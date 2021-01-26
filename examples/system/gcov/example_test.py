@@ -1,12 +1,13 @@
 from __future__ import unicode_literals
+
 import os
 import time
 
-from ttfw_idf import Utility
 import ttfw_idf
+from ttfw_idf import Utility
 
 
-@ttfw_idf.idf_example_test(env_tag="test_jtag_arm")
+@ttfw_idf.idf_example_test(env_tag='test_jtag_arm')
 def test_examples_gcov(env, extra_data):
 
     rel_project_path = os.path.join('examples', 'system', 'gcov')

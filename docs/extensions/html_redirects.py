@@ -53,22 +53,22 @@ def create_redirect_pages(app):
         return  # only relevant for standalone HTML output
 
     for (old_url, new_url) in app.config.html_redirect_pages:
-        print("Creating redirect %s to %s..." % (old_url, new_url))
+        print('Creating redirect %s to %s...' % (old_url, new_url))
         if old_url.startswith('/'):
-            print("Stripping leading / from URL in config file...")
+            print('Stripping leading / from URL in config file...')
             old_url = old_url[1:]
 
         new_url = app.builder.get_relative_uri(old_url, new_url)
         out_file = app.builder.get_outfilename(old_url)
-        print("HTML file %s redirects to relative URL %s" % (out_file, new_url))
+        print('HTML file %s redirects to relative URL %s' % (out_file, new_url))
 
         out_dir = os.path.dirname(out_file)
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
 
-        content = REDIRECT_TEMPLATE.replace("$NEWURL", new_url)
+        content = REDIRECT_TEMPLATE.replace('$NEWURL', new_url)
 
-        with open(out_file, "w") as rp:
+        with open(out_file, 'w') as rp:
             rp.write(content)
 
     return []

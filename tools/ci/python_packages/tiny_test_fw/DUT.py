@@ -38,12 +38,13 @@ If they using different port then need to implement their DUTPort class as well.
 """
 
 from __future__ import print_function
-import time
+
+import copy
+import functools
 import re
 import sys
 import threading
-import copy
-import functools
+import time
 
 # python2 and python3 queue package name is different
 try:
@@ -82,15 +83,15 @@ def _decode_data(data):
         # convert bytes to string. This is a bit of a hack, we know that we want to log this
         # later so encode to the stdout encoding with backslash escapes for anything non-encodable
         try:
-            return data.decode(sys.stdout.encoding, "backslashreplace")
+            return data.decode(sys.stdout.encoding, 'backslashreplace')
         except UnicodeDecodeError:  # Python <3.5 doesn't support backslashreplace
-            return data.decode(sys.stdout.encoding, "replace")
+            return data.decode(sys.stdout.encoding, 'replace')
     return data
 
 
 def _pattern_to_string(pattern):
     try:
-        ret = "RegEx: " + pattern.pattern
+        ret = 'RegEx: ' + pattern.pattern
     except AttributeError:
         ret = pattern
     return ret
@@ -167,7 +168,7 @@ class _LogThread(threading.Thread, _queue.Queue):
     Then data will be passed to ``expect`` as soon as received.
     """
     def __init__(self):
-        threading.Thread.__init__(self, name="LogThread")
+        threading.Thread.__init__(self, name='LogThread')
         _queue.Queue.__init__(self, maxsize=0)
         self.setDaemon(True)
         self.flush_lock = threading.Lock()
@@ -177,7 +178,7 @@ class _LogThread(threading.Thread, _queue.Queue):
         :param filename: log file name
         :param data: log data. Must be ``bytes``.
         """
-        self.put({"filename": filename, "data": data})
+        self.put({'filename': filename, 'data': data})
 
     def flush_data(self):
         with self.flush_lock:
@@ -187,14 +188,14 @@ class _LogThread(threading.Thread, _queue.Queue):
                 try:
                     log = self.get_nowait()
                     try:
-                        data_cache[log["filename"]] += log["data"]
+                        data_cache[log['filename']] += log['data']
                     except KeyError:
-                        data_cache[log["filename"]] = log["data"]
+                        data_cache[log['filename']] = log['data']
                 except _queue.Empty:
                     break
             # flush data
             for filename in data_cache:
-                with open(filename, "ab+") as f:
+                with open(filename, 'ab+') as f:
                     f.write(data_cache[filename])
 
     def run(self):
@@ -231,7 +232,7 @@ class RecvThread(threading.Thread):
         lines = decoded_data.splitlines(True)
         last_line = lines[-1]
 
-        if last_line[-1] != "\n":
+        if last_line[-1] != '\n':
             if len(lines) == 1:
                 # only one line and the line is not finished, then append this to cache
                 self._line_cache += lines[-1]
@@ -239,7 +240,7 @@ class RecvThread(threading.Thread):
             else:
                 # more than one line and not finished, replace line cache
                 self._line_cache = lines[-1]
-                ret += "".join(lines[:-1])
+                ret += ''.join(lines[:-1])
         else:
             # line finishes, flush cache
             self._line_cache = str()
@@ -302,7 +303,7 @@ class BaseDUT(object):
         self.start_receive()
 
     def __str__(self):
-        return "DUT({}: {})".format(self.name, str(self.port))
+        return 'DUT({}: {})'.format(self.name, str(self.port))
 
     def _save_expect_failure(self, pattern, data, start_time):
         """
@@ -311,8 +312,8 @@ class BaseDUT(object):
         The expect failures could be false alarm, and test case might generate a lot of such failures.
         Therefore, we don't print the failure immediately and limit the max size of failure list.
         """
-        self.expect_failures.insert(0, {"pattern": pattern, "data": data,
-                                        "start": start_time, "end": time.time()})
+        self.expect_failures.insert(0, {'pattern': pattern, 'data': data,
+                                        'start': start_time, 'end': time.time()})
         self.expect_failures = self.expect_failures[:self.MAX_EXPECT_FAILURES_TO_SAVED]
 
     def _save_dut_log(self, data):
@@ -444,7 +445,7 @@ class BaseDUT(object):
                 raise e
         return data
 
-    def write(self, data, eol="\r\n", flush=True):
+    def write(self, data, eol='\r\n', flush=True):
         """
         :param data: data
         :param eol: end of line pattern.
@@ -474,7 +475,7 @@ class BaseDUT(object):
         self.data_cache.flush(size)
         return data
 
-    def start_capture_raw_data(self, capture_id="default"):
+    def start_capture_raw_data(self, capture_id='default'):
         """
         Sometime application want to get DUT raw data and use ``expect`` method at the same time.
         Capture methods provides a way to get raw data without affecting ``expect`` or ``read`` method.
@@ -491,7 +492,7 @@ class BaseDUT(object):
                 # otherwise, create new data cache
                 self.recorded_data[capture_id] = _DataCache()
 
-    def stop_capture_raw_data(self, capture_id="default"):
+    def stop_capture_raw_data(self, capture_id='default'):
         """
         Stop capture and get raw data.
         This method should be used after ``start_capture_raw_data`` on the same capture ID.
@@ -504,9 +505,9 @@ class BaseDUT(object):
                 ret = self.recorded_data[capture_id].get_data()
                 self.recorded_data.pop(capture_id)
             except KeyError as e:
-                e.message = "capture_id does not exist. " \
-                            "You should call start_capture_raw_data with same ID " \
-                            "before calling stop_capture_raw_data"
+                e.message = 'capture_id does not exist. ' \
+                            'You should call start_capture_raw_data with same ID ' \
+                            'before calling stop_capture_raw_data'
                 raise e
         return ret
 
@@ -552,9 +553,9 @@ class BaseDUT(object):
         return ret, index
 
     EXPECT_METHOD = [
-        [type(re.compile("")), "_expect_re"],
-        [type(b''), "_expect_str"],  # Python 2 & 3 hook to work without 'from builtins import str' from future
-        [type(u''), "_expect_str"],
+        [type(re.compile('')), '_expect_re'],
+        [type(b''), '_expect_str'],  # Python 2 & 3 hook to work without 'from builtins import str' from future
+        [type(u''), '_expect_str'],
     ]
 
     def _get_expect_method(self, pattern):
@@ -607,7 +608,7 @@ class BaseDUT(object):
         if ret is None:
             pattern = _pattern_to_string(pattern)
             self._save_expect_failure(pattern, data, start_time)
-            raise ExpectTimeout(self.name + ": " + pattern)
+            raise ExpectTimeout(self.name + ': ' + pattern)
         return stdout if full_stdout else ret
 
     def _expect_multi(self, expect_all, expect_item_list, timeout):
@@ -622,12 +623,12 @@ class BaseDUT(object):
         def process_expected_item(item_raw):
             # convert item raw data to standard dict
             item = {
-                "pattern": item_raw[0] if isinstance(item_raw, tuple) else item_raw,
-                "method": self._get_expect_method(item_raw[0] if isinstance(item_raw, tuple)
+                'pattern': item_raw[0] if isinstance(item_raw, tuple) else item_raw,
+                'method': self._get_expect_method(item_raw[0] if isinstance(item_raw, tuple)
                                                   else item_raw),
-                "callback": item_raw[1] if isinstance(item_raw, tuple) else None,
-                "index": -1,
-                "ret": None,
+                'callback': item_raw[1] if isinstance(item_raw, tuple) else None,
+                'index': -1,
+                'ret': None,
             }
             return item
 
@@ -642,9 +643,9 @@ class BaseDUT(object):
             for expect_item in expect_items:
                 if expect_item not in matched_expect_items:
                     # exclude those already matched
-                    expect_item["ret"], expect_item["index"] = \
-                        expect_item["method"](data, expect_item["pattern"])
-                    if expect_item["ret"] is not None:
+                    expect_item['ret'], expect_item['index'] = \
+                        expect_item['method'](data, expect_item['pattern'])
+                    if expect_item['ret'] is not None:
                         # match succeed for one item
                         matched_expect_items.append(expect_item)
 
@@ -664,20 +665,20 @@ class BaseDUT(object):
         if match_succeed:
             # sort matched items according to order of appearance in the input data,
             # so that the callbacks are invoked in correct order
-            matched_expect_items = sorted(matched_expect_items, key=lambda it: it["index"])
+            matched_expect_items = sorted(matched_expect_items, key=lambda it: it['index'])
             # invoke callbacks and flush matched data cache
             slice_index = -1
             for expect_item in matched_expect_items:
                 # trigger callback
-                if expect_item["callback"]:
-                    expect_item["callback"](expect_item["ret"])
-                slice_index = max(slice_index, expect_item["index"])
+                if expect_item['callback']:
+                    expect_item['callback'](expect_item['ret'])
+                slice_index = max(slice_index, expect_item['index'])
             # flush already matched data
             self.data_cache.flush(slice_index)
         else:
-            pattern = str([_pattern_to_string(x["pattern"]) for x in expect_items])
+            pattern = str([_pattern_to_string(x['pattern']) for x in expect_items])
             self._save_expect_failure(pattern, data, start_time)
-            raise ExpectTimeout(self.name + ": " + pattern)
+            raise ExpectTimeout(self.name + ': ' + pattern)
 
     @_expect_lock
     def expect_any(self, *expect_items, **timeout):
@@ -697,8 +698,8 @@ class BaseDUT(object):
         """
         # to be compatible with python2
         # in python3 we can write f(self, *expect_items, timeout=DEFAULT_TIMEOUT)
-        if "timeout" not in timeout:
-            timeout["timeout"] = self.DEFAULT_EXPECT_TIMEOUT
+        if 'timeout' not in timeout:
+            timeout['timeout'] = self.DEFAULT_EXPECT_TIMEOUT
         return self._expect_multi(False, expect_items, **timeout)
 
     @_expect_lock
@@ -719,38 +720,38 @@ class BaseDUT(object):
         """
         # to be compatible with python2
         # in python3 we can write f(self, *expect_items, timeout=DEFAULT_TIMEOUT)
-        if "timeout" not in timeout:
-            timeout["timeout"] = self.DEFAULT_EXPECT_TIMEOUT
+        if 'timeout' not in timeout:
+            timeout['timeout'] = self.DEFAULT_EXPECT_TIMEOUT
         return self._expect_multi(True, expect_items, **timeout)
 
     @staticmethod
     def _format_ts(ts):
-        return "{}:{}".format(time.strftime("%m-%d %H:%M:%S", time.localtime(ts)), str(ts % 1)[2:5])
+        return '{}:{}'.format(time.strftime('%m-%d %H:%M:%S', time.localtime(ts)), str(ts % 1)[2:5])
 
     def print_debug_info(self):
         """
         Print debug info of current DUT. Currently we will print debug info for expect failures.
         """
-        Utility.console_log("DUT debug info for DUT: {}:".format(self.name), color="orange")
+        Utility.console_log('DUT debug info for DUT: {}:'.format(self.name), color='orange')
 
         for failure in self.expect_failures:
-            Utility.console_log(u"\t[pattern]: {}\r\n\t[data]: {}\r\n\t[time]: {} - {}\r\n"
-                                .format(failure["pattern"], failure["data"],
-                                        self._format_ts(failure["start"]), self._format_ts(failure["end"])),
-                                color="orange")
+            Utility.console_log(u'\t[pattern]: {}\r\n\t[data]: {}\r\n\t[time]: {} - {}\r\n'
+                                .format(failure['pattern'], failure['data'],
+                                        self._format_ts(failure['start']), self._format_ts(failure['end'])),
+                                color='orange')
 
 
 class SerialDUT(BaseDUT):
     """ serial with logging received data feature """
 
     DEFAULT_UART_CONFIG = {
-        "baudrate": 115200,
-        "bytesize": serial.EIGHTBITS,
-        "parity": serial.PARITY_NONE,
-        "stopbits": serial.STOPBITS_ONE,
-        "timeout": 0.05,
-        "xonxoff": False,
-        "rtscts": False,
+        'baudrate': 115200,
+        'bytesize': serial.EIGHTBITS,
+        'parity': serial.PARITY_NONE,
+        'stopbits': serial.STOPBITS_ONE,
+        'timeout': 0.05,
+        'xonxoff': False,
+        'rtscts': False,
     }
 
     def __init__(self, name, port, log_file, app, **kwargs):
@@ -768,8 +769,8 @@ class SerialDUT(BaseDUT):
         :param data: raw data from read
         :return: formatted data (str)
         """
-        timestamp = "[{}]".format(self._format_ts(time.time()))
-        formatted_data = timestamp.encode() + b"\r\n" + data + b"\r\n"
+        timestamp = '[{}]'.format(self._format_ts(time.time()))
+        formatted_data = timestamp.encode() + b'\r\n' + data + b'\r\n'
         return formatted_data
 
     def _port_open(self):

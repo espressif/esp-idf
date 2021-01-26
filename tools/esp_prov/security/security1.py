@@ -17,18 +17,17 @@
 # protocomm endpoint with security type protocomm_security1
 
 from __future__ import print_function
-from future.utils import tobytes
 
-import utils
 import proto
-from .security import Security
-
+import session_pb2
+import utils
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey, X25519PublicKey
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from future.utils import tobytes
 
-import session_pb2
+from .security import Security
 
 
 # Enum for state of protocomm_security1 FSM
@@ -76,7 +75,7 @@ class Security1(Security):
             self.setup1_response(response_data)
             return None
         else:
-            print("Unexpected state")
+            print('Unexpected state')
             return None
 
     def __generate_key(self):
@@ -92,7 +91,7 @@ class Security1(Security):
 
     def _print_verbose(self, data):
         if (self.verbose):
-            print("++++ " + data + " ++++")
+            print('++++ ' + data + ' ++++')
 
     def setup0_request(self):
         # Form SessionCmd0 request packet using client public key
@@ -100,26 +99,26 @@ class Security1(Security):
         setup_req.sec_ver = session_pb2.SecScheme1
         self.__generate_key()
         setup_req.sec1.sc0.client_pubkey = self.client_public_key
-        self._print_verbose("Client Public Key:\t" + utils.str_to_hexstr(self.client_public_key.decode('latin-1')))
+        self._print_verbose('Client Public Key:\t' + utils.str_to_hexstr(self.client_public_key.decode('latin-1')))
         return setup_req.SerializeToString().decode('latin-1')
 
     def setup0_response(self, response_data):
         # Interpret SessionResp0 response packet
         setup_resp = proto.session_pb2.SessionData()
         setup_resp.ParseFromString(tobytes(response_data))
-        self._print_verbose("Security version:\t" + str(setup_resp.sec_ver))
+        self._print_verbose('Security version:\t' + str(setup_resp.sec_ver))
         if setup_resp.sec_ver != session_pb2.SecScheme1:
-            print("Incorrect sec scheme")
+            print('Incorrect sec scheme')
             exit(1)
         self.device_public_key = setup_resp.sec1.sr0.device_pubkey
         # Device random is the initialization vector
         device_random = setup_resp.sec1.sr0.device_random
-        self._print_verbose("Device Public Key:\t" + utils.str_to_hexstr(self.device_public_key.decode('latin-1')))
-        self._print_verbose("Device Random:\t" + utils.str_to_hexstr(device_random.decode('latin-1')))
+        self._print_verbose('Device Public Key:\t' + utils.str_to_hexstr(self.device_public_key.decode('latin-1')))
+        self._print_verbose('Device Random:\t' + utils.str_to_hexstr(device_random.decode('latin-1')))
 
         # Calculate Curve25519 shared key using Client private key and Device public key
         sharedK = self.client_private_key.exchange(X25519PublicKey.from_public_bytes(self.device_public_key))
-        self._print_verbose("Shared Key:\t" + utils.str_to_hexstr(sharedK.decode('latin-1')))
+        self._print_verbose('Shared Key:\t' + utils.str_to_hexstr(sharedK.decode('latin-1')))
 
         # If PoP is provided, XOR SHA256 of PoP with the previously
         # calculated Shared Key to form the actual Shared Key
@@ -130,7 +129,7 @@ class Security1(Security):
             digest = h.finalize()
             # XOR with and update Shared Key
             sharedK = xor(sharedK, digest)
-            self._print_verbose("New Shared Key XORed with PoP:\t" + utils.str_to_hexstr(sharedK.decode('latin-1')))
+            self._print_verbose('New Shared Key XORed with PoP:\t' + utils.str_to_hexstr(sharedK.decode('latin-1')))
         # Initialize the encryption engine with Shared Key and initialization vector
         cipher = Cipher(algorithms.AES(sharedK), modes.CTR(device_random), backend=default_backend())
         self.cipher = cipher.encryptor()
@@ -142,7 +141,7 @@ class Security1(Security):
         setup_req.sec1.msg = proto.sec1_pb2.Session_Command1
         # Encrypt device public key and attach to the request packet
         client_verify = self.cipher.update(self.device_public_key)
-        self._print_verbose("Client Verify:\t" + utils.str_to_hexstr(client_verify.decode('latin-1')))
+        self._print_verbose('Client Verify:\t' + utils.str_to_hexstr(client_verify.decode('latin-1')))
         setup_req.sec1.sc1.client_verify_data = client_verify
         return setup_req.SerializeToString().decode('latin-1')
 
@@ -154,16 +153,16 @@ class Security1(Security):
         if setup_resp.sec_ver == session_pb2.SecScheme1:
             # Read encrypyed device verify string
             device_verify = setup_resp.sec1.sr1.device_verify_data
-            self._print_verbose("Device verify:\t" + utils.str_to_hexstr(device_verify.decode('latin-1')))
+            self._print_verbose('Device verify:\t' + utils.str_to_hexstr(device_verify.decode('latin-1')))
             # Decrypt the device verify string
             enc_client_pubkey = self.cipher.update(setup_resp.sec1.sr1.device_verify_data)
-            self._print_verbose("Enc client pubkey:\t " + utils.str_to_hexstr(enc_client_pubkey.decode('latin-1')))
+            self._print_verbose('Enc client pubkey:\t ' + utils.str_to_hexstr(enc_client_pubkey.decode('latin-1')))
             # Match decryped string with client public key
             if enc_client_pubkey != self.client_public_key:
-                print("Mismatch in device verify")
+                print('Mismatch in device verify')
                 return -2
         else:
-            print("Unsupported security protocol")
+            print('Unsupported security protocol')
             return -1
 
     def encrypt_data(self, data):

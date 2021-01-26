@@ -15,14 +15,14 @@
 #
 
 import collections
+import fnmatch
 import itertools
 import os
-import fnmatch
 
-from fragments import Sections, Scheme, Mapping, Fragment
-from pyparsing import Suppress, White, ParseException, Literal, Group, ZeroOrMore
-from pyparsing import Word, OneOrMore, nums, alphas, restOfLine, SkipTo
+from fragments import Fragment, Mapping, Scheme, Sections
 from ldgen_common import LdGenFailure
+from pyparsing import (Group, Literal, OneOrMore, ParseException, SkipTo, Suppress, White, Word, ZeroOrMore, alphas,
+                       nums, restOfLine)
 
 
 class PlacementRule():
@@ -39,13 +39,13 @@ class PlacementRule():
         def __init__(self, content):
             self.content = content
 
-    __metadata = collections.namedtuple("__metadata", "excludes expansions expanded")
+    __metadata = collections.namedtuple('__metadata', 'excludes expansions expanded')
 
     def __init__(self, archive, obj, symbol, sections, target):
-        if archive == "*":
+        if archive == '*':
             archive = None
 
-        if obj == "*":
+        if obj == '*':
             obj = None
 
         self.archive = archive
@@ -168,10 +168,10 @@ class PlacementRule():
             exclusion_string = None
 
             if exclusions:
-                exclusion_string = " ".join(map(lambda e: "*" + e.archive + (":" + e.obj + ".*" if e.obj else ""), exclusions))
-                exclusion_string = "EXCLUDE_FILE(" + exclusion_string + ")"
+                exclusion_string = ' '.join(map(lambda e: '*' + e.archive + (':' + e.obj + '.*' if e.obj else ''), exclusions))
+                exclusion_string = 'EXCLUDE_FILE(' + exclusion_string + ')'
             else:
-                exclusion_string = ""
+                exclusion_string = ''
 
             section_string = None
             exclusion_section_string = None
@@ -180,26 +180,26 @@ class PlacementRule():
             section_expanded = self.sections[section].expanded.content
 
             if section_expansions and section_expanded:
-                section_string = " ".join(section_expansions)
+                section_string = ' '.join(section_expansions)
                 exclusion_section_string = section_string
             else:
                 section_string = section
-                exclusion_section_string = exclusion_string + " " + section_string
+                exclusion_section_string = exclusion_string + ' ' + section_string
 
             sections_string.append(exclusion_section_string)
 
-        sections_string = " ".join(sections_string)
+        sections_string = ' '.join(sections_string)
 
-        archive = str(self.archive) if self.archive else ""
-        obj = (str(self.obj) + (".*" if self.obj else "")) if self.obj else ""
+        archive = str(self.archive) if self.archive else ''
+        obj = (str(self.obj) + ('.*' if self.obj else '')) if self.obj else ''
 
         # Handle output string generation based on information available
         if self.specificity == PlacementRule.DEFAULT_SPECIFICITY:
-            rule_string = "*(%s)" % (sections_string)
+            rule_string = '*(%s)' % (sections_string)
         elif self.specificity == PlacementRule.ARCHIVE_SPECIFICITY:
-            rule_string = "*%s:(%s)" % (archive, sections_string)
+            rule_string = '*%s:(%s)' % (archive, sections_string)
         else:
-            rule_string = "*%s:%s(%s)" % (archive, obj, sections_string)
+            rule_string = '*%s:%s(%s)' % (archive, obj, sections_string)
 
         return rule_string
 
@@ -251,7 +251,7 @@ class GenerationModel:
     Implements generation of placement rules based on collected sections, scheme and mapping fragment.
     """
 
-    DEFAULT_SCHEME = "default"
+    DEFAULT_SCHEME = 'default'
 
     def __init__(self, check_mappings=False, check_mapping_exceptions=None):
         self.schemes = {}
@@ -322,7 +322,7 @@ class GenerationModel:
                 # targets. Raise exception.
                 if intersection:
                     scheme = self.schemes[scheme_name]
-                    message = "Sections " + str(intersection) + " mapped to multiple targets."
+                    message = 'Sections ' + str(intersection) + ' mapped to multiple targets.'
                     raise GenerationException(message, scheme)
 
         return scheme_dictionary
@@ -352,7 +352,7 @@ class GenerationModel:
                                     raise GenerationException(message, mapping)
 
                                 if symbol:
-                                    obj_sym = fnmatch.filter(obj_sections, "*%s" % symbol)
+                                    obj_sym = fnmatch.filter(obj_sections, '*%s' % symbol)
                                     if not obj_sym:
                                         message = "'%s:%s %s' not found" % (archive, obj, symbol)
                                         raise GenerationException(message, mapping)
@@ -401,7 +401,7 @@ class GenerationModel:
 
                 if intersections and rule_a.maps_same_entities_as(rule_b):
                     rules_string = str([str(rule_a), str(rule_b)])
-                    message = "Rules " + rules_string + " map sections " + str(list(intersections)) + " into multiple targets."
+                    message = 'Rules ' + rules_string + ' map sections ' + str(list(intersections)) + ' into multiple targets.'
                     raise GenerationException(message)
 
     def _create_extra_rules(self, rules):
@@ -499,7 +499,7 @@ class TemplateModel:
     final output.
     """
 
-    Marker = collections.namedtuple("Marker", "target indent rules")
+    Marker = collections.namedtuple('Marker', 'target indent rules')
 
     def __init__(self, template_file):
         self.members = []
@@ -511,8 +511,8 @@ class TemplateModel:
         lines = template_file.readlines()
 
         target = Fragment.IDENTIFIER
-        reference = Suppress("mapping") + Suppress("[") + target.setResultsName("target") + Suppress("]")
-        pattern = White(" \t").setResultsName("indent") + reference
+        reference = Suppress('mapping') + Suppress('[') + target.setResultsName('target') + Suppress(']')
+        pattern = White(' \t').setResultsName('indent') + reference
 
         # Find the markers in the template file line by line. If line does not match marker grammar,
         # set it as a literal to be copied as is to the output file.
@@ -548,10 +548,10 @@ class TemplateModel:
 
     def write(self, output_file):
         # Add information that this is a generated file.
-        output_file.write("/* Automatically generated file; DO NOT EDIT */\n")
-        output_file.write("/* Espressif IoT Development Framework Linker Script */\n")
-        output_file.write("/* Generated from: %s */\n" % self.file)
-        output_file.write("\n")
+        output_file.write('/* Automatically generated file; DO NOT EDIT */\n')
+        output_file.write('/* Espressif IoT Development Framework Linker Script */\n')
+        output_file.write('/* Generated from: %s */\n' % self.file)
+        output_file.write('\n')
 
         # Do the text replacement
         for member in self.members:
@@ -560,7 +560,7 @@ class TemplateModel:
                 rules = member.rules
 
                 for rule in rules:
-                    generated_line = "".join([indent, str(rule), '\n'])
+                    generated_line = ''.join([indent, str(rule), '\n'])
                     output_file.write(generated_line)
             except AttributeError:
                 output_file.write(member)
@@ -572,7 +572,7 @@ class GenerationException(LdGenFailure):
     evaluate conditions, duplicate mappings, etc.
     """
 
-    UNDEFINED_REFERENCE = "Undefined reference"
+    UNDEFINED_REFERENCE = 'Undefined reference'
 
     def __init__(self, message, fragment=None):
         self.fragment = fragment
@@ -591,7 +591,7 @@ class SectionsInfo(dict):
     and names
     """
 
-    __info = collections.namedtuple("__info", "filename content")
+    __info = collections.namedtuple('__info', 'filename content')
 
     def __init__(self):
         self.sections = dict()
@@ -599,10 +599,10 @@ class SectionsInfo(dict):
     def add_sections_info(self, sections_info_dump):
         first_line = sections_info_dump.readline()
 
-        archive_path = (Literal("In archive").suppress() +
+        archive_path = (Literal('In archive').suppress() +
                         White().suppress() +
                         # trim the colon and line ending characters from archive_path
-                        restOfLine.setResultsName("archive_path").setParseAction(lambda s, loc, toks: s.rstrip(":\n\r ")))
+                        restOfLine.setResultsName('archive_path').setParseAction(lambda s, loc, toks: s.rstrip(':\n\r ')))
         parser = archive_path
 
         results = None
@@ -610,34 +610,34 @@ class SectionsInfo(dict):
         try:
             results = parser.parseString(first_line, parseAll=True)
         except ParseException as p:
-            raise ParseException("Parsing sections info for library " + sections_info_dump.name + " failed. " + p.msg)
+            raise ParseException('Parsing sections info for library ' + sections_info_dump.name + ' failed. ' + p.msg)
 
         archive = os.path.basename(results.archive_path)
         self.sections[archive] = SectionsInfo.__info(sections_info_dump.name, sections_info_dump.read())
 
     def _get_infos_from_file(self, info):
         # {object}:  file format elf32-xtensa-le
-        object_line = SkipTo(":").setResultsName("object") + Suppress(restOfLine)
+        object_line = SkipTo(':').setResultsName('object') + Suppress(restOfLine)
 
         # Sections:
         # Idx Name ...
-        section_start = Suppress(Literal("Sections:"))
+        section_start = Suppress(Literal('Sections:'))
         section_header = Suppress(OneOrMore(Word(alphas)))
 
         # 00 {section} 0000000 ...
         #              CONTENTS, ALLOC, ....
         section_entry = Suppress(Word(nums)) + SkipTo(' ') + Suppress(restOfLine) + \
-            Suppress(ZeroOrMore(Word(alphas) + Literal(",")) + Word(alphas))
+            Suppress(ZeroOrMore(Word(alphas) + Literal(',')) + Word(alphas))
 
-        content = Group(object_line + section_start + section_header + Group(OneOrMore(section_entry)).setResultsName("sections"))
-        parser = Group(ZeroOrMore(content)).setResultsName("contents")
+        content = Group(object_line + section_start + section_header + Group(OneOrMore(section_entry)).setResultsName('sections'))
+        parser = Group(ZeroOrMore(content)).setResultsName('contents')
 
         results = None
 
         try:
             results = parser.parseString(info.content, parseAll=True)
         except ParseException as p:
-            raise ParseException("Unable to parse section info file " + info.filename + ". " + p.msg)
+            raise ParseException('Unable to parse section info file ' + info.filename + '. ' + p.msg)
 
         return results
 
@@ -657,15 +657,15 @@ class SectionsInfo(dict):
                 self.sections[archive] = stored
 
             try:
-                res = stored[obj + ".o"]
+                res = stored[obj + '.o']
             except KeyError:
                 try:
-                    res = stored[obj + ".c.obj"]
+                    res = stored[obj + '.c.obj']
                 except KeyError:
                     try:
-                        res = stored[obj + ".cpp.obj"]
+                        res = stored[obj + '.cpp.obj']
                     except KeyError:
-                        res = stored[obj + ".S.obj"]
+                        res = stored[obj + '.S.obj']
         except KeyError:
             pass
 

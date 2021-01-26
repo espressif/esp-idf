@@ -1,13 +1,15 @@
 from __future__ import unicode_literals
-from io import open
-import debug_backend
+
 import os
 import re
 import tempfile
+from io import open
+
+import debug_backend
 import ttfw_idf
 
 
-@ttfw_idf.idf_example_test(env_tag="test_jtag_arm")
+@ttfw_idf.idf_example_test(env_tag='test_jtag_arm')
 def test_examples_sysview_tracing_heap_log(env, extra_data):
 
     rel_project_path = os.path.join('examples', 'system', 'sysview_tracing_heap_log')

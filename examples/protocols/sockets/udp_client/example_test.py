@@ -6,17 +6,17 @@
 
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function
-from __future__ import unicode_literals
-from builtins import input
+from __future__ import print_function, unicode_literals
+
 import os
 import re
-import netifaces
 import socket
-from threading import Thread, Event
-import ttfw_idf
 import sys
+from builtins import input
+from threading import Event, Thread
 
+import netifaces
+import ttfw_idf
 
 # -----------  Config  ----------
 PORT = 3333
@@ -26,7 +26,7 @@ INTERFACE = 'eth0'
 
 def get_my_ip(type):
     for i in netifaces.ifaddresses(INTERFACE)[type]:
-        return i['addr'].replace("%{}".format(INTERFACE), "")
+        return i['addr'].replace('%{}'.format(INTERFACE), '')
 
 
 class UdpServer:
@@ -44,10 +44,10 @@ class UdpServer:
         try:
             self.socket.bind(('', self.port))
         except socket.error as e:
-            print("Bind failed:{}".format(e))
+            print('Bind failed:{}'.format(e))
             raise
 
-        print("Starting server on port={} family_addr={}".format(self.port, self.family_addr))
+        print('Starting server on port={} family_addr={}'.format(self.port, self.family_addr))
         self.server_thread = Thread(target=self.run_server)
         self.server_thread.start()
         return self
@@ -72,13 +72,13 @@ class UdpServer:
                 reply = 'OK: ' + data
                 self.socket.sendto(reply.encode(), addr)
             except socket.error as e:
-                print("Running server failed:{}".format(e))
+                print('Running server failed:{}'.format(e))
                 raise
             if not self.persist:
                 break
 
 
-@ttfw_idf.idf_example_test(env_tag="Example_WIFI")
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
 def test_examples_protocol_socket_udpclient(env, extra_data):
     """
     steps:
@@ -86,39 +86,39 @@ def test_examples_protocol_socket_udpclient(env, extra_data):
       2. have the board connect to the server
       3. send and receive data
     """
-    dut1 = env.get_dut("udp_client", "examples/protocols/sockets/udp_client", dut_class=ttfw_idf.ESP32DUT)
+    dut1 = env.get_dut('udp_client', 'examples/protocols/sockets/udp_client', dut_class=ttfw_idf.ESP32DUT)
     # check and log bin size
-    binary_file = os.path.join(dut1.app.binary_path, "udp_client.bin")
+    binary_file = os.path.join(dut1.app.binary_path, 'udp_client.bin')
     bin_size = os.path.getsize(binary_file)
-    ttfw_idf.log_performance("udp_client_bin_size", "{}KB".format(bin_size // 1024))
+    ttfw_idf.log_performance('udp_client_bin_size', '{}KB'.format(bin_size // 1024))
 
     # start test
     dut1.start_app()
 
-    ipv4 = dut1.expect(re.compile(r" IPv4 address: ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)"), timeout=30)[0]
+    ipv4 = dut1.expect(re.compile(r' IPv4 address: ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)'), timeout=30)[0]
     ipv6_r = r':'.join((r'[0-9a-fA-F]{4}',) * 8)    # expect all 8 octets from IPv6 (assumes it's printed in the long form)
     ipv6 = dut1.expect(re.compile(r' IPv6 address: ({})'.format(ipv6_r)), timeout=30)[0]
-    print("Connected with IPv4={} and IPv6={}".format(ipv4, ipv6))
+    print('Connected with IPv4={} and IPv6={}'.format(ipv4, ipv6))
 
     # test IPv4
     with UdpServer(PORT, socket.AF_INET):
         server_ip = get_my_ip(netifaces.AF_INET)
-        print("Connect udp client to server IP={}".format(server_ip))
+        print('Connect udp client to server IP={}'.format(server_ip))
         dut1.write(server_ip)
-        dut1.expect(re.compile(r"OK: Message from ESP32"))
+        dut1.expect(re.compile(r'OK: Message from ESP32'))
     # test IPv6
     with UdpServer(PORT, socket.AF_INET6):
         server_ip = get_my_ip(netifaces.AF_INET6)
-        print("Connect udp client to server IP={}".format(server_ip))
+        print('Connect udp client to server IP={}'.format(server_ip))
         dut1.write(server_ip)
-        dut1.expect(re.compile(r"OK: Message from ESP32"))
+        dut1.expect(re.compile(r'OK: Message from ESP32'))
 
 
 if __name__ == '__main__':
-    if sys.argv[1:] and sys.argv[1].startswith("IPv"):     # if additional arguments provided:
+    if sys.argv[1:] and sys.argv[1].startswith('IPv'):     # if additional arguments provided:
         # Usage: example_test.py <IPv4|IPv6>
-        family_addr = socket.AF_INET6 if sys.argv[1] == "IPv6" else socket.AF_INET
+        family_addr = socket.AF_INET6 if sys.argv[1] == 'IPv6' else socket.AF_INET
         with UdpServer(PORT, family_addr, persist=True) as s:
-            print(input("Press Enter stop the server..."))
+            print(input('Press Enter stop the server...'))
     else:
         test_examples_protocol_socket_udpclient()

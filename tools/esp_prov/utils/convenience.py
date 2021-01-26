@@ -15,6 +15,7 @@
 
 # Convenience functions for commonly used data type conversions
 import binascii
+
 from future.utils import tobytes
 
 

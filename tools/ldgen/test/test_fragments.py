@@ -16,44 +16,44 @@
 #
 import os
 import sys
-import unittest
 import tempfile
-
+import unittest
 from io import StringIO
-from pyparsing import Word, ParseException, ParseFatalException, alphanums
+
+from pyparsing import ParseException, ParseFatalException, Word, alphanums
 
 try:
-    from fragments import FragmentFile, FRAGMENT_TYPES, Fragment, KeyGrammar
+    from fragments import FRAGMENT_TYPES, Fragment, FragmentFile, KeyGrammar
     from sdkconfig import SDKConfig
 except ImportError:
     sys.path.append('../')
-    from fragments import FragmentFile, FRAGMENT_TYPES, Fragment, KeyGrammar
+    from fragments import FRAGMENT_TYPES, Fragment, FragmentFile, KeyGrammar
     from sdkconfig import SDKConfig
 
 
 class SampleFragment(Fragment):
 
     grammars = {
-        "key_1": KeyGrammar(Word(alphanums + "_").setResultsName("value"), 0, None, True),
-        "key_2": KeyGrammar(Word(alphanums + "_").setResultsName("value"), 0, None, False),
-        "key_3": KeyGrammar(Word(alphanums + "_").setResultsName("value"), 3, 5, False)
+        'key_1': KeyGrammar(Word(alphanums + '_').setResultsName('value'), 0, None, True),
+        'key_2': KeyGrammar(Word(alphanums + '_').setResultsName('value'), 0, None, False),
+        'key_3': KeyGrammar(Word(alphanums + '_').setResultsName('value'), 3, 5, False)
     }
 
     def set_key_value(self, key, parse_results):
-        if key == "key_1":
+        if key == 'key_1':
             self.key_1 = list()
             for result in parse_results:
-                self.key_1.append(result["value"])
-        elif key == "key_2":
+                self.key_1.append(result['value'])
+        elif key == 'key_2':
             self.key_2 = list()
             for result in parse_results:
-                self.key_2.append(result["value"])
+                self.key_2.append(result['value'])
 
     def get_key_grammars(self):
         return self.__class__.grammars
 
 
-FRAGMENT_TYPES["test"] = SampleFragment
+FRAGMENT_TYPES['test'] = SampleFragment
 
 
 class FragmentTest(unittest.TestCase):
@@ -72,7 +72,7 @@ class FragmentTest(unittest.TestCase):
         # prepare_kconfig_files.py doesn't have to be called because COMPONENT_KCONFIGS and
         # COMPONENT_KCONFIGS_PROJBUILD are empty
 
-        self.sdkconfig = SDKConfig("data/Kconfig", "data/sdkconfig")
+        self.sdkconfig = SDKConfig('data/Kconfig', 'data/sdkconfig')
 
     def tearDown(self):
         try:
@@ -82,7 +82,7 @@ class FragmentTest(unittest.TestCase):
             pass
 
     @staticmethod
-    def create_fragment_file(contents, name="test_fragment.lf"):
+    def create_fragment_file(contents, name='test_fragment.lf'):
         f = StringIO(contents)
         f.name = name
         return f
@@ -102,11 +102,11 @@ key_2: value_a
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
 
         self.assertEqual(len(fragment_file.fragments[0].key_1), 3)
-        self.assertEqual(fragment_file.fragments[0].key_1[0], "value_1")
-        self.assertEqual(fragment_file.fragments[0].key_1[1], "value_2")
-        self.assertEqual(fragment_file.fragments[0].key_1[2], "value_3")
+        self.assertEqual(fragment_file.fragments[0].key_1[0], 'value_1')
+        self.assertEqual(fragment_file.fragments[0].key_1[1], 'value_2')
+        self.assertEqual(fragment_file.fragments[0].key_1[2], 'value_3')
         self.assertEqual(len(fragment_file.fragments[0].key_2), 1)
-        self.assertEqual(fragment_file.fragments[0].key_2[0], "value_a")
+        self.assertEqual(fragment_file.fragments[0].key_2[0], 'value_a')
 
     def test_duplicate_keys(self):
         test_fragment = self.create_fragment_file(u"""
@@ -139,10 +139,10 @@ key_1:
         value_5
 """)
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
-        self.assertEqual(fragment_file.fragments[0].key_1[0], "value_1")
-        self.assertEqual(fragment_file.fragments[0].key_1[1], "value_2")
-        self.assertEqual(fragment_file.fragments[0].key_1[2], "value_3")
-        self.assertEqual(fragment_file.fragments[0].key_1[3], "value_5")
+        self.assertEqual(fragment_file.fragments[0].key_1[0], 'value_1')
+        self.assertEqual(fragment_file.fragments[0].key_1[1], 'value_2')
+        self.assertEqual(fragment_file.fragments[0].key_1[2], 'value_3')
+        self.assertEqual(fragment_file.fragments[0].key_1[3], 'value_5')
 
         test_fragment = self.create_fragment_file(u"""
 [test:test]
@@ -160,9 +160,9 @@ key_1:
 """)
 
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
-        self.assertEqual(fragment_file.fragments[0].key_1[0], "value_1")
-        self.assertEqual(fragment_file.fragments[0].key_1[1], "value_3")
-        self.assertEqual(fragment_file.fragments[0].key_1[2], "value_6")
+        self.assertEqual(fragment_file.fragments[0].key_1[0], 'value_1')
+        self.assertEqual(fragment_file.fragments[0].key_1[1], 'value_3')
+        self.assertEqual(fragment_file.fragments[0].key_1[2], 'value_6')
 
         test_fragment = self.create_fragment_file(u"""
 [test:test]
@@ -185,14 +185,14 @@ key_2:
 """)
 
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
-        self.assertEqual(fragment_file.fragments[0].key_1[0], "value_1")
-        self.assertEqual(fragment_file.fragments[0].key_1[1], "value_2")
-        self.assertEqual(fragment_file.fragments[0].key_1[2], "value_4")
-        self.assertEqual(fragment_file.fragments[0].key_1[3], "value_5")
-        self.assertEqual(fragment_file.fragments[0].key_1[4], "value_6")
-        self.assertEqual(fragment_file.fragments[0].key_1[5], "value_7")
-        self.assertEqual(fragment_file.fragments[0].key_2[0], "value_a")
-        self.assertEqual(fragment_file.fragments[0].key_2[1], "value_b")
+        self.assertEqual(fragment_file.fragments[0].key_1[0], 'value_1')
+        self.assertEqual(fragment_file.fragments[0].key_1[1], 'value_2')
+        self.assertEqual(fragment_file.fragments[0].key_1[2], 'value_4')
+        self.assertEqual(fragment_file.fragments[0].key_1[3], 'value_5')
+        self.assertEqual(fragment_file.fragments[0].key_1[4], 'value_6')
+        self.assertEqual(fragment_file.fragments[0].key_1[5], 'value_7')
+        self.assertEqual(fragment_file.fragments[0].key_2[0], 'value_a')
+        self.assertEqual(fragment_file.fragments[0].key_2[1], 'value_b')
 
         test_fragment = self.create_fragment_file(u"""
 [test:test]
@@ -226,9 +226,9 @@ key_1:
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
 
         self.assertEqual(len(fragment_file.fragments[0].key_1), 3)
-        self.assertEqual(fragment_file.fragments[0].key_1[0], "value_1")
-        self.assertEqual(fragment_file.fragments[0].key_1[1], "value_2")
-        self.assertEqual(fragment_file.fragments[0].key_1[2], "value_3")
+        self.assertEqual(fragment_file.fragments[0].key_1[0], 'value_1')
+        self.assertEqual(fragment_file.fragments[0].key_1[1], 'value_2')
+        self.assertEqual(fragment_file.fragments[0].key_1[2], 'value_3')
 
         test_fragment = self.create_fragment_file(u"""
 [test:test]
@@ -410,8 +410,8 @@ key_1:
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
 
         self.assertEqual(len(fragment_file.fragments), 2)
-        self.assertEqual(fragment_file.fragments[0].key_1[0], "value_1")
-        self.assertEqual(fragment_file.fragments[1].key_1[0], "value_2")
+        self.assertEqual(fragment_file.fragments[0].key_1[0], 'value_1')
+        self.assertEqual(fragment_file.fragments[1].key_1[0], 'value_2')
 
     def test_whole_conditional_fragment(self):
         test_fragment = self.create_fragment_file(u"""
@@ -442,11 +442,11 @@ key_1:
 
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
         self.assertEqual(len(fragment_file.fragments), 4)
-        self.assertEqual(fragment_file.fragments[0].name, "test2")
-        self.assertEqual(fragment_file.fragments[1].name, "test3")
-        self.assertEqual(fragment_file.fragments[1].key_1[1], "value_6")
-        self.assertEqual(fragment_file.fragments[2].name, "test4")
-        self.assertEqual(fragment_file.fragments[3].name, "test5")
+        self.assertEqual(fragment_file.fragments[0].name, 'test2')
+        self.assertEqual(fragment_file.fragments[1].name, 'test3')
+        self.assertEqual(fragment_file.fragments[1].key_1[1], 'value_6')
+        self.assertEqual(fragment_file.fragments[2].name, 'test4')
+        self.assertEqual(fragment_file.fragments[3].name, 'test5')
 
     def test_equivalent_conditional_fragment(self):
         test_fragment1 = self.create_fragment_file(u"""
@@ -462,7 +462,7 @@ else:
 
         fragment_file1 = FragmentFile(test_fragment1, self.sdkconfig)
         self.assertEqual(len(fragment_file1.fragments), 1)
-        self.assertEqual(fragment_file1.fragments[0].key_1[0], "value_1")
+        self.assertEqual(fragment_file1.fragments[0].key_1[0], 'value_1')
 
         test_fragment2 = self.create_fragment_file(u"""
 [test:test1]
@@ -475,7 +475,7 @@ key_1:
 
         fragment_file2 = FragmentFile(test_fragment2, self.sdkconfig)
         self.assertEqual(len(fragment_file2.fragments), 1)
-        self.assertEqual(fragment_file2.fragments[0].key_1[0], "value_1")
+        self.assertEqual(fragment_file2.fragments[0].key_1[0], 'value_1')
 
 
 class SectionsTest(FragmentTest):
@@ -489,7 +489,7 @@ entries:
 """)
 
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
-        self.assertEqual(fragment_file.fragments[0].entries, {".section1", ".section2"})
+        self.assertEqual(fragment_file.fragments[0].entries, {'.section1', '.section2'})
 
     def test_duplicate_entries(self):
         test_fragment = self.create_fragment_file(u"""
@@ -502,7 +502,7 @@ entries:
 """)
 
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
-        self.assertEqual(fragment_file.fragments[0].entries, {".section1", ".section2", ".section3"})
+        self.assertEqual(fragment_file.fragments[0].entries, {'.section1', '.section2', '.section3'})
 
     def test_empty_entries(self):
         test_fragment = self.create_fragment_file(u"""
@@ -535,7 +535,7 @@ entries:
 
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
         self.assertEqual(fragment_file.fragments[0].entries,
-                         {"_valid1", "valid2.", ".valid3_-"})
+                         {'_valid1', 'valid2.', '.valid3_-'})
 
         # invalid starting char
         test_fragment = self.create_fragment_file(u"""
@@ -565,7 +565,7 @@ entries:
 
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
         self.assertEqual(fragment_file.fragments[0].entries,
-                         {"valid+"})
+                         {'valid+'})
 
         test_fragment = self.create_fragment_file(u"""
 [sections:test]
@@ -589,8 +589,8 @@ entries:
 
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
         self.assertEqual(fragment_file.fragments[0].entries,
-                         {("sections1", "target1"),
-                          ("sections2", "target2")})
+                         {('sections1', 'target1'),
+                          ('sections2', 'target2')})
 
     def test_duplicate_entries(self):
         test_fragment = self.create_fragment_file(u"""
@@ -603,8 +603,8 @@ entries:
 
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
         self.assertEqual(fragment_file.fragments[0].entries,
-                         {("sections1", "target1"),
-                          ("sections2", "target2")})
+                         {('sections1', 'target1'),
+                          ('sections2', 'target2')})
 
     def test_empty_entries(self):
         test_fragment = self.create_fragment_file(u"""
@@ -650,11 +650,11 @@ entries:
     * (noflash)
 """)
 
-        expected = {("obj", "symbol", "noflash"),
-                    ("obj", None, "noflash"),
-                    ("obj", "symbol_2", "noflash"),
-                    ("obj_2", None, "noflash"),
-                    ("*", None, "noflash")}
+        expected = {('obj', 'symbol', 'noflash'),
+                    ('obj', None, 'noflash'),
+                    ('obj', 'symbol_2', 'noflash'),
+                    ('obj_2', None, 'noflash'),
+                    ('*', None, 'noflash')}
 
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
         self.assertEqual(expected, fragment_file.fragments[0].entries)
@@ -717,7 +717,7 @@ entries:
     obj:symbol (noflash)
 """)
 
-        expected = {("obj", "symbol", "noflash")}
+        expected = {('obj', 'symbol', 'noflash')}
 
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
         self.assertEqual(expected, fragment_file.fragments[0].entries)
@@ -828,14 +828,14 @@ entries:
     * (noflash)
 """)
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
-        self.assertEqual("lib.a", fragment_file.fragments[0].archive)
-        self.assertEqual("lib_a", fragment_file.fragments[0].name)
+        self.assertEqual('lib.a', fragment_file.fragments[0].archive)
+        self.assertEqual('lib_a', fragment_file.fragments[0].name)
 
-        expected = {("obj", "symbol", "noflash"),
-                    ("obj", None, "noflash"),
-                    ("obj", "symbol_2", "noflash"),
-                    ("obj_2", None, "noflash"),
-                    ("*", None, "noflash")
+        expected = {('obj', 'symbol', 'noflash'),
+                    ('obj', None, 'noflash'),
+                    ('obj', 'symbol_2', 'noflash'),
+                    ('obj_2', None, 'noflash'),
+                    ('*', None, 'noflash')
                     }
 
         self.assertEqual(expected, fragment_file.fragments[0].entries)
@@ -850,7 +850,7 @@ entries:
     : default
 """)
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
-        expected = {("*", None, "default")}
+        expected = {('*', None, 'default')}
 
         self.assertEqual(expected, fragment_file.fragments[0].entries)
 
@@ -864,7 +864,7 @@ entries:
 """)
 
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
-        expected = {("*", None, "default")}
+        expected = {('*', None, 'default')}
 
         self.assertEqual(expected, fragment_file.fragments[0].entries)
 
@@ -876,7 +876,7 @@ entries:
     : default
 """)
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
-        expected = {("*", None, "default")}
+        expected = {('*', None, 'default')}
 
         self.assertEqual(expected, fragment_file.fragments[0].entries)
 
@@ -888,7 +888,7 @@ entries:
     : default
 """)
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
-        expected = {("*", None, "default")}
+        expected = {('*', None, 'default')}
 
         self.assertEqual(expected, fragment_file.fragments[0].entries)
 
@@ -909,9 +909,9 @@ entries:
 """)
 
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
-        expected = {("obj_b1", None, "noflash"),
-                    ("obj_b2", None, "noflash"),
-                    ("obj_b3", None, "noflash")}
+        expected = {('obj_b1', None, 'noflash'),
+                    ('obj_b2', None, 'noflash'),
+                    ('obj_b3', None, 'noflash')}
         self.assertEqual(expected, fragment_file.fragments[0].entries)
 
     def test_blank_entries(self):
@@ -928,7 +928,7 @@ entries:
     obj (noflash)
 """)
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
-        expected = {("*", None, "default")}
+        expected = {('*', None, 'default')}
         self.assertEqual(expected, fragment_file.fragments[0].entries)
 
     def test_blank_first_condition(self):
@@ -1053,5 +1053,5 @@ entries:
                          fragment_file.fragments[1].entries)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

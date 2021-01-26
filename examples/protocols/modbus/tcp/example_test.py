@@ -1,13 +1,13 @@
+import logging
 import os
 import re
-import logging
 from threading import Thread
 
 import ttfw_idf
 from tiny_test_fw import DUT
 
 LOG_LEVEL = logging.DEBUG
-LOGGER_NAME = "modbus_test"
+LOGGER_NAME = 'modbus_test'
 
 # Allowed options for the test
 TEST_READ_MAX_ERR_COUNT = 3         # Maximum allowed read errors during initialization
@@ -69,7 +69,7 @@ class DutTestThread(Thread):
         super(DutTestThread, self).__init__()
 
     def __enter__(self):
-        logger.debug("Restart %s." % self.tname)
+        logger.debug('Restart %s.' % self.tname)
         # Reset DUT first
         self.dut.reset()
         # Capture output from the DUT
@@ -80,7 +80,7 @@ class DutTestThread(Thread):
         """ The exit method of context manager
         """
         if exc_type is not None or exc_value is not None:
-            logger.info("Thread %s rised an exception type: %s, value: %s" % (self.tname, str(exc_type), str(exc_value)))
+            logger.info('Thread %s rised an exception type: %s, value: %s' % (self.tname, str(exc_type), str(exc_value)))
 
     def run(self):
         """ The function implements thread functionality
@@ -94,8 +94,8 @@ class DutTestThread(Thread):
 
         # Check DUT exceptions
         dut_exceptions = self.dut.get_exceptions()
-        if "Guru Meditation Error:" in dut_exceptions:
-            raise Exception("%s generated an exception: %s\n" % (str(self.dut), dut_exceptions))
+        if 'Guru Meditation Error:' in dut_exceptions:
+            raise Exception('%s generated an exception: %s\n' % (str(self.dut), dut_exceptions))
 
         # Mark thread has run to completion without any exceptions
         self.data = self.dut.stop_capture_raw_data(capture_id=self.dut.name)
@@ -108,13 +108,13 @@ class DutTestThread(Thread):
         self.dut.read()
         result = self.dut.expect(re.compile(message), TEST_EXPECT_STR_TIMEOUT)
         if int(result[0]) != index:
-            raise Exception("Incorrect index of IP=%d for %s\n" % (int(result[0]), str(self.dut)))
-        message = "IP%s=%s" % (result[0], self.ip_addr)
-        self.dut.write(message, "\r\n", False)
-        logger.debug("Sent message for %s: %s" % (self.tname, message))
+            raise Exception('Incorrect index of IP=%d for %s\n' % (int(result[0]), str(self.dut)))
+        message = 'IP%s=%s' % (result[0], self.ip_addr)
+        self.dut.write(message, '\r\n', False)
+        logger.debug('Sent message for %s: %s' % (self.tname, message))
         message = r'.*IP\([0-9]+\) = \[([0-9a-zA-Z\.\:]+)\] set from stdin.*'
         result = self.dut.expect(re.compile(message), TEST_EXPECT_STR_TIMEOUT)
-        logger.debug("Thread %s initialized with slave IP (%s)." % (self.tname, result[0]))
+        logger.debug('Thread %s initialized with slave IP (%s).' % (self.tname, result[0]))
 
     def test_start(self, timeout_value):
         """ The method to initialize and handle test stages
@@ -122,37 +122,37 @@ class DutTestThread(Thread):
         def handle_get_ip4(data):
             """ Handle get_ip v4
             """
-            logger.debug("%s[STACK_IPV4]: %s" % (self.tname, str(data)))
+            logger.debug('%s[STACK_IPV4]: %s' % (self.tname, str(data)))
             self.test_stage = STACK_IPV4
 
         def handle_get_ip6(data):
             """ Handle get_ip v6
             """
-            logger.debug("%s[STACK_IPV6]: %s" % (self.tname, str(data)))
+            logger.debug('%s[STACK_IPV6]: %s' % (self.tname, str(data)))
             self.test_stage = STACK_IPV6
 
         def handle_init(data):
             """ Handle init
             """
-            logger.debug("%s[STACK_INIT]: %s" % (self.tname, str(data)))
+            logger.debug('%s[STACK_INIT]: %s' % (self.tname, str(data)))
             self.test_stage = STACK_INIT
 
         def handle_connect(data):
             """ Handle connect
             """
-            logger.debug("%s[STACK_CONNECT]: %s" % (self.tname, str(data)))
+            logger.debug('%s[STACK_CONNECT]: %s' % (self.tname, str(data)))
             self.test_stage = STACK_CONNECT
 
         def handle_test_start(data):
             """ Handle connect
             """
-            logger.debug("%s[STACK_START]: %s" % (self.tname, str(data)))
+            logger.debug('%s[STACK_START]: %s' % (self.tname, str(data)))
             self.test_stage = STACK_START
 
         def handle_par_ok(data):
             """ Handle parameter ok
             """
-            logger.debug("%s[READ_PAR_OK]: %s" % (self.tname, str(data)))
+            logger.debug('%s[READ_PAR_OK]: %s' % (self.tname, str(data)))
             if self.test_stage >= STACK_START:
                 self.param_ok_count += 1
             self.test_stage = STACK_PAR_OK
@@ -160,14 +160,14 @@ class DutTestThread(Thread):
         def handle_par_fail(data):
             """ Handle parameter fail
             """
-            logger.debug("%s[READ_PAR_FAIL]: %s" % (self.tname, str(data)))
+            logger.debug('%s[READ_PAR_FAIL]: %s' % (self.tname, str(data)))
             self.param_fail_count += 1
             self.test_stage = STACK_PAR_FAIL
 
         def handle_destroy(data):
             """ Handle destroy
             """
-            logger.debug("%s[DESTROY]: %s" % (self.tname, str(data)))
+            logger.debug('%s[DESTROY]: %s' % (self.tname, str(data)))
             self.test_stage = STACK_DESTROY
             self.test_finish = True
 
@@ -183,7 +183,7 @@ class DutTestThread(Thread):
                                     (re.compile(self.expected[STACK_DESTROY]), handle_destroy),
                                     timeout=timeout_value)
             except DUT.ExpectTimeout:
-                logger.debug("%s, expect timeout on stage #%d (%s seconds)" % (self.tname, self.test_stage, timeout_value))
+                logger.debug('%s, expect timeout on stage #%d (%s seconds)' % (self.tname, self.test_stage, timeout_value))
                 self.test_finish = True
 
 
@@ -193,7 +193,7 @@ def test_check_mode(dut=None, mode_str=None, value=None):
     global logger
     try:
         opt = dut.app.get_sdkconfig()[mode_str]
-        logger.debug("%s {%s} = %s.\n" % (str(dut), mode_str, opt))
+        logger.debug('%s {%s} = %s.\n' % (str(dut), mode_str, opt))
         return value == opt
     except Exception:
         logger.error('ENV_TEST_FAILURE: %s: Cannot find option %s in sdkconfig.' % (str(dut), mode_str))
@@ -208,8 +208,8 @@ def test_modbus_communication(env, comm_mode):
     # Get device under test. Both duts must be able to be connected to WiFi router
     dut_master = env.get_dut('modbus_tcp_master', os.path.join(rel_project_path, TEST_MASTER_TCP))
     dut_slave = env.get_dut('modbus_tcp_slave', os.path.join(rel_project_path, TEST_SLAVE_TCP))
-    log_file = os.path.join(env.log_path, "modbus_tcp_test.log")
-    print("Logging file name: %s" % log_file)
+    log_file = os.path.join(env.log_path, 'modbus_tcp_test.log')
+    print('Logging file name: %s' % log_file)
 
     try:
         # create file handler which logs even debug messages
@@ -229,29 +229,29 @@ def test_modbus_communication(env, comm_mode):
         logger.addHandler(ch)
 
         # Check Kconfig configuration options for each built example
-        if (test_check_mode(dut_master, "CONFIG_FMB_COMM_MODE_TCP_EN", "y") and
-           test_check_mode(dut_slave, "CONFIG_FMB_COMM_MODE_TCP_EN", "y")):
+        if (test_check_mode(dut_master, 'CONFIG_FMB_COMM_MODE_TCP_EN', 'y') and
+           test_check_mode(dut_slave, 'CONFIG_FMB_COMM_MODE_TCP_EN', 'y')):
             slave_name = TEST_SLAVE_TCP
             master_name = TEST_MASTER_TCP
         else:
-            logger.error("ENV_TEST_FAILURE: IP resolver mode do not match in the master and slave implementation.\n")
-            raise Exception("ENV_TEST_FAILURE: IP resolver mode do not match in the master and slave implementation.\n")
+            logger.error('ENV_TEST_FAILURE: IP resolver mode do not match in the master and slave implementation.\n')
+            raise Exception('ENV_TEST_FAILURE: IP resolver mode do not match in the master and slave implementation.\n')
         address = None
-        if test_check_mode(dut_master, "CONFIG_MB_SLAVE_IP_FROM_STDIN", "y"):
-            logger.info("ENV_TEST_INFO: Set slave IP address through STDIN.\n")
+        if test_check_mode(dut_master, 'CONFIG_MB_SLAVE_IP_FROM_STDIN', 'y'):
+            logger.info('ENV_TEST_INFO: Set slave IP address through STDIN.\n')
             # Flash app onto DUT (Todo: Debug case when the slave flashed before master then expect does not work correctly for no reason
             dut_slave.start_app()
             dut_master.start_app()
-            if test_check_mode(dut_master, "CONFIG_EXAMPLE_CONNECT_IPV6", "y"):
+            if test_check_mode(dut_master, 'CONFIG_EXAMPLE_CONNECT_IPV6', 'y'):
                 address = dut_slave.expect(re.compile(pattern_dict_slave[STACK_IPV6]), TEST_EXPECT_STR_TIMEOUT)
             else:
                 address = dut_slave.expect(re.compile(pattern_dict_slave[STACK_IPV4]), TEST_EXPECT_STR_TIMEOUT)
             if address is not None:
-                    print("Found IP slave address: %s" % address[0])
+                    print('Found IP slave address: %s' % address[0])
             else:
-                raise Exception("ENV_TEST_FAILURE: Slave IP address is not found in the output. Check network settings.\n")
+                raise Exception('ENV_TEST_FAILURE: Slave IP address is not found in the output. Check network settings.\n')
         else:
-            raise Exception("ENV_TEST_FAILURE: Slave IP resolver is not configured correctly.\n")
+            raise Exception('ENV_TEST_FAILURE: Slave IP resolver is not configured correctly.\n')
 
         # Create thread for each dut
         with DutTestThread(dut=dut_master, name=master_name, ip_addr=address[0], expect=pattern_dict_master) as dut_master_thread:
@@ -266,21 +266,21 @@ def test_modbus_communication(env, comm_mode):
                 dut_master_thread.join(timeout=TEST_THREAD_JOIN_TIMEOUT)
 
                 if dut_slave_thread.isAlive():
-                    logger.error("ENV_TEST_FAILURE: The thread %s is not completed successfully after %d seconds.\n" %
+                    logger.error('ENV_TEST_FAILURE: The thread %s is not completed successfully after %d seconds.\n' %
                                  (dut_slave_thread.tname, TEST_THREAD_JOIN_TIMEOUT))
-                    raise Exception("ENV_TEST_FAILURE: The thread %s is not completed successfully after %d seconds.\n" %
+                    raise Exception('ENV_TEST_FAILURE: The thread %s is not completed successfully after %d seconds.\n' %
                                     (dut_slave_thread.tname, TEST_THREAD_JOIN_TIMEOUT))
 
                 if dut_master_thread.isAlive():
-                    logger.error("TEST_FAILURE: The thread %s is not completed successfully after %d seconds.\n" %
+                    logger.error('TEST_FAILURE: The thread %s is not completed successfully after %d seconds.\n' %
                                  (dut_master_thread.tname, TEST_THREAD_JOIN_TIMEOUT))
-                    raise Exception("TEST_FAILURE: The thread %s is not completed successfully after %d seconds.\n" %
+                    raise Exception('TEST_FAILURE: The thread %s is not completed successfully after %d seconds.\n' %
                                     (dut_master_thread.tname, TEST_THREAD_JOIN_TIMEOUT))
 
-                logger.info("TEST_INFO: %s error count = %d, %s error count = %d.\n" %
+                logger.info('TEST_INFO: %s error count = %d, %s error count = %d.\n' %
                             (dut_master_thread.tname, dut_master_thread.param_fail_count,
                              dut_slave_thread.tname, dut_slave_thread.param_fail_count))
-                logger.info("TEST_INFO: %s ok count = %d, %s ok count = %d.\n" %
+                logger.info('TEST_INFO: %s ok count = %d, %s ok count = %d.\n' %
                             (dut_master_thread.tname, dut_master_thread.param_ok_count,
                              dut_slave_thread.tname, dut_slave_thread.param_ok_count))
 
@@ -288,10 +288,10 @@ def test_modbus_communication(env, comm_mode):
                    (dut_slave_thread.param_fail_count > TEST_READ_MAX_ERR_COUNT) or
                    (dut_slave_thread.param_ok_count == 0) or
                    (dut_master_thread.param_ok_count == 0)):
-                    raise Exception("TEST_FAILURE: %s parameter read error(ok) count = %d(%d), %s parameter read error(ok) count = %d(%d).\n" %
+                    raise Exception('TEST_FAILURE: %s parameter read error(ok) count = %d(%d), %s parameter read error(ok) count = %d(%d).\n' %
                                     (dut_master_thread.tname, dut_master_thread.param_fail_count, dut_master_thread.param_ok_count,
                                      dut_slave_thread.tname, dut_slave_thread.param_fail_count, dut_slave_thread.param_ok_count))
-                logger.info("TEST_SUCCESS: The Modbus parameter test is completed successfully.\n")
+                logger.info('TEST_SUCCESS: The Modbus parameter test is completed successfully.\n')
 
     finally:
         dut_master.close()

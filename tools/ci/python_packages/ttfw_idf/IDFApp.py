@@ -22,7 +22,8 @@ import sys
 from abc import abstractmethod
 
 from tiny_test_fw import App
-from .IDFAssignTest import ExampleGroup, TestAppsGroup, UnitTestGroup, IDFCaseGroup, ComponentUTGroup
+
+from .IDFAssignTest import ComponentUTGroup, ExampleGroup, IDFCaseGroup, TestAppsGroup, UnitTestGroup
 
 try:
     import gitlab_api
@@ -36,8 +37,8 @@ def parse_encrypted_flag(args, offs, binary):
         # If the current entry is a partition, we have to check whether it is
         # the one we are looking for or not
         try:
-            if (entry["offset"], entry["file"]) == (offs, binary):
-                return entry["encrypted"] == "true"
+            if (entry['offset'], entry['file']) == (offs, binary):
+                return entry['encrypted'] == 'true'
         except (TypeError, KeyError):
             # TypeError occurs if the entry is a list, which is possible in JSON
             # data structure.
@@ -58,12 +59,12 @@ def parse_flash_settings(path, default_encryption=False):
     # The following list only contains the files that need encryption
     encrypt_files = []
 
-    if file_name == "flasher_args.json":
+    if file_name == 'flasher_args.json':
         # CMake version using build metadata file
-        with open(path, "r") as f:
+        with open(path, 'r') as f:
             args = json.load(f)
 
-        for (offs, binary) in args["flash_files"].items():
+        for (offs, binary) in args['flash_files'].items():
             if offs:
                 flash_files.append((offs, binary))
                 encrypted = parse_encrypted_flag(args, offs, binary)
@@ -73,15 +74,15 @@ def parse_flash_settings(path, default_encryption=False):
                 if (encrypted is None and default_encryption) or encrypted:
                     encrypt_files.append((offs, binary))
 
-        flash_settings = args["flash_settings"]
-        app_name = os.path.splitext(args["app"]["file"])[0]
+        flash_settings = args['flash_settings']
+        app_name = os.path.splitext(args['app']['file'])[0]
     else:
         # GNU Make version uses download.config arguments file
-        with open(path, "r") as f:
-            args = f.readlines()[-1].split(" ")
+        with open(path, 'r') as f:
+            args = f.readlines()[-1].split(' ')
             flash_settings = {}
             for idx in range(0, len(args), 2):  # process arguments in pairs
-                if args[idx].startswith("--"):
+                if args[idx].startswith('--'):
                     # strip the -- from the command line argument
                     flash_settings[args[idx][2:]] = args[idx + 1]
                 else:
@@ -92,7 +93,7 @@ def parse_flash_settings(path, default_encryption=False):
                 encrypt_files = flash_files
             # we can only guess app name in download.config.
             for p in flash_files:
-                if not os.path.dirname(p[1]) and "partition" not in p[1]:
+                if not os.path.dirname(p[1]) and 'partition' not in p[1]:
                     # app bin usually in the same dir with download.config and it's not partition table
                     app_name = os.path.splitext(p[1])[0]
                     break
@@ -107,9 +108,9 @@ class Artifacts(object):
         # at least one of app_path or config_name is not None. otherwise we can't match artifact
         assert app_path or config_name
         assert os.path.exists(artifact_index_file)
-        self.gitlab_inst = gitlab_api.Gitlab(os.getenv("CI_PROJECT_ID"))
+        self.gitlab_inst = gitlab_api.Gitlab(os.getenv('CI_PROJECT_ID'))
         self.dest_root_path = dest_root_path
-        with open(artifact_index_file, "r") as f:
+        with open(artifact_index_file, 'r') as f:
             artifact_index = json.load(f)
         self.artifact_info = self._find_artifact(artifact_index, app_path, config_name, target)
 
@@ -120,11 +121,11 @@ class Artifacts(object):
             if app_path:
                 # We use endswith here to avoid issue like:
                 # examples_protocols_mqtt_ws but return a examples_protocols_mqtt_wss failure
-                match_result = artifact_info["app_dir"].endswith(app_path)
+                match_result = artifact_info['app_dir'].endswith(app_path)
             if config_name:
-                match_result = match_result and config_name == artifact_info["config"]
+                match_result = match_result and config_name == artifact_info['config']
             if target:
-                match_result = match_result and target == artifact_info["target"]
+                match_result = match_result and target == artifact_info['target']
             if match_result:
                 ret = artifact_info
                 break
@@ -134,15 +135,15 @@ class Artifacts(object):
 
     def _get_app_base_path(self):
         if self.artifact_info:
-            return os.path.join(self.artifact_info["work_dir"], self.artifact_info["build_dir"])
+            return os.path.join(self.artifact_info['work_dir'], self.artifact_info['build_dir'])
         else:
             return None
 
     def _get_flash_arg_file(self, base_path, job_id):
-        if self.artifact_info["build_system"] == "cmake":
-            flash_arg_file = os.path.join(base_path, "flasher_args.json")
+        if self.artifact_info['build_system'] == 'cmake':
+            flash_arg_file = os.path.join(base_path, 'flasher_args.json')
         else:
-            flash_arg_file = os.path.join(base_path, "download.config")
+            flash_arg_file = os.path.join(base_path, 'download.config')
 
         self.gitlab_inst.download_artifact(job_id, [flash_arg_file], self.dest_root_path)
         return flash_arg_file
@@ -152,19 +153,19 @@ class Artifacts(object):
         # files also appear in the first list
         flash_files, _, _, app_name = parse_flash_settings(os.path.join(self.dest_root_path, flash_arg_file))
         artifact_files = [os.path.join(base_path, p[1]) for p in flash_files]
-        artifact_files.append(os.path.join(base_path, app_name + ".elf"))
+        artifact_files.append(os.path.join(base_path, app_name + '.elf'))
 
         self.gitlab_inst.download_artifact(job_id, artifact_files, self.dest_root_path)
 
     def _download_sdkconfig_file(self, base_path, job_id):
-        self.gitlab_inst.download_artifact(job_id, [os.path.join(os.path.dirname(base_path), "sdkconfig")],
+        self.gitlab_inst.download_artifact(job_id, [os.path.join(os.path.dirname(base_path), 'sdkconfig')],
                                            self.dest_root_path)
 
     def download_artifacts(self):
         if not self.artifact_info:
             return None
         base_path = self._get_app_base_path()
-        job_id = self.artifact_info["ci_job_id"]
+        job_id = self.artifact_info['ci_job_id']
         # 1. download flash args file
         flash_arg_file = self._get_flash_arg_file(base_path, job_id)
 
@@ -177,15 +178,15 @@ class Artifacts(object):
 
     def download_artifact_files(self, file_names):
         if self.artifact_info:
-            base_path = os.path.join(self.artifact_info["work_dir"], self.artifact_info["build_dir"])
-            job_id = self.artifact_info["ci_job_id"]
+            base_path = os.path.join(self.artifact_info['work_dir'], self.artifact_info['build_dir'])
+            job_id = self.artifact_info['ci_job_id']
 
             # download all binary files
             artifact_files = [os.path.join(base_path, fn) for fn in file_names]
             self.gitlab_inst.download_artifact(job_id, artifact_files, self.dest_root_path)
 
             # download sdkconfig file
-            self.gitlab_inst.download_artifact(job_id, [os.path.join(os.path.dirname(base_path), "sdkconfig")],
+            self.gitlab_inst.download_artifact(job_id, [os.path.join(os.path.dirname(base_path), 'sdkconfig')],
                                                self.dest_root_path)
         else:
             base_path = None
@@ -197,13 +198,13 @@ class UnitTestArtifacts(Artifacts):
 
     def _get_app_base_path(self):
         if self.artifact_info:
-            output_dir = self.BUILDS_DIR_RE.sub('output/', self.artifact_info["build_dir"])
-            return os.path.join(self.artifact_info["app_dir"], output_dir)
+            output_dir = self.BUILDS_DIR_RE.sub('output/', self.artifact_info['build_dir'])
+            return os.path.join(self.artifact_info['app_dir'], output_dir)
         else:
             return None
 
     def _download_sdkconfig_file(self, base_path, job_id):
-        self.gitlab_inst.download_artifact(job_id, [os.path.join(base_path, "sdkconfig")], self.dest_root_path)
+        self.gitlab_inst.download_artifact(job_id, [os.path.join(base_path, 'sdkconfig')], self.dest_root_path)
 
 
 class IDFApp(App.BaseApp):
@@ -212,8 +213,8 @@ class IDFApp(App.BaseApp):
     idf applications should inherent from this class and overwrite method get_binary_path.
     """
 
-    IDF_DOWNLOAD_CONFIG_FILE = "download.config"
-    IDF_FLASH_ARGS_FILE = "flasher_args.json"
+    IDF_DOWNLOAD_CONFIG_FILE = 'download.config'
+    IDF_FLASH_ARGS_FILE = 'flasher_args.json'
 
     def __init__(self, app_path, config_name=None, target=None, case_group=IDFCaseGroup, artifact_cls=Artifacts):
         super(IDFApp, self).__init__(app_path)
@@ -229,11 +230,11 @@ class IDFApp(App.BaseApp):
         assert os.path.exists(self.binary_path)
         if self.IDF_DOWNLOAD_CONFIG_FILE not in os.listdir(self.binary_path):
             if self.IDF_FLASH_ARGS_FILE not in os.listdir(self.binary_path):
-                msg = ("Neither {} nor {} exists. "
+                msg = ('Neither {} nor {} exists. '
                        "Try to run 'make print_flash_cmd | tail -n 1 > {}/{}' "
                        "or 'idf.py build' "
-                       "for resolving the issue."
-                       "").format(self.IDF_DOWNLOAD_CONFIG_FILE, self.IDF_FLASH_ARGS_FILE,
+                       'for resolving the issue.'
+                       '').format(self.IDF_DOWNLOAD_CONFIG_FILE, self.IDF_FLASH_ARGS_FILE,
                                   self.binary_path, self.IDF_DOWNLOAD_CONFIG_FILE)
                 raise AssertionError(msg)
 
@@ -252,7 +253,7 @@ class IDFApp(App.BaseApp):
 
     @classmethod
     def get_sdk_path(cls):  # type: () -> str
-        idf_path = os.getenv("IDF_PATH")
+        idf_path = os.getenv('IDF_PATH')
         assert idf_path
         assert os.path.exists(idf_path)
         return idf_path
@@ -263,7 +264,7 @@ class IDFApp(App.BaseApp):
 
         Note: could be overwritten by a derived class to provide other locations or order
         """
-        return [os.path.join(self.binary_path, "sdkconfig"), os.path.join(self.binary_path, "..", "sdkconfig")]
+        return [os.path.join(self.binary_path, 'sdkconfig'), os.path.join(self.binary_path, '..', 'sdkconfig')]
 
     def get_sdkconfig(self):
         """
@@ -306,13 +307,13 @@ class IDFApp(App.BaseApp):
         if path:
             return os.path.join(self.idf_path, path)
         else:
-            raise OSError("Failed to get binary for {}".format(self))
+            raise OSError('Failed to get binary for {}'.format(self))
 
     def _get_elf_file_path(self):
-        ret = ""
+        ret = ''
         file_names = os.listdir(self.binary_path)
         for fn in file_names:
-            if os.path.splitext(fn)[1] == ".elf":
+            if os.path.splitext(fn)[1] == '.elf':
                 ret = os.path.join(self.binary_path, fn)
         return ret
 
@@ -343,14 +344,14 @@ class IDFApp(App.BaseApp):
         # a default encrpytion flag: the macro
         # CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
         sdkconfig_dict = self.get_sdkconfig()
-        default_encryption = "CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT" in sdkconfig_dict
+        default_encryption = 'CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT' in sdkconfig_dict
 
         flash_files, encrypt_files, flash_settings, _ = parse_flash_settings(path, default_encryption)
 
         # Flash setting "encrypt" only and only if all the files to flash
         # must be encrypted. Else, this parameter should be False.
         # All files must be encrypted is both file lists are the same
-        flash_settings["encrypt"] = sorted(flash_files) == sorted(encrypt_files)
+        flash_settings['encrypt'] = sorted(flash_files) == sorted(encrypt_files)
 
         return self._int_offs_abs_paths(flash_files), self._int_offs_abs_paths(encrypt_files), flash_settings
 
@@ -363,9 +364,9 @@ class IDFApp(App.BaseApp):
         (Called from constructor)
         """
         partition_tool = os.path.join(self.idf_path,
-                                      "components",
-                                      "partition_table",
-                                      "gen_esp32part.py")
+                                      'components',
+                                      'partition_table',
+                                      'gen_esp32part.py')
         assert os.path.exists(partition_tool)
 
         errors = []
@@ -393,18 +394,18 @@ class IDFApp(App.BaseApp):
                                                                  p,
                                                                  os.linesep,
                                                                  msg) for p, msg in errors])
-            raise ValueError("No partition table found for IDF binary path: {}{}{}".format(self.binary_path,
+            raise ValueError('No partition table found for IDF binary path: {}{}{}'.format(self.binary_path,
                                                                                            os.linesep,
                                                                                            traceback_msg))
 
         partition_table = dict()
         for line in raw_data.splitlines():
-            if line[0] != "#":
+            if line[0] != '#':
                 try:
-                    _name, _type, _subtype, _offset, _size, _flags = line.split(",")
-                    if _size[-1] == "K":
+                    _name, _type, _subtype, _offset, _size, _flags = line.split(',')
+                    if _size[-1] == 'K':
                         _size = int(_size[:-1]) * 1024
-                    elif _size[-1] == "M":
+                    elif _size[-1] == 'M':
                         _size = int(_size[:-1]) * 1024 * 1024
                     else:
                         _size = int(_size)
@@ -412,11 +413,11 @@ class IDFApp(App.BaseApp):
                 except ValueError:
                     continue
                 partition_table[_name] = {
-                    "type": _type,
-                    "subtype": _subtype,
-                    "offset": _offset,
-                    "size": _size,
-                    "flags": _flags
+                    'type': _type,
+                    'subtype': _subtype,
+                    'offset': _offset,
+                    'size': _size,
+                    'flags': _flags
                 }
 
         return partition_table
@@ -444,11 +445,11 @@ class Example(IDFApp):
         """
         overrides the parent method to provide exact path of sdkconfig for example tests
         """
-        return [os.path.join(self.binary_path, "..", "sdkconfig")]
+        return [os.path.join(self.binary_path, '..', 'sdkconfig')]
 
     def _try_get_binary_from_local_fs(self):
         # build folder of example path
-        path = os.path.join(self.idf_path, self.app_path, "build")
+        path = os.path.join(self.idf_path, self.app_path, 'build')
         if os.path.exists(path):
             return path
 
@@ -456,11 +457,11 @@ class Example(IDFApp):
         # Path format: $IDF_PATH/build_examples/app_path_with_underscores/config/target
         # (see tools/ci/build_examples.sh)
         # For example: $IDF_PATH/build_examples/examples_get-started_blink/default/esp32
-        app_path_underscored = self.app_path.replace(os.path.sep, "_")
+        app_path_underscored = self.app_path.replace(os.path.sep, '_')
         example_path = os.path.join(self.idf_path, self.case_group.LOCAL_BUILD_DIR)
         for dirpath in os.listdir(example_path):
             if os.path.basename(dirpath) == app_path_underscored:
-                path = os.path.join(example_path, dirpath, self.config_name, self.target, "build")
+                path = os.path.join(example_path, dirpath, self.config_name, self.target, 'build')
                 if os.path.exists(path):
                     return path
                 else:
@@ -476,18 +477,18 @@ class UT(IDFApp):
         super(UT, self).__init__(app_path, config_name, target, case_group, artifacts_cls)
 
     def _try_get_binary_from_local_fs(self):
-        path = os.path.join(self.idf_path, self.app_path, "build")
+        path = os.path.join(self.idf_path, self.app_path, 'build')
         if os.path.exists(path):
             return path
 
         # first try to get from build folder of unit-test-app
-        path = os.path.join(self.idf_path, "tools", "unit-test-app", "build")
+        path = os.path.join(self.idf_path, 'tools', 'unit-test-app', 'build')
         if os.path.exists(path):
             # found, use bin in build path
             return path
 
         # ``build_unit_test.sh`` will copy binary to output folder
-        path = os.path.join(self.idf_path, "tools", "unit-test-app", "output", self.target, self.config_name)
+        path = os.path.join(self.idf_path, 'tools', 'unit-test-app', 'output', self.target, self.config_name)
         if os.path.exists(path):
             return path
 

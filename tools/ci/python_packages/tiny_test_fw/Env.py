@@ -13,12 +13,12 @@
 # limitations under the License.
 
 """ Test Env, manages DUT, App and EnvConfig, interface for test cases to access these components """
+import functools
 import os
 import threading
-import functools
+import traceback
 
 import netifaces
-import traceback
 
 from . import EnvConfig
 
@@ -44,7 +44,7 @@ class Env(object):
     :keyword env_config_file: test env config file path
     :keyword test_name: test suite name, used when generate log folder name
     """
-    CURRENT_LOG_FOLDER = ""
+    CURRENT_LOG_FOLDER = ''
 
     def __init__(self,
                  app=None,
@@ -79,7 +79,7 @@ class Env(object):
         :return: dut instance
         """
         if dut_name in self.allocated_duts:
-            dut = self.allocated_duts[dut_name]["dut"]
+            dut = self.allocated_duts[dut_name]['dut']
         else:
             if dut_class is None:
                 dut_class = self.default_dut_cls
@@ -95,7 +95,7 @@ class Env(object):
                     result, detected_target = dut_class.confirm_dut(port)
             except ValueError:
                 # try to auto detect ports
-                allocated_ports = [self.allocated_duts[x]["port"] for x in self.allocated_duts]
+                allocated_ports = [self.allocated_duts[x]['port'] for x in self.allocated_duts]
                 available_ports = dut_class.list_available_ports()
                 for port in available_ports:
                     if port not in allocated_ports:
@@ -113,17 +113,17 @@ class Env(object):
 
             if port:
                 try:
-                    dut_config = self.get_variable(dut_name + "_port_config")
+                    dut_config = self.get_variable(dut_name + '_port_config')
                 except ValueError:
                     dut_config = dict()
                 dut_config.update(dut_init_args)
                 dut = dut_class(dut_name, port,
-                                os.path.join(self.log_path, dut_name + ".log"),
+                                os.path.join(self.log_path, dut_name + '.log'),
                                 app_inst,
                                 **dut_config)
-                self.allocated_duts[dut_name] = {"port": port, "dut": dut}
+                self.allocated_duts[dut_name] = {'port': port, 'dut': dut}
             else:
-                raise ValueError("Failed to get DUT")
+                raise ValueError('Failed to get DUT')
         return dut
 
     @_synced
@@ -136,7 +136,7 @@ class Env(object):
         :return: None
         """
         try:
-            dut = self.allocated_duts.pop(dut_name)["dut"]
+            dut = self.allocated_duts.pop(dut_name)['dut']
             dut.close()
         except KeyError:
             pass
@@ -153,13 +153,13 @@ class Env(object):
         return self.config.get_variable(variable_name)
 
     PROTO_MAP = {
-        "ipv4": netifaces.AF_INET,
-        "ipv6": netifaces.AF_INET6,
-        "mac": netifaces.AF_LINK,
+        'ipv4': netifaces.AF_INET,
+        'ipv6': netifaces.AF_INET6,
+        'mac': netifaces.AF_LINK,
     }
 
     @_synced
-    def get_pc_nic_info(self, nic_name="pc_nic", proto="ipv4"):
+    def get_pc_nic_info(self, nic_name='pc_nic', proto='ipv4'):
         """
         get_pc_nic_info(nic_name="pc_nic")
         try to get info of a specified NIC and protocol.
@@ -192,7 +192,7 @@ class Env(object):
         """
         dut_close_errors = []
         for dut_name in self.allocated_duts:
-            dut = self.allocated_duts[dut_name]["dut"]
+            dut = self.allocated_duts[dut_name]['dut']
             try:
                 if dut_debug:
                     dut.print_debug_info()

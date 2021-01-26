@@ -16,34 +16,34 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import os
-import sys
-import serial
-import subprocess
-import re
 import argparse
-
+import os
+import re
+import subprocess
+import sys
 from subprocess import CalledProcessError
+
+import serial
 
 
 def get_running_partition(port=None):
     # Monitor the serial output of target device. The firmware outputs the currently
     # running partition
 
-    IDF_PATH = os.path.expandvars("$IDF_PATH")
+    IDF_PATH = os.path.expandvars('$IDF_PATH')
     sys.path.append(os.path.join(IDF_PATH, 'components', 'esptool_py', 'esptool'))
     import esptool
 
-    ESPTOOL_PY = os.path.join(IDF_PATH, "components", "esptool_py", "esptool", "esptool.py")
+    ESPTOOL_PY = os.path.join(IDF_PATH, 'components', 'esptool_py', 'esptool', 'esptool.py')
 
-    baud = os.environ.get("ESPTOOL_BAUD", esptool.ESPLoader.ESP_ROM_BAUD)
+    baud = os.environ.get('ESPTOOL_BAUD', esptool.ESPLoader.ESP_ROM_BAUD)
 
     if not port:
-        error_message = "Unable to obtain default target device port.\nSerial log:\n\n"
+        error_message = 'Unable to obtain default target device port.\nSerial log:\n\n'
         try:
             # Check what esptool.py finds on what port the device is connected to
-            output = subprocess.check_output([sys.executable, ESPTOOL_PY, "chip_id"])  # may raise CalledProcessError
-            pattern = r"Serial port ([\S]+)"
+            output = subprocess.check_output([sys.executable, ESPTOOL_PY, 'chip_id'])  # may raise CalledProcessError
+            pattern = r'Serial port ([\S]+)'
             pattern = re.compile(pattern.encode())
 
             port = re.search(pattern, output).group(1)  # may raise AttributeError
@@ -52,7 +52,7 @@ def get_running_partition(port=None):
         except AttributeError:
             raise Exception(error_message + output)
 
-    serial_instance = serial.serial_for_url(port.decode("utf-8"), baud, do_not_open=True)
+    serial_instance = serial.serial_for_url(port.decode('utf-8'), baud, do_not_open=True)
 
     serial_instance.dtr = False
     serial_instance.rts = False
@@ -62,16 +62,16 @@ def get_running_partition(port=None):
     serial_instance.rts = False
 
     # Read until example end and find the currently running partition string
-    content = serial_instance.read_until(b"Example end")
-    pattern = re.compile(b"Running partition: ([a-z0-9_]+)")
+    content = serial_instance.read_until(b'Example end')
+    pattern = re.compile(b'Running partition: ([a-z0-9_]+)')
     running = re.search(pattern, content).group(1)
 
-    return running.decode("utf-8")
+    return running.decode('utf-8')
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--port", default=None)
+    parser.add_argument('--port', default=None)
     args = parser.parse_args()
 
     try:
@@ -83,5 +83,5 @@ def main():
     print(res)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

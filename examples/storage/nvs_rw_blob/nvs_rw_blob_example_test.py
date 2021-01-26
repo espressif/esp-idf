@@ -1,8 +1,9 @@
-from tiny_test_fw import Utility
 import random
 import re
 import time
+
 import ttfw_idf
+from tiny_test_fw import Utility
 
 
 @ttfw_idf.idf_example_test(env_tag='Example_GENERIC')

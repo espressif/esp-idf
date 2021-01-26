@@ -15,8 +15,10 @@
 
 
 from __future__ import print_function
-from future.utils import tobytes
+
 import os
+
+from future.utils import tobytes
 
 
 def _load_source(name, path):
@@ -30,8 +32,8 @@ def _load_source(name, path):
 
 
 idf_path = os.environ['IDF_PATH']
-constants_pb2 = _load_source("constants_pb2", idf_path + "/components/protocomm/python/constants_pb2.py")
-local_ctrl_pb2 = _load_source("esp_local_ctrl_pb2", idf_path + "/components/esp_local_ctrl/python/esp_local_ctrl_pb2.py")
+constants_pb2 = _load_source('constants_pb2', idf_path + '/components/protocomm/python/constants_pb2.py')
+local_ctrl_pb2 = _load_source('esp_local_ctrl_pb2', idf_path + '/components/esp_local_ctrl/python/esp_local_ctrl_pb2.py')
 
 
 def get_prop_count_request():
@@ -67,10 +69,10 @@ def get_prop_vals_response(response_data):
     if (resp.resp_get_prop_vals.status == 0):
         for prop in resp.resp_get_prop_vals.props:
             results += [{
-                "name": prop.name,
-                "type": prop.type,
-                "flags": prop.flags,
-                "value": tobytes(prop.value)
+                'name': prop.name,
+                'type': prop.type,
+                'flags': prop.flags,
+                'value': tobytes(prop.value)
             }]
     return results
 

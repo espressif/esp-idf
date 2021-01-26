@@ -9,8 +9,8 @@
 try:
     from conf_common import *  # noqa: F403,F401
 except ImportError:
-    import sys
     import os
+    import sys
     sys.path.insert(0, os.path.abspath('..'))
     from conf_common import *  # noqa: F403,F401
 

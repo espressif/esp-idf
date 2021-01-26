@@ -1,5 +1,5 @@
 # Extension to generate esp_err definition as .rst
-from .util import copy_if_modified, call_with_python
+from .util import call_with_python, copy_if_modified
 
 
 def setup(app):

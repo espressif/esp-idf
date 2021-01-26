@@ -21,13 +21,13 @@ Command line interface to run test cases from a given path.
 Use ``python Runner.py test_case_path -c config_file -e env_config_file`` to run test cases.
 
 """
+import argparse
 import os
 import sys
-import argparse
 import threading
 
 from tiny_test_fw import TinyFW
-from tiny_test_fw.Utility import SearchCases, CaseConfig
+from tiny_test_fw.Utility import CaseConfig, SearchCases
 
 
 class Runner(threading.Thread):
@@ -43,7 +43,7 @@ class Runner(threading.Thread):
         if case_config:
             test_suite_name = os.path.splitext(os.path.basename(case_config))[0]
         else:
-            test_suite_name = "TestRunner"
+            test_suite_name = 'TestRunner'
         TinyFW.set_default_config(env_config_file=env_config_file, test_suite_name=test_suite_name)
         test_methods = SearchCases.Search.search_test_cases(test_case_paths)
         self.test_cases = CaseConfig.Parser.apply_config(test_methods, case_config)
@@ -60,12 +60,12 @@ class Runner(threading.Thread):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("test_cases", nargs='+',
-                        help="test case folders or files")
-    parser.add_argument("--case_config", "-c", default=None,
-                        help="case filter/config file")
-    parser.add_argument("--env_config_file", "-e", default=None,
-                        help="test env config file")
+    parser.add_argument('test_cases', nargs='+',
+                        help='test case folders or files')
+    parser.add_argument('--case_config', '-c', default=None,
+                        help='case filter/config file')
+    parser.add_argument('--env_config_file', '-e', default=None,
+                        help='test env config file')
     args = parser.parse_args()
 
     test_cases = [os.path.join(os.getenv('IDF_PATH'), path) if not os.path.isabs(path) else path for path in args.test_cases]
@@ -78,7 +78,7 @@ if __name__ == '__main__':
             if not runner.is_alive():
                 break
         except KeyboardInterrupt:
-            print("exit by Ctrl-C")
+            print('exit by Ctrl-C')
             break
     if not runner.get_test_result():
         sys.exit(1)

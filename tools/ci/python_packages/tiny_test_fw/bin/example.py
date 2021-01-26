@@ -19,7 +19,7 @@ import ttfw_idf
 from tiny_test_fw import TinyFW
 
 
-@ttfw_idf.idf_example_test(env_tag="Example_WIFI")
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
 def test_examples_protocol_https_request(env, extra_data):
     """
     steps: |
@@ -27,17 +27,17 @@ def test_examples_protocol_https_request(env, extra_data):
       2. connect to www.howsmyssl.com:443
       3. send http request
     """
-    dut1 = env.get_dut("https_request", "examples/protocols/https_request", dut_class=ttfw_idf.ESP32DUT)
+    dut1 = env.get_dut('https_request', 'examples/protocols/https_request', dut_class=ttfw_idf.ESP32DUT)
     dut1.start_app()
-    dut1.expect(re.compile(r"Connecting to www.howsmyssl.com:443"), timeout=30)
-    dut1.expect("Performing the SSL/TLS handshake")
-    dut1.expect("Certificate verified.", timeout=15)
-    dut1.expect_all(re.compile(r"Cipher suite is TLS-ECDHE-RSA-WITH-AES-128-GCM-SHA256"),
-                    "Reading HTTP response",
+    dut1.expect(re.compile(r'Connecting to www.howsmyssl.com:443'), timeout=30)
+    dut1.expect('Performing the SSL/TLS handshake')
+    dut1.expect('Certificate verified.', timeout=15)
+    dut1.expect_all(re.compile(r'Cipher suite is TLS-ECDHE-RSA-WITH-AES-128-GCM-SHA256'),
+                    'Reading HTTP response',
                     timeout=20)
-    dut1.expect(re.compile(r"Completed (\d) requests"))
+    dut1.expect(re.compile(r'Completed (\d) requests'))
 
 
 if __name__ == '__main__':
-    TinyFW.set_default_config(env_config_file="EnvConfigTemplate.yml", dut=ttfw_idf.IDFDUT)
+    TinyFW.set_default_config(env_config_file='EnvConfigTemplate.yml', dut=ttfw_idf.IDFDUT)
     test_examples_protocol_https_request()

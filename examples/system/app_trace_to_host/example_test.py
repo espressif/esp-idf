@@ -1,10 +1,12 @@
 from __future__ import unicode_literals
+
 import os
 import re
+
 import ttfw_idf
 
 
-@ttfw_idf.idf_example_test(env_tag="test_jtag_arm")
+@ttfw_idf.idf_example_test(env_tag='test_jtag_arm')
 def test_examples_app_trace_to_host(env, extra_data):
     rel_project_path = os.path.join('examples', 'system', 'app_trace_to_host')
     dut = env.get_dut('app_trace_to_host', rel_project_path)
@@ -22,7 +24,7 @@ def test_examples_app_trace_to_host(env, extra_data):
                        re.compile(r'example: Collected \d+ samples in 20 ms.'),
                        timeout=20)
 
-        ocd.apptrace_start("file://adc.log 0 9000 5 0 0")
+        ocd.apptrace_start('file://adc.log 0 9000 5 0 0')
         ocd.apptrace_wait_stop(tmo=30)
 
     with ttfw_idf.CustomProcess(' '.join([os.path.join(idf_path, 'tools/esp_app_trace/logtrace_proc.py'),

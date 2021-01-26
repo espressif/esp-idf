@@ -35,8 +35,8 @@ def build_subset(app, config):
     # Get all docs that will be built
     docs = [filename for filename in get_matching_files(app.srcdir, compile_matchers(exclude_docs))]
     if not docs:
-        raise ValueError("No documents to build")
-    print("Building a subset of the documents: {}".format(docs))
+        raise ValueError('No documents to build')
+    print('Building a subset of the documents: {}'.format(docs))
 
     # Sphinx requires a master document, if there is a document name 'index' then we pick that
     index_docs = [doc for doc in docs if 'index' in doc]

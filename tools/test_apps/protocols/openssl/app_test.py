@@ -1,13 +1,14 @@
-from __future__ import print_function
-from __future__ import unicode_literals
-import re
-import os
-import socket
-from threading import Thread, Event
-import ttfw_idf
-import ssl
+from __future__ import print_function, unicode_literals
 
-SERVER_CERTS_DIR = "server_certs/"
+import os
+import re
+import socket
+import ssl
+from threading import Event, Thread
+
+import ttfw_idf
+
+SERVER_CERTS_DIR = 'server_certs/'
 
 
 def _path(f):
@@ -45,7 +46,7 @@ class TlsServer:
         try:
             self.socket.bind(('', self.port))
         except socket.error as e:
-            print("Bind failed:{}".format(e))
+            print('Bind failed:{}'.format(e))
             raise
 
         self.socket.listen(1)
@@ -63,62 +64,62 @@ class TlsServer:
 
     def run_server(self):
         context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-        context.load_verify_locations(cafile=_path(SERVER_CERTS_DIR + "ca.crt"))
-        context.load_cert_chain(certfile=_path(SERVER_CERTS_DIR + "server.crt"), keyfile=_path(SERVER_CERTS_DIR + "server.key"))
+        context.load_verify_locations(cafile=_path(SERVER_CERTS_DIR + 'ca.crt'))
+        context.load_cert_chain(certfile=_path(SERVER_CERTS_DIR + 'server.crt'), keyfile=_path(SERVER_CERTS_DIR + 'server.key'))
         context.verify_flags = self.negotiated_protocol
         self.socket = context.wrap_socket(self.socket, server_side=True)
         try:
-            print("Listening socket")
+            print('Listening socket')
             self.conn, address = self.socket.accept()  # accept new connection
             self.socket.settimeout(20.0)
-            print(" - connection from: {}".format(address))
+            print(' - connection from: {}'.format(address))
         except ssl.SSLError as e:
             self.conn = None
             self.ssl_error = str(e)
-            print(" - SSLError: {}".format(str(e)))
+            print(' - SSLError: {}'.format(str(e)))
 
 
-@ttfw_idf.idf_custom_test(env_tag="Example_WIFI", group="test-apps")
+@ttfw_idf.idf_custom_test(env_tag='Example_WIFI', group='test-apps')
 def test_app_esp_openssl(env, extra_data):
-    dut1 = env.get_dut("openssl_connect_test", "tools/test_apps/protocols/openssl", dut_class=ttfw_idf.ESP32DUT)
+    dut1 = env.get_dut('openssl_connect_test', 'tools/test_apps/protocols/openssl', dut_class=ttfw_idf.ESP32DUT)
     # check and log bin size
-    binary_file = os.path.join(dut1.app.binary_path, "openssl_connect_test.bin")
+    binary_file = os.path.join(dut1.app.binary_path, 'openssl_connect_test.bin')
     bin_size = os.path.getsize(binary_file)
-    ttfw_idf.log_performance("openssl_connect_test_bin_size", "{}KB".format(bin_size // 1024))
+    ttfw_idf.log_performance('openssl_connect_test_bin_size', '{}KB'.format(bin_size // 1024))
     dut1.start_app()
-    esp_ip = dut1.expect(re.compile(r" IPv4 address: ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)"), timeout=30)
-    print("Got IP={}".format(esp_ip[0]))
+    esp_ip = dut1.expect(re.compile(r' IPv4 address: ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)'), timeout=30)
+    print('Got IP={}'.format(esp_ip[0]))
     ip = get_my_ip()
     server_port = 2222
 
     def start_case(case, desc, negotiated_protocol, result):
         with TlsServer(server_port, negotiated_protocol=negotiated_protocol):
-            print("Starting {}: {}".format(case, desc))
-            dut1.write("conn {} {} {}".format(ip, server_port, case))
+            print('Starting {}: {}'.format(case, desc))
+            dut1.write('conn {} {} {}'.format(ip, server_port, case))
             dut1.expect(re.compile(result), timeout=10)
             return case
 
     # start test cases
     start_case(
-        case="CONFIG_TLSV1_1_CONNECT_WRONG_CERT_VERIFY_NONE",
-        desc="Connect with verify_none mode using wrong certs",
+        case='CONFIG_TLSV1_1_CONNECT_WRONG_CERT_VERIFY_NONE',
+        desc='Connect with verify_none mode using wrong certs',
         negotiated_protocol=ssl.PROTOCOL_TLSv1_1,
-        result="SSL Connection Succeed")
+        result='SSL Connection Succeed')
     start_case(
-        case="CONFIG_TLSV1_1_CONNECT_WRONG_CERT_VERIFY_PEER",
-        desc="Connect with verify_peer mode using wrong certs",
+        case='CONFIG_TLSV1_1_CONNECT_WRONG_CERT_VERIFY_PEER',
+        desc='Connect with verify_peer mode using wrong certs',
         negotiated_protocol=ssl.PROTOCOL_TLSv1_1,
-        result="SSL Connection Failed")
+        result='SSL Connection Failed')
     start_case(
-        case="CONFIG_TLSV1_2_CONNECT_WRONG_CERT_VERIFY_NONE",
-        desc="Connect with verify_none mode using wrong certs",
+        case='CONFIG_TLSV1_2_CONNECT_WRONG_CERT_VERIFY_NONE',
+        desc='Connect with verify_none mode using wrong certs',
         negotiated_protocol=ssl.PROTOCOL_TLSv1_2,
-        result="SSL Connection Succeed")
+        result='SSL Connection Succeed')
     start_case(
-        case="CONFIG_TLSV1_1_CONNECT_WRONG_CERT_VERIFY_PEER",
-        desc="Connect with verify_peer mode using wrong certs",
+        case='CONFIG_TLSV1_1_CONNECT_WRONG_CERT_VERIFY_PEER',
+        desc='Connect with verify_peer mode using wrong certs',
         negotiated_protocol=ssl.PROTOCOL_TLSv1_2,
-        result="SSL Connection Failed")
+        result='SSL Connection Failed')
 
 
 if __name__ == '__main__':

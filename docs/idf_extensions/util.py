@@ -15,10 +15,11 @@
 # limitations under the License.
 
 from __future__ import unicode_literals
-from io import open
+
 import os
 import shutil
 import sys
+from io import open
 
 try:
     import urllib.request
@@ -33,10 +34,10 @@ def files_equal(path_1, path_2):
     if not os.path.exists(path_1) or not os.path.exists(path_2):
         return False
     file_1_contents = ''
-    with open(path_1, "r", encoding='utf-8') as f_1:
+    with open(path_1, 'r', encoding='utf-8') as f_1:
         file_1_contents = f_1.read()
     file_2_contents = ''
-    with open(path_2, "r", encoding='utf-8') as f_2:
+    with open(path_2, 'r', encoding='utf-8') as f_2:
         file_2_contents = f_2.read()
     return file_1_contents == file_2_contents
 
@@ -63,7 +64,7 @@ def copy_if_modified(src_path, dst_path):
 
 
 def download_file_if_missing(from_url, to_path):
-    filename_with_path = to_path + "/" + os.path.basename(from_url)
+    filename_with_path = to_path + '/' + os.path.basename(from_url)
     exists = os.path.isfile(filename_with_path)
     if exists:
         print("The file '%s' already exists" % (filename_with_path))

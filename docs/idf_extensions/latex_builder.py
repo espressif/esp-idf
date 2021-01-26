@@ -1,5 +1,6 @@
-from sphinx.builders.latex import LaTeXBuilder
 import os
+
+from sphinx.builders.latex import LaTeXBuilder
 
 
 # Overrides the default Sphinx latex build
@@ -26,7 +27,7 @@ class IdfLatexBuilder(LaTeXBuilder):
 
     def prepare_latex_macros(self, package_path, config):
 
-        PACKAGE_NAME = "espidf.sty"
+        PACKAGE_NAME = 'espidf.sty'
         latex_package = ''
         with open(package_path, 'r') as template:
 
@@ -36,7 +37,7 @@ class IdfLatexBuilder(LaTeXBuilder):
         latex_package = latex_package.replace('<idf_target_title>', idf_target_title)
 
         # Release name for the PDF front page, remove '_' as this is used for subscript in Latex
-        idf_release_name = "Release {}".format(config.version.replace('_', '-'))
+        idf_release_name = 'Release {}'.format(config.version.replace('_', '-'))
         latex_package = latex_package.replace('<idf_release_name>', idf_release_name)
 
         with open(os.path.join(self.outdir, PACKAGE_NAME), 'w') as package_file:
@@ -45,7 +46,7 @@ class IdfLatexBuilder(LaTeXBuilder):
     def finish(self):
         super().finish()
 
-        TEMPLATE_PATH = "../latex_templates/espidf.sty"
+        TEMPLATE_PATH = '../latex_templates/espidf.sty'
         self.prepare_latex_macros(os.path.join(self.confdir,TEMPLATE_PATH), self.config)
 
 

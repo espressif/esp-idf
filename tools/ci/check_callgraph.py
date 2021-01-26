@@ -16,20 +16,20 @@
 # limitations under the License.
 
 import argparse
-from functools import partial
 import os
 import re
+from functools import partial
 
 import elftools
 from elftools.elf import elffile
 
 try:
-    from typing import List, Optional, BinaryIO, Tuple, Generator, Dict, Callable
+    from typing import BinaryIO, Callable, Dict, Generator, List, Optional, Tuple
 except ImportError:
     pass
 
 FUNCTION_REGEX = re.compile(
-    r"^;; Function (?P<mangle>.*)\s+\((?P<function>\S+)(,.*)?\).*$"
+    r'^;; Function (?P<mangle>.*)\s+\((?P<function>\S+)(,.*)?\).*$'
 )
 CALL_REGEX = re.compile(r'^.*\(call.*"(?P<target>.*)".*$')
 SYMBOL_REF_REGEX = re.compile(r'^.*\(symbol_ref[^()]*\("(?P<target>.*)"\).*$')
@@ -52,24 +52,24 @@ class SectionAddressRange(object):
         self.high = addr + size
 
     def __str__(self):
-        return "{}: 0x{:08x} - 0x{:08x}".format(self.name, self.low, self.high)
+        return '{}: 0x{:08x} - 0x{:08x}'.format(self.name, self.low, self.high)
 
     def contains_address(self, addr):
         return self.low <= addr < self.high
 
 
 TARGET_SECTIONS = {
-    "esp32": [
-        SectionAddressRange(".rom.text", 0x40000000, 0x70000),
-        SectionAddressRange(".rom.rodata", 0x3ff96000, 0x9018)
+    'esp32': [
+        SectionAddressRange('.rom.text', 0x40000000, 0x70000),
+        SectionAddressRange('.rom.rodata', 0x3ff96000, 0x9018)
     ],
-    "esp32s2": [
-        SectionAddressRange(".rom.text", 0x40000000, 0x1bed0),
-        SectionAddressRange(".rom.rodata", 0x3ffac600, 0x392c)
+    'esp32s2': [
+        SectionAddressRange('.rom.text', 0x40000000, 0x1bed0),
+        SectionAddressRange('.rom.rodata', 0x3ffac600, 0x392c)
     ],
-    "esp32s3": [
-        SectionAddressRange(".rom.text", 0x40000000, 0x568d0),
-        SectionAddressRange(".rom.rodata", 0x3ff071c0, 0x8e30)
+    'esp32s3': [
+        SectionAddressRange('.rom.text', 0x40000000, 0x568d0),
+        SectionAddressRange('.rom.rodata', 0x3ff071c0, 0x8e30)
     ]
 }  # type: Dict[str, List[SectionAddressRange]]
 
@@ -85,11 +85,11 @@ class Symbol(object):
         self.referred_from = list()  # type: List[Symbol]
 
     def __str__(self):
-        return "{} @0x{:08x} [{}]{} {}".format(
+        return '{} @0x{:08x} [{}]{} {}'.format(
             self.name,
             self.addr,
-            self.section or "unknown",
-            " (local)" if self.local else "",
+            self.section or 'unknown',
+            ' (local)' if self.local else '',
             self.filename
         )
 
@@ -100,7 +100,7 @@ class Reference(object):
         self.to_sym = to_sym
 
     def __str__(self):
-        return "{} @0x{:08x} ({}) -> {} @0x{:08x} ({})".format(
+        return '{} @0x{:08x} ({}) -> {} @0x{:08x} ({})'.format(
             self.from_sym.name,
             self.from_sym.addr,
             self.from_sym.section,
@@ -124,12 +124,12 @@ class ElfInfo(object):
                 continue
             filename = None
             for sym in s.iter_symbols():
-                sym_type = sym.entry["st_info"]["type"]
-                if sym_type == "STT_FILE":
+                sym_type = sym.entry['st_info']['type']
+                if sym_type == 'STT_FILE':
                     filename = sym.name
-                if sym_type in ["STT_NOTYPE", "STT_FUNC", "STT_OBJECT"]:
-                    local = sym.entry["st_info"]["bind"] == "STB_LOCAL"
-                    addr = sym.entry["st_value"]
+                if sym_type in ['STT_NOTYPE', 'STT_FUNC', 'STT_OBJECT']:
+                    local = sym.entry['st_info']['bind'] == 'STB_LOCAL'
+                    addr = sym.entry['st_value']
                     symbols.append(
                         Symbol(
                             sym.name,
@@ -144,17 +144,17 @@ class ElfInfo(object):
     def _load_sections(self):  # type: () -> List[SectionAddressRange]
         result = []
         for segment in self.elf_obj.iter_segments():
-            if segment["p_type"] == "PT_LOAD":
+            if segment['p_type'] == 'PT_LOAD':
                 for section in self.elf_obj.iter_sections():
                     if not segment.section_in_segment(section):
                         continue
                     result.append(
                         SectionAddressRange(
-                            section.name, section["sh_addr"], section["sh_size"]
+                            section.name, section['sh_addr'], section['sh_size']
                         )
                     )
 
-        target = os.environ.get("IDF_TARGET")
+        target = os.environ.get('IDF_TARGET')
         if target in TARGET_SECTIONS:
             result += TARGET_SECTIONS[target]
 
@@ -180,7 +180,7 @@ def load_rtl_file(rtl_filename, tu_filename, functions):  # type: (str, str, Lis
         # Find function definition
         match = re.match(FUNCTION_REGEX, line)
         if match:
-            function_name = match.group("function")
+            function_name = match.group('function')
             last_function = RtlFunction(function_name, rtl_filename, tu_filename)
             functions.append(last_function)
             continue
@@ -189,7 +189,7 @@ def load_rtl_file(rtl_filename, tu_filename, functions):  # type: (str, str, Lis
             # Find direct function calls
             match = re.match(CALL_REGEX, line)
             if match:
-                target = match.group("target")
+                target = match.group('target')
                 if target not in last_function.calls:
                     last_function.calls.append(target)
                 continue
@@ -197,7 +197,7 @@ def load_rtl_file(rtl_filename, tu_filename, functions):  # type: (str, str, Lis
             # Find symbol references
             match = re.match(SYMBOL_REF_REGEX, line)
             if match:
-                target = match.group("target")
+                target = match.group('target')
                 if target not in last_function.refs:
                     last_function.refs.append(target)
                 continue
@@ -298,7 +298,7 @@ def match_rtl_funcs_to_symbols(rtl_functions, elfinfo):  # type: (List[RtlFuncti
             symbols.append(sym_from)
 
         for target_rtl_func_name in source_rtl_func.calls + source_rtl_func.refs:
-            if "*.LC" in target_rtl_func_name:  # skip local labels
+            if '*.LC' in target_rtl_func_name:  # skip local labels
                 continue
 
             maybe_sym_to = find_symbol_by_name(target_rtl_func_name, elfinfo, partial(match_local_target_func, source_rtl_func.rtl_filename, sym_from))
@@ -351,68 +351,68 @@ def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "--rtl-list",
-        help="File with the list of RTL files",
-        type=argparse.FileType("r"),
+        '--rtl-list',
+        help='File with the list of RTL files',
+        type=argparse.FileType('r'),
     )
     parser.add_argument(
-        "--rtl-dir", help="Directory where to look for RTL files, recursively"
+        '--rtl-dir', help='Directory where to look for RTL files, recursively'
     )
     parser.add_argument(
-        "--elf-file",
+        '--elf-file',
         required=True,
-        help="Program ELF file",
-        type=argparse.FileType("rb"),
+        help='Program ELF file',
+        type=argparse.FileType('rb'),
     )
-    action_sub = parser.add_subparsers(dest="action")
+    action_sub = parser.add_subparsers(dest='action')
     find_refs_parser = action_sub.add_parser(
-        "find-refs",
-        help="List the references coming from a given list of source sections"
-             "to a given list of target sections.",
+        'find-refs',
+        help='List the references coming from a given list of source sections'
+             'to a given list of target sections.',
     )
     find_refs_parser.add_argument(
-        "--from-sections", help="comma-separated list of source sections"
+        '--from-sections', help='comma-separated list of source sections'
     )
     find_refs_parser.add_argument(
-        "--to-sections", help="comma-separated list of target sections"
+        '--to-sections', help='comma-separated list of target sections'
     )
     find_refs_parser.add_argument(
-        "--exit-code",
-        action="store_true",
-        help="If set, exits with non-zero code when any references found",
+        '--exit-code',
+        action='store_true',
+        help='If set, exits with non-zero code when any references found',
     )
     action_sub.add_parser(
-        "all-refs",
-        help="Print the list of all references",
+        'all-refs',
+        help='Print the list of all references',
     )
 
     parser.parse_args()
     args = parser.parse_args()
     if args.rtl_list:
-        with open(args.rtl_list, "r") as rtl_list_file:
+        with open(args.rtl_list, 'r') as rtl_list_file:
             rtl_list = [line.strip for line in rtl_list_file]
     else:
         if not args.rtl_dir:
-            raise RuntimeError("Either --rtl-list or --rtl-dir must be specified")
-        rtl_list = list(find_files_recursive(args.rtl_dir, ".expand"))
+            raise RuntimeError('Either --rtl-list or --rtl-dir must be specified')
+        rtl_list = list(find_files_recursive(args.rtl_dir, '.expand'))
 
     if not rtl_list:
-        raise RuntimeError("No RTL files specified")
+        raise RuntimeError('No RTL files specified')
 
     _, refs = get_symbols_and_refs(rtl_list, args.elf_file)
 
-    if args.action == "find-refs":
-        from_sections = args.from_sections.split(",") if args.from_sections else []
-        to_sections = args.to_sections.split(",") if args.to_sections else []
+    if args.action == 'find-refs':
+        from_sections = args.from_sections.split(',') if args.from_sections else []
+        to_sections = args.to_sections.split(',') if args.to_sections else []
         found = list_refs_from_to_sections(
             refs, from_sections, to_sections
         )
         if args.exit_code and found:
             raise SystemExit(1)
-    elif args.action == "all-refs":
+    elif args.action == 'all-refs':
         for r in refs:
             print(str(r))
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

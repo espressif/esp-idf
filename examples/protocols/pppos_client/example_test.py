@@ -1,10 +1,12 @@
 from __future__ import unicode_literals
-from tiny_test_fw import Utility
+
 import os
-import serial
 import threading
 import time
+
+import serial
 import ttfw_idf
+from tiny_test_fw import Utility
 
 
 class SerialThread(object):

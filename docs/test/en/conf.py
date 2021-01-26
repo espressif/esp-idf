@@ -8,8 +8,8 @@
 try:
     from conf_common import *  # noqa: F403,F401
 except ImportError:
-    import sys
     import os
+    import sys
     sys.path.insert(0, os.path.abspath('../..'))
     from conf_common import *  # noqa: F403,F401
 
@@ -27,7 +27,7 @@ html_logo = None
 latex_logo = None
 html_static_path = []
 
-conditional_include_dict = {'esp32':["esp32_page.rst"],
-                            'esp32s2':["esp32s2_page.rst"],
-                            'SOC_BT_SUPPORTED':["bt_page.rst"],
+conditional_include_dict = {'esp32':['esp32_page.rst'],
+                            'esp32s2':['esp32s2_page.rst'],
+                            'SOC_BT_SUPPORTED':['bt_page.rst'],
                             }

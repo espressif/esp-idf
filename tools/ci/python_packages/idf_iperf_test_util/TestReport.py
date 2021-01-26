@@ -10,9 +10,9 @@ import os
 
 
 class ThroughputForConfigsReport(object):
-    THROUGHPUT_TYPES = ["tcp_tx", "tcp_rx", "udp_tx", "udp_rx"]
+    THROUGHPUT_TYPES = ['tcp_tx', 'tcp_rx', 'udp_tx', 'udp_rx']
 
-    REPORT_FILE_NAME = "ThroughputForConfigs.md"
+    REPORT_FILE_NAME = 'ThroughputForConfigs.md'
 
     def __init__(self, output_path, ap_ssid, throughput_results, sdkconfig_files):
         """
@@ -42,14 +42,14 @@ class ThroughputForConfigsReport(object):
     @staticmethod
     def _parse_config_file(config_file_path):
         sdkconfig = {}
-        with open(config_file_path, "r") as f:
+        with open(config_file_path, 'r') as f:
             for line in f:
                 if not line.isspace():
-                    if line[0] == "#":
+                    if line[0] == '#':
                         continue
-                    name, value = line.split("=")
-                    value = value.strip("\r\n")
-                    sdkconfig[name] = value if value else "n"
+                    name, value = line.split('=')
+                    value = value.strip('\r\n')
+                    sdkconfig[name] = value if value else 'n'
         return sdkconfig
 
     def _generate_the_difference_between_configs(self):
@@ -65,7 +65,7 @@ class ThroughputForConfigsReport(object):
 
         """
 
-        data = "## Config Definition:\r\n\r\n"
+        data = '## Config Definition:\r\n\r\n'
 
         def find_difference(base, new):
             _difference = {}
@@ -75,13 +75,13 @@ class ThroughputForConfigsReport(object):
                 try:
                     _base_value = base[_config]
                 except KeyError:
-                    _base_value = "null"
+                    _base_value = 'null'
                 try:
                     _new_value = new[_config]
                 except KeyError:
-                    _new_value = "null"
+                    _new_value = 'null'
                 if _base_value != _new_value:
-                    _difference[_config] = "{} -> {}".format(_base_value, _new_value)
+                    _difference[_config] = '{} -> {}'.format(_base_value, _new_value)
             return _difference
 
         for i, _config_name in enumerate(self.sort_order):
@@ -96,9 +96,9 @@ class ThroughputForConfigsReport(object):
             if previous_config:
                 # log the difference
                 difference = find_difference(previous_config, current_config)
-                data += "* {} (compared to {}):\r\n".format(_config_name, previous_config_name)
+                data += '* {} (compared to {}):\r\n'.format(_config_name, previous_config_name)
                 for diff_name in difference:
-                    data += "    * `{}`: {}\r\n".format(diff_name, difference[diff_name])
+                    data += '    * `{}`: {}\r\n'.format(diff_name, difference[diff_name])
         return data
 
     def _generate_report_for_one_type(self, throughput_type):
@@ -115,39 +115,39 @@ class ThroughputForConfigsReport(object):
         """
         empty = True
 
-        ret = "\r\n### {} {}\r\n\r\n".format(*throughput_type.split("_"))
-        ret += "| config name | throughput (Mbps) | free heap size (bytes) |\r\n"
-        ret += "|-------------|-------------------|------------------------|\r\n"
+        ret = '\r\n### {} {}\r\n\r\n'.format(*throughput_type.split('_'))
+        ret += '| config name | throughput (Mbps) | free heap size (bytes) |\r\n'
+        ret += '|-------------|-------------------|------------------------|\r\n'
         for config in self.sort_order:
             try:
                 result = self.results[config][throughput_type]
-                throughput = "{:.02f}".format(max(result.throughput_by_att[self.ap_ssid].values()))
+                throughput = '{:.02f}'.format(max(result.throughput_by_att[self.ap_ssid].values()))
                 heap_size = str(result.heap_size)
                 # although markdown table will do alignment
                 # do align here for better text editor presentation
-                ret += "| {:<12}| {:<18}| {:<23}|\r\n".format(config, throughput, heap_size)
+                ret += '| {:<12}| {:<18}| {:<23}|\r\n'.format(config, throughput, heap_size)
                 empty = False
             except KeyError:
                 pass
-        return ret if not empty else ""
+        return ret if not empty else ''
 
     def generate_report(self):
-        data = "# Throughput for different configs\r\n"
-        data += "\r\nAP: {}\r\n".format(self.ap_ssid)
+        data = '# Throughput for different configs\r\n'
+        data += '\r\nAP: {}\r\n'.format(self.ap_ssid)
 
         for throughput_type in self.THROUGHPUT_TYPES:
             data += self._generate_report_for_one_type(throughput_type)
-            data += "\r\n------\r\n"
+            data += '\r\n------\r\n'
 
         data += self._generate_the_difference_between_configs()
 
-        with open(os.path.join(self.output_path, self.REPORT_FILE_NAME), "w") as f:
+        with open(os.path.join(self.output_path, self.REPORT_FILE_NAME), 'w') as f:
             f.write(data)
 
 
 class ThroughputVsRssiReport(object):
 
-    REPORT_FILE_NAME = "ThroughputVsRssi.md"
+    REPORT_FILE_NAME = 'ThroughputVsRssi.md'
 
     def __init__(self, output_path, throughput_results):
         """
@@ -160,7 +160,7 @@ class ThroughputVsRssiReport(object):
             }
         """
         self.output_path = output_path
-        self.raw_data_path = os.path.join(output_path, "raw_data")
+        self.raw_data_path = os.path.join(output_path, 'raw_data')
         self.results = throughput_results
         self.throughput_types = list(self.results.keys())
         self.throughput_types.sort()
@@ -179,20 +179,20 @@ class ThroughputVsRssiReport(object):
             | udp rx  | Failed         | 55.44                 |
         """
 
-        ret = "\r\n### Summary\r\n\r\n"
-        ret += "| item    | curve analysis | max throughput (Mbps) |\r\n"
-        ret += "|---------|----------------|-----------------------|\r\n"
+        ret = '\r\n### Summary\r\n\r\n'
+        ret += '| item    | curve analysis | max throughput (Mbps) |\r\n'
+        ret += '|---------|----------------|-----------------------|\r\n'
 
         for _type in self.throughput_types:
             result = self.results[_type]
             max_throughput = 0.0
-            curve_analysis = "Failed" if result.error_list else "Success"
+            curve_analysis = 'Failed' if result.error_list else 'Success'
             for ap_ssid in result.throughput_by_att:
                 _max_for_ap = max(result.throughput_by_rssi[ap_ssid].values())
                 if _max_for_ap > max_throughput:
                     max_throughput = _max_for_ap
-            max_throughput = "{:.02f}".format(max_throughput)
-            ret += "| {:<8}| {:<15}| {:<22}|\r\n".format("{}_{}".format(result.proto, result.direction),
+            max_throughput = '{:.02f}'.format(max_throughput)
+            ret += '| {:<8}| {:<15}| {:<22}|\r\n'.format('{}_{}'.format(result.proto, result.direction),
                                                          curve_analysis, max_throughput)
         return ret
 
@@ -217,29 +217,29 @@ class ThroughputVsRssiReport(object):
 
         """
         result.post_analysis()
-        ret = "\r\n### {} {}\r\n".format(result.proto, result.direction)
+        ret = '\r\n### {} {}\r\n'.format(result.proto, result.direction)
         if result.error_list:
-            ret += "\r\nErrors:\r\n\r\n"
+            ret += '\r\nErrors:\r\n\r\n'
             for error in result.error_list:
-                ret += "* " + error + "\r\n"
+                ret += '* ' + error + '\r\n'
         for ap_ssid in result.throughput_by_rssi:
-            ret += "\r\nAP: {}\r\n".format(ap_ssid)
+            ret += '\r\nAP: {}\r\n'.format(ap_ssid)
             # draw figure
-            file_name = result.draw_throughput_figure(self.raw_data_path, ap_ssid, "rssi")
-            result.draw_throughput_figure(self.raw_data_path, ap_ssid, "att")
+            file_name = result.draw_throughput_figure(self.raw_data_path, ap_ssid, 'rssi')
+            result.draw_throughput_figure(self.raw_data_path, ap_ssid, 'att')
             result.draw_rssi_vs_att_figure(self.raw_data_path, ap_ssid)
 
-            ret += "\r\n[throughput Vs RSSI]({})\r\n".format(os.path.join("raw_data", file_name))
+            ret += '\r\n[throughput Vs RSSI]({})\r\n'.format(os.path.join('raw_data', file_name))
 
         return ret
 
     def generate_report(self):
-        data = "# Throughput Vs RSSI\r\n"
+        data = '# Throughput Vs RSSI\r\n'
 
         data += self._generate_summary()
 
         for _type in self.throughput_types:
             data += self._generate_report_for_one_type(self.results[_type])
 
-        with open(os.path.join(self.output_path, self.REPORT_FILE_NAME), "w") as f:
+        with open(os.path.join(self.output_path, self.REPORT_FILE_NAME), 'w') as f:
             f.write(data)

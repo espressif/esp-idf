@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+
 from setuptools import setup
 
 setup(name='esp-windows-curses',

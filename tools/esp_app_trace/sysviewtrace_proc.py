@@ -20,12 +20,13 @@
 #
 
 import argparse
-import sys
+import json
+import logging
 import os.path
 import signal
+import sys
 import traceback
-import logging
-import json
+
 import espytrace.apptrace as apptrace
 import espytrace.sysview as sysview
 
@@ -83,22 +84,22 @@ def main():
                                          sysview.SysViewLogTraceDataParser(print_events=False, core_id=i))
             parsers.append(parser)
         except Exception as e:
-            logging.error("Failed to create data parser (%s)!", e)
+            logging.error('Failed to create data parser (%s)!', e)
             traceback.print_exc()
             sys.exit(2)
         reader = apptrace.reader_create(trace_source, args.tmo)
         if not reader:
-            logging.error("Failed to create trace reader!")
+            logging.error('Failed to create trace reader!')
             sys.exit(2)
         try:
             # logging.info("Parse trace from '{}'...".format(trace_source))
             logging.info("Parse trace from '%s'...", trace_source)
             sysview.parse_trace(reader, parser, args.events_map)
-            logging.info("Parsing completed.")
+            logging.info('Parsing completed.')
         except (apptrace.ReaderTimeoutError, apptrace.ReaderShutdownRequest) as e:
-            logging.info("Stop parsing trace. (%s)", e)
+            logging.info('Stop parsing trace. (%s)', e)
         except Exception as e:
-            logging.error("Failed to parse trace (%s)!", e)
+            logging.error('Failed to parse trace (%s)!', e)
             parser.cleanup()
             traceback.print_exc()
             sys.exit(2)
@@ -115,16 +116,16 @@ def main():
             proc.add_stream_processor(sysview.SysViewTraceDataParser.STREAMID_LOG,
                                       sysview.SysViewLogTraceDataProcessor(root_proc=proc, print_log_events=args.print_events))
     except Exception as e:
-        logging.error("Failed to create data processor (%s)!", e)
+        logging.error('Failed to create data processor (%s)!', e)
         traceback.print_exc()
         sys.exit(2)
 
     try:
         logging.info("Process events from '%s'...", args.trace_sources)
         proc.merge_and_process()
-        logging.info("Processing completed.")
+        logging.info('Processing completed.')
     except Exception as e:
-        logging.error("Failed to process trace (%s)!", e)
+        logging.error('Failed to process trace (%s)!', e)
         traceback.print_exc()
         sys.exit(2)
     finally:

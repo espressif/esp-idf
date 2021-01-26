@@ -1,8 +1,10 @@
 from __future__ import unicode_literals
-from tiny_test_fw import Utility
+
 import datetime
 import re
+
 import ttfw_idf
+from tiny_test_fw import Utility
 
 
 @ttfw_idf.idf_example_test(env_tag='Example_WIFI')

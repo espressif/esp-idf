@@ -40,18 +40,18 @@ def draw_line_chart(file_name, title, x_label, y_label, data_series, range_list)
             _data[str(key)] = data_series[item][key]
         _data = list(_data.values())
         try:
-            legend = item + " (max: {:.02f})".format(max([x for x in _data if x]))
+            legend = item + ' (max: {:.02f})'.format(max([x for x in _data if x]))
         except TypeError:
             legend = item
         line.add_yaxis(legend, _data, is_smooth=True, is_connect_nones=True,
                        label_opts=opts.LabelOpts(is_show=False))
     line.set_global_opts(
         datazoom_opts=opts.DataZoomOpts(range_start=0, range_end=100),
-        title_opts=opts.TitleOpts(title=title, pos_left="center"),
-        legend_opts=opts.LegendOpts(pos_top="10%", pos_left="right", orient="vertical"),
-        tooltip_opts=opts.TooltipOpts(trigger="axis"),
-        xaxis_opts=opts.AxisOpts(type_="category", name=x_label, splitline_opts=opts.SplitLineOpts(is_show=True)),
-        yaxis_opts=opts.AxisOpts(type_="value", name=y_label,
+        title_opts=opts.TitleOpts(title=title, pos_left='center'),
+        legend_opts=opts.LegendOpts(pos_top='10%', pos_left='right', orient='vertical'),
+        tooltip_opts=opts.TooltipOpts(trigger='axis'),
+        xaxis_opts=opts.AxisOpts(type_='category', name=x_label, splitline_opts=opts.SplitLineOpts(is_show=True)),
+        yaxis_opts=opts.AxisOpts(type_='value', name=y_label,
                                  axistick_opts=opts.AxisTickOpts(is_show=True),
                                  splitline_opts=opts.SplitLineOpts(is_show=True)),
     )

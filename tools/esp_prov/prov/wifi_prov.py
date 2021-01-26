@@ -16,15 +16,15 @@
 # APIs for interpreting and creating protobuf packets for Wi-Fi provisioning
 
 from __future__ import print_function
-from future.utils import tobytes
 
-import utils
 import proto
+import utils
+from future.utils import tobytes
 
 
 def print_verbose(security_ctx, data):
     if (security_ctx.verbose):
-        print("++++ " + data + " ++++")
+        print('++++ ' + data + ' ++++')
 
 
 def config_get_status_request(security_ctx):
@@ -34,7 +34,7 @@ def config_get_status_request(security_ctx):
     cmd_get_status = proto.wifi_config_pb2.CmdGetStatus()
     cfg1.cmd_get_status.MergeFrom(cmd_get_status)
     encrypted_cfg = security_ctx.encrypt_data(cfg1.SerializeToString()).decode('latin-1')
-    print_verbose(security_ctx, "Client -> Device (Encrypted CmdGetStatus) " + utils.str_to_hexstr(encrypted_cfg))
+    print_verbose(security_ctx, 'Client -> Device (Encrypted CmdGetStatus) ' + utils.str_to_hexstr(encrypted_cfg))
     return encrypted_cfg
 
 
@@ -43,26 +43,26 @@ def config_get_status_response(security_ctx, response_data):
     decrypted_message = security_ctx.decrypt_data(tobytes(response_data))
     cmd_resp1 = proto.wifi_config_pb2.WiFiConfigPayload()
     cmd_resp1.ParseFromString(decrypted_message)
-    print_verbose(security_ctx, "Response type " + str(cmd_resp1.msg))
-    print_verbose(security_ctx, "Response status " + str(cmd_resp1.resp_get_status.status))
+    print_verbose(security_ctx, 'Response type ' + str(cmd_resp1.msg))
+    print_verbose(security_ctx, 'Response status ' + str(cmd_resp1.resp_get_status.status))
 
     if cmd_resp1.resp_get_status.sta_state == 0:
-        print("++++ WiFi state: " + "connected ++++")
-        return "connected"
+        print('++++ WiFi state: ' + 'connected ++++')
+        return 'connected'
     elif cmd_resp1.resp_get_status.sta_state == 1:
-        print("++++ WiFi state: " + "connecting... ++++")
-        return "connecting"
+        print('++++ WiFi state: ' + 'connecting... ++++')
+        return 'connecting'
     elif cmd_resp1.resp_get_status.sta_state == 2:
-        print("++++ WiFi state: " + "disconnected ++++")
-        return "disconnected"
+        print('++++ WiFi state: ' + 'disconnected ++++')
+        return 'disconnected'
     elif cmd_resp1.resp_get_status.sta_state == 3:
-        print("++++ WiFi state: " + "connection failed ++++")
+        print('++++ WiFi state: ' + 'connection failed ++++')
         if cmd_resp1.resp_get_status.fail_reason == 0:
-            print("++++ Failure reason: " + "Incorrect Password ++++")
+            print('++++ Failure reason: ' + 'Incorrect Password ++++')
         elif cmd_resp1.resp_get_status.fail_reason == 1:
-            print("++++ Failure reason: " + "Incorrect SSID ++++")
-        return "failed"
-    return "unknown"
+            print('++++ Failure reason: ' + 'Incorrect SSID ++++')
+        return 'failed'
+    return 'unknown'
 
 
 def config_set_config_request(security_ctx, ssid, passphrase):
@@ -72,7 +72,7 @@ def config_set_config_request(security_ctx, ssid, passphrase):
     cmd.cmd_set_config.ssid = tobytes(ssid)
     cmd.cmd_set_config.passphrase = tobytes(passphrase)
     enc_cmd = security_ctx.encrypt_data(cmd.SerializeToString()).decode('latin-1')
-    print_verbose(security_ctx, "Client -> Device (SetConfig cmd) " + utils.str_to_hexstr(enc_cmd))
+    print_verbose(security_ctx, 'Client -> Device (SetConfig cmd) ' + utils.str_to_hexstr(enc_cmd))
     return enc_cmd
 
 
@@ -81,7 +81,7 @@ def config_set_config_response(security_ctx, response_data):
     decrypt = security_ctx.decrypt_data(tobytes(response_data))
     cmd_resp4 = proto.wifi_config_pb2.WiFiConfigPayload()
     cmd_resp4.ParseFromString(decrypt)
-    print_verbose(security_ctx, "SetConfig status " + str(cmd_resp4.resp_set_config.status))
+    print_verbose(security_ctx, 'SetConfig status ' + str(cmd_resp4.resp_set_config.status))
     return cmd_resp4.resp_set_config.status
 
 
@@ -90,7 +90,7 @@ def config_apply_config_request(security_ctx):
     cmd = proto.wifi_config_pb2.WiFiConfigPayload()
     cmd.msg = proto.wifi_config_pb2.TypeCmdApplyConfig
     enc_cmd = security_ctx.encrypt_data(cmd.SerializeToString()).decode('latin-1')
-    print_verbose(security_ctx, "Client -> Device (ApplyConfig cmd) " + utils.str_to_hexstr(enc_cmd))
+    print_verbose(security_ctx, 'Client -> Device (ApplyConfig cmd) ' + utils.str_to_hexstr(enc_cmd))
     return enc_cmd
 
 
@@ -99,5 +99,5 @@ def config_apply_config_response(security_ctx, response_data):
     decrypt = security_ctx.decrypt_data(tobytes(response_data))
     cmd_resp5 = proto.wifi_config_pb2.WiFiConfigPayload()
     cmd_resp5.ParseFromString(decrypt)
-    print_verbose(security_ctx, "ApplyConfig status " + str(cmd_resp5.resp_apply_config.status))
+    print_verbose(security_ctx, 'ApplyConfig status ' + str(cmd_resp5.resp_apply_config.status))
     return cmd_resp5.resp_apply_config.status

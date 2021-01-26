@@ -1,7 +1,8 @@
 from __future__ import print_function
+
 import os
-import sys
 import subprocess
+import sys
 
 import ttfw_idf
 
@@ -12,22 +13,22 @@ def test_otatool_example(env, extra_data):
 
     # Verify factory firmware
     dut.start_app()
-    dut.expect("OTA Tool Example")
-    dut.expect("Example end")
+    dut.expect('OTA Tool Example')
+    dut.expect('Example end')
 
     # Close connection to DUT
     dut.receive_thread.exit()
     dut.port_inst.close()
 
-    script_path = os.path.join(os.getenv("IDF_PATH"), "examples", "system", "ota", "otatool", "otatool_example.py")
-    binary_path = ""
+    script_path = os.path.join(os.getenv('IDF_PATH'), 'examples', 'system', 'ota', 'otatool', 'otatool_example.py')
+    binary_path = ''
 
     for flash_file in dut.app.flash_files:
-        if "otatool.bin" in flash_file[1]:
+        if 'otatool.bin' in flash_file[1]:
             binary_path = flash_file[1]
             break
 
-    subprocess.check_call([sys.executable, script_path, "--binary", binary_path])
+    subprocess.check_call([sys.executable, script_path, '--binary', binary_path])
 
 
 if __name__ == '__main__':

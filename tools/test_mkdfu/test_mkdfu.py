@@ -16,14 +16,16 @@
 # limitations under the License.
 
 from __future__ import unicode_literals
+
 import filecmp
 import os
-import pexpect
 import shutil
 import sys
 import tempfile
 import time
 import unittest
+
+import pexpect
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
 mkdfu_path = os.path.join(current_dir, '..', 'mkdfu.py')

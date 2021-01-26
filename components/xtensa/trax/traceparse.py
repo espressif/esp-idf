@@ -50,11 +50,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from __future__ import print_function
+
 import sys
 
 # Check if loaded into GDB
 try:
-    assert gdb.__name__ == "gdb"
+    assert gdb.__name__ == 'gdb'
     WITH_GDB = True
 except NameError:
     WITH_GDB = False
@@ -114,7 +115,7 @@ class TraxPacket(object):
         return result
 
     def __str__(self):
-        return "%d byte packet%s" % (self.size_bytes, " (truncated)" if self.truncated else "")
+        return '%d byte packet%s' % (self.size_bytes, ' (truncated)' if self.truncated else '')
 
 
 class TraxMessage(object):
@@ -175,7 +176,7 @@ class TraxMessage(object):
             self.icnt = self.packets[0].get_bits(12, -1)
             self.is_correlation = True
         else:
-            raise NotImplementedError("Unknown message type (%d)" % self.msg_type)
+            raise NotImplementedError('Unknown message type (%d)' % self.msg_type)
 
     def process_forward(self, cur_pc):
         """
@@ -229,23 +230,23 @@ class TraxMessage(object):
         return prev_pc
 
     def __str__(self):
-        desc = "Unknown (%d)" % self.msg_type
-        extra = ""
+        desc = 'Unknown (%d)' % self.msg_type
+        extra = ''
         if self.truncated:
-            desc = "Truncated"
+            desc = 'Truncated'
         if self.msg_type == TVAL_INDBR:
-            desc = "Indirect branch"
-            extra = ", icnt=%d, uaddr=0x%x, exc=%d" % (self.icnt, self.uaddr, self.is_exception)
+            desc = 'Indirect branch'
+            extra = ', icnt=%d, uaddr=0x%x, exc=%d' % (self.icnt, self.uaddr, self.is_exception)
         if self.msg_type == TVAL_INDBRSYNC:
-            desc = "Indirect branch w/sync"
-            extra = ", icnt=%d, dcont=%d, exc=%d" % (self.icnt, self.dcont, self.is_exception)
+            desc = 'Indirect branch w/sync'
+            extra = ', icnt=%d, dcont=%d, exc=%d' % (self.icnt, self.dcont, self.is_exception)
         if self.msg_type == TVAL_SYNC:
-            desc = "Synchronization"
-            extra = ", icnt=%d, dcont=%d" % (self.icnt, self.dcont)
+            desc = 'Synchronization'
+            extra = ', icnt=%d, dcont=%d' % (self.icnt, self.dcont)
         if self.msg_type == TVAL_CORR:
-            desc = "Correlation"
-            extra = ", icnt=%d" % self.icnt
-        return "%s message, %d packets, PC range 0x%08x - 0x%08x, target PC 0x%08x" % (
+            desc = 'Correlation'
+            extra = ', icnt=%d' % self.icnt
+        return '%s message, %d packets, PC range 0x%08x - 0x%08x, target PC 0x%08x' % (
             desc, len(self.packets), self.pc_start, self.pc_end, self.pc_target) + extra
 
 
@@ -264,7 +265,7 @@ def load_messages(data):
     # Iterate over the input data, splitting bytes into packets and messages
     for i, b in enumerate(data):
         if (b & MSEO_MSGEND) and not (b & MSEO_PKTEND):
-            raise AssertionError("Invalid MSEO bits in b=0x%x. Not a TRAX dump?" % b)
+            raise AssertionError('Invalid MSEO bits in b=0x%x. Not a TRAX dump?' % b)
 
         if b & MSEO_PKTEND:
             pkt_cnt += 1
@@ -276,7 +277,7 @@ def load_messages(data):
             try:
                 messages.append(TraxMessage(packets, len(messages) == 0))
             except NotImplementedError as e:
-                sys.stderr.write("Failed to parse message #%03d (at %d bytes): %s\n" % (msg_cnt, i, str(e)))
+                sys.stderr.write('Failed to parse message #%03d (at %d bytes): %s\n' % (msg_cnt, i, str(e)))
             packets = []
 
     # Resolve PC ranges of messages.
@@ -312,32 +313,32 @@ def parse_and_dump(filename, disassemble=WITH_GDB):
         data = f.read()
 
     messages = load_messages(data)
-    sys.stderr.write("Loaded %d messages in %d bytes\n" % (len(messages), len(data)))
+    sys.stderr.write('Loaded %d messages in %d bytes\n' % (len(messages), len(data)))
 
     for i, m in enumerate(messages):
         if m.truncated:
             continue
-        print("%04d: %s" % (i, str(m)))
+        print('%04d: %s' % (i, str(m)))
         if m.is_exception:
-            print("*** Exception occurred ***")
+            print('*** Exception occurred ***')
         if disassemble and WITH_GDB:
             try:
-                gdb.execute("disassemble 0x%08x, 0x%08x" % (m.pc_start, m.pc_end))  # noqa: F821
+                gdb.execute('disassemble 0x%08x, 0x%08x' % (m.pc_start, m.pc_end))  # noqa: F821
             except gdb.MemoryError:  # noqa: F821
-                print("Failed to disassemble from 0x%08x to 0x%08x" % (m.pc_start, m.pc_end))
+                print('Failed to disassemble from 0x%08x to 0x%08x' % (m.pc_start, m.pc_end))
 
 
 def main():
     if sys.version_info[0] < 3:
-        print("WARNING: Support for Python 2 is deprecated and will be removed in future versions.", file=sys.stderr)
+        print('WARNING: Support for Python 2 is deprecated and will be removed in future versions.', file=sys.stderr)
     elif sys.version_info[0] == 3 and sys.version_info[1] < 6:
-        print("WARNING: Python 3 versions older than 3.6 are not supported.", file=sys.stderr)
+        print('WARNING: Python 3 versions older than 3.6 are not supported.', file=sys.stderr)
     if len(sys.argv) < 2:
-        sys.stderr.write("Usage: %s <dump_file>\n")
+        sys.stderr.write('Usage: %s <dump_file>\n')
         raise SystemExit(1)
 
     parse_and_dump(sys.argv[1])
 
 
-if __name__ == "__main__" and not WITH_GDB:
+if __name__ == '__main__' and not WITH_GDB:
     main()

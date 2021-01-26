@@ -1,7 +1,9 @@
 # Generate toolchain download links from toolchain info makefile
 from __future__ import print_function
+
 import os.path
-from .util import copy_if_modified, call_with_python
+
+from .util import call_with_python, copy_if_modified
 
 
 def setup(app):
@@ -12,9 +14,9 @@ def setup(app):
 
 
 def generate_idf_tools_links(app, project_description):
-    print("Generating IDF Tools list")
-    os.environ["IDF_MAINTAINER"] = "1"
+    print('Generating IDF Tools list')
+    os.environ['IDF_MAINTAINER'] = '1'
     tools_rst = os.path.join(app.config.build_dir, 'inc', 'idf-tools-inc.rst')
     tools_rst_tmp = os.path.join(app.config.build_dir, 'idf-tools-inc.rst')
-    call_with_python("{}/tools/idf_tools.py gen-doc --output {}".format(app.config.idf_path, tools_rst_tmp))
+    call_with_python('{}/tools/idf_tools.py gen-doc --output {}'.format(app.config.idf_path, tools_rst_tmp))
     copy_if_modified(tools_rst_tmp, tools_rst)

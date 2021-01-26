@@ -80,9 +80,9 @@ class BaseApp(object):
         if not test_suite_name:
             test_suite_name = os.path.splitext(os.path.basename(sys.modules['__main__'].__file__))[0]
         sdk_path = cls.get_sdk_path()
-        log_folder = os.path.join(sdk_path, "TEST_LOGS",
+        log_folder = os.path.join(sdk_path, 'TEST_LOGS',
                                   test_suite_name +
-                                  time.strftime("_%m%d_%H_%M_%S", time.localtime(LOG_FOLDER_TIMESTAMP)))
+                                  time.strftime('_%m%d_%H_%M_%S', time.localtime(LOG_FOLDER_TIMESTAMP)))
         if not os.path.exists(log_folder):
             os.makedirs(log_folder)
         return log_folder

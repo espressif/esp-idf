@@ -14,12 +14,12 @@
 #
 
 from __future__ import print_function
-from builtins import input
-from future.utils import iteritems
 
 import platform
+from builtins import input
 
 import utils
+from future.utils import iteritems
 
 fallback = True
 
@@ -28,9 +28,10 @@ fallback = True
 # else fallback to console mode
 if platform.system() == 'Linux':
     try:
+        import time
+
         import dbus
         import dbus.mainloop.glib
-        import time
         fallback = False
     except ImportError:
         pass
@@ -55,33 +56,33 @@ class BLE_Bluez_Client:
 
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         bus = dbus.SystemBus()
-        manager = dbus.Interface(bus.get_object("org.bluez", "/"), "org.freedesktop.DBus.ObjectManager")
+        manager = dbus.Interface(bus.get_object('org.bluez', '/'), 'org.freedesktop.DBus.ObjectManager')
         objects = manager.GetManagedObjects()
 
         for path, interfaces in iteritems(objects):
-            adapter = interfaces.get("org.bluez.Adapter1")
+            adapter = interfaces.get('org.bluez.Adapter1')
             if adapter is not None:
                 if path.endswith(iface):
-                    self.adapter = dbus.Interface(bus.get_object("org.bluez", path), "org.bluez.Adapter1")
-                    self.adapter_props = dbus.Interface(bus.get_object("org.bluez", path), "org.freedesktop.DBus.Properties")
+                    self.adapter = dbus.Interface(bus.get_object('org.bluez', path), 'org.bluez.Adapter1')
+                    self.adapter_props = dbus.Interface(bus.get_object('org.bluez', path), 'org.freedesktop.DBus.Properties')
                     break
 
         if self.adapter is None:
-            raise RuntimeError("Bluetooth adapter not found")
+            raise RuntimeError('Bluetooth adapter not found')
 
-        self.adapter_props.Set("org.bluez.Adapter1", "Powered", dbus.Boolean(1))
+        self.adapter_props.Set('org.bluez.Adapter1', 'Powered', dbus.Boolean(1))
         self.adapter.StartDiscovery()
 
         retry = 10
         while (retry > 0):
             try:
                 if self.device is None:
-                    print("Connecting...")
+                    print('Connecting...')
                     # Wait for device to be discovered
                     time.sleep(5)
                     self._connect_()
-                    print("Connected")
-                print("Getting Services...")
+                    print('Connected')
+                print('Getting Services...')
                 # Wait for services to be discovered
                 time.sleep(5)
                 self._get_services_()
@@ -89,28 +90,28 @@ class BLE_Bluez_Client:
             except Exception as e:
                 print(e)
                 retry -= 1
-                print("Retries left", retry)
+                print('Retries left', retry)
                 continue
         self.adapter.StopDiscovery()
         return False
 
     def _connect_(self):
         bus = dbus.SystemBus()
-        manager = dbus.Interface(bus.get_object("org.bluez", "/"), "org.freedesktop.DBus.ObjectManager")
+        manager = dbus.Interface(bus.get_object('org.bluez', '/'), 'org.freedesktop.DBus.ObjectManager')
         objects = manager.GetManagedObjects()
         dev_path = None
         for path, interfaces in iteritems(objects):
-            if "org.bluez.Device1" not in interfaces:
+            if 'org.bluez.Device1' not in interfaces:
                 continue
-            if interfaces["org.bluez.Device1"].get("Name") == self.devname:
+            if interfaces['org.bluez.Device1'].get('Name') == self.devname:
                 dev_path = path
                 break
 
         if dev_path is None:
-            raise RuntimeError("BLE device not found")
+            raise RuntimeError('BLE device not found')
 
         try:
-            self.device = bus.get_object("org.bluez", dev_path)
+            self.device = bus.get_object('org.bluez', dev_path)
             try:
                 uuids = self.device.Get('org.bluez.Device1', 'UUIDs',
                                         dbus_interface='org.freedesktop.DBus.Properties')
@@ -128,19 +129,19 @@ class BLE_Bluez_Client:
         except Exception as e:
             print(e)
             self.device = None
-            raise RuntimeError("BLE device could not connect")
+            raise RuntimeError('BLE device could not connect')
 
     def _get_services_(self):
         bus = dbus.SystemBus()
-        manager = dbus.Interface(bus.get_object("org.bluez", "/"), "org.freedesktop.DBus.ObjectManager")
+        manager = dbus.Interface(bus.get_object('org.bluez', '/'), 'org.freedesktop.DBus.ObjectManager')
         objects = manager.GetManagedObjects()
         service_found = False
         for srv_path, srv_interfaces in iteritems(objects):
-            if "org.bluez.GattService1" not in srv_interfaces:
+            if 'org.bluez.GattService1' not in srv_interfaces:
                 continue
             if not srv_path.startswith(self.device.object_path):
                 continue
-            service = bus.get_object("org.bluez", srv_path)
+            service = bus.get_object('org.bluez', srv_path)
             srv_uuid = service.Get('org.bluez.GattService1', 'UUID',
                                    dbus_interface='org.freedesktop.DBus.Properties')
 
@@ -152,20 +153,20 @@ class BLE_Bluez_Client:
             nu_lookup = dict()
             characteristics = dict()
             for chrc_path, chrc_interfaces in iteritems(objects):
-                if "org.bluez.GattCharacteristic1" not in chrc_interfaces:
+                if 'org.bluez.GattCharacteristic1' not in chrc_interfaces:
                     continue
                 if not chrc_path.startswith(service.object_path):
                     continue
-                chrc = bus.get_object("org.bluez", chrc_path)
+                chrc = bus.get_object('org.bluez', chrc_path)
                 uuid = chrc.Get('org.bluez.GattCharacteristic1', 'UUID',
                                 dbus_interface='org.freedesktop.DBus.Properties')
                 characteristics[uuid] = chrc
                 for desc_path, desc_interfaces in iteritems(objects):
-                    if "org.bluez.GattDescriptor1" not in desc_interfaces:
+                    if 'org.bluez.GattDescriptor1' not in desc_interfaces:
                         continue
                     if not desc_path.startswith(chrc.object_path):
                         continue
-                    desc = bus.get_object("org.bluez", desc_path)
+                    desc = bus.get_object('org.bluez', desc_path)
                     desc_uuid = desc.Get('org.bluez.GattDescriptor1', 'UUID',
                                          dbus_interface='org.freedesktop.DBus.Properties')
                     if desc_uuid[4:8] != '2901':
@@ -205,7 +206,7 @@ class BLE_Bluez_Client:
             self.device = None
             self.nu_lookup = None
             self.characteristics = dict()
-            raise RuntimeError("Provisioning service not found")
+            raise RuntimeError('Provisioning service not found')
 
     def get_nu_lookup(self):
         return self.nu_lookup
@@ -224,25 +225,25 @@ class BLE_Bluez_Client:
             self.nu_lookup = None
             self.characteristics = dict()
         if self.adapter_props:
-            self.adapter_props.Set("org.bluez.Adapter1", "Powered", dbus.Boolean(0))
+            self.adapter_props.Set('org.bluez.Adapter1', 'Powered', dbus.Boolean(0))
 
     def send_data(self, characteristic_uuid, data):
         try:
             path = self.characteristics[characteristic_uuid]
         except KeyError:
-            raise RuntimeError("Invalid characteristic : " + characteristic_uuid)
+            raise RuntimeError('Invalid characteristic : ' + characteristic_uuid)
 
         try:
             path.WriteValue([ord(c) for c in data], {}, dbus_interface='org.bluez.GattCharacteristic1')
         except TypeError:  # python3 compatible
             path.WriteValue([c for c in data], {}, dbus_interface='org.bluez.GattCharacteristic1')
         except dbus.exceptions.DBusException as e:
-            raise RuntimeError("Failed to write value to characteristic " + characteristic_uuid + ": " + str(e))
+            raise RuntimeError('Failed to write value to characteristic ' + characteristic_uuid + ': ' + str(e))
 
         try:
             readval = path.ReadValue({}, dbus_interface='org.bluez.GattCharacteristic1')
         except dbus.exceptions.DBusException as e:
-            raise RuntimeError("Failed to read value from characteristic " + characteristic_uuid + ": " + str(e))
+            raise RuntimeError('Failed to read value from characteristic ' + characteristic_uuid + ': ' + str(e))
         return ''.join(chr(b) for b in readval)
 
 
@@ -252,14 +253,14 @@ class BLE_Bluez_Client:
 # Console based BLE client for Cross Platform support
 class BLE_Console_Client:
     def connect(self, devname, iface, chrc_names, fallback_srv_uuid):
-        print("BLE client is running in console mode")
-        print("\tThis could be due to your platform not being supported or dependencies not being met")
-        print("\tPlease ensure all pre-requisites are met to run the full fledged client")
-        print("BLECLI >> Please connect to BLE device `" + devname + "` manually using your tool of choice")
-        resp = input("BLECLI >> Was the device connected successfully? [y/n] ")
+        print('BLE client is running in console mode')
+        print('\tThis could be due to your platform not being supported or dependencies not being met')
+        print('\tPlease ensure all pre-requisites are met to run the full fledged client')
+        print('BLECLI >> Please connect to BLE device `' + devname + '` manually using your tool of choice')
+        resp = input('BLECLI >> Was the device connected successfully? [y/n] ')
         if resp != 'Y' and resp != 'y':
             return False
-        print("BLECLI >> List available attributes of the connected device")
+        print('BLECLI >> List available attributes of the connected device')
         resp = input("BLECLI >> Is the service UUID '" + fallback_srv_uuid + "' listed among available attributes? [y/n] ")
         if resp != 'Y' and resp != 'y':
             return False
@@ -279,9 +280,9 @@ class BLE_Console_Client:
 
     def send_data(self, characteristic_uuid, data):
         print("BLECLI >> Write following data to characteristic with UUID '" + characteristic_uuid + "' :")
-        print("\t>> " + utils.str_to_hexstr(data))
-        print("BLECLI >> Enter data read from characteristic (in hex) :")
-        resp = input("\t<< ")
+        print('\t>> ' + utils.str_to_hexstr(data))
+        print('BLECLI >> Enter data read from characteristic (in hex) :')
+        resp = input('\t<< ')
         return utils.hexstr_to_str(resp)
 
 

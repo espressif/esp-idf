@@ -19,40 +19,42 @@
 #
 
 from __future__ import division, print_function
-from future.moves.itertools import zip_longest
-from builtins import int, range, bytes
-from io import open
-import sys
+
 import argparse
-import binascii
-import random
-import struct
-import os
 import array
-import zlib
+import binascii
 import codecs
 import datetime
 import distutils.dir_util
+import os
+import random
+import struct
+import sys
+import zlib
+from builtins import bytes, int, range
+from io import open
+
+from future.moves.itertools import zip_longest
 
 try:
-    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
     from cryptography.hazmat.backends import default_backend
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 except ImportError:
     print('The cryptography package is not installed.'
           'Please refer to the Get Started section of the ESP-IDF Programming Guide for '
           'setting up the required packages.')
     raise
 
-VERSION1_PRINT = "V1 - Multipage Blob Support Disabled"
-VERSION2_PRINT = "V2 - Multipage Blob Support Enabled"
+VERSION1_PRINT = 'V1 - Multipage Blob Support Disabled'
+VERSION2_PRINT = 'V2 - Multipage Blob Support Enabled'
 
 
 def reverse_hexbytes(addr_tmp):
     addr = []
-    reversed_bytes = ""
+    reversed_bytes = ''
     for i in range(0, len(addr_tmp), 2):
         addr.append(addr_tmp[i:i + 2])
-    reversed_bytes = "".join(reversed(addr))
+    reversed_bytes = ''.join(reversed(addr))
 
     return reversed_bytes
 
@@ -62,10 +64,10 @@ def reverse_hexbytes(addr_tmp):
 
 class Page(object):
     PAGE_PARAMS = {
-        "max_size": 4096,
-        "max_old_blob_size": 1984,
-        "max_new_blob_size": 4000,
-        "max_entries": 126
+        'max_size': 4096,
+        'max_old_blob_size': 1984,
+        'max_new_blob_size': 4000,
+        'max_entries': 126
     }
 
     # Item type codes
@@ -98,7 +100,7 @@ class Page(object):
         self.entry_num = 0
         self.bitmap_array = array.array('B')
         self.version = version
-        self.page_buf = bytearray(b'\xff') * Page.PAGE_PARAMS["max_size"]
+        self.page_buf = bytearray(b'\xff') * Page.PAGE_PARAMS['max_size']
         if not is_rsrv_page:
             self.bitmap_array = self.create_bitmap_array()
             self.set_header(page_num, version)
@@ -167,7 +169,7 @@ class Page(object):
         else:
             encr_key_input = codecs.decode(nvs_obj.encr_key, 'hex')
 
-        rel_addr = nvs_obj.page_num * Page.PAGE_PARAMS["max_size"] + Page.FIRST_ENTRY_OFFSET
+        rel_addr = nvs_obj.page_num * Page.PAGE_PARAMS['max_size'] + Page.FIRST_ENTRY_OFFSET
 
         if not isinstance(data_input, bytearray):
             byte_arr = bytearray(b'\xff') * 32
@@ -249,8 +251,8 @@ class Page(object):
             chunk_size = 0
 
             # Get the size available in current page
-            tailroom = (Page.PAGE_PARAMS["max_entries"] - self.entry_num - 1) * Page.SINGLE_ENTRY_SIZE
-            assert tailroom >= 0, "Page overflow!!"
+            tailroom = (Page.PAGE_PARAMS['max_entries'] - self.entry_num - 1) * Page.SINGLE_ENTRY_SIZE
+            assert tailroom >= 0, 'Page overflow!!'
 
             # Split the binary data into two and store a chunk of available size onto curr page
             if tailroom < remaining_size:
@@ -358,14 +360,14 @@ class Page(object):
         # Set size of data
         datalen = len(data)
 
-        if datalen > Page.PAGE_PARAMS["max_old_blob_size"]:
+        if datalen > Page.PAGE_PARAMS['max_old_blob_size']:
             if self.version == Page.VERSION1:
-                raise InputError(" Input File: Size (%d) exceeds max allowed length `%s` bytes for key `%s`."
-                                 % (datalen, Page.PAGE_PARAMS["max_old_blob_size"], key))
+                raise InputError(' Input File: Size (%d) exceeds max allowed length `%s` bytes for key `%s`.'
+                                 % (datalen, Page.PAGE_PARAMS['max_old_blob_size'], key))
             else:
-                if encoding == "string":
-                    raise InputError(" Input File: Size (%d) exceeds max allowed length `%s` bytes for key `%s`."
-                                     % (datalen, Page.PAGE_PARAMS["max_old_blob_size"], key))
+                if encoding == 'string':
+                    raise InputError(' Input File: Size (%d) exceeds max allowed length `%s` bytes for key `%s`.'
+                                     % (datalen, Page.PAGE_PARAMS['max_old_blob_size'], key))
 
         # Calculate no. of entries data will require
         rounded_size = (datalen + 31) & ~31
@@ -373,10 +375,10 @@ class Page(object):
         total_entry_count = data_entry_count + 1  # +1 for the entry header
 
         # Check if page is already full and new page is needed to be created right away
-        if self.entry_num >= Page.PAGE_PARAMS["max_entries"]:
+        if self.entry_num >= Page.PAGE_PARAMS['max_entries']:
             raise PageFullError()
-        elif (self.entry_num + total_entry_count) >= Page.PAGE_PARAMS["max_entries"]:
-            if not (self.version == Page.VERSION2 and encoding in ["hex2bin", "binary", "base64"]):
+        elif (self.entry_num + total_entry_count) >= Page.PAGE_PARAMS['max_entries']:
+            if not (self.version == Page.VERSION2 and encoding in ['hex2bin', 'binary', 'base64']):
                 raise PageFullError()
 
         # Entry header
@@ -385,7 +387,7 @@ class Page(object):
         entry_struct[0] = ns_index
         # Set Span
         if self.version == Page.VERSION2:
-            if encoding == "string":
+            if encoding == 'string':
                 entry_struct[2] = data_entry_count + 1
             # Set Chunk Index
             chunk_index = Page.CHUNK_ANY
@@ -399,12 +401,12 @@ class Page(object):
         entry_struct[8:8 + len(key)] = key.encode()
 
         # set Type
-        if encoding == "string":
+        if encoding == 'string':
             entry_struct[1] = Page.SZ
-        elif encoding in ["hex2bin", "binary", "base64"]:
+        elif encoding in ['hex2bin', 'binary', 'base64']:
             entry_struct[1] = Page.BLOB
 
-        if self.version == Page.VERSION2 and (encoding in ["hex2bin", "binary", "base64"]):
+        if self.version == Page.VERSION2 and (encoding in ['hex2bin', 'binary', 'base64']):
             entry_struct = self.write_varlen_binary_data(entry_struct,ns_index,key,data,
                                                          datalen,total_entry_count, encoding, nvs_obj)
         else:
@@ -413,7 +415,7 @@ class Page(object):
     """ Low-level function to write data of primitive type into page buffer. """
     def write_primitive_data(self, key, data, encoding, ns_index,nvs_obj):
         # Check if entry exceeds max number of entries allowed per page
-        if self.entry_num >= Page.PAGE_PARAMS["max_entries"]:
+        if self.entry_num >= Page.PAGE_PARAMS['max_entries']:
             raise PageFullError()
 
         entry_struct = bytearray(b'\xff') * 32
@@ -427,28 +429,28 @@ class Page(object):
         entry_struct[8:24] = key_array
         entry_struct[8:8 + len(key)] = key.encode()
 
-        if encoding == "u8":
+        if encoding == 'u8':
             entry_struct[1] = Page.U8
             struct.pack_into('<B', entry_struct, 24, data)
-        elif encoding == "i8":
+        elif encoding == 'i8':
             entry_struct[1] = Page.I8
             struct.pack_into('<b', entry_struct, 24, data)
-        elif encoding == "u16":
+        elif encoding == 'u16':
             entry_struct[1] = Page.U16
             struct.pack_into('<H', entry_struct, 24, data)
-        elif encoding == "i16":
+        elif encoding == 'i16':
             entry_struct[1] = Page.I16
             struct.pack_into('<h', entry_struct, 24, data)
-        elif encoding == "u32":
+        elif encoding == 'u32':
             entry_struct[1] = Page.U32
             struct.pack_into('<I', entry_struct, 24, data)
-        elif encoding == "i32":
+        elif encoding == 'i32':
             entry_struct[1] = Page.I32
             struct.pack_into('<i', entry_struct, 24, data)
-        elif encoding == "u64":
+        elif encoding == 'u64':
             entry_struct[1] = Page.U64
             struct.pack_into('<Q', entry_struct, 24, data)
-        elif encoding == "i64":
+        elif encoding == 'i64':
             entry_struct[1] = Page.I64
             struct.pack_into('<q', entry_struct, 24, data)
 
@@ -516,9 +518,9 @@ class NVS(object):
         version = self.version
         # Update available size as each page is created
         if self.size == 0:
-            raise InsufficientSizeError("Error: Size parameter is less than the size of data in csv.Please increase size.")
+            raise InsufficientSizeError('Error: Size parameter is less than the size of data in csv.Please increase size.')
         if not is_rsrv_page:
-            self.size = self.size - Page.PAGE_PARAMS["max_size"]
+            self.size = self.size - Page.PAGE_PARAMS['max_size']
         self.page_num += 1
         # Set version for each page and page header
         new_page = Page(self.page_num, version, is_rsrv_page)
@@ -533,10 +535,10 @@ class NVS(object):
     def write_namespace(self, key):
         self.namespace_idx += 1
         try:
-            self.cur_page.write_primitive_data(key, self.namespace_idx, "u8", 0,self)
+            self.cur_page.write_primitive_data(key, self.namespace_idx, 'u8', 0,self)
         except PageFullError:
             new_page = self.create_new_page()
-            new_page.write_primitive_data(key, self.namespace_idx, "u8", 0,self)
+            new_page.write_primitive_data(key, self.namespace_idx, 'u8', 0,self)
 
     """
     Write key-value pair. Function accepts value in the form of ascii character and converts
@@ -545,23 +547,23 @@ class NVS(object):
     We don't have to guard re-invocation with try-except since no entry can span multiple pages.
     """
     def write_entry(self, key, value, encoding):
-        if encoding == "hex2bin":
+        if encoding == 'hex2bin':
             value = value.strip()
             if len(value) % 2 != 0:
-                raise InputError("%s: Invalid data length. Should be multiple of 2." % key)
+                raise InputError('%s: Invalid data length. Should be multiple of 2.' % key)
             value = binascii.a2b_hex(value)
 
-        if encoding == "base64":
+        if encoding == 'base64':
             value = binascii.a2b_base64(value)
 
-        if encoding == "string":
+        if encoding == 'string':
             if type(value) == bytes:
                 value = value.decode()
             value += '\0'
 
         encoding = encoding.lower()
-        varlen_encodings = ["string", "binary", "hex2bin", "base64"]
-        primitive_encodings = ["u8", "i8", "u16", "i16", "u32", "i32", "u64", "i64"]
+        varlen_encodings = ['string', 'binary', 'hex2bin', 'base64']
+        primitive_encodings = ['u8', 'i8', 'u16', 'i16', 'u32', 'i32', 'u64', 'i64']
 
         if encoding in varlen_encodings:
             try:
@@ -576,7 +578,7 @@ class NVS(object):
                 new_page = self.create_new_page()
                 new_page.write_primitive_data(key, int(value), encoding, self.namespace_idx,self)
         else:
-            raise InputError("%s: Unsupported encoding" % encoding)
+            raise InputError('%s: Unsupported encoding' % encoding)
 
     """ Return accumulated data of all pages """
     def get_binary_data(self):
@@ -600,7 +602,7 @@ class InputError(RuntimeError):
     Represents error on the input
     """
     def __init__(self, e):
-        print("\nError:")
+        print('\nError:')
         super(InputError, self).__init__(e)
 
 
@@ -634,7 +636,7 @@ def write_entry(nvs_instance, key, datatype, encoding, value):
     :return: None
     """
 
-    if datatype == "file":
+    if datatype == 'file':
         abs_file_path = value
         if os.path.isabs(value) is False:
             script_dir = os.getcwd()
@@ -643,7 +645,7 @@ def write_entry(nvs_instance, key, datatype, encoding, value):
         with open(abs_file_path, 'rb') as f:
             value = f.read()
 
-    if datatype == "namespace":
+    if datatype == 'namespace':
         nvs_instance.write_namespace(key)
     else:
         nvs_instance.write_entry(key, value, encoding)
@@ -667,13 +669,13 @@ def check_size(size):
         # Set size
         input_size = int(size, 0)
         if input_size % 4096 != 0:
-            sys.exit("Size of partition must be multiple of 4096")
+            sys.exit('Size of partition must be multiple of 4096')
 
         # Update size as a page needs to be reserved of size 4KB
-        input_size = input_size - Page.PAGE_PARAMS["max_size"]
+        input_size = input_size - Page.PAGE_PARAMS['max_size']
 
-        if input_size < (2 * Page.PAGE_PARAMS["max_size"]):
-            sys.exit("Minimum NVS partition size needed is 0x3000 bytes.")
+        if input_size < (2 * Page.PAGE_PARAMS['max_size']):
+            sys.exit('Minimum NVS partition size needed is 0x3000 bytes.')
         return input_size
     except Exception as e:
         print(e)
@@ -708,7 +710,7 @@ def set_target_filepath(outdir, filepath):
 
     if os.path.isabs(filepath):
         if not outdir == os.getcwd():
-            print("\nWarning: `%s` \n\t==> absolute path given so outdir is ignored for this file." % filepath)
+            print('\nWarning: `%s` \n\t==> absolute path given so outdir is ignored for this file.' % filepath)
         # Set to empty as outdir is ignored here
         outdir = ''
 
@@ -728,11 +730,11 @@ def encrypt(args):
 
     check_size(args.size)
     if (args.keygen is False) and (not args.inputkey):
-        sys.exit("Error. --keygen or --inputkey argument needed.")
+        sys.exit('Error. --keygen or --inputkey argument needed.')
     elif args.keygen and args.inputkey:
-        sys.exit("Error. --keygen and --inputkey both are not allowed.")
+        sys.exit('Error. --keygen and --inputkey both are not allowed.')
     elif not args.keygen and args.keyfile:
-        print("\nWarning:","--inputkey argument is given. --keyfile argument will be ignored...")
+        print('\nWarning:','--inputkey argument is given. --keyfile argument will be ignored...')
 
     if args.inputkey:
         # Check if key file has .bin extension
@@ -835,7 +837,7 @@ def decrypt(args):
             start_entry_offset += nvs_read_bytes
         output_file.write(output_buf)
 
-    print("\nCreated NVS decrypted binary: ===>", args.output)
+    print('\nCreated NVS decrypted binary: ===>', args.output)
 
 
 def generate_key(args):
@@ -850,7 +852,7 @@ def generate_key(args):
 
     if not args.keyfile:
         timestamp = datetime.datetime.now().strftime('%m-%d_%H-%M')
-        args.keyfile = "keys-" + timestamp + bin_ext
+        args.keyfile = 'keys-' + timestamp + bin_ext
 
     keys_outdir = os.path.join(args.outdir,keys_dir, '')
     # Create keys/ dir in <outdir> if does not exist
@@ -872,7 +874,7 @@ def generate_key(args):
     with open(output_keyfile, 'wb') as output_keys_file:
         output_keys_file.write(keys_buf)
 
-    print("\nCreated encryption keys: ===> ", output_keyfile)
+    print('\nCreated encryption keys: ===> ', output_keyfile)
 
     return key
 
@@ -914,7 +916,7 @@ def generate(args, is_encr_enabled=False, encr_key=None):
         else:
             version_set = VERSION2_PRINT
 
-        print("\nCreating NVS binary with version:", version_set)
+        print('\nCreating NVS binary with version:', version_set)
 
         line = input_file.readline().strip()
 
@@ -939,25 +941,25 @@ def generate(args, is_encr_enabled=False, encr_key=None):
 
             try:
                 # Check key length
-                if len(data["key"]) > 15:
-                    raise InputError("Length of key `{}` should be <= 15 characters.".format(data["key"]))
-                write_entry(nvs_obj, data["key"], data["type"], data["encoding"], data["value"])
+                if len(data['key']) > 15:
+                    raise InputError('Length of key `{}` should be <= 15 characters.'.format(data['key']))
+                write_entry(nvs_obj, data['key'], data['type'], data['encoding'], data['value'])
             except InputError as e:
                 print(e)
                 filedir, filename = os.path.split(args.output)
                 if filename:
-                    print("\nWarning: NVS binary not created...")
+                    print('\nWarning: NVS binary not created...')
                     os.remove(args.output)
                 if is_dir_new and not filedir == os.getcwd():
-                        print("\nWarning: Output dir not created...")
+                        print('\nWarning: Output dir not created...')
                         os.rmdir(filedir)
                 sys.exit(-2)
 
-    print("\nCreated NVS binary: ===>", args.output)
+    print('\nCreated NVS binary: ===>', args.output)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="\nESP NVS partition generation utility", formatter_class=argparse.RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(description='\nESP NVS partition generation utility', formatter_class=argparse.RawTextHelpFormatter)
     subparser = parser.add_subparsers(title='Commands',
                                       dest='command',
                                       help='\nRun nvs_partition_gen.py {command} -h for additional help\n\n')
@@ -1022,7 +1024,7 @@ def main():
                              \nVersion 2 - Multipage blob support enabled.\
                              \nDefault: Version 2''')
     parser_encr.add_argument('--keygen',
-                             action="store_true",
+                             action='store_true',
                              default=False,
                              help='Generates key for encrypting NVS partition')
     parser_encr.add_argument('--keyfile',
@@ -1057,5 +1059,5 @@ def main():
     args.func(args)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

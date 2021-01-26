@@ -2,20 +2,21 @@
 # source: sec1.proto
 
 import sys
+
 _b=sys.version_info[0]<3 and (lambda x:x) or (lambda x:x.encode('latin1'))
-from google.protobuf.internal import enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
+from google.protobuf import descriptor_pb2
 from google.protobuf import message as _message
 from google.protobuf import reflection as _reflection
 from google.protobuf import symbol_database as _symbol_database
-from google.protobuf import descriptor_pb2
+from google.protobuf.internal import enum_type_wrapper
+
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
 
 
 import constants_pb2 as constants__pb2
-
 
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='sec1.proto',
@@ -73,7 +74,7 @@ _SESSIONCMD1 = _descriptor.Descriptor(
     _descriptor.FieldDescriptor(
       name='client_verify_data', full_name='SessionCmd1.client_verify_data', index=0,
       number=2, type=12, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b(""),
+      has_default_value=False, default_value=_b(''),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
@@ -111,7 +112,7 @@ _SESSIONRESP1 = _descriptor.Descriptor(
     _descriptor.FieldDescriptor(
       name='device_verify_data', full_name='SessionResp1.device_verify_data', index=1,
       number=3, type=12, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b(""),
+      has_default_value=False, default_value=_b(''),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
@@ -142,7 +143,7 @@ _SESSIONCMD0 = _descriptor.Descriptor(
     _descriptor.FieldDescriptor(
       name='client_pubkey', full_name='SessionCmd0.client_pubkey', index=0,
       number=1, type=12, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b(""),
+      has_default_value=False, default_value=_b(''),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
@@ -180,14 +181,14 @@ _SESSIONRESP0 = _descriptor.Descriptor(
     _descriptor.FieldDescriptor(
       name='device_pubkey', full_name='SessionResp0.device_pubkey', index=1,
       number=2, type=12, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b(""),
+      has_default_value=False, default_value=_b(''),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='device_random', full_name='SessionResp0.device_random', index=2,
       number=3, type=12, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b(""),
+      has_default_value=False, default_value=_b(''),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),

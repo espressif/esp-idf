@@ -4,7 +4,7 @@ from __future__ import print_function
 import ttfw_idf
 
 # TWAI Self Test Example constants
-STR_EXPECT = ("TWAI Alert and Recovery: Driver installed", "TWAI Alert and Recovery: Driver uninstalled")
+STR_EXPECT = ('TWAI Alert and Recovery: Driver installed', 'TWAI Alert and Recovery: Driver uninstalled')
 EXPECT_TIMEOUT = 20
 
 

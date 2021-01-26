@@ -17,15 +17,15 @@
 # limitations under the License.
 #
 
-import os
-import re
-import os.path
-import urllib.request
-import urllib.error
-import concurrent.futures
 import argparse
+import concurrent.futures
+import os
+import os.path
+import re
+import urllib.error
+import urllib.request
+from collections import defaultdict, namedtuple
 from pathlib import Path
-from collections import namedtuple, defaultdict
 
 EXCLUDE_DOCS_LIST = ['examples/peripherals/secure_element/atecc608_ecdsa/components/esp-cryptoauthlib/cryptoauthlib/**']
 
@@ -43,7 +43,7 @@ class ReadmeLinkError(Exception):
 
 class RelativeLinkError(ReadmeLinkError):
     def __str__(self):
-        return "Relative link error, file - {} not found, linked from {}".format(self.url, self.file)
+        return 'Relative link error, file - {} not found, linked from {}'.format(self.url, self.file)
 
 
 class UrlLinkError(ReadmeLinkError):
@@ -53,7 +53,7 @@ class UrlLinkError(ReadmeLinkError):
 
     def __str__(self):
         files = [str(f) for f in self.file]
-        return "URL error, url - {} in files - {} is not accessible, request returned {}".format(self.url, ", ".join(files), self.error_code)
+        return 'URL error, url - {} in files - {} is not accessible, request returned {}'.format(self.url, ', '.join(files), self.error_code)
 
 
 # we do not want a failed test just due to bad network conditions, for non 404 errors we simply print a warning
@@ -65,9 +65,9 @@ def check_url(url, files, timeout):
         if e.code == 404:
             raise UrlLinkError(files, url, str(e))
         else:
-            print("Unable to access {}, err = {}".format(url, str(e)))
+            print('Unable to access {}, err = {}'.format(url, str(e)))
     except Exception as e:
-        print("Unable to access {}, err = {}".format(url, str(e)))
+        print('Unable to access {}, err = {}'.format(url, str(e)))
 
 
 def check_web_links(web_links):
@@ -93,19 +93,19 @@ def check_file_links(file_links):
         if not Path.exists(link_path):
             errors.append(RelativeLinkError(link.file, link.url))
 
-    print("Found {} errors with relative links".format(len(errors)))
+    print('Found {} errors with relative links'.format(len(errors)))
     return errors
 
 
 def get_md_links(folder):
-    MD_LINK_RE = r"\[.+?\]\((.+?)(#.+)?\)"
+    MD_LINK_RE = r'\[.+?\]\((.+?)(#.+)?\)'
 
     idf_path = Path(os.getenv('IDF_PATH'))
     links = []
 
     for path in (idf_path / folder).rglob('*.md'):
         if any([path.relative_to(idf_path).match(exclude_doc) for exclude_doc in EXCLUDE_DOCS_LIST]):
-            print("{} - excluded".format(path))
+            print('{} - excluded'.format(path))
             continue
 
         with path.open(encoding='utf8') as f:
@@ -123,7 +123,7 @@ def get_md_links(folder):
 def check_readme_links(args):
 
     links = get_md_links('examples')
-    print("Found {} links".format(len(links)))
+    print('Found {} links'.format(len(links)))
 
     errors = []
 
@@ -145,7 +145,7 @@ def check_readme_links(args):
     if not args.skip_weburl:
         errors.extend(check_web_links(web_links))
 
-    print("Found {} errors:".format(len(errors)))
+    print('Found {} errors:'.format(len(errors)))
     for e in errors:
         print(e)
     if errors:
@@ -155,7 +155,7 @@ def check_readme_links(args):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='check_readme_links.py: Checks for dead links in example READMEs', prog='check_readme_links.py')
-    parser.add_argument("--skip-weburl", "-w", action='store_true', help="Skip checking of web URLs, only check links to local files")
+    parser.add_argument('--skip-weburl', '-w', action='store_true', help='Skip checking of web URLs, only check links to local files')
     args = parser.parse_args()
 
     check_readme_links(args)

@@ -15,21 +15,22 @@
 # limitations under the License.
 
 from __future__ import print_function
+
 import os
 import re
-import uuid
 import subprocess
+import uuid
 
-from tiny_test_fw import Utility
 import ttfw_idf
 from ble import lib_ble_client
+from tiny_test_fw import Utility
 
 # When running on local machine execute the following before running this script
 # > make app bootloader
 # > make print_flash_cmd | tail -n 1 > build/download.config
 
 
-@ttfw_idf.idf_example_test(env_tag="Example_WIFI_BT")
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_BT')
 def test_example_app_ble_central(env, extra_data):
     """
         Steps:
@@ -37,7 +38,7 @@ def test_example_app_ble_central(env, extra_data):
     """
 
     interface = 'hci0'
-    adv_host_name = "BleCentTestApp"
+    adv_host_name = 'BleCentTestApp'
     adv_iface_index = 0
     adv_type = 'peripheral'
     adv_uuid = '1811'
@@ -45,15 +46,15 @@ def test_example_app_ble_central(env, extra_data):
     subprocess.check_output(['rm','-rf','/var/lib/bluetooth/*'])
     subprocess.check_output(['hciconfig','hci0','reset'])
     # Acquire DUT
-    dut = env.get_dut("blecent", "examples/bluetooth/nimble/blecent", dut_class=ttfw_idf.ESP32DUT)
+    dut = env.get_dut('blecent', 'examples/bluetooth/nimble/blecent', dut_class=ttfw_idf.ESP32DUT)
 
     # Get binary file
-    binary_file = os.path.join(dut.app.binary_path, "blecent.bin")
+    binary_file = os.path.join(dut.app.binary_path, 'blecent.bin')
     bin_size = os.path.getsize(binary_file)
-    ttfw_idf.log_performance("blecent_bin_size", "{}KB".format(bin_size // 1024))
+    ttfw_idf.log_performance('blecent_bin_size', '{}KB'.format(bin_size // 1024))
 
     # Upload binary and start testing
-    Utility.console_log("Starting blecent example test app")
+    Utility.console_log('Starting blecent example test app')
     dut.start_app()
     dut.reset()
 
@@ -62,16 +63,16 @@ def test_example_app_ble_central(env, extra_data):
     # Get BLE client module
     ble_client_obj = lib_ble_client.BLE_Bluez_Client(interface)
     if not ble_client_obj:
-        raise RuntimeError("Get DBus-Bluez object failed !!")
+        raise RuntimeError('Get DBus-Bluez object failed !!')
 
     # Discover Bluetooth Adapter and power on
     is_adapter_set = ble_client_obj.set_adapter()
     if not is_adapter_set:
-        raise RuntimeError("Adapter Power On failed !!")
+        raise RuntimeError('Adapter Power On failed !!')
 
     # Write device address to dut
-    dut.expect("BLE Host Task Started", timeout=60)
-    dut.write(device_addr + "\n")
+    dut.expect('BLE Host Task Started', timeout=60)
+    dut.write(device_addr + '\n')
 
     '''
     Blecent application run:
@@ -87,22 +88,22 @@ def test_example_app_ble_central(env, extra_data):
     ble_client_obj.disconnect()
 
     # Check dut responses
-    dut.expect("Connection established", timeout=60)
+    dut.expect('Connection established', timeout=60)
 
-    dut.expect("Service discovery complete; status=0", timeout=60)
-    print("Service discovery passed\n\tService Discovery Status: 0")
+    dut.expect('Service discovery complete; status=0', timeout=60)
+    print('Service discovery passed\n\tService Discovery Status: 0')
 
-    dut.expect("GATT procedure initiated: read;", timeout=60)
-    dut.expect("Read complete; status=0", timeout=60)
-    print("Read passed\n\tSupportedNewAlertCategoryCharacteristic\n\tRead Status: 0")
+    dut.expect('GATT procedure initiated: read;', timeout=60)
+    dut.expect('Read complete; status=0', timeout=60)
+    print('Read passed\n\tSupportedNewAlertCategoryCharacteristic\n\tRead Status: 0')
 
-    dut.expect("GATT procedure initiated: write;", timeout=60)
-    dut.expect("Write complete; status=0", timeout=60)
-    print("Write passed\n\tAlertNotificationControlPointCharacteristic\n\tWrite Status: 0")
+    dut.expect('GATT procedure initiated: write;', timeout=60)
+    dut.expect('Write complete; status=0', timeout=60)
+    print('Write passed\n\tAlertNotificationControlPointCharacteristic\n\tWrite Status: 0')
 
-    dut.expect("GATT procedure initiated: write;", timeout=60)
-    dut.expect("Subscribe complete; status=0", timeout=60)
-    print("Subscribe passed\n\tClientCharacteristicConfigurationDescriptor\n\tSubscribe Status: 0")
+    dut.expect('GATT procedure initiated: write;', timeout=60)
+    dut.expect('Subscribe complete; status=0', timeout=60)
+    print('Subscribe passed\n\tClientCharacteristicConfigurationDescriptor\n\tSubscribe Status: 0')
 
 
 if __name__ == '__main__':

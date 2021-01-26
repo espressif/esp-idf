@@ -3,7 +3,7 @@ from __future__ import print_function
 import ttfw_idf
 
 STATS_TASK_ITERS = 3
-STATS_TASK_EXPECT = "Real time stats obtained"
+STATS_TASK_EXPECT = 'Real time stats obtained'
 
 
 @ttfw_idf.idf_example_test(env_tag='Example_GENERIC')

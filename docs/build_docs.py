@@ -24,31 +24,33 @@
 # limitations under the License.
 #
 from __future__ import print_function
+
 import argparse
 import locale
 import math
 import multiprocessing
 import os
 import os.path
+import re
 import subprocess
 import sys
-import re
-from packaging import version
 from collections import namedtuple
 
-LANGUAGES = ["en", "zh_CN"]
-TARGETS = ["esp32", "esp32s2"]
+from packaging import version
 
-SPHINX_WARN_LOG = "sphinx-warning-log.txt"
-SPHINX_SANITIZED_LOG = "sphinx-warning-log-sanitized.txt"
-SPHINX_KNOWN_WARNINGS = os.path.join(os.environ["IDF_PATH"], "docs", "sphinx-known-warnings.txt")
+LANGUAGES = ['en', 'zh_CN']
+TARGETS = ['esp32', 'esp32s2']
 
-DXG_WARN_LOG = "doxygen-warning-log.txt"
-DXG_SANITIZED_LOG = "doxygen-warning-log-sanitized.txt"
-DXG_KNOWN_WARNINGS = os.path.join(os.environ["IDF_PATH"], "docs", "doxygen-known-warnings.txt")
+SPHINX_WARN_LOG = 'sphinx-warning-log.txt'
+SPHINX_SANITIZED_LOG = 'sphinx-warning-log-sanitized.txt'
+SPHINX_KNOWN_WARNINGS = os.path.join(os.environ['IDF_PATH'], 'docs', 'sphinx-known-warnings.txt')
+
+DXG_WARN_LOG = 'doxygen-warning-log.txt'
+DXG_SANITIZED_LOG = 'doxygen-warning-log-sanitized.txt'
+DXG_KNOWN_WARNINGS = os.path.join(os.environ['IDF_PATH'], 'docs', 'doxygen-known-warnings.txt')
 DXG_CI_VERSION = version.parse('1.8.11')
 
-LogMessage = namedtuple("LogMessage", "original_text sanitized_text")
+LogMessage = namedtuple('LogMessage', 'original_text sanitized_text')
 
 languages = LANGUAGES
 targets = TARGETS
@@ -58,11 +60,11 @@ def main():
     # check Python dependencies for docs
     try:
         subprocess.check_call([sys.executable,
-                               os.path.join(os.environ["IDF_PATH"],
-                                            "tools",
-                                            "check_python_dependencies.py"),
-                               "-r",
-                               "{}/docs/requirements.txt".format(os.environ["IDF_PATH"])
+                               os.path.join(os.environ['IDF_PATH'],
+                                            'tools',
+                                            'check_python_dependencies.py'),
+                               '-r',
+                               '{}/docs/requirements.txt'.format(os.environ['IDF_PATH'])
                                ])
     except subprocess.CalledProcessError:
         raise SystemExit(2)  # stdout will already have these errors
@@ -73,31 +75,31 @@ def main():
     # type not the str type.
     if ('UTF-8' not in locale.getlocale()) and ('utf8' not in locale.getlocale()):
         raise RuntimeError("build_docs.py requires the default locale's encoding to be UTF-8.\n" +
-                           " - Linux. Setting environment variable LC_ALL=C.UTF-8 when running build_docs.py may be " +
-                           "enough to fix this.\n"
-                           " - Windows. Possible solution for the Windows 10 starting version 1803. Go to " +
-                           "Control Panel->Clock and Region->Region->Administrative->Change system locale...; " +
-                           "Check `Beta: Use Unicode UTF-8 for worldwide language support` and reboot")
+                           ' - Linux. Setting environment variable LC_ALL=C.UTF-8 when running build_docs.py may be ' +
+                           'enough to fix this.\n'
+                           ' - Windows. Possible solution for the Windows 10 starting version 1803. Go to ' +
+                           'Control Panel->Clock and Region->Region->Administrative->Change system locale...; ' +
+                           'Check `Beta: Use Unicode UTF-8 for worldwide language support` and reboot')
 
     parser = argparse.ArgumentParser(description='build_docs.py: Build IDF docs', prog='build_docs.py')
 
-    parser.add_argument("--language", "-l", choices=LANGUAGES, required=False)
-    parser.add_argument("--target", "-t", choices=TARGETS, required=False)
-    parser.add_argument("--build-dir", "-b", type=str, default="_build")
-    parser.add_argument("--source-dir", "-s", type=str, default="")
-    parser.add_argument("--builders", "-bs", nargs='+', type=str, default=["html"],
-                        help="List of builders for Sphinx, e.g. html or latex, for latex a PDF is also generated")
-    parser.add_argument("--sphinx-parallel-builds", "-p", choices=["auto"] + [str(x) for x in range(8)],
-                        help="Parallel Sphinx builds - number of independent Sphinx builds to run", default="auto")
-    parser.add_argument("--sphinx-parallel-jobs", "-j", choices=["auto"] + [str(x) for x in range(8)],
-                        help="Sphinx parallel jobs argument - number of threads for each Sphinx build to use", default="1")
-    parser.add_argument("--input-docs", "-i", nargs='+', default=[""],
-                        help="List of documents to build relative to the doc base folder, i.e. the language folder. Defaults to all documents")
+    parser.add_argument('--language', '-l', choices=LANGUAGES, required=False)
+    parser.add_argument('--target', '-t', choices=TARGETS, required=False)
+    parser.add_argument('--build-dir', '-b', type=str, default='_build')
+    parser.add_argument('--source-dir', '-s', type=str, default='')
+    parser.add_argument('--builders', '-bs', nargs='+', type=str, default=['html'],
+                        help='List of builders for Sphinx, e.g. html or latex, for latex a PDF is also generated')
+    parser.add_argument('--sphinx-parallel-builds', '-p', choices=['auto'] + [str(x) for x in range(8)],
+                        help='Parallel Sphinx builds - number of independent Sphinx builds to run', default='auto')
+    parser.add_argument('--sphinx-parallel-jobs', '-j', choices=['auto'] + [str(x) for x in range(8)],
+                        help='Sphinx parallel jobs argument - number of threads for each Sphinx build to use', default='1')
+    parser.add_argument('--input-docs', '-i', nargs='+', default=[''],
+                        help='List of documents to build relative to the doc base folder, i.e. the language folder. Defaults to all documents')
 
     action_parsers = parser.add_subparsers(dest='action')
 
     build_parser = action_parsers.add_parser('build', help='Build documentation')
-    build_parser.add_argument("--check-warnings-only", "-w", action='store_true')
+    build_parser.add_argument('--check-warnings-only', '-w', action='store_true')
 
     action_parsers.add_parser('linkcheck', help='Check links (a current IDF revision should be uploaded to GitHub)')
 
@@ -107,27 +109,27 @@ def main():
 
     global languages
     if args.language is None:
-        print("Building all languages")
+        print('Building all languages')
         languages = LANGUAGES
     else:
         languages = [args.language]
 
     global targets
     if args.target is None:
-        print("Building all targets")
+        print('Building all targets')
         targets = TARGETS
     else:
         targets = [args.target]
 
-    if args.action == "build" or args.action is None:
+    if args.action == 'build' or args.action is None:
         if args.action is None:
             args.check_warnings_only = False
         sys.exit(action_build(args))
 
-    if args.action == "linkcheck":
+    if args.action == 'linkcheck':
         sys.exit(action_linkcheck(args))
 
-    if args.action == "gh-linkcheck":
+    if args.action == 'gh-linkcheck':
         sys.exit(action_gh_linkcheck(args))
 
 
@@ -135,7 +137,7 @@ def parallel_call(args, callback):
     num_sphinx_builds = len(languages) * len(targets)
     num_cpus = multiprocessing.cpu_count()
 
-    if args.sphinx_parallel_builds == "auto":
+    if args.sphinx_parallel_builds == 'auto':
         # at most one sphinx build per CPU, up to the number of CPUs
         args.sphinx_parallel_builds = min(num_sphinx_builds, num_cpus)
     else:
@@ -143,17 +145,17 @@ def parallel_call(args, callback):
 
     # Force -j1 because sphinx works incorrectly
     args.sphinx_parallel_jobs = 1
-    if args.sphinx_parallel_jobs == "auto":
+    if args.sphinx_parallel_jobs == 'auto':
         # N CPUs per build job, rounded up - (maybe smarter to round down to avoid contention, idk)
         args.sphinx_parallel_jobs = int(math.ceil(num_cpus / args.sphinx_parallel_builds))
     else:
         args.sphinx_parallel_jobs = int(args.sphinx_parallel_jobs)
 
-    print("Will use %d parallel builds and %d jobs per build" % (args.sphinx_parallel_builds, args.sphinx_parallel_jobs))
+    print('Will use %d parallel builds and %d jobs per build' % (args.sphinx_parallel_builds, args.sphinx_parallel_jobs))
     pool = multiprocessing.Pool(args.sphinx_parallel_builds)
 
     if args.sphinx_parallel_jobs > 1:
-        print("WARNING: Sphinx parallel jobs currently produce incorrect docs output with Sphinx 1.8.5")
+        print('WARNING: Sphinx parallel jobs currently produce incorrect docs output with Sphinx 1.8.5')
 
     # make a list of all combinations of build_docs() args as tuples
     #
@@ -173,13 +175,13 @@ def parallel_call(args, callback):
     is_error = False
     for ret in errcodes:
         if ret != 0:
-            print("\nThe following language/target combinations failed to build:")
+            print('\nThe following language/target combinations failed to build:')
             is_error = True
             break
     if is_error:
         for ret, entry in zip(errcodes, entries):
             if ret != 0:
-                print("language: %s, target: %s, errcode: %d" % (entry[0], entry[1], ret))
+                print('language: %s, target: %s, errcode: %d' % (entry[0], entry[1], ret))
         # Don't re-throw real error code from each parallel process
         return 1
     else:
@@ -193,9 +195,9 @@ def sphinx_call(language, target, build_dir, src_dir, sphinx_parallel_jobs, buil
     # wrap stdout & stderr in a way that lets us see which build_docs instance they come from
     #
     # this doesn't apply to subprocesses, they write to OS stdout & stderr so no prefix appears
-    prefix = "%s/%s: " % (language, target)
+    prefix = '%s/%s: ' % (language, target)
 
-    print("Building in build_dir: %s" % (build_dir))
+    print('Building in build_dir: %s' % (build_dir))
     try:
         os.makedirs(build_dir)
     except OSError:
@@ -205,21 +207,21 @@ def sphinx_call(language, target, build_dir, src_dir, sphinx_parallel_jobs, buil
     environ.update(os.environ)
     environ['BUILDDIR'] = build_dir
 
-    args = [sys.executable, "-u", "-m", "sphinx.cmd.build",
-            "-j", str(sphinx_parallel_jobs),
-            "-b", buildername,
-            "-d", os.path.join(build_dir, "doctrees"),
-            "-w", SPHINX_WARN_LOG,
-            "-t", target,
-            "-D", "idf_target={}".format(target),
-            "-D", "docs_to_build={}".format(",". join(input_docs)),
+    args = [sys.executable, '-u', '-m', 'sphinx.cmd.build',
+            '-j', str(sphinx_parallel_jobs),
+            '-b', buildername,
+            '-d', os.path.join(build_dir, 'doctrees'),
+            '-w', SPHINX_WARN_LOG,
+            '-t', target,
+            '-D', 'idf_target={}'.format(target),
+            '-D', 'docs_to_build={}'.format(','. join(input_docs)),
             src_dir,
             os.path.join(build_dir, buildername)                    # build directory
             ]
 
     saved_cwd = os.getcwd()
     os.chdir(build_dir)  # also run sphinx in the build directory
-    print("Running '%s'" % (" ".join(args)))
+    print("Running '%s'" % (' '.join(args)))
 
     ret = 1
     try:
@@ -282,7 +284,7 @@ def call_build_docs(entry):
 
     # Build PDF from tex
     if 'latex' in builders:
-        latex_dir = os.path.join(build_dir, "latex")
+        latex_dir = os.path.join(build_dir, 'latex')
         ret = build_pdf(language, target, latex_dir)
 
     return ret
@@ -294,9 +296,9 @@ def build_pdf(language, target, latex_dir):
     # wrap stdout & stderr in a way that lets us see which build_docs instance they come from
     #
     # this doesn't apply to subprocesses, they write to OS stdout & stderr so no prefix appears
-    prefix = "%s/%s: " % (language, target)
+    prefix = '%s/%s: ' % (language, target)
 
-    print("Building PDF in latex_dir: %s" % (latex_dir))
+    print('Building PDF in latex_dir: %s' % (latex_dir))
 
     saved_cwd = os.getcwd()
     os.chdir(latex_dir)
@@ -337,8 +339,8 @@ def build_pdf(language, target, latex_dir):
     return ret
 
 
-SANITIZE_FILENAME_REGEX = re.compile("[^:]*/([^/:]*)(:.*)")
-SANITIZE_LINENUM_REGEX = re.compile("([^:]*)(:[0-9]+:)(.*)")
+SANITIZE_FILENAME_REGEX = re.compile('[^:]*/([^/:]*)(:.*)')
+SANITIZE_LINENUM_REGEX = re.compile('([^:]*)(:[0-9]+:)(.*)')
 
 
 def sanitize_line(line):
@@ -376,12 +378,12 @@ def check_docs(language, target, log_file, known_warnings_file, out_sanitized_lo
         for known_line in k:
             known_messages.append(known_line)
 
-    if "doxygen" in known_warnings_file:
+    if 'doxygen' in known_warnings_file:
         # Clean a known Doxygen limitation: it's expected to always document anonymous
         # structs/unions but we don't do this in our docs, so filter these all out with a regex
         # (this won't match any named field, only anonymous members -
         # ie the last part of the field is is just <something>::@NUM not <something>::name)
-        RE_ANONYMOUS_FIELD = re.compile(r".+:line: warning: parameters of member [^:\s]+(::[^:\s]+)*(::@\d+)+ are not \(all\) documented")
+        RE_ANONYMOUS_FIELD = re.compile(r'.+:line: warning: parameters of member [^:\s]+(::[^:\s]+)*(::@\d+)+ are not \(all\) documented')
         all_messages = [msg for msg in all_messages if not re.match(RE_ANONYMOUS_FIELD, msg.sanitized_text)]
 
     # Collect all new messages that are not match with the known messages.
@@ -395,17 +397,17 @@ def check_docs(language, target, log_file, known_warnings_file, out_sanitized_lo
             new_messages.append(msg)
 
     if new_messages:
-        print("\n%s/%s: Build failed due to new/different warnings (%s):\n" % (language, target, log_file))
+        print('\n%s/%s: Build failed due to new/different warnings (%s):\n' % (language, target, log_file))
         for msg in new_messages:
-            print("%s/%s: %s" % (language, target, msg.original_text), end='')
-        print("\n%s/%s: (Check files %s and %s for full details.)" % (language, target, known_warnings_file, log_file))
+            print('%s/%s: %s' % (language, target, msg.original_text), end='')
+        print('\n%s/%s: (Check files %s and %s for full details.)' % (language, target, known_warnings_file, log_file))
         return 1
 
     return 0
 
 
 def action_linkcheck(args):
-    args.builders = "linkcheck"
+    args.builders = 'linkcheck'
     return parallel_call(args, call_linkcheck)
 
 
@@ -416,49 +418,49 @@ def call_linkcheck(entry):
 # https://github.com/espressif/esp-idf/tree/
 # https://github.com/espressif/esp-idf/blob/
 # https://github.com/espressif/esp-idf/raw/
-GH_LINK_RE = r"https://github.com/espressif/esp-idf/(?:tree|blob|raw)/[^\s]+"
+GH_LINK_RE = r'https://github.com/espressif/esp-idf/(?:tree|blob|raw)/[^\s]+'
 
 # we allow this one doc, because we always want users to see the latest support policy
-GH_LINK_ALLOWED = ["https://github.com/espressif/esp-idf/blob/master/SUPPORT_POLICY.md",
-                   "https://github.com/espressif/esp-idf/blob/master/SUPPORT_POLICY_CN.md"]
+GH_LINK_ALLOWED = ['https://github.com/espressif/esp-idf/blob/master/SUPPORT_POLICY.md',
+                   'https://github.com/espressif/esp-idf/blob/master/SUPPORT_POLICY_CN.md']
 
 
 def action_gh_linkcheck(args):
-    print("Checking for hardcoded GitHub links\n")
+    print('Checking for hardcoded GitHub links\n')
 
     github_links = []
 
     docs_dir = os.path.relpath(os.path.dirname(__file__))
     for root, _, files in os.walk(docs_dir):
-        if "_build" in root:
+        if '_build' in root:
             continue
-        files = [os.path.join(root, f) for f in files if f.endswith(".rst")]
+        files = [os.path.join(root, f) for f in files if f.endswith('.rst')]
         for path in files:
-            with open(path, "r") as f:
+            with open(path, 'r') as f:
                 for link in re.findall(GH_LINK_RE, f.read()):
                     if link not in GH_LINK_ALLOWED:
                         github_links.append((path, link))
 
     if github_links:
         for path, link in github_links:
-            print("%s: %s" % (path, link))
-        print("WARNING: Some .rst files contain hardcoded Github links.")
-        print("Please check above output and replace links with one of the following:")
-        print("- :idf:`dir` - points to directory inside ESP-IDF")
-        print("- :idf_file:`file` - points to file inside ESP-IDF")
-        print("- :idf_raw:`file` - points to raw view of the file inside ESP-IDF")
-        print("- :component:`dir` - points to directory inside ESP-IDF components dir")
-        print("- :component_file:`file` - points to file inside ESP-IDF components dir")
-        print("- :component_raw:`file` - points to raw view of the file inside ESP-IDF components dir")
-        print("- :example:`dir` - points to directory inside ESP-IDF examples dir")
-        print("- :example_file:`file` - points to file inside ESP-IDF examples dir")
-        print("- :example_raw:`file` - points to raw view of the file inside ESP-IDF examples dir")
-        print("These link types will point to the correct GitHub version automatically")
+            print('%s: %s' % (path, link))
+        print('WARNING: Some .rst files contain hardcoded Github links.')
+        print('Please check above output and replace links with one of the following:')
+        print('- :idf:`dir` - points to directory inside ESP-IDF')
+        print('- :idf_file:`file` - points to file inside ESP-IDF')
+        print('- :idf_raw:`file` - points to raw view of the file inside ESP-IDF')
+        print('- :component:`dir` - points to directory inside ESP-IDF components dir')
+        print('- :component_file:`file` - points to file inside ESP-IDF components dir')
+        print('- :component_raw:`file` - points to raw view of the file inside ESP-IDF components dir')
+        print('- :example:`dir` - points to directory inside ESP-IDF examples dir')
+        print('- :example_file:`file` - points to file inside ESP-IDF examples dir')
+        print('- :example_raw:`file` - points to raw view of the file inside ESP-IDF examples dir')
+        print('These link types will point to the correct GitHub version automatically')
         return 1
     else:
-        print("No hardcoded links found")
+        print('No hardcoded links found')
         return 0
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

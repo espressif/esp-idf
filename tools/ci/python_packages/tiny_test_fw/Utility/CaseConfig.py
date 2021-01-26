@@ -141,9 +141,9 @@ def filter_test_cases(test_methods, case_filter):
 
 class Parser(object):
     DEFAULT_CONFIG = {
-        "TestConfig": dict(),
-        "Filter": dict(),
-        "CaseConfig": [{"extra_data": None}],
+        'TestConfig': dict(),
+        'Filter': dict(),
+        'CaseConfig': [{'extra_data': None}],
     }
 
     @classmethod
@@ -156,7 +156,7 @@ class Parser(object):
         """
         configs = cls.DEFAULT_CONFIG.copy()
         if config_file:
-            with open(config_file, "r") as f:
+            with open(config_file, 'r') as f:
                 configs.update(yaml.load(f, Loader=Loader))
         return configs
 
@@ -170,8 +170,8 @@ class Parser(object):
         """
         output = dict()
         for key in overwrite:
-            module = importlib.import_module(overwrite[key]["package"])
-            output[key] = module.__getattribute__(overwrite[key]["class"])
+            module = importlib.import_module(overwrite[key]['package'])
+            output[key] = module.__getattribute__(overwrite[key]['class'])
         return output
 
     @classmethod
@@ -185,10 +185,10 @@ class Parser(object):
         """
         configs = cls.parse_config_file(config_file)
         test_case_list = []
-        for _config in configs["CaseConfig"]:
-            _filter = configs["Filter"].copy()
-            _overwrite = cls.handle_overwrite_args(_config.pop("overwrite", dict()))
-            _extra_data = _config.pop("extra_data", None)
+        for _config in configs['CaseConfig']:
+            _filter = configs['Filter'].copy()
+            _overwrite = cls.handle_overwrite_args(_config.pop('overwrite', dict()))
+            _extra_data = _config.pop('extra_data', None)
             _filter.update(_config)
 
             # Try get target from yml
@@ -222,8 +222,8 @@ class Generator(object):
 
     def __init__(self):
         self.default_config = {
-            "TestConfig": dict(),
-            "Filter": dict(),
+            'TestConfig': dict(),
+            'Filter': dict(),
         }
 
     def set_default_configs(self, test_config, case_filter):
@@ -232,7 +232,7 @@ class Generator(object):
         :param case_filter: "Filter" value
         :return: None
         """
-        self.default_config = {"TestConfig": test_config, "Filter": case_filter}
+        self.default_config = {'TestConfig': test_config, 'Filter': case_filter}
 
     def generate_config(self, case_configs, output_file):
         """
@@ -241,6 +241,6 @@ class Generator(object):
         :return: None
         """
         config = self.default_config.copy()
-        config.update({"CaseConfig": case_configs})
-        with open(output_file, "w") as f:
+        config.update({'CaseConfig': case_configs})
+        with open(output_file, 'w') as f:
             yaml.dump(config, f)
