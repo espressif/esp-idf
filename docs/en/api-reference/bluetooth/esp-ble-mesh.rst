@@ -126,29 +126,29 @@ Configuration Client/Server Models
 Health Client/Server Models
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. include-build-file:: inc/esp_ble_mesh_generic_model_api.inc
+.. include-build-file:: inc/esp_ble_mesh_health_model_api.inc
 
 
 Generic Client/Server Models
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. include-build-file:: inc/esp_ble_mesh_health_model_api.inc
+.. include-build-file:: inc/esp_ble_mesh_generic_model_api.inc
 
 
 Sensor Client/Server Models
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. include-build-file:: inc/esp_ble_mesh_lighting_model_api.inc
+.. include-build-file:: inc/esp_ble_mesh_sensor_model_api.inc
 
 
 Time and Scenes Client/Server Models
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. include-build-file:: inc/esp_ble_mesh_sensor_model_api.inc
+.. include-build-file:: inc/esp_ble_mesh_time_scene_model_api.inc
 
 
 Lighting Client/Server Models
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. include-build-file:: inc/esp_ble_mesh_time_scene_model_api.inc
+.. include-build-file:: inc/esp_ble_mesh_lighting_model_api.inc
 

@@ -260,7 +260,7 @@ The command-line interface of `parttool.py` has the following structure:
   parttool.py --port "/dev/ttyUSB1" erase_partition --partition-name=storage
 
   # Read partition with type 'data' and subtype 'spiffs' and save to file 'spiffs.bin'
-  parttool.py --port "/dev/ttyUSB1" read_partition --partition-type=data --partition-subtype=spiffs "spiffs.bin"
+  parttool.py --port "/dev/ttyUSB1" read_partition --partition-type=data --partition-subtype=spiffs --output "spiffs.bin"
 
   # Write to partition 'factory' the contents of a file named 'factory.bin'
   parttool.py --port "/dev/ttyUSB1" write_partition --partition-name=factory "factory.bin"

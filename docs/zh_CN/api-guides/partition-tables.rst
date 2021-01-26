@@ -253,7 +253,7 @@ Python API
   parttool.py --port "/dev/ttyUSB1" erase_partition --partition-name=storage
 
   # 读取类型为 'data'、子类型为 'spiffs' 的分区，保存到 'spiffs.bin' 文件
-  parttool.py --port "/dev/ttyUSB1" read_partition --partition-type=data --partition-subtype=spiffs "spiffs.bin"
+  parttool.py --port "/dev/ttyUSB1" read_partition --partition-type=data --partition-subtype=spiffs --output "spiffs.bin"
 
   # 将 'factory.bin' 文件中的内容写入到 'factory' 分区
   parttool.py --port "/dev/ttyUSB1" write_partition --partition-name=factory "factory.bin"
