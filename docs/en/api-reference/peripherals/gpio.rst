@@ -6,14 +6,14 @@ Overview
 
 .. only:: esp32
 
-    The {IDF_TARGET_NAME} chip features 40 physical GPIO pads. Some GPIO pads cannot be used or do not have the corresponding pin on the chip package(refer to technical reference manual). Each pad can be used as a general purpose I/O or can be connected to an internal peripheral signal.
+    The {IDF_TARGET_NAME} chip features 40 physical GPIO pads. Some GPIO pads cannot be used or do not have the corresponding pin on the chip package. For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *IO MUX and GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__]. Each pad can be used as a general purpose I/O or can be connected to an internal peripheral signal.
 
     - Note that GPIO6-11 are usually used for SPI flash.
     - GPIO34-39 can only be set as input mode and do not have software pullup or pulldown functions.
 
 .. only:: esp32s2
 
-    The {IDF_TARGET_NAME} chip features 43 physical GPIO pads. Some GPIO pads cannot be used or do not have the corresponding pin on the chip package(refer to technical reference manual). Each pad can be used as a general purpose I/O or can be connected to an internal peripheral signal.
+    The {IDF_TARGET_NAME} chip features 43 physical GPIO pads. Some GPIO pads cannot be used or do not have the corresponding pin on the chip package. For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *IO MUX and GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__]. Each pad can be used as a general purpose I/O or can be connected to an internal peripheral signal.
 
     - Note that GPIO26-32 are usually used for SPI flash.
     - GPIO46 is fixed to pull-down and is input only

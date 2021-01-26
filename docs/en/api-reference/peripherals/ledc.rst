@@ -157,7 +157,7 @@ LEDC High and Low Speed Mode
 
     The advantage of high speed mode is glitch-free changeover of the timer settings. This means that if the timer settings are modified, the changes will be applied automatically on the next overflow interrupt of the timer. In contrast, when updating the low-speed timer, the change of settings should be explicitly triggered by software. The LEDC driver handles it in the background, e.g., when :cpp:func:`ledc_timer_config` or :cpp:func:`ledc_timer_set` is called. 
 
-    For additional details regarding speed modes, refer to `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_ (PDF). Please note that the support for ``SLOW_CLOCK`` mentioned in this manual is not yet supported in the LEDC driver.
+    For additional details regarding speed modes, see *{IDF_TARGET_NAME} Technical Reference Manual* > *LED PWM Controller (LEDC)* [`PDF <{IDF_TARGET_TRM_EN_URL}#ledpwm>`__]. Please note that the support for ``SLOW_CLOCK`` mentioned in this manual is not yet supported in the LEDC driver.
 
 .. only:: esp32s2
 

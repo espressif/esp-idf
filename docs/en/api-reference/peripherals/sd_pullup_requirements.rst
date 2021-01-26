@@ -217,7 +217,7 @@ To resolve the conflict, you have the following options:
 
    If running from an automated flashing script, ``espefuse.py`` has an option ``--do-not-confirm``.
 
-   For more details, see the `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_ (PDF).
+   For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* [`PDF <{IDF_TARGET_TRM_EN_URL}#efuse>`__].
 
 2. **If using 1-bit SD mode or SPI mode**, disconnect the DAT2 pin and make sure it is pulled high. For this, do one the following:
 

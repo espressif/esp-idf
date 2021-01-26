@@ -73,7 +73,7 @@ GPIO Bundle Operations
      - :cpp:func:`dedic_gpio_bundle_read_in`
 
 .. note::
-    The functions above just wrap the customized instructions defined for {IDF_TARGET_NAME}, for the details of those instructions, please refer to {IDF_TARGET_NAME} TRM.
+    The functions above just wrap the customized instructions defined for {IDF_TARGET_NAME}, for the details of those instructions, please refer to *{IDF_TARGET_NAME} Technical Reference Manual* > *IO MUX and GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__].
 
 .. only:: esp32s2
 
@@ -113,7 +113,7 @@ For advanced users, they can always manipulate the GPIOs by writing assembly cod
 2. Query the mask occupied by that bundle: :cpp:func:`dedic_gpio_get_out_mask` or/and :cpp:func:`dedic_gpio_get_in_mask`
 3. Call CPU LL apis (e.g. `cpu_ll_write_dedic_gpio_mask`) or write assembly code with that mask
 
-For details of supported dedicated GPIO instructions, please refer to {IDF_TARGET_NAME} TRM.
+For details of supported dedicated GPIO instructions, please refer to *{IDF_TARGET_NAME} Technical Reference Manual* > *IO MUX and GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__].
 
 .. note::
     Writing assembly code in application could make your code hard to port between targets, because those customized instructions are not guaranteed to remain the same format in different targets.

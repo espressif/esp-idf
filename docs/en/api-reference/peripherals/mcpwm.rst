@@ -92,7 +92,7 @@ There are couple of ways to adjust a signal on the outputs and changing how the 
     Synchronization signals are referred to using two different enumerations. First one :cpp:type:`mcpwm_io_signals_t` is used together with function :cpp:func:`mcpwm_gpio_init` when selecting a GPIO as the signal input source. The second one :cpp:type:`mcpwm_sync_signal_t` is used when enabling or disabling synchronization with :cpp:func:`mcpwm_sync_enable` or :cpp:func:`mcpwm_sync_disable`.
 
 
-* Vary the pattern of the A/B output signals by getting MCPWM counters to count up, down and up/down (automatically changing the count direction). Respective configuration is done when calling :cpp:func:`mcpwm_init`, as discussed in section `Configure`_, and selecting one of counter types from :cpp:type:`mcpwm_counter_type_t`. For explanation of how A/B PWM output signals are generated please refer to `{IDF_TARGET_NAME} Technical Reference Manual`_.
+* Vary the pattern of the A/B output signals by getting MCPWM counters to count up, down and up/down (automatically changing the count direction). Respective configuration is done when calling :cpp:func:`mcpwm_init`, as discussed in section `Configure`_, and selecting one of counter types from :cpp:type:`mcpwm_counter_type_t`. For explanation of how A/B PWM output signals are generated, see *{IDF_TARGET_NAME} Technical Reference Manual* > *Motor Control PWM (MCPWM)* [`PDF <{IDF_TARGET_TRM_EN_URL}#mcpwm>`__].
 
 Capture
 -------
@@ -150,7 +150,7 @@ To use the carrier submodule, it should be first initialized by calling :cpp:fun
 
 The carrier parameters may be then alerted at a runtime by calling dedicated functions to change individual fields of the :cpp:type:`mcpwm_carrier_config_t` structure, like :cpp:func:`mcpwm_carrier_set_period`, :cpp:func:`mcpwm_carrier_set_duty_cycle`, :cpp:func:`mcpwm_carrier_output_invert`, etc.
 
-This includes enabling and setting duration of the first pulse of the career with :cpp:func:`mcpwm_carrier_oneshot_mode_enable`. For more details please refer to "PWM Carrier Submodule" section of the `{IDF_TARGET_NAME} Technical Reference Manual`_.
+This includes enabling and setting duration of the first pulse of the career with :cpp:func:`mcpwm_carrier_oneshot_mode_enable`. For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *Motor Control PWM (MCPWM)* > *PWM Carrier Submodule* [`PDF <{IDF_TARGET_TRM_EN_URL}#mcpwm>`__].
 
 To disable carrier functionality call :cpp:func:`mcpwm_carrier_disable`.
 
@@ -170,8 +170,6 @@ Examples of using MCPWM for motor control: :example:`peripherals/mcpwm`:
 * Control of BLDC (brushless DC) motor with hall sensor feedback - :example:`peripherals/mcpwm/mcpwm_bldc_control`
 * Brushed DC motor control - :example:`peripherals/mcpwm/mcpwm_brushed_dc_control`
 * Servo motor control - :example:`peripherals/mcpwm/mcpwm_servo_control`
-
-.. _{IDF_TARGET_NAME} Technical Reference Manual: {IDF_TARGET_TRM_EN_URL}
 
 
 API Reference

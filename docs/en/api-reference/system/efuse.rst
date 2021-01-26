@@ -14,7 +14,7 @@ Hardware description
 The {IDF_TARGET_NAME} has a number of eFuses which can store system and user parameters. Each eFuse is a one-bit field which can be programmed to 1 after which it cannot be reverted back to 0.
 Some of system parameters are using these eFuse bits directly by hardware modules and have special place (for example EFUSE_BLK0).
 
-For more details, see Chapter eFuse Controller of `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_. Some eFuse bits are available for user applications.
+For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *eFuse Controller (eFuse)* [`PDF <{IDF_TARGET_TRM_EN_URL}#efuse>`__]. Some eFuse bits are available for user applications.
 
 .. only:: esp32
 
