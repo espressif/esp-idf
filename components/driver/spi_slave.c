@@ -110,15 +110,18 @@ static inline void restore_cs(spi_slave_t *host)
 
 esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *bus_config, const spi_slave_interface_config_t *slave_config, int dma_chan)
 {
-    bool spi_chan_claimed, dma_chan_claimed;
+    bool spi_chan_claimed;
+    uint32_t actual_dma_chan = 0;
     esp_err_t ret = ESP_OK;
     esp_err_t err;
     //We only support HSPI/VSPI, period.
     SPI_CHECK(is_valid_host(host), "invalid host", ESP_ERR_INVALID_ARG);
-#if defined(CONFIG_IDF_TARGET_ESP32)
-    SPI_CHECK( dma_chan >= 0 && dma_chan <= 2, "invalid dma channel", ESP_ERR_INVALID_ARG );
-#elif defined(CONFIG_IDF_TARGET_ESP32S2)
+#ifdef CONFIG_IDF_TARGET_ESP32
+    SPI_CHECK( (dma_chan >= 0 && dma_chan <= 2) || dma_chan == -1, "invalid dma channel", ESP_ERR_INVALID_ARG );
+#elif CONFIG_IDF_TARGET_ESP32S2
     SPI_CHECK( dma_chan == 0 || dma_chan == host, "invalid dma channel", ESP_ERR_INVALID_ARG );
+#elif SOC_GDMA_SUPPORTED
+    SPI_CHECK( dma_chan == -1, "invalid dma channel, chip only support spi dma channel auto-alloc", ESP_ERR_INVALID_ARG );
 #endif
     SPI_CHECK((bus_config->intr_flags & (ESP_INTR_FLAG_HIGH|ESP_INTR_FLAG_EDGE|ESP_INTR_FLAG_INTRDISABLED))==0, "intr flag not allowed", ESP_ERR_INVALID_ARG);
 #ifndef CONFIG_SPI_SLAVE_ISR_IN_IRAM
@@ -129,15 +132,12 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     spi_chan_claimed=spicommon_periph_claim(host, "spi slave");
     SPI_CHECK(spi_chan_claimed, "host already in use", ESP_ERR_INVALID_STATE);
 
-    bool use_dma = dma_chan != 0;
+    bool use_dma = (dma_chan != 0);
     if (use_dma) {
-        dma_chan_claimed=spicommon_dma_chan_claim(dma_chan);
-        if ( !dma_chan_claimed ) {
-            spicommon_periph_free( host );
-            SPI_CHECK(dma_chan_claimed, "dma channel already in use", ESP_ERR_INVALID_STATE);
+        err = spicommon_alloc_dma(host, dma_chan, &actual_dma_chan);
+        if (err != ESP_OK) {
+            return err;
         }
-
-        spicommon_connect_spi_and_dma(host, dma_chan);
     }
 
     spihost[host] = malloc(sizeof(spi_slave_t));
@@ -149,7 +149,7 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     memcpy(&spihost[host]->cfg, slave_config, sizeof(spi_slave_interface_config_t));
     spihost[host]->id = host;
 
-    err = spicommon_bus_initialize_io(host, bus_config, dma_chan, SPICOMMON_BUSFLAG_SLAVE|bus_config->flags, &spihost[host]->flags);
+    err = spicommon_bus_initialize_io(host, bus_config, actual_dma_chan, SPICOMMON_BUSFLAG_SLAVE|bus_config->flags, &spihost[host]->flags);
     if (err!=ESP_OK) {
         ret = err;
         goto cleanup;
@@ -162,7 +162,7 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     if (use_dma) freeze_cs(spihost[host]);
 
     int dma_desc_ct = 0;
-    spihost[host]->dma_chan = dma_chan;
+    spihost[host]->dma_chan = actual_dma_chan;
     if (use_dma) {
         //See how many dma descriptors we need and allocate them
         dma_desc_ct = (bus_config->max_transfer_sz + SPI_MAX_DMA_LEN - 1) / SPI_MAX_DMA_LEN;
@@ -242,7 +242,7 @@ cleanup:
     free(spihost[host]);
     spihost[host] = NULL;
     spicommon_periph_free(host);
-    if (dma_chan != 0) spicommon_dma_chan_free(dma_chan);
+    if (actual_dma_chan != 0) spicommon_dma_chan_free(actual_dma_chan);
     return ret;
 }
 
