@@ -227,7 +227,7 @@ static void IRAM_ATTR flush_uarts(void)
     for (int i = 0; i < SOC_UART_NUM; ++i) {
 #ifdef CONFIG_IDF_TARGET_ESP32
         esp_rom_uart_tx_wait_idle(i);
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#else
         if (periph_ll_periph_enabled(PERIPH_UART0_MODULE + i)) {
             esp_rom_uart_tx_wait_idle(i);
         }
@@ -789,6 +789,7 @@ static void touch_wakeup_prepare(void)
 #endif
 
 #if SOC_TOUCH_SENSOR_NUM > 0
+
 esp_err_t esp_sleep_enable_touchpad_wakeup(void)
 {
 #if ((defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT) || (defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT_V2))
@@ -813,7 +814,10 @@ touch_pad_t esp_sleep_get_touchpad_wakeup_status(void)
     assert(ret == ESP_OK && "wakeup reason is RTC_TOUCH_TRIG_EN but SENS_TOUCH_MEAS_EN is zero");
     return pad_num;
 }
+
 #endif // SOC_TOUCH_SENSOR_NUM > 0
+
+#if SOC_PM_SUPPORT_EXT_WAKEUP
 
 bool esp_sleep_is_valid_wakeup_gpio(gpio_num_t gpio_num)
 {
@@ -821,10 +825,9 @@ bool esp_sleep_is_valid_wakeup_gpio(gpio_num_t gpio_num)
     return RTC_GPIO_IS_VALID_GPIO(gpio_num);
 #else
     return GPIO_IS_VALID_GPIO(gpio_num);
-#endif
+#endif // SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 }
 
-#if SOC_PM_SUPPORT_EXT_WAKEUP
 esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level)
 {
     if (level < 0 || level > 1) {
@@ -931,6 +934,7 @@ uint64_t esp_sleep_get_ext1_wakeup_status(void)
     }
     return gpio_mask;
 }
+
 #endif // SOC_PM_SUPPORT_EXT_WAKEUP
 
 esp_err_t esp_sleep_enable_gpio_wakeup(void)

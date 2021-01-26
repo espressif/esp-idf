@@ -95,6 +95,7 @@ typedef esp_sleep_source_t esp_sleep_wakeup_cause_t;
  */
 esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source);
 
+#if SOC_ULP_SUPPORTED
 /**
  * @brief Enable wakeup by ULP coprocessor
  * @note In revisions 0 and 1 of the ESP32, ULP wakeup source
@@ -108,6 +109,8 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source);
  */
 esp_err_t esp_sleep_enable_ulp_wakeup(void);
 
+#endif // SOC_ULP_SUPPORTED
+
 /**
  * @brief Enable wakeup by timer
  * @param time_in_us  time before wakeup, in microseconds
@@ -116,6 +119,8 @@ esp_err_t esp_sleep_enable_ulp_wakeup(void);
  *      - ESP_ERR_INVALID_ARG if value is out of range (TBD)
  */
 esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us);
+
+#if SOC_TOUCH_SENSOR_NUM > 0
 
 /**
  * @brief Enable wakeup by touch sensor
@@ -143,6 +148,10 @@ esp_err_t esp_sleep_enable_touchpad_wakeup(void);
  * @return touch pad which caused wakeup
  */
 touch_pad_t esp_sleep_get_touchpad_wakeup_status(void);
+
+#endif // SOC_TOUCH_SENSOR_NUM > 0
+
+#if SOC_PM_SUPPORT_EXT_WAKEUP
 
 /**
  * @brief Returns true if a GPIO number is valid for use as wakeup source.
@@ -212,6 +221,8 @@ esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level);
  *        or mode is invalid
  */
 esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t mask, esp_sleep_ext1_wakeup_mode_t mode);
+
+#endif // SOC_PM_SUPPORT_EXT_WAKEUP
 
 /**
  * @brief Enable wakeup from light sleep using GPIOs

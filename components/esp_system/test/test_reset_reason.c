@@ -81,7 +81,7 @@ TEST_CASE("reset reason ESP_RST_POWERON", "[reset][ignore]")
     TEST_ASSERT_EQUAL(ESP_RST_POWERON, esp_reset_reason());
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C3) // TODO ESP32-C3 IDF-2560
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 static void do_deep_sleep(void)
 {
     setup_values();
@@ -104,7 +104,7 @@ static void check_reset_reason_deep_sleep(void)
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_DEEPSLEEP", "[reset_reason][reset="DEEPSLEEP"]",
         do_deep_sleep,
         check_reset_reason_deep_sleep);
-#endif // TODO ESP32-C3 IDF-2560
+#endif // TEMPORARY_DISABLED_FOR_TARGETS
 
 static void do_exception(void)
 {
