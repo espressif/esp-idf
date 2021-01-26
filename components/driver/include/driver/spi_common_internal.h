@@ -116,19 +116,6 @@ bool spicommon_periph_in_use(spi_host_device_t host);
 bool spicommon_periph_free(spi_host_device_t host);
 
 /**
- * @brief Try to claim a SPI DMA channel
- *
- *  Call this if your driver wants to use SPI with a DMA channnel.
- *
- * @param dma_chan channel to claim
- *
- * @note This public API is deprecated.
- *
- * @return True if success; false otherwise.
- */
-bool spicommon_dma_chan_claim(int dma_chan);
-
-/**
  * @brief Check whether the spi DMA channel is in use.
  *
  * @param dma_chan DMA channel to check.
@@ -151,12 +138,13 @@ bool spicommon_dma_chan_in_use(int dma_chan);
 bool spicommon_dma_chan_free(int dma_chan);
 
 /**
- * @brief Connect SPI and DMA peripherals
+ * @brief Try to claim a SPI DMA channel and connect it with SPI peripherals
  *
- * @param host     SPI peripheral
- * @param dma_chan DMA channel
+ * @param host_id                   SPI host ID
+ * @param dma_chan                  -1: auto dma allocate mode; 0: non-dma mode; 1 or 2: assign a specific DMA channel;
+ * @param[out] out_actual_dma_chan  Actual DMA channel (if you choose to assign a specific DMA channel, this will be the channel you assigned before)
  */
-void spicommon_connect_spi_and_dma(spi_host_device_t host, int dma_chan);
+esp_err_t spicommon_alloc_dma(spi_host_device_t host_id, int dma_chan, uint32_t *out_actual_dma_chan);
 
 /**
  * @brief Connect a SPI peripheral to GPIO pins

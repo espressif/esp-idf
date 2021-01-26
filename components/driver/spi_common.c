@@ -100,6 +100,12 @@ static portMUX_TYPE spi_dma_spinlock = portMUX_INITIALIZER_UNLOCKED;
 static spicommon_bus_context_t s_mainbus = MAIN_BUS_DEFAULT();
 static spicommon_bus_context_t* bus_ctx[SOC_SPI_PERIPH_NUM] = {&s_mainbus};
 
+#if CONFIG_IDF_TARGET_ESP32 || SOC_GDMA_SUPPORTED
+//ESP32S2 does not support DMA channel auto-allocation
+//Each bit stands for 1 dma channel, used for auto-alloc dma channel
+static uint32_t spi_dma_channel_code;
+#endif
+
 
 //Returns true if this peripheral is successfully claimed, false if otherwise.
 bool spicommon_periph_claim(spi_host_device_t host, const char* source)
@@ -159,7 +165,7 @@ static inline periph_module_t get_dma_periph(int dma_chan)
 #endif
 }
 
-bool spicommon_dma_chan_claim(int dma_chan)
+static bool spicommon_dma_chan_claim(int dma_chan)
 {
     bool ret = false;
     assert(dma_chan >= 1 && dma_chan <= SOC_SPI_DMA_CHAN_NUM);
@@ -196,7 +202,7 @@ bool spicommon_dma_chan_free(int dma_chan)
     return true;
 }
 
-void spicommon_connect_spi_and_dma(spi_host_device_t host, int dma_chan)
+static void spicommon_connect_spi_and_dma(spi_host_device_t host, int dma_chan)
 {
 #if CONFIG_IDF_TARGET_ESP32
     DPORT_SET_PERI_REG_BITS(DPORT_SPI_DMA_CHAN_SEL_REG, 3, dma_chan, (host * 2));
@@ -221,6 +227,50 @@ void spicommon_connect_spi_and_dma(spi_host_device_t host, int dma_chan)
     spi_dma_set_rx_channel_priority(gdma_chan, 1);
     spi_dma_set_tx_channel_priority(gdma_chan, 1);
 #endif  //#elif SOC_GDMA_SUPPORTED
+}
+
+esp_err_t spicommon_alloc_dma(spi_host_device_t host_id, int dma_chan, uint32_t *out_actual_dma_chan)
+{
+    uint32_t actual_dma_chan = 0;
+
+#if !SOC_GDMA_SUPPORTED
+    if (dma_chan < 0) {
+#if CONFIG_IDF_TARGET_ESP32
+        for (int i = 0; i < SOC_SPI_DMA_CHAN_NUM; i++) {
+            bool is_used = BIT(i) & spi_dma_channel_code;
+            if (!is_used) {
+                spi_dma_channel_code |= BIT(i);
+                actual_dma_chan = i+1;
+                break;
+            }
+        }
+        if (!actual_dma_chan) {
+            SPI_CHECK(false, "no available dma channel", ESP_ERR_INVALID_STATE);
+        }
+#elif CONFIG_IDF_TARGET_ESP32S2
+        //On ESP32S2, each SPI controller has its own DMA channel. So DMA channel auto-allocation is not supported
+        SPI_CHECK(false, "ESP32S2 does not support auto-alloc dma channel", ESP_ERR_INVALID_STATE);
+#endif  //#if CONFIG_IDF_TARGET_XXX
+    } else if (dma_chan > 0) {
+        actual_dma_chan = dma_chan;
+    } else {  //dma_chan == 0
+        // Program won't reach here
+    }
+
+    bool dma_chan_claimed = spicommon_dma_chan_claim(actual_dma_chan);
+    if (!dma_chan_claimed) {
+        spicommon_periph_free(host_id);
+        SPI_CHECK(false, "dma channel already in use", ESP_ERR_INVALID_STATE);
+    }
+
+    spicommon_connect_spi_and_dma(host_id, actual_dma_chan);
+
+#elif SOC_GDMA_SUPPORTED
+
+#endif
+
+    *out_actual_dma_chan = actual_dma_chan;
+    return ESP_OK;
 }
 
 static bool bus_uses_iomux_pins(spi_host_device_t host, const spi_bus_config_t* bus_config)
@@ -490,12 +540,16 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
     esp_err_t err = ESP_OK;
     spicommon_bus_context_t *ctx = NULL;
     spi_bus_attr_t *bus_attr = NULL;
+    uint32_t actual_dma_chan = 0;
+
     SPI_CHECK(is_valid_host(host_id), "invalid host_id", ESP_ERR_INVALID_ARG);
     SPI_CHECK(bus_ctx[host_id] == NULL, "SPI bus already initialized.", ESP_ERR_INVALID_STATE);
 #ifdef CONFIG_IDF_TARGET_ESP32
-    SPI_CHECK( dma_chan >= 0 && dma_chan <= 2, "invalid dma channel", ESP_ERR_INVALID_ARG );
+    SPI_CHECK( (dma_chan >= 0 && dma_chan <= 2) || dma_chan == -1, "invalid dma channel", ESP_ERR_INVALID_ARG );
 #elif CONFIG_IDF_TARGET_ESP32S2
     SPI_CHECK( dma_chan == 0 || dma_chan == host_id, "invalid dma channel", ESP_ERR_INVALID_ARG );
+#elif SOC_GDMA_SUPPORTED
+    SPI_CHECK( dma_chan == -1, "invalid dma channel, chip only support spi dma channel auto-alloc", ESP_ERR_INVALID_ARG );
 #endif
     SPI_CHECK((bus_config->intr_flags & (ESP_INTR_FLAG_HIGH|ESP_INTR_FLAG_EDGE|ESP_INTR_FLAG_INTRDISABLED))==0, "intr flag not allowed", ESP_ERR_INVALID_ARG);
 #ifndef CONFIG_SPI_MASTER_ISR_IN_IRAM
@@ -505,36 +559,23 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
     bool spi_chan_claimed = spicommon_periph_claim(host_id, "spi master");
     SPI_CHECK(spi_chan_claimed, "host_id already in use", ESP_ERR_INVALID_STATE);
 
-    if (dma_chan != 0) {
-        bool dma_chan_claimed = spicommon_dma_chan_claim(dma_chan);
-        if (!dma_chan_claimed) {
-            spicommon_periph_free(host_id);
-            SPI_CHECK(false, "dma channel already in use", ESP_ERR_INVALID_STATE);
-        }
-
-        spicommon_connect_spi_and_dma(host_id, dma_chan);
-    }
-
     //clean and initialize the context
-    ctx = (spicommon_bus_context_t*)malloc(sizeof(spicommon_bus_context_t));
+    ctx = (spicommon_bus_context_t *)calloc(1, sizeof(spicommon_bus_context_t));
     if (!ctx) {
         err = ESP_ERR_NO_MEM;
         goto cleanup;
     }
-    *ctx = (spicommon_bus_context_t) {
-        .host_id = host_id,
-        .bus_attr = {
-            .bus_cfg = *bus_config,
-            .dma_chan = dma_chan,
-        },
-    };
-
+    ctx->host_id = host_id;
     bus_attr = &ctx->bus_attr;
-    if (dma_chan == 0) {
-        bus_attr->max_transfer_sz = SOC_SPI_MAXIMUM_BUFFER_SIZE;
-        bus_attr->dma_desc_num = 0;
-    } else {
-        //See how many dma descriptors we need and allocate them
+    bus_attr->bus_cfg = *bus_config;
+
+    if (dma_chan != 0) {
+        err = spicommon_alloc_dma(host_id, dma_chan, &actual_dma_chan);
+        if (err != ESP_OK) {
+            return err;
+        }
+        bus_attr->dma_chan = actual_dma_chan;
+
         int dma_desc_ct = lldesc_get_required_num(bus_config->max_transfer_sz);
         if (dma_desc_ct == 0) dma_desc_ct = 1; //default to 4k when max is not given
 
@@ -546,6 +587,9 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
             goto cleanup;
         }
         bus_attr->dma_desc_num = dma_desc_ct;
+    } else {
+        bus_attr->max_transfer_sz = SOC_SPI_MAXIMUM_BUFFER_SIZE;
+        bus_attr->dma_desc_num = 0;
     }
 
     spi_bus_lock_config_t lock_config = {
@@ -565,7 +609,7 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
     }
 #endif //CONFIG_PM_ENABLE
 
-    err = spicommon_bus_initialize_io(host_id, bus_config, dma_chan, SPICOMMON_BUSFLAG_MASTER | bus_config->flags, &bus_attr->flags);
+    err = spicommon_bus_initialize_io(host_id, bus_config, actual_dma_chan, SPICOMMON_BUSFLAG_MASTER | bus_config->flags, &bus_attr->flags);
     if (err != ESP_OK) {
         goto cleanup;
     }
@@ -585,8 +629,8 @@ cleanup:
         free(bus_attr->dmadesc_rx);
     }
     free(ctx);
-    if (dma_chan) {
-        spicommon_dma_chan_free(dma_chan);
+    if (actual_dma_chan) {
+        spicommon_dma_chan_free(actual_dma_chan);
     }
     spicommon_periph_free(host_id);
     return err;

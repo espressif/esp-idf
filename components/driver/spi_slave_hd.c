@@ -64,12 +64,17 @@ static void spi_slave_hd_intr_append(void *arg);
 esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *bus_config,
                             const spi_slave_hd_slot_config_t *config)
 {
-    bool spi_chan_claimed, dma_chan_claimed;
+    bool spi_chan_claimed;
     bool append_mode = (config->flags & SPI_SLAVE_HD_APPEND_MODE);
+    uint32_t actual_dma_chan = 0;
     esp_err_t ret = ESP_OK;
 
     SPIHD_CHECK(VALID_HOST(host_id), "invalid host", ESP_ERR_INVALID_ARG);
+#if CONFIG_IDF_TARGET_ESP32S2
     SPIHD_CHECK(config->dma_chan == 0 || config->dma_chan == host_id, "invalid dma channel", ESP_ERR_INVALID_ARG);
+#elif SOC_GDMA_SUPPORTED
+    SPI_CHECK(dma_chan == -1, "invalid dma channel, chip only support spi dma channel auto-alloc", ESP_ERR_INVALID_ARG);
+#endif
 #if !CONFIG_IDF_TARGET_ESP32S2
 //Append mode is only supported on ESP32S2 now
     SPIHD_CHECK(append_mode == 0, "Append mode is only supported on ESP32S2 now", ESP_ERR_INVALID_ARG);
@@ -78,14 +83,11 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
     spi_chan_claimed = spicommon_periph_claim(host_id, "slave_hd");
     SPIHD_CHECK(spi_chan_claimed, "host already in use", ESP_ERR_INVALID_STATE);
 
-    if ( config->dma_chan != 0 ) {
-        dma_chan_claimed = spicommon_dma_chan_claim(config->dma_chan);
-        if (!dma_chan_claimed) {
-            spicommon_periph_free(host_id);
-            SPIHD_CHECK(dma_chan_claimed, "dma channel already in use", ESP_ERR_INVALID_STATE);
+    if (config->dma_chan != 0) {
+        ret = spicommon_alloc_dma(host_id, config->dma_chan, &actual_dma_chan);
+        if (ret != ESP_OK) {
+            return ret;
         }
-
-        spicommon_connect_spi_and_dma(host_id, config->dma_chan);
     }
 
     spi_slave_hd_slot_t* host = malloc(sizeof(spi_slave_hd_slot_t));
@@ -96,10 +98,10 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
     spihost[host_id] = host;
     memset(host, 0, sizeof(spi_slave_hd_slot_t));
 
-    host->dma_chan = config->dma_chan;
+    host->dma_chan = actual_dma_chan;
     host->int_spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
 
-    ret = spicommon_bus_initialize_io(host_id, bus_config, config->dma_chan,
+    ret = spicommon_bus_initialize_io(host_id, bus_config, actual_dma_chan,
                 SPICOMMON_BUSFLAG_SLAVE | bus_config->flags, &host->flags);
     if (ret != ESP_OK) {
         goto cleanup;
@@ -113,14 +115,14 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
         .host_id = host_id,
         .dma_in = SPI_LL_GET_HW(host_id),
         .dma_out = SPI_LL_GET_HW(host_id),
-        .dma_chan = config->dma_chan,
+        .dma_chan = actual_dma_chan,
         .append_mode = append_mode,
         .mode = config->mode,
         .tx_lsbfirst = (config->flags & SPI_SLAVE_HD_RXBIT_LSBFIRST),
         .rx_lsbfirst = (config->flags & SPI_SLAVE_HD_TXBIT_LSBFIRST),
     };
 
-    if (config->dma_chan != 0) {
+    if (actual_dma_chan != 0) {
         //Malloc for all the DMA descriptors
         uint32_t total_desc_size = spi_slave_hd_hal_get_total_desc_size(&host->hal, bus_config->max_transfer_sz);
         host->hal.dmadesc_tx = heap_caps_malloc(total_desc_size, MALLOC_CAP_DMA);
