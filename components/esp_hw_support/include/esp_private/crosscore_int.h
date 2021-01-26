@@ -14,6 +14,9 @@
 #ifndef __ESP_CROSSCORE_INT_H
 #define __ESP_CROSSCORE_INT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * Initialize the crosscore interrupt system for this CPU.
@@ -60,5 +63,9 @@ void esp_crosscore_int_send_freq_switch(int core_id);
  * @param core_id Core that should print its backtrace
  */
 void esp_crosscore_int_send_print_backtrace(int core_id);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
