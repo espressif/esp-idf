@@ -12,7 +12,9 @@ set(srcs  "intr_alloc.c"
           "system_api.c"
           "startup.c"
           "system_time.c"
-          "sleep_modes.c")
+          "sleep_modes.c"
+          "task_wdt.c"
+          "int_wdt.c")
 
 if(NOT (${target} STREQUAL "esp32c3") )
     list(APPEND srcs  "dbg_stubs.c")
