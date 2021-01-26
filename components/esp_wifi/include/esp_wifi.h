@@ -1156,16 +1156,18 @@ esp_err_t esp_wifi_statis_dump(uint32_t modules);
 esp_err_t esp_wifi_set_rssi_threshold(int32_t rssi);
 
 /**
-  * @brief     Start FTM Initiator session
-  *            If successful, event WIFI_EVENT_FTM_REPORT is generated with the result of the FTM procedure
+  * @brief      Start an FTM Initiator session by sending FTM request
+  *             If successful, event WIFI_EVENT_FTM_REPORT is generated with the result of the FTM procedure
   *
-  * @param     cfg  FTM Initiator configurations
+  * @attention  Use this API only in Station mode
+  *
+  * @param      cfg  FTM Initiator session configuration
   *
   * @return
   *    - ESP_OK: succeed
   *    - others: failed
   */
-esp_err_t esp_wifi_ftm_start_initiator(wifi_ftm_initiator_cfg_t *cfg);
+esp_err_t esp_wifi_ftm_initiate_session(wifi_ftm_initiator_cfg_t *cfg);
 
 #ifdef __cplusplus
 }

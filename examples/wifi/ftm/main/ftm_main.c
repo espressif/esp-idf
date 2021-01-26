@@ -37,6 +37,7 @@ typedef struct {
     struct arg_lit *mode;
     struct arg_int *frm_count;
     struct arg_int *burst_period;
+    struct arg_str *ssid;
     struct arg_end *end;
 } wifi_ftm_args_t;
 
@@ -59,29 +60,8 @@ const int FTM_FAILURE_BIT = BIT1;
 wifi_ftm_report_entry_t *g_ftm_report;
 uint8_t g_ftm_report_num_entries;
 
-static void scan_done_handler(void *arg, esp_event_base_t event_base,
-                              int32_t event_id, void *event_data)
-{
-    uint16_t sta_number = 0;
-    uint8_t i;
-    wifi_ap_record_t *ap_list_buffer;
-
-    esp_wifi_scan_get_ap_num(&sta_number);
-    ap_list_buffer = malloc(sta_number * sizeof(wifi_ap_record_t));
-    if (ap_list_buffer == NULL) {
-        ESP_LOGE(TAG_STA, "Failed to malloc buffer to print scan results");
-        return;
-    }
-
-    if (esp_wifi_scan_get_ap_records(&sta_number, (wifi_ap_record_t *)ap_list_buffer) == ESP_OK) {
-        for (i = 0; i < sta_number; i++) {
-            ESP_LOGI(TAG_STA, "[%s][rssi=%d]""%s", ap_list_buffer[i].ssid, ap_list_buffer[i].rssi,
-                     ap_list_buffer[i].ftm_responder ? "[FTM Responder]" : "");
-        }
-    }
-    free(ap_list_buffer);
-    ESP_LOGI(TAG_STA, "sta scan done");
-}
+uint16_t g_scan_ap_num;
+wifi_ap_record_t *g_ap_list_buffer;
 
 static void wifi_connected_handler(void *arg, esp_event_base_t event_base,
                                    int32_t event_id, void *event_data)
@@ -141,11 +121,6 @@ void initialise_wifi(void)
     ESP_ERROR_CHECK( esp_event_loop_create_default() );
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
-                    WIFI_EVENT_SCAN_DONE,
-                    &scan_done_handler,
-                    NULL,
-                    NULL));
     ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
                     WIFI_EVENT_STA_CONNECTED,
                     &wifi_connected_handler,
@@ -209,13 +184,40 @@ static int wifi_cmd_sta(int argc, char **argv)
     return 0;
 }
 
-static bool wifi_cmd_sta_scan(const char *ssid)
+static bool wifi_perform_scan(const char *ssid, bool internal)
 {
     wifi_scan_config_t scan_config = { 0 };
     scan_config.ssid = (uint8_t *) ssid;
+    uint8_t i;
 
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
-    ESP_ERROR_CHECK( esp_wifi_scan_start(&scan_config, false) );
+    ESP_ERROR_CHECK( esp_wifi_scan_start(&scan_config, true) );
+
+    esp_wifi_scan_get_ap_num(&g_scan_ap_num);
+    if (g_scan_ap_num == 0) {
+        ESP_LOGI(TAG_STA, "No matching AP found");
+        return false;
+    }
+
+    if (g_ap_list_buffer) {
+        free(g_ap_list_buffer);
+    }
+    g_ap_list_buffer = malloc(g_scan_ap_num * sizeof(wifi_ap_record_t));
+    if (g_ap_list_buffer == NULL) {
+        ESP_LOGE(TAG_STA, "Failed to malloc buffer to print scan results");
+        return false;
+    }
+
+    if (esp_wifi_scan_get_ap_records(&g_scan_ap_num, (wifi_ap_record_t *)g_ap_list_buffer) == ESP_OK) {
+        if (!internal) {
+            for (i = 0; i < g_scan_ap_num; i++) {
+                ESP_LOGI(TAG_STA, "[%s][rssi=%d]""%s", g_ap_list_buffer[i].ssid, g_ap_list_buffer[i].rssi,
+                         g_ap_list_buffer[i].ftm_responder ? "[FTM Responder]" : "");
+            }
+        }
+    }
+
+    ESP_LOGI(TAG_STA, "sta scan done");
 
     return true;
 }
@@ -231,9 +233,9 @@ static int wifi_cmd_scan(int argc, char **argv)
 
     ESP_LOGI(TAG_STA, "sta start to scan");
     if ( scan_args.ssid->count == 1 ) {
-        wifi_cmd_sta_scan(scan_args.ssid->sval[0]);
+        wifi_perform_scan(scan_args.ssid->sval[0], false);
     } else {
-        wifi_cmd_sta_scan(NULL);
+        wifi_perform_scan(NULL, false);
     }
     return 0;
 }
@@ -309,9 +311,45 @@ static int wifi_cmd_query(int argc, char **argv)
     return 0;
 }
 
+wifi_ap_record_t *find_ftm_responder_ap(const char *ssid)
+{
+    bool retry_scan = false;
+    uint8_t i;
+
+    if (!ssid)
+        return NULL;
+
+retry:
+    if (!g_ap_list_buffer || (g_scan_ap_num == 0)) {
+        ESP_LOGI(TAG_STA, "Scanning for %s", ssid);
+        if (false == wifi_perform_scan(ssid, true)) {
+            return NULL;
+        }
+    }
+
+    for (i = 0; i < g_scan_ap_num; i++) {
+        if (strcmp((const char *)g_ap_list_buffer[i].ssid, ssid) == 0)
+            return &g_ap_list_buffer[i];
+    }
+
+    if (!retry_scan) {
+        retry_scan = true;
+        if (g_ap_list_buffer) {
+            free(g_ap_list_buffer);
+            g_ap_list_buffer = NULL;
+        }
+        goto retry;
+    }
+
+    ESP_LOGI(TAG_STA, "No matching AP found");
+
+    return NULL;
+}
+
 static int wifi_cmd_ftm(int argc, char **argv)
 {
     int nerrors = arg_parse(argc, argv, (void **) &ftm_args);
+    wifi_ap_record_t *ap_record;
 
     wifi_ftm_initiator_cfg_t ftmi_cfg = {
         .frm_count = 32,
@@ -325,6 +363,18 @@ static int wifi_cmd_ftm(int argc, char **argv)
 
     if (ftm_args.mode->count == 0) {
         goto ftm_start;
+    }
+
+    if (ftm_args.ssid->count == 1) {
+        ap_record = find_ftm_responder_ap(ftm_args.ssid->sval[0]);
+        if (ap_record) {
+            printf("Starting FTM with " MACSTR " on channel %d\n", MAC2STR(ap_record->bssid),
+                    ap_record->primary);
+            memcpy(ftmi_cfg.resp_mac, ap_record->bssid, 6);
+            ftmi_cfg.channel = ap_record->primary;
+        } else {
+            return 0;
+        }
     }
 
     if (ftm_args.frm_count->count != 0) {
@@ -354,7 +404,7 @@ ftm_start:
                  ftmi_cfg.frm_count, ftmi_cfg.burst_period * 100);
     }
 
-    if (ESP_OK != esp_wifi_ftm_start_initiator(&ftmi_cfg)) {
+    if (ESP_OK != esp_wifi_ftm_initiate_session(&ftmi_cfg)) {
         ESP_LOGE(TAG_STA, "Failed to start FTM session");
         return 0;
     }
@@ -430,6 +480,7 @@ void register_wifi(void)
     ESP_ERROR_CHECK( esp_console_cmd_register(&query_cmd) );
 
     ftm_args.mode = arg_lit1("I", "ftm_initiator", "FTM Initiator mode");
+    ftm_args.ssid = arg_str0("s", "ssid", "SSID", "SSID of AP");
     ftm_args.frm_count = arg_int0("c", "frm_count", "<0/16/24/32/64>", "FTM frames to be exchanged (0: No preference)");
     ftm_args.burst_period = arg_int0("p", "burst_period", "<2-255 (x 100 mSec)>", "Periodicity of FTM bursts in 100's of miliseconds (0: No preference)");
     ftm_args.end = arg_end(1);
@@ -469,12 +520,11 @@ void app_main(void)
     printf("\n ==========================================================\n");
     printf(" |                      Steps to test FTM                 |\n");
     printf(" |                                                        |\n");
-    printf(" |  1. Print 'help' to gain overview of commands          |\n");
-    printf(" |  2. Use 'scan' command for AP that support FTM         |\n");
+    printf(" |  1. Use 'help' to gain overview of commands            |\n");
+    printf(" |  2. Use 'scan' command to search for external AP's     |\n");
     printf(" |                          OR                            |\n");
-    printf(" |  2. Start SoftAP on another device with 'ap' command   |\n");
-    printf(" |  3. Setup connection with the AP using 'sta' command   |\n");
-    printf(" |  4. Initiate FTM from Station using 'ftm -I' command   |\n");
+    printf(" |  2. Start SoftAP on another device using 'ap' command  |\n");
+    printf(" |  3. Start FTM with command 'ftm -I -s <SSID>'          |\n");
     printf(" |                                                        |\n");
     printf(" ==========================================================\n\n");
 

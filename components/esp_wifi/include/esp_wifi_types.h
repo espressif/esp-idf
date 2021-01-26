@@ -522,6 +522,8 @@ typedef struct {
   *
   */
 typedef struct {
+    uint8_t resp_mac[6];        /**< MAC address of the FTM Responder */
+    uint8_t channel;            /**< Primary channel of the FTM Responder */
     uint8_t frm_count;          /**< No. of FTM frames requested in terms of 4 or 8 bursts (allowed values - 0(No pref), 16, 24, 32, 64) */
     uint16_t burst_period;      /**< Requested time period between consecutive FTM bursts in 100's of milliseconds (0 - No pref) */
 } wifi_ftm_initiator_cfg_t;

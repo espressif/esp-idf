@@ -56,10 +56,10 @@ uint64_t g_wifi_feature_caps =
 #if (CONFIG_ESP32_SPIRAM_SUPPORT | CONFIG_ESP32S2_SPIRAM_SUPPORT)
     CONFIG_FEATURE_CACHE_TX_BUF_BIT |
 #endif
-#if CONFIG_ESP32S2_WIFI_FTM_INITIATOR_SUPPORT
+#if CONFIG_ESP_WIFI_FTM_INITIATOR_SUPPORT
     CONFIG_FEATURE_FTM_INITIATOR_BIT |
 #endif
-#if CONFIG_ESP32S2_WIFI_FTM_RESPONDER_SUPPORT
+#if CONFIG_ESP_WIFI_FTM_RESPONDER_SUPPORT
     CONFIG_FEATURE_FTM_RESPONDER_BIT |
 #endif
 0;
@@ -255,23 +255,21 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
     }
     adc2_cal_include(); //This enables the ADC2 calibration constructor at start up.
 
-#if CONFIG_IDF_TARGET_ESP32S2
-#ifdef CONFIG_ESP32S2_WIFI_FTM_REPORT_LOG_ENABLE
+#ifdef CONFIG_ESP_WIFI_FTM_REPORT_LOG_ENABLE
     ftm_report_log_level_t log_lvl = {0};
-#ifdef CONFIG_ESP32S2_WIFI_FTM_REPORT_SHOW_RTT
+#ifdef CONFIG_ESP_WIFI_FTM_REPORT_SHOW_RTT
     log_lvl.show_rtt = 1;
 #endif
-#ifdef CONFIG_ESP32S2_WIFI_FTM_REPORT_SHOW_DIAG
+#ifdef CONFIG_ESP_WIFI_FTM_REPORT_SHOW_DIAG
     log_lvl.show_diag = 1;
 #endif
-#ifdef CONFIG_ESP32S2_WIFI_FTM_REPORT_SHOW_T1T2T3T4
+#ifdef CONFIG_ESP_WIFI_FTM_REPORT_SHOW_T1T2T3T4
     log_lvl.show_t1t2t3t4 = 1;
 #endif
-#ifdef CONFIG_ESP32S2_WIFI_FTM_REPORT_SHOW_RSSI
+#ifdef CONFIG_ESP_WIFI_FTM_REPORT_SHOW_RSSI
     log_lvl.show_rxrssi = 1;
 #endif
     esp_wifi_set_ftm_report_log_level(&log_lvl);
-#endif
 #endif
     esp_wifi_config_info();
     return result;
