@@ -15,7 +15,8 @@ set(srcs  "intr_alloc.c"
           "sleep_modes.c"
           "task_wdt.c"
           "int_wdt.c"
-          "stack_check.c")
+          "stack_check.c"
+          "freertos_hooks.c")
 
 if(NOT (${target} STREQUAL "esp32c3") )
     list(APPEND srcs  "dbg_stubs.c")

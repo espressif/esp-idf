@@ -10,8 +10,7 @@ if(BOOTLOADER_BUILD)
 else()
     # Regular app build
     list(APPEND srcs "src/esp_err.c"
-             "src/esp_err_to_name.c"
-             "src/freertos_hooks.c")
+             "src/esp_err_to_name.c")
 
     # Note: esp_ipc, esp_pm added as a public requirement to keep compatibility as to be located here.
     idf_component_register(SRCS "${srcs}"
