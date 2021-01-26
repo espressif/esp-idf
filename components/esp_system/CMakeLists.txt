@@ -14,7 +14,8 @@ set(srcs  "intr_alloc.c"
           "system_time.c"
           "sleep_modes.c"
           "task_wdt.c"
-          "int_wdt.c")
+          "int_wdt.c"
+          "stack_check.c")
 
 if(NOT (${target} STREQUAL "esp32c3") )
     list(APPEND srcs  "dbg_stubs.c")
@@ -43,7 +44,7 @@ endif()
 
 # Disable stack protection in files which are involved in initialization of that feature
 set_source_files_properties(
-    startup.c
+    "startup.c" "stack_check.c"
     PROPERTIES COMPILE_FLAGS
     -fno-stack-protector)
 

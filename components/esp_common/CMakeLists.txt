@@ -11,8 +11,7 @@ else()
     # Regular app build
     list(APPEND srcs "src/esp_err.c"
              "src/esp_err_to_name.c"
-             "src/freertos_hooks.c"
-             "src/stack_check.c")
+             "src/freertos_hooks.c")
 
     # Note: esp_ipc, esp_pm added as a public requirement to keep compatibility as to be located here.
     idf_component_register(SRCS "${srcs}"
@@ -20,11 +19,6 @@ else()
                            REQUIRES ${target} espcoredump esp_timer esp_ipc esp_pm esp_hw_support
                            PRIV_REQUIRES soc
                            LDFRAGMENTS "linker.lf")
-
-    set_source_files_properties(
-        "src/stack_check.c"
-        PROPERTIES COMPILE_FLAGS
-        -fno-stack-protector)
 
     set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY LINK_LIBRARIES "-Wl,--gc-sections")
     set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-Wl,--gc-sections")
