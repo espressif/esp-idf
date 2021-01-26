@@ -9,15 +9,13 @@ if(BOOTLOADER_BUILD)
     set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-Wl,--gc-sections")
 else()
     # Regular app build
-    list(APPEND srcs "src/esp_err.c"
-             "src/esp_err_to_name.c")
+    list(APPEND srcs "src/esp_err_to_name.c")
 
     # Note: esp_ipc, esp_pm added as a public requirement to keep compatibility as to be located here.
     idf_component_register(SRCS "${srcs}"
                            INCLUDE_DIRS include
                            REQUIRES ${target} espcoredump esp_timer esp_ipc esp_pm esp_hw_support
-                           PRIV_REQUIRES soc
-                           LDFRAGMENTS "linker.lf")
+                           PRIV_REQUIRES soc)
 
     set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY LINK_LIBRARIES "-Wl,--gc-sections")
     set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-Wl,--gc-sections")
