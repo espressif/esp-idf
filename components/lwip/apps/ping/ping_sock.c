@@ -180,7 +180,9 @@ static void esp_ping_thread(void *args)
                         ep->on_ping_timeout((esp_ping_handle_t)ep, ep->cb_args);
                     }
                 }
-                vTaskDelayUntil(&last_wake, pdMS_TO_TICKS(ep->interval_ms)); // to get a more accurate delay
+                if (pdMS_TO_TICKS(ep->interval_ms)) {
+                    vTaskDelayUntil(&last_wake, pdMS_TO_TICKS(ep->interval_ms)); // to get a more accurate delay
+                }
             }
             /* batch of ping operations finished */
             if (ep->on_ping_end) {
