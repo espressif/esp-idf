@@ -278,14 +278,6 @@ menu "Common ESP-related"
             complex issues with crashes while flash cache is disabled (for example, when writing to
             SPI flash.)
 
-    config ESP_DEBUG_STUBS_ENABLE
-        bool
-        default COMPILER_OPTIMIZATION_LEVEL_DEBUG
-        depends on !ESP32_TRAX && !ESP32S2_TRAX
-        help
-            Debug stubs are used by OpenOCD to execute pre-compiled onboard code
-            which does some useful debugging stuff, e.g. GCOV data dump.
-
     config ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY
         # Invisible option that is set by SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY, but
         # exists even if SPIRAM is not supported

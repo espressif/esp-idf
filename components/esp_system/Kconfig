@@ -121,5 +121,14 @@ menu "ESP System Settings"
                 The lock is reset only on the chip startup.
 
     endmenu  # Memory protection
+    
+    config ESP_DEBUG_STUBS_ENABLE
+        bool
+        default COMPILER_OPTIMIZATION_LEVEL_DEBUG
+        depends on !ESP32_TRAX && !ESP32S2_TRAX
+        help
+            Debug stubs are used by OpenOCD to execute pre-compiled onboard code
+            which does some useful debugging stuff, e.g. GCOV data dump.
+
 
 endmenu  # ESP System Settings

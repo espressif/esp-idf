@@ -4,13 +4,21 @@ if(BOOTLOADER_BUILD)
     return()
 endif()
 
-idf_component_register(SRCS "intr_alloc.c"
-                            "esp_async_memcpy.c"
-                            "panic.c"
-                            "system_api.c"
-                            "startup.c"
-                            "system_time.c"
-                            "sleep_modes.c"
+idf_build_get_property(target IDF_TARGET)
+
+set(srcs  "intr_alloc.c"
+          "esp_async_memcpy.c"
+          "panic.c"
+          "system_api.c"
+          "startup.c"
+          "system_time.c"
+          "sleep_modes.c")
+
+if(NOT (${target} STREQUAL "esp32c3") )
+    list(APPEND srcs  "dbg_stubs.c")
+endif()
+
+idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS include
                     PRIV_REQUIRES spi_flash
                                   # [refactor-todo] requirements due to init code,
@@ -18,8 +26,8 @@ idf_component_register(SRCS "intr_alloc.c"
                                   # link-time registration is used.
                                   esp_pm app_update nvs_flash pthread app_trace esp_gdbstub
                     LDFRAGMENTS "linker.lf")
-
 add_subdirectory(port)
+
 
 # After system initialization, `start_app` (and its other cores variant) is called.
 # This is provided by the user or from another component. Since we can't establish
