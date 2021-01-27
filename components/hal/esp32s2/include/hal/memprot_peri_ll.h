@@ -31,9 +31,11 @@ extern "C" {
 #define PERI1_INTR_ST_FAULTADDR_M           0x03FFFFC0  //(bits 25:6 in the reg)
 #define PERI1_INTR_ST_FAULTADDR_S           0x4         //(bits 21:2 of real address)
 
+
 static inline void esp_memprot_peri1_clear_intr(void)
 {
     DPORT_SET_PERI_REG_MASK(DPORT_PMS_PRO_DPORT_6_REG, DPORT_PMS_PRO_DPORT_ILG_CLR);
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_PMS_PRO_DPORT_6_REG, DPORT_PMS_PRO_DPORT_ILG_CLR);
 }
 
 static inline uint32_t esp_memprot_peri1_get_intr_source_num(void)
@@ -116,6 +118,7 @@ static inline uint32_t esp_memprot_peri1_get_lock_bit(void)
 #define PERI1_RTCSLOW_ADDRESS_HIGH              PERI1_RTCSLOW_ADDRESS_LOW + RTCSLOW_MEMORY_SIZE
 #define PERI1_RTCSLOW_INTR_ST_FAULTADDR_HI_0    0x3F400000
 
+#define PERI1_RTCSLOW_ADDR_TO_CONF_REG(addr)    (((addr >> CONF_REG_ADDRESS_SHIFT) & DPORT_PMS_PRO_DPORT_RTCSLOW_SPLTADDR) << DPORT_PMS_PRO_DPORT_RTCSLOW_SPLTADDR_S)
 
 static inline uint32_t *esp_memprot_peri1_rtcslow_get_fault_address(void)
 {
@@ -137,11 +140,9 @@ static inline bool esp_memprot_peri1_rtcslow_is_intr_mine(void)
 static inline void esp_memprot_peri1_rtcslow_set_prot(uint32_t *split_addr, bool lw, bool lr, bool hw, bool hr)
 {
     uint32_t addr = (uint32_t)split_addr;
+    assert( addr % 0x4 == 0 );
 
-    //check split address is WORD aligned
-    uint32_t reg_split_addr = addr >> 2;
-    assert(addr == (reg_split_addr << 2));
-    reg_split_addr &= DPORT_PMS_PRO_DPORT_RTCSLOW_SPLTADDR_M;
+    uint32_t reg_split_addr = PERI1_RTCSLOW_ADDR_TO_CONF_REG(addr);
 
     //prepare high & low permission mask
     uint32_t permission_mask = 0;
@@ -201,6 +202,7 @@ static inline uint32_t esp_memprot_peri1_rtcslow_get_conf_reg(void)
 static inline void esp_memprot_peri2_clear_intr(void)
 {
     DPORT_SET_PERI_REG_MASK(DPORT_PMS_PRO_AHB_3_REG, DPORT_PMS_PRO_AHB_ILG_CLR);
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_PMS_PRO_AHB_3_REG, DPORT_PMS_PRO_AHB_ILG_CLR);
 }
 
 static inline uint32_t esp_memprot_peri2_get_intr_source_num(void)
@@ -286,6 +288,8 @@ static inline uint32_t *esp_memprot_peri2_rtcslow_get_fault_address(void)
 #define PERI2_RTCSLOW_0_ADDRESS_LOW              PERI2_RTCSLOW_0_ADDRESS_BASE
 #define PERI2_RTCSLOW_0_ADDRESS_HIGH             PERI2_RTCSLOW_0_ADDRESS_LOW + RTCSLOW_MEMORY_SIZE
 
+#define PERI2_RTCSLOW_0_ADDR_TO_CONF_REG(addr)    (((addr >> CONF_REG_ADDRESS_SHIFT) & DPORT_PMS_PRO_AHB_RTCSLOW_0_SPLTADDR) << DPORT_PMS_PRO_AHB_RTCSLOW_0_SPLTADDR_S)
+
 static inline bool esp_memprot_peri2_rtcslow_0_is_intr_mine(void)
 {
     if (esp_memprot_peri2_is_assoc_intr()) {
@@ -298,11 +302,9 @@ static inline bool esp_memprot_peri2_rtcslow_0_is_intr_mine(void)
 static inline void esp_memprot_peri2_rtcslow_0_set_prot(uint32_t *split_addr, bool lw, bool lr, bool lx, bool hw, bool hr, bool hx)
 {
     uint32_t addr = (uint32_t)split_addr;
+    assert( addr % 0x4 == 0 );
 
-    //check split address is WORD aligned
-    uint32_t reg_split_addr = addr >> 2;
-    assert(addr == (reg_split_addr << 2));
-    reg_split_addr &= DPORT_PMS_PRO_AHB_RTCSLOW_0_SPLTADDR_M;
+    uint32_t reg_split_addr = PERI2_RTCSLOW_0_ADDR_TO_CONF_REG(addr);
 
     //prepare high & low permission mask
     uint32_t permission_mask = 0;
@@ -371,6 +373,7 @@ static inline uint32_t esp_memprot_peri2_rtcslow_0_get_conf_reg(void)
 #define PERI2_RTCSLOW_1_ADDRESS_LOW              PERI2_RTCSLOW_1_ADDRESS_BASE
 #define PERI2_RTCSLOW_1_ADDRESS_HIGH             PERI2_RTCSLOW_1_ADDRESS_LOW + RTCSLOW_MEMORY_SIZE
 
+#define PERI2_RTCSLOW_1_ADDR_TO_CONF_REG(addr)   (((addr >> CONF_REG_ADDRESS_SHIFT) & DPORT_PMS_PRO_AHB_RTCSLOW_1_SPLTADDR) << DPORT_PMS_PRO_AHB_RTCSLOW_1_SPLTADDR_S)
 
 static inline bool esp_memprot_peri2_rtcslow_1_is_intr_mine(void)
 {
@@ -384,11 +387,9 @@ static inline bool esp_memprot_peri2_rtcslow_1_is_intr_mine(void)
 static inline void esp_memprot_peri2_rtcslow_1_set_prot(uint32_t *split_addr, bool lw, bool lr, bool lx, bool hw, bool hr, bool hx)
 {
     uint32_t addr = (uint32_t)split_addr;
+    assert( addr % 0x4 == 0 );
 
-    //check split address is WORD aligned
-    uint32_t reg_split_addr = addr >> 2;
-    assert(addr == (reg_split_addr << 2));
-    reg_split_addr &= DPORT_PMS_PRO_AHB_RTCSLOW_1_SPLTADDR_M;
+    uint32_t reg_split_addr = PERI2_RTCSLOW_1_ADDR_TO_CONF_REG(addr);
 
     //prepare high & low permission mask
     uint32_t permission_mask = 0;

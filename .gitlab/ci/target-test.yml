@@ -281,6 +281,11 @@ example_test_C3_FLASH_ENC_OTA:
     - .test_app_template
     - .rules:test:custom_test-esp32s2
 
+.test_app_esp32c3_template:
+  extends:
+    - .test_app_template
+    - .rules:test:custom_test-esp32c3
+
 test_app_test_001:
   extends: .test_app_esp32_template
   tags:
@@ -309,6 +314,12 @@ test_app_test_004:
   extends: .test_app_esp32s2_template
   tags:
     - ESP32S2
+    - Example_GENERIC
+
+test_app_test_005:
+  extends: .test_app_esp32c3_template
+  tags:
+    - ESP32C3
     - Example_GENERIC
 
 test_app_test_esp32_generic:
