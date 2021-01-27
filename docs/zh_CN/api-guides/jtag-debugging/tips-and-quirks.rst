@@ -115,64 +115,64 @@ OpenOCD 完全支持 ESP-IDF 自带的 FreeRTOS 操作系统，GDB 会将 FreeRT
 
 .. _jtag-debugging-tip-openocd-configure-target:
 
-Configuration of OpenOCD for specific target
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+根据目标芯片配置 OpenOCD
+^^^^^^^^^^^^^^^^^^^^^^^^
 
-There are several kinds of OpenOCD configuration files (``*.cfg``). All configuration files are located in subdirectories of ``share/openocd/scripts`` directory of OpenOCD distribution (or ``tcl/scripts`` directory of the source repository). For the purposes of this guide, the most important ones are ``board``, ``interface`` and ``target``.
+OpenOCD 有很多种配置文件（``*.cfg``），它们位于 OpenOCD 安装目录的 ``share/openocd/scripts`` 子目录中（或者在 OpenOCD 源码目录的 ``tcl/scripts`` 目录中）。本文主要介绍 ``board``，``interface`` 和 ``target`` 这三个目录。
 
-* ``interface`` configuration files describe the JTAG adapter. Examples of JTAG adapters are ESP-Prog and J-Link.
-* ``target`` configuration files describe specific chips, or in some cases, modules.
-* ``board`` configuration files are provided for development boards with a built-in JTAG adapter. Such files include an ``interface`` configuration file to choose the adapter, and ``target`` configuration file to choose the chip/module.
+* ``interface`` 包含了例如 ESPProg、J-Link 这些 JTAG 适配器的配置文件。
+* ``target`` 包含了目标芯片或者模组的配置文件。
+* ``board`` 包含有内置了 JTAG 适配器的开发板的配置文件，这些配置文件会根据实际的 JTAG 适配器和芯片/模组来导入某个具体的 ``interface`` 和 ``target`` 的配置。
 
-The following configuration files are available for {IDF_TARGET_NAME}:
+{IDF_TARGET_NAME} 可以使用的配置文件如下表所示:
 
 .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
     :start-after: openocd-cfg-files
     :end-before: ---
 
 
-If you are using one of the boards which have a pre-defined configuration file, you only need to pass one ``-f`` argument to OpenOCD, specifying that file.
+如果你使用的开发板已经有了一份预定义好的配置文件，你只须将该文件通过 ``-f`` 参数告诉 OpenOCD。
 
-If you are using a board not listed here, you need to specify both the interface configuration file and target configuration file.
+如果你的开发板不在上述列表中，你需要使用多个 ``-f`` 参数来告诉 OpenOCD 你选择的 ``interface`` 和 ``target`` 配置文件。
 
-Custom configuration files
-""""""""""""""""""""""""""
+自定义配置文件
+""""""""""""""
 
-OpenOCD configuration files are written in TCL, and include a variety of choices for customization and scripting. This can be useful for non-standard debugging situations. Please refer to `OpenOCD Manual`_ for the TCL scripting reference.
+OpenOCD 的配置文件是用 TCL 语言编写的, 包含了定制和编写脚本的各种选项。这在非标准调试的场景中非常有用，更多关于 TCL 脚本的内容请参考 `OpenOCD 参考手册`_ 。
 
 .. _jtag-debugging-tip-openocd-config-vars:
 
-OpenOCD configuration variables
-"""""""""""""""""""""""""""""""
+OpenOCD 中的配置变量
+""""""""""""""""""""
 
-The following variables can be optionally set before including the ESP-specific target configuration file. This can be done either in a custom configuration file, or from the command line.
+你还可以视情况在导入 ``target`` 配置文件之前，设定如下变量的值。可以写在自定义配置文件中，或者通过命令行传递。
 
-The syntax for setting a variable in TCL is:
+TCL 语言中为变量赋值的语法是:
 
 .. code-block:: tcl
 
     set VARIABLE_NAME value
 
-To set a variable from the command line (replace the name of .cfg file with the correct file for your board):
+在命令行中为变量赋值请参考如下示例（请把 .cfg 配置文件替换成你自己的开发板配置）:
 
 .. code-block:: bash
 
     openocd -c 'set VARIABLE_NAME value' -f board/esp-xxxxx-kit.cfg
 
-It is important to set the variable before including the ESP-specific configuration file, otherwise the variable will not have effect. You can set multiple variables by repeating the ``-c`` option.
+请切记，一定要在导入配置文件之前设置这些变量，否则变量的值将不会生效。为多个变量赋值需要重复多次 ``-c`` 选项。
 
-.. list-table:: Common ESP-related OpenOCD variables
+.. list-table:: 通用的 ESP 相关的 OpenOCD 变量
     :widths: 25 75
     :header-rows: 1
 
-    * - Variable
-      - Description
+    * - 变量名
+      - 描述
     * - ``ESP_RTOS``
-      - Set to ``none`` to disable RTOS support. In this case, thread list will not be available in GDB. Can be useful when debugging FreeRTOS itself, and stepping through the scheduler code.
+      - 设置成 ``none`` 可以关闭 OpenOCD 对 RTOS 的支持，这样的话，你将无法在 GDB 中查看到线程列表。这个功能在调试 FreeRTOS 本身的时候会很有用，可以单步调试调度器的代码。
     * - ``ESP_FLASH_SIZE``
-      - Set to ``0`` to disable Flash breakpoints support.
+      - 设置成 ``0`` 可以关闭对 Flash 断点的支持。
     * - ``ESP_SEMIHOST_BASEDIR``
-      - Set to the path (on the host) which will be the default directory for semihosting functions.
+      - 设置 semihosting 在主机端的默认目录。
 
 .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
     :start-after: openocd-target-specific-config-vars
@@ -215,25 +215,25 @@ It is important to set the variable before including the ESP-specific configurat
 
 .. _jtag-debugging-security-features:
 
-JTAG with Flash Encryption or Secure Boot
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+JTAG 与闪存加密和安全引导
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By default, enabling Flash Encryption and/or Secure Boot will disable JTAG debugging. On first boot, the bootloader will burn an eFuse bit to permanently disable JTAG at the same time it enables the other features.
+默认情况下，开启了闪存加密和（或者）安全引导后，系统在首次启动时，引导程序会烧写 eFuse 的某个比特，从而将 JTAG 永久关闭。
 
-The project configuration option :ref:`CONFIG_SECURE_BOOT_ALLOW_JTAG` will keep JTAG enabled at this time, removing all physical security but allowing debugging. (Although the name suggests Secure Boot, this option can be applied even when only Flash Encryption is enabled).
+Kconfig 配置项 :ref:`CONFIG_SECURE_BOOT_ALLOW_JTAG` 可以改变这个默认行为，使得用户即使开启了安全引导或者闪存加密，仍会保留 JTAG 的功能。
 
-However, OpenOCD may attempt to automatically read and write the flash in order to set :ref:`software breakpoints <jtag-debugging-tip-where-breakpoints>`. This has two problems:
+然而，因为设置 :ref:`软件断点 <jtag-debugging-tip-where-breakpoints>` 的需要，OpenOCD 会尝试自动读写 Flash 中的内容，这会带来两个问题：
 
-- Software breakpoints are incompatible with Flash Encryption, OpenOCD currently has no support for encrypting or decrypting flash contents.
-- If Secure Boot is enabled, setting a software breakpoint will change the digest of a signed app and make the signature invalid. This means if a software breakpoint is set and then a reset occurs, the signature verification will fail on boot.
+- 软件断点和闪存加密是不兼容的，目前 OpenOCD 尚不支持对 Flash 中的内容进行加密和解密。
+- 如果开启了安全引导功能，设置软件断点会改变被签名的程序的摘要，从而使得签名失效。这也意味着，如果设置了软件断点，系统会在下次重启时的签名验证阶段失败，导致无法启动。
 
-To disable software breakpoints while using JTAG, add an extra argument ``-c 'set ESP_FLASH_SIZE 0'`` to the start of the OpenOCD command line. For example::
+关闭 JTAG 的软件断点功能，可以在启动 OpenOCD 时在命令行额外加一项配置参数 ``-c 'set ESP_FLASH_SIZE 0'`` 例如 ::
 
     openocd -c 'set ESP_FLASH_SIZE 0' -f board/esp32-wrover-kit-3.3v.cfg
 
 .. note::
 
-   For the same reason, the ESP-IDF app may fail bootloader verification of app signatures, when this option is enabled and a software breakpoint is set.
+   同样地，当启用该选项，并且调试过程中打了软件断点，之后引导程序将无法校验通过应用程序的签名。
 
 .. _jtag-debugging-tip-reporting-issues:
 
@@ -279,4 +279,4 @@ To disable software breakpoints while using JTAG, add an extra argument ``-c 'se
 4.  请将 ``openocd_log.txt`` 和 ``gdb_log.txt`` 文件附在你的问题报告中。
 
 
-.. _OpenOCD Manual: http://openocd.org/doc/html/index.html
+.. _OpenOCD 参考手册: http://openocd.org/doc/html/index.html
