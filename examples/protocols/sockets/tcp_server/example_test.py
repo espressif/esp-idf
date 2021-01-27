@@ -6,14 +6,14 @@
 
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import print_function, unicode_literals
+
 import os
-import sys
 import re
 import socket
-import ttfw_idf
+import sys
 
+import ttfw_idf
 
 # -----------  Config  ----------
 PORT = 3333
@@ -46,28 +46,28 @@ def tcp_client(address, payload):
     return data.decode()
 
 
-@ttfw_idf.idf_example_test(env_tag="Example_WIFI")
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
 def test_examples_protocol_socket_tcpserver(env, extra_data):
-    MESSAGE = "Data to ESP"
+    MESSAGE = 'Data to ESP'
     """
     steps:
       1. join AP
       2. have the board connect to the server
       3. send and receive data
     """
-    dut1 = env.get_dut("tcp_client", "examples/protocols/sockets/tcp_server", dut_class=ttfw_idf.ESP32DUT)
+    dut1 = env.get_dut('tcp_client', 'examples/protocols/sockets/tcp_server', dut_class=ttfw_idf.ESP32DUT)
     # check and log bin size
-    binary_file = os.path.join(dut1.app.binary_path, "tcp_server.bin")
+    binary_file = os.path.join(dut1.app.binary_path, 'tcp_server.bin')
     bin_size = os.path.getsize(binary_file)
-    ttfw_idf.log_performance("tcp_server_bin_size", "{}KB".format(bin_size // 1024))
+    ttfw_idf.log_performance('tcp_server_bin_size', '{}KB'.format(bin_size // 1024))
 
     # start test
     dut1.start_app()
 
-    ipv4 = dut1.expect(re.compile(r" IPv4 address: ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)"), timeout=30)[0]
+    ipv4 = dut1.expect(re.compile(r' IPv4 address: ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)'), timeout=30)[0]
     ipv6_r = r':'.join((r'[0-9a-fA-F]{4}',) * 8)    # expect all 8 octets from IPv6 (assumes it's printed in the long form)
     ipv6 = dut1.expect(re.compile(r' IPv6 address: ({})'.format(ipv6_r)), timeout=30)[0]
-    print("Connected with IPv4={} and IPv6={}".format(ipv4, ipv6))
+    print('Connected with IPv4={} and IPv6={}'.format(ipv4, ipv6))
 
     # test IPv4
     received = tcp_client(ipv4, MESSAGE)
@@ -75,7 +75,7 @@ def test_examples_protocol_socket_tcpserver(env, extra_data):
         raise
     dut1.expect(MESSAGE)
     # test IPv6
-    received = tcp_client("{}%{}".format(ipv6, INTERFACE), MESSAGE)
+    received = tcp_client('{}%{}'.format(ipv6, INTERFACE), MESSAGE)
     if not received == MESSAGE:
         raise
     dut1.expect(MESSAGE)

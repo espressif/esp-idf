@@ -14,13 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import print_function, unicode_literals
+
 import sys
+
 try:
-    from builtins import str
-    from builtins import range
-    from builtins import object
+    from builtins import object, range, str
 except ImportError:
     # This should not happen because the Python packages are checked before invoking this script. However, here is
     # some output which should help if we missed something.
@@ -30,14 +29,14 @@ except ImportError:
     # requirements.txt from the IDF_PATH should be used) or from the documentation project (then the requirements.txt
     # for the documentation directory should be used).
     sys.exit(1)
-from io import open
-import os
 import argparse
-import re
-import fnmatch
 import collections
-import textwrap
+import fnmatch
 import functools
+import os
+import re
+import textwrap
+from io import open
 
 # list files here which should not be parsed
 ignore_files = [os.path.join('components', 'mdns', 'test_afl_fuzz_host', 'esp32_compat.h'),
@@ -72,7 +71,7 @@ class ErrItem(object):
     - rel_str - (optional) error string which is a base for the error
     - rel_off - (optional) offset in relation to the base error
     """
-    def __init__(self, name, file, include_as=None, comment="", rel_str="", rel_off=0):
+    def __init__(self, name, file, include_as=None, comment='', rel_str='', rel_off=0):
         self.name = name
         self.file = file
         self.include_as = include_as
@@ -81,11 +80,11 @@ class ErrItem(object):
         self.rel_off = rel_off
 
     def __str__(self):
-        ret = self.name + " from " + self.file
-        if (self.rel_str != ""):
-            ret += " is (" + self.rel_str + " + " + str(self.rel_off) + ")"
-        if self.comment != "":
-            ret += " // " + self.comment
+        ret = self.name + ' from ' + self.file
+        if (self.rel_str != ''):
+            ret += ' is (' + self.rel_str + ' + ' + str(self.rel_off) + ')'
+        if self.comment != '':
+            ret += ' // ' + self.comment
         return ret
 
     def __cmp__(self, other):
@@ -94,7 +93,7 @@ class ErrItem(object):
         elif self.file not in priority_headers and other.file in priority_headers:
             return 1
 
-        base = "_BASE"
+        base = '_BASE'
 
         if self.file == other.file:
             if self.name.endswith(base) and not(other.name.endswith(base)):
@@ -117,7 +116,7 @@ class InputError(RuntimeError):
     Represents and error on the input
     """
     def __init__(self, p, e):
-        super(InputError, self).__init__(p + ": " + e)
+        super(InputError, self).__init__(p + ': ' + e)
 
 
 def process(line, idf_path, include_as):
@@ -125,20 +124,20 @@ def process(line, idf_path, include_as):
     Process a line of text from file idf_path (relative to IDF project).
     Fills the global list unproc_list and dictionaries err_dict, rev_err_dict
     """
-    if idf_path.endswith(".c"):
+    if idf_path.endswith('.c'):
         # We would not try to include a C file
-        raise InputError(idf_path, "This line should be in a header file: %s" % line)
+        raise InputError(idf_path, 'This line should be in a header file: %s' % line)
 
     words = re.split(r' +', line, 2)
     # words[1] is the error name
     # words[2] is the rest of the line (value, base + value, comment)
     if len(words) < 3:
-        raise InputError(idf_path, "Error at line %s" % line)
+        raise InputError(idf_path, 'Error at line %s' % line)
 
-    line = ""
+    line = ''
     todo_str = words[2]
 
-    comment = ""
+    comment = ''
     # identify possible comment
     m = re.search(r'/\*!<(.+?(?=\*/))', todo_str)
     if m:
@@ -170,7 +169,7 @@ def process(line, idf_path, include_as):
             related = todo_str  # BASE error
             num = 0  # (BASE + 0)
         else:
-            raise InputError(idf_path, "Cannot parse line %s" % line)
+            raise InputError(idf_path, 'Cannot parse line %s' % line)
 
     try:
         related
@@ -199,7 +198,7 @@ def process_remaining_errors():
             err_dict[num].append(ErrItem(item.name, item.file, item.include_as, item.comment))
             rev_err_dict[item.name] = num
         else:
-            print(item.rel_str + " referenced by " + item.name + " in " + item.file + " is unknown")
+            print(item.rel_str + ' referenced by ' + item.name + ' in ' + item.file + ' is unknown')
 
     del unproc_list[:]
 
@@ -229,9 +228,9 @@ def print_warning(error_list, error_code):
     """
     Print warning about errors with the same error code
     """
-    print("[WARNING] The following errors have the same code (%d):" % error_code)
+    print('[WARNING] The following errors have the same code (%d):' % error_code)
     for e in error_list:
-        print("    " + str(e))
+        print('    ' + str(e))
 
 
 def max_string_width():
@@ -270,14 +269,14 @@ def generate_c_output(fin, fout):
 
     for line in fin:
         if re.match(r'@COMMENT@', line):
-            fout.write("//Do not edit this file because it is autogenerated by " + os.path.basename(__file__) + "\n")
+            fout.write('//Do not edit this file because it is autogenerated by ' + os.path.basename(__file__) + '\n')
 
         elif re.match(r'@HEADERS@', line):
             for i in include_list:
                 if i not in dont_include:
                     fout.write("#if __has_include(\"" + i + "\")\n#include \"" + i + "\"\n#endif\n")
         elif re.match(r'@ERROR_ITEMS@', line):
-            last_file = ""
+            last_file = ''
             for k in sorted(err_dict.keys()):
                 if len(err_dict[k]) > 1:
                     err_dict[k].sort(key=functools.cmp_to_key(ErrItem.__cmp__))
@@ -285,26 +284,26 @@ def generate_c_output(fin, fout):
                 for e in err_dict[k]:
                     if e.file != last_file:
                         last_file = e.file
-                        fout.write("    // %s\n" % last_file)
-                    table_line = ("    ERR_TBL_IT(" + e.name + "), ").ljust(max_width) + "/* " + str(k).rjust(max_decdig)
-                    fout.write("#   ifdef      %s\n" % e.name)
+                        fout.write('    // %s\n' % last_file)
+                    table_line = ('    ERR_TBL_IT(' + e.name + '), ').ljust(max_width) + '/* ' + str(k).rjust(max_decdig)
+                    fout.write('#   ifdef      %s\n' % e.name)
                     fout.write(table_line)
                     hexnum_length = 0
                     if k > 0:  # negative number and zero should be only ESP_FAIL and ESP_OK
-                        hexnum = " 0x%x" % k
+                        hexnum = ' 0x%x' % k
                         hexnum_length = len(hexnum)
                         fout.write(hexnum)
-                    if e.comment != "":
+                    if e.comment != '':
                         if len(e.comment) < 50:
-                            fout.write(" %s" % e.comment)
+                            fout.write(' %s' % e.comment)
                         else:
-                            indent = " " * (len(table_line) + hexnum_length + 1)
+                            indent = ' ' * (len(table_line) + hexnum_length + 1)
                             w = textwrap.wrap(e.comment, width=120, initial_indent=indent, subsequent_indent=indent)
                             # this couldn't be done with initial_indent because there is no initial_width option
-                            fout.write(" %s" % w[0].strip())
+                            fout.write(' %s' % w[0].strip())
                             for i in range(1, len(w)):
-                                fout.write("\n%s" % w[i])
-                    fout.write(" */\n#   endif\n")
+                                fout.write('\n%s' % w[i])
+                    fout.write(' */\n#   endif\n')
         else:
             fout.write(line)
 
@@ -359,7 +358,7 @@ def main():
                             except InputError as e:
                                 print(e)
                 except UnicodeDecodeError:
-                    raise ValueError("The encoding of {} is not Unicode.".format(path_in_idf))
+                    raise ValueError('The encoding of {} is not Unicode.'.format(path_in_idf))
 
     process_remaining_errors()
 
@@ -371,5 +370,5 @@ def main():
             generate_c_output(fin, fout)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

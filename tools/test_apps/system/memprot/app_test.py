@@ -3,7 +3,6 @@
 import ttfw_idf
 from tiny_test_fw import Utility
 
-
 mem_test = [
     ['IRAM0_SRAM', 'WRX'],
     ['IRAM0_RTCFAST', 'WRX'],
@@ -15,24 +14,24 @@ mem_test = [
 ]
 
 
-@ttfw_idf.idf_custom_test(env_tag="Example_GENERIC", target="esp32s2", group="test-apps")
+@ttfw_idf.idf_custom_test(env_tag='Example_GENERIC', target='esp32s2', group='test-apps')
 def test_memprot(env, extra_data):
 
-    dut = env.get_dut("memprot", "tools/test_apps/system/memprot")
+    dut = env.get_dut('memprot', 'tools/test_apps/system/memprot')
     dut.start_app()
 
     for i in mem_test:
         if 'R' in i[1]:
-            dut.expect(i[0] + " read low: OK")
-            dut.expect(i[0] + " read high: OK")
+            dut.expect(i[0] + ' read low: OK')
+            dut.expect(i[0] + ' read high: OK')
         if 'W' in i[1]:
-            dut.expect(i[0] + " write low: OK")
-            dut.expect(i[0] + " write high: OK")
+            dut.expect(i[0] + ' write low: OK')
+            dut.expect(i[0] + ' write high: OK')
         if 'X' in i[1]:
-            dut.expect(i[0] + " exec low: OK")
-            dut.expect(i[0] + " exec high: OK")
+            dut.expect(i[0] + ' exec low: OK')
+            dut.expect(i[0] + ' exec high: OK')
 
-    Utility.console_log("Memprot test done")
+    Utility.console_log('Memprot test done')
 
 
 if __name__ == '__main__':

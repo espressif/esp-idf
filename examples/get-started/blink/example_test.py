@@ -1,20 +1,19 @@
 #!/usr/bin/env python
 
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-import re
-import os
-import hashlib
+from __future__ import division, print_function, unicode_literals
 
-from tiny_test_fw import Utility
+import hashlib
+import os
+import re
+
 import ttfw_idf
+from tiny_test_fw import Utility
 
 
 def verify_elf_sha256_embedding(dut):
-    elf_file = os.path.join(dut.app.binary_path, "blink.elf")
+    elf_file = os.path.join(dut.app.binary_path, 'blink.elf')
     sha256 = hashlib.sha256()
-    with open(elf_file, "rb") as f:
+    with open(elf_file, 'rb') as f:
         sha256.update(f.read())
     sha256_expected = sha256.hexdigest()
 
@@ -28,12 +27,12 @@ def verify_elf_sha256_embedding(dut):
         raise ValueError('ELF file SHA256 mismatch')
 
 
-@ttfw_idf.idf_example_test(env_tag="Example_GENERIC")
+@ttfw_idf.idf_example_test(env_tag='Example_GENERIC')
 def test_examples_blink(env, extra_data):
-    dut = env.get_dut("blink", "examples/get-started/blink", dut_class=ttfw_idf.ESP32DUT)
-    binary_file = os.path.join(dut.app.binary_path, "blink.bin")
+    dut = env.get_dut('blink', 'examples/get-started/blink', dut_class=ttfw_idf.ESP32DUT)
+    binary_file = os.path.join(dut.app.binary_path, 'blink.bin')
     bin_size = os.path.getsize(binary_file)
-    ttfw_idf.log_performance("blink_bin_size", "{}KB".format(bin_size // 1024))
+    ttfw_idf.log_performance('blink_bin_size', '{}KB'.format(bin_size // 1024))
 
     dut.start_app()
 

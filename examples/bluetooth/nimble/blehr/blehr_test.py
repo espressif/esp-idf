@@ -15,20 +15,21 @@
 # limitations under the License.
 
 from __future__ import print_function
+
 import os
 import re
+import subprocess
 import threading
 import traceback
-import subprocess
 
 try:
     import Queue
 except ImportError:
     import queue as Queue
 
-from tiny_test_fw import Utility
 import ttfw_idf
 from ble import lib_ble_client
+from tiny_test_fw import Utility
 
 # When running on local machine execute the following before running this script
 # > make app bootloader
@@ -44,28 +45,28 @@ def blehr_client_task(hr_obj, dut_addr):
     # Get BLE client module
     ble_client_obj = lib_ble_client.BLE_Bluez_Client(interface, devname=ble_devname, devaddr=dut_addr)
     if not ble_client_obj:
-        raise RuntimeError("Failed to get DBus-Bluez object")
+        raise RuntimeError('Failed to get DBus-Bluez object')
 
     # Discover Bluetooth Adapter and power on
     is_adapter_set = ble_client_obj.set_adapter()
     if not is_adapter_set:
-        raise RuntimeError("Adapter Power On failed !!")
+        raise RuntimeError('Adapter Power On failed !!')
 
     # Connect BLE Device
     is_connected = ble_client_obj.connect()
     if not is_connected:
         # Call disconnect to perform cleanup operations before exiting application
         ble_client_obj.disconnect()
-        raise RuntimeError("Connection to device " + str(ble_devname) + " failed !!")
+        raise RuntimeError('Connection to device ' + str(ble_devname) + ' failed !!')
 
     # Read Services
     services_ret = ble_client_obj.get_services()
     if services_ret:
-        Utility.console_log("\nServices\n")
+        Utility.console_log('\nServices\n')
         Utility.console_log(str(services_ret))
     else:
         ble_client_obj.disconnect()
-        raise RuntimeError("Failure: Read Services failed")
+        raise RuntimeError('Failure: Read Services failed')
 
     '''
     Blehr application run:
@@ -75,9 +76,9 @@ def blehr_client_task(hr_obj, dut_addr):
     '''
     blehr_ret = ble_client_obj.hr_update_simulation(hr_srv_uuid, hr_char_uuid)
     if blehr_ret:
-        Utility.console_log("Success: blehr example test passed")
+        Utility.console_log('Success: blehr example test passed')
     else:
-        raise RuntimeError("Failure: blehr example test failed")
+        raise RuntimeError('Failure: blehr example test failed')
 
     # Call disconnect to perform cleanup operations before exiting application
     ble_client_obj.disconnect()
@@ -96,7 +97,7 @@ class BleHRThread(threading.Thread):
             self.exceptions_queue.put(traceback.format_exc(), block=False)
 
 
-@ttfw_idf.idf_example_test(env_tag="Example_WIFI_BT")
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_BT')
 def test_example_app_ble_hr(env, extra_data):
     """
         Steps:
@@ -110,20 +111,20 @@ def test_example_app_ble_hr(env, extra_data):
     subprocess.check_output(['hciconfig','hci0','reset'])
 
     # Acquire DUT
-    dut = env.get_dut("blehr", "examples/bluetooth/nimble/blehr", dut_class=ttfw_idf.ESP32DUT)
+    dut = env.get_dut('blehr', 'examples/bluetooth/nimble/blehr', dut_class=ttfw_idf.ESP32DUT)
 
     # Get binary file
-    binary_file = os.path.join(dut.app.binary_path, "blehr.bin")
+    binary_file = os.path.join(dut.app.binary_path, 'blehr.bin')
     bin_size = os.path.getsize(binary_file)
-    ttfw_idf.log_performance("blehr_bin_size", "{}KB".format(bin_size // 1024))
+    ttfw_idf.log_performance('blehr_bin_size', '{}KB'.format(bin_size // 1024))
 
     # Upload binary and start testing
-    Utility.console_log("Starting blehr simple example test app")
+    Utility.console_log('Starting blehr simple example test app')
     dut.start_app()
     dut.reset()
 
     # Get device address from dut
-    dut_addr = dut.expect(re.compile(r"Device Address: ([a-fA-F0-9:]+)"), timeout=30)[0]
+    dut_addr = dut.expect(re.compile(r'Device Address: ([a-fA-F0-9:]+)'), timeout=30)[0]
     exceptions_queue = Queue.Queue()
     # Starting a py-client in a separate thread
     blehr_thread_obj = BleHRThread(dut_addr, exceptions_queue)
@@ -137,15 +138,15 @@ def test_example_app_ble_hr(env, extra_data):
         except Queue.Empty:
             break
         else:
-            Utility.console_log("\n" + exception_msg)
+            Utility.console_log('\n' + exception_msg)
 
     if exception_msg:
-        raise Exception("Thread did not run successfully")
+        raise Exception('Thread did not run successfully')
 
     # Check dut responses
-    dut.expect("subscribe event; cur_notify=1", timeout=30)
-    dut.expect("subscribe event; cur_notify=0", timeout=30)
-    dut.expect("disconnect;", timeout=30)
+    dut.expect('subscribe event; cur_notify=1', timeout=30)
+    dut.expect('subscribe event; cur_notify=0', timeout=30)
+    dut.expect('disconnect;', timeout=30)
 
 
 if __name__ == '__main__':

@@ -17,18 +17,18 @@
 # limitations under the License.
 #
 
-from __future__ import print_function
-from __future__ import unicode_literals
-import re
-import os
-import subprocess
-import json
-import fnmatch
+from __future__ import print_function, unicode_literals
+
 import argparse
+import fnmatch
+import json
+import os
 import queue
-from threading import Thread, Event
+import re
+import subprocess
 import tempfile
 from io import open
+from threading import Event, Thread
 
 
 class HeaderFailed(Exception):
@@ -38,30 +38,30 @@ class HeaderFailed(Exception):
 
 class HeaderFailedSdkconfig(HeaderFailed):
     def __str__(self):
-        return "Sdkconfig Error"
+        return 'Sdkconfig Error'
 
 
 class HeaderFailedBuildError(HeaderFailed):
     def __str__(self):
-        return "Header Build Error"
+        return 'Header Build Error'
 
 
 class HeaderFailedCppGuardMissing(HeaderFailed):
     def __str__(self):
-        return "Header Missing C++ Guard"
+        return 'Header Missing C++ Guard'
 
 
 class HeaderFailedContainsCode(HeaderFailed):
     def __str__(self):
-        return "Header Produced non-zero object"
+        return 'Header Produced non-zero object'
 
 
 #   Creates a temp file and returns both output as a string and a file name
 #
-def exec_cmd_to_temp_file(what, suffix=""):
+def exec_cmd_to_temp_file(what, suffix=''):
     out_file = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
     rc, out, err = exec_cmd(what, out_file)
-    with open(out_file.name, "r", encoding='utf-8') as f:
+    with open(out_file.name, 'r', encoding='utf-8') as f:
         out = f.read()
     return rc, out, err, out_file.name
 
@@ -90,14 +90,14 @@ class PublicHeaderChecker:
             print(message)
 
     def __init__(self, verbose=False, jobs=1, prefix=None):
-        self.gcc = "{}gcc".format(prefix)
-        self.gpp = "{}g++".format(prefix)
+        self.gcc = '{}gcc'.format(prefix)
+        self.gpp = '{}g++'.format(prefix)
         self.verbose = verbose
         self.jobs = jobs
         self.prefix = prefix
         self.extern_c = re.compile(r'extern "C"')
         self.error_macro = re.compile(r'#error')
-        self.error_orphan_kconfig = re.compile(r"#error CONFIG_VARS_USED_WHILE_SDKCONFIG_NOT_INCLUDED")
+        self.error_orphan_kconfig = re.compile(r'#error CONFIG_VARS_USED_WHILE_SDKCONFIG_NOT_INCLUDED')
         self.kconfig_macro = re.compile(r'\bCONFIG_[A-Z0-9_]+')
         self.assembly_nocode = r'^\s*(\.file|\.text|\.ident).*$'
         self.check_threads = []
@@ -129,10 +129,10 @@ class PublicHeaderChecker:
                     try:
                         self.check_one_header(task, num)
                     except HeaderFailed as e:
-                        self.failed_queue.put("{}: Failed! {}".format(task, e))
+                        self.failed_queue.put('{}: Failed! {}'.format(task, e))
                     except Exception as e:
                         # Makes sure any unexpected exceptions causes the program to terminate
-                        self.failed_queue.put("{}: Failed! {}".format(task, e))
+                        self.failed_queue.put('{}: Failed! {}'.format(task, e))
                         self.terminate.set()
                         raise
 
@@ -174,7 +174,7 @@ class PublicHeaderChecker:
             self.compile_one_header(header)
             temp_header = None
             try:
-                _, _, _, temp_header = exec_cmd_to_temp_file(["sed", "/#include/d; /#error/d", header], suffix=".h")
+                _, _, _, temp_header = exec_cmd_to_temp_file(['sed', '/#include/d; /#error/d', header], suffix='.h')
                 res = self.preprocess_one_header(temp_header, num, ignore_sdkconfig_issue=True)
                 if res == self.PREPROC_OUT_SAME_HRD_FAILED:
                     raise HeaderFailedCppGuardMissing()
@@ -185,53 +185,53 @@ class PublicHeaderChecker:
                     os.unlink(temp_header)
 
     def compile_one_header(self, header):
-        rc, out, err = exec_cmd([self.gcc, "-S", "-o-", "-include", header, self.main_c] + self.include_dir_flags)
+        rc, out, err = exec_cmd([self.gcc, '-S', '-o-', '-include', header, self.main_c] + self.include_dir_flags)
         if rc == 0:
             if not re.sub(self.assembly_nocode, '', out, flags=re.M).isspace():
                 raise HeaderFailedContainsCode()
             return  # Header OK: produced zero code
-        self.log("{}: FAILED: compilation issue".format(header), True)
+        self.log('{}: FAILED: compilation issue'.format(header), True)
         self.log(err, True)
         raise HeaderFailedBuildError()
 
     def preprocess_one_header(self, header, num, ignore_sdkconfig_issue=False):
-        all_compilation_flags = ["-w", "-P", "-E", "-DESP_PLATFORM", "-include", header, self.main_c] + self.include_dir_flags
+        all_compilation_flags = ['-w', '-P', '-E', '-DESP_PLATFORM', '-include', header, self.main_c] + self.include_dir_flags
         if not ignore_sdkconfig_issue:
             # just strip commnets to check for CONFIG_... macros
-            rc, out, err = exec_cmd([self.gcc, "-fpreprocessed", "-dD",  "-P",  "-E", header] + self.include_dir_flags)
+            rc, out, err = exec_cmd([self.gcc, '-fpreprocessed', '-dD',  '-P',  '-E', header] + self.include_dir_flags)
             if re.search(self.kconfig_macro, out):
                 # enable defined #error if sdkconfig.h not included
-                all_compilation_flags.append("-DIDF_CHECK_SDKCONFIG_INCLUDED")
+                all_compilation_flags.append('-DIDF_CHECK_SDKCONFIG_INCLUDED')
         try:
             # compile with C++, check for errors, outputs for a temp file
-            rc, cpp_out, err, cpp_out_file = exec_cmd_to_temp_file([self.gpp, "--std=c++17"] + all_compilation_flags)
+            rc, cpp_out, err, cpp_out_file = exec_cmd_to_temp_file([self.gpp, '--std=c++17'] + all_compilation_flags)
             if rc != 0:
                 if re.search(self.error_macro, err):
                     if re.search(self.error_orphan_kconfig, err):
-                        self.log("{}: CONFIG_VARS_USED_WHILE_SDKCONFIG_NOT_INCLUDED".format(header), True)
+                        self.log('{}: CONFIG_VARS_USED_WHILE_SDKCONFIG_NOT_INCLUDED'.format(header), True)
                         return self.COMPILE_ERR_REF_CONFIG_HDR_FAILED
-                    self.log("{}: Error directive failure: OK".format(header))
+                    self.log('{}: Error directive failure: OK'.format(header))
                     return self.COMPILE_ERR_ERROR_MACRO_HDR_OK
-                self.log("{}: FAILED: compilation issue".format(header), True)
+                self.log('{}: FAILED: compilation issue'.format(header), True)
                 self.log(err)
                 return self.COMPILE_ERR_HDR_FAILED
             # compile with C compiler, outputs to another temp file
-            rc, c99_out, err, c99_out_file = exec_cmd_to_temp_file([self.gcc, "--std=c99"] + all_compilation_flags)
+            rc, c99_out, err, c99_out_file = exec_cmd_to_temp_file([self.gcc, '--std=c99'] + all_compilation_flags)
             if rc != 0:
-                self.log("{} FAILED should never happen".format(header))
+                self.log('{} FAILED should never happen'.format(header))
                 return self.COMPILE_ERR_HDR_FAILED
             # diff the two outputs
-            rc, diff, err = exec_cmd(["diff", c99_out_file, cpp_out_file])
+            rc, diff, err = exec_cmd(['diff', c99_out_file, cpp_out_file])
             if not diff or diff.isspace():
                 if not cpp_out or cpp_out.isspace():
-                    self.log("{} The same, but empty out - OK".format(header))
+                    self.log('{} The same, but empty out - OK'.format(header))
                     return self.PREPROC_OUT_ZERO_HDR_OK
-                self.log("{} FAILED C and C++ preprocessor output is the same!".format(header), True)
+                self.log('{} FAILED C and C++ preprocessor output is the same!'.format(header), True)
                 return self.PREPROC_OUT_SAME_HRD_FAILED
             if re.search(self.extern_c, diff):
-                self.log("{} extern C present - OK".format(header))
+                self.log('{} extern C present - OK'.format(header))
                 return self.PREPROC_OUT_DIFFERENT_WITH_EXT_C_HDR_OK
-            self.log("{} Different but no extern C - FAILED".format(header), True)
+            self.log('{} Different but no extern C - FAILED'.format(header), True)
             return self.PREPROC_OUT_DIFFERENT_NO_EXT_C_HDR_FAILED
         finally:
             os.unlink(cpp_out_file)
@@ -243,32 +243,32 @@ class PublicHeaderChecker:
     # Get compilation data from an example to list all public header files
     def list_public_headers(self, ignore_dirs, ignore_files, only_dir=None):
         idf_path = os.getenv('IDF_PATH')
-        project_dir = os.path.join(idf_path, "examples", "get-started", "blink")
-        subprocess.check_call(["idf.py", "reconfigure"], cwd=project_dir)
-        build_commands_json = os.path.join(project_dir, "build", "compile_commands.json")
-        with open(build_commands_json, "r", encoding='utf-8') as f:
-            build_command = json.load(f)[0]["command"].split()
+        project_dir = os.path.join(idf_path, 'examples', 'get-started', 'blink')
+        subprocess.check_call(['idf.py', 'reconfigure'], cwd=project_dir)
+        build_commands_json = os.path.join(project_dir, 'build', 'compile_commands.json')
+        with open(build_commands_json, 'r', encoding='utf-8') as f:
+            build_command = json.load(f)[0]['command'].split()
         include_dir_flags = []
         include_dirs = []
         # process compilation flags (includes and defines)
         for item in build_command:
-            if item.startswith("-I"):
+            if item.startswith('-I'):
                 include_dir_flags.append(item)
-                if "components" in item:
+                if 'components' in item:
                     include_dirs.append(item[2:])  # Removing the leading "-I"
-            if item.startswith("-D"):
+            if item.startswith('-D'):
                 include_dir_flags.append(item.replace('\\',''))  # removes escaped quotes, eg: -DMBEDTLS_CONFIG_FILE=\\\"mbedtls/esp_config.h\\\"
-        include_dir_flags.append("-I" + os.path.join(project_dir, "build", "config"))
-        include_dir_flags.append("-DCI_HEADER_CHECK")
-        sdkconfig_h = os.path.join(project_dir, "build", "config", "sdkconfig.h")
+        include_dir_flags.append('-I' + os.path.join(project_dir, 'build', 'config'))
+        include_dir_flags.append('-DCI_HEADER_CHECK')
+        sdkconfig_h = os.path.join(project_dir, 'build', 'config', 'sdkconfig.h')
         # prepares a main_c file for easier sdkconfig checks and avoid compilers warning when compiling headers directly
-        with open(sdkconfig_h, "a") as f:
-            f.write("#define IDF_SDKCONFIG_INCLUDED")
-        main_c = os.path.join(project_dir, "build", "compile.c")
-        with open(main_c, "w") as f:
-            f.write("#if defined(IDF_CHECK_SDKCONFIG_INCLUDED) && ! defined(IDF_SDKCONFIG_INCLUDED)\n"
-                    "#error CONFIG_VARS_USED_WHILE_SDKCONFIG_NOT_INCLUDED\n"
-                    "#endif")
+        with open(sdkconfig_h, 'a') as f:
+            f.write('#define IDF_SDKCONFIG_INCLUDED')
+        main_c = os.path.join(project_dir, 'build', 'compile.c')
+        with open(main_c, 'w') as f:
+            f.write('#if defined(IDF_CHECK_SDKCONFIG_INCLUDED) && ! defined(IDF_SDKCONFIG_INCLUDED)\n'
+                    '#error CONFIG_VARS_USED_WHILE_SDKCONFIG_NOT_INCLUDED\n'
+                    '#endif')
         # processes public include dirs, removing ignored files
         all_include_files = []
         files_to_check = []
@@ -277,7 +277,7 @@ class PublicHeaderChecker:
                 self.log('{} - directory ignored (not in "{}")'.format(d, only_dir))
                 continue
             if os.path.relpath(d, idf_path).startswith(tuple(ignore_dirs)):
-                self.log("{} - directory ignored".format(d))
+                self.log('{} - directory ignored'.format(d))
                 continue
             for root, dirnames, filenames in os.walk(d):
                 for filename in fnmatch.filter(filenames, '*.h'):
@@ -289,10 +289,10 @@ class PublicHeaderChecker:
         for f in all_include_files:
             rel_path_file = os.path.relpath(f, idf_path)
             if any([os.path.commonprefix([d, rel_path_file]) == d for d in ignore_dirs]):
-                self.log("{} - file ignored (inside ignore dir)".format(f))
+                self.log('{} - file ignored (inside ignore dir)'.format(f))
                 continue
             if rel_path_file in ignore_files:
-                self.log("{} - file ignored".format(f))
+                self.log('{} - file ignored'.format(f))
                 continue
             files_to_check.append(f)
         # removes duplicates and places headers to a work queue
@@ -302,22 +302,22 @@ class PublicHeaderChecker:
 
 
 def check_all_headers():
-    parser = argparse.ArgumentParser("Public header checker file")
-    parser.add_argument("--verbose", "-v", help="enables verbose mode", action="store_true")
-    parser.add_argument("--jobs", "-j", help="number of jobs to run checker", default=1, type=int)
-    parser.add_argument("--prefix", "-p", help="compiler prefix", default="xtensa-esp32-elf-", type=str)
-    parser.add_argument("--exclude-file", "-e", help="exception file", default="check_public_headers_exceptions.txt", type=str)
-    parser.add_argument("--only-dir", "-d", help="reduce the analysis to this directory only", default=None, type=str)
+    parser = argparse.ArgumentParser('Public header checker file')
+    parser.add_argument('--verbose', '-v', help='enables verbose mode', action='store_true')
+    parser.add_argument('--jobs', '-j', help='number of jobs to run checker', default=1, type=int)
+    parser.add_argument('--prefix', '-p', help='compiler prefix', default='xtensa-esp32-elf-', type=str)
+    parser.add_argument('--exclude-file', '-e', help='exception file', default='check_public_headers_exceptions.txt', type=str)
+    parser.add_argument('--only-dir', '-d', help='reduce the analysis to this directory only', default=None, type=str)
     args = parser.parse_args()
 
     # process excluded files and dirs
     exclude_file = os.path.join(os.path.dirname(__file__), args.exclude_file)
-    with open(exclude_file, "r", encoding='utf-8') as f:
+    with open(exclude_file, 'r', encoding='utf-8') as f:
         lines = [line.rstrip() for line in f]
     ignore_files = []
     ignore_dirs = []
     for line in lines:
-        if not line or line.isspace() or line.startswith("#"):
+        if not line or line.isspace() or line.startswith('#'):
             continue
         if os.path.isdir(line):
             ignore_dirs.append(line)
@@ -334,9 +334,9 @@ def check_all_headers():
                 for failed in failures:
                     print(failed)
                 exit(1)
-            print("No errors found")
+            print('No errors found')
         except KeyboardInterrupt:
-            print("Keyboard interrupt")
+            print('Keyboard interrupt')
 
 
 if __name__ == '__main__':

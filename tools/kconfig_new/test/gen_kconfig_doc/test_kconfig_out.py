@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from __future__ import unicode_literals
+
 import io
 import os
 import sys
@@ -76,5 +77,5 @@ class TestDocOutput(unittest.TestCase):
         self.assertNotIn('- from 100', s)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

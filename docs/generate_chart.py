@@ -18,14 +18,14 @@ import argparse
 import datetime as dt
 import json
 
-import numpy as np
-import requests
 import matplotlib.dates
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
-from matplotlib.dates import MONTHLY, DateFormatter, RRuleLocator, rrulewrapper
+import numpy as np
+import requests
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
+from matplotlib.dates import MONTHLY, DateFormatter, RRuleLocator, rrulewrapper
 
 
 class Version(object):
@@ -68,18 +68,18 @@ class ChartVersions(object):
     def get_releases_as_json(self):
         return {
             x.version_name: {
-                "start_date": x.get_start_date().strftime("%Y-%m-%d"),
-                "end_service": x.get_end_service_date().strftime("%Y-%m-%d"),
-                "end_date": x.get_end_of_life_date().strftime("%Y-%m-%d")
+                'start_date': x.get_start_date().strftime('%Y-%m-%d'),
+                'end_service': x.get_end_service_date().strftime('%Y-%m-%d'),
+                'end_date': x.get_end_of_life_date().strftime('%Y-%m-%d')
             } for x in self.sorted_releases_supported
         }
 
     @staticmethod
     def parse_chart_releases_from_js(js_as_string):
-        return json.loads(js_as_string[js_as_string.find("RELEASES: ") + len("RELEASES: "):js_as_string.rfind("};")])
+        return json.loads(js_as_string[js_as_string.find('RELEASES: ') + len('RELEASES: '):js_as_string.rfind('};')])
 
     def _get_all_version_from_url(self, url=None, filename=None):
-        releases_file = requests.get(url).text if url is not None else "".join(open(filename).readlines())
+        releases_file = requests.get(url).text if url is not None else ''.join(open(filename).readlines())
         return self.parse_chart_releases_from_js(releases_file)
 
     def _get_releases_from_url(self, url=None, filename=None):
@@ -178,7 +178,7 @@ class ChartVersions(object):
 
         rule = rrulewrapper(MONTHLY, interval=x_ax_interval)
         loc = RRuleLocator(rule)
-        formatter = DateFormatter("%b %Y")
+        formatter = DateFormatter('%b %Y')
 
         ax.xaxis.set_major_locator(loc)
         ax.xaxis.set_major_formatter(formatter)
@@ -198,19 +198,19 @@ class ChartVersions(object):
                    bbox_to_anchor=(1.01, 1.165), loc='upper right')
         fig.set_size_inches(11, 5, forward=True)
         plt.savefig(output_chart_name + output_chart_extension, bbox_inches='tight')
-        print("Saved into " + output_chart_name + output_chart_extension)
+        print('Saved into ' + output_chart_name + output_chart_extension)
 
 
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser(
-        description="Create chart of version support. Set the url or filename with versions."
-                    "If you set both filename and url the script will prefer filename.")
-    arg_parser.add_argument("--url", metavar="URL", default="https://dl.espressif.com/dl/esp-idf/idf_versions.js")
-    arg_parser.add_argument("--filename",
-                            help="Set the name of the source file, if is set, the script ignores the url.")
-    arg_parser.add_argument("--output-format", help="Set the output format of the image.", default="svg")
-    arg_parser.add_argument("--output-file", help="Set the name of the output file.", default="docs/chart")
+        description='Create chart of version support. Set the url or filename with versions.'
+                    'If you set both filename and url the script will prefer filename.')
+    arg_parser.add_argument('--url', metavar='URL', default='https://dl.espressif.com/dl/esp-idf/idf_versions.js')
+    arg_parser.add_argument('--filename',
+                            help='Set the name of the source file, if is set, the script ignores the url.')
+    arg_parser.add_argument('--output-format', help='Set the output format of the image.', default='svg')
+    arg_parser.add_argument('--output-file', help='Set the name of the output file.', default='docs/chart')
     args = arg_parser.parse_args()
 
     ChartVersions(url=args.url if args.filename is None else None, filename=args.filename).create_chart(
-        output_chart_extension="." + args.output_format.lower()[-3:], output_chart_name=args.output_file)
+        output_chart_extension='.' + args.output_format.lower()[-3:], output_chart_name=args.output_file)

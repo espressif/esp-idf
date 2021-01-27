@@ -20,16 +20,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from __future__ import print_function
-from __future__ import unicode_literals
-from __future__ import division
-from future.utils import iteritems
+from __future__ import division, print_function, unicode_literals
+
 import argparse
 import collections
 import json
 import os.path
 import re
 import sys
+
+from future.utils import iteritems
 
 GLOBAL_JSON_INDENT = 4
 GLOBAL_JSON_SEPARATORS = (',', ': ')
@@ -202,8 +202,8 @@ def load_map_data(map_file):
 def load_memory_config(map_file):
     """ Memory Configuration section is the total size of each output section """
     result = {}
-    scan_to_header(map_file, "Memory Configuration")
-    RE_MEMORY_SECTION = re.compile(r"(?P<name>[^ ]+) +0x(?P<origin>[\da-f]+) +0x(?P<length>[\da-f]+)")
+    scan_to_header(map_file, 'Memory Configuration')
+    RE_MEMORY_SECTION = re.compile(r'(?P<name>[^ ]+) +0x(?P<origin>[\da-f]+) +0x(?P<length>[\da-f]+)')
 
     for line in map_file:
         m = RE_MEMORY_SECTION.match(line)
@@ -213,13 +213,13 @@ def load_memory_config(map_file):
             else:
                 return result  # we're at the end of the Memory Configuration
         section = {
-            "name": m.group("name"),
-            "origin": int(m.group("origin"), 16),
-            "length": int(m.group("length"), 16),
+            'name': m.group('name'),
+            'origin': int(m.group('origin'), 16),
+            'length': int(m.group('length'), 16),
         }
-        if section["name"] != "*default*":
-            result[section["name"]] = section
-    raise RuntimeError("End of file while scanning memory configuration?")
+        if section['name'] != '*default*':
+            result[section['name']] = section
+    raise RuntimeError('End of file while scanning memory configuration?')
 
 
 def detect_target_chip(map_file):
@@ -258,45 +258,45 @@ def load_sections(map_file):
     information for each symbol linked into the section.
     """
     # output section header, ie '.iram0.text     0x0000000040080400    0x129a5'
-    RE_SECTION_HEADER = re.compile(r"(?P<name>[^ ]+) +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+)$")
+    RE_SECTION_HEADER = re.compile(r'(?P<name>[^ ]+) +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+)$')
 
     # source file line, ie
     # 0x0000000040080400       0xa4 /home/gus/esp/32/idf/examples/get-started/hello_world/build/esp32/libesp32.a(cpu_start.o)
     # cmake build system links some object files directly, not part of any archive, so make that part optional
     #  .xtensa.info   0x0000000000000000       0x38 CMakeFiles/hello-world.elf.dir/project_elf_src.c.obj
-    RE_SOURCE_LINE = re.compile(r"\s*(?P<sym_name>\S*) +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+) (?P<archive>.+\.a)?\(?(?P<object_file>.+\.(o|obj))\)?")
+    RE_SOURCE_LINE = re.compile(r'\s*(?P<sym_name>\S*) +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+) (?P<archive>.+\.a)?\(?(?P<object_file>.+\.(o|obj))\)?')
 
     # Fast check to see if line is a potential source line before running the slower full regex against it
-    RE_PRE_FILTER = re.compile(r".*\.(o|obj)\)?")
+    RE_PRE_FILTER = re.compile(r'.*\.(o|obj)\)?')
 
     # Check for lines which only contain the sym name (and rest is on following lines)
-    RE_SYMBOL_ONLY_LINE = re.compile(r"^ (?P<sym_name>\S*)$")
+    RE_SYMBOL_ONLY_LINE = re.compile(r'^ (?P<sym_name>\S*)$')
 
     sections = {}
     section = None
     sym_backup = None
     for line in map_file:
 
-        if line.strip() == "Cross Reference Table":
+        if line.strip() == 'Cross Reference Table':
             # stop processing lines because we are at the next section in the map file
             break
 
         m = RE_SECTION_HEADER.match(line)
         if m is not None:  # start of a new section
             section = {
-                "name": m.group("name"),
-                "address": int(m.group("address"), 16),
-                "size": int(m.group("size"), 16),
-                "sources": [],
+                'name': m.group('name'),
+                'address': int(m.group('address'), 16),
+                'size': int(m.group('size'), 16),
+                'sources': [],
             }
-            sections[section["name"]] = section
+            sections[section['name']] = section
             continue
 
         if section is not None:
             m = RE_SYMBOL_ONLY_LINE.match(line)
             if m is not None:
                 # In some cases the section name appears on the previous line, back it up in here
-                sym_backup = m.group("sym_name")
+                sym_backup = m.group('sym_name')
                 continue
 
             if not RE_PRE_FILTER.match(line):
@@ -305,21 +305,21 @@ def load_sections(map_file):
 
             m = RE_SOURCE_LINE.match(line)
             if m is not None:  # input source file details=ma,e
-                sym_name = m.group("sym_name") if len(m.group("sym_name")) > 0 else sym_backup
-                archive = m.group("archive")
+                sym_name = m.group('sym_name') if len(m.group('sym_name')) > 0 else sym_backup
+                archive = m.group('archive')
                 if archive is None:
                     # optional named group "archive" was not matched, so assign a value to it
-                    archive = "(exe)"
+                    archive = '(exe)'
 
                 source = {
-                    "size": int(m.group("size"), 16),
-                    "address": int(m.group("address"), 16),
-                    "archive": os.path.basename(archive),
-                    "object_file": os.path.basename(m.group("object_file")),
-                    "sym_name": sym_name,
+                    'size': int(m.group('size'), 16),
+                    'address': int(m.group('address'), 16),
+                    'archive': os.path.basename(archive),
+                    'object_file': os.path.basename(m.group('object_file')),
+                    'sym_name': sym_name,
                 }
-                source["file"] = "%s:%s" % (source["archive"], source["object_file"])
-                section["sources"] += [source]
+                source['file'] = '%s:%s' % (source['archive'], source['object_file'])
+                section['sources'] += [source]
 
     return sections
 
@@ -339,12 +339,12 @@ class MemRegNames(object):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="idf_size - a tool to print size information from an IDF MAP file")
+    parser = argparse.ArgumentParser(description='idf_size - a tool to print size information from an IDF MAP file')
 
     parser.add_argument(
         '--json',
-        help="Output results as JSON",
-        action="store_true")
+        help='Output results as JSON',
+        action='store_true')
 
     parser.add_argument(
         'map_file', help='MAP file produced by linker',
@@ -373,7 +373,7 @@ def main():
         '--output-file',
         type=argparse.FileType('w'),
         default=sys.stdout,
-        help="Print output to the specified file instead of stdout")
+        help='Print output to the specified file instead of stdout')
 
     args = parser.parse_args()
 
@@ -415,9 +415,9 @@ def main():
                               args.another_map_file, mem_reg_diff, memory_config_diff, sections_diff)
 
     if args.archives:
-        output += get_detailed_sizes(mem_reg, sections, "archive", "Archive File", args.json, sections_diff)
+        output += get_detailed_sizes(mem_reg, sections, 'archive', 'Archive File', args.json, sections_diff)
     if args.files:
-        output += get_detailed_sizes(mem_reg, sections, "file", "Object File", args.json, sections_diff)
+        output += get_detailed_sizes(mem_reg, sections, 'file', 'Object File', args.json, sections_diff)
 
     if args.archive_details:
         output += get_archive_symbols(mem_reg, sections, args.archive_details, args.json, sections_diff)
@@ -657,13 +657,13 @@ class StructureForDetailedSizes(object):
         """
         result = {}
         for _, section in iteritems(sections):
-            for s in section["sources"]:
+            for s in section['sources']:
                 if not s[key] in result:
                     result[s[key]] = {}
                 archive = result[s[key]]
-                if not section["name"] in archive:
-                    archive[section["name"]] = 0
-                archive[section["name"]] += s["size"]
+                if not section['name'] in archive:
+                    archive[section['name']] = 0
+                archive[section['name']] += s['size']
         return result
 
     @staticmethod

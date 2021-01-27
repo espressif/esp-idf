@@ -14,12 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
-from __future__ import unicode_literals
-from io import open
+from __future__ import print_function, unicode_literals
+
 import argparse
 import json
 import sys
+from io import open
 
 
 def _prepare_source_files(env_dict):
@@ -85,9 +85,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     try:
-        env = dict([(name, value) for (name, value) in (e.split("=", 1) for e in args.env)])
+        env = dict([(name, value) for (name, value) in (e.split('=', 1) for e in args.env)])
     except ValueError:
-        print("--env arguments must each contain =.")
+        print('--env arguments must each contain =.')
         sys.exit(1)
 
     if args.env_file is not None:

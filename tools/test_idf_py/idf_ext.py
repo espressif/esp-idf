@@ -3,88 +3,88 @@ def action_extensions(base_actions, project_path=None):
         print(name, args, kwargs)
 
     def verbose(name, ctx, args):
-        print("Output from test-verbose")
+        print('Output from test-verbose')
         if args.verbose:
-            print("Verbose mode on")
+            print('Verbose mode on')
 
     # Add global options
     extensions = {
-        "global_options": [
+        'global_options': [
             {
-                "names": ["--test-0"],
-                "help": "Non-deprecated option.",
-                "deprecated": False
+                'names': ['--test-0'],
+                'help': 'Non-deprecated option.',
+                'deprecated': False
             },
             {
-                "names": ["--test-1"],
-                "help": "Deprecated option 1.",
-                "deprecated": True
+                'names': ['--test-1'],
+                'help': 'Deprecated option 1.',
+                'deprecated': True
             },
             {
-                "names": ["--test-2"],
-                "help": "Deprecated option 2.",
-                "deprecated": "Please update your parameters."
+                'names': ['--test-2'],
+                'help': 'Deprecated option 2.',
+                'deprecated': 'Please update your parameters.'
             },
             {
-                "names": ["--test-3"],
-                "help": "Deprecated option 3.",
-                "deprecated": {
-                    "custom_message": "Please update your parameters."
+                'names': ['--test-3'],
+                'help': 'Deprecated option 3.',
+                'deprecated': {
+                    'custom_message': 'Please update your parameters.'
                 }
             },
             {
-                "names": ["--test-4"],
-                "help": "Deprecated option 4.",
-                "deprecated": {
-                    "since": "v4.0",
-                    "removed": "v5.0"
+                'names': ['--test-4'],
+                'help': 'Deprecated option 4.',
+                'deprecated': {
+                    'since': 'v4.0',
+                    'removed': 'v5.0'
                 }
             },
             {
-                "names": ["--test-5"],
-                "help": "Deprecated option 5.",
-                "deprecated": {
-                    "since": "v2.0",
-                    "removed": "v3.0",
-                    "exit_with_error": True
+                'names': ['--test-5'],
+                'help': 'Deprecated option 5.',
+                'deprecated': {
+                    'since': 'v2.0',
+                    'removed': 'v3.0',
+                    'exit_with_error': True
                 }
             },
         ],
-        "actions": {
-            "test-verbose": {
-                "callback": verbose,
-                "help": "Command that have some verbosity",
+        'actions': {
+            'test-verbose': {
+                'callback': verbose,
+                'help': 'Command that have some verbosity',
             },
-            "test-0": {
-                "callback": echo,
-                "help": "Non-deprecated command 0",
-                "options": [
+            'test-0': {
+                'callback': echo,
+                'help': 'Non-deprecated command 0',
+                'options': [
                     {
-                        "names": ["--test-sub-0"],
-                        "help": "Non-deprecated subcommand option 0",
-                        "default": None,
+                        'names': ['--test-sub-0'],
+                        'help': 'Non-deprecated subcommand option 0',
+                        'default': None,
                     },
                     {
-                        "names": ["--test-sub-1"],
-                        "help": "Deprecated subcommand option 1",
-                        "default": None,
-                        "deprecated": True
+                        'names': ['--test-sub-1'],
+                        'help': 'Deprecated subcommand option 1',
+                        'default': None,
+                        'deprecated': True
                     },
                 ],
-                "arguments": [{
-                    "names": ["test-arg-0"],
+                'arguments': [{
+                    'names': ['test-arg-0'],
                 }],
             },
-            "test-1": {
-                "callback": echo,
-                "help": "Deprecated command 1",
-                "deprecated": "Please use alternative command."
+            'test-1': {
+                'callback': echo,
+                'help': 'Deprecated command 1',
+                'deprecated': 'Please use alternative command.'
             },
-            "test-2": {
-                "callback": echo,
-                "help": "Deprecated command 2",
-                "deprecated": {
-                    "exit_with_error": True
+            'test-2': {
+                'callback': echo,
+                'help': 'Deprecated command 2',
+                'deprecated': {
+                    'exit_with_error': True
                 }
             },
         },

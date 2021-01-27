@@ -20,17 +20,17 @@ from __future__ import unicode_literals
 import filecmp
 import hashlib
 import os
-import pexpect
 import random
 import struct
 import sys
 import tempfile
 import time
 import unittest
-
 from functools import partial
 from io import open
 from itertools import chain
+
+import pexpect
 
 try:
     from itertools import izip as zip

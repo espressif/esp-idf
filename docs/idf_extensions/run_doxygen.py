@@ -1,20 +1,21 @@
 # Extension to generate Doxygen XML include files, with IDF config & soc macros included
-from __future__ import print_function
-from __future__ import unicode_literals
-from io import open
+from __future__ import print_function, unicode_literals
+
 import os
 import os.path
 import re
 import subprocess
+from io import open
+
 from .util import copy_if_modified
 
 ALL_KINDS = [
-    ("function", "Functions"),
-    ("union", "Unions"),
-    ("struct", "Structures"),
-    ("define", "Macros"),
-    ("typedef", "Type Definitions"),
-    ("enum", "Enumerations")
+    ('function', 'Functions'),
+    ('union', 'Unions'),
+    ('struct', 'Structures'),
+    ('define', 'Macros'),
+    ('typedef', 'Type Definitions'),
+    ('enum', 'Enumerations')
 ]
 """list of items that will be generated for a single API file
 """
@@ -30,27 +31,27 @@ def generate_doxygen(app, defines):
     build_dir = os.path.dirname(app.doctreedir.rstrip(os.sep))
 
     # Call Doxygen to get XML files from the header files
-    print("Calling Doxygen to generate latest XML files")
+    print('Calling Doxygen to generate latest XML files')
     doxy_env = os.environ
     doxy_env.update({
-        "ENV_DOXYGEN_DEFINES": " ".join('{}={}'.format(key, value) for key, value in defines.items()),
-        "IDF_PATH": app.config.idf_path,
-        "IDF_TARGET": app.config.idf_target,
+        'ENV_DOXYGEN_DEFINES': ' '.join('{}={}'.format(key, value) for key, value in defines.items()),
+        'IDF_PATH': app.config.idf_path,
+        'IDF_TARGET': app.config.idf_target,
     })
-    doxyfile_dir = os.path.join(app.config.docs_root, "doxygen")
-    doxyfile_main = os.path.join(doxyfile_dir, "Doxyfile_common")
-    doxyfile_target = os.path.join(doxyfile_dir, "Doxyfile_" + app.config.idf_target)
-    print("Running doxygen with doxyfiles {} and {}".format(doxyfile_main, doxyfile_target))
+    doxyfile_dir = os.path.join(app.config.docs_root, 'doxygen')
+    doxyfile_main = os.path.join(doxyfile_dir, 'Doxyfile_common')
+    doxyfile_target = os.path.join(doxyfile_dir, 'Doxyfile_' + app.config.idf_target)
+    print('Running doxygen with doxyfiles {} and {}'.format(doxyfile_main, doxyfile_target))
 
     # It's possible to have doxygen log warnings to a file using WARN_LOGFILE directive,
     # but in some cases it will still log an error to stderr and return success!
     #
     # So take all of stderr and redirect it to a logfile (will contain warnings and errors)
-    logfile = os.path.join(build_dir, "doxygen-warning-log.txt")
+    logfile = os.path.join(build_dir, 'doxygen-warning-log.txt')
 
-    with open(logfile, "w") as f:
+    with open(logfile, 'w') as f:
         # note: run Doxygen in the build directory, so the xml & xml_in files end up in there
-        subprocess.check_call(["doxygen", doxyfile_main], env=doxy_env, cwd=build_dir, stderr=f)
+        subprocess.check_call(['doxygen', doxyfile_main], env=doxy_env, cwd=build_dir, stderr=f)
 
     # Doxygen has generated XML files in 'xml' directory.
     # Copy them to 'xml_in', only touching the files which have changed.
@@ -69,11 +70,11 @@ def convert_api_xml_to_inc(app, doxyfiles):
     """
     build_dir = app.config.build_dir
 
-    xml_directory_path = "{}/xml".format(build_dir)
-    inc_directory_path = "{}/inc".format(build_dir)
+    xml_directory_path = '{}/xml'.format(build_dir)
+    inc_directory_path = '{}/inc'.format(build_dir)
 
     if not os.path.isdir(xml_directory_path):
-        raise RuntimeError("Directory {} does not exist!".format(xml_directory_path))
+        raise RuntimeError('Directory {} does not exist!'.format(xml_directory_path))
 
     if not os.path.exists(inc_directory_path):
         os.makedirs(inc_directory_path)
@@ -83,16 +84,16 @@ def convert_api_xml_to_inc(app, doxyfiles):
     print("Generating 'api_name.inc' files with Doxygen directives")
     for header_file_path in header_paths:
         api_name = get_api_name(header_file_path)
-        inc_file_path = inc_directory_path + "/" + api_name + ".inc"
+        inc_file_path = inc_directory_path + '/' + api_name + '.inc'
         rst_output = generate_directives(header_file_path, xml_directory_path)
 
         previous_rst_output = ''
         if os.path.isfile(inc_file_path):
-            with open(inc_file_path, "r", encoding='utf-8') as inc_file_old:
+            with open(inc_file_path, 'r', encoding='utf-8') as inc_file_old:
                 previous_rst_output = inc_file_old.read()
 
         if previous_rst_output != rst_output:
-            with open(inc_file_path, "w", encoding='utf-8') as inc_file:
+            with open(inc_file_path, 'w', encoding='utf-8') as inc_file:
                 inc_file.write(rst_output)
 
 
@@ -108,11 +109,11 @@ def get_doxyfile_input_paths(app, doxyfile_path):
 
     print("Getting Doxyfile's INPUT")
 
-    with open(doxyfile_path, "r", encoding='utf-8') as input_file:
+    with open(doxyfile_path, 'r', encoding='utf-8') as input_file:
         line = input_file.readline()
         # read contents of Doxyfile until 'INPUT' statement
         while line:
-            if line.find("INPUT") == 0:
+            if line.find('INPUT') == 0:
                 break
             line = input_file.readline()
 
@@ -124,13 +125,13 @@ def get_doxyfile_input_paths(app, doxyfile_path):
                 # we have reached the end of 'INPUT' statement
                 break
             # process only lines that are not comments
-            if line.find("#") == -1:
+            if line.find('#') == -1:
                 # extract header file path inside components folder
-                m = re.search("components/(.*\.h)", line)  # noqa: W605 - regular expression
+                m = re.search('components/(.*\.h)', line)  # noqa: W605 - regular expression
                 header_file_path = m.group(1)
 
                 # Replace env variable used for multi target header
-                header_file_path = header_file_path.replace("$(IDF_TARGET)", app.config.idf_target)
+                header_file_path = header_file_path.replace('$(IDF_TARGET)', app.config.idf_target)
 
                 doxyfile_INPUT.append(header_file_path)
 
@@ -150,8 +151,8 @@ def get_api_name(header_file_path):
         The name of API.
 
     """
-    api_name = ""
-    regex = r".*/(.*)\.h"
+    api_name = ''
+    regex = r'.*/(.*)\.h'
     m = re.search(regex, header_file_path)
     if m:
         api_name = m.group(1)
@@ -173,15 +174,15 @@ def generate_directives(header_file_path, xml_directory_path):
     api_name = get_api_name(header_file_path)
 
     # in XLT file name each "_" in the api name is expanded by Doxygen to "__"
-    xlt_api_name = api_name.replace("_", "__")
-    xml_file_path = "%s/%s_8h.xml" % (xml_directory_path, xlt_api_name)
+    xlt_api_name = api_name.replace('_', '__')
+    xml_file_path = '%s/%s_8h.xml' % (xml_directory_path, xlt_api_name)
 
-    rst_output = ""
+    rst_output = ''
     rst_output = ".. File automatically generated by 'gen-dxd.py'\n"
-    rst_output += "\n"
-    rst_output += get_rst_header("Header File")
-    rst_output += "* :component_file:`" + header_file_path + "`\n"
-    rst_output += "\n"
+    rst_output += '\n'
+    rst_output += get_rst_header('Header File')
+    rst_output += '* :component_file:`' + header_file_path + '`\n'
+    rst_output += '\n'
 
     try:
         import xml.etree.cElementTree as ET
@@ -206,10 +207,10 @@ def get_rst_header(header_name):
 
     """
 
-    rst_output = ""
-    rst_output += header_name + "\n"
-    rst_output += "^" * len(header_name) + "\n"
-    rst_output += "\n"
+    rst_output = ''
+    rst_output += header_name + '\n'
+    rst_output += '^' * len(header_name) + '\n'
+    rst_output += '\n'
 
     return rst_output
 
@@ -226,14 +227,14 @@ def select_unions(innerclass_list):
 
     """
 
-    rst_output = ""
+    rst_output = ''
     for line in innerclass_list.splitlines():
         # union is denoted by "union" at the beginning of line
-        if line.find("union") == 0:
-            union_id, union_name = re.split(r"\t+", line)
-            rst_output += ".. doxygenunion:: "
+        if line.find('union') == 0:
+            union_id, union_name = re.split(r'\t+', line)
+            rst_output += '.. doxygenunion:: '
             rst_output += union_name
-            rst_output += "\n"
+            rst_output += '\n'
 
     return rst_output
 
@@ -251,20 +252,20 @@ def select_structs(innerclass_list):
 
     """
 
-    rst_output = ""
+    rst_output = ''
     for line in innerclass_list.splitlines():
         # structure is denoted by "struct" at the beginning of line
-        if line.find("struct") == 0:
+        if line.find('struct') == 0:
             # skip structures that are part of union
             # they are documented by 'doxygenunion' directive
-            if line.find("::") > 0:
+            if line.find('::') > 0:
                 continue
-            struct_id, struct_name = re.split(r"\t+", line)
-            rst_output += ".. doxygenstruct:: "
+            struct_id, struct_name = re.split(r'\t+', line)
+            rst_output += '.. doxygenstruct:: '
             rst_output += struct_name
-            rst_output += "\n"
-            rst_output += "    :members:\n"
-            rst_output += "\n"
+            rst_output += '\n'
+            rst_output += '    :members:\n'
+            rst_output += '\n'
 
     return rst_output
 
@@ -282,12 +283,12 @@ def get_directives(tree, kind):
 
     """
 
-    rst_output = ""
-    if kind in ["union", "struct"]:
-        innerclass_list = ""
+    rst_output = ''
+    if kind in ['union', 'struct']:
+        innerclass_list = ''
         for elem in tree.iterfind('compounddef/innerclass'):
-            innerclass_list += elem.attrib["refid"] + "\t" + elem.text + "\n"
-        if kind == "union":
+            innerclass_list += elem.attrib['refid'] + '\t' + elem.text + '\n'
+        if kind == 'union':
             rst_output += select_unions(innerclass_list)
         else:
             rst_output += select_structs(innerclass_list)
@@ -295,10 +296,10 @@ def get_directives(tree, kind):
         for elem in tree.iterfind(
                 'compounddef/sectiondef/memberdef[@kind="%s"]' % kind):
             name = elem.find('name')
-            rst_output += ".. doxygen%s:: " % kind
-            rst_output += name.text + "\n"
+            rst_output += '.. doxygen%s:: ' % kind
+            rst_output += name.text + '\n'
     if rst_output:
         all_kinds_dict = dict(ALL_KINDS)
-        rst_output = get_rst_header(all_kinds_dict[kind]) + rst_output + "\n"
+        rst_output = get_rst_header(all_kinds_dict[kind]) + rst_output + '\n'
 
     return rst_output

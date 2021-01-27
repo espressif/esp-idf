@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
-import os
-import sys
-import pprint
 import json
+import os
+import pprint
 import subprocess
+import sys
 
 # =============================================================================
 # Service funcs
@@ -12,7 +12,7 @@ import subprocess
 
 
 def _build_path(path, *paths):
-    return str(os.path.normpath(os.path.join(path, *paths)).replace("\\", "/"))
+    return str(os.path.normpath(os.path.join(path, *paths)).replace('\\', '/'))
 
 
 def _unify_paths(path_list):
@@ -20,7 +20,7 @@ def _unify_paths(path_list):
 
 
 def _exclude_by_pat_list(path_list, ignore_list):
-    print("- Applying ignore list")
+    print('- Applying ignore list')
     path_list_res = list(path_list)
     for ign in ignore_list:
         if len(ign.strip()):
@@ -50,7 +50,7 @@ def get_idf_path(path, *paths):
 
 
 def _get_apps(target, build_system):
-    print("- Getting paths of apps")
+    print('- Getting paths of apps')
     args = [sys.executable,
             get_idf_path('tools/find_apps.py'),
             '-p',
@@ -79,21 +79,21 @@ def get_apps(target, build_system, ignorelist):
 
 
 def get_cmake_ignore_list():
-    print("- Getting CMake ignore list")
+    print('- Getting CMake ignore list')
     return _file2linelist(
-        get_idf_path("tools", "ci",
-                     "check_examples_cmake_make-cmake_ignore.txt"))
+        get_idf_path('tools', 'ci',
+                     'check_examples_cmake_make-cmake_ignore.txt'))
 
 
 def get_make_ignore_list():
-    print("- Getting Make ignore list")
+    print('- Getting Make ignore list')
     return _file2linelist(
-        get_idf_path("tools", "ci",
-                     "check_examples_cmake_make-make_ignore.txt"))
+        get_idf_path('tools', 'ci',
+                     'check_examples_cmake_make-make_ignore.txt'))
 
 
 def diff(first, second):
-    print("- Comparing...")
+    print('- Comparing...')
     first = set(first)
     second = set(second)
     res = list(first - second) + list(second - first)
@@ -103,21 +103,21 @@ def diff(first, second):
 def main():
     cmake_ignore = get_cmake_ignore_list()
     make_ignore = get_make_ignore_list()
-    cmakes = get_apps("esp32", "cmake", cmake_ignore)
-    makes = get_apps("esp32", "make", make_ignore)
+    cmakes = get_apps('esp32', 'cmake', cmake_ignore)
+    makes = get_apps('esp32', 'make', make_ignore)
 
     res = diff(cmakes, makes)
 
     if len(res):
         pp = pprint.PrettyPrinter(indent=4)
         print(
-            "[ ERROR ] Some projects are not containing Make and Cmake project files:"
+            '[ ERROR ] Some projects are not containing Make and Cmake project files:'
         )
         pp.pprint(res)
-        raise ValueError("Test is not passed")
+        raise ValueError('Test is not passed')
     else:
-        print("[ DONE ]")
+        print('[ DONE ]')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

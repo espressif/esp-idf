@@ -1,12 +1,14 @@
 from __future__ import unicode_literals
-from SimpleWebSocketServer import SimpleWebSocketServer, WebSocket
-from tiny_test_fw import Utility
+
 import glob
 import json
 import os
 import re
 import threading
+
 import ttfw_idf
+from SimpleWebSocketServer import SimpleWebSocketServer, WebSocket
+from tiny_test_fw import Utility
 
 
 class IDEWSProtocol(WebSocket):

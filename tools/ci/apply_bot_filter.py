@@ -3,15 +3,14 @@
 # internal use only
 # called by CI jobs to determine if it need to be executed
 
+import json
 import os
 import re
 import sys
-import json
-
 
 RE_FILTER_PATTERN = re.compile(r'^r"(.+)?"$')
 
-RE_TYPE = type(re.compile("", 0))
+RE_TYPE = type(re.compile('', 0))
 
 
 def parse_filter(filter_name):
@@ -50,13 +49,13 @@ def process_filter(execute_by_default, filter_name, ci_name):
     return execute
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     execute_by_default = True
-    if os.getenv("BOT_NEEDS_TRIGGER_BY_NAME", "0") == "1":
+    if os.getenv('BOT_NEEDS_TRIGGER_BY_NAME', '0') == '1':
         execute_by_default = False
 
-    need_to_execute = process_filter(True, "BOT_STAGE_FILTER", os.getenv("CI_JOB_STAGE")) and process_filter(execute_by_default,
-                                                                                                             "BOT_JOB_FILTER", os.getenv("CI_JOB_NAME"))
+    need_to_execute = process_filter(True, 'BOT_STAGE_FILTER', os.getenv('CI_JOB_STAGE')) and process_filter(execute_by_default,
+                                                                                                             'BOT_JOB_FILTER', os.getenv('CI_JOB_NAME'))
     if need_to_execute:
         sys.exit(0)
     else:

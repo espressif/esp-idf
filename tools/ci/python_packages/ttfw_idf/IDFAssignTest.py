@@ -18,7 +18,7 @@ import gitlab_api
 from tiny_test_fw.Utility import CIAssignTest
 
 try:
-    from idf_py_actions.constants import SUPPORTED_TARGETS, PREVIEW_TARGETS
+    from idf_py_actions.constants import PREVIEW_TARGETS, SUPPORTED_TARGETS
 except ImportError:
     SUPPORTED_TARGETS = []
     PREVIEW_TARGETS = []

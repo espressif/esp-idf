@@ -79,5 +79,5 @@ class Config(object):
             # TODO: to support auto get variable here
             value = None
         if value is None:
-            raise ValueError("Failed to get variable")
+            raise ValueError('Failed to get variable')
         return value

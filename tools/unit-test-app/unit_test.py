@@ -18,30 +18,30 @@
 Test script for unit test case.
 """
 
-import re
-import time
 import argparse
+import re
 import threading
+import time
 
-from tiny_test_fw import TinyFW, Utility, Env, DUT
+import ttfw_idf
+from tiny_test_fw import DUT, Env, TinyFW, Utility
 from tiny_test_fw.TinyFW import TestCaseFailed
 from tiny_test_fw.Utility import handle_unexpected_exception
-import ttfw_idf
 
-UT_APP_BOOT_UP_DONE = "Press ENTER to see the list of tests."
+UT_APP_BOOT_UP_DONE = 'Press ENTER to see the list of tests.'
 
-STRIP_CONFIG_PATTERN = re.compile(r"(.+?)(_\d+)?$")
+STRIP_CONFIG_PATTERN = re.compile(r'(.+?)(_\d+)?$')
 
 # matches e.g.: "rst:0xc (SW_CPU_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)"
-RESET_PATTERN = re.compile(r"(rst:0x[0-9a-fA-F]*\s\([\w].*?\),boot:0x[0-9a-fA-F]*\s\([\w].*?\))")
+RESET_PATTERN = re.compile(r'(rst:0x[0-9a-fA-F]*\s\([\w].*?\),boot:0x[0-9a-fA-F]*\s\([\w].*?\))')
 
 EXCEPTION_PATTERN = re.compile(r"(Guru Meditation Error: Core\s+\d panic'ed \([\w].*?\))")
-ABORT_PATTERN = re.compile(r"(abort\(\) was called at PC 0x[a-fA-F\d]{8} on core \d)")
-FINISH_PATTERN = re.compile(r"1 Tests (\d) Failures (\d) Ignored")
+ABORT_PATTERN = re.compile(r'(abort\(\) was called at PC 0x[a-fA-F\d]{8} on core \d)')
+FINISH_PATTERN = re.compile(r'1 Tests (\d) Failures (\d) Ignored')
 END_LIST_STR = r'\r?\nEnter test for running'
 TEST_PATTERN = re.compile(r'\((\d+)\)\s+"([^"]+)" ([^\r\n]+)\r?\n(' + END_LIST_STR + r')?')
 TEST_SUBMENU_PATTERN = re.compile(r'\s+\((\d+)\)\s+"[^"]+"\r?\n(?=(?=\()|(' + END_LIST_STR + r'))')
-UT_APP_PATH = "tools/unit-test-app"
+UT_APP_PATH = 'tools/unit-test-app'
 
 SIMPLE_TEST_ID = 0
 MULTI_STAGE_ID = 1
@@ -56,9 +56,9 @@ TEST_HISTORY_CHECK_TIMEOUT = 2
 
 def reset_reason_matches(reported_str, expected_str):
     known_aliases = {
-        "_RESET": "_RST",
-        "POWERON_RESET": "POWERON",
-        "DEEPSLEEP_RESET": "DSLEEP",
+        '_RESET': '_RST',
+        'POWERON_RESET': 'POWERON',
+        'DEEPSLEEP_RESET': 'DSLEEP',
     }
 
     if expected_str in reported_str:
@@ -105,32 +105,32 @@ def format_test_case_config(test_case_data):
             # strip space and remove white space only items
             _output = list()
             for _r in reset_list:
-                _data = _r.strip(" ")
+                _data = _r.strip(' ')
                 if _data:
                     _output.append(_data)
             return _output
 
         _case = dict()
         if isinstance(one_case_data, str):
-            _temp = one_case_data.split(" [reset=")
-            _case["name"] = _temp[0]
+            _temp = one_case_data.split(' [reset=')
+            _case['name'] = _temp[0]
             try:
-                _case["reset"] = process_reset_list(_temp[1][0:-1].split(","))
+                _case['reset'] = process_reset_list(_temp[1][0:-1].split(','))
             except IndexError:
-                _case["reset"] = list()
+                _case['reset'] = list()
         elif isinstance(one_case_data, dict):
             _case = one_case_data.copy()
-            assert "name" in _case
-            if "reset" not in _case:
-                _case["reset"] = list()
+            assert 'name' in _case
+            if 'reset' not in _case:
+                _case['reset'] = list()
             else:
-                if isinstance(_case["reset"], str):
-                    _case["reset"] = process_reset_list(_case["reset"].split(","))
+                if isinstance(_case['reset'], str):
+                    _case['reset'] = process_reset_list(_case['reset'].split(','))
         else:
-            raise TypeError("Not supported type during parsing unit test case")
+            raise TypeError('Not supported type during parsing unit test case')
 
-        if "config" not in _case:
-            _case["config"] = "default"
+        if 'config' not in _case:
+            _case['config'] = 'default'
 
         return _case
 
@@ -140,9 +140,9 @@ def format_test_case_config(test_case_data):
     for case_data in test_case_data:
         parsed_case = parse_case(case_data)
         try:
-            case_config[parsed_case["config"]].append(parsed_case)
+            case_config[parsed_case['config']].append(parsed_case)
         except KeyError:
-            case_config[parsed_case["config"]] = [parsed_case]
+            case_config[parsed_case['config']] = [parsed_case]
 
     return case_config
 
@@ -154,16 +154,16 @@ def replace_app_bin(dut, name, new_app_bin):
     for i, config in enumerate(dut.download_config):
         if config.endswith(search_pattern):
             dut.download_config[i] = new_app_bin
-            Utility.console_log("The replaced application binary is {}".format(new_app_bin), "O")
+            Utility.console_log('The replaced application binary is {}'.format(new_app_bin), 'O')
             break
 
 
 def format_case_name(case):
     # we could split cases of same config into multiple binaries as we have limited rom space
     # we should regard those configs like `default` and `default_2` as the same config
-    match = STRIP_CONFIG_PATTERN.match(case["config"])
+    match = STRIP_CONFIG_PATTERN.match(case['config'])
     stripped_config_name = match.group(1)
-    return "[{}] {}".format(stripped_config_name, case["name"])
+    return '[{}] {}'.format(stripped_config_name, case['name'])
 
 
 def reset_dut(dut):
@@ -180,19 +180,19 @@ def reset_dut(dut):
     # To solve this problem, we will add a delay between reset and input `-` command. And we'll also enlarge expect timeout.
     time.sleep(DUT_DELAY_AFTER_RESET)
     for _ in range(DUT_STARTUP_CHECK_RETRY_COUNT):
-        dut.write("-")
+        dut.write('-')
         try:
-            dut.expect("0 Tests 0 Failures 0 Ignored", timeout=TEST_HISTORY_CHECK_TIMEOUT)
+            dut.expect('0 Tests 0 Failures 0 Ignored', timeout=TEST_HISTORY_CHECK_TIMEOUT)
             break
         except DUT.ExpectTimeout:
             pass
     else:
-        raise AssertionError("Reset {} ({}) failed!".format(dut.name, dut.port))
+        raise AssertionError('Reset {} ({}) failed!'.format(dut.name, dut.port))
 
 
 def log_test_case(description, test_case, ut_config):
-    Utility.console_log("Running {} '{}' (config {})".format(description, test_case["name"], ut_config), color="orange")
-    Utility.console_log("Tags: %s" % ", ".join("%s=%s" % (k, v) for (k, v) in test_case.items() if k != "name" and v is not None), color="orange")
+    Utility.console_log("Running {} '{}' (config {})".format(description, test_case['name'], ut_config), color='orange')
+    Utility.console_log('Tags: %s' % ', '.join('%s=%s' % (k, v) for (k, v) in test_case.items() if k != 'name' and v is not None), color='orange')
 
 
 def run_one_normal_case(dut, one_case, junit_test_case):
@@ -200,8 +200,8 @@ def run_one_normal_case(dut, one_case, junit_test_case):
 
     dut.start_capture_raw_data()
     # run test case
-    dut.write("\"{}\"".format(one_case["name"]))
-    dut.expect("Running " + one_case["name"] + "...")
+    dut.write("\"{}\"".format(one_case['name']))
+    dut.expect('Running ' + one_case['name'] + '...')
 
     exception_reset_list = []
 
@@ -215,9 +215,9 @@ def run_one_normal_case(dut, one_case, junit_test_case):
         test_finish.append(True)
         output = dut.stop_capture_raw_data()
         if result:
-            Utility.console_log("Success: " + format_case_name(one_case), color="green")
+            Utility.console_log('Success: ' + format_case_name(one_case), color='green')
         else:
-            Utility.console_log("Failed: " + format_case_name(one_case), color="red")
+            Utility.console_log('Failed: ' + format_case_name(one_case), color='red')
             junit_test_case.add_failure_info(output)
             raise TestCaseFailed(format_case_name(one_case))
 
@@ -234,30 +234,30 @@ def run_one_normal_case(dut, one_case, junit_test_case):
         assert not exception_reset_list
         if int(data[1]):
             # case ignored
-            Utility.console_log("Ignored: " + format_case_name(one_case), color="orange")
-            junit_test_case.add_skipped_info("ignored")
+            Utility.console_log('Ignored: ' + format_case_name(one_case), color='orange')
+            junit_test_case.add_skipped_info('ignored')
         one_case_finish(not int(data[0]))
 
     def handle_reset_finish(data):
         """ reset happened and reboot finished """
         assert exception_reset_list  # reboot but no exception/reset logged. should never happen
         result = False
-        if len(one_case["reset"]) == len(exception_reset_list):
+        if len(one_case['reset']) == len(exception_reset_list):
             for i, exception in enumerate(exception_reset_list):
-                if not reset_reason_matches(exception, one_case["reset"][i]):
+                if not reset_reason_matches(exception, one_case['reset'][i]):
                     break
             else:
                 result = True
         if not result:
-            err_msg = "Reset Check Failed: \r\n\tExpected: {}\r\n\tGet: {}".format(one_case["reset"],
+            err_msg = 'Reset Check Failed: \r\n\tExpected: {}\r\n\tGet: {}'.format(one_case['reset'],
                                                                                    exception_reset_list)
-            Utility.console_log(err_msg, color="orange")
+            Utility.console_log(err_msg, color='orange')
             junit_test_case.add_failure_info(err_msg)
         one_case_finish(result)
 
     while not test_finish:
         try:
-            timeout_value = one_case["timeout"]
+            timeout_value = one_case['timeout']
             dut.expect_any((RESET_PATTERN, handle_exception_reset),
                            (EXCEPTION_PATTERN, handle_exception_reset),
                            (ABORT_PATTERN, handle_exception_reset),
@@ -265,13 +265,13 @@ def run_one_normal_case(dut, one_case, junit_test_case):
                            (UT_APP_BOOT_UP_DONE, handle_reset_finish),
                            timeout=timeout_value)
         except DUT.ExpectTimeout:
-            Utility.console_log("Timeout in expect (%s seconds)" % timeout_value, color="orange")
-            junit_test_case.add_failure_info("timeout")
+            Utility.console_log('Timeout in expect (%s seconds)' % timeout_value, color='orange')
+            junit_test_case.add_failure_info('timeout')
             one_case_finish(False)
             break
 
 
-@ttfw_idf.idf_unit_test(env_tag="UT_T1_1", junit_report_by_case=True)
+@ttfw_idf.idf_unit_test(env_tag='UT_T1_1', junit_report_by_case=True)
 def run_unit_test_cases(env, extra_data):
     """
     extra_data can be three types of value
@@ -297,15 +297,15 @@ def run_unit_test_cases(env, extra_data):
     failed_cases = []
 
     for ut_config in case_config:
-        Utility.console_log("Running unit test for config: " + ut_config, "O")
-        dut = env.get_dut("unit-test-app", app_path=UT_APP_PATH, app_config_name=ut_config, allow_dut_exception=True)
+        Utility.console_log('Running unit test for config: ' + ut_config, 'O')
+        dut = env.get_dut('unit-test-app', app_path=UT_APP_PATH, app_config_name=ut_config, allow_dut_exception=True)
         if len(case_config[ut_config]) > 0:
-            replace_app_bin(dut, "unit-test-app", case_config[ut_config][0].get('app_bin'))
+            replace_app_bin(dut, 'unit-test-app', case_config[ut_config][0].get('app_bin'))
         dut.start_app()
-        Utility.console_log("Download finished, start running test cases", "O")
+        Utility.console_log('Download finished, start running test cases', 'O')
 
         for one_case in case_config[ut_config]:
-            log_test_case("test case", one_case, ut_config)
+            log_test_case('test case', one_case, ut_config)
             performance_items = []
             # create junit report test case
             junit_test_case = TinyFW.JunitReport.create_test_case(format_case_name(one_case))
@@ -325,34 +325,34 @@ def run_unit_test_cases(env, extra_data):
 
     # raise exception if any case fails
     if failed_cases:
-        Utility.console_log("Failed Cases:", color="red")
+        Utility.console_log('Failed Cases:', color='red')
         for _case_name in failed_cases:
-            Utility.console_log("\t" + _case_name, color="red")
+            Utility.console_log('\t' + _case_name, color='red')
         raise TestCaseFailed(*failed_cases)
 
 
 class Handler(threading.Thread):
     WAIT_SIGNAL_PATTERN = re.compile(r'Waiting for signal: \[(.+)]!')
     SEND_SIGNAL_PATTERN = re.compile(r'Send signal: \[([^]]+)](\[([^]]+)])?!')
-    FINISH_PATTERN = re.compile(r"1 Tests (\d) Failures (\d) Ignored")
+    FINISH_PATTERN = re.compile(r'1 Tests (\d) Failures (\d) Ignored')
 
     def __init__(self, dut, sent_signal_list, lock, parent_case_name, child_case_index, timeout):
         self.dut = dut
         self.sent_signal_list = sent_signal_list
         self.lock = lock
         self.parent_case_name = parent_case_name
-        self.child_case_name = ""
+        self.child_case_name = ''
         self.child_case_index = child_case_index + 1
         self.finish = False
         self.result = False
-        self.output = ""
+        self.output = ''
         self.fail_name = None
         self.timeout = timeout
         self.force_stop = threading.Event()  # it show the running status
 
         reset_dut(self.dut)  # reset the board to make it start from begining
 
-        threading.Thread.__init__(self, name="{} Handler".format(dut))
+        threading.Thread.__init__(self, name='{} Handler'.format(dut))
 
     def run(self):
 
@@ -367,7 +367,7 @@ class Handler(threading.Thread):
             """ one test finished, let expect loop break and log result """
             self.finish = True
             self.result = result
-            self.output = "[{}]\n\n{}\n".format(self.child_case_name,
+            self.output = '[{}]\n\n{}\n'.format(self.child_case_name,
                                                 self.dut.stop_capture_raw_data())
             if not result:
                 self.fail_name = self.child_case_name
@@ -377,12 +377,12 @@ class Handler(threading.Thread):
             expected_signal = data[0].encode('utf-8')
             while 1:
                 if time.time() > start_time + self.timeout:
-                    Utility.console_log("Timeout in device for function: %s" % self.child_case_name, color="orange")
+                    Utility.console_log('Timeout in device for function: %s' % self.child_case_name, color='orange')
                     break
                 with self.lock:
                     for sent_signal in self.sent_signal_list:
-                        if expected_signal == sent_signal["name"]:
-                            self.dut.write(sent_signal["parameter"])
+                        if expected_signal == sent_signal['name']:
+                            self.dut.write(sent_signal['parameter'])
                             self.sent_signal_list.remove(sent_signal)
                             break
                     else:
@@ -393,8 +393,8 @@ class Handler(threading.Thread):
         def device_send_action(data):
             with self.lock:
                 self.sent_signal_list.append({
-                    "name": data[0].encode('utf-8'),
-                    "parameter": "" if data[2] is None else data[2].encode('utf-8')
+                    'name': data[0].encode('utf-8'),
+                    'parameter': '' if data[2] is None else data[2].encode('utf-8')
                     # no parameter means we only write EOL to DUT
                 })
 
@@ -403,15 +403,15 @@ class Handler(threading.Thread):
             # in this scenario reset should not happen
             if int(data[1]):
                 # case ignored
-                Utility.console_log("Ignored: " + self.child_case_name, color="orange")
+                Utility.console_log('Ignored: ' + self.child_case_name, color='orange')
             one_device_case_finish(not int(data[0]))
 
         try:
             time.sleep(1)
             self.dut.write("\"{}\"".format(self.parent_case_name))
-            self.dut.expect("Running " + self.parent_case_name + "...")
+            self.dut.expect('Running ' + self.parent_case_name + '...')
         except DUT.ExpectTimeout:
-            Utility.console_log("No case detected!", color="orange")
+            Utility.console_log('No case detected!', color='orange')
         while not self.finish and not self.force_stop.isSet():
             try:
                 self.dut.expect_any((re.compile('\(' + str(self.child_case_index) + '\)\s"(\w+)"'),  # noqa: W605 - regex
@@ -421,7 +421,7 @@ class Handler(threading.Thread):
                                     (self.FINISH_PATTERN, handle_device_test_finish),  # test finish pattern
                                     timeout=self.timeout)
             except DUT.ExpectTimeout:
-                Utility.console_log("Timeout in expect (%s seconds)" % self.timeout, color="orange")
+                Utility.console_log('Timeout in expect (%s seconds)' % self.timeout, color='orange')
                 one_device_case_finish(False)
                 break
 
@@ -430,8 +430,8 @@ class Handler(threading.Thread):
 
 
 def get_case_info(one_case):
-    parent_case = one_case["name"]
-    child_case_num = one_case["child case num"]
+    parent_case = one_case['name']
+    child_case_num = one_case['child case num']
     return parent_case, child_case_num
 
 
@@ -441,7 +441,7 @@ def get_dut(duts, env, name, ut_config, app_bin=None):
     else:
         dut = env.get_dut(name, app_path=UT_APP_PATH, app_config_name=ut_config, allow_dut_exception=True)
         duts[name] = dut
-        replace_app_bin(dut, "unit-test-app", app_bin)
+        replace_app_bin(dut, 'unit-test-app', app_bin)
         dut.start_app()  # download bin to board
     return dut
 
@@ -454,13 +454,13 @@ def run_one_multiple_devices_case(duts, ut_config, env, one_case, app_bin, junit
     parent_case, case_num = get_case_info(one_case)
 
     for i in range(case_num):
-        dut = get_dut(duts, env, "dut%d" % i, ut_config, app_bin)
+        dut = get_dut(duts, env, 'dut%d' % i, ut_config, app_bin)
         threads.append(Handler(dut, send_signal_list, lock,
-                               parent_case, i, one_case["timeout"]))
+                               parent_case, i, one_case['timeout']))
     for thread in threads:
         thread.setDaemon(True)
         thread.start()
-    output = "Multiple Device Failed\n"
+    output = 'Multiple Device Failed\n'
     for thread in threads:
         thread.join()
         result = result and thread.result
@@ -480,7 +480,7 @@ def run_one_multiple_devices_case(duts, ut_config, env, one_case, app_bin, junit
     return result
 
 
-@ttfw_idf.idf_unit_test(env_tag="UT_T2_1", junit_report_by_case=True)
+@ttfw_idf.idf_unit_test(env_tag='UT_T2_1', junit_report_by_case=True)
 def run_multiple_devices_cases(env, extra_data):
     """
      extra_data can be two types of value
@@ -506,9 +506,9 @@ def run_multiple_devices_cases(env, extra_data):
     case_config = format_test_case_config(extra_data)
     duts = {}
     for ut_config in case_config:
-        Utility.console_log("Running unit test for config: " + ut_config, "O")
+        Utility.console_log('Running unit test for config: ' + ut_config, 'O')
         for one_case in case_config[ut_config]:
-            log_test_case("multi-device test", one_case, ut_config, )
+            log_test_case('multi-device test', one_case, ut_config, )
             result = False
             junit_test_case = TinyFW.JunitReport.create_test_case(format_case_name(one_case))
             try:
@@ -520,10 +520,10 @@ def run_multiple_devices_cases(env, extra_data):
                 handle_unexpected_exception(junit_test_case, e)
             finally:
                 if result:
-                    Utility.console_log("Success: " + format_case_name(one_case), color="green")
+                    Utility.console_log('Success: ' + format_case_name(one_case), color='green')
                 else:
                     failed_cases.append(format_case_name(one_case))
-                    Utility.console_log("Failed: " + format_case_name(one_case), color="red")
+                    Utility.console_log('Failed: ' + format_case_name(one_case), color='red')
                 TinyFW.JunitReport.test_case_finish(junit_test_case)
         # close all DUTs when finish running all cases for one config
         for dut in duts:
@@ -531,9 +531,9 @@ def run_multiple_devices_cases(env, extra_data):
         duts = {}
 
     if failed_cases:
-        Utility.console_log("Failed Cases:", color="red")
+        Utility.console_log('Failed Cases:', color='red')
         for _case_name in failed_cases:
-            Utility.console_log("\t" + _case_name, color="red")
+            Utility.console_log('\t' + _case_name, color='red')
         raise TestCaseFailed(*failed_cases)
 
 
@@ -544,10 +544,10 @@ def run_one_multiple_stage_case(dut, one_case, junit_test_case):
 
     exception_reset_list = []
 
-    for test_stage in range(one_case["child case num"]):
+    for test_stage in range(one_case['child case num']):
         # select multi stage test case name
-        dut.write("\"{}\"".format(one_case["name"]))
-        dut.expect("Running " + one_case["name"] + "...")
+        dut.write("\"{}\"".format(one_case['name']))
+        dut.expect('Running ' + one_case['name'] + '...')
         # select test function for current stage
         dut.write(str(test_stage + 1))
 
@@ -556,22 +556,22 @@ def run_one_multiple_stage_case(dut, one_case, junit_test_case):
         stage_finish = list()
 
         def last_stage():
-            return test_stage == one_case["child case num"] - 1
+            return test_stage == one_case['child case num'] - 1
 
         def check_reset():
-            if one_case["reset"]:
+            if one_case['reset']:
                 assert exception_reset_list  # reboot but no exception/reset logged. should never happen
                 result = False
-                if len(one_case["reset"]) == len(exception_reset_list):
+                if len(one_case['reset']) == len(exception_reset_list):
                     for i, exception in enumerate(exception_reset_list):
-                        if not reset_reason_matches(exception, one_case["reset"][i]):
+                        if not reset_reason_matches(exception, one_case['reset'][i]):
                             break
                     else:
                         result = True
                 if not result:
-                    err_msg = "Reset Check Failed: \r\n\tExpected: {}\r\n\tGet: {}".format(one_case["reset"],
+                    err_msg = 'Reset Check Failed: \r\n\tExpected: {}\r\n\tGet: {}'.format(one_case['reset'],
                                                                                            exception_reset_list)
-                    Utility.console_log(err_msg, color="orange")
+                    Utility.console_log(err_msg, color='orange')
                     junit_test_case.add_failure_info(err_msg)
             else:
                 # we allow omit reset in multi stage cases
@@ -585,12 +585,12 @@ def run_one_multiple_stage_case(dut, one_case, junit_test_case):
             result = result and check_reset()
             output = dut.stop_capture_raw_data()
             if result:
-                Utility.console_log("Success: " + format_case_name(one_case), color="green")
+                Utility.console_log('Success: ' + format_case_name(one_case), color='green')
             else:
-                Utility.console_log("Failed: " + format_case_name(one_case), color="red")
+                Utility.console_log('Failed: ' + format_case_name(one_case), color='red')
                 junit_test_case.add_failure_info(output)
                 raise TestCaseFailed(format_case_name(one_case))
-            stage_finish.append("break")
+            stage_finish.append('break')
 
         def handle_exception_reset(data):
             """
@@ -604,27 +604,27 @@ def run_one_multiple_stage_case(dut, one_case, junit_test_case):
             # in this scenario reset should not happen
             if int(data[1]):
                 # case ignored
-                Utility.console_log("Ignored: " + format_case_name(one_case), color="orange")
-                junit_test_case.add_skipped_info("ignored")
+                Utility.console_log('Ignored: ' + format_case_name(one_case), color='orange')
+                junit_test_case.add_skipped_info('ignored')
             # only passed in last stage will be regarded as real pass
             if last_stage():
                 one_case_finish(not int(data[0]))
             else:
-                Utility.console_log("test finished before enter last stage", color="orange")
+                Utility.console_log('test finished before enter last stage', color='orange')
                 one_case_finish(False)
 
         def handle_next_stage(data):
             """ reboot finished. we goto next stage """
             if last_stage():
                 # already last stage, should never goto next stage
-                Utility.console_log("didn't finish at last stage", color="orange")
+                Utility.console_log("didn't finish at last stage", color='orange')
                 one_case_finish(False)
             else:
-                stage_finish.append("continue")
+                stage_finish.append('continue')
 
         while not stage_finish:
             try:
-                timeout_value = one_case["timeout"]
+                timeout_value = one_case['timeout']
                 dut.expect_any((RESET_PATTERN, handle_exception_reset),
                                (EXCEPTION_PATTERN, handle_exception_reset),
                                (ABORT_PATTERN, handle_exception_reset),
@@ -632,15 +632,15 @@ def run_one_multiple_stage_case(dut, one_case, junit_test_case):
                                (UT_APP_BOOT_UP_DONE, handle_next_stage),
                                timeout=timeout_value)
             except DUT.ExpectTimeout:
-                Utility.console_log("Timeout in expect (%s seconds)" % timeout_value, color="orange")
+                Utility.console_log('Timeout in expect (%s seconds)' % timeout_value, color='orange')
                 one_case_finish(False)
                 break
-        if stage_finish[0] == "break":
+        if stage_finish[0] == 'break':
             # test breaks on current stage
             break
 
 
-@ttfw_idf.idf_unit_test(env_tag="UT_T1_1", junit_report_by_case=True)
+@ttfw_idf.idf_unit_test(env_tag='UT_T1_1', junit_report_by_case=True)
 def run_multiple_stage_cases(env, extra_data):
     """
     extra_data can be 2 types of value
@@ -661,14 +661,14 @@ def run_multiple_stage_cases(env, extra_data):
     failed_cases = []
 
     for ut_config in case_config:
-        Utility.console_log("Running unit test for config: " + ut_config, "O")
-        dut = env.get_dut("unit-test-app", app_path=UT_APP_PATH, app_config_name=ut_config, allow_dut_exception=True)
+        Utility.console_log('Running unit test for config: ' + ut_config, 'O')
+        dut = env.get_dut('unit-test-app', app_path=UT_APP_PATH, app_config_name=ut_config, allow_dut_exception=True)
         if len(case_config[ut_config]) > 0:
-            replace_app_bin(dut, "unit-test-app", case_config[ut_config][0].get('app_bin'))
+            replace_app_bin(dut, 'unit-test-app', case_config[ut_config][0].get('app_bin'))
         dut.start_app()
 
         for one_case in case_config[ut_config]:
-            log_test_case("multi-stage test", one_case, ut_config)
+            log_test_case('multi-stage test', one_case, ut_config)
             performance_items = []
             junit_test_case = TinyFW.JunitReport.create_test_case(format_case_name(one_case))
             try:
@@ -687,9 +687,9 @@ def run_multiple_stage_cases(env, extra_data):
 
     # raise exception if any case fails
     if failed_cases:
-        Utility.console_log("Failed Cases:", color="red")
+        Utility.console_log('Failed Cases:', color='red')
         for _case_name in failed_cases:
-            Utility.console_log("\t" + _case_name, color="red")
+            Utility.console_log('\t' + _case_name, color='red')
         raise TestCaseFailed(*failed_cases)
 
 
@@ -697,14 +697,14 @@ def detect_update_unit_test_info(env, extra_data, app_bin):
     case_config = format_test_case_config(extra_data)
 
     for ut_config in case_config:
-        dut = env.get_dut("unit-test-app", app_path=UT_APP_PATH, app_config_name=ut_config)
-        replace_app_bin(dut, "unit-test-app", app_bin)
+        dut = env.get_dut('unit-test-app', app_path=UT_APP_PATH, app_config_name=ut_config)
+        replace_app_bin(dut, 'unit-test-app', app_bin)
         dut.start_app()
 
         reset_dut(dut)
 
         # get the list of test cases
-        dut.write("")
+        dut.write('')
         dut.expect("Here's the test menu, pick your combo:", timeout=DEFAULT_TIMEOUT)
 
         def find_update_dic(name, _t, _timeout, child_case_num=None):
@@ -748,7 +748,7 @@ def detect_update_unit_test_info(env, extra_data, app_bin):
                 if 'type' not in _dic:
                     raise ValueError("Unit test \"{}\" doesn't exist in the flashed device!".format(_dic.get('name')))
         except DUT.ExpectTimeout:
-            Utility.console_log("Timeout during getting the test list", color="red")
+            Utility.console_log('Timeout during getting the test list', color='red')
         finally:
             dut.close()
 
@@ -764,12 +764,12 @@ if __name__ == '__main__':
         type=int,
         default=1
     )
-    parser.add_argument("--env_config_file", "-e",
-                        help="test env config file",
+    parser.add_argument('--env_config_file', '-e',
+                        help='test env config file',
                         default=None
                         )
-    parser.add_argument("--app_bin", "-b",
-                        help="application binary file for flashing the chip",
+    parser.add_argument('--app_bin', '-b',
+                        help='application binary file for flashing the chip',
                         default=None
                         )
     parser.add_argument(
@@ -810,7 +810,7 @@ if __name__ == '__main__':
 
     for index in range(1, args.repeat + 1):
         if args.repeat > 1:
-            Utility.console_log("Repetition {}".format(index), color="green")
+            Utility.console_log('Repetition {}'.format(index), color='green')
         for dic in list_of_dicts:
             t = dic.get('type', SIMPLE_TEST_ID)
             if t == SIMPLE_TEST_ID:

@@ -4,14 +4,15 @@
 # with a caller
 #
 from __future__ import print_function
+
 import argparse
-import confgen
 import json
-import kconfiglib
 import os
 import sys
 import tempfile
 
+import confgen
+import kconfiglib
 from confgen import FatalError, __version__
 
 # Min/Max supported protocol versions
@@ -47,15 +48,15 @@ def main():
     args = parser.parse_args()
 
     if args.version < MIN_PROTOCOL_VERSION:
-        print("Version %d is older than minimum supported protocol version %d. Client is much older than ESP-IDF version?" %
+        print('Version %d is older than minimum supported protocol version %d. Client is much older than ESP-IDF version?' %
               (args.version, MIN_PROTOCOL_VERSION))
 
     if args.version > MAX_PROTOCOL_VERSION:
-        print("Version %d is newer than maximum supported protocol version %d. Client is newer than ESP-IDF version?" %
+        print('Version %d is newer than maximum supported protocol version %d. Client is newer than ESP-IDF version?' %
               (args.version, MAX_PROTOCOL_VERSION))
 
     try:
-        args.env = [(name,value) for (name,value) in (e.split("=",1) for e in args.env)]
+        args.env = [(name,value) for (name,value) in (e.split('=',1) for e in args.env)]
     except ValueError:
         print("--env arguments must each contain =. To unset an environment variable, use 'ENV='")
         sys.exit(1)
@@ -73,7 +74,7 @@ def main():
 def run_server(kconfig, sdkconfig, sdkconfig_rename, default_version=MAX_PROTOCOL_VERSION):
     config = kconfiglib.Kconfig(kconfig)
     sdkconfig_renames = [sdkconfig_rename] if sdkconfig_rename else []
-    sdkconfig_renames += os.environ.get("COMPONENT_SDKCONFIG_RENAMES", "").split()
+    sdkconfig_renames += os.environ.get('COMPONENT_SDKCONFIG_RENAMES', '').split()
     deprecated_options = confgen.DeprecatedOptions(config.config_prefix, path_rename_files=sdkconfig_renames)
     f_o = tempfile.NamedTemporaryFile(mode='w+b', delete=False)
     try:
@@ -85,7 +86,7 @@ def run_server(kconfig, sdkconfig, sdkconfig_rename, default_version=MAX_PROTOCO
         os.unlink(f_o.name)
     config.load_config(sdkconfig)
 
-    print("Server running, waiting for requests on stdin...", file=sys.stderr)
+    print('Server running, waiting for requests on stdin...', file=sys.stderr)
 
     config_dict = confgen.get_json_values(config)
     ranges_dict = get_ranges(config)
@@ -94,11 +95,11 @@ def run_server(kconfig, sdkconfig, sdkconfig_rename, default_version=MAX_PROTOCO
     if default_version == 1:
         # V1: no 'visibility' key, send value None for any invisible item
         values_dict = dict((k, v if visible_dict[k] else False) for (k,v) in config_dict.items())
-        json.dump({"version": 1, "values": values_dict, "ranges": ranges_dict}, sys.stdout)
+        json.dump({'version': 1, 'values': values_dict, 'ranges': ranges_dict}, sys.stdout)
     else:
         # V2 onwards: separate visibility from version
-        json.dump({"version": default_version, "values": config_dict, "ranges": ranges_dict, "visible": visible_dict}, sys.stdout)
-    print("\n")
+        json.dump({'version': default_version, 'values': config_dict, 'ranges': ranges_dict, 'visible': visible_dict}, sys.stdout)
+    print('\n')
     sys.stdout.flush()
 
     while True:
@@ -108,18 +109,18 @@ def run_server(kconfig, sdkconfig, sdkconfig_rename, default_version=MAX_PROTOCO
         try:
             req = json.loads(line)
         except ValueError as e:  # json module throws JSONDecodeError (sublcass of ValueError) on Py3 but ValueError on Py2
-            response = {"version": default_version, "error": ["JSON formatting error: %s" % e]}
+            response = {'version': default_version, 'error': ['JSON formatting error: %s' % e]}
             json.dump(response, sys.stdout)
-            print("\n")
+            print('\n')
             sys.stdout.flush()
             continue
         before = confgen.get_json_values(config)
         before_ranges = get_ranges(config)
         before_visible = get_visible(config)
 
-        if "load" in req:  # load a new sdkconfig
+        if 'load' in req:  # load a new sdkconfig
 
-            if req.get("version", default_version) == 1:
+            if req.get('version', default_version) == 1:
                 # for V1 protocol, send all items when loading new sdkconfig.
                 # (V2+ will only send changes, same as when setting an item)
                 before = {}
@@ -127,16 +128,16 @@ def run_server(kconfig, sdkconfig, sdkconfig_rename, default_version=MAX_PROTOCO
                 before_visible = {}
 
             # if no new filename is supplied, use existing sdkconfig path, otherwise update the path
-            if req["load"] is None:
-                req["load"] = sdkconfig
+            if req['load'] is None:
+                req['load'] = sdkconfig
             else:
-                sdkconfig = req["load"]
+                sdkconfig = req['load']
 
-        if "save" in req:
-            if req["save"] is None:
-                req["save"] = sdkconfig
+        if 'save' in req:
+            if req['save'] is None:
+                req['save'] = sdkconfig
             else:
-                sdkconfig = req["save"]
+                sdkconfig = req['save']
 
         error = handle_request(deprecated_options, config, req)
 
@@ -147,51 +148,51 @@ def run_server(kconfig, sdkconfig, sdkconfig_rename, default_version=MAX_PROTOCO
         values_diff = diff(before, after)
         ranges_diff = diff(before_ranges, after_ranges)
         visible_diff = diff(before_visible, after_visible)
-        if req["version"] == 1:
+        if req['version'] == 1:
             # V1 response, invisible items have value None
             for k in (k for (k,v) in visible_diff.items() if not v):
                 values_diff[k] = None
-            response = {"version": 1, "values": values_diff, "ranges": ranges_diff}
+            response = {'version': 1, 'values': values_diff, 'ranges': ranges_diff}
         else:
             # V2+ response, separate visibility values
-            response = {"version": req["version"], "values": values_diff, "ranges": ranges_diff, "visible": visible_diff}
+            response = {'version': req['version'], 'values': values_diff, 'ranges': ranges_diff, 'visible': visible_diff}
         if error:
             for e in error:
-                print("Error: %s" % e, file=sys.stderr)
-            response["error"] = error
+                print('Error: %s' % e, file=sys.stderr)
+            response['error'] = error
         json.dump(response, sys.stdout)
-        print("\n")
+        print('\n')
         sys.stdout.flush()
 
 
 def handle_request(deprecated_options, config, req):
-    if "version" not in req:
+    if 'version' not in req:
         return ["All requests must have a 'version'"]
 
-    if req["version"] < MIN_PROTOCOL_VERSION or req["version"] > MAX_PROTOCOL_VERSION:
-        return ["Unsupported request version %d. Server supports versions %d-%d" % (
-            req["version"],
+    if req['version'] < MIN_PROTOCOL_VERSION or req['version'] > MAX_PROTOCOL_VERSION:
+        return ['Unsupported request version %d. Server supports versions %d-%d' % (
+            req['version'],
             MIN_PROTOCOL_VERSION,
             MAX_PROTOCOL_VERSION)]
 
     error = []
 
-    if "load" in req:
-        print("Loading config from %s..." % req["load"], file=sys.stderr)
+    if 'load' in req:
+        print('Loading config from %s...' % req['load'], file=sys.stderr)
         try:
-            config.load_config(req["load"])
+            config.load_config(req['load'])
         except Exception as e:
-            error += ["Failed to load from %s: %s" % (req["load"], e)]
+            error += ['Failed to load from %s: %s' % (req['load'], e)]
 
-    if "set" in req:
-        handle_set(config, error, req["set"])
+    if 'set' in req:
+        handle_set(config, error, req['set'])
 
-    if "save" in req:
+    if 'save' in req:
         try:
-            print("Saving config to %s..." % req["save"], file=sys.stderr)
-            confgen.write_config(deprecated_options, config, req["save"])
+            print('Saving config to %s...' % req['save'], file=sys.stderr)
+            confgen.write_config(deprecated_options, config, req['save'])
         except Exception as e:
-            error += ["Failed to save to %s: %s" % (req["save"], e)]
+            error += ['Failed to save to %s: %s' % (req['save'], e)]
 
     return error
 
@@ -199,7 +200,7 @@ def handle_request(deprecated_options, config, req):
 def handle_set(config, error, to_set):
     missing = [k for k in to_set if k not in config.syms]
     if missing:
-        error.append("The following config symbol(s) were not found: %s" % (", ".join(missing)))
+        error.append('The following config symbol(s) were not found: %s' % (', '.join(missing)))
     # replace name keys with the full config symbol for each key:
     to_set = dict((config.syms[k],v) for (k,v) in to_set.items() if k not in missing)
 
@@ -219,21 +220,21 @@ def handle_set(config, error, to_set):
                 elif val is False:
                     sym.set_value(0)
                 else:
-                    error.append("Boolean symbol %s only accepts true/false values" % sym.name)
+                    error.append('Boolean symbol %s only accepts true/false values' % sym.name)
             elif sym.type == kconfiglib.HEX:
                 try:
                     if not isinstance(val, int):
                         val = int(val, 16)  # input can be a decimal JSON value or a string of hex digits
                     sym.set_value(hex(val))
                 except ValueError:
-                    error.append("Hex symbol %s can accept a decimal integer or a string of hex digits, only")
+                    error.append('Hex symbol %s can accept a decimal integer or a string of hex digits, only')
             else:
                 sym.set_value(str(val))
-            print("Set %s" % sym.name)
+            print('Set %s' % sym.name)
             del to_set[sym]
 
     if len(to_set):
-        error.append("The following config symbol(s) were not visible so were not updated: %s" % (", ".join(s.name for s in to_set)))
+        error.append('The following config symbol(s) were not visible so were not updated: %s' % (', '.join(s.name for s in to_set)))
 
 
 def diff(before, after):
@@ -320,5 +321,5 @@ if __name__ == '__main__':
     try:
         main()
     except FatalError as e:
-        print("A fatal error occurred: %s" % e, file=sys.stderr)
+        print('A fatal error occurred: %s' % e, file=sys.stderr)
         sys.exit(2)

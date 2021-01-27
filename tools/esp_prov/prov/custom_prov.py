@@ -16,15 +16,15 @@
 # APIs for interpreting and creating protobuf packets for `custom-config` protocomm endpoint
 
 from __future__ import print_function
-from future.utils import tobytes
 
-import utils
 import proto
+import utils
+from future.utils import tobytes
 
 
 def print_verbose(security_ctx, data):
     if (security_ctx.verbose):
-        print("++++ " + data + " ++++")
+        print('++++ ' + data + ' ++++')
 
 
 def custom_config_request(security_ctx, info, version):
@@ -33,7 +33,7 @@ def custom_config_request(security_ctx, info, version):
     cmd.info = tobytes(info)
     cmd.version = version
     enc_cmd = security_ctx.encrypt_data(cmd.SerializeToString()).decode('latin-1')
-    print_verbose(security_ctx, "Client -> Device (CustomConfig cmd) " + utils.str_to_hexstr(enc_cmd))
+    print_verbose(security_ctx, 'Client -> Device (CustomConfig cmd) ' + utils.str_to_hexstr(enc_cmd))
     return enc_cmd
 
 
@@ -42,19 +42,19 @@ def custom_config_response(security_ctx, response_data):
     decrypt = security_ctx.decrypt_data(tobytes(response_data))
     cmd_resp = proto.custom_config_pb2.CustomConfigResponse()
     cmd_resp.ParseFromString(decrypt)
-    print_verbose(security_ctx, "CustomConfig status " + str(cmd_resp.status))
+    print_verbose(security_ctx, 'CustomConfig status ' + str(cmd_resp.status))
     return cmd_resp.status
 
 
 def custom_data_request(security_ctx, data):
     # Encrypt the custom data
     enc_cmd = security_ctx.encrypt_data(tobytes(data))
-    print_verbose(security_ctx, "Client -> Device (CustomData cmd) " + utils.str_to_hexstr(enc_cmd))
+    print_verbose(security_ctx, 'Client -> Device (CustomData cmd) ' + utils.str_to_hexstr(enc_cmd))
     return enc_cmd
 
 
 def custom_data_response(security_ctx, response_data):
     # Decrypt response packet
     decrypt = security_ctx.decrypt_data(tobytes(response_data))
-    print("CustomData response: " + str(decrypt))
+    print('CustomData response: ' + str(decrypt))
     return 0

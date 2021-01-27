@@ -26,15 +26,11 @@ except ImportError:
     sys.path.append('../')
     from generation import PlacementRule
 
-from generation import GenerationException
-from generation import SectionsInfo
-from generation import TemplateModel
-from generation import GenerationModel
+from io import StringIO
 
 from fragments import FragmentFile
-
+from generation import GenerationException, GenerationModel, SectionsInfo, TemplateModel
 from sdkconfig import SDKConfig
-from io import StringIO
 
 
 class GenerationModelTest(unittest.TestCase):
@@ -59,22 +55,22 @@ class GenerationModelTest(unittest.TestCase):
         # prepare_kconfig_files.py doesn't have to be called because COMPONENT_KCONFIGS and
         # COMPONENT_KCONFIGS_PROJBUILD are empty
 
-        self.sdkconfig = SDKConfig("data/Kconfig", "data/sdkconfig")
+        self.sdkconfig = SDKConfig('data/Kconfig', 'data/sdkconfig')
 
-        with open("data/sample.lf") as fragment_file_obj:
+        with open('data/sample.lf') as fragment_file_obj:
             fragment_file = FragmentFile(fragment_file_obj, self.sdkconfig)
             self.model.add_fragments_from_file(fragment_file)
 
         self.sections_info = SectionsInfo()
 
-        with open("data/sections.info") as sections_info_file_obj:
+        with open('data/sections.info') as sections_info_file_obj:
             self.sections_info.add_sections_info(sections_info_file_obj)
 
-        with open("data/template.ld") as template_file_obj:
+        with open('data/template.ld') as template_file_obj:
             self.script_model = TemplateModel(template_file_obj)
 
     @staticmethod
-    def create_fragment_file(contents, name="test_fragment.lf"):
+    def create_fragment_file(contents, name='test_fragment.lf'):
         f = StringIO(contents)
         f.name = name
         return f
@@ -86,61 +82,61 @@ class GenerationModelTest(unittest.TestCase):
 
     def write(self, expected, actual):
         self.script_model.fill(expected)
-        self.script_model.write(open("expected.ld", "w"))
+        self.script_model.write(open('expected.ld', 'w'))
 
         self.script_model.fill(actual)
-        self.script_model.write(open("actual.ld", "w"))
+        self.script_model.write(open('actual.ld', 'w'))
 
     def generate_default_rules(self):
         rules = dict()
 
         # flash_text
         placement_rules = list()
-        rule = PlacementRule(None, None, None, self.model.sections["text"].entries, "flash_text")
+        rule = PlacementRule(None, None, None, self.model.sections['text'].entries, 'flash_text')
         placement_rules.append(rule)
-        rules["flash_text"] = placement_rules
+        rules['flash_text'] = placement_rules
 
         # flash_rodata
         placement_rules = list()
-        rule = PlacementRule(None, None, None, self.model.sections["rodata"].entries, "flash_rodata")
+        rule = PlacementRule(None, None, None, self.model.sections['rodata'].entries, 'flash_rodata')
         placement_rules.append(rule)
-        rules["flash_rodata"] = placement_rules
+        rules['flash_rodata'] = placement_rules
 
         # dram0_data
         placement_rules = list()
-        rule = PlacementRule(None, None, None, self.model.sections["data"].entries | self.model.sections["dram"].entries, "dram0_data")
+        rule = PlacementRule(None, None, None, self.model.sections['data'].entries | self.model.sections['dram'].entries, 'dram0_data')
         placement_rules.append(rule)
-        rules["dram0_data"] = placement_rules
+        rules['dram0_data'] = placement_rules
 
         # dram0_bss
         placement_rules = list()
-        rule = PlacementRule(None, None, None, self.model.sections["bss"].entries | self.model.sections["common"].entries, "dram0_bss")
+        rule = PlacementRule(None, None, None, self.model.sections['bss'].entries | self.model.sections['common'].entries, 'dram0_bss')
         placement_rules.append(rule)
-        rules["dram0_bss"] = placement_rules
+        rules['dram0_bss'] = placement_rules
 
         # iram0_text
         placement_rules = list()
-        rule = PlacementRule(None, None, None, self.model.sections["iram"].entries, "iram0_text")
+        rule = PlacementRule(None, None, None, self.model.sections['iram'].entries, 'iram0_text')
         placement_rules.append(rule)
-        rules["iram0_text"] = placement_rules
+        rules['iram0_text'] = placement_rules
 
         # rtc_text
         placement_rules = list()
-        rule = PlacementRule(None, None, None, self.model.sections["rtc_text"].entries, "rtc_text")
+        rule = PlacementRule(None, None, None, self.model.sections['rtc_text'].entries, 'rtc_text')
         placement_rules.append(rule)
-        rules["rtc_text"] = placement_rules
+        rules['rtc_text'] = placement_rules
 
         # rtc_data
         placement_rules = list()
-        rule = PlacementRule(None, None, None, self.model.sections["rtc_data"].entries | self.model.sections["rtc_rodata"].entries, "rtc_data")
+        rule = PlacementRule(None, None, None, self.model.sections['rtc_data'].entries | self.model.sections['rtc_rodata'].entries, 'rtc_data')
         placement_rules.append(rule)
-        rules["rtc_data"] = placement_rules
+        rules['rtc_data'] = placement_rules
 
         # rtc_bss
         placement_rules = list()
-        rule = PlacementRule(None, None, None, self.model.sections["rtc_bss"].entries, "rtc_bss")
+        rule = PlacementRule(None, None, None, self.model.sections['rtc_bss'].entries, 'rtc_bss')
         placement_rules.append(rule)
-        rules["rtc_bss"] = placement_rules
+        rules['rtc_bss'] = placement_rules
 
         return rules
 
@@ -149,7 +145,7 @@ class GenerationModelTest(unittest.TestCase):
 
         for (target, rules) in actual.items():
 
-            message = "target: " + target
+            message = 'target: ' + target
 
             actual_target_rules = rules
             expected_target_rules = expected[target]
@@ -192,19 +188,19 @@ entries:
 
         expected = self.generate_default_rules()
 
-        flash_text_default = self.get_default("flash_text", expected)
-        flash_rodata_default = self.get_default("flash_rodata", expected)
+        flash_text_default = self.get_default('flash_text', expected)
+        flash_rodata_default = self.get_default('flash_rodata', expected)
 
-        iram0_text_E1 = PlacementRule("libfreertos.a", "*", None, self.model.sections["text"].entries, "iram0_text")
-        dram0_data_E1 = PlacementRule("libfreertos.a", "*", None, self.model.sections["rodata"].entries, "dram0_data")
+        iram0_text_E1 = PlacementRule('libfreertos.a', '*', None, self.model.sections['text'].entries, 'iram0_text')
+        dram0_data_E1 = PlacementRule('libfreertos.a', '*', None, self.model.sections['rodata'].entries, 'dram0_data')
 
         # Add the exclusions
         flash_text_default.add_exclusion(iram0_text_E1)
         flash_rodata_default.add_exclusion(dram0_data_E1)
 
         # Add to the placement rules list
-        expected["iram0_text"].append(iram0_text_E1)
-        expected["dram0_data"].append(dram0_data_E1)
+        expected['iram0_text'].append(iram0_text_E1)
+        expected['dram0_data'].append(dram0_data_E1)
 
         self.compare_rules(expected, actual)
 
@@ -222,14 +218,14 @@ entries:
 
         expected = self.generate_default_rules()
 
-        flash_text_default = self.get_default("flash_text", expected)
-        flash_rodata_default = self.get_default("flash_rodata", expected)
-        dram0_data_default = self.get_default("dram0_data", expected)
-        dram0_bss_default = self.get_default("dram0_bss", expected)
+        flash_text_default = self.get_default('flash_text', expected)
+        flash_rodata_default = self.get_default('flash_rodata', expected)
+        dram0_data_default = self.get_default('dram0_data', expected)
+        dram0_bss_default = self.get_default('dram0_bss', expected)
 
-        rtc_text_E1 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E1 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E1 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
+        rtc_text_E1 = PlacementRule('libfreertos.a', 'timers', None, self.model.sections['text'].entries, 'rtc_text')
+        rtc_data_E1 = PlacementRule('libfreertos.a', 'timers', None, self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
+        rtc_bss_E1 = PlacementRule('libfreertos.a', 'timers', None, self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
 
         # Add the exclusions
         flash_text_default.add_exclusion(rtc_text_E1)
@@ -238,9 +234,9 @@ entries:
         dram0_bss_default.add_exclusion(rtc_bss_E1)
 
         # Add the rules
-        expected["rtc_text"].append(rtc_text_E1)
-        expected["rtc_data"].append(rtc_data_E1)
-        expected["rtc_bss"].append(rtc_bss_E1)
+        expected['rtc_text'].append(rtc_text_E1)
+        expected['rtc_data'].append(rtc_data_E1)
+        expected['rtc_bss'].append(rtc_bss_E1)
 
         self.compare_rules(expected, actual)
 
@@ -259,17 +255,17 @@ entries:
 
         expected = self.generate_default_rules()
 
-        flash_text_default = self.get_default("flash_text", expected)
-        flash_rodata_default = self.get_default("flash_rodata", expected)
-        dram0_data_default = self.get_default("dram0_data", expected)
-        dram0_bss_default = self.get_default("dram0_bss", expected)
+        flash_text_default = self.get_default('flash_text', expected)
+        flash_rodata_default = self.get_default('flash_rodata', expected)
+        dram0_data_default = self.get_default('dram0_data', expected)
+        dram0_bss_default = self.get_default('dram0_bss', expected)
 
-        rtc_text_E1 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E1 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E1 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
+        rtc_text_E1 = PlacementRule('libfreertos.a', 'timers', None, self.model.sections['text'].entries, 'rtc_text')
+        rtc_data_E1 = PlacementRule('libfreertos.a', 'timers', None, self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
+        rtc_bss_E1 = PlacementRule('libfreertos.a', 'timers', None, self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
 
-        iram0_text_E2 = PlacementRule("libfreertos.a", "*", None, self.model.sections["text"].entries, "iram0_text")
-        dram0_data_E2 = PlacementRule("libfreertos.a", "*", None, self.model.sections["rodata"].entries, "dram0_data")
+        iram0_text_E2 = PlacementRule('libfreertos.a', '*', None, self.model.sections['text'].entries, 'iram0_text')
+        dram0_data_E2 = PlacementRule('libfreertos.a', '*', None, self.model.sections['rodata'].entries, 'dram0_data')
 
         # Add the exclusions
         flash_text_default.add_exclusion(iram0_text_E2)
@@ -282,12 +278,12 @@ entries:
         dram0_data_E2.add_exclusion(rtc_data_E1)
 
         # Add the rules
-        expected["iram0_text"].append(iram0_text_E2)
-        expected["dram0_data"].append(dram0_data_E2)
+        expected['iram0_text'].append(iram0_text_E2)
+        expected['dram0_data'].append(dram0_data_E2)
 
-        expected["rtc_text"].append(rtc_text_E1)
-        expected["rtc_data"].append(rtc_data_E1)
-        expected["rtc_bss"].append(rtc_bss_E1)
+        expected['rtc_text'].append(rtc_text_E1)
+        expected['rtc_data'].append(rtc_data_E1)
+        expected['rtc_bss'].append(rtc_bss_E1)
 
         self.compare_rules(expected, actual)
 
@@ -307,21 +303,21 @@ entries:
 
         expected = self.generate_default_rules()
 
-        flash_text_default = self.get_default("flash_text", expected)
-        flash_rodata_default = self.get_default("flash_rodata", expected)
-        dram0_data_default = self.get_default("dram0_data", expected)
-        dram0_bss_default = self.get_default("dram0_bss", expected)
+        flash_text_default = self.get_default('flash_text', expected)
+        flash_rodata_default = self.get_default('flash_rodata', expected)
+        dram0_data_default = self.get_default('dram0_data', expected)
+        dram0_bss_default = self.get_default('dram0_bss', expected)
 
-        rtc_text_E1 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E1 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E1 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
+        rtc_text_E1 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['text'].entries, 'rtc_text')
+        rtc_data_E1 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
+        rtc_bss_E1 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
 
-        iram0_text_E2 = PlacementRule("libfreertos.a", "event_groups", None, self.model.sections["text"].entries, "iram0_text")
-        dram0_data_E2 = PlacementRule("libfreertos.a", "event_groups", None, self.model.sections["rodata"].entries, "dram0_data")
+        iram0_text_E2 = PlacementRule('libfreertos.a', 'event_groups', None, self.model.sections['text'].entries, 'iram0_text')
+        dram0_data_E2 = PlacementRule('libfreertos.a', 'event_groups', None, self.model.sections['rodata'].entries, 'dram0_data')
 
-        rtc_text_E3 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E3 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E3 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
+        rtc_text_E3 = PlacementRule('libfreertos.a', 'timers', None, self.model.sections['text'].entries, 'rtc_text')
+        rtc_data_E3 = PlacementRule('libfreertos.a', 'timers', None, self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
+        rtc_bss_E3 = PlacementRule('libfreertos.a', 'timers', None, self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
 
         # Add the exclusions
         flash_text_default.add_exclusion(rtc_text_E3)
@@ -338,16 +334,16 @@ entries:
         dram0_bss_default.add_exclusion(rtc_bss_E1)
 
         # Add the rules
-        expected["rtc_text"].append(rtc_text_E3)
-        expected["rtc_data"].append(rtc_data_E3)
-        expected["rtc_bss"].append(rtc_bss_E3)
+        expected['rtc_text'].append(rtc_text_E3)
+        expected['rtc_data'].append(rtc_data_E3)
+        expected['rtc_bss'].append(rtc_bss_E3)
 
-        expected["iram0_text"].append(iram0_text_E2)
-        expected["dram0_data"].append(dram0_data_E2)
+        expected['iram0_text'].append(iram0_text_E2)
+        expected['dram0_data'].append(dram0_data_E2)
 
-        expected["rtc_text"].append(rtc_text_E1)
-        expected["rtc_data"].append(rtc_data_E1)
-        expected["rtc_bss"].append(rtc_bss_E1)
+        expected['rtc_text'].append(rtc_text_E1)
+        expected['rtc_data'].append(rtc_data_E1)
+        expected['rtc_bss'].append(rtc_bss_E1)
 
         self.compare_rules(expected, actual)
 
@@ -368,24 +364,24 @@ entries:
 
         expected = self.generate_default_rules()
 
-        flash_text_default = self.get_default("flash_text", expected)
-        flash_rodata_default = self.get_default("flash_rodata", expected)
-        dram0_data_default = self.get_default("dram0_data", expected)
-        dram0_bss_default = self.get_default("dram0_bss", expected)
+        flash_text_default = self.get_default('flash_text', expected)
+        flash_rodata_default = self.get_default('flash_rodata', expected)
+        dram0_data_default = self.get_default('dram0_data', expected)
+        dram0_bss_default = self.get_default('dram0_bss', expected)
 
-        rtc_text_E1 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E1 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E1 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
+        rtc_text_E1 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['text'].entries, 'rtc_text')
+        rtc_data_E1 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
+        rtc_bss_E1 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
 
-        iram0_text_E2 = PlacementRule("libfreertos.a", "event_groups", None, self.model.sections["text"].entries, "iram0_text")
-        dram0_data_E2 = PlacementRule("libfreertos.a", "event_groups", None, self.model.sections["rodata"].entries, "dram0_data")
+        iram0_text_E2 = PlacementRule('libfreertos.a', 'event_groups', None, self.model.sections['text'].entries, 'iram0_text')
+        dram0_data_E2 = PlacementRule('libfreertos.a', 'event_groups', None, self.model.sections['rodata'].entries, 'dram0_data')
 
-        rtc_text_E3 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E3 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E3 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
+        rtc_text_E3 = PlacementRule('libfreertos.a', 'timers', None, self.model.sections['text'].entries, 'rtc_text')
+        rtc_data_E3 = PlacementRule('libfreertos.a', 'timers', None, self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
+        rtc_bss_E3 = PlacementRule('libfreertos.a', 'timers', None, self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
 
-        iram0_text_E4 = PlacementRule("libfreertos.a", "*", None, self.model.sections["text"].entries, "iram0_text")
-        dram0_data_E4 = PlacementRule("libfreertos.a", "*", None, self.model.sections["rodata"].entries, "dram0_data")
+        iram0_text_E4 = PlacementRule('libfreertos.a', '*', None, self.model.sections['text'].entries, 'iram0_text')
+        dram0_data_E4 = PlacementRule('libfreertos.a', '*', None, self.model.sections['rodata'].entries, 'dram0_data')
 
         # Add the exclusions
         flash_text_default.add_exclusion(iram0_text_E4)
@@ -405,19 +401,19 @@ entries:
         dram0_bss_default.add_exclusion(rtc_bss_E1)
 
         # Add the rules
-        expected["iram0_text"].append(iram0_text_E4)
-        expected["dram0_data"].append(dram0_data_E4)
+        expected['iram0_text'].append(iram0_text_E4)
+        expected['dram0_data'].append(dram0_data_E4)
 
-        expected["rtc_text"].append(rtc_text_E3)
-        expected["rtc_data"].append(rtc_data_E3)
-        expected["rtc_bss"].append(rtc_bss_E3)
+        expected['rtc_text'].append(rtc_text_E3)
+        expected['rtc_data'].append(rtc_data_E3)
+        expected['rtc_bss'].append(rtc_bss_E3)
 
-        expected["iram0_text"].append(iram0_text_E2)
-        expected["dram0_data"].append(dram0_data_E2)
+        expected['iram0_text'].append(iram0_text_E2)
+        expected['dram0_data'].append(dram0_data_E2)
 
-        expected["rtc_text"].append(rtc_text_E1)
-        expected["rtc_data"].append(rtc_data_E1)
-        expected["rtc_bss"].append(rtc_bss_E1)
+        expected['rtc_text'].append(rtc_text_E1)
+        expected['rtc_data'].append(rtc_data_E1)
+        expected['rtc_bss'].append(rtc_bss_E1)
 
         self.compare_rules(expected, actual)
 
@@ -435,14 +431,14 @@ entries:
 
         expected = self.generate_default_rules()
 
-        flash_text_default = self.get_default("flash_text", expected)
-        flash_rodata_default = self.get_default("flash_rodata", expected)
+        flash_text_default = self.get_default('flash_text', expected)
+        flash_rodata_default = self.get_default('flash_rodata', expected)
 
-        iram0_text_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckPendingReadyList", self.model.sections["text"].entries, "iram0_text")
-        dram0_data_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckPendingReadyList", self.model.sections["rodata"].entries, "dram0_data")
+        iram0_text_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckPendingReadyList', self.model.sections['text'].entries, 'iram0_text')
+        dram0_data_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckPendingReadyList', self.model.sections['rodata'].entries, 'dram0_data')
 
-        iram0_text_E1_extra = PlacementRule("libfreertos.a", "croutine", None, [".text.*", ".literal.*"], "flash_text")
-        dram0_data_E1_extra = PlacementRule("libfreertos.a", "croutine", None, [".rodata.*"], "flash_rodata")
+        iram0_text_E1_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.text.*', '.literal.*'], 'flash_text')
+        dram0_data_E1_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.rodata.*'], 'flash_rodata')
 
         # Add the exclusions
         flash_text_default.add_exclusion(iram0_text_E1_extra, self.sections_info)
@@ -452,11 +448,11 @@ entries:
         dram0_data_E1_extra.add_exclusion(dram0_data_E1, self.sections_info)
 
         # Add the rules
-        expected["flash_text"].append(iram0_text_E1_extra)
-        expected["flash_rodata"].append(dram0_data_E1_extra)
+        expected['flash_text'].append(iram0_text_E1_extra)
+        expected['flash_rodata'].append(dram0_data_E1_extra)
 
-        expected["iram0_text"].append(iram0_text_E1)
-        expected["dram0_data"].append(dram0_data_E1)
+        expected['iram0_text'].append(iram0_text_E1)
+        expected['dram0_data'].append(dram0_data_E1)
 
         self.compare_rules(expected, actual)
 
@@ -476,20 +472,20 @@ entries:
 
         expected = self.generate_default_rules()
 
-        flash_text_default = self.get_default("flash_text", expected)
-        flash_rodata_default = self.get_default("flash_rodata", expected)
+        flash_text_default = self.get_default('flash_text', expected)
+        flash_rodata_default = self.get_default('flash_rodata', expected)
 
-        iram0_text_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckPendingReadyList", self.model.sections["text"].entries, "iram0_text")
-        dram0_data_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckPendingReadyList", self.model.sections["rodata"].entries, "dram0_data")
+        iram0_text_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckPendingReadyList', self.model.sections['text'].entries, 'iram0_text')
+        dram0_data_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckPendingReadyList', self.model.sections['rodata'].entries, 'dram0_data')
 
-        iram0_text_E2 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["text"].entries, "iram0_text")
-        dram0_data_E2 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["rodata"].entries, "dram0_data")
+        iram0_text_E2 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList', self.model.sections['text'].entries, 'iram0_text')
+        dram0_data_E2 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList', self.model.sections['rodata'].entries, 'dram0_data')
 
-        iram0_text_E3 = PlacementRule("libfreertos.a", "croutine", "xCoRoutineCreate", self.model.sections["text"].entries, "iram0_text")
-        dram0_data_E3 = PlacementRule("libfreertos.a", "croutine", "xCoRoutineCreate", self.model.sections["rodata"].entries, "dram0_data")
+        iram0_text_E3 = PlacementRule('libfreertos.a', 'croutine', 'xCoRoutineCreate', self.model.sections['text'].entries, 'iram0_text')
+        dram0_data_E3 = PlacementRule('libfreertos.a', 'croutine', 'xCoRoutineCreate', self.model.sections['rodata'].entries, 'dram0_data')
 
-        flash_text_extra = PlacementRule("libfreertos.a", "croutine", None, [".text.*", ".literal.*"], "flash_text")
-        flash_rodata_extra = PlacementRule("libfreertos.a", "croutine", None, [".rodata.*"], "flash_rodata")
+        flash_text_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.text.*', '.literal.*'], 'flash_text')
+        flash_rodata_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.rodata.*'], 'flash_rodata')
 
         # Add the exclusions
         flash_text_default.add_exclusion(flash_text_extra, self.sections_info)
@@ -505,17 +501,17 @@ entries:
         flash_rodata_extra.add_exclusion(dram0_data_E3, self.sections_info)
 
         # Add the rules
-        expected["flash_text"].append(flash_text_extra)
-        expected["flash_rodata"].append(flash_rodata_extra)
+        expected['flash_text'].append(flash_text_extra)
+        expected['flash_rodata'].append(flash_rodata_extra)
 
-        expected["iram0_text"].append(iram0_text_E1)
-        expected["dram0_data"].append(dram0_data_E1)
+        expected['iram0_text'].append(iram0_text_E1)
+        expected['dram0_data'].append(dram0_data_E1)
 
-        expected["iram0_text"].append(iram0_text_E2)
-        expected["dram0_data"].append(dram0_data_E2)
+        expected['iram0_text'].append(iram0_text_E2)
+        expected['dram0_data'].append(dram0_data_E2)
 
-        expected["iram0_text"].append(iram0_text_E3)
-        expected["dram0_data"].append(dram0_data_E3)
+        expected['iram0_text'].append(iram0_text_E3)
+        expected['dram0_data'].append(dram0_data_E3)
 
         self.compare_rules(expected, actual)
 
@@ -535,27 +531,27 @@ entries:
 
         expected = self.generate_default_rules()
 
-        flash_text_default = self.get_default("flash_text", expected)
-        flash_rodata_default = self.get_default("flash_rodata", expected)
-        dram0_data_default = self.get_default("dram0_data", expected)
-        dram0_bss_default = self.get_default("dram0_bss", expected)
+        flash_text_default = self.get_default('flash_text', expected)
+        flash_rodata_default = self.get_default('flash_rodata', expected)
+        dram0_data_default = self.get_default('dram0_data', expected)
+        dram0_bss_default = self.get_default('dram0_bss', expected)
 
-        iram0_text_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckPendingReadyList", self.model.sections["text"].entries, "iram0_text")
-        dram0_data_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckPendingReadyList", self.model.sections["rodata"].entries, "dram0_data")
+        iram0_text_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckPendingReadyList', self.model.sections['text'].entries, 'iram0_text')
+        dram0_data_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckPendingReadyList', self.model.sections['rodata'].entries, 'dram0_data')
 
-        rtc_text_E2 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E2 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList",
-                                    self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E2 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList",
-                                   self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
+        rtc_text_E2 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList', self.model.sections['text'].entries, 'rtc_text')
+        rtc_data_E2 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList',
+                                    self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
+        rtc_bss_E2 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList',
+                                   self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
 
-        iram0_text_E3 = PlacementRule("libfreertos.a", "croutine", "xCoRoutineCreate", self.model.sections["text"].entries, "iram0_text")
-        dram0_data_E3 = PlacementRule("libfreertos.a", "croutine", "xCoRoutineCreate", self.model.sections["rodata"].entries, "dram0_data")
+        iram0_text_E3 = PlacementRule('libfreertos.a', 'croutine', 'xCoRoutineCreate', self.model.sections['text'].entries, 'iram0_text')
+        dram0_data_E3 = PlacementRule('libfreertos.a', 'croutine', 'xCoRoutineCreate', self.model.sections['rodata'].entries, 'dram0_data')
 
-        flash_text_extra = PlacementRule("libfreertos.a", "croutine", None, [".text.*", ".literal.*"], "flash_text")
-        flash_rodata_extra = PlacementRule("libfreertos.a", "croutine", None, [".rodata.*"], "flash_rodata")
-        dram0_data_extra = PlacementRule("libfreertos.a", "croutine", None, [".data.*"], "dram0_data")
-        dram0_bss_extra = PlacementRule("libfreertos.a", "croutine", None, [".bss.*"], "dram0_bss")
+        flash_text_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.text.*', '.literal.*'], 'flash_text')
+        flash_rodata_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.rodata.*'], 'flash_rodata')
+        dram0_data_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.data.*'], 'dram0_data')
+        dram0_bss_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.bss.*'], 'dram0_bss')
 
         # Add the exclusions
         flash_text_default.add_exclusion(flash_text_extra, self.sections_info)
@@ -575,20 +571,20 @@ entries:
         flash_rodata_extra.add_exclusion(dram0_data_E3, self.sections_info)
 
         # Add the rules
-        expected["flash_text"].append(flash_text_extra)
-        expected["flash_rodata"].append(flash_rodata_extra)
-        expected["dram0_data"].append(dram0_data_extra)
-        expected["dram0_bss"].append(dram0_bss_extra)
+        expected['flash_text'].append(flash_text_extra)
+        expected['flash_rodata'].append(flash_rodata_extra)
+        expected['dram0_data'].append(dram0_data_extra)
+        expected['dram0_bss'].append(dram0_bss_extra)
 
-        expected["iram0_text"].append(iram0_text_E1)
-        expected["dram0_data"].append(dram0_data_E1)
+        expected['iram0_text'].append(iram0_text_E1)
+        expected['dram0_data'].append(dram0_data_E1)
 
-        expected["rtc_text"].append(rtc_text_E2)
-        expected["rtc_data"].append(rtc_data_E2)
-        expected["rtc_bss"].append(rtc_bss_E2)
+        expected['rtc_text'].append(rtc_text_E2)
+        expected['rtc_data'].append(rtc_data_E2)
+        expected['rtc_bss'].append(rtc_bss_E2)
 
-        expected["iram0_text"].append(iram0_text_E3)
-        expected["dram0_data"].append(dram0_data_E3)
+        expected['iram0_text'].append(iram0_text_E3)
+        expected['dram0_data'].append(dram0_data_E3)
 
         self.compare_rules(expected, actual)
 
@@ -607,22 +603,22 @@ entries:
 
         expected = self.generate_default_rules()
 
-        flash_text_default = self.get_default("flash_text", expected)
-        flash_rodata_default = self.get_default("flash_rodata", expected)
-        dram0_data_default = self.get_default("dram0_data", expected)
-        dram0_bss_default = self.get_default("dram0_bss", expected)
+        flash_text_default = self.get_default('flash_text', expected)
+        flash_rodata_default = self.get_default('flash_rodata', expected)
+        dram0_data_default = self.get_default('dram0_data', expected)
+        dram0_bss_default = self.get_default('dram0_bss', expected)
 
-        rtc_text_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList",
-                                    self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList",
-                                   self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
+        rtc_text_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList', self.model.sections['text'].entries, 'rtc_text')
+        rtc_data_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList',
+                                    self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
+        rtc_bss_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList',
+                                   self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
 
-        iram0_text_E2 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["text"].entries, "iram0_text")
-        dram0_data_E2 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["rodata"].entries, "dram0_data")
+        iram0_text_E2 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['text'].entries, 'iram0_text')
+        dram0_data_E2 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['rodata'].entries, 'dram0_data')
 
-        dram0_data_extra = PlacementRule("libfreertos.a", "croutine", None, [".data.*"], "dram0_data")
-        dram0_bss_extra = PlacementRule("libfreertos.a", "croutine", None, [".bss.*"], "dram0_bss")
+        dram0_data_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.data.*'], 'dram0_data')
+        dram0_bss_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.bss.*'], 'dram0_bss')
 
         # Add the exclusions
         flash_text_default.add_exclusion(iram0_text_E2, self.sections_info)
@@ -638,15 +634,15 @@ entries:
         dram0_data_E2.add_exclusion(rtc_data_E1, self.sections_info)
 
         # Add the rules
-        expected["dram0_data"].append(dram0_data_extra)
-        expected["dram0_bss"].append(dram0_bss_extra)
+        expected['dram0_data'].append(dram0_data_extra)
+        expected['dram0_bss'].append(dram0_bss_extra)
 
-        expected["iram0_text"].append(iram0_text_E2)
-        expected["dram0_data"].append(dram0_data_E2)
+        expected['iram0_text'].append(iram0_text_E2)
+        expected['dram0_data'].append(dram0_data_E2)
 
-        expected["rtc_text"].append(rtc_text_E1)
-        expected["rtc_data"].append(rtc_data_E1)
-        expected["rtc_bss"].append(rtc_bss_E1)
+        expected['rtc_text'].append(rtc_text_E1)
+        expected['rtc_data'].append(rtc_data_E1)
+        expected['rtc_bss'].append(rtc_bss_E1)
 
         self.compare_rules(expected, actual)
 
@@ -665,24 +661,24 @@ entries:
 
         expected = self.generate_default_rules()
 
-        flash_text_default = self.get_default("flash_text", expected)
-        flash_rodata_default = self.get_default("flash_rodata", expected)
-        iram0_text_default = self.get_default("iram0_text", expected)
-        dram0_data_default = self.get_default("dram0_data", expected)
-        dram0_bss_default = self.get_default("dram0_bss", expected)
+        flash_text_default = self.get_default('flash_text', expected)
+        flash_rodata_default = self.get_default('flash_rodata', expected)
+        iram0_text_default = self.get_default('iram0_text', expected)
+        dram0_data_default = self.get_default('dram0_data', expected)
+        dram0_bss_default = self.get_default('dram0_bss', expected)
 
-        rtc_text_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList",
-                                    self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList",
-                                   self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
+        rtc_text_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList', self.model.sections['text'].entries, 'rtc_text')
+        rtc_data_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList',
+                                    self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
+        rtc_bss_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList',
+                                   self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
 
-        iram0_text_E2 = PlacementRule("libfreertos.a", None, None, self.model.sections["text"].entries, "iram0_text")
-        dram0_data_E2 = PlacementRule("libfreertos.a", None, None, self.model.sections["rodata"].entries, "dram0_data")
+        iram0_text_E2 = PlacementRule('libfreertos.a', None, None, self.model.sections['text'].entries, 'iram0_text')
+        dram0_data_E2 = PlacementRule('libfreertos.a', None, None, self.model.sections['rodata'].entries, 'dram0_data')
 
-        iram0_text_extra = PlacementRule("libfreertos.a", "croutine", None, [".text.*", ".literal.*"], "iram0_text")
-        dram0_data_extra = PlacementRule("libfreertos.a", "croutine", None, [".data.*", ".rodata.*"], "dram0_data")
-        dram0_bss_extra = PlacementRule("libfreertos.a", "croutine", None, [".bss.*"], "dram0_bss")
+        iram0_text_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.text.*', '.literal.*'], 'iram0_text')
+        dram0_data_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.data.*', '.rodata.*'], 'dram0_data')
+        dram0_bss_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.bss.*'], 'dram0_bss')
 
         # Add the exclusions
         flash_text_default.add_exclusion(iram0_text_E2, self.sections_info)
@@ -700,16 +696,16 @@ entries:
         dram0_bss_extra.add_exclusion(rtc_bss_E1, self.sections_info)
 
         # Add the rules
-        expected["iram0_text"].append(iram0_text_extra)
-        expected["dram0_data"].append(dram0_data_extra)
-        expected["dram0_bss"].append(dram0_bss_extra)
+        expected['iram0_text'].append(iram0_text_extra)
+        expected['dram0_data'].append(dram0_data_extra)
+        expected['dram0_bss'].append(dram0_bss_extra)
 
-        expected["iram0_text"].append(iram0_text_E2)
-        expected["dram0_data"].append(dram0_data_E2)
+        expected['iram0_text'].append(iram0_text_E2)
+        expected['dram0_data'].append(dram0_data_E2)
 
-        expected["rtc_text"].append(rtc_text_E1)
-        expected["rtc_data"].append(rtc_data_E1)
-        expected["rtc_bss"].append(rtc_bss_E1)
+        expected['rtc_text'].append(rtc_text_E1)
+        expected['rtc_data'].append(rtc_data_E1)
+        expected['rtc_bss'].append(rtc_bss_E1)
 
         self.compare_rules(expected, actual)
 
@@ -729,21 +725,21 @@ entries:
 
         expected = self.generate_default_rules()
 
-        flash_text_default = self.get_default("flash_text", expected)
-        flash_rodata_default = self.get_default("flash_rodata", expected)
-        iram0_text_default = self.get_default("iram0_text", expected)
-        dram0_data_default = self.get_default("dram0_data", expected)
-        dram0_bss_default = self.get_default("dram0_bss", expected)
+        flash_text_default = self.get_default('flash_text', expected)
+        flash_rodata_default = self.get_default('flash_rodata', expected)
+        iram0_text_default = self.get_default('iram0_text', expected)
+        dram0_data_default = self.get_default('dram0_data', expected)
+        dram0_bss_default = self.get_default('dram0_bss', expected)
 
-        iram0_text_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["text"].entries, "iram0_text")
-        dram0_data_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["rodata"].entries, "dram0_data")
+        iram0_text_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList', self.model.sections['text'].entries, 'iram0_text')
+        dram0_data_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList', self.model.sections['rodata'].entries, 'dram0_data')
 
-        rtc_text_E2 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E2 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E2 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
+        rtc_text_E2 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['text'].entries, 'rtc_text')
+        rtc_data_E2 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
+        rtc_bss_E2 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
 
-        iram0_text_E3 = PlacementRule("libfreertos.a", None, None, self.model.sections["text"].entries, "iram0_text")
-        dram0_data_E3 = PlacementRule("libfreertos.a", None, None, self.model.sections["rodata"].entries, "dram0_data")
+        iram0_text_E3 = PlacementRule('libfreertos.a', None, None, self.model.sections['text'].entries, 'iram0_text')
+        dram0_data_E3 = PlacementRule('libfreertos.a', None, None, self.model.sections['rodata'].entries, 'dram0_data')
 
         # Add the exclusions
         flash_text_default.add_exclusion(iram0_text_E3, self.sections_info)
@@ -759,15 +755,15 @@ entries:
         rtc_data_E2.add_exclusion(dram0_data_E1, self.sections_info)
 
         # Add the rules
-        expected["iram0_text"].append(iram0_text_E1)
-        expected["dram0_data"].append(dram0_data_E1)
+        expected['iram0_text'].append(iram0_text_E1)
+        expected['dram0_data'].append(dram0_data_E1)
 
-        expected["rtc_text"].append(rtc_text_E2)
-        expected["rtc_data"].append(rtc_data_E2)
-        expected["rtc_bss"].append(rtc_bss_E2)
+        expected['rtc_text'].append(rtc_text_E2)
+        expected['rtc_data'].append(rtc_data_E2)
+        expected['rtc_bss'].append(rtc_bss_E2)
 
-        expected["iram0_text"].append(iram0_text_E3)
-        expected["dram0_data"].append(dram0_data_E3)
+        expected['iram0_text'].append(iram0_text_E3)
+        expected['dram0_data'].append(dram0_data_E3)
 
         self.compare_rules(expected, actual)
 
@@ -787,26 +783,26 @@ entries:
 
         expected = self.generate_default_rules()
 
-        flash_text_default = self.get_default("flash_text", expected)
-        flash_rodata_default = self.get_default("flash_rodata", expected)
-        dram0_data_default = self.get_default("dram0_data", expected)
-        dram0_bss_default = self.get_default("dram0_bss", expected)
+        flash_text_default = self.get_default('flash_text', expected)
+        flash_rodata_default = self.get_default('flash_rodata', expected)
+        dram0_data_default = self.get_default('dram0_data', expected)
+        dram0_bss_default = self.get_default('dram0_bss', expected)
 
-        rtc_text_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList",
-                                    self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList",
-                                   self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
+        rtc_text_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList', self.model.sections['text'].entries, 'rtc_text')
+        rtc_data_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList',
+                                    self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
+        rtc_bss_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList',
+                                   self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
 
-        iram0_text_E2 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["text"].entries, "iram0_text")
-        dram0_data_E2 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["rodata"].entries, "dram0_data")
+        iram0_text_E2 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['text'].entries, 'iram0_text')
+        dram0_data_E2 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['rodata'].entries, 'dram0_data')
 
-        rtc_text_E3 = PlacementRule("libfreertos.a", None, None, self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E3 = PlacementRule("libfreertos.a", None, None, self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E3 = PlacementRule("libfreertos.a", None, None, self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
+        rtc_text_E3 = PlacementRule('libfreertos.a', None, None, self.model.sections['text'].entries, 'rtc_text')
+        rtc_data_E3 = PlacementRule('libfreertos.a', None, None, self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
+        rtc_bss_E3 = PlacementRule('libfreertos.a', None, None, self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
 
-        rtc_data_extra = PlacementRule("libfreertos.a", "croutine", None, [".data.*"], "rtc_data")
-        rtc_bss_extra = PlacementRule("libfreertos.a", "croutine", None, [".bss.*"], "rtc_bss")
+        rtc_data_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.data.*'], 'rtc_data')
+        rtc_bss_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.bss.*'], 'rtc_bss')
 
         # Add the exclusions
         flash_text_default.add_exclusion(rtc_text_E3, self.sections_info)
@@ -825,19 +821,19 @@ entries:
         dram0_data_E2.add_exclusion(rtc_data_E1, self.sections_info)
 
         # Add the rules
-        expected["rtc_data"].append(rtc_data_extra)
-        expected["rtc_bss"].append(rtc_bss_extra)
+        expected['rtc_data'].append(rtc_data_extra)
+        expected['rtc_bss'].append(rtc_bss_extra)
 
-        expected["rtc_text"].append(rtc_text_E1)
-        expected["rtc_data"].append(rtc_data_E1)
-        expected["rtc_bss"].append(rtc_bss_E1)
+        expected['rtc_text'].append(rtc_text_E1)
+        expected['rtc_data'].append(rtc_data_E1)
+        expected['rtc_bss'].append(rtc_bss_E1)
 
-        expected["iram0_text"].append(iram0_text_E2)
-        expected["dram0_data"].append(dram0_data_E2)
+        expected['iram0_text'].append(iram0_text_E2)
+        expected['dram0_data'].append(dram0_data_E2)
 
-        expected["rtc_text"].append(rtc_text_E3)
-        expected["rtc_data"].append(rtc_data_E3)
-        expected["rtc_bss"].append(rtc_bss_E3)
+        expected['rtc_text'].append(rtc_text_E3)
+        expected['rtc_data'].append(rtc_data_E3)
+        expected['rtc_bss'].append(rtc_bss_E3)
 
         self.compare_rules(expected, actual)
 
@@ -859,29 +855,29 @@ entries:
 
         expected = self.generate_default_rules()
 
-        flash_text_default = self.get_default("flash_text", expected)
-        flash_rodata_default = self.get_default("flash_rodata", expected)
-        dram0_data_default = self.get_default("dram0_data", expected)
-        dram0_bss_default = self.get_default("dram0_bss", expected)
+        flash_text_default = self.get_default('flash_text', expected)
+        flash_rodata_default = self.get_default('flash_rodata', expected)
+        dram0_data_default = self.get_default('dram0_data', expected)
+        dram0_bss_default = self.get_default('dram0_bss', expected)
 
-        iram0_text_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["text"].entries, "iram0_text")
-        dram0_data_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["rodata"].entries, "dram0_data")
+        iram0_text_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList', self.model.sections['text'].entries, 'iram0_text')
+        dram0_data_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList', self.model.sections['rodata'].entries, 'dram0_data')
 
-        iram0_text_E2 = PlacementRule("libfreertos.a", "event_groups", "xEventGroupCreate", self.model.sections["text"].entries, "iram0_text")
-        dram0_data_E2 = PlacementRule("libfreertos.a", "event_groups", "xEventGroupCreate", self.model.sections["rodata"].entries, "dram0_data")
+        iram0_text_E2 = PlacementRule('libfreertos.a', 'event_groups', 'xEventGroupCreate', self.model.sections['text'].entries, 'iram0_text')
+        dram0_data_E2 = PlacementRule('libfreertos.a', 'event_groups', 'xEventGroupCreate', self.model.sections['rodata'].entries, 'dram0_data')
 
-        rtc_text_E3 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E3 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E3 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
+        rtc_text_E3 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['text'].entries, 'rtc_text')
+        rtc_data_E3 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
+        rtc_bss_E3 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
 
-        rtc_text_E4 = PlacementRule("libfreertos.a", "event_groups", None, self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E4 = PlacementRule("libfreertos.a", "event_groups", None,
-                                    self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E4 = PlacementRule("libfreertos.a", "event_groups", None,
-                                   self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
+        rtc_text_E4 = PlacementRule('libfreertos.a', 'event_groups', None, self.model.sections['text'].entries, 'rtc_text')
+        rtc_data_E4 = PlacementRule('libfreertos.a', 'event_groups', None,
+                                    self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
+        rtc_bss_E4 = PlacementRule('libfreertos.a', 'event_groups', None,
+                                   self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
 
-        iram0_text_E5 = PlacementRule("libfreertos.a", None, None, self.model.sections["text"].entries, "iram0_text")
-        dram0_data_E5 = PlacementRule("libfreertos.a", None, None, self.model.sections["rodata"].entries, "dram0_data")
+        iram0_text_E5 = PlacementRule('libfreertos.a', None, None, self.model.sections['text'].entries, 'iram0_text')
+        dram0_data_E5 = PlacementRule('libfreertos.a', None, None, self.model.sections['rodata'].entries, 'dram0_data')
 
         # Add the exclusions
         flash_text_default.add_exclusion(iram0_text_E5, self.sections_info)
@@ -903,22 +899,22 @@ entries:
         rtc_data_E3.add_exclusion(dram0_data_E1, self.sections_info)
 
         # Add the rules
-        expected["iram0_text"].append(iram0_text_E1)
-        expected["dram0_data"].append(dram0_data_E1)
+        expected['iram0_text'].append(iram0_text_E1)
+        expected['dram0_data'].append(dram0_data_E1)
 
-        expected["iram0_text"].append(iram0_text_E2)
-        expected["dram0_data"].append(dram0_data_E2)
+        expected['iram0_text'].append(iram0_text_E2)
+        expected['dram0_data'].append(dram0_data_E2)
 
-        expected["rtc_text"].append(rtc_text_E3)
-        expected["rtc_data"].append(rtc_data_E3)
-        expected["rtc_bss"].append(rtc_bss_E3)
+        expected['rtc_text'].append(rtc_text_E3)
+        expected['rtc_data'].append(rtc_data_E3)
+        expected['rtc_bss'].append(rtc_bss_E3)
 
-        expected["rtc_text"].append(rtc_text_E4)
-        expected["rtc_data"].append(rtc_data_E4)
-        expected["rtc_bss"].append(rtc_bss_E4)
+        expected['rtc_text'].append(rtc_text_E4)
+        expected['rtc_data'].append(rtc_data_E4)
+        expected['rtc_bss'].append(rtc_bss_E4)
 
-        expected["iram0_text"].append(iram0_text_E5)
-        expected["dram0_data"].append(dram0_data_E5)
+        expected['iram0_text'].append(iram0_text_E5)
+        expected['dram0_data'].append(dram0_data_E5)
 
         self.compare_rules(expected, actual)
 
@@ -939,29 +935,29 @@ entries:
 
         expected = self.generate_default_rules()
 
-        flash_text_default = self.get_default("flash_text", expected)
-        flash_rodata_default = self.get_default("flash_rodata", expected)
-        dram0_data_default = self.get_default("dram0_data", expected)
-        dram0_bss_default = self.get_default("dram0_bss", expected)
+        flash_text_default = self.get_default('flash_text', expected)
+        flash_rodata_default = self.get_default('flash_rodata', expected)
+        dram0_data_default = self.get_default('dram0_data', expected)
+        dram0_bss_default = self.get_default('dram0_bss', expected)
 
-        iram0_text_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["text"].entries, "iram0_text")
-        dram0_data_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["rodata"].entries, "dram0_data")
+        iram0_text_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList', self.model.sections['text'].entries, 'iram0_text')
+        dram0_data_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList', self.model.sections['rodata'].entries, 'dram0_data')
 
-        rtc_text_E2 = PlacementRule("libfreertos.a", "event_groups", "xEventGroupCreate", self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E2 = PlacementRule("libfreertos.a", "event_groups", "xEventGroupCreate",
-                                    self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E2 = PlacementRule("libfreertos.a", "event_groups", "xEventGroupCreate",
-                                   self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
+        rtc_text_E2 = PlacementRule('libfreertos.a', 'event_groups', 'xEventGroupCreate', self.model.sections['text'].entries, 'rtc_text')
+        rtc_data_E2 = PlacementRule('libfreertos.a', 'event_groups', 'xEventGroupCreate',
+                                    self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
+        rtc_bss_E2 = PlacementRule('libfreertos.a', 'event_groups', 'xEventGroupCreate',
+                                   self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
 
-        rtc_text_E3 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E3 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E3 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
+        rtc_text_E3 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['text'].entries, 'rtc_text')
+        rtc_data_E3 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
+        rtc_bss_E3 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
 
-        iram0_text_E4 = PlacementRule("libfreertos.a", "event_groups", None, self.model.sections["text"].entries, "iram0_text")
-        dram0_data_E4 = PlacementRule("libfreertos.a", "event_groups", None, self.model.sections["rodata"].entries, "dram0_data")
+        iram0_text_E4 = PlacementRule('libfreertos.a', 'event_groups', None, self.model.sections['text'].entries, 'iram0_text')
+        dram0_data_E4 = PlacementRule('libfreertos.a', 'event_groups', None, self.model.sections['rodata'].entries, 'dram0_data')
 
-        dram0_data_extra = PlacementRule("libfreertos.a", "event_groups", None, [".data.*"], "dram0_data")
-        dram0_bss_extra = PlacementRule("libfreertos.a", "event_groups", None, [".bss.*"], "dram0_bss")
+        dram0_data_extra = PlacementRule('libfreertos.a', 'event_groups', None, ['.data.*'], 'dram0_data')
+        dram0_bss_extra = PlacementRule('libfreertos.a', 'event_groups', None, ['.bss.*'], 'dram0_bss')
 
         # Add the exclusions
         flash_text_default.add_exclusion(iram0_text_E4, self.sections_info)
@@ -983,22 +979,22 @@ entries:
         rtc_data_E3.add_exclusion(dram0_data_E1, self.sections_info)
 
         # Add the rules
-        expected["iram0_text"].append(iram0_text_E1)
-        expected["dram0_data"].append(dram0_data_E1)
+        expected['iram0_text'].append(iram0_text_E1)
+        expected['dram0_data'].append(dram0_data_E1)
 
-        expected["rtc_text"].append(rtc_text_E2)
-        expected["rtc_data"].append(rtc_data_E2)
-        expected["rtc_bss"].append(rtc_bss_E2)
+        expected['rtc_text'].append(rtc_text_E2)
+        expected['rtc_data'].append(rtc_data_E2)
+        expected['rtc_bss'].append(rtc_bss_E2)
 
-        expected["rtc_text"].append(rtc_text_E3)
-        expected["rtc_data"].append(rtc_data_E3)
-        expected["rtc_bss"].append(rtc_bss_E3)
+        expected['rtc_text'].append(rtc_text_E3)
+        expected['rtc_data'].append(rtc_data_E3)
+        expected['rtc_bss'].append(rtc_bss_E3)
 
-        expected["iram0_text"].append(iram0_text_E4)
-        expected["dram0_data"].append(dram0_data_E4)
+        expected['iram0_text'].append(iram0_text_E4)
+        expected['dram0_data'].append(dram0_data_E4)
 
-        expected["dram0_data"].append(dram0_data_extra)
-        expected["dram0_bss"].append(dram0_bss_extra)
+        expected['dram0_data'].append(dram0_data_extra)
+        expected['dram0_bss'].append(dram0_bss_extra)
 
         self.compare_rules(expected, actual)
 
@@ -1017,19 +1013,19 @@ entries:
 
         expected = self.generate_default_rules()
 
-        flash_text_default = self.get_default("flash_text", expected)
-        flash_rodata_default = self.get_default("flash_rodata", expected)
+        flash_text_default = self.get_default('flash_text', expected)
+        flash_rodata_default = self.get_default('flash_rodata', expected)
 
-        iram0_text_E1 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["text"].entries, "iram0_text")
-        dram0_data_E1 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["rodata"].entries, "dram0_data")
+        iram0_text_E1 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['text'].entries, 'iram0_text')
+        dram0_data_E1 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['rodata'].entries, 'dram0_data')
 
         # Add the exclusions
         flash_text_default.add_exclusion(iram0_text_E1)
         flash_rodata_default.add_exclusion(dram0_data_E1)
 
         # Add the rules
-        expected["iram0_text"].append(iram0_text_E1)
-        expected["dram0_data"].append(dram0_data_E1)
+        expected['iram0_text'].append(iram0_text_E1)
+        expected['dram0_data'].append(dram0_data_E1)
 
         self.compare_rules(expected, actual)
 
@@ -1048,19 +1044,19 @@ entries:
 
         expected = self.generate_default_rules()
 
-        flash_text_default = self.get_default("flash_text", expected)
-        flash_rodata_default = self.get_default("flash_rodata", expected)
+        flash_text_default = self.get_default('flash_text', expected)
+        flash_rodata_default = self.get_default('flash_rodata', expected)
 
-        iram0_text_E1 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["text"].entries, "iram0_text")
-        dram0_data_E1 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["rodata"].entries, "dram0_data")
+        iram0_text_E1 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['text'].entries, 'iram0_text')
+        dram0_data_E1 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['rodata'].entries, 'dram0_data')
 
         # Add the exclusions
         flash_text_default.add_exclusion(iram0_text_E1)
         flash_rodata_default.add_exclusion(dram0_data_E1)
 
         # Add the rules
-        expected["iram0_text"].append(iram0_text_E1)
-        expected["dram0_data"].append(dram0_data_E1)
+        expected['iram0_text'].append(iram0_text_E1)
+        expected['dram0_data'].append(dram0_data_E1)
 
         self.compare_rules(expected, actual)
 
@@ -1101,7 +1097,7 @@ entries:
 """
 
         for perf_level in range(0, 4):
-            self.sdkconfig.config.syms["PERFORMANCE_LEVEL"].set_value(str(perf_level))
+            self.sdkconfig.config.syms['PERFORMANCE_LEVEL'].set_value(str(perf_level))
 
             self.model.mappings = {}
             self.add_fragments(generation_with_condition)
@@ -1111,17 +1107,17 @@ entries:
 
             if perf_level < 4:
                 for append_no in range(1, perf_level + 1):
-                    flash_text_default = self.get_default("flash_text", expected)
-                    flash_rodata_default = self.get_default("flash_rodata", expected)
+                    flash_text_default = self.get_default('flash_text', expected)
+                    flash_rodata_default = self.get_default('flash_rodata', expected)
 
-                    iram_rule = PlacementRule("lib.a", "obj" + str(append_no), None, self.model.sections["text"].entries, "iram0_text")
-                    dram_rule = PlacementRule("lib.a", "obj" + str(append_no), None, self.model.sections["rodata"].entries, "dram0_data")
+                    iram_rule = PlacementRule('lib.a', 'obj' + str(append_no), None, self.model.sections['text'].entries, 'iram0_text')
+                    dram_rule = PlacementRule('lib.a', 'obj' + str(append_no), None, self.model.sections['rodata'].entries, 'dram0_data')
 
                     flash_text_default.add_exclusion(iram_rule)
                     flash_rodata_default.add_exclusion(dram_rule)
 
-                    expected["iram0_text"].append(iram_rule)
-                    expected["dram0_data"].append(dram_rule)
+                    expected['iram0_text'].append(iram_rule)
+                    expected['dram0_data'].append(dram_rule)
 
             self.compare_rules(expected, actual)
 
@@ -1162,21 +1158,21 @@ entries:
     * (cond_noflash)
 """
 
-        self.sdkconfig.config.syms["PERFORMANCE_LEVEL"].set_value("1")
+        self.sdkconfig.config.syms['PERFORMANCE_LEVEL'].set_value('1')
         self.add_fragments(generation_with_condition)
 
         actual = self.model.generate_rules(self.sections_info)
         expected = self.generate_default_rules()
 
-        flash_text_default = self.get_default("flash_text", expected)
+        flash_text_default = self.get_default('flash_text', expected)
 
-        iram0_text_E1 = PlacementRule("lib.a", "*", None, self.model.sections["text"].entries, "iram0_text")
+        iram0_text_E1 = PlacementRule('lib.a', '*', None, self.model.sections['text'].entries, 'iram0_text')
 
         # Add the exclusions
         flash_text_default.add_exclusion(iram0_text_E1)
 
         # Add to the placement rules list
-        expected["iram0_text"].append(iram0_text_E1)
+        expected['iram0_text'].append(iram0_text_E1)
 
         self.compare_rules(expected, actual)
 
@@ -1203,21 +1199,21 @@ entries:
     * (cond_noflash)
 """
 
-        self.sdkconfig.config.syms["PERFORMANCE_LEVEL"].set_value("0")
+        self.sdkconfig.config.syms['PERFORMANCE_LEVEL'].set_value('0')
         self.add_fragments(generation_with_condition)
 
         actual = self.model.generate_rules(self.sections_info)
         expected = self.generate_default_rules()
 
-        flash_rodata_default = self.get_default("flash_rodata", expected)
+        flash_rodata_default = self.get_default('flash_rodata', expected)
 
-        dram0_data_E1 = PlacementRule("lib.a", "*", None, self.model.sections["rodata"].entries, "dram0_data")
+        dram0_data_E1 = PlacementRule('lib.a', '*', None, self.model.sections['rodata'].entries, 'dram0_data')
 
         # Add the exclusions
         flash_rodata_default.add_exclusion(dram0_data_E1)
 
         # Add to the placement rules list
-        expected["dram0_data"].append(dram0_data_E1)
+        expected['dram0_data'].append(dram0_data_E1)
 
         self.compare_rules(expected, actual)
 
@@ -1239,7 +1235,7 @@ entries:
 """
 
         for perf_level in range(0, 4):
-            self.sdkconfig.config.syms["PERFORMANCE_LEVEL"].set_value(str(perf_level))
+            self.sdkconfig.config.syms['PERFORMANCE_LEVEL'].set_value(str(perf_level))
 
             self.model.mappings = {}
             self.add_fragments(generation_with_condition)
@@ -1249,17 +1245,17 @@ entries:
 
             if perf_level < 4:
                 for append_no in range(1, perf_level + 1):
-                    flash_text_default = self.get_default("flash_text", expected)
-                    flash_rodata_default = self.get_default("flash_rodata", expected)
+                    flash_text_default = self.get_default('flash_text', expected)
+                    flash_rodata_default = self.get_default('flash_rodata', expected)
 
-                    iram_rule = PlacementRule("lib.a", "obj" + str(append_no), None, self.model.sections["text"].entries, "iram0_text")
-                    dram_rule = PlacementRule("lib.a", "obj" + str(append_no), None, self.model.sections["rodata"].entries, "dram0_data")
+                    iram_rule = PlacementRule('lib.a', 'obj' + str(append_no), None, self.model.sections['text'].entries, 'iram0_text')
+                    dram_rule = PlacementRule('lib.a', 'obj' + str(append_no), None, self.model.sections['rodata'].entries, 'dram0_data')
 
                     flash_text_default.add_exclusion(iram_rule)
                     flash_rodata_default.add_exclusion(dram_rule)
 
-                    expected["iram0_text"].append(iram_rule)
-                    expected["dram0_data"].append(dram_rule)
+                    expected['iram0_text'].append(iram_rule)
+                    expected['dram0_data'].append(dram_rule)
 
             self.compare_rules(expected, actual)
 
@@ -1289,7 +1285,7 @@ entries:
 """
 
         for perf_level in range(0, 4):
-            self.sdkconfig.config.syms["PERFORMANCE_LEVEL"].set_value(str(perf_level))
+            self.sdkconfig.config.syms['PERFORMANCE_LEVEL'].set_value(str(perf_level))
 
             self.model.mappings = {}
             self.add_fragments(multiple_deprecated_definitions)
@@ -1299,17 +1295,17 @@ entries:
 
             if perf_level < 4:
                 for append_no in range(1, perf_level + 1):
-                    flash_text_default = self.get_default("flash_text", expected)
-                    flash_rodata_default = self.get_default("flash_rodata", expected)
+                    flash_text_default = self.get_default('flash_text', expected)
+                    flash_rodata_default = self.get_default('flash_rodata', expected)
 
-                    iram_rule = PlacementRule("lib.a", "obj" + str(append_no), None, self.model.sections["text"].entries, "iram0_text")
-                    dram_rule = PlacementRule("lib.a", "obj" + str(append_no), None, self.model.sections["rodata"].entries, "dram0_data")
+                    iram_rule = PlacementRule('lib.a', 'obj' + str(append_no), None, self.model.sections['text'].entries, 'iram0_text')
+                    dram_rule = PlacementRule('lib.a', 'obj' + str(append_no), None, self.model.sections['rodata'].entries, 'dram0_data')
 
                     flash_text_default.add_exclusion(iram_rule)
                     flash_rodata_default.add_exclusion(dram_rule)
 
-                    expected["iram0_text"].append(iram_rule)
-                    expected["dram0_data"].append(dram_rule)
+                    expected['iram0_text'].append(iram_rule)
+                    expected['dram0_data'].append(dram_rule)
 
             self.compare_rules(expected, actual)
 
@@ -1342,7 +1338,7 @@ entries:
 """
 
         for perf_level in range(0, 4):
-            self.sdkconfig.config.syms["PERFORMANCE_LEVEL"].set_value(str(perf_level))
+            self.sdkconfig.config.syms['PERFORMANCE_LEVEL'].set_value(str(perf_level))
 
             self.model.mappings = {}
             self.add_fragments(multiple_deprecated_definitions)
@@ -1352,17 +1348,17 @@ entries:
 
             if perf_level < 4:
                 for append_no in range(1, perf_level + 1):
-                    flash_text_default = self.get_default("flash_text", expected)
-                    flash_rodata_default = self.get_default("flash_rodata", expected)
+                    flash_text_default = self.get_default('flash_text', expected)
+                    flash_rodata_default = self.get_default('flash_rodata', expected)
 
-                    iram_rule = PlacementRule("lib.a", "obj" + str(append_no), None, self.model.sections["text"].entries, "iram0_text")
-                    dram_rule = PlacementRule("lib.a", "obj" + str(append_no), None, self.model.sections["rodata"].entries, "dram0_data")
+                    iram_rule = PlacementRule('lib.a', 'obj' + str(append_no), None, self.model.sections['text'].entries, 'iram0_text')
+                    dram_rule = PlacementRule('lib.a', 'obj' + str(append_no), None, self.model.sections['rodata'].entries, 'dram0_data')
 
                     flash_text_default.add_exclusion(iram_rule)
                     flash_rodata_default.add_exclusion(dram_rule)
 
-                    expected["iram0_text"].append(iram_rule)
-                    expected["dram0_data"].append(dram_rule)
+                    expected['iram0_text'].append(iram_rule)
+                    expected['dram0_data'].append(dram_rule)
 
             self.compare_rules(expected, actual)
 
@@ -1391,14 +1387,14 @@ entries:
 
         expected = self.generate_default_rules()
 
-        flash_text_default = self.get_default("flash_text", expected)
+        flash_text_default = self.get_default('flash_text', expected)
 
-        iram0_text_E1 = PlacementRule("libfreertos2.a", "croutine2", None, self.model.sections["text"].entries, "iram0_text")
-        iram0_text_E2 = PlacementRule("libfreertos2.a", "croutine", None, self.model.sections["text"].entries, "iram0_text")
-        iram0_text_E3 = PlacementRule("libfreertos.a", "croutine", "prvCheckPendingReadyList", self.model.sections["text"].entries, "iram0_text")
-        iram0_text_E4 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["text"].entries, "iram0_text")
+        iram0_text_E1 = PlacementRule('libfreertos2.a', 'croutine2', None, self.model.sections['text'].entries, 'iram0_text')
+        iram0_text_E2 = PlacementRule('libfreertos2.a', 'croutine', None, self.model.sections['text'].entries, 'iram0_text')
+        iram0_text_E3 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckPendingReadyList', self.model.sections['text'].entries, 'iram0_text')
+        iram0_text_E4 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList', self.model.sections['text'].entries, 'iram0_text')
 
-        flash_text_extra = PlacementRule("libfreertos.a", "croutine", None, [".text.*", ".literal.*"], "flash_text")
+        flash_text_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.text.*', '.literal.*'], 'flash_text')
 
         # Add the exclusions
         flash_text_default.add_exclusion(iram0_text_E1, self.sections_info)
@@ -1409,32 +1405,32 @@ entries:
         flash_text_extra.add_exclusion(iram0_text_E4, self.sections_info)
 
         # Add the rules, arranged by expected order
-        expected["flash_text"].append(flash_text_extra)
-        expected["iram0_text"].append(iram0_text_E4)
-        expected["iram0_text"].append(iram0_text_E3)
-        expected["iram0_text"].append(iram0_text_E2)
-        expected["iram0_text"].append(iram0_text_E1)
+        expected['flash_text'].append(flash_text_extra)
+        expected['iram0_text'].append(iram0_text_E4)
+        expected['iram0_text'].append(iram0_text_E3)
+        expected['iram0_text'].append(iram0_text_E2)
+        expected['iram0_text'].append(iram0_text_E1)
 
         # Perform general comparison for all sections
         self.compare_rules(expected, actual)
 
         # Perform ordered comparison
-        self.assertListEqual(actual["flash_text"], expected["flash_text"])
-        self.assertListEqual(actual["iram0_text"], expected["iram0_text"])
+        self.assertListEqual(actual['flash_text'], expected['flash_text'])
+        self.assertListEqual(actual['iram0_text'], expected['iram0_text'])
 
     def test_sections_info_parsing(self):
 
         self.sections_info = SectionsInfo()
 
-        with open("data/sections_parse.info") as sections_info_file_obj:
+        with open('data/sections_parse.info') as sections_info_file_obj:
             self.sections_info.add_sections_info(sections_info_file_obj)
 
-        sections = self.sections_info.get_obj_sections("libsections_parse.a", "croutine")
-        self.assertEqual(set(sections), set([".text", ".data", ".bss"]))
+        sections = self.sections_info.get_obj_sections('libsections_parse.a', 'croutine')
+        self.assertEqual(set(sections), set(['.text', '.data', '.bss']))
 
-        sections = self.sections_info.get_obj_sections("libsections_parse.a", "FreeRTOS-openocd")
-        self.assertEqual(set(sections), set([".literal.prvCheckPendingReadyList"]))
+        sections = self.sections_info.get_obj_sections('libsections_parse.a', 'FreeRTOS-openocd')
+        self.assertEqual(set(sections), set(['.literal.prvCheckPendingReadyList']))
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

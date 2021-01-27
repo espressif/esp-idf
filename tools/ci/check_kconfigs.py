@@ -14,8 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import print_function, unicode_literals
 
 import argparse
 import os
@@ -23,7 +22,7 @@ import re
 import sys
 from io import open
 
-from idf_ci_utils import get_submodule_dirs, IDF_PATH
+from idf_ci_utils import IDF_PATH, get_submodule_dirs
 
 # regular expression for matching Kconfig files
 RE_KCONFIG = r'^Kconfig(\.projbuild)?(\.in)?$'
@@ -101,7 +100,7 @@ class SourceChecker(BaseChecker):
             if path in ['$COMPONENT_KCONFIGS_SOURCE_FILE', '$COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE']:
                 pass
             elif not filename.startswith('Kconfig.'):
-                raise InputError(self.path_in_idf, line_number, "only filenames starting with Kconfig.* can be sourced",
+                raise InputError(self.path_in_idf, line_number, 'only filenames starting with Kconfig.* can be sourced',
                                  line.replace(path, os.path.join(os.path.dirname(path), 'Kconfig.' + filename)))
 
 
@@ -124,7 +123,7 @@ class LineRuleChecker(BaseChecker):
                 if rule[2]:
                     line = rule[0].sub(rule[2], line)
         if len(errors) > 0:
-            raise InputError(self.path_in_idf, line_number, "; ".join(errors), line)
+            raise InputError(self.path_in_idf, line_number, '; '.join(errors), line)
 
 
 class IndentAndNameChecker(BaseChecker):
@@ -369,7 +368,7 @@ class IndentAndNameChecker(BaseChecker):
 
 def valid_directory(path):
     if not os.path.isdir(path):
-        raise argparse.ArgumentTypeError("{} is not a valid directory!".format(path))
+        raise argparse.ArgumentTypeError('{} is not a valid directory!'.format(path))
     return path
 
 
@@ -394,7 +393,7 @@ def validate_kconfig_file(kconfig_full_path, verbose=False):  # type: (str, bool
                     fail = True
                     f_o.write(e.suggested_line)
         except UnicodeDecodeError:
-            raise ValueError("The encoding of {} is not Unicode.".format(kconfig_full_path))
+            raise ValueError('The encoding of {} is not Unicode.'.format(kconfig_full_path))
 
     if fail:
         print('\t{} has been saved with suggestions for resolving the issues.\n'
@@ -475,5 +474,5 @@ def main():
     return 0
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     sys.exit(main())

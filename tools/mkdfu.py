@@ -21,14 +21,15 @@
 # This file must be the first one in the archive. It contains binary structures describing each
 # subsequent file (for example, where the file needs to be flashed/loaded).
 
-from collections import namedtuple
-from future.utils import iteritems
 import argparse
 import hashlib
 import json
 import os
 import struct
 import zlib
+from collections import namedtuple
+
+from future.utils import iteritems
 
 try:
     import typing
@@ -43,28 +44,28 @@ except ImportError:
     pass
 
 # CPIO ("new ASCII") format related things
-CPIO_MAGIC = b"070701"
-CPIO_STRUCT = b"=6s" + b"8s" * 13
+CPIO_MAGIC = b'070701'
+CPIO_STRUCT = b'=6s' + b'8s' * 13
 CPIOHeader = namedtuple(
-    "CPIOHeader",
+    'CPIOHeader',
     [
-        "magic",
-        "ino",
-        "mode",
-        "uid",
-        "gid",
-        "nlink",
-        "mtime",
-        "filesize",
-        "devmajor",
-        "devminor",
-        "rdevmajor",
-        "rdevminor",
-        "namesize",
-        "check",
+        'magic',
+        'ino',
+        'mode',
+        'uid',
+        'gid',
+        'nlink',
+        'mtime',
+        'filesize',
+        'devmajor',
+        'devminor',
+        'rdevmajor',
+        'rdevminor',
+        'namesize',
+        'check',
     ],
 )
-CPIO_TRAILER = "TRAILER!!!"
+CPIO_TRAILER = 'TRAILER!!!'
 
 
 def make_cpio_header(
@@ -73,7 +74,7 @@ def make_cpio_header(
     """ Returns CPIOHeader for the given file name and file size """
 
     def as_hex(val):  # type: (int) -> bytes
-        return "{:08x}".format(val).encode("ascii")
+        return '{:08x}'.format(val).encode('ascii')
 
     hex_0 = as_hex(0)
     mode = hex_0 if is_trailer else as_hex(0o0100644)
@@ -98,17 +99,17 @@ def make_cpio_header(
 
 # DFU format related things
 # Structure of one entry in dfuinfo0.dat
-DFUINFO_STRUCT = b"<I I 64s 16s"
-DFUInfo = namedtuple("DFUInfo", ["address", "flags", "name", "md5"])
-DFUINFO_FILE = "dfuinfo0.dat"
+DFUINFO_STRUCT = b'<I I 64s 16s'
+DFUInfo = namedtuple('DFUInfo', ['address', 'flags', 'name', 'md5'])
+DFUINFO_FILE = 'dfuinfo0.dat'
 # Structure which gets added at the end of the entire DFU file
-DFUSUFFIX_STRUCT = b"<H H H H 3s B"
+DFUSUFFIX_STRUCT = b'<H H H H 3s B'
 DFUSuffix = namedtuple(
-    "DFUSuffix", ["bcd_device", "pid", "vid", "bcd_dfu", "sig", "len"]
+    'DFUSuffix', ['bcd_device', 'pid', 'vid', 'bcd_dfu', 'sig', 'len']
 )
 ESPRESSIF_VID = 12346
 # This CRC32 gets added after DFUSUFFIX_STRUCT
-DFUCRC_STRUCT = b"<I"
+DFUCRC_STRUCT = b'<I'
 
 
 def dfu_crc(data, crc=0):  # type: (bytes, int) -> int
@@ -117,7 +118,7 @@ def dfu_crc(data, crc=0):  # type: (bytes, int) -> int
     return uint32_max - (zlib.crc32(data, crc) & uint32_max)
 
 
-def pad_bytes(b, multiple, padding=b"\x00"):  # type: (bytes, int, bytes) -> bytes
+def pad_bytes(b, multiple, padding=b'\x00'):  # type: (bytes, int, bytes) -> bytes
     """ Pad 'b' to a length divisible by 'multiple' """
     padded_len = (len(b) + multiple - 1) // multiple * multiple
     return b + padding * (padded_len - len(b))
@@ -132,25 +133,25 @@ class EspDfuWriter(object):
 
     def add_file(self, flash_addr, path):  # type: (int, str) -> None
         """ Add file to be written into flash at given address """
-        with open(path, "rb") as f:
+        with open(path, 'rb') as f:
             self._add_cpio_flash_entry(os.path.basename(path), flash_addr, f.read())
 
     def finish(self):  # type: () -> None
         """ Write DFU file """
         # Prepare and add dfuinfo0.dat file
-        dfuinfo = b"".join([struct.pack(DFUINFO_STRUCT, *item) for item in self.index])
+        dfuinfo = b''.join([struct.pack(DFUINFO_STRUCT, *item) for item in self.index])
         self._add_cpio_entry(DFUINFO_FILE, dfuinfo, first=True)
 
         # Add CPIO archive trailer
-        self._add_cpio_entry(CPIO_TRAILER, b"", trailer=True)
+        self._add_cpio_entry(CPIO_TRAILER, b'', trailer=True)
 
         # Combine all the entries and pad the file
-        out_data = b"".join(self.entries)
+        out_data = b''.join(self.entries)
         cpio_block_size = 10240
         out_data = pad_bytes(out_data, cpio_block_size)
 
         # Add DFU suffix and CRC
-        dfu_suffix = DFUSuffix(0xFFFF, self.pid, ESPRESSIF_VID, 0x0100, b"UFD", 16)
+        dfu_suffix = DFUSuffix(0xFFFF, self.pid, ESPRESSIF_VID, 0x0100, b'UFD', 16)
         out_data += struct.pack(DFUSUFFIX_STRUCT, *dfu_suffix)
         out_data += struct.pack(DFUCRC_STRUCT, dfu_crc(out_data))
 
@@ -166,7 +167,7 @@ class EspDfuWriter(object):
             DFUInfo(
                 address=flash_addr,
                 flags=0,
-                name=filename.encode("utf-8"),
+                name=filename.encode('utf-8'),
                 md5=md5.digest(),
             )
         )
@@ -175,7 +176,7 @@ class EspDfuWriter(object):
     def _add_cpio_entry(
         self, filename, data, first=False, trailer=False
     ):  # type: (str, bytes, bool, bool) -> None
-        filename_b = filename.encode("utf-8") + b"\x00"
+        filename_b = filename.encode('utf-8') + b'\x00'
         cpio_header = make_cpio_header(len(filename_b), len(data), is_trailer=trailer)
         entry = pad_bytes(
             struct.pack(CPIO_STRUCT, *cpio_header) + filename_b, 4
@@ -199,21 +200,21 @@ def main():
     parser = argparse.ArgumentParser()
 
     # Provision to add "info" command
-    subparsers = parser.add_subparsers(dest="command")
-    write_parser = subparsers.add_parser("write")
-    write_parser.add_argument("-o", "--output-file",
+    subparsers = parser.add_subparsers(dest='command')
+    write_parser = subparsers.add_parser('write')
+    write_parser.add_argument('-o', '--output-file',
                               help='Filename for storing the output DFU image',
                               required=True,
-                              type=argparse.FileType("wb"))
-    write_parser.add_argument("--pid",
+                              type=argparse.FileType('wb'))
+    write_parser.add_argument('--pid',
                               required=True,
                               type=lambda h: int(h, 16),
                               help='Hexa-decimal product indentificator')
-    write_parser.add_argument("--json",
+    write_parser.add_argument('--json',
                               help='Optional file for loading "flash_files" dictionary with <address> <file> items')
-    write_parser.add_argument("files",
-                              metavar="<address> <file>", help='Add <file> at <address>',
-                              nargs="*")
+    write_parser.add_argument('files',
+                              metavar='<address> <file>', help='Add <file> at <address>',
+                              nargs='*')
 
     args = parser.parse_args()
 
@@ -252,5 +253,5 @@ def main():
      }[args.command](cmd_args)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

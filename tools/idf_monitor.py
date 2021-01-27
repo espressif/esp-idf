@@ -29,35 +29,36 @@
 #
 # Originally released under BSD-3-Clause license.
 #
-from __future__ import print_function, division
-from __future__ import unicode_literals
-from builtins import chr
-from builtins import object
-from builtins import bytes
-import subprocess
+from __future__ import division, print_function, unicode_literals
+
 import argparse
 import codecs
 import datetime
-import re
 import os
+import re
+import subprocess
+from builtins import bytes, chr, object
+
 try:
     import queue
 except ImportError:
     import Queue as queue
-import shlex
-import time
-import sys
-import serial
-import serial.tools.list_ports
-import serial.tools.miniterm as miniterm
-import threading
+
 import ctypes
+import json
+import shlex
+import sys
+import tempfile
+import textwrap
+import threading
+import time
 import types
 from distutils.version import StrictVersion
 from io import open
-import textwrap
-import tempfile
-import json
+
+import serial
+import serial.tools.list_ports
+import serial.tools.miniterm as miniterm
 
 try:
     import websocket
@@ -97,7 +98,7 @@ ANSI_NORMAL = '\033[0m'
 
 def color_print(message, color, newline='\n'):
     """ Print a message to stderr with colored highlighting """
-    sys.stderr.write("%s%s%s%s" % (color, message,  ANSI_NORMAL, newline))
+    sys.stderr.write('%s%s%s%s' % (color, message,  ANSI_NORMAL, newline))
 
 
 def yellow_print(message, newline='\n'):
@@ -108,7 +109,7 @@ def red_print(message, newline='\n'):
     color_print(message, ANSI_RED, newline)
 
 
-__version__ = "1.1"
+__version__ = '1.1'
 
 # Tags for tuples in queues
 TAG_KEY = 0
@@ -119,14 +120,14 @@ TAG_CMD = 3
 # regex matches an potential PC value (0x4xxxxxxx)
 MATCH_PCADDR = re.compile(r'0x4[0-9a-f]{7}', re.IGNORECASE)
 
-DEFAULT_TOOLCHAIN_PREFIX = "xtensa-esp32-elf-"
+DEFAULT_TOOLCHAIN_PREFIX = 'xtensa-esp32-elf-'
 
-DEFAULT_PRINT_FILTER = ""
+DEFAULT_PRINT_FILTER = ''
 
 # coredump related messages
-COREDUMP_UART_START = b"================= CORE DUMP START ================="
-COREDUMP_UART_END = b"================= CORE DUMP END ================="
-COREDUMP_UART_PROMPT = b"Press Enter to print core dump to UART..."
+COREDUMP_UART_START = b'================= CORE DUMP START ================='
+COREDUMP_UART_END = b'================= CORE DUMP END ================='
+COREDUMP_UART_PROMPT = b'Press Enter to print core dump to UART...'
 
 # coredump states
 COREDUMP_IDLE = 0
@@ -134,21 +135,21 @@ COREDUMP_READING = 1
 COREDUMP_DONE = 2
 
 # coredump decoding options
-COREDUMP_DECODE_DISABLE = "disable"
-COREDUMP_DECODE_INFO = "info"
+COREDUMP_DECODE_DISABLE = 'disable'
+COREDUMP_DECODE_INFO = 'info'
 
 # panic handler related messages
-PANIC_START = r"Core \s*\d+ register dump:"
-PANIC_END = b"ELF file SHA256:"
-PANIC_STACK_DUMP = b"Stack memory:"
+PANIC_START = r'Core \s*\d+ register dump:'
+PANIC_END = b'ELF file SHA256:'
+PANIC_STACK_DUMP = b'Stack memory:'
 
 # panic handler decoding states
 PANIC_IDLE = 0
 PANIC_READING = 1
 
 # panic handler decoding options
-PANIC_DECODE_DISABLE = "disable"
-PANIC_DECODE_BACKTRACE = "backtrace"
+PANIC_DECODE_DISABLE = 'disable'
+PANIC_DECODE_BACKTRACE = 'backtrace'
 
 
 class StoppableThread(object):
@@ -266,11 +267,11 @@ class ConsoleReader(StoppableThread):
 
 class ConsoleParser(object):
 
-    def __init__(self, eol="CRLF"):
+    def __init__(self, eol='CRLF'):
         self.translate_eol = {
-            "CRLF": lambda c: c.replace("\n", "\r\n"),
-            "CR": lambda c: c.replace("\n", "\r"),
-            "LF": lambda c: c.replace("\r", "\n"),
+            'CRLF': lambda c: c.replace('\n', '\r\n'),
+            'CR': lambda c: c.replace('\n', '\r'),
+            'LF': lambda c: c.replace('\r', '\n'),
         }[eol]
         self.menu_key = CTRL_T
         self.exit_key = CTRL_RBRACKET
@@ -308,7 +309,7 @@ class ConsoleParser(object):
         elif c == CTRL_L:  # Toggle saving output into file
             ret = (TAG_CMD, CMD_TOGGLE_LOGGING)
         elif c == CTRL_P:
-            yellow_print("Pause app (enter bootloader mode), press Ctrl-T Ctrl-R to restart")
+            yellow_print('Pause app (enter bootloader mode), press Ctrl-T Ctrl-R to restart')
             # to fast trigger pause without press menu key
             ret = (TAG_CMD, CMD_ENTER_BOOT)
         elif c in [CTRL_X, 'x', 'X']:  # Exiting from within the menu
@@ -448,7 +449,7 @@ class LineMatcher(object):
         self._re = re.compile(r'^(?:\033\[[01];?[0-9]+m?)?([EWIDV]) \([0-9]+\) ([^:]+): ')
         items = print_filter.split()
         if len(items) == 0:
-            self._dict["*"] = self.LEVEL_V  # default is to print everything
+            self._dict['*'] = self.LEVEL_V  # default is to print everything
         for f in items:
             s = f.split(r':')
             if len(s) == 1:
@@ -472,13 +473,13 @@ class LineMatcher(object):
                 lev = self.level[m.group(1)]
                 if m.group(2) in self._dict:
                     return self._dict[m.group(2)] >= lev
-                return self._dict.get("*", self.LEVEL_N) >= lev
+                return self._dict.get('*', self.LEVEL_N) >= lev
         except (KeyError, IndexError):
             # Regular line written with something else than ESP_LOG*
             # or an empty line.
             pass
         # We need something more than "*.N" for printing.
-        return self._dict.get("*", self.LEVEL_N) > self.LEVEL_N
+        return self._dict.get('*', self.LEVEL_N) > self.LEVEL_N
 
 
 class SerialStopException(Exception):
@@ -497,8 +498,8 @@ class Monitor(object):
 
     Main difference is that all event processing happens in the main thread, not the worker threads.
     """
-    def __init__(self, serial_instance, elf_file, print_filter, make="make", encrypted=False,
-                 toolchain_prefix=DEFAULT_TOOLCHAIN_PREFIX, eol="CRLF",
+    def __init__(self, serial_instance, elf_file, print_filter, make='make', encrypted=False,
+                 toolchain_prefix=DEFAULT_TOOLCHAIN_PREFIX, eol='CRLF',
                  decode_coredumps=COREDUMP_DECODE_INFO,
                  decode_panic=PANIC_DECODE_DISABLE,
                  target=None,
@@ -524,7 +525,7 @@ class Monitor(object):
 
             self.console.getkey = types.MethodType(getkey_patched, self.console)
 
-        socket_mode = serial_instance.port.startswith("socket://")  # testing hook - data from serial can make exit the monitor
+        socket_mode = serial_instance.port.startswith('socket://')  # testing hook - data from serial can make exit the monitor
         self.serial = serial_instance
         self.console_parser = ConsoleParser(eol)
         self.console_reader = ConsoleReader(self.console, self.event_queue, self.cmd_queue, self.console_parser, socket_mode)
@@ -540,9 +541,9 @@ class Monitor(object):
         self.target = target
 
         # internal state
-        self._last_line_part = b""
-        self._gdb_buffer = b""
-        self._pc_address_buffer = b""
+        self._last_line_part = b''
+        self._gdb_buffer = b''
+        self._pc_address_buffer = b''
         self._line_matcher = LineMatcher(print_filter)
         self._invoke_processing_last_line_timer = None
         self._force_line_print = False
@@ -551,10 +552,10 @@ class Monitor(object):
         self._log_file = None
         self._decode_coredumps = decode_coredumps
         self._reading_coredump = COREDUMP_IDLE
-        self._coredump_buffer = b""
+        self._coredump_buffer = b''
         self._decode_panic = decode_panic
         self._reading_panic = PANIC_IDLE
-        self._panic_buffer = b""
+        self._panic_buffer = b''
 
     def invoke_processing_last_line(self):
         self.event_queue.put((TAG_SERIAL_FLUSH, b''), False)
@@ -596,9 +597,9 @@ class Monitor(object):
                 elif event_tag == TAG_SERIAL_FLUSH:
                     self.handle_serial_input(data, finalize_line=True)
                 else:
-                    raise RuntimeError("Bad event data %r" % ((event_tag,data),))
+                    raise RuntimeError('Bad event data %r' % ((event_tag,data),))
         except SerialStopException:
-            sys.stderr.write(ANSI_NORMAL + "Stopping condition has been received\n")
+            sys.stderr.write(ANSI_NORMAL + 'Stopping condition has been received\n')
         finally:
             try:
                 self.console_reader.stop()
@@ -609,24 +610,24 @@ class Monitor(object):
                 self._invoke_processing_last_line_timer = None
             except Exception:
                 pass
-            sys.stderr.write(ANSI_NORMAL + "\n")
+            sys.stderr.write(ANSI_NORMAL + '\n')
 
     def handle_serial_input(self, data, finalize_line=False):
         sp = data.split(b'\n')
-        if self._last_line_part != b"":
+        if self._last_line_part != b'':
             # add unprocessed part from previous "data" to the first line
             sp[0] = self._last_line_part + sp[0]
-            self._last_line_part = b""
-        if sp[-1] != b"":
+            self._last_line_part = b''
+        if sp[-1] != b'':
             # last part is not a full line
             self._last_line_part = sp.pop()
         for line in sp:
-            if line != b"":
+            if line != b'':
                 if self._serial_check_exit and line == self.console_parser.exit_key.encode('latin-1'):
                     raise SerialStopException()
                 self.check_panic_decode_trigger(line)
                 self.check_coredump_trigger_before_print(line)
-                if self._force_line_print or self._line_matcher.match(line.decode(errors="ignore")):
+                if self._force_line_print or self._line_matcher.match(line.decode(errors='ignore')):
                     self._print(line + b'\n')
                     self.handle_possible_pc_address_in_line(line)
                 self.check_coredump_trigger_after_print(line)
@@ -636,8 +637,8 @@ class Monitor(object):
         # default we don't touch it and just wait for the arrival of the rest
         # of the line. But after some time when we didn't received it we need
         # to make a decision.
-        if self._last_line_part != b"":
-            if self._force_line_print or (finalize_line and self._line_matcher.match(self._last_line_part.decode(errors="ignore"))):
+        if self._last_line_part != b'':
+            if self._force_line_print or (finalize_line and self._line_matcher.match(self._last_line_part.decode(errors='ignore'))):
                 self._force_line_print = True
                 self._print(self._last_line_part)
                 self.handle_possible_pc_address_in_line(self._last_line_part)
@@ -651,15 +652,15 @@ class Monitor(object):
                 # GDB sequence can be cut in half also. GDB sequence is 7
                 # characters long, therefore, we save the last 6 characters.
                 self._gdb_buffer = self._last_line_part[-6:]
-                self._last_line_part = b""
+                self._last_line_part = b''
         # else: keeping _last_line_part and it will be processed the next time
         # handle_serial_input is invoked
 
     def handle_possible_pc_address_in_line(self, line):
         line = self._pc_address_buffer + line
-        self._pc_address_buffer = b""
+        self._pc_address_buffer = b''
         if self.enable_address_decoding:
-            for m in re.finditer(MATCH_PCADDR, line.decode(errors="ignore")):
+            for m in re.finditer(MATCH_PCADDR, line.decode(errors='ignore')):
                 self.lookup_pc_address(m.group())
 
     def __enter__(self):
@@ -675,7 +676,7 @@ class Monitor(object):
     def prompt_next_action(self, reason):
         self.console.setup()  # set up console to trap input characters
         try:
-            red_print("--- {}".format(reason))
+            red_print('--- {}'.format(reason))
             red_print(self.console_parser.get_next_action_text())
 
             k = CTRL_T  # ignore CTRL-T here, so people can muscle-memory Ctrl-T Ctrl-F, etc.
@@ -698,31 +699,31 @@ class Monitor(object):
                 popen_args = self.make + [target]
             else:
                 popen_args = [self.make, target]
-            yellow_print("Running %s..." % " ".join(popen_args))
+            yellow_print('Running %s...' % ' '.join(popen_args))
             p = subprocess.Popen(popen_args, env=os.environ)
             try:
                 p.wait()
             except KeyboardInterrupt:
                 p.wait()
             if p.returncode != 0:
-                self.prompt_next_action("Build failed")
+                self.prompt_next_action('Build failed')
             else:
                 self.output_enable(True)
 
     def lookup_pc_address(self, pc_addr):
-        cmd = ["%saddr2line" % self.toolchain_prefix,
-               "-pfiaC", "-e", self.elf_file, pc_addr]
+        cmd = ['%saddr2line' % self.toolchain_prefix,
+               '-pfiaC', '-e', self.elf_file, pc_addr]
         try:
-            translation = subprocess.check_output(cmd, cwd=".")
-            if b"?? ??:0" not in translation:
+            translation = subprocess.check_output(cmd, cwd='.')
+            if b'?? ??:0' not in translation:
                 self._print(translation.decode(), console_printer=yellow_print)
         except OSError as e:
-            red_print("%s: %s" % (" ".join(cmd), e))
+            red_print('%s: %s' % (' '.join(cmd), e))
 
     def check_gdbstub_trigger(self, line):
         line = self._gdb_buffer + line
-        self._gdb_buffer = b""
-        m = re.search(b"\\$(T..)#(..)", line)  # look for a gdb "reason" for a break
+        self._gdb_buffer = b''
+        m = re.search(b'\\$(T..)#(..)', line)  # look for a gdb "reason" for a break
         if m is not None:
             try:
                 chsum = sum(ord(bytes([p])) for p in m.group(1)) & 0xFF
@@ -741,27 +742,27 @@ class Monitor(object):
                 else:
                     self.run_gdb()
             else:
-                red_print("Malformed gdb message... calculated checksum %02x received %02x" % (chsum, calc_chsum))
+                red_print('Malformed gdb message... calculated checksum %02x received %02x' % (chsum, calc_chsum))
 
     def check_coredump_trigger_before_print(self, line):
         if self._decode_coredumps == COREDUMP_DECODE_DISABLE:
             return
 
         if COREDUMP_UART_PROMPT in line:
-            yellow_print("Initiating core dump!")
+            yellow_print('Initiating core dump!')
             self.event_queue.put((TAG_KEY, '\n'))
             return
 
         if COREDUMP_UART_START in line:
-            yellow_print("Core dump started (further output muted)")
+            yellow_print('Core dump started (further output muted)')
             self._reading_coredump = COREDUMP_READING
-            self._coredump_buffer = b""
+            self._coredump_buffer = b''
             self._output_enabled = False
             return
 
         if COREDUMP_UART_END in line:
             self._reading_coredump = COREDUMP_DONE
-            yellow_print("\nCore dump finished!")
+            yellow_print('\nCore dump finished!')
             self.process_coredump()
             return
 
@@ -771,7 +772,7 @@ class Monitor(object):
             self._coredump_buffer += line.replace(b'\r', b'') + b'\n'
             new_buffer_len_kb = len(self._coredump_buffer) // kb
             if new_buffer_len_kb > buffer_len_kb:
-                yellow_print("Received %3d kB..." % (new_buffer_len_kb), newline='\r')
+                yellow_print('Received %3d kB...' % (new_buffer_len_kb), newline='\r')
 
     def check_coredump_trigger_after_print(self, line):
         if self._decode_coredumps == COREDUMP_DECODE_DISABLE:
@@ -781,18 +782,18 @@ class Monitor(object):
         if not self._output_enabled and self._reading_coredump == COREDUMP_DONE:
             self._reading_coredump = COREDUMP_IDLE
             self._output_enabled = True
-            self._coredump_buffer = b""
+            self._coredump_buffer = b''
 
     def process_coredump(self):
         if self._decode_coredumps != COREDUMP_DECODE_INFO:
-            raise NotImplementedError("process_coredump: %s not implemented" % self._decode_coredumps)
+            raise NotImplementedError('process_coredump: %s not implemented' % self._decode_coredumps)
 
-        coredump_script = os.path.join(os.path.dirname(__file__), "..", "components", "espcoredump", "espcoredump.py")
+        coredump_script = os.path.join(os.path.dirname(__file__), '..', 'components', 'espcoredump', 'espcoredump.py')
         coredump_file = None
         try:
             # On Windows, the temporary file can't be read unless it is closed.
             # Set delete=False and delete the file manually later.
-            with tempfile.NamedTemporaryFile(mode="wb", delete=False) as coredump_file:
+            with tempfile.NamedTemporaryFile(mode='wb', delete=False) as coredump_file:
                 coredump_file.write(self._coredump_buffer)
                 coredump_file.flush()
 
@@ -808,9 +809,9 @@ class Monitor(object):
             else:
                 cmd = [sys.executable,
                        coredump_script,
-                       "info_corefile",
-                       "--core", coredump_file.name,
-                       "--core-format", "b64",
+                       'info_corefile',
+                       '--core', coredump_file.name,
+                       '--core-format', 'b64',
                        self.elf_file
                        ]
                 output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
@@ -818,7 +819,7 @@ class Monitor(object):
                 self._print(output)
                 self._output_enabled = False  # Will be reenabled in check_coredump_trigger_after_print
         except subprocess.CalledProcessError as e:
-            yellow_print("Failed to run espcoredump script: {}\n{}\n\n".format(e, e.output))
+            yellow_print('Failed to run espcoredump script: {}\n{}\n\n'.format(e, e.output))
             self._output_enabled = True
             self._print(COREDUMP_UART_START + b'\n')
             self._print(self._coredump_buffer)
@@ -834,9 +835,9 @@ class Monitor(object):
         if self._decode_panic == PANIC_DECODE_DISABLE:
             return
 
-        if self._reading_panic == PANIC_IDLE and re.search(PANIC_START, line.decode("ascii", errors='ignore')):
+        if self._reading_panic == PANIC_IDLE and re.search(PANIC_START, line.decode('ascii', errors='ignore')):
             self._reading_panic = PANIC_READING
-            yellow_print("Stack dump detected")
+            yellow_print('Stack dump detected')
 
         if self._reading_panic == PANIC_READING and PANIC_STACK_DUMP in line:
             self._output_enabled = False
@@ -848,33 +849,33 @@ class Monitor(object):
             self._reading_panic = PANIC_IDLE
             self._output_enabled = True
             self.process_panic_output(self._panic_buffer)
-            self._panic_buffer = b""
+            self._panic_buffer = b''
 
     def process_panic_output(self, panic_output):
-        panic_output_decode_script = os.path.join(os.path.dirname(__file__), "..", "tools", "gdb_panic_server.py")
+        panic_output_decode_script = os.path.join(os.path.dirname(__file__), '..', 'tools', 'gdb_panic_server.py')
         panic_output_file = None
         try:
             # On Windows, the temporary file can't be read unless it is closed.
             # Set delete=False and delete the file manually later.
-            with tempfile.NamedTemporaryFile(mode="wb", delete=False) as panic_output_file:
+            with tempfile.NamedTemporaryFile(mode='wb', delete=False) as panic_output_file:
                 panic_output_file.write(panic_output)
                 panic_output_file.flush()
 
-            cmd = [self.toolchain_prefix + "gdb",
-                   "--batch", "-n",
+            cmd = [self.toolchain_prefix + 'gdb',
+                   '--batch', '-n',
                    self.elf_file,
-                   "-ex", "target remote | \"{python}\" \"{script}\" --target {target} \"{output_file}\""
+                   '-ex', "target remote | \"{python}\" \"{script}\" --target {target} \"{output_file}\""
                    .format(python=sys.executable,
                            script=panic_output_decode_script,
                            target=self.target,
                            output_file=panic_output_file.name),
-                   "-ex", "bt"]
+                   '-ex', 'bt']
 
             output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
-            yellow_print("\nBacktrace:\n\n")
+            yellow_print('\nBacktrace:\n\n')
             self._print(output)
         except subprocess.CalledProcessError as e:
-            yellow_print("Failed to run gdb_panic_server.py script: {}\n{}\n\n".format(e, e.output))
+            yellow_print('Failed to run gdb_panic_server.py script: {}\n{}\n\n'.format(e, e.output))
             self._print(panic_output)
         finally:
             if panic_output_file is not None:
@@ -887,15 +888,15 @@ class Monitor(object):
         with self:  # disable console control
             sys.stderr.write(ANSI_NORMAL)
             try:
-                cmd = ["%sgdb" % self.toolchain_prefix,
-                       "-ex", "set serial baud %d" % self.serial.baudrate,
-                       "-ex", "target remote %s" % self.serial.port,
-                       "-ex", "interrupt",  # monitor has already parsed the first 'reason' command, need a second
+                cmd = ['%sgdb' % self.toolchain_prefix,
+                       '-ex', 'set serial baud %d' % self.serial.baudrate,
+                       '-ex', 'target remote %s' % self.serial.port,
+                       '-ex', 'interrupt',  # monitor has already parsed the first 'reason' command, need a second
                        self.elf_file]
-                process = subprocess.Popen(cmd, cwd=".")
+                process = subprocess.Popen(cmd, cwd='.')
                 process.wait()
             except OSError as e:
-                red_print("%s: %s" % (" ".join(cmd), e))
+                red_print('%s: %s' % (' '.join(cmd), e))
             except KeyboardInterrupt:
                 pass  # happens on Windows, maybe other OSes
             finally:
@@ -906,17 +907,17 @@ class Monitor(object):
                     pass
                 try:
                     # also on Linux, maybe other OSes, gdb sometimes exits uncleanly and breaks the tty mode
-                    subprocess.call(["stty", "sane"])
+                    subprocess.call(['stty', 'sane'])
                 except Exception:
                     pass  # don't care if there's no stty, we tried...
-            self.prompt_next_action("gdb exited")
+            self.prompt_next_action('gdb exited')
 
     def output_enable(self, enable):
         self._output_enabled = enable
 
     def output_toggle(self):
         self._output_enabled = not self._output_enabled
-        yellow_print("\nToggle output display: {}, Type Ctrl-T Ctrl-Y to show/disable output again.".format(self._output_enabled))
+        yellow_print('\nToggle output display: {}, Type Ctrl-T Ctrl-Y to show/disable output again.'.format(self._output_enabled))
 
     def toggle_logging(self):
         if self._log_file:
@@ -927,21 +928,21 @@ class Monitor(object):
     def start_logging(self):
         if not self._log_file:
             try:
-                name = "log.{}.{}.txt".format(os.path.splitext(os.path.basename(self.elf_file))[0],
+                name = 'log.{}.{}.txt'.format(os.path.splitext(os.path.basename(self.elf_file))[0],
                                               datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
-                self._log_file = open(name, "wb+")
-                yellow_print("\nLogging is enabled into file {}".format(name))
+                self._log_file = open(name, 'wb+')
+                yellow_print('\nLogging is enabled into file {}'.format(name))
             except Exception as e:
-                red_print("\nLog file {} cannot be created: {}".format(name, e))
+                red_print('\nLog file {} cannot be created: {}'.format(name, e))
 
     def stop_logging(self):
         if self._log_file:
             try:
                 name = self._log_file.name
                 self._log_file.close()
-                yellow_print("\nLogging is disabled and file {} has been closed".format(name))
+                yellow_print('\nLogging is disabled and file {} has been closed'.format(name))
             except Exception as e:
-                red_print("\nLog file cannot be closed: {}".format(e))
+                red_print('\nLog file cannot be closed: {}'.format(e))
             finally:
                 self._log_file = None
 
@@ -956,7 +957,7 @@ class Monitor(object):
                     string = string.encode()
                 self._log_file.write(string)
             except Exception as e:
-                red_print("\nCannot write to file: {}".format(e))
+                red_print('\nCannot write to file: {}'.format(e))
                 # don't fill-up the screen with the previous errors (probably consequent prints would fail also)
                 self.stop_logging()
 
@@ -972,9 +973,9 @@ class Monitor(object):
             self.serial.setDTR(self.serial.dtr)  # usbser.sys workaround
             self.output_enable(True)
         elif cmd == CMD_MAKE:
-            self.run_make("encrypted-flash" if self.encrypted else "flash")
+            self.run_make('encrypted-flash' if self.encrypted else 'flash')
         elif cmd == CMD_APP_FLASH:
-            self.run_make("encrypted-app-flash" if self.encrypted else "app-flash")
+            self.run_make('encrypted-app-flash' if self.encrypted else 'app-flash')
         elif cmd == CMD_OUTPUT_TOGGLE:
             self.output_toggle()
         elif cmd == CMD_TOGGLE_LOGGING:
@@ -990,11 +991,11 @@ class Monitor(object):
             time.sleep(0.45)  # timeouts taken from esptool.py, includes esp32r0 workaround. defaults: 0.05
             self.serial.setDTR(False)  # IO0=HIGH, done
         else:
-            raise RuntimeError("Bad command data %d" % (cmd))
+            raise RuntimeError('Bad command data %d' % (cmd))
 
 
 def main():
-    parser = argparse.ArgumentParser("idf_monitor - a serial output monitor for esp-idf")
+    parser = argparse.ArgumentParser('idf_monitor - a serial output monitor for esp-idf')
 
     parser.add_argument(
         '--port', '-p',
@@ -1005,8 +1006,8 @@ def main():
     parser.add_argument(
         '--disable-address-decoding', '-d',
         help="Don't print lines about decoded addresses from the application ELF file.",
-        action="store_true",
-        default=True if os.environ.get("ESP_MONITOR_DECODE") == 0 else False
+        action='store_true',
+        default=True if os.environ.get('ESP_MONITOR_DECODE') == 0 else False
     )
 
     parser.add_argument(
@@ -1027,14 +1028,14 @@ def main():
 
     parser.add_argument(
         '--toolchain-prefix',
-        help="Triplet prefix to add before cross-toolchain names",
+        help='Triplet prefix to add before cross-toolchain names',
         default=DEFAULT_TOOLCHAIN_PREFIX)
 
     parser.add_argument(
-        "--eol",
+        '--eol',
         choices=['CR', 'LF', 'CRLF'],
         type=lambda c: c.upper(),
-        help="End of line to use when sending to the serial port",
+        help='End of line to use when sending to the serial port',
         default='CR')
 
     parser.add_argument(
@@ -1043,47 +1044,47 @@ def main():
 
     parser.add_argument(
         '--print_filter',
-        help="Filtering string",
+        help='Filtering string',
         default=DEFAULT_PRINT_FILTER)
 
     parser.add_argument(
         '--decode-coredumps',
         choices=[COREDUMP_DECODE_INFO, COREDUMP_DECODE_DISABLE],
         default=COREDUMP_DECODE_INFO,
-        help="Handling of core dumps found in serial output"
+        help='Handling of core dumps found in serial output'
     )
 
     parser.add_argument(
         '--decode-panic',
         choices=[PANIC_DECODE_BACKTRACE, PANIC_DECODE_DISABLE],
         default=PANIC_DECODE_DISABLE,
-        help="Handling of panic handler info found in serial output"
+        help='Handling of panic handler info found in serial output'
     )
 
     parser.add_argument(
         '--target',
         required=False,
-        help="Target name (used when stack dump decoding is enabled)"
+        help='Target name (used when stack dump decoding is enabled)'
     )
 
     parser.add_argument(
         '--ws',
         default=os.environ.get('ESP_IDF_MONITOR_WS', None),
-        help="WebSocket URL for communicating with IDE tools for debugging purposes"
+        help='WebSocket URL for communicating with IDE tools for debugging purposes'
     )
 
     args = parser.parse_args()
 
     # GDB uses CreateFile to open COM port, which requires the COM name to be r'\\.\COMx' if the COM
     # number is larger than 10
-    if os.name == 'nt' and args.port.startswith("COM"):
+    if os.name == 'nt' and args.port.startswith('COM'):
         args.port = args.port.replace('COM', r'\\.\COM')
-        yellow_print("--- WARNING: GDB cannot open serial ports accessed as COMx")
-        yellow_print("--- Using %s instead..." % args.port)
-    elif args.port.startswith("/dev/tty.") and sys.platform == 'darwin':
-        args.port = args.port.replace("/dev/tty.", "/dev/cu.")
-        yellow_print("--- WARNING: Serial ports accessed as /dev/tty.* will hang gdb if launched.")
-        yellow_print("--- Using %s instead..." % args.port)
+        yellow_print('--- WARNING: GDB cannot open serial ports accessed as COMx')
+        yellow_print('--- Using %s instead...' % args.port)
+    elif args.port.startswith('/dev/tty.') and sys.platform == 'darwin':
+        args.port = args.port.replace('/dev/tty.', '/dev/cu.')
+        yellow_print('--- WARNING: Serial ports accessed as /dev/tty.* will hang gdb if launched.')
+        yellow_print('--- Using %s instead...' % args.port)
 
     serial_instance = serial.serial_for_url(args.port, args.baud,
                                             do_not_open=True)
@@ -1097,16 +1098,16 @@ def main():
     # all of the child makes we need (the -j argument remains part of
     # MAKEFLAGS)
     try:
-        makeflags = os.environ["MAKEFLAGS"]
-        makeflags = re.sub(r"--jobserver[^ =]*=[0-9,]+ ?", "", makeflags)
-        os.environ["MAKEFLAGS"] = makeflags
+        makeflags = os.environ['MAKEFLAGS']
+        makeflags = re.sub(r'--jobserver[^ =]*=[0-9,]+ ?', '', makeflags)
+        os.environ['MAKEFLAGS'] = makeflags
     except KeyError:
         pass  # not running a make jobserver
 
     # Pass the actual used port to callee of idf_monitor (e.g. make) through `ESPPORT` environment
     # variable
     # To make sure the key as well as the value are str type, by the requirements of subprocess
-    espport_key = str("ESPPORT")
+    espport_key = str('ESPPORT')
     espport_val = str(args.port)
     os.environ.update({espport_key: espport_val})
 
@@ -1310,5 +1311,5 @@ if os.name == 'nt':
                 pass
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

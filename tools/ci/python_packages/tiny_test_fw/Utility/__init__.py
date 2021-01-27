@@ -1,4 +1,5 @@
 from __future__ import print_function
+
 import os.path
 import sys
 import time
@@ -7,35 +8,35 @@ import traceback
 from .. import Env
 
 _COLOR_CODES = {
-    "white": u'\033[0m',
-    "red":  u'\033[31m',
-    "green": u'\033[32m',
-    "orange": u'\033[33m',
-    "blue": u'\033[34m',
-    "purple": u'\033[35m',
-    "W": u'\033[0m',
-    "R": u'\033[31m',
-    "G": u'\033[32m',
-    "O": u'\033[33m',
-    "B": u'\033[34m',
-    "P": u'\033[35m'
+    'white': u'\033[0m',
+    'red':  u'\033[31m',
+    'green': u'\033[32m',
+    'orange': u'\033[33m',
+    'blue': u'\033[34m',
+    'purple': u'\033[35m',
+    'W': u'\033[0m',
+    'R': u'\033[31m',
+    'G': u'\033[32m',
+    'O': u'\033[33m',
+    'B': u'\033[34m',
+    'P': u'\033[35m'
 }
 
 
 def _get_log_file_name():
     if Env.Env.CURRENT_LOG_FOLDER:
-        file_name = os.path.join(Env.Env.CURRENT_LOG_FOLDER, "console.log")
+        file_name = os.path.join(Env.Env.CURRENT_LOG_FOLDER, 'console.log')
     else:
-        raise OSError("env log folder does not exist, will not save to log file")
+        raise OSError('env log folder does not exist, will not save to log file')
     return file_name
 
 
 def format_timestamp():
     ts = time.time()
-    return "{}:{}".format(time.strftime("%m-%d %H:%M:%S", time.localtime(ts)), str(ts % 1)[2:5])
+    return '{}:{}'.format(time.strftime('%m-%d %H:%M:%S', time.localtime(ts)), str(ts % 1)[2:5])
 
 
-def console_log(data, color="white", end="\n"):
+def console_log(data, color='white', end='\n'):
     """
     log data to console.
     (if not flush console log, Gitlab-CI won't update logs during job execution)
@@ -44,19 +45,19 @@ def console_log(data, color="white", end="\n"):
     :param color: color
     """
     if color not in _COLOR_CODES:
-        color = "white"
+        color = 'white'
     color_codes = _COLOR_CODES[color]
     if isinstance(data, type(b'')):
         data = data.decode('utf-8', 'replace')
     print(color_codes + data, end=end)
-    if color not in ["white", "W"]:
+    if color not in ['white', 'W']:
         # reset color to white for later logs
-        print(_COLOR_CODES["white"] + u"\r")
+        print(_COLOR_CODES['white'] + u'\r')
     sys.stdout.flush()
-    log_data = "[{}] ".format(format_timestamp()) + data
+    log_data = '[{}] '.format(format_timestamp()) + data
     try:
         log_file = _get_log_file_name()
-        with open(log_file, "a+") as f:
+        with open(log_file, 'a+') as f:
             f.write(log_data + end)
     except OSError:
         pass
@@ -108,4 +109,4 @@ def handle_unexpected_exception(junit_test_case, exception):
     traceback.print_exc()
     # AssertionError caused by an 'assert' statement has an empty string as its 'str' form
     e_str = str(exception) if str(exception) else repr(exception)
-    junit_test_case.add_failure_info("Unexpected exception: {}\n{}".format(e_str, traceback.format_exc()))
+    junit_test_case.add_failure_info('Unexpected exception: {}\n{}'.format(e_str, traceback.format_exc()))

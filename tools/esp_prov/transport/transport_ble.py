@@ -15,9 +15,8 @@
 
 from __future__ import print_function
 
-from .transport import Transport
-
 from . import ble_cli
+from .transport import Transport
 
 
 class Transport_BLE(Transport):
@@ -35,7 +34,7 @@ class Transport_BLE(Transport):
         if not self.cli.connect(devname=devname, iface='hci0',
                                 chrc_names=nu_lookup.keys(),
                                 fallback_srv_uuid=service_uuid):
-            raise RuntimeError("Failed to initialize transport")
+            raise RuntimeError('Failed to initialize transport')
 
         # Irrespective of provided parameters, let the client
         # generate a lookup table by reading advertisement data
@@ -63,5 +62,5 @@ class Transport_BLE(Transport):
     def send_data(self, ep_name, data):
         # Write (and read) data to characteristic corresponding to the endpoint
         if ep_name not in self.name_uuid_lookup.keys():
-            raise RuntimeError("Invalid endpoint : " + ep_name)
+            raise RuntimeError('Invalid endpoint : ' + ep_name)
         return self.cli.send_data(self.name_uuid_lookup[ep_name], data)

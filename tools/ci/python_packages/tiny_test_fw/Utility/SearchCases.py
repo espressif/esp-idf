@@ -13,23 +13,23 @@
 # limitations under the License.
 
 """ search test cases from a given file or path """
-import os
-import fnmatch
-import types
 import copy
+import fnmatch
+import os
+import types
 
 from . import load_source
 
 
 class Search(object):
-    TEST_CASE_FILE_PATTERN = "*_test.py"
+    TEST_CASE_FILE_PATTERN = '*_test.py'
     SUPPORT_REPLICATE_CASES_KEY = ['target']
 
     @classmethod
     def _search_cases_from_file(cls, file_name):
         """ get test cases from test case .py file """
 
-        print("Try to get cases from: " + file_name)
+        print('Try to get cases from: ' + file_name)
         test_functions = []
         try:
             mod = load_source(file_name)
@@ -42,14 +42,14 @@ class Search(object):
                 except AttributeError:
                     continue
         except ImportError as e:
-            print("ImportError: \r\n\tFile:" + file_name + "\r\n\tError:" + str(e))
+            print('ImportError: \r\n\tFile:' + file_name + '\r\n\tError:' + str(e))
 
         test_functions_out = []
         for case in test_functions:
             test_functions_out += cls.replicate_case(case)
 
         for i, test_function in enumerate(test_functions_out):
-            print("\t{}. {} <{}>".format(i + 1, test_function.case_info["name"], test_function.case_info["target"]))
+            print('\t{}. {} <{}>'.format(i + 1, test_function.case_info['name'], test_function.case_info['target']))
             test_function.case_info['app_dir'] = os.path.dirname(file_name)
         return test_functions_out
 
@@ -58,7 +58,7 @@ class Search(object):
         """ search all test case files recursively of a path """
 
         if not os.path.exists(test_case):
-            raise OSError("test case path not exist")
+            raise OSError('test case path not exist')
         if os.path.isdir(test_case):
             test_case_files = []
             for root, _, file_names in os.walk(test_case):

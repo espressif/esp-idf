@@ -15,9 +15,9 @@
 # limitations under the License.
 
 import os
+import subprocess
 import sys
 import unittest
-import subprocess
 
 try:
     from StringIO import StringIO
@@ -40,8 +40,8 @@ class TestExtensions(unittest.TestCase):
     def test_extension_loading(self):
         try:
             os.symlink(extension_path, link_path)
-            os.environ["IDF_EXTRA_ACTIONS_PATH"] = os.path.join(current_dir, 'extra_path')
-            output = subprocess.check_output([sys.executable, idf_py_path, "--help"],
+            os.environ['IDF_EXTRA_ACTIONS_PATH'] = os.path.join(current_dir, 'extra_path')
+            output = subprocess.check_output([sys.executable, idf_py_path, '--help'],
                                              env=os.environ).decode('utf-8', 'ignore')
 
             self.assertIn('--test-extension-option', output)
@@ -54,9 +54,9 @@ class TestExtensions(unittest.TestCase):
     def test_extension_execution(self):
         try:
             os.symlink(extension_path, link_path)
-            os.environ["IDF_EXTRA_ACTIONS_PATH"] = ";".join([os.path.join(current_dir, 'extra_path')])
+            os.environ['IDF_EXTRA_ACTIONS_PATH'] = ';'.join([os.path.join(current_dir, 'extra_path')])
             output = subprocess.check_output(
-                [sys.executable, idf_py_path, "--some-extension-option=awesome", 'test_subcommand', "extra_subcommand"],
+                [sys.executable, idf_py_path, '--some-extension-option=awesome', 'test_subcommand', 'extra_subcommand'],
                 env=os.environ).decode('utf-8', 'ignore')
             self.assertIn('!!! From some global callback: awesome', output)
             self.assertIn('!!! From some subcommand', output)
@@ -68,8 +68,8 @@ class TestExtensions(unittest.TestCase):
     def test_hidden_commands(self):
         try:
             os.symlink(extension_path, link_path)
-            os.environ["IDF_EXTRA_ACTIONS_PATH"] = ";".join([os.path.join(current_dir, 'extra_path')])
-            output = subprocess.check_output([sys.executable, idf_py_path, "--help"],
+            os.environ['IDF_EXTRA_ACTIONS_PATH'] = ';'.join([os.path.join(current_dir, 'extra_path')])
+            output = subprocess.check_output([sys.executable, idf_py_path, '--help'],
                                              env=os.environ).decode('utf-8', 'ignore')
             self.assertIn('test_subcommand', output)
             self.assertNotIn('hidden_one', output)
@@ -135,9 +135,9 @@ class TestVerboseFlag(unittest.TestCase):
             [
                 sys.executable,
                 idf_py_path,
-                "-C%s" % current_dir,
-                "-v",
-                "test-verbose",
+                '-C%s' % current_dir,
+                '-v',
+                'test-verbose',
             ], env=os.environ).decode('utf-8', 'ignore')
 
         self.assertIn('Verbose mode on', output)
@@ -147,8 +147,8 @@ class TestVerboseFlag(unittest.TestCase):
             [
                 sys.executable,
                 idf_py_path,
-                "-C%s" % current_dir,
-                "test-verbose",
+                '-C%s' % current_dir,
+                'test-verbose',
             ], env=os.environ).decode('utf-8', 'ignore')
 
         self.assertIn('Output from test-verbose', output)
@@ -177,14 +177,14 @@ class TestGlobalAndSubcommandParameters(unittest.TestCase):
 class TestDeprecations(unittest.TestCase):
     def test_exit_with_error_for_subcommand(self):
         try:
-            subprocess.check_output([sys.executable, idf_py_path, "-C%s" % current_dir, "test-2"], env=os.environ,
+            subprocess.check_output([sys.executable, idf_py_path, '-C%s' % current_dir, 'test-2'], env=os.environ,
                                     stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
             self.assertIn('Error: Command "test-2" is deprecated and was removed.', e.output.decode('utf-8', 'ignore'))
 
     def test_exit_with_error_for_option(self):
         try:
-            subprocess.check_output([sys.executable, idf_py_path, "-C%s" % current_dir, "--test-5=asdf"],
+            subprocess.check_output([sys.executable, idf_py_path, '-C%s' % current_dir, '--test-5=asdf'],
                                     env=os.environ, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
             self.assertIn('Error: Option "test_5" is deprecated since v2.0 and was removed in v3.0.',
@@ -195,16 +195,16 @@ class TestDeprecations(unittest.TestCase):
             [
                 sys.executable,
                 idf_py_path,
-                "-C%s" % current_dir,
-                "--test-0=a",
-                "--test-1=b",
-                "--test-2=c",
-                "--test-3=d",
-                "test-0",
-                "--test-sub-0=sa",
-                "--test-sub-1=sb",
-                "ta",
-                "test-1",
+                '-C%s' % current_dir,
+                '--test-0=a',
+                '--test-1=b',
+                '--test-2=c',
+                '--test-3=d',
+                'test-0',
+                '--test-sub-0=sa',
+                '--test-sub-1=sb',
+                'ta',
+                'test-1',
             ],
             env=os.environ, stderr=subprocess.STDOUT).decode('utf-8', 'ignore')
 

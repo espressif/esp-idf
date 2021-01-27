@@ -24,12 +24,12 @@
 
 from __future__ import with_statement
 
-import os
-import sys
-import struct
 import argparse
 import csv
+import os
 import re
+import struct
+import sys
 from io import open
 
 try:
@@ -80,22 +80,22 @@ class CertificateBundle:
     def add_from_file(self, file_path):
         try:
             if file_path.endswith('.pem'):
-                status("Parsing certificates from %s" % file_path)
+                status('Parsing certificates from %s' % file_path)
                 with open(file_path, 'r', encoding='utf-8') as f:
                     crt_str = f.read()
                     self.add_from_pem(crt_str)
                     return True
 
             elif file_path.endswith('.der'):
-                status("Parsing certificates from %s" % file_path)
+                status('Parsing certificates from %s' % file_path)
                 with open(file_path, 'rb') as f:
                     crt_str = f.read()
                     self.add_from_der(crt_str)
                     return True
 
         except ValueError:
-            critical("Invalid certificate in %s" % file_path)
-            raise InputError("Invalid certificate")
+            critical('Invalid certificate in %s' % file_path)
+            raise InputError('Invalid certificate')
 
         return False
 
@@ -119,13 +119,13 @@ class CertificateBundle:
                 crt += strg
 
         if(count == 0):
-            raise InputError("No certificate found")
+            raise InputError('No certificate found')
 
-        status("Successfully added %d certificates" % count)
+        status('Successfully added %d certificates' % count)
 
     def add_from_der(self, crt_str):
         self.certificates.append(x509.load_der_x509_certificate(crt_str, default_backend()))
-        status("Successfully added 1 certificate")
+        status('Successfully added 1 certificate')
 
     def create_bundle(self):
         # Sort certificates in order to do binary search when looking up certificates
@@ -162,7 +162,7 @@ class CertificateBundle:
             for row in csv_reader:
                 filter_set.add(row[1])
 
-        status("Parsing certificates from %s" % crts_path)
+        status('Parsing certificates from %s' % crts_path)
         crt_str = []
         with open(crts_path, 'r', encoding='utf-8') as f:
             crt_str = f.read()
@@ -202,14 +202,14 @@ def main():
 
     for path in args.input:
         if os.path.isfile(path):
-            if os.path.basename(path) == "cacrt_all.pem" and args.filter:
+            if os.path.basename(path) == 'cacrt_all.pem' and args.filter:
                 bundle.add_with_filter(path, args.filter)
             else:
                 bundle.add_from_file(path)
         elif os.path.isdir(path):
             bundle.add_from_path(path)
         else:
-            raise InputError("Invalid --input=%s, is neither file nor folder" % args.input)
+            raise InputError('Invalid --input=%s, is neither file nor folder' % args.input)
 
     status('Successfully added %d certificates in total' % len(bundle.certificates))
 

@@ -35,8 +35,8 @@ def sanitize_version(original_version):
     except KeyError:
         version = original_version
 
-    if version == "master":
-        return "latest"
+    if version == 'master':
+        return 'latest'
 
     version = version.replace('/', '-')
 

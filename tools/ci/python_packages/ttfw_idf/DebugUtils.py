@@ -13,12 +13,12 @@
 # limitations under the License.
 
 from __future__ import unicode_literals
-from io import open
+
 import logging
+from io import open
 
 import pexpect
 import pygdbmi.gdbcontroller
-
 from tiny_test_fw import Utility
 
 try:

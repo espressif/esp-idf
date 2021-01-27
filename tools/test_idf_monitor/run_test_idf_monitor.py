@@ -14,20 +14,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import print_function, unicode_literals
+
+import errno
+import filecmp
+import os
+import pty
+import socket
+import subprocess
+import sys
+import tempfile
+import threading
+import time
 from builtins import object
 from io import open
-import os
-import sys
-import time
-import subprocess
-import socket
-import pty
-import filecmp
-import threading
-import errno
-import tempfile
 
 XTENSA_ARGS = '--toolchain-prefix xtensa-esp32-elf-'
 RISCV_ARGS = '--decode-panic backtrace --target esp32c3 --toolchain-prefix riscv32-esp-elf-'
@@ -104,8 +104,8 @@ def test_iteration(runner, test):
         pass
     print('\nRunning test on {} with filter "{}" and expecting {}'.format(test[0], test[1], test[2]))
     try:
-        with open(OUT_DIR + test[2], "w", encoding='utf-8') as o_f, \
-                tempfile.NamedTemporaryFile(dir=OUT_DIR, prefix=ERR_OUT, mode="w", delete=False) as e_f:
+        with open(OUT_DIR + test[2], 'w', encoding='utf-8') as o_f, \
+                tempfile.NamedTemporaryFile(dir=OUT_DIR, prefix=ERR_OUT, mode='w', delete=False) as e_f:
             monitor_cmd = [sys.executable, IDF_MONITOR_WAPPER,
                            '--port', 'socket://{}:{}?logging=debug'.format(HOST, runner.port),
                            '--print_filter', test[1],
@@ -171,7 +171,7 @@ def test_iteration(runner, test):
     if filecmp.cmp(f1, f2, shallow=False):
         print('\tTest has passed')
     else:
-        raise RuntimeError("The contents of the files are different. Please examine the artifacts.")
+        raise RuntimeError('The contents of the files are different. Please examine the artifacts.')
 
 
 def main():
@@ -202,5 +202,5 @@ def main():
     print('Execution took {:.2f} seconds\n'.format(gend - gstart))
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

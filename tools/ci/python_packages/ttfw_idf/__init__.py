@@ -19,12 +19,12 @@ import re
 from copy import deepcopy
 
 import junit_xml
-
 from tiny_test_fw import TinyFW, Utility
-from .DebugUtils import OCDBackend, GDBBackend, CustomProcess  # noqa: export DebugUtils for users
-from .IDFApp import IDFApp, Example, LoadableElfTestApp, UT, TestApp, ComponentUTApp  # noqa: export all Apps for users
-from .IDFDUT import IDFDUT, ESP32DUT, ESP32S2DUT, ESP32C3DUT, ESP8266DUT, ESP32QEMUDUT  # noqa: export DUTs for users
-from .unity_test_parser import TestResults, TestFormat
+
+from .DebugUtils import CustomProcess, GDBBackend, OCDBackend  # noqa: export DebugUtils for users
+from .IDFApp import UT, ComponentUTApp, Example, IDFApp, LoadableElfTestApp, TestApp  # noqa: export all Apps for users
+from .IDFDUT import ESP32C3DUT, ESP32DUT, ESP32QEMUDUT, ESP32S2DUT, ESP8266DUT, IDFDUT  # noqa: export DUTs for users
+from .unity_test_parser import TestFormat, TestResults
 
 # pass TARGET_DUT_CLS_DICT to Env.py to avoid circular dependency issue.
 TARGET_DUT_CLS_DICT = {
@@ -35,7 +35,7 @@ TARGET_DUT_CLS_DICT = {
 
 
 def format_case_id(target, case_name):
-    return "{}.{}".format(target, case_name)
+    return '{}.{}'.format(target, case_name)
 
 
 try:
@@ -128,13 +128,13 @@ def test_func_generator(func, app, target, ci_target, module, execution_time, le
         dut_dict=dut_classes, **kwargs
     )
     test_func = original_method(func)
-    test_func.case_info["ID"] = format_case_id(target, test_func.case_info["name"])
+    test_func.case_info['ID'] = format_case_id(target, test_func.case_info['name'])
     return test_func
 
 
 @ci_target_check
-def idf_example_test(app=Example, target="ESP32", ci_target=None, module="examples", execution_time=1,
-                     level="example", erase_nvs=True, config_name=None, **kwargs):
+def idf_example_test(app=Example, target='ESP32', ci_target=None, module='examples', execution_time=1,
+                     level='example', erase_nvs=True, config_name=None, **kwargs):
     """
     decorator for testing idf examples (with default values for some keyword args).
 
@@ -155,8 +155,8 @@ def idf_example_test(app=Example, target="ESP32", ci_target=None, module="exampl
 
 
 @ci_target_check
-def idf_unit_test(app=UT, target="ESP32", ci_target=None, module="unit-test", execution_time=1,
-                  level="unit", erase_nvs=True, **kwargs):
+def idf_unit_test(app=UT, target='ESP32', ci_target=None, module='unit-test', execution_time=1,
+                  level='unit', erase_nvs=True, **kwargs):
     """
     decorator for testing idf unit tests (with default values for some keyword args).
 
@@ -176,8 +176,8 @@ def idf_unit_test(app=UT, target="ESP32", ci_target=None, module="unit-test", ex
 
 
 @ci_target_check
-def idf_custom_test(app=TestApp, target="ESP32", ci_target=None, module="misc", execution_time=1,
-                    level="integration", erase_nvs=True, config_name=None, **kwargs):
+def idf_custom_test(app=TestApp, target='ESP32', ci_target=None, module='misc', execution_time=1,
+                    level='integration', erase_nvs=True, config_name=None, **kwargs):
     """
     decorator for idf custom tests (with default values for some keyword args).
 
@@ -198,8 +198,8 @@ def idf_custom_test(app=TestApp, target="ESP32", ci_target=None, module="misc", 
 
 
 @ci_target_check
-def idf_component_unit_test(app=ComponentUTApp, target="ESP32", ci_target=None, module="misc", execution_time=1,
-                            level="integration", erase_nvs=True, config_name=None, **kwargs):
+def idf_component_unit_test(app=ComponentUTApp, target='ESP32', ci_target=None, module='misc', execution_time=1,
+                            level='integration', erase_nvs=True, config_name=None, **kwargs):
     """
     decorator for idf custom tests (with default values for some keyword args).
 
@@ -253,11 +253,11 @@ def log_performance(item, value):
     :param item: performance item name
     :param value: performance value
     """
-    performance_msg = "[Performance][{}]: {}".format(item, value)
-    Utility.console_log(performance_msg, "orange")
+    performance_msg = '[Performance][{}]: {}'.format(item, value)
+    Utility.console_log(performance_msg, 'orange')
     # update to junit test report
     current_junit_case = TinyFW.JunitReport.get_current_test_case()
-    current_junit_case.stdout += performance_msg + "\r\n"
+    current_junit_case.stdout += performance_msg + '\r\n'
 
 
 def check_performance(item, value, target):
@@ -300,7 +300,7 @@ def check_performance(item, value, target):
         # if no exception was thrown then the performance is met and no need to continue
         break
     else:
-        raise AssertionError("Failed to get performance standard for {}".format(item))
+        raise AssertionError('Failed to get performance standard for {}'.format(item))
 
 
 MINIMUM_FREE_HEAP_SIZE_RE = re.compile(r'Minimum free heap size: (\d+) bytes')

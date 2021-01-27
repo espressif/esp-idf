@@ -7,9 +7,9 @@ from collections import defaultdict
 from copy import deepcopy
 
 from find_apps import find_apps
-from find_build_apps import BUILD_SYSTEMS, BUILD_SYSTEM_CMAKE
+from find_build_apps import BUILD_SYSTEM_CMAKE, BUILD_SYSTEMS
+from idf_py_actions.constants import PREVIEW_TARGETS, SUPPORTED_TARGETS
 from ttfw_idf.IDFAssignTest import ExampleAssignTest, TestAppsAssignTest
-from idf_py_actions.constants import SUPPORTED_TARGETS, PREVIEW_TARGETS
 
 TEST_LABELS = {
     'example_test': 'BOT_LABEL_EXAMPLE_TEST',
@@ -73,15 +73,15 @@ def main():
                         default=BUILD_SYSTEM_CMAKE)
     parser.add_argument('-c', '--ci-config-file',
                         required=True,
-                        help="gitlab ci config target-test file")
+                        help='gitlab ci config target-test file')
     parser.add_argument('-o', '--output-path',
                         required=True,
-                        help="output path of the scan result")
-    parser.add_argument("--exclude", nargs="*",
+                        help='output path of the scan result')
+    parser.add_argument('--exclude', nargs='*',
                         help='Ignore specified directory. Can be used multiple times.')
-    parser.add_argument('--preserve', action="store_true",
+    parser.add_argument('--preserve', action='store_true',
                         help='add this flag to preserve artifacts for all apps')
-    parser.add_argument('--build-all', action="store_true",
+    parser.add_argument('--build-all', action='store_true',
                         help='add this flag to build all apps')
 
     args = parser.parse_args()

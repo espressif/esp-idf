@@ -2,13 +2,15 @@
 # source: wifi_constants.proto
 
 import sys
+
 _b=sys.version_info[0]<3 and (lambda x:x) or (lambda x:x.encode('latin1'))
-from google.protobuf.internal import enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
+from google.protobuf import descriptor_pb2
 from google.protobuf import message as _message
 from google.protobuf import reflection as _reflection
 from google.protobuf import symbol_database as _symbol_database
-from google.protobuf import descriptor_pb2
+from google.protobuf.internal import enum_type_wrapper
+
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
@@ -141,7 +143,7 @@ _WIFICONNECTEDSTATE = _descriptor.Descriptor(
     _descriptor.FieldDescriptor(
       name='ip4_addr', full_name='WifiConnectedState.ip4_addr', index=0,
       number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
+      has_default_value=False, default_value=_b('').decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
@@ -155,14 +157,14 @@ _WIFICONNECTEDSTATE = _descriptor.Descriptor(
     _descriptor.FieldDescriptor(
       name='ssid', full_name='WifiConnectedState.ssid', index=2,
       number=3, type=12, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b(""),
+      has_default_value=False, default_value=_b(''),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='bssid', full_name='WifiConnectedState.bssid', index=3,
       number=4, type=12, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b(""),
+      has_default_value=False, default_value=_b(''),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),

@@ -13,13 +13,13 @@ import re
 
 import junit_xml
 
-_NORMAL_TEST_REGEX = re.compile(r"(?P<file>.+):(?P<line>\d+):(?P<test_name>[^\s:]+):(?P<result>PASS|FAIL|IGNORE)(?:: (?P<message>.+))?")
-_UNITY_FIXTURE_VERBOSE_PREFIX_REGEX = re.compile(r"(?P<prefix>TEST\((?P<test_group>[^\s,]+), (?P<test_name>[^\s\)]+)\))(?P<remainder>.+)?$")
-_UNITY_FIXTURE_REMAINDER_REGEX = re.compile(r"^(?P<file>.+):(?P<line>\d+)::(?P<result>PASS|FAIL|IGNORE)(?:: (?P<message>.+))?")
+_NORMAL_TEST_REGEX = re.compile(r'(?P<file>.+):(?P<line>\d+):(?P<test_name>[^\s:]+):(?P<result>PASS|FAIL|IGNORE)(?:: (?P<message>.+))?')
+_UNITY_FIXTURE_VERBOSE_PREFIX_REGEX = re.compile(r'(?P<prefix>TEST\((?P<test_group>[^\s,]+), (?P<test_name>[^\s\)]+)\))(?P<remainder>.+)?$')
+_UNITY_FIXTURE_REMAINDER_REGEX = re.compile(r'^(?P<file>.+):(?P<line>\d+)::(?P<result>PASS|FAIL|IGNORE)(?:: (?P<message>.+))?')
 _TEST_SUMMARY_BLOCK_REGEX = re.compile(
-    r"^(?P<num_tests>\d+) Tests (?P<num_failures>\d+) Failures (?P<num_ignored>\d+) Ignored\s*\r?\n(?P<overall_result>OK|FAIL)(?:ED)?", re.MULTILINE
+    r'^(?P<num_tests>\d+) Tests (?P<num_failures>\d+) Failures (?P<num_ignored>\d+) Ignored\s*\r?\n(?P<overall_result>OK|FAIL)(?:ED)?', re.MULTILINE
 )
-_TEST_RESULT_ENUM = ["PASS", "FAIL", "IGNORE"]
+_TEST_RESULT_ENUM = ['PASS', 'FAIL', 'IGNORE']
 
 
 class TestFormat(enum.Enum):
@@ -63,14 +63,14 @@ class TestResult:
             self,
             test_name,
             result,
-            group="default",
-            file="",
+            group='default',
+            file='',
             line=0,
-            message="",
-            full_line="",
+            message='',
+            full_line='',
     ):
         if result not in _TEST_RESULT_ENUM:
-            raise ValueError("result must be one of {}.".format(_TEST_RESULT_ENUM))
+            raise ValueError('result must be one of {}.'.format(_TEST_RESULT_ENUM))
 
         self._test_name = test_name
         self._result = result
@@ -78,11 +78,11 @@ class TestResult:
         self._message = message
         self._full_line = full_line
 
-        if result != "PASS":
+        if result != 'PASS':
             self._file = file
             self._line = line
         else:
-            self._file = ""
+            self._file = ''
             self._line = 0
 
     def file(self):
@@ -150,7 +150,7 @@ class TestResults:
             self._parse_unity_fixture_verbose(test_output)
         else:
             raise ValueError(
-                "test_format must be one of UNITY_BASIC or UNITY_FIXTURE_VERBOSE."
+                'test_format must be one of UNITY_BASIC or UNITY_FIXTURE_VERBOSE.'
             )
 
     def num_tests(self):
@@ -185,7 +185,7 @@ class TestResults:
         return self._tests
 
     def to_junit(
-            self, suite_name="all_tests",
+            self, suite_name='all_tests',
     ):
         """
         Convert the tests to JUnit XML.
@@ -207,7 +207,7 @@ class TestResults:
         test_case_list = []
 
         for test in self._tests:
-            if test.result() == "PASS":
+            if test.result() == 'PASS':
                 test_case_list.append(
                     junit_xml.TestCase(name=test.name(), classname=test.group())
                 )
@@ -218,11 +218,11 @@ class TestResults:
                     file=test.file(),
                     line=test.line(),
                 )
-                if test.result() == "FAIL":
+                if test.result() == 'FAIL':
                     junit_tc.add_failure_info(
                         message=test.message(), output=test.full_line()
                     )
-                elif test.result() == "IGNORE":
+                elif test.result() == 'IGNORE':
                     junit_tc.add_skipped_info(
                         message=test.message(), output=test.full_line()
                     )
@@ -245,17 +245,17 @@ class TestResults:
         """
         match = _TEST_SUMMARY_BLOCK_REGEX.search(unity_output)
         if not match:
-            raise ValueError("A Unity test summary block was not found.")
+            raise ValueError('A Unity test summary block was not found.')
 
         try:
             stats = TestStats()
-            stats.total = int(match.group("num_tests"))
-            stats.failed = int(match.group("num_failures"))
-            stats.ignored = int(match.group("num_ignored"))
+            stats.total = int(match.group('num_tests'))
+            stats.failed = int(match.group('num_failures'))
+            stats.ignored = int(match.group('num_ignored'))
             stats.passed = stats.total - stats.failed - stats.ignored
             return stats
         except ValueError:
-            raise ValueError("The Unity test summary block was not valid.")
+            raise ValueError('The Unity test summary block was not valid.')
 
     def _parse_unity_basic(self, unity_output):
         """
@@ -268,13 +268,13 @@ class TestResults:
         for test in _NORMAL_TEST_REGEX.finditer(unity_output):
             try:
                 new_test = TestResult(
-                    test.group("test_name"),
-                    test.group("result"),
-                    file=test.group("file"),
-                    line=int(test.group("line")),
-                    message=test.group("message")
-                    if test.group("message") is not None
-                    else "",
+                    test.group('test_name'),
+                    test.group('result'),
+                    file=test.group('file'),
+                    line=int(test.group('line')),
+                    message=test.group('message')
+                    if test.group('message') is not None
+                    else '',
                     full_line=test.group(0),
                 )
             except ValueError:
@@ -283,10 +283,10 @@ class TestResults:
             self._add_new_test(new_test, found_test_stats)
 
         if len(self._tests) == 0:
-            raise ValueError("No tests were found.")
+            raise ValueError('No tests were found.')
 
         if found_test_stats != self._test_stats:
-            raise ValueError("Test output does not match summary block.")
+            raise ValueError('Test output does not match summary block.')
 
     def _parse_unity_fixture_verbose(self, unity_output):
         """
@@ -309,7 +309,7 @@ class TestResults:
                 if prefix_match:
                     # Handle the remaining portion of a test case line after the unity_fixture
                     # prefix.
-                    remainder = prefix_match.group("remainder")
+                    remainder = prefix_match.group('remainder')
                     if remainder:
                         self._parse_unity_fixture_remainder(
                             prefix_match, remainder, found_test_stats
@@ -324,10 +324,10 @@ class TestResults:
             pass
 
         if len(self._tests) == 0:
-            raise ValueError("No tests were found.")
+            raise ValueError('No tests were found.')
 
         if found_test_stats != self._test_stats:
-            raise ValueError("Test output does not match summary block.")
+            raise ValueError('Test output does not match summary block.')
 
     def _parse_unity_fixture_remainder(self, prefix_match, remainder, test_stats):
         """
@@ -337,26 +337,26 @@ class TestResults:
         """
         new_test = None
 
-        if remainder == " PASS":
+        if remainder == ' PASS':
             new_test = TestResult(
-                prefix_match.group("test_name"),
-                "PASS",
-                group=prefix_match.group("test_group"),
+                prefix_match.group('test_name'),
+                'PASS',
+                group=prefix_match.group('test_group'),
                 full_line=prefix_match.group(0),
             )
         else:
             remainder_match = _UNITY_FIXTURE_REMAINDER_REGEX.match(remainder)
             if remainder_match:
                 new_test = TestResult(
-                    prefix_match.group("test_name"),
-                    remainder_match.group("result"),
-                    group=prefix_match.group("test_group"),
-                    file=remainder_match.group("file"),
-                    line=int(remainder_match.group("line")),
-                    message=remainder_match.group("message")
-                    if remainder_match.group("message") is not None
-                    else "",
-                    full_line=prefix_match.group("prefix") + remainder_match.group(0),
+                    prefix_match.group('test_name'),
+                    remainder_match.group('result'),
+                    group=prefix_match.group('test_group'),
+                    file=remainder_match.group('file'),
+                    line=int(remainder_match.group('line')),
+                    message=remainder_match.group('message')
+                    if remainder_match.group('message') is not None
+                    else '',
+                    full_line=prefix_match.group('prefix') + remainder_match.group(0),
                 )
 
         if new_test is not None:
@@ -365,9 +365,9 @@ class TestResults:
     def _add_new_test(self, new_test, test_stats):
         """Add a new test and increment the proper members of test_stats."""
         test_stats.total += 1
-        if new_test.result() == "PASS":
+        if new_test.result() == 'PASS':
             test_stats.passed += 1
-        elif new_test.result() == "FAIL":
+        elif new_test.result() == 'FAIL':
             test_stats.failed += 1
         else:
             test_stats.ignored += 1

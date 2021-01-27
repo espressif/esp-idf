@@ -15,13 +15,14 @@
 # limitations under the License.
 
 from __future__ import division
+
 import argparse
 import hashlib
 import json
 import os
 import struct
-
 from functools import partial
+
 from future.utils import iteritems
 
 try:
@@ -126,30 +127,30 @@ def main():
         return num
 
     # Provision to add "info" command
-    subparsers = parser.add_subparsers(dest="command")
-    write_parser = subparsers.add_parser("write")
-    write_parser.add_argument("-o", "--output-file",
+    subparsers = parser.add_subparsers(dest='command')
+    write_parser = subparsers.add_parser('write')
+    write_parser.add_argument('-o', '--output-file',
                               help='Filename for storing the output UF2 image',
                               required=True)
-    write_parser.add_argument("--chip-id",
+    write_parser.add_argument('--chip-id',
                               required=True,
                               type=parse_chip_id,
                               help='Hexa-decimal chip identificator')
-    write_parser.add_argument("--chunk-size",
+    write_parser.add_argument('--chunk-size',
                               required=False,
                               type=parse_chunk_size,
                               default=None,
                               help='Specify the used data part of the 512 byte UF2 block. A common value is 256. By '
                                    'default the largest possible value will be used.')
-    write_parser.add_argument("--json",
+    write_parser.add_argument('--json',
                               help='Optional file for loading "flash_files" dictionary with <address> <file> items')
-    write_parser.add_argument("--bin",
+    write_parser.add_argument('--bin',
                               help='Use only a subset of binaries from the JSON file, e.g. "partition_table '
                                    'bootloader app"',
                               nargs='*')
-    write_parser.add_argument("files",
-                              metavar="<address> <file>", help='Add <file> at <address>',
-                              nargs="*")
+    write_parser.add_argument('files',
+                              metavar='<address> <file>', help='Add <file> at <address>',
+                              nargs='*')
 
     args = parser.parse_args()
 
@@ -208,5 +209,5 @@ def main():
      }[args.command](cmd_args)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

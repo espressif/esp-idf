@@ -17,9 +17,10 @@
 # protocomm endpoint with security type protocomm_security0
 
 from __future__ import print_function
-from future.utils import tobytes
 
 import proto
+from future.utils import tobytes
+
 from .security import Security
 
 
@@ -54,7 +55,7 @@ class Security0(Security):
         setup_resp.ParseFromString(tobytes(response_data))
         # Check if security scheme matches
         if setup_resp.sec_ver != proto.session_pb2.SecScheme0:
-            print("Incorrect sec scheme")
+            print('Incorrect sec scheme')
 
     def encrypt_data(self, data):
         # Passive. No encryption when security0 used

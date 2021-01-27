@@ -6,9 +6,9 @@ from threading import Thread
 import ttfw_idf
 
 # Define tuple of strings to expect for each DUT.
-master_expect = ("TWAI Master: Driver installed", "TWAI Master: Driver uninstalled")
-slave_expect = ("TWAI Slave: Driver installed", "TWAI Slave: Driver uninstalled")
-listen_only_expect = ("TWAI Listen Only: Driver installed", "TWAI Listen Only: Driver uninstalled")
+master_expect = ('TWAI Master: Driver installed', 'TWAI Master: Driver uninstalled')
+slave_expect = ('TWAI Slave: Driver installed', 'TWAI Slave: Driver uninstalled')
+listen_only_expect = ('TWAI Listen Only: Driver installed', 'TWAI Listen Only: Driver uninstalled')
 
 
 def dut_thread_callback(**kwargs):
@@ -31,11 +31,11 @@ def dut_thread_callback(**kwargs):
 def test_twai_network_example(env, extra_data):
 
     # Get device under test. "dut1", "dut2", and "dut3" must be properly defined in EnvConfig
-    dut_master = env.get_dut("dut1", "examples/peripherals/twai/twai_network/twai_network_master",
+    dut_master = env.get_dut('dut1', 'examples/peripherals/twai/twai_network/twai_network_master',
                              dut_class=ttfw_idf.ESP32DUT)
-    dut_slave = env.get_dut("dut2", "examples/peripherals/twai/twai_network/twai_network_slave",
+    dut_slave = env.get_dut('dut2', 'examples/peripherals/twai/twai_network/twai_network_slave',
                             dut_class=ttfw_idf.ESP32DUT)
-    dut_listen_only = env.get_dut("dut3", "examples/peripherals/twai/twai_network/twai_network_listen_only",
+    dut_listen_only = env.get_dut('dut3', 'examples/peripherals/twai/twai_network/twai_network_listen_only',
                                   dut_class=ttfw_idf.ESP32DUT)
 
     # Flash app onto each DUT, each DUT is reset again at the start of each thread
@@ -45,14 +45,14 @@ def test_twai_network_example(env, extra_data):
 
     # Create dict of keyword arguments for each dut
     results = [[False], [False], [False]]
-    master_kwargs = {"dut": dut_master, "result": results[0], "expected": master_expect}
-    slave_kwargs = {"dut": dut_slave, "result": results[1], "expected": slave_expect}
-    listen_only_kwargs = {"dut": dut_listen_only, "result": results[2], "expected": listen_only_expect}
+    master_kwargs = {'dut': dut_master, 'result': results[0], 'expected': master_expect}
+    slave_kwargs = {'dut': dut_slave, 'result': results[1], 'expected': slave_expect}
+    listen_only_kwargs = {'dut': dut_listen_only, 'result': results[2], 'expected': listen_only_expect}
 
     # Create thread for each dut
-    dut_master_thread = Thread(target=dut_thread_callback, name="Master Thread", kwargs=master_kwargs)
-    dut_slave_thread = Thread(target=dut_thread_callback, name="Slave Thread", kwargs=slave_kwargs)
-    dut_listen_only_thread = Thread(target=dut_thread_callback, name="Listen Only Thread", kwargs=listen_only_kwargs)
+    dut_master_thread = Thread(target=dut_thread_callback, name='Master Thread', kwargs=master_kwargs)
+    dut_slave_thread = Thread(target=dut_thread_callback, name='Slave Thread', kwargs=slave_kwargs)
+    dut_listen_only_thread = Thread(target=dut_thread_callback, name='Listen Only Thread', kwargs=listen_only_kwargs)
 
     # Start each thread
     dut_listen_only_thread.start()
@@ -67,7 +67,7 @@ def test_twai_network_example(env, extra_data):
     # check each thread ran to completion
     for result in results:
         if result[0] is not True:
-            raise Exception("One or more threads did not run successfully")
+            raise Exception('One or more threads did not run successfully')
 
 
 if __name__ == '__main__':

@@ -13,12 +13,14 @@
 # limitations under the License.
 
 from __future__ import unicode_literals
-import sys
+
 import argparse
-import serial
+import sys
 import threading
 import time
 from io import open
+
+import serial
 
 try:
     import idf_monitor
@@ -35,7 +37,7 @@ def monitor_serial_reader_state(serial_reader, file_to_create):
     """
     while not serial_reader.serial.is_open or not serial_reader.alive:
         time.sleep(1)
-    with open(file_to_create, "w", encoding='utf-8'):
+    with open(file_to_create, 'w', encoding='utf-8'):
         pass
 
 
@@ -45,7 +47,7 @@ def main():
     parser.add_argument('--print_filter')
     parser.add_argument('--serial_alive_file')
     parser.add_argument('--toolchain-prefix')
-    parser.add_argument('--decode-panic', default="disable")
+    parser.add_argument('--decode-panic', default='disable')
     parser.add_argument('--target', default=None)
     parser.add_argument('--elf-file')
     args = parser.parse_args()
@@ -65,5 +67,5 @@ def main():
     sys.stderr.write('Monitoring thread joined.\n')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

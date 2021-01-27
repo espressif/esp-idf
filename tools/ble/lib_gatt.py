@@ -18,6 +18,7 @@
 # Creating GATT Application which then becomes available to remote devices.
 
 from __future__ import print_function
+
 import sys
 
 try:
@@ -27,8 +28,8 @@ except ImportError as e:
     if 'linux' not in sys.platform:
         raise e
     print(e)
-    print("Install packages `libgirepository1.0-dev gir1.2-gtk-3.0 libcairo2-dev libdbus-1-dev libdbus-glib-1-dev` for resolving the issue")
-    print("Run `pip install -r $IDF_PATH/tools/ble/requirements.txt` for resolving the issue")
+    print('Install packages `libgirepository1.0-dev gir1.2-gtk-3.0 libcairo2-dev libdbus-1-dev libdbus-glib-1-dev` for resolving the issue')
+    print('Run `pip install -r $IDF_PATH/tools/ble/requirements.txt` for resolving the issue')
     raise
 
 alert_status_char_obj = None
@@ -216,7 +217,7 @@ class Characteristic(dbus.service.Object):
     @dbus.service.signal(DBUS_PROP_IFACE,
                          signature='sa{sv}as')
     def PropertiesChanged(self, interface, changed, invalidated):
-        print("\nProperties Changed")
+        print('\nProperties Changed')
 
 
 class Descriptor(dbus.service.Object):
@@ -293,8 +294,8 @@ class SupportedNewAlertCategoryCharacteristic(Characteristic):
         val_list = []
         for val in self.value:
             val_list.append(dbus.Byte(val))
-        print("Read Request received\n", "\tSupportedNewAlertCategoryCharacteristic")
-        print("\tValue:", "\t", val_list)
+        print('Read Request received\n', '\tSupportedNewAlertCategoryCharacteristic')
+        print('\tValue:', '\t', val_list)
         return val_list
 
 
@@ -314,23 +315,23 @@ class AlertNotificationControlPointCharacteristic(Characteristic):
         val_list = []
         for val in self.value:
             val_list.append(dbus.Byte(val))
-        print("Read Request received\n", "\tAlertNotificationControlPointCharacteristic")
-        print("\tValue:", "\t", val_list)
+        print('Read Request received\n', '\tAlertNotificationControlPointCharacteristic')
+        print('\tValue:', '\t', val_list)
         return val_list
 
     def WriteValue(self, value, options):
         global CHAR_WRITE
         CHAR_WRITE = True
-        print("Write Request received\n", "\tAlertNotificationControlPointCharacteristic")
-        print("\tCurrent value:", "\t", self.value)
+        print('Write Request received\n', '\tAlertNotificationControlPointCharacteristic')
+        print('\tCurrent value:', '\t', self.value)
         val_list = []
         for val in value:
             val_list.append(val)
         self.value = val_list
         # Check if new value is written
-        print("\tNew value:", "\t", self.value)
+        print('\tNew value:', '\t', self.value)
         if not self.value == value:
-            print("Failed: Write Request\n\tNew value not written\tCurrent value:", self.value)
+            print('Failed: Write Request\n\tNew value not written\tCurrent value:', self.value)
 
 
 class UnreadAlertStatusCharacteristic(Characteristic):
@@ -355,7 +356,7 @@ class UnreadAlertStatusCharacteristic(Characteristic):
             print('\nAlready notifying, nothing to do')
             return
         self.notifying = True
-        print("\nNotify Started")
+        print('\nNotify Started')
         self.cccd_obj.WriteValue([dbus.Byte(1), dbus.Byte(0)])
         self.cccd_obj.ReadValue()
 
@@ -364,26 +365,26 @@ class UnreadAlertStatusCharacteristic(Characteristic):
             print('\nNot notifying, nothing to do')
             return
         self.notifying = False
-        print("\nNotify Stopped")
+        print('\nNotify Stopped')
 
     def ReadValue(self, options):
-        print("Read Request received\n", "\tUnreadAlertStatusCharacteristic")
+        print('Read Request received\n', '\tUnreadAlertStatusCharacteristic')
         val_list = []
         for val in self.value:
             val_list.append(dbus.Byte(val))
-        print("\tValue:", "\t", val_list)
+        print('\tValue:', '\t', val_list)
         return val_list
 
     def WriteValue(self, value, options):
-        print("Write Request received\n", "\tUnreadAlertStatusCharacteristic")
+        print('Write Request received\n', '\tUnreadAlertStatusCharacteristic')
         val_list = []
         for val in value:
             val_list.append(val)
         self.value = val_list
         # Check if new value is written
-        print("\tNew value:", "\t", self.value)
+        print('\tNew value:', '\t', self.value)
         if not self.value == value:
-            print("Failed: Write Request\n\tNew value not written\tCurrent value:", self.value)
+            print('Failed: Write Request\n\tNew value not written\tCurrent value:', self.value)
 
 
 class ClientCharacteristicConfigurationDescriptor(Descriptor):
@@ -398,7 +399,7 @@ class ClientCharacteristicConfigurationDescriptor(Descriptor):
             characteristic)
 
     def ReadValue(self):
-        print("\tValue on read:", "\t", self.value)
+        print('\tValue on read:', '\t', self.value)
         return self.value
 
     def WriteValue(self, value):
@@ -407,6 +408,6 @@ class ClientCharacteristicConfigurationDescriptor(Descriptor):
             val_list.append(val)
         self.value = val_list
         # Check if new value is written
-        print("New value on write:", "\t", self.value)
+        print('New value on write:', '\t', self.value)
         if not self.value == value:
-            print("Failed: Write Request\n\tNew value not written\tCurrent value:", self.value)
+            print('Failed: Write Request\n\tNew value not written\tCurrent value:', self.value)

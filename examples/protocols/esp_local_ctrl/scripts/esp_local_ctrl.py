@@ -16,21 +16,21 @@
 #
 
 from __future__ import print_function
-from future.utils import tobytes
-from builtins import input
-import os
-import sys
-import struct
+
 import argparse
+import os
 import ssl
+import struct
+import sys
+from builtins import input
 
 import proto
+from future.utils import tobytes
 
 # The tools directory is already in the PATH in environment prepared by install.sh which would allow to import
 # esp_prov as file but not as complete module.
 sys.path.insert(0, os.path.join(os.environ['IDF_PATH'], 'tools/esp_prov'))
 import esp_prov  # noqa: E402
-
 
 # Set this to true to allow exceptions to be thrown
 config_throw_except = False
@@ -48,26 +48,26 @@ PROP_FLAG_READONLY = (1 << 0)
 
 
 def prop_typestr(prop):
-    if prop["type"] == PROP_TYPE_TIMESTAMP:
-        return "TIME(us)"
-    elif prop["type"] == PROP_TYPE_INT32:
-        return "INT32"
-    elif prop["type"] == PROP_TYPE_BOOLEAN:
-        return "BOOLEAN"
-    elif prop["type"] == PROP_TYPE_STRING:
-        return "STRING"
-    return "UNKNOWN"
+    if prop['type'] == PROP_TYPE_TIMESTAMP:
+        return 'TIME(us)'
+    elif prop['type'] == PROP_TYPE_INT32:
+        return 'INT32'
+    elif prop['type'] == PROP_TYPE_BOOLEAN:
+        return 'BOOLEAN'
+    elif prop['type'] == PROP_TYPE_STRING:
+        return 'STRING'
+    return 'UNKNOWN'
 
 
 def encode_prop_value(prop, value):
     try:
-        if prop["type"] == PROP_TYPE_TIMESTAMP:
+        if prop['type'] == PROP_TYPE_TIMESTAMP:
             return struct.pack('q', value)
-        elif prop["type"] == PROP_TYPE_INT32:
+        elif prop['type'] == PROP_TYPE_INT32:
             return struct.pack('i', value)
-        elif prop["type"] == PROP_TYPE_BOOLEAN:
+        elif prop['type'] == PROP_TYPE_BOOLEAN:
             return struct.pack('?', value)
-        elif prop["type"] == PROP_TYPE_STRING:
+        elif prop['type'] == PROP_TYPE_STRING:
             return tobytes(value)
         return value
     except struct.error as e:
@@ -77,13 +77,13 @@ def encode_prop_value(prop, value):
 
 def decode_prop_value(prop, value):
     try:
-        if prop["type"] == PROP_TYPE_TIMESTAMP:
+        if prop['type'] == PROP_TYPE_TIMESTAMP:
             return struct.unpack('q', value)[0]
-        elif prop["type"] == PROP_TYPE_INT32:
+        elif prop['type'] == PROP_TYPE_INT32:
             return struct.unpack('i', value)[0]
-        elif prop["type"] == PROP_TYPE_BOOLEAN:
+        elif prop['type'] == PROP_TYPE_BOOLEAN:
             return struct.unpack('?', value)[0]
-        elif prop["type"] == PROP_TYPE_STRING:
+        elif prop['type'] == PROP_TYPE_STRING:
             return value.decode('latin-1')
         return value
     except struct.error as e:
@@ -93,13 +93,13 @@ def decode_prop_value(prop, value):
 
 def str_to_prop_value(prop, strval):
     try:
-        if prop["type"] == PROP_TYPE_TIMESTAMP:
+        if prop['type'] == PROP_TYPE_TIMESTAMP:
             return int(strval)
-        elif prop["type"] == PROP_TYPE_INT32:
+        elif prop['type'] == PROP_TYPE_INT32:
             return int(strval)
-        elif prop["type"] == PROP_TYPE_BOOLEAN:
+        elif prop['type'] == PROP_TYPE_BOOLEAN:
             return bool(strval)
-        elif prop["type"] == PROP_TYPE_STRING:
+        elif prop['type'] == PROP_TYPE_STRING:
             return strval
         return strval
     except ValueError as e:
@@ -108,7 +108,7 @@ def str_to_prop_value(prop, strval):
 
 
 def prop_is_readonly(prop):
-    return (prop["flags"] & PROP_FLAG_READONLY) != 0
+    return (prop['flags'] & PROP_FLAG_READONLY) != 0
 
 
 def on_except(err):
@@ -122,8 +122,8 @@ def get_transport(sel_transport, service_name, check_hostname):
     try:
         tp = None
         if (sel_transport == 'http'):
-            example_path = os.environ['IDF_PATH'] + "/examples/protocols/esp_local_ctrl"
-            cert_path = example_path + "/main/certs/rootCA.pem"
+            example_path = os.environ['IDF_PATH'] + '/examples/protocols/esp_local_ctrl'
+            cert_path = example_path + '/main/certs/rootCA.pem'
             ssl_ctx = ssl.create_default_context(cafile=cert_path)
             ssl_ctx.check_hostname = check_hostname
             tp = esp_prov.transport.Transport_HTTP(service_name, ssl_ctx)
@@ -156,15 +156,15 @@ def get_all_property_values(tp):
         response = tp.send_data('esp_local_ctrl/control', message)
         count = proto.get_prop_count_response(response)
         if count == 0:
-            raise RuntimeError("No properties found!")
+            raise RuntimeError('No properties found!')
         indices = [i for i in range(count)]
         message = proto.get_prop_vals_request(indices)
         response = tp.send_data('esp_local_ctrl/control', message)
         props = proto.get_prop_vals_response(response)
         if len(props) != count:
-            raise RuntimeError("Incorrect count of properties!")
+            raise RuntimeError('Incorrect count of properties!')
         for p in props:
-            p["value"] = decode_prop_value(p, p["value"])
+            p['value'] = decode_prop_value(p, p['value'])
         return props
     except RuntimeError as e:
         on_except(e)
@@ -176,7 +176,7 @@ def set_property_values(tp, props, indices, values, check_readonly=False):
         if check_readonly:
             for index in indices:
                 if prop_is_readonly(props[index]):
-                    raise RuntimeError("Cannot set value of Read-Only property")
+                    raise RuntimeError('Cannot set value of Read-Only property')
         message = proto.set_prop_vals_request(indices, values)
         response = tp.send_data('esp_local_ctrl/control', message)
         return proto.set_prop_vals_response(response)
@@ -188,27 +188,27 @@ def set_property_values(tp, props, indices, values, check_readonly=False):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(add_help=False)
 
-    parser = argparse.ArgumentParser(description="Control an ESP32 running esp_local_ctrl service")
+    parser = argparse.ArgumentParser(description='Control an ESP32 running esp_local_ctrl service')
 
-    parser.add_argument("--version", dest='version', type=str,
-                        help="Protocol version", default='')
+    parser.add_argument('--version', dest='version', type=str,
+                        help='Protocol version', default='')
 
-    parser.add_argument("--transport", dest='transport', type=str,
-                        help="transport i.e http or ble", default='http')
+    parser.add_argument('--transport', dest='transport', type=str,
+                        help='transport i.e http or ble', default='http')
 
-    parser.add_argument("--name", dest='service_name', type=str,
-                        help="BLE Device Name / HTTP Server hostname or IP", default='')
+    parser.add_argument('--name', dest='service_name', type=str,
+                        help='BLE Device Name / HTTP Server hostname or IP', default='')
 
-    parser.add_argument("--dont-check-hostname", action="store_true",
+    parser.add_argument('--dont-check-hostname', action='store_true',
                         # If enabled, the certificate won't be rejected for hostname mismatch.
                         # This option is hidden because it should be used only for testing purposes.
                         help=argparse.SUPPRESS)
 
-    parser.add_argument("-v", "--verbose", dest='verbose', help="increase output verbosity", action="store_true")
+    parser.add_argument('-v', '--verbose', dest='verbose', help='increase output verbosity', action='store_true')
     args = parser.parse_args()
 
     if args.version != '':
-        print("==== Esp_Ctrl Version: " + args.version + " ====")
+        print('==== Esp_Ctrl Version: ' + args.version + ' ====')
 
     if args.service_name == '':
         args.service_name = 'my_esp_ctrl_device'
@@ -217,45 +217,45 @@ if __name__ == '__main__':
 
     obj_transport = get_transport(args.transport, args.service_name, not args.dont_check_hostname)
     if obj_transport is None:
-        print("---- Invalid transport ----")
+        print('---- Invalid transport ----')
         exit(1)
 
     if args.version != '':
-        print("\n==== Verifying protocol version ====")
+        print('\n==== Verifying protocol version ====')
         if not version_match(obj_transport, args.version, args.verbose):
-            print("---- Error in protocol version matching ----")
+            print('---- Error in protocol version matching ----')
             exit(2)
-        print("==== Verified protocol version successfully ====")
+        print('==== Verified protocol version successfully ====')
 
     while True:
         properties = get_all_property_values(obj_transport)
         if len(properties) == 0:
-            print("---- Error in reading property values ----")
+            print('---- Error in reading property values ----')
             exit(4)
 
-        print("\n==== Available Properties ====")
-        print("{0: >4} {1: <16} {2: <10} {3: <16} {4: <16}".format(
-            "S.N.", "Name", "Type", "Flags", "Value"))
+        print('\n==== Available Properties ====')
+        print('{0: >4} {1: <16} {2: <10} {3: <16} {4: <16}'.format(
+            'S.N.', 'Name', 'Type', 'Flags', 'Value'))
         for i in range(len(properties)):
-            print("[{0: >2}] {1: <16} {2: <10} {3: <16} {4: <16}".format(
-                i + 1, properties[i]["name"], prop_typestr(properties[i]),
-                ["","Read-Only"][prop_is_readonly(properties[i])],
-                str(properties[i]["value"])))
+            print('[{0: >2}] {1: <16} {2: <10} {3: <16} {4: <16}'.format(
+                i + 1, properties[i]['name'], prop_typestr(properties[i]),
+                ['','Read-Only'][prop_is_readonly(properties[i])],
+                str(properties[i]['value'])))
 
         select = 0
         while True:
             try:
                 inval = input("\nSelect properties to set (0 to re-read, 'q' to quit) : ")
                 if inval.lower() == 'q':
-                    print("Quitting...")
+                    print('Quitting...')
                     exit(5)
                 invals = inval.split(',')
                 selections = [int(val) for val in invals]
                 if min(selections) < 0 or max(selections) > len(properties):
-                    raise ValueError("Invalid input")
+                    raise ValueError('Invalid input')
                 break
             except ValueError as e:
-                print(str(e) + "! Retry...")
+                print(str(e) + '! Retry...')
 
         if len(selections) == 1 and selections[0] == 0:
             continue
@@ -264,15 +264,15 @@ if __name__ == '__main__':
         set_indices = []
         for select in selections:
             while True:
-                inval = input("Enter value to set for property (" + properties[select - 1]["name"] + ") : ")
+                inval = input('Enter value to set for property (' + properties[select - 1]['name'] + ') : ')
                 value = encode_prop_value(properties[select - 1],
                                           str_to_prop_value(properties[select - 1], inval))
                 if value is None:
-                    print("Invalid input! Retry...")
+                    print('Invalid input! Retry...')
                     continue
                 break
             set_values += [value]
             set_indices += [select - 1]
 
         if not set_property_values(obj_transport, properties, set_indices, set_values):
-            print("Failed to set values!")
+            print('Failed to set values!')

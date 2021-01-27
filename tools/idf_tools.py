@@ -40,23 +40,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
+import contextlib
+import copy
+import errno
+import functools
+import hashlib
 import json
 import os
+import platform
+import re
+import shutil
+import ssl
 import subprocess
 import sys
-import argparse
-import re
-import platform
-import hashlib
 import tarfile
 import zipfile
-import errno
-import shutil
-import functools
-import copy
 from collections import OrderedDict, namedtuple
-import ssl
-import contextlib
 
 try:
     import typing  # noqa: F401
@@ -64,10 +64,10 @@ except ImportError:
     pass
 
 try:
-    from urllib.request import urlopen
     from urllib.error import ContentTooShortError
+    from urllib.request import urlopen
 except ImportError:
-    from urllib import urlopen, ContentTooShortError
+    from urllib import ContentTooShortError, urlopen
 
 try:
     from exceptions import WindowsError
@@ -277,7 +277,7 @@ def get_file_size_sha256(filename, block_size=65536):
 def report_progress(count, block_size, total_size):
     percent = int(count * block_size * 100 / total_size)
     percent = min(100, percent)
-    sys.stdout.write("\r%d%%" % percent)
+    sys.stdout.write('\r%d%%' % percent)
     sys.stdout.flush()
 
 
@@ -319,13 +319,13 @@ def urlretrieve_ctx(url, filename, reporthook=None, data=None, context=None):
     # urlopen doesn't have context argument in Python <=2.7.9
     extra_urlopen_args = {}
     if context:
-        extra_urlopen_args["context"] = context
+        extra_urlopen_args['context'] = context
     with contextlib.closing(urlopen(url, data, **extra_urlopen_args)) as fp:
         headers = fp.info()
 
         # Just return the local path and the "headers" for file://
         # URLs. No sense in performing a copy unless requested.
-        if url_type == "file" and not filename:
+        if url_type == 'file' and not filename:
             return os.path.normpath(path), headers
 
         # Handle temporary file setup.
@@ -334,7 +334,7 @@ def urlretrieve_ctx(url, filename, reporthook=None, data=None, context=None):
         with tfp:
             result = filename, headers
             bs = 1024 * 8
-            size = int(headers.get("content-length", -1))
+            size = int(headers.get('content-length', -1))
             read = 0
             blocknum = 0
 
@@ -353,7 +353,7 @@ def urlretrieve_ctx(url, filename, reporthook=None, data=None, context=None):
 
     if size >= 0 and read < size:
         raise ContentTooShortError(
-            "retrieval incomplete: got only %i out of %i bytes"
+            'retrieval incomplete: got only %i out of %i bytes'
             % (read, size), result)
 
     return result
@@ -571,7 +571,7 @@ class IDFTool(object):
             raise ToolExecError('Command {} has returned non-zero exit code ({})\n'.format(
                 ' '.join(self._current_options.version_cmd), e.returncode))
 
-        in_str = version_cmd_result.decode("utf-8")
+        in_str = version_cmd_result.decode('utf-8')
         match = re.search(self._current_options.version_regex, in_str)
         if not match:
             return UNKNOWN_VERSION
@@ -677,7 +677,7 @@ class IDFTool(object):
                 ctx = None
                 # For dl.espressif.com, add the ISRG x1 root certificate.
                 # This works around the issue with outdated certificate stores in some installations.
-                if "dl.espressif.com" in url:
+                if 'dl.espressif.com' in url:
                     try:
                         ctx = ssl.create_default_context()
                         ctx.load_verify_locations(cadata=ISRG_X1_ROOT_CERT)
@@ -687,7 +687,7 @@ class IDFTool(object):
                         pass
 
                 urlretrieve_ctx(url, local_temp_path, report_progress if not global_non_interactive else None, context=ctx)
-                sys.stdout.write("\rDone\n")
+                sys.stdout.write('\rDone\n')
             except Exception as e:
                 # urlretrieve could throw different exceptions, e.g. IOError when the server is down
                 # Errors are ignored because the downloaded file is checked a couple of lines later.
@@ -959,7 +959,7 @@ def get_python_env_path():
 
     version_file_path = os.path.join(global_idf_path, 'version.txt')
     if os.path.exists(version_file_path):
-        with open(version_file_path, "r") as version_file:
+        with open(version_file_path, 'r') as version_file:
             idf_version_str = version_file.read()
     else:
         try:
@@ -1209,7 +1209,7 @@ def apply_github_assets_option(tool_download_obj):
     IDF_GITHUB_ASSETS is set. The github.com part of the URL will be replaced.
     """
     try:
-        github_assets = os.environ["IDF_GITHUB_ASSETS"].strip()
+        github_assets = os.environ['IDF_GITHUB_ASSETS'].strip()
     except KeyError:
         return  # no IDF_GITHUB_ASSETS
     if not github_assets:  # variable exists but is empty
@@ -1350,7 +1350,7 @@ def action_install_python_env(args):
         info('Creating a new Python environment in {}'.format(idf_python_env_path))
 
         try:
-            import virtualenv   # noqa: F401
+            import virtualenv  # noqa: F401
         except ImportError:
             info('Installing virtualenv')
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--user', 'virtualenv'],
@@ -1454,17 +1454,17 @@ def action_gen_doc(args):
     def print_out(text):
         f.write(text + '\n')
 
-    print_out(".. |zwsp| unicode:: U+200B")
-    print_out("   :trim:")
-    print_out("")
+    print_out('.. |zwsp| unicode:: U+200B')
+    print_out('   :trim:')
+    print_out('')
 
-    idf_gh_url = "https://github.com/espressif/esp-idf"
+    idf_gh_url = 'https://github.com/espressif/esp-idf'
     for tool_name, tool_obj in tools_info.items():
         info_url = tool_obj.options.info_url
-        if idf_gh_url + "/tree" in info_url:
-            info_url = re.sub(idf_gh_url + r"/tree/\w+/(.*)", r":idf:`\1`", info_url)
+        if idf_gh_url + '/tree' in info_url:
+            info_url = re.sub(idf_gh_url + r'/tree/\w+/(.*)', r':idf:`\1`', info_url)
 
-        license_url = "https://spdx.org/licenses/" + tool_obj.options.license
+        license_url = 'https://spdx.org/licenses/' + tool_obj.options.license
 
         print_out("""
 .. _tool-{name}:
@@ -1502,9 +1502,9 @@ More info: {info_url}
             if install_type == IDFTool.INSTALL_NEVER:
                 continue
             elif install_type == IDFTool.INSTALL_ALWAYS:
-                install_type_str = "required"
+                install_type_str = 'required'
             elif install_type == IDFTool.INSTALL_ON_REQUEST:
-                install_type_str = "optional"
+                install_type_str = 'optional'
             else:
                 raise NotImplementedError()
 
@@ -1615,7 +1615,7 @@ def main(argv):
     if args.idf_path:
         global_idf_path = args.idf_path
     if not global_idf_path:
-        global_idf_path = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
+        global_idf_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
     os.environ['IDF_PATH'] = global_idf_path
 
     global global_idf_tools_path

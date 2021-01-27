@@ -16,33 +16,33 @@
 #
 
 import argparse
+import errno
 import json
+import os
+import subprocess
 import sys
 import tempfile
-import subprocess
-import os
-import errno
+from io import StringIO
 
 from fragments import FragmentFile
-from sdkconfig import SDKConfig
-from generation import GenerationModel, TemplateModel, SectionsInfo
+from generation import GenerationModel, SectionsInfo, TemplateModel
 from ldgen_common import LdGenFailure
 from pyparsing import ParseException, ParseFatalException
-from io import StringIO
+from sdkconfig import SDKConfig
 
 try:
     import confgen
 except Exception:
     parent_dir_name = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    kconfig_new_dir = os.path.abspath(parent_dir_name + "/kconfig_new")
+    kconfig_new_dir = os.path.abspath(parent_dir_name + '/kconfig_new')
     sys.path.insert(0, kconfig_new_dir)
     import confgen
 
 
 def _update_environment(args):
-    env = [(name, value) for (name,value) in (e.split("=",1) for e in args.env)]
+    env = [(name, value) for (name,value) in (e.split('=',1) for e in args.env)]
     for name, value in env:
-        value = " ".join(value.split())
+        value = ' '.join(value.split())
         os.environ[name] = value
 
     if args.env_file is not None:
@@ -52,51 +52,51 @@ def _update_environment(args):
 
 def main():
 
-    argparser = argparse.ArgumentParser(description="ESP-IDF linker script generator")
+    argparser = argparse.ArgumentParser(description='ESP-IDF linker script generator')
 
     argparser.add_argument(
-        "--input", "-i",
-        help="Linker template file",
-        type=argparse.FileType("r"))
+        '--input', '-i',
+        help='Linker template file',
+        type=argparse.FileType('r'))
 
     argparser.add_argument(
-        "--fragments", "-f",
-        type=argparse.FileType("r"),
-        help="Input fragment files",
-        nargs="+")
+        '--fragments', '-f',
+        type=argparse.FileType('r'),
+        help='Input fragment files',
+        nargs='+')
 
     argparser.add_argument(
-        "--libraries-file",
-        type=argparse.FileType("r"),
-        help="File that contains the list of libraries in the build")
+        '--libraries-file',
+        type=argparse.FileType('r'),
+        help='File that contains the list of libraries in the build')
 
     argparser.add_argument(
-        "--output", "-o",
-        help="Output linker script",
+        '--output', '-o',
+        help='Output linker script',
         type=str)
 
     argparser.add_argument(
-        "--config", "-c",
-        help="Project configuration")
+        '--config', '-c',
+        help='Project configuration')
 
     argparser.add_argument(
-        "--kconfig", "-k",
-        help="IDF Kconfig file")
+        '--kconfig', '-k',
+        help='IDF Kconfig file')
 
     argparser.add_argument(
-        "--check-mapping",
-        help="Perform a check if a mapping (archive, obj, symbol) exists",
+        '--check-mapping',
+        help='Perform a check if a mapping (archive, obj, symbol) exists',
         action='store_true'
     )
 
     argparser.add_argument(
-        "--check-mapping-exceptions",
-        help="Mappings exempted from check",
-        type=argparse.FileType("r")
+        '--check-mapping-exceptions',
+        help='Mappings exempted from check',
+        type=argparse.FileType('r')
     )
 
     argparser.add_argument(
-        "--env", "-e",
+        '--env', '-e',
         action='append', default=[],
         help='Environment to set when evaluating the config file', metavar='NAME=VAL')
 
@@ -105,8 +105,8 @@ def main():
                            'should be a JSON object where each key/value pair is a variable.')
 
     argparser.add_argument(
-        "--objdump",
-        help="Path to toolchain objdump")
+        '--objdump',
+        help='Path to toolchain objdump')
 
     args = argparser.parse_args()
 
@@ -129,7 +129,7 @@ def main():
         for library in libraries_file:
             library = library.strip()
             if library:
-                dump = StringIO(subprocess.check_output([objdump, "-h", library]).decode())
+                dump = StringIO(subprocess.check_output([objdump, '-h', library]).decode())
                 dump.name = library
                 sections_infos.add_sections_info(dump)
 
@@ -146,7 +146,7 @@ def main():
                 # ParseException is raised on incorrect grammar
                 # ParseFatalException is raised on correct grammar, but inconsistent contents (ex. duplicate
                 # keys, key unsupported by fragment, unexpected number of values, etc.)
-                raise LdGenFailure("failed to parse %s\n%s" % (fragment_file.name, str(e)))
+                raise LdGenFailure('failed to parse %s\n%s' % (fragment_file.name, str(e)))
             generation_model.add_fragments_from_file(fragment_file)
 
         mapping_rules = generation_model.generate_rules(sections_infos)
@@ -154,7 +154,7 @@ def main():
         script_model = TemplateModel(input_file)
         script_model.fill(mapping_rules)
 
-        with tempfile.TemporaryFile("w+") as output:
+        with tempfile.TemporaryFile('w+') as output:
             script_model.write(output)
             output.seek(0)
 
@@ -165,12 +165,12 @@ def main():
                     if exc.errno != errno.EEXIST:
                         raise
 
-            with open(output_path, "w") as f:  # only create output file after generation has suceeded
+            with open(output_path, 'w') as f:  # only create output file after generation has suceeded
                 f.write(output.read())
     except LdGenFailure as e:
-        print("linker script generation failed for %s\nERROR: %s" % (input_file.name, e))
+        print('linker script generation failed for %s\nERROR: %s' % (input_file.name, e))
         sys.exit(1)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

@@ -1,5 +1,5 @@
-from tiny_test_fw import Utility
 import ttfw_idf
+from tiny_test_fw import Utility
 
 try:
     from itertools import izip_longest as zip_longest

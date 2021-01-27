@@ -3,8 +3,8 @@
 import os
 import sys
 import unittest
-from unittest.mock import MagicMock
 from tempfile import TemporaryDirectory
+from unittest.mock import MagicMock
 
 from sphinx.util import tags
 
@@ -14,9 +14,7 @@ except ImportError:
     sys.path.append('..')
     from idf_extensions import exclude_docs
 
-from idf_extensions import format_idf_target
-from idf_extensions import gen_idf_tools_links
-from idf_extensions import link_roles
+from idf_extensions import format_idf_target, gen_idf_tools_links, link_roles
 
 
 class TestFormatIdfTarget(unittest.TestCase):
@@ -30,14 +28,14 @@ class TestFormatIdfTarget(unittest.TestCase):
 
     def test_add_subs(self):
 
-        self.assertEqual(self.str_sub.substitute_strings['{IDF_TARGET_NAME}'], "ESP32")
-        self.assertEqual(self.str_sub.substitute_strings['{IDF_TARGET_PATH_NAME}'], "esp32")
-        self.assertEqual(self.str_sub.substitute_strings['{IDF_TARGET_TOOLCHAIN_NAME}'], "esp32")
-        self.assertEqual(self.str_sub.substitute_strings['{IDF_TARGET_CFG_PREFIX}'], "ESP32")
+        self.assertEqual(self.str_sub.substitute_strings['{IDF_TARGET_NAME}'], 'ESP32')
+        self.assertEqual(self.str_sub.substitute_strings['{IDF_TARGET_PATH_NAME}'], 'esp32')
+        self.assertEqual(self.str_sub.substitute_strings['{IDF_TARGET_TOOLCHAIN_NAME}'], 'esp32')
+        self.assertEqual(self.str_sub.substitute_strings['{IDF_TARGET_CFG_PREFIX}'], 'ESP32')
         self.assertEqual(self.str_sub.substitute_strings['{IDF_TARGET_TRM_EN_URL}'],
-                         "https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf")
+                         'https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf')
         self.assertEqual(self.str_sub.substitute_strings['{IDF_TARGET_TRM_CN_URL}'],
-                         "https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_cn.pdf")
+                         'https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_cn.pdf')
 
     def test_sub(self):
         content = ('This is a {IDF_TARGET_NAME}, with {IDF_TARGET_PATH_NAME}/soc.c, compiled with '
@@ -54,14 +52,14 @@ class TestFormatIdfTarget(unittest.TestCase):
         content = ('{IDF_TARGET_TX_PIN:default="IO3", esp32="IO4", esp32s2="IO5"}'
                    'The {IDF_TARGET_NAME} UART {IDF_TARGET_TX_PIN} uses for TX')
 
-        expected = "The ESP32 UART IO4 uses for TX"
+        expected = 'The ESP32 UART IO4 uses for TX'
         self.assertEqual(self.str_sub.substitute(content), expected)
 
     def test_local_sub_default(self):
         content = ('{IDF_TARGET_TX_PIN:default="IO3", esp32s2="IO5"}'
                    'The {IDF_TARGET_NAME} UART {IDF_TARGET_TX_PIN} uses for TX')
 
-        expected = "The ESP32 UART IO3 uses for TX"
+        expected = 'The ESP32 UART IO3 uses for TX'
         self.assertEqual(self.str_sub.substitute(content), expected)
 
     def test_local_sub_no_default(self):
@@ -76,12 +74,12 @@ class TestExclude(unittest.TestCase):
     def setUp(self):
         self.app = MagicMock()
         self.app.tags = tags.Tags()
-        self.app.config.conditional_include_dict = {"esp32":["esp32.rst", "bt.rst"], "esp32s2":["esp32s2.rst"]}
+        self.app.config.conditional_include_dict = {'esp32':['esp32.rst', 'bt.rst'], 'esp32s2':['esp32s2.rst']}
         self.app.config.docs_to_build = None
         self.app.config.exclude_patterns = []
 
     def test_update_exclude_pattern(self):
-        self.app.tags.add("esp32")
+        self.app.tags.add('esp32')
         exclude_docs.update_exclude_patterns(self.app, self.app.config)
         docs_to_build = set(self.app.config.conditional_include_dict['esp32'])
 
@@ -92,7 +90,7 @@ class TestExclude(unittest.TestCase):
 class TestGenIDFToolLinks(unittest.TestCase):
     def setUp(self):
         self.app = MagicMock()
-        self.app.config.build_dir = "_build"
+        self.app.config.build_dir = '_build'
         self.app.config.idf_path = os.environ['IDF_PATH']
 
     def test_gen_idf_tool_links(self):

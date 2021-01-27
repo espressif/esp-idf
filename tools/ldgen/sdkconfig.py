@@ -14,8 +14,9 @@
 # limitations under the License.
 #
 
-from pyparsing import Word, alphanums, printables, Combine, Literal, hexnums, quotedString, Optional, nums, removeQuotes, oneOf, Group, infixNotation, opAssoc
 import kconfiglib
+from pyparsing import (Combine, Group, Literal, Optional, Word, alphanums, hexnums, infixNotation, nums, oneOf,
+                       opAssoc, printables, quotedString, removeQuotes)
 
 
 class SDKConfig:
@@ -25,17 +26,17 @@ class SDKConfig:
     """
 
     # A configuration entry is in the form CONFIG=VALUE. Definitions of components of that grammar
-    IDENTIFIER = Word(alphanums.upper() + "_")
+    IDENTIFIER = Word(alphanums.upper() + '_')
 
-    HEX = Combine("0x" + Word(hexnums)).setParseAction(lambda t:int(t[0], 16))
-    DECIMAL = Combine(Optional(Literal("+") | Literal("-")) + Word(nums)).setParseAction(lambda t:int(t[0]))
-    LITERAL = Word(printables.replace(":", ""))
+    HEX = Combine('0x' + Word(hexnums)).setParseAction(lambda t:int(t[0], 16))
+    DECIMAL = Combine(Optional(Literal('+') | Literal('-')) + Word(nums)).setParseAction(lambda t:int(t[0]))
+    LITERAL = Word(printables.replace(':', ''))
     QUOTED_LITERAL = quotedString.setParseAction(removeQuotes)
 
     VALUE = HEX | DECIMAL | LITERAL | QUOTED_LITERAL
 
     # Operators supported by the expression evaluation
-    OPERATOR = oneOf(["=", "!=", ">", "<", "<=", ">="])
+    OPERATOR = oneOf(['=', '!=', '>', '<', '<=', '>='])
 
     def __init__(self, kconfig_file, sdkconfig_file):
         self.config = kconfiglib.Kconfig(kconfig_file)
@@ -49,24 +50,24 @@ class SDKConfig:
         elif result == 2:  # y
             return True
         else:  # m
-            raise Exception("unsupported config expression result")
+            raise Exception('unsupported config expression result')
 
     @staticmethod
     def get_expression_grammar():
-        identifier = SDKConfig.IDENTIFIER.setResultsName("identifier")
-        operator = SDKConfig.OPERATOR.setResultsName("operator")
-        value = SDKConfig.VALUE.setResultsName("value")
+        identifier = SDKConfig.IDENTIFIER.setResultsName('identifier')
+        operator = SDKConfig.OPERATOR.setResultsName('operator')
+        value = SDKConfig.VALUE.setResultsName('value')
 
         test_binary = identifier + operator + value
         test_single = identifier
 
         test = test_binary | test_single
 
-        condition = Group(Optional("(").suppress() + test + Optional(")").suppress())
+        condition = Group(Optional('(').suppress() + test + Optional(')').suppress())
 
         grammar = infixNotation(condition, [
-                                ("!", 1, opAssoc.RIGHT),
-                                ("&&", 2, opAssoc.LEFT),
-                                ("||",  2, opAssoc.LEFT)])
+                                ('!', 1, opAssoc.RIGHT),
+                                ('&&', 2, opAssoc.LEFT),
+                                ('||',  2, opAssoc.LEFT)])
 
         return grammar

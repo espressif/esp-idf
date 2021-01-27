@@ -7,16 +7,16 @@ def action_extensions(base_actions, project_path):
         run_target(target_name, args)
 
     uf2_actions = {
-        "actions": {
-            "uf2": {
-                "callback": uf2_target,
-                "short_help": "Generate the UF2 binary with all the binaries included",
-                "dependencies": ["all"],
+        'actions': {
+            'uf2': {
+                'callback': uf2_target,
+                'short_help': 'Generate the UF2 binary with all the binaries included',
+                'dependencies': ['all'],
             },
-            "uf2-app": {
-                "callback": uf2_target,
-                "short_help": "Generate an UF2 binary for the application only",
-                "dependencies": ["all"],
+            'uf2-app': {
+                'callback': uf2_target,
+                'short_help': 'Generate an UF2 binary for the application only',
+                'dependencies': ['all'],
             },
         }
     }

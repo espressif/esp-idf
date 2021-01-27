@@ -15,11 +15,8 @@
 # limitations under the License.
 
 import unittest
-from check_kconfigs import LineRuleChecker
-from check_kconfigs import SourceChecker
-from check_kconfigs import InputError
-from check_kconfigs import IndentAndNameChecker
-from check_kconfigs import CONFIG_NAME_MAX_LENGTH
+
+from check_kconfigs import CONFIG_NAME_MAX_LENGTH, IndentAndNameChecker, InputError, LineRuleChecker, SourceChecker
 
 
 class ApplyLine(object):

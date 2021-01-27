@@ -1,14 +1,15 @@
-from __future__ import print_function
-from __future__ import unicode_literals
-import re
+from __future__ import print_function, unicode_literals
+
 import os
-import socket
 import random
+import re
+import socket
 import string
+from threading import Event, Thread
+
+import ttfw_idf
 from SimpleWebSocketServer import SimpleWebSocketServer, WebSocket
 from tiny_test_fw import Utility
-from threading import Thread, Event
-import ttfw_idf
 
 
 def get_my_ip():
@@ -66,15 +67,15 @@ class Websocket(object):
 
 
 def test_echo(dut):
-    dut.expect("WEBSOCKET_EVENT_CONNECTED")
+    dut.expect('WEBSOCKET_EVENT_CONNECTED')
     for i in range(0, 10):
-        dut.expect(re.compile(r"Received=hello (\d)"), timeout=30)
-    print("All echos received")
+        dut.expect(re.compile(r'Received=hello (\d)'), timeout=30)
+    print('All echos received')
 
 
 def test_close(dut):
-    code = dut.expect(re.compile(r"WEBSOCKET: Received closed message with code=(\d*)"), timeout=60)[0]
-    print("Received close frame with code {}".format(code))
+    code = dut.expect(re.compile(r'WEBSOCKET: Received closed message with code=(\d*)'), timeout=60)[0]
+    print('Received close frame with code {}'.format(code))
 
 
 def test_recv_long_msg(dut, websocket, msg_len, repeats):
@@ -86,17 +87,17 @@ def test_recv_long_msg(dut, websocket, msg_len, repeats):
         recv_msg = ''
         while len(recv_msg) < msg_len:
             # Filter out color encoding
-            match = dut.expect(re.compile(r"Received=([a-zA-Z0-9]*).*\n"), timeout=30)[0]
+            match = dut.expect(re.compile(r'Received=([a-zA-Z0-9]*).*\n'), timeout=30)[0]
             recv_msg += match
 
         if recv_msg == send_msg:
-            print("Sent message and received message are equal")
+            print('Sent message and received message are equal')
         else:
-            raise ValueError("DUT received string do not match sent string, \nexpected: {}\nwith length {}\
-                            \nreceived: {}\nwith length {}".format(send_msg, len(send_msg), recv_msg, len(recv_msg)))
+            raise ValueError('DUT received string do not match sent string, \nexpected: {}\nwith length {}\
+                            \nreceived: {}\nwith length {}'.format(send_msg, len(send_msg), recv_msg, len(recv_msg)))
 
 
-@ttfw_idf.idf_example_test(env_tag="Example_WIFI")
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
 def test_examples_protocol_websocket(env, extra_data):
     """
     steps:
@@ -104,17 +105,17 @@ def test_examples_protocol_websocket(env, extra_data):
       2. connect to uri specified in the config
       3. send and receive data
     """
-    dut1 = env.get_dut("websocket", "examples/protocols/websocket", dut_class=ttfw_idf.ESP32DUT)
+    dut1 = env.get_dut('websocket', 'examples/protocols/websocket', dut_class=ttfw_idf.ESP32DUT)
     # check and log bin size
-    binary_file = os.path.join(dut1.app.binary_path, "websocket-example.bin")
+    binary_file = os.path.join(dut1.app.binary_path, 'websocket-example.bin')
     bin_size = os.path.getsize(binary_file)
-    ttfw_idf.log_performance("websocket_bin_size", "{}KB".format(bin_size // 1024))
+    ttfw_idf.log_performance('websocket_bin_size', '{}KB'.format(bin_size // 1024))
 
     try:
-        if "CONFIG_WEBSOCKET_URI_FROM_STDIN" in dut1.app.get_sdkconfig():
+        if 'CONFIG_WEBSOCKET_URI_FROM_STDIN' in dut1.app.get_sdkconfig():
             uri_from_stdin = True
         else:
-            uri = dut1.app.get_sdkconfig()["CONFIG_WEBSOCKET_URI"].strip('"')
+            uri = dut1.app.get_sdkconfig()['CONFIG_WEBSOCKET_URI'].strip('"')
             uri_from_stdin = False
 
     except Exception:
@@ -127,9 +128,9 @@ def test_examples_protocol_websocket(env, extra_data):
     if uri_from_stdin:
         server_port = 4455
         with Websocket(server_port) as ws:
-            uri = "ws://{}:{}".format(get_my_ip(), server_port)
-            print("DUT connecting to {}".format(uri))
-            dut1.expect("Please enter uri of websocket endpoint", timeout=30)
+            uri = 'ws://{}:{}'.format(get_my_ip(), server_port)
+            print('DUT connecting to {}'.format(uri))
+            dut1.expect('Please enter uri of websocket endpoint', timeout=30)
             dut1.write(uri)
             test_echo(dut1)
             # Message length should exceed DUT's buffer size to test fragmentation, default is 1024 byte
@@ -137,7 +138,7 @@ def test_examples_protocol_websocket(env, extra_data):
             test_close(dut1)
 
     else:
-        print("DUT connecting to {}".format(uri))
+        print('DUT connecting to {}'.format(uri))
         test_echo(dut1)
 
 

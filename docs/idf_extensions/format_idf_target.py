@@ -1,9 +1,10 @@
-import re
 import os
 import os.path
+import re
+
 from docutils import io, nodes, statemachine, utils
-from docutils.utils.error_reporting import SafeString, ErrorString
 from docutils.parsers.rst import directives
+from docutils.utils.error_reporting import ErrorString, SafeString
 from sphinx.directives.other import Include as BaseInclude
 from sphinx.util import logging
 
@@ -73,26 +74,26 @@ class StringSubstituter:
     def init_sub_strings(self, config):
         self.target_name = config.idf_target
 
-        self.add_pair("{IDF_TARGET_NAME}", self.TARGET_NAMES[config.idf_target])
-        self.add_pair("{IDF_TARGET_PATH_NAME}", config.idf_target)
-        self.add_pair("{IDF_TARGET_TOOLCHAIN_NAME}", self.TOOLCHAIN_NAMES[config.idf_target])
-        self.add_pair("{IDF_TARGET_CFG_PREFIX}", self.CONFIG_PREFIX[config.idf_target])
-        self.add_pair("{IDF_TARGET_TRM_EN_URL}", self.TRM_EN_URL[config.idf_target])
-        self.add_pair("{IDF_TARGET_TRM_CN_URL}", self.TRM_CN_URL[config.idf_target])
+        self.add_pair('{IDF_TARGET_NAME}', self.TARGET_NAMES[config.idf_target])
+        self.add_pair('{IDF_TARGET_PATH_NAME}', config.idf_target)
+        self.add_pair('{IDF_TARGET_TOOLCHAIN_NAME}', self.TOOLCHAIN_NAMES[config.idf_target])
+        self.add_pair('{IDF_TARGET_CFG_PREFIX}', self.CONFIG_PREFIX[config.idf_target])
+        self.add_pair('{IDF_TARGET_TRM_EN_URL}', self.TRM_EN_URL[config.idf_target])
+        self.add_pair('{IDF_TARGET_TRM_CN_URL}', self.TRM_CN_URL[config.idf_target])
 
     def add_local_subs(self, matches):
 
         for sub_def in matches:
             if len(sub_def) != 2:
-                raise ValueError("IDF_TARGET_X substitution define invalid, val={}".format(sub_def))
+                raise ValueError('IDF_TARGET_X substitution define invalid, val={}'.format(sub_def))
 
-            tag = "{" + "IDF_TARGET_{}".format(sub_def[0]) + "}"
+            tag = '{' + 'IDF_TARGET_{}'.format(sub_def[0]) + '}'
 
             match_default = re.match(r'^\s*default(\s*)=(\s*)\"(.*?)\"', sub_def[1])
 
             if match_default is None:
                 # There should always be a default value
-                raise ValueError("No default value in IDF_TARGET_X substitution define, val={}".format(sub_def))
+                raise ValueError('No default value in IDF_TARGET_X substitution define, val={}'.format(sub_def))
 
             match_target = re.match(r'^.*{}(\s*)=(\s*)\"(.*?)\"'.format(self.target_name), sub_def[1])
 

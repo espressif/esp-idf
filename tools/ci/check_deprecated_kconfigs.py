@@ -14,8 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import print_function, unicode_literals
 
 import argparse
 import os
@@ -47,7 +46,7 @@ def _parse_path(path, sep=None):
 
 def _valid_directory(path):
     if not os.path.isdir(path):
-        raise argparse.ArgumentTypeError("{} is not a valid directory!".format(path))
+        raise argparse.ArgumentTypeError('{} is not a valid directory!'.format(path))
     return path
 
 
@@ -114,5 +113,5 @@ def main():
     return 0
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     sys.exit(main())

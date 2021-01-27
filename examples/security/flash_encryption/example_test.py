@@ -1,18 +1,20 @@
 from __future__ import print_function
+
 import binascii
-from io import BytesIO
-from collections import namedtuple
 import os
 import sys
+from collections import namedtuple
+from io import BytesIO
 
 import ttfw_idf
+
 try:
     import espsecure
 except ImportError:
-    idf_path = os.getenv("IDF_PATH")
+    idf_path = os.getenv('IDF_PATH')
     if not idf_path or not os.path.exists(idf_path):
         raise
-    sys.path.insert(0, os.path.join(idf_path, "components", "esptool_py", "esptool"))
+    sys.path.insert(0, os.path.join(idf_path, 'components', 'esptool_py', 'esptool'))
     import espsecure
 
 
@@ -30,7 +32,7 @@ def test_examples_security_flash_encryption(env, extra_data):
     dut.start_app()
 
     # calculate the expected ciphertext
-    flash_addr = dut.app.partition_table["storage"]["offset"]
+    flash_addr = dut.app.partition_table['storage']['offset']
     plain_hex_str = '00 01 02 03 04 05 06 07  08 09 0a 0b 0c 0d 0e 0f'
     plain_data = binascii.unhexlify(plain_hex_str.replace(' ', ''))
 

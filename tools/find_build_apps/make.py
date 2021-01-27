@@ -4,12 +4,12 @@ import shlex
 import subprocess
 import sys
 
-from .common import BuildSystem, BuildError
+from .common import BuildError, BuildSystem
 
 # Same for the Makefile projects:
-MAKE_PROJECT_LINE = r"include $(IDF_PATH)/make/project.mk"
+MAKE_PROJECT_LINE = r'include $(IDF_PATH)/make/project.mk'
 
-BUILD_SYSTEM_MAKE = "make"
+BUILD_SYSTEM_MAKE = 'make'
 
 try:
     string_type = basestring
@@ -34,8 +34,8 @@ class MakeBuildSystem(BuildSystem):
         build_stdout = sys.stdout
         build_stderr = sys.stderr
         if build_item.build_log_path:
-            logging.info("Writing build log to {}".format(build_item.build_log_path))
-            log_file = open(build_item.build_log_path, "w")
+            logging.info('Writing build log to {}'.format(build_item.build_log_path))
+            log_file = open(build_item.build_log_path, 'w')
             build_stdout = log_file
             build_stderr = log_file
 
@@ -46,16 +46,16 @@ class MakeBuildSystem(BuildSystem):
             except subprocess.CalledProcessError as e:
                 if log_file:
                     log_file.close()
-                raise BuildError("Build failed with exit code {}".format(e.returncode))
+                raise BuildError('Build failed with exit code {}'.format(e.returncode))
 
         build_item.size_json_fp = build_item.get_size_json_fp()
 
     @staticmethod
     def is_app(path):
-        makefile_path = os.path.join(path, "Makefile")
+        makefile_path = os.path.join(path, 'Makefile')
         if not os.path.exists(makefile_path):
             return False
-        with open(makefile_path, "r") as makefile:
+        with open(makefile_path, 'r') as makefile:
             makefile_content = makefile.read()
         if MAKE_PROJECT_LINE not in makefile_content:
             return False

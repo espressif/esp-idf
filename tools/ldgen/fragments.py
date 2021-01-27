@@ -13,30 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import abc
 import os
 import re
-
-from sdkconfig import SDKConfig
-from pyparsing import OneOrMore
-from pyparsing import restOfLine
-from pyparsing import alphanums
-from pyparsing import Word
-from pyparsing import alphas
-from pyparsing import ParseFatalException
-from pyparsing import Suppress
-from pyparsing import Group
-from pyparsing import Literal
-from pyparsing import ZeroOrMore
-from pyparsing import Optional
-from pyparsing import originalTextFor
-from pyparsing import Forward
-from pyparsing import indentedBlock
-from pyparsing import Combine
 from collections import namedtuple
-import abc
 
+from pyparsing import (Combine, Forward, Group, Literal, OneOrMore, Optional, ParseFatalException, Suppress, Word,
+                       ZeroOrMore, alphanums, alphas, indentedBlock, originalTextFor, restOfLine)
+from sdkconfig import SDKConfig
 
-KeyGrammar = namedtuple("KeyGrammar", "grammar min max required")
+KeyGrammar = namedtuple('KeyGrammar', 'grammar min max required')
 
 
 class FragmentFile():
@@ -47,7 +33,7 @@ class FragmentFile():
 
     def __init__(self, fragment_file, sdkconfig):
         try:
-            fragment_file = open(fragment_file, "r")
+            fragment_file = open(fragment_file, 'r')
         except TypeError:
             pass
 
@@ -57,14 +43,14 @@ class FragmentFile():
 
         class parse_ctx:
             fragment = None  # current fragment
-            key = ""  # current key
+            key = ''  # current key
             keys = list()  # list of keys parsed
             key_grammar = None  # current key grammar
 
             @staticmethod
             def reset():
                 parse_ctx.fragment_instance = None
-                parse_ctx.key = ""
+                parse_ctx.key = ''
                 parse_ctx.keys = list()
                 parse_ctx.key_grammar = None
 
@@ -75,11 +61,11 @@ class FragmentFile():
 
         def expand_conditionals(toks, stmts):
             try:
-                stmt = toks["value"]
+                stmt = toks['value']
                 stmts.append(stmt)
             except KeyError:
                 try:
-                    conditions = toks["conditional"]
+                    conditions = toks['conditional']
                     for condition in conditions:
                         try:
                             _toks = condition[1]
@@ -111,7 +97,7 @@ class FragmentFile():
                 raise ParseFatalException(pstr, loc, "unable to add key '%s'; %s" % (parse_ctx.key, str(e)))
             return None
 
-        key = Word(alphanums + "_") + Suppress(":")
+        key = Word(alphanums + '_') + Suppress(':')
         key_stmt = Forward()
 
         condition_block = indentedBlock(key_stmt, indent_stack)
@@ -119,11 +105,11 @@ class FragmentFile():
         key_body = Suppress(key) + key_stmts
         key_body.setParseAction(key_body_parsed)
 
-        condition = originalTextFor(SDKConfig.get_expression_grammar()).setResultsName("condition")
-        if_condition = Group(Suppress("if") + condition + Suppress(":") + condition_block)
-        elif_condition = Group(Suppress("elif") + condition + Suppress(":") + condition_block)
-        else_condition = Group(Suppress("else") + Suppress(":") + condition_block)
-        conditional = (if_condition + Optional(OneOrMore(elif_condition)) + Optional(else_condition)).setResultsName("conditional")
+        condition = originalTextFor(SDKConfig.get_expression_grammar()).setResultsName('condition')
+        if_condition = Group(Suppress('if') + condition + Suppress(':') + condition_block)
+        elif_condition = Group(Suppress('elif') + condition + Suppress(':') + condition_block)
+        else_condition = Group(Suppress('else') + Suppress(':') + condition_block)
+        conditional = (if_condition + Optional(OneOrMore(elif_condition)) + Optional(else_condition)).setResultsName('conditional')
 
         def key_parse_action(pstr, loc, toks):
             key = toks[0]
@@ -142,7 +128,7 @@ class FragmentFile():
             except Exception as e:
                 raise ParseFatalException(pstr, loc, "unable to parse key '%s'; %s" % (key, str(e)))
 
-            key_stmt << (conditional | Group(key_grammar).setResultsName("value"))
+            key_stmt << (conditional | Group(key_grammar).setResultsName('value'))
 
             return None
 
@@ -152,33 +138,33 @@ class FragmentFile():
         key.setParseAction(key_parse_action)
 
         ftype = Word(alphas).setParseAction(fragment_type_parse_action)
-        fid = Suppress(":") + Word(alphanums + "_.").setResultsName("name")
+        fid = Suppress(':') + Word(alphanums + '_.').setResultsName('name')
         fid.setParseAction(name_parse_action)
-        header = Suppress("[") + ftype + fid + Suppress("]")
+        header = Suppress('[') + ftype + fid + Suppress(']')
 
         def fragment_parse_action(pstr, loc, toks):
             key_grammars = parse_ctx.fragment.get_key_grammars()
             required_keys = set([k for (k,v) in key_grammars.items() if v.required])
             present_keys = required_keys.intersection(set(parse_ctx.keys))
             if present_keys != required_keys:
-                raise ParseFatalException(pstr, loc, "required keys %s for fragment not found" %
+                raise ParseFatalException(pstr, loc, 'required keys %s for fragment not found' %
                                           list(required_keys - present_keys))
             return parse_ctx.fragment
 
         fragment_stmt = Forward()
         fragment_block = indentedBlock(fragment_stmt, indent_stack)
 
-        fragment_if_condition = Group(Suppress("if") + condition + Suppress(":") + fragment_block)
-        fragment_elif_condition = Group(Suppress("elif") + condition + Suppress(":") + fragment_block)
-        fragment_else_condition = Group(Suppress("else") + Suppress(":") + fragment_block)
+        fragment_if_condition = Group(Suppress('if') + condition + Suppress(':') + fragment_block)
+        fragment_elif_condition = Group(Suppress('elif') + condition + Suppress(':') + fragment_block)
+        fragment_else_condition = Group(Suppress('else') + Suppress(':') + fragment_block)
         fragment_conditional = (fragment_if_condition + Optional(OneOrMore(fragment_elif_condition)) +
-                                Optional(fragment_else_condition)).setResultsName("conditional")
+                                Optional(fragment_else_condition)).setResultsName('conditional')
 
-        fragment = (header + OneOrMore(indentedBlock(key_body, indent_stack, False))).setResultsName("value")
+        fragment = (header + OneOrMore(indentedBlock(key_body, indent_stack, False))).setResultsName('value')
         fragment.setParseAction(fragment_parse_action)
-        fragment.ignore("#" + restOfLine)
+        fragment.ignore('#' + restOfLine)
 
-        deprecated_mapping = DeprecatedMapping.get_fragment_grammar(sdkconfig, fragment_file.name).setResultsName("value")
+        deprecated_mapping = DeprecatedMapping.get_fragment_grammar(sdkconfig, fragment_file.name).setResultsName('value')
 
         fragment_stmt << (Group(deprecated_mapping) | Group(fragment) | Group(fragment_conditional))
 
@@ -203,8 +189,8 @@ class Fragment():
     such as checking the validity of the fragment name and getting the entry values.
     """
 
-    IDENTIFIER = Word(alphas + "_", alphanums + "_")
-    ENTITY = Word(alphanums + ".-_$")
+    IDENTIFIER = Word(alphas + '_', alphanums + '_')
+    ENTITY = Word(alphanums + '.-_$')
 
     @abc.abstractmethod
     def set_key_value(self, key, parse_results):
@@ -219,12 +205,12 @@ class Sections(Fragment):
 
     # Unless quoted, symbol names start with a letter, underscore, or point
     # and may include any letters, underscores, digits, points, and hyphens.
-    GNU_LD_SYMBOLS = Word(alphas + "_.", alphanums + "._-")
+    GNU_LD_SYMBOLS = Word(alphas + '_.', alphanums + '._-')
 
-    entries_grammar = Combine(GNU_LD_SYMBOLS + Optional("+"))
+    entries_grammar = Combine(GNU_LD_SYMBOLS + Optional('+'))
 
     grammars = {
-        "entries": KeyGrammar(entries_grammar.setResultsName("section"), 1, None, True)
+        'entries': KeyGrammar(entries_grammar.setResultsName('section'), 1, None, True)
     }
 
     """
@@ -235,22 +221,22 @@ class Sections(Fragment):
     def get_section_data_from_entry(sections_entry, symbol=None):
         if not symbol:
             sections = list()
-            sections.append(sections_entry.replace("+", ""))
-            sections.append(sections_entry.replace("+", ".*"))
+            sections.append(sections_entry.replace('+', ''))
+            sections.append(sections_entry.replace('+', '.*'))
             return sections
         else:
-            if sections_entry.endswith("+"):
-                section = sections_entry.replace("+", ".*")
-                expansion = section.replace(".*", "." + symbol)
+            if sections_entry.endswith('+'):
+                section = sections_entry.replace('+', '.*')
+                expansion = section.replace('.*', '.' + symbol)
                 return (section, expansion)
             else:
                 return (sections_entry, None)
 
     def set_key_value(self, key, parse_results):
-        if key == "entries":
+        if key == 'entries':
             self.entries = set()
             for result in parse_results:
-                self.entries.add(result["section"])
+                self.entries.add(result['section'])
 
     def get_key_grammars(self):
         return self.__class__.grammars
@@ -262,15 +248,15 @@ class Scheme(Fragment):
     """
 
     grammars = {
-        "entries": KeyGrammar(Fragment.IDENTIFIER.setResultsName("sections") + Suppress("->") +
-                              Fragment.IDENTIFIER.setResultsName("target"), 1, None, True)
+        'entries': KeyGrammar(Fragment.IDENTIFIER.setResultsName('sections') + Suppress('->') +
+                              Fragment.IDENTIFIER.setResultsName('target'), 1, None, True)
     }
 
     def set_key_value(self, key, parse_results):
-        if key == "entries":
+        if key == 'entries':
             self.entries = set()
             for result in parse_results:
-                self.entries.add((result["sections"], result["target"]))
+                self.entries.add((result['sections'], result['target']))
 
     def get_key_grammars(self):
         return self.__class__.grammars
@@ -281,7 +267,7 @@ class Mapping(Fragment):
     Encapsulates a mapping fragment, which defines what targets the input sections of mappable entties are placed under.
     """
 
-    MAPPING_ALL_OBJECTS = "*"
+    MAPPING_ALL_OBJECTS = '*'
 
     def __init__(self):
         Fragment.__init__(self)
@@ -289,26 +275,26 @@ class Mapping(Fragment):
         self.deprecated = False
 
     def set_key_value(self, key, parse_results):
-        if key == "archive":
-            self.archive = parse_results[0]["archive"]
-        elif key == "entries":
+        if key == 'archive':
+            self.archive = parse_results[0]['archive']
+        elif key == 'entries':
             for result in parse_results:
                 obj = None
                 symbol = None
                 scheme = None
 
                 try:
-                    obj = result["object"]
+                    obj = result['object']
                 except KeyError:
                     pass
 
                 try:
-                    symbol = result["symbol"]
+                    symbol = result['symbol']
                 except KeyError:
                     pass
 
                 try:
-                    scheme = result["scheme"]
+                    scheme = result['scheme']
                 except KeyError:
                     pass
 
@@ -319,19 +305,19 @@ class Mapping(Fragment):
         #       obj:symbol (scheme)
         #       obj (scheme)
         #       * (scheme)
-        obj = Fragment.ENTITY.setResultsName("object")
-        symbol = Suppress(":") + Fragment.IDENTIFIER.setResultsName("symbol")
-        scheme = Suppress("(") + Fragment.IDENTIFIER.setResultsName("scheme") + Suppress(")")
+        obj = Fragment.ENTITY.setResultsName('object')
+        symbol = Suppress(':') + Fragment.IDENTIFIER.setResultsName('symbol')
+        scheme = Suppress('(') + Fragment.IDENTIFIER.setResultsName('scheme') + Suppress(')')
 
         pattern1 = obj + symbol + scheme
         pattern2 = obj + scheme
-        pattern3 = Literal(Mapping.MAPPING_ALL_OBJECTS).setResultsName("object") + scheme
+        pattern3 = Literal(Mapping.MAPPING_ALL_OBJECTS).setResultsName('object') + scheme
 
         entry = pattern1 | pattern2 | pattern3
 
         grammars = {
-            "archive": KeyGrammar(Fragment.ENTITY.setResultsName("archive"), 1, 1, True),
-            "entries": KeyGrammar(entry, 0, None, True)
+            'archive': KeyGrammar(Fragment.ENTITY.setResultsName('archive'), 1, 1, True),
+            'entries': KeyGrammar(entry, 0, None, True)
         }
 
         return grammars
@@ -343,53 +329,53 @@ class DeprecatedMapping():
     """
 
     # Name of the default condition entry
-    DEFAULT_CONDITION = "default"
-    MAPPING_ALL_OBJECTS = "*"
+    DEFAULT_CONDITION = 'default'
+    MAPPING_ALL_OBJECTS = '*'
 
     @staticmethod
     def get_fragment_grammar(sdkconfig, fragment_file):
 
         # Match header [mapping]
-        header = Suppress("[") + Suppress("mapping") + Suppress("]")
+        header = Suppress('[') + Suppress('mapping') + Suppress(']')
 
         # There are three possible patterns for mapping entries:
         #       obj:symbol (scheme)
         #       obj (scheme)
         #       * (scheme)
-        obj = Fragment.ENTITY.setResultsName("object")
-        symbol = Suppress(":") + Fragment.IDENTIFIER.setResultsName("symbol")
-        scheme = Suppress("(") + Fragment.IDENTIFIER.setResultsName("scheme") + Suppress(")")
+        obj = Fragment.ENTITY.setResultsName('object')
+        symbol = Suppress(':') + Fragment.IDENTIFIER.setResultsName('symbol')
+        scheme = Suppress('(') + Fragment.IDENTIFIER.setResultsName('scheme') + Suppress(')')
 
         pattern1 = Group(obj + symbol + scheme)
         pattern2 = Group(obj + scheme)
-        pattern3 = Group(Literal(Mapping.MAPPING_ALL_OBJECTS).setResultsName("object") + scheme)
+        pattern3 = Group(Literal(Mapping.MAPPING_ALL_OBJECTS).setResultsName('object') + scheme)
 
         mapping_entry = pattern1 | pattern2 | pattern3
 
         # To simplify parsing, classify groups of condition-mapping entry into two types: normal and default
         # A normal grouping is one with a non-default condition. The default grouping is one which contains the
         # default condition
-        mapping_entries = Group(ZeroOrMore(mapping_entry)).setResultsName("mappings")
+        mapping_entries = Group(ZeroOrMore(mapping_entry)).setResultsName('mappings')
 
-        normal_condition = Suppress(":") + originalTextFor(SDKConfig.get_expression_grammar())
-        default_condition = Optional(Suppress(":") + Literal(DeprecatedMapping.DEFAULT_CONDITION))
+        normal_condition = Suppress(':') + originalTextFor(SDKConfig.get_expression_grammar())
+        default_condition = Optional(Suppress(':') + Literal(DeprecatedMapping.DEFAULT_CONDITION))
 
-        normal_group = Group(normal_condition.setResultsName("condition") + mapping_entries)
-        default_group = Group(default_condition + mapping_entries).setResultsName("default_group")
+        normal_group = Group(normal_condition.setResultsName('condition') + mapping_entries)
+        default_group = Group(default_condition + mapping_entries).setResultsName('default_group')
 
-        normal_groups = Group(ZeroOrMore(normal_group)).setResultsName("normal_groups")
+        normal_groups = Group(ZeroOrMore(normal_group)).setResultsName('normal_groups')
 
         # Any mapping fragment definition can have zero or more normal group and only one default group as a last entry.
-        archive = Suppress("archive") + Suppress(":") + Fragment.ENTITY.setResultsName("archive")
-        entries = Suppress("entries") + Suppress(":") + (normal_groups + default_group).setResultsName("entries")
+        archive = Suppress('archive') + Suppress(':') + Fragment.ENTITY.setResultsName('archive')
+        entries = Suppress('entries') + Suppress(':') + (normal_groups + default_group).setResultsName('entries')
 
         mapping = Group(header + archive + entries)
-        mapping.ignore("#" + restOfLine)
+        mapping.ignore('#' + restOfLine)
 
         def parsed_deprecated_mapping(pstr, loc, toks):
             fragment = Mapping()
             fragment.archive = toks[0].archive
-            fragment.name = re.sub(r"[^0-9a-zA-Z]+", "_", fragment.archive)
+            fragment.name = re.sub(r'[^0-9a-zA-Z]+', '_', fragment.archive)
             fragment.deprecated = True
 
             fragment.entries = set()
@@ -413,10 +399,10 @@ class DeprecatedMapping():
                     fragment.entries.add((entry.object, None if entry.symbol == '' else entry.symbol, entry.scheme))
 
             if not fragment.entries:
-                fragment.entries.add(("*", None, "default"))
+                fragment.entries.add(('*', None, 'default'))
 
             dep_warning = str(ParseFatalException(pstr, loc,
-                              "Warning: Deprecated old-style mapping fragment parsed in file %s." % fragment_file))
+                              'Warning: Deprecated old-style mapping fragment parsed in file %s.' % fragment_file))
 
             print(dep_warning)
             return fragment
@@ -426,7 +412,7 @@ class DeprecatedMapping():
 
 
 FRAGMENT_TYPES = {
-    "sections": Sections,
-    "scheme": Scheme,
-    "mapping": Mapping
+    'sections': Sections,
+    'scheme': Scheme,
+    'mapping': Mapping
 }
