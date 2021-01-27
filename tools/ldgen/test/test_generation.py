@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2018-2019 Espressif Systems (Shanghai) PTE LTD
+# Copyright 2021 Espressif Systems (Shanghai) CO LTD
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,30 +15,42 @@
 # limitations under the License.
 #
 
+import collections
+import fnmatch
 import os
 import sys
 import tempfile
 import unittest
 
 try:
-    from generation import PlacementRule
+    from generation import Generation, GenerationException
 except ImportError:
     sys.path.append('../')
-    from generation import PlacementRule
+    from generation import Generation, GenerationException
 
 from io import StringIO
 
+from entity import Entity, EntityDB
 from fragments import FragmentFile
-from generation import GenerationException, GenerationModel, SectionsInfo, TemplateModel
+from linker_script import LinkerScript
+from output_commands import InputSectionDesc
 from sdkconfig import SDKConfig
 
+ROOT = Entity('*')
 
-class GenerationModelTest(unittest.TestCase):
+FREERTOS = Entity('libfreertos.a')
+CROUTINE = Entity('libfreertos.a', 'croutine')
+TIMERS = Entity('libfreertos.a', 'timers')
+
+FREERTOS2 = Entity('libfreertos2.a')
+
+
+class GenerationTest(unittest.TestCase):
 
     def setUp(self):
-        self.model = GenerationModel()
-        self.sections_info = None
-        self.script_model = None
+        self.generation = Generation()
+        self.entities = None
+        self.linker_script = None
 
         with tempfile.NamedTemporaryFile(delete=False) as f:
             self.kconfigs_source_file = os.path.join(tempfile.gettempdir(), f.name)
@@ -57,17 +69,17 @@ class GenerationModelTest(unittest.TestCase):
 
         self.sdkconfig = SDKConfig('data/Kconfig', 'data/sdkconfig')
 
-        with open('data/sample.lf') as fragment_file_obj:
+        with open('data/base.lf') as fragment_file_obj:
             fragment_file = FragmentFile(fragment_file_obj, self.sdkconfig)
-            self.model.add_fragments_from_file(fragment_file)
+            self.generation.add_fragments_from_file(fragment_file)
 
-        self.sections_info = SectionsInfo()
+        self.entities = EntityDB()
 
-        with open('data/sections.info') as sections_info_file_obj:
-            self.sections_info.add_sections_info(sections_info_file_obj)
+        with open('data/libfreertos.a.txt') as objdump:
+            self.entities.add_sections_info(objdump)
 
-        with open('data/template.ld') as template_file_obj:
-            self.script_model = TemplateModel(template_file_obj)
+        with open('data/linker_script.ld') as linker_script:
+            self.linker_script = LinkerScript(linker_script)
 
     @staticmethod
     def create_fragment_file(contents, name='test_fragment.lf'):
@@ -78,1106 +90,1009 @@ class GenerationModelTest(unittest.TestCase):
     def add_fragments(self, text):
         fragment_file = self.create_fragment_file(text)
         fragment_file = FragmentFile(fragment_file, self.sdkconfig)
-        self.model.add_fragments_from_file(fragment_file)
+        self.generation.add_fragments_from_file(fragment_file)
 
     def write(self, expected, actual):
-        self.script_model.fill(expected)
-        self.script_model.write(open('expected.ld', 'w'))
+        self.linker_script.fill(expected)
+        self.linker_script.write(open('expected.ld', 'w'))
 
-        self.script_model.fill(actual)
-        self.script_model.write(open('actual.ld', 'w'))
+        self.linker_script.fill(actual)
+        self.linker_script.write(open('actual.ld', 'w'))
 
     def generate_default_rules(self):
-        rules = dict()
+        rules = collections.defaultdict(list)
 
-        # flash_text
-        placement_rules = list()
-        rule = PlacementRule(None, None, None, self.model.sections['text'].entries, 'flash_text')
-        placement_rules.append(rule)
-        rules['flash_text'] = placement_rules
-
-        # flash_rodata
-        placement_rules = list()
-        rule = PlacementRule(None, None, None, self.model.sections['rodata'].entries, 'flash_rodata')
-        placement_rules.append(rule)
-        rules['flash_rodata'] = placement_rules
-
-        # dram0_data
-        placement_rules = list()
-        rule = PlacementRule(None, None, None, self.model.sections['data'].entries | self.model.sections['dram'].entries, 'dram0_data')
-        placement_rules.append(rule)
-        rules['dram0_data'] = placement_rules
-
-        # dram0_bss
-        placement_rules = list()
-        rule = PlacementRule(None, None, None, self.model.sections['bss'].entries | self.model.sections['common'].entries, 'dram0_bss')
-        placement_rules.append(rule)
-        rules['dram0_bss'] = placement_rules
-
-        # iram0_text
-        placement_rules = list()
-        rule = PlacementRule(None, None, None, self.model.sections['iram'].entries, 'iram0_text')
-        placement_rules.append(rule)
-        rules['iram0_text'] = placement_rules
-
-        # rtc_text
-        placement_rules = list()
-        rule = PlacementRule(None, None, None, self.model.sections['rtc_text'].entries, 'rtc_text')
-        placement_rules.append(rule)
-        rules['rtc_text'] = placement_rules
-
-        # rtc_data
-        placement_rules = list()
-        rule = PlacementRule(None, None, None, self.model.sections['rtc_data'].entries | self.model.sections['rtc_rodata'].entries, 'rtc_data')
-        placement_rules.append(rule)
-        rules['rtc_data'] = placement_rules
-
-        # rtc_bss
-        placement_rules = list()
-        rule = PlacementRule(None, None, None, self.model.sections['rtc_bss'].entries, 'rtc_bss')
-        placement_rules.append(rule)
-        rules['rtc_bss'] = placement_rules
+        rules['flash_text'].append(InputSectionDesc(ROOT, ['.literal', '.literal.*', '.text', '.text.*'], []))
+        rules['flash_rodata'].append(InputSectionDesc(ROOT, ['.rodata', '.rodata.*'], []))
+        rules['dram0_data'].append(InputSectionDesc(ROOT, ['.data', '.data.*'], []))
+        rules['dram0_data'].append(InputSectionDesc(ROOT, ['.dram', '.dram.*'], []))
+        rules['dram0_bss'].append(InputSectionDesc(ROOT, ['.bss', '.bss.*'], []))
+        rules['dram0_bss'].append(InputSectionDesc(ROOT, ['COMMON'], []))
+        rules['iram0_text'].append(InputSectionDesc(ROOT, ['.iram', '.iram.*'], []))
+        rules['rtc_text'].append(InputSectionDesc(ROOT, ['.rtc.text', '.rtc.literal'], []))
+        rules['rtc_data'].append(InputSectionDesc(ROOT, ['.rtc.data'], []))
+        rules['rtc_data'].append(InputSectionDesc(ROOT, ['.rtc.rodata'], []))
+        rules['rtc_bss'].append(InputSectionDesc(ROOT, ['.rtc.bss'], []))
 
         return rules
 
     def compare_rules(self, expected, actual):
         self.assertEqual(set(expected.keys()), set(actual.keys()))
 
-        for (target, rules) in actual.items():
+        for target in sorted(actual.keys()):
+            a_cmds = actual[target]
+            e_cmds = expected[target]
 
-            message = 'target: ' + target
+            self.assertEqual(len(a_cmds), len(e_cmds))
 
-            actual_target_rules = rules
-            expected_target_rules = expected[target]
-
-            self.assertEqual(len(actual_target_rules), len(expected_target_rules))
-
-            for actual_target_rule in actual_target_rules:
-                self.assertTrue(actual_target_rule in expected_target_rules, message + str(actual_target_rule))
-
-            for expected_target_rule in expected_target_rules:
-                self.assertTrue(expected_target_rule in actual_target_rules, message + str(expected_target_rule))
+            for a, e in zip(a_cmds, e_cmds):
+                self.assertEqual(a, e)
 
     def get_default(self, target, rules):
         return rules[target][0]
 
     def test_rule_generation_default(self):
-        normal = u"""
+        # Checks that default rules are generated from
+        # the default scheme properly and even if no mappings
+        # are defined.
+        actual = self.generation.generate_rules(self.entities)
+        expected = self.generate_default_rules()
+
+        self.compare_rules(expected, actual)
+
+
+class DefaultMappingTest(GenerationTest):
+
+    def test_default_mapping_lib(self):
+        # Mapping a library with default mapping. This should not emit additional rules,
+        # other than the default ones.
+        mapping = u"""
 [mapping:test]
 archive: libfreertos.a
 entries:
     * (default)
 """
+        self.add_fragments(mapping)
+        self.test_rule_generation_default()
 
-        self.add_fragments(normal)
-        actual = self.model.generate_rules(self.sections_info)
-        expected = self.generate_default_rules()
-
-        self.compare_rules(expected, actual)
-
-    def test_rule_generation_nominal_1(self):
-        normal = u"""
+    def test_default_mapping_obj(self):
+        # Mapping an object with default mapping. This should not emit additional rules,
+        # other than the default ones.
+        mapping = u"""
 [mapping:test]
 archive: libfreertos.a
 entries:
-    * (noflash)
+    croutine (default)
 """
-        self.add_fragments(normal)
+        self.add_fragments(mapping)
+        self.test_rule_generation_default()
 
-        actual = self.model.generate_rules(self.sections_info)
-
-        expected = self.generate_default_rules()
-
-        flash_text_default = self.get_default('flash_text', expected)
-        flash_rodata_default = self.get_default('flash_rodata', expected)
-
-        iram0_text_E1 = PlacementRule('libfreertos.a', '*', None, self.model.sections['text'].entries, 'iram0_text')
-        dram0_data_E1 = PlacementRule('libfreertos.a', '*', None, self.model.sections['rodata'].entries, 'dram0_data')
-
-        # Add the exclusions
-        flash_text_default.add_exclusion(iram0_text_E1)
-        flash_rodata_default.add_exclusion(dram0_data_E1)
-
-        # Add to the placement rules list
-        expected['iram0_text'].append(iram0_text_E1)
-        expected['dram0_data'].append(dram0_data_E1)
-
-        self.compare_rules(expected, actual)
-
-    def test_rule_generation_nominal_2(self):
-        normal = u"""
+    def test_default_mapping_symbol(self):
+        # Mapping a symbol with default mapping. This should not emit additional rules,
+        # other than the default ones.
+        mapping = u"""
 [mapping:test]
 archive: libfreertos.a
 entries:
-    timers (rtc)
+    croutine:prvCheckPendingReadyList (default)                 #1
 """
+        self.add_fragments(mapping)
+        self.test_rule_generation_default()
 
-        self.add_fragments(normal)
-
-        actual = self.model.generate_rules(self.sections_info)
-
-        expected = self.generate_default_rules()
-
-        flash_text_default = self.get_default('flash_text', expected)
-        flash_rodata_default = self.get_default('flash_rodata', expected)
-        dram0_data_default = self.get_default('dram0_data', expected)
-        dram0_bss_default = self.get_default('dram0_bss', expected)
-
-        rtc_text_E1 = PlacementRule('libfreertos.a', 'timers', None, self.model.sections['text'].entries, 'rtc_text')
-        rtc_data_E1 = PlacementRule('libfreertos.a', 'timers', None, self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
-        rtc_bss_E1 = PlacementRule('libfreertos.a', 'timers', None, self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
-
-        # Add the exclusions
-        flash_text_default.add_exclusion(rtc_text_E1)
-        flash_rodata_default.add_exclusion(rtc_data_E1)
-        dram0_data_default.add_exclusion(rtc_data_E1)
-        dram0_bss_default.add_exclusion(rtc_bss_E1)
-
-        # Add the rules
-        expected['rtc_text'].append(rtc_text_E1)
-        expected['rtc_data'].append(rtc_data_E1)
-        expected['rtc_bss'].append(rtc_bss_E1)
-
-        self.compare_rules(expected, actual)
-
-    def test_rule_generation_nominal_3(self):
-        normal = u"""
+    def test_default_mapping_all(self):
+        # Mapping a library, object, and symbol with default mapping. This should not emit additional rules,
+        # other than the default ones.
+        mapping = u"""
 [mapping:test]
 archive: libfreertos.a
 entries:
-    timers (rtc)
-    * (noflash)
+    * (default)                                     #1
+    croutine (default)                              #2
+    croutine:prvCheckPendingReadyList (default)     #3
 """
+        self.add_fragments(mapping)
+        self.test_rule_generation_default()
 
-        self.add_fragments(normal)
-
-        actual = self.model.generate_rules(self.sections_info)
-
-        expected = self.generate_default_rules()
-
-        flash_text_default = self.get_default('flash_text', expected)
-        flash_rodata_default = self.get_default('flash_rodata', expected)
-        dram0_data_default = self.get_default('dram0_data', expected)
-        dram0_bss_default = self.get_default('dram0_bss', expected)
-
-        rtc_text_E1 = PlacementRule('libfreertos.a', 'timers', None, self.model.sections['text'].entries, 'rtc_text')
-        rtc_data_E1 = PlacementRule('libfreertos.a', 'timers', None, self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
-        rtc_bss_E1 = PlacementRule('libfreertos.a', 'timers', None, self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
-
-        iram0_text_E2 = PlacementRule('libfreertos.a', '*', None, self.model.sections['text'].entries, 'iram0_text')
-        dram0_data_E2 = PlacementRule('libfreertos.a', '*', None, self.model.sections['rodata'].entries, 'dram0_data')
-
-        # Add the exclusions
-        flash_text_default.add_exclusion(iram0_text_E2)
-        flash_rodata_default.add_exclusion(dram0_data_E2)
-
-        dram0_data_default.add_exclusion(rtc_data_E1)
-        dram0_bss_default.add_exclusion(rtc_bss_E1)
-
-        iram0_text_E2.add_exclusion(rtc_text_E1)
-        dram0_data_E2.add_exclusion(rtc_data_E1)
-
-        # Add the rules
-        expected['iram0_text'].append(iram0_text_E2)
-        expected['dram0_data'].append(dram0_data_E2)
-
-        expected['rtc_text'].append(rtc_text_E1)
-        expected['rtc_data'].append(rtc_data_E1)
-        expected['rtc_bss'].append(rtc_bss_E1)
-
-        self.compare_rules(expected, actual)
-
-    def test_rule_generation_nominal_4(self):
-        normal = u"""
+    def test_default_mapping_lib_symbol(self):
+        # Mapping a library, and symbol with default mapping. This should not emit additional rules,
+        # other than the default ones.
+        #
+        # This is a check needed to make sure generation does not generate
+        # intermediate commands due to presence of symbol mapping.
+        mapping = u"""
 [mapping:test]
 archive: libfreertos.a
 entries:
-    croutine (rtc)
-    event_groups (noflash)
-    timers (rtc)
+    * (default)                                     #1
+    croutine:prvCheckPendingReadyList (default)     #2
 """
+        self.add_fragments(mapping)
+        self.test_rule_generation_default()
 
-        self.add_fragments(normal)
-
-        actual = self.model.generate_rules(self.sections_info)
-
-        expected = self.generate_default_rules()
-
-        flash_text_default = self.get_default('flash_text', expected)
-        flash_rodata_default = self.get_default('flash_rodata', expected)
-        dram0_data_default = self.get_default('dram0_data', expected)
-        dram0_bss_default = self.get_default('dram0_bss', expected)
-
-        rtc_text_E1 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['text'].entries, 'rtc_text')
-        rtc_data_E1 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
-        rtc_bss_E1 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
-
-        iram0_text_E2 = PlacementRule('libfreertos.a', 'event_groups', None, self.model.sections['text'].entries, 'iram0_text')
-        dram0_data_E2 = PlacementRule('libfreertos.a', 'event_groups', None, self.model.sections['rodata'].entries, 'dram0_data')
-
-        rtc_text_E3 = PlacementRule('libfreertos.a', 'timers', None, self.model.sections['text'].entries, 'rtc_text')
-        rtc_data_E3 = PlacementRule('libfreertos.a', 'timers', None, self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
-        rtc_bss_E3 = PlacementRule('libfreertos.a', 'timers', None, self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
-
-        # Add the exclusions
-        flash_text_default.add_exclusion(rtc_text_E3)
-        flash_rodata_default.add_exclusion(rtc_data_E3)
-        dram0_data_default.add_exclusion(rtc_data_E3)
-        dram0_bss_default.add_exclusion(rtc_bss_E3)
-
-        flash_text_default.add_exclusion(iram0_text_E2)
-        flash_rodata_default.add_exclusion(dram0_data_E2)
-
-        flash_text_default.add_exclusion(rtc_text_E1)
-        flash_rodata_default.add_exclusion(rtc_data_E1)
-        dram0_data_default.add_exclusion(rtc_data_E1)
-        dram0_bss_default.add_exclusion(rtc_bss_E1)
-
-        # Add the rules
-        expected['rtc_text'].append(rtc_text_E3)
-        expected['rtc_data'].append(rtc_data_E3)
-        expected['rtc_bss'].append(rtc_bss_E3)
-
-        expected['iram0_text'].append(iram0_text_E2)
-        expected['dram0_data'].append(dram0_data_E2)
-
-        expected['rtc_text'].append(rtc_text_E1)
-        expected['rtc_data'].append(rtc_data_E1)
-        expected['rtc_bss'].append(rtc_bss_E1)
-
-        self.compare_rules(expected, actual)
-
-    def test_rule_generation_nominal_5(self):
-        normal = u"""
+    def test_default_mapping_obj_symbol(self):
+        # Mapping a library, and symbol with default mapping. This should not emit additional rules,
+        # other than the default ones.
+        #
+        # This is a check needed to make sure generation does not generate
+        # intermediate commands due to presence of symbol mapping.
+        mapping = u"""
 [mapping:test]
 archive: libfreertos.a
 entries:
-    croutine (rtc)
-    event_groups (noflash)
-    timers (rtc)
-    * (noflash)
+    croutine (default)                              #1
+    croutine:prvCheckPendingReadyList (default)     #2
 """
+        self.add_fragments(mapping)
+        self.test_rule_generation_default()
 
-        self.add_fragments(normal)
 
-        actual = self.model.generate_rules(self.sections_info)
+class BasicTest(GenerationTest):
+    # Test basic and fundamental interactions between typical
+    # entries.
 
-        expected = self.generate_default_rules()
-
-        flash_text_default = self.get_default('flash_text', expected)
-        flash_rodata_default = self.get_default('flash_rodata', expected)
-        dram0_data_default = self.get_default('dram0_data', expected)
-        dram0_bss_default = self.get_default('dram0_bss', expected)
-
-        rtc_text_E1 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['text'].entries, 'rtc_text')
-        rtc_data_E1 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
-        rtc_bss_E1 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
-
-        iram0_text_E2 = PlacementRule('libfreertos.a', 'event_groups', None, self.model.sections['text'].entries, 'iram0_text')
-        dram0_data_E2 = PlacementRule('libfreertos.a', 'event_groups', None, self.model.sections['rodata'].entries, 'dram0_data')
-
-        rtc_text_E3 = PlacementRule('libfreertos.a', 'timers', None, self.model.sections['text'].entries, 'rtc_text')
-        rtc_data_E3 = PlacementRule('libfreertos.a', 'timers', None, self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
-        rtc_bss_E3 = PlacementRule('libfreertos.a', 'timers', None, self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
-
-        iram0_text_E4 = PlacementRule('libfreertos.a', '*', None, self.model.sections['text'].entries, 'iram0_text')
-        dram0_data_E4 = PlacementRule('libfreertos.a', '*', None, self.model.sections['rodata'].entries, 'dram0_data')
-
-        # Add the exclusions
-        flash_text_default.add_exclusion(iram0_text_E4)
-        flash_rodata_default.add_exclusion(dram0_data_E4)
-
-        iram0_text_E4.add_exclusion(rtc_text_E3)
-        dram0_data_E4.add_exclusion(rtc_data_E3)
-        dram0_data_default.add_exclusion(rtc_data_E3)
-        dram0_bss_default.add_exclusion(rtc_bss_E3)
-
-        iram0_text_E4.add_exclusion(iram0_text_E2)
-        dram0_data_E4.add_exclusion(dram0_data_E2)
-
-        iram0_text_E4.add_exclusion(rtc_text_E1)
-        dram0_data_E4.add_exclusion(rtc_data_E1)
-        dram0_data_default.add_exclusion(rtc_data_E1)
-        dram0_bss_default.add_exclusion(rtc_bss_E1)
-
-        # Add the rules
-        expected['iram0_text'].append(iram0_text_E4)
-        expected['dram0_data'].append(dram0_data_E4)
-
-        expected['rtc_text'].append(rtc_text_E3)
-        expected['rtc_data'].append(rtc_data_E3)
-        expected['rtc_bss'].append(rtc_bss_E3)
-
-        expected['iram0_text'].append(iram0_text_E2)
-        expected['dram0_data'].append(dram0_data_E2)
-
-        expected['rtc_text'].append(rtc_text_E1)
-        expected['rtc_data'].append(rtc_data_E1)
-        expected['rtc_bss'].append(rtc_bss_E1)
-
-        self.compare_rules(expected, actual)
-
-    def test_rule_generation_nominal_6(self):
-        normal = u"""
+    def test_nondefault_mapping_lib(self, alt=None):
+        # Test mapping entry different from default for a library.
+        # There should be exclusions in the default commands for flash_text and flash_rodata:
+        #
+        # flash_text
+        #   *((EXCLUDE_FILE(libfreertos.a)) .literal ...)                                                          A
+        #
+        # Commands placing the entire library in iram, dram should be generated:
+        #
+        # iram0_text
+        #   *(.iram ...)
+        #   *libfreertos.a(.literal  ...)                                                                          B
+        mapping = u"""
 [mapping:test]
 archive: libfreertos.a
 entries:
-    croutine:prvCheckPendingReadyList (noflash)
+    * (noflash)                     #1
 """
-
-        self.add_fragments(normal)
-
-        actual = self.model.generate_rules(self.sections_info)
-
+        self.add_fragments(alt if alt else mapping)
+        actual = self.generation.generate_rules(self.entities)
         expected = self.generate_default_rules()
 
-        flash_text_default = self.get_default('flash_text', expected)
-        flash_rodata_default = self.get_default('flash_rodata', expected)
+        flash_text = expected['flash_text']
+        flash_rodata = expected['flash_rodata']
+        iram0_text = expected['iram0_text']
+        dram0_data = expected['dram0_data']
 
-        iram0_text_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckPendingReadyList', self.model.sections['text'].entries, 'iram0_text')
-        dram0_data_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckPendingReadyList', self.model.sections['rodata'].entries, 'dram0_data')
+        # Generate exclusions in flash_text and flash_rodata                                                 A
+        flash_text[0].exclusions.add(FREERTOS)
+        flash_rodata[0].exclusions.add(FREERTOS)
 
-        iram0_text_E1_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.text.*', '.literal.*'], 'flash_text')
-        dram0_data_E1_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.rodata.*'], 'flash_rodata')
-
-        # Add the exclusions
-        flash_text_default.add_exclusion(iram0_text_E1_extra, self.sections_info)
-        flash_rodata_default.add_exclusion(dram0_data_E1_extra, self.sections_info)
-
-        iram0_text_E1_extra.add_exclusion(iram0_text_E1, self.sections_info)
-        dram0_data_E1_extra.add_exclusion(dram0_data_E1, self.sections_info)
-
-        # Add the rules
-        expected['flash_text'].append(iram0_text_E1_extra)
-        expected['flash_rodata'].append(dram0_data_E1_extra)
-
-        expected['iram0_text'].append(iram0_text_E1)
-        expected['dram0_data'].append(dram0_data_E1)
+        # Input section commands in iram_text and dram0_data for #1                                          B
+        iram0_text.append(InputSectionDesc(FREERTOS, flash_text[0].sections, []))
+        dram0_data.append(InputSectionDesc(FREERTOS, flash_rodata[0].sections, []))
 
         self.compare_rules(expected, actual)
 
-    def test_rule_generation_nominal_7(self):
-        normal = u"""
+    def test_nondefault_mapping_obj(self, alt=None):
+        # Test mapping entry different from default for an object.
+        # There should be exclusions in the default commands for flash_text and flash_rodata:
+        #
+        # flash_text
+        #   *((EXCLUDE_FILE(libfreertos.a:croutine)) .literal ...)                                                          A
+        #
+        # Commands placing the entire library in iram, dram should be generated:
+        #
+        # iram0_text
+        #   *(.iram ...)
+        #   *libfreertos.a:croutine(.literal  ...)                                                                          B
+        mapping = u"""
 [mapping:test]
 archive: libfreertos.a
 entries:
-    croutine:prvCheckPendingReadyList (noflash)
-    croutine:prvCheckDelayedList (noflash)
-    croutine:xCoRoutineCreate (noflash)
+    croutine (noflash)                              #1
 """
 
-        self.add_fragments(normal)
-
-        actual = self.model.generate_rules(self.sections_info)
-
+        self.add_fragments(alt if alt else mapping)
+        actual = self.generation.generate_rules(self.entities)
         expected = self.generate_default_rules()
 
-        flash_text_default = self.get_default('flash_text', expected)
-        flash_rodata_default = self.get_default('flash_rodata', expected)
+        flash_text = expected['flash_text']
+        flash_rodata = expected['flash_rodata']
+        iram0_text = expected['iram0_text']
+        dram0_data = expected['dram0_data']
 
-        iram0_text_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckPendingReadyList', self.model.sections['text'].entries, 'iram0_text')
-        dram0_data_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckPendingReadyList', self.model.sections['rodata'].entries, 'dram0_data')
+        # Generate exclusions in flash_text and flash_rodata                                                A
+        flash_text[0].exclusions.add(CROUTINE)
+        flash_rodata[0].exclusions.add(CROUTINE)
 
-        iram0_text_E2 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList', self.model.sections['text'].entries, 'iram0_text')
-        dram0_data_E2 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList', self.model.sections['rodata'].entries, 'dram0_data')
-
-        iram0_text_E3 = PlacementRule('libfreertos.a', 'croutine', 'xCoRoutineCreate', self.model.sections['text'].entries, 'iram0_text')
-        dram0_data_E3 = PlacementRule('libfreertos.a', 'croutine', 'xCoRoutineCreate', self.model.sections['rodata'].entries, 'dram0_data')
-
-        flash_text_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.text.*', '.literal.*'], 'flash_text')
-        flash_rodata_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.rodata.*'], 'flash_rodata')
-
-        # Add the exclusions
-        flash_text_default.add_exclusion(flash_text_extra, self.sections_info)
-        flash_rodata_default.add_exclusion(flash_rodata_extra, self.sections_info)
-
-        flash_text_extra.add_exclusion(iram0_text_E1, self.sections_info)
-        flash_rodata_extra.add_exclusion(dram0_data_E1, self.sections_info)
-
-        flash_text_extra.add_exclusion(iram0_text_E2, self.sections_info)
-        flash_rodata_extra.add_exclusion(dram0_data_E2, self.sections_info)
-
-        flash_text_extra.add_exclusion(iram0_text_E3, self.sections_info)
-        flash_rodata_extra.add_exclusion(dram0_data_E3, self.sections_info)
-
-        # Add the rules
-        expected['flash_text'].append(flash_text_extra)
-        expected['flash_rodata'].append(flash_rodata_extra)
-
-        expected['iram0_text'].append(iram0_text_E1)
-        expected['dram0_data'].append(dram0_data_E1)
-
-        expected['iram0_text'].append(iram0_text_E2)
-        expected['dram0_data'].append(dram0_data_E2)
-
-        expected['iram0_text'].append(iram0_text_E3)
-        expected['dram0_data'].append(dram0_data_E3)
+        # Input section commands in iram_text and dram0_data for #1                                         B
+        iram0_text.append(InputSectionDesc(CROUTINE, flash_text[0].sections, []))
+        dram0_data.append(InputSectionDesc(CROUTINE, flash_rodata[0].sections, []))
 
         self.compare_rules(expected, actual)
 
-    def test_rule_generation_nominal_8(self):
-        normal = u"""
+    def test_nondefault_mapping_symbol(self):
+        # Test mapping entry different from default for symbol.
+        # There should be exclusions in the default commands for flash_text, as well as the implicit intermediate object command
+        # with an exclusion from default:
+        #
+        # flash_text
+        #   *((EXCLUDE_FILE(libfreertos.a:croutine)) .literal ...)                                                          A
+        #   *libfreertos.a:croutine(.literal  .literal.prvCheckDelayedList ...)                                             B
+        #
+        # Commands placing the entire library in iram should be generated:
+        #
+        # iram0_text
+        #   *(.iram ...)
+        #   *libfreertos.a:croutine(.text.prvCheckPendingReadyList .literal.prvCheckPendingReadyList)                       C
+        mapping = u"""
 [mapping:test]
 archive: libfreertos.a
 entries:
-    croutine:prvCheckPendingReadyList (noflash)
-    croutine:prvCheckDelayedList (rtc)
-    croutine:xCoRoutineCreate (noflash)
+    croutine:prvCheckPendingReadyList (noflash)         #1
 """
-
-        self.add_fragments(normal)
-
-        actual = self.model.generate_rules(self.sections_info)
-
+        self.add_fragments(mapping)
+        actual = self.generation.generate_rules(self.entities)
         expected = self.generate_default_rules()
 
-        flash_text_default = self.get_default('flash_text', expected)
-        flash_rodata_default = self.get_default('flash_rodata', expected)
-        dram0_data_default = self.get_default('dram0_data', expected)
-        dram0_bss_default = self.get_default('dram0_bss', expected)
+        flash_text = expected['flash_text']
+        iram0_text = expected['iram0_text']
 
-        iram0_text_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckPendingReadyList', self.model.sections['text'].entries, 'iram0_text')
-        dram0_data_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckPendingReadyList', self.model.sections['rodata'].entries, 'dram0_data')
+        # Generate exclusion in flash_text                                                A
+        flash_text[0].exclusions.add(CROUTINE)
 
-        rtc_text_E2 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList', self.model.sections['text'].entries, 'rtc_text')
-        rtc_data_E2 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList',
-                                    self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
-        rtc_bss_E2 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList',
-                                   self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
+        # Generate intermediate command                                                   B
+        # List all relevant sections except the symbol
+        # being mapped
+        croutine_sections = self.entities.get_sections('libfreertos.a', 'croutine')
+        filtered_sections = fnmatch.filter(croutine_sections, '.literal.*')
+        filtered_sections.extend(fnmatch.filter(croutine_sections, '.text.*'))
 
-        iram0_text_E3 = PlacementRule('libfreertos.a', 'croutine', 'xCoRoutineCreate', self.model.sections['text'].entries, 'iram0_text')
-        dram0_data_E3 = PlacementRule('libfreertos.a', 'croutine', 'xCoRoutineCreate', self.model.sections['rodata'].entries, 'dram0_data')
+        filtered_sections = [s for s in filtered_sections if not s.endswith('prvCheckPendingReadyList')]
+        filtered_sections.append('.text')
 
-        flash_text_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.text.*', '.literal.*'], 'flash_text')
-        flash_rodata_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.rodata.*'], 'flash_rodata')
-        dram0_data_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.data.*'], 'dram0_data')
-        dram0_bss_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.bss.*'], 'dram0_bss')
+        flash_text.append(InputSectionDesc(CROUTINE, set(filtered_sections), []))
 
-        # Add the exclusions
-        flash_text_default.add_exclusion(flash_text_extra, self.sections_info)
-        flash_rodata_default.add_exclusion(flash_rodata_extra, self.sections_info)
-        dram0_data_default.add_exclusion(dram0_data_extra, self.sections_info)
-        dram0_bss_default.add_exclusion(dram0_bss_extra, self.sections_info)
-
-        flash_text_extra.add_exclusion(iram0_text_E1, self.sections_info)
-        flash_rodata_extra.add_exclusion(dram0_data_E1, self.sections_info)
-
-        flash_text_extra.add_exclusion(rtc_text_E2, self.sections_info)
-        dram0_data_extra.add_exclusion(rtc_data_E2, self.sections_info)
-        flash_rodata_extra.add_exclusion(rtc_data_E2, self.sections_info)
-        dram0_bss_extra.add_exclusion(rtc_bss_E2, self.sections_info)
-
-        flash_text_extra.add_exclusion(iram0_text_E3, self.sections_info)
-        flash_rodata_extra.add_exclusion(dram0_data_E3, self.sections_info)
-
-        # Add the rules
-        expected['flash_text'].append(flash_text_extra)
-        expected['flash_rodata'].append(flash_rodata_extra)
-        expected['dram0_data'].append(dram0_data_extra)
-        expected['dram0_bss'].append(dram0_bss_extra)
-
-        expected['iram0_text'].append(iram0_text_E1)
-        expected['dram0_data'].append(dram0_data_E1)
-
-        expected['rtc_text'].append(rtc_text_E2)
-        expected['rtc_data'].append(rtc_data_E2)
-        expected['rtc_bss'].append(rtc_bss_E2)
-
-        expected['iram0_text'].append(iram0_text_E3)
-        expected['dram0_data'].append(dram0_data_E3)
+        # Input section commands in iram_text for #1                                     C
+        iram0_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), []))
 
         self.compare_rules(expected, actual)
 
-    def test_rule_generation_nominal_9(self):
-        normal = u"""
+    def test_default_symbol_nondefault_lib(self):
+        # Test default symbol mapping with different lib mapping. This should create an implicit intermediate object command.
+        # The significant targets are flash_text, flash_rodata, iram0_text, dram0_data.
+        #
+        # flash_text
+        #   *(EXCLUDE_FILE(libfreertos.a) .text ...)                                                        A
+        #  libfreertos.a:croutine (.text.prvCheckPendingReadyList .literal.prvCheckPendingReadyList)        B
+        #
+        # flash_rodata
+        #   *(EXCLUDE_FILE(libfreertos.a) .rodata ...)                                                      A
+        #
+        # iram0_text
+        #  * ( .iram ...)
+        #  libfreertos.a (EXCLUDE_FILE(libfreertos:croutine) .text ...)                                     C.1
+        #   *libfreertos.a:croutine(.literal  .literal.prvCheckDelayedList ...)                             D
+        #
+        # dram0_data
+        #  * ( .dram ...)
+        #  libfreertos.a ( .rodata ...)                                                                     C.2
+        #
+        # Only default commands are in the other targets.
+        mapping = u"""
 [mapping:test]
 archive: libfreertos.a
 entries:
-    croutine:prvCheckDelayedList (rtc)
-    croutine (noflash)
+    * (noflash)                                         #1
+    croutine:prvCheckPendingReadyList (default)         #2
 """
 
-        self.add_fragments(normal)
-
-        actual = self.model.generate_rules(self.sections_info)
-
+        self.add_fragments(mapping)
+        actual = self.generation.generate_rules(self.entities)
         expected = self.generate_default_rules()
 
-        flash_text_default = self.get_default('flash_text', expected)
-        flash_rodata_default = self.get_default('flash_rodata', expected)
-        dram0_data_default = self.get_default('dram0_data', expected)
-        dram0_bss_default = self.get_default('dram0_bss', expected)
+        flash_text = expected['flash_text']
+        flash_rodata = expected['flash_rodata']
+        iram0_text = expected['iram0_text']
+        dram0_data = expected['dram0_data']
 
-        rtc_text_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList', self.model.sections['text'].entries, 'rtc_text')
-        rtc_data_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList',
-                                    self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
-        rtc_bss_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList',
-                                   self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
+        # Exclusions for #1                                                                                 A
+        flash_text[0].exclusions.add(FREERTOS)
+        flash_rodata[0].exclusions.add(FREERTOS)
 
-        iram0_text_E2 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['text'].entries, 'iram0_text')
-        dram0_data_E2 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['rodata'].entries, 'dram0_data')
+        # Commands for #1                                                                                   C.1 & C.2
+        # C.1 excludes intermediate command for #2
+        iram0_text.append(InputSectionDesc(FREERTOS, flash_text[0].sections, [CROUTINE]))
+        dram0_data.append(InputSectionDesc(FREERTOS, flash_rodata[0].sections, []))
 
-        dram0_data_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.data.*'], 'dram0_data')
-        dram0_bss_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.bss.*'], 'dram0_bss')
+        # Intermediate command for excluding #2                                                             D
+        croutine_sections = self.entities.get_sections('libfreertos.a', 'croutine')
+        filtered_sections = fnmatch.filter(croutine_sections, '.literal.*')
+        filtered_sections.extend(fnmatch.filter(croutine_sections, '.text.*'))
 
-        # Add the exclusions
-        flash_text_default.add_exclusion(iram0_text_E2, self.sections_info)
-        flash_rodata_default.add_exclusion(dram0_data_E2, self.sections_info)
+        filtered_sections = [s for s in filtered_sections if not s.endswith('prvCheckPendingReadyList')]
+        filtered_sections.append('.text')
 
-        dram0_data_default.add_exclusion(dram0_data_extra, self.sections_info)
-        dram0_bss_default.add_exclusion(dram0_bss_extra, self.sections_info)
+        iram0_text.append(InputSectionDesc(CROUTINE, set(filtered_sections), []))
 
-        dram0_data_extra.add_exclusion(rtc_data_E1, self.sections_info)
-        dram0_bss_extra.add_exclusion(rtc_bss_E1, self.sections_info)
-
-        iram0_text_E2.add_exclusion(rtc_text_E1, self.sections_info)
-        dram0_data_E2.add_exclusion(rtc_data_E1, self.sections_info)
-
-        # Add the rules
-        expected['dram0_data'].append(dram0_data_extra)
-        expected['dram0_bss'].append(dram0_bss_extra)
-
-        expected['iram0_text'].append(iram0_text_E2)
-        expected['dram0_data'].append(dram0_data_E2)
-
-        expected['rtc_text'].append(rtc_text_E1)
-        expected['rtc_data'].append(rtc_data_E1)
-        expected['rtc_bss'].append(rtc_bss_E1)
+        # Command for #2                                                                                    B
+        flash_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), []))
 
         self.compare_rules(expected, actual)
 
-    def test_rule_generation_nominal_10(self):
-        normal = u"""
+    def test_default_symbol_nondefault_obj(self):
+        # Test default symbol mapping with different obj mapping. Since there is an explicit entry for the object,
+        # the sections for that object should just be expanded and the symbol section subtracted, to be placed
+        # using another command.
+        #
+        # flash_text
+        #   *(EXCLUDE_FILE(libfreertos.a:croutine) .text ...)                                                        A
+        #   libfreertos.a:croutine (.text.prvCheckPendingReadyList .literal.prvCheckPendingReadyList)                B
+        #
+        # flash_rodata
+        #   *(EXCLUDE_FILE(libfreertos.a:croutine) .rodata ...)                                                      A
+        #
+        # iram0_text
+        #   *( .iram ...)
+        #   *libfreertos.a:croutine(.literal  .literal.prvCheckDelayedList ...)                                      C.1
+        #
+        # dram0_data
+        #   *(.data ..)
+        #   *libfreertos.a:croutine(.rodata ....)                                                                    C.2
+        #
+        # Only default commands are in the other targets
+        mapping = u"""
 [mapping:test]
 archive: libfreertos.a
 entries:
-    croutine:prvCheckDelayedList (rtc)
-    * (noflash)
+    croutine (noflash)                                  #1
+    croutine:prvCheckPendingReadyList (default)         #2
 """
-
-        self.add_fragments(normal)
-
-        actual = self.model.generate_rules(self.sections_info)
-
+        self.add_fragments(mapping)
+        actual = self.generation.generate_rules(self.entities)
         expected = self.generate_default_rules()
 
-        flash_text_default = self.get_default('flash_text', expected)
-        flash_rodata_default = self.get_default('flash_rodata', expected)
-        iram0_text_default = self.get_default('iram0_text', expected)
-        dram0_data_default = self.get_default('dram0_data', expected)
-        dram0_bss_default = self.get_default('dram0_bss', expected)
+        flash_text = expected['flash_text']
+        flash_rodata = expected['flash_rodata']
+        iram0_text = expected['iram0_text']
+        dram0_data = expected['dram0_data']
 
-        rtc_text_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList', self.model.sections['text'].entries, 'rtc_text')
-        rtc_data_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList',
-                                    self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
-        rtc_bss_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList',
-                                   self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
+        # Exclusions for #1                                                                                 A
+        flash_text[0].exclusions.add(CROUTINE)
+        flash_rodata[0].exclusions.add(CROUTINE)
 
-        iram0_text_E2 = PlacementRule('libfreertos.a', None, None, self.model.sections['text'].entries, 'iram0_text')
-        dram0_data_E2 = PlacementRule('libfreertos.a', None, None, self.model.sections['rodata'].entries, 'dram0_data')
+        # Commands for #1                                                                                   C.1 & C.2
+        # C.1 list relevant sections for libfreertos.a:croutine to
+        # exclude symbol to map
+        croutine_sections = self.entities.get_sections('libfreertos.a', 'croutine')
+        filtered_sections = fnmatch.filter(croutine_sections, '.literal.*')
+        filtered_sections.extend(fnmatch.filter(croutine_sections, '.text.*'))
 
-        iram0_text_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.text.*', '.literal.*'], 'iram0_text')
-        dram0_data_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.data.*', '.rodata.*'], 'dram0_data')
-        dram0_bss_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.bss.*'], 'dram0_bss')
+        filtered_sections = [s for s in filtered_sections if not s.endswith('prvCheckPendingReadyList')]
+        filtered_sections.append('.text')
 
-        # Add the exclusions
-        flash_text_default.add_exclusion(iram0_text_E2, self.sections_info)
-        flash_rodata_default.add_exclusion(dram0_data_E2, self.sections_info)
+        iram0_text.append(InputSectionDesc(CROUTINE, set(filtered_sections), []))
+        dram0_data.append(InputSectionDesc(CROUTINE, flash_rodata[0].sections, []))
 
-        iram0_text_default.add_exclusion(iram0_text_extra, self.sections_info)
-        dram0_data_default.add_exclusion(dram0_data_extra, self.sections_info)
-        dram0_bss_default.add_exclusion(dram0_bss_extra, self.sections_info)
-
-        iram0_text_E2.add_exclusion(iram0_text_extra, self.sections_info)
-        dram0_data_E2.add_exclusion(dram0_data_extra, self.sections_info)
-
-        iram0_text_extra.add_exclusion(rtc_text_E1, self.sections_info)
-        dram0_data_extra.add_exclusion(rtc_data_E1, self.sections_info)
-        dram0_bss_extra.add_exclusion(rtc_bss_E1, self.sections_info)
-
-        # Add the rules
-        expected['iram0_text'].append(iram0_text_extra)
-        expected['dram0_data'].append(dram0_data_extra)
-        expected['dram0_bss'].append(dram0_bss_extra)
-
-        expected['iram0_text'].append(iram0_text_E2)
-        expected['dram0_data'].append(dram0_data_E2)
-
-        expected['rtc_text'].append(rtc_text_E1)
-        expected['rtc_data'].append(rtc_data_E1)
-        expected['rtc_bss'].append(rtc_bss_E1)
+        # Command for #2                                                                                    B
+        flash_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), []))
 
         self.compare_rules(expected, actual)
 
-    def test_rule_generation_nominal_11(self):
-        normal = u"""
+    def test_default_nondefault_alternating(self):
+        # Here, each of the entries map sections to something different
+        # than its one-level-up entry.
+        #
+        # *                                         text -> flash, rodata -> flash
+        # libfreertos.a                             text -> iram, rodata -> dram
+        # libfreertos.a:croutine                    text -> flash, rodata -> flash
+        # croutine:prvCheckPendingReadyList         text  -> iram
+        #
+        # The significant targets are flash_text, flash_rodata, iram0_text, and dram0_data.
+        #
+        # flash_text
+        #   *(EXCLUDE_FILE(libfreertos.a) .text ...)                                                         A
+        #   *libfreertos.a:croutine(.literal  .literal.prvCheckDelayedList ...)                              B.1
+        #
+        # flash_rodata
+        #   *(EXCLUDE_FILE(libfreertos.a) .rodata ...)                                                       A
+        #   *libfreertos.a:croutine(.rodata .rodata.*)                                                       B.2
+        #
+        # iram0_text
+        #  * ( .iram ...)
+        #  libfreertos.a (EXCLUDE_FILE(libfreertos:croutine) .text ...)                                      C
+        #  libfreertos.a:croutine (.text.prvCheckPendingReadyList .literal.prvCheckPendingReadyList)         D
+        #
+        # dram0_data
+        #  * ( .dram ...)
+        #  libfreertos.a (EXCLUDE_FILE(libfreertos:croutine) .rodata ...)                                    C
+        #
+        # For the other targets only the default commands should be present.
+        mapping = u"""
 [mapping:test]
 archive: libfreertos.a
 entries:
-    croutine:prvCheckDelayedList (noflash)
-    croutine (rtc)
-    * (noflash)
+    * (noflash)                                         #1
+    croutine (default)                                  #2
+    croutine:prvCheckPendingReadyList (noflash)         #3
 """
 
-        self.add_fragments(normal)
-
-        actual = self.model.generate_rules(self.sections_info)
-
+        self.add_fragments(mapping)
+        actual = self.generation.generate_rules(self.entities)
         expected = self.generate_default_rules()
 
-        flash_text_default = self.get_default('flash_text', expected)
-        flash_rodata_default = self.get_default('flash_rodata', expected)
-        iram0_text_default = self.get_default('iram0_text', expected)
-        dram0_data_default = self.get_default('dram0_data', expected)
-        dram0_bss_default = self.get_default('dram0_bss', expected)
+        flash_text = expected['flash_text']
+        flash_rodata = expected['flash_rodata']
+        iram0_text = expected['iram0_text']
+        dram0_data = expected['dram0_data']
 
-        iram0_text_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList', self.model.sections['text'].entries, 'iram0_text')
-        dram0_data_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList', self.model.sections['rodata'].entries, 'dram0_data')
+        # Exclusions for #1                                                                                 A
+        # Only for flash_text and flash_rodata
+        flash_text[0].exclusions.add(FREERTOS)
+        flash_rodata[0].exclusions.add(FREERTOS)
 
-        rtc_text_E2 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['text'].entries, 'rtc_text')
-        rtc_data_E2 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
-        rtc_bss_E2 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
+        # Commands for #1                                                                                   C
+        # with exclusions for #2
+        iram0_text.append(InputSectionDesc(FREERTOS, flash_text[0].sections, [CROUTINE]))
+        dram0_data.append(InputSectionDesc(FREERTOS, flash_rodata[0].sections, [CROUTINE]))
 
-        iram0_text_E3 = PlacementRule('libfreertos.a', None, None, self.model.sections['text'].entries, 'iram0_text')
-        dram0_data_E3 = PlacementRule('libfreertos.a', None, None, self.model.sections['rodata'].entries, 'dram0_data')
+        # Commands for #2                                                                                   B.1
+        flash_rodata.append(InputSectionDesc(CROUTINE, flash_rodata[0].sections, []))
 
-        # Add the exclusions
-        flash_text_default.add_exclusion(iram0_text_E3, self.sections_info)
-        flash_rodata_default.add_exclusion(dram0_data_E3, self.sections_info)
-        iram0_text_default.add_exclusion(rtc_text_E2, self.sections_info)
-        dram0_data_default.add_exclusion(rtc_data_E2, self.sections_info)
-        dram0_bss_default.add_exclusion(rtc_bss_E2, self.sections_info)
+        # List all relevant sections in case of flash_text                                                  B.2
+        # as exclusion for #3
+        croutine_sections = self.entities.get_sections('libfreertos.a', 'croutine')
+        filtered_sections = fnmatch.filter(croutine_sections, '.literal.*')
+        filtered_sections.extend(fnmatch.filter(croutine_sections, '.text.*'))
 
-        iram0_text_E3.add_exclusion(rtc_text_E2, self.sections_info)
-        dram0_data_E3.add_exclusion(rtc_data_E2, self.sections_info)
+        filtered_sections = [s for s in filtered_sections if not s.endswith('prvCheckPendingReadyList')]
+        filtered_sections.append('.text')
 
-        rtc_text_E2.add_exclusion(iram0_text_E1, self.sections_info)
-        rtc_data_E2.add_exclusion(dram0_data_E1, self.sections_info)
+        flash_text.append(InputSectionDesc(CROUTINE, set(filtered_sections), []))
 
-        # Add the rules
-        expected['iram0_text'].append(iram0_text_E1)
-        expected['dram0_data'].append(dram0_data_E1)
-
-        expected['rtc_text'].append(rtc_text_E2)
-        expected['rtc_data'].append(rtc_data_E2)
-        expected['rtc_bss'].append(rtc_bss_E2)
-
-        expected['iram0_text'].append(iram0_text_E3)
-        expected['dram0_data'].append(dram0_data_E3)
+        # Command for #3                                                                                    D
+        iram0_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), []))
 
         self.compare_rules(expected, actual)
 
-    def test_rule_generation_nominal_12(self):
-        normal = u"""
+    def test_nondefault_but_same_lib_and_obj(self):
+        # Extension of DefaultMappingTest. Commands should not be generated for #2, since it does similar mapping
+        # to #1. Output is similar to test_different_mapping_lib.
+        mapping = u"""
 [mapping:test]
 archive: libfreertos.a
 entries:
-    croutine:prvCheckDelayedList (rtc)
-    croutine (noflash)
-    * (rtc)
+    * (noflash)                                     #1
+    croutine (noflash)                              #2
+"""
+        self.test_nondefault_mapping_lib(mapping)
+
+    def test_nondefault_but_same_lib_and_sym(self):
+        # Extension of DefaultMappingTest. Commands should not be generated for #2, since it does similar mapping
+        # to #1. Output is similar to test_different_mapping_lib.
+        mapping = u"""
+[mapping:test]
+archive: libfreertos.a
+entries:
+    * (noflash)                                     #1
+    croutine:prvCheckPendingReadyList (noflash)     #2
+"""
+        self.test_nondefault_mapping_lib(mapping)
+
+    def test_nondefault_but_same_obj_and_sym(self):
+        # Commands should not be generated for #2, since it does similar mapping
+        # to #1. Output is similar to test_different_mapping_obj.
+        mapping = u"""
+[mapping:test]
+archive: libfreertos.a
+entries:
+    croutine (noflash)                                     #1
+    croutine:prvCheckPendingReadyList (noflash)            #2
+"""
+        self.test_nondefault_mapping_obj(mapping)
+
+    def test_multiple_symbols_excluded_from_intermediate_command(self):
+        # Test mapping multiple symbols from the same object.
+        # All these symbols must be succesfully excluded from
+        # the intermediate command.
+        #
+        # flash_text
+        #   * (EXCLUDE_FILE(libfreertos.a:croutine) .text ...)                  A
+        #   libfreertos:croutine(.text ...)                                     B
+        #
+        # iram0_text
+        #
+        #
+        mapping = u"""
+[mapping:test]
+archive: libfreertos.a
+entries:
+    croutine:prvCheckPendingReadyList (noflash)            #1
+    croutine:prvCheckDelayedList (noflash)                 #2
 """
 
-        self.add_fragments(normal)
-
-        actual = self.model.generate_rules(self.sections_info)
-
+        self.add_fragments(mapping)
+        actual = self.generation.generate_rules(self.entities)
         expected = self.generate_default_rules()
 
-        flash_text_default = self.get_default('flash_text', expected)
-        flash_rodata_default = self.get_default('flash_rodata', expected)
-        dram0_data_default = self.get_default('dram0_data', expected)
-        dram0_bss_default = self.get_default('dram0_bss', expected)
+        flash_text = expected['flash_text']
+        iram0_text = expected['iram0_text']
 
-        rtc_text_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList', self.model.sections['text'].entries, 'rtc_text')
-        rtc_data_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList',
-                                    self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
-        rtc_bss_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList',
-                                   self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
+        # Exclusions for #1 & #2 intermediate command                                       A
+        flash_text[0].exclusions.add(CROUTINE)
 
-        iram0_text_E2 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['text'].entries, 'iram0_text')
-        dram0_data_E2 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['rodata'].entries, 'dram0_data')
+        # Intermediate command for #1 & #2 which lists                                      B
+        # all relevant sections in croutine except prvCheckPendingReadyList
+        # and prvCheckDelayedList
+        croutine_sections = self.entities.get_sections('libfreertos.a', 'croutine')
+        filtered_sections = fnmatch.filter(croutine_sections, '.literal.*')
+        filtered_sections.extend(fnmatch.filter(croutine_sections, '.text.*'))
 
-        rtc_text_E3 = PlacementRule('libfreertos.a', None, None, self.model.sections['text'].entries, 'rtc_text')
-        rtc_data_E3 = PlacementRule('libfreertos.a', None, None, self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
-        rtc_bss_E3 = PlacementRule('libfreertos.a', None, None, self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
+        filtered_sections = [s for s in filtered_sections if not s.endswith('prvCheckPendingReadyList')]
+        filtered_sections = [s for s in filtered_sections if not s.endswith('prvCheckDelayedList')]
+        filtered_sections.append('.text')
 
-        rtc_data_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.data.*'], 'rtc_data')
-        rtc_bss_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.bss.*'], 'rtc_bss')
+        flash_text.append(InputSectionDesc(CROUTINE, set(filtered_sections), []))
 
-        # Add the exclusions
-        flash_text_default.add_exclusion(rtc_text_E3, self.sections_info)
-        flash_rodata_default.add_exclusion(rtc_data_E3, self.sections_info)
-        dram0_data_default.add_exclusion(rtc_data_E3, self.sections_info)
-        dram0_bss_default.add_exclusion(rtc_bss_E3, self.sections_info)
-
-        rtc_text_E3.add_exclusion(iram0_text_E2, self.sections_info)
-        rtc_data_E3.add_exclusion(dram0_data_E2, self.sections_info)
-        rtc_data_E3.add_exclusion(rtc_data_extra, self.sections_info)
-        rtc_bss_E3.add_exclusion(rtc_bss_extra, self.sections_info)
-
-        rtc_data_extra.add_exclusion(rtc_data_E1, self.sections_info)
-        rtc_bss_extra.add_exclusion(rtc_bss_E1, self.sections_info)
-        iram0_text_E2.add_exclusion(rtc_text_E1, self.sections_info)
-        dram0_data_E2.add_exclusion(rtc_data_E1, self.sections_info)
-
-        # Add the rules
-        expected['rtc_data'].append(rtc_data_extra)
-        expected['rtc_bss'].append(rtc_bss_extra)
-
-        expected['rtc_text'].append(rtc_text_E1)
-        expected['rtc_data'].append(rtc_data_E1)
-        expected['rtc_bss'].append(rtc_bss_E1)
-
-        expected['iram0_text'].append(iram0_text_E2)
-        expected['dram0_data'].append(dram0_data_E2)
-
-        expected['rtc_text'].append(rtc_text_E3)
-        expected['rtc_data'].append(rtc_data_E3)
-        expected['rtc_bss'].append(rtc_bss_E3)
+        # Commands for #1 & 2
+        iram0_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckDelayedList', '.literal.prvCheckDelayedList']), []))
+        iram0_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), []))
 
         self.compare_rules(expected, actual)
 
-    def test_rule_generation_nominal_13(self):
-        normal = u"""
+
+class AdvancedTest(GenerationTest):
+
+    # Test valid but quirky cases, corner cases, failure cases, and
+    # cases involving interaction between schemes, other mapping
+    # fragments.
+
+    def test_same_entity_no_scheme_common(self):
+        # Test same entity being mapped by schemes that have nothing in common.
+        #
+        # noflash_data: rodata -> dram0_data
+        # noflash_text: text -> iram0_text
+        #
+        # This operation should succeed with the following commands:
+        #
+        # flash_text
+        #   *(EXCLUDE_FILE(libfreertos.a:croutine) .text ...)                                                        A
+        #
+        # flash_rodata
+        #   *(EXCLUDE_FILE(libfreertos.a:croutine) .rodata ...)                                                      B
+        #
+        # iram0_text
+        #   *(.iram ...)
+        #   *libfreertos.a:croutine(.text .text.* ...)                                                               C
+        #
+        # dram0_data
+        #   *(.data ..)
+        #   *(.dram ...)
+        #   *libfreertos.a:croutine(.rodata .rodata.*)                                                               D
+        mapping = u"""
 [mapping:test]
 archive: libfreertos.a
 entries:
-    croutine:prvCheckDelayedList (noflash)
-    event_groups:xEventGroupCreate (noflash)
-    croutine (rtc)
-    event_groups (rtc)
-    * (noflash)
+    croutine (noflash_text)                         #1
+    croutine (noflash_data)                         #2
 """
-
-        self.add_fragments(normal)
-
-        actual = self.model.generate_rules(self.sections_info)
-
+        self.add_fragments(mapping)
+        actual = self.generation.generate_rules(self.entities)
         expected = self.generate_default_rules()
 
-        flash_text_default = self.get_default('flash_text', expected)
-        flash_rodata_default = self.get_default('flash_rodata', expected)
-        dram0_data_default = self.get_default('dram0_data', expected)
-        dram0_bss_default = self.get_default('dram0_bss', expected)
+        flash_text = expected['flash_text']
+        flash_rodata = expected['flash_rodata']
+        iram0_text = expected['iram0_text']
+        dram0_data = expected['dram0_data']
 
-        iram0_text_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList', self.model.sections['text'].entries, 'iram0_text')
-        dram0_data_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList', self.model.sections['rodata'].entries, 'dram0_data')
+        # Exclusions for #1                                                                 A
+        flash_text[0].exclusions.add(CROUTINE)
 
-        iram0_text_E2 = PlacementRule('libfreertos.a', 'event_groups', 'xEventGroupCreate', self.model.sections['text'].entries, 'iram0_text')
-        dram0_data_E2 = PlacementRule('libfreertos.a', 'event_groups', 'xEventGroupCreate', self.model.sections['rodata'].entries, 'dram0_data')
+        # Exclusions for #2                                                                 B
+        flash_rodata[0].exclusions.add(CROUTINE)
 
-        rtc_text_E3 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['text'].entries, 'rtc_text')
-        rtc_data_E3 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
-        rtc_bss_E3 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
+        # Command for #1                                                                    C
+        iram0_text.append(InputSectionDesc(CROUTINE, flash_text[0].sections, []))
 
-        rtc_text_E4 = PlacementRule('libfreertos.a', 'event_groups', None, self.model.sections['text'].entries, 'rtc_text')
-        rtc_data_E4 = PlacementRule('libfreertos.a', 'event_groups', None,
-                                    self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
-        rtc_bss_E4 = PlacementRule('libfreertos.a', 'event_groups', None,
-                                   self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
-
-        iram0_text_E5 = PlacementRule('libfreertos.a', None, None, self.model.sections['text'].entries, 'iram0_text')
-        dram0_data_E5 = PlacementRule('libfreertos.a', None, None, self.model.sections['rodata'].entries, 'dram0_data')
-
-        # Add the exclusions
-        flash_text_default.add_exclusion(iram0_text_E5, self.sections_info)
-        flash_rodata_default.add_exclusion(dram0_data_E5, self.sections_info)
-        dram0_bss_default.add_exclusion(rtc_bss_E3, self.sections_info)
-        dram0_data_default.add_exclusion(rtc_data_E3, self.sections_info)
-        dram0_bss_default.add_exclusion(rtc_bss_E4, self.sections_info)
-        dram0_data_default.add_exclusion(rtc_data_E4, self.sections_info)
-
-        iram0_text_E5.add_exclusion(rtc_text_E3, self.sections_info)
-        dram0_data_E5.add_exclusion(rtc_data_E3, self.sections_info)
-        iram0_text_E5.add_exclusion(rtc_text_E4, self.sections_info)
-        dram0_data_E5.add_exclusion(rtc_data_E4, self.sections_info)
-
-        rtc_text_E4.add_exclusion(iram0_text_E2, self.sections_info)
-        rtc_data_E4.add_exclusion(dram0_data_E2, self.sections_info)
-
-        rtc_text_E3.add_exclusion(iram0_text_E1, self.sections_info)
-        rtc_data_E3.add_exclusion(dram0_data_E1, self.sections_info)
-
-        # Add the rules
-        expected['iram0_text'].append(iram0_text_E1)
-        expected['dram0_data'].append(dram0_data_E1)
-
-        expected['iram0_text'].append(iram0_text_E2)
-        expected['dram0_data'].append(dram0_data_E2)
-
-        expected['rtc_text'].append(rtc_text_E3)
-        expected['rtc_data'].append(rtc_data_E3)
-        expected['rtc_bss'].append(rtc_bss_E3)
-
-        expected['rtc_text'].append(rtc_text_E4)
-        expected['rtc_data'].append(rtc_data_E4)
-        expected['rtc_bss'].append(rtc_bss_E4)
-
-        expected['iram0_text'].append(iram0_text_E5)
-        expected['dram0_data'].append(dram0_data_E5)
+        # Command for #2                                                                    D
+        dram0_data.append(InputSectionDesc(CROUTINE, flash_rodata[0].sections, []))
 
         self.compare_rules(expected, actual)
 
-    def test_rule_generation_nominal_14(self):
-        normal = u"""
+    def test_same_entity_sub_scheme(self):
+        # Test same entity being mapped by scheme that is a subset of the other.
+        #
+        # noflash: text -> iram0_text, rodata -> dram0_data
+        # noflash_text: text -> iram0_text
+        #
+        # `text -> iram0_text` is common between the two schemes.
+        #
+        # This operation should succeed with the following commands:
+        #
+        # flash_text
+        #   *(EXCLUDE_FILE(libfreertos.a:croutine) .text ...)                                                        A
+        #
+        # flash_rodata
+        #   *(EXCLUDE_FILE(libfreertos.a:croutine) .rodata ...)                                                      B
+        #
+        # iram0_text
+        #   *(.iram ...)
+        #   *libfreertos.a:croutine(.text .text.* ...)                                                               C
+        #
+        # dram0_data
+        #   *(.data ..)
+        #   *(.dram ...)
+        #   *libfreertos.a:croutine(.rodata .rodata.*)                                                               D
+        mapping = u"""
 [mapping:test]
 archive: libfreertos.a
 entries:
-    croutine:prvCheckDelayedList (noflash)
-    event_groups:xEventGroupCreate (rtc)
-    croutine (rtc)
-    event_groups (noflash)
+    croutine (noflash)                              #1
+    croutine (noflash_data)                         #2
 """
-
-        self.add_fragments(normal)
-
-        actual = self.model.generate_rules(self.sections_info)
-
+        self.add_fragments(mapping)
+        actual = self.generation.generate_rules(self.entities)
         expected = self.generate_default_rules()
 
-        flash_text_default = self.get_default('flash_text', expected)
-        flash_rodata_default = self.get_default('flash_rodata', expected)
-        dram0_data_default = self.get_default('dram0_data', expected)
-        dram0_bss_default = self.get_default('dram0_bss', expected)
+        flash_text = expected['flash_text']
+        flash_rodata = expected['flash_rodata']
+        iram0_text = expected['iram0_text']
+        dram0_data = expected['dram0_data']
 
-        iram0_text_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList', self.model.sections['text'].entries, 'iram0_text')
-        dram0_data_E1 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList', self.model.sections['rodata'].entries, 'dram0_data')
+        # Exclusions for #1                                                                 A
+        flash_text[0].exclusions.add(CROUTINE)
 
-        rtc_text_E2 = PlacementRule('libfreertos.a', 'event_groups', 'xEventGroupCreate', self.model.sections['text'].entries, 'rtc_text')
-        rtc_data_E2 = PlacementRule('libfreertos.a', 'event_groups', 'xEventGroupCreate',
-                                    self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
-        rtc_bss_E2 = PlacementRule('libfreertos.a', 'event_groups', 'xEventGroupCreate',
-                                   self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
+        # Exclusions for #1 & #2                                                            B
+        flash_rodata[0].exclusions.add(CROUTINE)
 
-        rtc_text_E3 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['text'].entries, 'rtc_text')
-        rtc_data_E3 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['data'].entries | self.model.sections['rodata'].entries, 'rtc_data')
-        rtc_bss_E3 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['bss'].entries | self.model.sections['common'].entries, 'rtc_bss')
+        # Command for #1                                                                    C
+        iram0_text.append(InputSectionDesc(CROUTINE, flash_text[0].sections, []))
 
-        iram0_text_E4 = PlacementRule('libfreertos.a', 'event_groups', None, self.model.sections['text'].entries, 'iram0_text')
-        dram0_data_E4 = PlacementRule('libfreertos.a', 'event_groups', None, self.model.sections['rodata'].entries, 'dram0_data')
-
-        dram0_data_extra = PlacementRule('libfreertos.a', 'event_groups', None, ['.data.*'], 'dram0_data')
-        dram0_bss_extra = PlacementRule('libfreertos.a', 'event_groups', None, ['.bss.*'], 'dram0_bss')
-
-        # Add the exclusions
-        flash_text_default.add_exclusion(iram0_text_E4, self.sections_info)
-        flash_rodata_default.add_exclusion(dram0_data_E4, self.sections_info)
-        dram0_data_default.add_exclusion(dram0_data_extra, self.sections_info)
-        dram0_bss_default.add_exclusion(dram0_bss_extra, self.sections_info)
-
-        flash_text_default.add_exclusion(rtc_text_E3, self.sections_info)
-        flash_rodata_default.add_exclusion(rtc_data_E3, self.sections_info)
-        dram0_data_default.add_exclusion(rtc_data_E3, self.sections_info)
-        dram0_bss_default.add_exclusion(rtc_bss_E3, self.sections_info)
-
-        iram0_text_E4.add_exclusion(rtc_text_E2, self.sections_info)
-        dram0_data_E4.add_exclusion(rtc_data_E2, self.sections_info)
-        dram0_data_extra.add_exclusion(rtc_data_E2, self.sections_info)
-        dram0_bss_extra.add_exclusion(rtc_bss_E2, self.sections_info)
-
-        rtc_text_E3.add_exclusion(iram0_text_E1, self.sections_info)
-        rtc_data_E3.add_exclusion(dram0_data_E1, self.sections_info)
-
-        # Add the rules
-        expected['iram0_text'].append(iram0_text_E1)
-        expected['dram0_data'].append(dram0_data_E1)
-
-        expected['rtc_text'].append(rtc_text_E2)
-        expected['rtc_data'].append(rtc_data_E2)
-        expected['rtc_bss'].append(rtc_bss_E2)
-
-        expected['rtc_text'].append(rtc_text_E3)
-        expected['rtc_data'].append(rtc_data_E3)
-        expected['rtc_bss'].append(rtc_bss_E3)
-
-        expected['iram0_text'].append(iram0_text_E4)
-        expected['dram0_data'].append(dram0_data_E4)
-
-        expected['dram0_data'].append(dram0_data_extra)
-        expected['dram0_bss'].append(dram0_bss_extra)
+        # Command for #1 & #2                                                               D
+        dram0_data.append(InputSectionDesc(CROUTINE, flash_rodata[0].sections, []))
 
         self.compare_rules(expected, actual)
 
-    def test_rule_generation_nominal_15(self):
-        normal = u"""
+    def test_same_entity_conflicting_scheme(self, alt=None):
+        # Test same entity being mapped by scheme conflicting with another.
+        #
+        # rtc = text -> rtc_text, rodata -> rtc_data
+        # noflash = text -> iram0_text, rodata -> dram0_data
+        #
+        # This operation should fail.
+        mapping = u"""
 [mapping:test]
 archive: libfreertos.a
 entries:
-    croutine (noflash_data)
-    croutine (noflash_text)
+    croutine (noflash)                              #1
+    croutine (rtc)                                  #2
 """
-
-        self.add_fragments(normal)
-
-        actual = self.model.generate_rules(self.sections_info)
-
-        expected = self.generate_default_rules()
-
-        flash_text_default = self.get_default('flash_text', expected)
-        flash_rodata_default = self.get_default('flash_rodata', expected)
-
-        iram0_text_E1 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['text'].entries, 'iram0_text')
-        dram0_data_E1 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['rodata'].entries, 'dram0_data')
-
-        # Add the exclusions
-        flash_text_default.add_exclusion(iram0_text_E1)
-        flash_rodata_default.add_exclusion(dram0_data_E1)
-
-        # Add the rules
-        expected['iram0_text'].append(iram0_text_E1)
-        expected['dram0_data'].append(dram0_data_E1)
-
-        self.compare_rules(expected, actual)
-
-    def test_rule_generation_nominal_16(self):
-        normal = u"""
-[mapping:test]
-archive: libfreertos.a
-entries:
-    croutine (noflash_data)
-    croutine (noflash)
-"""
-
-        self.add_fragments(normal)
-
-        actual = self.model.generate_rules(self.sections_info)
-
-        expected = self.generate_default_rules()
-
-        flash_text_default = self.get_default('flash_text', expected)
-        flash_rodata_default = self.get_default('flash_rodata', expected)
-
-        iram0_text_E1 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['text'].entries, 'iram0_text')
-        dram0_data_E1 = PlacementRule('libfreertos.a', 'croutine', None, self.model.sections['rodata'].entries, 'dram0_data')
-
-        # Add the exclusions
-        flash_text_default.add_exclusion(iram0_text_E1)
-        flash_rodata_default.add_exclusion(dram0_data_E1)
-
-        # Add the rules
-        expected['iram0_text'].append(iram0_text_E1)
-        expected['dram0_data'].append(dram0_data_E1)
-
-        self.compare_rules(expected, actual)
-
-    def test_rule_generation_conflict(self):
-        conflict_mapping = u"""
-[mapping:test]
-archive: libfreertos.a
-entries:
-    croutine (conflict)
-    croutine (noflash)
-
-[scheme:conflict]
-entries:
-    rodata -> dram0_data
-    bss -> dram0_data
-"""
-        self.add_fragments(conflict_mapping)
+        self.add_fragments(alt if alt else mapping)
 
         with self.assertRaises(GenerationException):
-            self.model.generate_rules(self.sections_info)
+            self.generation.generate_rules(self.entities)
 
-    def test_rule_generation_condition(self):
-        generation_with_condition = u"""
+    def test_complex_mapping_case(self, alt=None):
+        # Test a complex case where an object is mapped using
+        # one scheme, but a specific symbol in that object is mapped
+        # using another. Another object and symbol is mapped the other way around.
+        #
+        # flash_text
+        #   *(EXCLUDE_FILE(libfreertos.a:croutine libfreertos.a:timers) .text ...)                                                        A, B
+        #
+        # flash_rodata
+        #   *(EXCLUDE_FILE(libfreertos.a:croutine libfreertos.a:timers) .rodata ...)                                                      A, B
+        #
+        # dram0_data
+        #   *(EXCLUDE_FILES(libfreertos.a:timers) .data ..)                                                                               B
+        #   *(.dram ...)
+        #   *libfreertos.a:croutine(.rodata .rodata.*)                                                                                    C
+        #   *libfreertos.a:timers(.rodata.prvProcessReceivedCommands ...)                                                                 E
+        #
+        # dram0_bss
+        #   *(EXCLUDE_FILE(libfreertos.a:timers) .bss .bss.* ...)                                                                         B
+        #   *(EXCLUDE_FILE(libfreertos.a:timers) COMMON)                                                                                  B
+        #
+        # iram0_text
+        #   *(.iram ...)
+        #   *libfreertos.a:croutine(.literal  .literal.prvCheckDelayedList ...)                                                           C
+        #   *libfreertos.a:timers(.literal  .literal.prvProcessReceivedCommands ...)                                                      E
+        #
+        # rtc_text
+        #   *(rtc.text .rtc.literal)
+        #   libfreertos.a:croutine (.text.prvCheckPendingReadyList .literal.prvCheckPendingReadyList)                                     F
+        #   libfreertos.a:timers (.text .text.prvCheckForValidListAndQueue ...)                                                           D.2
+        #
+        # rtc_data
+        #   *(rtc.data)
+        #   *(rtc.rodata)
+        #   libfreertos.a:timers (.data .data.*)                                                                                          D
+        #   libfreertos.a:timers (.rodata ...)                                                                                            D.2
+        #
+        # rtc_bss
+        #   *(rtc.bss .rtc.bss)
+        #   libfreertos.a:timers (.bss .bss.*)                                                                                            D
+        #   libfreertos.a:timers (COMMON)                                                                                                 D
+        mapping = u"""
 [mapping:test]
-archive: lib.a
+archive: libfreertos.a
 entries:
-    if PERFORMANCE_LEVEL = 1:
-        obj1 (noflash)
-    elif PERFORMANCE_LEVEL = 2:
-        obj1 (noflash)
-        obj2 (noflash)
-    elif PERFORMANCE_LEVEL = 3:
-        obj1 (noflash)
-        obj2 (noflash)
-        obj3 (noflash)
-    else: # PERFORMANCE_LEVEL = 0
-        * (default)
+    croutine (noflash)                                  #1
+    timers (rtc)                                        #2
+    timers:prvProcessReceivedCommands (noflash)         #3
+    croutine:prvCheckPendingReadyList (rtc)             #4
 """
 
-        for perf_level in range(0, 4):
-            self.sdkconfig.config.syms['PERFORMANCE_LEVEL'].set_value(str(perf_level))
-
-            self.model.mappings = {}
-            self.add_fragments(generation_with_condition)
-
-            actual = self.model.generate_rules(self.sections_info)
-            expected = self.generate_default_rules()
-
-            if perf_level < 4:
-                for append_no in range(1, perf_level + 1):
-                    flash_text_default = self.get_default('flash_text', expected)
-                    flash_rodata_default = self.get_default('flash_rodata', expected)
-
-                    iram_rule = PlacementRule('lib.a', 'obj' + str(append_no), None, self.model.sections['text'].entries, 'iram0_text')
-                    dram_rule = PlacementRule('lib.a', 'obj' + str(append_no), None, self.model.sections['rodata'].entries, 'dram0_data')
-
-                    flash_text_default.add_exclusion(iram_rule)
-                    flash_rodata_default.add_exclusion(dram_rule)
-
-                    expected['iram0_text'].append(iram_rule)
-                    expected['dram0_data'].append(dram_rule)
-
-            self.compare_rules(expected, actual)
-
-    def test_rule_generation_empty_entries(self):
-        normal = u"""
-[mapping:test]
-archive: lib.a
-entries:
-    if PERFORMANCE_LEVEL >= 1: # is false, generate no special rules
-        obj.a (noflash)
-"""
-
-        self.add_fragments(normal)
-        actual = self.model.generate_rules(self.sections_info)
-        expected = self.generate_default_rules()  # only default rules
-        self.compare_rules(expected, actual)
-
-    def test_conditional_sections_1(self):
-        generation_with_condition = u"""
-[sections:cond_text_data]
-entries:
-    if PERFORMANCE_LEVEL >= 1:
-        .text+
-        .literal+
-    else:
-        .data+
-
-[scheme:cond_noflash]
-entries:
-    if PERFORMANCE_LEVEL >= 1:
-        cond_text_data -> iram0_text
-    else:
-        cond_text_data -> dram0_data
-
-[mapping:test]
-archive: lib.a
-entries:
-    * (cond_noflash)
-"""
-
-        self.sdkconfig.config.syms['PERFORMANCE_LEVEL'].set_value('1')
-        self.add_fragments(generation_with_condition)
-
-        actual = self.model.generate_rules(self.sections_info)
+        self.add_fragments(alt if alt else mapping)
+        actual = self.generation.generate_rules(self.entities)
         expected = self.generate_default_rules()
 
-        flash_text_default = self.get_default('flash_text', expected)
+        flash_text = expected['flash_text']
+        flash_rodata = expected['flash_rodata']
+        dram0_data = expected['dram0_data']
+        iram0_text = expected['iram0_text']
+        dram0_bss = expected['dram0_bss']
+        rtc_text = expected['rtc_text']
+        rtc_data = expected['rtc_data']
+        rtc_bss = expected['rtc_bss']
 
-        iram0_text_E1 = PlacementRule('lib.a', '*', None, self.model.sections['text'].entries, 'iram0_text')
+        # Exclusions for #1                                                                 A
+        flash_text[0].exclusions.add(CROUTINE)
+        flash_rodata[0].exclusions.add(CROUTINE)
 
-        # Add the exclusions
-        flash_text_default.add_exclusion(iram0_text_E1)
+        # Exclusions for #2                                                                 B
+        flash_text[0].exclusions.add(TIMERS)
+        flash_rodata[0].exclusions.add(TIMERS)
+        dram0_data[0].exclusions.add(TIMERS)
+        dram0_bss[0].exclusions.add(TIMERS)
+        dram0_bss[1].exclusions.add(TIMERS)
 
-        # Add to the placement rules list
-        expected['iram0_text'].append(iram0_text_E1)
+        # Commands for #1                                                                   C
+        # List all relevant sections excluding #4 for text -> iram0_text
+        croutine_sections = self.entities.get_sections('libfreertos.a', 'croutine')
+        filtered_sections = fnmatch.filter(croutine_sections, '.literal.*')
+        filtered_sections.extend(fnmatch.filter(croutine_sections, '.text.*'))
+
+        filtered_sections = [s for s in filtered_sections if not s.endswith('prvCheckPendingReadyList')]
+        filtered_sections.append('.text')
+
+        iram0_text.append(InputSectionDesc(CROUTINE, set(filtered_sections), []))
+        dram0_data.append(InputSectionDesc(CROUTINE, flash_rodata[0].sections, []))
+
+        # Commands for #4                                                                   F
+        # Processed first due to alphabetical ordering
+        rtc_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), []))
+
+        # Commands for #2                                                                   D
+        # List all relevant sections excluding #3 for text -> rtc_text and                  D.2
+        # rodata -> rtc_data
+        timers_sections = self.entities.get_sections('libfreertos.a', 'timers')
+        filtered_sections = fnmatch.filter(timers_sections, '.literal.*')
+        filtered_sections.extend(fnmatch.filter(timers_sections, '.text.*'))
+
+        filtered_sections = [s for s in filtered_sections if not s.endswith('prvProcessReceivedCommands')]
+        filtered_sections.append('.text')
+        rtc_text.append(InputSectionDesc(TIMERS, set(filtered_sections), []))
+
+        rtc_data.append(InputSectionDesc(TIMERS, dram0_data[0].sections, []))
+        filtered_sections = fnmatch.filter(timers_sections, '.rodata.*')
+        filtered_sections = [s for s in filtered_sections if not s.endswith('prvProcessReceivedCommands')]
+        rtc_data.append(InputSectionDesc(TIMERS, set(filtered_sections), []))
+
+        rtc_bss.append(InputSectionDesc(TIMERS, dram0_bss[0].sections, []))
+        rtc_bss.append(InputSectionDesc(TIMERS, dram0_bss[1].sections, []))
+
+        # Commands for #3                                                                  E
+        iram0_text.append(InputSectionDesc(TIMERS, set(['.text.prvProcessReceivedCommands', '.literal.prvProcessReceivedCommands']), []))
+        dram0_data.append(InputSectionDesc(TIMERS, set(['.rodata.prvProcessReceivedCommands']), []))
 
         self.compare_rules(expected, actual)
 
-    def test_conditional_sections_2(self):
-        generation_with_condition = u"""
+    def test_multiple_mapping_fragments(self):
+        # Test mapping multiple fragments succeeds, particularly
+        # generating exclusions from the default command of archive
+        # and object specificity.
+        #
+        # flash_text
+        #   * (EXCLUDE_FILE(libfreertos.a libfreertos.a:croutine) .text ...)
+        #
+        # flash_rodata
+        #   * (EXCLUDE_FILE(libfreertos.a libfreertos.a:croutine) .text ...)
+        #
+        # iram0_text
+        mapping = u"""
+[mapping:test_1]
+archive: libfreertos.a
+entries:
+    croutine (noflash)                              #1
+
+[mapping:test_2]
+archive: libfreertos2.a
+entries:
+    * (noflash)                                     #2
+"""
+
+        self.add_fragments(mapping)
+        actual = self.generation.generate_rules(self.entities)
+        expected = self.generate_default_rules()
+
+        flash_text = expected['flash_text']
+        flash_rodata = expected['flash_rodata']
+        iram0_text = expected['iram0_text']
+        dram0_data = expected['dram0_data']
+
+        # Exclusions for #1                                                                 A
+        flash_text[0].exclusions.add(CROUTINE)
+        flash_rodata[0].exclusions.add(CROUTINE)
+
+        # Exclusions for #1 & #2                                                            B
+        flash_text[0].exclusions.add(FREERTOS2)
+        flash_rodata[0].exclusions.add(FREERTOS2)
+
+        # Command for #1                                                                    C
+        iram0_text.append(InputSectionDesc(CROUTINE, flash_text[0].sections, []))
+        dram0_data.append(InputSectionDesc(CROUTINE, flash_rodata[0].sections, []))
+
+        # Command for #1 & #2                                                               D
+        iram0_text.append(InputSectionDesc(FREERTOS2, flash_text[0].sections, []))
+        dram0_data.append(InputSectionDesc(FREERTOS2, flash_rodata[0].sections, []))
+
+        self.compare_rules(expected, actual)
+
+    def test_mapping_same_lib_in_multiple_fragments_no_conflict(self):
+        # Test mapping fragments operating on the same archive.
+        # In these cases, the entries are taken together.
+        #
+        # Uses the same entries as C_05 but spreads them across
+        # two fragments. The output should still be the same.
+        mapping = u"""
+[mapping:test_1]
+archive: libfreertos.a
+entries:
+    croutine (noflash)                                  #1
+    timers:prvProcessReceivedCommands (noflash)         #3
+
+[mapping:test_2]
+archive: libfreertos.a
+entries:
+    timers (rtc)                                        #2
+    croutine:prvCheckPendingReadyList (rtc)             #4
+"""
+        self.test_complex_mapping_case(mapping)
+
+    def test_mapping_same_lib_in_multiple_fragments_conflict(self):
+        # Test mapping fragments operating on the same archive
+        # with conflicting mappings.
+        mapping = u"""
+[mapping:test_1]
+archive: libfreertos.a
+entries:
+    croutine (noflash)                              #1
+
+[mapping:test_2]
+archive: libfreertos.a
+entries:
+    croutine (rtc)                                  #2
+"""
+        self.test_same_entity_conflicting_scheme(mapping)
+
+    def test_command_order(self):
+        # Test command order sorting: the commands should be sorted by specificity, then
+        # alphabetically. This contributes to deterministic output given
+        # the same input mapping entries.
+        #
+        # This ordering is also tested in other tests as a side-effect.
+        #
+        # flash_text
+        #   * (EXCLUDE_FILE(libfreertos.a:croutine libfreertos.a:croutine2))                                    A
+        #   libfreertos.a:croutine(.text ....)                                                                  B
+        #
+        # iram0_text
+        #
+        #   * (.iram .iram.*)
+        #   libfreertos:croutine(.text .literal ...)                                                            C
+        #   libfreertos:croutine(.text.prvCheckDelayedList .literal.prvCheckDelayedList)                        F
+        #   libfreertos:croutine(.text.prvCheckPendingReadyList .literal.prvCheckPendingReadyList)              G
+        #   libfreertos2:croutine(.text .literal ...)                                                           D
+        #   libfreertos2:croutine2(.text .literal ...)                                                          E
+        mapping = u"""
+[mapping:freertos2]
+archive: libfreertos2.a
+entries:
+    croutine2 (noflash_text)                                    #1
+    croutine (noflash_text)                                     #2
+
+[mapping:freertos]
+archive: libfreertos.a
+entries:
+    croutine:prvCheckPendingReadyList (noflash_text)            #3
+    croutine:prvCheckDelayedList (noflash_text)                 #4
+"""
+
+        self.add_fragments(mapping)
+        actual = self.generation.generate_rules(self.entities)
+        expected = self.generate_default_rules()
+
+        flash_text = expected['flash_text']
+        iram0_text = expected['iram0_text']
+
+        # Exclusions for #1                                                                 A
+        flash_text[0].exclusions.add(CROUTINE)
+        flash_text[0].exclusions.add(Entity(FREERTOS2.archive, 'croutine2'))
+        flash_text[0].exclusions.add(Entity(FREERTOS2.archive, 'croutine'))
+
+        # Intermediate command for #3 and #4                                                B
+        croutine_sections = self.entities.get_sections('libfreertos.a', 'croutine')
+
+        filtered_sections = fnmatch.filter(croutine_sections, '.literal.*')
+        filtered_sections.extend(fnmatch.filter(croutine_sections, '.text.*'))
+
+        filtered_sections = [s for s in filtered_sections if not s.endswith('prvCheckPendingReadyList')]
+        filtered_sections = [s for s in filtered_sections if not s.endswith('prvCheckDelayedList')]
+        filtered_sections.append('.text')
+        flash_text.append(InputSectionDesc(CROUTINE, set(filtered_sections), []))
+
+        # Command for
+        iram0_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckDelayedList', '.literal.prvCheckDelayedList']), []))
+        iram0_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), []))
+
+        iram0_text.append(InputSectionDesc(Entity(FREERTOS2.archive, 'croutine'), flash_text[0].sections, []))
+        iram0_text.append(InputSectionDesc(Entity(FREERTOS2.archive, 'croutine2'), flash_text[0].sections, []))
+
+        self.compare_rules(expected, actual)
+
+    def test_ambigious_obj(self):
+        # Command generation for ambiguous entry should fail.
+        mapping = u"""
+[mapping:test]
+archive: libfreertos.a
+entries:
+    port:xPortGetTickRateHz (noflash)                 #1
+"""
+        self.add_fragments(mapping)
+
+        with self.assertRaises(GenerationException):
+            self.generation.generate_rules(self.entities)
+
+    def test_disambiguated_obj(self):
+        # Test command generation for disambiguated entry. Should produce similar
+        # results to test_nondefault_mapping_symbol.
+        mapping = u"""
+[mapping:test]
+archive: libfreertos.a
+entries:
+    port.c:xPortGetTickRateHz (noflash)                 #1
+"""
+        port = Entity('libfreertos.a', 'port.c')
+        self.add_fragments(mapping)
+        actual = self.generation.generate_rules(self.entities)
+        expected = self.generate_default_rules()
+
+        flash_text = expected['flash_text']
+        iram0_text = expected['iram0_text']
+
+        # Generate exclusion in flash_text                                                A
+        flash_text[0].exclusions.add(port)
+
+        # Generate intermediate command                                                   B
+        # List all relevant sections except the symbol
+        # being mapped
+        port_sections = self.entities.get_sections('libfreertos.a', 'port.c')
+        filtered_sections = fnmatch.filter(port_sections, '.literal.*')
+        filtered_sections.extend(fnmatch.filter(port_sections, '.text.*'))
+
+        filtered_sections = [s for s in filtered_sections if not s.endswith('xPortGetTickRateHz')]
+        filtered_sections.append('.text')
+
+        flash_text.append(InputSectionDesc(port, set(filtered_sections), []))
+
+        # Input section commands in iram_text for #1                                     C
+        iram0_text.append(InputSectionDesc(port, set(['.text.xPortGetTickRateHz', '.literal.xPortGetTickRateHz']), []))
+
+        self.compare_rules(expected, actual)
+
+
+class ConfigTest(GenerationTest):
+    # Test command generation with conditions
+
+    def _test_conditional_on_scheme(self, perf, alt=None):
+        # Test that proper commands are generated if using
+        # schemes with conditional entries.
+        scheme = u"""
 [sections:cond_text_data]
 entries:
     if PERFORMANCE_LEVEL >= 1:
@@ -1192,33 +1107,107 @@ entries:
         cond_text_data -> iram0_text
     else:
         cond_text_data -> dram0_data
+"""
 
+        mapping = u"""
 [mapping:test]
 archive: lib.a
 entries:
     * (cond_noflash)
 """
+        self.sdkconfig.config.syms['PERFORMANCE_LEVEL'].set_value(str(perf))
+        self.add_fragments(scheme)
+        self.add_fragments(alt if alt else mapping)
 
-        self.sdkconfig.config.syms['PERFORMANCE_LEVEL'].set_value('0')
-        self.add_fragments(generation_with_condition)
-
-        actual = self.model.generate_rules(self.sections_info)
+        actual = self.generation.generate_rules(self.entities)
         expected = self.generate_default_rules()
 
-        flash_rodata_default = self.get_default('flash_rodata', expected)
-
-        dram0_data_E1 = PlacementRule('lib.a', '*', None, self.model.sections['rodata'].entries, 'dram0_data')
-
-        # Add the exclusions
-        flash_rodata_default.add_exclusion(dram0_data_E1)
-
-        # Add to the placement rules list
-        expected['dram0_data'].append(dram0_data_E1)
+        if perf >= 1:
+            flash_text = expected['flash_text']
+            iram0_text = expected['iram0_text']
+            flash_text[0].exclusions.add(Entity('lib.a'))
+            iram0_text.append(InputSectionDesc(Entity('lib.a'), flash_text[0].sections, []))
+        else:
+            flash_rodata = expected['flash_rodata']
+            dram0_data = expected['dram0_data']
+            flash_rodata[0].exclusions.add(Entity('lib.a'))
+            dram0_data.append(InputSectionDesc(Entity('lib.a'), flash_rodata[0].sections, []))
 
         self.compare_rules(expected, actual)
 
-    def test_rule_generation_condition_with_deprecated_mapping(self):
-        generation_with_condition = u"""
+    def test_conditional_on_scheme_00(self):
+        self._test_conditional_on_scheme(0)
+
+    def test_conditional_on_scheme_01(self):
+        self._test_conditional_on_scheme(1)
+
+    def test_conditional_mapping(self, alt=None):
+        # Test that proper commands are generated
+        # in conditional mapping entries.
+        mapping = u"""
+[mapping:test]
+archive: lib.a
+entries:
+    if PERFORMANCE_LEVEL = 1:
+        obj1 (noflash)
+    elif PERFORMANCE_LEVEL = 2:
+        obj1 (noflash)
+        obj2 (noflash)
+    elif PERFORMANCE_LEVEL = 3:
+        obj1 (noflash)
+        obj2 (noflash)
+        obj3 (noflash)
+"""
+
+        for perf_level in range(0, 4):
+            self.sdkconfig.config.syms['PERFORMANCE_LEVEL'].set_value(str(perf_level))
+
+            self.generation.mappings = {}
+            self.add_fragments(alt if alt else mapping)
+
+            actual = self.generation.generate_rules(self.entities)
+            expected = self.generate_default_rules()
+
+            if perf_level < 4 and perf_level > 0:
+                for append_no in range(1, perf_level + 1):
+                    flash_text = expected['flash_text']
+                    flash_rodata = expected['flash_rodata']
+                    iram0_text = expected['iram0_text']
+                    dram0_data = expected['dram0_data']
+
+                    obj_str = 'obj' + str(append_no)
+
+                    flash_text[0].exclusions.add(Entity('lib.a', obj_str))
+                    flash_rodata[0].exclusions.add(Entity('lib.a', obj_str))
+
+                    iram0_text.append(InputSectionDesc(Entity('lib.a', obj_str), flash_text[0].sections, []))
+                    dram0_data.append(InputSectionDesc(Entity('lib.a', obj_str), flash_rodata[0].sections, []))
+
+            self.compare_rules(expected, actual)
+
+    def test_conditional_on_scheme_legacy_mapping_00(self):
+        # Test use of conditional scheme on legacy mapping fragment grammar.
+        mapping = u"""
+[mapping]
+archive: lib.a
+entries:
+    * (cond_noflash)
+"""
+        self._test_conditional_on_scheme(0, mapping)
+
+    def test_conditional_on_scheme_legacy_mapping_01(self):
+        # Test use of conditional scheme on legacy mapping fragment grammar.
+        mapping = u"""
+[mapping]
+archive: lib.a
+entries:
+    * (cond_noflash)
+"""
+        self._test_conditional_on_scheme(0, mapping)
+
+    def test_conditional_entries_legacy_mapping_fragment(self):
+        # Test conditional entries on legacy mapping fragment grammar.
+        mapping = u"""
 [mapping]
 archive: lib.a
 entries:
@@ -1233,34 +1222,12 @@ entries:
     obj2 (noflash)
     obj3 (noflash)
 """
+        self.test_conditional_mapping(mapping)
 
-        for perf_level in range(0, 4):
-            self.sdkconfig.config.syms['PERFORMANCE_LEVEL'].set_value(str(perf_level))
-
-            self.model.mappings = {}
-            self.add_fragments(generation_with_condition)
-
-            actual = self.model.generate_rules(self.sections_info)
-            expected = self.generate_default_rules()
-
-            if perf_level < 4:
-                for append_no in range(1, perf_level + 1):
-                    flash_text_default = self.get_default('flash_text', expected)
-                    flash_rodata_default = self.get_default('flash_rodata', expected)
-
-                    iram_rule = PlacementRule('lib.a', 'obj' + str(append_no), None, self.model.sections['text'].entries, 'iram0_text')
-                    dram_rule = PlacementRule('lib.a', 'obj' + str(append_no), None, self.model.sections['rodata'].entries, 'dram0_data')
-
-                    flash_text_default.add_exclusion(iram_rule)
-                    flash_rodata_default.add_exclusion(dram_rule)
-
-                    expected['iram0_text'].append(iram_rule)
-                    expected['dram0_data'].append(dram_rule)
-
-            self.compare_rules(expected, actual)
-
-    def test_rule_generation_multiple_deprecated_mapping_definitions(self):
-        multiple_deprecated_definitions = u"""
+    def test_multiple_fragment_same_lib_conditional_legacy(self):
+        # Test conditional entries on legacy mapping fragment grammar
+        # across multiple fragments.
+        mapping = u"""
 [mapping]
 archive: lib.a
 entries:
@@ -1284,33 +1251,12 @@ entries:
     obj3 (noflash)
 """
 
-        for perf_level in range(0, 4):
-            self.sdkconfig.config.syms['PERFORMANCE_LEVEL'].set_value(str(perf_level))
+        self.test_conditional_mapping(mapping)
 
-            self.model.mappings = {}
-            self.add_fragments(multiple_deprecated_definitions)
-
-            actual = self.model.generate_rules(self.sections_info)
-            expected = self.generate_default_rules()
-
-            if perf_level < 4:
-                for append_no in range(1, perf_level + 1):
-                    flash_text_default = self.get_default('flash_text', expected)
-                    flash_rodata_default = self.get_default('flash_rodata', expected)
-
-                    iram_rule = PlacementRule('lib.a', 'obj' + str(append_no), None, self.model.sections['text'].entries, 'iram0_text')
-                    dram_rule = PlacementRule('lib.a', 'obj' + str(append_no), None, self.model.sections['rodata'].entries, 'dram0_data')
-
-                    flash_text_default.add_exclusion(iram_rule)
-                    flash_rodata_default.add_exclusion(dram_rule)
-
-                    expected['iram0_text'].append(iram_rule)
-                    expected['dram0_data'].append(dram_rule)
-
-            self.compare_rules(expected, actual)
-
-    def test_rule_generation_multiple_mapping_definitions(self):
-        multiple_deprecated_definitions = u"""
+    def test_multiple_fragment_same_lib_conditional(self):
+        # Test conditional entries on new mapping fragment grammar.
+        # across multiple fragments.
+        mapping = u"""
 [mapping:base]
 archive: lib.a
 entries:
@@ -1320,8 +1266,6 @@ entries:
         obj1 (noflash)
     elif PERFORMANCE_LEVEL = 3:
         obj1 (noflash)
-    else:
-        * (default)
 
 [mapping:extra]
 archive: lib.a
@@ -1333,103 +1277,9 @@ entries:
     elif PERFORMANCE_LEVEL = 3:
         obj2 (noflash)
         obj3 (noflash)
-    else:
-        * (default)
 """
 
-        for perf_level in range(0, 4):
-            self.sdkconfig.config.syms['PERFORMANCE_LEVEL'].set_value(str(perf_level))
-
-            self.model.mappings = {}
-            self.add_fragments(multiple_deprecated_definitions)
-
-            actual = self.model.generate_rules(self.sections_info)
-            expected = self.generate_default_rules()
-
-            if perf_level < 4:
-                for append_no in range(1, perf_level + 1):
-                    flash_text_default = self.get_default('flash_text', expected)
-                    flash_rodata_default = self.get_default('flash_rodata', expected)
-
-                    iram_rule = PlacementRule('lib.a', 'obj' + str(append_no), None, self.model.sections['text'].entries, 'iram0_text')
-                    dram_rule = PlacementRule('lib.a', 'obj' + str(append_no), None, self.model.sections['rodata'].entries, 'dram0_data')
-
-                    flash_text_default.add_exclusion(iram_rule)
-                    flash_rodata_default.add_exclusion(dram_rule)
-
-                    expected['iram0_text'].append(iram_rule)
-                    expected['dram0_data'].append(dram_rule)
-
-            self.compare_rules(expected, actual)
-
-    def test_rules_order(self):
-        # The fragments are structured such that ldgen will:
-        #  - parse freertos2 mapping first
-        #  - entry for prvCheckPendingReadyList is parsed first before prvCheckDelayedList
-        # We expect that despite this, ldgen will output rules in a set order:
-        # by increasing specificity and alphabetically
-        test = u"""
-[mapping:freertos2]
-archive: libfreertos2.a
-entries:
-    croutine2 (noflash_text)
-    croutine (noflash_text)
-
-[mapping:freertos]
-archive: libfreertos.a
-entries:
-    croutine:prvCheckPendingReadyList (noflash_text)
-    croutine:prvCheckDelayedList (noflash_text)
-"""
-        self.add_fragments(test)
-
-        actual = self.model.generate_rules(self.sections_info)
-
-        expected = self.generate_default_rules()
-
-        flash_text_default = self.get_default('flash_text', expected)
-
-        iram0_text_E1 = PlacementRule('libfreertos2.a', 'croutine2', None, self.model.sections['text'].entries, 'iram0_text')
-        iram0_text_E2 = PlacementRule('libfreertos2.a', 'croutine', None, self.model.sections['text'].entries, 'iram0_text')
-        iram0_text_E3 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckPendingReadyList', self.model.sections['text'].entries, 'iram0_text')
-        iram0_text_E4 = PlacementRule('libfreertos.a', 'croutine', 'prvCheckDelayedList', self.model.sections['text'].entries, 'iram0_text')
-
-        flash_text_extra = PlacementRule('libfreertos.a', 'croutine', None, ['.text.*', '.literal.*'], 'flash_text')
-
-        # Add the exclusions
-        flash_text_default.add_exclusion(iram0_text_E1, self.sections_info)
-        flash_text_default.add_exclusion(iram0_text_E2, self.sections_info)
-
-        flash_text_default.add_exclusion(flash_text_extra, self.sections_info)
-        flash_text_extra.add_exclusion(iram0_text_E3, self.sections_info)
-        flash_text_extra.add_exclusion(iram0_text_E4, self.sections_info)
-
-        # Add the rules, arranged by expected order
-        expected['flash_text'].append(flash_text_extra)
-        expected['iram0_text'].append(iram0_text_E4)
-        expected['iram0_text'].append(iram0_text_E3)
-        expected['iram0_text'].append(iram0_text_E2)
-        expected['iram0_text'].append(iram0_text_E1)
-
-        # Perform general comparison for all sections
-        self.compare_rules(expected, actual)
-
-        # Perform ordered comparison
-        self.assertListEqual(actual['flash_text'], expected['flash_text'])
-        self.assertListEqual(actual['iram0_text'], expected['iram0_text'])
-
-    def test_sections_info_parsing(self):
-
-        self.sections_info = SectionsInfo()
-
-        with open('data/sections_parse.info') as sections_info_file_obj:
-            self.sections_info.add_sections_info(sections_info_file_obj)
-
-        sections = self.sections_info.get_obj_sections('libsections_parse.a', 'croutine')
-        self.assertEqual(set(sections), set(['.text', '.data', '.bss']))
-
-        sections = self.sections_info.get_obj_sections('libsections_parse.a', 'FreeRTOS-openocd')
-        self.assertEqual(set(sections), set(['.literal.prvCheckPendingReadyList']))
+        self.test_conditional_mapping(mapping)
 
 
 if __name__ == '__main__':
