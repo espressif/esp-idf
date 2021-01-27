@@ -125,6 +125,7 @@ extern "C" {
 
 //Extra dummy for flash read
 #define ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_20M   0
+#define ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_26M   0
 #define ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_40M   1
 #define ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_80M   2
 
