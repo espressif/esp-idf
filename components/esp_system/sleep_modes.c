@@ -1245,5 +1245,5 @@ static uint32_t get_power_down_flags(void)
 
 void esp_deep_sleep_disable_rom_logging(void)
 {
-    esp_rom_disable_logging();
+    rtc_suppress_rom_log();
 }
