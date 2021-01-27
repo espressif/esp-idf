@@ -684,9 +684,9 @@ static inline mcpwm_capture_on_edge_t mcpwm_ll_get_captured_edge(mcpwm_dev_t *mc
     if (cap_sig == 0) {
         edge = mcpwm->cap_status.cap0_edge;
     } else if (cap_sig == 1) {
-        edge = mcpwm->cap_status.cap0_edge;
+        edge = mcpwm->cap_status.cap1_edge;
     } else {   //2
-        edge = mcpwm->cap_status.cap0_edge;
+        edge = mcpwm->cap_status.cap2_edge;
     }
     return (edge? MCPWM_NEG_EDGE: MCPWM_POS_EDGE);
 }
