@@ -195,7 +195,8 @@ esp_err_t esp_eth_update_input_path(
 esp_err_t esp_eth_transmit(esp_eth_handle_t hdl, void *buf, size_t length);
 
 /**
-* @brief General Receive
+* @brief General Receive is deprecated and shall not be accessed from app code,
+*        as polling is not supported by Ethernet.
 *
 * @param[in] hdl: handle of Ethernet driver
 * @param[out] buf: buffer to preserve the received packet
@@ -203,6 +204,9 @@ esp_err_t esp_eth_transmit(esp_eth_handle_t hdl, void *buf, size_t length);
 *
 * @note Before this function got invoked, the value of "length" should set by user, equals the size of buffer.
 *       After the function returned, the value of "length" means the real length of received data.
+* @note This API was exposed by accident, users should not use this API in their applications.
+*       Ethernet driver is interrupt driven, and doesn't support polling mode.
+*       Instead, users should register input callback with ``esp_eth_update_input_path``.
 *
 * @return
 *       - ESP_OK: receive frame buffer successfully
@@ -211,7 +215,7 @@ esp_err_t esp_eth_transmit(esp_eth_handle_t hdl, void *buf, size_t length);
 *                               in this case, value of returned "length" indicates the real size of incoming data.
 *       - ESP_FAIL: receive frame buffer failed because some other error occurred
 */
-esp_err_t esp_eth_receive(esp_eth_handle_t hdl, uint8_t *buf, uint32_t *length);
+esp_err_t esp_eth_receive(esp_eth_handle_t hdl, uint8_t *buf, uint32_t *length) __attribute__((deprecated("Ethernet driver is interrupt driven only, please register input callback with esp_eth_update_input_path")));
 
 /**
 * @brief Misc IO function of Etherent driver
