@@ -86,7 +86,7 @@ typedef struct {
     uint32_t address_bits;                      ///< address field bits, multiples of 8 and at least 8.
     uint32_t dummy_bits;                        ///< dummy field bits, multiples of 8 and at least 8.
     uint32_t queue_size;                        ///< Transaction queue size. This sets how many transactions can be 'in the air' (queued using spi_slave_hd_queue_trans but not yet finished using spi_slave_hd_get_trans_result) at the same time
-    uint32_t dma_chan;                          ///< DMA channel used. -1: auto dma allocate mode; 0: non-dma mode; 1 or 2: assign a specific DMA channel;
+    int dma_chan;                          ///< DMA channel used. -1: auto dma allocate mode; 0: non-dma mode; 1 or 2: assign a specific DMA channel;
     spi_slave_hd_callback_config_t cb_config;   ///< Callback configuration
 } spi_slave_hd_slot_config_t;
 

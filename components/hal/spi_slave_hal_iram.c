@@ -7,15 +7,15 @@
 #include "soc/gdma_struct.h"
 #include "hal/gdma_ll.h"
 
-#define spi_dma_ll_rx_reset(dev)                             gdma_ll_rx_reset_channel(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL)
-#define spi_dma_ll_tx_reset(dev)                             gdma_ll_tx_reset_channel(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL);
-#define spi_dma_ll_rx_start(dev, addr) do {\
-            gdma_ll_rx_set_desc_addr(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL, (uint32_t)addr);\
-            gdma_ll_rx_start(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL);\
+#define spi_dma_ll_rx_reset(dev, chan)                             gdma_ll_rx_reset_channel(&GDMA, chan)
+#define spi_dma_ll_tx_reset(dev, chan)                             gdma_ll_tx_reset_channel(&GDMA, chan);
+#define spi_dma_ll_rx_start(dev, chan, addr) do {\
+            gdma_ll_rx_set_desc_addr(&GDMA, chan, (uint32_t)addr);\
+            gdma_ll_rx_start(&GDMA, chan);\
         } while (0)
-#define spi_dma_ll_tx_start(dev, addr) do {\
-            gdma_ll_tx_set_desc_addr(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL, (uint32_t)addr);\
-            gdma_ll_tx_start(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL);\
+#define spi_dma_ll_tx_start(dev, chan, addr) do {\
+            gdma_ll_tx_set_desc_addr(&GDMA, chan, (uint32_t)addr);\
+            gdma_ll_tx_start(&GDMA, chan);\
         } while (0)
 #endif
 
@@ -39,24 +39,24 @@ void spi_slave_hal_prepare_data(const spi_slave_hal_context_t *hal)
             lldesc_setup_link(hal->dmadesc_rx, hal->rx_buffer, ((hal->bitlen + 7) / 8), true);
 
             //reset dma inlink, this should be reset before spi related reset
-            spi_dma_ll_rx_reset(hal->dma_in);
+            spi_dma_ll_rx_reset(hal->dma_in, hal->rx_dma_chan);
             spi_ll_dma_rx_fifo_reset(hal->dma_in);
             spi_ll_slave_reset(hal->hw);
             spi_ll_infifo_full_clr(hal->hw);
 
             spi_ll_dma_rx_enable(hal->hw, 1);
-            spi_dma_ll_rx_start(hal->dma_in, &hal->dmadesc_rx[0]);
+            spi_dma_ll_rx_start(hal->dma_in, hal->rx_dma_chan, &hal->dmadesc_rx[0]);
         }
         if (hal->tx_buffer) {
             lldesc_setup_link(hal->dmadesc_tx, hal->tx_buffer, (hal->bitlen + 7) / 8, false);
             //reset dma outlink, this should be reset before spi related reset
-            spi_dma_ll_tx_reset(hal->dma_out);
+            spi_dma_ll_tx_reset(hal->dma_out, hal->tx_dma_chan);
             spi_ll_dma_tx_fifo_reset(hal->dma_out);
             spi_ll_slave_reset(hal->hw);
             spi_ll_outfifo_empty_clr(hal->hw);
 
             spi_ll_dma_tx_enable(hal->hw, 1);
-            spi_dma_ll_tx_start(hal->dma_out, (&hal->dmadesc_tx[0]));
+            spi_dma_ll_tx_start(hal->dma_out, hal->tx_dma_chan, (&hal->dmadesc_tx[0]));
         }
     } else {
         //No DMA. Turn off SPI and copy data to transmit buffers.

@@ -70,7 +70,9 @@ typedef struct {
     uint32_t      host_id;                          ///< Host ID of the spi peripheral
     spi_dma_dev_t *dma_in;                          ///< Input  DMA(DMA -> RAM) peripheral register address
     spi_dma_dev_t *dma_out;                         ///< Output DMA(RAM -> DMA) peripheral register address
-    uint32_t      dma_chan;                         ///< The dma channel used.
+    bool          dma_enabled;                      ///< DMA enabled or not
+    uint32_t      tx_dma_chan;                      ///< TX DMA channel used.
+    uint32_t      rx_dma_chan;                      ///< RX DMA channel used.
     bool          append_mode;                      ///< True for DMA append mode, false for segment mode
     uint32_t      spics_io_num;                     ///< CS GPIO pin for this device
     uint8_t       mode;                             ///< SPI mode (0-3)
@@ -94,7 +96,9 @@ typedef struct {
     spi_dev_t                       *dev;                   ///< Beginning address of the peripheral registers.
     spi_dma_dev_t                   *dma_in;                ///< Address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
     spi_dma_dev_t                   *dma_out;               ///< Address of the DMA peripheral registers which transmits the data from RAM to a peripheral.
-
+    bool                            dma_enabled;            ///< DMA enabled or not
+    uint32_t                        tx_dma_chan;            ///< TX DMA channel used.
+    uint32_t                        rx_dma_chan;            ///< RX DMA channel used.
     bool                            append_mode;            ///< True for DMA append mode, false for segment mode
     uint32_t                        dma_desc_num;           ///< Number of the available DMA descriptors. Calculated from ``bus_max_transfer_size``.
     spi_slave_hd_hal_desc_append_t  *tx_cur_desc;           ///< Current TX DMA descriptor that could be linked (set up).

@@ -38,6 +38,7 @@
 
 //This GDMA related part will be introduced by GDMA dedicated APIs in the future. Here we temporarily use macros.
 #if SOC_GDMA_SUPPORTED
+#include "esp_private/gdma.h"
 #include "hal/gdma_ll.h"
 #include "soc/gdma_channel.h"
 #include "soc/spi_caps.h"
@@ -70,43 +71,52 @@ typedef struct spi_device_t spi_device_t;
 
 #define DMA_CHANNEL_ENABLED(dma_chan)    (BIT(dma_chan-1))
 
-
 typedef struct {
     int host_id;
     spi_destroy_func_t destroy_func;
     void* destroy_arg;
     spi_bus_attr_t bus_attr;
+#if SOC_GDMA_SUPPORTED
+    gdma_channel_handle_t tx_channel;
+    gdma_channel_handle_t rx_channel;
+#endif
 } spicommon_bus_context_t;
 
 #define MAIN_BUS_DEFAULT() { \
         .host_id = 0, \
         .bus_attr = { \
-            .dma_chan = 0, \
+            .tx_dma_chan = 0, \
+            .rx_dma_chan = 0, \
             .max_transfer_sz = SOC_SPI_MAXIMUM_BUFFER_SIZE, \
             .dma_desc_num= 0, \
         }, \
     }
 
 //Periph 1 is 'claimed' by SPI flash code.
-static atomic_bool spi_periph_claimed[SOC_SPI_PERIPH_NUM] = { ATOMIC_VAR_INIT(true), ATOMIC_VAR_INIT(false), ATOMIC_VAR_INIT(false),
-#if SOC_SPI_PERIPH_NUM >= 4
+static atomic_bool spi_periph_claimed[SOC_SPI_PERIPH_NUM] = { ATOMIC_VAR_INIT(true), ATOMIC_VAR_INIT(false),
+#if (SOC_SPI_PERIPH_NUM >= 3)
+ATOMIC_VAR_INIT(false),
+#endif
+#if (SOC_SPI_PERIPH_NUM >= 4)
         ATOMIC_VAR_INIT(false),
 #endif
 };
 static const char* spi_claiming_func[3] = {NULL, NULL, NULL};
+#if !SOC_GDMA_SUPPORTED
 static uint8_t spi_dma_chan_enabled = 0;
 static portMUX_TYPE spi_dma_spinlock = portMUX_INITIALIZER_UNLOCKED;
+#endif
 
 static spicommon_bus_context_t s_mainbus = MAIN_BUS_DEFAULT();
 static spicommon_bus_context_t* bus_ctx[SOC_SPI_PERIPH_NUM] = {&s_mainbus};
 
-#if CONFIG_IDF_TARGET_ESP32 || SOC_GDMA_SUPPORTED
+#if CONFIG_IDF_TARGET_ESP32
 //ESP32S2 does not support DMA channel auto-allocation
 //Each bit stands for 1 dma channel, used for auto-alloc dma channel
 static uint32_t spi_dma_channel_code;
 #endif
 
-
+//----------------------------------------------------------alloc spi periph-------------------------------------------------------//
 //Returns true if this peripheral is successfully claimed, false if otherwise.
 bool spicommon_periph_claim(spi_host_device_t host, const char* source)
 {
@@ -145,6 +155,8 @@ int spicommon_irqdma_source_for_host(spi_host_device_t host)
     return spi_periph_signal[host].irq_dma;
 }
 
+//----------------------------------------------------------esp32/s2 dma periph-------------------------------------------------------//
+#if !SOC_GDMA_SUPPORTED
 static inline periph_module_t get_dma_periph(int dma_chan)
 {
 #if CONFIG_IDF_TARGET_ESP32S2
@@ -158,10 +170,6 @@ static inline periph_module_t get_dma_periph(int dma_chan)
     }
 #elif CONFIG_IDF_TARGET_ESP32
     return PERIPH_SPI_DMA_MODULE;
-#elif SOC_GDMA_SUPPORTED
-    return PERIPH_GDMA_MODULE;
-#else
-    return 0;
 #endif
 }
 
@@ -183,14 +191,152 @@ static bool spicommon_dma_chan_claim(int dma_chan)
     return ret;
 }
 
-bool spicommon_dma_chan_in_use(int dma_chan)
+static void spicommon_connect_spi_and_dma(spi_host_device_t host, int dma_chan)
 {
-    assert(dma_chan ==1 || dma_chan == 2);
-    return spi_dma_chan_enabled & DMA_CHANNEL_ENABLED(dma_chan);
+#if CONFIG_IDF_TARGET_ESP32
+    DPORT_SET_PERI_REG_BITS(DPORT_SPI_DMA_CHAN_SEL_REG, 3, dma_chan, (host * 2));
+#elif CONFIG_IDF_TARGET_ESP32S2
+    //On ESP32S2, each SPI controller has its own DMA channel. So there is no need to connect them.
+#endif
 }
 
-bool spicommon_dma_chan_free(int dma_chan)
+#endif  //#if !SOC_GDMA_SUPPORTED
+
+bool spicommon_dma_chan_in_use(int dma_chan)
 {
+#if !SOC_GDMA_SUPPORTED
+    assert(dma_chan ==1 || dma_chan == 2);
+    return spi_dma_chan_enabled & DMA_CHANNEL_ENABLED(dma_chan);
+#endif
+    return true;
+}
+
+//----------------------------------------------------------alloc dma periph-------------------------------------------------------//
+static esp_err_t spicommon_alloc_dma(spi_host_device_t host_id, int dma_chan, uint32_t *out_actual_tx_dma_chan, uint32_t *out_actual_rx_dma_chan)
+{
+    uint32_t actual_tx_dma_chan = 0;
+    uint32_t actual_rx_dma_chan = 0;
+    esp_err_t ret = ESP_OK;
+
+#if !SOC_GDMA_SUPPORTED
+//On ESP32 and ESP32S2, actual_tx_dma_chan and actual_rx_dma_chan are always same
+    if (dma_chan < 0) {
+#if CONFIG_IDF_TARGET_ESP32
+        for (int i = 0; i < SOC_SPI_DMA_CHAN_NUM; i++) {
+            bool is_used = BIT(i) & spi_dma_channel_code;
+            if (!is_used) {
+                spi_dma_channel_code |= BIT(i);
+                actual_tx_dma_chan = i+1;
+                actual_rx_dma_chan = i+1;
+                break;
+            }
+        }
+        if (!actual_tx_dma_chan) {
+            SPI_CHECK(false, "no available dma channel", ESP_ERR_INVALID_STATE);
+        }
+#elif CONFIG_IDF_TARGET_ESP32S2
+        //On ESP32S2, each SPI controller has its own DMA channel. So DMA channel auto-allocation is not supported
+        SPI_CHECK(false, "ESP32S2 does not support auto-alloc dma channel", ESP_ERR_INVALID_STATE);
+#endif  //#if CONFIG_IDF_TARGET_XXX
+    } else if (dma_chan > 0) {
+        actual_tx_dma_chan = dma_chan;
+        actual_rx_dma_chan = dma_chan;
+    } else {  //dma_chan == 0
+        // Program won't reach here
+        abort();
+    }
+
+    bool dma_chan_claimed = spicommon_dma_chan_claim(actual_tx_dma_chan);
+    if (!dma_chan_claimed) {
+        spicommon_periph_free(host_id);
+        SPI_CHECK(false, "dma channel already in use", ESP_ERR_INVALID_STATE);
+    }
+
+    spicommon_connect_spi_and_dma(host_id, actual_tx_dma_chan);
+
+#else //SOC_GDMA_SUPPORTED
+
+    spicommon_bus_context_t *ctx = bus_ctx[host_id];
+
+    if (dma_chan < 0) {
+        gdma_channel_alloc_config_t tx_alloc_config = {
+            .flags.reserve_sibling = 1,
+            .direction = GDMA_CHANNEL_DIRECTION_TX,
+        };
+        ret = gdma_new_channel(&tx_alloc_config, &ctx->tx_channel);
+        if (ret != ESP_OK) {
+            return ret;
+        }
+
+        gdma_channel_alloc_config_t rx_alloc_config = {
+            .direction = GDMA_CHANNEL_DIRECTION_RX,
+            .sibling_chan = ctx->tx_channel,
+        };
+        ret = gdma_new_channel(&rx_alloc_config, &ctx->rx_channel);
+        if (ret != ESP_OK) {
+            return ret;
+        }
+
+        if (host_id == SPI1_HOST) {
+            SPI_CHECK(false, "SPI1 does not support DMA mode", ESP_ERR_INVALID_STATE);
+        }
+#if (SOC_SPI_PERIPH_NUM >= 2)
+         else if (host_id == SPI2_HOST) {
+            gdma_connect(ctx->rx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_SPI, 2));
+            gdma_connect(ctx->tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_SPI, 2));
+        }
+#endif
+#if (SOC_SPI_PERIPH_NUM >= 3)
+        else {
+            //host_id == SPI3_HOST
+            gdma_connect(ctx->rx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_SPI, 3));
+            gdma_connect(ctx->tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_SPI, 3));
+        }
+#endif
+
+        gdma_get_channel_id(ctx->tx_channel, (int *)&actual_tx_dma_chan);
+        gdma_get_channel_id(ctx->rx_channel, (int *)&actual_rx_dma_chan);
+
+    } else if (dma_chan > 0) {
+        SPI_CHECK(false, "specifying a DMA channel is not supported, please use dma auto-alloc mode", ESP_ERR_INVALID_STATE);
+    } else {  //dma_chan == 0
+        // Program won't reach here
+    }
+#endif
+
+    *out_actual_tx_dma_chan = actual_tx_dma_chan;
+    *out_actual_rx_dma_chan = actual_rx_dma_chan;
+    return ret;
+}
+
+esp_err_t spicommon_slave_alloc_dma(spi_host_device_t host_id, int dma_chan, uint32_t *out_actual_tx_dma_chan, uint32_t *out_actual_rx_dma_chan)
+{
+    esp_err_t ret = ESP_OK;
+    spicommon_bus_context_t *ctx = (spicommon_bus_context_t *)calloc(1, sizeof(spicommon_bus_context_t));
+    if (!ctx) {
+        ret = ESP_ERR_NO_MEM;
+        goto cleanup;
+    }
+    bus_ctx[host_id] = ctx;
+    ctx->host_id = host_id;
+
+
+    ret = spicommon_alloc_dma(host_id, dma_chan, out_actual_tx_dma_chan, out_actual_rx_dma_chan);
+    if (ret != ESP_OK) {
+        goto cleanup;
+    }
+    return ret;
+
+cleanup:
+    free(ctx);
+    ctx = NULL;
+    return ret;
+}
+
+//----------------------------------------------------------free dma periph-------------------------------------------------------//
+static esp_err_t spicommon_dma_chan_free(spi_host_device_t host_id, int dma_chan)
+{
+#if !SOC_GDMA_SUPPORTED
     assert( dma_chan == 1 || dma_chan == 2 );
     assert( spi_dma_chan_enabled & DMA_CHANNEL_ENABLED(dma_chan) );
 
@@ -199,80 +345,32 @@ bool spicommon_dma_chan_free(int dma_chan)
     periph_module_disable(get_dma_periph(dma_chan));
     portEXIT_CRITICAL(&spi_dma_spinlock);
 
-    return true;
-}
-
-static void spicommon_connect_spi_and_dma(spi_host_device_t host, int dma_chan)
-{
-#if CONFIG_IDF_TARGET_ESP32
-    DPORT_SET_PERI_REG_BITS(DPORT_SPI_DMA_CHAN_SEL_REG, 3, dma_chan, (host * 2));
-#elif CONFIG_IDF_TARGET_ESP32S2
-    //On ESP32S2, each SPI controller has its own DMA channel. So there is no need to connect them.
-#elif SOC_GDMA_SUPPORTED
-    int gdma_chan, periph_id;
-    if (dma_chan == 1) {
-        gdma_chan = SOC_GDMA_SPI2_DMA_CHANNEL;
-        periph_id = SOC_GDMA_TRIG_PERIPH_SPI2;
-#ifdef SOC_GDMA_TRIG_PERIPH_SPI3
-    } else if (dma_chan == 2) {
-        gdma_chan = SOC_GDMA_SPI3_DMA_CHANNEL;
-        periph_id = SOC_GDMA_TRIG_PERIPH_SPI3;
-#endif
-    } else {
-        abort();
+#else //SOC_GDMA_SUPPORTED
+    spicommon_bus_context_t *ctx = bus_ctx[host_id];
+    if (ctx->rx_channel) {
+        gdma_disconnect(ctx->rx_channel);
+        gdma_del_channel(ctx->rx_channel);
     }
-
-    spi_dma_connect_rx_channel_to_periph(gdma_chan, periph_id);
-    spi_dma_connect_tx_channel_to_periph(gdma_chan, periph_id);
-    spi_dma_set_rx_channel_priority(gdma_chan, 1);
-    spi_dma_set_tx_channel_priority(gdma_chan, 1);
-#endif  //#elif SOC_GDMA_SUPPORTED
-}
-
-esp_err_t spicommon_alloc_dma(spi_host_device_t host_id, int dma_chan, uint32_t *out_actual_dma_chan)
-{
-    uint32_t actual_dma_chan = 0;
-
-#if !SOC_GDMA_SUPPORTED
-    if (dma_chan < 0) {
-#if CONFIG_IDF_TARGET_ESP32
-        for (int i = 0; i < SOC_SPI_DMA_CHAN_NUM; i++) {
-            bool is_used = BIT(i) & spi_dma_channel_code;
-            if (!is_used) {
-                spi_dma_channel_code |= BIT(i);
-                actual_dma_chan = i+1;
-                break;
-            }
-        }
-        if (!actual_dma_chan) {
-            SPI_CHECK(false, "no available dma channel", ESP_ERR_INVALID_STATE);
-        }
-#elif CONFIG_IDF_TARGET_ESP32S2
-        //On ESP32S2, each SPI controller has its own DMA channel. So DMA channel auto-allocation is not supported
-        SPI_CHECK(false, "ESP32S2 does not support auto-alloc dma channel", ESP_ERR_INVALID_STATE);
-#endif  //#if CONFIG_IDF_TARGET_XXX
-    } else if (dma_chan > 0) {
-        actual_dma_chan = dma_chan;
-    } else {  //dma_chan == 0
-        // Program won't reach here
+    if (ctx->tx_channel) {
+        gdma_disconnect(ctx->tx_channel);
+        gdma_del_channel(ctx->tx_channel);
     }
-
-    bool dma_chan_claimed = spicommon_dma_chan_claim(actual_dma_chan);
-    if (!dma_chan_claimed) {
-        spicommon_periph_free(host_id);
-        SPI_CHECK(false, "dma channel already in use", ESP_ERR_INVALID_STATE);
-    }
-
-    spicommon_connect_spi_and_dma(host_id, actual_dma_chan);
-
-#elif SOC_GDMA_SUPPORTED
-
 #endif
 
-    *out_actual_dma_chan = actual_dma_chan;
     return ESP_OK;
 }
 
+esp_err_t spicommon_slave_free_dma(spi_host_device_t host_id, int dma_chan)
+{
+    esp_err_t ret = spicommon_dma_chan_free(host_id, dma_chan);
+
+    free(bus_ctx[host_id]);
+    bus_ctx[host_id] = NULL;
+
+    return ret;
+}
+
+//----------------------------------------------------------IO general-------------------------------------------------------//
 static bool bus_uses_iomux_pins(spi_host_device_t host, const spi_bus_config_t* bus_config)
 {
     if (bus_config->sclk_io_num>=0 &&
@@ -304,7 +402,7 @@ Do the common stuff to hook up a SPI host to a bus defined by a bunch of GPIO pi
 bus config struct and it'll set up the GPIO matrix and enable the device. If a pin is set to non-negative value,
 it should be able to be initialized.
 */
-esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_config_t *bus_config, int dma_chan, uint32_t flags, uint32_t* flags_o)
+esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_config_t *bus_config, uint32_t flags, uint32_t* flags_o)
 {
     uint32_t temp_flag = 0;
 
@@ -535,12 +633,14 @@ static inline bool is_valid_host(spi_host_device_t host)
     return host >= SPI1_HOST && host <= SPI3_HOST;
 }
 
+//----------------------------------------------------------master bus init-------------------------------------------------------//
 esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *bus_config, int dma_chan)
 {
     esp_err_t err = ESP_OK;
     spicommon_bus_context_t *ctx = NULL;
     spi_bus_attr_t *bus_attr = NULL;
-    uint32_t actual_dma_chan = 0;
+    uint32_t actual_tx_dma_chan = 0;
+    uint32_t actual_rx_dma_chan = 0;
 
     SPI_CHECK(is_valid_host(host_id), "invalid host_id", ESP_ERR_INVALID_ARG);
     SPI_CHECK(bus_ctx[host_id] == NULL, "SPI bus already initialized.", ESP_ERR_INVALID_STATE);
@@ -549,7 +649,7 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
 #elif CONFIG_IDF_TARGET_ESP32S2
     SPI_CHECK( dma_chan == 0 || dma_chan == host_id, "invalid dma channel", ESP_ERR_INVALID_ARG );
 #elif SOC_GDMA_SUPPORTED
-    SPI_CHECK( dma_chan == -1, "invalid dma channel, chip only support spi dma channel auto-alloc", ESP_ERR_INVALID_ARG );
+    SPI_CHECK( dma_chan == 0 || dma_chan == -1, "invalid dma channel, chip only support spi dma channel auto-alloc", ESP_ERR_INVALID_ARG );
 #endif
     SPI_CHECK((bus_config->intr_flags & (ESP_INTR_FLAG_HIGH|ESP_INTR_FLAG_EDGE|ESP_INTR_FLAG_INTRDISABLED))==0, "intr flag not allowed", ESP_ERR_INVALID_ARG);
 #ifndef CONFIG_SPI_MASTER_ISR_IN_IRAM
@@ -565,16 +665,20 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
         err = ESP_ERR_NO_MEM;
         goto cleanup;
     }
+    bus_ctx[host_id] = ctx;
     ctx->host_id = host_id;
     bus_attr = &ctx->bus_attr;
     bus_attr->bus_cfg = *bus_config;
 
     if (dma_chan != 0) {
-        err = spicommon_alloc_dma(host_id, dma_chan, &actual_dma_chan);
+        bus_attr->dma_enabled = 1;
+
+        err = spicommon_alloc_dma(host_id, dma_chan, &actual_tx_dma_chan, &actual_rx_dma_chan);
         if (err != ESP_OK) {
-            return err;
+            goto cleanup;
         }
-        bus_attr->dma_chan = actual_dma_chan;
+        bus_attr->tx_dma_chan = actual_tx_dma_chan;
+        bus_attr->rx_dma_chan = actual_rx_dma_chan;
 
         int dma_desc_ct = lldesc_get_required_num(bus_config->max_transfer_sz);
         if (dma_desc_ct == 0) dma_desc_ct = 1; //default to 4k when max is not given
@@ -588,6 +692,7 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
         }
         bus_attr->dma_desc_num = dma_desc_ct;
     } else {
+        bus_attr->dma_enabled = 0;
         bus_attr->max_transfer_sz = SOC_SPI_MAXIMUM_BUFFER_SIZE;
         bus_attr->dma_desc_num = 0;
     }
@@ -609,12 +714,11 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
     }
 #endif //CONFIG_PM_ENABLE
 
-    err = spicommon_bus_initialize_io(host_id, bus_config, actual_dma_chan, SPICOMMON_BUSFLAG_MASTER | bus_config->flags, &bus_attr->flags);
+    err = spicommon_bus_initialize_io(host_id, bus_config, SPICOMMON_BUSFLAG_MASTER | bus_config->flags, &bus_attr->flags);
     if (err != ESP_OK) {
         goto cleanup;
     }
 
-    bus_ctx[host_id] = ctx;
     return ESP_OK;
 
 cleanup:
@@ -627,12 +731,15 @@ cleanup:
         }
         free(bus_attr->dmadesc_tx);
         free(bus_attr->dmadesc_rx);
-    }
-    free(ctx);
-    if (actual_dma_chan) {
-        spicommon_dma_chan_free(actual_dma_chan);
+
+        //On ESP32 and ESP32S2, actual_tx_dma_chan and actual_rx_dma_chan are always same
+        if (bus_attr->dma_enabled) {
+            spicommon_dma_chan_free(host_id, actual_tx_dma_chan);
+        }
     }
     spicommon_periph_free(host_id);
+    free(bus_ctx[host_id]);
+    bus_ctx[host_id] = NULL;
     return err;
 }
 
@@ -663,8 +770,10 @@ esp_err_t spi_bus_free(spi_host_device_t host_id)
     free(bus_attr->dmadesc_rx);
     free(bus_attr->dmadesc_tx);
 
-    if (bus_attr->dma_chan > 0) {
-        spicommon_dma_chan_free (bus_attr->dma_chan);
+
+    //On ESP32 and ESP32S2, actual_tx_dma_chan and actual_rx_dma_chan are always same
+    if (bus_attr->dma_enabled > 0) {
+        spicommon_dma_chan_free (host_id, bus_attr->tx_dma_chan);
     }
     spicommon_periph_free(host_id);
 
