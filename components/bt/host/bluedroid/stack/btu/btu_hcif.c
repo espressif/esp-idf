@@ -502,7 +502,7 @@ UINT8 btu_hcif_send_cmd_sync (UINT8 controller_id, BT_HDR *p_buf)
         btu_hcif_command_complete_evt,
         btu_hcif_command_status_evt,
         vsc_callback);
-    
+
     osi_sem_take(&sync_info->sync_sem, OSI_SEM_MAX_TIMEOUT);
 
 #if (defined(HCILP_INCLUDED) && HCILP_INCLUDED == TRUE)
