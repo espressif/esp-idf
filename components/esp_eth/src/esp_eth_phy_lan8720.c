@@ -109,7 +109,7 @@ typedef union {
     struct {
         uint32_t reserved1 : 1;                /* Reserved */
         uint32_t auto_nego_page_received : 1;  /* Auto-Negotiation Page Received */
-        uint32_t parallel_detect_falut : 1;    /* Parallel Detection Fault */
+        uint32_t parallel_detect_fault : 1;    /* Parallel Detection Fault */
         uint32_t auto_nego_lp_acknowledge : 1; /* Auto-Negotiation LP Acknowledge */
         uint32_t link_down : 1;                /* Link Down */
         uint32_t remote_fault_detect : 1;      /* Remote Fault Detect */
@@ -129,12 +129,12 @@ typedef union {
     struct {
         uint32_t reserved1 : 1;                /* Reserved */
         uint32_t auto_nego_page_received : 1;  /* Auto-Negotiation Page Received */
-        uint32_t parallel_detect_falut : 1;    /* Parallel Detection Fault */
+        uint32_t parallel_detect_fault : 1;    /* Parallel Detection Fault */
         uint32_t auto_nego_lp_acknowledge : 1; /* Auto-Negotiation LP Acknowledge */
         uint32_t link_down : 1;                /* Link Down */
         uint32_t remote_fault_detect : 1;      /* Remote Fault Detect */
         uint32_t auto_nego_complete : 1;       /* Auto-Negotiation Complete */
-        uint32_t energy_on_generate : 1;       /* ENERYON generated */
+        uint32_t energy_on_generate : 1;       /* ENERGY ON generated */
         uint32_t reserved2 : 8;                /* Reserved */
     };
     uint32_t val;
