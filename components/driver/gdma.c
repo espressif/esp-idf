@@ -97,8 +97,8 @@ static gdma_group_t *gdma_acquire_group_handle(int group_id);
 static void gdma_release_group_handle(gdma_group_t *group);
 static gdma_pair_t *gdma_acquire_pair_handle(gdma_group_t *group, int pair_id);
 static void gdma_release_pair_handle(gdma_pair_t *pair);
-static void gdma_uninstall_pair(gdma_pair_t *pair);
 static void gdma_uninstall_group(gdma_group_t *group);
+static void gdma_uninstall_pair(gdma_pair_t *pair);
 static esp_err_t gdma_del_tx_channel(gdma_channel_t *dma_channel);
 static esp_err_t gdma_del_rx_channel(gdma_channel_t *dma_channel);
 static esp_err_t gdma_install_interrupt(gdma_pair_t *pair);
@@ -312,6 +312,8 @@ esp_err_t gdma_register_tx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
     tx_chan->on_trans_eof = cbs->on_trans_eof;
     tx_chan->user_data = user_data;
 
+    DMA_CHECK(esp_intr_enable(pair->intr) == ESP_OK, "enable interrupt failed", err, ESP_FAIL);
+
 err:
     return ret_code;
 }
@@ -336,6 +338,8 @@ esp_err_t gdma_register_rx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
 
     rx_chan->on_recv_eof = cbs->on_recv_eof;
     rx_chan->user_data = user_data;
+
+    DMA_CHECK(esp_intr_enable(pair->intr) == ESP_OK, "enable interrupt failed", err, ESP_FAIL);
 
 err:
     return ret_code;
@@ -429,33 +433,35 @@ static void gdma_uninstall_group(gdma_group_t *group)
 
 static gdma_group_t *gdma_acquire_group_handle(int group_id)
 {
-    gdma_group_t *group = NULL;
     bool new_group = false;
+    gdma_group_t *group = NULL;
+    gdma_group_t *pre_alloc_group = calloc(1, sizeof(gdma_group_t));
+    if (!pre_alloc_group) {
+        goto out;
+    }
     portENTER_CRITICAL(&s_platform.spinlock);
     if (!s_platform.groups[group_id]) {
-        // lazy install group
-        group = calloc(1, sizeof(gdma_group_t));
-        if (group) {
-            new_group = true;
-            s_platform.groups[group_id] = group; // register to platform
-            group->group_id = group_id;
-            group->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
-            periph_module_enable(gdma_periph_signals.groups[group_id].module); // enable APB to access GDMA registers
-            gdma_hal_init(&group->hal, group_id);       // initialize HAL context
-            gdma_ll_enable_clock(group->hal.dev, true); // enable gdma clock
-        }
+        new_group = true;
+        group = pre_alloc_group;
+        s_platform.groups[group_id] = group; // register to platform
+        group->group_id = group_id;
+        group->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
+        periph_module_enable(gdma_periph_signals.groups[group_id].module); // enable APB to access GDMA registers
+        gdma_hal_init(&group->hal, group_id);       // initialize HAL context
+        gdma_ll_enable_clock(group->hal.dev, true); // enable gdma clock
     } else {
         group = s_platform.groups[group_id];
     }
-    if (group) {
-        // someone acquired the group handle means we have a new object that refer to this group
-        group->ref_count++;
-    }
+    // someone acquired the group handle means we have a new object that refer to this group
+    group->ref_count++;
     portEXIT_CRITICAL(&s_platform.spinlock);
 
     if (new_group) {
         ESP_LOGD(TAG, "new group (%d) at %p", group->group_id, group);
+    } else {
+        free(pre_alloc_group);
     }
+out:
     return group;
 }
 
@@ -486,6 +492,12 @@ static void gdma_uninstall_pair(gdma_pair_t *pair)
             do_deinitialize = true;
             group->pairs[pair_id] = NULL; // deregister from pair
             group->ref_count--; // decrease reference count, because this pair won't refer to the group
+            if (pair->intr) {
+                // disable interrupt handler (but not freed, esp_intr_free is a blocking API, we can't use it in a critical section)
+                esp_intr_disable(pair->intr);
+                gdma_ll_enable_interrupt(group->hal.dev, pair->pair_id, UINT32_MAX, false); // disable all interupt events
+                gdma_ll_clear_interrupt_status(group->hal.dev, pair->pair_id, UINT32_MAX);  // clear all pending events
+            }
         }
         portEXIT_CRITICAL(&group->spinlock);
     }
@@ -502,32 +514,34 @@ static void gdma_uninstall_pair(gdma_pair_t *pair)
 
 static gdma_pair_t *gdma_acquire_pair_handle(gdma_group_t *group, int pair_id)
 {
-    gdma_pair_t *pair = NULL;
     bool new_pair = false;
+    gdma_pair_t *pair = NULL;
+    gdma_pair_t *pre_alloc_pair = calloc(1, sizeof(gdma_pair_t));
+    if (!pre_alloc_pair) {
+        goto out;
+    }
     portENTER_CRITICAL(&group->spinlock);
     if (!group->pairs[pair_id]) {
-        // lazy install pair
-        pair = calloc(1, sizeof(gdma_pair_t));
-        if (pair) {
-            new_pair = true;
-            group->pairs[pair_id] = pair; // register to group
-            group->ref_count++; // pair obtains a reference to group
-            pair->group = group;
-            pair->pair_id = pair_id;
-            pair->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
-        }
+        new_pair = true;
+        pair = pre_alloc_pair;
+        group->pairs[pair_id] = pair; // register to group
+        group->ref_count++; // pair obtains a reference to group
+        pair->group = group;
+        pair->pair_id = pair_id;
+        pair->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     } else {
         pair = group->pairs[pair_id];
     }
-    if (pair) {
-        // someone acquired the pair handle means we have a new object that refer to this pair
-        pair->ref_count++;
-    }
+    // someone acquired the pair handle means we have a new object that refer to this pair
+    pair->ref_count++;
     portEXIT_CRITICAL(&group->spinlock);
 
     if (new_pair) {
         ESP_LOGD(TAG, "new pair (%d,%d) at %p", group->group_id, pair->pair_id, pair);
+    } else {
+        free(pre_alloc_pair);
     }
+out:
     return pair;
 }
 
@@ -619,22 +633,29 @@ static esp_err_t gdma_install_interrupt(gdma_pair_t *pair)
 {
     esp_err_t ret_code = ESP_OK;
     gdma_group_t *group = pair->group;
-    int isr_flags = 0;
     bool do_install_isr = false;
+    // pre-alloc a interrupt handle, shared with other handle, with handler disabled
+    // This is used to prevent potential concurrency between interrupt install and uninstall
+    int isr_flags = ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_INTRDISABLED;
+    intr_handle_t intr = NULL;
+    ret_code = esp_intr_alloc(gdma_periph_signals.groups[group->group_id].pairs[pair->pair_id].irq_id, isr_flags, gdma_default_isr, pair, &intr);
+    DMA_CHECK(ret_code == ESP_OK, "alloc interrupt failed", err, ret_code);
 
     if (!pair->intr) {
         portENTER_CRITICAL(&pair->spinlock);
         if (!pair->intr) {
             do_install_isr = true;
-            ret_code = esp_intr_alloc(gdma_periph_signals.groups[group->group_id].pairs[pair->pair_id].irq_id, isr_flags, gdma_default_isr, pair, &pair->intr);
+            pair->intr = intr;
             gdma_ll_enable_interrupt(group->hal.dev, pair->pair_id, UINT32_MAX, false); // disable all interupt events
             gdma_ll_clear_interrupt_status(group->hal.dev, pair->pair_id, UINT32_MAX);  // clear all pending events
         }
         portEXIT_CRITICAL(&pair->spinlock);
     }
     if (do_install_isr) {
-        DMA_CHECK(ret_code == ESP_OK, "alloc interrupt failed", err, ret_code);
         ESP_LOGD(TAG, "install interrupt service for pair (%d,%d)", group->group_id, pair->pair_id);
+    } else {
+        // interrupt handle has been installed before, so removed this one
+        esp_intr_free(intr);
     }
 
 err:
