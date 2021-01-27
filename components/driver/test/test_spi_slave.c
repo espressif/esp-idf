@@ -74,8 +74,12 @@ static void slave_init(void)
     gpio_set_pull_mode(PIN_NUM_MOSI, GPIO_PULLUP_ONLY);
     gpio_set_pull_mode(PIN_NUM_CLK, GPIO_PULLUP_ONLY);
     gpio_set_pull_mode(PIN_NUM_CS, GPIO_PULLUP_ONLY);
+#if !SOC_GDMA_SUPPORTED
     //Initialize SPI slave interface
     TEST_ESP_OK( spi_slave_initialize(TEST_SLAVE_HOST, &buscfg, &slvcfg, 2) );
+#else
+    TEST_ESP_OK( spi_slave_initialize(TEST_SLAVE_HOST, &buscfg, &slvcfg, -1) );
+#endif
 }
 
 TEST_CASE("test slave send unaligned","[spi]")

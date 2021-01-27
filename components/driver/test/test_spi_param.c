@@ -100,12 +100,22 @@ static void local_test_start(spi_device_handle_t *spi, int freq, const spitest_p
 
     slave_pull_up(&buscfg, slvcfg.spics_io_num);
 
-    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, pset->master_dma_chan));
+#if !SOC_GDMA_SUPPORTED
+    int dma_chan = pset->master_dma_chan;
+#else
+    int dma_chan = (pset->master_dma_chan == 0) ? 0 : -1;
+#endif
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, dma_chan));
     TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, spi));
 
     //slave automatically use iomux pins if pins are on VSPI_* pins
     buscfg.quadhd_io_num = -1;
-    TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &buscfg, &slvcfg, pset->slave_dma_chan));
+#if !SOC_GDMA_SUPPORTED
+    int slave_dma_chan = pset->slave_dma_chan;
+#else
+    int slave_dma_chan = (pset->slave_dma_chan == 0) ? 0 : -1;
+#endif
+    TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &buscfg, &slvcfg, slave_dma_chan));
 
     //initialize master and slave on the same pins break some of the output configs, fix them
     if (pset->master_iomux) {
@@ -702,7 +712,15 @@ static void test_master_start(spi_device_handle_t *spi, int freq, const spitest_
     devpset.input_delay_ns = pset->slave_tv_ns;
     devpset.clock_speed_hz = freq;
     if (pset->master_limit != 0 && freq > pset->master_limit) devpset.flags |= SPI_DEVICE_NO_DUMMY;
-    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buspset, pset->master_dma_chan));
+
+
+
+#if !SOC_GDMA_SUPPORTED
+    int dma_chan = pset->master_dma_chan;
+#else
+    int dma_chan = (pset->master_dma_chan == 0) ? 0 : -1;
+#endif
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buspset, dma_chan));
     TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devpset, spi));
 
     //prepare data for the slave
@@ -822,7 +840,12 @@ static void timing_slave_start(int speed, const spitest_param_set_t* pset, spite
     //Enable pull-ups on SPI lines so we don't detect rogue pulses when no master is connected.
     slave_pull_up(&slv_buscfg, slvcfg.spics_io_num);
 
-    TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &slv_buscfg, &slvcfg, pset->slave_dma_chan));
+#if !SOC_GDMA_SUPPORTED
+    int slave_dma_chan = pset->slave_dma_chan;
+#else
+    int slave_dma_chan = (pset->slave_dma_chan == 0) ? 0 : -1;
+#endif
+    TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &slv_buscfg, &slvcfg, slave_dma_chan));
 
     //prepare data for the master
     for (int i = 0; i < pset->test_size; i++) {
