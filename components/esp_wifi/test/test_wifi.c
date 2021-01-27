@@ -267,7 +267,7 @@ static void send_ds2ds_packet(void)
 
     // send packet 20 times to make sure receiver will get this packet
     for (uint16_t i = 0; i < 20; i++) {
-        esp_wifi_80211_tx(ESP_IF_WIFI_AP, ds2ds_pdu, sizeof(ds2ds_pdu), true);
+        esp_wifi_80211_tx(WIFI_IF_AP, ds2ds_pdu, sizeof(ds2ds_pdu), true);
         vTaskDelay(50 / portTICK_PERIOD_MS);
     }
     stop_wifi();
@@ -329,7 +329,7 @@ static void test_wifi_connection_softap(void)
 
     start_wifi_as_softap();
 
-    TEST_ESP_OK(esp_wifi_get_mac(ESP_IF_WIFI_AP, mac));
+    TEST_ESP_OK(esp_wifi_get_mac(WIFI_IF_AP, mac));
     sprintf(mac_str, MACSTR, MAC2STR(mac));
 
     unity_send_signal_param("SoftAP mac", mac_str);
