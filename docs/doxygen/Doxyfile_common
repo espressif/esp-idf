@@ -100,8 +100,6 @@ INPUT = \
     $(IDF_PATH)/components/driver/include/driver/i2c.h \
     $(IDF_PATH)/components/driver/include/driver/i2s.h \
     $(IDF_PATH)/components/driver/include/driver/ledc.h \
-    $(IDF_PATH)/components/driver/include/driver/mcpwm.h \
-    $(IDF_PATH)/components/driver/include/driver/pcnt.h \
     $(IDF_PATH)/components/driver/include/driver/rmt.h \
     $(IDF_PATH)/components/driver/include/driver/sigmadelta.h \
     $(IDF_PATH)/components/driver/include/driver/spi_common.h \
@@ -109,7 +107,6 @@ INPUT = \
     $(IDF_PATH)/components/driver/include/driver/spi_slave.h \
     $(IDF_PATH)/components/driver/include/driver/spi_slave_hd.h \
     $(IDF_PATH)/components/driver/$(IDF_TARGET)/include/driver/adc.h \
-    $(IDF_PATH)/components/driver/$(IDF_TARGET)/include/driver/touch_sensor.h \
     $(IDF_PATH)/components/driver/include/driver/timer.h \
     $(IDF_PATH)/components/driver/include/driver/touch_sensor_common.h \
     $(IDF_PATH)/components/driver/include/driver/twai.h \
@@ -120,10 +117,8 @@ INPUT = \
     $(IDF_PATH)/components/hal/include/hal/dma_types.h \
     $(IDF_PATH)/components/hal/include/hal/gpio_types.h \
     $(IDF_PATH)/components/hal/include/hal/uart_types.h \
-    $(IDF_PATH)/components/hal/include/hal/mcpwm_types.h \
     $(IDF_PATH)/components/hal/include/hal/rmt_types.h \
     $(IDF_PATH)/components/hal/include/hal/spi_types.h \
-    $(IDF_PATH)/components/hal/include/hal/pcnt_types.h \
     $(IDF_PATH)/components/hal/include/hal/i2s_types.h \
     $(IDF_PATH)/components/hal/include/hal/rtc_io_types.h \
     $(IDF_PATH)/components/hal/include/hal/sigmadelta_types.h \
@@ -135,10 +130,7 @@ INPUT = \
     $(IDF_PATH)/components/hal/include/hal/twai_types.h \
     $(IDF_PATH)/components/hal/include/hal/touch_sensor_types.h \
     $(IDF_PATH)/components/soc/$(IDF_TARGET)/include/soc/adc_channel.h \
-    $(IDF_PATH)/components/soc/$(IDF_TARGET)/include/soc/dac_channel.h \
-    $(IDF_PATH)/components/soc/$(IDF_TARGET)/include/soc/touch_sensor_channel.h \
     $(IDF_PATH)/components/soc/$(IDF_TARGET)/include/soc/uart_channel.h \
-    $(IDF_PATH)/components/soc/$(IDF_TARGET)/include/soc/rtc_io_channel.h \
     ## esp_netif - API Reference
     $(IDF_PATH)/components/esp_netif/include/esp_netif.h \
     $(IDF_PATH)/components/esp_netif/include/esp_netif_net_stack.h \

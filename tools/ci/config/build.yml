@@ -291,7 +291,7 @@ build_component_ut_esp32c3:
   parallel:
     matrix:
       - DOCLANG: [ "en", "zh_CN" ]
-        DOCTGT: [ "esp32", "esp32s2" ]
+        DOCTGT: [ "esp32", "esp32s2",  "esp32c3"]
 
 build_docs_html:
   extends:

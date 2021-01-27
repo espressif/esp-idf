@@ -161,17 +161,22 @@ LEGACY_DOCS = ['api-guides/build-system-legacy.rst',
                'api-guides/unit-tests-legacy.rst',
                'get-started-legacy/**']
 
-USB_DOCS = ['api-reference/peripherals/usb.rst']
+USB_DOCS = ['api-reference/peripherals/usb.rst',
+            'api-guides/usb-console.rst',
+            'api-guides/dfu.rst']
 
 ULP_DOCS = ['api-guides/ulp.rst', 'api-guides/ulp_macros.rst']
 
+RISCV_COPROC_DOCS = ['api-guides/ulp-risc-v.rst',]
+
 XTENSA_DOCS = ['api-guides/hlinterrupts.rst']
 
-RISCV_DOCS = ['api-guides/hlinterrupts.rst']
+RISCV_DOCS = []
 
 ESP32_DOCS = ['api-guides/ulp_instruction_set.rst',
               'api-reference/system/himem.rst',
               'api-guides/RF_calibration.rst',
+              'api-guides/romconsole.rst',
               'api-reference/system/ipc.rst',
               'security/secure-boot-v1.rst',
               'api-reference/peripherals/secure_element.rst',
@@ -180,15 +185,12 @@ ESP32_DOCS = ['api-guides/ulp_instruction_set.rst',
 
 ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-guides/ulps2_instruction_set.rst',
-                'api-guides/dfu.rst',
                 'api-guides/usb-console.rst',
-                'api-guides/ulp-risc-v.rst',
                 'api-reference/peripherals/hmac.rst',
                 'api-reference/peripherals/ds.rst',
                 'api-reference/peripherals/spi_slave_hd.rst',
                 'api-reference/peripherals/temp_sensor.rst',
                 'api-reference/system/async_memcpy.rst',
-                'api-reference/peripherals/usb.rst',
                 'api-reference/peripherals/dac.rst']
 
 ESP32C3_DOCS = []
@@ -205,6 +207,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_DAC_PERIPH_NUM':DAC_DOCS,
                             'SOC_TOUCH_SENSOR_NUM':TOUCH_SENSOR_DOCS,
                             'SOC_ULP_SUPPORTED':ULP_DOCS,
+                            'SOC_RISCV_COPROC_SUPPORTED':RISCV_COPROC_DOCS,
                             'CONFIG_IDF_TARGET_ARCH_XTENSA':XTENSA_DOCS,
                             'CONFIG_IDF_TARGET_ARCH_RISCV':RISCV_DOCS,
                             'esp32':ESP32_DOCS,
@@ -240,7 +243,7 @@ pygments_style = 'sphinx'
 project_slug = 'esp-idf'
 versions_url = 'https://dl.espressif.com/dl/esp-idf/idf_versions.js'
 
-idf_targets = ['esp32', 'esp32s2']
+idf_targets = ['esp32', 'esp32s2', 'esp32c3']
 languages = ['en', 'zh_CN']
 
 project_homepage = 'https://github.com/espressif/esp-idf'
@@ -451,7 +454,8 @@ def setup_config_values(app, config):
     # Sets up global config values needed by other extensions
     idf_target_title_dict = {
         'esp32': 'ESP32',
-        'esp32s2': 'ESP32-S2'
+        'esp32s2': 'ESP32-S2',
+        'esp32c3': 'ESP32-C3'
     }
 
     app.add_config_value('idf_target_title_dict', idf_target_title_dict, 'env')

@@ -1,4 +1,4 @@
-.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+.. include:: {IDF_TARGET_PATH_NAME}.inc
    :start-after: devkit-defs
    :end-before: ---
 
@@ -12,13 +12,13 @@ All versions of |devkit-name| boards have built-in JTAG functionality. Putting i
 Configure Hardware
 ^^^^^^^^^^^^^^^^^^
 
-.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+.. include:: {IDF_TARGET_PATH_NAME}.inc
     :start-after: devkit-hw-config
     :end-before: ---
 
 * Verify if {IDF_TARGET_NAME} pins used for JTAG communication are not connected to some other h/w that may disturb JTAG operation:
 
-    .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+    .. include:: {IDF_TARGET_PATH_NAME}.inc
         :start-after: jtag-pins
         :end-before: ---
 
@@ -118,7 +118,7 @@ Manually unloading the driver
 
 4. Run OpenOCD:
 
-   .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+   .. include:: {IDF_TARGET_PATH_NAME}.inc
        :start-after: run-openocd
        :end-before: ---
 

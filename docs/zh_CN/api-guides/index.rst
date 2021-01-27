@@ -15,7 +15,7 @@ API 指南
    错误处理 <error-handling>
    :SOC_BT_SUPPORTED: ESP-BLE-MESH <esp-ble-mesh/ble-mesh-index>
    ESP-MESH (Wi-Fi) <mesh>
-   核心转储 <core_dump>   
+   核心转储 <core_dump>
    事件处理 <event-handling>
    :SOC_SPIRAM_SUPPORTED: 片外 SPI RAM <external-ram>
    严重错误 <fatal-errors>
@@ -25,11 +25,11 @@ API 指南
    硬件抽象层 <hardware-abstraction>
    :CONFIG_IDF_TARGET_ARCH_XTENSA: 高层中断 <hlinterrupts>
    JTAG 调试 <jtag-debugging/index>
-   链接脚本生成机制 <linker-script-generation>  
+   链接脚本生成机制 <linker-script-generation>
    lwIP TCP/IP 协议栈 <lwip>
    分区表 <partition-tables>
    :esp32: 射频校准 <RF_calibration>
-   ROM 调试控制台 <romconsole>
+   :esp32: ROM 调试控制台 <romconsole>
    :esp32: 安全启动 <../security/secure-boot-v1>
    安全启动 V2 <../security/secure-boot-v2>
    线程本地存储 <thread-local-storage>

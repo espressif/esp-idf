@@ -109,7 +109,7 @@ IDF 监视器为寄存器转储补充如下信息::
 
 IDF 监视器在后台运行以下命令，解码各地址::
 
-  xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-addr2line -pfiaC -e build/PROJECT.elf ADDRESS
+  {IDF_TARGET_TOOLCHAIN_PREFIX}-addr2line -pfiaC -e build/PROJECT.elf ADDRESS
 
 .. note::
 
@@ -128,7 +128,7 @@ IDF 监视器在后台运行以下命令，解码各地址::
 
 IDF 监控器在后台运行如下命令::
 
-  xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-gdb -ex "set serial baud BAUD" -ex "target remote PORT" -ex interrupt build/PROJECT.elf
+  {IDF_TARGET_TOOLCHAIN_PREFIX}-gdb -ex "set serial baud BAUD" -ex "target remote PORT" -ex interrupt build/PROJECT.elf
 
 
 输出筛选

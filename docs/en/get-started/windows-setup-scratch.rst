@@ -81,12 +81,12 @@ Download the precompiled Windows toolchain:
 
 |download_link_win32|
 
-Unzip the zip file to ``C:\Program Files`` (or some other location). The zip file contains a single directory ``xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf``.
+Unzip the zip file to ``C:\Program Files`` (or some other location). The zip file contains a single directory ``{IDF_TARGET_TOOLCHAIN_PREFIX}``.
 
-Next, the ``bin`` subdirectory of this directory must be :ref:`added to your Path <add-directory-windows-path>`. For example, the directory to add may be ``C:\Program Files\xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf\bin``.
+Next, the ``bin`` subdirectory of this directory must be :ref:`added to your Path <add-directory-windows-path>`. For example, the directory to add may be ``C:\Program Files\{IDF_TARGET_TOOLCHAIN_PREFIX}\bin``.
 
 .. note::
-   If you already have the MSYS2 environment (for use with the "GNU Make" build system) installed, you can skip the separate download and add the directory ``C:\msys32\opt\xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf\bin`` to the Path instead, as the toolchain is included in the MSYS2 environment.
+   If you already have the MSYS2 environment (for use with the "GNU Make" build system) installed, you can skip the separate download and add the directory ``C:\msys32\opt\{IDF_TARGET_TOOLCHAIN_PREFIX}\bin`` to the Path instead, as the toolchain is included in the MSYS2 environment.
 
 
 .. _add-directory-windows-path:

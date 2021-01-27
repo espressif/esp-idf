@@ -39,8 +39,8 @@ class StringSubstituter:
 
         Supports the following replacements (examples shown is for target=esp32s2):
         {IDF_TARGET_NAME}, replaced with the current target name, e.g. ESP32-S2 Beta
+        {IDF_TARGET_TOOLCHAIN_PREFIX}, replaced with the toolchain prefix, e.g. xtensa-esp32-elf
         {IDF_TARGET_PATH_NAME}, replaced with the path name, e.g. esp32s2
-        {IDF_TARGET_TOOLCHAIN_NAME}, replaced with the toolchain name, e.g. esp32s2
         {IDF_TARGET_CFG_PREFIX}, replaced with the prefix used for config parameters, e.g. ESP32S2
         {IDF_TARGET_TRM_EN_URL}, replaced with the url to the English technical reference manual
         {IDF_TARGET_TRM_CH_URL}, replaced with the url to the Chinese technical reference manual
@@ -52,7 +52,7 @@ class StringSubstituter:
 
     """
     TARGET_NAMES = {'esp32': 'ESP32', 'esp32s2': 'ESP32-S2', 'esp32c3': 'ESP32-C3'}
-    TOOLCHAIN_NAMES = {'esp32': 'esp32', 'esp32s2': 'esp32s2', 'esp32c3': 'esp32c3'}
+    TOOLCHAIN_PREFIX = {'esp32': 'xtensa-esp32-elf', 'esp32s2': 'xtensa-esp32s2-elf', 'esp32c3': 'riscv32-esp-elf'}
     CONFIG_PREFIX = {'esp32': 'ESP32', 'esp32s2': 'ESP32S2', 'esp32c3': 'ESP32C3'}
 
     TRM_EN_URL = {'esp32': 'https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf',
@@ -76,7 +76,7 @@ class StringSubstituter:
 
         self.add_pair('{IDF_TARGET_NAME}', self.TARGET_NAMES[config.idf_target])
         self.add_pair('{IDF_TARGET_PATH_NAME}', config.idf_target)
-        self.add_pair('{IDF_TARGET_TOOLCHAIN_NAME}', self.TOOLCHAIN_NAMES[config.idf_target])
+        self.add_pair('{IDF_TARGET_TOOLCHAIN_PREFIX}', self.TOOLCHAIN_PREFIX[config.idf_target])
         self.add_pair('{IDF_TARGET_CFG_PREFIX}', self.CONFIG_PREFIX[config.idf_target])
         self.add_pair('{IDF_TARGET_TRM_EN_URL}', self.TRM_EN_URL[config.idf_target])
         self.add_pair('{IDF_TARGET_TRM_CN_URL}', self.TRM_CN_URL[config.idf_target])

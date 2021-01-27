@@ -11,7 +11,7 @@ API Guides
     Build System <build-system>
     :esp32: Build System (Legacy GNU Make) <build-system-legacy>
     Deep Sleep Wake Stubs <deep-sleep-stub>
-    :esp32s2: Device Firmware Upgrade through USB <dfu>
+    :SOC_USB_SUPPORTED: Device Firmware Upgrade through USB <dfu>
     Error Handling <error-handling>
     :SOC_BT_SUPPORTED: ESP-BLE-MESH <esp-ble-mesh/ble-mesh-index>
     ESP-MESH (Wi-Fi) <mesh>
@@ -29,15 +29,15 @@ API Guides
     lwIP TCP/IP Stack <lwip>
     Partition Tables <partition-tables>
     :esp32: RF Calibration <RF_calibration>
-    ROM debug console <romconsole>
+    :esp32: ROM debug console <romconsole>
     :esp32: Secure Boot <../security/secure-boot-v1>
     Secure Boot V2 <../security/secure-boot-v2>
     Thread Local Storage <thread-local-storage>
     Tools <tools/index>
     :SOC_ULP_SUPPORTED: ULP Coprocessor <ulp>
     :esp32: ULP Coprocessor (Legacy GNU Make) <ulp-legacy>
-    :esp32s2: ULP-RISC-V Coprocessor <ulp-risc-v>
+    :SOC_RISCV_COPROC_SUPPORTED: ULP-RISC-V Coprocessor <ulp-risc-v>
     Unit Testing <unit-tests>
     :esp32: Unit Testing (Legacy GNU Make) <unit-tests-legacy>
-    :esp32s2: USB Console <usb-console>
+    :SOC_USB_SUPPORTED: USB Console <usb-console>
     WiFi Driver <wifi>

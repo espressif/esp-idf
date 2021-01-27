@@ -8,7 +8,7 @@
 #define SOC_CPU_CORES_NUM   1
 #define SOC_GDMA_SUPPORTED  1
 #define SOC_TWAI_SUPPORTED  1
-
+#define SOC_BT_SUPPORTED    1
 
 // There are 3 DMA channels on ESP32-C3
 // Attention: These fixed DMA channels are temporarily workaround before we have a centralized DMA controller API to help alloc the channel dynamically

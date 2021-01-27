@@ -37,7 +37,7 @@ Offset should be in hex format. To reset to the default behaviour you can specif
 
     .. highlight:: bash
 
-    .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+    .. include:: {IDF_TARGET_PATH_NAME}.inc
         :start-after: run-openocd-appimage-offset
         :end-before: ---
 
@@ -128,7 +128,7 @@ There are several kinds of OpenOCD configuration files (``*.cfg``). All configur
 
 The following configuration files are available for {IDF_TARGET_NAME}:
 
-.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+.. include:: {IDF_TARGET_PATH_NAME}.inc
     :start-after: openocd-cfg-files
     :end-before: ---
 
@@ -176,7 +176,7 @@ It is important to set the variable before including the ESP-specific configurat
     * - ``ESP_SEMIHOST_BASEDIR``
       - Set to the path (on the host) which will be the default directory for semihosting functions.
 
-.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+.. include:: {IDF_TARGET_PATH_NAME}.inc
     :start-after: openocd-target-specific-config-vars
     :end-before: ---
 
@@ -195,7 +195,7 @@ Do not use JTAG pins for something else
 
 Operation of JTAG may be disturbed, if some other h/w is connected to JTAG pins besides {IDF_TARGET_NAME} module and JTAG adapter. {IDF_TARGET_NAME} JTAG is using the following pins:
 
-.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+.. include:: {IDF_TARGET_PATH_NAME}.inc
     :start-after: jtag-pins
     :end-before: ---
 
@@ -263,19 +263,19 @@ In case you encounter a problem with OpenOCD or GDB programs itself and do not f
 
     OpenOCD:
 
-    .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+    .. include:: {IDF_TARGET_PATH_NAME}.inc
         :start-after: run-openocd-d3
         :end-before: ---
 
     Logging to a file this way will prevent information displayed on the terminal. This may be a good thing taken amount of information provided, when increased debug level ``-d3`` is set. If you still like to see the log on the screen, then use another command instead:
 
-    .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+    .. include:: {IDF_TARGET_PATH_NAME}.inc
         :start-after: run-openocd-d3-tee
         :end-before: ---
 
     Debugger:
 
-    .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+    .. include:: {IDF_TARGET_PATH_NAME}.inc
         :start-after: run-gdb-remotelog
         :end-before: ---
 

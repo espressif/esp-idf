@@ -35,7 +35,7 @@
 
         GDB 硬件调试的配置 - Main 选项卡
 
-6.  点击 “Debugger” 选项卡，在 “GDB Command” 栏中输入 ``xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-gdb`` 来调用调试器。
+6.  点击 “Debugger” 选项卡，在 “GDB Command” 栏中输入 ``{IDF_TARGET_TOOLCHAIN_PREFIX}-gdb`` 来调用调试器。
 
 7.  更改 “Remote host” 的默认配置，在 “Port number” 下面输入 ``3333``。
 
@@ -134,7 +134,7 @@
 
     ::
 
-        xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-gdb -x gdbinit build/blink.elf
+        {IDF_TARGET_TOOLCHAIN_PREFIX}-gdb -x gdbinit build/blink.elf
 
 .. highlight:: none
 
@@ -142,14 +142,14 @@
 
     ::
 
-        user-name@computer-name:~/esp/blink$ xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-gdb -x gdbinit build/blink.elf
+        user-name@computer-name:~/esp/blink$ {IDF_TARGET_TOOLCHAIN_PREFIX}-gdb -x gdbinit build/blink.elf
         GNU gdb (crosstool-NG crosstool-ng-1.22.0-61-gab8375a) 7.10
         Copyright (C) 2015 Free Software Foundation, Inc.
         License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
         This is free software: you are free to change and redistribute it.
         There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
         and "show warranty" for details.
-        This GDB was configured as "--host=x86_64-build_pc-linux-gnu --target=xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf".
+        This GDB was configured as "--host=x86_64-build_pc-linux-gnu --target={IDF_TARGET_TOOLCHAIN_PREFIX}".
         Type "show configuration" for configuration details.
         For bug reporting instructions, please see:
         <http://www.gnu.org/software/gdb/bugs/>.
@@ -158,7 +158,7 @@
         For help, type "help".
         Type "apropos word" to search for commands related to "word"...
         Reading symbols from build/blink.elf...done.
-        0x400d10d8 in esp_vApplicationIdleHook () at /home/user-name/esp/esp-idf/components/{IDF_TARGET_TOOLCHAIN_NAME}/./freertos_hooks.c:52
+        0x400d10d8 in esp_vApplicationIdleHook () at /home/user-name/esp/esp-idf/components/{IDF_TARGET_PATH_NAME}/./freertos_hooks.c:52
         52          asm("waiti 0");
         JTAG tap: {IDF_TARGET_PATH_NAME}.cpu0 tap/device found: 0x120034e5 (mfg: 0x272 (Tensilica), part: 0x2003, ver: 0x1)
         JTAG tap: {IDF_TARGET_PATH_NAME}.slave tap/device found: 0x120034e5 (mfg: 0x272 (Tensilica), part: 0x2003, ver: 0x1)
@@ -202,7 +202,7 @@
     在终端中运行 OpenOCD，其配置信息来源于环境变量或者命令行。默认会使用 ``OPENOCD_SCRIPTS`` 环境变量中指定的脚本路径，它是由 ESP-IDF 项目仓库中的导出脚本（``export.sh`` or ``export.bat``）添加到系统环境变量中的。
     当然，我们可以在命令行中通过  ``--openocd-scripts`` 来覆盖这个变量的值。
 
-    .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+    .. include:: {IDF_TARGET_PATH_NAME}.inc
         :start-after: idf-py-openocd-default-cfg
         :end-before: ---
 

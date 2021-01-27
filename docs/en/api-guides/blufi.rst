@@ -153,13 +153,13 @@ The format of Ack Frame（8 bit）：
   | 0x0 (b’000000)          | Ack                                                          | The data field of the Ack frame uses the same                 | The data field consumes a byte and its value is               |
   |                         |                                                              | sequence value of the frame to reply to.                      | the same as the sequence field of the frame to reply to.      |
   +-------------------------+--------------------------------------------------------------+---------------------------------------------------------------+---------------------------------------------------------------+
-  | 0x1 (b’000001)          | Set ESP32 to the security mode.                              | To inform ESP32 of the security mode to use                   | The data field consumes a byte.                               |
+  | 0x1 (b’000001)          | Set ESP device to the security mode.                         | To inform ESP device of the security mode to use              | The data field consumes a byte.                               |
   |                         |                                                              | when sending data, which is allowed to be reset               | The higher 4 bits are for the security mode setting           |
   |                         |                                                              | multiple times during the process.                            | of the control frame, and the lower 4 bits are for            |
   |                         |                                                              | Each setting affects the subsequent security mode used.       | the security mode setting of the data frame.                  |
-  +                         +                                                              + If it is not set, ESP32 will send the control frame           +---------------------------------------------------------------+
+  +                         +                                                              + If it is not set, ESP device will send the control frame      +---------------------------------------------------------------+
   |                         |                                                              | and data frame with no checksum and encryption by default.    | b’0000: no checksum and no encryption;                        |
-  +                         +                                                              + The data transmission from the mobile phone to ESP32 is       +---------------------------------------------------------------+
+  +                         +                                                              + The data transmission from the mobile phone to ESP device is  +---------------------------------------------------------------+
   |                         |                                                              | controlled by this control frame.                             | b’0001: with checksum but no encryption;                      |
   +                         +                                                              +                                                               +---------------------------------------------------------------+
   |                         |                                                              |                                                               | b’0010: no checksum but with encryption;                      |
@@ -167,7 +167,7 @@ The format of Ack Frame（8 bit）：
   |                         |                                                              |                                                               | b’0011: with both checksum and encryption.                    |
   +-------------------------+--------------------------------------------------------------+---------------------------------------------------------------+---------------------------------------------------------------+
   | 0x2 (b’000010)          | Set the opmode of Wi-Fi.                                     | The frame contains opmode settings for                        | data[0] is for opmode settings, including:                    |
-  +                         +                                                              + configuring for the Wi-Fi mode of ESP32.                      +---------------------------------------------------------------+
+  +                         +                                                              + configuring for the Wi-Fi mode of ESP device.                 +---------------------------------------------------------------+
   |                         |                                                              |                                                               | 0x00: NULL；                                                  |
   +                         +                                                              +                                                               +---------------------------------------------------------------+
   |                         |                                                              |                                                               | 0x01: STA;                                                    |
@@ -179,13 +179,13 @@ The format of Ack Frame（8 bit）：
   |                         |                                                              |                                                               | Please set the SSID/Password/Max Connection Number of         |
   |                         |                                                              |                                                               | the AP mode in the first place if an AP gets involved.        |
   +-------------------------+--------------------------------------------------------------+---------------------------------------------------------------+---------------------------------------------------------------+
-  | 0x3 (b’000011)          | Connect ESP32 to the AP.                                     | To notify ESP32 that the essential information has been sent  | No data field is contained.                                   |
-  |                         |                                                              | and it is allowed to connect to the AP.                       |                                                               |
+  | 0x3 (b’000011)          | Connect ESP device to the AP.                                | To notify ESP device that the essential information has been  | No data field is contained.                                   |
+  |                         |                                                              | sent and it is allowed to connect to the AP.                  |                                                               |
   +-------------------------+--------------------------------------------------------------+---------------------------------------------------------------+---------------------------------------------------------------+
-  | 0x4 (b’000100)          | Disconnect ESP32 from the AP.                                |                                                               | No data field is contained.                                   |
+  | 0x4 (b’000100)          | Disconnect ESP device from the AP.                           |                                                               | No data field is contained.                                   |
   +-------------------------+--------------------------------------------------------------+---------------------------------------------------------------+---------------------------------------------------------------+
-  | 0x5 (b’000101)          | To get the information of ESP32’s Wi-Fi mode and its status. |                                                               | No data field is contained.                                   |
-  |                         |                                                              |                                                               | When receiving this control frame, ESP32 will send back       |
+  | 0x5 (b’000101)          | To get the information of ESP device’s Wi-Fi mode and        |                                                               | No data field is contained.                                   |
+  |                         | it's status.                                                 |                                                               | When receiving this control frame, ESP device will send back  |
   |                         |                                                              |                                                               | a follow-up  frame of Wi-Fi connection state report to        |
   |                         |                                                              |                                                               | the mobile phone with the information of the current opmode,  |
   |                         |                                                              |                                                               | connection status, SSID and so on.                            |
@@ -198,12 +198,12 @@ The format of Ack Frame（8 bit）：
   +-------------------------+--------------------------------------------------------------+---------------------------------------------------------------+---------------------------------------------------------------+
   | 0x7 (b'000111)          | Get the version information.                                 |                                                               |                                                               |
   +-------------------------+--------------------------------------------------------------+---------------------------------------------------------------+---------------------------------------------------------------+
-  | 0x8 (b’001000)          | Disconnect the BLE GATT link.                                |                                                               | ESP32 will disconnect the BLE GATT link                       |
+  | 0x8 (b’001000)          | Disconnect the BLE GATT link.                                |                                                               | ESP device will disconnect the BLE GATT link                  |
   |                         |                                                              |                                                               | after receives this command.                                  |
   +-------------------------+--------------------------------------------------------------+---------------------------------------------------------------+---------------------------------------------------------------+
-  | 0x9 (b’001001)          | Get the Wi-Fi list.                                          | To get ESP32 to scan the Wi-Fi access points around.          | No data field is contained.                                   |
+  | 0x9 (b’001001)          | Get the Wi-Fi list.                                          | To get ESP device to scan the Wi-Fi access points around.     | No data field is contained.                                   |
   |                         |                                                              |                                                               | When receiving this control frame,                            |
-  |                         |                                                              |                                                               | ESP32 will send back a follow-up frame of Wi-Fi list          |
+  |                         |                                                              |                                                               | ESP device will send back a follow-up frame of Wi-Fi lis      |
   |                         |                                                              |                                                               | report to the mobile phone.                                   |
   +-------------------------+--------------------------------------------------------------+---------------------------------------------------------------+---------------------------------------------------------------+
 
@@ -216,27 +216,27 @@ The format of Ack Frame（8 bit）：
   |                  |                                                    | function registered in the application layer.                 |                                                                       |
   +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
   |  0x1 (b’000001)  | Send the BSSID for STA mode.                       | To send the BSSID of the AP for the STA device to             | The length of the data depends on the length field.                   |
-  |                  |                                                    | connect under the condition that  the SSID is hidden.         | When the transmission direction is ESP32 to the mobile phone,         |
+  |                  |                                                    | connect under the condition that  the SSID is hidden.         | When the transmission direction is ESP device to the mobile phone,    |
   |                  |                                                    |                                                               | it means to provide the mobile phone with the needed information.     |
   +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
   |  0x2 (b’000010)  | Send the SSID for STA mode.                        | To send the SSID of the AP for the STA device to connect.     | The length of the data depends on the length field.                   |
-  |                  |                                                    |                                                               | When the transmission direction is ESP32 to the mobile phone,         |
+  |                  |                                                    |                                                               | When the transmission direction is ESP device to the mobile phone,    |
   |                  |                                                    |                                                               | it means to provide the mobile phone with the needed information.     |
   +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
   |  0x3 (b’000011)  | Send the password for STA mode.                    | To send the password of the AP for the STA device to connect. | The length of the data depends on the length field.                   |
-  |                  |                                                    |                                                               | When the transmission direction is ESP32 to the mobile phone,         |
+  |                  |                                                    |                                                               | When the transmission direction is ESP device to the mobile phone,    |
   |                  |                                                    |                                                               | it means to provide the mobile phone with the needed information.     |
   +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
   |  0x4 (b’000100)  | Send the SSID for SoftAP mode.                     |                                                               | The length of the data depends on the length field.                   |
-  |                  |                                                    |                                                               | When the transmission direction is ESP32 to the mobile phone,         |
+  |                  |                                                    |                                                               | When the transmission direction is ESP device to the mobile phone,    |
   |                  |                                                    |                                                               | it means to provide the mobile phone with the needed information.     |
   +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
   |  0x5 (b’000101)  | Send the password for SoftAPmode.                  |                                                               | The length of the data depends on the length field.                   |
-  |                  |                                                    |                                                               | When the transmission direction is ESP32 to the mobile phone,         |
+  |                  |                                                    |                                                               | When the transmission direction is ESP device to the mobile phone,    |
   |                  |                                                    |                                                               | it means to provide the mobile phone with the needed information.     |
   +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
   |  0x6 (b’000110)  | Set the maximum connection number for SoftAP mode. |                                                               | data[0] represents the value of the connection number,                |
-  |                  |                                                    |                                                               | ranging from 1 to 4. When the transmission direction is ESP32         |
+  |                  |                                                    |                                                               | ranging from 1 to 4. When the transmission direction is ESP device    |
   |                  |                                                    |                                                               | to the mobile phone, it means to provide the mobile phone with        |
   |                  |                                                    |                                                               | the needed information.                                               |
   +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
@@ -252,12 +252,12 @@ The format of Ack Frame（8 bit）：
   +                  +                                                    +                                                               +-----------------------------------------------------------------------+
   |                  |                                                    |                                                               | 0x04: WPA_WPA2_PSK                                                    |
   +                  +                                                    +                                                               +-----------------------------------------------------------------------+
-  |                  |                                                    |                                                               | When the transmission direction is ESP32 to the mobile phone,         |
+  |                  |                                                    |                                                               | When the transmission direction is ESP device to the mobile phone,    |
   |                  |                                                    |                                                               | it means to provide the mobile phone with the needed information.     |
   +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
   |  0x8 (b’001000)  | Set the channel amount for SoftAP mode.            |                                                               | data[0] represents the quantity of the supported channels,            |
   |                  |                                                    |                                                               | ranging from 1 to 14.                                                 |
-  |                  |                                                    |                                                               | When the transmission direction is ESP32 to the mobile phone,         |
+  |                  |                                                    |                                                               | When the transmission direction is ESP device to the mobile phone,    |
   |                  |                                                    |                                                               | it means to provide the mobile phone with the needed information.     |
   +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
   |  0x9 (b’001001)  | Username                                           | It provides the username of the GATT client when using        | The length of the data depends on the length field.                   |
@@ -281,7 +281,7 @@ The format of Ack Frame（8 bit）：
   |  0xe (b’001110)  | ServerPrivate Key                                  | It provides the private key of the sever when                 | The length of the data depends on the length field.                   |
   |                  |                                                    | using encryption of enterprise level.                         | The frame supports to be fragmented if the data length is not enough. |
   +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
-  |  0xf (b’001111)  | Wi-Fi Connection State Report                      | To notify the phone of the ESP32's Wi-Fi status,              | data[0] represents opmode, including:                                 |
+  |  0xf (b’001111)  | Wi-Fi Connection State Report                      | To notify the phone of the ESP device's Wi-Fi status,         | data[0] represents opmode, including:                                 |
   +                  +                                                    + including STA status and SoftAP status.                       +-----------------------------------------------------------------------+
   |                  |                                                    | It is for the STA device to connect to the                    | 0x00: NULL                                                            |
   +                  +                                                    + mobile phone or the SoftAP.                                   +-----------------------------------------------------------------------+
@@ -303,7 +303,7 @@ The format of Ack Frame（8 bit）：
   +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
   |  0x10 (b’010000) | Version                                            |                                                               | data[0]= great versiondata[1]= sub version                            |
   +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
-  |  0x11 (b’010001) | Wi-Fi List                                         | To send the Wi-Fi list to ESP32.                              | The format of the data frame is length + RSSI + SSID                  |
+  |  0x11 (b’010001) | Wi-Fi List                                         | To send the Wi-Fi list to ESP device.                         | The format of the data frame is length + RSSI + SSID                  |
   |                  |                                                    |                                                               | and it supports to be sent into fragments                             |
   |                  |                                                    |                                                               | if the data length is too long.                                       |
   +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
@@ -352,9 +352,9 @@ The format of Ack Frame（8 bit）：
    +--------------------+------------------------------------------------------------------------------------------------+
    | 0x04               | Represents the data direction.                                                                 |
    +--------------------+------------------------------------------------------------------------------------------------+
-   |                    | 0 means the mobile phone to ESP32;                                                             |
+   |                    | 0 means the mobile phone to ESP device;                                                        |
    +--------------------+------------------------------------------------------------------------------------------------+
-   |                    | 1 means ESP32 to the mobile phone.                                                             |
+   |                    | 1 means ESP device to the mobile phone.                                                        |
    +--------------------+------------------------------------------------------------------------------------------------+
    | 0x08               | Indicates whether the other person is required to reply to an ACK.                             |
    +--------------------+------------------------------------------------------------------------------------------------+

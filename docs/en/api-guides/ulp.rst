@@ -31,7 +31,7 @@ To compile the ULP code as part of the component, the following steps must be ta
 
 1. The ULP code, written in assembly, must be added to one or more files with `.S` extension. These files must be placed into a separate directory inside the component directory, for instance `ulp/`.
 
-.. note: When registering the component (via ``idf_component_register``), this directory should not be added to the ``SRC_DIRS`` argument. The logic behind this is that the ESP-IDF build system will compile files found in ``SRC_DIRS`` based on their extensions. For ``.S`` files, ``xtensa-{IDF_TARGET_NAME}-elf-as`` assembler is used. This is not desirable for ULP assembly files, so the easiest way to achieve the distinction is by placing ULP assembly files into a separate directory. The ULP assembly source files should also **not** be added to ``SRCS`` for the same reason. See the step below for how to properly add ULP assembly source files.
+.. note: When registering the component (via ``idf_component_register``), this directory should not be added to the ``SRC_DIRS`` argument. The logic behind this is that the ESP-IDF build system will compile files found in ``SRC_DIRS`` based on their extensions. For ``.S`` files, ``{IDF_TARGET_TOOLCHAIN_PREFIX}-as`` assembler is used. This is not desirable for ULP assembly files, so the easiest way to achieve the distinction is by placing ULP assembly files into a separate directory. The ULP assembly source files should also **not** be added to ``SRCS`` for the same reason. See the step below for how to properly add ULP assembly source files.
 
 2. Call ``ulp_embed_binary`` from the component CMakeLists.txt after registration. For example::
 
@@ -150,9 +150,9 @@ Declaration of the entry point symbol comes from the generated header file menti
     ESP32 ULP program flow
     -----------------------
 
-    ESP32 ULP coprocessor is started by a timer. The timer is started once ``ulp_run`` is called. The timer counts a number of RTC_SLOW_CLK ticks 
-    (by default, produced by an internal 150 kHz RC oscillator). The number of ticks is set using ``SENS_ULP_CP_SLEEP_CYCx_REG`` registers (x = 0..4). 
-    When starting the ULP for the first time, ``SENS_ULP_CP_SLEEP_CYC0_REG`` will be used to set the number of timer ticks. 
+    ESP32 ULP coprocessor is started by a timer. The timer is started once ``ulp_run`` is called. The timer counts a number of RTC_SLOW_CLK ticks
+    (by default, produced by an internal 150 kHz RC oscillator). The number of ticks is set using ``SENS_ULP_CP_SLEEP_CYCx_REG`` registers (x = 0..4).
+    When starting the ULP for the first time, ``SENS_ULP_CP_SLEEP_CYC0_REG`` will be used to set the number of timer ticks.
     Later the ULP program can select another ``SENS_ULP_CP_SLEEP_CYCx_REG`` register using ``sleep`` instruction.
 
     The application can set ULP timer period values (SENS_ULP_CP_SLEEP_CYCx_REG, x = 0..4) using ``ulp_set_wakeup_period`` function.
@@ -171,19 +171,19 @@ Declaration of the entry point symbol comes from the generated header file menti
     ESP32-S2 ULP program flow
     -------------------------
 
-    ESP32-S2 ULP coprocessor is started by a timer. The timer is started once ``ulp_run`` is called. The timer counts a number of RTC_SLOW_CLK ticks 
-    (by default, produced by an internal 90 kHz RC oscillator). The number of ticks is set using ``RTC_CNTL_ULP_CP_TIMER_1_REG`` register. 
+    ESP32-S2 ULP coprocessor is started by a timer. The timer is started once ``ulp_run`` is called. The timer counts a number of RTC_SLOW_CLK ticks
+    (by default, produced by an internal 90 kHz RC oscillator). The number of ticks is set using ``RTC_CNTL_ULP_CP_TIMER_1_REG`` register.
 
     The application can set ULP timer period values by ``ulp_set_wakeup_period`` function.
 
     .. doxygenfunction:: ulp_set_wakeup_period
 
-    Once the timer counts the number of ticks set in the selected ``RTC_CNTL_ULP_CP_TIMER_1_REG`` register, ULP coprocessor powers up and starts running the program 
+    Once the timer counts the number of ticks set in the selected ``RTC_CNTL_ULP_CP_TIMER_1_REG`` register, ULP coprocessor powers up and starts running the program
     from the entry point set in the call to ``ulp_run``.
 
     The program runs until it encounters a ``halt`` instruction or an illegal instruction. Once the program halts, ULP coprocessor powers down, and the timer is started again.
 
-    To disable the timer (effectively preventing the ULP program from running again), clear the ``RTC_CNTL_ULP_CP_SLP_TIMER_EN`` bit in the ``RTC_CNTL_STATE0_REG`` register. 
+    To disable the timer (effectively preventing the ULP program from running again), clear the ``RTC_CNTL_ULP_CP_SLP_TIMER_EN`` bit in the ``RTC_CNTL_STATE0_REG`` register.
     This can be done both from ULP code and from the main program.
 
 

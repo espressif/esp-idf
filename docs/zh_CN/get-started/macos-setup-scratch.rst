@@ -73,14 +73,14 @@ MacPorts 需要完整的 XCode 软件，而 Homebrew 只需要安装 XCode 命�
 
 编译工具链::
 
-	./ct-ng xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf
+	./ct-ng {IDF_TARGET_TOOLCHAIN_PREFIX}
 	./ct-ng build
-	chmod -R u+w builds/xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf
+	chmod -R u+w builds/{IDF_TARGET_TOOLCHAIN_PREFIX}
 
-编译得到的工具链会被保存到 ``~/esp/ctng-volume/crosstool-NG/builds/xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf``。使用工具链前，请将 ``~/esp/ctng-volume/crosstool-NG/builds/xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf/bin`` 添加至 ``PATH`` 环境变量。
+编译得到的工具链会被保存到 ``~/esp/ctng-volume/crosstool-NG/builds/{IDF_TARGET_TOOLCHAIN_PREFIX}``。使用工具链前，请将 ``~/esp/ctng-volume/crosstool-NG/builds/{IDF_TARGET_TOOLCHAIN_PREFIX}/bin`` 添加至 ``PATH`` 环境变量。
 
 
-停用 Python 2 
+停用 Python 2
 ====================
 
 Python 2 已经 `结束生命周期 <https://www.python.org/doc/sunset-python-2/>`_，ESP-IDF 很快将不再支持 Python 2。请安装 Python 3.6 或以上版本。可参考上面列出的 macOS 安装说明。

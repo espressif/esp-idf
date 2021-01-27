@@ -144,11 +144,11 @@ CMake 项目模型运行完成后，系统将在构建初期发出 ``idf-info`` 
 :idf_file:`docs/idf_extensions/format_idf_target.py`
     通过将 idf_target 发送至 Sphinx 命令行替换 target 相关名称的扩展功能。例如：
 
-     This is a {\IDF_TARGET_NAME}, with /{\IDF_TARGET_PATH_NAME}/soc.c, compiled with `xtensa-{\IDF_TARGET_TOOLCHAIN_NAME}-elf-gcc` with `CONFIG_{\IDF_TARGET_CFG_PREFIX}_MULTI_DOC`
+     This is a {\IDF_TARGET_NAME}, with /{\IDF_TARGET_PATH_NAME}/soc.c, compiled with `{\IDF_TARGET_TOOLCHAIN_PREFIX}-gcc` with `CONFIG_{\IDF_TARGET_CFG_PREFIX}_MULTI_DOC`
 
     删掉退格键后，将被渲染为
 
-     This is a {IDF_TARGET_NAME}, with /{IDF_TARGET_PATH_NAME}/soc.c, compiled with `xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-gcc` with `CONFIG_{IDF_TARGET_CFG_PREFIX}_MULTI_DOC`.
+     This is a {IDF_TARGET_NAME}, with /{IDF_TARGET_PATH_NAME}/soc.c, compiled with `{IDF_TARGET_TOOLCHAIN_PREFIX}-gcc` with `CONFIG_{IDF_TARGET_CFG_PREFIX}_MULTI_DOC`.
 
     同时，也支持使用以下语法标记本地（单个 rst 文件）替代文件的定义：
     {\IDF_TARGET_TX_PIN:default="IO3",esp32="IO4",esp32s2="IO5"}

@@ -171,7 +171,7 @@ Below is the description of available OpenOCD application tracing commands.
 
 Command usage:
 
-``esp32 apptrace [start <options>] | [stop] | [status] | [dump <cores_num> <outfile>]``
+``esp apptrace [start <options>] | [stop] | [status] | [dump <cores_num> <outfile>]``
 
 Sub-commands:
 
@@ -214,7 +214,7 @@ Command usage examples:
 
     ::
 
-        esp32 apptrace start file://trace.log 1 2048 5 0 0
+        esp apptrace start file://trace.log 1 2048 5 0 0
 
     The tracing data will be retrieved and saved in non-blocking mode. This process will stop automatically after 2048 bytes are collected, or if no data are available for more than 5 seconds.
 
@@ -226,15 +226,15 @@ Command usage examples:
 
     ::
 
-        esp32 apptrace start file://trace.log 1 -1 -1 0 0
+        esp apptrace start file://trace.log 1 -1 -1 0 0
 
-    There is no limitation on the size of collected data and there is no any data timeout set. This process may be stopped by issuing ``esp32 apptrace stop`` command on OpenOCD telnet prompt, or by pressing Ctrl+C in OpenOCD window.
+    There is no limitation on the size of collected data and there is no any data timeout set. This process may be stopped by issuing ``esp apptrace stop`` command on OpenOCD telnet prompt, or by pressing Ctrl+C in OpenOCD window.
 
 3.  Retrieve tracing data and save them indefinitely.
 
     ::
 
-        esp32 apptrace start file://trace.log 0 -1 -1 0 0
+        esp apptrace start file://trace.log 0 -1 -1 0 0
 
     OpenOCD telnet command line prompt will not be available until tracing is stopped. To stop tracing press Ctrl+C in OpenOCD window.
 
@@ -242,7 +242,7 @@ Command usage examples:
 
     ::
 
-        esp32 apptrace start file://trace.log 0 2048 -1 1 0
+        esp apptrace start file://trace.log 0 2048 -1 1 0
 
     To configure tracing immediately after reset use the openocd ``reset halt`` command.
 
@@ -351,7 +351,7 @@ OpenOCD SystemView Tracing Command Options
 
 Command usage:
 
-``esp32 sysview [start <options>] | [stop] | [status]``
+``esp sysview [start <options>] | [stop] | [status]``
 
 Sub-commands:
 
@@ -389,15 +389,15 @@ Command usage examples:
 
     ::
 
-        esp32 sysview start file://pro-cpu.SVDat file://app-cpu.SVDat
+        esp sysview start file://pro-cpu.SVDat file://app-cpu.SVDat
 
-    The tracing data will be retrieved and saved in non-blocking mode. To stop data this process enter ``esp32 apptrace stop`` command on OpenOCD telnet prompt, optionally pressing Ctrl+C in OpenOCD window.
+    The tracing data will be retrieved and saved in non-blocking mode. To stop data this process enter ``esp apptrace stop`` command on OpenOCD telnet prompt, optionally pressing Ctrl+C in OpenOCD window.
 
 2.  Retrieve tracing data and save them indefinitely.
 
     ::
 
-        esp32 sysview start file://pro-cpu.SVDat file://app-cpu.SVDat 0 -1 -1
+        esp sysview start file://pro-cpu.SVDat file://app-cpu.SVDat 0 -1 -1
 
     OpenOCD telnet command line prompt will not be available until tracing is stopped. To stop tracing, press Ctrl+C in OpenOCD window.
 
@@ -405,7 +405,11 @@ Command usage examples:
 Data Visualization
 """"""""""""""""""
 
-After trace data are collected user can use special tool to visualize the results and inspect behavior of the program. Unfortunately SystemView does not support tracing from multiple cores. So when tracing from {IDF_TARGET_NAME} working in dual-core mode two files are generated: one for PRO CPU and another one for APP CPU. User can load every file into separate instance of the tool.
+After trace data are collected user can use special tool to visualize the results and inspect behavior of the program.
+
+.. only:: not CONFIG_FREERTOS_UNICORE
+
+    Unfortunately SystemView does not support tracing from multiple cores. So when tracing from {IDF_TARGET_NAME} working in dual-core mode two files are generated: one for PRO CPU and another one for APP CPU. User can load every file into separate instance of the tool.
 
 It is uneasy and awkward to analyze data for every core in separate instance of the tool. Fortunately there is Eclipse plugin called *Impulse* which can load several trace files and makes it possible to inspect events from both cores in one view. Also this plugin has no limitation of 1,000,000 events as compared to free version of SystemView.
 
@@ -416,25 +420,26 @@ Good instruction on how to install, configure and visualize data in Impulse from
     IDF uses its own mapping for SystemView FreeRTOS events IDs, so user needs to replace original file with mapping ``$SYSVIEW_INSTALL_DIR/Description/SYSVIEW_FreeRTOS.txt`` with ``$IDF_PATH/docs/api-guides/SYSVIEW_FreeRTOS.txt``.
     Also contents of that IDF specific file should be used when configuring SystemView serializer using above link.
 
+.. only:: not CONFIG_FREERTOS_UNICORE
 
-Configure Impulse for Dual Core Traces
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Configure Impulse for Dual Core Traces
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-After installing Impulse and ensuring that it can successfully load trace files for each core in separate tabs user can add special Multi Adapter port and load both files into one view. To do this user needs to do the following in Eclipse:
+    After installing Impulse and ensuring that it can successfully load trace files for each core in separate tabs user can add special Multi Adapter port and load both files into one view. To do this user needs to do the following in Eclipse:
 
-1. Open 'Signal Ports' view. Go to Windows->Show View->Other menu. Find 'Signal Ports' view in Impulse folder and double-click on it.
-2. In 'Signal Ports' view right-click on 'Ports' and select 'Add ...'->New Multi Adapter Port
-3. In open dialog Press 'Add' button and select 'New Pipe/File'.
-4. In open dialog select 'SystemView Serializer' as Serializer and set path to PRO CPU trace file. Press OK.
-5. Repeat steps 3-4 for APP CPU trace file.
-6. Double-click on created port. View for this port should open.
-7. Click Start/Stop Streaming button. Data should be loaded.
-8. Use 'Zoom Out', 'Zoom In' and 'Zoom Fit' button to inspect data.
-9. For settings measurement cursors and other features please see `Impulse documentation <https://toem.de/index.php/projects/impulse>`_).
+    1. Open 'Signal Ports' view. Go to Windows->Show View->Other menu. Find 'Signal Ports' view in Impulse folder and double-click on it.
+    2. In 'Signal Ports' view right-click on 'Ports' and select 'Add ...'->New Multi Adapter Port
+    3. In open dialog Press 'Add' button and select 'New Pipe/File'.
+    4. In open dialog select 'SystemView Serializer' as Serializer and set path to PRO CPU trace file. Press OK.
+    5. Repeat steps 3-4 for APP CPU trace file.
+    6. Double-click on created port. View for this port should open.
+    7. Click Start/Stop Streaming button. Data should be loaded.
+    8. Use 'Zoom Out', 'Zoom In' and 'Zoom Fit' button to inspect data.
+    9. For settings measurement cursors and other features please see `Impulse documentation <https://toem.de/index.php/projects/impulse>`_).
 
-.. note::
+    .. note::
 
-    If you have problems with visualization (no data are shown or strange behavior of zoom action is observed) you can try to delete current signal hierarchy and double click on the necessary file or port. Eclipse will ask you to create new signal hierarchy.
+        If you have problems with visualization (no data are shown or strange behavior of zoom action is observed) you can try to delete current signal hierarchy and double click on the necessary file or port. Eclipse will ask you to create new signal hierarchy.
 
 
 .. _app_trace-gcov-source-code-coverage:
@@ -511,24 +516,24 @@ ESP-IDF supports two methods of dumping code coverage data form the target to th
 Instant Run-Time Dump
 ~~~~~~~~~~~~~~~~~~~~~
 
-An Instant Run-Time Dump is triggered by calling the ``esp32 gcov`` OpenOCD command (via a telnet session). Once called, OpenOCD will immediately preempt the {IDF_TARGET_NAME}'s current state and execute a builtin IDF Gcov debug stub function. The debug stub function will handle the dumping of data to the Host. Upon completion, the {IDF_TARGET_NAME} will resume it's current state.
+An Instant Run-Time Dump is triggered by calling the ``{IDF_TARGET_NAME} gcov`` OpenOCD command (via a telnet session). Once called, OpenOCD will immediately preempt the {IDF_TARGET_NAME}'s current state and execute a builtin IDF Gcov debug stub function. The debug stub function will handle the dumping of data to the Host. Upon completion, the {IDF_TARGET_NAME} will resume it's current state.
 
 Hard-coded Dump
 ~~~~~~~~~~~~~~~
 
-A Hard-coded Dump is triggered by the application itself by calling :cpp:func:`esp_gcov_dump` from somewhere within the application. When called, the application will halt and wait for OpenOCD to connect and retrieve the code coverage data. Once :cpp:func:`esp_gcov_dump` is called, the Host must execute the ``esp32 gcov dump`` OpenOCD command (via a telnet session). The ``esp32 gcov dump`` command will cause OpenOCD to connect to the {IDF_TARGET_NAME}, retrieve the code coverage data, then disconnect from the {IDF_TARGET_NAME} thus allowing the application to resume. Hard-coded Dumps can also be triggered multiple times throughout an application's lifetime.
+A Hard-coded Dump is triggered by the application itself by calling :cpp:func:`esp_gcov_dump` from somewhere within the application. When called, the application will halt and wait for OpenOCD to connect and retrieve the code coverage data. Once :cpp:func:`esp_gcov_dump` is called, the Host must execute the ``esp gcov dump`` OpenOCD command (via a telnet session). The ``esp gcov dump`` command will cause OpenOCD to connect to the {IDF_TARGET_NAME}, retrieve the code coverage data, then disconnect from the {IDF_TARGET_NAME} thus allowing the application to resume. Hard-coded Dumps can also be triggered multiple times throughout an application's lifetime.
 
 Hard-coded dumps are useful if code coverage data is required at certain points of an application's lifetime by placing :cpp:func:`esp_gcov_dump` where necessary (e.g., after application initialization, during each iteration of an application's main loop).
 
-GDB can be used to set a breakpoint on :cpp:func:`esp_gcov_dump`, then call ``mon esp32 gcov dump`` automatically via the use a ``gdbinit`` script (see  Using GDB from :ref:`jtag-debugging-using-debugger-command-line`).
+GDB can be used to set a breakpoint on :cpp:func:`esp_gcov_dump`, then call ``mon esp gcov dump`` automatically via the use a ``gdbinit`` script (see  Using GDB from :ref:`jtag-debugging-using-debugger-command-line`).
 
-The following GDB script is will add a breakpoint at :cpp:func:`esp_gcov_dump`, then call the ``mon esp32 gcov dump`` OpenOCD command.
+The following GDB script is will add a breakpoint at :cpp:func:`esp_gcov_dump`, then call the ``mon esp gcov dump`` OpenOCD command.
 
 .. code-block:: none
 
     b esp_gcov_dump
     commands
-    mon esp32 gcov dump
+    mon esp gcov dump
     end
 
 

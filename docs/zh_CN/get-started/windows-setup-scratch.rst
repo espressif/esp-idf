@@ -82,12 +82,12 @@ Python 安装完成后，从 Windows 开始菜单中打开“命令提示符”�
 
 |download_link_win32|
 
-将压缩包文件解压到 ``C:\Program Files``（或其他位置）。压缩包文件包含一个 ``xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf`` 目录。
+将压缩包文件解压到 ``C:\Program Files``（或其他位置）。压缩包文件包含一个 ``{IDF_TARGET_TOOLCHAIN_PREFIX}`` 目录。
 
-然后，请将该目录下的 ``bin`` 子目录 :ref:`添加到 Path 环境变量 <add-directory-windows-path>`。例如，将目录 ``C:\Program Files\xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf\bin`` 添加到 Path 环境变量。
+然后，请将该目录下的 ``bin`` 子目录 :ref:`添加到 Path 环境变量 <add-directory-windows-path>`。例如，将目录 ``C:\Program Files\{IDF_TARGET_TOOLCHAIN_PREFIX}\bin`` 添加到 Path 环境变量。
 
 .. 注解::
-    如果您已安装 MSYS2 环境（适用 "GNU Make" 编译系统），则可以跳过下载那一步，直接添加目录 ``C:\msys32\opt\xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf\bin`` 到 Path 环境变量，因为 MSYS2 环境已包含工具链。
+    如果您已安装 MSYS2 环境（适用 "GNU Make" 编译系统），则可以跳过下载那一步，直接添加目录 ``C:\msys32\opt\{IDF_TARGET_TOOLCHAIN_PREFIX}\bin`` 到 Path 环境变量，因为 MSYS2 环境已包含工具链。
 
 
 .. _add-directory-windows-path:

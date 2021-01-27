@@ -10,7 +10,7 @@
 
 1.  找到 JTAG 接口和 {IDF_TARGET_NAME} 板上需要相互连接并建立通信的引脚/信号。
 
-    .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+    .. include:: {IDF_TARGET_PATH_NAME}.inc
         :start-after: jtag-pins
         :end-before: ---
 

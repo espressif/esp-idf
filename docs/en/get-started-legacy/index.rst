@@ -299,7 +299,7 @@ If you run the given command and see errors such as "Failed to connect", there m
 
 In general, you should have no problems with the official esp-idf development boards. However, ``esptool.py`` is not able to reset your hardware automatically in the following cases:
 
-- Your hardware does not have the DTR and RTS lines connected to ``GPIO0`` and ``CIHP_PU``
+- Your hardware does not have the DTR and RTS lines connected to ``GPIO0`` and ``CHIP_PU``
 - The DTR and RTS lines are configured differently
 - There are no such serial control lines at all
 

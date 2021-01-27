@@ -30,7 +30,7 @@ class TestFormatIdfTarget(unittest.TestCase):
 
         self.assertEqual(self.str_sub.substitute_strings['{IDF_TARGET_NAME}'], 'ESP32')
         self.assertEqual(self.str_sub.substitute_strings['{IDF_TARGET_PATH_NAME}'], 'esp32')
-        self.assertEqual(self.str_sub.substitute_strings['{IDF_TARGET_TOOLCHAIN_NAME}'], 'esp32')
+        self.assertEqual(self.str_sub.substitute_strings['{IDF_TARGET_TOOLCHAIN_PREFIX}'], 'xtensa-esp32-elf')
         self.assertEqual(self.str_sub.substitute_strings['{IDF_TARGET_CFG_PREFIX}'], 'ESP32')
         self.assertEqual(self.str_sub.substitute_strings['{IDF_TARGET_TRM_EN_URL}'],
                          'https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf')
@@ -39,7 +39,7 @@ class TestFormatIdfTarget(unittest.TestCase):
 
     def test_sub(self):
         content = ('This is a {IDF_TARGET_NAME}, with {IDF_TARGET_PATH_NAME}/soc.c, compiled with '
-                   'xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-gcc with CONFIG_{IDF_TARGET_CFG_PREFIX}_MULTI_DOC. '
+                   '{IDF_TARGET_TOOLCHAIN_PREFIX}-gcc with CONFIG_{IDF_TARGET_CFG_PREFIX}_MULTI_DOC. '
                    'TRM can be found at {IDF_TARGET_TRM_EN_URL} or {IDF_TARGET_TRM_CN_URL}')
 
         expected = ('This is a ESP32, with esp32/soc.c, compiled with xtensa-esp32-elf-gcc with CONFIG_ESP32_MULTI_DOC. '

@@ -16,7 +16,7 @@ import sys
 project_path = os.path.abspath(os.path.dirname(__file__))
 
 # Targets which needs --preview to build
-PREVIEW_TARGETS = ['esp32c3']
+PREVIEW_TARGETS = []
 
 
 def setup(app):
