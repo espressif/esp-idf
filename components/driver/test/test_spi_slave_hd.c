@@ -99,7 +99,11 @@ static void init_master_hd(spi_device_handle_t* spi, const spitest_param_set_t* 
     bus_cfg.flags |= SPICOMMON_BUSFLAG_GPIO_PINS;
 #endif
 
+#if !SOC_GDMA_SUPPORTED
     TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &bus_cfg, TEST_SPI_HOST));
+#else
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &bus_cfg, -1));
+#endif
     spi_device_interface_config_t dev_cfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
     dev_cfg.flags = SPI_DEVICE_HALFDUPLEX;
     dev_cfg.command_bits = 8;
@@ -122,7 +126,11 @@ static void init_slave_hd(int mode, bool append_mode, const spi_slave_hd_callbac
 #endif
     spi_slave_hd_slot_config_t slave_hd_cfg = SPI_SLOT_TEST_DEFAULT_CONFIG();
     slave_hd_cfg.mode = mode;
+#if !SOC_GDMA_SUPPORTED
     slave_hd_cfg.dma_chan = TEST_SLAVE_HOST;
+#else
+    slave_hd_cfg.dma_chan = -1;
+#endif
     if (append_mode) {
         slave_hd_cfg.flags |= SPI_SLAVE_HD_APPEND_MODE;
     }
