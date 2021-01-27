@@ -329,7 +329,11 @@ uint32_t bta_hf_client_sco_co_out_data(UINT8 *p_buf)
         return btc_hf_client_outgoing_data_cb_to_app(p_buf, hf_raw_pkt_size);
     } else if (hf_air_mode == BTM_SCO_AIR_MODE_TRANSPNT) {
         // mSBC
-
+#if (HFP_DYNAMIC_MEMORY == TRUE)
+        if(bta_hf_client_co_cb_ptr == NULL) {
+            return 0;
+        }
+#endif /* HFP_DYNAMIC_MEMORY == TRUE */
         if (hf_inout_pkt_size == BTM_MSBC_FRAME_SIZE / 2) {
             if (bta_hf_client_co_cb.encode_first_pkt){
                 UINT32 size = btc_hf_client_outgoing_data_cb_to_app((UINT8 *)bta_hf_client_co_cb.encoder.as16PcmBuffer, HF_SBC_ENC_RAW_DATA_SIZE);
