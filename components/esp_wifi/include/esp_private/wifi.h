@@ -73,6 +73,17 @@ typedef enum {
 } wifi_log_module_t;
 
 /**
+  * @brief FTM Report log levels configuration
+  *
+  */
+typedef struct {
+    uint8_t show_rtt:1;     /**< Display all valid Round-Trip-Time readings for FTM frames */
+    uint8_t show_diag:1;    /**< Display dialogue tokens for all FTM frames with valid readings */
+    uint8_t show_t1t2t3t4:1;/**< Display all valid T1, T2, T3, T4 readings considered while calculating RTT */
+    uint8_t show_rxrssi:1;  /**< Display RSSI for each FTM frame with valid readings */
+} ftm_report_log_level_t;
+
+/**
   * @brief WiFi log submodule definition
   *
   */
@@ -558,6 +569,18 @@ esp_err_t esp_wifi_internal_set_spp_amsdu(wifi_interface_t ifidx, bool spp_cap, 
   *
   */
 void esp_wifi_internal_optimize_wake_ahead_time(void);
+
+/**
+ * @brief Set FTM Report log level
+ *
+ * @param   log_lvl Log levels configuration
+ *
+ * @return
+ *    - ESP_OK: succeed
+ *    - ESP_ERR_NOT_SUPPORTED: No FTM support
+ */
+esp_err_t esp_wifi_set_ftm_report_log_level(ftm_report_log_level_t *log_lvl);
+
 #ifdef __cplusplus
 }
 #endif
