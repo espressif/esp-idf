@@ -185,12 +185,9 @@ PriorityInitTest g_static_init_priority_test2;
 PriorityInitTest g_static_init_priority_test1 __attribute__((init_priority(1000)));
 PriorityInitTest g_static_init_priority_test0 __attribute__((init_priority(999)));
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3)
-// TODO ESP32C3 IDF-2206
 TEST_CASE("init_priority extension works", "[cxx]")
 {
     TEST_ASSERT_EQUAL(0, g_static_init_priority_test0.index);
     TEST_ASSERT_EQUAL(1, g_static_init_priority_test1.index);
     TEST_ASSERT_EQUAL(2, g_static_init_priority_test2.index);
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3)
