@@ -90,9 +90,9 @@ isr_skip_decrement:
 
     /* preserve return address and schedule next task */
     addi sp,sp,-4
-    sw  ra, 0x04(sp)
+    sw  ra, 0(sp)
     call vTaskSwitchContext
-    lw  ra, 0x04(sp)
+    lw  ra, 0(sp)
     addi sp, sp, 4
 
     /* Clears the switch pending flag */
