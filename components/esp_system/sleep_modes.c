@@ -575,6 +575,7 @@ esp_err_t esp_light_sleep_start(void)
     s_config.rtc_clk_cal_period = (time_per_us << RTC_CLK_CAL_FRACT) / rtc_clk_slow_freq_get_hz();
 #elif defined(CONFIG_ESP32S2_RTC_CLK_SRC_INT_RC)
     s_config.rtc_clk_cal_period = rtc_clk_cal_cycling(RTC_CAL_RTC_MUX, RTC_CLK_SRC_CAL_CYCLES);
+    esp_clk_slowclk_cal_set(s_config.rtc_clk_cal_period);
 #else
     s_config.rtc_clk_cal_period = rtc_clk_cal(RTC_CAL_RTC_MUX, RTC_CLK_SRC_CAL_CYCLES);
 #endif

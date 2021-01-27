@@ -59,6 +59,9 @@ static uint64_t s_boot_time; // when RTC is used to persist time, two RTC_STORE 
 
 static _lock_t s_boot_time_lock;
 
+static _lock_t s_esp_rtc_time_lock;
+static uint64_t s_esp_rtc_time_us, s_rtc_last_ticks;
+
 #if defined( CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER ) || defined( CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER )
 uint64_t esp_time_impl_get_time_since_boot(void)
 {
@@ -131,8 +134,10 @@ uint32_t esp_clk_slowclk_cal_get(void)
 
 uint64_t esp_rtc_get_time_us(void)
 {
-    const uint64_t ticks = rtc_time_get();
+    _lock_acquire(&s_esp_rtc_time_lock);
     const uint32_t cal = esp_clk_slowclk_cal_get();
+    const uint64_t rtc_this_ticks = rtc_time_get();
+    const uint64_t ticks = rtc_this_ticks - s_rtc_last_ticks;
     /* RTC counter result is up to 2^48, calibration factor is up to 2^24,
      * for a 32kHz clock. We need to calculate (assuming no overflow):
      *   (ticks * cal) >> RTC_CLK_CAL_FRACT
@@ -146,26 +151,21 @@ uint64_t esp_rtc_get_time_us(void)
      */
     const uint64_t ticks_low = ticks & UINT32_MAX;
     const uint64_t ticks_high = ticks >> 32;
-    return ((ticks_low * cal) >> RTC_CLK_CAL_FRACT) +
+    const uint64_t delta_time_us = ((ticks_low * cal) >> RTC_CLK_CAL_FRACT) +
            ((ticks_high * cal) << (32 - RTC_CLK_CAL_FRACT));
+    s_esp_rtc_time_us += delta_time_us;
+    s_rtc_last_ticks = rtc_this_ticks;
+    _lock_release(&s_esp_rtc_time_lock);
+    return s_esp_rtc_time_us;
 }
 
 void esp_clk_slowclk_cal_set(uint32_t new_cal)
 {
 #if defined(CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER)
     /* To force monotonic time values even when clock calibration value changes,
-     * we adjust boot time, given current time and the new calibration value:
-     *      T = boot_time_old + cur_cal * ticks / 2^19
-     *      T = boot_time_adj + new_cal * ticks / 2^19
-     * which results in:
-     *      boot_time_adj = boot_time_old + ticks * (cur_cal - new_cal) / 2^19
+     * we adjust esp_rtc_time
      */
-    const int64_t ticks = (int64_t) rtc_time_get();
-    const uint32_t cur_cal = REG_READ(RTC_SLOW_CLK_CAL_REG);
-    int32_t cal_diff = (int32_t) (cur_cal - new_cal);
-    int64_t boot_time_diff = ticks * cal_diff / (1LL << RTC_CLK_CAL_FRACT);
-    uint64_t boot_time_adj = esp_time_impl_get_boot_time() + boot_time_diff;
-    esp_time_impl_set_boot_time(boot_time_adj);
+    esp_rtc_get_time_us();
 #endif // CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER
     REG_WRITE(RTC_SLOW_CLK_CAL_REG, new_cal);
 }
