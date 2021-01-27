@@ -65,7 +65,9 @@ typedef struct {
     spi_bus_config_t bus_cfg;   ///< Config used to initialize the bus
     uint32_t flags;             ///< Flags (attributes) of the bus
     int max_transfer_sz;        ///< Maximum length of bytes available to send
-    int dma_chan;               ///< DMA channel used
+    bool dma_enabled;           ///< To enable DMA or not
+    int tx_dma_chan;            ///< TX DMA channel, on ESP32 and ESP32S2, tx_dma_chan and rx_dma_chan are same
+    int rx_dma_chan;            ///< RX DMA channel, on ESP32 and ESP32S2, tx_dma_chan and rx_dma_chan are same
     int dma_desc_num;           ///< DMA descriptor number of dmadesc_tx or dmadesc_rx.
     lldesc_t *dmadesc_tx;       ///< DMA descriptor array for TX
     lldesc_t *dmadesc_rx;       ///< DMA descriptor array for RX
@@ -127,24 +129,30 @@ bool spicommon_periph_free(spi_host_device_t host);
 bool spicommon_dma_chan_in_use(int dma_chan);
 
 /**
- * @brief Return the SPI DMA channel so other driver can claim it, or just to power down DMA.
+ * @brief Configure DMA for SPI Slave
  *
- * @param dma_chan channel to return
+ * @param host_id                      SPI host ID
+ * @param dma_chan                     -1: auto dma allocate mode; 0: non-dma mode; 1 or 2: assign a specific DMA channel;
+ * @param[out] out_actual_tx_dma_chan  Actual TX DMA channel (if you choose to assign a specific DMA channel, this will be the channel you assigned before)
+ * @param[out] out_actual_rx_dma_chan  Actual RX DMA channel (if you choose to assign a specific DMA channel, this will be the channel you assigned before)
  *
- * @note This public API is deprecated.
- *
- * @return True if success; false otherwise.
+ * @return
+ *        - ESP_OK:                On success
+ *        - ESP_ERR_NO_MEM:        No enough memory
+ *        - ESP_ERR_INVALID_STATE: Driver invalid state, check the log message for details
  */
-bool spicommon_dma_chan_free(int dma_chan);
+esp_err_t spicommon_slave_alloc_dma(spi_host_device_t host_id, int dma_chan, uint32_t *out_actual_tx_dma_chan, uint32_t *out_actual_rx_dma_chan);
 
 /**
- * @brief Try to claim a SPI DMA channel and connect it with SPI peripherals
+ * @brief Free DMA for SPI Slave
  *
- * @param host_id                   SPI host ID
- * @param dma_chan                  -1: auto dma allocate mode; 0: non-dma mode; 1 or 2: assign a specific DMA channel;
- * @param[out] out_actual_dma_chan  Actual DMA channel (if you choose to assign a specific DMA channel, this will be the channel you assigned before)
+ * @param host_id  SPI host ID
+ * @param dma_chan Actual used DMA channel
+ *
+ * @return
+ *        - ESP_OK: On success
  */
-esp_err_t spicommon_alloc_dma(spi_host_device_t host_id, int dma_chan, uint32_t *out_actual_dma_chan);
+esp_err_t spicommon_slave_free_dma(spi_host_device_t host_id, int dma_chan);
 
 /**
  * @brief Connect a SPI peripheral to GPIO pins
@@ -158,7 +166,6 @@ esp_err_t spicommon_alloc_dma(spi_host_device_t host_id, int dma_chan, uint32_t 
  *
  * @param host SPI peripheral to be routed
  * @param bus_config Pointer to a spi_bus_config struct detailing the GPIO pins
- * @param dma_chan DMA-channel (1 or 2) to use, or 0 for no DMA.
  * @param flags Combination of SPICOMMON_BUSFLAG_* flags, set to ensure the pins set are capable with some functions:
  *              - ``SPICOMMON_BUSFLAG_MASTER``: Initialize I/O in master mode
  *              - ``SPICOMMON_BUSFLAG_SLAVE``: Initialize I/O in slave mode
@@ -180,7 +187,7 @@ esp_err_t spicommon_alloc_dma(spi_host_device_t host_id, int dma_chan, uint32_t 
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_OK                on success
  */
-esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_config_t *bus_config, int dma_chan, uint32_t flags, uint32_t *flags_o);
+esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_config_t *bus_config, uint32_t flags, uint32_t *flags_o);
 
 /**
  * @brief Free the IO used by a SPI peripheral

@@ -67,7 +67,9 @@ typedef struct {
     int max_transfer_sz;
     QueueHandle_t trans_queue;
     QueueHandle_t ret_queue;
-    int dma_chan;
+    bool dma_enabled;
+    uint32_t tx_dma_chan;
+    uint32_t rx_dma_chan;
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;
 #endif
@@ -111,7 +113,8 @@ static inline void restore_cs(spi_slave_t *host)
 esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *bus_config, const spi_slave_interface_config_t *slave_config, int dma_chan)
 {
     bool spi_chan_claimed;
-    uint32_t actual_dma_chan = 0;
+    uint32_t actual_tx_dma_chan = 0;
+    uint32_t actual_rx_dma_chan = 0;
     esp_err_t ret = ESP_OK;
     esp_err_t err;
     //We only support HSPI/VSPI, period.
@@ -121,7 +124,7 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
 #elif CONFIG_IDF_TARGET_ESP32S2
     SPI_CHECK( dma_chan == 0 || dma_chan == host, "invalid dma channel", ESP_ERR_INVALID_ARG );
 #elif SOC_GDMA_SUPPORTED
-    SPI_CHECK( dma_chan == -1, "invalid dma channel, chip only support spi dma channel auto-alloc", ESP_ERR_INVALID_ARG );
+    SPI_CHECK( dma_chan == 0 || dma_chan == -1, "invalid dma channel, chip only support spi dma channel auto-alloc", ESP_ERR_INVALID_ARG );
 #endif
     SPI_CHECK((bus_config->intr_flags & (ESP_INTR_FLAG_HIGH|ESP_INTR_FLAG_EDGE|ESP_INTR_FLAG_INTRDISABLED))==0, "intr flag not allowed", ESP_ERR_INVALID_ARG);
 #ifndef CONFIG_SPI_SLAVE_ISR_IN_IRAM
@@ -132,14 +135,6 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     spi_chan_claimed=spicommon_periph_claim(host, "spi slave");
     SPI_CHECK(spi_chan_claimed, "host already in use", ESP_ERR_INVALID_STATE);
 
-    bool use_dma = (dma_chan != 0);
-    if (use_dma) {
-        err = spicommon_alloc_dma(host, dma_chan, &actual_dma_chan);
-        if (err != ESP_OK) {
-            return err;
-        }
-    }
-
     spihost[host] = malloc(sizeof(spi_slave_t));
     if (spihost[host] == NULL) {
         ret = ESP_ERR_NO_MEM;
@@ -149,7 +144,16 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     memcpy(&spihost[host]->cfg, slave_config, sizeof(spi_slave_interface_config_t));
     spihost[host]->id = host;
 
-    err = spicommon_bus_initialize_io(host, bus_config, actual_dma_chan, SPICOMMON_BUSFLAG_SLAVE|bus_config->flags, &spihost[host]->flags);
+    bool use_dma = (dma_chan != 0);
+    spihost[host]->dma_enabled = use_dma;
+    if (use_dma) {
+        ret = spicommon_slave_alloc_dma(host, dma_chan, &actual_tx_dma_chan, &actual_rx_dma_chan);
+        if (ret != ESP_OK) {
+            goto cleanup;
+        }
+    }
+
+    err = spicommon_bus_initialize_io(host, bus_config, SPICOMMON_BUSFLAG_SLAVE|bus_config->flags, &spihost[host]->flags);
     if (err!=ESP_OK) {
         ret = err;
         goto cleanup;
@@ -162,7 +166,8 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     if (use_dma) freeze_cs(spihost[host]);
 
     int dma_desc_ct = 0;
-    spihost[host]->dma_chan = actual_dma_chan;
+    spihost[host]->tx_dma_chan = actual_tx_dma_chan;
+    spihost[host]->rx_dma_chan = actual_rx_dma_chan;
     if (use_dma) {
         //See how many dma descriptors we need and allocate them
         dma_desc_ct = (bus_config->max_transfer_sz + SPI_MAX_DMA_LEN - 1) / SPI_MAX_DMA_LEN;
@@ -220,6 +225,8 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     hal->tx_lsbfirst = (slave_config->flags & SPI_SLAVE_TXBIT_LSBFIRST) ? 1 : 0;
     hal->mode = slave_config->mode;
     hal->use_dma = use_dma;
+    hal->tx_dma_chan = actual_tx_dma_chan;
+    hal->rx_dma_chan = actual_rx_dma_chan;
 
     spi_slave_hal_setup_device(hal);
 
@@ -239,10 +246,15 @@ cleanup:
 #endif
     }
     spi_slave_hal_deinit(&spihost[host]->hal);
+    //On ESP32 and ESP32S2, actual_tx_dma_chan and actual_rx_dma_chan are always same
+    if (spihost[host]->dma_enabled) {
+        spicommon_slave_free_dma(host, actual_tx_dma_chan);
+    }
+
     free(spihost[host]);
     spihost[host] = NULL;
     spicommon_periph_free(host);
-    if (actual_dma_chan != 0) spicommon_dma_chan_free(actual_dma_chan);
+
     return ret;
 }
 
@@ -252,8 +264,9 @@ esp_err_t spi_slave_free(spi_host_device_t host)
     SPI_CHECK(spihost[host], "host not slave", ESP_ERR_INVALID_ARG);
     if (spihost[host]->trans_queue) vQueueDelete(spihost[host]->trans_queue);
     if (spihost[host]->ret_queue) vQueueDelete(spihost[host]->ret_queue);
-    if ( spihost[host]->dma_chan > 0 ) {
-        spicommon_dma_chan_free ( spihost[host]->dma_chan );
+    if (spihost[host]->dma_enabled) {
+        //On ESP32 and ESP32S2, actual_tx_dma_chan and actual_rx_dma_chan are always same
+        spicommon_slave_free_dma(host, spihost[host]->tx_dma_chan);
     }
     free(spihost[host]->hal.dmadesc_tx);
     free(spihost[host]->hal.dmadesc_rx);
@@ -274,9 +287,9 @@ esp_err_t SPI_SLAVE_ATTR spi_slave_queue_trans(spi_host_device_t host, const spi
     BaseType_t r;
     SPI_CHECK(is_valid_host(host), "invalid host", ESP_ERR_INVALID_ARG);
     SPI_CHECK(spihost[host], "host not slave", ESP_ERR_INVALID_ARG);
-    SPI_CHECK(spihost[host]->dma_chan == 0 || trans_desc->tx_buffer==NULL || esp_ptr_dma_capable(trans_desc->tx_buffer),
+    SPI_CHECK(spihost[host]->dma_enabled == 0 || trans_desc->tx_buffer==NULL || esp_ptr_dma_capable(trans_desc->tx_buffer),
 			"txdata not in DMA-capable memory", ESP_ERR_INVALID_ARG);
-    SPI_CHECK(spihost[host]->dma_chan == 0 || trans_desc->rx_buffer==NULL ||
+    SPI_CHECK(spihost[host]->dma_enabled == 0 || trans_desc->rx_buffer==NULL ||
         (esp_ptr_dma_capable(trans_desc->rx_buffer) && esp_ptr_word_aligned(trans_desc->rx_buffer) &&
             (trans_desc->length%4==0)),
         "rxdata not in DMA-capable memory or not WORD aligned", ESP_ERR_INVALID_ARG);
@@ -332,7 +345,7 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
 
     assert(spi_slave_hal_usr_is_done(hal));
 
-    bool use_dma = host->dma_chan != 0;
+    bool use_dma = host->dma_enabled;
     if (host->cur_trans) {
         // When DMA is enabled, the slave rx dma suffers from unexpected transactions. Forbid reading until transaction ready.
         if (use_dma) freeze_cs(host);
@@ -341,7 +354,8 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
         host->cur_trans->trans_len = spi_slave_hal_get_rcv_bitlen(hal);
 
         if (spi_slave_hal_dma_need_reset(hal)) {
-            spicommon_dmaworkaround_req_reset(host->dma_chan, spi_slave_restart_after_dmareset, host);
+            //On ESP32 and ESP32S2, actual_tx_dma_chan and actual_rx_dma_chan are always same
+            spicommon_dmaworkaround_req_reset(host->tx_dma_chan, spi_slave_restart_after_dmareset, host);
         }
         if (host->cfg.post_trans_cb) host->cfg.post_trans_cb(host->cur_trans);
         //Okay, transaction is done.
@@ -350,7 +364,8 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
         host->cur_trans = NULL;
     }
     if (use_dma) {
-        spicommon_dmaworkaround_idle(host->dma_chan);
+        //On ESP32 and ESP32S2, actual_tx_dma_chan and actual_rx_dma_chan are always same
+        spicommon_dmaworkaround_idle(host->tx_dma_chan);
         if (spicommon_dmaworkaround_reset_in_progress()) {
             //We need to wait for the reset to complete. Disable int (will be re-enabled on reset callback) and exit isr.
             esp_intr_disable(host->intr);
@@ -375,7 +390,8 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
         hal->tx_buffer = trans->tx_buffer;
 
         if (use_dma) {
-            spicommon_dmaworkaround_transfer_active(host->dma_chan);
+            //On ESP32 and ESP32S2, actual_tx_dma_chan and actual_rx_dma_chan are always same
+            spicommon_dmaworkaround_transfer_active(host->tx_dma_chan);
         }
 
         spi_slave_hal_prepare_data(hal);

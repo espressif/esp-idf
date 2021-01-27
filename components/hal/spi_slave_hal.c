@@ -7,20 +7,20 @@
 #include "soc/gdma_struct.h"
 #include "hal/gdma_ll.h"
 
-#define spi_dma_ll_rx_enable_burst_data(dev, enable)         gdma_ll_rx_enable_data_burst(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL, enable);
-#define spi_dma_ll_tx_enable_burst_data(dev, enable)         gdma_ll_tx_enable_data_burst(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL, enable);
-#define spi_dma_ll_rx_enable_burst_desc(dev, enable)         gdma_ll_rx_enable_descriptor_burst(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL, enable);
-#define spi_dma_ll_tx_enable_burst_desc(dev, enable)         gdma_ll_tx_enable_descriptor_burst(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL, enable);
-#define spi_dma_ll_enable_out_auto_wrback(dev, enable)          gdma_ll_tx_enable_auto_write_back(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL, enable);
-#define spi_dma_ll_set_out_eof_generation(dev, enable)          gdma_ll_tx_set_eof_mode(&GDMA, SOC_GDMA_SPI3_DMA_CHANNEL, enable);
+#define spi_dma_ll_rx_enable_burst_data(dev, chan, enable)         gdma_ll_rx_enable_data_burst(&GDMA, chan, enable);
+#define spi_dma_ll_tx_enable_burst_data(dev, chan, enable)         gdma_ll_tx_enable_data_burst(&GDMA, chan, enable);
+#define spi_dma_ll_rx_enable_burst_desc(dev, chan, enable)         gdma_ll_rx_enable_descriptor_burst(&GDMA, chan, enable);
+#define spi_dma_ll_tx_enable_burst_desc(dev, chan, enable)         gdma_ll_tx_enable_descriptor_burst(&GDMA, chan, enable);
+#define spi_dma_ll_enable_out_auto_wrback(dev, chan, enable)          gdma_ll_tx_enable_auto_write_back(&GDMA, chan, enable);
+#define spi_dma_ll_set_out_eof_generation(dev, chan, enable)          gdma_ll_tx_set_eof_mode(&GDMA, chan, enable);
 #endif
 
 static void s_spi_slave_hal_dma_init_config(const spi_slave_hal_context_t *hal)
 {
-    spi_dma_ll_rx_enable_burst_data(hal->dma_in, 1);
-    spi_dma_ll_tx_enable_burst_data(hal->dma_out, 1);
-    spi_dma_ll_rx_enable_burst_desc(hal->dma_in, 1);
-    spi_dma_ll_tx_enable_burst_desc(hal->dma_out, 1);
+    spi_dma_ll_rx_enable_burst_data(hal->dma_in, hal->rx_dma_chan, 1);
+    spi_dma_ll_tx_enable_burst_data(hal->dma_out, hal->tx_dma_chan, 1);
+    spi_dma_ll_rx_enable_burst_desc(hal->dma_in, hal->rx_dma_chan, 1);
+    spi_dma_ll_tx_enable_burst_desc(hal->dma_out, hal->tx_dma_chan, 1);
 }
 
 void spi_slave_hal_init(spi_slave_hal_context_t *hal, const spi_slave_hal_config_t *hal_config)
