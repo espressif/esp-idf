@@ -63,7 +63,7 @@ static esp_err_t start_wifi_ap(const char *ssid, const char *pass)
         ESP_LOGE(TAG, "Failed to set Wi-Fi mode : %d", err);
         return err;
     }
-    err = esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config);
+    err = esp_wifi_set_config(WIFI_IF_AP, &wifi_config);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to set Wi-Fi config : %d", err);
         return err;
