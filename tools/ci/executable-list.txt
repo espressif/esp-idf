@@ -88,8 +88,10 @@ tools/kconfig_new/test/confserver/test_confserver.py
 tools/kconfig_new/test/gen_kconfig_doc/test_kconfig_out.py
 tools/kconfig_new/test/gen_kconfig_doc/test_target_visibility.py
 tools/ldgen/ldgen.py
+tools/ldgen/test/test_entity.py
 tools/ldgen/test/test_fragments.py
 tools/ldgen/test/test_generation.py
+tools/ldgen/test/test_output_commands.py
 tools/mass_mfg/mfg_gen.py
 tools/mkdfu.py
 tools/mkuf2.py
