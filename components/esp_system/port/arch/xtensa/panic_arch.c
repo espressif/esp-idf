@@ -31,10 +31,14 @@
 #include "soc/rtc_cntl_reg.h"
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/cache_err_int.h"
+#ifdef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 #include "esp32s2/memprot.h"
+#endif
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/cache_err_int.h"
+#ifdef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 #include "esp32s3/memprot.h"
+#endif
 #endif
 #endif // CONFIG_IDF_TARGET_ESP32
 
@@ -261,6 +265,7 @@ static inline void print_cache_err_details(const void *f)
     }
 }
 
+#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 static inline void print_memprot_err_details(const void *f)
 {
     uint32_t *fault_addr;
@@ -278,6 +283,7 @@ static inline void print_memprot_err_details(const void *f)
     panic_print_hex( (uint32_t)fault_addr );
     panic_print_str(" not permitted.\r\n");
 }
+#endif
 
 #elif CONFIG_IDF_TARGET_ESP32S3
 static inline void print_cache_err_details(const void* f)
@@ -345,10 +351,6 @@ static inline void print_cache_err_details(const void* f)
         }
     }
     panic_print_str("\r\n");
-}
-
-static inline void print_memprot_err_details(const void *f)
-{
 }
 #endif
 
@@ -429,10 +431,13 @@ void panic_soc_fill_info(void *f, panic_info_t *info)
 
 #if CONFIG_IDF_TARGET_ESP32S2
     if (frame->exccause == PANIC_RSN_CACHEERR) {
+#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
         if ( esp_memprot_is_intr_ena_any() ) {
             info->details = print_memprot_err_details;
             info->reason = "Memory protection fault";
-        } else {
+        } else
+#endif
+        {
             info->details = print_cache_err_details;
         }
     }

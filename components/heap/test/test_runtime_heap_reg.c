@@ -30,7 +30,7 @@ TEST_CASE("Allocate new heap at runtime", "[heap][ignore]")
 TEST_CASE("Allocate new heap with new capability", "[heap][ignore]")
 {
     const size_t BUF_SZ = 100;
-#ifdef CONFIG_ESP32S2_MEMPROT_FEATURE
+#ifdef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
     const size_t ALLOC_SZ = 32;
 #else
     const size_t ALLOC_SZ = 64; // More than half of BUF_SZ

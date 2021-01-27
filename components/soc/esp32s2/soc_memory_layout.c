@@ -55,7 +55,7 @@ const soc_memory_type_desc_t soc_memory_types[] = {
     { "RTCRAM", { MALLOC_CAP_8BIT|MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL|MALLOC_CAP_32BIT, 0 }, false, false},
 };
 
-#ifdef CONFIG_ESP32S2_MEMPROT_FEATURE
+#ifdef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 #define SOC_MEMORY_TYPE_DEFAULT 0
 #else
 #define SOC_MEMORY_TYPE_DEFAULT 2

@@ -359,7 +359,8 @@ SECTIONS
   /* Marks the end of IRAM code segment */
   .iram0.text_end (NOLOAD) :
   {
-    . = ALIGN (16);
+    /* C3 memprot requires 512 B alignment for split lines */
+    . = ALIGN (0x200);
     _iram_text_end = ABSOLUTE(.);
   } > iram0_0_seg
 

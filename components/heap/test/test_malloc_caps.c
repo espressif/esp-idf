@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <sys/param.h>
 
-#ifndef CONFIG_ESP32S2_MEMPROT_FEATURE
+#ifndef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 TEST_CASE("Capabilities allocator test", "[heap]")
 {
     char *m1, *m2[10];
