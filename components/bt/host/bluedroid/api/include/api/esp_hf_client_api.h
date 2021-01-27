@@ -101,33 +101,33 @@ typedef union {
      * @brief  ESP_HF_CLIENT_CONNECTION_STATE_EVT
      */
     struct hf_client_conn_stat_param {
-        esp_hf_client_connection_state_t state;   /*!< HF connection state */
-        uint32_t peer_feat;                       /*!< AG supported features */
-        uint32_t chld_feat;                       /*!< AG supported features on call hold and multiparty services */
-        esp_bd_addr_t remote_bda;                 /*!< remote bluetooth device address */
-    } conn_stat;                                  /*!< HF callback param of ESP_HF_CLIENT_CONNECTION_STATE_EVT */
+        esp_hf_client_connection_state_t state;  /*!< HF connection state */
+        uint32_t peer_feat;                      /*!< AG supported features */
+        uint32_t chld_feat;                      /*!< AG supported features on call hold and multiparty services */
+        esp_bd_addr_t remote_bda;                /*!< remote bluetooth device address */
+    } conn_stat;                                 /*!< HF callback param of ESP_HF_CLIENT_CONNECTION_STATE_EVT */
 
     /**
      * @brief ESP_HF_CLIENT_AUDIO_STATE_EVT
      */
     struct hf_client_audio_stat_param {
-        esp_hf_client_audio_state_t state;        /*!< audio connection state */
-        esp_bd_addr_t remote_bda;                 /*!< remote bluetooth device address */
-    } audio_stat;                                 /*!< HF callback param of ESP_HF_CLIENT_AUDIO_STATE_EVT */
+        esp_hf_client_audio_state_t state;       /*!< audio connection state */
+        esp_bd_addr_t remote_bda;                /*!< remote bluetooth device address */
+    } audio_stat;                                /*!< HF callback param of ESP_HF_CLIENT_AUDIO_STATE_EVT */
 
     /**
      * @brief ESP_HF_CLIENT_BVRA_EVT
      */
     struct hf_client_bvra_param {
-        esp_hf_vr_state_t value;                  /*!< voice recognition state */
-    } bvra;                                       /*!< HF callback param of ESP_HF_CLIENT_BVRA_EVT */
+        esp_hf_vr_state_t value;                 /*!< voice recognition state */
+    } bvra;                                      /*!< HF callback param of ESP_HF_CLIENT_BVRA_EVT */
 
     /**
      * @brief ESP_HF_CLIENT_CIND_SERVICE_AVAILABILITY_EVT
      */
     struct hf_client_service_availability_param {
-        esp_hf_network_state_t status;     /*!< service availability status */
-    } service_availability;                              /*!< HF callback param of ESP_HF_CLIENT_CIND_SERVICE_AVAILABILITY_EVT */
+        esp_hf_network_state_t status;           /*!< service availability status */
+    } service_availability;                      /*!< HF callback param of ESP_HF_CLIENT_CIND_SERVICE_AVAILABILITY_EVT */
 
     /**
      * @brief ESP_HF_CLIENT_CIND_ROAMING_STATUS_EVT
@@ -270,8 +270,11 @@ typedef void (* esp_hf_client_incoming_data_cb_t)(const uint8_t *buf, uint32_t l
  * @param[in]       buf : pointer to incoming data(payload of HCI synchronous data packet), the
  *                  buffer is allocated inside bluetooth protocol stack and will be released after
  *                  invoke of the callback is finished.
+ *
  * @param[in]       len : size(in bytes) in buf
+ *
  * @param[out]      length of data successfully read
+ *
  */
 typedef uint32_t (* esp_hf_client_outgoing_data_cb_t)(uint8_t *buf, uint32_t len);
 
@@ -285,8 +288,8 @@ typedef uint32_t (* esp_hf_client_outgoing_data_cb_t)(uint8_t *buf, uint32_t len
 typedef void (* esp_hf_client_cb_t)(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_t *param);
 
 /**
- * @brief           Register application callback function to HFP client module. This function should be called
- *                  only after esp_bluedroid_enable() completes successfully, used by HFP client
+ * @brief           Register application callback function to HFP client module.
+ *                  This function should be called only after esp_bluedroid_enable() completes successfully.
  *
  * @param[in]       callback: HFP client event callback function
  *
@@ -300,8 +303,8 @@ esp_err_t esp_hf_client_register_callback(esp_hf_client_cb_t callback);
 
 /**
  *
- * @brief           Initialize the bluetooth HFP client module. This function should be called
- *                  after esp_bluedroid_enable() completes successfully
+ * @brief           Initialize the bluetooth HFP client module.
+ *                  This function should be called after esp_bluedroid_enable() completes successfully.
  *
  * @return
  *                  - ESP_OK: if the initialization request is sent successfully
@@ -313,8 +316,8 @@ esp_err_t esp_hf_client_init(void);
 
 /**
  *
- * @brief           De-initialize for HFP client module. This function
- *                  should be called only after esp_bluedroid_enable() completes successfully
+ * @brief           De-initialize for HFP client module.
+ *                  This function should be called only after esp_bluedroid_enable() completes successfully.
  *
  * @return
  *                  - ESP_OK: success
@@ -326,7 +329,8 @@ esp_err_t esp_hf_client_deinit(void);
 
 /**
  *
- * @brief           Connect to remote bluetooth HFP audio gateway(AG) device, must after esp_hf_client_init()
+ * @brief           Establish a Service Level Connection to remote bluetooth HFP audio gateway(AG) device.
+ *                  This function must be called after esp_hf_client_init() and before esp_hf_client_deinit().
  *
  * @param[in]       remote_bda: remote bluetooth device address
  *
@@ -340,9 +344,11 @@ esp_err_t esp_hf_client_connect(esp_bd_addr_t remote_bda);
 
 /**
  *
- * @brief           Disconnect from the remote HFP audio gateway
+ * @brief           Disconnect from the remote HFP audio gateway.
+ *                  This function must be called after esp_hf_client_init() and before esp_hf_client_deinit().
  *
  * @param[in]       remote_bda: remote bluetooth device address
+ *
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
@@ -353,8 +359,8 @@ esp_err_t esp_hf_client_disconnect(esp_bd_addr_t remote_bda);
 
 /**
  *
- * @brief           Create audio connection with remote HFP AG. As a precondition to use this API,
- *                  Service Level Connection shall exist with AG
+ * @brief           Create audio connection with remote HFP AG.
+ *                  As a precondition to use this API, Service Level Connection shall exist with AG.
  *
  * @param[in]       remote_bda: remote bluetooth device address
  * @return
@@ -368,6 +374,7 @@ esp_err_t esp_hf_client_connect_audio(esp_bd_addr_t remote_bda);
 /**
  *
  * @brief           Release the established audio connection with remote HFP AG.
+ *                  As a precondition to use this API, Service Level Connection shall exist with AG.
  *
  * @param[in]       remote_bda: remote bluetooth device address
  * @return
@@ -380,8 +387,8 @@ esp_err_t esp_hf_client_disconnect_audio(esp_bd_addr_t remote_bda);
 
 /**
  *
- * @brief           Enable voice recognition in the AG. As a precondition to use this API,
- *                  Service Level Connection shall exist with AG
+ * @brief           Enable voice recognition in the AG.
+ *                  As a precondition to use this API, Service Level Connection shall exist with AG.
  *
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
@@ -393,8 +400,8 @@ esp_err_t esp_hf_client_start_voice_recognition(void);
 
 /**
  *
- * @brief           Disable voice recognition in the AG. As a precondition to use this API,
- *                  Service Level Connection shall exist with AG
+ * @brief           Disable voice recognition in the AG.
+ *                  As a precondition to use this API, Service Level Connection shall exist with AG.
  *
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
@@ -406,8 +413,8 @@ esp_err_t esp_hf_client_stop_voice_recognition(void);
 
 /**
  *
- * @brief           Volume synchronization with AG. As a precondition to use this API,
- *                  Service Level Connection shall exist with AG
+ * @brief           Volume synchronization with AG.
+ *                  As a precondition to use this API, Service Level Connection shall exist with AG.
  *
  * @param[in]       type: volume control target, speaker or microphone
  * @param[in]       volume: gain of the speaker of microphone, ranges 0 to 15
@@ -422,9 +429,8 @@ esp_err_t esp_hf_client_volume_update(esp_hf_volume_control_target_t type, int v
 
 /**
  *
- * @brief           Place a call with a specified number, if number is NULL, last called number is
- *                  called.  As a precondition to use this API, Service Level Connection shall
- *                  exist with AG
+ * @brief           Place a call with a specified number, if number is NULL, last called number is called.
+ *                  As a precondition to use this API, Service Level Connection shall exist with AG.
  *
  * @param[in]       number: number string of the call. If NULL, the last number is called(aka re-dial)
  *
@@ -438,8 +444,8 @@ esp_err_t esp_hf_client_dial(const char *number);
 
 /**
  *
- * @brief           Place a call with number specified by location(speed dial). As a precondition,
- *                  to use this API, Service Level Connection shall exist with AG
+ * @brief           Place a call with number specified by location(speed dial).
+ *                  As a precondition to use this API, Service Level Connection shall exist with AG.
  *
  * @param[in]       location: location of the number in the memory
  *
@@ -455,7 +461,7 @@ esp_err_t esp_hf_client_dial_memory(int location);
 /**
  *
  * @brief           Send call hold and multiparty commands, or enhanced call control commands(Use AT+CHLD).
- *                  As a precondition to use this API, Service Level Connection shall exist with AG
+ *                  As a precondition to use this API, Service Level Connection shall exist with AG.
  *
  * @param[in]       chld: AT+CHLD call hold and multiparty handling AT command.
  * @param[in]       idx: used in Enhanced Call Control Mechanisms, used if chld is
@@ -472,7 +478,7 @@ esp_err_t esp_hf_client_send_chld_cmd(esp_hf_chld_type_t chld, int idx);
 /**
  *
  * @brief           Send response and hold action command(Send AT+BTRH command)
- *                  As a precondition to use this API, Service Level Connection shall exist with AG
+ *                  As a precondition to use this API, Service Level Connection shall exist with AG.
  *
  * @param[in]       btrh: response and hold action to send
  *
@@ -486,8 +492,8 @@ esp_err_t esp_hf_client_send_btrh_cmd(esp_hf_btrh_cmd_t btrh);
 
 /**
  *
- * @brief           Answer an incoming call(send ATA command). As a precondition to use this API,
- *                  Service Level Connection shall exist with AG
+ * @brief           Answer an incoming call(send ATA command).
+ *                  As a precondition to use this API, Service Level Connection shall exist with AG.
  *
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
@@ -499,8 +505,8 @@ esp_err_t esp_hf_client_answer_call(void);
 
 /**
  *
- * @brief           Reject an incoming call(send AT+CHUP command), As a precondition to use this API,
- *                  Service Level Connection shall exist with AG
+ * @brief           Reject an incoming call(send AT+CHUP command).
+ *                  As a precondition to use this API, Service Level Connection shall exist with AG.
  *
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
@@ -512,8 +518,8 @@ esp_err_t esp_hf_client_reject_call(void);
 
 /**
  *
- * @brief           Query list of current calls in AG(send AT+CLCC command), As a precondition to use this API,
- *                  Service Level Connection shall exist with AG
+ * @brief           Query list of current calls in AG(send AT+CLCC command).
+ *                  As a precondition to use this API, Service Level Connection shall exist with AG.
  *
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
@@ -525,8 +531,8 @@ esp_err_t esp_hf_client_query_current_calls(void);
 
 /**
  *
- * @brief           Query the name of currently selected network operator in AG(use AT+COPS commands)
- *                  As a precondition to use this API, Service Level Connection shall exist with AG
+ * @brief           Query the name of currently selected network operator in AG(use AT+COPS commands).
+ *                  As a precondition to use this API, Service Level Connection shall exist with AG.
  *
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
@@ -552,7 +558,7 @@ esp_err_t esp_hf_client_retrieve_subscriber_info(void);
 /**
  *
  * @brief           Transmit DTMF codes during an ongoing call(use AT+VTS commands)
- *                  As a precondition to use this API, Service Level Connection shall exist with AG
+ *                  As a precondition to use this API, Service Level Connection shall exist with AG.
  *
  * @param[in]       code: dtmf code, single ascii character in the set 0-9, #, *, A-D
  *
@@ -566,9 +572,8 @@ esp_err_t esp_hf_client_send_dtmf(char code);
 
 /**
  *
- * @brief           Request a phone number from AG corresponding to last voice tag recorded
- *                  (send AT+BINP command). As a precondition to use this API, Service Level
- *                  Connection shall exist with AG
+ * @brief           Request a phone number from AG corresponding to last voice tag recorded (send AT+BINP command).
+ *                  As a precondition to use this API, Service Level Connection shall exist with AG.
  *
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
@@ -580,7 +585,7 @@ esp_err_t esp_hf_client_request_last_voice_tag_number(void);
 
 /**
  *
- * @brief           Disable echo cancellation and noise reduction in the AG (use AT+NREC=0 command)
+ * @brief           Disable echo cancellation and noise reduction in the AG (use AT+NREC=0 command).
  *                  As a precondition to use this API, Service Level Connection shall exist with AG
  *
  * @return
@@ -597,6 +602,7 @@ esp_err_t esp_hf_client_send_nrec(void);
  *                  the case that Voice Over HCI is enabled.
  *
  * @param[in]       recv: HFP client incoming data callback function
+ *
  * @param[in]       send: HFP client outgoing data callback function
  *
  * @return
@@ -609,10 +615,11 @@ esp_err_t esp_hf_client_register_data_callback(esp_hf_client_incoming_data_cb_t 
                                                esp_hf_client_outgoing_data_cb_t send);
 
 /**
- * @brief           Trigger the lower-layer to fetch and send audio data. This function is only
- *                  only used in the case that Voice Over HCI is enabled. Precondition is that
- *                  the HFP audio connection is connected. After this function is called, lower
- *                  layer will invoke esp_hf_client_outgoing_data_cb_t to fetch data
+ * @brief           Trigger the lower-layer to fetch and send audio data.
+ *                  This function is only only used in the case that Voice Over HCI is enabled. After this
+ *                  function is called, lower layer will invoke esp_hf_client_outgoing_data_cb_t to fetch data.
+ *
+ *                  As a precondition to use this API, Service Level Connection shall exist with AG.
  *
  */
 void esp_hf_client_outgoing_data_ready(void);
@@ -625,6 +632,7 @@ void esp_hf_client_outgoing_data_ready(void);
  * @param[in]       src_sps: original samples per second(source audio data, i.e. 48000, 32000,
  *                  16000, 44100, 22050, 11025)
  * @param[in]       bits: number of bits per pcm sample (16)
+ *
  * @param[in]       channels: number of channels (i.e. mono(1), stereo(2)...)
  */
 void esp_hf_client_pcm_resample_init(uint32_t src_sps, uint32_t bits, uint32_t channels);
@@ -639,7 +647,9 @@ void esp_hf_client_pcm_resample_deinit(void);
  *                  samples. This can only be used in the case that Voice Over HCI is enabled.
  *
  * @param[in]       src: pointer to the buffer where the original sampling PCM are stored
+ *
  * @param[in]       in_bytes: length of the input PCM sample buffer in byte
+ *
  * @param[in]       dst: pointer to the buffer which is to be used to store the converted PCM samples
  *
  * @return          number of samples converted

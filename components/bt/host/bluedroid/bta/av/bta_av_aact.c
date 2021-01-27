@@ -273,7 +273,7 @@ static void bta_av_save_addr(tBTA_AV_SCB *p_scb, const BD_ADDR b)
     APPL_TRACE_DEBUG("bta_av_save_addr r:%d, s:%d",
                      p_scb->recfg_sup, p_scb->suspend_sup);
     if (bdcmp(p_scb->peer_addr, b) != 0) {
-        APPL_TRACE_ERROR("reset flags");
+        APPL_TRACE_WARNING("reset flags");
         /* a new addr, reset the supported flags */
         p_scb->recfg_sup    = TRUE;
         p_scb->suspend_sup  = TRUE;

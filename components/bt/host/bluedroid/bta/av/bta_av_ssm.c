@@ -355,11 +355,7 @@ static const tBTA_AV_SST_TBL bta_av_sst_tbl[] = {
     bta_av_sst_closing
 };
 
-
-
-#if (defined(BTA_AV_DEBUG) && BTA_AV_DEBUG == TRUE)
 static char *bta_av_sst_code(UINT8 state);
-#endif
 
 /*******************************************************************************
 **
@@ -423,12 +419,8 @@ void bta_av_ssm_execute(tBTA_AV_SCB *p_scb, UINT16 event, tBTA_AV_DATA *p_data)
         }
     }
 
-#if (defined(BTA_AV_DEBUG) && BTA_AV_DEBUG == TRUE)
     APPL_TRACE_VERBOSE("AV Sevent(0x%x)=0x%x(%s) state=%d(%s)",
                        p_scb->hndl, event, bta_av_evt_code(event), p_scb->state, bta_av_sst_code(p_scb->state));
-#else
-    APPL_TRACE_VERBOSE("AV Sevent=0x%x state=%d", event, p_scb->state);
-#endif
 
     /* look up the state table for the current state */
     state_table = bta_av_sst_tbl[p_scb->state];
@@ -441,6 +433,7 @@ void bta_av_ssm_execute(tBTA_AV_SCB *p_scb, UINT16 event, tBTA_AV_DATA *p_data)
     /* execute action functions */
     for (i = 0; i < BTA_AV_SACTIONS; i++) {
         if ((action = state_table[event][i]) != BTA_AV_SIGNORE) {
+            APPL_TRACE_VERBOSE("AV Sevent(0x%x)=%d(%s)", p_scb->hndl, event, bta_av_action_code(action));
             (*p_scb->p_act_tbl[action])(p_scb, p_data);
         } else {
             break;
@@ -555,7 +548,6 @@ void bta_av_set_scb_sst_incoming (tBTA_AV_SCB *p_scb)
 /*****************************************************************************
 **  Debug Functions
 *****************************************************************************/
-#if (defined(BTA_AV_DEBUG) && BTA_AV_DEBUG == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_av_sst_code
@@ -578,5 +570,4 @@ UNUSED_ATTR static char *bta_av_sst_code(UINT8 state)
     }
 }
 
-#endif
 #endif /* BTA_AV_INCLUDED */

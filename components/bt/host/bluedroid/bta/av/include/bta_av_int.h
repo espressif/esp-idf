@@ -33,7 +33,6 @@
 
 #if (BTA_AV_INCLUDED == TRUE)
 
-#define BTA_AV_DEBUG TRUE
 /*****************************************************************************
 **  Constants
 *****************************************************************************/
@@ -593,15 +592,16 @@ extern void bta_av_set_scb_sst_incoming (tBTA_AV_SCB *p_scb);
 extern tBTA_AV_LCB *bta_av_find_lcb(BD_ADDR addr, UINT8 op);
 
 
+/* debug functions */
+extern char *bta_av_evt_code(UINT16 evt_code);
+extern char *bta_av_action_code(UINT16 action_code);
+
 /* main functions */
 extern void bta_av_api_deregister(tBTA_AV_DATA *p_data);
 extern void bta_av_dup_audio_buf(tBTA_AV_SCB *p_scb, BT_HDR *p_buf);
 extern void bta_av_sm_execute(tBTA_AV_CB *p_cb, UINT16 event, tBTA_AV_DATA *p_data);
 extern void bta_av_ssm_execute(tBTA_AV_SCB *p_scb, UINT16 event, tBTA_AV_DATA *p_data);
 extern BOOLEAN bta_av_hdl_event(BT_HDR *p_msg);
-#if (defined(BTA_AV_DEBUG) && BTA_AV_DEBUG == TRUE)
-extern char *bta_av_evt_code(UINT16 evt_code);
-#endif
 extern BOOLEAN bta_av_switch_if_needed(tBTA_AV_SCB *p_scb);
 extern BOOLEAN bta_av_link_role_ok(tBTA_AV_SCB *p_scb, UINT8 bits);
 extern BOOLEAN bta_av_is_rcfg_sst(tBTA_AV_SCB *p_scb);
