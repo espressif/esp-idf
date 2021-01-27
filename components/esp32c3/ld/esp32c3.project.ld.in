@@ -369,6 +369,8 @@ SECTIONS
   {
     /* C3 memprot requires 512 B alignment for split lines */
     . = ALIGN (0x200);
+    /* iram_end_test section exists for use by memprot unit tests only */
+    *(.iram_end_test)
     _iram_text_end = ABSOLUTE(.);
   } > iram0_0_seg
 

@@ -1,0 +1,4 @@
+config ESP_SYSTEM_MEMPROT_IRAM_TESTBUF
+    bool
+    default y if IDF_TARGET_ESP32C3
+    default n if !IDF_TARGET_ESP32C3

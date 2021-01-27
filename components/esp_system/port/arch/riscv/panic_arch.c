@@ -154,27 +154,27 @@ static inline void print_cache_err_details(const void *frame)
  * explanation of why the panic occured.
  */
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
-static inline void print_memprot_err_details(const void *frame)
+static inline void print_memprot_err_details(const void *frame __attribute__((unused)))
 {
     //common memprot fault info
     mem_type_prot_t mem_type = esp_memprot_get_active_intr_memtype();
     panic_print_str( "  memory type: ");
-    panic_print_str( mem_type_to_str(mem_type) );
-    panic_print_str( "\r\n  faulting address: ");
+    panic_print_str( esp_memprot_mem_type_to_str(mem_type) );
+    panic_print_str( "\r\n  faulting address: 0x");
     panic_print_hex( esp_memprot_get_violate_addr(mem_type) );
-    panic_print_str( "\r\n  world: ");
-    panic_print_hex( esp_memprot_get_violate_world(mem_type) );
+    panic_print_str( "\r\n  world:");
+    panic_print_dec( esp_memprot_get_violate_world(mem_type) );
 
     char operation = 0;
     // IRAM fault: check instruction-fetch flag
     if ( mem_type == MEMPROT_IRAM0_SRAM ) {
-        if ( esp_memprot_get_violate_loadstore(mem_type) == 1 ) {
+        if ( esp_memprot_get_violate_loadstore(mem_type) ) {
             operation = 'X';
         }
     }
     // W/R - common
     if ( operation == 0 ) {
-        operation = esp_memprot_get_violate_wr(mem_type) == 1 ? 'W' : 'R';
+        operation = esp_memprot_get_violate_wr(mem_type) == MEMPROT_PMS_OP_WRITE ? 'W' : 'R';
     }
     panic_print_str( "\r\n  operation type: ");
     panic_print_char( operation );
