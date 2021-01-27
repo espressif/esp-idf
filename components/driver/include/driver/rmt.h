@@ -859,6 +859,19 @@ esp_err_t rmt_add_channel_to_group(rmt_channel_t channel);
 esp_err_t rmt_remove_channel_from_group(rmt_channel_t channel);
 #endif
 
+#if SOC_RMT_SUPPORT_TX_LOOP_COUNT
+/**
+ * @brief Set loop count for RMT TX channel
+ *
+ * @param channel RMT channel
+ * @param count loop count
+ * @return
+ *      - ESP_ERR_INVALID_ARG Parameter error
+ *      - ESP_OK Success
+ */
+esp_err_t rmt_set_tx_loop_count(rmt_channel_t channel, uint32_t count);
+#endif
+
 /**
 * @brief Reset RMT TX/RX memory index.
 *

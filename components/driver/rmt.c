@@ -1365,3 +1365,14 @@ esp_err_t rmt_memory_rw_rst(rmt_channel_t channel)
     return ESP_OK;
 }
 #endif
+
+#if SOC_RMT_SUPPORT_TX_LOOP_COUNT
+esp_err_t rmt_set_tx_loop_count(rmt_channel_t channel, uint32_t count)
+{
+    RMT_CHECK(RMT_IS_TX_CHANNEL(channel), RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
+    RMT_ENTER_CRITICAL();
+    rmt_ll_tx_set_loop_count(rmt_contex.hal.regs, channel, count);
+    RMT_EXIT_CRITICAL();
+    return ESP_OK;
+}
+#endif

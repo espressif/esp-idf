@@ -67,7 +67,7 @@ static void rmt_tx_init(void)
     ESP_ERROR_CHECK(rmt_driver_install(config.channel, 0, 0));
 }
 
-void app_main(void *ignore)
+void app_main(void)
 {
     ESP_LOGI(TAG, "Configuring transmitter");
     rmt_tx_init();
