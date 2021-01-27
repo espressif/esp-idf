@@ -77,7 +77,7 @@ do{\
 } while(0)
 
 #define OSI_FUNCS_TIME_BLOCKING  0xffffffff
-#define OSI_VERSION              0x00010002
+#define OSI_VERSION              0x00010005
 #define OSI_MAGIC_VALUE          0xFADEBEAD
 
 /* SPIRAM Configuration */
@@ -157,6 +157,10 @@ struct osi_funcs_t {
     void (* _btdm_sleep_exit_phase1)(void);  /* called from ISR */
     void (* _btdm_sleep_exit_phase2)(void);  /* called from ISR */
     void (* _btdm_sleep_exit_phase3)(void);  /* called from task */
+    void (* _coex_wifi_sleep_set)(bool sleep);
+    int (* _coex_core_ble_conn_dyn_prio_get)(bool *low, bool *high);
+    void (* _coex_schm_status_bit_set)(uint32_t type, uint32_t status);
+    void (* _coex_schm_status_bit_clear)(uint32_t type, uint32_t status);
 };
 
 
@@ -257,6 +261,9 @@ static void btdm_sleep_enter_phase1_wrapper(uint32_t lpcycles);
 static void btdm_sleep_enter_phase2_wrapper(void);
 static void IRAM_ATTR btdm_sleep_exit_phase1_wrapper(void);
 static void btdm_sleep_exit_phase3_wrapper(void);
+static void coex_wifi_sleep_set_hook(bool sleep);
+static void coex_schm_status_bit_set_wrapper(uint32_t type, uint32_t status);
+static void coex_schm_status_bit_clear_wrapper(uint32_t type, uint32_t status);
 
 /* Local variable definition
  ***************************************************************************
@@ -305,11 +312,10 @@ static const struct osi_funcs_t osi_funcs_ro = {
     ._btdm_sleep_exit_phase1 = btdm_sleep_exit_phase1_wrapper,
     ._btdm_sleep_exit_phase2 = NULL,
     ._btdm_sleep_exit_phase3 = btdm_sleep_exit_phase3_wrapper,
-    //._coex_bt_request = coex_bt_request_wrapper,
-    //._coex_bt_release = coex_bt_release_wrapper,
-    // ._coex_register_bt_cb = coex_register_bt_cb_wrapper,
-    // ._coex_bb_reset_lock = coex_bb_reset_lock_wrapper,
-    //._coex_bb_reset_unlock = coex_bb_reset_unlock_wrapper,
+    ._coex_wifi_sleep_set = coex_wifi_sleep_set_hook,
+    ._coex_core_ble_conn_dyn_prio_get = NULL,
+    ._coex_schm_status_bit_set = coex_schm_status_bit_set_wrapper,
+    ._coex_schm_status_bit_clear = coex_schm_status_bit_clear_wrapper,
 };
 
 static DRAM_ATTR struct osi_funcs_t *osi_funcs_p;
@@ -829,6 +835,20 @@ static void IRAM_ATTR btdm_slp_tmr_callback(void *arg)
 }
 #endif
 
+static void coex_schm_status_bit_set_wrapper(uint32_t type, uint32_t status)
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    coex_schm_status_bit_set(type, status);
+#endif
+}
+
+static void coex_schm_status_bit_clear_wrapper(uint32_t type, uint32_t status)
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    coex_schm_status_bit_clear(type, status);
+#endif
+}
+
 bool esp_vhci_host_check_send_available(void)
 {
     return API_vhci_host_check_send_available();
@@ -1087,7 +1107,7 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
 
     // esp_phy_enable();
 
-#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
+#if CONFIG_SW_COEXIST_ENABLE
     coex_enable();
 #endif
 
@@ -1129,7 +1149,7 @@ esp_err_t esp_bt_controller_disable(void)
     }
     btdm_controller_disable();
 
-#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
+#if CONFIG_SW_COEXIST_ENABLE
     coex_disable();
 #endif
 
@@ -1223,25 +1243,13 @@ int IRAM_ATTR esp_bt_h4tl_eif_io_event_notify(int event)
     return btdm_hci_tl_io_event_post(event);
 }
 
-void force_wifi_mode(int arg)
-{
-}
-
-void unforce_wifi_mode(void)
-{
-}
-void bt_bb_init_cmplx_reg(void)
-{
-}
-
 uint16_t esp_bt_get_tx_buf_num(void)
 {
     return l2c_ble_link_get_tx_buf_num();
 }
 
-void coex_wifi_sleep_set(bool sleep)
+static void coex_wifi_sleep_set_hook(bool sleep)
 {
 
 }
-
 #endif /*  CONFIG_BT_ENABLED */
