@@ -271,8 +271,6 @@ void esp_mac_bb_pd_mem_init(void)
 
 IRAM_ATTR void esp_mac_bb_power_up(void)
 {
-    uint32_t level = phy_enter_critical();
-
     if (s_mac_bb_pd_mem != NULL && s_mac_bb_pd_ref == 0) {
         esp_phy_common_clock_enable();
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
@@ -283,13 +281,13 @@ IRAM_ATTR void esp_mac_bb_power_up(void)
         esp_phy_common_clock_disable();
     }
     s_mac_bb_pd_ref++;
-
-    phy_exit_critical(level);
 }
 
 IRAM_ATTR void esp_mac_bb_power_down(void)
 {
-    uint32_t level = phy_enter_critical();
+    if (s_mac_bb_pd_ref == 0) {
+        return;
+    }
 
     s_mac_bb_pd_ref--;
     if (s_mac_bb_pd_mem != NULL && s_mac_bb_pd_ref == 0) {
@@ -299,8 +297,6 @@ IRAM_ATTR void esp_mac_bb_power_down(void)
         SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
         esp_phy_common_clock_disable();
     }
-
-    phy_exit_critical(level);
 }
 #endif
 

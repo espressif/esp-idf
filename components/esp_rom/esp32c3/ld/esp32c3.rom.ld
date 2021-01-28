@@ -1731,6 +1731,7 @@ ieee80211_set_tx_desc = 0x4000186c;
 rom_sta_input = 0x40001870;
 wifi_get_macaddr = 0x40001874;
 wifi_rf_phy_disable = 0x40001878;
+wifi_rf_phy_enable = 0x4000187c;
 ic_ebuf_alloc = 0x40001880;
 ieee80211_classify = 0x40001884;
 ieee80211_copy_eb_header = 0x40001888;

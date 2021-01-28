@@ -152,7 +152,10 @@ esp_err_t esp_wifi_deinit(void)
     esp_pm_unregister_inform_out_light_sleep_overhead_callback(esp_wifi_internal_update_light_sleep_wake_ahead_time);
 #endif
 #endif
-
+#if CONFIG_MAC_BB_PD
+    esp_unregister_mac_bb_pd_callback(pm_mac_sleep);
+    esp_unregister_mac_bb_pu_callback(pm_mac_wakeup);
+#endif
     return err;
 }
 
@@ -207,11 +210,26 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
         }
     }
 #endif
+
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#if CONFIG_MAC_BB_PD
+    if (esp_register_mac_bb_pd_callback(pm_mac_sleep) != ESP_OK
+        || esp_register_mac_bb_pu_callback(pm_mac_wakeup) != ESP_OK) {
+
+        esp_unregister_mac_bb_pd_callback(pm_mac_sleep);
+        esp_unregister_mac_bb_pu_callback(pm_mac_wakeup);
+        return ESP_ERR_INVALID_ARG;
+    }
+#endif
+
 #if SOC_WIFI_HW_TSF
     esp_err_t ret = esp_pm_register_skip_light_sleep_callback(esp_wifi_internal_is_tsf_active);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to register skip light sleep callback (0x%x)", ret);
+#if CONFIG_MAC_BB_PD
+        esp_unregister_mac_bb_pd_callback(pm_mac_sleep);
+        esp_unregister_mac_bb_pu_callback(pm_mac_wakeup);
+#endif
         return ret;
     }
     ret = esp_pm_register_inform_out_light_sleep_overhead_callback(esp_wifi_internal_update_light_sleep_wake_ahead_time);
@@ -222,10 +240,7 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
     esp_sleep_enable_wifi_wakeup();
 #endif
 #endif
-#if CONFIG_MAC_BB_PD
-    esp_mac_bb_pd_mem_init();
-    esp_wifi_internal_set_mac_sleep(true);
-#endif
+
 #if CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
     esp_err_t err = tcpip_adapter_set_default_wifi_handlers();
     if (err != ESP_OK) {
@@ -237,6 +252,10 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 #endif
     esp_err_t result = esp_wifi_init_internal(config);
     if (result == ESP_OK) {
+#if CONFIG_MAC_BB_PD
+        esp_mac_bb_pd_mem_init();
+        esp_wifi_internal_set_mac_sleep(true);
+#endif
         esp_wifi_set_debug_log();
 #if CONFIG_IDF_TARGET_ESP32
         s_wifi_mac_time_update_cb = esp_wifi_internal_update_mac_time;

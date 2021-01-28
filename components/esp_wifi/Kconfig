@@ -446,7 +446,7 @@ menu "PHY"
 
     config ESP32_PHY_MAC_BB_PD
         bool "Power down MAC and baseband of Wi-Fi and Bluetooth when PHY is disabled"
-        depends on IDF_TARGET_ESP32C3
+        depends on (IDF_TARGET_ESP32C3 && FREERTOS_USE_TICKLESS_IDLE)
         default n
         help
             If enabled, the MAC and baseband of Wi-Fi and Bluetooth will be powered

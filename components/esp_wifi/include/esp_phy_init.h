@@ -219,6 +219,7 @@ int64_t esp_phy_rf_get_on_ts(void);
  */
 esp_err_t esp_phy_update_country_info(const char *country);
 
+
 #if CONFIG_ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN
 /**
  * @brief Apply PHY init bin to PHY
