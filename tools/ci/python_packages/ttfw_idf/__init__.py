@@ -34,10 +34,6 @@ TARGET_DUT_CLS_DICT = {
 }
 
 
-def format_case_id(target, case_name):
-    return '{}.{}'.format(target, case_name)
-
-
 try:
     string_type = basestring
 except NameError:
@@ -128,7 +124,6 @@ def test_func_generator(func, app, target, ci_target, module, execution_time, le
         dut_dict=dut_classes, **kwargs
     )
     test_func = original_method(func)
-    test_func.case_info['ID'] = format_case_id(target, test_func.case_info['name'])
     return test_func
 
 

@@ -28,9 +28,11 @@
     # clone test env configs
     - retry_failed git clone $TEST_ENV_CONFIG_REPO
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
-    - cd tools/ci/python_packages/tiny_test_fw/bin
+    # git clone the known failure cases repo, run test
+    - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
     # run test
-    - python Runner.py $TEST_CASE_PATH -c $CONFIG_FILE -e $ENV_FILE
+    - cd tools/ci/python_packages/tiny_test_fw/bin
+    - run_cmd python Runner.py $TEST_CASE_PATH -c $CONFIG_FILE -e $ENV_FILE --known_failure_cases_file $CI_PROJECT_DIR/known_failure_cases/known_failure_cases.txt
 
 .example_test_template:
   extends:
@@ -67,9 +69,11 @@
     # clone test env configs
     - retry_failed git clone $TEST_ENV_CONFIG_REPO
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
-    - cd tools/ci/python_packages/tiny_test_fw/bin
+    # git clone the known failure cases repo, run test
+    - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
     # run test
-    - python Runner.py $COMPONENT_UT_DIRS -c $CONFIG_FILE -e $ENV_FILE
+    - cd tools/ci/python_packages/tiny_test_fw/bin
+    - run_cmd python Runner.py $COMPONENT_UT_DIRS -c $CONFIG_FILE -e $ENV_FILE  --known_failure_cases_file $CI_PROJECT_DIR/known_failure_cases/known_failure_cases.txt
 
 .component_ut_32_template:
   extends:

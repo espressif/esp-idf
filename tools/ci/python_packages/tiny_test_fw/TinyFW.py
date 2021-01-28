@@ -22,6 +22,7 @@ from datetime import datetime
 import junit_xml
 
 from . import DUT, App, Env, Utility
+from .Utility import format_case_id
 
 
 class TestCaseFailed(AssertionError):
@@ -98,7 +99,7 @@ class JunitReport(object):
     def output_report(cls, junit_file_path):
         """ Output current test result to file. """
         with open(os.path.join(junit_file_path, cls.JUNIT_FILE_NAME), 'w') as f:
-            cls.JUNIT_TEST_SUITE.to_file(f, [cls.JUNIT_TEST_SUITE], prettyprint=False)
+            junit_xml.to_xml_report_file(f, [cls.JUNIT_TEST_SUITE], prettyprint=False)
 
     @classmethod
     def get_current_test_case(cls):
@@ -195,9 +196,9 @@ def test_method(**kwargs):
 
             # prepare for xunit test results
             junit_file_path = env_inst.app_cls.get_log_folder(env_config['test_suite_name'])
-            junit_test_case = JunitReport.create_test_case(case_info['ID'])
+            junit_test_case = JunitReport.create_test_case(format_case_id(case_info['ID'],
+                                                                          target=env_inst.default_dut_cls.TARGET))
             result = False
-
             try:
                 Utility.console_log('starting running test: ' + test_func.__name__, color='green')
                 # execute test function
