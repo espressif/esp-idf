@@ -19,7 +19,6 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
-#include "freertos/xtensa_api.h"
 #include "unity.h"
 
 #include "bootloader_common.h"
@@ -450,7 +449,7 @@ static void test_flow4(void)
     ESP_LOGI(TAG, "boot count %d", boot_count);
     const esp_partition_t *cur_app = get_running_firmware();
     nvs_handle_t handle = 0;
-    int boot_count_nvs = 0;
+    int32_t boot_count_nvs = 0;
     switch (boot_count) {
         case 2:
             ESP_LOGI(TAG, "Factory");
@@ -486,7 +485,7 @@ static void test_flow4(void)
             ESP_LOGI(TAG, "Factory");
             TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_FACTORY, cur_app->subtype);
 
-            int boot_count_nvs;
+            int32_t boot_count_nvs;
             TEST_ESP_OK(nvs_flash_init());
             TEST_ESP_OK(nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &handle));
             TEST_ESP_ERR(ESP_ERR_NVS_NOT_FOUND, nvs_get_i32(handle, "boot_count", &boot_count_nvs));
