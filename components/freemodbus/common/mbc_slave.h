@@ -17,8 +17,10 @@
 
 #include "driver/uart.h"    // for uart defines
 #include "errno.h"          // for errno
+#include "sys/queue.h"      // for list
 #include "esp_log.h"        // for log write
 #include "string.h"         // for strerror()
+
 #include "esp_modbus_slave.h"    // for public type defines
 #include "esp_modbus_callbacks.h"   // for callback functions
 
@@ -53,6 +55,17 @@ typedef struct {
 } mb_slave_comm_info_t;
 
 /**
+ * @brief Modbus area descriptor list item
+ */
+typedef struct mb_descr_entry_s{
+    uint16_t start_offset;                  /*!< Modbus start address for area descriptor */
+    mb_param_type_t type;                   /*!< Type of storage area descriptor */
+    void* p_data;                           /*!< Instance address for storage area descriptor */
+    size_t size;                            /*!< Instance size for area descriptor (bytes) */
+    LIST_ENTRY(mb_descr_entry_s) entries;    /*!< The Modbus area descriptor entry */
+} mb_descr_entry_t;
+
+/**
  * @brief Modbus controller handler structure
  */
 typedef struct {
@@ -61,7 +74,7 @@ typedef struct {
     TaskHandle_t mbs_task_handle;                       /*!< task handle */
     EventGroupHandle_t mbs_event_group;                 /*!< controller event group */
     QueueHandle_t mbs_notification_queue_handle;        /*!< controller notification queue */
-    mb_register_area_descriptor_t mbs_area_descriptors[MB_PARAM_COUNT]; /*!< register area descriptors */
+    LIST_HEAD(mbs_area_descriptors_, mb_descr_entry_s) mbs_area_descriptors[MB_PARAM_COUNT]; /*!< register area descriptors */
 } mb_slave_options_t;
 
 typedef mb_event_group_t (*iface_check_event)(mb_event_group_t);          /*!< Interface method check_event */
