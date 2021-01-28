@@ -230,4 +230,13 @@ menu "SPI Flash driver"
 
     endmenu #auto detect flash chips
 
+    config SPI_FLASH_ENABLE_ENCRYPTED_READ_WRITE
+        bool "Enable encrypted partition read/write operations"
+        default y
+        help
+            This option enables flash read/write operations to encrypted partition/s. This option
+            is kept enabled irrespective of state of flash encryption feature. However, in case
+            application is not using flash encryption feature and is in need of some additional
+            memory from IRAM region (~1KB) then this config can be disabled.
+
 endmenu
