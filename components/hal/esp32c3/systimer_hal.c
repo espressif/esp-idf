@@ -121,3 +121,8 @@ void systimer_hal_connect_alarm_counter(systimer_alarm_id_t alarm_id, systimer_c
 {
     systimer_ll_connect_alarm_counter(alarm_id, counter_id);
 }
+
+void systimer_hal_counter_can_stall_by_cpu(uint32_t counter_id, uint32_t cpu_id, bool can)
+{
+    systimer_ll_counter_can_stall_by_cpu(counter_id, cpu_id, can);
+}
