@@ -126,34 +126,33 @@ def main():
     scan_info_dict = defaultdict(dict)
     # store the test cases dir, exclude these folders when scan for standalone apps
     default_exclude = args.exclude if args.exclude else []
-    exclude_apps = deepcopy(default_exclude)
 
     build_system = args.build_system.lower()
     build_system_class = BUILD_SYSTEMS[build_system]
 
-    if build_test_case_apps:
-        for target in SUPPORTED_TARGETS:
-            target_dict = scan_info_dict[target]
-            test_case_apps = target_dict['test_case_apps'] = set()
+    for target in SUPPORTED_TARGETS:
+        exclude_apps = deepcopy(default_exclude)
+
+        if build_test_case_apps:
+            scan_info_dict[target]['test_case_apps'] = set()
             for case in test_cases:
                 app_dir = case.case_info['app_dir']
                 app_target = case.case_info['target']
                 if app_target.lower() != target.lower():
                     continue
-                test_case_apps.update(find_apps(build_system_class, app_dir, True, default_exclude, target.lower()))
-                exclude_apps.append(app_dir)
-    else:
-        for target in SUPPORTED_TARGETS:
+                _apps = find_apps(build_system_class, app_dir, True, exclude_apps, target.lower())
+                if _apps:
+                    scan_info_dict[target]['test_case_apps'].update(_apps)
+                    exclude_apps.append(app_dir)
+        else:
             scan_info_dict[target]['test_case_apps'] = set()
 
-    if build_standalone_apps:
-        for target in SUPPORTED_TARGETS:
-            target_dict = scan_info_dict[target]
-            standalone_apps = target_dict['standalone_apps'] = set()
+        if build_standalone_apps:
+            scan_info_dict[target]['standalone_apps'] = set()
             for path in paths:
-                standalone_apps.update(find_apps(build_system_class, path, True, exclude_apps, target.lower()))
-    else:
-        for target in SUPPORTED_TARGETS:
+                scan_info_dict[target]['standalone_apps'].update(
+                    find_apps(build_system_class, path, True, exclude_apps, target.lower()))
+        else:
             scan_info_dict[target]['standalone_apps'] = set()
 
     test_case_apps_preserve_default = True if build_system == 'cmake' else False

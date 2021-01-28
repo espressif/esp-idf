@@ -311,7 +311,7 @@ SECTIONS
     . = SIZEOF(.flash.text);
     . = ALIGN(0x10000) + 0x20;
     _rodata_reserved_start = .;
-  } > drom0_0_seg
+  } > default_rodata_seg
 
   /* When modifying the alignment, don't forget to update tls_section_alignment in pxPortInitialiseStack */
   .flash.rodata : ALIGN(0x10)
