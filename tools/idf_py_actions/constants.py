@@ -36,6 +36,6 @@ GENERATORS = collections.OrderedDict([
     })
 ])
 
-SUPPORTED_TARGETS = ['esp32', 'esp32s2']
+SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3']
 
-PREVIEW_TARGETS = ['esp32s3', 'esp32c3', 'linux']
+PREVIEW_TARGETS = ['esp32s3', 'linux']
