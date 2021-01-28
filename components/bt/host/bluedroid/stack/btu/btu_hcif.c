@@ -455,7 +455,6 @@ void btu_hcif_send_cmd (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_buf)
        ) {
         vsc_callback = *((void **)(p_buf + 1));
     }
-    p_buf->sem = NULL;
 
     hci_layer_get_interface()->transmit_command(
         p_buf,
@@ -474,18 +473,18 @@ UINT8 btu_hcif_send_cmd_sync (UINT8 controller_id, BT_HDR *p_buf)
         HCI_TRACE_ERROR("%s p_buf is NULL", __func__);
         return HCI_ERR_ILLEGAL_PARAMETER_FMT;
     }
-    osi_sem_t *p_sem =  btsnd_hcic_ble_get_sync_sem();
-    if((*p_sem) == NULL) {
-        HCI_TRACE_ERROR("%s semaphore is NULL", __func__);
+    BlE_SYNC *sync_info =  btsnd_hcic_ble_get_sync_info();
+    if((sync_info ==  NULL) || (sync_info->sync_sem == NULL)) {
+        HCI_TRACE_ERROR("%s sync_info error", __func__);
         return HCI_ERR_ILLEGAL_PARAMETER_FMT;
     }
     uint16_t opcode;
     uint8_t *stream = p_buf->data + p_buf->offset;
     void *vsc_callback = NULL;
 
-    p_buf->sem = (*p_sem);
-
     STREAM_TO_UINT16(opcode, stream);
+
+    sync_info->opcode = opcode;
 
     // Eww...horrible hackery here
     /* If command was a VSC, then extract command_complete callback */
@@ -504,7 +503,7 @@ UINT8 btu_hcif_send_cmd_sync (UINT8 controller_id, BT_HDR *p_buf)
         btu_hcif_command_status_evt,
         vsc_callback);
 
-    osi_sem_take(p_sem, OSI_SEM_MAX_TIMEOUT);
+    osi_sem_take(&sync_info->sync_sem, OSI_SEM_MAX_TIMEOUT);
 
 #if (defined(HCILP_INCLUDED) && HCILP_INCLUDED == TRUE)
     btu_check_bt_sleep ();

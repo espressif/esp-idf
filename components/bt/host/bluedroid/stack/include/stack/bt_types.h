@@ -195,9 +195,15 @@ typedef struct {
     uint16_t          len;
     uint16_t          offset;
     uint16_t          layer_specific;
-    osi_sem_t         sem;
     uint8_t           data[];
 } BT_HDR;
+
+typedef struct {
+    uint8_t           status;
+    uint16_t          opcode;
+    osi_sem_t         sync_sem;
+} BlE_SYNC;
+
 
 #define BT_HDR_SIZE (sizeof (BT_HDR))
 

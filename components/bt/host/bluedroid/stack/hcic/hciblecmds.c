@@ -35,32 +35,33 @@
 
 #define HCI_GET_CMD_BUF(paramlen)       ((BT_HDR *)osi_malloc(HCIC_PREAMBLE_SIZE + sizeof(BT_HDR) + paramlen))
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
-static uint8_t status;
-static osi_sem_t  sync_sem;
+static BlE_SYNC ble_sync_info;
 
 void btsnd_hcic_ble_sync_sem_init(void)
 {
-    osi_sem_new(&sync_sem, 1, 0);
+    ble_sync_info.opcode = 0;
+    osi_sem_new(&ble_sync_info.sync_sem, 1, 0);
 }
 
 void btsnd_hcic_ble_sync_sem_deinit(void)
 {
-    osi_sem_free(&sync_sem);
+    ble_sync_info.opcode = 0;
+    osi_sem_free(&ble_sync_info.sync_sem);
 }
 
-osi_sem_t *btsnd_hcic_ble_get_sync_sem(void)
+BlE_SYNC *btsnd_hcic_ble_get_sync_info(void)
 {
-    return &sync_sem;
+    return &ble_sync_info;
 }
 
 uint8_t btsnd_hcic_ble_get_status(void)
 {
-    return status;
+    return ble_sync_info.status;
 }
 
 void btsnd_hci_ble_set_status(UINT8 hci_status)
 {
-    status = hci_status;
+    ble_sync_info.status = hci_status;
     return;
 }
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)

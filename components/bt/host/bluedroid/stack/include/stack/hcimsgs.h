@@ -726,7 +726,7 @@ void btsnd_hcic_vendor_spec_cmd (void *buffer, UINT16 opcode,
 #define HCIC_PARAM_SIZE_READ_RF_PATH_COMPENSATION      0
 #define HCIC_PARAM_SIZE_WRITE_RF_PATH_COMPENSATION     4
 
-osi_sem_t *btsnd_hcic_ble_get_sync_sem(void);
+BlE_SYNC *btsnd_hcic_ble_get_sync_info(void);
 void btsnd_hcic_ble_sync_sem_init(void);
 void btsnd_hcic_ble_sync_sem_deinit(void);
 

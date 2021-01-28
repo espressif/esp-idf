@@ -440,8 +440,14 @@ static bool filter_incoming_event(BT_HDR *packet)
         } else if (wait_entry->complete_callback) {
             wait_entry->complete_callback(packet, wait_entry->context);
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
-            if (wait_entry->command->sem) {
-                osi_sem_give(&wait_entry->command->sem);
+            BlE_SYNC *sync_info =  btsnd_hcic_ble_get_sync_info();
+            if(!sync_info) {
+                HCI_TRACE_WARNING("%s sync_info is NULL. opcode = 0x%x", __func__, opcode);
+            } else {
+                if (sync_info->sync_sem && sync_info->opcode == opcode) {
+                    osi_sem_give(&sync_info->sync_sem);
+                    sync_info->opcode = 0;
+                }
             }
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
         } else if (wait_entry->complete_future) {
