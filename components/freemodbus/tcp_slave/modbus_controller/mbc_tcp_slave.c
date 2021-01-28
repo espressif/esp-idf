@@ -31,13 +31,6 @@
 // Shared pointer to interface structure
 static mb_slave_interface_t* mbs_interface_ptr = NULL;
 
-// The helper function to get time stamp in microseconds
-static uint64_t get_time_stamp(void)
-{
-    uint64_t time_stamp = esp_timer_get_time();
-    return time_stamp;
-}
-
 // Modbus task function
 static void modbus_tcp_slave_task(void *pvParameters)
 {
@@ -123,67 +116,9 @@ static esp_err_t mbc_tcp_slave_destroy(void)
     (void)vQueueDelete(mbs_opts->mbs_notification_queue_handle);
     (void)vEventGroupDelete(mbs_opts->mbs_event_group);
     (void)vMBTCPPortClose();
-    free(mbs_interface_ptr);
+
     vMBPortSetMode((UCHAR)MB_PORT_INACTIVE);
-    mbs_interface_ptr = NULL;
     return ESP_OK;
-}
-
-esp_err_t mbc_tcp_slave_set_descriptor(const mb_register_area_descriptor_t descr_info)
-{
-    MB_SLAVE_ASSERT(mbs_interface_ptr != NULL);
-    mb_slave_options_t* mbs_opts = &mbs_interface_ptr->opts;
-    MB_SLAVE_CHECK(((descr_info.type < MB_PARAM_COUNT) && (descr_info.type >= MB_PARAM_HOLDING)),
-                ESP_ERR_INVALID_ARG, "mb incorrect modbus instance type = (0x%x).",
-                (uint32_t)descr_info.type);
-    MB_SLAVE_CHECK((descr_info.address != NULL),
-                ESP_ERR_INVALID_ARG, "mb instance pointer is NULL.");
-    MB_SLAVE_CHECK((descr_info.size >= MB_INST_MIN_SIZE) && (descr_info.size < (MB_INST_MAX_SIZE)),
-                ESP_ERR_INVALID_ARG, "mb instance size is incorrect = (0x%x).",
-                (uint32_t)descr_info.size);
-    mbs_opts->mbs_area_descriptors[descr_info.type] = descr_info;
-    return ESP_OK;
-}
-
-// Helper function to send parameter information to application task
-static esp_err_t send_param_info(mb_event_group_t par_type, uint16_t mb_offset,
-                                    uint8_t* par_address, uint16_t par_size)
-{
-    MB_SLAVE_ASSERT(mbs_interface_ptr != NULL);
-    mb_slave_options_t* mbs_opts = &mbs_interface_ptr->opts;
-    esp_err_t error = ESP_FAIL;
-    mb_param_info_t par_info;
-    // Check if queue is not full the send parameter information
-    par_info.type = par_type;
-    par_info.size = par_size;
-    par_info.address = par_address;
-    par_info.time_stamp = get_time_stamp();
-    par_info.mb_offset = mb_offset;
-    BaseType_t status = xQueueSend(mbs_opts->mbs_notification_queue_handle,
-                                    &par_info, MB_PAR_INFO_TOUT);
-    if (pdTRUE == status) {
-        ESP_LOGD(MB_SLAVE_TAG, "Queue send parameter info (type, address, size): %d, 0x%.4x, %d",
-                par_type, (uint32_t)par_address, par_size);
-        error = ESP_OK;
-    } else if (errQUEUE_FULL == status) {
-        ESP_LOGD(MB_SLAVE_TAG, "Parameter queue is overflowed.");
-    }
-    return error;
-}
-
-// Helper function to send notification
-static esp_err_t send_param_access_notification(mb_event_group_t event)
-{
-    MB_SLAVE_ASSERT(mbs_interface_ptr != NULL);
-    mb_slave_options_t* mbs_opts = &mbs_interface_ptr->opts;
-    esp_err_t err = ESP_FAIL;
-    mb_event_group_t bits = (mb_event_group_t)xEventGroupSetBits(mbs_opts->mbs_event_group,
-                                                                    (EventBits_t)event);
-    if (bits & event) {
-        ESP_LOGD(MB_SLAVE_TAG, "The MB_REG_CHANGE_EVENT = 0x%.2x is set.", (uint8_t)event);
-        err = ESP_OK;
-    }
-    return err;
 }
 
 // Blocking function to get event on parameter group change for application task
@@ -219,203 +154,6 @@ static esp_err_t mbc_tcp_slave_get_param_info(mb_param_info_t* reg_info, uint32_
 
 // This is required to suppress warning when register start address is zero
 #pragma GCC diagnostic ignored "-Wtype-limits"
-
-// Callback function for reading of MB Input Registers
-eMBErrorCode eMBRegInputCBTcpSlave(UCHAR * pucRegBuffer, USHORT usAddress,
-                                USHORT usNRegs)
-{
-    MB_SLAVE_ASSERT(mbs_interface_ptr != NULL);
-    mb_slave_options_t* mbs_opts = &mbs_interface_ptr->opts;
-    MB_SLAVE_ASSERT(pucRegBuffer != NULL);
-    USHORT usRegInputNregs = (USHORT)(mbs_opts->mbs_area_descriptors[MB_PARAM_INPUT].size >> 1); // Number of input registers
-    USHORT usInputRegStart = (USHORT)mbs_opts->mbs_area_descriptors[MB_PARAM_INPUT].start_offset; // Get Modbus start address
-    UCHAR* pucInputBuffer = (UCHAR*)mbs_opts->mbs_area_descriptors[MB_PARAM_INPUT].address; // Get instance address
-    USHORT usRegs = usNRegs;
-    eMBErrorCode eStatus = MB_ENOERR;
-    USHORT iRegIndex;
-    // If input or configuration parameters are incorrect then return an error to stack layer
-    if ((usAddress >= usInputRegStart)
-            && (pucInputBuffer != NULL)
-            && (usNRegs >= 1)
-            && ((usAddress + usRegs) <= (usInputRegStart + usRegInputNregs + 1))
-            && (usRegInputNregs >= 1)) {
-        iRegIndex = (USHORT)(usAddress - usInputRegStart - 1);
-        iRegIndex <<= 1; // register Address to byte address
-        pucInputBuffer += iRegIndex;
-        UCHAR* pucBufferStart = pucInputBuffer;
-        while (usRegs > 0) {
-            _XFER_2_RD(pucRegBuffer, pucInputBuffer);
-            iRegIndex += 2;
-            usRegs -= 1;
-        }
-        // Send access notification
-        (void)send_param_access_notification(MB_EVENT_INPUT_REG_RD);
-        // Send parameter info to application task
-        (void)send_param_info(MB_EVENT_INPUT_REG_RD, (uint16_t)usAddress,
-                        (uint8_t*)pucBufferStart, (uint16_t)usNRegs);
-    } else {
-        eStatus = MB_ENOREG;
-    }
-    return eStatus;
-}
-
-// Callback function for reading of MB Holding Registers
-// Executed by stack when request to read/write holding registers is received
-eMBErrorCode eMBRegHoldingCBTcpSlave(UCHAR * pucRegBuffer, USHORT usAddress,
-        USHORT usNRegs, eMBRegisterMode eMode)
-{
-    MB_SLAVE_ASSERT(mbs_interface_ptr != NULL);
-    mb_slave_options_t* mbs_opts = &mbs_interface_ptr->opts;
-    MB_SLAVE_ASSERT(pucRegBuffer != NULL);
-    USHORT usRegHoldingNregs = (USHORT)(mbs_opts->mbs_area_descriptors[MB_PARAM_HOLDING].size >> 1);
-    USHORT usRegHoldingStart = (USHORT)mbs_opts->mbs_area_descriptors[MB_PARAM_HOLDING].start_offset;
-    UCHAR* pucHoldingBuffer = (UCHAR*)mbs_opts->mbs_area_descriptors[MB_PARAM_HOLDING].address;
-    eMBErrorCode eStatus = MB_ENOERR;
-    USHORT iRegIndex;
-    USHORT usRegs = usNRegs;
-    // Check input and configuration parameters for correctness
-    if ((usAddress >= usRegHoldingStart)
-            && (pucHoldingBuffer != NULL)
-            && ((usAddress + usRegs) <= (usRegHoldingStart + usRegHoldingNregs + 1))
-            && (usRegHoldingNregs >= 1)
-            && (usNRegs >= 1)) {
-        iRegIndex = (USHORT) (usAddress - usRegHoldingStart - 1);
-        iRegIndex <<= 1; // register Address to byte address
-        pucHoldingBuffer += iRegIndex;
-        UCHAR* pucBufferStart = pucHoldingBuffer;
-        switch (eMode) {
-            case MB_REG_READ:
-                while (usRegs > 0) {
-                    _XFER_2_RD(pucRegBuffer, pucHoldingBuffer);
-                    iRegIndex += 2;
-                    usRegs -= 1;
-                };
-                // Send access notification
-                (void)send_param_access_notification(MB_EVENT_HOLDING_REG_RD);
-                // Send parameter info
-                (void)send_param_info(MB_EVENT_HOLDING_REG_RD, (uint16_t)usAddress,
-                                (uint8_t*)pucBufferStart, (uint16_t)usNRegs);
-                break;
-            case MB_REG_WRITE:
-                while (usRegs > 0) {
-                    _XFER_2_WR(pucHoldingBuffer, pucRegBuffer);
-                    pucHoldingBuffer += 2;
-                    iRegIndex += 2;
-                    usRegs -= 1;
-                };
-                // Send access notification
-                (void)send_param_access_notification(MB_EVENT_HOLDING_REG_WR);
-                // Send parameter info
-                (void)send_param_info(MB_EVENT_HOLDING_REG_WR, (uint16_t)usAddress,
-                                (uint8_t*)pucBufferStart, (uint16_t)usNRegs);
-                break;
-        }
-    } else {
-        eStatus = MB_ENOREG;
-    }
-    return eStatus;
-}
-
-// Callback function for reading of MB Coils Registers
-eMBErrorCode eMBRegCoilsCBTcpSlave(UCHAR* pucRegBuffer, USHORT usAddress,
-        USHORT usNCoils, eMBRegisterMode eMode)
-{
-    MB_SLAVE_ASSERT(mbs_interface_ptr != NULL);
-    mb_slave_options_t* mbs_opts = &mbs_interface_ptr->opts;
-    MB_SLAVE_ASSERT(NULL != pucRegBuffer);
-    USHORT usRegCoilNregs = (USHORT)(mbs_opts->mbs_area_descriptors[MB_PARAM_COIL].size >> 1); // number of registers in storage area
-    USHORT usRegCoilsStart = (USHORT)mbs_opts->mbs_area_descriptors[MB_PARAM_COIL].start_offset; // MB offset of coils registers
-    UCHAR* pucRegCoilsBuf = (UCHAR*)mbs_opts->mbs_area_descriptors[MB_PARAM_COIL].address;
-    eMBErrorCode eStatus = MB_ENOERR;
-    USHORT iRegIndex;
-    USHORT usCoils = usNCoils;
-    usAddress--; // The address is already +1
-    if ((usAddress >= usRegCoilsStart)
-            && (usRegCoilNregs >= 1)
-            && ((usAddress + usCoils) <= (usRegCoilsStart + (usRegCoilNregs << 4) + 1))
-            && (pucRegCoilsBuf != NULL)
-            && (usNCoils >= 1)) {
-        iRegIndex = (USHORT) (usAddress - usRegCoilsStart);
-        CHAR* pucCoilsDataBuf = (CHAR*)(pucRegCoilsBuf + (iRegIndex >> 3));
-        switch (eMode) {
-            case MB_REG_READ:
-                while (usCoils > 0) {
-                    UCHAR ucResult = xMBUtilGetBits((UCHAR*)pucRegCoilsBuf, iRegIndex, 1);
-                    xMBUtilSetBits(pucRegBuffer, iRegIndex - (usAddress - usRegCoilsStart), 1, ucResult);
-                    iRegIndex++;
-                    usCoils--;
-                }
-                // Send an event to notify application task about event
-                (void)send_param_access_notification(MB_EVENT_COILS_RD);
-                (void)send_param_info(MB_EVENT_COILS_RD, (uint16_t)usAddress,
-                                (uint8_t*)(pucCoilsDataBuf), (uint16_t)usNCoils);
-                break;
-            case MB_REG_WRITE:
-                while (usCoils > 0) {
-                    UCHAR ucResult = xMBUtilGetBits(pucRegBuffer,
-                            iRegIndex - (usAddress - usRegCoilsStart), 1);
-                    xMBUtilSetBits((uint8_t*)pucRegCoilsBuf, iRegIndex, 1, ucResult);
-                    iRegIndex++;
-                    usCoils--;
-                }
-                // Send an event to notify application task about event
-                (void)send_param_access_notification(MB_EVENT_COILS_WR);
-                (void)send_param_info(MB_EVENT_COILS_WR, (uint16_t)usAddress,
-                                (uint8_t*)pucCoilsDataBuf, (uint16_t)usNCoils);
-                break;
-        } // switch ( eMode )
-    } else {
-        // If the configuration or input parameters are incorrect then return error to stack
-        eStatus = MB_ENOREG;
-    }
-    return eStatus;
-}
-
-// Callback function for reading of MB Discrete Input Registers
-eMBErrorCode eMBRegDiscreteCBTcpSlave(UCHAR* pucRegBuffer, USHORT usAddress,
-                            USHORT usNDiscrete)
-{
-    MB_SLAVE_ASSERT(mbs_interface_ptr != NULL);
-    mb_slave_options_t* mbs_opts = &mbs_interface_ptr->opts;
-    MB_SLAVE_ASSERT(pucRegBuffer != NULL);
-    USHORT usRegDiscreteNregs = (USHORT)(mbs_opts->mbs_area_descriptors[MB_PARAM_DISCRETE].size >> 1); // number of registers in storage area
-    USHORT usRegDiscreteStart = (USHORT)mbs_opts->mbs_area_descriptors[MB_PARAM_DISCRETE].start_offset; // MB offset of registers
-    UCHAR* pucRegDiscreteBuf = (UCHAR*)mbs_opts->mbs_area_descriptors[MB_PARAM_DISCRETE].address; // the storage address
-    eMBErrorCode eStatus = MB_ENOERR;
-    USHORT iRegIndex, iRegBitIndex, iNReg;
-    UCHAR* pucDiscreteInputBuf;
-    iNReg = usNDiscrete / 8 + 1;
-    pucDiscreteInputBuf = (UCHAR*) pucRegDiscreteBuf;
-    // It already plus one in modbus function method.
-    usAddress--;
-    if ((usAddress >= usRegDiscreteStart)
-            && (usRegDiscreteNregs >= 1)
-            && (pucRegDiscreteBuf != NULL)
-            && ((usAddress + usNDiscrete) <= (usRegDiscreteStart + (usRegDiscreteNregs * 16)))
-            && (usNDiscrete >= 1)) {
-        iRegIndex = (USHORT) (usAddress - usRegDiscreteStart) / 8; // Get register index in the buffer for bit number
-        iRegBitIndex = (USHORT)(usAddress - usRegDiscreteStart) % 8; // Get bit index
-        UCHAR* pucTempBuf = &pucDiscreteInputBuf[iRegIndex];
-        while (iNReg > 0) {
-            *pucRegBuffer++ = xMBUtilGetBits(&pucDiscreteInputBuf[iRegIndex++], iRegBitIndex, 8);
-            iNReg--;
-        }
-        pucRegBuffer--;
-        // Last discrete
-        usNDiscrete = usNDiscrete % 8;
-        // Filling zero to high bit
-        *pucRegBuffer = *pucRegBuffer << (8 - usNDiscrete);
-        *pucRegBuffer = *pucRegBuffer >> (8 - usNDiscrete);
-        // Send an event to notify application task about event
-        (void)send_param_access_notification(MB_EVENT_DISCRETE_RD);
-        (void)send_param_info(MB_EVENT_DISCRETE_RD, (uint16_t)usAddress,
-                            (uint8_t*)pucTempBuf, (uint16_t)usNDiscrete);
-    } else {
-        eStatus = MB_ENOREG;
-    }
-    return eStatus;
-}
-#pragma GCC diagnostic pop   // require GCC
 
 // Initialization of Modbus controller
 esp_err_t mbc_tcp_slave_create(void** handler)
@@ -470,13 +208,13 @@ esp_err_t mbc_tcp_slave_create(void** handler)
     mbs_interface_ptr->start = mbc_tcp_slave_start;
     mbs_interface_ptr->check_event = mbc_tcp_slave_check_event;
     mbs_interface_ptr->get_param_info = mbc_tcp_slave_get_param_info;
-    mbs_interface_ptr->set_descriptor = mbc_tcp_slave_set_descriptor;
+    mbs_interface_ptr->set_descriptor = NULL; // Use common descriptor setter
 
     // Initialize stack callback function pointers
-    mbs_interface_ptr->slave_reg_cb_discrete = eMBRegDiscreteCBTcpSlave;
-    mbs_interface_ptr->slave_reg_cb_input = eMBRegInputCBTcpSlave;
-    mbs_interface_ptr->slave_reg_cb_holding = eMBRegHoldingCBTcpSlave;
-    mbs_interface_ptr->slave_reg_cb_coils = eMBRegCoilsCBTcpSlave;
+    mbs_interface_ptr->slave_reg_cb_discrete = NULL; // implemented in common layer
+    mbs_interface_ptr->slave_reg_cb_input = NULL;
+    mbs_interface_ptr->slave_reg_cb_holding = NULL;
+    mbs_interface_ptr->slave_reg_cb_coils = NULL;
 
     *handler = (void*)mbs_interface_ptr;
 
