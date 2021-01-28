@@ -37,7 +37,7 @@ void mbedtls_mpi_printf(const char *name, const mbedtls_mpi *X)
 */
 static void test_bignum_mult_variant(const char *a_str, const char *b_str, const char *e_str, size_t mod_bits, int res_operands_overlap)
 {
-    mbedtls_mpi A, B, X, E, M;
+    mbedtls_mpi A, B, X, E;
     char x_buf[2048] = {0};
     size_t x_buf_len = 0;
 
@@ -65,6 +65,7 @@ static void test_bignum_mult_variant(const char *a_str, const char *b_str, const
     TEST_ASSERT_EQUAL_STRING_MESSAGE(e_str, x_buf, "mbedtls_mpi_mul_mpi result wrong");
 
 #ifdef CONFIG_MBEDTLS_HARDWARE_MPI
+    mbedtls_mpi M;
     /* if mod_bits arg is set, also do a esp_mpi_mul_mod() call */
     if (mod_bits > 0 && mod_bits <= SOC_RSA_MAX_BIT_LEN) {
         mbedtls_mpi_init(&M);
