@@ -416,6 +416,9 @@ void vPortAssertIfInISR(void)
 	configASSERT(xPortInIsrContext());
 }
 
+#define STACK_WATCH_AREA_SIZE 32
+#define STACK_WATCH_POINT_NUMBER (SOC_CPU_WATCHPOINTS_NUM - 1)
+
 void vPortSetStackWatchpoint( void* pxStackStart ) {
 	//Set watchpoint 1 to watch the last 32 bytes of the stack.
 	//Unfortunately, the Xtensa watchpoints can't set a watchpoint on a random [base - base+n] region because
@@ -425,7 +428,7 @@ void vPortSetStackWatchpoint( void* pxStackStart ) {
 	//This way, we make sure we trigger before/when the stack canary is corrupted, not after.
 	int addr=(int)pxStackStart;
 	addr=(addr+31)&(~31);
-	esp_set_watchpoint(1, (char*)addr, 32, ESP_WATCHPOINT_STORE);
+	esp_set_watchpoint(STACK_WATCH_POINT_NUMBER, (char*)addr, 32, ESP_WATCHPOINT_STORE);
 }
 
 uint32_t xPortGetTickRateHz(void) {

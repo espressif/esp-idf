@@ -215,7 +215,7 @@ TEST_CASE("Can mmap into instruction address space", "[spi_flash][mmap]")
 
 }
 
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3)
+#endif //!DISABLED_FOR_TARGETS(ESP32C3)
 
 
 TEST_CASE("Can mmap unordered pages into contiguous memory", "[spi_flash][mmap]")
