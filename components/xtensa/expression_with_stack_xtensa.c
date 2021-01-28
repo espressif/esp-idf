@@ -17,6 +17,8 @@
 #include <freertos/xtensa_context.h>
 #include <setjmp.h>
 #include <string.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/portmacro.h"
 
 StackType_t *xtensa_shared_stack;
 shared_stack_function xtensa_shared_stack_callback;
@@ -29,10 +31,6 @@ extern void esp_shared_stack_invoke_function(void);
 
 static void esp_switch_stack_setup(StackType_t *stack, size_t stack_size)
 {
-#if CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK
-    esp_clear_watchpoint(1);
-    uint32_t watchpoint_place = ((uint32_t)stack + 32) & ~0x1f ;
-#endif
     //We need also to tweak current task stackpointer to avoid erroneous
     //stack overflow indication, so fills the stack with freertos known pattern:
     memset(stack, 0xa5U, stack_size * sizeof(StackType_t));
@@ -48,7 +46,7 @@ static void esp_switch_stack_setup(StackType_t *stack, size_t stack_size)
     top_of_stack =  (StackType_t *)(((UBaseType_t)(top_of_stack - 16) & ~0xf));
 
 #if CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK
-    esp_set_watchpoint(1, (uint8_t *)watchpoint_place, 32, ESP_WATCHPOINT_STORE);
+    vPortSetStackWatchpoint(stack);
 #endif
 
     xtensa_shared_stack = top_of_stack;
