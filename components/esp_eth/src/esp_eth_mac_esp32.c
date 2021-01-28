@@ -299,12 +299,14 @@ static void emac_esp32_rx_task(void *arg)
             } else {
                 free(buffer);
             }
+#if CONFIG_ETH_SOFT_FLOW_CONTROL
             // we need to do extra checking of remained frames in case there are no unhandled frames left, but pause frame is still undergoing
             if ((emac->free_rx_descriptor < emac->flow_control_low_water_mark) && emac->do_flow_ctrl && emac->frames_remain) {
                 emac_hal_send_pause_frame(&emac->hal, true);
             } else if ((emac->free_rx_descriptor > emac->flow_control_high_water_mark) || !emac->frames_remain) {
                 emac_hal_send_pause_frame(&emac->hal, false);
             }
+#endif
         } while (emac->frames_remain);
     }
     vTaskDelete(NULL);
