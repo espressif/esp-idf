@@ -526,6 +526,16 @@ void esp_wifi_internal_update_light_sleep_wake_ahead_time(uint32_t);
   *    - ESP_OK: succeed
   */
 esp_err_t esp_wifi_internal_set_mac_sleep(bool enable);
+
+/**
+ * @brief mac bb sleep.
+ */
+void pm_mac_sleep(void);
+
+/**
+ * @brief mac bb wakeup.
+ */
+void pm_mac_wakeup(void);
 #endif
 
 /**

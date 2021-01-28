@@ -176,6 +176,95 @@ static void timer_wakeup_prepare(void);
 static void touch_wakeup_prepare(void);
 #endif
 
+#if CONFIG_MAC_BB_PD
+#define MAC_BB_POWER_DOWN_CB_NO 2
+#define MAC_BB_POWER_UP_CB_NO 2
+static DRAM_ATTR mac_bb_power_down_cb_t   s_mac_bb_power_down_cb[MAC_BB_POWER_DOWN_CB_NO];
+static DRAM_ATTR mac_bb_power_up_cb_t    s_mac_bb_power_up_cb[MAC_BB_POWER_UP_CB_NO];
+
+esp_err_t esp_register_mac_bb_pd_callback(mac_bb_power_down_cb_t cb)
+{
+    int index = MAC_BB_POWER_DOWN_CB_NO;
+    for (int i = MAC_BB_POWER_DOWN_CB_NO -1; i >= 0; i--) {
+        if (s_mac_bb_power_down_cb[i] == cb) {
+            return ESP_ERR_INVALID_STATE;
+        }
+
+        if (s_mac_bb_power_down_cb[i] == NULL) {
+            index = i;
+        }
+    }
+
+    if (index < MAC_BB_POWER_DOWN_CB_NO) {
+        s_mac_bb_power_down_cb[index] = cb;
+        return ESP_OK;
+    }
+
+    return ESP_ERR_NO_MEM;
+}
+
+esp_err_t esp_unregister_mac_bb_pd_callback(mac_bb_power_down_cb_t cb)
+{
+    for (int i = MAC_BB_POWER_DOWN_CB_NO -1; i >= 0; i--) {
+        if (s_mac_bb_power_down_cb[i] == cb) {
+            s_mac_bb_power_down_cb[i] = NULL;
+            return ESP_OK;
+        }
+    }
+    return ESP_ERR_INVALID_STATE;
+}
+
+static IRAM_ATTR void mac_bb_power_down_cb_execute(void)
+{
+    for (int i = 0; i < MAC_BB_POWER_DOWN_CB_NO; i++) {
+        if (s_mac_bb_power_down_cb[i]) {
+            s_mac_bb_power_down_cb[i]();
+        }
+    }
+}
+
+esp_err_t esp_register_mac_bb_pu_callback(mac_bb_power_up_cb_t cb)
+{
+    int index = MAC_BB_POWER_UP_CB_NO;
+    for (int i = MAC_BB_POWER_UP_CB_NO -1; i >= 0; i--) {
+        if (s_mac_bb_power_up_cb[i] == cb) {
+            return ESP_ERR_INVALID_STATE;
+        }
+
+        if (s_mac_bb_power_up_cb[i] == NULL) {
+            index = i;
+        }
+    }
+
+    if (index < MAC_BB_POWER_UP_CB_NO) {
+        s_mac_bb_power_up_cb[index] = cb;
+        return ESP_OK;
+    }
+
+    return ESP_ERR_NO_MEM;
+}
+
+esp_err_t esp_unregister_mac_bb_pu_callback(mac_bb_power_up_cb_t cb)
+{
+    for (int i = MAC_BB_POWER_UP_CB_NO -1; i >= 0; i--) {
+        if (s_mac_bb_power_up_cb[i] == cb) {
+            s_mac_bb_power_up_cb[i] = NULL;
+            return ESP_OK;
+        }
+    }
+    return ESP_ERR_INVALID_STATE;
+}
+
+static IRAM_ATTR void mac_bb_power_up_cb_execute(void)
+{
+    for (int i = 0; i < MAC_BB_POWER_UP_CB_NO; i++) {
+        if (s_mac_bb_power_up_cb[i]) {
+            s_mac_bb_power_up_cb[i]();
+        }
+    }
+}
+#endif ///CONFIG_MAC_BB_PD
+
 /* Wake from deep sleep stub
    See esp_deepsleep.h esp_wake_deep_sleep() comments for details.
 */
@@ -342,6 +431,7 @@ void esp_sleep_gpio_status_switch_configure(bool enable)
 }
 #endif // SOC_GPIO_SUPPORT_SLP_SWITCH
 
+
 static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 {
     // Stop UART output so that output is not lost due to APB frequency change.
@@ -363,6 +453,10 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     } else {
         suspend_uarts();
     }
+
+#if CONFIG_MAC_BB_PD
+    mac_bb_power_down_cb_execute();
+#endif
 
     // Save current frequency and switch to XTAL
     rtc_cpu_freq_config_t cpu_freq_config;
@@ -474,6 +568,9 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     gpio_sleep_mode_config_unapply();
 #endif
 
+#if CONFIG_MAC_BB_PD
+    mac_bb_power_up_cb_execute();
+#endif
     // re-enable UART output
     resume_uarts();
 

@@ -409,6 +409,51 @@ void esp_sleep_gpio_status_init(void);
  */
 void esp_sleep_gpio_status_switch_configure(bool enable);
 #endif
+
+#if CONFIG_MAC_BB_PD
+/**
+ * @brief Function type for stub to run mac bb power down.
+ */
+typedef void (* mac_bb_power_down_cb_t)(void);
+
+/**
+ * @brief Function type for stub to run mac bb power up.
+ */
+typedef void (* mac_bb_power_up_cb_t)(void);
+
+/**
+ * @brief  Registet mac bb power down callback.
+ * @param  cb mac bb power down callback.
+ * @return
+ *  - ESP_OK on success
+ */
+esp_err_t esp_register_mac_bb_pd_callback(mac_bb_power_down_cb_t cb);
+
+/**
+ * @brief  Unregistet mac bb power down callback.
+ * @param  cb mac bb power down callback.
+ * @return
+ *  - ESP_OK on success
+ */
+esp_err_t esp_unregister_mac_bb_pd_callback(mac_bb_power_down_cb_t cb);
+
+/**
+ * @brief  Registet mac bb power up callback.
+ * @param  cb mac bb power up callback.
+ * @return
+ *  - ESP_OK on success
+ */
+esp_err_t esp_register_mac_bb_pu_callback(mac_bb_power_up_cb_t cb);
+
+/**
+ * @brief  Unregistet mac bb power up callback.
+ * @param  cb mac bb power up callback.
+ * @return
+ *  - ESP_OK on success
+ */
+esp_err_t esp_unregister_mac_bb_pu_callback(mac_bb_power_up_cb_t cb);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

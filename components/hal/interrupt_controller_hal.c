@@ -20,8 +20,8 @@
 
 static bool is_interrupt_number_reserved(int interrupt_number)
 {
-    //TODO. Workaround to reserve interrupt number 0 for Wi-Fi.
-    if (interrupt_number == 1) {
+    //TODO. Workaround to reserve interrupt number 1 for Wi-Fi and 5&8 for Bluetooth.
+    if (interrupt_number == 1 || interrupt_number == 5 || interrupt_number == 8) {
         return true;
     }
 
