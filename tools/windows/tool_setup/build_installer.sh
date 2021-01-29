@@ -51,4 +51,4 @@ wget --no-verbose -O idf_versions.txt https://dl.espressif.com/dl/esp-idf/idf_ve
 
 echo "Running ISCC..."
 # https://jrsoftware.org/ishelp/index.php?topic=compilercmdline
-iscc /F "esp-idf-tools-setup-$INSTALLER_TYPE-unsigned" idf_tool_setup.iss
+iscc idf_tool_setup.iss
