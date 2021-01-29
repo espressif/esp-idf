@@ -12,35 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stdint.h>
-#include <sys/param.h>
-
-#include "esp_attr.h"
-#include "soc/rtc.h"
-#include "esp32s2/clk.h"
-
-#define MHZ (1000000)
-
-// g_ticks_us defined in ROMs
-extern uint32_t g_ticks_per_us_pro;
-
-int IRAM_ATTR esp_clk_cpu_freq(void)
-{
-    return g_ticks_per_us_pro * MHZ;
-}
-
-int IRAM_ATTR esp_clk_apb_freq(void)
-{
-    return MIN(g_ticks_per_us_pro, 80) * MHZ;
-}
-
-int IRAM_ATTR esp_clk_xtal_freq(void)
-{
-    return rtc_clk_xtal_freq_get() * MHZ;
-}
-
-void IRAM_ATTR ets_update_cpu_frequency(uint32_t ticks_per_us)
-{
-    /* Update scale factors used by esp_rom_delay_us */
-    g_ticks_per_us_pro = ticks_per_us;
-}
+#pragma once
+#include "esp_private/esp_clk.h"

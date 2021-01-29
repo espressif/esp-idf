@@ -1,4 +1,4 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -66,6 +66,17 @@ int esp_clk_cpu_freq(void);
  * @return APB clock frequency, in Hz
  */
 int esp_clk_apb_freq(void);
+
+/**
+ * @brief Return frequency of the main XTAL
+ *
+ * Frequency of the main XTAL can be either auto-detected or set at compile
+ * time (see CONFIG_ESP32_XTAL_FREQ_SEL sdkconfig option). In both cases, this
+ * function returns the actual value at run time.
+ *
+ * @return XTAL frequency, in Hz
+ */
+int esp_clk_xtal_freq(void);
 
 
 /**

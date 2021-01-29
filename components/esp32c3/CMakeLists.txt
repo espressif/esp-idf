@@ -11,8 +11,7 @@ if(BOOTLOADER_BUILD)
 else()
     # Regular app build
 
-    set(srcs "clk.c"
-             "dport_access.c"
+    set(srcs "dport_access.c"
              "esp_hmac.c"
              "esp_ds.c"
              "esp_crypto_lock.c"

@@ -12,7 +12,6 @@ else()
     # Regular app build
 
     set(srcs "memprot.c"
-             "clk.c"
              "dport_access.c"
              "spiram.c"
              "spiram_psram.c"
