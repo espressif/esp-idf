@@ -220,7 +220,7 @@ class _TargetMethodsESP32(_TargetMethodsBase):
 class _ArchMethodsXtensa(_ArchMethodsBase):
     @staticmethod
     def get_registers_from_stack(data, grows_down):
-        extra_regs = {k: 0 for k in XtensaRegisters().registers}
+        extra_regs = {v: 0 for v in XtensaRegisters().registers.values()}
         regs = [0] * REG_NUM
         # TODO: support for growing up stacks
         if not grows_down:
