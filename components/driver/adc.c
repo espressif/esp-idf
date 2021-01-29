@@ -78,6 +78,14 @@ In ADC2, there're two locks used for different cases:
 
 adc2_spinlock should be acquired first, then adc2_wifi_lock or rtc_spinlock.
 */
+// This gets incremented when adc_power_acquire() is called, and decremented when
+// adc_power_release() is called. ADC is powered down when the value reaches zero.
+// Should be modified within critical section (ADC_ENTER/EXIT_CRITICAL).
+static int s_adc_power_on_cnt;
+
+static void adc_power_on_internal(void);
+static void adc_power_off_internal(void);
+
 //prevent ADC2 being used by wifi and other tasks at the same time.
 static _lock_t adc2_wifi_lock;
 //prevent ADC2 being used by tasks (regardless of WIFI)
@@ -89,35 +97,59 @@ static _lock_t adc1_i2s_lock;
                     ADC Common
 ---------------------------------------------------------------*/
 
-void adc_power_always_on(void)
+void adc_power_acquire(void)
 {
+    bool powered_on = false;
     ADC_ENTER_CRITICAL();
-    adc_hal_set_power_manage(ADC_POWER_SW_ON);
+    s_adc_power_on_cnt++;
+    if (s_adc_power_on_cnt == 1) {
+        adc_power_on_internal();
+        powered_on = true;
+    }
     ADC_EXIT_CRITICAL();
+    if (powered_on) {
+        ESP_LOGV(ADC_TAG, "%s: ADC powered on", __func__);
+    }
 }
 
-void adc_power_on(void)
+void adc_power_release(void)
+{
+    bool powered_off = false;
+    ADC_ENTER_CRITICAL();
+    s_adc_power_on_cnt--;
+    /* Sanity check */
+    if (s_adc_power_on_cnt < 0) {
+        ADC_EXIT_CRITICAL();
+        ESP_LOGE(ADC_TAG, "%s called, but s_adc_power_on_cnt == 0", __func__);
+        abort();
+    } else if (s_adc_power_on_cnt == 0) {
+        adc_power_off_internal();
+        powered_off = true;
+    }
+    ADC_EXIT_CRITICAL();
+    if (powered_off) {
+        ESP_LOGV(ADC_TAG, "%s: ADC powered off", __func__);
+    }
+}
+
+static void adc_power_on_internal(void)
 {
     ADC_ENTER_CRITICAL();
-    /* The power FSM controlled mode saves more power, while the ADC noise may get increased. */
-#ifndef CONFIG_ADC_FORCE_XPD_FSM
     /* Set the power always on to increase precision. */
     adc_hal_set_power_manage(ADC_POWER_SW_ON);
-#else
-    /* Use the FSM to turn off the power while not used to save power. */
-    if (adc_hal_get_power_manage() != ADC_POWER_BY_FSM) {
-        adc_hal_set_power_manage(ADC_POWER_SW_ON);
-    }
-#endif
     ADC_EXIT_CRITICAL();
 }
 
-void adc_power_off(void)
+void adc_power_on(void) __attribute__((alias("adc_power_on_internal")));
+
+static void adc_power_off_internal(void)
 {
     ADC_ENTER_CRITICAL();
     adc_hal_set_power_manage(ADC_POWER_SW_OFF);
     ADC_EXIT_CRITICAL();
 }
+
+void adc_power_off(void) __attribute__((alias("adc_power_off_internal")));
 
 esp_err_t adc_set_clk_div(uint8_t clk_div)
 {
@@ -283,6 +315,7 @@ esp_err_t adc1_i2s_mode_acquire(void)
     _lock_acquire( &adc1_i2s_lock );
     ESP_LOGD( ADC_TAG, "i2s mode takes adc1 lock." );
     ADC_ENTER_CRITICAL();
+    adc_power_acquire();
     adc_hal_set_power_manage(ADC_POWER_SW_ON);
     /* switch SARADC into DIG channel */
     adc_hal_set_controller(ADC_NUM_1, ADC_CTRL_DIG);
@@ -296,6 +329,7 @@ esp_err_t adc1_adc_mode_acquire(void)
        for adc1, block until acquire the lock. */
     _lock_acquire( &adc1_i2s_lock );
     ADC_ENTER_CRITICAL();
+    adc_power_acquire();
     /* switch SARADC into RTC channel. */
     adc_hal_set_controller(ADC_NUM_1, ADC_CTRL_RTC);
     ADC_EXIT_CRITICAL();
@@ -317,7 +351,7 @@ int adc1_get_raw(adc1_channel_t channel)
     ADC_CHANNEL_CHECK(ADC_NUM_1, channel);
     adc1_adc_mode_acquire();
 
-    adc_power_on();
+    adc_power_acquire();
     ADC_ENTER_CRITICAL();
     /* disable other peripherals. */
     adc_hal_hall_disable();
@@ -329,6 +363,7 @@ int adc1_get_raw(adc1_channel_t channel)
     adc_value = adc_convert(ADC_NUM_1, channel);
     ADC_EXIT_CRITICAL();
 
+    adc_power_release();
     adc1_lock_release();
     return adc_value;
 }
@@ -340,7 +375,7 @@ int adc1_get_voltage(adc1_channel_t channel)    //Deprecated. Use adc1_get_raw()
 
 void adc1_ulp_enable(void)
 {
-    adc_power_on();
+    adc_power_acquire();
 
     ADC_ENTER_CRITICAL();
     adc_hal_set_controller(ADC_NUM_1, ADC_CTRL_ULP);
@@ -372,6 +407,7 @@ esp_err_t adc2_wifi_acquire(void)
 {
     /* Wi-Fi module will use adc2. Use locks to avoid conflicts. */
     _lock_acquire( &adc2_wifi_lock );
+    adc_power_acquire();
     ESP_LOGD( ADC_TAG, "Wi-Fi takes adc2 lock." );
     return ESP_OK;
 }
@@ -444,7 +480,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     ADC_CHECK(channel < ADC2_CHANNEL_MAX, "ADC Channel Err", ESP_ERR_INVALID_ARG);
 
     //in critical section with whole rtc module
-    adc_power_on();
+    adc_power_acquire();
 
     //avoid collision with other tasks
     portENTER_CRITICAL(&adc2_spinlock);
@@ -452,6 +488,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     //try the lock, return if failed (wifi using).
     if ( _lock_try_acquire( &adc2_wifi_lock ) == -1 ) {
         portEXIT_CRITICAL( &adc2_spinlock );
+        adc_power_release();
         return ESP_ERR_TIMEOUT;
     }
 
@@ -468,15 +505,16 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     adc_value = adc_convert(ADC_NUM_2, channel);
     _lock_release( &adc2_wifi_lock );
     portEXIT_CRITICAL(&adc2_spinlock);
-
+    adc_power_release();
     *raw_out = (int)adc_value;
     return ESP_OK;
 }
 
 esp_err_t adc2_vref_to_gpio(gpio_num_t gpio)
 {
-    adc_power_always_on();               //Select power source of ADC
+    adc_power_acquire();               //Select power source of ADC
     if (adc_hal_vref_output(gpio) != true) {
+        adc_power_release();
         return ESP_ERR_INVALID_ARG;
     } else {
         //Configure RTC gpio
@@ -496,7 +534,7 @@ static int hall_sensor_get_value(void)    //hall sensor without LNA
 {
     int hall_value;
 
-    adc_power_on();
+    adc_power_acquire();
 
     ADC_ENTER_CRITICAL();
     /* disable other peripherals. */
