@@ -1169,6 +1169,35 @@ esp_err_t esp_wifi_set_rssi_threshold(int32_t rssi);
   */
 esp_err_t esp_wifi_ftm_initiate_session(wifi_ftm_initiator_cfg_t *cfg);
 
+/**
+  * @brief      Enable or disable 11b rate of specified interface
+  *
+  * @attention  1. This API should be called after esp_wifi_init() and before esp_wifi_start().
+  * @attention  2. Only when really need to disable 11b rate call this API otherwise don't call this.
+  *
+  * @param      ifx  Interface to be configured.
+  * @param      disable true means disable 11b rate while false means enable 11b rate.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_wifi_config_11b_rate(wifi_interface_t ifx, bool disable);
+
+/**
+  * @brief      Config ESPNOW rate of specified interface
+  *
+  * @attention  1. This API should be called after esp_wifi_init() and before esp_wifi_start().
+  *
+  * @param      ifx  Interface to be configured.
+  * @param      rate Only support 1M, 6M and MCS0_LGI
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_wifi_config_espnow_rate(wifi_interface_t ifx, wifi_phy_rate_t rate);
+
 #ifdef __cplusplus
 }
 #endif
