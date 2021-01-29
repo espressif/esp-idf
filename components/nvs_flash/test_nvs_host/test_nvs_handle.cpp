@@ -45,7 +45,6 @@ TEST_CASE("NVSHandleSimple closes its reference in PartitionManager", "[partitio
     CHECK(NVSPartitionManager::get_instance()->open_handles_size() == 0);
 
     REQUIRE(NVSPartitionManager::get_instance()->deinit_partition("test") == ESP_OK);
-
 }
 
 TEST_CASE("NVSHandleSimple multiple open and closes with PartitionManager", "[partition_mgr]")
@@ -86,7 +85,6 @@ TEST_CASE("nvshandle readonly fails", "[partition_mgr]")
 {
     SpiFlashEmulator emu(10);
 
-    NVSPartitionManager::get_instance()->deinit_partition(NVS_DEFAULT_PART_NAME);
     NVSHandleSimple *handle_1;
     NVSHandleSimple *handle_2;
     const uint32_t NVS_FLASH_SECTOR = 6;
