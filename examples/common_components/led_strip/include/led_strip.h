@@ -121,6 +121,27 @@ typedef struct {
 */
 led_strip_t *led_strip_new_rmt_ws2812(const led_strip_config_t *config);
 
+/**
+ * @brief Init the RMT peripheral and LED strip configuration.
+ *
+ * @param[in] channel: RMT peripheral channel number.
+ * @param[in] gpio: GPIO number for the RMT data output.
+ * @param[in] led_num: number of addressable LEDs.
+ * @return
+ *      LED strip instance or NULL
+ */
+led_strip_t * led_strip_init(uint8_t channel, uint8_t gpio, uint16_t led_num);
+
+/**
+ * @brief Denit the RMT peripheral.
+ *
+ * @param[in] strip: LED strip
+ * @return
+ *     - ESP_OK
+ *     - ESP_FAIL
+ */
+esp_err_t led_strip_denit(led_strip_t *strip);
+
 #ifdef __cplusplus
 }
 #endif
