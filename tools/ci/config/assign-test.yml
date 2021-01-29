@@ -68,7 +68,7 @@ update_test_cases:
     PYTHON_VER: 3.7.7
   script:
     - export GIT_SHA=$(echo ${CI_COMMIT_SHA} | cut -c 1-8)
-    - git clone $TEST_MANAGEMENT_REPO
+    - ./tools/ci/retry_failed.sh git clone $TEST_MANAGEMENT_REPO
     - python $CHECKOUT_REF_SCRIPT test-management test-management
     - cd test-management
     - echo $BOT_JIRA_ACCOUNT > ${BOT_ACCOUNT_CONFIG_FILE}
