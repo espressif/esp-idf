@@ -896,6 +896,7 @@ static void touch_wakeup_prepare(void)
     if ((touch_num > TOUCH_PAD_NUM0) && (touch_num < TOUCH_PAD_MAX) && touch_ll_get_fsm_state()) {
         touch_ll_stop_fsm();
         touch_ll_clear_channel_mask(TOUCH_PAD_BIT_MASK_ALL);
+        touch_ll_intr_clear(TOUCH_PAD_INTR_MASK_ALL); // Clear state from previous wakeup
         touch_ll_set_channel_mask(BIT(touch_num));
         touch_ll_start_fsm();
     }
