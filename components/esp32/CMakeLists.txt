@@ -18,7 +18,6 @@ else()
         "crosscore_int.c"
         "dport_access.c"
         "esp_himem.c"
-        "hw_random.c"
         "spiram.c"
         "spiram_psram.c"
         "system_api_esp32.c")

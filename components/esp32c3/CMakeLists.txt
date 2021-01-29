@@ -18,7 +18,6 @@ else()
              "esp_hmac.c"
              "esp_ds.c"
              "esp_crypto_lock.c"
-             "hw_random.c"
              "memprot.c"
              "system_api_esp32c3.c")
     set(include_dirs "include")
