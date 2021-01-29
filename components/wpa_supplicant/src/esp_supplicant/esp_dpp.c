@@ -407,22 +407,35 @@ int esp_supp_rx_action(uint8_t *hdr, uint8_t *payload, size_t len, uint8_t chann
 {
     struct ieee80211_hdr *rx_hdr = (struct ieee80211_hdr *)hdr;
     struct action_rx_param *rx_param;
+    int ret = ESP_ERR_NOT_SUPPORTED;
 
     if (WLAN_FC_GET_STYPE(rx_hdr->frame_control) == WLAN_FC_STYPE_ACTION) {
         rx_param = os_zalloc(sizeof(struct action_rx_param));
+        if (!rx_param) {
+            wpa_printf(MSG_ERROR, "Failed to allocate memory for Rx Action");
+            return ESP_ERR_NO_MEM;
+        }
         os_memcpy(rx_param->sa, rx_hdr->addr2, ETH_ALEN);
         rx_param->channel = channel;
         rx_param->action_frm = os_zalloc(len);
+        if (!rx_param->action_frm) {
+            wpa_printf(MSG_ERROR, "Failed to allocate memory for Rx Action");
+            os_free(rx_param);
+            return ESP_ERR_NO_MEM;
+        }
         rx_param->frm_len = len;
         os_memcpy(rx_param->action_frm, payload, len);
 
-        if (ESP_OK != esp_dpp_post_evt(SIG_DPP_RX_ACTION, (u32)rx_param)) {
+        ret = esp_dpp_post_evt(SIG_DPP_RX_ACTION, (u32)rx_param);
+        if (ESP_OK != ret) {
+            wpa_printf(MSG_ERROR, "Failed to post event to DPP Task(status=%d)", ret);
             os_free(rx_param->action_frm);
             os_free(rx_param);
+            return ret;
         }
     }
 
-    return ESP_ERR_NOT_SUPPORTED;
+    return ret;
 }
 
 static void offchan_event_handler(void *arg, esp_event_base_t event_base,
