@@ -178,6 +178,7 @@ void esp_mbedtls_conn_delete(esp_tls_t *tls)
         esp_mbedtls_cleanup(tls);
         if (tls->is_tls) {
             mbedtls_net_free(&tls->server_fd);
+            tls->sockfd = tls->server_fd.fd;
         }
     }
 }
