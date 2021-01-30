@@ -62,7 +62,7 @@ static inline void strip_cr_lf_tail(char *str, uint32_t len)
 esp_err_t esp_modem_dce_handle_response_default(modem_dce_t *dce, const char *line);
 
 /**
- * @brief Handle response from AT+CSQ
+ * @brief Handle response from AT+CSQ (Get signal quality)
  *
  * @param dce Modem DCE object
  * @param line line string
@@ -73,7 +73,7 @@ esp_err_t esp_modem_dce_handle_response_default(modem_dce_t *dce, const char *li
 esp_err_t esp_modem_dce_handle_csq(modem_dce_t *dce, const char *line);
 
 /**
- * @brief Handle response from AT+CBC
+ * @brief Handle response from AT+CBC (Get battery status)
  *
  * @param dce Modem DCE object
  * @param line line string
@@ -84,7 +84,7 @@ esp_err_t esp_modem_dce_handle_csq(modem_dce_t *dce, const char *line);
 esp_err_t esp_modem_dce_handle_cbc(modem_dce_t *dce, const char *line);
 
 /**
- * @brief Handle response from +++
+ * @brief Handle response from +++ (Set Working Mode)
  *
  * @param dce Modem DCE object
  * @param line line string
@@ -95,7 +95,7 @@ esp_err_t esp_modem_dce_handle_cbc(modem_dce_t *dce, const char *line);
 esp_err_t esp_modem_dce_handle_exit_data_mode(modem_dce_t *dce, const char *line);
 
 /**
- * @brief Handle response from ATD*99#
+ * @brief Handle response from ATD*99# (Set Working Mode)
  *
  * @param dce Modem DCE object
  * @param line line string
@@ -106,7 +106,7 @@ esp_err_t esp_modem_dce_handle_exit_data_mode(modem_dce_t *dce, const char *line
 esp_err_t esp_modem_dce_handle_atd_ppp(modem_dce_t *dce, const char *line);
 
 /**
- * @brief Handle response from AT+CGMM
+ * @brief Handle response from AT+CGMM (Get DCE module name)
  *
  * @param dce Modem DCE object
  * @param line line string
@@ -117,7 +117,7 @@ esp_err_t esp_modem_dce_handle_atd_ppp(modem_dce_t *dce, const char *line);
 esp_err_t esp_modem_dce_handle_cgmm(modem_dce_t *dce, const char *line);
 
 /**
- * @brief Handle response from AT+CGSN
+ * @brief Handle response from AT+CGSN (Get DCE module IMEI number)
  *
  * @param dce Modem DCE object
  * @param line line string
@@ -128,7 +128,7 @@ esp_err_t esp_modem_dce_handle_cgmm(modem_dce_t *dce, const char *line);
 esp_err_t esp_modem_dce_handle_cgsn(modem_dce_t *dce, const char *line);
 
 /**
- * @brief Handle response from AT+CIMI
+ * @brief Handle response from AT+CIMI (Get DCE module IMSI number)
  *
  * @param dce Modem DCE object
  * @param line line string
@@ -139,7 +139,7 @@ esp_err_t esp_modem_dce_handle_cgsn(modem_dce_t *dce, const char *line);
 esp_err_t esp_modem_dce_handle_cimi(modem_dce_t *dce, const char *line);
 
 /**
- * @brief Handle response from AT+COPS?
+ * @brief Handle response from AT+COPS? (Get Operator's name)
  *
  * @param dce Modem DCE object
  * @param line line string
@@ -160,7 +160,7 @@ esp_err_t esp_modem_dce_handle_cops(modem_dce_t *dce, const char *line);
 esp_err_t esp_modem_dce_sync(modem_dce_t *dce);
 
 /**
- * @brief Enable or not echo mode of DCE
+ * @brief Enable or not echo mode of DCE (V.25TER specification)
  *
  * @param dce Modem DCE object
  * @param on true to enable echo mode, false to disable echo mode
@@ -181,7 +181,7 @@ esp_err_t esp_modem_dce_echo(modem_dce_t *dce, bool on);
 esp_err_t esp_modem_dce_store_profile(modem_dce_t *dce);
 
 /**
- * @brief Set flow control mode of DCE in data mode
+ * @brief Set flow control mode of DCE in data mode (V.25TER specification)
  *
  * @param dce Modem DCE object
  * @param flow_ctrl flow control mode
@@ -192,7 +192,7 @@ esp_err_t esp_modem_dce_store_profile(modem_dce_t *dce);
 esp_err_t esp_modem_dce_set_flow_ctrl(modem_dce_t *dce, modem_flow_ctrl_t flow_ctrl);
 
 /**
- * @brief Define PDP context
+ * @brief Define PDP context (GPRS)
  *
  * @param dce Modem DCE object
  * @param cid PDP context identifier
@@ -205,7 +205,7 @@ esp_err_t esp_modem_dce_set_flow_ctrl(modem_dce_t *dce, modem_flow_ctrl_t flow_c
 esp_err_t esp_modem_dce_define_pdp_context(modem_dce_t *dce, uint32_t cid, const char *type, const char *apn);
 
 /**
- * @brief Get signal quality
+ * @brief Get signal quality (3GPP TS 27.007 specification)
  *
  * @param dce Modem DCE object
  * @param rssi received signal strength indication
@@ -217,7 +217,7 @@ esp_err_t esp_modem_dce_define_pdp_context(modem_dce_t *dce, uint32_t cid, const
 esp_err_t esp_modem_dce_get_signal_quality(modem_dce_t *dce, uint32_t *rssi, uint32_t *ber);
 
 /**
- * @brief Get battery status
+ * @brief Get battery status (3GPP TS 27.007 specification)
  *
  * @param dce Modem DCE object
  * @param bcs Battery charge status
@@ -230,7 +230,7 @@ esp_err_t esp_modem_dce_get_signal_quality(modem_dce_t *dce, uint32_t *rssi, uin
 esp_err_t esp_modem_dce_get_battery_status(modem_dce_t *dce, uint32_t *bcs, uint32_t *bcl, uint32_t *voltage);
 
 /**
- * @brief Get DCE module name
+ * @brief Get DCE module name (3GPP TS 27.007 specification)
  *
  * @param dce Modem DCE object
  * @return esp_err_t
@@ -240,7 +240,7 @@ esp_err_t esp_modem_dce_get_battery_status(modem_dce_t *dce, uint32_t *bcs, uint
 esp_err_t esp_modem_dce_get_module_name(modem_dce_t *dce);
 
 /**
- * @brief Get DCE module IMEI number
+ * @brief Get DCE module IMEI number (3GPP TS 27.007 specification)
  *
  * @param dce Modem DCE object
  * @return esp_err_t
@@ -250,7 +250,7 @@ esp_err_t esp_modem_dce_get_module_name(modem_dce_t *dce);
 esp_err_t esp_modem_dce_get_imei_number(modem_dce_t *dce);
 
 /**
- * @brief Get DCE module IMSI number
+ * @brief Get DCE module IMSI number (3GPP TS 27.007 specification)
  *
  * @param dce Modem DCE object
  * @return esp_err_t
@@ -260,7 +260,7 @@ esp_err_t esp_modem_dce_get_imei_number(modem_dce_t *dce);
 esp_err_t esp_modem_dce_get_imsi_number(modem_dce_t *dce);
 
 /**
- * @brief Get Operator's name
+ * @brief Get Operator's name (3GPP TS 27.007 specification)
  *
  * @param dce Modem DCE object
  * @return esp_err_t
@@ -270,7 +270,7 @@ esp_err_t esp_modem_dce_get_imsi_number(modem_dce_t *dce);
 esp_err_t esp_modem_dce_get_operator_name(modem_dce_t *dce);
 
 /**
- * @brief Hang up
+ * @brief Hang up (V.25TER specification)
  *
  * @param dce Modem DCE object
  * @return esp_err_t
