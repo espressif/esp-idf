@@ -62,6 +62,94 @@ static inline void strip_cr_lf_tail(char *str, uint32_t len)
 esp_err_t esp_modem_dce_handle_response_default(modem_dce_t *dce, const char *line);
 
 /**
+ * @brief Handle response from AT+CSQ
+ *
+ * @param dce Modem DCE object
+ * @param line line string
+ * @return esp_err_t
+ *      - ESP_OK on success
+ *      - ESP_FAIL on error
+ */
+esp_err_t esp_modem_dce_handle_csq(modem_dce_t *dce, const char *line);
+
+/**
+ * @brief Handle response from AT+CBC
+ *
+ * @param dce Modem DCE object
+ * @param line line string
+ * @return esp_err_t
+ *      - ESP_OK on success
+ *      - ESP_FAIL on error
+ */
+esp_err_t esp_modem_dce_handle_cbc(modem_dce_t *dce, const char *line);
+
+/**
+ * @brief Handle response from +++
+ *
+ * @param dce Modem DCE object
+ * @param line line string
+ * @return esp_err_t
+ *      - ESP_OK on success
+ *      - ESP_FAIL on error
+ */
+esp_err_t esp_modem_dce_handle_exit_data_mode(modem_dce_t *dce, const char *line);
+
+/**
+ * @brief Handle response from ATD*99#
+ *
+ * @param dce Modem DCE object
+ * @param line line string
+ * @return esp_err_t
+ *      - ESP_OK on success
+ *      - ESP_FAIL on error
+ */
+esp_err_t esp_modem_dce_handle_atd_ppp(modem_dce_t *dce, const char *line);
+
+/**
+ * @brief Handle response from AT+CGMM
+ *
+ * @param dce Modem DCE object
+ * @param line line string
+ * @return esp_err_t
+ *      - ESP_OK on success
+ *      - ESP_FAIL on error
+ */
+esp_err_t esp_modem_dce_handle_cgmm(modem_dce_t *dce, const char *line);
+
+/**
+ * @brief Handle response from AT+CGSN
+ *
+ * @param dce Modem DCE object
+ * @param line line string
+ * @return esp_err_t
+ *      - ESP_OK on success
+ *      - ESP_FAIL on error
+ */
+esp_err_t esp_modem_dce_handle_cgsn(modem_dce_t *dce, const char *line);
+
+/**
+ * @brief Handle response from AT+CIMI
+ *
+ * @param dce Modem DCE object
+ * @param line line string
+ * @return esp_err_t
+ *      - ESP_OK on success
+ *      - ESP_FAIL on error
+ */
+esp_err_t esp_modem_dce_handle_cimi(modem_dce_t *dce, const char *line);
+
+/**
+ * @brief Handle response from AT+COPS?
+ *
+ * @param dce Modem DCE object
+ * @param line line string
+ * @return esp_err_t
+ *      - ESP_OK on success
+ *      - ESP_FAIL on error
+ */
+esp_err_t esp_modem_dce_handle_cops(modem_dce_t *dce, const char *line);
+
+/**
  * @brief Syncronization
  *
  * @param dce Modem DCE object
@@ -115,6 +203,71 @@ esp_err_t esp_modem_dce_set_flow_ctrl(modem_dce_t *dce, modem_flow_ctrl_t flow_c
  *      - ESP_FAIL on error
  */
 esp_err_t esp_modem_dce_define_pdp_context(modem_dce_t *dce, uint32_t cid, const char *type, const char *apn);
+
+/**
+ * @brief Get signal quality
+ *
+ * @param dce Modem DCE object
+ * @param rssi received signal strength indication
+ * @param ber bit error ratio
+ * @return esp_err_t
+ *      - ESP_OK on success
+ *      - ESP_FAIL on error
+ */
+esp_err_t esp_modem_dce_get_signal_quality(modem_dce_t *dce, uint32_t *rssi, uint32_t *ber);
+
+/**
+ * @brief Get battery status
+ *
+ * @param dce Modem DCE object
+ * @param bcs Battery charge status
+ * @param bcl Battery connection level
+ * @param voltage Battery voltage
+ * @return esp_err_t
+ *      - ESP_OK on success
+ *      - ESP_FAIL on error
+ */
+esp_err_t esp_modem_dce_get_battery_status(modem_dce_t *dce, uint32_t *bcs, uint32_t *bcl, uint32_t *voltage);
+
+/**
+ * @brief Get DCE module name
+ *
+ * @param dce Modem DCE object
+ * @return esp_err_t
+ *      - ESP_OK on success
+ *      - ESP_FAIL on error
+ */
+esp_err_t esp_modem_dce_get_module_name(modem_dce_t *dce);
+
+/**
+ * @brief Get DCE module IMEI number
+ *
+ * @param dce Modem DCE object
+ * @return esp_err_t
+ *      - ESP_OK on success
+ *      - ESP_FAIL on error
+ */
+esp_err_t esp_modem_dce_get_imei_number(modem_dce_t *dce);
+
+/**
+ * @brief Get DCE module IMSI number
+ *
+ * @param dce Modem DCE object
+ * @return esp_err_t
+ *      - ESP_OK on success
+ *      - ESP_FAIL on error
+ */
+esp_err_t esp_modem_dce_get_imsi_number(modem_dce_t *dce);
+
+/**
+ * @brief Get Operator's name
+ *
+ * @param dce Modem DCE object
+ * @return esp_err_t
+ *      - ESP_OK on success
+ *      - ESP_FAIL on error
+ */
+esp_err_t esp_modem_dce_get_operator_name(modem_dce_t *dce);
 
 /**
  * @brief Hang up
