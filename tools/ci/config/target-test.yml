@@ -153,7 +153,7 @@
     # can not retry if downing git lfs files failed, so using empty_branch first.
     - ./tools/ci/retry_failed.sh git clone ${CI_AUTO_TEST_SCRIPT_REPO_URL} -b empty_branch
     - ./tools/ci/retry_failed.sh git -C auto_test_script checkout -f ${CI_AUTO_TEST_SCRIPT_REPO_BRANCH}
-    - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script
+    - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script --customized_only
     - cat ${KNOWN_ISSUE_FILE} >> ${TEST_CASE_FILE_PATH}/KnownIssues
     # run test
     - python ${CI_RUNNER_SCRIPT} -l "$LOG_PATH/$JOB_FULL_NAME" -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH
@@ -521,7 +521,7 @@ nvs_compatible_test:
     # can not retry if downing git lfs files failed, so using empty_branch first.
     - ./tools/ci/retry_failed.sh git clone ${CI_AUTO_TEST_SCRIPT_REPO_URL} -b empty_branch
     - ./tools/ci/retry_failed.sh git -C auto_test_script checkout -f ${CI_AUTO_TEST_SCRIPT_REPO_BRANCH}
-    - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script
+    - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script --customized_only
     # prepare nvs bins
     - cd auto_test_script
     - ./tools/prepare_nvs_bin.sh
