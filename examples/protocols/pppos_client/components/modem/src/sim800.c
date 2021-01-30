@@ -19,20 +19,7 @@
 
 #define MODEM_RESULT_CODE_POWERDOWN "POWER DOWN"
 
-/**
- * @brief Macro defined for error checking
- *
- */
 static const char *DCE_TAG = "sim800";
-#define DCE_CHECK(a, str, goto_tag, ...)                                              \
-    do                                                                                \
-    {                                                                                 \
-        if (!(a))                                                                     \
-        {                                                                             \
-            ESP_LOGE(DCE_TAG, "%s(%d): " str, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
-            goto goto_tag;                                                            \
-        }                                                                             \
-    } while (0)
 
 /**
  * @brief Handle response from AT+CPOWD=1
