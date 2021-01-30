@@ -24,6 +24,11 @@
 #include "esp_httpd_priv.h"
 #include "ctrl_sock.h"
 
+typedef struct {
+  fd_set *fdset;
+  struct httpd_data *hd;
+} process_session_context_t;
+
 static const char *TAG = "httpd";
 
 static esp_err_t httpd_accept_conn(struct httpd_data *hd, int listen_fd)
@@ -132,15 +137,6 @@ void *httpd_get_global_transport_ctx(httpd_handle_t handle)
     return ((struct httpd_data *)handle)->config.global_transport_ctx;
 }
 
-static void httpd_close_all_sessions(struct httpd_data *hd)
-{
-    int fd = -1;
-    while ((fd = httpd_sess_iterate(hd, fd)) != -1) {
-        ESP_LOGD(TAG, LOG_FMT("cleaning up socket %d"), fd);
-        httpd_sess_delete(hd, fd);
-        close(fd);
-    }
-}
 
 static void httpd_process_ctrl_msg(struct httpd_data *hd)
 {
@@ -169,6 +165,29 @@ static void httpd_process_ctrl_msg(struct httpd_data *hd)
     default:
         break;
     }
+}
+
+// Called for each session from httpd_server
+static int httpd_process_session(struct sock_db *session, void *context)
+{
+	if ((!session) || (!context)) {
+        return 0;
+	}
+
+	if (session->fd < 0) {
+        return 1;
+	}
+
+	process_session_context_t * ctx=(process_session_context_t*)context;
+	int fd=session->fd;
+
+	if (FD_ISSET(fd, ctx->fdset) || httpd_sess_pending(ctx->hd,session)) {
+	    ESP_LOGD(TAG, LOG_FMT("processing socket %d"), fd);
+	    if (httpd_sess_process(ctx->hd, session) != ESP_OK) {
+	        httpd_sess_delete(ctx->hd, session); // Delete session
+	    }
+	}
+	return 1;
 }
 
 /* Manage in-coming connection or data requests */
@@ -210,19 +229,11 @@ static esp_err_t httpd_server(struct httpd_data *hd)
 
     /* Case1: Do we have any activity on the current data
      * sessions? */
-    int fd = -1;
-    while ((fd = httpd_sess_iterate(hd, fd)) != -1) {
-        if (FD_ISSET(fd, &read_set) || (httpd_sess_pending(hd, fd))) {
-            ESP_LOGD(TAG, LOG_FMT("processing socket %d"), fd);
-            if (httpd_sess_process(hd, fd) != ESP_OK) {
-                ESP_LOGD(TAG, LOG_FMT("closing socket %d"), fd);
-                close(fd);
-                /* Delete session and update fd to that
-                 * preceding the one being deleted */
-                fd = httpd_sess_delete(hd, fd);
-            }
-        }
-    }
+    process_session_context_t context = {
+        .fdset = &read_set,
+        .hd = hd
+    };
+    httpd_sess_enum(hd, httpd_process_session, &context);
 
     /* Case2: Do we have any incoming connection requests to
      * process? */
@@ -253,7 +264,7 @@ static void httpd_thread(void *arg)
     ESP_LOGD(TAG, LOG_FMT("web server exiting"));
     close(hd->msg_fd);
     cs_free_ctrl_sock(hd->ctrl_fd);
-    httpd_close_all_sessions(hd);
+    httpd_sess_close_all(hd);
     close(hd->listen_fd);
     hd->hd_td.status = THREAD_STOPPED;
     httpd_os_thread_delete();

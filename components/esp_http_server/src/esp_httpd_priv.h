@@ -117,9 +117,11 @@ struct httpd_data {
     int msg_fd;                             /*!< Ctrl message sender FD */
     struct thread_data hd_td;               /*!< Information for the HTTPD thread */
     struct sock_db *hd_sd;                  /*!< The socket database */
+    int hd_sd_active_count;                 /*!< The number of the active sockets */
     httpd_uri_t **hd_calls;                 /*!< Registered URI handlers */
     struct httpd_req hd_req;                /*!< The current HTTPD request */
     struct httpd_req_aux hd_req_aux;        /*!< Additional data about the HTTPD request kept unexposed */
+    uint64_t lru_counter;                   /*!< LRU counter */
 
     /* Array of registered error handler functions */
     httpd_err_handler_func_t *err_handler_fns;
@@ -130,6 +132,29 @@ struct httpd_data {
  * Functions related to HTTP session management
  * @{
  */
+
+// Enum function, which will be called for each session
+typedef int (*httpd_session_enum_function)(struct sock_db *session, void *context);
+
+/**
+ * @brief  Enumerates all sessions
+ *
+ * @param[in] hd            Server instance data
+ * @param[in] enum_function Enumeration function, which will be called for each session
+ * @param[in] context       Context, which will be passed to the enumeration function
+ */
+void httpd_sess_enum(struct httpd_data *hd, httpd_session_enum_function enum_function, void *context);
+
+/**
+ * @brief   Returns next free session slot (fd<0)
+ *
+ * @param[in] hd    Server instance data
+ *
+ * @return
+ *  - +VE : Free session slot
+ *  - NULL: End of iteration
+ */
+struct sock_db *httpd_sess_get_free(struct httpd_data *hd);
 
 /**
  * @brief Retrieve a session by its descriptor
@@ -171,33 +196,23 @@ esp_err_t httpd_sess_new(struct httpd_data *hd, int newfd);
 /**
  * @brief   Processes incoming HTTP requests
  *
- * @param[in] hd    Server instance data
- * @param[in] clifd Descriptor of the client from which data is to be received
+ * @param[in] hd      Server instance data
+ * @param[in] session session
  *
  * @return
  *  - ESP_OK    : on successfully receiving, parsing and responding to a request
  *  - ESP_FAIL  : in case of failure in any of the stages of processing
  */
-esp_err_t httpd_sess_process(struct httpd_data *hd, int clifd);
+esp_err_t httpd_sess_process(struct httpd_data *hd, struct sock_db *session);
 
 /**
  * @brief   Remove client descriptor from the session / socket database
  *          and close the connection for this client.
  *
- * @note    The returned descriptor should be used by httpd_sess_iterate()
- *          to continue the iteration correctly. This ensures that the
- *          iteration is not restarted abruptly which may cause reading from
- *          a socket which has been already processed and thus blocking
- *          the server loop until data appears on that socket.
- *
- * @param[in] hd    Server instance data
- * @param[in] clifd Descriptor of the client to be removed from the session.
- *
- * @return
- *  - +VE : Client descriptor preceding the one being deleted
- *  - -1  : No descriptor preceding the one being deleted
+ * @param[in] hd      Server instance data
+ * @param[in] session Session
  */
-int httpd_sess_delete(struct httpd_data *hd, int clifd);
+void httpd_sess_delete(struct httpd_data *hd, struct sock_db *session);
 
 /**
  * @brief   Free session context
@@ -205,7 +220,7 @@ int httpd_sess_delete(struct httpd_data *hd, int clifd);
  * @param[in] ctx     Pointer to session context
  * @param[in] free_fn Free function to call on session context
  */
-void httpd_sess_free_ctx(void *ctx, httpd_free_ctx_fn_t free_fn);
+void httpd_sess_free_ctx(void **ctx, httpd_free_ctx_fn_t free_fn);
 
 /**
  * @brief   Add descriptors present in the socket database to an fdset and
@@ -217,21 +232,6 @@ void httpd_sess_free_ctx(void *ctx, httpd_free_ctx_fn_t free_fn);
  * @param[out] maxfd Maximum value among all file descriptors.
  */
 void httpd_sess_set_descriptors(struct httpd_data *hd, fd_set *fdset, int *maxfd);
-
-/**
- * @brief   Iterates through the list of client fds in the session /socket database.
- *          Passing the value of a client fd returns the fd for the next client
- *          in the database. In order to iterate from the beginning pass -1 as fd.
- *
- * @param[in] hd    Server instance data
- * @param[in] fd    Last accessed client descriptor.
- *                  -1 to reset iterator to start of database.
- *
- * @return
- *  - +VE : Client descriptor next in the database
- *  - -1  : End of iteration
- */
-int httpd_sess_iterate(struct httpd_data *hd, int fd);
 
 /**
  * @brief   Checks if session can accept another connection from new client.
@@ -257,12 +257,12 @@ bool httpd_is_sess_available(struct httpd_data *hd);
  * comes in use, as it checks the socket's pending data
  * buffer.
  *
- * @param[in] hd  Server instance data
- * @param[in] fd  Client descriptor
+ * @param[in] hd      Server instance data
+ * @param[in] session Session
  *
  * @return True if there is any pending data
  */
-bool httpd_sess_pending(struct httpd_data *hd, int fd);
+bool httpd_sess_pending(struct httpd_data *hd, struct sock_db *session);
 
 /**
  * @brief   Removes the least recently used client from the session
@@ -278,6 +278,14 @@ bool httpd_sess_pending(struct httpd_data *hd, int fd);
  *  - ESP_FAIL  : if failed
  */
 esp_err_t httpd_sess_close_lru(struct httpd_data *hd);
+
+/**
+ * @brief   Closes all sessions
+ *
+ * @param[in] hd  Server instance data
+ *
+ */
+void httpd_sess_close_all(struct httpd_data *hd);
 
 /** End of Group : Session Management
  * @}
@@ -518,6 +526,23 @@ esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req, const char *suppor
  *  - ESP_FAIL                      : Socket failures
  */
 esp_err_t httpd_ws_get_frame_type(httpd_req_t *req);
+
+/**
+ * @brief   Trigger an httpd session close externally
+ *
+ * @note    Calling this API is only required in special circumstances wherein
+ *          some application requires to close an httpd client session asynchronously.
+ *
+ * @param[in] handle    Handle to server returned by httpd_start
+ * @param[in] session   Session to be closed
+ *
+ * @return
+ *  - ESP_OK    : On successfully initiating closure
+ *  - ESP_FAIL  : Failure to queue work
+ *  - ESP_ERR_NOT_FOUND   : Socket fd not found
+ *  - ESP_ERR_INVALID_ARG : Null arguments
+ */
+esp_err_t httpd_sess_trigger_close_(httpd_handle_t handle, struct sock_db *session);
 
 /** End of WebSocket related functions
  * @}
