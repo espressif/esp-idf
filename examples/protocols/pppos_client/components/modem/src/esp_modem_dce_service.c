@@ -30,15 +30,6 @@ static const char *DCE_TAG = "dce_service";
         }                                                                             \
     } while (0)
 
-/**
- * @brief ESP Modem
- *
- */
-typedef struct {
-    void *priv_resource; /*!< Private resource */
-    modem_dce_t parent;  /*!< DCE parent class */
-} esp_modem_dce_t;
-
 esp_err_t esp_modem_dce_handle_response_default(modem_dce_t *dce, const char *line)
 {
     esp_err_t err = ESP_FAIL;
