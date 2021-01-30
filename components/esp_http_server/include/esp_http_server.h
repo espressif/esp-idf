@@ -1415,6 +1415,23 @@ void httpd_sess_set_ctx(httpd_handle_t handle, int sockfd, void *ctx, httpd_free
 void *httpd_sess_get_transport_ctx(httpd_handle_t handle, int sockfd);
 
 /**
+ * @brief   Trigger an httpd session close externally
+ *
+ * @note    Calling this API is only required in special circumstances wherein
+ *          some application requires to close an httpd client session asynchronously.
+ *
+ * @param[in] handle    Handle to server returned by httpd_start
+ * @param[in] sockfd    The socket descriptor of the session to be closed
+ *
+ * @return
+ *  - ESP_OK    : On successfully initiating closure
+ *  - ESP_FAIL  : Failure to queue work
+ *  - ESP_ERR_NOT_FOUND   : Socket fd not found
+ *  - ESP_ERR_INVALID_ARG : Null arguments
+ */
+esp_err_t httpd_sess_trigger_close(httpd_handle_t handle, int sockfd);
+
+/**
  * @brief   Set session 'transport' context by socket descriptor
  * @see     httpd_sess_set_ctx()
  *
@@ -1440,23 +1457,6 @@ void *httpd_get_global_user_ctx(httpd_handle_t handle);
  * @return global transport context
  */
 void *httpd_get_global_transport_ctx(httpd_handle_t handle);
-
-/**
- * @brief   Trigger an httpd session close externally
- *
- * @note    Calling this API is only required in special circumstances wherein
- *          some application requires to close an httpd client session asynchronously.
- *
- * @param[in] handle    Handle to server returned by httpd_start
- * @param[in] sockfd    The socket descriptor of the session to be closed
- *
- * @return
- *  - ESP_OK    : On successfully initiating closure
- *  - ESP_FAIL  : Failure to queue work
- *  - ESP_ERR_NOT_FOUND   : Socket fd not found
- *  - ESP_ERR_INVALID_ARG : Null arguments
- */
-esp_err_t httpd_sess_trigger_close(httpd_handle_t handle, int sockfd);
 
 /**
  * @brief   Update LRU counter for a given socket

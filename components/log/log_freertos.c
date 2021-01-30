@@ -27,14 +27,16 @@
 #define MAX_MUTEX_WAIT_MS 10
 #define MAX_MUTEX_WAIT_TICKS ((MAX_MUTEX_WAIT_MS + portTICK_PERIOD_MS - 1) / portTICK_PERIOD_MS)
 
-static SemaphoreHandle_t s_log_mutex = NULL;
+static volatile SemaphoreHandle_t s_log_mutex = NULL;
 
 void esp_log_impl_lock(void)
 {
     if (!s_log_mutex) {
         s_log_mutex = xSemaphoreCreateMutex();
     }
-    xSemaphoreTake(s_log_mutex, portMAX_DELAY);
+    if (s_log_mutex) {
+        xSemaphoreTake(s_log_mutex, portMAX_DELAY);
+    }
 }
 
 bool esp_log_impl_lock_timeout(void)
@@ -42,7 +44,10 @@ bool esp_log_impl_lock_timeout(void)
     if (!s_log_mutex) {
         s_log_mutex = xSemaphoreCreateMutex();
     }
-    return xSemaphoreTake(s_log_mutex, MAX_MUTEX_WAIT_TICKS) == pdTRUE;
+    if (s_log_mutex) {
+        return xSemaphoreTake(s_log_mutex, MAX_MUTEX_WAIT_TICKS) == pdTRUE;
+    }
+    return false;
 }
 
 void esp_log_impl_unlock(void)
