@@ -14,8 +14,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "esp_log.h"
+#include "esp_modem_dce_service.h"
 #include "bg96.h"
-#include "bg96_private.h"
 
 /**
  * @brief This module supports SIM7600 module, which has a very similar interface

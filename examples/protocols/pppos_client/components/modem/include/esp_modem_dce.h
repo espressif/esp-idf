@@ -13,6 +13,20 @@
 // limitations under the License.
 #pragma once
 
+/**
+ * @brief Macro defined for error checking
+ *
+ */
+#define DCE_CHECK(a, str, goto_tag, ...)                                              \
+    do                                                                                \
+    {                                                                                 \
+        if (!(a))                                                                     \
+        {                                                                             \
+            ESP_LOGE(DCE_TAG, "%s(%d): " str, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
+            goto goto_tag;                                                            \
+        }                                                                             \
+    } while (0)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
