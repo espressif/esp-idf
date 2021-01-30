@@ -23,6 +23,7 @@ extern "C" {
 
 typedef struct modem_dce modem_dce_t;
 typedef struct modem_dte modem_dte_t;
+typedef struct esp_modem_dce esp_modem_dce_t;
 
 /**
  * @brief Result Code from DCE
@@ -95,6 +96,15 @@ struct modem_dce {
     esp_err_t (*power_down)(modem_dce_t *dce);                          /*!< Normal power down */
     esp_err_t (*deinit)(modem_dce_t *dce);                              /*!< Deinitialize */
 };
+
+/**
+  * @brief ESP Modem with private resource
+  *
+  */
+ struct esp_modem_dce {
+     void *priv_resource; /*!< Private resource */
+     modem_dce_t parent;  /*!< DCE parent class */
+ };
 
 #ifdef __cplusplus
 }

@@ -35,15 +35,6 @@ static const char *DCE_TAG = "sim800";
     } while (0)
 
 /**
- * @brief SIM800 Modem
- *
- */
-typedef struct {
-    void *priv_resource; /*!< Private resource */
-    modem_dce_t parent;  /*!< DCE parent class */
-} sim800_modem_dce_t;
-
-/**
  * @brief Handle response from AT+CPOWD=1
  */
 static esp_err_t sim800_handle_power_down(modem_dce_t *dce, const char *line)
@@ -138,52 +129,52 @@ err:
  */
 static esp_err_t sim800_deinit(modem_dce_t *dce)
 {
-    sim800_modem_dce_t *sim800_dce = __containerof(dce, sim800_modem_dce_t, parent);
+    esp_modem_dce_t *esp_modem_dce = __containerof(dce, esp_modem_dce_t, parent);
     if (dce->dte) {
         dce->dte->dce = NULL;
     }
-    free(sim800_dce);
+    free(esp_modem_dce);
     return ESP_OK;
 }
 
 modem_dce_t *sim800_init(modem_dte_t *dte)
 {
     DCE_CHECK(dte, "DCE should bind with a DTE", err);
-    /* malloc memory for sim800_dce object */
-    sim800_modem_dce_t *sim800_dce = calloc(1, sizeof(sim800_modem_dce_t));
-    DCE_CHECK(sim800_dce, "calloc sim800_dce failed", err);
+    /* malloc memory for esp_modem_dce object */
+    esp_modem_dce_t *esp_modem_dce = calloc(1, sizeof(esp_modem_dce_t));
+    DCE_CHECK(esp_modem_dce, "calloc esp_modem_dce_t failed", err);
     /* Bind DTE with DCE */
-    sim800_dce->parent.dte = dte;
-    dte->dce = &(sim800_dce->parent);
+    esp_modem_dce->parent.dte = dte;
+    dte->dce = &(esp_modem_dce->parent);
     /* Bind methods */
-    sim800_dce->parent.handle_line = NULL;
-    sim800_dce->parent.sync = esp_modem_dce_sync;
-    sim800_dce->parent.echo_mode = esp_modem_dce_echo;
-    sim800_dce->parent.store_profile = esp_modem_dce_store_profile;
-    sim800_dce->parent.set_flow_ctrl = esp_modem_dce_set_flow_ctrl;
-    sim800_dce->parent.define_pdp_context = esp_modem_dce_define_pdp_context;
-    sim800_dce->parent.hang_up = esp_modem_dce_hang_up;
-    sim800_dce->parent.get_signal_quality = esp_modem_dce_get_signal_quality;
-    sim800_dce->parent.get_battery_status = esp_modem_dce_get_battery_status;
-    sim800_dce->parent.get_operator_name = esp_modem_dce_get_operator_name;
-    sim800_dce->parent.set_working_mode = sim800_set_working_mode;
-    sim800_dce->parent.power_down = sim800_power_down;
-    sim800_dce->parent.deinit = sim800_deinit;
+    esp_modem_dce->parent.handle_line = NULL;
+    esp_modem_dce->parent.sync = esp_modem_dce_sync;
+    esp_modem_dce->parent.echo_mode = esp_modem_dce_echo;
+    esp_modem_dce->parent.store_profile = esp_modem_dce_store_profile;
+    esp_modem_dce->parent.set_flow_ctrl = esp_modem_dce_set_flow_ctrl;
+    esp_modem_dce->parent.define_pdp_context = esp_modem_dce_define_pdp_context;
+    esp_modem_dce->parent.hang_up = esp_modem_dce_hang_up;
+    esp_modem_dce->parent.get_signal_quality = esp_modem_dce_get_signal_quality;
+    esp_modem_dce->parent.get_battery_status = esp_modem_dce_get_battery_status;
+    esp_modem_dce->parent.get_operator_name = esp_modem_dce_get_operator_name;
+    esp_modem_dce->parent.set_working_mode = sim800_set_working_mode;
+    esp_modem_dce->parent.power_down = sim800_power_down;
+    esp_modem_dce->parent.deinit = sim800_deinit;
     /* Sync between DTE and DCE */
-    DCE_CHECK(esp_modem_dce_sync(&(sim800_dce->parent)) == ESP_OK, "sync failed", err_io);
+    DCE_CHECK(esp_modem_dce_sync(&(esp_modem_dce->parent)) == ESP_OK, "sync failed", err_io);
     /* Close echo */
-    DCE_CHECK(esp_modem_dce_echo(&(sim800_dce->parent), false) == ESP_OK, "close echo mode failed", err_io);
+    DCE_CHECK(esp_modem_dce_echo(&(esp_modem_dce->parent), false) == ESP_OK, "close echo mode failed", err_io);
     /* Get Module name */
-    DCE_CHECK(esp_modem_dce_get_module_name(&(sim800_dce->parent)) == ESP_OK, "get module name failed", err_io);
+    DCE_CHECK(esp_modem_dce_get_module_name(&(esp_modem_dce->parent)) == ESP_OK, "get module name failed", err_io);
     /* Get IMEI number */
-    DCE_CHECK(esp_modem_dce_get_imei_number(&(sim800_dce->parent)) == ESP_OK, "get imei failed", err_io);
+    DCE_CHECK(esp_modem_dce_get_imei_number(&(esp_modem_dce->parent)) == ESP_OK, "get imei failed", err_io);
     /* Get IMSI number */
-    DCE_CHECK(esp_modem_dce_get_imsi_number(&(sim800_dce->parent)) == ESP_OK, "get imsi failed", err_io);
+    DCE_CHECK(esp_modem_dce_get_imsi_number(&(esp_modem_dce->parent)) == ESP_OK, "get imsi failed", err_io);
     /* Get operator name */
-    DCE_CHECK(esp_modem_dce_get_operator_name(&(sim800_dce->parent)) == ESP_OK, "get operator name failed", err_io);
-    return &(sim800_dce->parent);
+    DCE_CHECK(esp_modem_dce_get_operator_name(&(esp_modem_dce->parent)) == ESP_OK, "get operator name failed", err_io);
+    return &(esp_modem_dce->parent);
 err_io:
-    free(sim800_dce);
+    free(esp_modem_dce);
 err:
     return NULL;
 }
