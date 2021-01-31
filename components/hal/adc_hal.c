@@ -147,8 +147,6 @@ static uint32_t read_cal_channel(adc_ll_num_t adc_n, int channel)
 
 uint32_t adc_hal_self_calibration(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten, bool internal_gnd)
 {
-    adc_hal_set_power_manage(ADC_POWER_SW_ON);
-
     if (adc_n == ADC_NUM_2) {
         adc_arbiter_t config = ADC_ARBITER_CONFIG_DEFAULT();
         adc_hal_arbiter_config(&config);
