@@ -24,7 +24,12 @@
 #define SOC_GDMA_ADC_INTR_SOURCE    ETS_DMA_CH0_INTR_SOURCE
 
 #include "rmt_caps.h"
-#include "dac_caps.h"
+
+
+/*-------------------------- DAC CAPS ----------------------------------------*/
+#define SOC_DAC_PERIPH_NUM      0
+
+
 #include "i2c_caps.h"
 #include "mpu_caps.h"
 #include "sigmadelta_caps.h"
