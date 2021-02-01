@@ -47,7 +47,11 @@ static void app_multiple_handle(esp_ip4_addr_t *ip4_addr, esp_netif_t *esp_netif
      */
 #if CONFIG_EXAMPLE_BIND_SOCKET_TO_NETIF_NAME
     struct ifreq ifr;
+#if !CONFIG_LWIP_NETIF_API
     esp_netif_get_netif_impl_name(esp_netif, ifr.ifr_name);
+#else
+    if_indextoname(esp_netif_get_netif_impl_index(esp_netif), ifr.ifr_name);
+#endif
     int ret = setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE,  (void*)&ifr, sizeof(struct ifreq));
     if (ret < 0) {
         ESP_LOGE(TAG, "\"%s\" Unable to bind socket to specified interface: errno %d", netif_name, errno);

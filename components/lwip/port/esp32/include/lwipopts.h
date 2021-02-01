@@ -448,6 +448,11 @@
  */
 #define LWIP_NETIF_TX_SINGLE_PBUF             1
 
+/**
+ * LWIP_NETIF_API==1: Enable usage of standard POSIX APIs in LWIP.
+ */
+#define LWIP_NETIF_API                      CONFIG_LWIP_NETIF_API
+
 /*
    ------------------------------------
    ---------- LOOPIF options ----------
@@ -949,6 +954,7 @@
 #define ESP_IP4_ATON                    1
 #define ESP_LIGHT_SLEEP                 1
 #define ESP_L2_TO_L3_COPY               CONFIG_LWIP_L2_TO_L3_COPY
+#define LWIP_NETIF_API                  CONFIG_LWIP_NETIF_API
 #define ESP_STATS_MEM                   CONFIG_LWIP_STATS
 #define ESP_STATS_DROP                  CONFIG_LWIP_STATS
 #define ESP_STATS_TCP                   0
