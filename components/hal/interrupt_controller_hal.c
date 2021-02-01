@@ -20,8 +20,10 @@
 
 static bool is_interrupt_number_reserved(int interrupt_number)
 {
-    //TODO. Workaround to reserve interrupt number 1 for Wi-Fi and 5&8 for Bluetooth.
-    if (interrupt_number == 1 || interrupt_number == 5 || interrupt_number == 8) {
+    // Workaround to reserve interrupt number 1 for Wi-Fi, 5,8 for Bluetooth, 6 for "permanently disabled interrupt"
+    // [TODO: IDF-2465]
+    const uint32_t reserved = BIT(1) | BIT(5) | BIT(6) | BIT(8);
+    if (reserved & BIT(interrupt_number)) {
         return true;
     }
 
