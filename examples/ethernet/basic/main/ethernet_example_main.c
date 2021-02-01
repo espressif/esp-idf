@@ -145,7 +145,7 @@ void app_main(void)
     esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy);
     esp_eth_handle_t eth_handle = NULL;
     ESP_ERROR_CHECK(esp_eth_driver_install(&config, &eth_handle));
-#if CONFIG_ETH_USE_SPI_ETHERNET
+#if !CONFIG_EXAMPLE_USE_INTERNAL_ETHERNET
     /* The SPI Ethernet module might doesn't have a burned factory MAC address, we cat to set it manually.
        02:00:00 is a Locally Administered OUI range so should not be used except when testing on a LAN under your control.
     */
