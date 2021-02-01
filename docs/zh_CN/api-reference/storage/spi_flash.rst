@@ -34,6 +34,9 @@ SPI Flash API 参考
 .. include-build-file:: inc/esp_flash.inc
 .. include-build-file:: inc/spi_flash_types.inc
 
+
+.. _api-reference-partition-table:
+
 分区表 API 参考
 -------------------------------
 

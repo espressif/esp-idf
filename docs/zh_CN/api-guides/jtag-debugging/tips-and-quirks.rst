@@ -35,6 +35,8 @@
 
     由于 GDB 在连接 OpenOCD 时仅仅请求一次内存映射，所以可以在 TCL 配置文件中指定该命令，或者通过命令行传递给 OpenOCD。对于后者，命令行示例如下：
 
+    .. highlight:: bash
+
     .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
         :start-after: run-openocd-appimage-offset
         :end-before: ---
@@ -64,8 +66,8 @@ ESP-IDF 有一些针对 OpenOCD 调试功能的选项可以在编译时进行设
 
 .. _jtag-debugging-tip-freertos-support:
 
-支持FreeRTOS
-^^^^^^^^^^^^
+支持 FreeRTOS
+^^^^^^^^^^^^^^^^
 
 OpenOCD 完全支持 ESP-IDF 自带的 FreeRTOS 操作系统，GDB 会将 FreeRTOS 中的任务当做线程。使用 GDB 命令 ``i threads`` 可以查看所有的线程，使用命令 ``thread n`` 可以切换到某个具体任务的堆栈，其中 ``n`` 是线程的编号。检测 FreeRTOS 的功能可以在配置目标时被禁用。更多详细信息，请参阅 :ref:`jtag-debugging-tip-openocd-configure-target`.
 
@@ -138,7 +140,7 @@ OpenOCD 有很多种配置文件（``*.cfg``），它们位于 OpenOCD 安装目
 自定义配置文件
 """"""""""""""
 
-OpenOCD 的配置文件是用 TCL 语言编写的, 包含了定制和编写脚本的各种选项。这在非标准调试的场景中非常有用，更多关于 TCL 脚本的内容请参考 `OpenOCD 参考手册`_ 。
+OpenOCD 的配置文件是用 TCL 语言编写的, 包含了定制和编写脚本的各种选项。这在非标准调试的场景中非常有用，更多关于 TCL 脚本的内容请参考 `OpenOCD 参考手册`_。
 
 .. _jtag-debugging-tip-openocd-config-vars:
 
@@ -178,7 +180,6 @@ TCL 语言中为变量赋值的语法是:
     :start-after: openocd-target-specific-config-vars
     :end-before: ---
 
-
 .. _jtag-debugging-tip-reset-by-debugger:
 
 复位 {IDF_TARGET_NAME}
@@ -194,13 +195,11 @@ TCL 语言中为变量赋值的语法是:
 
 如果除了 {IDF_TARGET_NAME} 模组和 JTAG 适配器之外的其他硬件也连接到了 JTAG 引脚，那么 JTAG 的操作可能会受到干扰。{IDF_TARGET_NAME} JTAG 使用以下引脚：
 
-
-
-如果用户应用程序更改了 JTAG 引脚的配置，JTAG 通信可能会失败。如果 OpenOCD 正确初始化（检测到两个 Tensilica 内核），但在程序运行期间失去了同步并报出大量 DTR/DIR 错误，则应用程序可能将 JTAG 引脚重新配置为其他功能或者用户忘记将 Vtar 连接到 JTAG 适配器。
-
 .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
     :start-after: jtag-pins
     :end-before: ---
+
+如果用户应用程序更改了 JTAG 引脚的配置，JTAG 通信可能会失败。如果 OpenOCD 正确初始化（检测到两个 Tensilica 内核），但在程序运行期间失去了同步并报出大量 DTR/DIR 错误，则应用程序可能将 JTAG 引脚重新配置为其他功能或者用户忘记将 Vtar 连接到 JTAG 适配器。
 
 .. highlight:: none
 
@@ -227,13 +226,20 @@ Kconfig 配置项 :ref:`CONFIG_SECURE_BOOT_ALLOW_JTAG` 可以改变这个默认�
 - 软件断点和闪存加密是不兼容的，目前 OpenOCD 尚不支持对 Flash 中的内容进行加密和解密。
 - 如果开启了安全引导功能，设置软件断点会改变被签名的程序的摘要，从而使得签名失效。这也意味着，如果设置了软件断点，系统会在下次重启时的签名验证阶段失败，导致无法启动。
 
-关闭 JTAG 的软件断点功能，可以在启动 OpenOCD 时在命令行额外加一项配置参数 ``-c 'set ESP_FLASH_SIZE 0'`` 例如 ::
-
-    openocd -c 'set ESP_FLASH_SIZE 0' -f board/esp32-wrover-kit-3.3v.cfg
+关闭 JTAG 的软件断点功能，可以在启动 OpenOCD 时在命令行额外加一项配置参数 ``-c 'set ESP_FLASH_SIZE 0'``，请参考 :ref:`jtag-debugging-tip-openocd-config-vars`。
 
 .. note::
 
    同样地，当启用该选项，并且调试过程中打了软件断点，之后引导程序将无法校验通过应用程序的签名。
+
+.. only:: esp32
+
+    JTAG 和 ESP32-WROOM-32 AT 固件兼容性问题
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    ESP32-WROOM 系列模块预装了 AT 固件。该固件将 GPIO12 至 GPIO15 管脚配置为 SPI 从属接口，使得无法使用 JTAG。
+
+    要想使用 JTAG，需要编译新的固件，新的固件不能使用专门用于 JTAG 通信的管脚（GPIO12 至 GPIO15），然后将固件烧录到模组中。请参考 :ref:`jtag-debugging-tip-jtag-pins-reconfigured`。
 
 .. _jtag-debugging-tip-reporting-issues:
 
