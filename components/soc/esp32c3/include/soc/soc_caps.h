@@ -26,7 +26,6 @@
 #include "i2s_caps.h"
 #include "rtc_io_caps.h"
 #include "soc_caps.h"
-#include "timer_group_caps.h"
 #include "cpu_caps.h"
 #include "gpio_caps.h"
 #include "ledc_caps.h"
@@ -76,6 +75,12 @@
 #define SOC_SHA_SUPPORT_SHA224          (1)
 #define SOC_SHA_SUPPORT_SHA256          (1)
 
+/*--------------------------- TIMER GROUP CAPS ---------------------------------------*/
+#define SOC_TIMER_GROUPS                  (2)
+#define SOC_TIMER_GROUP_TIMERS_PER_GROUP  (1)
+#define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH (54)
+#define SOC_TIMER_GROUP_SUPPORT_XTAL      (1)
+#define SOC_TIMER_GROUP_TOTAL_TIMERS (SOC_TIMER_GROUPS * SOC_TIMER_GROUP_TIMERS_PER_GROUP)
 
 /*--------------------------- RMT CAPS ---------------------------------------*/
 #define SOC_RMT_GROUPS                  (1)  /*!< One RMT group */
