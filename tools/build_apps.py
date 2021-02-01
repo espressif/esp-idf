@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 # coding=utf-8
 #
 # ESP-IDF helper script to build multiple applications. Consumes the input of find_apps.py.
@@ -12,7 +13,7 @@ from find_build_apps import BUILD_SYSTEMS, BuildError, BuildItem, setup_logging
 from find_build_apps.common import SIZE_JSON_FN, rmdir
 
 
-def main():
+def main():  # type: () -> None
     parser = argparse.ArgumentParser(description='ESP-IDF app builder')
     parser.add_argument(
         '-v',
