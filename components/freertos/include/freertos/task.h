@@ -1499,9 +1499,7 @@ configSTACK_DEPTH_TYPE uxTaskGetStackHighWaterMark2( TaskHandle_t xTask ) PRIVIL
  * INCLUDE_pxTaskGetStackStart must be set to 1 in FreeRTOSConfig.h for
  * this function to be available.
  *
- * Returns the highest stack memory address on architectures where the stack grows down
- * from high memory, and the lowest memory address on architectures where the
- * stack grows up from low memory.
+ * Returns the lowest stack memory address, regardless of whether the stack grows up or down.
  *
  * @param xTask Handle of the task associated with the stack returned.
  * Set xTask to NULL to return the stack of the calling task.
