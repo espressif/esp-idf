@@ -153,6 +153,7 @@ menu "Bootloader config"
     config BOOTLOADER_APP_TEST
         bool "GPIO triggers boot from test app partition"
         default N
+        depends on !BOOTLOADER_APP_ANTI_ROLLBACK
         help
             Allows to run the test app from "TEST" partition.
             A boot from "test" partition will occur if there is a GPIO input pulled low while device starts up.
