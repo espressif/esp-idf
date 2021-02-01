@@ -77,30 +77,29 @@ code_quality_check:
     - .rules:patterns:static-code-analysis-preview
   allow_failure: true
   script:
-    - export CI_MR_IID=$(python ${CI_PROJECT_DIR}/tools/ci/ci_get_mr_info.py id ${CI_COMMIT_BRANCH})
-    - export CI_MR_COMMITS=$(python ${CI_PROJECT_DIR}/tools/ci/ci_get_mr_info.py commits ${CI_COMMIT_BRANCH} | tr '\n' ',')
+    - export CI_MERGE_REQUEST_COMMITS=$(python ${CI_PROJECT_DIR}/tools/ci/ci_get_mr_info.py commits ${CI_COMMIT_REF_NAME} | tr '\n' ',')
     # test if this branch have merge request, if not, exit 0
-    - test -n "$CI_MR_IID" || exit 0
-    - test -n "$CI_MR_COMMITS" || exit 0
+    - test -n "$CI_MERGE_REQUEST_IID" || exit 0
+    - test -n "$CI_MERGE_REQUEST_COMMITS" || exit 0
     - sonar-scanner
       -Dsonar.analysis.mode=preview
-      -Dsonar.host.url=$SONAR_HOST_URL
-      -Dsonar.login=$SONAR_LOGIN
-      -Dsonar.sources=$CI_PROJECT_DIR
-      -Dsonar.sourceEncoding=UTF-8
-      -Dsonar.projectKey=esp-idf
-      -Dsonar.projectBaseDir=$CI_PROJECT_DIR
-      -Dsonar.exclusions=$EXCLUSIONS
-      -Dsonar.gitlab.project_id=$CI_PROJECT_ID
-      -Dsonar.gitlab.commit_sha=$CI_MR_COMMITS
-      -Dsonar.gitlab.ref_name=$CI_COMMIT_REF_NAME
-      -Dsonar.gitlab.failure_notification_mode=exit-code
+      -Dsonar.branch.name=$CI_COMMIT_REF_NAME
       -Dsonar.cxx.clangtidy.reportPath=$REPORT_DIR/clang_tidy_report.txt
       -Dsonar.cxx.includeDirectories=components,/usr/include
-      -Dsonar.python.pylint_config=.pylintrc
-      -Dsonar.gitlab.ci_merge_request_iid=$CI_MR_IID
+      -Dsonar.exclusions=$EXCLUSIONS
+      -Dsonar.gitlab.ci_merge_request_iid=$CI_MERGE_REQUEST_IID
+      -Dsonar.gitlab.commit_sha=$CI_MERGE_REQUEST_COMMITS
+      -Dsonar.gitlab.failure_notification_mode=exit-code
       -Dsonar.gitlab.merge_request_discussion=true
-      -Dsonar.branch.name=$CI_COMMIT_REF_NAME
+      -Dsonar.gitlab.project_id=$CI_PROJECT_ID
+      -Dsonar.gitlab.ref_name=$CI_COMMIT_REF_NAME
+      -Dsonar.host.url=$SONAR_HOST_URL
+      -Dsonar.login=$SONAR_LOGIN
+      -Dsonar.projectBaseDir=$CI_PROJECT_DIR
+      -Dsonar.projectKey=esp-idf
+      -Dsonar.python.pylint_config=.pylintrc
+      -Dsonar.sourceEncoding=UTF-8
+      -Dsonar.sources=$CI_PROJECT_DIR
 
 code_quality_report:
   extends:
@@ -108,20 +107,21 @@ code_quality_report:
     - .rules:protected-schedule
   script:
     - sonar-scanner
-      -Dsonar.host.url=$SONAR_HOST_URL
-      -Dsonar.login=$SONAR_LOGIN
-      -Dsonar.sources=$CI_PROJECT_DIR
-      -Dsonar.sourceEncoding=UTF-8
-      -Dsonar.projectKey=esp-idf
-      -Dsonar.projectBaseDir=$CI_PROJECT_DIR
-      -Dsonar.exclusions=$EXCLUSIONS
-      -Dsonar.gitlab.project_id=$CI_PROJECT_ID
-      -Dsonar.gitlab.commit_sha=$CI_COMMIT_SHA
-      -Dsonar.gitlab.ref_name=$CI_COMMIT_REF_NAME
+      -Dsonar.branch.name=$CI_COMMIT_REF_NAME
       -Dsonar.cxx.clangtidy.reportPath=$REPORT_DIR/clang_tidy_report.txt
       -Dsonar.cxx.includeDirectories=components,/usr/include
+      -Dsonar.exclusions=$EXCLUSIONS
+      -Dsonar.gitlab.commit_sha=$CI_COMMIT_SHA
+      -Dsonar.gitlab.failure_notification_mode=exit-code
+      -Dsonar.gitlab.project_id=$CI_PROJECT_ID
+      -Dsonar.gitlab.ref_name=$CI_COMMIT_REF_NAME
+      -Dsonar.host.url=$SONAR_HOST_URL
+      -Dsonar.login=$SONAR_LOGIN
+      -Dsonar.projectBaseDir=$CI_PROJECT_DIR
+      -Dsonar.projectKey=esp-idf
       -Dsonar.python.pylint_config=.pylintrc
-      -Dsonar.branch.name=$CI_COMMIT_REF_NAME
+      -Dsonar.sourceEncoding=UTF-8
+      -Dsonar.sources=$CI_PROJECT_DIR
 
 # deploy stage
 .clang_tidy_deploy_template:
