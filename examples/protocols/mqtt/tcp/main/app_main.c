@@ -104,9 +104,9 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 
 static void mqtt_app_start(void)
 {
-    esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = CONFIG_BROKER_URL,
-    };
+    esp_mqtt_client_config_t mqtt_cfg = {0};
+    mqtt_cfg.uri = CONFIG_BROKER_URL;
+    
 #if CONFIG_BROKER_URL_FROM_STDIN
     char line[128];
 
