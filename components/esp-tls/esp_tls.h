@@ -111,6 +111,16 @@ typedef struct psk_key_hint {
 } psk_hint_key_t;
 
 /**
+ *  @brief Keep alive parameters structure
+ */
+typedef struct tls_keep_alive_cfg {
+    bool keep_alive_enable;               /*!< Enable keep-alive timeout */
+    int keep_alive_idle;                  /*!< Keep-alive idle time (second) */
+    int keep_alive_interval;              /*!< Keep-alive interval time (second) */
+    int keep_alive_count;                 /*!< Keep-alive packet retry send count */
+} tls_keep_alive_cfg_t;
+
+/**
  * @brief      ESP-TLS configuration parameters
  *
  * @note       Note about format of certificates:
@@ -204,7 +214,7 @@ typedef struct esp_tls_cfg {
     esp_err_t (*crt_bundle_attach)(void *conf);
                                             /*!< Function pointer to esp_crt_bundle_attach. Enables the use of certification
                                                  bundle for server verification, must be enabled in menuconfig */
-
+    tls_keep_alive_cfg_t *keep_alive_cfg;   /*!< Enable TCP keep-alive timeout for SSL connection */
 } esp_tls_cfg_t;
 
 #ifdef CONFIG_ESP_TLS_SERVER

@@ -51,11 +51,40 @@ static int resolve_dns(const char *host, struct sockaddr_in *ip)
     return ESP_OK;
 }
 
+static int tcp_enable_keep_alive(int fd, esp_transport_keep_alive_t *keep_alive_cfg)
+{
+    int keep_alive_enable = 1;
+    int keep_alive_idle = keep_alive_cfg->keep_alive_idle;
+    int keep_alive_interval = keep_alive_cfg->keep_alive_interval;
+    int keep_alive_count = keep_alive_cfg->keep_alive_count;
+
+    ESP_LOGD(TAG, "Enable TCP keep alive. idle: %d, interval: %d, count: %d", keep_alive_idle, keep_alive_interval, keep_alive_count);
+    if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &keep_alive_enable, sizeof(keep_alive_enable)) != 0) {
+        ESP_LOGE(TAG, "Fail to setsockopt SO_KEEPALIVE");
+        return -1;
+    }
+    if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, &keep_alive_idle, sizeof(keep_alive_idle)) != 0) {
+        ESP_LOGE(TAG, "Fail to setsockopt TCP_KEEPIDLE");
+        return -1;
+    }
+    if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL, &keep_alive_interval, sizeof(keep_alive_interval)) != 0) {
+        ESP_LOGE(TAG, "Fail to setsockopt TCP_KEEPINTVL");
+        return -1;
+    }
+    if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT, &keep_alive_count, sizeof(keep_alive_count)) != 0) {
+        ESP_LOGE(TAG, "Fail to setsockopt TCP_KEEPCNT");
+        return -1;
+    }
+
+    return 0;
+}
+
 static int tcp_connect(esp_transport_handle_t t, const char *host, int port, int timeout_ms)
 {
     struct sockaddr_in remote_ip;
     struct timeval tv = { 0 };
     transport_tcp_t *tcp = esp_transport_get_context_data(t);
+    esp_transport_keep_alive_t *keep_alive_cfg = esp_transport_get_keep_alive(t);
 
     bzero(&remote_ip, sizeof(struct sockaddr_in));
 
@@ -80,7 +109,15 @@ static int tcp_connect(esp_transport_handle_t t, const char *host, int port, int
 
     setsockopt(tcp->sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
     setsockopt(tcp->sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
-
+    // Set socket keep-alive option
+    if (keep_alive_cfg && keep_alive_cfg->keep_alive_enable) {
+        if (tcp_enable_keep_alive(tcp->sock, keep_alive_cfg) < 0) {
+            ESP_LOGE(TAG, "Error to set tcp [socket=%d] keep-alive", tcp->sock);
+            close(tcp->sock);
+            tcp->sock = -1;
+            return -1;
+        }
+    }
     // Set socket to non-blocking
     int flags;
     if ((flags = fcntl(tcp->sock, F_GETFL, NULL)) < 0) {
@@ -232,6 +269,11 @@ static esp_err_t tcp_destroy(esp_transport_handle_t t)
     esp_transport_close(t);
     free(tcp);
     return 0;
+}
+
+void esp_transport_tcp_set_keep_alive(esp_transport_handle_t t, esp_transport_keep_alive_t *keep_alive_cfg)
+{
+    esp_transport_set_keep_alive(t, keep_alive_cfg);
 }
 
 esp_transport_handle_t esp_transport_tcp_init(void)
