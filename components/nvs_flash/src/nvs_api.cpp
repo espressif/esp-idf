@@ -539,7 +539,7 @@ extern "C" esp_err_t nvs_flash_generate_keys(const esp_partition_t* partition, n
 
     for(uint8_t cnt = 0; cnt < NVS_KEY_SIZE; cnt++) {
         /* Adjacent 16-byte blocks should be different */
-        if((cnt / 16) & 1 == 0) {
+        if(((cnt / 16) & 1) == 0) {
             cfg->eky[cnt] = 0xff;
             cfg->tky[cnt] = 0xee;
         }
