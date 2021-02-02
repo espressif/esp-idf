@@ -1591,6 +1591,11 @@ typedef struct httpd_ws_frame {
 
 /**
  * @brief Receive and parse a WebSocket frame
+ *
+ * @note    Calling httpd_ws_recv_frame() with max_len as 0 will give actual frame size in pkt->len.
+ *          The user can dynamically allocate space for pkt->payload as per this length and call httpd_ws_recv_frame() again to get the actual data.
+ *          Please refer to the corresponding example for usage.
+ *
  * @param[in]   req         Current request
  * @param[out]  pkt         WebSocket packet
  * @param[in]   max_len     Maximum length for receive
