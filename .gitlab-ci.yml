@@ -22,9 +22,16 @@ variables:
   # GIT_STRATEGY is not defined here.
   # Use an option from  "CI / CD Settings" - "General pipelines".
 
-  # "normal" strategy for fetching only top-level submodules since nothing requires the sub-submodules code for building IDF.
-  # If the "recursive" strategy is used we have a problem with using relative URLs for sub-submodules.
-  GIT_SUBMODULE_STRATEGY: normal
+  # we will download archive for each submodule instead of clone.
+  # we don't do "recursive" when fetch submodule as they're not used in CI now.
+  GIT_SUBMODULE_STRATEGY: none
+  SUBMODULE_FETCH_TOOL: "tools/ci/ci_fetch_submodule.py"
+  # by default we will fetch all submodules
+  # jobs can overwrite this variable to only fetch submodules they required
+  # set to "none" if don't need to fetch submodules
+  SUBMODULES_TO_FETCH: "all"
+  # tell build system do not check submodule update as we download archive instead of clone
+  IDF_SKIP_CHECK_SUBMODULES: 1
 
   UNIT_TEST_BUILD_SYSTEM: make
 # IDF environment
@@ -57,9 +64,10 @@ variables:
 .show_submodule_urls: &show_submodule_urls |
   git config --get-regexp '^submodule\..*\.url$' || true
 
+.fetch_submodules: &fetch_submodules |
+  python $SUBMODULE_FETCH_TOOL -s $SUBMODULES_TO_FETCH
+
 before_script:
-  - echo "Running common script"
-  - *show_submodule_urls
   - source tools/ci/setup_python.sh
   # apply bot filter in before script
   - *apply_bot_filter
@@ -75,6 +83,8 @@ before_script:
   - *setup_tools_unless_target_test
   # Set some options and environment for CI
   - source tools/ci/configure_ci_environment.sh
+  - export PYTHONPATH="${PYTHONPATH}:${CI_PROJECT_DIR}/tools/ci/python_packages"
+  - *fetch_submodules
 
 # used for check scripts which we want to run unconditionally
 .before_script_lesser_nofilter: &before_script_lesser_nofilter
@@ -874,6 +884,7 @@ assign_test:
     reports:
         junit: $LOG_PATH/*/XUNIT_RESULT.xml
   variables:
+    SUBMODULES_TO_FETCH: "components/esptool_py/esptool"
     TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
     TEST_CASE_PATH: "$CI_PROJECT_DIR/examples"
     CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/examples/test_configs"
@@ -936,7 +947,7 @@ assign_test:
       - $LOG_PATH
     expire_in: 1 week
   variables:
-    GIT_SUBMODULE_STRATEGY: none
+    SUBMODULES_TO_FETCH: "none"
     LOCAL_ENV_CONFIG_PATH: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32_IDF"
     LOG_PATH: "$CI_PROJECT_DIR/$CI_COMMIT_SHA"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/auto_test_script/TestCaseFiles"
@@ -1002,6 +1013,8 @@ example_test_002:
   tags:
     - ESP32
     - Example_ShieldBox_Basic
+  variables:
+    SUBMODULES_TO_FETCH: "components/esptool_py/esptool;components/micro-ecc/micro-ecc"
 
 .example_test_003:
   <<: *example_test_template
