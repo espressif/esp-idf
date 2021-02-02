@@ -2,11 +2,11 @@
 快速入门
 ***********
 
-{IDF_TARGET_CORE_NUM:default="2", esp32="2", esp32s2="1"}
+{IDF_TARGET_CORE_NUM:default="2", esp32="2", esp32s2="1", esp32c3="1"}
 
-{IDF_TARGET_FEATURES:default="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32s2="WiFi, silicon revision 0, 2MB external flash"}
+{IDF_TARGET_FEATURES:default="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32s2="WiFi, silicon revision 0, 2MB external flash", esp32c3="WiFi/BLE, silicon revision 0, 2MB external flash"}
 
-{IDF_TARGET_HEAP_SIZE:default="298968", esp32="298968", esp32s2="253900"}
+{IDF_TARGET_HEAP_SIZE:default="298968", esp32="298968", esp32s2="253900", esp32c3="337332"}
 
 :link_to_translation:`en:[English]`
 
@@ -25,7 +25,7 @@
 
     * 2.4 GHz Wi-Fi
     * 蓝牙
-    * 高性能双核
+    * 高性能 Xtensa® 32 位 LX6 双核处理器
     * 超低功耗协处理器
     * 多种外设
 
@@ -34,11 +34,21 @@
     ESP32-S2 SoC 芯片支持以下功能：
 
     * 2.4 GHz Wi-Fi
-    * 高性能单核
+    * 高性能 Xtensa® 32 位 LX7 单核处理器
     * 运行 RISC-V 或 FSM 内核的超低功耗协处理器
     * 多种外设
     * 内置安全硬件
     * USB OTG 接口
+
+.. only:: esp32c3
+
+    ESP32-C3 SoC 芯片支持以下功能：
+
+    * 2.4 GHz Wi-Fi
+    * 低能耗蓝牙
+    * 高性能 32 位 RISC-V 单核处理器
+    * 多种外设
+    * 内置安全硬件
 
 {IDF_TARGET_NAME} 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、稳定性、通用性和可靠性，适用于各种应用场景和不同功耗需求。
 
@@ -101,6 +111,12 @@
         ESP32-S2-Saola-1 <../hw-reference/esp32s2/user-guide-saola-1-v1.2>
         ESP32-S2-DevKitM-1(U) <../hw-reference/esp32s2/user-guide-devkitm-1-v1>
         ESP32-S2-Kaluga-Kit <../hw-reference/esp32s2/user-guide-esp32-s2-kaluga-1-kit>
+
+.. only:: esp32c3
+
+    .. note::
+
+        有关 ESP32-C3 的硬件指南尚未发布。
 
 .. _get-started-step-by-step:
 
@@ -167,7 +183,6 @@
 
 .. _get-started-get-esp-idf:
 
-
 第二步：获取 ESP-IDF
 =================================
 
@@ -229,7 +244,6 @@ Linux 和 macOS 操作系统
     cd ~/esp/esp-idf
     ./install.sh
 
-
 下载工具备选方案
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -259,7 +273,6 @@ Linux 和 macOS 操作系统
     export IDF_GITHUB_ASSETS="dl.espressif.com/github_assets"
     ./install.sh
 
-
 自定义工具安装路径
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -268,6 +281,7 @@ Linux 和 macOS 操作系统
 如果修改了 ``IDF_TOOLS_PATH`` 变量，请确保该变量在每次执行安装脚本 (``install.bat``、``install.ps1`` 或 ``install.sh``) 和导出脚本 (``export.bat``、``export.ps1`` 或 ``export.sh``) 均保持一致。
 
 .. _get-started-set-up-env:
+
 
 第四步：设置环境变量
 =======================================
@@ -355,6 +369,8 @@ ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照�
 
     ESP-IDF 编译系统不支持带有空格的路径。
 
+
+
 .. _get-started-connect:
 
 第六步：连接设备
@@ -409,6 +425,8 @@ Windows 操作系统
     :alt: 工程配置 — 主窗口
     :figclass: align-center
 
+    工程配置 — 主窗口
+
 您可以通过此菜单设置项目的具体变量，包括 Wi-Fi 网络名称、密码和处理器速度等. ``hello_world`` 示例项目会以默认配置运行，因此可以跳过使用 ``menuconfig`` 进行项目配置这一步骤。
 
 .. only:: esp32
@@ -423,10 +441,13 @@ Windows 操作系统
 
 .. _get-started-build:
 
+
 第八步：编译工程
 =========================
 
-请使用以下命令，编译烧录工程：::
+请使用以下命令，编译烧录工程：
+
+.. code-block:: batch
 
     idf.py build
 
@@ -479,21 +500,22 @@ Windows 操作系统
 
 烧录过程中可能遇到的问题
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-如果在运行给定命令时出现如“连接失败”这样的错误，原因之一则可能是运行 ``esptool.py`` 出现错误。``esptool.py`` 是编译系统调用的程序，用于重置芯片、与 ROM 引导加载器交互以及烧录固件的工具。解决该问题的一个简单的方法就是按照以下步骤进行手动复位。如果问题仍未解决，请参考 `Troubleshooting <https://github.com/espressif/esptool#bootloader-wont-respond>`_ 获取更多信息。
+{IDF_TARGET_STRAP_GPIO:default="GPIO0", esp32="GPIO0", esp32s2="GPIO0", esp32c3="GPIO9"}
 
+如果在运行给定命令时出现如“连接失败”这样的错误，原因之一则可能是运行 ``esptool.py`` 出现错误。``esptool.py`` 是构建系统调用的程序，用于重置芯片、与 ROM 引导加载器交互以及烧录固件的工具。解决该问题的一个简单的方法就是按照以下步骤进行手动复位。如果问题仍未解决，请参考 `Troubleshooting <https://github.com/espressif/esptool#bootloader-wont-respond>`_ 获取更多信息。
 
-``esptool.py`` 通过使 USB 转串口转接器芯片（如 FTDI 或 CP210x）的 DTR 和 RTS 控制线生效来自动复位 {IDF_TARGET_NAME}（请参考 :doc:`establish-serial-connection` 获取更多详细信息)。DTR 和 RTS 控制线又连接到 {IDF_TARGET_NAME} 的 ``GPIO0`` 和 ``CHIP_PU`` (EN) 管脚上，因此 DTR 和 RTS 的电压水平变化会使 {IDF_TARGET_NAME} 进入固件下载模式。相关示例可查看 ESP32 DevKitC 开发板的 `原理图 <https://dl.espressif.com/dl/schematics/esp32_devkitc_v4-sch-20180607a.pdf>`_。
+``esptool.py`` 通过使 USB 转串口转接器芯片（如 FTDI 或 CP210x）的 DTR 和 RTS 控制线生效来自动复位 {IDF_TARGET_NAME}（请参考 :doc:`establish-serial-connection` 获取更多详细信息)。DTR 和 RTS 控制线又连接到 {IDF_TARGET_NAME} 的 ``{IDF_TARGET_STRAP_GPIO}`` 和 ``CHIP_PU`` (EN) 管脚上，因此 DTR 和 RTS 的电压电平变化会使 {IDF_TARGET_NAME} 进入固件下载模式。相关示例可查看 ESP32 DevKitC 开发板的 `原理图 <https://dl.espressif.com/dl/schematics/esp32_devkitc_v4-sch-20180607a.pdf>`_。
 
 一般来说，使用官方的 esp-idf 开发板不会出现问题。但是，``esptool.py`` 在以下情况下不能自动重置硬件。
 
-- 您的硬件没有连接到 ``GPIO0`` 和 ``CIHP_PU`` 的 DTR 和 RTS 控制线。
+- 您的硬件没有连接到 ``{IDF_TARGET_STRAP_GPIO}`` 和 ``CIHP_PU`` 的 DTR 和 RTS 控制线。
 - DTR 和 RTS 控制线的配置方式不同
 - 根本没有这样的串行控制线路
 
 根据您硬件的种类，也可以将您 {IDF_TARGET_NAME} 开发板手动设置成固件下载模式（复位）。
-- 对于 Espressif 的开发板，您可以参考对应开发板的入门指南或用户指南。例如，可以通过按住 **Boot** 按钮 (``GPIO0``) 再按住 **EN** 按钮(``CHIP_PU``) 来手动复位 esp-idf 开发板。
-- 对于其他类型的硬件，可以尝试将 ``GPIO0`` 拉低。
 
+- 对于 Espressif 的开发板，您可以参考对应开发板的入门指南或用户指南。例如，可以通过按住 **Boot** 按钮 (``{IDF_TARGET_STRAP_GPIO}``) 再按住 **EN** 按钮(``CHIP_PU``) 来手动复位 esp-idf 开发板。
+- 对于其他类型的硬件，可以尝试将 ``{IDF_TARGET_STRAP_GPIO}`` 拉低。
 
 
 常规操作
@@ -580,6 +602,47 @@ Windows 操作系统
         Leaving...
         Hard resetting via RTS pin...
         Done
+
+.. only:: esp32c3
+
+    .. code-block:: none
+
+        ...
+        esptool.py --chip esp32c3 -p /dev/ttyUSB0 -b 460800 --before=default_reset --after=hard_reset write_flash --flash_mode dio --flash_freq 80m --flash_size 2MB 0x8000 partition_table/partition-table.bin 0x0 bootloader/bootloader.bin 0x10000 hello-world.bin
+        esptool.py v3.0
+        Serial port /dev/ttyUSB0
+        Connecting....
+        Chip is ESP32-C3
+        Features: Wi-Fi
+        Crystal is 40MHz
+        MAC: 7c:df:a1:40:02:a4
+        Uploading stub...
+        Running stub...
+        Stub running...
+        Changing baud rate to 460800
+        Changed.
+        Configuring flash size...
+        Compressed 3072 bytes to 103...
+        Writing at 0x00008000... (100 %)
+        Wrote 3072 bytes (103 compressed) at 0x00008000 in 0.0 seconds (effective 4238.1 kbit/s)...
+        Hash of data verified.
+        Compressed 18960 bytes to 11311...
+        Writing at 0x00000000... (100 %)
+        Wrote 18960 bytes (11311 compressed) at 0x00000000 in 0.3 seconds (effective 584.9 kbit/s)...
+        Hash of data verified.
+        Compressed 145520 bytes to 71984...
+        Writing at 0x00010000... (20 %)
+        Writing at 0x00014000... (40 %)
+        Writing at 0x00018000... (60 %)
+        Writing at 0x0001c000... (80 %)
+        Writing at 0x00020000... (100 %)
+        Wrote 145520 bytes (71984 compressed) at 0x00010000 in 2.3 seconds (effective 504.4 kbit/s)...
+        Hash of data verified.
+
+        Leaving...
+        Hard resetting via RTS pin...
+        Done        
+
 
 如果一切顺利，烧录完成后，开发板将会复位，应用程序 "hello_world" 开始运行。
 

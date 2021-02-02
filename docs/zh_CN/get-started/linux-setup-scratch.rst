@@ -28,7 +28,6 @@
     sudo pacman -Sy --needed gcc git make ncurses flex bison gperf python-pyserial python-cryptography python-future python-pyparsing python-pyelftools cmake ninja ccache dfu-util libusb
 
 .. 注解::
-
     使用 ESP-IDF 需要 CMake 3.5 或以上版本。较早的 Linux 发行版可能需要升级自身的软件源仓库，或开启 backports 套件库，或安装 "cmake3" 软件包（不是安装 "cmake")。
 
 从源代码编译工具链
@@ -73,7 +72,6 @@
     ./ct-ng build
     chmod -R u+w builds/{IDF_TARGET_TOOLCHAIN_PREFIX}
 
-
 编译得到的工具链会被保存至 ``~/esp/crosstool-NG/builds/{IDF_TARGET_TOOLCHAIN_PREFIX}``。
 
 添加工具链到 PATH 环境变量
@@ -85,9 +83,11 @@
 
     export PATH="$HOME/esp/{IDF_TARGET_TOOLCHAIN_PREFIX}/bin:$PATH"
 
+
 .. 注解::
 
     如果您已将 ``/bin/bash`` 设置为登录 shell，且同时存在 ``.bash_profile`` 和 ``.profile`` 两个文件，则请更新 ``.bash_profile``。在 CentOS 环境下, ``alias`` 需要添加到 ``.bashrc`` 文件中。
+
 
 退出并重新登录以使 ``.profile`` 的更改生效。运行以下命令来检查 ``PATH`` 设置是否正确::
 
@@ -99,7 +99,6 @@
     /home/user-name/esp/{IDF_TARGET_TOOLCHAIN_PREFIX}/bin:/home/user-name/bin:/home/user-name/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
 
 注意这里的 ``/home/user-name`` 应该替换成您安装的主路径。
-
 
 停用 Python 2
 ====================

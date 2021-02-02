@@ -2,7 +2,7 @@ ESP-IDF 编程指南
 =========================
 :link_to_translation:`en:[English]`
 
-这里是乐鑫 IoT 开发框架 (`esp-idf <https://github.com/espressif/esp-idf>`_) 的文档中心。ESP-IDF 是 `ESP32 和 ESP32-S2 <https://www.espressif.com/en/products/hardware/socs>`_ 系列芯片的官方开发框架。
+这里是乐鑫 IoT 开发框架 (`esp-idf <https://github.com/espressif/esp-idf>`_) 的文档中心。ESP-IDF 是 `ESP32、ESP32-S 和 ESP32-C <https://www.espressif.com/en/products/hardware/socs>`_ 系列芯片的官方开发框架。
 
 .. only:: html
 
@@ -12,8 +12,11 @@ ESP-IDF 编程指南
 
     本文档仅包含针对 {IDF_TARGET_NAME} 芯片的 ESP-IDF 使用。
 
+.. only:: esp32c3
 
-ESP-IDF 是 `ESP32 <https://www.espressif.com/zh-hans/products/hardware/esp32/overview>`_ 芯片的官方开发框架。
+    .. warning::
+
+        ESP32-C3 的相关文档尚未全部更新完毕。
 
 ==================  ==================  ==================
 |快速入门|_          |API 参考|_         |H/W 参考|_
@@ -24,7 +27,6 @@ ESP-IDF 是 `ESP32 <https://www.espressif.com/zh-hans/products/hardware/esp32/ov
 ------------------  ------------------  ------------------
 `API 指南`_          `贡献代码`_         `相关资源`_
 ==================  ==================  ==================
-
 
 .. |快速入门| image:: ../_static/get-started.png
 .. _快速入门: get-started/index.html
@@ -61,7 +63,5 @@ ESP-IDF 是 `ESP32 <https://www.espressif.com/zh-hans/products/hardware/esp32/ov
    版权 <COPYRIGHT>
    关于 <about>
    Languages/语言 <languages>
-   指南下载 <https://readthedocs.com/projects/espressif-esp-idf/downloads/>
-
 
 * :ref:`genindex`
