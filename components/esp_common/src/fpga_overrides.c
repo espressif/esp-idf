@@ -13,17 +13,25 @@
 // limitations under the License.
 #include "sdkconfig.h"
 #include "soc/soc.h"
-#include "soc/system_reg.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
+#include "esp_log.h"
 #include "esp_rom_sys.h"
 #include "esp_rom_uart.h"
 #include "esp_attr.h"
 
+static const char *TAG = "fpga";
+
 extern void ets_update_cpu_frequency(uint32_t ticks_per_us);
+
+static void s_warn(void)
+{
+    ESP_EARLY_LOGW(TAG, "Project configuration is for internal FPGA use, not all functions will work");
+}
 
 void bootloader_clock_configure(void)
 {
+    s_warn();
     esp_rom_uart_tx_wait_idle(0);
 
     uint32_t xtal_freq_mhz = 40;
@@ -48,7 +56,7 @@ void IRAM_ATTR bootloader_fill_random(void *buffer, size_t length)
 
 void esp_clk_init(void)
 {
-
+    s_warn();
 }
 
 void esp_perip_clk_init(void)
