@@ -46,6 +46,7 @@ tools/ci/check_idf_version.sh
 tools/ci/check_kconfigs.py
 tools/ci/check_readme_links.py
 tools/ci/check_rom_apis.sh
+tools/ci/check_tools_files_patterns.py
 tools/ci/check_ut_cmake_make.sh
 tools/ci/checkout_project_ref.py
 tools/ci/deploy_docs.py

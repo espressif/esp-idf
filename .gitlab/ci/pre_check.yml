@@ -147,3 +147,12 @@ check_version_tag:
     - .rules:tag:release-no_label
   script:
     - (git cat-file -t $CI_COMMIT_REF_NAME | grep tag) || (echo "ESP-IDF versions must be annotated tags." && exit 1)
+
+check_tools_file_patterns:
+  extends: .pre_check_job_template
+  image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
+  variables:
+    PYTHON_VER: 3.7.7
+  script:
+    - python tools/ci/check_tools_files_patterns.py
+  allow_failure: true
