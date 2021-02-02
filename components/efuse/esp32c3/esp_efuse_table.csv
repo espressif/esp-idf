@@ -95,7 +95,7 @@
         FLASH_ECC_MODE,                   EFUSE_BLK0,  131,    1,     Set this bit to set flsah ecc mode. 0:flash ecc 16to18 byte mode. 1:flash ecc 16to17 byte mode
         DIS_USB_DOWNLOAD_MODE,            EFUSE_BLK0,  132,    1,     Disable download through USB
         ENABLE_SECURITY_DOWNLOAD,         EFUSE_BLK0,  133,    1,     Enable security download mode
-        UART_PRINT_CONTROL,               EFUSE_BLK0,  134,    2,     b00:force print. b01:control by GPIO46 - low level print. b10:control by GPIO46 - high level print. b11:force disable print.
+        UART_PRINT_CONTROL,               EFUSE_BLK0,  134,    2,     b00:force print. b01:control by GPIO8 - low level print. b10:control by GPIO8 - high level print. b11:force disable print.
         PIN_POWER_SELECTION,              EFUSE_BLK0,  136,    1,     GPIO33-GPIO37 power supply selection in ROM code. 0:VDD3P3_CPU. 1:VDD_SPI.
         FLASH_TYPE,                       EFUSE_BLK0,  137,    1,     Connected Flash interface type. 0: 4 data line. 1: 8 data line
         FLASH_PAGE_SIZE,                  EFUSE_BLK0,  138,    2,     Flash page size
