@@ -31,7 +31,7 @@ ULP 协处理器代码是用汇编语言编写的，并使用 `binutils-esp32ulp
 
 1. 用汇编语言编写的 ULP 代码必须导入到一个或多个 `.S` 扩展文件中，且这些文件必须放在组件目录中一个独立的目录中，例如 `ulp/`。
 
-.. note: 在（通过 ``idf_component_register``）注册组件时，不应将该目录添加到 ``SRC_DIRS`` 参数中。因为 ESP-IDF 构建系统将基于文件扩展名编译在 ``SRC_DIRS`` 中搜索到的文件。对于 ``.S`` 文件，使用的是 ``xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-as`` 汇编器。但这并不适用于 ULP 程序集文件，因此体现这种区别最简单的方式就是将 ULP 程序集文件放到单独的目录中。同样，ULP 程序集源文件也 **不应该** 添加到 ``SRCS`` 中。请参考如下步骤，查看如何正确添加 ULP 程序集源文件。
+.. note: 在注册组件（通过 ``idf_component_register``）时，不应将该目录添加到 ``SRC_DIRS`` 参数中。因为 ESP-IDF 构建系统将基于文件扩展名编译在 ``SRC_DIRS`` 中搜索到的文件。对于 ``.S`` 文件，使用的是 ``{IDF_TARGET_TOOLCHAIN_PREFIX}-as`` 汇编器。但这并不适用于 ULP 程序集文件，因此体现这种区别最简单的方式就是将 ULP 程序集文件放到单独的目录中。同样，ULP 程序集源文件也 **不应该** 添加到 ``SRCS`` 中。请参考如下步骤，查看如何正确添加 ULP 程序集源文件。
 
 2. 注册后从组件 CMakeLists.txt 中调用 ``ulp_embed_binary`` 示例如下::
 
@@ -176,5 +176,5 @@ ULP 协处理器代码是用汇编语言编写的，并使用 `binutils-esp32ulp
 
     如果想禁用定时器（有效防止 ULP 程序再次运行），可在 ULP 代码或主程序中清除 ``RTC_CNTL_STATE0_REG`` 寄存器中的 ``RTC_CNTL_ULP_CP_SLP_TIMER_EN`` 位。
 
-    
+
 .. _binutils-esp32ulp 工具链: https://github.com/espressif/binutils-esp32ulp

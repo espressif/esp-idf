@@ -1,4 +1,12 @@
 INPUT += \
          $(IDF_PATH)/components/driver/$(IDF_TARGET)/include/driver/dac.h \
          $(IDF_PATH)/components/esp32/include/esp32/himem.h \
+         $(IDF_PATH)/components/driver/$(IDF_TARGET)/include/driver/touch_sensor.h \
+         $(IDF_PATH)/components/soc/$(IDF_TARGET)/include/soc/dac_channel.h \
+         $(IDF_PATH)/components/soc/$(IDF_TARGET)/include/soc/touch_sensor_channel.h \
+         $(IDF_PATH)/components/soc/$(IDF_TARGET)/include/soc/rtc_io_channel.h \
+         $(IDF_PATH)/components/driver/include/driver/mcpwm.h \
+         $(IDF_PATH)/components/hal/include/hal/mcpwm_types.h \
+         $(IDF_PATH)/components/driver/include/driver/pcnt.h \
+         $(IDF_PATH)/components/hal/include/hal/pcnt_types.h \
          $(IDF_PATH)/components/ulp/include/$(IDF_TARGET)/ulp.h

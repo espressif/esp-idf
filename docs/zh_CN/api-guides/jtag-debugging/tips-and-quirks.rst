@@ -37,7 +37,7 @@
 
     .. highlight:: bash
 
-    .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+    .. include:: {IDF_TARGET_PATH_NAME}.inc
         :start-after: run-openocd-appimage-offset
         :end-before: ---
 
@@ -128,7 +128,7 @@ OpenOCD 有很多种配置文件（``*.cfg``），它们位于 OpenOCD 安装目
 
 {IDF_TARGET_NAME} 可以使用的配置文件如下表所示:
 
-.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+.. include:: {IDF_TARGET_PATH_NAME}.inc
     :start-after: openocd-cfg-files
     :end-before: ---
 
@@ -176,7 +176,7 @@ TCL 语言中为变量赋值的语法是:
     * - ``ESP_SEMIHOST_BASEDIR``
       - 设置 semihosting 在主机端的默认目录。
 
-.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+.. include:: {IDF_TARGET_PATH_NAME}.inc
     :start-after: openocd-target-specific-config-vars
     :end-before: ---
 
@@ -195,7 +195,7 @@ TCL 语言中为变量赋值的语法是:
 
 如果除了 {IDF_TARGET_NAME} 模组和 JTAG 适配器之外的其他硬件也连接到了 JTAG 引脚，那么 JTAG 的操作可能会受到干扰。{IDF_TARGET_NAME} JTAG 使用以下引脚：
 
-.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+.. include:: {IDF_TARGET_PATH_NAME}.inc
     :start-after: jtag-pins
     :end-before: ---
 
@@ -263,19 +263,19 @@ Kconfig 配置项 :ref:`CONFIG_SECURE_BOOT_ALLOW_JTAG` 可以改变这个默认�
 
     OpenOCD 端：
 
-    .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+    .. include:: {IDF_TARGET_PATH_NAME}.inc
         :start-after: run-openocd-d3
         :end-before: ---
 
     这种方式会将日志输出到文件，但是它会阻止调试信息打印在终端上。当有大量信息需要输出的时候（比如调试等级提高到 ``-d3``）这是个不错的选择。如果你仍然希望在屏幕上看到调试日志，请改用以下命令：
 
-    .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+    .. include:: {IDF_TARGET_PATH_NAME}.inc
         :start-after: run-openocd-d3-tee
         :end-before: ---
 
     Debugger 端：
 
-    .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+    .. include:: {IDF_TARGET_PATH_NAME}.inc
         :start-after: run-gdb-remotelog
         :end-before: ---
 

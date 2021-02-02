@@ -4,11 +4,11 @@ Core Dump
 Overview
 --------
 
-.. only:: esp32s2
+.. only:: not esp32
 
     .. note::
 
-        The python utility does not currently support ESP32-S2
+        The python utility does not fully support {IDF_TARGET_NAME}
 
 ESP-IDF provides support to generate core dumps on unrecoverable software errors. This useful technique allows post-mortem analysis of software state at the moment of failure.
 Upon the crash system enters panic state, prints some information and halts or reboots depending configuration. User can choose to generate core dump in order to analyse
@@ -127,14 +127,14 @@ Example
 2. In your project, create a global variable in DRAM area as such as:
 
   .. code-block:: bash
-      
+
       // uint8_t global_var;
       COREDUMP_DRAM_ATTR uint8_t global_var;
 
 3. In main application, set the variable to any value and `assert(0)` to cause a crash.
-  
+
   .. code-block:: bash
-      
+
       global_var = 25;
       assert(0);
 
@@ -143,13 +143,13 @@ Example
 5. Run the command below to start core dumping in GDB, where ``PORT`` is the device USB port:
 
   .. code-block:: bash
-      
+
       espcoredump.py -p PORT dbg_corefile <path/to/elf>
 
 6. In GDB shell, type ``p global_var`` to get the variable content:
 
   .. code-block:: bash
-      
+
       (gdb) p global_var
       $1 = 25 '\031'
 

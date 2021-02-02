@@ -36,7 +36,7 @@ Concepts
 
 - "components" are modular pieces of standalone code which are compiled into static libraries (.a files) and linked into an app. Some are provided by ESP-IDF itself, others may be sourced from other places.
 
-- "Target" is the hardware for which an application is built. At the moment, ESP-IDF supports ``esp32`` and ``esp32s2`` targets.
+- "Target" is the hardware for which an application is built. At the moment, ESP-IDF supports ``esp32``, ``esp32s2`` and ``esp32c3`` targets.
 
 Some things are not part of the project:
 
@@ -618,7 +618,7 @@ Common component requirements
 
 To avoid duplication, every component automatically requires some "common" IDF components even if they are not mentioned explicitly. Headers from these components can always be included.
 
-The list of common components is: freertos, newlib, heap, log, soc, esp_rom, esp_common, xtensa, cxx.
+The list of common components is: freertos, newlib, heap, log, soc, esp_rom, esp_common, xtensa/riscv, cxx.
 
 Including components in the build
 ----------------------------------
@@ -1007,6 +1007,7 @@ ESP-IDF supports multiple targets (chips). The identifiers used for each chip ar
 
 * ``esp32`` — for ESP32-D0WD, ESP32-D2WD, ESP32-S0WD (ESP-SOLO), ESP32-U4WDH, ESP32-PICO-D4
 * ``esp32s2``— for ESP32-S2
+* ``esp32c3``— for ESP32-C3
 
 To select the target before building the project, use ``idf.py set-target <target>`` command, for example::
 

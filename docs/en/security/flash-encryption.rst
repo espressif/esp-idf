@@ -282,14 +282,14 @@ To test flash encryption process, take the following steps:
 
 A sample output of the first {IDF_TARGET_NAME} boot after enabling flash encryption is given below:
 
-.. include:: {IDF_TARGET_TOOLCHAIN_NAME}_log.inc
+.. include:: {IDF_TARGET_PATH_NAME}_log.inc
    :start-after: first_boot_enc
    :end-before: ------
 
 
 A sample output of subsequent {IDF_TARGET_NAME} boots just mentions that flash encryption is already enabled:
 
-.. include:: {IDF_TARGET_TOOLCHAIN_NAME}_log.inc
+.. include:: {IDF_TARGET_PATH_NAME}_log.inc
    :start-after: already_en_enc
    :end-before: ------
 

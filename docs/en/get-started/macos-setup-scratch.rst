@@ -73,11 +73,11 @@ Download ``crosstool-NG`` and build it:
 
 Build the toolchain::
 
-    ./ct-ng xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf
+    ./ct-ng {IDF_TARGET_TOOLCHAIN_PREFIX}
     ./ct-ng build
-    chmod -R u+w builds/xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf
+    chmod -R u+w builds/{IDF_TARGET_TOOLCHAIN_PREFIX}
 
-Toolchain will be built in ``~/esp/ctng-volume/crosstool-NG/builds/xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf``. To use it, you need to add ``~/esp/ctng-volume/crosstool-NG/builds/xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf/bin`` to ``PATH`` environment variable.
+Toolchain will be built in ``~/esp/ctng-volume/crosstool-NG/builds/{IDF_TARGET_TOOLCHAIN_PREFIX}``. To use it, you need to add ``~/esp/ctng-volume/crosstool-NG/builds/{IDF_TARGET_TOOLCHAIN_PREFIX}/bin`` to ``PATH`` environment variable.
 
 Python 2 deprecation
 ====================

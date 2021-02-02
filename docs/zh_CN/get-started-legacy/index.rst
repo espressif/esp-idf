@@ -8,6 +8,8 @@
 
 本文档旨在指导用户搭建 ESP32 硬件开发的软件环境，通过一个简单的示例展示如何使用 ESP-IDF (Espressif IoT Development Framework) 配置菜单，并编译、下载固件至 ESP32 开发板等步骤。
 
+
+
 .. include-build-file:: inc/version-note.inc
 
 概述
@@ -16,7 +18,7 @@
 ESP32 SoC 芯片支持以下功能：
 
 * 2.4 GHz Wi-Fi
-* 蓝牙 4.2
+* 蓝牙 
 * 高性能双核
 * 超低功耗协处理器
 * 多种外设
@@ -32,7 +34,7 @@ ESP32 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、�
 
 * 一款 **ESP32** 开发板
 * **USB 数据线**  (A 转 Micro-B)
-* PC（Windows、Linux 或 Mac OS）
+* PC（Windows、Linux 或 macOS）
 
 软件：
 
@@ -53,8 +55,6 @@ ESP32 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、�
     ESP32-PICO-KIT <../hw-reference/esp32/get-started-pico-kit>
     ESP32-Ethernet-Kit <../hw-reference/esp32/get-started-ethernet-kit>
     ESP32-DevKit-S(-R) <../hw-reference/esp32/user-guide-devkits-r-v1.1>
-
-
 .. _get-started-step-by-step-legacy:
 
 详细安装步骤
@@ -117,7 +117,7 @@ ESP32 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、�
 
 .. note::
 
-    在本文档中，Linux 和 MacOS 操作系统中 ESP-IDF 的默认安装路径为 ``~/esp``；Windows 操作系统的默认路径为 ``%userprofile%\esp``。您也可以将 ESP-IDF 安装在任何其他路径下，但请注意在使用命令行时进行相应替换。注意，ESP-IDF 不支持带有空格的路径。
+    在本文档中，Linux 和 macOS 操作系统中 ESP-IDF 的默认安装路径为 ``~/esp``；Windows 操作系统的默认路径为 ``%userprofile%\esp``。您也可以将 ESP-IDF 安装在任何其他路径下，但请注意在使用命令行时进行相应替换。注意，ESP-IDF 不支持带有空格的路径。
 
 此外， 您也可以根据自身经验和实际需求，对环境进行个性化设置，而非使用预制工具链。此时，请前往 :ref:`get-started-customized-setup-legacy` 章节获取更多信息。
 
@@ -164,7 +164,7 @@ ESP-IDF 将下载至 ``~/esp/esp-idf``。
 第四步：安装 Python 软件包
 ==========================
 
-ESP-IDF 所需的 Python 软件包位于 ``IDF_PATH/requirements.txt`` 中。您可以运行以下命令进行安装：您可以运行以下命令进行安装::
+ESP-IDF 所需的 Python 软件包位于 ``IDF_PATH/requirements.txt`` 中。您可以运行以下命令进行安装::
 
     python -m pip install --user -r $IDF_PATH/requirements.txt
 
@@ -177,6 +177,8 @@ ESP-IDF 所需的 Python 软件包位于 ``IDF_PATH/requirements.txt`` 中。您
 
 .. _get-started-start-project-legacy:
 
+
+
 第五步：开始创建工程
 =====================
 
@@ -184,7 +186,7 @@ ESP-IDF 所需的 Python 软件包位于 ``IDF_PATH/requirements.txt`` 中。您
 
 将 :example:`get-started/hello_world` 复制至您本地的 ``~/esp`` 目录下：
 
-Linux 和 MacOS 操作系统
+Linux 和 macOS 操作系统
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
@@ -206,6 +208,8 @@ ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照�
 
     ESP-IDF 编译系统不支持带有空格的路径。
 
+
+
 .. _get-started-connect-legacy:
 
 第六步：连接设备
@@ -217,7 +221,7 @@ ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照�
 
 - **Windows 操作系统：** ``COM1`` 等
 - **Linux 操作系统：** 以 ``/dev/tty`` 开始
-- **MacOS 操作系统：** 以 ``/dev/cu.`` 开始
+- **macOS 操作系统：** 以 ``/dev/cu.`` 开始
 
 有关如何查看串口名称的详细信息，请见 :doc:`establish-serial-connection`。
 
@@ -233,7 +237,7 @@ ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照�
 
 请进入 :ref:`get-started-start-project-legacy` 中提到的 ``hello_world`` 目录，并运行工程配置工具 ``menuconfig``。
 
-Linux 和 MacOS 操作系统
+Linux 和 macOS 操作系统
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
@@ -285,37 +289,60 @@ Windows 操作系统
 
 运行以上命令可以编译应用程序和所有 ESP-IDF 组件，接着生成 bootloader、分区表和应用程序二进制文件。接着，这些二进制文件将被烧录至 ESP32 开发板。
 
-如果一切顺利，您可在烧录完成后看到类似下方的打印信息（代表加载进程）。接着，开发板将会复位，应用程序 "hello_world" 开始启动。
 
-.. highlight:: none
+烧录过程中可能遇到的问题
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-::
+如果在运行给定命令时出现如“连接失败”这样的错误，原因之一则可能是运行 ``esptool.py`` 出现错误。``esptool.py`` 是构建系统调用的程序，用于重置芯片、与 ROM 引导加载器交互以及烧录固件的工具。解决该问题的一个简单的方法就是按照以下步骤进行手动复位。如果问题仍未解决，请参考 `Troubleshooting <https://github.com/espressif/esptool#bootloader-wont-respond>`_ 获取更多信息。
 
-    esptool.py v2.0-beta2
+``esptool.py`` 通过使 USB 转串口转接器芯片（如 FTDI 或 CP210x）的 DTR 和 RTS 控制线生效来自动复位 {IDF_TARGET_NAME}（请参考 :doc:`establish-serial-connection` 获取更多详细信息)。DTR 和 RTS 控制线又连接到 {IDF_TARGET_NAME} 的 ``GPIO0`` 和 ``CHIP_PU`` (EN) 管脚上，因此 DTR 和 RTS 的电压电平变化会使 {IDF_TARGET_NAME} 进入固件下载模式。相关示例可查看 ESP32 DevKitC 开发板的 `原理图 <https://dl.espressif.com/dl/schematics/esp32_devkitc_v4-sch-20180607a.pdf>`_。
+
+一般来说，使用官方的 esp-idf 开发板不会出现问题。但是，``esptool.py`` 在以下情况下不能自动重置硬件。
+
+- 您的硬件没有连接到 ``GPIO0`` 和 ``CIHP_PU`` 的 DTR 和 RTS 控制线
+- DTR 和 RTS 控制线的配置方式不同
+- 根本没有这样的串行控制线路
+
+根据您硬件的种类，也可以将您 {IDF_TARGET_NAME} 开发板手动设置成固件下载模式（复位）。
+
+- 对于 Espressif 的开发板，您可以参考对应开发板的入门指南或用户指南。例如，可以通过按住 **Boot** 按钮 (``GPIO0``) 再按住 **EN** 按钮(``CHIP_PU``) 来手动复位 esp-idf 开发板。
+- 对于其他类型的硬件，可以尝试将 ``GPIO0`` 拉低。
+
+
+常规操作
+~~~~~~~~~~~~~~~~
+
+如果一切顺利，您可在烧录完成后看到类似下方的打印信息。接着，开发板将会复位，应用程序 "hello_world" 开始启动。
+
+.. code-block:: bash
+
+    esptool.py v3.0-dev
     Flashing binaries to serial port /dev/ttyUSB0 (app at offset 0x10000)...
-    esptool.py v2.0-beta2
-    Connecting........___
+    esptool.py v3.0-dev
+    Serial port /dev/cu.SLAB_USBtoUART
+    Connecting........____
+    Chip is ESP32D0WDQ6 (revision 1)
+    Features: WiFi, BT, Dual Core, Coding Scheme None
+    Crystal is 40MHz
+    MAC: 30:ae:a4:15:21:b4
     Uploading stub...
     Running stub...
     Stub running...
-    Changing baud rate to 921600
-    Changed.
-    Attaching SPI flash...
     Configuring flash size...
     Auto-detected Flash size: 4MB
     Flash params set to 0x0220
-    Compressed 11616 bytes to 6695...
-    Wrote 11616 bytes (6695 compressed) at 0x00001000 in 0.1 seconds (effective 920.5 kbit/s)...
+    Compressed 26704 bytes to 15930...
+    Wrote 26704 bytes (15930 compressed) at 0x00001000 in 1.4 seconds (effective 151.9 kbit/s)...
     Hash of data verified.
-    Compressed 408096 bytes to 171625...
-    Wrote 408096 bytes (171625 compressed) at 0x00010000 in 3.9 seconds (effective 847.3 kbit/s)...
+    Compressed 147984 bytes to 77738...
+    Wrote 147984 bytes (77738 compressed) at 0x00010000 in 6.9 seconds (effective 172.7 kbit/s)...
     Hash of data verified.
-    Compressed 3072 bytes to 82...
-    Wrote 3072 bytes (82 compressed) at 0x00008000 in 0.0 seconds (effective 8297.4 kbit/s)...
+    Compressed 3072 bytes to 103...
+    Wrote 3072 bytes (103 compressed) at 0x00008000 in 0.0 seconds (effective 1607.9 kbit/s)...
     Hash of data verified.
 
     Leaving...
-    Hard resetting...
+    Hard resetting via RTS pin...
 
 
 如果您希望使用 Eclipse IDE，而非 ``make`` 编译系统，请参考 :doc:`Eclipse guide <eclipse-setup>`。
@@ -342,12 +369,12 @@ Windows 操作系统
 
 此时，您就可以在启动日志和诊断日志之后，看到打印的 “Hello world!” 了。
 
-.. code-block:: none
+.. code-block:: bash
 
     ...
     Hello world!
+    This is esp32 chip with 2 CPU cores, WiFi/BT/BLE, silicon revision 1, 4MB external flash
     Restarting in 10 seconds...
-    I (211) cpu_start: Starting scheduler on APP CPU.
     Restarting in 9 seconds...
     Restarting in 8 seconds...
     Restarting in 7 seconds...
@@ -400,9 +427,11 @@ Windows 操作系统
     * - ``MONITORBAUD``
       - 覆盖监控时使用的串口速率。例：``make monitor MONITORBAUD=9600``
 
+
 .. note::
 
     您可导出环境变量（例：``export ESPPORT=/dev/ttyUSB1``）。在同一会话窗口中，如果未被同步覆盖，所有 ``make`` 命令均会使用导出的环境变量值。
+
 
 
 更新 ESP-IDF

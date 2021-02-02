@@ -77,3 +77,5 @@ wear-levelling.rst:line: WARNING: Duplicate declaration, bool esp_vfs_fat_mount_
 wear-levelling.rst:line: WARNING: Duplicate declaration, int esp_vfs_fat_mount_config_t::max_files
 wear-levelling.rst:line: WARNING: Duplicate declaration, size_t esp_vfs_fat_mount_config_t::allocation_unit_size
 wear-levelling.rst:line: WARNING: Duplicate declaration, esp_vfs_fat_mount_config_t
+bootloader.rst:line: WARNING: undefined label: config_secure_boot (if the link has no caption the label must precede a section header)
+secure-boot-v2.rst:line: WARNING: undefined label: config_secure_boot_insecure (if the link has no caption the label must precede a section header)

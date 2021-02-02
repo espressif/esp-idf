@@ -351,11 +351,11 @@ CI build 脚本中添加了检查功能，查找 RST 文件中的硬编码链接
 
 例如，以下 reStructuredText 内容：
 
-    This is a {\IDF_TARGET_NAME}, with /{\IDF_TARGET_PATH_NAME}/soc.c, compiled with `xtensa-{\IDF_TARGET_TOOLCHAIN_NAME}-elf-gcc` with `CONFIG_{\IDF_TARGET_CFG_PREFIX}_MULTI_DOC`
+    This is a {\IDF_TARGET_NAME}, with /{\IDF_TARGET_PATH_NAME}/soc.c, compiled with `{\IDF_TARGET_TOOLCHAIN_PREFIX}-gcc` with `CONFIG_{\IDF_TARGET_CFG_PREFIX}_MULTI_DOC`
 
 将在文档中渲染为：
 
-    This is a {IDF_TARGET_NAME}, with /{IDF_TARGET_PATH_NAME}/soc.c, compiled with `xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-gcc` with `CONFIG_{IDF_TARGET_CFG_PREFIX}_MULTI_DOC`.
+    This is a {IDF_TARGET_NAME}, with /{IDF_TARGET_PATH_NAME}/soc.c, compiled with `{IDF_TARGET_TOOLCHAIN_PREFIX}-gcc` with `CONFIG_{IDF_TARGET_CFG_PREFIX}_MULTI_DOC`.
 
 这一扩展也支持定义本地（在单个源文件中）替代名称的标记。请在 RST 文件的一行中插入下示定义语言：
 
@@ -521,7 +521,7 @@ Doxygen 的安装取决于操作系统：
 请注意，这一功能仅用于文档写作过程中的检查和测试。其生成的 HTML 页面并非渲染完成后的格式，比如，运行这一指令并不会生成一个列有所有文档的索引，而且如果其中涉及到任何还未生成的文档参考都将导致错误警报出现。
 
 
-生成 PDF 
+生成 PDF
 """"""""""""
 
 可以使用 ``build_docs.py`` 生成文档的 latex 和 PDF 格式，需安装以下 latex 工具包：

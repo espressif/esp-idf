@@ -25,7 +25,7 @@ GDB. The document is structured as follows:
     This section provides collection of tips and quirks related JTAG debugging of {IDF_TARGET_NAME} with OpenOCD and GDB.
 
 
-.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+.. include:: {IDF_TARGET_PATH_NAME}.inc
    :start-after: devkit-defs
    :end-before: ---
 
@@ -54,7 +54,7 @@ This document provides a guide to installing OpenOCD for {IDF_TARGET_NAME} and d
 How it Works?
 -------------
 
-The key software and hardware to perform debugging of {IDF_TARGET_NAME} with OpenOCD over JTAG (Joint Test Action Group) interface is presented below and includes xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-gdb debugger, OpenOCD on chip debugger and JTAG adapter connected to {IDF_TARGET_NAME} target.
+The key software and hardware to perform debugging of {IDF_TARGET_NAME} with OpenOCD over JTAG (Joint Test Action Group) interface is presented below and includes {IDF_TARGET_TOOLCHAIN_PREFIX}-gdb debugger, OpenOCD on chip debugger and JTAG adapter connected to {IDF_TARGET_NAME} target.
 
 .. figure:: ../../../_static/jtag-debugging-overview.jpg
     :align: center
@@ -149,7 +149,7 @@ Once target is configured and connected to computer, you are ready to launch Ope
 
 Open a terminal and set it up for using the ESP-IDF as described in the :ref:`setting up the environment <get-started-set-up-env>` section of the Getting Started Guide. Then run OpenOCD (this command works on Windows, Linux, and macOS):
 
-.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+.. include:: {IDF_TARGET_PATH_NAME}.inc
    :start-after: run-openocd
    :end-before: ---
 
@@ -161,7 +161,7 @@ Open a terminal and set it up for using the ESP-IDF as described in the :ref:`se
 
 You should now see similar output (this log is for |run-openocd-device-name|):
 
-.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+.. include:: {IDF_TARGET_PATH_NAME}.inc
    :start-after: run-openocd-output
    :end-before: ---
 
@@ -179,7 +179,7 @@ Build and upload your application to {IDF_TARGET_NAME} as usual, see :ref:`get-s
 
 Another option is to write application image to flash using OpenOCD via JTAG with commands like this:
 
-.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+.. include:: {IDF_TARGET_PATH_NAME}.inc
    :start-after: run-openocd-upload
    :end-before: ---
 
@@ -201,7 +201,7 @@ You are now ready to start application debugging. Follow steps described in sect
 Launching Debugger
 ------------------
 
-The toolchain for {IDF_TARGET_NAME} features GNU Debugger, in short GDB. It is available with other toolchain programs under filename: xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-gdb. GDB can be called and operated directly from command line in a terminal. Another option is to call it from within IDE (like Eclipse, Visual Studio Code, etc.) and operate indirectly with help of GUI instead of typing commands in a terminal.
+The toolchain for {IDF_TARGET_NAME} features GNU Debugger, in short GDB. It is available with other toolchain programs under filename: {IDF_TARGET_TOOLCHAIN_PREFIX}-gdb. GDB can be called and operated directly from command line in a terminal. Another option is to call it from within IDE (like Eclipse, Visual Studio Code, etc.) and operate indirectly with help of GUI instead of typing commands in a terminal.
 
 Both options of using debugger are discussed under links below.
 
@@ -263,13 +263,13 @@ For Windows:
 
 Example of invoking OpenOCD build locally from sources, for Linux and macOS:
 
-.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+.. include:: {IDF_TARGET_PATH_NAME}.inc
    :start-after: run-openocd-src-linux
    :end-before: ---
 
 and Windows:
 
-.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+.. include:: {IDF_TARGET_PATH_NAME}.inc
    :start-after: run-openocd-src-win
    :end-before: ---
 

@@ -142,7 +142,7 @@ typedef struct {
             uint8_t reserved:  2;   /*!< reserved0 */
 #endif
         };
-        uint8_t val;
+        uint8_t val;                /*!<Raw data value */
     };
 } adc_digi_pattern_table_t;
 
@@ -193,14 +193,14 @@ typedef struct {
     union {
         struct {
             uint32_t data:          12; /*!<ADC real output data info. Resolution: 12 bit. */
-            uint32_t reserved12:    1;
+            uint32_t reserved12:    1;  /*!<Reserved12. */
             uint32_t channel:       3;  /*!<ADC channel index info.
                                             If (channel < ADC_CHANNEL_MAX), The data is valid.
                                             If (channel > ADC_CHANNEL_MAX), The data is invalid. */
             uint32_t unit:          1;  /*!<ADC unit index info. 0: ADC1; 1: ADC2.  */
-            uint32_t reserved17_31: 15;
-        } type2;
-        uint32_t val;
+            uint32_t reserved17_31: 15; /*!<Reserved17. */
+        } type2;                         /*!<When the configured output format is 12bit. `ADC_DIGI_FORMAT_11BIT` */
+        uint32_t val;                   /*!<Raw data value */
     };
 } adc_digi_output_data_t;
 #endif

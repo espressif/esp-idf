@@ -169,7 +169,7 @@ GDB Stub
     This is free software: you are free to change and redistribute it.
     There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
     and "show warranty" for details.
-    This GDB was configured as "--host=x86_64-build_apple-darwin16.3.0 --target=xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf".
+    This GDB was configured as "--host=x86_64-build_apple-darwin16.3.0 --target={IDF_TARGET_TOOLCHAIN_PREFIX}".
     Type "show configuration" for configuration details.
     For bug reporting instructions, please see:
     <http://www.gnu.org/software/gdb/bugs/>.

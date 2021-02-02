@@ -41,7 +41,7 @@ In all cases, error cause will be printed in parens. See `Guru Meditation Errors
 Subsequent behavior of the panic handler can be set using :ref:`CONFIG_ESP_SYSTEM_PANIC` configuration choice. The available options are:
 
 - Print registers and reboot (``CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT``) — default option.
-  
+
   This will print register values at the point of the exception, print the backtrace, and restart the chip.
 
 - Print registers and halt (``CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT``)
@@ -169,7 +169,7 @@ If :doc:`IDF Monitor <tools/idf-monitor>` is used, GDB is started automatically 
     This is free software: you are free to change and redistribute it.
     There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
     and "show warranty" for details.
-    This GDB was configured as "--host=x86_64-build_apple-darwin16.3.0 --target=xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf".
+    This GDB was configured as "--host=x86_64-build_apple-darwin16.3.0 --target={IDF_TARGET_TOOLCHAIN_PREFIX}".
     Type "show configuration" for configuration details.
     For bug reporting instructions, please see:
     <http://www.gnu.org/software/gdb/bugs/>.

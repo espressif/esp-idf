@@ -6,7 +6,7 @@ API 参考
 .. toctree::
    :maxdepth: 2
 
-   :esp32: Bluetooth <bluetooth/index>
+   :SOC_BT_SUPPORTED: Bluetooth <bluetooth/index>
    Networking <network/index>
    Peripherals <peripherals/index>
    协议 <protocols/index>

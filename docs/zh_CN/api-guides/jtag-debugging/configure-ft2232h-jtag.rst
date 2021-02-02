@@ -1,4 +1,4 @@
-.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+.. include:: {IDF_TARGET_PATH_NAME}.inc
    :start-after: devkit-defs
    :end-before: ---
 
@@ -12,13 +12,13 @@
 配置硬件
 ^^^^^^^^
 
-.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+.. include:: {IDF_TARGET_PATH_NAME}.inc
     :start-after: devkit-hw-config
     :end-before: ---
 
 * 检查 {IDF_TARGET_NAME} 上用于 JTAG 通信的引脚是否被接到了其它硬件上，这可能会影响 JTAG 的工作。
 
-    .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+    .. include:: {IDF_TARGET_PATH_NAME}.inc
         :start-after: jtag-pins
         :end-before: ---
 
@@ -118,7 +118,7 @@ MacOS
 
 4. 运行 OpenOCD::
 
-    .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+    .. include:: {IDF_TARGET_PATH_NAME}.inc
         :start-after: run-openocd
         :end-before: ---
 

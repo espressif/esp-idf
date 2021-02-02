@@ -57,7 +57,7 @@ The example below show how to register a allocation failure callback::
 
   #include "esp_heap_caps.h"
 
-  void heap_caps_alloc_failed_hook(size_t requested_size, uint32_t caps, const char *function_name) 
+  void heap_caps_alloc_failed_hook(size_t requested_size, uint32_t caps, const char *function_name)
   {
     printf("%s was called but failed to allocate %d bytes with 0x%X capabilities. \n",function_name, requested_size, caps);
   }
@@ -70,7 +70,7 @@ The example below show how to register a allocation failure callback::
       void *ptr = heap_caps_malloc(allocation_size, MALLOC_CAP_DEFAULT);
       ...
   }
-  
+
 Finding Heap Corruption
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -317,7 +317,7 @@ To gather and analyse heap trace do the following on the host:
 
 Using this file GDB will connect to the target, reset it, and start tracing when program hits breakpoint at :cpp:func:`heap_trace_start`. Trace data will be saved to ``/tmp/heap_log.svdat``. Tracing will be stopped when program hits breakpoint at :cpp:func:`heap_trace_stop`.
 
-4. Run GDB using the following command ``xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-gdb -x gdbinit </path/to/program/elf>``
+4. Run GDB using the following command ``{IDF_TARGET_TOOLCHAIN_PREFIX}-gdb -x gdbinit </path/to/program/elf>``
 
 5. Quit GDB when program stops at :cpp:func:`heap_trace_stop`. Trace data are saved in ``/tmp/heap.svdat``
 

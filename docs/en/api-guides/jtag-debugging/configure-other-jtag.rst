@@ -10,7 +10,7 @@ Configure Hardware
 
 1.  Identify all pins / signals on JTAG interface and {IDF_TARGET_NAME} board, that should be connected to establish communication.
 
-    .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+    .. include:: {IDF_TARGET_PATH_NAME}.inc
         :start-after: jtag-pins
         :end-before: ---
 
