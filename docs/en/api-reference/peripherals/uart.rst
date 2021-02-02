@@ -1,7 +1,7 @@
 UART
 ====
 
-{IDF_TARGET_UART_NUM:default = "UART1", esp32 = "UART2", esp32s2 = "UART1"}
+{IDF_TARGET_UART_NUM:default = "UART_NUM_1", esp32 = "UART_NUM_2", esp32s2 = "UART_NUM_1"}
 
 Overview
 --------
@@ -10,11 +10,11 @@ A Universal Asynchronous Receiver/Transmitter (UART) is a hardware feature that 
 
 .. only:: esp32
 
-    The ESP32 chip has three UART controllers (UART0, UART1, and UART2) that feature an identical set of registers for ease of programming and flexibility. 
+    The ESP32 chip has three UART controllers (UART0, UART1, and UART2) that feature an identical set of registers for ease of programming and flexibility.
 
 .. only:: esp32s2
 
-    The ESP32-S2 chip has two UART controllers (UART0 and UART1) that feature an identical set of registers for ease of programming and flexibility. 
+    The ESP32-S2 chip has two UART controllers (UART0 and UART1) that feature an identical set of registers for ease of programming and flexibility.
 
 Each UART controller is independently configurable with parameters such as baud rate, data bit length, bit ordering, number of stop bits, parity bit etc. All the controllers are compatible with UART-enabled devices from various manufacturers and can also support Infrared Data Association protocols (IrDA).
 
@@ -99,21 +99,19 @@ After setting communication parameters, configure the physical GPIO pins to whic
 
 The same macro should be specified for pins that will not be used.
 
-.. code-block:: c
-
 .. only:: esp32
 
-    ::
+  .. code-block:: c
 
-        // Set UART pins(TX: IO16 (UART2 default), RX: IO17 (UART2 default), RTS: IO18, CTS: IO19)
-        ESP_ERROR_CHECK(uart_set_pin(UART_NUM_2, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, 18, 19));
+    // Set UART pins(TX: IO16 (UART2 default), RX: IO17 (UART2 default), RTS: IO18, CTS: IO19)
+    ESP_ERROR_CHECK(uart_set_pin(UART_NUM_2, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, 18, 19));
 
 .. only:: esp32s2
 
-    ::
+  .. code-block:: c
 
-        // Set UART pins(TX: IO17 (UART1 default), RX: IO18 (UART1 default), RTS: IO19, CTS: IO20)
-        ESP_ERROR_CHECK(uart_set_pin(UART_NUM_1, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, 19, 20));
+    // Set UART pins(TX: IO17 (UART1 default), RX: IO18 (UART1 default), RTS: IO19, CTS: IO20)
+    ESP_ERROR_CHECK(uart_set_pin(UART_NUM_1, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, 19, 20));
 
 
 .. _uart-api-driver-installation:
@@ -189,7 +187,7 @@ There is a 'companion' function :cpp:func:`uart_wait_tx_done` that monitors the 
 .. code-block:: c
 
     // Wait for packet to be sent
-    const int uart_num = UART_NUM_2;
+    const int uart_num = {IDF_TARGET_UART_NUM};
     ESP_ERROR_CHECK(uart_wait_tx_done(uart_num, 100)); // wait timeout is 100 RTOS ticks (TickType_t)
 
 
@@ -353,8 +351,8 @@ Circuit C: Auto Switching Transmitter/Receiver
    VCC1 <-------------------+-----------+           +-------------------+----> VCC2
                  10K ____   |           |           |                   |
                 +---|____|--+       +---x-----------x---+    10K ____   |
-                |                   |                   |   +---|____|--+ GND2
-  RX <----------+-------------------| RXD               |   | 
+                |                   |                   |   +---|____|--+
+  RX <----------+-------------------| RXD               |   |
                      10K ____       |                  A|---+---------------<> A (+)
                 +-------|____|------| PV    ADM2483     |   |    ____  120
                 |   ____            |                   |   +---|____|---+  RS485 bus side
@@ -363,7 +361,7 @@ Circuit C: Auto Switching Transmitter/Receiver
                         ---+    +-->| /RE               |   |    ____
            10K          |       |   |                   |   +---|____|---+
           ____       | /-C      +---| TXD               |    10K         |
-  TX >---|____|--B___|/   NPN   |   |                   |                |
+  TX >---|____|--+_B_|/   NPN   |   |                   |                |
                      |\         |   +---x-----------x---+                |
                      | \-E      |       |           |                    |
                         |       |       |           |                    |
