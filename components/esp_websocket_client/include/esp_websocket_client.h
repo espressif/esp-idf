@@ -84,6 +84,10 @@ typedef struct {
     const char                  *cert_pem;                  /*!< SSL Certification, PEM format as string, if the client requires to verify server */
     esp_websocket_transport_t   transport;                  /*!< Websocket transport type, see `esp_websocket_transport_t */
     char                        *subprotocol;               /*!< Websocket subprotocol */
+    bool                        keep_alive_enable;          /*!< Enable keep-alive timeout */
+    int                         keep_alive_idle;            /*!< Keep-alive idle time. Default is 5 (second) */
+    int                         keep_alive_interval;        /*!< Keep-alive interval time. Default is 5 (second) */
+    int                         keep_alive_count;           /*!< Keep-alive packet retry send count. Default is 3 counts */
 } esp_websocket_client_config_t;
 
 /**

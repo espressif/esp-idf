@@ -80,6 +80,16 @@ typedef enum esp_tls_role {
 } esp_tls_role_t;
 
 /**
+ *  @brief Keep alive parameters structure
+ */
+typedef struct tls_keep_alive_cfg {
+    bool keep_alive_enable;               /*!< Enable keep-alive timeout */
+    int keep_alive_idle;                  /*!< Keep-alive idle time (second) */
+    int keep_alive_interval;              /*!< Keep-alive interval time (second) */
+    int keep_alive_count;                 /*!< Keep-alive packet retry send count */
+} tls_keep_alive_cfg_t;
+
+/**
  * @brief      ESP-TLS configuration parameters 
  */ 
 typedef struct esp_tls_cfg {
@@ -128,6 +138,8 @@ typedef struct esp_tls_cfg {
                                                  If NULL, server certificate CN must match hostname. */
 
     bool skip_common_name;                  /*!< Skip any validation of server certificate CN field */
+
+    tls_keep_alive_cfg_t *keep_alive_cfg;   /*!< Enable TCP keep-alive timeout for SSL connection */
 } esp_tls_cfg_t;
 
 #ifdef CONFIG_ESP_TLS_SERVER

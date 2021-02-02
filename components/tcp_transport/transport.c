@@ -44,7 +44,7 @@ struct esp_transport_item_t {
     connect_async_func _connect_async;      /*!< non-blocking connect function of this transport */
     payload_transfer_func  _parent_transfer;        /*!< Function returning underlying transport layer */
     esp_tls_error_handle_t     error_handle;            /*!< Pointer to esp-tls error handle */
-
+    esp_transport_keep_alive_t *keep_alive_cfg;    /*!< TCP keep-alive config */
     STAILQ_ENTRY(esp_transport_item_t) next;
 };
 
@@ -305,4 +305,19 @@ void esp_transport_set_errors(esp_transport_handle_t t, const esp_tls_error_hand
     if (t)  {
         memcpy(t->error_handle, error_handle, sizeof(esp_tls_last_error_t));
     }
+}
+
+void esp_transport_set_keep_alive(esp_transport_handle_t t, esp_transport_keep_alive_t *keep_alive_cfg)
+{
+    if (t && keep_alive_cfg) {
+        t->keep_alive_cfg = keep_alive_cfg;
+    }
+}
+
+void *esp_transport_get_keep_alive(esp_transport_handle_t t)
+{
+    if (t) {
+        return t->keep_alive_cfg;
+    }
+    return NULL;
 }

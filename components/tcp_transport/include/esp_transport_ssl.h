@@ -79,6 +79,14 @@ void esp_transport_ssl_set_client_key_data(esp_transport_handle_t t, const char 
  */
 void esp_transport_ssl_skip_common_name_check(esp_transport_handle_t t);
 
+/**
+ * @brief      Set keep-alive status in current ssl context
+ *
+ * @param[in]  t               ssl transport
+ * @param[in]  keep_alive_cfg  The handle for keep-alive configuration
+ */
+void esp_transport_ssl_set_keep_alive(esp_transport_handle_t t, esp_transport_keep_alive_t *keep_alive_cfg);
+
 #ifdef __cplusplus
 }
 #endif
