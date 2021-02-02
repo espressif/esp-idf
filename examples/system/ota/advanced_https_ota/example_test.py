@@ -9,7 +9,8 @@ import subprocess
 from threading import Thread
 
 import ttfw_idf
-from tiny_test_fw import DUT
+from RangeHTTPServer import RangeRequestHandler
+from tiny_test_fw import DUT, Utility
 
 server_cert = '-----BEGIN CERTIFICATE-----\n' \
               'MIIDXTCCAkWgAwIBAgIJAP4LF7E72HakMA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNV\n'\
@@ -99,7 +100,7 @@ def https_request_handler():
     """
     Returns a request handler class that handles broken pipe exception
     """
-    class RequestHandler(http.server.SimpleHTTPRequestHandler):
+    class RequestHandler(RangeRequestHandler):
         def finish(self):
             try:
                 if not self.wfile.closed:
@@ -111,7 +112,7 @@ def https_request_handler():
 
         def handle(self):
             try:
-                http.server.BaseHTTPRequestHandler.handle(self)
+                RangeRequestHandler.handle(self)
             except socket.error:
                 pass
 
@@ -511,6 +512,49 @@ def test_examples_protocol_advanced_https_ota_example_anti_rollback(env, extra_d
     os.remove(anti_rollback_bin_name)
 
 
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+def test_examples_protocol_advanced_https_ota_example_partial_request(env, extra_data):
+    """
+    This is a positive test case, to test OTA workflow with Range HTTP header.
+    steps: |
+      1. join AP
+      2. Fetch OTA image over HTTPS
+      3. Reboot with the new OTA image
+    """
+    dut1 = env.get_dut('advanced_https_ota_example', 'examples/system/ota/advanced_https_ota', dut_class=ttfw_idf.ESP32DUT, app_config_name='partial_download')
+    server_port = 8001
+    # File to be downloaded. This file is generated after compilation
+    bin_name = 'advanced_https_ota.bin'
+    # check and log bin size
+    binary_file = os.path.join(dut1.app.binary_path, bin_name)
+    bin_size = os.path.getsize(binary_file)
+    ttfw_idf.log_performance('advanced_https_ota_bin_size', '{}KB'.format(bin_size // 1024))
+    http_requests = int((bin_size / 50000) + 1)
+    # start test
+    host_ip = get_my_ip()
+    if (get_server_status(host_ip, server_port) is False):
+        thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path, host_ip, server_port))
+        thread1.daemon = True
+        thread1.start()
+    dut1.start_app()
+    dut1.expect('Loaded app from partition at offset', timeout=30)
+    try:
+        ip_address = dut1.expect(re.compile(r' sta ip: ([^,]+),'), timeout=30)
+        print('Connected to AP with IP: {}'.format(ip_address))
+    except DUT.ExpectTimeout:
+        Utility.console_log('ENV_TEST_FAILURE: Cannot connect to AP')
+        raise
+    dut1.expect('Starting Advanced OTA example', timeout=30)
+
+    print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + bin_name))
+    dut1.write('https://' + host_ip + ':' + str(server_port) + '/' + bin_name)
+    for _ in range(http_requests):
+        dut1.expect('Connection closed', timeout=60)
+    dut1.expect('Loaded app from partition at offset', timeout=60)
+    dut1.expect('Starting Advanced OTA example', timeout=30)
+    dut1.reset()
+
+
 if __name__ == '__main__':
     test_examples_protocol_advanced_https_ota_example()
     test_examples_protocol_advanced_https_ota_example_chunked()
@@ -519,3 +563,4 @@ if __name__ == '__main__':
     test_examples_protocol_advanced_https_ota_example_truncated_header()
     test_examples_protocol_advanced_https_ota_example_random()
     test_examples_protocol_advanced_https_ota_example_anti_rollback()
+    test_examples_protocol_advanced_https_ota_example_partial_request()
