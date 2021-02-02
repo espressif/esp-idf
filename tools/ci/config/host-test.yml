@@ -309,3 +309,15 @@ check_doc_links:
     - test "${CI_COMMIT_REF_NAME}" = "master" || exit 0
     - cd docs
     - make linkcheck
+
+test_detect_python:
+  extends: .host_test_template
+  image: $CI_DOCKER_REGISTRY/linux-shells:1
+  script:
+    - cd ${IDF_PATH}
+    - shellcheck -s sh tools/detect_python.sh
+    - shellcheck -s bash tools/detect_python.sh
+    - shellcheck -s dash tools/detect_python.sh
+    - "bash -c '. tools/detect_python.sh && echo Our Python: ${ESP_PYTHON?Python is not set}'"
+    - "dash -c '. tools/detect_python.sh && echo Our Python: ${ESP_PYTHON?Python is not set}'"
+    - "zsh -c '. tools/detect_python.sh && echo Our Python: ${ESP_PYTHON?Python is not set}'"

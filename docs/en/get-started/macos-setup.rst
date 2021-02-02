@@ -34,8 +34,8 @@ ESP-IDF will use the version of Python installed by default on macOS.
 
    Then you will need to install the XCode command line tools to continue. You can install these by running ``xcode-select --install``.
 
-Installing and setting up Python 3 as default
----------------------------------------------
+Installing Python 3
+-------------------
 
 Basing on macOS `Catalina 10.15 release notes`_, use of Python 2.7 is not recommended and Python 2.7 will not be included by default in future versions of macOS. Check what Python you currently have::
 
@@ -47,30 +47,15 @@ If the output is like ``Python 2.7.17``, your default interpreter is Python 2.7.
 
 If above command returns an error, it means Python 3 is not installed. 
 
-Below is an overview of steps to install Python 3 and making it default interpreter. 
+Below is an overview of steps to install Python 3.
 
   - Installing with HomeBrew_ can be done as follows::
 
       brew install python3
-      ln -s /usr/local/bin/python3.8 /usr/local/bin/python
-
-    Adjust above directory name ``/usr/local/bin/python3.8`` to point where Python 3 has been installed. To check this directory you can run  ``which -a python3``.
 
   - If you have MacPorts_, you can run::
 
       sudo port install python38
-      sudo port select --set python python38
-
-Now open a new terminal session to verify what python is running by default::
-
-  python --version
-
-If the output is similar to ``Python 3.8.5``, your installation has been done successfully.
-
-
-.. note::
-
-    This is system-wide change which may affect all of the applications.
 
 Python 2 deprecation
 ====================
