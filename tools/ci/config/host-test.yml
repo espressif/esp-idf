@@ -312,3 +312,16 @@ test_mkdfu:
   script:
     - cd ${IDF_PATH}/tools/test_mkdfu
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_mkdfu.py
+
+test_detect_python:
+  extends: .host_test_template
+  image: $CI_DOCKER_REGISTRY/linux-shells:1
+  script:
+    - cd ${IDF_PATH}
+    - shellcheck -s sh tools/detect_python.sh
+    - shellcheck -s bash tools/detect_python.sh
+    - shellcheck -s dash tools/detect_python.sh
+    - "bash -c '. tools/detect_python.sh && echo Our Python: ${ESP_PYTHON?Python is not set}'"
+    - "dash -c '. tools/detect_python.sh && echo Our Python: ${ESP_PYTHON?Python is not set}'"
+    - "zsh -c '. tools/detect_python.sh && echo Our Python: ${ESP_PYTHON?Python is not set}'"
+    - "fish -c 'source tools/detect_python.fish && echo Our Python: $ESP_PYTHON'"
