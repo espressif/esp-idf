@@ -94,6 +94,7 @@ const static qio_info_t chip_data[] = {
        This approach works for chips including:
        GigaDevice (mfg ID 0xC8, flash IDs including 4016),
        FM25Q32 (QOUT mode only, mfg ID 0xA1, flash IDs including 4016)
+       BY25Q32 (mfg ID 0x68, flash IDs including 4016)
     */
     { NULL,          0xFF,    0xFFFF, 0xFFFF,   read_status_8b_rdsr2,       write_status_8b_wrsr2,      1 },
 };
