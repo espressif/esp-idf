@@ -331,12 +331,6 @@ esp_err_t esp_bt_controller_disable(void);
  */
 esp_bt_controller_status_t esp_bt_controller_get_status(void);
 
-/**
- * @brief  Get BT MAC address.
- * @return Array pointer of length 6 storing MAC address value.
- */
-uint8_t* esp_bt_get_mac(void);
-
 /** @brief esp_vhci_host_callback
  *  used for vhci call host function to notify what host need to do
  */
