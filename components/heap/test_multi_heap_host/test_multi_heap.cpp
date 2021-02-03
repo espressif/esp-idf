@@ -466,23 +466,15 @@ TEST_CASE("multi_heap aligned allocations", "[multi_heap]")
         uint8_t *buf = (uint8_t *)multi_heap_aligned_alloc(heap, (aligments + 137), aligments );
         if(((aligments & (aligments - 1)) != 0) || (!aligments)) {
             REQUIRE( buf == NULL );
-            //printf("[ALIGNED_ALLOC] alignment: %u is not a power of two, don't allow allocation \n", aligments);
         } else {
             REQUIRE( buf != NULL );
             REQUIRE((intptr_t)buf >= (intptr_t)test_heap);
             REQUIRE((intptr_t)buf < (intptr_t)(test_heap + sizeof(test_heap)));
 
             printf("[ALIGNED_ALLOC] alignment required: %u \n", aligments);
-            //printf("[ALIGNED_ALLOC] allocated size: %d \n", multi_heap_get_allocated_size(heap, buf));
             printf("[ALIGNED_ALLOC] address of allocated memory: %p \n\n", (void *)buf);
             //Address of obtained block must be aligned with selected value
-            if((aligments & 0x03) == 0) {
-                //Alignment is a multiple of four:
-                REQUIRE(((intptr_t)buf & 0x03) == 0);
-            } else {
-                //Exotic alignments:
-                REQUIRE(((intptr_t)buf & (aligments - 1)) == 0);
-            }
+            REQUIRE(((intptr_t)buf & (aligments - 1)) == 0);
 
             //Write some data, if it corrupts memory probably the heap
             //canary verification will fail:

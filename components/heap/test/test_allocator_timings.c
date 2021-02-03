@@ -9,8 +9,8 @@
 #include <string.h>
 #include <test_utils.h>
 
-//This test only makes sense with poisoning disabled
-#ifndef CONFIG_HEAP_POISONING_COMPREHENSIVE
+//This test only makes sense with poisoning disabled (light or comprehensive)
+#if !defined(CONFIG_HEAP_POISONING_COMPREHENSIVE) && !defined(CONFIG_HEAP_POISONING_LIGHT)
 
 #define NUM_POINTERS 128
 #define ITERATIONS 10000

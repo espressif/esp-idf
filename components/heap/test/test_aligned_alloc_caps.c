@@ -29,13 +29,7 @@ TEST_CASE("Capabilities aligned allocator test", "[heap]")
             printf("[ALIGNED_ALLOC] alignment required: %u \n", alignments);
             printf("[ALIGNED_ALLOC] address of allocated memory: %p \n\n", (void *)buf);
             //Address of obtained block must be aligned with selected value
-            if((alignments & 0x03) == 0) {
-                //Alignment is a multiple of four:
-                TEST_ASSERT(((intptr_t)buf & 0x03) == 0);
-            } else {
-                //Exotic alignments:
-                TEST_ASSERT(((intptr_t)buf & (alignments - 1)) == 0);
-            }
+            TEST_ASSERT(((intptr_t)buf & (alignments - 1)) == 0);
 
             //Write some data, if it corrupts memory probably the heap
             //canary verification will fail:
@@ -64,14 +58,7 @@ TEST_CASE("Capabilities aligned allocator test", "[heap]")
             printf("[ALIGNED_ALLOC] alignment required: %u \n", alignments);
             printf("[ALIGNED_ALLOC] address of allocated memory: %p \n\n", (void *)buf);
             //Address of obtained block must be aligned with selected value
-            if((alignments & 0x03) == 0) {
-                //Alignment is a multiple of four:
-                TEST_ASSERT(((intptr_t)buf & 0x03) == 0);
-            } else {
-                //Exotic alignments:
-                TEST_ASSERT(((intptr_t)buf & (alignments - 1)) == 0);
-            }
-
+            TEST_ASSERT(((intptr_t)buf & (alignments - 1)) == 0);
 
             //Write some data, if it corrupts memory probably the heap
             //canary verification will fail:
@@ -99,13 +86,7 @@ TEST_CASE("Capabilities aligned calloc test", "[heap]")
             printf("[ALIGNED_ALLOC] alignment required: %u \n", alignments);
             printf("[ALIGNED_ALLOC] address of allocated memory: %p \n\n", (void *)buf);
             //Address of obtained block must be aligned with selected value
-            if((alignments & 0x03) == 0) {
-                //Alignment is a multiple of four:
-                TEST_ASSERT(((intptr_t)buf & 0x03) == 0);
-            } else {
-                //Exotic alignments:
-                TEST_ASSERT(((intptr_t)buf & (alignments - 1)) == 0);
-            }
+            TEST_ASSERT(((intptr_t)buf & (alignments - 1)) == 0);
 
             //Write some data, if it corrupts memory probably the heap
             //canary verification will fail:
@@ -137,7 +118,7 @@ TEST_CASE("Capabilities aligned calloc test", "[heap]")
 
     for(;alignments <= 1024 * 1024; alignments++) {
         //Now try to take aligned memory from IRAM:
-        uint8_t *buf = (uint8_t *)(uint8_t *)heap_caps_aligned_calloc(alignments, 1, 10*1024, MALLOC_CAP_SPIRAM);;
+        uint8_t *buf = (uint8_t *)(uint8_t *)heap_caps_aligned_calloc(alignments, 1, 10*1024, MALLOC_CAP_SPIRAM);
         if(((alignments & (alignments - 1)) != 0) || (!alignments)) {
             TEST_ASSERT( buf == NULL );
             //printf("[ALIGNED_ALLOC] alignment: %u is not a power of two, don't allow allocation \n", aligments);
@@ -146,13 +127,8 @@ TEST_CASE("Capabilities aligned calloc test", "[heap]")
             printf("[ALIGNED_ALLOC] alignment required: %u \n", alignments);
             printf("[ALIGNED_ALLOC] address of allocated memory: %p \n\n", (void *)buf);
             //Address of obtained block must be aligned with selected value
-            if((alignments & 0x03) == 0) {
-                //Alignment is a multiple of four:
-                TEST_ASSERT(((intptr_t)buf & 0x03) == 0);
-            } else {
-                //Exotic alignments:
-                TEST_ASSERT(((intptr_t)buf & (alignments - 1)) == 0);
-            }
+            TEST_ASSERT(((intptr_t)buf & (alignments - 1)) == 0);
+
             //Write some data, if it corrupts memory probably the heap
             //canary verification will fail:
             memset(buf, 0xA5, (10*1024));
