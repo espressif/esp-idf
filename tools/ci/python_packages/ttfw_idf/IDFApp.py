@@ -78,7 +78,9 @@ class Artifacts(object):
         for artifact_info in artifact_index:
             match_result = True
             if app_path:
-                match_result = app_path in artifact_info["app_dir"]
+                # We use endswith here to avoid issue like:
+                # examples_protocols_mqtt_ws but return a examples_protocols_mqtt_wss failure
+                match_result = artifact_info["app_dir"].endswith(app_path)
             if config_name:
                 match_result = match_result and config_name == artifact_info["config"]
             if target:
