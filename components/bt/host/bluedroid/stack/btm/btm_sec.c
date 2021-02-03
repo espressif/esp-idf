@@ -36,7 +36,6 @@
 #include "osi/fixed_queue.h"
 #include "osi/alarm.h"
 #include "stack/btm_ble_api.h"
-#include "esp_bt.h"
 
 #if (BT_USE_TRACES == TRUE && BT_TRACE_VERBOSE == FALSE)
 /* needed for sprintf() */
@@ -2634,8 +2633,8 @@ void btm_sec_conn_req (UINT8 *bda, UINT8 *dc)
     /* Check if peer device's and our BD_ADDR is same or not. It
        should be different to avoid 'Impersonation in the Pin Pairing
        Protocol' (CVE-2020-26555) vulnerability. */
-    if (memcmp(bda, esp_bt_get_mac(), sizeof (BD_ADDR)) == 0) {
-        BTM_TRACE_ERROR ("Security Manager: connect request from device with same BD_ADDR\n");
+    if (memcmp((uint8_t *)bda, (uint8_t *)&controller_get_interface()->get_address()->address, sizeof (BD_ADDR)) == 0) {
+        BTM_TRACE_ERROR ("Security Manager: connect request from device with same BD_ADDR");
         btsnd_hcic_reject_conn (bda, HCI_ERR_HOST_REJECT_DEVICE);
         return;
     }
