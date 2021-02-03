@@ -23,11 +23,11 @@ from io import StringIO
 from pyparsing import ParseException, ParseFatalException, Word, alphanums
 
 try:
-    from fragments import FRAGMENT_TYPES, Fragment, FragmentFile, KeyGrammar
+    from fragments import FRAGMENT_TYPES, Fragment, FragmentFile, KeyGrammar, Mapping
     from sdkconfig import SDKConfig
 except ImportError:
     sys.path.append('../')
-    from fragments import FRAGMENT_TYPES, Fragment, FragmentFile, KeyGrammar
+    from fragments import FRAGMENT_TYPES, Fragment, FragmentFile, KeyGrammar, Mapping
     from sdkconfig import SDKConfig
 
 
@@ -810,6 +810,208 @@ entries:
 
         with self.assertRaises(ParseException):
             FragmentFile(test_fragment, self.sdkconfig)
+
+    def test_keep_flag(self):
+        # Test parsing combinations and orders of flags
+        test_fragment = self.create_fragment_file(u"""
+[mapping:map]
+archive: libmain.a
+entries:
+    obj1 (default);
+        text->flash_text keep,
+        rodata->flash_rodata keep keep
+""")
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+
+        fragment = fragment_file.fragments[0]
+
+        expected = [('text', 'flash_text', [Mapping.Keep()]),
+                    ('rodata', 'flash_rodata', [Mapping.Keep(), Mapping.Keep()])]
+        actual = fragment.flags[('obj1', None, 'default')]
+
+        self.assertEqual(expected, actual)
+
+    def test_align_flag(self):
+        # Test parsing combinations and orders of flags
+        test_fragment = self.create_fragment_file(u"""
+[mapping:map]
+archive: libmain.a
+entries:
+    obj1 (default);
+        text->flash_text align(8),
+        rodata->flash_rodata align(8, pre),
+        data->dram0_data align(8, pre, post),
+        bss->dram0_bss align(8, post),
+        common->dram0_bss align(8, pre, post) align(8)
+""")
+
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        fragment = fragment_file.fragments[0]
+
+        expected = [('text', 'flash_text', [Mapping.Align(8, True, False)]),
+                    ('rodata', 'flash_rodata', [Mapping.Align(8, True, False)]),
+                    ('data', 'dram0_data', [Mapping.Align(8, True, True)]),
+                    ('bss', 'dram0_bss', [Mapping.Align(8, False, True)]),
+                    ('common', 'dram0_bss', [Mapping.Align(8, True, True), Mapping.Align(8, True, False)])]
+        actual = fragment.flags[('obj1', None, 'default')]
+
+        self.assertEqual(expected, actual)
+
+        # Wrong post, pre order
+        test_fragment = self.create_fragment_file(u"""
+[mapping:map]
+archive: libmain.a
+entries:
+    obj1 (noflash)
+        text->iram0_text align(8, post, pre)
+""")
+
+        with self.assertRaises(ParseFatalException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+    def test_sort_flag(self):
+        # Test parsing combinations and orders of flags
+        test_fragment = self.create_fragment_file(u"""
+[mapping:map]
+archive: libmain.a
+entries:
+    obj1 (default);
+        text->flash_text sort(name),
+        rodata->flash_rodata sort(alignment),
+        data->dram0_data sort(init_priority),
+        bss->dram0_bss sort(name, alignment),
+        common->dram0_bss sort(alignment, name),
+        iram->iram0_text sort(name, name),
+        dram->dram0_data sort(alignment, alignment)
+""")
+
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        fragment = fragment_file.fragments[0]
+
+        expected = [('text', 'flash_text', [Mapping.Sort('name')]),
+                    ('rodata', 'flash_rodata', [Mapping.Sort('alignment')]),
+                    ('data', 'dram0_data', [Mapping.Sort('init_priority')]),
+                    ('bss', 'dram0_bss', [Mapping.Sort('name', 'alignment')]),
+                    ('common', 'dram0_bss', [Mapping.Sort('alignment', 'name')]),
+                    ('iram', 'iram0_text', [Mapping.Sort('name', 'name')]),
+                    ('dram', 'dram0_data', [Mapping.Sort('alignment', 'alignment')])]
+        actual = fragment.flags[('obj1', None, 'default')]
+        self.assertEqual(expected, actual)
+
+        test_fragment = self.create_fragment_file(u"""
+[mapping:map]
+archive: libmain.a
+entries:
+    obj1 (default)
+        text->iram0_text sort(name) sort(alignment)
+""")
+
+    def test_emit_flag(self):
+        # Test parsing combinations and orders of flags
+        test_fragment = self.create_fragment_file(u"""
+[mapping:map]
+archive: libmain.a
+entries:
+    obj1 (default);
+        text->flash_text emit(sym1),
+        rodata->flash_rodata emit(sym2, pre),
+        data->dram0_data emit(sym3, post),
+        bss->dram0_bss emit(sym4, pre, post),
+        common->dram0_bss emit(sym5, pre, post) emit(sym6)
+""")
+
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        fragment = fragment_file.fragments[0]
+
+        expected = [('text', 'flash_text', [Mapping.Emit('sym1', True, True)]),
+                    ('rodata', 'flash_rodata', [Mapping.Emit('sym2', True, False)]),
+                    ('data', 'dram0_data', [Mapping.Emit('sym3', False, True)]),
+                    ('bss', 'dram0_bss', [Mapping.Emit('sym4', True, True)]),
+                    ('common', 'dram0_bss', [Mapping.Emit('sym5', True, True), Mapping.Emit('sym6', True, True)])]
+        actual = fragment.flags[('obj1', None, 'default')]
+        self.assertEqual(expected, actual)
+
+    def test_flag_order(self):
+        # Test that the order in which the flags are specified is retained
+        test_fragment = self.create_fragment_file(u"""
+[mapping:map]
+archive: libmain.a
+entries:
+    obj1 (default);
+        text->flash_text align(4) keep emit(sym1) align(8) sort(name),
+        rodata->flash_rodata keep align(4) keep emit(sym1) align(8) align(4) sort(name)
+""")
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        fragment = fragment_file.fragments[0]
+
+        expected = [('text', 'flash_text', [Mapping.Align(4, True, False),
+                                            Mapping.Keep(),
+                                            Mapping.Emit('sym1', True, True),
+                                            Mapping.Align(8, True, False),
+                                            Mapping.Sort('name')]),
+                    ('rodata', 'flash_rodata', [Mapping.Keep(),
+                                                Mapping.Align(4, True, False),
+                                                Mapping.Keep(),
+                                                Mapping.Emit('sym1', True, True),
+                                                Mapping.Align(8, True, False),
+                                                Mapping.Align(4, True, False),
+                                                Mapping.Sort('name')])]
+        actual = fragment.flags[('obj1', None, 'default')]
+        self.assertEqual(expected, actual)
+
+    def test_flags_entries_multiple_flags(self):
+        # Not an error, generation step handles this, since
+        # it that step has a more complete information
+        # about all mappings.
+        test_fragment = self.create_fragment_file(u"""
+[mapping:map]
+archive: libmain.a
+entries:
+    obj1 (default);
+        text->flash_text align(4) keep emit(sym1) sort(name),
+        text->flash_text align(4) keep emit(sym1) sort(name)
+""")
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        fragment = fragment_file.fragments[0]
+
+        expected = [('text', 'flash_text', [Mapping.Align(4, True, False),
+                                            Mapping.Keep(),
+                                            Mapping.Emit('sym1', True, True),
+                                            Mapping.Sort('name')]),
+                    ('text', 'flash_text', [Mapping.Align(4, True, False),
+                                            Mapping.Keep(),
+                                            Mapping.Emit('sym1', True, True),
+                                            Mapping.Sort('name')])]
+        actual = fragment.flags[('obj1', None, 'default')]
+        self.assertEqual(expected, actual)
+
+    def test_flags_entries_multiple_flags_and_entries(self):
+        # Not an error, generation step handles this, since
+        # it that step has a more complete information
+        # about all mappings. This can happen across multiple
+        # mapping fragments.
+        test_fragment = self.create_fragment_file(u"""
+[mapping:map]
+archive: libmain.a
+entries:
+    obj1 (default);
+        text->flash_text align(4) keep emit(sym1) sort(name)
+    obj1 (default);
+        text->flash_text align(4) keep emit(sym1) sort(name)
+""")
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        fragment = fragment_file.fragments[0]
+
+        expected = [('text', 'flash_text', [Mapping.Align(4, True, False),
+                                            Mapping.Keep(),
+                                            Mapping.Emit('sym1', True, True),
+                                            Mapping.Sort('name')]),
+                    ('text', 'flash_text', [Mapping.Align(4, True, False),
+                                            Mapping.Keep(),
+                                            Mapping.Emit('sym1', True, True),
+                                            Mapping.Sort('name')])]
+        actual = fragment.flags[('obj1', None, 'default')]
+        self.assertEqual(expected, actual)
 
 
 class DeprecatedMappingTest(FragmentTest):

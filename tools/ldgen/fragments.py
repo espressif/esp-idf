@@ -17,9 +17,12 @@ import abc
 import os
 import re
 from collections import namedtuple
+from enum import Enum
 
-from pyparsing import (Combine, Forward, Group, Literal, OneOrMore, Optional, ParseFatalException, Suppress, Word,
-                       ZeroOrMore, alphanums, alphas, indentedBlock, originalTextFor, restOfLine)
+from entity import Entity
+from pyparsing import (Combine, Forward, Group, Keyword, Literal, OneOrMore, Optional, Or, ParseFatalException,
+                       Suppress, Word, ZeroOrMore, alphanums, alphas, delimitedList, indentedBlock, nums,
+                       originalTextFor, restOfLine)
 from sdkconfig import SDKConfig
 
 KeyGrammar = namedtuple('KeyGrammar', 'grammar min max required')
@@ -267,11 +270,131 @@ class Mapping(Fragment):
     Encapsulates a mapping fragment, which defines what targets the input sections of mappable entties are placed under.
     """
 
-    MAPPING_ALL_OBJECTS = '*'
+    class Flag():
+        PRE_POST = (Optional(Suppress(',') + Suppress('pre').setParseAction(lambda: True).setResultsName('pre')) +
+                    Optional(Suppress(',') + Suppress('post').setParseAction(lambda: True).setResultsName('post')))
+
+    class Emit(Flag):
+
+        def __init__(self, symbol, pre=True, post=True):
+            self.symbol = symbol
+            self.pre = pre
+            self.post = post
+
+        @staticmethod
+        def get_grammar():
+            # emit(symbol [, pre, post])
+            #
+            # __symbol_start, __symbol_end is generated before and after
+            # the corresponding input section description, respectively.
+            grammar = (Keyword('emit').suppress() +
+                       Suppress('(') +
+                       Fragment.IDENTIFIER.setResultsName('symbol') +
+                       Mapping.Flag.PRE_POST +
+                       Suppress(')'))
+
+            def on_parse(tok):
+                if tok.pre == '' and tok.post == '':
+                    res = Mapping.Emit(tok.symbol)
+                elif tok.pre != '' and tok.post == '':
+                    res = Mapping.Emit(tok.symbol, tok.pre, False)
+                elif tok.pre == '' and tok.post != '':
+                    res = Mapping.Emit(tok.symbol, False, tok.post)
+                else:
+                    res = Mapping.Emit(tok.symbol, tok.pre, tok.post)
+                return res
+
+            grammar.setParseAction(on_parse)
+            return grammar
+
+        def __eq__(self, other):
+            return (isinstance(other, Mapping.Emit) and
+                    self.symbol == other.symbol and
+                    self.pre == other.pre and
+                    self.post == other.post)
+
+    class Align(Flag):
+
+        def __init__(self, alignment, pre=True, post=False):
+            self.alignment = alignment
+            self.pre = pre
+            self.post = post
+
+        @staticmethod
+        def get_grammar():
+            # align(alignment, [, pre, post])
+            grammar = (Keyword('align').suppress() +
+                       Suppress('(') +
+                       Word(nums).setResultsName('alignment') +
+                       Mapping.Flag.PRE_POST +
+                       Suppress(')'))
+
+            def on_parse(tok):
+                alignment = int(tok.alignment)
+                if tok.pre == '' and tok.post == '':
+                    res = Mapping.Align(alignment)
+                elif tok.pre != '' and tok.post == '':
+                    res = Mapping.Align(alignment, tok.pre)
+                elif tok.pre == '' and tok.post != '':
+                    res = Mapping.Align(alignment, False, tok.post)
+                else:
+                    res = Mapping.Align(alignment, tok.pre, tok.post)
+                return res
+
+            grammar.setParseAction(on_parse)
+            return grammar
+
+        def __eq__(self, other):
+            return (isinstance(other, Mapping.Align) and
+                    self.alignment == other.alignment and
+                    self.pre == other.pre and
+                    self.post == other.post)
+
+    class Keep(Flag):
+
+        def __init__(self):
+            pass
+
+        @staticmethod
+        def get_grammar():
+            grammar = Keyword('keep').setParseAction(Mapping.Keep)
+            return grammar
+
+        def __eq__(self, other):
+            return isinstance(other, Mapping.Keep)
+
+    class Sort(Flag):
+        class Type(Enum):
+            NAME = 0
+            ALIGNMENT = 1
+            INIT_PRIORITY = 2
+
+        def __init__(self, first, second=None):
+            self.first = first
+            self.second = second
+
+        @staticmethod
+        def get_grammar():
+            # sort(sort_by_first [, sort_by_second])
+            keywords = Keyword('name') | Keyword('alignment') | Keyword('init_priority')
+            grammar = (Keyword('sort').suppress() + Suppress('(') +
+                       keywords.setResultsName('first') +
+                       Optional(Suppress(',') + keywords.setResultsName('second')) + Suppress(')'))
+
+            grammar.setParseAction(lambda tok: Mapping.Sort(tok.first, tok.second if tok.second != '' else None))
+            return grammar
+
+        def __eq__(self, other):
+            return (isinstance(other, Mapping.Sort) and
+                    self.first == other.first and
+                    self.second == other.second)
 
     def __init__(self):
         Fragment.__init__(self)
         self.entries = set()
+        # k = (obj, symbol, scheme)
+        # v = list((section, target), Mapping.Flag))
+        self.flags = dict()
         self.deprecated = False
 
     def set_key_value(self, key, parse_results):
@@ -283,40 +406,63 @@ class Mapping(Fragment):
                 symbol = None
                 scheme = None
 
-                try:
-                    obj = result['object']
-                except KeyError:
-                    pass
+                obj = result['object']
 
                 try:
                     symbol = result['symbol']
                 except KeyError:
                     pass
 
-                try:
-                    scheme = result['scheme']
-                except KeyError:
-                    pass
+                scheme = result['scheme']
 
-                self.entries.add((obj, symbol, scheme))
+                mapping = (obj, symbol, scheme)
+                self.entries.add(mapping)
+
+                try:
+                    parsed_flags = result['sections_target_flags']
+                except KeyError:
+                    parsed_flags = []
+
+                if parsed_flags:
+                    entry_flags = []
+                    for pf in parsed_flags:
+                        entry_flags.append((pf.sections, pf.target, list(pf.flags)))
+
+                    try:
+                        existing_flags = self.flags[mapping]
+                    except KeyError:
+                        existing_flags = list()
+                        self.flags[mapping] = existing_flags
+
+                    existing_flags.extend(entry_flags)
 
     def get_key_grammars(self):
         # There are three possible patterns for mapping entries:
         #       obj:symbol (scheme)
         #       obj (scheme)
         #       * (scheme)
+        # Flags can be specified for section->target in the scheme specified, ex:
+        #       obj (scheme); section->target emit(symbol), section2->target2 align(4)
         obj = Fragment.ENTITY.setResultsName('object')
         symbol = Suppress(':') + Fragment.IDENTIFIER.setResultsName('symbol')
         scheme = Suppress('(') + Fragment.IDENTIFIER.setResultsName('scheme') + Suppress(')')
 
-        pattern1 = obj + symbol + scheme
-        pattern2 = obj + scheme
-        pattern3 = Literal(Mapping.MAPPING_ALL_OBJECTS).setResultsName('object') + scheme
+        # The flags are specified for section->target in the scheme specified
+        sections_target = Scheme.grammars['entries'].grammar
 
-        entry = pattern1 | pattern2 | pattern3
+        flag = Or([f.get_grammar() for f in [Mapping.Keep, Mapping.Align, Mapping.Emit, Mapping.Sort]])
+
+        section_target_flags = Group(sections_target + Group(OneOrMore(flag)).setResultsName('flags'))
+
+        pattern1 = obj + symbol
+        pattern2 = obj
+        pattern3 = Literal(Entity.ALL).setResultsName('object')
+
+        entry = ((pattern1 | pattern2 | pattern3) + scheme +
+                 Optional(Suppress(';') + delimitedList(section_target_flags).setResultsName('sections_target_flags')))
 
         grammars = {
-            'archive': KeyGrammar(Fragment.ENTITY.setResultsName('archive'), 1, 1, True),
+            'archive': KeyGrammar(Or([Fragment.ENTITY, Word(Entity.ALL)]).setResultsName('archive'), 1, 1, True),
             'entries': KeyGrammar(entry, 0, None, True)
         }
 
@@ -330,7 +476,6 @@ class DeprecatedMapping():
 
     # Name of the default condition entry
     DEFAULT_CONDITION = 'default'
-    MAPPING_ALL_OBJECTS = '*'
 
     @staticmethod
     def get_fragment_grammar(sdkconfig, fragment_file):
@@ -348,7 +493,7 @@ class DeprecatedMapping():
 
         pattern1 = Group(obj + symbol + scheme)
         pattern2 = Group(obj + scheme)
-        pattern3 = Group(Literal(Mapping.MAPPING_ALL_OBJECTS).setResultsName('object') + scheme)
+        pattern3 = Group(Literal(Entity.ALL).setResultsName('object') + scheme)
 
         mapping_entry = pattern1 | pattern2 | pattern3
 

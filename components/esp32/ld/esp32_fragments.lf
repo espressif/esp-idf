@@ -192,3 +192,8 @@ entries:
 [scheme:wifi_slp_rx_iram]
 entries:
     wifi_slp_rx_iram -> iram0_text
+
+[mapping:default]
+archive: *
+entries:
+    * (default)
