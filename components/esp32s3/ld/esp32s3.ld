@@ -70,14 +70,14 @@ MEMORY
   /**
    * RTC fast memory (same block as above), viewed from data bus
    */
-  rtc_data_seg(RW) :                 org = 0x3ff80000, len = 0x2000
+  rtc_data_seg(RW) :                 org = 0x600fe000, len = 0x2000
 
   /**
    * RTC slow memory (data accessible). Persists over deep sleep.
    * Start of RTC slow memory is reserved for ULP co-processor code + data, if enabled.
    */
   rtc_slow_seg(RW)  :                org = 0x50000000 + CONFIG_ESP32S3_ULP_COPROC_RESERVE_MEM,
-                                     len = 0x1000 - CONFIG_ESP32S3_ULP_COPROC_RESERVE_MEM
+                                     len = 0x2000 - CONFIG_ESP32S3_ULP_COPROC_RESERVE_MEM
 }
 
 #if CONFIG_ESP32S3_USE_FIXED_STATIC_RAM_SIZE
