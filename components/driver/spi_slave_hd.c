@@ -23,14 +23,15 @@
 #include "hal/spi_slave_hd_hal.h"
 
 
-//SPI1 can never be used as the slave
-#define VALID_HOST(x) (x>SPI_HOST && x<=HSPI_HOST)
+#if (SOC_SPI_PERIPH_NUM == 2)
+#define VALID_HOST(x) ((x) == SPI2_HOST)
+#elif (SOC_SPI_PERIPH_NUM == 3)
+#define VALID_HOST(x) ((x) >= SPI2_HOST && (x) <= SPI3_HOST)
+#endif
 #define SPIHD_CHECK(cond,warn,ret) do{if(!(cond)){ESP_LOGE(TAG, warn); return ret;}} while(0)
 
 typedef struct {
     bool dma_enabled;
-    uint32_t tx_dma_chan;
-    uint32_t rx_dma_chan;
     int max_transfer_sz;
     uint32_t flags;
     portMUX_TYPE int_spinlock;
@@ -74,9 +75,9 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
 
     SPIHD_CHECK(VALID_HOST(host_id), "invalid host", ESP_ERR_INVALID_ARG);
 #if CONFIG_IDF_TARGET_ESP32S2
-    SPIHD_CHECK(config->dma_chan == 0 || config->dma_chan == host_id, "invalid dma channel", ESP_ERR_INVALID_ARG);
+    SPIHD_CHECK(config->dma_chan == 0 || config->dma_chan == host_id || config->dma_chan == DMA_AUTO_CHAN, "invalid dma channel", ESP_ERR_INVALID_ARG);
 #elif SOC_GDMA_SUPPORTED
-    SPIHD_CHECK(config->dma_chan == 0 || config->dma_chan == -1, "invalid dma channel, chip only support spi dma channel auto-alloc", ESP_ERR_INVALID_ARG);
+    SPIHD_CHECK(config->dma_chan == 0 || config->dma_chan == DMA_AUTO_CHAN, "invalid dma channel, chip only support spi dma channel auto-alloc", ESP_ERR_INVALID_ARG);
 #endif
 #if !CONFIG_IDF_TARGET_ESP32S2
 //Append mode is only supported on ESP32S2 now
@@ -97,14 +98,11 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
     host->dma_enabled = (config->dma_chan != 0);
 
     if (host->dma_enabled) {
-        ret = spicommon_slave_alloc_dma(host_id, config->dma_chan, &actual_tx_dma_chan, &actual_rx_dma_chan);
+        ret = spicommon_slave_dma_chan_alloc(host_id, config->dma_chan, &actual_tx_dma_chan, &actual_rx_dma_chan);
         if (ret != ESP_OK) {
             goto cleanup;
         }
     }
-
-    host->tx_dma_chan = actual_tx_dma_chan;
-    host->rx_dma_chan = actual_rx_dma_chan;
 
     ret = spicommon_bus_initialize_io(host_id, bus_config, SPICOMMON_BUSFLAG_SLAVE | bus_config->flags, &host->flags);
     if (ret != ESP_OK) {
@@ -120,8 +118,8 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
         .dma_in = SPI_LL_GET_HW(host_id),
         .dma_out = SPI_LL_GET_HW(host_id),
         .dma_enabled = host->dma_enabled,
-        .tx_dma_chan = host->tx_dma_chan,
-        .rx_dma_chan = host->rx_dma_chan,
+        .tx_dma_chan = actual_tx_dma_chan,
+        .rx_dma_chan = actual_rx_dma_chan,
         .append_mode = append_mode,
         .mode = config->mode,
         .tx_lsbfirst = (config->flags & SPI_SLAVE_HD_RXBIT_LSBFIRST),
@@ -252,8 +250,7 @@ esp_err_t spi_slave_hd_deinit(spi_host_device_t host_id)
 
     spicommon_periph_free(host_id);
     if (host->dma_enabled) {
-        //On ESP32S2, actual_tx_dma_chan and actual_rx_dma_chan are always same
-        spicommon_slave_free_dma(host_id, host->tx_dma_chan);
+        spicommon_slave_free_dma(host_id);
     }
     free(host);
     spihost[host_id] = NULL;

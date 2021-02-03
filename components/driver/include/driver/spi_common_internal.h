@@ -118,41 +118,29 @@ bool spicommon_periph_in_use(spi_host_device_t host);
 bool spicommon_periph_free(spi_host_device_t host);
 
 /**
- * @brief Check whether the spi DMA channel is in use.
- *
- * @param dma_chan DMA channel to check.
- *
- * @note This public API is deprecated.
- *
- * @return True if in use, otherwise false.
- */
-bool spicommon_dma_chan_in_use(int dma_chan);
-
-/**
- * @brief Configure DMA for SPI Slave
+ * @brief Alloc DMA for SPI Slave
  *
  * @param host_id                      SPI host ID
- * @param dma_chan                     -1: auto dma allocate mode; 0: non-dma mode; 1 or 2: assign a specific DMA channel;
+ * @param dma_chan                     DMA_AUTO_CHAN: auto dma allocate mode; 0: non-dma mode; 1 or 2: assign a specific DMA channel;
  * @param[out] out_actual_tx_dma_chan  Actual TX DMA channel (if you choose to assign a specific DMA channel, this will be the channel you assigned before)
  * @param[out] out_actual_rx_dma_chan  Actual RX DMA channel (if you choose to assign a specific DMA channel, this will be the channel you assigned before)
  *
  * @return
  *        - ESP_OK:                On success
  *        - ESP_ERR_NO_MEM:        No enough memory
- *        - ESP_ERR_INVALID_STATE: Driver invalid state, check the log message for details
+ *        - ESP_ERR_NOT_FOUND:     There is no available DMA channel
  */
-esp_err_t spicommon_slave_alloc_dma(spi_host_device_t host_id, int dma_chan, uint32_t *out_actual_tx_dma_chan, uint32_t *out_actual_rx_dma_chan);
+esp_err_t spicommon_slave_dma_chan_alloc(spi_host_device_t host_id, int dma_chan, uint32_t *out_actual_tx_dma_chan, uint32_t *out_actual_rx_dma_chan);
 
 /**
  * @brief Free DMA for SPI Slave
  *
  * @param host_id  SPI host ID
- * @param dma_chan Actual used DMA channel
  *
  * @return
  *        - ESP_OK: On success
  */
-esp_err_t spicommon_slave_free_dma(spi_host_device_t host_id, int dma_chan);
+esp_err_t spicommon_slave_free_dma(spi_host_device_t host_id);
 
 /**
  * @brief Connect a SPI peripheral to GPIO pins

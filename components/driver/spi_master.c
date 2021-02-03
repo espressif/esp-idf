@@ -188,10 +188,12 @@ static esp_err_t spi_master_deinit_driver(void* arg);
 
 static inline bool is_valid_host(spi_host_device_t host)
 {
+//SPI1 can be used as GPSPI only on ESP32
 #if CONFIG_IDF_TARGET_ESP32
     return host >= SPI1_HOST && host <= SPI3_HOST;
-#else
-// SPI_HOST (SPI1_HOST) is not supported by the SPI Master driver on ESP32-S2 and later
+#elif (SOC_SPI_PERIPH_NUM == 2)
+    return host == SPI2_HOST;
+#elif (SOC_SPI_PERIPH_NUM == 3)
     return host >= SPI2_HOST && host <= SPI3_HOST;
 #endif
 }
