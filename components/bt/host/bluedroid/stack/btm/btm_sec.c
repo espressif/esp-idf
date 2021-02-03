@@ -2630,15 +2630,6 @@ void btm_sec_conn_req (UINT8 *bda, UINT8 *dc)
         return;
     }
 
-    /* Check if peer device's and our BD_ADDR is same or not. It
-       should be different to avoid 'Impersonation in the Pin Pairing
-       Protocol' (CVE-2020-26555) vulnerability. */
-    if (memcmp((uint8_t *)bda, (uint8_t *)&controller_get_interface()->get_address()->address, sizeof (BD_ADDR)) == 0) {
-        BTM_TRACE_ERROR ("Security Manager: connect request from device with same BD_ADDR");
-        btsnd_hcic_reject_conn (bda, HCI_ERR_HOST_REJECT_DEVICE);
-        return;
-    }
-
     /* Security guys wants us not to allow connection from not paired devices */
 
     /* Check if connection is allowed for only paired devices */
