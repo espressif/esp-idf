@@ -139,7 +139,6 @@ typedef struct {
 } btdm_dram_available_region_t;
 
 typedef void (* osi_intr_handler)(void);
-static uint8_t own_bda[6];
 
 /* OSI function */
 struct osi_funcs_t {
@@ -975,8 +974,6 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         return ESP_ERR_INVALID_ARG;
     }
 
-    read_mac_wrapper(own_bda);
-
     ESP_LOGI(BTDM_LOG_TAG, "BT controller compile version [%s]", btdm_controller_get_compile_version());
 
     // init low-power control resources
@@ -1329,11 +1326,6 @@ esp_err_t esp_bt_controller_disable(void)
 esp_bt_controller_status_t esp_bt_controller_get_status(void)
 {
     return btdm_controller_status;
-}
-
-uint8_t* esp_bt_get_mac(void)
-{
-    return own_bda;
 }
 
 /* extra functions */

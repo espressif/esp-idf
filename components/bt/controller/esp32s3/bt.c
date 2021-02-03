@@ -111,8 +111,6 @@ typedef struct {
 } btdm_queue_item_t;
 #endif
 
-static uint8_t own_bda[6];
-
 /* OSI function */
 struct osi_funcs_t {
     uint32_t _magic;
@@ -950,8 +948,6 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         }
     }
 
-    read_mac_wrapper(own_bda);
-
     ESP_LOGI(BTDM_LOG_TAG, "BT controller compile version [%s]", btdm_controller_get_compile_version());
 
 #if CONFIG_SPIRAM_USE_MALLOC
@@ -1166,11 +1162,6 @@ esp_err_t esp_bt_controller_disable(void)
 esp_bt_controller_status_t esp_bt_controller_get_status(void)
 {
     return btdm_controller_status;
-}
-
-uint8_t* esp_bt_get_mac(void)
-{
-    return own_bda;
 }
 
 /* extra functions */
