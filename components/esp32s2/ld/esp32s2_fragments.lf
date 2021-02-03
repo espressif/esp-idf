@@ -78,8 +78,12 @@ entries:
 
 [scheme:default]
 entries:
-    text -> flash_text
-    rodata -> flash_rodata
+    if APP_BUILD_USE_FLASH_SECTIONS = y:
+        text -> flash_text
+        rodata -> flash_rodata
+    else:
+        text -> iram0_text
+        rodata -> dram0_data
     data -> dram0_data
     bss -> dram0_bss
     common -> dram0_bss

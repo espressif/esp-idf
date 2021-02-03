@@ -134,7 +134,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 Select the way the application is built.
 
                 By default, the application is built as a binary file in a format compatible with
-                the ESP32 bootloader. In addition to this application, 2nd stage bootloader is
+                the ESP-IDF bootloader. In addition to this application, 2nd stage bootloader is
                 also built. Application and bootloader binaries can be written into flash and
                 loaded/executed from there.
 
@@ -146,7 +146,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 written into flash.
                 Note that at the moment, ESP-IDF does not contain all the startup code required to
                 initialize the CPUs and ROM memory (data/bss). Therefore it is necessary to execute
-                a bit of ROM code prior to executing the application. A gdbinit file may look as follows:
+                a bit of ROM code prior to executing the application. A gdbinit file may look as follows (for ESP32):
 
                     # Connect to a running instance of OpenOCD
                     target remote :3333
@@ -165,6 +165,8 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 Execute this gdbinit file as follows:
 
                     xtensa-esp32-elf-gdb build/app-name.elf -x gdbinit
+
+                Example gdbinit files for other targets can be found in tools/test_apps/system/gdb_loadable_elf/
 
                 Recommended sdkconfig.defaults for building loadable ELF files is as follows.
                 CONFIG_APP_BUILD_TYPE_ELF_RAM is required, other options help reduce application
