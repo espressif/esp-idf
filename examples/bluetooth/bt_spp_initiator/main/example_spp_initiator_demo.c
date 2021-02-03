@@ -115,12 +115,21 @@ static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
         }
         break;
     case ESP_SPP_OPEN_EVT:
-        ESP_LOGI(SPP_TAG, "ESP_SPP_OPEN_EVT");
-        esp_spp_write(param->open.handle, SPP_DATA_LEN, spp_data);
-        gettimeofday(&time_old, NULL);
+        if (param->open.status == ESP_SPP_SUCCESS) {
+            ESP_LOGI(SPP_TAG, "ESP_SPP_OPEN_EVT OK hdl:0x%x", param->open.handle);
+            esp_spp_write(param->open.handle, SPP_DATA_LEN, spp_data);
+            gettimeofday(&time_old, NULL);
+        } else {
+            ESP_LOGI(SPP_TAG, "ESP_SPP_OPEN_EVT Failed!, status:%d", param->open.status);
+        }
         break;
     case ESP_SPP_CLOSE_EVT:
-        ESP_LOGI(SPP_TAG, "ESP_SPP_CLOSE_EVT");
+        if ((param->close.async == false && param->close.status == ESP_SPP_SUCCESS) || param->close.async) {
+            ESP_LOGI(SPP_TAG, "ESP_SPP_CLOSE_EVT OK, async:%d", param->close.async);
+            esp_spp_start_discovery(peer_bd_addr);
+        } else {
+            ESP_LOGI(SPP_TAG, "ESP_SPP_CLOSE_EVT failed!");
+        }
         break;
     case ESP_SPP_START_EVT:
         ESP_LOGI(SPP_TAG, "ESP_SPP_START_EVT");
@@ -140,17 +149,21 @@ static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
         }
         break;
     case ESP_SPP_WRITE_EVT:
+        if (param->write.status == ESP_SPP_SUCCESS) {
 #if (SPP_SHOW_MODE == SPP_SHOW_DATA)
-        ESP_LOGI(SPP_TAG, "ESP_SPP_WRITE_EVT len=%d cong=%d", param->write.len , param->write.cong);
-        esp_log_buffer_hex("",spp_data,SPP_DATA_LEN);
+            ESP_LOGI(SPP_TAG, "ESP_SPP_WRITE_EVT len=%d cong=%d", param->write.len, param->write.cong);
+            esp_log_buffer_hex("", spp_data, SPP_DATA_LEN);
 #else
-        gettimeofday(&time_new, NULL);
-        data_num += param->write.len;
-        if (time_new.tv_sec - time_old.tv_sec >= 3) {
-            print_speed();
-        }
+            gettimeofday(&time_new, NULL);
+            data_num += param->write.len;
+            if (time_new.tv_sec - time_old.tv_sec >= 3) {
+                print_speed();
+            }
 #endif
-        if (param->write.cong == 0) {
+        } else {
+            ESP_LOGE(SPP_TAG, "ESP_SPP_WRITE_EVT failed(%d)!", param->write.status);
+        }
+        if (param->write.cong == 0 && param->write.handle > 0) {
             esp_spp_write(param->write.handle, SPP_DATA_LEN, spp_data);
         }
         break;
