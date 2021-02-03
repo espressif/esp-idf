@@ -21,7 +21,7 @@
 import argparse
 import subprocess
 
-from pyparsing import LineEnd, Literal, ParseException, SkipTo, Word, alphanums, hexnums
+from pyparsing import LineEnd, LineStart, Literal, Optional, Word, alphanums, hexnums
 
 argparser = argparse.ArgumentParser()
 
@@ -34,24 +34,38 @@ contents = subprocess.check_output([args.objdump, '-t', args.elf]).decode()
 
 
 def check_location(symbol, expected):
-    pattern = Word(alphanums + '._').setResultsName('actual') + Word(hexnums) + Literal(symbol) + LineEnd()
-    pattern = SkipTo(pattern) + pattern
+    pattern = (LineStart() + Word(hexnums).setResultsName('address')
+               + Optional(Word(alphanums, exact=1))
+               + Optional(Word(alphanums,exact=1))
+               + Word(alphanums + '._*').setResultsName('actual')
+               + Word(hexnums)
+               + Literal(symbol)
+               + LineEnd())
 
     try:
-        results = pattern.parseString(contents)
-    except ParseException:
-        print("check placement fail: '%s' was not found" % (symbol))
-        exit(1)
+        results = pattern.searchString(contents)[0]
+    except IndexError:
+        raise Exception("check placement fail: '%s' was not found" % (symbol))
 
     if results.actual != expected:
-        print("check placement fail: '%s' was placed in '%s', not in '%s'" % (symbol, results.actual, expected))
-        exit(1)
+        raise Exception("check placement fail: '%s' was placed in '%s', not in '%s'" % (symbol, results.actual, expected))
 
     print("check placement pass: '%s' was successfully placed in '%s'" % (symbol, results.actual))
+    return int(results.address, 16)
 
 
 # src1:func1 (noflash) - explicit mapping for func2 using 'rtc' scheme
-check_location('func1', '.iram0.text')
+# should have been dropped since it is unreferenced.
+func1 = check_location('func1', '.iram0.text')
+
+sym1_start = check_location('_sym1_start', '*ABS*')
+sym1_end = check_location('_sym1_end', '*ABS*')
+
+assert func1 >= sym1_start, 'check placement fail: func1 comes before __sym1_start'
+assert func1 < sym1_end, 'check placement fail: func1 comes after __sym1_end'
+assert sym1_start % 9 == 0, '_sym1_start is not aligned as specified in linker fragment'
+assert sym1_end % 12 == 0, '_sym1_end is not aligned as specified in linker fragment'
+print('check placement pass: _sym1_start < func1 < __sym1_end and alignments checked')
 
 # src1:func2 (rtc) - explicit mapping for func2 using 'rtc' scheme
 check_location('func2', '.rtc.text')
@@ -60,5 +74,4 @@ check_location('func2', '.rtc.text')
 # mapped using a different scheme
 check_location('func3', '.flash.text')
 
-# * (noflash) - no explicit mapping for src2
 check_location('func4', '.iram0.text')

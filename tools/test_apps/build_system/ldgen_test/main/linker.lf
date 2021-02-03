@@ -3,5 +3,6 @@ archive: libmain.a
 entries:
     * (noflash)
     src1 (default)
-    src1:func1 (noflash)
+    src1:func1 (noflash);
+        text->iram0_text keep align(9) align(12, post) emit(sym1)
     src1:func2 (rtc)
