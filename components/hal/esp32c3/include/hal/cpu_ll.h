@@ -16,6 +16,8 @@
 #include <stdint.h>
 
 #include "soc/soc_caps.h"
+#include "soc/dport_access.h"
+#include "soc/system_reg.h"
 #include "esp_bit_defs.h"
 #include "soc/assist_debug_reg.h"
 #include "esp_attr.h"
@@ -153,6 +155,11 @@ static inline void cpu_ll_set_vecbase(const void* vecbase)
 
 static inline void cpu_ll_waiti(void)
 {
+    if (cpu_ll_is_debugger_attached() && DPORT_REG_GET_BIT(SYSTEM_CPU_PER_CONF_REG, SYSTEM_CPU_WAIT_MODE_FORCE_ON) == 0) {
+        /* when SYSTEM_CPU_WAIT_MODE_FORCE_ON is disabled in WFI mode SBA access to memory does not work for debugger,
+           so do not enter that mode when debugger is connected */
+        return;
+    }
     asm volatile ("wfi\n");
 }
 
