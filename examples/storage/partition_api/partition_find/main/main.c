@@ -47,8 +47,14 @@ static void find_partition(esp_partition_type_t type, esp_partition_subtype_t su
 {
     ESP_LOGI(TAG, "Find partition with type %s, subtype %s, label %s...", get_type_str(type), get_subtype_str(subtype),
                     name == NULL ? "NULL (unspecified)" : name);
+
     const esp_partition_t * part  = esp_partition_find_first(type, subtype, name);
-    ESP_LOGI(TAG, "\tfound partition '%s' at offset 0x%x with size 0x%x", part->label, part->address, part->size);
+
+    if (part != NULL) {
+        ESP_LOGI(TAG, "\tfound partition '%s' at offset 0x%x with size 0x%x", part->label, part->address, part->size);
+    } else {
+        ESP_LOGE(TAG, "\tpartition not found!");
+    }
 }
 
 void app_main(void)
