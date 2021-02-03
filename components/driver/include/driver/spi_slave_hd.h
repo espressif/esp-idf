@@ -74,7 +74,12 @@ typedef struct {
 
 /// Configuration structure for the SPI Slave HD driver
 typedef struct {
-    uint8_t  mode;                              ///< SPI mode (0-3)
+    uint8_t mode;                               /**< SPI mode, representing a pair of (CPOL, CPHA) configuration:
+                                                     - 0: (0, 0)
+                                                     - 1: (0, 1)
+                                                     - 2: (1, 0)
+                                                     - 3: (1, 1)
+                                                 */
     uint32_t spics_io_num;                      ///< CS GPIO pin for this device
     uint32_t flags;                             ///< Bitwise OR of SPI_SLAVE_HD_* flags
     uint32_t command_bits;                      ///< command field bits, multiples of 8 and at least 8.
