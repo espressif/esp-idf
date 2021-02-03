@@ -48,7 +48,7 @@ static void master_init_nodma( spi_device_handle_t* spi)
         .cs_ena_pretrans=1,
     };
     //Initialize the SPI bus
-    ret=spi_bus_initialize(TEST_SPI_HOST, &buscfg, 0);
+    ret=spi_bus_initialize(TEST_SPI_HOST, &buscfg, DMA_AUTO_CHAN);
     TEST_ASSERT(ret==ESP_OK);
     //Attach the LCD to the SPI bus
     ret=spi_bus_add_device(TEST_SPI_HOST, &devcfg, spi);
@@ -74,12 +74,8 @@ static void slave_init(void)
     gpio_set_pull_mode(PIN_NUM_MOSI, GPIO_PULLUP_ONLY);
     gpio_set_pull_mode(PIN_NUM_CLK, GPIO_PULLUP_ONLY);
     gpio_set_pull_mode(PIN_NUM_CS, GPIO_PULLUP_ONLY);
-#if !SOC_GDMA_SUPPORTED
     //Initialize SPI slave interface
-    TEST_ESP_OK( spi_slave_initialize(TEST_SLAVE_HOST, &buscfg, &slvcfg, 2) );
-#else
-    TEST_ESP_OK( spi_slave_initialize(TEST_SLAVE_HOST, &buscfg, &slvcfg, -1) );
-#endif
+    TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &buscfg, &slvcfg, DMA_AUTO_CHAN));
 }
 
 TEST_CASE("test slave send unaligned","[spi]")
@@ -224,7 +220,7 @@ static void unaligned_test_slave(void)
 {
     spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
     spi_slave_interface_config_t slvcfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
-    TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &buscfg, &slvcfg, TEST_SLAVE_HOST));
+    TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &buscfg, &slvcfg, DMA_AUTO_CHAN));
 
     uint8_t *slave_send_buf = heap_caps_malloc(BUF_SIZE, MALLOC_CAP_DMA);
     uint8_t *slave_recv_buf = heap_caps_calloc(BUF_SIZE, 1, MALLOC_CAP_DMA);

@@ -81,10 +81,12 @@ static void IRAM_ATTR spi_intr(void *arg);
 
 static inline bool is_valid_host(spi_host_device_t host)
 {
+//SPI1 can be used as GPSPI only on ESP32
 #if CONFIG_IDF_TARGET_ESP32
     return host >= SPI1_HOST && host <= SPI3_HOST;
-#else
-// SPI_HOST (SPI1_HOST) is not supported by the SPI Slave driver on ESP32-S2 & later
+#elif (SOC_SPI_PERIPH_NUM == 2)
+    return host == SPI2_HOST;
+#elif (SOC_SPI_PERIPH_NUM == 3)
     return host >= SPI2_HOST && host <= SPI3_HOST;
 #endif
 }
@@ -120,11 +122,11 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     //We only support HSPI/VSPI, period.
     SPI_CHECK(is_valid_host(host), "invalid host", ESP_ERR_INVALID_ARG);
 #ifdef CONFIG_IDF_TARGET_ESP32
-    SPI_CHECK( (dma_chan >= 0 && dma_chan <= 2) || dma_chan == -1, "invalid dma channel", ESP_ERR_INVALID_ARG );
+    SPI_CHECK( (dma_chan >= 0 && dma_chan <= 2) || dma_chan == DMA_AUTO_CHAN, "invalid dma channel", ESP_ERR_INVALID_ARG );
 #elif CONFIG_IDF_TARGET_ESP32S2
-    SPI_CHECK( dma_chan == 0 || dma_chan == host, "invalid dma channel", ESP_ERR_INVALID_ARG );
+    SPI_CHECK( dma_chan == 0 || dma_chan == host || dma_chan == DMA_AUTO_CHAN, "invalid dma channel", ESP_ERR_INVALID_ARG );
 #elif SOC_GDMA_SUPPORTED
-    SPI_CHECK( dma_chan == 0 || dma_chan == -1, "invalid dma channel, chip only support spi dma channel auto-alloc", ESP_ERR_INVALID_ARG );
+    SPI_CHECK( dma_chan == 0 || dma_chan == DMA_AUTO_CHAN, "invalid dma channel, chip only support spi dma channel auto-alloc", ESP_ERR_INVALID_ARG );
 #endif
     SPI_CHECK((bus_config->intr_flags & (ESP_INTR_FLAG_HIGH|ESP_INTR_FLAG_EDGE|ESP_INTR_FLAG_INTRDISABLED))==0, "intr flag not allowed", ESP_ERR_INVALID_ARG);
 #ifndef CONFIG_SPI_SLAVE_ISR_IN_IRAM
@@ -147,7 +149,7 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     bool use_dma = (dma_chan != 0);
     spihost[host]->dma_enabled = use_dma;
     if (use_dma) {
-        ret = spicommon_slave_alloc_dma(host, dma_chan, &actual_tx_dma_chan, &actual_rx_dma_chan);
+        ret = spicommon_slave_dma_chan_alloc(host, dma_chan, &actual_tx_dma_chan, &actual_rx_dma_chan);
         if (ret != ESP_OK) {
             goto cleanup;
         }
@@ -246,9 +248,8 @@ cleanup:
 #endif
     }
     spi_slave_hal_deinit(&spihost[host]->hal);
-    //On ESP32 and ESP32S2, actual_tx_dma_chan and actual_rx_dma_chan are always same
     if (spihost[host]->dma_enabled) {
-        spicommon_slave_free_dma(host, actual_tx_dma_chan);
+        spicommon_slave_free_dma(host);
     }
 
     free(spihost[host]);
@@ -265,8 +266,7 @@ esp_err_t spi_slave_free(spi_host_device_t host)
     if (spihost[host]->trans_queue) vQueueDelete(spihost[host]->trans_queue);
     if (spihost[host]->ret_queue) vQueueDelete(spihost[host]->ret_queue);
     if (spihost[host]->dma_enabled) {
-        //On ESP32 and ESP32S2, actual_tx_dma_chan and actual_rx_dma_chan are always same
-        spicommon_slave_free_dma(host, spihost[host]->tx_dma_chan);
+        spicommon_slave_free_dma(host);
     }
     free(spihost[host]->hal.dmadesc_tx);
     free(spihost[host]->hal.dmadesc_rx);
