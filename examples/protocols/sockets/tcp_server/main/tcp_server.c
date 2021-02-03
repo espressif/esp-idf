@@ -24,7 +24,10 @@
 #include <lwip/netdb.h>
 
 
-#define PORT CONFIG_EXAMPLE_PORT
+#define PORT                        CONFIG_EXAMPLE_PORT
+#define KEEPALIVE_IDLE              CONFIG_EXAMPLE_KEEPALIVE_IDLE
+#define KEEPALIVE_INTERVAL          CONFIG_EXAMPLE_KEEPALIVE_INTERVAL
+#define KEEPALIVE_COUNT             CONFIG_EXAMPLE_KEEPALIVE_COUNT
 
 static const char *TAG = "example";
 
@@ -62,6 +65,10 @@ static void tcp_server_task(void *pvParameters)
     char addr_str[128];
     int addr_family = (int)pvParameters;
     int ip_protocol = 0;
+    int keepAlive = 1;
+    int keepIdle = KEEPALIVE_IDLE;
+    int keepInterval = KEEPALIVE_INTERVAL;
+    int keepCount = KEEPALIVE_COUNT;
     struct sockaddr_storage dest_addr;
 
     if (addr_family == AF_INET) {
@@ -123,6 +130,11 @@ static void tcp_server_task(void *pvParameters)
             break;
         }
 
+        // Set tcp keepalive option
+        setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &keepAlive, sizeof(int));
+        setsockopt(sock, IPPROTO_TCP, TCP_KEEPIDLE, &keepIdle, sizeof(int));
+        setsockopt(sock, IPPROTO_TCP, TCP_KEEPINTVL, &keepInterval, sizeof(int));
+        setsockopt(sock, IPPROTO_TCP, TCP_KEEPCNT, &keepCount, sizeof(int));
         // Convert ip address to string
         if (source_addr.ss_family == PF_INET) {
             inet_ntoa_r(((struct sockaddr_in *)&source_addr)->sin_addr, addr_str, sizeof(addr_str) - 1);
