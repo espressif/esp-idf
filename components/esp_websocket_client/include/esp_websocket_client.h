@@ -99,6 +99,7 @@ typedef struct {
     int                         keep_alive_idle;            /*!< Keep-alive idle time. Default is 5 (second) */
     int                         keep_alive_interval;        /*!< Keep-alive interval time. Default is 5 (second) */
     int                         keep_alive_count;           /*!< Keep-alive packet retry send count. Default is 3 counts */
+    size_t                      ping_interval_sec;          /*!< Websocket ping interval, defaults to 10 seconds if not set */
 } esp_websocket_client_config_t;
 
 /**

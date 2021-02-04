@@ -37,7 +37,7 @@ static const char *TAG = "WEBSOCKET_CLIENT";
 #define WEBSOCKET_TASK_PRIORITY         (5)
 #define WEBSOCKET_TASK_STACK            (4*1024)
 #define WEBSOCKET_NETWORK_TIMEOUT_MS    (10*1000)
-#define WEBSOCKET_PING_TIMEOUT_MS       (10*1000)
+#define WEBSOCKET_PING_INTERVAL_SEC     (10)
 #define WEBSOCKET_EVENT_QUEUE_SIZE      (1)
 #define WEBSOCKET_PINGPONG_TIMEOUT_SEC  (120)
 #define WEBSOCKET_KEEP_ALIVE_IDLE       (5)
@@ -85,6 +85,7 @@ typedef struct {
     char                        *user_agent;
     char                        *headers;
     int                         pingpong_timeout_sec;
+    size_t                      ping_interval_sec;
 } websocket_config_storage_t;
 
 typedef enum {
@@ -241,6 +242,12 @@ static esp_err_t esp_websocket_client_set_config(esp_websocket_client_handle_t c
         cfg->pingpong_timeout_sec = config->pingpong_timeout_sec;
     } else {
         cfg->pingpong_timeout_sec = WEBSOCKET_PINGPONG_TIMEOUT_SEC;
+    }
+
+    if (config->ping_interval_sec == 0) {
+        cfg->ping_interval_sec = WEBSOCKET_PING_INTERVAL_SEC;
+    } else {
+        cfg->ping_interval_sec = config->ping_interval_sec;
     }
 
     return ESP_OK;
@@ -612,7 +619,7 @@ static void esp_websocket_client_task(void *pv)
             case WEBSOCKET_STATE_CONNECTED:
                 if ((CLOSE_FRAME_SENT_BIT & xEventGroupGetBits(client->status_bits)) == 0) { // only send and check for PING
                                                                                                           // if closing hasn't been initiated
-                    if (_tick_get_ms() - client->ping_tick_ms > WEBSOCKET_PING_TIMEOUT_MS) {
+                    if (_tick_get_ms() - client->ping_tick_ms > client->config->ping_interval_sec*1000) {
                         client->ping_tick_ms = _tick_get_ms();
                         ESP_LOGD(TAG, "Sending PING...");
                         esp_transport_ws_send_raw(client->transport, WS_TRANSPORT_OPCODES_PING | WS_TRANSPORT_OPCODES_FIN, NULL, 0, client->config->network_timeout_ms);
