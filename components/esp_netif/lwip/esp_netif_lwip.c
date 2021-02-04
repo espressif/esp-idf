@@ -14,6 +14,7 @@
 
 #include <string.h>
 #include <lwip/ip_addr.h>
+#include <lwip/sockets.h>
 
 #include "esp_netif_lwip_internal.h"
 
@@ -247,6 +248,23 @@ uint32_t esp_ip4addr_aton(const char *addr)
     return ipaddr_addr(addr);
 }
 
+esp_err_t esp_netif_str_to_ip4(const char *src, esp_ip4_addr_t *dst)
+{
+    if (src == NULL || dst == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    int err = inet_pton(AF_INET, src, dst);
+    return err == 1 ? ESP_OK : ESP_FAIL;
+}
+
+esp_err_t esp_netif_str_to_ip6(const char *src, esp_ip6_addr_t *dst)
+{
+    if (src == NULL || dst == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    int err = inet_pton(AF_INET6, src, dst);
+    return err == 1 ? ESP_OK : ESP_FAIL;
+}
 
 esp_netif_iodriver_handle esp_netif_get_io_driver(esp_netif_t *esp_netif)
 {

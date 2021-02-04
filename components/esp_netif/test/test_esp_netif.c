@@ -286,3 +286,27 @@ TEST_CASE("esp_netif: get/set hostname", "[esp_netif]")
 
     esp_netif_destroy(esp_netif);
 }
+
+TEST_CASE("esp_netif: convert ip address from string", "[esp_netif]")
+{
+    const char *ipv4_src[] = {"127.168.1.1", "255.255.255.0", "305.500.721.801", "127.168.1..", "abc.def.***.ddd"};
+    esp_ip4_addr_t ipv4;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_str_to_ip4(ipv4_src[0], &ipv4));
+    TEST_ASSERT_EQUAL(ipv4.addr, ESP_IP4TOADDR(127, 168, 1, 1));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_str_to_ip4(ipv4_src[1], &ipv4));
+    TEST_ASSERT_EQUAL(ipv4.addr, ESP_IP4TOADDR(255, 255, 255, 0));
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, esp_netif_str_to_ip4(ipv4_src[2], &ipv4));
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, esp_netif_str_to_ip4(ipv4_src[3], &ipv4));
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, esp_netif_str_to_ip4(ipv4_src[4], &ipv4));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_netif_str_to_ip4(NULL, &ipv4));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_netif_str_to_ip4(ipv4_src[0], NULL));
+
+    const char *ipv6_src[] = {"127:168:6:8:188:65:1:0", "255:255:255:0:0:0:65:56", "305:500:721:888:777:458:555:666", "EFGH.127:168::55"};
+    esp_ip6_addr_t ipv6;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_str_to_ip6(ipv6_src[0], &ipv6));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_str_to_ip6(ipv6_src[1], &ipv6));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_str_to_ip6(ipv6_src[2], &ipv6));
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, esp_netif_str_to_ip6(ipv6_src[3], &ipv6));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_netif_str_to_ip6(NULL, &ipv6));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_netif_str_to_ip6(ipv6_src[0], NULL));
+}
