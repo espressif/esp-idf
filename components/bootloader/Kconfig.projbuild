@@ -615,6 +615,7 @@ menu "Security features"
         config SECURE_FLASH_ENCRYPTION_MODE_RELEASE
             bool "Release"
             select SECURE_ENABLE_SECURE_ROM_DL_MODE if SECURE_TARGET_HAS_SECURE_ROM_DL_MODE && !SECURE_DISABLE_ROM_DL_MODE # NOERROR
+            select PARTITION_TABLE_MD5 if !ESP32_COMPATIBLE_PRE_V3_1_BOOTLOADERS
 
     endchoice
 
