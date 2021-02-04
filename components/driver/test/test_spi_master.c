@@ -936,7 +936,7 @@ TEST_CASE("SPI master variable dummy test", "[spi]")
     TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &bus_cfg, 0));
     TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &dev_cfg, &spi));
 
-    spi_slave_interface_config_t slave_cfg =SPI_SLAVE_TEST_DEFAULT_CONFIG();
+    spi_slave_interface_config_t slave_cfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
     TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &bus_cfg, &slave_cfg, 0));
 
     spitest_gpio_output_sel(bus_cfg.mosi_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spid_out);
@@ -959,8 +959,100 @@ TEST_CASE("SPI master variable dummy test", "[spi]")
     master_free_device_bus(spi);
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+/**
+ * This test is to check when the first transaction of the HD master is to send data without receiving data via DMA,
+ * then if the master could receive data correctly.
+ *
+ * Because an old version ESP32 silicon issue, there is a workaround to enable and start the RX DMA in FD/HD mode in
+ * this condition (TX without RX). And if RX DMA is enabled and started in HD mode, because there is no correctly
+ * linked RX DMA descriptor, there will be an inlink_dscr_error interrupt emerging, which will influence the following
+ * RX transactions.
+ *
+ * This bug is fixed by triggering this workaround only in FD mode.
+ *
+ */
+TEST_CASE("SPI master hd dma TX without RX test", "[spi]")
+{
+    spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &bus_cfg, TEST_SPI_HOST));
+
+    spi_device_handle_t spi;
+    spi_device_interface_config_t dev_cfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    dev_cfg.flags = SPI_DEVICE_HALFDUPLEX;
+    dev_cfg.clock_speed_hz = 4*1000*1000;
+    TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &dev_cfg, &spi));
+
+    spi_slave_interface_config_t slave_cfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
+    TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &bus_cfg, &slave_cfg, TEST_SLAVE_HOST));
+
+    same_pin_func_sel(bus_cfg, dev_cfg, 0);
+
+    uint32_t buf_size = 32;
+    uint8_t *mst_send_buf = heap_caps_malloc(buf_size, MALLOC_CAP_DMA);
+    uint8_t *mst_recv_buf = heap_caps_calloc(buf_size, 1, MALLOC_CAP_DMA);
+    uint8_t *slv_send_buf = heap_caps_malloc(buf_size, MALLOC_CAP_DMA);
+    uint8_t *slv_recv_buf = heap_caps_calloc(buf_size, 1, MALLOC_CAP_DMA);
+
+    srand(199);
+    for (int i = 0; i < buf_size; i++) {
+        mst_send_buf[i] = rand();
+    }
+
+    //1. Master sends without receiving, no rx_buffer is set
+    spi_slave_transaction_t slave_trans = {
+        .rx_buffer = slv_recv_buf,
+        .length = buf_size * 8,
+    };
+    TEST_ESP_OK(spi_slave_queue_trans(TEST_SLAVE_HOST, &slave_trans, portMAX_DELAY));
+
+    spi_transaction_t master_trans = {
+        .tx_buffer = mst_send_buf,
+        .length = buf_size * 8,
+    };
+    TEST_ESP_OK(spi_device_transmit(spi, &master_trans));
+
+    spi_slave_transaction_t *ret_slave;
+    TEST_ESP_OK(spi_slave_get_trans_result(TEST_SLAVE_HOST, &ret_slave, portMAX_DELAY));
+
+    spitest_cmp_or_dump(mst_send_buf, slv_recv_buf, buf_size);
+
+    //2. Master receives data
+    for (int i = 100; i < 110; i++) {
+
+        srand(i);
+        for (int j = 0; j < buf_size; j++) {
+            slv_send_buf[j] = rand();
+        }
+        slave_trans = (spi_slave_transaction_t) {};
+        slave_trans.tx_buffer = slv_send_buf;
+        slave_trans.length = buf_size * 8;
+        TEST_ESP_OK(spi_slave_queue_trans(TEST_SLAVE_HOST, &slave_trans, portMAX_DELAY));
+
+        vTaskDelay(50);
+
+        master_trans = (spi_transaction_t) {};
+        master_trans.rx_buffer = mst_recv_buf;
+        master_trans.rxlength = buf_size * 8;
+        TEST_ESP_OK(spi_device_transmit(spi, &master_trans));
+
+        TEST_ESP_OK(spi_slave_get_trans_result(TEST_SLAVE_HOST, &ret_slave, portMAX_DELAY));
+
+        spitest_cmp_or_dump(slv_send_buf, mst_recv_buf, buf_size);
+    }
+
+    free(mst_send_buf);
+    free(mst_recv_buf);
+    free(slv_send_buf);
+    free(slv_recv_buf);
+    spi_slave_free(TEST_SLAVE_HOST);
+    master_free_device_bus(spi);
+}
+#endif  // #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+
 //There is only one GPSPI controller, so single-board test is disabled.
 #endif  //#if !DISABLED_FOR_TARGETS(ESP32C3)
+
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3)
 /********************************************************************************
