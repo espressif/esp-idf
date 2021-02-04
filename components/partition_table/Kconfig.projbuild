@@ -52,6 +52,7 @@ menu "Partition Table"
     config PARTITION_TABLE_MD5
         bool "Generate an MD5 checksum for the partition table"
         default y
+        depends on !ESP32_COMPATIBLE_PRE_V3_1_BOOTLOADERS
         help
             Generate an MD5 checksum for the partition table for protecting the
             integrity of the table. The generation should be turned off for legacy
