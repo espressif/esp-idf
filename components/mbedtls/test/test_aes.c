@@ -8,6 +8,7 @@
 #include "mbedtls/gcm.h"
 #include "unity.h"
 #include "sdkconfig.h"
+#include "esp_log.h"
 #include "esp_timer.h"
 #include "esp_heap_caps.h"
 #include "test_utils.h"
@@ -73,7 +74,7 @@ TEST_CASE("mbedtls CTR stream test", "[aes]")
         no matter how many bytes we encrypt each call
         */
     for (int bytes_to_process = 1; bytes_to_process < SZ; bytes_to_process++) {
-
+        ESP_LOGD("test", "bytes_to_process %d", bytes_to_process);
         memset(nonce, 0xEE, 16);
         memset(chipertext, 0x0, SZ);
         memset(decryptedtext, 0x0, SZ);
@@ -87,10 +88,14 @@ TEST_CASE("mbedtls CTR stream test", "[aes]")
             mbedtls_aes_crypt_ctr(&ctx, length, &offset, nonce,
                                   stream_block, plaintext + idx, chipertext + idx );
         }
+        ESP_LOG_BUFFER_HEXDUMP("expected", expected_cipher, SZ, ESP_LOG_DEBUG);
+        ESP_LOG_BUFFER_HEXDUMP("actual  ", chipertext, SZ, ESP_LOG_DEBUG);
+
         TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher, chipertext, SZ);
 
         // Decrypt
         memset(nonce, 0xEE, 16);
+        memset(decryptedtext, 0x22, SZ);
         offset = 0;
         for (int idx = 0; idx < SZ; idx = idx + bytes_to_process) {
             // Limit length of last call to avoid exceeding buffer size
@@ -98,6 +103,7 @@ TEST_CASE("mbedtls CTR stream test", "[aes]")
             mbedtls_aes_crypt_ctr(&ctx, length, &offset, nonce,
                                   stream_block, chipertext + idx, decryptedtext + idx );
         }
+        ESP_LOG_BUFFER_HEXDUMP("decrypted", decryptedtext, SZ, ESP_LOG_DEBUG);
         TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
     }
     free(plaintext);
@@ -273,6 +279,7 @@ TEST_CASE("mbedtls OFB stream test", "[aes]")
         */
 
     for (int bytes_to_process = 1; bytes_to_process < SZ; bytes_to_process++) {
+        ESP_LOGD("test", "bytes_to_process %d", bytes_to_process);
         // Encrypt
         memset(iv, 0xEE, 16);
         size_t offset = 0;
@@ -286,6 +293,7 @@ TEST_CASE("mbedtls OFB stream test", "[aes]")
 
         // Decrypt
         memset(iv, 0xEE, 16);
+        memset(decryptedtext, 0x22, SZ);
         offset = 0;
         for (int idx = 0; idx < SZ; idx = idx + bytes_to_process) {
             // Limit length of last call to avoid exceeding buffer size
