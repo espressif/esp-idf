@@ -34,6 +34,8 @@ typedef struct MD5Context {
     uint8_t in[64];
 } md5_context_t;
 
+#define ESP_ROM_MD5_DIGEST_LEN 16
+
 /**
  * @brief Initialize the MD5 context
  *
@@ -56,7 +58,7 @@ void esp_rom_md5_update(md5_context_t *context, const uint8_t *buf, uint32_t len
  * @param digest Where to store the 128-bit digest value
  * @param context MD5 context
  */
-void esp_rom_md5_final(uint8_t digest[16], md5_context_t *context);
+void esp_rom_md5_final(uint8_t digest[ESP_ROM_MD5_DIGEST_LEN], md5_context_t *context);
 
 #ifdef __cplusplus
 }

@@ -60,7 +60,7 @@ esp_err_t esp_partition_table_verify(const esp_partition_info_t *partition_table
             esp_rom_md5_update(&context, (unsigned char *) partition_table, num_parts * sizeof(esp_partition_info_t));
             esp_rom_md5_final(digest, &context);
 
-            unsigned char *md5sum = ((unsigned char *) part) + 16; // skip the 2B magic number and the 14B fillup bytes
+            unsigned char *md5sum = ((unsigned char *) part) + ESP_PARTITION_MD5_OFFSET;
 
             if (memcmp(md5sum, digest, sizeof(digest)) != 0) {
                 if (log_errors) {
