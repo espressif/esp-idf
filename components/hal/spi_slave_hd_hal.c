@@ -30,13 +30,15 @@
 #include "hal/gdma_ll.h"
 
 #define spi_dma_ll_rx_reset(dev, chan)                             gdma_ll_rx_reset_channel(&GDMA, chan)
-#define spi_dma_ll_tx_reset(dev, chan)                             gdma_ll_tx_reset_channel(&GDMA, chan);
-#define spi_dma_ll_rx_enable_burst_data(dev, chan, enable)         gdma_ll_rx_enable_data_burst(&GDMA, chan, enable);
-#define spi_dma_ll_tx_enable_burst_data(dev, chan, enable)         gdma_ll_tx_enable_data_burst(&GDMA, chan, enable);
-#define spi_dma_ll_rx_enable_burst_desc(dev, chan, enable)         gdma_ll_rx_enable_descriptor_burst(&GDMA, chan, enable);
-#define spi_dma_ll_tx_enable_burst_desc(dev, chan, enable)         gdma_ll_tx_enable_descriptor_burst(&GDMA, chan, enable);
-#define spi_dma_ll_enable_out_auto_wrback(dev, chan, enable)          gdma_ll_tx_enable_auto_write_back(&GDMA, chan, enable);
-#define spi_dma_ll_set_out_eof_generation(dev, chan, enable)          gdma_ll_tx_set_eof_mode(&GDMA, chan, enable);
+#define spi_dma_ll_tx_reset(dev, chan)                             gdma_ll_tx_reset_channel(&GDMA, chan)
+#define spi_dma_ll_rx_enable_burst_data(dev, chan, enable)         gdma_ll_rx_enable_data_burst(&GDMA, chan, enable)
+#define spi_dma_ll_tx_enable_burst_data(dev, chan, enable)         gdma_ll_tx_enable_data_burst(&GDMA, chan, enable)
+#define spi_dma_ll_rx_enable_burst_desc(dev, chan, enable)         gdma_ll_rx_enable_descriptor_burst(&GDMA, chan, enable)
+#define spi_dma_ll_tx_enable_burst_desc(dev, chan, enable)         gdma_ll_tx_enable_descriptor_burst(&GDMA, chan, enable)
+#define spi_dma_ll_enable_out_auto_wrback(dev, chan, enable)       gdma_ll_tx_enable_auto_write_back(&GDMA, chan, enable)
+#define spi_dma_ll_set_out_eof_generation(dev, chan, enable)       gdma_ll_tx_set_eof_mode(&GDMA, chan, enable)
+#define spi_dma_ll_get_out_eof_desc_addr(dev, chan)                gdma_ll_tx_get_eof_desc_addr(&GDMA, chan)
+#define spi_dma_ll_get_in_suc_eof_desc_addr(dev, chan)             gdma_ll_rx_get_success_eof_desc_addr(&GDMA, chan)
 #define spi_dma_ll_rx_start(dev, chan, addr) do {\
             gdma_ll_rx_set_desc_addr(&GDMA, chan, (uint32_t)addr);\
             gdma_ll_rx_start(&GDMA, chan);\
@@ -54,6 +56,7 @@ static void s_spi_slave_hd_hal_dma_init_config(const spi_slave_hd_hal_context_t 
     spi_dma_ll_rx_enable_burst_desc(hal->dma_in, hal->rx_dma_chan, 1);
     spi_dma_ll_tx_enable_burst_desc(hal->dma_out, hal->tx_dma_chan, 1);
     spi_dma_ll_enable_out_auto_wrback(hal->dma_out, hal->tx_dma_chan, 1);
+    spi_dma_ll_set_out_eof_generation(hal->dma_out, hal->tx_dma_chan, 1);
 }
 
 void spi_slave_hd_hal_init(spi_slave_hd_hal_context_t *hal, const spi_slave_hd_hal_config_t *hal_config)
@@ -68,6 +71,10 @@ void spi_slave_hd_hal_init(spi_slave_hd_hal_context_t *hal, const spi_slave_hd_h
     hal->append_mode = hal_config->append_mode;
     hal->rx_cur_desc = hal->dmadesc_rx;
     hal->tx_cur_desc = hal->dmadesc_tx;
+    STAILQ_NEXT(&hal->tx_dummy_head.desc, qe) = &hal->dmadesc_tx->desc;
+    hal->tx_dma_head = &hal->tx_dummy_head;
+    STAILQ_NEXT(&hal->rx_dummy_head.desc, qe) = &hal->dmadesc_rx->desc;
+    hal->rx_dma_head = &hal->rx_dummy_head;
 
     //Configure slave
     s_spi_slave_hd_hal_dma_init_config(hal);
@@ -261,27 +268,27 @@ int spi_slave_hd_hal_rxdma_seg_get_len(spi_slave_hd_hal_context_t *hal)
 
 bool spi_slave_hd_hal_get_tx_finished_trans(spi_slave_hd_hal_context_t *hal, void **out_trans)
 {
-    if (!hal->tx_dma_head || hal->tx_dma_head->desc.owner) {
+    if ((uint32_t)&hal->tx_dma_head->desc == spi_dma_ll_get_out_eof_desc_addr(hal->dma_out, hal->tx_dma_chan)) {
         return false;
     }
 
+    hal->tx_dma_head = (spi_slave_hd_hal_desc_append_t *)STAILQ_NEXT(&hal->tx_dma_head->desc, qe);
     *out_trans = hal->tx_dma_head->arg;
     hal->tx_recycled_desc_cnt++;
-    hal->tx_dma_head = (spi_slave_hd_hal_desc_append_t *)STAILQ_NEXT(&hal->tx_dma_head->desc, qe);
 
     return true;
 }
 
 bool spi_slave_hd_hal_get_rx_finished_trans(spi_slave_hd_hal_context_t *hal, void **out_trans, size_t *out_len)
 {
-    if (!hal->rx_dma_head || hal->rx_dma_head->desc.owner) {
+    if ((uint32_t)&hal->rx_dma_head->desc == spi_dma_ll_get_in_suc_eof_desc_addr(hal->dma_in, hal->rx_dma_chan)) {
         return false;
     }
 
+    hal->rx_dma_head = (spi_slave_hd_hal_desc_append_t *)STAILQ_NEXT(&hal->rx_dma_head->desc, qe);
     *out_trans = hal->rx_dma_head->arg;
     *out_len = hal->rx_dma_head->desc.length;
     hal->rx_recycled_desc_cnt++;
-    hal->rx_dma_head = (spi_slave_hd_hal_desc_append_t *)STAILQ_NEXT(&hal->rx_dma_head->desc, qe);
 
     return true;
 }
@@ -331,22 +338,20 @@ esp_err_t spi_slave_hd_hal_txdma_append(spi_slave_hd_hal_context_t *hal, uint8_t
 
     spi_slave_hd_hal_link_append_desc(hal->tx_cur_desc, data, len, false, arg);
 
-    if (!hal->tx_dma_head) {
-        //start a new link
-        hal->tx_dma_head = hal->tx_cur_desc;
+    if (!hal->tx_dma_started) {
+        hal->tx_dma_started = true;
+        //start a link
         hal->tx_dma_tail = hal->tx_cur_desc;
-
-        spi_dma_ll_tx_reset(hal->dma_out, hal->tx_dma_chan);
-        spi_ll_outfifo_empty_clr(hal->dev);
         spi_ll_clear_intr(hal->dev, SPI_LL_INTR_OUT_EOF);
-
+        spi_ll_dma_tx_fifo_reset(hal->dma_out);
+        spi_ll_outfifo_empty_clr(hal->dev);
+        spi_dma_ll_tx_reset(hal->dma_out, hal->tx_dma_chan);
         spi_ll_dma_tx_enable(hal->dev, 1);
-        spi_dma_ll_tx_start(hal->dma_out, hal->tx_dma_chan, &hal->tx_dma_head->desc);
+        spi_dma_ll_tx_start(hal->dma_out, hal->tx_dma_chan, &hal->tx_cur_desc->desc);
     } else {
-        //there is already a link
+        //there is already a consecutive link
         STAILQ_NEXT(&hal->tx_dma_tail->desc, qe) = &hal->tx_cur_desc->desc;
         hal->tx_dma_tail = hal->tx_cur_desc;
-
         spi_dma_ll_tx_restart(hal->dma_out, hal->tx_dma_chan);
     }
 
@@ -374,22 +379,20 @@ esp_err_t spi_slave_hd_hal_rxdma_append(spi_slave_hd_hal_context_t *hal, uint8_t
 
     spi_slave_hd_hal_link_append_desc(hal->rx_cur_desc, data, len, false, arg);
 
-    if (!hal->rx_dma_head) {
-        //start a new link
-        hal->rx_dma_head = hal->rx_cur_desc;
+    if (!hal->rx_dma_started) {
+        hal->rx_dma_started = true;
+        //start a link
         hal->rx_dma_tail = hal->rx_cur_desc;
-
-        spi_dma_ll_rx_reset(hal->dma_in, hal->rx_dma_chan);
-        spi_ll_infifo_full_clr(hal->dev);
         spi_ll_clear_intr(hal->dev, SPI_LL_INTR_CMD7);
-
+        spi_dma_ll_rx_reset(hal->dma_in, hal->rx_dma_chan);
+        spi_ll_dma_rx_fifo_reset(hal->dma_in);
+        spi_ll_infifo_full_clr(hal->dev);
         spi_ll_dma_rx_enable(hal->dev, 1);
-        spi_dma_ll_rx_start(hal->dma_in, hal->rx_dma_chan, &hal->rx_dma_head->desc);
+        spi_dma_ll_rx_start(hal->dma_in, hal->rx_dma_chan, &hal->rx_cur_desc->desc);
     } else {
-        //there is already a link
+        //there is already a consecutive link
         STAILQ_NEXT(&hal->rx_dma_tail->desc, qe) = &hal->rx_cur_desc->desc;
         hal->rx_dma_tail = hal->rx_cur_desc;
-
         spi_dma_ll_rx_restart(hal->dma_in, hal->rx_dma_chan);
     }
 
