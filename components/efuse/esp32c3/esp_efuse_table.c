@@ -17,7 +17,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 96cd6235ddc0947b4a296add3f942acb
+// md5_digest_table 69693bb96832f42833460571ebc1f865
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -392,8 +392,24 @@ static const esp_efuse_desc_t SPI_PAD_CONFIG_D7[] = {
     {EFUSE_BLK1, 108, 6}, 	 // SPI_PAD_configure D7,
 };
 
+static const esp_efuse_desc_t WAFER_VERSION[] = {
+    {EFUSE_BLK1, 114, 3}, 	 // WAFER version,
+};
+
+static const esp_efuse_desc_t PKG_VERSION[] = {
+    {EFUSE_BLK1, 117, 3}, 	 // Package version 0:ESP32C3,
+};
+
+static const esp_efuse_desc_t BLOCK1_VERSION[] = {
+    {EFUSE_BLK1, 120, 3}, 	 // BLOCK1 efuse version,
+};
+
+static const esp_efuse_desc_t OPTIONAL_UNIQUE_ID[] = {
+    {EFUSE_BLK2, 0, 128}, 	 // Optional unique 128-bit ID,
+};
+
 static const esp_efuse_desc_t BLOCK2_VERSION[] = {
-    {EFUSE_BLK2, 128, 3}, 	 // Version of Block2,
+    {EFUSE_BLK2, 128, 3}, 	 // Version of BLOCK2,
 };
 
 static const esp_efuse_desc_t TEMP_CALIB[] = {
@@ -932,8 +948,28 @@ const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_D7[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION[] = {
+    &WAFER_VERSION[0],    		// WAFER version
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[] = {
+    &PKG_VERSION[0],    		// Package version 0:ESP32C3
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_BLOCK1_VERSION[] = {
+    &BLOCK1_VERSION[0],    		// BLOCK1 efuse version
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_OPTIONAL_UNIQUE_ID[] = {
+    &OPTIONAL_UNIQUE_ID[0],    		// Optional unique 128-bit ID
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_BLOCK2_VERSION[] = {
-    &BLOCK2_VERSION[0],    		// Version of Block2
+    &BLOCK2_VERSION[0],    		// Version of BLOCK2
     NULL
 };
 
