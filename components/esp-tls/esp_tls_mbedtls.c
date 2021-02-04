@@ -625,6 +625,10 @@ esp_err_t esp_mbedtls_init_global_ca_store(void)
 
 esp_err_t esp_mbedtls_set_global_ca_store(const unsigned char *cacert_pem_buf, const unsigned int cacert_pem_bytes)
 {
+#ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_CA_CERT
+    ESP_LOGE(TAG, "Please disable dynamic freeing of ca cert in mbedtls (CONFIG_MBEDTLS_DYNAMIC_FREE_CA_CERT)\n in order to use the global ca_store");
+    return ESP_FAIL;
+#endif
     if (cacert_pem_buf == NULL) {
         ESP_LOGE(TAG, "cacert_pem_buf is null");
         return ESP_ERR_INVALID_ARG;
