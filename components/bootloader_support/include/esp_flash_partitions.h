@@ -42,6 +42,9 @@ extern "C" {
 
 #define PART_FLAG_ENCRYPTED (1<<0)
 
+/* The md5sum value is found this many bytes after the ESP_PARTITION_MAGIC_MD5 offset */
+#define ESP_PARTITION_MD5_OFFSET 16
+
 /* Pre-partition table fixed flash offsets */
 #define ESP_BOOTLOADER_DIGEST_OFFSET 0x0
 #define ESP_BOOTLOADER_OFFSET 0x1000 /* Offset of bootloader image. Has matching value in bootloader KConfig.projbuild file. */
