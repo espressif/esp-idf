@@ -102,6 +102,18 @@ menu "Ethernet"
             help
                 Number of DMA transmit buffers. Each buffer's size is ETH_DMA_BUFFER_SIZE.
                 Larger number of buffers could increase throughput somehow.
+
+        if ETH_DMA_RX_BUFFER_NUM > 15
+            config ETH_SOFT_FLOW_CONTROL
+                bool "Enable software flow control"
+                default n
+                help
+                    Ethernet MAC engine on ESP32 doesn't feature a flow control logic.
+                    The MAC driver can perform a software flow control if you enable this option.
+                    Note that, if the RX buffer number is small, enabling software flow control will
+                    cause obvious performance loss.
+        endif
+
     endif # ETH_USE_ESP32_EMAC
 
     menuconfig ETH_USE_SPI_ETHERNET
