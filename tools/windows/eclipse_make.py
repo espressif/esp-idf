@@ -20,7 +20,7 @@ def check_path(path):
         pass
     paths[path] = path  # cache as failed, replace with success if it works
     try:
-        winpath = subprocess.check_output(["cygpath", "-w", path]).decode().strip()
+        winpath = subprocess.check_output(['cygpath', '-w', path]).decode('utf-8').strip()
     except subprocess.CalledProcessError:
         return path  # something went wrong running cygpath, assume this is not a path!
     if not os.path.exists(winpath):
