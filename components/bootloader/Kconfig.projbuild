@@ -403,6 +403,7 @@ menu "Security features"
     config FLASH_ENCRYPTION_ENABLED
         bool "Enable flash encryption on boot (READ DOCS FIRST)"
         default N
+        select PARTITION_TABLE_MD5 if !ESP32_COMPATIBLE_PRE_V3_1_BOOTLOADERS
         help
             If this option is set, flash contents will be encrypted by the bootloader on first boot.
 
