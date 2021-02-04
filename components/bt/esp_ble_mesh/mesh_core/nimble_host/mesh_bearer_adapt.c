@@ -1866,6 +1866,7 @@ int bt_mesh_encrypt_le(const uint8_t key[16], const uint8_t plaintext[16],
     sys_memcpy_swap(tmp, key, 16);
 
     if (mbedtls_aes_setkey_enc(&ctx, tmp, 128) != 0) {
+        mbedtls_aes_free(&ctx);
         return -EINVAL;
     }
 
@@ -1873,8 +1874,11 @@ int bt_mesh_encrypt_le(const uint8_t key[16], const uint8_t plaintext[16],
 
     if (mbedtls_aes_crypt_ecb(&ctx, MBEDTLS_AES_ENCRYPT,
                               tmp, enc_data) != 0) {
+        mbedtls_aes_free(&ctx);
         return -EINVAL;
     }
+
+    mbedtls_aes_free(&ctx);
 #else /* CONFIG_MBEDTLS_HARDWARE_AES */
     struct tc_aes_key_sched_struct s = {0};
 
@@ -1909,13 +1913,17 @@ int bt_mesh_encrypt_be(const uint8_t key[16], const uint8_t plaintext[16],
     mbedtls_aes_init(&ctx);
 
     if (mbedtls_aes_setkey_enc(&ctx, key, 128) != 0) {
+        mbedtls_aes_free(&ctx);
         return -EINVAL;
     }
 
     if (mbedtls_aes_crypt_ecb(&ctx, MBEDTLS_AES_ENCRYPT,
                               plaintext, enc_data) != 0) {
+        mbedtls_aes_free(&ctx);
         return -EINVAL;
     }
+
+    mbedtls_aes_free(&ctx);
 #else /* CONFIG_MBEDTLS_HARDWARE_AES */
     struct tc_aes_key_sched_struct s = {0};
 
