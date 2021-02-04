@@ -73,13 +73,6 @@ config BT_CTRL_HW_CCA_EFF
         If other devices are sending packets in the air and the signal is strong,
         the packet hw to be sent this time is cancelled.
 
-config BT_CTRL_COEX_PARAMETERS_ENABLE
-    bool "Allow Bluetooth preemption in the use of RF to support coexistence with Wi-Fi"
-    default n
-    help
-        Use pre-determined parameter set to control the use of RF by Bluetooth,
-        so that Bluetooth can compete for RF with Wi-fi to support coexistence.
-
 choice BT_CTRL_CE_LENGTH_TYPE
     prompt "Connection event length determination method"
     help
@@ -166,12 +159,6 @@ config BT_CTRL_DFT_TX_POWER_LEVEL_EFF
     default 6 if BT_CTRL_DFT_TX_POWER_LEVEL_P6
     default 7 if BT_CTRL_DFT_TX_POWER_LEVEL_P9
     default 0
-
-config BT_CTRL_COEX_USE_HOOKS
-    bool "Communicate Bluetooth working status with Wi-Fi to support coexistence"
-    default n
-    help
-        Send notifications of Bluetooth working status to support coexistence with Wi-Fi.
 
 config BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_SUPP
     bool "BLE adv report flow control supported"
@@ -276,6 +263,31 @@ config BT_CTRL_MESH_DUPL_SCAN_CACHE_SIZE
     help
         Maximum number of adv packets which can be recorded in duplicate scan cache for BLE Mesh.
         When the maximum amount of device in the filter is reached, the cache will be refreshed.
+
+choice BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM
+    prompt "Coexistence: limit on MAX Tx/Rx time for coded-PHY connection"
+    default BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_DIS
+    depends on ESP32_WIFI_SW_COEXIST_ENABLE
+    help
+        When using PHY-Coded in BLE connection, limitation on max tx/rx time can be applied to
+        better avoid dramatic performance deterioration of Wi-Fi.
+
+    config BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_EN
+        bool "Force Enable"
+        help
+            Always enable the limitation on max tx/rx time for Coded-PHY connection
+
+    config BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_DIS
+        bool "Force Disable"
+        help
+            Disable the limitation on max tx/rx time for Coded-PHY connection
+endchoice
+
+config BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_EFF
+    int
+    default 0 if (!ESP32_WIFI_SW_COEXIST_ENABLE)
+    default 1 if BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_EN
+    default 0 if BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_DIS
 
 menu "MODEM SLEEP Options"
     visible if BT_ENABLED
