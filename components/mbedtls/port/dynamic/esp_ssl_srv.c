@@ -112,7 +112,7 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add)
             } else {
                 CHECK_OK(esp_mbedtls_free_rx_buffer(ssl));
 
-#ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_CONFIG_DATA
+#ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_CA_CERT
                 esp_mbedtls_free_cacert(ssl);
 #endif
             }
