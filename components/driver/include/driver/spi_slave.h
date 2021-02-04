@@ -43,7 +43,12 @@ typedef struct {
     int spics_io_num;               ///< CS GPIO pin for this device
     uint32_t flags;                 ///< Bitwise OR of SPI_SLAVE_* flags
     int queue_size;                 ///< Transaction queue size. This sets how many transactions can be 'in the air' (queued using spi_slave_queue_trans but not yet finished using spi_slave_get_trans_result) at the same time
-    uint8_t mode;                   ///< SPI mode (0-3)
+    uint8_t mode;                   /**< SPI mode, representing a pair of (CPOL, CPHA) configuration:
+                                         - 0: (0, 0)
+                                         - 1: (0, 1)
+                                         - 2: (1, 0)
+                                         - 3: (1, 1)
+                                     */
     slave_transaction_cb_t post_setup_cb;  /**< Callback called after the SPI registers are loaded with new data.
                                              *
                                              *  This callback is called within interrupt
