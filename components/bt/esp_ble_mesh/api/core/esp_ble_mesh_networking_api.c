@@ -528,6 +528,76 @@ const uint8_t *esp_ble_mesh_provisioner_get_local_net_key(uint16_t net_idx)
 {
     return bt_mesh_provisioner_local_net_key_get(net_idx);
 }
+
+#if CONFIG_BLE_MESH_PROVISIONER_RECV_HB
+esp_err_t esp_ble_mesh_provisioner_recv_heartbeat(bool enable)
+{
+    btc_ble_mesh_prov_args_t arg = {0};
+    btc_msg_t msg = {0};
+
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_PROV;
+    msg.act = BTC_BLE_MESH_ACT_PROVISIONER_ENABLE_HEARTBEAT_RECV;
+
+    arg.enable_heartbeat_recv.enable = enable;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_mesh_provisioner_set_heartbeat_filter_type(uint8_t type)
+{
+    btc_ble_mesh_prov_args_t arg = {0};
+    btc_msg_t msg = {0};
+
+    if (type > ESP_BLE_MESH_HEARTBEAT_FILTER_REJECTLIST) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_PROV;
+    msg.act = BTC_BLE_MESH_ACT_PROVISIONER_SET_HEARTBEAT_FILTER_TYPE;
+
+    arg.set_heartbeat_filter_type.type = type;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_mesh_provisioner_set_heartbeat_filter_info(uint8_t op, esp_ble_mesh_heartbeat_filter_info_t *info)
+{
+    btc_ble_mesh_prov_args_t arg = {0};
+    btc_msg_t msg = {0};
+
+    if (op > ESP_BLE_MESH_HEARTBEAT_FILTER_REMOVE || info == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (!ESP_BLE_MESH_ADDR_IS_UNICAST(info->hb_src) &&
+        !ESP_BLE_MESH_ADDR_IS_UNICAST(info->hb_dst) &&
+        !ESP_BLE_MESH_ADDR_IS_GROUP(info->hb_dst)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_PROV;
+    msg.act = BTC_BLE_MESH_ACT_PROVISIONER_SET_HEARTBEAT_FILTER_INFO;
+
+    arg.set_heartbeat_filter_info.op = op;
+    arg.set_heartbeat_filter_info.hb_src = info->hb_src;
+    arg.set_heartbeat_filter_info.hb_dst = info->hb_dst;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+#endif /* CONFIG_BLE_MESH_PROVISIONER_RECV_HB */
+
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 
 #if (CONFIG_BLE_MESH_FAST_PROV)
