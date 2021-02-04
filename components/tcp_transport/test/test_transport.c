@@ -190,7 +190,7 @@ static void transport_connection_timeout_test(esp_transport_handle_t transport_u
     EventBits_t bits = xEventGroupWaitBits(params.tcp_connect_done, TCP_CONNECT_DONE, true, true, max_wait);
     TickType_t end = xTaskGetTickCount();
 
-    TEST_ASSERT_EQUAL(TCP_CONNECT_DONE, TCP_CONNECT_DONE&bits);          // Connection has finished
+    TEST_ASSERT_EQUAL(TCP_CONNECT_DONE, TCP_CONNECT_DONE & bits);          // Connection has finished
     TEST_ASSERT_EQUAL(-1, params.ret);   // Connection failed with -1
 
     // Test connection attempt took expected timeout value
@@ -316,24 +316,21 @@ static void socket_operation_test(esp_transport_handle_t transport_under_test,
     test_utils_task_delete(tcp_connect_task_handle);
 }
 
-static void tcp_transport_keepalive_test(esp_transport_handle_t transport_under_test)
+static void tcp_transport_keepalive_test(esp_transport_handle_t transport_under_test, esp_transport_keep_alive_t *config)
 {
-    static const int KEEP_ALIVE_INTERVAL = 1;
-    static const int KEEP_ALIVE_IDLE = 2;
-    static const int KEEP_ALIVE_COUNT = 3;
-
-    static const struct expected_sock_option expected_opts[] = {
+    static struct expected_sock_option expected_opts[4] = {
             { .level = SOL_SOCKET, .optname = SO_KEEPALIVE, .optval = 1, .opttype = SOCK_OPT_TYPE_BOOL },
-            { .level = IPPROTO_TCP, .optname = TCP_KEEPIDLE, .optval = KEEP_ALIVE_IDLE, .opttype = SOCK_OPT_TYPE_INT },
-            { .level = IPPROTO_TCP, .optname = TCP_KEEPINTVL, .optval = KEEP_ALIVE_INTERVAL, .opttype = SOCK_OPT_TYPE_INT },
-            { .level = IPPROTO_TCP, .optname = TCP_KEEPCNT, .optval = KEEP_ALIVE_COUNT, .opttype = SOCK_OPT_TYPE_INT },
+            { .level = IPPROTO_TCP },
+            { .level = IPPROTO_TCP },
+            { .level = IPPROTO_TCP }
     };
 
-    esp_transport_keep_alive_t  keep_alive_cfg = { .keep_alive_interval = KEEP_ALIVE_INTERVAL,
-                                                   .keep_alive_idle = KEEP_ALIVE_IDLE,
-                                                   .keep_alive_enable = true,
-                                                   .keep_alive_count = KEEP_ALIVE_COUNT };
-    esp_transport_tcp_set_keep_alive(transport_under_test, &keep_alive_cfg);
+    expected_opts[1].optname = TCP_KEEPIDLE;
+    expected_opts[1].optval = config->keep_alive_idle;
+    expected_opts[2].optname = TCP_KEEPINTVL;
+    expected_opts[2].optval = config->keep_alive_interval;
+    expected_opts[3].optname = TCP_KEEPCNT;
+    expected_opts[3].optval = config->keep_alive_count;
 
     socket_operation_test(transport_under_test, expected_opts, sizeof(expected_opts)/sizeof(struct expected_sock_option));
 }
@@ -346,7 +343,14 @@ TEST_CASE("tcp_transport: Keep alive test", "[tcp_transport]")
     esp_transport_list_add(transport_list, tcp, "tcp");
 
     // Perform the test
-    tcp_transport_keepalive_test(tcp);
+    esp_transport_keep_alive_t  keep_alive_cfg = {
+            .keep_alive_interval = 5,
+            .keep_alive_idle = 4,
+            .keep_alive_enable = true,
+            .keep_alive_count = 3 };
+    esp_transport_tcp_set_keep_alive(tcp, &keep_alive_cfg);
+
+    tcp_transport_keepalive_test(tcp, &keep_alive_cfg);
 
     // Cleanup
     esp_transport_close(tcp);
@@ -363,7 +367,14 @@ TEST_CASE("ssl_transport: Keep alive test", "[tcp_transport]")
     esp_transport_ssl_enable_global_ca_store(ssl);
 
     // Perform the test
-    tcp_transport_keepalive_test(ssl);
+    esp_transport_keep_alive_t  keep_alive_cfg = {
+            .keep_alive_interval = 2,
+            .keep_alive_idle = 3,
+            .keep_alive_enable = true,
+            .keep_alive_count = 4 };
+    esp_transport_ssl_set_keep_alive(ssl, &keep_alive_cfg);
+
+    tcp_transport_keepalive_test(ssl, &keep_alive_cfg);
 
     // Cleanup
     esp_transport_close(ssl);
@@ -382,9 +393,40 @@ TEST_CASE("ws_transport: Keep alive test", "[tcp_transport]")
     esp_transport_list_add(transport_list, ws, "wss");
 
     // Perform the test
-    tcp_transport_keepalive_test(ws);
+    esp_transport_keep_alive_t  keep_alive_cfg = {
+            .keep_alive_interval = 1,
+            .keep_alive_idle = 2,
+            .keep_alive_enable = true,
+            .keep_alive_count = 3 };
+    esp_transport_tcp_set_keep_alive(ssl, &keep_alive_cfg);
+
+    tcp_transport_keepalive_test(ws, &keep_alive_cfg);
 
     // Cleanup
     esp_transport_close(ssl);
     esp_transport_list_destroy(transport_list);
+}
+
+// Note: This functionality is tested and kept only for compatibility reasons with IDF <= 4.x
+//       It is strongly encouraged to use transport within lists only
+TEST_CASE("ssl_transport: Check that parameters (keepalive) are set independently on the list", "[tcp_transport]")
+{
+    // Init the transport under test
+    esp_transport_handle_t ssl = esp_transport_ssl_init();
+    esp_tls_init_global_ca_store();
+    esp_transport_ssl_enable_global_ca_store(ssl);
+
+    // Perform the test
+    esp_transport_keep_alive_t  keep_alive_cfg = {
+            .keep_alive_interval = 2,
+            .keep_alive_idle = 4,
+            .keep_alive_enable = true,
+            .keep_alive_count = 3 };
+    esp_transport_ssl_set_keep_alive(ssl, &keep_alive_cfg);
+
+    tcp_transport_keepalive_test(ssl, &keep_alive_cfg);
+
+    // Cleanup
+    esp_transport_close(ssl);
+    esp_transport_destroy(ssl);
 }
