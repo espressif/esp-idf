@@ -142,7 +142,7 @@ build_examples_make:
 # same as above, but for CMake
 .build_examples_cmake: &build_examples_cmake
   extends: .build_template
-  parallel: 8
+  parallel: 9
   artifacts:
     when: always
     paths:
