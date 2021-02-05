@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Intel Corporation
+ * Additional Copyright (c) 2020 Espressif Systems (Shanghai) PTE LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -69,6 +70,7 @@ int settings_core_erase(void);
 
 int bt_mesh_settings_init(void);
 int bt_mesh_settings_deinit(bool erase);
+void bt_mesh_settings_reset(bool erase);
 
 #ifdef __cplusplus
 }
