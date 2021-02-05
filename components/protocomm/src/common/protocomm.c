@@ -378,7 +378,7 @@ static int protocomm_version_handler(uint32_t session_id,
     /* Output is a non null terminated string with length specified */
     *outlen = strlen(pc->ver);
     *outbuf = malloc(*outlen);
-    if (outbuf == NULL) {
+    if (*outbuf == NULL) {
         ESP_LOGE(TAG, "Failed to allocate memory for version response");
         return ESP_ERR_NO_MEM;
     }
