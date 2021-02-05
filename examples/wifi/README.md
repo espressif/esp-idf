@@ -1,48 +1,24 @@
 # Wi-Fi Examples
 
-Including some examples about wifi.
+This directory contains a range of examples ESP-IDF projects. These are intended to demonstrate the Wi-Fi functionality, and to provide code that you can copy and adapt into your own projects.
 
-## wpa2_enterprise
+# Example Layout
 
-Show how ESP32 connects to AP with wpa2 enterprise encryption.
+The examples are grouped into sub-directories by category. Each category directory contains one or more example projects:
 
-See the [README.md](./wpa2_enterprise/README.md) file in the project [wpa2_enterprise](./wpa2_enterprise/).
-
-## power_save
-
-Show how to use power save mode of wifi.
-
-See the [README.md](./power_save/README.md) file in the project [power_save](./power_save/).
-
-## wps(Wifi Protected Setup)
-
-shows how to use wps(Wifi Protected Setup).
-
-See the [README.md](./wps/README.md) file in the project [wps](./wps/).
-
-## espnow
-
-shows how to use espnow.
-
-See the [README.md](./espnow/README.md) file in the project [espnow](./espnow/).
-
-## fast_scan
-
-Show how to use fast scan while connecting to an AP.
-
-See the [README.md](./fast_scan/README.md) file in the project [fast_scan](./fast_scan/).
-
-## scan
-
-Show how to scan for all the available APs.
-
-See the [README.md](./scan/README.md) file in the project [scan](./scan/).
-
-## FTM(Fine Timing Measurement)
-
-Shows how to use FTM(Fine Timing Measurement).
-
-See the [README.md](./ftm/README.md) file in the project [ftm](./ftm/).
+* `espnow` is the connectionless Wi-Fi communication protocol.
+* `fast_scan` shows how to use fast scan while connecting to an AP..
+* `ftm` is a how to use FTM (Fine Timing Measurement) feature to calculate distance between devices.
+* `getting_started` contains the basic examples for using Wi-Fi in STA and AP mode.
+* `iperf` shows the common performance measurements for two ESP running this example.
+* `power_save` contains a how to use power save mode of Wi-Fi.
+* `roaming` contains a example using 802.11k and 802.11v APIs.
+* `scan` shows how to scan for all the available APs.
+* `simple_sniffer` demonstrates basic usage of WiFi sniffer mode by saving packets into SD card with pcap format.
+* `smart_config` shows how ESP connects to a target AP with ESPTOUCH.
+* `wifi_easy_connect` shows how to configure an ESP device as an enrollee using Device Provisioning Protocol (DPP).
+* `wpa2_enterprise` connects to AP with WPA2 enterprise encryption.
+* `wps` contains a how to use the Wi-Fi Protected Setup protocol.
 
 # More
 
