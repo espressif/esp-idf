@@ -114,9 +114,10 @@
 
 .. only:: esp32c3
 
-    .. note::
+    .. toctree::
+        :maxdepth: 1
 
-        有关 ESP32-C3 的硬件指南尚未发布。
+        ESP32-C3-DevKitM-1 <../hw-reference/esp32c3/user-guide-devkitm-1>
 
 .. _get-started-step-by-step:
 
