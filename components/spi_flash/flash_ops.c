@@ -507,10 +507,70 @@ out:
 }
 #endif // CONFIG_SPI_FLASH_USE_LEGACY_IMPL
 
+#if !CONFIG_SPI_FLASH_USE_LEGACY_IMPL
+extern void spi_common_set_dummy_output(esp_rom_spiflash_read_mode_t mode);
+extern void spi_dummy_len_fix(uint8_t spi, uint8_t freqdiv);
+static void IRAM_ATTR flash_rom_init(void)
+{
+    uint32_t freqdiv = 0;
+    esp_rom_spiflash_read_mode_t read_mode;
+
+#if CONFIG_IDF_TARGET_ESP32
+    uint32_t dummy_bit = 0;
+#if CONFIG_ESPTOOLPY_FLASHFREQ_80M
+    dummy_bit = ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_80M;
+#elif CONFIG_ESPTOOLPY_FLASHFREQ_40M
+    dummy_bit = ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_40M;
+#elif CONFIG_ESPTOOLPY_FLASHFREQ_26M
+    dummy_bit = ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_26M;
+#elif CONFIG_ESPTOOLPY_FLASHFREQ_20M
+    dummy_bit = ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_20M;
+#endif
+#endif//CONFIG_IDF_TARGET_ESP32
+
+#if CONFIG_ESPTOOLPY_FLASHFREQ_80M
+    freqdiv = 1;
+#elif CONFIG_ESPTOOLPY_FLASHFREQ_40M
+    freqdiv = 2;
+#elif CONFIG_ESPTOOLPY_FLASHFREQ_26M
+    freqdiv = 3;
+#elif CONFIG_ESPTOOLPY_FLASHFREQ_20M
+    freqdiv = 4;
+#endif
+
+#if CONFIG_ESPTOOLPY_FLASHMODE_QIO
+    read_mode = ESP_ROM_SPIFLASH_QIO_MODE;
+#elif CONFIG_ESPTOOLPY_FLASHMODE_QOUT
+    read_mode = ESP_ROM_SPIFLASH_QOUT_MODE;
+#elif CONFIG_ESPTOOLPY_FLASHMODE_DIO
+    read_mode = ESP_ROM_SPIFLASH_DIO_MODE;
+#elif CONFIG_ESPTOOLPY_FLASHMODE_DOUT
+    read_mode = ESP_ROM_SPIFLASH_DOUT_MODE;
+#endif
+
+#if CONFIG_IDF_TARGET_ESP32
+    g_rom_spiflash_dummy_len_plus[1] = dummy_bit;
+#else
+    spi_dummy_len_fix(1, freqdiv);
+#endif //CONFIG_IDF_TARGET_ESP32
+
+#if !CONFIG_IDF_TARGET_ESP32S2 && !CONFIG_IDF_TARGET_ESP32
+    spi_common_set_dummy_output(read_mode);
+#endif //!CONFIG_IDF_TARGET_ESP32S2
+    esp_rom_spiflash_config_readmode(read_mode);
+    esp_rom_spiflash_config_clk(freqdiv, 1);
+}
+#else
+static void IRAM_ATTR flash_rom_init(void)
+{
+    return;
+}
+#endif // !CONFIG_SPI_FLASH_USE_LEGACY_IMPL
 
 esp_err_t IRAM_ATTR spi_flash_write_encrypted(size_t dest_addr, const void *src, size_t size)
 {
     esp_err_t err = ESP_OK;
+    flash_rom_init();
     const spi_flash_guard_funcs_t *guard =  spi_flash_guard_get();
     CHECK_WRITE_ADDRESS(dest_addr, size);
     if ((dest_addr % 16) != 0) {
@@ -757,6 +817,7 @@ out:
 
 esp_err_t IRAM_ATTR spi_flash_read_encrypted(size_t src, void *dstv, size_t size)
 {
+    flash_rom_init();
     if (src + size > g_rom_flashchip.chip_size) {
         return ESP_ERR_INVALID_SIZE;
     }
