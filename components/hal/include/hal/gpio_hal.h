@@ -335,7 +335,7 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, gpio_num_t gpio_num);
   *
   * @param hal Context of the HAL layer
   * */
-#define gpio_hal_force_unhold_all(hal) gpio_ll_force_unhold_all((hal)->dev)
+#define gpio_hal_force_unhold_all() gpio_ll_force_unhold_all()
 #endif
 
 #if SOC_GPIO_SUPPORT_SLP_SWITCH
@@ -435,8 +435,37 @@ void gpio_hal_sleep_pupd_config_apply(gpio_hal_context_t *hal, gpio_num_t gpio_n
  * @param  gpio_num GPIO number.
  */
 void gpio_hal_sleep_pupd_config_unapply(gpio_hal_context_t *hal, gpio_num_t gpio_num);
-#endif
-#endif
+#endif // CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
+#endif //SOC_GPIO_SUPPORT_SLP_SWITCH
+
+#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+
+/**
+ * @brief Enable GPIO deep-sleep wake-up function.
+ *
+ * @param hal Context of the HAL layer
+ * @param gpio_num GPIO number.
+ * @param intr_type GPIO wake-up type. Only GPIO_INTR_LOW_LEVEL or GPIO_INTR_HIGH_LEVEL can be used.
+ */
+#define gpio_hal_deepsleep_wakeup_enable(hal, gpio_num, intr_type) gpio_ll_deepsleep_wakeup_enable((hal)->dev, gpio_num, intr_type)
+
+/**
+ * @brief Disable GPIO deep-sleep wake-up function.
+ *
+ * @param hal Context of the HAL layer
+ * @param gpio_num GPIO number
+ */
+#define gpio_hal_deepsleep_wakeup_disable(hal, gpio_num) gpio_ll_deepsleep_wakeup_disable((hal)->dev, gpio_num)
+
+/**
+ * @brief Judge if the gpio is valid for waking up chip from deep-sleep
+ *
+ * @param gpio_num GPIO number
+ */
+#define gpio_hal_is_valid_deepsleep_wakeup_gpio(gpio_num) (gpio_num <= GPIO_NUM_5)
+
+#endif //SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+
 #ifdef __cplusplus
 }
 #endif
