@@ -55,6 +55,26 @@ int esp_create_wolfssl_handle(const char *hostname, size_t hostlen, const void *
         goto exit;
     }
 
+    if (!cfg->skip_common_name) {
+        char *use_host = NULL;
+        if (cfg->common_name != NULL) {
+            use_host = strdup(cfg->common_name);
+        } else {
+            use_host = strndup(hostname, hostlen);
+        }
+        if (use_host == NULL) {
+            return ESP_ERR_NO_MEM;
+        }
+        /* Hostname set here should match CN in server certificate */
+        if ((ret = (wolfSSL_check_domain_name( (WOLFSSL *)tls->priv_ssl, use_host))) != WOLFSSL_SUCCESS) {
+            ESP_LOGE(TAG, "wolfSSL_check_domain_name returned -0x%x", -ret);
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_WOLFSSL, -ret);
+            free(use_host);
+            return ESP_FAIL;
+        }
+        free(use_host);
+    }
+
 #ifdef HAVE_ALPN
     if (cfg->alpn_protos) {
         char **alpn_list = (char **)cfg->alpn_protos;
@@ -95,16 +115,6 @@ int esp_create_wolfssl_handle(const char *hostname, size_t hostlen, const void *
         ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_WOLFSSL, -ret);
         goto exit;
     }
-
-#ifdef HAVE_SNI
-    /* Hostname set here should match CN in server certificate */
-    char *use_host = strndup(hostname, hostlen);
-    if (!use_host) {
-        goto exit;
-    }
-    wolfSSL_set_tlsext_host_name( (WOLFSSL *)tls->priv_ssl, use_host);
-    free(use_host);
-#endif
 
     wolfSSL_set_fd((WOLFSSL *)tls->priv_ssl, tls->sockfd);
     return 0;
