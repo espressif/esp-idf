@@ -89,6 +89,17 @@ check_wifi_lib_md5:
     - IDF_TARGET=esp32 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
     - IDF_TARGET=esp32s2 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
 
+check_fuzzer_compilation:
+   extends: .pre_check_base_template
+   image: $CI_DOCKER_REGISTRY/afl-fuzzer-test
+   script:
+     - cd ${IDF_PATH}/components/lwip/test_afl_host
+     - make MODE=dhcp_server
+     - make MODE=dhcp_client
+     - make MODE=dns
+     - cd ${IDF_PATH}/components/mdns/test_afl_fuzz_host
+     - make
+
 check_public_headers:
   extends:
     - .pre_check_base_template

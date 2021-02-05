@@ -52,6 +52,7 @@
 
 #define portMAX_DELAY               0xFFFFFFFF
 #define portTICK_PERIOD_MS          1
+#define ESP_LOGW(a,b)
 #define ESP_LOGD(a,b)
 #define ESP_LOGE(a,b,c)
 #define ESP_LOGV(a,b,c,d)
@@ -60,6 +61,8 @@
 #define __ESP_SYSTEM_H__
 #define INC_TASK_H
 
+#define pdMS_TO_TICKS(a) a
+#define portTICK_RATE_MS 10
 #define xSemaphoreTake(s,d)
 #define xTaskDelete(a)
 #define vTaskDelete(a)             free(a)
