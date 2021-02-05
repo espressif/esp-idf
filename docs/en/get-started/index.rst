@@ -114,10 +114,11 @@ If you have one of {IDF_TARGET_NAME} development boards listed below, you can cl
 
 .. only:: esp32c3
 
-    .. note::
+    .. toctree::
+        :maxdepth: 1
 
-        No hardware guides for ESP32-C3 published yet.
-
+        ESP32-C3-DevKitM-1 <../hw-reference/esp32c3/user-guide-devkitm-1>
+        
 .. _get-started-step-by-step:
 
 Installation Step by Step
