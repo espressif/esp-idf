@@ -41,14 +41,20 @@ extern "C" {
 #define PERFORMANCE_CON(a, b) _PERFORMANCE_CON(a, b)
 #define _PERFORMANCE_CON(a, b) a##b
 
+#if !CONFIG_UNITY_IGNORE_PERFORMANCE_TESTS
+#define _TEST_PERFORMANCE_ASSERT TEST_ASSERT
+#else
+#define _TEST_PERFORMANCE_ASSERT(ARG) printf("Ignoring performance test [%s]\n", PERFORMANCE_STR(ARG))
+#endif
+
 #define TEST_PERFORMANCE_LESS_THAN(name, value_fmt, value)  do { \
     printf("[Performance][" PERFORMANCE_STR(name) "]: "value_fmt"\n", value); \
-    TEST_ASSERT(value < PERFORMANCE_CON(IDF_PERFORMANCE_MAX_, name)); \
+    _TEST_PERFORMANCE_ASSERT(value < PERFORMANCE_CON(IDF_PERFORMANCE_MAX_, name)); \
 } while(0)
 
 #define TEST_PERFORMANCE_GREATER_THAN(name, value_fmt, value)  do { \
     printf("[Performance][" PERFORMANCE_STR(name) "]: "value_fmt"\n", value); \
-    TEST_ASSERT(value > PERFORMANCE_CON(IDF_PERFORMANCE_MIN_, name)); \
+    _TEST_PERFORMANCE_ASSERT(value > PERFORMANCE_CON(IDF_PERFORMANCE_MIN_, name)); \
 } while(0)
 
 /* Macros to be used when performance is calculated using the cache compensated timer

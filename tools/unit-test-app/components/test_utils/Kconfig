@@ -24,4 +24,13 @@ menu "IDF unit test"
         int "Critical leak for UT which use LWIP component"
         default 4095
 
+    config UNITY_IGNORE_PERFORMANCE_TESTS
+        bool "Ignore performance test results"
+        default y if IDF_ENV_FPGA
+        default n
+        help
+            If set, performance tests that use TEST_PERFORMANCE_LESS_THAN and
+            TEST_PERFORMANCE_GREATER_THAN macros will log the performance value
+            but not fail the test if the threshold is not met.
+
 endmenu
