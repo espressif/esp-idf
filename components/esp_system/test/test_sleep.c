@@ -18,6 +18,7 @@
 #include "test_utils.h"
 #include "sdkconfig.h"
 #include "esp_rom_sys.h"
+#include "esp_timer.h"
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3, ESP32S3)
 
@@ -30,6 +31,9 @@
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/clk.h"
 #include "esp32s3/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/clk.h"
+#include "esp32c3/rom/rtc.h"
 #endif
 
 #define ESP_EXT0_WAKEUP_LEVEL_LOW 0
@@ -527,3 +531,28 @@ static void check_time_deepsleep(void)
 TEST_CASE_MULTIPLE_STAGES("check a time after wakeup from deep sleep", "[deepsleep][reset=DEEPSLEEP_RESET]", trigger_deepsleep, check_time_deepsleep);
 
 #endif // #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3, ESP32S3)
+
+#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+static void gpio_deepsleep_wakeup_config(void)
+{
+    gpio_config_t io_conf = {
+        .mode = GPIO_MODE_INPUT,
+        .pin_bit_mask = ((1ULL << 2) | (1ULL << 4))
+    };
+    ESP_ERROR_CHECK(gpio_config(&io_conf));
+}
+
+TEST_CASE("wake up using GPIO (2 or 4 high)", "[deepsleep][ignore]")
+{
+    gpio_deepsleep_wakeup_config();
+    ESP_ERROR_CHECK(esp_deep_sleep_enable_gpio_wakeup(((1ULL << 2) | (1ULL << 4)) , ESP_GPIO_WAKEUP_GPIO_HIGH));
+    esp_deep_sleep_start();
+}
+
+TEST_CASE("wake up using GPIO (2 or 4 low)", "[deepsleep][ignore]")
+{
+    gpio_deepsleep_wakeup_config();
+    ESP_ERROR_CHECK(esp_deep_sleep_enable_gpio_wakeup(((1ULL << 2) | (1ULL << 4)) , ESP_GPIO_WAKEUP_GPIO_LOW));
+    esp_deep_sleep_start();
+}
+#endif // SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
