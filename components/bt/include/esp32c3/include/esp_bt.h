@@ -26,7 +26,7 @@ extern "C" {
 #endif
 
 #define ESP_BT_CTRL_CONFIG_MAGIC_VAL    0x5A5AA5A5
-#define ESP_BT_CTRL_CONFIG_VERSION      0x02004260
+#define ESP_BT_CTRL_CONFIG_VERSION      0x02101290
 
 #define ESP_BT_HCI_TL_MAGIC_VALUE   0xfadebead
 #define ESP_BT_HCI_TL_VERSION       0x00010000
@@ -85,22 +85,17 @@ enum {
     ESP_BT_ANT_IDX_1 = 1,               /*!< anntena NO 1 */
 };
 
+/**
+ * @brief Maximum Tx/Rx time limit on Coded-PHY connection
+ */
+enum {
+    ESP_BT_COEX_PHY_CODED_TX_RX_TIME_LIMIT_FORCE_DISABLE = 0,    /*!< Disable the limit */
+    ESP_BT_COEX_PHY_CODED_TX_RX_TIME_LIMIT_FORCE_ENABLE,         /*!< Always Enable the limit */
+};
+
 #ifdef CONFIG_BT_ENABLED
 
-#ifdef CONFIG_BT_CTRL_COEX_PARAMETERS_ENABLE
-#define BT_CTRL_COEX_PARAMETERS_ENABLE true
-#else
-#define BT_CTRL_COEX_PARAMETERS_ENABLE false
-#endif
-
-#ifdef CONFIG_BT_CTRL_COEX_USE_HOOKS
-#define BT_CTRL_COEX_USE_HOOKS true
-#else
-#define BT_CTRL_COEX_USE_HOOKS false
-#endif
-
 #define BT_CTRL_BLE_MAX_ACT_LIMIT           10  //Maximum BLE activity limitation
-
 
 #ifdef CONFIG_BT_CTRL_SCAN_DUPL_TYPE
 #define SCAN_DUPLICATE_TYPE_VALUE  CONFIG_BT_CTRL_SCAN_DUPL_TYPE
@@ -151,9 +146,7 @@ enum {
     .ble_st_acl_tx_buf_nb = CONFIG_BT_CTRL_BLE_STATIC_ACL_TX_BUF_NB,       \
     .ble_hw_cca_check = CONFIG_BT_CTRL_HW_CCA_EFF,                         \
     .ble_adv_dup_filt_max = CONFIG_BT_CTRL_ADV_DUP_FILT_MAX,               \
-    .coex_param_en = BT_CTRL_COEX_PARAMETERS_ENABLE,                       \
     .ce_len_type = CONFIG_BT_CTRL_CE_LENGTH_TYPE_EFF,                      \
-    .coex_use_hooks = BT_CTRL_COEX_USE_HOOKS,                              \
     .hci_tl_type = CONFIG_BT_CTRL_HCI_TL_EFF,                              \
     .hci_tl_funcs = NULL,                                                  \
     .txant_dft = CONFIG_BT_CTRL_TX_ANTENNA_INDEX_EFF,                      \
@@ -164,6 +157,7 @@ enum {
     .scan_duplicate_type = SCAN_DUPLICATE_TYPE_VALUE,                      \
     .normal_adv_size = NORMAL_SCAN_DUPLICATE_CACHE_SIZE,                   \
     .mesh_adv_size = MESH_DUPLICATE_SCAN_CACHE_SIZE,                       \
+    .coex_phy_coded_tx_rx_time_limit = CONFIG_BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_EFF, \
 };
 
 #else
@@ -213,9 +207,9 @@ typedef struct {
     uint8_t ble_st_acl_tx_buf_nb;           /*!< controller static ACL TX BUFFER number */
     uint8_t ble_hw_cca_check;               /*!< controller hardware triggered CCA check */
     uint16_t ble_adv_dup_filt_max;          /*!< maxinum number of duplicate scan filter */
-    bool coex_param_en;                     /*!< init coex parameters*/
+    bool coex_param_en;                     /*!< deprecated */
     uint8_t ce_len_type;                    /*!< connection event length computation method */
-    bool coex_use_hooks;                    /*!< use hooks in bluetooth to assist WiFi behavouir determination */
+    bool coex_use_hooks;                    /*!< deprecated */
     uint8_t hci_tl_type;                    /*!< HCI transport layer, UART, VHCI, etc */
     esp_bt_hci_tl_t *hci_tl_funcs;          /*!< hci transport functions used, must be set when hci_tl_type is UART */
     uint8_t txant_dft;                      /*!< default Tx antenna */
@@ -226,6 +220,7 @@ typedef struct {
     uint8_t scan_duplicate_type;            /*!< scan duplicate type */
     uint16_t normal_adv_size;               /*!< Normal adv size for scan duplicate */
     uint16_t mesh_adv_size;                 /*!< Mesh adv size for scan duplicate */
+    uint8_t coex_phy_coded_tx_rx_time_limit;  /*!< limit on max tx/rx time in case of connection using CODED-PHY with Wi-Fi coexistence */
 } esp_bt_controller_config_t;
 
 /**
