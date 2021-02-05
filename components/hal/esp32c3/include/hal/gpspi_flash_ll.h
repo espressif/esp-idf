@@ -148,6 +148,7 @@ static inline void gpspi_flash_ll_set_buffer_data(spi_dev_t *dev, const void *bu
  */
 static inline void gpspi_flash_ll_user_start(spi_dev_t *dev)
 {
+    dev->ctrl.hold_pol = 1;
     dev->cmd.update = 1;
     while (dev->cmd.update);
     dev->cmd.usr = 1;
