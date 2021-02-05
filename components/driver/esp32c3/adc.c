@@ -828,10 +828,13 @@ static uint32_t adc_get_calibration_offset(adc_ll_num_t adc_n, adc_channel_t cha
         s_adc_cali_param[0][atten] = init_code;
         s_adc_cali_param[1][atten] = init_code;
     } else {
-        const bool internal_gnd = true;
+        adc_power_acquire();
         ADC_ENTER_CRITICAL();
+        const bool internal_gnd = true;
         init_code = adc_hal_self_calibration(adc_n, channel, atten, internal_gnd);
         ADC_EXIT_CRITICAL();
+        adc_power_release();
+
         ESP_LOGD(ADC_TAG, "Calib(V%d) ADC%d atten=%d: %04X", version, adc_n, atten, init_code);
         s_adc_cali_param[adc_n][atten] = init_code;
     }
