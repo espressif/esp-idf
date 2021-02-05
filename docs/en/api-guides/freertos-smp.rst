@@ -223,7 +223,7 @@ In vanilla FreeRTOS, suspending the scheduler via :cpp:func:`vTaskSuspendAll` wi
 prevent calls of ``vTaskSwitchContext`` from context switching until the
 scheduler has been resumed with :cpp:func:`xTaskResumeAll`. However servicing ISRs
 are still permitted. Therefore any changes in task states as a result from the
-current running task or ISRSs will not be executed until the scheduler is
+current running task or ISRs will not be executed until the scheduler is
 resumed. Scheduler suspension in vanilla FreeRTOS is a common protection method
 against simultaneous access of data shared between tasks, whilst still allowing
 ISRs to be serviced.
@@ -279,15 +279,14 @@ to unblock multiple tasks at the same time.
 Critical Sections & Disabling Interrupts
 ----------------------------------------
 
-Vanilla FreeRTOS implements critical sections in ``vTaskEnterCritical`` which
-disables the scheduler and calls ``portDISABLE_INTERRUPTS``. This prevents
-context switches and servicing of ISRs during a critical section. Therefore,
-critical sections are used as a valid protection method against simultaneous
-access in vanilla FreeRTOS.
+Vanilla FreeRTOS implements critical sections with ``taskENTER_CRITICAL()`` which
+calls ``portDISABLE_INTERRUPTS()``. This prevents preemptive context switches and
+servicing of ISRs during a critical section. Therefore, critical sections are
+used as a valid protection method against simultaneous access in vanilla FreeRTOS.
 
 .. only:: not CONFIG_FREERTOS_UNICORE
 
-    On the other hand, the ESP32 has no hardware method for cores to disable each
+    On the other hand, {IDF_TARGET_NAME} has no hardware method for cores to disable each
     other’s interrupts. Calling ``portDISABLE_INTERRUPTS()`` will have no effect on
     the interrupts of the other core. Therefore, disabling interrupts is **NOT**
     a valid protection method against simultaneous access to shared data as it
@@ -299,42 +298,44 @@ access in vanilla FreeRTOS.
    ESP-IDF contains some modifications to work with dual core concurrency,
    and the dual core API is used even on a single core only chip.
 
-For this reason, ESP-IDF FreeRTOS implements critical sections using special mutexes,
-referred by portMUX_Type objects on top of specific spinlock component
-and calls to enter or exit a critical must provide a spinlock object that
-is associated with a shared resource requiring access protection.
-When entering a critical section in ESP-IDF FreeRTOS, the calling core will disable
-its scheduler and interrupts similar to the vanilla FreeRTOS implementation. However,
-the calling core will also take the locks whilst the other core is left unaffected during
-the critical section. If the other core attempts to take the spinlock, it
-will spin until the lock is released. Therefore, the ESP-IDF FreeRTOS
-implementation of critical sections allows a core to have protected access to a
-shared resource without disabling the other core. The other core will only be
-affected if it tries to concurrently access the same resource.
+For this reason, ESP-IDF FreeRTOS implements critical sections using special
+mutexes, referred by ``portMUX_Type`` objects. These are implemented on top of a
+specific spinlock component.  Calls to ``taskENTER_CRITICAL`` or
+``taskEXIT_CRITICAL`` each provide a spinlock object as an argument. The
+spinlock is associated with a shared resource requiring access protection.  When
+entering a critical section in ESP-IDF FreeRTOS, the calling core will disable
+interrupts similar to the vanilla FreeRTOS implementation, and will then take the
+spinlock and enter the critical section. The other core is unaffected at this point,
+unless it enters its own critical section and attempts to take the same spinlock.
+In that case it will spin until the lock is released. Therefore, the ESP-IDF FreeRTOS
+implementation of critical sections allows a core to have protected access to a shared
+resource without disabling the other core. The other core will only be affected if it
+tries to concurrently access the same resource.
 
 The ESP-IDF FreeRTOS critical section functions have been modified as follows…
 
  - ``taskENTER_CRITICAL(mux)``, ``taskENTER_CRITICAL_ISR(mux)``,
    ``portENTER_CRITICAL(mux)``, ``portENTER_CRITICAL_ISR(mux)`` are all macro
-   defined to call :cpp:func:`vTaskEnterCritical`
+   defined to call internal function :cpp:func:`vPortEnterCritical`
 
  - ``taskEXIT_CRITICAL(mux)``, ``taskEXIT_CRITICAL_ISR(mux)``,
    ``portEXIT_CRITICAL(mux)``, ``portEXIT_CRITICAL_ISR(mux)`` are all macro
-   defined to call :cpp:func:`vTaskExitCritical`
+   defined to call internal function :cpp:func:`vPortExitCritical`
 
  - ``portENTER_CRITICAL_SAFE(mux)``, ``portEXIT_CRITICAL_SAFE(mux)`` macro identifies
    the context of execution, i.e ISR or Non-ISR, and calls appropriate critical
    section functions (``port*_CRITICAL`` in Non-ISR and ``port*_CRITICAL_ISR`` in ISR)
    in order to be in compliance with Vanilla FreeRTOS.
 
-For more details see :component_file:`esp_hw_support/include/soc/spinlock.h`
+For more details see :component_file:`esp_hw_support/include/soc/spinlock.h`,
+:component_file:`freertos/include/freertos/task.h`,
 and :component_file:`freertos/tasks.c`
 
 It should be noted that when modifying vanilla FreeRTOS code to be ESP-IDF
-FreeRTOS compatible, it is trivial to modify the type of critical section
-called as they are all defined to call the same function. As long as the same
-spinlock is provided upon entering and exiting, the type of call should not
-matter.
+FreeRTOS compatible, it is trivial to modify the type of critical section called
+as they are all defined to call the same function. As long as the same spinlock
+is provided upon entering and exiting, the exact macro or function used for the
+call should not matter.
 
 
 .. only:: not CONFIG_FREERTOS_UNICORE
