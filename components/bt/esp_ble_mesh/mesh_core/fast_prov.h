@@ -21,21 +21,21 @@
 extern "C" {
 #endif
 
-const u8_t *bt_mesh_fast_prov_dev_key_get(u16_t dst);
+const uint8_t *bt_mesh_fast_prov_dev_key_get(uint16_t dst);
 
-struct bt_mesh_subnet *bt_mesh_fast_prov_subnet_get(u16_t net_idx);
+struct bt_mesh_subnet *bt_mesh_fast_prov_subnet_get(uint16_t net_idx);
 
-struct bt_mesh_app_key *bt_mesh_fast_prov_app_key_find(u16_t app_idx);
+struct bt_mesh_app_key *bt_mesh_fast_prov_app_key_find(uint16_t app_idx);
 
-u8_t bt_mesh_set_fast_prov_net_idx(u16_t net_idx);
+uint8_t bt_mesh_set_fast_prov_net_idx(uint16_t net_idx);
 
-u8_t bt_mesh_fast_prov_net_key_add(const u8_t net_key[16]);
+uint8_t bt_mesh_fast_prov_net_key_add(const uint8_t net_key[16]);
 
-const u8_t *bt_mesh_fast_prov_net_key_get(u16_t net_idx);
+const uint8_t *bt_mesh_fast_prov_net_key_get(uint16_t net_idx);
 
-const u8_t *bt_mesh_get_fast_prov_app_key(u16_t net_idx, u16_t app_idx);
+const uint8_t *bt_mesh_get_fast_prov_app_key(uint16_t net_idx, uint16_t app_idx);
 
-u8_t bt_mesh_set_fast_prov_action(u8_t action);
+uint8_t bt_mesh_set_fast_prov_action(uint8_t action);
 
 #ifdef __cplusplus
 }

@@ -51,10 +51,10 @@ void bt_mesh_light_server_unlock(void)
 
 static void send_light_lightness_status(struct bt_mesh_model *model,
                                         struct bt_mesh_msg_ctx *ctx,
-                                        bool publish, u16_t opcode)
+                                        bool publish, uint16_t opcode)
 {
     struct net_buf_simple *msg = NULL;
-    u8_t length = 2 + 5;
+    uint8_t length = 2 + 5;
 
     if (ctx == NULL && publish == false) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -145,7 +145,7 @@ static void light_lightness_get(struct bt_mesh_model *model,
                                 struct net_buf_simple *buf)
 {
     struct bt_mesh_light_lightness_srv *srv = model->user_data;
-    u16_t opcode = 0U;
+    uint16_t opcode = 0U;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -184,7 +184,7 @@ static void light_lightness_get(struct bt_mesh_model *model,
     return;
 }
 
-void light_lightness_publish(struct bt_mesh_model *model, u16_t opcode)
+void light_lightness_publish(struct bt_mesh_model *model, uint16_t opcode)
 {
     if (model->user_data == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -222,10 +222,10 @@ static void light_lightness_set(struct bt_mesh_model *model,
                                 struct net_buf_simple *buf)
 {
     struct bt_mesh_light_lightness_srv *srv = model->user_data;
-    u8_t tid = 0U, trans_time = 0U, delay = 0U;
+    uint8_t tid = 0U, trans_time = 0U, delay = 0U;
     bool optional = false;
-    u16_t actual = 0U;
-    s64_t now = 0;
+    uint16_t actual = 0U;
+    int64_t now = 0;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -249,7 +249,7 @@ static void light_lightness_set(struct bt_mesh_model *model,
             .lightness_set.delay = delay,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const u8_t *)&set, sizeof(set));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -287,7 +287,7 @@ static void light_lightness_set(struct bt_mesh_model *model,
             .lightness_set.lightness = srv->state->lightness_actual,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const u8_t *)&change, sizeof(change));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
 
         if (ctx->recv_op == BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_SET) {
             send_light_lightness_status(model, ctx, false, BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_STATUS);
@@ -334,10 +334,10 @@ static void light_lightness_linear_set(struct bt_mesh_model *model,
                                        struct net_buf_simple *buf)
 {
     struct bt_mesh_light_lightness_srv *srv = model->user_data;
-    u8_t tid = 0U, trans_time = 0U, delay = 0U;
+    uint8_t tid = 0U, trans_time = 0U, delay = 0U;
     bool optional = false;
-    u16_t linear = 0U;
-    s64_t now = 0;
+    uint16_t linear = 0U;
+    int64_t now = 0;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -361,7 +361,7 @@ static void light_lightness_linear_set(struct bt_mesh_model *model,
             .lightness_linear_set.delay = delay,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const u8_t *)&set, sizeof(set));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -392,7 +392,7 @@ static void light_lightness_linear_set(struct bt_mesh_model *model,
             .lightness_linear_set.lightness = srv->state->lightness_actual,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const u8_t *)&change, sizeof(change));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
 
         if (ctx->recv_op == BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_LINEAR_SET) {
             send_light_lightness_status(model, ctx, false, BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_LINEAR_STATUS);
@@ -430,7 +430,7 @@ static void light_lightness_default_set(struct bt_mesh_model *model,
                                         struct net_buf_simple *buf)
 {
     struct bt_mesh_light_lightness_setup_srv *srv = model->user_data;
-    u16_t lightness = 0U;
+    uint16_t lightness = 0U;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -445,7 +445,7 @@ static void light_lightness_default_set(struct bt_mesh_model *model,
             .lightness_default_set.lightness = lightness,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const u8_t *)&set, sizeof(set));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -456,7 +456,7 @@ static void light_lightness_default_set(struct bt_mesh_model *model,
             .lightness_default_set.lightness = lightness,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const u8_t *)&change, sizeof(change));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
     }
 
     if (ctx->recv_op == BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_DEFAULT_SET) {
@@ -472,7 +472,7 @@ static void light_lightness_range_set(struct bt_mesh_model *model,
                                       struct net_buf_simple *buf)
 {
     struct bt_mesh_light_lightness_setup_srv *srv = model->user_data;
-    u16_t range_min = 0U, range_max = 0U;
+    uint16_t range_min = 0U, range_max = 0U;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -495,7 +495,7 @@ static void light_lightness_range_set(struct bt_mesh_model *model,
             .lightness_range_set.range_max = range_max,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const u8_t *)&set, sizeof(set));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -534,7 +534,7 @@ static void light_lightness_range_set(struct bt_mesh_model *model,
         .lightness_range_set.range_max = srv->state->lightness_range_max,
     };
     bt_mesh_lighting_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const u8_t *)&change, sizeof(change));
+        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
 
     if (ctx->recv_op == BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_RANGE_SET) {
         send_light_lightness_status(model, ctx, false, BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_RANGE_STATUS);
@@ -548,10 +548,10 @@ static void light_lightness_range_set(struct bt_mesh_model *model,
 
 static void send_light_ctl_status(struct bt_mesh_model *model,
                                   struct bt_mesh_msg_ctx *ctx,
-                                  bool publish, u16_t opcode)
+                                  bool publish, uint16_t opcode)
 {
     struct net_buf_simple *msg = NULL;
-    u8_t length = 2 + 9;
+    uint8_t length = 2 + 9;
 
     if (ctx == NULL && publish == false) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -646,7 +646,7 @@ static void light_ctl_get(struct bt_mesh_model *model,
                           struct net_buf_simple *buf)
 {
     struct bt_mesh_server_rsp_ctrl *rsp_ctrl = NULL;
-    u16_t opcode = 0U;
+    uint16_t opcode = 0U;
 
     if (model->user_data == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -706,7 +706,7 @@ static void light_ctl_get(struct bt_mesh_model *model,
     return;
 }
 
-void light_ctl_publish(struct bt_mesh_model *model, u16_t opcode)
+void light_ctl_publish(struct bt_mesh_model *model, uint16_t opcode)
 {
     if (model->user_data == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -752,11 +752,11 @@ static void light_ctl_set(struct bt_mesh_model *model,
                           struct net_buf_simple *buf)
 {
     struct bt_mesh_light_ctl_srv *srv = model->user_data;
-    u16_t lightness = 0U, temperature = 0U;
-    u8_t tid = 0U, trans_time = 0U, delay = 0U;
-    s16_t delta_uv = 0;
+    uint16_t lightness = 0U, temperature = 0U;
+    uint8_t tid = 0U, trans_time = 0U, delay = 0U;
+    int16_t delta_uv = 0;
     bool optional = false;
-    s64_t now = 0;
+    int64_t now = 0;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -765,7 +765,7 @@ static void light_ctl_set(struct bt_mesh_model *model,
 
     lightness = net_buf_simple_pull_le16(buf);
     temperature = net_buf_simple_pull_le16(buf);
-    delta_uv = (s16_t) net_buf_simple_pull_le16(buf);
+    delta_uv = (int16_t) net_buf_simple_pull_le16(buf);
     tid = net_buf_simple_pull_u8(buf);
 
     if (temperature < BLE_MESH_TEMPERATURE_MIN || temperature > BLE_MESH_TEMPERATURE_MAX) {
@@ -789,7 +789,7 @@ static void light_ctl_set(struct bt_mesh_model *model,
             .ctl_set.delay = delay,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const u8_t *)&set, sizeof(set));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -831,7 +831,7 @@ static void light_ctl_set(struct bt_mesh_model *model,
             .ctl_set.delta_uv = srv->state->delta_uv,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const u8_t *)&change, sizeof(change));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
 
         if (ctx->recv_op == BLE_MESH_MODEL_OP_LIGHT_CTL_SET) {
             send_light_ctl_status(model, ctx, false, BLE_MESH_MODEL_OP_LIGHT_CTL_STATUS);
@@ -871,8 +871,8 @@ static void light_ctl_default_set(struct bt_mesh_model *model,
                                   struct net_buf_simple *buf)
 {
     struct bt_mesh_light_ctl_setup_srv *srv = model->user_data;
-    u16_t lightness = 0U, temperature = 0U;
-    s16_t delta_uv = 0;
+    uint16_t lightness = 0U, temperature = 0U;
+    int16_t delta_uv = 0;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -881,7 +881,7 @@ static void light_ctl_default_set(struct bt_mesh_model *model,
 
     lightness = net_buf_simple_pull_le16(buf);
     temperature = net_buf_simple_pull_le16(buf);
-    delta_uv = (s16_t) net_buf_simple_pull_le16(buf);
+    delta_uv = (int16_t) net_buf_simple_pull_le16(buf);
 
     if (temperature < BLE_MESH_TEMPERATURE_MIN || temperature > BLE_MESH_TEMPERATURE_MAX) {
         BT_ERR("Invalid temperature 0x%04x", temperature);
@@ -896,7 +896,7 @@ static void light_ctl_default_set(struct bt_mesh_model *model,
             .ctl_default_set.delta_uv = delta_uv,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const u8_t *)&set, sizeof(set));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -920,7 +920,7 @@ static void light_ctl_default_set(struct bt_mesh_model *model,
         .ctl_default_set.delta_uv = srv->state->delta_uv_default,
     };
     bt_mesh_lighting_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const u8_t *)&change, sizeof(change));
+        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
 
     if (ctx->recv_op == BLE_MESH_MODEL_OP_LIGHT_CTL_DEFAULT_SET) {
         send_light_ctl_status(model, ctx, false, BLE_MESH_MODEL_OP_LIGHT_CTL_DEFAULT_STATUS);
@@ -935,7 +935,7 @@ static void light_ctl_temp_range_set(struct bt_mesh_model *model,
                                      struct net_buf_simple *buf)
 {
     struct bt_mesh_light_ctl_setup_srv *srv = model->user_data;
-    u16_t min = 0U, max = 0U;
+    uint16_t min = 0U, max = 0U;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -961,7 +961,7 @@ static void light_ctl_temp_range_set(struct bt_mesh_model *model,
             .ctl_temp_range_set.range_max = max,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const u8_t *)&set, sizeof(set));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -986,7 +986,7 @@ static void light_ctl_temp_range_set(struct bt_mesh_model *model,
         .ctl_temp_range_set.range_max = srv->state->temperature_range_max,
     };
     bt_mesh_lighting_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const u8_t *)&change, sizeof(change));
+        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
 
     if (ctx->recv_op == BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_RANGE_SET) {
         send_light_ctl_status(model, ctx, false, BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_RANGE_STATUS);
@@ -1001,11 +1001,11 @@ static void light_ctl_temp_set(struct bt_mesh_model *model,
                                struct net_buf_simple *buf)
 {
     struct bt_mesh_light_ctl_temp_srv *srv = model->user_data;
-    u8_t tid = 0U, trans_time = 0U, delay = 0U;
-    u16_t temperature = 0U;
-    s16_t delta_uv = 0;
+    uint8_t tid = 0U, trans_time = 0U, delay = 0U;
+    uint16_t temperature = 0U;
+    int16_t delta_uv = 0;
     bool optional = false;
-    s64_t now = 0;
+    int64_t now = 0;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -1013,7 +1013,7 @@ static void light_ctl_temp_set(struct bt_mesh_model *model,
     }
 
     temperature = net_buf_simple_pull_le16(buf);
-    delta_uv = (s16_t) net_buf_simple_pull_le16(buf);
+    delta_uv = (int16_t) net_buf_simple_pull_le16(buf);
     tid = net_buf_simple_pull_u8(buf);
 
     if (temperature < BLE_MESH_TEMPERATURE_MIN || temperature > BLE_MESH_TEMPERATURE_MAX) {
@@ -1036,7 +1036,7 @@ static void light_ctl_temp_set(struct bt_mesh_model *model,
             .ctl_temp_set.delay = delay,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const u8_t *)&set, sizeof(set));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -1075,7 +1075,7 @@ static void light_ctl_temp_set(struct bt_mesh_model *model,
             .ctl_temp_set.delta_uv = srv->state->delta_uv,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const u8_t *)&change, sizeof(change));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
 
         if (ctx->recv_op == BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_SET) {
             send_light_ctl_status(model, ctx, false, BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_STATUS);
@@ -1113,10 +1113,10 @@ static void light_ctl_temp_set(struct bt_mesh_model *model,
 
 static void send_light_hsl_status(struct bt_mesh_model *model,
                                   struct bt_mesh_msg_ctx *ctx,
-                                  bool publish, u16_t opcode)
+                                  bool publish, uint16_t opcode)
 {
     struct net_buf_simple *msg = NULL;
-    u8_t length = 2 + 9;
+    uint8_t length = 2 + 9;
 
     if (ctx == NULL && publish == false) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -1232,7 +1232,7 @@ static void light_hsl_get(struct bt_mesh_model *model,
                           struct net_buf_simple *buf)
 {
     struct bt_mesh_server_rsp_ctrl *rsp_ctrl = NULL;
-    u16_t opcode = 0U;
+    uint16_t opcode = 0U;
 
     if (model->user_data == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -1307,7 +1307,7 @@ static void light_hsl_get(struct bt_mesh_model *model,
     return;
 }
 
-void light_hsl_publish(struct bt_mesh_model *model, u16_t opcode)
+void light_hsl_publish(struct bt_mesh_model *model, uint16_t opcode)
 {
     if (model->user_data == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -1361,10 +1361,10 @@ static void light_hsl_set(struct bt_mesh_model *model,
                           struct net_buf_simple *buf)
 {
     struct bt_mesh_light_hsl_srv *srv = model->user_data;
-    u16_t lightness = 0U, hue = 0U, saturation = 0U;
-    u8_t tid = 0U, trans_time = 0U, delay = 0U;
+    uint16_t lightness = 0U, hue = 0U, saturation = 0U;
+    uint8_t tid = 0U, trans_time = 0U, delay = 0U;
     bool optional = false;
-    s64_t now = 0;
+    int64_t now = 0;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -1392,7 +1392,7 @@ static void light_hsl_set(struct bt_mesh_model *model,
             .hsl_set.delay = delay,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const u8_t *)&set, sizeof(set));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -1439,7 +1439,7 @@ static void light_hsl_set(struct bt_mesh_model *model,
             .hsl_set.saturation = srv->state->saturation,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const u8_t *)&change, sizeof(change));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
 
         if (ctx->recv_op == BLE_MESH_MODEL_OP_LIGHT_HSL_SET) {
             send_light_hsl_status(model, ctx, false, BLE_MESH_MODEL_OP_LIGHT_HSL_STATUS);
@@ -1479,7 +1479,7 @@ static void light_hsl_default_set(struct bt_mesh_model *model,
                                   struct net_buf_simple *buf)
 {
     struct bt_mesh_light_hsl_setup_srv *srv = model->user_data;
-    u16_t lightness = 0U, hue = 0U, saturation = 0U;
+    uint16_t lightness = 0U, hue = 0U, saturation = 0U;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -1498,7 +1498,7 @@ static void light_hsl_default_set(struct bt_mesh_model *model,
             .hsl_default_set.saturation = saturation,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const u8_t *)&set, sizeof(set));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -1524,7 +1524,7 @@ static void light_hsl_default_set(struct bt_mesh_model *model,
         .hsl_default_set.saturation = srv->state->saturation_default,
     };
     bt_mesh_lighting_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const u8_t *)&change, sizeof(change));
+        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
 
     if (ctx->recv_op == BLE_MESH_MODEL_OP_LIGHT_HSL_DEFAULT_SET) {
         send_light_hsl_status(model, ctx, false, BLE_MESH_MODEL_OP_LIGHT_HSL_DEFAULT_STATUS);
@@ -1539,7 +1539,7 @@ static void light_hsl_range_set(struct bt_mesh_model *model,
                                 struct net_buf_simple *buf)
 {
     struct bt_mesh_light_hsl_setup_srv *srv = model->user_data;
-    u16_t hue_min = 0U, hue_max = 0U, saturation_min = 0U, saturation_max = 0U;
+    uint16_t hue_min = 0U, hue_max = 0U, saturation_min = 0U, saturation_max = 0U;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -1572,7 +1572,7 @@ static void light_hsl_range_set(struct bt_mesh_model *model,
             .hsl_range_set.sat_range_max = saturation_max,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const u8_t *)&set, sizeof(set));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -1589,7 +1589,7 @@ static void light_hsl_range_set(struct bt_mesh_model *model,
         .hsl_range_set.sat_range_max = srv->state->saturation_range_max,
     };
     bt_mesh_lighting_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const u8_t *)&change, sizeof(change));
+        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
 
     if (ctx->recv_op == BLE_MESH_MODEL_OP_LIGHT_HSL_RANGE_SET) {
         send_light_hsl_status(model, ctx, false, BLE_MESH_MODEL_OP_LIGHT_HSL_RANGE_STATUS);
@@ -1604,10 +1604,10 @@ static void light_hsl_hue_set(struct bt_mesh_model *model,
                               struct net_buf_simple *buf)
 {
     struct bt_mesh_light_hsl_hue_srv *srv = model->user_data;
-    u8_t tid = 0U, trans_time = 0U, delay = 0U;
+    uint8_t tid = 0U, trans_time = 0U, delay = 0U;
     bool optional = false;
-    u16_t hue = 0U;
-    s64_t now = 0;
+    uint16_t hue = 0U;
+    int64_t now = 0;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -1631,7 +1631,7 @@ static void light_hsl_hue_set(struct bt_mesh_model *model,
             .hsl_hue_set.delay = delay,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const u8_t *)&set, sizeof(set));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -1667,7 +1667,7 @@ static void light_hsl_hue_set(struct bt_mesh_model *model,
             .hsl_hue_set.hue = srv->state->hue,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const u8_t *)&change, sizeof(change));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
 
         if (ctx->recv_op == BLE_MESH_MODEL_OP_LIGHT_HSL_HUE_SET) {
             send_light_hsl_status(model, ctx, false, BLE_MESH_MODEL_OP_LIGHT_HSL_HUE_STATUS);
@@ -1705,10 +1705,10 @@ static void light_hsl_sat_set(struct bt_mesh_model *model,
                               struct net_buf_simple *buf)
 {
     struct bt_mesh_light_hsl_sat_srv *srv = model->user_data;
-    u8_t tid = 0U, trans_time = 0U, delay = 0U;
-    u16_t saturation = 0U;
+    uint8_t tid = 0U, trans_time = 0U, delay = 0U;
+    uint16_t saturation = 0U;
     bool optional = false;
-    s64_t now = 0;
+    int64_t now = 0;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -1732,7 +1732,7 @@ static void light_hsl_sat_set(struct bt_mesh_model *model,
             .hsl_saturation_set.delay = delay,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const u8_t *)&set, sizeof(set));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -1768,7 +1768,7 @@ static void light_hsl_sat_set(struct bt_mesh_model *model,
             .hsl_saturation_set.saturation = srv->state->saturation,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const u8_t *)&change, sizeof(change));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
 
         if (ctx->recv_op == BLE_MESH_MODEL_OP_LIGHT_HSL_SATURATION_SET) {
             send_light_hsl_status(model, ctx, false, BLE_MESH_MODEL_OP_LIGHT_HSL_SATURATION_STATUS);
@@ -1805,10 +1805,10 @@ static void light_hsl_sat_set(struct bt_mesh_model *model,
 
 static void send_light_xyl_status(struct bt_mesh_model *model,
                                   struct bt_mesh_msg_ctx *ctx,
-                                  bool publish, u16_t opcode)
+                                  bool publish, uint16_t opcode)
 {
     struct net_buf_simple *msg = NULL;
-    u8_t length = 2 + 9;
+    uint8_t length = 2 + 9;
 
     if (ctx == NULL && publish == false) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -1904,7 +1904,7 @@ static void light_xyl_get(struct bt_mesh_model *model,
                           struct net_buf_simple *buf)
 {
     struct bt_mesh_light_xyl_srv *srv = model->user_data;
-    u16_t opcode = 0U;
+    uint16_t opcode = 0U;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -1940,7 +1940,7 @@ static void light_xyl_get(struct bt_mesh_model *model,
     return;
 }
 
-void light_xyl_publish(struct bt_mesh_model *model, u16_t opcode)
+void light_xyl_publish(struct bt_mesh_model *model, uint16_t opcode)
 {
     if (model->user_data == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -1978,10 +1978,10 @@ static void light_xyl_set(struct bt_mesh_model *model,
                           struct net_buf_simple *buf)
 {
     struct bt_mesh_light_xyl_srv *srv = model->user_data;
-    u8_t tid = 0U, trans_time = 0U, delay = 0U;
-    u16_t lightness = 0U, x = 0U, y = 0U;
+    uint8_t tid = 0U, trans_time = 0U, delay = 0U;
+    uint16_t lightness = 0U, x = 0U, y = 0U;
     bool optional = false;
-    s64_t now = 0;
+    int64_t now = 0;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -2009,7 +2009,7 @@ static void light_xyl_set(struct bt_mesh_model *model,
             .xyl_set.delay = delay,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const u8_t *)&set, sizeof(set));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -2056,7 +2056,7 @@ static void light_xyl_set(struct bt_mesh_model *model,
             .xyl_set.y = srv->state->y,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const u8_t *)&change, sizeof(change));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
 
         if (ctx->recv_op == BLE_MESH_MODEL_OP_LIGHT_XYL_SET) {
             send_light_xyl_status(model, ctx, false, BLE_MESH_MODEL_OP_LIGHT_XYL_STATUS);
@@ -2096,7 +2096,7 @@ static void light_xyl_default_set(struct bt_mesh_model *model,
                                   struct net_buf_simple *buf)
 {
     struct bt_mesh_light_xyl_setup_srv *srv = model->user_data;
-    u16_t lightness = 0U, x = 0U, y = 0U;
+    uint16_t lightness = 0U, x = 0U, y = 0U;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -2115,7 +2115,7 @@ static void light_xyl_default_set(struct bt_mesh_model *model,
             .xyl_default_set.y = y,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const u8_t *)&set, sizeof(set));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -2141,7 +2141,7 @@ static void light_xyl_default_set(struct bt_mesh_model *model,
         .xyl_default_set.y = srv->state->y_default,
     };
     bt_mesh_lighting_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const u8_t *)&change, sizeof(change));
+        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
 
     if (ctx->recv_op == BLE_MESH_MODEL_OP_LIGHT_XYL_DEFAULT_SET) {
         send_light_xyl_status(model, ctx, false, BLE_MESH_MODEL_OP_LIGHT_XYL_DEFAULT_STATUS);
@@ -2156,7 +2156,7 @@ static void light_xyl_range_set(struct bt_mesh_model *model,
                                 struct net_buf_simple *buf)
 {
     struct bt_mesh_light_xyl_setup_srv *srv = model->user_data;
-    u16_t x_min = 0U, x_max = 0U, y_min = 0U, y_max = 0U;
+    uint16_t x_min = 0U, x_max = 0U, y_min = 0U, y_max = 0U;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -2189,7 +2189,7 @@ static void light_xyl_range_set(struct bt_mesh_model *model,
             .xyl_range_set.y_range_max = y_max,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const u8_t *)&set, sizeof(set));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -2206,7 +2206,7 @@ static void light_xyl_range_set(struct bt_mesh_model *model,
         .xyl_range_set.y_range_max = srv->state->y_range_max,
     };
     bt_mesh_lighting_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const u8_t *)&change, sizeof(change));
+        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
 
     if (ctx->recv_op == BLE_MESH_MODEL_OP_LIGHT_XYL_RANGE_SET) {
         send_light_xyl_status(model, ctx, false, BLE_MESH_MODEL_OP_LIGHT_XYL_RANGE_STATUS);
@@ -2219,11 +2219,11 @@ static void light_xyl_range_set(struct bt_mesh_model *model,
 /* Light LC Server/Setup Server message handlers */
 static void send_light_lc_status(struct bt_mesh_model *model,
                                  struct bt_mesh_msg_ctx *ctx,
-                                 bool publish, u16_t opcode)
+                                 bool publish, uint16_t opcode)
 {
     struct bt_mesh_light_lc_srv *srv = model->user_data;
     struct net_buf_simple *msg = NULL;
-    u8_t length = 2 + 3;
+    uint8_t length = 2 + 3;
 
     if (ctx == NULL && publish == false) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -2281,7 +2281,7 @@ static void light_lc_get(struct bt_mesh_model *model,
                          struct net_buf_simple *buf)
 {
     struct bt_mesh_light_lc_srv *srv = model->user_data;
-    u16_t opcode = 0U;
+    uint16_t opcode = 0U;
 
     if (srv == NULL || srv->lc == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -2314,7 +2314,7 @@ static void light_lc_get(struct bt_mesh_model *model,
     return;
 }
 
-void light_lc_publish(struct bt_mesh_model *model, u16_t opcode)
+void light_lc_publish(struct bt_mesh_model *model, uint16_t opcode)
 {
     struct bt_mesh_light_lc_srv *srv = model->user_data;
 
@@ -2332,7 +2332,7 @@ static void light_lc_mode_set(struct bt_mesh_model *model,
                               struct net_buf_simple *buf)
 {
     struct bt_mesh_light_lc_srv *srv = model->user_data;
-    u8_t mode = 0U;
+    uint8_t mode = 0U;
 
     if (srv == NULL || srv->lc == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -2351,7 +2351,7 @@ static void light_lc_mode_set(struct bt_mesh_model *model,
             .lc_mode_set.mode = mode,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const u8_t *)&set, sizeof(set));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -2361,7 +2361,7 @@ static void light_lc_mode_set(struct bt_mesh_model *model,
         .lc_mode_set.mode = srv->lc->state.mode,
     };
     bt_mesh_lighting_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const u8_t *)&change, sizeof(change));
+        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
 
     if (ctx->recv_op == BLE_MESH_MODEL_OP_LIGHT_LC_MODE_SET) {
         send_light_lc_status(model, ctx, false, BLE_MESH_MODEL_OP_LIGHT_LC_MODE_STATUS);
@@ -2376,7 +2376,7 @@ static void light_lc_om_set(struct bt_mesh_model *model,
                             struct net_buf_simple *buf)
 {
     struct bt_mesh_light_lc_srv *srv = model->user_data;
-    u8_t om = 0U;
+    uint8_t om = 0U;
 
     if (srv == NULL || srv->lc == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -2395,7 +2395,7 @@ static void light_lc_om_set(struct bt_mesh_model *model,
             .lc_om_set.mode = om,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const u8_t *)&set, sizeof(set));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -2405,7 +2405,7 @@ static void light_lc_om_set(struct bt_mesh_model *model,
         .lc_om_set.mode = srv->lc->state.occupancy_mode,
     };
     bt_mesh_lighting_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const u8_t *)&change, sizeof(change));
+        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
 
     if (ctx->recv_op == BLE_MESH_MODEL_OP_LIGHT_LC_OM_SET) {
         send_light_lc_status(model, ctx, false, BLE_MESH_MODEL_OP_LIGHT_LC_OM_STATUS);
@@ -2420,10 +2420,10 @@ static void light_lc_light_onoff_set(struct bt_mesh_model *model,
                                      struct net_buf_simple *buf)
 {
     struct bt_mesh_light_lc_srv *srv = model->user_data;
-    u8_t tid = 0U, trans_time = 0U, delay = 0U;
+    uint8_t tid = 0U, trans_time = 0U, delay = 0U;
     bool optional = false;
-    u8_t onoff = 0U;
-    s64_t now = 0;
+    uint8_t onoff = 0U;
+    int64_t now = 0;
 
     if (srv == NULL || srv->lc == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -2447,7 +2447,7 @@ static void light_lc_light_onoff_set(struct bt_mesh_model *model,
             .lc_light_onoff_set.delay = delay,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const u8_t *)&set, sizeof(set));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -2474,7 +2474,7 @@ static void light_lc_light_onoff_set(struct bt_mesh_model *model,
             .lc_light_onoff_set.onoff = srv->lc->state.light_onoff,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const u8_t *)&change, sizeof(change));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
 
         if (ctx->recv_op == BLE_MESH_MODEL_OP_LIGHT_LC_LIGHT_ONOFF_SET) {
             send_light_lc_status(model, ctx, false, BLE_MESH_MODEL_OP_LIGHT_LC_LIGHT_ONOFF_STATUS);
@@ -2538,8 +2538,8 @@ static void light_lc_sensor_status(struct bt_mesh_model *model,
      */
     struct bt_mesh_light_lc_srv *srv = model->user_data;
     bt_mesh_light_server_state_change_t change = {0};
-    u16_t mpid = 0U, prop_id = 0U;
-    u8_t length = 0U;
+    uint16_t mpid = 0U, prop_id = 0U;
+    uint8_t length = 0U;
 
     if (srv == NULL || srv->lc == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -2551,18 +2551,18 @@ static void light_lc_sensor_status(struct bt_mesh_model *model,
             .sensor_status.data = buf,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_STATUS_MSG, model, ctx, (const u8_t *)&status, sizeof(status));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_STATUS_MSG, model, ctx, (const uint8_t *)&status, sizeof(status));
         return;
     }
 
     mpid = net_buf_simple_pull_le16(buf);
     if (mpid & BIT(0)) {
-        length = (u8_t)((mpid & 0xff) >> 1);
-        u8_t msb = net_buf_simple_pull_u8(buf);
-        prop_id = (u16_t)(msb << 8) | (u16_t)(mpid >> 8);
+        length = (uint8_t)((mpid & 0xff) >> 1);
+        uint8_t msb = net_buf_simple_pull_u8(buf);
+        prop_id = (uint16_t)(msb << 8) | (uint16_t)(mpid >> 8);
     } else {
-        length = (u8_t)((mpid & 0x1f) >> 1);
-        prop_id = (u16_t)(mpid >> 5);
+        length = (uint8_t)((mpid & 0x1f) >> 1);
+        prop_id = (uint16_t)(mpid >> 5);
     }
 
     change.sensor_status.property_id = prop_id;
@@ -2573,13 +2573,13 @@ static void light_lc_sensor_status(struct bt_mesh_model *model,
             BT_WARN("Invalid Motion Sensed Property length %d", length);
             return;
         }
-        u8_t val = net_buf_simple_pull_u8(buf);
+        uint8_t val = net_buf_simple_pull_u8(buf);
         if (val > 0) {
             srv->lc->state.occupancy = BLE_MESH_STATE_ON;
 
             change.sensor_status.state.occupancy = srv->lc->state.occupancy;
             bt_mesh_lighting_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const u8_t *)&change, sizeof(change));
+                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
         }
         break;
     }
@@ -2588,13 +2588,13 @@ static void light_lc_sensor_status(struct bt_mesh_model *model,
             BT_WARN("Invalid Motion Sensed Property length %d", length);
             return;
         }
-        u16_t val = net_buf_simple_pull_le16(buf);
+        uint16_t val = net_buf_simple_pull_le16(buf);
         if (val > 0) {
             srv->lc->state.occupancy = BLE_MESH_STATE_ON;
 
             change.sensor_status.state.occupancy = srv->lc->state.occupancy;
             bt_mesh_lighting_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const u8_t *)&change, sizeof(change));
+                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
         }
         break;
     }
@@ -2603,13 +2603,13 @@ static void light_lc_sensor_status(struct bt_mesh_model *model,
             BT_WARN("Invalid Motion Sensed Property length %d", length);
             return;
         }
-        u8_t val = net_buf_simple_pull_u8(buf);
+        uint8_t val = net_buf_simple_pull_u8(buf);
         if (val > 0) {
             srv->lc->state.occupancy = BLE_MESH_STATE_ON;
 
             change.sensor_status.state.occupancy = srv->lc->state.occupancy;
             bt_mesh_lighting_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const u8_t *)&change, sizeof(change));
+                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
         }
         break;
     }
@@ -2618,14 +2618,14 @@ static void light_lc_sensor_status(struct bt_mesh_model *model,
             BT_WARN("Invalid Motion Sensed Property length %d", length);
             return;
         }
-        u16_t val = net_buf_simple_pull_le16(buf);
+        uint16_t val = net_buf_simple_pull_le16(buf);
         if (val <= srv->lc->prop_state.time_occupancy_delay) {
             srv->lc->prop_state.set_occupancy_to_1_delay =
                 srv->lc->prop_state.time_occupancy_delay - val;
 
             change.sensor_status.state.set_occupancy_to_1_delay = srv->lc->prop_state.set_occupancy_to_1_delay;
             bt_mesh_lighting_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const u8_t *)&change, sizeof(change));
+                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
         }
         break;
     }
@@ -2640,13 +2640,13 @@ static void light_lc_sensor_status(struct bt_mesh_model *model,
             BT_WARN("Invalid Motion Sensed Property length %d", buf->len);
             return;
         }
-        u16_t lsb = net_buf_simple_pull_le16(buf);
-        u8_t msb = net_buf_simple_pull_u8(buf);
+        uint16_t lsb = net_buf_simple_pull_le16(buf);
+        uint8_t msb = net_buf_simple_pull_u8(buf);
         srv->lc->state.ambient_luxlevel = (msb << 16) | lsb;
 
         change.sensor_status.state.ambient_luxlevel = srv->lc->state.ambient_luxlevel;
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const u8_t *)&change, sizeof(change));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
         break;
     }
     default:
@@ -2654,72 +2654,72 @@ static void light_lc_sensor_status(struct bt_mesh_model *model,
     }
 }
 
-static u8_t *get_light_lc_prop_val(struct bt_mesh_model *model, u16_t prop_id)
+static uint8_t *get_light_lc_prop_val(struct bt_mesh_model *model, uint16_t prop_id)
 {
     struct bt_mesh_light_lc_setup_srv *srv = model->user_data;
-    u8_t *val = NULL;
+    uint8_t *val = NULL;
 
     switch (prop_id) {
     case BLE_MESH_LIGHT_CONTROL_TIME_OCCUPANCY_DELAY:
-        val = (u8_t *)&srv->lc->prop_state.time_occupancy_delay;
+        val = (uint8_t *)&srv->lc->prop_state.time_occupancy_delay;
         break;
     case BLE_MESH_LIGHT_CONTROL_TIME_FADE_ON:
-        val = (u8_t *)&srv->lc->prop_state.time_fade_on;
+        val = (uint8_t *)&srv->lc->prop_state.time_fade_on;
         break;
     case BLE_MESH_LIGHT_CONTROL_TIME_RUN_ON:
-        val = (u8_t *)&srv->lc->prop_state.time_run_on;
+        val = (uint8_t *)&srv->lc->prop_state.time_run_on;
         break;
     case BLE_MESH_LIGHT_CONTROL_TIME_FADE:
-        val = (u8_t *)&srv->lc->prop_state.time_fade;
+        val = (uint8_t *)&srv->lc->prop_state.time_fade;
         break;
     case BLE_MESH_LIGHT_CONTROL_TIME_PROLONG:
-        val = (u8_t *)&srv->lc->prop_state.time_prolong;
+        val = (uint8_t *)&srv->lc->prop_state.time_prolong;
         break;
     case BLE_MESH_LIGHT_CONTROL_TIME_FADE_STANDBY_AUTO:
-        val = (u8_t *)&srv->lc->prop_state.time_fade_standby_auto;
+        val = (uint8_t *)&srv->lc->prop_state.time_fade_standby_auto;
         break;
     case BLE_MESH_LIGHT_CONTROL_TIME_FADE_STANDBY_MANUAL:
-        val = (u8_t *)&srv->lc->prop_state.time_fade_standby_manual;
+        val = (uint8_t *)&srv->lc->prop_state.time_fade_standby_manual;
         break;
     case BLE_MESH_LIGHT_CONTROL_LIGHTNESS_ON:
-        val = (u8_t *)&srv->lc->prop_state.lightness_on;
+        val = (uint8_t *)&srv->lc->prop_state.lightness_on;
         break;
     case BLE_MESH_LIGHT_CONTROL_LIGHTNESS_PROLONG:
-        val = (u8_t *)&srv->lc->prop_state.lightness_prolong;
+        val = (uint8_t *)&srv->lc->prop_state.lightness_prolong;
         break;
     case BLE_MESH_LIGHT_CONTROL_LIGHTNESS_STANDBY:
-        val = (u8_t *)&srv->lc->prop_state.lightness_standby;
+        val = (uint8_t *)&srv->lc->prop_state.lightness_standby;
         break;
     case BLE_MESH_LIGHT_CONTROL_AMBIENT_LUXLEVEL_ON:
-        val = (u8_t *)&srv->lc->prop_state.ambient_luxlevel_on;
+        val = (uint8_t *)&srv->lc->prop_state.ambient_luxlevel_on;
         break;
     case BLE_MESH_LIGHT_CONTROL_AMBIENT_LUXLEVEL_PROLONG:
-        val = (u8_t *)&srv->lc->prop_state.ambient_luxlevel_prolong;
+        val = (uint8_t *)&srv->lc->prop_state.ambient_luxlevel_prolong;
         break;
     case BLE_MESH_LIGHT_CONTROL_AMBIENT_LUXLEVEL_STANDBY:
-        val = (u8_t *)&srv->lc->prop_state.ambient_luxlevel_standby;
+        val = (uint8_t *)&srv->lc->prop_state.ambient_luxlevel_standby;
         break;
     case BLE_MESH_LIGHT_CONTROL_REGULATOR_KIU:
-        val = (u8_t *)&srv->lc->prop_state.regulator_kiu;
+        val = (uint8_t *)&srv->lc->prop_state.regulator_kiu;
         break;
     case BLE_MESH_LIGHT_CONTROL_REGULATOR_KID:
-        val = (u8_t *)&srv->lc->prop_state.regulator_kid;
+        val = (uint8_t *)&srv->lc->prop_state.regulator_kid;
         break;
     case BLE_MESH_LIGHT_CONTROL_REGULATOR_KPU:
-        val = (u8_t *)&srv->lc->prop_state.regulator_kpu;
+        val = (uint8_t *)&srv->lc->prop_state.regulator_kpu;
         break;
     case BLE_MESH_LIGHT_CONTROL_REGULATOR_KPD:
-        val = (u8_t *)&srv->lc->prop_state.regulator_kpd;
+        val = (uint8_t *)&srv->lc->prop_state.regulator_kpd;
         break;
     case BLE_MESH_LIGHT_CONTROL_REGULATOR_ACCURACY:
-        val = (u8_t *)&srv->lc->prop_state.regulator_accuracy;
+        val = (uint8_t *)&srv->lc->prop_state.regulator_accuracy;
         break;
     }
 
     return val;
 }
 
-u8_t *bt_mesh_get_lc_prop_value(struct bt_mesh_model *model, u16_t prop_id)
+uint8_t *bt_mesh_get_lc_prop_value(struct bt_mesh_model *model, uint16_t prop_id)
 {
     if (model == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -2731,11 +2731,11 @@ u8_t *bt_mesh_get_lc_prop_value(struct bt_mesh_model *model, u16_t prop_id)
 
 static void send_light_lc_prop_status(struct bt_mesh_model *model,
                                       struct bt_mesh_msg_ctx *ctx,
-                                      u16_t prop_id, bool publish)
+                                      uint16_t prop_id, bool publish)
 {
     struct net_buf_simple *msg = NULL;
-    u8_t length = 1 + 2 + 4;
-    u8_t *prop_val = NULL;
+    uint8_t length = 1 + 2 + 4;
+    uint8_t *prop_val = NULL;
 
     prop_val = get_light_lc_prop_val(model, prop_id);
     if (prop_val == NULL) {
@@ -2774,7 +2774,7 @@ static void light_lc_prop_get(struct bt_mesh_model *model,
                               struct net_buf_simple *buf)
 {
     struct bt_mesh_light_lc_setup_srv *srv = model->user_data;
-    u16_t prop_id = 0U;
+    uint16_t prop_id = 0U;
 
     if (srv == NULL || srv->lc == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -2793,7 +2793,7 @@ static void light_lc_prop_get(struct bt_mesh_model *model,
             .lc_property_get.id = net_buf_simple_pull_le16(buf),
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_GET_MSG, model, ctx, (const u8_t *)&get, sizeof(get));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_GET_MSG, model, ctx, (const uint8_t *)&get, sizeof(get));
         return;
     }
 
@@ -2806,8 +2806,8 @@ static void light_lc_prop_set(struct bt_mesh_model *model,
                               struct net_buf_simple *buf)
 {
     struct bt_mesh_light_lc_setup_srv *srv = model->user_data;
-    u8_t *prop_val = NULL, expect_len = 0U;
-    u16_t prop_id = 0U;
+    uint8_t *prop_val = NULL, expect_len = 0U;
+    uint16_t prop_id = 0U;
 
     if (srv == NULL || srv->lc == NULL) {
         BT_ERR("%s, Invalid model user data", __func__);
@@ -2826,7 +2826,7 @@ static void light_lc_prop_set(struct bt_mesh_model *model,
             .lc_property_set.value = buf,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const u8_t *)&set, sizeof(set));
+            BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -2850,7 +2850,7 @@ static void light_lc_prop_set(struct bt_mesh_model *model,
         .lc_property_set.value = buf,
     };
     bt_mesh_lighting_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const u8_t *)&change, sizeof(change));
+        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
 
     if (ctx->recv_op == BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET) {
         send_light_lc_prop_status(model, ctx, prop_id, false);
