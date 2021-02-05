@@ -19,6 +19,7 @@
 #include "nvs_partition_manager.hpp"
 #include "esp_partition.h"
 #include "sdkconfig.h"
+#include <functional>
 #include "nvs_handle_simple.hpp"
 #ifdef CONFIG_NVS_ENCRYPTION
 #include "nvs_encr.hpp"
@@ -120,8 +121,16 @@ extern "C" esp_err_t nvs_flash_secure_init_custom(const char *partName, uint32_t
 
 static esp_err_t close_handles_and_deinit(const char* part_name)
 {
-    // Delete all corresponding open handles
-    s_nvs_handles.clearAndFreeNodes();
+    auto belongs_to_part = [=](NVSHandleEntry& e) -> bool {
+        return strncmp(e.nvs_handle->get_partition_name(), part_name, NVS_PART_NAME_MAX_SIZE) == 0;
+    };
+
+    auto it = find_if(begin(s_nvs_handles), end(s_nvs_handles), belongs_to_part);
+
+    while (it != end(s_nvs_handles)) {
+        s_nvs_handles.erase(it);
+        it = find_if(begin(s_nvs_handles), end(s_nvs_handles), belongs_to_part);
+    }
 
     // Deinit partition
     return NVSPartitionManager::get_instance()->deinit_partition(part_name);
