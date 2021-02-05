@@ -129,9 +129,9 @@ void initialise_wifi(void)
     ESP_ERROR_CHECK(esp_netif_init());
     wifi_event_group = xEventGroupCreate();
     ESP_ERROR_CHECK(esp_event_loop_create_default());
-    esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
+    sta_netif = esp_netif_create_default_wifi_sta();
     assert(sta_netif);
-    esp_netif_t *ap_netif = esp_netif_create_default_wifi_ap();
+    ap_netif = esp_netif_create_default_wifi_ap();
     assert(ap_netif);
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &ip_event_handler, NULL));
