@@ -387,21 +387,17 @@ static int disc_cb(struct ble_gap_event *event, void *arg)
 #endif
 
     switch (event->type) {
-    case BLE_GAP_EVENT_DISC:
-        desc = &event->disc;
+    case BLE_GAP_EVENT_DISC: {
+        struct net_buf_simple buf = {0};
 
-        struct net_buf_simple *buf = bt_mesh_alloc_buf(desc->length_data);
-        if (!buf) {
-            BT_ERR("%s, Out of memory", __func__);
-            return 0;
-        }
-        net_buf_simple_add_mem(buf, desc->data, desc->length_data);
+        desc = &event->disc;
+        net_buf_simple_init_with_data(&buf, desc->data, desc->length_data);
 
         if (bt_mesh_scan_dev_found_cb) {
-            bt_mesh_scan_dev_found_cb((bt_mesh_addr_t *)&desc->addr, desc->rssi, desc->event_type, buf);
+            bt_mesh_scan_dev_found_cb((bt_mesh_addr_t *)&desc->addr, desc->rssi, desc->event_type, &buf);
         }
-        bt_mesh_free(buf);
         break;
+    }
 #if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
     CONFIG_BLE_MESH_GATT_PROXY_CLIENT
     case BLE_GAP_EVENT_CONNECT:
