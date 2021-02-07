@@ -25,6 +25,20 @@
 static const char *DCE_TAG = "sim7600";
 
 /**
+ * @brief Macro defined for error checking
+ *
+ */
+#define DCE_CHECK(a, str, goto_tag, ...)                                              \
+    do                                                                                \
+    {                                                                                 \
+        if (!(a))                                                                     \
+        {                                                                             \
+            ESP_LOGE(DCE_TAG, "%s(%d): " str, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
+            goto goto_tag;                                                            \
+        }                                                                             \
+    } while (0)
+
+/**
  * @brief Handle response from AT+CBC
  */
 static esp_err_t sim7600_handle_cbc(modem_dce_t *dce, const char *line)

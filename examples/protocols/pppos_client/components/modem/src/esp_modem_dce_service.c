@@ -17,6 +17,20 @@
 
 static const char *DCE_TAG = "dce_service";
 
+/**
+ * @brief Macro defined for error checking
+ *
+ */
+#define DCE_CHECK(a, str, goto_tag, ...)                                              \
+    do                                                                                \
+    {                                                                                 \
+        if (!(a))                                                                     \
+        {                                                                             \
+            ESP_LOGE(DCE_TAG, "%s(%d): " str, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
+            goto goto_tag;                                                            \
+        }                                                                             \
+    } while (0)
+
 esp_err_t esp_modem_dce_handle_response_default(modem_dce_t *dce, const char *line)
 {
     esp_err_t err = ESP_FAIL;
