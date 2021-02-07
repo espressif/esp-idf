@@ -2044,23 +2044,23 @@
 #define RTC_MEM_CRC_FINISH      (BIT(31))
 #define RTC_MEM_CRC_FINISH_M    (BIT(31))
 #define RTC_MEM_CRC_FINISH_V    0x1
-#define RTC_MEM_CRC_FINISH_S    (31)
+#define RTC_MEM_CRC_FINISH_S    31
 #define RTC_MEM_CRC_LEN         (0x7ff)
 #define RTC_MEM_CRC_LEN_M       ((RTC_MEM_CRC_LEN_V)<<(RTC_MEM_CRC_LEN_S))
-#define RTC_MEM_CRC_LEN_V       (0x7ff)
-#define RTC_MEM_CRC_LEN_S       (20)
-#define RTC_MEM_CRC_ADDR        (0x7ff)
+#define RTC_MEM_CRC_LEN_V       0x7ff
+#define RTC_MEM_CRC_LEN_S       20
+#define RTC_MEM_CRC_ADDR        0x7ff
 #define RTC_MEM_CRC_ADDR_M      ((RTC_MEM_CRC_ADDR_V)<<(RTC_MEM_CRC_ADDR_S))
-#define RTC_MEM_CRC_ADDR_V      (0x7ff)
-#define RTC_MEM_CRC_ADDR_S      (9)
+#define RTC_MEM_CRC_ADDR_V      0x7ff
+#define RTC_MEM_CRC_ADDR_S      9
 #define RTC_MEM_CRC_START       (BIT(8))
 #define RTC_MEM_CRC_START_M     (BIT(8))
 #define RTC_MEM_CRC_START_V     0x1
-#define RTC_MEM_CRC_START_S     (8)
-#define RTC_MEM_PID_CONF        (0xff)
-#define RTC_MEM_PID_CONF_M      (0xff)
-#define RTC_MEM_PID_CONF_V      (0xff)
-#define RTC_MEM_PID_CONF_S      (0)
+#define RTC_MEM_CRC_START_S     8
+#define RTC_MEM_PID_CONF        0xff
+#define RTC_MEM_PID_CONF_M      0xff
+#define RTC_MEM_PID_CONF_V      0xff
+#define RTC_MEM_PID_CONF_S      0
 
 #define RTC_MEM_CRC_RES         (DR_REG_RTCCNTL_BASE + 0x41 * 4)
 
