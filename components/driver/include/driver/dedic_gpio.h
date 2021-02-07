@@ -20,6 +20,8 @@
 #include "esp_attr.h"
 #include "soc/soc_caps.h"
 
+#if SOC_DEDICATED_GPIO_SUPPORTED
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -171,3 +173,5 @@ esp_err_t dedic_gpio_bundle_set_interrupt_and_callback(dedic_gpio_bundle_handle_
 #ifdef __cplusplus
 }
 #endif
+
+#endif //SOC_DEDICATED_GPIO_SUPPORTED

@@ -17,10 +17,12 @@
 
 #include <stdint.h>
 #include "esp_err.h"
-#include "driver/gpio.h"
 #include "soc/soc_caps.h"
 #include "soc/rtc_io_periph.h"
 #include "hal/rtc_io_types.h"
+#include "driver/gpio.h"
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -42,6 +44,7 @@ static inline bool rtc_gpio_is_valid_gpio(gpio_num_t gpio_num)
 
 #define RTC_GPIO_IS_VALID_GPIO(gpio_num) rtc_gpio_is_valid_gpio(gpio_num) // Deprecated, use rtc_gpio_is_valid_gpio()
 
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 /**
  * @brief Get RTC IO index number by gpio number.
  *
@@ -52,14 +55,8 @@ static inline bool rtc_gpio_is_valid_gpio(gpio_num_t gpio_num)
  */
 static inline int rtc_io_number_get(gpio_num_t gpio_num)
 {
-#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
     return rtc_io_num_map[gpio_num];
-#else
-    return gpio_num;
-#endif
 }
-
-#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
 /**
  * @brief Init a GPIO as RTC GPIO
