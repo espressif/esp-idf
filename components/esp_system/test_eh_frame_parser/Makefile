@@ -14,7 +14,7 @@
 # limitations under the License.
 
 CC=gcc
-CFLAGS=-W -fasynchronous-unwind-tables -I. -std=c99 -g -DCONFIG_ESP_SYSTEM_USE_EH_FRAME -m32
+CFLAGS=-W -fasynchronous-unwind-tables -I. -I../include/ -std=c99 -g -DCONFIG_ESP_SYSTEM_USE_EH_FRAME -m32
 LDFLAGS=-Wl,--eh-frame-hdr -m32 -g -Tlinker.ld -no-pie
 OBJECTS=objs/eh_frame_parser.o objs/main.o
 HEADERS=eh_frame_parser_impl.h

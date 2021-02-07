@@ -118,6 +118,6 @@ REGION_ALIAS("rtc_data_location", rtc_iram_seg );
 #endif
 
 #if CONFIG_ESP_SYSTEM_USE_EH_FRAME
-    ASSERT ((_eh_frame_end > _eh_frame), "Error: eh_frame size is null!");
-    ASSERT ((_eh_frame_hdr_end > _eh_frame_hdr), "Error: eh_frame_hdr size is null!");
+    ASSERT ((__eh_frame_end > __eh_frame), "Error: eh_frame size is null!");
+    ASSERT ((__eh_frame_hdr_end > __eh_frame_hdr), "Error: eh_frame_hdr size is null!");
 #endif

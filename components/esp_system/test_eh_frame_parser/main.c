@@ -20,7 +20,8 @@
  * parsing `eh_frame` and `eh_frame_hdr`.
  */
 
-#define _POSIX_C_SOURCE 199309L
+#define _POSIX_C_SOURCE 200809L
+#define _DEFAULT_SOURCE
 #include <stdio.h>
 #include <signal.h>
 #include <string.h>
@@ -29,7 +30,8 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <ucontext.h>
-#include "port/eh_frame_parser.h"
+#include "../include/eh_frame_parser.h"
+#include "eh_frame_parser_impl.h"
 
 /**
  * @brief Index of x86 registers in `greg_t` structure.
@@ -53,7 +55,12 @@
  * @brief Number which will determine the depth of the call stack.
  * Check `main()` for more information.
  */
-#define NUMBER_TO_TEST  (4)
+#define NUMBER_TO_TEST          (4)
+
+/**
+ * @brief Number of iteration for function `esp_eh_frame_generated_step`.
+ */
+#define NUMBER_OF_ITERATION     (2 * NUMBER_TO_TEST + 2 + 1)
 
 /**
  * @brief Define a simple linked list type and initialize one.
@@ -106,7 +113,7 @@ struct functions_info funs[] = {
 
 /**
  * @brief Test whether the address passed as PC is part of the function which
- * name is `funciton_name`. The global array `funs` is used.
+ * name is `function_name`. The global array `funs` is used.
  *
  * @param pc Program counter to test. (address in the program)
  * @param function_name Function name to check the address of.
@@ -127,18 +134,19 @@ bool is_pc_in_function(const uint32_t pc, const char* function_name)
 }
 
 /**
+ * @brief Number of times `esp_eh_frame_generated_step` is called.
+ */
+static uint32_t iteration = 1;
+
+/**
  * @brief Override the default function called when a backtrace step is
  * generated.
  */
 void esp_eh_frame_generated_step(uint32_t pc, uint32_t sp) {
-    /* Number of times this function has been entered. */
-    static uint32_t iteration = 1;
-
-    /* The first PC in the backtrace are calls to `browse_list()`.
-     * +2 is due to the fact that the list contains all the numbers
+    /* The first PCs in the backtrace are calls to `browse_list()` + 2.
+     * This is due to the fact that the list contains all the numbers
      * between NUMBER_TO_TEST to 0 included. Moreover, another call
-     * is made when we meet the NULL pointer.
-     */
+     * is made when we meet the NULL pointer. */
     if (iteration > 0 && iteration <= (NUMBER_TO_TEST + 2)) {
         assert(is_pc_in_function(pc, "browse_list"));
     } else {
@@ -151,13 +159,15 @@ void esp_eh_frame_generated_step(uint32_t pc, uint32_t sp) {
          * browse_list (NUMBER_TO_TEST + 2 iterations), is_even
          * (NUMBER_TO_TEST/2 calls) and is_odd (NUMBER_TO_TEST/2 calls) calls.
          */
-        if (iteration > (2 * NUMBER_TO_TEST + 2))
+        if (iteration >= NUMBER_OF_ITERATION)
             return;
         else if (iteration % 2 == 0)
             assert(is_pc_in_function(pc, "is_odd"));
         else
             assert(is_pc_in_function(pc, "is_even"));
     }
+
+    /* Number of times this function has been entered. */
     iteration++;
 }
 
@@ -175,7 +185,7 @@ void signal_handler(int signal, siginfo_t *info, void *ucontext) {
      * Indeed, the registers index defined in ucontext.h are NOT the same
      * the registers index DWARF is expecting. */
     ucontext_t* context = (ucontext_t*) ucontext;
-    greg_t *gregset = context->uc_mcontext.__gregs;
+    greg_t *gregset = context->uc_mcontext.gregs;
     x86ExcFrame frame = {
         .eax = gregset[REG_EAX],
         .ecx = gregset[REG_ECX],
@@ -195,8 +205,15 @@ void signal_handler(int signal, siginfo_t *info, void *ucontext) {
      */
     esp_eh_frame_print_backtrace(&frame);
 
-    /* No assert has been triggered, the backtrace succeeded. */
-    printf("\e[32m\e[1mAll tests passed \e[0m\r\n");
+    /* No assert has been triggered, the backtrace succeeded if the number of
+     * iterations of function `esp_eh_frame_generated_step` is correct. */
+    if (iteration == NUMBER_OF_ITERATION) {
+        printf("\e[32m\e[1mAll tests passed \e[0m\r\n");
+    } else {
+        printf("\e[31m\e[1mWrong length of backtrace (%d iteration, expected %d) \e[0m\r\n",
+        iteration, NUMBER_OF_ITERATION);
+        exit(1);
+    }
 
     /* Everything went fine, exit normally. */
     exit(0);
@@ -298,6 +315,7 @@ int main (int argc, char** argv)
     int res = sigaction(SIGSEGV, &sig, NULL);
     if (res) {
         perror("Could not override SIGSEV signal");
+        return 1;
     }
 
     /* Trigger the segmentation fault with a complex backtrace. */

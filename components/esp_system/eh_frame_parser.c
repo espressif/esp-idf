@@ -25,12 +25,13 @@
  * http://dwarfstd.org/Download.php
  */
 
-#include "port/eh_frame_parser.h"
-#include "port/eh_frame_parser_impl.h"
+#include "eh_frame_parser.h"
 #include "esp_private/panic_internal.h"
 #include <string.h>
 
 #if CONFIG_ESP_SYSTEM_USE_EH_FRAME
+
+#include "eh_frame_parser_impl.h"
 
 /**
  * @brief Dimension of an array (number of elements)
@@ -90,8 +91,8 @@
 /**
  * @brief Pointers to both .eh_frame_hdr and .eh_frame sections.
  */
-#define EH_FRAME_HDR_ADDR   (&_eh_frame_hdr)
-#define EH_FRAME_ADDR       (&_eh_frame)
+#define EH_FRAME_HDR_ADDR   (&__eh_frame_hdr)
+#define EH_FRAME_ADDR       (&__eh_frame)
 
 /**
  * @brief Structure of .eh_frame_hdr section header.
@@ -259,8 +260,8 @@ typedef struct {
  * @brief Symbols defined by the linker.
  * Retrieve the addresses of both .eh_frame_hdr and .eh_frame sections.
  */
-extern char _eh_frame_hdr;
-extern char _eh_frame;
+extern char __eh_frame_hdr;
+extern char __eh_frame;
 
 /**
  * @brief Decode multiple bytes encoded in LEB128.
@@ -439,22 +440,22 @@ static const table_entry* esp_eh_frame_find_entry(const table_entry* sorted_tabl
             /* Signed comparisons. */
             const int32_t sfun_addr = (int32_t) fun_addr;
             const int32_t snxt_addr = (int32_t) nxt_addr;
-        if (sfun_addr <= ra && snxt_addr > ra)
-            found = true;
-        else if (snxt_addr <= ra)
-            begin = middle + 1;
-        else
-            end = middle;
+            if (sfun_addr <= ra && snxt_addr > ra)
+                found = true;
+            else if (snxt_addr <= ra)
+                begin = middle + 1;
+            else
+                end = middle;
 
         } else {
             /* Unsigned comparisons. */
             const uint32_t ura = (uint32_t) ra;
-        if (fun_addr <= ura && nxt_addr > ura)
-            found = true;
-        else if (nxt_addr <= ura)
-            begin = middle + 1;
-        else
-            end = middle;
+            if (fun_addr <= ura && nxt_addr > ura)
+                found = true;
+            else if (nxt_addr <= ura)
+                begin = middle + 1;
+            else
+                end = middle;
         }
 
         middle = (end + begin) / 2;
@@ -799,10 +800,45 @@ static uint32_t esp_eh_frame_restore_caller_state(const uint32_t* fde,
     EXECUTION_FRAME_SP(*frame) = cfa_addr;
 
     /* If the frame was not available, it would be possible to retrieve the return address
-     * register thanks to CIE structure. */
-    return EXECUTION_FRAME_REG(frame, ra_reg);
+     * register thanks to CIE structure.
+     * The return address points to the address the PC needs to jump to. It
+     * does NOT point to the instruction where the routine call occured.
+     * This can cause problems with functions without epilogue (i.e. function
+     * which last instruction is a function call). This happens when compiler
+     * optimization are ON or when a function is marked as "noreturn".
+     *
+     * Thus, in order to point to the call/jal instruction, we need to
+     * subtract at least 1 byte but not more than an instruction size.
+     */
+    return EXECUTION_FRAME_REG(frame, ra_reg) - 2;
 }
 
+/**
+ * @brief Test whether the DWARF information for the given PC are missing or not.
+ *
+ * @param fde FDE associated to this PC. This FDE is the one found thanks to
+ *            `esp_eh_frame_find_entry()`.
+ * @param pc PC to get information from.
+ *
+ * @return true is DWARF information are missing, false else.
+ */
+static bool esp_eh_frame_missing_info(const uint32_t* fde, uint32_t pc) {
+    if (fde == NULL) {
+        return true;
+    }
+
+    /* Get the range of this FDE entry. It is possible that there are some
+     * gaps between DWARF entries, in that case, the FDE entry found has
+     * indeed an initial_location very close to PC but doesn't reach it.
+     * For example, if FDE initial_location is 0x40300000 and its length is
+     * 0x100, but PC value is 0x40300200, then some DWARF information
+     * are missing as there is a gap.
+     * End the backtrace. */
+    const uint32_t initial_location = ((uint32_t) &fde[ESP_FDE_INITLOC_IDX] + fde[ESP_FDE_INITLOC_IDX]);
+    const uint32_t range_length = fde[ESP_FDE_RANGELEN_IDX];
+
+    return (initial_location + range_length) <= pc;
+}
 
 /**
  * @brief When one step of the backtrace is generated, output it to the serial.
@@ -824,10 +860,12 @@ void __attribute__((weak)) esp_eh_frame_generated_step(uint32_t pc, uint32_t sp)
  *
  * @param frame_or Snapshot of the CPU registers when the CPU stopped its normal execution.
  */
-void esp_eh_frame_print_backtrace(const ExecutionFrame *frame_or)
+void esp_eh_frame_print_backtrace(const void *frame_or)
 {
+    assert(frame_or != NULL);
+
     static dwarf_regs state = { 0 };
-    ExecutionFrame frame = *frame_or;
+    ExecutionFrame frame = *((ExecutionFrame*) frame_or);
     uint32_t size = 0;
     uint8_t* enc_values = NULL;
     bool end_of_backtrace = false;
@@ -865,16 +903,23 @@ void esp_eh_frame_print_backtrace(const ExecutionFrame *frame_or)
         const table_entry* from_fun = esp_eh_frame_find_entry(sorted_table, fde_count,
                                                               table_enc, EXECUTION_FRAME_PC(frame));
 
-        if (from_fun == 0) {
+        /* Get absolute address of FDE entry describing the function where PC left of. */
+        uint32_t* fde = NULL;
+
+        if (from_fun != NULL) {
+            fde = esp_eh_frame_decode_address(&from_fun->fde_addr, table_enc);
+        }
+
+        if (esp_eh_frame_missing_info(fde, EXECUTION_FRAME_PC(frame))) {
             /* Address was not found in the list. */
+            panic_print_str("\r\nBacktrace ended abruptly: cannot find DWARF information for"
+                            " instruction at address 0x");
+            panic_print_hex(EXECUTION_FRAME_PC(frame));
+            panic_print_str("\r\n");
             break;
         }
 
-        /* Get absolute address of FDE entry describing the function where PC left of. */
-        const uint32_t* fde = esp_eh_frame_decode_address(&from_fun->fde_addr, table_enc);
-
-        /* Clean and set the DWARF register structure.
-         * TODO: Initialization should be done by the instruction contained by the CIE associated to the FDE. */
+        /* Clean and set the DWARF register structure. */
         memset(&state, 0, sizeof(dwarf_regs));
 
         const uint32_t prev_sp = EXECUTION_FRAME_SP(frame);

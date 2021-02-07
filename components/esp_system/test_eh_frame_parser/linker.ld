@@ -18,12 +18,12 @@ SECTIONS
 {
   .eh_frame_hdr   :
     {
-      _eh_frame_hdr = ABSOLUTE(.);
-      *(.eh_frame_hdr) *(.eh_frame_entry .eh_frame_entry.*)
+        __eh_frame_hdr = ABSOLUTE(.);
+        *(.eh_frame_hdr) *(.eh_frame_entry .eh_frame_entry.*)
     }
   .eh_frame       : ONLY_IF_RO
     {
-        _eh_frame = ABSOLUTE(.);
+        __eh_frame = ABSOLUTE(.);
         KEEP (*(.eh_frame)) *(.eh_frame.*)
     }
 }

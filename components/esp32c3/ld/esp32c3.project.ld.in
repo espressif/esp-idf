@@ -339,22 +339,28 @@ SECTIONS
     *(.srodata.*)
     _thread_local_end = ABSOLUTE(.);
     _rodata_reserved_end = ABSOLUTE(.);
-    . = ALIGN(4);
+    . = ALIGN(ALIGNOF(.eh_frame));
   } > default_rodata_seg
 
-  .eh_frame :
+  /* Keep this section shall be at least aligned on 4 */
+  .eh_frame : ALIGN(8)
   {
-    _eh_frame = ABSOLUTE(.);
+    __eh_frame = ABSOLUTE(.);
     KEEP (*(.eh_frame))
-    _eh_frame_end = ABSOLUTE(.);
-  } > drom0_0_seg
+    __eh_frame_end = ABSOLUTE(.);
+    /* Guarantee that this section and the next one will be merged by making
+     * them adjacent. */
+    . = ALIGN(ALIGNOF(.eh_frame_hdr));
+  } > default_rodata_seg
 
-  .eh_frame_hdr :
+  /* To avoid any exception in C++ exception frame unwinding code, this section
+   * shall be aligned on 8. */
+  .eh_frame_hdr : ALIGN(8)
   {
-    _eh_frame_hdr = ABSOLUTE(.);
+    __eh_frame_hdr = ABSOLUTE(.);
     KEEP (*(.eh_frame_hdr))
-    _eh_frame_hdr_end = ABSOLUTE(.);
-  } > drom0_0_seg
+    __eh_frame_hdr_end = ABSOLUTE(.);
+  } > default_rodata_seg
 
   .flash.rodata_noload (NOLOAD) :
   {

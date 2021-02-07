@@ -98,10 +98,12 @@ menu "ESP System Settings"
         default n
         depends on IDF_TARGET_ARCH_RISCV
         help
-            Generate DWARF information in the resulting binary to perform backtracing when panics occur. Activating
-            this option will activate asynchronous frame unwinding and generation of both .eh_frame and .eh_frame_hdr
-            sections, resulting in a bigger binary size (20% to 100% larger). This option shall be not be used for
-            production.
+            Generate DWARF information for each function of the project. These information will parsed and used to
+            perform backtracing when panics occur. Activating this option will activate asynchronous frame unwinding
+            and generation of both .eh_frame and .eh_frame_hdr sections, resulting in a bigger binary size (20% to
+            100% larger). The main purpose of this option is to be able to have a backtrace parsed and printed by
+            the program itself, regardless of the serial monitor used.
+            This option shall NOT be used for production.
 
     menu "Memory protection"
 

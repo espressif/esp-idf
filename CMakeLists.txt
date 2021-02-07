@@ -15,6 +15,7 @@ unset(link_options)
 
 # Add the following build specifications here, since these seem to be dependent
 # on config values on the root Kconfig.
+
 if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_COMPILER_OPTIMIZATION_SIZE)

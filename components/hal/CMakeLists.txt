@@ -1,12 +1,13 @@
 idf_build_get_property(target IDF_TARGET)
 
 set(srcs    "wdt_hal_iram.c"
-            "mpu_hal.c")
+            "mpu_hal.c"
+            "cpu_hal.c")
+
 set(includes "${target}/include" "include" "platform_port/include")
 
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs
-                "cpu_hal.c"
                 "rmt_hal.c"
                 "rtc_io_hal.c"
                 "spi_hal.c"

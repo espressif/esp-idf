@@ -207,6 +207,37 @@ If :doc:`IDF Monitor <tools/idf-monitor>` is used, Program Counter values will b
         MSTATUS : 0x00001881  MTVEC   : 0x40380001  MCAUSE  : 0x00000007  MTVAL   : 0x00000000
         MHARTID : 0x00000000
 
+    Moreover, it is also capable of generating and printing a backtrace thanks to the stack dump provided by the board in the panic handler. 
+    The output looks like this:
+
+    ::
+
+        Backtrace:
+
+        0x42006686 in bar (ptr=ptr@entry=0x0) at ../main/hello_world_main.c:18
+        18	    *ptr = 0x42424242;
+        #0  0x42006686 in bar (ptr=ptr@entry=0x0) at ../main/hello_world_main.c:18
+        #1  0x42006692 in foo () at ../main/hello_world_main.c:22
+        #2  0x420066ac in app_main () at ../main/hello_world_main.c:28
+        #3  0x42015ece in main_task (args=<optimized out>) at /Users/user/esp/components/freertos/port/port_common.c:142
+        #4  0x403859b8 in vPortEnterCritical () at /Users/user/esp/components/freertos/port/riscv/port.c:130
+        #5  0x00000000 in ?? ()
+        Backtrace stopped: frame did not save the PC
+
+    While this is very handy efficient, it requires the user to use :doc:`IDF Monitor <tools/idf-monitor>`. Thus, in order to generate and print a backtrace while using another monitor program, it is possible to activate :ref:`CONFIG_ESP_SYSTEM_USE_EH_FRAME` option from the menuconfig.
+
+    This option will let the compiler generate DWARF information for each function of the project. Then, when a CPU exception occurs, the panic handler will parse these data and determine the backtrace of the task that failed. The output looks like this:
+    
+    ::
+
+        Backtrace: 0x42009e9a:0x3fc92120 0x42009ea6:0x3fc92120 0x42009ec2:0x3fc92130 0x42024620:0x3fc92150 0x40387d7c:0x3fc92160 0xfffffffe:0x3fc92170    
+    
+    These PC:SP pairs represent PC, the Program Counter and SP, the Stack Pointer for each stack frame of the current task.
+
+
+    The main benefit of this option is that this trace is generate by the board itself. Its drawback is that it results in a larger compiled binary, with an increase that can go from 20% to 100%. Finally, it is highly advised to not use this option for production as it results in the presence of debug information within the final binary.
+    
+
 To find the location where a fatal error has happened, look at the lines which follow the "Backtrace" line. Fatal error location is the top line, and subsequent lines show the call stack.
 
 .. _GDB-Stub:
