@@ -53,7 +53,7 @@ static const char *SPI_TAG = "spi";
             SPI_CHECK(GPIO_IS_VALID_GPIO(pin_num), pin_name" not valid", ESP_ERR_INVALID_ARG); \
         }
 
-#define MAIN_BUS_DEFAULT() { \
+#define SPI_MAIN_BUS_DEFAULT() { \
         .host_id = 0, \
         .bus_attr = { \
             .tx_dma_chan = 0, \
@@ -88,7 +88,7 @@ ATOMIC_VAR_INIT(false),
 };
 
 static const char* spi_claiming_func[3] = {NULL, NULL, NULL};
-static spicommon_bus_context_t s_mainbus = MAIN_BUS_DEFAULT();
+static spicommon_bus_context_t s_mainbus = SPI_MAIN_BUS_DEFAULT();
 static spicommon_bus_context_t* bus_ctx[SOC_SPI_PERIPH_NUM] = {&s_mainbus};
 
 #if !SOC_GDMA_SUPPORTED

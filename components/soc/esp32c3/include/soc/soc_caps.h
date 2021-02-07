@@ -10,19 +10,7 @@
 #define SOC_TWAI_SUPPORTED  1
 #define SOC_BT_SUPPORTED    1
 
-// There are 3 DMA channels on ESP32-C3
-// Attention: These fixed DMA channels are temporarily workaround before we have a centralized DMA controller API to help alloc the channel dynamically
-// Remove them when GDMA driver API is ready
-#define SOC_GDMA_SPI2_DMA_CHANNEL   (2)
-
-//NOTE: The CHx number should be consistent with the selected DMA channel above
-#define SOC_GDMA_SPI2_INTR_SOURCE   ETS_DMA_CH2_INTR_SOURCE
-//On C3, there is only 1 GPSPI controller (GPSPI2)
-#define SOC_GDMA_SPI3_DMA_CHANNEL   SOC_GDMA_SPI2_DMA_CHANNEL
-
-
 #include "rmt_caps.h"
-
 
 /*-------------------------- DAC CAPS ----------------------------------------*/
 #define SOC_DAC_PERIPH_NUM      0
