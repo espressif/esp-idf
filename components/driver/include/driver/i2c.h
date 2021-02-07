@@ -33,9 +33,39 @@ extern "C" {
 
 #define I2C_APB_CLK_FREQ  APB_CLK_FREQ /*!< I2C source clock is APB clock, 80MHz */
 
-#define I2C_NUM_0              (0) /*!< I2C port 0 */
-#define I2C_NUM_1              (1) /*!< I2C port 1 */
 #define I2C_NUM_MAX            (SOC_I2C_NUM) /*!< I2C port max */
+#define I2C_NUM_0              (0) /*!< I2C port 0 */
+#if SOC_I2C_NUM >= 2
+#define I2C_NUM_1              (1) /*!< I2C port 1 */
+#endif
+
+// I2C clk flags for users to use, can be expanded in the future.
+#define I2C_SCLK_SRC_FLAG_FOR_NOMAL       (0)         /*!< Any one clock source that is available for the specified frequency may be choosen*/
+#define I2C_SCLK_SRC_FLAG_AWARE_DFS       (1 << 0)    /*!< For REF tick clock, it won't change with APB.*/
+#define I2C_SCLK_SRC_FLAG_LIGHT_SLEEP     (1 << 1)    /*!< For light sleep mode.*/
+
+/**
+ * @brief I2C initialization parameters
+ */
+typedef struct{
+    i2c_mode_t mode;     /*!< I2C mode */
+    int sda_io_num;      /*!< GPIO number for I2C sda signal */
+    int scl_io_num;      /*!< GPIO number for I2C scl signal */
+    bool sda_pullup_en;  /*!< Internal GPIO pull mode for I2C sda signal*/
+    bool scl_pullup_en;  /*!< Internal GPIO pull mode for I2C scl signal*/
+
+    union {
+        struct {
+            uint32_t clk_speed;     /*!< I2C clock frequency for master mode, (no higher than 1MHz for now) */
+        } master;                   /*!< I2C master config */
+        struct {
+            uint8_t addr_10bit_en;  /*!< I2C 10bit address mode enable for slave mode */
+            uint16_t slave_addr;    /*!< I2C address for slave mode */
+        } slave;                    /*!< I2C slave config */
+    };
+    uint32_t clk_flags;             /*!< Bitwise of ``I2C_SCLK_SRC_FLAG_**FOR_DFS**`` for clk source choice*/
+} i2c_config_t;
+
 
 typedef void *i2c_cmd_handle_t;    /*!< I2C command handle  */
 

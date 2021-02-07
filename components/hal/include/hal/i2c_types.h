@@ -79,35 +79,8 @@ typedef enum {
     I2C_SCLK_MAX,
 } i2c_sclk_t;
 
-// I2C clk flags for users to use, can be expanded in the future.
-#define I2C_SCLK_SRC_FLAG_FOR_NOMAL       (0)         /*!< Any one clock source that is available for the specified frequency may be choosen*/
-#define I2C_SCLK_SRC_FLAG_AWARE_DFS       (1 << 0)    /*!< For REF tick clock, it won't change with APB.*/
-#define I2C_SCLK_SRC_FLAG_LIGHT_SLEEP     (1 << 1)    /*!< For light sleep mode.*/
-
 /// Use the highest speed that is available for the clock source picked by clk_flags
 #define I2C_CLK_FREQ_MAX                  (-1)
-
-/**
- * @brief I2C initialization parameters
- */
-typedef struct{
-    i2c_mode_t mode;     /*!< I2C mode */
-    int sda_io_num;      /*!< GPIO number for I2C sda signal */
-    int scl_io_num;      /*!< GPIO number for I2C scl signal */
-    bool sda_pullup_en;  /*!< Internal GPIO pull mode for I2C sda signal*/
-    bool scl_pullup_en;  /*!< Internal GPIO pull mode for I2C scl signal*/
-
-    union {
-        struct {
-            uint32_t clk_speed;     /*!< I2C clock frequency for master mode, (no higher than 1MHz for now) */
-        } master;                   /*!< I2C master config */
-        struct {
-            uint8_t addr_10bit_en;  /*!< I2C 10bit address mode enable for slave mode */
-            uint16_t slave_addr;    /*!< I2C address for slave mode */
-        } slave;                    /*!< I2C slave config */
-    };
-    uint32_t clk_flags;             /*!< Bitwise of ``I2C_SCLK_SRC_FLAG_**FOR_DFS**`` for clk source choice*/
-} i2c_config_t;
 
 #if CONFIG_IDF_TARGET_ESP32
 typedef enum{
