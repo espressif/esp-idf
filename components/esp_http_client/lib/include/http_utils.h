@@ -22,7 +22,7 @@
  *
  * @param      str      pointer to string pointer
  * @param      new_str  assign this tring to str
- * @param      len      length of string, 0 if new_str is zero terminated
+ * @param      len      length of string, less than 0 if new_str is zero terminated
  *
  * @return
  *  - new_str pointer
@@ -31,15 +31,14 @@
 char *http_utils_assign_string(char **str, const char *new_str, int len);
 
 /**
- * @brief      Realloc *str and append new_str to it, if not NULL; assign new_str to *str pointer if NULL
+ * @brief      Realloc *str and append new_str to it if new_str is not NULL; return *str pointer if new_str is NULL
  *
  * @param      str      pointer to string pointer
- * @param      new_str  assign this string to str
- * @param      len      length of string, 0 if new_str is zero terminated
+ * @param      new_str  append this string to str
+ * @param      len      length of string, less than 0 if new_str is zero terminated
  *
  * @return
- *  - new_str pointer
- *  - NULL
+ *  - *str pointer
  */
 char *http_utils_append_string(char **str, const char *new_str, int len);
 
