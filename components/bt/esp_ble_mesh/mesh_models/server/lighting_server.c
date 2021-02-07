@@ -3438,6 +3438,12 @@ static int light_server_deinit(struct bt_mesh_model *model)
         }
         break;
     }
+    case BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SETUP_SRV:
+    case BLE_MESH_MODEL_ID_LIGHT_CTL_SETUP_SRV:
+    case BLE_MESH_MODEL_ID_LIGHT_HSL_SETUP_SRV:
+    case BLE_MESH_MODEL_ID_LIGHT_XYL_SETUP_SRV:
+    case BLE_MESH_MODEL_ID_LIGHT_LC_SETUP_SRV:
+        break;
     default:
         BT_WARN("Unknown Light Server, model id 0x%04x", model->id);
         return -EINVAL;
