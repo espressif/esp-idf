@@ -38,7 +38,7 @@ extern "C" {
  * @brief Define memory space of each RMT channel (in words = 4 bytes)
  *
  */
-#define RMT_MEM_ITEM_NUM SOC_RMT_CHANNEL_MEM_WORDS
+#define RMT_MEM_ITEM_NUM SOC_RMT_MEM_WORDS_PER_CHANNEL
 
 /**
 * @brief Data struct of RMT TX configure parameters
@@ -384,6 +384,7 @@ esp_err_t rmt_rx_memory_reset(rmt_channel_t channel);
 
 /**
 * @brief Set RMT memory owner.
+* @note Setting memroy is only valid for RX channel.
 *
 * @param channel RMT channel
 * @param owner To set when the transmitter or receiver can process the memory of channel.
@@ -835,9 +836,9 @@ rmt_tx_end_callback_t rmt_register_tx_end_callback(rmt_tx_end_fn_t function, voi
 esp_err_t rmt_set_rx_thr_intr_en(rmt_channel_t channel, bool en, uint16_t evt_thresh);
 #endif
 
-#if SOC_RMT_SUPPORT_TX_GROUP
+#if SOC_RMT_SUPPORT_TX_SYNCHRO
 /**
-* @brief Add channel into a group (channels in the same group will transmit simultaneously)
+* @brief Add channel into a synchronous group (channels in the same group can start transaction simultaneously)
 *
 * @param channel RMT channel
 *
