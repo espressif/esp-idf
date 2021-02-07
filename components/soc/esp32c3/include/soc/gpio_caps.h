@@ -30,11 +30,6 @@ extern "C" {
 // GPIO0~5 on ESP32C3 can support chip deep sleep wakeup
 #define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP      (1)
 
-#define GPIO_MODE_DEF_DISABLE         (0)
-#define GPIO_MODE_DEF_INPUT           (BIT0)
-#define GPIO_MODE_DEF_OUTPUT          (BIT1)
-#define GPIO_MODE_DEF_OD              (BIT2)
-
 #define SOC_GPIO_VALID_GPIO_MASK        ((1U<<SOC_GPIO_PIN_COUNT) - 1)
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK SOC_GPIO_VALID_GPIO_MASK
 #define SOC_GPIO_DEEP_SLEEP_WAKEUP_VALID_GPIO_MASK        (0ULL | BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5)

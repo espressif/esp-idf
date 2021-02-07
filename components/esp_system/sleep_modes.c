@@ -54,13 +54,13 @@
 #include "esp32/rom/cache.h"
 #include "esp32/clk.h"
 #include "esp32/rom/rtc.h"
-#include "driver/gpio.h"
+#include "esp_private/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/clk.h"
 #include "esp32s2/rom/cache.h"
 #include "esp32s2/rom/rtc.h"
 #include "soc/extmem_reg.h"
-#include "driver/gpio.h"
+#include "esp_private/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/clk.h"
 #include "esp32s3/rom/cache.h"
