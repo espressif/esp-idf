@@ -55,7 +55,7 @@ extern "C" {
 
 #define RTC_SLOW_CLK_X32K_CAL_TIMEOUT_THRES(cycles)  (cycles << 12)
 #define RTC_SLOW_CLK_8MD256_CAL_TIMEOUT_THRES(cycles)  (cycles << 12)
-#define RTC_SLOW_CLK_150K_CAL_TIMEOUT_THRES(cycles)  (cycles << 10)
+#define RTC_SLOW_CLK_90K_CAL_TIMEOUT_THRES(cycles)  (cycles << 10)
 
 #define RTC_SLOW_CLK_FREQ_90K      90000
 #define RTC_SLOW_CLK_FREQ_8MD256    (RTC_FAST_CLK_FREQ_APPROX / 256)
@@ -214,7 +214,7 @@ typedef struct {
     rtc_slow_freq_t slow_freq : 2;  //!< RTC_SLOW_CLK frequency to set
     uint32_t clk_rtc_clk_div : 8;
     uint32_t clk_8m_clk_div : 3;        //!< RTC 8M clock divider (division is by clk_8m_div+1, i.e. 0 means 8MHz frequency)
-    uint32_t slow_clk_dcap : 8;     //!< RTC 150k clock adjustment parameter (higher value leads to lower frequency)
+    uint32_t slow_clk_dcap : 8;     //!< RTC 90k clock adjustment parameter (higher value leads to lower frequency)
     uint32_t clk_8m_dfreq : 8;      //!< RTC 8m clock adjustment parameter (higher value leads to higher frequency)
 } rtc_clk_config_t;
 

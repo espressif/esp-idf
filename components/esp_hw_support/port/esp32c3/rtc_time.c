@@ -39,7 +39,7 @@
  */
 uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 {
-    /* On ESP32S3, choosing RTC_CAL_RTC_MUX results in calibration of
+    /* On ESP32C3, choosing RTC_CAL_RTC_MUX results in calibration of
      * the 90k RTC clock regardless of the currenlty selected SLOW_CLK.
      * On the ESP32, it used the currently selected SLOW_CLK.
      * The following code emulates ESP32 behavior:
@@ -52,7 +52,7 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
             cal_clk = RTC_CAL_8MD256;
         }
     }
-    /* Enable requested clock (150k clock is always on) */
+    /* Enable requested clock (90k clock is always on) */
     int dig_32k_xtal_state = REG_GET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_XTAL32K_EN);
     if (cal_clk == RTC_CAL_32K_XTAL && !dig_32k_xtal_state) {
         REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_XTAL32K_EN, 1);
@@ -84,7 +84,7 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
         REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, RTC_SLOW_CLK_8MD256_CAL_TIMEOUT_THRES(slowclk_cycles));
         expected_freq = RTC_SLOW_CLK_FREQ_8MD256;
     } else {
-        REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, RTC_SLOW_CLK_150K_CAL_TIMEOUT_THRES(slowclk_cycles));
+        REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, RTC_SLOW_CLK_90K_CAL_TIMEOUT_THRES(slowclk_cycles));
         expected_freq = RTC_SLOW_CLK_FREQ_90K;
     }
     uint32_t us_time_estimate = (uint32_t) (((uint64_t) slowclk_cycles) * MHZ / expected_freq);
@@ -150,12 +150,6 @@ uint64_t rtc_time_slowclk_to_us(uint64_t rtc_cycles, uint32_t period)
 uint64_t rtc_time_get(void)
 {
     SET_PERI_REG_MASK(RTC_CNTL_TIME_UPDATE_REG, RTC_CNTL_TIME_UPDATE);
-#if 0 // TODO ESP32-C3 IDF-2569:  Re-enable it in the future
-    while (GET_PERI_REG_MASK(RTC_CNTL_TIME_UPDATE_REG, RTC_CNTL_TIME_VALID) == 0) {
-        esp_rom_delay_us(1); // might take 1 RTC slowclk period, don't flood RTC bus
-    }
-    SET_PERI_REG_MASK(RTC_CNTL_INT_CLR_REG, RTC_CNTL_TIME_VALID_INT_CLR);
-#endif
     uint64_t t = READ_PERI_REG(RTC_CNTL_TIME0_REG);
     t |= ((uint64_t) READ_PERI_REG(RTC_CNTL_TIME1_REG)) << 32;
     return t;
