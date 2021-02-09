@@ -2,6 +2,7 @@ stages:
   - pre_check
   - build
   - assign_test
+  - build_doc
   - host_test
   - target_test
   - test_deploy
