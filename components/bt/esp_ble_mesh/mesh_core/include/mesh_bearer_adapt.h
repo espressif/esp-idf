@@ -325,12 +325,6 @@ struct bt_mesh_gatt_service {
     sys_snode_t               node;
 };
 
-struct bt_mesh_ecb_param {
-    uint8_t key[16];
-    uint8_t clear_text[16];
-    uint8_t cipher_text[16];
-} __packed;
-
 typedef struct {
     uint8_t type;
     uint8_t val[6];
