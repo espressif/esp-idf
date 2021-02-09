@@ -27,19 +27,23 @@
 static const char *TAG = "protocomm_httpd";
 static protocomm_t *pc_httpd; /* The global protocomm instance for HTTPD */
 static bool pc_ext_httpd_handle_provided = false;
-static uint32_t session_id = PROTOCOMM_NO_SESSION_ID;
+/* The socket session id, which is basically just the socket number */
+static uint32_t sock_session_id = PROTOCOMM_NO_SESSION_ID;
+/* Cookie session id, which is a random number passed through HTTP cookies */
+static uint32_t cookie_session_id = PROTOCOMM_NO_SESSION_ID;
 
 #define MAX_REQ_BODY_LEN 4096
 
 static void protocomm_httpd_session_close(void *ctx)
 {
-    if (pc_httpd->sec && pc_httpd->sec->close_transport_session) {
-        ESP_LOGW(TAG, "Closing session as socket %d was closed", session_id);
-        if (pc_httpd->sec->close_transport_session((protocomm_security_handle_t)ctx, session_id) != ESP_OK) {
-            ESP_LOGW(TAG, "Error closing session with ID: %d", session_id);
-        }
+    /* When a socket session closes, we just reset the sock_session_id value.
+     * Thereafter, only cookie_session_id would get used to check if the subsequent
+     * request is for the same session.
+     */
+    if (sock_session_id != PROTOCOMM_NO_SESSION_ID) {
+        ESP_LOGW(TAG, "Resetting socket session id as socket %d was closed", sock_session_id);
+        sock_session_id = PROTOCOMM_NO_SESSION_ID;
     }
-    session_id = PROTOCOMM_NO_SESSION_ID;
 }
 
 static esp_err_t common_post_handler(httpd_req_t *req)
@@ -50,27 +54,56 @@ static esp_err_t common_post_handler(httpd_req_t *req)
     const char *ep_name = NULL;
     ssize_t outlen;
 
-    int cur_session_id = httpd_req_to_sockfd(req);
+    int cur_sock_session_id = httpd_req_to_sockfd(req);
+    int cur_cookie_session_id = 0;
+    char cookie_buf[20] = {0};
+    bool same_session = false;
 
-    if (cur_session_id != session_id) {
-        ESP_LOGD(TAG, "Creating new session: %d", cur_session_id);
-        /* Initialize new security session */
-        if (session_id != PROTOCOMM_NO_SESSION_ID) {
-            ESP_LOGD(TAG, "Closing session with ID: %d", session_id);
-            /* Presently HTTP server doesn't support callback on socket closure so
-             * previous session can only be closed when new session is requested */
+    /* Check if any cookie is available in the received headers */
+    if (httpd_req_get_hdr_value_str(req, "Cookie", cookie_buf, sizeof(cookie_buf)) == ESP_OK) {
+        ESP_LOGD(TAG, "Received cookie %s", cookie_buf);
+        char session_cookie[20] = {0};
+        snprintf(session_cookie, sizeof(session_cookie), "session=%u", cookie_session_id);
+        /* If a cookie is found, check it against the session id. If it matches,
+         * it means that this is a continuation of the same session.
+         */
+        if (strcmp(session_cookie, cookie_buf) == 0) {
+            ESP_LOGD(TAG, "Continuing Session %u", cookie_session_id);
+            cur_cookie_session_id = cookie_session_id;
+            /* If we reach here, it means that the client supports cookies and so the
+             * socket session id would no more be required for checking.
+             */
+            sock_session_id = PROTOCOMM_NO_SESSION_ID;
+            same_session = true;
+        }
+    } else if (cur_sock_session_id == sock_session_id) {
+        /* If the socket number matches, we assume it to be the same session */
+        ESP_LOGD(TAG, "Continuing Socket Session %u", sock_session_id);
+        cur_cookie_session_id = cookie_session_id;
+        same_session = true;
+    }
+    if (!same_session) {
+        /* If the received request is not a continuation of an existing session,
+         * first close any existing sessions as applicable.
+         */
+        if (cookie_session_id != PROTOCOMM_NO_SESSION_ID) {
+            ESP_LOGW(TAG, "Closing session with ID: %u", cookie_session_id);
             if (pc_httpd->sec && pc_httpd->sec->close_transport_session) {
-                ret = pc_httpd->sec->close_transport_session(pc_httpd->sec_inst, session_id);
+                ret = pc_httpd->sec->close_transport_session(pc_httpd->sec_inst, cookie_session_id);
                 if (ret != ESP_OK) {
-                    ESP_LOGW(TAG, "Error closing session with ID: %d", session_id);
+                    ESP_LOGW(TAG, "Error closing session with ID: %u", cookie_session_id);
                 }
             }
-            session_id = PROTOCOMM_NO_SESSION_ID;
+            cookie_session_id = PROTOCOMM_NO_SESSION_ID;
+            sock_session_id = PROTOCOMM_NO_SESSION_ID;
         }
+        /* Initialize new security session. A random number will be assigned to the session */
+        cur_cookie_session_id = esp_random();
+        ESP_LOGD(TAG, "Creating new session: %u", cur_cookie_session_id);
         if (pc_httpd->sec && pc_httpd->sec->new_transport_session) {
-            ret = pc_httpd->sec->new_transport_session(pc_httpd->sec_inst, cur_session_id);
+            ret = pc_httpd->sec->new_transport_session(pc_httpd->sec_inst, cur_cookie_session_id);
             if (ret != ESP_OK) {
-                ESP_LOGE(TAG, "Failed to launch new session with ID: %d", cur_session_id);
+                ESP_LOGE(TAG, "Failed to launch new session with ID: %u", cur_cookie_session_id);
                 ret = ESP_FAIL;
                 goto out;
             }
@@ -78,8 +111,9 @@ static esp_err_t common_post_handler(httpd_req_t *req)
             req->free_ctx = protocomm_httpd_session_close;
 
         }
-        session_id = cur_session_id;
-        ESP_LOGD(TAG, "New session with ID: %d", cur_session_id);
+        cookie_session_id = cur_cookie_session_id;
+        sock_session_id = cur_sock_session_id;
+        ESP_LOGD(TAG, "New socket session ID: %d", sock_session_id);
     }
 
     if (req->content_len <= 0) {
@@ -112,13 +146,19 @@ static esp_err_t common_post_handler(httpd_req_t *req)
     /* Extract the endpoint name from URI string of type "/ep_name" */
     ep_name = req->uri + 1;
 
-    ret = protocomm_req_handle(pc_httpd, ep_name, session_id,
+    ret = protocomm_req_handle(pc_httpd, ep_name, cookie_session_id,
                                (uint8_t *)req_body, recv_size, &outbuf, &outlen);
 
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Data handler failed");
         ret = ESP_FAIL;
         goto out;
+    }
+    /* If this is a new session, send the session id in a cookie */
+    if (!same_session) {
+        snprintf(cookie_buf, sizeof(cookie_buf), "session=%u", cookie_session_id);
+        ESP_LOGD(TAG, "Setting cookie %s", cookie_buf);
+        httpd_resp_set_hdr(req, "Set-Cookie", cookie_buf);
     }
 
     ret = httpd_resp_send(req, (char *)outbuf, outlen);
@@ -254,7 +294,8 @@ esp_err_t protocomm_httpd_start(protocomm_t *pc, const protocomm_httpd_config_t 
     pc->add_endpoint    = protocomm_httpd_add_endpoint;
     pc->remove_endpoint = protocomm_httpd_remove_endpoint;
     pc_httpd = pc;
-    session_id = PROTOCOMM_NO_SESSION_ID;
+    cookie_session_id = PROTOCOMM_NO_SESSION_ID;
+    sock_session_id = PROTOCOMM_NO_SESSION_ID;
     return ESP_OK;
 }
 
@@ -270,7 +311,8 @@ esp_err_t protocomm_httpd_stop(protocomm_t *pc)
         }
         pc_httpd->priv = NULL;
         pc_httpd = NULL;
-        session_id = PROTOCOMM_NO_SESSION_ID;
+        cookie_session_id = PROTOCOMM_NO_SESSION_ID;
+        sock_session_id = PROTOCOMM_NO_SESSION_ID;
         return ESP_OK;
     }
     return ESP_ERR_INVALID_ARG;
