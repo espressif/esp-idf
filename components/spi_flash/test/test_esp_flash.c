@@ -638,10 +638,12 @@ void esp_test_for_suspend(void)
     printf("aaaaa bbbbb zzzzz fffff qqqqq ccccc\n");
 }
 
+static volatile bool task_erase_end, task_suspend_end = false;
 void task_erase_large_region(void *arg)
 {
     esp_partition_t *part = (esp_partition_t *)arg;
     test_erase_large_region(part);
+    task_erase_end = true;
     vTaskDelete(NULL);
 }
 
@@ -650,12 +652,7 @@ void task_request_suspend(void *arg)
     vTaskDelay(2);
     ESP_LOGI(TAG, "flash go into suspend");
     esp_test_for_suspend();
-    vTaskDelete(NULL);
-}
-
-void task_delay(void *arg)
-{
-    esp_rom_delay_us(2000000);
+    task_suspend_end = true;
     vTaskDelete(NULL);
 }
 
@@ -663,7 +660,9 @@ static void test_flash_suspend_resume(const esp_partition_t* part)
 {
     xTaskCreatePinnedToCore(task_request_suspend, "suspend", 2048, (void *)"test_for_suspend", UNITY_FREERTOS_PRIORITY + 3, NULL, 0);
     xTaskCreatePinnedToCore(task_erase_large_region, "test", 2048, (void *)part, UNITY_FREERTOS_PRIORITY + 2, NULL, 0);
-    xTaskCreatePinnedToCore(task_delay, "task_delay", 1024, (void *)"task_delay", UNITY_FREERTOS_PRIORITY + 1, NULL, 0);
+    while (!task_erase_end || !task_suspend_end) {
+    }
+    vTaskDelay(200);
 }
 
 FLASH_TEST_CASE("SPI flash suspend and resume test", test_flash_suspend_resume);
