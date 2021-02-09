@@ -334,6 +334,16 @@ menu "Security features"
         select MBEDTLS_ECDSA_C
         depends on SECURE_SIGNED_ON_BOOT || SECURE_SIGNED_ON_UPDATE
 
+    config SECURE_BOOT_SUPPORTS_RSA
+        bool
+        default y
+        depends on ESP32_REV_MIN_3 || IDF_TARGET_ESP32S2
+
+    config SECURE_TARGET_HAS_SECURE_ROM_DL_MODE
+        bool
+        default y
+        depends on IDF_TARGET_ESP32S2
+
 
     config SECURE_SIGNED_APPS_NO_SECURE_BOOT
         bool "Require signed app images"
@@ -369,7 +379,7 @@ menu "Security features"
 
         config SECURE_SIGNED_APPS_RSA_SCHEME
             bool "RSA"
-            depends on (ESP32_REV_MIN_3 || IDF_TARGET_ESP32S2) && SECURE_BOOT_V2_ENABLED
+            depends on SECURE_BOOT_SUPPORTS_RSA && SECURE_BOOT_V2_ENABLED
             help
                 Appends the RSA-3072 based Signature block to the application.
                 Refer to <Secure Boot Version 2 documentation link> before enabling.
@@ -433,8 +443,8 @@ menu "Security features"
 
         config SECURE_BOOT_V2_ENABLED
             bool "Enable Secure Boot version 2"
-            depends on ESP32_REV_MIN_3 || IDF_TARGET_ESP32S2
-            select SECURE_ENABLE_SECURE_ROM_DL_MODE if IDF_TARGET_ESP32S2 && !SECURE_INSECURE_ALLOW_DL_MODE
+            depends on SECURE_BOOT_SUPPORTS_RSA
+            select SECURE_ENABLE_SECURE_ROM_DL_MODE if !IDF_TARGET_ESP32 && !SECURE_INSECURE_ALLOW_DL_MODE
             select SECURE_DISABLE_ROM_DL_MODE if ESP32_REV_MIN_3 && !SECURE_INSECURE_ALLOW_DL_MODE
             help
                 Build a bootloader which enables Secure Boot version 2 on first boot.
@@ -604,7 +614,7 @@ menu "Security features"
 
         config SECURE_FLASH_ENCRYPTION_MODE_RELEASE
             bool "Release"
-            select SECURE_ENABLE_SECURE_ROM_DL_MODE
+            select SECURE_ENABLE_SECURE_ROM_DL_MODE if SECURE_TARGET_HAS_SECURE_ROM_DL_MODE
 
     endchoice
 
@@ -749,7 +759,7 @@ menu "Security features"
 
     config SECURE_ENABLE_SECURE_ROM_DL_MODE
         bool "Permanently switch to ROM UART Secure Download mode"
-        depends on IDF_TARGET_ESP32S2 && !SECURE_DISABLE_ROM_DL_MODE
+        depends on SECURE_TARGET_HAS_SECURE_ROM_DL_MODE && !SECURE_DISABLE_ROM_DL_MODE
         help
             If set, during startup the app will burn an eFuse bit to permanently switch the UART ROM
             Download Mode into a separate Secure Download mode. This option can only work if
