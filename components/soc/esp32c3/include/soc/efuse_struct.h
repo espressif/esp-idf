@@ -79,7 +79,7 @@ typedef volatile struct {
             uint32_t flash_ecc_mode:           1;                /*Set ECC mode in ROM  0: ROM would Enable Flash ECC 16to18 byte mode. 1:ROM would use 16to17 byte mode.*/
             uint32_t dis_usb_download_mode:    1;                /*Set this bit to disable UART download mode through USB.*/
             uint32_t enable_security_download: 1;                /*Set this bit to enable secure UART download mode.*/
-            uint32_t uart_print_control:       2;                /*Set the default UARTboot message output mode. 00: Enabled. 01: Enabled when GPIO46 is low at reset. 10: Enabled when GPIO46 is high at reset. 11:disabled.*/
+            uint32_t uart_print_control:       2;                /*Set the default UARTboot message output mode. 00: Enabled. 01: Enabled when GPIO8 is low at reset. 10: Enabled when GPIO8 is high at reset. 11:disabled.*/
             uint32_t pin_power_selection:      1;                /*GPIO33-GPIO37 power supply selection in ROM code. 0: VDD3P3_CPU. 1: VDD_SPI.*/
             uint32_t flash_type:               1;                /*Set the maximum lines of SPI flash. 0: four lines. 1: eight lines.*/
             uint32_t flash_page_size:          2;                /*Set Flash page size.*/

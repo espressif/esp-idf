@@ -17,7 +17,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 69693bb96832f42833460571ebc1f865
+// md5_digest_table f9a84eb22f94a7bc083b4c6817a33a59
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -312,7 +312,7 @@ static const esp_efuse_desc_t ENABLE_SECURITY_DOWNLOAD[] = {
 };
 
 static const esp_efuse_desc_t UART_PRINT_CONTROL[] = {
-    {EFUSE_BLK0, 134, 2}, 	 // b00:force print. b01:control by GPIO46 - low level print. b10:control by GPIO46 - high level print. b11:force disable print.,
+    {EFUSE_BLK0, 134, 2}, 	 // b00:force print. b01:control by GPIO8 - low level print. b10:control by GPIO8 - high level print. b11:force disable print.,
 };
 
 static const esp_efuse_desc_t PIN_POWER_SELECTION[] = {
@@ -849,7 +849,7 @@ const esp_efuse_desc_t* ESP_EFUSE_ENABLE_SECURITY_DOWNLOAD[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_UART_PRINT_CONTROL[] = {
-    &UART_PRINT_CONTROL[0],    		// b00:force print. b01:control by GPIO46 - low level print. b10:control by GPIO46 - high level print. b11:force disable print.
+    &UART_PRINT_CONTROL[0],    		// b00:force print. b01:control by GPIO8 - low level print. b10:control by GPIO8 - high level print. b11:force disable print.
     NULL
 };
 

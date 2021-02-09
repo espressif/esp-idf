@@ -308,7 +308,7 @@ extern "C" {
 #define EFUSE_PIN_POWER_SELECTION_S  8
 /* EFUSE_UART_PRINT_CONTROL : R/W ;bitpos:[7:6] ;default: 2'h0 ; */
 /*description: Set the default UARTboot message output mode. 00: Enabled. 01:
- Enabled when GPIO46 is low at reset. 10: Enabled when GPIO46 is high at reset. 11:disabled.*/
+ Enabled when GPIO8 is low at reset. 10: Enabled when GPIO8 is high at reset. 11:disabled.*/
 #define EFUSE_UART_PRINT_CONTROL  0x00000003
 #define EFUSE_UART_PRINT_CONTROL_M  ((EFUSE_UART_PRINT_CONTROL_V)<<(EFUSE_UART_PRINT_CONTROL_S))
 #define EFUSE_UART_PRINT_CONTROL_V  0x3
