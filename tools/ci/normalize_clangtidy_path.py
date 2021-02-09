@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import argparse
 import re
-from os.path import join, normpath, dirname, relpath, exists
+from os.path import dirname, exists, join, normpath, relpath
 
 CLANG_TIDY_REGEX = re.compile(r'(.+|[a-zA-Z]:\\\\.+):([0-9]+):([0-9]+): ([^:]+): (.+)')
 
