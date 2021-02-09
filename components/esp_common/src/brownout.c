@@ -85,3 +85,18 @@ void esp_brownout_init(void)
     brownout_hal_intr_enable(true);
 #endif // not SOC_BROWNOUT_RESET_SUPPORTED
 }
+
+void esp_brownout_disable(void)
+{
+    brownout_hal_config_t cfg = {
+        .enabled = false,
+    };
+
+    brownout_hal_config(&cfg);
+
+#ifndef SOC_BROWNOUT_RESET_SUPPORTED
+    brownout_hal_intr_enable(false);
+
+    rtc_isr_deregister(rtc_brownout_isr_handler, NULL);
+#endif // not SOC_BROWNOUT_RESET_SUPPORTED
+}
