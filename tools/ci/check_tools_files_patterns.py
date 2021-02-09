@@ -24,7 +24,6 @@ import yaml
 from idf_ci_utils import IDF_PATH, get_git_files, magic_check, magic_check_bytes, translate
 
 # Monkey patch starts
-
 # glob.glob will ignore all files starts with ``.``
 # don't ignore them here
 # need to keep the same argument as glob._ishidden
@@ -83,13 +82,13 @@ if __name__ == '__main__':
     not_included_files, dup_patterns = check(args.pattern_yml, args.exclude_list)
     if not_included_files:
         print('Missing Files: (please add to tools/ci/exclude_check_tools_files.txt')
-        for f in not_included_files:
-            print(f)
+        for file in not_included_files:
+            print(file)
         res = 1
     if dup_patterns:
         print('Duplicated Patterns: (please check .gitlab/ci/rules.yml and tools/ci/exclude_check_tools_files.txt')
-        for pat in dup_patterns:
-            print(pat)
+        for pattern in dup_patterns:
+            print(pattern)
         res = 1
 
     sys.exit(res)

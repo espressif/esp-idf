@@ -1,30 +1,11 @@
 .host_test_template:
-  extends: .rules:labels:host_test
+  extends: .rules:test:host_test
   stage: host_test
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - host_test
   dependencies: []
-
-.host_fuzzer_test_template:
-  extends:
-    - .host_test_template
-    - .rules:labels:fuzzer_test-weekend_test-only
-  image: $CI_DOCKER_REGISTRY/afl-fuzzer-test
-  artifacts:
-    when: always
-    paths:
-      - ${FUZZER_TEST_DIR}/out/crashes
-      - ${FUZZER_TEST_DIR}/fuzz_output.log
-    expire_in: 1 week
-  script:
-    - export AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 && export AFL_SKIP_CPUFREQ=1
-    - cd ${FUZZER_TEST_DIR}
-    # run AFL fuzzer for one hour
-    - ( ( make ${FUZZER_PARAMS} fuzz | tee fuzz_output.log | grep -v '\(Fuzzing test case\|Entering queue cycle\)' ) || pkill sleep ) &
-    - ( sleep 3600 || mkdir -p out/crashes/env_failed ) && pkill afl-fuz
-    # check no crashes found
-    - test -z "$(ls out/crashes/)" || exit 1
+  needs: []  # run host_test jobs immediately
 
 test_nvs_on_host:
   extends: .host_test_template
@@ -35,7 +16,7 @@ test_nvs_on_host:
 test_nvs_coverage:
   extends:
     - .host_test_template
-    - .rules:labels:nvs_coverage-only
+    - .rules:labels:nvs_coverage
   artifacts:
     paths:
       - components/nvs_flash/test_nvs_host/coverage_report
@@ -78,6 +59,26 @@ test_ldgen_on_host:
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_output_commands.py
   variables:
     LC_ALL: C.UTF-8
+
+.host_fuzzer_test_template:
+  extends:
+    - .host_test_template
+    - .rules:labels:fuzzer_test-weekend_test
+  image: $CI_DOCKER_REGISTRY/afl-fuzzer-test
+  artifacts:
+    when: always
+    paths:
+      - ${FUZZER_TEST_DIR}/out/crashes
+      - ${FUZZER_TEST_DIR}/fuzz_output.log
+    expire_in: 1 week
+  script:
+    - export AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 && export AFL_SKIP_CPUFREQ=1
+    - cd ${FUZZER_TEST_DIR}
+    # run AFL fuzzer for one hour
+    - ( ( make ${FUZZER_PARAMS} fuzz | tee fuzz_output.log | grep -v '\(Fuzzing test case\|Entering queue cycle\)' ) || pkill sleep ) &
+    - ( sleep 3600 || mkdir -p out/crashes/env_failed ) && pkill afl-fuz
+    # check no crashes found
+    - test -z "$(ls out/crashes/)" || exit 1
 
 test_mdns_fuzzer_on_host:
   extends: .host_fuzzer_test_template

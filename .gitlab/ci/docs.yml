@@ -1,7 +1,26 @@
+# stage: pre_check
+check_readme_links:
+  extends:
+    - .pre_check_job_template
+    - .rules:build:docs
+  tags: ["build", "amd64", "internet"]
+  allow_failure: true
+  script:
+    - python ${IDF_PATH}/tools/ci/check_readme_links.py
+
+check_docs_lang_sync:
+  extends:
+    - .pre_check_job_template
+    - .rules:build:docs
+  script:
+    - cd docs
+    - ./check_lang_folder_sync.sh
+
 .build_docs_template:
   image: $ESP_IDF_DOC_ENV_IMAGE
   tags:
     - build_docs
+  dependencies: []
   script:
     - cd docs
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r requirements.txt
@@ -9,37 +28,13 @@
   parallel:
     matrix:
       - DOCLANG: ["en", "zh_CN"]
-        DOCTGT: ["esp32", "esp32s2", "esp32c3"]
-
-# stage: pre_check
-check_readme_links:
-  extends:
-    - .pre_check_job_template
-    - .rules:patterns:docs
-  tags: ["internet"]
-  allow_failure: true
-  variables:
-    PYTHON_VER: 3
-  script:
-    - python ${IDF_PATH}/tools/ci/check_readme_links.py
-
-check_docs_lang_sync:
-  extends:
-    - .pre_check_job_template
-    - .rules:patterns:docs
-  variables:
-    SUBMODULES_TO_FETCH: "none"
-  script:
-    - cd docs
-    - ./check_lang_folder_sync.sh
+        DOCTGT: ["esp32", "esp32s2"]
 
 check_docs_gh_links:
   extends:
+    - .pre_check_job_template
     - .build_docs_template
-    - .rules:patterns:docs
-  stage: pre_check
-  variables:
-    SUBMODULES_TO_FETCH: "none"
+    - .rules:build:docs
   script:
     - cd docs
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r requirements.txt
@@ -49,11 +44,13 @@ check_docs_gh_links:
 .build_docs_build_stage_template:
   extends:
     - .build_docs_template
-    - .rules:patterns:docs
+    - .rules:build:docs
   stage: build
   needs:
-    - check_docs_lang_sync
-    - check_docs_gh_links
+    - job: check_docs_lang_sync
+      artifacts: false
+    - job: check_docs_gh_links
+      artifacts: false
 
 build_docs_html:
   extends:
@@ -80,15 +77,16 @@ build_docs_pdf:
 
 .deploy_docs_template:
   extends:
-    - .before_script_lesser
-    - .rules:patterns:docs
+    - .before_script_no_sync_submodule
   image: $ESP_IDF_DOC_ENV_IMAGE
+  stage: test_deploy
   tags:
     - deploy
     - shiny
   variables:
     DOCS_BUILD_DIR: "${IDF_PATH}/docs/_build/"
     PYTHONUNBUFFERED: 1
+  dependencies: []
   script:
     - add_doc_server_ssh_keys $DOCS_DEPLOY_PRIVATEKEY $DOCS_DEPLOY_SERVER $DOCS_DEPLOY_SERVER_USER
     - export GIT_VER=$(git describe --always)
@@ -98,8 +96,8 @@ build_docs_pdf:
 deploy_docs_preview:
   extends:
     - .deploy_docs_template
-    - .rules:patterns:docs-preview
-  stage: test_deploy
+    - .rules:build:docs-preview
+  dependencies:  # set dependencies to null to avoid missing artifacts issue
   needs:
     - build_docs_html
     - build_docs_pdf
@@ -117,12 +115,14 @@ deploy_docs_production:
   # The DOCS_PROD_* variables used by this job are "Protected" so these branches must all be marked "Protected" in Gitlab settings
   extends:
     - .deploy_docs_template
-    - .rules:protected-no_label
+    - .rules:build:docs-production
   stage: post_deploy
+  dependencies:  # set dependencies to null to avoid missing artifacts issue
   needs: # ensure runs after push_to_github succeeded
     - build_docs_html
     - build_docs_pdf
-    - push_to_github
+    - job: push_to_github
+      artifacts: false
   variables:
     TYPE: "preview"
     DOCS_DEPLOY_PRIVATEKEY: "$DOCS_PROD_DEPLOY_KEY"
@@ -144,7 +144,6 @@ check_doc_links:
       - docs/_build/*/*/linkcheck/*.txt
     expire_in: 1 week
   allow_failure: true
-  dependencies: []
   script:
     - cd docs
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r requirements.txt

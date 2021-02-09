@@ -1,4 +1,5 @@
-.clang_tidy_check_template:
+# pre_check stage
+clang_tidy_check:
   extends:
     - .pre_check_base_template
     - .rules:patterns:clang_tidy
@@ -15,24 +16,6 @@
     # Setup parameters of triggered/regular job
     - export TARGET_BRANCH=${BOT_CUSTOMIZED_REVISION-}
     - ./analyze.sh $IDF_PATH/examples/get-started/hello_world/ $IDF_PATH/tools/ci/static-analysis-rules.yml $IDF_PATH/output.xml
-
-# pre_check stage
-clang_tidy_check:
-  extends: .clang_tidy_check_template
-  variables:
-    BOT_NEEDS_TRIGGER_BY_NAME: 1
-    TRIGGERED_RELATIVE: 1
-
-clang_tidy_check_regular:
-  extends:
-    - .clang_tidy_check_template
-    - .rules:patterns:clang_tidy-preview
-
-clang_tidy_check_all:
-  extends: .clang_tidy_check_template
-  variables:
-    BOT_NEEDS_TRIGGER_BY_NAME: 1
-    TRIGGERED_ABSOLUTE: 1
 
 # build stage
 # Sonarqube related jobs put here for this reason:
@@ -69,7 +52,7 @@ clang_tidy_check_all:
   tags:
     - host_test
   dependencies:  # Here is not a hard dependency relationship, could be skipped when only python files changed. so we do not use "needs" here.
-    - clang_tidy_check_regular
+    - clang_tidy_check
 
 code_quality_check:
   extends:
@@ -104,7 +87,7 @@ code_quality_check:
 code_quality_report:
   extends:
     - .sonar_scan_template
-    - .rules:protected-schedule
+    - .rules:protected
   script:
     - sonar-scanner
       -Dsonar.branch.name=$CI_COMMIT_REF_NAME
@@ -124,10 +107,12 @@ code_quality_report:
       -Dsonar.sources=$CI_PROJECT_DIR
 
 # deploy stage
-.clang_tidy_deploy_template:
+clang_tidy_deploy:
   extends:
     - .deploy_job_template
     - .rules:patterns:clang_tidy
+  needs:
+    - clang_tidy_check
   tags:
     - deploy
     - shiny
@@ -144,20 +129,3 @@ code_quality_report:
     # add link to view the report
     - echo "[static analysis][clang tidy] $CI_DOCKER_REGISTRY/static_analysis/esp-idf/clang-tidy/${GIT_VER}/index.html"
     - test ! -e ${GIT_VER}/FAILED_RULES || { echo 'Failed static analysis rules!'; cat ${GIT_VER}/FAILED_RULES; exit 1; }
-
-clang_tidy_deploy:
-  extends: .clang_tidy_deploy_template
-  # Override default stage to happen before the post_check
-  stage: test_deploy
-  needs:
-    - clang_tidy_check
-    - clang_tidy_check_all
-  variables:
-    BOT_NEEDS_TRIGGER_BY_NAME: 1
-
-clang_tidy_deploy_regular:
-  extends:
-    - .clang_tidy_deploy_template
-    - .rules:patterns:clang_tidy-preview
-  needs:
-    - clang_tidy_check_regular
