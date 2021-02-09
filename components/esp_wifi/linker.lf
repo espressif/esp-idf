@@ -1,3 +1,72 @@
+[sections:wifi_iram]
+entries:
+    .wifi0iram+
+
+[sections:wifi_rx_iram]
+entries:
+    .wifirxiram+
+
+[sections:wifi_slp_iram]
+entries:
+    .wifislpiram+
+
+[sections:wifi_or_slp_iram]
+entries:
+    .wifiorslpiram+
+
+[sections:wifi_slp_rx_iram]
+entries:
+    .wifislprxiram+
+
+[scheme:wifi_iram]
+entries:
+    wifi_iram -> iram0_text
+
+[scheme:wifi_rx_iram]
+entries:
+    wifi_rx_iram -> iram0_text
+
+[scheme:extram_bss]
+entries:
+    bss -> extern_ram
+    common -> extern_ram
+
+[scheme:wifi_slp_iram]
+entries:
+    wifi_slp_iram -> iram0_text
+
+[scheme:wifi_or_slp_iram]
+entries:
+    wifi_or_slp_iram -> iram0_text
+
+[scheme:wifi_slp_rx_iram]
+entries:
+    wifi_slp_rx_iram -> iram0_text
+
+if IDF_TARGET_ESP32 = y:
+    [scheme:phy_iram]
+    entries:
+        phy_iram -> iram0_text
+
+    [sections:phy_iram]
+    entries:
+        .phyiram+
+
+[scheme:wifi_default]
+entries:
+    wifi_slp_iram -> flash_text
+    wifi_or_slp_iram -> flash_text
+    wifi_slp_rx_iram -> flash_text
+    wifi_iram -> flash_text
+    wifi_rx_iram -> flash_text
+    if IDF_TARGET_ESP32 = y:
+        phy_iram -> flash_text
+
+[mapping:wifi_default]
+archive: *
+entries:
+    * (wifi_default)
+
 [mapping:phy]
 archive: libphy.a
 entries:
