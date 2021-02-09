@@ -48,22 +48,6 @@ entries:
 entries:
     .rtc.bss
 
-[sections:rtc_fast_coredump]
-entries:
-    .rtc.fast.coredump+
-
-[sections:rtc_coredump]
-entries:
-    .rtc.coredump+
-
-[sections:dram_coredump]
-entries:
-    .dram1.coredump+
-
-[sections:iram_coredump]
-entries:
-    .iram.data.coredump+
-
 [sections:iram]
 entries:
     .iram1+
@@ -108,10 +92,6 @@ entries:
     rtc_data -> rtc_data
     rtc_rodata -> rtc_data
     rtc_bss -> rtc_bss
-    dram_coredump -> dram_coredump
-    iram_coredump -> iram_coredump
-    rtc_coredump -> rtc_coredump
-    rtc_fast_coredump -> rtc_fast_coredump
 
 [scheme:rtc]
 entries:

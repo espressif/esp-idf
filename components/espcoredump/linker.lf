@@ -1,3 +1,33 @@
+[sections:rtc_fast_coredump]
+entries:
+    .rtc.fast.coredump+
+
+[sections:rtc_coredump]
+entries:
+    .rtc.coredump+
+
+[sections:dram_coredump]
+entries:
+    .dram1.coredump+
+
+if IDF_TARGET_ESP32S2 = n:
+    [sections:iram_coredump]
+    entries:
+        .iram.data.coredump+
+
+[scheme:coredump_default]
+entries:
+    dram_coredump -> dram_coredump
+    rtc_coredump -> rtc_coredump
+    rtc_fast_coredump -> rtc_fast_coredump
+    if IDF_TARGET_ESP32S2 = n:
+        iram_coredump -> iram_coredump
+
+[mapping:coredump_default]
+archive: *
+entries:
+    * (coredump_default)
+
 [mapping:espcoredump]
 archive: libespcoredump.a
 entries:
