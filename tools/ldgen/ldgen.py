@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2018-2019 Espressif Systems (Shanghai) PTE LTD
+# Copyright 2021 Espressif Systems (Shanghai) CO LTD
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,9 +24,11 @@ import sys
 import tempfile
 from io import StringIO
 
+from entity import EntityDB
 from fragments import FragmentFile
-from generation import GenerationModel, SectionsInfo, TemplateModel
+from generation import Generation
 from ldgen_common import LdGenFailure
+from linker_script import LinkerScript
 from pyparsing import ParseException, ParseFatalException
 from sdkconfig import SDKConfig
 
@@ -125,7 +127,7 @@ def main():
         check_mapping_exceptions = None
 
     try:
-        sections_infos = SectionsInfo()
+        sections_infos = EntityDB()
         for library in libraries_file:
             library = library.strip()
             if library:
@@ -133,7 +135,7 @@ def main():
                 dump.name = library
                 sections_infos.add_sections_info(dump)
 
-        generation_model = GenerationModel(check_mapping, check_mapping_exceptions)
+        generation_model = Generation(check_mapping, check_mapping_exceptions)
 
         _update_environment(args)  # assign args.env and args.env_file to os.environ
 
@@ -151,7 +153,7 @@ def main():
 
         mapping_rules = generation_model.generate_rules(sections_infos)
 
-        script_model = TemplateModel(input_file)
+        script_model = LinkerScript(input_file)
         script_model.fill(mapping_rules)
 
         with tempfile.TemporaryFile('w+') as output:

@@ -1,4 +1,4 @@
-In archive /home/user/ãóç+ěščřžýáíé/build/esp-idf/freertos/libsections_parse.a:
+In archive /home/user/ãóç+ěščřžýáíé/build/esp-idf/freertos/ěščřžýáíé.a:
 
 croutine.c.obj:     file format elf32-littleriscv
 
@@ -11,9 +11,9 @@ Idx Name          Size      VMA       LMA       File off  Algn
   2 .bss          00000000  00000000  00000000  00000034  2**0
                   ALLOC
 
-FreeRTOS-openocd.c.obj:     file format elf32-xtensa-le // 'F' should not get included in match for 'CONTENTS, ALLOC, LOAD ...' prior
+FreeRTOS-ěščřžýáíé.c.obj:     file format elf32-xtensa-le // 'F' should not get included in match for 'CONTENTS, ALLOC, LOAD ...' prior
 
 Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
-  0 .literal.prvCheckPendingReadyList 00000018  00000000  00000000  00000034  2**2
+  0 .literal.ěščřžýáíé 00000018  00000000  00000000  00000034  2**2
                   CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE

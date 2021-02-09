@@ -72,8 +72,10 @@ test_ldgen_on_host:
   extends: .host_test_template
   script:
     - cd tools/ldgen/test
-    - ./test_fragments.py
-    - ./test_generation.py
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_fragments.py
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_generation.py
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_entity.py
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_output_commands.py
   variables:
     LC_ALL: C.UTF-8
 

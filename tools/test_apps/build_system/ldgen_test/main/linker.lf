@@ -1,0 +1,7 @@
+[mapping:main]
+archive: libmain.a
+entries:
+    * (noflash)
+    src1 (default)
+    src1:func1 (noflash)
+    src1:func2 (rtc)
