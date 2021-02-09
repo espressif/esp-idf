@@ -283,8 +283,8 @@ static inline bool usb_ll_check_core_soft_reset(usbh_dev_t *hw)
 /**
  * @brief Reads and clears the global interrupt register
  *
- * @param hw
- * @return uint32_t
+ * @param hw Start address of the DWC_OTG registers
+ * @return uint32_t Mask of interrupts
  */
 static inline uint32_t usb_ll_intr_read_and_clear(usbh_dev_t *hw)
 {
@@ -292,6 +292,18 @@ static inline uint32_t usb_ll_intr_read_and_clear(usbh_dev_t *hw)
     gintsts.val = hw->gintsts_reg.val;
     hw->gintsts_reg.val = gintsts.val;  //Write back to clear
     return gintsts.val;
+}
+
+/**
+ * @brief Clear specific interrupts
+ *
+ * @param hw Start address of the DWC_OTG registers
+ * @param intr_msk Mask of interrupts to clear
+ */
+static inline void usb_ll_intr_clear(usbh_dev_t *hw, uint32_t intr_msk)
+{
+    //All GINTSTS fields are either W1C or read only. So safe to write directly
+    hw->gintsts_reg.val = intr_msk;
 }
 
 // --------------------------- GINTMSK Register --------------------------------
@@ -403,26 +415,36 @@ static inline void usbh_ll_hcfg_set_fsls_pclk_sel(usbh_dev_t *hw)
 }
 
 /**
- * @brief Sets some default values to HCFG to operate in Host mode wiht scatter/gather DMA
+ * @brief Sets some default values to HCFG to operate in Host mode with scatter/gather DMA
  *
  * @param hw
  */
-static inline void usbh_ll_hcfg_set_defaults(usbh_dev_t *hw)
+static inline void usbh_ll_hcfg_set_defaults(usbh_dev_t *hw, usb_speed_t speed)
 {
     hw->hcfg_reg.descdma = 1;   //Enable scatt/gatt
     hw->hcfg_reg.fslssupp = 1;  //FS/LS supp only
-    hw->hcfg_reg.fslspclksel = 1;   //48MHz PHY clock
+    /*
+    Indicate to the OTG core what speed the PHY clock is at
+    Note: It seems like our PHY has an implicit 8 divider applied when in LS mode,
+          so the values of FSLSPclkSel and FrInt have to be adjusted accordingly.
+    */
+    hw->hcfg_reg.fslspclksel = (speed == USB_SPEED_FULL) ? 1 : 2;
     hw->hcfg_reg.perschedena = 0;   //Disable perio sched
 }
 
 // ----------------------------- HFIR Register ---------------------------------
 
-static inline void usbh_ll_hfir_set_defaults(usbh_dev_t *hw)
+static inline void usbh_ll_hfir_set_defaults(usbh_dev_t *hw, usb_speed_t speed)
 {
     usb_hfir_reg_t hfir;
     hfir.val = hw->hfir_reg.val;
     hfir.hfirrldctrl = 0;       //Disable dynamic loading
-    hfir.frint = 48000;         //Set frame interval to 48000 cycles of 48MHz clock (i.e. equals to 1ms)
+    /*
+    Set frame interval to be equal to 1ms
+    Note: It seems like our PHY has an implicit 8 divider applied when in LS mode,
+          so the values of FSLSPclkSel and FrInt have to be adjusted accordingly.
+    */
+    hfir.frint = (speed == USB_SPEED_FULL) ? 48000 : 6000;
     hw->hfir_reg.val = hfir.val;
 }
 
@@ -611,6 +633,13 @@ static inline uint32_t usbh_ll_hprt_intr_read_and_clear(usbh_dev_t *hw)
     return (hprt.val & (USBH_LL_HPRT_W1C_MSK & ~(USBH_LL_HPRT_ENA_MSK)));
 }
 
+static inline void usbh_ll_hprt_intr_clear(usbh_dev_t *hw, uint32_t intr_mask)
+{
+    usb_hprt_reg_t hprt;
+    hprt.val = hw->hprt_reg.val;
+    hw->hprt_reg.val = ((hprt.val & ~USBH_LL_HPRT_ENA_MSK) & ~USBH_LL_HPRT_W1C_MSK) | intr_mask;
+}
+
 //Per Channel registers
 
 // --------------------------- HCCHARi Register --------------------------------
@@ -665,9 +694,11 @@ static inline void usbh_ll_chan_set_ep_type(volatile usb_host_chan_regs_t *chan,
     }
 }
 
-static inline void usbh_ll_chan_set_ls(volatile usb_host_chan_regs_t *chan)
+//Indicates whether channel is commuunicating with a LS device connected via a FS hub. Setting this bit to 1 will cause
+//each packet to be preceded by a PREamble packet
+static inline void usbh_ll_chan_set_lspddev(volatile usb_host_chan_regs_t *chan, bool is_ls)
 {
-    chan->hcchar_reg.lspddev = 1;
+    chan->hcchar_reg.lspddev = is_ls;
 }
 
 static inline void usbh_ll_chan_set_dir(volatile usb_host_chan_regs_t *chan, bool is_in)
@@ -685,11 +716,12 @@ static inline void usbh_ll_chan_set_mps(volatile usb_host_chan_regs_t *chan, uin
     chan->hcchar_reg.mps = mps;
 }
 
-static inline void usbh_ll_chan_hcchar_init(volatile usb_host_chan_regs_t *chan, int dev_addr, int ep_num, int mps, usb_xfer_type_t type, bool is_in)
+static inline void usbh_ll_chan_hcchar_init(volatile usb_host_chan_regs_t *chan, int dev_addr, int ep_num, int mps, usb_xfer_type_t type, bool is_in, bool is_ls)
 {
     //Sets all persistent fields of the channel over its lifetime
     usbh_ll_chan_set_dev_addr(chan, dev_addr);
     usbh_ll_chan_set_ep_type(chan, type);
+    usbh_ll_chan_set_lspddev(chan, is_ls);
     usbh_ll_chan_set_dir(chan, is_in);
     usbh_ll_chan_set_ep_num(chan, ep_num);
     usbh_ll_chan_set_mps(chan, mps);
