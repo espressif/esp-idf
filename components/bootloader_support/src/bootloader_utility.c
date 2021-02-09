@@ -477,7 +477,7 @@ void bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_
     esp_image_metadata_t image_data;
 
     if (start_index == TEST_APP_INDEX) {
-        if (try_load_partition(&bs->test, &image_data)) {
+        if (check_anti_rollback(&bs->test) && try_load_partition(&bs->test, &image_data)) {
             load_image(&image_data);
         } else {
             ESP_LOGE(TAG, "No bootable test partition in the partition table");
@@ -513,7 +513,7 @@ void bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_
         log_invalid_app_partition(index);
     }
 
-    if (try_load_partition(&bs->test, &image_data)) {
+    if (check_anti_rollback(&bs->test) && try_load_partition(&bs->test, &image_data)) {
         ESP_LOGW(TAG, "Falling back to test app as only bootable partition");
         load_image(&image_data);
     }
