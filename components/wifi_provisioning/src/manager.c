@@ -138,6 +138,7 @@ struct wifi_prov_mgr_ctx {
     wifi_ap_record_t *ap_list[14];
     wifi_ap_record_t *ap_list_sorted[MAX_SCAN_RESULTS];
     wifi_scan_config_t scan_cfg;
+    wifi_prov_cb_auth_t auth_cb;
 };
 
 /* Mutex to lock/unlock access to provisioning singleton
@@ -336,6 +337,7 @@ static esp_err_t wifi_prov_mgr_start_service(const char *service_name, const cha
         protocomm_delete(prov_ctx->pc);
         return ESP_ERR_NO_MEM;
     }
+    prov_ctx->wifi_prov_handlers->config_auth = prov_ctx->auth_cb;
 
     /* Add protocomm endpoint for Wi-Fi station configuration */
     ret = protocomm_add_endpoint(prov_ctx->pc, "prov-config",
@@ -358,6 +360,7 @@ static esp_err_t wifi_prov_mgr_start_service(const char *service_name, const cha
         protocomm_delete(prov_ctx->pc);
         return ESP_ERR_NO_MEM;
     }
+    prov_ctx->wifi_scan_handlers->scan_auth = prov_ctx->auth_cb;
 
     /* Add endpoint for scanning Wi-Fi APs and sending scan list */
     ret = protocomm_add_endpoint(prov_ctx->pc, "prov-scan",
@@ -1555,4 +1558,12 @@ void wifi_prov_mgr_stop_provisioning(void)
     wifi_prov_mgr_stop_service(0);
 
     RELEASE_LOCK(prov_ctx_lock);
+}
+
+esp_err_t wifi_prov_mgr_set_authorization_cb(wifi_prov_cb_auth_t auth_cb) {
+    if (!prov_ctx) {
+        return ESP_FAIL;
+    }
+    prov_ctx->auth_cb = auth_cb;
+    return ESP_OK;
 }

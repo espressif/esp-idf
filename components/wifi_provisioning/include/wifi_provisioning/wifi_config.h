@@ -123,6 +123,17 @@ typedef struct wifi_prov_config_handlers {
     esp_err_t (*apply_config_handler)(wifi_prov_ctx_t **ctx);
 
     /**
+     * Handler function called to authorize get/set/apply commands.
+     * Can be NULL if no authorization required.
+     * If set, will be called before handling commands.
+     *
+     * Returns:
+     *  ESP_OK: Command is authorized
+     *  ESP_FAIL: Command is not authorized
+     */
+    esp_err_t (*config_auth)(const char* auth, size_t auth_len);
+
+    /**
      * Context pointer to be passed to above handler functions upon invocation
      */
     wifi_prov_ctx_t *ctx;

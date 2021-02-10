@@ -710,7 +710,7 @@ const ProtobufCMessageDescriptor resp_scan_result__descriptor =
   (ProtobufCMessageInit) resp_scan_result__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor wi_fi_scan_payload__field_descriptors[8] =
+static const ProtobufCFieldDescriptor wi_fi_scan_payload__field_descriptors[9] =
 {
   {
     "msg",
@@ -732,6 +732,18 @@ static const ProtobufCFieldDescriptor wi_fi_scan_payload__field_descriptors[8] =
     0,   /* quantifier_offset */
     offsetof(WiFiScanPayload, status),
     &status__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "auth_token",
+    9,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(WiFiScanPayload, auth_token),
+    NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
@@ -810,20 +822,21 @@ static const ProtobufCFieldDescriptor wi_fi_scan_payload__field_descriptors[8] =
   },
 };
 static const unsigned wi_fi_scan_payload__field_indices_by_name[] = {
-  6,   /* field[6] = cmd_scan_result */
-  2,   /* field[2] = cmd_scan_start */
-  4,   /* field[4] = cmd_scan_status */
+  2,   /* field[2] = auth_token */
+  7,   /* field[7] = cmd_scan_result */
+  3,   /* field[3] = cmd_scan_start */
+  5,   /* field[5] = cmd_scan_status */
   0,   /* field[0] = msg */
-  7,   /* field[7] = resp_scan_result */
-  3,   /* field[3] = resp_scan_start */
-  5,   /* field[5] = resp_scan_status */
+  8,   /* field[8] = resp_scan_result */
+  4,   /* field[4] = resp_scan_start */
+  6,   /* field[6] = resp_scan_status */
   1,   /* field[1] = status */
 };
 static const ProtobufCIntRange wi_fi_scan_payload__number_ranges[2 + 1] =
 {
   { 1, 0 },
-  { 10, 2 },
-  { 0, 8 }
+  { 9, 2 },
+  { 0, 9 }
 };
 const ProtobufCMessageDescriptor wi_fi_scan_payload__descriptor =
 {
@@ -833,7 +846,7 @@ const ProtobufCMessageDescriptor wi_fi_scan_payload__descriptor =
   "WiFiScanPayload",
   "",
   sizeof(WiFiScanPayload),
-  8,
+  9,
   wi_fi_scan_payload__field_descriptors,
   wi_fi_scan_payload__field_indices_by_name,
   2,  wi_fi_scan_payload__number_ranges,

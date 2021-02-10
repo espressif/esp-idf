@@ -589,7 +589,7 @@ const ProtobufCMessageDescriptor resp_apply_config__descriptor =
   (ProtobufCMessageInit) resp_apply_config__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor wi_fi_config_payload__field_descriptors[7] =
+static const ProtobufCFieldDescriptor wi_fi_config_payload__field_descriptors[8] =
 {
   {
     "msg",
@@ -599,6 +599,18 @@ static const ProtobufCFieldDescriptor wi_fi_config_payload__field_descriptors[7]
     0,   /* quantifier_offset */
     offsetof(WiFiConfigPayload, msg),
     &wi_fi_config_msg_type__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "auth_token",
+    9,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(WiFiConfigPayload, auth_token),
+    NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
@@ -677,19 +689,20 @@ static const ProtobufCFieldDescriptor wi_fi_config_payload__field_descriptors[7]
   },
 };
 static const unsigned wi_fi_config_payload__field_indices_by_name[] = {
-  5,   /* field[5] = cmd_apply_config */
-  1,   /* field[1] = cmd_get_status */
-  3,   /* field[3] = cmd_set_config */
+  1,   /* field[1] = auth_token */
+  6,   /* field[6] = cmd_apply_config */
+  2,   /* field[2] = cmd_get_status */
+  4,   /* field[4] = cmd_set_config */
   0,   /* field[0] = msg */
-  6,   /* field[6] = resp_apply_config */
-  2,   /* field[2] = resp_get_status */
-  4,   /* field[4] = resp_set_config */
+  7,   /* field[7] = resp_apply_config */
+  3,   /* field[3] = resp_get_status */
+  5,   /* field[5] = resp_set_config */
 };
 static const ProtobufCIntRange wi_fi_config_payload__number_ranges[2 + 1] =
 {
   { 1, 0 },
-  { 10, 1 },
-  { 0, 7 }
+  { 9, 1 },
+  { 0, 8 }
 };
 const ProtobufCMessageDescriptor wi_fi_config_payload__descriptor =
 {
@@ -699,7 +712,7 @@ const ProtobufCMessageDescriptor wi_fi_config_payload__descriptor =
   "WiFiConfigPayload",
   "",
   sizeof(WiFiConfigPayload),
-  7,
+  8,
   wi_fi_config_payload__field_descriptors,
   wi_fi_config_payload__field_indices_by_name,
   2,  wi_fi_config_payload__number_ranges,
