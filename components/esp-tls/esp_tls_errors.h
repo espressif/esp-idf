@@ -52,13 +52,18 @@ extern "C" {
 #define ESP_ERR_ESP_TLS_SE_FAILED                         (ESP_ERR_ESP_TLS_BASE + 0x1B)  /*< esp-tls use Secure Element returned failed */
 #define ESP_ERR_ESP_TLS_TCP_CLOSED_FIN                    (ESP_ERR_ESP_TLS_BASE + 0x1C)  /*< esp-tls's TPC transport connection has benn closed (in a clean way) */
 
+/**
+* Definition of errors reported from IO API (potentially non-blocking) in case of error:
+* - esp_tls_conn_read()
+* - esp_tls_conn_write()
+*/
 #ifdef CONFIG_ESP_TLS_USING_MBEDTLS
 #define ESP_TLS_ERR_SSL_WANT_READ                          MBEDTLS_ERR_SSL_WANT_READ
 #define ESP_TLS_ERR_SSL_WANT_WRITE                         MBEDTLS_ERR_SSL_WANT_WRITE
 #define ESP_TLS_ERR_SSL_TIMEOUT                            MBEDTLS_ERR_SSL_TIMEOUT
 #elif CONFIG_ESP_TLS_USING_WOLFSSL /* CONFIG_ESP_TLS_USING_MBEDTLS */
-#define ESP_TLS_ERR_SSL_WANT_READ                          WOLFSSL_ERROR_WANT_READ
-#define ESP_TLS_ERR_SSL_WANT_WRITE                         WOLFSSL_ERROR_WANT_WRITE
+#define ESP_TLS_ERR_SSL_WANT_READ                          -0x6900
+#define ESP_TLS_ERR_SSL_WANT_WRITE                         -0x6880
 #define ESP_TLS_ERR_SSL_TIMEOUT                            WOLFSSL_CBIO_ERR_TIMEOUT
 #endif /*CONFIG_ESP_TLS_USING_WOLFSSL */
 
@@ -74,7 +79,6 @@ typedef enum {
     ESP_TLS_ERR_TYPE_ESP,                   /*!< ESP-IDF error type -- esp_err_t  */
     ESP_TLS_ERR_TYPE_WOLFSSL,               /*!< Error code from wolfSSL library */
     ESP_TLS_ERR_TYPE_WOLFSSL_CERT_FLAGS,    /*!< Certificate flags defined in wolfSSL */
-    ESP_TLS_ERR_TYPE_TCP_CONNECTION,        /*!< Errors related to TCP layer, extending errno */
     ESP_TLS_ERR_TYPE_MAX,                   /*!< Last err type -- invalid entry */
 } esp_tls_error_type_t;
 
