@@ -97,6 +97,8 @@ examples/protocols/mqtt/ssl_ds/configure_ds.py
 examples/protocols/mqtt/tcp/mqtt_tcp_example_test.py
 examples/protocols/mqtt/ws/mqtt_ws_example_test.py
 examples/protocols/mqtt/wss/mqtt_wss_example_test.py
+examples/protocols/openssl_client/example_test.py
+examples/protocols/openssl_server/example_test.py
 examples/protocols/pppos_client/example_test.py
 examples/protocols/sntp/example_test.py
 examples/protocols/sockets/tcp_client/example_test.py
