@@ -13,6 +13,7 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 #include "keep_alive.h"
+#include "esp_timer.h"
 
 typedef enum {
     NO_CLIENT = 0,

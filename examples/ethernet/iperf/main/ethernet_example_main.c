@@ -52,7 +52,7 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_console_new_repl_uart(&uart_config, &repl_config, &repl));
 
     /* Register commands */
-    register_system();
+    register_system_common();
     register_ethernet();
 
     printf("\n =======================================================\n");

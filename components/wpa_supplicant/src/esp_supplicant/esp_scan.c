@@ -33,7 +33,7 @@
 extern struct wpa_supplicant g_wpa_supp;
 
 static void esp_scan_done_event_handler(void* arg, esp_event_base_t event_base,
-					int event_id, void* event_data)
+					int32_t event_id, void* event_data)
 {
 	struct wpa_supplicant *wpa_s = &g_wpa_supp;
 	if (!wpa_s->scanning) {

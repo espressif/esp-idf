@@ -32,8 +32,8 @@ static const char *TAG = "example";
 
 // #define USE_SPI_MODE
 
-// ESP32-S2 doesn't have an SD Host peripheral, always use SPI:
-#ifdef CONFIG_IDF_TARGET_ESP32S2
+// ESP32-S2 and ESP32-C3 doesn't have an SD Host peripheral, always use SPI:
+#if CONFIG_IDF_TARGET_ESP32S2 ||CONFIG_IDF_TARGET_ESP32C3
 #ifndef USE_SPI_MODE
 #define USE_SPI_MODE
 #endif // USE_SPI_MODE
@@ -54,10 +54,19 @@ static const char *TAG = "example";
 // Pin mapping when using SPI mode.
 // With this mapping, SD card can be used both in SPI and 1-line SD mode.
 // Note that a pull-up on CS line is required in SD mode.
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
 #define PIN_NUM_MISO 2
 #define PIN_NUM_MOSI 15
 #define PIN_NUM_CLK  14
 #define PIN_NUM_CS   13
+
+#elif CONFIG_IDF_TARGET_ESP32C3
+#define PIN_NUM_MISO 18
+#define PIN_NUM_MOSI 9
+#define PIN_NUM_CLK  8
+#define PIN_NUM_CS   19
+
+#endif //CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
 #endif //USE_SPI_MODE
 
 void app_main(void)

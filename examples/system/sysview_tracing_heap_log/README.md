@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-S2 |
+| ----------------- | ----- | -------- |
+
 # SystemView Heap and Log Tracing Example
 
 Heap memory leaking is quite widespread software bug. IDF provides [heap tracing feature](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/system/heap_debug.html#heap-tracing) which allows to collect information related to heap operations (allocations/deallocations) and detect potential memory leaks. This feature can be used in two modes: standalone and host-based. In standalone mode collected data are kept on-board, so this mode is limited by avaialable memory in the system. Host-based mode does not have such limitation because collected data are sent to the host and can be analysed there using special tools. One of such tool is SEGGER SystemView. For description of [SystemView tracing feature](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html#system-behaviour-analysis-with-segger-systemview) please refer to **ESP32 Programming Guide**, section **Application Level Tracing library**. SystemView is also can be useful to show log message sent from the target.

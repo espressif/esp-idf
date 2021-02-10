@@ -1,11 +1,14 @@
+| Supported Targets | ESP32 | ESP32-S2 |
+| ----------------- | ----- | -------- |
+
 # Performance Monitor (`perfmon`) example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
 ## Overview
-This example illustrates usage of `perfmon` APIs to monitor and profile functions. 
+This example illustrates usage of `perfmon` APIs to monitor and profile functions.
 The example will calculate performance statistic for simple test function.
-The simple test function could be exchanged to one from the user. 
+The simple test function could be exchanged to one from the user.
 
 The example contain test function that will be executed with perfmon component and collect CPU statistic. The test function will be executed 200 times in each test case. The first test case collect statistic from all available performance counters, and second test just from defined in the list.
 

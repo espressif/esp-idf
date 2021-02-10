@@ -10,7 +10,6 @@
 
 #include "utils/common.h"
 #include "common/ieee802_11_defs.h"
-#include "config.h"
 #include "wpa_supplicant_i.h"
 #include "drivers/driver.h"
 #include "common/ieee802_11_common.h"

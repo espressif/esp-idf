@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-S2 |
+| ----------------- | ----- | -------  |
+
 # Simple Sniffer Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -14,7 +17,7 @@ This example is based on console component. For more information about console, 
 
 ### Hardware Required
 
-To run this example, you should have one ESP32 dev board integrated with a SD card slot (e.g [ESP-WROVER-KIT](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/modules-and-boards.html#esp-wrover-kit-v4-1)) or just connect [ESP32-DevKitC](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/modules-and-boards.html#esp32-devkitc-v4) to a SD card breakout board. 
+To run this example, you should have one ESP32 dev board integrated with a SD card slot (e.g [ESP-WROVER-KIT](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/modules-and-boards.html#esp-wrover-kit-v4-1)) or just connect [ESP32-DevKitC](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/modules-and-boards.html#esp32-devkitc-v4) to a SD card breakout board.
 If you want to send packets to host, make sure to connect ESP32 to some kind of [JTAG adapter](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/index.html#jtag-debugging-selecting-jtag-adapter).
 
 ### Configure the project
@@ -85,7 +88,7 @@ The `sniffer` command support some important options as follow:
 esp32> mount sd
 I (158912) example: Initializing SD card
 I (158912) example: Using SDMMC peripheral
-I (158912) gpio: GPIO[13]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 
+I (158912) gpio: GPIO[13]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
 Name: SA16G
 Type: SDHC/SDXC
 Speed: 20 MHz

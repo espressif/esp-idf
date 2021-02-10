@@ -37,20 +37,22 @@
 
 #define MOUNT_POINT "/sdcard"
 static const char *TAG="example";
-/* ESP32-S2 doesn't have an SD Host peripheral, always use SPI,
+/* ESP32-S2/C3 doesn't have an SD Host peripheral, always use SPI,
  * ESP32 can choose SPI or SDMMC Host, SPI is used by default: */
 
 #ifndef CONFIG_EXAMPLE_USE_SDMMC_HOST
 #define USE_SPI_MODE
 #endif
-// on ESP32-S2, DMA channel must be the same as host id
-#ifdef CONFIG_IDF_TARGET_ESP32S2
-#define SPI_DMA_CHAN    host.slot
-#endif //CONFIG_IDF_TARGET_ESP32S2
 // DMA channel to be used by the SPI peripheral
-#ifdef CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_TARGET_ESP32
 #define SPI_DMA_CHAN    1
-#endif //SPI_DMA_CHAN
+// on ESP32-S2, DMA channel must be the same as host id
+#elif CONFIG_IDF_TARGET_ESP32S2
+#define SPI_DMA_CHAN    host.slot
+#elif CONFIG_IDF_TARGET_ESP32C3
+// on ESP32-C3, DMA channels are shared with all other peripherals
+#define SPI_DMA_CHAN    1
+#endif //CONFIG_IDF_TARGET_ESP32
 
 // When testing SD and SPI modes, keep in mind that once the card has been
 // initialized in SPI mode, it can not be reinitialized in SD mode without
@@ -63,10 +65,17 @@ static char * mount_base_path = MOUNT_POINT;
 // Pin mapping when using SPI mode.
 // With this mapping, SD card can be used both in SPI and 1-line SD mode.
 // Note that a pull-up on CS line is required in SD mode.
+#if CONFIG_IDF_TARGET_ESP32C3
+#define PIN_NUM_MISO 2
+#define PIN_NUM_MOSI 7
+#define PIN_NUM_CLK  6
+#define PIN_NUM_CS   10
+#else
 #define PIN_NUM_MISO 2
 #define PIN_NUM_MOSI 15
 #define PIN_NUM_CLK  14
 #define PIN_NUM_CS   13
+#endif // CONFIG_IDF_TARGET_ESP32C3
 #endif //USE_SPI_MODE
 
 /* Function to initialize SPIFFS */
@@ -186,7 +195,6 @@ void sdcard_mount(void)
     sdmmc_card_print_info(stdout, card);
 
 }
-#endif
 
 static esp_err_t unmount_card(const char* base_path, sdmmc_card_t* card)
 {
@@ -204,6 +212,8 @@ static esp_err_t unmount_card(const char* base_path, sdmmc_card_t* card)
 
     return err;
 }
+
+#endif //CONFIG_EXAMPLE_MOUNT_SD_CARD
 
 void app_main(void)
 {

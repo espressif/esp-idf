@@ -28,7 +28,7 @@ static void example_ir_rx_task(void *arg)
 {
     uint32_t addr = 0;
     uint32_t cmd = 0;
-    uint32_t length = 0;
+    size_t length = 0;
     bool repeat = false;
     RingbufHandle_t rb = NULL;
     rmt_item32_t *items = NULL;
@@ -77,7 +77,7 @@ static void example_ir_tx_task(void *arg)
     uint32_t addr = 0x10;
     uint32_t cmd = 0x20;
     rmt_item32_t *items = NULL;
-    uint32_t length = 0;
+    size_t length = 0;
     ir_builder_t *ir_builder = NULL;
 
     rmt_config_t rmt_tx_config = RMT_DEFAULT_CONFIG_TX(CONFIG_EXAMPLE_RMT_TX_GPIO, example_tx_channel);

@@ -48,6 +48,14 @@
 #  define PIN_NUM_MOSI 35
 #  define PIN_NUM_CLK  36
 #  define PIN_NUM_CS   34
+#elif defined CONFIG_IDF_TARGET_ESP32C3
+#  define EEPROM_HOST    SPI2_HOST
+#  define DMA_CHAN    EEPROM_HOST
+
+#  define PIN_NUM_MISO 2
+#  define PIN_NUM_MOSI 7
+#  define PIN_NUM_CLK  6
+#  define PIN_NUM_CS   10
 #endif
 
 static const char TAG[] = "main";

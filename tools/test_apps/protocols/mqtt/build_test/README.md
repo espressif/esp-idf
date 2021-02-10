@@ -1,6 +1,3 @@
-| Supported Targets | ESP32 | ESP32-S2 |
-| ----------------- | ----- | -------- |
-
 # Build only test for C++
 
-This test app ensures that calling all mqtt-client API could be called from C++ 
+This test app ensures that calling all mqtt-client API could be called from C++

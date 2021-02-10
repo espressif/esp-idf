@@ -17,7 +17,6 @@
 #define PORT_COMMON_H_
 
 #include "freertos/FreeRTOS.h"
-#include "freertos/xtensa_api.h"
 #include "esp_log.h"                // for ESP_LOGE macro
 #include "mbconfig.h"
 
