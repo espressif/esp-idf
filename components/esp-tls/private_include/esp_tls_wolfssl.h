@@ -71,6 +71,13 @@ void esp_wolfssl_free_global_ca_store(void);
  */
 esp_err_t esp_wolfssl_init_global_ca_store(void);
 
+/**
+ * wolfSSL function for Initializing socket wrappers (no-operation for wolfSSL)
+ */
+static inline void esp_wolfssl_net_init(esp_tls_t *tls)
+{
+}
+
 #ifdef CONFIG_ESP_TLS_SERVER
 
 /**

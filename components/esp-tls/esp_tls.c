@@ -45,6 +45,7 @@ static const char *TAG = "esp-tls";
 #define _esp_tls_read                       esp_mbedtls_read
 #define _esp_tls_write                      esp_mbedtls_write
 #define _esp_tls_conn_delete                esp_mbedtls_conn_delete
+#define _esp_tls_net_init                   esp_mbedtls_net_init
 #ifdef CONFIG_ESP_TLS_SERVER
 #define _esp_tls_server_session_create      esp_mbedtls_server_session_create
 #define _esp_tls_server_session_delete      esp_mbedtls_server_session_delete
@@ -60,6 +61,7 @@ static const char *TAG = "esp-tls";
 #define _esp_tls_read                       esp_wolfssl_read
 #define _esp_tls_write                      esp_wolfssl_write
 #define _esp_tls_conn_delete                esp_wolfssl_conn_delete
+#define _esp_tls_net_init                   esp_wolfssl_net_init
 #ifdef CONFIG_ESP_TLS_SERVER
 #define _esp_tls_server_session_create      esp_wolfssl_server_session_create
 #define _esp_tls_server_session_delete      esp_wolfssl_server_session_delete
@@ -126,9 +128,7 @@ esp_tls_t *esp_tls_init(void)
         free(tls);
         return NULL;
     }
-#ifdef CONFIG_ESP_TLS_USING_MBEDTLS
-    tls->server_fd.fd = -1;
-#endif
+    _esp_tls_net_init(tls);
     tls->sockfd = -1;
     return tls;
 }
@@ -353,9 +353,7 @@ static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, c
     case ESP_TLS_INIT:
         tls->sockfd = -1;
         if (cfg != NULL && cfg->is_plain_tcp == false) {
-#ifdef CONFIG_ESP_TLS_USING_MBEDTLS
-            mbedtls_net_init(&tls->server_fd);
-#endif
+            _esp_tls_net_init(tls);
             tls->is_tls = true;
         }
         if ((esp_ret = esp_tcp_connect(hostname, hostlen, port, &tls->sockfd, tls, cfg)) != ESP_OK) {
