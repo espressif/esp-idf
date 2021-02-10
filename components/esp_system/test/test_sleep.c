@@ -69,6 +69,7 @@ TEST_CASE("light sleep followed by deep sleep", "[deepsleep][reset=DEEPSLEEP_RES
     esp_light_sleep_start();
     esp_deep_sleep_start();
 }
+#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
 
 TEST_CASE("wake up from light sleep using timer", "[deepsleep]")
 {
@@ -81,7 +82,6 @@ TEST_CASE("wake up from light sleep using timer", "[deepsleep]")
                (tv_stop.tv_usec - tv_start.tv_usec) * 1e-3f;
     TEST_ASSERT_INT32_WITHIN(500, 2000, (int) dt);
 }
-#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
 
 static void test_light_sleep(void* arg)
 {
