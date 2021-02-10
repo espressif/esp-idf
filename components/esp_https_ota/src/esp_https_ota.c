@@ -104,10 +104,28 @@ static esp_err_t _http_connect(esp_http_client_handle_t http_client)
     esp_err_t err = ESP_FAIL;
     int status_code, header_ret;
     do {
-        err = esp_http_client_open(http_client, 0);
+        char *post_data = NULL;
+        /* Send POST request if body is set.
+         * Note: Sending POST request is not supported if partial_http_download
+         * is enabled
+         */
+        int post_len = esp_http_client_get_post_field(http_client, &post_data);
+        err = esp_http_client_open(http_client, post_len);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Failed to open HTTP connection: %s", esp_err_to_name(err));
             return err;
+        }
+        if (post_len) {
+            int write_len = 0;
+            while (post_len > 0) {
+                write_len = esp_http_client_write(http_client, post_data, post_len);
+                if (write_len < 0) {
+                    ESP_LOGE(TAG, "Write failed");
+                    return ESP_FAIL;
+                }
+            }
+            post_len -= write_len;
+            post_data += write_len;
         }
         header_ret = esp_http_client_fetch_headers(http_client);
         if (header_ret < 0) {
