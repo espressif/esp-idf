@@ -52,7 +52,7 @@ class Runner(threading.Thread):
     @staticmethod
     def _get_config_cases(config_file):
         res = set()
-        if not config_file or os.path.isfile(config_file):
+        if not config_file or not os.path.isfile(config_file):
             return res
 
         for line in open(config_file).readlines():
