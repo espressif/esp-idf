@@ -66,6 +66,7 @@ void vMBPortEventClose( void );
 
 /* ----------------------- Static variables ---------------------------------*/
 static int xListenSock = -1;
+static SemaphoreHandle_t xShutdownSemaphore = NULL;
 static MbSlavePortConfig_t xConfig = { 0 };
 
 /* ----------------------- Static functions ---------------------------------*/
@@ -462,6 +463,11 @@ static void vMBTCPPortServerTask(void *pvParameters)
             // Wait for an activity on one of the sockets, timeout is NULL, so wait indefinitely
             xErr = select(xMaxSd + 1 , &xReadSet , NULL , NULL , NULL);
             if ((xErr < 0) && (errno != EINTR)) {
+                // First check if the task is not flagged for shutdown
+                if (xListenSock == -1 && xShutdownSemaphore) {
+                    xSemaphoreGive(xShutdownSemaphore);
+                    vTaskDelete(NULL);
+                }
                 // error occurred during wait for read
                 ESP_LOGE(MB_TCP_SLAVE_PORT_TAG, "select() errno = %d.", errno);
                 continue;
@@ -626,8 +632,22 @@ void
 vMBTCPPortClose( )
 {
     // Release resources for the event queue.
+
+    // Try to exit the task gracefully, so select could release its internal callbacks
+    // that were allocated on the stack of the task we're going to delete
+    xShutdownSemaphore = xSemaphoreCreateBinary();
+    vTaskResume(xConfig.xMbTcpTaskHandle);
+    if (xShutdownSemaphore == NULL || // if no semaphore (alloc issues) or couldn't acquire it, just delete the task
+        xSemaphoreTake(xShutdownSemaphore, 2*pdMS_TO_TICKS(CONFIG_FMB_MASTER_TIMEOUT_MS_RESPOND)) != pdTRUE) {
+        ESP_LOGE(MB_TCP_SLAVE_PORT_TAG, "Task couldn't exit gracefully within timeout -> abruptly deleting the task");
+        vTaskDelete(xConfig.xMbTcpTaskHandle);
+    }
+    if (xShutdownSemaphore) {
+        vSemaphoreDelete(xShutdownSemaphore);
+        xShutdownSemaphore = NULL;
+    }
+
     vMBPortEventClose( );
-    vTaskDelete(xConfig.xMbTcpTaskHandle);
 }
 
 void
