@@ -249,6 +249,10 @@ def _erase_ota_partition(target, ota_id):
 
 
 def main():
+    if sys.version_info[0] < 3:
+        print("WARNING: Support for Python 2 is deprecated and will be removed in future versions.", file=sys.stderr)
+    elif sys.version_info[0] == 3 and sys.version_info[1] < 6:
+        print("WARNING: Python 3 versions older than 3.6 are not supported.", file=sys.stderr)
     global quiet
 
     parser = argparse.ArgumentParser("ESP-IDF OTA Partitions Tool")

@@ -458,6 +458,10 @@ def create_output_files(name, output_table, debug):
 
 
 def main():
+    if sys.version_info[0] < 3:
+        print("WARNING: Support for Python 2 is deprecated and will be removed in future versions.", file=sys.stderr)
+    elif sys.version_info[0] == 3 and sys.version_info[1] < 6:
+        print("WARNING: Python 3 versions older than 3.6 are not supported.", file=sys.stderr)
     global quiet
     global max_blk_len
     global idf_target

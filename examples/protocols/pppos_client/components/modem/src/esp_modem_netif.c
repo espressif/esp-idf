@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include "esp_netif.h"
+#include "esp_netif_ppp.h"
 #include "esp_modem.h"
 #include "esp_log.h"
 
@@ -25,6 +26,16 @@ typedef struct esp_modem_netif_driver_s {
     modem_dte_t            *dte;        /*!< ptr to the esp_modem objects (DTE) */
 } esp_modem_netif_driver_t;
 
+static void on_ppp_changed(void *arg, esp_event_base_t event_base,
+                           int32_t event_id, void *event_data)
+{
+    modem_dte_t *dte = arg;
+    if (event_id < NETIF_PP_PHASE_OFFSET) {
+        ESP_LOGI(TAG, "PPP state changed event %d", event_id);
+        // only notify the modem on state/error events, ignoring phase transitions
+        esp_modem_notify_ppp_netif_closed(dte);
+    }
+}
 /**
  * @brief Transmit function called from esp_netif to output network stack data
  *
@@ -53,7 +64,7 @@ static esp_err_t esp_modem_dte_transmit(void *h, void *buffer, size_t len)
  * @param esp_netif handle to esp-netif object
  * @param args pointer to modem-netif driver
  *
- * @return ESP_OK on success
+ * @return ESP_OK on success, modem-start error code if starting failed
  */
 static esp_err_t esp_modem_post_attach_start(esp_netif_t * esp_netif, void * args)
 {
@@ -66,8 +77,16 @@ static esp_err_t esp_modem_post_attach_start(esp_netif_t * esp_netif, void * arg
     };
     driver->base.netif = esp_netif;
     ESP_ERROR_CHECK(esp_netif_set_driver_config(esp_netif, &driver_ifconfig));
-    esp_modem_start_ppp(dte);
-    return ESP_OK;
+
+    // enable both events, so we could notify the modem layer if an error occurred/state changed
+    esp_netif_ppp_config_t ppp_config = {
+            .ppp_error_event_enabled = true,
+            .ppp_phase_event_enabled = true
+    };
+    esp_netif_ppp_set_params(esp_netif, &ppp_config);
+
+    ESP_ERROR_CHECK(esp_event_handler_register(NETIF_PPP_STATUS, ESP_EVENT_ANY_ID, &on_ppp_changed, dte));
+    return esp_modem_start_ppp(dte);
 }
 
 /**
@@ -110,7 +129,6 @@ drv_create_failed:
 void esp_modem_netif_teardown(void *h)
 {
     esp_modem_netif_driver_t *driver = h;
-    esp_netif_destroy(driver->base.netif);
     free(driver);
 }
 

@@ -23,7 +23,7 @@
       - $BOT_LABEL_INTEGRATION_TEST
       - $BOT_LABEL_REGULAR_TEST
   script:
-    - git clone $SSC_REPOSITORY
+    - ./tools/ci/retry_failed.sh git clone $SSC_REPOSITORY
     - python $CHECKOUT_REF_SCRIPT SSC SSC
     - cd SSC
     - MAKEFLAGS= ./ci_build_ssc.sh $TARGET_NAME
@@ -58,6 +58,7 @@ build_ssc_esp32s2:
       - $BOT_LABEL_REGULAR_TEST
   variables:
     LOG_PATH: "$CI_PROJECT_DIR/log_ut_cmake"
+    PYTHON_VER: 3
   script:
     - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
     - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
@@ -78,7 +79,9 @@ build_esp_idf_tests_cmake_esp32s2:
 
 .build_examples_template:
   extends: .build_template
-  parallel: 8
+  variables:
+      PYTHON_VER: 3
+  parallel: 10
   artifacts:
     when: always
     expire_in: 4 days
@@ -209,7 +212,6 @@ build_test_apps_esp32s2:
     paths:
       - docs/_build/*/*/*.txt
       - docs/_build/*/*/html/*
-      - docs/_build/*/*/latex/*
     expire_in: 4 days
   only:
     variables:
@@ -221,31 +223,39 @@ build_test_apps_esp32s2:
   script:
     - cd docs
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r requirements.txt
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py -bs html latex -l $DOCLANG -t $DOCTGT build
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py -bs html -l $DOCLANG -t $DOCTGT build
 
-build_docs_en_esp32:
+build_docs_html:
   extends: .build_docs_template
-  variables:
-    DOCLANG: "en"
-    DOCTGT: "esp32"
+  parallel:
+    matrix:
+      - DOCLANG: ["en", "zh_CN"]
+        DOCTGT: ["esp32", "esp32s2"]
 
-build_docs_en_esp32s2:
-  extends: .build_docs_template
-  variables:
-    DOCLANG: "en"
-    DOCTGT: "esp32s2"
-
-build_docs_zh_CN_esp32:
-  extends: .build_docs_template
-  variables:
-    DOCLANG: "zh_CN"
-    DOCTGT: "esp32"
-
-build_docs_zh_CN_esp32s2:
-  extends: .build_docs_template
-  variables:
-    DOCLANG: "zh_CN"
-    DOCTGT: "esp32s2"
+build_docs_pdf:
+  stage: build
+  image: $ESP_IDF_DOC_ENV_IMAGE
+  tags:
+    - build_docs
+  artifacts:
+    when: always
+    paths:
+      - docs/_build/*/*/latex/*
+    expire_in: 4 days
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "master"'
+    - if: '$CI_COMMIT_REF_NAME =~ "/^release\/v/"'
+    - if: '$CI_COMMIT_REF_NAME =~ "/^v\d+\.\d+(\.\d+)?($|-)/"'
+    - if: $BOT_LABEL_BUILD_DOCS
+  dependencies: []
+  parallel:
+    matrix:
+      - DOCLANG: ["en", "zh_CN"]
+        DOCTGT: ["esp32", "esp32s2"]
+  script:
+    - cd docs
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r requirements.txt
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py -bs latex -l $DOCLANG -t $DOCTGT build
 
 test_build_system:
   extends: .build_template
@@ -313,7 +323,10 @@ build_docker:
     DOCKER_TMP_IMAGE_NAME: "idf_tmp_image"
   before_script: []
   script:
-    - export DOCKER_BUILD_ARGS="--build-arg IDF_CLONE_URL=${CI_REPOSITORY_URL} --build-arg IDF_CLONE_BRANCH_OR_TAG=${CI_COMMIT_REF_NAME} --build-arg IDF_CHECKOUT_REF=${CI_COMMIT_TAG:-$CI_COMMIT_SHA}"
+    - export LOCAL_CI_REPOSITORY_URL=$CI_REPOSITORY_URL
+    - if [ -n "$LOCAL_GITLAB_HTTPS_HOST" ]; then export LOCAL_CI_REPOSITORY_URL="https://gitlab-ci-token:${CI_JOB_TOKEN}@${LOCAL_GITLAB_HTTPS_HOST}/${CI_PROJECT_PATH}"; fi
+    - echo "Using repository at $LOCAL_CI_REPOSITORY_URL"
+    - export DOCKER_BUILD_ARGS="--build-arg IDF_CLONE_URL=${LOCAL_CI_REPOSITORY_URL} --build-arg IDF_CLONE_BRANCH_OR_TAG=${CI_COMMIT_REF_NAME} --build-arg IDF_CHECKOUT_REF=${CI_COMMIT_TAG:-$CI_COMMIT_SHA}"
     # Build
     - docker build --tag ${DOCKER_TMP_IMAGE_NAME} ${DOCKER_BUILD_ARGS} tools/docker/
     # We can't mount $PWD/examples/get-started/blink into the container, see https://gitlab.com/gitlab-org/gitlab-ce/issues/41227.

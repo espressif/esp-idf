@@ -174,8 +174,8 @@ menu "FreeRTOS"
 
     config FREERTOS_ISR_STACKSIZE
         int "ISR stack size"
-        range 2100 32768 if ESP32_COREDUMP_DATA_FORMAT_ELF
-        default 2100 if ESP32_COREDUMP_DATA_FORMAT_ELF
+        range 2096 32768 if ESP32_COREDUMP_DATA_FORMAT_ELF
+        default 2096 if ESP32_COREDUMP_DATA_FORMAT_ELF
         range 1536 32768
         default 1536
         help

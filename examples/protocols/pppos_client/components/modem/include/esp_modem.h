@@ -158,6 +158,17 @@ esp_err_t esp_modem_stop_ppp(modem_dte_t *dte);
  */
 esp_err_t esp_modem_set_rx_cb(modem_dte_t *dte, esp_modem_on_receive receive_cb, void *receive_cb_ctx);
 
+/**
+ * @brief Notify the modem, that ppp netif has closed
+ *
+ * @note This API should only be used internally by the modem-netif layer
+ *
+ * @param dte ESP Modem DTE object
+ *
+ * @return ESP_OK on success
+ */
+esp_err_t esp_modem_notify_ppp_netif_closed(modem_dte_t *dte);
+
 #ifdef __cplusplus
 }
 #endif

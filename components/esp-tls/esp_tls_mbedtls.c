@@ -196,6 +196,7 @@ void esp_mbedtls_conn_delete(esp_tls_t *tls)
         esp_mbedtls_cleanup(tls);
         if (tls->is_tls) {
             mbedtls_net_free(&tls->server_fd);
+            tls->sockfd = tls->server_fd.fd;
         }
     }
 }
@@ -259,6 +260,11 @@ static esp_err_t set_ca_cert(esp_tls_t *tls, const unsigned char *cacert, size_t
         ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%x", -ret);
         ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_MBEDTLS, -ret);
         return ESP_ERR_MBEDTLS_X509_CRT_PARSE_FAILED;
+    }
+    if (ret > 0) {
+        /* This will happen if the CA chain contains one or more invalid certs, going ahead as the hadshake
+         * may still succeed if the other certificates in the CA chain are enough for the authentication */
+        ESP_LOGW(TAG, "mbedtls_x509_crt_parse was partly successful. No. of failed certificates: %d", ret);
     }
     mbedtls_ssl_conf_authmode(&tls->conf, MBEDTLS_SSL_VERIFY_REQUIRED);
     mbedtls_ssl_conf_ca_chain(&tls->conf, tls->cacert_ptr, NULL);

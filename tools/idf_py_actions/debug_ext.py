@@ -287,7 +287,11 @@ def action_extensions(base_actions, project_path):
                 continue
             finally:
                 watch_openocd.join()
-                processes["threads_to_join"].remove(watch_openocd)
+                try:
+                    processes["threads_to_join"].remove(watch_openocd)
+                except ValueError:
+                    # Valid scenario: watch_openocd task won't be in the list if openocd not started from idf.py
+                    pass
 
     fail_if_openocd_failed = {
         "names": ["--require-openocd", "--require_openocd"],

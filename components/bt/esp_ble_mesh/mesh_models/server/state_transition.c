@@ -11,16 +11,21 @@
 #include "btc_ble_mesh_time_scene_model.h"
 #include "btc_ble_mesh_sensor_model.h"
 
+#include "mesh_config.h"
 #include "model_opcode.h"
 #include "state_transition.h"
+
+#if (CONFIG_BLE_MESH_GENERIC_SERVER || \
+     CONFIG_BLE_MESH_TIME_SCENE_SERVER || \
+     CONFIG_BLE_MESH_LIGHTING_SERVER)
 
 /* Function to calculate Remaining Time (Start) */
 
 void bt_mesh_server_calc_remain_time(struct bt_mesh_state_transition *transition)
 {
-    u8_t steps = 0U, resolution = 0U;
-    s32_t duration_remainder = 0;
-    s64_t now = 0;
+    uint8_t steps = 0U, resolution = 0U;
+    int32_t duration_remainder = 0;
+    int64_t now = 0;
 
     if (transition->just_started) {
         transition->remain_time = transition->trans_time;
@@ -57,7 +62,7 @@ void bt_mesh_server_calc_remain_time(struct bt_mesh_state_transition *transition
 
 static void tt_values_calculator(struct bt_mesh_state_transition *transition)
 {
-    u8_t steps_multiplier = 0U, resolution = 0U;
+    uint8_t steps_multiplier = 0U, resolution = 0U;
 
     resolution = (transition->trans_time >> 6);
     steps_multiplier = (transition->trans_time & 0x3F);
@@ -85,7 +90,7 @@ static void tt_values_calculator(struct bt_mesh_state_transition *transition)
 }
 
 static void transition_time_values(struct bt_mesh_state_transition *transition,
-                                   u8_t trans_time, u8_t delay)
+                                   uint8_t trans_time, uint8_t delay)
 {
     transition->trans_time = trans_time;
     transition->delay = delay;
@@ -96,117 +101,6 @@ static void transition_time_values(struct bt_mesh_state_transition *transition,
 
     tt_values_calculator(transition);
     transition->quo_tt = transition->total_duration / transition->counter;
-}
-
-void generic_onoff_tt_values(struct bt_mesh_gen_onoff_srv *srv,
-                             u8_t trans_time, u8_t delay)
-{
-    return transition_time_values(&srv->transition, trans_time, delay);
-}
-
-void generic_level_tt_values(struct bt_mesh_gen_level_srv *srv,
-                             u8_t trans_time, u8_t delay)
-{
-    transition_time_values(&srv->transition, trans_time, delay);
-    srv->tt_delta_level =
-        ((float) (srv->state.level - srv->state.target_level) / srv->transition.counter);
-}
-
-void generic_power_level_tt_values(struct bt_mesh_gen_power_level_srv *srv,
-                                   u8_t trans_time, u8_t delay)
-{
-    transition_time_values(&srv->transition, trans_time, delay);
-    srv->tt_delta_level =
-        ((float) (srv->state->power_actual - srv->state->target_power_actual) / srv->transition.counter);
-}
-
-void light_lightness_actual_tt_values(struct bt_mesh_light_lightness_srv *srv,
-                                      u8_t trans_time, u8_t delay)
-{
-    transition_time_values(&srv->actual_transition, trans_time, delay);
-    srv->tt_delta_lightness_actual =
-        ((float) (srv->state->lightness_actual - srv->state->target_lightness_actual) / srv->actual_transition.counter);
-}
-
-void light_lightness_linear_tt_values(struct bt_mesh_light_lightness_srv *srv,
-                                      u8_t trans_time, u8_t delay)
-{
-    transition_time_values(&srv->linear_transition, trans_time, delay);
-    srv->tt_delta_lightness_linear =
-        ((float) (srv->state->lightness_linear - srv->state->target_lightness_linear) / srv->linear_transition.counter);
-}
-
-void light_ctl_tt_values(struct bt_mesh_light_ctl_srv *srv,
-                         u8_t trans_time, u8_t delay)
-{
-    transition_time_values(&srv->transition, trans_time, delay);
-    srv->tt_delta_lightness =
-        ((float) (srv->state->lightness - srv->state->target_lightness) / srv->transition.counter);
-    srv->tt_delta_temperature =
-        ((float) (srv->state->temperature - srv->state->target_temperature) / srv->transition.counter);
-    srv->tt_delta_delta_uv =
-        ((float) (srv->state->delta_uv - srv->state->target_delta_uv) / srv->transition.counter);
-}
-
-void light_ctl_temp_tt_values(struct bt_mesh_light_ctl_temp_srv *srv,
-                              u8_t trans_time, u8_t delay)
-{
-    transition_time_values(&srv->transition, trans_time, delay);
-    srv->tt_delta_temperature =
-        ((float) (srv->state->temperature - srv->state->target_temperature) / srv->transition.counter);
-    srv->tt_delta_delta_uv =
-        ((float) (srv->state->delta_uv - srv->state->target_delta_uv) / srv->transition.counter);
-}
-
-void light_hsl_tt_values(struct bt_mesh_light_hsl_srv *srv,
-                         u8_t trans_time, u8_t delay)
-{
-    transition_time_values(&srv->transition, trans_time, delay);
-    srv->tt_delta_lightness =
-        ((float) (srv->state->lightness - srv->state->target_lightness) / srv->transition.counter);
-    srv->tt_delta_hue =
-        ((float) (srv->state->hue - srv->state->target_hue) / srv->transition.counter);
-    srv->tt_delta_saturation =
-        ((float) (srv->state->saturation - srv->state->target_saturation) / srv->transition.counter);
-}
-
-void light_hsl_hue_tt_values(struct bt_mesh_light_hsl_hue_srv *srv,
-                             u8_t trans_time, u8_t delay)
-{
-    transition_time_values(&srv->transition, trans_time, delay);
-    srv->tt_delta_hue =
-        ((float) (srv->state->hue - srv->state->target_hue) / srv->transition.counter);
-}
-
-void light_hsl_sat_tt_values(struct bt_mesh_light_hsl_sat_srv *srv,
-                             u8_t trans_time, u8_t delay)
-{
-    transition_time_values(&srv->transition, trans_time, delay);
-    srv->tt_delta_saturation =
-        ((float) (srv->state->saturation - srv->state->target_saturation) / srv->transition.counter);
-}
-
-void light_xyl_tt_values(struct bt_mesh_light_xyl_srv *srv,
-                         u8_t trans_time, u8_t delay)
-{
-    transition_time_values(&srv->transition, trans_time, delay);
-    srv->tt_delta_lightness =
-        ((float) (srv->state->lightness - srv->state->target_lightness) / srv->transition.counter);
-    srv->tt_delta_x =
-        ((float) (srv->state->x - srv->state->target_x) / srv->transition.counter);
-    srv->tt_delta_y =
-        ((float) (srv->state->y - srv->state->target_y) / srv->transition.counter);
-}
-
-void light_lc_tt_values(struct bt_mesh_light_lc_srv *srv,
-                        u8_t trans_time, u8_t delay)
-{
-    transition_time_values(&srv->transition, trans_time, delay);
-}
-
-void scene_tt_values(struct bt_mesh_scene_srv *srv, u8_t trans_time, u8_t delay)
-{
-    transition_time_values(&srv->transition, trans_time, delay);
 }
 
 static void transition_timer_start(struct bt_mesh_state_transition *transition)
@@ -222,7 +116,126 @@ static void transition_timer_stop(struct bt_mesh_state_transition *transition)
     bt_mesh_atomic_clear_bit(transition->flag, BLE_MESH_TRANS_TIMER_START);
 }
 
+#if CONFIG_BLE_MESH_GENERIC_SERVER
+void generic_onoff_tt_values(struct bt_mesh_gen_onoff_srv *srv,
+                             uint8_t trans_time, uint8_t delay)
+{
+    return transition_time_values(&srv->transition, trans_time, delay);
+}
+
+void generic_level_tt_values(struct bt_mesh_gen_level_srv *srv,
+                             uint8_t trans_time, uint8_t delay)
+{
+    transition_time_values(&srv->transition, trans_time, delay);
+    srv->tt_delta_level =
+        ((float) (srv->state.level - srv->state.target_level) / srv->transition.counter);
+}
+
+void generic_power_level_tt_values(struct bt_mesh_gen_power_level_srv *srv,
+                                   uint8_t trans_time, uint8_t delay)
+{
+    transition_time_values(&srv->transition, trans_time, delay);
+    srv->tt_delta_level =
+        ((float) (srv->state->power_actual - srv->state->target_power_actual) / srv->transition.counter);
+}
+#endif /* CONFIG_BLE_MESH_GENERIC_SERVER */
+
+#if CONFIG_BLE_MESH_LIGHTING_SERVER
+void light_lightness_actual_tt_values(struct bt_mesh_light_lightness_srv *srv,
+                                      uint8_t trans_time, uint8_t delay)
+{
+    transition_time_values(&srv->actual_transition, trans_time, delay);
+    srv->tt_delta_lightness_actual =
+        ((float) (srv->state->lightness_actual - srv->state->target_lightness_actual) / srv->actual_transition.counter);
+}
+
+void light_lightness_linear_tt_values(struct bt_mesh_light_lightness_srv *srv,
+                                      uint8_t trans_time, uint8_t delay)
+{
+    transition_time_values(&srv->linear_transition, trans_time, delay);
+    srv->tt_delta_lightness_linear =
+        ((float) (srv->state->lightness_linear - srv->state->target_lightness_linear) / srv->linear_transition.counter);
+}
+
+void light_ctl_tt_values(struct bt_mesh_light_ctl_srv *srv,
+                         uint8_t trans_time, uint8_t delay)
+{
+    transition_time_values(&srv->transition, trans_time, delay);
+    srv->tt_delta_lightness =
+        ((float) (srv->state->lightness - srv->state->target_lightness) / srv->transition.counter);
+    srv->tt_delta_temperature =
+        ((float) (srv->state->temperature - srv->state->target_temperature) / srv->transition.counter);
+    srv->tt_delta_delta_uv =
+        ((float) (srv->state->delta_uv - srv->state->target_delta_uv) / srv->transition.counter);
+}
+
+void light_ctl_temp_tt_values(struct bt_mesh_light_ctl_temp_srv *srv,
+                              uint8_t trans_time, uint8_t delay)
+{
+    transition_time_values(&srv->transition, trans_time, delay);
+    srv->tt_delta_temperature =
+        ((float) (srv->state->temperature - srv->state->target_temperature) / srv->transition.counter);
+    srv->tt_delta_delta_uv =
+        ((float) (srv->state->delta_uv - srv->state->target_delta_uv) / srv->transition.counter);
+}
+
+void light_hsl_tt_values(struct bt_mesh_light_hsl_srv *srv,
+                         uint8_t trans_time, uint8_t delay)
+{
+    transition_time_values(&srv->transition, trans_time, delay);
+    srv->tt_delta_lightness =
+        ((float) (srv->state->lightness - srv->state->target_lightness) / srv->transition.counter);
+    srv->tt_delta_hue =
+        ((float) (srv->state->hue - srv->state->target_hue) / srv->transition.counter);
+    srv->tt_delta_saturation =
+        ((float) (srv->state->saturation - srv->state->target_saturation) / srv->transition.counter);
+}
+
+void light_hsl_hue_tt_values(struct bt_mesh_light_hsl_hue_srv *srv,
+                             uint8_t trans_time, uint8_t delay)
+{
+    transition_time_values(&srv->transition, trans_time, delay);
+    srv->tt_delta_hue =
+        ((float) (srv->state->hue - srv->state->target_hue) / srv->transition.counter);
+}
+
+void light_hsl_sat_tt_values(struct bt_mesh_light_hsl_sat_srv *srv,
+                             uint8_t trans_time, uint8_t delay)
+{
+    transition_time_values(&srv->transition, trans_time, delay);
+    srv->tt_delta_saturation =
+        ((float) (srv->state->saturation - srv->state->target_saturation) / srv->transition.counter);
+}
+
+void light_xyl_tt_values(struct bt_mesh_light_xyl_srv *srv,
+                         uint8_t trans_time, uint8_t delay)
+{
+    transition_time_values(&srv->transition, trans_time, delay);
+    srv->tt_delta_lightness =
+        ((float) (srv->state->lightness - srv->state->target_lightness) / srv->transition.counter);
+    srv->tt_delta_x =
+        ((float) (srv->state->x - srv->state->target_x) / srv->transition.counter);
+    srv->tt_delta_y =
+        ((float) (srv->state->y - srv->state->target_y) / srv->transition.counter);
+}
+
+void light_lc_tt_values(struct bt_mesh_light_lc_srv *srv,
+                        uint8_t trans_time, uint8_t delay)
+{
+    transition_time_values(&srv->transition, trans_time, delay);
+}
+#endif /* CONFIG_BLE_MESH_LIGHTING_SERVER */
+
+#if CONFIG_BLE_MESH_TIME_SCENE_SERVER
+void scene_tt_values(struct bt_mesh_scene_srv *srv, uint8_t trans_time, uint8_t delay)
+{
+    transition_time_values(&srv->transition, trans_time, delay);
+}
+#endif /* CONFIG_BLE_MESH_TIME_SCENE_SERVER */
+
 /* Timers related handlers & threads (Start) */
+
+#if CONFIG_BLE_MESH_GENERIC_SERVER
 void generic_onoff_work_handler(struct k_work *work)
 {
     struct bt_mesh_gen_onoff_srv *srv =
@@ -244,7 +257,7 @@ void generic_onoff_work_handler(struct k_work *work)
         if (srv->transition.counter == 0U) {
             change.gen_onoff_set.onoff = srv->state.onoff;
             bt_mesh_generic_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, srv->model, ctx, (const u8_t *)&change, sizeof(change));
+                BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             bt_mesh_atomic_clear_bit(srv->transition.flag, BLE_MESH_TRANS_TIMER_START);
         } else {
             /**
@@ -257,7 +270,7 @@ void generic_onoff_work_handler(struct k_work *work)
                 srv->state.onoff = BLE_MESH_STATE_ON;
                 change.gen_onoff_set.onoff = srv->state.onoff;
                 bt_mesh_generic_server_cb_evt_to_btc(
-                    BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, srv->model, ctx, (const u8_t *)&change, sizeof(change));
+                    BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             }
             transition_timer_start(&srv->transition);
         }
@@ -276,7 +289,7 @@ void generic_onoff_work_handler(struct k_work *work)
         if (srv->state.target_onoff != BLE_MESH_STATE_ON) {
             change.gen_onoff_set.onoff = srv->state.onoff;
             bt_mesh_generic_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, srv->model, ctx, (const u8_t *)&change, sizeof(change));
+                BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
         }
     }
 
@@ -320,7 +333,7 @@ void generic_level_work_handler(struct k_work *work)
                 break;
             }
             bt_mesh_generic_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, srv->model, ctx, (const u8_t *)&change, sizeof(change));
+                BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             bt_mesh_atomic_clear_bit(srv->transition.flag, BLE_MESH_TRANS_TIMER_START);
         } else {
             transition_timer_start(&srv->transition);
@@ -355,7 +368,7 @@ void generic_level_work_handler(struct k_work *work)
         break;
     }
     bt_mesh_generic_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, srv->model, ctx, (const u8_t *)&change, sizeof(change));
+        BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
 
     gen_level_publish(srv->model);
 
@@ -385,7 +398,7 @@ void generic_power_level_work_handler(struct k_work *work)
         if (srv->transition.counter == 0U) {
             change.gen_power_level_set.power = srv->state->power_actual;
             bt_mesh_generic_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, srv->model, ctx, (const u8_t *)&change, sizeof(change));
+                BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             bt_mesh_atomic_clear_bit(srv->transition.flag, BLE_MESH_TRANS_TIMER_START);
         } else {
             transition_timer_start(&srv->transition);
@@ -417,14 +430,16 @@ void generic_power_level_work_handler(struct k_work *work)
 
     change.gen_power_level_set.power = srv->state->power_actual;
     bt_mesh_generic_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, srv->model, ctx, (const u8_t *)&change, sizeof(change));
+        BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
 
     gen_power_level_publish(srv->model, BLE_MESH_MODEL_OP_GEN_POWER_LEVEL_STATUS);
 
     bt_mesh_generic_server_unlock();
     return;
 }
+#endif /* CONFIG_BLE_MESH_GENERIC_SERVER */
 
+#if CONFIG_BLE_MESH_LIGHTING_SERVER
 void light_lightness_actual_work_handler(struct k_work *work)
 {
     struct bt_mesh_light_lightness_srv *srv =
@@ -447,7 +462,7 @@ void light_lightness_actual_work_handler(struct k_work *work)
         if (srv->actual_transition.counter == 0U) {
             change.lightness_set.lightness = srv->state->lightness_actual;
             bt_mesh_lighting_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const u8_t *)&change, sizeof(change));
+                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             bt_mesh_atomic_clear_bit(srv->actual_transition.flag, BLE_MESH_TRANS_TIMER_START);
         } else {
             transition_timer_start(&srv->actual_transition);
@@ -479,7 +494,7 @@ void light_lightness_actual_work_handler(struct k_work *work)
 
     change.lightness_set.lightness = srv->state->lightness_actual;
     bt_mesh_lighting_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const u8_t *)&change, sizeof(change));
+        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
 
     light_lightness_publish(srv->model, BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_STATUS);
 
@@ -509,7 +524,7 @@ void light_lightness_linear_work_handler(struct k_work *work)
         if (srv->linear_transition.counter == 0U) {
             change.lightness_linear_set.lightness = srv->state->lightness_linear;
             bt_mesh_lighting_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const u8_t *)&change, sizeof(change));
+                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             bt_mesh_atomic_clear_bit(srv->linear_transition.flag, BLE_MESH_TRANS_TIMER_START);
         } else {
             transition_timer_start(&srv->linear_transition);
@@ -531,7 +546,7 @@ void light_lightness_linear_work_handler(struct k_work *work)
 
     change.lightness_linear_set.lightness = srv->state->lightness_linear;
     bt_mesh_lighting_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const u8_t *)&change, sizeof(change));
+        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
 
     light_lightness_publish(srv->model, BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_LINEAR_STATUS);
 
@@ -563,7 +578,7 @@ void light_ctl_work_handler(struct k_work *work)
             change.ctl_set.temperature = srv->state->temperature;
             change.ctl_set.delta_uv = srv->state->delta_uv;
             bt_mesh_lighting_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const u8_t *)&change, sizeof(change));
+                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             bt_mesh_atomic_clear_bit(srv->transition.flag, BLE_MESH_TRANS_TIMER_START);
         } else {
             transition_timer_start(&srv->transition);
@@ -591,7 +606,7 @@ void light_ctl_work_handler(struct k_work *work)
     change.ctl_set.temperature = srv->state->temperature;
     change.ctl_set.delta_uv = srv->state->delta_uv;
     bt_mesh_lighting_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const u8_t *)&change, sizeof(change));
+        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
 
     light_ctl_publish(srv->model, BLE_MESH_MODEL_OP_LIGHT_CTL_STATUS);
 
@@ -622,7 +637,7 @@ void light_ctl_temp_work_handler(struct k_work *work)
             change.ctl_temp_set.temperature = srv->state->temperature;
             change.ctl_temp_set.delta_uv = srv->state->delta_uv;
             bt_mesh_lighting_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const u8_t *)&change, sizeof(change));
+                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             bt_mesh_atomic_clear_bit(srv->transition.flag, BLE_MESH_TRANS_TIMER_START);
         } else {
             transition_timer_start(&srv->transition);
@@ -647,7 +662,7 @@ void light_ctl_temp_work_handler(struct k_work *work)
     change.ctl_temp_set.temperature = srv->state->temperature;
     change.ctl_temp_set.delta_uv = srv->state->delta_uv;
     bt_mesh_lighting_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const u8_t *)&change, sizeof(change));
+        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
 
     light_ctl_publish(srv->model, BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_STATUS);
 
@@ -679,7 +694,7 @@ void light_hsl_work_handler(struct k_work *work)
             change.hsl_set.hue = srv->state->hue;
             change.hsl_set.saturation = srv->state->saturation;
             bt_mesh_lighting_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const u8_t *)&change, sizeof(change));
+                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             bt_mesh_atomic_clear_bit(srv->transition.flag, BLE_MESH_TRANS_TIMER_START);
         } else {
             transition_timer_start(&srv->transition);
@@ -707,7 +722,7 @@ void light_hsl_work_handler(struct k_work *work)
     change.hsl_set.hue = srv->state->hue;
     change.hsl_set.saturation = srv->state->saturation;
     bt_mesh_lighting_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const u8_t *)&change, sizeof(change));
+        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
 
     light_hsl_publish(srv->model, BLE_MESH_MODEL_OP_LIGHT_HSL_STATUS);
 
@@ -737,7 +752,7 @@ void light_hsl_hue_work_handler(struct k_work *work)
         if (srv->transition.counter == 0U) {
             change.hsl_hue_set.hue = srv->state->hue;
             bt_mesh_lighting_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const u8_t *)&change, sizeof(change));
+                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             bt_mesh_atomic_clear_bit(srv->transition.flag, BLE_MESH_TRANS_TIMER_START);
         } else {
             transition_timer_start(&srv->transition);
@@ -759,7 +774,7 @@ void light_hsl_hue_work_handler(struct k_work *work)
 
     change.hsl_hue_set.hue = srv->state->hue;
     bt_mesh_lighting_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const u8_t *)&change, sizeof(change));
+        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
 
     light_hsl_publish(srv->model, BLE_MESH_MODEL_OP_LIGHT_HSL_HUE_STATUS);
 
@@ -789,7 +804,7 @@ void light_hsl_sat_work_handler(struct k_work *work)
         if (srv->transition.counter == 0U) {
             change.hsl_saturation_set.saturation = srv->state->saturation;
             bt_mesh_lighting_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const u8_t *)&change, sizeof(change));
+                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             bt_mesh_atomic_clear_bit(srv->transition.flag, BLE_MESH_TRANS_TIMER_START);
         } else {
             transition_timer_start(&srv->transition);
@@ -811,7 +826,7 @@ void light_hsl_sat_work_handler(struct k_work *work)
 
     change.hsl_saturation_set.saturation = srv->state->saturation;
     bt_mesh_lighting_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const u8_t *)&change, sizeof(change));
+        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
 
     light_hsl_publish(srv->model, BLE_MESH_MODEL_OP_LIGHT_HSL_SATURATION_STATUS);
 
@@ -843,7 +858,7 @@ void light_xyl_work_handler(struct k_work *work)
             change.xyl_set.x = srv->state->x;
             change.xyl_set.y = srv->state->y;
             bt_mesh_lighting_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const u8_t *)&change, sizeof(change));
+                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             bt_mesh_atomic_clear_bit(srv->transition.flag, BLE_MESH_TRANS_TIMER_START);
         } else {
             transition_timer_start(&srv->transition);
@@ -871,7 +886,7 @@ void light_xyl_work_handler(struct k_work *work)
     change.xyl_set.x = srv->state->x;
     change.xyl_set.y = srv->state->y;
     bt_mesh_lighting_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const u8_t *)&change, sizeof(change));
+        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
 
     light_xyl_publish(srv->model, BLE_MESH_MODEL_OP_LIGHT_XYL_STATUS);
 
@@ -900,7 +915,7 @@ void light_lc_work_handler(struct k_work *work)
         if (srv->transition.counter == 0U) {
             change.lc_light_onoff_set.onoff = srv->lc->state.light_onoff;
             bt_mesh_lighting_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const u8_t *)&change, sizeof(change));
+                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             bt_mesh_atomic_clear_bit(srv->transition.flag, BLE_MESH_TRANS_TIMER_START);
         } else {
             /**
@@ -915,7 +930,7 @@ void light_lc_work_handler(struct k_work *work)
                     .lc_light_onoff_set.onoff = srv->lc->state.light_onoff,
                 };
                 bt_mesh_lighting_server_cb_evt_to_btc(
-                    BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const u8_t *)&change, sizeof(change));
+                    BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             }
             transition_timer_start(&srv->transition);
         }
@@ -934,7 +949,7 @@ void light_lc_work_handler(struct k_work *work)
         if (srv->lc->state.light_onoff != BLE_MESH_STATE_ON) {
             change.lc_light_onoff_set.onoff = srv->lc->state.light_onoff;
             bt_mesh_lighting_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const u8_t *)&change, sizeof(change));
+                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
         }
     }
 
@@ -943,7 +958,9 @@ void light_lc_work_handler(struct k_work *work)
     bt_mesh_light_server_unlock();
     return;
 }
+#endif /* CONFIG_BLE_MESH_LIGHTING_SERVER */
 
+#if CONFIG_BLE_MESH_TIME_SCENE_SERVER
 void scene_recall_work_handler(struct k_work *work)
 {
     struct bt_mesh_scene_srv *srv =
@@ -966,7 +983,7 @@ void scene_recall_work_handler(struct k_work *work)
         if (srv->transition.counter == 0U) {
             change.scene_recall.scene_number = srv->state->current_scene;
             bt_mesh_time_scene_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_STATE_CHANGE, srv->model, ctx, (const u8_t *)&change, sizeof(change));
+                BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             bt_mesh_atomic_clear_bit(srv->transition.flag, BLE_MESH_TRANS_TIMER_START);
         } else {
             transition_timer_start(&srv->transition);
@@ -989,13 +1006,14 @@ void scene_recall_work_handler(struct k_work *work)
 
     change.scene_recall.scene_number = srv->state->current_scene;
     bt_mesh_time_scene_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_STATE_CHANGE, srv->model, ctx, (const u8_t *)&change, sizeof(change));
+        BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
 
     scene_publish(srv->model, ctx, BLE_MESH_MODEL_OP_SCENE_STATUS);
 
     bt_mesh_time_scene_server_unlock();
     return;
 }
+#endif /* CONFIG_BLE_MESH_TIME_SCENE_SERVER */
 
 /* Timers related handlers & threads (End) */
 
@@ -1018,3 +1036,7 @@ void bt_mesh_server_start_transition(struct bt_mesh_state_transition *transition
 }
 
 /* Messages handlers (End) */
+
+#endif /* (CONFIG_BLE_MESH_GENERIC_SERVER || \
+           CONFIG_BLE_MESH_TIME_SCENE_SERVER || \
+           CONFIG_BLE_MESH_LIGHTING_SERVER) */

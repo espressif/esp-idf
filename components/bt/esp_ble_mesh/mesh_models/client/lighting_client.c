@@ -17,7 +17,10 @@
 
 #include "btc_ble_mesh_lighting_model.h"
 
+#include "mesh_config.h"
 #include "model_opcode.h"
+
+#if CONFIG_BLE_MESH_LIGHTING_CLIENT
 #include "lighting_client.h"
 
 /* The followings are the macro definitions of Lighting client
@@ -127,10 +130,12 @@ static void bt_mesh_light_client_mutex_new(void)
     }
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static void bt_mesh_light_client_mutex_free(void)
 {
     bt_mesh_mutex_free(&light_client_lock);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 static void bt_mesh_light_client_lock(void)
 {
@@ -147,7 +152,7 @@ static void timeout_handler(struct k_work *work)
     struct k_delayed_work *timer = NULL;
     bt_mesh_client_node_t *node = NULL;
     struct bt_mesh_msg_ctx ctx = {0};
-    u32_t opcode = 0U;
+    uint32_t opcode = 0U;
 
     BT_WARN("Receive light status message timeout");
 
@@ -176,8 +181,8 @@ static void light_status(struct bt_mesh_model *model,
                          struct net_buf_simple *buf)
 {
     bt_mesh_client_node_t *node = NULL;
-    u8_t *val = NULL;
-    u8_t evt = 0xFF;
+    uint8_t *val = NULL;
+    uint8_t evt = 0xFF;
     size_t len = 0U;
 
     BT_DBG("len %d, bytes %s", buf->len, bt_hex(buf->data, buf->len));
@@ -200,7 +205,7 @@ static void light_status(struct bt_mesh_model *model,
             status->target_lightness = net_buf_simple_pull_le16(buf);
             status->remain_time = net_buf_simple_pull_u8(buf);
         }
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_light_lightness_status);
         break;
     }
@@ -221,7 +226,7 @@ static void light_status(struct bt_mesh_model *model,
             status->target_lightness = net_buf_simple_pull_le16(buf);
             status->remain_time = net_buf_simple_pull_u8(buf);
         }
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_light_lightness_linear_status);
         break;
     }
@@ -237,7 +242,7 @@ static void light_status(struct bt_mesh_model *model,
             return;
         }
         status->lightness = net_buf_simple_pull_le16(buf);
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_light_lightness_last_status);
         break;
     }
@@ -253,7 +258,7 @@ static void light_status(struct bt_mesh_model *model,
             return;
         }
         status->lightness = net_buf_simple_pull_le16(buf);
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_light_lightness_default_status);
         break;
     }
@@ -271,7 +276,7 @@ static void light_status(struct bt_mesh_model *model,
         status->status_code = net_buf_simple_pull_u8(buf);
         status->range_min = net_buf_simple_pull_le16(buf);
         status->range_max = net_buf_simple_pull_le16(buf);
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_light_lightness_range_status);
         break;
     }
@@ -294,7 +299,7 @@ static void light_status(struct bt_mesh_model *model,
             status->target_ctl_temperature = net_buf_simple_pull_le16(buf);
             status->remain_time = net_buf_simple_pull_u8(buf);
         }
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_light_ctl_status);
         break;
     }
@@ -317,7 +322,7 @@ static void light_status(struct bt_mesh_model *model,
             status->target_ctl_delta_uv = net_buf_simple_pull_le16(buf);
             status->remain_time = net_buf_simple_pull_u8(buf);
         }
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_light_ctl_temperature_status);
         break;
     }
@@ -335,7 +340,7 @@ static void light_status(struct bt_mesh_model *model,
         status->status_code = net_buf_simple_pull_u8(buf);
         status->range_min = net_buf_simple_pull_le16(buf);
         status->range_max = net_buf_simple_pull_le16(buf);
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_light_ctl_temperature_range_status);
         break;
     }
@@ -353,7 +358,7 @@ static void light_status(struct bt_mesh_model *model,
         status->lightness = net_buf_simple_pull_le16(buf);
         status->temperature = net_buf_simple_pull_le16(buf);
         status->delta_uv = net_buf_simple_pull_le16(buf);
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_light_ctl_default_status);
         break;
     }
@@ -375,7 +380,7 @@ static void light_status(struct bt_mesh_model *model,
             status->op_en = true;
             status->remain_time = net_buf_simple_pull_u8(buf);
         }
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_light_hsl_status);
         break;
     }
@@ -397,7 +402,7 @@ static void light_status(struct bt_mesh_model *model,
             status->op_en = true;
             status->remain_time = net_buf_simple_pull_u8(buf);
         }
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_light_hsl_target_status);
         break;
     }
@@ -418,7 +423,7 @@ static void light_status(struct bt_mesh_model *model,
             status->target_hue = net_buf_simple_pull_le16(buf);
             status->remain_time = net_buf_simple_pull_u8(buf);
         }
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_light_hsl_hue_status);
         break;
     }
@@ -439,7 +444,7 @@ static void light_status(struct bt_mesh_model *model,
             status->target_saturation = net_buf_simple_pull_le16(buf);
             status->remain_time = net_buf_simple_pull_u8(buf);
         }
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_light_hsl_saturation_status);
         break;
     }
@@ -457,7 +462,7 @@ static void light_status(struct bt_mesh_model *model,
         status->lightness = net_buf_simple_pull_le16(buf);
         status->hue = net_buf_simple_pull_le16(buf);
         status->saturation = net_buf_simple_pull_le16(buf);
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_light_hsl_default_status);
         break;
     }
@@ -477,7 +482,7 @@ static void light_status(struct bt_mesh_model *model,
         status->hue_range_max = net_buf_simple_pull_le16(buf);
         status->saturation_range_min = net_buf_simple_pull_le16(buf);
         status->saturation_range_max = net_buf_simple_pull_le16(buf);
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_light_hsl_range_status);
         break;
     }
@@ -499,7 +504,7 @@ static void light_status(struct bt_mesh_model *model,
             status->op_en = true;
             status->remain_time = net_buf_simple_pull_u8(buf);
         }
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_light_xyl_status);
         break;
     }
@@ -521,7 +526,7 @@ static void light_status(struct bt_mesh_model *model,
             status->op_en = true;
             status->remain_time = net_buf_simple_pull_u8(buf);
         }
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_light_xyl_target_status);
         break;
     }
@@ -539,7 +544,7 @@ static void light_status(struct bt_mesh_model *model,
         status->lightness = net_buf_simple_pull_le16(buf);
         status->xyl_x = net_buf_simple_pull_le16(buf);
         status->xyl_y = net_buf_simple_pull_le16(buf);
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_light_xyl_default_status);
         break;
     }
@@ -559,7 +564,7 @@ static void light_status(struct bt_mesh_model *model,
         status->xyl_x_range_max = net_buf_simple_pull_le16(buf);
         status->xyl_y_range_min = net_buf_simple_pull_le16(buf);
         status->xyl_y_range_max = net_buf_simple_pull_le16(buf);
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_light_xyl_range_status);
         break;
     }
@@ -575,7 +580,7 @@ static void light_status(struct bt_mesh_model *model,
             return;
         }
         status->mode = net_buf_simple_pull_u8(buf);
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_light_lc_mode_status);
         break;
     }
@@ -591,7 +596,7 @@ static void light_status(struct bt_mesh_model *model,
             return;
         }
         status->mode = net_buf_simple_pull_u8(buf);
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_light_lc_om_status);
         break;
     }
@@ -612,7 +617,7 @@ static void light_status(struct bt_mesh_model *model,
             status->target_light_onoff = net_buf_simple_pull_u8(buf);
             status->remain_time = net_buf_simple_pull_u8(buf);
         }
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_light_lc_light_onoff_status);
         break;
     }
@@ -631,7 +636,7 @@ static void light_status(struct bt_mesh_model *model,
             return;
         }
         net_buf_simple_add_mem(status->light_lc_property_value, buf->data, buf->len);
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_light_lc_property_status);
         break;
     }
@@ -702,7 +707,7 @@ static void light_status(struct bt_mesh_model *model,
         }
 
         if (!k_delayed_work_free(&node->timer)) {
-            u32_t opcode = node->opcode;
+            uint32_t opcode = node->opcode;
             bt_mesh_client_free_node(node);
             bt_mesh_lighting_client_cb_evt_to_btc(opcode, evt, model, ctx, val, len);
         }
@@ -793,7 +798,7 @@ static int light_get_state(bt_mesh_client_common_param_t *common, void *value)
 }
 
 static int light_set_state(bt_mesh_client_common_param_t *common,
-                           void *value, u16_t value_len, bool need_ack)
+                           void *value, uint16_t value_len, bool need_ack)
 {
     struct net_buf_simple *msg = NULL;
     int err = 0;
@@ -1083,7 +1088,7 @@ int bt_mesh_light_client_get_state(bt_mesh_client_common_param_t *common, void *
 int bt_mesh_light_client_set_state(bt_mesh_client_common_param_t *common, void *set)
 {
     bt_mesh_light_client_t *client = NULL;
-    u16_t length = 0U;
+    uint16_t length = 0U;
     bool need_ack = false;
 
     if (!common || !common->model || !set) {
@@ -1362,6 +1367,7 @@ static int lighting_client_init(struct bt_mesh_model *model)
     return 0;
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static int lighting_client_deinit(struct bt_mesh_model *model)
 {
     bt_mesh_light_client_t *client = NULL;
@@ -1390,8 +1396,13 @@ static int lighting_client_deinit(struct bt_mesh_model *model)
 
     return 0;
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 const struct bt_mesh_model_cb bt_mesh_lighting_client_cb = {
     .init = lighting_client_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = lighting_client_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
+
+#endif /* CONFIG_BLE_MESH_LIGHTING_CLIENT */

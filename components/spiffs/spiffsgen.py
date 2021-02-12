@@ -16,8 +16,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import division
+from __future__ import division, print_function
 import os
+import sys
 import io
 import math
 import struct
@@ -451,6 +452,10 @@ class SpiffsFS():
 
 
 def main():
+    if sys.version_info[0] < 3:
+        print("WARNING: Support for Python 2 is deprecated and will be removed in future versions.", file=sys.stderr)
+    elif sys.version_info[0] == 3 and sys.version_info[1] < 6:
+        print("WARNING: Python 3 versions older than 3.6 are not supported.", file=sys.stderr)
     parser = argparse.ArgumentParser(description="SPIFFS Image Generator",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 

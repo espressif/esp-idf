@@ -111,7 +111,7 @@ static void tcp_server_task(void *pvParameters)
 
         ESP_LOGI(TAG, "Socket listening");
 
-        struct sockaddr_in6 source_addr; // Large enough for both IPv4 or IPv6
+        struct sockaddr_storage source_addr; // Large enough for both IPv4 or IPv6
         uint addr_len = sizeof(source_addr);
         int sock = accept(listen_sock, (struct sockaddr *)&source_addr, &addr_len);
         if (sock < 0) {
@@ -120,10 +120,10 @@ static void tcp_server_task(void *pvParameters)
         }
 
         // Convert ip address to string
-        if (source_addr.sin6_family == PF_INET) {
-            inet_ntoa_r(((struct sockaddr_in *)&source_addr)->sin_addr.s_addr, addr_str, sizeof(addr_str) - 1);
-        } else if (source_addr.sin6_family == PF_INET6) {
-            inet6_ntoa_r(source_addr.sin6_addr, addr_str, sizeof(addr_str) - 1);
+        if (source_addr.ss_family == PF_INET) {
+            inet_ntoa_r(((struct sockaddr_in *)&source_addr)->sin_addr, addr_str, sizeof(addr_str) - 1);
+        } else if (source_addr.ss_family == PF_INET6) {
+            inet6_ntoa_r(((struct sockaddr_in6 *)&source_addr)->sin6_addr, addr_str, sizeof(addr_str) - 1);
         }
         ESP_LOGI(TAG, "Socket accepted ip address: %s", addr_str);
 

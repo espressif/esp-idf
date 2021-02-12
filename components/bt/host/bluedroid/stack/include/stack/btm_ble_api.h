@@ -2126,6 +2126,17 @@ tBTM_STATUS BTM_UpdateBleDuplicateExceptionalList(uint8_t subcode, uint32_t type
 *******************************************************************************/
 
 BOOLEAN BTM_GetCurrentConnParams(BD_ADDR bda, uint16_t *interval, uint16_t *latency, uint16_t *timeout);
+
+/*******************************************************************************
+**
+** Function         BTM_Ble_Authorization
+**
+** Description      This function is used to authorize a specified device
+**
+** Returns          TRUE or FALSE
+**
+*******************************************************************************/
+BOOLEAN BTM_Ble_Authorization(BD_ADDR bd_addr, BOOLEAN authorize);
 /*
 #ifdef __cplusplus
 }

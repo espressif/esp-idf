@@ -95,6 +95,42 @@ if BLE_MESH
 
     endchoice # BLE_MESH_FREERTOS_STATIC_ALLOC_MODE
 
+    config BLE_MESH_DEINIT
+        bool "Support de-initialize BLE Mesh stack"
+        default y
+        help
+            If enabled, users can use the function esp_ble_mesh_deinit() to de-initialize
+            the whole BLE Mesh stack.
+
+    menu "BLE Mesh and BLE coexistence support"
+
+        config BLE_MESH_SUPPORT_BLE_ADV
+            bool "Support sending normal BLE advertising packets"
+            default n
+            help
+                When selected, users can send normal BLE advertising packets
+                with specific API.
+
+        if BLE_MESH_SUPPORT_BLE_ADV
+
+            config BLE_MESH_BLE_ADV_BUF_COUNT
+                int "Number of advertising buffers for BLE advertising packets"
+                default 3
+                range 1 255
+                help
+                    Number of advertising buffers for BLE packets available.
+
+        endif # BLE_MESH_SUPPORT_BLE_ADV
+
+        config BLE_MESH_SUPPORT_BLE_SCAN
+            bool "Support scanning normal BLE advertising packets"
+            default n
+            help
+                When selected, users can register a callback and receive normal BLE
+                advertising packets in the application layer.
+
+    endmenu # BLE Mesh and BLE coexistence support
+
     config BLE_MESH_FAST_PROV
         bool "Enable BLE Mesh Fast Provisioning"
         select BLE_MESH_NODE
@@ -187,6 +223,28 @@ if BLE_MESH
             help
                 This option specifies how many application keys the Provisioner can have.
                 Indeed, this value decides the number of the application keys which can be added by a Provisioner.
+
+        config BLE_MESH_PROVISIONER_RECV_HB
+            bool "Support receiving Heartbeat messages"
+            default n
+            help
+                When this option is enabled, Provisioner can call specific functions to enable
+                or disable receiving Heartbeat messages and notify them to the application layer.
+
+        if BLE_MESH_PROVISIONER_RECV_HB
+
+            config BLE_MESH_PROVISIONER_RECV_HB_FILTER_SIZE
+                int "Maximum number of filter entries for receiving Heartbeat messages"
+                default 3
+                range 1 1000
+                help
+                    This option specifies how many heartbeat filter entries Provisioner supports.
+                    The heartbeat filter (acceptlist or rejectlist) entries are used to store a
+                    list of SRC and DST which can be used to decide if a heartbeat message will
+                    be processed and notified to the application layer by Provisioner.
+                    Note: The filter is an empty rejectlist by default.
+
+        endif # BLE_MESH_PROVISIONER_RECV_HB
 
     endif # BLE_MESH_PROVISIONER
 
@@ -291,28 +349,6 @@ if BLE_MESH
 
     if BLE_MESH_SETTINGS
 
-        config BLE_MESH_SPECIFIC_PARTITION
-            bool "Use a specific NVS partition for BLE Mesh"
-            default n
-            help
-                When selected, the mesh stack will use a specified NVS partition instead of
-                default NVS partition. Note that the specified partition must be registered
-                with NVS using nvs_flash_init_partition() API, and the partition must exists
-                in the csv file.
-                When Provisioner needs to store a large amount of nodes' information in the
-                flash (e.g. more than 20), this option is recommended to be enabled.
-
-        if BLE_MESH_SPECIFIC_PARTITION
-
-            config BLE_MESH_PARTITION_NAME
-                string "Name of the NVS partition for BLE Mesh"
-                default "ble_mesh"
-                help
-                    This value defines the name of the specified NVS partition used by the
-                    mesh stack.
-
-        endif # BLE_MESH_SPECIFIC_PARTITION
-
         config BLE_MESH_STORE_TIMEOUT
             int "Delay (in seconds) before storing anything persistently"
             range 0 1000000
@@ -327,7 +363,7 @@ if BLE_MESH
         config BLE_MESH_SEQ_STORE_RATE
             int "How often the sequence number gets updated in storage"
             range 0 1000000
-            default 6
+            default 0
             help
                 This value defines how often the local sequence number gets updated in
                 persistent storage (i.e. flash). e.g. a value of 100 means that the
@@ -342,7 +378,7 @@ if BLE_MESH
         config BLE_MESH_RPL_STORE_TIMEOUT
             int "Minimum frequency that the RPL gets updated in storage"
             range 0 1000000
-            default 5
+            default 0
             help
                 This value defines in seconds how soon the RPL (Replay Protection List)
                 gets written to persistent storage after a change occurs. If the node
@@ -377,6 +413,50 @@ if BLE_MESH
                 we recommend enabling this option, so that system could set the flag
                 in advance before recovering node information and make sure the node
                 information recovering could work as expected.
+
+        config BLE_MESH_SPECIFIC_PARTITION
+            bool "Use a specific NVS partition for BLE Mesh"
+            default n
+            help
+                When selected, the mesh stack will use a specified NVS partition instead of
+                default NVS partition. Note that the specified partition must be registered
+                with NVS using nvs_flash_init_partition() API, and the partition must exists
+                in the csv file.
+                When Provisioner needs to store a large amount of nodes' information in the
+                flash (e.g. more than 20), this option is recommended to be enabled.
+
+        config BLE_MESH_PARTITION_NAME
+            string "Name of the NVS partition for BLE Mesh"
+            depends on BLE_MESH_SPECIFIC_PARTITION
+            default "ble_mesh"
+            help
+                This value defines the name of the specified NVS partition used by the
+                mesh stack.
+
+        config BLE_MESH_USE_MULTIPLE_NAMESPACE
+            bool "Support using multiple NVS namespaces by Provisioner"
+            depends on BLE_MESH_PROVISIONER
+            default n
+            help
+                When selected, Provisioner can use different NVS namespaces to store
+                different instances of mesh information.
+                For example, if in the first room, Provisioner uses NetKey A, AppKey
+                A and provisions three devices, these information will be treated as
+                mesh information instance A. When the Provisioner moves to the second
+                room, it uses NetKey B, AppKey B and provisions two devices, then the
+                information will be treated as mesh information instance B.
+                Here instance A and instance B will be stored in different namespaces.
+                With this option enabled, Provisioner needs to use specific functions
+                to open the corresponding NVS namespace, restore the mesh information,
+                release the mesh information or erase the mesh information.
+
+        config BLE_MESH_MAX_NVS_NAMESPACE
+            int "Maximum number of NVS namespaces"
+            depends on BLE_MESH_USE_MULTIPLE_NAMESPACE
+            default 2
+            range 1 255
+            help
+                This option specifies the maximum NVS namespaces supported by Provisioner.
 
     endif  # if BLE_MESH_SETTINGS
 
@@ -458,24 +538,6 @@ if BLE_MESH
             for the Transport Layer MIC). For example, 5 segments means the maximum
             SDU size is 60 bytes, which leaves 56 bytes for application layer data
             using a 4-byte MIC, or 52 bytes using an 8-byte MIC.
-
-    config BLE_MESH_SUPPORT_BLE_ADV
-        bool "Support sending normal BLE advertising packets"
-        default n
-        help
-            When selected, users can send normal BLE advertising packets
-            with specific API.
-
-    if BLE_MESH_SUPPORT_BLE_ADV
-
-        config BLE_MESH_BLE_ADV_BUF_COUNT
-            int "Number of advertising buffers for BLE advertising packets"
-            default 3
-            range 1 255
-            help
-                Number of advertising buffers for BLE packets available.
-
-    endif # BLE_MESH_SUPPORT_BLE_ADV
 
     config BLE_MESH_IVU_DIVIDER
         int "Divider for IV Update state refresh timer"
@@ -871,104 +933,138 @@ if BLE_MESH
             uses 0 as the timeout value when sending acknowledged messages, then
             the default value will be used which is four seconds.
 
-    menu "Support for BLE Mesh Client Models"
+    menu "Support for BLE Mesh Foundation models"
 
         config BLE_MESH_CFG_CLI
-            bool "Configuration Client Model"
+            bool "Configuration Client model"
             help
-                Enable support for Configuration client model.
+                Enable support for Configuration Client model.
 
         config BLE_MESH_HEALTH_CLI
-            bool "Health Client Model"
+            bool "Health Client model"
             help
-                Enable support for Health client model.
+                Enable support for Health Client model.
+
+        config BLE_MESH_HEALTH_SRV
+            bool "Health Server model"
+            default y
+            help
+                Enable support for Health Server model.
+
+    endmenu #Support for BLE Mesh Foundation models
+
+    menu "Support for BLE Mesh Client/Server models"
 
         config BLE_MESH_GENERIC_ONOFF_CLI
-            bool "Generic OnOff Client Model"
+            bool "Generic OnOff Client model"
             help
-                Enable support for Generic OnOff client model.
+                Enable support for Generic OnOff Client model.
 
         config BLE_MESH_GENERIC_LEVEL_CLI
-            bool "Generic Level Client Model"
+            bool "Generic Level Client model"
             help
-                Enable support for Generic Level client model.
+                Enable support for Generic Level Client model.
 
         config BLE_MESH_GENERIC_DEF_TRANS_TIME_CLI
-            bool "Generic Default Transition Time Client Model"
+            bool "Generic Default Transition Time Client model"
             help
-                Enable support for Generic Default Transition Time client model.
+                Enable support for Generic Default Transition Time Client model.
 
         config BLE_MESH_GENERIC_POWER_ONOFF_CLI
-            bool "Generic Power OnOff Client Model"
+            bool "Generic Power OnOff Client model"
             help
-                Enable support for Generic Power OnOff client model.
+                Enable support for Generic Power OnOff Client model.
 
         config BLE_MESH_GENERIC_POWER_LEVEL_CLI
-            bool "Generic Power Level Client Model"
+            bool "Generic Power Level Client model"
             help
-                Enable support for Generic Power Level client model.
+                Enable support for Generic Power Level Client model.
 
         config BLE_MESH_GENERIC_BATTERY_CLI
-            bool "Generic Battery Client Model"
+            bool "Generic Battery Client model"
             help
-                Enable support for Generic Battery client model.
+                Enable support for Generic Battery Client model.
 
         config BLE_MESH_GENERIC_LOCATION_CLI
-            bool "Generic Location Client Model"
+            bool "Generic Location Client model"
             help
-                Enable support for Generic Location client model.
+                Enable support for Generic Location Client model.
 
         config BLE_MESH_GENERIC_PROPERTY_CLI
-            bool "Generic Property Client Model"
+            bool "Generic Property Client model"
             help
-                Enable support for Generic Property client model.
+                Enable support for Generic Property Client model.
 
         config BLE_MESH_SENSOR_CLI
-            bool "Sensor Client Model"
+            bool "Sensor Client model"
             help
-                Enable support for Sensor client model.
+                Enable support for Sensor Client model.
 
         config BLE_MESH_TIME_CLI
-            bool "Time Client Model"
+            bool "Time Client model"
             help
-                Enable support for Time client model.
+                Enable support for Time Client model.
 
         config BLE_MESH_SCENE_CLI
-            bool "Scene Client Model"
+            bool "Scene Client model"
             help
-                Enable support for Scene client model.
+                Enable support for Scene Client model.
 
         config BLE_MESH_SCHEDULER_CLI
-            bool "Scheduler Client Model"
+            bool "Scheduler Client model"
             help
-                Enable support for Scheduler client model.
+                Enable support for Scheduler Client model.
 
         config BLE_MESH_LIGHT_LIGHTNESS_CLI
-            bool "Light Lightness Client Model"
+            bool "Light Lightness Client model"
             help
-                Enable support for Light Lightness client model.
+                Enable support for Light Lightness Client model.
 
         config BLE_MESH_LIGHT_CTL_CLI
-            bool "Light CTL Client Model"
+            bool "Light CTL Client model"
             help
-                Enable support for Light CTL client model.
+                Enable support for Light CTL Client model.
 
         config BLE_MESH_LIGHT_HSL_CLI
-            bool "Light HSL Client Model"
+            bool "Light HSL Client model"
             help
-                Enable support for Light HSL client model.
+                Enable support for Light HSL Client model.
 
         config BLE_MESH_LIGHT_XYL_CLI
-            bool "Light XYL Client Model"
+            bool "Light XYL Client model"
             help
-                Enable support for Light XYL client model.
+                Enable support for Light XYL Client model.
 
         config BLE_MESH_LIGHT_LC_CLI
-            bool "Light LC Client Model"
+            bool "Light LC Client model"
             help
-                Enable support for Light LC client model.
+                Enable support for Light LC Client model.
 
-    endmenu
+        config BLE_MESH_GENERIC_SERVER
+            bool "Generic server models"
+            default y
+            help
+                Enable support for Generic server models.
+
+        config BLE_MESH_SENSOR_SERVER
+            bool "Sensor server models"
+            default y
+            help
+                Enable support for Sensor server models.
+
+        config BLE_MESH_TIME_SCENE_SERVER
+            bool "Time and Scenes server models"
+            default y
+            help
+                Enable support for Time and Scenes server models.
+
+        config BLE_MESH_LIGHTING_SERVER
+            bool "Lighting server models"
+            default y
+            help
+                Enable support for Lighting server models.
+
+    endmenu #Support for BLE Mesh Client/Server models
 
     config BLE_MESH_IV_UPDATE_TEST
         bool "Test the IV Update Procedure"

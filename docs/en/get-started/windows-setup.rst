@@ -60,8 +60,8 @@ For advanced users who want to customize the install process:
 .. toctree::
     :maxdepth: 1
 
-    windows-setup-scratch
     windows-setup-update
+
 
 .. _MSYS2: https://www.msys2.org/
 .. _cmake: https://cmake.org/download/

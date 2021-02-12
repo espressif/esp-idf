@@ -13,7 +13,7 @@
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 
-#include "sdkconfig.h"
+#include "mesh_config.h"
 #include "mesh_types.h"
 
 #ifdef __cplusplus
@@ -50,7 +50,7 @@ extern "C" {
  *
  * @return N/A
  */
-void k_sleep(s32_t duration);
+void k_sleep(int32_t duration);
 
 #ifdef __cplusplus
 }

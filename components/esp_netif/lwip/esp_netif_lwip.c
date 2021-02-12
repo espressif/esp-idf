@@ -33,6 +33,10 @@
 #include "lwip/dns.h"
 #endif
 
+#if CONFIG_LWIP_TCP_ISN_HOOK
+#include "tcp_isn.h"
+#endif
+
 #include "esp_netif_lwip_ppp.h"
 #include "dhcpserver/dhcpserver.h"
 #include "dhcpserver/dhcpserver_options.h"
@@ -263,6 +267,18 @@ esp_err_t esp_netif_init(void)
 {
     if (tcpip_initialized == false) {
         tcpip_initialized = true;
+#if CONFIG_LWIP_TCP_ISN_HOOK
+        uint8_t rand_buf[16];
+        /*
+         * This is early startup code where WiFi/BT is yet to be enabled and hence
+         * relevant entropy source is not available. However, bootloader enables
+         * SAR ADC based entropy source at its initialization, and our requirement
+         * of random bytes is pretty small (16), so we can assume that following
+         * API will provide sufficiently random data.
+         */
+        esp_fill_random(rand_buf, sizeof(rand_buf));
+        lwip_init_tcp_isn(esp_log_timestamp(), rand_buf);
+#endif
         tcpip_init(NULL, NULL);
         ESP_LOGD(TAG, "LwIP stack has been initialized");
     }
@@ -1171,6 +1187,9 @@ static esp_err_t esp_netif_down_api(esp_netif_api_msg_t *msg)
     }
     for(int8_t i = 0 ;i < LWIP_IPV6_NUM_ADDRESSES ;i++) {
         netif_ip6_addr_set(lwip_netif, i, IP6_ADDR_ANY6);
+        netif_ip6_addr_set_valid_life(lwip_netif, i, 0);
+        netif_ip6_addr_set_pref_life(lwip_netif, i, 0);
+        netif_ip6_addr_set_state(lwip_netif, i, IP6_ADDR_INVALID);
     }
     netif_set_addr(lwip_netif, IP4_ADDR_ANY4, IP4_ADDR_ANY4, IP4_ADDR_ANY4);
     netif_set_down(lwip_netif);
@@ -1519,9 +1538,10 @@ esp_err_t esp_netif_get_ip6_global(esp_netif_t *esp_netif, esp_ip6_addr_t *if_ip
 
     if (p_netif != NULL && netif_is_up(p_netif)) {
         for (i = 1; i < LWIP_IPV6_NUM_ADDRESSES; i++) {
-            if (ip6_addr_ispreferred(netif_ip6_addr_state(p_netif, i))) {
-                memcpy(if_ip6, &p_netif->ip6_addr[i], sizeof(ip6_addr_t));
-                return ESP_OK;
+            if (ip6_addr_ispreferred(netif_ip6_addr_state(p_netif, i)) &&
+                ip6_addr_isglobal(netif_ip6_addr(p_netif, i))) {
+                    memcpy(if_ip6, &p_netif->ip6_addr[i], sizeof(ip6_addr_t));
+                    return ESP_OK;
             }
         }
     }

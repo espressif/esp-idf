@@ -29,6 +29,9 @@ IGNORE_WARNS = [
         r"reassigning to symbol",
         r"changes choice state",
         r"crosstool_version_check\.cmake",
+        r"CryptographyDeprecationWarning",
+        r"Python 3 versions older than 3.6 are not supported.",
+        r"Support for Python 2 is deprecated and will be removed in future versions.",
     ]
 ]
 

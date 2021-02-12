@@ -11,6 +11,7 @@
 #include <errno.h>
 
 #include "adv.h"
+#include "scan.h"
 #include "mesh.h"
 #include "test.h"
 #include "crypto.h"
@@ -41,6 +42,8 @@ int bt_mesh_device_auto_enter_network(struct bt_mesh_device_network_info *info)
             !BLE_MESH_ADDR_IS_GROUP(info->group_addr)) {
         return -EINVAL;
     }
+
+    bt_mesh_atomic_set_bit(bt_mesh.flags, BLE_MESH_NODE);
 
     /* The device becomes a node and enters the network */
     err = bt_mesh_provision(info->net_key, info->net_idx, info->flags, info->iv_index,

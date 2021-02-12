@@ -8,10 +8,13 @@
 
 #include <errno.h>
 
+#include "mesh_config.h"
 #include "mesh_common.h"
 #include "model_opcode.h"
 #include "state_binding.h"
 #include "state_transition.h"
+
+#if CONFIG_BLE_MESH_SERVER_MODEL
 
 #define MINDIFF (2.25e-308)
 
@@ -35,9 +38,9 @@ static float bt_mesh_sqrt(float square)
     return root;
 }
 
-static s32_t bt_mesh_ceiling(float num)
+static int32_t bt_mesh_ceiling(float num)
 {
-    s32_t inum = (s32_t)num;
+    int32_t inum = (int32_t)num;
 
     if (num == (float)inum) {
         return inum;
@@ -46,49 +49,49 @@ static s32_t bt_mesh_ceiling(float num)
     return inum + 1;
 }
 
-u16_t bt_mesh_convert_lightness_actual_to_linear(u16_t actual)
+uint16_t bt_mesh_convert_lightness_actual_to_linear(uint16_t actual)
 {
     float tmp = ((float) actual / UINT16_MAX);
 
     return bt_mesh_ceiling(UINT16_MAX * tmp * tmp);
 }
 
-u16_t bt_mesh_convert_lightness_linear_to_actual(u16_t linear)
+uint16_t bt_mesh_convert_lightness_linear_to_actual(uint16_t linear)
 {
-    return (u16_t) (UINT16_MAX * bt_mesh_sqrt(((float) linear / UINT16_MAX)));
+    return (uint16_t) (UINT16_MAX * bt_mesh_sqrt(((float) linear / UINT16_MAX)));
 }
 
-s16_t bt_mesh_convert_temperature_to_gen_level(u16_t temp, u16_t min, u16_t max)
+int16_t bt_mesh_convert_temperature_to_gen_level(uint16_t temp, uint16_t min, uint16_t max)
 {
     float tmp = (temp - min) * UINT16_MAX / (max - min);
-    return (s16_t) (tmp + INT16_MIN);
+    return (int16_t) (tmp + INT16_MIN);
 }
 
-u16_t bt_mesh_covert_gen_level_to_temperature(s16_t level, u16_t min, u16_t max)
+uint16_t bt_mesh_covert_gen_level_to_temperature(int16_t level, uint16_t min, uint16_t max)
 {
     float diff = (float) (max - min) / UINT16_MAX;
-    u16_t tmp = (u16_t) ((level - INT16_MIN) * diff);
-    return (u16_t) (min + tmp);
+    uint16_t tmp = (uint16_t) ((level - INT16_MIN) * diff);
+    return (uint16_t) (min + tmp);
 }
 
-s16_t bt_mesh_convert_hue_to_level(u16_t hue)
+int16_t bt_mesh_convert_hue_to_level(uint16_t hue)
 {
-    return (s16_t) (hue + INT16_MIN);
+    return (int16_t) (hue + INT16_MIN);
 }
 
-u16_t bt_mesh_convert_level_to_hue(s16_t level)
+uint16_t bt_mesh_convert_level_to_hue(int16_t level)
 {
-    return (u16_t) (level - INT16_MIN);
+    return (uint16_t) (level - INT16_MIN);
 }
 
-s16_t bt_mesh_convert_saturation_to_level(u16_t saturation)
+int16_t bt_mesh_convert_saturation_to_level(uint16_t saturation)
 {
-    return (s16_t) (saturation + INT16_MIN);
+    return (int16_t) (saturation + INT16_MIN);
 }
 
-u16_t bt_mesh_convert_level_to_saturation(s16_t level)
+uint16_t bt_mesh_convert_level_to_saturation(int16_t level)
 {
-    return (u16_t) (level - INT16_MIN);
+    return (uint16_t) (level - INT16_MIN);
 }
 
 int bt_mesh_update_binding_state(struct bt_mesh_model *model,
@@ -102,6 +105,7 @@ int bt_mesh_update_binding_state(struct bt_mesh_model *model,
     }
 
     switch (type) {
+#if CONFIG_BLE_MESH_GENERIC_SERVER
     case GENERIC_ONOFF_STATE: {
         if (model->id != BLE_MESH_MODEL_ID_GEN_ONOFF_SRV) {
             BT_ERR("Invalid Generic OnOff Server, model id 0x%04x", model->id);
@@ -168,6 +172,8 @@ int bt_mesh_update_binding_state(struct bt_mesh_model *model,
         gen_power_level_publish(model, BLE_MESH_MODEL_OP_GEN_POWER_LEVEL_STATUS);
         break;
     }
+#endif /* CONFIG_BLE_MESH_GENERIC_SERVER */
+#if CONFIG_BLE_MESH_LIGHTING_SERVER
     case LIGHT_LIGHTNESS_ACTUAL_STATE: {
         if (model->id != BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SRV) {
             BT_ERR("Invalid Light Lightness Server, model id 0x%04x", model->id);
@@ -244,6 +250,25 @@ int bt_mesh_update_binding_state(struct bt_mesh_model *model,
         srv->state->temperature = value->light_ctl_temp_delta_uv.temperature;
         srv->state->delta_uv = value->light_ctl_temp_delta_uv.delta_uv;
         light_ctl_publish(model, BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_STATUS);
+        break;
+    }
+    case LIGHT_HSL_STATE: {
+        if (model->id != BLE_MESH_MODEL_ID_LIGHT_HSL_SRV) {
+            BT_ERR("Invalid Light HSL Server, model id 0x%04x", model->id);
+            return -EINVAL;
+        }
+
+        struct bt_mesh_light_hsl_srv *srv = model->user_data;
+        if (srv->state == NULL) {
+            BT_ERR("Invalid Light HSL Server state");
+            return -EINVAL;
+        }
+
+        bt_mesh_server_stop_transition(&srv->transition);
+        srv->state->lightness = value->light_hsl.lightness;
+        srv->state->hue = value->light_hsl.hue;
+        srv->state->saturation = value->light_hsl.saturation;
+        light_hsl_publish(model, BLE_MESH_MODEL_OP_LIGHT_HSL_STATUS);
         break;
     }
     case LIGHT_HSL_LIGHTNESS_STATE: {
@@ -331,6 +356,7 @@ int bt_mesh_update_binding_state(struct bt_mesh_model *model,
         light_lc_publish(model, BLE_MESH_MODEL_OP_LIGHT_LC_LIGHT_ONOFF_STATUS);
         break;
     }
+#endif /* CONFIG_BLE_MESH_LIGHTING_SERVER */
     default:
         BT_WARN("Unknown binding state type 0x%02x", type);
         return -EINVAL;
@@ -339,3 +365,4 @@ int bt_mesh_update_binding_state(struct bt_mesh_model *model,
     return 0;
 }
 
+#endif /* CONFIG_BLE_MESH_SERVER_MODEL */

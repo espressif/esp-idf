@@ -980,6 +980,7 @@ static void _mdns_dispatch_tx_packet(mdns_tx_packet_t * p)
     uint8_t count;
 
     _mdns_set_u16(packet, MDNS_HEAD_FLAGS_OFFSET, p->flags);
+    _mdns_set_u16(packet, MDNS_HEAD_ID_OFFSET, p->id);
 
     count = 0;
     q = p->questions;
@@ -1259,6 +1260,7 @@ static void _mdns_create_answer_from_parsed_packet(mdns_parsed_packet_t * parsed
     }
     packet->flags = MDNS_FLAGS_AUTHORITATIVE;
     packet->distributed = parsed_packet->distributed;
+    packet->id = parsed_packet->id;
 
     mdns_parsed_question_t * q = parsed_packet->questions;
     while (q) {
@@ -1311,6 +1313,17 @@ static void _mdns_create_answer_from_parsed_packet(mdns_parsed_packet_t * parsed
                     _mdns_free_tx_packet(packet);
                     return;
                 }
+#ifdef MDNS_REPEAT_QUERY_IN_RESPONSE
+                mdns_out_question_t * out_question = malloc(sizeof(mdns_out_question_t));
+                if (out_question == NULL) {
+                    HOOK_MALLOC_FAILED;
+                    _mdns_free_tx_packet(packet);
+                    return;
+                }
+                memcpy(out_question, q, sizeof(mdns_out_question_t));
+                out_question->next = NULL;
+                queueToEnd(mdns_out_question_t, packet->questions, out_question);
+#endif // MDNS_REPEAT_QUERY_IN_RESPONSE
             } else if (!_mdns_alloc_answer(&packet->answers, q->type, NULL, send_flush, false)) {
                 _mdns_free_tx_packet(packet);
                 return;
@@ -2662,6 +2675,7 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
     parsed_packet->multicast = packet->multicast;
     parsed_packet->authoritative = header.flags.value == MDNS_FLAGS_AUTHORITATIVE;
     parsed_packet->distributed = header.flags.value == MDNS_FLAGS_DISTRIBUTED;
+    parsed_packet->id = header.id;
     ip_addr_copy(parsed_packet->src, packet->src);
     parsed_packet->src_port = packet->src_port;
 
@@ -2739,7 +2753,7 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
         }
     }
 
-    if (header.questions && !parsed_packet->questions && !parsed_packet->discovery) {
+    if (header.questions && !parsed_packet->questions && !parsed_packet->discovery && !header.answers) {
         goto clear_rx_packet;
     } else if (header.answers || header.servers || header.additional) {
         uint16_t recordIndex = 0;
@@ -2782,13 +2796,14 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
 
             if (parsed_packet->discovery && _mdns_name_is_discovery(name, type)) {
                 discovery = true;
-            } else if (!name->sub && _mdns_name_is_ours(name)) {
-                ours = true;
-                if (name->service && name->service[0] && name->proto && name->proto[0]) {
-                    service = _mdns_get_service_item(name->service, name->proto);
-                }
             } else {
-                if (header.questions || !parsed_packet->authoritative || record_type == MDNS_NS) {
+                if (!name->sub && _mdns_name_is_ours(name)) {
+                    ours = true;
+                    if (name->service && name->service[0] && name->proto && name->proto[0]) {
+                        service = _mdns_get_service_item(name->service, name->proto);
+                    }
+                }
+                if (!parsed_packet->authoritative || record_type == MDNS_NS) {
                     //skip this record
                     continue;
                 }

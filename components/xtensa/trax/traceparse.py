@@ -49,7 +49,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+from __future__ import print_function
 import sys
 
 # Check if loaded into GDB
@@ -328,6 +328,10 @@ def parse_and_dump(filename, disassemble=WITH_GDB):
 
 
 def main():
+    if sys.version_info[0] < 3:
+        print("WARNING: Support for Python 2 is deprecated and will be removed in future versions.", file=sys.stderr)
+    elif sys.version_info[0] == 3 and sys.version_info[1] < 6:
+        print("WARNING: Python 3 versions older than 3.6 are not supported.", file=sys.stderr)
     if len(sys.argv) < 2:
         sys.stderr.write("Usage: %s <dump_file>\n")
         raise SystemExit(1)

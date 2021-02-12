@@ -8,6 +8,18 @@ stages:
   - deploy
   - post_deploy
 
+# pipelines will not be created in such two cases:
+# 1. MR push
+# 2. push not on "master/release" branches, and not tagged
+# This behavior could be changed after the `rules: changes` feature is implemented
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: never
+    - if: '$CI_COMMIT_REF_NAME != "master" && $CI_COMMIT_BRANCH !~ /^release\/v/ && $CI_COMMIT_TAG !~ /^v\d+\.\d+(\.\d+)?($|-)/ && $CI_PIPELINE_SOURCE == "push"'
+      when: never
+    - when: always
+
 variables:
 # System environment
 

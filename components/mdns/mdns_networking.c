@@ -127,7 +127,8 @@ static void _udp_recv(void *arg, struct udp_pcb *upcb, struct pbuf *pb, const ip
         packet->tcpip_if = MDNS_IF_MAX;
         packet->pb = this_pb;
         packet->src_port = rport;
-        memcpy(&packet->src, raddr, sizeof(ip_addr_t));
+        packet->src.type = raddr->type;
+        memcpy(&packet->src.u_addr, &raddr->u_addr, sizeof(raddr->u_addr));
         packet->dest.type = packet->src.type;
 
         if (packet->src.type == IPADDR_TYPE_V4) {

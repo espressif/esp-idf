@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <stdint.h>
+#include <string.h>
 
 #include "esp_err.h"
 
@@ -128,3 +129,87 @@ esp_err_t esp_ble_mesh_model_unsubscribe_group_addr(uint16_t element_addr, uint1
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+
+#if CONFIG_BLE_MESH_NODE
+
+const uint8_t *esp_ble_mesh_node_get_local_net_key(uint16_t net_idx)
+{
+    return btc_ble_mesh_node_get_local_net_key(net_idx);
+}
+
+const uint8_t *esp_ble_mesh_node_get_local_app_key(uint16_t app_idx)
+{
+    return btc_ble_mesh_node_get_local_app_key(app_idx);
+}
+
+esp_err_t esp_ble_mesh_node_add_local_net_key(const uint8_t net_key[16], uint16_t net_idx)
+{
+    btc_ble_mesh_prov_args_t arg = {0};
+    btc_msg_t msg = {0};
+
+    if (net_key == NULL || net_idx > 0xFFF) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_PROV;
+    msg.act = BTC_BLE_MESH_ACT_NODE_ADD_LOCAL_NET_KEY;
+
+    arg.node_add_local_net_key.net_idx = net_idx;
+    memcpy(arg.node_add_local_net_key.net_key, net_key, 16);
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_mesh_node_add_local_app_key(const uint8_t app_key[16], uint16_t net_idx, uint16_t app_idx)
+{
+    btc_ble_mesh_prov_args_t arg = {0};
+    btc_msg_t msg = {0};
+
+    if (app_key == NULL || net_idx > 0xFFF || app_idx > 0xFFF) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_PROV;
+    msg.act = BTC_BLE_MESH_ACT_NODE_ADD_LOCAL_APP_KEY;
+
+    arg.node_add_local_app_key.net_idx = net_idx;
+    arg.node_add_local_app_key.app_idx = app_idx;
+    memcpy(arg.node_add_local_app_key.app_key, app_key, 16);
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_mesh_node_bind_app_key_to_local_model(uint16_t element_addr, uint16_t company_id,
+                                                        uint16_t model_id, uint16_t app_idx)
+{
+    btc_ble_mesh_prov_args_t arg = {0};
+    btc_msg_t msg = {0};
+
+    if (!ESP_BLE_MESH_ADDR_IS_UNICAST(element_addr) || app_idx > 0xFFF) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_PROV;
+    msg.act = BTC_BLE_MESH_ACT_NODE_BIND_APP_KEY_TO_MODEL;
+
+    arg.node_local_mod_app_bind.element_addr = element_addr;
+    arg.node_local_mod_app_bind.model_id = model_id;
+    arg.node_local_mod_app_bind.company_id = company_id;
+    arg.node_local_mod_app_bind.app_idx = app_idx;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+#endif /* CONFIG_BLE_MESH_NODE */

@@ -51,6 +51,15 @@ extern const uint8_t server_pk_end[]   asm("_binary_prvtkey_pem_end");
 extern const uint8_t server_cert_bundle_start[] asm("_binary_server_cert_bundle_start");
 extern const uint8_t server_cert_bundle_end[] asm("_binary_server_cert_bundle_end");
 
+extern const uint8_t bad_md_crt_pem_start[] asm("_binary_bad_md_crt_pem_start");
+extern const uint8_t bad_md_crt_pem_end[]   asm("_binary_bad_md_crt_pem_end");
+
+extern const uint8_t wrong_sig_crt_pem_start[] asm("_binary_wrong_sig_crt_esp32_com_pem_start");
+extern const uint8_t wrong_sig_crt_pem_end[]   asm("_binary_wrong_sig_crt_esp32_com_pem_end");
+
+extern const uint8_t correct_sig_crt_pem_start[] asm("_binary_correct_sig_crt_esp32_com_pem_start");
+extern const uint8_t correct_sig_crt_pem_end[]   asm("_binary_correct_sig_crt_esp32_com_pem_end");
+
 typedef struct {
     mbedtls_ssl_context ssl;
     mbedtls_net_context listen_fd;
@@ -70,6 +79,8 @@ typedef enum {
     ESP_CRT_VALIDATE_OK,
     ESP_CRT_VALIDATE_FAIL,
 }esp_crt_validate_res_t;
+
+int esp_crt_verify_callback(void *buf, mbedtls_x509_crt *crt, int data, uint32_t *flags);
 
 static const char *TAG = "cert_bundle_test";
 
@@ -327,4 +338,50 @@ TEST_CASE("custom certificate bundle", "[mbedtls]")
     }
 
     vSemaphoreDelete(exit_sema);
+}
+
+TEST_CASE("custom certificate bundle - weak hash", "[mbedtls]")
+{
+    /* A weak signature hash on the trusted certificate should not stop
+       us from verifying the chain, since we already trust it a weak signature hash is
+       not a security issue */
+
+    mbedtls_x509_crt crt;
+    uint32_t flags = 0;
+
+    esp_crt_bundle_attach(NULL);
+
+    mbedtls_x509_crt_init( &crt );
+    mbedtls_x509_crt_parse(&crt, bad_md_crt_pem_start, bad_md_crt_pem_end - bad_md_crt_pem_start);
+    TEST_ASSERT(mbedtls_x509_crt_verify(&crt, NULL, NULL, NULL, &flags, esp_crt_verify_callback, NULL) == 0);
+
+    mbedtls_x509_crt_free(&crt);
+
+    esp_crt_bundle_detach(NULL);
+}
+
+TEST_CASE("custom certificate bundle - wrong signature", "[mbedtls]")
+{
+    /* Check that the bundle will not verify a valid certificate from trusted root where the signature is wrong */
+
+    mbedtls_x509_crt crt;
+    uint32_t flags = 0;
+
+    esp_crt_bundle_attach(NULL);
+
+    mbedtls_x509_crt_init( &crt );
+    /* esp32.com cert chain where 1 byte in the signature is changed */
+    printf("Testing certificate with wrong signature\n");
+    mbedtls_x509_crt_parse(&crt, wrong_sig_crt_pem_start, wrong_sig_crt_pem_end - wrong_sig_crt_pem_start);
+    TEST_ASSERT(mbedtls_x509_crt_verify(&crt, NULL, NULL, NULL, &flags, esp_crt_verify_callback, NULL) != 0);
+    mbedtls_x509_crt_free(&crt);
+
+    mbedtls_x509_crt_init( &crt );
+    /* the correct esp32.com cert chain*/
+    printf("Testing certificate with correct signature\n");
+    mbedtls_x509_crt_parse(&crt, correct_sig_crt_pem_start, correct_sig_crt_pem_end - correct_sig_crt_pem_start);
+    TEST_ASSERT(mbedtls_x509_crt_verify(&crt, NULL, NULL, NULL, &flags, esp_crt_verify_callback, NULL) == 0);
+    mbedtls_x509_crt_free(&crt);
+
+    esp_crt_bundle_detach(NULL);
 }

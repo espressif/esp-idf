@@ -734,3 +734,14 @@ esp_err_t esp_gap_ble_set_channels(esp_gap_ble_channels channels)
     arg.set_channels.channels[ESP_GAP_BLE_CHANNELS_LEN -1] &= 0x1F;
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+
+esp_err_t esp_gap_ble_set_authorization(esp_bd_addr_t bd_addr, bool authorize)
+{
+    if (!bd_addr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (BTM_Ble_Authorization(bd_addr, authorize)) {
+        return ESP_OK;
+    }
+    return ESP_FAIL;
+}

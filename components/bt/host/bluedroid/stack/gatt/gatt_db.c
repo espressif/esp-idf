@@ -34,6 +34,7 @@
 #include "gatt_int.h"
 #include "stack/l2c_api.h"
 #include "btm_int.h"
+#include "common/bte_appl.h"
 
 /********************************************************************************
 **              L O C A L    F U N C T I O N     P R O T O T Y P E S            *
@@ -124,10 +125,14 @@ static tGATT_STATUS gatts_check_attr_readability(tGATT_ATTR16 *p_attr,
     tGATT_PERM      perm = p_attr->permission;
 
     UNUSED(offset);
+#if SMP_INCLUDED == TRUE
+    min_key_size = bte_appl_cfg.ble_appl_enc_key_size;
+#else
     min_key_size = (((perm & GATT_ENCRYPT_KEY_SIZE_MASK) >> 12));
     if (min_key_size != 0 ) {
         min_key_size += 6;
     }
+#endif
 
     if (!(perm & GATT_READ_ALLOWED)) {
         GATT_TRACE_ERROR( "GATT_READ_NOT_PERMIT\n");
@@ -154,7 +159,11 @@ static tGATT_STATUS gatts_check_attr_readability(tGATT_ATTR16 *p_attr,
         GATT_TRACE_ERROR( "GATT_INSUF_KEY_SIZE\n");
         return GATT_INSUF_KEY_SIZE;
     }
-
+    /* LE Authorization check*/
+    if ((perm & GATT_READ_AUTHORIZATION) && (!(sec_flag & GATT_SEC_FLAG_LKEY_AUTHED) || !(sec_flag & GATT_SEC_FLAG_AUTHORIZATION))) {
+        GATT_TRACE_ERROR( "GATT_INSUF_AUTHORIZATION\n");
+        return GATT_INSUF_AUTHORIZATION;
+    }
 
     if (read_long) {
         switch (p_attr->uuid) {
@@ -1068,10 +1077,14 @@ tGATT_STATUS gatts_write_attr_perm_check (tGATT_SVC_DB *p_db, UINT8 op_code,
         while (p_attr != NULL) {
             if (p_attr->handle == handle) {
                 perm = p_attr->permission;
+            #if SMP_INCLUDED == TRUE
+                min_key_size = bte_appl_cfg.ble_appl_enc_key_size;
+            #else
                 min_key_size = (((perm & GATT_ENCRYPT_KEY_SIZE_MASK) >> 12));
                 if (min_key_size != 0 ) {
                     min_key_size += 6;
                 }
+            #endif
                 GATT_TRACE_DEBUG( "gatts_write_attr_perm_check p_attr->permission =0x%04x min_key_size==0x%04x",
                                   p_attr->permission,
                                   min_key_size);
@@ -1117,6 +1130,11 @@ tGATT_STATUS gatts_write_attr_perm_check (tGATT_SVC_DB *p_db, UINT8 op_code,
                 } else if ((perm & GATT_WRITE_ENCRYPTED_PERM ) && (sec_flag & GATT_SEC_FLAG_ENCRYPTED) && (key_size < min_key_size)) {
                     status = GATT_INSUF_KEY_SIZE;
                     GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_INSUF_KEY_SIZE");
+                }
+                /* LE Authorization check*/
+                else if ((perm & GATT_WRITE_AUTHORIZATION) && (!(sec_flag & GATT_SEC_FLAG_LKEY_AUTHED) || !(sec_flag & GATT_SEC_FLAG_AUTHORIZATION))){
+                    status = GATT_INSUF_AUTHORIZATION;
+                    GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_INSUF_AUTHORIZATION");
                 }
                 /* LE security mode 2 attribute  */
                 else if (perm & GATT_WRITE_SIGNED_PERM && op_code != GATT_SIGN_CMD_WRITE && !(sec_flag & GATT_SEC_FLAG_ENCRYPTED)

@@ -17,7 +17,10 @@
 
 #include "btc_ble_mesh_sensor_model.h"
 
+#include "mesh_config.h"
 #include "model_opcode.h"
+
+#if CONFIG_BLE_MESH_SENSOR_CLI
 #include "sensor_client.h"
 
 /* The followings are the macro definitions of Sensor client
@@ -49,24 +52,26 @@ static const bt_mesh_client_op_pair_t sensor_op_pair[] = {
 
 static bt_mesh_mutex_t sensor_client_lock;
 
-static void bt_mesh_sensor_client_mutex_new(void)
+static inline void bt_mesh_sensor_client_mutex_new(void)
 {
     if (!sensor_client_lock.mutex) {
         bt_mesh_mutex_create(&sensor_client_lock);
     }
 }
 
-static void bt_mesh_sensor_client_mutex_free(void)
+#if CONFIG_BLE_MESH_DEINIT
+static inline void bt_mesh_sensor_client_mutex_free(void)
 {
     bt_mesh_mutex_free(&sensor_client_lock);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
-static void bt_mesh_sensor_client_lock(void)
+static inline void bt_mesh_sensor_client_lock(void)
 {
     bt_mesh_mutex_lock(&sensor_client_lock);
 }
 
-static void bt_mesh_sensor_client_unlock(void)
+static inline void bt_mesh_sensor_client_unlock(void)
 {
     bt_mesh_mutex_unlock(&sensor_client_lock);
 }
@@ -76,7 +81,7 @@ static void timeout_handler(struct k_work *work)
     struct k_delayed_work *timer = NULL;
     bt_mesh_client_node_t *node = NULL;
     struct bt_mesh_msg_ctx ctx = {0};
-    u32_t opcode = 0U;
+    uint32_t opcode = 0U;
 
     BT_WARN("Receive sensor status message timeout");
 
@@ -105,8 +110,8 @@ static void sensor_status(struct bt_mesh_model *model,
                           struct net_buf_simple *buf)
 {
     bt_mesh_client_node_t *node = NULL;
-    u8_t *val = NULL;
-    u8_t evt = 0xFF;
+    uint8_t *val = NULL;
+    uint8_t evt = 0xFF;
     size_t len = 0U;
 
     BT_DBG("len %d, bytes %s", buf->len, bt_hex(buf->data, buf->len));
@@ -126,7 +131,7 @@ static void sensor_status(struct bt_mesh_model *model,
             return;
         }
         net_buf_simple_add_mem(status->descriptor, buf->data, buf->len);
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_sensor_descriptor_status);
         break;
     }
@@ -145,7 +150,7 @@ static void sensor_status(struct bt_mesh_model *model,
             return;
         }
         net_buf_simple_add_mem(status->sensor_cadence_value, buf->data, buf->len);
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_sensor_cadence_status);
         break;
     }
@@ -164,7 +169,7 @@ static void sensor_status(struct bt_mesh_model *model,
             return;
         }
         net_buf_simple_add_mem(status->sensor_setting_property_ids, buf->data, buf->len);
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_sensor_settings_status);
         break;
     }
@@ -188,7 +193,7 @@ static void sensor_status(struct bt_mesh_model *model,
             }
             net_buf_simple_add_mem(status->sensor_setting_raw, buf->data, buf->len);
         }
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_sensor_setting_status);
         break;
     }
@@ -206,7 +211,7 @@ static void sensor_status(struct bt_mesh_model *model,
             return;
         }
         net_buf_simple_add_mem(status->marshalled_sensor_data, buf->data, buf->len);
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_sensor_status);
         break;
     }
@@ -225,7 +230,7 @@ static void sensor_status(struct bt_mesh_model *model,
             return;
         }
         net_buf_simple_add_mem(status->sensor_column_value, buf->data, buf->len);
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_sensor_column_status);
         break;
     }
@@ -244,7 +249,7 @@ static void sensor_status(struct bt_mesh_model *model,
             return;
         }
         net_buf_simple_add_mem(status->sensor_series_value, buf->data, buf->len);
-        val = (u8_t *)status;
+        val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_sensor_series_status);
         break;
     }
@@ -281,7 +286,7 @@ static void sensor_status(struct bt_mesh_model *model,
         }
 
         if (!k_delayed_work_free(&node->timer)) {
-            u32_t opcode = node->opcode;
+            uint32_t opcode = node->opcode;
             bt_mesh_client_free_node(node);
             bt_mesh_sensor_client_cb_evt_to_btc(opcode, evt, model, ctx, val, len);
         }
@@ -353,7 +358,7 @@ const struct bt_mesh_model_op bt_mesh_sensor_cli_op[] = {
 };
 
 static int sensor_act_state(bt_mesh_client_common_param_t *common,
-                            void *value, u16_t value_len, bool need_ack)
+                            void *value, uint16_t value_len, bool need_ack)
 {
     struct net_buf_simple *msg = NULL;
     int err = 0;
@@ -457,7 +462,7 @@ end:
 int bt_mesh_sensor_client_get_state(bt_mesh_client_common_param_t *common, void *get)
 {
     bt_mesh_sensor_client_t *client = NULL;
-    u16_t length = 0U;
+    uint16_t length = 0U;
 
     if (!common || !common->model || !get) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -522,7 +527,7 @@ int bt_mesh_sensor_client_get_state(bt_mesh_client_common_param_t *common, void 
 int bt_mesh_sensor_client_set_state(bt_mesh_client_common_param_t *common, void *set)
 {
     bt_mesh_sensor_client_t *client = NULL;
-    u16_t length = 0U;
+    uint16_t length = 0U;
     bool need_ack = false;
 
     if (!common || !common->model || !set) {
@@ -612,6 +617,7 @@ static int sensor_client_init(struct bt_mesh_model *model)
     return 0;
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static int sensor_client_deinit(struct bt_mesh_model *model)
 {
     bt_mesh_sensor_client_t *client = NULL;
@@ -640,8 +646,13 @@ static int sensor_client_deinit(struct bt_mesh_model *model)
 
     return 0;
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 const struct bt_mesh_model_cb bt_mesh_sensor_client_cb = {
     .init = sensor_client_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = sensor_client_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
+
+#endif /* CONFIG_BLE_MESH_SENSOR_CLI */

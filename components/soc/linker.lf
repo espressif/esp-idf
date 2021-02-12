@@ -25,3 +25,7 @@ entries:
     soc_hal (noflash)
     wdt_hal_iram (noflash)
     systimer_hal (noflash)
+    if TWAI_ISR_IN_IRAM = y:
+        twai_hal_iram (noflash)
+    else:
+        twai_hal_iram (default)

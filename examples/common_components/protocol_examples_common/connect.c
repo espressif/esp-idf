@@ -196,6 +196,7 @@ esp_err_t example_disconnect(void)
     vSemaphoreDelete(s_semph_get_ip_addrs);
     s_semph_get_ip_addrs = NULL;
     stop();
+    ESP_ERROR_CHECK(esp_unregister_shutdown_handler(&stop));
     return ESP_OK;
 }
 
@@ -256,7 +257,7 @@ static esp_netif_t* wifi_start(void)
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
-    ESP_ERROR_CHECK(esp_wifi_connect());
+    esp_wifi_connect();
     return netif;
 }
 

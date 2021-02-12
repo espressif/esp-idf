@@ -195,7 +195,7 @@ class PublicHeaderChecker:
         raise HeaderFailedBuildError()
 
     def preprocess_one_header(self, header, num, ignore_sdkconfig_issue=False):
-        all_compilation_flags = ["-w", "-P", "-E", "-include", header, self.main_c] + self.include_dir_flags
+        all_compilation_flags = ["-w", "-P", "-E", "-DESP_PLATFORM", "-include", header, self.main_c] + self.include_dir_flags
         if not ignore_sdkconfig_issue:
             # just strip commnets to check for CONFIG_... macros
             rc, out, err = exec_cmd([self.gcc, "-fpreprocessed", "-dD",  "-P",  "-E", header] + self.include_dir_flags)

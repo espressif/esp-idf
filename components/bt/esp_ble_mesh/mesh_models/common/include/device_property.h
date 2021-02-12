@@ -824,9 +824,9 @@ extern "C" {
  */
 
 /* Unit is in degrees Celsius with a resolution of 0.01 degrees Celsius. */
-typedef s16_t bt_mesh_temperature_t;
+typedef int16_t bt_mesh_temperature_t;
 
-typedef u16_t bt_mesh_gap_appearance_t;
+typedef uint16_t bt_mesh_gap_appearance_t;
 
 /* Mesh Characteristics Type Definitions  */
 
@@ -835,7 +835,7 @@ typedef u16_t bt_mesh_gap_appearance_t;
  *       Minimum value: 0, maximum value: 655.34;
  *       A value of 0xFFFF represents 'value is not known'.
  */
-typedef u16_t bt_mesh_electric_current_t;
+typedef uint16_t bt_mesh_electric_current_t;
 
 /* The Time Exponential 8 characteristic is used to represent a measure of period of
  * time in seconds.
@@ -845,7 +845,7 @@ typedef u16_t bt_mesh_electric_current_t;
  *       A raw value of 0x00 represents 0 seconds, and a raw value of 0xFF represents
  *       the total life of the device.
  */
-typedef u8_t bt_mesh_time_exponential_8_t;
+typedef uint8_t bt_mesh_time_exponential_8_t;
 
 /* The Voltage characteristic is used to represent a measure of positive electric
  * potential difference in units of volts.
@@ -855,7 +855,7 @@ typedef u8_t bt_mesh_time_exponential_8_t;
  *       value represents the minimum value or lower, the maximum representable value
  *       represents the maximum value or higher.
  */
-typedef u16_t bt_mesh_voltage_t;
+typedef uint16_t bt_mesh_voltage_t;
 
 /* This characteristic aggregates the Electric Current characteristic and instance of
  * the Time Exponential 8 characteristic.
@@ -879,7 +879,7 @@ typedef struct __packed average_voltage {
  * 1        |   True
  * 2 to 255 |   Prohibited
  */
-typedef u8_t bt_mesh_boolean_t;
+typedef uint8_t bt_mesh_boolean_t;
 
 /* The Chromatic Distance From Planckian characteristic represents a distance of a
  * chromaticity coordinate from the Planckian locus in the (u',2/3 v') diagram as
@@ -892,14 +892,14 @@ typedef u8_t bt_mesh_boolean_t;
  *       A value of 0xFFFF represents 'value is not known';
  *       A value of 0xFFFE represents 'value is not valid'.
  */
-typedef s16_t bt_mesh_chromatic_distance_from_planckian_t;
+typedef int16_t bt_mesh_chromatic_distance_from_planckian_t;
 
 /* This characteristic represents a chromaticity coordinate in a color diagram such as
  * the CIE1931 diagram. It can represent an x or y coordinate.
  * Note: Unit is unitless with a resolution of 1/65535;
  *       Minimum value: 0, maximum value: 1.0.
  */
-typedef u16_t bt_mesh_chromaticity_coordinate_t;
+typedef uint16_t bt_mesh_chromaticity_coordinate_t;
 
 /* This characteristic represents a chromaticity coordinate as a tuple with an x and
  * y coordinate.
@@ -915,7 +915,7 @@ typedef struct __packed chromaticity_coordinates {
  *       Minimum value: 800, maximum value: 65534;
  *       A value of 0xFFFF represents 'value is not known'.
  */
-typedef u16_t bt_mesh_correlated_color_temperature_t;
+typedef uint16_t bt_mesh_correlated_color_temperature_t;
 
 /* The Chromaticity In CCT And Duv Values characteristic is a composite characteristic
  * consisting of the Correlated Color Temperature characteristic and the Chromatic
@@ -932,14 +932,14 @@ typedef struct __packed chromaticity_in_cct_and_duv_values {
  * Note: Unit is unitless with a resolution of 0.0001;
  *       Minimum value: 0, maximum value: 0.0255.
  */
-typedef u8_t bt_mesh_chromaticity_tolerance_t;
+typedef uint8_t bt_mesh_chromaticity_tolerance_t;
 
 /* The CIE 13.3-1995 Color Rendering Index characteristic is a color rendition index value
  * for a color patch as calculated in accordance with the CIE 13.3-1995 standard.
  * Note: Unit is unitless with a resolution of 1;
  *       Minimum value: -128, maximum value: 100.
  */
-typedef s8_t bt_mesh_cie_13_3_1995_color_rendering_index_t;
+typedef int8_t bt_mesh_cie_13_3_1995_color_rendering_index_t;
 
 /* The Coefficient characteristic is used to represent a general coefficient value. */
 typedef float bt_mesh_coefficient_t;
@@ -949,14 +949,14 @@ typedef float bt_mesh_coefficient_t;
  *       Minimum value: 0, maximum value 65534;
  *       A value of 0xFFFF represents 'value is not known'.
  */
-typedef u16_t bt_mesh_count_16_t;
+typedef uint16_t bt_mesh_count_16_t;
 
 /* The Count 24 characteristic is used to represent a general count value.
  * Note: Unit is unitless with a resolution of 1;
  *       Minimum value: 0, maximum value 16777214;
  *       A value of 0xFFFFFF represents 'value is not known'.
  */
-typedef u8_t bt_mesh_count_24_t[3];
+typedef uint8_t bt_mesh_count_24_t[3];
 
 /* This characteristic represents a country or dependent areas in accordance with
  * the ISO 3166-1 Numeric standard.
@@ -964,7 +964,7 @@ typedef u8_t bt_mesh_count_24_t[3];
  *       Minimum value: 0, maximum value: 4095;
  *       A value of 0xFFFF represents 'value is not known'.
  */
-typedef u16_t bt_mesh_country_code_t;
+typedef uint16_t bt_mesh_country_code_t;
 
 /* Date as days elapsed since the Epoch (Jan 1, 1970) in the Coordinated Universal
  * Time (UTC) time zone.
@@ -972,7 +972,7 @@ typedef u16_t bt_mesh_country_code_t;
  *       Minimum value: 1, maximum value: 16777214;
  *       A value of 0x000000 represents 'value is not known'.
  */
-typedef u8_t bt_mesh_date_utc_t[3];
+typedef uint8_t bt_mesh_date_utc_t[3];
 
 /* This characteristic aggregates two instances of the Electric Current characteristic
  * to represent a range of Electric Current values.
@@ -1008,7 +1008,7 @@ typedef struct __packed electric_current_statistics {
  *       Minimum value: 0, maximum value: 16777214;
  *       A value of 0xFFFFFF represents ‘value is not known’.
  */
-typedef u8_t bt_mesh_energy_t[3];
+typedef uint8_t bt_mesh_energy_t[3];
 
 /* The Time Decihour 8 characteristic is used to represent a period of time in
  * tenths of an hour.
@@ -1016,7 +1016,7 @@ typedef u8_t bt_mesh_energy_t[3];
  *       Minimum value: 0.0, maximum value: 24.0;
  *       A value of 0xFF represents 'value is not known'. All other values are Prohibited.
  */
-typedef u8_t bt_mesh_time_decihour_8_t;
+typedef uint8_t bt_mesh_time_decihour_8_t;
 
 /* This characteristic aggregates the Energy characteristic, and two instances of
  * the Time Decihour 8 characteristic, to represent energy use in a period of day.
@@ -1033,7 +1033,7 @@ typedef struct __packed energy_in_a_period_of_day {
  *       Minimum value: 0, maximum value: 65534;
  *       A value of 0xFFFF represents 'value is not known'.
  */
-typedef u16_t bt_mesh_time_second_16_t;
+typedef uint16_t bt_mesh_time_second_16_t;
 
 /* This characteristic aggregates the Count 16 characteristic, two instances of the
  * Time Decihour 8 characteristic and an instance of the Sensing Duration characteristic,
@@ -1063,13 +1063,13 @@ typedef char bt_mesh_fixed_string_8_t[8];
  * Note: Unit is unitless with a resolution of 1;
  *       Minimum value: 0, maximum value: 65535.
  */
-typedef u16_t bt_mesh_generic_level_t;
+typedef uint16_t bt_mesh_generic_level_t;
 
 /* The Global Trade Item Number characteristic represents an identifier as
  * issued by GS1 General Specifications, which may consist up to 14 digits,
  * and is here represented as a 48-bit unsigned integer.
  */
-typedef u8_t bt_mesh_global_trade_item_number_t[6];
+typedef uint8_t bt_mesh_global_trade_item_number_t[6];
 
 /* The Illuminance characteristic is used to represent a measure of illuminance
  * in units of lux.
@@ -1077,7 +1077,7 @@ typedef u8_t bt_mesh_global_trade_item_number_t[6];
  *       Minimum value: 0, maximum value: 167772.14;
  *       A value of 0xFFFFFF represents 'value is not known'.
  */
-typedef u8_t bt_mesh_illuminance_t[3];
+typedef uint8_t bt_mesh_illuminance_t[3];
 
 /* The Luminous Efficacy characteristic is used to represent a measure of luminous
  * efficacy in units of lumen per watt.
@@ -1085,7 +1085,7 @@ typedef u8_t bt_mesh_illuminance_t[3];
  *       Minimum value: 0, maximum value: 1800;
  *       A value of 0xFFFF represents 'value is not known'. All other values are Prohibited.
  */
-typedef u16_t bt_mesh_luminous_efficacy_t;
+typedef uint16_t bt_mesh_luminous_efficacy_t;
 
 /* The Luminous Energy characteristic is used to represent a measure of luminous
  * energy in units of lumen hour.
@@ -1093,7 +1093,7 @@ typedef u16_t bt_mesh_luminous_efficacy_t;
  *       Minimum value: 0, maximum value: 16777214000;
  *       A value of 0xFFFFFF represents 'value is not known'.
  */
-typedef u8_t bt_mesh_luminous_energy_t[3];
+typedef uint8_t bt_mesh_luminous_energy_t[3];
 
 /* The Luminous Exposure characteristic is used to represent a measure of luminous
  * exposure in units of lux-hour.
@@ -1101,7 +1101,7 @@ typedef u8_t bt_mesh_luminous_energy_t[3];
  *       Minimum value: 0, maximum value: 16777214000;
  *       A value of 0xFFFFFF represents 'value is not known'.
  */
-typedef u8_t bt_mesh_luminous_exposure_t[3];
+typedef uint8_t bt_mesh_luminous_exposure_t[3];
 
 /* The Luminous Flux characteristic is used to represent a measure of luminous flux
  * in units of lumen.
@@ -1109,7 +1109,7 @@ typedef u8_t bt_mesh_luminous_exposure_t[3];
  *       Minimum value: 0, maximum value: 65534;
  *       A value of 0xFFFF represents 'value is not known'.
  */
-typedef u16_t bt_mesh_luminous_flux_t;
+typedef uint16_t bt_mesh_luminous_flux_t;
 
 /* This characteristic aggregates two instances of the Luminous Flux characteristic
  * to represent a luminous flux range.
@@ -1125,14 +1125,14 @@ typedef struct __packed luminous_flux_range {
  *       Minimum value: 0, maximum value: 65534;
  *       A value of 0xFFFF represents 'value is not known'.
  */
-typedef u16_t bt_mesh_luminous_intensity_t;
+typedef uint16_t bt_mesh_luminous_intensity_t;
 
 /* The Mass Flow characteristic is used to represent a flow of mass.
  * Note: Unit is gram/second with a resolution of 1;
  *       Minimum value: 0, maximum value: 65534;
  *       A value of 0xFFFF represents 'value is not known'.
  */
-typedef u16_t bt_mesh_mass_flow_t;
+typedef uint16_t bt_mesh_mass_flow_t;
 
 /* The Mesh Provisioning Data In characteristic can be written to send a Proxy PDU
  * message containing Provisioning PDU to the Provisioning Server.
@@ -1167,21 +1167,21 @@ struct mesh_proxy_data_out {
  * Note: Unit is unitless with a resolution of 1;
  *       Minimum value: 0, maximum value: 65535.
  */
-typedef u16_t bt_mesh_perceived_lightness_t;
+typedef uint16_t bt_mesh_perceived_lightness_t;
 
 /* The Percentage 8 characteristic is used to represent a measure of percentage.
  * Note: Unit is a percentage with a resolution of 0.5;
  *       Minimum value: 0, maximum value: 100;
  *       A value of 0xFF represents 'value is not known'. All other values are Prohibited.
  */
-typedef u8_t bt_mesh_percentage_8_t;
+typedef uint8_t bt_mesh_percentage_8_t;
 
 /* The Power characteristic is used to represent a measure of power in units of watts.
  * Note: Unit is watt with a resolution of 0.1;
  *       Minimum value: 0, maximum value: 1677721.4;
  *       A value of 0xFFFFFF represents 'value is not known'.
  */
-typedef u8_t bt_mesh_power_t[3];
+typedef uint8_t bt_mesh_power_t[3];
 
 /* This characteristic aggregates three instances of the Power characteristic to
  * represent a specification of Power values.
@@ -1253,7 +1253,7 @@ typedef struct __packed relative_value_in_an_illuminance_range {
  *       Minimum value: -64.0, maximum value: 63.5;
  *       A value of 0xFF represents 'value is not known'.
  */
-typedef s8_t bt_mesh_temperature_8_t;
+typedef int8_t bt_mesh_temperature_8_t;
 
 /* This characteristic aggregates the Temperature 8 characteristic, and two instances
  * of the Time Decihour 8 characteristic, to represent a temperature value in a period
@@ -1300,7 +1300,7 @@ typedef struct __packed temperature_statistics {
  *       Minimum value: 0, maximum value: 16777214;
  *       A value of 0xFFFFFF represents 'value is not known'.
  */
-typedef u8_t bt_mesh_time_hour_24_t[3];
+typedef uint8_t bt_mesh_time_hour_24_t[3];
 
 /* The Time Millisecond 24 characteristic is used to represent a period of time with
  * a resolution of 1 millisecond.
@@ -1308,7 +1308,7 @@ typedef u8_t bt_mesh_time_hour_24_t[3];
  *       Minimum value: 0, maximum value: 16777.214;
  *       A value of 0xFFFFFF represents 'value is not known'.
  */
-typedef u8_t bt_mesh_time_millisecond_24_t[3];
+typedef uint8_t bt_mesh_time_millisecond_24_t[3];
 
 /* The Time Second 8 characteristic is used to represent a period of time with a unit
  * of 1 second.
@@ -1316,7 +1316,7 @@ typedef u8_t bt_mesh_time_millisecond_24_t[3];
  *       Minimum value: 0, maximum value: 254;
  *       A value of 0xFF represents 'value is not known'.
  */
-typedef u8_t bt_mesh_time_second_8_t;
+typedef uint8_t bt_mesh_time_second_8_t;
 
 /* This characteristic aggregates three instances of the Voltage characteristic to
  * represent a specification of voltage values.
@@ -1345,11 +1345,11 @@ typedef struct __packed voltage_statistics {
  *       Minimum value: 0, maximum value: 65534;
  *       A value of 0xFFFF represents 'value is not known'.
  */
-typedef u16_t bt_mesh_volume_flow_t;
+typedef uint16_t bt_mesh_volume_flow_t;
 
 /* Mesh Device Property related function */
 
-u8_t bt_mesh_get_dev_prop_len(u16_t prop_id);
+uint8_t bt_mesh_get_dev_prop_len(uint16_t prop_id);
 
 #ifdef __cplusplus
 }

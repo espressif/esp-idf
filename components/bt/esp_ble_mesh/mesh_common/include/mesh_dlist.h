@@ -291,7 +291,7 @@ static inline sys_dnode_t *sys_dlist_peek_head_not_empty(sys_dlist_t *list)
  */
 
 static inline sys_dnode_t *sys_dlist_peek_next_no_check(sys_dlist_t *list,
-        sys_dnode_t *node)
+                                                        sys_dnode_t *node)
 {
     return (node == list->tail) ? NULL : node->next;
 }
@@ -307,7 +307,7 @@ static inline sys_dnode_t *sys_dlist_peek_next_no_check(sys_dlist_t *list,
  */
 
 static inline sys_dnode_t *sys_dlist_peek_next(sys_dlist_t *list,
-        sys_dnode_t *node)
+                                               sys_dnode_t *node)
 {
     return node ? sys_dlist_peek_next_no_check(list, node) : NULL;
 }
@@ -379,7 +379,8 @@ static inline void sys_dlist_prepend(sys_dlist_t *list, sys_dnode_t *node)
  */
 
 static inline void sys_dlist_insert_after(sys_dlist_t *list,
-        sys_dnode_t *insert_point, sys_dnode_t *node)
+                                          sys_dnode_t *insert_point,
+                                          sys_dnode_t *node)
 {
     if (!insert_point) {
         sys_dlist_prepend(list, node);
@@ -405,7 +406,8 @@ static inline void sys_dlist_insert_after(sys_dlist_t *list,
  */
 
 static inline void sys_dlist_insert_before(sys_dlist_t *list,
-        sys_dnode_t *insert_point, sys_dnode_t *node)
+                                           sys_dnode_t *insert_point,
+                                           sys_dnode_t *node)
 {
     if (!insert_point) {
         sys_dlist_append(list, node);

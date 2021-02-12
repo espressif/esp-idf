@@ -27,7 +27,7 @@ def dut_thread_callback(**kwargs):
     result[0] = True
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_TWAI2')
+@ttfw_idf.idf_example_test(env_tag='Example_TWAI2', ignore=True)
 def test_twai_network_example(env, extra_data):
 
     # Get device under test. "dut1", "dut2", and "dut3" must be properly defined in EnvConfig

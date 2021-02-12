@@ -11,14 +11,15 @@
 #include <errno.h>
 #include <stdbool.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_MODEL)
-
 #include "btc_ble_mesh_config_model.h"
 
 #include "mesh.h"
+#include "mesh_config.h"
 #include "foundation.h"
 #include "mesh_common.h"
 #include "cfg_cli.h"
+
+#if CONFIG_BLE_MESH_CFG_CLI
 
 static const bt_mesh_client_op_pair_t cfg_op_pair[] = {
     { OP_BEACON_GET,           OP_BEACON_STATUS        },
@@ -72,24 +73,26 @@ static const bt_mesh_client_op_pair_t cfg_op_pair[] = {
 
 static bt_mesh_mutex_t cfg_client_lock;
 
-static void bt_mesh_cfg_client_mutex_new(void)
+static inline void bt_mesh_cfg_client_mutex_new(void)
 {
     if (!cfg_client_lock.mutex) {
         bt_mesh_mutex_create(&cfg_client_lock);
     }
 }
 
-static void bt_mesh_cfg_client_mutex_free(void)
+#if CONFIG_BLE_MESH_DEINIT
+static inline void bt_mesh_cfg_client_mutex_free(void)
 {
     bt_mesh_mutex_free(&cfg_client_lock);
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
-static void bt_mesh_cfg_client_lock(void)
+static inline void bt_mesh_cfg_client_lock(void)
 {
     bt_mesh_mutex_lock(&cfg_client_lock);
 }
 
-static void bt_mesh_cfg_client_unlock(void)
+static inline void bt_mesh_cfg_client_unlock(void)
 {
     bt_mesh_mutex_unlock(&cfg_client_lock);
 }
@@ -99,7 +102,7 @@ static void timeout_handler(struct k_work *work)
     struct k_delayed_work *timer = NULL;
     bt_mesh_client_node_t *node = NULL;
     struct bt_mesh_msg_ctx ctx = {0};
-    u32_t opcode = 0U;
+    uint32_t opcode = 0U;
 
     BT_WARN("Receive configuration status message timeout");
 
@@ -129,7 +132,7 @@ static void cfg_client_recv_status(struct bt_mesh_model *model,
 {
     bt_mesh_client_node_t *node = NULL;
     struct net_buf_simple buf = {0};
-    u8_t evt_type = 0xFF;
+    uint8_t evt_type = 0xFF;
 
     if (!model || !ctx) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -137,8 +140,8 @@ static void cfg_client_recv_status(struct bt_mesh_model *model,
     }
 
     /* If it is a publish message, sent to the user directly. */
-    buf.data = (u8_t *)status;
-    buf.len  = (u16_t)len;
+    buf.data = (uint8_t *)status;
+    buf.len  = (uint16_t)len;
 
     bt_mesh_cfg_client_lock();
 
@@ -203,10 +206,10 @@ static void cfg_client_recv_status(struct bt_mesh_model *model,
         }
 
         if (!k_delayed_work_free(&node->timer)) {
-            u32_t opcode = node->opcode;
+            uint32_t opcode = node->opcode;
             bt_mesh_client_free_node(node);
             bt_mesh_config_client_cb_evt_to_btc(
-                opcode, evt_type, model, ctx, (const u8_t *)status, len);
+                opcode, evt_type, model, ctx, (const uint8_t *)status, len);
         }
     }
 
@@ -271,7 +274,7 @@ static void state_status_u8(struct bt_mesh_model *model,
                             struct bt_mesh_msg_ctx *ctx,
                             struct net_buf_simple *buf)
 {
-    u8_t status = 0U;
+    uint8_t status = 0U;
 
     BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
            ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
@@ -279,7 +282,7 @@ static void state_status_u8(struct bt_mesh_model *model,
 
     status = net_buf_simple_pull_u8(buf);
 
-    cfg_client_recv_status(model, ctx, &status, sizeof(u8_t));
+    cfg_client_recv_status(model, ctx, &status, sizeof(uint8_t));
 }
 
 static void beacon_status(struct bt_mesh_model *model,
@@ -673,7 +676,7 @@ const struct bt_mesh_model_op bt_mesh_cfg_cli_op[] = {
     BLE_MESH_MODEL_OP_END,
 };
 
-static int send_msg_with_none(bt_mesh_client_common_param_t *param, u32_t op)
+static int send_msg_with_none(bt_mesh_client_common_param_t *param, uint32_t op)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, op, 0);
 
@@ -682,7 +685,7 @@ static int send_msg_with_none(bt_mesh_client_common_param_t *param, u32_t op)
     return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-static int send_msg_with_u8(bt_mesh_client_common_param_t *param, u32_t op, u8_t val)
+static int send_msg_with_u8(bt_mesh_client_common_param_t *param, uint32_t op, uint8_t val)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, op, 1);
 
@@ -692,7 +695,7 @@ static int send_msg_with_u8(bt_mesh_client_common_param_t *param, u32_t op, u8_t
     return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-static int send_msg_with_le16(bt_mesh_client_common_param_t *param, u32_t op, u16_t val)
+static int send_msg_with_le16(bt_mesh_client_common_param_t *param, uint32_t op, uint16_t val)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, op, 2);
 
@@ -702,7 +705,7 @@ static int send_msg_with_le16(bt_mesh_client_common_param_t *param, u32_t op, u1
     return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-int bt_mesh_cfg_comp_data_get(bt_mesh_client_common_param_t *param, u8_t page)
+int bt_mesh_cfg_comp_data_get(bt_mesh_client_common_param_t *param, uint8_t page)
 {
     return send_msg_with_u8(param, OP_DEV_COMP_DATA_GET, page);
 }
@@ -712,7 +715,7 @@ int bt_mesh_cfg_beacon_get(bt_mesh_client_common_param_t *param)
     return send_msg_with_none(param, OP_BEACON_GET);
 }
 
-int bt_mesh_cfg_beacon_set(bt_mesh_client_common_param_t *param, u8_t val)
+int bt_mesh_cfg_beacon_set(bt_mesh_client_common_param_t *param, uint8_t val)
 {
     if (val > 0x01) {
         BT_ERR("Invalid beacon state 0x%02x", val);
@@ -726,7 +729,7 @@ int bt_mesh_cfg_ttl_get(bt_mesh_client_common_param_t *param)
     return send_msg_with_none(param, OP_DEFAULT_TTL_GET);
 }
 
-int bt_mesh_cfg_ttl_set(bt_mesh_client_common_param_t *param, u8_t val)
+int bt_mesh_cfg_ttl_set(bt_mesh_client_common_param_t *param, uint8_t val)
 {
     return send_msg_with_u8(param, OP_DEFAULT_TTL_SET, val);
 }
@@ -736,7 +739,7 @@ int bt_mesh_cfg_friend_get(bt_mesh_client_common_param_t *param)
     return send_msg_with_none(param, OP_FRIEND_GET);
 }
 
-int bt_mesh_cfg_friend_set(bt_mesh_client_common_param_t *param, u8_t val)
+int bt_mesh_cfg_friend_set(bt_mesh_client_common_param_t *param, uint8_t val)
 {
     return send_msg_with_u8(param, OP_FRIEND_SET, val);
 }
@@ -746,7 +749,7 @@ int bt_mesh_cfg_gatt_proxy_get(bt_mesh_client_common_param_t *param)
     return send_msg_with_none(param, OP_GATT_PROXY_GET);
 }
 
-int bt_mesh_cfg_gatt_proxy_set(bt_mesh_client_common_param_t *param, u8_t val)
+int bt_mesh_cfg_gatt_proxy_set(bt_mesh_client_common_param_t *param, uint8_t val)
 {
     return send_msg_with_u8(param, OP_GATT_PROXY_SET, val);
 }
@@ -757,7 +760,7 @@ int bt_mesh_cfg_relay_get(bt_mesh_client_common_param_t *param)
 }
 
 int bt_mesh_cfg_relay_set(bt_mesh_client_common_param_t *param,
-                          u8_t relay, u8_t retransmit)
+                          uint8_t relay, uint8_t retransmit)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_RELAY_SET, 2);
 
@@ -769,7 +772,7 @@ int bt_mesh_cfg_relay_set(bt_mesh_client_common_param_t *param,
 }
 
 int bt_mesh_cfg_net_key_add(bt_mesh_client_common_param_t *param,
-                            u16_t net_idx, const u8_t net_key[16])
+                            uint16_t net_idx, const uint8_t net_key[16])
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_NET_KEY_ADD, 18);
 
@@ -786,8 +789,8 @@ int bt_mesh_cfg_net_key_add(bt_mesh_client_common_param_t *param,
 }
 
 int bt_mesh_cfg_app_key_add(bt_mesh_client_common_param_t *param,
-                            u16_t net_idx, u16_t app_idx,
-                            const u8_t app_key[16])
+                            uint16_t net_idx, uint16_t app_idx,
+                            const uint8_t app_key[16])
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_APP_KEY_ADD, 19);
 
@@ -804,8 +807,8 @@ int bt_mesh_cfg_app_key_add(bt_mesh_client_common_param_t *param,
 }
 
 int bt_mesh_cfg_mod_app_bind(bt_mesh_client_common_param_t *param,
-                             u16_t elem_addr, u16_t app_idx,
-                             u16_t mod_id, u16_t cid)
+                             uint16_t elem_addr, uint16_t app_idx,
+                             uint16_t mod_id, uint16_t cid)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_MOD_APP_BIND, 8);
 
@@ -820,9 +823,9 @@ int bt_mesh_cfg_mod_app_bind(bt_mesh_client_common_param_t *param,
     return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-static int mod_sub(bt_mesh_client_common_param_t *param, u32_t op,
-                   u16_t elem_addr, u16_t sub_addr,
-                   u16_t mod_id, u16_t cid)
+static int mod_sub(bt_mesh_client_common_param_t *param, uint32_t op,
+                   uint16_t elem_addr, uint16_t sub_addr,
+                   uint16_t mod_id, uint16_t cid)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, op, 8);
 
@@ -838,29 +841,29 @@ static int mod_sub(bt_mesh_client_common_param_t *param, u32_t op,
 }
 
 int bt_mesh_cfg_mod_sub_add(bt_mesh_client_common_param_t *param,
-                            u16_t elem_addr, u16_t sub_addr,
-                            u16_t mod_id, u16_t cid)
+                            uint16_t elem_addr, uint16_t sub_addr,
+                            uint16_t mod_id, uint16_t cid)
 {
     return mod_sub(param, OP_MOD_SUB_ADD, elem_addr, sub_addr, mod_id, cid);
 }
 
 int bt_mesh_cfg_mod_sub_del(bt_mesh_client_common_param_t *param,
-                            u16_t elem_addr, u16_t sub_addr,
-                            u16_t mod_id, u16_t cid)
+                            uint16_t elem_addr, uint16_t sub_addr,
+                            uint16_t mod_id, uint16_t cid)
 {
     return mod_sub(param, OP_MOD_SUB_DEL, elem_addr, sub_addr, mod_id, cid);
 }
 
 int bt_mesh_cfg_mod_sub_overwrite(bt_mesh_client_common_param_t *param,
-                                  u16_t elem_addr, u16_t sub_addr,
-                                  u16_t mod_id, u16_t cid)
+                                  uint16_t elem_addr, uint16_t sub_addr,
+                                  uint16_t mod_id, uint16_t cid)
 {
     return mod_sub(param, OP_MOD_SUB_OVERWRITE, elem_addr, sub_addr, mod_id, cid);
 }
 
-static int mod_sub_va(bt_mesh_client_common_param_t *param, u32_t op,
-                      u16_t elem_addr, const u8_t label[16],
-                      u16_t mod_id, u16_t cid)
+static int mod_sub_va(bt_mesh_client_common_param_t *param, uint32_t op,
+                      uint16_t elem_addr, const uint8_t label[16],
+                      uint16_t mod_id, uint16_t cid)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, op, 22);
 
@@ -884,28 +887,28 @@ static int mod_sub_va(bt_mesh_client_common_param_t *param, u32_t op,
 }
 
 int bt_mesh_cfg_mod_sub_va_add(bt_mesh_client_common_param_t *param,
-                               u16_t elem_addr, const u8_t label[16],
-                               u16_t mod_id, u16_t cid)
+                               uint16_t elem_addr, const uint8_t label[16],
+                               uint16_t mod_id, uint16_t cid)
 {
     return mod_sub_va(param, OP_MOD_SUB_VA_ADD, elem_addr, label, mod_id, cid);
 }
 
 int bt_mesh_cfg_mod_sub_va_del(bt_mesh_client_common_param_t *param,
-                               u16_t elem_addr, const u8_t label[16],
-                               u16_t mod_id, u16_t cid)
+                               uint16_t elem_addr, const uint8_t label[16],
+                               uint16_t mod_id, uint16_t cid)
 {
     return mod_sub_va(param, OP_MOD_SUB_VA_DEL, elem_addr, label, mod_id, cid);
 }
 
 int bt_mesh_cfg_mod_sub_va_overwrite(bt_mesh_client_common_param_t *param,
-                                     u16_t elem_addr, const u8_t label[16],
-                                     u16_t mod_id, u16_t cid)
+                                     uint16_t elem_addr, const uint8_t label[16],
+                                     uint16_t mod_id, uint16_t cid)
 {
     return mod_sub_va(param, OP_MOD_SUB_VA_OVERWRITE, elem_addr, label, mod_id, cid);
 }
 
 int bt_mesh_cfg_mod_pub_get(bt_mesh_client_common_param_t *param,
-                            u16_t elem_addr, u16_t mod_id, u16_t cid)
+                            uint16_t elem_addr, uint16_t mod_id, uint16_t cid)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_MOD_PUB_GET, 6);
 
@@ -920,7 +923,7 @@ int bt_mesh_cfg_mod_pub_get(bt_mesh_client_common_param_t *param,
 }
 
 int bt_mesh_cfg_mod_pub_set(bt_mesh_client_common_param_t *param,
-                            u16_t elem_addr, u16_t mod_id, u16_t cid,
+                            uint16_t elem_addr, uint16_t mod_id, uint16_t cid,
                             struct bt_mesh_cfg_mod_pub *pub)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_MOD_PUB_SET, 13);
@@ -1000,8 +1003,8 @@ int bt_mesh_cfg_node_reset(bt_mesh_client_common_param_t *param)
 }
 
 int bt_mesh_cfg_mod_pub_va_set(bt_mesh_client_common_param_t *param,
-                               u16_t elem_addr, u16_t mod_id,
-                               u16_t cid, const u8_t label[16],
+                               uint16_t elem_addr, uint16_t mod_id,
+                               uint16_t cid, const uint8_t label[16],
                                struct bt_mesh_cfg_mod_pub *pub)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_MOD_PUB_VA_SET, 27);
@@ -1027,7 +1030,7 @@ int bt_mesh_cfg_mod_pub_va_set(bt_mesh_client_common_param_t *param,
 }
 
 int bt_mesh_cfg_mod_sub_del_all(bt_mesh_client_common_param_t *param,
-                                u16_t elem_addr, u16_t mod_id, u16_t cid)
+                                uint16_t elem_addr, uint16_t mod_id, uint16_t cid)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_MOD_SUB_DEL_ALL, 6);
 
@@ -1041,8 +1044,8 @@ int bt_mesh_cfg_mod_sub_del_all(bt_mesh_client_common_param_t *param,
     return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-static int mod_sub_get(bt_mesh_client_common_param_t *param, u32_t op,
-                       u16_t elem_addr, u16_t mod_id, u16_t cid)
+static int mod_sub_get(bt_mesh_client_common_param_t *param, uint32_t op,
+                       uint16_t elem_addr, uint16_t mod_id, uint16_t cid)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, op, 6);
 
@@ -1057,13 +1060,13 @@ static int mod_sub_get(bt_mesh_client_common_param_t *param, u32_t op,
 }
 
 int bt_mesh_cfg_mod_sub_get(bt_mesh_client_common_param_t *param,
-                            u16_t elem_addr, u16_t mod_id)
+                            uint16_t elem_addr, uint16_t mod_id)
 {
     return mod_sub_get(param, OP_MOD_SUB_GET, elem_addr, mod_id, BLE_MESH_CID_NVAL);
 }
 
 int bt_mesh_cfg_mod_sub_get_vnd(bt_mesh_client_common_param_t *param,
-                                u16_t elem_addr, u16_t mod_id, u16_t cid)
+                                uint16_t elem_addr, uint16_t mod_id, uint16_t cid)
 {
     if (cid == BLE_MESH_CID_NVAL) {
         BT_ERR("Invalid company id");
@@ -1073,7 +1076,7 @@ int bt_mesh_cfg_mod_sub_get_vnd(bt_mesh_client_common_param_t *param,
 }
 
 int bt_mesh_cfg_net_key_update(bt_mesh_client_common_param_t *param,
-                               u16_t net_idx, const u8_t net_key[16])
+                               uint16_t net_idx, const uint8_t net_key[16])
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_NET_KEY_UPDATE, 18);
 
@@ -1089,7 +1092,7 @@ int bt_mesh_cfg_net_key_update(bt_mesh_client_common_param_t *param,
     return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-int bt_mesh_cfg_net_key_delete(bt_mesh_client_common_param_t *param, u16_t net_idx)
+int bt_mesh_cfg_net_key_delete(bt_mesh_client_common_param_t *param, uint16_t net_idx)
 {
     return send_msg_with_le16(param, OP_NET_KEY_DEL, net_idx);
 }
@@ -1100,8 +1103,8 @@ int bt_mesh_cfg_net_key_get(bt_mesh_client_common_param_t *param)
 }
 
 int bt_mesh_cfg_app_key_update(bt_mesh_client_common_param_t *param,
-                               u16_t net_idx, u16_t app_idx,
-                               const u8_t app_key[16])
+                               uint16_t net_idx, uint16_t app_idx,
+                               const uint8_t app_key[16])
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_APP_KEY_UPDATE, 19);
 
@@ -1118,7 +1121,7 @@ int bt_mesh_cfg_app_key_update(bt_mesh_client_common_param_t *param,
 }
 
 int bt_mesh_cfg_app_key_delete(bt_mesh_client_common_param_t *param,
-                               u16_t net_idx, u16_t app_idx)
+                               uint16_t net_idx, uint16_t app_idx)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_APP_KEY_DEL, 3);
 
@@ -1128,18 +1131,18 @@ int bt_mesh_cfg_app_key_delete(bt_mesh_client_common_param_t *param,
     return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-int bt_mesh_cfg_app_key_get(bt_mesh_client_common_param_t *param, u16_t net_idx)
+int bt_mesh_cfg_app_key_get(bt_mesh_client_common_param_t *param, uint16_t net_idx)
 {
     return send_msg_with_le16(param, OP_APP_KEY_GET, net_idx);
 }
 
-int bt_mesh_cfg_node_identity_get(bt_mesh_client_common_param_t *param, u16_t net_idx)
+int bt_mesh_cfg_node_identity_get(bt_mesh_client_common_param_t *param, uint16_t net_idx)
 {
     return send_msg_with_le16(param, OP_NODE_IDENTITY_GET, net_idx);
 }
 
 int bt_mesh_cfg_node_identity_set(bt_mesh_client_common_param_t *param,
-                                  u16_t net_idx, u8_t identity)
+                                  uint16_t net_idx, uint8_t identity)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_NODE_IDENTITY_SET, 3);
 
@@ -1156,8 +1159,8 @@ int bt_mesh_cfg_node_identity_set(bt_mesh_client_common_param_t *param,
 }
 
 int bt_mesh_cfg_mod_app_unbind(bt_mesh_client_common_param_t *param,
-                               u16_t elem_addr, u16_t app_idx,
-                               u16_t mod_id, u16_t cid)
+                               uint16_t elem_addr, uint16_t app_idx,
+                               uint16_t mod_id, uint16_t cid)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_MOD_APP_UNBIND, 8);
 
@@ -1172,8 +1175,8 @@ int bt_mesh_cfg_mod_app_unbind(bt_mesh_client_common_param_t *param,
     return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-static int mod_app_get(bt_mesh_client_common_param_t *param, u32_t op,
-                       u16_t elem_addr, u16_t mod_id, u16_t cid)
+static int mod_app_get(bt_mesh_client_common_param_t *param, uint32_t op,
+                       uint16_t elem_addr, uint16_t mod_id, uint16_t cid)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, op, 6);
 
@@ -1188,13 +1191,13 @@ static int mod_app_get(bt_mesh_client_common_param_t *param, u32_t op,
 }
 
 int bt_mesh_cfg_mod_app_get(bt_mesh_client_common_param_t *param,
-                            u16_t elem_addr, u16_t mod_id)
+                            uint16_t elem_addr, uint16_t mod_id)
 {
     return mod_app_get(param, OP_SIG_MOD_APP_GET, elem_addr, mod_id, BLE_MESH_CID_NVAL);
 }
 
 int bt_mesh_cfg_mod_app_get_vnd(bt_mesh_client_common_param_t *param,
-                                u16_t elem_addr, u16_t mod_id, u16_t cid)
+                                uint16_t elem_addr, uint16_t mod_id, uint16_t cid)
 {
     if (cid == BLE_MESH_CID_NVAL) {
         BT_ERR("Invalid company id");
@@ -1203,13 +1206,13 @@ int bt_mesh_cfg_mod_app_get_vnd(bt_mesh_client_common_param_t *param,
     return mod_app_get(param, OP_VND_MOD_APP_GET, elem_addr, mod_id, cid);
 }
 
-int bt_mesh_cfg_kr_phase_get(bt_mesh_client_common_param_t *param, u16_t net_idx)
+int bt_mesh_cfg_kr_phase_get(bt_mesh_client_common_param_t *param, uint16_t net_idx)
 {
     return send_msg_with_le16(param, OP_KRP_GET, net_idx);
 }
 
 int bt_mesh_cfg_kr_phase_set(bt_mesh_client_common_param_t *param,
-                             u16_t net_idx, u8_t transition)
+                             uint16_t net_idx, uint8_t transition)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_KRP_SET, 3);
 
@@ -1225,7 +1228,7 @@ int bt_mesh_cfg_kr_phase_set(bt_mesh_client_common_param_t *param,
     return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
 }
 
-int bt_mesh_cfg_lpn_timeout_get(bt_mesh_client_common_param_t *param, u16_t lpn_addr)
+int bt_mesh_cfg_lpn_timeout_get(bt_mesh_client_common_param_t *param, uint16_t lpn_addr)
 {
     return send_msg_with_le16(param, OP_LPN_TIMEOUT_GET, lpn_addr);
 }
@@ -1235,7 +1238,7 @@ int bt_mesh_cfg_net_transmit_get(bt_mesh_client_common_param_t *param)
     return send_msg_with_none(param, OP_NET_TRANSMIT_GET);
 }
 
-int bt_mesh_cfg_net_transmit_set(bt_mesh_client_common_param_t *param, u8_t transmit)
+int bt_mesh_cfg_net_transmit_set(bt_mesh_client_common_param_t *param, uint8_t transmit)
 {
     return send_msg_with_u8(param, OP_NET_TRANSMIT_SET, transmit);
 }
@@ -1286,6 +1289,7 @@ static int cfg_cli_init(struct bt_mesh_model *model)
     return 0;
 }
 
+#if CONFIG_BLE_MESH_DEINIT
 static int cfg_cli_deinit(struct bt_mesh_model *model)
 {
     bt_mesh_config_client_t *client = NULL;
@@ -1319,8 +1323,13 @@ static int cfg_cli_deinit(struct bt_mesh_model *model)
 
     return 0;
 }
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 const struct bt_mesh_model_cb bt_mesh_cfg_cli_cb = {
     .init = cfg_cli_init,
+#if CONFIG_BLE_MESH_DEINIT
     .deinit = cfg_cli_deinit,
+#endif /* CONFIG_BLE_MESH_DEINIT */
 };
+
+#endif /* CONFIG_BLE_MESH_CFG_CLI */
