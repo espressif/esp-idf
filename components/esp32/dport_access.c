@@ -165,6 +165,9 @@ static void dport_access_init_core(void *arg)
     dport_access_end[core_id] = 0;
     dport_core_state[core_id] = DPORT_CORE_STATE_RUNNING;
 
+    /* If this fails then the minimum stack size for this config is too close to running out */
+    assert(uxTaskGetStackHighWaterMark(NULL) > 128);
+
     vTaskDelete(NULL);
 }
 #endif
