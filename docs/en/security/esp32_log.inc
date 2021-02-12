@@ -1,7 +1,7 @@
 
 .. first_boot_enc
 
-.. code-block:: bash
+.. code-block:: none
 
     --- idf_monitor on /dev/cu.SLAB_USBtoUART 115200 ---
     --- Quit: Ctrl+] | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H ---
@@ -74,7 +74,7 @@
 
 .. already_en_enc
 
-.. code-block:: bash
+.. code-block:: none
 
     rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
     configsip: 0, SPIWP:0xee
@@ -98,7 +98,7 @@
     I (67) boot:  1 phy_init         RF data          01 01 00010000 00001000
     I (75) boot:  2 factory          factory app      00 00 00020000 00100000
     I (82) boot: End of partition table
-  I (86) esp_image: segment 0: paddr=0x00020020 vaddr=0x3f400020 size=0x0808c ( 32908) map
+    I (86) esp_image: segment 0: paddr=0x00020020 vaddr=0x3f400020 size=0x0808c ( 32908) map
     I (107) esp_image: segment 1: paddr=0x000280b4 vaddr=0x3ffb0000 size=0x01ea4 (  7844) load
     I (111) esp_image: segment 2: paddr=0x00029f60 vaddr=0x40080000 size=0x00400 (  1024) load
     0x40080000: _WindowOverflow4 at esp-idf/esp-idf/components/freertos/xtensa_vectors.S:1778

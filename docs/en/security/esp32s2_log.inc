@@ -1,7 +1,7 @@
 
 .. first_boot_enc
 
-.. code-block:: bash
+.. code-block:: none
 
   ESP-ROM:esp32s2-rc4-20191025
   Build:Oct 25 2019
@@ -82,7 +82,7 @@
 
 .. already_en_enc
 
-.. code-block:: bash
+.. code-block:: none
 
   ESP-ROM:esp32s2-rc4-20191025
   Build:Oct 25 2019
