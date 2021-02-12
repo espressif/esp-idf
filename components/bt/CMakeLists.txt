@@ -599,3 +599,13 @@ if(CONFIG_BT_ENABLED)
         target_link_libraries(${COMPONENT_LIB} PUBLIC btdm_app btbb)
     endif()
 endif()
+
+if(CONFIG_BT_NIMBLE_MESH)
+    set_source_files_properties("host/nimble/nimble/nimble/host/mesh/src/net.c"
+        PROPERTIES COMPILE_FLAGS -Wno-type-limits)
+endif()
+
+if(CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE AND CONFIG_BT_NIMBLE_ENABLED)
+    # some variables in NimBLE are only used by asserts
+    target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-unused-but-set-variable -Wno-unused-variable)
+endif()

@@ -284,7 +284,7 @@ static void do_core_init(void)
     esp_secure_boot_init_checks();
 #endif
 
-    esp_err_t err;
+    esp_err_t err __attribute__((unused));
 
 #if CONFIG_SECURE_DISABLE_ROM_DL_MODE
     err = esp_efuse_disable_rom_download_mode();
@@ -323,6 +323,7 @@ static void do_core_init(void)
     esp_flash_app_init();
     esp_err_t flash_ret = esp_flash_init_default_chip();
     assert(flash_ret == ESP_OK);
+    (void)flash_ret;
 }
 
 static void do_secondary_init(void)

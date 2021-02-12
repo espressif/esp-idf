@@ -83,6 +83,7 @@ void esp_startup_start_app_common(void)
 												ESP_TASK_MAIN_STACK, NULL,
 												ESP_TASK_MAIN_PRIO, NULL, 0);
 	assert(res == pdTRUE);
+	(void)res;
 }
 
 static void main_task(void* args)

@@ -1935,6 +1935,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 				taskEXIT_CRITICAL(&xTaskQueueMutex);
 
 				configASSERT( suspended == 0 );
+				(void)suspended;
 				portYIELD_WITHIN_API();
 			}
 			else

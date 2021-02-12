@@ -288,7 +288,7 @@ esp_err_t esp_pm_configure(const void* vconfig)
 
     portENTER_CRITICAL(&s_switch_lock);
 
-    bool res = false;
+    bool res __attribute__((unused));
     res = rtc_clk_cpu_freq_mhz_to_config(max_freq_mhz, &s_cpu_freq_by_mode[PM_MODE_CPU_MAX]);
     assert(res);
     res = rtc_clk_cpu_freq_mhz_to_config(apb_max_freq, &s_cpu_freq_by_mode[PM_MODE_APB_MAX]);

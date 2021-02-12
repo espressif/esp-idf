@@ -148,8 +148,7 @@ void vPortExitCritical(void)
 void vPortSetupTimer(void)
 {
     /* set system timer interrupt vector */
-    esp_err_t err = esp_intr_alloc(ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE, ESP_INTR_FLAG_IRAM, vPortSysTickHandler, NULL, NULL);
-    assert(err == ESP_OK);
+    ESP_ERROR_CHECK(esp_intr_alloc(ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE, ESP_INTR_FLAG_IRAM, vPortSysTickHandler, NULL, NULL));
 
     /* configure the timer */
     systimer_hal_init();
