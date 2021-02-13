@@ -27,15 +27,14 @@ ESP-IDF 将使用 macOS 上默认安装的 Python 版本。
 
 - 强烈建议同时安装 ccache_ 以获得更快的编译速度。如有 HomeBrew_，可通过 MacPorts_ 上的 ``brew install ccache`` 或 ``sudo port install ccache`` 完成安装。
 
-.. note::
-    
+.. note::   
     如您在上述任何步骤中遇到以下错误::
 
     ``xcrun: error: invalid active developer path (/Library/Developer/CommandLineTools), missing xcrun at:/Library/Developer/CommandLineTools/usr/bin/xcrun``
 
     则必须安装 XCode 命令行工具，具体可运行 ``xcode-select --install``。
 
-安装并设置 Python 3 为默认版本
+安装 Python 3
 ---------------------------------------------
 
 `Catalina 10.15 发布说明`_ 中表示不推荐使用 Python 2.7 版本，在未来的 macOS 版本中也不会默认包含 Python 2.7。执行以下命令来检查您当前使用的 Python 版本::
@@ -48,31 +47,15 @@ ESP-IDF 将使用 macOS 上默认安装的 Python 版本。
 
 如果运行上述命令出现错误，则代表电脑上没有安装 Python 3。
 
-请根据以下步骤安装 Python 3 并使其成为默认解释器：
+请根据以下步骤安装 Python 3：
 
   - 使用 HomeBrew_ 进行安装的方法如下::
 
       brew install python3
-      ln -s /usr/local/bin/python3.8 /usr/local/bin/python
-
-    将上述的目录名 ``/usr/local/bin/python3.8`` 修改为 Python 3 所在的目录。您可以运行 ``which -a python3`` 来查看 Python 3 所在的目录。
 
   - 使用 MacPorts_ 进行安装的方法如下::
 
       sudo port install python38
-      sudo port select --set python python38
-
-现在您可以打开终端窗口验证默认运行的 Python 版本::
-
-  python --version
-
-如果输出结果类似于 ``Python 3.8.5`` 则代表安装成功。
-
-.. 注解::
-
-    上述设置为全局设置，同时会影响到其它应用。
-
-
 
 停用 Python 2 
 ====================
