@@ -24,3 +24,8 @@ if(CONFIG_ESP_TLS_USE_SE)
     idf_component_get_property(cryptoauthlib esp-cryptoauthlib COMPONENT_LIB)
     target_link_libraries(${COMPONENT_LIB} PUBLIC ${cryptoauthlib})
 endif()
+
+# Increase link multiplicity to get some lwip symbols correctly resolved by the linker
+# due to cyclic dependencies present in IDF for lwip/esp_netif/mbedtls
+idf_component_get_property(lwip lwip COMPONENT_LIB)
+set_property(TARGET ${lwip} APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 5)
