@@ -2202,6 +2202,9 @@ static void _mdns_dup_interface(mdns_if_t tcpip_if)
 {
     uint8_t i;
     mdns_if_t other_if = _mdns_get_other_if (tcpip_if);
+    if (other_if == MDNS_IF_MAX) {
+        return; // no other interface found
+    }
     for (i=0; i<MDNS_IP_PROTOCOL_MAX; i++) {
         if (_mdns_server->interfaces[other_if].pcbs[i].pcb) {
             //stop this interface and mark as dup
