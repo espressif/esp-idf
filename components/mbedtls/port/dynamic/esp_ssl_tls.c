@@ -89,7 +89,7 @@ int __wrap_mbedtls_ssl_read(mbedtls_ssl_context *ssl, unsigned char *buf, size_t
     ret = esp_mbedtls_add_rx_buffer(ssl);
     if (ret == MBEDTLS_ERR_SSL_CONN_EOF) {
         ESP_LOGD(TAG, "fail, the connection indicated an EOF");
-        return 0;
+        return ret;
     } else if (ret < 0) {
         ESP_LOGD(TAG, "fail, error=-0x%x", -ret);
         return ret;
