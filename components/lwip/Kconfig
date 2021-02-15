@@ -768,6 +768,24 @@ menu "LWIP"
 
     endmenu # SNTP
 
+    menu "LCP"
+
+        config LCP_ECHOINTERVAL
+            int "Echo interval (s)"
+            range 0 1000000
+            default 0
+            help
+                Interval in seconds between keepalive LCP echo requests, 0 to disable.
+
+        config LCP_MAXECHOFAILS
+            int "Maximum echo failures"
+            range 0 100000
+            default 3
+            help
+                Number of consecutive unanswered echo requests before failure is indicated.
+
+    endmenu # LCP
+
     config LWIP_ESP_LWIP_ASSERT
         bool "Enable LWIP ASSERT checks"
         default y

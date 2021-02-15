@@ -733,7 +733,23 @@
 #define PPP_DEBUG                       LWIP_DBG_OFF
 #endif
 
-#endif
+#endif  /* PPP SUPPORT */
+
+/*
+   ------------------------------------
+   --------- LCP Echo options ---------
+   ------------------------------------
+*/
+/**
+ * LCP_ECHOINTERVAL: Interval in seconds between keepalive LCP echo requests, 0 to disable.
+ */
+#define LCP_ECHOINTERVAL                CONFIG_LCP_ECHOINTERVAL
+
+/**
+ * LCP_MAXECHOFAILS: Number of consecutive unanswered echo requests before failure is indicated.
+ */
+#define LCP_MAXECHOFAILS                CONFIG_LCP_MAXECHOFAILS
+
 
 /*
    --------------------------------------
