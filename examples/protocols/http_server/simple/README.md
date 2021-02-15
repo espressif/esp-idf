@@ -20,5 +20,7 @@ The Example consists of HTTPD server demo with demostration of URI handling :
                 * since the server echoes back the request body, the two files should be same, as can be confirmed using : "cmp anyfile tmpfile"
             3. "curl -X PUT -d "0" 192.168.43.130:80/ctrl" - disable /hello and /echo handlers
             4. "curl -X PUT -d "1" 192.168.43.130:80/ctrl" -  enable /hello and /echo handlers
+            
+* If the server log shows "httpd_parse: parse_block: request URI/header too long", especially when handling POST requests, then you probably need to increase HTTPD_MAX_REQ_HDR_LEN, which you can find in the project configuration menu (`idf.py menuconfig`): Component config -> HTTP Server -> Max HTTP Request Header Length
 
 See the README.md file in the upper level 'examples' directory for more information about examples.
