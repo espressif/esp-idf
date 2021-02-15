@@ -19,6 +19,8 @@
 #include "led_strip.h"
 #include "driver/rmt.h"
 
+#define RMT_TX_CHANNEL RMT_CHANNEL_0
+
 static const char *TAG = "ws2812";
 #define STRIP_CHECK(a, str, goto_tag, ret_value, ...)                             \
     do                                                                            \
@@ -168,4 +170,38 @@ led_strip_t *led_strip_new_rmt_ws2812(const led_strip_config_t *config)
     return &ws2812->parent;
 err:
     return ret;
+}
+
+led_strip_t * led_strip_init(uint8_t channel, uint8_t gpio, uint16_t led_num)
+{
+    static led_strip_t *pStrip;
+
+    rmt_config_t config = RMT_DEFAULT_CONFIG_TX(gpio, channel);
+    // set counter clock to 40MHz
+    config.clk_div = 2;
+
+    ESP_ERROR_CHECK(rmt_config(&config));
+    ESP_ERROR_CHECK(rmt_driver_install(config.channel, 0, 0));
+
+    // install ws2812 driver
+    led_strip_config_t strip_config = LED_STRIP_DEFAULT_CONFIG(led_num, (led_strip_dev_t)config.channel);
+
+    pStrip = led_strip_new_rmt_ws2812(&strip_config);
+
+    if ( !pStrip ) {
+        ESP_LOGE(TAG, "install WS2812 driver failed");
+        return NULL;
+    }
+
+    // Clear LED strip (turn off all LEDs)
+    ESP_ERROR_CHECK(pStrip->clear(pStrip, 100));
+
+    return pStrip;
+}
+
+esp_err_t led_strip_denit(led_strip_t *strip)
+{
+    ws2812_t *ws2812 = __containerof(strip, ws2812_t, parent);
+    ESP_ERROR_CHECK(rmt_driver_uninstall(ws2812->rmt_channel));
+    return strip->del(strip);
 }

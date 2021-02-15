@@ -28,9 +28,9 @@ GPIO18 +-----------------+---|>| (WS2812)
 
 Open the project configuration menu (`idf.py menuconfig`). 
 
-In the `Example Connection Configuration` menu:
+In the `Example Configuration` menu:
 
-* Set the GPIO number used for transmitting the IR signal under `RMT TX GPIO` optin.
+* Set the GPIO number used for transmitting the IR signal under `RMT TX GPIO` option.
 * Set the number of LEDs in a strip under `Number of LEDS in a strip` option.
 
 ### Build and Flash
