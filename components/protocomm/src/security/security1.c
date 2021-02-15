@@ -175,6 +175,8 @@ static esp_err_t handle_session_command1(session_t *cur_session,
     return ESP_OK;
 }
 
+static esp_err_t sec1_new_session(protocomm_security_handle_t handle, uint32_t session_id);
+
 static esp_err_t handle_session_command0(session_t *cur_session,
                                          uint32_t session_id,
                                          SessionData *req, SessionData *resp,
@@ -186,8 +188,9 @@ static esp_err_t handle_session_command0(session_t *cur_session,
     int mbed_err;
 
     if (cur_session->state != SESSION_STATE_CMD0) {
-        ESP_LOGE(TAG, "Invalid state of session %d (expected %d)", SESSION_STATE_CMD0, cur_session->state);
-        return ESP_ERR_INVALID_STATE;
+        ESP_LOGW(TAG, "Invalid state of session %d (expected %d). Restarting session.",
+                SESSION_STATE_CMD0, cur_session->state);
+        sec1_new_session(cur_session, session_id);
     }
 
     if (in->sc0->client_pubkey.len != PUBLIC_KEY_LEN) {
