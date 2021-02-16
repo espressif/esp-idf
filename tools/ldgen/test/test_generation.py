@@ -1398,7 +1398,7 @@ class FlagTest(GenerationTest):
 
     def test_flags_basics(self):
         # Test that input section commands additions are done (keep, sort).
-        # Test that order dependent commands are properly generated (align, emit)
+        # Test that order dependent commands are properly generated (align, surround)
         # Normally, if an entry has the same mapping as parent, commands.
         #   are not emitted for them. However, if there are flags, they should be -
         #   only for the scheme entries that have flags, though.
@@ -1428,11 +1428,11 @@ class FlagTest(GenerationTest):
 archive: libfreertos.a
 entries:
     croutine (noflash_text);
-        text->iram0_text align(4, pre, post) emit(sym1, pre, post)                      #1
+        text->iram0_text align(4, pre, post) surround(sym1, pre, post)                      #1
     timers (default);
         text->flash_text keep sort(name)                                                #2
     timers (default);
-        rodata->flash_rodata emit(sym2, pre, post) align(4, pre, post)                  #3
+        rodata->flash_rodata surround(sym2, pre, post) align(4, pre, post)                  #3
 """
 
         self.add_fragments(mapping)
@@ -1489,7 +1489,7 @@ archive: *
 entries:
     # 1
     * (default);
-        text->flash_text emit(sym1) keep                            #2
+        text->flash_text surround(sym1) keep                            #2
 
 [mapping:test]
 archive: libfreertos.a
@@ -1551,7 +1551,7 @@ archive: libfreertos.a
 entries:
     # 1
     * (default);
-        text->flash_text emit(sym1) keep                            #2
+        text->flash_text surround(sym1) keep                            #2
     croutine:prvCheckPendingReadyList (noflash_text)                #3
 """
 
@@ -1607,7 +1607,7 @@ archive: libfreertos.a
 entries:
     # 1
     croutine (default);
-        text->flash_text emit(sym1) keep                            #2
+        text->flash_text surround(sym1) keep                            #2
     croutine:prvCheckPendingReadyList (noflash_text)                #3
 """
 
@@ -1658,7 +1658,7 @@ archive: *
 entries:
     # 1
     * (default);
-        text->flash_text emit(sym1) keep                            #2
+        text->flash_text surround(sym1) keep                            #2
 
 [mapping:test]
 archive: libfreertos.a
@@ -1720,7 +1720,7 @@ archive: libfreertos.a
 entries:
     # 1
     * (default);
-        text->flash_text emit(sym1) keep
+        text->flash_text surround(sym1) keep
     croutine (default)                                              #2
     croutine:prvCheckPendingReadyList (noflash_text)                #3
 """
@@ -1820,7 +1820,7 @@ entries:
 archive: *
 entries:
     * (default);
-        text->flash_text emit(sym1)
+        text->flash_text surround(sym1)
 """
         self.add_fragments(mapping)
 

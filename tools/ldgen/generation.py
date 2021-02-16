@@ -146,7 +146,7 @@ class EntityNode():
 
                 keep = False
                 sort = None
-                surround = []
+                surround_type = []
 
                 placement_flags = placement.flags if placement.flags is not None else []
 
@@ -155,12 +155,12 @@ class EntityNode():
                         keep = True
                     elif isinstance(flag, Mapping.Sort):
                         sort = (flag.first, flag.second)
-                    else:  # emit or align
-                        surround.append(flag)
+                    else:  # surround or align
+                        surround_type.append(flag)
 
-                for flag in surround:
+                for flag in surround_type:
                     if flag.pre:
-                        if isinstance(flag, Mapping.Emit):
+                        if isinstance(flag, Mapping.Surround):
                             commands[placement.target].append(SymbolAtAddress('_%s_start' % flag.symbol))
                         else:  # align
                             commands[placement.target].append(AlignAtAddress(flag.alignment))
@@ -181,9 +181,9 @@ class EntityNode():
                                                    [e.node.entity for e in subplacement.exclusions], keep, sort)
                         commands[placement.target].append(command)
 
-                for flag in surround:
+                for flag in surround_type:
                     if flag.post:
-                        if isinstance(flag, Mapping.Emit):
+                        if isinstance(flag, Mapping.Surround):
                             commands[placement.target].append(SymbolAtAddress('_%s_end' % flag.symbol))
                         else:  # align
                             commands[placement.target].append(AlignAtAddress(flag.alignment))

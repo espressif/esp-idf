@@ -274,7 +274,7 @@ class Mapping(Fragment):
         PRE_POST = (Optional(Suppress(',') + Suppress('pre').setParseAction(lambda: True).setResultsName('pre')) +
                     Optional(Suppress(',') + Suppress('post').setParseAction(lambda: True).setResultsName('post')))
 
-    class Emit(Flag):
+    class Surround(Flag):
 
         def __init__(self, symbol, pre=True, post=True):
             self.symbol = symbol
@@ -283,11 +283,11 @@ class Mapping(Fragment):
 
         @staticmethod
         def get_grammar():
-            # emit(symbol [, pre, post])
+            # surround(symbol [, pre, post])
             #
             # __symbol_start, __symbol_end is generated before and after
             # the corresponding input section description, respectively.
-            grammar = (Keyword('emit').suppress() +
+            grammar = (Keyword('surround').suppress() +
                        Suppress('(') +
                        Fragment.IDENTIFIER.setResultsName('symbol') +
                        Mapping.Flag.PRE_POST +
@@ -295,20 +295,20 @@ class Mapping(Fragment):
 
             def on_parse(tok):
                 if tok.pre == '' and tok.post == '':
-                    res = Mapping.Emit(tok.symbol)
+                    res = Mapping.Surround(tok.symbol)
                 elif tok.pre != '' and tok.post == '':
-                    res = Mapping.Emit(tok.symbol, tok.pre, False)
+                    res = Mapping.Surround(tok.symbol, tok.pre, False)
                 elif tok.pre == '' and tok.post != '':
-                    res = Mapping.Emit(tok.symbol, False, tok.post)
+                    res = Mapping.Surround(tok.symbol, False, tok.post)
                 else:
-                    res = Mapping.Emit(tok.symbol, tok.pre, tok.post)
+                    res = Mapping.Surround(tok.symbol, tok.pre, tok.post)
                 return res
 
             grammar.setParseAction(on_parse)
             return grammar
 
         def __eq__(self, other):
-            return (isinstance(other, Mapping.Emit) and
+            return (isinstance(other, Mapping.Surround) and
                     self.symbol == other.symbol and
                     self.pre == other.pre and
                     self.post == other.post)
@@ -442,7 +442,7 @@ class Mapping(Fragment):
         #       obj (scheme)
         #       * (scheme)
         # Flags can be specified for section->target in the scheme specified, ex:
-        #       obj (scheme); section->target emit(symbol), section2->target2 align(4)
+        #       obj (scheme); section->target surround(symbol), section2->target2 align(4)
         obj = Fragment.ENTITY.setResultsName('object')
         symbol = Suppress(':') + Fragment.IDENTIFIER.setResultsName('symbol')
         scheme = Suppress('(') + Fragment.IDENTIFIER.setResultsName('scheme') + Suppress(')')
@@ -450,7 +450,7 @@ class Mapping(Fragment):
         # The flags are specified for section->target in the scheme specified
         sections_target = Scheme.grammars['entries'].grammar
 
-        flag = Or([f.get_grammar() for f in [Mapping.Keep, Mapping.Align, Mapping.Emit, Mapping.Sort]])
+        flag = Or([f.get_grammar() for f in [Mapping.Keep, Mapping.Align, Mapping.Surround, Mapping.Sort]])
 
         section_target_flags = Group(sections_target + Group(OneOrMore(flag)).setResultsName('flags'))
 

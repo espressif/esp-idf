@@ -913,21 +913,21 @@ entries:
 archive: libmain.a
 entries:
     obj1 (default);
-        text->flash_text emit(sym1),
-        rodata->flash_rodata emit(sym2, pre),
-        data->dram0_data emit(sym3, post),
-        bss->dram0_bss emit(sym4, pre, post),
-        common->dram0_bss emit(sym5, pre, post) emit(sym6)
+        text->flash_text surround(sym1),
+        rodata->flash_rodata surround(sym2, pre),
+        data->dram0_data surround(sym3, post),
+        bss->dram0_bss surround(sym4, pre, post),
+        common->dram0_bss surround(sym5, pre, post) surround(sym6)
 """)
 
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
         fragment = fragment_file.fragments[0]
 
-        expected = [('text', 'flash_text', [Mapping.Emit('sym1', True, True)]),
-                    ('rodata', 'flash_rodata', [Mapping.Emit('sym2', True, False)]),
-                    ('data', 'dram0_data', [Mapping.Emit('sym3', False, True)]),
-                    ('bss', 'dram0_bss', [Mapping.Emit('sym4', True, True)]),
-                    ('common', 'dram0_bss', [Mapping.Emit('sym5', True, True), Mapping.Emit('sym6', True, True)])]
+        expected = [('text', 'flash_text', [Mapping.Surround('sym1', True, True)]),
+                    ('rodata', 'flash_rodata', [Mapping.Surround('sym2', True, False)]),
+                    ('data', 'dram0_data', [Mapping.Surround('sym3', False, True)]),
+                    ('bss', 'dram0_bss', [Mapping.Surround('sym4', True, True)]),
+                    ('common', 'dram0_bss', [Mapping.Surround('sym5', True, True), Mapping.Surround('sym6', True, True)])]
         actual = fragment.flags[('obj1', None, 'default')]
         self.assertEqual(expected, actual)
 
@@ -938,21 +938,21 @@ entries:
 archive: libmain.a
 entries:
     obj1 (default);
-        text->flash_text align(4) keep emit(sym1) align(8) sort(name),
-        rodata->flash_rodata keep align(4) keep emit(sym1) align(8) align(4) sort(name)
+        text->flash_text align(4) keep surround(sym1) align(8) sort(name),
+        rodata->flash_rodata keep align(4) keep surround(sym1) align(8) align(4) sort(name)
 """)
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
         fragment = fragment_file.fragments[0]
 
         expected = [('text', 'flash_text', [Mapping.Align(4, True, False),
                                             Mapping.Keep(),
-                                            Mapping.Emit('sym1', True, True),
+                                            Mapping.Surround('sym1', True, True),
                                             Mapping.Align(8, True, False),
                                             Mapping.Sort('name')]),
                     ('rodata', 'flash_rodata', [Mapping.Keep(),
                                                 Mapping.Align(4, True, False),
                                                 Mapping.Keep(),
-                                                Mapping.Emit('sym1', True, True),
+                                                Mapping.Surround('sym1', True, True),
                                                 Mapping.Align(8, True, False),
                                                 Mapping.Align(4, True, False),
                                                 Mapping.Sort('name')])]
@@ -968,19 +968,19 @@ entries:
 archive: libmain.a
 entries:
     obj1 (default);
-        text->flash_text align(4) keep emit(sym1) sort(name),
-        text->flash_text align(4) keep emit(sym1) sort(name)
+        text->flash_text align(4) keep surround(sym1) sort(name),
+        text->flash_text align(4) keep surround(sym1) sort(name)
 """)
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
         fragment = fragment_file.fragments[0]
 
         expected = [('text', 'flash_text', [Mapping.Align(4, True, False),
                                             Mapping.Keep(),
-                                            Mapping.Emit('sym1', True, True),
+                                            Mapping.Surround('sym1', True, True),
                                             Mapping.Sort('name')]),
                     ('text', 'flash_text', [Mapping.Align(4, True, False),
                                             Mapping.Keep(),
-                                            Mapping.Emit('sym1', True, True),
+                                            Mapping.Surround('sym1', True, True),
                                             Mapping.Sort('name')])]
         actual = fragment.flags[('obj1', None, 'default')]
         self.assertEqual(expected, actual)
@@ -995,20 +995,20 @@ entries:
 archive: libmain.a
 entries:
     obj1 (default);
-        text->flash_text align(4) keep emit(sym1) sort(name)
+        text->flash_text align(4) keep surround(sym1) sort(name)
     obj1 (default);
-        text->flash_text align(4) keep emit(sym1) sort(name)
+        text->flash_text align(4) keep surround(sym1) sort(name)
 """)
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
         fragment = fragment_file.fragments[0]
 
         expected = [('text', 'flash_text', [Mapping.Align(4, True, False),
                                             Mapping.Keep(),
-                                            Mapping.Emit('sym1', True, True),
+                                            Mapping.Surround('sym1', True, True),
                                             Mapping.Sort('name')]),
                     ('text', 'flash_text', [Mapping.Align(4, True, False),
                                             Mapping.Keep(),
-                                            Mapping.Emit('sym1', True, True),
+                                            Mapping.Surround('sym1', True, True),
                                             Mapping.Sort('name')])]
         actual = fragment.flags[('obj1', None, 'default')]
         self.assertEqual(expected, actual)
