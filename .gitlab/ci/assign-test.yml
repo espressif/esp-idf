@@ -1,6 +1,5 @@
 assign_test:
-  extends:
-    - .rules:assign_test:target_test-integration_test-weekend_test
+  extends: .rules:test:any_test
   tags:
     - assign_test
   image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG

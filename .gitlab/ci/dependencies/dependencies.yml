@@ -1,0 +1,142 @@
+.all_targets: &all_targets
+  - esp32
+  - esp32s2
+  - esp32s3
+  - esp32c3
+
+.target_test: &target_test
+  - example_test
+  - custom_test
+  - unit_test
+  - component_ut
+
+"build:{0}-{1}":
+  matrix:
+    - *target_test
+    - *all_targets
+  labels:
+    - build
+  patterns:
+    - build
+
+"build:example_test-esp32":
+  labels:
+    - build
+    - weekend_test  # only have esp32 jobs
+    - iperf_stress_test  # only have esp32 jobs
+  patterns:
+    - build
+    - example_test
+
+"build:{0}":
+  matrix:
+    - [windows, docker]
+  labels:
+    - build
+    - "{0}"
+  patterns:
+    - build
+    - "{0}"
+
+"build:macos":
+  labels:
+    - build
+    - macos
+    - macos_test  # for backward compatibility
+  patterns:
+    - build
+    - macos
+
+"build:docs":
+  labels:
+    - build
+    - docs
+    - build_docs  # for backward compatibility
+  patterns:
+    - docs
+  deploy:
+    - preview
+    - production
+
+"build":
+  labels:
+    - build
+  patterns:
+    - build
+
+"test:{0}-{1}":
+  matrix:
+    - *target_test
+    - *all_targets
+  labels:
+    - "{0}"
+    - "{0}_{1}"
+  patterns:
+    - "{0}"
+    - build
+    - "build-{0}"
+  included_in:
+    - "build:{0}-{1}"
+    - test:target_test
+    - test:any_test
+
+"test:component_ut-{0}":
+  matrix:
+    - *all_targets
+  labels:
+    - component_ut
+    - "component_ut_{0}"
+    - unit_test
+    - "unit_test_{0}"
+  patterns:
+    - component_ut
+    - build
+    - "build-component_ut-{0}"
+  included_in:
+    - "build:component_ut-{0}"
+    - test:target_test
+    - test:any_test
+
+# due to the lack of runners, c3 tests will only be triggered by label
+"test:unit_test-esp32c3":
+  labels:
+    - unit_test_esp32c3
+  patterns:
+    - unit_test
+    - build
+    - "build-unit_test-esp32c3"
+  included_in:
+    - "build:unit_test-esp32c3"
+
+"test:integration_test":
+  labels:
+    - "integration_test"
+  patterns:
+    - "integration_test"
+  included_in:
+    - "build:integration_test"
+    - test:target_test
+    - test:any_test
+
+"test:host_test":
+  labels:
+    - host_test
+  patterns:
+    - host_test
+  included_in:
+    - test:any_test
+
+"labels:{0}":
+  matrix:
+    - [weekend_test, iperf_stress_test, nvs_coverage]
+  labels:
+    - "{0}"
+  included_in:
+    - test:any_test
+
+"labels:fuzzer_test-weekend_test":
+  labels:
+    - fuzzer_test
+    - weekend_test
+  included_in:
+    - test:any_test
