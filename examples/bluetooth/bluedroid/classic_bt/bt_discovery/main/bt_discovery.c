@@ -149,7 +149,8 @@ static void update_device_info(esp_bt_gap_cb_param_t *param)
     }
 
     if (!esp_bt_gap_is_valid_cod(cod) ||
-            !(esp_bt_gap_get_cod_major_dev(cod) == ESP_BT_COD_MAJOR_DEV_PHONE)) {
+	    (!(esp_bt_gap_get_cod_major_dev(cod) == ESP_BT_COD_MAJOR_DEV_PHONE) &&
+             !(esp_bt_gap_get_cod_major_dev(cod) == ESP_BT_COD_MAJOR_DEV_AV))) {
         return;
     }
 
