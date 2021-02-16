@@ -609,15 +609,27 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
     if (config->use_global_ca_store == true) {
         esp_transport_ssl_enable_global_ca_store(ssl);
     } else if (config->cert_pem) {
-        esp_transport_ssl_set_cert_data(ssl, config->cert_pem, strlen(config->cert_pem));
+        if (!config->cert_len) {
+            esp_transport_ssl_set_cert_data(ssl, config->cert_pem, strlen(config->cert_pem));
+        } else {
+            esp_transport_ssl_set_cert_data_der(ssl, config->cert_pem, config->cert_len);
+        }
     }
 
     if (config->client_cert_pem) {
-        esp_transport_ssl_set_client_cert_data(ssl, config->client_cert_pem, strlen(config->client_cert_pem));
+        if (!config->client_cert_len) {
+            esp_transport_ssl_set_client_cert_data(ssl, config->client_cert_pem, strlen(config->client_cert_pem));
+        } else {
+            esp_transport_ssl_set_client_cert_data_der(ssl, config->client_cert_pem, config->client_cert_len);
+        }
     }
 
     if (config->client_key_pem) {
-        esp_transport_ssl_set_client_key_data(ssl, config->client_key_pem, strlen(config->client_key_pem));
+        if (!config->client_key_len) {
+            esp_transport_ssl_set_client_key_data(ssl, config->client_key_pem, strlen(config->client_key_pem));
+        } else {
+            esp_transport_ssl_set_client_key_data_der(ssl, config->client_key_pem, config->client_key_len);
+        }
     }
 
     if (config->skip_cert_common_name_check) {
