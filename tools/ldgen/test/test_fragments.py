@@ -906,28 +906,20 @@ entries:
         text->iram0_text sort(name) sort(alignment)
 """)
 
-    def test_emit_flag(self):
+    def test_surround_flag(self):
         # Test parsing combinations and orders of flags
         test_fragment = self.create_fragment_file(u"""
 [mapping:map]
 archive: libmain.a
 entries:
     obj1 (default);
-        text->flash_text surround(sym1),
-        rodata->flash_rodata surround(sym2, pre),
-        data->dram0_data surround(sym3, post),
-        bss->dram0_bss surround(sym4, pre, post),
-        common->dram0_bss surround(sym5, pre, post) surround(sym6)
+        text->flash_text surround(sym1)
 """)
 
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
         fragment = fragment_file.fragments[0]
 
-        expected = [('text', 'flash_text', [Mapping.Surround('sym1', True, True)]),
-                    ('rodata', 'flash_rodata', [Mapping.Surround('sym2', True, False)]),
-                    ('data', 'dram0_data', [Mapping.Surround('sym3', False, True)]),
-                    ('bss', 'dram0_bss', [Mapping.Surround('sym4', True, True)]),
-                    ('common', 'dram0_bss', [Mapping.Surround('sym5', True, True), Mapping.Surround('sym6', True, True)])]
+        expected = [('text', 'flash_text', [Mapping.Surround('sym1')])]
         actual = fragment.flags[('obj1', None, 'default')]
         self.assertEqual(expected, actual)
 
@@ -946,13 +938,13 @@ entries:
 
         expected = [('text', 'flash_text', [Mapping.Align(4, True, False),
                                             Mapping.Keep(),
-                                            Mapping.Surround('sym1', True, True),
+                                            Mapping.Surround('sym1'),
                                             Mapping.Align(8, True, False),
                                             Mapping.Sort('name')]),
                     ('rodata', 'flash_rodata', [Mapping.Keep(),
                                                 Mapping.Align(4, True, False),
                                                 Mapping.Keep(),
-                                                Mapping.Surround('sym1', True, True),
+                                                Mapping.Surround('sym1'),
                                                 Mapping.Align(8, True, False),
                                                 Mapping.Align(4, True, False),
                                                 Mapping.Sort('name')])]
@@ -976,11 +968,11 @@ entries:
 
         expected = [('text', 'flash_text', [Mapping.Align(4, True, False),
                                             Mapping.Keep(),
-                                            Mapping.Surround('sym1', True, True),
+                                            Mapping.Surround('sym1'),
                                             Mapping.Sort('name')]),
                     ('text', 'flash_text', [Mapping.Align(4, True, False),
                                             Mapping.Keep(),
-                                            Mapping.Surround('sym1', True, True),
+                                            Mapping.Surround('sym1'),
                                             Mapping.Sort('name')])]
         actual = fragment.flags[('obj1', None, 'default')]
         self.assertEqual(expected, actual)
@@ -1004,11 +996,11 @@ entries:
 
         expected = [('text', 'flash_text', [Mapping.Align(4, True, False),
                                             Mapping.Keep(),
-                                            Mapping.Surround('sym1', True, True),
+                                            Mapping.Surround('sym1'),
                                             Mapping.Sort('name')]),
                     ('text', 'flash_text', [Mapping.Align(4, True, False),
                                             Mapping.Keep(),
-                                            Mapping.Surround('sym1', True, True),
+                                            Mapping.Surround('sym1'),
                                             Mapping.Sort('name')])]
         actual = fragment.flags[('obj1', None, 'default')]
         self.assertEqual(expected, actual)

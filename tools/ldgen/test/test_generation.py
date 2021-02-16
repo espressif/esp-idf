@@ -1410,29 +1410,29 @@ class FlagTest(GenerationTest):
         #
         # flash_rodata
         #   *((EXCLUDE_FILE(libfreertos:timers) .rodata ...)                            C
-        #   _sym2_start                                                                D.1
+        #   _sym2_start                                                                 D.1
         #   . = ALIGN(4)                                                                E.1
         #   KEEP(* (EXCLUDE_FILE(libfreertos:timers) .rodata ...)                       F
-        #   _sym2_end                                                                  D.2
+        #   _sym2_end                                                                   D.2
         #   . = ALIGN(4)                                                                E.2
         #
         # iram0_text
         #   *(.iram .iram.*)
         #   . = ALIGN(4)                                                                G.1
-        #   _sym1_start                                                                H.1
+        #   _sym1_start                                                                 H.1
         #   libfreertos.a:croutine(.text .literal ...)                                  I
         #   . = ALIGN(4)                                                                G.2
-        #   _sym1_end                                                                  H.2
+        #   _sym1_end                                                                   H.2
         mapping = u"""
 [mapping:test]
 archive: libfreertos.a
 entries:
     croutine (noflash_text);
-        text->iram0_text align(4, pre, post) surround(sym1, pre, post)                      #1
+        text->iram0_text align(4, pre, post) surround(sym1)                             #1
     timers (default);
         text->flash_text keep sort(name)                                                #2
     timers (default);
-        rodata->flash_rodata surround(sym2, pre, post) align(4, pre, post)                  #3
+        rodata->flash_rodata surround(sym2) align(4, pre, post)                         #3
 """
 
         self.add_fragments(mapping)
@@ -1475,10 +1475,10 @@ entries:
         # are included in the flags.
         #
         # flash_text
-        #   _sym1_start                                                                A.1
+        #   _sym1_start                                                                 A.1
         #   KEEP(* (EXCLUDE_FILE(libfreertos:croutine).text ...)                        B
         #   KEEP(libfreertos.a:croutine(...)))                                          C
-        #   _sym1_end                                                                  A.2
+        #   _sym1_end                                                                   A.2
         #
         # iram0_text
         #   *(.iram .iram.*)
@@ -1494,7 +1494,7 @@ entries:
 [mapping:test]
 archive: libfreertos.a
 entries:
-    croutine:prvCheckPendingReadyList (noflash_text)                #3
+    croutine:prvCheckPendingReadyList (noflash_text)                    #3
 """
 
         self.generation.mappings = {}
@@ -1537,10 +1537,10 @@ entries:
         #
         # flash_text
         #   *(EXCLUDE_FILE(libfreertos.a).text  ...)
-        #   _sym1_start                                                                A.1
+        #   _sym1_start                                                                 A.1
         #   KEEP(libfreertos.a(EXCLUDE_FILE(libfreertos:croutine).text.* ...))          B
         #   KEEP(libfreertos.a:croutine(...)))                                          C
-        #   _sym1_end                                                                  A.2
+        #   _sym1_end                                                                   A.2
         #
         # iram0_text
         #   *(.iram .iram.*)
@@ -1552,7 +1552,7 @@ entries:
     # 1
     * (default);
         text->flash_text surround(sym1) keep                            #2
-    croutine:prvCheckPendingReadyList (noflash_text)                #3
+    croutine:prvCheckPendingReadyList (noflash_text)                    #3
 """
 
         self.add_fragments(mapping)
@@ -1594,9 +1594,9 @@ entries:
         #
         # flash_text
         #   *(EXCLUDE_FILE(libfreertos.a).text  ...)
-        #   _sym1_start                                                                A.1
+        #   _sym1_start                                                                 A.1
         #   KEEP(libfreertos.a:croutine(...)))                                          B
-        #   _sym1_end                                                                  A.2
+        #   _sym1_end                                                                   A.2
         #
         # iram0_text
         #   *(.iram .iram.*)
@@ -1608,7 +1608,7 @@ entries:
     # 1
     croutine (default);
         text->flash_text surround(sym1) keep                            #2
-    croutine:prvCheckPendingReadyList (noflash_text)                #3
+    croutine:prvCheckPendingReadyList (noflash_text)                    #3
 """
 
         self.add_fragments(mapping)
@@ -1644,9 +1644,9 @@ entries:
         # Explicit commands are separated from the parent's flags.
         #
         # flash_text
-        #   _sym1_start                                                                A.1
+        #   _sym1_start                                                                 A.1
         #   KEEP(* (EXCLUDE_FILE(libfreertos:croutine).text ...)                        B
-        #   _sym1_end                                                                  A.2
+        #   _sym1_end                                                                   A.2
         #   KEEP(libfreertos.a:croutine(...)))                                          C
         #
         # iram0_text
@@ -1663,8 +1663,8 @@ entries:
 [mapping:test]
 archive: libfreertos.a
 entries:
-    croutine (default)                                              #3
-    croutine:prvCheckPendingReadyList (noflash_text)                #4
+    croutine (default)                                                  #3
+    croutine:prvCheckPendingReadyList (noflash_text)                    #4
 """
 
         self.generation.mappings = {}
@@ -1706,9 +1706,9 @@ entries:
         #
         # flash_text
         #   *(EXCLUDE_FILE(libfreertos.a).text  ...)
-        #   _sym1_start                                                                A.1
+        #   _sym1_start                                                                 A.1
         #   KEEP(libfreertos.a(EXCLUDE_FILE(libfreertos:croutine).text.* ...))          B
-        #   _sym1_end                                                                  A.2
+        #   _sym1_end                                                                   A.2
         #   KEEP(libfreertos.a:croutine(...)))                                          C
         #
         # iram0_text

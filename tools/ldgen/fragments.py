@@ -276,42 +276,28 @@ class Mapping(Fragment):
 
     class Surround(Flag):
 
-        def __init__(self, symbol, pre=True, post=True):
+        def __init__(self, symbol):
             self.symbol = symbol
-            self.pre = pre
-            self.post = post
+            self.pre = True
+            self.post = True
 
         @staticmethod
         def get_grammar():
-            # surround(symbol [, pre, post])
+            # surround(symbol)
             #
             # __symbol_start, __symbol_end is generated before and after
             # the corresponding input section description, respectively.
             grammar = (Keyword('surround').suppress() +
                        Suppress('(') +
                        Fragment.IDENTIFIER.setResultsName('symbol') +
-                       Mapping.Flag.PRE_POST +
                        Suppress(')'))
 
-            def on_parse(tok):
-                if tok.pre == '' and tok.post == '':
-                    res = Mapping.Surround(tok.symbol)
-                elif tok.pre != '' and tok.post == '':
-                    res = Mapping.Surround(tok.symbol, tok.pre, False)
-                elif tok.pre == '' and tok.post != '':
-                    res = Mapping.Surround(tok.symbol, False, tok.post)
-                else:
-                    res = Mapping.Surround(tok.symbol, tok.pre, tok.post)
-                return res
-
-            grammar.setParseAction(on_parse)
+            grammar.setParseAction(lambda tok: Mapping.Surround(tok.symbol))
             return grammar
 
         def __eq__(self, other):
             return (isinstance(other, Mapping.Surround) and
-                    self.symbol == other.symbol and
-                    self.pre == other.pre and
-                    self.post == other.post)
+                    self.symbol == other.symbol)
 
     class Align(Flag):
 
