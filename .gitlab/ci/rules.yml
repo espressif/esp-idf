@@ -12,19 +12,14 @@
   - "CONTRIBUTING.rst"
 
 .patterns-c-files: &patterns-c-files
+  - ".gitlab/ci/static-code-analysis.yml"
   - "**/*.{c,C}"
   - "**/*.{h,H}"
   - "components/**/Kconfig"
   - "components/**/CMakeList.txt"
 
 .patterns-python-files: &patterns-python-files
-  - "**/*.py"
-
-.patterns-static-code-analysis: &patterns-static-code-analysis
   - ".gitlab/ci/static-code-analysis.yml"
-  - "tools/ci/static-analysis-rules.yml"
-  - "**/*.{c,C}"
-  - "**/*.{h,H}"
   - "**/*.py"
 
 .patterns-example_test: &patterns-example_test
@@ -203,7 +198,9 @@
 .rules:patterns:static-code-analysis-preview:
   rules:
     - <<: *if-dev-push
-      changes: *patterns-static-code-analysis
+      changes: *patterns-c-files
+    - <<: *if-dev-push
+      changes: *patterns-python-files
 
 # DO NOT place comments or maintain any code from this line
 #
