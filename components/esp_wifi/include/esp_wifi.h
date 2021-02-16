@@ -228,7 +228,7 @@ extern uint64_t g_wifi_feature_caps;
     .feature_caps = g_wifi_feature_caps, \
     .sta_disconnected_pm = WIFI_STA_DISCONNECTED_PM_ENABLED,  \
     .magic = WIFI_INIT_CONFIG_MAGIC\
-};
+}
 
 /**
   * @brief  Initialize WiFi
