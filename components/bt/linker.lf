@@ -9,7 +9,7 @@ entries:
     data -> dram0_data
 
 # For the following fragments, order matters for
-# 'align(4, post) surround(sym)', which generates:
+# 'ALIGN(4, post) SURROUND(sym)', which generates:
 #
 #   _sym_start
 #   ...
@@ -20,8 +20,8 @@ entries:
 archive: libbt.a
 entries:
     * (bt_start_end);
-        bss_common -> dram0_bss align(4, post) surround(bt_bss),
-        data -> dram0_data  align(4, post) surround(bt_data)
+        bss_common -> dram0_bss ALIGN(4, post) SURROUND(bt_bss),
+        data -> dram0_data  ALIGN(4, post) SURROUND(bt_data)
     if ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY = y:
         * (extram_bss)
 
@@ -29,12 +29,12 @@ entries:
 archive: libbtdm_app.a
 entries:
     * (bt_start_end);
-        bss_common -> dram0_bss align(4, post) surround(btdm_bss),
-        data -> dram0_data align(4, post) surround(btdm_data)
+        bss_common -> dram0_bss ALIGN(4, post) SURROUND(btdm_bss),
+        data -> dram0_data ALIGN(4, post) SURROUND(btdm_data)
 
 [mapping:nimble]
 archive: libnimble.a
 entries:
     * (bt_start_end);
-        bss_common -> dram0_bss align(4, post) surround(nimble_bss),
-        data -> dram0_data align(4, post) surround(nimble_data)
+        bss_common -> dram0_bss ALIGN(4, post) SURROUND(nimble_bss),
+        data -> dram0_data ALIGN(4, post) SURROUND(nimble_data)

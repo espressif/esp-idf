@@ -137,7 +137,7 @@ class InputSectionDescTest(unittest.TestCase):
         self.assertEqual(expected, str(desc))
 
     def test_keep(self):
-        # Test keep
+        # Test KEEP
         expected = 'KEEP(*libfreertos.a:croutine.*( ))'
 
         desc = InputSectionDesc(Entity('libfreertos.a', 'croutine'), [], keep=True)

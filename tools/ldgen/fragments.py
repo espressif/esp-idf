@@ -283,11 +283,11 @@ class Mapping(Fragment):
 
         @staticmethod
         def get_grammar():
-            # surround(symbol)
+            # SURROUND(symbol)
             #
             # __symbol_start, __symbol_end is generated before and after
             # the corresponding input section description, respectively.
-            grammar = (Keyword('surround').suppress() +
+            grammar = (Keyword('SURROUND').suppress() +
                        Suppress('(') +
                        Fragment.IDENTIFIER.setResultsName('symbol') +
                        Suppress(')'))
@@ -308,8 +308,8 @@ class Mapping(Fragment):
 
         @staticmethod
         def get_grammar():
-            # align(alignment, [, pre, post])
-            grammar = (Keyword('align').suppress() +
+            # ALIGN(alignment, [, pre, post])
+            grammar = (Keyword('ALIGN').suppress() +
                        Suppress('(') +
                        Word(nums).setResultsName('alignment') +
                        Mapping.Flag.PRE_POST +
@@ -343,7 +343,7 @@ class Mapping(Fragment):
 
         @staticmethod
         def get_grammar():
-            grammar = Keyword('keep').setParseAction(Mapping.Keep)
+            grammar = Keyword('KEEP').setParseAction(Mapping.Keep)
             return grammar
 
         def __eq__(self, other):
@@ -361,9 +361,9 @@ class Mapping(Fragment):
 
         @staticmethod
         def get_grammar():
-            # sort(sort_by_first [, sort_by_second])
+            # SORT(sort_by_first [, sort_by_second])
             keywords = Keyword('name') | Keyword('alignment') | Keyword('init_priority')
-            grammar = (Keyword('sort').suppress() + Suppress('(') +
+            grammar = (Keyword('SORT').suppress() + Suppress('(') +
                        keywords.setResultsName('first') +
                        Optional(Suppress(',') + keywords.setResultsName('second')) + Suppress(')'))
 
@@ -428,7 +428,7 @@ class Mapping(Fragment):
         #       obj (scheme)
         #       * (scheme)
         # Flags can be specified for section->target in the scheme specified, ex:
-        #       obj (scheme); section->target surround(symbol), section2->target2 align(4)
+        #       obj (scheme); section->target SURROUND(symbol), section2->target2 ALIGN(4)
         obj = Fragment.ENTITY.setResultsName('object')
         symbol = Suppress(':') + Fragment.IDENTIFIER.setResultsName('symbol')
         scheme = Suppress('(') + Fragment.IDENTIFIER.setResultsName('scheme') + Suppress(')')

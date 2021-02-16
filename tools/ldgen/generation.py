@@ -155,14 +155,14 @@ class EntityNode():
                         keep = True
                     elif isinstance(flag, Mapping.Sort):
                         sort = (flag.first, flag.second)
-                    else:  # surround or align
+                    else:  # SURROUND or ALIGN
                         surround_type.append(flag)
 
                 for flag in surround_type:
                     if flag.pre:
                         if isinstance(flag, Mapping.Surround):
                             commands[placement.target].append(SymbolAtAddress('_%s_start' % flag.symbol))
-                        else:  # align
+                        else:  # ALIGN
                             commands[placement.target].append(AlignAtAddress(flag.alignment))
 
                 # This is for expanded object node and symbol node placements without checking for
@@ -185,7 +185,7 @@ class EntityNode():
                     if flag.post:
                         if isinstance(flag, Mapping.Surround):
                             commands[placement.target].append(SymbolAtAddress('_%s_end' % flag.symbol))
-                        else:  # align
+                        else:  # ALIGN
                             commands[placement.target].append(AlignAtAddress(flag.alignment))
 
         return commands

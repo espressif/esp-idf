@@ -1397,8 +1397,8 @@ class FlagTest(GenerationTest):
     # with flags.
 
     def test_flags_basics(self):
-        # Test that input section commands additions are done (keep, sort).
-        # Test that order dependent commands are properly generated (align, surround)
+        # Test that input section commands additions are done (KEEP, SORT).
+        # Test that order dependent commands are properly generated (ALIGN, SURROUND)
         # Normally, if an entry has the same mapping as parent, commands.
         #   are not emitted for them. However, if there are flags, they should be -
         #   only for the scheme entries that have flags, though.
@@ -1428,11 +1428,11 @@ class FlagTest(GenerationTest):
 archive: libfreertos.a
 entries:
     croutine (noflash_text);
-        text->iram0_text align(4, pre, post) surround(sym1)                             #1
+        text->iram0_text ALIGN(4, pre, post) SURROUND(sym1)                             #1
     timers (default);
-        text->flash_text keep sort(name)                                                #2
+        text->flash_text KEEP SORT(name)                                                #2
     timers (default);
-        rodata->flash_rodata surround(sym2) align(4, pre, post)                         #3
+        rodata->flash_rodata SURROUND(sym2) ALIGN(4, pre, post)                         #3
 """
 
         self.add_fragments(mapping)
@@ -1489,7 +1489,7 @@ archive: *
 entries:
     # 1
     * (default);
-        text->flash_text surround(sym1) keep                            #2
+        text->flash_text SURROUND(sym1) KEEP                            #2
 
 [mapping:test]
 archive: libfreertos.a
@@ -1509,7 +1509,7 @@ entries:
         # Command for #2, pre                                          A.1
         flash_text.insert(0, SymbolAtAddress('_sym1_start'))
 
-        # Command for #1 with keep                                     B
+        # Command for #1 with KEEP                                     B
         # and exclusion for #3
         flash_text[1].keep = True
         flash_text[1].exclusions.add(CROUTINE)
@@ -1551,7 +1551,7 @@ archive: libfreertos.a
 entries:
     # 1
     * (default);
-        text->flash_text surround(sym1) keep                            #2
+        text->flash_text SURROUND(sym1) KEEP                            #2
     croutine:prvCheckPendingReadyList (noflash_text)                    #3
 """
 
@@ -1567,7 +1567,7 @@ entries:
         flash_text.append(SymbolAtAddress('_sym1_start'))
         flash_text[0].exclusions.add(FREERTOS)
 
-        # Command for #1 with keep                                     B
+        # Command for #1 with KEEP                                     B
         # and exclusion for #3
         flash_text.append(InputSectionDesc(FREERTOS, flash_text[0].sections, [CROUTINE], keep=True))
 
@@ -1607,7 +1607,7 @@ archive: libfreertos.a
 entries:
     # 1
     croutine (default);
-        text->flash_text surround(sym1) keep                            #2
+        text->flash_text SURROUND(sym1) KEEP                            #2
     croutine:prvCheckPendingReadyList (noflash_text)                    #3
 """
 
@@ -1658,7 +1658,7 @@ archive: *
 entries:
     # 1
     * (default);
-        text->flash_text surround(sym1) keep                            #2
+        text->flash_text SURROUND(sym1) KEEP                            #2
 
 [mapping:test]
 archive: libfreertos.a
@@ -1679,7 +1679,7 @@ entries:
         # Command for #2, pre                                          A.1
         flash_text.insert(0, SymbolAtAddress('_sym1_start'))
 
-        # Command for #1 with keep                                     B
+        # Command for #1 with KEEP                                     B
         # and exclusion for #3
         flash_text[1].keep = True
         flash_text[1].exclusions.add(CROUTINE)
@@ -1720,7 +1720,7 @@ archive: libfreertos.a
 entries:
     # 1
     * (default);
-        text->flash_text surround(sym1) keep
+        text->flash_text SURROUND(sym1) KEEP
     croutine (default)                                              #2
     croutine:prvCheckPendingReadyList (noflash_text)                #3
 """
@@ -1737,7 +1737,7 @@ entries:
         flash_text.append(SymbolAtAddress('_sym1_start'))
         flash_text[0].exclusions.add(FREERTOS)
 
-        # Command for #1 with keep                                     B
+        # Command for #1 with KEEP                                     B
         # and exclusion for #3
         flash_text.append(InputSectionDesc(FREERTOS, flash_text[0].sections, [CROUTINE], keep=True))
 
@@ -1766,7 +1766,7 @@ entries:
 archive: *
 entries:
     * (default);
-        text->flash_text keep
+        text->flash_text KEEP
 """
 
         self.add_fragments(mapping)
@@ -1787,13 +1787,13 @@ entries:
 archive: *
 entries:
     * (default);
-        text->flash_text keep
+        text->flash_text KEEP
 
 [mapping:default_add_flag_2]
 archive: *
 entries:
     * (default);
-        text->flash_text keep
+        text->flash_text KEEP
 """
 
         self.add_fragments(mapping)
@@ -1814,13 +1814,13 @@ entries:
 archive: *
 entries:
     * (default);
-        text->flash_text align(2)
+        text->flash_text ALIGN(2)
 
 [mapping:default_add_flag_2]
 archive: *
 entries:
     * (default);
-        text->flash_text surround(sym1)
+        text->flash_text SURROUND(sym1)
 """
         self.add_fragments(mapping)
 

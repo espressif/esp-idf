@@ -818,8 +818,8 @@ entries:
 archive: libmain.a
 entries:
     obj1 (default);
-        text->flash_text keep,
-        rodata->flash_rodata keep keep
+        text->flash_text KEEP,
+        rodata->flash_rodata KEEP KEEP
 """)
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
 
@@ -838,11 +838,11 @@ entries:
 archive: libmain.a
 entries:
     obj1 (default);
-        text->flash_text align(8),
-        rodata->flash_rodata align(8, pre),
-        data->dram0_data align(8, pre, post),
-        bss->dram0_bss align(8, post),
-        common->dram0_bss align(8, pre, post) align(8)
+        text->flash_text ALIGN(8),
+        rodata->flash_rodata ALIGN(8, pre),
+        data->dram0_data ALIGN(8, pre, post),
+        bss->dram0_bss ALIGN(8, post),
+        common->dram0_bss ALIGN(8, pre, post) ALIGN(8)
 """)
 
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
@@ -863,7 +863,7 @@ entries:
 archive: libmain.a
 entries:
     obj1 (noflash)
-        text->iram0_text align(8, post, pre)
+        text->iram0_text ALIGN(8, post, pre)
 """)
 
         with self.assertRaises(ParseFatalException):
@@ -876,13 +876,13 @@ entries:
 archive: libmain.a
 entries:
     obj1 (default);
-        text->flash_text sort(name),
-        rodata->flash_rodata sort(alignment),
-        data->dram0_data sort(init_priority),
-        bss->dram0_bss sort(name, alignment),
-        common->dram0_bss sort(alignment, name),
-        iram->iram0_text sort(name, name),
-        dram->dram0_data sort(alignment, alignment)
+        text->flash_text SORT(name),
+        rodata->flash_rodata SORT(alignment),
+        data->dram0_data SORT(init_priority),
+        bss->dram0_bss SORT(name, alignment),
+        common->dram0_bss SORT(alignment, name),
+        iram->iram0_text SORT(name, name),
+        dram->dram0_data SORT(alignment, alignment)
 """)
 
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
@@ -903,7 +903,7 @@ entries:
 archive: libmain.a
 entries:
     obj1 (default)
-        text->iram0_text sort(name) sort(alignment)
+        text->iram0_text SORT(name) SORT(alignment)
 """)
 
     def test_surround_flag(self):
@@ -913,7 +913,7 @@ entries:
 archive: libmain.a
 entries:
     obj1 (default);
-        text->flash_text surround(sym1)
+        text->flash_text SURROUND(sym1)
 """)
 
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
@@ -930,8 +930,8 @@ entries:
 archive: libmain.a
 entries:
     obj1 (default);
-        text->flash_text align(4) keep surround(sym1) align(8) sort(name),
-        rodata->flash_rodata keep align(4) keep surround(sym1) align(8) align(4) sort(name)
+        text->flash_text ALIGN(4) KEEP SURROUND(sym1) ALIGN(8) SORT(name),
+        rodata->flash_rodata KEEP ALIGN(4) KEEP SURROUND(sym1) ALIGN(8) ALIGN(4) SORT(name)
 """)
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
         fragment = fragment_file.fragments[0]
@@ -960,8 +960,8 @@ entries:
 archive: libmain.a
 entries:
     obj1 (default);
-        text->flash_text align(4) keep surround(sym1) sort(name),
-        text->flash_text align(4) keep surround(sym1) sort(name)
+        text->flash_text ALIGN(4) KEEP SURROUND(sym1) SORT(name),
+        text->flash_text ALIGN(4) KEEP SURROUND(sym1) SORT(name)
 """)
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
         fragment = fragment_file.fragments[0]
@@ -987,9 +987,9 @@ entries:
 archive: libmain.a
 entries:
     obj1 (default);
-        text->flash_text align(4) keep surround(sym1) sort(name)
+        text->flash_text ALIGN(4) KEEP SURROUND(sym1) SORT(name)
     obj1 (default);
-        text->flash_text align(4) keep surround(sym1) sort(name)
+        text->flash_text ALIGN(4) KEEP SURROUND(sym1) SORT(name)
 """)
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
         fragment = fragment_file.fragments[0]
