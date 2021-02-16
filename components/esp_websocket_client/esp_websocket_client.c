@@ -329,8 +329,8 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
     ESP_WS_CLIENT_MEM_CHECK(TAG, tcp, goto _websocket_init_fail);
 
     esp_transport_set_default_port(tcp, WEBSOCKET_TCP_DEFAULT_PORT);
-    esp_transport_tcp_set_keep_alive(tcp, &client->keep_alive_cfg);
     esp_transport_list_add(client->transport_list, tcp, "_tcp"); // need to save to transport list, for cleanup
+    esp_transport_tcp_set_keep_alive(tcp, &client->keep_alive_cfg);
 
 
     esp_transport_handle_t ws = esp_transport_ws_init(tcp);
@@ -347,6 +347,7 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
     ESP_WS_CLIENT_MEM_CHECK(TAG, ssl, goto _websocket_init_fail);
 
     esp_transport_set_default_port(ssl, WEBSOCKET_SSL_DEFAULT_PORT);
+    esp_transport_list_add(client->transport_list, ssl, "_ssl"); // need to save to transport list, for cleanup
     if (config->use_global_ca_store == true) {
         esp_transport_ssl_enable_global_ca_store(ssl);
     } else if (config->cert_pem) {
@@ -374,7 +375,6 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
         esp_transport_ssl_skip_common_name_check(ssl);
     }
     esp_transport_ssl_set_keep_alive(ssl, &client->keep_alive_cfg);
-    esp_transport_list_add(client->transport_list, ssl, "_ssl"); // need to save to transport list, for cleanup
 
     esp_transport_handle_t wss = esp_transport_ws_init(ssl);
     ESP_WS_CLIENT_MEM_CHECK(TAG, wss, goto _websocket_init_fail);
