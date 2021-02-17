@@ -22,10 +22,12 @@ Test applications are treated the same way as ESP-IDF examples, so each project 
 
 For each project in test_apps (and also examples):
 
-* If a file `sdkconfig.ci` exists then it's built as the `default` CI config (same as if this file was named `sdkconfig.ci.default`)
-* If any files `sdkconfig.ci.<CONFIG>` exist then these are built as alternative configs, with the specified `<CONFIG>` name.
+* If a file `sdkconfig.ci` exists then it's built as the `default` CI config.
+* If any additional files `sdkconfig.ci.<CONFIG>` exist then these are built as alternative configs, with the specified `<CONFIG>` name.
 
-* By default, every CI configurations is built for every target SoC (an `m * n` configuration matrix). However if any `sdkconfig.ci` file contains a line of the form `CONFIG_IDF_TARGET="targetname"` then that CI config is only built for that one target.
+The CI system expects to see at least a "default" config, so add `sdkconfig.ci` before adding any `sdkconfig.ci.CONFIG` files.
+
+* By default, every CI configurations is built for every target SoC (an `m * n` configuration matrix). However if any `sdkconfig.ci.*` file contains a line of the form `CONFIG_IDF_TARGET="targetname"` then that CI config is only built for that one target. This only works in `sdkconfig.ci.CONFIG`, not in the default `sdkconfig.ci`.
 * Each configuration is also built with the contents of any `sdkconfig.defaults` file or a file named `sdkconfig.defaults.<TARGET>` appended. (Same as a normal ESP-IDF project build.)
 
 ## Test Execution
