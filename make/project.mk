@@ -338,7 +338,7 @@ endif
 
 # If we have `version.txt` then prefer that for extracting IDF version
 ifeq ("$(wildcard ${IDF_PATH}/version.txt)","")
-IDF_VER_T := $(shell cd ${IDF_PATH} && git describe --always --dirty)
+IDF_VER_T := $(shell cd ${IDF_PATH} && git describe --always --dirty --match v*.*)
 else
 IDF_VER_T := $(shell cat ${IDF_PATH}/version.txt)
 endif
