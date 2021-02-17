@@ -197,7 +197,7 @@ esp_err_t httpd_sess_new(struct httpd_data *hd, int newfd);
  * @brief   Processes incoming HTTP requests
  *
  * @param[in] hd      Server instance data
- * @param[in] session session
+ * @param[in] session Session
  *
  * @return
  *  - ESP_OK    : on successfully receiving, parsing and responding to a request

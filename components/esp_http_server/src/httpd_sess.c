@@ -76,59 +76,59 @@ static int enum_function(struct sock_db *session, void *context)
     enum_context_t *ctx = (enum_context_t *) context;
     int found = 0;
     switch (ctx->task) {
-        // Initialize session
-        case HTTPD_TASK_INIT:
-            session->fd = -1;
-            session->ctx = NULL;
-            break;
-        // Get active session
-        case HTTPD_TASK_GET_ACTIVE:
-            found = (session->fd != -1);
-            break;
-        // Get free slot
-        case HTTPD_TASK_GET_FREE:
-            found = (session->fd < 0);
-            break;
-        // Find fd
-        case HTTPD_TASK_FIND_FD:
-            found = (session->fd == ctx->fd);
-            break;
-        // Set descriptor
-        case HTTPD_TASK_SET_DESCRIPTOR:
-            if (session->fd != -1) {
-                FD_SET(session->fd, ctx->fdset);
-                if (session->fd > ctx->max_fd) {
-                    ctx->max_fd = session->fd;
-                }
+    // Initialize session
+    case HTTPD_TASK_INIT:
+        session->fd = -1;
+        session->ctx = NULL;
+        break;
+    // Get active session
+    case HTTPD_TASK_GET_ACTIVE:
+        found = (session->fd != -1);
+        break;
+    // Get free slot
+    case HTTPD_TASK_GET_FREE:
+        found = (session->fd < 0);
+        break;
+    // Find fd
+    case HTTPD_TASK_FIND_FD:
+        found = (session->fd == ctx->fd);
+        break;
+    // Set descriptor
+    case HTTPD_TASK_SET_DESCRIPTOR:
+        if (session->fd != -1) {
+            FD_SET(session->fd, ctx->fdset);
+            if (session->fd > ctx->max_fd) {
+                ctx->max_fd = session->fd;
             }
-            break;
-        // Delete invalid session
-        case HTTPD_TASK_DELETE_INVALID:
-            if (!fd_is_valid(session->fd)) {
-                ESP_LOGW(TAG, LOG_FMT("Closing invalid socket %d"), session->fd);
-                httpd_sess_delete(ctx->hd, session);
-            }
-            break;
-        // Find lowest lru
-        case HTTPD_TASK_FIND_LOWEST_LRU:
-            // Found free slot - no need to check other sessions
-            if (session->fd == -1) {
-                return 0;
-            }
-            // Check/update lowest lru
-            if (session->lru_counter < ctx->lru_counter) {
-                ctx->lru_counter = session->lru_counter;
-                ctx->session = session;
-            }
-            break;
-        case HTTPD_TASK_CLOSE:
-            if (session->fd!=-1) {
-                ESP_LOGD(TAG, LOG_FMT("cleaning up socket %d"), session->fd);
-                httpd_sess_delete(ctx->hd, session);
-            }
-            break;
-        default:
+        }
+        break;
+    // Delete invalid session
+    case HTTPD_TASK_DELETE_INVALID:
+        if (!fd_is_valid(session->fd)) {
+            ESP_LOGW(TAG, LOG_FMT("Closing invalid socket %d"), session->fd);
+            httpd_sess_delete(ctx->hd, session);
+        }
+        break;
+    // Find lowest lru
+    case HTTPD_TASK_FIND_LOWEST_LRU:
+        // Found free slot - no need to check other sessions
+        if (session->fd == -1) {
             return 0;
+        }
+        // Check/update lowest lru
+        if (session->lru_counter < ctx->lru_counter) {
+            ctx->lru_counter = session->lru_counter;
+            ctx->session = session;
+        }
+        break;
+    case HTTPD_TASK_CLOSE:
+        if (session->fd != -1) {
+            ESP_LOGD(TAG, LOG_FMT("cleaning up socket %d"), session->fd);
+            httpd_sess_delete(ctx->hd, session);
+        }
+        break;
+    default:
+        return 0;
     }
     if (found) {
         ctx->session = session;
@@ -155,9 +155,9 @@ static void httpd_sess_close(void *arg)
 
 struct sock_db *httpd_sess_get_free(struct httpd_data *hd)
 {
-	if ((!hd) || (hd->hd_sd_active_count == hd->config.max_open_sockets)) {
-		return NULL;
-	}
+    if ((!hd) || (hd->hd_sd_active_count == hd->config.max_open_sockets)) {
+        return NULL;
+    }
     enum_context_t context = {
         .task = HTTPD_TASK_GET_FREE
     };
@@ -179,7 +179,7 @@ struct sock_db *httpd_sess_get(struct httpd_data *hd, int sockfd)
     // Check if called inside a request handler, and the session sockfd in use is same as the parameter
     // => Just return the pointer to the sock_db corresponding to the request
     if ((hd->hd_req_aux.sd) && (hd->hd_req_aux.sd->fd == sockfd)) {
-         return hd->hd_req_aux.sd;
+        return hd->hd_req_aux.sd;
     }
 
     enum_context_t context = {
@@ -236,8 +236,7 @@ void httpd_sess_free_ctx(void **ctx, httpd_free_ctx_fn_t free_fn)
     }
     if (free_fn) {
         free_fn(*ctx);
-    }
-    else {
+    } else {
         free(*ctx);
     }
     *ctx = NULL;
@@ -272,7 +271,7 @@ void *httpd_sess_get_ctx(httpd_handle_t handle, int sockfd)
     // Check if the function has been called from inside a
     // request handler, in which case fetch the context from
     // the httpd_req_t structure
-    struct httpd_data * hd = (struct httpd_data *) handle;
+    struct httpd_data *hd = (struct httpd_data *) handle;
     if (hd->hd_req_aux.sd == session) {
         return hd->hd_req.sess_ctx;
     }
@@ -357,7 +356,7 @@ void httpd_sess_delete_invalid(struct httpd_data *hd)
 
 void httpd_sess_delete(struct httpd_data *hd, struct sock_db *session)
 {
-    if ((!hd) || (!session) || (session->fd<0)) {
+    if ((!hd) || (!session) || (session->fd < 0)) {
         return;
     }
 
@@ -366,8 +365,7 @@ void httpd_sess_delete(struct httpd_data *hd, struct sock_db *session)
     // Call close function if defined
     if (hd->config.close_fn) {
         hd->config.close_fn(hd, session->fd);
-    }
-    else {
+    } else {
         close(session->fd);
     }
 
@@ -477,18 +475,18 @@ esp_err_t httpd_sess_trigger_close_(httpd_handle_t handle, struct sock_db *sessi
 
 esp_err_t httpd_sess_trigger_close(httpd_handle_t handle, int sockfd)
 {
-	struct sock_db *session = httpd_sess_get(handle, sockfd);
-	if (!session) {
-	     return ESP_ERR_NOT_FOUND;
-	}
-	return httpd_sess_trigger_close_(handle,session);
+    struct sock_db *session = httpd_sess_get(handle, sockfd);
+    if (!session) {
+        return ESP_ERR_NOT_FOUND;
+    }
+    return httpd_sess_trigger_close_(handle, session);
 }
 
 void httpd_sess_close_all(struct httpd_data *hd)
 {
-	enum_context_t context = {
+    enum_context_t context = {
         .task = HTTPD_TASK_CLOSE,
         .hd = hd
     };
-	httpd_sess_enum(hd, enum_function, &context);
+    httpd_sess_enum(hd, enum_function, &context);
 }

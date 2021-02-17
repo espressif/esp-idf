@@ -25,8 +25,8 @@
 #include "ctrl_sock.h"
 
 typedef struct {
-  fd_set *fdset;
-  struct httpd_data *hd;
+    fd_set *fdset;
+    struct httpd_data *hd;
 } process_session_context_t;
 
 static const char *TAG = "httpd";
@@ -44,7 +44,7 @@ static esp_err_t httpd_accept_conn(struct httpd_data *hd, int listen_fd)
              * therefore httpd_accept_conn() will be called again, but this time
              * with space available for one session
              */
-       }
+        }
     }
 
     struct sockaddr_in addr_from;
@@ -60,12 +60,12 @@ static esp_err_t httpd_accept_conn(struct httpd_data *hd, int listen_fd)
     /* Set recv timeout of this fd as per config */
     tv.tv_sec = hd->config.recv_wait_timeout;
     tv.tv_usec = 0;
-    setsockopt(new_fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv));
+    setsockopt(new_fd, SOL_SOCKET, SO_RCVTIMEO, (const char *)&tv, sizeof(tv));
 
     /* Set send timeout of this fd as per config */
     tv.tv_sec = hd->config.send_wait_timeout;
     tv.tv_usec = 0;
-    setsockopt(new_fd, SOL_SOCKET, SO_SNDTIMEO, (const char*)&tv, sizeof(tv));
+    setsockopt(new_fd, SOL_SOCKET, SO_SNDTIMEO, (const char *)&tv, sizeof(tv));
 
     if (ESP_OK != httpd_sess_new(hd, new_fd)) {
         ESP_LOGW(TAG, LOG_FMT("session creation failed"));
@@ -170,24 +170,24 @@ static void httpd_process_ctrl_msg(struct httpd_data *hd)
 // Called for each session from httpd_server
 static int httpd_process_session(struct sock_db *session, void *context)
 {
-	if ((!session) || (!context)) {
+    if ((!session) || (!context)) {
         return 0;
-	}
+    }
 
-	if (session->fd < 0) {
+    if (session->fd < 0) {
         return 1;
-	}
+    }
 
-	process_session_context_t * ctx=(process_session_context_t*)context;
-	int fd=session->fd;
+    process_session_context_t *ctx = (process_session_context_t *)context;
+    int fd = session->fd;
 
-	if (FD_ISSET(fd, ctx->fdset) || httpd_sess_pending(ctx->hd,session)) {
-	    ESP_LOGD(TAG, LOG_FMT("processing socket %d"), fd);
-	    if (httpd_sess_process(ctx->hd, session) != ESP_OK) {
-	        httpd_sess_delete(ctx->hd, session); // Delete session
-	    }
-	}
-	return 1;
+    if (FD_ISSET(fd, ctx->fdset) || httpd_sess_pending(ctx->hd, session)) {
+        ESP_LOGD(TAG, LOG_FMT("processing socket %d"), fd);
+        if (httpd_sess_process(ctx->hd, session) != ESP_OK) {
+            httpd_sess_delete(ctx->hd, session); // Delete session
+        }
+    }
+    return 1;
 }
 
 /* Manage in-coming connection or data requests */
@@ -417,8 +417,8 @@ esp_err_t httpd_start(httpd_handle_t *handle, const httpd_config_t *config)
      */
     if (CONFIG_LWIP_MAX_SOCKETS < config->max_open_sockets + 3) {
         ESP_LOGE(TAG, "Configuration option max_open_sockets is too large (max allowed %d)\n\t"
-                      "Either decrease this or configure LWIP_MAX_SOCKETS to a larger value",
-                      CONFIG_LWIP_MAX_SOCKETS - 3);
+                 "Either decrease this or configure LWIP_MAX_SOCKETS to a larger value",
+                 CONFIG_LWIP_MAX_SOCKETS - 3);
         return ESP_ERR_INVALID_ARG;
     }
 
