@@ -77,6 +77,11 @@ test_weekend_network:
     - .example_test_template
     - .rules:test:example_test-esp32
 
+.example_test_esp32s2_template:
+  extends:
+    - .example_test_template
+    - .rules:test:example_test-esp32s2
+
 example_test_001A:
   extends: .example_test_esp32_template
   parallel: 4
@@ -228,6 +233,12 @@ example_test_016:
     paths:
       - $CI_PROJECT_DIR/examples/*/*/*.log
       - $LOG_PATH
+
+example_test_017:
+  extends: .example_test_esp32s2_template
+  tags:
+    - ESP32S2
+    - Example_GENERIC
 
 .test_app_template:
   extends: .target_test_job_template
