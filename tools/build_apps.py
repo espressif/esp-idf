@@ -7,10 +7,18 @@
 
 import argparse
 import logging
+import os.path
+import re
 import sys
 
 from find_build_apps import BUILD_SYSTEMS, BuildError, BuildItem, setup_logging
 from find_build_apps.common import SIZE_JSON_FN, rmdir
+
+# This RE will match GCC errors and many other fatal build errors and warnings as well
+LOG_ERROR_WARNING = re.compile(r'(error|warning):', re.IGNORECASE)
+
+# Log this many trailing lines from a failed build log, also
+LOG_DEBUG_LINES = 25
 
 
 def main():  # type: () -> None
@@ -120,6 +128,17 @@ def main():  # type: () -> None
             build_system_class.build(build_info)
         except BuildError as e:
             logging.error(str(e))
+            if build_info.build_log_path:
+                log_filename = os.path.basename(build_info.build_log_path)
+                with open(build_info.build_log_path, 'r') as f:
+                    lines = [line.rstrip() for line in f.readlines() if line.rstrip()]  # non-empty lines
+                    logging.debug('Error and warning lines from {}:'.format(log_filename))
+                    for line in lines:
+                        if LOG_ERROR_WARNING.search(line):
+                            logging.warning('>>> {}'.format(line))
+                    logging.debug('Last {} lines of {}:'.format(LOG_DEBUG_LINES, log_filename))
+                    for line in lines[-LOG_DEBUG_LINES:]:
+                        logging.debug('>>> {}'.format(line))
             if args.keep_going:
                 failed_builds.append(build_info)
             else:
