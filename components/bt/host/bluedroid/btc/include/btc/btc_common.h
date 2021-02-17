@@ -16,12 +16,12 @@
 #ifndef __BTC_COMMON_H__
 #define __BTC_COMMON_H__
 
+#include <assert.h>
 #include "common/bt_trace.h"
 #include "stack/bt_types.h"
 #include "osi/osi.h"
 
-#define BTC_ASSERTC(cond, msg, val) if (!(cond)) { LOG_ERROR( \
-    "### ASSERT : %s line %d %s (%d) ###", __FILE__, __LINE__, msg, val);}
+#define BTC_ASSERTC(cond, msg, val) assert(cond && msg)
 
 #define BTC_HAL_CBACK(P_CB, P_CBACK, ...)\
     if (P_CB && P_CB->P_CBACK) {            \
