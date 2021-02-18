@@ -87,8 +87,13 @@ TEST_CASE("esp_timer orders timers correctly", "[esp_timer]")
     }
     fflush(stream);
     fseek(stream, 0, SEEK_SET);
+
+    /* Discard header lines */
+    char line[128];
+    TEST_ASSERT_NOT_NULL(fgets(line, sizeof(line), stream));
+    TEST_ASSERT_NOT_NULL(fgets(line, sizeof(line), stream));
+
     for (size_t i = 0; i < num_timers; ++i) {
-        char line[128];
         TEST_ASSERT_NOT_NULL(fgets(line, sizeof(line), stream));
 #if WITH_PROFILING
         int timer_id;
