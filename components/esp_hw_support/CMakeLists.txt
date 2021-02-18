@@ -7,7 +7,9 @@ endif()
 
 set(srcs "compare_set.c" "cpu_util.c")
 if(NOT BOOTLOADER_BUILD)
-    list(APPEND srcs "clk_ctrl_os.c")
+    list(APPEND srcs "clk_ctrl_os.c" "mac_addr.c")
+endif()
+
 endif()
 
 idf_component_register(SRCS ${srcs}

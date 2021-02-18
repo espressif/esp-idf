@@ -1,8 +1,5 @@
 idf_build_get_property(target IDF_TARGET)
 
-if(CONFIG_IDF_ENV_FPGA)
-    list(APPEND srcs "src/fpga_overrides.c")
-endif()
 
 if(BOOTLOADER_BUILD)
     # For bootloader, all we need from esp_common is headers
@@ -16,7 +13,6 @@ else()
              "src/esp_err.c"
              "src/esp_err_to_name.c"
              "src/freertos_hooks.c"
-             "src/mac_addr.c"
              "src/stack_check.c"
              "src/task_wdt.c"
              "src/int_wdt.c")

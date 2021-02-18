@@ -122,7 +122,7 @@ menu "ESP32-specific"
         endchoice
 
         # insert non-chip-specific items here
-        source "$IDF_PATH/components/esp_common/Kconfig.spiram.common"
+        source "$IDF_PATH/components/esp_hw_support/Kconfig.spiram.common"
 
         config SPIRAM_CACHE_WORKAROUND
             bool "Enable workaround for bug in SPI RAM cache for Rev1 ESP32s"
