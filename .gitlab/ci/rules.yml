@@ -13,6 +13,7 @@
 
 .patterns-c-files: &patterns-c-files
   - ".gitlab/ci/static-code-analysis.yml"
+  - "tools/ci/static-analysis-rules.yml"
   - "**/*.{c,C}"
   - "**/*.{h,H}"
   - "components/**/Kconfig"
@@ -120,6 +121,9 @@
   - "tools/test_mkdfu/**/*"
 
   - "tools/kconfig_new/**/*"
+
+  - "tools/detect_python.sh"
+  - "tools/detect_python.fish"
 
 .patterns-windows: &patterns-windows
   - "tools/windows/**/*"
