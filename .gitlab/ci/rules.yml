@@ -315,103 +315,103 @@
   if: '$BOT_LABEL_WINDOWS'
 
 .if-title-build: &if-title-build
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*build(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*build(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*build(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*build(?:[, ]+\w+)*/i'
 
 .if-title-build_docs: &if-title-build_docs
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*build_docs(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*build_docs(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*build_docs(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*build_docs(?:[, ]+\w+)*/i'
 
 .if-title-component_ut: &if-title-component_ut
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*component_ut(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*component_ut(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*component_ut(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*component_ut(?:[, ]+\w+)*/i'
 
 .if-title-component_ut_esp32: &if-title-component_ut_esp32
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*component_ut_esp32(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*component_ut_esp32(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*component_ut_esp32(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*component_ut_esp32(?:[, ]+\w+)*/i'
 
 .if-title-component_ut_esp32c3: &if-title-component_ut_esp32c3
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*component_ut_esp32c3(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*component_ut_esp32c3(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*component_ut_esp32c3(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*component_ut_esp32c3(?:[, ]+\w+)*/i'
 
 .if-title-component_ut_esp32s2: &if-title-component_ut_esp32s2
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*component_ut_esp32s2(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*component_ut_esp32s2(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*component_ut_esp32s2(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*component_ut_esp32s2(?:[, ]+\w+)*/i'
 
 .if-title-component_ut_esp32s3: &if-title-component_ut_esp32s3
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*component_ut_esp32s3(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*component_ut_esp32s3(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*component_ut_esp32s3(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*component_ut_esp32s3(?:[, ]+\w+)*/i'
 
 .if-title-custom_test: &if-title-custom_test
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*custom_test(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*custom_test(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*custom_test(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*custom_test(?:[, ]+\w+)*/i'
 
 .if-title-custom_test_esp32: &if-title-custom_test_esp32
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*custom_test_esp32(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*custom_test_esp32(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*custom_test_esp32(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*custom_test_esp32(?:[, ]+\w+)*/i'
 
 .if-title-custom_test_esp32c3: &if-title-custom_test_esp32c3
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*custom_test_esp32c3(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*custom_test_esp32c3(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*custom_test_esp32c3(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*custom_test_esp32c3(?:[, ]+\w+)*/i'
 
 .if-title-custom_test_esp32s2: &if-title-custom_test_esp32s2
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*custom_test_esp32s2(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*custom_test_esp32s2(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*custom_test_esp32s2(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*custom_test_esp32s2(?:[, ]+\w+)*/i'
 
 .if-title-custom_test_esp32s3: &if-title-custom_test_esp32s3
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*custom_test_esp32s3(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*custom_test_esp32s3(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*custom_test_esp32s3(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*custom_test_esp32s3(?:[, ]+\w+)*/i'
 
 .if-title-docker: &if-title-docker
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*docker(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*docker(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*docker(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*docker(?:[, ]+\w+)*/i'
 
 .if-title-docs: &if-title-docs
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*docs(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*docs(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*docs(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*docs(?:[, ]+\w+)*/i'
 
 .if-title-example_test: &if-title-example_test
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*example_test(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*example_test(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*example_test(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*example_test(?:[, ]+\w+)*/i'
 
 .if-title-example_test_esp32: &if-title-example_test_esp32
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*example_test_esp32(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*example_test_esp32(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*example_test_esp32(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*example_test_esp32(?:[, ]+\w+)*/i'
 
 .if-title-example_test_esp32c3: &if-title-example_test_esp32c3
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*example_test_esp32c3(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*example_test_esp32c3(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*example_test_esp32c3(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*example_test_esp32c3(?:[, ]+\w+)*/i'
 
 .if-title-example_test_esp32s2: &if-title-example_test_esp32s2
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*example_test_esp32s2(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*example_test_esp32s2(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*example_test_esp32s2(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*example_test_esp32s2(?:[, ]+\w+)*/i'
 
 .if-title-example_test_esp32s3: &if-title-example_test_esp32s3
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*example_test_esp32s3(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*example_test_esp32s3(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*example_test_esp32s3(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*example_test_esp32s3(?:[, ]+\w+)*/i'
 
 .if-title-fuzzer_test: &if-title-fuzzer_test
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*fuzzer_test(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*fuzzer_test(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*fuzzer_test(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*fuzzer_test(?:[, ]+\w+)*/i'
 
 .if-title-host_test: &if-title-host_test
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*host_test(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*host_test(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*host_test(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*host_test(?:[, ]+\w+)*/i'
 
 .if-title-integration_test: &if-title-integration_test
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*integration_test(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*integration_test(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*integration_test(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*integration_test(?:[, ]+\w+)*/i'
 
 .if-title-iperf_stress_test: &if-title-iperf_stress_test
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*iperf_stress_test(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*iperf_stress_test(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*iperf_stress_test(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*iperf_stress_test(?:[, ]+\w+)*/i'
 
 .if-title-macos: &if-title-macos
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*macos(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*macos(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*macos(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*macos(?:[, ]+\w+)*/i'
 
 .if-title-macos_test: &if-title-macos_test
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*macos_test(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*macos_test(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*macos_test(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*macos_test(?:[, ]+\w+)*/i'
 
 .if-title-nvs_coverage: &if-title-nvs_coverage
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*nvs_coverage(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*nvs_coverage(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*nvs_coverage(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*nvs_coverage(?:[, ]+\w+)*/i'
 
 .if-title-unit_test: &if-title-unit_test
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*unit_test(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*unit_test(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*unit_test(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*unit_test(?:[, ]+\w+)*/i'
 
 .if-title-unit_test_esp32: &if-title-unit_test_esp32
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*unit_test_esp32(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*unit_test_esp32(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*unit_test_esp32(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*unit_test_esp32(?:[, ]+\w+)*/i'
 
 .if-title-unit_test_esp32c3: &if-title-unit_test_esp32c3
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*unit_test_esp32c3(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*unit_test_esp32c3(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*unit_test_esp32c3(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*unit_test_esp32c3(?:[, ]+\w+)*/i'
 
 .if-title-unit_test_esp32s2: &if-title-unit_test_esp32s2
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*unit_test_esp32s2(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*unit_test_esp32s2(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*unit_test_esp32s2(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*unit_test_esp32s2(?:[, ]+\w+)*/i'
 
 .if-title-unit_test_esp32s3: &if-title-unit_test_esp32s3
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*unit_test_esp32s3(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*unit_test_esp32s3(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*unit_test_esp32s3(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*unit_test_esp32s3(?:[, ]+\w+)*/i'
 
 .if-title-weekend_test: &if-title-weekend_test
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*weekend_test(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*weekend_test(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*weekend_test(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*weekend_test(?:[, ]+\w+)*/i'
 
 .if-title-windows: &if-title-windows
-  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*windows(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*windows(?:[, ]+\w+)*/i'
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*windows(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*windows(?:[, ]+\w+)*/i'
 
 .rules:build:
   rules:
