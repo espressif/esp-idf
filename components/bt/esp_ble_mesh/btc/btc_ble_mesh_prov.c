@@ -1017,7 +1017,7 @@ int btc_ble_mesh_client_model_init(esp_ble_mesh_model_t *model)
         return -EINVAL;
     }
 
-    __ASSERT(model && model->op, "%s, Invalid parameter", __func__);
+    __ASSERT(model && model->op, "Invalid parameter");
     esp_ble_mesh_model_op_t *op = model->op;
     while (op != NULL && op->opcode != 0) {
         op->param_cb = (esp_ble_mesh_cb_t)btc_ble_mesh_client_model_op_cb;
