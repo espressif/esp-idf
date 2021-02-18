@@ -7,7 +7,7 @@
 This example demonstrates basic usage of I2C driver by running two tasks on I2C bus:
 
 1. Read external I2C sensor, here we take the BH1750 ambient light sensor (GY-30 module) for an example.
-2. Use one of ESP32’s I2C port (master mode) to read and write another I2C port (slave mode) in ESP32.
+2. Use one of the ESP device's I2C port (master mode) to read and write another I2C port (slave mode) in ESP device.
 
 If you have a new I2C application to go (for example, read the temperature data from external sensor with I2C interface), try this as a basic template, then add your own code.
 
@@ -15,17 +15,17 @@ If you have a new I2C application to go (for example, read the temperature data 
 
 ### Hardware Required
 
-To run this example, you should have one ESP32 dev board (e.g. ESP32-WROVER Kit) or ESP32 core board (e.g. ESP32-DevKitC). Optionally, you can also connect an external sensor, here we choose the BH1750 just for an example. BH1750 is a digital ambient light sensor, for more information about it, you can read the [PDF](http://rohmfs.rohm.com/en/products/databook/datasheet/ic/sensor/light/bh1721fvc-e.pdf) of this sensor.
+To run this example, you should have one ESP development board (e.g. ESP32-WROVER Kit) or ESP core board (e.g. ESP32-DevKitC). Optionally, you can also connect an external sensor. Here we choose the BH1750 just as an example. BH1750 is a digital ambient light sensor. For more information about it, you can read the [datasheet](http://rohmfs.rohm.com/en/products/databook/datasheet/ic/sensor/light/bh1721fvc-e.pdf) of this sensor.
 
-#### Pin Assignment:
+#### Pin Assignment(esp32, esp32s2):
 
 **Note:** The following pin assignments are used by default, yout can change these  in the `menuconfig` .
 
-|                  | SDA    | SCL    |
-| ---------------- | ------ | ------ |
-| ESP32 I2C Master | GPIO18 | GPIO19 |
-| ESP32 I2C Slave  | GPIO4  | GPIO5  |
-| BH1750 Sensor    | SDA    | SCL    |
+|                           | SDA    | SCL    |
+| ------------------------- | ------ | ------ |
+| ESP32/ESP32-S2 I2C Master | GPIO18 | GPIO19 |
+| ESP32/ESP32-S2 I2C Slave  | GPIO4  | GPIO5  |
+| BH1750 Sensor             | SDA    | SCL    |
 
 - slave:
   - GPIO4 is assigned as the data signal of I2C slave port
@@ -39,7 +39,25 @@ To run this example, you should have one ESP32 dev board (e.g. ESP32-WROVER Kit)
   - connect GPIO19 with GPIO5
   - connect SDA/SCL of BH1750 sensor with GPIO18/GPIO19
 
-**Note: ** There’s no need to add an external pull-up resistors for SDA/SCL pin, because the driver will enable the internal pull-up resistors.
+**Note:** It is recommended to add external pull-up resistors for SDA/SCL pins to make the communication more stable, though the driver will enable internal pull-up resistors.
+
+#### Pin Assignment(esp32c3):
+
+**Note:** The following pin assignments are used by default, you can change these in the `menuconfig` .
+
+|                           | SDA    | SCL    |
+| ------------------------- | ------ | ------ |
+| ESP32-C3 I2C Master(Slave)| GPIO5  | GPIO6  |
+| BH1750 Sensor             | SDA    | SCL    |
+
+- master:
+  - GPIO5 is assigned to the data signal of the I2C master port
+  - GPIO6 is assigned to the clock signal of the I2C master port
+
+- Connection:
+  - connect SDA/SCL of BH1750 sensor to GPIO5/GPIO6
+
+**Note:** There is only one i2c device on esp32c3, so you can't try any master-slave example for esp32/s2 in this repo. But you can try external devices. If you find anything wrong with your device, please try connecting pull-up resistors by yourself.
 
 ### Configure the project
 

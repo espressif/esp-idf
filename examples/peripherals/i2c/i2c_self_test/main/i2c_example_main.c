@@ -58,8 +58,9 @@ SemaphoreHandle_t print_mux = NULL;
  * | start | slave_addr + rd_bit +ack | read n-1 bytes + ack | read 1 byte + nack | stop |
  * --------|--------------------------|----------------------|--------------------|------|
  *
+ * @note cannot use master read slave on esp32c3 because there is only one i2c controller on esp32c3
  */
-static esp_err_t i2c_master_read_slave(i2c_port_t i2c_num, uint8_t *data_rd, size_t size)
+static esp_err_t __attribute__((unused)) i2c_master_read_slave(i2c_port_t i2c_num, uint8_t *data_rd, size_t size)
 {
     if (size == 0) {
         return ESP_OK;
@@ -87,8 +88,9 @@ static esp_err_t i2c_master_read_slave(i2c_port_t i2c_num, uint8_t *data_rd, siz
  * | start | slave_addr + wr_bit + ack | write n bytes + ack  | stop |
  * --------|---------------------------|----------------------|------|
  *
+ * @note cannot use master write slave on esp32c3 because there is only one i2c controller on esp32c3
  */
-static esp_err_t i2c_master_write_slave(i2c_port_t i2c_num, uint8_t *data_wr, size_t size)
+static esp_err_t __attribute__((unused)) i2c_master_write_slave(i2c_port_t i2c_num, uint8_t *data_wr, size_t size)
 {
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
@@ -160,6 +162,7 @@ static esp_err_t i2c_master_init(void)
     return i2c_driver_install(i2c_master_port, conf.mode, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0);
 }
 
+#if !CONFIG_IDF_TARGET_ESP32C3
 /**
  * @brief i2c slave initialization
  */
@@ -196,15 +199,18 @@ static void disp_buf(uint8_t *buf, int len)
     }
     printf("\n");
 }
+#endif //!CONFIG_IDF_TARGET_ESP32C3
 
 static void i2c_test_task(void *arg)
 {
-    int i = 0;
     int ret;
     uint32_t task_idx = (uint32_t)arg;
+#if !CONFIG_IDF_TARGET_ESP32C3
+    int i = 0;
     uint8_t *data = (uint8_t *)malloc(DATA_LENGTH);
     uint8_t *data_wr = (uint8_t *)malloc(DATA_LENGTH);
     uint8_t *data_rd = (uint8_t *)malloc(DATA_LENGTH);
+#endif //!CONFIG_IDF_TARGET_ESP32C3
     uint8_t sensor_data_h, sensor_data_l;
     int cnt = 0;
     while (1) {
@@ -226,6 +232,7 @@ static void i2c_test_task(void *arg)
         xSemaphoreGive(print_mux);
         vTaskDelay((DELAY_TIME_BETWEEN_ITEMS_MS * (task_idx + 1)) / portTICK_RATE_MS);
         //---------------------------------------------------
+#if !CONFIG_IDF_TARGET_ESP32C3
         for (i = 0; i < DATA_LENGTH; i++) {
             data[i] = i;
         }
@@ -281,6 +288,7 @@ static void i2c_test_task(void *arg)
         }
         xSemaphoreGive(print_mux);
         vTaskDelay((DELAY_TIME_BETWEEN_ITEMS_MS * (task_idx + 1)) / portTICK_RATE_MS);
+#endif //!CONFIG_IDF_TARGET_ESP32C3
     }
     vSemaphoreDelete(print_mux);
     vTaskDelete(NULL);
@@ -289,7 +297,9 @@ static void i2c_test_task(void *arg)
 void app_main(void)
 {
     print_mux = xSemaphoreCreateMutex();
+#if !CONFIG_IDF_TARGET_ESP32C3
     ESP_ERROR_CHECK(i2c_slave_init());
+#endif
     ESP_ERROR_CHECK(i2c_master_init());
     xTaskCreate(i2c_test_task, "i2c_test_task_0", 1024 * 2, (void *)0, 10, NULL);
     xTaskCreate(i2c_test_task, "i2c_test_task_1", 1024 * 2, (void *)1, 10, NULL);
