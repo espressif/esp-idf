@@ -1,6 +1,5 @@
-CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE=y
-CONFIG_FREERTOS_ASSERT_DISABLE=y
-CONFIG_COMPILER_HIDE_PATHS_MACROS=n
+# this is the default value, actually
+CONFIG_COMPILER_HIDE_PATHS_MACROS=y
 
 # compiling as many files as possible here (we don't have 100% coverage of course, due to config options, but
 # try to maximize what we can check

@@ -9,9 +9,11 @@ idf_build_get_property(idf_path IDF_PATH)
 idf_build_get_property(python PYTHON)
 idf_build_get_property(elf EXECUTABLE)
 
-# If the configuration is one that doesn't expect any paths to be found then run this build step
+# If the configuration is one that doesn't expect the IDF_PATH to be found in binaries then run this build step
 # after building the ELF, will fail if it finds any file paths in binary files
-if(CONFIG_OPTIMIZATION_ASSERTIONS_SILENT OR CONFIG_OPTIMIZATION_ASSERTIONS_DISABLED)
+if(CONFIG_OPTIMIZATION_ASSERTIONS_SILENT OR
+        CONFIG_OPTIMIZATION_ASSERTIONS_DISABLED OR
+        CONFIG_COMPILER_HIDE_PATHS_MACROS)
     add_custom_command(
         TARGET ${elf}
         POST_BUILD
