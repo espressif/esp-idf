@@ -455,6 +455,9 @@ typedef struct t_l2c_linkcb {
     /* connection parameters update order:
        waiting_update_conn_xx -> updating_conn_xx -> current_used_conn_xx
     */
+   /* create connection retry count*/
+   UINT8                retry_create_con;
+   UINT32               start_time_s;
 #endif
 
 #if (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE)

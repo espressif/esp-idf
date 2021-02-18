@@ -51,6 +51,7 @@ const tHCI_ExtConnParams ext_conn_params = {
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 static BOOLEAN l2cble_start_conn_update (tL2C_LCB *p_lcb);
+extern int64_t esp_system_get_time(void);
 
 /*******************************************************************************
 **
@@ -847,6 +848,18 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
         L2CAP_TRACE_ERROR("initate direct connection fail, topology limitation");
         return FALSE;
     }
+    uint32_t link_timeout = L2CAP_BLE_LINK_CONNECT_TOUT;
+    if(GATTC_CONNECT_RETRY_COUNT) {
+        if(!p_lcb->retry_create_con) {
+            p_lcb->start_time_s = (esp_system_get_time()/1000);
+        }
+        uint32_t current_time = (esp_system_get_time()/1000);
+        link_timeout = (L2CAP_BLE_LINK_CONNECT_TOUT*1000 - (current_time - p_lcb->start_time_s))/1000;
+
+        if(link_timeout == 0 || link_timeout > L2CAP_BLE_LINK_CONNECT_TOUT) {
+            link_timeout = L2CAP_BLE_LINK_CONNECT_TOUT;
+        }
+    }
 
     if (!p_lcb->is_aux) {
         if (!btsnd_hcic_ble_create_ll_conn (scan_int,/* UINT16 scan_int      */
@@ -872,7 +885,7 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
             p_lcb->link_state = LST_CONNECTING;
             l2cb.is_ble_connecting = TRUE;
             memcpy (l2cb.ble_connecting_bda, p_lcb->remote_bd_addr, BD_ADDR_LEN);
-            btu_start_timer (&p_lcb->timer_entry, BTU_TTYPE_L2CAP_LINK, L2CAP_BLE_LINK_CONNECT_TOUT);
+            btu_start_timer (&p_lcb->timer_entry, BTU_TTYPE_L2CAP_LINK, link_timeout);
             btm_ble_set_conn_st (BLE_DIR_CONN);
 
             return (TRUE);
@@ -899,7 +912,7 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
         p_lcb->link_state = LST_CONNECTING;
         l2cb.is_ble_connecting = TRUE;
         memcpy (l2cb.ble_connecting_bda, p_lcb->remote_bd_addr, BD_ADDR_LEN);
-        btu_start_timer (&p_lcb->timer_entry, BTU_TTYPE_L2CAP_LINK, L2CAP_BLE_LINK_CONNECT_TOUT);
+        btu_start_timer (&p_lcb->timer_entry, BTU_TTYPE_L2CAP_LINK, link_timeout);
         btm_ble_set_conn_st (BLE_DIR_CONN);
         if(!btsnd_hcic_ble_create_ext_conn(&aux_conn)) {
             l2cu_release_lcb (p_lcb);

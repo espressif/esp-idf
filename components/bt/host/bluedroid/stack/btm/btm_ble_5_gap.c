@@ -23,8 +23,22 @@ tBTM_BLE_EXTENDED_CB extend_adv_cb;
 
 tBTM_BLE_5_HCI_CBACK ble_5_hci_cb;
 
+#define INVALID_VALUE   0XFF
+
 static tBTM_STATUS btm_ble_ext_adv_params_validate(tBTM_BLE_GAP_EXT_ADV_PARAMS *params);
 static tBTM_STATUS btm_ble_ext_adv_set_data_validate(UINT8 instance, UINT16 len, UINT8 *data);
+
+typedef struct {
+    uint16_t ter_con_handle;
+    bool invalid;
+    UINT8 instance;
+    int duration;
+    int max_events;
+    uint8_t retry_count;
+} tBTM_EXT_ADV_RECORD;
+
+tBTM_EXT_ADV_RECORD adv_record[MAX_BLE_ADV_INSTANCE] = {0};
+extern void btm_ble_inter_set(bool extble_inter);
 
 static char *btm_ble_hci_status_to_str(tHCI_STATUS status)
 {
@@ -176,6 +190,16 @@ static char *btm_ble_hci_status_to_str(tHCI_STATUS status)
     return NULL;
 }
 
+void btm_ble_extendadvcb_init(void)
+{
+    memset(&extend_adv_cb, 0, sizeof(tBTM_BLE_EXTENDED_CB));
+}
+
+void btm_ble_advrecod_init(void)
+{
+    memset(&adv_record[0], 0, sizeof(tBTM_EXT_ADV_RECORD)*MAX_BLE_ADV_INSTANCE);
+}
+
 void BTM_BleGapRegisterCallback(tBTM_BLE_5_HCI_CBACK cb)
 {
     if (cb) {
@@ -185,6 +209,15 @@ void BTM_BleGapRegisterCallback(tBTM_BLE_5_HCI_CBACK cb)
     }
 }
 
+void BTM_ExtBleCallbackTrigger(tBTM_BLE_5_GAP_EVENT event, tBTM_BLE_5_GAP_CB_PARAMS *params)
+{
+    if(params && params->status == BTM_SUCCESS) {
+        btm_ble_inter_set(true);
+    }
+    if (ble_5_hci_cb) {
+        ble_5_hci_cb(event, params);
+    }
+}
 
 tBTM_STATUS BTM_BleReadPhy(BD_ADDR bd_addr, UINT8 *tx_phy, UINT8 *rx_phy)
 {
@@ -221,9 +254,9 @@ tBTM_STATUS BTM_BleSetPreferDefaultPhy(UINT8 tx_phy_mask, UINT8 rx_phy_mask)
     }
 
     cb_params.set_perf_def_phy.status = err;
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(BTM_BLE_5_GAP_SET_PREFERED_DEFAULT_PHY_COMPLETE_EVT, &cb_params);
-    }
+
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_SET_PREFERED_DEFAULT_PHY_COMPLETE_EVT, &cb_params);
+
     return status;
 
 }
@@ -247,9 +280,7 @@ tBTM_STATUS BTM_BleSetPreferPhy(BD_ADDR bd_addr, UINT8 all_phys, UINT8 tx_phy_ma
 
     if (!btsnd_hcic_ble_set_phy(p_lcb->handle, all_phys, tx_phy_mask, rx_phy_mask, phy_options)) {
         cb_params.status = BTM_ILLEGAL_VALUE;
-        if (ble_5_hci_cb) {
-            ble_5_hci_cb(BTM_BLE_5_GAP_SET_PREFERED_PHY_COMPLETE_EVT, &cb_params);
-        }
+        BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_SET_PREFERED_PHY_COMPLETE_EVT, &cb_params);
     }
 
 
@@ -295,9 +326,7 @@ tBTM_STATUS BTM_BleSetExtendedAdvRandaddr(UINT8 instance, BD_ADDR rand_addr)
 end:
     cb_params.status = status;
 
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(BTM_BLE_5_GAP_EXT_ADV_SET_RAND_ADDR_COMPLETE_EVT, &cb_params);
-    }
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_EXT_ADV_SET_RAND_ADDR_COMPLETE_EVT, &cb_params);
 
     return status;
 
@@ -351,10 +380,7 @@ tBTM_STATUS BTM_BleSetExtendedAdvParams(UINT8 instance, tBTM_BLE_GAP_EXT_ADV_PAR
 end:
 
     cb_params.status = status;
-
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(BTM_BLE_5_GAP_EXT_ADV_SET_PARAMS_COMPLETE_EVT, &cb_params);
-    }
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_EXT_ADV_SET_PARAMS_COMPLETE_EVT, &cb_params);
 
     return status;
 }
@@ -405,10 +431,7 @@ tBTM_STATUS BTM_BleConfigExtendedAdvDataRaw(BOOLEAN is_scan_rsp, UINT8 instance,
 
 end:
     cb_params.status = status;
-
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(is_scan_rsp ? BTM_BLE_5_GAP_EXT_SCAN_RSP_DATA_SET_COMPLETE_EVT : BTM_BLE_5_GAP_EXT_ADV_DATA_SET_COMPLETE_EVT, &cb_params);
-    }
+    BTM_ExtBleCallbackTrigger(is_scan_rsp ? BTM_BLE_5_GAP_EXT_SCAN_RSP_DATA_SET_COMPLETE_EVT : BTM_BLE_5_GAP_EXT_ADV_DATA_SET_COMPLETE_EVT, &cb_params);
 
     return status;
 }
@@ -475,15 +498,70 @@ end:
         for (int i = 0; i < MAX_BLE_ADV_INSTANCE; i++) {
             extend_adv_cb.inst[i].configured = false;
         }
+        // disable all ext adv
+        if(num == 0) {
+
+            for (uint8_t i = 0; i < MAX_BLE_ADV_INSTANCE; i++)
+            {
+                adv_record[i].invalid = false;
+                adv_record[i].instance = INVALID_VALUE;
+                adv_record[i].duration = INVALID_VALUE;
+                adv_record[i].max_events = INVALID_VALUE;
+                adv_record[i].retry_count = 0;
+            }
+        } else {
+            for (uint8_t i = 0; i < num; i++)
+            {
+                uint8_t index = ext_adv[i].instance;
+                adv_record[index].invalid = false;
+                adv_record[index].instance = INVALID_VALUE;
+                adv_record[index].duration = INVALID_VALUE;
+                adv_record[index].max_events = INVALID_VALUE;
+                adv_record[index].retry_count = 0;
+            }
+        }
+    }
+    // start extend adv success, save the adv information
+    if(enable && status == BTM_SUCCESS) {
+        for (uint8_t i = 0; i < num; i++)
+        {
+            uint8_t index = ext_adv[i].instance;
+            adv_record[index].invalid = true;
+            adv_record[index].instance = ext_adv[i].instance;
+            adv_record[index].duration = ext_adv[i].duration;
+            adv_record[index].max_events = ext_adv[i].max_events;
+            adv_record[index].retry_count = 0;
+        }
     }
 
     cb_params.status = status;
-
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(enable ? BTM_BLE_5_GAP_EXT_ADV_START_COMPLETE_EVT : BTM_BLE_5_GAP_EXT_ADV_STOP_COMPLETE_EVT, &cb_params);
-    }
+    BTM_ExtBleCallbackTrigger(enable ? BTM_BLE_5_GAP_EXT_ADV_START_COMPLETE_EVT : BTM_BLE_5_GAP_EXT_ADV_STOP_COMPLETE_EVT, &cb_params);
 
     return status;
+}
+
+tBTM_STATUS BTM_BleStartExtAdvRestart(uint8_t con_handle)
+{
+   tBTM_BLE_EXT_ADV ext_adv;
+   uint8_t index = INVALID_VALUE;
+   for (uint8_t i = 0; i < MAX_BLE_ADV_INSTANCE; i++)
+   {
+       if(adv_record[i].ter_con_handle == con_handle) {
+           index = i;
+           break;
+       }
+    }
+
+    if((index >= MAX_BLE_ADV_INSTANCE) || (!adv_record[index].invalid) || (adv_record[index].retry_count > GATTC_CONNECT_RETRY_COUNT)) {
+        return BTM_WRONG_MODE;
+    }
+
+    adv_record[index].retry_count ++;
+    BTM_TRACE_DEBUG("remote device did not reveive aux connect response, retatrt the extend adv to reconnect, adv handle %d con_handle %d\n", index, con_handle);
+    ext_adv.instance = adv_record[index].instance;
+    ext_adv.duration = adv_record[index].duration;
+    ext_adv.max_events = adv_record[index].max_events;
+    return BTM_BleStartExtAdv(true, 1, &ext_adv);
 }
 
 tBTM_STATUS BTM_BleExtAdvSetRemove(UINT8 instance)
@@ -507,9 +585,7 @@ end:
 
     cb_params.status = status;
 
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(BTM_BLE_5_GAP_EXT_ADV_SET_REMOVE_COMPLETE_EVT, &cb_params);
-    }
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_EXT_ADV_SET_REMOVE_COMPLETE_EVT, &cb_params);
 
     return status;
 }
@@ -527,9 +603,7 @@ tBTM_STATUS BTM_BleExtAdvSetClear(void)
 
     cb_params.status = status;
 
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(BTM_BLE_5_GAP_EXT_ADV_SET_CLEAR_COMPLETE_EVT, &cb_params);
-    }
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_EXT_ADV_SET_CLEAR_COMPLETE_EVT, &cb_params);
 
     return status;
 }
@@ -567,9 +641,7 @@ end:
 
     cb_params.status = status;
 
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(BTM_BLE_5_GAP_PERIODIC_ADV_SET_PARAMS_COMPLETE_EVT, &cb_params);
-    }
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_PERIODIC_ADV_SET_PARAMS_COMPLETE_EVT, &cb_params);
 
     return status;
 }
@@ -620,9 +692,7 @@ tBTM_STATUS BTM_BlePeriodicAdvCfgDataRaw(UINT8 instance, UINT16 len, UINT8 *data
 
     cb_params.status = status;
 
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(BTM_BLE_5_GAP_PERIODIC_ADV_DATA_SET_COMPLETE_EVT, &cb_params);
-    }
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_PERIODIC_ADV_DATA_SET_COMPLETE_EVT, &cb_params);
 
     return status;
 }
@@ -648,9 +718,7 @@ end:
 
     cb_params.status = status;
 
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(enable ? BTM_BLE_5_GAP_PERIODIC_ADV_START_COMPLETE_EVT : BTM_BLE_5_GAP_PERIODIC_ADV_STOP_COMPLETE_EVT, &cb_params);
-    }
+    BTM_ExtBleCallbackTrigger(enable ? BTM_BLE_5_GAP_PERIODIC_ADV_START_COMPLETE_EVT : BTM_BLE_5_GAP_PERIODIC_ADV_STOP_COMPLETE_EVT, &cb_params);
 
     return status;
 
@@ -683,11 +751,10 @@ tBTM_STATUS BTM_BlePeriodicAdvCreateSync(tBTM_BLE_Periodic_Sync_Params *params)
     }
 
 end:
-    if((status != BTM_SUCCESS) && ble_5_hci_cb) {
+    if(status != BTM_SUCCESS) {
         cb_params.status = status;
-        ble_5_hci_cb(BTM_BLE_5_GAP_PERIODIC_ADV_CREATE_SYNC_COMPLETE_EVT, &cb_params);
+        BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_PERIODIC_ADV_CREATE_SYNC_COMPLETE_EVT, &cb_params);
     }
-
 
     return status;
 }
@@ -696,9 +763,7 @@ void btm_set_phy_callback(UINT8 status)
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
     cb_params.status = status;
 
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(BTM_BLE_5_GAP_SET_PREFERED_PHY_COMPLETE_EVT, &cb_params);
-    }
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_SET_PREFERED_PHY_COMPLETE_EVT, &cb_params);
 
 }
 void btm_create_sync_callback(UINT8 status)
@@ -706,9 +771,7 @@ void btm_create_sync_callback(UINT8 status)
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
     cb_params.status = status;
 
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(BTM_BLE_5_GAP_PERIODIC_ADV_CREATE_SYNC_COMPLETE_EVT, &cb_params);
-    }
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_PERIODIC_ADV_CREATE_SYNC_COMPLETE_EVT, &cb_params);
 }
 
 void btm_read_phy_callback(uint8_t hci_status, uint16_t conn_handle, uint8_t tx_phy, uint8_t rx_phy)
@@ -727,9 +790,7 @@ void btm_read_phy_callback(uint8_t hci_status, uint16_t conn_handle, uint8_t tx_
     cb_params.read_phy.tx_phy = tx_phy;
     cb_params.read_phy.rx_phy = rx_phy;
 
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(BTM_BLE_5_GAP_READ_PHY_COMPLETE_EVT, &cb_params);
-    }
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_READ_PHY_COMPLETE_EVT, &cb_params);
 }
 
 tBTM_STATUS BTM_BlePeriodicAdvSyncCancel(void)
@@ -745,9 +806,7 @@ tBTM_STATUS BTM_BlePeriodicAdvSyncCancel(void)
 
     cb_params.status = status;
 
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_CANCEL_COMPLETE_EVT, &cb_params);
-    }
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_CANCEL_COMPLETE_EVT, &cb_params);
 
     return status;
 }
@@ -765,9 +824,7 @@ tBTM_STATUS BTM_BlePeriodicAdvSyncTerm(UINT16 sync_handle)
 
     cb_params.status = status;
 
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_TERMINATE_COMPLETE_EVT, &cb_params);
-    }
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_TERMINATE_COMPLETE_EVT, &cb_params);
 
     return status;
 }
@@ -791,9 +848,7 @@ tBTM_STATUS BTM_BlePeriodicAdvAddDevToList(tBLE_ADDR_TYPE addr_type, BD_ADDR add
 
 end:
     cb_params.status = status;
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(BTM_BLE_5_GAP_PERIODIC_ADV_ADD_DEV_COMPLETE_EVT, &cb_params);
-    }
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_PERIODIC_ADV_ADD_DEV_COMPLETE_EVT, &cb_params);
 
     return status;
 }
@@ -818,9 +873,7 @@ tBTM_STATUS BTM_BlePeriodicAdvRemoveDevFromList(tBLE_ADDR_TYPE addr_type, BD_ADD
 end:
 
     cb_params.status = status;
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(BTM_BLE_5_GAP_PERIODIC_ADV_REMOVE_DEV_COMPLETE_EVT, &cb_params);
-    }
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_PERIODIC_ADV_REMOVE_DEV_COMPLETE_EVT, &cb_params);
     return status;
 }
 
@@ -836,9 +889,7 @@ tBTM_STATUS BTM_BlePeriodicAdvClearDev(void)
     }
 
     cb_params.status = status;
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(BTM_BLE_5_GAP_PERIODIC_ADV_CLEAR_DEV_COMPLETE_EVT, &cb_params);
-    }
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_PERIODIC_ADV_CLEAR_DEV_COMPLETE_EVT, &cb_params);
 
     return status;
 }
@@ -887,9 +938,7 @@ end:
 
     cb_params.status = status;
 
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(BTM_BLE_5_GAP_SET_EXT_SCAN_PARAMS_COMPLETE_EVT, &cb_params);
-    }
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_SET_EXT_SCAN_PARAMS_COMPLETE_EVT, &cb_params);
 
     return cb_params.status;
 }
@@ -915,9 +964,7 @@ end:
 
     cb_params.status = status;
 
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(enable ? BTM_BLE_5_GAP_EXT_SCAN_START_COMPLETE_EVT : BTM_BLE_5_GAP_EXT_SCAN_STOP_COMPLETE_EVT, &cb_params);
-    }
+    BTM_ExtBleCallbackTrigger(enable ? BTM_BLE_5_GAP_EXT_SCAN_START_COMPLETE_EVT : BTM_BLE_5_GAP_EXT_SCAN_STOP_COMPLETE_EVT, &cb_params);
 
     return status;
 }
@@ -1041,20 +1088,15 @@ void btm_ble_update_phy_evt(tBTM_BLE_UPDATE_PHY *params)
     memcpy(cb_params.phy_update.addr, p_lcb->remote_bd_addr, BD_ADDR_LEN);
 
     // If the user has register the callback function, should callback it to the application.
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(BTM_BLE_5_GAP_PHY_UPDATE_COMPLETE_EVT, &cb_params);
-    }
+
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_PHY_UPDATE_COMPLETE_EVT, &cb_params);
 
     return;
 }
 
 void btm_ble_scan_timeout_evt(void)
 {
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(BTM_BLE_5_GAP_SCAN_TIMEOUT_EVT, NULL);
-    }
-
-    return;
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_SCAN_TIMEOUT_EVT, NULL);
 }
 
 void btm_ble_adv_set_terminated_evt(tBTM_BLE_ADV_TERMINAT *params)
@@ -1066,12 +1108,18 @@ void btm_ble_adv_set_terminated_evt(tBTM_BLE_ADV_TERMINAT *params)
         return;
     }
 
+    // adv terminated due to connection, save the adv handle and connection handle
+    if(params->completed_event == 0x00) {
+        adv_record[params->adv_handle].ter_con_handle = params->conn_handle;
+    } else {
+        adv_record[params->adv_handle].ter_con_handle = INVALID_VALUE;
+        adv_record[params->adv_handle].invalid = false;
+    }
+
     memcpy(&cb_params.adv_term, params, sizeof(tBTM_BLE_ADV_TERMINAT));
 
     // If the user has register the callback function, should callback it to the application.
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(BTM_BLE_5_GAP_ADV_TERMINATED_EVT, &cb_params);
-    }
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_ADV_TERMINATED_EVT, &cb_params);
 
     return;
 }
@@ -1088,9 +1136,7 @@ void btm_ble_ext_adv_report_evt(tBTM_BLE_EXT_ADV_REPORT *params)
     memcpy(&cb_params.ext_adv_report, params, sizeof(tBTM_BLE_EXT_ADV_REPORT));
 
     // If the user has register the callback function, should callback it to the application.
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(BTM_BLE_5_GAP_EXT_ADV_REPORT_EVT, &cb_params);
-    }
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_EXT_ADV_REPORT_EVT, &cb_params);
 
     return;
 
@@ -1108,9 +1154,7 @@ void btm_ble_scan_req_received_evt(tBTM_BLE_SCAN_REQ_RECEIVED *params)
     memcpy(&cb_params.scan_req, params, sizeof(tBTM_BLE_SCAN_REQ_RECEIVED));
 
     // If the user has register the callback function, should callback it to the application.
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(BTM_BLE_5_GAP_SCAN_REQ_RECEIVED_EVT, &cb_params);
-    }
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_SCAN_REQ_RECEIVED_EVT, &cb_params);
 
     return;
 }
@@ -1127,9 +1171,7 @@ void btm_ble_channel_select_algorithm_evt(tBTM_BLE_CHANNEL_SEL_ALG *params)
     memcpy(&cb_params.channel_sel, params, sizeof(tBTM_BLE_CHANNEL_SEL_ALG));
 
     // If the user has register the callback function, should callback it to the application.
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(BTM_BLE_5_GAP_CHANNEL_SELETE_ALGORITHM_EVT, &cb_params);
-    }
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_CHANNEL_SELETE_ALGORITHM_EVT, &cb_params);
 
     return;
 }
@@ -1146,9 +1188,7 @@ void btm_ble_periodic_adv_report_evt(tBTM_PERIOD_ADV_REPORT *params)
     memcpy(&cb_params.period_adv_report, params, sizeof(tBTM_PERIOD_ADV_REPORT));
 
     // If the user has register the callback function, should callback it to the application.
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(BTM_BLE_5_GAP_PERIODIC_ADV_REPORT_EVT, &cb_params);
-    }
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_PERIODIC_ADV_REPORT_EVT, &cb_params);
 
     return;
 
@@ -1166,9 +1206,7 @@ void btm_ble_periodic_adv_sync_lost_evt(tBTM_BLE_PERIOD_ADV_SYNC_LOST *params)
     memcpy(&cb_params.sync_lost, params, sizeof(tBTM_BLE_PERIOD_ADV_SYNC_LOST));
 
     // If the user has register the callback function, should callback it to the application.
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_LOST_EVT, &cb_params);
-    }
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_LOST_EVT, &cb_params);
 
     return;
 
@@ -1186,9 +1224,7 @@ void btm_ble_periodic_adv_sync_establish_evt(tBTM_BLE_PERIOD_ADV_SYNC_ESTAB *par
     memcpy(&cb_params.sync_estab, params, sizeof(tBTM_BLE_PERIOD_ADV_SYNC_ESTAB));
 
     // If the user has register the callback function, should callback it to the application.
-    if (ble_5_hci_cb) {
-        ble_5_hci_cb(BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_ESTAB_EVT, &cb_params);
-    }
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_ESTAB_EVT, &cb_params);
 
     return;
 
