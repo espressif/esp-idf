@@ -15,6 +15,8 @@
 #include <esp_expression_with_stack.h>
 #include <riscv/rvruntime-frames.h>
 #include <string.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/portmacro.h"
 
 static portMUX_TYPE shared_stack_spinlock = portMUX_INITIALIZER_UNLOCKED;
 static void *current_task_stack = NULL;
@@ -23,11 +25,6 @@ extern void esp_shared_stack_invoke_function(shared_stack_function function, voi
 
 static StackType_t *esp_switch_stack_setup(StackType_t *stack, size_t stack_size)
 {
-#if CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK
-    // TODO ESP32-C3 IDF-2207
-    // esp_clear_watchpoint(1);
-    // uint32_t watchpoint_place = ((uint32_t)stack + 32) & ~0x1f ;
-#endif
     //We need also to tweak current task stackpointer to avoid erroneous
     //stack overflow indication, so fills the stack with freertos known pattern:
     memset(stack, 0xa5U, stack_size * sizeof(StackType_t));
@@ -45,10 +42,8 @@ static StackType_t *esp_switch_stack_setup(StackType_t *stack, size_t stack_size
     adjusted_top_of_stack--;
 
 #if CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK
-    // TODO ESP32-C3 IDF-2207
-    //esp_set_watchpoint(1, (uint8_t *)watchpoint_place, 32, ESP_WATCHPOINT_STORE);
+    vPortSetStackWatchpoint(stack);
 #endif
-
     return ((StackType_t *)adjusted_top_of_stack);
 }
 
