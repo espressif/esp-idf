@@ -33,7 +33,7 @@ static const char *TAG = "tsens";
 
 #define TSENS_CHECK(res, ret_val) ({                                    \
     if (!(res)) {                                                       \
-        ESP_LOGE(TAG, "%s:%d (%s)", __FILE__, __LINE__, __FUNCTION__);  \
+        ESP_LOGE(TAG, "%s(%d)", __FUNCTION__, __LINE__);                \
         return (ret_val);                                               \
     }                                                                   \
 })

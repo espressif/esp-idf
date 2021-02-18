@@ -34,9 +34,9 @@
 #include "esp_efuse_rtc_calib.h"
 #include "esp_private/gdma.h"
 
-#define ADC_CHECK_RET(fun_ret) ({                  \
+#define ADC_CHECK_RET(fun_ret) ({                           \
     if (fun_ret != ESP_OK) {                                \
-        ESP_LOGE(ADC_TAG,"%s:%d\n",__FUNCTION__,__LINE__);  \
+        ESP_LOGE(ADC_TAG,"%s(%d)",__FUNCTION__,__LINE__);   \
         return ESP_FAIL;                                    \
     }                                                       \
 })
@@ -45,7 +45,7 @@ static const char *ADC_TAG = "ADC";
 
 #define ADC_CHECK(a, str, ret_val) ({                                               \
     if (!(a)) {                                                                     \
-        ESP_LOGE(ADC_TAG,"%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str);   \
+        ESP_LOGE(ADC_TAG,"%s(%d) :%s", __FUNCTION__, __LINE__, str);                \
         return (ret_val);                                                           \
     }                                                                               \
 })
