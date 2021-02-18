@@ -88,6 +88,18 @@ static void btm_ble_stop_discover(void);
 #define BTM_BLE_SEL_CONN_RESULT     0x04
 #define BTM_BLE_DISCO_RESULT        0x08
 
+static bool is_ble50_inter = false;
+
+void btm_ble_inter_set(bool extble_inter)
+{
+    is_ble50_inter = extble_inter;
+}
+
+bool btm_ble_inter_get(void)
+{
+    return is_ble50_inter;
+}
+
 /* LE states combo bit to check */
 const UINT8 btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX][2] = {
     {/* single state support */

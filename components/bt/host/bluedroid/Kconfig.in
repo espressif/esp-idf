@@ -193,6 +193,14 @@ config BT_GATTC_CACHE_NVS_FLASH
     help
         This select can save gattc cache data to nvs flash
 
+config BT_GATTC_CONNECT_RETRY_COUNT
+    int "The number of attempts to reconnect if the connection establishment failed"
+    depends on BT_GATTC_ENABLE
+    range 1 7
+    default 3
+    help
+        The number of attempts to reconnect if the connection establishment failed
+
 config BT_BLE_SMP_ENABLE
     bool "Include BLE security module(SMP)"
     depends on BT_BLE_ENABLED

@@ -158,6 +158,10 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
 
     p_lcb->in_use     = FALSE;
     p_lcb->is_bonding = FALSE;
+#if (BLE_INCLUDED == TRUE)
+    p_lcb->retry_create_con = 0;
+    p_lcb->start_time_s = 0;
+#endif // #if (BLE_INCLUDED == TRUE)
 
     /* Stop and release timers */
     btu_free_timer (&p_lcb->timer_entry);
@@ -333,6 +337,26 @@ tL2C_LCB  *l2cu_find_free_lcb (void)
     }
     /* If here, no match found */
     return (NULL);
+}
+
+uint8_t l2cu_plcb_active_count(void)
+{
+    list_node_t *p_node = NULL;
+    tL2C_LCB    *p_lcb  = NULL;
+    uint8_t active_count = 0;
+    for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
+        p_lcb = list_node(p_node);
+        if (p_lcb && p_lcb->in_use) {
+            active_count ++;
+        }
+    }
+    if (active_count >= MAX_L2CAP_CHANNELS) {
+        L2CAP_TRACE_ERROR("error active count");
+        active_count = 0;
+    }
+    L2CAP_TRACE_DEBUG("plcb active count %d", active_count);
+    return active_count;
+
 }
 
 /*******************************************************************************
