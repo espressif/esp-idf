@@ -848,7 +848,7 @@ To embed a file into a project, rather than a component, you can call the functi
 
 Place this line after the ``project()`` line in your project CMakeLists.txt file. Replace ``myproject.elf`` with your project name. The final argument can be ``TEXT`` to embed a null-terminated string, or ``BINARY`` to embed the content as-is.
 
-For an example of using this technique, see :example:`protocols/https_request` - the certificate file contents are loaded from the text .pem file at compile time.
+For an example of using this technique, see the "main" component of the file_serving example :example_file:`protocols/http_server/file_serving/main/CMakeLists.txt` - two files are loaded at build time and linked into the firmware.
 
 Code and Data Placements
 ------------------------
