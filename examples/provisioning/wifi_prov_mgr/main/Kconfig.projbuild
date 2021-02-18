@@ -20,4 +20,9 @@ menu "Example Configuration"
         default 1 if EXAMPLE_PROV_TRANSPORT_BLE
         default 2 if EXAMPLE_PROV_TRANSPORT_SOFTAP
 
+    config EXAMPLE_PROV_SHOW_QR
+        bool "Show provisioning QR code"
+        default y
+        help
+            Show the QR code for provisioning.
 endmenu

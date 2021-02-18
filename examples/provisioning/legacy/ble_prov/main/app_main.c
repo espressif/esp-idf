@@ -20,8 +20,12 @@
 #include <lwip/sys.h>
 
 #include "app_prov.h"
+#include "qrcode.h"
 
 #define EXAMPLE_AP_RECONN_ATTEMPTS  CONFIG_EXAMPLE_AP_RECONN_ATTEMPTS
+#define PROV_QR_VERSION         "v1"
+#define PROV_TRANSPORT_BLE      "ble"
+#define QRCODE_BASE_URL         "https://espressif.github.io/esp-jumpstart/qrcode.html"
 
 static const char *TAG = "app";
 
@@ -109,6 +113,41 @@ static void start_ble_provisioning(void)
     ESP_ERROR_CHECK(app_prov_start_ble_provisioning(security, pop));
 }
 
+static void get_device_service_name(char *service_name, size_t max)
+{
+    uint8_t eth_mac[6];
+    const char *ssid_prefix = "PROV_";
+    esp_wifi_get_mac(WIFI_IF_STA, eth_mac);
+    snprintf(service_name, max, "%s%02X%02X%02X",
+             ssid_prefix, eth_mac[3], eth_mac[4], eth_mac[5]);
+}
+
+static void ble_prov_print_qr(void)
+{
+    char payload[150] = {0};
+    char name[12] = {0};
+    char *pop = NULL;
+#ifdef CONFIG_EXAMPLE_USE_POP
+    pop = CONFIG_EXAMPLE_POP;
+#endif
+    get_device_service_name(name, sizeof(name));
+    if (pop) {
+        snprintf(payload, sizeof(payload), "{\"ver\":\"%s\",\"name\":\"%s\"" \
+                    ",\"pop\":\"%s\",\"transport\":\"%s\"}",
+                    PROV_QR_VERSION, name, pop, PROV_TRANSPORT_BLE);
+    } else {
+        snprintf(payload, sizeof(payload), "{\"ver\":\"%s\",\"name\":\"%s\"" \
+                    ",\"transport\":\"%s\"}",
+                    PROV_QR_VERSION, name, PROV_TRANSPORT_BLE);
+    }
+#ifdef CONFIG_EXAMPLE_PROV_SHOW_QR
+    ESP_LOGI(TAG, "Scan this QR code from the provisioning application for Provisioning.");
+    esp_qrcode_config_t cfg = ESP_QRCODE_CONFIG_DEFAULT();
+    esp_qrcode_generate(&cfg, payload);
+#endif /* CONFIG_APP_WIFI_PROV_SHOW_QR */
+    ESP_LOGI(TAG, "If QR code is not visible, copy paste the below URL in a browser.\n%s?data=%s", QRCODE_BASE_URL, payload);
+}
+
 void app_main(void)
 {
     /* Initialize networking stack */
@@ -137,6 +176,7 @@ void app_main(void)
         /* If not provisioned, start provisioning via BLE */
         ESP_LOGI(TAG, "Starting BLE provisioning");
         start_ble_provisioning();
+        ble_prov_print_qr();
     } else {
         /* Else start as station with credentials set during provisioning */
         ESP_LOGI(TAG, "Starting WiFi station");
