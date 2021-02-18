@@ -80,7 +80,7 @@ class RulesWriter:
     ''')
     TITLE_TEMPLATE = inspect.cleandoc(r'''
     .if-title-{0}: &if-title-{0}
-      if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*{0}(?:,\w+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*{0}(?:[, ]+\w+)*/i'
+      if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*{0}(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*{0}(?:[, ]+\w+)*/i'
     ''')
 
     RULE_NORM = '    - <<: *if-protected'
