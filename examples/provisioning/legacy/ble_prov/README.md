@@ -116,6 +116,41 @@ I (718390) app_prov: Stopping provisioning
 I (718670) app_prov: Provisioning stopped
 ```
 
+## QR Code Scanning
+
+Enabling `CONFIG_EXAMPLE_PROV_SHOW_QR` will display a QR code on the serial terminal, which can be scanned from the ESP Provisioning phone apps to start the Wi-Fi provisioning process.
+
+The monitor log should display something like this : 
+
+```
+I (1640) app_prov: SoftAP Provisioning started with SSID 'PROV_EA69FC', Password 'PROV_PASS'
+I (1640) app: Scan this QR code from the provisioning application for Provisioning.
+I (1650) QRCODE: Encoding below text with ECC LVL 0 & QR Code Version 10
+I (1660) QRCODE: {"ver":"v1","name":"PROV_EA69FC","pop":"abcd1234","transport":"ble"}
+                                      
+  █▀▀▀▀▀█ ▄▀ ▄█ ▄█▄▄█▀▄  ██ █▀▀▀▀▀█   
+  █ ███ █ ▀███▀  ██▀▀█  ▀█▀ █ ███ █   
+  █ ▀▀▀ █ █▄ ▄ ▀███  ▄▄█▀ ▄ █ ▀▀▀ █   
+  ▀▀▀▀▀▀▀ █▄▀ █ ▀ ▀▄█▄▀▄▀▄█ ▀▀▀▀▀▀▀   
+  ▀▀▄▀▄▄▀█  █▄ ▀▄▀█▄█ ▄▄ ██▄█▀▀▄▀▀▄   
+  ███ █▀▀ ▄▀▀  ▄█▄ ▀▀█▄█▀▄▄ ▄█    █   
+  ▄▀▀ ▀▀▀█▀▄▄▄█▀▀  ██▄█▄▄█▄▀█ ▄▄ ▀█   
+   ▄█▄█ ▀▀▄█  ██   ▄█  ██▀█▀  ▄█ █▄   
+    ▄█▀█▀  █▄▀▀▄  █▀█▀██  ▄█▀ ▀▀▄ ▀   
+   █▄▄█▄▀█▄▄▀▄▄▀█ ▀▄ ▄▀██ ▄ █▄▄▄ ▀█   
+  ▀▄▀▄▀▀▀█  ▄ ▄▀▀▀█▄▀▀▀▀▀▄█ ▄▄ █ ▄▄   
+  ▀█▄▀██▀▄▄ ▄▄▀▄ ▄▀▀▀▀█▄▀▄▀█  ▄▄ ▀▀   
+  ▀ ▀ ▀ ▀▀█▄▀ ▀▀  ▀▀▀▄▀██ █▀▀▀█▀ ▄▄   
+  █▀▀▀▀▀█ ▀▀██▀█▀ ▀█ ▄ █▀▀█ ▀ ██ ▀▄   
+  █ ███ █ ▄█▀▄▄▄  █▀▀▀ ██ ▀████▀ ▄█   
+  █ ▀▀▀ █ ▄▀▄▄   ▄▀█▀▄▄▄█ ▀  ▄▀█▀▀▀   
+  ▀▀▀▀▀▀▀ ▀  ▀▀▀▀    ▀ ▀  ▀ ▀ ▀▀ ▀    
+                                      
+
+I (1870) app: If QR code is not visible, copy paste the below URL in a browser.
+https://espressif.github.io/esp-jumpstart/qrcode.html?data={"ver":"v1","name":"PROV_EA69FC","pop":"abcd1234","transport":"ble"}
+```
+
 ## Troubleshooting
 
 ### Provisioning failed

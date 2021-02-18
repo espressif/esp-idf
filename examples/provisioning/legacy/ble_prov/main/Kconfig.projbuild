@@ -37,4 +37,9 @@ menu "Example Configuration"
         help
             Set the maximum connection attempts to perform when connecting to a Wi-Fi AP.
 
+    config EXAMPLE_PROV_SHOW_QR
+        bool "Show provisioning QR code"
+        default y
+        help
+            Show the QR code for provisioning.
 endmenu
