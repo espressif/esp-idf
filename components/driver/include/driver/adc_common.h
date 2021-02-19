@@ -49,8 +49,8 @@ typedef enum {
     ADC1_CHANNEL_5,     /*!< ADC1 channel 5 is GPIO6  */
     ADC1_CHANNEL_6,     /*!< ADC1 channel 6 is GPIO7  */
     ADC1_CHANNEL_7,     /*!< ADC1 channel 7 is GPIO8  */
-    ADC1_CHANNEL_8,     /*!< ADC1 channel 6 is GPIO9  */
-    ADC1_CHANNEL_9,     /*!< ADC1 channel 7 is GPIO10 */
+    ADC1_CHANNEL_8,     /*!< ADC1 channel 8 is GPIO9  */
+    ADC1_CHANNEL_9,     /*!< ADC1 channel 9 is GPIO10 */
     ADC1_CHANNEL_MAX,
 } adc1_channel_t;
 #elif CONFIG_IDF_TARGET_ESP32C3
