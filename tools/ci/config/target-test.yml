@@ -331,7 +331,7 @@ UT_020:
     - psram
 
 UT_021:
-  extends: .unit_test_32_template
+  extends: .unit_test_template
   parallel: 2
   tags:
     - ESP32_IDF
