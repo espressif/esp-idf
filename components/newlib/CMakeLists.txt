@@ -16,6 +16,7 @@ set(srcs
     "newlib_init.c"
     "syscalls.c"
     "termios.c"
+    "stdatomic.c"
     "time.c")
 set(include_dirs platform_include)
 
