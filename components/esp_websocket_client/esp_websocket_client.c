@@ -381,7 +381,6 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
     if (config->skip_cert_common_name_check) {
         esp_transport_ssl_skip_common_name_check(ssl);
     }
-    esp_transport_ssl_set_keep_alive(ssl, &client->keep_alive_cfg);
 
     esp_transport_handle_t wss = esp_transport_ws_init(ssl);
     ESP_WS_CLIENT_MEM_CHECK(TAG, wss, goto _websocket_init_fail);
