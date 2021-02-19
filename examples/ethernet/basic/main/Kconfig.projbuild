@@ -70,6 +70,12 @@ menu "Example Configuration"
                 help
                     The KSZ8041 is a single supply 10Base-T/100Base-TX Physical Layer Transceiver.
                     Goto https://www.microchip.com/wwwproducts/en/KSZ8041 for more information about it.
+
+            config EXAMPLE_ETH_PHY_KSZ8081
+                bool "KSZ8081"
+                help
+                    The KSZ8081 is a single supply 10Base-T/100Base-TX Physical Layer Transceiver.
+                    Goto https://www.microchip.com/wwwproducts/en/KSZ8081 for more information about it.
         endchoice # EXAMPLE_ETH_PHY_MODEL
 
         config EXAMPLE_ETH_MDC_GPIO
