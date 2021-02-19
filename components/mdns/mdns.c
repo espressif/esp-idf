@@ -2679,7 +2679,7 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
     }
 
     //if we have not set the hostname, we can not answer questions
-    if (header.questions && _str_null_or_empty(_mdns_server->hostname)) {
+    if (header.questions && !header.answers && _str_null_or_empty(_mdns_server->hostname)) {
         free(parsed_packet);
         return;
     }
