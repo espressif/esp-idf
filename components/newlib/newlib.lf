@@ -3,3 +3,4 @@ archive: libnewlib.a
 entries:
   heap (noflash)
   abort (noflash)
+  stdatomic (noflash)

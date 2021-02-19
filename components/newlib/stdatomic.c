@@ -17,11 +17,34 @@
 #include "sdkconfig.h"
 #include <stdbool.h>
 #include <stdint.h>
-#include "freertos/portmacro.h"
 
-//reserved to measure atomic operation time
-#define atomic_benchmark_intr_disable()
-#define atomic_benchmark_intr_restore(STATE)
+#ifdef __XTENSA__
+
+#include "xtensa/config/core-isa.h"
+#include "xtensa/xtruntime.h"
+
+// This allows nested interrupts disabling and restoring via local registers or stack.
+// They can be called from interrupts too.
+// WARNING: Only applies to current CPU.
+#define _ATOMIC_ENTER_CRITICAL(void) ({ \
+	unsigned state = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL); \
+	atomic_benchmark_intr_disable(); \
+	state; \
+})
+
+#define _ATOMIC_EXIT_CRITICAL(state)   do { \
+    atomic_benchmark_intr_restore(state); \
+    XTOS_RESTORE_JUST_INTLEVEL(state); \
+    } while (0)
+
+#ifndef XCHAL_HAVE_S32C1I
+#error "XCHAL_HAVE_S32C1I not defined, include correct header!"
+#endif
+
+#define NO_ATOMICS_SUPPORT (XCHAL_HAVE_S32C1I == 0)
+#else // RISCV
+
+#include "freertos/portmacro.h"
 
 // This allows nested interrupts disabling and restoring via local registers or stack.
 // They can be called from interrupts too.
@@ -36,6 +59,15 @@
     atomic_benchmark_intr_restore(state); \
     portEXIT_CRITICAL_NESTED(state); \
     } while (0)
+
+#define NO_ATOMICS_SUPPORT 1    // [todo] Get the equivalent XCHAL_HAVE_S32C1I check for RISCV 
+
+#endif
+
+
+//reserved to measure atomic operation time
+#define atomic_benchmark_intr_disable()
+#define atomic_benchmark_intr_restore(STATE)
 
 #define CMP_EXCHANGE(n, type) bool __atomic_compare_exchange_ ## n (type* mem, type* expect, type desired, int success, int failure) \
 { \
@@ -98,6 +130,8 @@
 
 #pragma GCC diagnostic ignored "-Wbuiltin-declaration-mismatch"
 
+#if NO_ATOMICS_SUPPORT
+
 CMP_EXCHANGE(1, uint8_t)
 CMP_EXCHANGE(2, uint16_t)
 CMP_EXCHANGE(4, uint32_t)
@@ -127,3 +161,5 @@ FETCH_XOR(1, uint8_t)
 FETCH_XOR(2, uint16_t)
 FETCH_XOR(4, uint32_t)
 FETCH_XOR(8, uint64_t)
+
+#endif

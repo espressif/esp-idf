@@ -9,7 +9,6 @@ else()
     set(srcs
         "instruction_decode.c"
         "interrupt.c"
-        "stdatomic.c"
         "vectors.S")
 endif()
 
