@@ -28,7 +28,7 @@ check_docs_lang_sync:
   parallel:
     matrix:
       - DOCLANG: ["en", "zh_CN"]
-        DOCTGT: ["esp32", "esp32s2"]
+        DOCTGT: ["esp32", "esp32s2", "esp32c3"]
 
 check_docs_gh_links:
   extends:
