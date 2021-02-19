@@ -38,8 +38,7 @@ static StackType_t *esp_switch_stack_setup(StackType_t *stack, size_t stack_size
 
     //Align stack to a 16byte boundary, as required by CPU specific:
     top_of_stack =  (StackType_t *)(((UBaseType_t)(top_of_stack - 16) & ~0xf));
-    RvExcFrame *adjusted_top_of_stack = (RvExcFrame *) top_of_stack;
-    adjusted_top_of_stack--;
+    StackType_t *adjusted_top_of_stack = top_of_stack - RV_STK_FRMSZ;
 
 #if CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK
     vPortSetStackWatchpoint(stack);

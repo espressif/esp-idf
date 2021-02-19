@@ -15,7 +15,16 @@ static StackType_t *shared_stack_sp = NULL;
 void external_stack_function(void)
 {
     printf("Executing this printf from external stack! sp=%p\n", get_sp());
+
     shared_stack_sp = (StackType_t *)get_sp();
+
+    char *res = NULL;
+    /* Test return value from asprintf, this could potentially help catch a misaligned
+       stack pointer error */
+    asprintf(&res, "%d %011i %lu %p %x %c %.4f\n", 42, 2147483647, 2147483648UL, (void *) 0x40010000, 0x40020000, 'Q', 1.0f / 137.0f);
+    TEST_ASSERT_NOT_NULL(res);
+    TEST_ASSERT_EQUAL_STRING("42 02147483647 2147483648 0x40010000 40020000 Q 0.0073\n", res);
+    free(res);
 }
 
 void another_external_stack_function(void)
