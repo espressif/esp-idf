@@ -32,6 +32,12 @@ struct tcp_connect_task_params {
     bool consume_sock_backlog;
 };
 
+#define TEST_TRANSPORT_BIND_IFNAME() \
+    struct ifreq ifr; \
+    ifr.ifr_name[0] = 'l'; \
+    ifr.ifr_name[1] = 'o'; \
+    ifr.ifr_name[2] = '\0';
+
 /**
  * @brief Recursively connects with a new socket to loopback interface until the last one blocks.
  * The last socket is closed upon test teardown, that initiates recursive cleanup (close) for all
@@ -350,6 +356,10 @@ TEST_CASE("tcp_transport: Keep alive test", "[tcp_transport]")
             .keep_alive_count = 3 };
     esp_transport_tcp_set_keep_alive(tcp, &keep_alive_cfg);
 
+    // Bind device interface to loopback
+    TEST_TRANSPORT_BIND_IFNAME();
+    esp_transport_tcp_set_interface_name(tcp, &ifr);
+
     tcp_transport_keepalive_test(tcp, &keep_alive_cfg);
 
     // Cleanup
@@ -373,6 +383,10 @@ TEST_CASE("ssl_transport: Keep alive test", "[tcp_transport]")
             .keep_alive_enable = true,
             .keep_alive_count = 4 };
     esp_transport_ssl_set_keep_alive(ssl, &keep_alive_cfg);
+
+    // Bind device interface to loopback
+    TEST_TRANSPORT_BIND_IFNAME();
+    esp_transport_ssl_set_interface_name(ssl, &ifr);
 
     tcp_transport_keepalive_test(ssl, &keep_alive_cfg);
 
@@ -400,6 +414,10 @@ TEST_CASE("ws_transport: Keep alive test", "[tcp_transport]")
             .keep_alive_count = 3 };
     esp_transport_tcp_set_keep_alive(ssl, &keep_alive_cfg);
 
+    // Bind device interface to loopback
+    TEST_TRANSPORT_BIND_IFNAME();
+    esp_transport_ssl_set_interface_name(ws, &ifr);
+
     tcp_transport_keepalive_test(ws, &keep_alive_cfg);
 
     // Cleanup
@@ -423,6 +441,10 @@ TEST_CASE("ssl_transport: Check that parameters (keepalive) are set independentl
             .keep_alive_enable = true,
             .keep_alive_count = 3 };
     esp_transport_ssl_set_keep_alive(ssl, &keep_alive_cfg);
+
+    // Bind device interface to loopback
+    TEST_TRANSPORT_BIND_IFNAME();
+    esp_transport_ssl_set_interface_name(ssl, &ifr);
 
     tcp_transport_keepalive_test(ssl, &keep_alive_cfg);
 
