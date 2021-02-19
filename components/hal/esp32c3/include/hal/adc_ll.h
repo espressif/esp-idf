@@ -29,7 +29,6 @@
 extern "C" {
 #endif
 
-#define ADC_LL_ADC2_CHANNEL_MAX     1
 #define ADC_LL_CLKM_DIV_NUM_DEFAULT 15
 #define ADC_LL_CLKM_DIV_B_DEFAULT   1
 #define ADC_LL_CLKM_DIV_A_DEFAULT   0
@@ -74,7 +73,7 @@ typedef enum {
     ADC2_CTRL_FORCE_PWDET = 3,  /*!<For ADC2. Arbiter in shield mode. Force select Wi-Fi controller work. */
     ADC2_CTRL_FORCE_RTC = 4,    /*!<For ADC2. Arbiter in shield mode. Force select RTC controller work. */
     ADC2_CTRL_FORCE_DIG = 6,    /*!<For ADC2. Arbiter in shield mode. Force select digital controller work. */
-} adc_controller_t;
+} adc_ll_controller_t;
 
 /*---------------------------------------------------------------
                     Digital controller setting
@@ -289,7 +288,6 @@ static inline void adc_ll_digi_controller_clk_enable(bool use_apll)
 static inline void adc_ll_digi_controller_clk_disable(void)
 {
     APB_SARADC.ctrl.sar_clk_gated = 0;
-    APB_SARADC.apb_adc_clkm_conf.clk_sel = 0;
 }
 
 /**
@@ -657,17 +655,13 @@ static inline adc_ll_power_t adc_ll_get_power_manage(void)
 
 /**
  * Set ADC module controller.
- * There are five SAR ADC controllers:
- * Two digital controller: Continuous conversion mode (DMA). High performance with multiple channel scan modes;
- * Two RTC controller: Single conversion modes (Polling). For low power purpose working during deep sleep;
- * the other is dedicated for Power detect (PWDET / PKDET), Only support ADC2.
- *
  * @param adc_n ADC unit.
  * @param ctrl ADC controller.
  */
-static inline void adc_ll_set_controller(adc_ll_num_t adc_n, adc_controller_t ctrl)
+static inline void adc_ll_set_controller(adc_ll_num_t adc_n, adc_ll_controller_t ctrl)
 {
-    //NOTE: ULP is removed on C3, please remove ULP related (if there still are any) code and this comment
+    //This is for chip version compability. On esp32c3, the ADC1 is only controlled by digital controller, whereas ADC2 controller is
+    //auto-selected by arbiter according to the priority.
 }
 
 /**
