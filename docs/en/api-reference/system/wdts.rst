@@ -54,6 +54,8 @@ sections or interrupt handlers should ever block waiting for another event to oc
 If changing the code to reduce the processing time is not possible or desirable, it's possible to
 increase the :ref:`CONFIG_ESP_INT_WDT_TIMEOUT_MS` setting instead.
 
+.. _task-watchdog-timer:
+
 Task Watchdog Timer
 ^^^^^^^^^^^^^^^^^^^
 

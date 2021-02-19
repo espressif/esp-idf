@@ -136,11 +136,7 @@
 #define configTICK_RATE_HZ                              ( CONFIG_FREERTOS_HZ )
 
 /* This has impact on speed of search for highest priority */
-#ifdef SMALL_TEST
-#define configMAX_PRIORITIES                            ( 7 )
-#else
 #define configMAX_PRIORITIES                            ( 25 )
-#endif
 
 /* Various things that impact minimum stack sizes */
 

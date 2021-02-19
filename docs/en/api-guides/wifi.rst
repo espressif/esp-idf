@@ -1906,7 +1906,7 @@ Dynamic vs. Static Buffer
 
 The default type of buffer in Wi-Fi drivers is "dynamic". Most of the time the dynamic buffer can significantly save memory. However, it makes the application programming a little more difficult, because in this case the application needs to consider memory usage in Wi-Fi.
 
-lwIP also allocates buffers at the TCP/IP layer, and this buffer allocation is also dynamic. See `lwIP documentation section about memory use and performance <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/lwip.html#performance-optimization>`_.
+lwIP also allocates buffers at the TCP/IP layer, and this buffer allocation is also dynamic. See :ref:`lwIP documentation section about memory use and performance <lwip-performance>`.
 
 Peak Wi-Fi Dynamic Buffer
 ++++++++++++++++++++++++++++++

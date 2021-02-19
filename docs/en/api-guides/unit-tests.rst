@@ -246,6 +246,8 @@ Similar to multi-device test cases, multi-stage test cases will also print sub-m
 First time you execute this case, input ``1`` to run first stage (trigger deepsleep). After DUT is rebooted and able to run test cases, select this case again and input ``2`` to run the second stage. The case only passes if the last stage passes and all previous stages trigger reset.
 
 
+.. _cache-compensated-timer:
+
 Timing Code with Cache Compensated Timer
 -----------------------------------------
 

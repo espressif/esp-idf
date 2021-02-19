@@ -29,6 +29,7 @@ API Guides
     Memory Types <memory-types>
     lwIP TCP/IP Stack <lwip>
     Partition Tables <partition-tables>
+    Performance <performance/index>
     RF Calibration <RF_calibration>
     :esp32: Secure Boot <../security/secure-boot-v1>
     Secure Boot V2 <../security/secure-boot-v2>
