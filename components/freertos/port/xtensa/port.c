@@ -428,7 +428,7 @@ void vPortSetStackWatchpoint( void* pxStackStart ) {
 	//This way, we make sure we trigger before/when the stack canary is corrupted, not after.
 	int addr=(int)pxStackStart;
 	addr=(addr+31)&(~31);
-	esp_set_watchpoint(STACK_WATCH_POINT_NUMBER, (char*)addr, 32, ESP_WATCHPOINT_STORE);
+	esp_cpu_set_watchpoint(STACK_WATCH_POINT_NUMBER, (char*)addr, 32, ESP_WATCHPOINT_STORE);
 }
 
 uint32_t xPortGetTickRateHz(void) {

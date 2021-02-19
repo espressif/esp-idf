@@ -19,9 +19,10 @@
 #include "sdkconfig.h"
 
 #include "hal/cpu_hal.h"
-#include "esp_debug_helpers.h"
 #include "hal/cpu_types.h"
 #include "hal/mpu_hal.h"
+
+#include "esp_cpu.h"
 
 #include "hal/soc_hal.h"
 #include "soc/soc_caps.h"
@@ -47,7 +48,7 @@ void IRAM_ATTR esp_cpu_reset(int cpu_id)
     soc_hal_reset_core(cpu_id);
 }
 
-esp_err_t IRAM_ATTR esp_set_watchpoint(int no, void *adr, int size, int flags)
+esp_err_t IRAM_ATTR esp_cpu_set_watchpoint(int no, void *adr, int size, int flags)
 {
     watchpoint_trigger_t trigger;
 
@@ -70,7 +71,7 @@ esp_err_t IRAM_ATTR esp_set_watchpoint(int no, void *adr, int size, int flags)
     return ESP_OK;
 }
 
-void IRAM_ATTR esp_clear_watchpoint(int no)
+void IRAM_ATTR esp_cpu_clear_watchpoint(int no)
 {
     cpu_hal_clear_watchpoint(no);
 }
@@ -85,13 +86,6 @@ bool IRAM_ATTR esp_cpu_in_ocd_debug_mode(void)
 #else
     return false; // Always return false if "OCD aware" is disabled
 #endif
-}
-
-void IRAM_ATTR esp_set_breakpoint_if_jtag(void *fn)
-{
-    if (esp_cpu_in_ocd_debug_mode()) {
-        cpu_hal_set_breakpoint(0, fn);
-    }
 }
 
 #if __XTENSA__

@@ -77,15 +77,15 @@ FORCE_INLINE_ATTR void esp_core_dump_setup_stack(void)
     memset(s_coredump_stack, COREDUMP_STACK_FILL_BYTE, ESP_COREDUMP_STACK_SIZE);
 
     /* watchpoint 1 can be used for task stack overflow detection, re-use it, it is no more necessary */
-	//esp_clear_watchpoint(1);
-	//esp_set_watchpoint(1, s_coredump_stack, 1, ESP_WATCHPOINT_STORE);
+	//esp_cpu_clear_watchpoint(1);
+	//esp_cpu_set_watchpoint(1, s_coredump_stack, 1, ESP_WATCHPOINT_STORE);
 
     /* Replace the stack pointer depending on the architecture, but save the
      * current stack pointer, in order to be able too restore it later.
      * This function must be inlined. */
     s_core_dump_backup = esp_core_dump_replace_sp(s_core_dump_sp);
     ESP_COREDUMP_LOGI("Backing up stack @ %p and use core dump stack @ %p",
-                      s_core_dump_backup, get_sp());
+                      s_core_dump_backup, esp_cpu_get_sp());
 }
 
 /**
@@ -127,8 +127,8 @@ FORCE_INLINE_ATTR void esp_core_dump_setup_stack(void)
     /* If we are in ISR set watchpoint to the end of ISR stack */
     if (esp_core_dump_in_isr_context()) {
         uint8_t* topStack = esp_core_dump_get_isr_stack_top();
-        esp_clear_watchpoint(1);
-        esp_set_watchpoint(1, topStack+xPortGetCoreID()*configISR_STACK_SIZE, 1, ESP_WATCHPOINT_STORE);
+        esp_cpu_clear_watchpoint(1);
+        esp_cpu_set_watchpoint(1, topStack+xPortGetCoreID()*configISR_STACK_SIZE, 1, ESP_WATCHPOINT_STORE);
     } else {
         /* for tasks user should enable stack overflow detection in menuconfig
         TODO: if not enabled in menuconfig enable it ourselves */

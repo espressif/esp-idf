@@ -8,8 +8,7 @@ endif()
 
 if(BOOTLOADER_BUILD)
     # Bootloader relies on some Kconfig options defined in esp_system.
-    idf_component_register( INCLUDE_DIRS include
-                            SRCS "${srcs}")
+    idf_component_register(SRCS "${srcs}")
 else()
     list(APPEND srcs "esp_err.c"
             "freertos_hooks.c"

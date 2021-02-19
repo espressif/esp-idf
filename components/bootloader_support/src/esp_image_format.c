@@ -400,7 +400,7 @@ static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_
 
     if (esp_ptr_in_dram(load_addr_p) && esp_ptr_in_dram(load_end_p)) { /* Writing to DRAM */
         /* Check if we're clobbering the stack */
-        intptr_t sp = (intptr_t)get_sp();
+        intptr_t sp = (intptr_t)esp_cpu_get_sp();
         if (bootloader_util_regions_overlap(sp - STACK_LOAD_HEADROOM, SOC_ROM_STACK_START,
                                            load_addr, load_end)) {
             reason = "overlaps bootloader stack";
