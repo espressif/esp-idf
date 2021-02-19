@@ -5,7 +5,7 @@
   - ".gitlab/ci/docs.yml"
   - "docs/**/*"
   - "components/**/*.h"
-  - "components/**/Kconfig"
+  - "components/**/Kconfig*"
   - "components/**/CMakeList.txt"
   - "components/**/sdkconfig*"
   - "tools/kconfig_new/**/*"
