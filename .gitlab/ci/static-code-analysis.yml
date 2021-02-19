@@ -58,7 +58,8 @@ code_quality_check:
   extends:
     - .sonar_scan_template
     - .rules:patterns:static-code-analysis-preview
-  allow_failure: true
+  allow_failure: true  # since now it's using exit code to indicate the code analysis result,
+                       # we don't want to block ci when critical issues founded
   script:
     - export CI_MERGE_REQUEST_COMMITS=$(python ${CI_PROJECT_DIR}/tools/ci/ci_get_mr_info.py commits ${CI_COMMIT_REF_NAME} | tr '\n' ',')
     # test if this branch have merge request, if not, exit 0
@@ -88,6 +89,8 @@ code_quality_report:
   extends:
     - .sonar_scan_template
     - .rules:protected
+  allow_failure: true  # since now it's using exit code to indicate the code analysis result,
+                       # we don't want to block ci when critical issues founded
   script:
     - sonar-scanner
       -Dsonar.branch.name=$CI_COMMIT_REF_NAME
