@@ -10,12 +10,41 @@ The test apps are not intended to demonstrate the ESP-IDF functionality in any w
 
 Test applications are treated the same way as ESP-IDF examples, so each project directory shall contain
 * Build recipe in cmake and the main component with app sources
-* Configuration files
-  - `sdkconfig.ci` - Default configuration for the project
-  - `sdkconfig.ci.<CONFIG>` - Other configurations, where `<CONFIG>` indicates name of the configuration
+* Configuration files, `sdkconfig.ci` and similar (see below)
 * Test executor in `ttfw_idf` format if the project is intended to also run tests (otherwise the example is build only)
   - test file in the project dir must end with `_test.py`, by should be named  `app_test.py`
   - test cases shall be decorated with `@ttfw_idf.idf_custom_test(env_tag="...")`
+
+
+# CI Behavior
+
+## Configuration Files
+
+For each project in test_apps (and also examples):
+
+* If a file `sdkconfig.ci` exists then it's built as the `default` CI config (same as if this file was named `sdkconfig.ci.default`)
+* If any files `sdkconfig.ci.<CONFIG>` exist then these are built as alternative configs, with the specified `<CONFIG>` name.
+
+* By default, every CI configurations is built for every target SoC (an `m * n` configuration matrix). However if any `sdkconfig.ci` file contains a line of the form `CONFIG_IDF_TARGET="targetname"` then that CI config is only built for that one target.
+* Each configuration is also built with the contents of any `sdkconfig.defaults` file or a file named `sdkconfig.defaults.<TARGET>` appended. (Same as a normal ESP-IDF project build.)
+
+## Test Execution
+
+If an example test or test app test supports more targets than just `ESP32`, then the `app_test.py` file needs to specify the list of supported targets in the test decorator. For example:
+
+```
+@ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32', 'esp32s2'])
+def test_app_xyz(env, extra_data):
+```
+
+If the app test supports multiple targets but you only want some of these targets to be run automatically in CI, the list can be further filtered down by adding the `ci_target` list:
+
+```
+@ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32', 'esp32s2'], ci_target=['esp32'])
+def test_app_xyz(env, extra_data):
+```
+
+(If no ci_target list is specified, all supported targets will be tested in CI.)
 
 # Test Apps layout
 
