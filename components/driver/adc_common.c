@@ -160,17 +160,12 @@ static void adc_power_on_internal(void)
 
 void adc_power_acquire(void)
 {
-    bool powered_on = false;
     ADC_POWER_ENTER();
     s_adc_power_on_cnt++;
     if (s_adc_power_on_cnt == 1) {
         adc_power_on_internal();
-        powered_on = true;
     }
     ADC_POWER_EXIT();
-    if (powered_on) {
-        ESP_LOGV(ADC_TAG, "%s: ADC powered on", __func__);
-    }
 }
 
 void adc_power_on(void)
@@ -187,7 +182,6 @@ static void adc_power_off_internal(void)
 
 void adc_power_release(void)
 {
-    bool powered_off = false;
     ADC_POWER_ENTER();
     s_adc_power_on_cnt--;
     /* Sanity check */
@@ -197,12 +191,8 @@ void adc_power_release(void)
         abort();
     } else if (s_adc_power_on_cnt == 0) {
         adc_power_off_internal();
-        powered_off = true;
     }
     ADC_POWER_EXIT();
-    if (powered_off) {
-        ESP_LOGV(ADC_TAG, "%s: ADC powered off", __func__);
-    }
 }
 
 void adc_power_off(void)
