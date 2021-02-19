@@ -35,7 +35,6 @@
 #include "l2c_int.h"
 #include "osi/fixed_queue.h"
 #include "osi/alarm.h"
-#include "esp_bt.h"
 
 #if (BT_USE_TRACES == TRUE && BT_TRACE_VERBOSE == FALSE)
 /* needed for sprintf() */
@@ -2613,15 +2612,6 @@ void btm_sec_conn_req (UINT8 *bda, UINT8 *dc)
     /* Some device may request a connection before we are done with the HCI_Reset sequence */
     if (!controller_get_interface()->get_is_ready()) {
         BTM_TRACE_ERROR ("Security Manager: connect request when device not ready\n");
-        btsnd_hcic_reject_conn (bda, HCI_ERR_HOST_REJECT_DEVICE);
-        return;
-    }
-
-    /* Check if peer device's and our BD_ADDR is same or not. It
-       should be different to avoid 'Impersonation in the Pin Pairing
-       Protocol' (CVE-2020-26555) vulnerability. */
-    if (memcmp(bda, esp_bt_get_mac(), sizeof (BD_ADDR)) == 0) {
-        BTM_TRACE_ERROR ("Security Manager: connect request from device with same BD_ADDR\n");
         btsnd_hcic_reject_conn (bda, HCI_ERR_HOST_REJECT_DEVICE);
         return;
     }

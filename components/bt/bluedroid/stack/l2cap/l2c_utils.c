@@ -52,6 +52,16 @@ tL2C_LCB *l2cu_allocate_lcb (BD_ADDR p_bd_addr, BOOLEAN is_bonding, tBT_TRANSPOR
     int         xx;
     tL2C_LCB    *p_lcb = &l2cb.lcb_pool[0];
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
+            /* Check if peer device's and our BD_ADDR is same or not. It
+               should be different to avoid 'Impersonation in the Pin Pairing
+               Protocol' (CVE-2020-26555) vulnerability. */
+            if (memcmp((uint8_t *)p_bd_addr, (uint8_t *)&controller_get_interface()->get_address()->address, sizeof (BD_ADDR)) == 0) {
+                L2CAP_TRACE_ERROR ("%s connection rejected due to same BD ADDR", __func__);
+                return (NULL);
+            }
+#endif
+
     for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
         if (!p_lcb->in_use) {
             btu_free_timer(&p_lcb->timer_entry);
