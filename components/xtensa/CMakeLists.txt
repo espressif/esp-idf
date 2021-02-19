@@ -7,9 +7,7 @@ if(BOOTLOADER_BUILD)
     set(priv_requires soc)
 else()
     set(priv_requires soc freertos)
-    set(srcs "debug_helpers.c"
-             "debug_helpers_asm.S"
-             "eri.c"
+    set(srcs "eri.c"
              "trax.c"
              "xtensa_intr.c"
              "xtensa_intr_asm.S"
