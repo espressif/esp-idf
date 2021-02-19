@@ -62,7 +62,7 @@ static mb_descr_entry_t* mbc_slave_find_reg_descriptor(mb_param_type_t type, uin
         if ((addr >= it->start_offset)
             && (it->p_data)
             && (regs >= 1)
-            && ((addr + regs) <= (it->start_offset + reg_size + 1))
+            && ((addr + regs) <= (it->start_offset + reg_size))
             && (reg_size >= 1)) {
             return it;
         }
