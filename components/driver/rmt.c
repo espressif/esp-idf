@@ -528,7 +528,7 @@ esp_err_t rmt_set_tx_thr_intr_en(rmt_channel_t channel, bool en, uint16_t evt_th
     return ESP_OK;
 }
 
-esp_err_t rmt_set_pin(rmt_channel_t channel, rmt_mode_t mode, gpio_num_t gpio_num)
+esp_err_t rmt_set_gpio(rmt_channel_t channel, rmt_mode_t mode, gpio_num_t gpio_num, bool invert_signal)
 {
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
     RMT_CHECK(mode < RMT_MODE_MAX, RMT_MODE_ERROR_STR, ESP_ERR_INVALID_ARG);
@@ -540,13 +540,19 @@ esp_err_t rmt_set_pin(rmt_channel_t channel, rmt_mode_t mode, gpio_num_t gpio_nu
     if (mode == RMT_MODE_TX) {
         RMT_CHECK(RMT_IS_TX_CHANNEL(channel), RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
         gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);
-        esp_rom_gpio_connect_out_signal(gpio_num, rmt_periph_signals.channels[channel].tx_sig, 0, 0);
+        esp_rom_gpio_connect_out_signal(gpio_num, rmt_periph_signals.channels[channel].tx_sig, invert_signal, 0);
     } else {
         RMT_CHECK(RMT_IS_RX_CHANNEL(channel), RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
         gpio_set_direction(gpio_num, GPIO_MODE_INPUT);
-        esp_rom_gpio_connect_in_signal(gpio_num, rmt_periph_signals.channels[channel].rx_sig, 0);
+        esp_rom_gpio_connect_in_signal(gpio_num, rmt_periph_signals.channels[channel].rx_sig, invert_signal);
     }
     return ESP_OK;
+}
+
+esp_err_t rmt_set_pin(rmt_channel_t channel, rmt_mode_t mode, gpio_num_t gpio_num)
+{
+    // only for backword compatibility
+    return rmt_set_gpio(channel, mode, gpio_num, false);
 }
 
 static bool rmt_is_channel_number_valid(rmt_channel_t channel, uint8_t mode)
@@ -688,7 +694,7 @@ esp_err_t rmt_config(const rmt_config_t *rmt_param)
 {
     rmt_module_enable();
 
-    RMT_CHECK(rmt_set_pin(rmt_param->channel, rmt_param->rmt_mode, rmt_param->gpio_num) == ESP_OK,
+    RMT_CHECK(rmt_set_gpio(rmt_param->channel, rmt_param->rmt_mode, rmt_param->gpio_num, rmt_param->flags & RMT_CHANNEL_FLAGS_INVERT_SIG) == ESP_OK,
               "set gpio for RMT driver failed", ESP_ERR_INVALID_ARG);
 
     RMT_CHECK(rmt_internal_config(&RMT, rmt_param) == ESP_OK,

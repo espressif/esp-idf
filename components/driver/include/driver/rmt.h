@@ -29,6 +29,7 @@ extern "C" {
 #include "hal/rmt_types.h"
 
 #define RMT_CHANNEL_FLAGS_AWARE_DFS (1 << 0) /*!< Channel can work during APB clock scaling */
+#define RMT_CHANNEL_FLAGS_INVERT_SIG (1 << 1) /*!< Invert RMT signal */
 
 /** @cond */
 #define RMT_CHANNEL_FLAGS_ALWAYS_ON RMT_CHANNEL_FLAGS_AWARE_DFS  /*!< Deprecated name, defined here for compatibility */
@@ -572,17 +573,18 @@ esp_err_t rmt_set_tx_intr_en(rmt_channel_t channel, bool en);
 esp_err_t rmt_set_tx_thr_intr_en(rmt_channel_t channel, bool en, uint16_t evt_thresh);
 
 /**
-* @brief Set RMT pin
+* @brief Configure the GPIO used by RMT channel
 *
 * @param channel RMT channel
-* @param mode TX or RX mode for RMT
-* @param gpio_num GPIO number to transmit or receive the signal.
+* @param mode RMT mode, either RMT_MODE_TX or RMT_MODE_RX
+* @param gpio_num GPIO number, which is connected with certain RMT signal
+* @param invert_signal Invert RMT signal physically by GPIO matrix
 *
 * @return
-*     - ESP_ERR_INVALID_ARG Parameter error
-*     - ESP_OK Success
+*     - ESP_ERR_INVALID_ARG Configure RMT GPIO failed because of wrong parameter
+*     - ESP_OK Configure RMT GPIO successfully
 */
-esp_err_t rmt_set_pin(rmt_channel_t channel, rmt_mode_t mode, gpio_num_t gpio_num);
+esp_err_t rmt_set_gpio(rmt_channel_t channel, rmt_mode_t mode, gpio_num_t gpio_num, bool invert_signal);
 
 /**
 * @brief Configure RMT parameters
@@ -902,6 +904,20 @@ __attribute__((deprecated("interrupt should be handled by driver")));
 */
 void rmt_clr_intr_enable_mask(uint32_t mask)
 __attribute__((deprecated("interrupt should be handled by driver")));
+
+/**
+* @brief Set RMT pin
+*
+* @param channel RMT channel
+* @param mode TX or RX mode for RMT
+* @param gpio_num GPIO number to transmit or receive the signal.
+*
+* @return
+*     - ESP_ERR_INVALID_ARG Parameter error
+*     - ESP_OK Success
+*/
+esp_err_t rmt_set_pin(rmt_channel_t channel, rmt_mode_t mode, gpio_num_t gpio_num)
+__attribute__((deprecated("use rmt_set_gpio instead")));
 
 #ifdef __cplusplus
 }
