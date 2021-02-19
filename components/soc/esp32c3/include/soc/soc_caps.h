@@ -14,14 +14,12 @@
 // Attention: These fixed DMA channels are temporarily workaround before we have a centralized DMA controller API to help alloc the channel dynamically
 // Remove them when GDMA driver API is ready
 #define SOC_GDMA_SPI2_DMA_CHANNEL   (2)
-#define SOC_GDMA_ADC_DMA_CHANNEL    (0)
 
 //NOTE: The CHx number should be consistent with the selected DMA channel above
 #define SOC_GDMA_SPI2_INTR_SOURCE   ETS_DMA_CH2_INTR_SOURCE
 //On C3, there is only 1 GPSPI controller (GPSPI2)
 #define SOC_GDMA_SPI3_DMA_CHANNEL   SOC_GDMA_SPI2_DMA_CHANNEL
 
-#define SOC_GDMA_ADC_INTR_SOURCE    ETS_DMA_CH0_INTR_SOURCE
 
 #include "rmt_caps.h"
 

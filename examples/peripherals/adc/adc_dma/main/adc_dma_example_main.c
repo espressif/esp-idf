@@ -7,7 +7,6 @@
 #include "driver/adc.h"
 
 #define TIMES 256
-#define DMA_CHANNEL 0
 
 static void continuous_adc_init(uint16_t adc1_chan_mask, uint16_t adc2_chan_mask, adc_channel_t *channel, uint8_t channel_num)
 {
@@ -17,7 +16,6 @@ static void continuous_adc_init(uint16_t adc1_chan_mask, uint16_t adc2_chan_mask
     adc_digi_init_config_t adc_dma_config = {
         .max_store_buf_size = 1024,
         .conv_num_each_intr = 256,
-        .dma_chan = SOC_GDMA_ADC_DMA_CHANNEL,
         .adc1_chan_mask = adc1_chan_mask,
         .adc2_chan_mask = adc2_chan_mask,
     };
