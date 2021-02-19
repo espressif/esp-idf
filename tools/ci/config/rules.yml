@@ -198,6 +198,7 @@
 
 .rules:tests:unit_test_c3:
   rules:
+    - <<: *if-protected-no_label
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test-c3
 
