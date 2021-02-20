@@ -9,8 +9,7 @@ if(BOOTLOADER_BUILD)
     set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-Wl,--gc-sections")
 else()
     # Regular app build
-    list(APPEND srcs "src/brownout.c"
-             "src/esp_err.c"
+    list(APPEND srcs "src/esp_err.c"
              "src/esp_err_to_name.c"
              "src/freertos_hooks.c"
              "src/stack_check.c")

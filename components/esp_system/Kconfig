@@ -121,7 +121,77 @@ menu "ESP System Settings"
                 The lock is reset only on the chip startup.
 
     endmenu  # Memory protection
-    
+
+    config ESP_INT_WDT
+        bool "Interrupt watchdog"
+        default y
+        help
+            This watchdog timer can detect if the FreeRTOS tick interrupt has not been called for a certain time,
+            either because a task turned off interrupts and did not turn them on for a long time, or because an
+            interrupt handler did not return. It will try to invoke the panic handler first and failing that
+            reset the SoC.
+
+    config ESP_INT_WDT_TIMEOUT_MS
+        int "Interrupt watchdog timeout (ms)"
+        depends on ESP_INT_WDT
+        default 300 if !ESP32_SPIRAM_SUPPORT
+        default 800 if ESP32_SPIRAM_SUPPORT
+        range 10 10000
+        help
+            The timeout of the watchdog, in miliseconds. Make this higher than the FreeRTOS tick rate.
+
+    config ESP_INT_WDT_CHECK_CPU1
+        bool "Also watch CPU1 tick interrupt"
+        depends on ESP_INT_WDT && !FREERTOS_UNICORE
+        default y
+        help
+            Also detect if interrupts on CPU 1 are disabled for too long.
+
+    config ESP_TASK_WDT
+        bool "Initialize Task Watchdog Timer on startup"
+        default y
+        help
+            The Task Watchdog Timer can be used to make sure individual tasks are still
+            running. Enabling this option will cause the Task Watchdog Timer to be
+            initialized automatically at startup. The Task Watchdog timer can be
+            initialized after startup as well (see Task Watchdog Timer API Reference)
+
+    config ESP_TASK_WDT_PANIC
+        bool "Invoke panic handler on Task Watchdog timeout"
+        depends on ESP_TASK_WDT
+        default n
+        help
+            If this option is enabled, the Task Watchdog Timer will be configured to
+            trigger the panic handler when it times out. This can also be configured
+            at run time (see Task Watchdog Timer API Reference)
+
+    config ESP_TASK_WDT_TIMEOUT_S
+        int "Task Watchdog timeout period (seconds)"
+        depends on ESP_TASK_WDT
+        range 1 60
+        default 5
+        help
+            Timeout period configuration for the Task Watchdog Timer in seconds.
+            This is also configurable at run time (see Task Watchdog Timer API Reference)
+
+    config ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0
+        bool "Watch CPU0 Idle Task"
+        depends on ESP_TASK_WDT
+        default y
+        help
+            If this option is enabled, the Task Watchdog Timer will watch the CPU0
+            Idle Task. Having the Task Watchdog watch the Idle Task allows for detection
+            of CPU starvation as the Idle Task not being called is usually a symptom of
+            CPU starvation. Starvation of the Idle Task is detrimental as FreeRTOS household
+            tasks depend on the Idle Task getting some runtime every now and then.
+
+    config ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1
+        bool "Watch CPU1 Idle Task"
+        depends on ESP_TASK_WDT && !FREERTOS_UNICORE
+        default y
+        help
+            If this option is enabled, the Task Wtachdog Timer will wach the CPU1
+            Idle Task.
     config ESP_DEBUG_STUBS_ENABLE
         bool
         default COMPILER_OPTIMIZATION_LEVEL_DEBUG
