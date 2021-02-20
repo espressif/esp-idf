@@ -121,7 +121,7 @@ bool spicommon_periph_free(spi_host_device_t host);
  * @brief Alloc DMA for SPI Slave
  *
  * @param host_id                      SPI host ID
- * @param dma_chan                     DMA_AUTO_CHAN: auto dma allocate mode; 0: non-dma mode; 1 or 2: assign a specific DMA channel;
+ * @param dma_chan                     DMA channel to be used
  * @param[out] out_actual_tx_dma_chan  Actual TX DMA channel (if you choose to assign a specific DMA channel, this will be the channel you assigned before)
  * @param[out] out_actual_rx_dma_chan  Actual RX DMA channel (if you choose to assign a specific DMA channel, this will be the channel you assigned before)
  *
@@ -130,7 +130,7 @@ bool spicommon_periph_free(spi_host_device_t host);
  *        - ESP_ERR_NO_MEM:        No enough memory
  *        - ESP_ERR_NOT_FOUND:     There is no available DMA channel
  */
-esp_err_t spicommon_slave_dma_chan_alloc(spi_host_device_t host_id, int dma_chan, uint32_t *out_actual_tx_dma_chan, uint32_t *out_actual_rx_dma_chan);
+esp_err_t spicommon_slave_dma_chan_alloc(spi_host_device_t host_id, spi_dma_chan_t dma_chan, uint32_t *out_actual_tx_dma_chan, uint32_t *out_actual_rx_dma_chan);
 
 /**
  * @brief Free DMA for SPI Slave

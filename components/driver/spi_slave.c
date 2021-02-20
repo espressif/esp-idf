@@ -112,7 +112,7 @@ static inline void restore_cs(spi_slave_t *host)
     }
 }
 
-esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *bus_config, const spi_slave_interface_config_t *slave_config, int dma_chan)
+esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *bus_config, const spi_slave_interface_config_t *slave_config, spi_dma_chan_t dma_chan)
 {
     bool spi_chan_claimed;
     uint32_t actual_tx_dma_chan = 0;
@@ -122,11 +122,11 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     //We only support HSPI/VSPI, period.
     SPI_CHECK(is_valid_host(host), "invalid host", ESP_ERR_INVALID_ARG);
 #ifdef CONFIG_IDF_TARGET_ESP32
-    SPI_CHECK( (dma_chan >= 0 && dma_chan <= 2) || dma_chan == DMA_AUTO_CHAN, "invalid dma channel", ESP_ERR_INVALID_ARG );
+    SPI_CHECK(dma_chan >= SPI_DMA_DISABLED && dma_chan <= SPI_DMA_CH_AUTO, "invalid dma channel", ESP_ERR_INVALID_ARG );
 #elif CONFIG_IDF_TARGET_ESP32S2
-    SPI_CHECK( dma_chan == 0 || dma_chan == host || dma_chan == DMA_AUTO_CHAN, "invalid dma channel", ESP_ERR_INVALID_ARG );
+    SPI_CHECK( dma_chan == SPI_DMA_DISABLED || dma_chan == (int)host || dma_chan == SPI_DMA_CH_AUTO, "invalid dma channel", ESP_ERR_INVALID_ARG );
 #elif SOC_GDMA_SUPPORTED
-    SPI_CHECK( dma_chan == 0 || dma_chan == DMA_AUTO_CHAN, "invalid dma channel, chip only support spi dma channel auto-alloc", ESP_ERR_INVALID_ARG );
+    SPI_CHECK( dma_chan == SPI_DMA_DISABLED || dma_chan == SPI_DMA_CH_AUTO, "invalid dma channel, chip only support spi dma channel auto-alloc", ESP_ERR_INVALID_ARG );
 #endif
     SPI_CHECK((bus_config->intr_flags & (ESP_INTR_FLAG_HIGH|ESP_INTR_FLAG_EDGE|ESP_INTR_FLAG_INTRDISABLED))==0, "intr flag not allowed", ESP_ERR_INVALID_ARG);
 #ifndef CONFIG_SPI_SLAVE_ISR_IN_IRAM
@@ -146,7 +146,7 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     memcpy(&spihost[host]->cfg, slave_config, sizeof(spi_slave_interface_config_t));
     spihost[host]->id = host;
 
-    bool use_dma = (dma_chan != 0);
+    bool use_dma = (dma_chan != SPI_DMA_DISABLED);
     spihost[host]->dma_enabled = use_dma;
     if (use_dma) {
         ret = spicommon_slave_dma_chan_alloc(host, dma_chan, &actual_tx_dma_chan, &actual_rx_dma_chan);
