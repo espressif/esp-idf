@@ -8,12 +8,10 @@ if(BOOTLOADER_BUILD)
 else()
     set(priv_requires soc freertos)
     set(srcs "eri.c"
-             "trax.c"
+             "xt_trax.c"
              "xtensa_intr.c"
              "xtensa_intr_asm.S"
-             "${target}/trax_init.c"
              )
-
 endif()
 
 idf_component_register(SRCS ${srcs}
