@@ -75,9 +75,9 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
 
     SPIHD_CHECK(VALID_HOST(host_id), "invalid host", ESP_ERR_INVALID_ARG);
 #if CONFIG_IDF_TARGET_ESP32S2
-    SPIHD_CHECK(config->dma_chan == 0 || config->dma_chan == host_id || config->dma_chan == DMA_AUTO_CHAN, "invalid dma channel", ESP_ERR_INVALID_ARG);
+    SPIHD_CHECK(config->dma_chan == SPI_DMA_DISABLED || config->dma_chan == (int)host_id || config->dma_chan == SPI_DMA_CH_AUTO, "invalid dma channel", ESP_ERR_INVALID_ARG);
 #elif SOC_GDMA_SUPPORTED
-    SPIHD_CHECK(config->dma_chan == 0 || config->dma_chan == DMA_AUTO_CHAN, "invalid dma channel, chip only support spi dma channel auto-alloc", ESP_ERR_INVALID_ARG);
+    SPIHD_CHECK(config->dma_chan == SPI_DMA_DISABLED || config->dma_chan == SPI_DMA_CH_AUTO, "invalid dma channel, chip only support spi dma channel auto-alloc", ESP_ERR_INVALID_ARG);
 #endif
 #if !CONFIG_IDF_TARGET_ESP32S2
 //Append mode is only supported on ESP32S2 now
@@ -95,7 +95,7 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
     spihost[host_id] = host;
     memset(host, 0, sizeof(spi_slave_hd_slot_t));
     host->int_spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
-    host->dma_enabled = (config->dma_chan != 0);
+    host->dma_enabled = (config->dma_chan != SPI_DMA_DISABLED);
 
     if (host->dma_enabled) {
         ret = spicommon_slave_dma_chan_alloc(host_id, config->dma_chan, &actual_tx_dma_chan, &actual_rx_dma_chan);

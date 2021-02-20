@@ -29,8 +29,6 @@ extern "C"
 
 //Maximum amount of bytes that can be put in one DMA descriptor
 #define SPI_MAX_DMA_LEN (4096-4)
-//Set the ``dma_chan`` to this, then driver will auto-alloc a DMA channel
-#define DMA_AUTO_CHAN (-2)
 
 /**
  * Transform unsigned integer of length <= 32 bits to the format which can be
@@ -74,6 +72,24 @@ extern "C"
 
 #define SPICOMMON_BUSFLAG_NATIVE_PINS   SPICOMMON_BUSFLAG_IOMUX_PINS
 
+/**
+ * @brief SPI DMA channels
+ */
+typedef enum {
+  SPI_DMA_DISABLED = 0,     ///< Do not enable DMA for SPI
+#if CONFIG_IDF_TARGET_ESP32
+  SPI_DMA_CH1      = 1,     ///< Enable DMA, select DMA Channel 1
+  SPI_DMA_CH2      = 2,     ///< Enable DMA, select DMA Channel 2
+#endif
+  SPI_DMA_CH_AUTO  = 3,     ///< Enable DMA, channel is automatically selected by driver
+} spi_common_dma_t;
+
+#if __cplusplus
+/* Needed for C++ backwards compatibility with earlier ESP-IDF where this argument is a bare 'int'. Can be removed in ESP-IDF 5 */
+typedef int spi_dma_chan_t;
+#else
+typedef spi_common_dma_t spi_dma_chan_t;
+#endif
 
 /**
  * @brief This is a configuration structure for a SPI bus.
@@ -107,13 +123,10 @@ typedef struct {
  *
  * @param host_id       SPI peripheral that controls this bus
  * @param bus_config    Pointer to a spi_bus_config_t struct specifying how the host should be initialized
- * @param dma_chan      - DMA_AUTO_CHAN: allocate a free channel automatically;
- *                      - 1 or 2:        assign a specific DMA channel;
- *                      - 0:             non-dma mode;
- *                      Selecting a DMA channel for an SPI bus allows transfers on the bus to have sizes only
- *                      limited by the amount of internal memory. Selecting no DMA channel (by passing the
- *                      value 0) limits the amount of bytes transfered to a maximum of 64. Set to 0 if only
- *                      the SPI flash uses this bus. Set to DMA_AUTO_CHAN to let the driver to allocate the DMA channel.
+ * @param dma_chan      - Selecting a DMA channel for an SPI bus allows transactions on the bus with size only limited by the amount of internal memory.
+ *                      - Selecting SPI_DMA_DISABLED limits the size of transactions.
+ *                      - Set to SPI_DMA_DISABLED if only the SPI flash uses this bus.
+ *                      - Set to SPI_DMA_CH_AUTO to let the driver to allocate the DMA channel.
  *
  * @warning If a DMA channel is selected, any transmit and receive buffer used should be allocated in
  *          DMA-capable memory.
@@ -129,7 +142,7 @@ typedef struct {
  *         - ESP_ERR_NO_MEM        if out of memory
  *         - ESP_OK                on success
  */
-esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *bus_config, int dma_chan);
+esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *bus_config, spi_dma_chan_t dma_chan);
 
 /**
  * @brief Free a SPI bus

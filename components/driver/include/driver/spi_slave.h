@@ -93,13 +93,10 @@ struct spi_slave_transaction_t {
  * @param host          SPI peripheral to use as a SPI slave interface
  * @param bus_config    Pointer to a spi_bus_config_t struct specifying how the host should be initialized
  * @param slave_config  Pointer to a spi_slave_interface_config_t struct specifying the details for the slave interface
- * @param dma_chan      - DMA_AUTO_CHAN: allocate a free channel automatically;
- *                      - 1 or 2:        assign a specific DMA channel;
- *                      - 0:             non-dma mode;
- *                      Selecting a DMA channel for an SPI bus allows transfers on the bus to have sizes only
- *                      limited by the amount of internal memory. Selecting no DMA channel (by passing the
- *                      value 0) limits the amount of bytes transfered to a maximum of 64. Set to 0 if only
- *                      the SPI flash uses this bus. Set to DMA_AUTO_CHAN to let the driver to allocate the DMA channel.
+ * @param dma_chan      - Selecting a DMA channel for an SPI bus allows transactions on the bus with size only limited by the amount of internal memory.
+ *                      - Selecting SPI_DMA_DISABLED limits the size of transactions.
+ *                      - Set to SPI_DMA_DISABLED if only the SPI flash uses this bus.
+ *                      - Set to SPI_DMA_CH_AUTO to let the driver to allocate the DMA channel.
  *
  * @warning If a DMA channel is selected, any transmit and receive buffer used should be allocated in
  *          DMA-capable memory.
@@ -115,7 +112,7 @@ struct spi_slave_transaction_t {
  *         - ESP_ERR_NO_MEM        if out of memory
  *         - ESP_OK                on success
  */
-esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *bus_config, const spi_slave_interface_config_t *slave_config, int dma_chan);
+esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *bus_config, const spi_slave_interface_config_t *slave_config, spi_dma_chan_t dma_chan);
 
 /**
  * @brief Free a SPI bus claimed as a SPI slave interface

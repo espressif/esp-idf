@@ -74,7 +74,7 @@ TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
         .quadhd_io_num=-1
     };
     esp_err_t ret;
-    ret = spi_bus_initialize(TEST_SPI_HOST, &buscfg, DMA_AUTO_CHAN);
+    ret = spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO);
     TEST_ASSERT(ret==ESP_OK);
 
     check_spi_pre_n_for(26000000, 1, 3);
@@ -112,7 +112,7 @@ static spi_device_handle_t setup_spi_bus_loopback(int clkspeed, bool dma) {
     };
     spi_device_handle_t handle;
 
-    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, dma ? DMA_AUTO_CHAN : 0));
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, dma ? SPI_DMA_CH_AUTO : 0));
     TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &handle));
     //connect MOSI to two devices breaks the output, fix it.
     spitest_gpio_output_sel(PIN_NUM_MOSI, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spid_out);
@@ -273,7 +273,7 @@ static esp_err_t test_master_pins(int mosi, int miso, int sclk, int cs)
     spi_device_interface_config_t master_cfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
     master_cfg.spics_io_num = cs;
 
-    ret = spi_bus_initialize(TEST_SPI_HOST, &cfg, DMA_AUTO_CHAN);
+    ret = spi_bus_initialize(TEST_SPI_HOST, &cfg, SPI_DMA_CH_AUTO);
     if (ret != ESP_OK) {
         return ret;
     }
@@ -300,7 +300,7 @@ static esp_err_t test_slave_pins(int mosi, int miso, int sclk, int cs)
     spi_slave_interface_config_t slave_cfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
     slave_cfg.spics_io_num = cs;
 
-    ret = spi_slave_initialize(TEST_SLAVE_HOST, &cfg, &slave_cfg, DMA_AUTO_CHAN);
+    ret = spi_slave_initialize(TEST_SLAVE_HOST, &cfg, &slave_cfg, SPI_DMA_CH_AUTO);
     if (ret != ESP_OK) {
         return ret;
     }
@@ -507,7 +507,7 @@ TEST_CASE("SPI Master no response when switch from host1 (HSPI) to host2 (VSPI)"
     //initialize for first host
     host = TEST_SPI_HOST;
 
-    TEST_ESP_OK(spi_bus_initialize(host, &bus_config, DMA_AUTO_CHAN));
+    TEST_ESP_OK(spi_bus_initialize(host, &bus_config, SPI_DMA_CH_AUTO));
     TEST_ESP_OK(spi_bus_add_device(host, &device_config, &spi));
 
     printf("before first xmit\n");
@@ -519,7 +519,7 @@ TEST_CASE("SPI Master no response when switch from host1 (HSPI) to host2 (VSPI)"
 
     //for second host and failed before
     host = TEST_SLAVE_HOST;
-    TEST_ESP_OK(spi_bus_initialize(host, &bus_config, DMA_AUTO_CHAN));
+    TEST_ESP_OK(spi_bus_initialize(host, &bus_config, SPI_DMA_CH_AUTO));
     TEST_ESP_OK(spi_bus_add_device(host, &device_config, &spi));
 
     printf("before second xmit\n");
@@ -587,7 +587,7 @@ TEST_CASE("SPI Master DMA test, TX and RX in different regions", "[spi]")
     spi_device_interface_config_t devcfg=SPI_DEVICE_TEST_DEFAULT_CONFIG();
 
     //Initialize the SPI bus
-    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, DMA_AUTO_CHAN));
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
     //Attach the LCD to the SPI bus
     TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &spi));
     //connect MOSI to two devices breaks the output, fix it.
@@ -671,7 +671,7 @@ TEST_CASE("SPI Master DMA test: length, start, not aligned", "[spi]")
         .pre_cb=NULL,
     };
     //Initialize the SPI bus
-    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, DMA_AUTO_CHAN));
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
     //Attach the LCD to the SPI bus
     TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &spi));
 
@@ -740,7 +740,7 @@ void test_cmd_addr(spi_slave_task_context_t *slave_context, bool lsb_first)
     //initial master, mode 0, 1MHz
     spi_bus_config_t buscfg=SPI_BUS_TEST_DEFAULT_CONFIG();
     buscfg.quadhd_io_num = UNCONNECTED_PIN;
-    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, DMA_AUTO_CHAN));
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
     spi_device_interface_config_t devcfg=SPI_DEVICE_TEST_DEFAULT_CONFIG();
     devcfg.clock_speed_hz = 1*1000*1000;
     if (lsb_first) devcfg.flags |= SPI_DEVICE_BIT_LSBFIRST;
@@ -978,6 +978,8 @@ TEST_CASE("SPI master hd dma TX without RX test", "[spi]")
     TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &dev_cfg, &spi));
 
     spi_slave_interface_config_t slave_cfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
+
+    printf("TEST_SLAVE_HOST is %d\n", TEST_SLAVE_HOST);
     TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &bus_cfg, &slave_cfg, TEST_SLAVE_HOST));
 
     same_pin_func_sel(bus_cfg, dev_cfg, 0);
@@ -1075,7 +1077,7 @@ static void speed_setup(spi_device_handle_t* spi, bool use_dma)
     devcfg.queue_size=8;       //We want to be able to queue 7 transactions at a time
 
     //Initialize the SPI bus and the device to test
-    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, (use_dma ? DMA_AUTO_CHAN : 0)));
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, (use_dma ? SPI_DMA_CH_AUTO : 0)));
     TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, spi));
 }
 
