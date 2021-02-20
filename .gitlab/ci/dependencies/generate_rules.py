@@ -215,7 +215,7 @@ class RulesWriter:
         if name.endswith('-production'):
             _rules.append(self.RULE_PROD)
         else:
-            if not name.endswith('-preview'):
+            if not (name.endswith('-preview') or name.startswith('labels:')):
                 _rules.append(self.RULE_NORM)
             for label in cfg['labels']:
                 _rules.append(self.RULE_LABEL_TEMPLATE.format(label))

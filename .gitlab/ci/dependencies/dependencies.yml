@@ -131,12 +131,8 @@
     - [weekend_test, iperf_stress_test, nvs_coverage]
   labels:
     - "{0}"
-  included_in:
-    - test:any_test
 
 "labels:fuzzer_test-weekend_test":
   labels:
     - fuzzer_test
     - weekend_test
-  included_in:
-    - test:any_test

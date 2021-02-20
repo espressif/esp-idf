@@ -745,7 +745,6 @@
 
 .rules:labels:fuzzer_test-weekend_test:
   rules:
-    - <<: *if-protected
     - <<: *if-label-fuzzer_test
     - <<: *if-title-fuzzer_test
     - <<: *if-label-weekend_test
@@ -753,19 +752,16 @@
 
 .rules:labels:iperf_stress_test:
   rules:
-    - <<: *if-protected
     - <<: *if-label-iperf_stress_test
     - <<: *if-title-iperf_stress_test
 
 .rules:labels:nvs_coverage:
   rules:
-    - <<: *if-protected
     - <<: *if-label-nvs_coverage
     - <<: *if-title-nvs_coverage
 
 .rules:labels:weekend_test:
   rules:
-    - <<: *if-protected
     - <<: *if-label-weekend_test
     - <<: *if-title-weekend_test
 
@@ -802,16 +798,10 @@
     - <<: *if-title-example_test_esp32s2
     - <<: *if-label-example_test_esp32s3
     - <<: *if-title-example_test_esp32s3
-    - <<: *if-label-fuzzer_test
-    - <<: *if-title-fuzzer_test
     - <<: *if-label-host_test
     - <<: *if-title-host_test
     - <<: *if-label-integration_test
     - <<: *if-title-integration_test
-    - <<: *if-label-iperf_stress_test
-    - <<: *if-title-iperf_stress_test
-    - <<: *if-label-nvs_coverage
-    - <<: *if-title-nvs_coverage
     - <<: *if-label-unit_test
     - <<: *if-title-unit_test
     - <<: *if-label-unit_test_esp32
@@ -822,8 +812,6 @@
     - <<: *if-title-unit_test_esp32s2
     - <<: *if-label-unit_test_esp32s3
     - <<: *if-title-unit_test_esp32s3
-    - <<: *if-label-weekend_test
-    - <<: *if-title-weekend_test
     - <<: *if-dev-push
       changes: *patterns-build
     - <<: *if-dev-push
