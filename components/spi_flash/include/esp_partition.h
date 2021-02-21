@@ -45,6 +45,8 @@ extern "C" {
 typedef enum {
     ESP_PARTITION_TYPE_APP = 0x00,       //!< Application partition type
     ESP_PARTITION_TYPE_DATA = 0x01,      //!< Data partition type
+
+    ESP_PARTITION_TYPE_ANY = 0xff,       //!< Used to search for partitions with any type
 } esp_partition_type_t;
 
 /**
