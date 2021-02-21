@@ -55,8 +55,6 @@ components/wpa_supplicant/port/
 components/mbedtls/port/include/
 components/mbedtls/mbedtls/include/mbedtls/
 
-components/espcoredump/include/esp_core_dump.h
-
 components/coap/
 components/nghttp/
 components/cbor/
