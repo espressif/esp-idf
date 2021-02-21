@@ -141,7 +141,7 @@ idf_export_main() {
 }
 
 enable_autocomplete() {
-    if [ -n "$ZSH_VERSION" ]
+    if [ -n "${ZSH_VERSION-}" ]
     then
         autoload -Uz compinit && compinit -u
         eval "$(env _IDF.PY_COMPLETE=source_zsh idf.py)" || echo "WARNING: Failed to load shell autocompletion!"
