@@ -5,7 +5,7 @@
   - ".gitlab/ci/docs.yml"
   - "docs/**/*"
   - "components/**/*.h"
-  - "components/**/Kconfig"
+  - "components/**/Kconfig*"
   - "components/**/CMakeList.txt"
   - "components/**/sdkconfig*"
   - "tools/kconfig_new/**/*"
@@ -565,19 +565,6 @@
 .rules:build:docs:
   rules:
     - <<: *if-protected
-    - <<: *if-label-build
-    - <<: *if-title-build
-    - <<: *if-label-build_docs
-    - <<: *if-title-build_docs
-    - <<: *if-label-docs
-    - <<: *if-title-docs
-    - <<: *if-dev-push
-      changes: *patterns-docs
-
-.rules:build:docs-preview:
-  rules:
-    - <<: *if-label-build
-    - <<: *if-title-build
     - <<: *if-label-build_docs
     - <<: *if-title-build_docs
     - <<: *if-label-docs
@@ -588,6 +575,21 @@
 .rules:build:docs-production:
   rules:
     - <<: *if-protected-no_label
+
+.rules:build:docs:label-only:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build_docs
+    - <<: *if-title-build_docs
+    - <<: *if-label-docs
+    - <<: *if-title-docs
+
+.rules:build:docs:label-only-preview:
+  rules:
+    - <<: *if-label-build_docs
+    - <<: *if-title-build_docs
+    - <<: *if-label-docs
+    - <<: *if-title-docs
 
 .rules:build:example_test-esp32:
   rules:

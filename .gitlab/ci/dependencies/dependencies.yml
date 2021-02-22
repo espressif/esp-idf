@@ -49,14 +49,19 @@
 
 "build:docs":
   labels:
-    - build
     - docs
     - build_docs  # for backward compatibility
   patterns:
     - docs
   deploy:
-    - preview
     - production
+
+"build:docs:label-only":
+  labels:
+    - docs
+    - build_docs  # for backward compatibility
+  deploy:
+    - preview
 
 "build":
   labels:

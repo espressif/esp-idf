@@ -28,7 +28,7 @@ check_docs_lang_sync:
   parallel:
     matrix:
       - DOCLANG: ["en", "zh_CN"]
-        DOCTGT: ["esp32", "esp32s2"]
+        DOCTGT: ["esp32", "esp32s2", "esp32c3"]
 
 check_docs_gh_links:
   extends:
@@ -68,6 +68,7 @@ build_docs_html:
 build_docs_pdf:
   extends:
     - .build_docs_build_stage_template
+    - .rules:build:docs:label-only
   artifacts:
     when: always
     paths:
@@ -97,7 +98,7 @@ build_docs_pdf:
 deploy_docs_preview:
   extends:
     - .deploy_docs_template
-    - .rules:build:docs-preview
+    - .rules:build:docs:label-only-preview
   dependencies:  # set dependencies to null to avoid missing artifacts issue
   needs:
     - build_docs_html
