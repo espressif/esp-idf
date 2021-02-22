@@ -10,33 +10,35 @@
   - unit_test
   - component_ut
 
-"build:{0}-{1}":
-  matrix:
-    - *target_test
-    - *all_targets
+##############
+# Build Jobs #
+##############
+"build":
   labels:
     - build
   patterns:
-    - build
+    - build_components
+    - build_system
+  included_in:
+    - build:target_test
 
-"build:example_test-esp32":
+# -------------------
+# Specific Build Jobs
+# -------------------
+"build:docker":
   labels:
     - build
-    - weekend_test  # only have esp32 jobs
-    - iperf_stress_test  # only have esp32 jobs
+    - docker
   patterns:
-    - build
-    - example_test
+    - docker
 
-"build:{0}":
-  matrix:
-    - [windows, docker]
+"build:windows":
   labels:
     - build
-    - "{0}"
+    - windows
   patterns:
-    - build
-    - "{0}"
+    - build_system
+    - windows
 
 "build:macos":
   labels:
@@ -44,7 +46,7 @@
     - macos
     - macos_test  # for backward compatibility
   patterns:
-    - build
+    - build_system
     - macos
 
 "build:docs":
@@ -63,29 +65,54 @@
   deploy:
     - preview
 
-"build":
-  labels:
-    - build
-  patterns:
-    - build
-
-"test:{0}-{1}":
+# ---------------
+# Build Test Jobs
+# ---------------
+"build:{0}-{1}":
   matrix:
     - *target_test
     - *all_targets
   labels:
+    - build
+  patterns:
+    - build_components
+    - build_system
+
+# -------------
+# Special Cases
+# -------------
+"build:example_test-esp32":
+  labels:
+    - build
+    - weekend_test  # only have esp32 jobs
+    - iperf_stress_test  # only have esp32 jobs
+  patterns:
+    - build_components
+    - build_system
+
+####################
+# Target Test Jobs #
+####################
+"test:{0}-{1}":
+  matrix:
+    - *target_test
+    - *all_targets
+  labels: # For each rule, use labels <test_type> and <test_type>-<target>
     - "{0}"
     - "{0}_{1}"
-  patterns:
+  patterns: # For each rule, use patterns <test_type> and build-<test_type>
     - "{0}"
-    - build
     - "build-{0}"
-  included_in:
+  included_in: # Parent rules
     - "build:{0}-{1}"
+    - build:target_test
     - test:target_test
     - test:any_test
 
-"test:component_ut-{0}":
+# -------------
+# Special Cases
+# -------------
+"test:component_ut-{0}": # component_ut will trigger by unit_test as well, since now we have 2 kinds of UT
   matrix:
     - *all_targets
   labels:
@@ -95,10 +122,10 @@
     - "unit_test_{0}"
   patterns:
     - component_ut
-    - build
     - "build-component_ut-{0}"
   included_in:
     - "build:component_ut-{0}"
+    - build:target_test
     - test:target_test
     - test:any_test
 
@@ -107,8 +134,6 @@
   labels:
     - unit_test_esp32c3
   patterns:
-    - unit_test
-    - build
     - "build-unit_test-esp32c3"
   included_in:
     - "build:unit_test-esp32c3"
@@ -120,6 +145,7 @@
     - "integration_test"
   included_in:
     - "build:integration_test"
+    - build:target_test
     - test:target_test
     - test:any_test
 
@@ -131,6 +157,9 @@
   included_in:
     - test:any_test
 
+#################################
+# Triggered Only By Labels Jobs #
+#################################
 "labels:{0}":
   matrix:
     - [weekend_test, iperf_stress_test, nvs_coverage]

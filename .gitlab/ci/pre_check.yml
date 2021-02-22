@@ -101,7 +101,7 @@ check_public_headers:
 scan_tests:
   extends:
     - .pre_check_base_template
-    - .rules:test:target_test
+    - .rules:build:target_test
   image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - assign_test
