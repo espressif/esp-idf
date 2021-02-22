@@ -391,7 +391,8 @@ esp_err_t gpio_config(const gpio_config_t *pGPIOConfig)
                 gpio_intr_disable(io_num);
             }
 
-            PIN_FUNC_SELECT(io_reg, PIN_FUNC_GPIO); /*function number 2 is GPIO_FUNC for each pin */
+            /* By default, all the pins have to be configured as GPIO pins. */
+            PIN_FUNC_SELECT(io_reg, PIN_FUNC_GPIO);
         }
 
         io_num++;
