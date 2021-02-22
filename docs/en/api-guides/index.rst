@@ -6,6 +6,7 @@ API Guides
     :maxdepth: 1
 
     Application Level Tracing <app_trace>
+    Application Startup Flow <startup>
     :SOC_BT_SUPPORTED: BluFi <blufi>
     Bootloader <bootloader>
     Build System <build-system>
@@ -21,11 +22,11 @@ API Guides
     Fatal Errors <fatal-errors>
     Flash Encryption <../security/flash-encryption>
     FreeRTOS SMP Changes <freertos-smp>
-    General Notes <general-notes>
     Hardware Abstraction <hardware-abstraction>
     :CONFIG_IDF_TARGET_ARCH_XTENSA: High Level Interrupts <hlinterrupts>
     JTAG Debugging <jtag-debugging/index>
     Linker Script Generation <linker-script-generation>
+    Memory Types <memory-types>
     lwIP TCP/IP Stack <lwip>
     Partition Tables <partition-tables>
     :esp32: RF Calibration <RF_calibration>
