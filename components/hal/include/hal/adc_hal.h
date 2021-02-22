@@ -4,6 +4,51 @@
 #include "hal/adc_types.h"
 #include "hal/adc_ll.h"
 
+#if CONFIG_IDF_TARGET_ESP32C3
+#include "soc/gdma_struct.h"
+#include "hal/gdma_ll.h"
+#include "hal/dma_types.h"
+#include "hal/adc_ll.h"
+#include "hal/dma_types.h"
+#include "esp_err.h"
+
+/**
+ * @brief Enum for DMA descriptor status
+ */
+typedef enum adc_hal_dma_desc_status_t{
+    ADC_DMA_DESC_FINISH     = 0,            ///< This DMA descriptor is written by HW already
+    ADC_DMA_DESC_NOT_FINISH = 1,            ///< This DMA descriptor is not written by HW yet
+    ADC_DMA_DESC_NULL       = 2             ///< This DMA descriptor is NULL
+} adc_hal_dma_desc_status_t;
+
+/**
+ * @brief Configuration of the HAL
+ */
+typedef struct adc_hal_config_t {
+    uint32_t            desc_max_num;       ///< Number of the descriptors linked once
+    uint32_t            dma_chan;           ///< DMA channel to be used
+    uint32_t            eof_num;            ///< Bytes between 2 in_suc_eof interrupts
+} adc_hal_config_t;
+
+/**
+ * @brief Context of the HAL
+ */
+typedef struct adc_hal_context_t {
+    /**< this needs to be malloced by the driver layer first */
+    dma_descriptor_t    *rx_desc;           ///< DMA descriptors
+
+    /**< these will be assigned by hal layer itself */
+    gdma_dev_t          *dev;               ///< GDMA address
+    dma_descriptor_t    desc_dummy_head;    ///< Dummy DMA descriptor for ``cur_desc_ptr`` to start
+    dma_descriptor_t    *cur_desc_ptr;      ///< Pointer to the current descriptor
+
+    /**< these need to be configured by `adc_hal_config_t` via driver layer*/
+    uint32_t            desc_max_num;       ///< Number of the descriptors linked once
+    uint32_t            dma_chan;           ///< DMA channel to be used
+    uint32_t            eof_num;            ///< Bytes between 2 in_suc_eof interrupts
+} adc_hal_context_t;
+#endif
+
 /*---------------------------------------------------------------
                     Common setting
 ---------------------------------------------------------------*/
@@ -252,44 +297,85 @@ uint32_t adc_hal_self_calibration(adc_ll_num_t adc_n, adc_channel_t channel, adc
 /*---------------------------------------------------------------
                     DMA setting
 ---------------------------------------------------------------*/
-#include "soc/gdma_struct.h"
-#include "hal/gdma_ll.h"
-#include "hal/dma_types.h"
-#include "hal/adc_ll.h"
-#include "hal/dma_types.h"
-#include "esp_err.h"
+/**
+ * @brief Initialize the hal context
+ *
+ * @param hal    Context of the HAL
+ * @param config Configuration of the HAL
+ */
+void adc_hal_context_config(adc_hal_context_t *hal, const adc_hal_config_t *config);
 
-typedef struct adc_dma_hal_context_t {
-    gdma_dev_t          *dev;           //address of the general DMA
-} adc_dma_hal_context_t;
+/**
+ * @brief Initialize the HW
+ *
+ * @param hal Context of the HAL
+ */
+void adc_hal_digi_init(adc_hal_context_t *hal);
 
-typedef struct adc_dma_hal_config_t {
-    dma_descriptor_t    *rx_desc;       //dma descriptor
-    dma_descriptor_t    *cur_desc_ptr;  //pointer to the current descriptor
-    uint32_t            desc_max_num;   //number of the descriptors linked once
-    uint32_t            desc_cnt;
-    uint32_t            dma_chan;
-} adc_dma_hal_config_t;
+/**
+ * @brief Reset ADC / DMA fifo
+ *
+ * @param hal Context of the HAL
+ */
+void adc_hal_fifo_reset(adc_hal_context_t *hal);
 
-void adc_hal_digi_dma_multi_descriptor(adc_dma_hal_config_t *dma_config, uint8_t *data_buf, uint32_t size, uint32_t num);
+/**
+ * @brief Start DMA
+ *
+ * @param hal      Context of the HAL
+ * @param data_buf Pointer to the data buffer
+ * @param size     Size of the buffer
+ */
+void adc_hal_digi_rxdma_start(adc_hal_context_t *hal, uint8_t *data_buf, uint32_t size);
 
-void adc_hal_digi_rxdma_start(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config);
+/**
+ * @brief Start ADC
+ *
+ * @param hal Context of the HAL
+ */
+void adc_hal_digi_start(adc_hal_context_t *hal);
 
-void adc_hal_digi_rxdma_stop(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config);
+/**
+ * @brief Get the ADC reading result
+ *
+ * @param      hal           Context of the HAL
+ * @param      eof_desc_addr The last descriptor that is finished by HW. Should be got from DMA
+ * @param[out] cur_desc      The descriptor with ADC reading result (from the 1st one to the last one (``eof_desc_addr``))
+ *
+ * @return                   See ``adc_hal_dma_desc_status_t``
+ */
+adc_hal_dma_desc_status_t adc_hal_get_reading_result(adc_hal_context_t *hal, const intptr_t eof_desc_addr, dma_descriptor_t **cur_desc);
 
-void adc_hal_digi_ena_intr(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config, uint32_t mask);
+/**
+ * @brief Stop DMA
+ *
+ * @param hal Context of the HAL
+ */
+void adc_hal_digi_rxdma_stop(adc_hal_context_t *hal);
 
-void adc_hal_digi_clr_intr(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config, uint32_t mask);
+/**
+ * @brief Clear interrupt
+ *
+ * @param hal  Context of the HAL
+ * @param mask mask of the interrupt
+ */
+void adc_hal_digi_clr_intr(adc_hal_context_t *hal, uint32_t mask);
 
-void adc_hal_digi_dis_intr(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config, uint32_t mask);
+/**
+ * @brief Enable interrupt
+ *
+ * @param hal  Context of the HAL
+ * @param mask mask of the interrupt
+ */
+void adc_hal_digi_dis_intr(adc_hal_context_t *hal, uint32_t mask);
 
-void adc_hal_digi_set_eof_num(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config, uint32_t num);
+/**
+ * @brief Stop ADC
+ *
+ * @param hal Context of the HAL
+ */
+void adc_hal_digi_stop(adc_hal_context_t *hal);
 
-void adc_hal_digi_start(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config);
-
-void adc_hal_digi_stop(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config);
-
-void adc_hal_digi_init(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config);
 
 /*---------------------------------------------------------------
                     Single Read
