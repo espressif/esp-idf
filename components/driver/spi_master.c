@@ -188,10 +188,12 @@ static esp_err_t spi_master_deinit_driver(void* arg);
 
 static inline bool is_valid_host(spi_host_device_t host)
 {
+//SPI1 can be used as GPSPI only on ESP32
 #if CONFIG_IDF_TARGET_ESP32
     return host >= SPI1_HOST && host <= SPI3_HOST;
-#else
-// SPI_HOST (SPI1_HOST) is not supported by the SPI Master driver on ESP32-S2 and later
+#elif (SOC_SPI_PERIPH_NUM == 2)
+    return host == SPI2_HOST;
+#elif (SOC_SPI_PERIPH_NUM == 3)
     return host >= SPI2_HOST && host <= SPI3_HOST;
 #endif
 }
@@ -231,17 +233,18 @@ static esp_err_t spi_master_init_driver(spi_host_device_t host_id)
     }
 
     //assign the SPI, RX DMA and TX DMA peripheral registers beginning address
-    spi_hal_dma_config_t hal_dma_config = {
+    spi_hal_config_t hal_config = {
         //On ESP32-S2 and earlier chips, DMA registers are part of SPI registers. Pass the registers of SPI peripheral to control it.
         .dma_in = SPI_LL_GET_HW(host_id),
         .dma_out = SPI_LL_GET_HW(host_id),
+        .dma_enabled = bus_attr->dma_enabled,
         .dmadesc_tx = bus_attr->dmadesc_tx,
         .dmadesc_rx = bus_attr->dmadesc_rx,
-        .dmadesc_n = bus_attr->dma_desc_num
+        .tx_dma_chan = bus_attr->tx_dma_chan,
+        .rx_dma_chan = bus_attr->rx_dma_chan,
+        .dmadesc_n = bus_attr->dma_desc_num,
     };
-
-    spi_hal_init(&host->hal, host_id, &hal_dma_config);
-    host->hal.dma_enabled = (bus_attr->dma_chan != 0);
+    spi_hal_init(&host->hal, host_id, &hal_config);
 
     if (host_id != SPI1_HOST) {
         //SPI1 attributes are already initialized at start up.
@@ -606,8 +609,9 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
         //Okay, transaction is done.
         const int cs = host->cur_cs;
         //Tell common code DMA workaround that our DMA channel is idle. If needed, the code will do a DMA reset.
-        if (bus_attr->dma_chan) {
-            spicommon_dmaworkaround_idle(bus_attr->dma_chan);
+        if (bus_attr->dma_enabled) {
+            //This workaround is only for esp32, where tx_dma_chan and rx_dma_chan are always same
+            spicommon_dmaworkaround_idle(bus_attr->tx_dma_chan);
         }
 
         //cur_cs is changed to DEV_NUM_MAX here
@@ -658,9 +662,10 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
 
         if (trans_found) {
             spi_trans_priv_t *const cur_trans_buf = &host->cur_trans_buf;
-            if (bus_attr->dma_chan != 0 && (cur_trans_buf->buffer_to_rcv || cur_trans_buf->buffer_to_send)) {
+            if (bus_attr->dma_enabled && (cur_trans_buf->buffer_to_rcv || cur_trans_buf->buffer_to_send)) {
                 //mark channel as active, so that the DMA will not be reset by the slave
-                spicommon_dmaworkaround_transfer_active(bus_attr->dma_chan);
+                //This workaround is only for esp32, where tx_dma_chan and rx_dma_chan are always same
+                spicommon_dmaworkaround_transfer_active(bus_attr->tx_dma_chan);
             }
             spi_new_trans(device_to_send, cur_trans_buf);
         }
@@ -693,7 +698,7 @@ static SPI_MASTER_ISR_ATTR esp_err_t check_trans_valid(spi_device_handle_t handl
     SPI_CHECK(!((trans_desc->flags & (SPI_TRANS_MODE_DIO|SPI_TRANS_MODE_QIO)) && (handle->cfg.flags & SPI_DEVICE_3WIRE)), "incompatible iface params", ESP_ERR_INVALID_ARG);
     SPI_CHECK(!((trans_desc->flags & (SPI_TRANS_MODE_DIO|SPI_TRANS_MODE_QIO)) && !is_half_duplex), "incompatible iface params", ESP_ERR_INVALID_ARG);
 #ifdef CONFIG_IDF_TARGET_ESP32
-    SPI_CHECK(!is_half_duplex || bus_attr->dma_chan == 0 || !rx_enabled || !tx_enabled, "SPI half duplex mode does not support using DMA with both MOSI and MISO phases.", ESP_ERR_INVALID_ARG );
+    SPI_CHECK(!is_half_duplex || !bus_attr->dma_enabled || !rx_enabled || !tx_enabled, "SPI half duplex mode does not support using DMA with both MOSI and MISO phases.", ESP_ERR_INVALID_ARG );
 #elif CONFIG_IDF_TARGET_ESP32S3
     SPI_CHECK(!is_half_duplex || !tx_enabled || !rx_enabled, "SPI half duplex mode is not supported when both MOSI and MISO phases are enabled.", ESP_ERR_INVALID_ARG);
 #endif
@@ -788,7 +793,7 @@ esp_err_t SPI_MASTER_ATTR spi_device_queue_trans(spi_device_handle_t handle, spi
     SPI_CHECK(!spi_bus_device_is_polling(handle), "Cannot queue new transaction while previous polling transaction is not terminated.", ESP_ERR_INVALID_STATE );
 
     spi_trans_priv_t trans_buf;
-    ret = setup_priv_desc(trans_desc, &trans_buf, (host->bus_attr->dma_chan!=0));
+    ret = setup_priv_desc(trans_desc, &trans_buf, (host->bus_attr->dma_enabled));
     if (ret != ESP_OK) return ret;
 
 #ifdef CONFIG_PM_ENABLE
@@ -877,8 +882,9 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_acquire_bus(spi_device_t *device, TickT
     //configure the device ahead so that we don't need to do it again in the following transactions
     spi_setup_device(host->device[device->id]);
     //the DMA is also occupied by the device, all the slave devices that using DMA should wait until bus released.
-    if (host->bus_attr->dma_chan != 0) {
-        spicommon_dmaworkaround_transfer_active(host->bus_attr->dma_chan);
+    if (host->bus_attr->dma_enabled) {
+        //This workaround is only for esp32, where tx_dma_chan and rx_dma_chan are always same
+        spicommon_dmaworkaround_transfer_active(host->bus_attr->tx_dma_chan);
     }
     return ESP_OK;
 }
@@ -893,8 +899,9 @@ void SPI_MASTER_ISR_ATTR spi_device_release_bus(spi_device_t *dev)
         assert(0);
     }
 
-    if (host->bus_attr->dma_chan != 0) {
-        spicommon_dmaworkaround_idle(host->bus_attr->dma_chan);
+    if (host->bus_attr->dma_enabled) {
+        //This workaround is only for esp32, where tx_dma_chan and rx_dma_chan are always same
+        spicommon_dmaworkaround_idle(host->bus_attr->tx_dma_chan);
     }
     //Tell common code DMA workaround that our DMA channel is idle. If needed, the code will do a DMA reset.
 
@@ -928,7 +935,7 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_start(spi_device_handle_t handl
     }
     if (ret != ESP_OK) return ret;
 
-    ret = setup_priv_desc(trans_desc, &host->cur_trans_buf, (host->bus_attr->dma_chan!=0));
+    ret = setup_priv_desc(trans_desc, &host->cur_trans_buf, (host->bus_attr->dma_enabled));
     if (ret!=ESP_OK) return ret;
 
     //Polling, no interrupt is used.
