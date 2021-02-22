@@ -209,11 +209,34 @@ uint32_t adc_hal_self_calibration(adc_ll_num_t adc_n, adc_channel_t channel, adc
 /*---------------------------------------------------------------
                     DMA setting
 ---------------------------------------------------------------*/
-void adc_hal_digi_dma_multi_descriptor(adc_dma_hal_config_t *dma_config, uint8_t *data_buf, uint32_t size, uint32_t num)
+void adc_hal_context_config(adc_hal_context_t *hal, const adc_hal_config_t *config)
+{
+    hal->dev = &GDMA;
+    hal->desc_dummy_head.next = hal->rx_desc;
+    hal->desc_max_num = config->desc_max_num;
+    hal->dma_chan = config->dma_chan;
+    hal->eof_num = config->eof_num;
+}
+
+void adc_hal_digi_init(adc_hal_context_t *hal)
+{
+    gdma_ll_clear_interrupt_status(hal->dev, hal->dma_chan, UINT32_MAX);
+    gdma_ll_enable_interrupt(hal->dev, hal->dma_chan, GDMA_LL_EVENT_RX_SUC_EOF, true);
+    adc_ll_digi_dma_set_eof_num(hal->eof_num);
+    adc_ll_adc1_onetime_sample_enable(false);
+    adc_ll_adc2_onetime_sample_enable(false);
+}
+
+void adc_hal_fifo_reset(adc_hal_context_t *hal)
+{
+    adc_ll_digi_reset();
+    gdma_ll_rx_reset_channel(hal->dev, hal->dma_chan);
+}
+
+static void adc_hal_digi_dma_multi_descriptor(dma_descriptor_t *desc, uint8_t *data_buf, uint32_t size, uint32_t num)
 {
     assert(((uint32_t)data_buf % 4) == 0);
     assert((size % 4) == 0);
-    dma_descriptor_t *desc = dma_config->rx_desc;
     uint32_t n = 0;
 
     while (num--) {
@@ -228,62 +251,59 @@ void adc_hal_digi_dma_multi_descriptor(adc_dma_hal_config_t *dma_config, uint8_t
     desc[n-1].next = NULL;
 }
 
-void adc_hal_digi_rxdma_start(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config)
+void adc_hal_digi_rxdma_start(adc_hal_context_t *hal, uint8_t *data_buf, uint32_t size)
 {
-    gdma_ll_rx_reset_channel(adc_dma_ctx->dev, dma_config->dma_chan);
-    gdma_ll_rx_set_desc_addr(adc_dma_ctx->dev, dma_config->dma_chan, (uint32_t)dma_config->rx_desc);
-    gdma_ll_rx_start(adc_dma_ctx->dev, dma_config->dma_chan);
+    //reset the current descriptor address
+    hal->cur_desc_ptr = &hal->desc_dummy_head;
+    adc_hal_digi_dma_multi_descriptor(hal->rx_desc, data_buf, size, hal->desc_max_num);
+    gdma_ll_rx_set_desc_addr(hal->dev, hal->dma_chan, (uint32_t)hal->rx_desc);
+    gdma_ll_rx_start(hal->dev, hal->dma_chan);
 }
 
-void adc_hal_digi_rxdma_stop(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config)
-{
-    gdma_ll_rx_stop(adc_dma_ctx->dev, dma_config->dma_chan);
-}
-
-void adc_hal_digi_ena_intr(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config, uint32_t mask)
-{
-    gdma_ll_enable_interrupt(adc_dma_ctx->dev, dma_config->dma_chan, mask, true);
-}
-
-void adc_hal_digi_clr_intr(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config, uint32_t mask)
-{
-    gdma_ll_clear_interrupt_status(adc_dma_ctx->dev, dma_config->dma_chan, mask);
-}
-
-void adc_hal_digi_dis_intr(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config, uint32_t mask)
-{
-    gdma_ll_enable_interrupt(adc_dma_ctx->dev, dma_config->dma_chan, mask, false);
-}
-
-void adc_hal_digi_set_eof_num(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config, uint32_t num)
-{
-    adc_ll_digi_dma_set_eof_num(num);
-}
-
-void adc_hal_digi_start(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config)
+void adc_hal_digi_start(adc_hal_context_t *hal)
 {
     //Set to 1: the ADC data will be sent to the DMA
     adc_ll_digi_dma_enable();
     //enable sar adc timer
     adc_ll_digi_trigger_enable();
-    //reset the adc state
-    adc_ll_digi_reset();
 }
 
-void adc_hal_digi_stop(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config)
+adc_hal_dma_desc_status_t adc_hal_get_reading_result(adc_hal_context_t *hal, const intptr_t eof_desc_addr, dma_descriptor_t **cur_desc)
+{
+    if (!hal->cur_desc_ptr->next) {
+        return ADC_DMA_DESC_NULL;
+    }
+    if ((intptr_t)hal->cur_desc_ptr == eof_desc_addr) {
+        return ADC_DMA_DESC_NOT_FINISH;
+    }
+
+    hal->cur_desc_ptr = hal->cur_desc_ptr->next;
+    *cur_desc = hal->cur_desc_ptr;
+
+    return ADC_DMA_DESC_FINISH;
+}
+
+void adc_hal_digi_rxdma_stop(adc_hal_context_t *hal)
+{
+    gdma_ll_rx_stop(hal->dev, hal->dma_chan);
+}
+
+void adc_hal_digi_clr_intr(adc_hal_context_t *hal, uint32_t mask)
+{
+    gdma_ll_clear_interrupt_status(hal->dev, hal->dma_chan, mask);
+}
+
+void adc_hal_digi_dis_intr(adc_hal_context_t *hal, uint32_t mask)
+{
+    gdma_ll_enable_interrupt(hal->dev, hal->dma_chan, mask, false);
+}
+
+void adc_hal_digi_stop(adc_hal_context_t *hal)
 {
     //Set to 0: the ADC data won't be sent to the DMA
     adc_ll_digi_dma_disable();
     //disable sar adc timer
     adc_ll_digi_trigger_disable();
-}
-
-void adc_hal_digi_init(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config)
-{
-    adc_dma_ctx->dev = &GDMA;
-    gdma_ll_clear_interrupt_status(adc_dma_ctx->dev, dma_config->dma_chan, UINT32_MAX);
-    adc_ll_adc1_onetime_sample_enable(false);
-    adc_ll_adc2_onetime_sample_enable(false);
 }
 
 /*---------------------------------------------------------------

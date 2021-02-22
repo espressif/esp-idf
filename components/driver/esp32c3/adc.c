@@ -83,13 +83,12 @@ static _lock_t sar_adc2_mutex;
 #define IN_SUC_EOF_BIT GDMA_LL_EVENT_RX_SUC_EOF
 
 typedef struct adc_digi_context_t {
-    intr_handle_t           dma_intr_hdl;               //MD interrupt handle
     uint32_t                bytes_between_intr;         //bytes between in suc eof intr
     uint8_t                 *rx_dma_buf;                //dma buffer
-    adc_dma_hal_context_t   hal_dma;                    //dma context (hal)
-    adc_dma_hal_config_t    hal_dma_config;             //dma config (hal)
+    adc_hal_context_t       hal;                        //hal context
     gdma_channel_handle_t   rx_dma_channel;             //dma rx channel handle
     RingbufHandle_t         ringbuf_hdl;                //RX ringbuffer handler
+    intptr_t                rx_eof_desc_addr;           //eof descriptor address of RX channel
     bool                    ringbuf_overflow_flag;      //1: ringbuffer overflow
     bool                    driver_start_flag;          //1: driver is started; 0: driver is stoped
     bool                    use_adc1;                   //1: ADC unit1 will be used; 0: ADC unit1 won't be used.
@@ -167,12 +166,11 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
     }
 
     //malloc dma descriptor
-    s_adc_digi_ctx->hal_dma_config.rx_desc = heap_caps_calloc(1, (sizeof(dma_descriptor_t)) * INTERNAL_BUF_NUM, MALLOC_CAP_DMA);
-    if (!s_adc_digi_ctx->hal_dma_config.rx_desc) {
+    s_adc_digi_ctx->hal.rx_desc = heap_caps_calloc(1, (sizeof(dma_descriptor_t)) * INTERNAL_BUF_NUM, MALLOC_CAP_DMA);
+    if (!s_adc_digi_ctx->hal.rx_desc) {
         ret = ESP_ERR_NO_MEM;
         goto cleanup;
     }
-    s_adc_digi_ctx->hal_dma_config.desc_max_num = INTERNAL_BUF_NUM;
 
     //malloc pattern table
     s_adc_digi_ctx->digi_controller_config.adc_pattern = calloc(1, SOC_ADC_PATT_LEN_MAX * sizeof(adc_digi_pattern_table_t));
@@ -218,7 +216,13 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
 
     int dma_chan;
     gdma_get_channel_id(s_adc_digi_ctx->rx_dma_channel, &dma_chan);
-    s_adc_digi_ctx->hal_dma_config.dma_chan = dma_chan;
+
+    adc_hal_config_t config = {
+        .desc_max_num = INTERNAL_BUF_NUM,
+        .dma_chan = dma_chan,
+        .eof_num = s_adc_digi_ctx->bytes_between_intr / 4
+    };
+    adc_hal_context_config(&s_adc_digi_ctx->hal, &config);
 
     //enable SARADC module clock
     periph_module_enable(PERIPH_SARADC_MODULE);
@@ -239,6 +243,7 @@ static IRAM_ATTR bool adc_dma_intr(adc_digi_context_t *adc_digi_ctx);
 static IRAM_ATTR bool adc_dma_in_suc_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
     adc_digi_context_t *adc_digi_ctx = (adc_digi_context_t *)user_data;
+    adc_digi_ctx->rx_eof_desc_addr = event_data->rx_eof_desc_addr;
     return adc_dma_intr(adc_digi_ctx);
 }
 
@@ -246,33 +251,25 @@ static IRAM_ATTR bool adc_dma_intr(adc_digi_context_t *adc_digi_ctx)
 {
     portBASE_TYPE taskAwoken = 0;
     BaseType_t ret;
+    adc_hal_dma_desc_status_t status = false;
+    dma_descriptor_t *current_desc = NULL;
 
-    while (adc_digi_ctx->hal_dma_config.cur_desc_ptr->dw0.owner == 0) {
-        dma_descriptor_t *current_desc = adc_digi_ctx->hal_dma_config.cur_desc_ptr;
+    while (1) {
+        status = adc_hal_get_reading_result(&adc_digi_ctx->hal, adc_digi_ctx->rx_eof_desc_addr, &current_desc);
+        if (status != ADC_DMA_DESC_FINISH) {
+            break;
+        }
+
         ret = xRingbufferSendFromISR(adc_digi_ctx->ringbuf_hdl, current_desc->buffer, current_desc->dw0.length, &taskAwoken);
         if (ret == pdFALSE) {
             //ringbuffer overflow
             adc_digi_ctx->ringbuf_overflow_flag = 1;
         }
-
-        adc_digi_ctx->hal_dma_config.desc_cnt += 1;
-        //cycle the dma descriptor and buffers
-        adc_digi_ctx->hal_dma_config.cur_desc_ptr = adc_digi_ctx->hal_dma_config.cur_desc_ptr->next;
-        if (!adc_digi_ctx->hal_dma_config.cur_desc_ptr) {
-            break;
-        }
     }
 
-    if (!adc_digi_ctx->hal_dma_config.cur_desc_ptr) {
-
-        assert(adc_digi_ctx->hal_dma_config.desc_cnt == adc_digi_ctx->hal_dma_config.desc_max_num);
-        //reset the current descriptor status
-        adc_digi_ctx->hal_dma_config.cur_desc_ptr = adc_digi_ctx->hal_dma_config.rx_desc;
-        adc_digi_ctx->hal_dma_config.desc_cnt = 0;
-
+    if (status == ADC_DMA_DESC_NULL) {
         //start next turns of dma operation
-        adc_hal_digi_dma_multi_descriptor(&adc_digi_ctx->hal_dma_config, adc_digi_ctx->rx_dma_buf, adc_digi_ctx->bytes_between_intr, adc_digi_ctx->hal_dma_config.desc_max_num);
-        adc_hal_digi_rxdma_start(&adc_digi_ctx->hal_dma, &adc_digi_ctx->hal_dma_config);
+        adc_hal_digi_rxdma_start(&adc_digi_ctx->hal, adc_digi_ctx->rx_dma_buf, adc_digi_ctx->bytes_between_intr);
     }
 
     if(taskAwoken == pdTRUE) {
@@ -309,26 +306,16 @@ esp_err_t adc_digi_start(void)
     }
 
     adc_hal_init();
-
     adc_hal_arbiter_config(&config);
-    adc_hal_digi_init(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config);
+    adc_hal_digi_init(&s_adc_digi_ctx->hal);
     adc_hal_digi_controller_config(&s_adc_digi_ctx->digi_controller_config);
 
-    //create dma descriptors
-    adc_hal_digi_dma_multi_descriptor(&s_adc_digi_ctx->hal_dma_config, s_adc_digi_ctx->rx_dma_buf, s_adc_digi_ctx->bytes_between_intr, s_adc_digi_ctx->hal_dma_config.desc_max_num);
-    adc_hal_digi_set_eof_num(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config, (s_adc_digi_ctx->bytes_between_intr)/4);
-    //set the current descriptor pointer
-    s_adc_digi_ctx->hal_dma_config.cur_desc_ptr = s_adc_digi_ctx->hal_dma_config.rx_desc;
-    s_adc_digi_ctx->hal_dma_config.desc_cnt = 0;
-
-    //enable in suc eof intr
-    adc_hal_digi_ena_intr(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config, IN_SUC_EOF_BIT);
-
-    //start ADC
-    adc_hal_digi_start(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config);
-
+    //reset ADC and DMA
+    adc_hal_fifo_reset(&s_adc_digi_ctx->hal);
     //start DMA
-    adc_hal_digi_rxdma_start(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config);
+    adc_hal_digi_rxdma_start(&s_adc_digi_ctx->hal, s_adc_digi_ctx->rx_dma_buf, s_adc_digi_ctx->bytes_between_intr);
+    //start ADC
+    adc_hal_digi_start(&s_adc_digi_ctx->hal);
 
     return ESP_OK;
 }
@@ -342,13 +329,13 @@ esp_err_t adc_digi_stop(void)
     s_adc_digi_ctx->driver_start_flag = 0;
 
     //disable the in suc eof intrrupt
-    adc_hal_digi_dis_intr(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config, IN_SUC_EOF_BIT);
+    adc_hal_digi_dis_intr(&s_adc_digi_ctx->hal, IN_SUC_EOF_BIT);
     //clear the in suc eof interrupt
-    adc_hal_digi_clr_intr(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config, IN_SUC_EOF_BIT);
-    //stop DMA
-    adc_hal_digi_rxdma_stop(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config);
+    adc_hal_digi_clr_intr(&s_adc_digi_ctx->hal, IN_SUC_EOF_BIT);
     //stop ADC
-    adc_hal_digi_stop(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config);
+    adc_hal_digi_stop(&s_adc_digi_ctx->hal);
+    //stop DMA
+    adc_hal_digi_rxdma_stop(&s_adc_digi_ctx->hal);
     adc_hal_digi_deinit();
 
     ADC_DIGI_LOCK_RELEASE();
@@ -403,17 +390,13 @@ esp_err_t adc_digi_deinitialize(void)
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (s_adc_digi_ctx->dma_intr_hdl) {
-        esp_intr_free(s_adc_digi_ctx->dma_intr_hdl);
-    }
-
     if(s_adc_digi_ctx->ringbuf_hdl) {
         vRingbufferDelete(s_adc_digi_ctx->ringbuf_hdl);
         s_adc_digi_ctx->ringbuf_hdl = NULL;
     }
 
     free(s_adc_digi_ctx->rx_dma_buf);
-    free(s_adc_digi_ctx->hal_dma_config.rx_desc);
+    free(s_adc_digi_ctx->hal.rx_desc);
     free(s_adc_digi_ctx->digi_controller_config.adc_pattern);
     gdma_disconnect(s_adc_digi_ctx->rx_dma_channel);
     gdma_del_channel(s_adc_digi_ctx->rx_dma_channel);
