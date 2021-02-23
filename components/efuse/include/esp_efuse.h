@@ -50,6 +50,16 @@ typedef struct {
 } esp_efuse_desc_t;
 
 /**
+ * @brief Type definition for ROM log scheme
+ */
+typedef enum {
+    ESP_EFUSE_ROM_LOG_ALWAYS_ON,    /**< Always enable ROM logging */
+    ESP_EFUSE_ROM_LOG_ON_GPIO_LOW,  /**< ROM logging is enabled when specific GPIO level is low during start up */
+    ESP_EFUSE_ROM_LOG_ON_GPIO_HIGH, /**< ROM logging is enabled when specific GPIO level is high during start up */
+    ESP_EFUSE_ROM_LOG_ALWAYS_OFF    /**< Disable ROM logging permanently */
+} esp_efuse_rom_log_scheme_t;
+
+/**
  * @brief   Reads bits from EFUSE field and writes it into an array.
  *
  * The number of read bits will be limited to the minimum value
@@ -346,6 +356,20 @@ void esp_efuse_disable_basic_rom_console(void);
  * - ESP_ERR_INVALID_STATE (ESP32 only) This eFuse is write protected and cannot be written
  */
 esp_err_t esp_efuse_disable_rom_download_mode(void);
+
+/**
+ * @brief Set boot ROM log scheme via eFuse
+ *
+ * @note By default, the boot ROM will always print to console. This API can be called to set the log scheme only once per chip,
+ *       once the value is changed from the default it can't be changed again.
+ *
+ * @param log_scheme Supported ROM log scheme
+ * @return
+ *      - ESP_OK If the eFuse was successfully burned, or had already been burned.
+ *      - ESP_ERR_NOT_SUPPORTED (ESP32 only) This SoC is not capable of setting ROM log scheme
+ *      - ESP_ERR_INVALID_STATE This eFuse is write protected or has been burned already
+ */
+esp_err_t esp_efuse_set_rom_log_scheme(esp_efuse_rom_log_scheme_t log_scheme);
 
 #if SOC_SUPPORTS_SECURE_DL_MODE
 /**

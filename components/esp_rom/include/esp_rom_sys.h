@@ -47,13 +47,8 @@ void esp_rom_delay_us(uint32_t us);
 void esp_rom_install_channel_putc(int channel, void (*putc)(char c));
 
 /**
- *  @brief Disable logging from the ROM code.
+ * @brief Install UART1 as the default console channel, equivalent to `esp_rom_install_channel_putc(1, esp_rom_uart_putc)`
  */
-void esp_rom_disable_logging(void);
-
-/**
-  * @brief Install UART1 as the default console channel, equivalent to `esp_rom_install_channel_putc(1, esp_rom_uart_putc)`
-  */
 void esp_rom_install_uart_printf(void);
 
 #ifdef __cplusplus

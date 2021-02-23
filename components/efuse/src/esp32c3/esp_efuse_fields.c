@@ -45,6 +45,18 @@ uint32_t esp_efuse_get_pkg_ver(void)
     return pkg_ver;
 }
 
+
+esp_err_t esp_efuse_set_rom_log_scheme(esp_efuse_rom_log_scheme_t log_scheme)
+{
+    int cur_log_scheme = 0;
+    esp_efuse_read_field_blob(ESP_EFUSE_UART_PRINT_CONTROL, &cur_log_scheme, 2);
+    if (!cur_log_scheme) { // not burned yet
+        return esp_efuse_write_field_blob(ESP_EFUSE_UART_PRINT_CONTROL, &log_scheme, 2);
+    } else {
+        return ESP_ERR_INVALID_STATE;
+    }
+}
+
 void esp_efuse_write_random_key(uint32_t blk_wdata0_reg)
 {
     uint32_t buf[8];

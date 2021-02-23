@@ -96,6 +96,11 @@ esp_err_t esp_efuse_disable_rom_download_mode(void)
     return esp_efuse_write_field_bit(ESP_EFUSE_UART_DOWNLOAD_DIS);
 }
 
+esp_err_t esp_efuse_set_rom_log_scheme(esp_efuse_rom_log_scheme_t log_scheme)
+{
+    return ESP_ERR_NOT_SUPPORTED;
+}
+
 void esp_efuse_write_random_key(uint32_t blk_wdata0_reg)
 {
     uint32_t buf[8];

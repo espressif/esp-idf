@@ -55,7 +55,7 @@ void esp_efuse_write_random_key(uint32_t blk_wdata0_reg)
     ESP_LOGV(TAG, "Writing random values to address 0x%08x", blk_wdata0_reg);
     for (int i = 0; i < 8; i++) {
         ESP_LOGV(TAG, "EFUSE_BLKx_WDATA%d_REG = 0x%08x", i, buf[i]);
-        REG_WRITE(blk_wdata0_reg + 4*i, buf[i]);
+        REG_WRITE(blk_wdata0_reg + 4 * i, buf[i]);
     }
     bzero(buf, sizeof(buf));
     bzero(raw, sizeof(raw));
@@ -64,6 +64,17 @@ void esp_efuse_write_random_key(uint32_t blk_wdata0_reg)
 esp_err_t esp_efuse_disable_rom_download_mode(void)
 {
     return esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MODE);
+}
+
+esp_err_t esp_efuse_set_rom_log_scheme(esp_efuse_rom_log_scheme_t log_scheme)
+{
+    int cur_log_scheme = 0;
+    esp_efuse_read_field_blob(ESP_EFUSE_UART_PRINT_CONTROL, &cur_log_scheme, 2);
+    if (!cur_log_scheme) { // not burned yet
+        return esp_efuse_write_field_blob(ESP_EFUSE_UART_PRINT_CONTROL, &log_scheme, 2);
+    } else {
+        return ESP_ERR_INVALID_STATE;
+    }
 }
 
 esp_err_t esp_efuse_enable_rom_secure_download_mode(void)
