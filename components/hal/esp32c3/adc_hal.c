@@ -72,7 +72,6 @@ void adc_hal_digi_controller_config(const adc_digi_config_t *cfg)
         }
     }
 
-    adc_ll_set_controller(pattern_both, ADC_CTRL_DIG);
     if (cfg->conv_limit_en) {
         adc_ll_digi_set_convert_limit_num(cfg->conv_limit_num);
         adc_ll_digi_convert_limit_enable();
