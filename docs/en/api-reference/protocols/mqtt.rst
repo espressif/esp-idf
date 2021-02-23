@@ -33,30 +33,30 @@ URI
 -  Curently support ``mqtt``, ``mqtts``, ``ws``, ``wss`` schemes
 -  MQTT over TCP samples:
 
-   -  ``mqtt://mqtt.eclipse.org``: MQTT over TCP, default port 1883:
-   -  ``mqtt://mqtt.eclipse.org:1884`` MQTT over TCP, port 1884:
-   -  ``mqtt://username:password@mqtt.eclipse.org:1884`` MQTT over TCP,
+   -  ``mqtt://mqtt.eclipseprojects.io``: MQTT over TCP, default port 1883:
+   -  ``mqtt://mqtt.eclipseprojects.io:1884`` MQTT over TCP, port 1884:
+   -  ``mqtt://username:password@mqtt.eclipseprojects.io:1884`` MQTT over TCP,
       port 1884, with username and password
 
 -  MQTT over SSL samples:
 
-   -  ``mqtts://mqtt.eclipse.org``: MQTT over SSL, port 8883
-   -  ``mqtts://mqtt.eclipse.org:8884``: MQTT over SSL, port 8884
+   -  ``mqtts://mqtt.eclipseprojects.io``: MQTT over SSL, port 8883
+   -  ``mqtts://mqtt.eclipseprojects.io:8884``: MQTT over SSL, port 8884
 
 -  MQTT over Websocket samples:
 
-   -  ``ws://mqtt.eclipse.org:80/mqtt``
+   -  ``ws://mqtt.eclipseprojects.io:80/mqtt``
 
 -  MQTT over Websocket Secure samples:
 
-   -  ``wss://mqtt.eclipse.org:443/mqtt``
+   -  ``wss://mqtt.eclipseprojects.io:443/mqtt``
 
 -  Minimal configurations:
 
 .. code:: c
 
     const esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = "mqtt://mqtt.eclipse.org",
+        .uri = "mqtt://mqtt.eclipseprojects.io",
         // .user_context = (void *)your_context
     };
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
@@ -69,15 +69,15 @@ URI
 SSL
 ^^^
 
--  Get certificate from server, example: ``mqtt.eclipse.org``
-   ``openssl s_client -showcerts -connect mqtt.eclipse.org:8883 </dev/null 2>/dev/null|openssl x509 -outform PEM >mqtt_eclipse_org.pem``
+-  Get certificate from server, example: ``mqtt.eclipseprojects.io``
+   ``openssl s_client -showcerts -connect mqtt.eclipseprojects.io:8883 </dev/null 2>/dev/null|openssl x509 -outform PEM >mqtt_eclipse_org.pem``
 -  Check the sample application: ``examples/mqtt_ssl``
 -  Configuration:
 
 .. code:: c
 
     const esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = "mqtts://mqtt.eclipse.org:8883",
+        .uri = "mqtts://mqtt.eclipseprojects.io:8883",
         .event_handle = mqtt_event_handler,
         .cert_pem = (const char *)mqtt_eclipse_org_pem_start,
     };
