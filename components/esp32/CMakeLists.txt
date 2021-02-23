@@ -14,7 +14,6 @@ else()
     set(srcs
         "cache_sram_mmu.c"
         "clk.c"
-        "crosscore_int.c"
         "dport_access.c"
         "esp_himem.c"
         "spiram.c"

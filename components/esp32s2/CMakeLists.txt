@@ -13,7 +13,6 @@ else()
 
     set(srcs "memprot.c"
              "clk.c"
-             "crosscore_int.c"
              "dport_access.c"
              "spiram.c"
              "spiram_psram.c"

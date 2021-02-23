@@ -12,30 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include <stdint.h>
-#include <string.h>
-
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
 #include "esp_debug_helpers.h"
+#include "soc/periph_defs.h"
 
-#include "soc/cpu.h"
-#include "soc/dport_reg.h"
-#include "soc/gpio_periph.h"
-#include "soc/rtc_periph.h"
-
+#include "hal/cpu_hal.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/semphr.h"
-#include "freertos/queue.h"
+#include "freertos/portmacro.h"
 
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
+#include "soc/dport_reg.h"
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3
+#include "soc/system_reg.h"
+#endif
 
 #define REASON_YIELD            BIT(0)
 #define REASON_FREQ_SWITCH      BIT(1)
+
+#if !CONFIG_IDF_TARGET_ESP32C3
 #define REASON_PRINT_BACKTRACE  BIT(2)
+#endif
 
 static portMUX_TYPE reason_spinlock = portMUX_INITIALIZER_UNLOCKED;
-static volatile uint32_t reason[ portNUM_PROCESSORS ];
+static volatile uint32_t reason[portNUM_PROCESSORS];
 
 /*
 ToDo: There is a small chance the CPU already has yielded when this ISR is serviced. In that case, it's running the intended task but
@@ -52,11 +53,24 @@ static void IRAM_ATTR esp_crosscore_isr(void *arg) {
     volatile uint32_t *my_reason=arg;
 
     //Clear the interrupt first.
-    if (xPortGetCoreID()==0) {
+#if CONFIG_IDF_TARGET_ESP32
+    if (cpu_hal_get_core_id()==0) {
         DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, 0);
     } else {
         DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, 0);
     }
+#elif CONFIG_IDF_TARGET_ESP32S2
+    DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, 0);
+#elif CONFIG_IDF_TARGET_ESP32S3
+    if (cpu_hal_get_core_id()==0) {
+        WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_0_REG, 0);
+    } else {
+        WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_1_REG, 0);
+    }
+#elif CONFIG_IDF_TARGET_ESP32C3
+    WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_0_REG, 0);
+#endif
+
     //Grab the reason and clear it.
     portENTER_CRITICAL_ISR(&reason_spinlock);
     my_reason_val=*my_reason;
@@ -73,24 +87,30 @@ static void IRAM_ATTR esp_crosscore_isr(void *arg) {
          * to allow DFS features without the extra latency of the ISR hook.
          */
     }
+#if !CONFIG_IDF_TARGET_ESP32C3 // IDF-2986
     if (my_reason_val & REASON_PRINT_BACKTRACE) {
         esp_backtrace_print(100);
     }
+#endif
 }
 
 //Initialize the crosscore interrupt on this core. Call this once
 //on each active core.
 void esp_crosscore_int_init(void) {
     portENTER_CRITICAL(&reason_spinlock);
-    reason[xPortGetCoreID()]=0;
+    reason[cpu_hal_get_core_id()]=0;
     portEXIT_CRITICAL(&reason_spinlock);
-    esp_err_t err __attribute__((unused));
-    if (xPortGetCoreID()==0) {
+    esp_err_t err __attribute__((unused)) = ESP_OK;
+#if portNUM_PROCESSORS > 1
+    if (cpu_hal_get_core_id()==0) {
         err = esp_intr_alloc(ETS_FROM_CPU_INTR0_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason[0], NULL);
     } else {
         err = esp_intr_alloc(ETS_FROM_CPU_INTR1_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason[1], NULL);
     }
-    assert(err == ESP_OK);
+#else
+    err = esp_intr_alloc(ETS_FROM_CPU_INTR0_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason[0], NULL);
+#endif
+    ESP_ERROR_CHECK(err);
 }
 
 static void IRAM_ATTR esp_crosscore_int_send(int core_id, uint32_t reason_mask) {
@@ -100,11 +120,23 @@ static void IRAM_ATTR esp_crosscore_int_send(int core_id, uint32_t reason_mask) 
     reason[core_id] |= reason_mask;
     portEXIT_CRITICAL_ISR(&reason_spinlock);
     //Poke the other CPU.
+#if CONFIG_IDF_TARGET_ESP32
     if (core_id==0) {
         DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, DPORT_CPU_INTR_FROM_CPU_0);
     } else {
         DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, DPORT_CPU_INTR_FROM_CPU_1);
     }
+#elif CONFIG_IDF_TARGET_ESP32S2
+    DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, DPORT_CPU_INTR_FROM_CPU_0);
+#elif CONFIG_IDF_TARGET_ESP32S3
+    if (core_id==0) {
+        WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_0_REG, SYSTEM_CPU_INTR_FROM_CPU_0);
+    } else {
+        WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_1_REG, SYSTEM_CPU_INTR_FROM_CPU_1);
+    }
+#elif CONFIG_IDF_TARGET_ESP32C3
+    WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_0_REG, SYSTEM_CPU_INTR_FROM_CPU_0);
+#endif
 }
 
 void IRAM_ATTR esp_crosscore_int_send_yield(int core_id)
@@ -117,7 +149,9 @@ void IRAM_ATTR esp_crosscore_int_send_freq_switch(int core_id)
     esp_crosscore_int_send(core_id, REASON_FREQ_SWITCH);
 }
 
+#if !CONFIG_IDF_TARGET_ESP32C3
 void IRAM_ATTR esp_crosscore_int_send_print_backtrace(int core_id)
 {
     esp_crosscore_int_send(core_id, REASON_PRINT_BACKTRACE);
 }
+#endif

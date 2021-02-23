@@ -12,7 +12,6 @@ else()
     # Regular app build
 
     set(srcs "clk.c"
-             "crosscore_int.c"
              "dport_access.c"
              "esp_hmac.c"
              "esp_ds.c"

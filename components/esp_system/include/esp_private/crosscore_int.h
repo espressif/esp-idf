@@ -14,6 +14,8 @@
 #ifndef __ESP_CROSSCORE_INT_H
 #define __ESP_CROSSCORE_INT_H
 
+#include "sdkconfig.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -54,6 +56,8 @@ void esp_crosscore_int_send_yield(int core_id);
  */
 void esp_crosscore_int_send_freq_switch(int core_id);
 
+
+#if !CONFIG_IDF_TARGET_ESP32C3
 /**
  * Send an interrupt to a CPU indicating it should print its current backtrace
  *
@@ -63,6 +67,7 @@ void esp_crosscore_int_send_freq_switch(int core_id);
  * @param core_id Core that should print its backtrace
  */
 void esp_crosscore_int_send_print_backtrace(int core_id);
+#endif
 
 #ifdef __cplusplus
 }

@@ -10,7 +10,8 @@ if(BOOTLOADER_BUILD)
     # Bootloader relies on some Kconfig options defined in esp_system.
     idf_component_register(SRCS "${srcs}")
 else()
-    list(APPEND srcs "esp_err.c"
+    list(APPEND srcs "crosscore_int.c"
+            "esp_err.c"
             "freertos_hooks.c"
             "intr_alloc.c"
             "int_wdt.c"
