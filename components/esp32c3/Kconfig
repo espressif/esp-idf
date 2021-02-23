@@ -23,6 +23,28 @@ menu "ESP32C3-Specific"
         default 80 if ESP32C3_DEFAULT_CPU_FREQ_80
         default 160 if ESP32C3_DEFAULT_CPU_FREQ_160
 
+    choice ESP32C3_REV_MIN
+        prompt "Minimum Supported ESP32-C3 Revision"
+        default ESP32C3_REV_MIN_0
+        help
+            Minimum revision that ESP-IDF would support.
+
+            Only supporting higher chip revisions can reduce binary size.
+
+        config ESP32C3_REV_MIN_0
+            bool "Rev 0"
+        config ESP32C3_REV_MIN_1
+            bool "Rev 1"
+        config ESP32C3_REV_MIN_2
+            bool "Rev 2"
+    endchoice
+
+    config ESP32C3_REV_MIN
+        int
+        default 0 if ESP32C3_REV_MIN_0
+        default 1 if ESP32C3_REV_MIN_1
+        default 2 if ESP32C3_REV_MIN_2
+
     choice ESP32C3_UNIVERSAL_MAC_ADDRESSES
         bool "Number of universally administered (by IEEE) MAC address"
         default ESP32C3_UNIVERSAL_MAC_ADDRESSES_FOUR
