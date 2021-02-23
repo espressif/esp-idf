@@ -53,6 +53,22 @@ static esp_err_t sim7600_handle_cbc(modem_dce_t *dce, const char *line)
 }
 
 /**
+ * @brief Handle response from AT+CPOF
+ */
+static esp_err_t sim7600_handle_cpof(modem_dce_t *dce, const char *line)
+{
+    esp_err_t err = ESP_OK;
+    if (strstr(line, MODEM_RESULT_CODE_SUCCESS)) {
+        err = esp_modem_process_command_done(dce, MODEM_STATE_SUCCESS);
+    } else if (strstr(line, MODEM_RESULT_CODE_NO_CARRIER)) {
+        err = ESP_OK;
+    } else if (strstr(line, MODEM_RESULT_CODE_ERROR)) {
+        err = esp_modem_process_command_done(dce, MODEM_STATE_FAIL);
+    }
+    return err;
+}
+
+/**
  * @brief Get battery status
  *
  * @param dce Modem DCE object
@@ -79,6 +95,26 @@ err:
 }
 
 /**
+ * @brief Set the SIM7600 device to power down mode
+ *
+ * @param dce common modem dce object (modem_dce_t)
+ * @return esp_err_t
+ *      - ESP_OK on success
+ *      - ESP_FAIL on error
+ */
+static esp_err_t sim7600_power_down(modem_dce_t *dce)
+{
+    modem_dte_t *dte = dce->dte;
+    dce->handle_line = sim7600_handle_cpof;
+    DCE_CHECK(dte->send_cmd(dte, "AT+CPOF\r", MODEM_COMMAND_TIMEOUT_POWEROFF) == ESP_OK, "send command failed", err);
+    DCE_CHECK(dce->state == MODEM_STATE_SUCCESS, "power down failed", err);
+    ESP_LOGD(DCE_TAG, "power down ok");
+    return ESP_OK;
+err:
+    return ESP_FAIL;
+}
+
+/**
  * @brief Create and initialize SIM7600 object
  *
  */
@@ -86,5 +122,6 @@ modem_dce_t *sim7600_init(modem_dte_t *dte)
 {
     modem_dce_t *dce = bg96_init(dte);
     dte->dce->get_battery_status = sim7600_get_battery_status;
+    dte->dce->power_down = sim7600_power_down;
     return dce;
 }
