@@ -157,6 +157,12 @@
   included_in:
     - test:any_test
 
+"test:submodule":
+  labels:
+    - submodule
+  patterns:
+    - submodule
+
 #################################
 # Triggered Only By Labels Jobs #
 #################################
