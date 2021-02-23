@@ -44,7 +44,7 @@
 fast_template_app:
   extends:
     - .build_template_app_template
-    - .rules:test:target_test
+    - .rules:build:target_test
   stage: pre_check
   variables:
     BUILD_COMMAND_ARGS: "-p"
