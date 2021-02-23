@@ -553,6 +553,16 @@ esp_err_t wifi_prov_mgr_get_wifi_disconnect_reason(wifi_prov_sta_fail_reason_t *
  */
 esp_err_t wifi_prov_mgr_configure_sta(wifi_config_t *wifi_cfg);
 
+/**
+ * @brief   Reset Wi-Fi provisioning config
+ *
+ * Calling this API will restore WiFi stack persistent settings to default values.
+ *
+ * @return
+ *  - ESP_OK      : Reset provisioning config successfully
+ *  - ESP_FAIL    : Failed to reset provisioning config
+ */
+esp_err_t wifi_prov_mgr_reset_provisioning(void);
 #ifdef __cplusplus
 }
 #endif

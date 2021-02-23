@@ -185,9 +185,13 @@ void app_main(void)
     ESP_ERROR_CHECK(wifi_prov_mgr_init(config));
 
     bool provisioned = false;
+#ifdef CONFIG_EXAMPLE_RESET_PROVISIONED
+    wifi_prov_mgr_reset_provisioning();
+#else
     /* Let's find out if the device is provisioned */
     ESP_ERROR_CHECK(wifi_prov_mgr_is_provisioned(&provisioned));
 
+#endif
     /* If device is not yet provisioned start provisioning service */
     if (!provisioned) {
         ESP_LOGI(TAG, "Starting provisioning");
