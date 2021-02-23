@@ -5,10 +5,12 @@
 
 #pragma once
 
-#define SOC_CPU_CORES_NUM   1
-#define SOC_GDMA_SUPPORTED  1
-#define SOC_TWAI_SUPPORTED  1
-#define SOC_BT_SUPPORTED    1
+#define SOC_CPU_CORES_NUM       1
+#define SOC_GDMA_SUPPORTED      1
+#define SOC_TWAI_SUPPORTED      1
+#define SOC_BT_SUPPORTED        1
+#define SOC_DIG_SIGN_SUPPORTED  1
+#define SOC_HMAC_SUPPORTED      1
 
 /*-------------------------- DAC CAPS ----------------------------------------*/
 #define SOC_DAC_PERIPH_NUM      0
