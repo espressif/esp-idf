@@ -39,7 +39,15 @@ if(NOT CONFIG_SECURE_BOOT_ALLOW_SHORT_APP_PARTITION AND
 endif()
 
 if(CONFIG_ESP32_REV_MIN)
-    list(APPEND esptool_elf2image_args --min-rev ${CONFIG_ESP32_REV_MIN})
+    set(min_rev ${CONFIG_ESP32_REV_MIN})
+endif()
+if(CONFIG_ESP32C3_REV_MIN)
+    set(min_rev ${CONFIG_ESP32C3_REV_MIN})
+endif()
+
+if(min_rev)
+    list(APPEND esptool_elf2image_args --min-rev ${min_rev})
+    unset(min_rev)
 endif()
 
 if(CONFIG_ESPTOOLPY_FLASHSIZE_DETECT)
