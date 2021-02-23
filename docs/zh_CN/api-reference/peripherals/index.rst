@@ -10,8 +10,8 @@
     :SOC_DAC_PERIPH_NUM: DAC <dac>
     GPIO (包括 RTC 低功耗 I/O) <gpio>
     :SOC_DEDICATED_GPIO_SUPPORTED: 专用 GPIO <dedic_gpio>
-    :esp32s2: HMAC <hmac>
-    :esp32s2: Digital Signature <ds>
+    :SOC_HMAC_SUPPORTED: HMAC <hmac>
+    :SOC_DIG_SIGN_SUPPORTED: Digital Signature <ds>
     I2C <i2c>
     I2S <i2s>
     LED Control <ledc>
