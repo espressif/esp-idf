@@ -58,8 +58,7 @@ This is the documentation for Espressif IoT Development Framework (`esp-idf <htt
    Copyrights <COPYRIGHT>
    About <about>
    语言/Languages <languages>
-   Guide Downloads <https://readthedocs.com/projects/espressif-esp-idf/downloads/>
-   
+
 * :ref:`genindex`
 
 

@@ -61,7 +61,6 @@ ESP-IDF 是 `ESP32 <https://www.espressif.com/zh-hans/products/hardware/esp32/ov
    版权 <COPYRIGHT>
    关于 <about>
    Languages/语言 <languages>
-   指南下载 <https://readthedocs.com/projects/espressif-esp-idf/downloads/>
 
 
 * :ref:`genindex`
