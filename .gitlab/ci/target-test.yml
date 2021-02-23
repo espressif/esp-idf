@@ -602,7 +602,7 @@ UT_C3:
 
 UT_C3_FLASH:
   extends: .unit_test_esp32c3_template
-  parallel: 3
+  parallel: 2
   tags:
     - ESP32C3_IDF
     - UT_T1_ESP_FLASH
@@ -619,6 +619,12 @@ UT_C3_FLASH_ENC:
   tags:
     - ESP32C3_IDF
     - UT_T1_FlashEncryption
+
+UT_C3_I2C:
+  extends: .unit_test_esp32c3_template
+  tags:
+    - ESP32C3_IDF
+    - UT_T2_I2C
 
 .integration_test_template:
   extends:
