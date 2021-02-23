@@ -90,4 +90,8 @@ menu "Power Management"
             Waring: If you want to enable this option on ESP32, you should enable `GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL`
             at first, otherwise you will not be able to switch pullup/pulldown mode.
 
+    config PM_SLP_DEFAULT_PARAMS_OPT
+        bool
+        default n
+
 endmenu # "Power Management"
