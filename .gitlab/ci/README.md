@@ -60,6 +60,7 @@
 - `macos`
 - `macos_test`
 - `nvs_coverage`
+- `submodule`
 - `unit_test[_esp32/esp32s2/...]`
 - `weekend_test`
 - `windows`
