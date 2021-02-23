@@ -2,25 +2,25 @@ menu "Example Configuration"
 
     config EXAMPLE_BROKER_SSL_URI
         string "Broker SSL URL"
-        default "mqtts://mqtt.eclipse.org:8883"
+        default "mqtts://mqtt.eclipseprojects.io:8883"
         help
             URL of an mqtt broker for ssl transport
 
     config EXAMPLE_BROKER_TCP_URI
         string "Broker TCP URL"
-        default "mqtt://mqtt.eclipse.org:1883"
+        default "mqtt://mqtt.eclipseprojects.io:1883"
         help
             URL of an mqtt broker for tcp transport
 
     config EXAMPLE_BROKER_WS_URI
         string "Broker WS URL"
-        default "ws://mqtt.eclipse.org:80/mqtt"
+        default "ws://mqtt.eclipseprojects.io:80/mqtt"
         help
             URL of an mqtt broker for ws transport
 
     config EXAMPLE_BROKER_WSS_URI
         string "Broker WSS URL"
-        default "wss://mqtt.eclipse.org:443/mqtt"
+        default "wss://mqtt.eclipseprojects.io:443/mqtt"
         help
             URL of an mqtt broker for wss transport
 
