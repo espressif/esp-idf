@@ -8,7 +8,7 @@ Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)
 Used static IRAM:   38932 bytes (  92140 available, 29.7% used)
       Flash code:  146944 bytes
     Flash rodata:   39580 bytes
-Total image size:~ 243076 bytes (.bin may be padded larger)
+Total image size:~ 234780 bytes (.bin may be padded larger)
 
 ***
 Running idf_size.py on bootloader...
@@ -20,7 +20,7 @@ Used static DRAM:    7212 bytes (  58324 available, 11.0% used)
 Used static IRAM:    4445 bytes (  92835 available, 4.6% used)
       Flash code:       0 bytes
     Flash rodata:       0 bytes
-Total image size:~  11657 bytes (.bin may be padded larger)
+Total image size:~  11609 bytes (.bin may be padded larger)
 
 ***
 Running idf_size.py --archives...
@@ -31,7 +31,7 @@ Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)
 Used static IRAM:   38932 bytes (  92140 available, 29.7% used)
       Flash code:  146944 bytes
     Flash rodata:   39580 bytes
-Total image size:~ 243076 bytes (.bin may be padded larger)
+Total image size:~ 234780 bytes (.bin may be padded larger)
 Per-archive contributions to ELF file:
             Archive File DRAM .data & .bss & other   IRAM   D/IRAM Flash code & rodata   Total
                liblwip.a         14   3751       0      0        0      66978    13936   84679
@@ -82,7 +82,7 @@ Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)
 Used static IRAM:   38932 bytes (  92140 available, 29.7% used)
       Flash code:  146944 bytes
     Flash rodata:   39580 bytes
-Total image size:~ 243076 bytes (.bin may be padded larger)
+Total image size:~ 234780 bytes (.bin may be padded larger)
 Per-file contributions to ELF file:
              Object File DRAM .data & .bss & other   IRAM   D/IRAM Flash code & rodata   Total
         lib_a-vfprintf.o          0      0       0      0        0      14193      756   14949
@@ -376,7 +376,7 @@ Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)
 Used static IRAM:   38932 bytes (  92140 available, 29.7% used)
       Flash code:  146944 bytes
     Flash rodata:   39580 bytes
-Total image size:~ 243076 bytes (.bin may be padded larger)
+Total image size:~ 234780 bytes (.bin may be padded larger)
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
 
 Symbols from section: .dram0.bss
@@ -417,7 +417,7 @@ Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)                  
 Used static IRAM:   38932 bytes (  92140 available, 29.7% used)                  4445         +34487 (   -695 available,  +33792 total)
       Flash code:  146944 bytes                                                     0        +146944
     Flash rodata:   39580 bytes                                                     0         +39580
-Total image size:~ 243076 bytes (.bin may be padded larger)                     11657        +231419
+Total image size:~ 234780 bytes (.bin may be padded larger)                     11609        +223171
 
 ***
 Running idf_size.py diff with itself...
@@ -431,7 +431,7 @@ Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)                  
 Used static IRAM:   38932 bytes (  92140 available, 29.7% used)                 38932                (     +0 available,      +0 total)
       Flash code:  146944 bytes                                                146944
     Flash rodata:   39580 bytes                                                 39580
-Total image size:~ 243076 bytes (.bin may be padded larger)                    243076
+Total image size:~ 234780 bytes (.bin may be padded larger)                    234780
 
 ***
 Running idf_size.py diff with another app...
@@ -445,7 +445,7 @@ Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)                  
 Used static IRAM:   38932 bytes (  92140 available, 29.7% used)                 38956            -24 (    +24 available,      +0 total)
       Flash code:  146944 bytes                                                 77191         +69753
     Flash rodata:   39580 bytes                                                 22360         +17220
-Total image size:~ 243076 bytes (.bin may be padded larger)                    149111         +93965
+Total image size:~ 234780 bytes (.bin may be padded larger)                    147087         +87693
 
 ***
 Running idf_size.py diff with app in reverse order...
@@ -459,7 +459,7 @@ Used static DRAM:   10604 bytes ( 170132 available, 5.9% used)                  
 Used static IRAM:   38956 bytes (  92116 available, 29.7% used)                 38932            +24 (    -24 available,      +0 total)
       Flash code:   77191 bytes                                                146944         -69753
     Flash rodata:   22360 bytes                                                 39580         -17220
-Total image size:~ 149111 bytes (.bin may be padded larger)                    243076         -93965
+Total image size:~ 147087 bytes (.bin may be padded larger)                    234780         -87693
 
 ***
 Running idf_size.py diff --archives with bootloader...
@@ -474,7 +474,7 @@ Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)                  
 Used static IRAM:   38932 bytes (  92140 available, 29.7% used)                  4445         +34487 (   -695 available,  +33792 total)
       Flash code:  146944 bytes                                                     0        +146944
     Flash rodata:   39580 bytes                                                     0         +39580
-Total image size:~ 243076 bytes (.bin may be padded larger)                     11657        +231419
+Total image size:~ 234780 bytes (.bin may be padded larger)                     11609        +223171
 Per-archive contributions to ELF file:
             Archive File              DRAM .data               DRAM .bss              DRAM other                    IRAM                  D/IRAM              Flash code            Flash rodata                   Total
                         |    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>
@@ -536,7 +536,7 @@ Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)                  
 Used static IRAM:   38932 bytes (  92140 available, 29.7% used)                 38932                (     +0 available,      +0 total)
       Flash code:  146944 bytes                                                146944
     Flash rodata:   39580 bytes                                                 39580
-Total image size:~ 243076 bytes (.bin may be padded larger)                    243076
+Total image size:~ 234780 bytes (.bin may be padded larger)                    234780
 Per-archive contributions to ELF file:
             Archive File              DRAM .data               DRAM .bss              DRAM other                    IRAM                  D/IRAM              Flash code            Flash rodata                   Total
                         |    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>
@@ -592,7 +592,7 @@ Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)                  
 Used static IRAM:   38932 bytes (  92140 available, 29.7% used)                 38956            -24 (    +24 available,      +0 total)
       Flash code:  146944 bytes                                                 77191         +69753
     Flash rodata:   39580 bytes                                                 22360         +17220
-Total image size:~ 243076 bytes (.bin may be padded larger)                    149111         +93965
+Total image size:~ 234780 bytes (.bin may be padded larger)                    147087         +87693
 Per-archive contributions to ELF file:
             Archive File              DRAM .data               DRAM .bss              DRAM other                    IRAM                  D/IRAM              Flash code            Flash rodata                   Total
                         |    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>
@@ -660,7 +660,7 @@ Used static DRAM:   10604 bytes ( 170132 available, 5.9% used)                  
 Used static IRAM:   38956 bytes (  92116 available, 29.7% used)                 38932            +24 (    -24 available,      +0 total)
       Flash code:   77191 bytes                                                146944         -69753
     Flash rodata:   22360 bytes                                                 39580         -17220
-Total image size:~ 149111 bytes (.bin may be padded larger)                    243076         -93965
+Total image size:~ 147087 bytes (.bin may be padded larger)                    234780         -87693
 Per-archive contributions to ELF file:
             Archive File              DRAM .data               DRAM .bss              DRAM other                    IRAM                  D/IRAM              Flash code            Flash rodata                   Total
                         |    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>
@@ -729,7 +729,7 @@ Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)                  
 Used static IRAM:   38932 bytes (  92140 available, 29.7% used)                  4445         +34487 (   -695 available,  +33792 total)
       Flash code:  146944 bytes                                                     0        +146944
     Flash rodata:   39580 bytes                                                     0         +39580
-Total image size:~ 243076 bytes (.bin may be padded larger)                     11657        +231419
+Total image size:~ 234780 bytes (.bin may be padded larger)                     11609        +223171
 Per-file contributions to ELF file:
              Object File              DRAM .data               DRAM .bss              DRAM other                    IRAM                  D/IRAM              Flash code            Flash rodata                   Total
                         |    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>
@@ -1070,7 +1070,7 @@ Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)                  
 Used static IRAM:   38932 bytes (  92140 available, 29.7% used)                 38932                (     +0 available,      +0 total)
       Flash code:  146944 bytes                                                146944
     Flash rodata:   39580 bytes                                                 39580
-Total image size:~ 243076 bytes (.bin may be padded larger)                    243076
+Total image size:~ 234780 bytes (.bin may be padded larger)                    234780
 Per-file contributions to ELF file:
              Object File              DRAM .data               DRAM .bss              DRAM other                    IRAM                  D/IRAM              Flash code            Flash rodata                   Total
                         |    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>
@@ -1369,7 +1369,7 @@ Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)                  
 Used static IRAM:   38932 bytes (  92140 available, 29.7% used)                 38956            -24 (    +24 available,      +0 total)
       Flash code:  146944 bytes                                                 77191         +69753
     Flash rodata:   39580 bytes                                                 22360         +17220
-Total image size:~ 243076 bytes (.bin may be padded larger)                    149111         +93965
+Total image size:~ 234780 bytes (.bin may be padded larger)                    147087         +87693
 Per-file contributions to ELF file:
              Object File              DRAM .data               DRAM .bss              DRAM other                    IRAM                  D/IRAM              Flash code            Flash rodata                   Total
                         |    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>
@@ -1855,7 +1855,7 @@ Used static DRAM:   10604 bytes ( 170132 available, 5.9% used)                  
 Used static IRAM:   38956 bytes (  92116 available, 29.7% used)                 38932            +24 (    -24 available,      +0 total)
       Flash code:   77191 bytes                                                146944         -69753
     Flash rodata:   22360 bytes                                                 39580         -17220
-Total image size:~ 149111 bytes (.bin may be padded larger)                    243076         -93965
+Total image size:~ 147087 bytes (.bin may be padded larger)                    234780         -87693
 Per-file contributions to ELF file:
              Object File              DRAM .data               DRAM .bss              DRAM other                    IRAM                  D/IRAM              Flash code            Flash rodata                   Total
                         |    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>
@@ -2342,7 +2342,7 @@ Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)                  
 Used static IRAM:   38932 bytes (  92140 available, 29.7% used)                  4445         +34487 (   -695 available,  +33792 total)
       Flash code:  146944 bytes                                                     0        +146944
     Flash rodata:   39580 bytes                                                     0         +39580
-Total image size:~ 243076 bytes (.bin may be padded larger)                     11657        +231419
+Total image size:~ 234780 bytes (.bin may be padded larger)                     11609        +223171
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
 
 .dram0.bss                                  <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
@@ -2404,7 +2404,7 @@ Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)                  
 Used static IRAM:   38932 bytes (  92140 available, 29.7% used)                  4445         +34487 (   -695 available,  +33792 total)
       Flash code:  146944 bytes                                                     0        +146944
     Flash rodata:   39580 bytes                                                     0         +39580
-Total image size:~ 243076 bytes (.bin may be padded larger)                     11657        +231419
+Total image size:~ 234780 bytes (.bin may be padded larger)                     11609        +223171
 Symbols within the archive: libc.a (Not all symbols may be reported)
 
 .dram0.bss                                  <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
@@ -2444,7 +2444,7 @@ Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)                  
 Used static IRAM:   38932 bytes (  92140 available, 29.7% used)                 38932                (     +0 available,      +0 total)
       Flash code:  146944 bytes                                                146944
     Flash rodata:   39580 bytes                                                 39580
-Total image size:~ 243076 bytes (.bin may be padded larger)                    243076
+Total image size:~ 234780 bytes (.bin may be padded larger)                    234780
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
 
 .dram0.bss                                  <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
@@ -2505,7 +2505,7 @@ Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)                  
 Used static IRAM:   38932 bytes (  92140 available, 29.7% used)                 38956            -24 (    +24 available,      +0 total)
       Flash code:  146944 bytes                                                 77191         +69753
     Flash rodata:   39580 bytes                                                 22360         +17220
-Total image size:~ 243076 bytes (.bin may be padded larger)                    149111         +93965
+Total image size:~ 234780 bytes (.bin may be padded larger)                    147087         +87693
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
 
 .dram0.bss                                  <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
@@ -2631,7 +2631,7 @@ Used static DRAM:   10604 bytes ( 170132 available, 5.9% used)                  
 Used static IRAM:   38956 bytes (  92116 available, 29.7% used)                 38932            +24 (    -24 available,      +0 total)
       Flash code:   77191 bytes                                                146944         -69753
     Flash rodata:   22360 bytes                                                 39580         -17220
-Total image size:~ 149111 bytes (.bin may be padded larger)                    243076         -93965
+Total image size:~ 147087 bytes (.bin may be padded larger)                    234780         -87693
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
 
 .dram0.bss                                  <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
@@ -2757,7 +2757,7 @@ Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)                  
 Used static IRAM:   38932 bytes (  92140 available, 29.7% used)                 38956            -24 (    +24 available,      +0 total)
       Flash code:  146944 bytes                                                 77191         +69753
     Flash rodata:   39580 bytes                                                 22360         +17220
-Total image size:~ 243076 bytes (.bin may be padded larger)                    149111         +93965
+Total image size:~ 234780 bytes (.bin may be padded larger)                    147087         +87693
 Symbols within the archive: libfreertos.a (Not all symbols may be reported)
 
 .dram0.bss                                  <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
@@ -3040,7 +3040,7 @@ Used static IRAM:       0 bytes (      0 available, nan% used)
 Used stat D/IRAM:   43020 bytes ( 350196 available, 10.9% used)
       Flash code:   74439 bytes
     Flash rodata:   18580 bytes
-Total image size:~ 136039 bytes (.bin may be padded larger)
+Total image size:~ 134103 bytes (.bin may be padded larger)
 
 ***
 Running idf_size.py for esp32s2 (target autodetected)...
@@ -3052,7 +3052,7 @@ Used static IRAM:       0 bytes (      0 available, nan% used)
 Used stat D/IRAM:   43020 bytes ( 350196 available, 10.9% used)
       Flash code:   74439 bytes
     Flash rodata:   18580 bytes
-Total image size:~ 136039 bytes (.bin may be padded larger)
+Total image size:~ 134103 bytes (.bin may be padded larger)
 
 ***
 Running idf_size.py on bootloader for esp32s2...
@@ -3064,7 +3064,7 @@ Used static IRAM:       0 bytes (      0 available, nan% used)
 Used stat D/IRAM:   12094 bytes (  30914 available, 28.1% used)
       Flash code:       0 bytes
     Flash rodata:       0 bytes
-Total image size:~  12094 bytes (.bin may be padded larger)
+Total image size:~  11830 bytes (.bin may be padded larger)
 
 ***
 Running idf_size.py on bootloader for esp32s2 (target autodetected)...
@@ -3076,7 +3076,7 @@ Used static IRAM:       0 bytes (      0 available, nan% used)
 Used stat D/IRAM:   12094 bytes (  30914 available, 28.1% used)
       Flash code:       0 bytes
     Flash rodata:       0 bytes
-Total image size:~  12094 bytes (.bin may be padded larger)
+Total image size:~  11830 bytes (.bin may be padded larger)
 
 ***
 Running idf_size.py --archives for esp32s2...
@@ -3088,7 +3088,7 @@ Used static IRAM:       0 bytes (      0 available, nan% used)
 Used stat D/IRAM:   43020 bytes ( 350196 available, 10.9% used)
       Flash code:   74439 bytes
     Flash rodata:   18580 bytes
-Total image size:~ 136039 bytes (.bin may be padded larger)
+Total image size:~ 134103 bytes (.bin may be padded larger)
 Per-archive contributions to ELF file:
             Archive File DRAM .data & .bss & other   IRAM   D/IRAM Flash code & rodata   Total
                   libc.a        364      4       0      0      368      54964     3765   59465
@@ -3127,7 +3127,7 @@ Used static IRAM:       0 bytes (      0 available, nan% used)
 Used stat D/IRAM:   43020 bytes ( 350196 available, 10.9% used)
       Flash code:   74439 bytes
     Flash rodata:   18580 bytes
-Total image size:~ 136039 bytes (.bin may be padded larger)
+Total image size:~ 134103 bytes (.bin may be padded larger)
 Per-file contributions to ELF file:
              Object File DRAM .data & .bss & other   IRAM   D/IRAM Flash code & rodata   Total
         lib_a-vfprintf.o          0      0       0      0        0      13681      752   14433
@@ -3354,7 +3354,7 @@ Used static IRAM:       0 bytes (      0 available, nan% used)
 Used stat D/IRAM:   43020 bytes ( 350196 available, 10.9% used)
       Flash code:   74439 bytes
     Flash rodata:   18580 bytes
-Total image size:~ 136039 bytes (.bin may be padded larger)
+Total image size:~ 134103 bytes (.bin may be padded larger)
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
 
 Symbols from section: .dram0.bss
@@ -3398,7 +3398,7 @@ Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)                  
 Used static IRAM:   38932 bytes (  92140 available, 29.7% used)                 74439         -35507 (+158387 available, +122880 total)
       Flash code:  146944 bytes                                                 74439         +72505
     Flash rodata:   39580 bytes                                                 18580         +21000
-Total image size:~ 243076 bytes (.bin may be padded larger)                    176546         +66530
+Total image size:~ 234780 bytes (.bin may be padded larger)                    174610         +60170
 
 ***
 Running idf_size.py diff with another app (wrong target)...
@@ -3414,7 +3414,7 @@ Used static DRAM:       0 bytes (      0 available, nan% used)                  
 Used static IRAM:       0 bytes (      0 available, nan% used)                      0                (     +0 available,      +0 total)
       Flash code:  146944 bytes                                                 77191         +69753
     Flash rodata:   39580 bytes                                                 22360         +17220
-Total image size:~ 194820 bytes (.bin may be padded larger)                    101575         +93245
+Total image size:~ 186524 bytes (.bin may be padded larger)                     99551         +86973
 
 ***
 Producing JSON output...
@@ -3433,7 +3433,7 @@ Producing JSON output...
     "used_diram_ratio": 0,
     "flash_code": 146944,
     "flash_rodata": 39580,
-    "total_size": 243076
+    "total_size": 234780
 }
 {
     "liblwip.a": {
@@ -6683,7 +6683,7 @@ Producing JSON output...
         "used_diram_ratio": 0,
         "flash_code": 146944,
         "flash_rodata": 39580,
-        "total_size": 243076
+        "total_size": 234780
     },
     "reference": {
         "dram_data": 8580,
@@ -6700,7 +6700,7 @@ Producing JSON output...
         "used_diram_ratio": 0,
         "flash_code": 77191,
         "flash_rodata": 22360,
-        "total_size": 149111
+        "total_size": 147087
     },
     "diff": {
         "dram_data": 744,
@@ -6717,7 +6717,7 @@ Producing JSON output...
         "used_diram_ratio": 0,
         "flash_code": 69753,
         "flash_rodata": 17220,
-        "total_size": 93965
+        "total_size": 87693
     }
 }
 {
