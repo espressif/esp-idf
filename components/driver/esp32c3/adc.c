@@ -442,39 +442,20 @@ esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten)
 int adc1_get_raw(adc1_channel_t channel)
 {
     int raw_out = 0;
-    adc_digi_config_t dig_cfg = {
-        .conv_limit_en = 0,
-        .conv_limit_num = 250,
-        .sample_freq_hz = SOC_ADC_SAMPLE_FREQ_THRES_HIGH,
-    };
 
     ADC_DIGI_LOCK_ACQUIRE();
-
     periph_module_enable(PERIPH_SARADC_MODULE);
 
     adc_atten_t atten = s_atten1_single[channel];
     uint32_t cal_val = adc_get_calibration_offset(ADC_NUM_1, channel, atten);
     adc_hal_set_calibration_param(ADC_NUM_1, cal_val);
 
-    adc_hal_digi_controller_config(&dig_cfg);
+    adc_hal_set_power_manage(ADC_POWER_SW_ON);
+    adc_hal_set_atten(ADC_NUM_2, channel, atten);
+    adc_hal_convert(ADC_NUM_1, channel, &raw_out);
 
-    adc_hal_intr_clear(ADC_EVENT_ADC1_DONE);
-
-    adc_hal_adc1_onetime_sample_enable(true);
-    adc_hal_onetime_channel(ADC_NUM_1, channel);
-    adc_hal_set_onetime_atten(atten);
-
-    //Trigger single read.
-    adc_hal_onetime_start(&dig_cfg);
-    while (!adc_hal_intr_get_raw(ADC_EVENT_ADC1_DONE));
-    adc_hal_single_read(ADC_NUM_1, &raw_out);
-
-    adc_hal_intr_clear(ADC_EVENT_ADC1_DONE);
-    adc_hal_adc1_onetime_sample_enable(false);
-
-    adc_hal_digi_deinit();
+    adc_hal_set_power_manage(ADC_POWER_SW_OFF);
     periph_module_disable(PERIPH_SARADC_MODULE);
-
     ADC_DIGI_LOCK_RELEASE();
 
     return raw_out;
@@ -502,11 +483,6 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     }
 
     esp_err_t ret = ESP_OK;
-    adc_digi_config_t dig_cfg = {
-        .conv_limit_en = 0,
-        .conv_limit_num = 250,
-        .sample_freq_hz = SOC_ADC_SAMPLE_FREQ_THRES_HIGH,
-    };
 
     SAC_ADC2_LOCK_ACQUIRE();
     ADC_DIGI_LOCK_ACQUIRE();
@@ -516,25 +492,12 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     uint32_t cal_val = adc_get_calibration_offset(ADC_NUM_2, channel, atten);
     adc_hal_set_calibration_param(ADC_NUM_2, cal_val);
 
-    adc_hal_digi_controller_config(&dig_cfg);
+    adc_hal_set_power_manage(ADC_POWER_SW_ON);
+    adc_hal_set_atten(ADC_NUM_2, channel, atten);
+    ret = adc_hal_convert(ADC_NUM_2, channel, raw_out);
 
-    adc_hal_intr_clear(ADC_EVENT_ADC2_DONE);
-
-    adc_hal_adc2_onetime_sample_enable(true);
-    adc_hal_onetime_channel(ADC_NUM_2, channel);
-    adc_hal_set_onetime_atten(atten);
-
-    //Trigger single read.
-    adc_hal_onetime_start(&dig_cfg);
-    while (!adc_hal_intr_get_raw(ADC_EVENT_ADC2_DONE));
-    ret = adc_hal_single_read(ADC_NUM_2, raw_out);
-
-    adc_hal_intr_clear(ADC_EVENT_ADC2_DONE);
-    adc_hal_adc2_onetime_sample_enable(false);
-
-    adc_hal_digi_deinit();
+    adc_hal_set_power_manage(ADC_POWER_SW_OFF);
     periph_module_disable(PERIPH_SARADC_MODULE);
-
     ADC_DIGI_LOCK_RELEASE();
     SAC_ADC2_LOCK_RELEASE();
 

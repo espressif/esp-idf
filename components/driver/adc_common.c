@@ -552,6 +552,7 @@ static inline void adc2_dac_disable( adc2_channel_t channel)
  */
 esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *raw_out)
 {
+    esp_err_t ret = ESP_OK;
     int adc_value = 0;
 
     ADC_CHECK(raw_out != NULL, "ADC out value err", ESP_ERR_INVALID_ARG);
@@ -591,7 +592,9 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 #endif //CONFIG_PM_ENABLE
 #endif //CONFIG_IDF_TARGET_ESP32
 
-    if (adc_hal_convert(ADC_NUM_2, channel, &adc_value)) {
+    ret = adc_hal_convert(ADC_NUM_2, channel, &adc_value);
+    if (ret != ESP_OK) {
+        ESP_LOGD( ADC_TAG, "ADC2 ARB: Return data is invalid." );
         adc_value = -1;
     }
 
@@ -608,13 +611,8 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     adc_power_release();
     SARADC2_RELEASE();
 
-    if (adc_value < 0) {
-        ESP_LOGD( ADC_TAG, "ADC2 ARB: Return data is invalid." );
-        return ESP_ERR_INVALID_STATE;
-    }
-
     *raw_out = adc_value;
-    return ESP_OK;
+    return ret;
 }
 
 esp_err_t adc2_vref_to_gpio(gpio_num_t gpio)
