@@ -903,6 +903,7 @@ static inline void i2c_ll_slave_init(i2c_dev_t *hw)
     ctrl_reg.sda_force_out = 1;
     ctrl_reg.scl_force_out = 1;
     hw->ctr.val = ctrl_reg.val;
+    hw->ctr.slv_tx_auto_start_en = 1;
     hw->fifo_conf.fifo_addr_cfg_en = 0;
 }
 
