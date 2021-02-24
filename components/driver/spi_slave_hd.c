@@ -87,13 +87,12 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
     spi_chan_claimed = spicommon_periph_claim(host_id, "slave_hd");
     SPIHD_CHECK(spi_chan_claimed, "host already in use", ESP_ERR_INVALID_STATE);
 
-    spi_slave_hd_slot_t* host = malloc(sizeof(spi_slave_hd_slot_t));
+    spi_slave_hd_slot_t* host = calloc(1, sizeof(spi_slave_hd_slot_t));
     if (host == NULL) {
         ret = ESP_ERR_NO_MEM;
         goto cleanup;
     }
     spihost[host_id] = host;
-    memset(host, 0, sizeof(spi_slave_hd_slot_t));
     host->int_spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     host->dma_enabled = (config->dma_chan != SPI_DMA_DISABLED);
 
@@ -398,9 +397,7 @@ static IRAM_ATTR void spi_slave_hd_intr_append(void *arg)
         spi_slave_hd_data_t *trans_desc;
         while (1) {
             bool trans_finish = false;
-            portENTER_CRITICAL_ISR(&host->int_spinlock);
             trans_finish = spi_slave_hd_hal_get_tx_finished_trans(hal, (void **)&trans_desc);
-            portEXIT_CRITICAL_ISR(&host->int_spinlock);
             if (!trans_finish) {
                 break;
             }
@@ -431,9 +428,7 @@ static IRAM_ATTR void spi_slave_hd_intr_append(void *arg)
         size_t trans_len;
         while (1) {
             bool trans_finish = false;
-            portENTER_CRITICAL_ISR(&host->int_spinlock);
             trans_finish = spi_slave_hd_hal_get_rx_finished_trans(hal, (void **)&trans_desc, &trans_len);
-            portEXIT_CRITICAL_ISR(&host->int_spinlock);
             if (!trans_finish) {
                 break;
             }
@@ -552,17 +547,13 @@ esp_err_t spi_slave_hd_append_trans(spi_host_device_t host_id, spi_slave_chan_t 
         if (ret == pdFALSE) {
             return ESP_ERR_TIMEOUT;
         }
-        portENTER_CRITICAL(&host->int_spinlock);
         err = spi_slave_hd_hal_txdma_append(hal, trans->data, trans->len, trans);
-        portEXIT_CRITICAL(&host->int_spinlock);
     } else {
         BaseType_t ret = xSemaphoreTake(host->rx_cnting_sem, timeout);
         if (ret == pdFALSE) {
             return ESP_ERR_TIMEOUT;
         }
-        portENTER_CRITICAL(&host->int_spinlock);
         err = spi_slave_hd_hal_rxdma_append(hal, trans->data, trans->len, trans);
-        portEXIT_CRITICAL(&host->int_spinlock);
     }
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Wait until the DMA finishes its transaction");
