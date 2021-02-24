@@ -312,6 +312,10 @@ void vPortSetStackWatchpoint(void *pxStackStart)
     esp_set_watchpoint(STACK_WATCH_POINT_NUMBER, (char *)addr, STACK_WATCH_AREA_SIZE, ESP_WATCHPOINT_STORE);
 }
 
+uint32_t xPortGetTickRateHz(void) {
+	return (uint32_t)configTICK_RATE_HZ;
+}
+
 BaseType_t xPortInIsrContext(void)
 {
     return uxInterruptNesting;
