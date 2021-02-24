@@ -92,7 +92,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_CACHE_TX_BUFFER_NUM
         int "Max number of WiFi cache TX buffers"
-        depends on (ESP32_SPIRAM_SUPPORT || ESP32S2_SPIRAM_SUPPORT)
+        depends on (ESP32_SPIRAM_SUPPORT || ESP32S2_SPIRAM_SUPPORT || ESP32S3_SPIRAM_SUPPORT)
         range 16 128
         default 32
         help
