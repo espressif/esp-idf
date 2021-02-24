@@ -29,6 +29,7 @@
     :esp32s2: Temp sensor <temp_sensor>
     Timer <timer>
     :SOC_TOUCH_SENSOR_NUM: Touch Sensor <touch_pad>
+    :esp32s2: Touch Element <touch_element>
     TWAI <twai>
     UART <uart>
     :SOC_USB_SUPPORTED: USB <usb>
