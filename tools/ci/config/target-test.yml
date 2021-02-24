@@ -581,7 +581,7 @@ UT_046:
 
 UT_C3:
   extends: .unit_test_c3_template
-  parallel: 28
+  parallel: 29
   tags:
     - ESP32C3_IDF
     - UT_T1_1

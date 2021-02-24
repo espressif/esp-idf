@@ -26,8 +26,6 @@ void another_external_stack_function(void)
     shared_stack_sp = (StackType_t *)get_sp();
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3)
-
 TEST_CASE("test printf using shared buffer stack", "[newlib]")
 {
     portSTACK_TYPE *shared_stack = malloc(SHARED_STACK_SIZE);
@@ -60,5 +58,3 @@ TEST_CASE("test printf using shared buffer stack", "[newlib]")
     vSemaphoreDelete(printf_lock);
     free(shared_stack);
 }
-
-#endif

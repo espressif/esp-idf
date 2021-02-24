@@ -81,6 +81,7 @@
 
 #include "sdkconfig.h"
 
+#include "soc/soc_caps.h"
 #include "soc/periph_defs.h"
 #include "soc/system_reg.h"
 #include "hal/systimer_hal.h"
@@ -302,11 +303,13 @@ void vPortYield(void)
 }
 
 #define STACK_WATCH_AREA_SIZE 32
+#define STACK_WATCH_POINT_NUMBER (SOC_CPU_WATCHPOINTS_NUM - 1)
+
 void vPortSetStackWatchpoint(void *pxStackStart)
 {
     uint32_t addr = (uint32_t)pxStackStart;
     addr = (addr + (STACK_WATCH_AREA_SIZE - 1)) & (~(STACK_WATCH_AREA_SIZE - 1));
-    esp_set_watchpoint(7, (char *)addr, STACK_WATCH_AREA_SIZE, ESP_WATCHPOINT_STORE);
+    esp_set_watchpoint(STACK_WATCH_POINT_NUMBER, (char *)addr, STACK_WATCH_AREA_SIZE, ESP_WATCHPOINT_STORE);
 }
 
 uint32_t xPortGetTickRateHz(void) {
