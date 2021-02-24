@@ -18,6 +18,10 @@
 #include "esp_err.h"
 #include "esp_private/panic_internal.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**************************************************************************************/
 /******************************** EXCEPTION MODE API **********************************/
 /**************************************************************************************/
@@ -84,5 +88,9 @@ void esp_core_dump_to_uart(panic_info_t *info);
  * @return ESP_OK on success, otherwise \see esp_err_t
  */
 esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
