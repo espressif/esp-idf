@@ -568,16 +568,16 @@ esp_err_t esp_timer_dump(FILE* stream)
         timer_list_unlock(dispatch_method);
     }
 
-    fprintf(stream, "Timer stats:\n");
+    if (stream != NULL) {
+        fprintf(stream, "Timer stats:\n");
 #if WITH_PROFILING
-    fprintf(stream, "%-20s  %-10s  %-12s  %-12s  %-12s  %-12s  %-12s\n",
-            "Name", "Period", "Alarm", "Times_armed", "Times_trigg", "Times_skip", "Cb_exec_time");
+        fprintf(stream, "%-20s  %-10s  %-12s  %-12s  %-12s  %-12s  %-12s\n",
+                "Name", "Period", "Alarm", "Times_armed", "Times_trigg", "Times_skip", "Cb_exec_time");
 #else
-    fprintf(stream, "%-20s  %-10s  %-12s\n", "Name", "Period", "Alarm");
+        fprintf(stream, "%-20s  %-10s  %-12s\n", "Name", "Period", "Alarm");
 #endif
 
-    /* Print the buffer */
-    if (stream != NULL) {
+        /* Print the buffer */
         fputs(print_buf, stream);
     }
 
