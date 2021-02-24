@@ -48,6 +48,15 @@ uint16_t esp_efuse_rtc_calib_get_init_code(int version, int atten);
  */
 esp_err_t esp_efuse_rtc_calib_get_cal_voltage(int version, int atten, uint32_t* out_digi, uint32_t* out_vol_mv);
 
+/**
+ * @brief Get the temperature sensor calibration number delta_T stored in the efuse.
+ *
+ * @param version Version of the stored efuse
+ *
+ * @return The specification of temperature sensor calibration number in efuse.
+ */
+float esp_efuse_rtc_calib_get_cal_temp(int version);
+
 #ifdef __cplusplus
 }
 #endif
