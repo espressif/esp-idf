@@ -1153,34 +1153,24 @@ static esp_err_t adc_set_atten(adc_unit_t adc_unit, adc_channel_t channel, adc_a
 
 void adc_power_acquire()
 {
-    bool powered_on = false;
     portENTER_CRITICAL(&rtc_spinlock);
     s_adc_power_on_cnt++;
     if (s_adc_power_on_cnt == 1) {
         adc_power_on_internal();
-        powered_on = true;
     }
     portEXIT_CRITICAL(&rtc_spinlock);
-    if (powered_on) {
-        ESP_LOGV(TAG, "%s: ADC powered on", __func__);
-    }
 }
 
 void adc_power_release(void)
 {
-    bool powered_off = false;
     portENTER_CRITICAL(&rtc_spinlock);
     s_adc_power_on_cnt--;
     if (s_adc_power_on_cnt < 0) {
         portEXIT_CRITICAL(&rtc_spinlock);
     } else if (s_adc_power_on_cnt == 0) {
         adc_power_off_internal();
-        powered_off = true;
     }
     portEXIT_CRITICAL(&rtc_spinlock);
-    if (powered_off) {
-        ESP_LOGV(TAG, "%s: ADC powered off", __func__);
-    }
 }
 
 static void adc_power_on_internal(void)
