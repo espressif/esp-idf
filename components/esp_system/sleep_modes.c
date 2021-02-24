@@ -151,7 +151,7 @@ typedef struct {
 } sleep_config_t;
 
 static sleep_config_t s_config = {
-    .pd_options = { ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO },
+    .pd_options = { ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO },
     .ccount_ticks_record = 0,
     .sleep_time_overhead_out = DEFAULT_SLEEP_OUT_OVERHEAD_US,
     .wakeup_triggers = 0
@@ -724,35 +724,43 @@ esp_err_t esp_light_sleep_start(void)
     // If it needs to be powered down, adjust sleep time.
     const uint32_t flash_enable_time_us = VDD_SDIO_POWERUP_TO_FLASH_READ_US + DEEP_SLEEP_WAKEUP_DELAY;
 
-#if CONFIG_ESP_SYSTEM_PD_FLASH
-    /*
-     * When SPIRAM is disabled in menuconfig, the minimum sleep time of the
-     * system needs to meet the sum below:
-     * 1. Wait time for the flash power-on after waking up;
-     * 2. The execution time of codes between RTC Timer get start time
-     *    with hardware starts to switch state to sleep;
-     * 3. The hardware state switching time of the rtc state machine during
-     *    sleep and wake-up. This process requires 6 cycles to complete.
-     *    The specific hardware state switching process and the cycles
-     *    consumed are rtc_cpu_run_stall(1), cut_pll_rtl(2), cut_8m(1),
-     *    min_protect(2);
-     * 4. All the adjustment time which is s_config.sleep_time_adjustment below.
+    /**
+     * If VDD_SDIO power domain is requested to be turned off, bit `RTC_SLEEP_PD_VDDSDIO`
+     * will be set in `pd_flags`.
      */
-    const uint32_t vddsdio_pd_sleep_duration = MAX(FLASH_PD_MIN_SLEEP_TIME_US,
-            flash_enable_time_us + LIGHT_SLEEP_MIN_TIME_US + s_config.sleep_time_adjustment
-            + rtc_time_slowclk_to_us(RTC_MODULE_SLEEP_PREPARE_CYCLES, s_config.rtc_clk_cal_period));
+    if ((pd_flags & RTC_SLEEP_PD_VDDSDIO) != 0) {
+        /*
+        * When VDD_SDIO power domain has to be turned off, the minimum sleep time of the
+        * system needs to meet the sum below:
+        * 1. Wait time for the flash power-on after waking up;
+        * 2. The execution time of codes between RTC Timer get start time
+        *    with hardware starts to switch state to sleep;
+        * 3. The hardware state switching time of the rtc state machine during
+        *    sleep and wake-up. This process requires 6 cycles to complete.
+        *    The specific hardware state switching process and the cycles
+        *    consumed are rtc_cpu_run_stall(1), cut_pll_rtl(2), cut_8m(1),
+        *    min_protect(2);
+        * 4. All the adjustment time which is s_config.sleep_time_adjustment below.
+        */
+        const uint32_t vddsdio_pd_sleep_duration = MAX(FLASH_PD_MIN_SLEEP_TIME_US,
+                        flash_enable_time_us + LIGHT_SLEEP_MIN_TIME_US + s_config.sleep_time_adjustment
+                        + rtc_time_slowclk_to_us(RTC_MODULE_SLEEP_PREPARE_CYCLES, s_config.rtc_clk_cal_period));
 
-    if (s_config.sleep_duration > vddsdio_pd_sleep_duration) {
-        pd_flags |= RTC_SLEEP_PD_VDDSDIO;
-        if (s_config.sleep_time_overhead_out < flash_enable_time_us) {
-            s_config.sleep_time_adjustment += flash_enable_time_us;
-        }
-    } else {
-        if (s_config.sleep_time_overhead_out > flash_enable_time_us) {
-            s_config.sleep_time_adjustment -= flash_enable_time_us;
+        if (s_config.sleep_duration > vddsdio_pd_sleep_duration) {
+            if (s_config.sleep_time_overhead_out < flash_enable_time_us) {
+                s_config.sleep_time_adjustment += flash_enable_time_us;
+            }
+        } else {
+            /**
+             * Minimum sleep time is not enough, then keep the VDD_SDIO power
+             * domain on.
+             */
+            pd_flags &= ~RTC_SLEEP_PD_VDDSDIO;
+            if (s_config.sleep_time_overhead_out > flash_enable_time_us) {
+                s_config.sleep_time_adjustment -= flash_enable_time_us;
+            }
         }
     }
-#endif //CONFIG_ESP_SYSTEM_PD_FLASH
 
     periph_inform_out_light_sleep_overhead(s_config.sleep_time_adjustment - sleep_time_overhead_in);
 
@@ -1329,6 +1337,27 @@ static uint32_t get_power_down_flags(void)
 #ifdef CONFIG_IDF_TARGET_ESP32
     pd_flags |= RTC_SLEEP_PD_XTAL;
 #endif
+
+    /**
+     * VDD_SDIO power domain shall be kept on during the light sleep
+     * when CONFIG_ESP_SYSTEM_PD_FLASH is not set and off when it is set.
+     * The application can still force the power domain to remain on by calling
+     * `esp_sleep_pd_config` before getting into light sleep mode.
+     *
+     * In deep sleep mode, the power domain will be turned off, regardless the
+     * value of this field.
+     */
+    if (s_config.pd_options[ESP_PD_DOMAIN_VDDSDIO] == ESP_PD_OPTION_AUTO) {
+#ifdef CONFIG_ESP_SYSTEM_PD_FLASH
+        s_config.pd_options[ESP_PD_DOMAIN_VDDSDIO] = ESP_PD_OPTION_OFF;
+#else
+        s_config.pd_options[ESP_PD_DOMAIN_VDDSDIO] = ESP_PD_OPTION_ON;
+#endif
+    }
+
+    if (s_config.pd_options[ESP_PD_DOMAIN_VDDSDIO] != ESP_PD_OPTION_ON) {
+        pd_flags |= RTC_SLEEP_PD_VDDSDIO;
+    }
 
 #if ((defined CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS) && (defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT))
     if ((s_config.wakeup_triggers & (RTC_TOUCH_TRIG_EN | RTC_ULP_TRIG_EN)) == 0) {
