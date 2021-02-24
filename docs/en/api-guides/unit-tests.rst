@@ -197,6 +197,9 @@ Change into ``tools/unit-test-app`` directory to configure and build it:
 * ``idf.py -T "xxx yyy" build`` - build unit test app with tests for some space-separated specific components (For instance: ``idf.py -T heap build`` - build unit tests only for ``heap`` component directory).
 * ``idf.py -T all -E "xxx yyy" build`` - build unit test app with all unit tests, except for unit tests of some components (For instance: ``idf.py -T all -E "ulp mbedtls" build`` - build all unit tests exludes ``ulp`` and ``mbedtls`` components).
 
+.. note::
+    Due to inherent limitations of Windows command prompt, following syntax has to be used in order to build unit-test-app with multiple components: ``idf.py -T xxx -T yyy build`` or with escaped quoates: ``idf.py -T \`"xxx yyy\`" build`` in PowerShell or ``idf.py -T \^"ssd1306 hts221\^" build`` in Windows command prompt.
+
 When the build finishes, it will print instructions for flashing the chip. You can simply run ``idf.py flash`` to flash all build output.
 
 You can also run ``idf.py -T all flash`` or ``idf.py -T xxx flash`` to build and flash. Everything needed will be rebuilt automatically before flashing.
