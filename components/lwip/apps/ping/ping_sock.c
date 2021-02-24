@@ -114,13 +114,16 @@ static int esp_ping_receive(esp_ping_t *ep)
             inet_addr_to_ip4addr(ip_2_ip4(&ep->recv_addr), &from4->sin_addr);
             IP_SET_TYPE_VAL(ep->recv_addr, IPADDR_TYPE_V4);
             data_head = (uint16_t)(sizeof(struct ip_hdr) + sizeof(struct icmp_echo_hdr));
-        } else {
+        }
+#if CONFIG_LWIP_IPV6
+        else {
             // IPv6
             struct sockaddr_in6 *from6 = (struct sockaddr_in6 *)&from;
             inet6_addr_to_ip6addr(ip_2_ip6(&ep->recv_addr), &from6->sin6_addr);
             IP_SET_TYPE_VAL(ep->recv_addr, IPADDR_TYPE_V6);
             data_head = (uint16_t)(sizeof(struct ip6_hdr) + sizeof(struct icmp6_echo_hdr));
         }
+#endif
         if (len >= data_head) {
             if (IP_IS_V4_VAL(ep->recv_addr)) {              // Currently we process IPv4
                 struct ip_hdr *iphdr = (struct ip_hdr *)buf;
@@ -131,7 +134,9 @@ static int esp_ping_receive(esp_ping_t *ep)
                     ep->recv_len = lwip_ntohs(IPH_LEN(iphdr)) - data_head;  // The data portion of ICMP
                     return len;
                 }
-            } else if (IP_IS_V6_VAL(ep->recv_addr)) {      // Currently we process IPv6
+            }
+#if CONFIG_LWIP_IPV6
+            else if (IP_IS_V6_VAL(ep->recv_addr)) {      // Currently we process IPv6
                 struct ip6_hdr *iphdr = (struct ip6_hdr *)buf;
                 struct icmp6_echo_hdr *iecho6 = (struct icmp6_echo_hdr *)(buf + sizeof(struct ip6_hdr)); // IPv6 head length is 40
                 if ((iecho6->id == ep->packet_hdr->id) && (iecho6->seqno == ep->packet_hdr->seqno)) {
@@ -140,6 +145,7 @@ static int esp_ping_receive(esp_ping_t *ep)
                     return len;
                 }
             }
+#endif
         }
         fromlen = sizeof(from);
     }
@@ -249,11 +255,18 @@ esp_err_t esp_ping_new_session(const esp_ping_config_t *config, const esp_ping_c
     }
 
     /* create socket */
-    if (IP_IS_V4(&config->target_addr) || ip6_addr_isipv4mappedipv6(ip_2_ip6(&config->target_addr))) {
+    if (IP_IS_V4(&config->target_addr)
+#if CONFIG_LWIP_IPV6
+        || ip6_addr_isipv4mappedipv6(ip_2_ip6(&config->target_addr))
+#endif
+    ) {
         ep->sock = socket(AF_INET, SOCK_RAW, IP_PROTO_ICMP);
-    } else {
+    }
+#if CONFIG_LWIP_IPV6
+    else {
         ep->sock = socket(AF_INET6, SOCK_RAW, IP6_NEXTH_ICMP6);
     }
+#endif
     PING_CHECK(ep->sock > 0, "create socket failed: %d", err, ESP_FAIL, ep->sock);
     /* set if index */
     if(config->interface) {
@@ -281,12 +294,14 @@ esp_err_t esp_ping_new_session(const esp_ping_config_t *config, const esp_ping_c
         inet_addr_from_ip4addr(&to4->sin_addr, ip_2_ip4(&config->target_addr));
         ep->packet_hdr->type = ICMP_ECHO;
     }
+#if CONFIG_LWIP_IPV6
     if (IP_IS_V6(&config->target_addr)) {
         struct sockaddr_in6 *to6 = (struct sockaddr_in6 *)&ep->target_addr;
         to6->sin6_family = AF_INET6;
         inet6_addr_from_ip6addr(&to6->sin6_addr, ip_2_ip6(&config->target_addr));
         ep->packet_hdr->type = ICMP6_TYPE_EREQ;
     }
+#endif
     /* return ping handle to user */
     *hdl_out = (esp_ping_handle_t)ep;
     return ESP_OK;

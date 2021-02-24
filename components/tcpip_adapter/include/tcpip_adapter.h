@@ -51,6 +51,7 @@ tcpip_adapter_if_t tcpip_adapter_if_from_esp_netif(esp_netif_t *esp_netif);
  */
 esp_err_t tcpip_adapter_get_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_ip_info_t *ip_info);
 
+#if CONFIG_LWIP_IPV6
 /**
  * @brief Translates to esp_netif_get_ip6_linklocal
  *
@@ -68,6 +69,7 @@ esp_err_t tcpip_adapter_get_ip6_linklocal(tcpip_adapter_if_t tcpip_if, ip6_addr_
  * @return See esp_netif_get_ip6_global
  */
 esp_err_t tcpip_adapter_get_ip6_global(tcpip_adapter_if_t tcpip_if, ip6_addr_t *if_ip6);
+#endif
 
 /**
  * @brief`Translates to esp_netif_dhcpc_get_status
@@ -92,12 +94,14 @@ bool tcpip_adapter_is_netif_up(tcpip_adapter_if_t tcpip_if);
  */
 esp_err_t tcpip_adapter_get_netif(tcpip_adapter_if_t tcpip_if, void ** netif);
 
+#if CONFIG_LWIP_IPV6
 /**
  * @brief Translates to esp_netif_create_ip6_linklocal
  * @param tcpip_if Interface type corresponding to appropriate instance of esp-netif
  * @return see esp_netif_create_ip6_linklocal
  */
 esp_err_t tcpip_adapter_create_ip6_linklocal(tcpip_adapter_if_t tcpip_if);
+#endif
 
 /**
  * @brief Compatible version of setting ethernet default handlers

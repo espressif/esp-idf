@@ -339,6 +339,7 @@ esp_err_t mdns_query_txt(const char * instance_name, const char * service_type, 
  */
 esp_err_t mdns_query_a(const char * host_name, uint32_t timeout, esp_ip4_addr_t * addr);
 
+#if CONFIG_LWIP_IPV6
 /**
  * @brief  Query mDNS for A record
  *
@@ -353,6 +354,7 @@ esp_err_t mdns_query_a(const char * host_name, uint32_t timeout, esp_ip4_addr_t 
  *     - ESP_ERR_INVALID_ARG    parameter error
  */
 esp_err_t mdns_query_aaaa(const char * host_name, uint32_t timeout, esp_ip6_addr_t * addr);
+#endif
 
 /**
  * @brief   System event handler

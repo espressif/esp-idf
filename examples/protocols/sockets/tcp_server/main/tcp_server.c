@@ -24,7 +24,10 @@
 #include <lwip/netdb.h>
 
 
-#define PORT CONFIG_EXAMPLE_PORT
+#define PORT                        CONFIG_EXAMPLE_PORT
+#define KEEPALIVE_IDLE              CONFIG_EXAMPLE_KEEPALIVE_IDLE
+#define KEEPALIVE_INTERVAL          CONFIG_EXAMPLE_KEEPALIVE_INTERVAL
+#define KEEPALIVE_COUNT             CONFIG_EXAMPLE_KEEPALIVE_COUNT
 
 static const char *TAG = "example";
 
@@ -62,7 +65,11 @@ static void tcp_server_task(void *pvParameters)
     char addr_str[128];
     int addr_family = (int)pvParameters;
     int ip_protocol = 0;
-    struct sockaddr_in6 dest_addr;
+    int keepAlive = 1;
+    int keepIdle = KEEPALIVE_IDLE;
+    int keepInterval = KEEPALIVE_INTERVAL;
+    int keepCount = KEEPALIVE_COUNT;
+    struct sockaddr_storage dest_addr;
 
     if (addr_family == AF_INET) {
         struct sockaddr_in *dest_addr_ip4 = (struct sockaddr_in *)&dest_addr;
@@ -70,12 +77,16 @@ static void tcp_server_task(void *pvParameters)
         dest_addr_ip4->sin_family = AF_INET;
         dest_addr_ip4->sin_port = htons(PORT);
         ip_protocol = IPPROTO_IP;
-    } else if (addr_family == AF_INET6) {
-        bzero(&dest_addr.sin6_addr.un, sizeof(dest_addr.sin6_addr.un));
-        dest_addr.sin6_family = AF_INET6;
-        dest_addr.sin6_port = htons(PORT);
+    }
+#ifdef CONFIG_EXAMPLE_IPV6
+    else if (addr_family == AF_INET6) {
+        struct sockaddr_in6 *dest_addr_ip6 = (struct sockaddr_in6 *)&dest_addr;
+        bzero(&dest_addr_ip6->sin6_addr.un, sizeof(dest_addr_ip6->sin6_addr.un));
+        dest_addr_ip6->sin6_family = AF_INET6;
+        dest_addr_ip6->sin6_port = htons(PORT);
         ip_protocol = IPPROTO_IPV6;
     }
+#endif
 
     int listen_sock = socket(addr_family, SOCK_STREAM, ip_protocol);
     if (listen_sock < 0) {
@@ -83,11 +94,11 @@ static void tcp_server_task(void *pvParameters)
         vTaskDelete(NULL);
         return;
     }
+    int opt = 1;
+    setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 #if defined(CONFIG_EXAMPLE_IPV4) && defined(CONFIG_EXAMPLE_IPV6)
     // Note that by default IPV6 binds to both protocols, it is must be disabled
     // if both protocols used at the same time (used in CI)
-    int opt = 1;
-    setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
     setsockopt(listen_sock, IPPROTO_IPV6, IPV6_V6ONLY, &opt, sizeof(opt));
 #endif
 
@@ -119,12 +130,20 @@ static void tcp_server_task(void *pvParameters)
             break;
         }
 
+        // Set tcp keepalive option
+        setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &keepAlive, sizeof(int));
+        setsockopt(sock, IPPROTO_TCP, TCP_KEEPIDLE, &keepIdle, sizeof(int));
+        setsockopt(sock, IPPROTO_TCP, TCP_KEEPINTVL, &keepInterval, sizeof(int));
+        setsockopt(sock, IPPROTO_TCP, TCP_KEEPCNT, &keepCount, sizeof(int));
         // Convert ip address to string
         if (source_addr.ss_family == PF_INET) {
             inet_ntoa_r(((struct sockaddr_in *)&source_addr)->sin_addr, addr_str, sizeof(addr_str) - 1);
-        } else if (source_addr.ss_family == PF_INET6) {
+        }
+#ifdef CONFIG_EXAMPLE_IPV6
+        else if (source_addr.ss_family == PF_INET6) {
             inet6_ntoa_r(((struct sockaddr_in6 *)&source_addr)->sin6_addr, addr_str, sizeof(addr_str) - 1);
         }
+#endif
         ESP_LOGI(TAG, "Socket accepted ip address: %s", addr_str);
 
         do_retransmit(sock);
