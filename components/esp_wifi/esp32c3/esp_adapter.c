@@ -382,12 +382,12 @@ static void IRAM_ATTR timer_disarm_wrapper(void *timer)
     ets_timer_disarm(timer);
 }
 
-static void IRAM_ATTR timer_done_wrapper(void *ptimer)
+static void timer_done_wrapper(void *ptimer)
 {
     ets_timer_done(ptimer);
 }
 
-static void IRAM_ATTR timer_setfn_wrapper(void *ptimer, void *pfunction, void *parg)
+static void timer_setfn_wrapper(void *ptimer, void *pfunction, void *parg)
 {
     ets_timer_setfn(ptimer, pfunction, parg);
 }
@@ -435,13 +435,12 @@ static int get_time_wrapper(void *t)
     return os_get_time(t);
 }
 
-#define WIFI_LIGHT_SLEEP_CLK_WIDTH 12
 static uint32_t esp_clk_slowclk_cal_get_wrapper(void)
 {
     /* The bit width of WiFi light sleep clock calibration is 12 while the one of
      * system is 19. It should shift 19 - 12 = 7.
     */
-    return (esp_clk_slowclk_cal_get() >> (RTC_CLK_CAL_FRACT - WIFI_LIGHT_SLEEP_CLK_WIDTH));
+    return (esp_clk_slowclk_cal_get() >> (RTC_CLK_CAL_FRACT - SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH));
 }
 
 static void * IRAM_ATTR malloc_internal_wrapper(size_t size)

@@ -57,19 +57,43 @@ extern void wifi_apb80m_request(void);
 extern void wifi_apb80m_release(void);
 #endif
 
+/*
+ If CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP is enabled. Prefer to allocate a chunk of memory in SPIRAM firstly.
+ If failed, try to allocate it in internal memory then.
+ */
 IRAM_ATTR void *wifi_malloc( size_t size )
 {
+#if CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+    return heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
+#else
     return malloc(size);
+#endif
 }
 
+/*
+ If CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP is enabled. Prefer to allocate a chunk of memory in SPIRAM firstly.
+ If failed, try to allocate it in internal memory then.
+ */
 IRAM_ATTR void *wifi_realloc( void *ptr, size_t size )
 {
+#if CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+    return heap_caps_realloc_prefer(ptr, size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
+#else
     return realloc(ptr, size);
+#endif
 }
 
+/*
+ If CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP is enabled. Prefer to allocate a chunk of memory in SPIRAM firstly.
+ If failed, try to allocate it in internal memory then.
+ */
 IRAM_ATTR void *wifi_calloc( size_t n, size_t size )
 {
+#if CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+    return heap_caps_calloc_prefer(n, size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
+#else
     return calloc(n, size);
+#endif
 }
 
 static void * IRAM_ATTR wifi_zalloc_wrapper(size_t size)
@@ -87,14 +111,48 @@ wifi_static_queue_t* wifi_create_queue( int queue_len, int item_size)
         return NULL;
     }
 
+#if CONFIG_SPIRAM_USE_MALLOC
+
+    queue->storage = heap_caps_calloc(1, sizeof(StaticQueue_t) + (queue_len*item_size), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+    if (!queue->storage) {
+        goto _error;
+    }
+
+    queue->handle = xQueueCreateStatic( queue_len, item_size, ((uint8_t*)(queue->storage)) + sizeof(StaticQueue_t), (StaticQueue_t*)(queue->storage));
+
+    if (!queue->handle) {
+        goto _error;
+    }
+
+    return queue;
+
+_error:
+    if (queue) {
+        if (queue->storage) {
+            free(queue->storage);
+        }
+
+        free(queue);
+    }
+
+    return NULL;
+#else
     queue->handle = xQueueCreate( queue_len, item_size);
     return queue;
+#endif
 }
 
 void wifi_delete_queue(wifi_static_queue_t *queue)
 {
     if (queue) {
         vQueueDelete(queue->handle);
+
+#if CONFIG_SPIRAM_USE_MALLOC
+        if (queue->storage) {
+            free(queue->storage);
+        }
+#endif
+
         free(queue);
     }
 }
@@ -136,7 +194,7 @@ static void set_isr_wrapper(int32_t n, void *f, void *arg)
 static void * spin_lock_create_wrapper(void)
 {
     portMUX_TYPE tmp = portMUX_INITIALIZER_UNLOCKED;
-    void *mux = malloc(sizeof(portMUX_TYPE));
+    void *mux = heap_caps_malloc(sizeof(portMUX_TYPE), MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
 
     if (mux) {
         memcpy(mux,&tmp,sizeof(portMUX_TYPE));
@@ -369,12 +427,12 @@ static void IRAM_ATTR timer_disarm_wrapper(void *timer)
     ets_timer_disarm(timer);
 }
 
-static void IRAM_ATTR timer_done_wrapper(void *ptimer)
+static void timer_done_wrapper(void *ptimer)
 {
     ets_timer_done(ptimer);
 }
 
-static void IRAM_ATTR timer_setfn_wrapper(void *ptimer, void *pfunction, void *parg)
+static void timer_setfn_wrapper(void *ptimer, void *pfunction, void *parg)
 {
     ets_timer_setfn(ptimer, pfunction, parg);
 }
@@ -407,14 +465,14 @@ static void IRAM_ATTR wifi_rtc_disable_iso_wrapper(void)
 #endif
 }
 
-static void IRAM_ATTR wifi_clock_enable_wrapper(void)
+static void wifi_clock_enable_wrapper(void)
 {
-    periph_module_enable(PERIPH_WIFI_MODULE);
+    wifi_module_enable();
 }
 
-static void IRAM_ATTR wifi_clock_disable_wrapper(void)
+static void wifi_clock_disable_wrapper(void)
 {
-    periph_module_disable(PERIPH_WIFI_MODULE);
+    wifi_module_disable();
 }
 
 static int get_time_wrapper(void *t)
@@ -422,13 +480,12 @@ static int get_time_wrapper(void *t)
     return os_get_time(t);
 }
 
-#define WIFI_LIGHT_SLEEP_CLK_WIDTH 12
 static uint32_t esp_clk_slowclk_cal_get_wrapper(void)
 {
     /* The bit width of WiFi light sleep clock calibration is 12 while the one of
      * system is 19. It should shift 19 - 12 = 7.
     */
-    return (esp_clk_slowclk_cal_get() >> (RTC_CLK_CAL_FRACT - WIFI_LIGHT_SLEEP_CLK_WIDTH));
+    return (esp_clk_slowclk_cal_get() >> (RTC_CLK_CAL_FRACT - SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH));
 }
 
 static void * IRAM_ATTR malloc_internal_wrapper(size_t size)
@@ -450,29 +507,6 @@ static void * IRAM_ATTR zalloc_internal_wrapper(size_t size)
 {
     void *ptr = heap_caps_calloc(1, size, MALLOC_CAP_8BIT|MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
     return ptr;
-}
-
-static esp_err_t nvs_open_wrapper(const char* name, uint32_t open_mode, nvs_handle_t *out_handle)
-{
-    return nvs_open(name,(nvs_open_mode_t)open_mode, out_handle);
-}
-
-static void esp_log_writev_wrapper(uint32_t level, const char *tag, const char *format, va_list args)
-{
-    return esp_log_writev((esp_log_level_t)level,tag,format,args);
-}
-
-static void esp_log_write_wrapper(uint32_t level,const char *tag,const char *format, ...)
-{
-    va_list list;
-    va_start(list, format);
-    esp_log_writev((esp_log_level_t)level, tag, format, list);
-    va_end(list);
-}
-
-static esp_err_t esp_read_mac_wrapper(uint8_t* mac, uint32_t type)
-{
-    return esp_read_mac(mac, (esp_mac_type_t)type);
 }
 
 static int coex_init_wrapper(void)
@@ -641,6 +675,11 @@ static void IRAM_ATTR esp_empty_wrapper(void)
 
 }
 
+int32_t IRAM_ATTR coex_is_in_isr_wrapper(void)
+{
+    return !xPortCanYield();
+}
+
 wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._version = ESP_WIFI_OS_ADAPTER_VERSION,
     ._env_is_chip = env_is_chip_wrapper,
@@ -697,7 +736,7 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._phy_disable = esp_phy_disable,
     ._phy_enable = esp_phy_enable,
     ._phy_update_country_info = esp_phy_update_country_info,
-    ._read_mac = esp_read_mac_wrapper,
+    ._read_mac = esp_read_mac,
     ._timer_arm = timer_arm_wrapper,
     ._timer_disarm = timer_disarm_wrapper,
     ._timer_done = timer_done_wrapper,
@@ -715,7 +754,7 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._nvs_get_u8 = nvs_get_u8,
     ._nvs_set_u16 = nvs_set_u16,
     ._nvs_get_u16 = nvs_get_u16,
-    ._nvs_open = nvs_open_wrapper,
+    ._nvs_open = nvs_open,
     ._nvs_close = nvs_close,
     ._nvs_commit = nvs_commit,
     ._nvs_set_blob = nvs_set_blob,
@@ -725,8 +764,8 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._get_time = get_time_wrapper,
     ._random = os_random,
     ._slowclk_cal_get = esp_clk_slowclk_cal_get_wrapper,
-    ._log_write = esp_log_write_wrapper,
-    ._log_writev = esp_log_writev_wrapper,
+    ._log_write = esp_log_write,
+    ._log_writev = esp_log_writev,
     ._log_timestamp = esp_log_timestamp,
     ._malloc_internal =  malloc_internal_wrapper,
     ._realloc_internal = realloc_internal_wrapper,
@@ -769,7 +808,7 @@ coex_adapter_funcs_t g_coex_adapter_funcs = {
     ._semphr_give_from_isr = semphr_give_from_isr_wrapper,
     ._semphr_take = semphr_take_wrapper,
     ._semphr_give = semphr_give_wrapper,
-    ._is_in_isr = xPortInIsrContext,
+    ._is_in_isr = coex_is_in_isr_wrapper,
     ._malloc_internal =  malloc_internal_wrapper,
     ._free = free,
     ._esp_timer_get_time = esp_timer_get_time,

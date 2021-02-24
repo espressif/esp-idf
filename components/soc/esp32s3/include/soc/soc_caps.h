@@ -170,6 +170,9 @@
 #define SOC_PHY_DIG_REGS_MEM_SIZE       (21*4)
 #define SOC_MAC_BB_PD_MEM_SIZE          (192*4)
 
+/*--------------- WIFI LIGHT SLEEP CLOCK WIDTH CAPS --------------------------*/
+#define SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH  (12)
+
 /*-------------------------- SPI MEM CAPS ---------------------------------------*/
 #define SOC_SPI_MEM_SUPPORT_AUTO_WAIT_IDLE                (1)
 #define SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND                  (1)
