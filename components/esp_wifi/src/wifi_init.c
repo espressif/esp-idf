@@ -133,7 +133,7 @@ esp_err_t esp_wifi_deinit(void)
 
     if (esp_wifi_get_user_init_flag_internal()) {
         ESP_LOGE(TAG, "Wi-Fi not stop");
-        return ESP_FAIL;
+        return ESP_ERR_WIFI_NOT_STOPPED;
     }
 
     esp_supplicant_deinit();
