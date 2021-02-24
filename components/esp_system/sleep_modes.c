@@ -58,6 +58,7 @@
 #include "esp32s2/clk.h"
 #include "esp32s2/rom/cache.h"
 #include "esp32s2/rom/rtc.h"
+#include "esp32s2/brownout.h"
 #include "soc/extmem_reg.h"
 #include "driver/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
@@ -588,6 +589,12 @@ inline static uint32_t IRAM_ATTR call_rtc_sleep_start(uint32_t reject_triggers)
 
 void IRAM_ATTR esp_deep_sleep_start(void)
 {
+#if CONFIG_IDF_TARGET_ESP32S2
+    /* Due to hardware limitations, on S2 the brownout detector sometimes trigger during deep sleep
+       to circumvent this we disable the brownout detector before sleeping  */
+    esp_brownout_disable();
+#endif //CONFIG_IDF_TARGET_ESP32S2
+
     // record current RTC time
     s_config.rtc_ticks_at_sleep_start = rtc_time_get();
 
