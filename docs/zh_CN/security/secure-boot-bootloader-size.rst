@@ -1,0 +1,1 @@
+.. include:: ../../en/security/secure-boot-bootloader-size.rst
