@@ -136,6 +136,16 @@ static inline void interrupt_controller_hal_disable_interrupts(uint32_t mask)
 }
 
 /**
+ * @brief Read the current interrupt mask.
+ *
+ * @return The bitmask of current interrupts
+ */
+static inline uint32_t interrupt_controller_hal_read_interrupt_mask(void)
+{
+    return intr_cntrl_ll_read_interrupt_mask();
+}
+
+/**
  * @brief checks if given interrupt number has a valid handler
  *
  * @param intr interrupt number ranged from 0 to 31
@@ -169,27 +179,6 @@ static inline void interrupt_controller_hal_set_int_handler(uint8_t intr, interr
 static inline void * interrupt_controller_hal_get_int_handler_arg(uint8_t intr)
 {
     return intr_cntrl_ll_get_int_handler_arg(intr);
-}
-
-/**
- * @brief Disables interrupts that are not located in iram
- *
- * @param newmask mask of interrupts needs to be disabled
- * @return oldmask where to store old interrupts state
- */
-static inline uint32_t interrupt_controller_hal_disable_int_mask(uint32_t newmask)
-{
-    return intr_cntrl_ll_disable_int_mask(newmask);
-}
-
-/**
- * @brief Enables interrupts that are not located in iram
- *
- * @param newmask mask of interrupts needs to be disabled
- */
-static inline void interrupt_controller_hal_enable_int_mask(uint32_t newmask)
-{
-    intr_cntrl_ll_enable_int_mask(newmask);
 }
 
 /**

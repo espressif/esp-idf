@@ -136,45 +136,4 @@ extern void * xt_get_interrupt_handler_arg(int n);
 */
 bool xt_int_has_handler(int intr, int cpu);
 
-/*
--------------------------------------------------------------------------------
-  Call this function to disable non iram located interrupts.
-
-    newmask       - mask containing the interrupts to disable.
--------------------------------------------------------------------------------
-*/
-static inline uint32_t xt_int_disable_mask(uint32_t newmask)
-{
-    uint32_t oldint;
-    asm volatile (
-        "movi %0,0\n"
-        "xsr %0,INTENABLE\n"    //disable all ints first
-        "rsync\n"
-        "and a3,%0,%1\n"        //mask ints that need disabling
-        "wsr a3,INTENABLE\n"    //write back
-        "rsync\n"
-        :"=&r"(oldint):"r"(newmask):"a3");
-
-    return oldint;
-}
-
-/*
--------------------------------------------------------------------------------
-  Call this function to enable non iram located interrupts.
-
-    newmask       - mask containing the interrupts to enable.
--------------------------------------------------------------------------------
-*/
-static inline void xt_int_enable_mask(uint32_t newmask)
-{
-    asm volatile (
-        "movi a3,0\n"
-        "xsr a3,INTENABLE\n"
-        "rsync\n"
-        "or a3,a3,%0\n"
-        "wsr a3,INTENABLE\n"
-        "rsync\n"
-        ::"r"(newmask):"a3");
-}
-
 #endif /* __XTENSA_API_H__ */
