@@ -135,6 +135,7 @@ static int async_memcpy_prepare_receive(async_memcpy_t asmcp, void *buffer, size
 
     while (size > DMA_DESCRIPTOR_BUFFER_MAX_SIZE) {
         if (desc->dw0.owner != DMA_DESCRIPTOR_BUFFER_OWNER_DMA) {
+            desc->dw0.suc_eof = 0;
             desc->dw0.size = DMA_DESCRIPTOR_BUFFER_MAX_SIZE;
             desc->buffer = &buf[prepared_length];
             desc = desc->next; // move to next descriptor
@@ -148,6 +149,7 @@ static int async_memcpy_prepare_receive(async_memcpy_t asmcp, void *buffer, size
     if (size) {
         if (desc->dw0.owner != DMA_DESCRIPTOR_BUFFER_OWNER_DMA) {
             end = desc; // the last descriptor used
+            desc->dw0.suc_eof = 0;
             desc->dw0.size = size;
             desc->buffer = &buf[prepared_length];
             desc = desc->next; // move to next descriptor
