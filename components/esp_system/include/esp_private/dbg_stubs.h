@@ -14,6 +14,10 @@
 #ifndef ESP_DBG_STUBS_H_
 #define ESP_DBG_STUBS_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "esp_err.h"
 
 /**
@@ -46,5 +50,9 @@ void esp_dbg_stubs_init(void);
  * @return ESP_OK on success, otherwise see esp_err_t
  */
 esp_err_t esp_dbg_stub_entry_set(esp_dbg_stub_id_t id, uint32_t entry);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //ESP_DBG_STUBS_H_

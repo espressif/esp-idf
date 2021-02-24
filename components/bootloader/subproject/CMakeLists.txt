@@ -19,6 +19,7 @@ set(COMPONENTS
     bootloader
     esptool_py
     esp_hw_support
+    esp_system
     hal
     partition_table
     soc

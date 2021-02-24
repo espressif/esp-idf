@@ -16,6 +16,9 @@
 #define __ESP_FREERTOS_HOOKS_H__
 
 #include <stdbool.h>
+
+#include "freertos/portmacro.h"
+
 #include "esp_err.h"
 
 #ifdef __cplusplus

@@ -618,7 +618,7 @@ Common component requirements
 
 To avoid duplication, every component automatically requires some "common" IDF components even if they are not mentioned explicitly. Headers from these components can always be included.
 
-The list of common components is: freertos, newlib, heap, log, soc, esp_rom, esp_common, xtensa/riscv, cxx.
+The list of common components is: cxx, newlib, freertos, esp_hw_support, heap, log, lwip, soc, hal, esp_rom, esp_common, esp_system.
 
 Including components in the build
 ----------------------------------

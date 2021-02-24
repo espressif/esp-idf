@@ -128,7 +128,7 @@ Interrupt Watchdog API Reference
 Header File
 ^^^^^^^^^^^
 
-  * :component_file:`esp_common/include/esp_int_wdt.h`
+  * :component_file:`esp_system/include/esp_int_wdt.h`
 
 
 Functions

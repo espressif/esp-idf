@@ -164,7 +164,9 @@ static void task_wdt_isr(void *arg)
     for (twdttask=twdt_config->list; twdttask!=NULL; twdttask=twdttask->next) {
         if (!twdttask->has_reset) {
             cpu=xTaskGetAffinity(twdttask->task_handle)==0?DRAM_STR("CPU 0"):DRAM_STR("CPU 1");
-            if (xTaskGetAffinity(twdttask->task_handle)==tskNO_AFFINITY) cpu=DRAM_STR("CPU 0/1");
+            if (xTaskGetAffinity(twdttask->task_handle)==tskNO_AFFINITY) {
+                cpu=DRAM_STR("CPU 0/1");
+            }
             ESP_EARLY_LOGE(TAG, " - %s (%s)", pcTaskGetTaskName(twdttask->task_handle), cpu);
         }
     }

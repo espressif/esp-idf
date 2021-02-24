@@ -1,6 +1,6 @@
-target_include_directories(${COMPONENT_LIB} PRIVATE include)
+target_include_directories(${COMPONENT_LIB} PRIVATE include .)
 
-set(srcs "cpu_start.c" "panic_handler.c")
+set(srcs "cpu_start.c" "panic_handler.c" "brownout.c")
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" ${srcs})
 
 target_sources(${COMPONENT_LIB} PRIVATE ${srcs})

@@ -45,7 +45,11 @@
 #include "nvs_flash.h"
 #include "esp_phy_init.h"
 #include "esp_coexist_internal.h"
+
+#if CONFIG_ESP_COREDUMP_ENABLE
 #include "esp_core_dump.h"
+#endif
+
 #include "esp_app_trace.h"
 #include "esp_private/dbg_stubs.h"
 #include "esp_flash_encrypt.h"
