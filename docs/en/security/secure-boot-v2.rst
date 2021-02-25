@@ -25,11 +25,15 @@ Advantages
 
 - The RSA public key is stored on the device. The corresponding RSA private key is kept secret on a server and is never accessed by the device.
 
-- Up to three public keys can be generated and stored in ESP32-S2 during manufacturing. (ESP32 ECO3: only one key)
-
   .. only:: esp32
 
-    - ESP32-S2 provides the facility to permanently revoke individual public keys. This can be configured conservatively or aggressively.
+    - Only one public key can be generated and stored in ESP32 ECO3 during manufacturing.
+
+  .. only:: esp32s2
+
+    - Up to three public keys can be generated and stored in the chip during manufacturing.
+
+    - {IDF_TARGET_NAME} provides the facility to permanently revoke individual public keys. This can be configured conservatively or aggressively.
 
     - Conservatively - The old key is revoked after the bootloader and application have successfully migrated to a new key. Aggressively - The key is revoked as soon as verification with this key fails.
 
@@ -96,7 +100,15 @@ The remainder of the signature sector is erased flash (0xFF) which allows writin
 Verifying the signature Block
 -----------------------------
 
-A signature block is “valid” if the first byte is 0xe7 and a valid CRC32 is stored at offset 1196. Upto 3 signature blocks can be appended to the bootloader or application image in ESP32-S2. (ESP32 ECO3: only one key)
+A signature block is “valid” if the first byte is 0xe7 and a valid CRC32 is stored at offset 1196.
+
+  .. only:: esp32
+
+    Only one signature block can be appended to the bootloader or application image in ESP32 ECO3.
+
+  .. only:: esp32s2
+
+    Upto 3 signature blocks can be appended to the bootloader or application image in {IDF_TARGET_NAME}.
 
 An image is “verified” if the public key stored in any signature block is valid for this device, and if the stored signature is valid for the image data read from flash.
 
@@ -113,28 +125,10 @@ An image is “verified” if the public key stored in any signature block is va
 .. important::
   It is recommended to use Secure Boot V2 on the chip versions supporting them.
 
-.. _secure-boot-v2-bootloader-size:
-
 Bootloader Size
 ---------------
 
-{IDF_TARGET_MAX_BOOTLOADER_SIZE:default = "64KB (0x10000 bytes)", esp32 = "48KB (0xC000 bytes)"}
-{IDF_TARGET_MAX_PARTITION_TABLE_OFFSET:default = "0x12000", esp32 = "0xE000"}
-.. Above is calculated as 0x1000 at start of flash + IDF_TARGET_MAX_BOOTLOADER_SIZE + 0x1000 signature sector
-
-When secure boot is enabled the bootloader app binary ``bootloader.bin`` may exceed the default bootloader size limit. This is especially likely if flash encryption is enabled as well. The default size limit is 0x7000 (28672) bytes (partition table offset 0x8000 - bootloader offset 0x1000).
-
-If the bootloader becomes too large, the {IDF_TARGET_NAME} will fail to boot - errors will be logged about either invalid partition table or invalid bootloader checksum.
-
-When Secure Boot V2 is enabled, there is also an absolute binary size limit of {IDF_TARGET_MAX_BOOTLOADER_SIZE} (excluding the 4KB signature), because the bootloader is first loaded into a fixed size buffer for verification.
-
-Options to work around this are:
-
-- Set :ref:`bootloader compiler optimization <CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION>` back to "Size" if it has been changed from this default value.
-- Reduce :ref:`bootloader log level <CONFIG_BOOTLOADER_LOG_LEVEL>`. Setting log level to Warning, Error or None all significantly reduce the final binary size (but may make it harder to debug).
-- Set :ref:`partition table offset <CONFIG_PARTITION_TABLE_OFFSET>` to a higher value than 0x8000, to place the partition table later in the flash. This increases the space available for the bootloader. If the :doc:`partition table </api-guides/partition-tables>` CSV file contains explicit partition offsets, they will need changing so no partition has an offset lower than ``CONFIG_PARTITION_TABLE_OFFSET + 0x1000``. (This includes the default partition CSV files supplied with ESP-IDF.)
-
-  Note that because of the absolute binary size limit, there is no benefit to moving the partition table any higher than offset {IDF_TARGET_MAX_PARTITION_TABLE_OFFSET}.
+Enabling Secure boot and/or flash encryption will increase the size of bootloader, which might require updating partition table offset. See :ref:`secure-boot-bootloader-size`.
 
 .. _efuse-usage:
 
@@ -153,7 +147,7 @@ eFuse usage
 
     - SECURE_BOOT_EN - Enables secure boot protection on boot.
 
-    - KEY_PURPOSE_X - Set the purpose of the key block on ESP32-S2 by programming SECURE_BOOT_DIGESTX (X = 0, 1, 2) into KEY_PURPOSE_X (X = 0, 1, 2, 3, 4). Example: If KEY_PURPOSE_2 is set to SECURE_BOOT_DIGEST1, then BLOCK_KEY2 will have the Secure Boot V2 public key digest.
+    - KEY_PURPOSE_X - Set the purpose of the key block on {IDF_TARGET_NAME} by programming SECURE_BOOT_DIGESTX (X = 0, 1, 2) into KEY_PURPOSE_X (X = 0, 1, 2, 3, 4, 5). Example: If KEY_PURPOSE_2 is set to SECURE_BOOT_DIGEST1, then BLOCK_KEY2 will have the Secure Boot V2 public key digest.
 
     - BLOCK_KEYX - The block contains the data corresponding to its purpose programmed in KEY_PURPOSE_X. Stores the SHA-256 digest of the public key. SHA-256 hash of public key modulus, exponent, precalculated R & M’ values (represented as 776 bytes – offsets 36 to 812 - as per the :ref:`signature-block-format`) is written to an eFuse key block.
 
@@ -288,6 +282,7 @@ Secure Boot Best Practices
     * The bootloader can be signed with multiple keys from the factory.
 
     Assuming a trusted private key (N-1) has been compromised, to update to new keypair (N).
+
     1. Server sends an OTA update with an application signed with the new private key (#N).
     2. The new OTA update is written to an unused OTA app partition.
     3. The new application's signature block is validated. The public keys are checked against the digests programmed in the eFuse & the application is verified using the verified public key.
