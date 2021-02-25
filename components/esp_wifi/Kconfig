@@ -349,6 +349,16 @@ menu "PHY"
 
             If unsure, choose 'n'.
 
+    config ESP32_PHY_DEFAULT_INIT_IF_INVALID
+        bool "Reset default PHY init data if invalid"
+        default n
+        depends on ESP32_PHY_INIT_DATA_IN_PARTITION
+        help
+            If enabled, PHY init data will be restored to default if
+            it cannot be verified successfully to avoid endless bootloops.
+
+            If unsure, choose 'n'.
+
     if ESP32_PHY_INIT_DATA_IN_PARTITION
         config ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN
             bool "Support multiple PHY init data bin"
