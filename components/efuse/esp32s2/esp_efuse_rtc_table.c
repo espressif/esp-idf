@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <stdbool.h>
-#include "esp32s2/esp_efuse_rtc_table.h"
+#include "esp_efuse_rtc_table.h"
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "esp_log.h"

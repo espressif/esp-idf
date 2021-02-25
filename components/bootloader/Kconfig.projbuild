@@ -692,6 +692,16 @@ menu "Security features"
                 key digest, causing an immediate denial of service and possibly allowing an additional fault
                 injection attack to bypass the signature protection.
 
+        config SECURE_BOOT_ALLOW_UNUSED_DIGEST_SLOTS
+            bool "Leave unused digest slots available (not revoke)"
+            depends on SECURE_BOOT_INSECURE && !IDF_TARGET_ESP32
+            default N
+            help
+                If not set (default), during startup in the app all unused digest slots will be revoked.
+                To revoke unused slot will be called esp_efuse_set_digest_revoke(num_digest) for each digest.
+                Revoking unused digest slots makes ensures that no trusted keys can be added later by an attacker.
+                If set, it means that you have a plan to use unused digests slots later.
+
         config SECURE_INSECURE_ALLOW_DL_MODE
             bool "Don't automatically restrict UART download mode"
             depends on SECURE_BOOT_INSECURE && SECURE_BOOT_V2_ENABLED
