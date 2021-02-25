@@ -804,5 +804,16 @@ menu "Security features"
             It is also possible to enable secure download mode at runtime by calling
             esp_efuse_enable_rom_secure_download_mode()
 
+    config SECURE_FLASH_CHECK_ENC_EN_IN_APP
+        bool "Check Flash Encryption enabled on app startup"
+        depends on SECURE_FLASH_ENC_ENABLED
+        default y
+        help
+            If set (default), in an app during startup code,
+            there is a check of the flash encryption eFuse bit is on
+            (as the bootloader should already have set it).
+            The app requires this bit is on to continue work otherwise abort.
+
+            If not set, the app does not care if the flash encryption eFuse bit is set or not.
 
 endmenu  # Security features
