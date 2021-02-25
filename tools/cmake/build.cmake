@@ -64,7 +64,7 @@ endfunction()
 #
 function(__build_get_idf_git_revision)
     idf_build_get_property(idf_path IDF_PATH)
-    git_describe(idf_ver_git "${idf_path}")
+    git_describe(idf_ver_git "${idf_path}" "--match v*.*")
     if(EXISTS "${idf_path}/version.txt")
         file(STRINGS "${idf_path}/version.txt" idf_ver_t)
         set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${idf_path}/version.txt")

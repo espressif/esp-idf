@@ -55,7 +55,8 @@ def idf_version():
         version = subprocess.check_output([
             'git',
             '--git-dir=%s' % os.path.join(os.environ['IDF_PATH'], '.git'),
-            '--work-tree=%s' % os.environ['IDF_PATH'], 'describe', '--tags', '--dirty'
+            '--work-tree=%s' % os.environ['IDF_PATH'],
+            'describe', '--tags', '--dirty', '--match', 'v*.*',
         ]).decode('utf-8', 'ignore').strip()
     except (subprocess.CalledProcessError, UnicodeError):
         # if failed, then try to parse cmake.version file

@@ -146,6 +146,22 @@ function run_tests()
     idf.py reconfigure || failure "Failed to use IDF_VERSION_MAJOR in component CMakeLists.txt"
     git checkout -- main/CMakeLists.txt
 
+    print_status "Project is in ESP-IDF which has a custom tag"
+    pushd ${IDF_PATH}/examples/get-started/hello_world
+    git config user.email "noone@espressif.com"
+    git config user.name "No One"
+    git tag mytag -a -m "mytag"
+    idf.py reconfigure &> log.log || failure "Failed to build"
+    str="App \"hello-world\" version: mytag"
+    grep "${str}" log.log || { cat log.log ; failure "Project version should be the custom tag"; }
+    idf_version=$(idf.py --version)
+    if [[ "$idf_version" == *"mytag"* ]]; then
+        failure "IDF version $idf_version should not contain mytag"
+    fi
+    git tag -d mytag
+    rm -rf sdkconfig build
+    popd
+
     print_status "Moving BUILD_DIR_BASE out of tree"
     clean_build_dir
     OUTOFTREE_BUILD=${TESTDIR}/alt_build
