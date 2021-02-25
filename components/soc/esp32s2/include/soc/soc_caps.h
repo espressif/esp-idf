@@ -290,6 +290,9 @@
 #define SOC_AES_SUPPORT_DMA     (1)
 #define SOC_AES_SUPPORT_GCM     (1)
 
+/*-------------------------- Flash Encryption CAPS----------------------------*/
+#define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (64)
+
 /* Has "crypto DMA", which is shared with SHA */
 #define SOC_AES_CRYPTO_DMA      (1)
 

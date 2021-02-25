@@ -25,6 +25,7 @@ if(NOT BOOTLOADER_BUILD)
                 "uart_hal_iram.c"
                 "spi_flash_hal.c"
                 "spi_flash_hal_iram.c"
+                "spi_flash_encrypt_hal_iram.c"
                 "soc_hal.c"
                 "interrupt_controller_hal.c"
                 "sha_hal.c"
