@@ -5,7 +5,6 @@
   - [What if Expected Jobs ARE NOT Created?](#what-if-expected-jobs-are-not-created)
   - [MR labels for additional jobs](#mr-labels-for-additional-jobs)
     - [Supported MR Labels](#supported-mr-labels)
-    - [Usages](#usages)
     - [How to trigger a `detached` pipeline without pushing new commits?](#how-to-trigger-a-detached-pipeline-without-pushing-new-commits)
   - [How to Develop With `rules.yml`?](#how-to-develop-with-rulesyml)
     - [General Concepts](#general-concepts)
@@ -28,19 +27,13 @@
 3. A `detached` pipeline will be created.
 4. if you push a new commit, a new pipeline will be created automatically.
 
-**Details:**
-
-1. If an MR title starts with `WIP:` or `Draft:`, push commit will NOT trigger a merge-request pipeline
-2. If a commit message starts with `test ci:`, pushing a commit will trigger a merge-request pipeline even when the MR title starts with `WIP:` or `Draft:`.
-3. If a commit message starts with `WIP:` or `Draft:`, push commit will NOT trigger a pipeline
-
 ## What if Expected Jobs ARE NOT Created?
 
 1. check the file patterns
 
    If you found a job that is not running as expected with some file changes, a git commit to improve the `pattern` will be appreciated.
 
-2. please add MR labels to run additional tests
+2. please add MR labels to run additional tests, currently we have to do this only for `target-test` jobs, please use it as few as possible. Our final goal is to remove all the labels and let the file changes decide everything!
 
 ## MR labels for additional jobs
 
@@ -70,24 +63,15 @@ There are two general labels (not recommended since these two labels will trigge
 - `target_test`: includes all target for `example_test`, `custom_test`, `component_ut`, `unit_test`, `integration_test`
 - `all_test`: includes all test labels
 
-### Usages
-
-We have two ways to run additional jobs
-
-- Add these labels in the MR `labels`
-- Add these labels in the commit message (not the first line). For example:
-
-    ```
-    ci: detect file changes to assign jobs
-  
-    test labels: example_test_esp32, custom_test_esp32
-    ```
-
-  The additional test labels line should start with `test label(s):` and the labels should be separated by space or comma.
-
 ### How to trigger a `detached` pipeline without pushing new commits?
 
-Go to MR web page -> `Pipelines` tab -> click `Run pipeline` button
+Go to MR web page -> `Pipelines` tab -> click `Run pipeline` button.
+
+In very rare case, this tab will not show up because no merge_request pipeline is created before. Please use web API then.
+
+```shell
+curl -X POST --header "PRIVATE-TOKEN: [YOUR PERSONAL ACCESS TOKEN]" [GITLAB_SERVER]/api/v4/projects/103/merge_requests/[MERGE_REQUEST_IID]/pipelines
+```
 
 ## How to Develop With `rules.yml`?
 
@@ -100,32 +84,21 @@ Go to MR web page -> `Pipelines` tab -> click `Run pipeline` button
       - "**/*.py"
     ```
 
-- `label`: (deprecated). Defined in an if clause, similar as the previous bot command. A GitLab job will be created if the pipeline variables contains variables in `BOT_LABEL_xxx` format. For example:
+- `label`: Defined in an if clause, similar as the previous bot command. A GitLab job will be created if the pipeline variables contains variables in `BOT_LABEL_xxx` format (DEPRECATED) or included in the MR labels. For example:
 
     ```yaml
     .if-label-build_docs: &if-label-build_docs
-      if: '$BOT_LABEL_BUILD_DOCS'
+      if: '$BOT_LABEL_BUILD_DOCS || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*build_docs(?:,[^,\n\r]+)*$/i'
     ```
 
-- `title`: Defined in an if clause. A GitLab job will be created if this title included in the MR labels or in the commit message title. For example:
-
-    ```yaml
-    .if-title-docs: &if-title-docs
-      if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:\w+,)*docs(?:,\w+)*$/i || $CI_COMMIT_TITLE =~ /\((?:\w+\s+)*docs(?:\s+\w+)*\)$/i'
-    ```
-
-- `rule`: A combination of various patterns, labels, and titles. It will be used by GitLab YAML `extends` keyword to tell GitLab in what conditions will this job be created. For example:
+- `rule`: A combination of various patterns, and labels. It will be used by GitLab YAML `extends` keyword to tell GitLab in what conditions will this job be created. For example:
 
     ```yaml
     .rules:build:docs:
       rules:
         - <<: *if-protected
-        - <<: *if-label-build
-        - <<: *if-title-build
         - <<: *if-label-build_docs
-        - <<: *if-title-build_docs
         - <<: *if-label-docs
-        - <<: *if-title-docs
         - <<: *if-dev-push
           changes: *patterns-docs
     ```
