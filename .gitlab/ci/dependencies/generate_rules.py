@@ -21,17 +21,22 @@ import sys
 from collections import defaultdict
 from itertools import product
 
+import yaml
+
 try:
     import pygraphviz as pgv
 except ImportError:  # used when pre-commit, skip generating image
     pass
 
-import yaml
+try:
+    from typing import Union
+except ImportError:  # used for type hint
+    pass
 
 IDF_PATH = os.path.abspath(os.getenv('IDF_PATH', os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 
 
-def _list(str_or_list):
+def _list(str_or_list):  # type: (Union[str, list]) -> list
     if isinstance(str_or_list, str):
         return [str_or_list]
     elif isinstance(str_or_list, list):
@@ -40,7 +45,7 @@ def _list(str_or_list):
         raise ValueError('Wrong type: {}. Only supports str or list.'.format(type(str_or_list)))
 
 
-def _format_nested_dict(_dict, f_tuple):
+def _format_nested_dict(_dict, f_tuple):  # type: (dict[str, dict], tuple[str, ...]) -> dict[str, dict]
     res = {}
     for k, v in _dict.items():
         k = k.split('__')[0]
@@ -54,7 +59,7 @@ def _format_nested_dict(_dict, f_tuple):
     return res
 
 
-def _format_nested_list(_list, f_tuple):
+def _format_nested_list(_list, f_tuple):  # type: (list[str], tuple[str, ...]) -> list[str]
     res = []
     for item in _list:
         if isinstance(item, list):
@@ -76,17 +81,12 @@ class RulesWriter:
 
     LABEL_TEMPLATE = inspect.cleandoc(r'''
     .if-label-{0}: &if-label-{0}
-      if: '$BOT_LABEL_{1}'
-    ''')
-    TITLE_TEMPLATE = inspect.cleandoc(r'''
-    .if-title-{0}: &if-title-{0}
-      if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*{0}(?:,[^,\n\r]+)*$/i || $CI_COMMIT_DESCRIPTION =~ /test labels?: (?:\w+[, ]+)*{0}(?:[, ]+\w+)*/i'
+      if: '$BOT_LABEL_{1} || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*{0}(?:,[^,\n\r]+)*$/i'
     ''')
 
-    RULE_NORM = '    - <<: *if-protected'
-    RULE_PROD = '    - <<: *if-protected-no_label'
+    RULE_PROTECTED = '    - <<: *if-protected'
+    RULE_PROTECTED_NO_LABEL = '    - <<: *if-protected-no_label'
     RULE_LABEL_TEMPLATE = '    - <<: *if-label-{0}'
-    RULE_TITLE_TEMPLATE = '    - <<: *if-title-{0}'
     RULE_PATTERN_TEMPLATE = '    - <<: *if-dev-push\n' \
                             '      changes: *patterns-{0}'
     RULES_TEMPLATE = inspect.cleandoc(r"""
@@ -175,7 +175,7 @@ class RulesWriter:
                 sorted_res[k][vk] = sorted(vv)
         return sorted_res
 
-    def new_labels_titles_str(self):  # type: () -> str
+    def new_labels_str(self):  # type: () -> str
         _labels = set([])
         for k, v in self.cfg.items():
             if not v:
@@ -188,8 +188,6 @@ class RulesWriter:
 
         res = ''
         res += '\n\n'.join([self._format_label(_label) for _label in labels])
-        res += '\n\n'
-        res += '\n\n'.join([self._format_title(_label) for _label in labels])
         return res
 
     @classmethod
@@ -200,10 +198,6 @@ class RulesWriter:
     def bot_label_str(label):  # type: (str) -> str
         return label.upper().replace('-', '_')
 
-    @classmethod
-    def _format_title(cls, title):  # type: (str) -> str
-        return cls.TITLE_TEMPLATE.format(title)
-
     def new_rules_str(self):  # type: () -> str
         res = []
         for k, v in sorted(self.rules.items()):
@@ -213,13 +207,12 @@ class RulesWriter:
     def _format_rule(self, name, cfg):  # type: (str, dict) -> str
         _rules = []
         if name.endswith('-production'):
-            _rules.append(self.RULE_PROD)
+            _rules.append(self.RULE_PROTECTED_NO_LABEL)
         else:
             if not (name.endswith('-preview') or name.startswith('labels:')):
-                _rules.append(self.RULE_NORM)
+                _rules.append(self.RULE_PROTECTED)
             for label in cfg['labels']:
                 _rules.append(self.RULE_LABEL_TEMPLATE.format(label))
-                _rules.append(self.RULE_TITLE_TEMPLATE.format(label))
             for pattern in cfg['patterns']:
                 if '.patterns-{}'.format(pattern) in self.rules_cfg:
                     _rules.append(self.RULE_PATTERN_TEMPLATE.format(pattern))
@@ -231,7 +224,7 @@ class RulesWriter:
         with open(self.rules_yml) as fr:
             file_str = fr.read()
 
-        auto_generate_str = '\n{}\n\n{}\n'.format(self.new_labels_titles_str(), self.new_rules_str())
+        auto_generate_str = '\n{}\n\n{}\n'.format(self.new_labels_str(), self.new_rules_str())
         rest, marker, old = file_str.partition(self.AUTO_GENERATE_MARKER)
         if old == auto_generate_str:
             return False
