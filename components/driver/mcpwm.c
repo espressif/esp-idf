@@ -101,38 +101,33 @@ static inline void mcpwm_critical_exit(mcpwm_unit_t mcpwm_num)
 
 esp_err_t mcpwm_gpio_init(mcpwm_unit_t mcpwm_num, mcpwm_io_signals_t io_signal, int gpio_num)
 {
-    if (gpio_num == MCPWM_PIN_IGNORE) {
-        //IGNORE
+    if (gpio_num < 0) { // ignore on minus gpio number
         return ESP_OK;
     }
 
     MCPWM_CHECK(mcpwm_num < SOC_MCPWM_GROUPS, MCPWM_GROUP_NUM_ERROR, ESP_ERR_INVALID_ARG);
     MCPWM_CHECK((GPIO_IS_VALID_GPIO(gpio_num)), MCPWM_GPIO_ERROR, ESP_ERR_INVALID_ARG);
 
-    periph_module_enable(PERIPH_PWM0_MODULE + mcpwm_num);
+    // we enabled both input and output mode for GPIO used here, which can help to simulate trigger source especially in test code
     PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
-    bool mcpwm_gpio_sig = (io_signal <= MCPWM2B);
-    if (mcpwm_num == MCPWM_UNIT_0) {
-        if (mcpwm_gpio_sig) {
-            MCPWM_CHECK((GPIO_IS_VALID_OUTPUT_GPIO(gpio_num)), MCPWM_GPIO_ERROR, ESP_ERR_INVALID_ARG);
-            gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);
-            esp_rom_gpio_connect_out_signal(gpio_num, PWM0_OUT0A_IDX + io_signal, 0, 0);
-        } else {
-            gpio_set_direction(gpio_num, GPIO_MODE_INPUT);
-            esp_rom_gpio_connect_in_signal(gpio_num, PWM0_SYNC0_IN_IDX + io_signal - OFFSET_FOR_GPIO_IDX_1, 0);
-        }
-    } else { //MCPWM_UNIT_1
-        if (mcpwm_gpio_sig) {
-            MCPWM_CHECK((GPIO_IS_VALID_OUTPUT_GPIO(gpio_num)), MCPWM_GPIO_ERROR, ESP_ERR_INVALID_ARG);
-            gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);
-            esp_rom_gpio_connect_out_signal(gpio_num, PWM1_OUT0A_IDX + io_signal, 0, 0);
-        } else if (io_signal >= MCPWM_SYNC_0 && io_signal <= MCPWM_FAULT_2) {
-            gpio_set_direction(gpio_num, GPIO_MODE_INPUT);
-            esp_rom_gpio_connect_in_signal(gpio_num, PWM1_SYNC0_IN_IDX + io_signal - OFFSET_FOR_GPIO_IDX_1, 0);
-        } else {
-            gpio_set_direction(gpio_num, GPIO_MODE_INPUT);
-            esp_rom_gpio_connect_in_signal(gpio_num, PWM1_SYNC0_IN_IDX + io_signal - OFFSET_FOR_GPIO_IDX_2, 0);
-        }
+    if (io_signal <= MCPWM2B) { // Generator output signal
+        MCPWM_CHECK((GPIO_IS_VALID_OUTPUT_GPIO(gpio_num)), MCPWM_GPIO_ERROR, ESP_ERR_INVALID_ARG);
+        gpio_set_direction(gpio_num, GPIO_MODE_INPUT_OUTPUT);
+        int operator_id = io_signal / 2;
+        int generator_id = io_signal % 2;
+        esp_rom_gpio_connect_out_signal(gpio_num, mcpwm_periph_signals.groups[mcpwm_num].operators[operator_id].generators[generator_id].pwm_sig, 0, 0);
+    } else if (io_signal <= MCPWM_SYNC_2) { // External sync input signal
+        gpio_set_direction(gpio_num, GPIO_MODE_INPUT_OUTPUT);
+        int ext_sync_id = io_signal - MCPWM_SYNC_0;
+        esp_rom_gpio_connect_in_signal(gpio_num, mcpwm_periph_signals.groups[mcpwm_num].ext_syncers[ext_sync_id].sync_sig, 0);
+    } else if (io_signal <= MCPWM_FAULT_2) { // Fault input signal
+        gpio_set_direction(gpio_num, GPIO_MODE_INPUT_OUTPUT);
+        int fault_id = io_signal - MCPWM_FAULT_0;
+        esp_rom_gpio_connect_in_signal(gpio_num, mcpwm_periph_signals.groups[mcpwm_num].detectors[fault_id].fault_sig, 0);
+    } else if (io_signal >= MCPWM_CAP_0 && io_signal <= MCPWM_CAP_2) { // Capture input signal
+        gpio_set_direction(gpio_num, GPIO_MODE_INPUT_OUTPUT);
+        int capture_id = io_signal - MCPWM_CAP_0;
+        esp_rom_gpio_connect_in_signal(gpio_num, mcpwm_periph_signals.groups[mcpwm_num].captures[capture_id].cap_sig, 0);
     }
     return ESP_OK;
 }
@@ -251,7 +246,7 @@ esp_err_t mcpwm_init(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, const mcpw
     //the driver currently always use the timer x for operator x
     const int op = timer_num;
     MCPWM_TIMER_ID_CHECK(mcpwm_num, op);
-    periph_module_enable(PERIPH_PWM0_MODULE + mcpwm_num);
+    periph_module_enable(mcpwm_periph_signals.groups[mcpwm_num].module);
 
     mcpwm_hal_context_t *hal = &context[mcpwm_num].hal;
     mcpwm_hal_init_config_t init_config = {
@@ -535,6 +530,8 @@ esp_err_t mcpwm_capture_enable(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t ca
                                uint32_t num_of_pulse)
 {
     MCPWM_CHECK(mcpwm_num < SOC_MCPWM_GROUPS, MCPWM_GROUP_NUM_ERROR, ESP_ERR_INVALID_ARG);
+    // enable MCPWM module incase user don't use `mcpwm_init` at all
+    periph_module_enable(mcpwm_periph_signals.groups[mcpwm_num].module);
     mcpwm_hal_init_config_t init_config = {
         .host_id = mcpwm_num,
     };
@@ -561,6 +558,7 @@ esp_err_t mcpwm_capture_disable(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t c
     mcpwm_critical_enter(mcpwm_num);
     mcpwm_hal_capture_disable(&context[mcpwm_num].hal, cap_sig);
     mcpwm_critical_exit(mcpwm_num);
+    periph_module_disable(mcpwm_periph_signals.groups[mcpwm_num].module);
     return ESP_OK;
 }
 
@@ -612,6 +610,6 @@ esp_err_t mcpwm_isr_register(mcpwm_unit_t mcpwm_num, void (*fn)(void *), void *a
     esp_err_t ret;
     MCPWM_CHECK(mcpwm_num < SOC_MCPWM_GROUPS, MCPWM_GROUP_NUM_ERROR, ESP_ERR_INVALID_ARG);
     MCPWM_CHECK(fn != NULL, MCPWM_PARAM_ADDR_ERROR, ESP_ERR_INVALID_ARG);
-    ret = esp_intr_alloc((ETS_PWM0_INTR_SOURCE + mcpwm_num), intr_alloc_flags, fn, arg, handle);
+    ret = esp_intr_alloc(mcpwm_periph_signals.groups[mcpwm_num].irq_id, intr_alloc_flags, fn, arg, handle);
     return ret;
 }
