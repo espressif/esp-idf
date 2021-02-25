@@ -13,8 +13,6 @@
 // There are 3 DMA channels on ESP32-C3
 // Attention: These fixed DMA channels are temporarily workaround before we have a centralized DMA controller API to help alloc the channel dynamically
 // Remove them when GDMA driver API is ready
-#define SOC_GDMA_ADC_DMA_CHANNEL    (0)
-#define SOC_GDMA_ADC_INTR_SOURCE    ETS_DMA_CH0_INTR_SOURCE
 #include "rmt_caps.h"
 
 /*-------------------------- DAC CAPS ----------------------------------------*/

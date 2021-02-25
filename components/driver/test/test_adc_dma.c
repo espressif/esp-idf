@@ -122,7 +122,6 @@ static void continuous_adc_init(uint16_t adc1_chan_mask, uint16_t adc2_chan_mask
     adc_digi_init_config_t adc_dma_config = {
         .max_store_buf_size = TEST_COUNT*2,
         .conv_num_each_intr = 128,
-        .dma_chan = SOC_GDMA_ADC_DMA_CHANNEL,
         .adc1_chan_mask = adc1_chan_mask,
         .adc2_chan_mask = adc2_chan_mask,
     };
