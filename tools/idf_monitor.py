@@ -824,6 +824,9 @@ if os.name == 'nt':
                 # an exception (however, the character is still written to the screen)
                 # Ref https://github.com/espressif/esp-idf/issues/1136
                 pass
+            except UnicodeDecodeError:
+                # In case of double byte Unicode characters display '?'
+                self.output.write('?')
 
         def write(self, data):
             if isinstance(data, bytes):
