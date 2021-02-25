@@ -77,11 +77,11 @@ void ref_clock_init(void)
 
     rmt_ll_enable_drive_clock(s_rmt_hal.regs, true);
 #if SOC_RMT_SUPPORT_XTAL
-    rmt_ll_set_counter_clock_src(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, RMT_BASECLK_XTAL, 39, 0, 0); // XTAL(40MHz), rmt_sclk => 1MHz (40/(1+39))
+    rmt_ll_set_group_clock_src(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, RMT_BASECLK_XTAL, 39, 0, 0); // XTAL(40MHz), rmt_sclk => 1MHz (40/(1+39))
 #elif SOC_RMT_SUPPORT_REF_TICK
-    rmt_ll_set_counter_clock_src(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, RMT_BASECLK_REF, 0, 0, 0); // select REF_TICK (1MHz)
+    rmt_ll_set_group_clock_src(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, RMT_BASECLK_REF, 0, 0, 0); // select REF_TICK (1MHz)
 #endif
-    rmt_hal_tx_set_counter_clock(&s_rmt_hal, REF_CLOCK_RMT_CHANNEL, 1000000, 1000000); // counter clock: 1MHz
+    rmt_hal_tx_set_channel_clock(&s_rmt_hal, REF_CLOCK_RMT_CHANNEL, 1000000, 1000000); // counter clock: 1MHz
     rmt_ll_tx_enable_idle(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, true); // enable idle output
     rmt_ll_tx_set_idle_level(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, 1); // idle level: 1
     rmt_ll_tx_enable_carrier_modulation(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, true);
