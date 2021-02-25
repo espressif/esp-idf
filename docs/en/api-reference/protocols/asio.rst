@@ -21,11 +21,11 @@ Internal asio settings for ESP include
 
 Application Example
 -------------------
-ESP examples are based on standard asio :example:`examples/protocols/asio`:
+ESP examples are based on standard asio :example:`protocols/asio`:
 
-- :example:`examples/protocols/asio/udp_echo_server`
-- :example:`examples/protocols/asio/tcp_echo_server`
-- :example:`examples/protocols/asio/chat_client`
-- :example:`examples/protocols/asio/chat_server`
+- :example:`protocols/asio/udp_echo_server`
+- :example:`protocols/asio/tcp_echo_server`
+- :example:`protocols/asio/chat_client`
+- :example:`protocols/asio/chat_server`
 
 Please refer to the specific example README.md for details
