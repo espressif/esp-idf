@@ -14,9 +14,9 @@
 #include "randombytes_default.h"
 #include "esp_system.h"
 
-static const char *randombytes_esp32_implementation_name(void)
+static const char *randombytes_esp32xx_implementation_name(void)
 {
-    return "esp32";
+    return CONFIG_IDF_TARGET;
 }
 
 /*
@@ -27,7 +27,7 @@ static const char *randombytes_esp32_implementation_name(void)
   is no need to call randombytes_set_implementation().
 */
 const struct randombytes_implementation randombytes_esp32_implementation = {
-    .implementation_name = randombytes_esp32_implementation_name,
+    .implementation_name = randombytes_esp32xx_implementation_name,
     .random = esp_random,
     .stir = NULL,
     .uniform = NULL,
