@@ -94,8 +94,8 @@ static esp_flash_t* example_init_ext_flash(void)
         .mosi_io_num = VSPI_IOMUX_PIN_NUM_MOSI,
         .miso_io_num = VSPI_IOMUX_PIN_NUM_MISO,
         .sclk_io_num = VSPI_IOMUX_PIN_NUM_CLK,
-        .quadwp_io_num = -1,
-        .quadhd_io_num = -1,
+        .quadhd_io_num = VSPI_IOMUX_PIN_NUM_HD,
+        .quadwp_io_num = VSPI_IOMUX_PIN_NUM_WP,
     };
 
     const esp_flash_spi_device_config_t device_config = {
