@@ -14,7 +14,7 @@
 
 #pragma once
 
-#define SOC_SPI_PERIPH_NUM      4
+#define SOC_SPI_PERIPH_NUM      2
 #define SOC_SPI_DMA_CHAN_NUM    3
 #define SOC_SPI_PERIPH_CS_NUM(i)    3
 

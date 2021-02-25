@@ -1080,10 +1080,10 @@ static inline uint32_t spi_ll_slave_hd_get_last_addr(spi_dev_t* hw)
 /**
  * Reset RX DMA which stores the data received from a peripheral into RAM.
  *
- * @param hw     Beginning address of the peripheral registers.
- * @param dma_in Beginning address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
+ * @param dma_in  Beginning address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
+ * @param channel DMA channel, for chip version compatibility, not used.
  */
-static inline void spi_dma_ll_rx_reset(spi_dma_dev_t *dma_in)
+static inline void spi_dma_ll_rx_reset(spi_dma_dev_t *dma_in, uint32_t channel)
 {
     //Reset RX DMA peripheral
     dma_in->dma_in_link.dma_rx_ena = 0;
@@ -1096,10 +1096,11 @@ static inline void spi_dma_ll_rx_reset(spi_dma_dev_t *dma_in)
 /**
  * Start RX DMA.
  *
- * @param dma_in Beginning address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
- * @param addr Address of the beginning DMA descriptor.
+ * @param dma_in  Beginning address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
+ * @param channel DMA channel, for chip version compatibility, not used.
+ * @param addr    Address of the beginning DMA descriptor.
  */
-static inline void spi_dma_ll_rx_start(spi_dma_dev_t *dma_in, lldesc_t *addr)
+static inline void spi_dma_ll_rx_start(spi_dma_dev_t *dma_in, uint32_t channel, lldesc_t *addr)
 {
     dma_in->dma_in_link.addr = (int) addr & 0xFFFFF;
     dma_in->dma_in_link.start = 1;
@@ -1109,9 +1110,10 @@ static inline void spi_dma_ll_rx_start(spi_dma_dev_t *dma_in, lldesc_t *addr)
  * Enable DMA RX channel burst for data
  *
  * @param dma_in  Beginning address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
+ * @param channel DMA channel, for chip version compatibility, not used.
  * @param enable  True to enable, false to disable
  */
-static inline void spi_dma_ll_rx_enable_burst_data(spi_dma_dev_t *dma_in, bool enable)
+static inline void spi_dma_ll_rx_enable_burst_data(spi_dma_dev_t *dma_in, uint32_t channel, bool enable)
 {
     //This is not supported in esp32s2
 }
@@ -1119,10 +1121,11 @@ static inline void spi_dma_ll_rx_enable_burst_data(spi_dma_dev_t *dma_in, bool e
 /**
  * Enable DMA TX channel burst for descriptor
  *
- * @param dma_in Beginning address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
+ * @param dma_in  Beginning address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
+ * @param channel DMA channel, for chip version compatibility, not used.
  * @param enable  True to enable, false to disable
  */
-static inline void spi_dma_ll_rx_enable_burst_desc(spi_dma_dev_t *dma_in, bool enable)
+static inline void spi_dma_ll_rx_enable_burst_desc(spi_dma_dev_t *dma_in, uint32_t channel, bool enable)
 {
     dma_in->dma_conf.indscr_burst_en = enable;
 }
@@ -1130,10 +1133,10 @@ static inline void spi_dma_ll_rx_enable_burst_desc(spi_dma_dev_t *dma_in, bool e
 /**
  * Reset TX DMA which transmits the data from RAM to a peripheral.
  *
- * @param hw      Beginning address of the peripheral registers.
  * @param dma_out Beginning address of the DMA peripheral registers which transmits the data from RAM to a peripheral.
+ * @param channel DMA channel, for chip version compatibility, not used.
  */
-static inline void spi_dma_ll_tx_reset(spi_dma_dev_t *dma_out)
+static inline void spi_dma_ll_tx_reset(spi_dma_dev_t *dma_out, uint32_t channel)
 {
     //Reset TX DMA peripheral
     dma_out->dma_conf.out_rst = 1;
@@ -1144,9 +1147,10 @@ static inline void spi_dma_ll_tx_reset(spi_dma_dev_t *dma_out)
  * Start TX DMA.
  *
  * @param dma_out Beginning address of the DMA peripheral registers which transmits the data from RAM to a peripheral.
- * @param addr Address of the beginning DMA descriptor.
+ * @param channel DMA channel, for chip version compatibility, not used.
+ * @param addr    Address of the beginning DMA descriptor.
  */
-static inline void spi_dma_ll_tx_start(spi_dma_dev_t *dma_out, lldesc_t *addr)
+static inline void spi_dma_ll_tx_start(spi_dma_dev_t *dma_out, uint32_t channel, lldesc_t *addr)
 {
     dma_out->dma_out_link.addr = (int) addr & 0xFFFFF;
     dma_out->dma_out_link.start = 1;
@@ -1156,9 +1160,10 @@ static inline void spi_dma_ll_tx_start(spi_dma_dev_t *dma_out, lldesc_t *addr)
  * Enable DMA TX channel burst for data
  *
  * @param dma_out Beginning address of the DMA peripheral registers which transmits the data from RAM to a peripheral.
+ * @param channel DMA channel, for chip version compatibility, not used.
  * @param enable  True to enable, false to disable
  */
-static inline void spi_dma_ll_tx_enable_burst_data(spi_dma_dev_t *dma_out, bool enable)
+static inline void spi_dma_ll_tx_enable_burst_data(spi_dma_dev_t *dma_out, uint32_t channel, bool enable)
 {
     dma_out->dma_conf.out_data_burst_en = enable;
 }
@@ -1167,9 +1172,10 @@ static inline void spi_dma_ll_tx_enable_burst_data(spi_dma_dev_t *dma_out, bool 
  * Enable DMA TX channel burst for descriptor
  *
  * @param dma_out Beginning address of the DMA peripheral registers which transmits the data from RAM to a peripheral.
+ * @param channel DMA channel, for chip version compatibility, not used.
  * @param enable  True to enable, false to disable
  */
-static inline void spi_dma_ll_tx_enable_burst_desc(spi_dma_dev_t *dma_out, bool enable)
+static inline void spi_dma_ll_tx_enable_burst_desc(spi_dma_dev_t *dma_out, uint32_t channel, bool enable)
 {
     dma_out->dma_conf.outdscr_burst_en = enable;
 }
@@ -1178,9 +1184,10 @@ static inline void spi_dma_ll_tx_enable_burst_desc(spi_dma_dev_t *dma_out, bool 
  * Configuration of OUT EOF flag generation way
  *
  * @param dma_out Beginning address of the DMA peripheral registers which transmits the data from RAM to a peripheral.
+ * @param channel DMA channel, for chip version compatibility, not used.
  * @param enable  1: when dma pop all data from fifo  0:when ahb push all data to fifo.
  */
-static inline void spi_dma_ll_set_out_eof_generation(spi_dma_dev_t *dma_out, bool enable)
+static inline void spi_dma_ll_set_out_eof_generation(spi_dma_dev_t *dma_out, uint32_t channel, bool enable)
 {
     dma_out->dma_conf.out_eof_mode = enable;
 }
@@ -1189,19 +1196,20 @@ static inline void spi_dma_ll_set_out_eof_generation(spi_dma_dev_t *dma_out, boo
  * Enable automatic outlink-writeback
  *
  * @param dma_out Beginning address of the DMA peripheral registers which transmits the data from RAM to a peripheral.
+ * @param channel DMA channel, for chip version compatibility, not used.
  * @param enable  True to enable, false to disable
  */
-static inline void spi_dma_ll_enable_out_auto_wrback(spi_dma_dev_t *dma_out, bool enable)
+static inline void spi_dma_ll_enable_out_auto_wrback(spi_dma_dev_t *dma_out, uint32_t channel, bool enable)
 {
     dma_out->dma_conf.out_auto_wrback = enable;
 }
 
-static inline void spi_dma_ll_rx_restart(spi_dma_dev_t *dma_in)
+static inline void spi_dma_ll_rx_restart(spi_dma_dev_t *dma_in, uint32_t channel)
 {
     dma_in->dma_in_link.restart = 1;
 }
 
-static inline void spi_dma_ll_tx_restart(spi_dma_dev_t *dma_out)
+static inline void spi_dma_ll_tx_restart(spi_dma_dev_t *dma_out, uint32_t channel)
 {
     dma_out->dma_out_link.restart = 1;
 }
