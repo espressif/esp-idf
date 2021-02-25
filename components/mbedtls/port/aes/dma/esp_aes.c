@@ -54,8 +54,8 @@
 #endif
 
 #if SOC_AES_GDMA
-#define AES_LOCK() esp_crypto_aes_lock_acquire()
-#define AES_RELEASE() esp_crypto_aes_lock_release()
+#define AES_LOCK() esp_crypto_sha_aes_lock_acquire()
+#define AES_RELEASE() esp_crypto_sha_aes_lock_release()
 #elif SOC_AES_CRYPTO_DMA
 #define AES_LOCK() esp_crypto_dma_lock_acquire()
 #define AES_RELEASE() esp_crypto_dma_lock_release()
