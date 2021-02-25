@@ -1041,6 +1041,9 @@ if os.name == 'nt':
                 # Also possible for Windows to throw an OSError error if the data is invalid for the console
                 # (garbage bytes, etc)
                 pass
+            except UnicodeDecodeError:
+                # In case of double byte Unicode characters display '?'
+                self.output.write('?')
 
         def write(self, data):
             if isinstance(data, bytes):
