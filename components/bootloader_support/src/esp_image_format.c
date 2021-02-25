@@ -354,20 +354,9 @@ static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t
 
     if (image->magic != ESP_IMAGE_HEADER_MAGIC) {
         if (!silent) {
-            ESP_LOGE(TAG, "image at 0x%x has invalid magic byte", src_addr);
+            ESP_LOGE(TAG, "image at 0x%x has invalid magic byte (nothing flashed here?)", src_addr);
         }
         err = ESP_ERR_IMAGE_INVALID;
-    }
-    if (!silent) {
-        if (image->spi_mode > ESP_IMAGE_SPI_MODE_SLOW_READ) {
-            ESP_LOGW(TAG, "image at 0x%x has invalid SPI mode %d", src_addr, image->spi_mode);
-        }
-        if (image->spi_speed > ESP_IMAGE_SPI_SPEED_80M) {
-            ESP_LOGW(TAG, "image at 0x%x has invalid SPI speed %d", src_addr, image->spi_speed);
-        }
-        if (image->spi_size > ESP_IMAGE_FLASH_SIZE_MAX) {
-            ESP_LOGW(TAG, "image at 0x%x has invalid SPI size %d", src_addr, image->spi_size);
-        }
     }
 
     if (err == ESP_OK) {
