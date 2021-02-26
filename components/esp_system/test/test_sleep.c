@@ -20,7 +20,7 @@
 #include "esp_rom_sys.h"
 #include "esp_timer.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3, ESP32S3)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/clk.h"
@@ -66,14 +66,12 @@ TEST_CASE("wake up from deep sleep using timer", "[deepsleep][reset=DEEPSLEEP_RE
     esp_deep_sleep_start();
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
 TEST_CASE("light sleep followed by deep sleep", "[deepsleep][reset=DEEPSLEEP_RESET]")
 {
     esp_sleep_enable_timer_wakeup(1000000);
     esp_light_sleep_start();
     esp_deep_sleep_start();
 }
-#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
 
 TEST_CASE("wake up from light sleep using timer", "[deepsleep]")
 {
@@ -194,7 +192,12 @@ TEST_CASE("light sleep duration is correct", "[deepsleep][ignore]")
 TEST_CASE("light sleep and frequency switching", "[deepsleep]")
 {
 #ifndef CONFIG_PM_ENABLE
-    uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), UART_SCLK_REF_TICK);
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
+    uart_sclk_t clk_source = UART_SCLK_REF_TICK;
+#else
+    uart_sclk_t clk_source = UART_SCLK_XTAL;
+#endif
+    uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), clk_source);
     uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), CONFIG_ESP_CONSOLE_UART_BAUDRATE);
 #endif
 
@@ -350,6 +353,8 @@ TEST_CASE_MULTIPLE_STAGES("can set sleep wake stub from stack in RTC RAM", "[dee
 
 #endif // CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
 
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+
 TEST_CASE("wake up using ext0 (13 high)", "[deepsleep][ignore]")
 {
     ESP_ERROR_CHECK(rtc_gpio_init(GPIO_NUM_13));
@@ -420,7 +425,9 @@ __attribute__((unused)) static uint32_t get_cause(void)
     return wakeup_cause;
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+// Fails on S2 IDF-2903
+
 // This test case verifies deactivation of trigger for wake up sources
 TEST_CASE("disable source trigger behavior", "[deepsleep]")
 {
@@ -493,7 +500,9 @@ TEST_CASE("disable source trigger behavior", "[deepsleep]")
     // Disable ext0 wakeup source, as this might interfere with other tests
     ESP_ERROR_CHECK(esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_EXT0));
 }
-#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
+#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+
+#endif //SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
 static RTC_DATA_ATTR struct timeval start;
 static void trigger_deepsleep(void)
@@ -530,14 +539,14 @@ static void check_time_deepsleep(void)
 
 TEST_CASE_MULTIPLE_STAGES("check a time after wakeup from deep sleep", "[deepsleep][reset=DEEPSLEEP_RESET]", trigger_deepsleep, check_time_deepsleep);
 
-#endif // #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3, ESP32S3)
+#endif // #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 static void gpio_deepsleep_wakeup_config(void)
 {
     gpio_config_t io_conf = {
         .mode = GPIO_MODE_INPUT,
-        .pin_bit_mask = ((1ULL << 2) | (1ULL << 4)) 
+        .pin_bit_mask = ((1ULL << 2) | (1ULL << 4))
     };
     ESP_ERROR_CHECK(gpio_config(&io_conf));
 }
