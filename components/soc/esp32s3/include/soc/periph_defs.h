@@ -28,6 +28,7 @@ typedef enum {
     PERIPH_I2C1_MODULE,
     PERIPH_I2S0_MODULE,
     PERIPH_I2S1_MODULE,
+    PERIPH_LCD_CAM_MODULE,
     PERIPH_TIMG0_MODULE,
     PERIPH_TIMG1_MODULE,
     PERIPH_PWM0_MODULE,
@@ -149,7 +150,6 @@ typedef enum {
     ETS_CACHE_CORE0_ACS_INTR_SOURCE,
     ETS_CACHE_CORE1_ACS_INTR_SOURCE,
     ETS_MAX_INTR_SOURCE,                        /**< number of interrupt sources */
-
 } periph_interrput_t;
 
 #ifdef __cplusplus
