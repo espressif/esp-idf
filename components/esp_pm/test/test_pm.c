@@ -26,6 +26,8 @@
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/clk.h"
 #include "esp32s3/ulp.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/clk.h"
 #endif
 
 TEST_CASE("Can dump power management lock stats", "[pm]")
@@ -44,6 +46,8 @@ static void switch_freq(int mhz)
     esp_pm_config_esp32s2_t pm_config = {
 #elif CONFIG_IDF_TARGET_ESP32S3
     esp_pm_config_esp32s3_t pm_config = {
+#elif CONFIG_IDF_TARGET_ESP32C3
+    esp_pm_config_esp32c3_t pm_config = {
 #endif
         .max_freq_mhz = mhz,
         .min_freq_mhz = MIN(mhz, xtal_freq),
@@ -56,22 +60,21 @@ static void switch_freq(int mhz)
     }
 }
 
+#if CONFIG_IDF_TARGET_ESP32C3
+static const int test_freqs[] = {40, 160, 80, 40, 80, 10, 80, 20, 40};
+#else
+static const int test_freqs[] = {240, 40, 160, 240, 80, 40, 240, 40, 80, 10, 80, 20, 40};
+#endif
+
+
 TEST_CASE("Can switch frequency using esp_pm_configure", "[pm]")
 {
     int orig_freq_mhz = esp_clk_cpu_freq() / MHZ;
-    switch_freq(240);
-    switch_freq(40);
-    switch_freq(160);
-    switch_freq(240);
-    switch_freq(80);
-    switch_freq(40);
-    switch_freq(240);
-    switch_freq(40);
-    switch_freq(80);
-    switch_freq(10);
-    switch_freq(80);
-    switch_freq(20);
-    switch_freq(40);
+
+    for (int i = 0; i < sizeof(test_freqs)/sizeof(int); i++) {
+        switch_freq(test_freqs[i]);
+    }
+
     switch_freq(orig_freq_mhz);
 }
 
@@ -88,6 +91,8 @@ static void light_sleep_enable(void)
     esp_pm_config_esp32s2_t pm_config = {
 #elif CONFIG_IDF_TARGET_ESP32S3
     esp_pm_config_esp32s3_t pm_config = {
+#elif CONFIG_IDF_TARGET_ESP32C3
+    esp_pm_config_esp32c3_t pm_config = {
 #endif
         .max_freq_mhz = cur_freq_mhz,
         .min_freq_mhz = xtal_freq,
@@ -106,6 +111,8 @@ static void light_sleep_disable(void)
     esp_pm_config_esp32s2_t pm_config = {
 #elif CONFIG_IDF_TARGET_ESP32S3
     esp_pm_config_esp32s3_t pm_config = {
+#elif CONFIG_IDF_TARGET_ESP32C3
+    esp_pm_config_esp32c3_t pm_config = {
 #endif
         .max_freq_mhz = cur_freq_mhz,
         .min_freq_mhz = cur_freq_mhz,
@@ -154,6 +161,9 @@ TEST_CASE("Automatic light occurs when tasks are suspended", "[pm]")
 }
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
+#if !DISABLED_FOR_TARGETS(ESP32C3)
+// No ULP on C3
+
 // Fix failure on ESP32 when running alone; passes when the previous test is run before this one
 TEST_CASE("Can wake up from automatic light sleep by GPIO", "[pm][ignore]")
 {
@@ -227,7 +237,9 @@ TEST_CASE("Can wake up from automatic light sleep by GPIO", "[pm][ignore]")
 
     light_sleep_disable();
 }
-#endif
+#endif //!DISABLED_FOR_TARGETS(ESP32C3)
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
+
 typedef struct {
     int delay_us;
     int result;
