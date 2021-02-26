@@ -20,6 +20,7 @@ INCLUDE_DIRS := \
 	vfs/include \
 	$(addprefix ../../../../components/, \
 	esp_common/include \
+	esp_hw_support/include \
 	esp_system/include \
 	soc/esp32/include \
 	soc/include \

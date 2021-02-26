@@ -9,6 +9,7 @@ set(srcs
     "rtc_sleep.c"
     "rtc_time.c"
     "rtc_wdt.c"
+    "chip_info.c"
     )
 
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")
