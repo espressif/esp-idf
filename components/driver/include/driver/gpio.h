@@ -516,6 +516,38 @@ esp_err_t gpio_sleep_pupd_config_unapply(gpio_num_t gpio_num);
 #endif
 #endif
 
+#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+
+#define GPIO_IS_DEEP_SLEEP_WAKEUP_VALID_GPIO(gpio_num)        ((gpio_num & ~SOC_GPIO_DEEP_SLEEP_WAKEUP_VALID_GPIO_MASK) == 0)
+
+/**
+ * @brief Enable GPIO deep-sleep wake-up function.
+ *
+ * @param gpio_num GPIO number.
+ *
+ * @param intr_type GPIO wake-up type. Only GPIO_INTR_LOW_LEVEL or GPIO_INTR_HIGH_LEVEL can be used.
+ *
+ * @note Called by the SDK. User shouldn't call this directly in the APP.
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t gpio_deep_sleep_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type);
+
+/**
+ * @brief Disable GPIO deep-sleep wake-up function.
+ *
+ * @param gpio_num GPIO number
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t gpio_deep_sleep_wakeup_disable(gpio_num_t gpio_num);
+
+#endif
+
 #ifdef __cplusplus
 }
 #endif

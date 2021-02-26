@@ -40,12 +40,12 @@ const uint32_t GPIO_PIN_MUX_REG[SOC_GPIO_PIN_COUNT] = {
 };
 
 const uint32_t GPIO_HOLD_MASK[SOC_GPIO_PIN_COUNT] = {
-    0,  //GPIO0
-    0,  //GPIO1
-    0,  //GPIO2
-    0,  //GPIO3
-    0,  //GPIO4
-    0,  //GPIO5
+    BIT(0),     //GPIO0
+    BIT(1),     //GPIO1
+    BIT(2),     //GPIO2
+    BIT(3),     //GPIO3
+    BIT(4),     //GPIO4
+    BIT(5),     //GPIO5
     BIT(5),     //GPIO6
     BIT(6),     //GPIO7
     BIT(3),     //GPIO8
