@@ -24,8 +24,14 @@ import subprocess
 
 from gitlab_api import Gitlab
 
+try:
+    from typing import Any, Union
+except ImportError:
+    # Only used for type annotations
+    pass
 
-def _get_mr_obj(source_branch):
+
+def _get_mr_obj(source_branch):  # type: (str) -> Union[Gitlab, None]
     if not source_branch:
         return None
     gl = Gitlab(os.getenv('CI_PROJECT_ID', 'espressif/esp-idf'))
@@ -46,7 +52,7 @@ def get_mr_iid(source_branch):  # type: (str) -> str
         return str(mr.iid)
 
 
-def get_mr_changed_files(source_branch):
+def get_mr_changed_files(source_branch):  # type: (str) -> Any
     mr = _get_mr_obj(source_branch)
     if not mr:
         return ''
@@ -55,7 +61,7 @@ def get_mr_changed_files(source_branch):
                                     'origin/{}...origin/{}'.format(mr.target_branch, source_branch)]).decode('utf8')
 
 
-def get_mr_commits(source_branch):
+def get_mr_commits(source_branch):  # type: (str) -> str
     mr = _get_mr_obj(source_branch)
     if not mr:
         return ''

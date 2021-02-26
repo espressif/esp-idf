@@ -15,6 +15,7 @@ tools/ci/get-full-sources.sh
 tools/ci/idf_ci_utils.py
 tools/ci/mirror-submodule-update.sh
 tools/ci/multirun_with_pyenv.sh
+tools/ci/mypy_ignore_list.txt
 tools/ci/normalize_clangtidy_path.py
 tools/ci/push_to_github.sh
 tools/ci/python_packages/wifi_tools.py
