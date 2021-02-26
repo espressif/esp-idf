@@ -66,10 +66,10 @@ static void write_status_8b_wrsr2(unsigned new_status);
 /* Write 16 bit status using WRSR */
 static void write_status_16b_wrsr(unsigned new_status);
 
-/* Read 8 bit status of XM25QU64A  */
-static unsigned read_status_8b_xmc25qu64a();
-/* Write 8 bit status of XM25QU64A */
-static void write_status_8b_xmc25qu64a(unsigned new_status);
+/* Read 8 bit status using RDSR command in otp mode  */
+static unsigned read_status_8b_rdsr_otp(void);
+/* Write 8 bit status using WRSR command in otp mode */
+static void write_status_8b_wrsr_otp(unsigned new_status);
 
 #define ESP32_D2WD_WP_GPIO 7 /* ESP32-D2WD has this GPIO wired to WP pin of flash */
 
@@ -95,7 +95,8 @@ const static qio_info_t chip_data[] = {
     { "ISSI",        0x9D,   0x4000, 0xCF00,    read_status_8b_rdsr,        write_status_8b_wrsr,       6 }, /* IDs 0x40xx, 0x70xx */
     { "WinBond",     0xEF,   0x4000, 0xFF00,    read_status_16b_rdsr_rdsr2, write_status_16b_wrsr,      9 },
     { "GD",          0xC8,   0x6000, 0xFF00,    read_status_16b_rdsr_rdsr2, write_status_16b_wrsr,      9 },
-    { "XM25QU64A",   0x20,   0x3817, 0xFFFF,    read_status_8b_xmc25qu64a,  write_status_8b_xmc25qu64a, 6 },
+    { "XM25QU64A",   0x20,   0x3817, 0xFFFF,    read_status_8b_rdsr_otp,    write_status_8b_wrsr_otp,   6 },
+    { "EON",         0x1C,   0x7000, 0xFF00,    read_status_8b_rdsr_otp,    write_status_8b_wrsr_otp,   6 }, /* EN25QH sereils: IDs 0x70xx */
 
     /* Final entry is default entry, if no other IDs have matched.
 
@@ -253,7 +254,7 @@ static void write_status_16b_wrsr(unsigned new_status)
     execute_flash_command(CMD_WRSR, new_status, 16, 0);
 }
 
-static unsigned read_status_8b_xmc25qu64a()
+static unsigned read_status_8b_rdsr_otp(void)
 {
     execute_flash_command(CMD_OTPEN, 0, 0, 0);  /* Enter OTP mode */
     esp_rom_spiflash_wait_idle(&g_rom_flashchip);
@@ -262,7 +263,7 @@ static unsigned read_status_8b_xmc25qu64a()
     return read_status;
 }
 
-static void write_status_8b_xmc25qu64a(unsigned new_status)
+static void write_status_8b_wrsr_otp(unsigned new_status)
 {
     execute_flash_command(CMD_OTPEN, 0, 0, 0);  /* Enter OTP mode */
     esp_rom_spiflash_wait_idle(&g_rom_flashchip);
