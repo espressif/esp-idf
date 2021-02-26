@@ -255,7 +255,7 @@ static void semphr_delete_wrapper(void *semphr)
 
 static void wifi_thread_semphr_free(void* data)
 {
-    xSemaphoreHandle *sem = (xSemaphoreHandle*)(data);
+    SemaphoreHandle_t *sem = (SemaphoreHandle_t*)(data);
 
     if (sem) {
         vSemaphoreDelete(sem);
@@ -266,7 +266,7 @@ static void * wifi_thread_semphr_get_wrapper(void)
 {
     static bool s_wifi_thread_sem_key_init = false;
     static pthread_key_t s_wifi_thread_sem_key;
-    xSemaphoreHandle sem = NULL;
+    SemaphoreHandle_t sem = NULL;
 
     if (s_wifi_thread_sem_key_init == false) {
         if (0 != pthread_key_create(&s_wifi_thread_sem_key, wifi_thread_semphr_free)) {
