@@ -4589,26 +4589,6 @@ void btm_sec_disconnected (UINT16 handle, UINT8 reason)
 #endif  ///BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE
     BTM_TRACE_EVENT("%s before update sec_flags=0x%x\n", __func__, p_dev_rec->sec_flags);
 
-    /* If we are in the process of bonding we need to tell client that auth failed */
-    if ( (btm_cb.pairing_state != BTM_PAIR_STATE_IDLE)
-            && (memcmp (btm_cb.pairing_bda, p_dev_rec->bd_addr, BD_ADDR_LEN) == 0)) {
-        btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE);
-        p_dev_rec->sec_flags &= ~BTM_SEC_LINK_KEY_KNOWN;
-        if (btm_cb.api.p_auth_complete_callback) {
-            /* If the disconnection reason is REPEATED_ATTEMPTS,
-               send this error message to complete callback function
-               to display the error message of Repeated attempts.
-               All others, send HCI_ERR_AUTH_FAILURE. */
-            if (reason == HCI_ERR_REPEATED_ATTEMPTS) {
-                result = HCI_ERR_REPEATED_ATTEMPTS;
-            } else if (old_pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD) {
-                result = HCI_ERR_HOST_REJECT_SECURITY;
-            }
-            (*btm_cb.api.p_auth_complete_callback) (p_dev_rec->bd_addr,     p_dev_rec->dev_class,
-                                                    p_dev_rec->sec_bd_name, result);
-        }
-    }
-
 #if BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
     btm_ble_update_mode_operation(HCI_ROLE_UNKNOWN, p_dev_rec->bd_addr, HCI_SUCCESS);
     /* see sec_flags processing in btm_acl_removed */
@@ -4645,6 +4625,26 @@ void btm_sec_disconnected (UINT16 handle, UINT8 reason)
     }
 
     BTM_TRACE_EVENT("%s after update sec_flags=0x%x\n", __func__, p_dev_rec->sec_flags);
+
+    /* If we are in the process of bonding we need to tell client that auth failed */
+    if ( (btm_cb.pairing_state != BTM_PAIR_STATE_IDLE)
+            && (memcmp (btm_cb.pairing_bda, p_dev_rec->bd_addr, BD_ADDR_LEN) == 0)) {
+        btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE);
+        p_dev_rec->sec_flags &= ~BTM_SEC_LINK_KEY_KNOWN;
+        if (btm_cb.api.p_auth_complete_callback) {
+            /* If the disconnection reason is REPEATED_ATTEMPTS,
+               send this error message to complete callback function
+               to display the error message of Repeated attempts.
+               All others, send HCI_ERR_AUTH_FAILURE. */
+            if (reason == HCI_ERR_REPEATED_ATTEMPTS) {
+                result = HCI_ERR_REPEATED_ATTEMPTS;
+            } else if (old_pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD) {
+                result = HCI_ERR_HOST_REJECT_SECURITY;
+            }
+            (*btm_cb.api.p_auth_complete_callback) (p_dev_rec->bd_addr,     p_dev_rec->dev_class,
+                                                    p_dev_rec->sec_bd_name, result);
+        }
+    }
 }
 
 /*******************************************************************************
