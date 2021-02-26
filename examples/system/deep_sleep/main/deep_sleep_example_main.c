@@ -31,6 +31,15 @@
 #include "driver/touch_pad.h"
 #endif
 
+#ifdef CONFIG_IDF_TARGET_ESP32C3
+#define DEFAULT_WAKEUP_PIN      CONFIG_EXAMPLE_GPIO_WAKEUP_PIN
+#ifdef CONFIG_EXAMPLE_GPIO_WAKEUP_HIGH_LEVEL
+#define DEFAULT_WAKEUP_LEVEL    ESP_GPIO_WAKEUP_GPIO_HIGH
+#else
+#define DEFAULT_WAKEUP_LEVEL    ESP_GPIO_WAKEUP_GPIO_LOW
+#endif
+#endif
+
 static RTC_DATA_ATTR struct timeval sleep_enter_time;
 
 #ifdef CONFIG_EXAMPLE_ULP_TEMPERATURE_WAKEUP
@@ -106,6 +115,18 @@ void app_main(void)
             break;
         }
 #endif // CONFIG_EXAMPLE_EXT1_WAKEUP
+#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+        case ESP_SLEEP_WAKEUP_GPIO: {
+            uint64_t wakeup_pin_mask = esp_sleep_get_gpio_wakeup_status();
+            if (wakeup_pin_mask != 0) {
+                int pin = __builtin_ffsll(wakeup_pin_mask) - 1;
+                printf("Wake up from GPIO %d\n", pin);
+            } else {
+                printf("Wake up from GPIO\n");
+            }
+            break;
+        }
+#endif //SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
         case ESP_SLEEP_WAKEUP_TIMER: {
             printf("Wake up from timer. Time spent in deep sleep: %dms\n", sleep_time_ms);
             break;
@@ -162,6 +183,16 @@ void app_main(void)
     printf("Enabling EXT1 wakeup on pins GPIO%d, GPIO%d\n", ext_wakeup_pin_1, ext_wakeup_pin_2);
     esp_sleep_enable_ext1_wakeup(ext_wakeup_pin_1_mask | ext_wakeup_pin_2_mask, ESP_EXT1_WAKEUP_ANY_HIGH);
 #endif // CONFIG_EXAMPLE_EXT1_WAKEUP
+
+#ifdef CONFIG_EXAMPLE_GPIO_WAKEUP
+    const gpio_config_t config = {
+        .pin_bit_mask = BIT(DEFAULT_WAKEUP_PIN),
+        .mode = GPIO_MODE_INPUT,
+    };
+    ESP_ERROR_CHECK(gpio_config(&config));
+    ESP_ERROR_CHECK(esp_deep_sleep_enable_gpio_wakeup(BIT(DEFAULT_WAKEUP_PIN), DEFAULT_WAKEUP_LEVEL));
+    printf("Enabling GPIO wakeup on pins GPIO%d\n", DEFAULT_WAKEUP_PIN);
+#endif
 
 #ifdef CONFIG_EXAMPLE_TOUCH_WAKEUP
 #if CONFIG_IDF_TARGET_ESP32

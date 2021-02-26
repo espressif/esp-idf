@@ -72,6 +72,7 @@
 #include "esp_flash_encrypt.h"
 
 #include "hal/rtc_io_hal.h"
+#include "hal/gpio_hal.h"
 #include "hal/wdt_hal.h"
 #include "soc/rtc.h"
 #include "soc/efuse_reg.h"
@@ -474,7 +475,11 @@ void IRAM_ATTR call_start_cpu0(void)
     esp_rom_uart_set_clock_baudrate(CONFIG_ESP_CONSOLE_UART_NUM, clock_hz, CONFIG_ESP_CONSOLE_UART_BAUDRATE);
 #endif
 
+#if SOC_RTCIO_HOLD_SUPPORTED
     rtcio_hal_unhold_all();
+#else
+    gpio_hal_force_unhold_all();
+#endif
 
     esp_cache_err_int_init();
 
