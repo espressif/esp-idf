@@ -1113,7 +1113,7 @@ static uint8_t coex_schm_curr_period_get_wrapper(void)
 #if CONFIG_SW_COEXIST_ENABLE
     return coex_schm_curr_period_get();
 #else
-    return 0;
+    return 1;
 #endif
 }
 
@@ -1131,7 +1131,7 @@ static int coex_wifi_channel_get_wrapper(uint8_t *primary, uint8_t *secondary)
 #if CONFIG_SW_COEXIST_ENABLE
     return coex_wifi_channel_get(primary, secondary);
 #else
-    return 0;
+    return -1;
 #endif
 }
 
@@ -1140,7 +1140,7 @@ static int coex_register_wifi_channel_change_callback_wrapper(void *cb)
 #if CONFIG_SW_COEXIST_ENABLE
     return coex_register_wifi_channel_change_callback(cb);
 #else
-    return 0;
+    return -1;
 #endif
 }
 
@@ -1328,7 +1328,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     if (btdm_dram_available_region[0].mode == ESP_BT_MODE_IDLE) {
         return ESP_ERR_INVALID_STATE;
     }
-    
+
     osi_funcs_p = (struct osi_funcs_t *)malloc_internal_wrapper(sizeof(struct osi_funcs_t));
     if (osi_funcs_p == NULL) {
         return ESP_ERR_NO_MEM;
