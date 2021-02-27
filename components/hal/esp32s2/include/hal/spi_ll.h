@@ -1077,6 +1077,7 @@ static inline uint32_t spi_ll_slave_hd_get_last_addr(spi_dev_t* hw)
  *      RX DMA (Peripherals->DMA->RAM)
  *      TX DMA (RAM->DMA->Peripherals)
  *----------------------------------------------------------------------------*/
+//---------------------------------------------------RX-------------------------------------------------//
 /**
  * Reset RX DMA which stores the data received from a peripheral into RAM.
  *
@@ -1119,7 +1120,7 @@ static inline void spi_dma_ll_rx_enable_burst_data(spi_dma_dev_t *dma_in, uint32
 }
 
 /**
- * Enable DMA TX channel burst for descriptor
+ * Enable DMA RX channel burst for descriptor
  *
  * @param dma_in  Beginning address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
  * @param channel DMA channel, for chip version compatibility, not used.
@@ -1130,6 +1131,19 @@ static inline void spi_dma_ll_rx_enable_burst_desc(spi_dma_dev_t *dma_in, uint32
     dma_in->dma_conf.indscr_burst_en = enable;
 }
 
+/**
+ * Get the last inlink descriptor address when DMA produces in_suc_eof interrupt
+ *
+ * @param dma_in  Beginning address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
+ * @param channel DMA channel, for chip version compatibility, not used.
+ * @return        The address
+ */
+static inline uint32_t spi_dma_ll_get_in_suc_eof_desc_addr(spi_dma_dev_t *dma_in, uint32_t channel)
+{
+    return dma_in->dma_in_suc_eof_des_addr;
+}
+
+//---------------------------------------------------TX-------------------------------------------------//
 /**
  * Reset TX DMA which transmits the data from RAM to a peripheral.
  *
@@ -1202,6 +1216,18 @@ static inline void spi_dma_ll_set_out_eof_generation(spi_dma_dev_t *dma_out, uin
 static inline void spi_dma_ll_enable_out_auto_wrback(spi_dma_dev_t *dma_out, uint32_t channel, bool enable)
 {
     dma_out->dma_conf.out_auto_wrback = enable;
+}
+
+/**
+ * Get the last outlink descriptor address when DMA produces out_eof intrrupt
+ *
+ * @param dma_out Beginning address of the DMA peripheral registers which transmits the data from RAM to a peripheral.
+ * @param channel DMA channel, for chip version compatibility, not used.
+ * @return        The address
+ */
+static inline uint32_t spi_dma_ll_get_out_eof_desc_addr(spi_dma_dev_t *dma_out, uint32_t channel)
+{
+    return dma_out->dma_out_eof_des_addr;
 }
 
 static inline void spi_dma_ll_rx_restart(spi_dma_dev_t *dma_in, uint32_t channel)
