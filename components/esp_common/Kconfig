@@ -29,6 +29,13 @@ menu "Common ESP-related"
             which calls app_main(). If app_main() returns then this task is deleted
             and its stack memory is freed.
 
+    config ESP_MAIN_TASK_CORE_AFFINITY
+        int "Main task core affinity"
+        default 0
+        help
+            Configure the "main task" core affinity. This is the used core of the task
+            which calls app_main(). If app_main() returns then this task is deleted.
+
     config ESP_IPC_TASK_STACK_SIZE
         int "Inter-Processor Call (IPC) task stack size"
         range 512 65536 if !APPTRACE_ENABLE
