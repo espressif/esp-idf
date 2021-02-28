@@ -340,40 +340,14 @@ const esp_phy_init_data_t* esp_phy_get_init_data(void)
         memcpy(init_data_store + sizeof(phy_init_magic_pre) + sizeof(phy_init_data),
                PHY_INIT_MAGIC, sizeof(phy_init_magic_post));
 
+        assert(memcmp(init_data_store, PHY_INIT_MAGIC, sizeof(phy_init_magic_pre)) == 0);
+        assert(memcmp(init_data_store + init_data_store_length - sizeof(phy_init_magic_post),
+                      PHY_INIT_MAGIC, sizeof(phy_init_magic_post)) == 0);
+
         // write default data
         err = esp_partition_write(partition, 0, init_data_store, init_data_store_length);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "failed to write default PHY data partition (0x%x)", err);
-            free(init_data_store);
-            return NULL;
-        }
-
-        memset(init_data_store, 0, init_data_store_length);
-
-        // verify by reading again from flash
-        esp_err_t err = esp_partition_read(partition, 0, init_data_store, init_data_store_length);
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "failed to read PHY data partition second time (0x%x)", err);
-            free(init_data_store);
-            return NULL;
-        }
-
-        if (memcmp(init_data_store, PHY_INIT_MAGIC, sizeof(phy_init_magic_pre)) != 0)
-        {
-            ESP_LOGE(TAG, "failed to validate PHY data partition second time PRE");
-        }
-
-        if (memcmp(init_data_store + init_data_store_length - sizeof(phy_init_magic_post),
-                   PHY_INIT_MAGIC, sizeof(phy_init_magic_post)) != 0)
-        {
-            ESP_LOGE(TAG, "failed to validate PHY data partition second time POST");
-        }
-
-        // if still not valid flash might be damaged
-        if (memcmp(init_data_store, PHY_INIT_MAGIC, sizeof(phy_init_magic_pre)) != 0 ||
-            memcmp(init_data_store + init_data_store_length - sizeof(phy_init_magic_post),
-                    PHY_INIT_MAGIC, sizeof(phy_init_magic_post)) != 0) {
-            ESP_LOGE(TAG, "failed to validate PHY data partition second time");
             free(init_data_store);
             return NULL;
         }
