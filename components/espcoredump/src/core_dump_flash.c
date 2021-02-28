@@ -392,8 +392,8 @@ esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size)
 
     /* Verify that the size read from the flash is not corrupted. */
     if (size == 0xFFFFFFFF) {
-        ESP_LOGD(TAG, "Blank core dump partition!");
-        err = ESP_ERR_INVALID_SIZE;
+        ESP_LOGD(TAG, "Coredump not found, blank core dump partition!");
+        err = ESP_ERR_NOT_FOUND;
     } else if ((size < sizeof(uint32_t)) || (size > core_part->size)) {
         ESP_LOGE(TAG, "Incorrect size of core dump image: %d", size);
         err = ESP_ERR_INVALID_SIZE;
@@ -459,3 +459,37 @@ esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size)
 }
 
 #endif
+
+esp_err_t esp_core_dump_image_erase()
+{
+    /* Find the partition that could potentially contain a (previous) core dump. */
+    const esp_partition_t *core_part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
+                                                                ESP_PARTITION_SUBTYPE_DATA_COREDUMP,
+                                                                NULL);
+    if (!core_part) {
+        ESP_LOGE(TAG, "No core dump partition found!");
+        return ESP_ERR_NOT_FOUND;
+    }
+    if (core_part->size < sizeof(uint32_t)) {
+        ESP_LOGE(TAG, "Too small core dump partition!");
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    esp_err_t err = ESP_OK;
+    err = esp_partition_erase_range(core_part, 0, core_part->size);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to erase core dump partition (%d)!", err);
+        return err;
+    }
+
+    // on encrypted flash esp_partition_erase_range will leave encrypted
+    // garbage instead of 0xFFFFFFFF so overwriting again to safely signalize
+    // deleted coredumps
+    const uint32_t invalid_size = 0xFFFFFFFF;
+    err = esp_partition_write(core_part, 0, &invalid_size, sizeof(invalid_size));
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to write core dump partition size (%d)!", err);
+    }
+
+    return err;
+}
