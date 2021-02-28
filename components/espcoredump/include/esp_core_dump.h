@@ -89,6 +89,15 @@ void esp_core_dump_to_uart(panic_info_t *info);
  */
 esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size);
 
+/**
+ * @brief  Erases coredump data in flash. esp_core_dump_image_get() will then return
+ *         ESP_ERR_NOT_FOUND. Can be used after a coredump has been transmitted successfully.
+ *         This function is always available, even when core dump is disabled in menuconfig.
+ *
+ * @return ESP_OK on success, otherwise \see esp_err_t
+ */
+esp_err_t esp_core_dump_image_erase();
+
 #ifdef __cplusplus
 }
 #endif
