@@ -37,6 +37,11 @@ if(CONFIG_ETH_ENABLED)
                          "src/esp_eth_phy_w5500.c")
     endif()
 
+    if(CONFIG_ETH_SPI_ETHERNET_KSZ8851SNL)
+        list(APPEND srcs "src/esp_eth_mac_ksz8851snl.c"
+                         "src/esp_eth_phy_ksz8851snl.c")
+    endif()
+
     if(CONFIG_ETH_USE_OPENETH)
         list(APPEND srcs "src/esp_eth_mac_openeth.c")
     endif()
