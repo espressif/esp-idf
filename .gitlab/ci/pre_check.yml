@@ -29,7 +29,7 @@ check_pre_commit_MR:
     - .check_pre_commit_template
     - .rules:dev
   script:
-    - python ${CI_PROJECT_DIR}/tools/ci/ci_get_mr_info.py files ${CI_COMMIT_BRANCH} | xargs pre-commit run --files
+    - python ${CI_PROJECT_DIR}/tools/ci/ci_get_mr_info.py files ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME} | xargs pre-commit run --files
 
 check_version:
   # Don't run this for feature/bugfix branches, so that it is possible to modify
