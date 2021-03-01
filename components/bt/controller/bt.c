@@ -1328,7 +1328,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     if (btdm_dram_available_region[0].mode == ESP_BT_MODE_IDLE) {
         return ESP_ERR_INVALID_STATE;
     }
-    
+
     osi_funcs_p = (struct osi_funcs_t *)malloc_internal_wrapper(sizeof(struct osi_funcs_t));
     if (osi_funcs_p == NULL) {
         return ESP_ERR_NO_MEM;
@@ -1538,15 +1538,11 @@ esp_err_t esp_bt_controller_deinit(void)
 static void bt_shutdown(void)
 {
     esp_err_t ret = ESP_OK;
-    ESP_LOGD(BTDM_LOG_TAG, "stop/deinit bt");
+    ESP_LOGD(BTDM_LOG_TAG, "stop Bluetooth");
 
     ret = esp_bt_controller_disable();
     if (ESP_OK != ret) {
         ESP_LOGW(BTDM_LOG_TAG, "controller disable ret=%d", ret);
-    }
-    ret = esp_bt_controller_deinit();
-    if (ESP_OK != ret) {
-        ESP_LOGW(BTDM_LOG_TAG, "controller deinit ret=%d", ret);
     }
     return;
 }
