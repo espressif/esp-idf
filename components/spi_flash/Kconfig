@@ -114,7 +114,18 @@ menu "SPI Flash driver"
         help
             Defines how many ticks will be before returning to continue a erasing.
 
+    config SPI_FLASH_OVERRIDE_CHIP_DRIVER_LIST
+        bool "Override default chip driver list"
+        depends on !SPI_FLASH_USE_LEGACY_IMPL
+        default n
+        help
+            This option allows customize the chip driver list, instead of using the default one provided by IDF.
+            When this option is enabled, the default list is no longer compiled or linked. `default_registered_chips` structure should be provided by the user.
+
+            See example: custom_chip_driver under examples/storage for more details.
+
     menu "Auto-detect flash chips"
+        visible if !SPI_FLASH_OVERRIDE_CHIP_DRIVER_LIST
 
         config SPI_FLASH_SUPPORT_ISSI_CHIP
             bool "ISSI"
