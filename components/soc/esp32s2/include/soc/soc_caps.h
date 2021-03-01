@@ -48,6 +48,8 @@
 #define SOC_ULP_SUPPORTED               1
 #define SOC_RTC_SLOW_MEM_SUPPORTED      1
 #define SOC_CCOMP_TIMER_SUPPORTED       1
+#define SOC_DIG_SIGN_SUPPORTED          1
+#define SOC_HMAC_SUPPORTED              1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS 3
 
 #define SOC_CACHE_SUPPORT_WRAP          1
