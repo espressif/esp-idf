@@ -84,22 +84,29 @@ _Static_assert((RX_FIFO_LEN + NPTX_FIFO_LEN + PTX_FIFO_LEN + REG_FIFO_LEN) <= HW
  * The following channel interrupt bits are currently checked (in order LSB to MSB)
  * - USBH_LL_INTR_CHAN_XFERCOMPL
  * - USBH_LL_INTR_CHAN_CHHLTD
- * - USBH_LL_INTR_CHAN_AHBERR
  * - USBH_LL_INTR_CHAN_STALL
  * - USBH_LL_INTR_CHAN_BBLEER
  * - USBH_LL_INTR_CHAN_BNAINTR
  * - USBH_LL_INTR_CHAN_XCS_XACT_ERR
  *
+ * Note the following points about channel interrupts:
  * - Not all bits are unmaskable under scatter/gather
  * - Those bits proxy their interrupt through the USBH_LL_INTR_CHAN_CHHLTD bit
  * - USBH_LL_INTR_CHAN_XCS_XACT_ERR is always unmasked
+ * - When USBH_LL_INTR_CHAN_BNAINTR occurs, USBH_LL_INTR_CHAN_CHHLTD will NOT.
+ * - USBH_LL_INTR_CHAN_AHBERR doesn't actually ever happen on our system )i.e., ESP32S2 and later):
+ *      - If the QTD list's starting address is an invalid address (e.g., NULL), the core will attempt to fetch that
+ *        address for a transfer descriptor and probably gets all zeroes. It will interpret the zero as a bad QTD and
+ *        return a USBH_LL_INTR_CHAN_BNAINTR instead.
+ *      - If the QTD's buffer pointer is an invalid address, the core will attempt to read/write data to/from that
+ *        invalid buffer address with NO INDICATION OF ERROR. The transfer will be acknowledged and treated as
+ *        successful. Bad buffer pointers MUST BE CHECKED FROM HIGHER LAYERS INSTEAD.
  */
 #define CHAN_INTRS_EN_MSK   (USBH_LL_INTR_CHAN_XFERCOMPL | \
                              USBH_LL_INTR_CHAN_CHHLTD | \
                              USBH_LL_INTR_CHAN_BNAINTR)
 
-#define CHAN_INTRS_ERROR_MSK  (USBH_LL_INTR_CHAN_AHBERR | \
-                               USBH_LL_INTR_CHAN_STALL | \
+#define CHAN_INTRS_ERROR_MSK  (USBH_LL_INTR_CHAN_STALL | \
                                USBH_LL_INTR_CHAN_BBLEER | \
                                USBH_LL_INTR_CHAN_BNAINTR | \
                                USBH_LL_INTR_CHAN_XCS_XACT_ERR)
@@ -164,8 +171,11 @@ void usbh_hal_core_soft_reset(usbh_hal_context_t *hal)
     }
     //Set the default bits
     set_defaults(hal);
-    //Clear all the flags
+    //Clear all the flags and channels
     hal->flags.val = 0;
+    hal->channels.num_allocd = 0;
+    hal->channels.chan_pend_intrs_msk = 0;
+    memset(hal->channels.hdls, 0, sizeof(usbh_hal_chan_t *) * USBH_HAL_NUM_CHAN);
 }
 
 /* -----------------------------------------------------------------------------
@@ -181,11 +191,12 @@ static inline void debounce_lock_enable(usbh_hal_context_t *hal)
 
 void usbh_hal_port_enable(usbh_hal_context_t *hal)
 {
+    usb_speed_t speed = usbh_ll_hprt_get_speed(hal->dev);
     //Host Configuration
-    usbh_ll_hcfg_set_defaults(hal->dev);
+    usbh_ll_hcfg_set_defaults(hal->dev, speed);
     //Todo: Set frame list entries and ena per sched
     //Configure HFIR
-    usbh_ll_hfir_set_defaults(hal->dev);
+    usbh_ll_hfir_set_defaults(hal->dev, speed);
     //Config FIFO sizes
     usb_ll_set_rx_fifo_size(hal->dev, RX_FIFO_LEN);
     usb_ll_set_nptx_fifo_size(hal->dev, RX_FIFO_LEN, NPTX_FIFO_LEN);
@@ -225,7 +236,7 @@ bool usbh_hal_chan_alloc(usbh_hal_context_t *hal, usbh_hal_chan_t *chan_obj, voi
     usbh_ll_chan_intr_read_and_clear(chan_obj->regs);            //Clear the interrupt bits for that channel
     usbh_ll_haintmsk_en_chan_intr(hal->dev, 1 << chan_obj->flags.chan_idx);
     usbh_ll_chan_set_intr_mask(chan_obj->regs, CHAN_INTRS_EN_MSK);  //Unmask interrupts for this channel
-    usbh_ll_chan_set_pid(chan_obj->regs, 0);      //Set the initial PID to zero
+    usbh_ll_chan_set_pid(chan_obj->regs, 0);        //Set the initial PID to zero
     usbh_ll_chan_hctsiz_init(chan_obj->regs);       //Set the non changing parts of the HCTSIZ registers (e.g., do_ping and sched info)
     return true;
 }
@@ -235,8 +246,8 @@ void usbh_hal_chan_free(usbh_hal_context_t *hal, usbh_hal_chan_t *chan_obj)
 {
     //Can only free a channel when in the disabled state and descriptor list released
     assert(!chan_obj->slot.flags.slot_acquired
-                      && !chan_obj->flags.active
-                      && !chan_obj->flags.error_pending);
+           && !chan_obj->flags.active
+           && !chan_obj->flags.error_pending);
     //Deallocate channel
     hal->channels.hdls[chan_obj->flags.chan_idx] = NULL;
     hal->channels.num_allocd--;
@@ -255,7 +266,8 @@ void usbh_hal_chan_set_ep_char(usbh_hal_chan_t *chan_obj, usbh_hal_ep_char_t *ep
                              ep_char->bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_NUM_MASK,
                              ep_char->mps,
                              ep_char->type,
-                             ep_char->bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_DIR_MASK);
+                             ep_char->bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_DIR_MASK,
+                             ep_char->ls_via_fs_hub);
 }
 
 /* -----------------------------------------------------------------------------
@@ -278,11 +290,11 @@ void usbh_hal_chan_activate(usbh_hal_chan_t *chan_obj, int num_to_skip)
     usbh_ll_chan_start(chan_obj->regs);
 }
 
-bool usbh_hal_chan_request_halt(usbh_hal_chan_t *chan_obj)
+bool usbh_hal_chan_slot_request_halt(usbh_hal_chan_t *chan_obj)
 {
     //Cannot request halt on a channel that is pending error handling
     assert(!chan_obj->flags.error_pending);
-    if (usbh_ll_chan_is_active(chan_obj->regs)) {
+    if (usbh_ll_chan_is_active(chan_obj->regs) || chan_obj->flags.active) {
         usbh_ll_chan_halt(chan_obj->regs);
         chan_obj->flags.halt_requested = 1;
         return false;
@@ -294,6 +306,16 @@ bool usbh_hal_chan_request_halt(usbh_hal_chan_t *chan_obj)
 -------------------------------- Event Handling --------------------------------
 ----------------------------------------------------------------------------- */
 
+//When a device on the port is no longer valid (e.g., disconnect, port error). All channels are no longer valid
+static void chan_all_halt(usbh_hal_context_t *hal)
+{
+    for (int i = 0; i < USBH_HAL_NUM_CHAN; i++) {
+        if (hal->channels.hdls[i] != NULL) {
+            hal->channels.hdls[i]->flags.active = 0;
+        }
+    }
+}
+
 usbh_hal_port_event_t usbh_hal_decode_intr(usbh_hal_context_t *hal)
 {
     uint32_t intrs_core = usb_ll_intr_read_and_clear(hal->dev);  //Read and clear core interrupts
@@ -304,7 +326,7 @@ usbh_hal_port_event_t usbh_hal_decode_intr(usbh_hal_context_t *hal)
     }
     //Note: Do not change order of checks. Regressing events (e.g. enable -> disabled, connected -> connected)
     //always take precendance. ENABLED < DISABLED < CONN < DISCONN < OVRCUR
-    usbh_hal_port_event_t event = -1;
+    usbh_hal_port_event_t event = USBH_HAL_PORT_EVENT_NONE;
 
     //Check if this is a core or port event
     if ((intrs_core & CORE_EVENTS_INTRS_MSK) || (intrs_port & PORT_EVENTS_INTRS_MSK)) {
@@ -312,11 +334,13 @@ usbh_hal_port_event_t usbh_hal_decode_intr(usbh_hal_context_t *hal)
         if (intrs_core & USB_LL_INTR_CORE_DISCONNINT) {
             event = USBH_HAL_PORT_EVENT_DISCONN;
             debounce_lock_enable(hal);
+            chan_all_halt(hal); //All channels are halted on a disconnect
             //Mask the port connection and disconnection interrupts to prevent repeated triggering
         } else if (intrs_port & USBH_LL_INTR_HPRT_PRTOVRCURRCHNG) {
             //Check if this is an overcurrent or an overcurrent cleared
             if (usbh_ll_hprt_get_port_overcur(hal->dev)) {
                 event = USBH_HAL_PORT_EVENT_OVRCUR;
+                chan_all_halt(hal); //All channels are halted on an overcurrent
             } else {
                 event = USBH_HAL_PORT_EVENT_OVRCUR_CLR;
             }
@@ -325,13 +349,15 @@ usbh_hal_port_event_t usbh_hal_decode_intr(usbh_hal_context_t *hal)
                 event = USBH_HAL_PORT_EVENT_ENABLED;
             } else {    //Host port has been disabled
                 event = USBH_HAL_PORT_EVENT_DISABLED;
+                chan_all_halt(hal); //All channels are halted when the port is disabled
             }
         } else if (intrs_port & USBH_LL_INTR_HPRT_PRTCONNDET && !hal->flags.dbnc_lock_enabled) {
             event = USBH_HAL_PORT_EVENT_CONN;
             debounce_lock_enable(hal);
         }
     }
-    if (intrs_core & USB_LL_INTR_CORE_HCHINT) {
+    //Port events always take precendance over channel events
+    if (event == USBH_HAL_PORT_EVENT_NONE && (intrs_core & USB_LL_INTR_CORE_HCHINT)) {
         //One or more channels have pending interrupts. Store the mask of those channels
         hal->channels.chan_pend_intrs_msk = usbh_ll_get_chan_intrs_msk(hal->dev);
         event = USBH_HAL_PORT_EVENT_CHAN;
@@ -355,17 +381,15 @@ usbh_hal_chan_event_t usbh_hal_chan_decode_intr(usbh_hal_chan_t *chan_obj)
 {
     uint32_t chan_intrs = usbh_ll_chan_intr_read_and_clear(chan_obj->regs);
     usbh_hal_chan_event_t chan_event;
-    //Currently, all cases where channel interrupts occur will also halt the channel
-    assert(chan_intrs & USBH_LL_INTR_CHAN_CHHLTD);
+    //Currently, all cases where channel interrupts occur will also halt the channel, except for BNA
+    assert(chan_intrs & (USBH_LL_INTR_CHAN_CHHLTD | USBH_LL_INTR_CHAN_BNAINTR));
     chan_obj->flags.active = 0;
     //Note: Do not change the current checking order of checks. Certain interrupts (e.g., errors) have precedence over others
     if (chan_intrs & CHAN_INTRS_ERROR_MSK) {  //One of the error interrupts has occurred.
         //Note: Errors are uncommon, so we check against the entire interrupt mask to reduce frequency of entering this call path
         //Store the error in hal context
         usbh_hal_chan_error_t error;
-        if (chan_intrs & USBH_LL_INTR_CHAN_AHBERR) {
-            error = USBH_HAL_CHAN_ERROR_AHB;
-        } else if (chan_intrs & USBH_LL_INTR_CHAN_STALL) {
+        if (chan_intrs & USBH_LL_INTR_CHAN_STALL) {
             error = USBH_HAL_CHAN_ERROR_STALL;
         } else if (chan_intrs & USBH_LL_INTR_CHAN_BBLEER) {
             error = USBH_HAL_CHAN_ERROR_PKT_BBL;
@@ -393,8 +417,8 @@ usbh_hal_chan_event_t usbh_hal_chan_decode_intr(usbh_hal_chan_t *chan_obj)
             chan_event = USBH_HAL_CHAN_EVENT_SLOT_HALT;
         }
     } else {
-        //Channel halted suddenly (i.e,, a disconnect)
-        chan_event = USBH_HAL_CHAN_EVENT_SUDDEN_HLT;
+        //Should never reach this point
+        abort();
     }
     return chan_event;
 }
