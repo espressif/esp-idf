@@ -119,3 +119,13 @@ To clearly show how the SSP aggregate with the SPP , we use the Commands and Eff
 - If you want to update the responses of HF Unit or want to update the log, please refer to `bt_app_spp.c`.
 
 - Task configuration part is in `example_spp_initiator_demo.c`.
+
+## FAQ
+Q: How can we reach the maximum throughput when using SPP?
+A: The default MTU size of classic Bluetooth SPP on ESP32 is 990 bytes, and higher throughput can be achieved in the case that data chunck size is close to the MTU size or multiple of MTU size. For example, sending 100 bytes data per second is much better than sending 10 bytes every 100 milliseconds.
+
+Q: What is the difference between the event `ESP_SPP_CONG_EVT` and the parameter `cong` of the event `ESP_SPP_WRITE_EVT`?
+A: The event `ESP_SPP_CONG_EVT` shows the changing status from `congest` to `uncongest`, or form `uncongest` to `congest`. Congestion can have many causes, such as using out of the credit which is sent by peer, reaching the high watermark of the Tx buffer, the congestion at Bluetooth L2CAP layer and so on. The parameter `cong` of the event `ESP_SPP_WRITE_EVT` shows a snapshot of the state of the flow control manager after the write operation is completed. The user needs to carefully consider retransmitting or continuing to write according to these two events. The ESP32 offers an VFS mode of SPP which hides the details of retransmitting, but it will block the caller and is not more efficient than the callback mode.
+
+Q: How many SPP clients does ESP32 support?
+A: The ESP32 supports maximum 8 SPP clients, which including virtual SPP connections. Virtual SPP connection means that SPP clients can connect to the different SPP servers running on the same peer device. However the number of SPP clients (excluding virtual connections) shall not exceed the number of Bluetooth ACL connections.
