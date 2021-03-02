@@ -8,4 +8,54 @@ menu "Example CoAP Server Configuration"
             The Preshared Key to use to encrypt the communicatons. The same key must be
             used at both ends of the CoAP connection, and the CoaP client must request
             an URI prefixed with coaps:// instead of coap:// for DTLS to be used.
+
+    choice EXAMPLE_COAP_MCAST_IP_MODE
+        prompt "Receive Multicast IP type"
+        help
+            Example can receive multicast IPV4, IPV6, both or none.
+
+        config EXAMPLE_COAP_MCAST_NONE
+            bool "None"
+
+        config EXAMPLE_COAP_MCAST_IPV4_V6
+            bool "IPV4 & IPV6"
+            select EXAMPLE_COAP_MCAST_IPV4
+            select EXAMPLE_COAP_MCAST_IPV6
+
+        config EXAMPLE_COAP_MCAST_IPV4_ONLY
+            bool "IPV4"
+            select EXAMPLE_COAP_MCAST_IPV4
+
+        config EXAMPLE_COAP_MCAST_IPV6_ONLY
+            bool "IPV6"
+            select EXAMPLE_COAP_MCAST_IPV6
+
+    endchoice
+
+    config EXAMPLE_COAP_MCAST_IPV4
+        bool
+    config EXAMPLE_COAP_MCAST_IPV6
+        bool
+        select EXAMPLE_CONNECT_IPV6 if IDF_TARGET_ESP32
+
+    config EXAMPLE_COAP_MULTICAST_IPV4_ADDR
+        string "CoAP Multicast IPV4 Address (receive)"
+        default "224.0.1.187"
+        depends on EXAMPLE_COAP_MCAST_IPV4
+        help
+            IPV4 multicast address to receive multicast traffic on.
+
+            The default CoAP IPV4 address is 224.0.1.187.
+
+    config EXAMPLE_COAP_MULTICAST_IPV6_ADDR
+        string "CoAP Multicast IPV6 Address (receive)"
+        default "FF02::FD"
+        depends on EXAMPLE_COAP_MCAST_IPV6
+        help
+            IPV6 multicast address to receive multicast traffic on.
+
+            The default CoAP FF02::FD address is a link-local multicast address.
+            Consult IPV6 specifications or documentation for information about
+            meaning of different IPV6 multicast ranges.
+
 endmenu

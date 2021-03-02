@@ -43,6 +43,8 @@ Component config  --->
   CoAP Configuration  --->
     * Set encryption method definition, PSK (default) or PKI
     * Enable CoAP debugging if required
+  High resolution timer (esp_timer)  --->
+    * Hardware timer to use for esp_timer - change if required (FRC2 for QEMU)
 
 ### Build and Flash
 
@@ -86,7 +88,11 @@ published under EPL+EDL: http://www.eclipse.org/californium/
 ```
 
 ## libcoap Documentation
-This can be found at https://libcoap.net/doc/reference/4.2.0/
+This can be found at [libcoap Documentation](https://libcoap.net/documentation.html).
+The current API is 4.3.0.
+
+## libcoap Specific Issues
+These can be raised at [libcoap Issues](https://github.com/obgm/libcoap/issues).
 
 ## Troubleshooting
 * Please make sure Target Url includes valid `host`, optional `port`,
