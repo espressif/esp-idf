@@ -344,7 +344,7 @@ class Mapping(Fragment):
 
         @staticmethod
         def get_grammar():
-            grammar = Keyword('KEEP').setParseAction(Mapping.Keep)
+            grammar = Keyword('KEEP()').setParseAction(Mapping.Keep)
             return grammar
 
         def __eq__(self, other):

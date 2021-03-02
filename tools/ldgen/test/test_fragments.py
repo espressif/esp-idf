@@ -818,8 +818,8 @@ entries:
 archive: libmain.a
 entries:
     obj1 (default);
-        text->flash_text KEEP,
-        rodata->flash_rodata KEEP KEEP
+        text->flash_text KEEP(),
+        rodata->flash_rodata KEEP() KEEP()
 """)
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
 
@@ -930,8 +930,8 @@ entries:
 archive: libmain.a
 entries:
     obj1 (default);
-        text->flash_text ALIGN(4) KEEP SURROUND(sym1) ALIGN(8) SORT(name),
-        rodata->flash_rodata KEEP ALIGN(4) KEEP SURROUND(sym1) ALIGN(8) ALIGN(4) SORT(name)
+        text->flash_text ALIGN(4) KEEP() SURROUND(sym1) ALIGN(8) SORT(name),
+        rodata->flash_rodata KEEP() ALIGN(4) KEEP() SURROUND(sym1) ALIGN(8) ALIGN(4) SORT(name)
 """)
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
         fragment = fragment_file.fragments[0]
@@ -960,8 +960,8 @@ entries:
 archive: libmain.a
 entries:
     obj1 (default);
-        text->flash_text ALIGN(4) KEEP SURROUND(sym1) SORT(name),
-        text->flash_text ALIGN(4) KEEP SURROUND(sym1) SORT(name)
+        text->flash_text ALIGN(4) KEEP() SURROUND(sym1) SORT(name),
+        text->flash_text ALIGN(4) KEEP() SURROUND(sym1) SORT(name)
 """)
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
         fragment = fragment_file.fragments[0]
@@ -987,9 +987,9 @@ entries:
 archive: libmain.a
 entries:
     obj1 (default);
-        text->flash_text ALIGN(4) KEEP SURROUND(sym1) SORT(name)
+        text->flash_text ALIGN(4) KEEP() SURROUND(sym1) SORT(name)
     obj1 (default);
-        text->flash_text ALIGN(4) KEEP SURROUND(sym1) SORT(name)
+        text->flash_text ALIGN(4) KEEP() SURROUND(sym1) SORT(name)
 """)
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
         fragment = fragment_file.fragments[0]
