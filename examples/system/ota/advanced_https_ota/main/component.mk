@@ -4,3 +4,6 @@
 # (Uses default behaviour of compiling all source files in directory, adding 'include' to include path.)
 
 COMPONENT_EMBED_TXTFILES :=  ${PROJECT_PATH}/server_certs/ca_cert.pem
+
+COMPONENT_ADD_INCLUDEDIRS += ./ble_helper/include
+COMPONENT_SRCDIRS += ./ble_helper/
