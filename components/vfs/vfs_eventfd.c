@@ -15,6 +15,7 @@
 
 #include "esp_vfs_eventfd.h"
 
+#include <errno.h>
 #include <fcntl.h>
 #include <stdint.h>
 #include <string.h>
@@ -59,7 +60,7 @@ static esp_err_t event_start_select(int                  nfds,
         _lock_acquire_recursive(&s_events[i].lock);
         int fd = s_events[i].fd;
 
-        if (fd != FD_INVALID) {
+        if (fd != FD_INVALID && fd < nfds) {
             if (s_events[i].support_isr) {
                 portENTER_CRITICAL(&s_events[i].data_spin_lock);
             }
@@ -76,7 +77,6 @@ static esp_err_t event_start_select(int                  nfds,
             if (FD_ISSET(fd, readfds)) {
                 s_events[i].read_fds = readfds;
                 if (s_events[i].is_set) {
-                    s_events[i].is_set = false;
                     should_trigger = true;
                 } else {
                     FD_CLR(fd, readfds);
@@ -108,7 +108,6 @@ static esp_err_t event_end_select(void *end_select_args)
         memset(&s_events[i].signal_sem, 0, sizeof(s_events[i].signal_sem));
         if (s_events[i].read_fds && s_events[i].is_set) {
             FD_SET(s_events[i].fd, s_events[i].read_fds);
-            s_events[i].is_set = false;
             s_events[i].read_fds = NULL;
         }
         if (s_events[i].write_fds) {
@@ -145,7 +144,7 @@ static int event_open(const char *path, int flags, int mode)
 }
 
 
-ssize_t esp_signal_event_fd_from_isr(int fd, const void *data, size_t size)
+static ssize_t signal_event_fd_from_isr(int fd, const void *data, size_t size)
 {
     BaseType_t task_woken = pdFALSE;
     const uint64_t *val = (const uint64_t *)data;
@@ -171,14 +170,16 @@ static ssize_t event_write(int fd, const void *data, size_t size)
     ssize_t ret = -1;
 
     if (fd >= NUM_EVENT_FDS || data == NULL || size != sizeof(uint64_t)) {
+        errno = EINVAL;
         return ret;
     }
     if (size != sizeof(uint64_t)) {
+        errno = EINVAL;
         return ret;
     }
 
     if (xPortInIsrContext()) {
-        ret = esp_signal_event_fd_from_isr(fd, data, size);
+        ret = signal_event_fd_from_isr(fd, data, size);
     } else {
         const uint64_t *val = (const uint64_t *)data;
         _lock_acquire_recursive(&s_events[fd].lock);
@@ -206,9 +207,11 @@ static ssize_t event_read(int fd, void *data, size_t size)
     ssize_t ret = -1;
 
     if (fd >= NUM_EVENT_FDS) {
+        errno = EINVAL;
         return ret;
     }
     if (size != sizeof(uint64_t)) {
+        errno = EINVAL;
         return ret;
     }
 
@@ -220,6 +223,7 @@ static ssize_t event_read(int fd, void *data, size_t size)
             portENTER_CRITICAL(&s_events[fd].data_spin_lock);
         }
         *val = s_events[fd].value;
+        s_events[fd].is_set = false;
         ret = size;
         s_events[fd].value = 0;
         if (s_events[fd].support_isr) {
@@ -255,7 +259,7 @@ static int event_close(int fd)
     }
 
     _lock_release_recursive(&s_events[fd].lock);
-    _lock_close(&s_events[fd].lock);
+    _lock_close_recursive(&s_events[fd].lock);
     return ret;
 }
 
@@ -294,12 +298,18 @@ esp_err_t esp_vfs_eventfd_unregister(void)
 
 int eventfd(unsigned int initval, int flags)
 {
-    int fd = -1;
+    int fd = FD_INVALID;
+
+    if ((flags & (~EFD_SUPPORT_ISR)) != 0) {
+        errno = EINVAL;
+        return FD_INVALID;
+    }
 
     for (size_t i = 0; i < NUM_EVENT_FDS; i++) {
         bool support_isr = flags & EFD_SUPPORT_ISR;
         bool has_allocated = false;
 
+        _lock_init_recursive(&s_events[i].lock);
         _lock_acquire_recursive(&s_events[i].lock);
         if (s_events[i].fd == FD_INVALID) {
             s_events[i].fd = i;
@@ -327,5 +337,5 @@ int eventfd(unsigned int initval, int flags)
             return fd;
         }
     }
-    return -1;
+    return FD_INVALID;
 }

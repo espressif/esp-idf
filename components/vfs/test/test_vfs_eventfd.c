@@ -14,171 +14,242 @@
 
 #include "esp_vfs_eventfd.h"
 
-#include <stdint.h>
-#include <stdio.h>
+#include <errno.h>
 #include <sys/select.h>
 
-#include "driver/periph_ctrl.h"
 #include "driver/timer.h"
-#include "esp_err.h"
-#include "esp_types.h"
 #include "esp_vfs.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/portmacro.h"
-#include "freertos/projdefs.h"
-#include "freertos/queue.h"
-#include "freertos/task.h"
-#include "hal/timer_types.h"
+#include "sys/_stdint.h"
 #include "unity.h"
 
-#define TIMER_DIVIDER         16
-#define TIMER_SCALE           (TIMER_BASE_CLK / TIMER_DIVIDER)
-#define TIMER_INTERVAL0_SEC   (0.25)
-#define TEST_WITHOUT_RELOAD   0
-#define PROGRESS_INTERVAL_MS  350
-#define TIMER_SIGNAL          1
-#define PROGRESS_SIGNAL       2
-
-int s_timer_fd;
-int s_progress_fd;
-
-/*
- * A simple helper function to print the raw timer counter value
- * and the counter value converted to seconds
- */
-static void inline print_timer_counter(uint64_t counter_value)
+TEST_CASE("Test eventfd create and close", "[vfs][eventfd]")
 {
-    printf("Counter: 0x%08x%08x\n", (uint32_t) (counter_value >> 32),
-           (uint32_t) (counter_value));
-    printf("Time   : %.8f s\n", (double) counter_value / TIMER_SCALE);
+    TEST_ESP_OK(esp_vfs_eventfd_register());
+    int fd = eventfd(0, 0);
+    TEST_ASSERT_GREATER_OR_EQUAL(0, fd);
+    TEST_ASSERT_EQUAL(0, close(fd));
+
+    fd = eventfd(0, EFD_SUPPORT_ISR);
+    TEST_ASSERT_GREATER_OR_EQUAL(0, fd);
+    TEST_ASSERT_EQUAL(0, close(fd));
+    TEST_ESP_OK(esp_vfs_eventfd_unregister());
 }
 
-void IRAM_ATTR timer_group0_isr(void *para)
+TEST_CASE("Test eventfd reject unknown flags", "[vfs][eventfd]")
 {
-    timer_spinlock_take(TIMER_GROUP_0);
-    int timer_idx = (int) para;
+    TEST_ESP_OK(esp_vfs_eventfd_register());
+    int fd = eventfd(0, 1);
+    TEST_ASSERT_LESS_THAN(0, fd);
+    TEST_ASSERT_EQUAL(EINVAL, errno);
 
-    uint32_t timer_intr = timer_group_get_intr_status_in_isr(TIMER_GROUP_0);
-    uint64_t timer_counter_value = timer_group_get_counter_value_in_isr(TIMER_GROUP_0, timer_idx);
-
-    if (timer_intr & TIMER_INTR_T0) {
-        timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_0);
-        timer_counter_value += (uint64_t) (TIMER_INTERVAL0_SEC * TIMER_SCALE);
-        timer_group_set_alarm_value_in_isr(TIMER_GROUP_0, timer_idx, timer_counter_value);
-    }
-
-    timer_group_enable_alarm_in_isr(TIMER_GROUP_0, timer_idx);
-
-    uint64_t signal = TIMER_SIGNAL;
-    ssize_t val = write(s_timer_fd, &signal, sizeof(signal));
-    assert(val == sizeof(signal));
-    timer_spinlock_give(TIMER_GROUP_0);
+    fd = eventfd(0, INT_MAX);
+    TEST_ASSERT_LESS_THAN(0, fd);
+    TEST_ASSERT_EQUAL(EINVAL, errno);
+    TEST_ESP_OK(esp_vfs_eventfd_unregister());
 }
 
-static void eventfd_timer_init(int timer_idx, double timer_interval_sec)
+TEST_CASE("Test eventfd read", "[vfs][eventfd]")
 {
+    TEST_ESP_OK(esp_vfs_eventfd_register());
+    unsigned int initval = 123;
+    int fd = eventfd(initval, 0);
+    TEST_ASSERT_GREATER_OR_EQUAL(0, fd);
+
+    uint64_t val = 0;
+    TEST_ASSERT_EQUAL(sizeof(val), read(fd, &val, sizeof(val)));
+    TEST_ASSERT_EQUAL(initval, val);
+    TEST_ASSERT_EQUAL(sizeof(val), read(fd, &val, sizeof(val)));
+    TEST_ASSERT_EQUAL(0, val);
+    TEST_ASSERT_EQUAL(0, close(fd));
+    TEST_ESP_OK(esp_vfs_eventfd_unregister());
+}
+
+TEST_CASE("Test eventfd read invalid size", "[vfs][eventfd]")
+{
+    TEST_ESP_OK(esp_vfs_eventfd_register());
+    int fd = eventfd(0, 0);
+    TEST_ASSERT_GREATER_OR_EQUAL(0, fd);
+
+    uint32_t val = 0;
+    TEST_ASSERT_LESS_THAN(0, read(fd, &val, sizeof(val)));
+    TEST_ASSERT_EQUAL(EINVAL, errno);
+    TEST_ASSERT_EQUAL(0, close(fd));
+    TEST_ESP_OK(esp_vfs_eventfd_unregister());
+}
+
+TEST_CASE("Test eventfd write invalid size", "[vfs][eventfd]")
+{
+    TEST_ESP_OK(esp_vfs_eventfd_register());
+    int fd = eventfd(0, 0);
+    TEST_ASSERT_GREATER_OR_EQUAL(0, fd);
+
+    uint32_t val = 0;
+    TEST_ASSERT_LESS_THAN(0, write(fd, &val, sizeof(val)));
+    TEST_ASSERT_EQUAL(EINVAL, errno);
+    TEST_ASSERT_EQUAL(0, close(fd));
+    TEST_ESP_OK(esp_vfs_eventfd_unregister());
+}
+
+TEST_CASE("Test eventfd write then read", "[vfs][eventfd]")
+{
+    TEST_ESP_OK(esp_vfs_eventfd_register());
+    int fd = eventfd(0, 0);
+    TEST_ASSERT_GREATER_OR_EQUAL(0, fd);
+
+    uint64_t val = 123;
+    TEST_ASSERT_EQUAL(sizeof(val), write(fd, &val, sizeof(val)));
+    TEST_ASSERT_EQUAL(sizeof(val), read(fd, &val, sizeof(val)));
+    TEST_ASSERT_EQUAL(123, val);
+    val = 4;
+    TEST_ASSERT_EQUAL(sizeof(val), write(fd, &val, sizeof(val)));
+    val = 5;
+    TEST_ASSERT_EQUAL(sizeof(val), write(fd, &val, sizeof(val)));
+    TEST_ASSERT_EQUAL(sizeof(val), read(fd, &val, sizeof(val)));
+    TEST_ASSERT_EQUAL(9, val);
+    TEST_ASSERT_EQUAL(0, close(fd));
+    TEST_ESP_OK(esp_vfs_eventfd_unregister());
+}
+
+TEST_CASE("Test eventfd instant select", "[vfs][eventfd]")
+{
+    TEST_ESP_OK(esp_vfs_eventfd_register());
+    int fd = eventfd(0, 0);
+    TEST_ASSERT_GREATER_OR_EQUAL(0, fd);
+
+    struct timeval zero_time;
+    fd_set read_fds, write_fds, error_fds;
+
+    zero_time.tv_sec = 0;
+    zero_time.tv_usec = 0;
+
+    FD_ZERO(&read_fds);
+    FD_ZERO(&write_fds);
+    FD_ZERO(&error_fds);
+    FD_SET(fd, &read_fds);
+    int ret = select(fd + 1, &read_fds, &write_fds, &error_fds, &zero_time);
+    TEST_ASSERT_EQUAL(0, ret);
+    TEST_ASSERT(!FD_ISSET(fd, &read_fds));
+
+    uint64_t val = 1;
+    printf("Write to fd\n");
+    TEST_ASSERT_EQUAL(sizeof(val), write(fd, &val, sizeof(val)));
+    FD_ZERO(&read_fds);
+    FD_ZERO(&write_fds);
+    FD_ZERO(&error_fds);
+    FD_SET(fd, &read_fds);
+    ret = select(fd + 1, &read_fds, &write_fds, &error_fds, &zero_time);
+    TEST_ASSERT_EQUAL(1, ret);
+    TEST_ASSERT(FD_ISSET(fd, &read_fds));
+
+    TEST_ASSERT_EQUAL(sizeof(val), read(fd, &val, sizeof(val)));
+    FD_ZERO(&read_fds);
+    FD_ZERO(&write_fds);
+    FD_ZERO(&error_fds);
+    FD_SET(fd, &read_fds);
+    ret = select(fd + 1, &read_fds, &write_fds, &error_fds, &zero_time);
+    TEST_ASSERT_EQUAL(0, ret);
+    TEST_ASSERT(!FD_ISSET(fd, &read_fds));
+    TEST_ESP_OK(esp_vfs_eventfd_unregister());
+}
+
+static void signal_task(void *arg)
+{
+    int fd = *((int *)arg);
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    uint64_t val = 1;
+    TEST_ASSERT_EQUAL(sizeof(val), write(fd, &val, sizeof(val)));
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("Test eventfd signal from task", "[vfs][eventfd]")
+{
+    TEST_ESP_OK(esp_vfs_eventfd_register());
+    int fd = eventfd(0, 0);
+    TEST_ASSERT_GREATER_OR_EQUAL(0, fd);
+
+    xTaskCreate(signal_task, "signal_task", 2048, &fd, 5, NULL);
+    struct timeval wait_time;
+    struct timeval zero_time;
+    fd_set read_fds, write_fds, error_fds;
+    FD_ZERO(&read_fds);
+    FD_ZERO(&write_fds);
+    FD_ZERO(&error_fds);
+    FD_SET(fd, &read_fds);
+    wait_time.tv_sec = 2;
+    wait_time.tv_usec = 0;
+    zero_time.tv_sec = 0;
+    zero_time.tv_usec = 0;
+
+    FD_SET(fd, &read_fds);
+    int ret = select(fd + 1, &read_fds, &write_fds, &error_fds, &wait_time);
+    TEST_ASSERT_EQUAL(1, ret);
+    TEST_ASSERT(FD_ISSET(fd, &read_fds));
+
+    FD_ZERO(&read_fds);
+    FD_ZERO(&write_fds);
+    FD_ZERO(&error_fds);
+    FD_SET(fd, &read_fds);
+    ret = select(fd + 1, &read_fds, &write_fds, &error_fds, &zero_time);
+    TEST_ASSERT_EQUAL(1, ret);
+    TEST_ASSERT(FD_ISSET(fd, &read_fds));
+
+    uint64_t val;
+    TEST_ASSERT_EQUAL(sizeof(val), read(fd, &val, sizeof(val)));
+    FD_ZERO(&read_fds);
+    FD_ZERO(&write_fds);
+    FD_ZERO(&error_fds);
+    FD_SET(fd, &read_fds);
+    ret = select(fd + 1, &read_fds, &write_fds, &error_fds, &zero_time);
+    TEST_ASSERT_EQUAL(0, ret);
+    TEST_ASSERT(!FD_ISSET(fd, &read_fds));
+    TEST_ESP_OK(esp_vfs_eventfd_unregister());
+}
+
+static void IRAM_ATTR eventfd_select_test_isr(void *arg)
+{
+    int fd = *((int *)arg);
+    uint64_t val = 1;
+    timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_0);
+    int ret = write(fd, &val, sizeof(val));
+    assert(ret == sizeof(val));
+}
+
+TEST_CASE("Test eventfd signal from ISR", "[vfs][eventfd]")
+{
+    TEST_ESP_OK(esp_vfs_eventfd_register());
+    int fd = eventfd(0, EFD_SUPPORT_ISR);
+    TEST_ASSERT_GREATER_OR_EQUAL(0, fd);
+
     timer_config_t config = {
-        .divider = TIMER_DIVIDER,
+        .divider = 16,
         .counter_dir = TIMER_COUNT_UP,
         .counter_en = TIMER_PAUSE,
         .alarm_en = TIMER_ALARM_EN,
         .auto_reload = false,
     };
-    timer_init(TIMER_GROUP_0, timer_idx, &config);
+    TEST_ESP_OK(timer_init(TIMER_GROUP_0, TIMER_0, &config));
 
-    timer_set_counter_value(TIMER_GROUP_0, timer_idx, 0x00000000ULL);
+    TEST_ESP_OK(timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0x00000000ULL));
 
-    timer_set_alarm_value(TIMER_GROUP_0, timer_idx, timer_interval_sec * TIMER_SCALE);
-    timer_enable_intr(TIMER_GROUP_0, timer_idx);
-    timer_isr_register(TIMER_GROUP_0, timer_idx, timer_group0_isr,
-                       (void *) timer_idx, ESP_INTR_FLAG_IRAM, NULL);
+    TEST_ESP_OK(timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, TIMER_BASE_CLK / 16));
+    TEST_ESP_OK(timer_enable_intr(TIMER_GROUP_0, TIMER_0));
+    TEST_ESP_OK(timer_isr_register(TIMER_GROUP_0, TIMER_0, eventfd_select_test_isr,
+                                   &fd, ESP_INTR_FLAG_IRAM, NULL));
+    TEST_ESP_OK(timer_start(TIMER_GROUP_0, TIMER_0));
 
-    timer_start(TIMER_GROUP_0, timer_idx);
-}
+    struct timeval wait_time;
+    fd_set read_fds, write_fds, error_fds;
+    FD_ZERO(&read_fds);
+    FD_ZERO(&write_fds);
+    FD_ZERO(&error_fds);
+    FD_SET(fd, &read_fds);
+    wait_time.tv_sec = 2;
+    wait_time.tv_usec = 0;
 
-static void eventfd_timer_deinit(int timer_idx)
-{
-    timer_pause(TIMER_GROUP_0, timer_idx);
-    timer_deinit(TIMER_GROUP_0, timer_idx);
-}
-
-static void worker_task(void *arg)
-{
-    for (int i = 0; i < 3; i++) {
-        vTaskDelay(pdMS_TO_TICKS(PROGRESS_INTERVAL_MS));
-        uint64_t signal = PROGRESS_SIGNAL;
-        ssize_t val = write(s_progress_fd, &signal, sizeof(signal));
-        assert(val == sizeof(signal));
-    }
-    vTaskDelete(NULL);
-}
-
-TEST_CASE("Test eventfd triggered correctly", "[vfs][eventfd]")
-{
-    xTaskCreate(worker_task, "worker_task", 1024, NULL, 5, NULL);
-    TEST_ESP_OK(esp_vfs_eventfd_register());
-    s_timer_fd = eventfd(0, EFD_SUPPORT_ISR);
-    s_progress_fd = eventfd(0, 0);
-    int maxFd = s_progress_fd > s_timer_fd ? s_progress_fd : s_timer_fd;
-    printf("Timer fd %d progress fd %d\n", s_timer_fd, s_progress_fd);
-    eventfd_timer_init(TIMER_0, TIMER_INTERVAL0_SEC);
-
-    int selectTimeoutCount = 0;
-    int timerTriggerCount = 0;
-    int progressTriggerCount = 0;
-
-    for (size_t i = 0; i < 10; i++) {
-        struct timeval timeout;
-        uint64_t signal;
-
-        timeout.tv_sec = 0;
-        timeout.tv_usec = 200 * 1000;
-
-        fd_set readfds;
-        fd_set writefds;
-        fd_set errorfds;
-
-        FD_ZERO(&readfds);
-        FD_ZERO(&writefds);
-        FD_ZERO(&errorfds);
-
-        FD_SET(s_timer_fd, &readfds);
-        FD_SET(s_progress_fd, &readfds);
-
-        select(maxFd + 1, &readfds, &writefds, &errorfds, &timeout);
-
-        printf("-------- TASK TIME --------\n");
-        uint64_t task_counter_value;
-        timer_get_counter_value(TIMER_GROUP_0, TIMER_0, &task_counter_value);
-        print_timer_counter(task_counter_value);
-
-        if (FD_ISSET(s_progress_fd, &readfds)) {
-            ssize_t ret = read(s_progress_fd, &signal, sizeof(signal));
-            TEST_ASSERT(ret == sizeof(signal));
-            TEST_ASSERT(signal == PROGRESS_SIGNAL);
-            progressTriggerCount++;
-            printf("Progress fd\n");
-        } else if (FD_ISSET(s_timer_fd, &readfds)) {
-            ssize_t ret = read(s_timer_fd, &signal, sizeof(signal));
-            TEST_ASSERT(ret == sizeof(signal));
-            TEST_ASSERT(signal == TIMER_SIGNAL);
-            timerTriggerCount++;
-            printf("TimerEvent fd\n");
-        } else {
-            selectTimeoutCount++;
-            printf("Select timeout\n");
-        }
-    }
-
-    printf("Select timeout: %d\n", selectTimeoutCount);
-    printf("Timer trigger: %d\n", timerTriggerCount);
-    printf("Progress trigger: %d\n", progressTriggerCount);
-    TEST_ASSERT(selectTimeoutCount == 3);
-    TEST_ASSERT(timerTriggerCount == 4);
-    TEST_ASSERT(progressTriggerCount == 3);
-    printf("Test done\n");
-    close(s_progress_fd);
-    close(s_timer_fd);
-    eventfd_timer_deinit(TIMER_0);
+    FD_SET(fd, &read_fds);
+    int ret = select(fd + 1, &read_fds, &write_fds, &error_fds, &wait_time);
+    TEST_ASSERT_EQUAL(1, ret);
+    TEST_ASSERT(FD_ISSET(fd, &read_fds));
+    timer_deinit(TIMER_GROUP_0, TIMER_0);
     TEST_ESP_OK(esp_vfs_eventfd_unregister());
 }
