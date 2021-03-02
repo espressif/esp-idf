@@ -30,6 +30,7 @@
 #define HAVE_NETDB_H
 #define HAVE_NETINET_IN_H
 #define HAVE_STRUCT_CMSGHDR
+#define COAP_DISABLE_TCP 0
 
 #define ipi_spec_dst ipi_addr
 struct in6_pktinfo {
@@ -52,8 +53,6 @@ struct in6_pktinfo {
 #endif /* CONFIG_MBEDTLS_TLS_ENABLED */
 #define COAP_CONSTRAINED_STACK 1
 #define ESPIDF_VERSION
-
-#define _POSIX_TIMERS 1
 
 #define gai_strerror(x) "gai_strerror() not supported"
 
