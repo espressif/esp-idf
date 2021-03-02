@@ -2080,7 +2080,7 @@ BaseType_t xTaskGenericNotifyFromISR( TaskHandle_t xTaskToNotify, uint32_t ulVal
  * the Blocked state for a notification to be received, should a notification
  * not already be pending when xTaskNotifyWait() was called.  The task
  * will not consume any processing time while it is in the Blocked state.  This
- * is specified in kernel ticks, the macro pdMS_TO_TICSK( value_in_ms ) can be
+ * is specified in kernel ticks, the macro pdMS_TO_TICKS( value_in_ms ) can be
  * used to convert a time specified in milliseconds to a time specified in
  * ticks.
  *
@@ -2246,7 +2246,7 @@ void vTaskNotifyGiveFromISR( TaskHandle_t xTaskToNotify, BaseType_t *pxHigherPri
  * should the count not already be greater than zero when
  * ulTaskNotifyTake() was called.  The task will not consume any processing
  * time while it is in the Blocked state.  This is specified in kernel ticks,
- * the macro pdMS_TO_TICSK( value_in_ms ) can be used to convert a time
+ * the macro pdMS_TO_TICKS( value_in_ms ) can be used to convert a time
  * specified in milliseconds to a time specified in ticks.
  *
  * @return The task's notification count before it is either cleared to zero or
