@@ -1,3 +1,5 @@
+:orphan:
+
 General Notes About ESP-IDF Programming
 =======================================
 :link_to_translation:`zh_CN:[中文]`

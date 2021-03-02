@@ -53,26 +53,7 @@ IRAM-Safe Interrupt Handlers
 
 If you have an interrupt handler that you want to execute while a flash operation is in progress (for example, for low latency operations), set the ``ESP_INTR_FLAG_IRAM`` flag when the :doc:`interrupt handler is registered </api-reference/system/intr_alloc>`.
 
-You must ensure that all data and functions accessed by these interrupt handlers, including the ones that handlers call, are located in IRAM or DRAM.
-
-Use the ``IRAM_ATTR`` attribute for functions::
-
-    #include "esp_attr.h"
-
-    void IRAM_ATTR gpio_isr_handler(void* arg)
-    {
-        // ...
-    }
-
-Use the ``DRAM_ATTR`` and ``DRAM_STR`` attributes for constant data::
-
-    void IRAM_ATTR gpio_isr_handler(void* arg)
-    {
-       const static DRAM_ATTR uint8_t INDEX_DATA[] = { 45, 33, 12, 0 };
-       const static char *MSG = DRAM_STR("I am a string stored in RAM");
-    }
-
-Note that knowing which data should be marked with ``DRAM_ATTR`` can be hard, the compiler will sometimes recognize that a variable or expression is constant (even if it is not marked ``const``) and optimize it into flash, unless it is marked with ``DRAM_ATTR``.
+You must ensure that all data and functions accessed by these interrupt handlers, including the ones that handlers call, are located in IRAM or DRAM. See :ref:`how-to-place-code-in-iram`.
 
 If a function or symbol is not correctly put into IRAM/DRAM, and the interrupt handler reads from the flash cache during a flash operation, it will cause a crash due to Illegal Instruction exception (for code which should be in IRAM) or garbage data to be read (for constant data which should be in DRAM).
 
