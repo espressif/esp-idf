@@ -299,8 +299,14 @@ uint8_t* esp_core_dump_get_isr_stack_top(void) {
 
 static inline bool esp_core_dump_task_stack_end_is_sane(uint32_t sp)
 {
-    //TODO: currently core dump supports stacks in DRAM only, external SRAM not supported yet
-    return esp_ptr_in_dram((void *)sp);
+    return esp_ptr_in_dram((void *)sp)
+#if CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+        || esp_stack_ptr_in_extram(sp)
+#endif
+#if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
+        || esp_ptr_in_rtc_dram_fast((void*) sp)
+#endif
+    ;
 }
 
 
@@ -387,28 +393,31 @@ bool esp_core_dump_check_task(core_dump_task_header_t *task)
                                             task->tcb_addr,
                                             task->stack_start,
                                             task->stack_end);
-    }
-    XtSolFrame *sol_frame = (XtSolFrame *)task->stack_start;
-    if (sol_frame->exit == 0) {
-        ESP_COREDUMP_LOG_PROCESS("Task (TCB:%x), EXIT/PC/PS/A0/SP %x %x %x %x %x",
-                                    task->tcb_addr,
-                                    sol_frame->exit,
-                                    sol_frame->pc,
-                                    sol_frame->ps,
-                                    sol_frame->a0,
-                                    sol_frame->a1);
     } else {
-// to avoid warning that 'exc_frame' is unused when ESP_COREDUMP_LOG_PROCESS does nothing
-#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
-        XtExcFrame *exc_frame = (XtExcFrame *)task->stack_start;
-        ESP_COREDUMP_LOG_PROCESS("Task (TCB:%x) EXIT/PC/PS/A0/SP %x %x %x %x %x",
-                                    task->tcb_addr,
-                                    exc_frame->exit,
-                                    exc_frame->pc,
-                                    exc_frame->ps,
-                                    exc_frame->a0,
-                                    exc_frame->a1);
-#endif
+        /* This shall be done only if the stack was correct, else, stack_start
+         * would point to a fake address. */
+        XtSolFrame *sol_frame = (XtSolFrame *)task->stack_start;
+        if (sol_frame->exit == 0) {
+            ESP_COREDUMP_LOG_PROCESS("Task (TCB:%x), EXIT/PC/PS/A0/SP %x %x %x %x %x",
+                                        task->tcb_addr,
+                                        sol_frame->exit,
+                                        sol_frame->pc,
+                                        sol_frame->ps,
+                                        sol_frame->a0,
+                                        sol_frame->a1);
+        } else {
+    // to avoid warning that 'exc_frame' is unused when ESP_COREDUMP_LOG_PROCESS does nothing
+    #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+            XtExcFrame *exc_frame = (XtExcFrame *)task->stack_start;
+            ESP_COREDUMP_LOG_PROCESS("Task (TCB:%x) EXIT/PC/PS/A0/SP %x %x %x %x %x",
+                                        task->tcb_addr,
+                                        exc_frame->exit,
+                                        exc_frame->pc,
+                                        exc_frame->ps,
+                                        exc_frame->a0,
+                                        exc_frame->a1);
+    #endif
+        }
     }
     return true;
 }
@@ -420,12 +429,14 @@ bool esp_core_dump_check_task(core_dump_task_header_t *task)
  */
 uint32_t esp_core_dump_get_task_regs_dump(core_dump_task_header_t *task, void **reg_dump)
 {
-    uint32_t stack_vaddr, stack_paddr, stack_len;
+    uint32_t stack_vaddr = 0;
+    uint32_t stack_paddr = 0;
+    uint32_t stack_len = 0;
     static xtensa_elf_reg_dump_t s_reg_dump = { 0 };
 
     ESP_COREDUMP_DEBUG_ASSERT(task != NULL && reg_dump != NULL);
 
-    stack_len = esp_core_dump_get_stack(task, &stack_paddr, &stack_vaddr);
+    stack_len = esp_core_dump_get_stack(task, &stack_vaddr, &stack_paddr);
 
     ESP_COREDUMP_LOG_PROCESS("Add regs for task 0x%x", task->tcb_addr);
 
