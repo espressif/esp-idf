@@ -281,7 +281,7 @@ static int elf_add_stack(core_dump_elf_t *self, core_dump_task_header_t *task)
 
     ELF_CHECK_ERR((task), ELF_PROC_ERR_OTHER, "Invalid task pointer.");
 
-    stack_len = esp_core_dump_get_stack(task, &stack_paddr, &stack_vaddr);
+    stack_len = esp_core_dump_get_stack(task, &stack_vaddr, &stack_paddr);
     ESP_COREDUMP_LOG_PROCESS("Add stack for task 0x%x: addr 0x%x, sz %u",
                                 task->tcb_addr, stack_vaddr, stack_len);
     int ret = elf_add_segment(self, PT_LOAD,
