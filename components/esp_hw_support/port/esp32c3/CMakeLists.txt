@@ -9,7 +9,7 @@ set(srcs "cpu_util_esp32c3.c"
          )
 
 if(NOT BOOTLOADER_BUILD)
-    list(APPEND srcs "../async_memcpy_impl_gdma.c")
+    list(APPEND srcs "../async_memcpy_impl_gdma.c" "memprot.c")
 endif()
 
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")

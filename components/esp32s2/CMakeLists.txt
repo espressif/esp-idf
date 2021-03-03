@@ -11,8 +11,7 @@ if(BOOTLOADER_BUILD)
 else()
     # Regular app build
 
-    set(srcs "memprot.c"
-             "dport_access.c"
+    set(srcs "dport_access.c"
              "spiram.c"
              "spiram_psram.c"
              "esp_crypto_lock.c"

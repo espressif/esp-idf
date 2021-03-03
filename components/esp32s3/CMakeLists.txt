@@ -14,7 +14,6 @@ else()
 
     set(srcs "dport_access.c"
              "esp_crypto_lock.c"
-             "memprot.c"
              "spiram.c"
              "spi_timing_config.c")
     set(include_dirs "include")

@@ -14,8 +14,7 @@ else()
     set(srcs "dport_access.c"
              "esp_hmac.c"
              "esp_ds.c"
-             "esp_crypto_lock.c"
-             "memprot.c")
+             "esp_crypto_lock.c")
     set(include_dirs "include")
 
     set(requires driver efuse soc riscv) #unfortunately rom/uart uses SOC registers directly
