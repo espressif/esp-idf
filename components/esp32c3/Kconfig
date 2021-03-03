@@ -37,6 +37,8 @@ menu "ESP32C3-Specific"
             bool "Rev 1"
         config ESP32C3_REV_MIN_2
             bool "Rev 2"
+        config ESP32C3_REV_MIN_3
+            bool "Rev 3"
     endchoice
 
     config ESP32C3_REV_MIN
@@ -44,6 +46,7 @@ menu "ESP32C3-Specific"
         default 0 if ESP32C3_REV_MIN_0
         default 1 if ESP32C3_REV_MIN_1
         default 2 if ESP32C3_REV_MIN_2
+        default 3 if ESP32C3_REV_MIN_3
 
     choice ESP32C3_UNIVERSAL_MAC_ADDRESSES
         bool "Number of universally administered (by IEEE) MAC address"
