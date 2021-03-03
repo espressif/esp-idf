@@ -220,7 +220,7 @@ ESP-IDF 搜索组件时，会按照 ``COMPONENT_DIRS`` 指定的顺序依次进�
 -  ``CFLAGS``： 传递给 C 编译器的标志。根据项目设置已经定义一组默认的 ``CFLAGS``，可以通过 ``CFLAGS +=`` 来为组件添加特定的标志，也可以完全重写该变量（尽管不推荐这么做）。
 -  ``CPPFLAGS``： 传递给 C 预处理器的标志（用于 ``.c``，``.cpp`` 和 ``.S`` 文件）。根据项目设置已经定义一组默认的 ``CPPFLAGS`` ，可以通过 ``CPPFLAGS +=`` 来为组件添加特定的标志，也可以完全重写该变量（尽管不推荐这么做）。
 -  ``CXXFLAGS``： 传递给 C++ 编译器的标志。根据项目设置已经定义一组默认的 ``CXXFLAGS`` ，可以通过 ``CXXFLAGS +=`` 来为组件添加特定的标志，也可以完全重写该变量（尽管不推荐这么做）。
-- ``COMPONENT_ADD_LDFRAGMENTS``: 链接器脚本生成功能的链接器片段文件的路径，请查看 :doc:`链接器脚本生成 <linker-script-generation>`.
+- ``COMPONENT_ADD_LDFRAGMENTS``：链接器脚本生成功能的链接器片段文件的路径，请查看 :doc:`链接器脚本生成 <linker-script-generation>`.
 
 如果要将编译标志应用于单个源文件，您可以将该源文件的目标规则覆盖，例如::
 
@@ -280,7 +280,7 @@ ESP-IDF 构建系统会在命令行中添加以下 C 预处理定义：
 以非交互的方式运行 Make
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-如果在运行 ``make`` 的时候不希望出现交互式提示（例如：在IDE或自动构建系统中），可以将 ``BATCH_BUILD=1`` 添加到make的参数中（或者将其设置为环境变量）。
+如果在运行 ``make`` 的时候不希望出现交互式提示（例如：在 IDE 或自动构建系统中），可以将 ``BATCH_BUILD=1`` 添加到 make 的参数中（或者将其设置为环境变量）。
 
 设置 ``BATCH_BUILD`` 意味着：
 
@@ -436,7 +436,7 @@ Makefile.componentbuild
     #We need font if either console or plot is enabled
     $(call compile_only_if,$(or $(CONFIG_ENABLE_LCD_CONSOLE),$(CONFIG_ENABLE_LCD_PLOT)), font.o)
 
-请注意使用 Make 或者函数来包含字体文件。其他的替换函数，比如 ``and`` 和 ``if`` 也适用于此处。也可以使用不在 menuconfig 中定义的变量，ESP-IDF 使用默认的 Make 策略，将一个空的或者只包含空格的变量视为 false ，而其中任何非空格的比那辆都为 true 。
+请注意使用 Make 或者函数来包含字体文件。其他的替换函数，比如 ``and`` 和 ``if`` 也适用于此处。也可以使用不在 menuconfig 中定义的变量，ESP-IDF 使用默认的 Make 策略，判断一个空的或只包含空格的变量视为 false，而其中任何非空格的变量都为 true 。
 
 （注意：本文档的历史版本建议将目标文件添加到 ``COMPONENT_OBJS`` 中，虽然这仍然可行，但是只有当组件中的所有目标文件都明确命名时才会起作用，并且在 ``make clean`` 后并不会清除 make 中取消选择的目标文件）。
 
@@ -458,8 +458,6 @@ Makefile.componentbuild
 
 润色与改进
 ^^^^^^^^^^
-
-Because logo.h is a generated file, it needs to be cleaned when make clean is called which why it is added to the COMPONENT_EXTRA_CLEAN variable.
 
 将 logo.h 添加作为 ``graphics_lib.o`` 的依赖项会导致在编译 ``graphics_lib.c`` 之前先生成它。
 
@@ -519,7 +517,7 @@ ESP-IDF 还支持自动生成链接脚本，它允许组件通过链接片段文
 保存 flash 参数
 ~~~~~~~~~~~~~~~
 
-在某些情况下，我们希望在没有 IDF 的情况下烧写目标板卡，对于这种情况，我们希望保存构建的二进制文件、esptool.py 和 esptool write_flash 命令的参数。可以简单编写一段脚本来保存二进制文件和 esptool.py，并且使用命令 ``make print_flash_cmd`` 来查看烧写 flash 时的参数::
+在某些情况下，我们希望在没有 IDF 的情况下烧写目标板，对于这种情况，我们希望保存构建的二进制文件、esptool.py 和 esptool write_flash 命令的参数。可以简单编写一段脚本来保存二进制文件和 esptool.py，并且使用命令 ``make print_flash_cmd`` 来查看烧写 flash 时的参数::
 
     --flash_mode dio --flash_freq 40m --flash_size detect 0x1000 bootloader/bootloader.bin 0x10000 example_app.bin 0x8000 partition_table_unit_test_app.bin
 

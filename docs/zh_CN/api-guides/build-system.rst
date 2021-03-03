@@ -418,7 +418,7 @@ ESP-IDF 构建系统会在命令行中添加以下 C 预处理器定义：
 - ``COMPONENT_REQUIRES`` 和 ``COMPONENT_PRIV_REQUIRES`` 的值不能依赖于任何配置选项（``CONFIG_xxx``），这是因为在配置加载之前，依赖关系就已经被展开。其它组件变量（比如 ``COMPONENT_SRCS`` 和 ``COMPONENT_ADD_INCLUDEDIRS``）可以依赖配置选择。
 - 如果当前组件除了 ``COMPONENT_REQUIRES_COMMON`` 中设置的通用组件（比如 RTOS、libc 等）外，并不依赖其它组件，那么上述两个 ``REQUIRES`` 变量可以为空。
 
-如果组件仅支持某些硬件目标（即依赖于特定的 ``IDF_TARGET``），则可以调用 ``require_idf_targets(NAMES...)`` CMake 函数来声明这个需求。在这种情况下，如果构建系统导入了不支持当前硬件目标的组件时就会报错。
+通用组件包括：freertos、newlib、heap、log、soc、esp_rom、esp_common、xtensa/riscv、cxx。
 
 创建项目
 --------
