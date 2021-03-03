@@ -84,14 +84,14 @@ static void button_handler_task(void *arg)
 }
 #elif CONFIG_TOUCH_ELEM_CALLBACK
 /* Button callback routine */
-static void button_handler(touch_button_handle_t out_handle, touch_button_message_t out_message, void *arg)
+static void button_handler(touch_button_handle_t out_handle, touch_button_message_t *out_message, void *arg)
 {
     (void) out_handle; //Unused
-    if (out_message.event == TOUCH_BUTTON_EVT_ON_PRESS) {
+    if (out_message->event == TOUCH_BUTTON_EVT_ON_PRESS) {
         ESP_LOGI(TAG, "Button[%d] Press", (uint32_t)arg);
-    } else if (out_message.event == TOUCH_BUTTON_EVT_ON_RELEASE) {
+    } else if (out_message->event == TOUCH_BUTTON_EVT_ON_RELEASE) {
         ESP_LOGI(TAG, "Button[%d] Release", (uint32_t)arg);
-    } else if (out_message.event == TOUCH_BUTTON_EVT_ON_LONGPRESS) {
+    } else if (out_message->event == TOUCH_BUTTON_EVT_ON_LONGPRESS) {
         ESP_LOGI(TAG, "Button[%d] LongPress", (uint32_t)arg);
     }
 }
