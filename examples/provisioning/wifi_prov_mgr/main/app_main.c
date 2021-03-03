@@ -28,12 +28,18 @@
 #ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP
 #include <wifi_provisioning/scheme_softap.h>
 #endif /* CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP */
+#include "qrcode.h"
 
 static const char *TAG = "app";
 
 /* Signal Wi-Fi events on this event-group */
 const int WIFI_CONNECTED_EVENT = BIT0;
 static EventGroupHandle_t wifi_event_group;
+
+#define PROV_QR_VERSION         "v1"
+#define PROV_TRANSPORT_SOFTAP   "softap"
+#define PROV_TRANSPORT_BLE      "ble"
+#define QRCODE_BASE_URL         "https://espressif.github.io/esp-jumpstart/qrcode.html"
 
 /* Event handler for catching system events */
 static void event_handler(void* arg, esp_event_base_t event_base,
@@ -118,6 +124,30 @@ esp_err_t custom_prov_data_handler(uint32_t session_id, const uint8_t *inbuf, ss
     *outlen = strlen(response) + 1; /* +1 for NULL terminating byte */
 
     return ESP_OK;
+}
+
+static void wifi_prov_print_qr(const char *name, const char *pop, const char *transport)
+{
+    if (!name || !transport) {
+        ESP_LOGW(TAG, "Cannot generate QR code payload. Data missing.");
+        return;
+    }
+    char payload[150] = {0};
+    if (pop) {
+        snprintf(payload, sizeof(payload), "{\"ver\":\"%s\",\"name\":\"%s\"" \
+                    ",\"pop\":\"%s\",\"transport\":\"%s\"}",
+                    PROV_QR_VERSION, name, pop, transport);
+    } else {
+        snprintf(payload, sizeof(payload), "{\"ver\":\"%s\",\"name\":\"%s\"" \
+                    ",\"transport\":\"%s\"}",
+                    PROV_QR_VERSION, name, transport);
+    }
+#ifdef CONFIG_EXAMPLE_PROV_SHOW_QR
+    ESP_LOGI(TAG, "Scan this QR code from the provisioning application for Provisioning.");
+    esp_qrcode_config_t cfg = ESP_QRCODE_CONFIG_DEFAULT();
+    esp_qrcode_generate(&cfg, payload);
+#endif /* CONFIG_APP_WIFI_PROV_SHOW_QR */
+    ESP_LOGI(TAG, "If QR code is not visible, copy paste the below URL in a browser.\n%s?data=%s", QRCODE_BASE_URL, payload);
 }
 
 void app_main(void)
@@ -260,6 +290,12 @@ void app_main(void)
          * by the default event loop handler, we don't need to call the following */
         // wifi_prov_mgr_wait();
         // wifi_prov_mgr_deinit();
+        /* Print QR code for provisioning */
+#ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_BLE
+        wifi_prov_print_qr(service_name, pop, PROV_TRANSPORT_BLE);
+#else /* CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP */
+        wifi_prov_print_qr(service_name, pop, PROV_TRANSPORT_SOFTAP);
+#endif /* CONFIG_EXAMPLE_PROV_TRANSPORT_BLE */
     } else {
         ESP_LOGI(TAG, "Already provisioned, starting Wi-Fi STA");
 
