@@ -347,7 +347,7 @@ static inline void button_dispatch(te_button_handle_t button_handle, touch_elem_
     } else if (dispatch_method == TOUCH_ELEM_DISP_CALLBACK) {
         touch_button_message_t button_info;
         button_info.event = button_handle->event;
-        button_handle->config->callback(button_handle, button_info, button_handle->config->arg);  //Event callback
+        button_handle->config->callback(button_handle, &button_info, button_handle->config->arg);  //Event callback
     }
 }
 
