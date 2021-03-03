@@ -644,11 +644,14 @@
   rules:
     - <<: *if-protected
     - <<: *if-label-build
+    - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32c3
     - <<: *if-dev-push
       changes: *patterns-build_components
     - <<: *if-dev-push
       changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-unit_test
 
 .rules:build:unit_test-esp32s2:
   rules:
@@ -952,7 +955,10 @@
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
+    - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32c3
+    - <<: *if-dev-push
+      changes: *patterns-unit_test
 
 .rules:test:unit_test-esp32s2:
   rules:
