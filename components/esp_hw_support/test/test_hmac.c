@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "esp_hmac.h"
 #include "unity.h"
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "esp_log.h"
+
+#if SOC_HMAC_SUPPORTED
+#include "esp_hmac.h"
 
 #if CONFIG_IDF_ENV_FPGA
 
@@ -1033,3 +1035,5 @@ TEST_CASE("HMAC key out of range", "[hw_crypto]")
 }
 
 #endif // CONFIG_IDF_ENV_FPGA
+
+#endif // SOC_HMAC_SUPPORTED

@@ -13,10 +13,7 @@ else()
 
     set(srcs "dport_access.c"
              "spiram.c"
-             "spiram_psram.c"
-             "esp_crypto_lock.c"
-             "esp_hmac.c"
-             "esp_ds.c")
+             "spiram_psram.c")
 
     set(include_dirs "include")
 

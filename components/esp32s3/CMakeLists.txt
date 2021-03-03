@@ -13,7 +13,6 @@ else()
     # Regular app build
 
     set(srcs "dport_access.c"
-             "esp_crypto_lock.c"
              "spiram.c"
              "spi_timing_config.c")
     set(include_dirs "include")

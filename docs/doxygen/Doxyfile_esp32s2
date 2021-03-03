@@ -7,8 +7,8 @@ INPUT += \
          $(IDF_PATH)/components/driver/esp32s2/include/driver/temp_sensor.h \
          $(IDF_PATH)/components/soc/$(IDF_TARGET)/include/soc/touch_sensor_channel.h \
          $(IDF_PATH)/components/driver/$(IDF_TARGET)/include/driver/touch_sensor.h \
-         $(IDF_PATH)/components/esp32s2/include/esp_hmac.h \
-         $(IDF_PATH)/components/esp32s2/include/esp_ds.h \
+         $(IDF_PATH)/components/esp_hw_support/include/soc/esp32s2/esp_ds.h \
+         $(IDF_PATH)/components/esp_hw_support/include/soc/esp32s2/esp_hmac.h \
          $(IDF_PATH)/components/ulp/include/esp32s2/ulp_riscv.h \
          $(IDF_PATH)/components/ulp/include/$(IDF_TARGET)/ulp.h \
          $(IDF_PATH)/components/touch_element/include/touch_element/touch_element.h \
