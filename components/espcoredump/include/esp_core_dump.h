@@ -96,7 +96,7 @@ esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size);
  *
  * @return ESP_OK on success, otherwise \see esp_err_t
  */
-esp_err_t esp_core_dump_image_erase();
+esp_err_t esp_core_dump_image_erase(void);
 
 #ifdef __cplusplus
 }
