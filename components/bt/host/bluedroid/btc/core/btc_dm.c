@@ -342,7 +342,7 @@ static void btc_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
            )
 #endif
             if (1) {
-                bt_status_t ret;
+                bt_status_t ret __attribute__((unused));
                 BTC_TRACE_DEBUG("%s: Storing link key. key_type=0x%x",
                           __FUNCTION__, p_auth_cmpl->key_type);
                 ret = btc_storage_add_bonded_device(&bd_addr,

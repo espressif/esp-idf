@@ -42,7 +42,7 @@ static esp_alloc_failed_hook_t alloc_failed_callback;
 IRAM_ATTR static void *dram_alloc_to_iram_addr(void *addr, size_t len)
 {
     uintptr_t dstart = (uintptr_t)addr; //First word
-    uintptr_t dend = dstart + len - 4; //Last word
+    uintptr_t dend __attribute__((unused)) = dstart + len - 4; //Last word
     assert(esp_ptr_in_diram_dram((void *)dstart));
     assert(esp_ptr_in_diram_dram((void *)dend));
     assert((dstart & 3) == 0);

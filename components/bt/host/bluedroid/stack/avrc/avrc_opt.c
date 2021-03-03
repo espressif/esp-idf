@@ -21,7 +21,7 @@
  *  Interface to AVRCP optional commands
  *
  ******************************************************************************/
-// #include <assert.h>
+#include <assert.h>
 #include "common/bt_target.h"
 #include <string.h>
 #include "stack/avrc_api.h"

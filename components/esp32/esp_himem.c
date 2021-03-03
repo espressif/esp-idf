@@ -110,7 +110,7 @@ static inline int rangeblock_idx_valid(int rangeblock_idx)
 
 static void set_bank(int virt_bank, int phys_bank, int ct)
 {
-    int r;
+    int r __attribute__((unused));
     r = cache_sram_mmu_set( 0, 0, SOC_EXTRAM_DATA_LOW + CACHE_BLOCKSIZE * virt_bank, phys_bank * CACHE_BLOCKSIZE, 32, ct );
     assert(r == 0);
     r = cache_sram_mmu_set( 1, 0, SOC_EXTRAM_DATA_LOW + CACHE_BLOCKSIZE * virt_bank, phys_bank * CACHE_BLOCKSIZE, 32, ct );

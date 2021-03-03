@@ -141,8 +141,10 @@ void usbh_hal_init(usbh_hal_context_t *hal)
 {
     //Check if a peripheral is alive by reading the core ID registers
     usbh_dev_t *dev = &USBH;
+#ifndef NDEBUG
     uint32_t core_id = usb_ll_get_controller_core_id(dev);
     assert(core_id == CORE_REG_GSNPSID);
+#endif
     //Initialize HAL context
     memset(hal, 0, sizeof(usbh_hal_context_t));
     hal->dev = dev;

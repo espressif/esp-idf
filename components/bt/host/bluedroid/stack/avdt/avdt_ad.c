@@ -22,7 +22,7 @@
  *
  ******************************************************************************/
 
-// #include <assert.h>
+#include <assert.h>
 #include "common/bt_trace.h"
 #include <string.h>
 

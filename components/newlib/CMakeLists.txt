@@ -1,3 +1,9 @@
+if(BOOTLOADER_BUILD)
+    # Bootloader builds need the platform_include directory (for assert.h), but nothing else
+    idf_component_register(INCLUDE_DIRS platform_include)
+    return()
+endif()
+
 set(srcs
     "abort.c"
     "heap.c"

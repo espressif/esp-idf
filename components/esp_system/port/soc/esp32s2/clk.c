@@ -136,7 +136,9 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk);
         esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
     }
 
-    rtc_clk_cpu_freq_set_config(&new_config);
+    if (res) {
+        rtc_clk_cpu_freq_set_config(&new_config);
+    }
 
     // Re calculate the ccount to make time calculation correct.
     cpu_hal_set_cycle_count( (uint64_t)cpu_hal_get_cycle_count() * new_freq_mhz / old_freq_mhz );

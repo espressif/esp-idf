@@ -915,6 +915,7 @@ void SPI_MASTER_ISR_ATTR spi_device_release_bus(spi_device_t *dev)
     host->device_acquiring_lock = NULL;
     esp_err_t ret = spi_bus_lock_acquire_end(dev->dev_lock);
     assert(ret == ESP_OK);
+    (void) ret;
 }
 
 esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_start(spi_device_handle_t handle, spi_transaction_t *trans_desc, TickType_t ticks_to_wait)

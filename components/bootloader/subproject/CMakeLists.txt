@@ -29,10 +29,11 @@ set(COMPONENTS
     micro-ecc
     main
     efuse
-    esp_system)
+    esp_system
+    newlib)
 set(BOOTLOADER_BUILD 1)
 include("${IDF_PATH}/tools/cmake/project.cmake")
-set(common_req log esp_rom esp_common esp_hw_support hal)
+set(common_req log esp_rom esp_common esp_hw_support hal newlib)
 if(LEGACY_INCLUDE_COMMON_HEADERS)
     list(APPEND common_req soc hal)
 endif()

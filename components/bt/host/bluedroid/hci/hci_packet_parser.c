@@ -227,19 +227,19 @@ static uint8_t *read_command_complete_header(
     uint8_t *stream = response->data + response->offset;
 
     // Read the event header
-    uint8_t event_code;
-    uint8_t parameter_length;
+    uint8_t event_code __attribute__((unused));
+    uint8_t parameter_length __attribute__((unused));
     STREAM_TO_UINT8(event_code, stream);
     STREAM_TO_UINT8(parameter_length, stream);
 
-    const size_t parameter_bytes_we_read_here = 4;
+    const size_t parameter_bytes_we_read_here  __attribute__((unused)) = 4;
 
     // Check the event header values against what we expect
     assert(event_code == HCI_COMMAND_COMPLETE_EVT);
     assert(parameter_length >= (parameter_bytes_we_read_here + minimum_bytes_after));
 
     // Read the command complete header
-    command_opcode_t opcode;
+    command_opcode_t opcode __attribute__((unused));
     uint8_t status;
     STREAM_SKIP_UINT8(stream); // skip the number of hci command packets field
     STREAM_TO_UINT16(opcode, stream);

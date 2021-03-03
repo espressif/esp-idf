@@ -771,9 +771,13 @@ menu "LWIP"
     config LWIP_ESP_LWIP_ASSERT
         bool "Enable LWIP ASSERT checks"
         default y
+        depends on !COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE
         help
-            Enable this option allows lwip to check assert.
-            It is recommended to keep it open, do not close it.
+            Enable this option keeps LWIP assertion checks enabled.
+            It is recommended to keep this option enabled.
+
+            If asserts are disabled for the entire project, they are also disabled
+            for LWIP and this option is ignored.
 
     menu "Hooks"
 

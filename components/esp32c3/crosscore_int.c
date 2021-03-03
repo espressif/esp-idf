@@ -66,8 +66,7 @@ void esp_crosscore_int_init(void)
     portENTER_CRITICAL(&reason_spinlock);
     reason[cpu_hal_get_core_id()] = 0;
     portEXIT_CRITICAL(&reason_spinlock);
-    esp_err_t err = esp_intr_alloc(ETS_FROM_CPU_INTR0_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void *)&reason[0], NULL);
-    assert(err == ESP_OK);
+    ESP_ERROR_CHECK(esp_intr_alloc(ETS_FROM_CPU_INTR0_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void *)&reason[0], NULL));
 }
 
 static void IRAM_ATTR esp_crosscore_int_send(int core_id, uint32_t reason_mask)

@@ -16,6 +16,7 @@
 #ifndef _BT_COMMON_H_
 #define _BT_COMMON_H_
 
+#include <assert.h>
 #include "bt_user_config.h"
 #include "esp_log.h"
 
@@ -86,10 +87,6 @@
 #define BT_PRINT_I(tag, format, ...)   {esp_log_write(ESP_LOG_INFO,    tag, LOG_FORMAT(I, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }
 #define BT_PRINT_D(tag, format, ...)   {esp_log_write(ESP_LOG_DEBUG,   tag, LOG_FORMAT(D, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }
 #define BT_PRINT_V(tag, format, ...)   {esp_log_write(ESP_LOG_VERBOSE, tag, LOG_FORMAT(V, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }
-
-#ifndef assert
-#define assert(x)   do { if (!(x)) BT_PRINT_E("BT", "bt host error %s %u\n", __FILE__, __LINE__); } while (0)
-#endif
 
 
 #if !UC_BT_STACK_NO_LOG

@@ -173,6 +173,7 @@ void esp_dport_access_int_init(void)
 #ifndef CONFIG_FREERTOS_UNICORE
     portBASE_TYPE res = xTaskCreatePinnedToCore(&dport_access_init_core, "dport", configMINIMAL_STACK_SIZE, NULL, 5, NULL, xPortGetCoreID());
     assert(res == pdTRUE);
+    (void)res;
 #endif
 }
 

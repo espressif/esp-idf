@@ -380,7 +380,7 @@ static IRAM_ATTR void spi_slave_hd_intr_append(void *arg)
     spi_slave_hd_callback_config_t *callback = &host->callback;
     spi_slave_hd_hal_context_t *hal = &host->hal;
     BaseType_t awoken = pdFALSE;
-    BaseType_t ret;
+    BaseType_t ret __attribute__((unused));
 
     bool tx_done = false;
     bool rx_done = false;

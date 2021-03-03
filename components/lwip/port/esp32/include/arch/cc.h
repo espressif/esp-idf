@@ -75,12 +75,19 @@ typedef int sys_prot_t;
 #include <stdio.h>
 
 #define LWIP_PLATFORM_DIAG(x)   do {printf x;} while(0)
-// __assert_func is the assertion failure handler from newlib, defined in assert.h
-#define LWIP_PLATFORM_ASSERT(message) __assert_func(__FILE__, __LINE__, __ASSERT_FUNC, message)
 
 #ifdef NDEBUG
-#define LWIP_NOASSERT
+
+#define LWIP_NOASSERT 1
+
 #else // Assertions enabled
+
+#if CONFIG_OPTIMIZATION_ASSERTIONS_SILENT
+#define LWIP_PLATFORM_ASSERT(message) abort()
+#else
+// __assert_func is the assertion failure handler from newlib, defined in assert.h
+#define LWIP_PLATFORM_ASSERT(message) __assert_func(__FILE__, __LINE__, __ASSERT_FUNC, message)
+#endif
 
 // If assertions are on, the default LWIP_ERROR handler behaviour is to
 // abort w/ an assertion failure. Don't do this, instead just print the error (if LWIP_DEBUG is set)

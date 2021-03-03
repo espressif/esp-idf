@@ -927,7 +927,7 @@ touch_pad_t esp_sleep_get_touchpad_wakeup_status(void)
     touch_pad_t pad_num;
     esp_err_t ret = touch_pad_get_wakeup_status(&pad_num); //TODO 723diff commit id:fda9ada1b
     assert(ret == ESP_OK && "wakeup reason is RTC_TOUCH_TRIG_EN but SENS_TOUCH_MEAS_EN is zero");
-    return pad_num;
+    return (ret == ESP_OK) ? pad_num : TOUCH_PAD_MAX;
 }
 
 #endif // SOC_TOUCH_SENSOR_NUM > 0
@@ -1097,7 +1097,7 @@ esp_err_t esp_deep_sleep_enable_gpio_wakeup(uint64_t gpio_pin_mask, esp_deepslee
             return ESP_ERR_INVALID_ARG;
         }
         err = gpio_deep_sleep_wakeup_enable(gpio_idx, intr_type);
-        
+
         s_config.gpio_wakeup_mask |= BIT(gpio_idx);
         if (mode == ESP_GPIO_WAKEUP_GPIO_HIGH) {
             s_config.gpio_trigger_mode |= (mode << gpio_idx);

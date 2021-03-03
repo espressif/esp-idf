@@ -42,8 +42,7 @@ uint16_t esp_efuse_rtc_calib_get_init_code(int version, int atten)
     assert(init_code_size == 10);
 
     uint32_t init_code = 0;
-    esp_err_t err = esp_efuse_read_field_blob(init_code_efuse, &init_code, init_code_size);
-    assert(err == ESP_OK);
+    ESP_ERROR_CHECK(esp_efuse_read_field_blob(init_code_efuse, &init_code, init_code_size));
     return init_code + 1000;    // version 1 logic
 }
 
@@ -71,12 +70,10 @@ esp_err_t esp_efuse_rtc_calib_get_cal_voltage(int version, int atten, uint32_t* 
         calib_vol_expected_mv = 1370;
     }
 
-    int cal_vol_size = esp_efuse_get_field_size(cal_vol_efuse);
-    assert(cal_vol_size == 10);
+    assert(cal_vol_efuse[0]->bit_count == 10);
 
     uint32_t cal_vol = 0;
-    esp_err_t err = esp_efuse_read_field_blob(cal_vol_efuse, &cal_vol, cal_vol_size) & 0x3FF;
-    assert(err == ESP_OK);
+    ESP_ERROR_CHECK(esp_efuse_read_field_blob(cal_vol_efuse, &cal_vol, cal_vol_efuse[0]->bit_count));
 
     *out_digi = 2000 + ((cal_vol & BIT(9))? -(cal_vol & ~BIT9): cal_vol);
     *out_vol_mv = calib_vol_expected_mv;
@@ -94,6 +91,7 @@ float esp_efuse_rtc_calib_get_cal_temp(int version)
     uint32_t cal_temp = 0;
     esp_err_t err = esp_efuse_read_field_blob(cal_temp_efuse, &cal_temp, cal_temp_size);
     assert(err == ESP_OK);
+    (void)err;
     // BIT(8) stands for sign: 1: negtive, 0: positive
     return ((cal_temp & BIT(8)) != 0)? -(uint8_t)cal_temp: (uint8_t)cal_temp;
 }

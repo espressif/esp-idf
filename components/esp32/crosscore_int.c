@@ -84,7 +84,7 @@ void esp_crosscore_int_init(void) {
     portENTER_CRITICAL(&reason_spinlock);
     reason[xPortGetCoreID()]=0;
     portEXIT_CRITICAL(&reason_spinlock);
-    esp_err_t err;
+    esp_err_t err __attribute__((unused));
     if (xPortGetCoreID()==0) {
         err = esp_intr_alloc(ETS_FROM_CPU_INTR0_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason[0], NULL);
     } else {
