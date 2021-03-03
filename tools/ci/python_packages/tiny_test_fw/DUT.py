@@ -81,10 +81,13 @@ def _decode_data(data):
     if isinstance(data, bytes):
         # convert bytes to string. This is a bit of a hack, we know that we want to log this
         # later so encode to the stdout encoding with backslash escapes for anything non-encodable
+        encoding = sys.stdout.encoding
+        if encoding is None:
+            encoding = 'ascii'
         try:
-            return data.decode(sys.stdout.encoding, "backslashreplace")
+            return data.decode(encoding, "backslashreplace")
         except (UnicodeDecodeError, TypeError):  # Python <3.5 doesn't support backslashreplace
-            return data.decode(sys.stdout.encoding, "replace")
+            return data.decode(encoding, "replace")
     return data
 
 
