@@ -1,4 +1,11 @@
 .. include:: ../../../../components/spi_flash/README.rst
+As an expert feature, you can also try to customize your own flash chip driver, see :doc:`spi_flash_override_driver`.
+
+.. toctree::
+   :hidden:
+
+   Custom Flash Driver <spi_flash_override_driver>
+
 
 See also
 --------
