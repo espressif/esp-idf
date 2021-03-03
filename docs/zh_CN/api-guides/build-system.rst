@@ -618,7 +618,7 @@ Spark Plug 组件
 
 为避免重复性工作，各组件都用自动依赖一些“通用” IDF 组件，即使它们没有被明确提及。这些组件的头文件会一直包含在构建系统中。
 
-通用组件包括：freertos、newlibheap、log、soc、esp_rom、esp_common、xtensa、cxx。
+通用组件包括：freertos、newlib、heap、log、soc、esp_rom、esp_common、xtensa/riscv、cxx。
 
 在构建中导入组件
 -----------------

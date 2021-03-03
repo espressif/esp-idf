@@ -459,8 +459,6 @@ In this example, graphics_lib.o and logo.h will be generated in the current dire
 Cosmetic Improvements
 ^^^^^^^^^^^^^^^^^^^^^
 
-Because logo.h is a generated file, it needs to be cleaned when make clean is called which why it is added to the COMPONENT_EXTRA_CLEAN variable.
-
 Adding logo.h to the ``graphics_lib.o`` dependencies causes it to be generated before ``graphics_lib.c`` is compiled.
 
 If a a source file in another component included ``logo.h``, then this component's name would have to be added to the other component's ``COMPONENT_DEPENDS`` list to ensure that the components were built in-order.
