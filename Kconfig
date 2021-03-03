@@ -279,6 +279,16 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
         endchoice # assertions
 
+        config COMPILER_OPTIMIZATION_CHECKS_SILENT
+            bool "Disable messages in ESP_RETURN_ON_* and ESP_EXIT_ON_* macros"
+            default n
+            help
+                If enabled, the error messages will be discarded in following check macros:
+                - ESP_RETURN_ON_ERROR
+                - ESP_EXIT_ON_ERROR
+                - ESP_RETURN_ON_FALSE
+                - ESP_EXIT_ON_FALSE
+
         menuconfig COMPILER_HIDE_PATHS_MACROS
             bool "Replace ESP-IDF and project paths in binaries"
             default y

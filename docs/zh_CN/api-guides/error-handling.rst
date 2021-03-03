@@ -69,6 +69,71 @@ ESP-IDF 中大多数函数会返回 :cpp:type:`esp_err_t` 类型的错误码， 
 
 .. note:: 如果使用 :doc:`IDF monitor <tools/idf-monitor>`, 则最后一行回溯结果中的地址将会被替换为相应的文件名和行号。
 
+.. _esp-error-check-without-abort-macro:
+
+``ESP_ERROR_CHECK_WITHOUT_ABORT`` 宏
+------------------------------------
+
+宏 :cpp:func:`ESP_ERROR_CHECK_WITHOUT_ABORT` 的功能和 ``ESP_ERROR_CHECK`` 类似, 不同之处在于它不会调用 ``abort()``.
+
+.. _esp-return-on-error-macro:
+
+``ESP_RETURN_ON_ERROR`` 宏
+--------------------------
+
+宏 :cpp:func:`ESP_RETURN_ON_ERROR` 用于错误码检查, 如果错误码不等于 :c:macro:`ESP_OK`, 该宏会打印错误信息，并使原函数立刻返回。
+
+.. _esp-goto-on-error-macro:
+
+``ESP_GOTO_ON_ERROR`` 宏
+------------------------
+
+宏 :cpp:func:`ESP_GOTO_ON_ERROR` 用于错误码检查, 如果错误码不等于 :c:macro:`ESP_OK`, 该宏会打印错误信息，将局部变量 `ret` 赋值为该错误码, 并使原函数跳转至给定的 `goto_tag`.
+
+.. _esp-return-on-false-macro:
+
+``ESP_RETURN_ON_FALSE`` 宏
+--------------------------
+
+宏 :cpp:func:`ESP_RETURN_ON_FALSE` 用于条件检查, 如果给定条件不等于 `true`, 该宏会打印错误信息，并使原函数立刻返回，返回值为给定的 `err_code`.
+
+.. _esp-goto-on-false-macro:
+
+``ESP_GOTO_ON_FALSE`` 宏
+------------------------
+
+宏 :cpp:func:`ESP_GOTO_ON_FALSE` 用于条件检查, 如果给定条件不等于 `true`, 该宏会打印错误信息，将局部变量 `ret` 赋值为给定的 `err_code`, 并使原函数跳转至给定的 `goto_tag`.
+
+.. _check_macros_examples:
+
+``CHECK 宏使用示例``
+-------------------------
+
+示例::
+
+    static const char* TAG = "Test";
+
+    esp_err_t test_func(void)
+    {
+        esp_err_t ret = ESP_OK;
+
+        ESP_ERROR_CHECK(x);                                         // err message printed if `x` is not `ESP_OK`, and then `abort()`.
+        ESP_ERROR_CHECK_WITHOUT_ABORT(x);                           // err message printed if `x` is not `ESP_OK`, without `abort()`.
+        ESP_RETURN_ON_ERROR(x, TAG, "fail reason 1");               // err message printed if `x` is not `ESP_OK`, and then function returns with code `x`.
+        ESP_GOTO_ON_ERROR(x, err, TAG, "fail reason 2");            // err message printed if `x` is not `ESP_OK`, `ret` is set to `x`, and then jumps to `err`.
+        ESP_RETURN_ON_FALSE(a, err_code, TAG, "fail reason 3");     // err message printed if `a` is not `true`, and then function returns with code `err_code`.
+        ESP_GOTO_ON_FALSE(a, err_code, err, TAG, "fail reason 4");  // err message printed if `a` is not `true`, `ret` is set to `err_code`, and then jumps to `err`.
+
+    err:
+        // clean up
+        return ret;
+    }
+
+.. note::
+
+     如果 Kconfig 中的 :ref:`CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT` 选项被打开, CHECK 宏将不会打印错误信息，其他功能不变。
+
+     ``ESP_RETURN_xx`` 和 ``ESP_GOTO_xx`` 宏不可以在中断服务程序里被调用。如需要在中断中使用类似功能，请使用 ``xx_ISR`` 宏，如 ``ESP_RETURN_ON_ERROR_ISR`` 等。
 
 错误处理模式
 ------------
