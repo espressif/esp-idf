@@ -288,7 +288,7 @@ The command-line interface of `otatool.py` has the following structure:
   otatool.py --port "/dev/ttyUSB1" switch_ota_partition --slot 1
 
   # Read OTA partition 'ota_3' and save contents to a file named 'ota_3.bin'
-  otatool.py --port "/dev/ttyUSB1" read_ota_partition --name=ota_3
+  otatool.py --port "/dev/ttyUSB1" read_ota_partition --name=ota_3 --output=ota_3.bin
 
 
 More information can be obtained by specifying `--help` as argument:
