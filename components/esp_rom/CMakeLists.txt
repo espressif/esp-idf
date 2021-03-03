@@ -90,6 +90,10 @@ else() # Regular app build
         if(CONFIG_NEWLIB_NANO_FORMAT)
             rom_linker_script("newlib-nano")
         endif()
+
+        if(CONFIG_ESP32C3_REV_MIN_3)
+            rom_linker_script("eco3")
+        endif()
     endif()
 
 endif()
