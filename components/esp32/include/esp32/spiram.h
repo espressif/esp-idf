@@ -21,6 +21,10 @@
 #include <stdbool.h>
 #include "esp_err.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
     ESP_SPIRAM_SIZE_16MBITS = 0,   /*!< SPI RAM size is 16 MBits */
     ESP_SPIRAM_SIZE_32MBITS = 1,   /*!< SPI RAM size is 32 MBits */
@@ -113,4 +117,8 @@ esp_err_t esp_spiram_reserve_dma_pool(size_t size);
 bool esp_spiram_is_initialized(void);
 
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif
