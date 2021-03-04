@@ -1,6 +1,8 @@
 Sleep Modes
 ===========
 
+{IDF_TARGET_SPI_POWER_DOMAIN:default="VDD_SPI", esp32="VDD_SDIO"}
+
 Overview
 --------
 
@@ -131,6 +133,15 @@ This wakeup mode doesn't require RTC peripherals or RTC memories to be powered o
         One more method of wakeup from external inputs is available in light sleep mode. With this wakeup source, each pin can be individually configured to trigger wakeup on high or low level using :cpp:func:`gpio_wakeup_enable` function. This wakeup source can be used with any IO (RTC or digital).
 
     :cpp:func:`esp_sleep_enable_gpio_wakeup` function can be used to enable this wakeup source.
+
+    .. warning::
+        Before entering light sleep mode, check if any GPIO pin to be driven is part of the {IDF_TARGET_SPI_POWER_DOMAIN} power domain. If so, this power domain must be configured to remain ON during sleep.
+        
+        For example, on ESP32-WROOM-32 board, GPIO16 and GPIO17 are linked to {IDF_TARGET_SPI_POWER_DOMAIN} power domain. If they are configured to remain high during
+        light sleep, the power domain should be configured to remain powered ON. This can be done with :cpp:func:`esp_sleep_pd_config()`::
+
+            esp_sleep_pd_config(ESP_PD_DOMAIN_VDDSDIO, ESP_PD_OPTION_ON);
+
 
 UART wakeup (light sleep only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

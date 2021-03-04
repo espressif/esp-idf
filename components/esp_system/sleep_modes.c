@@ -728,7 +728,7 @@ esp_err_t esp_light_sleep_start(void)
      * If VDD_SDIO power domain is requested to be turned off, bit `RTC_SLEEP_PD_VDDSDIO`
      * will be set in `pd_flags`.
      */
-    if ((pd_flags & RTC_SLEEP_PD_VDDSDIO) != 0) {
+    if (pd_flags & RTC_SLEEP_PD_VDDSDIO) {
         /*
         * When VDD_SDIO power domain has to be turned off, the minimum sleep time of the
         * system needs to meet the sum below:
