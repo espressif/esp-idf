@@ -329,6 +329,7 @@ esp_err_t httpd_uri(struct httpd_data *hd)
         aux->sd->ws_handshake_done = true;
         aux->sd->ws_handler = uri->handler;
         aux->sd->ws_control_frames = uri->handle_ws_control_frames;
+        aux->sd->ws_user_ctx = uri->user_ctx;
     }
 #endif
 
