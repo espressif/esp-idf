@@ -72,6 +72,14 @@ variables:
   fi
   if [[ "$SETUP_TOOLS" == "1" || "$CI_JOB_STAGE" != "target_test" ]]; then
   tools/idf_tools.py --non-interactive install && eval "$(tools/idf_tools.py --non-interactive export)" || exit 1
+    if [[ ! -z "$OOCD_DISTRO_URL" ]]; then
+    echo "Using custom OpenOCD from ${OOCD_DISTRO_URL}"
+    wget $OOCD_DISTRO_URL
+    ARCH_NAME=$(basename $OOCD_DISTRO_URL)
+    tar -x -f $ARCH_NAME
+    export OPENOCD_SCRIPTS=$PWD/openocd-esp32/share/openocd/scripts
+    export PATH=$PWD/openocd-esp32/bin:$PATH
+    fi
   fi
 
 before_script:
