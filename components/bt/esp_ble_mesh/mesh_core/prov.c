@@ -1670,6 +1670,16 @@ int bt_mesh_pb_gatt_recv(struct bt_mesh_conn *conn, struct net_buf_simple *buf)
         return -EINVAL;
     }
 
+    /* For case MESH/NODE/PROV/BI-03-C, if the link is closed, when the node receive
+     * a Provisioning PDU , it will send a Provisioning Failed PDU with the Error Code
+     * field set to Unexpected PDU(0x03). 
+     */
+    if (bt_mesh_atomic_test_bit(link.flags, LINK_INVALID)) {
+        BT_WARN("Unexpected msg 0x%02x on invalid link", type);
+        prov_send_fail_msg(PROV_ERR_UNEXP_PDU);
+        return -EINVAL;
+    }
+
     /* For case MESH/NODE/PROV/BI-15-C, when the node receive a Provisioning PDU
      * with the Type field set to the lowest unsupported or RFU value, it sends a
      * Provisioning Failed PDU with the Error Code field set to Invalid PDU(0x01).
