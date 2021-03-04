@@ -341,7 +341,7 @@ TEST_CASE("GPIO enable and disable interrupt test", "[gpio][test_env=UT_T1_GPIO]
     TEST_ASSERT(gpio_isr_handler_remove(GPIO_INPUT_IO) == ESP_ERR_INVALID_STATE);
 }
 
-// Connect GPIO18 with GPIO19
+// Connect GPIO_OUTPUT_IO with GPIO_INPUT_IO
 // use multimeter to test the voltage, so it is ignored in CI
 TEST_CASE("GPIO set gpio output level test", "[gpio][ignore]")
 {
@@ -417,7 +417,7 @@ TEST_CASE("GPIO io pull up/down function", "[gpio]")
 
 TEST_CASE("GPIO output and input mode test", "[gpio][test_env=UT_T1_GPIO]")
 {
-    //connect io18 and io5
+    //connect GPIO_OUTPUT_IO with GPIO_INPUT_IO
     gpio_config_t output_io = init_io(GPIO_OUTPUT_IO);
     gpio_config_t input_io = init_io(GPIO_INPUT_IO);
     gpio_config(&output_io);
@@ -464,9 +464,10 @@ TEST_CASE("GPIO output and input mode test", "[gpio][test_env=UT_T1_GPIO]")
     TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(GPIO_INPUT_IO), !level, "direction set error, it can't output");
     // input test
     gpio_set_direction(GPIO_OUTPUT_IO, GPIO_MODE_OUTPUT);
-    gpio_set_direction(GPIO_INPUT_IO, GPIO_MODE_INPUT_OUTPUT);
+    gpio_set_direction(GPIO_INPUT_IO, GPIO_MODE_INPUT_OUTPUT); // sets output buffer for this pin also
     level = gpio_get_level(GPIO_INPUT_IO);
     gpio_set_level(GPIO_OUTPUT_IO, !level);
+    gpio_set_level(GPIO_INPUT_IO, !level); // in GPIO_MODE_INPUT_OUTPUT this pin also has an enabled output buffer
     TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(GPIO_INPUT_IO), !level, "direction set error, it can't output");
 }
 
