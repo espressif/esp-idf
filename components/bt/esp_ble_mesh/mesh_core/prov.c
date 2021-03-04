@@ -1450,15 +1450,19 @@ static void prov_msg_recv(void)
         return;
     }
 
-    if (type != PROV_FAILED && type != link.expect) {
-        BT_WARN("Unexpected msg 0x%02x != 0x%02x", type, link.expect);
-        prov_send_fail_msg(PROV_ERR_UNEXP_PDU);
-        return;
-    }
-
+    /* For case MESH/NODE/PROV/BI-15-C, when the node receive a Provisioning PDU
+     * with the Type field set to the lowest unsupported or RFU value, it sends a
+     * Provisioning Failed PDU with the Error Code field set to Invalid PDU(0x01).
+     */
     if (type >= ARRAY_SIZE(prov_handlers)) {
         BT_ERR("Unknown provisioning PDU type 0x%02x", type);
         prov_send_fail_msg(PROV_ERR_NVAL_PDU);
+        return;
+    }
+
+    if (type != PROV_FAILED && type != link.expect) {
+        BT_WARN("Unexpected msg 0x%02x != 0x%02x", type, link.expect);
+        prov_send_fail_msg(PROV_ERR_UNEXP_PDU);
         return;
     }
 
@@ -1666,15 +1670,20 @@ int bt_mesh_pb_gatt_recv(struct bt_mesh_conn *conn, struct net_buf_simple *buf)
         return -EINVAL;
     }
 
+    /* For case MESH/NODE/PROV/BI-15-C, when the node receive a Provisioning PDU
+     * with the Type field set to the lowest unsupported or RFU value, it sends a
+     * Provisioning Failed PDU with the Error Code field set to Invalid PDU(0x01).
+     */
     type = net_buf_simple_pull_u8(buf);
-    if (type != PROV_FAILED && type != link.expect) {
-        BT_WARN("Unexpected msg 0x%02x != 0x%02x", type, link.expect);
-        prov_send_fail_msg(PROV_ERR_UNEXP_PDU);
+    if (type >= ARRAY_SIZE(prov_handlers)) {
+        BT_ERR("Unknown provisioning PDU type 0x%02x", type);
+        prov_send_fail_msg(PROV_ERR_NVAL_PDU);
         return -EINVAL;
     }
 
-    if (type >= ARRAY_SIZE(prov_handlers)) {
-        BT_ERR("Unknown provisioning PDU type 0x%02x", type);
+    if (type != PROV_FAILED && type != link.expect) {
+        BT_WARN("Unexpected msg 0x%02x != 0x%02x", type, link.expect);
+        prov_send_fail_msg(PROV_ERR_UNEXP_PDU);
         return -EINVAL;
     }
 
