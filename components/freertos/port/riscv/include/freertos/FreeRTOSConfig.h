@@ -157,7 +157,7 @@
 
 /* with optimizations disabled, scheduler uses additional stack */
 #if CONFIG_COMPILER_OPTIMIZATION_NONE
-#define configSTACK_OVERHEAD_OPTIMIZATION 256
+#define configSTACK_OVERHEAD_OPTIMIZATION 320
 #else
 #define configSTACK_OVERHEAD_OPTIMIZATION 0
 #endif
