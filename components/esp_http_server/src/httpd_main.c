@@ -105,7 +105,7 @@ esp_err_t httpd_queue_work(httpd_handle_t handle, httpd_work_fn_t work, void *ar
 esp_err_t httpd_get_client_list(httpd_handle_t handle, size_t *fds, int *client_fds)
 {
     struct httpd_data *hd = (struct httpd_data *) handle;
-    if (hd == NULL || fds == NULL || *fds == 0 || client_fds == NULL || *fds < hd->config.max_open_sockets) {
+    if (hd == NULL || fds == NULL || *fds == 0 || client_fds == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
     size_t max_fds = *fds;

@@ -1492,13 +1492,17 @@ esp_err_t httpd_sess_update_lru_counter(httpd_handle_t handle, int sockfd);
  * @brief   Returns list of current socket descriptors of active sessions
  *
  * @param[in] handle    Handle to server returned by httpd_start
- * @param[in,out] fds   In: Number of fds allocated in the supplied structure client_fds
+ * @param[in,out] fds   In: Size of provided client_fds array
  *                      Out: Number of valid client fds returned in client_fds,
  * @param[out] client_fds  Array of client fds
  *
+ * @note Size of provided array has to be equal or greater then maximum number of opened
+ *       sockets, configured upon initialization with max_open_sockets field in
+ *       httpd_config_t structure.
+ *
  * @return
  *  - ESP_OK              : Successfully retrieved session list
- *  - ESP_ERR_INVALID_ARG : Wrong arguments or list is longer than allocated
+ *  - ESP_ERR_INVALID_ARG : Wrong arguments or list is longer than provided array
  */
 esp_err_t httpd_get_client_list(httpd_handle_t handle, size_t *fds, int *client_fds);
 
