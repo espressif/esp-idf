@@ -292,7 +292,7 @@ class RootNode(EntityNode):
     def __init__(self):
         EntityNode.__init__(self, None, Entity.ALL)
         self.child_t = ArchiveNode
-        self.entity = Entity('*')
+        self.entity = Entity(Entity.ALL)
 
 
 class Generation:

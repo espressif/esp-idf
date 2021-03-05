@@ -25,7 +25,6 @@ from pyparsing import (Combine, Forward, Group, Keyword, Literal, OneOrMore, Opt
                        originalTextFor, restOfLine)
 from sdkconfig import SDKConfig
 
-KeyGrammar = namedtuple('KeyGrammar', 'grammar min max required')
 
 
 class FragmentFile():
@@ -192,6 +191,8 @@ class Fragment():
     such as checking the validity of the fragment name and getting the entry values.
     """
 
+    KeyValue = namedtuple('KeyValue', 'grammar min max required')
+
     IDENTIFIER = Word(alphas + '_', alphanums + '_')
     ENTITY = Word(alphanums + '.-_$')
 
@@ -213,7 +214,7 @@ class Sections(Fragment):
     entries_grammar = Combine(GNU_LD_SYMBOLS + Optional('+'))
 
     grammars = {
-        'entries': KeyGrammar(entries_grammar.setResultsName('section'), 1, None, True)
+        'entries': Fragment.KeyValue(entries_grammar.setResultsName('section'), 1, None, True)
     }
 
     """
@@ -251,7 +252,7 @@ class Scheme(Fragment):
     """
 
     grammars = {
-        'entries': KeyGrammar(Fragment.IDENTIFIER.setResultsName('sections') + Suppress('->') +
+        'entries': Fragment.KeyValue(Fragment.IDENTIFIER.setResultsName('sections') + Suppress('->') +
                               Fragment.IDENTIFIER.setResultsName('target'), 1, None, True)
     }
 
@@ -448,8 +449,8 @@ class Mapping(Fragment):
                  Optional(Suppress(';') + delimitedList(section_target_flags).setResultsName('sections_target_flags')))
 
         grammars = {
-            'archive': KeyGrammar(Or([Fragment.ENTITY, Word(Entity.ALL)]).setResultsName('archive'), 1, 1, True),
-            'entries': KeyGrammar(entry, 0, None, True)
+            'archive': Fragment.KeyValue(Or([Fragment.ENTITY, Word(Entity.ALL)]).setResultsName('archive'), 1, 1, True),
+            'entries': Fragment.KeyValue(entry, 0, None, True)
         }
 
         return grammars

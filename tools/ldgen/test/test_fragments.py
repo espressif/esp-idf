@@ -23,20 +23,20 @@ from io import StringIO
 from pyparsing import ParseException, ParseFatalException, Word, alphanums
 
 try:
-    from fragments import FRAGMENT_TYPES, Fragment, FragmentFile, KeyGrammar, Mapping
+    from fragments import FRAGMENT_TYPES, Fragment, FragmentFile, Mapping
     from sdkconfig import SDKConfig
 except ImportError:
     sys.path.append('../')
-    from fragments import FRAGMENT_TYPES, Fragment, FragmentFile, KeyGrammar, Mapping
+    from fragments import FRAGMENT_TYPES, Fragment, FragmentFile, Mapping
     from sdkconfig import SDKConfig
 
 
 class SampleFragment(Fragment):
 
     grammars = {
-        'key_1': KeyGrammar(Word(alphanums + '_').setResultsName('value'), 0, None, True),
-        'key_2': KeyGrammar(Word(alphanums + '_').setResultsName('value'), 0, None, False),
-        'key_3': KeyGrammar(Word(alphanums + '_').setResultsName('value'), 3, 5, False)
+        'key_1': Fragment.KeyValue(Word(alphanums + '_').setResultsName('value'), 0, None, True),
+        'key_2': Fragment.KeyValue(Word(alphanums + '_').setResultsName('value'), 0, None, False),
+        'key_3': Fragment.KeyValue(Word(alphanums + '_').setResultsName('value'), 3, 5, False)
     }
 
     def set_key_value(self, key, parse_results):
