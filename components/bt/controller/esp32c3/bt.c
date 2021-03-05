@@ -1042,7 +1042,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         if (rtc_clk_slow_freq_get() == RTC_SLOW_FREQ_RTC) {
             s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_RTC_SLOW; // set default value
         } else {
-            ESP_LOGW(BTDM_LOG_TAG, "Internal 150kHz RC oscillator not detected, fall back to main XTAL as Bluetooth sleep clock\n"
+            ESP_LOGW(BTDM_LOG_TAG, "Internal 90kHz RC oscillator not detected, fall back to main XTAL as Bluetooth sleep clock\n"
                  "light sleep mode will not be able to apply when bluetooth is enabled");
             s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_XTAL; // set default value
         }
