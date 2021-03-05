@@ -1328,7 +1328,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     if (btdm_dram_available_region[0].mode == ESP_BT_MODE_IDLE) {
         return ESP_ERR_INVALID_STATE;
     }
-    
+
     osi_funcs_p = (struct osi_funcs_t *)malloc_internal_wrapper(sizeof(struct osi_funcs_t));
     if (osi_funcs_p == NULL) {
         return ESP_ERR_NO_MEM;
@@ -1535,6 +1535,19 @@ esp_err_t esp_bt_controller_deinit(void)
     return ESP_OK;
 }
 
+static void bt_shutdown(void)
+{
+    esp_err_t ret = ESP_OK;
+    ESP_LOGD(BTDM_LOG_TAG, "stop Bluetooth");
+
+    ret = esp_bt_controller_disable();
+    if (ESP_OK != ret) {
+        ESP_LOGW(BTDM_LOG_TAG, "controller disable ret=%d", ret);
+    }
+    return;
+}
+
+
 esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
 {
     int ret;
@@ -1598,6 +1611,10 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
     }
 
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_ENABLED;
+    ret = esp_register_shutdown_handler(bt_shutdown);
+    if (ret != ESP_OK) {
+        ESP_LOGW(BTDM_LOG_TAG, "Register shutdown handler failed, ret = 0x%x", ret);
+    }
 
     return ESP_OK;
 }
@@ -1628,6 +1645,7 @@ esp_err_t esp_bt_controller_disable(void)
     }
     esp_phy_rf_deinit(PHY_BT_MODULE);
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
+    esp_unregister_shutdown_handler(bt_shutdown);
 
 #ifdef CONFIG_PM_ENABLE
     if (!s_btdm_allow_light_sleep) {
