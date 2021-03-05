@@ -16,6 +16,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "ets_sys.h"
 #include "rsa_pss.h"
 
 #ifdef __cplusplus
@@ -28,6 +29,14 @@ struct ets_secure_boot_signature_t;
 typedef struct ets_secure_boot_sig_block ets_secure_boot_sig_block_t;
 typedef struct ets_secure_boot_signature ets_secure_boot_signature_t;
 typedef struct ets_secure_boot_key_digests ets_secure_boot_key_digests_t;
+
+/* Anti-FI measure: use full words for success/fail, instead of
+   0/non-zero
+*/
+typedef enum {
+    SB_SUCCESS = 0x3A5A5AA5,
+    SB_FAILED = 0x7533885E,
+} secure_boot_status_t;
 
 /* Verify bootloader image (reconfigures cache to map,
  loads trusted key digests from efuse)
@@ -49,22 +58,24 @@ int ets_secure_boot_verify_bootloader(uint8_t *verified_hash, bool allow_key_rev
    If result is ETS_OK, the "simple hash" of the bootloader is
    copied into verified_hash.
 */
-int ets_secure_boot_verify_bootloader_with_keys(uint8_t *verified_hash, const ets_secure_boot_key_digests_t *trusted_keys);
+secure_boot_status_t ets_secure_boot_verify_bootloader_with_keys(uint8_t *verified_hash, const ets_secure_boot_key_digests_t *trusted_keys, bool stage_load);
 
 /* Verify supplied signature against supplied digest, using
    supplied trusted key digests.
 
    Doesn't reconfigure cache or any other hardware access.
 */
-int ets_secure_boot_verify_signature(const ets_secure_boot_signature_t *sig, const uint8_t *image_digest, const ets_secure_boot_key_digests_t *trusted_keys);
+secure_boot_status_t ets_secure_boot_verify_signature(const ets_secure_boot_signature_t *sig, const uint8_t *image_digest, const ets_secure_boot_key_digests_t *trusted_keys, uint8_t *verified_digest);
 
 /* Read key digests from efuse. Any revoked/missing digests will be
    marked as NULL
 
    Returns 0 if at least one valid digest was found.
 */
-int ets_secure_boot_read_key_digests(ets_secure_boot_key_digests_t *trusted_keys);
+ETS_STATUS ets_secure_boot_read_key_digests(ets_secure_boot_key_digests_t *trusted_keys);
 
+#define CRC_SIGN_BLOCK_LEN 1196
+#define SIG_BLOCK_PADDING 4096
 #define ETS_SECURE_BOOT_V2_SIGNATURE_MAGIC 0xE7
 
 /* Secure Boot V2 signature block (up to 3 can be appended) */
@@ -92,8 +103,10 @@ struct ets_secure_boot_signature {
 
 _Static_assert(sizeof(ets_secure_boot_signature_t) == 4096, "ets_secure_boot_signature_t should occupy 4096 Bytes in memory");
 
+#define MAX_KEY_DIGESTS 3
+
 struct ets_secure_boot_key_digests {
-    const void *key_digests[3];
+    const void *key_digests[MAX_KEY_DIGESTS];
     bool allow_key_revoke;
 };
 

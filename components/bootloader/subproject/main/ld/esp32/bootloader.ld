@@ -52,7 +52,7 @@ SECTIONS
     *libbootloader_support.a:flash_encrypt.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:flash_partitions.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:secure_boot.*(.literal .text .literal.* .text.*)
-    *libbootloader_support.a:secure_boot_signatures.*(.literal .text .literal.* .text.*)
+    *libbootloader_support.a:secure_boot_signatures_bootloader.*(.literal .text .literal.* .text.*)
     *libmicro-ecc.a:*.*(.literal .text .literal.* .text.*)
     *libspi_flash.a:*.*(.literal .text .literal.* .text.*)
     *libhal.a:wdt_hal_iram.*(.literal .text .literal.* .text.*)
