@@ -1443,15 +1443,11 @@ esp_err_t esp_bt_controller_deinit(void)
 static void bt_shutdown(void)
 {
     esp_err_t ret = ESP_OK;
-    ESP_LOGD(BTDM_LOG_TAG, "stop/deinit bt");
+    ESP_LOGD(BTDM_LOG_TAG, "stop Bluetooth");
 
     ret = esp_bt_controller_disable();
     if (ESP_OK != ret) {
         ESP_LOGW(BTDM_LOG_TAG, "controller disable ret=%d", ret);
-    }
-    ret = esp_bt_controller_deinit();
-    if (ESP_OK != ret) {
-        ESP_LOGW(BTDM_LOG_TAG, "controller deinit ret=%d", ret);
     }
     return;
 }
