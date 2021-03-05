@@ -33,12 +33,24 @@ extern "C" {
 esp_err_t adc_set_i2s_data_source(adc_i2s_source_t src);
 
 /**
- * @brief Initialize I2S ADC mode
+ * @brief Initialize I2S ADC mode for multiple channels
+ * @param adc_unit ADC unit index
+ * @param pattern_count count of ADC channels to sample
+ * @param patterns pointer to an array of `pattern_count` channel patterns
+ * @return
+ *     - ESP_OK success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t adc_i2s_mode_init_multi(adc_unit_t adc_unit, size_t pattern_count, adc_digi_pattern_table_t *patterns);
+
+/**
+ * @brief Initialize I2S ADC mode for a single channel
  * @param adc_unit ADC unit index
  * @param channel ADC channel index
  * @return
  *     - ESP_OK success
  *     - ESP_ERR_INVALID_ARG Parameter error
+ * @sa adc_i2s_mode_init_multi
  */
 esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel);
 
