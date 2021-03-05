@@ -1,4 +1,3 @@
-.gitlab/ci/dependencies/generate_rules.py
 components/app_update/otatool.py
 components/efuse/efuse_table_gen.py
 components/efuse/test_efuse_host/efuse_tests.py

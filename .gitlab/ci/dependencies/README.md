@@ -4,7 +4,7 @@
 
 This script can do only two things:
 
-1. Auto-generate some labels/titles/rules we need and update them in `rules.yml`
+1. Auto-generate some labels/rules we need and update them in `rules.yml`
 2. Generate a dependency tree graph
 
 ## Schema
@@ -14,7 +14,7 @@ This file only used basic YAML grammar and has nothing to do with the GitLab ver
 It has five custom keywords:
 
 - `matrix`: An array of sub-arrays, used to replicate rules by formatting strings. You can use the format string everywhere, it will be formatted recursively
-- `labels`: An array of `labels`. Also indicates `titles` with the same names
+- `labels`: An array of `labels`.
 - `patterns`: An array of `patterns`. Patterns that not included
 - `included_in`: An array of other `rule` names. It indicates the `labels` and `patterns` will be included in all specified `rules` as well
 - `deploy`: An array of strings, used to replicate rules by adding postfix `-<item in deploy array>`. It indicates the extra `label` used in `rules`, which will explain later.
@@ -81,11 +81,11 @@ Let's take a complicated example to help understand the process
    | build-a  | a-c, a-d | a        |
    | build-b  | b-c, b-d | b        |
 
-3. replace the auto-generated region in `rules.yml` with `labels`, `titles`, and `rules`. Each mapping will generate a `rule` and all the required labels/titles. `patterns` are pre-defined in `rules.yml` and could not be generated automatically. If a mapping is using a `pattern` undefined, the `pattern` will be ignored.
+3. replace the auto-generated region in `rules.yml` with `labels`, and `rules`. Each mapping will generate a `rule` and all the required labels. `patterns` are pre-defined in `rules.yml` and could not be generated automatically. If a mapping is using a `pattern` undefined, the `pattern` will be ignored.
 
-   - If a mapping key has postfix '-preview', no `if-protected-xxx` clause will be added
-   - else if a mapping key has postfix '-production', `if-protected-no_label` clause will be added
-   - else: a mapping key `if-protected` clause will be added
+    - If a mapping key has postfix `-preview`, no `if-protected-xxx` clause will be added
+    - else if a mapping key has postfix `-production`, an `if-protected-no_label` clause will be added
+    - else, an `if-protected` clause will be added
 
 ## Graph
 
