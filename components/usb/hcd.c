@@ -13,19 +13,21 @@
 // limitations under the License.
 
 #include <string.h>
-#include "sys/queue.h"
+#include <sys/queue.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/semphr.h"
 #include "esp_heap_caps.h"
 #include "esp_intr_alloc.h"
 #include "esp_timer.h"
 #include "esp_err.h"
 #include "esp_rom_gpio.h"
 #include "hal/usbh_hal.h"
+#include "hal/usb_types_private.h"
 #include "soc/gpio_pins.h"
 #include "soc/gpio_sig_map.h"
 #include "driver/periph_ctrl.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/semphr.h"
+#include "usb.h"
 #include "hcd.h"
 
 // ----------------------------------------------------- Macros --------------------------------------------------------
@@ -572,7 +574,7 @@ static hcd_port_event_t _intr_hdlr_hprt(port_t *port, usbh_hal_port_event_t hal_
         }
         case USBH_HAL_PORT_EVENT_ENABLED: {
             usbh_hal_port_enable(port->hal);  //Initialize remaining host port registers
-            port->speed = usbh_hal_port_get_conn_speed(port->hal);
+            port->speed = (usbh_hal_port_get_conn_speed(port->hal) == USB_PRIV_SPEED_FULL) ? USB_SPEED_FULL : USB_SPEED_LOW;
             port->state = HCD_PORT_STATE_ENABLED;
             port->flags.conn_devc_ena = 1;
             //This was triggered by a command, so no event needs to be propagated.
@@ -665,7 +667,7 @@ static hcd_pipe_event_t _intr_hdlr_chan(pipe_t *pipe, usbh_hal_chan_t *chan_obj,
         }
         case USBH_HAL_CHAN_EVENT_SLOT_HALT: {
             //A transfer descriptor list has partially completed. This currently only happens on control pipes
-            assert(pipe->ep_char.type == USB_XFER_TYPE_CTRL);
+            assert(pipe->ep_char.type == USB_PRIV_XFER_TYPE_CTRL);
             _xfer_req_continue(pipe);    //Continue the transfer request.
             //We are continuing a transfer, so no event has occurred
             break;
@@ -1200,7 +1202,12 @@ esp_err_t hcd_port_get_speed(hcd_port_handle_t port_hdl, usb_speed_t *speed)
     HCD_ENTER_CRITICAL();
     //Device speed is only valid if there is a resetted device connected to the port
     HCD_CHECK_FROM_CRIT(port->flags.conn_devc_ena, ESP_ERR_INVALID_STATE);
-    *speed = usbh_hal_port_get_conn_speed(port->hal);
+    usb_priv_speed_t hal_speed = usbh_hal_port_get_conn_speed(port->hal);
+    if (hal_speed == USB_PRIV_SPEED_FULL) {
+        *speed = USB_SPEED_FULL;
+    } else {
+        *speed = USB_SPEED_LOW;
+    }
     HCD_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -1372,7 +1379,7 @@ static inline hcd_pipe_event_t pipe_decode_error_event(usbh_hal_chan_error_t cha
 }
 
 // ----------------------- Public --------------------------
-
+#include "esp_rom_sys.h"
 esp_err_t hcd_pipe_alloc(hcd_port_handle_t port_hdl, const hcd_pipe_config_t *pipe_config, hcd_pipe_handle_t *pipe_hdl)
 {
     HCD_CHECK(port_hdl != NULL && pipe_config != NULL && pipe_hdl != NULL, ESP_ERR_INVALID_ARG);
@@ -1387,7 +1394,7 @@ esp_err_t hcd_pipe_alloc(hcd_port_handle_t port_hdl, const hcd_pipe_config_t *pi
 
     esp_err_t ret = ESP_OK;
     //Get the type of pipe to allocate
-    usb_xfer_type_t type;
+    usb_transfer_type_t type;
     bool is_default_pipe;
     if (pipe_config->ep_desc == NULL) {  //A NULL ep_desc indicates we are allocating a default pipe
         type = USB_XFER_TYPE_CTRL;
@@ -1431,7 +1438,22 @@ esp_err_t hcd_pipe_alloc(hcd_port_handle_t port_hdl, const hcd_pipe_config_t *pi
     pipe->xfer_desc_list = xfer_desc_list;
     pipe->flags.xfer_desc_list_len = num_xfer_desc;
     pipe->chan_obj = chan_obj;
-    pipe->ep_char.type = type;
+    usb_priv_xfer_type_t hal_type;
+    switch (type) {
+        case USB_XFER_TYPE_CTRL:
+            hal_type = USB_PRIV_XFER_TYPE_CTRL;
+            break;
+        case USB_XFER_TYPE_ISOCHRONOUS:
+            hal_type = USB_PRIV_XFER_TYPE_ISOCHRONOUS;
+            break;
+        case USB_XFER_TYPE_BULK:
+            hal_type = USB_PRIV_XFER_TYPE_ISOCHRONOUS;
+            break;
+        default:    //USB_XFER_TYPE_INTR
+            hal_type = USB_PRIV_XFER_TYPE_INTR;
+            break;
+    }
+    pipe->ep_char.type = hal_type;
     if (is_default_pipe) {
         pipe->ep_char.bEndpointAddress = 0;
         //Set the default pipe's MPS to the worst case MPS for the device's speed
