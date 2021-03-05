@@ -70,18 +70,18 @@ static void slider_handler_task(void *arg)
 }
 #elif CONFIG_TOUCH_ELEM_CALLBACK
 /* Slider callback routine */
-void slider_handler(touch_slider_handle_t out_handle, touch_slider_message_t out_message, void *arg)
+void slider_handler(touch_slider_handle_t out_handle, touch_slider_message_t *out_message, void *arg)
 {
     (void) arg; //Unused
     if (out_handle != slider_handle) {
         return;
     }
-    if (out_message.event == TOUCH_SLIDER_EVT_ON_PRESS) {
-        ESP_LOGI(TAG, "Slider Press, position: %d", out_message.position);
-    } else if (out_message.event == TOUCH_SLIDER_EVT_ON_RELEASE) {
-        ESP_LOGI(TAG, "Slider Release, position: %d", out_message.position);
-    } else if (out_message.event == TOUCH_SLIDER_EVT_ON_CALCULATION) {
-        ESP_LOGI(TAG, "Slider Calculate, position: %d", out_message.position);
+    if (out_message->event == TOUCH_SLIDER_EVT_ON_PRESS) {
+        ESP_LOGI(TAG, "Slider Press, position: %d", out_message->position);
+    } else if (out_message->event == TOUCH_SLIDER_EVT_ON_RELEASE) {
+        ESP_LOGI(TAG, "Slider Release, position: %d", out_message->position);
+    } else if (out_message->event == TOUCH_SLIDER_EVT_ON_CALCULATION) {
+        ESP_LOGI(TAG, "Slider Calculate, position: %d", out_message->position);
     }
 }
 #endif

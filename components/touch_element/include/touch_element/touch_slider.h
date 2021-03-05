@@ -77,7 +77,7 @@ typedef struct {
 } touch_slider_message_t;
 
 typedef touch_elem_handle_t touch_slider_handle_t;   //!< Slider instance handle
-typedef void(*touch_slider_callback_t)(touch_slider_handle_t, touch_slider_message_t, void *); //!< Slider callback type
+typedef void(*touch_slider_callback_t)(touch_slider_handle_t, touch_slider_message_t *, void *); //!< Slider callback type
 
 /**
  * @brief   Touch slider initialize
@@ -177,6 +177,8 @@ esp_err_t touch_slider_set_dispatch_method(touch_slider_handle_t slider_handle, 
  *
  * @param[in] slider_handle     Slider handle
  * @param[in] slider_callback   User input callback
+ *
+ * @note        Slider message will be passed from the callback function and it will be destroyed when the callback function return.
  *
  * @warning     Since this input callback routine runs on driver core (esp-timer callback routine),
  *              it should not do something that attempts to Block, such as calling vTaskDelay().

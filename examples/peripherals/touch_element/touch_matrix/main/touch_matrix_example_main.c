@@ -76,18 +76,18 @@ static void matrix_handler_task(void *arg)
 }
 #elif CONFIG_TOUCH_ELEM_CALLBACK
 /* Matrix callback routine */
-void matrix_handler(touch_matrix_handle_t out_handle, touch_matrix_message_t out_message, void *arg)
+void matrix_handler(touch_matrix_handle_t out_handle, touch_matrix_message_t *out_message, void *arg)
 {
     (void) arg; //Unused
     if (out_handle != matrix_handle) {
         return;
     }
-    if (out_message.event == TOUCH_MATRIX_EVT_ON_PRESS) {
-        ESP_LOGI(TAG, "Matrix Press, axis: (%d, %d) index: %d", out_message.position.x_axis, out_message.position.y_axis, out_message.position.index);
-    } else if (out_message.event == TOUCH_MATRIX_EVT_ON_RELEASE) {
-        ESP_LOGI(TAG, "Matrix Release, axis: (%d, %d) index: %d", out_message.position.x_axis, out_message.position.y_axis, out_message.position.index);
-    } else if (out_message.event == TOUCH_MATRIX_EVT_ON_LONGPRESS) {
-        ESP_LOGI(TAG, "Matrix LongPress, axis: (%d, %d) index: %d", out_message.position.x_axis, out_message.position.y_axis, out_message.position.index);
+    if (out_message->event == TOUCH_MATRIX_EVT_ON_PRESS) {
+        ESP_LOGI(TAG, "Matrix Press, axis: (%d, %d) index: %d", out_message->position.x_axis, out_message->position.y_axis, out_message->position.index);
+    } else if (out_message->event == TOUCH_MATRIX_EVT_ON_RELEASE) {
+        ESP_LOGI(TAG, "Matrix Release, axis: (%d, %d) index: %d", out_message->position.x_axis, out_message->position.y_axis, out_message->position.index);
+    } else if (out_message->event == TOUCH_MATRIX_EVT_ON_LONGPRESS) {
+        ESP_LOGI(TAG, "Matrix LongPress, axis: (%d, %d) index: %d", out_message->position.x_axis, out_message->position.y_axis, out_message->position.index);
     }
 }
 #endif
