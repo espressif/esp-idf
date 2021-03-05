@@ -33,6 +33,10 @@ static const size_t max_clients = 4;
 
 static esp_err_t ws_handler(httpd_req_t *req)
 {
+    if (req->method == HTTP_GET) {
+        ESP_LOGI(TAG, "Handshake done, the new connection was opened");
+        return ESP_OK;
+    }
     httpd_ws_frame_t ws_pkt;
     memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
 
