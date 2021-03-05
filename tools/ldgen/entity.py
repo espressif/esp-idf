@@ -27,8 +27,13 @@ from pyparsing import (Group, Literal, OneOrMore, ParseException, SkipTo, Suppre
 @total_ordering
 class Entity():
     """
-    Definition of an entity which can be placed or excluded
-    from placement.
+    An entity refers to a library, object, symbol whose input
+    sections can be placed or excluded from placement.
+
+    An important property of an entity is its specificity - the granularity
+    of the the entity to be placed. Specificity increases in the following
+    order: library, object, symbol. An entity with no specificity refers
+    to all entities.
     """
 
     ALL = '*'
@@ -105,8 +110,10 @@ class Entity():
 
 class EntityDB():
     """
-    Encapsulates an output of objdump. Contains information about the static library sections
-    and names
+    Collection of entities extracted from libraries known in the build.
+    Allows retrieving a list of archives, a list of object files in an archive
+    or a list of symbols in an archive; as well as allows for checking if an
+    entity exists in the collection.
     """
 
     __info = collections.namedtuple('__info', 'filename content')

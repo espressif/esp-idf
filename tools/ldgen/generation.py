@@ -26,6 +26,26 @@ from output_commands import AlignAtAddress, InputSectionDesc, SymbolAtAddress
 
 
 class Placement():
+    """
+    A Placement is an assignment of an entity's input sections to a target
+    in the output linker script - a precursor to the input section description.
+
+    A placement can be excluded from another placement. These are represented
+    as contents of EXCLUDE_FILE in the input section description. Since the linker uses the
+    first matching rule, these exclusions make sure that accidental matching
+    of entities with higher specificity does not occur.
+
+    The placement which a placement is excluded from is referred to as the
+    'basis' placement. It operates on the same input section of the entity on
+    one of the parent (or parent's parent and so forth), but might have
+    a different target (see is_significant() for the criteria).
+
+    A placement is explicit if it was derived from an actual entry in one of
+    the mapping fragments. Just as intermediate entity nodes are created in some cases,
+    intermediate placements are created particularly for symbol placements.
+    The reason is that EXCLUDE_FILE does not work on symbols (see ObjectNode
+    for details).
+    """
 
     def __init__(self, node, sections, target, flags, explicit, force=False, dryrun=False):
         self.node = node
@@ -43,9 +63,7 @@ class Placement():
         # fragment entry.
         self.explicit = explicit
 
-        # Find basis placement. A basis placement is a placement
-        # on the parent (or parent's parent and so on and so forth)
-        # that operates on the same section as this one.
+        # Find basis placement.
         parent = node.parent
         candidate = None
         while parent:
@@ -91,6 +109,31 @@ class Placement():
 
 
 class EntityNode():
+    """
+    Node in entity tree. An EntityNode
+    is created from an Entity (see entity.py).
+
+    The entity tree has a maximum depth of 3. Nodes at different
+    depths are derived from this class for special behavior (see
+    RootNode, ArchiveNode, ObjectNode, SymbolNode) depending
+    on entity specificity.
+
+    Nodes for entities are inserted at the appropriate depth, creating
+    intermediate nodes along the path if necessary. For example, a node
+    for entity `lib1.a:obj1:sym1` needs to be inserted. If the node for `lib1:obj1`
+    does not exist, then it needs to be created.
+
+    A node contains a dictionary of placements (see Placement).
+    The key to this dictionary are contents of sections fragments,
+    representing the input sections of an entity. For example,
+    a node for entity `lib1.a` might have a placement entry for its `.text` input section
+    in this dictionary. The placement will contain details about the
+    target, the flags, etc.
+
+    Generation of output commands to be written to the output linker script
+    requires traversal of the tree, each node collecting the output commands
+    from its children, so on and so forth.
+    """
 
     def __init__(self, parent, name):
         self.children = []
@@ -212,14 +255,32 @@ class EntityNode():
 
 
 class SymbolNode(EntityNode):
-
+    """
+    Entities at depth=3. Represents entities with archive, object
+    and symbol specified.
+    """
     def __init__(self, parent, name):
         EntityNode.__init__(self, parent, name)
         self.entity = Entity(self.parent.parent.name, self.parent.name)
 
 
 class ObjectNode(EntityNode):
+    """
+    Entities at depth=2. Represents entities with archive
+    and object specified.
 
+    Creating a placement on a child node (SymbolNode) has a different behavior, since
+    exclusions using EXCLUDE_FILE for symbols does not work.
+
+    The sections of this entity has to be 'expanded'. That is, we must
+    look into the actual input sections of this entity and remove
+    the ones corresponding to the symbol. The remaining sections of an expanded
+    object entity will be listed one-by-one in the corresponding
+    input section description.
+
+    An intermediate placement on this node is created, if one does not exist,
+    and is the one excluded from its basis placement.
+    """
     def __init__(self, parent, name):
         EntityNode.__init__(self, parent, name)
         self.child_t = SymbolNode
@@ -281,7 +342,9 @@ class ObjectNode(EntityNode):
 
 
 class ArchiveNode(EntityNode):
-
+    """
+    Entities at depth=1. Represents entities with archive specified.
+    """
     def __init__(self, parent, name):
         EntityNode.__init__(self, parent, name)
         self.child_t = ObjectNode
@@ -289,6 +352,10 @@ class ArchiveNode(EntityNode):
 
 
 class RootNode(EntityNode):
+    """
+    Single entity at depth=0. Represents entities with no specific members
+    specified.
+    """
     def __init__(self):
         EntityNode.__init__(self, None, Entity.ALL)
         self.child_t = ArchiveNode
@@ -297,7 +364,9 @@ class RootNode(EntityNode):
 
 class Generation:
     """
-    Implements generation of placement based on collected sections, scheme and mapping fragment.
+    Processes all fragments processed from fragment files included in the build.
+    Generates output commands (see output_commands.py) that LinkerScript (see linker_script.py) can
+    write to the output linker script.
     """
 
     # Processed mapping, scheme and section entries

@@ -21,8 +21,8 @@ from pyparsing import (Combine, Group, Literal, Optional, Word, alphanums, hexnu
 
 class SDKConfig:
     """
-    Encapsulates an sdkconfig file. Defines grammar of a configuration entry, and enables
-    evaluation of logical expressions involving those entries.
+    Evaluates conditional expressions based on the build's sdkconfig and Kconfig files.
+    This also defines the grammar of conditional expressions.
     """
 
     # A configuration entry is in the form CONFIG=VALUE. Definitions of components of that grammar
