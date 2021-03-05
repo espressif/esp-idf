@@ -86,7 +86,8 @@ enum {
    layers we might need to temporarily buffer up data */
 
 /* 18 frames is equivalent to 6.89*18*2.9 ~= 360 ms @ 44.1 khz, 20 ms mediatick */
-#define MAX_OUTPUT_A2DP_SNK_FRAME_QUEUE_SZ     (18)
+#define JITTER_BUFFER_WATER_LEVEL (15)
+#define MAX_OUTPUT_A2DP_SNK_FRAME_QUEUE_SZ     (18 + JITTER_BUFFER_WATER_LEVEL)
 
 typedef struct {
     uint32_t sig;
@@ -670,6 +671,11 @@ UINT8 btc_a2dp_sink_enque_buf(BT_HDR *p_pkt)
         p_msg->num_frames_to_be_processed = (*((UINT8 *)(p_msg + 1) + p_msg->offset)) & 0x0f;
         APPL_TRACE_VERBOSE("btc_a2dp_sink_enque_buf %d + \n", p_msg->num_frames_to_be_processed);
         fixed_queue_enqueue(a2dp_sink_local_param.btc_aa_snk_cb.RxSbcQ, p_msg, FIXED_QUEUE_MAX_TIMEOUT);
+
+        if (fixed_queue_length(a2dp_sink_local_param.btc_aa_snk_cb.RxSbcQ) < JITTER_BUFFER_WATER_LEVEL) {
+            return fixed_queue_length(a2dp_sink_local_param.btc_aa_snk_cb.RxSbcQ);
+        }
+
         btc_a2dp_sink_data_post();
     } else {
         /* let caller deal with a failed allocation */
