@@ -120,7 +120,7 @@ uint32_t spi_flash_hal_check_status(spi_flash_host_inst_t *host)
 #endif
     // Not clear if this is necessary, or only necessary if
     // chip->spi == SPI1. But probably doesn't hurt...
-    if ((void*) dev == spi_flash_ll_get_hw(SPI_HOST)) {
+    if ((void*) dev == spi_flash_ll_get_hw(SPI1_HOST)) {
 #if CONFIG_IDF_TARGET_ESP32
         status &= spi_flash_ll_host_idle(&SPI0);
 #endif
@@ -133,7 +133,7 @@ uint32_t spi_flash_hal_check_status(spi_flash_host_inst_t *host)
 esp_err_t spi_flash_hal_setup_read_suspend(spi_flash_host_inst_t *host, const spi_flash_sus_cmd_conf *sus_conf)
 {
 #if SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
-    spi_mem_dev_t *dev = (spi_mem_dev_t *)spi_flash_ll_get_hw(SPI_HOST);
+    spi_mem_dev_t *dev = (spi_mem_dev_t *)spi_flash_ll_get_hw(SPI1_HOST);
     spi_flash_hal_context_t* ctx = (spi_flash_hal_context_t*)host;
     memcpy(&(ctx->sus_cfg), sus_conf, sizeof(spi_flash_sus_cmd_conf));
     spimem_flash_ll_set_read_sus_status(dev, sus_conf->sus_mask);
@@ -147,7 +147,7 @@ esp_err_t spi_flash_hal_setup_read_suspend(spi_flash_host_inst_t *host, const sp
 #if SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 void spi_flash_hal_setup_auto_suspend_mode(spi_flash_host_inst_t *host)
 {
-    spi_mem_dev_t *dev = (spi_mem_dev_t*)spi_flash_ll_get_hw(SPI_HOST);
+    spi_mem_dev_t *dev = (spi_mem_dev_t*)spi_flash_ll_get_hw(SPI1_HOST);
     spimem_flash_ll_auto_wait_idle_init(dev, true);
     spimem_flash_ll_auto_suspend_init(dev, true);
 #if SOC_SPI_MEM_SUPPORT_CHECK_SUS
@@ -157,7 +157,7 @@ void spi_flash_hal_setup_auto_suspend_mode(spi_flash_host_inst_t *host)
 
 void spi_flash_hal_setup_auto_resume_mode(spi_flash_host_inst_t *host)
 {
-    spi_mem_dev_t *dev = (spi_mem_dev_t*)spi_flash_ll_get_hw(SPI_HOST);
+    spi_mem_dev_t *dev = (spi_mem_dev_t*)spi_flash_ll_get_hw(SPI1_HOST);
     spimem_flash_ll_auto_resume_init(dev, true);
 #if SOC_SPI_MEM_SUPPORT_CHECK_SUS
     spimem_flash_ll_res_check_sus_setup(dev, true);
@@ -166,7 +166,7 @@ void spi_flash_hal_setup_auto_resume_mode(spi_flash_host_inst_t *host)
 
 void spi_flash_hal_disable_auto_suspend_mode(spi_flash_host_inst_t *host)
 {
-    spi_mem_dev_t *dev = (spi_mem_dev_t *)spi_flash_ll_get_hw(SPI_HOST);
+    spi_mem_dev_t *dev = (spi_mem_dev_t *)spi_flash_ll_get_hw(SPI1_HOST);
     spimem_flash_ll_auto_wait_idle_init(dev, false);
     spimem_flash_ll_auto_suspend_init(dev, false);
 #if SOC_SPI_MEM_SUPPORT_CHECK_SUS
@@ -176,7 +176,7 @@ void spi_flash_hal_disable_auto_suspend_mode(spi_flash_host_inst_t *host)
 
 void spi_flash_hal_disable_auto_resume_mode(spi_flash_host_inst_t *host)
 {
-    spi_mem_dev_t *dev = (spi_mem_dev_t*)spi_flash_ll_get_hw(SPI_HOST);
+    spi_mem_dev_t *dev = (spi_mem_dev_t*)spi_flash_ll_get_hw(SPI1_HOST);
     spimem_flash_ll_auto_resume_init(dev, false);
 #if SOC_SPI_MEM_SUPPORT_CHECK_SUS
     spimem_flash_ll_res_check_sus_setup(dev, false);

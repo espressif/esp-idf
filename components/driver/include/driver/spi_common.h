@@ -119,7 +119,7 @@ typedef struct {
 /**
  * @brief Initialize a SPI bus
  *
- * @warning For now, only supports HSPI and VSPI.
+ * @warning SPI0/1 is not supported
  *
  * @param host_id       SPI peripheral that controls this bus
  * @param bus_config    Pointer to a spi_bus_config_t struct specifying how the host should be initialized

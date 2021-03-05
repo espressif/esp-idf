@@ -39,7 +39,7 @@
 //TEST_CNT > 512
 #define TEST_CNT                10000
 
-#define TEST_SDSPI_HOST         HSPI_HOST
+#define TEST_SDSPI_HOST         SPI2_HOST
 #define TEST_SDSPI_DMACHAN      1
 
 #define TEST_RESET_DATA_LEN 10

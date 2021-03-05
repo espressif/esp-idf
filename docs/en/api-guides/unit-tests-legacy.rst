@@ -98,7 +98,7 @@ DUT1 console::
     Waiting for signal: [dut2 mac address]!
     Please input parameter value from any board send this signal and press "Enter" key.
 
-DUT2 console:: 
+DUT2 console::
 
     Send signal: [dut2 mac address][10:20:30:40:50:60]!
 
@@ -108,7 +108,7 @@ Once the signal is sent from DUT2, you need to input ``10:20:30:40:50:60`` on DU
 Multi-stage Test Cases
 -----------------------
 
-The normal test cases are expected to finish without reset (or only need to check if reset happens). Sometimes we expect to run some specific tests after certain kinds of reset. 
+The normal test cases are expected to finish without reset (or only need to check if reset happens). Sometimes we expect to run some specific tests after certain kinds of reset.
 For example, we expect to test if reset reason is correct after a wakeup from deep sleep. We need to create a deep-sleep reset first and then check the reset reason.
 To support this, we can define multi-stage test cases, to group a set of test functions::
 
@@ -140,12 +140,12 @@ Change into ``tools/unit-test-app`` directory to configure and build it:
 * ``make menuconfig`` - configure unit test app.
 
 * ``make TESTS_ALL=1`` - build unit test app with tests for each component having tests in the ``test`` subdirectory.
-* ``make TEST_COMPONENTS='xxx'`` - build unit test app with tests for specific components. 
+* ``make TEST_COMPONENTS='xxx'`` - build unit test app with tests for specific components.
 * ``make TESTS_ALL=1 TEST_EXCLUDE_COMPONENTS='xxx'`` - build unit test app with all unit tests, except for unit tests of some components. (For instance: ``make TESTS_ALL=1 TEST_EXCLUDE_COMPONENTS='ulp mbedtls'`` - build all unit tests exludes ``ulp`` and ``mbedtls`` components).
 
 When the build finishes, it will print instructions for flashing the chip. You can simply run ``make flash`` to flash all build output.
 
-You can also run ``make flash TESTS_ALL=1`` or ``make TEST_COMPONENTS='xxx'`` to build and flash. Everything needed will be rebuilt automatically before flashing. 
+You can also run ``make flash TESTS_ALL=1`` or ``make TEST_COMPONENTS='xxx'`` to build and flash. Everything needed will be rebuilt automatically before flashing.
 
 Use menuconfig to set the serial port for flashing.
 
@@ -175,7 +175,7 @@ When unit test app is idle, press "Enter" will make it print test menu with all 
     (14)    "SPI Master clockdiv calculation routines" [spi]
     (15)    "SPI Master test" [spi][ignore]
     (16)    "SPI Master test, interaction of multiple devs" [spi][ignore]
-    (17)    "SPI Master no response when switch from host1 (HSPI) to host2 (VSPI)" [spi]
+    (17)    "SPI Master no response when switch from host1 (SPI2) to host2 (SPI3)" [spi]
     (18)    "SPI Master DMA test, TX and RX in different regions" [spi]
     (19)    "SPI Master DMA test: length, start, not aligned" [spi]
     (20)    "reset reason check for deepsleep" [esp32][test_env=UT_T2_1][multi_stage]
