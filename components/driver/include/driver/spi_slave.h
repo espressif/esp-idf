@@ -88,7 +88,7 @@ struct spi_slave_transaction_t {
 /**
  * @brief Initialize a SPI bus as a slave interface
  *
- * @warning For now, only supports HSPI and VSPI.
+ * @warning SPI0/1 is not supported
  *
  * @param host          SPI peripheral to use as a SPI slave interface
  * @param bus_config    Pointer to a spi_bus_config_t struct specifying how the host should be initialized

@@ -172,7 +172,7 @@ static const char TAG[] = "test_esp_flash";
     { \
         .io_mode = TEST_SPI_READ_MODE,\
         .speed = TEST_SPI_SPEED, \
-        .host_id = SPI_HOST, \
+        .host_id = SPI1_HOST, \
         .cs_id = 1, \
         /* the pin which is usually used by the PSRAM */ \
         .cs_io_num = SPI1_CS_IO, \
@@ -229,7 +229,7 @@ flashtest_config_t config_list[] = {
     {
         .io_mode = TEST_SPI_READ_MODE,
         .speed = TEST_SPI_SPEED,
-        .host_id = FSPI_HOST,
+        .host_id = SPI2_HOST,
         .cs_id = 0,
         .cs_io_num = FSPI_PIN_NUM_CS,
         .input_delay_ns = 0,
@@ -245,7 +245,7 @@ flashtest_config_t config_list[] = {
     {
         .io_mode = TEST_SPI_READ_MODE,
         .speed = TEST_SPI_SPEED,
-        .host_id = FSPI_HOST,
+        .host_id = SPI2_HOST,
         .cs_id = 0,
         .cs_io_num = FSPI_PIN_NUM_CS,
         .input_delay_ns = 0,
@@ -258,7 +258,7 @@ static void get_chip_host(esp_flash_t* chip, spi_host_device_t* out_host_id, int
     spi_host_device_t host_id;
     int cs_id;
     if (chip == NULL) {
-        host_id = SPI_HOST;
+        host_id = SPI1_HOST;
         cs_id = 0;
     } else {
         spi_flash_hal_context_t* host_data = (spi_flash_hal_context_t*)chip->host;
@@ -275,7 +275,7 @@ static void get_chip_host(esp_flash_t* chip, spi_host_device_t* out_host_id, int
 
 static void setup_bus(spi_host_device_t host_id)
 {
-    if (host_id == SPI_HOST) {
+    if (host_id == SPI1_HOST) {
         ESP_LOGI(TAG, "setup flash on SPI1 CS1...\n");
         //no need to initialize the bus, however the CLK may need one more output if it's on the usual place of PSRAM
 #ifdef EXTRA_SPI1_CLK_IO
@@ -295,7 +295,7 @@ static void setup_bus(spi_host_device_t host_id)
 #endif //!DISABLED_FOR_TARGETS(ESP32)
 
 #if !DISABLED_FOR_TARGETS(ESP32)
-    } else if (host_id == FSPI_HOST) {
+    } else if (host_id == SPI2_HOST) {
         ESP_LOGI(TAG, "setup flash on SPI%d (FSPI) CS0...\n", host_id + 1);
         spi_bus_config_t fspi_bus_cfg = {
             .mosi_io_num = FSPI_PIN_NUM_MOSI,
@@ -312,7 +312,7 @@ static void setup_bus(spi_host_device_t host_id)
         TEST_ESP_OK(ret);
 #endif
         //currently the SPI bus for main flash chip is initialized through GPIO matrix
-    } else if (host_id == HSPI_HOST) {
+    } else if (host_id == SPI2_HOST) {
         ESP_LOGI(TAG, "setup flash on SPI%d (HSPI) CS0...\n", host_id + 1);
         spi_bus_config_t hspi_bus_cfg = {
             .mosi_io_num = HSPI_PIN_NUM_MOSI,
@@ -1091,7 +1091,7 @@ static void test_flash_read_write_performance(const esp_partition_t *part)
     int cs_id;
 
     get_chip_host(chip, &host_id, &cs_id);
-    if (host_id != SPI_HOST) {
+    if (host_id != SPI1_HOST) {
         // Chips on other SPI buses
         CHECK_PERFORMANCE(EXT_);
     } else if (cs_id == 0) {

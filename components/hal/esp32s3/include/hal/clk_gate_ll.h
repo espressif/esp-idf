@@ -67,12 +67,10 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
         return SYSTEM_PCNT_CLK_EN;
     case PERIPH_SPI_MODULE:
         return SYSTEM_SPI01_CLK_EN;
-    case PERIPH_FSPI_MODULE:
+    case PERIPH_SPI2_MODULE:
         return SYSTEM_SPI2_CLK_EN;
-    case PERIPH_HSPI_MODULE:
+    case PERIPH_SPI3_MODULE:
         return SYSTEM_SPI3_CLK_EN;
-    case PERIPH_VSPI_MODULE:
-        return SYSTEM_SPI4_CLK_EN;
     case PERIPH_SDMMC_MODULE:
         return SYSTEM_SDIO_HOST_CLK_EN;
     case PERIPH_TWAI_MODULE:
@@ -150,12 +148,10 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return SYSTEM_PCNT_RST;
     case PERIPH_SPI_MODULE:
         return SYSTEM_SPI01_RST;
-    case PERIPH_FSPI_MODULE:
+    case PERIPH_SPI2_MODULE:
         return SYSTEM_SPI2_RST;
-    case PERIPH_HSPI_MODULE:
+    case PERIPH_SPI3_MODULE:
         return SYSTEM_SPI3_RST;
-    case PERIPH_VSPI_MODULE:
-        return SYSTEM_SPI4_RST;
     case PERIPH_SDMMC_MODULE:
         return SYSTEM_SDIO_HOST_RST;
     case PERIPH_TWAI_MODULE:
