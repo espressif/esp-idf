@@ -1507,6 +1507,24 @@ esp_err_t esp_bt_controller_deinit(void)
     return ESP_OK;
 }
 
+
+static void bt_shutdown(void)
+{
+    esp_err_t ret = ESP_OK;
+    ESP_LOGD(BTDM_LOG_TAG, "stop/deinit bt");
+
+    ret = esp_bt_controller_disable();
+    if (ESP_OK != ret) {
+        ESP_LOGW(BTDM_LOG_TAG, "controller disable ret=%d", ret);
+    }
+    ret = esp_bt_controller_deinit();
+    if (ESP_OK != ret) {
+        ESP_LOGW(BTDM_LOG_TAG, "controller deinit ret=%d", ret);
+    }
+    return;
+}
+
+
 esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
 {
     int ret;
@@ -1566,6 +1584,10 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
     }
 
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_ENABLED;
+    ret = esp_register_shutdown_handler(bt_shutdown);
+    if (ret != ESP_OK) {
+        ESP_LOGW(BTDM_LOG_TAG, "Register shutdown handler failed, ret = 0x%x", ret);
+    }
 
     return ESP_OK;
 }
