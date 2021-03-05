@@ -51,14 +51,14 @@ typedef enum {
  * @brief States of an HCD pipe
  *
  * Active:
- *  - Pipe is able to transmit data. Transfer request can be enqueued.
- *  - Event if pipe has no transfer requests enqueued, it can still be in the active state.
+ *  - Pipe is able to transmit data. IRPs can be enqueued.
+ *  - Event if pipe has no IRPs enqueued, it can still be in the active state.
  * Halted:
- *  - An error has occurred on the pipe. Transfer request will no longer be executed.
+ *  - An error has occurred on the pipe. IRPs will no longer be executed.
  *  - Halt should be cleared using the clear command
  * Invalid:
  *  - The underlying device that the pipe connects is not longer valid, thus making the pipe invalid.
- *  - Pending transfer requests should be dequeued and the pipe should be freed.
+ *  - Pending IRPs should be dequeued and the pipe should be freed.
  */
 typedef enum {
     HCD_PIPE_STATE_ACTIVE,          /**< The pipe is active */
@@ -91,10 +91,10 @@ typedef enum {
  */
 typedef enum {
     HCD_PIPE_EVENT_NONE,                    /**< The pipe has no events (used to indicate no events when polling) */
-    HCD_PIPE_EVENT_XFER_REQ_DONE,           /**< The pipe has completed a transfer request and can be dequeued */
+    HCD_PIPE_EVENT_IRP_DONE,                /**< The pipe has completed an IRP. The IRP can be dequeued */
     HCD_PIPE_EVENT_INVALID,                 /**< The pipe is invalid because  */
     HCD_PIPE_EVENT_ERROR_XFER,              /**< Excessive (three consecutive) transaction errors (e.g., no ACK, bad CRC etc) */
-    HCD_PIPE_EVENT_ERROR_XFER_NOT_AVAIL,    /**< Transfer request was not available */
+    HCD_PIPE_EVENT_ERROR_IRP_NOT_AVAIL,     /**< IRP was not available */
     HCD_PIPE_EVENT_ERROR_OVERFLOW,          /**< Received more data than requested. Usually a Packet babble error
                                                  (i.e., an IN packet has exceeded the endpoint's MPS) */
     HCD_PIPE_EVENT_ERROR_STALL,             /**< Pipe received a STALL response received */
@@ -120,8 +120,8 @@ typedef enum {
  * The pipe commands represent the list of pipe manipulations outlined in 10.5.2.2. of USB2.0 specification.
  */
 typedef enum {
-    HCD_PIPE_CMD_ABORT,             /**< Retire all scheduled transfer requests. Pipe's state remains unchanged */
-    HCD_PIPE_CMD_RESET,             /**< Retire all scheduled transfer requests. Pipe's state moves to active */
+    HCD_PIPE_CMD_ABORT,             /**< Retire all scheduled IRPs. Pipe's state remains unchanged */
+    HCD_PIPE_CMD_RESET,             /**< Retire all scheduled IRPs. Pipe's state moves to active */
     HCD_PIPE_CMD_CLEAR,             /**< Pipe's state moves from halted to active */
     HCD_PIPE_CMD_HALT               /**< Pipe's state moves to halted */
 } hcd_pipe_cmd_t;
@@ -137,11 +137,6 @@ typedef void * hcd_port_handle_t;
  * @brief Pipe handle type
  */
 typedef void * hcd_pipe_handle_t;
-
-/**
- * @brief HCD transfer request handle type
- */
-typedef void * hcd_xfer_req_handle_t;
 
 /**
  * @brief Port event callback type
@@ -360,7 +355,7 @@ esp_err_t hcd_pipe_alloc(hcd_port_handle_t port_hdl, const hcd_pipe_config_t *pi
  *
  * Frees the resources used by an HCD pipe. The pipe's handle should be discarded after calling this function. The pipe
  * must be in following condition before it can be freed:
- * - All transfers have been dequeued
+ * - All IRPs have been dequeued
  *
  * @param pipe_hdl Pipe handle
  *
@@ -376,7 +371,7 @@ esp_err_t hcd_pipe_free(hcd_pipe_handle_t pipe_hdl);
  * address and maximum packet size. This function can only be called on a pipe that has met the following conditions:
  * - Pipe is still valid (i.e., not in the HCD_PIPE_STATE_INVALID state)
  * - Pipe is not currently processing a command
- * - All transfer request have been dequeued from the pipe
+ * - All IRPs have been dequeued from the pipe
  *
  * @param pipe_hdl Pipe handle
  * @param dev_addr New device address
@@ -406,12 +401,12 @@ hcd_pipe_state_t hcd_pipe_get_state(hcd_pipe_handle_t pipe_hdl);
 /**
  * @brief Execute a command on a particular pipe
  *
- * Pipe commands allow a pipe to be manipulated (such as clearing a halt, retiring all transfer requests etc). The
- * following conditions must for a pipe command to be issued:
+ * Pipe commands allow a pipe to be manipulated (such as clearing a halt, retiring all IRPs etc). The following
+ * conditions must for a pipe command to be issued:
  * - Pipe is still valid (i.e., not in the HCD_PIPE_STATE_INVALID)
  * - No other thread/task processing a command on the pipe concurrently (will return)
  *
- * @note Some pipe commands will block until the pipe's current inflight transfer is completed. If the pipe's state
+ * @note Some pipe commands will block until the pipe's current inflight IRP is complete. If the pipe's state
  *       changes unexpectedley, this function will return ESP_ERR_INVALID_RESPONSE
  *
  * @param pipe_hdl Pipe handle
@@ -433,92 +428,47 @@ esp_err_t hcd_pipe_command(hcd_pipe_handle_t pipe_hdl, hcd_pipe_cmd_t command);
  */
 hcd_pipe_event_t hcd_pipe_get_event(hcd_pipe_handle_t pipe_hdl);
 
-// ----------------------------------------------- HCD Transfer Requests -----------------------------------------------
+// ---------------------------------------------------- HCD IRPs -------------------------------------------------------
 
 /**
- * @brief Allocate a transfer request
+ * @brief Enqueue an IRP to a particular pipe
  *
- * @note The allocate transfer request will not have its target set (i.e., no target pipe and associated IRP). Call
- *       hcd_xfer_req_set_target() before enqueueing the transfer request
- *
- * @return hcd_xfer_req_handle_t Transfer request handle or NULL if failed.
- */
-hcd_xfer_req_handle_t hcd_xfer_req_alloc(void);
-
-/**
- * @brief Free a transfer request
- *
- * @note The transfer request must be dequeued before it can be freed
- *
- * @param req_hdl Transfer request handle
- */
-void hcd_xfer_req_free(hcd_xfer_req_handle_t req_hdl);
-
-/**
- * @brief Set a transfer request's target
- *
- * Setting a transfer request's target will associate a transfer request with a pipe and a USB IRP (i.e., the data). A
- * transfer request's target must be set before it can be enqueued.
- *
- * @note This should only be called when a transfer requests that are not currently enqueued
- *
- * @param req_hdl Transfer request handle
- * @param pipe_hdl Target pipe's handle
- * @param irp Target IRP handle
- * @param context Context variable to associate transfer request with upper layer object
- */
-void hcd_xfer_req_set_target(hcd_xfer_req_handle_t req_hdl, hcd_pipe_handle_t pipe_hdl, usb_irp_t *irp, void *context);
-
-/**
- * @brief Get the target of a transfer request
- *
- * @note This should only be called when a transfer requests that are not currently enqueued
- *
- * @param[in] req_hdl Transfer request handle
- * @param[out] pipe_hdl Target pipe's handle
- * @param[out] irp Target IRP's handle
- * @param[out] context Context variable
- */
-void hcd_xfer_req_get_target(hcd_xfer_req_handle_t req_hdl, hcd_pipe_handle_t *pipe_hdl, usb_irp_t **irp, void **context);
-
-/**
- * @brief Enqueue a transfer request
- *
- * The following conditions must be met for a transfer request to be enqueued:
- * - The transfer request's target must be set
- * - Transfer request must not already be enqueued
- * - The target pipe must be in the HCD_PIPE_STATE_ACTIVE state
- *
- * @param req_hdl Transfer request handle
- * @retval ESP_OK: Transfer request enqueued successfully
- * @retval ESP_ERR_INVALID_STATE: Conditions not met to enqueue transfer request
- */
-esp_err_t hcd_xfer_req_enqueue(hcd_xfer_req_handle_t req_hdl);
-
-/**
- * @brief Dequeue a completed transfer request from a pipe
- *
- * This function should be called on a pipe after it receives an pipe event. If a pipe has multiple transfer requests
- * that can be dequeued, this function must be called repeatedely until all transfer requests are dequeued. If a pipe
- * has no more transfer requests to dequeue, this function will return NULL.
+ * The following conditions must be met before an IRP can be enqueued:
+ * - The IRP is properly initialized (data buffer and transfer length are set)
+ * - The IRP must not already be enqueued
+ * - The pipe must be in the HCD_PIPE_STATE_ACTIVE state
  *
  * @param pipe_hdl Pipe handle
- * @return hcd_xfer_req_handle_t Transfer request handle or NULL if no more transfer requests to dequeue.
+ * @param irp I/O Request Packet to enqueue
+ * @retval ESP_OK: IRP enqueued successfully
+ * @retval ESP_ERR_INVALID_STATE: Conditions not met to enqueue IRP
  */
-hcd_xfer_req_handle_t hcd_xfer_req_dequeue(hcd_pipe_handle_t pipe_hdl);
+esp_err_t hcd_irp_enqueue(hcd_pipe_handle_t pipe_hdl, usb_irp_t *irp);
 
 /**
- * @brief Abort an ongoing transfer request
+ * @brief Dequeue an IRP from a particular pipe
  *
- * This function will attempt to abort an enqueued transfer request. If the transfer request has not yet been executed,
- * it will be marked as "cancelled" and can be dequeued. If a transfer request is already in progress or has completed,
- * it will not be affected by this function.
+ * This function should be called on a pipe after a pipe receives a HCD_PIPE_EVENT_IRP_DONE event. If a pipe has
+ * multiple IRPs that can be dequeued, this function should be called repeatedely until all IRPs are dequeued. If a pipe
+ * has no more IRPs to dequeue, this function will return NULL.
  *
- * @param req_hdl Transfer request handle
- * @retval ESP_OK: Transfer request successfully aborted, or did not need to be aborted
- * @retval ESP_ERR_INVALID_STATE: Transfer request was never enqueued
+ * @param pipe_hdl Pipe handle
+ * @return usb_irp_t* Dequeued I/O Request Packet, or NULL if no more IRPs to dequeue
  */
-esp_err_t hcd_xfer_req_abort(hcd_xfer_req_handle_t req_hdl);
+usb_irp_t *hcd_irp_dequeue(hcd_pipe_handle_t pipe_hdl);
+
+/**
+ * @brief Abort an enqueued IRP
+ *
+ * This function will attempt to abort an IRP that is already enqueued. If the IRP has yet to be executed, it will be
+ * "cancelled" and can then be dequeued. If the IRP is currenty inflight or has already completed, the IRP will not be
+ * affected by this function.
+ *
+ * @param irp I/O Request Packet to abort
+ * @retval ESP_OK: IRP successfully aborted, or was not affected by this function
+ * @retval ESP_ERR_INVALID_STATE: IRP was never enqueued
+ */
+esp_err_t hcd_irp_abort(usb_irp_t *irp);
 
 #ifdef __cplusplus
 }

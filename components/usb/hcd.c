@@ -58,12 +58,22 @@
 
 #define NUM_PORTS                   1       //The controller only has one port.
 
-typedef enum {
-    XFER_REQ_STATE_IDLE,        //The transfer request is not enqueued
-    XFER_REQ_STATE_PENDING,     //The transfer request is enqueued and pending execution
-    XFER_REQ_STATE_INFLIGHT,    //The transfer request is currently being executed
-    XFER_REQ_STATE_DONE,        //The transfer request has completed executed or is retired, and is waiting to be dequeued
-} xfer_req_state_t;
+// ------------------------ Flags --------------------------
+
+/**
+ * @brief Bit masks for the HCD to use in the IRPs reserved_flags field
+ *
+ * The IRP object has a reserved_flags member for host stack's internal use. The following flags will be set in
+ * reserved_flags in order to keep track of state of an IRP within the HCD.
+ */
+#define IRP_STATE_IDLE         0x0     //The IRP is not enqueued in an HCD pipe
+#define IRP_STATE_PENDING      0x1     //The IRP is enqueued and pending execution
+#define IRP_STATE_INFLIGHT     0x2     //The IRP is currently in flight
+#define IRP_STATE_DONE         0x3     //The IRP has completed execution or is retired, and is waiting to be dequeued
+#define IRP_STATE_MASK         0x3     //Bit mask of all the IRP state flags
+#define IRP_STATE_SET(reserved_flags, state)    (reserved_flags = (reserved_flags & ~IRP_STATE_MASK) | state)
+#define IRP_STATE_GET(reserved_flags)           (reserved_flags & IRP_STATE_MASK)
+
 
 // -------------------- Convenience ------------------------
 
@@ -86,31 +96,19 @@ typedef enum {
 
 // ------------------------------------------------------ Types --------------------------------------------------------
 
-typedef struct xfer_req_obj xfer_req_t;
 typedef struct pipe_obj pipe_t;
 typedef struct port_obj port_t;
-
-/**
- * @brief Object representing an HCD transfer request
- */
-struct xfer_req_obj {
-    TAILQ_ENTRY(xfer_req_obj) tailq_entry;  //TailQ entry for pending or done tailq in pipe object
-    pipe_t *pipe;   //Target pipe of transfer request
-    usb_irp_t *irp; //Target IRP
-    void *context;  //Context variable of transfer request
-    xfer_req_state_t state; //Current state of the transfer request
-};
 
 /**
  * @brief Object representing a pipe in the HCD layer
  */
 struct pipe_obj {
-    //Transfer requests related
-    TAILQ_HEAD(tailhead_xfer_req_pend, xfer_req_obj) pend_xfer_req_tailq;
-    TAILQ_HEAD(tailhead_xfer_req_done, xfer_req_obj) done_xfer_req_tailq;
-    int num_xfer_req_pending;
-    int num_xfer_req_done;
-    xfer_req_t *inflight_xfer_req;  //Pointer to the current transfer request being executed by the pipe. NULL if none.
+    //IRP queueing related
+    TAILQ_HEAD(tailhead_irp_pending, usb_irp_obj) pending_irp_tailq;
+    TAILQ_HEAD(tailhead_irp_done, usb_irp_obj) done_irp_tailq;
+    int num_irp_pending;
+    int num_irp_done;
+    usb_irp_t *inflight_irp;  //Pointer to the in-flight IRP (i.e., the IRP currently being executed). NULL if none.
     //Port related
     port_t *port;                       //The port to which this pipe is routed through
     TAILQ_ENTRY(pipe_obj) tailq_entry;  //TailQ entry for port's list of pipes
@@ -149,7 +147,7 @@ struct port_obj {
     usbh_hal_context_t *hal;
     //Pipes routed through this port
     TAILQ_HEAD(tailhead_pipes_idle, pipe_obj) pipes_idle_tailq;
-    TAILQ_HEAD(tailhead_pipes_queued, pipe_obj) pipes_queued_tailq;
+    TAILQ_HEAD(tailhead_pipes_queued, pipe_obj) pipes_active_tailq;
     int num_pipes_idle;
     int num_pipes_queued;
     //Port status, state, and events
@@ -246,7 +244,7 @@ static bool _internal_pipe_event_notify(pipe_t *pipe, bool from_isr);
  * Entry:
  *  - The port or its connected device is no longer valid. This guarantees that none of the pipes will be transferring
  * Exit:
- *  - Each pipe will have any pending transfer request moved to their respective done tailq
+ *  - Each pipe will have any pending IRPs moved to their respective done tailq
  *  - Each pipe will be put into the invalid state
  *  - Generate a HCD_PIPE_EVENT_INVALID event on each pipe and run their respective callbacks
  *
@@ -262,8 +260,8 @@ static void _port_invalidate_all_pipes(port_t *port);
  * Entry:
  *  - The port is in the HCD_PORT_STATE_ENABLED state (i.e., there is a connected device which has been reset)
  * Exit:
- *  - All pipes of the port have either paused, or are waiting to complete their inflight transfer request to pause
- *  - If waiting for one or more pipes, _internal_port_event_wait() must be called after this function returns
+ *  - All pipes routed through the port have either paused, or are waiting to complete their in-flight IRPs before pausing
+ *  - If waiting for one or more pipes to pause, _internal_port_event_wait() must be called after this function returns
  *
  * @param port Port object
  * @return true All pipes have been paused
@@ -280,7 +278,7 @@ static bool _port_pause_all_pipes(port_t *port);
  *  - The port is in the HCD_PORT_STATE_ENABLED state
  *  - All pipes are paused
  * Exit:
- *  - All pipes un-paused. If those pipes have pending transfer requests, they will be started.
+ *  - All pipes un-paused. If those pipes have pending IRPs, they will be started.
  *
  * @param port Port object
  */
@@ -369,66 +367,66 @@ static bool _port_debounce(port_t *port);
 // ------------------------ Pipe ---------------------------
 
 /**
- * @brief Get the next pending transfer request from the pending tailq
+ * @brief Get the next pending IRP from the pending tailq
  *
  * Entry:
- * - The inflight transfer request must be set to NULL (indicating the pipe currently has no inflight transfer request)
+ * - The in-flight IRP must be set to NULL (indicating the pipe currently has no in-flight IRP)
  * Exit:
- * - If (num_xfer_req_pending > 0), the first transfer request is removed from pend_xfer_req_tailq and and
- *   inflight_xfer_req is set to that transfer request.
- * - If there are no more queued transfer requests, inflight_xfer_req is left as NULL
+ * - If (num_irp_pending > 0), the first IRP is removed from pending_irp_tailq and and
+ *   inflight_irp is set to that IRP.
+ * - If there are no more queued IRPs, inflight_irp is left as NULL
  *
  * @param pipe Pipe object
- * @return true A pending transfer request is now set as the inflight transfer request
- * @return false No more pending transfer requests
+ * @return true A pending IRP is now set as the in-flight IRP
+ * @return false No more pending IRPs
  */
-static bool _pipe_get_next_xfer_req(pipe_t *pipe);
+static bool _pipe_get_next_irp(pipe_t *pipe);
 
 /**
- * @brief Return the inflight transfer request to the done tailq
+ * @brief Return the pipe's current IRP (inflight_irp) to the done tailq
  *
  * Entry:
- *  - The inflight transfer request must already have been parsed (i.e., results have been checked)
+ *  - The inflight_irp must already have been parsed (i.e., results have been checked)
  * Exit:
- * - The inflight transfer request is returned to the done tailq and inflight_xfer_req is set to NULL
+ * - The IRP is returned to the done tailq and inflight_irp is set to NULL
  *
  * @param pipe Pipe object
  */
-static void _pipe_ret_cur_xfer_req(pipe_t *pipe);
+static void _pipe_return_cur_irp(pipe_t *pipe);
 
 /**
- * @brief Wait until a pipe's inflight transfer request is done
+ * @brief Wait until a pipe's in-flight IRP is done
  *
- * If the pipe has an inflight transfer request, this function will block until it is done (via a internal pipe event).
- * If the pipe has no inflight transfer request, this function do nothing and return immediately.
+ * If the pipe has an in-flight IRP, this function will block until it is done (via a internal pipe event).
+ * If the pipe has no in-flight IRP, this function do nothing and return immediately.
  * If the pipe's state changes unexpectedely, this function will return false.
  *
  * @note This function is blocking (will exit and re-enter the critical section to do so)
  *
  * @param pipe Pipe object
- * @return true Pipes inflight transfer request is done
+ * @return true Pipes in-flight IRP is done
  * @return false Pipes state unexpectedly changed
  */
 static bool _pipe_wait_done(pipe_t *pipe);
 
 /**
- * @brief Retires all transfer requests (those that were previously inflight or pending)
+ * @brief Retires all IRPs (those that were previously in-flight or pending)
  *
- * Retiring all transfer requests will result in any pending transfer request being moved to the done tailq. This
- * function will update the IPR status of each transfer request.
+ * Retiring all IRPs will result in any pending IRP being moved to the done tailq. This
+ * function will update the IPR status of each IRP.
  *  - If the retiring is self-initiated (i.e., due to a pipe command), the IRP status will be set to USB_TRANSFER_STATUS_CANCELLED.
  *  - If the retiring is NOT self-initiated (i.e., the pipe is no longer valid), the IRP status will be set to USB_TRANSFER_STATUS_NO_DEVICE
  *
  * Entry:
- * - There can be no inflight transfer request (must already be parsed and returned to done queue)
+ * - There can be no in-flight IRP (must already be parsed and returned to done queue)
  * Exit:
- * - If there was an inflight transfer request, it is parsed and returned to the done queue
- * - If there are any pending transfer requests:
+ * - If there was an in-flight IRP, it is parsed and returned to the done queue
+ * - If there are any pending IRPs:
  *      - They are moved to the done tailq
  *
  * @param pipe Pipe object
- * @param cancelled Are we actively Pipe retire is initialized by the user due to a command, thus transfer request are actively
- *                  cancelled
+ * @param cancelled Are we actively Pipe retire is initialized by the user due to a command, thus IRP are
+ *                  actively cancelled.
  */
 static void _pipe_retire(pipe_t *pipe, bool self_initiated);
 
@@ -440,45 +438,45 @@ static void _pipe_retire(pipe_t *pipe, bool self_initiated);
  */
 static inline hcd_pipe_event_t pipe_decode_error_event(usbh_hal_chan_error_t chan_error);
 
-// ------------------ Transfer Requests --------------------
+// ----------------- Transfer Descriptors ------------------
 
 /**
- * @brief Fill a transfer request into the pipe's transfer descriptor list
+ * @brief Fill the inflight_irp into the pipe's transfer descriptor list
  *
  * Entry:
- *  - The pipe's inflight_xfer_req must be set to the next transfer request
+ *  - The pipe's inflight_irp must be set to the next IRP
  * Exit:
- *  - inflight_xfer_req filled into the pipe's transfer descriptor list
+ *  - inflight_irp filled into the pipe's transfer descriptor list
  *  - Starting PIDs and directions set
  *  - Channel slot acquired. Will need to call usbh_hal_chan_activate() to actually start execution
  *
- * @param pipe Pipe where inflight_xfer_req is already set to the next transfer request
+ * @param pipe Pipe where inflight_irp is already set to the next IRP
  */
-static void _xfer_req_fill(pipe_t *pipe);
+static void _xfer_desc_list_fill(pipe_t *pipe);
 
 /**
- * @brief Continue a transfer request
+ * @brief Continue the execution of the transfer descriptor list
  *
  * @note This is currently only used for control transfers
  *
- * @param pipe Pipe where inflight_xfer_req contains the transfer request to continue
+ * @param pipe Pipe object
  */
-static void _xfer_req_continue(pipe_t *pipe);
+static void _xfer_desc_list_continue(pipe_t *pipe);
 
 /**
- * @brief Parse the results of a pipe's transfer descriptor list into a transfer request
+ * @brief Parse the pipe's transfer descriptor list to fill the result of the transfers into the pipe's IRP
  *
  * Entry:
  *  - The pipe must have stop transferring either due a channel event or a port disconnection.
- *  - The pipe's state and last_event must be updated before parsing the transfer request as
- *    they will used to determine the resuult of the transfer request
+ *  - The pipe's state and last_event must be updated before parsing the IRP as they will used to determine the result
+ *    of the IRP
  * Exit:
- *  - The pipe's inflight_xfer_req is filled with result of the transfer request (i.e., the underlying IRP has its status set)
+ *  - The pipe's inflight_irp is filled with result of the IRP (i.e., the underlying IRP has its status set)
  *
- * @param pipe Pipe where inflight_xfer_req contains the completed transfer request
+ * @param pipe Pipe object
  * @param error_occurred Are we parsing after the pipe had an error (or has become invalid)
  */
-static void _xfer_req_parse(pipe_t *pipe, bool error_occurred);
+static void _xfer_desc_list_parse(pipe_t *pipe, bool error_occurred);
 
 // ----------------------------------------------- Interrupt Handling --------------------------------------------------
 
@@ -562,7 +560,7 @@ static hcd_port_event_t _intr_hdlr_hprt(port_t *port, usbh_hal_port_event_t hal_
         }
         case USBH_HAL_PORT_EVENT_DISCONN: {
             if (port->flags.conn_devc_ena) {
-                //The port was previously enabled, so this is a sudden disconenction
+                //The port was previously enabled, so this is a sudden disconnection
                 port->state = HCD_PORT_STATE_RECOVERY;
                 port_event = HCD_PORT_EVENT_SUDDEN_DISCONN;
             } else {
@@ -638,10 +636,10 @@ static hcd_pipe_event_t _intr_hdlr_chan(pipe_t *pipe, usbh_hal_chan_t *chan_obj,
     switch (chan_event) {
         case USBH_HAL_CHAN_EVENT_SLOT_DONE: {
             //An entire transfer descriptor list has completed execution
-            pipe->last_event = HCD_PIPE_EVENT_XFER_REQ_DONE;
-            event = HCD_PIPE_EVENT_XFER_REQ_DONE;
-            _xfer_req_parse(pipe, false);    //Parse results of transfer request
-            _pipe_ret_cur_xfer_req(pipe);    //Return the transfer request to the pipe's done tailq
+            pipe->last_event = HCD_PIPE_EVENT_IRP_DONE;
+            event = HCD_PIPE_EVENT_IRP_DONE;
+            _xfer_desc_list_parse(pipe, false);    //Parse results of IRP
+            _pipe_return_cur_irp(pipe);    //Return the IRP to the pipe's done tailq
             if (pipe->flags.waiting_xfer_done) {
                 //A port/pipe command is waiting for this pipe to complete its transfer. So don't load the next transfer
                 pipe->flags.waiting_xfer_done = 0;
@@ -658,9 +656,9 @@ static hcd_pipe_event_t _intr_hdlr_chan(pipe_t *pipe, usbh_hal_chan_t *chan_obj,
                     //Pipe command is waiting for transfer to complete
                     *yield |= _internal_pipe_event_notify(pipe, true);
                 }
-            } else if (_pipe_get_next_xfer_req(pipe)) {
-                //Fill the descriptor list with the transfer request and start the transfer
-                _xfer_req_fill(pipe);
+            } else if (_pipe_get_next_irp(pipe)) {
+                //Fill the descriptor list with the IRP and start the transfer
+                _xfer_desc_list_fill(pipe);
                 usbh_hal_chan_activate(chan_obj, 0);  //Start with the first descriptor
             }
             break;
@@ -668,7 +666,7 @@ static hcd_pipe_event_t _intr_hdlr_chan(pipe_t *pipe, usbh_hal_chan_t *chan_obj,
         case USBH_HAL_CHAN_EVENT_SLOT_HALT: {
             //A transfer descriptor list has partially completed. This currently only happens on control pipes
             assert(pipe->ep_char.type == USB_PRIV_XFER_TYPE_CTRL);
-            _xfer_req_continue(pipe);    //Continue the transfer request.
+            _xfer_desc_list_continue(pipe);     //Continue the transfer request.
             //We are continuing a transfer, so no event has occurred
             break;
         }
@@ -679,9 +677,9 @@ static hcd_pipe_event_t _intr_hdlr_chan(pipe_t *pipe, usbh_hal_chan_t *chan_obj,
             pipe->last_event = pipe_decode_error_event(chan_error);
             event = pipe->last_event;
             pipe->state = HCD_PIPE_STATE_HALTED;
-            //Parse the failed transfer request and update it's IRP status
-            _xfer_req_parse(pipe, true);
-            _pipe_ret_cur_xfer_req(pipe);    //Return the transfer request to the pipe's done tailq
+            //Parse the failed IRP and update it's IRP status
+            _xfer_desc_list_parse(pipe, true);
+            _pipe_return_cur_irp(pipe);    //Return the IRP to the pipe's done tailq
             break;
         }
         case USBH_HAL_CHAN_EVENT_HALT_REQ:  //We currently don't halt request so this event should never occur
@@ -705,7 +703,7 @@ static hcd_pipe_event_t _intr_hdlr_chan(pipe_t *pipe, usbh_hal_chan_t *chan_obj,
  */
 static void intr_hdlr_main(void *arg)
 {
-    port_t *port = (port_t *)arg;
+    port_t *port = (port_t *) arg;
     bool yield = false;
 
     HCD_ENTER_CRITICAL_ISR();
@@ -792,7 +790,7 @@ esp_err_t hcd_install(const hcd_config_t *config)
     //Allocate resources for each port (there's only one)
     p_hcd_obj_dmy->port_obj = port_obj_alloc();
     esp_err_t intr_alloc_ret = esp_intr_alloc(ETS_USB_INTR_SOURCE,
-                                              config->intr_flags | ESP_INTR_FLAG_INTRDISABLED,  //The interruupt must be disabled until the port is initialized
+                                              config->intr_flags | ESP_INTR_FLAG_INTRDISABLED,  //The interrupt must be disabled until the port is initialized
                                               intr_hdlr_main,
                                               (void *)p_hcd_obj_dmy->port_obj,
                                               &p_hcd_obj_dmy->isr_hdl);
@@ -811,7 +809,7 @@ esp_err_t hcd_install(const hcd_config_t *config)
         goto err;
     }
     s_hcd_obj = p_hcd_obj_dmy;
-    //Set HW prereqs for each port (there's only one)
+    //Set HW prerequisites for each port (there's only one)
     periph_module_enable(PERIPH_USB_MODULE);
     periph_module_reset(PERIPH_USB_MODULE);
     /*
@@ -839,7 +837,7 @@ err:
 esp_err_t hcd_uninstall(void)
 {
     HCD_ENTER_CRITICAL();
-    //Check that all ports have been disabled (theres only one)
+    //Check that all ports have been disabled (there's only one port)
     if (s_hcd_obj == NULL || s_hcd_obj->port_obj->initialized) {
         HCD_EXIT_CRITICAL();
         return ESP_ERR_INVALID_STATE;
@@ -865,17 +863,17 @@ static void _port_invalidate_all_pipes(port_t *port)
     //This function should only be called when the port is invalid
     assert(!port->flags.conn_devc_ena);
     pipe_t *pipe;
-    //Process all pipes that have queued transfer requests
-    TAILQ_FOREACH(pipe, &port->pipes_queued_tailq, tailq_entry) {
+    //Process all pipes that have queued IRPs
+    TAILQ_FOREACH(pipe, &port->pipes_active_tailq, tailq_entry) {
         //Mark the pipe as invalid and set an invalid event
         pipe->state = HCD_PIPE_STATE_INVALID;
         pipe->last_event = HCD_PIPE_EVENT_INVALID;
-        //If the pipe had an inflight transfer, parse and return it
-        if (pipe->inflight_xfer_req != NULL) {
-            _xfer_req_parse(pipe, true);
-            _pipe_ret_cur_xfer_req(pipe);
+        //If the pipe had an in-flight transfer, parse and return it
+        if (pipe->inflight_irp != NULL) {
+            _xfer_desc_list_parse(pipe, true);
+            _pipe_return_cur_irp(pipe);
         }
-        //Retire any remaining transfer requests
+        //Retire any remaining IRPs
         _pipe_retire(pipe, false);
         if (pipe->task_waiting_pipe_notif != NULL) {
             //Unblock the thread/task waiting for a notification from the pipe as the pipe is no longer valid.
@@ -905,14 +903,14 @@ static bool _port_pause_all_pipes(port_t *port)
     assert(port->state == HCD_PORT_STATE_ENABLED);
     pipe_t *pipe;
     int num_pipes_waiting_done = 0;
-    //Process all pipes that have queued transfer requests
-    TAILQ_FOREACH(pipe, &port->pipes_queued_tailq, tailq_entry) {
-        if (pipe->inflight_xfer_req != NULL) {
-            //Pipe has an inflight transfer. Indicate to the pipe we are waiting the transfer to complete
+    //Process all pipes that have queued IRPs
+    TAILQ_FOREACH(pipe, &port->pipes_active_tailq, tailq_entry) {
+        if (pipe->inflight_irp != NULL) {
+            //Pipe has an in-flight transfer. Indicate to the pipe we are waiting the transfer to complete
             pipe->flags.waiting_xfer_done = 1;
             num_pipes_waiting_done++;
         } else {
-            //No inflight transfer so no need to wait
+            //No in-flight transfer so no need to wait
             pipe->flags.paused = 1;
         }
     }
@@ -937,12 +935,12 @@ static void _port_unpause_all_pipes(port_t *port)
     TAILQ_FOREACH(pipe, &port->pipes_idle_tailq, tailq_entry) {
         pipe->flags.paused = 0;
     }
-    //Process all pipes that have queued transfer requests
-    TAILQ_FOREACH(pipe, &port->pipes_queued_tailq, tailq_entry) {
+    //Process all pipes that have queued IRPs
+    TAILQ_FOREACH(pipe, &port->pipes_active_tailq, tailq_entry) {
         pipe->flags.paused = 0;
-        //If the pipe has more pending transfer request, start them.
-        if (_pipe_get_next_xfer_req(pipe)) {
-            _xfer_req_fill(pipe);
+        //If the pipe has more pending IRP, start them.
+        if (_pipe_get_next_irp(pipe)) {
+            _xfer_desc_list_fill(pipe);
             usbh_hal_chan_activate(pipe->chan_obj, 0);
         }
     }
@@ -983,7 +981,7 @@ static bool _port_bus_suspend(port_t *port)
         //Need to wait for some pipes to pause. Wait for notification from ISR
         _internal_port_event_wait(port);
         if (port->state != HCD_PORT_STATE_ENABLED || !port->flags.conn_devc_ena) {
-            //Port state unexpectedley changed
+            //Port state unexpectedly changed
             goto bailout;
         }
     }
@@ -1082,10 +1080,10 @@ esp_err_t hcd_port_init(int port_number, hcd_port_config_t *port_config, hcd_por
 
     HCD_ENTER_CRITICAL();
     HCD_CHECK_FROM_CRIT(s_hcd_obj != NULL && !s_hcd_obj->port_obj->initialized, ESP_ERR_INVALID_STATE);
-    //Port object memory and resources (such as mutex) already be allocated. Just need to initialize necessary fields only
+    //Port object memory and resources (such as the mutex) already be allocated. Just need to initialize necessary fields only
     port_t *port_obj = s_hcd_obj->port_obj;
     TAILQ_INIT(&port_obj->pipes_idle_tailq);
-    TAILQ_INIT(&port_obj->pipes_queued_tailq);
+    TAILQ_INIT(&port_obj->pipes_active_tailq);
     port_obj->state = HCD_PORT_STATE_NOT_POWERED;
     port_obj->last_event = HCD_PORT_EVENT_NONE;
     port_obj->callback = port_config->callback;
@@ -1292,17 +1290,18 @@ void *hcd_port_get_ctx(hcd_port_handle_t port_hdl)
 
 // ----------------------- Private -------------------------
 
-static bool _pipe_get_next_xfer_req(pipe_t *pipe)
+static bool _pipe_get_next_irp(pipe_t *pipe)
 {
-    assert(pipe->inflight_xfer_req == NULL);
+    assert(pipe->inflight_irp == NULL);
     bool ret;
-    //This function assigns the next pending transfer request to the inflight_xfer_req
-    if (pipe->num_xfer_req_pending > 0) {
-        //Set inflight_xfer_req to the next pending transfer request
-        pipe->inflight_xfer_req = TAILQ_FIRST(&pipe->pend_xfer_req_tailq);
-        TAILQ_REMOVE(&pipe->pend_xfer_req_tailq, pipe->inflight_xfer_req, tailq_entry);
-        pipe->inflight_xfer_req->state = XFER_REQ_STATE_INFLIGHT;
-        pipe->num_xfer_req_pending--;
+    //This function assigns the next pending IRP to the inflight_irp
+    if (pipe->num_irp_pending > 0) {
+        //Set inflight_irp to the next pending IRP
+        pipe->inflight_irp = TAILQ_FIRST(&pipe->pending_irp_tailq);
+        TAILQ_REMOVE(&pipe->pending_irp_tailq, pipe->inflight_irp, tailq_entry);
+        pipe->num_irp_pending--;
+        //Update the IRP's current state
+        IRP_STATE_SET(pipe->inflight_irp->reserved_flags, IRP_STATE_INFLIGHT);
         ret =  true;
     } else {
         ret = false;
@@ -1310,20 +1309,21 @@ static bool _pipe_get_next_xfer_req(pipe_t *pipe)
     return ret;
 }
 
-static void _pipe_ret_cur_xfer_req(pipe_t *pipe)
+static void _pipe_return_cur_irp(pipe_t *pipe)
 {
-    assert(pipe->inflight_xfer_req != NULL);
-    //Add the transfer request to the pipe's done tailq
-    TAILQ_INSERT_TAIL(&pipe->done_xfer_req_tailq, pipe->inflight_xfer_req, tailq_entry);
-    pipe->inflight_xfer_req->state = XFER_REQ_STATE_DONE;
-    pipe->inflight_xfer_req = NULL;
-    pipe->num_xfer_req_done++;
+    assert(pipe->inflight_irp != NULL);
+    //Add the IRP to the pipe's done tailq
+    TAILQ_INSERT_TAIL(&pipe->done_irp_tailq, pipe->inflight_irp, tailq_entry);
+    //Update the IRP's current state
+    IRP_STATE_SET(pipe->inflight_irp->reserved_flags, IRP_STATE_DONE);
+    pipe->inflight_irp = NULL;
+    pipe->num_irp_done++;
 }
 
 static bool _pipe_wait_done(pipe_t *pipe)
 {
-    //Check if there is a currently inflight transfer request
-    if (pipe->inflight_xfer_req != NULL) {
+    //Check if there is a currently in-flight IRP
+    if (pipe->inflight_irp != NULL) {
         //Wait for pipe to complete its transfer
         pipe->flags.waiting_xfer_done = 1;
         _internal_pipe_event_wait(pipe);
@@ -1341,20 +1341,21 @@ static bool _pipe_wait_done(pipe_t *pipe)
 
 static void _pipe_retire(pipe_t *pipe, bool self_initiated)
 {
-    //Cannot have any inflight transfer request
-    assert(pipe->inflight_xfer_req == NULL);
-    if (pipe->num_xfer_req_pending > 0) {
-        //Process all remaining pending transfer requests
-        xfer_req_t *xfer_req;
-        TAILQ_FOREACH(xfer_req, &pipe->pend_xfer_req_tailq, tailq_entry) {
-            xfer_req->state = XFER_REQ_STATE_DONE;
-            //If we are initiating the retire, mark the transfer request as cancelled
-            xfer_req->irp->status = (self_initiated) ? USB_TRANSFER_STATUS_CANCELLED : USB_TRANSFER_STATUS_NO_DEVICE;
+    //Cannot have any in-flight IRP
+    assert(pipe->inflight_irp == NULL);
+    if (pipe->num_irp_pending > 0) {
+        //Process all remaining pending IRPs
+        usb_irp_t *irp;
+        TAILQ_FOREACH(irp, &pipe->pending_irp_tailq, tailq_entry) {
+            //Update the IRP's current state
+            IRP_STATE_SET(irp->reserved_flags, IRP_STATE_DONE);
+            //If we are initiating the retire, mark the IRP as cancelled
+            irp->status = (self_initiated) ? USB_TRANSFER_STATUS_CANCELLED : USB_TRANSFER_STATUS_NO_DEVICE;
         }
         //Concatenated pending tailq to the done tailq
-        TAILQ_CONCAT(&pipe->done_xfer_req_tailq, &pipe->pend_xfer_req_tailq, tailq_entry);
-        pipe->num_xfer_req_done += pipe->num_xfer_req_pending;
-        pipe->num_xfer_req_pending = 0;
+        TAILQ_CONCAT(&pipe->done_irp_tailq, &pipe->pending_irp_tailq, tailq_entry);
+        pipe->num_irp_done += pipe->num_irp_pending;
+        pipe->num_irp_pending = 0;
     }
 }
 
@@ -1366,7 +1367,7 @@ static inline hcd_pipe_event_t pipe_decode_error_event(usbh_hal_chan_error_t cha
             event = HCD_PIPE_EVENT_ERROR_XFER;
             break;
         case USBH_HAL_CHAN_ERROR_BNA:
-            event = HCD_PIPE_EVENT_ERROR_XFER_NOT_AVAIL;
+            event = HCD_PIPE_EVENT_ERROR_IRP_NOT_AVAIL;
             break;
         case USBH_HAL_CHAN_ERROR_PKT_BBL:
             event = HCD_PIPE_EVENT_ERROR_OVERFLOW;
@@ -1379,13 +1380,13 @@ static inline hcd_pipe_event_t pipe_decode_error_event(usbh_hal_chan_error_t cha
 }
 
 // ----------------------- Public --------------------------
-#include "esp_rom_sys.h"
+
 esp_err_t hcd_pipe_alloc(hcd_port_handle_t port_hdl, const hcd_pipe_config_t *pipe_config, hcd_pipe_handle_t *pipe_hdl)
 {
     HCD_CHECK(port_hdl != NULL && pipe_config != NULL && pipe_hdl != NULL, ESP_ERR_INVALID_ARG);
     port_t *port = (port_t *)port_hdl;
     HCD_ENTER_CRITICAL();
-    //Can only allocate a pipe if the targetted port is initialized and conencted to an enabled device
+    //Can only allocate a pipe if the targeted port is initialized and connected to an enabled device
     HCD_CHECK_FROM_CRIT(port->initialized && port->flags.conn_devc_ena, ESP_ERR_INVALID_STATE);
     usb_speed_t port_speed = port->speed;
     HCD_EXIT_CRITICAL();
@@ -1432,8 +1433,8 @@ esp_err_t hcd_pipe_alloc(hcd_port_handle_t port_hdl, const hcd_pipe_config_t *pi
     }
 
     //Initialize pipe object
-    TAILQ_INIT(&pipe->pend_xfer_req_tailq);
-    TAILQ_INIT(&pipe->done_xfer_req_tailq);
+    TAILQ_INIT(&pipe->pending_irp_tailq);
+    TAILQ_INIT(&pipe->done_irp_tailq);
     pipe->port = port;
     pipe->xfer_desc_list = xfer_desc_list;
     pipe->flags.xfer_desc_list_len = num_xfer_desc;
@@ -1502,12 +1503,12 @@ esp_err_t hcd_pipe_free(hcd_pipe_handle_t pipe_hdl)
 {
     pipe_t *pipe = (pipe_t *)pipe_hdl;
     HCD_ENTER_CRITICAL();
-    //Check that all transfer requests have been removed and pipe has no pending events
-    HCD_CHECK_FROM_CRIT(pipe->inflight_xfer_req == NULL
-                        && pipe->num_xfer_req_pending == 0
-                        && pipe->num_xfer_req_done == 0,
+    //Check that all IRPs have been removed and pipe has no pending events
+    HCD_CHECK_FROM_CRIT(pipe->inflight_irp == NULL
+                        && pipe->num_irp_pending == 0
+                        && pipe->num_irp_done == 0,
                         ESP_ERR_INVALID_STATE);
-    //Remove pipe from the list of idle pipes (it must be in the idle list because it should have no queued transfer requests)
+    //Remove pipe from the list of idle pipes (it must be in the idle list because it should have no queued IRPs)
     TAILQ_REMOVE(&pipe->port->pipes_idle_tailq, pipe, tailq_entry);
     pipe->port->num_pipes_idle--;
     usbh_hal_chan_free(pipe->port->hal, pipe->chan_obj);
@@ -1527,10 +1528,10 @@ esp_err_t hcd_pipe_update(hcd_pipe_handle_t pipe_hdl, uint8_t dev_addr, int mps)
     //Check if pipe is in the correct state to be updated
     HCD_CHECK_FROM_CRIT(pipe->state != HCD_PIPE_STATE_INVALID
                         && !pipe->flags.pipe_cmd_processing
-                        && pipe->num_xfer_req_pending == 0
-                        && pipe->num_xfer_req_done == 0,
+                        && pipe->num_irp_pending == 0
+                        && pipe->num_irp_done == 0,
                         ESP_ERR_INVALID_STATE);
-    //Check that all transfer requests have been removed and pipe has no pending events
+    //Check that all IRPs have been removed and pipe has no pending events
     pipe->ep_char.dev_addr = dev_addr;
     pipe->ep_char.mps = mps;
     usbh_hal_chan_set_ep_char(pipe->chan_obj, &pipe->ep_char);
@@ -1540,7 +1541,7 @@ esp_err_t hcd_pipe_update(hcd_pipe_handle_t pipe_hdl, uint8_t dev_addr, int mps)
 
 void *hcd_pipe_get_ctx(hcd_pipe_handle_t pipe_hdl)
 {
-    pipe_t *pipe = (pipe_t *) pipe_hdl;
+    pipe_t *pipe = (pipe_t *)pipe_hdl;
     void *ret;
     HCD_ENTER_CRITICAL();
     ret = pipe->context;
@@ -1551,7 +1552,7 @@ void *hcd_pipe_get_ctx(hcd_pipe_handle_t pipe_hdl)
 hcd_pipe_state_t hcd_pipe_get_state(hcd_pipe_handle_t pipe_hdl)
 {
     hcd_pipe_state_t ret;
-    pipe_t *pipe = (pipe_t *) pipe_hdl;
+    pipe_t *pipe = (pipe_t *)pipe_hdl;
     HCD_ENTER_CRITICAL();
     //If there is no enabled device, all existing pipes are invalid.
     if (pipe->port->state != HCD_PORT_STATE_ENABLED
@@ -1567,7 +1568,7 @@ hcd_pipe_state_t hcd_pipe_get_state(hcd_pipe_handle_t pipe_hdl)
 
 esp_err_t hcd_pipe_command(hcd_pipe_handle_t pipe_hdl, hcd_pipe_cmd_t command)
 {
-    pipe_t *pipe = (pipe_t *) pipe_hdl;
+    pipe_t *pipe = (pipe_t *)pipe_hdl;
     bool ret = ESP_OK;
 
     HCD_ENTER_CRITICAL();
@@ -1578,7 +1579,7 @@ esp_err_t hcd_pipe_command(hcd_pipe_handle_t pipe_hdl, hcd_pipe_cmd_t command)
         pipe->flags.pipe_cmd_processing = 1;
         switch (command) {
             case HCD_PIPE_CMD_ABORT: {
-                //Retire all scheduled transfer requests. Pipe's state remains unchanged
+                //Retire all scheduled IRPs. Pipe's state remains unchanged
                 if (!_pipe_wait_done(pipe)) {   //Stop any on going transfers
                     ret = ESP_ERR_INVALID_RESPONSE;
                     break;
@@ -1587,7 +1588,7 @@ esp_err_t hcd_pipe_command(hcd_pipe_handle_t pipe_hdl, hcd_pipe_cmd_t command)
                 break;
             }
             case HCD_PIPE_CMD_RESET: {
-                //Retire all scheduled transfer requests. Pipe's state moves to active
+                //Retire all scheduled IRPs. Pipe's state moves to active
                 if (!_pipe_wait_done(pipe)) {   //Stop any on going transfers
                     ret = ESP_ERR_INVALID_RESPONSE;
                     break;
@@ -1601,9 +1602,9 @@ esp_err_t hcd_pipe_command(hcd_pipe_handle_t pipe_hdl, hcd_pipe_cmd_t command)
                 if (pipe->state == HCD_PIPE_STATE_HALTED) {
                     pipe->state = HCD_PIPE_STATE_ACTIVE;
                     //Start the next pending transfer if it exists
-                    if (_pipe_get_next_xfer_req(pipe)) {
-                        //Fill the descriptor list with the transfer request and start the transfer
-                        _xfer_req_fill(pipe);
+                    if (_pipe_get_next_irp(pipe)) {
+                        //Fill the descriptor list with the IRP and start the transfer
+                        _xfer_desc_list_fill(pipe);
                         usbh_hal_chan_activate(pipe->chan_obj, 0);  //Start with the first descriptor
                     }
                 }
@@ -1627,7 +1628,7 @@ esp_err_t hcd_pipe_command(hcd_pipe_handle_t pipe_hdl, hcd_pipe_cmd_t command)
 
 hcd_pipe_event_t hcd_pipe_get_event(hcd_pipe_handle_t pipe_hdl)
 {
-    pipe_t *pipe = (pipe_t *) pipe_hdl;
+    pipe_t *pipe = (pipe_t *)pipe_hdl;
     hcd_pipe_event_t ret;
     HCD_ENTER_CRITICAL();
     ret = pipe->last_event;
@@ -1636,19 +1637,19 @@ hcd_pipe_event_t hcd_pipe_get_event(hcd_pipe_handle_t pipe_hdl)
     return ret;
 }
 
-// ----------------------------------------------- HCD Transfer Requests -----------------------------------------------
+// ---------------------------------------------- HCD Transfer Descriptors ---------------------------------------------
 
 // ----------------------- Private -------------------------
 
-static void _xfer_req_fill(pipe_t *pipe)
+static void _xfer_desc_list_fill(pipe_t *pipe)
 {
-    //inflight_xfer_req of the pipe must already set to the target transfer request
-    assert(pipe->inflight_xfer_req != NULL);
-    //Fill transfer descriptor list with a single transfer request
-    usb_irp_t *usb_irp = pipe->inflight_xfer_req->irp;
+    //inflight_irp of the pipe must already set to the target IRP
+    assert(pipe->inflight_irp != NULL);
+    //Fill transfer descriptor list with a single IRP
+    usb_irp_t *usb_irp = pipe->inflight_irp;
     switch (pipe->ep_char.type) {
         case USB_XFER_TYPE_CTRL: {
-            //Get information about the contorl transfer by analyzing the setup packet (the first 8 bytes)
+            //Get information about the control transfer by analyzing the setup packet (the first 8 bytes)
             usb_ctrl_req_t *ctrl_req = (usb_ctrl_req_t *)usb_irp->data_buffer;
             pipe->flags.ctrl_data_stg_in = ((ctrl_req->bRequestType & USB_B_REQUEST_TYPE_DIR_IN) != 0);
             pipe->flags.ctrl_data_stg_skip = (usb_irp->num_bytes == 0);
@@ -1686,7 +1687,7 @@ static void _xfer_req_fill(pipe_t *pipe)
     usbh_hal_chan_slot_acquire(pipe->chan_obj, pipe->xfer_desc_list, pipe->flags.xfer_desc_list_len, (void *)pipe);
 }
 
-static void _xfer_req_continue(pipe_t *pipe)
+static void _xfer_desc_list_continue(pipe_t *pipe)
 {
     int next_idx = usbh_hal_chan_get_next_desc_index(pipe->chan_obj);
     bool next_dir_is_in;    //Next descriptor direction is IN
@@ -1717,9 +1718,9 @@ static void _xfer_req_continue(pipe_t *pipe)
     usbh_hal_chan_activate(pipe->chan_obj, num_to_skip);    //Start the next stage
 }
 
-static void _xfer_req_parse(pipe_t *pipe, bool error_occurred)
+static void _xfer_desc_list_parse(pipe_t *pipe, bool error_occurred)
 {
-    assert(pipe->inflight_xfer_req != NULL);
+    assert(pipe->inflight_irp != NULL);
     //Release the slot
     void *xfer_desc_list;
     int xfer_desc_len;
@@ -1728,7 +1729,7 @@ static void _xfer_req_parse(pipe_t *pipe, bool error_occurred)
     (void) xfer_desc_len;
 
     //Parse the transfer descriptor list for the result of the transfer
-    usb_irp_t *usb_irp = pipe->inflight_xfer_req->irp;
+    usb_irp_t *irp = pipe->inflight_irp;
     usb_transfer_status_t xfer_status;
     int xfer_rem_len;
     if (error_occurred) {
@@ -1748,13 +1749,13 @@ static void _xfer_req_parse(pipe_t *pipe, bool error_occurred)
                     xfer_status = USB_TRANSFER_STATUS_STALL;
                     break;
                 default:
-                    //HCD_PIPE_EVENT_ERROR_XFER_NOT_AVAIL should never occur
+                    //HCD_PIPE_EVENT_ERROR_IRP_NOT_AVAIL should never occur
                     abort();
                     break;
             }
         }
         //We assume no bytes transmitted because of an error.
-        xfer_rem_len = usb_irp->num_bytes;
+        xfer_rem_len = irp->num_bytes;
     } else {
         int desc_status;
         switch (pipe->ep_char.type) {
@@ -1786,144 +1787,104 @@ static void _xfer_req_parse(pipe_t *pipe, bool error_occurred)
         assert(desc_status == USBH_HAL_XFER_DESC_STS_SUCCESS);
     }
     //Write back results to IRP
-    usb_irp->actual_num_bytes = usb_irp->num_bytes - xfer_rem_len;
-    usb_irp->status = xfer_status;
+    irp->actual_num_bytes = irp->num_bytes - xfer_rem_len;
+    irp->status = xfer_status;
 }
 
 // ----------------------- Public --------------------------
 
-hcd_xfer_req_handle_t hcd_xfer_req_alloc()
+esp_err_t hcd_irp_enqueue(hcd_pipe_handle_t pipe_hdl, usb_irp_t *irp)
 {
-    xfer_req_t *xfer_req = calloc(1, sizeof(xfer_req_t));
-    xfer_req->state = XFER_REQ_STATE_IDLE;
-    return (hcd_xfer_req_handle_t) xfer_req;
-}
-
-void hcd_xfer_req_free(hcd_xfer_req_handle_t req_hdl)
-{
-    if (req_hdl == NULL) {
-        return;
-    }
-    xfer_req_t *xfer_req = (xfer_req_t *) req_hdl;
-    //Cannot free a transfer request that is still being used
-    assert(xfer_req->state == XFER_REQ_STATE_IDLE);
-    free(xfer_req);
-}
-
-void hcd_xfer_req_set_target(hcd_xfer_req_handle_t req_hdl, hcd_pipe_handle_t pipe_hdl, usb_irp_t *irp, void *context)
-{
-    xfer_req_t *xfer_req = (xfer_req_t *) req_hdl;
-    //Can only set an transfer request's target when the transfer request is idl
-    assert(xfer_req->state == XFER_REQ_STATE_IDLE);
-    xfer_req->pipe = (pipe_t *) pipe_hdl;
-    xfer_req->irp = irp;
-    xfer_req->context = context;
-}
-
-void hcd_xfer_req_get_target(hcd_xfer_req_handle_t req_hdl, hcd_pipe_handle_t *pipe_hdl, usb_irp_t **irp, void **context)
-{
-    xfer_req_t *xfer_req = (xfer_req_t *) req_hdl;
-    *pipe_hdl = (hcd_pipe_handle_t) xfer_req->pipe;
-    *irp = xfer_req->irp;
-    *context = xfer_req->context;
-}
-
-esp_err_t hcd_xfer_req_enqueue(hcd_xfer_req_handle_t req_hdl)
-{
-    xfer_req_t *xfer_req = (xfer_req_t *) req_hdl;
-    HCD_CHECK(xfer_req->pipe != NULL && xfer_req->irp != NULL       //The transfer request's target must be set
-              && xfer_req->state == XFER_REQ_STATE_IDLE,    //The transfer request cannot be already enqueued
+    //Check that IRP has not already been enqueued
+    HCD_CHECK(irp->reserved_ptr == NULL
+              && IRP_STATE_GET(irp->reserved_flags) == IRP_STATE_IDLE,
               ESP_ERR_INVALID_STATE);
-    pipe_t *pipe = xfer_req->pipe;
+    pipe_t *pipe = (pipe_t *)pipe_hdl;
+
     HCD_ENTER_CRITICAL();
+    //Check that pipe and port are in the corrrect state to receive IRPs
     HCD_CHECK_FROM_CRIT(pipe->port->state == HCD_PORT_STATE_ENABLED     //The pipe's port must be in the correct state
                         && pipe->state == HCD_PIPE_STATE_ACTIVE         //The pipe must be in the correct state
                         && !pipe->flags.pipe_cmd_processing,            //Pipe cannot currently be processing a pipe command
                         ESP_ERR_INVALID_STATE);
+    //Use the IRP's reserved_ptr to store the pipe's
+    irp->reserved_ptr = (void *)pipe;
+
     //Check if we can start execution on the pipe immediately
-    if (!pipe->flags.paused && pipe->num_xfer_req_pending == 0 && pipe->inflight_xfer_req == NULL) {
+    if (!pipe->flags.paused && pipe->num_irp_pending == 0 && pipe->inflight_irp == NULL) {
         //Pipe isn't executing any transfers. Start immediately
-        pipe->inflight_xfer_req = xfer_req;
-        _xfer_req_fill(pipe);
+        pipe->inflight_irp = irp;
+        _xfer_desc_list_fill(pipe);
         usbh_hal_chan_activate(pipe->chan_obj, 0);  //Start with the first descriptor
-        xfer_req->state = XFER_REQ_STATE_INFLIGHT;
-        if (pipe->num_xfer_req_done == 0) {
-            //This is the first transfer request to be enqueued into the pipe. Move the pipe to the list of queued pipes
+        //use the IRP's reserved_flags to store the IRP's current state
+        IRP_STATE_SET(irp->reserved_flags, IRP_STATE_INFLIGHT);
+        if (pipe->num_irp_done == 0) {
+            //This is the first IRP to be enqueued into the pipe. Move the pipe to the list of active pipes
             TAILQ_REMOVE(&pipe->port->pipes_idle_tailq, pipe, tailq_entry);
-            TAILQ_INSERT_TAIL(&pipe->port->pipes_queued_tailq, pipe, tailq_entry);
+            TAILQ_INSERT_TAIL(&pipe->port->pipes_active_tailq, pipe, tailq_entry);
             pipe->port->num_pipes_idle--;
             pipe->port->num_pipes_queued++;
         }
     } else {
-        //Add the transfer request to the pipe's pending tailq
-        TAILQ_INSERT_TAIL(&pipe->pend_xfer_req_tailq, xfer_req, tailq_entry);
-        pipe->num_xfer_req_pending++;
-        xfer_req->state = XFER_REQ_STATE_PENDING;
+        //Add the IRP to the pipe's pending tailq
+        TAILQ_INSERT_TAIL(&pipe->pending_irp_tailq, irp, tailq_entry);
+        pipe->num_irp_pending++;
+        //use the IRP's reserved_flags to store the IRP's current state
+        IRP_STATE_SET(irp->reserved_flags, IRP_STATE_PENDING);
     }
     HCD_EXIT_CRITICAL();
     return ESP_OK;
 }
 
-hcd_xfer_req_handle_t hcd_xfer_req_dequeue(hcd_pipe_handle_t pipe_hdl)
+usb_irp_t *hcd_irp_dequeue(hcd_pipe_handle_t pipe_hdl)
 {
     pipe_t *pipe = (pipe_t *)pipe_hdl;
-    hcd_xfer_req_handle_t ret;
+    usb_irp_t *irp;
 
     HCD_ENTER_CRITICAL();
-    if (pipe->num_xfer_req_done > 0) {
-        xfer_req_t *xfer_req = TAILQ_FIRST(&pipe->done_xfer_req_tailq);
-        TAILQ_REMOVE(&pipe->done_xfer_req_tailq, xfer_req, tailq_entry);
-        pipe->num_xfer_req_done--;
-        assert(xfer_req->state == XFER_REQ_STATE_DONE);
-        xfer_req->state = XFER_REQ_STATE_IDLE;
-        ret = (hcd_xfer_req_handle_t) xfer_req;
-        if (pipe->num_xfer_req_done == 0 && pipe->num_xfer_req_pending == 0) {
-            //This pipe has no more enqueued transfers. Move the pipe to the list of idle pipes
-            TAILQ_REMOVE(&pipe->port->pipes_queued_tailq, pipe, tailq_entry);
+    if (pipe->num_irp_done > 0) {
+        irp = TAILQ_FIRST(&pipe->done_irp_tailq);
+        TAILQ_REMOVE(&pipe->done_irp_tailq, irp, tailq_entry);
+        pipe->num_irp_done--;
+        //Check the IRP's reserved fields then reset them
+        assert(irp->reserved_ptr == (void *)pipe && IRP_STATE_GET(irp->reserved_flags) == IRP_STATE_DONE);  //The IRP's reserved field should have been set to this pipe
+        irp->reserved_ptr = NULL;
+        IRP_STATE_SET(irp->reserved_flags, IRP_STATE_IDLE);
+        if (pipe->num_irp_done == 0 && pipe->num_irp_pending == 0) {
+            //This pipe has no more enqueued IRPs. Move the pipe to the list of idle pipes
+            TAILQ_REMOVE(&pipe->port->pipes_active_tailq, pipe, tailq_entry);
             TAILQ_INSERT_TAIL(&pipe->port->pipes_idle_tailq, pipe, tailq_entry);
             pipe->port->num_pipes_idle++;
             pipe->port->num_pipes_queued--;
         }
     } else {
-        ret = NULL;
+        //No more IRPs to dequeue from this pipe
+        irp = NULL;
     }
     HCD_EXIT_CRITICAL();
-    return ret;
+    return irp;
 }
 
-esp_err_t hcd_xfer_req_abort(hcd_xfer_req_handle_t req_hdl)
+esp_err_t hcd_irp_abort(usb_irp_t *irp)
 {
-    xfer_req_t *xfer_req = (xfer_req_t *) req_hdl;
-    esp_err_t ret;
-
     HCD_ENTER_CRITICAL();
-    switch (xfer_req->state) {
-        case XFER_REQ_STATE_PENDING: {
-            //Transfer request has not been executed so it can be aborted
-            pipe_t *pipe = xfer_req->pipe;
-            //Remove it form the pending queue
-            TAILQ_REMOVE(&pipe->pend_xfer_req_tailq, xfer_req, tailq_entry);
-            pipe->num_xfer_req_pending--;
-            //Add it to the done queue
-            TAILQ_INSERT_TAIL(&pipe->done_xfer_req_tailq, xfer_req, tailq_entry);
-            pipe->num_xfer_req_done++;
-            //Update the transfer request and associated IRP's status
-            xfer_req->state = XFER_REQ_STATE_DONE;
-            xfer_req->irp->status = USB_TRANSFER_STATUS_CANCELLED;
-            ret = ESP_OK;
-            break;
-        }
-        case XFER_REQ_STATE_IDLE: {
-            //Cannot abort a transfer request that was never enqueued
-            ret = ESP_ERR_INVALID_STATE;
-            break;
-        }
-        default :{
-            //Transfer request is currently or has already been executed. Nothing to do.
-            ret = ESP_OK;
-            break;
-        }
-    }
+    //Check that the IRP was enqueued to begin with
+    HCD_CHECK_FROM_CRIT(irp->reserved_ptr != NULL
+                        && IRP_STATE_GET(irp->reserved_flags) != IRP_STATE_IDLE,
+                        ESP_ERR_INVALID_STATE);
+    if (IRP_STATE_GET(irp->reserved_flags) == IRP_STATE_PENDING) {
+        //IRP has not been executed so it can be aborted
+        pipe_t *pipe = (pipe_t *)irp->reserved_ptr;
+        //Remove it form the pending queue
+        TAILQ_REMOVE(&pipe->pending_irp_tailq, irp, tailq_entry);
+        pipe->num_irp_pending--;
+        //Add it to the done queue
+        TAILQ_INSERT_TAIL(&pipe->done_irp_tailq, irp, tailq_entry);
+        pipe->num_irp_done++;
+        //Update the IRP's current state and status
+        IRP_STATE_SET(irp->reserved_flags, IRP_STATE_DONE);
+        irp->status = USB_TRANSFER_STATUS_CANCELLED;
+    }// Otherwise, the IRP is in-flight or already done thus cannot be aborted
     HCD_EXIT_CRITICAL();
-    return ret;
+    return ESP_OK;
 }
