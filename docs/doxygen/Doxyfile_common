@@ -157,6 +157,7 @@ INPUT = \
     $(IDF_PATH)/components/openthread/include/openthread-core-esp32x-config.h \
     $(IDF_PATH)/components/vfs/include/esp_vfs.h \
     $(IDF_PATH)/components/vfs/include/esp_vfs_dev.h \
+    $(IDF_PATH)/components/vfs/include/esp_vfs_eventfd.h \
     $(IDF_PATH)/components/vfs/include/esp_vfs_semihost.h \
     $(IDF_PATH)/components/fatfs/vfs/esp_vfs_fat.h \
     $(IDF_PATH)/components/fatfs/diskio/diskio_impl.h \
