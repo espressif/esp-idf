@@ -151,7 +151,7 @@ static spp_slot_t *spp_malloc_slot(void)
                 break;
             }
             if (spp_local_param.spp_mode == ESP_SPP_MODE_VFS) {
-                if (esp_vfs_register_fd(spp_local_param.spp_vfs_id, &(*slot)->fd) != ESP_OK) {
+                if (esp_vfs_register_fd(spp_local_param.spp_vfs_id, -1, /*permanent=*/true, &(*slot)->fd) != ESP_OK) {
                     BTC_TRACE_ERROR("%s unable to register fd!", __func__);
                     err_no = 3;
                     break;

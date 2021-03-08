@@ -20,11 +20,14 @@
 #include "esp_err.h"
 
 #define EFD_SUPPORT_ISR (1 << 4)
-#define EVENT_VFS_PREFIX  "/dev/event"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef struct {
+    size_t eventfd_max_num;
+} esp_vfs_eventfd_config_t;
 
 /**
  * @brief  Registers the event vfs.
@@ -32,7 +35,7 @@ extern "C" {
  * @return  ESP_OK if successful, ESP_ERR_NO_MEM if too many VFSes are
  *          registered.
  */
-esp_err_t esp_vfs_eventfd_register(void);
+esp_err_t esp_vfs_eventfd_register(const esp_vfs_eventfd_config_t *config);
 
 /**
  * @brief  Unregisters the event vfs.

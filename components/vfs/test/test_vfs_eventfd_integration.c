@@ -114,7 +114,10 @@ static void worker_task(void *arg)
 TEST_CASE("Test eventfd triggered correctly", "[vfs][eventfd]")
 {
     xTaskCreate(worker_task, "worker_task", 1024, NULL, 5, NULL);
-    TEST_ESP_OK(esp_vfs_eventfd_register());
+    esp_vfs_eventfd_config_t config = {
+        .eventfd_max_num = 5,
+    };
+    TEST_ESP_OK(esp_vfs_eventfd_register(&config));
     s_timer_fd = eventfd(0, EFD_SUPPORT_ISR);
     s_progress_fd = eventfd(0, 0);
     int maxFd = s_progress_fd > s_timer_fd ? s_progress_fd : s_timer_fd;
