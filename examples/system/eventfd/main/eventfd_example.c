@@ -90,9 +90,7 @@ static void worker_task(void *arg)
 
 static void collector_task(void *arg)
 {
-    esp_vfs_eventfd_config_t config = {
-        .eventfd_max_num = 2,
-    };
+    esp_vfs_eventfd_config_t config = ESP_VFS_EVENTD_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_vfs_eventfd_register(&config));
 
     s_timer_fd = eventfd(0, EFD_SUPPORT_ISR);

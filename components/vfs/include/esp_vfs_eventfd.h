@@ -26,8 +26,12 @@ extern "C" {
 #endif
 
 typedef struct {
-    size_t eventfd_max_num;
+    size_t max_fds;
 } esp_vfs_eventfd_config_t;
+
+#define ESP_VFS_EVENTD_CONFIG_DEFAULT() (esp_vfs_eventfd_config_t) { \
+      .max_fds = 5, \
+};
 
 /**
  * @brief  Registers the event vfs.

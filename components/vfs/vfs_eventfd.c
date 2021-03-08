@@ -41,7 +41,7 @@ typedef struct event_select_args_t {
     esp_vfs_select_sem_t        signal_sem;
     struct event_select_args_t  *prev_in_fd;
     struct event_select_args_t  *next_in_fd;
-    struct event_select_args_t  *next_in_args;
+    struct event_select_args_t  *next_in_args; // a linked list for all pending select args for one select call
 } event_select_args_t;
 
 typedef struct {
@@ -49,7 +49,7 @@ typedef struct {
     bool                    support_isr;
     volatile bool           is_set;
     volatile uint64_t       value;
-    event_select_args_t     *select_args;
+    event_select_args_t     *select_args;   // a double-linked list for all pending select args with this fd
     _lock_t                 lock;
     spinlock_t              data_spin_lock; // only for event fds that support ISR.
 } event_context_t;
@@ -336,14 +336,14 @@ static int event_close(int fd)
 
 esp_err_t esp_vfs_eventfd_register(const esp_vfs_eventfd_config_t *config)
 {
-    if (config == NULL || config->eventfd_max_num >= MAX_FDS) {
+    if (config == NULL || config->max_fds >= MAX_FDS) {
         return ESP_ERR_INVALID_ARG;
     }
     if (s_eventfd_vfs_id != -1) {
         return ESP_ERR_INVALID_STATE;
     }
 
-    s_event_size = config->eventfd_max_num;
+    s_event_size = config->max_fds;
     s_events = (event_context_t *)calloc(s_event_size, sizeof(event_context_t));
     for (size_t i = 0; i < s_event_size; i++) {
         _lock_init_recursive(&s_events[i].lock);
@@ -362,12 +362,6 @@ esp_err_t esp_vfs_eventfd_register(const esp_vfs_eventfd_config_t *config)
         .access       = NULL,
         .start_select = &event_start_select,
         .end_select   = &event_end_select,
-#ifdef CONFIG_SUPPORT_TERMIOS
-        .tcsetattr = NULL,
-        .tcgetattr = NULL,
-        .tcdrain   = NULL,
-        .tcflush   = NULL,
-#endif // CONFIG_SUPPORT_TERMIOS
     };
     return esp_vfs_register_with_id(&vfs, NULL, &s_eventfd_vfs_id);
 }

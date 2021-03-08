@@ -24,9 +24,7 @@
 
 TEST_CASE("eventfd create and close", "[vfs][eventfd]")
 {
-    esp_vfs_eventfd_config_t config = {
-        .eventfd_max_num = 5,
-    };
+    esp_vfs_eventfd_config_t config = ESP_VFS_EVENTD_CONFIG_DEFAULT();
     TEST_ESP_OK(esp_vfs_eventfd_register(&config));
     int fd = eventfd(0, 0);
     TEST_ASSERT_GREATER_OR_EQUAL(0, fd);
@@ -40,9 +38,7 @@ TEST_CASE("eventfd create and close", "[vfs][eventfd]")
 
 TEST_CASE("eventfd reject unknown flags", "[vfs][eventfd]")
 {
-    esp_vfs_eventfd_config_t config = {
-        .eventfd_max_num = 5,
-    };
+    esp_vfs_eventfd_config_t config = ESP_VFS_EVENTD_CONFIG_DEFAULT();
     TEST_ESP_OK(esp_vfs_eventfd_register(&config));
 
     int fd = eventfd(0, 1);
@@ -57,9 +53,7 @@ TEST_CASE("eventfd reject unknown flags", "[vfs][eventfd]")
 
 TEST_CASE("eventfd read", "[vfs][eventfd]")
 {
-    esp_vfs_eventfd_config_t config = {
-        .eventfd_max_num = 5,
-    };
+    esp_vfs_eventfd_config_t config = ESP_VFS_EVENTD_CONFIG_DEFAULT();
     TEST_ESP_OK(esp_vfs_eventfd_register(&config));
 
     unsigned int initval = 123;
@@ -77,9 +71,7 @@ TEST_CASE("eventfd read", "[vfs][eventfd]")
 
 TEST_CASE("eventfd read invalid size", "[vfs][eventfd]")
 {
-    esp_vfs_eventfd_config_t config = {
-        .eventfd_max_num = 5,
-    };
+    esp_vfs_eventfd_config_t config = ESP_VFS_EVENTD_CONFIG_DEFAULT();
     TEST_ESP_OK(esp_vfs_eventfd_register(&config));
 
     int fd = eventfd(0, 0);
@@ -94,9 +86,7 @@ TEST_CASE("eventfd read invalid size", "[vfs][eventfd]")
 
 TEST_CASE("eventfd write invalid size", "[vfs][eventfd]")
 {
-    esp_vfs_eventfd_config_t config = {
-        .eventfd_max_num = 5,
-    };
+    esp_vfs_eventfd_config_t config = ESP_VFS_EVENTD_CONFIG_DEFAULT();
     TEST_ESP_OK(esp_vfs_eventfd_register(&config));
 
     int fd = eventfd(0, 0);
@@ -111,9 +101,7 @@ TEST_CASE("eventfd write invalid size", "[vfs][eventfd]")
 
 TEST_CASE("eventfd write then read", "[vfs][eventfd]")
 {
-    esp_vfs_eventfd_config_t config = {
-        .eventfd_max_num = 5,
-    };
+    esp_vfs_eventfd_config_t config = ESP_VFS_EVENTD_CONFIG_DEFAULT();
     TEST_ESP_OK(esp_vfs_eventfd_register(&config));
 
     int fd = eventfd(0, 0);
@@ -135,9 +123,7 @@ TEST_CASE("eventfd write then read", "[vfs][eventfd]")
 
 TEST_CASE("eventfd instant select", "[vfs][eventfd]")
 {
-    esp_vfs_eventfd_config_t config = {
-        .eventfd_max_num = 5,
-    };
+    esp_vfs_eventfd_config_t config = ESP_VFS_EVENTD_CONFIG_DEFAULT();
     TEST_ESP_OK(esp_vfs_eventfd_register(&config));
 
     int fd = eventfd(0, 0);
@@ -153,7 +139,6 @@ TEST_CASE("eventfd instant select", "[vfs][eventfd]")
     FD_ZERO(&write_fds);
     FD_ZERO(&error_fds);
     FD_SET(fd, &read_fds);
-    printf("fd %d\n", fd);
     int ret = select(fd + 1, &read_fds, &write_fds, &error_fds, &zero_time);
     TEST_ASSERT_EQUAL(0, ret);
     TEST_ASSERT(!FD_ISSET(fd, &read_fds));
@@ -191,9 +176,7 @@ static void signal_task(void *arg)
 
 TEST_CASE("eventfd signal from task", "[vfs][eventfd]")
 {
-    esp_vfs_eventfd_config_t config = {
-        .eventfd_max_num = 5,
-    };
+    esp_vfs_eventfd_config_t config = ESP_VFS_EVENTD_CONFIG_DEFAULT();
     TEST_ESP_OK(esp_vfs_eventfd_register(&config));
 
     int fd0 = eventfd(0, 0);
@@ -215,7 +198,6 @@ TEST_CASE("eventfd signal from task", "[vfs][eventfd]")
     zero_time.tv_usec = 0;
 
     int ret = select(max_fd + 1, &read_fds, NULL, NULL, &wait_time);
-    printf("Frist select returned\n");
     TEST_ASSERT_EQUAL(1, ret);
     TEST_ASSERT(FD_ISSET(fd0, &read_fds));
 
@@ -246,9 +228,7 @@ static void IRAM_ATTR eventfd_select_test_isr(void *arg)
 
 TEST_CASE("eventfd signal from ISR", "[vfs][eventfd]")
 {
-    esp_vfs_eventfd_config_t config = {
-        .eventfd_max_num = 5,
-    };
+    esp_vfs_eventfd_config_t config = ESP_VFS_EVENTD_CONFIG_DEFAULT();
     TEST_ESP_OK(esp_vfs_eventfd_register(&config));
 
     int fd = eventfd(0, EFD_SUPPORT_ISR);
@@ -299,9 +279,7 @@ static void close_task(void *arg)
 
 TEST_CASE("eventfd select closed fd", "[vfs][eventfd]")
 {
-    esp_vfs_eventfd_config_t config = {
-        .eventfd_max_num = 5,
-    };
+    esp_vfs_eventfd_config_t config = ESP_VFS_EVENTD_CONFIG_DEFAULT();
     TEST_ESP_OK(esp_vfs_eventfd_register(&config));
 
     int fd = eventfd(0, 0);
@@ -350,9 +328,7 @@ static void select_task(void *arg)
 
 TEST_CASE("eventfd multiple selects", "[vfs][eventfd]")
 {
-    esp_vfs_eventfd_config_t config = {
-        .eventfd_max_num = 5,
-    };
+    esp_vfs_eventfd_config_t config = ESP_VFS_EVENTD_CONFIG_DEFAULT();
     TEST_ESP_OK(esp_vfs_eventfd_register(&config));
 
     int fd = eventfd(0, 0);
@@ -380,4 +356,3 @@ TEST_CASE("eventfd multiple selects", "[vfs][eventfd]")
     TEST_ASSERT_EQUAL(0, close(fd));
     TEST_ESP_OK(esp_vfs_eventfd_unregister());
 }
-
