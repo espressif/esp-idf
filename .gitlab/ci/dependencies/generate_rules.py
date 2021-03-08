@@ -86,6 +86,8 @@ class RulesWriter:
 
     RULE_PROTECTED = '    - <<: *if-protected'
     RULE_PROTECTED_NO_LABEL = '    - <<: *if-protected-no_label'
+    RULE_BUILD_ONLY = '    - <<: *if-label-build-only\n' \
+                      '      when: never'
     RULE_LABEL_TEMPLATE = '    - <<: *if-label-{0}'
     RULE_PATTERN_TEMPLATE = '    - <<: *if-dev-push\n' \
                             '      changes: *patterns-{0}'
@@ -211,6 +213,8 @@ class RulesWriter:
         else:
             if not (name.endswith('-preview') or name.startswith('labels:')):
                 _rules.append(self.RULE_PROTECTED)
+            if name.startswith('test:'):
+                _rules.append(self.RULE_BUILD_ONLY)
             for label in cfg['labels']:
                 _rules.append(self.RULE_LABEL_TEMPLATE.format(label))
             for pattern in cfg['patterns']:

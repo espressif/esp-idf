@@ -187,6 +187,9 @@
 .if-trigger: &if-trigger
   if: '$CI_PIPELINE_SOURCE == "trigger"'
 
+.if-label-build-only: &if-label-build-only
+  if: '$CI_JOB_STAGE == "target_test" && $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*For Maintainers: Only Build Tests(?:,[^,\n\r]+)*$/i'
+
 #########
 # Rules #
 #########
@@ -238,12 +241,14 @@
     - <<: *if-dev-push
       changes: *patterns-python-files
 
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # DO NOT place comments or maintain any code from this line
 #
 # Use dependencies.yml and generate_rules.py under .gitlab/ci/dependencies dir
 # to generate labels and rules
 # Could also use pre-commit hook to finish this if detected changes on
 # these two files
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ##################
 # Auto Generated #
@@ -701,6 +706,8 @@
 .rules:test:any_test:
   rules:
     - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32
     - <<: *if-label-component_ut_esp32c3
@@ -741,6 +748,8 @@
 .rules:test:component_ut-esp32:
   rules:
     - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32
     - <<: *if-label-unit_test
@@ -751,6 +760,8 @@
 .rules:test:component_ut-esp32c3:
   rules:
     - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32c3
     - <<: *if-label-unit_test
@@ -761,6 +772,8 @@
 .rules:test:component_ut-esp32s2:
   rules:
     - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32s2
     - <<: *if-label-unit_test
@@ -771,6 +784,8 @@
 .rules:test:component_ut-esp32s3:
   rules:
     - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32s3
     - <<: *if-label-unit_test
@@ -781,6 +796,8 @@
 .rules:test:custom_test-esp32:
   rules:
     - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
     - <<: *if-label-custom_test
     - <<: *if-label-custom_test_esp32
     - <<: *if-dev-push
@@ -789,6 +806,8 @@
 .rules:test:custom_test-esp32c3:
   rules:
     - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
     - <<: *if-label-custom_test
     - <<: *if-label-custom_test_esp32c3
     - <<: *if-dev-push
@@ -797,6 +816,8 @@
 .rules:test:custom_test-esp32s2:
   rules:
     - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
     - <<: *if-label-custom_test
     - <<: *if-label-custom_test_esp32s2
     - <<: *if-dev-push
@@ -805,6 +826,8 @@
 .rules:test:custom_test-esp32s3:
   rules:
     - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
     - <<: *if-label-custom_test
     - <<: *if-label-custom_test_esp32s3
     - <<: *if-dev-push
@@ -813,6 +836,8 @@
 .rules:test:example_test-esp32:
   rules:
     - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
     - <<: *if-label-example_test
     - <<: *if-label-example_test_esp32
     - <<: *if-dev-push
@@ -823,6 +848,8 @@
 .rules:test:example_test-esp32c3:
   rules:
     - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
     - <<: *if-label-example_test
     - <<: *if-label-example_test_esp32c3
     - <<: *if-dev-push
@@ -833,6 +860,8 @@
 .rules:test:example_test-esp32s2:
   rules:
     - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
     - <<: *if-label-example_test
     - <<: *if-label-example_test_esp32s2
     - <<: *if-dev-push
@@ -843,6 +872,8 @@
 .rules:test:example_test-esp32s3:
   rules:
     - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
     - <<: *if-label-example_test
     - <<: *if-label-example_test_esp32s3
     - <<: *if-dev-push
@@ -853,6 +884,8 @@
 .rules:test:host_test:
   rules:
     - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
     - <<: *if-label-host_test
     - <<: *if-dev-push
       changes: *patterns-host_test
@@ -860,6 +893,8 @@
 .rules:test:integration_test:
   rules:
     - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
     - <<: *if-label-integration_test
     - <<: *if-dev-push
       changes: *patterns-integration_test
@@ -867,6 +902,8 @@
 .rules:test:submodule:
   rules:
     - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
     - <<: *if-label-submodule
     - <<: *if-dev-push
       changes: *patterns-submodule
@@ -874,6 +911,8 @@
 .rules:test:target_test:
   rules:
     - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32
     - <<: *if-label-component_ut_esp32c3
@@ -911,6 +950,8 @@
 .rules:test:unit_test-esp32:
   rules:
     - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32
     - <<: *if-dev-push
@@ -919,11 +960,15 @@
 .rules:test:unit_test-esp32c3:
   rules:
     - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
     - <<: *if-label-unit_test_esp32c3
 
 .rules:test:unit_test-esp32s2:
   rules:
     - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32s2
     - <<: *if-dev-push
@@ -932,6 +977,8 @@
 .rules:test:unit_test-esp32s3:
   rules:
     - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32s3
     - <<: *if-dev-push
