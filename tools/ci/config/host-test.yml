@@ -362,3 +362,10 @@ test_detect_python:
     - "dash -c '. tools/detect_python.sh && echo Our Python: ${ESP_PYTHON?Python is not set}'"
     - "zsh -c '. tools/detect_python.sh && echo Our Python: ${ESP_PYTHON?Python is not set}'"
     - "fish -c 'source tools/detect_python.fish && echo Our Python: $ESP_PYTHON'"
+
+test_nvs_page:
+  extends: .host_test_template
+  script:
+    - cd ${IDF_PATH}/components/nvs_flash/host_test/nvs_page_test
+    - idf.py build
+    - build/host_nvs_page_test.elf

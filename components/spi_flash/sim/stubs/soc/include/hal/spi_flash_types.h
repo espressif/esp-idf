@@ -41,6 +41,11 @@ typedef enum {
     SPI_FLASH_READ_MODE_MAX,    ///< The fastest io mode supported by the host is ``ESP_FLASH_READ_MODE_MAX-1``.
 } esp_flash_io_mode_t;
 
+/**
+ * Configuration structure for the flash chip suspend feature.
+ */
+typedef struct spi_flash_sus_cmd_conf_dummy spi_flash_sus_cmd_conf;
+
 struct spi_flash_host_driver_s;
 typedef struct spi_flash_host_driver_s spi_flash_host_driver_t;
 
