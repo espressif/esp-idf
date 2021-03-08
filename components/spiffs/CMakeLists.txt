@@ -8,6 +8,6 @@ idf_component_register(SRCS "esp_spiffs.c"
                     INCLUDE_DIRS "include"
                     PRIV_INCLUDE_DIRS "." "spiffs/src"
                     REQUIRES spi_flash
-                    PRIV_REQUIRES bootloader_support)
+                    PRIV_REQUIRES bootloader_support esptool_py)
 
 set_source_files_properties(spiffs/src/spiffs_nucleus.c PROPERTIES COMPILE_FLAGS -Wno-stringop-truncation)
