@@ -87,7 +87,7 @@ Make 构建系统和 CMake 构建系统结构有所不同，请注意以下几�
 
     spiffs_create_partition_image(my_spiffs_partition my_folder DEPENDS dep)
 
-请参考 :example:`examples/storage/spiffsgen>`，查看示例。 
+请参考 :example:`storage/spiffsgen`，查看示例。 
 
 mkspiffs
 ^^^^^^^^^^^
