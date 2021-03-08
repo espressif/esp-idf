@@ -191,6 +191,7 @@ ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-reference/peripherals/spi_slave_hd.rst',
                 'api-reference/peripherals/temp_sensor.rst',
                 'api-reference/system/async_memcpy.rst',
+                'api-reference/peripherals/touch_element.rst',
                 'api-reference/peripherals/dac.rst']
 
 ESP32C3_DOCS = ['hw-reference/esp32c3/**']
