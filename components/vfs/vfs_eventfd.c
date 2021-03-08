@@ -34,14 +34,30 @@
 #define FD_INVALID -1
 #define FD_PENDING_SELECT -2
 
+/*
+ * About the event_select_args_t linked list
+ *
+ * Each event_select_args_t structure records a pending select from a select call
+ * on a file descriptor.
+ *
+ * For each select() call, we form a linked list in end_select_args containing
+ * all the pending selects in this select call.
+ *
+ * For each file descriptor, we form a double linked list in event_context_t::select_args.
+ * This list contains all the pending selects on this file descriptor from
+ * different select() calls.
+ *
+ */
 typedef struct event_select_args_t {
     int                         fd;
     fd_set                      *read_fds;
     fd_set                      *error_fds;
     esp_vfs_select_sem_t        signal_sem;
+    // linked list node in event_context_t::select_args
     struct event_select_args_t  *prev_in_fd;
     struct event_select_args_t  *next_in_fd;
-    struct event_select_args_t  *next_in_args; // a linked list for all pending select args for one select call
+    // linked list node in end_select_arg
+    struct event_select_args_t  *next_in_args;
 } event_select_args_t;
 
 typedef struct {
@@ -49,9 +65,11 @@ typedef struct {
     bool                    support_isr;
     volatile bool           is_set;
     volatile uint64_t       value;
-    event_select_args_t     *select_args;   // a double-linked list for all pending select args with this fd
+    // a double-linked list for all pending select args with this fd
+    event_select_args_t     *select_args;
     _lock_t                 lock;
-    spinlock_t              data_spin_lock; // only for event fds that support ISR.
+    // only for event fds that support ISR.
+    spinlock_t              data_spin_lock;
 } event_context_t;
 
 esp_vfs_id_t s_eventfd_vfs_id = -1;
@@ -79,6 +97,7 @@ static void trigger_select_for_event_isr(event_context_t *event, BaseType_t *tas
     }
 }
 
+#ifdef CONFIG_VFS_SUPPORT_SELECT
 static esp_err_t event_start_select(int                  nfds,
                                     fd_set              *readfds,
                                     fd_set              *writefds,
@@ -100,7 +119,8 @@ static esp_err_t event_start_select(int                  nfds,
                 portENTER_CRITICAL(&s_events[i].data_spin_lock);
             }
 
-            event_select_args_t *event_select_args = (event_select_args_t *)malloc(sizeof(event_select_args_t));
+            event_select_args_t *event_select_args =
+                (event_select_args_t *)malloc(sizeof(event_select_args_t));
             event_select_args->fd = i;
             event_select_args->signal_sem = signal_sem;
 
@@ -200,6 +220,7 @@ static esp_err_t event_end_select(void *end_select_args)
 
     return ESP_OK;
 }
+#endif // CONFIG_VFS_SUPPORT_SELECT
 
 static ssize_t signal_event_fd_from_isr(int fd, const void *data, size_t size)
 {
@@ -353,15 +374,12 @@ esp_err_t esp_vfs_eventfd_register(const esp_vfs_eventfd_config_t *config)
     esp_vfs_t vfs = {
         .flags        = ESP_VFS_FLAG_DEFAULT,
         .write        = &event_write,
-        .open         = NULL,
-        .fstat        = NULL,
         .close        = &event_close,
         .read         = &event_read,
-        .fcntl        = NULL,
-        .fsync        = NULL,
-        .access       = NULL,
+#ifdef CONFIG_VFS_SUPPORT_SELECT
         .start_select = &event_start_select,
         .end_select   = &event_end_select,
+#endif
     };
     return esp_vfs_register_with_id(&vfs, NULL, &s_eventfd_vfs_id);
 }
@@ -401,7 +419,7 @@ int eventfd(unsigned int initval, int flags)
         _lock_acquire_recursive(&s_events[i].lock);
         if (s_events[i].fd == FD_INVALID) {
 
-            error = esp_vfs_register_fd(s_eventfd_vfs_id, i, /*permanent=*/false, &global_fd);
+            error = esp_vfs_register_fd_with_local_fd(s_eventfd_vfs_id, i, /*permanent=*/false, &global_fd);
             if (error != ESP_OK) {
                 _lock_release_recursive(&s_events[i].lock);
                 break;

@@ -34,7 +34,7 @@ static const char *TAG = "eventfd_example";
 int s_timer_fd;
 int s_progress_fd;
 
-static void IRAM_ATTR eventfd_timer_group0_isr(void *para)
+static void eventfd_timer_group0_isr(void *para)
 {
     timer_spinlock_take(TIMER_GROUP_0);
     int timer_idx = (int) para;

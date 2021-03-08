@@ -339,15 +339,28 @@ esp_err_t esp_vfs_unregister_with_id(esp_vfs_id_t vfs_id);
  * by esp_vfs_register_with_id.
  *
  * @param vfs_id VFS identificator returned by esp_vfs_register_with_id.
- * @param local_fd The fd in the local vfs. Passing -1 will set the local fd as the (*fd) value.
- * @param permanenent Whether the fd should be treated as permannet (not removed after close())
  * @param fd The registered file descriptor will be written to this address.
  *
  * @return  ESP_OK if the registration is successful,
  *          ESP_ERR_NO_MEM if too many file descriptors are registered,
  *          ESP_ERR_INVALID_ARG if the arguments are incorrect.
  */
-esp_err_t esp_vfs_register_fd(esp_vfs_id_t vfs_id, int local_fd, bool permanent, int *fd);
+esp_err_t esp_vfs_register_fd(esp_vfs_id_t vfs_id, int *fd);
+
+/**
+ * Special function for registering another file descriptor with given local_fd
+ * for a VFS registered by esp_vfs_register_with_id.
+ *
+ * @param vfs_id VFS identificator returned by esp_vfs_register_with_id.
+ * @param local_fd The fd in the local vfs. Passing -1 will set the local fd as the (*fd) value.
+ * @param permanent Whether the fd should be treated as permannet (not removed after close())
+ * @param fd The registered file descriptor will be written to this address.
+ *
+ * @return  ESP_OK if the registration is successful,
+ *          ESP_ERR_NO_MEM if too many file descriptors are registered,
+ *          ESP_ERR_INVALID_ARG if the arguments are incorrect.
+ */
+esp_err_t esp_vfs_register_fd_with_local_fd(esp_vfs_id_t vfs_id, int local_fd, bool permanent, int *fd);
 
 /**
  * Special function for unregistering a file descriptor belonging to a VFS

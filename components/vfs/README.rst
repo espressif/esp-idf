@@ -242,7 +242,7 @@ Event fds
 ``eventfd()`` call is a powerful tool to notify a ``select()`` based loop of custom events. The ``eventfd()`` implementation in ESP-IDF is generally the same as described in ``man(2) eventfd`` except for:
 
 - ``esp_vfs_eventfd_register()`` has to be called before calling ``eventfd()``
-- Option ``EFD_CLOEXEC``, ``EFD_NONBLOCK`` and ``EFD_SEMAPHORE`` is not supported in flags.
+- Options ``EFD_CLOEXEC``, ``EFD_NONBLOCK`` and ``EFD_SEMAPHORE`` are not supported in flags.
 - Option ``EFD_SUPPORT_ISR`` has been added in flags. This flag is required to read and the write the eventfd in an interrupt handler.
 
 Note that creating an eventfd with ``EFD_SUPPORT_ISR`` will cause interrupts to be temporarily disabled when reading, writing the file and during the beginning and the ending of the ``select()`` when this file is set.

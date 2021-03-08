@@ -209,10 +209,16 @@ esp_err_t esp_vfs_unregister(const char* base_path)
     return ESP_ERR_INVALID_STATE;
 }
 
-esp_err_t esp_vfs_register_fd(esp_vfs_id_t vfs_id, int local_fd, bool permanent, int *fd)
+esp_err_t esp_vfs_register_fd(esp_vfs_id_t vfs_id, int *fd)
+{
+    return esp_vfs_register_fd_with_local_fd(vfs_id, -1, true, fd);
+}
+
+esp_err_t esp_vfs_register_fd_with_local_fd(esp_vfs_id_t vfs_id, int local_fd, bool permanent, int *fd)
 {
     if (vfs_id < 0 || vfs_id >= s_vfs_count || fd == NULL) {
-        ESP_LOGD(TAG, "Invalid arguments for esp_vfs_register_fd(%d, 0x%x)", vfs_id, (int) fd);
+        ESP_LOGD(TAG, "Invalid arguments for esp_vfs_register_fd_with_local_fd(%d, %d, %d, 0x%p)",
+                 vfs_id, local_fd, permanent, fd);
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -234,7 +240,8 @@ esp_err_t esp_vfs_register_fd(esp_vfs_id_t vfs_id, int local_fd, bool permanent,
     }
     _lock_release(&s_fd_table_lock);
 
-    ESP_LOGD(TAG, "esp_vfs_register_fd(%d, 0x%x) finished with %s", vfs_id, (int) fd, esp_err_to_name(ret));
+    ESP_LOGD(TAG, "esp_vfs_register_fd_with_local_fd(%d, %d, %d, 0x%p) finished with %s",
+             vfs_id, local_fd, permanent, fd, esp_err_to_name(ret));
 
     return ret;
 }
@@ -906,7 +913,6 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
         }
 
         if (is_socket_fd) {
-            assert(false);
             if (!socket_select) {
                 // no socket_select found yet so take a look
                 if (esp_vfs_safe_fd_isset(fd, readfds) ||

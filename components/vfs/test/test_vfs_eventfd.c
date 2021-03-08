@@ -217,7 +217,7 @@ TEST_CASE("eventfd signal from task", "[vfs][eventfd]")
     TEST_ESP_OK(esp_vfs_eventfd_unregister());
 }
 
-static void IRAM_ATTR eventfd_select_test_isr(void *arg)
+static void eventfd_select_test_isr(void *arg)
 {
     int fd = *((int *)arg);
     uint64_t val = 1;
@@ -248,7 +248,7 @@ TEST_CASE("eventfd signal from ISR", "[vfs][eventfd]")
     TEST_ESP_OK(timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, TIMER_BASE_CLK / 16));
     TEST_ESP_OK(timer_enable_intr(TIMER_GROUP_0, TIMER_0));
     TEST_ESP_OK(timer_isr_register(TIMER_GROUP_0, TIMER_0, eventfd_select_test_isr,
-                                   &fd, ESP_INTR_FLAG_IRAM, NULL));
+                                   &fd, ESP_INTR_FLAG_LOWMED, NULL));
     TEST_ESP_OK(timer_start(TIMER_GROUP_0, TIMER_0));
 
     struct timeval wait_time;
@@ -300,7 +300,6 @@ TEST_CASE("eventfd select closed fd", "[vfs][eventfd]")
     TEST_ASSERT_EQUAL(1, ret);
     TEST_ASSERT(FD_ISSET(fd, &error_fds));
 
-    TEST_ASSERT_EQUAL(0, close(fd));
     TEST_ESP_OK(esp_vfs_eventfd_unregister());
 }
 

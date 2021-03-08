@@ -1,4 +1,4 @@
-// Copyright 2021 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2021 Espressif Systems (Shanghai) CO LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,8 +25,11 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Eventfd vfs initialization settings
+ */
 typedef struct {
-    size_t max_fds;
+    size_t max_fds;     /*!< The maxinum number of eventfds supported */
 } esp_vfs_eventfd_config_t;
 
 #define ESP_VFS_EVENTD_CONFIG_DEFAULT() (esp_vfs_eventfd_config_t) { \
