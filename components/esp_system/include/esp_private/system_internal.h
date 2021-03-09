@@ -61,11 +61,11 @@ void esp_reset_reason_set_hint(esp_reset_reason_t hint);
  */
 esp_reset_reason_t esp_reset_reason_get_hint(void);
 
-
 /**
  * @brief Get the time in microseconds since startup
  *
- * @returns time since startup in microseconds
+ * @returns time since g_startup_time; definition should be fixed by system time provider
+ * no matter the underlying timer used.
  */
 int64_t esp_system_get_time(void);
 
