@@ -1,5 +1,6 @@
 Documentation Add-ons and Extensions Reference
 ==============================================
+
 :link_to_translation:`zh_CN:[中文]`
 
 This documentation is created using `Sphinx <http://www.sphinx-doc.org/>`_ application that renders text source files in `reStructuredText <https://en.wikipedia.org/wiki/ReStructuredText>`_ (``.rst``) format located in :idf:`docs` directory. For some more details on that process, please refer to section :doc:`documenting-code`.
@@ -11,7 +12,6 @@ We build ESP-IDF documentation for two languages (English, Simplified Chinese) a
 On top of that, we have created a couple of custom add-ons and extensions to help integrate documentation with underlining `ESP-IDF`_ repository and further improve navigation as well as maintenance of documentation.
 
 The purpose of this section is to provide a quick reference to the add-ons and the extensions.
-
 
 Documentation Folder Structure
 ------------------------------
@@ -143,9 +143,15 @@ Other Extensions
 
 :idf_file:`docs/idf_extensions/format_idf_target.py`
     An extension for replacing generic target related names with the idf_target passed to the Sphinx command line.
-    This is a {\IDF_TARGET_NAME}, with /{\IDF_TARGET_PATH_NAME}/soc.c, compiled with `{\IDF_TARGET_TOOLCHAIN_PREFIX}-gcc` with `CONFIG_{\IDF_TARGET_CFG_PREFIX}_MULTI_DOC` will, if the backspaces are removed, render as This is a {IDF_TARGET_NAME}, with /{IDF_TARGET_PATH_NAME}/soc.c, compiled with `{IDF_TARGET_TOOLCHAIN_PREFIX}-gcc` with `CONFIG_{IDF_TARGET_CFG_PREFIX}_MULTI_DOC`.
 
-    Also supports markup for defining local (single .rst-file) substitions with the following syntax: {\IDF_TARGET_TX_PIN:default="IO3",esp32="IO4",esp32s2="IO5"}
+    This is a {\IDF_TARGET_NAME}, with /{\IDF_TARGET_PATH_NAME}/soc.c, compiled with `{\IDF_TARGET_TOOLCHAIN_PREFIX}-gcc` 
+    with `CONFIG_{\IDF_TARGET_CFG_PREFIX}_MULTI_DOC` 
+    will, if the backspaces are removed, render as 
+    This is a {IDF_TARGET_NAME}, with /{IDF_TARGET_PATH_NAME}/soc.c, compiled with `{IDF_TARGET_TOOLCHAIN_PREFIX}-gcc` with `CONFIG_{IDF_TARGET_CFG_PREFIX}_MULTI_DOC`.
+
+
+    Also supports markup for defining local (single .rst-file) substitions with the following syntax: 
+    {\IDF_TARGET_TX_PIN:default="IO3",esp32="IO4",esp32s2="IO5"}
 
     This will define a replacement of the tag {\IDF_TARGET_TX_PIN} in the current rst-file.
 
@@ -182,7 +188,7 @@ Other Extensions
     Please refer to :doc:`documenting-code` and :doc:`../api-reference/template`, section **API Reference** for additional details on this process.
 
 Related Documents
------------------
+-------------------
 
 * :doc:`documenting-code`
 

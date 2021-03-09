@@ -10,8 +10,9 @@
 开发人员可以使用这个功能库将应用程序的运行状态发送给主机，在运行时接收来自主机的命令或者其他类型的信息。该库的主要使用场景有：
 
 1. 收集应用程序特定的数据，具体请参阅 :ref:`app_trace-application-specific-tracing`
-2. 轻量级的日志记录，具体请参阅 :ref:`app_trace-logging-to-host`
+2. 记录到主机的轻量级日志，具体请参阅 :ref:`app_trace-logging-to-host`
 3. 系统行为分析，具体请参阅 :ref:`app_trace-system-behaviour-analysis-with-segger-systemview`
+4. 源代码覆盖率，具体请参阅 :ref:`app_trace-gcov-source-code-coverage`
 
 使用 JTAG 接口的跟踪组件工作示意图：
 
@@ -61,7 +62,7 @@
 .. _app_trace-application-specific-tracing:
 
 特定应用程序的跟踪
-~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 通常，用户需要决定在每个方向上待传输数据的类型以及如何解析（处理）这些数据。要想在目标和主机之间传输数据，用户必须要执行以下几个步骤。
 
@@ -158,9 +159,8 @@
 5. 使用特殊的 OpenOCD 命令开始收集待跟踪的命令，此命令将传输跟踪数据并将其重定向到指定的文件或套接字（当前仅支持文件作为跟踪数据目标）。相关命令的说明请参阅 :ref:`jtag-debugging-launching-debugger` 。
 6. 最后一步是处理接收到的数据，由于数据格式由用户定义，因此处理阶段超出了本文档的范围。数据处理的范例可以参考位于 ``$IDF_PATH/tools/esp_app_trace`` 下的 Python 脚本 ``apptrace_proc.py`` （用于功能测试）和 ``logtrace_proc.py`` （请参阅 :ref:`app_trace-logging-to-host` 章节中的详细信息）。
 
-
 OpenOCD 应用程序跟踪命令
-^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""
 
 *HW UP BUFFER* 在用户数据块之间共享，并且会替 API 的调用者（在任务或者中断上下文中）填充分配到的内存。在多线程环境中，正在填充缓冲区的任务/中断可能会被另一个高优先级的任务/中断抢占，有可能发生主机读取还未准备好的用户数据的情况。为了处理这样的情况，跟踪模块在所有用户数据块之前添加一个数据头，其中包含有分配的用户缓冲区的大小（2 字节）和实际写入的数据长度（2 字节），也就是说数据头总共长 4 字节。负责读取跟踪数据的 OpenOCD 命令在读取到不完整的用户数据块时会报错，但是无论如何它都会将整个用户数据块（包括还未填充的区域）的内容放到输出文件中。
 
@@ -249,6 +249,7 @@ Start 子命令的语法：
 
 
 .. _app_trace-logging-to-host:
+
 
 记录日志到主机
 ^^^^^^^^^^^^^^
@@ -354,7 +355,7 @@ OpenOCD SystemView 跟踪命令选项
 
 ``esp32 sysview [start <options>] | [stop] | [status]``
 
-自命令：
+子命令：
 
 ``start``
     开启跟踪（连续流模式）。
@@ -406,9 +407,13 @@ Start 子命令语法：
 数据可视化
 """"""""""
 
-收集到跟踪数据后，用户可以使用特殊的工具来可视化结果并分析程序的行为。遗憾的是，SystemView 不支持从多个核心进行跟踪。所以当追踪双核模式下的 ESP32 时会生成两个文件：一个用于 PRO CPU，另一个用于 APP CPU。用户可以将每个文件加载到工具中单独分析。
+收集到跟踪数据后，用户可以使用特殊的工具来可视化结果并分析程序的行为。
 
-在工具中单独分析每个核的跟踪数据是比较棘手的，幸运的是， Eclipse 中有一款 *Impulse* 的插件可以加载多个跟踪文件，并且可以在同一个视图中检查来自两个内核的事件。此外，与免费版的 SystemView 相比，此插件没有 1,000,000 个事件的限制。
+.. only:: not CONFIG_FREERTOS_UNICORE
+
+    遗憾的是，SystemView 不支持从多个核心进行跟踪。所以当追踪双核模式下的 {IDF_TARGET_NAME} 时会生成两个文件：一个用于 PRO CPU，另一个用于 APP CPU。用户可以将每个文件加载到工具中单独分析。
+
+在工具中单独分析每个核的跟踪数据是比较棘手的，但是 Eclipse 提供了一个叫 *Impulse* 的插件可以加载多个跟踪文件，并且可以在同一个视图中检查来自两个内核的事件。此外，与免费版的 SystemView 相比，此插件没有 1,000,000 个事件的限制。
 
 关于如何安装、配置 Impulse 并使用它可视化来自单个核心的跟踪数据，请参阅 `官方教程 <https://mcuoneclipse.com/2016/07/31/impulse-segger-systemview-in-eclipse/>`_ 。
 
@@ -417,22 +422,183 @@ Start 子命令语法：
     IDF 使用自己的 SystemView FreeRTOS 事件 ID 映射，因此用户需要将 ``$SYSVIEW_INSTALL_DIR/Description/SYSVIEW_FreeRTOS.txt`` 替换成 ``$IDF_PATH/docs/api-guides/SYSVIEW_FreeRTOS.txt``。
     在使用上述链接配置 SystemView 序列化程序时，也应该使用该 IDF 特定文件的内容。
 
+.. only:: not CONFIG_FREERTOS_UNICORE
 
-配置 Impulse 实现双核跟踪
-~~~~~~~~~~~~~~~~~~~~~~~~~
+    配置 Impulse 实现双核跟踪
+    ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-在安装好 Impulse 插件后，先确保它能够在单独的选项卡中成功加载每个核心的跟踪文件，然后用户可以添加特殊的 Multi Adapter 端口并将这两个文件加载到一个视图中。为此，用户需要在 Eclipse 中执行以下操作：
+    在安装好 Impulse 插件并确保 Impulse 能够在单独的选项卡中成功加载每个核心的跟踪文件后，用户可以添加特殊的 Multi Adapter 端口并将这两个文件加载到一个视图中。为此，用户需要在 Eclipse 中执行以下操作：
 
-1. 打开 “Signal Ports” 视图，前往 Windows->Show View->Other 菜单，在 Impulse 文件夹中找到 “Signal Ports” 视图，然后双击它。
-2. 在 “Signal Ports” 视图中，右键单击 “Ports” 并选择 “Add ...”，然后选择 New Multi Adapter Port。
-3. 在打开的对话框中按下 “Add” 按钮，选择 “New Pipe/File”。
-4. 在打开的对话框中选择 “SystemView Serializer” 并设置 PRO CPU 跟踪文件的路径，按下确定保存设置。
-5. 对 APP CPU 的跟踪文件重复步骤 3 和 4。
-6. 双击创建的端口，会打开此端口的视图。
-7. 单击 Start/Stop Streaming 按钮，数据将会被加载。
-8. 使用 “Zoom Out”，“Zoom In” 和 “Zoom Fit” 按钮来查看数据。
-9. 有关设置测量光标和其他的功能，请参阅 `Impulse 官方文档 <http://toem.de/index.php/projects/impulse>`_ 。
+    1. 打开 “Signal Ports” 视图，前往 Windows->Show View->Other 菜单，在 Impulse 文件夹中找到 “Signal Ports” 视图，然后双击它。
+    2. 在 “Signal Ports” 视图中，右键单击 “Ports” 并选择 “Add ...”，然后选择 New Multi Adapter Port。
+    3. 在打开的对话框中按下 “Add” 按钮，选择 “New Pipe/File”。
+    4. 在打开的对话框中选择 “SystemView Serializer” 并设置 PRO CPU 跟踪文件的路径，按下确定保存设置。
+    5. 对 APP CPU 的跟踪文件重复步骤 3 和 4。
+    6. 双击创建的端口，会打开此端口的视图。
+    7. 单击 Start/Stop Streaming 按钮，数据将会被加载。
+    8. 使用 “Zoom Out”，“Zoom In” 和 “Zoom Fit” 按钮来查看数据。
+    9. 有关设置测量光标和其他的功能，请参阅 `Impulse 官方文档 <http://toem.de/index.php/projects/impulse>`_ 。
+
+    .. note::
+
+        如果您在可视化方面遇到了问题（未显示数据或者缩放操作异常），您可以尝试删除当前的信号层次结构，再双击必要的文件或端口。Eclipse 会请求您创建新的信号层次结构。
+
+
+.. _app_trace-gcov-source-code-coverage:
+
+Gcov（源代码覆盖）
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Gcov 和 Gcovr 简介
+""""""""""""""""""""""""
+
+源代码覆盖率显示程序运行时间内执行的每一条程序执行路径的数量和频率。`Gcov <https://en.wikipedia.org/wiki/Gcov>`_ 是一个 GCC 工具，与编译器协同使用时，可生成日志文件，显示源文件每行的执行次数。`Gcovr <https://gcovr.com>`_ 是管理 Gcov 和生成代码覆盖率总结的工具。
+
+一般来说，使用 Gcov 在主机上编译和运行程序会经过以下步骤：
+
+1. 使用 GCC 以及 ``--coverage`` 选项编译源代码。这会让编译器在编译过程中生成一个 ``.gcno`` 注释文件，该文件包含重建执行路径块图以及将每个块映射到源代码行号等信息。每个用 ``--coverage`` 选项编译的源文件都会有自己的同名 ``.gcno`` 文件（如 ``main.c`` 在编译时会生成 ``main.gcno``）。
+
+2. 执行程序。在执行过程中，程序会生成 ``.gcda`` 数据文件。这些数据文件包含了执行路径的次数统计。程序将为每个用 ``--coverage`` 选项编译的源文件生成一个 ``.gcda`` 文件（如 ``main.c`` 将生成 ``main.gcda``）。
+
+3. Gcov 或 Gcovr 可用于生成基于 ``.gcno``、``.gcda`` 和源文件的代码覆盖。Gcov 将以 ``.gcov`` 文件的形式为每个源文件生成基于文本的覆盖报告，而 Gcovr 将以 HTML 格式生成覆盖报告。
+
+ESP-IDF 中 Gcov 和 Gcovr 应用
+"""""""""""""""""""""""""""""""
+
+在 ESP-IDF 中使用 Gcov 比较复杂，因为程序不在主机上运行（即在目标机上运行）。代码覆盖率数据（即 ``.gcda`` 文件）最初存储在目标机上。然后 OpenOCD 在运行时通过 JTAG 将代码覆盖数据从目标机转储到主机上。在 ESP-IDF 中使用 Gcov 可以分为以下几个步骤：
+
+1. :ref:`app_trace-gcov-setup-project`
+2. :ref:`app_trace-gcov-dumping-data`
+3. :ref:`app_trace-gcov-generate-report`
+
+.. _app_trace-gcov-setup-project:
+
+为 Gcov 设置项目
+"""""""""""""""""""""""""""""""
+
+编译器选项
+~~~~~~~~~~~~~~~
+
+为了获得项目中的代码覆盖率数据，项目中的一个或多个源文件必须用 ``--coverage`` 选项进行编译。在 ESP-IDF 中，这可以在组件级或单个源文件级实现：
+
+使组件中的所有源文件用 ``--coverage`` 选项进行编译：
+    - 如果使用 CMake，则在组件的 ``CMakeLists.txt`` 文件中添加 ``target_compile_options(${COMPONENT_LIB} PRIVATE --coverage)``。
+    - 如果使用 Make，则在组件的 ``component.mk`` 文件中添加 ``CFLAGS += --coverage``。
+
+使同一组件中选定的一些源文件（如 ``sourec1.c`` 和 ``source2.c``）通过 ``--coverage`` 选项编译：
+    - 如果使用 CMake，则在组件的 ``CMakeLists.txt`` 文件中添加 ``set_source_files_properties(source1.c source2.c PROPERTIES COMPILE_FLAGS --coverage)``。
+    - 如果使用 Make，则在组件的 ``component.mk`` 文件中添加 ``source1.o: CFLAGS += --coverage`` 和 ``source2.o: CFLAGS += --coverage``。
+
+当一个源文件用 ``--coverage`` 选项编译时（例如 ``gcov_example.c``），编译器会在项目的构建目录下生成 ``gcov_example.gcno`` 文件。
+
+项目配置
+~~~~~~~~~~~~~~~~~
+
+在构建一个有源代码覆盖的项目之前，请通过运行 ``idf.py menuconfig``（如使用传统的 Make 构建系统，则启用 ``make menuconfig``）启用以下项目配置选项。
+
+- 通过 :ref:`CONFIG_APPTRACE_DESTINATION` 选项选择 *Trace Memory* 来启用应用程序跟踪模块。
+- 通过 :ref:`CONFIG_APPTRACE_GCOV_ENABLE` 选项启用 Gcov 主机。
+
+.. _app_trace-gcov-dumping-data:
+
+转储代码覆盖数据
+""""""""""""""""""""""""""
+
+一旦一个项目使用 ``--coverage`` 选项编译并烧录到目标机上，在应用程序运行时，代码覆盖数据将存储在目标机内部（即在跟踪存储器中）。将代码覆盖率数据从目标机转移到主机上的过程称为转储。
+
+覆盖率数据的转储通过 OpenOCD 进行（关于如何设置和运行 OpenOCD，请参考 :doc:`JTAG调试 <../api-guides/jtag-debugging/index>`）。由于是通过向 OpenOCD 发出命令来触发转储，因此必须打开 telnet 会话来向 OpenOCD 发出这些命令（运行 ``telnet localhost 4444``）。GDB 也可以代替 telnet 来向 OpenOCD 发出命令，但是所有从 GDB 发出的命令都需要以 ``mon <oocd_command>`` 为前缀。
+
+当目标机转储代码覆盖数据时，``.gcda`` 文件存储在项目的构建目录中。例如，如果 ``main`` 组件的 ``gcov_example_main.c`` 在编译时使用了 ``--coverage`` 选项，那么转储代码覆盖数据将在 ``build/esp-idf/main/CMakeFiles/__idf_main.dir/gcov_example_main.c.gcda`` 中（如果使用传统 Make 构建系统，则是在 ``build/main/gcov_example_main.gcda`` 中）生成一个 ``gcov_example_main.gcda`` 文件。注意，编译过程中产生的 ``.gcno`` 文件也放在同一个目录下。
+
+代码覆盖数据的转储可以在应用程序的整个生命周期内多次进行。每次转储都会用最新的代码覆盖信息更新 ``.gcda`` 文件。代码覆盖数据是累积的，因此最新的数据将包含应用程序整个生命周期中每个代码路径的总执行次数。
+
+ESP-IDF 支持两种将代码覆盖数据从目标机转储到主机的方法：
+
+* 运行中实时转储
+* 硬编码转储
+
+运行中实时转储
+~~~~~~~~~~~~~~~~~~~~~
+
+通过 telnet 会话调用 OpenOCD 命令 ``{IDF_TARGET_NAME} gcov`` 来触发运行时的实时转储。一旦被调用，OpenOCD 将立即抢占 {IDF_TARGET_NAME} 的当前状态，并执行一个内置的 IDF Gcov 调试存根函数。调试存根函数将数据转储到主机。完成后，{IDF_TARGET_NAME} 将恢复当前状态。
+
+硬编码转储
+~~~~~~~~~~~~~~~
+
+硬编码转储是由应用程序本身从程序内部调用 :cpp:func:`esp_gcov_dump` 函数触发的。在调用时，应用程序将停止并等待 OpenOCD 连接并检索代码覆盖数据。一旦 :cpp:func:`esp_gcov_dump` 函数被调用，主机将通过 telnet 会话执行 ``esp gcov dump`` OpenOCD 命令。``esp gcov dump`` 命令会让 OpenOCD 连接到 {IDF_TARGET_NAME}，检索代码覆盖数据，然后断开与 {IDF_TARGET_NAME} 的连接，从而恢复应用程序。可以在应用程序的生命周期中多次触发硬编码转储。
+
+通过在必要地方放置 :cpp:func:`esp_gcov_dump` （如在应用程序初始化后，在应用程序主循环的每次迭代期间），当应用程序在生命周期的某刻需要代码覆盖率数据时，硬编码转储会非常有用。
+
+GDB 可以用来在 :cpp:func:`esp_gcov_dump` 上设置一个断点，然后通过使用 ``gdbinit`` 脚本自动调用 ``mon esp gcov dump`` (关于 GDB 的使用可参考 :ref:`jtag-debugging-using-debugger-command-line`)。
+
+以下 GDB 脚本将在 :cpp:func:`esp_gcov_dump` 处添加一个断点，然后调用 ``mon esp gcov dump`` OpenOCD 命令。
+
+.. code-block:: none
+
+    b esp_gcov_dump
+    commands
+    mon esp gcov dump
+    end
+
 
 .. note::
+    注意所有的 OpenOCD 命令都应该在 GDB 中以 ``mon <oocd_command>`` 方式调用。
 
-    如果您在可视化方面遇到了问题（未显示数据或者缩放操作很奇怪），您可以尝试删除当前的信号层次结构，再双击必要的文件或端口。Eclipse 会请求您创建新的信号层次结构。
+.. _app_trace-gcov-generate-report:
+
+生成代码覆盖报告
+""""""""""""""""""""""""""
+
+一旦代码覆盖数据被转储，``.gcno``、``.gcda`` 和源文件可以用来生成代码覆盖报告。该报告会显示源文件中每行被执行的次数。
+
+Gcov 和 Gcovr 都可以用来生成代码覆盖报告。安装 Xtensa 工具链时会一起安装 Gcov，但 Gcovr 可能需要单独安装。关于如何使用 Gcov 或 Gcovr，请参考 `Gcov documentation <https://gcc.gnu.org/onlinedocs/gcc/Gcov.html>`_ 和 `Gcovr documentation <http://gcovr.com/>`_。
+
+在工程中添加 Gcovr 构建目标
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+用户可以在自己的工程中定义额外的构建目标从而更方便地生成报告。可以通过一个简单的构建命令生成这样的报告。
+
+CMake 构建系统
+************************
+
+对于 CMake 构建系统，请在您工程的 ``CMakeLists.txt`` 文件中添加以下内容：
+
+.. code-block:: none
+
+    include($ENV{IDF_PATH}/tools/cmake/gcov.cmake)
+    idf_create_coverage_report(${CMAKE_CURRENT_BINARY_DIR}/coverage_report)
+    idf_clean_coverage_report(${CMAKE_CURRENT_BINARY_DIR}/coverage_report)
+
+可使用以下命令:
+
+    * ``cmake --build build/ --target gcovr-report``：在 ``$(BUILD_DIR_BASE)/coverage_report/html`` 目录下生成 HTML 格式代码覆盖报告。
+    * ``cmake --build build/ --target cov-data-clean``：删除所有代码覆盖数据文件。
+
+Make 构建系统
+************************
+
+对于 Make 构建系统，请在您工程的 ``Makefile`` 文件中添加以下内容：
+
+.. code-block:: none
+
+    GCOV := $(call dequote,$(CONFIG_SDK_TOOLPREFIX))gcov
+    REPORT_DIR := $(BUILD_DIR_BASE)/coverage_report
+
+    gcovr-report:
+        echo "Generating coverage report in: $(REPORT_DIR)"
+        echo "Using gcov: $(GCOV)"
+        mkdir -p $(REPORT_DIR)/html
+        cd $(BUILD_DIR_BASE)
+        gcovr -r $(PROJECT_PATH) --gcov-executable $(GCOV) -s --html-details $(REPORT_DIR)/html/index.html
+
+    cov-data-clean:
+        echo "Remove coverage data files..."
+        find $(BUILD_DIR_BASE) -name "*.gcda" -exec rm {} +
+        rm -rf $(REPORT_DIR)
+
+    .PHONY: gcovr-report cov-data-clean
+
+可使用以下命令:
+
+    * ``make gcovr-report``：在 ``$(BUILD_DIR_BASE)/coverage_report/html`` 目录下生成 HTML 格式代码覆盖报告。
+    * ``make cov-data-clean``：删除所有代码覆盖数据文件。
