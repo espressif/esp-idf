@@ -19,7 +19,7 @@ Background
 
 - Most data is stored in flash. Flash access does not need to be protected from physical access in order for secure boot to function, because critical data is stored (non-software-accessible) in Efuses internal to the chip.
 
-- Efuses are used to store the secure bootloader key (in efuse BLOCK2), and also a single Efuse bit (ABS_DONE_0) is burned (written to 1) to permanently enable secure boot on the chip.  For more details about efuse, see Chapter 11 "eFuse Controller" in the Technical Reference Manual.
+- Efuses are used to store the secure bootloader key (in efuse BLOCK2), and also a single Efuse bit (ABS_DONE_0) is burned (written to 1) to permanently enable secure boot on the chip.  For more details on eFuses, see *{IDF_TARGET_NAME} Technical Reference Manual* > *eFuse Controller (eFuse)* [`PDF <{IDF_TARGET_TRM_EN_URL}#efuse>`__].
 
 - To understand the secure boot process, first familiarise yourself with the standard :doc:`ESP-IDF boot process <../api-guides/general-notes>`.
 
@@ -56,13 +56,7 @@ The following keys are used by the secure boot process:
 
   - By default, the Efuse Block 2 Coding Scheme is "None" and a 256 bit key is stored in this block. On some {IDF_TARGET_NAME}s, the Coding Scheme is set to 3/4 Encoding (CODING_SCHEME efuse has value 1) and a 192 bit key must be stored in this block.
 
-  .. only:: esp32
-
-    See ESP32 Technical Reference Manual section 20.3.1.3 *System Parameter coding_scheme* for more details.
-
-  .. only:: esp32s2
-
-    See ESP32-S2 Technical Reference Manual for more details.
+  For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *eFuse Controller (eFuse)* > *System Parameter coding_scheme* [`PDF <{IDF_TARGET_TRM_EN_URL}#efuse>`__].
 
   The algorithm operates on a 256 bit key in all cases, 192 bit keys are extended by repeating some bits (:ref:`details<secure-bootloader-digest-algorithm>`).
 
@@ -72,19 +66,10 @@ The following keys are used by the secure boot process:
 
   - The private key from this key pair *must be securely kept private*, as anyone who has this key can authenticate to any bootloader that is configured with secure boot and the matching public key.
 
-.. _secure-boot-bootloader-size:
-
 Bootloader Size
 ---------------
 
-When secure boot is enabled the bootloader app binary ``bootloader.bin`` may exceed the default bootloader size limit. This is especially likely if flash encryption is enabled as well. The default size limit is 0x7000 (28672) bytes (partition table offset 0x8000 - bootloader offset 0x1000).
-
-If the bootloader becomes too large, the {IDF_TARGET_NAME} will fail to boot - errors will be logged about either invalid partition table or invalid bootloader checksum.
-
-Options to work around this are:
-
-- Reduce :ref:`bootloader log level <CONFIG_BOOTLOADER_LOG_LEVEL>`. Setting log level to Warning, Error or None all significantly reduce the final binary size (but may make it harder to debug).
-- Set :ref:`partition table offset <CONFIG_PARTITION_TABLE_OFFSET>` to a higher value than 0x8000, to place the partition table later in the flash. This increases the space available for the bootloader. If the :doc:`partition table </api-guides/partition-tables>` CSV file contains explicit partition offsets, they will need changing so no partition has an offset lower than ``CONFIG_PARTITION_TABLE_OFFSET + 0x1000``. (This includes the default partition CSV files supplied with ESP-IDF.)
+Enabling Secure boot and/or flash encryption will increase the size of bootloader, which might require updating partition table offset. See :ref:`secure-boot-bootloader-size`.
 
 .. _secure-boot-howto:
 
