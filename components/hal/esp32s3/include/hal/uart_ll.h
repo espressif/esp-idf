@@ -129,20 +129,24 @@ static inline uint32_t uart_ll_get_sclk_freq(uart_dev_t *hw)
  * @brief  Configure the baud-rate.
  *
  * @param  hw Beginning address of the peripheral registers.
- * @param  baud The baud rate to be set. When the source clock is APB, the max baud rate is `UART_LL_BITRATE_MAX`
+ * @param  baud The baud rate to be set.
  *
  * @return None
  */
 static inline void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud)
 {
-    uint32_t sclk_freq, clk_div;
+#define DIV_UP(a, b)    (((a) + (b) - 1) / (b))
+    uint32_t sclk_freq = uart_ll_get_sclk_freq(hw);
+    const uint32_t max_div = BIT(12) - 1;   // UART divider integer part only has 12 bits
+    int sclk_div = DIV_UP(sclk_freq, max_div * baud);
 
-    sclk_freq = uart_ll_get_sclk_freq(hw);
-    clk_div = ((sclk_freq) << 4) / baud;
+    uint32_t clk_div = ((sclk_freq) << 4) / (baud * sclk_div);
     // The baud rate configuration register is divided into
     // an integer part and a fractional part.
     hw->clk_div.div_int = clk_div >> 4;
     hw->clk_div.div_frag = clk_div &  0xf;
+    hw->clk_conf.sclk_div_num = sclk_div - 1;
+#undef DIV_UP
 }
 
 /**
@@ -156,7 +160,7 @@ static inline uint32_t uart_ll_get_baudrate(uart_dev_t *hw)
 {
     uint32_t sclk_freq = uart_ll_get_sclk_freq(hw);
     typeof(hw->clk_div) div_reg = hw->clk_div;
-    return ((sclk_freq << 4)) / ((div_reg.div_int << 4) | div_reg.div_frag);
+    return ((sclk_freq << 4)) / (((div_reg.div_int << 4) | div_reg.div_frag) * (hw->clk_conf.sclk_div_num + 1));
 }
 
 /**
