@@ -67,6 +67,10 @@ static esp_err_t trigger_async_send(httpd_handle_t handle, httpd_req_t *req)
  */
 static esp_err_t echo_handler(httpd_req_t *req)
 {
+    if (req->method == HTTP_GET) {
+        ESP_LOGI(TAG, "Handshake done, the new connection was opened");
+        return ESP_OK;
+    }
     httpd_ws_frame_t ws_pkt;
     memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
     ws_pkt.type = HTTPD_WS_TYPE_TEXT;
