@@ -274,6 +274,10 @@ menu "Bootloader config"
 
     config BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP
         bool "Skip image validation when exiting deep sleep"
+        # note: dependencies for this config item are different to other "skip image validation"
+        # options, allowing to turn on "allow insecure options" and have secure boot with
+        # "skip validation when existing deep sleep". Keeping this to avoid a breaking change,
+        # but - as noted in help - it invalidates the integrity of Secure Boot checks
         depends on (SECURE_BOOT && SECURE_BOOT_INSECURE) || !SECURE_BOOT
         default n
         help
@@ -285,6 +289,48 @@ menu "Bootloader config"
             in conjunction with using deep_sleep() entry and changing the active OTA
             partition as this would skip the validation upon first load of the new
             OTA partition.
+
+            It is possible to enable this option with Secure Boot if "allow insecure
+            options" is enabled, however it's strongly recommended to NOT enable it as
+            it may allow a Secure Boot bypass.
+
+    config BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON
+        bool "Skip image validation from power on reset (READ HELP FIRST)"
+        # only available if both Secure Boot and Check Signature on Boot are disabled
+        depends on !SECURE_SIGNED_ON_BOOT
+        default n
+        help
+            Some applications need to boot very quickly from power on. By default, the entire app binary
+            is read from flash and verified which takes up a significant portion of the boot time.
+
+            Enabling this option will skip validation of the app when the SoC boots from power on.
+            Note that in this case it's not possible for the bootloader to detect if an app image is
+            corrupted in the flash, therefore it's not possible to safely fall back to a different app
+            partition. Flash corruption of this kind is unlikely but can happen if there is a serious
+            firmware bug or physical damage.
+
+            Following other reset types, the bootloader will still validate the app image. This increases
+            the chances that flash corruption resulting in a crash can be detected following soft reset, and
+            the bootloader will fall back to a valid app image. To increase the chances of successfully recovering
+            from a flash corruption event, keep the option BOOTLOADER_WDT_ENABLE enabled and consider also enabling
+            BOOTLOADER_WDT_DISABLE_IN_USER_CODE - then manually disable the RTC Watchdog once the app is running.
+            In addition, enable both the Task and Interrupt watchdog timers with reset options set.
+
+    config BOOTLOADER_SKIP_VALIDATE_ALWAYS
+        bool "Skip image validation always (READ HELP FIRST)"
+        # only available if both Secure Boot and Check Signature on Boot are disabled
+        depends on !SECURE_SIGNED_ON_BOOT
+        default n
+        select BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP
+        select BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON
+        help
+            Selecting this option prevents the bootloader from ever validating the app image before
+            booting it. Any flash corruption of the selected app partition will make the entire SoC
+            unbootable.
+
+            Although flash corruption is a very rare case, it is not recommended to select this option.
+            Consider selecting "Skip image validation from power on reset" instead. However, if boot time
+            is the only important factor then it can be enabled.
 
     config BOOTLOADER_RESERVE_RTC_SIZE
         hex
