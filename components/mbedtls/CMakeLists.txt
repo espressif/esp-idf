@@ -96,7 +96,8 @@ if(SHA_PERIPHERAL_TYPE STREQUAL "dma")
     if(CONFIG_IDF_TARGET_ESP32S2)
         set(SHA_DMA_SRCS "${COMPONENT_DIR}/port/sha/dma/esp_sha_crypto_dma_impl.c")
     else()
-        set(SHA_DMA_SRCS "${COMPONENT_DIR}/port/sha/dma/esp_sha_gdma_impl.c")
+        set(SHA_DMA_SRCS "${COMPONENT_DIR}/port/sha/dma/esp_sha_gdma_impl.c"
+                         "${COMPONENT_DIR}/port/crypto_shared_gdma/esp_crypto_shared_gdma.c")
     endif()
 endif()
 

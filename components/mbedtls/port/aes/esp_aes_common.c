@@ -54,10 +54,6 @@ bool valid_key_length(const esp_aes_context *ctx)
 void esp_aes_init( esp_aes_context *ctx )
 {
     bzero( ctx, sizeof( esp_aes_context ) );
-
-#if SOC_AES_GDMA
-    esp_aes_dma_init();
-#endif
 }
 
 void esp_aes_free( esp_aes_context *ctx )
@@ -65,10 +61,6 @@ void esp_aes_free( esp_aes_context *ctx )
     if ( ctx == NULL ) {
         return;
     }
-
-#if SOC_AES_GDMA
-    esp_aes_dma_free();
-#endif
 
     bzero( ctx, sizeof( esp_aes_context ) );
 }
