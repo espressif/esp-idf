@@ -622,8 +622,18 @@ void IRAM_ATTR esp_deep_sleep_start(void)
     // Correct the sleep time
     s_config.sleep_time_adjustment = DEEP_SLEEP_TIME_OVERHEAD_US;
 
+    uint32_t force_pd_flags = RTC_SLEEP_PD_DIG | RTC_SLEEP_PD_VDDSDIO;
+
+#if SOC_PM_SUPPORT_WIFI_PD
+    force_pd_flags |= RTC_SLEEP_PD_WIFI;
+#endif
+
+#if SOC_PM_SUPPORT_BT_PD
+    force_pd_flags |= RTC_SLEEP_PD_BT;
+#endif
+
     // Enter sleep
-    esp_sleep_start(RTC_SLEEP_PD_DIG | RTC_SLEEP_PD_VDDSDIO | pd_flags);
+    esp_sleep_start(force_pd_flags | pd_flags);
 
     // Because RTC is in a slower clock domain than the CPU, it
     // can take several CPU cycles for the sleep mode to start.
