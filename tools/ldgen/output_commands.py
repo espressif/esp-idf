@@ -17,9 +17,35 @@
 from entity import Entity
 
 
+class AlignAtAddress():
+
+    def __init__(self, alignment):
+        self.alignment = alignment
+
+    def __str__(self):
+        return ('. = ALIGN(%d);' % self.alignment)
+
+    def __eq__(self, other):
+        return (isinstance(other, AlignAtAddress) and
+                self.alignment == other.alignment)
+
+
+class SymbolAtAddress():
+
+    def __init__(self, symbol):
+        self.symbol = symbol
+
+    def __str__(self):
+        return ('%s = ABSOLUTE(.);' % self.symbol)
+
+    def __eq__(self, other):
+        return (isinstance(other, SymbolAtAddress) and
+                self.symbol == other.symbol)
+
+
 class InputSectionDesc():
 
-    def __init__(self, entity, sections, exclusions=None):
+    def __init__(self, entity, sections, exclusions=None, keep=False, sort=None):
         assert(entity.specificity != Entity.Specificity.SYMBOL)
 
         self.entity = entity
@@ -34,7 +60,12 @@ class InputSectionDesc():
         else:
             self.exclusions = set()
 
+        self.keep = keep
+        self.sort = sort
+
     def __str__(self):
+        sections_string = '( )'
+
         if self.sections:
             exclusion_strings = []
 
@@ -57,22 +88,48 @@ class InputSectionDesc():
                 for section in sorted(self.sections):
                     section_strings.append(section)
 
-            sections_string = '(%s)' % ' '.join(section_strings)
-        else:
-            sections_string = '( )'
+            if self.sort:
+                if self.sort == (None, None):
+                    pattern = 'SORT(%s)'
+                elif self.sort == ('name', None):
+                    pattern = 'SORT_BY_NAME(%s)'
+                elif self.sort == ('alignment', None):
+                    pattern = 'SORT_BY_ALIGNMENT(%s)'
+                elif self.sort == ('init_priority', None):
+                    pattern = 'SORT_BY_INIT_PRIORITY(%s)'
+                elif self.sort == ('name', 'alignment'):
+                    pattern = 'SORT_BY_NAME(SORT_BY_ALIGNMENT(%s))'
+                elif self.sort == ('alignment', 'name'):
+                    pattern = 'SORT_BY_ALIGNMENT(SORT_BY_NAME(%s))'
+                elif self.sort == ('name', 'name'):
+                    pattern = 'SORT_BY_NAME(SORT_BY_NAME(%s))'
+                elif self.sort == ('alignment', 'alignment'):
+                    pattern = 'SORT_BY_ALIGNMENT(SORT_BY_ALIGNMENT(%s))'
+                else:
+                    raise Exception('Invalid sort arguments')
 
-        command = None
+                section_strings = [(pattern % s) for s in section_strings]
+
+            sections_string = '(%s)' % ' '.join(section_strings)
 
         if self.entity.specificity == Entity.Specificity.NONE:
-            command = '*%s' % (sections_string)
+            entry = '*%s' % (sections_string)
         elif self.entity.specificity == Entity.Specificity.ARCHIVE:
-            command = '*%s:%s' % (self.entity.archive, sections_string)
+            entry = '*%s:%s' % (self.entity.archive, sections_string)
         else:
-            command = '*%s:%s.*%s' % (self.entity.archive, self.entity.obj, sections_string)
+            entry = '*%s:%s.*%s' % (self.entity.archive, self.entity.obj, sections_string)
 
-        return command
+        if self.keep:
+            res = 'KEEP(%s)' % entry
+        else:
+            res = entry
+
+        return res
 
     def __eq__(self, other):
-        return (self.entity == other.entity and
+        return (isinstance(other, InputSectionDesc) and
+                self.entity == other.entity and
                 self.sections == other.sections and
-                self.exclusions == other.exclusions)
+                self.exclusions == other.exclusions and
+                self.keep == other.keep and
+                self.sort == other.sort)

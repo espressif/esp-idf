@@ -151,7 +151,7 @@ def main():
                 raise LdGenFailure('failed to parse %s\n%s' % (fragment_file.name, str(e)))
             generation_model.add_fragments_from_file(fragment_file)
 
-        mapping_rules = generation_model.generate_rules(sections_infos)
+        mapping_rules = generation_model.generate(sections_infos)
 
         script_model = LinkerScript(input_file)
         script_model.fill(mapping_rules)

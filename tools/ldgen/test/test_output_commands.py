@@ -19,10 +19,10 @@ import sys
 import unittest
 
 try:
-    from output_commands import InputSectionDesc
+    from output_commands import AlignAtAddress, InputSectionDesc, SymbolAtAddress
 except ImportError:
     sys.path.append('../')
-    from output_commands import InputSectionDesc
+    from output_commands import InputSectionDesc, SymbolAtAddress, AlignAtAddress
 
 from entity import Entity
 
@@ -34,7 +34,7 @@ CROUTINE = Entity('libfreertos.a', 'croutine')
 
 class InputSectionDescTest(unittest.TestCase):
 
-    def test_output_00(self):
+    def test_catch_all_placement(self):
         # Test default (catch-all) command
         expected = '*(.literal .literal.* .text .text.*)'
 
@@ -44,7 +44,7 @@ class InputSectionDescTest(unittest.TestCase):
         desc = InputSectionDesc(Entity(Entity.ALL), SECTIONS)
         self.assertEqual(expected, str(desc))
 
-    def test_output_01(self):
+    def test_lib_placement(self):
         # Test library placement command
         expected = '*libfreertos.a:(.literal .literal.* .text .text.*)'
 
@@ -60,7 +60,7 @@ class InputSectionDescTest(unittest.TestCase):
         desc = InputSectionDesc(Entity('libfreertos.a', Entity.ALL, Entity.ALL), SECTIONS)
         self.assertEqual(expected, str(desc))
 
-    def test_output_02(self):
+    def test_obj_placement(self):
         # Test object placement command
         expected = '*libfreertos.a:croutine.*(.literal .literal.* .text .text.*)'
 
@@ -79,7 +79,7 @@ class InputSectionDescTest(unittest.TestCase):
         desc = InputSectionDesc(Entity('libfreertos.a', 'croutine.c'), SECTIONS)
         self.assertEqual(expected, str(desc))
 
-    def test_output_03(self):
+    def test_invalid_entity(self):
         # Invalid entity specification
         with self.assertRaises(AssertionError):
             InputSectionDesc(Entity('libfreertos.a', 'croutine', 'prvCheckPendingReadyList'), SECTIONS)
@@ -90,7 +90,7 @@ class InputSectionDescTest(unittest.TestCase):
         with self.assertRaises(AssertionError):
             InputSectionDesc(Entity('libfreertos.a', 'croutine'), SECTIONS, [Entity('libfreertos.a', 'croutine', 'prvCheckPendingReadyList')])
 
-    def test_output_04(self):
+    def test_exclusions(self):
         # Test exclusions
 
         # Library
@@ -129,11 +129,112 @@ class InputSectionDescTest(unittest.TestCase):
         desc = InputSectionDesc(CROUTINE, SECTIONS, [Entity('libfreertos.a', 'croutine.c')])
         self.assertEqual(expected, str(desc))
 
-    def test_output_05(self):
+    def test_empty_sections(self):
         # Test empty sections
         expected = '*libfreertos.a:croutine.*( )'
 
         desc = InputSectionDesc(Entity('libfreertos.a', 'croutine'), [])
+        self.assertEqual(expected, str(desc))
+
+    def test_keep(self):
+        # Test KEEP
+        expected = 'KEEP(*libfreertos.a:croutine.*( ))'
+
+        desc = InputSectionDesc(Entity('libfreertos.a', 'croutine'), [], keep=True)
+        self.assertEqual(expected, str(desc))
+
+    def test_sort(self):
+        # Test sort
+        expected = ('*libfreertos.a:croutine.*('
+                    'SORT(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .literal) '
+                    'SORT(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .literal.*) '
+                    'SORT(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .text) '
+                    'SORT(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .text.*)'
+                    ')')
+        desc = InputSectionDesc(CROUTINE, SECTIONS, [Entity('libfreertos.a', 'croutine.c')], keep=False, sort=(None, None))
+        self.assertEqual(expected, str(desc))
+
+        expected = ('*libfreertos.a:croutine.*('
+                    'SORT_BY_NAME(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .literal) '
+                    'SORT_BY_NAME(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .literal.*) '
+                    'SORT_BY_NAME(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .text) '
+                    'SORT_BY_NAME(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .text.*)'
+                    ')')
+        desc = InputSectionDesc(CROUTINE, SECTIONS, [Entity('libfreertos.a', 'croutine.c')], keep=False, sort=('name', None))
+        self.assertEqual(expected, str(desc))
+
+        expected = ('*libfreertos.a:croutine.*('
+                    'SORT_BY_ALIGNMENT(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .literal) '
+                    'SORT_BY_ALIGNMENT(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .literal.*) '
+                    'SORT_BY_ALIGNMENT(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .text) '
+                    'SORT_BY_ALIGNMENT(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .text.*)'
+                    ')')
+        desc = InputSectionDesc(CROUTINE, SECTIONS, [Entity('libfreertos.a', 'croutine.c')], keep=False, sort=('alignment', None))
+        self.assertEqual(expected, str(desc))
+
+        expected = ('*libfreertos.a:croutine.*('
+                    'SORT_BY_INIT_PRIORITY(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .literal) '
+                    'SORT_BY_INIT_PRIORITY(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .literal.*) '
+                    'SORT_BY_INIT_PRIORITY(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .text) '
+                    'SORT_BY_INIT_PRIORITY(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .text.*)'
+                    ')')
+        desc = InputSectionDesc(CROUTINE, SECTIONS, [Entity('libfreertos.a', 'croutine.c')], keep=False, sort=('init_priority', None))
+        self.assertEqual(expected, str(desc))
+
+        expected = ('*libfreertos.a:croutine.*('
+                    'SORT_BY_NAME(SORT_BY_ALIGNMENT(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .literal)) '
+                    'SORT_BY_NAME(SORT_BY_ALIGNMENT(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .literal.*)) '
+                    'SORT_BY_NAME(SORT_BY_ALIGNMENT(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .text)) '
+                    'SORT_BY_NAME(SORT_BY_ALIGNMENT(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .text.*))'
+                    ')')
+        desc = InputSectionDesc(CROUTINE, SECTIONS, [Entity('libfreertos.a', 'croutine.c')], keep=False, sort=('name', 'alignment'))
+        self.assertEqual(expected, str(desc))
+
+        expected = ('*libfreertos.a:croutine.*('
+                    'SORT_BY_NAME(SORT_BY_NAME(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .literal)) '
+                    'SORT_BY_NAME(SORT_BY_NAME(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .literal.*)) '
+                    'SORT_BY_NAME(SORT_BY_NAME(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .text)) '
+                    'SORT_BY_NAME(SORT_BY_NAME(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .text.*))'
+                    ')')
+        desc = InputSectionDesc(CROUTINE, SECTIONS, [Entity('libfreertos.a', 'croutine.c')], keep=False, sort=('name', 'name'))
+        self.assertEqual(expected, str(desc))
+
+        expected = ('*libfreertos.a:croutine.*('
+                    'SORT_BY_ALIGNMENT(SORT_BY_NAME(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .literal)) '
+                    'SORT_BY_ALIGNMENT(SORT_BY_NAME(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .literal.*)) '
+                    'SORT_BY_ALIGNMENT(SORT_BY_NAME(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .text)) '
+                    'SORT_BY_ALIGNMENT(SORT_BY_NAME(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .text.*))'
+                    ')')
+        desc = InputSectionDesc(CROUTINE, SECTIONS, [Entity('libfreertos.a', 'croutine.c')], keep=False, sort=('alignment', 'name'))
+        self.assertEqual(expected, str(desc))
+
+        expected = ('*libfreertos.a:croutine.*('
+                    'SORT_BY_ALIGNMENT(SORT_BY_ALIGNMENT(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .literal)) '
+                    'SORT_BY_ALIGNMENT(SORT_BY_ALIGNMENT(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .literal.*)) '
+                    'SORT_BY_ALIGNMENT(SORT_BY_ALIGNMENT(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .text)) '
+                    'SORT_BY_ALIGNMENT(SORT_BY_ALIGNMENT(EXCLUDE_FILE(*libfreertos.a:croutine.c.*) .text.*))'
+                    ')')
+        desc = InputSectionDesc(CROUTINE, SECTIONS, [Entity('libfreertos.a', 'croutine.c')], keep=False, sort=('alignment', 'alignment'))
+        self.assertEqual(expected, str(desc))
+
+
+class SymbolAtAddressTest(unittest.TestCase):
+
+    def test_symbol(self):
+        symbol = 'test_symbol'
+        expected = '%s = ABSOLUTE(.);' % symbol
+
+        desc = SymbolAtAddress(symbol)
+        self.assertEqual(expected, str(desc))
+
+
+class AlignAtAddressTest(unittest.TestCase):
+
+    def test_align(self):
+        align = 8
+        expected = '. = ALIGN(%d);' % 8
+
+        desc = AlignAtAddress(align)
         self.assertEqual(expected, str(desc))
 
 
