@@ -740,13 +740,16 @@ static void IRAM_ATTR btdm_sleep_exit_phase0(void *param)
     }
 #endif
 
-    btdm_wakeup_request();
+    int event = (int) param;
+    if (event == BTDM_ASYNC_WAKEUP_SRC_VHCI || event == BTDM_ASYNC_WAKEUP_SRC_DISA) {
+        btdm_wakeup_request();
+    }
 
     if (s_lp_cntl.wakeup_timer_required && s_lp_stat.wakeup_timer_started) {
         esp_timer_stop(s_btdm_slp_tmr);
         s_lp_stat.wakeup_timer_started = 0;
     }
-    int event = (int) param;
+
     if (event == BTDM_ASYNC_WAKEUP_SRC_VHCI || event == BTDM_ASYNC_WAKEUP_SRC_DISA) {
         semphr_give_wrapper(s_wakeup_req_sem);
     }
