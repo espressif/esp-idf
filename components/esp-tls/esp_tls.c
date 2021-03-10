@@ -196,16 +196,18 @@ static void ms_to_timeval(int timeout_ms, struct timeval *tv)
 
 static esp_err_t esp_tls_set_socket_options(int fd, const esp_tls_cfg_t *cfg)
 {
-    if (cfg && cfg->timeout_ms >= 0) {
-        struct timeval tv;
-        ms_to_timeval(cfg->timeout_ms, &tv);
-        if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) != 0) {
-            ESP_LOGE(TAG, "Fail to setsockopt SO_RCVTIMEO");
-            return ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED;
-        }
-        if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) != 0) {
-            ESP_LOGE(TAG, "Fail to setsockopt SO_SNDTIMEO");
-            return ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED;
+    if (cfg) {
+        if (cfg->timeout_ms >= 0) {
+            struct timeval tv;
+            ms_to_timeval(cfg->timeout_ms, &tv);
+            if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) != 0) {
+                ESP_LOGE(TAG, "Fail to setsockopt SO_RCVTIMEO");
+                return ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED;
+            }
+            if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) != 0) {
+                ESP_LOGE(TAG, "Fail to setsockopt SO_SNDTIMEO");
+                return ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED;
+            }
         }
         if (cfg->keep_alive_cfg && cfg->keep_alive_cfg->keep_alive_enable) {
             int keep_alive_enable = 1;
@@ -229,6 +231,15 @@ static esp_err_t esp_tls_set_socket_options(int fd, const esp_tls_cfg_t *cfg)
             if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT, &keep_alive_count, sizeof(keep_alive_count)) != 0) {
                 ESP_LOGE(TAG, "Fail to setsockopt TCP_KEEPCNT");
                 return ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED;
+            }
+        }
+        if (cfg->if_name) {
+            if (cfg->if_name->ifr_name[0] != 0) {
+                ESP_LOGD(TAG, "Bind [sock=%d] to interface %s", fd, cfg->if_name->ifr_name);
+                if (setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE,  cfg->if_name, sizeof(struct ifreq)) != 0) {
+                    ESP_LOGE(TAG, "Bind [sock=%d] to interface %s fail", fd, cfg->if_name->ifr_name);
+                    return ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED;
+                }
             }
         }
     }
@@ -266,7 +277,7 @@ static esp_err_t esp_tcp_connect(const char *host, int hostlen, int port, int *s
         return ret;
     }
 
-    // Set timeout options and keep-alive options if configured
+    // Set timeout options, keep-alive options and bind device options if configured
     ret = esp_tls_set_socket_options(fd, cfg);
     if (ret != ESP_OK) {
         goto err;

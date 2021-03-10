@@ -173,6 +173,15 @@ void esp_transport_ssl_set_psk_key_hint(esp_transport_handle_t t, const psk_hint
  */
 void esp_transport_ssl_set_keep_alive(esp_transport_handle_t t, esp_transport_keep_alive_t *keep_alive_cfg);
 
+/**
+ * @brief      Set name of interface that socket can be binded on
+ *             So the data can transport on this interface
+ *
+ * @param[in]  t        The transport handle
+ * @param[in]  if_name  The interface name
+ */
+void esp_transport_ssl_set_interface_name(esp_transport_handle_t t, struct ifreq *if_name);
+
 #ifdef __cplusplus
 }
 #endif

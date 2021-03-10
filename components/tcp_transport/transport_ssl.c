@@ -345,6 +345,12 @@ void esp_transport_ssl_set_keep_alive(esp_transport_handle_t t, esp_transport_ke
     ssl->cfg.keep_alive_cfg = (tls_keep_alive_cfg_t *) keep_alive_cfg;
 }
 
+void esp_transport_ssl_set_interface_name(esp_transport_handle_t t, struct ifreq *if_name)
+{
+    GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t);
+    ssl->cfg.if_name = if_name;
+}
+
 esp_transport_handle_t esp_transport_ssl_init(void)
 {
     esp_transport_handle_t t = esp_transport_init();
@@ -377,4 +383,9 @@ esp_transport_handle_t esp_transport_tcp_init(void)
 void esp_transport_tcp_set_keep_alive(esp_transport_handle_t t, esp_transport_keep_alive_t *keep_alive_cfg)
 {
     return esp_transport_ssl_set_keep_alive(t, keep_alive_cfg);
+}
+
+void esp_transport_tcp_set_interface_name(esp_transport_handle_t t, struct ifreq *if_name)
+{
+    return esp_transport_ssl_set_interface_name(t, if_name);
 }
