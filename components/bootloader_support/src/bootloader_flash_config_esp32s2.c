@@ -39,6 +39,11 @@ void bootloader_flash_update_id()
     g_rom_flashchip.device_id = bootloader_read_flash_id();
 }
 
+void bootloader_flash_update_size(uint32_t size)
+{
+    g_rom_flashchip.chip_size = size;
+}
+
 void IRAM_ATTR bootloader_flash_cs_timing_config()
 {
     SET_PERI_REG_MASK(SPI_MEM_USER_REG(0), SPI_MEM_CS_HOLD_M | SPI_MEM_CS_SETUP_M);
