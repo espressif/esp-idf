@@ -25,13 +25,12 @@ from pyparsing import (Combine, Forward, Group, Keyword, Literal, OneOrMore, Opt
                        originalTextFor, restOfLine)
 from sdkconfig import SDKConfig
 
-KeyGrammar = namedtuple('KeyGrammar', 'grammar min max required')
-
 
 class FragmentFile():
     """
-    Fragment file internal representation. Parses and stores instances of the fragment definitions
-    contained within the file.
+    Processes a fragment file and stores all parsed fragments. For
+    more information on how this class interacts with classes for the different fragment types,
+    see description of Fragment.
     """
 
     def __init__(self, fragment_file, sdkconfig):
@@ -186,11 +185,36 @@ class FragmentFile():
 
 
 class Fragment():
+    """
+    Base class for a fragment that can be parsed from a fragment file. All fragments
+    share the common grammar:
+
+    [type:name]
+    key1:value1
+    key2:value2
+    ...
+
+    Supporting a new fragment type means deriving a concrete class which specifies
+    key-value pairs that the fragment supports and what to do with the parsed key-value pairs.
+
+    The new fragment must also be appended to FRAGMENT_TYPES, specifying the
+    keyword for the type and the derived class.
+
+    The key of the key-value pair is a simple keyword string. Other parameters
+    that describe the key-value pair is specified in Fragment.KeyValue:
+        1. grammar - pyparsing grammar to parse the value of key-value pair
+        2. min - the minimum number of value in the key entry, None means no minimum
+        3. max - the maximum number of value in the key entry, None means no maximum
+        4. required - if the key-value pair is required in the fragment
+
+    Setting min=max=1 means that the key has a single value.
+
+    FragmentFile provides conditional expression evaluation, enforcing
+    the parameters for Fragment.Keyvalue.
+    """
     __metaclass__ = abc.ABCMeta
-    """
-    Encapsulates a fragment as defined in the generator syntax. Sets values common to all fragment and performs processing
-    such as checking the validity of the fragment name and getting the entry values.
-    """
+
+    KeyValue = namedtuple('KeyValue', 'grammar min max required')
 
     IDENTIFIER = Word(alphas + '_', alphanums + '_')
     ENTITY = Word(alphanums + '.-_$')
@@ -205,6 +229,15 @@ class Fragment():
 
 
 class Sections(Fragment):
+    """
+    Fragment which contains list of input sections.
+
+    [sections:<name>]
+    entries:
+        .section1
+        .section2
+        ...
+    """
 
     # Unless quoted, symbol names start with a letter, underscore, or point
     # and may include any letters, underscores, digits, points, and hyphens.
@@ -213,7 +246,7 @@ class Sections(Fragment):
     entries_grammar = Combine(GNU_LD_SYMBOLS + Optional('+'))
 
     grammars = {
-        'entries': KeyGrammar(entries_grammar.setResultsName('section'), 1, None, True)
+        'entries': Fragment.KeyValue(entries_grammar.setResultsName('section'), 1, None, True)
     }
 
     """
@@ -247,12 +280,19 @@ class Sections(Fragment):
 
 class Scheme(Fragment):
     """
-    Encapsulates a scheme fragment, which defines what target input sections are placed under.
+    Fragment which defines where the input sections defined in a Sections fragment
+    is going to end up, the target. The targets are markers in a linker script template
+    (see LinkerScript in linker_script.py).
+
+    [scheme:<name>]
+    entries:
+        sections1 -> target1
+        ...
     """
 
     grammars = {
-        'entries': KeyGrammar(Fragment.IDENTIFIER.setResultsName('sections') + Suppress('->') +
-                              Fragment.IDENTIFIER.setResultsName('target'), 1, None, True)
+        'entries': Fragment.KeyValue(Fragment.IDENTIFIER.setResultsName('sections') + Suppress('->') +
+                                     Fragment.IDENTIFIER.setResultsName('target'), 1, None, True)
     }
 
     def set_key_value(self, key, parse_results):
@@ -267,7 +307,23 @@ class Scheme(Fragment):
 
 class Mapping(Fragment):
     """
-    Encapsulates a mapping fragment, which defines what targets the input sections of mappable entties are placed under.
+    Fragment which attaches a scheme to entities (see Entity in entity.py), specifying where the input
+    sections of the entity will end up.
+
+    [mapping:<name>]
+    archive: lib1.a
+    entries:
+        obj1:symbol1 (scheme1); section1 -> target1 KEEP SURROUND(sym1) ...
+        obj2 (scheme2)
+        ...
+
+    Ultimately, an `entity (scheme)` entry generates an
+    input section description (see https://sourceware.org/binutils/docs/ld/Input-Section.html)
+    in the output linker script. It is possible to attach 'flags' to the
+    `entity (scheme)` to generate different output commands or to
+    emit additional keywords in the generated input section description. The
+    input section description, as well as other output commands, is defined in
+    output_commands.py.
     """
 
     class Flag():
@@ -275,7 +331,6 @@ class Mapping(Fragment):
                     Optional(Suppress(',') + Suppress('post').setParseAction(lambda: True).setResultsName('post')))
 
     class Surround(Flag):
-
         def __init__(self, symbol):
             self.symbol = symbol
             self.pre = True
@@ -285,7 +340,7 @@ class Mapping(Fragment):
         def get_grammar():
             # SURROUND(symbol)
             #
-            # __symbol_start, __symbol_end is generated before and after
+            # '__symbol_start', '__symbol_end' is generated before and after
             # the corresponding input section description, respectively.
             grammar = (Keyword('SURROUND').suppress() +
                        Suppress('(') +
@@ -308,7 +363,11 @@ class Mapping(Fragment):
 
         @staticmethod
         def get_grammar():
-            # ALIGN(alignment, [, pre, post])
+            # ALIGN(alignment, [, pre, post]).
+            #
+            # Generates alignment command before and/or after the corresponding
+            # input section description, depending whether pre, post or
+            # both are specified.
             grammar = (Keyword('ALIGN').suppress() +
                        Suppress('(') +
                        Word(nums).setResultsName('alignment') +
@@ -343,7 +402,10 @@ class Mapping(Fragment):
 
         @staticmethod
         def get_grammar():
-            grammar = Keyword('KEEP').setParseAction(Mapping.Keep)
+            # KEEP()
+            #
+            # Surrounds input section description with KEEP command.
+            grammar = Keyword('KEEP()').setParseAction(Mapping.Keep)
             return grammar
 
         def __eq__(self, other):
@@ -361,7 +423,12 @@ class Mapping(Fragment):
 
         @staticmethod
         def get_grammar():
-            # SORT(sort_by_first [, sort_by_second])
+            # SORT([sort_by_first, sort_by_second])
+            #
+            # where sort_by_first, sort_by_second = {name, alignment, init_priority}
+            #
+            # Emits SORT_BY_NAME, SORT_BY_ALIGNMENT or SORT_BY_INIT_PRIORITY
+            # depending on arguments. Nested sort follows linker script rules.
             keywords = Keyword('name') | Keyword('alignment') | Keyword('init_priority')
             grammar = (Keyword('SORT').suppress() + Suppress('(') +
                        keywords.setResultsName('first') +
@@ -448,8 +515,8 @@ class Mapping(Fragment):
                  Optional(Suppress(';') + delimitedList(section_target_flags).setResultsName('sections_target_flags')))
 
         grammars = {
-            'archive': KeyGrammar(Or([Fragment.ENTITY, Word(Entity.ALL)]).setResultsName('archive'), 1, 1, True),
-            'entries': KeyGrammar(entry, 0, None, True)
+            'archive': Fragment.KeyValue(Or([Fragment.ENTITY, Word(Entity.ALL)]).setResultsName('archive'), 1, 1, True),
+            'entries': Fragment.KeyValue(entry, 0, None, True)
         }
 
         return grammars
@@ -457,7 +524,9 @@ class Mapping(Fragment):
 
 class DeprecatedMapping():
     """
-    Encapsulates a mapping fragment, which defines what targets the input sections of mappable entties are placed under.
+    Mapping fragment with old grammar in versions older than ESP-IDF v4.0. Does not conform to
+    requirements of the Fragment class and thus is limited when it comes to conditional expression
+    evaluation.
     """
 
     # Name of the default condition entry

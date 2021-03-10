@@ -23,20 +23,20 @@ from io import StringIO
 from pyparsing import ParseException, ParseFatalException, Word, alphanums
 
 try:
-    from fragments import FRAGMENT_TYPES, Fragment, FragmentFile, KeyGrammar, Mapping
+    from fragments import FRAGMENT_TYPES, Fragment, FragmentFile, Mapping
     from sdkconfig import SDKConfig
 except ImportError:
     sys.path.append('../')
-    from fragments import FRAGMENT_TYPES, Fragment, FragmentFile, KeyGrammar, Mapping
+    from fragments import FRAGMENT_TYPES, Fragment, FragmentFile, Mapping
     from sdkconfig import SDKConfig
 
 
 class SampleFragment(Fragment):
 
     grammars = {
-        'key_1': KeyGrammar(Word(alphanums + '_').setResultsName('value'), 0, None, True),
-        'key_2': KeyGrammar(Word(alphanums + '_').setResultsName('value'), 0, None, False),
-        'key_3': KeyGrammar(Word(alphanums + '_').setResultsName('value'), 3, 5, False)
+        'key_1': Fragment.KeyValue(Word(alphanums + '_').setResultsName('value'), 0, None, True),
+        'key_2': Fragment.KeyValue(Word(alphanums + '_').setResultsName('value'), 0, None, False),
+        'key_3': Fragment.KeyValue(Word(alphanums + '_').setResultsName('value'), 3, 5, False)
     }
 
     def set_key_value(self, key, parse_results):
@@ -818,8 +818,8 @@ entries:
 archive: libmain.a
 entries:
     obj1 (default);
-        text->flash_text KEEP,
-        rodata->flash_rodata KEEP KEEP
+        text->flash_text KEEP(),
+        rodata->flash_rodata KEEP() KEEP()
 """)
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
 
@@ -930,8 +930,8 @@ entries:
 archive: libmain.a
 entries:
     obj1 (default);
-        text->flash_text ALIGN(4) KEEP SURROUND(sym1) ALIGN(8) SORT(name),
-        rodata->flash_rodata KEEP ALIGN(4) KEEP SURROUND(sym1) ALIGN(8) ALIGN(4) SORT(name)
+        text->flash_text ALIGN(4) KEEP() SURROUND(sym1) ALIGN(8) SORT(name),
+        rodata->flash_rodata KEEP() ALIGN(4) KEEP() SURROUND(sym1) ALIGN(8) ALIGN(4) SORT(name)
 """)
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
         fragment = fragment_file.fragments[0]
@@ -960,8 +960,8 @@ entries:
 archive: libmain.a
 entries:
     obj1 (default);
-        text->flash_text ALIGN(4) KEEP SURROUND(sym1) SORT(name),
-        text->flash_text ALIGN(4) KEEP SURROUND(sym1) SORT(name)
+        text->flash_text ALIGN(4) KEEP() SURROUND(sym1) SORT(name),
+        text->flash_text ALIGN(4) KEEP() SURROUND(sym1) SORT(name)
 """)
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
         fragment = fragment_file.fragments[0]
@@ -987,9 +987,9 @@ entries:
 archive: libmain.a
 entries:
     obj1 (default);
-        text->flash_text ALIGN(4) KEEP SURROUND(sym1) SORT(name)
+        text->flash_text ALIGN(4) KEEP() SURROUND(sym1) SORT(name)
     obj1 (default);
-        text->flash_text ALIGN(4) KEEP SURROUND(sym1) SORT(name)
+        text->flash_text ALIGN(4) KEEP() SURROUND(sym1) SORT(name)
 """)
         fragment_file = FragmentFile(test_fragment, self.sdkconfig)
         fragment = fragment_file.fragments[0]

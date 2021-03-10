@@ -16,8 +16,20 @@
 
 from entity import Entity
 
+# Contains classes for output section commands referred to in
+# https://www.acrc.bris.ac.uk/acrc/RedHat/rhel-ld-en-4/sections.html#OUTPUT-SECTION-DESCRIPTION.
+
 
 class AlignAtAddress():
+    """
+    Outputs assignment of builtin function ALIGN to current
+    position:
+
+    . = ALIGN(<alignment>)
+
+    Mapping fragment flag ALIGN causes this output section
+    command to be emitted.
+    """
 
     def __init__(self, alignment):
         self.alignment = alignment
@@ -31,6 +43,16 @@ class AlignAtAddress():
 
 
 class SymbolAtAddress():
+    """
+    Outputs assignment of builtin function ABSOLUTE to a symbol
+    for current position:
+
+    <symbol> = ABSOLUTE(.)
+
+    Mapping fragment flag SURROUND causes this
+    output section command to be emitted before and after
+    an InputSectionDesc.
+    """
 
     def __init__(self, symbol):
         self.symbol = symbol
@@ -44,6 +66,14 @@ class SymbolAtAddress():
 
 
 class InputSectionDesc():
+    """
+    Outputs an input section description as described in
+    https://www.acrc.bris.ac.uk/acrc/RedHat/rhel-ld-en-4/sections.html#INPUT-SECTION.
+
+    These commands are emmited from mapping fragment entries, specifically attaching
+    a scheme onto an entity. Mapping fragment flags KEEP, SORT will also affect
+    the emitted input section description.
+    """
 
     def __init__(self, entity, sections, exclusions=None, keep=False, sort=None):
         assert(entity.specificity != Entity.Specificity.SYMBOL)
