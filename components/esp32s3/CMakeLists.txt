@@ -26,11 +26,9 @@ else()
     # esp_timer is added here because cpu_start.c uses esp_timer
     set(priv_requires app_trace app_update bootloader_support log mbedtls nvs_flash pthread
         spi_flash vfs espcoredump esp_common perfmon esp_timer esp_ipc)
-    set(fragments linker.lf)
 
     idf_component_register(SRCS "${srcs}"
                         INCLUDE_DIRS "${include_dirs}"
-                        LDFRAGMENTS "${fragments}"
                         REQUIRES "${requires}"
                         PRIV_REQUIRES "${priv_requires}"
                         REQUIRED_IDF_TARGETS esp32s3)

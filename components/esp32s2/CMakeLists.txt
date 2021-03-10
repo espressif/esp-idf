@@ -29,11 +29,8 @@ else()
         app_trace app_update bootloader_support esp_system log mbedtls nvs_flash
         pthread spi_flash vfs espcoredump esp_common esp_timer)
 
-    set(fragments linker.lf)
-
     idf_component_register(SRCS "${srcs}"
                         INCLUDE_DIRS "${include_dirs}"
-                        LDFRAGMENTS "${fragments}"
                         REQUIRES "${requires}"
                         PRIV_REQUIRES "${priv_requires}"
                         REQUIRED_IDF_TARGETS esp32s2)
