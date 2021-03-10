@@ -71,7 +71,7 @@ static esp_err_t mbc_serial_slave_setup(void* comm_info)
                 (uint32_t)comm_settings->slave_addr);
     MB_SLAVE_CHECK((comm_settings->port < UART_NUM_MAX), ESP_ERR_INVALID_ARG,
                 "mb wrong port to set = (0x%x).", (uint32_t)comm_settings->port);
-    MB_SLAVE_CHECK((comm_settings->parity <= UART_PARITY_EVEN), ESP_ERR_INVALID_ARG,
+    MB_SLAVE_CHECK((comm_settings->parity <= UART_PARITY_ODD), ESP_ERR_INVALID_ARG,
                 "mb wrong parity option = (0x%x).", (uint32_t)comm_settings->parity);
 
     // Set communication options of the controller
@@ -92,7 +92,7 @@ static esp_err_t mbc_serial_slave_start(void)
                          (UCHAR)mbs_opts->mbs_comm.slave_addr,
                          (UCHAR)mbs_opts->mbs_comm.port,
                          (ULONG)mbs_opts->mbs_comm.baudrate,
-                         (eMBParity)mbs_opts->mbs_comm.parity);
+                         MB_PORT_PARITY_GET(mbs_opts->mbs_comm.parity));
     MB_SLAVE_CHECK((status == MB_ENOERR), ESP_ERR_INVALID_STATE,
             "mb stack initialization failure, eMBInit() returns (0x%x).", status);
     status = eMBEnable();
