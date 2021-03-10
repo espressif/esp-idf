@@ -495,7 +495,7 @@ esp_err_t adc_digi_controller_config(const adc_digi_config_t *config);
 /**
  * @brief Initialize the Digital ADC.
  *
- * @param init_config Pointer to Digital ADC initilisation config. Refer to ``adc_digi_init_config_t``.
+ * @param init_config Pointer to Digital ADC initilization config. Refer to ``adc_digi_init_config_t``.
  *
  * @return
  *         - ESP_ERR_INVALID_ARG   If the combination of arguments is invalid.

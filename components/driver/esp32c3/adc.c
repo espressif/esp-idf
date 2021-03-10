@@ -19,6 +19,7 @@
 #include "sdkconfig.h"
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
+#include "esp_pm.h"
 #include "sys/lock.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -96,6 +97,7 @@ typedef struct adc_digi_context_t {
     adc_atten_t             adc1_atten;                 //Attenuation for ADC1. On this chip each ADC can only support one attenuation.
     adc_atten_t             adc2_atten;                 //Attenuation for ADC2. On this chip each ADC can only support one attenuation.
     adc_digi_config_t       digi_controller_config;     //Digital Controller Configuration
+    esp_pm_lock_handle_t    pm_lock;                    //For power management
 } adc_digi_context_t;
 
 static adc_digi_context_t *s_adc_digi_ctx = NULL;
@@ -178,6 +180,13 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
         ret = ESP_ERR_NO_MEM;
         goto cleanup;
     }
+
+#if CONFIG_PM_ENABLE
+    ret = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "adc_dma", &s_adc_digi_ctx->pm_lock);
+    if (ret != ESP_OK) {
+        goto cleanup;
+    }
+#endif //CONFIG_PM_ENABLE
 
     //init gpio pins
     if (init_config->adc1_chan_mask) {
@@ -272,7 +281,7 @@ static IRAM_ATTR bool adc_dma_intr(adc_digi_context_t *adc_digi_ctx)
         adc_hal_digi_rxdma_start(&adc_digi_ctx->hal, adc_digi_ctx->rx_dma_buf, adc_digi_ctx->bytes_between_intr);
     }
 
-    if(taskAwoken == pdTRUE) {
+    if (taskAwoken == pdTRUE) {
         return true;
     } else {
         return false;
@@ -294,6 +303,11 @@ esp_err_t adc_digi_start(void)
         SAC_ADC2_LOCK_ACQUIRE();
     }
     ADC_DIGI_LOCK_ACQUIRE();
+
+#if CONFIG_PM_ENABLE
+    // Lock APB frequency while ADC driver is in use
+    esp_pm_lock_acquire(s_adc_digi_ctx->pm_lock);
+#endif
 
     adc_arbiter_t config = ADC_ARBITER_CONFIG_DEFAULT();
     if (s_adc_digi_ctx->use_adc1) {
@@ -337,6 +351,11 @@ esp_err_t adc_digi_stop(void)
     //stop DMA
     adc_hal_digi_rxdma_stop(&s_adc_digi_ctx->hal);
     adc_hal_digi_deinit();
+#if CONFIG_PM_ENABLE
+    if (s_adc_digi_ctx->pm_lock) {
+        esp_pm_lock_release(s_adc_digi_ctx->pm_lock);
+    }
+#endif  //CONFIG_PM_ENABLE
 
     ADC_DIGI_LOCK_RELEASE();
     //When using SARADC2 module, this task needs to be protected from WIFI
@@ -390,10 +409,16 @@ esp_err_t adc_digi_deinitialize(void)
         return ESP_ERR_INVALID_STATE;
     }
 
-    if(s_adc_digi_ctx->ringbuf_hdl) {
+    if (s_adc_digi_ctx->ringbuf_hdl) {
         vRingbufferDelete(s_adc_digi_ctx->ringbuf_hdl);
         s_adc_digi_ctx->ringbuf_hdl = NULL;
     }
+
+#if CONFIG_PM_ENABLE
+    if (s_adc_digi_ctx->pm_lock) {
+        esp_pm_lock_delete(s_adc_digi_ctx->pm_lock);
+    }
+#endif  //CONFIG_PM_ENABLE
 
     free(s_adc_digi_ctx->rx_dma_buf);
     free(s_adc_digi_ctx->hal.rx_desc);
@@ -527,7 +552,7 @@ esp_err_t adc_digi_controller_config(const adc_digi_config_t *config)
     s_adc_digi_ctx->use_adc1 = 0;
     s_adc_digi_ctx->use_adc2 = 0;
     for (int i = 0; i < config->adc_pattern_len; i++) {
-        const adc_digi_pattern_table_t* pat = &config->adc_pattern[i];
+        const adc_digi_pattern_table_t *pat = &config->adc_pattern[i];
         if (pat->unit == ADC_NUM_1) {
             s_adc_digi_ctx->use_adc1 = 1;
 
