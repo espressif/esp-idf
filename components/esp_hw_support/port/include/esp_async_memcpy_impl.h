@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_err.h"
@@ -26,6 +30,7 @@
 #elif SOC_GDMA_SUPPORTED
 #include "esp_private/gdma.h"
 #endif
+
 
 /**
  * @brief Type of async mcp implementation layer context
@@ -103,3 +108,7 @@ esp_err_t async_memcpy_impl_restart(async_memcpy_impl_t *impl);
  * @return True if both address are valid
  */
 bool async_memcpy_impl_is_buffer_address_valid(async_memcpy_impl_t *impl, void *src, void *dst);
+
+#ifdef __cplusplus
+}
+#endif

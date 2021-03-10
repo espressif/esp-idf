@@ -247,7 +247,7 @@ INPUT = \
     ## Sleep
     $(IDF_PATH)/components/esp_system/include/esp_sleep.h \
     ## Async memory copy
-    $(IDF_PATH)/components/esp_system/include/esp_async_memcpy.h \
+    $(IDF_PATH)/components/esp_hw_support/include/esp_async_memcpy.h \
     ## Logging
     $(IDF_PATH)/components/log/include/esp_log.h \
     $(IDF_PATH)/components/esp_rom/include/esp_rom_sys.h \

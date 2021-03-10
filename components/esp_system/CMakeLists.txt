@@ -15,7 +15,6 @@ else()
             "freertos_hooks.c"
             "intr_alloc.c"
             "int_wdt.c"
-            "esp_async_memcpy.c"
             "panic.c"
             "esp_system.c"
             "startup.c"
