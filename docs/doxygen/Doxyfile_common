@@ -245,7 +245,7 @@ INPUT = \
     ## ESP HTTPS OTA
     $(IDF_PATH)/components/esp_https_ota/include/esp_https_ota.h \
     ## Sleep
-    $(IDF_PATH)/components/esp_system/include/esp_sleep.h \
+    $(IDF_PATH)/components/esp_hw_support/include/esp_sleep.h \
     ## Async memory copy
     $(IDF_PATH)/components/esp_hw_support/include/esp_async_memcpy.h \
     ## Logging

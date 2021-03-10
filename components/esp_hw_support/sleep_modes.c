@@ -1336,7 +1336,7 @@ static uint32_t get_power_down_flags(void)
 
     /**
      * VDD_SDIO power domain shall be kept on during the light sleep
-     * when CONFIG_ESP_SYSTEM_PD_FLASH is not set and off when it is set.
+     * when CONFIG_ESP_SLEEP_POWER_DOWN_FLASH is not set and off when it is set.
      * The application can still force the power domain to remain on by calling
      * `esp_sleep_pd_config` before getting into light sleep mode.
      *
@@ -1344,7 +1344,7 @@ static uint32_t get_power_down_flags(void)
      * value of this field.
      */
     if (s_config.pd_options[ESP_PD_DOMAIN_VDDSDIO] == ESP_PD_OPTION_AUTO) {
-#ifdef CONFIG_ESP_SYSTEM_PD_FLASH
+#ifdef CONFIG_ESP_SLEEP_POWER_DOWN_FLASH
         s_config.pd_options[ESP_PD_DOMAIN_VDDSDIO] = ESP_PD_OPTION_OFF;
 #else
         s_config.pd_options[ESP_PD_DOMAIN_VDDSDIO] = ESP_PD_OPTION_ON;

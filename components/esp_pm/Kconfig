@@ -94,4 +94,12 @@ menu "Power Management"
         bool
         default n
 
+    config PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
+        bool "Power down CPU in light sleep"
+        depends on IDF_TARGET_ESP32C3
+        default y
+        help
+            If enabled, the CPU will be powered down in light sleep. Enabling this option will consume
+            1.68 KB of internal RAM and will reduce sleep current consumption by about 100 uA.
+
 endmenu # "Power Management"

@@ -19,7 +19,6 @@ else()
             "startup.c"
             "system_time.c"
             "stack_check.c"
-            "sleep_modes.c"
             "task_wdt.c")
 
     if(NOT (${target} STREQUAL "esp32c3") )

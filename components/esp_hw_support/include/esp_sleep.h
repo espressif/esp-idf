@@ -441,6 +441,18 @@ void esp_default_wake_deep_sleep(void);
  */
 void esp_deep_sleep_disable_rom_logging(void);
 
+#ifdef SOC_PM_SUPPORT_CPU_PD
+/**
+ * @brief CPU Power down low-level initialize
+ *
+ * @param enable  enable or disable CPU power down during light sleep
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NO_MEM not enough retention memory
+ */
+esp_err_t esp_sleep_cpu_pd_low_init(bool enable);
+#endif
+
 #if SOC_GPIO_SUPPORT_SLP_SWITCH
 /**
  * @brief Configure to isolate all GPIO pins in sleep state

@@ -14,7 +14,8 @@ if(NOT BOOTLOADER_BUILD)
                      "clk_ctrl_os.c"
                      "hw_random.c"
                      "intr_alloc.c"
-                     "mac_addr.c")
+                     "mac_addr.c"
+                     "sleep_modes.c")
      list(APPEND priv_requires esp_ipc)
 endif()
 
