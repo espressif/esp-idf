@@ -388,7 +388,10 @@ There exists a special scheme with the name ``default``. This scheme is special 
 
 These catch-all rules then effectively serve as fallback rules for those whose mappings were not specified.
 
-The ``default scheme`` is defined in :component_file:`{IDF_TARGET_PATH_NAME}/ld/{IDF_TARGET_PATH_NAME}_fragments.lf`. The ``noflash`` and ``rtc`` scheme fragments which are built-in schemes referenced in the quick start guide are also defined in this file.
+
+The ``default scheme`` is defined in :component_file:`esp_system/app.lf`. The ``noflash`` and ``rtc`` scheme fragments which are
+built-in schemes referenced in the quick start guide are also defined in this file.
+
 
 .. _ldgen-mapping-fragment :
 

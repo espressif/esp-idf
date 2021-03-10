@@ -36,7 +36,7 @@ else()
                                     # link-time registration is used.
                                     esp_pm app_update nvs_flash pthread app_trace esp_gdbstub esp_ipc
                                     espcoredump
-                        LDFRAGMENTS "linker.lf")
+                        LDFRAGMENTS "linker.lf" "app.lf")
     add_subdirectory(port)
 
     # After system initialization, `start_app` (and its other cores variant) is called.

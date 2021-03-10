@@ -17,7 +17,7 @@ COMPONENT_ADD_LDFLAGS += -L $(COMPONENT_PATH)/ld \
                          -u ld_include_panic_highint_hdl \
                          $(addprefix -T ,$(LINKER_SCRIPTS)) \
 
-COMPONENT_ADD_LDFRAGMENTS += ld/esp32_fragments.lf linker.lf
+COMPONENT_ADD_LDFRAGMENTS += linker.lf
 
 # final linking of project ELF depends on all binary libraries, and
 # all linker scripts (except esp32_out.ld, as this is code generated here.)

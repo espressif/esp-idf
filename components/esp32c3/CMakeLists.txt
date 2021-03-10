@@ -27,7 +27,7 @@ else()
         app_trace app_update bootloader_support log mbedtls nvs_flash
         pthread spi_flash vfs espcoredump esp_common esp_timer)
 
-    set(fragments linker.lf ld/esp32c3_fragments.lf)
+    set(fragments linker.lf)
 
     idf_component_register(SRCS "${srcs}"
                         INCLUDE_DIRS "${include_dirs}"

@@ -1,0 +1,43 @@
+# Sections that can be placed in memory regions common
+# to supported SoCs. This is here since some of counterpart attributes
+# are in esp_attr.h.
+#
+# Ideally esp_attr.h would be split between this component and `soc`.
+# Those moved to `soc` are the counterpart attributes to these sections.
+
+[sections:rtc_text]
+entries:
+    .rtc.text+
+    .rtc.literal
+
+[sections:rtc_data]
+entries:
+    .rtc.data+
+
+[sections:rtc_rodata]
+entries:
+    .rtc.rodata+
+
+[sections:rtc_bss]
+entries:
+    .rtc.bss
+
+[sections:iram]
+entries:
+    .iram1+
+
+[sections:iram_data]
+entries:
+    .iram.data+
+
+[sections:iram_bss]
+entries:
+    .iram.bss+
+
+[sections:dram]
+entries:
+    .dram1+
+
+[sections:extram_bss]
+entries:
+    .ext_ram.bss+
