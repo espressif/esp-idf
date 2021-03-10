@@ -228,7 +228,7 @@ INPUT = \
     $(IDF_PATH)/components/heap/include/esp_heap_caps_init.h \
     $(IDF_PATH)/components/heap/include/multi_heap.h \
     ## Interrupt Allocation
-    $(IDF_PATH)/components/esp_system/include/esp_intr_alloc.h \
+    $(IDF_PATH)/components/esp_hw_support/include/esp_intr_alloc.h \
     ## Watchdogs
     ## NOTE: for two lines below header_file.inc is not used
     $(IDF_PATH)/components/esp_system/include/esp_int_wdt.h \
