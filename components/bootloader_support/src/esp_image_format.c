@@ -327,11 +327,24 @@ err:
 
 esp_err_t bootloader_load_image(const esp_partition_pos_t *part, esp_image_metadata_t *data)
 {
-#ifdef BOOTLOADER_BUILD
-    return image_load(ESP_IMAGE_LOAD, part, data);
-#else
+#if !defined(BOOTLOADER_BUILD)
     return ESP_FAIL;
-#endif
+#else
+    esp_image_load_mode_t mode = ESP_IMAGE_LOAD;
+
+#if !defined(CONFIG_SECURE_BOOT)
+    /* Skip validation under particular configurations */
+#if CONFIG_BOOTLOADER_SKIP_VALIDATE_ALWAYS
+    mode = ESP_IMAGE_LOAD_NO_VALIDATE;
+#elif CONFIG_BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON
+    if (rtc_get_reset_reason(0) == POWERON_RESET) {
+        mode = ESP_IMAGE_LOAD_NO_VALIDATE;
+    }
+#endif // CONFIG_BOOTLOADER_SKIP_...
+#endif // CONFIG_SECURE_BOOT
+
+ return image_load(mode, part, data);
+#endif // BOOTLOADER_BUILD
 }
 
 esp_err_t bootloader_load_image_no_verify(const esp_partition_pos_t *part, esp_image_metadata_t *data)
