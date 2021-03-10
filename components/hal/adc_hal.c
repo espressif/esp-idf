@@ -393,8 +393,8 @@ esp_err_t adc_hal_convert(adc_ll_num_t adc_n, int channel, int *out_raw)
 
     if ((int)adc_ll_rtc_analysis_raw_data(adc_n, (uint16_t)(*out_raw))) {
         return ESP_ERR_INVALID_STATE;
-    } else {
-        return ESP_OK;
     }
+
+    return ESP_OK;
 }
 #endif  //#if !CONFIG_IDF_TARGET_ESP32C3
