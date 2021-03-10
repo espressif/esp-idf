@@ -4819,6 +4819,10 @@ esp_err_t mdns_query_a(const char * name, uint32_t timeout, esp_ip4_addr_t * add
         return ESP_ERR_INVALID_ARG;
     }
 
+    if (strstr(name, ".local")) {
+        ESP_LOGW(TAG, "Please note that hostname must not contain domain name, as mDNS uses '.local' domain");
+    }
+
     err = mdns_query(name, NULL, NULL, MDNS_TYPE_A, timeout, 1, &result);
 
     if (err) {
@@ -4851,6 +4855,10 @@ esp_err_t mdns_query_aaaa(const char * name, uint32_t timeout, esp_ip6_addr_t * 
 
     if (_str_null_or_empty(name)) {
         return ESP_ERR_INVALID_ARG;
+    }
+
+    if (strstr(name, ".local")) {
+        ESP_LOGW(TAG, "Please note that hostname must not contain domain name, as mDNS uses '.local' domain");
     }
 
     err = mdns_query(name, NULL, NULL, MDNS_TYPE_AAAA, timeout, 1, &result);
