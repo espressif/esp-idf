@@ -35,6 +35,7 @@
         .configure_host_io_mode = spi_flash_hal_configure_host_io_mode, \
         .poll_cmd_done = spi_flash_hal_poll_cmd_done, \
         .flush_cache = memspi_host_flush_cache, \
+        .check_suspend = NULL, \
         .resume = spi_flash_hal_resume, \
         .suspend = spi_flash_hal_suspend,\
         .sus_setup = spi_flash_hal_setup_read_suspend,\
