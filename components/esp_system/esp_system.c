@@ -1,3 +1,17 @@
+// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include "esp_system.h"
 #include "esp_private/system_internal.h"
 #include "esp_heap_caps.h"
@@ -16,9 +30,28 @@
 #include "esp32c3/memprot.h"
 #endif
 
-
 #define SHUTDOWN_HANDLERS_NO 4
 static shutdown_handler_t shutdown_handlers[SHUTDOWN_HANDLERS_NO];
+
+void IRAM_ATTR esp_restart_noos_dig(void)
+{
+    // make sure all the panic handler output is sent from UART FIFO
+    if (CONFIG_ESP_CONSOLE_UART_NUM >= 0) {
+        esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+    }
+
+    // switch to XTAL (otherwise we will keep running from the PLL)
+    rtc_clk_cpu_freq_set_xtal();
+
+#if CONFIG_IDF_TARGET_ESP32
+    esp_cpu_unstall(PRO_CPU_NUM);
+#endif
+    // reset the digital part
+    SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_SYS_RST);
+    while (true) {
+        ;
+    }
+}
 
 esp_err_t esp_register_shutdown_handler(shutdown_handler_t handler)
 {
@@ -44,25 +77,6 @@ esp_err_t esp_unregister_shutdown_handler(shutdown_handler_t handler)
     return ESP_ERR_INVALID_STATE;
 }
 
-void IRAM_ATTR esp_restart_noos_dig(void)
-{
-    // make sure all the panic handler output is sent from UART FIFO
-    if (CONFIG_ESP_CONSOLE_UART_NUM >= 0) {
-        esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
-    }
-
-    // switch to XTAL (otherwise we will keep running from the PLL)
-    rtc_clk_cpu_freq_set_xtal();
-
-#if CONFIG_IDF_TARGET_ESP32
-    esp_cpu_unstall(PRO_CPU_NUM);
-#endif
-    // reset the digital part
-    SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_SYS_RST);
-    while (true) {
-        ;
-    }
-}
 
 void IRAM_ATTR esp_restart(void)
 {

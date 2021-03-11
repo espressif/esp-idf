@@ -16,7 +16,6 @@ else()
              "dport_access.c"
              "spiram.c"
              "spiram_psram.c"
-             "system_api_esp32s2.c"
              "esp_crypto_lock.c"
              "esp_hmac.c"
              "esp_ds.c")

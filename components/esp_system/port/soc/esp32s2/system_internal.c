@@ -1,4 +1,4 @@
-// Copyright 2013-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,9 +28,12 @@
 #include "soc/cpu.h"
 #include "soc/rtc.h"
 #include "soc/syscon_reg.h"
+#include "soc/rtc_periph.h"
 #include "hal/wdt_hal.h"
 #include "freertos/xtensa_api.h"
 #include "hal/cpu_hal.h"
+
+#include "esp32s2/rom/rtc.h"
 
 /* "inner" restart function for after RTOS, interrupts & anything else on this
  * core are already stopped. Stalls other core, resets hardware,
@@ -108,28 +111,5 @@ void IRAM_ATTR esp_restart_noos(void)
     }
     while (true) {
         ;
-    }
-}
-
-void esp_chip_info(esp_chip_info_t *out_info)
-{
-    uint32_t pkg_ver = esp_efuse_get_pkg_ver();
-
-    memset(out_info, 0, sizeof(*out_info));
-
-    out_info->model = CHIP_ESP32S2;
-    out_info->cores = 1;
-    out_info->features = CHIP_FEATURE_WIFI_BGN;
-
-    switch (pkg_ver) {
-    case 0: // ESP32-S2
-        break;
-    case 1: // ESP32-S2FH16
-        // fallthrough
-    case 2: // ESP32-S2FH32
-        out_info->features |= CHIP_FEATURE_EMB_FLASH;
-        break;
-    default: // New package, features unknown
-        break;
     }
 }

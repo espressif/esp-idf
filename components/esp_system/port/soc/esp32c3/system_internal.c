@@ -1,4 +1,4 @@
-// Copyright 2013-2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,18 +17,24 @@
 #include "esp_system.h"
 #include "esp_private/system_internal.h"
 #include "esp_attr.h"
+#include "esp_efuse.h"
 #include "esp_log.h"
-#include "esp32s3/rom/cache.h"
+#include "riscv/riscv_interrupts.h"
+#include "riscv/interrupt.h"
 #include "esp_rom_uart.h"
-#include "soc/dport_reg.h"
 #include "soc/gpio_reg.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/timer_group_reg.h"
 #include "soc/cpu.h"
 #include "soc/rtc.h"
+#include "soc/rtc_periph.h"
 #include "soc/syscon_reg.h"
+#include "soc/system_reg.h"
 #include "hal/wdt_hal.h"
-#include "freertos/xtensa_api.h"
+#include "cache_err_int.h"
+
+#include "esp32c3/rom/cache.h"
+#include "esp32c3/rom/rtc.h"
 
 /* "inner" restart function for after RTOS, interrupts & anything else on this
  * core are already stopped. Stalls other core, resets hardware,
@@ -37,8 +43,7 @@
 void IRAM_ATTR esp_restart_noos(void)
 {
     // Disable interrupts
-    xt_ints_off(0xFFFFFFFF);
-
+    riscv_global_interrupts_disable();
     // Enable RTC watchdog for 1 second
     wdt_hal_context_t rtc_wdt_ctx;
     wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);
@@ -77,7 +82,6 @@ void IRAM_ATTR esp_restart_noos(void)
     esp_rom_uart_tx_wait_idle(1);
     // Disable cache
     Cache_Disable_ICache();
-    Cache_Disable_DCache();
 
     // 2nd stage bootloader reconfigures SPI flash signals.
     // Reset them to the defaults expected by ROM.
@@ -92,21 +96,20 @@ void IRAM_ATTR esp_restart_noos(void)
     SET_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG,
                       SYSTEM_BB_RST | SYSTEM_FE_RST | SYSTEM_MAC_RST |
                       SYSTEM_BT_RST | SYSTEM_BTMAC_RST | SYSTEM_SDIO_RST |
-                      SYSTEM_SDIO_HOST_RST | SYSTEM_EMAC_RST | SYSTEM_MACPWR_RST |
-                      SYSTEM_RW_BTMAC_RST | SYSTEM_RW_BTLP_RST | SYSTEM_BLE_REG_RST | SYSTEM_PWR_REG_RST | SYSTEM_BB_REG_RST);
+                      SYSTEM_EMAC_RST | SYSTEM_MACPWR_RST |
+                      SYSTEM_RW_BTMAC_RST | SYSTEM_RW_BTLP_RST | BLE_REG_REST_BIT
+                      |BLE_PWR_REG_REST_BIT | BLE_BB_REG_REST_BIT);
+
+
     REG_WRITE(SYSTEM_CORE_RST_EN_REG, 0);
 
     // Reset timer/spi/uart
     SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG,
                       SYSTEM_TIMERS_RST | SYSTEM_SPI01_RST | SYSTEM_UART_RST);
     REG_WRITE(SYSTEM_PERIP_RST_EN0_REG, 0);
-
     // Reset dma
     SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, SYSTEM_DMA_RST);
     REG_WRITE(SYSTEM_PERIP_RST_EN1_REG, 0);
-
-    SET_PERI_REG_MASK(SYSTEM_EDMA_CTRL_REG, SYSTEM_EDMA_RESET);
-    CLEAR_PERI_REG_MASK(SYSTEM_EDMA_CTRL_REG, SYSTEM_EDMA_RESET);
 
     // Set CPU back to XTAL source, no PLL, same as hard reset
 #if !CONFIG_IDF_ENV_FPGA
@@ -138,12 +141,4 @@ void IRAM_ATTR esp_restart_noos(void)
     while (true) {
         ;
     }
-}
-
-void esp_chip_info(esp_chip_info_t *out_info)
-{
-    memset(out_info, 0, sizeof(*out_info));
-    out_info->model = CHIP_ESP32S3;
-    out_info->cores = 2;
-    out_info->features = CHIP_FEATURE_WIFI_BGN;
 }

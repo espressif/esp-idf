@@ -1,5 +1,6 @@
 set(srcs "clk.c"
          "reset_reason.c"
+         "system_internal.c"
          "cache_err_int.c"
          "../../async_memcpy_impl_gdma.c"
          "apb_backup_dma.c"

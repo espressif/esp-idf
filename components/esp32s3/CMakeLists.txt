@@ -17,8 +17,7 @@ else()
              "esp_crypto_lock.c"
              "memprot.c"
              "spiram.c"
-             "spiram_psram.c"
-             "system_api_esp32s3.c")
+             "spiram_psram.c")
     set(include_dirs "include")
 
     set(requires driver efuse soc xtensa) #unfortunately rom/uart uses SOC registers directly

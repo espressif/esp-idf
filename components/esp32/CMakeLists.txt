@@ -17,8 +17,7 @@ else()
         "dport_access.c"
         "esp_himem.c"
         "spiram.c"
-        "spiram_psram.c"
-        "system_api_esp32.c")
+        "spiram_psram.c")
 
     set(include_dirs "include")
 

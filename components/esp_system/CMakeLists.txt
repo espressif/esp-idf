@@ -17,7 +17,7 @@ else()
             "int_wdt.c"
             "esp_async_memcpy.c"
             "panic.c"
-            "system_api.c"
+            "esp_system.c"
             "startup.c"
             "system_time.c"
             "stack_check.c"
