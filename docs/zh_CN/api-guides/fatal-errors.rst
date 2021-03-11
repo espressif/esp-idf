@@ -9,7 +9,7 @@
 
 在某些情况下，程序并不会按照我们的预期运行，在 ESP-IDF 中，这些情况包括：
 
-- CPU 异常：非法指令，加载/存储时的内存对齐错误，加载/存储时的访问权限错误，双重异常。
+- CPU 异常：|CPU_EXCEPTIONS_LIST|
 - 系统级检查错误：
 
   - :doc:`中断看门狗 <../api-reference/system/wdts>` 超时
@@ -29,13 +29,17 @@
 
 :ref:`Overview` 中列举的所有错误都会由 *紧急处理程序（Panic Handler）* 负责处理。
 
-紧急处理程序首先会将出错原因打印到控制台，例如 CPU 异常的错误信息通常会类似于::
+紧急处理程序首先会将出错原因打印到控制台，例如 CPU 异常的错误信息通常会类似于
 
-    Guru Meditation Error: Core 0 panic'ed (IllegalInstruction). Exception was unhandled.
+.. parsed-literal::
 
-对于一些系统级检查错误（如中断看门狗超时，高速缓存访问错误等），错误信息会类似于::
+    Guru Meditation Error: Core 0 panic'ed (|ILLEGAL_INSTR_MSG|). Exception was unhandled.
 
-    Guru Meditation Error: Core 0 panic'ed (Cache disabled but cached memory region accessed)
+对于一些系统级检查错误（如中断看门狗超时，高速缓存访问错误等），错误信息会类似于
+
+.. parsed-literal::
+
+    Guru Meditation Error: Core 0 panic'ed (|CACHE_ERR_MSG|). Exception was unhandled.
 
 不管哪种情况，错误原因都会被打印在括号中。请参阅 :ref:`Guru-Meditation-Errors` 以查看所有可能的出错原因。
 
@@ -112,44 +116,92 @@
 寄存器转储与回溯
 ----------------
 
-除非启用了 ``CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT`` 否则紧急处理程序会将 CPU 寄存器和回溯打印到控制台::
+除非启用了 ``CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT`` 否则紧急处理程序会将 CPU 寄存器和回溯打印到控制台
 
-    Core 0 register dump:
-    PC      : 0x400e14ed  PS      : 0x00060030  A0      : 0x800d0805  A1      : 0x3ffb5030
-    A2      : 0x00000000  A3      : 0x00000001  A4      : 0x00000001  A5      : 0x3ffb50dc
-    A6      : 0x00000000  A7      : 0x00000001  A8      : 0x00000000  A9      : 0x3ffb5000
-    A10     : 0x00000000  A11     : 0x3ffb2bac  A12     : 0x40082d1c  A13     : 0x06ff1ff8
-    A14     : 0x3ffb7078  A15     : 0x00000000  SAR     : 0x00000014  EXCCAUSE: 0x0000001d
-    EXCVADDR: 0x00000000  LBEG    : 0x4000c46c  LEND    : 0x4000c477  LCOUNT  : 0xffffffff
+.. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
-    Backtrace: 0x400e14ed:0x3ffb5030 0x400d0802:0x3ffb5050
+    ::
+
+        Core 0 register dump:
+        PC      : 0x400e14ed  PS      : 0x00060030  A0      : 0x800d0805  A1      : 0x3ffb5030
+        A2      : 0x00000000  A3      : 0x00000001  A4      : 0x00000001  A5      : 0x3ffb50dc
+        A6      : 0x00000000  A7      : 0x00000001  A8      : 0x00000000  A9      : 0x3ffb5000
+        A10     : 0x00000000  A11     : 0x3ffb2bac  A12     : 0x40082d1c  A13     : 0x06ff1ff8
+        A14     : 0x3ffb7078  A15     : 0x00000000  SAR     : 0x00000014  EXCCAUSE: 0x0000001d
+        EXCVADDR: 0x00000000  LBEG    : 0x4000c46c  LEND    : 0x4000c477  LCOUNT  : 0xffffffff
+
+        Backtrace: 0x400e14ed:0x3ffb5030 0x400d0802:0x3ffb5050
+
+.. only:: CONFIG_IDF_TARGET_ARCH_RISCV
+
+    ::
+
+        Core  0 register dump:
+        MEPC    : 0x420048b4  RA      : 0x420048b4  SP      : 0x3fc8f2f0  GP      : 0x3fc8a600
+        TP      : 0x3fc8a2ac  T0      : 0x40057fa6  T1      : 0x0000000f  T2      : 0x00000000
+        S0/FP   : 0x00000000  S1      : 0x00000000  A0      : 0x00000001  A1      : 0x00000001
+        A2      : 0x00000064  A3      : 0x00000004  A4      : 0x00000001  A5      : 0x00000000
+        A6      : 0x42001fd6  A7      : 0x00000000  S2      : 0x00000000  S3      : 0x00000000
+        S4      : 0x00000000  S5      : 0x00000000  S6      : 0x00000000  S7      : 0x00000000
+        S8      : 0x00000000  S9      : 0x00000000  S10     : 0x00000000  S11     : 0x00000000
+        T3      : 0x00000000  T4      : 0x00000000  T5      : 0x00000000  T6      : 0x00000000
+        MSTATUS : 0x00001881  MTVEC   : 0x40380001  MCAUSE  : 0x00000007  MTVAL   : 0x00000000
+        MHARTID : 0x00000000
 
 仅会打印异常帧中 CPU 寄存器的值，即引发 CPU 异常或者其它严重错误时刻的值。
 
 紧急处理程序如果是因 abort() 而调用，则不会打印寄存器转储。
 
-在某些情况下，例如中断看门狗超时，紧急处理程序会额外打印 CPU 寄存器（EPC1-EPC4）的值，以及另一个 CPU 的寄存器值和代码回溯。
+.. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
-回溯行包含了当前任务中每个堆栈帧的 PC:SP 对（PC 是程序计数器，SP 是堆栈指针）。如果在 ISR 中发生了严重错误，回溯会同时包括被中断任务的 PC:SP 对，以及 ISR 中的 PC:SP 对。
+    在某些情况下，例如中断看门狗超时，紧急处理程序会额外打印 CPU 寄存器（EPC1-EPC4）的值，以及另一个 CPU 的寄存器值和代码回溯。
 
-如果使用了 :doc:`IDF 监视器 <tools/idf-monitor>`，该工具会将程序计数器的值转换为对应的代码位置（函数名，文件名，行号），并加以注释::
+    回溯行包含了当前任务中每个堆栈帧的 PC:SP 对（PC 是程序计数器，SP 是堆栈指针）。如果在 ISR 中发生了严重错误，回溯会同时包括被中断任务的 PC:SP 对，以及 ISR 中的 PC:SP 对。
 
-    Core 0 register dump:
-    PC      : 0x400e14ed  PS      : 0x00060030  A0      : 0x800d0805  A1      : 0x3ffb5030
-    0x400e14ed: app_main at /Users/user/esp/example/main/main.cpp:36
+如果使用了 :doc:`IDF 监视器 <tools/idf-monitor>`，该工具会将程序计数器的值转换为对应的代码位置（函数名，文件名，行号），并加以注释
 
-    A2      : 0x00000000  A3      : 0x00000001  A4      : 0x00000001  A5      : 0x3ffb50dc
-    A6      : 0x00000000  A7      : 0x00000001  A8      : 0x00000000  A9      : 0x3ffb5000
-    A10     : 0x00000000  A11     : 0x3ffb2bac  A12     : 0x40082d1c  A13     : 0x06ff1ff8
-    0x40082d1c: _calloc_r at /Users/user/esp/esp-idf/components/newlib/syscalls.c:51
+.. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
-    A14     : 0x3ffb7078  A15     : 0x00000000  SAR     : 0x00000014  EXCCAUSE: 0x0000001d
-    EXCVADDR: 0x00000000  LBEG    : 0x4000c46c  LEND    : 0x4000c477  LCOUNT  : 0xffffffff
+    ::
 
-    Backtrace: 0x400e14ed:0x3ffb5030 0x400d0802:0x3ffb5050
-    0x400e14ed: app_main at /Users/user/esp/example/main/main.cpp:36
+        Core 0 register dump:
+        PC      : 0x400e14ed  PS      : 0x00060030  A0      : 0x800d0805  A1      : 0x3ffb5030
+        0x400e14ed: app_main at /Users/user/esp/example/main/main.cpp:36
 
-    0x400d0802: main_task at /Users/user/esp/esp-idf/components/{IDF_TARGET_PATH_NAME}/cpu_start.c:470
+        A2      : 0x00000000  A3      : 0x00000001  A4      : 0x00000001  A5      : 0x3ffb50dc
+        A6      : 0x00000000  A7      : 0x00000001  A8      : 0x00000000  A9      : 0x3ffb5000
+        A10     : 0x00000000  A11     : 0x3ffb2bac  A12     : 0x40082d1c  A13     : 0x06ff1ff8
+        0x40082d1c: _calloc_r at /Users/user/esp/esp-idf/components/newlib/syscalls.c:51
+
+        A14     : 0x3ffb7078  A15     : 0x00000000  SAR     : 0x00000014  EXCCAUSE: 0x0000001d
+        EXCVADDR: 0x00000000  LBEG    : 0x4000c46c  LEND    : 0x4000c477  LCOUNT  : 0xffffffff
+
+        Backtrace: 0x400e14ed:0x3ffb5030 0x400d0802:0x3ffb5050
+        0x400e14ed: app_main at /Users/user/esp/example/main/main.cpp:36
+
+        0x400d0802: main_task at /Users/user/esp/esp-idf/components/{IDF_TARGET_PATH_NAME}/cpu_start.c:470
+
+.. only:: CONFIG_IDF_TARGET_ARCH_RISCV
+
+    ::
+
+        Core  0 register dump:
+        MEPC    : 0x420048b4  RA      : 0x420048b4  SP      : 0x3fc8f2f0  GP      : 0x3fc8a600
+        0x420048b4: app_main at /Users/user/esp/example/main/hello_world_main.c:20
+
+        0x420048b4: app_main at /Users/user/esp/example/main/hello_world_main.c:20
+
+        TP      : 0x3fc8a2ac  T0      : 0x40057fa6  T1      : 0x0000000f  T2      : 0x00000000
+        S0/FP   : 0x00000000  S1      : 0x00000000  A0      : 0x00000001  A1      : 0x00000001
+        A2      : 0x00000064  A3      : 0x00000004  A4      : 0x00000001  A5      : 0x00000000
+        A6      : 0x42001fd6  A7      : 0x00000000  S2      : 0x00000000  S3      : 0x00000000
+        0x42001fd6: uart_write at /Users/user/esp/esp-idf/components/vfs/vfs_uart.c:201
+
+        S4      : 0x00000000  S5      : 0x00000000  S6      : 0x00000000  S7      : 0x00000000
+        S8      : 0x00000000  S9      : 0x00000000  S10     : 0x00000000  S11     : 0x00000000
+        T3      : 0x00000000  T4      : 0x00000000  T5      : 0x00000000  T6      : 0x00000000
+        MSTATUS : 0x00001881  MTVEC   : 0x40380001  MCAUSE  : 0x00000007  MTVAL   : 0x00000000
+        MHARTID : 0x00000000
 
 若要查找发生严重错误的代码位置，请查看 "Backtrace" 的后面几行，发生严重错误的代码显示在顶行，后续几行显示的是调用堆栈。
 
@@ -200,8 +252,8 @@ Guru Meditation 错误
 .. note:: 想要了解 "Guru Meditation" 的历史渊源，请参阅 `维基百科 <https://en.wikipedia.org/wiki/Guru_Meditation>`_ 。
 
 
-IllegalInstruction
-^^^^^^^^^^^^^^^^^^
+|ILLEGAL_INSTR_MSG|
+^^^^^^^^^^^^^^^^^^^
 
 此 CPU 异常表示当前执行的指令不是有效指令，引起此错误的常见原因包括：
 
@@ -213,53 +265,76 @@ IllegalInstruction
 
   - 某些外部设备意外连接到 SPI Flash 的引脚上，干扰了 {IDF_TARGET_NAME} 和 SPI Flash 之间的通信。
 
+.. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
-InstrFetchProhibited
-^^^^^^^^^^^^^^^^^^^^
+    InstrFetchProhibited
+    ^^^^^^^^^^^^^^^^^^^^
 
-此 CPU 异常表示 CPU 无法加载指令，因为指令的地址不在 IRAM 或者 IROM 中的有效区域中。
+    此 CPU 异常表示 CPU 无法加载指令，因为指令的地址不在 IRAM 或者 IROM 中的有效区域中。
 
-通常这意味着代码中调用了并不指向有效代码块的函数指针。这种情况下，可以查看 ``PC`` （程序计数器）寄存器的值并做进一步判断：若为 0 或者其它非法值（即只要不是 ``0x4xxxxxxx`` 的情况），则证实确实是该原因。
+    通常这意味着代码中调用了并不指向有效代码块的函数指针。这种情况下，可以查看 ``PC`` （程序计数器）寄存器的值并做进一步判断：若为 0 或者其它非法值（即只要不是 ``0x4xxxxxxx`` 的情况），则证实确实是该原因。
 
-LoadProhibited, StoreProhibited
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    LoadProhibited, StoreProhibited
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-当应用程序尝试读取或写入无效的内存位置时，会发生此类 CPU 异常。此类无效内存地址可以在寄存器转储的 ``EXCVADDR`` 中找到。如果该地址为零，通常意味着应用程序正尝试解引用一个 NULL 指针。如果该地址接近于零，则通常意味着应用程序尝试访问某个结构体的成员，但是该结构体的指针为 NULL。如果该地址是其它非法值（不在 ``0x3fxxxxxx`` - ``0x6xxxxxxx`` 的范围内），则可能意味着用于访问数据的指针未初始化或者已经损坏。
+    当应用程序尝试读取或写入无效的内存位置时，会发生此类 CPU 异常。此类无效内存地址可以在寄存器转储的 ``EXCVADDR`` 中找到。如果该地址为零，通常意味着应用程序正尝试解引用一个 NULL 指针。如果该地址接近于零，则通常意味着应用程序尝试访问某个结构体的成员，但是该结构体的指针为 NULL。如果该地址是其它非法值（不在 ``0x3fxxxxxx`` - ``0x6xxxxxxx`` 的范围内），则可能意味着用于访问数据的指针未初始化或者已经损坏。
 
-IntegerDivideByZero
-^^^^^^^^^^^^^^^^^^^
+    IntegerDivideByZero
+    ^^^^^^^^^^^^^^^^^^^
 
-应用程序尝试将整数除以零。
+    应用程序尝试将整数除以零。
 
-LoadStoreAlignment
-^^^^^^^^^^^^^^^^^^
+    LoadStoreAlignment
+    ^^^^^^^^^^^^^^^^^^
 
-应用程序尝试读取/写入的内存位置不符合加载/存储指令对字节对齐大小的要求，例如，32 位加载指令只能访问 4 字节对齐的内存地址，而 16 位加载指令只能访问 2 字节对齐的内存地址。
+    应用程序尝试读取/写入的内存位置不符合加载/存储指令对字节对齐大小的要求，例如，32 位加载指令只能访问 4 字节对齐的内存地址，而 16 位加载指令只能访问 2 字节对齐的内存地址。
 
-LoadStoreError
-^^^^^^^^^^^^^^
+    LoadStoreError
+    ^^^^^^^^^^^^^^
 
-这类异常通常发生于以下几种场合:
+    这类异常通常发生于以下几种场合:
 
-应用程序尝试从仅支持 32 位加载/存储的内存区域执行 8 位或 16 位加载/存储操作，例如，解引用一个指向指令内存区域(比如 IRAM 或者 IROM)的 char* 指针就会触发这个错误。
-应用程序尝试保存数据到只读的内存区域（比如 IROM 或者 DROM）也会触发这个错误。
+    应用程序尝试从仅支持 32 位加载/存储的内存区域执行 8 位或 16 位加载/存储操作，例如，解引用一个指向指令内存区域(比如 IRAM 或者 IROM)的 char* 指针就会触发这个错误。
+    应用程序尝试保存数据到只读的内存区域（比如 IROM 或者 DROM）也会触发这个错误。
 
-Unhandled debug exception
-^^^^^^^^^^^^^^^^^^^^^^^^^
+    Unhandled debug exception
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-这后面通常会再跟一条消息::
+    这后面通常会再跟一条消息::
 
-    Debug exception reason: Stack canary watchpoint triggered (task_name)
+        Debug exception reason: Stack canary watchpoint triggered (task_name)
 
-此错误表示应用程序写入的位置越过了 ``task_name`` 任务堆栈的末尾，请注意，并非每次堆栈溢出都会触发此错误。任务有可能会绕过堆栈金丝雀（stack canary）的位置访问堆栈，在这种情况下，监视点就不会被触发。
+    此错误表示应用程序写入的位置越过了 ``task_name`` 任务堆栈的末尾，请注意，并非每次堆栈溢出都会触发此错误。任务有可能会绕过堆栈金丝雀（stack canary）的位置访问堆栈，在这种情况下，监视点就不会被触发。
+
+.. only:: CONFIG_IDF_TARGET_ARCH_RISCV
+    
+    Instruction address misaligned
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    此 CPU 异常表示要执行的指令地址非 2 字节对齐。
+
+    Instruction access fault, Load access fault, Store access fault
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    当应用程序尝试读取或写入无效的内存位置时，会发生此类 CPU 异常。此类无效内存地址可以在寄存器转储的 ``MTVAL`` 中找到。如果该地址为零，通常意味着应用程序正尝试解引用一个 NULL 指针。如果该地址接近于零，则通常意味着应用程序尝试访问某个结构体的成员，但是该结构体的指针为 NULL。如果该地址是其它非法值（不在 ``0x3fxxxxxx`` - ``0x6xxxxxxx`` 的范围内），则可能意味着用于访问数据的指针未初始化或者已经损坏。
+
+    Breakpoint
+    ^^^^^^^^^^
+
+    当执行 ``EBREAK`` 指令时，会发生此 CPU 异常。
+
+    Load address misaligned, Store address misaligned
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    应用程序尝试读取/写入的内存位置不符合加载/存储指令对字节对齐大小的要求，例如，32 位加载指令只能访问 4 字节对齐的内存地址，而 16 位加载指令只能访问 2 字节对齐的内存地址。
 
 Interrupt wdt timeout on CPU0 / CPU1
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 这表示发生了中断看门狗超时，详细信息请查阅 :doc:`看门狗 <../api-reference/system/wdts>` 文档。
 
-Cache disabled but cached memory region accessed
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+|CACHE_ERR_MSG|
+^^^^^^^^^^^^^^^
 
 在某些情况下，ESP-IDF 会暂时禁止通过高速缓存访问外部 SPI Flash 和 SPI RAM，例如在使用 spi_flash API 读取/写入/擦除/映射 SPI Flash 的时候。在这些情况下，任务会被挂起，并且未使用 ``ESP_INTR_FLAG_IRAM`` 注册的中断处理程序会被禁用。请确保任何使用此标志注册的中断处理程序所访问的代码和数据分别位于 IRAM 和 DRAM 中。更多详细信息请参阅 :ref:`SPI Flash API 文档 <iram-safe-interrupt-handlers>`。
 
@@ -304,3 +379,14 @@ Stack 粉碎保护（基于 GCC ``-fstack-protector*`` 标志）可以通过 ESP
 
 回溯信息会指明发生 Stack 粉碎的函数，建议检查函数中是否有代码访问本地数组时发生了越界。
 
+.. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
+
+    .. |CPU_EXCEPTIONS_LIST| replace:: 非法指令，加载/存储时的内存对齐错误，加载/存储时的访问权限错误，双重异常。
+    .. |ILLEGAL_INSTR_MSG| replace:: IllegalInstruction
+    .. |CACHE_ERR_MSG| replace:: Cache disabled but cached memory region accessed
+
+.. only:: CONFIG_IDF_TARGET_ARCH_RISCV
+
+    .. |CPU_EXCEPTIONS_LIST| replace:: 非法指令，加载/存储时的内存对齐错误，加载/存储时的访问权限错误。
+    .. |ILLEGAL_INSTR_MSG| replace:: Illegal instruction
+    .. |CACHE_ERR_MSG| replace:: Cache error
