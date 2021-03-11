@@ -41,6 +41,7 @@ if(IDF_TARGET STREQUAL "esp32")
     list(APPEND srcs "src/hal/mcpwm_hal.c"
                      "src/hal/sdio_slave_hal.c"
                      "src/hal/can_hal.c"
+                     "src/hal/can_hal_iram.c"
     )
 endif()
 

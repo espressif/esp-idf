@@ -157,7 +157,10 @@ The CAN driver contains an alert feature which is used to notify the application
     The **error warning limit** can be used to preemptively warn the application of bus errors before the error passive state is reached. By default the CAN driver sets the **error warning limit** to **96**. The ``CAN_ALERT_ABOVE_ERR_WARN`` is raised when the TEC or REC becomes larger then or equal to the error warning limit. The ``CAN_ALERT_BELOW_ERR_WARN`` is raised when both TEC and REC return back to values below **96**.
 
 .. note::
-    When enabling alerts, the ``CAN_ALERT_AND_LOG`` flag can be used to cause the CAN driver to log any raised alerts to UART. The ``CAN_ALERT_ALL`` and ``CAN_ALERT_NONE`` macros can also be used to enable/disable all alerts during configuration/reconfiguration.
+    When enabling alerts, the ``CAN_ALERT_AND_LOG`` flag can be used to cause the CAN driver to log any raised alerts to UART. However, alert logging is disabled and ``CAN_ALERT_AND_LOG`` if the :ref:`CONFIG_CAN_ISR_IN_IRAM` option is enabled (see :ref:`placing-isr-into-iram`).
+
+.. note::
+    The ``CAN_ALERT_ALL`` and ``CAN_ALERT_NONE`` macros can also be used to enable/disable all alerts during configuration/reconfiguration.
 
 Bit Timing
 ^^^^^^^^^^
@@ -223,6 +226,23 @@ Disabling TX Queue
 
 The TX queue can be disabled during configuration by setting the ``tx_queue_len`` member of :cpp:type:`can_general_config_t` to ``0``. This will allow applications that do not require message transmission to save a small amount of memory when using the CAN driver.
 
+.. _placing-isr-into-iram:
+
+Placing ISR into IRAM
+^^^^^^^^^^^^^^^^^^^^^
+
+The CAN driver's ISR (Interrupt Service Routine) can be placed into IRAM so that the ISR can still run whilst the cache is disabled. Placing the ISR into IRAM may be necessary to maintain the CAN driver's functionality during lengthy cache disabling operations (such as SPI Flash writes, OTA updates etc). Whilst the cache is disabled, the ISR will continue to:
+
+- Read received messages from the RX buffer and place them into the driver's RX queue.
+- Load messages pending transmission from the driver's TX queue and write them into the TX buffer.
+
+To place the CAN driver's ISR, users must do the following:
+
+- Enable the :ref:`CONFIG_CAN_ISR_IN_IRAM` option using ``idf.py menuconfig``.
+- When calling :cpp:func:`can_driver_install`, the `intr_flags` member of :cpp:type:`can_general_config_t` should set the :c:macro:`ESP_INTR_FLAG_IRAM` set.
+
+.. note::
+    When the :ref:`CONFIG_CAN_ISR_IN_IRAM` option is enabled, the CAN driver will no longer log any alerts (i.e., the ``CAN_ALERT_AND_LOG`` flag will not have any effect).
 
 .. -------------------------------- CAN Driver ---------------------------------
 

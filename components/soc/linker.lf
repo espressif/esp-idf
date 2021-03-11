@@ -21,3 +21,7 @@ entries:
     i2c_hal_iram (noflash)
     spi_flash_hal_gpspi (noflash)
     lldesc (noflash_text)
+    if CAN_ISR_IN_IRAM = y:
+        can_hal_iram (noflash)
+    else:
+        can_hal_iram (default)
