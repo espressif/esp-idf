@@ -26,6 +26,7 @@
 #include "esp32s2/rom/rtc.h"
 #include "esp32s2/rom/uart.h"
 #include "esp32s2/rom/ets_sys.h"
+#include "esp32s2/brownout.h"
 #include "soc/cpu.h"
 #include "soc/rtc.h"
 #include "soc/spi_periph.h"
@@ -229,6 +230,10 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 
 void IRAM_ATTR esp_deep_sleep_start(void)
 {
+    /* Due to hardware limitations, on S2 the brownout detector sometimes trigger during deep sleep
+       to circumvent this we disable the brownout detector before sleeping  */
+    esp_brownout_disable();
+
     // record current RTC time
     s_config.rtc_ticks_at_sleep_start = rtc_time_get();
     esp_sync_counters_rtc_and_frc();
