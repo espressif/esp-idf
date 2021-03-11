@@ -41,6 +41,15 @@ typedef enum {
 typedef int (*vprintf_like_t)(const char *, va_list);
 
 /**
+ * @brief Default log level
+ *
+ * This is used by the definition of ESP_EARLY_LOGx macros. It is not
+ * recommended to set this directly, call esp_log_level_set("*", level)
+ * instead.
+ */
+extern esp_log_level_t esp_log_default_level;
+
+/**
  * @brief Set log level for given tag
  *
  * If logging for given component has already been enabled, changes previous setting.
@@ -282,8 +291,16 @@ void esp_log_writev(esp_log_level_t level, const char* tag, const char* format, 
 /// macro to output logs in startup code at ``ESP_LOG_VERBOSE`` level.  @see ``ESP_EARLY_LOGE``,``ESP_LOGE``, ``printf``
 #define ESP_EARLY_LOGV( tag, format, ... ) ESP_LOG_EARLY_IMPL(tag, format, ESP_LOG_VERBOSE, V, ##__VA_ARGS__)
 
+#ifdef BOOTLOADER_BUILD
+#define _ESP_LOG_EARLY_ENABLED(log_level) (LOG_LOCAL_LEVEL >= (log_level))
+#else
+/* For early log, there is no log tag filtering. So we want to log only if both the LOG_LOCAL_LEVEL and the
+   currently configured min log level are higher than the log level */
+#define _ESP_LOG_EARLY_ENABLED(log_level) (LOG_LOCAL_LEVEL >= (log_level) && esp_log_default_level >= (log_level))
+#endif
+
 #define ESP_LOG_EARLY_IMPL(tag, format, log_level, log_tag_letter, ...) do {                             \
-        if (LOG_LOCAL_LEVEL >= log_level) {                                                              \
+        if (_ESP_LOG_EARLY_ENABLED(log_level)) {                                                         \
             esp_rom_printf(LOG_FORMAT(log_tag_letter, format), esp_log_timestamp(), tag, ##__VA_ARGS__); \
         }} while(0)
 
@@ -351,7 +368,8 @@ void esp_log_writev(esp_log_level_t level, const char* tag, const char* format, 
 /**
  * @brief Macro to output logs when the cache is disabled. log at ``ESP_LOG_ERROR`` level.
  *
- * Similar to `ESP_EARLY_LOGE`, the log level cannot be changed by `esp_log_level_set`.
+ * Similar to `ESP_EARLY_LOGE`, the log level cannot be changed per-tag, however
+ * esp_log_level_set("*", level) will set the default level which controls these log lines also.
  *
  * Usage: `ESP_DRAM_LOGE(DRAM_STR("my_tag"), "format", or `ESP_DRAM_LOGE(TAG, "format", ...)`,
  * where TAG is a char* that points to a str in the DRAM.
@@ -374,7 +392,7 @@ void esp_log_writev(esp_log_level_t level, const char* tag, const char* format, 
 #define _ESP_LOG_DRAM_LOG_FORMAT(letter, format)  DRAM_STR(#letter " %s: " format "\n")
 
 #define ESP_DRAM_LOG_IMPL(tag, format, log_level, log_tag_letter, ...) do {                       \
-        if (LOG_LOCAL_LEVEL >= log_level) {                                                       \
+        if (_ESP_LOG_EARLY_ENABLED(log_level)) {                                                  \
             esp_rom_printf(_ESP_LOG_DRAM_LOG_FORMAT(log_tag_letter, format), tag, ##__VA_ARGS__); \
         }} while(0)
 /** @endcond */
