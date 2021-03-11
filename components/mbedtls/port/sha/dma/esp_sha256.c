@@ -48,10 +48,6 @@
 
 #include "sha/sha_dma.h"
 
-#if SOC_SHA_GDMA
-#include "esp_sha_dma_priv.h"
-#endif
-
 /* Implementation that should never be optimized out by the compiler */
 static void mbedtls_zeroize( void *v, size_t n )
 {
@@ -87,10 +83,6 @@ do {                                                    \
 void mbedtls_sha256_init( mbedtls_sha256_context *ctx )
 {
     memset( ctx, 0, sizeof( mbedtls_sha256_context ) );
-
-#if SOC_SHA_GDMA
-    esp_sha_dma_init();
-#endif
 }
 
 void mbedtls_sha256_free( mbedtls_sha256_context *ctx )
@@ -98,10 +90,6 @@ void mbedtls_sha256_free( mbedtls_sha256_context *ctx )
     if ( ctx == NULL ) {
         return;
     }
-
-#if SOC_SHA_GDMA
-    esp_sha_dma_free();
-#endif
 
     mbedtls_zeroize( ctx, sizeof( mbedtls_sha256_context ) );
 }

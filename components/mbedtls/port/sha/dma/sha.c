@@ -55,13 +55,11 @@
 #endif
 
 #if SOC_SHA_GDMA
-#define SHA_LOCK() esp_crypto_sha_lock_acquire()
-#define SHA_RELEASE() esp_crypto_sha_lock_release()
+#define SHA_LOCK() esp_crypto_sha_aes_lock_acquire()
+#define SHA_RELEASE() esp_crypto_sha_aes_lock_release()
 #elif SOC_SHA_CRYPTO_DMA
 #define SHA_LOCK() esp_crypto_dma_lock_acquire()
 #define SHA_RELEASE() esp_crypto_dma_lock_release()
-#else
-#define SHA_LOCK() ()
 #endif
 
 const static char *TAG = "esp-sha";

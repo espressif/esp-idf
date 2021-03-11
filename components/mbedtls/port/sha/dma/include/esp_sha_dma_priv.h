@@ -22,27 +22,6 @@
 extern "C" {
 #endif
 
-#if SOC_SHA_GDMA
-
-/**
- * @brief Initialize the GDMA channel
- *
- * @note Allocate and initialize a DMA channel (tx) for the SHA peripheral
- *       Only one channel will be initialized at any given time. If two or more SHA operations are
- *       run in parallel the channel will be shared sequentially.
- *
- */
-void esp_sha_dma_init(void);
-
-/**
- * @brief Free the GDMA channel
- *
- * @note The channel will only be freed if there are no other SHA operations currently using it
- *
- */
-void esp_sha_dma_free(void);
-#endif //SOC_SHA_GDMA
-
 /**
  * @brief Start the DMA engine
  *
