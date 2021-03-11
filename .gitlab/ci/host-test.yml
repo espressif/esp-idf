@@ -105,17 +105,6 @@ test_lwip_dhcps_fuzzer_on_host:
     FUZZER_TEST_DIR: components/lwip/test_afl_host
     FUZZER_PARAMS: MODE=dhcp_server
 
-test_compile_fuzzers:
-  extends: .host_test_template
-  image: $CI_DOCKER_REGISTRY/afl-fuzzer-test
-  script:
-    - cd ${IDF_PATH}/components/lwip/test_afl_host
-    - make MODE=dhcp_server
-    - make MODE=dhcp_client
-    - make MODE=dns
-    - cd ${IDF_PATH}/components/mdns/test_afl_fuzz_host
-    - make
-
 test_spiffs_on_host:
   extends: .host_test_template
   script:
