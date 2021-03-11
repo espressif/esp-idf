@@ -63,6 +63,7 @@
   - "tools/find_build_apps/**/*"
 
   - "tools/test_apps/**/*"
+  - "tools/ldgen/**/*"
 
 .patterns-unit_test: &patterns-unit_test
   - "tools/ci/python_packages/gitlab_api.py"
