@@ -148,9 +148,7 @@ function run_tests()
 
     print_status "Project is in ESP-IDF which has a custom tag"
     pushd ${IDF_PATH}/examples/get-started/hello_world
-    git config -f test.conf user.email "noone@espressif.com"
-    git config -f test.conf user.name "No One"
-    GIT_CONFIG=test.conf git tag mytag -a -m "mytag"
+    GIT_COMMITTER_NAME="No One" GIT_COMMITTER_EMAIL="noone@espressif.com" git tag mytag -a -m "mytag" || failure "Git cannot create tag"
     idf.py reconfigure &> log.log || failure "Failed to build"
     str="App \"hello-world\" version: mytag"
     grep "${str}" log.log || { cat log.log ; failure "Project version should be the custom tag"; }
@@ -159,7 +157,7 @@ function run_tests()
         failure "IDF version $idf_version should not contain mytag"
     fi
     git tag -d mytag
-    rm -rf sdkconfig build test.conf
+    rm -rf sdkconfig build
     popd
 
     print_status "Moving BUILD_DIR_BASE out of tree"
