@@ -20,9 +20,10 @@ void spi_flash_hal_disable_auto_resume_mode(spi_flash_host_inst_t *host);
 void spi_flash_hal_disable_auto_suspend_mode(spi_flash_host_inst_t *host);
 void spi_flash_hal_setup_auto_resume_mode(spi_flash_host_inst_t *host);
 #endif //SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
-#include "spi_flash_hal_common.inc"
 
 #ifndef CONFIG_SPI_FLASH_ROM_IMPL
+
+#include "spi_flash_hal_common.inc"
 
 // HAL for
 //  - MEMSPI
@@ -91,6 +92,19 @@ esp_err_t spi_flash_hal_set_write_protect(spi_flash_host_inst_t *host, bool wp)
     spi_flash_ll_set_write_protect(dev, wp);
     host->driver->poll_cmd_done(host);
     return ESP_OK;
+}
+
+#else // defined CONFIG_SPI_FLASH_ROM_IMPL
+
+static inline spi_dev_t *get_spi_dev(spi_flash_host_inst_t *host)
+{
+    return ((spi_flash_hal_context_t*)host)->spi;
+}
+
+static inline int get_host_id(spi_flash_host_inst_t* host)
+{
+    spi_dev_t *dev = get_spi_dev(host);
+    return spi_flash_ll_hw_get_id(dev);
 }
 
 #endif // !CONFIG_SPI_FLASH_ROM_IMPL

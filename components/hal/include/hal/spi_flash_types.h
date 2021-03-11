@@ -190,6 +190,11 @@ struct spi_flash_host_driver_s {
     esp_err_t (*flush_cache)(spi_flash_host_inst_t* host, uint32_t addr, uint32_t size);
 
     /**
+     * Suspend check erase/program operation, reserved for ESP32-C3 and ESP32-S3 spi flash ROM IMPL.
+     */
+    void (*check_suspend)(spi_flash_host_inst_t *host);
+
+    /**
      * Resume flash from suspend manually
      */
     void (*resume)(spi_flash_host_inst_t *host);
