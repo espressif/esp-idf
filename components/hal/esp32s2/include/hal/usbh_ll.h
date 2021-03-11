@@ -159,16 +159,6 @@ typedef struct {
     uint8_t *buffer;
 } usbh_ll_dma_qtd_t;
 
-/*
- * Enumeration of different possible lengths of the periodic frame list
- */
-typedef enum {
-    USBH_LL_FRAME_LIST_LEN_8 = 0,
-    USBH_LL_FRAME_LIST_LEN_16,
-    USBH_LL_FRAME_LIST_LEN_32,
-    USBH_LL_FRAME_LIST_LEN_64,
-} usbh_ll_frame_list_len_t;
-
 /* -----------------------------------------------------------------------------
 ------------------------------ USB Wrap Registers ------------------------------
 ----------------------------------------------------------------------------- */
@@ -249,18 +239,33 @@ static inline bool usb_ll_check_dma_req_in_progress(usbh_dev_t *hw)
     return hw->grstctl_reg.dmareq;
 }
 
-static inline void usb_ll_flush_tx_fifo(usbh_dev_t *hw, uint32_t chan_num)
+static inline void usb_ll_flush_nptx_fifo(usbh_dev_t *hw)
 {
-    usb_grstctl_reg_t grstctl;
-    grstctl.val = hw->grstctl_reg.val;
-    grstctl.txfnum = chan_num;      //Set channel number to flush
-    grstctl.txfflsh = 1;            //Flush that channel's TX FIFO
-    hw->grstctl_reg.val = grstctl.val;
+    hw->grstctl_reg.txfnum = 0;     //Set the TX FIFO number to 0 to select the non-periodic TX FIFO
+    hw->grstctl_reg.txfflsh = 1;    //Flush the selected TX FIFO
+    //Wait for the flushing to complete
+    while (hw->grstctl_reg.txfflsh) {
+        ;
+    }
+}
+
+static inline void usb_ll_flush_ptx_fifo(usbh_dev_t *hw)
+{
+    hw->grstctl_reg.txfnum = 1;     //Set the TX FIFO number to 1 to select the periodic TX FIFO
+    hw->grstctl_reg.txfflsh = 1;    //FLush the select TX FIFO
+    //Wait for the flushing to complete
+    while (hw->grstctl_reg.txfflsh) {
+        ;
+    }
 }
 
 static inline void usb_ll_flush_rx_fifo(usbh_dev_t *hw)
 {
     hw->grstctl_reg.rxfflsh = 1;
+    //Wait for the flushing to complete
+    while (hw->grstctl_reg.rxfflsh) {
+        ;
+    }
 }
 
 static inline void usb_ll_reset_frame_counter(usbh_dev_t *hw)
@@ -320,20 +325,20 @@ static inline void usb_ll_dis_intrs(usbh_dev_t *hw, uint32_t intr_mask)
 
 // --------------------------- GRXFSIZ Register --------------------------------
 
-static inline void usb_ll_set_rx_fifo_size(usbh_dev_t *hw, uint32_t size)
+static inline void usb_ll_set_rx_fifo_size(usbh_dev_t *hw, uint32_t num_lines)
 {
     //Set size in words
-    hw->grxfsiz_reg.rxfdep = size;
+    hw->grxfsiz_reg.rxfdep = num_lines;
 }
 
 // -------------------------- GNPTXFSIZ Register -------------------------------
 
-static inline void usb_ll_set_nptx_fifo_size(usbh_dev_t *hw, uint32_t addr, uint32_t size)
+static inline void usb_ll_set_nptx_fifo_size(usbh_dev_t *hw, uint32_t addr, uint32_t num_lines)
 {
     usb_gnptxfsiz_reg_t gnptxfsiz;
     gnptxfsiz.val = hw->gnptxfsiz_reg.val;
     gnptxfsiz.nptxfstaddr = addr;
-    gnptxfsiz.nptxfdep = size;
+    gnptxfsiz.nptxfdep = num_lines;
     hw->gnptxfsiz_reg.val = gnptxfsiz.val;
 }
 
@@ -364,12 +369,12 @@ static inline void usb_ll_get_hardware_config(usbh_dev_t *hw, uint32_t *ghwcfg1,
 
 // --------------------------- HPTXFSIZ Register -------------------------------
 
-static inline void usbh_ll_set_ptx_fifo_size(usbh_dev_t *hw, uint32_t addr, uint32_t size)
+static inline void usbh_ll_set_ptx_fifo_size(usbh_dev_t *hw, uint32_t addr, uint32_t num_lines)
 {
     usb_hptxfsiz_reg_t hptxfsiz;
     hptxfsiz.val = hw->hptxfsiz_reg.val;
     hptxfsiz.ptxfstaddr = addr;
-    hptxfsiz.ptxfsize = size;
+    hptxfsiz.ptxfsize = num_lines;
     hw->hptxfsiz_reg.val = hptxfsiz.val;
 }
 
@@ -394,9 +399,24 @@ static inline void usbh_ll_hcfg_dis_perio_sched(usbh_dev_t *hw)
  *
  * @param num_entires Number of entires in the frame list
  */
-static inline void usbh_ll_hcfg_set_num_frame_list_entries(usbh_dev_t *hw, usbh_ll_frame_list_len_t num_entries)
+static inline void usbh_ll_hcfg_set_num_frame_list_entries(usbh_dev_t *hw, usb_hal_frame_list_len_t num_entries)
 {
-    hw->hcfg_reg.frlisten = num_entries;
+    uint32_t frlisten;
+    switch (num_entries) {
+        case USB_HAL_FRAME_LIST_LEN_8:
+            frlisten = 0;
+            break;
+        case USB_HAL_FRAME_LIST_LEN_16:
+            frlisten = 1;
+            break;
+        case USB_HAL_FRAME_LIST_LEN_32:
+            frlisten = 2;
+            break;
+        default: //USB_HAL_FRAME_LIST_LEN_64
+            frlisten = 3;
+            break;
+    }
+    hw->hcfg_reg.frlisten = frlisten;
 }
 
 static inline void usbh_ll_hcfg_en_scatt_gatt_dma(usbh_dev_t *hw)
@@ -417,7 +437,8 @@ static inline void usbh_ll_hcfg_set_fsls_pclk_sel(usbh_dev_t *hw)
 /**
  * @brief Sets some default values to HCFG to operate in Host mode with scatter/gather DMA
  *
- * @param hw
+ * @param hw Start address of the USB Wrap registers
+ * @param speed Speed to initialize the host port at
  */
 static inline void usbh_ll_hcfg_set_defaults(usbh_dev_t *hw, usb_priv_speed_t speed)
 {
@@ -498,11 +519,27 @@ static inline void usbh_ll_haintmsk_dis_chan_intr(usbh_dev_t *hw, uint32_t mask)
 
 // --------------------------- HFLBAddr Register -------------------------------
 
+/**
+ * @brief Set the base address of the scheduling frame list
+ *
+ * @note For some reason, this address must be 512 bytes aligned or else a bunch of frames will not be scheduled when
+ *       the frame list rolls over. However, according to the databook, there is no mention of the HFLBAddr needing to
+ *       be aligned.
+ *
+ * @param hw Start address of the DWC_OTG registers
+ * @param addr Base address of the scheduling frame list
+ */
 static inline void usbh_ll_set_frame_list_base_addr(usbh_dev_t *hw, uint32_t addr)
 {
     hw->hflbaddr_reg.hflbaddr = addr;
 }
 
+/**
+ * @brief Get the base address of the scheduling frame list
+ *
+ * @param hw Start address of the DWC_OTG registers
+ * @return uint32_t Base address of the scheduling frame list
+ */
 static inline uint32_t usbh_ll_get_frame_list_base_addr(usbh_dev_t *hw)
 {
     return hw->hflbaddr_reg.hflbaddr;
@@ -529,6 +566,7 @@ static inline uint32_t usbh_ll_hprt_get_test_ctl(usbh_dev_t *hw)
 {
     return hw->hprt_reg.prttstctl;
 }
+
 static inline void usbh_ll_hprt_set_test_ctl(usbh_dev_t *hw, uint32_t test_mode)
 {
     usb_hprt_reg_t hprt;
@@ -604,6 +642,7 @@ static inline bool usbh_ll_hprt_get_port_resume(usbh_dev_t *hw)
 {
     return hw->hprt_reg.prtres;
 }
+
 static inline bool usbh_ll_hprt_get_port_overcur(usbh_dev_t *hw)
 {
     return hw->hprt_reg.prtovrcurract;
@@ -780,9 +819,7 @@ static inline void usbh_ll_chan_set_dma_addr_non_iso(volatile usb_host_chan_regs
 
 static inline void usbh_ll_chan_set_dma_addr_iso(volatile usb_host_chan_regs_t *chan,
                                                 void *dmaaddr,
-                                                uint32_t ntd,
-                                                uint32_t pktcnt,
-                                                uint32_t ctd)
+                                                uint32_t ntd)
 {
     int n;
     if (ntd == 2) {
@@ -861,15 +898,15 @@ static inline usb_host_chan_regs_t *usbh_ll_get_chan_regs(usbh_dev_t *dev, int c
  * @param data_buff Pointer to buffer containing the data to transfer
  * @param xfer_len Number of bytes in transfer. Setting 0 will do a zero length IN transfer.
  *                 Non zero length must be mulitple of the endpoint's MPS.
- * @param halt_on_cplt Generate a channel halted interrupt on completion of QTD
+ * @param hoc Halt on complete (will generate an interrupt and halt the channel)
  */
-static inline void usbh_ll_set_qtd_in(usbh_ll_dma_qtd_t *qtd, uint8_t *data_buff, int xfer_len, bool halt_on_cplt)
+static inline void usbh_ll_set_qtd_in(usbh_ll_dma_qtd_t *qtd, uint8_t *data_buff, int xfer_len, bool hoc)
 {
     qtd->buffer = data_buff;        //Set pointer to data buffer
     qtd->buffer_status_val = 0;     //Reset all flags to zero
     qtd->in_non_iso.xfer_size = xfer_len;
-    if (halt_on_cplt) {
-        qtd->in_non_iso.intr_cplt = 1;  //Used to indicate successful completion
+    if (hoc) {
+        qtd->in_non_iso.intr_cplt = 1;  //We need to set this to distinguish between a halt due to a QTD
         qtd->in_non_iso.eol = 1;        //Used to halt the channel at this qtd
     }
     qtd->in_non_iso.active = 1;
@@ -882,11 +919,11 @@ static inline void usbh_ll_set_qtd_in(usbh_ll_dma_qtd_t *qtd, uint8_t *data_buff
  * @param data_buff Pointer to buffer containing the data to transfer
  * @param xfer_len Number of bytes to transfer. Setting 0 will do a zero length transfer.
  *                 For ctrl setup packets, this should be set to 8.
- * @param halt_on_cplt Generate a channel halted interrupt on completion of QTD.
+ * @param hoc Halt on complete (will generate an interrupt)
  * @param is_setup Indicates whether this is a control transfer setup packet or a normal OUT Data transfer.
  *                 (As per the USB protocol, setup packets cannot be STALLd or NAKd by the device)
  */
-static inline void usbh_ll_set_qtd_out(usbh_ll_dma_qtd_t *qtd, uint8_t *data_buff, int xfer_len, bool halt_on_cplt, bool is_setup)
+static inline void usbh_ll_set_qtd_out(usbh_ll_dma_qtd_t *qtd, uint8_t *data_buff, int xfer_len, bool hoc, bool is_setup)
 {
     qtd->buffer = data_buff;        //Set pointer to data buffer
     qtd->buffer_status_val = 0;     //Reset all flags to zero
@@ -894,9 +931,9 @@ static inline void usbh_ll_set_qtd_out(usbh_ll_dma_qtd_t *qtd, uint8_t *data_buf
     if (is_setup) {
         qtd->out_non_iso.is_setup = 1;
     }
-    if (halt_on_cplt) {
-        qtd->out_non_iso.intr_cplt = 1;  //Used to indicate successful completion
-        qtd->out_non_iso.eol = 1;        //Used to halt the channel at this qtd
+    if (hoc) {
+        qtd->in_non_iso.intr_cplt = 1;  //We need to set this to distinguish between a halt due to a QTD
+        qtd->in_non_iso.eol = 1;        //Used to halt the channel at this qtd
     }
     qtd->out_non_iso.active = 1;
 }

@@ -31,11 +31,19 @@ The HAL layer abstracts the DWC_OTG operating in Host Mode using Internal Scatte
 ## HAL Channels
 
 - Channels are essentially the controllers abstraction of USB pipes. At any one point in time, a channel can be configured to map to a particular endpoint on a particular connected device (i.e., a particular device address).
-- Channels have to be allocated and freed. It's possible to change a channel's endpoint characteristics (i.e., EP number, device address, direction, transfer type etc) so long as the channel is in the Halted state whilst doing so.
-- Channels transfer data using transfer descriptor lists (i.e., a list of DMA descriptors). Each channel has one slot for a single list. Use `usbh_hal_chan_slot_acquire()` to acquire a channel's list slot, and `usbh_hal_chan_activate()` to start the transfer.
-- Once a transfer is completed, an channel event should be generated. Use `usbh_hal_chan_slot_release()` to free the slot, allowing for another transfer list to acquire the slot.
-- To fill and parse a transfer descriptor list, use the `usbh_hal_xfer_desc_fill()` and `usbh_hal_xfer_desc_parse()` functions.
-- Each channel and each channel slot will allow the callers to set a context variable. This allows client to associate a particular channel or an acquired slot with client objects (e.g., associate a channel to a HCD pipe object).
+- Channels have to be allocated and freed. It's possible to change a channel's endpoint characteristics (i.e., EP number, device address, direction, transfer type etc) so long as the channel is halted (i.e., not actively executing transfer descriptors).
+  - Use `usbh_hal_chan_alloc()` to allocate a channel
+  - Once allocated, use `usbh_hal_chan_set_ep_char()` to set the Endpoint characteristics of the channel (i.e., the information of the endpoint that the channel is communicating with). There are also some `usbh_hal_chan_set...()` functions to change a particular characteristic.
+  - Once the channel is no longer needed, call `usbh_hal_chan_free()` to free the channel
+- Channels use a list of Queue Transfer Descriptors (QTDs) to executed USB transfers.
+  - A transfer descriptor list must be filled using `usbh_hal_xfer_desc_fill()`
+  - Once filled, a channel can be activated using `usbh_hal_chan_activate()`
+  - Once the channel is done (i.e., a descriptor with the `USBH_HAL_XFER_DESC_FLAG_HOC` is executed), a `USBH_HAL_CHAN_EVENT_CPLT` event is generated. The channel is now halted
+  - Call `usbh_hal_xfer_desc_parse()` to parse the results of the descriptor list
+  - If you need to halt the channel early (such as aborting a transfer), call `usbh_hal_chan_request_halt()`
+- In case of a channel error event:
+  - Call `usbh_hal_chan_get_error()` to get the specific channel error that occurred
+  - You must call `usbh_hal_chan_clear_error()` after an error to clear the error and allow the channel to continue to be used.
 
 # Host Controller Driver (HCD)
 
@@ -49,16 +57,18 @@ The HCD currently has the following limitations:
 - HCD **does not** "present the root hub and its behavior according to the hub class definition". We currently don't have a hub driver yet, so the port commands in the driver do not fully represent an interface of a USB hub as described in 10.4 of the USB2.0 spec.
 - No more than 8 pipes can be allocated at any one time due to underlying Host Controllers 8 channel limit. In the future, we could make particular pipes share a single Host Controller channel.
 - The HCD currently only supports Control and Bulk transfer types.
+- If you are connecting to a device with a large MPS requirements (e.g., Isochronous transfers), you may need to call `hcd_port_set_fifo_bias()` to adjust the size of the internal FIFO
 
 ## HCD Port
 
 - An HCD port can be as a simplified version of a port on the Root Hub of the host controller. However, the complexity of parsing Hub Requests is discarded in favor of port commands (`hcd_port_cmd_t`) as the current USB Host Stack does not support hubs yet.
 - A port must first initialized before it can be used. A port is identified by its handled of type `hcd_port_handle_t`
-- The port can be manipulated using commands such as
+- The port can be manipulated using commands such as:
   - Powering the port ON/OFF
   - Issuing reset/resume signals
 - The various host port events are represented in the `hcd_port_event_t` enumeration
 - When a fatal error (such as a sudden disconnection or a port over current), the port will be put into the HCD_PORT_STATE_RECOVERY state. The port can be deinitialized from there, or recovered using `hcd_port_recover()`. All the pipes routed through the port will be made invalid.
+- The FIFO bias of a port can be set using `hcd_port_set_fifo_bias()`. Biasing the FIFO will affect the permissible MPS sizes of pipes. For example, if the connected device has an IN endpoint with large MPS (e.g., 512 bytes), the FIFO should be biased as `HCD_PORT_FIFO_BIAS_RX`.
 
 ## HCD Pipes
 
