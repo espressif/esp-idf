@@ -20,6 +20,7 @@ menu "Example Configuration"
                 Store pcap file to SD card.
         config SNIFFER_PCAP_DESTINATION_JTAG
             bool "JTAG (App Trace)"
+            select APPTRACE_DEST_TRAX
             help
                 Store pcap file to host via JTAG interface.
     endchoice
