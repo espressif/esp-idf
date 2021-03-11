@@ -30,7 +30,6 @@
 #include <sys/queue.h>
 #include <sys/time.h>
 
-#define LOG_LOCAL_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include "esp_log.h"
 const static char *TAG = "esp_pthread";
 

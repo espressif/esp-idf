@@ -32,7 +32,6 @@
     This entry is used by OpenOCD code to invoke other stub entries and allocate memory for them.
  */
 
-#define LOG_LOCAL_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include "esp_log.h"
 const static char *TAG = "esp_dbg_stubs";
 
