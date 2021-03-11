@@ -46,7 +46,7 @@ typedef int (*vprintf_like_t)(const char *, va_list);
  * If logging for given component has already been enabled, changes previous setting.
  *
  * Note that this function can not raise log level above the level set using
- * CONFIG_LOG_DEFAULT_LEVEL setting in menuconfig.
+ * CONFIG_LOG_MAXIMUM_LEVEL setting in menuconfig.
  *
  * To raise log level above the default one for a given file, define
  * LOG_LOCAL_LEVEL to one of the ESP_LOG_* values, before including
@@ -137,7 +137,7 @@ void esp_log_writev(esp_log_level_t level, const char* tag, const char* format, 
 
 #ifndef LOG_LOCAL_LEVEL
 #ifndef BOOTLOADER_BUILD
-#define LOG_LOCAL_LEVEL  CONFIG_LOG_DEFAULT_LEVEL
+#define LOG_LOCAL_LEVEL  CONFIG_LOG_MAXIMUM_LEVEL
 #else
 #define LOG_LOCAL_LEVEL  CONFIG_BOOTLOADER_LOG_LEVEL
 #endif
