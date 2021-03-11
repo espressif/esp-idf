@@ -13,8 +13,6 @@
 // limitations under the License.
 
 #include <esp_expression_with_stack.h>
-#include <freertos/xtensa_rtos.h>
-#include <freertos/xtensa_context.h>
 #include <setjmp.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"

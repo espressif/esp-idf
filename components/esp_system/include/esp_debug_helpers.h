@@ -23,10 +23,7 @@ extern "C" {
 #include <stdbool.h>
 #include "esp_err.h"
 #include "soc/soc.h"  // [refactor-todo] IDF-2297
-
-#define ESP_WATCHPOINT_LOAD 0x40000000
-#define ESP_WATCHPOINT_STORE 0x80000000
-#define ESP_WATCHPOINT_ACCESS 0xC0000000
+#include "esp_cpu.h"
 
 /*
  * @brief   Structure used for backtracing
@@ -52,32 +49,6 @@ typedef struct {
  * @param fn  Pointer to the target breakpoint position
  */
 void esp_set_breakpoint_if_jtag(void *fn);
-
-/**
- * @brief Set a watchpoint to break/panic when a certain memory range is accessed.
- *
- * @param no Watchpoint number. On the ESP32, this can be 0 or 1.
- * @param adr Base address to watch
- * @param size Size of the region, starting at the base address, to watch. Must
- *             be one of 2^n, with n in [0..6].
- * @param flags One of ESP_WATCHPOINT_* flags
- *
- * @return ESP_ERR_INVALID_ARG on invalid arg, ESP_OK otherwise
- *
- * @warning The ESP32 watchpoint hardware watches a region of bytes by effectively
- *          masking away the lower n bits for a region with size 2^n. If adr does
- *          not have zero for these lower n bits, you may not be watching the
- *          region you intended.
- */
-esp_err_t esp_set_watchpoint(int no, void *adr, int size, int flags);
-
-/**
- * @brief Clear a watchpoint
- *
- * @param no Watchpoint to clear
- *
- */
-void esp_clear_watchpoint(int no);
 
 /**
  * Get the first frame of the current stack's backtrace
@@ -126,6 +97,24 @@ bool esp_backtrace_get_next_frame(esp_backtrace_frame_t *frame);
  *      - ESP_FAIL  Backtrace is corrupted
  */
 esp_err_t esp_backtrace_print(int depth);
+
+/**
+ * @brief Set a watchpoint to break/panic when a certain memory range is accessed.
+ * Superseded by esp_cpu_set_watchpoint in esp_cpu.h.
+ */
+static inline __attribute__((deprecated)) esp_err_t esp_set_watchpoint(int no, void *adr, int size, int flags)
+{
+    return esp_cpu_set_watchpoint(no, adr, size, flags);
+}
+
+/**
+ * @brief Set a watchpoint to break/panic when a certain memory range is accessed.
+ * Superseded by esp_cpu_clear_watchpoint in esp_cpu.h.
+ */
+static inline __attribute__((deprecated)) void esp_clear_watchpoint(int no)
+{
+    esp_cpu_clear_watchpoint(no);
+}
 
 #endif
 #ifdef __cplusplus

@@ -306,7 +306,7 @@ static int fibonacci(int n, void* func(void))
     RSR(WINDOWSTART, start);
     printf("WINDOWBASE = %-2d   WINDOWSTART = 0x%x\n", base, start);
     if (n <= 1) {
-        StackType_t *last_addr_stack = get_sp();
+        StackType_t *last_addr_stack = esp_cpu_get_sp();
         StackType_t *used_stack = (StackType_t *) (start_addr_stack - last_addr_stack);
         printf("addr_stack = %p, used[%p]/all[0x%x] space in stack\n", last_addr_stack, used_stack, size_stack);
         func();
@@ -319,7 +319,7 @@ static int fibonacci(int n, void* func(void))
 
 static void test_task(void *func)
 {
-    start_addr_stack = get_sp();
+    start_addr_stack = esp_cpu_get_sp();
     if (esp_ptr_external_ram(start_addr_stack)) {
         printf("restart_task: uses external stack, addr_stack = %p\n", start_addr_stack);
     } else {
@@ -336,7 +336,7 @@ static void func_do_exception(void)
 static void init_restart_task(void)
 {
     StackType_t *stack_for_task = (StackType_t *) heap_caps_calloc(1, size_stack, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-    printf("init_task: current addr_stack = %p, stack_for_task = %p\n", get_sp(), stack_for_task);
+    printf("init_task: current addr_stack = %p, stack_for_task = %p\n", esp_cpu_get_sp(), stack_for_task);
     static StaticTask_t task_buf;
     xTaskCreateStaticPinnedToCore(test_task, "test_task", size_stack, esp_restart, 5, stack_for_task, &task_buf, 1);
     while (1) { };
@@ -345,7 +345,7 @@ static void init_restart_task(void)
 static void init_task_do_exception(void)
 {
     StackType_t *stack_for_task = (StackType_t *) heap_caps_calloc(1, size_stack, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-    printf("init_task: current addr_stack = %p, stack_for_task = %p\n", get_sp(), stack_for_task);
+    printf("init_task: current addr_stack = %p, stack_for_task = %p\n", esp_cpu_get_sp(), stack_for_task);
     static StaticTask_t task_buf;
     xTaskCreateStaticPinnedToCore(test_task, "test_task", size_stack, func_do_exception, 5, stack_for_task, &task_buf, 1);
     while (1) { };

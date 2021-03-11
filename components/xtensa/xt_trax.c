@@ -13,51 +13,44 @@
 // limitations under the License.
 
 #include <stdio.h>
-#include "esp_log.h"
+#include <stdbool.h>
+
 #include "esp_err.h"
+
 #include "xtensa-debug-module.h"
 #include "eri.h"
-#include "trax.h"
-#include "sdkconfig.h"
 
-#if defined(CONFIG_ESP32_TRAX) || defined(CONFIG_ESP32S2_TRAX)
-#define WITH_TRAX 1
-#endif
-
-static const char* TAG = "trax";
-
-
-int trax_start_trace(trax_downcount_unit_t units_until_stop)
+bool xt_trax_trace_is_active(void)
 {
-#if !WITH_TRAX
-    ESP_EARLY_LOGE(TAG, "Trax_start_trace called, but trax is disabled in menuconfig!");
-    return ESP_ERR_NO_MEM;
-#endif
-    uint32_t v;
-    if (eri_read(ERI_TRAX_TRAXSTAT)&TRAXSTAT_TRACT) {
-        ESP_EARLY_LOGI(TAG, "Stopping active trace first.");
-        //Trace is active. Stop trace.
-        eri_write(ERI_TRAX_DELAYCNT, 0);
-        eri_write(ERI_TRAX_TRAXCTRL, eri_read(ERI_TRAX_TRAXCTRL)|TRAXCTRL_TRSTP);
-        //ToDo: This will probably trigger a trace done interrupt. ToDo: Fix, but how? -JD
-        eri_write(ERI_TRAX_TRAXCTRL, 0);
-    }
-    eri_write(ERI_TRAX_PCMATCHCTRL, 31); //do not stop at any pc match
-    v=TRAXCTRL_TREN | TRAXCTRL_TMEN | TRAXCTRL_PTOWS | (1<<TRAXCTRL_SMPER_SHIFT);
-    if (units_until_stop == TRAX_DOWNCOUNT_INSTRUCTIONS) v|=TRAXCTRL_CNTU;
-    //Enable trace. This trace has no stop condition and will just keep on running.
-    eri_write(ERI_TRAX_TRAXCTRL, v);
-    return ESP_OK;
+    return eri_read(ERI_TRAX_TRAXSTAT)&TRAXSTAT_TRACT;
 }
 
-
-int trax_trigger_traceend_after_delay(int delay)
+static void _xt_trax_start_trace(bool instructions)
 {
-#if !WITH_TRAX
-    ESP_EARLY_LOGE(TAG, "Trax_trigger_traceend_after_delay called, but trax is disabled in menuconfig!");
-    return ESP_ERR_NO_MEM;
-#endif
+    uint32_t v;
+    eri_write(ERI_TRAX_PCMATCHCTRL, 31); //do not stop at any pc match
+    v=TRAXCTRL_TREN | TRAXCTRL_TMEN | TRAXCTRL_PTOWS | (1<<TRAXCTRL_SMPER_SHIFT);
+    if (instructions) {
+        v|=TRAXCTRL_CNTU;
+    }
+    //Enable trace. This trace has no stop condition and will just keep on running.
+    eri_write(ERI_TRAX_TRAXCTRL, v);
+}
+
+void xt_trax_start_trace_instructions(void)
+{
+    _xt_trax_start_trace(true);
+}
+
+void xt_trax_start_trace_words(void)
+{
+    _xt_trax_start_trace(false);
+}
+
+void xt_trax_trigger_traceend_after_delay(int delay)
+{
     eri_write(ERI_TRAX_DELAYCNT, delay);
     eri_write(ERI_TRAX_TRAXCTRL, eri_read(ERI_TRAX_TRAXCTRL)|TRAXCTRL_TRSTP);
-    return ESP_OK;
+    //ToDo: This will probably trigger a trace done interrupt. ToDo: Fix, but how? -JD
+    eri_write(ERI_TRAX_TRAXCTRL, 0);
 }

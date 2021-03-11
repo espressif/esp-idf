@@ -4281,4 +4281,9 @@
 
 #define DPORT_MMU_ADDRESS_MASK 0xff
 
+#define TRACEMEM_MUX_PROBLK0_APPBLK1    0
+#define TRACEMEM_MUX_BLK0_ONLY          1
+#define TRACEMEM_MUX_BLK1_ONLY          2
+#define TRACEMEM_MUX_PROBLK1_APPBLK0    3
+
 #endif /*_SOC_DPORT_REG_H_ */

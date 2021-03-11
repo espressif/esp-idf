@@ -125,7 +125,7 @@ void IRAM_ATTR spi_flash_op_block_func(void *arg)
 
 void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu(void)
 {
-    assert(esp_ptr_in_dram((const void *)get_sp()));
+    assert(esp_ptr_in_dram((const void *)esp_cpu_get_sp()));
 
     spi_flash_op_lock();
 
