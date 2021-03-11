@@ -4,8 +4,8 @@ ESP-TLS
 Overview
 --------
 
-The ESP-TLS component provides a simplified API interface for accessing the commonly used TLS functionality. 
-It supports common scenarios like CA certification validation, SNI, ALPN negotiation, non-blocking connection among others. 
+The ESP-TLS component provides a simplified API interface for accessing the commonly used TLS functionality.
+It supports common scenarios like CA certification validation, SNI, ALPN negotiation, non-blocking connection among others.
 All the configuration can be specified in the ``esp_tls_cfg_t`` data structure. Once done, TLS communication can be conducted using the following APIs:
 
     * :cpp:func:`esp_tls_conn_new`: for opening a new TLS connection.
@@ -13,7 +13,7 @@ All the configuration can be specified in the ``esp_tls_cfg_t`` data structure. 
     * :cpp:func:`esp_tls_conn_write`: for writing into the connection.
     * :cpp:func:`esp_tls_conn_delete`: for freeing up the connection.
 
-Any application layer protocol like HTTP1, HTTP2 etc can be executed on top of this layer.                       
+Any application layer protocol like HTTP1, HTTP2 etc can be executed on top of this layer.
 
 Application Example
 -------------------
@@ -137,19 +137,17 @@ SSL/TLS libraries and with all respective configurations set to default.
                 .use_secure_element = true,
             };
 
-.. only:: esp32s2
+.. only:: SOC_DIG_SIGN_SUPPORTED
 
     .. _digital-signature-with-esp-tls:
 
     Digital Signature with ESP-TLS
     ------------------------------
-    ESP-TLS provides support for using the Digital Signature (DS) with ESP32-S2.
+    ESP-TLS provides support for using the Digital Signature (DS) with {IDF_TARGET_NAME}.
     Use of the DS for TLS is supported only when ESP-TLS is used with mbedTLS (default stack) as its underlying SSL/TLS stack.
     For more details on Digital Signature, please refer to the :doc:`Digital Signature Documentation </api-reference/peripherals/ds>`. The technical details of Digital Signature such as
     how to calculate private key parameters can be found in *{IDF_TARGET_NAME} Technical Reference Manual* > *Digital Signature (DS)* [`PDF <{IDF_TARGET_TRM_EN_URL}#digsig>`__].
     The DS peripheral must be configured before it can be used to perform Digital Signature, see `Configure the DS Peripheral` in :doc:`Digital Signature </api-reference/peripherals/ds>`.
-
-    .. note:: As the DS peripheral support is only available for ESP32-S2, the idf-target should be set to ESP32-S2. See `Selecting the Target` in :doc:`build-system.</api-guides/build-system>`.
 
     The DS peripheral must be initlized with the required encrypted private key parameters (obtained when the DS peripheral is configured). ESP-TLS internally initializes the DS peripheral when
     provided with the required DS context (DS parameters). Please see the below code snippet for passing the DS context to esp-tls context. The DS context passed to the esp-tls context should not be freed till the TLS connection is deleted.

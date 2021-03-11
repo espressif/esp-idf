@@ -51,7 +51,7 @@ Once the calculation has finished, :cpp:func:`esp_ds_finish_sign` can be called 
 Configure the DS peripheral for a TLS connection
 ------------------------------------------------
 
-The DS peripheral on ESP32-S2 chip must be configured before it can be used for a TLS connection.
+The DS peripheral on {IDF_TARGET_NAME} chip must be configured before it can be used for a TLS connection.
 The configuration involves the following steps -
 
 1) Randomly generate a 256 bit value called the `Initialization Vector` (IV).

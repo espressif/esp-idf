@@ -58,7 +58,7 @@ Each key has a corresponding eFuse parameter *key purpose* determining for which
 This is to prevent the usage of a key for a different function than originally intended.
 
 To calculate an HMAC, the software has to provide the ID of the key block containing the secret key as well as the *key purpose* (see *{IDF_TARGET_NAME} Technical Reference Manual* > *eFuse Controller (eFuse)* [`PDF <{IDF_TARGET_TRM_EN_URL}#efuse>`__]).
-Before the HMAC key calculation, the HMAC module looks up the purpose of the provided key block. 
+Before the HMAC key calculation, the HMAC module looks up the purpose of the provided key block.
 The calculation only proceeds if the provided key purpose matches the purpose stored in the eFuses of the key block provided by the ID.
 
 HMAC Generation for Software
@@ -115,7 +115,7 @@ We use `ets_efuse_write_key` to set physical key block 4 in the eFuse for the HM
 
 .. code-block:: c
 
-    #include "esp32s2/rom/efuse.h"
+    #include "{IDF_TARGET_PATH_NAME}/rom/efuse.h"
 
     const uint8_t key_data[32] = { ... };
 
