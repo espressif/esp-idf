@@ -458,14 +458,14 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
         suspend_uarts();
     }
 
-#if CONFIG_MAC_BB_PD
-    mac_bb_power_down_cb_execute();
-#endif
-
     // Save current frequency and switch to XTAL
     rtc_cpu_freq_config_t cpu_freq_config;
     rtc_clk_cpu_freq_get_config(&cpu_freq_config);
     rtc_clk_cpu_freq_set_xtal();
+
+#if CONFIG_MAC_BB_PD
+    mac_bb_power_down_cb_execute();
+#endif
 
 #if SOC_PM_SUPPORT_EXT_WAKEUP
     // Configure pins for external wakeup
