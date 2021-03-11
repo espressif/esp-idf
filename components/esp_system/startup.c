@@ -40,6 +40,7 @@
 #include "esp_efuse.h"
 #include "esp_flash_encrypt.h"
 #include "esp_secure_boot.h"
+#include "esp_sleep.h"
 
 /***********************************************/
 // Headers for other components init functions
@@ -412,6 +413,14 @@ static void start_cpu0_default(void)
 IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components0, BIT(0))
 {
     esp_timer_init();
+
+#if CONFIG_ESP32C3_LIGHTSLEEP_GPIO_RESET_WORKAROUND && !CONFIG_PM_SLP_DISABLE_GPIO
+    // Configure to isolate (disable the Input/Output/Pullup/Pulldown
+    // function of the pin) all GPIO pins in sleep state
+    esp_sleep_config_gpio_isolate();
+    // Enable automatic switching of GPIO configuration
+    esp_sleep_enable_gpio_switch(true);
+#endif
 
 #if defined(CONFIG_PM_ENABLE)
     esp_pm_impl_init();

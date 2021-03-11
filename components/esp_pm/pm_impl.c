@@ -304,7 +304,7 @@ esp_err_t esp_pm_configure(const void* vconfig)
     portEXIT_CRITICAL(&s_switch_lock);
 
 #if CONFIG_PM_SLP_DISABLE_GPIO && SOC_GPIO_SUPPORT_SLP_SWITCH
-    esp_sleep_gpio_status_switch_configure(config->light_sleep_enable);
+    esp_sleep_enable_gpio_switch(config->light_sleep_enable);
 #endif
 
 #if CONFIG_ESP_SYSTEM_PM_POWER_DOWN_CPU && SOC_PM_SUPPORT_CPU_PD
@@ -705,7 +705,7 @@ void esp_pm_impl_init(void)
 #endif
 
 #if CONFIG_PM_SLP_DISABLE_GPIO && SOC_GPIO_SUPPORT_SLP_SWITCH
-    esp_sleep_gpio_status_init();
+    esp_sleep_config_gpio_isolate();
 #endif
     ESP_ERROR_CHECK(esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "rtos0",
             &s_rtos_lock_handle[0]));
