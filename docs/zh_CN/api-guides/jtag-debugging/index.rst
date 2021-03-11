@@ -293,9 +293,15 @@ Windows 用户::
 --------
 
 .. toctree::
-    :maxdepth: 1
+    :hidden:
 
     using-debugger
     debugging-examples
     tips-and-quirks
     ../app_trace
+
+- :doc:`using-debugger`
+- :doc:`debugging-examples`
+- :doc:`tips-and-quirks`
+- :doc:`../app_trace`
+- `ESP-Prog 调试板介绍 <https://docs.espressif.com/projects/espressif-esp-iot-solution/zh_CN/latest/hw-reference/ESP-Prog_guide.html>`__ 

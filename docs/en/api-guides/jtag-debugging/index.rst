@@ -295,9 +295,15 @@ Related Documents
 -----------------
 
 .. toctree::
-    :maxdepth: 1
+    :hidden:
 
     using-debugger
     debugging-examples
     tips-and-quirks
     ../app_trace
+
+- :doc:`using-debugger`
+- :doc:`debugging-examples`
+- :doc:`tips-and-quirks`
+- :doc:`../app_trace`
+- `Introduction to ESP-Prog Board <https://docs.espressif.com/projects/espressif-esp-iot-solution/en/latest/hw-reference/ESP-Prog_guide.html>`__ 
