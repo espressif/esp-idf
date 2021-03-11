@@ -323,6 +323,8 @@ menu "Wi-Fi"
 
     config ESP_WIFI_SLP_IRAM_OPT
         bool "WiFi SLP IRAM speed optimization"
+        depends on FREERTOS_USE_TICKLESS_IDLE
+        select PM_SLP_DEFAULT_PARAMS_OPT
         help
             Select this option to place called Wi-Fi library TBTT process and receive beacon functions in IRAM.
             Some functions can be put in IRAM either by ESP32_WIFI_IRAM_OPT and ESP32_WIFI_RX_IRAM_OPT, or this one.
@@ -330,6 +332,22 @@ menu "Wi-Fi"
             If already enabled ESP32_WIFI_RX_IRAM_OPT, the other 1.3KB IRAM memory would be taken by this option.
             If neither of them are enabled, the other 7.4KB IRAM memory would be taken by this option.
             Wi-Fi power-save mode average current would be reduced if this option is enabled.
+
+    config ESP_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME
+        int "Minimum active time"
+        range 8 60
+        default 8
+        depends on ESP_WIFI_SLP_IRAM_OPT
+        help
+            The minimum timeout for waiting to receive data, unit: milliseconds.
+
+    config ESP_WIFI_SLP_DEFAULT_MAX_ACTIVE_TIME
+        int "Maximum keep alive time"
+        range 10 60
+        default 60
+        depends on ESP_WIFI_SLP_IRAM_OPT
+        help
+            The maximum time that wifi keep alive, unit: seconds.
 
     config ESP_WIFI_FTM_INITIATOR_SUPPORT
         bool "FTM Initiator support"

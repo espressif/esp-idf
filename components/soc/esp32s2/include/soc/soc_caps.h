@@ -317,5 +317,7 @@
 
 #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
 
+#define SOC_PM_SUPPORT_WIFI_PD          (1)
+
 /* ---------------------------- Compatibility ------------------------------- */
 // No contents

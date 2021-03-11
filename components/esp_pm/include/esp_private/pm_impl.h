@@ -50,6 +50,13 @@ typedef enum {
 pm_mode_t esp_pm_impl_get_mode(esp_pm_lock_type_t type, int arg);
 
 /**
+ * @brief Get CPU clock frequency by power mode
+ * @param mode power mode
+ * @return CPU clock frequency
+ */
+int esp_pm_impl_get_cpu_freq(pm_mode_t mode);
+
+/**
  * If profiling is enabled, this data type will be used to store microsecond
  * timestamps.
  */
@@ -171,6 +178,28 @@ esp_err_t esp_pm_register_inform_out_light_sleep_overhead_callback(inform_out_li
   *   - ESP_ERR_INVALID_STATE if the given callback hasn't been registered before
   */
 esp_err_t esp_pm_unregister_inform_out_light_sleep_overhead_callback(inform_out_light_sleep_overhead_cb_t cb);
+
+/**
+ * @brief Callback function type for peripherals to know light sleep default parameters
+ */
+typedef void (* update_light_sleep_default_params_config_cb_t)(int, int);
+
+/**
+ * @brief  Register peripherals light sleep default parameters configure callback
+ *
+ * This function allows you to register a callback that configure the peripherals
+ * of default parameters of light sleep
+ * @param cb function to update default parameters
+ */
+void esp_pm_register_light_sleep_default_params_config_callback(update_light_sleep_default_params_config_cb_t cb);
+
+/**
+ * @brief  Unregister peripherals light sleep default parameters configure Callback
+ *
+ * This function allows you to unregister a callback that configure the peripherals
+ * of default parameters of light sleep
+ */
+void esp_pm_unregister_light_sleep_default_params_config_callback(void);
 
 #ifdef CONFIG_PM_PROFILING
 #define WITH_PROFILING

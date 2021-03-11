@@ -151,6 +151,9 @@ esp_err_t esp_wifi_deinit(void)
     esp_pm_unregister_skip_light_sleep_callback(esp_wifi_internal_is_tsf_active);
     esp_pm_unregister_inform_out_light_sleep_overhead_callback(esp_wifi_internal_update_light_sleep_wake_ahead_time);
 #endif
+#if CONFIG_ESP_WIFI_SLP_IRAM_OPT
+    esp_pm_unregister_light_sleep_default_params_config_callback();
+#endif
 #endif
 #if CONFIG_MAC_BB_PD
     esp_unregister_mac_bb_pd_callback(pm_mac_sleep);
@@ -186,7 +189,6 @@ static void esp_wifi_config_info(void)
 #endif
 
 #ifdef CONFIG_ESP_WIFI_SLP_IRAM_OPT
-    esp_wifi_internal_optimize_wake_ahead_time();
     ESP_LOGI(TAG, "WiFi SLP IRAM OP enabled");
 #endif
 
@@ -220,6 +222,20 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
         esp_unregister_mac_bb_pu_callback(pm_mac_wakeup);
         return ESP_ERR_INVALID_ARG;
     }
+#endif
+
+#if CONFIG_ESP_WIFI_SLP_IRAM_OPT
+    esp_pm_register_light_sleep_default_params_config_callback(esp_wifi_internal_update_light_sleep_default_params);
+
+    int min_freq_mhz = esp_pm_impl_get_cpu_freq(PM_MODE_LIGHT_SLEEP);
+    int max_freq_mhz = esp_pm_impl_get_cpu_freq(PM_MODE_CPU_MAX);
+    esp_wifi_internal_update_light_sleep_default_params(min_freq_mhz, max_freq_mhz);
+
+    uint32_t sleep_delay_us = CONFIG_ESP_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME * 1000;
+    esp_wifi_set_sleep_delay_time(sleep_delay_us);
+
+    uint32_t keep_alive_time_us = CONFIG_ESP_WIFI_SLP_DEFAULT_MAX_ACTIVE_TIME * 1000 * 1000;
+    esp_wifi_set_keep_alive_time(keep_alive_time_us);
 #endif
 
 #if SOC_WIFI_HW_TSF
