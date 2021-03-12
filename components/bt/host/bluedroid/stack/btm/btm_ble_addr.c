@@ -414,12 +414,13 @@ void btm_ble_resolve_random_addr(BD_ADDR random_bda, tBTM_BLE_RESOLVE_CBACK *p_c
         /* start to resolve random address */
         /* check for next security record */
         for (p_node = list_begin(btm_cb.p_sec_dev_rec_list); p_node; p_node = list_next(p_node)) {
-	    p_dev_rec = list_node(p_node);
+            p_dev_rec = list_node(p_node);
             p_mgnt_cb->p_dev_rec = p_dev_rec;
             if (btm_ble_match_random_bda(p_dev_rec)) {
-	        break;
-	    }
-	}
+                break;
+            }
+            p_mgnt_cb->p_dev_rec = NULL;
+        }
         btm_ble_resolve_address_cmpl();
     } else {
         (*p_cback)(NULL, p);
