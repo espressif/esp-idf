@@ -134,6 +134,13 @@ export COMMON_MAKEFILES
 ifndef BUILD_DIR_BASE
 BUILD_DIR_BASE := $(PROJECT_PATH)/build
 endif
+
+ifneq ("$(BUILD_DIR_BASE)","$(subst :,,$(BUILD_DIR_BASE))")
+$(error BUILD_DIR_BASE ($(BUILD_DIR_BASE)) cannot contain colons. If setting this path on Windows, use MSYS Unix-style /c/dir instead of C:/dir)
+endif
+
+BUILD_DIR_BASE := $(abspath $(BUILD_DIR_BASE))
+
 export BUILD_DIR_BASE
 
 # Component directories. These directories are searched for components (either the directory is a component,
