@@ -1,7 +1,7 @@
-| Supported Targets | ESP32 |
-| ----------------- | ----- |
+| Supported Targets | ESP32 | ESP32-S2 |
+| ----------------- | ----- | -------- |
 
-# High Resolution Timer Example (`esp_timer`) 
+# High Resolution Timer Example (`esp_timer`)
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
@@ -15,7 +15,7 @@ The `esp_timer` API also provides the `esp_timer_get_time()` function which retu
 
 ### Hardware Required
 
-This example should be able to run on any commonly available ESP32 development board.
+This example should be able to run on any commonly available ESP development board.
 
 ### Configure the project
 
@@ -127,7 +127,7 @@ I (5265) example: Periodic timer called, time since boot: 5002476 us
 
 The one-shot timer runs and changes the period of the periodic timer. Now the periodic timer runs with a period of 1 second:
 
-```    
+```
 I (5265) example: One-shot timer called, time since boot: 5002586 us
 I (5265) example: Restarted periodic timer with 1s period, time since boot: 5005475 us
 I (6265) example: Periodic timer called, time since boot: 6005492 us
@@ -144,7 +144,7 @@ I (10265) example: Periodic timer called, time since boot: 10005492 us
 ### 5. Continuation through light sleep
 
 To illustrate that timekeeping continues correctly after light sleep, the example enters light sleep for 0.5 seconds. This sleep does not impact timer period, and the timer is executed 1 second after the previous iteration. Note that the timers can not execute during light sleep, since the CPU is not running at that time. Such timers would execute immediately after light sleep, and then continue running with their normal period.
-    
+
 ```
 I (10275) example: Entering light sleep for 0.5s, time since boot: 10011559 us
 I (10275) example: Woke up from light sleep, time since boot: 10512007 us

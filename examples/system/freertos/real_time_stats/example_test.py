@@ -6,9 +6,9 @@ STATS_TASK_ITERS = 3
 STATS_TASK_EXPECT = 'Real time stats obtained'
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_GENERIC')
+@ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32', 'esp32c3'])
 def test_real_time_stats_example(env, extra_data):
-    dut = env.get_dut('real_time_stats', 'examples/system/freertos/real_time_stats', dut_class=ttfw_idf.ESP32DUT)
+    dut = env.get_dut('real_time_stats', 'examples/system/freertos/real_time_stats')
     dut.start_app()
 
     for iteration in range(0, STATS_TASK_ITERS):

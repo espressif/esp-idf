@@ -326,6 +326,13 @@ example_test_016:
       - $CI_PROJECT_DIR/examples/*/*/*.log
       - $LOG_PATH
 
+example_test_C3_GENERIC:
+  extends: .example_test_template
+  parallel: 3
+  tags:
+    - ESP32C3
+    - Example_GENERIC
+
 test_app_test_001:
   extends: .test_app_template
   tags:

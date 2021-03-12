@@ -19,6 +19,12 @@
 
 #define STORAGE_NAMESPACE "storage"
 
+#if CONFIG_IDF_TARGET_ESP32C3
+#define BOOT_MODE_PIN GPIO_NUM_9
+#else
+#define BOOT_MODE_PIN GPIO_NUM_0
+#endif //CONFIG_IDF_TARGET_ESP32C3
+
 /* Save the number of module restarts in NVS
    by first reading and then incrementing
    the number that has been saved previously.
@@ -167,16 +173,16 @@ void app_main(void)
     err = save_restart_counter();
     if (err != ESP_OK) printf("Error (%s) saving restart counter to NVS!\n", esp_err_to_name(err));
 
-    gpio_reset_pin(GPIO_NUM_0);
-    gpio_set_direction(GPIO_NUM_0, GPIO_MODE_INPUT);
+    gpio_reset_pin(BOOT_MODE_PIN);
+    gpio_set_direction(BOOT_MODE_PIN, GPIO_MODE_INPUT);
 
     /* Read the status of GPIO0. If GPIO0 is LOW for longer than 1000 ms,
        then save module's run time and restart it
      */
     while (1) {
-        if (gpio_get_level(GPIO_NUM_0) == 0) {
+        if (gpio_get_level(BOOT_MODE_PIN) == 0) {
             vTaskDelay(1000 / portTICK_PERIOD_MS);
-            if(gpio_get_level(GPIO_NUM_0) == 0) {
+            if(gpio_get_level(BOOT_MODE_PIN) == 0) {
                 err = save_run_time();
                 if (err != ESP_OK) printf("Error (%s) saving run time blob to NVS!\n", esp_err_to_name(err));
                 printf("Restarting...\n");
