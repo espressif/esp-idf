@@ -36,7 +36,6 @@
 static const char *TAG = "secure_boot_v2";
 #define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
-#ifdef CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
 /* A signature block is valid when it has correct magic byte, crc. */
 static esp_err_t validate_signature_block(const ets_secure_boot_sig_block_t *block)
 {
@@ -47,7 +46,7 @@ static esp_err_t validate_signature_block(const ets_secure_boot_sig_block_t *blo
     return ESP_OK;
 }
 
-static esp_err_t get_signing_keys_for_running_app(esp_image_sig_public_key_digests_t *public_key_digests)
+esp_err_t esp_secure_boot_get_signature_blocks_for_running_app(bool digest_public_keys, esp_image_sig_public_key_digests_t *public_key_digests)
 {
     esp_image_metadata_t metadata;
     const esp_partition_t* running_app_part = esp_ota_get_running_partition();
@@ -65,6 +64,8 @@ static esp_err_t get_signing_keys_for_running_app(esp_image_sig_public_key_diges
         return ESP_FAIL;
     }
 
+    memset(public_key_digests, 0, sizeof(esp_image_sig_public_key_digests_t));
+
     // Generating the SHA of the public key components in the signature block
 
     // metadata.image_len doesn't include any padding to start of the signature sector, so pad it here
@@ -76,9 +77,11 @@ static esp_err_t get_signing_keys_for_running_app(esp_image_sig_public_key_diges
         esp_err_t err = bootloader_flash_read(addr, &block, sizeof(ets_secure_boot_sig_block_t), true);
         if (err == ESP_OK) {
             if (validate_signature_block(&block) == ESP_OK) {
-                bootloader_sha256_handle_t sig_block_sha = bootloader_sha256_start();
-                bootloader_sha256_data(sig_block_sha, &block.key, sizeof(block.key));
-                bootloader_sha256_finish(sig_block_sha, public_key_digests->key_digests[i]);
+                if (digest_public_keys) {
+                    bootloader_sha256_handle_t sig_block_sha = bootloader_sha256_start();
+                    bootloader_sha256_data(sig_block_sha, &block.key, sizeof(block.key));
+                    bootloader_sha256_finish(sig_block_sha, public_key_digests->key_digests[i]);
+                }
                 public_key_digests->num_digests++;
             }
         } else {
@@ -92,14 +95,13 @@ static esp_err_t get_signing_keys_for_running_app(esp_image_sig_public_key_diges
     ESP_LOGE(TAG, "No signatures were found for the running app");
     return ESP_ERR_NOT_FOUND;
 }
-#endif // CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
 
 static esp_err_t get_secure_boot_key_digests(esp_image_sig_public_key_digests_t *public_key_digests)
 {
 #ifdef CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
     // Gets key digests from running app
     ESP_LOGI(TAG, "Take trusted digest key(s) from running app");
-    return get_signing_keys_for_running_app(public_key_digests);
+    return esp_secure_boot_get_signature_blocks_for_running_app(true, public_key_digests);
 #elif CONFIG_SECURE_BOOT_V2_ENABLED
     ESP_LOGI(TAG, "Take trusted digest key(s) from eFuse block(s)");
 #if SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS > 1
