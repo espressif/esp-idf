@@ -386,6 +386,12 @@ menu "Wi-Fi"
         default y
         depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3)
 
+    config ESP_WIFI_STA_DISCONNECTED_PM_ENABLE
+        bool "Power Management for station at disconnected"
+        help
+            Select this option to enable power_management for station when disconnected.
+            Chip will do modem-sleep when rf module is not in use any more.
+
 endmenu  # Wi-Fi
 
 menu "PHY"

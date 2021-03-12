@@ -115,6 +115,7 @@ typedef struct {
     int                    beacon_max_len;         /**< WiFi softAP maximum length of the beacon */
     int                    mgmt_sbuf_num;          /**< WiFi management short buffer number, the minimum value is 6, the maximum value is 32 */
     uint64_t               feature_caps;           /**< Enables additional WiFi features and capabilities */
+    bool                   sta_disconnected_pm;    /**< WiFi Power Management for station at disconnected status */
     int                    magic;                  /**< WiFi init magic number, it should be the last field */
 } wifi_init_config_t;
 
@@ -201,6 +202,12 @@ extern uint64_t g_wifi_feature_caps;
 #define WIFI_MGMT_SBUF_NUM 32
 #endif
 
+#if CONFIG_ESP_WIFI_STA_DISCONNECTED_PM_ENABLE
+#define WIFI_STA_DISCONNECTED_PM_ENABLED true
+#else
+#define WIFI_STA_DISCONNECTED_PM_ENABLED false
+#endif
+
 #define CONFIG_FEATURE_WPA3_SAE_BIT     (1<<0)
 #define CONFIG_FEATURE_CACHE_TX_BUF_BIT (1<<1)
 #define CONFIG_FEATURE_FTM_INITIATOR_BIT (1<<2)
@@ -227,6 +234,7 @@ extern uint64_t g_wifi_feature_caps;
     .beacon_max_len = WIFI_SOFTAP_BEACON_MAX_LEN, \
     .mgmt_sbuf_num = WIFI_MGMT_SBUF_NUM, \
     .feature_caps = g_wifi_feature_caps, \
+    .sta_disconnected_pm = WIFI_STA_DISCONNECTED_PM_ENABLED,  \
     .magic = WIFI_INIT_CONFIG_MAGIC\
 };
 
@@ -1197,6 +1205,18 @@ esp_err_t esp_wifi_config_11b_rate(wifi_interface_t ifx, bool disable);
   *    - others: failed
   */
 esp_err_t esp_wifi_config_espnow_rate(wifi_interface_t ifx, wifi_phy_rate_t rate);
+
+/**
+  * @brief      Set interval for station to wake up periodically at disconnected.
+  *
+  * @attention 1. Only when ESP_WIFI_STA_DISCONNECTED_PM_ENABLE is enabled, this configuration could work
+  * @attention 2. This configuration only work for station mode and disconnected status
+  * @attention 3. This configuration would influence nothing until some module configure wake_window
+  * @attention 4. A sensible interval which is not too small is recommended (e.g. 100ms)
+  *
+  * @param      interval  how much micriosecond would the chip wake up, from 1 to 65535.
+  */
+esp_err_t esp_wifi_set_connectionless_wake_interval(uint16_t interval);
 
 #ifdef __cplusplus
 }
