@@ -172,9 +172,10 @@ typedef struct {
 
 /* data associated with BTA_JV_DISCOVERY_COMP_EVT_ */
 typedef struct {
-    tBTA_JV_STATUS  status;     /* Whether the operation succeeded or failed. */
-    UINT8 scn_num;              /* num of channel */
-    UINT8 scn[BTA_JV_MAX_SCN];  /* channel # */
+    tBTA_JV_STATUS status;                    /* Whether the operation succeeded or failed. */
+    UINT8 scn_num;                            /* num of channel */
+    UINT8 scn[BTA_JV_MAX_SCN];                /* channel # */
+    const char *service_name[BTA_JV_MAX_SCN]; /* service_name */
 } tBTA_JV_DISCOVERY_COMP;
 
 /* data associated with BTA_JV_CREATE_RECORD_EVT */
@@ -305,6 +306,7 @@ typedef struct {
     tBTA_JV_STATUS  status;     /* Whether the operation succeeded or failed. */
     UINT32          handle;     /* The connection handle */
     UINT8           sec_id;     /* security ID used by this server */
+    UINT8           scn;        /* Server channe number */
     BOOLEAN         use_co;     /* TRUE to use co_rfc_data */
 } tBTA_JV_RFCOMM_START;
 
@@ -376,8 +378,9 @@ typedef struct {
 
 /* data associated with BTA_JV_FREE_SCN_EVT  */
 typedef struct {
-    tBTA_JV_STATUS          status; /* Status of the operation */
-    tBTA_JV_SERVER_STATUS   server_status;
+    tBTA_JV_STATUS          status;         /* Status of the operation */
+    tBTA_JV_SERVER_STATUS   server_status;  /* Server status */
+    UINT8                   scn;            /* Server channe number */
 } tBTA_JV_FREE_SCN;
 
 
