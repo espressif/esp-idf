@@ -42,12 +42,10 @@ can be set to lower value which is not possible without enabling this configurat
 Default value of mbedTLS Rx buffer size is set to 16K. By using partial_http_download with max_http_request_size of 4K,
 size of mbedTLS Rx buffer can be reduced to 4K. With this confiuration, memory saving of around 12K is expected.
 
-.. only:: esp32
+Signature Verification
+----------------------
 
-    Signature Verification
-    ----------------------
-
-    For additional security, signature of OTA firmware images can be verified. For that, refer :ref:`secure-ota-updates`
+For additional security, signature of OTA firmware images can be verified. For that, refer :ref:`secure-ota-updates`
 
 API Reference
 -------------
