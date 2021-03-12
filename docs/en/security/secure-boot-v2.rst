@@ -322,6 +322,48 @@ Secure Boot & Flash Encryption
 
 If secure boot is used without :doc:`Flash Encryption <flash-encryption>`, it is possible to launch "time-of-check to time-of-use" attack, where flash contents are swapped after the image is verified and running. Therefore, it is recommended to use both the features together.
 
+.. _signed-app-verify-v2:
+
+Signed App Verification Without Hardware Secure Boot
+----------------------------------------------------
+
+The Secure Boot V2 signature of apps can be checked on OTA update, without enabling the hardware secure boot option. This option uses the same app signature scheme as Secure Boot V2, but unlike hardware secure boot it does not prevent an attacker who can write to flash from bypassing the signature protection.
+
+This may be desirable in cases where the delay of Secure Boot verification on startup is unacceptable, and/or where the threat model does not include physical access or attackers writing to bootloader or app partitions in flash.
+
+In this mode, any public key which is present in the signature block of the currently running app will be used to verify the signature of a newly updated app. (The signature on the running app isn't verified during the update process, it's assumed to be valid.) In this way the system creates a chain of trust from the running app to the newly updated app.
+
+For this reason, it's essential that the initial app flashed to the device is also signed. A check is run on app startup and the app will abort if no signatures are found. This is to try and prevent a situation where no update is possible. Note again that, unlike hardware Secure Boot V2, the signature of the running app isn't verified on boot. The system only checks that at least one public key can be found there, in order to not prevent an update.
+
+.. note::
+
+   In general, it's recommended to use full hardware Secure Boot unless certain that this option is sufficient for application security needs
+
+.. _signed-app-verify-v2-howto:
+
+How To Enable Signed App Verification
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. Open :ref:`project-configuration-menu` -> Security features
+
+.. only:: esp32
+
+    2. Ensure `App Signing Scheme` is `RSA`. For ESP32 ECO3 chip, select :ref:`CONFIG_ESP32_REV_MIN` to `Rev 3` to get `RSA` option available
+
+.. only:: not esp32
+
+    2. Ensure `App Signing Scheme` is `RSA`
+
+3. Enable :ref:`CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT`
+
+4. By default, "Sign binaries during build" will be enabled on selecting "Require signed app images" option, which will sign binary files as a part of build process. The file named in "Secure boot private signing key" will be used to sign the image.
+
+5. If you disable "Sign binaries during build" option then all app binaries must be manually signed by following instructions in :ref:`remote-sign-v2-image`.
+
+.. warning::
+
+   It is very important that all apps flashed have been signed, either during the build or after the build.
+
 Advanced Features
 -----------------
 
