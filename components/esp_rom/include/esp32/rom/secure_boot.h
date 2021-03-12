@@ -73,12 +73,13 @@ typedef struct {
 } ets_secure_boot_sig_block_t;
 _Static_assert(sizeof(ets_secure_boot_sig_block_t) == 1216, "invalid sig block size");
 
-#define MAX_APPENDED_SIGN_BLOCKS_TO_IMAGE 3
+/* ROM supports up to 3, but IDF only checks the first one (SECURE_BOOT_NUM_BLOCKS) */
+#define SECURE_BOOT_MAX_APPENDED_SIGN_BLOCKS_TO_IMAGE 3
 
 /* Multiple key block support */
 typedef struct {
-    ets_secure_boot_sig_block_t block[MAX_APPENDED_SIGN_BLOCKS_TO_IMAGE];
-    uint8_t _padding[4096 - (sizeof(ets_secure_boot_sig_block_t) * MAX_APPENDED_SIGN_BLOCKS_TO_IMAGE)];
+    ets_secure_boot_sig_block_t block[SECURE_BOOT_MAX_APPENDED_SIGN_BLOCKS_TO_IMAGE];
+    uint8_t _padding[4096 - (sizeof(ets_secure_boot_sig_block_t) * SECURE_BOOT_MAX_APPENDED_SIGN_BLOCKS_TO_IMAGE)];
 } ets_secure_boot_signature_t;
 
 _Static_assert(sizeof(ets_secure_boot_signature_t) == 4096, "invalid sig sector size");
