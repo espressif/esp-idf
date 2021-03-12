@@ -3,7 +3,7 @@ from __future__ import print_function
 import ttfw_idf
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_GENERIC')
+@ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32', 'esp32c3'])
 def test_examples_system_console(env, extra_data):
     dut = env.get_dut('console_example', 'examples/system/console', app_config_name='history')
     print('Using binary path: {}'.format(dut.app.binary_path))

@@ -82,6 +82,11 @@ test_weekend_network:
     - .example_test_template
     - .rules:test:example_test-esp32s2
 
+.example_test_esp32c3_template:
+  extends:
+    - .example_test_template
+    - .rules:labels:example_test-esp32c3
+
 example_test_001A:
   extends: .example_test_esp32_template
   parallel: 4
@@ -239,6 +244,14 @@ example_test_017:
   tags:
     - ESP32S2
     - Example_GENERIC
+
+example_test_C3_GENERIC:
+  extends: .example_test_esp32c3_template
+  parallel: 3
+  tags:
+    - ESP32C3
+    - Example_GENERIC
+
 
 .test_app_template:
   extends: .target_test_job_template

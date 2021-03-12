@@ -6,7 +6,7 @@ import ttfw_idf
 from tiny_test_fw import Utility
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_GENERIC')
+@ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32', 'esp32c3'])
 def test_examples_base_mac_address(env, extra_data):
 
     dut = env.get_dut('base_mac_address', 'examples/system/base_mac_address')
