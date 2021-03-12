@@ -416,7 +416,7 @@ TEST_CASE("ws_transport: Keep alive test", "[tcp_transport]")
 
     // Bind device interface to loopback
     TEST_TRANSPORT_BIND_IFNAME();
-    esp_transport_ssl_set_interface_name(ws, &ifr);
+    esp_transport_ssl_set_interface_name(ssl, &ifr);
 
     tcp_transport_keepalive_test(ws, &keep_alive_cfg);
 
