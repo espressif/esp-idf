@@ -438,9 +438,9 @@ void app_main(void)
     /* mesh start */
     ESP_ERROR_CHECK(esp_mesh_start());
 #ifdef CONFIG_MESH_ENABLE_PS
-    /* set the device active duty cycle. (default:12, MESH_PS_DEVICE_DUTY_REQUEST) */
+    /* set the device active duty cycle. (default:10, MESH_PS_DEVICE_DUTY_REQUEST) */
     ESP_ERROR_CHECK(esp_mesh_set_active_duty_cycle(CONFIG_MESH_PS_DEV_DUTY, CONFIG_MESH_PS_DEV_DUTY_TYPE));
-    /* set the network active duty cycle. (default:12, -1, MESH_PS_NETWORK_DUTY_APPLIED_ENTIRE) */
+    /* set the network active duty cycle. (default:10, -1, MESH_PS_NETWORK_DUTY_APPLIED_ENTIRE) */
     ESP_ERROR_CHECK(esp_mesh_set_network_duty_cycle(CONFIG_MESH_PS_NWK_DUTY, CONFIG_MESH_PS_NWK_DUTY_DURATION, CONFIG_MESH_PS_NWK_DUTY_RULE));
 #endif
     ESP_LOGI(MESH_TAG, "mesh starts successfully, heap:%d, %s<%d>%s, ps:%d\n",  esp_get_minimum_free_heap_size(),
