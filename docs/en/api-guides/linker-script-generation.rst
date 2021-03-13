@@ -568,9 +568,9 @@ generates an output on the linker script:
 .. code-block:: none
 
     . = ALIGN(8)
-    __my_sym_start = ABSOLUTE(.)
+    _my_sym_start = ABSOLUTE(.)
     KEEP(lib1.a:obj1.*( SORT(.rodata) SORT(.rodata.*) ))
-    __my_sym_end = ABSOLUTE(.)
+    _my_sym_end = ABSOLUTE(.)
 
 Note that ALIGN and SURROUND, as mentioned in the flag descriptions, are order sensitive.
 Therefore, if for the same mapping fragment these two are switched, the following
@@ -578,10 +578,10 @@ is generated instead:
 
 .. code-block:: none
 
-    __my_sym_start = ABSOLUTE(.)
+    _my_sym_start = ABSOLUTE(.)
     . = ALIGN(8)
     KEEP(lib1.a:obj1.*( SORT(.rodata) SORT(.rodata.*) ))
-    __my_sym_end = ABSOLUTE(.)
+    _my_sym_end = ABSOLUTE(.)
 
 
 .. _ldgen-symbol-granularity-placements :
