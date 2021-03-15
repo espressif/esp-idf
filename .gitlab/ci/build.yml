@@ -110,7 +110,7 @@ build_ssc_esp32c3:
   script:
     - ${IDF_PATH}/tools/ci/find_apps_build_apps.sh
     - cd $CI_PROJECT_DIR/tools/unit-test-app
-    - python tools/UnitTestParser.py ${BUILD_PATH}
+    - python tools/UnitTestParser.py ${BUILD_PATH} ${CI_NODE_INDEX:-1}
 
 build_esp_idf_tests_cmake_esp32:
   extends:

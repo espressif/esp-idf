@@ -55,7 +55,7 @@ class Parser(object):
         'esp32s2': 'xtensa-esp32s2-elf-',
     }
 
-    def __init__(self, binary_folder):
+    def __init__(self, binary_folder, node_index):
         idf_path = os.getenv('IDF_PATH')
         idf_target = os.getenv('IDF_TARGET')
         self.test_env_tags = {}
@@ -63,6 +63,7 @@ class Parser(object):
         self.file_name_cache = {}
         self.idf_path = idf_path
         self.idf_target = idf_target
+        self.node_index = node_index
         self.ut_bin_folder = binary_folder
         self.objdump = Parser.TOOLCHAIN_FOR_TARGET.get(idf_target, '') + 'objdump'
         self.tag_def = yaml.load(open(os.path.join(idf_path, self.TAG_DEF_FILE), 'r'), Loader=Loader)
@@ -285,7 +286,8 @@ class Parser(object):
         dump parsed test cases to YAML file for test bench input
         :param test_cases: parsed test cases
         """
-        filename = os.path.join(self.idf_path, self.TEST_CASE_FILE_DIR, self.idf_target + '.yml')
+        filename = os.path.join(self.idf_path, self.TEST_CASE_FILE_DIR,
+                                '{}_{}.yml'.format(self.idf_target, self.node_index))
         try:
             os.mkdir(os.path.dirname(filename))
         except OSError:
@@ -315,33 +317,33 @@ class Parser(object):
         self.dump_test_cases(test_cases)
 
 
-def test_parser(binary_folder):
-    parser = Parser(binary_folder)
+def test_parser(binary_folder, node_index):
+    ut_parser = Parser(binary_folder, node_index)
     # test parsing tags
     # parsing module only and module in module list
-    prop = parser.parse_case_properties('[esp32]')
+    prop = ut_parser.parse_case_properties('[esp32]')
     assert prop['module'] == 'esp32'
     # module not in module list
-    prop = parser.parse_case_properties('[not_in_list]')
+    prop = ut_parser.parse_case_properties('[not_in_list]')
     assert prop['module'] == 'misc'
     # parsing a default tag, a tag with assigned value
-    prop = parser.parse_case_properties('[esp32][ignore][test_env=ABCD][not_support1][not_support2=ABCD]')
+    prop = ut_parser.parse_case_properties('[esp32][ignore][test_env=ABCD][not_support1][not_support2=ABCD]')
     assert prop['ignore'] == 'Yes' and prop['test_env'] == 'ABCD' \
            and 'not_support1' not in prop and 'not_supported2' not in prop
     # parsing omitted value
-    prop = parser.parse_case_properties('[esp32]')
+    prop = ut_parser.parse_case_properties('[esp32]')
     assert prop['ignore'] == 'No' and prop['test_env'] == 'UT_T1_1'
     # parsing with incorrect format
     try:
-        parser.parse_case_properties('abcd')
+        ut_parser.parse_case_properties('abcd')
         assert False
     except AssertionError:
         pass
     # skip invalid data parse, [type=] assigns empty string to type
-    prop = parser.parse_case_properties('[esp32]abdc aaaa [ignore=]')
+    prop = ut_parser.parse_case_properties('[esp32]abdc aaaa [ignore=]')
     assert prop['module'] == 'esp32' and prop['ignore'] == ''
     # skip mis-paired []
-    prop = parser.parse_case_properties('[esp32][[ignore=b]][]][test_env=AAA]]')
+    prop = ut_parser.parse_case_properties('[esp32][[ignore=b]][]][test_env=AAA]]')
     assert prop['module'] == 'esp32' and prop['ignore'] == 'b' and prop['test_env'] == 'AAA'
 
     config_dependency = {
@@ -353,20 +355,20 @@ def test_parser(binary_folder):
         'f': '({123} and {456}) or ({123} and {789})'
     }
     sdkconfig = ['123', '789']
-    tags = parser.parse_tags_internal(sdkconfig, config_dependency, parser.CONFIG_PATTERN)
+    tags = ut_parser.parse_tags_internal(sdkconfig, config_dependency, ut_parser.CONFIG_PATTERN)
     assert sorted(tags) == ['a', 'd', 'f']  # sorted is required for older Python3, e.g. 3.4.8
 
 
-def main(binary_folder):
+def main(binary_folder, node_index):
     assert os.getenv('IDF_PATH'), 'IDF_PATH must be set to use this script'
     assert os.getenv('IDF_TARGET'), 'IDF_TARGET must be set to use this script'
-    test_parser(binary_folder)
+    test_parser(binary_folder, node_index)
 
-    parser = Parser(binary_folder)
-    parser.parse_test_cases()
-    parser.copy_module_def_file()
-    if len(parser.parsing_errors) > 0:
-        for error in parser.parsing_errors:
+    ut_parser = Parser(binary_folder, node_index)
+    ut_parser.parse_test_cases()
+    ut_parser.copy_module_def_file()
+    if len(ut_parser.parsing_errors) > 0:
+        for error in ut_parser.parsing_errors:
             print(error)
         exit(1)
 
@@ -374,5 +376,7 @@ def main(binary_folder):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('bin_dir', help='Binary Folder')
+    parser.add_argument('node_index', type=int, default=1,
+                        help='Node index, should only be set in CI')
     args = parser.parse_args()
-    main(args.bin_dir)
+    main(args.bin_dir, args.node_index)
