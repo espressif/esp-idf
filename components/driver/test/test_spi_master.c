@@ -838,7 +838,7 @@ void test_cmd_addr(spi_slave_task_context_t *slave_context, bool lsb_first)
         }
 
         //clean
-        vRingbufferReturnItem(slave_context->data_received, buffer);
+        vRingbufferReturnItem(slave_context->data_received, rcv_data);
     }
 
     TEST_ASSERT(spi_bus_remove_device(spi) == ESP_OK);
