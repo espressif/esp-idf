@@ -24,6 +24,7 @@ extern "C" {
 #include "soc/system_reg.h"
 #include "soc/syscon_reg.h"
 #include "soc/dport_access.h"
+#include "soc/uart_reg.h"
 
 static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
 {
@@ -208,6 +209,12 @@ static inline void periph_ll_enable_clk_clear_rst(periph_module_t periph)
 
 static inline void periph_ll_disable_clk_set_rst(periph_module_t periph)
 {
+    // set UART_RST_CORE before setting SYSTEM_UART_RST on esp32c3
+    if (periph == PERIPH_UART0_MODULE) {
+        SET_PERI_REG_MASK(UART_CLK_CONF_REG(0), UART_RST_CORE_M);
+    } else if (periph == PERIPH_UART1_MODULE) {
+        SET_PERI_REG_MASK(UART_CLK_CONF_REG(1), UART_RST_CORE_M);
+    }
     DPORT_CLEAR_PERI_REG_MASK(periph_ll_get_clk_en_reg(periph), periph_ll_get_clk_en_mask(periph));
     DPORT_SET_PERI_REG_MASK(periph_ll_get_rst_en_reg(periph), periph_ll_get_rst_en_mask(periph, false));
 }
@@ -226,6 +233,12 @@ static inline void IRAM_ATTR periph_ll_wifi_bt_module_disable_clk_set_rst(void)
 
 static inline void periph_ll_reset(periph_module_t periph)
 {
+    // set UART_RST_CORE before setting SYSTEM_UART_RST on esp32c3
+    if (periph == PERIPH_UART0_MODULE) {
+        SET_PERI_REG_MASK(UART_CLK_CONF_REG(0), UART_RST_CORE_M);
+    } else if (periph == PERIPH_UART1_MODULE) {
+        SET_PERI_REG_MASK(UART_CLK_CONF_REG(1), UART_RST_CORE_M);
+    }
     DPORT_SET_PERI_REG_MASK(periph_ll_get_rst_en_reg(periph), periph_ll_get_rst_en_mask(periph, false));
     DPORT_CLEAR_PERI_REG_MASK(periph_ll_get_rst_en_reg(periph), periph_ll_get_rst_en_mask(periph, false));
 }
