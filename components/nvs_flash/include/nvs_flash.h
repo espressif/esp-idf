@@ -181,7 +181,7 @@ esp_err_t nvs_flash_erase_partition_ptr(const esp_partition_t *partition);
  *                              If cfg is NULL, no encryption is used.
  *
  * @return
- *      - ESP_OK if storage was successfully initialized.
+ *      - ESP_OK if storage has been initialized successfully.
  *      - ESP_ERR_NVS_NO_FREE_PAGES if the NVS storage contains no empty pages
  *        (which may happen if NVS partition was truncated)
  *      - ESP_ERR_NOT_FOUND if no partition with label "nvs" is found in the partition table
@@ -193,13 +193,13 @@ esp_err_t nvs_flash_secure_init(nvs_sec_cfg_t* cfg);
 /**
  * @brief Initialize NVS flash storage for the specified partition.
  *
- * @param[in]  partition_label   Label of the partition. Note that internally a reference to
+ * @param[in]  partition_label   Label of the partition. Note that internally, a reference to
  *                               passed value is kept and it should be accessible for future operations
  *
  * @param[in]  cfg Security configuration (keys) to be used for NVS encryption/decryption.
  *                              If cfg is null, no encryption/decryption is used.
  * @return
- *      - ESP_OK if storage was successfully initialized.
+ *      - ESP_OK if storage has been initialized successfully.
  *      - ESP_ERR_NVS_NO_FREE_PAGES if the NVS storage contains no empty pages
  *        (which may happen if NVS partition was truncated)
  *      - ESP_ERR_NOT_FOUND if specified partition is not found in the partition table
@@ -221,6 +221,7 @@ esp_err_t nvs_flash_secure_init_partition(const char *partition_label, nvs_sec_c
  *
  * @return
  *      -ESP_OK, if cfg was read successfully;
+ *      -ESP_INVALID_ARG, if partition or cfg;
  *      -or error codes from esp_partition_write/erase APIs.
  */
 
@@ -236,10 +237,11 @@ esp_err_t nvs_flash_generate_keys(const esp_partition_t* partition, nvs_sec_cfg_
  * @param[out] cfg       Pointer to nvs security configuration structure.
  *                       Pointer must be non-NULL.
  *
- * @note  Provided parition is assumed to be marked 'encrypted'.
+ * @note  Provided partition is assumed to be marked 'encrypted'.
  *
  * @return
  *      -ESP_OK, if cfg was read successfully;
+ *      -ESP_INVALID_ARG, if partition or cfg;
  *      -ESP_ERR_NVS_KEYS_NOT_INITIALIZED, if the partition is not yet written with keys.
  *      -ESP_ERR_NVS_CORRUPT_KEY_PART, if the partition containing keys is found to be corrupt
  *      -or error codes from esp_partition_read API.

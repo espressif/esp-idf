@@ -31,6 +31,14 @@ std::unique_ptr<NVSHandle> open_nvs_handle_from_partition(const char *partition_
         return nullptr;
     }
 
+    esp_err_t lock_result = Lock::init();
+    if (lock_result != ESP_OK) {
+        if (err != nullptr) {
+            *err = lock_result;
+        }
+        return nullptr;
+    }
+
     Lock lock;
 
     NVSHandleSimple *handle_simple;
