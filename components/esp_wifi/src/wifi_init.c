@@ -290,22 +290,6 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
     }
     adc2_cal_include(); //This enables the ADC2 calibration constructor at start up.
 
-#ifdef CONFIG_ESP_WIFI_FTM_REPORT_LOG_ENABLE
-    ftm_report_log_level_t log_lvl = {0};
-#ifdef CONFIG_ESP_WIFI_FTM_REPORT_SHOW_RTT
-    log_lvl.show_rtt = 1;
-#endif
-#ifdef CONFIG_ESP_WIFI_FTM_REPORT_SHOW_DIAG
-    log_lvl.show_diag = 1;
-#endif
-#ifdef CONFIG_ESP_WIFI_FTM_REPORT_SHOW_T1T2T3T4
-    log_lvl.show_t1t2t3t4 = 1;
-#endif
-#ifdef CONFIG_ESP_WIFI_FTM_REPORT_SHOW_RSSI
-    log_lvl.show_rxrssi = 1;
-#endif
-    esp_wifi_set_ftm_report_log_level(&log_lvl);
-#endif
     esp_wifi_config_info();
     return result;
 }
@@ -344,3 +328,10 @@ void set_xpd_sar(bool en)
         adc_power_release();
     }
 }
+
+#ifndef CONFIG_ESP_WIFI_FTM_ENABLE
+void ieee80211_ftm_attach(void)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+}
+#endif
