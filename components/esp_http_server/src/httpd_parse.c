@@ -802,7 +802,7 @@ esp_err_t httpd_req_delete(struct httpd_data *hd)
         char dummy[CONFIG_HTTPD_PURGE_BUF_LEN];
         int recv_len = MIN(sizeof(dummy), ra->remaining_len);
         recv_len = httpd_req_recv(r, dummy, recv_len);
-        if (recv_len < 0) {
+        if (recv_len <= 0) {
             httpd_req_cleanup(r);
             return ESP_FAIL;
         }
