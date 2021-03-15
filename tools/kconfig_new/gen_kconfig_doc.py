@@ -74,8 +74,7 @@ class ConfigTargetVisibility(object):
                 implication_list = [self._implies_invisibility(item[1]), self._implies_invisibility(item[2])]
                 if all([implies for (implies, _) in implication_list]):
                     source_list = [s for (_, s) in implication_list if s.startswith(self.target_env_var)]
-                    if len(set(source_list)) != 1:  # set removes the duplicates
-                        print('[WARNING] list contains targets: {}'.format(source_list))
+                    # if source_list has more items then it should not matter which will imply the invisibility
                     return (True, source_list[0])
                 return (False, None)
             elif item[0] in self.direct_eval_set:
@@ -94,8 +93,7 @@ class ConfigTargetVisibility(object):
             vis_list = [self._visible(node) for node in item.nodes]
             if len(vis_list) > 0 and all([not visible for (visible, _) in vis_list]):
                 source_list = [s for (_, s) in vis_list if s is not None and s.startswith(self.target_env_var)]
-                if len(set(source_list)) != 1:  # set removes the duplicates
-                    print('[WARNING] list contains targets: {}'.format(source_list))
+                # if source_list has more items then it should not matter which will imply the invisibility
                 return (True, source_list[0])
 
             if item.name.startswith(self.target_env_var):
