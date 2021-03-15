@@ -59,30 +59,28 @@ extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate posi
 #define ADC_ENTER_CRITICAL()  portENTER_CRITICAL(&rtc_spinlock)
 #define ADC_EXIT_CRITICAL()  portEXIT_CRITICAL(&rtc_spinlock)
 
-/*---------------------------------------------------------------
-                    Digital Controller Context
----------------------------------------------------------------*/
 /**
- * 1. adc_digi_mutex: this mutex lock is used for ADC digital controller. On ESP32-C3, the ADC single read APIs (unit1 & unit2)
- * and ADC DMA continuous read APIs share the ``apb_saradc_struct.h`` regs.
- *
- * 2. sar_adc_mutex: this mutex lock is used for SARADC2 module. On ESP32C-C3, the ADC single read APIs (unit2), ADC DMA
- * continuous read APIs and WIFI share the SARADC2 analog IP.
- *
- * Sequence:
- *          Acquire: 1. sar_adc_mutex;  2. adc_digi_mutex;
- *          Release: 1. adc_digi_mutex; 2. sar_adc_mutex;
+ * 1. sar_adc1_lock: this mutex lock is to protect the SARADC1 module.
+ * 2. sar_adc2_lock: this mutex lock is to protect the SARADC2 module. On C3, it is controlled by the digital controller
+ *    and PWDET controller.
+ * 3. adc_reg_lock:  this spin lock is to protect the shared registers used by ADC1 / ADC2 single read mode.
  */
-static _lock_t adc_digi_mutex;
-#define ADC_DIGI_LOCK_ACQUIRE()     _lock_acquire(&adc_digi_mutex)
-#define ADC_DIGI_LOCK_RELEASE()     _lock_release(&adc_digi_mutex)
-static _lock_t sar_adc2_mutex;
-#define SAC_ADC2_LOCK_ACQUIRE()     _lock_acquire(&sar_adc2_mutex)
-#define SAC_ADC2_LOCK_RELEASE()     _lock_release(&sar_adc2_mutex)
+static _lock_t sar_adc1_lock;
+#define SAR_ADC1_LOCK_ACQUIRE()    _lock_acquire(&sar_adc1_lock)
+#define SAR_ADC1_LOCK_RELEASE()    _lock_release(&sar_adc1_lock)
+static _lock_t sar_adc2_lock;
+#define SAR_ADC2_LOCK_ACQUIRE()    _lock_acquire(&sar_adc2_lock)
+#define SAR_ADC2_LOCK_RELEASE()    _lock_release(&sar_adc2_lock)
+portMUX_TYPE adc_reg_lock = portMUX_INITIALIZER_UNLOCKED;
+#define ADC_REG_LOCK_ENTER()       portENTER_CRITICAL(&adc_reg_lock)
+#define ADC_REG_LOCK_EXIT()        portEXIT_CRITICAL(&adc_reg_lock)
 
 #define INTERNAL_BUF_NUM 5
 #define IN_SUC_EOF_BIT GDMA_LL_EVENT_RX_SUC_EOF
 
+/*---------------------------------------------------------------
+                    Digital Controller Context
+---------------------------------------------------------------*/
 typedef struct adc_digi_context_t {
     uint32_t                bytes_between_intr;         //bytes between in suc eof intr
     uint8_t                 *rx_dma_buf;                //dma buffer
@@ -298,11 +296,14 @@ esp_err_t adc_digi_start(void)
     s_adc_digi_ctx->ringbuf_overflow_flag = 0;
     s_adc_digi_ctx->driver_start_flag = 1;
 
-    //When using SARADC2 module, this task needs to be protected from WIFI
-    if (s_adc_digi_ctx->use_adc2) {
-        SAC_ADC2_LOCK_ACQUIRE();
+    esp_rom_printf("adc start\n");
+
+    if (s_adc_digi_ctx->use_adc1) {
+        SAR_ADC1_LOCK_ACQUIRE();
     }
-    ADC_DIGI_LOCK_ACQUIRE();
+    if (s_adc_digi_ctx->use_adc2) {
+        SAR_ADC2_LOCK_ACQUIRE();
+    }
 
 #if CONFIG_PM_ENABLE
     // Lock APB frequency while ADC driver is in use
@@ -357,10 +358,11 @@ esp_err_t adc_digi_stop(void)
     }
 #endif  //CONFIG_PM_ENABLE
 
-    ADC_DIGI_LOCK_RELEASE();
-    //When using SARADC2 module, this task needs to be protected from WIFI
+    if (s_adc_digi_ctx->use_adc1) {
+        SAR_ADC1_LOCK_RELEASE();
+    }
     if (s_adc_digi_ctx->use_adc2) {
-        SAC_ADC2_LOCK_RELEASE();
+        SAR_ADC2_LOCK_RELEASE();
     }
 
     return ESP_OK;
@@ -468,20 +470,22 @@ int adc1_get_raw(adc1_channel_t channel)
 {
     int raw_out = 0;
 
-    ADC_DIGI_LOCK_ACQUIRE();
+    SAR_ADC1_LOCK_ACQUIRE();
     periph_module_enable(PERIPH_SARADC_MODULE);
 
     adc_atten_t atten = s_atten1_single[channel];
     uint32_t cal_val = adc_get_calibration_offset(ADC_NUM_1, channel, atten);
-    adc_hal_set_calibration_param(ADC_NUM_1, cal_val);
 
+    ADC_REG_LOCK_ENTER();
+    adc_hal_set_calibration_param(ADC_NUM_1, cal_val);
     adc_hal_set_power_manage(ADC_POWER_SW_ON);
     adc_hal_set_atten(ADC_NUM_2, channel, atten);
     adc_hal_convert(ADC_NUM_1, channel, &raw_out);
+    adc_hal_set_power_manage(ADC_POWER_BY_FSM);
+    ADC_REG_LOCK_EXIT();
 
-    adc_hal_set_power_manage(ADC_POWER_SW_OFF);
     periph_module_disable(PERIPH_SARADC_MODULE);
-    ADC_DIGI_LOCK_RELEASE();
+    SAR_ADC1_LOCK_RELEASE();
 
     return raw_out;
 }
@@ -509,22 +513,22 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 
     esp_err_t ret = ESP_OK;
 
-    SAC_ADC2_LOCK_ACQUIRE();
-    ADC_DIGI_LOCK_ACQUIRE();
+    SAR_ADC2_LOCK_ACQUIRE();
     periph_module_enable(PERIPH_SARADC_MODULE);
 
     adc_atten_t atten = s_atten2_single[channel];
     uint32_t cal_val = adc_get_calibration_offset(ADC_NUM_2, channel, atten);
-    adc_hal_set_calibration_param(ADC_NUM_2, cal_val);
 
+    ADC_REG_LOCK_ENTER();
+    adc_hal_set_calibration_param(ADC_NUM_2, cal_val);
     adc_hal_set_power_manage(ADC_POWER_SW_ON);
     adc_hal_set_atten(ADC_NUM_2, channel, atten);
     ret = adc_hal_convert(ADC_NUM_2, channel, raw_out);
+    adc_hal_set_power_manage(ADC_POWER_BY_FSM);
+    ADC_REG_LOCK_EXIT();
 
-    adc_hal_set_power_manage(ADC_POWER_SW_OFF);
     periph_module_disable(PERIPH_SARADC_MODULE);
-    ADC_DIGI_LOCK_RELEASE();
-    SAC_ADC2_LOCK_RELEASE();
+    SAR_ADC2_LOCK_RELEASE();
 
     return ret;
 }
