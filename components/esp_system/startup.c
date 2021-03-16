@@ -276,14 +276,6 @@ static void do_core_init(void)
     _REENT_SMALL_CHECK_INIT(_GLOBAL_REENT);
 #endif // defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_NONE)
 
-#ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
-    esp_flash_encryption_init_checks();
-#endif
-
-#ifdef CONFIG_SECURE_BOOT
-    esp_secure_boot_init_checks();
-#endif
-
     esp_err_t err __attribute__((unused));
 
 #if CONFIG_SECURE_DISABLE_ROM_DL_MODE
@@ -324,6 +316,15 @@ static void do_core_init(void)
     esp_err_t flash_ret = esp_flash_init_default_chip();
     assert(flash_ret == ESP_OK);
     (void)flash_ret;
+
+#ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
+    esp_flash_encryption_init_checks();
+#endif
+
+#if defined(CONFIG_SECURE_BOOT) || defined(CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT)
+    // Note: in some configs this may read flash, so placed after flash init
+    esp_secure_boot_init_checks();
+#endif
 }
 
 static void do_secondary_init(void)
