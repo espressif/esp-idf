@@ -234,6 +234,8 @@ class BLE_Bluez_Client:
 
         try:
             path.WriteValue([ord(c) for c in data], {}, dbus_interface='org.bluez.GattCharacteristic1')
+        except TypeError:  # python3 compatible
+            path.WriteValue([c for c in data], {}, dbus_interface='org.bluez.GattCharacteristic1')
         except dbus.exceptions.DBusException as e:
             raise RuntimeError("Failed to write value to characteristic " + characteristic_uuid + ": " + str(e))
 
