@@ -143,6 +143,16 @@ config BT_BLE_BLUFI_ENABLE
     help
         This option can be close when the app does not require blufi function.
 
+config BT_GATT_SR_PROFILES
+    int "Max GATT Server Profiles"
+    depends on BT_GATTS_ENABLE && BT_BLUEDROID_ENABLED
+    range 1 32
+    default 8
+    help
+        Maximum GATT Server Profiles Count
+
+
+
 choice BT_GATTS_SEND_SERVICE_CHANGE_MODE
     prompt "GATTS Service Change Mode"
     default BT_GATTS_SEND_SERVICE_CHANGE_AUTO
@@ -944,7 +954,6 @@ menu "BT DEBUG LOG LEVEL"
         default 2
 
 endmenu #BT DEBUG LOG LEVEL
-
 
 config BT_ACL_CONNECTIONS
     int "BT/BLE MAX ACL CONNECTIONS(1~7)"
