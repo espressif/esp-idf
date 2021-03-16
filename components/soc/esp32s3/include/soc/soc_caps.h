@@ -9,6 +9,7 @@
 #define SOC_PCNT_SUPPORTED              1
 #define SOC_TWAI_SUPPORTED              1
 #define SOC_GDMA_SUPPORTED              1
+#define SOC_I80_LCD_SUPPORTED           1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_CPU_CORES_NUM               2
 #define SOC_CACHE_SUPPORT_WRAP          1
@@ -70,6 +71,12 @@
 #define SOC_RMT_SUPPORT_TX_LOOP_COUNT   (1)  /*!< Support transmit specified number of cycles in loop mode */
 #define SOC_RMT_SUPPORT_TX_SYNCHRO      (1)  /*!< Support coordinate a group of TX channels to start simultaneously */
 #define SOC_RMT_SUPPORT_XTAL            (1)  /*!< Support set XTAL clock as the RMT clock source */
+
+
+/*-------------------------- LCD CAPS ----------------------------------------*/
+#define SOC_LCD_I80_BUSES               (1)  /*!< Has one LCD Intel 8080 bus */
+#define SOC_LCD_RGB_PANELS              (1)  /*!< Support one RGB LCD panel */
+#define SOC_LCD_MAX_DATA_WIDTH          (16) /*!< Maximum number of LCD data lines */
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 #include "rtc_io_caps.h"
