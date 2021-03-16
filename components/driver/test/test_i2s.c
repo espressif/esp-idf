@@ -11,6 +11,7 @@
 #include "freertos/task.h"
 #include "driver/i2s.h"
 #include "driver/gpio.h"
+#include "hal/gpio_hal.h"
 #include "unity.h"
 #include "math.h"
 #include "esp_rom_gpio.h"
@@ -44,9 +45,9 @@
 static void i2s_test_io_config(int mode)
 {
     // Connect internal signals using IO matrix.
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[MASTER_BCK_IO], PIN_FUNC_GPIO);
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[MASTER_WS_IO], PIN_FUNC_GPIO);
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[DATA_OUT_IO], PIN_FUNC_GPIO);
+    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[MASTER_BCK_IO], PIN_FUNC_GPIO);
+    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[MASTER_WS_IO], PIN_FUNC_GPIO);
+    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[DATA_OUT_IO], PIN_FUNC_GPIO);
 
     gpio_set_direction(MASTER_BCK_IO, GPIO_MODE_INPUT_OUTPUT);
     gpio_set_direction(MASTER_WS_IO, GPIO_MODE_INPUT_OUTPUT);

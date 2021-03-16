@@ -25,6 +25,7 @@
 #include "soc/io_mux_reg.h"
 #include "hal/cpu_hal.h"
 #include "hal/cpu_ll.h"
+#include "hal/gpio_hal.h"
 #include "driver/periph_ctrl.h"
 #include "esp_rom_gpio.h"
 #include "freertos/FreeRTOS.h"
@@ -267,13 +268,13 @@ esp_err_t dedic_gpio_new_bundle(const dedic_gpio_bundle_config_t *config, dedic_
     // route dedicated GPIO channel signals to GPIO matrix
     if (config->flags.in_en) {
         for (size_t i = 0; i < config->array_size; i++) {
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[config->gpio_array[i]], PIN_FUNC_GPIO);
+            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[config->gpio_array[i]], PIN_FUNC_GPIO);
             esp_rom_gpio_connect_in_signal(config->gpio_array[i], dedic_gpio_periph_signals.cores[core_id].in_sig_per_channel[in_offset + i], config->flags.in_invert);
         }
     }
     if (config->flags.out_en) {
         for (size_t i = 0; i < config->array_size; i++) {
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[config->gpio_array[i]], PIN_FUNC_GPIO);
+            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[config->gpio_array[i]], PIN_FUNC_GPIO);
             esp_rom_gpio_connect_out_signal(config->gpio_array[i], dedic_gpio_periph_signals.cores[core_id].out_sig_per_channel[out_offset + i], config->flags.out_invert, false);
         }
     }

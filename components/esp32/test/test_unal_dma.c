@@ -5,6 +5,7 @@
 #include <string.h>
 #include "esp32/rom/lldesc.h"
 #include "driver/periph_ctrl.h"
+#include "hal/gpio_hal.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -32,16 +33,16 @@ static void dmaMemcpy(void *in, void *out, int len)
     //Init pins to i2s functions
     SET_PERI_REG_MASK(GPIO_ENABLE_W1TS_REG, (1 << 11) | (1 << 3) | (1 << 0) | (1 << 2) | (1 << 5) | (1 << 16) | (1 << 17) | (1 << 18) | (1 << 19) | (1 << 20)); //ENABLE GPIO oe_enable
 
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, 0);
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO2_U, 0);
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, 0);
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO16_U, 0);
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO17_U, 0);
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO18_U, 0);
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO19_U, 0);
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO20_U, 0);
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_CMD_U, 2); //11
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO26_U, 0); //RS
+    gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_GPIO0_U, 0);
+    gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_GPIO2_U, 0);
+    gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_GPIO5_U, 0);
+    gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_GPIO16_U, 0);
+    gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_GPIO17_U, 0);
+    gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_GPIO18_U, 0);
+    gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_GPIO19_U, 0);
+    gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_GPIO20_U, 0);
+    gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_CMD_U, 2); //11
+    gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_GPIO26_U, 0); //RS
 
     WRITE_PERI_REG(GPIO_FUNC0_OUT_SEL_CFG_REG, (148 << GPIO_FUNC0_OUT_SEL_S));
     WRITE_PERI_REG(GPIO_FUNC2_OUT_SEL_CFG_REG, (149 << GPIO_FUNC0_OUT_SEL_S));

@@ -24,6 +24,7 @@
 #include "soc/lldesc.h"
 #include "driver/gpio.h"
 #include "driver/i2s.h"
+#include "hal/gpio_hal.h"
 #if SOC_I2S_SUPPORTS_ADC_DAC
 #include "driver/dac.h"
 #include "hal/i2s_hal.h"
@@ -118,7 +119,7 @@ static inline void gpio_matrix_out_check(int gpio, uint32_t signal_idx, bool out
 {
     //if pin = -1, do not need to configure
     if (gpio != -1) {
-        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
+        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
         gpio_set_direction(gpio, GPIO_MODE_OUTPUT);
         esp_rom_gpio_connect_out_signal(gpio, signal_idx, out_inv, oen_inv);
     }
@@ -127,7 +128,7 @@ static inline void gpio_matrix_out_check(int gpio, uint32_t signal_idx, bool out
 static inline void gpio_matrix_in_check(int gpio, uint32_t signal_idx, bool inv)
 {
     if (gpio != -1) {
-        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
+        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
         //Set direction, for some GPIOs, the input function are not enabled as default.
         gpio_set_direction(gpio, GPIO_MODE_INPUT);
         esp_rom_gpio_connect_in_signal(gpio, signal_idx, inv);

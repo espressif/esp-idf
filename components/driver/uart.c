@@ -22,6 +22,7 @@
 #include "freertos/semphr.h"
 #include "freertos/ringbuf.h"
 #include "hal/uart_hal.h"
+#include "hal/gpio_hal.h"
 #include "soc/uart_periph.h"
 #include "soc/rtc_cntl_reg.h"
 #include "driver/uart.h"
@@ -597,23 +598,23 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
     UART_CHECK((cts_io_num < 0 || (GPIO_IS_VALID_GPIO(cts_io_num))), "cts_io_num error", ESP_FAIL);
 
     if(tx_io_num >= 0) {
-        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[tx_io_num], PIN_FUNC_GPIO);
+        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[tx_io_num], PIN_FUNC_GPIO);
         gpio_set_level(tx_io_num, 1);
         esp_rom_gpio_connect_out_signal(tx_io_num, uart_periph_signal[uart_num].tx_sig, 0, 0);
     }
     if(rx_io_num >= 0) {
-        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[rx_io_num], PIN_FUNC_GPIO);
+        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[rx_io_num], PIN_FUNC_GPIO);
         gpio_set_pull_mode(rx_io_num, GPIO_PULLUP_ONLY);
         gpio_set_direction(rx_io_num, GPIO_MODE_INPUT);
         esp_rom_gpio_connect_in_signal(rx_io_num, uart_periph_signal[uart_num].rx_sig, 0);
     }
     if(rts_io_num >= 0) {
-        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[rts_io_num], PIN_FUNC_GPIO);
+        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[rts_io_num], PIN_FUNC_GPIO);
         gpio_set_direction(rts_io_num, GPIO_MODE_OUTPUT);
         esp_rom_gpio_connect_out_signal(rts_io_num, uart_periph_signal[uart_num].rts_sig, 0, 0);
     }
     if(cts_io_num >= 0) {
-        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[cts_io_num], PIN_FUNC_GPIO);
+        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[cts_io_num], PIN_FUNC_GPIO);
         gpio_set_pull_mode(cts_io_num, GPIO_PULLUP_ONLY);
         gpio_set_direction(cts_io_num, GPIO_MODE_INPUT);
         esp_rom_gpio_connect_in_signal(cts_io_num, uart_periph_signal[uart_num].cts_sig, 0);

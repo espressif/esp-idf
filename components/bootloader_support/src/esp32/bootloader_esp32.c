@@ -34,6 +34,7 @@
 #include "soc/io_mux_reg.h"
 #include "soc/rtc.h"
 #include "soc/spi_periph.h"
+#include "hal/gpio_hal.h"
 
 #include "esp32/rom/cache.h"
 #include "esp_rom_gpio.h"
@@ -61,7 +62,7 @@ void bootloader_configure_spi_pins(int drv)
         pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOV302) {
         // For ESP32D2WD or ESP32-PICO series,the SPI pins are already configured
         // flash clock signal should come from IO MUX.
-        PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_CLK_U, FUNC_SD_CLK_SPICLK);
+        gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_CLK_U, FUNC_SD_CLK_SPICLK);
         SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_CLK_U, FUN_DRV, drv, FUN_DRV_S);
     } else {
         const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
@@ -76,14 +77,14 @@ void bootloader_configure_spi_pins(int drv)
             esp_rom_gpio_connect_out_signal(FLASH_SPIHD_IO, SPIHD_OUT_IDX, 0, 0);
             esp_rom_gpio_connect_in_signal(FLASH_SPIHD_IO, SPIHD_IN_IDX, 0);
             //select pin function gpio
-            PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA0_U, PIN_FUNC_GPIO);
-            PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA1_U, PIN_FUNC_GPIO);
-            PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA2_U, PIN_FUNC_GPIO);
-            PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA3_U, PIN_FUNC_GPIO);
-            PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_CMD_U, PIN_FUNC_GPIO);
+            gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_DATA0_U, PIN_FUNC_GPIO);
+            gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_DATA1_U, PIN_FUNC_GPIO);
+            gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_DATA2_U, PIN_FUNC_GPIO);
+            gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_DATA3_U, PIN_FUNC_GPIO);
+            gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_CMD_U, PIN_FUNC_GPIO);
             // flash clock signal should come from IO MUX.
             // set drive ability for clock
-            PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_CLK_U, FUNC_SD_CLK_SPICLK);
+            gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_CLK_U, FUNC_SD_CLK_SPICLK);
             SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_CLK_U, FUN_DRV, drv, FUN_DRV_S);
 
 #if CONFIG_SPIRAM_TYPE_ESPPSRAM32 || CONFIG_SPIRAM_TYPE_ESPPSRAM64

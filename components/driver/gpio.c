@@ -392,7 +392,7 @@ esp_err_t gpio_config(const gpio_config_t *pGPIOConfig)
             }
 
             /* By default, all the pins have to be configured as GPIO pins. */
-            PIN_FUNC_SELECT(io_reg, PIN_FUNC_GPIO);
+            gpio_hal_iomux_func_sel(io_reg, PIN_FUNC_GPIO);
         }
 
         io_num++;

@@ -30,6 +30,7 @@
 #include "driver/spi_common_internal.h"
 #include "stdatomic.h"
 #include "hal/spi_hal.h"
+#include "hal/gpio_hal.h"
 #include "esp_rom_gpio.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
@@ -498,7 +499,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
 #if CONFIG_IDF_TARGET_ESP32S2
             PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[bus_config->mosi_io_num]);
 #endif
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->mosi_io_num], FUNC_GPIO);
+            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[bus_config->mosi_io_num], FUNC_GPIO);
         }
         if (bus_config->miso_io_num >= 0) {
             if (miso_need_output || (temp_flag&SPICOMMON_BUSFLAG_DUAL)) {
@@ -511,7 +512,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
 #if CONFIG_IDF_TARGET_ESP32S2
             PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[bus_config->miso_io_num]);
 #endif
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->miso_io_num], FUNC_GPIO);
+            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[bus_config->miso_io_num], FUNC_GPIO);
         }
         if (bus_config->quadwp_io_num >= 0) {
             gpio_set_direction(bus_config->quadwp_io_num, GPIO_MODE_INPUT_OUTPUT);
@@ -520,7 +521,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
 #if CONFIG_IDF_TARGET_ESP32S2
             PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[bus_config->quadwp_io_num]);
 #endif
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->quadwp_io_num], FUNC_GPIO);
+            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[bus_config->quadwp_io_num], FUNC_GPIO);
         }
         if (bus_config->quadhd_io_num >= 0) {
             gpio_set_direction(bus_config->quadhd_io_num, GPIO_MODE_INPUT_OUTPUT);
@@ -529,7 +530,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
 #if CONFIG_IDF_TARGET_ESP32S2
             PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[bus_config->quadhd_io_num]);
 #endif
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->quadhd_io_num], FUNC_GPIO);
+            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[bus_config->quadhd_io_num], FUNC_GPIO);
         }
         if (bus_config->sclk_io_num >= 0) {
             if (sclk_need_output) {
@@ -542,7 +543,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
 #if CONFIG_IDF_TARGET_ESP32S2
             PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[bus_config->sclk_io_num]);
 #endif
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->sclk_io_num], FUNC_GPIO);
+            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[bus_config->sclk_io_num], FUNC_GPIO);
         }
     }
 
@@ -582,7 +583,7 @@ void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_num, 
         }
         if (cs_num == 0) esp_rom_gpio_connect_in_signal(cs_io_num, spi_periph_signal[host].spics_in, false);
         PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[cs_io_num]);
-        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[cs_io_num], FUNC_GPIO);
+        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[cs_io_num], FUNC_GPIO);
     }
 }
 

@@ -21,6 +21,7 @@
 #include "soc/gpio_sig_map.h"
 #include "soc/rtc.h"
 #include "hal/clk_gate_ll.h"
+#include "hal/gpio_hal.h"
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/usb/cdc_acm.h"
 #include "esp32s2/rom/usb/usb_common.h"
@@ -69,8 +70,8 @@ void bootloader_console_init(void)
             uart_tx_gpio != UART_NUM_0_TXD_DIRECT_GPIO_NUM ||
             uart_rx_gpio != UART_NUM_0_RXD_DIRECT_GPIO_NUM) {
         // Change default UART pins back to GPIOs
-        PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0RXD_U, PIN_FUNC_GPIO);
-        PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0TXD_U, PIN_FUNC_GPIO);
+        gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_U0RXD_U, PIN_FUNC_GPIO);
+        gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_U0TXD_U, PIN_FUNC_GPIO);
         // Route GPIO signals to/from pins
         const uint32_t tx_idx = uart_periph_signal[uart_num].tx_sig;
         const uint32_t rx_idx = uart_periph_signal[uart_num].rx_sig;

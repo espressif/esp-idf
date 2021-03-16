@@ -98,6 +98,7 @@ The driver of FIFOs works as below:
 #include "driver/periph_ctrl.h"
 #include "driver/gpio.h"
 #include "hal/sdio_slave_hal.h"
+#include "hal/gpio_hal.h"
 
 
 #define SDIO_SLAVE_CHECK(res, str, ret_val) do { if(!(res)){\
@@ -280,7 +281,7 @@ static void configure_pin(int pin, uint32_t func, bool pullup)
     assert(reg != UINT32_MAX);
 
     PIN_INPUT_ENABLE(reg);
-    PIN_FUNC_SELECT(reg, sdmmc_func);
+    gpio_hal_iomux_func_sel(reg, sdmmc_func);
     PIN_SET_DRV(reg, drive_strength);
     gpio_pulldown_dis(pin);
     if (pullup) {
@@ -322,7 +323,7 @@ static void recover_pin(int pin, int sdio_func)
     int func = REG_GET_FIELD(reg, MCU_SEL);
     if (func == sdio_func) {
         gpio_set_direction(pin, GPIO_MODE_INPUT);
-        PIN_FUNC_SELECT(reg, PIN_FUNC_GPIO);
+        gpio_hal_iomux_func_sel(reg, PIN_FUNC_GPIO);
     }
 }
 

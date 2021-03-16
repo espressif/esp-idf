@@ -21,6 +21,7 @@
 #include "soc/rtc.h"
 #include "soc/soc_caps.h"
 #include "hal/ledc_hal.h"
+#include "hal/gpio_hal.h"
 #include "driver/ledc.h"
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
@@ -355,7 +356,7 @@ esp_err_t ledc_set_pin(int gpio_num, ledc_mode_t speed_mode, ledc_channel_t ledc
     LEDC_ARG_CHECK(ledc_channel < LEDC_CHANNEL_MAX, "ledc_channel");
     LEDC_ARG_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "gpio_num");
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
+    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
     gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);
     esp_rom_gpio_connect_out_signal(gpio_num, ledc_periph_signal[speed_mode].sig_out0_idx + ledc_channel, 0, 0);
     return ESP_OK;
@@ -402,7 +403,7 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t* ledc_conf)
         ledc_channel, gpio_num, duty, timer_select
     );
     /*set LEDC signal in gpio matrix*/
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
+    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
     gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);
     esp_rom_gpio_connect_out_signal(gpio_num, ledc_periph_signal[speed_mode].sig_out0_idx + ledc_channel, 0, 0);
 

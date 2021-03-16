@@ -39,6 +39,7 @@
 #include "soc/soc.h"
 #include "soc/io_mux_reg.h"
 #include "driver/gpio.h"
+#include "hal/gpio_hal.h"
 #include "driver/spi_common_internal.h"
 #include "driver/spi_common.h"
 #include "driver/periph_ctrl.h"
@@ -379,10 +380,10 @@ static void IRAM_ATTR psram_gpio_config(psram_cache_mode_t mode)
     esp_rom_spiflash_select_qio_pins(psram_io.psram_spiwp_sd3_io, spiconfig);
 
     if (psram_io.psram_cs_io == SPI_CS1_GPIO_NUM) {
-        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[psram_io.psram_cs_io],  FUNC_SPICS1_SPICS1);
+        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[psram_io.psram_cs_io],  FUNC_SPICS1_SPICS1);
     } else {
         esp_rom_gpio_connect_out_signal(psram_io.psram_cs_io, SPICS1_OUT_IDX, 0, 0);
-        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[psram_io.psram_cs_io],  PIN_FUNC_GPIO);
+        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[psram_io.psram_cs_io],  PIN_FUNC_GPIO);
     }
 }
 

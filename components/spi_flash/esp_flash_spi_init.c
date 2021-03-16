@@ -24,6 +24,7 @@
 #include "hal/spi_types.h"
 #include "driver/spi_common_internal.h"
 #include "hal/spi_flash_hal.h"
+#include "hal/gpio_hal.h"
 #include "esp_flash_internal.h"
 #include "esp_rom_gpio.h"
 #if CONFIG_IDF_TARGET_ESP32
@@ -127,7 +128,7 @@ static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_f
     chip->os_func->start(chip->os_func_data);
     PIN_INPUT_ENABLE(iomux_reg);
     if (use_iomux) {
-        PIN_FUNC_SELECT(iomux_reg, spics_func);
+        gpio_hal_iomux_func_sel(iomux_reg, spics_func);
     } else {
 #if SOC_GPIO_PIN_COUNT <= 32
         GPIO.enable_w1ts.val = (0x1 << cs_io_num);
@@ -143,7 +144,7 @@ static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_f
         if (cs_id == 0) {
             esp_rom_gpio_connect_in_signal(cs_io_num, spics_in, false);
         }
-        PIN_FUNC_SELECT(iomux_reg, PIN_FUNC_GPIO);
+        gpio_hal_iomux_func_sel(iomux_reg, PIN_FUNC_GPIO);
     }
     chip->os_func->end(chip->os_func_data);
 }

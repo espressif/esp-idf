@@ -25,6 +25,7 @@
 #include "soc/spi_reg.h"
 #include "soc/soc_caps.h"
 #include "soc/soc_pins.h"
+#include "hal/gpio_hal.h"
 #include "flash_qio_mode.h"
 #include "bootloader_common.h"
 #include "bootloader_flash_config.h"
@@ -87,7 +88,7 @@ void IRAM_ATTR bootloader_flash_gpio_config(const esp_image_header_t* pfhdr)
         pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOV302) {
         // For ESP32D2WD or ESP32-PICO series,the SPI pins are already configured
         // flash clock signal should come from IO MUX.
-        PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_CLK_U, FUNC_SD_CLK_SPICLK);
+        gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_CLK_U, FUNC_SD_CLK_SPICLK);
         SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_CLK_U, FUN_DRV, drv, FUN_DRV_S);
     } else {
         const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
@@ -102,14 +103,14 @@ void IRAM_ATTR bootloader_flash_gpio_config(const esp_image_header_t* pfhdr)
             esp_rom_gpio_connect_out_signal(SPI_IOMUX_PIN_NUM_HD, SPIHD_OUT_IDX, 0, 0);
             esp_rom_gpio_connect_in_signal(SPI_IOMUX_PIN_NUM_HD, SPIHD_IN_IDX, 0);
             //select pin function gpio
-            PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA0_U, PIN_FUNC_GPIO);
-            PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA1_U, PIN_FUNC_GPIO);
-            PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA2_U, PIN_FUNC_GPIO);
-            PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA3_U, PIN_FUNC_GPIO);
-            PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_CMD_U, PIN_FUNC_GPIO);
+            gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_DATA0_U, PIN_FUNC_GPIO);
+            gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_DATA1_U, PIN_FUNC_GPIO);
+            gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_DATA2_U, PIN_FUNC_GPIO);
+            gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_DATA3_U, PIN_FUNC_GPIO);
+            gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_CMD_U, PIN_FUNC_GPIO);
             // flash clock signal should come from IO MUX.
             // set drive ability for clock
-            PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_CLK_U, FUNC_SD_CLK_SPICLK);
+            gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_CLK_U, FUNC_SD_CLK_SPICLK);
             SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_CLK_U, FUN_DRV, drv, FUN_DRV_S);
 
             uint32_t flash_id = g_rom_flashchip.device_id;

@@ -17,6 +17,7 @@
 #include "driver/sigmadelta.h"
 #include "esp_heap_caps.h"
 #include "hal/sigmadelta_hal.h"
+#include "hal/gpio_hal.h"
 #include "esp_rom_gpio.h"
 
 static const char *TAG = "sigma-delta";
@@ -57,7 +58,7 @@ static inline esp_err_t _sigmadelta_set_pin(sigmadelta_port_t sigmadelta_port, s
 {
     SIGMADELTA_OBJ_CHECK(sigmadelta_port);
 
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
+    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
     gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);
     esp_rom_gpio_connect_out_signal(gpio_num, sigma_delta_periph_signals.channels[channel].sd_sig, 0, 0);
     return ESP_OK;
