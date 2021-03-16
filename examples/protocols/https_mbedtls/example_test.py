@@ -30,7 +30,8 @@ def test_examples_protocol_https_mbedtls(env, extra_data):  # type: (tiny_test_f
       2. connect to www.howsmyssl.com:443
       3. send http request
     """
-    dut1 = env.get_dut('https_mbedtls', 'examples/protocols/https_mbedtls', dut_class=ttfw_idf.ESP32DUT)
+    app_name = 'https_mbedtls'
+    dut1 = env.get_dut(app_name, 'examples/protocols/https_mbedtls', dut_class=ttfw_idf.ESP32DUT)
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, 'https-mbedtls.bin')
     bin_size = os.path.getsize(binary_file)
@@ -45,6 +46,12 @@ def test_examples_protocol_https_mbedtls(env, extra_data):  # type: (tiny_test_f
     dut1.expect('Writing HTTP request...')
     dut1.expect('Reading HTTP response...')
     dut1.expect(re.compile(r'Completed (\d) requests'))
+
+    # Read free heap size
+    res = dut1.expect(ttfw_idf.MINIMUM_FREE_HEAP_SIZE_RE)
+    if not res:
+        raise ValueError('Maximum heap size info not found')
+    ttfw_idf.print_heap_size(app_name, dut1.app.config_name, dut1.TARGET, res[0])
 
 
 if __name__ == '__main__':
