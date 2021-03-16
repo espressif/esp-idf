@@ -3,6 +3,7 @@
 #include <string.h>
 #include "sdkconfig.h"
 #include "hal/cpu_hal.h"
+#include "hal/gpio_hal.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
@@ -63,7 +64,7 @@ static void rmt_setup_testbench(int tx_channel, int rx_channel, uint32_t flags)
     }
 
     // Routing internal signals by IO Matrix (bind rmt tx and rx signal on the same GPIO)
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[RMT_DATA_IO], PIN_FUNC_GPIO);
+    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[RMT_DATA_IO], PIN_FUNC_GPIO);
     TEST_ESP_OK(gpio_set_direction(RMT_DATA_IO, GPIO_MODE_INPUT_OUTPUT));
     esp_rom_gpio_connect_out_signal(RMT_DATA_IO, RMT_SIG_OUT0_IDX + tx_channel, 0, 0);
     esp_rom_gpio_connect_in_signal(RMT_DATA_IO, RMT_SIG_IN0_IDX + rx_channel, 0);

@@ -30,6 +30,7 @@
 #include "soc/rtc.h"
 #include "hal/rmt_hal.h"
 #include "hal/rmt_ll.h"
+#include "hal/gpio_hal.h"
 #include "esp_rom_gpio.h"
 
 #define RMT_CHANNEL_ERROR_STR "RMT CHANNEL ERR"
@@ -534,7 +535,7 @@ esp_err_t rmt_set_pin(rmt_channel_t channel, rmt_mode_t mode, gpio_num_t gpio_nu
                (GPIO_IS_VALID_OUTPUT_GPIO(gpio_num) && (mode == RMT_MODE_TX))),
               RMT_GPIO_ERROR_STR, ESP_ERR_INVALID_ARG);
 
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
+    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
     if (mode == RMT_MODE_TX) {
         RMT_CHECK(RMT_IS_TX_CHANNEL(channel), RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
         gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);

@@ -24,6 +24,7 @@
 #include "driver/periph_ctrl.h"
 #include "sdkconfig.h"
 #include "hal/mcpwm_hal.h"
+#include "hal/gpio_hal.h"
 #include "esp_rom_gpio.h"
 
 typedef struct {
@@ -109,7 +110,7 @@ esp_err_t mcpwm_gpio_init(mcpwm_unit_t mcpwm_num, mcpwm_io_signals_t io_signal, 
     MCPWM_CHECK((GPIO_IS_VALID_GPIO(gpio_num)), MCPWM_GPIO_ERROR, ESP_ERR_INVALID_ARG);
 
     periph_module_enable(PERIPH_PWM0_MODULE + mcpwm_num);
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
+    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
     bool mcpwm_gpio_sig = (io_signal <= MCPWM2B);
     if (mcpwm_num == MCPWM_UNIT_0) {
         if (mcpwm_gpio_sig) {

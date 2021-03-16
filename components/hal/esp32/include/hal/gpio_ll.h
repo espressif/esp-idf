@@ -568,6 +568,17 @@ static inline void gpio_ll_iomux_in(gpio_dev_t *hw, uint32_t gpio, uint32_t sign
 }
 
 /**
+ * @brief  Select a function for the pin in the IOMUX
+ *
+ * @param  pin_name Pin name to configure
+ * @param  func Function to assign to the pin
+ */
+static inline void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
+{
+    PIN_FUNC_SELECT(pin_name, func);
+}
+
+/**
   * @brief Set peripheral output to an GPIO pad through the IOMUX.
   *
   * @param hw Peripheral GPIO hardware instance address.
@@ -580,7 +591,7 @@ static inline void gpio_ll_iomux_out(gpio_dev_t *hw, uint8_t gpio_num, int func,
 {
     hw->func_out_sel_cfg[gpio_num].oen_sel = 0;
     hw->func_out_sel_cfg[gpio_num].oen_inv_sel = oen_inv;
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], func);
+    gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_num], func);
 }
 
 #ifdef __cplusplus
