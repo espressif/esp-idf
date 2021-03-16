@@ -72,6 +72,7 @@ static esp_err_t echo_handler(httpd_req_t *req)
         return ESP_OK;
     }
     httpd_ws_frame_t ws_pkt;
+    uint8_t *buf = NULL;
     memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
     ws_pkt.type = HTTPD_WS_TYPE_TEXT;
     /* Set max_len = 0 to get the frame len */
@@ -81,25 +82,27 @@ static esp_err_t echo_handler(httpd_req_t *req)
         return ret;
     }
     ESP_LOGI(TAG, "frame len is %d", ws_pkt.len);
-    /* ws_pkt.len + 1 is for NULL termination as we are expecting a string */
-    uint8_t *buf = calloc(1, ws_pkt.len + 1);
-    if (buf == NULL) {
-        ESP_LOGE(TAG, "Failed to calloc memory for buf");
-        return ESP_ERR_NO_MEM;
+    if (ws_pkt.len) {
+        /* ws_pkt.len + 1 is for NULL termination as we are expecting a string */
+        buf = calloc(1, ws_pkt.len + 1);
+        if (buf == NULL) {
+            ESP_LOGE(TAG, "Failed to calloc memory for buf");
+            return ESP_ERR_NO_MEM;
+        }
+        ws_pkt.payload = buf;
+        /* Set max_len = ws_pkt.len to get the frame payload */
+        ret = httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "httpd_ws_recv_frame failed with %d", ret);
+            free(buf);
+            return ret;
+        }
+        ESP_LOGI(TAG, "Got packet with message: %s", ws_pkt.payload);
     }
-    ws_pkt.payload = buf;
-    /* Set max_len = ws_pkt.len to get the frame payload */
-    ret = httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "httpd_ws_recv_frame failed with %d", ret);
-        return ret;
-    }
-    ESP_LOGI(TAG, "Got packet with message: %s", ws_pkt.payload);
     ESP_LOGI(TAG, "Packet type: %d", ws_pkt.type);
     if (ws_pkt.type == HTTPD_WS_TYPE_TEXT &&
         strcmp((char*)ws_pkt.payload,"Trigger async") == 0) {
         free(buf);
-        buf = NULL;
         return trigger_async_send(req->handle, req);
     }
 
@@ -108,7 +111,6 @@ static esp_err_t echo_handler(httpd_req_t *req)
         ESP_LOGE(TAG, "httpd_ws_send_frame failed with %d", ret);
     }
     free(buf);
-    buf = NULL;
     return ret;
 }
 
