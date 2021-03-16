@@ -69,8 +69,8 @@ def _test_iteration_events(dut):
             dut.expect(TASK_ITERATION_HANDLING.format(iteration))
             dut.expect('TASK_EVENTS:TASK_ITERATION_EVENT: all_event_handler')
         elif iteration == TASK_UNREGISTRATION_LIMIT:
-            dut.expect('TASK_EVENTS:TASK_ITERATION_EVENT: unregistering task_iteration_handler')
-            dut.expect('TASK_EVENTS:TASK_ITERATION_EVENT: all_event_handler')
+            dut.expect_all('TASK_EVENTS:TASK_ITERATION_EVENT: unregistering task_iteration_handler',
+                           'TASK_EVENTS:TASK_ITERATION_EVENT: all_event_handler')
             print('Unregistered handler at iteration {} out of {}'.format(iteration, TASK_ITERATION_LIMIT))
         else:
             dut.expect('TASK_EVENTS:TASK_ITERATION_EVENT: all_event_handler')
@@ -81,7 +81,7 @@ def _test_iteration_events(dut):
     print('Deleted task event source')
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_GENERIC')
+@ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32'])
 def test_default_event_loop_example(env, extra_data):
     dut = env.get_dut('default_event_loop', 'examples/system/esp_event/default_event_loop')
 

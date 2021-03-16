@@ -12,9 +12,9 @@ WAITING_FOR_GPIO_STR = 'Waiting for GPIO0 to go high...'
 WAKEUP_INTERVAL_MS = 2000
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_GENERIC')
+@ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32'])
 def test_examples_system_light_sleep(env, extra_data):
-    dut = env.get_dut('light_sleep_example', 'examples/system/light_sleep', dut_class=ttfw_idf.ESP32DUT)
+    dut = env.get_dut('light_sleep_example', 'examples/system/light_sleep')
     dut.start_app()
 
     # Ensure DTR and RTS are de-asserted for proper control of GPIO0

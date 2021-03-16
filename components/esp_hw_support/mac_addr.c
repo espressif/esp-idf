@@ -20,6 +20,14 @@
 
 /* esp_system.h APIs relating to MAC addresses */
 
+#if CONFIG_ESP32_UNIVERSAL_MAC_ADDRESSES_FOUR   || \
+    CONFIG_ESP32S3_UNIVERSAL_MAC_ADDRESSES_FOUR || \
+    CONFIG_ESP32C3_UNIVERSAL_MAC_ADDRESSES_FOUR
+#define MAC_ADDR_UNIVERSE_BT_OFFSET 2
+#else
+#define MAC_ADDR_UNIVERSE_BT_OFFSET 1
+#endif
+
 static const char* TAG = "system_api";
 
 static uint8_t base_mac_addr[6] = { 0 };
@@ -180,7 +188,7 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type)
     case ESP_MAC_BT:
 #if CONFIG_ESP_MAC_ADDR_UNIVERSE_BT
         memcpy(mac, efuse_mac, 6);
-        mac[5] += CONFIG_ESP_MAC_ADDR_UNIVERSE_BT_OFFSET;
+        mac[5] += MAC_ADDR_UNIVERSE_BT_OFFSET;
 #endif
         break;
     case ESP_MAC_ETH:

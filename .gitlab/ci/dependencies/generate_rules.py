@@ -119,6 +119,8 @@ class RulesWriter:
             res.update(self._expand_matrix(k, v))
 
         for k, v in self.cfg.items():
+            if not v:
+                continue
             deploy = v.get('deploy')
             if deploy:
                 for item in _list(deploy):
@@ -147,6 +149,8 @@ class RulesWriter:
     def expand_rules(self):  # type: () -> dict[str, dict[str, list]]
         res = defaultdict(lambda: defaultdict(set))  # type: dict[str, dict[str, set]]
         for k, v in self.cfg.items():
+            if not v:
+                continue
             for vk, vv in v.items():
                 if vk in self.KEYWORDS:
                     res[k][vk] = set(_list(vv))

@@ -90,6 +90,16 @@
     - build_components
     - build_system
 
+"build:example_test-esp32c3":  # esp32c3 test is only run by label, but build jobs should always be triggered
+  labels:
+    - build
+    - example_test
+  patterns:
+    - build_components
+    - build_system
+    - build-example_test
+    - example_test
+
 ####################
 # Target Test Jobs #
 ####################
@@ -137,6 +147,14 @@
     - "build-unit_test-esp32c3"
   included_in:
     - "build:unit_test-esp32c3"
+
+"test:example_test-esp32c3":  # For esp32c3 we trigger only with label
+
+"labels:example_test-esp32c3":
+  labels:
+    - example_test_esp32c3
+  included_in:
+    - "build:example_test-esp32c3"
 
 "test:integration_test":
   labels:
