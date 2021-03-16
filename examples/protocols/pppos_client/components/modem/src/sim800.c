@@ -176,6 +176,7 @@ modem_dce_t *sim800_init(modem_dte_t *dte)
     return &(esp_modem_dce->parent);
 err_io:
     free(esp_modem_dce);
+    dte->dce = NULL;
 err:
     return NULL;
 }
