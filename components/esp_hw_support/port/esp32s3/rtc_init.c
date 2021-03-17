@@ -20,6 +20,7 @@
 #include "soc/gpio_reg.h"
 #include "soc/spi_mem_reg.h"
 #include "soc/extmem_reg.h"
+#include "soc/syscon_reg.h"
 #include "regi2c_ctrl.h"
 #include "regi2c_ulp.h"
 #include "soc_log.h"
@@ -53,8 +54,8 @@ void rtc_init(rtc_config_t cfg)
     REG_SET_FIELD(RTC_CNTL_TIMER4_REG, RTC_CNTL_DG_WRAP_POWERUP_TIMER, rtc_init_cfg.dg_wrap_powerup_cycles);
     REG_SET_FIELD(RTC_CNTL_TIMER4_REG, RTC_CNTL_DG_WRAP_WAIT_TIMER, rtc_init_cfg.dg_wrap_wait_cycles);
     // set rtc memory timer
-    REG_SET_FIELD(RTC_CNTL_TIMER5_REG, RTC_CNTL_RTCMEM_POWERUP_TIMER, rtc_init_cfg.rtc_mem_powerup_cycles);
-    REG_SET_FIELD(RTC_CNTL_TIMER5_REG, RTC_CNTL_RTCMEM_WAIT_TIMER, rtc_init_cfg.rtc_mem_wait_cycles);
+    REG_SET_FIELD(RTC_CNTL_TIMER5_REG, RTC_CNTLMEM_POWERUP_TIMER, rtc_init_cfg.rtc_mem_powerup_cycles);
+    REG_SET_FIELD(RTC_CNTL_TIMER5_REG, RTC_CNTLMEM_WAIT_TIMER, rtc_init_cfg.rtc_mem_wait_cycles);
 
     /* Reset RTC bias to default value (needed if waking up from deep sleep) */
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG_SLEEP, RTC_CNTL_DBIAS_1V10);
@@ -64,9 +65,9 @@ void rtc_init(rtc_config_t cfg)
         //clear CMMU clock force on
         CLEAR_PERI_REG_MASK(EXTMEM_CACHE_MMU_POWER_CTRL_REG, EXTMEM_CACHE_MMU_MEM_FORCE_ON);
         //clear rom clock force on
-        REG_SET_FIELD(SYSTEM_ROM_CTRL_0_REG, SYSTEM_ROM_IRAM0_CLKGATE_FORCE_ON, 0);
+        REG_SET_FIELD(SYSCON_CLKGATE_FORCE_ON_REG, SYSCON_ROM_CLKGATE_FORCE_ON, 0);
         //clear sram clock force on
-        REG_SET_FIELD(SYSTEM_SRAM_CTRL_0_REG, SYSTEM_SRAM_CLKGATE_FORCE_ON, 0);
+        REG_SET_FIELD(SYSCON_CLKGATE_FORCE_ON_REG, SYSCON_SRAM_CLKGATE_FORCE_ON, 0);
         //clear tag clock force on
         CLEAR_PERI_REG_MASK(EXTMEM_DCACHE_TAG_POWER_CTRL_REG, EXTMEM_DCACHE_TAG_MEM_FORCE_ON);
         CLEAR_PERI_REG_MASK(EXTMEM_ICACHE_TAG_POWER_CTRL_REG, EXTMEM_ICACHE_TAG_MEM_FORCE_ON);

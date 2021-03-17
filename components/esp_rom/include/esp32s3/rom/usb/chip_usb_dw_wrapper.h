@@ -1,4 +1,4 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2019-2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,27 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#pragma once
 #include <stdint.h>
-#include <sys/param.h>
 
-#include "esp_attr.h"
-#include "esp32s3/clk.h"
-#include "esp32s3/rom/ets_sys.h"
-#include "soc/rtc.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#define MHZ (1000000)
+int chip_usb_dw_init(void);
+int chip_usb_dw_did_persist(void);
+void chip_usb_dw_prepare_persist(void);
+uint32_t chip_usb_get_persist_flags(void);
+void chip_usb_set_persist_flags(uint32_t flags);
 
-int IRAM_ATTR esp_clk_cpu_freq(void)
-{
-    return ets_get_cpu_frequency() * MHZ;
+#ifdef __cplusplus
 }
-
-int IRAM_ATTR esp_clk_apb_freq(void)
-{
-    return MIN(ets_get_cpu_frequency(), 80) * MHZ;
-}
-
-int IRAM_ATTR esp_clk_xtal_freq(void)
-{
-    return rtc_clk_xtal_freq_get() * MHZ;
-}
+#endif

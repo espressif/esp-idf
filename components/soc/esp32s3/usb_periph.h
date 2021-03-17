@@ -1,4 +1,4 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,27 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#pragma once
+
 #include <stdint.h>
-#include <sys/param.h>
+#include <stdbool.h>
+#include "soc/usb_pins.h"
+#include "soc/gpio_sig_map.h"
+#include "soc/usb_reg.h"
+#include "soc/usb_types.h"
+#include "soc/usb_struct.h"
+#include "soc/usb_wrap_reg.h"
+#include "soc/usb_wrap_struct.h"
 
-#include "esp_attr.h"
-#include "esp32s3/clk.h"
-#include "esp32s3/rom/ets_sys.h"
-#include "soc/rtc.h"
+/**
+ * @brief A pin descriptor for init
+ */
+typedef struct {
+    const int pin;
+    const int func;
+    const bool is_output;
+    const int ext_phy_only;
+} usb_iopin_dsc_t;
 
-#define MHZ (1000000)
-
-int IRAM_ATTR esp_clk_cpu_freq(void)
-{
-    return ets_get_cpu_frequency() * MHZ;
-}
-
-int IRAM_ATTR esp_clk_apb_freq(void)
-{
-    return MIN(ets_get_cpu_frequency(), 80) * MHZ;
-}
-
-int IRAM_ATTR esp_clk_xtal_freq(void)
-{
-    return rtc_clk_xtal_freq_get() * MHZ;
-}
+extern const usb_iopin_dsc_t usb_periph_iopins[];

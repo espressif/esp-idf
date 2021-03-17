@@ -27,6 +27,8 @@
 #include "soc/rtc.h"
 #include "regi2c_ctrl.h"
 
+#define RTC_CNTL_MEM_FOLW_CPU (RTC_CNTL_SLOWMEM_FOLW_CPU | RTC_CNTL_FASTMEM_FOLW_CPU)
+
 /**
  * Configure whether certain peripherals are powered up in sleep
  * @param cfg power down flags as rtc_sleep_pu_config_t structure
@@ -47,16 +49,14 @@ void rtc_sleep_pu(rtc_sleep_pu_config_t cfg)
     REG_SET_FIELD(FE_GEN_CTRL, FE_IQ_EST_FORCE_PU, cfg.fe_fpu);
     REG_SET_FIELD(FE2_TX_INTERP_CTRL, FE2_TX_INF_FORCE_PU, cfg.fe_fpu);
     if (cfg.sram_fpu) {
-        REG_SET_FIELD(SYSTEM_SRAM_CTRL_2_REG, SYSTEM_SRAM_POWER_UP, SYSTEM_SRAM_POWER_UP);
+        REG_SET_FIELD(APB_CTRL_MEM_POWER_UP_REG, APB_CTRL_SRAM_POWER_UP, APB_CTRL_SRAM_POWER_UP);
     } else {
-        REG_SET_FIELD(SYSTEM_SRAM_CTRL_2_REG, SYSTEM_SRAM_POWER_UP, 0);
+        REG_SET_FIELD(APB_CTRL_MEM_POWER_UP_REG, APB_CTRL_SRAM_POWER_UP, 0);
     }
     if (cfg.rom_ram_fpu) {
-        SET_PERI_REG_MASK(SYSTEM_ROM_CTRL_1_REG, SYSTEM_ROM_IRAM0_DRAM0_POWER_UP);
-        REG_SET_FIELD(SYSTEM_ROM_CTRL_1_REG, SYSTEM_ROM_IRAM0_POWER_UP, SYSTEM_ROM_IRAM0_POWER_UP);
+        REG_SET_FIELD(APB_CTRL_MEM_POWER_UP_REG, APB_CTRL_ROM_POWER_UP, APB_CTRL_ROM_POWER_UP);
     } else {
-        CLEAR_PERI_REG_MASK(SYSTEM_ROM_CTRL_1_REG, SYSTEM_ROM_IRAM0_DRAM0_POWER_UP);
-        REG_SET_FIELD(SYSTEM_ROM_CTRL_1_REG, SYSTEM_ROM_IRAM0_POWER_UP, 0);
+        REG_SET_FIELD(APB_CTRL_MEM_POWER_UP_REG, APB_CTRL_ROM_POWER_UP, 0);
     }
 }
 

@@ -90,6 +90,8 @@ typedef struct {
 #define I2C_LL_SLAVE_RX_INT           (I2C_RXFIFO_WM_INT_ENA_M | I2C_TRANS_COMPLETE_INT_ENA_M)
 // I2C source clock
 #define I2C_LL_CLK_SRC_FREQ(src_clk)  (((src_clk) == I2C_SCLK_RTC) ? 8*1000*1000 : 40*1000*1000); // Another clock is XTAL clock
+// I2C max timeout value
+#define I2C_LL_MAX_TIMEOUT I2C_TIME_OUT_VALUE_V
 
 /**
  * @brief  Calculate I2C bus frequency
@@ -159,7 +161,7 @@ static inline void i2c_ll_set_bus_timing(i2c_dev_t *hw, i2c_clk_cal_t *bus_cfg)
     //hold
     hw->scl_start_hold.time = bus_cfg->hold - 1;
     hw->scl_stop_hold.time = bus_cfg->hold;
-    hw->timeout.time_out_value = bus_cfg->tout;
+    hw->timeout.tout = bus_cfg->tout;
     hw->timeout.time_out_en = 1;
 }
 
@@ -280,7 +282,7 @@ static inline void i2c_ll_set_fifo_mode(i2c_dev_t *hw, bool fifo_mode_en)
  */
 static inline void i2c_ll_set_tout(i2c_dev_t *hw, int tout)
 {
-    hw->timeout.time_out_value = tout;
+    hw->timeout.tout = tout;
 }
 
 /**
@@ -449,7 +451,7 @@ static inline uint32_t i2c_ll_get_hw_version(i2c_dev_t *hw)
  */
 static inline bool i2c_ll_is_bus_busy(i2c_dev_t *hw)
 {
-    return hw->status_reg.bus_busy;
+    return hw->sr.bus_busy;
 }
 
 /**
@@ -473,7 +475,7 @@ static inline bool i2c_ll_is_master_mode(i2c_dev_t *hw)
  */
 static inline uint32_t i2c_ll_get_rxfifo_cnt(i2c_dev_t *hw)
 {
-    return hw->status_reg.rx_fifo_cnt;
+    return hw->sr.rx_fifo_cnt;
 }
 
 /**
@@ -485,7 +487,7 @@ static inline uint32_t i2c_ll_get_rxfifo_cnt(i2c_dev_t *hw)
  */
 static inline uint32_t i2c_ll_get_txfifo_len(i2c_dev_t *hw)
 {
-    return SOC_I2C_FIFO_LEN - hw->status_reg.tx_fifo_cnt;
+    return SOC_I2C_FIFO_LEN - hw->sr.tx_fifo_cnt;
 }
 
 /**
@@ -497,7 +499,7 @@ static inline uint32_t i2c_ll_get_txfifo_len(i2c_dev_t *hw)
  */
 static inline uint32_t i2c_ll_get_tout(i2c_dev_t *hw)
 {
-    return hw->timeout.time_out_value;
+    return hw->timeout.tout;
 }
 
 /**

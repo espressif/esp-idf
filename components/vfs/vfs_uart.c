@@ -27,6 +27,7 @@
 #include "sdkconfig.h"
 #include "driver/uart_select.h"
 #include "esp_rom_uart.h"
+#include "soc/soc_caps.h"
 
 // TODO: make the number of UARTs chip dependent
 #define UART_NUM SOC_UART_NUM

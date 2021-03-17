@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-C3 |
+| ----------------- | ----- | -------- | -------- |
+
 # ESP-MQTT advanced publish and connect test project
 
 Main purpose of this application is to test the MQTT library to correctly publish and receive messages (of different size and sequences) over different transports.
