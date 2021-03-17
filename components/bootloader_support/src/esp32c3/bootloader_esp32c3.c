@@ -233,8 +233,9 @@ static void wdt_reset_cpu0_info_enable(void)
 
 static void wdt_reset_info_dump(int cpu)
 {
-    // TODO ESP32-C3 IDF-2118
-    ESP_LOGE(TAG, "WDT reset info dump is not supported yet");
+    (void) cpu;
+    // saved PC was already printed by the ROM bootloader.
+    // nothing to do here.
 }
 
 static void bootloader_check_wdt_reset(void)
