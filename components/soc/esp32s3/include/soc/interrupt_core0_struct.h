@@ -1,4 +1,4 @@
-// Copyright 2017-2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,13 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#pragma once
-
+#ifndef _SOC_INTERRUPT_CORE0_STRUCT_H_
+#define _SOC_INTERRUPT_CORE0_STRUCT_H_
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdint.h>
 
 typedef volatile struct {
     union {
@@ -484,39 +482,74 @@ typedef volatile struct {
     } core0_apb_adc_int_map;
     union {
         struct {
-            uint32_t core0_dma_ch0_int_map: 5;
-            uint32_t reserved5:            27;
+            uint32_t core0_dma_in_ch0_int_map: 5;
+            uint32_t reserved5:               27;
         };
         uint32_t val;
-    } core0_dma_ch0_int_map;
+    } core0_dma_in_ch0_int_map;
     union {
         struct {
-            uint32_t core0_dma_ch1_int_map: 5;
-            uint32_t reserved5:            27;
+            uint32_t core0_dma_in_ch1_int_map: 5;
+            uint32_t reserved5:               27;
         };
         uint32_t val;
-    } core0_dma_ch1_int_map;
+    } core0_dma_in_ch1_int_map;
     union {
         struct {
-            uint32_t core0_dma_ch2_int_map: 5;
-            uint32_t reserved5:            27;
+            uint32_t core0_dma_in_ch2_int_map: 5;
+            uint32_t reserved5:               27;
         };
         uint32_t val;
-    } core0_dma_ch2_int_map;
+    } core0_dma_in_ch2_int_map;
     union {
         struct {
-            uint32_t core0_dma_ch3_int_map: 5;
-            uint32_t reserved5:            27;
+            uint32_t core0_dma_in_ch3_int_map: 5;
+            uint32_t reserved5:               27;
         };
         uint32_t val;
-    } core0_dma_ch3_int_map;
+    } core0_dma_in_ch3_int_map;
     union {
         struct {
-            uint32_t core0_dma_ch4_int_map: 5;
-            uint32_t reserved5:            27;
+            uint32_t core0_dma_in_ch4_int_map: 5;
+            uint32_t reserved5:               27;
         };
         uint32_t val;
-    } core0_dma_ch4_int_map;
+    } core0_dma_in_ch4_int_map;
+    union {
+        struct {
+            uint32_t core0_dma_out_ch0_int_map: 5;
+            uint32_t reserved5:                27;
+        };
+        uint32_t val;
+    } core0_dma_out_ch0_int_map;
+    union {
+        struct {
+            uint32_t core0_dma_out_ch1_int_map: 5;
+            uint32_t reserved5:                27;
+        };
+        uint32_t val;
+    } core0_dma_out_ch1_int_map;
+    union {
+        struct {
+            uint32_t core0_dma_out_ch2_int_map: 5;
+            uint32_t reserved5:                27;
+        };
+        uint32_t val;
+    } core0_dma_out_ch2_int_map;
+    union {
+        struct {
+            uint32_t core0_dma_out_ch3_int_map: 5;
+            uint32_t reserved5:                27;
+        };
+        uint32_t val;
+    } core0_dma_out_ch3_int_map;
+    union {
+        struct {
+            uint32_t core0_dma_out_ch4_int_map: 5;
+            uint32_t reserved5:                27;
+        };
+        uint32_t val;
+    } core0_dma_out_ch4_int_map;
     union {
         struct {
             uint32_t core0_rsa_int_map: 5;
@@ -638,6 +671,13 @@ typedef volatile struct {
     } core0_core_1_pif_pms_monitor_violate_size_intr_map;
     union {
         struct {
+            uint32_t core0_backup_pms_violate_intr_map: 5;
+            uint32_t reserved5:                        27;
+        };
+        uint32_t val;
+    } core0_backup_pms_violate_intr_map;
+    union {
+        struct {
             uint32_t core0_cache_core0_acs_int_map: 5;
             uint32_t reserved5:                    27;
         };
@@ -650,9 +690,31 @@ typedef volatile struct {
         };
         uint32_t val;
     } core0_cache_core1_acs_int_map;
+    union {
+        struct {
+            uint32_t core0_usb_device_int_map: 5;
+            uint32_t reserved5:               27;
+        };
+        uint32_t val;
+    } core0_usb_device_int_map;
+    union {
+        struct {
+            uint32_t core0_peri_backup_int_map: 5;
+            uint32_t reserved5:                27;
+        };
+        uint32_t val;
+    } core0_peri_backup_int_map;
+    union {
+        struct {
+            uint32_t core0_dma_extmem_reject_int_map: 5;
+            uint32_t reserved5:                      27;
+        };
+        uint32_t val;
+    } core0_dma_extmem_reject_int_map;
     uint32_t core0_intr_status_0;                                             /**/
     uint32_t core0_intr_status_1;                                             /**/
     uint32_t core0_intr_status_2;                                             /**/
+    uint32_t core0_intr_status_3;                                             /**/
     union {
         struct {
             uint32_t core0_clk_en: 1;
@@ -660,16 +722,6 @@ typedef volatile struct {
         };
         uint32_t val;
     } core0_clock_gate;
-    uint32_t reserved_178;
-    uint32_t reserved_17c;
-    uint32_t reserved_180;
-    uint32_t reserved_184;
-    uint32_t reserved_188;
-    uint32_t reserved_18c;
-    uint32_t reserved_190;
-    uint32_t reserved_194;
-    uint32_t reserved_198;
-    uint32_t reserved_19c;
     uint32_t reserved_1a0;
     uint32_t reserved_1a4;
     uint32_t reserved_1a8;
@@ -1079,15 +1131,15 @@ typedef volatile struct {
     uint32_t reserved_7f8;
     union {
         struct {
-            uint32_t core0_interrupt_date: 28;
+            uint32_t core0_interrupt_date:28;
             uint32_t reserved28:           4;
         };
         uint32_t val;
     } core0_interrupt_date;
 } interrupt_core0_dev_t;
-
 extern interrupt_core0_dev_t INTERRUPT_CORE0;
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif  /* _SOC_INTERRUPT_CORE0_STRUCT_H_ */

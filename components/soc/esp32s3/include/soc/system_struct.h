@@ -1,4 +1,4 @@
-// Copyright 2017-2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,363 +11,423 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#pragma once
+#ifndef _SOC_SYSTEM_STRUCT_H_
+#define _SOC_SYSTEM_STRUCT_H_
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdint.h>
+#include "soc.h"
 
 typedef volatile struct {
     union {
         struct {
-            uint32_t rom_iram0_clkgate_force_on:       2;
-            uint32_t rom_iram0_dram0_clkgate_force_on: 1;
-            uint32_t reserved3:                       29;
-        };
-        uint32_t val;
-    } rom_ctrl_0;
-    union {
-        struct {
-            uint32_t rom_iram0_power_down:       2;
-            uint32_t rom_iram0_power_up:         2;
-            uint32_t rom_iram0_dram0_power_down: 1;
-            uint32_t rom_iram0_dram0_power_up:   1;
-            uint32_t reserved6:                 26;
-        };
-        uint32_t val;
-    } rom_ctrl_1;
-    union {
-        struct {
-            uint32_t sram_clkgate_force_on: 11;
-            uint32_t reserved11:           21;
-        };
-        uint32_t val;
-    } sram_ctrl_0;
-    union {
-        struct {
-            uint32_t sram_power_down: 11;
-            uint32_t reserved11:     21;
-        };
-        uint32_t val;
-    } sram_ctrl_1;
-    union {
-        struct {
-            uint32_t sram_power_up: 11;
-            uint32_t reserved11:   21;
-        };
-        uint32_t val;
-    } sram_ctrl_2;
-    union {
-        struct {
-            uint32_t control_core_1_runstall:   1;
-            uint32_t control_core_1_clkgate_en: 1;
-            uint32_t control_core_1_reseting:   1;
-            uint32_t reserved3:                29;
+            uint32_t control_core_1_runstall       :    1;
+            uint32_t control_core_1_clkgate_en     :    1;
+            uint32_t control_core_1_reseting       :    1;
+            uint32_t reserved3                     :    29;
         };
         uint32_t val;
     } core_1_control_0;
-    uint32_t core_1_control_1;                                   /**/
+    uint32_t core_1_control_1;
     union {
         struct {
-            uint32_t reserved0:             6;
-            uint32_t clk_en_assist_debug:   1;
-            uint32_t clk_en_dedicated_gpio: 1;
-            uint32_t reserved8:            24;
+            uint32_t reserved0                     :    6;
+            uint32_t clk_en_assist_debug           :    1;
+            uint32_t clk_en_dedicated_gpio         :    1;
+            uint32_t reserved8                     :    24;
         };
         uint32_t val;
     } cpu_peri_clk_en;
     union {
         struct {
-            uint32_t reserved0:             6;
-            uint32_t rst_en_assist_debug:   1;
-            uint32_t rst_en_dedicated_gpio: 1;
-            uint32_t reserved8:            24;
+            uint32_t reserved0                     :    6;
+            uint32_t rst_en_assist_debug           :    1;
+            uint32_t rst_en_dedicated_gpio         :    1;
+            uint32_t reserved8                     :    24;
         };
         uint32_t val;
     } cpu_peri_rst_en;
     union {
         struct {
-            uint32_t cpuperiod_sel:          2;
-            uint32_t pll_freq_sel:           1;
-            uint32_t cpu_wait_mode_force_on: 1;
-            uint32_t cpu_waiti_delay_num:    4;
-            uint32_t reserved8:             24;
+            uint32_t cpuperiod_sel                 :    2;
+            uint32_t pll_freq_sel                  :    1;
+            uint32_t cpu_wait_mode_force_on        :    1;
+            uint32_t cpu_waiti_delay_num           :    4;
+            uint32_t reserved8                     :    24;
         };
         uint32_t val;
     } cpu_per_conf;
-    uint32_t jtag_ctrl_0;                                        /**/
-    uint32_t jtag_ctrl_1;                                        /**/
-    uint32_t jtag_ctrl_2;                                        /**/
-    uint32_t jtag_ctrl_3;                                        /**/
-    uint32_t jtag_ctrl_4;                                        /**/
-    uint32_t jtag_ctrl_5;                                        /**/
-    uint32_t jtag_ctrl_6;                                        /**/
-    uint32_t jtag_ctrl_7;                                        /**/
+    uint32_t jtag_ctrl_0;
+    uint32_t jtag_ctrl_1;
+    uint32_t jtag_ctrl_2;
+    uint32_t jtag_ctrl_3;
+    uint32_t jtag_ctrl_4;
+    uint32_t jtag_ctrl_5;
+    uint32_t jtag_ctrl_6;
+    uint32_t jtag_ctrl_7;
     union {
         struct {
-            uint32_t lslp_mem_pd_mask: 1;
-            uint32_t reserved1:       31;
+            uint32_t lslp_mem_pd_mask              :    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } mem_pd_mask;
     union {
         struct {
-            uint32_t timers_clk_en:      1;
-            uint32_t spi01_clk_en:       1;
-            uint32_t uart_clk_en:        1;
-            uint32_t wdg_clk_en:         1;
-            uint32_t i2s0_clk_en:        1;
-            uint32_t uart1_clk_en:       1;
-            uint32_t spi2_clk_en:        1;
-            uint32_t i2c_ext0_clk_en:    1;
-            uint32_t uhci0_clk_en:       1;
-            uint32_t rmt_clk_en:         1;
-            uint32_t pcnt_clk_en:        1;
-            uint32_t ledc_clk_en:        1;
-            uint32_t uhci1_clk_en:       1;
-            uint32_t timergroup_clk_en:  1;
-            uint32_t efuse_clk_en:       1;
-            uint32_t timergroup1_clk_en: 1;
-            uint32_t spi3_clk_en:        1;
-            uint32_t pwm0_clk_en:        1;
-            uint32_t i2c_ext1_clk_en:    1;
-            uint32_t can_clk_en:         1;
-            uint32_t pwm1_clk_en:        1;
-            uint32_t i2s1_clk_en:        1;
-            uint32_t spi2_dma_clk_en:    1;
-            uint32_t usb_clk_en:         1;
-            uint32_t uart_mem_clk_en:    1;
-            uint32_t pwm2_clk_en:        1;
-            uint32_t pwm3_clk_en:        1;
-            uint32_t spi3_dma_clk_en:    1;
-            uint32_t apb_saradc_clk_en:  1;
-            uint32_t systimer_clk_en:    1;
-            uint32_t adc2_arb_clk_en:    1;
-            uint32_t spi4_clk_en:        1;
+            uint32_t timers_clk_en                 :    1;
+            uint32_t spi01_clk_en                  :    1;
+            uint32_t uart_clk_en                   :    1;
+            uint32_t wdg_clk_en                    :    1;
+            uint32_t i2s0_clk_en                   :    1;
+            uint32_t uart1_clk_en                  :    1;
+            uint32_t spi2_clk_en                   :    1;
+            uint32_t i2c_ext0_clk_en               :    1;
+            uint32_t uhci0_clk_en                  :    1;
+            uint32_t rmt_clk_en                    :    1;
+            uint32_t pcnt_clk_en                   :    1;
+            uint32_t ledc_clk_en                   :    1;
+            uint32_t uhci1_clk_en                  :    1;
+            uint32_t timergroup_clk_en             :    1;
+            uint32_t efuse_clk_en                  :    1;
+            uint32_t timergroup1_clk_en            :    1;
+            uint32_t spi3_clk_en                   :    1;
+            uint32_t pwm0_clk_en                   :    1;
+            uint32_t i2c_ext1_clk_en               :    1;
+            uint32_t can_clk_en                    :    1;
+            uint32_t pwm1_clk_en                   :    1;
+            uint32_t i2s1_clk_en                   :    1;
+            uint32_t spi2_dma_clk_en               :    1;
+            uint32_t usb_clk_en                    :    1;
+            uint32_t uart_mem_clk_en               :    1;
+            uint32_t pwm2_clk_en                   :    1;
+            uint32_t pwm3_clk_en                   :    1;
+            uint32_t spi3_dma_clk_en               :    1;
+            uint32_t apb_saradc_clk_en             :    1;
+            uint32_t systimer_clk_en               :    1;
+            uint32_t adc2_arb_clk_en               :    1;
+            uint32_t spi4_clk_en                   :    1;
         };
         uint32_t val;
     } perip_clk_en0;
     union {
         struct {
-            uint32_t reserved0:          1;
-            uint32_t crypto_aes_clk_en:  1;
-            uint32_t crypto_sha_clk_en:  1;
-            uint32_t crypto_rsa_clk_en:  1;
-            uint32_t crypto_ds_clk_en:   1;
-            uint32_t crypto_hmac_clk_en: 1;
-            uint32_t dma_clk_en:         1;
-            uint32_t sdio_host_clk_en:   1;
-            uint32_t lcd_cam_clk_en:     1;
-            uint32_t uart2_clk_en:       1;
-            uint32_t reserved10:        22;
+            uint32_t peri_backup_clk_en            :    1;
+            uint32_t crypto_aes_clk_en             :    1;
+            uint32_t crypto_sha_clk_en             :    1;
+            uint32_t crypto_rsa_clk_en             :    1;
+            uint32_t crypto_ds_clk_en              :    1;
+            uint32_t crypto_hmac_clk_en            :    1;
+            uint32_t dma_clk_en                    :    1;
+            uint32_t sdio_host_clk_en              :    1;
+            uint32_t lcd_cam_clk_en                :    1;
+            uint32_t uart2_clk_en                  :    1;
+            uint32_t usb_device_clk_en             :    1;
+            uint32_t reserved11                    :    21;
         };
         uint32_t val;
     } perip_clk_en1;
     union {
         struct {
-            uint32_t timers_rst:      1;
-            uint32_t spi01_rst:       1;
-            uint32_t uart_rst:        1;
-            uint32_t wdg_rst:         1;
-            uint32_t i2s0_rst:        1;
-            uint32_t uart1_rst:       1;
-            uint32_t spi2_rst:        1;
-            uint32_t i2c_ext0_rst:    1;
-            uint32_t uhci0_rst:       1;
-            uint32_t rmt_rst:         1;
-            uint32_t pcnt_rst:        1;
-            uint32_t ledc_rst:        1;
-            uint32_t uhci1_rst:       1;
-            uint32_t timergroup_rst:  1;
-            uint32_t efuse_rst:       1;
-            uint32_t timergroup1_rst: 1;
-            uint32_t spi3_rst:        1;
-            uint32_t pwm0_rst:        1;
-            uint32_t i2c_ext1_rst:    1;
-            uint32_t can_rst:         1;
-            uint32_t pwm1_rst:        1;
-            uint32_t i2s1_rst:        1;
-            uint32_t spi2_dma_rst:    1;
-            uint32_t usb_rst:         1;
-            uint32_t uart_mem_rst:    1;
-            uint32_t pwm2_rst:        1;
-            uint32_t pwm3_rst:        1;
-            uint32_t spi3_dma_rst:    1;
-            uint32_t apb_saradc_rst:  1;
-            uint32_t systimer_rst:    1;
-            uint32_t adc2_arb_rst:    1;
-            uint32_t spi4_rst:        1;
+            uint32_t timers_rst                    :    1;
+            uint32_t spi01_rst                     :    1;
+            uint32_t uart_rst                      :    1;
+            uint32_t wdg_rst                       :    1;
+            uint32_t i2s0_rst                      :    1;
+            uint32_t uart1_rst                     :    1;
+            uint32_t spi2_rst                      :    1;
+            uint32_t i2c_ext0_rst                  :    1;
+            uint32_t uhci0_rst                     :    1;
+            uint32_t rmt_rst                       :    1;
+            uint32_t pcnt_rst                      :    1;
+            uint32_t ledc_rst                      :    1;
+            uint32_t uhci1_rst                     :    1;
+            uint32_t timergroup_rst                :    1;
+            uint32_t efuse_rst                     :    1;
+            uint32_t timergroup1_rst               :    1;
+            uint32_t spi3_rst                      :    1;
+            uint32_t pwm0_rst                      :    1;
+            uint32_t i2c_ext1_rst                  :    1;
+            uint32_t can_rst                       :    1;
+            uint32_t pwm1_rst                      :    1;
+            uint32_t i2s1_rst                      :    1;
+            uint32_t spi2_dma_rst                  :    1;
+            uint32_t usb_rst                       :    1;
+            uint32_t uart_mem_rst                  :    1;
+            uint32_t pwm2_rst                      :    1;
+            uint32_t pwm3_rst                      :    1;
+            uint32_t spi3_dma_rst                  :    1;
+            uint32_t apb_saradc_rst                :    1;
+            uint32_t systimer_rst                  :    1;
+            uint32_t adc2_arb_rst                  :    1;
+            uint32_t spi4_rst                      :    1;
         };
         uint32_t val;
     } perip_rst_en0;
     union {
         struct {
-            uint32_t reserved0:       1;
-            uint32_t crypto_aes_rst:  1;
-            uint32_t crypto_sha_rst:  1;
-            uint32_t crypto_rsa_rst:  1;
-            uint32_t crypto_ds_rst:   1;
-            uint32_t crypto_hmac_rst: 1;
-            uint32_t dma_rst:         1;
-            uint32_t sdio_host_rst:   1;
-            uint32_t lcd_cam_rst:     1;
-            uint32_t uart2_rst:       1;
-            uint32_t reserved10:     22;
+            uint32_t peri_backup_rst               :    1;
+            uint32_t crypto_aes_rst                :    1;
+            uint32_t crypto_sha_rst                :    1;
+            uint32_t crypto_rsa_rst                :    1;
+            uint32_t crypto_ds_rst                 :    1;
+            uint32_t crypto_hmac_rst               :    1;
+            uint32_t dma_rst                       :    1;
+            uint32_t sdio_host_rst                 :    1;
+            uint32_t lcd_cam_rst                   :    1;
+            uint32_t uart2_rst                     :    1;
+            uint32_t usb_device_rst                :    1;
+            uint32_t reserved11                    :    21;
         };
         uint32_t val;
     } perip_rst_en1;
     union {
         struct {
-            uint32_t bt_lpck_div_num: 12;
-            uint32_t reserved12:     20;
+            uint32_t bt_lpck_div_num               :    12;
+            uint32_t reserved12                    :    20;
         };
         uint32_t val;
     } bt_lpck_div_int;
     union {
         struct {
-            uint32_t bt_lpck_div_b:     12;
-            uint32_t bt_lpck_div_a:     12;
-            uint32_t lpclk_sel_rtc_slow: 1;
-            uint32_t lpclk_sel_8m:       1;
-            uint32_t lpclk_sel_xtal:     1;
-            uint32_t lpclk_sel_xtal32k:  1;
-            uint32_t lpclk_rtc_en:       1;
-            uint32_t reserved29:         3;
+            uint32_t bt_lpck_div_b                 :    12;
+            uint32_t bt_lpck_div_a                 :    12;
+            uint32_t lpclk_sel_rtc_slow            :    1;
+            uint32_t lpclk_sel_8m                  :    1;
+            uint32_t lpclk_sel_xtal                :    1;
+            uint32_t lpclk_sel_xtal32k             :    1;
+            uint32_t lpclk_rtc_en                  :    1;
+            uint32_t reserved29                    :    3;
         };
         uint32_t val;
     } bt_lpck_div_frac;
     union {
         struct {
-            uint32_t cpu_intr_from_cpu_0: 1;
-            uint32_t reserved1:          31;
+            uint32_t cpu_intr_from_cpu_0           :    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } cpu_intr_from_cpu_0;
     union {
         struct {
-            uint32_t cpu_intr_from_cpu_1: 1;
-            uint32_t reserved1:          31;
+            uint32_t cpu_intr_from_cpu_1           :    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } cpu_intr_from_cpu_1;
     union {
         struct {
-            uint32_t cpu_intr_from_cpu_2: 1;
-            uint32_t reserved1:          31;
+            uint32_t cpu_intr_from_cpu_2           :    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } cpu_intr_from_cpu_2;
     union {
         struct {
-            uint32_t cpu_intr_from_cpu_3: 1;
-            uint32_t reserved1:          31;
+            uint32_t cpu_intr_from_cpu_3           :    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } cpu_intr_from_cpu_3;
     union {
         struct {
-            uint32_t rsa_mem_pd:       1;
-            uint32_t rsa_mem_force_pu: 1;
-            uint32_t rsa_mem_force_pd: 1;
-            uint32_t reserved3:       29;
+            uint32_t rsa_mem_pd                    :    1;
+            uint32_t rsa_mem_force_pu              :    1;
+            uint32_t rsa_mem_force_pd              :    1;
+            uint32_t reserved3                     :    29;
         };
         uint32_t val;
     } rsa_pd_ctrl;
     union {
         struct {
-            uint32_t edma_clk_on: 1;
-            uint32_t edma_reset:  1;
-            uint32_t reserved2:  30;
+            uint32_t edma_clk_on                   :    1;
+            uint32_t edma_reset                    :    1;
+            uint32_t reserved2                     :    30;
         };
         uint32_t val;
     } edma_ctrl;
     union {
         struct {
-            uint32_t icache_clk_on: 1;
-            uint32_t icache_reset:  1;
-            uint32_t dcache_clk_on: 1;
-            uint32_t dcache_reset:  1;
-            uint32_t reserved4:    28;
+            uint32_t icache_clk_on                 :    1;
+            uint32_t icache_reset                  :    1;
+            uint32_t dcache_clk_on                 :    1;
+            uint32_t dcache_reset                  :    1;
+            uint32_t reserved4                     :    28;
         };
         uint32_t val;
     } cache_control;
     union {
         struct {
-            uint32_t enable_spi_manual_encrypt:      1;
-            uint32_t enable_download_db_encrypt:     1;
-            uint32_t enable_download_g0cb_decrypt:   1;
-            uint32_t enable_download_manual_encrypt: 1;
-            uint32_t reserved4:                     28;
+            uint32_t enable_spi_manual_encrypt     :    1;
+            uint32_t enable_download_db_encrypt    :    1;
+            uint32_t enable_download_g0cb_decrypt  :    1;
+            uint32_t enable_download_manual_encrypt:    1;
+            uint32_t reserved4                     :    28;
         };
         uint32_t val;
     } external_device_encrypt_decrypt_control;
     union {
         struct {
-            uint32_t reserved0:          8;
-            uint32_t rtc_mem_crc_start:  1;
-            uint32_t rtc_mem_crc_addr:  11;
-            uint32_t rtc_mem_crc_len:   11;
-            uint32_t rtc_mem_crc_finish: 1;
+            uint32_t reserved0                     :    8;
+            uint32_t rtc_mem_crc_start             :    1;
+            uint32_t rtc_mem_crc_addr              :    11;
+            uint32_t rtc_mem_crc_len               :    11;
+            uint32_t rtc_mem_crc_finish            :    1;
         };
         uint32_t val;
     } rtc_fastmem_config;
-    uint32_t rtc_fastmem_crc;                                    /**/
+    uint32_t rtc_fastmem_crc;
     union {
         struct {
-            uint32_t redundant_eco_drive:  1;
-            uint32_t redundant_eco_result: 1;
-            uint32_t reserved2:           30;
+            uint32_t redundant_eco_drive           :    1;
+            uint32_t redundant_eco_result          :    1;
+            uint32_t reserved2                     :    30;
         };
         uint32_t val;
     } redundant_eco_ctrl;
     union {
         struct {
-            uint32_t clk_en:     1;
-            uint32_t reserved1: 31;
+            uint32_t clk_en                        :    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } clock_gate;
     union {
         struct {
-            uint32_t pre_div_cnt:  10;
-            uint32_t soc_clk_sel:   2;
-            uint32_t clk_xtal_freq: 7;
-            uint32_t clk_div_en:    1;
-            uint32_t reserved20:   12;
+            uint32_t pre_div_cnt                   :    10;
+            uint32_t soc_clk_sel                   :    2;
+            uint32_t clk_xtal_freq                 :    7;
+            uint32_t clk_div_en                    :    1;
+            uint32_t reserved20                    :    12;
         };
         uint32_t val;
     } sysclk_conf;
     union {
         struct {
-            uint32_t mem_path_len:       4;
-            uint32_t mem_err_cnt_clr:    1;
-            uint32_t mem_pvt_monitor_en: 1;
-            uint32_t mem_timing_err_cnt: 16;
-            uint32_t reserved22:        10;
+            uint32_t mem_path_len                  :    4;
+            uint32_t mem_err_cnt_clr               :    1;
+            uint32_t mem_pvt_monitor_en            :    1;
+            uint32_t mem_timing_err_cnt            :    16;
+            uint32_t mem_vt_sel                    :    2;
+            uint32_t reserved24                    :    8;
         };
         uint32_t val;
     } mem_pvt;
     union {
         struct {
-            uint32_t comb_path_len:       5;
-            uint32_t comb_err_cnt_clr:    1;
-            uint32_t comb_pvt_monitor_en: 1;
-            uint32_t comb_timing_err_cnt: 16;
-            uint32_t reserved23:          9;
+            uint32_t comb_path_len_lvt             :    5;
+            uint32_t comb_err_cnt_clr_lvt          :    1;
+            uint32_t comb_pvt_monitor_en_lvt       :    1;
+            uint32_t reserved7                     :    18;
+            uint32_t reserved25                    :    7;
         };
         uint32_t val;
-    } comb_pvt;
-    uint32_t reserved_a0;
-    uint32_t reserved_a4;
-    uint32_t reserved_a8;
-    uint32_t reserved_ac;
-    uint32_t reserved_b0;
-    uint32_t reserved_b4;
-    uint32_t reserved_b8;
-    uint32_t reserved_bc;
-    uint32_t reserved_c0;
+    } comb_pvt_lvt_conf;
+    union {
+        struct {
+            uint32_t comb_path_len_nvt             :    5;
+            uint32_t comb_err_cnt_clr_nvt          :    1;
+            uint32_t comb_pvt_monitor_en_nvt       :    1;
+            uint32_t reserved7                     :    18;
+            uint32_t reserved25                    :    7;
+        };
+        uint32_t val;
+    } comb_pvt_nvt_conf;
+    union {
+        struct {
+            uint32_t comb_path_len_hvt             :    5;
+            uint32_t comb_err_cnt_clr_hvt          :    1;
+            uint32_t comb_pvt_monitor_en_hvt       :    1;
+            uint32_t reserved7                     :    18;
+            uint32_t reserved25                    :    7;
+        };
+        uint32_t val;
+    } comb_pvt_hvt_conf;
+    union {
+        struct {
+            uint32_t comb_timing_err_cnt_lvt_site0 :    16;
+            uint32_t reserved16                    :    16;
+        };
+        uint32_t val;
+    } comb_pvt_err_lvt_site0;
+    union {
+        struct {
+            uint32_t comb_timing_err_cnt_nvt_site0 :    16;
+            uint32_t reserved16                    :    16;
+        };
+        uint32_t val;
+    } comb_pvt_err_nvt_site0;
+    union {
+        struct {
+            uint32_t comb_timing_err_cnt_hvt_site0 :    16;
+            uint32_t reserved16                    :    16;
+        };
+        uint32_t val;
+    } comb_pvt_err_hvt_site0;
+    union {
+        struct {
+            uint32_t comb_timing_err_cnt_lvt_site1 :    16;
+            uint32_t reserved16                    :    16;
+        };
+        uint32_t val;
+    } comb_pvt_err_lvt_site1;
+    union {
+        struct {
+            uint32_t comb_timing_err_cnt_nvt_site1 :    16;
+            uint32_t reserved16                    :    16;
+        };
+        uint32_t val;
+    } comb_pvt_err_nvt_site1;
+    union {
+        struct {
+            uint32_t comb_timing_err_cnt_hvt_site1 :    16;
+            uint32_t reserved16                    :    16;
+        };
+        uint32_t val;
+    } comb_pvt_err_hvt_site1;
+    union {
+        struct {
+            uint32_t comb_timing_err_cnt_lvt_site2 :    16;
+            uint32_t reserved16                    :    16;
+        };
+        uint32_t val;
+    } comb_pvt_err_lvt_site2;
+    union {
+        struct {
+            uint32_t comb_timing_err_cnt_nvt_site2 :    16;
+            uint32_t reserved16                    :    16;
+        };
+        uint32_t val;
+    } comb_pvt_err_nvt_site2;
+    union {
+        struct {
+            uint32_t comb_timing_err_cnt_hvt_site2 :    16;
+            uint32_t reserved16                    :    16;
+        };
+        uint32_t val;
+    } comb_pvt_err_hvt_site2;
+    union {
+        struct {
+            uint32_t comb_timing_err_cnt_lvt_site3 :    16;
+            uint32_t reserved16                    :    16;
+        };
+        uint32_t val;
+    } comb_pvt_err_lvt_site3;
+    union {
+        struct {
+            uint32_t comb_timing_err_cnt_nvt_site3 :    16;
+            uint32_t reserved16                    :    16;
+        };
+        uint32_t val;
+    } comb_pvt_err_nvt_site3;
+    union {
+        struct {
+            uint32_t comb_timing_err_cnt_hvt_site3 :    16;
+            uint32_t reserved16                    :    16;
+        };
+        uint32_t val;
+    } comb_pvt_err_hvt_site3;
     uint32_t reserved_c4;
     uint32_t reserved_c8;
     uint32_t reserved_cc;
@@ -383,13 +443,7 @@ typedef volatile struct {
     uint32_t reserved_f4;
     uint32_t reserved_f8;
     uint32_t reserved_fc;
-    union {
-        struct {
-            uint32_t retention_link_addr: 27;
-            uint32_t reserved27:          5;
-        };
-        uint32_t val;
-    } retention_bus_ctrl;
+    uint32_t reserved_100;
     uint32_t reserved_104;
     uint32_t reserved_108;
     uint32_t reserved_10c;
@@ -1350,15 +1404,17 @@ typedef volatile struct {
     uint32_t reserved_ff8;
     union {
         struct {
-            uint32_t date:      28;
-            uint32_t reserved28: 4;
+            uint32_t date                          :    28;
+            uint32_t reserved28                    :    4;
         };
         uint32_t val;
     } date;
 } system_dev_t;
-
 extern system_dev_t SYSTEM;
-
 #ifdef __cplusplus
 }
 #endif
+
+
+
+#endif /*_SOC_SYSTEM_STRUCT_H_ */

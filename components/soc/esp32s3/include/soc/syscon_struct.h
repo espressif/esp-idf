@@ -1,4 +1,4 @@
-// Copyright 2017-2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,33 +11,29 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#pragma once
-
+#ifndef _SOC_SYSCON_STRUCT_H_
+#define _SOC_SYSCON_STRUCT_H_
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <stdint.h>
-
 typedef volatile struct {
     union {
         struct {
-            uint32_t pre_div:     10;
-            uint32_t clk_320m_en:  1;
-            uint32_t clk_en:       1;
-            uint32_t rst_tick:     1;
-            uint32_t reserved13:   1;
-            uint32_t soc_clk_sel:  2;
-            uint32_t reserved16:  16;
+            uint32_t apb_ctrl_pre_div_cnt: 10;
+            uint32_t apb_ctrl_clk_320m_en:  1;
+            uint32_t clk_en:                1;
+            uint32_t apb_ctrl_rst_tick_cnt: 1;
+            uint32_t reserved13:           19;
         };
         uint32_t val;
     } apb_ctrl_sysclk_conf;
     union {
         struct {
-            uint32_t xtal_tick:     8;
-            uint32_t ck8m_tick:     8;
-            uint32_t tick_enable:   1;
-            uint32_t reserved17:   15;
+            uint32_t apb_ctrl_xtal_tick_num: 8;
+            uint32_t apb_ctrl_ck8m_tick_num: 8;
+            uint32_t apb_ctrl_tick_enable:   1;
+            uint32_t reserved17:            15;
         };
         uint32_t val;
     } apb_ctrl_tick_conf;
@@ -58,6 +54,10 @@ typedef volatile struct {
         };
         uint32_t val;
     } apb_ctrl_clk_out_en;
+    uint32_t wifi_bb_cfg;                              /**/
+    uint32_t wifi_bb_cfg_2;                            /**/
+    uint32_t wifi_clk_en;                              /**/
+    uint32_t wifi_rst_en;                              /**/
     union {
         struct {
             uint32_t peri_io_swap: 8;
@@ -74,120 +74,127 @@ typedef volatile struct {
     } ext_mem_pms_lock;
     union {
         struct {
-            uint32_t flash_ace0_attr: 3;
-            uint32_t reserved3:      29;
+            uint32_t writeback_bypass: 1;              /*Set 1 to bypass cache writeback request to external memory so that spi will not check its attribute.*/
+            uint32_t reserved1:       31;
+        };
+        uint32_t val;
+    } ext_mem_writeback_bypass;
+    union {
+        struct {
+            uint32_t flash_ace0_attr: 9;
+            uint32_t reserved9:      23;
         };
         uint32_t val;
     } flash_ace0_attr;
     union {
         struct {
-            uint32_t flash_ace1_attr: 3;
-            uint32_t reserved3:      29;
+            uint32_t flash_ace1_attr: 9;
+            uint32_t reserved9:      23;
         };
         uint32_t val;
     } flash_ace1_attr;
     union {
         struct {
-            uint32_t flash_ace2_attr: 3;
-            uint32_t reserved3:      29;
+            uint32_t flash_ace2_attr: 9;
+            uint32_t reserved9:      23;
         };
         uint32_t val;
     } flash_ace2_attr;
     union {
         struct {
-            uint32_t flash_ace3_attr: 3;
-            uint32_t reserved3:      29;
+            uint32_t flash_ace3_attr: 9;
+            uint32_t reserved9:      23;
         };
         uint32_t val;
     } flash_ace3_attr;
-    uint32_t flash_ace0_addr;                     /**/
-    uint32_t flash_ace1_addr;                     /**/
-    uint32_t flash_ace2_addr;                     /**/
-    uint32_t flash_ace3_addr;                     /**/
+    uint32_t flash_ace0_addr;                          /**/
+    uint32_t flash_ace1_addr;                          /**/
+    uint32_t flash_ace2_addr;                          /**/
+    uint32_t flash_ace3_addr;                          /**/
     union {
         struct {
-            uint32_t flash_ace0_size: 16;
+            uint32_t flash_ace0_size:16;
             uint32_t reserved16:     16;
         };
         uint32_t val;
     } flash_ace0_size;
     union {
         struct {
-            uint32_t flash_ace1_size: 16;
+            uint32_t flash_ace1_size:16;
             uint32_t reserved16:     16;
         };
         uint32_t val;
     } flash_ace1_size;
     union {
         struct {
-            uint32_t flash_ace2_size: 16;
+            uint32_t flash_ace2_size:16;
             uint32_t reserved16:     16;
         };
         uint32_t val;
     } flash_ace2_size;
     union {
         struct {
-            uint32_t flash_ace3_size: 16;
+            uint32_t flash_ace3_size:16;
             uint32_t reserved16:     16;
         };
         uint32_t val;
     } flash_ace3_size;
     union {
         struct {
-            uint32_t sram_ace0_attr: 3;
-            uint32_t reserved3:     29;
+            uint32_t sram_ace0_attr: 9;
+            uint32_t reserved9:     23;
         };
         uint32_t val;
     } sram_ace0_attr;
     union {
         struct {
-            uint32_t sram_ace1_attr: 3;
-            uint32_t reserved3:     29;
+            uint32_t sram_ace1_attr: 9;
+            uint32_t reserved9:     23;
         };
         uint32_t val;
     } sram_ace1_attr;
     union {
         struct {
-            uint32_t sram_ace2_attr: 3;
-            uint32_t reserved3:     29;
+            uint32_t sram_ace2_attr: 9;
+            uint32_t reserved9:     23;
         };
         uint32_t val;
     } sram_ace2_attr;
     union {
         struct {
-            uint32_t sram_ace3_attr: 3;
-            uint32_t reserved3:     29;
+            uint32_t sram_ace3_attr: 9;
+            uint32_t reserved9:     23;
         };
         uint32_t val;
     } sram_ace3_attr;
-    uint32_t sram_ace0_addr;                      /**/
-    uint32_t sram_ace1_addr;                      /**/
-    uint32_t sram_ace2_addr;                      /**/
-    uint32_t sram_ace3_addr;                      /**/
+    uint32_t sram_ace0_addr;                           /**/
+    uint32_t sram_ace1_addr;                           /**/
+    uint32_t sram_ace2_addr;                           /**/
+    uint32_t sram_ace3_addr;                           /**/
     union {
         struct {
-            uint32_t sram_ace0_size: 16;
+            uint32_t sram_ace0_size:16;
             uint32_t reserved16:    16;
         };
         uint32_t val;
     } sram_ace0_size;
     union {
         struct {
-            uint32_t sram_ace1_size: 16;
+            uint32_t sram_ace1_size:16;
             uint32_t reserved16:    16;
         };
         uint32_t val;
     } sram_ace1_size;
     union {
         struct {
-            uint32_t sram_ace2_size: 16;
+            uint32_t sram_ace2_size:16;
             uint32_t reserved16:    16;
         };
         uint32_t val;
     } sram_ace2_size;
     union {
         struct {
-            uint32_t sram_ace3_size: 16;
+            uint32_t sram_ace3_size:16;
             uint32_t reserved16:    16;
         };
         uint32_t val;
@@ -201,14 +208,14 @@ typedef volatile struct {
         };
         uint32_t val;
     } spi_mem_pms_ctrl;
-    uint32_t spi_mem_reject_addr;                 /**/
+    uint32_t spi_mem_reject_addr;                      /**/
     union {
         struct {
             uint32_t sdio_win_access_en: 1;
             uint32_t reserved1:         31;
         };
         uint32_t val;
-    } sdio_ctrl;
+    } apb_ctrl_sdio_ctrl;
     union {
         struct {
             uint32_t redcy_sig0: 31;
@@ -223,10 +230,6 @@ typedef volatile struct {
         };
         uint32_t val;
     } redcy_sig1;
-    uint32_t wifi_bb_cfg;                         /**/
-    uint32_t wifi_bb_cfg_2;                       /**/
-    uint32_t wifi_clk_en;                         /**/
-    uint32_t wifi_rst_en;                         /**/
     union {
         struct {
             uint32_t agc_mem_force_pu:  1;
@@ -235,20 +238,84 @@ typedef volatile struct {
             uint32_t pbus_mem_force_pd: 1;
             uint32_t dc_mem_force_pu:   1;
             uint32_t dc_mem_force_pd:   1;
-            uint32_t reserved6:        26;
+            uint32_t freq_mem_force_pu: 1;
+            uint32_t freq_mem_force_pd: 1;
+            uint32_t reserved8:        24;
         };
         uint32_t val;
     } front_end_mem_pd;
-    uint32_t reserved_9c;
-    uint32_t reserved_a0;
+    union {
+        struct {
+            uint32_t reserved0:      18;               /*reserved*/
+            uint32_t flash_page_size: 2;               /*Set the page size of the used MSPI flash. 0: 256 bytes. 1: 512 bytes. 2: 1024 bytes. 3: 2048 bytes.*/
+            uint32_t sram_page_size:  2;               /*Set the page size of the used MSPI external RAM. 0: 256 bytes. 1: 512 bytes. 2: 1024 bytes. 3: 2048 bytes.*/
+            uint32_t reserved22:     10;               /*reserved*/
+        };
+        uint32_t val;
+    } spi_mem_ecc_ctrl;
     uint32_t reserved_a4;
-    uint32_t reserved_a8;
-    uint32_t reserved_ac;
-    uint32_t reserved_b0;
-    uint32_t reserved_b4;
-    uint32_t reserved_b8;
-    uint32_t reserved_bc;
-    uint32_t reserved_c0;
+    union {
+        struct {
+            uint32_t rom_clkgate_force_on:  3;
+            uint32_t sram_clkgate_force_on:11;
+            uint32_t reserved14:           18;
+        };
+        uint32_t val;
+    } clkgate_force_on;
+    union {
+        struct {
+            uint32_t rom_power_down:  3;
+            uint32_t sram_power_down:11;
+            uint32_t reserved14:     18;
+        };
+        uint32_t val;
+    } mem_power_down;
+    union {
+        struct {
+            uint32_t rom_power_up:  3;
+            uint32_t sram_power_up:11;
+            uint32_t reserved14:   18;
+        };
+        uint32_t val;
+    } mem_power_up;
+    union {
+        struct {
+            uint32_t retention_cpu_link_addr:27;
+            uint32_t nobypass_cpu_iso_rst:    1;
+            uint32_t reserved28:              4;
+        };
+        uint32_t val;
+    } retention_ctrl;
+    union {
+        struct {
+            uint32_t retention_tag_link_addr:27;
+            uint32_t reserved27:              5;
+        };
+        uint32_t val;
+    } retention_ctrl1;
+    union {
+        struct {
+            uint32_t reserved0:              4;
+            uint32_t ret_icache_size:        8;
+            uint32_t reserved12:             1;
+            uint32_t ret_icache_vld_size:    8;
+            uint32_t reserved21:             1;
+            uint32_t ret_icache_start_point: 8;
+            uint32_t reserved30:             1;
+            uint32_t ret_icache_enable:      1;
+        };
+        uint32_t val;
+    } retention_ctrl2;
+    union {
+        struct {
+            uint32_t reserved0:              4;
+            uint32_t ret_dcache_size:        9;
+            uint32_t ret_dcache_vld_size:    9;
+            uint32_t ret_dcache_start_point: 9;
+            uint32_t ret_dcache_enable:      1;
+        };
+        uint32_t val;
+    } retention_ctrl3;
     uint32_t reserved_c4;
     uint32_t reserved_c8;
     uint32_t reserved_cc;
@@ -455,11 +522,11 @@ typedef volatile struct {
     uint32_t reserved_3f0;
     uint32_t reserved_3f4;
     uint32_t reserved_3f8;
-    uint32_t date;                       /**/
+    uint32_t apb_ctrl_date;                            /*Version control*/
 } syscon_dev_t;
-
 extern syscon_dev_t SYSCON;
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif  /* _SOC_SYSCON_STRUCT_H_ */
