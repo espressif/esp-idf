@@ -15,13 +15,13 @@
 #ifndef __ESP_ADC_CAL_H__
 #define __ESP_ADC_CAL_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdint.h>
 #include "esp_err.h"
 #include "driver/adc.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Type of calibration value used in characterization

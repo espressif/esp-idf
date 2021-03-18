@@ -13,11 +13,11 @@
 
 #pragma once
 
+#include "driver/touch_sensor_common.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "driver/touch_sensor_common.h"
 
 /**
  * @brief Set touch sensor FSM start
