@@ -252,7 +252,7 @@ static uint8_t _mod_pub_set(struct bt_mesh_model *model, uint16_t pub_addr,
         return STATUS_SUCCESS;
     }
 
-    /* For case MESH/NODE/CFG/MP/BI-03-C, need to check if appkey 
+    /* For case MESH/NODE/CFG/MP/BI-03-C, need to check if appkey
      * is bound to model identified by the ModelIdentifier.
      */
     if (!bt_mesh_app_key_find(app_idx) ||
