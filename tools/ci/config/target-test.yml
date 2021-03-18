@@ -484,6 +484,14 @@ UT_020:
     - Example_SPI_Multi_device
     - psram
 
+UT_021:
+  extends: .unit_test_template
+  parallel: 2
+  tags:
+    - ESP32_IDF
+    - psram
+    - UT_T1_FlashEncryption
+
 UT_022:
   extends: .unit_test_template
   tags:
