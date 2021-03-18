@@ -274,6 +274,67 @@ TEST_CASE_MULTIPLE_STAGES("can set sleep wake stub", "[deepsleep][reset=DEEPSLEE
         check_wake_stub);
 
 
+#if CONFIG_ESP32_ALLOW_RTC_FAST_MEM_AS_HEAP || CONFIG_ESP32S2_ALLOW_RTC_FAST_MEM_AS_HEAP \
+    || CONFIG_ESP32S3_ALLOW_RTC_FAST_MEM_AS_HEAP
+#if CONFIG_FREERTOS_SUPPORT_STATIC_ALLOCATION
+
+/* Version of prepare_wake_stub() that sets up the deep sleep call while running
+   from RTC memory as stack, with a high frequency timer also writing RTC FAST
+   memory.
+
+   This is important because the ROM code (ESP32 & ESP32-S2) requires software
+   trigger a CRC calculation (done in hardware) for the entire RTC FAST memory
+   before going to deep sleep and if it's invalid then the stub is not
+   run. Also, while the CRC is being calculated the RTC FAST memory is not
+   accesible by the CPU (reads all zeros).
+*/
+
+static void increment_rtc_memory_cb(void *arg)
+{
+    static volatile RTC_FAST_ATTR unsigned counter;
+    counter++;
+}
+
+static void prepare_wake_stub_from_rtc(void)
+{
+    /* RTC memory can be used as heap, however there is no API call that returns this as
+       a memory capability (as it's an implementation detail). So to test this we need to allocate
+       the stack statically.
+    */
+    static RTC_FAST_ATTR uint8_t sleep_stack[1024];
+    static RTC_FAST_ATTR StaticTask_t sleep_task;
+
+    /* normally BSS like sleep_stack will be cleared on reset, but RTC memory is not cleared on
+     * wake from deep sleep. So to ensure unused stack is different if test is re-run without a full reset,
+     * fill with some random bytes
+     */
+    esp_fill_random(sleep_stack, sizeof(sleep_stack));
+
+    /* to make things extra sure, start a periodic timer to write to RTC FAST RAM at high frequency */
+    const esp_timer_create_args_t timer_args = {
+                                          .callback = increment_rtc_memory_cb,
+                                          .arg = NULL,
+                                          .dispatch_method = ESP_TIMER_TASK,
+                                          .name = "Write RTC MEM"
+    };
+    esp_timer_handle_t timer;
+    ESP_ERROR_CHECK( esp_timer_create(&timer_args, &timer) );
+    ESP_ERROR_CHECK( esp_timer_start_periodic(timer, 200) );
+
+    printf("Creating test task with stack %p\n", sleep_stack);
+    TEST_ASSERT_NOT_NULL(xTaskCreateStatic( (void *)prepare_wake_stub, "sleep", sizeof(sleep_stack), NULL,
+                                            UNITY_FREERTOS_PRIORITY, sleep_stack, &sleep_task));
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    TEST_FAIL_MESSAGE("Should be asleep by now");
+}
+
+TEST_CASE_MULTIPLE_STAGES("can set sleep wake stub from stack in RTC RAM", "[deepsleep][reset=DEEPSLEEP_RESET]",
+        prepare_wake_stub_from_rtc,
+        check_wake_stub);
+
+#endif // CONFIG_FREERTOS_SUPPORT_STATIC_ALLOCATION
+#endif // CONFIG_xyz_ALLOW_RTC_FAST_MEM_AS_HEAP
+
 TEST_CASE("wake up using ext0 (13 high)", "[deepsleep][ignore]")
 {
     ESP_ERROR_CHECK(rtc_gpio_init(GPIO_NUM_13));

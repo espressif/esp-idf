@@ -84,8 +84,8 @@ static sleep_config_t s_config = {
 static bool s_light_sleep_wakeup = false;
 
 /* Updating RTC_MEMORY_CRC_REG register via set_rtc_memory_crc()
-   is not thread-safe. */
-static _lock_t lock_rtc_memory_crc;
+   is not thread-safe, so we need to disable interrupts before going to deep sleep. */
+static portMUX_TYPE spinlock_rtc_deep_sleep = portMUX_INITIALIZER_UNLOCKED;
 
 static const char* TAG = "sleep";
 
@@ -99,16 +99,6 @@ static void timer_wakeup_prepare(void);
 */
 esp_deep_sleep_wake_stub_fn_t esp_get_deep_sleep_wake_stub(void)
 {
-    _lock_acquire(&lock_rtc_memory_crc);
-    uint32_t stored_crc = REG_READ(RTC_MEMORY_CRC_REG);
-    set_rtc_memory_crc();
-    uint32_t calc_crc = REG_READ(RTC_MEMORY_CRC_REG);
-    REG_WRITE(RTC_MEMORY_CRC_REG, stored_crc);
-    _lock_release(&lock_rtc_memory_crc);
-
-    if(stored_crc != calc_crc) {
-        return NULL;
-    }
     esp_deep_sleep_wake_stub_fn_t stub_ptr = (esp_deep_sleep_wake_stub_fn_t) REG_READ(RTC_ENTRY_ADDR_REG);
     if (!esp_ptr_executable(stub_ptr)) {
         return NULL;
@@ -118,10 +108,7 @@ esp_deep_sleep_wake_stub_fn_t esp_get_deep_sleep_wake_stub(void)
 
 void esp_set_deep_sleep_wake_stub(esp_deep_sleep_wake_stub_fn_t new_stub)
 {
-    _lock_acquire(&lock_rtc_memory_crc);
     REG_WRITE(RTC_ENTRY_ADDR_REG, (uint32_t)new_stub);
-    set_rtc_memory_crc();
-    _lock_release(&lock_rtc_memory_crc);
 }
 
 void RTC_IRAM_ATTR esp_default_wake_deep_sleep(void) {
@@ -174,12 +161,16 @@ static void IRAM_ATTR resume_uarts(void)
     }
 }
 
+inline static uint32_t IRAM_ATTR call_rtc_sleep_start(uint32_t reject_triggers);
+
 static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 {
     // Stop UART output so that output is not lost due to APB frequency change.
     // For light sleep, suspend UART output — it will resume after wakeup.
     // For deep sleep, wait for the contents of UART FIFO to be sent.
-    if (pd_flags & RTC_SLEEP_PD_DIG) {
+    bool deep_sleep = pd_flags & RTC_SLEEP_PD_DIG;
+
+    if (deep_sleep) {
         flush_uarts();
     } else {
         suspend_uarts();
@@ -211,7 +202,27 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
         s_config.sleep_duration > 0) {
         timer_wakeup_prepare();
     }
-    uint32_t result = rtc_sleep_start(s_config.wakeup_triggers, 0);
+
+    uint32_t result;
+    if (deep_sleep) {
+        /* Disable interrupts in case another task writes to RTC memory while we
+         * calculate RTC memory CRC
+         */
+        portENTER_CRITICAL(&spinlock_rtc_deep_sleep);
+
+#if !CONFIG_ESP32_ALLOW_RTC_FAST_MEM_AS_HEAP
+        /* If not possible stack is in RTC FAST memory, use the ROM function to calculate the CRC and save ~140 bytes IRAM */
+        set_rtc_memory_crc();
+        result = call_rtc_sleep_start(0);
+#else
+        /* Otherwise, need to call the dedicated soc function for this */
+        result = rtc_deep_sleep_start(s_config.wakeup_triggers, 0);
+#endif
+
+        portEXIT_CRITICAL(&spinlock_rtc_deep_sleep);
+    } else {
+        result = call_rtc_sleep_start(0);
+    }
 
     // Restore CPU frequency
     rtc_clk_cpu_freq_set_config(&cpu_freq_config);
@@ -220,6 +231,15 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     resume_uarts();
 
     return result;
+}
+
+inline static uint32_t IRAM_ATTR call_rtc_sleep_start(uint32_t reject_triggers)
+{
+#ifdef CONFIG_IDF_TARGET_ESP32
+        return rtc_sleep_start(s_config.wakeup_triggers, reject_triggers);
+#else
+        return rtc_sleep_start(s_config.wakeup_triggers, reject_triggers, 1);
+#endif
 }
 
 void IRAM_ATTR esp_deep_sleep_start(void)
