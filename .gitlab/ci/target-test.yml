@@ -594,6 +594,13 @@ UT_C3_FLASH:
     - ESP32C3_IDF
     - UT_T1_ESP_FLASH
 
+UT_C3_SPI_DUAL:
+  extends: .unit_test_esp32c3_template
+  parallel: 2
+  tags:
+    - ESP32C3_IDF
+    - Example_SPI_Multi_device
+
 .integration_test_template:
   extends:
     - .target_test_job_template
