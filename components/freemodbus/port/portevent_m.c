@@ -252,7 +252,7 @@ eMBMasterReqErrCode eMBMasterWaitRequestFinish( void ) {
                                                 MB_EVENT_REQ_MASK,  // The bits within the event group to wait for.
                                                 pdTRUE,             // Masked bits should be cleared before returning.
                                                 pdFALSE,            // Don't wait for both bits, either bit will do.
-                                                1000 );             // Wait forever for either bit to be set. //portMAX_DELAY
+                                                portMAX_DELAY );    // Wait forever for either bit to be set.
     xRecvedEvent = (eMBMasterEventType)(uxBits);
     if (xRecvedEvent) {
         ESP_LOGD(MB_PORT_TAG,"%s: returned event = 0x%x", __func__, xRecvedEvent);
@@ -271,7 +271,12 @@ eMBMasterReqErrCode eMBMasterWaitRequestFinish( void ) {
         }
     } else {
         ESP_LOGE(MB_PORT_TAG,"%s: Incorrect event or timeout xRecvedEvent = 0x%x", __func__, uxBits);
-        assert(0);
+        // https://github.com/espressif/esp-idf/issues/5275
+        // if a no event is received, that means vMBMasterPortEventClose()
+        // has been closed, so event group has been deleted by FreeRTOS, which
+        // triggers the send of 0 value to the event group to unlock this task
+        // waiting on it. For this patch, handles it as a time out without assert.
+        eErrStatus = MB_MRE_TIMEDOUT;
     }
     return eErrStatus;
 }
