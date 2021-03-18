@@ -61,6 +61,28 @@ static void async_memcpy_verify_and_clear_testbench(uint32_t seed, uint32_t buff
     free(dst_buf);
 }
 
+TEST_CASE("memory copy the same buffer with different content", "[async mcp]")
+{
+    async_memcpy_config_t config = ASYNC_MEMCPY_DEFAULT_CONFIG();
+    config.backlog = 1;
+    async_memcpy_t driver = NULL;
+    TEST_ESP_OK(esp_async_memcpy_install(&config, &driver));
+    uint8_t sbuf[256] = {0};
+    uint8_t dbuf[256] = {0};
+    for (int j = 0; j < 20; j++) {
+        TEST_ESP_OK(esp_async_memcpy(driver, dbuf, sbuf, 256, NULL, NULL));
+        for (int i = 0; i < 256; i++) {
+            if (sbuf[i] != dbuf[i]) {
+                printf("location[%d]:s=%d,d=%d\r\n", i, sbuf[i], dbuf[i]);
+                TEST_FAIL_MESSAGE("destination data doesn't match source data");
+            } else {
+                sbuf[i] += 1;
+            }
+        }
+    }
+    TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
+}
+
 TEST_CASE("memory copy by DMA one by one", "[async mcp]")
 {
     async_memcpy_config_t config = ASYNC_MEMCPY_DEFAULT_CONFIG();
