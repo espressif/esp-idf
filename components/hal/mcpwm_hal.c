@@ -43,11 +43,11 @@ void mcpwm_hal_timer_update_basic(mcpwm_hal_context_t *hal, int timer)
     mcpwm_ll_timer_set_prescale(hal->dev, timer, hal->timer[timer].timer_prescale);
 
     uint32_t period = MCPWM_BASE_CLK / (hal->timer[timer].freq *
-            (hal->prescale +1) * (hal->timer[timer].timer_prescale + 1));
+                                        (hal->prescale + 1) * (hal->timer[timer].timer_prescale + 1));
     mcpwm_ll_timer_set_period(hal->dev, timer, period);
     //write back the actual value to the context
     hal->timer[timer].freq = MCPWM_BASE_CLK / (period *
-            (hal->prescale +1) * (hal->timer[timer].timer_prescale + 1));
+                             (hal->prescale + 1) * (hal->timer[timer].timer_prescale + 1));
 
     mcpwm_ll_timer_set_count_mode(hal->dev, timer, hal->timer[timer].count_mode);
 }
@@ -70,10 +70,10 @@ void mcpwm_hal_operator_update_basic(mcpwm_hal_context_t *hal, int op)
 {
     mcpwm_hal_operator_config_t *op_conf = &hal->op[op];
     mcpwm_ll_operator_select_timer(hal->dev, op, op_conf->timer);
-    for (int cmp = 0; cmp < SOC_MCPWM_COMPARATOR_NUM; cmp++) {
+    for (int cmp = 0; cmp < SOC_MCPWM_COMPARATORS_PER_OPERATOR; cmp++) {
         mcpwm_hal_operator_update_comparator(hal, op, cmp);
     }
-    for (int gen = 0; gen < SOC_MCPWM_GENERATOR_NUM; gen++) {
+    for (int gen = 0; gen < SOC_MCPWM_GENERATORS_PER_OPERATOR; gen++) {
         mcpwm_hal_operator_update_generator(hal, op, gen);
     }
 }
@@ -88,7 +88,7 @@ void mcpwm_hal_operator_update_comparator(mcpwm_hal_context_t *hal, int op, int 
 
 void mcpwm_hal_operator_update_generator(mcpwm_hal_context_t *hal, int op, int gen_num)
 {
-    mcpwm_hal_generator_config_t* gen_config = &(hal->op[op].gen[gen_num]);
+    mcpwm_hal_generator_config_t *gen_config = &(hal->op[op].gen[gen_num]);
     if (gen_config->duty_type == MCPWM_HAL_GENERATOR_MODE_FORCE_HIGH) {
         mcpwm_ll_gen_set_zero_action(hal->dev, op, gen_num, MCPWM_ACTION_FORCE_HIGH);
         mcpwm_ll_gen_set_period_action(hal->dev, op, gen_num, MCPWM_ACTION_FORCE_HIGH);
@@ -166,21 +166,21 @@ void mcpwm_hal_fault_init(mcpwm_hal_context_t *hal, int fault_sig, bool level)
 
 void mcpwm_hal_operator_update_fault(mcpwm_hal_context_t *hal, int op, const mcpwm_hal_fault_conf_t *fault_conf)
 {
-    for (int fault_sig = 0; fault_sig < SOC_MCPWM_FAULT_SIG_NUM; fault_sig++) {
+    for (int fault_sig = 0; fault_sig < SOC_MCPWM_FAULT_DETECTORS_PER_GROUP; fault_sig++) {
         bool enabled = (fault_conf->cbc_enabled_mask & BIT(fault_sig)) ? true : false;
         mcpwm_ll_fault_cbc_enable_signal(hal->dev, op, fault_sig, enabled);
     }
-    for (int fault_sig = 0; fault_sig < SOC_MCPWM_FAULT_SIG_NUM; fault_sig++) {
+    for (int fault_sig = 0; fault_sig < SOC_MCPWM_FAULT_DETECTORS_PER_GROUP; fault_sig++) {
         bool enabled = (fault_conf->ost_enabled_mask & BIT(fault_sig)) ? true : false;
         mcpwm_ll_fault_oneshot_enable_signal(hal->dev, op, fault_sig, enabled);
     }
     if (fault_conf->cbc_enabled_mask) {
-        for (int gen = 0; gen < SOC_MCPWM_GENERATOR_NUM; gen++) {
+        for (int gen = 0; gen < SOC_MCPWM_GENERATORS_PER_OPERATOR; gen++) {
             mcpwm_ll_fault_set_cyc_action(hal->dev, op, gen, fault_conf->action_on_fault[gen], fault_conf->action_on_fault[gen]);
         }
     }
     if (fault_conf->ost_enabled_mask) {
-        for (int gen = 0; gen < SOC_MCPWM_GENERATOR_NUM; gen++) {
+        for (int gen = 0; gen < SOC_MCPWM_GENERATORS_PER_OPERATOR; gen++) {
             mcpwm_ll_fault_set_oneshot_action(hal->dev, op, gen, fault_conf->action_on_fault[gen], fault_conf->action_on_fault[gen]);
         }
     }
@@ -193,7 +193,7 @@ void mcpwm_hal_fault_oneshot_clear(mcpwm_hal_context_t *hal, int op)
 
 void mcpwm_hal_fault_disable(mcpwm_hal_context_t *hal, int fault_sig)
 {
-    for (int op = 0; op < SOC_MCPWM_OP_NUM; op++) {
+    for (int op = 0; op < SOC_MCPWM_OPERATORS_PER_GROUP; op++) {
         if (mcpwm_ll_fault_oneshot_signal_enabled(hal->dev, op, fault_sig)) {
             mcpwm_ll_fault_clear_ost(hal->dev, op);
         }

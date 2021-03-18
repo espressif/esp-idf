@@ -9,6 +9,7 @@ set(srcs
     "interrupts.c"
     "lcd_periph.c"
     "ledc_periph.c"
+    "mcpwm_periph.c"
     "pcnt_periph.c"
     "rmt_periph.c"
     "rtc_io_periph.c"
