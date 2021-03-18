@@ -777,6 +777,10 @@ tBTA_AV_EVT bta_av_proc_meta_cmd(tAVRC_RESPONSE  *p_rc_rsp, tBTA_AV_RC_MSG *p_ms
         case AVRC_PDU_SET_ABSOLUTE_VOLUME:
             p_rc_rsp->rsp.status = BTA_AV_STS_NO_RSP;
             break;
+        case AVRC_PDU_SET_PLAYER_APP_VALUE:
+            /* Setting of a value by CT does not implicitly mean that the setting will take effect on TG. */
+            /* The setting shall take effect after a play command from CT. */
+            break;
         default:
             APPL_TRACE_WARNING("%s unhandled RC vendor PDU: 0x%x", __FUNCTION__, pdu);
             break;
