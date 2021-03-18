@@ -178,7 +178,7 @@ typedef struct rtc_cpu_freq_config_s {
  * @brief RTC SLOW_CLK frequency values
  */
 typedef enum {
-    RTC_SLOW_FREQ_RTC = 0,      //!< Internal 150 kHz RC oscillator
+    RTC_SLOW_FREQ_RTC = 0,      //!< Internal 90 kHz RC oscillator
     RTC_SLOW_FREQ_32K_XTAL = 1, //!< External 32 kHz XTAL
     RTC_SLOW_FREQ_8MD256 = 2,   //!< Internal 8 MHz RC oscillator, divided by 256
 } rtc_slow_freq_t;
@@ -426,7 +426,7 @@ rtc_slow_freq_t rtc_clk_slow_freq_get(void);
 /**
  * @brief Get the approximate frequency of RTC_SLOW_CLK, in Hz
  *
- * - if RTC_SLOW_FREQ_RTC is selected, returns ~150000
+ * - if RTC_SLOW_FREQ_RTC is selected, returns ~90000
  * - if RTC_SLOW_FREQ_32K_XTAL is selected, returns 32768
  * - if RTC_SLOW_FREQ_8MD256 is selected, returns ~33000
  *

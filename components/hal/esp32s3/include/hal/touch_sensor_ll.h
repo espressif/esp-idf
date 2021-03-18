@@ -72,7 +72,7 @@ static inline void touch_ll_get_measure_times(uint16_t *meas_time)
  */
 static inline void touch_ll_set_sleep_time(uint16_t sleep_time)
 {
-    // touch sensor sleep cycle Time = sleep_cycle / RTC_SLOW_CLK(90k)
+    // touch sensor sleep cycle Time = sleep_cycle / RTC_SLOW_CLK(150k)
     RTCCNTL.touch_ctrl1.touch_sleep_cycles = sleep_time;
 }
 

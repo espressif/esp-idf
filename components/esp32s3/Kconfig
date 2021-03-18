@@ -448,7 +448,7 @@ menu "ESP32S3-Specific"
             Choose which clock is used as RTC clock source.
 
         config ESP32S3_RTC_CLK_SRC_INT_RC
-            bool "Internal 90kHz RC oscillator"
+            bool "Internal 150kHz RC oscillator"
         config ESP32S3_RTC_CLK_SRC_EXT_CRYS
             bool "External 32kHz crystal"
             select ESP_SYSTEM_RTC_EXT_XTAL
@@ -474,7 +474,7 @@ menu "ESP32S3-Specific"
             When this option is set to 0, clock calibration will not be performed at
             startup, and approximate clock frequencies will be assumed:
 
-            - 90000 Hz if internal RC oscillator is used as clock source. For this use value 1024.
+            - 150000 Hz if internal RC oscillator is used as clock source. For this use value 1024.
             - 32768 Hz if the 32k crystal oscillator is used. For this use value 3000 or more.
               In case more value will help improve the definition of the launch of the crystal.
               If the crystal could not start, it will be switched to internal RC.

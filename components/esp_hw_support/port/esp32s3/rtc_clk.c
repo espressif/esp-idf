@@ -187,7 +187,7 @@ rtc_slow_freq_t rtc_clk_slow_freq_get(void)
 uint32_t rtc_clk_slow_freq_get_hz(void)
 {
     switch (rtc_clk_slow_freq_get()) {
-    case RTC_SLOW_FREQ_RTC: return RTC_SLOW_CLK_FREQ_90K;
+    case RTC_SLOW_FREQ_RTC: return RTC_SLOW_CLK_FREQ_150K;
     case RTC_SLOW_FREQ_32K_XTAL: return RTC_SLOW_CLK_FREQ_32K;
     case RTC_SLOW_FREQ_8MD256: return RTC_SLOW_CLK_FREQ_8MD256;
     }
