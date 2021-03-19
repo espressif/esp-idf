@@ -424,7 +424,7 @@ menu "Security features"
             1. ECDSA based secure boot scheme. (Only choice for Secure Boot V1)
             Supported in ESP32 and ESP32-ECO3.
             2. The RSA based secure boot scheme. (Only choice for Secure Boot V2)
-            Supported in ESP32-ECO3. (ESP32 Chip Revision 3 onwards)
+            Supported in ESP32-ECO3 (ESP32 Chip Revision 3 onwards), ESP32-S2, ESP32-C3, ESP32-S3.
 
         config SECURE_SIGNED_APPS_ECDSA_SCHEME
             bool "ECDSA"
@@ -436,7 +436,7 @@ menu "Security features"
 
         config SECURE_SIGNED_APPS_RSA_SCHEME
             bool "RSA"
-            depends on SECURE_BOOT_SUPPORTS_RSA && SECURE_BOOT_V2_ENABLED
+            depends on SECURE_BOOT_SUPPORTS_RSA && (SECURE_SIGNED_APPS_NO_SECURE_BOOT || SECURE_BOOT_V2_ENABLED)
             help
                 Appends the RSA-3072 based Signature block to the application.
                 Refer to <Secure Boot Version 2 documentation link> before enabling.
@@ -445,7 +445,7 @@ menu "Security features"
     config SECURE_SIGNED_ON_BOOT_NO_SECURE_BOOT
         bool "Bootloader verifies app signatures"
         default n
-        depends on SECURE_SIGNED_APPS_NO_SECURE_BOOT
+        depends on SECURE_SIGNED_APPS_NO_SECURE_BOOT && SECURE_SIGNED_APPS_ECDSA_SCHEME
         help
             If this option is set, the bootloader will be compiled with code to verify that an app is signed before
             booting it.
