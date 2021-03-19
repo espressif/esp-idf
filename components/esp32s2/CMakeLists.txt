@@ -1,32 +1,22 @@
 idf_build_get_property(target IDF_TARGET)
-idf_build_get_property(sdkconfig_header SDKCONFIG_HEADER)
 if(NOT "${target}" STREQUAL "esp32s2")
     return()
 endif()
 
-if(BOOTLOADER_BUILD)
-    # For bootloader, all we need from esp32s2 is headers
-    idf_component_register(INCLUDE_DIRS include REQUIRES xtensa)
-    target_linker_script(${COMPONENT_LIB} INTERFACE "ld/esp32s2.peripherals.ld")
-else()
-    # Regular app build
+if(NOT BOOTLOADER_BUILD)
+    # [refactor-todo] propagate these requirements for compatibility
+    # remove in the future
+    set(legacy_reqs driver efuse soc)
+endif()
 
-    set(include_dirs "include")
+idf_component_register(INCLUDE_DIRS include
+                       REQUIRES xtensa "${legacy_reqs}"
+                       REQUIRED_IDF_TARGETS esp32s2)
 
-    set(requires driver efuse xtensa)
+target_linker_script(${COMPONENT_LIB} INTERFACE "ld/esp32s2.peripherals.ld")
 
-    # app_update is added here because cpu_start.c uses esp_ota_get_app_description() function.
-    # esp_timer is added here because cpu_start.c uses esp_timer
-    set(priv_requires
-        app_trace app_update bootloader_support esp_system log mbedtls nvs_flash
-        pthread spi_flash vfs espcoredump esp_common esp_timer)
-
-    idf_component_register(SRCS "${srcs}"
-                        INCLUDE_DIRS "${include_dirs}"
-                        REQUIRES "${requires}"
-                        PRIV_REQUIRES "${priv_requires}"
-                        REQUIRED_IDF_TARGETS esp32s2)
-
+if(NOT BOOTLOADER_BUILD)
+    idf_build_get_property(sdkconfig_header SDKCONFIG_HEADER)
     target_linker_script(${COMPONENT_LIB} INTERFACE "${CMAKE_CURRENT_BINARY_DIR}/esp32s2_out.ld")
 
     # Process the template file through the linker script generation mechanism, and use the output for linking the
@@ -36,8 +26,6 @@ else()
                          PROCESS "${CMAKE_CURRENT_BINARY_DIR}/ld/esp32s2.project.ld")
 
     target_linker_script(${COMPONENT_LIB} INTERFACE "ld/esp32s2.peripherals.ld")
-    target_link_libraries(${COMPONENT_LIB} INTERFACE gcc)
-    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u call_user_start_cpu0")
 
     idf_build_get_property(config_dir CONFIG_DIR)
     # Preprocess esp32s2.ld linker script to include configuration, becomes esp32s2_out.ld

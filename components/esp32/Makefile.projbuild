@@ -1,7 +1,3 @@
-# Enable dynamic esp_timer overflow value if building unit tests
-ifneq ("$(filter esp32,$(TEST_COMPONENTS_LIST))","")
-CPPFLAGS += -DESP_TIMER_DYNAMIC_OVERFLOW_VAL
-endif
 ESP32_LINKER_SCRIPT_TEMPLATE := $(COMPONENT_PATH)/ld/esp32.project.ld.in
 ESP32_LINKER_SCRIPT_OUTPUT_DIR := $(realpath $(BUILD_DIR_BASE)/esp32)
 

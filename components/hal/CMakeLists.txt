@@ -118,6 +118,7 @@ idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
                        PRIV_INCLUDE_DIRS ${priv_include}
                        REQUIRES soc
+                       PRIV_REQUIRES ${target}
                        LDFRAGMENTS linker.lf)
 
 if(CONFIG_HAL_DEFAULT_ASSERTION_LEVEL EQUAL 1)

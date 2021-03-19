@@ -69,7 +69,7 @@ idf_component_register(SRCS "${srcs}"
                     PRIV_INCLUDE_DIRS  ${private_include_dirs}
                     LDFRAGMENTS linker.lf
                     REQUIRES ${required_components}
-                    PRIV_REQUIRES soc)
+                    PRIV_REQUIRES soc esp_pm)
 
 idf_component_get_property(COMPONENT_DIR freertos COMPONENT_DIR)
 idf_component_set_property(freertos ORIG_INCLUDE_PATH "${COMPONENT_DIR}/include/freertos/")

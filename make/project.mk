@@ -354,7 +354,6 @@ IDF_VER := $(shell echo "$(IDF_VER_T)"  | cut -c 1-31)
 # Set default LDFLAGS
 EXTRA_LDFLAGS ?=
 LDFLAGS ?= -nostdlib \
-	-u call_user_start_cpu0	\
 	$(EXTRA_LDFLAGS) \
 	-Wl,--gc-sections	\
 	-Wl,-static	\
