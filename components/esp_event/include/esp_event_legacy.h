@@ -50,6 +50,7 @@ typedef enum {
     SYSTEM_EVENT_AP_PROBEREQRECVED,        /*!< Receive probe request packet in soft-AP interface */
     SYSTEM_EVENT_ACTION_TX_STATUS,         /*!< Receive status of Action frame transmitted */
     SYSTEM_EVENT_ROC_DONE,                 /*!< Indicates the completion of Remain-on-Channel operation status */
+    SYSTEM_EVENT_STA_BEACON_TIMEOUT,       /*!< ESP32 station beacon timeout */
     SYSTEM_EVENT_FTM_REPORT,               /*!< Receive report of FTM procedure */
     SYSTEM_EVENT_GOT_IP6,                  /*!< ESP32 station or ap or ethernet interface v6IP addr is preferred */
     SYSTEM_EVENT_ETH_START,                /*!< ESP32 ethernet start */
