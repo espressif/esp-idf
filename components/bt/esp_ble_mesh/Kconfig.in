@@ -265,6 +265,19 @@ if BLE_MESH
             advertising bearer. This option should be enabled if PB-ADV is
             going to be used during provisioning procedure.
 
+    config BLE_MESH_UNPROVISIONED_BEACON_INTERVAL
+        int "Interval between two consecutive Unprovisioned Device Beacon"
+        depends on BLE_MESH_NODE && BLE_MESH_PB_ADV
+        default 5
+        default 3 if BLE_MESH_FAST_PROV
+        range 1 100
+        help
+            This option specifies the interval of sending two consecutive unprovisioned
+            device beacon, users can use this option to change the frequency of sending
+            unprovisioned device beacon. For example, if the value is 5, it means the
+            unprovisioned device beacon will send every 5 seconds. When the option of
+            BLE_MESH_FAST_PROV is selected, the value is better to be 3 seconds, or less.
+
     config BLE_MESH_PB_GATT
         bool "Provisioning support using GATT (PB-GATT)"
         select BLE_MESH_PROXY
