@@ -345,6 +345,9 @@ void capture_tcp_transport_error(esp_transport_handle_t t, enum tcp_transport_er
         case ERR_TCP_TRANSPORT_SETOPT_FAILED:
             err_handle->last_error = ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED;
             break;
+        case ERR_TCP_TRANSPORT_NO_MEM:
+            err_handle->last_error = ESP_ERR_NO_MEM;
+            break;
     }
 }
 
