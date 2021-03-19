@@ -856,6 +856,7 @@ void bta_jv_free_scn(tBTA_JV_MSG *p_data)
     tBTA_JV_FREE_SCN evt_data = {
         .status = BTA_JV_SUCCESS,
         .server_status = BTA_JV_SERVER_STATUS_MAX,
+        .scn = scn
     };
 
     tBTA_JV_FREE_SCN_USER_DATA *user_data = NULL;
@@ -949,6 +950,7 @@ static void bta_jv_start_discovery_cback(UINT16 result, void *user_data)
         status = BTA_JV_FAILURE;
         if (result == SDP_SUCCESS || result == SDP_DB_FULL) {
             tSDP_DISC_REC       *p_sdp_rec = NULL;
+            tSDP_DISC_ATTR *p_attr = NULL;
             tSDP_PROTOCOL_ELEM  pe;
             logu("bta_jv_cb.uuid", bta_jv_cb.uuid.uu.uuid128);
             tBT_UUID su = shorten_sdp_uuid(&bta_jv_cb.uuid);
@@ -957,7 +959,13 @@ static void bta_jv_start_discovery_cback(UINT16 result, void *user_data)
                 p_sdp_rec = SDP_FindServiceUUIDInDb(p_bta_jv_cfg->p_sdp_db, &su, p_sdp_rec);
                 APPL_TRACE_DEBUG("p_sdp_rec:%p", p_sdp_rec);
                 if (p_sdp_rec && SDP_FindProtocolListElemInRec(p_sdp_rec, UUID_PROTOCOL_RFCOMM, &pe)){
-                    dcomp.scn[dcomp.scn_num++] = (UINT8) pe.params[0];
+                    dcomp.scn[dcomp.scn_num] = (UINT8) pe.params[0];
+                    if ((p_attr = SDP_FindAttributeInRec(p_sdp_rec, ATTR_ID_SERVICE_NAME)) != NULL) {
+                        dcomp.service_name[dcomp.scn_num] = (char *)p_attr->attr_value.v.array;
+                    } else {
+                        dcomp.service_name[dcomp.scn_num] = NULL;
+                    }
+                    dcomp.scn_num++;
                     status = BTA_JV_SUCCESS;
                 }
             } while (p_sdp_rec);
@@ -2154,6 +2162,7 @@ void bta_jv_rfcomm_start_server(tBTA_JV_MSG *p_data)
         evt_data.status = BTA_JV_SUCCESS;
         evt_data.handle = p_pcb->handle;
         evt_data.sec_id = sec_id;
+        evt_data.scn = rs->local_scn;
         evt_data.use_co = TRUE;
 
         PORT_ClearKeepHandleFlag(handle);
