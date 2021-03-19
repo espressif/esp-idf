@@ -599,6 +599,8 @@ typedef enum {
     WIFI_EVENT_ACTION_TX_STATUS,         /**< Status indication of Action Tx operation */
     WIFI_EVENT_ROC_DONE,                 /**< Remain-on-Channel operation complete */
 
+    WIFI_EVENT_STA_BEACON_TIMEOUT,       /**< ESP32 station beacon timeout */
+
     WIFI_EVENT_MAX,                      /**< Invalid WiFi event ID */
 } wifi_event_t;
 
