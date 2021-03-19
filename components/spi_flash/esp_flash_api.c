@@ -836,6 +836,7 @@ IRAM_ATTR esp_err_t esp_flash_set_io_mode(esp_flash_t* chip, bool qe)
 //init suspend mode cmd, uses internal.
 esp_err_t esp_flash_suspend_cmd_init(esp_flash_t* chip)
 {
+    ESP_EARLY_LOGW(TAG, "Flash suspend feature is enabled");
     return chip->chip_drv->sus_setup(chip);
 }
 
