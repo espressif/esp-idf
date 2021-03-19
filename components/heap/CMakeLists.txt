@@ -1,8 +1,11 @@
 set(srcs
     "heap_caps.c"
     "heap_caps_init.c"
-    "multi_heap.c"
-    "heap_tlsf.c")
+    "multi_heap.c")
+
+if(NOT CONFIG_HEAP_ROM_IMPL)
+    list(APPEND srcs "heap_tlsf.c")
+endif()
 
 if(NOT CONFIG_HEAP_POISONING_DISABLED)
     list(APPEND srcs "multi_heap_poisoning.c")

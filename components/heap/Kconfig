@@ -71,4 +71,21 @@ menu "Heap memory debugging"
         help
             When enabled, if a memory allocation operation fails it will cause a system abort.
 
+    config HEAP_HAS_ROM_IMPL
+        bool
+        default y if IDF_TARGET_ESP32C2
+
+    config HEAP_ROM_IMPL
+        bool "Use heap implementation in ROM"
+        depends on HEAP_HAS_ROM_IMPL
+        default y
+        help
+            Enable this flag to use heap functions from ROM instead of ESP-IDF.
+
+            If keeping this as "n" in your project, you will have less free IRAM.
+            If making this as "y" in your project, you will increase free IRAM,
+            but you will lose the possibility to debug this module, and some new
+            features will be added and bugs will be fixed in the IDF source
+            but cannot be synced to ROM.
+
 endmenu
