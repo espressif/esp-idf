@@ -50,7 +50,7 @@ menu "Example Configuration"
         int "Mesh PS device duty cycle"
         depends on MESH_ENABLE_PS
         range 1 100
-        default 12
+        default 10
         help
             Mesh PS device duty cycle.
 
@@ -58,7 +58,7 @@ menu "Example Configuration"
         int "Mesh PS network duty cycle"
         depends on MESH_ENABLE_PS
         range 1 100
-        default 12
+        default 10
         help
             Mesh PS network duty cycle.
 
