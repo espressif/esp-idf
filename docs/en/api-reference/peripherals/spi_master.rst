@@ -140,7 +140,7 @@ Polling Transactions
 
 Polling transactions do not use interrupts. The routine keeps polling the SPI Host's status bit until the transaction is finished.
 
-All the tasks that use interrupt transactions can be blocked by the queue. At this point, they will need to wait for the ISR to run twice before the transaction is finished. Polling transactions save time otherwise spent on queue handling and context switching, which results in smaller transaction intervals. The disadvantage is that the CPU is busy while these transactions are in progress.
+All the tasks that use interrupt transactions can be blocked by the queue. At this point, they will need to wait for the ISR to run twice before the transaction is finished. Polling transactions save time otherwise spent on queue handling and context switching, which results in smaller transaction duration. The disadvantage is that the CPU is busy while these transactions are in progress.
 
 The :cpp:func:`spi_device_polling_end` routine needs an overhead of at least 1 us to unblock other tasks when the transaction is finished. It is strongly recommended to wrap a series of polling transactions using the functions :cpp:func:`spi_device_acquire_bus` and :cpp:func:`spi_device_release_bus` to avoid the overhead. For more information, see :ref:`bus_acquiring`.
 
@@ -375,31 +375,28 @@ There are three factors limiting the transfer speed:
 The main parameter that determines the transfer speed for large transactions is clock frequency. For multiple small transactions, the transfer speed is mostly determined by the length of transaction intervals.
 
 
-Transaction Interval
+Transaction Duration
 ^^^^^^^^^^^^^^^^^^^^
 
-Transaction interval is the time that software requires to set up SPI peripheral registers and to copy data to FIFOs, or to set up DMA links.
+{IDF_TARGET_TRANS_TIME_INTR_DMA:default="28", esp32="28", esp32s2="23", esp32c3="28"}
+{IDF_TARGET_TRANS_TIME_POLL_DMA:default="10", esp32="10", esp32s2="9", esp32c3="10"}
+{IDF_TARGET_TRANS_TIME_INTR_CPU:default="25", esp32="25", esp32s2="22", esp32c3="27"}
+{IDF_TARGET_TRANS_TIME_POLL_CPU:default="8", esp32="8", esp32s2="8", esp32c3="9"}
+
+Transaction duration includes setting up SPI peripheral registers, copying data to FIFOs or setting up DMA links, and the time for SPI transaction.
 
 Interrupt transactions allow appending extra overhead to accommodate the cost of FreeRTOS queues and the time needed for switching between tasks and the ISR.
 
-For **interrupt transactions**, the CPU can switch to other tasks when a transaction is in progress. This saves the CPU time but increases the interval. See :ref:`interrupt_transactions`. For **polling transactions**, it does not block the task but allows to do polling when the transaction is in progress. For more information, see :ref:`polling_transactions`.
+For **interrupt transactions**, the CPU can switch to other tasks when a transaction is in progress. This saves the CPU time but increases the transaction duration. See :ref:`interrupt_transactions`. For **polling transactions**, it does not block the task but allows to do polling when the transaction is in progress. For more information, see :ref:`polling_transactions`.
 
 If DMA is enabled, setting up the linked list requires about 2 us per transaction. When a master is transferring data, it automatically reads the data from the linked list. If DMA is not enabled, the CPU has to write and read each byte from the FIFO by itself. Usually, this is faster than 2 us, but the transaction length is limited to 64 bytes for both write and read.
 
-.. only:: esp32
+Typical transaction duration for one byte of data are given below.
 
-    Typical transaction interval timings for one byte of data are given below.
-
-    +--------+----------------+--------------+
-    |        | Typical Transaction Time (us) |
-    +========+================+==============+
-    |        | Interrupt      | Polling      |
-    +--------+----------------+--------------+
-    | DMA    | 24             | 8            |
-    +--------+----------------+--------------+
-    | No DMA | 22             | 7            |
-    +--------+----------------+--------------+
-
+- Interrupt Transaction via DMA: {IDF_TARGET_TRANS_TIME_INTR_DMA} µs.
+- Interrupt Transaction via CPU: {IDF_TARGET_TRANS_TIME_INTR_CPU} µs.
+- Polling Transaction via DMA: {IDF_TARGET_TRANS_TIME_POLL_DMA} µs.
+- Polling Transaction via CPU: {IDF_TARGET_TRANS_TIME_POLL_CPU} µs.
 
 SPI Clock Frequency
 ^^^^^^^^^^^^^^^^^^^
