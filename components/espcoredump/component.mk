@@ -5,8 +5,10 @@ COMPONENT_ADD_LDFRAGMENTS += linker.lf
 
 ifdef CONFIG_IDF_TARGET_ARCH_XTENSA
 	COMPONENT_PRIV_INCLUDEDIRS += include_core_dump/port/xtensa
+	COMPONENT_SRCDIRS += src/port/xtensa
 endif
 
 ifdef CONFIG_IDF_TARGET_ARCH_RISCV
 	COMPONENT_PRIV_INCLUDEDIRS += include_core_dump/port/riscv
+	COMPONENT_SRCDIRS += src/port/riscv
 endif
