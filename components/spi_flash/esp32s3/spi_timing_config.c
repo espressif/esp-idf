@@ -11,7 +11,7 @@
 #include "esp_types.h"
 #include "esp_log.h"
 #include "soc/spi_mem_reg.h"
-#include "esp32s3/spi_timing_config.h"
+#include "spi_timing_config.h"
 
 #define OPI_PSRAM_SYNC_READ                 0x0000
 #define OPI_PSRAM_SYNC_WRITE                0x8080

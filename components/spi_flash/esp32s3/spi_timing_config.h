@@ -9,7 +9,7 @@
 #include "esp_flash_partitions.h"
 #include "esp32s3/rom/spi_flash.h"
 #include "esp32s3/rom/opi_flash.h"
-#include "esp32s3/mspi_timing_tuning_configs.h"
+#include "mspi_timing_tuning_configs.h"
 
 #ifdef __cplusplus
 extern "C" {

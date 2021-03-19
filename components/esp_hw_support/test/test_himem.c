@@ -14,6 +14,8 @@
 #include "sdkconfig.h"
 #include "esp32/himem.h"
 
+#if CONFIG_IDF_TARGET_ESP32
+
 #if CONFIG_SPIRAM_BANKSWITCH_ENABLE
 
 //Fill memory with pseudo-random data generated from the given seed.
@@ -107,3 +109,5 @@ TEST_CASE("high psram memory test", "[himem]")
 
 
 #endif
+
+#endif // CONFIG_IDF_TARGET_ESP32

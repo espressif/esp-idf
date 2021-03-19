@@ -11,9 +11,6 @@ if(BOOTLOADER_BUILD)
 else()
     # Regular app build
 
-    set(srcs "spiram.c"
-             "spiram_psram.c")
-
     set(include_dirs "include")
 
     set(requires driver efuse xtensa)
@@ -39,7 +36,7 @@ else()
                          PROCESS "${CMAKE_CURRENT_BINARY_DIR}/ld/esp32s2.project.ld")
 
     target_linker_script(${COMPONENT_LIB} INTERFACE "ld/esp32s2.peripherals.ld")
-    target_link_libraries(${COMPONENT_LIB} PUBLIC gcc)
+    target_link_libraries(${COMPONENT_LIB} INTERFACE gcc)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u call_user_start_cpu0")
 
     idf_build_get_property(config_dir CONFIG_DIR)

@@ -12,7 +12,11 @@ set(srcs
     "chip_info.c")
 
 if(NOT BOOTLOADER_BUILD)
-    list(APPEND srcs "dport_access.c")
+    list(APPEND srcs "cache_sram_mmu.c"
+                     "dport_access.c"
+                     "esp_himem.c"
+                     "spiram.c"
+                     "spiram_psram.c")
 endif()
 
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")

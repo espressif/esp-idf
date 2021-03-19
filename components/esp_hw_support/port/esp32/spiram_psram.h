@@ -11,6 +11,10 @@
 #include "esp_err.h"
 #include "sdkconfig.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
     PSRAM_CACHE_F80M_S40M = 0,
     PSRAM_CACHE_F40M_S40M,
@@ -58,5 +62,9 @@ psram_size_t psram_get_size(void);
  * @return ESP_OK on success, ESP_ERR_INVALID_STATE when VSPI peripheral is needed but cannot be claimed.
  */
 esp_err_t psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vaddrmode);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

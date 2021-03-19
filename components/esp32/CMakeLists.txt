@@ -11,12 +11,6 @@ if(BOOTLOADER_BUILD)
     target_linker_script(${COMPONENT_LIB} INTERFACE "ld/esp32.peripherals.ld")
 else()
     # Regular app build
-    set(srcs
-        "cache_sram_mmu.c"
-        "esp_himem.c"
-        "spiram.c"
-        "spiram_psram.c")
-
     set(include_dirs "include")
 
     set(requires driver efuse soc xtensa) #unfortunately rom/uart uses SOC registers directly
@@ -40,7 +34,7 @@ else()
                         PROCESS "${CMAKE_CURRENT_BINARY_DIR}/ld/esp32.project.ld")
 
     target_linker_script(${COMPONENT_LIB} INTERFACE "ld/esp32.peripherals.ld")
-    target_link_libraries(${COMPONENT_LIB} PUBLIC gcc)
+    target_link_libraries(${COMPONENT_LIB} INTERFACE gcc)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u call_user_start_cpu0")
 
     idf_build_get_property(config_dir CONFIG_DIR)
@@ -57,27 +51,4 @@ else()
     add_custom_target(esp32_linker_script DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/esp32_out.ld)
     add_dependencies(${COMPONENT_LIB} esp32_linker_script)
 
-    if(CONFIG_SPIRAM_CACHE_WORKAROUND)
-        # Note: Adding as a PUBLIC compile option here causes this option to propagate to all
-        # components that depend on esp32.
-        #
-        # To handle some corner cases, the same flag is set in project_include.cmake
-        target_compile_options(${COMPONENT_LIB} PUBLIC -mfix-esp32-psram-cache-issue)
-        # also, make sure we link with this option so correct toolchain libs are pulled in
-        target_link_libraries(${COMPONENT_LIB} PUBLIC -mfix-esp32-psram-cache-issue)
-        # set strategy selected
-        # note that we don't need to set link options as the library linked is independent of this
-        if(CONFIG_SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST)
-            target_compile_options(${COMPONENT_LIB} PUBLIC -mfix-esp32-psram-cache-strategy=dupldst)
-            target_link_libraries(${COMPONENT_LIB} PUBLIC -mfix-esp32-psram-cache-strategy=dupldst)
-        endif()
-        if(CONFIG_SPIRAM_CACHE_WORKAROUND_STRATEGY_MEMW)
-            target_compile_options(${COMPONENT_LIB} PUBLIC -mfix-esp32-psram-cache-strategy=memw)
-            target_link_libraries(${COMPONENT_LIB} PUBLIC -mfix-esp32-psram-cache-strategy=memw)
-        endif()
-        if(CONFIG_SPIRAM_CACHE_WORKAROUND_STRATEGY_NOPS)
-            target_compile_options(${COMPONENT_LIB} PUBLIC -mfix-esp32-psram-cache-strategy=nops)
-            target_link_libraries(${COMPONENT_LIB} PUBLIC -mfix-esp32-psram-cache-strategy=nops)
-        endif()
-    endif()
 endif()

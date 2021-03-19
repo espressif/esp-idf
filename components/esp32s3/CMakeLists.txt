@@ -11,11 +11,6 @@ if(BOOTLOADER_BUILD)
     target_linker_script(${COMPONENT_LIB} INTERFACE "ld/esp32s3.peripherals.ld")
 else()
     # Regular app build
-
-    set(srcs "dport_access.c"
-             "spiram.c"
-             "spiram_psram.c"
-             "spi_timing_config.c")
     set(include_dirs "include")
 
     set(requires driver efuse soc xtensa) #unfortunately rom/uart uses SOC registers directly
@@ -25,12 +20,6 @@ else()
     # esp_timer is added here because cpu_start.c uses esp_timer
     set(priv_requires app_trace app_update bootloader_support log mbedtls nvs_flash pthread
         spi_flash vfs espcoredump esp_common perfmon esp_timer esp_ipc)
-
-    if(CONFIG_SPIRAM_MODE_QUAD)
-        list(APPEND srcs "spiram_psram.c")
-    elseif(CONFIG_SPIRAM_MODE_OCT)
-        list(APPEND srcs "opiram_psram.c")
-    endif()
 
     idf_component_register(SRCS "${srcs}"
                         INCLUDE_DIRS "${include_dirs}"
@@ -46,7 +35,7 @@ else()
                                           PROCESS "${CMAKE_CURRENT_BINARY_DIR}/ld/esp32s3.project.ld")
 
     target_linker_script(${COMPONENT_LIB} INTERFACE "ld/esp32s3.peripherals.ld")
-    target_link_libraries(${COMPONENT_LIB} PUBLIC gcc)
+    target_link_libraries(${COMPONENT_LIB} INTERFACE gcc)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u call_user_start_cpu0")
 
     idf_build_get_property(config_dir CONFIG_DIR)

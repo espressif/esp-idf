@@ -13,7 +13,6 @@ This code tests the interaction between PSRAM and SPI flash routines.
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
-#include "freertos/xtensa_api.h"
 #include "unity.h"
 #include <stdint.h>
 #include <stdlib.h>

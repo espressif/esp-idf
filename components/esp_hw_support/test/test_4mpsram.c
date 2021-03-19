@@ -9,6 +9,8 @@
 #include "driver/spi_common_internal.h"
 #include "sdkconfig.h"
 
+#if CONFIG_IDF_TARGET_ESP32
+
 static const char TAG[] = "test_psram";
 
 #ifdef CONFIG_SPIRAM
@@ -98,3 +100,5 @@ they will not pass this test at 80MHz.
     test_spi_bus_occupy(-1);
 }
 #endif
+
+#endif // CONFIG_IDF_TARGET_ESP32

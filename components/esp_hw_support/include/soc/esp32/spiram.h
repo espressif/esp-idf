@@ -108,9 +108,8 @@ esp_err_t esp_spiram_reserve_dma_pool(size_t size);
  */
 bool esp_spiram_is_initialized(void);
 
-
-#endif
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif //  __ESP_SPIRAM_H
