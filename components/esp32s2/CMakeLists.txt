@@ -11,8 +11,7 @@ if(BOOTLOADER_BUILD)
 else()
     # Regular app build
 
-    set(srcs "dport_access.c"
-             "spiram.c"
+    set(srcs "spiram.c"
              "spiram_psram.c")
 
     set(include_dirs "include")

@@ -18,7 +18,8 @@ if(NOT BOOTLOADER_BUILD)
                      "memprot.c"
                      "esp_hmac.c"
                      "esp_crypto_lock.c"
-                     "esp_ds.c")
+                     "esp_ds.c"
+                     "dport_access.c")
 endif()
 
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")

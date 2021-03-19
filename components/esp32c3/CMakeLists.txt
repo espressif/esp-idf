@@ -11,7 +11,7 @@ if(BOOTLOADER_BUILD)
 else()
     # Regular app build
 
-    set(srcs "dport_access.c")
+    set(srcs)
     set(include_dirs "include")
 
     set(requires driver efuse soc riscv) #unfortunately rom/uart uses SOC registers directly
@@ -36,8 +36,7 @@ else()
     target_linker_script(${COMPONENT_LIB} INTERFACE "${CMAKE_CURRENT_LIST_DIR}/ld/esp32c3.project.ld.in"
             PROCESS "${CMAKE_CURRENT_BINARY_DIR}/ld/esp32c3.project.ld")
     target_linker_script(${COMPONENT_LIB} INTERFACE "ld/esp32c3.peripherals.ld")
-
-    target_link_libraries(${COMPONENT_LIB} PUBLIC gcc)
+    target_link_libraries(${COMPONENT_LIB} INTERFACE gcc)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u call_user_start_cpu0")
 
     idf_build_get_property(config_dir CONFIG_DIR)

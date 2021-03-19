@@ -6,8 +6,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "esp_types.h"
+#include <sdkconfig.h>
 
+#if CONFIG_IDF_TARGET_ESP32
+
+#include "esp_types.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -20,10 +23,10 @@
 #include "soc/dport_reg.h"
 #include "soc/rtc.h"
 #include "esp_log.h"
-#include "mbedtls/sha256.h"
 #include "sha/sha_parallel_engine.h"
 #include "aes/esp_aes.h"
 #include "mbedtls/rsa.h"
+#include "mbedtls/sha256.h"
 
 static const char *TAG = "test";
 static volatile bool exit_flag = false;
@@ -289,3 +292,5 @@ TEST_CASE("Test shared using AES SHA RSA", "[hw_crypto]")
         vSemaphoreDelete(exit_sema[i]);
     }
 }
+
+#endif // CONFIG_IDF_TARGET_ESP32

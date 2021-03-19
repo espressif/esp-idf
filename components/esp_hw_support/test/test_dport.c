@@ -3,6 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "sdkconfig.h"
+
+#if CONFIG_IDF_TARGET_ESP32
 #include <stdio.h>
 #include <stdlib.h>
 #include "xtensa/core-macros.h"
@@ -25,6 +28,7 @@
 #include "hal/cpu_hal.h"
 #include "esp_intr_alloc.h"
 #include "driver/timer.h"
+
 
 #define MHZ (1000000)
 static volatile bool exit_flag;
@@ -501,3 +505,5 @@ TEST_CASE("Check pre-read workaround DPORT and Hi-interrupt (2)", "[esp32]")
     run_tasks("accessAPB", accessAPB, "accessDPORT3", accessDPORT3, 10000);
 }
 #endif // CONFIG_FREERTOS_UNICORE
+
+#endif // CONFIG_IDF_TARGET_ESP32

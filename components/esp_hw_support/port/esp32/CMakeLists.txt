@@ -11,5 +11,9 @@ set(srcs
     "rtc_wdt.c"
     "chip_info.c")
 
+if(NOT BOOTLOADER_BUILD)
+    list(APPEND srcs "dport_access.c")
+endif()
+
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")
 target_sources(${COMPONENT_LIB} PRIVATE "${srcs}")

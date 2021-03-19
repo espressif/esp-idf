@@ -13,7 +13,6 @@ else()
     # Regular app build
     set(srcs
         "cache_sram_mmu.c"
-        "dport_access.c"
         "esp_himem.c"
         "spiram.c"
         "spiram_psram.c")

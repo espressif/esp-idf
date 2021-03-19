@@ -1,9 +1,9 @@
-// Copyright 2010-2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2010-2017 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-//
+
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -14,6 +14,8 @@
 
 #ifndef _ESP_DPORT_ACCESS_H_
 #define _ESP_DPORT_ACCESS_H_
+
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {

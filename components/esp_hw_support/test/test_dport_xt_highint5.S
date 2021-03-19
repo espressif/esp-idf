@@ -1,9 +1,11 @@
+#include "sdkconfig.h"
+
+#if CONFIG_IDF_TARGET_ESP32
 #include <xtensa/coreasm.h>
 #include <xtensa/corebits.h>
 #include <xtensa/config/system.h>
 #include "freertos/xtensa_context.h"
 #include "esp_private/panic_reason.h"
-#include "sdkconfig.h"
 #include "soc/soc.h"
 #include "soc/dport_reg.h"
 
@@ -76,3 +78,5 @@ xt_highint5:
     .global ld_include_test_dport_xt_highint5
 ld_include_test_dport_xt_highint5:
 #endif // CONFIG_FREERTOS_UNICORE
+
+#endif // CONFIG_IDF_TARGET_ESP32

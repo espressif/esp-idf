@@ -14,6 +14,7 @@ else()
 
     set(srcs "dport_access.c"
              "spiram.c"
+             "spiram_psram.c"
              "spi_timing_config.c")
     set(include_dirs "include")
 
