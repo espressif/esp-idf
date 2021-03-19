@@ -33,8 +33,6 @@
 #include "freertos/xtensa_api.h"
 #include "soc/soc_memory_layout.h"
 
-#include "esp32/cache_err_int.h"
-
 /* "inner" restart function for after RTOS, interrupts & anything else on this
  * core are already stopped. Stalls other core, resets hardware,
  * triggers restart.

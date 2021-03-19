@@ -60,24 +60,22 @@
 #include "esp_private/usb_console.h"
 #include "esp_vfs_cdcacm.h"
 
+#include "brownout.h"
+
 #include "esp_rom_sys.h"
 
 // [refactor-todo] make this file completely target-independent
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/clk.h"
 #include "esp32/spiram.h"
-#include "esp32/brownout.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/clk.h"
 #include "esp32s2/spiram.h"
-#include "esp32s2/brownout.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/clk.h"
 #include "esp32s3/spiram.h"
-#include "esp32s3/brownout.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/clk.h"
-#include "esp32c3/brownout.h"
 #endif
 /***********************************************/
 

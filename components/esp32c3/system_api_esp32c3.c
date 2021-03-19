@@ -20,7 +20,6 @@
 #include "esp_efuse.h"
 #include "esp_log.h"
 #include "esp32c3/rom/cache.h"
-#include "esp32c3/cache_err_int.h"
 #include "riscv/riscv_interrupts.h"
 #include "riscv/interrupt.h"
 #include "esp_rom_uart.h"

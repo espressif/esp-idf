@@ -487,18 +487,6 @@ menu "ESP32-specific"
         default 6 if ESP32_BROWNOUT_DET_LVL_SEL_6
         default 7 if ESP32_BROWNOUT_DET_LVL_SEL_7
 
-
-        #Reduce PHY TX power when brownout reset
-    config ESP32_REDUCE_PHY_TX_POWER
-        bool "Reduce PHY TX power when brownout reset"
-        depends on ESP32_BROWNOUT_DET
-        default y
-        help
-            When brownout reset occurs, reduce PHY TX power to keep the code running
-
-            # Note about the use of "FRC1" name: currently FRC1 timer is not used for
-            # high resolution timekeeping anymore. Instead the esp_timer API is used.
-            # FRC1 name in the option name is kept for compatibility.
     choice ESP32_TIME_SYSCALL
         prompt "Timers used for gettimeofday function"
         default ESP32_TIME_SYSCALL_USE_RTC_FRC1

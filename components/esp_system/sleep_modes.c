@@ -48,6 +48,7 @@
 
 #include "sdkconfig.h"
 #include "esp_rom_uart.h"
+#include "brownout.h"
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/cache.h"
@@ -58,7 +59,6 @@
 #include "esp32s2/clk.h"
 #include "esp32s2/rom/cache.h"
 #include "esp32s2/rom/rtc.h"
-#include "esp32s2/brownout.h"
 #include "soc/extmem_reg.h"
 #include "driver/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32S3

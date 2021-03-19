@@ -12,7 +12,6 @@ if(BOOTLOADER_BUILD)
 else()
     # Regular app build
     set(srcs
-        "cache_err_int.c"
         "cache_sram_mmu.c"
         "clk.c"
         "crosscore_int.c"

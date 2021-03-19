@@ -12,12 +12,10 @@ if(BOOTLOADER_BUILD)
 else()
     # Regular app build
 
-    set(srcs "cache_err_int.c"
-             "clk.c"
+    set(srcs "clk.c"
              "crosscore_int.c"
              "dport_access.c"
              "esp_crypto_lock.c"
-
              "memprot.c"
              "spiram.c"
              "spiram_psram.c"

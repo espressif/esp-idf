@@ -21,21 +21,19 @@
 #include "esp_private/panic_reason.h"
 #include "soc/soc.h"
 
+#include "cache_err_int.h"
+
 #include "sdkconfig.h"
 
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/cache_err_int.h"
-#else
+#if !CONFIG_IDF_TARGET_ESP32
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"
 #include "soc/rtc_cntl_reg.h"
 #if CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/cache_err_int.h"
 #ifdef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 #include "esp32s2/memprot.h"
 #endif
 #elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/cache_err_int.h"
 #ifdef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 #include "esp32s3/memprot.h"
 #endif
