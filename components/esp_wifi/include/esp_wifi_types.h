@@ -508,6 +508,7 @@ typedef enum {
     WIFI_EVENT_STA_CONNECTED,            /**< ESP32 station connected to AP */
     WIFI_EVENT_STA_DISCONNECTED,         /**< ESP32 station disconnected from AP */
     WIFI_EVENT_STA_AUTHMODE_CHANGE,      /**< the auth mode of AP connected by ESP32 station changed */
+    WIFI_EVENT_STA_BEACON_TIMEOUT,       /**< ESP32 station beacon timeout */
 
     WIFI_EVENT_STA_WPS_ER_SUCCESS,       /**< ESP32 station wps succeeds in enrollee mode */
     WIFI_EVENT_STA_WPS_ER_FAILED,        /**< ESP32 station wps fails in enrollee mode */

@@ -52,6 +52,9 @@ static system_event_id_t esp_event_legacy_wifi_event_id(int32_t event_id)
     case WIFI_EVENT_STA_AUTHMODE_CHANGE:
         return SYSTEM_EVENT_STA_AUTHMODE_CHANGE;
 
+    case WIFI_EVENT_STA_BEACON_TIMEOUT:
+        return SYSTEM_EVENT_STA_BEACON_TIMEOUT;
+
     case WIFI_EVENT_STA_WPS_ER_SUCCESS:
         return SYSTEM_EVENT_STA_WPS_ER_SUCCESS;
 
