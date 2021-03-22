@@ -1,5 +1,5 @@
 /*
-    FreeRTOS V8.2.0 - Copyright (C) 2021 Real Time Engineers Ltd.
+    FreeRTOS V10 - Copyright (C) 2021 Real Time Engineers Ltd.
     All rights reserved
 
     VISIT http://www.FreeRTOS.org TO ENSURE YOU ARE USING THE LATEST VERSION.
@@ -74,16 +74,16 @@
 
 /* enable use of optimized task selection by the scheduler */
 #ifdef CONFIG_FREERTOS_OPTIMIZED_SCHEDULER
-#define configUSE_PORT_OPTIMISED_TASK_SELECTION 1
+#define configUSE_PORT_OPTIMISED_TASK_SELECTION         1
 #endif
 
-#define XT_USE_THREAD_SAFE_CLIB		0
+#define XT_USE_THREAD_SAFE_CLIB                         0
 #undef XT_USE_SWPRI
 
 #if CONFIG_FREERTOS_CORETIMER_0
-#define XT_TIMER_INDEX 0
+#define XT_TIMER_INDEX                                  0
 #elif CONFIG_FREERTOS_CORETIMER_1
-#define XT_TIMER_INDEX 1
+#define XT_TIMER_INDEX                                  1
 #endif
 
 #ifndef __ASSEMBLER__
@@ -133,8 +133,8 @@ int xt_clock_freq(void) __attribute__((deprecated));
 #define UNTESTED_FUNCTION()
 #endif
 
-#define configXT_BOARD                      1   /* Board mode */
-#define configXT_SIMULATOR					0
+#define configXT_BOARD                                  1   /* Board mode */
+#define configXT_SIMULATOR                              0
 
 /* The maximum interrupt priority from which FreeRTOS.org API functions can
    be called.  Only API functions that end in ...FromISR() can be used within
@@ -142,7 +142,7 @@ int xt_clock_freq(void) __attribute__((deprecated));
 #define configMAX_SYSCALL_INTERRUPT_PRIORITY	XCHAL_EXCM_LEVEL
 
 /* Stack alignment, architecture specifc. Must be a power of two. */
-#define configSTACK_ALIGNMENT			16
+#define configSTACK_ALIGNMENT                           16
 
 
 /* The Xtensa port uses a separate interrupt stack. Adjust the stack size
@@ -151,7 +151,7 @@ int xt_clock_freq(void) __attribute__((deprecated));
  * the stack for the 2nd CPU will be calculated using configISR_STACK_SIZE.
  */
 #ifndef configISR_STACK_SIZE
-#define configISR_STACK_SIZE			((CONFIG_FREERTOS_ISR_STACKSIZE + configSTACK_ALIGNMENT - 1) & (~(configSTACK_ALIGNMENT - 1)))
+#define configISR_STACK_SIZE                            ((CONFIG_FREERTOS_ISR_STACKSIZE + configSTACK_ALIGNMENT - 1) & (~(configSTACK_ALIGNMENT - 1)))
 #endif
 
 #endif // FREERTOS_CONFIG_XTENSA_H

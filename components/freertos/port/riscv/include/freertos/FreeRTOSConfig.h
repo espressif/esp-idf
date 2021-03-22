@@ -1,5 +1,5 @@
 /*
-    FreeRTOS V8.2.0 - Copyright (C) 2021 Real Time Engineers Ltd.
+    FreeRTOS V10 - Copyright (C) 2021 Real Time Engineers Ltd.
     All rights reserved
 
     VISIT http://www.FreeRTOS.org TO ENSURE YOU ARE USING THE LATEST VERSION.
@@ -74,7 +74,7 @@
 
 #include "sdkconfig.h"
 
-#define configUSE_PORT_OPTIMISED_TASK_SELECTION 0
+#define configUSE_PORT_OPTIMISED_TASK_SELECTION         0
 
 #ifndef __ASSEMBLER__
 #if CONFIG_IDF_TARGET_ESP32C3
@@ -85,10 +85,10 @@
 /* The maximum interrupt priority from which FreeRTOS.org API functions can
    be called.  Only API functions that end in ...FromISR() can be used within
    interrupts. */
-#define configMAX_SYSCALL_INTERRUPT_PRIORITY	0
+#define configMAX_SYSCALL_INTERRUPT_PRIORITY            0
 
 #ifndef configISR_STACK_SIZE
-#define configISR_STACK_SIZE			(CONFIG_FREERTOS_ISR_STACKSIZE)
+#define configISR_STACK_SIZE                            (CONFIG_FREERTOS_ISR_STACKSIZE)
 #endif
 
 #endif // FREERTOS_CONFIG_RISCV_H
