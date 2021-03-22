@@ -65,4 +65,11 @@ menu "OpenThread"
         help
             The storage size should be at least 8192 bytes.
 
+    config OPENTHREAD_NETIF_QUEUE_SIZE
+        int "The size of the packet queue for OpenThread lwIP network interface"
+        depends on OPENTHREAD_ENABLED
+        default 10
+        help
+            The size of the packet queue for OpenThread lwIP network interface.
+
 endmenu

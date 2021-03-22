@@ -20,8 +20,9 @@
 #include "esp_netif.h"
 #include "esp_openthread.h"
 #include "esp_openthread_lock.h"
+#include "esp_openthread_netif.h"
 #include "esp_openthread_types.h"
-#include "sdkconfig.h"
+#include "esp_vfs_eventfd.h"
 #include "driver/uart.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
@@ -79,10 +80,15 @@ static void ot_task_worker(void *aContext)
             },
         },
     };
+    esp_vfs_eventfd_config_t eventfd_config = {
+        .max_fds = 2,
+    };
     esp_openthread_mainloop_context_t mainloop;
 
+    ESP_ERROR_CHECK(esp_vfs_eventfd_register(&eventfd_config));
     ESP_ERROR_CHECK(esp_openthread_platform_init(&config));
     otInstance *instance = otInstanceInitSingle();
+    ESP_ERROR_CHECK(esp_openthread_netif_init());
     assert(instance != NULL);
 
     esp_openthread_lock_acquire(portMAX_DELAY);
@@ -122,10 +128,12 @@ static void ot_task_worker(void *aContext)
 
     otInstanceFinalize(instance);
     esp_openthread_platform_deinit();
+    esp_vfs_eventfd_unregister();
     vTaskDelete(NULL);
 }
 
 void app_main(void)
 {
+    ESP_ERROR_CHECK(esp_netif_init());
     xTaskCreate(ot_task_worker, "ot_cli_main", 10240, xTaskGetCurrentTaskHandle(), 5, NULL);
 }
