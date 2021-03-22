@@ -77,4 +77,5 @@ const spi_flash_chip_t esp_flash_chip_boya = {
     .read_reg = spi_flash_chip_generic_read_reg,
     .yield = spi_flash_chip_generic_yield,
     .sus_setup = spi_flash_chip_boya_suspend_cmd_conf,
+    .read_unique_id = spi_flash_chip_generic_read_unique_id,
 };

@@ -286,6 +286,31 @@ esp_err_t esp_flash_read_id(esp_flash_t* chip, uint32_t* out_id)
 }
 #endif //CONFIG_SPI_FLASH_ROM_IMPL
 
+static esp_err_t IRAM_ATTR NOINLINE_ATTR read_unique_id(esp_flash_t* chip, uint64_t* out_uid)
+{
+    esp_err_t err = rom_spiflash_api_funcs->start(chip);
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    err = chip->chip_drv->read_unique_id(chip, out_uid);
+
+    return rom_spiflash_api_funcs->end(chip, err);
+}
+
+esp_err_t esp_flash_read_unique_chip_id(esp_flash_t *chip, uint64_t* out_uid)
+{
+    esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
+    if (err != ESP_OK) {
+        return err;
+    }
+    if (out_uid == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    };
+
+    return read_unique_id(chip, out_uid);
+}
+
 static esp_err_t IRAM_ATTR detect_spi_flash_chip(esp_flash_t *chip)
 {
     esp_err_t err;

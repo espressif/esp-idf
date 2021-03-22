@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include "spi_flash_chip_generic.h"
 #include "spi_flash_defs.h"
+#include "esp_log.h"
 
 /* Driver for MXIC flash chip */
 
@@ -49,6 +50,13 @@ esp_err_t spi_flash_chip_mxic_suspend_cmd_conf(esp_flash_t *chip)
     };
 
     return chip->host->driver->sus_setup(chip->host, &sus_conf);
+}
+
+esp_err_t spi_flash_chip_mxic_read_unique_id(esp_flash_t *chip, uint64_t* flash_unique_id)
+{
+    //MXIC not support read unique id.
+    ESP_LOGE(chip_name, "chip %s doesn't support reading unique id", chip->chip_drv->name);
+    return ESP_ERR_NOT_SUPPORTED;
 }
 
 // The mxic chip can use the functions for generic chips except from set read mode and probe,
@@ -86,4 +94,5 @@ const spi_flash_chip_t esp_flash_chip_mxic = {
     .read_reg = spi_flash_chip_mxic_read_reg,
     .yield = spi_flash_chip_generic_yield,
     .sus_setup = spi_flash_chip_mxic_suspend_cmd_conf,
+    .read_unique_id = spi_flash_chip_mxic_read_unique_id,
 };

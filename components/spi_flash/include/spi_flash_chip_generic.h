@@ -245,6 +245,18 @@ esp_err_t spi_flash_chip_generic_set_io_mode(esp_flash_t *chip);
 esp_err_t spi_flash_chip_generic_get_io_mode(esp_flash_t *chip, esp_flash_io_mode_t* out_quad_mode);
 
 /**
+ * @brief Read the chip unique ID.
+ *
+ * @param chip Pointer to SPI flash chip to use. If NULL, esp_flash_default_chip is substituted.
+ * @param flash_unique_id Pointer to store output unique id.
+ *
+ * @return
+ *      - ESP_OK if success
+ *      - ESP_ERR_NOT_SUPPORTED if the chip doesn't support read id.
+ */
+esp_err_t spi_flash_chip_generic_read_unique_id(esp_flash_t *chip, uint64_t* flash_unique_id);
+
+/**
  * Generic SPI flash chip_drv, uses all the above functions for its operations.
  * In default autodetection, this is used as a catchall if a more specific
  * chip_drv is not found.
