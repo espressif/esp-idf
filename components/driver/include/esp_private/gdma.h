@@ -155,6 +155,7 @@ esp_err_t gdma_new_channel(const gdma_channel_alloc_config_t *config, gdma_chann
  * @brief Connect GDMA channel to trigger peripheral
  *
  * @note Suggest to use helper macro `GDMA_MAKE_TRIGGER` to construct parameter `trig_periph`. e.g. GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_SHA,0)
+ * @note Connecting to a peripheral will also reset the DMA FIFO and FSM automatically
  *
  * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
  * @param[in] trig_periph GDMA trigger peripheral
@@ -278,6 +279,18 @@ esp_err_t gdma_stop(gdma_channel_handle_t dma_chan);
  *      - ESP_FAIL: Send append command to DMA engine failed because of other error
  */
 esp_err_t gdma_append(gdma_channel_handle_t dma_chan);
+
+/**
+ * @brief Reset DMA channel FIFO and internal finite state machine
+ * @note Resetting a DMA channel won't break the connection with the target peripheral
+ *
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @return
+ *      - ESP_OK: DMA channel reset successfully
+ *      - ESP_ERR_INVALID_ARG: DMA channel reset failed due to invalid arguments
+ *      - ESP_FAIL: DMA channel reset failed due to other errors
+ */
+esp_err_t gdma_reset(gdma_channel_handle_t dma_chan);
 
 #ifdef __cplusplus
 }
