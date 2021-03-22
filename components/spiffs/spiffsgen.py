@@ -448,19 +448,21 @@ class SpiffsFS():
 
     def to_binary(self):
         img = b''
+        all_blocks = []
         for block in self.blocks:
-            img += block.to_binary(self.blocks_lim)
+            all_blocks.append(block.to_binary(self.blocks_lim))
         bix = len(self.blocks)
         if self.build_config.use_magic:
             # Create empty blocks with magic numbers
             while self.remaining_blocks > 0:
                 block = SpiffsBlock(bix, self.blocks_lim, self.build_config)
-                img += block.to_binary(self.blocks_lim)
+                all_blocks.append(block.to_binary(self.blocks_lim))
                 self.remaining_blocks -= 1
                 bix += 1
         else:
             # Just fill remaining spaces FF's
-            img += '\xFF' * (self.img_size - len(img))
+            all_blocks.append(b'\xFF' * (self.img_size - len(img)))
+        img += b''.join([blk for blk in all_blocks])
         return img
 
 
