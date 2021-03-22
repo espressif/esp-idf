@@ -44,7 +44,8 @@ SPIFFS_BLOCK_IX_LEN = 2  # spiffs_block_ix
 class SpiffsBuildConfig():
     def __init__(self, page_size, page_ix_len, block_size,
                  block_ix_len, meta_len, obj_name_len, obj_id_len,
-                 span_ix_len, packed, aligned, endianness, use_magic, use_magic_len):
+                 span_ix_len, packed, aligned, endianness, use_magic, use_magic_len,
+                 aligned_obj_ix_tables):
         if block_size % page_size != 0:
             raise RuntimeError('block size should be a multiple of page size')
 
@@ -61,6 +62,7 @@ class SpiffsBuildConfig():
         self.endianness = endianness
         self.use_magic = use_magic
         self.use_magic_len = use_magic_len
+        self.aligned_obj_ix_tables = aligned_obj_ix_tables
 
         self.PAGES_PER_BLOCK = self.block_size // self.page_size
         self.OBJ_LU_PAGES_PER_BLOCK = int(math.ceil(self.block_size / self.page_size * self.obj_id_len / self.page_size))
@@ -78,7 +80,14 @@ class SpiffsBuildConfig():
 
         self.OBJ_INDEX_PAGES_HEADER_LEN = (self.OBJ_DATA_PAGE_HEADER_LEN_ALIGNED + SPIFFS_PH_IX_SIZE_LEN +
                                            SPIFFS_PH_IX_OBJ_TYPE_LEN + self.obj_name_len + self.meta_len)
-        self.OBJ_INDEX_PAGES_OBJ_IDS_HEAD_LIM = (self.page_size - self.OBJ_INDEX_PAGES_HEADER_LEN) // self.block_ix_len
+        if aligned_obj_ix_tables:
+            self.OBJ_INDEX_PAGES_HEADER_LEN_ALIGNED = (self.OBJ_INDEX_PAGES_HEADER_LEN + SPIFFS_PAGE_IX_LEN - 1) & ~(SPIFFS_PAGE_IX_LEN - 1)
+            self.OBJ_INDEX_PAGES_HEADER_LEN_ALIGNED_PAD = self.OBJ_INDEX_PAGES_HEADER_LEN_ALIGNED - self.OBJ_INDEX_PAGES_HEADER_LEN
+        else:
+            self.OBJ_INDEX_PAGES_HEADER_LEN_ALIGNED = self.OBJ_INDEX_PAGES_HEADER_LEN
+            self.OBJ_INDEX_PAGES_HEADER_LEN_ALIGNED_PAD = 0
+
+        self.OBJ_INDEX_PAGES_OBJ_IDS_HEAD_LIM = (self.page_size - self.OBJ_INDEX_PAGES_HEADER_LEN_ALIGNED) // self.block_ix_len
         self.OBJ_INDEX_PAGES_OBJ_IDS_LIM = (self.page_size - self.OBJ_DATA_PAGE_HEADER_LEN_ALIGNED) / self.block_ix_len
 
 
@@ -217,7 +226,10 @@ class SpiffsObjIndexPage(SpiffsPage):
                                self.size,
                                SPIFFS_TYPE_FILE)
 
-            img += self.name.encode() + (b'\x00' * ((self.build_config.obj_name_len - len(self.name)) + self.build_config.meta_len))
+            img += self.name.encode() + (b'\x00' * (
+                (self.build_config.obj_name_len - len(self.name))
+                + self.build_config.meta_len
+                + self.build_config.OBJ_INDEX_PAGES_HEADER_LEN_ALIGNED_PAD))
 
         # Finally, add the page index of daa pages
         for page in self.pages:
@@ -490,24 +502,38 @@ def main():
                         default=4)
 
     parser.add_argument('--use-magic',
+                        dest='use_magic',
                         help='Use magic number to create an identifiable SPIFFS image. Specify if CONFIG_SPIFFS_USE_MAGIC.',
-                        action='store_true',
-                        default=True)
+                        action='store_true')
+
+    parser.add_argument('--no-magic',
+                        dest='use_magic',
+                        help='Inverse of --use-magic',
+                        action='store_false')
+
+    parser.add_argument('--use-magic-len',
+                        dest='use_magic_len',
+                        help='Use position in memory to create different magic numbers for each block. Specify if CONFIG_SPIFFS_USE_MAGIC_LENGTH.',
+                        action='store_true')
+
+    parser.add_argument('--no-magic-len',
+                        dest='use_magic_len',
+                        help='Inverse of --use-magic-len',
+                        action='store_false')
 
     parser.add_argument('--follow-symlinks',
                         help='Take into account symbolic links during partition image creation.',
-                        action='store_true',
-                        default=False)
-
-    parser.add_argument('--use-magic-len',
-                        help='Use position in memory to create different magic numbers for each block. Specify if CONFIG_SPIFFS_USE_MAGIC_LENGTH.',
-                        action='store_true',
-                        default=True)
+                        action='store_true')
 
     parser.add_argument('--big-endian',
                         help='Specify if the target architecture is big-endian. If not specified, little-endian is assumed.',
+                        action='store_true')
+
+    parser.add_argument('--aligned-obj-ix-tables',
                         action='store_true',
-                        default=False)
+                        help='Use aligned object index tables. Specify if SPIFFS_ALIGNED_OBJECT_INDEX_TABLES is set.')
+
+    parser.set_defaults(use_magic=True, use_magic_len=True)
 
     args = parser.parse_args()
 
@@ -520,7 +546,7 @@ def main():
                                                  args.block_size, SPIFFS_BLOCK_IX_LEN, args.meta_len,
                                                  args.obj_name_len, SPIFFS_OBJ_ID_LEN, SPIFFS_SPAN_IX_LEN,
                                                  True, True, 'big' if args.big_endian else 'little',
-                                                 args.use_magic, args.use_magic_len)
+                                                 args.use_magic, args.use_magic_len, args.aligned_obj_ix_tables)
 
         spiffs = SpiffsFS(image_size, spiffs_build_default)
 
