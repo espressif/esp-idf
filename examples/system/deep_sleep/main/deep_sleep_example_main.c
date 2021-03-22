@@ -239,6 +239,8 @@ void app_main(void)
     /* Set sleep touch pad. */
     touch_pad_sleep_channel_enable(TOUCH_PAD_NUM9, true);
     touch_pad_sleep_channel_enable_proximity(TOUCH_PAD_NUM9, false);
+    /* Reducing the operating frequency can effectively reduce power consumption. */
+    touch_pad_sleep_channel_set_work_time(1000, TOUCH_PAD_MEASURE_CYCLE_DEFAULT);
     /* Enable touch sensor clock. Work mode is "timer trigger". */
     touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER);
     touch_pad_fsm_start();
