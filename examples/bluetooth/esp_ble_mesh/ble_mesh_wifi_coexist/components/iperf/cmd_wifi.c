@@ -167,7 +167,7 @@ static bool wifi_cmd_sta_join(const char *ssid, const char *pass)
     esp_wifi_disconnect();
     //ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) ); //by snake
     ESP_ERROR_CHECK( esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
-    ESP_ERROR_CHECK( esp_wifi_connect() );
+    esp_wifi_connect();
 
     xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, 0, 1, 5000 / portTICK_RATE_MS);
 
@@ -194,7 +194,7 @@ static bool wifi_cmd_sta_scan(const char *ssid)
     scan_config.ssid = (uint8_t *) ssid;
 
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
-    ESP_ERROR_CHECK( esp_wifi_scan_start(&scan_config, false) );
+    esp_wifi_scan_start(&scan_config, false);
 
     return true;
 }
