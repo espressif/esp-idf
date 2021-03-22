@@ -19,12 +19,20 @@
 from __future__ import division, print_function
 
 import argparse
-import ctypes
 import io
 import math
 import os
 import struct
 import sys
+
+try:
+    import typing
+
+    TSP = typing.TypeVar('TSP', bound='SpiffsObjPageWithIdx')
+    ObjIdsItem = typing.Tuple[int, typing.Type[TSP]]
+except ImportError:
+    pass
+
 
 SPIFFS_PH_FLAG_USED_FINAL_INDEX = 0xF8
 SPIFFS_PH_FLAG_USED_FINAL = 0xFC
@@ -42,10 +50,22 @@ SPIFFS_BLOCK_IX_LEN = 2  # spiffs_block_ix
 
 
 class SpiffsBuildConfig():
-    def __init__(self, page_size, page_ix_len, block_size,
-                 block_ix_len, meta_len, obj_name_len, obj_id_len,
-                 span_ix_len, packed, aligned, endianness, use_magic, use_magic_len,
-                 aligned_obj_ix_tables):
+    def __init__(self,
+                 page_size,  # type: int
+                 page_ix_len,  # type: int
+                 block_size,  # type: int
+                 block_ix_len,  # type: int
+                 meta_len,  # type: int
+                 obj_name_len,  # type: int
+                 obj_id_len,  # type: int
+                 span_ix_len,  # type: int
+                 packed,  # type: bool
+                 aligned,  # type: bool
+                 endianness,  # type: str
+                 use_magic,  # type: bool
+                 use_magic_len,  # type: bool
+                 aligned_obj_ix_tables  # type: bool
+                 ):
         if block_size % page_size != 0:
             raise RuntimeError('block size should be a multiple of page size')
 
@@ -88,11 +108,11 @@ class SpiffsBuildConfig():
             self.OBJ_INDEX_PAGES_HEADER_LEN_ALIGNED_PAD = 0
 
         self.OBJ_INDEX_PAGES_OBJ_IDS_HEAD_LIM = (self.page_size - self.OBJ_INDEX_PAGES_HEADER_LEN_ALIGNED) // self.block_ix_len
-        self.OBJ_INDEX_PAGES_OBJ_IDS_LIM = (self.page_size - self.OBJ_DATA_PAGE_HEADER_LEN_ALIGNED) / self.block_ix_len
+        self.OBJ_INDEX_PAGES_OBJ_IDS_LIM = (self.page_size - self.OBJ_DATA_PAGE_HEADER_LEN_ALIGNED) // self.block_ix_len
 
 
 class SpiffsFullError(RuntimeError):
-    def __init__(self, message=None):
+    def __init__(self, message=None):  # type: (typing.Optional[str]) -> None
         super(SpiffsFullError, self).__init__(message)
 
 
@@ -109,35 +129,39 @@ class SpiffsPage():
         8: 'Q'
     }
 
-    _type_dict = {
-        1: ctypes.c_ubyte,
-        2: ctypes.c_ushort,
-        4: ctypes.c_uint,
-        8: ctypes.c_ulonglong
-    }
-
-    def __init__(self, bix, build_config):
+    def __init__(self, bix, build_config):  # type: (int, SpiffsBuildConfig) -> None
         self.build_config = build_config
         self.bix = bix
 
+    def to_binary(self):  # type: () -> bytes
+        # Consider rewriting this using ABC
+        raise NotImplementedError()
+
+
+class SpiffsObjPageWithIdx(SpiffsPage):
+    def __init__(self, obj_id, build_config):  # type: (int, SpiffsBuildConfig) -> None
+        super(SpiffsObjPageWithIdx, self).__init__(0, build_config)
+        self.obj_id = obj_id
+
 
 class SpiffsObjLuPage(SpiffsPage):
-    def __init__(self, bix, build_config):
+    def __init__(self, bix, build_config):  # type: (int, SpiffsBuildConfig) -> None
         SpiffsPage.__init__(self, bix, build_config)
 
         self.obj_ids_limit = self.build_config.OBJ_LU_PAGES_OBJ_IDS_LIM
-        self.obj_ids = list()
+        self.obj_ids = list()  # type: typing.List[ObjIdsItem]
 
-    def _calc_magic(self, blocks_lim):
+    def _calc_magic(self, blocks_lim):  # type: (int) -> int
         # Calculate the magic value mirrorring computation done by the macro SPIFFS_MAGIC defined in
         # spiffs_nucleus.h
         magic = 0x20140529 ^ self.build_config.page_size
         if self.build_config.use_magic_len:
             magic = magic ^ (blocks_lim - self.bix)
-        magic = SpiffsPage._type_dict[self.build_config.obj_id_len](magic)
-        return magic.value
+        # narrow the result to build_config.obj_id_len bytes
+        mask = (2 << (8 * self.build_config.obj_id_len)) - 1
+        return magic & mask
 
-    def register_page(self, page):
+    def register_page(self, page):  # type: (TSP) -> None
         if not self.obj_ids_limit > 0:
             raise SpiffsFullError()
 
@@ -145,8 +169,7 @@ class SpiffsObjLuPage(SpiffsPage):
         self.obj_ids.append(obj_id)
         self.obj_ids_limit -= 1
 
-    def to_binary(self):
-        global test
+    def to_binary(self):  # type: () -> bytes
         img = b''
 
         for (obj_id, page_type) in self.obj_ids:
@@ -161,7 +184,7 @@ class SpiffsObjLuPage(SpiffsPage):
 
         return img
 
-    def magicfy(self, blocks_lim):
+    def magicfy(self, blocks_lim):  # type: (int) -> None
         # Only use magic value if no valid obj id has been written to the spot, which is the
         # spot taken up by the last obj id on last lookup page. The parent is responsible
         # for determining which is the last lookup page and calling this function.
@@ -172,7 +195,7 @@ class SpiffsObjLuPage(SpiffsPage):
             4: 0xFFFFFFFF,
             8: 0xFFFFFFFFFFFFFFFF
         }
-        if (remaining >= 2):
+        if remaining >= 2:
             for i in range(remaining):
                 if i == remaining - 2:
                     self.obj_ids.append((self._calc_magic(blocks_lim), SpiffsObjDataPage))
@@ -182,10 +205,10 @@ class SpiffsObjLuPage(SpiffsPage):
                 self.obj_ids_limit -= 1
 
 
-class SpiffsObjIndexPage(SpiffsPage):
-    def __init__(self, obj_id, span_ix, size, name, build_config):
-        SpiffsPage.__init__(self, 0, build_config)
-        self.obj_id = obj_id
+class SpiffsObjIndexPage(SpiffsObjPageWithIdx):
+    def __init__(self, obj_id, span_ix, size, name, build_config
+                 ):  # type: (int, int, int, str, SpiffsBuildConfig) -> None
+        super(SpiffsObjIndexPage, self).__init__(obj_id, build_config)
         self.span_ix = span_ix
         self.name = name
         self.size = size
@@ -195,16 +218,16 @@ class SpiffsObjIndexPage(SpiffsPage):
         else:
             self.pages_lim = self.build_config.OBJ_INDEX_PAGES_OBJ_IDS_LIM
 
-        self.pages = list()
+        self.pages = list()  # type: typing.List[int]
 
-    def register_page(self, page):
+    def register_page(self, page):  # type: (SpiffsObjDataPage) -> None
         if not self.pages_lim > 0:
             raise SpiffsFullError
 
         self.pages.append(page.offset)
         self.pages_lim -= 1
 
-    def to_binary(self):
+    def to_binary(self):  # type: () -> bytes
         obj_id = self.obj_id ^ (1 << ((self.build_config.obj_id_len * 8) - 1))
         img = struct.pack(SpiffsPage._endianness_dict[self.build_config.endianness] +
                           SpiffsPage._len_dict[self.build_config.obj_id_len] +
@@ -244,15 +267,15 @@ class SpiffsObjIndexPage(SpiffsPage):
         return img
 
 
-class SpiffsObjDataPage(SpiffsPage):
-    def __init__(self, offset, obj_id, span_ix, contents, build_config):
-        SpiffsPage.__init__(self, 0, build_config)
-        self.obj_id = obj_id
+class SpiffsObjDataPage(SpiffsObjPageWithIdx):
+    def __init__(self, offset, obj_id, span_ix, contents, build_config
+                 ):  # type: (int, int, int, bytes, SpiffsBuildConfig) -> None
+        super(SpiffsObjDataPage, self).__init__(obj_id, build_config)
         self.span_ix = span_ix
         self.contents = contents
         self.offset = offset
 
-    def to_binary(self):
+    def to_binary(self):  # type: () -> bytes
         img = struct.pack(SpiffsPage._endianness_dict[self.build_config.endianness] +
                           SpiffsPage._len_dict[self.build_config.obj_id_len] +
                           SpiffsPage._len_dict[self.build_config.span_ix_len] +
@@ -271,17 +294,17 @@ class SpiffsObjDataPage(SpiffsPage):
 
 
 class SpiffsBlock():
-    def _reset(self):
+    def _reset(self):  # type: () -> None
         self.cur_obj_index_span_ix = 0
         self.cur_obj_data_span_ix = 0
         self.cur_obj_id = 0
-        self.cur_obj_idx_page = None
+        self.cur_obj_idx_page = None  # type: typing.Optional[SpiffsObjIndexPage]
 
-    def __init__(self, bix, blocks_lim, build_config):
+    def __init__(self, bix, blocks_lim, build_config):  # type: (int, int, SpiffsBuildConfig) -> None
         self.build_config = build_config
         self.offset = bix * self.build_config.block_size
         self.remaining_pages = self.build_config.OBJ_USABLE_PAGES_PER_BLOCK
-        self.pages = list()
+        self.pages = list()  # type: typing.List[SpiffsPage]
         self.bix = bix
 
         lu_pages = list()
@@ -296,8 +319,9 @@ class SpiffsBlock():
 
         self._reset()
 
-    def _register_page(self, page):
+    def _register_page(self, page):  # type: (TSP) -> None
         if isinstance(page, SpiffsObjDataPage):
+            assert self.cur_obj_idx_page is not None
             self.cur_obj_idx_page.register_page(page)  # can raise SpiffsFullError
 
         try:
@@ -313,7 +337,8 @@ class SpiffsBlock():
 
         self.pages.append(page)
 
-    def begin_obj(self, obj_id, size, name, obj_index_span_ix=0, obj_data_span_ix=0):
+    def begin_obj(self, obj_id, size, name, obj_index_span_ix=0, obj_data_span_ix=0
+                  ):  # type: (int, int, str, int, int) -> None
         if not self.remaining_pages > 0:
             raise SpiffsFullError()
         self._reset()
@@ -330,7 +355,7 @@ class SpiffsBlock():
         self.remaining_pages -= 1
         self.cur_obj_index_span_ix += 1
 
-    def update_obj(self, contents):
+    def update_obj(self, contents):  # type: (bytes) -> None
         if not self.remaining_pages > 0:
             raise SpiffsFullError()
         page = SpiffsObjDataPage(self.offset + (len(self.pages) * self.build_config.page_size),
@@ -341,18 +366,19 @@ class SpiffsBlock():
         self.cur_obj_data_span_ix += 1
         self.remaining_pages -= 1
 
-    def end_obj(self):
+    def end_obj(self):  # type: () -> None
         self._reset()
 
-    def is_full(self):
+    def is_full(self):  # type: () -> bool
         return self.remaining_pages <= 0
 
-    def to_binary(self, blocks_lim):
+    def to_binary(self, blocks_lim):  # type: (int) -> bytes
         img = b''
 
         if self.build_config.use_magic:
             for (idx, page) in enumerate(self.pages):
                 if idx == self.build_config.OBJ_LU_PAGES_PER_BLOCK - 1:
+                    assert isinstance(page, SpiffsObjLuPage)
                     page.magicfy(blocks_lim)
                 img += page.to_binary()
         else:
@@ -366,19 +392,19 @@ class SpiffsBlock():
 
 
 class SpiffsFS():
-    def __init__(self, img_size, build_config):
+    def __init__(self, img_size, build_config):  # type: (int, SpiffsBuildConfig) -> None
         if img_size % build_config.block_size != 0:
             raise RuntimeError('image size should be a multiple of block size')
 
         self.img_size = img_size
         self.build_config = build_config
 
-        self.blocks = list()
+        self.blocks = list()  # type: typing.List[SpiffsBlock]
         self.blocks_lim = self.img_size // self.build_config.block_size
         self.remaining_blocks = self.blocks_lim
         self.cur_obj_id = 1  # starting object id
 
-    def _create_block(self):
+    def _create_block(self):  # type: () -> SpiffsBlock
         if self.is_full():
             raise SpiffsFullError('the image size has been exceeded')
 
@@ -387,12 +413,10 @@ class SpiffsFS():
         self.remaining_blocks -= 1
         return block
 
-    def is_full(self):
+    def is_full(self):  # type: () -> bool
         return self.remaining_blocks <= 0
 
-    def create_file(self, img_path, file_path):
-        contents = None
-
+    def create_file(self, img_path, file_path):  # type: (str, str) -> None
         if len(img_path) > self.build_config.obj_name_len:
             raise RuntimeError("object name '%s' too long" % img_path)
 
@@ -446,7 +470,7 @@ class SpiffsFS():
 
         self.cur_obj_id += 1
 
-    def to_binary(self):
+    def to_binary(self):  # type: () -> bytes
         img = b''
         all_blocks = []
         for block in self.blocks:
@@ -466,7 +490,7 @@ class SpiffsFS():
         return img
 
 
-def main():
+def main():  # type: () -> None
     if sys.version_info[0] < 3:
         print('WARNING: Support for Python 2 is deprecated and will be removed in future versions.', file=sys.stderr)
     elif sys.version_info[0] == 3 and sys.version_info[1] < 6:
