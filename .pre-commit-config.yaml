@@ -87,7 +87,7 @@ repos:
         name: Check rules are generated (based on .gitlab/ci/dependencies/dependencies.yml)
         entry: .gitlab/ci/dependencies/generate_rules.py
         language: python
-        files: '\.gitlab/ci/dependencies/.+'
+        files: '\.gitlab/ci/dependencies/.+|\.gitlab/ci/rules\.yml'
         pass_filenames: false
         additional_dependencies:
           - PyYAML == 5.3.1
