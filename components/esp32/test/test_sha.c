@@ -62,9 +62,13 @@ TEST_CASE("Test esp_sha()", "[hw_crypto]")
     ESP_LOGI(TAG, "esp_sha() 32KB SHA512 in %u us", us_sha512);
 
     free(buffer);
-
+/* ccomp timer seems to sometimes give wrong results in psram config,
+   disable check for now, IDF-2993
+*/
+#ifndef CONFIG_SPIRAM
     TEST_PERFORMANCE_LESS_THAN(TIME_SHA1_32KB, "%dus", us_sha1);
     TEST_PERFORMANCE_LESS_THAN(TIME_SHA512_32KB, "%dus", us_sha512);
+#endif
 }
 
 TEST_CASE("Test esp_sha() function with long input", "[hw_crypto]")
