@@ -97,6 +97,16 @@ typedef struct {
     uint8_t toDS;            /**< toDS state */
 } __attribute__((packed)) mesh_assoc_t;
 
+typedef struct {
+    uint16_t layer_cap;
+    uint16_t layer;
+} mesh_chain_layer_t;
+
+typedef struct {
+    mesh_assoc_t tree;
+    mesh_chain_layer_t chain;
+} __attribute__((packed)) mesh_chain_assoc_t;
+
 /**
  * @brief Mesh PS duties
  */
