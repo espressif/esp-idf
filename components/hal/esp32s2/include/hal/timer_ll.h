@@ -43,8 +43,8 @@ _Static_assert(TIMER_INTR_WDT == TIMG_WDT_INT_CLR, "Add mapping to LL interrupt 
  */
 static inline void timer_ll_set_divider(timg_dev_t *hw, timer_idx_t timer_num, uint32_t divider)
 {
-    // refer to TRM 12.2.1
-    if (divider == 65536) {
+    assert(divider >= 2 && divider <= 65536);
+    if (divider >= 65536) {
         divider = 0;
     }
     int timer_en = hw->hw_timer[timer_num].config.enable;
@@ -67,6 +67,8 @@ static inline void timer_ll_get_divider(timg_dev_t *hw, timer_idx_t timer_num, u
     uint32_t d = hw->hw_timer[timer_num].config.divider;
     if (d == 0) {
         d = 65536;
+    } else if (d == 1) {
+        d = 2;
     }
     *divider = d;
 }
