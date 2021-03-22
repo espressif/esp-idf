@@ -122,9 +122,9 @@ static void handle_ap_start(void *arg, esp_event_base_t base, int32_t event_id, 
     tcpip_adapter_ip_info_t ap_ip;
     uint8_t ap_mac[6];
 
-    API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, (wifi_rxcb_t)tcpip_adapter_ap_input), ESP_OK);
+    API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(WIFI_IF_AP, (wifi_rxcb_t)tcpip_adapter_ap_input), ESP_OK);
     API_CALL_CHECK("esp_wifi_internal_reg_netstack_buf_cb",esp_wifi_internal_reg_netstack_buf_cb(esp_netif_netstack_buf_ref, esp_netif_netstack_buf_free), ESP_OK);
-    API_CALL_CHECK("esp_wifi_mac_get",  esp_wifi_get_mac(ESP_IF_WIFI_AP, ap_mac), ESP_OK);
+    API_CALL_CHECK("esp_wifi_mac_get",  esp_wifi_get_mac(WIFI_IF_AP, ap_mac), ESP_OK);
 
     tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP, &ap_ip);
     tcpip_adapter_ap_start(ap_mac, &ap_ip);
@@ -132,7 +132,7 @@ static void handle_ap_start(void *arg, esp_event_base_t base, int32_t event_id, 
 
 static void handle_ap_stop(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
-    API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, NULL), ESP_OK);
+    API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(WIFI_IF_AP, NULL), ESP_OK);
 
     tcpip_adapter_stop(TCPIP_ADAPTER_IF_AP);
 }
@@ -143,7 +143,7 @@ static void handle_sta_start(void *arg, esp_event_base_t base, int32_t event_id,
     uint8_t sta_mac[6];
 
     API_CALL_CHECK("esp_wifi_internal_reg_netstack_buf_cb",esp_wifi_internal_reg_netstack_buf_cb(esp_netif_netstack_buf_ref, esp_netif_netstack_buf_free), ESP_OK);
-    API_CALL_CHECK("esp_wifi_mac_get",  esp_wifi_get_mac(ESP_IF_WIFI_STA, sta_mac), ESP_OK);
+    API_CALL_CHECK("esp_wifi_mac_get",  esp_wifi_get_mac(WIFI_IF_STA, sta_mac), ESP_OK);
     tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &sta_ip);
     tcpip_adapter_sta_start(sta_mac, &sta_ip);
 }
@@ -157,7 +157,7 @@ static void handle_sta_connected(void *arg, esp_event_base_t base, int32_t event
 {
     tcpip_adapter_dhcp_status_t status;
 
-    API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, (wifi_rxcb_t)tcpip_adapter_sta_input), ESP_OK);
+    API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(WIFI_IF_STA, (wifi_rxcb_t)tcpip_adapter_sta_input), ESP_OK);
 
     tcpip_adapter_up(TCPIP_ADAPTER_IF_STA);
 
@@ -196,7 +196,7 @@ static void handle_sta_connected(void *arg, esp_event_base_t base, int32_t event
 static void handle_sta_disconnected(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
     tcpip_adapter_down(TCPIP_ADAPTER_IF_STA);
-    API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, NULL), ESP_OK);
+    API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(WIFI_IF_STA, NULL), ESP_OK);
 }
 
 

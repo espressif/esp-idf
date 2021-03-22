@@ -72,7 +72,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
                 if (ap_idx < s_ap_creds_num) {
                     ESP_LOGI(TAG, "Connecting to SSID: %s, Passphrase: %s",
                              wps_ap_creds[ap_idx].sta.ssid, wps_ap_creds[ap_idx].sta.password);
-                    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wps_ap_creds[ap_idx++]) );
+                    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wps_ap_creds[ap_idx++]) );
                     esp_wifi_connect();
                 }
                 s_retry_num = 0;
@@ -99,7 +99,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
                     /* If multiple AP credentials are received from WPS, connect with first one */
                     ESP_LOGI(TAG, "Connecting to SSID: %s, Passphrase: %s",
                              wps_ap_creds[0].sta.ssid, wps_ap_creds[0].sta.password);
-                    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wps_ap_creds[0]) );
+                    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wps_ap_creds[0]) );
                 }
                 /*
                  * If only one AP credential is received from WPS, there will be no event data and
