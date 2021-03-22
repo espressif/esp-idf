@@ -251,7 +251,7 @@ mesh_netif_driver_t mesh_create_if_driver(bool is_ap, bool is_root)
     }
 
     // save station mac address to exclude it from routing-table on broadcast
-    esp_wifi_get_mac(ESP_IF_WIFI_STA, driver->sta_mac_addr);
+    esp_wifi_get_mac(WIFI_IF_STA, driver->sta_mac_addr);
 
     return driver;
 }
@@ -289,7 +289,7 @@ esp_err_t mesh_netifs_init(mesh_raw_recv_cb_t *cb)
 static esp_err_t start_mesh_link_ap(void)
 {
     uint8_t mac[MAC_ADDR_LEN];
-    esp_wifi_get_mac(ESP_IF_WIFI_AP, mac);
+    esp_wifi_get_mac(WIFI_IF_AP, mac);
     esp_netif_set_mac(netif_ap, mac);
     esp_netif_action_start(netif_ap, NULL, 0, NULL);
     return ESP_OK;
@@ -301,7 +301,7 @@ static esp_err_t start_mesh_link_ap(void)
 static esp_err_t start_wifi_link_sta(void)
 {
     uint8_t mac[6];
-    esp_wifi_get_mac(ESP_IF_WIFI_STA, mac);
+    esp_wifi_get_mac(WIFI_IF_STA, mac);
     esp_err_t ret;
     void *driver = esp_netif_get_io_driver(netif_sta);
     if ((ret = esp_wifi_register_if_rxcb(driver,  esp_netif_receive, netif_sta)) != ESP_OK) {
@@ -319,7 +319,7 @@ static esp_err_t start_wifi_link_sta(void)
 static esp_err_t start_mesh_link_sta(void)
 {
     uint8_t mac[MAC_ADDR_LEN];
-    esp_wifi_get_mac(ESP_IF_WIFI_STA, mac);
+    esp_wifi_get_mac(WIFI_IF_STA, mac);
     esp_netif_set_mac(netif_sta, mac);
     esp_netif_action_start(netif_sta, NULL, 0, NULL);
     esp_netif_action_connected(netif_sta, NULL, 0, NULL);

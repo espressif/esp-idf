@@ -101,7 +101,7 @@ static void test_wifi_init_deinit(wifi_init_config_t *cfg, wifi_config_t* wifi_c
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_set_mode"));
     TEST_ESP_OK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_set_config"));
-    TEST_ESP_OK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_config));
+    TEST_ESP_OK(esp_wifi_set_config(WIFI_IF_STA, wifi_config));
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_deinit..."));
     TEST_ESP_OK(esp_wifi_deinit());
 }
@@ -115,7 +115,7 @@ static void test_wifi_start_stop(wifi_init_config_t *cfg, wifi_config_t* wifi_co
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_set_mode"));
     TEST_ESP_OK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_set_config"));
-    TEST_ESP_OK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_config));
+    TEST_ESP_OK(esp_wifi_set_config(WIFI_IF_STA, wifi_config));
     //now start wifi
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_start..."));
     TEST_ESP_OK(esp_wifi_start());
@@ -266,7 +266,7 @@ static void send_ds2ds_packet(void)
 
     // send packet 20 times to make sure receiver will get this packet
     for (uint16_t i = 0; i < 20; i++) {
-        esp_wifi_80211_tx(ESP_IF_WIFI_AP, ds2ds_pdu, sizeof(ds2ds_pdu), true);
+        esp_wifi_80211_tx(WIFI_IF_AP, ds2ds_pdu, sizeof(ds2ds_pdu), true);
         vTaskDelay(50 / portTICK_PERIOD_MS);
     }
     stop_wifi();
@@ -328,7 +328,7 @@ static void test_wifi_connection_softap(void)
 
     start_wifi_as_softap();
 
-    TEST_ESP_OK(esp_wifi_get_mac(ESP_IF_WIFI_AP, mac));
+    TEST_ESP_OK(esp_wifi_get_mac(WIFI_IF_AP, mac));
     sprintf(mac_str, MACSTR, MAC2STR(mac));
 
     unity_send_signal_param("SoftAP mac", mac_str);

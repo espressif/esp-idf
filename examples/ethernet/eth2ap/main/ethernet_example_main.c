@@ -80,7 +80,7 @@ static void eth2wifi_flow_control_task(void *args)
                 do {
                     vTaskDelay(pdMS_TO_TICKS(timeout));
                     timeout += 2;
-                    res = esp_wifi_internal_tx(ESP_IF_WIFI_AP, msg.packet, msg.length);
+                    res = esp_wifi_internal_tx(WIFI_IF_AP, msg.packet, msg.length);
                 } while (res && timeout < FLOW_CONTROL_WIFI_SEND_TIMEOUT_MS);
                 if (res != ESP_OK) {
                     ESP_LOGE(TAG, "WiFi send packet failed: %d", res);
@@ -130,7 +130,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
         ESP_LOGI(TAG, "Wi-Fi AP got a station connected");
         if (!s_con_cnt) {
             s_sta_is_connected = true;
-            esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, pkt_wifi2eth);
+            esp_wifi_internal_reg_rxcb(WIFI_IF_AP, pkt_wifi2eth);
         }
         s_con_cnt++;
         break;
@@ -139,7 +139,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
         s_con_cnt--;
         if (!s_con_cnt) {
             s_sta_is_connected = false;
-            esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, NULL);
+            esp_wifi_internal_reg_rxcb(WIFI_IF_AP, NULL);
         }
         break;
     default:
@@ -220,7 +220,7 @@ static void initialize_wifi(void)
         wifi_config.ap.authmode = WIFI_AUTH_OPEN;
     }
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_config));
 }
 
 static esp_err_t initialize_flow_control(void)
