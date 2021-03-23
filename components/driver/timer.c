@@ -156,7 +156,7 @@ esp_err_t timer_set_divider(timer_group_t group_num, timer_idx_t timer_num, uint
     TIMER_CHECK(divider > 1 && divider < 65537, DIVIDER_RANGE_ERROR, ESP_ERR_INVALID_ARG);
     TIMER_CHECK(p_timer_obj[group_num][timer_num] != NULL, TIMER_NEVER_INIT_ERROR, ESP_ERR_INVALID_ARG);
     TIMER_ENTER_CRITICAL(&timer_spinlock[group_num]);
-    timer_hal_set_divider(&(p_timer_obj[group_num][timer_num]->hal), (uint16_t) divider);
+    timer_hal_set_divider(&(p_timer_obj[group_num][timer_num]->hal), divider);
     TIMER_EXIT_CRITICAL(&timer_spinlock[group_num]);
     return ESP_OK;
 }
