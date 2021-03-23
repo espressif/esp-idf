@@ -41,6 +41,7 @@ ESP-IDF 中包含多种芯片的双语文档（英文，简体中文）。如运
 ^^^^^^^
 
 :idf_file:`docs/build_docs.py`
+
     最高级可执行程序，负责运行 Sphinx 为单个或多个语言/目标生成文档。运行 ``build_docs.py --help`` 可查阅所有命令选项。
 
     当使用 ``build_docs.py`` 运行 Sphinx 时，系统将为 ``idf_target`` 配置变量，并设置一个与该配置变量相同名称的 Sphinx 标签，然后使用一些环境变量将路径发送至 :ref:`IDF-Specific Extensions`。
@@ -61,9 +62,9 @@ ESP-IDF 中包含多种芯片的双语文档（英文，简体中文）。如运
     该脚本将检测整个 `ESP-IDF`_ 库，在源代码头文件中查找是否有错误代码和信息，然后在 :doc:`../api-reference/error-codes` 内生成一个 ``.inc`` 文件记录这些信息。
 
 :idf_file:`tools/kconfig_new/confgen.py`
-    ESP-IDF :idf:`components` 的配置选项包含在每个部件目录下的 ``Kconfig`` 文件中，如 :idf_file:`components/bt/Kconfig`。该脚本将检测所有 ``component`` 目录并记录检测到的配置选项，然后在 :ref:`configuration-options-reference` 内生成一个 ``.inc`` 文件记录这些信息。
+    ESP-IDF :idf:`components` 的配置选项包含在每个组件目录下的 ``Kconfig`` 文件中，如 :idf_file:`components/bt/Kconfig`。该脚本将检测所有 ``component`` 目录并记录检测到的配置选项，然后在 :ref:`configuration-options-reference` 内生成一个 ``.inc`` 文件记录这些信息。
 
-泛型扩展
+通用扩展
 ^^^^^^^^^^^^^^^^^^
 
 以下是专为 IDF 开发的 Sphinx 扩展，这些扩展不依赖于任何特定的 IDF 文档操作或配置：
@@ -116,7 +117,6 @@ CMake 项目模型运行完成后，系统将在构建初期发出 ``idf-info`` 
 
 其它 IDF 专属的扩展功能均订阅该事件，并使用该事件根据系统构建信息来设置一些文档参数。
 
-
 其它扩展
 #############
 
@@ -124,7 +124,7 @@ CMake 项目模型运行完成后，系统将在构建初期发出 ``idf-info`` 
     ``include-build-file`` 指令相当于是内置的 ``include-file`` 指令，只是文件路径是相对于 ``build_dir`` 来评估的。
 
 :idf_file:`docs/idf_extensions/kconfig_reference.py`
-    订阅 ``idf-info`` 事件，并使用 confgen 从默认构建项目所使用的部件中生成 ``kconfig.inc`` 文件。之后，这个文件将被存储至 :doc:`/api-reference/kconfig` 中。
+    订阅 ``idf-info`` 事件，并使用 confgen 从默认构建项目所使用的组件中生成 ``kconfig.inc`` 文件。之后，这个文件将被存储至 :doc:`/api-reference/kconfig` 中。
 
 :idf_file:`docs/idf_extensions/link_roles.py`
     一个自定义的 `Sphinx 角色 <https://www.sphinx-doc.org/en/master/usage/restructuredtext/roles.html>`_ 的实现功能，帮助从文档链接到 `ESP-IDF`_ 项目中具体的文件和文件夹处。有关具体实现了哪些角色，请参阅 :ref:`link-custom-roles` 和 :ref:`link-language-versions`。
@@ -195,4 +195,3 @@ CMake 项目模型运行完成后，系统将在构建初期发出 ``idf-info`` 
 
 .. _ESP-IDF: https://github.com/espressif/esp-idf/
 .. _Sphinx selective exclude: https://github.com/pfalcon/sphinx_selective_exclude
-

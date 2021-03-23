@@ -40,6 +40,7 @@ Configuration Options and Dependencies
 Using of this feature depends on two components:
 
 1. **Host side:** Application tracing is done over JTAG, so it needs OpenOCD to be set up and running on host machine. For instructions on how to set it up, please see :doc:`JTAG Debugging <../api-guides/jtag-debugging/index>` for details.
+
 2. **Target side:** Application tracing functionality can be enabled in menuconfig. *Component config > Application Level Tracing* menu allows selecting destination for the trace data (HW interface for transport). Choosing any of the destinations automatically enables ``CONFIG_APPTRACE_ENABLE`` option.
 
 .. note::
@@ -49,6 +50,7 @@ Using of this feature depends on two components:
 There are two additional menuconfig options not mentioned above:
 
 1.  *Threshold for flushing last trace data to host on panic* (:ref:`CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH`). This option is necessary due to the nature of working over JTAG. In that mode trace data are exposed to the host in 16 KB blocks. In post-mortem mode when one block is filled it is exposed to the host and the previous one becomes unavailable. In other words trace data are overwritten in 16 KB granularity. On panic the latest data from the current input block are exposed to host and host can read them for post-analysis. System panic may occur when very small amount of data are not exposed to the host yet. In this case the previous 16 KB of collected data will be lost and host will see the latest, but very small piece of the trace. It can be insufficient to diagnose the problem. This menuconfig option allows avoiding such situations. It controls the threshold for flushing data in case of panic. For example user can decide that it needs not less then 512 bytes of the recent trace data, so if there is less then 512 bytes of pending data at the moment of panic they will not be flushed and will not overwrite previous 16 KB. The option is only meaningful in post-mortem mode and when working over JTAG.
+
 2.  *Timeout for flushing last trace data to host on panic* (:ref:`CONFIG_APPTRACE_ONPANIC_HOST_FLUSH_TMO`). The option is only meaningful in streaming mode and controls the maximum time tracing module will wait for the host to read the last data in case of panic.
 
 
@@ -425,7 +427,7 @@ Good instruction on how to install, configure and visualize data in Impulse from
     Configure Impulse for Dual Core Traces
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    After installing Impulse and ensuring that it can successfully load trace files for each core in separate tabs user can add special Multi Adapter port and load both files into one view. To do this user needs to do the following in Eclipse:
+    After installing Impulse and ensuring that it can successfully load trace files for each core in separate tabs， users can add special Multi Adapter port and load both files into one view. To do this, users need to do the following in Eclipse:
 
     1. Open 'Signal Ports' view. Go to Windows->Show View->Other menu. Find 'Signal Ports' view in Impulse folder and double-click on it.
     2. In 'Signal Ports' view right-click on 'Ports' and select 'Add ...'->New Multi Adapter Port
@@ -455,11 +457,13 @@ Source code coverage is data indicating the count and frequency of every program
 Generally, using Gcov to compile and run programs on the Host will undergo these steps:
 
 1. Compile the source code using GCC with the ``--coverage`` option enabled. This will cause the compiler to generate a ``.gcno`` notes files during compilation. The notes files contain information to reconstruct execution path block graphs and map each block to source code line numbers. Each source file compiled with the ``--coverage`` option should have their own ``.gcno`` file of the same name (e.g., a ``main.c`` will generate a ``main.gcno`` when compiled).
+
 2. Execute the program. During execution, the program should generate ``.gcda`` data files. These data files contain the counts of the number of times an execution path was taken. The program will generate a ``.gcda`` file for each source file compiled with the ``--coverage`` option (e.g., ``main.c`` will generate a ``main.gcda``.
+
 3. Gcov or Gcovr can be used generate a code coverage based on the ``.gcno``, ``.gcda``, and source files. Gcov will generate a text based coverage report for each source file in the form of a ``.gcov`` file, whilst Gcovr will generate a coverage report in HTML format.
 
 Gcov and Gcovr in ESP-IDF
-"""""""""""""""""""""""""
+"""""""""""""""""""""""""""
 
 Using Gcov in ESP-IDF is complicated by the fact that the program is running remotely from the Host (i.e., on the target). The code coverage data (i.e., the ``.gcda`` files) is initially stored on the target itself. OpenOCD is then used to dump the code coverage data from the target to the host via JTAG during runtime. Using Gcov in ESP-IDF can be split into the following steps.
 
@@ -510,7 +514,7 @@ The dumping of code coverage data can be done multiple times throughout an appli
 
 ESP-IDF supports two methods of dumping code coverage data form the target to the host:
 
-* Instant Run-Time Dump
+* Instant Run-Time Dumpgit 
 * Hard-coded Dump
 
 Instant Run-Time Dump
