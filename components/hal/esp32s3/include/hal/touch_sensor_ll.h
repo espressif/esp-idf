@@ -745,9 +745,9 @@ static inline void touch_ll_filter_get_debounce(uint32_t *dbc_cnt)
 static inline void touch_ll_filter_set_noise_thres(uint32_t noise_thr)
 {
     RTCCNTL.touch_filter_ctrl.touch_noise_thres = noise_thr;
-    RTCCNTL.touch_filter_ctrl.config2 = noise_thr;
-    RTCCNTL.touch_filter_ctrl.config1 = 0xF;
-    RTCCNTL.touch_filter_ctrl.config3 = 2;
+    RTCCNTL.touch_filter_ctrl.touch_neg_noise_thres = noise_thr;
+    RTCCNTL.touch_filter_ctrl.touch_neg_noise_limit = 0xF;
+    RTCCNTL.touch_filter_ctrl.touch_hysteresis = 2;
 }
 
 /**

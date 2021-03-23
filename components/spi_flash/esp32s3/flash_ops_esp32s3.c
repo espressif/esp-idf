@@ -70,7 +70,7 @@ esp_rom_spiflash_result_t IRAM_ATTR spi_flash_write_encrypted_chip(size_t dest_a
             ops->start();
         }
         flash_rom_init();
-        rc = SPI_Encrypt_Write(dest_addr, src, size);
+        rc = esp_rom_spiflash_write_encrypted(dest_addr, (void *)src, size);
         if (ops && ops->end) {
             ops->end();
         }

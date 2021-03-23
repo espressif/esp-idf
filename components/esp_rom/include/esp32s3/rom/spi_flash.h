@@ -148,6 +148,7 @@ typedef struct {
     uint16_t data;
 } esp_rom_spiflash_common_cmd_t;
 
+
 /**
   * @brief Fix the bug in SPI hardware communication with Flash/Ext-SRAM in High Speed.
   *    Please do not call this function in SDK.
@@ -548,14 +549,42 @@ void esp_rom_spiflash_select_qio_pins(uint8_t wp_gpio_num, uint32_t spiconfig);
  */
 esp_rom_spiflash_result_t esp_rom_spiflash_write_disable(void);
 
-/** @brief Global esp_rom_spiflash_chip_t structure used by ROM functions
- *
- */
-extern esp_rom_spiflash_chip_t g_rom_flashchip;
+typedef void (* spi_flash_func_t)(void);
+typedef SpiFlashOpResult (* spi_flash_op_t)(void);
+typedef SpiFlashOpResult (* spi_flash_erase_t)(uint32_t);
+typedef SpiFlashOpResult (* spi_flash_rd_t)(uint32_t, uint32_t*, int);
+typedef SpiFlashOpResult (* spi_flash_wr_t)(uint32_t, const uint32_t*, int);
+typedef SpiFlashOpResult (* spi_flash_ewr_t)(uint32_t, const void*, uint32_t);
+typedef SpiFlashOpResult (* spi_flash_wren_t)(void*);
 
-/**
-  * @}
-  */
+
+typedef struct {
+    uint32_t read_sub_len;
+    uint32_t write_sub_len;
+    spi_flash_op_t unlock;
+    spi_flash_erase_t erase_sector;
+    spi_flash_erase_t erase_block;
+    spi_flash_rd_t read;
+    spi_flash_wr_t write;
+    spi_flash_ewr_t encrypt_write;
+    spi_flash_func_t check_sus;
+    spi_flash_wren_t wren;
+    spi_flash_op_t wait_idle;
+} spiflash_legacy_funcs_t;
+
+/* Defined in the interfaces file, default value is rom_default_spiflash_legacy_flash_func */
+extern const spiflash_legacy_funcs_t *rom_spiflash_legacy_funcs;
+
+typedef struct {
+    esp_rom_spiflash_chip_t chip;
+    uint8_t dummy_len_plus[3];
+    uint8_t sig_matrix;
+} spiflash_legacy_data_t;
+
+extern spiflash_legacy_data_t *rom_spiflash_legacy_data;
+
+#define g_rom_flashchip (rom_spiflash_legacy_data->chip)
+#define g_rom_spiflash_dummy_len_plus (rom_spiflash_legacy_data->dummy_len_plus)
 
 #ifdef __cplusplus
 }

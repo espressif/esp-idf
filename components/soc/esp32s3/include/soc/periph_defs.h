@@ -33,6 +33,8 @@ typedef enum {
     PERIPH_TIMG1_MODULE,
     PERIPH_PWM0_MODULE,
     PERIPH_PWM1_MODULE,
+    PERIPH_PWM2_MODULE,
+    PERIPH_PWM3_MODULE,
     PERIPH_UHCI0_MODULE,
     PERIPH_UHCI1_MODULE,
     PERIPH_RMT_MODULE,
@@ -130,6 +132,11 @@ typedef enum {
     ETS_DMA_CH2_INTR_SOURCE,                    /**< interrupt of general DMA channel 2, LEVEL*/
     ETS_DMA_CH3_INTR_SOURCE,                    /**< interrupt of general DMA channel 3, LEVEL*/
     ETS_DMA_CH4_INTR_SOURCE,                    /**< interrupt of general DMA channel 4, LEVEL*/
+    ETS_DMA_OUT_CH0_INTR_SOURCE,
+    ETS_DMA_OUT_CH1_INTR_SOURCE,
+    ETS_DMA_OUT_CH2_INTR_SOURCE,
+    ETS_DMA_OUT_CH3_INTR_SOURCE,
+    ETS_DMA_OUT_CH4_INTR_SOURCE,
     ETS_RSA_INTR_SOURCE,                        /**< interrupt of RSA accelerator, level*/
     ETS_AES_INTR_SOURCE,                        /**< interrupt of AES accelerator, level*/
     ETS_SHA_INTR_SOURCE,                        /**< interrupt of SHA accelerator, level*/
@@ -147,8 +154,12 @@ typedef enum {
     ETS_CORE1_DRAM0_PMS_INTR_SOURCE,
     ETS_CORE1_PIF_PMS_INTR_SOURCE,
     ETS_CORE1_PIF_PMS_SIZE_INTR_SOURCE,
+    ETS_BACKUP_PMS_VIOLATE_INTR_SOURCE,
     ETS_CACHE_CORE0_ACS_INTR_SOURCE,
     ETS_CACHE_CORE1_ACS_INTR_SOURCE,
+    ETS_USB_DEVICE_INTR_SOURCE,
+    ETS_PREI_BACKUP_INTR_SOURCE,
+    ETS_DMA_EXTMEM_REJECT_SOURCE,
     ETS_MAX_INTR_SOURCE,                        /**< number of interrupt sources */
 } periph_interrput_t;
 

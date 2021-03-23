@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-C3 |
+| ----------------- | ----- | -------- | -------- |
+
 # No Embedded Paths
 
 This test app exists to verify that paths (like __FILE__) are not compiled into

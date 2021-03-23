@@ -6,8 +6,8 @@ idf_build_get_property(python PYTHON)
 
 set(chip_model ${target})
 if(target STREQUAL "esp32s3")
-    if(CONFIG_IDF_TARGET_ESP32S3_BETA_VERSION_2)
-        set(chip_model "esp32s3beta2")
+    if(CONFIG_IDF_TARGET_ESP32S3_BETA_VERSION_3)
+        set(chip_model "esp32s3beta3")
     endif()
 endif()
 

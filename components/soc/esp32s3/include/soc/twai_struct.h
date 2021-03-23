@@ -22,7 +22,7 @@ extern "C" {
 
 /* ---------------------------- Register Layout ------------------------------ */
 
-/* The TWAI peripheral's registers are 8bits, however the ESP32-S3 can only access
+/* The TWAI peripheral's registers are 8bits, however the ESP32 can only access
  * peripheral registers every 32bits. Therefore each TWAI register is mapped to
  * the least significant byte of every 32bits.
  */
@@ -61,7 +61,7 @@ typedef volatile struct twai_dev_s {
             uint32_t es: 1;                     /* SR.6 Error Status */
             uint32_t bs: 1;                     /* SR.7 Bus Status */
             uint32_t ms: 1;                     /* SR.8 Miss Status */
-            uint32_t reserved23: 23;            /* Internal Reserved */
+            uint32_t reserved24: 23;            /* Internal Reserved */
         };
         uint32_t val;
     } status_reg;                               /* Address 2 */

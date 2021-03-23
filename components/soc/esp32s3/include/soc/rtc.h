@@ -249,10 +249,16 @@ typedef struct {
 typedef struct {
     uint16_t wifi_powerup_cycles : 7;
     uint16_t wifi_wait_cycles : 9;
+    uint16_t bt_powerup_cycles : 7;
+    uint16_t bt_wait_cycles : 9;
     uint16_t rtc_powerup_cycles : 7;
     uint16_t rtc_wait_cycles : 9;
+    uint16_t cpu_top_powerup_cycles : 7;
+    uint16_t cpu_top_wait_cycles : 9;
     uint16_t dg_wrap_powerup_cycles : 7;
     uint16_t dg_wrap_wait_cycles : 9;
+    uint16_t dg_peri_powerup_cycles : 7;
+    uint16_t dg_peri_wait_cycles : 9;
     uint16_t rtc_mem_powerup_cycles : 7;
     uint16_t rtc_mem_wait_cycles : 9;
 } rtc_init_config_t;
@@ -633,6 +639,9 @@ typedef struct {
     uint32_t rtc_slowmem_pd_en : 1;     //!< power down RTC slow memory
     uint32_t rtc_peri_pd_en : 1;        //!< power down RTC peripherals
     uint32_t wifi_pd_en : 1;            //!< power down WiFi
+    uint32_t bt_pd_en : 1;              //!< power down BT
+    uint32_t cpu_pd_en : 1;             //!< power down CPU, but not restart when lightsleep.
+    uint32_t dig_peri_pd_en : 1;        //!< power down digital peripherals
     uint32_t deep_slp : 1;              //!< power down digital domain
     uint32_t wdt_flashboot_mod_en : 1;  //!< enable WDT flashboot mode
     uint32_t dig_dbias_wak : 5;         //!< set bias for digital domain, in active mode
