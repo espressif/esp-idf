@@ -459,12 +459,14 @@ esp_transport_handle_t esp_transport_ws_init(esp_transport_handle_t parent_handl
     ws->path = strdup("/");
     ESP_TRANSPORT_MEM_CHECK(TAG, ws->path, {
         free(ws);
+	esp_transport_destroy(t);
         return NULL;
     });
     ws->buffer = malloc(DEFAULT_WS_BUFFER);
     ESP_TRANSPORT_MEM_CHECK(TAG, ws->buffer, {
         free(ws->path);
         free(ws);
+	esp_transport_destroy(t);
         return NULL;
     });
 

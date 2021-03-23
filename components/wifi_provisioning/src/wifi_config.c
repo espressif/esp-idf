@@ -82,6 +82,7 @@ static esp_err_t cmd_get_status_handler(WiFiConfigPayload *req,
             WifiConnectedState *connected = (WifiConnectedState *)(
                                             malloc(sizeof(WifiConnectedState)));
             if (!connected) {
+	        free(resp_payload);
                 ESP_LOGE(TAG, "Error allocating memory");
                 return ESP_ERR_NO_MEM;
             }

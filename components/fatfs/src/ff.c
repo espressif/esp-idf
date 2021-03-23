@@ -5586,7 +5586,10 @@ FRESULT f_mkfs (
 		sz_buf = len / ss;		/* Size of working buffer (sector) */
 		szb_buf = sz_buf * ss;	/* Size of working buffer (byte) */
 	}
-	if (!buf || sz_buf == 0) return FR_NOT_ENOUGH_CORE;
+	if (!buf || sz_buf == 0) {
+	    ff_memfree(buf);
+	    return FR_NOT_ENOUGH_CORE;
+	}
 
 	/* Determine where the volume to be located (b_vol, sz_vol) */
 	if (FF_MULTI_PARTITION && part != 0) {

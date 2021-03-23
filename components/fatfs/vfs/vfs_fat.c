@@ -634,12 +634,12 @@ static int vfs_fat_link(void* ctx, const char* n1, const char* n2)
     }
 fail3:
     f_close(pf2);
-    free(pf2);
 fail2:
     f_close(pf1);
-    free(pf1);
 fail1:
     free(buf);
+    free(pf2);
+    free(pf1);
     if (res != FR_OK) {
         ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
         errno = fresult_to_errno(res);
