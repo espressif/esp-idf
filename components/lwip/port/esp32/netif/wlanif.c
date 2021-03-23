@@ -135,7 +135,7 @@ low_level_output(struct netif *netif, struct pbuf *p)
   struct pbuf *q = p;
   esp_err_t ret;
 
-  if (wifi_if > WIFI_IF_AP) {
+  if (wifi_if >= ESP_IF_MAX) {
     return ERR_IF;
   }
 
