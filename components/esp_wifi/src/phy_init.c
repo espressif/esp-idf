@@ -640,6 +640,11 @@ static void __attribute((unused)) esp_phy_reduce_tx_power(esp_phy_init_data_t* i
 
 void esp_phy_load_cal_and_init(phy_rf_module_t module)
 {
+#if CONFIG_IDF_TARGET_ESP32
+    char * phy_version = get_phy_version_str();
+    ESP_LOGI(TAG, "phy_version %s", phy_version);
+#endif
+
     esp_phy_calibration_data_t* cal_data =
             (esp_phy_calibration_data_t*) calloc(sizeof(esp_phy_calibration_data_t), 1);
     if (cal_data == NULL) {
