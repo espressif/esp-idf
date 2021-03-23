@@ -1112,7 +1112,7 @@ static uint8_t coex_schm_curr_period_get_wrapper(void)
 #if CONFIG_SW_COEXIST_ENABLE
     return coex_schm_curr_period_get();
 #else
-    return 0;
+    return 1;
 #endif
 }
 
@@ -1130,7 +1130,7 @@ static int coex_wifi_channel_get_wrapper(uint8_t *primary, uint8_t *secondary)
 #if CONFIG_SW_COEXIST_ENABLE
     return coex_wifi_channel_get(primary, secondary);
 #else
-    return 0;
+    return -1;
 #endif
 }
 
@@ -1139,7 +1139,7 @@ static int coex_register_wifi_channel_change_callback_wrapper(void *cb)
 #if CONFIG_SW_COEXIST_ENABLE
     return coex_register_wifi_channel_change_callback(cb);
 #else
-    return 0;
+    return -1;
 #endif
 }
 
