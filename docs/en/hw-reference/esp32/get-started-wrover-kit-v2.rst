@@ -22,8 +22,8 @@ ESP-WROVER-KIT is an ESP32-based development board produced by `Espressif <https
 
 ESP-WROVER-KIT comes with the following ESP32 modules:
 
-- :ref:`esp-modules-and-boards-esp32-wroom-32`
-- :ref:`ESP32-WROVER <esp-modules-and-boards-esp32-wrover>`
+- ESP32-WROOM-32
+- ESP32-WROVER series
 
 Its another distinguishing feature is the embedded FTDI FT2232HL chip - an advanced multi-interface USB bridge. This chip enables to use JTAG for direct debugging of ESP32 through the USB interface without a separate JTAG debugger. ESP-WROVER-KIT makes development convenient, easy, and cost-effective.
 

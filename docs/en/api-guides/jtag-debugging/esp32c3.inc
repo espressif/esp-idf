@@ -154,7 +154,7 @@
 .. devkit-defs
 
 .. |devkit-name| replace:: ESP32-C3
-.. |devkit-name-with-link| replace:: :doc:`ESP32-C3 <../../hw-reference/modules-and-boards>`
+.. |devkit-name-with-link| replace:: :doc:`ESP32-C3 <../../hw-reference/index>`
 
 ---
 

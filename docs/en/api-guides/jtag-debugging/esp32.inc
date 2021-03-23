@@ -165,7 +165,7 @@
 .. devkit-defs
 
 .. |devkit-name| replace:: ESP-WROVER-KIT
-.. |devkit-name-with-link| replace:: :doc:`ESP-WROVER-KIT <../../hw-reference/modules-and-boards>`
+.. |devkit-name-with-link| replace:: :doc:`ESP-WROVER-KIT <../../hw-reference/index>`
 
 ---
 
