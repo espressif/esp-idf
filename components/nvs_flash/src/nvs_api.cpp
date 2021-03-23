@@ -571,16 +571,28 @@ extern "C" esp_err_t nvs_flash_generate_keys(const esp_partition_t* partition, n
     }
 
     for(uint8_t cnt = 0; cnt < NVS_KEY_SIZE; cnt++) {
-        cfg->eky[cnt] = 0xff;
-        cfg->tky[cnt] = 0xee;
+        /* Adjacent 16-byte blocks should be different */
+        if (((cnt / 16) & 1) == 0) {
+            cfg->eky[cnt] = 0xff;
+            cfg->tky[cnt] = 0xee;
+        } else {
+            cfg->eky[cnt] = 0x99;
+            cfg->tky[cnt] = 0x88;
+        }
     }
 
-    err = esp_partition_write(partition, 0, cfg->eky, NVS_KEY_SIZE);
+    /**
+     * Write key configuration without encryption engine (using raw partition write APIs).
+     * But the read is decrypted through flash encryption engine. This allows unique NVS encryption configuration,
+     * as flash encryption key is randomly generated per device.
+     */
+    err = esp_partition_write_raw(partition, 0, cfg->eky, NVS_KEY_SIZE);
     if(err != ESP_OK) {
         return err;
     }
 
-    err = esp_partition_write(partition, NVS_KEY_SIZE, cfg->tky, NVS_KEY_SIZE);
+    /* Write without encryption, see note above */
+    err = esp_partition_write_raw(partition, NVS_KEY_SIZE, cfg->tky, NVS_KEY_SIZE);
     if(err != ESP_OK) {
         return err;
     }
