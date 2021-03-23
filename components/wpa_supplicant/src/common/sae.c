@@ -1184,7 +1184,7 @@ static int sae_parse_password_identifier(struct sae_data *sae,
 				   "SAE: No Password Identifier included, but expected one (%s)",
 				   sae->tmp->pw_id);
 		    os_free(sae->tmp->pw_id);
-            sae->tmp->pw_id = NULL;
+			sae->tmp->pw_id = NULL;
 			return WLAN_STATUS_UNKNOWN_PASSWORD_IDENTIFIER;
 		}
 		return WLAN_STATUS_SUCCESS; /* No Password Identifier */
