@@ -18,6 +18,13 @@ Overview
     - Note that GPIO26-32 are usually used for SPI flash.
     - GPIO46 is fixed to pull-down and is input only
 
+.. only:: esp32c3
+
+    The {IDF_TARGET_NAME} chip features 22 physical GPIO pads. Some GPIO pads cannot be used or do not have the corresponding pin on the chip package. For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *IO MUX and GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__]. Each pad can be used as a general purpose I/O or can be connected to an internal peripheral signal.
+
+    - Note that GPIO12-17 are usually used for SPI flash.
+    - Note that GPIO 18 and 19 are used by USB-JTAG by default. In order to use them as GPIOs, USB-JTAG will be disabled by the drivers.
+    - {IDF_TARGET_NAME} doesn't have separate "RTC GPIO" support. However, GPIO0-5 keep the rtc feature, which can be used for power-management and analog subsystem.
 
 .. only:: SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
