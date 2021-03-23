@@ -1448,8 +1448,8 @@ TaskHandle_t xTaskGetHandle( const char *pcNameToQuery ) PRIVILEGED_FUNCTION; /*
  * this function to be available.
  *
  * Returns the high water mark of the stack associated with xTask.  That is,
- * the minimum free stack space there has been (in words, so on a 32 bit machine
- * a value of 1 means 4 bytes) since the task started.  The smaller the returned
+ * the minimum free stack space there has been in bytes since the task started. 
+ * Note that this differs from vanilla FreeRTOS. The smaller the returned
  * number the closer the task has come to overflowing its stack.
  *
  * uxTaskGetStackHighWaterMark() and uxTaskGetStackHighWaterMark2() are the
