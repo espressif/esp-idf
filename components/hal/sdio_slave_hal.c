@@ -91,7 +91,7 @@ static esp_err_t sdio_ringbuf_send(sdio_ringbuf_t *buf, esp_err_t (*copy_callbac
     uint8_t* get_ptr = sdio_ringbuf_offset_ptr(buf, RINGBUF_WRITE_PTR, SDIO_SLAVE_SEND_DESC_SIZE);
     esp_err_t err = ESP_OK;
     if (copy_callback) {
-        (*copy_callback)(get_ptr, arg);
+        err = (*copy_callback)(get_ptr, arg);
     }
     if (err != ESP_OK) return err;
 
