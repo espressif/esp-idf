@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "unity.h"
 
+#include "esp_attr.h"
 #include "soc/soc_caps.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
@@ -18,11 +19,30 @@
 #include "esp_rom_sys.h"
 #include "esp_rom_uart.h"
 
+#include "esp_sleep.h"
+#include "esp_system.h"
+
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rtc.h"
+#include "esp32/clk.h"
+#include "esp32/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rtc.h"
+#include "esp32s2/clk.h"
+#include "esp32s2/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rtc.h"
+#include "esp32s3/clk.h"
+#include "esp32s3/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rtc.h"
+#include "esp32c3/clk.h"
+#include "esp32c3/rom/rtc.h"
+#endif
+
 extern void rtc_clk_select_rtc_slow_clk(void);
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
-
-#include "esp32/clk.h"
 
 #define CALIBRATE_ONE(cali_clk) calibrate_one(cali_clk, #cali_clk)
 
@@ -290,3 +310,81 @@ TEST_CASE("Test starting 'External 32kHz XTAL' on the board without it.", "[rtc_
 }
 
 #endif
+
+static RTC_NOINIT_ATTR int64_t start = 0;
+
+TEST_CASE("Test rtc clk calibration compensation", "[rtc_clk]")
+{
+    int64_t t1 = esp_rtc_get_time_us();
+
+    // Modify calibration value
+    esp_clk_slowclk_cal_set(esp_clk_slowclk_cal_get() / 2);
+
+    // Delay for error accumulation.
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    // Internally, the origin point of rtc clk has been adjusted
+    // so that t2 > t1 remains true
+    int64_t t2 = esp_rtc_get_time_us();
+
+    TEST_ASSERT(t2 > t1);
+
+    // Restore calibration value
+    esp_clk_slowclk_cal_set(esp_clk_slowclk_cal_get() * 2);
+
+    // Delay for error accumulation.
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    t2 = esp_rtc_get_time_us();
+
+    TEST_ASSERT(t2 > t1);
+}
+
+static void trigger_deepsleep(void)
+{
+    printf("Trigger deep sleep. Waiting for 10 sec ...\n");
+
+    // Simulate the dispersion of the calibration coefficients at start-up.
+    // Corrupt the calibration factor.
+    esp_clk_slowclk_cal_set(esp_clk_slowclk_cal_get() / 2);
+
+    // Delay for error accumulation.
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    // Save start time. Deep sleep.
+    start = esp_rtc_get_time_us();
+    esp_sleep_enable_timer_wakeup(1000);
+    // In function esp_deep_sleep_start() uses function esp_sync_counters_rtc_and_frc()
+    // to prevent a negative time after wake up.
+    esp_deep_sleep_start();
+}
+
+static void check_time_deepsleep_1(void)
+{
+    RESET_REASON reason = rtc_get_reset_reason(0);
+    TEST_ASSERT(reason == DEEPSLEEP_RESET);
+    int64_t end = esp_rtc_get_time_us();
+    TEST_ASSERT(end > start);
+
+    esp_clk_slowclk_cal_set(esp_clk_slowclk_cal_get() * 2);
+
+    // Delay for error accumulation.
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    start = esp_rtc_get_time_us();
+
+    esp_sleep_enable_timer_wakeup(1000);
+    // In function esp_deep_sleep_start() uses function esp_sync_counters_rtc_and_frc()
+    // to prevent a negative time after wake up.
+    esp_deep_sleep_start();
+}
+
+static void check_time_deepsleep_2(void)
+{
+    RESET_REASON reason = rtc_get_reset_reason(0);
+    TEST_ASSERT(reason == DEEPSLEEP_RESET);
+    int64_t end = esp_rtc_get_time_us();
+    TEST_ASSERT(end > start);
+}
+
+TEST_CASE_MULTIPLE_STAGES("Test rtc clk calibration compensation across deep sleep", "[rtc_clk][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET]", trigger_deepsleep, check_time_deepsleep_1, check_time_deepsleep_2);
