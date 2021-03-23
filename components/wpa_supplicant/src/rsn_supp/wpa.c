@@ -1009,7 +1009,7 @@ int   ieee80211w_set_keys(struct wpa_sm *sm,
 		if (keyidx > 4095) {
 			return -1;
 		}
-		return esp_wifi_set_igtk_internal(ESP_IF_WIFI_STA, igtk);
+		return esp_wifi_set_igtk_internal(WIFI_IF_STA, igtk);
 	}
 	return 0;
 #else
@@ -2148,7 +2148,7 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
     if (esp_wifi_sta_pmf_enabled()) {
         wifi_config_t wifi_cfg;
 
-        esp_wifi_get_config(ESP_IF_WIFI_STA, &wifi_cfg);
+        esp_wifi_get_config(WIFI_IF_STA, &wifi_cfg);
         sm->pmf_cfg = wifi_cfg.sta.pmf_cfg;
         sm->mgmt_group_cipher = cipher_type_map_public_to_supp(esp_wifi_sta_get_mgmt_group_cipher());
     } else {
