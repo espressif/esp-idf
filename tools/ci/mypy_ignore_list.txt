@@ -101,6 +101,8 @@ examples/protocols/sockets/tcp_client/example_test.py
 examples/protocols/sockets/tcp_server/example_test.py
 examples/protocols/sockets/udp_client/example_test.py
 examples/protocols/sockets/udp_server/example_test.py
+examples/protocols/sockets_non_blocking/tcp_client/example_test.py
+examples/protocols/sockets_non_blocking/tcp_server/example_test.py
 examples/protocols/websocket/example_test.py
 examples/provisioning/legacy/ble_prov/ble_prov_test.py
 examples/provisioning/legacy/custom_config/components/custom_provisioning/python/custom_config_pb2.py
