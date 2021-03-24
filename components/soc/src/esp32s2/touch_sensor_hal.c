@@ -19,7 +19,9 @@
 
 void touch_hal_init(void)
 {
+    touch_ll_stop_fsm();
     touch_ll_intr_disable(TOUCH_PAD_INTR_MASK_ALL);
+    touch_ll_intr_clear(TOUCH_PAD_INTR_MASK_ALL);
     touch_ll_clear_channel_mask(SOC_TOUCH_SENSOR_BIT_MASK_MAX);
     touch_ll_clear_trigger_status_mask();
     touch_ll_set_meas_times(TOUCH_PAD_MEASURE_CYCLE_DEFAULT);
