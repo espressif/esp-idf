@@ -43,17 +43,17 @@ OTA 数据分区是两个 0x2000 字节大小的 flash 扇区，防止写入时�
 状态控制了选取启动应用程序的过程：
 
 =============================  ========================================================
-状态                            启动加载器选取启动应用程序的限制               
+状态                            启动加载器选取启动应用程序的限制
 =============================  ========================================================
- ESP_OTA_IMG_VALID             没有限制，可以选取。                                      
- ESP_OTA_IMG_UNDEFINED         没有限制，可以选取。                                      
- ESP_OTA_IMG_INVALID           不会选取。                                              
- ESP_OTA_IMG_ABORTED           不会选取。                                              
+ ESP_OTA_IMG_VALID             没有限制，可以选取。
+ ESP_OTA_IMG_UNDEFINED         没有限制，可以选取。
+ ESP_OTA_IMG_INVALID           不会选取。
+ ESP_OTA_IMG_ABORTED           不会选取。
  ESP_OTA_IMG_NEW               如使能 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE`，
-                               则仅会选取一次。在启动加载器中，状态立即变为                  
-                               ``ESP_OTA_IMG_PENDING_VERIFY``。                       
+                               则仅会选取一次。在启动加载器中，状态立即变为
+                               ``ESP_OTA_IMG_PENDING_VERIFY``。
  ESP_OTA_IMG_PENDING_VERIFY    如使能 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE`，
-                               则不会选取，状态变为``ESP_OTA_IMG_ABORTED``。             
+                               则不会选取，状态变为``ESP_OTA_IMG_ABORTED``。
 =============================  ========================================================
 
 如果 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 没有使能（默认情况），则 :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` 和 :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` 为可选功能，``ESP_OTA_IMG_NEW`` 和 ``ESP_OTA_IMG_PENDING_VERIFY`` 不会使用。
@@ -177,16 +177,19 @@ Kconfig 中的 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 可以帮助用户�
 
   - ESP32 中版本号存储在 eFuse 的 ``EFUSE_BLK3_RDATA4_REG`` 里（若 eFuse 的位烧写为 1，则永远无法恢复为 0）。寄存器设置了多少位，应用程序的安全版本号就为多少。
 
+
+.. _secure-ota-updates:
+
+没有安全启动的安全 OTA 升级
+---------------------------
+
+即便硬件安全启动没有使能，也可验证已签名的 OTA 升级
+
 .. only:: esp32
 
-  .. _secure-ota-updates:
+  具体可参考 :ref:`signed-app-verify`。
 
-  没有安全启动的安全 OTA 升级
-  ---------------------------
 
-  即便硬件安全启动没有使能，也可验证已签名的 OTA 升级，具体可参考 :ref:`signed-app-verify`。
-
-    
 OTA 工具 (otatool.py)
 ---------------------
 
