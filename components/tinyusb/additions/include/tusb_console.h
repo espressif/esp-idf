@@ -14,6 +14,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "esp_err.h"
 
 /**
@@ -31,3 +35,7 @@ esp_err_t esp_tusb_init_console(int cdc_intf);
  * @return esp_err_t
  */
 esp_err_t esp_tusb_deinit_console(int cdc_intf);
+
+#ifdef __cplusplus
+}
+#endif
