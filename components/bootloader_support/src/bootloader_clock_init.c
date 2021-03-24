@@ -80,4 +80,7 @@ __attribute__((weak)) void bootloader_clock_configure(void)
         rtc_clk_32k_bootstrap(CONFIG_ESP_SYSTEM_RTC_EXT_XTAL_BOOTSTRAP_CYCLES);
     }
 #endif // CONFIG_ESP_SYSTEM_RTC_EXT_XTAL
+
+    REG_WRITE(RTC_CNTL_INT_ENA_REG, 0);
+    REG_WRITE(RTC_CNTL_INT_CLR_REG, UINT32_MAX);
 }

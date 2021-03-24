@@ -148,6 +148,9 @@ void rtc_init(rtc_config_t cfg)
             calibrate_ocode();
         }
     }
+
+    REG_WRITE(RTC_CNTL_INT_ENA_REG, 0);
+    REG_WRITE(RTC_CNTL_INT_CLR_REG, UINT32_MAX);
 }
 
 rtc_vddsdio_config_t rtc_vddsdio_get_config(void)
