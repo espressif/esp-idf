@@ -632,8 +632,6 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     uart_hal_set_tx_idle_num(&(uart_context[uart_num].hal), UART_TX_IDLE_NUM_DEFAULT);
     uart_hal_set_hw_flow_ctrl(&(uart_context[uart_num].hal), uart_config->flow_ctrl, uart_config->rx_flow_ctrl_thresh);
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
-    // The module reset do not reset TX and RX memory.
-    // reset FIFO to avoid garbage data remained in the FIFO.
     uart_hal_rxfifo_rst(&(uart_context[uart_num].hal));
     uart_hal_txfifo_rst(&(uart_context[uart_num].hal));
     return ESP_OK;
@@ -961,7 +959,7 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                 // then postpone interrupt processing for next interrupt
                 uart_event.type = UART_EVENT_MAX;
             } else {
-                // Workaround for RS485: If the RS485 half duplex mode is active 
+                // Workaround for RS485: If the RS485 half duplex mode is active
                 // and transmitter is in idle state then reset received buffer and reset RTS pin
                 // skip this behavior for other UART modes
                 UART_ENTER_CRITICAL_ISR(&(uart_context[uart_num].spinlock));
