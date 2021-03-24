@@ -48,12 +48,12 @@
 
 
 #define ADC_FSM_RSTB_WAIT_DEFAULT     (8)
-#define ADC_FSM_START_WAIT_DEFAULT    (5)
+#define ADC_FSM_START_WAIT_DEFAULT    (SAR_ADC_CLK_DIV_DEFUALT * 2)
 #define ADC_FSM_STANDBY_WAIT_DEFAULT  (100)
 #define ADC_FSM_TIME_KEEP             (-1)
 #define ADC_MAX_MEAS_NUM_DEFAULT      (255)
 #define ADC_MEAS_NUM_LIM_DEFAULT      (1)
-#define SAR_ADC_CLK_DIV_DEFUALT       (2)
+#define SAR_ADC_CLK_DIV_DEFUALT       (16)
 #define ADC_PATT_LEN_MAX              (16)
 #define TOUCH_PAD_FILTER_FACTOR_DEFAULT   (4)   // IIR filter coefficient.
 #define TOUCH_PAD_SHIFT_DEFAULT           (4)   // Increase computing accuracy.
