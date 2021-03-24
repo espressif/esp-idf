@@ -284,15 +284,9 @@ gatt_svr_dsc_access(uint16_t conn_handle, uint16_t attr_handle, struct
     }
 
     int rc;
-    char *temp_outbuf = strdup(ctxt->dsc->arg);
-    if (temp_outbuf == NULL) {
-        ESP_LOGE(TAG, "Error duplicating user description of characteristic");
-        return BLE_ATT_ERR_INSUFFICIENT_RES;
-    }
+    ssize_t temp_outlen = strlen(ctxt->dsc->arg);
 
-    ssize_t temp_outlen = strlen(temp_outbuf);
-    rc = os_mbuf_append(ctxt->om, temp_outbuf, temp_outlen);
-    free(temp_outbuf);
+    rc = os_mbuf_append(ctxt->om, ctxt->dsc->arg, temp_outlen);
     return rc;
 }
 
