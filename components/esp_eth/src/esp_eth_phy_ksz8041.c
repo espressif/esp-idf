@@ -41,20 +41,20 @@ static const char *TAG = "ksz8041";
  */
 typedef union {
     struct {
-        uint32_t hp_mdix : 1;          /* HP Auto MDI/MDI-X Mode */
-        uint32_t mdi_x_select : 1;     /* MDI/MDI-X Select */
-        uint32_t pairswap_dis : 1;     /* Disable Auto MDI/MDI-X */
-        uint32_t energy_det : 1;       /* Presence of Signal on RX+/- Wire Pair */
-        uint32_t force_link : 1;       /* Force Link Pass */
-        uint32_t power_saving : 1;     /* Enable Powering Saving */
-        uint32_t irq_level : 1;        /* Interrupt Pin Active Level */
-        uint32_t jabber : 1;           /* Enable Jabber Counter */
-        uint32_t auto_nego_comp : 1;   /* Auto Negotiation Complete */
-        uint32_t flow_ctl_cap : 1;     /* Flow Control Capable */
-        uint32_t phy_iso : 1;          /* PHY in Isolate Mode */
-        uint32_t op_mode_ind : 3;      /* Operation Mode Indication */
-        uint32_t en_sqe_test : 1;      /* Enable SQE Test */
-        uint32_t dis_data_scr: 1;      /* Disable Scrambler */
+        uint32_t dis_data_scr: 1;    /* Disable Scrambler */
+        uint32_t en_sqe_test : 1;    /* Enable SQE Test */
+        uint32_t op_mode : 3;        /* Operation Mode */
+        uint32_t phy_iso : 1;        /* PHY Isolate */
+        uint32_t en_flow_ctrl : 1;   /* Enable Flow Control */
+        uint32_t auto_nego_comp : 1; /* Auto Negotiation Complete */
+        uint32_t en_jabber : 1;      /* Enable Jabber Counter */
+        uint32_t irq_level : 1;      /* Interrupt Pin Active Level */
+        uint32_t power_saving : 1;   /* Enable Powering Saving */
+        uint32_t force_link : 1;     /* Force Link Pass */
+        uint32_t energy_det : 1;     /* Presence of Signal on RX+/- Wire Pair */
+        uint32_t pairswap_dis : 1;   /* Disable Auto MDI/MDI-X */
+        uint32_t mdix_select : 1;    /* MDI/MDI-X Select */
+        uint32_t hp_mdix : 1;        /* HP Auto MDI/MDI-X Mode */
     };
     uint32_t val;
 } pc2r_reg_t;
@@ -90,7 +90,7 @@ static esp_err_t ksz8041_update_link_duplex_speed(phy_ksz8041_t *ksz8041)
         if (link == ETH_LINK_UP) {
             PHY_CHECK(eth->phy_reg_read(eth, ksz8041->addr, ETH_PHY_PC2R_REG_ADDR, &(pc2r.val)) == ESP_OK,
                       "read PC2R failed", err);
-            switch (pc2r.op_mode_ind) {
+            switch (pc2r.op_mode) {
             case 1: //10Base-T half-duplex
                 speed = ETH_SPEED_10M;
                 duplex = ETH_DUPLEX_HALF;
