@@ -319,7 +319,7 @@ If you want to use more than one extension board at the same time, please check 
      - Utilize time division multiple access, or use a different audio module that can be connected via other GPIOs or DAC.
    * - TouchA v1.1 + LCD32 v1.2
      - IO11, IO6
-     - Touch actions cannot be triggered because of the multiplexed pin IO11. ESP-LyraP-LCD32 will not be affected because its BLCT pin will be disconnected fron IO6.
+     - Touch actions cannot be triggered because of the multiplexed pin IO11. ESP-LyraP-LCD32 will not be affected because its BLCT pin will be disconnected from IO6.
      - Do not initialize IO11 (NETWORK) for your ESP-LyraP-TouchA, or configure the BLCT pin to `-1` (= do not use BLCT) for your ESP-LyraP-LCD32.
    * - 8311A v1.3 + LCD32 v1.2
      - IO6
