@@ -105,6 +105,11 @@ menu "Example Connection Configuration"
                     help
                         DP83848 is a single port 10/100Mb/s Ethernet Physical Layer Transceiver.
                         Goto http://www.ti.com/product/DP83848J for more information about it.
+                config EXAMPLE_ETH_PHY_KSZ8081
+                    bool "KSZ8081"
+                    help
+                        The KSZ8081 is a single supply 10Base-T/100Base-TX Physical Layer Transceiver.
+                        Goto https://www.microchip.com/wwwproducts/en/KSZ8081 for more information about it.   
             endchoice
 
             config EXAMPLE_ETH_MDC_GPIO

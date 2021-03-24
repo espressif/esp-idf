@@ -359,6 +359,8 @@ static esp_netif_t *eth_start(void)
     s_phy = esp_eth_phy_new_rtl8201(&phy_config);
 #elif CONFIG_EXAMPLE_ETH_PHY_LAN8720
     s_phy = esp_eth_phy_new_lan8720(&phy_config);
+#elif CONFIG_EXAMPLE_ETH_PHY_KSZ8081
+    s_phy = esp_eth_phy_new_ksz8081(&phy_config);
 #elif CONFIG_EXAMPLE_ETH_PHY_DP83848
     s_phy = esp_eth_phy_new_dp83848(&phy_config);
 #endif
