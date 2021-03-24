@@ -707,6 +707,10 @@ static void btu_hcif_disconnection_comp_evt (UINT8 *p)
 
     handle = HCID_GET_HANDLE (handle);
 
+    if (reason != HCI_ERR_PEER_USER && reason != HCI_ERR_CONN_CAUSE_LOCAL_HOST) {
+        HCI_TRACE_WARNING("DiscCmpl evt: hdl=%d, rsn=0x%x", handle, reason);
+    }
+
 #if BTM_SCO_INCLUDED == TRUE
     /* If L2CAP doesn't know about it, send it to SCO */
     if (!l2c_link_hci_disc_comp (handle, reason)) {
@@ -1126,7 +1130,7 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         uint8_t status;
         STREAM_TO_UINT8  (status, p);
         if(status != HCI_SUCCESS) {
-            HCI_TRACE_ERROR("%s opcode 0x%x status 0x%x", __func__, opcode, status);
+            HCI_TRACE_ERROR("CC evt: op=0x%x, status=0x%x", opcode, status);
         }
         break;
     }
@@ -1259,7 +1263,7 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
     {
         uint8_t btm_status = BTM_SUCCESS;
         if(status != HCI_SUCCESS) {
-            HCI_TRACE_ERROR("%s, Create sync error, the error code = 0x%x", __func__, status);
+            HCI_TRACE_ERROR("CS evt: LE PA CreateSync status=0x%x", status);
             btm_status = BTM_ILLEGAL_VALUE;
         }
         btm_create_sync_callback(btm_status);
@@ -1269,7 +1273,7 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
     {
         uint8_t btm_status = BTM_SUCCESS;
         if(status != HCI_SUCCESS) {
-            HCI_TRACE_ERROR("%s, Set phy error, the error code = 0x%x", __func__, status);
+            HCI_TRACE_ERROR("CS evt: LE SetPhy status=0x%x", status);
             btm_status = BTM_ILLEGAL_VALUE;
         }
         btm_set_phy_callback(btm_status);
