@@ -68,7 +68,7 @@ esp_err_t esp_efuse_utility_process(const esp_efuse_desc_t* field[], void* ptr, 
             if ((bits_counter + num_bits) > req_size) { // Limits the length of the field.
                 num_bits = req_size - bits_counter;
             }
-            ESP_LOGD(TAG, "In EFUSE_BLK%d__DATA%d_REG is used %d bits starting with %d bit",
+            ESP_EARLY_LOGD(TAG, "In EFUSE_BLK%d__DATA%d_REG is used %d bits starting with %d bit",
                     (int)field[i]->efuse_block, num_reg, num_bits, start_bit);
             err = func_proc(num_reg, field[i]->efuse_block, start_bit, num_bits, ptr, &bits_counter);
             ++i_reg;
@@ -164,16 +164,16 @@ void esp_efuse_utility_erase_virt_blocks(void)
 void esp_efuse_utility_update_virt_blocks(void)
 {
 #ifdef CONFIG_EFUSE_VIRTUAL
-    ESP_LOGI(TAG, "Loading virtual efuse blocks from real efuses");
+    ESP_EARLY_LOGI(TAG, "Loading virtual efuse blocks from real efuses");
     for (int num_block = EFUSE_BLK0; num_block < EFUSE_BLK_MAX; num_block++) {
         int subblock = 0;
         for (uint32_t addr_rd_block = range_read_addr_blocks[num_block].start; addr_rd_block <= range_read_addr_blocks[num_block].end; addr_rd_block += 4) {
             virt_blocks[num_block][subblock++] = REG_READ(addr_rd_block);
         }
-        ESP_LOGD(TAG, "virt_blocks[%d] is filled by EFUSE_BLOCK%d", num_block, num_block);
+        ESP_EARLY_LOGD(TAG, "virt_blocks[%d] is filled by EFUSE_BLOCK%d", num_block, num_block);
     }
 #else
-    ESP_LOGI(TAG, "Emulate efuse is disabled");
+    ESP_EARLY_LOGI(TAG, "Emulate efuse is disabled");
 #endif
 }
 
@@ -216,7 +216,7 @@ esp_err_t esp_efuse_utility_write_reg(esp_efuse_block_t efuse_block, unsigned in
     esp_err_t err = ESP_OK;
     uint32_t reg = esp_efuse_utility_read_reg(efuse_block, num_reg);
     if (reg & reg_to_write) {
-        ESP_LOGE(TAG, "Repeated programming of programmed bits is strictly forbidden 0x%08x", reg & reg_to_write);
+        ESP_EARLY_LOGE(TAG, "Repeated programming of programmed bits is strictly forbidden 0x%08x", reg & reg_to_write);
         err = ESP_ERR_EFUSE_REPEATED_PROG;
     } else {
         write_reg(efuse_block, num_reg, reg_to_write);
