@@ -1,10 +1,11 @@
 [mapping:esp_system]
 archive: libesp_system.a
 entries:
-    panic (noflash)
-    panic_handler (noflash)
-    panic_arch (noflash)
-    reset_reason (noflash)
+    if ESP_PANIC_HANDLER_IRAM = y:
+        panic (noflash)
+        panic_handler (noflash)
+        panic_arch (noflash)
+
     esp_err (noflash)
     esp_system:esp_system_abort (noflash)
 
