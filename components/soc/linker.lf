@@ -2,6 +2,8 @@
 archive: libsoc.a
 entries:
     cpu_util (noflash_text)
+    if IDF_TARGET_ESP32S2 = y:
+        regi2c_ctrl (noflash)
     rtc_clk (noflash)
     rtc_clk_init (noflash_text)
     rtc_init (noflash_text)
