@@ -45,7 +45,7 @@ void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, uns
 #endif
     } ctx;
 
-    int ret;
+    int ret __attribute__((unused));
     assert(input != NULL && output != NULL);
 
 #if SOC_SHA_SUPPORT_SHA1

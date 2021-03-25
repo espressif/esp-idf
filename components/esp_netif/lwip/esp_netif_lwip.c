@@ -1241,12 +1241,14 @@ static esp_err_t esp_netif_down_api(esp_netif_api_msg_t *msg)
 
         esp_netif_reset_ip_info(esp_netif);
     }
+#if CONFIG_LWIP_IPV6
     for(int8_t i = 0 ;i < LWIP_IPV6_NUM_ADDRESSES ;i++) {
         netif_ip6_addr_set(lwip_netif, i, IP6_ADDR_ANY6);
         netif_ip6_addr_set_valid_life(lwip_netif, i, 0);
         netif_ip6_addr_set_pref_life(lwip_netif, i, 0);
         netif_ip6_addr_set_state(lwip_netif, i, IP6_ADDR_INVALID);
     }
+#endif
     netif_set_addr(lwip_netif, IP4_ADDR_ANY4, IP4_ADDR_ANY4, IP4_ADDR_ANY4);
     netif_set_down(lwip_netif);
 
@@ -1424,8 +1426,9 @@ static esp_err_t esp_netif_set_dns_info_api(esp_netif_api_msg_t *msg)
     ESP_LOGD(TAG, "set dns if=%p type=%d dns=%x", esp_netif, type, dns->ip.u_addr.ip4.addr);
 
     ip_addr_t *lwip_ip = (ip_addr_t*)&dns->ip;
+#if CONFIG_LWIP_IPV6 && LWIP_IPV4
     lwip_ip->type = IPADDR_TYPE_V4;
-
+#endif
     if (esp_netif->flags & ESP_NETIF_DHCP_SERVER) {
         // if DHCP server configured to set DNS in dhcps API
         if (type != ESP_NETIF_DNS_MAIN) {
@@ -1488,7 +1491,11 @@ esp_err_t esp_netif_get_dns_info(esp_netif_t *esp_netif, esp_netif_dns_type_t ty
         if (dns_ip == IP_ADDR_ANY) {
             return ESP_ERR_ESP_NETIF_DNS_NOT_CONFIGURED;
         }
+#if CONFIG_LWIP_IPV6
         memcpy(&dns->ip.u_addr.ip4, &dns_ip->u_addr.ip4, sizeof(ip4_addr_t));
+#else
+        memcpy(&dns->ip.u_addr.ip4, &dns_ip->addr, sizeof(ip4_addr_t));
+#endif
         return ESP_OK;
     }
 
@@ -1499,6 +1506,7 @@ esp_err_t esp_netif_get_dns_info(esp_netif_t *esp_netif, esp_netif_dns_type_t ty
     return esp_netif_lwip_ipc_call(esp_netif_get_dns_info_api, esp_netif, (void *)&dns_param);
 }
 
+#if CONFIG_LWIP_IPV6
 esp_ip6_addr_type_t esp_netif_ip6_get_addr_type(esp_ip6_addr_t* ip6_addr)
 {
     ip6_addr_t* lwip_ip6_info = (ip6_addr_t*)ip6_addr;
@@ -1625,6 +1633,7 @@ int esp_netif_get_all_ip6(esp_netif_t *esp_netif, esp_ip6_addr_t if_ip6[])
     }
     return addr_count;
 }
+#endif
 
 esp_netif_flags_t esp_netif_get_flags(esp_netif_t *esp_netif)
 {

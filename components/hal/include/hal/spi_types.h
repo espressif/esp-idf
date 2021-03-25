@@ -23,7 +23,7 @@
  * @brief Enum with the three SPI peripherals that are software-accessible in it
  */
 typedef enum {
-// SPI_HOST (SPI1_HOST) is not supported by the SPI Master and SPI Slave driver on ESP32-S2
+//SPI1 can be used as GPSPI only on ESP32
     SPI1_HOST=0,    ///< SPI1
     SPI2_HOST=1,    ///< SPI2
     SPI3_HOST=2,    ///< SPI3

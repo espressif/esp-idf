@@ -242,7 +242,7 @@ menu "ESP32S3-Specific"
         endchoice
 
         # insert non-chip-specific items here
-        source "$IDF_PATH/components/esp_common/Kconfig.spiram.common"
+        source "$IDF_PATH/components/esp_hw_support/Kconfig.spiram.common"
 
     endmenu
 
@@ -450,7 +450,7 @@ menu "ESP32S3-Specific"
             Choose which clock is used as RTC clock source.
 
         config ESP32S3_RTC_CLK_SRC_INT_RC
-            bool "Internal 150kHz RC oscillator"
+            bool "Internal 90kHz RC oscillator"
         config ESP32S3_RTC_CLK_SRC_EXT_CRYS
             bool "External 32kHz crystal"
             select ESP_SYSTEM_RTC_EXT_XTAL
@@ -463,7 +463,7 @@ menu "ESP32S3-Specific"
     config ESP32S3_RTC_CLK_CAL_CYCLES
         int "Number of cycles for RTC_SLOW_CLK calibration"
         default 3000 if ESP32S3_RTC_CLK_SRC_EXT_CRYS || ESP32S3_RTC_CLK_SRC_EXT_OSC || ESP32S3_RTC_CLK_SRC_INT_8MD256
-        default 1024 if ESP32S3_RTC_CLK_SRC_INT_RC
+        default 576 if ESP32S3_RTC_CLK_SRC_INT_RC
         range 0 125000
         help
             When the startup code initializes RTC_SLOW_CLK, it can perform
@@ -476,7 +476,7 @@ menu "ESP32S3-Specific"
             When this option is set to 0, clock calibration will not be performed at
             startup, and approximate clock frequencies will be assumed:
 
-            - 150000 Hz if internal RC oscillator is used as clock source. For this use value 1024.
+            - 90000 Hz if internal RC oscillator is used as clock source. For this use value 1024.
             - 32768 Hz if the 32k crystal oscillator is used. For this use value 3000 or more.
               In case more value will help improve the definition of the launch of the crystal.
               If the crystal could not start, it will be switched to internal RC.

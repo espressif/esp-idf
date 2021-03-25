@@ -19,7 +19,7 @@
 #include "bg96.h"
 #include "sim7600.h"
 
-#define BROKER_URL "mqtt://mqtt.eclipse.org"
+#define BROKER_URL "mqtt://mqtt.eclipseprojects.io"
 
 static const char *TAG = "pppos_example";
 static EventGroupHandle_t event_group = NULL;

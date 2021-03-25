@@ -1456,9 +1456,11 @@ void l2cu_change_pri_ccb (tL2C_CCB *p_ccb, tL2CAP_CHNL_PRIORITY priority)
 ** Returns          pointer to CCB, or NULL if none
 **
 *******************************************************************************/
+bool l2cu_find_ccb_in_list(void *p_ccb_node, void *p_local_cid);
 tL2C_CCB *l2cu_allocate_ccb (tL2C_LCB *p_lcb, UINT16 cid)
 {
     tL2C_CCB    *p_ccb = NULL;
+    uint16_t tmp_cid = L2CAP_BASE_APPL_CID;
     L2CAP_TRACE_DEBUG ("l2cu_allocate_ccb: cid 0x%04x", cid);
 
     p_ccb = l2cu_find_free_ccb ();
@@ -1481,7 +1483,13 @@ tL2C_CCB *l2cu_allocate_ccb (tL2C_LCB *p_lcb, UINT16 cid)
     p_ccb->in_use = TRUE;
 
     /* Get a CID for the connection */
-    p_ccb->local_cid = L2CAP_BASE_APPL_CID + (list_length(l2cb.p_ccb_pool) - 1);
+    for (tmp_cid = L2CAP_BASE_APPL_CID; tmp_cid < MAX_L2CAP_CHANNELS + L2CAP_BASE_APPL_CID; tmp_cid++) {
+        if (list_foreach(l2cb.p_ccb_pool, l2cu_find_ccb_in_list, &tmp_cid) == NULL) {
+            break;
+        }
+    }
+    assert(tmp_cid != MAX_L2CAP_CHANNELS + L2CAP_BASE_APPL_CID);
+    p_ccb->local_cid = tmp_cid;
     p_ccb->p_lcb = p_lcb;
     p_ccb->p_rcb = NULL;
     p_ccb->should_free_rcb = false;

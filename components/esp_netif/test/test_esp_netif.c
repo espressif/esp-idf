@@ -310,3 +310,42 @@ TEST_CASE("esp_netif: convert ip address from string", "[esp_netif]")
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_netif_str_to_ip6(NULL, &ipv6));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_netif_str_to_ip6(ipv6_src[0], NULL));
 }
+
+TEST_CASE("esp_netif: create and destroy default wifi interfaces", "[esp_netif][leaks=0]")
+{
+    // Helper constants to refer default STA and AP's params
+    static const esp_netif_inherent_config_t default_sta_cfg = ESP_NETIF_INHERENT_DEFAULT_WIFI_STA();
+    static const esp_netif_inherent_config_t default_ap_cfg = ESP_NETIF_INHERENT_DEFAULT_WIFI_AP();
+
+    // create default station
+    esp_netif_t *sta = esp_netif_create_default_wifi_sta();
+
+    // check it gets created and has default params
+    TEST_ASSERT_NOT_NULL(sta);
+    TEST_ASSERT_EQUAL_STRING(default_sta_cfg.if_desc, esp_netif_get_desc(sta));
+    TEST_ASSERT_EQUAL(default_sta_cfg.route_prio, esp_netif_get_route_prio(sta));
+
+    // create default access point
+    esp_netif_t *ap = esp_netif_create_default_wifi_ap();
+
+    // check it gets created and has default params
+    TEST_ASSERT_NOT_NULL(ap);
+    TEST_ASSERT_EQUAL_STRING(default_ap_cfg.if_desc, esp_netif_get_desc(ap));
+    TEST_ASSERT_EQUAL(default_ap_cfg.route_prio, esp_netif_get_route_prio(ap));
+
+    // destroy the station
+    esp_wifi_clear_default_wifi_driver_and_handlers(sta);
+    esp_netif_destroy(sta);
+
+    // destroy the AP
+    esp_wifi_clear_default_wifi_driver_and_handlers(ap);
+    esp_netif_destroy(ap);
+
+
+    // quick check on create-destroy cycle of the default station again
+    sta = NULL;
+    sta = esp_netif_create_default_wifi_sta();
+    TEST_ASSERT_NOT_NULL(sta);
+    esp_wifi_clear_default_wifi_driver_and_handlers(sta);
+    esp_netif_destroy(sta);
+}

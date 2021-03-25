@@ -15,9 +15,7 @@
 
 namespace nvs {
 
-NVSHandleLocked::NVSHandleLocked(NVSHandleSimple *handle) : handle(handle) {
-    Lock::init();
-}
+NVSHandleLocked::NVSHandleLocked(NVSHandleSimple *handle) : handle(handle) { }
 
 NVSHandleLocked::~NVSHandleLocked() {
     Lock lock;

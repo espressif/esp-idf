@@ -25,8 +25,10 @@ extern "C"
 #define USB_DESC_ATTR           __attribute__((packed))
 
 /* -----------------------------------------------------------------------------
------------------------------- USB Protocol Enums ------------------------------
+------------------------------- Common USB Types -------------------------------
 ----------------------------------------------------------------------------- */
+
+// ----------------------------- Device Related --------------------------------
 
 /**
  * @brief Enumeration of USB PHY type
@@ -35,6 +37,18 @@ typedef enum {
     USB_PHY_INTERNAL = 0,       /**< Use the chip's internal USB PHY */
     USB_PHY_EXTERNAL,           /**< Use an external USB PHY */
 } usb_phy_t;
+
+// ------------------------------ Bus Related ----------------------------------
+
+/**
+ * @brief USB Standard Speeds
+ */
+typedef enum {
+    USB_SPEED_LOW = 0,                  /**< USB Low Speed (1.5 Mbit/s) */
+    USB_SPEED_FULL,                     /**< USB Full Speed (12 Mbit/s) */
+} usb_speed_t;
+
+// ---------------------------- Transfer Related -------------------------------
 
 /**
  * @brief The type of USB transfer
@@ -49,16 +63,64 @@ typedef enum {
 } usb_xfer_type_t;
 
 /**
- * @brief USB Standard Speeds
+ * @brief The status of a particular transfer
  */
 typedef enum {
-    USB_SPEED_LOW = 0,          /**< USB Low Speed (1.5 Mbit/s) */
-    USB_SPEED_FULL,             /**< USB Full Speed (12 Mbit/s) */
-} usb_speed_t;
+    USB_TRANSFER_STATUS_COMPLETED,      /**< The transfer was successful (but may be short) */
+    USB_TRANSFER_STATUS_ERROR,          /**< The transfer failed because due to excessive errors (e.g. no response or CRC error) */
+    USB_TRANSFER_STATUS_TIMED_OUT,      /**< The transfer failed due to to a time out */
+    USB_TRANSFER_STATUS_CANCELLED,      /**< The transfer was cancelled */
+    USB_TRANSFER_STATUS_STALL,          /**< The transfer was stalled */
+    USB_TRANSFER_STATUS_NO_DEVICE,      /**< The transfer failed because the device is no longer valid (e.g., disconencted */
+    USB_TRANSFER_STATUS_OVERFLOW,       /**< The transfer as more data was sent than was requested */
+} usb_transfer_status_t;
+
+/**
+ * @brief Isochronous packet descriptor
+ *
+ * If the number of bytes in an IRP transfer is larger than the MPS of the
+ * endpoint, the IRP is split over multiple packets (one packet per bInterval
+ * of the endpoint). An array of Isochronous packet descriptos describes how
+ * an IRP should be split over multiple packets.
+ */
+typedef struct {
+    int length;                         /**< Number of bytes to transmit/receive in the packet */
+    int actual_length;                  /**< Actual number of bytes transmitted/received in the packet */
+    usb_transfer_status_t status;       /**< Status of the packet */
+} usb_iso_packet_desc_t;
+
+/**
+ * @brief USB IRP (I/O Request Packet). See USB2.0 Spec
+ *
+ * An identifiable request by a software client to move data between itself (on the
+ * host) and an endpoint of a device in an appropriate direction.
+ *
+ * This structure represents the barebones of the request. Different layers of
+ * USB drivers will wrap their own objects around this.
+ *
+ * See 10.5.3.1 os USB2.0 specification
+ * Bulk: Represnts a single bulk transfer which a pipe will transparently split
+ *       into multiple MPS transactions (until the last)
+ * Control: Represents a single contorl transfer with the setup packet at the
+ *          first 8 bytes of the buffer.
+ * Interrupt: Represnts a single interrupt transaction
+ * Isochronous: Represnts a buffer of a stream of bytes which the pipe will transparently
+ *              transfer the stream of bytes one or more service periods
+ */
+typedef struct {
+    int num_bytes;                      /**< Number of bytes in IRP. Control should exclude size of setup. IN should be integer multiple of MPS */
+    int actual_num_bytes;               /**< Actual number of bytes transmitted/receives in the IRP */
+    uint8_t *data_buffer;               /**< Pointer to data buffer. Must be DMA capable memory */
+    usb_transfer_status_t status;       /**< Status of the transfer */
+    int num_iso_packets;                /**< Only relevant to isochronous. Number of service periods to transfer data buffer over. Set to 0 for non-iso transfers */
+    usb_iso_packet_desc_t iso_packet_desc[0];   /**< Descriptors for each ISO packet */
+} usb_irp_t;
 
 /* -----------------------------------------------------------------------------
--------------------------------- Control Request -------------------------------
+----------------------------------- Chapter 9 ----------------------------------
 ----------------------------------------------------------------------------- */
+
+// ------------------------------ Control Request ------------------------------
 
 /**
  * @brief Size of a USB control transfer setup packet in bytes
@@ -183,11 +245,7 @@ _Static_assert(sizeof(usb_ctrl_req_t) == USB_CTRL_REQ_SIZE, "Size of usb_ctrl_re
     (ctrl_req_ptr)->wLength = 0;   \
 })
 
-/* -----------------------------------------------------------------------------
----------------------------------- Descriptors ---------------------------------
------------------------------------------------------------------------------ */
-
-// -------------------------- Device Descriptor --------------------------------
+// ---------------------------- Device Descriptor ------------------------------
 
 /**
  * @brief Size of a USB device descriptor in bytes

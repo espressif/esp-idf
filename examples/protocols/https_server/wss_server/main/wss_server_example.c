@@ -33,13 +33,30 @@ static const size_t max_clients = 4;
 
 static esp_err_t ws_handler(httpd_req_t *req)
 {
-    uint8_t buf[128] = { 0 };
+    if (req->method == HTTP_GET) {
+        ESP_LOGI(TAG, "Handshake done, the new connection was opened");
+        return ESP_OK;
+    }
     httpd_ws_frame_t ws_pkt;
     memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
-    ws_pkt.payload = buf;
 
     // First receive the full ws message
-    esp_err_t ret = httpd_ws_recv_frame(req, &ws_pkt, 128);
+    /* Set max_len = 0 to get the frame len */
+    esp_err_t ret = httpd_ws_recv_frame(req, &ws_pkt, 0);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "httpd_ws_recv_frame failed to get frame len with %d", ret);
+        return ret;
+    }
+    ESP_LOGI(TAG, "frame len is %d", ws_pkt.len);
+    /* ws_pkt.len + 1 is for NULL termination as we are expecting a string */
+    uint8_t *buf = calloc(1, ws_pkt.len + 1);
+    if (buf == NULL) {
+        ESP_LOGE(TAG, "Failed to calloc memory for buf");
+        return ESP_ERR_NO_MEM;
+    }
+    ws_pkt.payload = buf;
+    /* Set max_len = ws_pkt.len to get the frame payload */
+    ret = httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "httpd_ws_recv_frame failed with %d", ret);
         return ret;
@@ -48,6 +65,8 @@ static esp_err_t ws_handler(httpd_req_t *req)
     // If it was a PONG, update the keep-alive
     if (ws_pkt.type == HTTPD_WS_TYPE_PONG) {
         ESP_LOGD(TAG, "Received PONG message");
+        free(buf);
+        buf = NULL;
         return wss_keep_alive_client_is_active(httpd_get_global_user_ctx(req->handle),
                 httpd_req_to_sockfd(req));
 
@@ -60,8 +79,12 @@ static esp_err_t ws_handler(httpd_req_t *req)
         }
         ESP_LOGI(TAG, "ws_handler: httpd_handle_t=%p, sockfd=%d, client_info:%d", req->handle,
                  httpd_req_to_sockfd(req), httpd_ws_get_fd_info(req->handle, httpd_req_to_sockfd(req)));
+        free(buf);
+        buf = NULL;
         return ret;
     }
+    free(buf);
+    buf = NULL;
     return ESP_OK;
 }
 

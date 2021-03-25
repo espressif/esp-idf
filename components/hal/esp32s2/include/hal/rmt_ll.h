@@ -13,13 +13,13 @@
 // limitations under the License.
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdbool.h>
 #include "soc/soc_caps.h"
 #include "soc/rmt_struct.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define RMT_LL_HW_BASE  (&RMT)
 #define RMT_LL_MEM_BASE (&RMTMEM)
@@ -52,26 +52,29 @@ static inline void rmt_ll_enable_mem_access(rmt_dev_t *dev, bool enable)
     dev->apb_conf.fifo_mask = enable;
 }
 
-static inline void rmt_ll_set_counter_clock_src(rmt_dev_t *dev, uint32_t channel, uint8_t src, uint8_t div_num, uint8_t div_a, uint8_t div_b)
+static inline void rmt_ll_set_group_clock_src(rmt_dev_t *dev, uint32_t channel, uint8_t src, uint8_t div_num, uint8_t div_a, uint8_t div_b)
 {
     dev->conf_ch[channel].conf1.ref_always_on = src;
 }
 
-static inline uint32_t rmt_ll_get_counter_clock_src(rmt_dev_t *dev, uint32_t channel)
+static inline uint32_t rmt_ll_get_group_clock_src(rmt_dev_t *dev, uint32_t channel)
 {
     return dev->conf_ch[channel].conf1.ref_always_on;
 }
 
-static inline void rmt_ll_tx_reset_counter_clock_div(rmt_dev_t *dev, uint32_t channel)
+static inline void rmt_ll_tx_reset_channel_clock_div(rmt_dev_t *dev, uint32_t channel)
 {
     dev->ref_cnt_rst.val |= (1 << channel);
-    dev->ref_cnt_rst.val &= ~(1 << channel);
 }
 
-static inline void rmt_ll_rx_reset_counter_clock_div(rmt_dev_t *dev, uint32_t channel)
+static inline void rmt_ll_tx_reset_channels_clock_div(rmt_dev_t *dev, uint32_t channel_mask)
+{
+    dev->ref_cnt_rst.val |= channel_mask;
+}
+
+static inline void rmt_ll_rx_reset_channel_clock_div(rmt_dev_t *dev, uint32_t channel)
 {
     dev->ref_cnt_rst.val |= (1 << channel);
-    dev->ref_cnt_rst.val &= ~(1 << channel);
 }
 
 static inline void rmt_ll_tx_reset_pointer(rmt_dev_t *dev, uint32_t channel)
@@ -121,23 +124,23 @@ static inline uint32_t rmt_ll_rx_get_mem_blocks(rmt_dev_t *dev, uint32_t channel
     return dev->conf_ch[channel].conf0.mem_size;
 }
 
-static inline void rmt_ll_tx_set_counter_clock_div(rmt_dev_t *dev, uint32_t channel, uint32_t div)
+static inline void rmt_ll_tx_set_channel_clock_div(rmt_dev_t *dev, uint32_t channel, uint32_t div)
 {
     dev->conf_ch[channel].conf0.div_cnt = div;
 }
 
-static inline void rmt_ll_rx_set_counter_clock_div(rmt_dev_t *dev, uint32_t channel, uint32_t div)
+static inline void rmt_ll_rx_set_channel_clock_div(rmt_dev_t *dev, uint32_t channel, uint32_t div)
 {
     dev->conf_ch[channel].conf0.div_cnt = div;
 }
 
-static inline uint32_t rmt_ll_tx_get_counter_clock_div(rmt_dev_t *dev, uint32_t channel)
+static inline uint32_t rmt_ll_tx_get_channel_clock_div(rmt_dev_t *dev, uint32_t channel)
 {
     uint32_t div = dev->conf_ch[channel].conf0.div_cnt;
     return div == 0 ? 256 : div;
 }
 
-static inline uint32_t rmt_ll_rx_get_counter_clock_div(rmt_dev_t *dev, uint32_t channel)
+static inline uint32_t rmt_ll_rx_get_channel_clock_div(rmt_dev_t *dev, uint32_t channel)
 {
     uint32_t div = dev->conf_ch[channel].conf0.div_cnt;
     return div == 0 ? 256 : div;
@@ -199,15 +202,14 @@ static inline void rmt_ll_tx_enable_sync(rmt_dev_t *dev, bool enable)
     dev->tx_sim.en = enable;
 }
 
-static inline void rmt_ll_tx_add_channel_to_group(rmt_dev_t *dev, uint32_t channel)
+static inline void rmt_ll_tx_add_to_sync_group(rmt_dev_t *dev, uint32_t channel)
 {
     dev->tx_sim.val |= 1 << channel;
 }
 
-static inline uint32_t rmt_ll_tx_remove_channel_from_group(rmt_dev_t *dev, uint32_t channel)
+static inline void rmt_ll_tx_remove_from_sync_group(rmt_dev_t *dev, uint32_t channel)
 {
     dev->tx_sim.val &= ~(1 << channel);
-    return dev->tx_sim.val & 0x0F;
 }
 
 static inline void rmt_ll_rx_enable_filter(rmt_dev_t *dev, uint32_t channel, bool enable)
@@ -442,7 +444,7 @@ static inline void rmt_ll_tx_set_carrier_always_on(rmt_dev_t *dev, uint32_t chan
 }
 
 //Writes items to the specified TX channel memory with the given offset and writen length.
-//the caller should ensure that (length + off) <= (memory block * SOC_RMT_CHANNEL_MEM_WORDS)
+//the caller should ensure that (length + off) <= (memory block * SOC_RMT_MEM_WORDS_PER_CHANNEL)
 static inline void rmt_ll_write_memory(rmt_mem_t *mem, uint32_t channel, const rmt_item32_t *data, uint32_t length, uint32_t off)
 {
     for (uint32_t i = 0; i < length; i++) {

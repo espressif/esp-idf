@@ -9,6 +9,7 @@
 #ifndef _BLE_MESH_TRACE_H_
 #define _BLE_MESH_TRACE_H_
 
+#include <assert.h>
 #include "esp_log.h"
 #include "mesh_util.h"
 #include "esp_rom_sys.h"
@@ -72,21 +73,11 @@ extern "C" {
 #define STRINGIFY(s)    _STRINGIFY(s)
 
 #ifndef __ASSERT
-#define __ASSERT(test, fmt, ...)                        \
-    do {                                                \
-        if (!(test)) {                                  \
-            printk("ASSERTION FAIL [%s] @ %s:%d:\n\t",  \
-                   _STRINGIFY(test),                    \
-                   __FILE__,                            \
-                   __LINE__);                           \
-            printk(fmt, ##__VA_ARGS__);                 \
-            for (;;);                                   \
-        }                                               \
-    } while ((0))
+#define __ASSERT(test, str) assert(test)
 #endif
 
 #ifndef __ASSERT_NO_MSG
-#define __ASSERT_NO_MSG(x)  do { if (!(x)) BLE_MESH_PRINT_E(BLE_MESH_TRACE_TAG, "error %s %u", __FILE__, __LINE__); } while (0)
+#define __ASSERT_NO_MSG(x) assert(x)
 #endif
 
 #if !CONFIG_BLE_MESH_NO_LOG

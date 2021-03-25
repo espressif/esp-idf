@@ -331,10 +331,10 @@ menu "MODEM SLEEP Options"
                 modem sleep to be used with both DFS and light sleep.
 
         config BT_CTRL_LPCLK_SEL_RTC_SLOW
-            bool "Internal 150kHz RC oscillator"
+            bool "Internal 90kHz RC oscillator"
             depends on ESP32C3_RTC_CLK_SRC_INT_RC
             help
-                Internal 150kHz RC oscillator.
+                Internal 90kHz RC oscillator.
 
 
     endchoice

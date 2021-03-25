@@ -19,6 +19,7 @@
 #include "http_parser.h"
 #include "sdkconfig.h"
 #include "esp_err.h"
+#include <sys/socket.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -135,6 +136,7 @@ typedef struct {
     int                         keep_alive_idle;     /*!< Keep-alive idle time. Default is 5 (second) */
     int                         keep_alive_interval; /*!< Keep-alive interval time. Default is 5 (second) */
     int                         keep_alive_count;    /*!< Keep-alive packet retry send count. Default is 3 counts */
+    struct ifreq                *if_name;            /*!< The name of interface for data to go through. Use the default interface without setting */
 } esp_http_client_config_t;
 
 /**

@@ -35,6 +35,7 @@
 #include "driver/periph_ctrl.h"
 #include "bootloader_clock.h"
 #include "soc/syscon_reg.h"
+#include "hal/clk_gate_ll.h"
 
 static const char *TAG = "clk";
 
@@ -135,7 +136,9 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk);
         esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
     }
 
-    rtc_clk_cpu_freq_set_config(&new_config);
+    if (res) {
+        rtc_clk_cpu_freq_set_config(&new_config);
+    }
 
     // Re calculate the ccount to make time calculation correct.
     cpu_hal_set_cycle_count( (uint64_t)cpu_hal_get_cycle_count() * new_freq_mhz / old_freq_mhz );
@@ -312,6 +315,8 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     DPORT_REG_SET_FIELD(DPORT_BT_LPCK_DIV_INT_REG, DPORT_BT_LPCK_DIV_NUM, 0);
     DPORT_CLEAR_PERI_REG_MASK(DPORT_BT_LPCK_DIV_FRAC_REG, DPORT_LPCLK_SEL_8M);
     DPORT_SET_PERI_REG_MASK(DPORT_BT_LPCK_DIV_FRAC_REG, DPORT_LPCLK_SEL_RTC_SLOW);
+
+    periph_ll_reset(PERIPH_SYSTIMER_MODULE);
 
     /* Enable RNG clock. */
     periph_module_enable(PERIPH_RNG_MODULE);

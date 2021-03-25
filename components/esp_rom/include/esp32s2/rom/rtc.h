@@ -71,6 +71,8 @@ extern "C" {
 #define RTC_RESET_CAUSE_REG     RTC_CNTL_STORE6_REG
 #define RTC_MEMORY_CRC_REG      RTC_CNTL_STORE7_REG
 
+#define RTC_DISABLE_ROM_LOG ((1 << 0) | (1 << 16)) //!< Disable logging from the ROM code.
+
 typedef enum {
     AWAKE = 0,             //<CPU ON
     LIGHT_SLEEP = BIT0,    //CPU waiti, PLL ON.  We don't need explicitly set this mode.
@@ -171,6 +173,24 @@ uint32_t calc_rtc_memory_crc(uint32_t start_addr, uint32_t crc_len);
   * @return None
   */
 void set_rtc_memory_crc(void);
+
+/**
+  * @brief Suppress ROM log by setting specific RTC control register.
+  * @note This is not a permanent disable of ROM logging since the RTC register can not retain after chip reset.
+  *
+  * @param  None
+  *
+  * @return None
+  */
+static inline void rtc_suppress_rom_log(void)
+{
+    /* To disable logging in the ROM, only the least significant bit of the register is used,
+     * but since this register is also used to store the frequency of the main crystal (RTC_XTAL_FREQ_REG),
+     * you need to write to this register in the same format.
+     * Namely, the upper 16 bits and lower should be the same.
+     */
+    REG_SET_BIT(RTC_CNTL_STORE4_REG, RTC_DISABLE_ROM_LOG);
+}
 
 /**
   * @brief Fetch entry from RTC memory and RTC STORE reg

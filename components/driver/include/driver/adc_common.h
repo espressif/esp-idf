@@ -137,9 +137,8 @@ typedef enum {
 typedef struct adc_digi_init_config_s {
     uint32_t max_store_buf_size;    ///< Max length of the converted data that driver can store before they are processed. When this length is reached, driver will dump out all the old data and start to store them again.
     uint32_t conv_num_each_intr;    ///< Bytes of data that can be converted in 1 interrupt.
-    uint32_t dma_chan;              ///< DMA channel.
-    uint16_t adc1_chan_mask;        ///< Channel list of ADC1 to be initialized.
-    uint16_t adc2_chan_mask;        ///< Channel list of ADC2 to be initialized.
+    uint32_t adc1_chan_mask;        ///< Channel list of ADC1 to be initialized.
+    uint32_t adc2_chan_mask;        ///< Channel list of ADC2 to be initialized.
 } adc_digi_init_config_t;
 #endif
 

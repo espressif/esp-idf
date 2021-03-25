@@ -1,0 +1,351 @@
+.host_test_template:
+  extends: .rules:test:host_test
+  stage: host_test
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - host_test
+  dependencies: []
+  needs: []  # run host_test jobs immediately
+
+test_nvs_on_host:
+  extends: .host_test_template
+  script:
+    - cd components/nvs_flash/test_nvs_host
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh make test
+
+test_nvs_coverage:
+  extends:
+    - .host_test_template
+    - .rules:labels:nvs_coverage
+  artifacts:
+    paths:
+      - components/nvs_flash/test_nvs_host/coverage_report
+    expire_in: 1 week
+  script:
+    - cd components/nvs_flash/test_nvs_host
+    - make coverage_report
+  # the 'long' host tests take approx 11 hours on our current runners. Adding some margin here for possible CPU contention
+  timeout: 18 hours
+
+test_partition_table_on_host:
+  extends: .host_test_template
+  tags:
+    - build
+  script:
+    - cd components/partition_table/test_gen_esp32part_host
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./gen_esp32part_tests.py
+
+test_wl_on_host:
+  extends: .host_test_template
+  artifacts:
+    paths:
+      - components/wear_levelling/test_wl_host/coverage_report.zip
+    expire_in: 1 week
+  script:
+    - cd components/wear_levelling/test_wl_host
+    - make test
+
+test_fatfs_on_host:
+  extends: .host_test_template
+  script:
+    - cd components/fatfs/test_fatfs_host/
+    - make test
+
+test_ldgen_on_host:
+  extends: .host_test_template
+  script:
+    - cd tools/ldgen/test
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_fragments.py
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_generation.py
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_entity.py
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_output_commands.py
+  variables:
+    LC_ALL: C.UTF-8
+
+.host_fuzzer_test_template:
+  extends:
+    - .host_test_template
+    - .rules:labels:fuzzer_test-weekend_test
+  image: $CI_DOCKER_REGISTRY/afl-fuzzer-test
+  artifacts:
+    when: always
+    paths:
+      - ${FUZZER_TEST_DIR}/out/crashes
+      - ${FUZZER_TEST_DIR}/fuzz_output.log
+    expire_in: 1 week
+  script:
+    - export AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 && export AFL_SKIP_CPUFREQ=1
+    - cd ${FUZZER_TEST_DIR}
+    # run AFL fuzzer for one hour
+    - ( ( make ${FUZZER_PARAMS} fuzz | tee fuzz_output.log | grep -v '\(Fuzzing test case\|Entering queue cycle\)' ) || pkill sleep ) &
+    - ( sleep 3600 || mkdir -p out/crashes/env_failed ) && pkill afl-fuz
+    # check no crashes found
+    - test -z "$(ls out/crashes/)" || exit 1
+
+test_mdns_fuzzer_on_host:
+  extends: .host_fuzzer_test_template
+  variables:
+    FUZZER_TEST_DIR: components/mdns/test_afl_fuzz_host
+
+test_lwip_dns_fuzzer_on_host:
+  extends: .host_fuzzer_test_template
+  variables:
+    FUZZER_TEST_DIR: components/lwip/test_afl_host
+    FUZZER_PARAMS: MODE=dns
+
+test_lwip_dhcp_fuzzer_on_host:
+  extends: .host_fuzzer_test_template
+  variables:
+    FUZZER_TEST_DIR: components/lwip/test_afl_host
+    FUZZER_PARAMS: MODE=dhcp_client
+
+test_lwip_dhcps_fuzzer_on_host:
+  extends: .host_fuzzer_test_template
+  variables:
+    FUZZER_TEST_DIR: components/lwip/test_afl_host
+    FUZZER_PARAMS: MODE=dhcp_server
+
+test_spiffs_on_host:
+  extends: .host_test_template
+  script:
+    - cd components/spiffs/test_spiffs_host/
+    - make test
+
+test_multi_heap_on_host:
+  extends: .host_test_template
+  script:
+    - cd components/heap/test_multi_heap_host
+    - ./test_all_configs.sh
+
+test_certificate_bundle_on_host:
+  extends: .host_test_template
+  tags:
+    - build
+  script:
+    - cd components/mbedtls/esp_crt_bundle/test_gen_crt_bundle/
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_gen_crt_bundle.py
+
+test_confserver:
+  extends: .host_test_template
+  script:
+    - cd tools/kconfig_new/test/confserver
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_confserver.py
+
+test_gen_kconfig_doc:
+  extends: .host_test_template
+  script:
+    - cd tools/kconfig_new/test/gen_kconfig_doc/
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_target_visibility.py
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_kconfig_out.py
+
+test_confgen:
+  extends: .host_test_template
+  script:
+    - cd tools/kconfig_new/test/confgen/
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_confgen.py
+
+test_idf_monitor:
+  extends: .host_test_template
+  artifacts:
+    # save artifacts always in order to access results which were retried without consequent failure
+    when: always
+    paths:
+      - tools/test_idf_monitor/outputs/*
+    expire_in: 1 week
+  script:
+    - cd ${IDF_PATH}/tools/test_idf_monitor
+    - ./run_test_idf_monitor.py
+
+test_idf_size:
+  extends: .host_test_template
+  artifacts:
+    when: on_failure
+    paths:
+      - tools/test_idf_size/output
+      - tools/test_idf_size/.coverage
+    expire_in: 1 week
+  script:
+    - cd ${IDF_PATH}/tools/test_idf_size
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test.sh
+
+test_idf_py:
+  extends: .host_test_template
+  variables:
+    LC_ALL: C.UTF-8
+  script:
+    - cd ${IDF_PATH}/tools/test_idf_py
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_idf_py.py
+
+test_idf_tools:
+  extends: .host_test_template
+  script:
+    # Remove Xtensa and ULP toolchains from the PATH, tests will expect a clean environment
+    - export PATH=$(p=$(echo $PATH | tr ":" "\n" | grep -v "/root/.espressif/tools\|/opt/espressif" | tr "\n" ":"); echo ${p%:})
+    - cd ${IDF_PATH}/tools/test_idf_tools
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_idf_tools.py
+
+test_esp_err_to_name_on_host:
+  extends: .host_test_template
+  artifacts:
+    when: on_failure
+    paths:
+      - components/esp32/esp_err_to_name.c
+    expire_in: 1 week
+  script:
+    - cd ${IDF_PATH}/tools/
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 2.7.15 ./gen_esp_err_to_name.py
+    - git diff --exit-code -- ../components/esp_common/src/esp_err_to_name.c || { echo 'Differences found. Please run gen_esp_err_to_name.py and commit the changes.'; exit 1; }
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.4.8 ./gen_esp_err_to_name.py
+    - git diff --exit-code -- ../components/esp_common/src/esp_err_to_name.c || { echo 'Differences found between running under Python 2 and 3.'; exit 1; }
+
+test_esp32_efuse_table_on_host:
+  extends: .host_test_template
+  artifacts:
+    when: on_failure
+    paths:
+      - components/efuse/esp32/esp_efuse_table.c
+    expire_in: 1 week
+  script:
+    - cd ${IDF_PATH}/components/efuse/
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 2.7.15 ./efuse_table_gen.py ${IDF_PATH}/components/efuse/esp32/esp_efuse_table.csv
+    - git diff --exit-code -- esp32/esp_efuse_table.c || { echo 'Differences found for esp32 target. Please run make efuse_common_table or idf.py efuse_common_table and commit the changes.'; exit 1; }
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.4.8 ./efuse_table_gen.py ${IDF_PATH}/components/efuse/esp32/esp_efuse_table.csv
+    - git diff --exit-code -- esp32/esp_efuse_table.c || { echo 'Differences found between running under Python 2 and 3.'; exit 1; }
+    - cd ${IDF_PATH}/components/efuse/test_efuse_host
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./efuse_tests.py
+
+test_esp32s2_efuse_table_on_host:
+  extends: .host_test_template
+  artifacts:
+    when: on_failure
+    paths:
+      - components/efuse/esp32s2/esp_efuse_table.c
+    expire_in: 1 week
+  script:
+    - cd ${IDF_PATH}/components/efuse/
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 2.7.15 ./efuse_table_gen.py -t "esp32s2" ${IDF_PATH}/components/efuse/esp32s2/esp_efuse_table.csv
+    - git diff --exit-code -- esp32s2/esp_efuse_table.c || { echo 'Differences found for esp32s2 target. Please run make efuse_common_table or idf.py efuse_common_table and commit the changes.'; exit 1; }
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.4.8 ./efuse_table_gen.py -t "esp32s2" ${IDF_PATH}/components/efuse/esp32s2/esp_efuse_table.csv
+    - git diff --exit-code -- esp32s2/esp_efuse_table.c || { echo 'Differences found between running under Python 2 and 3.'; exit 1; }
+    - cd ${IDF_PATH}/components/efuse/test_efuse_host
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./efuse_tests.py
+
+test_esp32s3_efuse_table_on_host:
+  extends: .host_test_template
+  artifacts:
+    when: on_failure
+    paths:
+      - components/efuse/esp32s3/esp_efuse_table.c
+    expire_in: 1 week
+  script:
+    - cd ${IDF_PATH}/components/efuse/
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 2.7.15 ./efuse_table_gen.py -t "esp32s3" ${IDF_PATH}/components/efuse/esp32s3/esp_efuse_table.csv
+    - git diff --exit-code -- esp32s3/esp_efuse_table.c || { echo 'Differences found for esp32s3 target. Please run make efuse_common_table or idf.py efuse_common_table and commit the changes.'; exit 1; }
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.4.8 ./efuse_table_gen.py -t "esp32s3" ${IDF_PATH}/components/efuse/esp32s3/esp_efuse_table.csv
+    - git diff --exit-code -- esp32s3/esp_efuse_table.c || { echo 'Differences found between running under Python 2 and 3.'; exit 1; }
+    - cd ${IDF_PATH}/components/efuse/test_efuse_host
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./efuse_tests.py
+
+test_esp32c3_efuse_table_on_host:
+  extends: .host_test_template
+  artifacts:
+    when: on_failure
+    paths:
+      - components/efuse/esp32c3/esp_efuse_table.c
+    expire_in: 1 week
+  script:
+    - cd ${IDF_PATH}/components/efuse/
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 2.7.15 ./efuse_table_gen.py -t "esp32c3" ${IDF_PATH}/components/efuse/esp32c3/esp_efuse_table.csv
+    - git diff --exit-code -- esp32c3/esp_efuse_table.c || { echo 'Differences found for esp32c3 target. Please run make efuse_common_table or idf.py efuse_common_table and commit the changes.'; exit 1; }
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.4.8 ./efuse_table_gen.py -t "esp32c3" ${IDF_PATH}/components/efuse/esp32c3/esp_efuse_table.csv
+    - git diff --exit-code -- esp32c3/esp_efuse_table.c || { echo 'Differences found between running under Python 2 and 3.'; exit 1; }
+    - cd ${IDF_PATH}/components/efuse/test_efuse_host
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./efuse_tests.py
+
+test_espcoredump:
+  extends: .host_test_template
+  artifacts:
+    when: always
+    paths:
+      - components/espcoredump/test/.coverage
+      - components/espcoredump/test/output
+    expire_in: 1 week
+  script:
+    - cd components/espcoredump/test/
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_espcoredump.sh
+
+test_logtrace_proc:
+  extends: .host_test_template
+  artifacts:
+    when: on_failure
+    paths:
+      - tools/esp_app_trace/test/logtrace/output
+      - tools/esp_app_trace/test/logtrace/.coverage
+    expire_in: 1 week
+  script:
+    - cd ${IDF_PATH}/tools/esp_app_trace/test/logtrace
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test.sh
+
+test_sysviewtrace_proc:
+  extends: .host_test_template
+  artifacts:
+    when: on_failure
+    paths:
+      - tools/esp_app_trace/test/sysview/output
+      - tools/esp_app_trace/test/sysview/.coverage
+    expire_in: 1 week
+  script:
+    - cd ${IDF_PATH}/tools/esp_app_trace/test/sysview
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test.sh
+
+test_mkdfu:
+  extends: .host_test_template
+  variables:
+    LC_ALL: C.UTF-8
+  script:
+    - cd ${IDF_PATH}/tools/test_mkdfu
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_mkdfu.py
+
+test_mkuf2:
+  extends: .host_test_template
+  script:
+    - cd ${IDF_PATH}/tools/test_mkuf2
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_mkuf2.py
+
+test_docs:
+  extends: .host_test_template
+  image: $ESP_IDF_DOC_ENV_IMAGE
+  artifacts:
+    when: on_failure
+    paths:
+      - docs/test/_build/*/*/*/html/*
+    expire_in: 1 week
+  script:
+    - cd ${IDF_PATH}/docs/test
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r ${IDF_PATH}/docs/requirements.txt
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./test_docs.py
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./test_sphinx_idf_extensions.py
+
+test_autocomplete:
+  extends: .host_test_template
+  image: $CI_DOCKER_REGISTRY/linux-shells:1
+  artifacts:
+    when: on_failure
+    paths:
+      - ${IDF_PATH}/*.out
+    expire_in: 1 week
+  script:
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ${IDF_PATH}/tools/ci/test_autocomplete.py
+
+test_detect_python:
+  extends: .host_test_template
+  image: $CI_DOCKER_REGISTRY/linux-shells:1
+  script:
+    - cd ${IDF_PATH}
+    - shellcheck -s sh tools/detect_python.sh
+    - shellcheck -s bash tools/detect_python.sh
+    - shellcheck -s dash tools/detect_python.sh
+    - "bash -c '. tools/detect_python.sh && echo Our Python: ${ESP_PYTHON?Python is not set}'"
+    - "dash -c '. tools/detect_python.sh && echo Our Python: ${ESP_PYTHON?Python is not set}'"
+    - "zsh -c '. tools/detect_python.sh && echo Our Python: ${ESP_PYTHON?Python is not set}'"
+    - "fish -c 'source tools/detect_python.fish && echo Our Python: $ESP_PYTHON'"

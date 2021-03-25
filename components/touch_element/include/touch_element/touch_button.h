@@ -61,7 +61,7 @@ typedef struct {
 } touch_button_message_t;
 
 typedef touch_elem_handle_t touch_button_handle_t;      //!< Button handle
-typedef void(*touch_button_callback_t)(touch_button_handle_t, touch_button_message_t, void *); //!< Button callback type
+typedef void(*touch_button_callback_t)(touch_button_handle_t, touch_button_message_t *, void *); //!< Button callback type
 
 /**
  * @brief   Touch Button initialize
@@ -159,6 +159,8 @@ esp_err_t touch_button_set_dispatch_method(touch_button_handle_t button_handle, 
  *
  * @param[in] button_handle     Button handle
  * @param[in] button_callback   User input callback
+ *
+ * @note        Button message will be passed from the callback function and it will be destroyed when the callback function return.
  *
  * @warning     Since this input callback routine runs on driver core (esp-timer callback routine),
  *              it should not do something that attempts to Block, such as calling vTaskDelay().

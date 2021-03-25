@@ -13,7 +13,7 @@ import yaml
 try:
     from yaml import CLoader as Loader
 except ImportError:
-    from yaml import Loader as Loader
+    from yaml import Loader as Loader  # type: ignore
 
 TEST_CASE_PATTERN = {
     'initial condition': 'UTINIT1',

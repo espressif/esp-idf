@@ -13,12 +13,12 @@ repos:
         # 3 - any directory named 'testdata'
         # 4 - IDF monitor test data
         exclude: &whitespace_excludes |
-            (?x)^(
-                .+\.(md|rst|map|bin)|
-                .+test.*\/.*expected.*|
-                .+\/testdata\/.+|
-                .+test_idf_monitor\/tests\/.+
-            )$
+          (?x)^(
+            .+\.(md|rst|map|bin)|
+            .+test.*\/.*expected.*|
+            .+\/testdata\/.+|
+            .+test_idf_monitor\/tests\/.+
+          )$
       - id: end-of-file-fixer
         exclude: *whitespace_excludes
       - id: check-executables-have-shebangs
@@ -75,3 +75,25 @@ repos:
         language: python
         files: '\.gitlab/CODEOWNERS'
         pass_filenames: false
+      - id: check-rules-yml
+        name: Check rules.yml all rules have at lease one job applied, all rules needed exist
+        entry: tools/ci/check_rules_yml.py
+        language: python
+        files: '\.gitlab/ci/.+\.yml|\.gitlab-ci.yml'
+        pass_filenames: false
+        additional_dependencies:
+          - PyYAML == 5.3.1
+      - id: check-generated-rules
+        name: Check rules are generated (based on .gitlab/ci/dependencies/dependencies.yml)
+        entry: .gitlab/ci/dependencies/generate_rules.py
+        language: python
+        files: '\.gitlab/ci/dependencies/.+'
+        pass_filenames: false
+        additional_dependencies:
+          - PyYAML == 5.3.1
+      - id: mypy-check
+        name: Check type annotations in python files
+        entry: tools/ci/check_type_comments.py
+        additional_dependencies: ['mypy==0.800', 'mypy-extensions==0.4.3']
+        language: python
+        types: [python]

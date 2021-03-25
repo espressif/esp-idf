@@ -290,7 +290,7 @@ def main():
     subparsers.add_parser('switch_ota_partition', help='switch otadata partition', parents=[slot_or_name_parser, spi_flash_sec_size])
 
     read_ota_partition_subparser = subparsers.add_parser('read_ota_partition', help='read contents of an ota partition', parents=[slot_or_name_parser])
-    read_ota_partition_subparser.add_argument('--output', help='file to write the contents of the ota partition to')
+    read_ota_partition_subparser.add_argument('--output', help='file to write the contents of the ota partition to', required=True)
 
     write_ota_partition_subparser = subparsers.add_parser('write_ota_partition', help='write contents to an ota partition', parents=[slot_or_name_parser])
     write_ota_partition_subparser.add_argument('--input', help='file whose contents to write to the ota partition')

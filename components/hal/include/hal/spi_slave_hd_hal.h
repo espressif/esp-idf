@@ -70,7 +70,9 @@ typedef struct {
     uint32_t      host_id;                          ///< Host ID of the spi peripheral
     spi_dma_dev_t *dma_in;                          ///< Input  DMA(DMA -> RAM) peripheral register address
     spi_dma_dev_t *dma_out;                         ///< Output DMA(RAM -> DMA) peripheral register address
-    uint32_t      dma_chan;                         ///< The dma channel used.
+    bool          dma_enabled;                      ///< DMA enabled or not
+    uint32_t      tx_dma_chan;                      ///< TX DMA channel used.
+    uint32_t      rx_dma_chan;                      ///< RX DMA channel used.
     bool          append_mode;                      ///< True for DMA append mode, false for segment mode
     uint32_t      spics_io_num;                     ///< CS GPIO pin for this device
     uint8_t       mode;                             ///< SPI mode (0-3)
@@ -94,22 +96,28 @@ typedef struct {
     spi_dev_t                       *dev;                   ///< Beginning address of the peripheral registers.
     spi_dma_dev_t                   *dma_in;                ///< Address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
     spi_dma_dev_t                   *dma_out;               ///< Address of the DMA peripheral registers which transmits the data from RAM to a peripheral.
-
+    bool                            dma_enabled;            ///< DMA enabled or not
+    uint32_t                        tx_dma_chan;            ///< TX DMA channel used.
+    uint32_t                        rx_dma_chan;            ///< RX DMA channel used.
     bool                            append_mode;            ///< True for DMA append mode, false for segment mode
     uint32_t                        dma_desc_num;           ///< Number of the available DMA descriptors. Calculated from ``bus_max_transfer_size``.
     spi_slave_hd_hal_desc_append_t  *tx_cur_desc;           ///< Current TX DMA descriptor that could be linked (set up).
     spi_slave_hd_hal_desc_append_t  *tx_dma_head;           ///< Head of the linked TX DMA descriptors which are not used by hardware
     spi_slave_hd_hal_desc_append_t  *tx_dma_tail;           ///< Tail of the linked TX DMA descriptors which are not used by hardware
+    spi_slave_hd_hal_desc_append_t  tx_dummy_head;          ///< Dummy descriptor for ``tx_dma_head`` to start
     uint32_t                        tx_used_desc_cnt;       ///< Number of the TX descriptors that have been setup
     uint32_t                        tx_recycled_desc_cnt;   ///< Number of the TX descriptors that could be recycled
     spi_slave_hd_hal_desc_append_t  *rx_cur_desc;           ///< Current RX DMA descriptor that could be linked (set up).
     spi_slave_hd_hal_desc_append_t  *rx_dma_head;           ///< Head of the linked RX DMA descriptors which are not used by hardware
     spi_slave_hd_hal_desc_append_t  *rx_dma_tail;           ///< Tail of the linked RX DMA descriptors which are not used by hardware
+    spi_slave_hd_hal_desc_append_t  rx_dummy_head;          ///< Dummy descriptor for ``rx_dma_head`` to start
     uint32_t                        rx_used_desc_cnt;       ///< Number of the RX descriptors that have been setup
     uint32_t                        rx_recycled_desc_cnt;   ///< Number of the RX descriptors that could be recycled
 
     /* Internal status used by the HAL implementation, initialized as 0. */
     uint32_t                        intr_not_triggered;
+    bool                            tx_dma_started;
+    bool                            rx_dma_started;
 } spi_slave_hd_hal_context_t;
 
 /**
@@ -258,6 +266,10 @@ int spi_slave_hd_hal_get_last_addr(spi_slave_hd_hal_context_t *hal);
 /**
  * @brief Return the finished TX transaction
  *
+ * @note This API is based on this assumption: the hardware behaviour of current transaction completion is only modified by the its own caller layer.
+ * This means if some other code changed the hardware behaviour (e.g. clear intr raw bit), or the caller call this API without noticing the HW behaviour,
+ * this API will go wrong.
+ *
  * @param hal            Context of the HAL layer
  * @param out_trans      Pointer to the caller-defined transaction
  * @return               1: Transaction is finished; 0: Transaction is not finished
@@ -266,6 +278,10 @@ bool spi_slave_hd_hal_get_tx_finished_trans(spi_slave_hd_hal_context_t *hal, voi
 
 /**
  * @brief Return the finished RX transaction
+ *
+ * @note This API is based on this assumption: the hardware behaviour of current transaction completion is only modified by the its own caller layer.
+ * This means if some other code changed the hardware behaviour (e.g. clear intr raw bit), or the caller call this API without noticing the HW behaviour,
+ * this API will go wrong.
  *
  * @param hal            Context of the HAL layer
  * @param out_trans      Pointer to the caller-defined transaction

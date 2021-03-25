@@ -6,7 +6,7 @@
 # Includes information which is not shown in "xtensa-esp32-elf-size",
 # or easy to parse from "xtensa-esp32-elf-objdump" or raw map files.
 #
-# Copyright 2017-2020 Espressif Systems (Shanghai) PTE LTD
+# Copyright 2017-2021 Espressif Systems (Shanghai) CO LTD
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -486,7 +486,8 @@ class StructureForSummary(object):
 
         r.flash_code = _get_size(sects, '.flash.text')
         r.flash_rodata = _get_size(sects, '.flash.rodata')
-        r.total_size = r.used_dram + r.used_iram + r.used_diram + r.flash_code + r.flash_rodata
+        # The used DRAM BSS is counted into the "Used static DRAM" but not into the "Total image size"
+        r.total_size = r.used_dram - r.used_dram_bss + r.used_iram + r.used_diram - r.used_diram_bss + r.flash_code + r.flash_rodata
 
         return r
 

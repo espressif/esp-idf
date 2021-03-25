@@ -228,8 +228,7 @@ esp_err_t esp_efuse_utility_write_reg(esp_efuse_block_t efuse_block, unsigned in
 uint32_t esp_efuse_utility_read_reg(esp_efuse_block_t blk, unsigned int num_reg)
 {
     assert(blk >= 0 && blk < EFUSE_BLK_MAX);
-    unsigned int max_num_reg = (range_read_addr_blocks[blk].end - range_read_addr_blocks[blk].start) / sizeof(uint32_t);
-    assert(num_reg <= max_num_reg);
+    assert(num_reg <= (range_read_addr_blocks[blk].end - range_read_addr_blocks[blk].start) / sizeof(uint32_t));
     uint32_t value;
 #ifdef CONFIG_EFUSE_VIRTUAL
     value = virt_blocks[blk][num_reg];
@@ -245,8 +244,8 @@ uint32_t esp_efuse_utility_read_reg(esp_efuse_block_t blk, unsigned int num_reg)
 static void write_reg(esp_efuse_block_t blk, unsigned int num_reg, uint32_t value)
 {
     assert(blk >= 0 && blk < EFUSE_BLK_MAX);
-    unsigned int max_num_reg = (range_read_addr_blocks[blk].end - range_read_addr_blocks[blk].start) / sizeof(uint32_t);
-    assert(num_reg <= max_num_reg);
+    assert(num_reg <= (range_read_addr_blocks[blk].end - range_read_addr_blocks[blk].start) / sizeof(uint32_t));
+
     uint32_t addr_wr_reg = range_write_addr_blocks[blk].start + num_reg * 4;
     uint32_t reg_to_write = REG_READ(addr_wr_reg) | value;
     // The register can be written in parts so we combine the new value with the one already available.

@@ -1406,7 +1406,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 	void vTaskDelayUntil( TickType_t * const pxPreviousWakeTime, const TickType_t xTimeIncrement )
 	{
 	TickType_t xTimeToWake;
-	BaseType_t xAlreadyYielded = pdFALSE, xShouldDelay = pdFALSE;
+	BaseType_t xShouldDelay = pdFALSE;
 
 		configASSERT( pxPreviousWakeTime );
 		configASSERT( ( xTimeIncrement > 0U ) );
@@ -1470,16 +1470,8 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 		}
 		taskEXIT_CRITICAL( &xTaskQueueMutex );
 
-		/* Force a reschedule if xTaskResumeAll has not already done so, we may
-		have put ourselves to sleep. */
-		if( xAlreadyYielded == pdFALSE )
-		{
-			portYIELD_WITHIN_API();
-		}
-		else
-		{
-			mtCOVERAGE_TEST_MARKER();
-		}
+		/* Force a reschedule, we may have put ourselves to sleep. */
+		portYIELD_WITHIN_API();
 	}
 
 #endif /* INCLUDE_vTaskDelayUntil */
@@ -1489,8 +1481,6 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 
 	void vTaskDelay( const TickType_t xTicksToDelay )
 	{
-	BaseType_t xAlreadyYielded = pdFALSE;
-
 		/* A delay time of zero just forces a reschedule. */
 		if( xTicksToDelay > ( TickType_t ) 0U )
 		{
@@ -1515,17 +1505,10 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 			mtCOVERAGE_TEST_MARKER();
 		}
 
-		/* Force a reschedule if xTaskResumeAll has not already done so, we may
-		have put ourselves to sleep. */
-		if( xAlreadyYielded == pdFALSE )
-		{
-			portYIELD_WITHIN_API();
-		}
-		else
-		{
-			mtCOVERAGE_TEST_MARKER();
-		}
+		/* Force a reschedule, we may have put ourselves to sleep. */
+		portYIELD_WITHIN_API();
 	}
+
 
 #endif /* INCLUDE_vTaskDelay */
 /*-----------------------------------------------------------*/
@@ -1952,6 +1935,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 				taskEXIT_CRITICAL(&xTaskQueueMutex);
 
 				configASSERT( suspended == 0 );
+				(void)suspended;
 				portYIELD_WITHIN_API();
 			}
 			else

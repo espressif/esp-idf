@@ -64,7 +64,7 @@
 #define DR_REG_SPI_ENCRYPT_BASE                 0x3ff5B000
 #define DR_REG_NRX_BASE                         0x3ff5CC00
 #define DR_REG_BB_BASE                          0x3ff5D000
-#define DR_REG_PWM_BASE                         0x3ff5E000
+#define DR_REG_PWM0_BASE                        0x3ff5E000
 #define DR_REG_TIMERGROUP0_BASE                 0x3ff5F000
 #define DR_REG_TIMERGROUP1_BASE                 0x3ff60000
 #define DR_REG_RTCMEM0_BASE                     0x3ff61000
@@ -81,8 +81,6 @@
 #define DR_REG_PWM1_BASE                        0x3ff6C000
 #define DR_REG_I2S1_BASE                        0x3ff6D000
 #define DR_REG_UART2_BASE                       0x3ff6E000
-#define DR_REG_PWM2_BASE                        0x3ff6F000
-#define DR_REG_PWM3_BASE                        0x3ff70000
 #define PERIPHS_SPI_ENCRYPT_BASEADDR            DR_REG_SPI_ENCRYPT_BASE
 
 //Registers Operation {{
@@ -324,8 +322,6 @@
 #define ETS_ETH_MAC_INTR_SOURCE                 38/**< interrupt of ethernet mac, level*/
 #define ETS_PWM0_INTR_SOURCE                    39/**< interrupt of PWM0, level, Reserved*/
 #define ETS_PWM1_INTR_SOURCE                    40/**< interrupt of PWM1, level, Reserved*/
-#define ETS_PWM2_INTR_SOURCE                    41/**< interrupt of PWM2, level*/
-#define ETS_PWM3_INTR_SOURCE                    42/**< interruot of PWM3, level*/
 #define ETS_LEDC_INTR_SOURCE                    43/**< interrupt of LED PWM, level*/
 #define ETS_EFUSE_INTR_SOURCE                   44/**< interrupt of efuse, level, not likely to use*/
 #define ETS_TWAI_INTR_SOURCE                    45/**< interrupt of twai, level*/

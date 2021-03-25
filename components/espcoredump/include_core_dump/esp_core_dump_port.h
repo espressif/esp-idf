@@ -14,142 +14,155 @@
 #ifndef ESP_CORE_DUMP_PORT_H_
 #define ESP_CORE_DUMP_PORT_H_
 
+/**
+ * @file
+ * @brief Core dump port interface.
+ *
+ * This file contains all the functions required by the core dump component to
+ * get the information related to the board or the SoC itself. Currently, the
+ * implementations of this interface, located in `src/port/[arch]`, support
+ * both Xtensa and RISC-V architecture.
+ */
+
 #include "freertos/FreeRTOS.h"
-#if CONFIG_ESP_COREDUMP_CHECKSUM_CRC32
-#include "esp_rom_crc.h"
-#elif CONFIG_ESP_COREDUMP_CHECKSUM_SHA256
-#include "mbedtls/sha256.h"
-#endif
-#include "esp_core_dump_priv.h"
 #include "soc/cpu.h"
 #include "esp_debug_helpers.h"
 #include "esp_app_format.h"
+#include "esp_core_dump_types.h"
+#include "esp_core_dump_port_impl.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32
-#define COREDUMP_VERSION_CHIP ESP_CHIP_ID_ESP32
-#elif CONFIG_IDF_TARGET_ESP32S2
-#define COREDUMP_VERSION_CHIP ESP_CHIP_ID_ESP32S2
-#endif
-
-typedef enum {
-    COREDUMP_MEMORY_DRAM,
-    COREDUMP_MEMORY_IRAM,
-    COREDUMP_MEMORY_RTC,
-    COREDUMP_MEMORY_RTC_FAST,
-    COREDUMP_MEMORY_MAX,
-    COREDUMP_MEMORY_START = COREDUMP_MEMORY_DRAM
-} coredump_region_t;
-
-// RTOS tasks snapshots walk API
-void esp_core_dump_reset_tasks_snapshots_iter(void);
-void *esp_core_dump_get_next_task(void *handle);
-bool esp_core_dump_get_task_snapshot(void *handle, core_dump_task_header_t *task,
-                                    core_dump_mem_seg_header_t *interrupted_stack);
-
-bool esp_core_dump_mem_seg_is_sane(uint32_t addr, uint32_t sz);
-void *esp_core_dump_get_current_task_handle(void);
-uint32_t esp_core_dump_get_stack(core_dump_task_header_t* task_snapshot, uint32_t* stk_base, uint32_t* stk_len);
-
-static inline uint32_t esp_core_dump_get_tcb_len(void)
-{
-    if (sizeof(StaticTask_t) % sizeof(uint32_t)) {
-        return ((sizeof(StaticTask_t) / sizeof(uint32_t) + 1) * sizeof(uint32_t));
-    }
-    return sizeof(StaticTask_t);
-}
-
-static inline uint32_t esp_core_dump_get_memory_len(uint32_t start, uint32_t end)
-{
-    uint32_t len = end - start;
-    // Take stack padding into account
-    return (len + sizeof(uint32_t) - 1) & ~(sizeof(uint32_t) - 1);
-}
-
+/**
+ * @brief Get the architecture ID.
+ *
+ * @return Architecture ID, as described by ELF format.
+ */
 uint16_t esp_core_dump_get_arch_id(void);
-uint32_t esp_core_dump_get_task_regs_dump(core_dump_task_header_t *task, void **reg_dump);
-void esp_core_dump_init_extra_info(void);
-uint32_t esp_core_dump_get_extra_info(void **info);
 
-uint32_t esp_core_dump_get_user_ram_segments(void);
-uint32_t esp_core_dump_get_user_ram_size(void);
-int esp_core_dump_get_user_ram_info(coredump_region_t region, uint32_t *start);
-
-// Data integrity check functions
-void esp_core_dump_checksum_init(core_dump_write_data_t* wr_data);
-void esp_core_dump_checksum_update(core_dump_write_data_t* wr_data, void* data, size_t data_len);
-size_t esp_core_dump_checksum_finish(core_dump_write_data_t* wr_data, void** chs_ptr);
-uint32_t esp_core_dump_checksum_size(void);
-
-#if CONFIG_ESP_COREDUMP_CHECKSUM_SHA256
-void esp_core_dump_print_sha256(const char* msg, const uint8_t* sha_output);
-int esp_core_dump_sha(mbedtls_sha256_context *ctx,
-        const unsigned char *input, size_t ilen, unsigned char output[32]);
-#endif
-void esp_core_dump_print_checksum(const char* msg, const void* checksum);
-
+/**
+ * @brief Initialize the port module. This function is also in charge of
+ * initializing the extra information, if any.
+ *
+ * @param info Pointer to the panic information. It contains the execution
+ *             frame.
+ */
 void esp_core_dump_port_init(panic_info_t *info);
 
-#if CONFIG_ESP_COREDUMP_STACK_SIZE > 0
-#if LOG_LOCAL_LEVEL >= ESP_LOG_DEBUG
-// increase stack size in verbose mode
-#define ESP_COREDUMP_STACK_SIZE (CONFIG_ESP_COREDUMP_STACK_SIZE+100)
-#else
-#define ESP_COREDUMP_STACK_SIZE CONFIG_ESP_COREDUMP_STACK_SIZE
-#endif
-#endif
+/**
+ * @brief Reset fake stacks allocator, if any.
+ *
+ * @note This function is called if we want to free all the previously
+ * allocated "fake" stacks, used in broken tasks.
+ */
+void esp_core_dump_reset_fake_stacks(void);
 
-void esp_core_dump_report_stack_usage(void);
+/**
+ * @brief Get ISR stack end address.
+ *
+ * @return End address of the ISR stack.
+ */
+uint32_t esp_core_dump_get_isr_stack_end(void);
 
-#if ESP_COREDUMP_STACK_SIZE > 0
-#define COREDUMP_STACK_FILL_BYTE	        (0xa5U)
-extern uint8_t s_coredump_stack[];
-extern uint8_t *s_core_dump_sp;
 
-#if LOG_LOCAL_LEVEL >= ESP_LOG_DEBUG
-#define esp_core_dump_fill_stack() \
-    memset(s_coredump_stack, COREDUMP_STACK_FILL_BYTE, ESP_COREDUMP_STACK_SIZE)
-#else
-#define esp_core_dump_fill_stack()
-#endif
+/**
+ * @brief Get the top of the ISR stack.
+ *
+ * @return Pointer to the top of the ISR stack.
+ */
+uint8_t* esp_core_dump_get_isr_stack_top(void);
 
-#define esp_core_dump_setup_stack() \
-{ \
-    s_core_dump_sp = (uint8_t *)((uint32_t)(s_coredump_stack + ESP_COREDUMP_STACK_SIZE - 1) & ~0xf); \
-    esp_core_dump_fill_stack(); \
-    /* watchpoint 1 can be used for task stack overflow detection, re-use it, it is no more necessary */ \
-	esp_clear_watchpoint(1); \
-	esp_set_watchpoint(1, s_coredump_stack, 1, ESP_WATCHPOINT_STORE); \
-    asm volatile ("mov sp, %0" :: "r"(s_core_dump_sp)); \
-    ESP_COREDUMP_LOGD("Use core dump stack @ 0x%x", get_sp()); \
-}
-#else
-#define esp_core_dump_setup_stack() \
-{ \
-    /* if we are in ISR set watchpoint to the end of ISR stack */ \
-    if (xPortInterruptedFromISRContext()) { \
-        extern uint8_t port_IntStack; \
-        esp_clear_watchpoint(1); \
-        esp_set_watchpoint(1, &port_IntStack+xPortGetCoreID()*configISR_STACK_SIZE, 1, ESP_WATCHPOINT_STORE); \
-    } else { \
-        /* for tasks user should enable stack overflow detection in menuconfig
-        TODO: if not enabled in menuconfig enable it ourselves */ \
-    } \
-}
-#endif
 
-// coredump memory regions defined during compile timing
-extern int _coredump_dram_start;
-extern int _coredump_dram_end;
-extern int _coredump_iram_start;
-extern int _coredump_iram_end;
-extern int _coredump_rtc_start;
-extern int _coredump_rtc_end;
-extern int _coredump_rtc_fast_start;
-extern int _coredump_rtc_fast_end;
+/**
+ * @brief Check the stack defined by address given.
+ *
+ * @param task Task to check the stack of.
+ *
+ * @return true is the stack is sane, false else.
+ */
+bool esp_core_dump_check_stack(core_dump_task_header_t *task);
+
+
+/**
+ * @brief Check if the memory segment is sane.
+ *
+ * @param addr Address of the memory segment to check.
+ * @param sz Size of the memory segment to check.
+ *
+ * @return true if the memory segment is sane, false else.
+ */
+bool esp_core_dump_mem_seg_is_sane(uint32_t addr, uint32_t sz);
+
+
+/**
+ * @brief Get the stack of a task.
+ *
+ * @param task_snapshot Pointer to the task snapshot.
+ * @param stk_vaddr Pointer which will be set to the stack's virtual address.
+ *                  Must **not** be NULL.
+ * @param stk_paddr Pointer which will be set to the stack's physical
+ *                  address. Must **not** be NULL.
+ *
+ * @return Size, in bytes, of the stack.
+ */
+uint32_t esp_core_dump_get_stack(core_dump_task_header_t* task_snapshot,
+                                 uint32_t* stk_vaddr, uint32_t* stk_paddr);
+
+
+/**
+ * @brief Check the task passed as a parameter.
+ *
+ * @note The goal of this function is to check whether the task passed is the
+ *       task that crashed or not. If this is the case and if it didn't crash
+ *       within an ISR, its stack pointer will be set to the panic frame,
+ *       containing all the registers values when the error occured. This
+ *       function also checks if the TCB address is sane or not.
+ *
+ * @param task Pointer to the frame exception generated when the panic occured.
+ *
+ * @return True if the TCB is sane, false else.
+ */
+bool esp_core_dump_check_task(core_dump_task_header_t *task);
+
+
+/**
+ * @brief Get a dump of the task's registers.
+ *
+ * @note In practice, this function is used to fill the ELF file with the
+ *       PR_STATUS sections for all the existing tasks. This structure
+ *       contains the CPU registers value when the exception occured.
+ *
+ * @param task     Task to dump the registers from.
+ * @param reg_dump Pointer that will be filled with the registers dump.
+ *                 Must **not** be NULL.
+ *
+ * @return Size, in bytes, of the returned registers duump.
+ */
+uint32_t esp_core_dump_get_task_regs_dump(core_dump_task_header_t *task,
+                                          void **reg_dump);
+
+/**
+ * @brief Transmit the crashed task handle.
+ *
+ * @param handle Crashed task handle.
+ *
+ * @note This function is used to give information about the crashed task to
+ * the port module. It can be ignored if not needed.
+ */
+void esp_core_dump_port_set_crashed_tcb(uint32_t handle);
+
+/**
+ * @brief Retrieve the extra information.
+ *
+ * @param info Pointer that will be filled with the extra information.
+ *             Can be NULL, in that case, this function is used to get the
+ *             extra information size.
+ *
+ * @return Size, in bytes, of the extra information.
+ */
+uint32_t esp_core_dump_get_extra_info(void **info);
 
 #ifdef __cplusplus
 }

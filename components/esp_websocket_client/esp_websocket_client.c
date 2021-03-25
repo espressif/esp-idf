@@ -58,7 +58,7 @@ static const char *TAG = "WEBSOCKET_CLIENT";
         }
 
 #define ESP_WS_CLIENT_STATE_CHECK(TAG, a, action) if ((a->state) < WEBSOCKET_STATE_INIT) {                                         \
-        ESP_LOGE(TAG,"%s:%d (%s): %s", __FILE__, __LINE__, __FUNCTION__, "Websocket already stop");       \
+        ESP_LOGE(TAG,"%s(%d): %s", __FUNCTION__, __LINE__, "Websocket already stop"); \
         action;                                                                                     \
         }
 
@@ -121,6 +121,7 @@ struct esp_websocket_client {
     int                         payload_len;
     int                         payload_offset;
     esp_transport_keep_alive_t  keep_alive_cfg;
+    struct ifreq                *if_name;
 };
 
 static uint64_t _tick_get_ms(void)
@@ -316,6 +317,12 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
         client->keep_alive_cfg.keep_alive_count =  (config->keep_alive_count == 0) ? WEBSOCKET_KEEP_ALIVE_COUNT : config->keep_alive_count;
     }
 
+    if (config->if_name) {
+        client->if_name = calloc(1, sizeof(struct ifreq) + 1);
+        ESP_WS_CLIENT_MEM_CHECK(TAG, client->if_name, goto _websocket_init_fail);
+        memcpy(client->if_name, config->if_name, sizeof(struct ifreq));
+    }
+
     client->lock = xSemaphoreCreateRecursiveMutex();
     ESP_WS_CLIENT_MEM_CHECK(TAG, client->lock, goto _websocket_init_fail);
 
@@ -329,9 +336,9 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
     ESP_WS_CLIENT_MEM_CHECK(TAG, tcp, goto _websocket_init_fail);
 
     esp_transport_set_default_port(tcp, WEBSOCKET_TCP_DEFAULT_PORT);
-    esp_transport_tcp_set_keep_alive(tcp, &client->keep_alive_cfg);
     esp_transport_list_add(client->transport_list, tcp, "_tcp"); // need to save to transport list, for cleanup
-
+    esp_transport_tcp_set_keep_alive(tcp, &client->keep_alive_cfg);
+    esp_transport_tcp_set_interface_name(tcp, client->if_name);
 
     esp_transport_handle_t ws = esp_transport_ws_init(tcp);
     ESP_WS_CLIENT_MEM_CHECK(TAG, ws, goto _websocket_init_fail);
@@ -347,6 +354,7 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
     ESP_WS_CLIENT_MEM_CHECK(TAG, ssl, goto _websocket_init_fail);
 
     esp_transport_set_default_port(ssl, WEBSOCKET_SSL_DEFAULT_PORT);
+    esp_transport_list_add(client->transport_list, ssl, "_ssl"); // need to save to transport list, for cleanup
     if (config->use_global_ca_store == true) {
         esp_transport_ssl_enable_global_ca_store(ssl);
     } else if (config->cert_pem) {
@@ -373,8 +381,6 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
     if (config->skip_cert_common_name_check) {
         esp_transport_ssl_skip_common_name_check(ssl);
     }
-    esp_transport_ssl_set_keep_alive(ssl, &client->keep_alive_cfg);
-    esp_transport_list_add(client->transport_list, ssl, "_ssl"); // need to save to transport list, for cleanup
 
     esp_transport_handle_t wss = esp_transport_ws_init(ssl);
     ESP_WS_CLIENT_MEM_CHECK(TAG, wss, goto _websocket_init_fail);
@@ -447,6 +453,9 @@ esp_err_t esp_websocket_client_destroy(esp_websocket_client_handle_t client)
     }
     if (client->event_handle) {
         esp_event_loop_delete(client->event_handle);
+    }
+    if (client->if_name) {
+        free(client->if_name);
     }
     esp_websocket_client_destroy_config(client);
     esp_transport_list_destroy(client->transport_list);

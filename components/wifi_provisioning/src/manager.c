@@ -1553,3 +1553,15 @@ void wifi_prov_mgr_stop_provisioning(void)
 
     RELEASE_LOCK(prov_ctx_lock);
 }
+
+esp_err_t wifi_prov_mgr_reset_provisioning(void)
+{
+    esp_err_t ret = esp_wifi_restore();
+
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_wifi_restore fail, ret is %d", ret);
+        ret = ESP_FAIL;
+    }
+
+    return ret;
+}

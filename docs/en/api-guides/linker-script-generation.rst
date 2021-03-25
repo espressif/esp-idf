@@ -6,8 +6,15 @@ Overview
 --------
 
 There are several :ref:`memory regions<memory-layout>` where code and data can be placed. Code and read-only data are placed by default in flash,
-writable data in RAM, etc. However, it is sometimes necessary to change these default placements. For example, it may
-be necessary to place critical code in RAM for performance reasons or to place code in RTC memory for use in a wake stub or the ULP coprocessor.
+writable data in RAM, etc. However, it is sometimes necessary to change these default placements. 
+
+.. only:: SOC_ULP_SUPPORTED
+
+    For example, it may be necessary to place critical code in RAM for performance reasons or to place code in RTC memory for use in a wake stub or the ULP coprocessor.
+
+.. only:: not SOC_ULP_SUPPORTED
+
+    For example, it may be necessary to place critical code in RAM for performance reasons or to place code in RTC memory for use in a wake stub.
 
 With the linker script generation mechanism, it is possible to specify these placements at the component level within ESP-IDF. The component presents
 information on how it would like to place its symbols, objects or the entire archive. During build the information presented by the components are collected,
@@ -487,6 +494,95 @@ Example:
     archive: libfreertos.a
     entries:
         * (noflash)
+
+Aside from the entity and scheme, flags can also be specified in an entry. The following
+flags are supported (note: <> = argument name, [] = optional): 
+
+1. ALIGN(<alignment>[, pre, post])
+    Align the placement by the amount specified in ``alignment``. Generates
+
+.. code-block::none
+
+    . = ALIGN(<alignment>)
+
+    before and/or after (depending whether ``pre``, ``post`` or both are specified) 
+    the input section description generated from the mapping
+    fragment entry. If neither 'pre' or 'post' is specified, the alignment command is
+    generated before the input section description. Order sensitive.
+
+2. SORT([<sort_by_first>, <sort_by_second>])
+    Emits ``SORT_BY_NAME``, ``SORT_BY_ALIGNMENT``,
+    ``SORT_BY_INIT_PRIORITY`` or ``SORT`` in the input section description.
+    Possible values for ``sort_by_first`` and ``sort_by_second`` are:
+    ``name``, ``alignment``, ``init_priority``.
+
+    If both ``sort_by_first`` and ``sort_by_second`` are not specified, the input
+    sections are sorted by name. If both are specified, then the nested
+    sorting follows the same rules discussed in 
+    https://sourceware.org/binutils/docs/ld/Input-Section-Wildcards.html.
+
+3. KEEP()
+    Prevent the linker from discarding the placement by
+    surrounding the input section description with KEEP command.
+    See https://sourceware.org/binutils/docs/ld/Input-Section-Keep.html
+    for more details.
+
+4.SURROUND(<name>)
+    Generate symbols before and after the placement. The generated symbols
+    follow the naming ``_<name>_start`` and ``_<name>_end``. For example, if
+    ``name`` == sym1,
+
+.. code-block::none
+
+    _sym1_start = ABSOLUTE(.)
+    ...
+    _sym2_end = ABSOLUTE(.)
+
+    These symbols can then be referenced from C/C++ code. Order sensitive.
+
+When adding flags, the specific ``section -> target`` in the scheme needs to be specified.
+For multiple ``section -> target``, use a comma as a separator. For example,
+
+.. code-block:: none
+
+    # Notes:
+    # A. semicolon after entity-scheme
+    # B. comma before section2 -> target2
+    # C. section1 -> target1 and section2 -> target2 should be defined in entries of scheme1 
+    entity1 (scheme1); 
+        section1 -> target1 KEEP() ALIGN(4, pre, post),
+        section2 -> target2 SURROUND(sym) ALIGN(4, post) SORT()
+
+Putting it all together, the following mapping fragment, for example,
+
+.. code-block:: none
+
+    [mapping:name]
+    archive: lib1.a
+    entries:
+        obj1 (noflash);
+            rodata -> dram0_data KEEP() SORT() ALIGN(8) SURROUND(my_sym)
+
+generates an output on the linker script:
+
+.. code-block:: none
+
+    . = ALIGN(8)
+    __my_sym_start = ABSOLUTE(.)
+    KEEP(lib1.a:obj1.*( SORT(.rodata) SORT(.rodata.*) ))
+    __my_sym_end = ABSOLUTE(.)
+
+Note that ALIGN and SURROUND, as mentioned in the flag descriptions, are order sensitive.
+Therefore, if for the same mapping fragment these two are switched, the following
+is generated instead:
+
+.. code-block:: none
+
+    __my_sym_start = ABSOLUTE(.)
+    . = ALIGN(8)
+    KEEP(lib1.a:obj1.*( SORT(.rodata) SORT(.rodata.*) ))
+    __my_sym_end = ABSOLUTE(.)
+
 
 .. _ldgen-symbol-granularity-placements :
 

@@ -50,17 +50,30 @@ typedef struct gdma_channel_t gdma_channel_t;
 typedef struct gdma_tx_channel_t gdma_tx_channel_t;
 typedef struct gdma_rx_channel_t gdma_rx_channel_t;
 
+/**
+ * GDMA driver consists of there object class, namely: Group, Pair and Channel.
+ * Channel is allocated when user calls `gdma_new_channel`, its lifecycle is maintained by user.
+ * Pair and Group are all lazy allocated, their life cycles are maintained by this driver.
+ * We use reference count to track their life cycles, i.e. the driver will free their memory only when their reference count reached to 0.
+ *
+ * We don't use an all-in-one spin lock in this driver, instead, we created different spin locks at different level.
+ * For platform, it has a spinlock, which is used to protect the group handle slots and reference count of each group.
+ * For group, it has a spinlock, which is used to protect group level stuffs, e.g. hal object, pair handle slots and reference count of each pair.
+ * For pair, it has a sinlock, which is used to protect pair level stuffs, e.g. interrupt handle, channel handle slots, occupy code.
+ */
+
 struct gdma_platform_t {
     portMUX_TYPE spinlock;                 // platform level spinlock
     gdma_group_t *groups[SOC_GDMA_GROUPS]; // array of GDMA group instances
+    int group_ref_counts[SOC_GDMA_GROUPS]; // reference count used to protect group install/uninstall
 };
 
 struct gdma_group_t {
     int group_id;           // Group ID, index from 0
     gdma_hal_context_t hal; // HAL instance is at group level
     portMUX_TYPE spinlock;  // group level spinlock
-    int ref_count;          // reference count
-    gdma_pair_t *pairs[SOC_GDMA_PAIRS_PER_GROUP]; // handles of GDMA pairs
+    gdma_pair_t *pairs[SOC_GDMA_PAIRS_PER_GROUP];  // handles of GDMA pairs
+    int pair_ref_counts[SOC_GDMA_PAIRS_PER_GROUP]; // reference count used to protect pair install/uninstall
 };
 
 struct gdma_pair_t {
@@ -71,7 +84,6 @@ struct gdma_pair_t {
     int occupy_code;            // each bit indicates which channel has been occupied (an occupied channel will be skipped during channel search)
     intr_handle_t intr;         // Interrupt is at pair level
     portMUX_TYPE spinlock;      // pair level spinlock
-    int ref_count;              // reference count
 };
 
 struct gdma_channel_t {
@@ -138,9 +150,9 @@ esp_err_t gdma_new_channel(const gdma_channel_alloc_config_t *config, gdma_chann
         DMA_CHECK(config->sibling_chan->direction != config->direction,
                   "sibling channel should have a different direction", err, ESP_ERR_INVALID_ARG);
         group = pair->group;
-        portENTER_CRITICAL(&pair->spinlock);
-        pair->ref_count++; // channel obtains a reference to pair
-        portEXIT_CRITICAL(&pair->spinlock);
+        portENTER_CRITICAL(&group->spinlock);
+        group->pair_ref_counts[pair->pair_id]++; // channel obtains a reference to pair
+        portEXIT_CRITICAL(&group->spinlock);
         goto search_done; // skip the search path below if user has specify a sibling channel
     }
 
@@ -152,10 +164,14 @@ esp_err_t gdma_new_channel(const gdma_channel_alloc_config_t *config, gdma_chann
                 portENTER_CRITICAL(&pair->spinlock);
                 if (!(search_code & pair->occupy_code)) { // pair has suitable position for acquired channel(s)
                     pair->occupy_code |= search_code;
-                    pair->ref_count++; // channel obtains a reference to pair
                     search_code = 0; // exit search loop
                 }
                 portEXIT_CRITICAL(&pair->spinlock);
+                if (!search_code) {
+                    portENTER_CRITICAL(&group->spinlock);
+                    group->pair_ref_counts[j]++; // channel obtains a reference to pair
+                    portEXIT_CRITICAL(&group->spinlock);
+                }
             }
             gdma_release_pair_handle(pair);
         } // loop used to search pair
@@ -404,26 +420,21 @@ err:
     return ret_code;
 }
 
-static inline bool gdma_is_group_busy(gdma_group_t *group)
-{
-    return group->ref_count;
-}
-
 static void gdma_uninstall_group(gdma_group_t *group)
 {
     int group_id = group->group_id;
     bool do_deinitialize = false;
 
-    if (s_platform.groups[group_id] && !gdma_is_group_busy(group)) {
-        portENTER_CRITICAL(&s_platform.spinlock);
-        if (s_platform.groups[group_id] && !gdma_is_group_busy(group)) {
-            do_deinitialize = true;
-            s_platform.groups[group_id] = NULL; // deregister from platfrom
-            gdma_ll_enable_clock(group->hal.dev, false);
-            periph_module_disable(gdma_periph_signals.groups[group_id].module);
-        }
-        portEXIT_CRITICAL(&s_platform.spinlock);
+    portENTER_CRITICAL(&s_platform.spinlock);
+    s_platform.group_ref_counts[group_id]--;
+    if (s_platform.group_ref_counts[group_id] == 0) {
+        assert(s_platform.groups[group_id]);
+        do_deinitialize = true;
+        s_platform.groups[group_id] = NULL; // deregister from platfrom
+        gdma_ll_enable_clock(group->hal.dev, false);
+        periph_module_disable(gdma_periph_signals.groups[group_id].module);
     }
+    portEXIT_CRITICAL(&s_platform.spinlock);
 
     if (do_deinitialize) {
         free(group);
@@ -453,7 +464,7 @@ static gdma_group_t *gdma_acquire_group_handle(int group_id)
         group = s_platform.groups[group_id];
     }
     // someone acquired the group handle means we have a new object that refer to this group
-    group->ref_count++;
+    s_platform.group_ref_counts[group_id]++;
     portEXIT_CRITICAL(&s_platform.spinlock);
 
     if (new_group) {
@@ -468,16 +479,8 @@ out:
 static void gdma_release_group_handle(gdma_group_t *group)
 {
     if (group) {
-        portENTER_CRITICAL(&group->spinlock);
-        group->ref_count--;
-        portEXIT_CRITICAL(&group->spinlock);
         gdma_uninstall_group(group);
     }
-}
-
-static inline bool gdma_is_pair_busy(gdma_pair_t *pair)
-{
-    return pair->ref_count;
 }
 
 static void gdma_uninstall_pair(gdma_pair_t *pair)
@@ -486,21 +489,21 @@ static void gdma_uninstall_pair(gdma_pair_t *pair)
     int pair_id = pair->pair_id;
     bool do_deinitialize = false;
 
-    if (group->pairs[pair_id] && !gdma_is_pair_busy(pair)) {
-        portENTER_CRITICAL(&group->spinlock);
-        if (group->pairs[pair_id] && !gdma_is_pair_busy(pair)) {
-            do_deinitialize = true;
-            group->pairs[pair_id] = NULL; // deregister from pair
-            group->ref_count--; // decrease reference count, because this pair won't refer to the group
-            if (pair->intr) {
-                // disable interrupt handler (but not freed, esp_intr_free is a blocking API, we can't use it in a critical section)
-                esp_intr_disable(pair->intr);
-                gdma_ll_enable_interrupt(group->hal.dev, pair->pair_id, UINT32_MAX, false); // disable all interupt events
-                gdma_ll_clear_interrupt_status(group->hal.dev, pair->pair_id, UINT32_MAX);  // clear all pending events
-            }
+    portENTER_CRITICAL(&group->spinlock);
+    group->pair_ref_counts[pair_id]--;
+    if (group->pair_ref_counts[pair_id] == 0) {
+        assert(group->pairs[pair_id]);
+        do_deinitialize = true;
+        group->pairs[pair_id] = NULL; // deregister from pair
+        if (pair->intr) {
+            // disable interrupt handler (but not freed, esp_intr_free is a blocking API, we can't use it in a critical section)
+            esp_intr_disable(pair->intr);
+            gdma_ll_enable_interrupt(group->hal.dev, pair->pair_id, UINT32_MAX, false); // disable all interupt events
+            gdma_ll_clear_interrupt_status(group->hal.dev, pair->pair_id, UINT32_MAX);  // clear all pending events
         }
-        portEXIT_CRITICAL(&group->spinlock);
     }
+    portEXIT_CRITICAL(&group->spinlock);
+
     if (do_deinitialize) {
         if (pair->intr) {
             esp_intr_free(pair->intr); // free interrupt resource
@@ -508,6 +511,7 @@ static void gdma_uninstall_pair(gdma_pair_t *pair)
         }
         free(pair);
         ESP_LOGD(TAG, "del pair (%d,%d)", group->group_id, pair_id);
+
         gdma_uninstall_group(group);
     }
 }
@@ -525,7 +529,6 @@ static gdma_pair_t *gdma_acquire_pair_handle(gdma_group_t *group, int pair_id)
         new_pair = true;
         pair = pre_alloc_pair;
         group->pairs[pair_id] = pair; // register to group
-        group->ref_count++; // pair obtains a reference to group
         pair->group = group;
         pair->pair_id = pair_id;
         pair->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
@@ -533,10 +536,13 @@ static gdma_pair_t *gdma_acquire_pair_handle(gdma_group_t *group, int pair_id)
         pair = group->pairs[pair_id];
     }
     // someone acquired the pair handle means we have a new object that refer to this pair
-    pair->ref_count++;
+    group->pair_ref_counts[pair_id]++;
     portEXIT_CRITICAL(&group->spinlock);
 
     if (new_pair) {
+        portENTER_CRITICAL(&s_platform.spinlock);
+        s_platform.group_ref_counts[group->group_id]++; // pair obtains a reference to group
+        portEXIT_CRITICAL(&s_platform.spinlock);
         ESP_LOGD(TAG, "new pair (%d,%d) at %p", group->group_id, pair->pair_id, pair);
     } else {
         free(pre_alloc_pair);
@@ -548,9 +554,6 @@ out:
 static void gdma_release_pair_handle(gdma_pair_t *pair)
 {
     if (pair) {
-        portENTER_CRITICAL(&pair->spinlock);
-        pair->ref_count--;
-        portEXIT_CRITICAL(&pair->spinlock);
         gdma_uninstall_pair(pair);
     }
 }
@@ -558,16 +561,15 @@ static void gdma_release_pair_handle(gdma_pair_t *pair)
 static esp_err_t gdma_del_tx_channel(gdma_channel_t *dma_channel)
 {
     gdma_pair_t *pair = dma_channel->pair;
+    gdma_group_t *group = pair->group;
     gdma_tx_channel_t *tx_chan = __containerof(dma_channel, gdma_tx_channel_t, base);
     portENTER_CRITICAL(&pair->spinlock);
     pair->tx_chan = NULL;
-    pair->ref_count--; // decrease reference count, because this channel won't refer to the pair
     pair->occupy_code &= ~SEARCH_REQUEST_TX_CHANNEL;
     portEXIT_CRITICAL(&pair->spinlock);
 
-    ESP_LOGD(TAG, "del tx channel (%d,%d)", pair->group->group_id, pair->pair_id);
+    ESP_LOGD(TAG, "del tx channel (%d,%d)", group->group_id, pair->pair_id);
     free(tx_chan);
-
     gdma_uninstall_pair(pair);
     return ESP_OK;
 }
@@ -575,16 +577,15 @@ static esp_err_t gdma_del_tx_channel(gdma_channel_t *dma_channel)
 static esp_err_t gdma_del_rx_channel(gdma_channel_t *dma_channel)
 {
     gdma_pair_t *pair = dma_channel->pair;
+    gdma_group_t *group = pair->group;
     gdma_rx_channel_t *rx_chan = __containerof(dma_channel, gdma_rx_channel_t, base);
     portENTER_CRITICAL(&pair->spinlock);
     pair->rx_chan = NULL;
-    pair->ref_count--; // decrease reference count, because this channel won't refer to the pair
     pair->occupy_code &= ~SEARCH_REQUEST_RX_CHANNEL;
     portEXIT_CRITICAL(&pair->spinlock);
 
-    ESP_LOGD(TAG, "del rx channel (%d,%d)", pair->group->group_id, pair->pair_id);
+    ESP_LOGD(TAG, "del rx channel (%d,%d)", group->group_id, pair->pair_id);
     free(rx_chan);
-
     gdma_uninstall_pair(pair);
     return ESP_OK;
 }

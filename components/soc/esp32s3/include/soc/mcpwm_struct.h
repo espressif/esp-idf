@@ -13,13 +13,13 @@
 // limitations under the License.
 #pragma once
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <stdint.h>
-
-typedef volatile struct {
+typedef volatile struct mcpwm_dev_s {
     union {
         struct {
             uint32_t prescale:     8;
@@ -50,7 +50,8 @@ typedef volatile struct {
                 uint32_t in_en:            1;
                 uint32_t sync_sw:          1;              /*write the negate value will trigger a sw sync*/
                 uint32_t out_sel:          2;
-                uint32_t timer_phase:     17;
+                uint32_t timer_phase:     16;
+                uint32_t phase_direct :    1;
                 uint32_t reserved21:      11;
             };
             uint32_t val;

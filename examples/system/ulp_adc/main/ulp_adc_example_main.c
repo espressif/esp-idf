@@ -84,9 +84,7 @@ static void init_ulp_program(void)
      */
     rtc_gpio_isolate(GPIO_NUM_12);
     rtc_gpio_isolate(GPIO_NUM_15);
-#if CONFIG_IDF_TARGET_ESP32
     esp_deep_sleep_disable_rom_logging(); // suppress boot messages
-#endif
 }
 
 static void start_ulp_program(void)

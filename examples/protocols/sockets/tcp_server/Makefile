@@ -6,5 +6,6 @@
 PROJECT_NAME := tcp_server
 
 EXTRA_COMPONENT_DIRS = $(IDF_PATH)/examples/common_components/protocol_examples_common
+EXCLUDE_COMPONENTS = coap asio
 
 include $(IDF_PATH)/make/project.mk

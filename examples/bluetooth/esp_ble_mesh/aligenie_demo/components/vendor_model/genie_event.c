@@ -26,10 +26,10 @@
 #include "esp_ble_mesh_provisioning_api.h"
 #include "esp_ble_mesh_local_data_operation_api.h"
 
+#include "genie_mesh.h"
 #include "genie_util.h"
 #include "genie_model_srv.h"
 #include "genie_event.h"
-#include "genie_mesh.h"
 #include "genie_reset.h"
 #include "genie_timer.h"
 #include "ble_mesh_example_nvs.h"

@@ -90,6 +90,11 @@ if(CONFIG_COMPILER_DUMP_RTL_FILES)
     list(APPEND compile_options "-fdump-rtl-expand")
 endif()
 
+if(CONFIG_COMPILER_HIDE_PATHS_MACROS)
+    list(APPEND compile_options "-fmacro-prefix-map=${CMAKE_SOURCE_DIR}=.")
+    list(APPEND compile_options "-fmacro-prefix-map=${IDF_PATH}=IDF")
+endif()
+
 # GCC-specific options
 if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
     list(APPEND compile_options "-fstrict-volatile-bitfields"

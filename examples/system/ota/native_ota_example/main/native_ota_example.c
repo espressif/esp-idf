@@ -132,9 +132,9 @@ static void ota_example_task(void *pvParameter)
     esp_http_client_fetch_headers(client);
 
     update_partition = esp_ota_get_next_update_partition(NULL);
+    assert(update_partition != NULL);
     ESP_LOGI(TAG, "Writing to partition subtype %d at offset 0x%x",
              update_partition->subtype, update_partition->address);
-    assert(update_partition != NULL);
 
     int binary_file_length = 0;
     /*deal with all receive packet*/
@@ -234,8 +234,9 @@ static void ota_example_task(void *pvParameter)
     if (err != ESP_OK) {
         if (err == ESP_ERR_OTA_VALIDATE_FAILED) {
             ESP_LOGE(TAG, "Image validation failed, image is corrupted");
+        } else {
+            ESP_LOGE(TAG, "esp_ota_end failed (%s)!", esp_err_to_name(err));
         }
-        ESP_LOGE(TAG, "esp_ota_end failed (%s)!", esp_err_to_name(err));
         http_cleanup(client);
         task_fatal_error();
     }

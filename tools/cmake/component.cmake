@@ -232,7 +232,7 @@ function(__component_get_requirements)
             "-m"
             "idf_component_manager.prepare_components"
             "--project_dir=${project_dir}"
-            "inject_requrements"
+            "inject_requirements"
             "--idf_path=${idf_path}"
             "--build_dir=${build_dir}"
             "--component_requires_file=${component_requires_file}"

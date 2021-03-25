@@ -16,6 +16,12 @@ from corefile.gdb import EspGDB
 from corefile.loader import ESPCoreDumpFileLoader, ESPCoreDumpFlashLoader
 from pygdbmi.gdbcontroller import DEFAULT_GDB_TIMEOUT_SEC
 
+try:
+    from typing import Optional, Tuple
+except ImportError:
+    # Only used for type annotations
+    pass
+
 IDF_PATH = os.getenv('IDF_PATH')
 if not IDF_PATH:
     sys.stderr.write('IDF_PATH is not found! Set proper IDF_PATH in environment.\n')
@@ -34,7 +40,7 @@ else:
     CLOSE_FDS = True
 
 
-def load_aux_elf(elf_path):  # type: (str) -> (ElfFile, str)
+def load_aux_elf(elf_path):  # type: (str) -> Tuple[ElfFile, str]
     """
     Loads auxiliary ELF file and composes GDB command to read its symbols.
     """
@@ -48,7 +54,7 @@ def load_aux_elf(elf_path):  # type: (str) -> (ElfFile, str)
     return elf, sym_cmd
 
 
-def core_prepare():
+def core_prepare():  # type: () -> Tuple[Optional[str], ESPCoreDumpFlashLoader]
     loader = None
     core_filename = None
     if not args.core:
@@ -72,7 +78,7 @@ def core_prepare():
     return core_filename, loader
 
 
-def dbg_corefile():
+def dbg_corefile():  # type: () -> None
     """
     Command to load core dump from file or flash and run GDB debug session with it
     """
@@ -91,7 +97,7 @@ def dbg_corefile():
     print('Done!')
 
 
-def info_corefile():
+def info_corefile():  # type: () -> None
     """
     Command to load core dump from file or flash and print it's data in user friendly form
     """

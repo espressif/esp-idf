@@ -292,7 +292,7 @@ typedef enum {
     GPIO_NUM_16 = 16,   /*!< GPIO16, input and output */
     GPIO_NUM_17 = 17,   /*!< GPIO17, input and output */
     GPIO_NUM_18 = 18,   /*!< GPIO18, input and output */
-    // TODO: ESP32C3 IDF-2463
+    GPIO_NUM_19 = 19,   /*!< GPIO19, input and output */
     GPIO_NUM_20 = 20,   /*!< GPIO20, input and output */
     GPIO_NUM_21 = 21,   /*!< GPIO21, input and output */
     GPIO_NUM_22 = 22,   /*!< GPIO22, input and output */

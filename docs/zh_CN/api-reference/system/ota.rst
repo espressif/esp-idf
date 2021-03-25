@@ -269,7 +269,7 @@ Python API
   otatool.py --port "/dev/ttyUSB1" switch_ota_partition --slot 1
 
   # 读取 OTA 分区 'ota_3'，将内容保存至文件 'ota_3.bin'
-  otatool.py --port "/dev/ttyUSB1" read_ota_partition --name=ota_3
+  otatool.py --port "/dev/ttyUSB1" read_ota_partition --name=ota_3 --output=ota_3.bin
 
 
 更多信息可用 `--help` 指令查看：

@@ -4,26 +4,23 @@ if(EXISTS "${COMPONENT_DIR}/${target}")
     include(${COMPONENT_DIR}/${target}/sources.cmake)
     spaces2list(EFUSE_SOC_SRCS)
     set(include_dirs include ${target}/include)
+    set(private_include private_include ${target}/private_include)
     add_prefix(srcs "${target}/" ${EFUSE_SOC_SRCS})
-    list(APPEND srcs "src/${target}/esp_efuse_api.c"
-                     "src/${target}/esp_efuse_fields.c"
-                     "src/${target}/esp_efuse_utility.c")
-    if("esp32s2" STREQUAL "${target}")
-        list(APPEND srcs "src/${target}/esp_efuse_rtc_table.c")
-    endif()
-    if("esp32c3" STREQUAL "${target}")
-        list(APPEND srcs "src/${target}/esp_efuse_rtc_calib.c")
-    endif()
 endif()
 
 list(APPEND srcs "src/esp_efuse_api.c"
                  "src/esp_efuse_fields.c"
                  "src/esp_efuse_utility.c")
+if("esp32" STREQUAL "${target}")
+    list(APPEND srcs "src/esp_efuse_api_key_esp32.c")
+else()
+    list(APPEND srcs "src/esp_efuse_api_key_esp32xx.c")
+endif()
 
 idf_component_register(SRCS "${srcs}"
                     PRIV_REQUIRES bootloader_support soc spi_flash
                     INCLUDE_DIRS "${include_dirs}"
-                    PRIV_INCLUDE_DIRS private_include)
+                    PRIV_INCLUDE_DIRS "${private_include}")
 
 if(target)
     set(TOOL_TARGET -t ${target})

@@ -185,6 +185,24 @@ uint32_t calc_rtc_memory_crc(uint32_t start_addr, uint32_t crc_len);
 void set_rtc_memory_crc(void);
 
 /**
+  * @brief Suppress ROM log by setting specific RTC control register.
+  * @note This is not a permanent disable of ROM logging since the RTC register can not retain after chip reset.
+  *
+  * @param  None
+  *
+  * @return None
+  */
+static inline void rtc_suppress_rom_log(void)
+{
+    /* To disable logging in the ROM, only the least significant bit of the register is used,
+     * but since this register is also used to store the frequency of the main crystal (RTC_XTAL_FREQ_REG),
+     * you need to write to this register in the same format.
+     * Namely, the upper 16 bits and lower should be the same.
+     */
+    REG_SET_BIT(RTC_CNTL_STORE4_REG, RTC_DISABLE_ROM_LOG);
+}
+
+/**
   * @brief Software Reset digital core.
   *
   * It is not recommended to use this function in esp-idf, use

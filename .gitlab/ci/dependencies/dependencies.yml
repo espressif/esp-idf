@@ -1,0 +1,178 @@
+.all_targets: &all_targets
+  - esp32
+  - esp32s2
+  - esp32s3
+  - esp32c3
+
+.target_test: &target_test
+  - example_test
+  - custom_test
+  - unit_test
+  - component_ut
+
+##############
+# Build Jobs #
+##############
+"build":
+  labels:
+    - build
+  patterns:
+    - build_components
+    - build_system
+  included_in:
+    - build:target_test
+
+# -------------------
+# Specific Build Jobs
+# -------------------
+"build:docker":
+  labels:
+    - build
+    - docker
+  patterns:
+    - docker
+
+"build:windows":
+  labels:
+    - build
+    - windows
+  patterns:
+    - build_system
+    - windows
+
+"build:macos":
+  labels:
+    - build
+    - macos
+    - macos_test  # for backward compatibility
+  patterns:
+    - build_system
+    - macos
+
+"build:docs":
+  labels:
+    - docs
+    - build_docs  # for backward compatibility
+  patterns:
+    - docs
+  deploy:
+    - production
+
+"build:docs:label-only":
+  labels:
+    - docs
+    - build_docs  # for backward compatibility
+  deploy:
+    - preview
+
+# ---------------
+# Build Test Jobs
+# ---------------
+"build:{0}-{1}":
+  matrix:
+    - *target_test
+    - *all_targets
+  labels:
+    - build
+  patterns:
+    - build_components
+    - build_system
+
+# -------------
+# Special Cases
+# -------------
+"build:example_test-esp32":
+  labels:
+    - build
+    - weekend_test  # only have esp32 jobs
+    - iperf_stress_test  # only have esp32 jobs
+  patterns:
+    - build_components
+    - build_system
+
+####################
+# Target Test Jobs #
+####################
+"test:{0}-{1}":
+  matrix:
+    - *target_test
+    - *all_targets
+  labels: # For each rule, use labels <test_type> and <test_type>-<target>
+    - "{0}"
+    - "{0}_{1}"
+  patterns: # For each rule, use patterns <test_type> and build-<test_type>
+    - "{0}"
+    - "build-{0}"
+  included_in: # Parent rules
+    - "build:{0}-{1}"
+    - build:target_test
+    - test:target_test
+    - test:any_test
+
+# -------------
+# Special Cases
+# -------------
+"test:component_ut-{0}": # component_ut will trigger by unit_test as well, since now we have 2 kinds of UT
+  matrix:
+    - *all_targets
+  labels:
+    - component_ut
+    - "component_ut_{0}"
+    - unit_test
+    - "unit_test_{0}"
+  patterns:
+    - component_ut
+    - "build-component_ut-{0}"
+  included_in:
+    - "build:component_ut-{0}"
+    - build:target_test
+    - test:target_test
+    - test:any_test
+
+# due to the lack of runners, c3 tests will only be triggered by label
+"test:unit_test-esp32c3":
+  labels:
+    - unit_test_esp32c3
+  patterns:
+    - "build-unit_test-esp32c3"
+  included_in:
+    - "build:unit_test-esp32c3"
+
+"test:integration_test":
+  labels:
+    - "integration_test"
+  patterns:
+    - "integration_test"
+  included_in:
+    - "build:integration_test"
+    - build:target_test
+    - test:target_test
+    - test:any_test
+
+"test:host_test":
+  labels:
+    - host_test
+  patterns:
+    - host_test
+  included_in:
+    - test:any_test
+
+"test:submodule":
+  labels:
+    - submodule
+  patterns:
+    - submodule
+
+#################################
+# Triggered Only By Labels Jobs #
+#################################
+"labels:{0}":
+  matrix:
+    - [weekend_test, iperf_stress_test, nvs_coverage]
+  labels:
+    - "{0}"
+
+"labels:fuzzer_test-weekend_test":
+  labels:
+    - fuzzer_test
+    - weekend_test

@@ -618,7 +618,7 @@ Spark Plug 组件
 
 为避免重复性工作，各组件都用自动依赖一些“通用” IDF 组件，即使它们没有被明确提及。这些组件的头文件会一直包含在构建系统中。
 
-通用组件包括：freertos、newlibheap、log、soc、esp_rom、esp_common、xtensa、cxx。
+通用组件包括：freertos、newlib、heap、log、soc、esp_rom、esp_common、xtensa/riscv、cxx。
 
 在构建中导入组件
 -----------------
@@ -862,7 +862,7 @@ CMake 文件可以使用 ``IDF_TARGET`` 变量来获取当前的硬件目标。
 
 并将这行代码放在项目 CMakeLists.txt 的 ``project()`` 命令之后，修改 ``myproject.elf`` 为你自己的项目名。如果最后一个参数是 ``TEXT``，那么构建系统会嵌入以 null 结尾的字符串，如果最后一个参数被设置为 ``BINARY``，则将文件内容按照原样嵌入。
 
-有关使用此技术的示例，请参考 :example:`protocols/https_request`，证书文件的内容会在编译时从 .pem 文件中加载。
+有关使用此技术的示例，请查看 file_serving 示例 :example_file:`protocols/http_server/file_serving/main/CMakeLists.txt` 中的 main 组件，两个文件会在编译时加载并链接到固件中。
 
 
 .. highlight:: cmake
@@ -1007,6 +1007,7 @@ ESP-IDF 支持多款芯片，它们通过在软件中使用不同的 “目标�
 
 * ``esp32`` — 适用于 ESP32-D0WD、ESP32-D2WD、ESP32-S0WD (ESP-SOLO)、ESP32-U4WDH、ESP32-PICO-D4
 * ``esp32s2``— 适用于 ESP32-S2
+* ``esp32c3``— 适用于 ESP32-C3
 
 在构建项目前，请首先根据您的芯片选择正确的软件目标，具体命令为 ``idf.py set-target <target>``。举例 ::
 

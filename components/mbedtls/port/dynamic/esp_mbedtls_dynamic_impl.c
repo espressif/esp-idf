@@ -499,7 +499,9 @@ void esp_mbedtls_free_keycert_cert(mbedtls_ssl_context *ssl)
         keycert = keycert->next;
     }
 }
+#endif /* CONFIG_MBEDTLS_DYNAMIC_FREE_CONFIG_DATA */
 
+#ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_CA_CERT
 void esp_mbedtls_free_cacert(mbedtls_ssl_context *ssl)
 {
     if (ssl->conf->ca_chain) {
@@ -509,8 +511,7 @@ void esp_mbedtls_free_cacert(mbedtls_ssl_context *ssl)
         conf->ca_chain = NULL;
     }
 }
-
-#endif
+#endif /* CONFIG_MBEDTLS_DYNAMIC_FREE_CA_CERT */
 
 #ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_PEER_CERT
 void esp_mbedtls_free_peer_cert(mbedtls_ssl_context *ssl)

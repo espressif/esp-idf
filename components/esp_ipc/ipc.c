@@ -95,6 +95,7 @@ static void esp_ipc_init(void)
         portBASE_TYPE res = xTaskCreatePinnedToCore(ipc_task, task_name, CONFIG_ESP_IPC_TASK_STACK_SIZE, (void*) i,
                                                     configMAX_PRIORITIES - 1, &s_ipc_task_handle[i], i);
         assert(res == pdTRUE);
+        (void)res;
     }
 }
 

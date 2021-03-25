@@ -740,13 +740,16 @@ static void IRAM_ATTR btdm_sleep_exit_phase0(void *param)
     }
 #endif
 
-    btdm_wakeup_request();
+    int event = (int) param;
+    if (event == BTDM_ASYNC_WAKEUP_SRC_VHCI || event == BTDM_ASYNC_WAKEUP_SRC_DISA) {
+        btdm_wakeup_request();
+    }
 
     if (s_lp_cntl.wakeup_timer_required && s_lp_stat.wakeup_timer_started) {
         esp_timer_stop(s_btdm_slp_tmr);
         s_lp_stat.wakeup_timer_started = 0;
     }
-    int event = (int) param;
+
     if (event == BTDM_ASYNC_WAKEUP_SRC_VHCI || event == BTDM_ASYNC_WAKEUP_SRC_DISA) {
         semphr_give_wrapper(s_wakeup_req_sem);
     }
@@ -1042,7 +1045,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         if (rtc_clk_slow_freq_get() == RTC_SLOW_FREQ_RTC) {
             s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_RTC_SLOW; // set default value
         } else {
-            ESP_LOGW(BTDM_LOG_TAG, "Internal 150kHz RC oscillator not detected, fall back to main XTAL as Bluetooth sleep clock\n"
+            ESP_LOGW(BTDM_LOG_TAG, "Internal 90kHz RC oscillator not detected, fall back to main XTAL as Bluetooth sleep clock\n"
                  "light sleep mode will not be able to apply when bluetooth is enabled");
             s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_XTAL; // set default value
         }
@@ -1050,7 +1053,8 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_XTAL; // set default value
 #endif
 
-        bool select_src_ret, set_div_ret;
+        bool select_src_ret __attribute__((unused));
+        bool set_div_ret __attribute__((unused));
         if (s_lp_cntl.lpclk_sel == BTDM_LPCLK_SEL_XTAL) {
             select_src_ret = btdm_lpclk_select_src(BTDM_LPCLK_SEL_XTAL);
             set_div_ret = btdm_lpclk_set_div(rtc_clk_xtal_freq_get() * 2);

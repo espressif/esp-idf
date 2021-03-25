@@ -55,6 +55,14 @@ ssize_t esp_mbedtls_get_bytes_avail(esp_tls_t *tls);
  */
 esp_err_t esp_create_mbedtls_handle(const char *hostname, size_t hostlen, const void *cfg, esp_tls_t *tls);
 
+/**
+ * mbedTLS function for Initializing socket wrappers
+ */
+static inline void esp_mbedtls_net_init(esp_tls_t *tls)
+{
+    mbedtls_net_init(&tls->server_fd);
+}
+
 #ifdef CONFIG_ESP_TLS_SERVER
 /**
  * Internal Callback for set_server_config

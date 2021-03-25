@@ -255,13 +255,14 @@ ESP-IDF 工具安装器会下载 Github 发布版本中附带的一些工具，�
 Windows 操作系统
 -----------------
 
-如果希望在运行 ESP-IDF 工具安装器或在使用命令行安装工具时优先选择 Espressif 下载服务器，可通过以下方式设置：打开系统控制面板，然后点击高级设置，添加一个新的环境变量（类型为用户或系统都可以，名称为 ``IDF_GITHUB_ASSETS``，值为 ``dl.espressif.com/github_assets``），最后点击确定。
+如果希望在运行 ESP-IDF 工具安装器时优先选择 Espressif 下载服务器，请在安装程序窗口中勾选 ``Use Espressif download server instead of downloading tool packages from GitHub.`` 选项。
 
-如果在添加新的环境变量前命令行窗口或 ESP-IDF 工具安装器窗口已经打开，请关闭这些窗口后重新打开。
+.. figure:: ../../_static/esp-idf-installer-download-server.png
+    :align: center
+    :alt: 配置 ESP-IDF 工具安装向导优先选择 Espressif 下载服务器
+    :figclass: align-center
 
-当设置好这个新的环境变量后，ESP-IDF 工具安装器以及命令行安装程序将会优先选择 Espressif 下载服务器。
-
-.. 在 ESP-IDF 工具安装器的二进制文件更新后（导入复选框），这段需要重新更新
+    配置 ESP-IDF 工具安装向导优先选择 Espressif 下载服务器
 
 Linux 和 macOS 操作系统
 --------------------------

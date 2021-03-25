@@ -404,7 +404,7 @@ static inline void matrix_dispatch(te_matrix_handle_t matrix_handle, touch_elem_
         matrix_info.event = matrix_handle->event;
         matrix_info.position = matrix_handle->position;
         void *arg = matrix_handle->config->arg;
-        matrix_handle->config->callback(matrix_handle, matrix_info, arg);  //Event callback
+        matrix_handle->config->callback(matrix_handle, &matrix_info, arg);  //Event callback
     }
 }
 

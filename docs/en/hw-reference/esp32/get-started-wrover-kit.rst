@@ -87,7 +87,7 @@ FT2232              The FT2232 chip serves as a multi-protocol USB-to-serial bri
 
 0R                  Zero-ohm resistor intended as a placeholder for a current shunt, can be desoldered or replaced with a current shunt to facilitate the measurement of ESP32's current consumption in different modes.
 
-ESP32-WROVER-B      This EPS32 module features 64-Mbit PSRAM for flexible extended storage and data processing capabilities.
+ESP32-WROVER-B      This ESP32 module features 64-Mbit PSRAM for flexible extended storage and data processing capabilities.
 
 Diagnostic LEDs     Four red LEDs connected to the GPIO pins of FT2232. Intended for future use.
 

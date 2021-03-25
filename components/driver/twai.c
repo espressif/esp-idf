@@ -410,6 +410,7 @@ esp_err_t twai_driver_install(const twai_general_config_t *g_config, const twai_
     periph_module_enable(PERIPH_TWAI_MODULE);            //Enable APB CLK to TWAI peripheral
     bool init = twai_hal_init(&twai_context);
     assert(init);
+    (void)init;
     twai_hal_configure(&twai_context, t_config, f_config, DRIVER_DEFAULT_INTERRUPTS, g_config->clkout_divider);
     TWAI_EXIT_CRITICAL();
 
@@ -536,6 +537,7 @@ esp_err_t twai_transmit(const twai_message_t *message, TickType_t ticks_to_wait)
                     //Manually start a transmission
                     int res = xQueueReceive(p_twai_obj->tx_queue, &tx_frame, 0);
                     assert(res == pdTRUE);
+                    (void)res;
                     twai_hal_set_tx_buffer_and_transmit(&twai_context, &tx_frame);
                     p_twai_obj->tx_msg_count++;
                     ret = ESP_OK;

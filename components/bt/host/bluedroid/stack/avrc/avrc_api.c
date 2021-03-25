@@ -21,7 +21,7 @@
  *  Interface to AVRCP mandatory commands
  *
  ******************************************************************************/
-// #include <assert.h>
+#include <assert.h>
 #include "common/bt_trace.h"
 #include <string.h>
 #include "common/bt_target.h"

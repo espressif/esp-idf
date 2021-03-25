@@ -281,10 +281,7 @@ void adc_hal_digi_stop(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t 
 void adc_hal_digi_init(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config)
 {
     adc_dma_ctx->dev = &GDMA;
-    gdma_ll_enable_clock(adc_dma_ctx->dev, true);
     gdma_ll_clear_interrupt_status(adc_dma_ctx->dev, dma_config->dma_chan, UINT32_MAX);
-    gdma_ll_rx_connect_to_periph(adc_dma_ctx->dev, dma_config->dma_chan, SOC_GDMA_TRIG_PERIPH_ADC0);
-
     adc_ll_adc1_onetime_sample_enable(false);
     adc_ll_adc2_onetime_sample_enable(false);
 }

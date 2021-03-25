@@ -23,15 +23,15 @@
 #include "soc/gdma_struct.h"
 #include "hal/gdma_ll.h"
 
-#define spi_dma_ll_rx_reset(dev)                             gdma_ll_rx_reset_channel(&GDMA, SOC_GDMA_SPI2_DMA_CHANNEL)
-#define spi_dma_ll_tx_reset(dev)                             gdma_ll_tx_reset_channel(&GDMA, SOC_GDMA_SPI2_DMA_CHANNEL);
-#define spi_dma_ll_rx_start(dev, addr) do {\
-            gdma_ll_rx_set_desc_addr(&GDMA, SOC_GDMA_SPI2_DMA_CHANNEL, (uint32_t)addr);\
-            gdma_ll_rx_start(&GDMA, SOC_GDMA_SPI2_DMA_CHANNEL);\
+#define spi_dma_ll_rx_reset(dev, chan)                             gdma_ll_rx_reset_channel(&GDMA, chan)
+#define spi_dma_ll_tx_reset(dev, chan)                             gdma_ll_tx_reset_channel(&GDMA, chan);
+#define spi_dma_ll_rx_start(dev, chan, addr) do {\
+            gdma_ll_rx_set_desc_addr(&GDMA, chan, (uint32_t)addr);\
+            gdma_ll_rx_start(&GDMA, chan);\
         } while (0)
-#define spi_dma_ll_tx_start(dev, addr) do {\
-            gdma_ll_tx_set_desc_addr(&GDMA, SOC_GDMA_SPI2_DMA_CHANNEL, (uint32_t)addr);\
-            gdma_ll_tx_start(&GDMA, SOC_GDMA_SPI2_DMA_CHANNEL);\
+#define spi_dma_ll_tx_start(dev, chan, addr) do {\
+            gdma_ll_tx_set_desc_addr(&GDMA, chan, (uint32_t)addr);\
+            gdma_ll_tx_start(&GDMA, chan);\
         } while (0)
 #endif
 
@@ -143,12 +143,12 @@ void spi_hal_prepare_data(spi_hal_context_t *hal, const spi_hal_dev_config_t *de
         if (!hal->dma_enabled) {
             //No need to setup anything; we'll copy the result out of the work registers directly later.
         } else {
-            lldesc_setup_link(hal->dma_config.dmadesc_rx, trans->rcv_buffer, ((trans->rx_bitlen + 7) / 8), true);
+            lldesc_setup_link(hal->dmadesc_rx, trans->rcv_buffer, ((trans->rx_bitlen + 7) / 8), true);
 
-            spi_dma_ll_rx_reset(hal->dma_in);
+            spi_dma_ll_rx_reset(hal->dma_in, hal->rx_dma_chan);
             spi_ll_dma_rx_fifo_reset(hal->dma_in);
             spi_ll_dma_rx_enable(hal->hw, 1);
-            spi_dma_ll_rx_start(hal->dma_in, hal->dma_config.dmadesc_rx);
+            spi_dma_ll_rx_start(hal->dma_in, hal->rx_dma_chan, hal->dmadesc_rx);
         }
 
     }
@@ -157,7 +157,7 @@ void spi_hal_prepare_data(spi_hal_context_t *hal, const spi_hal_dev_config_t *de
         //DMA temporary workaround: let RX DMA work somehow to avoid the issue in ESP32 v0/v1 silicon
         if (hal->dma_enabled && !dev->half_duplex) {
             spi_ll_dma_rx_enable(hal->hw, 1);
-            spi_dma_ll_rx_start(hal->dma_in, 0);
+            spi_dma_ll_rx_start(hal->dma_in, hal->rx_dma_chan, 0);
         }
     }
 #endif
@@ -167,12 +167,12 @@ void spi_hal_prepare_data(spi_hal_context_t *hal, const spi_hal_dev_config_t *de
             //Need to copy data to registers manually
             spi_ll_write_buffer(hw, trans->send_buffer, trans->tx_bitlen);
         } else {
-            lldesc_setup_link(hal->dma_config.dmadesc_tx, trans->send_buffer, (trans->tx_bitlen + 7) / 8, false);
+            lldesc_setup_link(hal->dmadesc_tx, trans->send_buffer, (trans->tx_bitlen + 7) / 8, false);
 
-            spi_dma_ll_tx_reset(hal->dma_out);
+            spi_dma_ll_tx_reset(hal->dma_out, hal->tx_dma_chan);
             spi_ll_dma_tx_fifo_reset(hal->dma_in);
             spi_ll_dma_tx_enable(hal->hw, 1);
-            spi_dma_ll_tx_start(hal->dma_out, hal->dma_config.dmadesc_tx);
+            spi_dma_ll_tx_start(hal->dma_out, hal->tx_dma_chan, hal->dmadesc_tx);
         }
     }
 

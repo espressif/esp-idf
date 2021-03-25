@@ -1,0 +1,405 @@
+.build_template:
+  stage: build
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - build
+  variables:
+    SIZE_INFO_LOCATION: "$CI_PROJECT_DIR/size_info.txt"
+  dependencies: []
+
+.build_template_app_template:
+  extends: .build_template
+  variables:
+    LOG_PATH: "${CI_PROJECT_DIR}/log_template_app"
+    BUILD_PATH: "${CI_PROJECT_DIR}/build_template_app"
+    BUILD_DIR: "@t/@w"
+    BUILD_LOG_MAKE: "${LOG_PATH}/make_@t_@w.txt"
+    BUILD_LOG_CMAKE: "${LOG_PATH}/cmake_@t_@w.txt"
+    BUILD_COMMAND_ARGS: ""
+  artifacts:
+    when: always
+    paths:
+      - log_template_app/*
+      - size_info.txt
+      - build_template_app/**/size.json
+  script:
+    # Set the variable for 'esp-idf-template' testing
+    - ESP_IDF_TEMPLATE_GIT=${ESP_IDF_TEMPLATE_GIT:-"https://github.com/espressif/esp-idf-template.git"}
+    - retry_failed git clone ${ESP_IDF_TEMPLATE_GIT}
+    # Try to use the same branch name for esp-idf-template that we're
+    # using on esp-idf. If it doesn't exist then just stick to the default branch
+    - python $CHECKOUT_REF_SCRIPT esp-idf-template esp-idf-template
+    - export PATH="$IDF_PATH/tools:$PATH"
+    - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
+    - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
+    # Only do the default cmake build for each target, remaining part are done in the build_template_app job
+    - tools/ci/build_template_app.sh ${BUILD_COMMAND_ARGS}
+    # Check if there are any stray printf/ets_printf references in WiFi libs
+    - cd components/esp_wifi/lib
+    - for dir in esp32 esp32s2; do test $(xtensa-esp32-elf-nm $dir/*.a | grep -w printf | wc -l) -eq 0; done;
+    - for dir in esp32 esp32s2; do test $(xtensa-esp32-elf-nm $dir/*.a | grep -w ets_printf | wc -l) -eq 0; done;
+
+# build-related-pre-check-jobs ------------------------------------------------
+# Build at least one project for each target at earliest stage to reduce build cost for obvious failing commits
+fast_template_app:
+  extends:
+    - .build_template_app_template
+    - .rules:build:target_test
+  stage: pre_check
+  variables:
+    BUILD_COMMAND_ARGS: "-p"
+#------------------------------------------------------------------------------
+
+.build_ssc_template:
+  extends:
+    - .build_template
+    - .rules:build:integration_test
+  artifacts:
+    paths:
+      - SSC/ssc_bin
+    expire_in: 1 week
+  script:
+    - retry_failed git clone $SSC_REPOSITORY
+    - python $CHECKOUT_REF_SCRIPT SSC SSC
+    - cd SSC
+    - MAKEFLAGS= ./ci_build_ssc.sh $TARGET_NAME
+
+build_ssc_esp32:
+  extends: .build_ssc_template
+  parallel: 3
+  variables:
+    TARGET_NAME: "ESP32"
+
+build_ssc_esp32s2:
+  extends: .build_ssc_template
+  parallel: 2
+  variables:
+    TARGET_NAME: "ESP32S2"
+
+build_ssc_esp32c3:
+  extends: .build_ssc_template
+  parallel: 3
+  variables:
+    TARGET_NAME: "ESP32C3"
+
+.build_esp_idf_tests_cmake_template:
+  extends: .build_template
+  dependencies:  # set dependencies to null to avoid missing artifacts issue
+  needs:
+    - job: fast_template_app
+      artifacts: false
+    - scan_tests
+  artifacts:
+    paths:
+      - tools/unit-test-app/output/${IDF_TARGET}
+      - tools/unit-test-app/builds/*.json
+      - tools/unit-test-app/builds/${IDF_TARGET}/*/size.json
+      - components/idf_test/unit_test/*.yml
+      - $LOG_PATH
+      - $SIZE_INFO_LOCATION
+    when: always
+    expire_in: 4 days
+  variables:
+    LOG_PATH: "$CI_PROJECT_DIR/log_ut_cmake"
+    BUILD_PATH: ${CI_PROJECT_DIR}/tools/unit-test-app/builds
+    OUTPUT_PATH: ${CI_PROJECT_DIR}/tools/unit-test-app/output
+    BUILD_SYSTEM: "cmake"
+    TEST_TYPE: "unit_test"
+    PYTHON_VER: 3
+    LDGEN_CHECK_MAPPING: 1
+  script:
+    - ${IDF_PATH}/tools/ci/find_apps_build_apps.sh
+    - cd $CI_PROJECT_DIR/tools/unit-test-app
+    - python tools/UnitTestParser.py ${BUILD_PATH}
+
+build_esp_idf_tests_cmake_esp32:
+  extends:
+    - .build_esp_idf_tests_cmake_template
+    - .rules:build:unit_test-esp32
+  variables:
+    IDF_TARGET: esp32
+
+build_esp_idf_tests_cmake_esp32s2:
+  extends:
+    - .build_esp_idf_tests_cmake_template
+    - .rules:build:unit_test-esp32s2
+  variables:
+    IDF_TARGET: esp32s2
+
+build_esp_idf_tests_cmake_esp32s3:
+  extends:
+    - .build_esp_idf_tests_cmake_template
+    - .rules:build:unit_test-esp32s3
+  variables:
+    IDF_TARGET: esp32s3
+
+build_esp_idf_tests_cmake_esp32c3:
+  extends:
+    - .build_esp_idf_tests_cmake_template
+    - .rules:build:unit_test-esp32c3
+  variables:
+    IDF_TARGET: esp32c3
+
+.build_examples_template:
+  extends: .build_template
+  dependencies:  # set dependencies to null to avoid missing artifacts issue
+  needs:
+    - job: fast_template_app
+      artifacts: false
+    - scan_tests
+  variables:
+    TEST_PREFIX: examples
+    TEST_RELATIVE_DIR: examples
+    SCAN_TEST_JSON: ${CI_PROJECT_DIR}/${TEST_RELATIVE_DIR}/test_configs/scan_${IDF_TARGET}_${BUILD_SYSTEM}.json
+    TEST_TYPE: example_test
+    LOG_PATH: ${CI_PROJECT_DIR}/log_${TEST_PREFIX}
+    BUILD_PATH: ${CI_PROJECT_DIR}/build_${TEST_PREFIX}
+    PYTHON_VER: 3
+    LDGEN_CHECK_MAPPING: 1
+  script:
+    # it's not possible to build 100% out-of-tree and have the "artifacts"
+    # mechanism work, but this is the next best thing
+    - ${IDF_PATH}/tools/ci/find_apps_build_apps.sh
+
+build_examples_make:
+  extends:
+    - .build_examples_template
+    - .rules:build:example_test-esp32
+  # This is a workaround for a rarely encountered issue with building examples in CI.
+  # Probably related to building of Kconfig in 'make clean' stage
+  retry: 1
+  parallel: 8
+  artifacts:
+    paths:
+      - $LOG_PATH
+      - build_${TEST_PREFIX}/*/*/*/build/size.json
+      - $SIZE_INFO_LOCATION
+    when: always
+    expire_in: 4 days
+  variables:
+    BUILD_SYSTEM: make
+    IDF_TARGET: esp32  # currently we only support esp32
+
+# same as above, but for CMake
+.build_examples_cmake_template:
+  extends: .build_examples_template
+  artifacts:
+    paths:
+      - build_${TEST_PREFIX}/list.json
+      - build_${TEST_PREFIX}/list_job_*.json
+      - build_${TEST_PREFIX}/*/*/*/sdkconfig
+      - build_${TEST_PREFIX}/*/*/*/build/size.json
+      - build_${TEST_PREFIX}/*/*/*/build/*.bin
+      - build_${TEST_PREFIX}/*/*/*/build/*.elf
+      - build_${TEST_PREFIX}/*/*/*/build/*.map
+      - build_${TEST_PREFIX}/*/*/*/build/flasher_args.json
+      - build_${TEST_PREFIX}/*/*/*/build/bootloader/*.bin
+      - build_${TEST_PREFIX}/*/*/*/build/partition_table/*.bin
+      - $LOG_PATH
+      - $SIZE_INFO_LOCATION
+    when: always
+    expire_in: 4 days
+  variables:
+    BUILD_SYSTEM: cmake
+
+build_examples_cmake_esp32:
+  extends:
+    - .build_examples_cmake_template
+    - .rules:build:example_test-esp32
+  parallel: 10
+  variables:
+    IDF_TARGET: esp32
+
+build_examples_cmake_esp32s2:
+  extends:
+    - .build_examples_cmake_template
+    - .rules:build:example_test-esp32s2
+  parallel: 8
+  variables:
+    IDF_TARGET: esp32s2
+
+build_examples_cmake_esp32c3:
+  extends:
+    - .build_examples_cmake_template
+    - .rules:build:example_test-esp32c3
+  parallel: 8
+  variables:
+    IDF_TARGET: esp32c3
+
+.build_test_apps_template:
+  extends: .build_examples_cmake_template
+  variables:
+    TEST_PREFIX: test_apps
+    TEST_RELATIVE_DIR: tools/test_apps
+    TEST_TYPE: custom_test
+  script:
+    - ${IDF_PATH}/tools/ci/find_apps_build_apps.sh
+
+build_test_apps_esp32:
+  extends:
+    - .build_test_apps_template
+    - .rules:build:custom_test-esp32
+  parallel: 8
+  variables:
+    IDF_TARGET: esp32
+
+build_test_apps_esp32s2:
+  extends:
+    - .build_test_apps_template
+    - .rules:build:custom_test-esp32s2
+  parallel: 8
+  variables:
+    IDF_TARGET: esp32s2
+
+build_test_apps_esp32s3:
+  extends:
+    - .build_test_apps_template
+    - .rules:build:custom_test-esp32s3
+  parallel: 8
+  variables:
+    IDF_TARGET: esp32s3
+
+build_test_apps_esp32c3:
+  extends:
+    - .build_test_apps_template
+    - .rules:build:custom_test-esp32c3
+  parallel: 8
+  variables:
+    IDF_TARGET: esp32c3
+
+.build_component_ut_template:
+  extends: .build_test_apps_template
+  variables:
+    TEST_PREFIX: component_ut
+    TEST_RELATIVE_DIR: component_ut
+
+build_component_ut_esp32:
+  extends:
+    - .build_component_ut_template
+    - .rules:build:component_ut-esp32
+  variables:
+    IDF_TARGET: esp32
+
+build_component_ut_esp32s2:
+  extends:
+    - .build_component_ut_template
+    - .rules:build:component_ut-esp32s2
+  variables:
+    IDF_TARGET: esp32s2
+
+build_component_ut_esp32c3:
+  extends:
+    - .build_component_ut_template
+    - .rules:build:component_ut-esp32c3
+  variables:
+    IDF_TARGET: esp32c3
+
+.test_build_system_template:
+  extends:
+    - .build_template
+    - .rules:build
+  needs:
+    - job: fast_template_app
+      artifacts: false
+  script:
+    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
+    - rm -rf test_build_system
+    - mkdir test_build_system
+    - cd test_build_system
+    - ${IDF_PATH}/tools/ci/${SHELL_TEST_SCRIPT}
+
+test_build_system:
+  extends: .test_build_system_template
+  variables:
+    SHELL_TEST_SCRIPT: test_build_system.sh
+
+test_build_system_cmake:
+  extends: .test_build_system_template
+  variables:
+    SHELL_TEST_SCRIPT: test_build_system_cmake.sh
+
+test_build_system_cmake_macos:
+  extends:
+    - .test_build_system_template
+    - .before_script_macos
+    - .rules:build:macos
+  tags:
+    - macos_shell
+  variables:
+    SHELL_TEST_SCRIPT: test_build_system_cmake.sh
+
+build_docker:
+  extends:
+    - .before_script_minimal
+    - .rules:build:docker
+  stage: build
+  image: espressif/docker-builder:1
+  tags:
+    - build_docker_amd64_brno
+  variables:
+    DOCKER_TMP_IMAGE_NAME: "idf_tmp_image"
+  script:
+    - export LOCAL_CI_REPOSITORY_URL=$CI_REPOSITORY_URL
+    - if [ -n "$LOCAL_GITLAB_HTTPS_HOST" ]; then export LOCAL_CI_REPOSITORY_URL="https://gitlab-ci-token:${CI_JOB_TOKEN}@${LOCAL_GITLAB_HTTPS_HOST}/${CI_PROJECT_PATH}"; fi
+    - echo "Using repository at $LOCAL_CI_REPOSITORY_URL"
+    - export DOCKER_BUILD_ARGS="--build-arg IDF_CLONE_URL=${LOCAL_CI_REPOSITORY_URL} --build-arg IDF_CLONE_BRANCH_OR_TAG=${CI_COMMIT_REF_NAME} --build-arg IDF_CHECKOUT_REF=${CI_COMMIT_TAG:-$CI_COMMIT_SHA}"
+    # Build
+    - docker build --tag ${DOCKER_TMP_IMAGE_NAME} ${DOCKER_BUILD_ARGS} tools/docker/
+    # We can't mount $PWD/examples/get-started/blink into the container, see https://gitlab.com/gitlab-org/gitlab-ce/issues/41227.
+    # The workaround mentioned there works, but leaves around directories which need to be cleaned up manually.
+    # Therefore, build a copy of the example located inside the container.
+    - docker run --rm --workdir /opt/esp/idf/examples/get-started/blink ${DOCKER_TMP_IMAGE_NAME} idf.py build
+
+.test-on-windows:
+  extends:
+    - .before_script_minimal
+    - .rules:build:windows
+  stage: build
+  image: $CI_DOCKER_REGISTRY/esp32-toolchain-win-cross
+  tags:
+    - build
+  script:
+    - cd $TEST_DIR
+    - mkdir build
+    - cd build
+    - cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain-i686-w64-mingw32.cmake -DCMAKE_BUILD_TYPE=Release ..
+    - cmake --build .
+
+build_idf_exe:
+  extends: .test-on-windows
+  artifacts:
+    paths:
+      - tools/windows/idf_exe/build/idf-exe-v*.zip
+    expire_in: 4 days
+  variables:
+    TEST_DIR: tools/windows/idf_exe
+
+build_cmdlinerunner:
+  extends: .test-on-windows
+  artifacts:
+    paths:
+      - tools/windows/tool_setup/cmdlinerunner/build/cmdlinerunner.dll
+    expire_in: 4 days
+  variables:
+    TEST_DIR: tools/windows/tool_setup/cmdlinerunner
+
+build_installer:
+  extends: .test-on-windows
+  # using a different stage here to be able to use artifacts from build_cmdlinerunner job
+  stage: host_test
+  image: $CI_DOCKER_REGISTRY/wine-innosetup:1
+  dependencies:  # set dependencies to null to avoid missing artifacts issue
+  needs:
+    - build_cmdlinerunner
+  script:
+    - cd tools/windows/tool_setup/
+    - ./build_installer.sh
+
+# This job builds template app with permutations of targets and optimization levels
+build_template_app:
+  extends:
+    - .build_template_app_template
+    - .rules:build
+  needs:
+    - job: fast_template_app
+      artifacts: false

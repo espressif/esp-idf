@@ -72,6 +72,7 @@ typedef struct {
 typedef struct {
     spi_dma_dev_t *dma_in;              ///< Input  DMA(DMA -> RAM) peripheral register address
     spi_dma_dev_t *dma_out;             ///< Output DMA(RAM -> DMA) peripheral register address
+    bool dma_enabled;                   ///< Whether the DMA is enabled, do not update after initialization
     lldesc_t  *dmadesc_tx;              /**< Array of DMA descriptor used by the TX DMA.
                                          *   The amount should be larger than dmadesc_n. The driver should ensure that
                                          *   the data to be sent is shorter than the descriptors can hold.
@@ -80,8 +81,10 @@ typedef struct {
                                          *   The amount should be larger than dmadesc_n. The driver should ensure that
                                          *   the data to be sent is shorter than the descriptors can hold.
                                          */
+    uint32_t tx_dma_chan;               ///< TX DMA channel
+    uint32_t rx_dma_chan;               ///< RX DMA channel
     int dmadesc_n;                      ///< The amount of descriptors of both ``dmadesc_tx`` and ``dmadesc_rx`` that the HAL can use.
-} spi_hal_dma_config_t;
+} spi_hal_config_t;
 
 /**
  * Transaction configuration structure, this should be assigned by driver each time.
@@ -104,12 +107,24 @@ typedef struct {
  * Context that should be maintained by both the driver and the HAL.
  */
 typedef struct {
+    /* These two need to be malloced by the driver first */
+    lldesc_t  *dmadesc_tx;              /**< Array of DMA descriptor used by the TX DMA.
+                                         *   The amount should be larger than dmadesc_n. The driver should ensure that
+                                         *   the data to be sent is shorter than the descriptors can hold.
+                                         */
+    lldesc_t *dmadesc_rx;               /**< Array of DMA descriptor used by the RX DMA.
+                                         *   The amount should be larger than dmadesc_n. The driver should ensure that
+                                         *   the data to be sent is shorter than the descriptors can hold.
+                                         */
+
     /* Configured by driver at initialization, don't touch */
     spi_dev_t     *hw;                  ///< Beginning address of the peripheral registers.
     spi_dma_dev_t *dma_in;              ///< Address of the DMA peripheral registers which stores the data received from a peripheral into RAM (DMA -> RAM).
     spi_dma_dev_t *dma_out;             ///< Address of the DMA peripheral registers which transmits the data from RAM to a peripheral (RAM -> DMA).
     bool  dma_enabled;                  ///< Whether the DMA is enabled, do not update after initialization
-    spi_hal_dma_config_t dma_config;    ///< DMA configuration
+    uint32_t tx_dma_chan;               ///< TX DMA channel
+    uint32_t rx_dma_chan;               ///< RX DMA channel
+    int dmadesc_n;                      ///< The amount of descriptors of both ``dmadesc_tx`` and ``dmadesc_rx`` that the HAL can use.
 
     /* Internal parameters, don't touch */
     spi_hal_trans_config_t trans_config; ///< Transaction configuration
@@ -144,10 +159,11 @@ typedef struct {
 /**
  * Init the peripheral and the context.
  *
- * @param hal     Context of the HAL layer.
- * @param host_id Index of the SPI peripheral. 0 for SPI1, 1 for HSPI (SPI2) and 2 for VSPI (SPI3).
+ * @param hal        Context of the HAL layer.
+ * @param host_id    Index of the SPI peripheral. 0 for SPI1, 1 for HSPI (SPI2) and 2 for VSPI (SPI3).
+ * @param hal_config Configuration of the hal defined by the upper layer.
  */
-void spi_hal_init(spi_hal_context_t *hal, uint32_t host_id, const spi_hal_dma_config_t *hal_dma_config);
+void spi_hal_init(spi_hal_context_t *hal, uint32_t host_id, const spi_hal_config_t *hal_config);
 
 /**
  * Deinit the peripheral (and the context if needed).

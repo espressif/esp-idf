@@ -32,6 +32,25 @@ menu "High resolution timer (esp_timer)"
             FreeRTOS timer task size, see "FreeRTOS timer task stack size" option
             in "FreeRTOS" menu.
 
+    config ESP_TIMER_INTERRUPT_LEVEL
+        int "Interrupt level"
+        default 1
+        range 1 3 if IDF_TARGET_ESP32
+        range 1 1 if !IDF_TARGET_ESP32
+        help
+            It sets the interrupt level for esp_timer ISR in range 1..3.
+            A higher level (3) helps to decrease the ISR esp_timer latency.
+
+    config ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
+        bool "Support ISR dispatch method"
+        default n
+        help
+            Allows using ESP_TIMER_ISR dispatch method (ESP_TIMER_TASK dispatch method is also avalible).
+            - ESP_TIMER_TASK - Timer callbacks are dispatched from a high-priority esp_timer task.
+            - ESP_TIMER_ISR - Timer callbacks are dispatched directly from the timer interrupt handler.
+            The ISR dispatch can be used, in some cases, when a callback is very simple
+            or need a lower-latency.
+
     choice ESP_TIMER_IMPL
         prompt "Hardware timer to use for esp_timer"
         default ESP_TIMER_IMPL_TG0_LAC if IDF_TARGET_ESP32

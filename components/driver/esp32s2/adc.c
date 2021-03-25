@@ -29,7 +29,7 @@
 #include "driver/rtc_cntl.h"
 #include "driver/gpio.h"
 #include "driver/adc.h"
-#include "esp32s2/esp_efuse_rtc_table.h"
+#include "esp_efuse_rtc_table.h"
 
 #include "hal/adc_types.h"
 #include "hal/adc_hal.h"

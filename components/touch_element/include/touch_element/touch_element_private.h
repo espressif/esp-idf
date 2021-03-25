@@ -29,7 +29,7 @@ extern "C" {
 
 #define TE_CHECK(cond, ret_val) ({                                            \
     if (!(cond)) {                                                            \
-        ESP_LOGE(TE_TAG, "%s:%d (%s)", __FILE__, __LINE__, __FUNCTION__);     \
+        ESP_LOGE(TE_TAG, "%s(%d)", __FUNCTION__, __LINE__);     \
         return (ret_val);                                                     \
     }                                                                         \
 })

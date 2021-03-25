@@ -279,6 +279,22 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
         endchoice # assertions
 
+        menuconfig COMPILER_HIDE_PATHS_MACROS
+            bool "Replace ESP-IDF and project paths in binaries"
+            default y
+            depends on IDF_CMAKE
+            help
+                When expanding the __FILE__ and __BASE_FILE__ macros, replace paths inside ESP-IDF
+                with paths relative to the placeholder string "IDF", and convert paths inside the
+                project directory to relative paths.
+
+                This allows building the project with assertions or other code that embeds file paths,
+                without the binary containing the exact path to the IDF or project directories.
+
+                This option passes -fmacro-prefix-map options to the GCC command line. To replace additional
+                paths in your binaries, modify the project CMakeLists.txt file to pass custom -fmacro-prefix-map or
+                -ffile-prefix-map arguments.
+
         menuconfig COMPILER_CXX_EXCEPTIONS
             bool "Enable C++ exceptions"
             default n

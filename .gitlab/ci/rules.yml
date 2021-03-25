@@ -1,0 +1,986 @@
+############
+# Patterns #
+############
+.patterns-docs: &patterns-docs
+  - ".gitlab/ci/docs.yml"
+  - "docs/**/*"
+  - "components/**/*.h"
+  - "components/**/Kconfig*"
+  - "components/**/CMakeList.txt"
+  - "components/**/sdkconfig*"
+  - "tools/kconfig_new/**/*"
+  - "CONTRIBUTING.rst"
+
+.patterns-c-files: &patterns-c-files
+  - ".gitlab/ci/static-code-analysis.yml"
+  - "tools/ci/static-analysis-rules.yml"
+  - "**/*.{c,C}"
+  - "**/*.{h,H}"
+  - "components/**/Kconfig"
+  - "components/**/CMakeList.txt"
+
+.patterns-python-files: &patterns-python-files
+  - ".gitlab/ci/static-code-analysis.yml"
+  - "**/*.py"
+
+.patterns-example_test: &patterns-example_test
+  - "tools/ci/python_packages/gitlab_api.py"
+  - "tools/ci/python_packages/idf_http_server_test/**/*"
+  - "tools/ci/python_packages/idf_iperf_test_util/**/*"
+  - "tools/ci/python_packages/tiny_test_fw/**/*"
+  - "tools/ci/python_packages/ttfw_idf/**/*"
+
+  - "tools/ci/find_apps_build_apps.sh"
+  - "tools/build_apps.py"
+  - "tools/find_apps.py"
+  - "tools/find_build_apps/**/*"
+
+  - "tools/esp_prov/**/*"
+  - "examples/**/*"
+
+.patterns-build-example_test: &patterns-build-example_test
+  - "tools/ci/build_example_dirs.txt"
+  - "tools/ci/get_supported_examples.sh"
+
+.patterns-build_components: &patterns-build_components
+  - "components/**/*"
+
+.patterns-build_system: &patterns-build_system
+  - "tools/cmake/**/*"
+  - "tools/kconfig_new/**/*"
+  - "tools/tools.json"
+
+.patterns-custom_test: &patterns-custom_test
+  - "components/espcoredump/**/*"
+
+  - "tools/ci/python_packages/gitlab_api.py"
+  - "tools/ci/python_packages/tiny_test_fw/**/*"
+  - "tools/ci/python_packages/ttfw_idf/**/*"
+
+  - "tools/ci/find_apps_build_apps.sh"
+  - "tools/build_apps.py"
+  - "tools/find_apps.py"
+  - "tools/find_build_apps/**/*"
+
+  - "tools/test_apps/**/*"
+  - "tools/ldgen/**/*"
+
+.patterns-unit_test: &patterns-unit_test
+  - "tools/ci/python_packages/gitlab_api.py"
+  - "tools/ci/python_packages/tiny_test_fw/**/*"
+  - "tools/ci/python_packages/ttfw_idf/**/*"
+
+  - "tools/ci/find_apps_build_apps.sh"
+  - "tools/build_apps.py"
+  - "tools/find_apps.py"
+  - "tools/find_build_apps/**/*"
+
+  - "tools/unit-test-app/**/*"
+
+.patterns-component_ut: &patterns-component_ut
+  - "tools/ci/python_packages/gitlab_api.py"
+  - "tools/ci/python_packages/tiny_test_fw/**/*"
+  - "tools/ci/python_packages/ttfw_idf/**/*"
+
+  - "tools/ci/find_apps_build_apps.sh"
+  - "tools/build_apps.py"
+  - "tools/find_apps.py"
+  - "tools/find_build_apps/**/*"
+
+  - "components/**/test_apps/**/*"
+
+.patterns-integration_test: &patterns-integration_test
+  - "tools/ci/python_packages/tiny_test_fw/**/*"
+
+.patterns-host_test: &patterns-host_test
+  - ".gitlab/ci/host-test.yml"
+  - "tools/ci/test_autocomplete.py"
+  - "tools/ci/test_build_system.sh"
+  - "tools/ci/test_build_system_cmake.sh"
+  - "tools/ci/test_check_kconfigs.py"
+  - "tools/ci/test_configure_ci_environment.sh"
+
+  - "tools/mass_mfg/**/*"
+  - "components/nvs_flash/test_nvs_host/**/*"
+
+  - "tools/esp_app_trace/**/*"
+  - "tools/ldgen/**/*"
+
+  - "tools/gdb_panic_server.py"
+  - "tools/idf_monitor.py"
+  - "tools/test_idf_monitor/**/*"
+
+  - "tools/idf.py"
+  - "tools/idf_py_actions/**/*"
+  - "tools/test_idf_py/**/*"
+
+  - "tools/idf_size.py"
+  - "tools/test_idf_size/**/*"
+
+  - "tools/tools_schema.json"
+  - "tools/idf_tools.py"
+  - "tools/test_idf_tools/**/*"
+
+  - "tools/mkdfu.py"
+  - "tools/test_mkdfu/**/*"
+
+  - "tools/kconfig_new/**/*"
+
+  - "tools/detect_python.sh"
+  - "tools/detect_python.fish"
+
+.patterns-windows: &patterns-windows
+  - "tools/windows/**/*"
+
+.patterns-docker: &patterns-docker
+  - "tools/docker/**/*"
+
+.patterns-submodule: &patterns-submodule
+  - "components/asio/asio"
+  - "components/bootloader/subproject/components/micro-ecc/micro-ecc"
+  - "components/bt/controller/lib"
+  - "components/bt/host/nimble/nimble"
+  - "components/cbor/tinycbor"
+  - "components/cmock/CMock"
+  - "components/cmock/CMock/vendor/c_exception"
+  - "components/cmock/CMock/vendor/unity"
+  - "components/coap/libcoap"
+  - "components/coap/libcoap/ext/tinydtls"
+  - "components/esp_wifi/lib"
+  - "components/esptool_py/esptool"
+  - "components/expat/expat"
+  - "components/json/cJSON"
+  - "components/libsodium/libsodium"
+  - "components/lwip/lwip"
+  - "components/mbedtls/mbedtls"
+  - "components/mqtt/esp-mqtt"
+  - "components/nghttp/nghttp2"
+  - "components/nghttp/nghttp2/third-party/mruby"
+  - "components/nghttp/nghttp2/third-party/neverbleed"
+  - "components/protobuf-c/protobuf-c"
+  - "components/spiffs/spiffs"
+  - "components/tinyusb/tinyusb"
+  - "components/unity/unity"
+  - "examples/build_system/cmake/import_lib/main/lib/tinyxml2"
+  - "examples/peripherals/secure_element/atecc608_ecdsa/components/esp-cryptoauthlib"
+
+##############
+# if anchors #
+##############
+.if-ref-master: &if-ref-master
+  if: '$CI_COMMIT_REF_NAME == "master"'
+
+.if-tag-release: &if-tag-release
+  if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+(\.\d+)?($|-)/'
+
+.if-protected: &if-protected
+  if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/ || $CI_COMMIT_TAG =~ /^v\d+\.\d+(\.\d+)?($|-)/)'
+
+.if-protected-no_label: &if-protected-no_label
+  if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/ || $CI_COMMIT_TAG =~ /^v\d+\.\d+(\.\d+)?($|-)/) && $BOT_TRIGGER_WITH_LABEL == null'
+
+.if-dev-push: &if-dev-push
+  if: '$CI_COMMIT_REF_NAME != "master" && $CI_COMMIT_BRANCH !~ /^release\/v/ && $CI_COMMIT_TAG !~ /^v\d+\.\d+(\.\d+)?($|-)/ && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event")'
+
+.if-schedule: &if-schedule
+  if: '$CI_PIPELINE_SOURCE == "schedule"'
+
+.if-trigger: &if-trigger
+  if: '$CI_PIPELINE_SOURCE == "trigger"'
+
+.if-label-build-only: &if-label-build-only
+  if: '$CI_JOB_STAGE == "target_test" && $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*For Maintainers: Only Build Tests(?:,[^,\n\r]+)*$/i'
+
+#########
+# Rules #
+#########
+.rules:protected:
+  rules:
+    - <<: *if-protected
+
+.rules:protected-no_label:
+  rules:
+    - <<: *if-protected-no_label
+
+.rules:dev:
+  rules:
+    - <<: *if-trigger
+    - <<: *if-dev-push
+
+.rules:tag:release:
+  rules:
+    - <<: *if-tag-release
+
+.rules:ref:master-schedule:
+  rules:
+    - <<: *if-ref-master
+    - <<: *if-schedule
+
+.rules:ref:master-schedule-always:
+  rules:
+    - <<: *if-ref-master
+      when: always
+    - <<: *if-schedule
+      when: always
+
+.rules:patterns:clang_tidy:
+  rules:
+    - <<: *if-protected
+    - <<: *if-dev-push
+      changes: *patterns-c-files
+
+.rules:patterns:python-files:
+  rules:
+    - <<: *if-protected
+    - <<: *if-dev-push
+      changes: *patterns-python-files
+
+.rules:patterns:static-code-analysis-preview:
+  rules:
+    - <<: *if-dev-push
+      changes: *patterns-c-files
+    - <<: *if-dev-push
+      changes: *patterns-python-files
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# DO NOT place comments or maintain any code from this line
+#
+# Use dependencies.yml and generate_rules.py under .gitlab/ci/dependencies dir
+# to generate labels and rules
+# Could also use pre-commit hook to finish this if detected changes on
+# these two files
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+##################
+# Auto Generated #
+##################
+.if-label-build: &if-label-build
+  if: '$BOT_LABEL_BUILD || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*build(?:,[^,\n\r]+)*$/i'
+
+.if-label-build_docs: &if-label-build_docs
+  if: '$BOT_LABEL_BUILD_DOCS || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*build_docs(?:,[^,\n\r]+)*$/i'
+
+.if-label-component_ut: &if-label-component_ut
+  if: '$BOT_LABEL_COMPONENT_UT || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*component_ut(?:,[^,\n\r]+)*$/i'
+
+.if-label-component_ut_esp32: &if-label-component_ut_esp32
+  if: '$BOT_LABEL_COMPONENT_UT_ESP32 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*component_ut_esp32(?:,[^,\n\r]+)*$/i'
+
+.if-label-component_ut_esp32c3: &if-label-component_ut_esp32c3
+  if: '$BOT_LABEL_COMPONENT_UT_ESP32C3 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*component_ut_esp32c3(?:,[^,\n\r]+)*$/i'
+
+.if-label-component_ut_esp32s2: &if-label-component_ut_esp32s2
+  if: '$BOT_LABEL_COMPONENT_UT_ESP32S2 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*component_ut_esp32s2(?:,[^,\n\r]+)*$/i'
+
+.if-label-component_ut_esp32s3: &if-label-component_ut_esp32s3
+  if: '$BOT_LABEL_COMPONENT_UT_ESP32S3 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*component_ut_esp32s3(?:,[^,\n\r]+)*$/i'
+
+.if-label-custom_test: &if-label-custom_test
+  if: '$BOT_LABEL_CUSTOM_TEST || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*custom_test(?:,[^,\n\r]+)*$/i'
+
+.if-label-custom_test_esp32: &if-label-custom_test_esp32
+  if: '$BOT_LABEL_CUSTOM_TEST_ESP32 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*custom_test_esp32(?:,[^,\n\r]+)*$/i'
+
+.if-label-custom_test_esp32c3: &if-label-custom_test_esp32c3
+  if: '$BOT_LABEL_CUSTOM_TEST_ESP32C3 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*custom_test_esp32c3(?:,[^,\n\r]+)*$/i'
+
+.if-label-custom_test_esp32s2: &if-label-custom_test_esp32s2
+  if: '$BOT_LABEL_CUSTOM_TEST_ESP32S2 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*custom_test_esp32s2(?:,[^,\n\r]+)*$/i'
+
+.if-label-custom_test_esp32s3: &if-label-custom_test_esp32s3
+  if: '$BOT_LABEL_CUSTOM_TEST_ESP32S3 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*custom_test_esp32s3(?:,[^,\n\r]+)*$/i'
+
+.if-label-docker: &if-label-docker
+  if: '$BOT_LABEL_DOCKER || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*docker(?:,[^,\n\r]+)*$/i'
+
+.if-label-docs: &if-label-docs
+  if: '$BOT_LABEL_DOCS || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*docs(?:,[^,\n\r]+)*$/i'
+
+.if-label-example_test: &if-label-example_test
+  if: '$BOT_LABEL_EXAMPLE_TEST || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*example_test(?:,[^,\n\r]+)*$/i'
+
+.if-label-example_test_esp32: &if-label-example_test_esp32
+  if: '$BOT_LABEL_EXAMPLE_TEST_ESP32 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*example_test_esp32(?:,[^,\n\r]+)*$/i'
+
+.if-label-example_test_esp32c3: &if-label-example_test_esp32c3
+  if: '$BOT_LABEL_EXAMPLE_TEST_ESP32C3 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*example_test_esp32c3(?:,[^,\n\r]+)*$/i'
+
+.if-label-example_test_esp32s2: &if-label-example_test_esp32s2
+  if: '$BOT_LABEL_EXAMPLE_TEST_ESP32S2 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*example_test_esp32s2(?:,[^,\n\r]+)*$/i'
+
+.if-label-example_test_esp32s3: &if-label-example_test_esp32s3
+  if: '$BOT_LABEL_EXAMPLE_TEST_ESP32S3 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*example_test_esp32s3(?:,[^,\n\r]+)*$/i'
+
+.if-label-fuzzer_test: &if-label-fuzzer_test
+  if: '$BOT_LABEL_FUZZER_TEST || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*fuzzer_test(?:,[^,\n\r]+)*$/i'
+
+.if-label-host_test: &if-label-host_test
+  if: '$BOT_LABEL_HOST_TEST || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*host_test(?:,[^,\n\r]+)*$/i'
+
+.if-label-integration_test: &if-label-integration_test
+  if: '$BOT_LABEL_INTEGRATION_TEST || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*integration_test(?:,[^,\n\r]+)*$/i'
+
+.if-label-iperf_stress_test: &if-label-iperf_stress_test
+  if: '$BOT_LABEL_IPERF_STRESS_TEST || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*iperf_stress_test(?:,[^,\n\r]+)*$/i'
+
+.if-label-macos: &if-label-macos
+  if: '$BOT_LABEL_MACOS || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*macos(?:,[^,\n\r]+)*$/i'
+
+.if-label-macos_test: &if-label-macos_test
+  if: '$BOT_LABEL_MACOS_TEST || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*macos_test(?:,[^,\n\r]+)*$/i'
+
+.if-label-nvs_coverage: &if-label-nvs_coverage
+  if: '$BOT_LABEL_NVS_COVERAGE || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*nvs_coverage(?:,[^,\n\r]+)*$/i'
+
+.if-label-submodule: &if-label-submodule
+  if: '$BOT_LABEL_SUBMODULE || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*submodule(?:,[^,\n\r]+)*$/i'
+
+.if-label-unit_test: &if-label-unit_test
+  if: '$BOT_LABEL_UNIT_TEST || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*unit_test(?:,[^,\n\r]+)*$/i'
+
+.if-label-unit_test_esp32: &if-label-unit_test_esp32
+  if: '$BOT_LABEL_UNIT_TEST_ESP32 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*unit_test_esp32(?:,[^,\n\r]+)*$/i'
+
+.if-label-unit_test_esp32c3: &if-label-unit_test_esp32c3
+  if: '$BOT_LABEL_UNIT_TEST_ESP32C3 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*unit_test_esp32c3(?:,[^,\n\r]+)*$/i'
+
+.if-label-unit_test_esp32s2: &if-label-unit_test_esp32s2
+  if: '$BOT_LABEL_UNIT_TEST_ESP32S2 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*unit_test_esp32s2(?:,[^,\n\r]+)*$/i'
+
+.if-label-unit_test_esp32s3: &if-label-unit_test_esp32s3
+  if: '$BOT_LABEL_UNIT_TEST_ESP32S3 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*unit_test_esp32s3(?:,[^,\n\r]+)*$/i'
+
+.if-label-weekend_test: &if-label-weekend_test
+  if: '$BOT_LABEL_WEEKEND_TEST || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*weekend_test(?:,[^,\n\r]+)*$/i'
+
+.if-label-windows: &if-label-windows
+  if: '$BOT_LABEL_WINDOWS || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*windows(?:,[^,\n\r]+)*$/i'
+
+.rules:build:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+
+.rules:build:component_ut-esp32:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-component_ut
+    - <<: *if-label-component_ut_esp32
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-component_ut
+
+.rules:build:component_ut-esp32c3:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-component_ut
+    - <<: *if-label-component_ut_esp32c3
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32c3
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-component_ut
+
+.rules:build:component_ut-esp32s2:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-component_ut
+    - <<: *if-label-component_ut_esp32s2
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32s2
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-component_ut
+
+.rules:build:component_ut-esp32s3:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-component_ut
+    - <<: *if-label-component_ut_esp32s3
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32s3
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-component_ut
+
+.rules:build:custom_test-esp32:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-custom_test
+    - <<: *if-label-custom_test_esp32
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-custom_test
+
+.rules:build:custom_test-esp32c3:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-custom_test
+    - <<: *if-label-custom_test_esp32c3
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-custom_test
+
+.rules:build:custom_test-esp32s2:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-custom_test
+    - <<: *if-label-custom_test_esp32s2
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-custom_test
+
+.rules:build:custom_test-esp32s3:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-custom_test
+    - <<: *if-label-custom_test_esp32s3
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-custom_test
+
+.rules:build:docker:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-docker
+    - <<: *if-dev-push
+      changes: *patterns-docker
+
+.rules:build:docs:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build_docs
+    - <<: *if-label-docs
+    - <<: *if-dev-push
+      changes: *patterns-docs
+
+.rules:build:docs-production:
+  rules:
+    - <<: *if-protected-no_label
+
+.rules:build:docs:label-only:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build_docs
+    - <<: *if-label-docs
+
+.rules:build:docs:label-only-preview:
+  rules:
+    - <<: *if-label-build_docs
+    - <<: *if-label-docs
+
+.rules:build:example_test-esp32:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32
+    - <<: *if-label-iperf_stress_test
+    - <<: *if-label-weekend_test
+    - <<: *if-dev-push
+      changes: *patterns-build-example_test
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-example_test
+
+.rules:build:example_test-esp32c3:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32c3
+    - <<: *if-dev-push
+      changes: *patterns-build-example_test
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-example_test
+
+.rules:build:example_test-esp32s2:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32s2
+    - <<: *if-dev-push
+      changes: *patterns-build-example_test
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-example_test
+
+.rules:build:example_test-esp32s3:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32s3
+    - <<: *if-dev-push
+      changes: *patterns-build-example_test
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-example_test
+
+.rules:build:integration_test:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-integration_test
+    - <<: *if-dev-push
+      changes: *patterns-integration_test
+
+.rules:build:macos:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-macos
+    - <<: *if-label-macos_test
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+
+.rules:build:target_test:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-component_ut
+    - <<: *if-label-component_ut_esp32
+    - <<: *if-label-component_ut_esp32c3
+    - <<: *if-label-component_ut_esp32s2
+    - <<: *if-label-component_ut_esp32s3
+    - <<: *if-label-custom_test
+    - <<: *if-label-custom_test_esp32
+    - <<: *if-label-custom_test_esp32c3
+    - <<: *if-label-custom_test_esp32s2
+    - <<: *if-label-custom_test_esp32s3
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32
+    - <<: *if-label-example_test_esp32c3
+    - <<: *if-label-example_test_esp32s2
+    - <<: *if-label-example_test_esp32s3
+    - <<: *if-label-integration_test
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32
+    - <<: *if-label-unit_test_esp32c3
+    - <<: *if-label-unit_test_esp32s2
+    - <<: *if-label-unit_test_esp32s3
+    - <<: *if-dev-push
+      changes: *patterns-build-example_test
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-component_ut
+    - <<: *if-dev-push
+      changes: *patterns-custom_test
+    - <<: *if-dev-push
+      changes: *patterns-example_test
+    - <<: *if-dev-push
+      changes: *patterns-integration_test
+    - <<: *if-dev-push
+      changes: *patterns-unit_test
+
+.rules:build:unit_test-esp32:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-unit_test
+
+.rules:build:unit_test-esp32c3:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-unit_test_esp32c3
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+
+.rules:build:unit_test-esp32s2:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32s2
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-unit_test
+
+.rules:build:unit_test-esp32s3:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32s3
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-unit_test
+
+.rules:build:windows:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-windows
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-windows
+
+.rules:labels:fuzzer_test-weekend_test:
+  rules:
+    - <<: *if-label-fuzzer_test
+    - <<: *if-label-weekend_test
+
+.rules:labels:iperf_stress_test:
+  rules:
+    - <<: *if-label-iperf_stress_test
+
+.rules:labels:nvs_coverage:
+  rules:
+    - <<: *if-label-nvs_coverage
+
+.rules:labels:weekend_test:
+  rules:
+    - <<: *if-label-weekend_test
+
+.rules:test:any_test:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-component_ut
+    - <<: *if-label-component_ut_esp32
+    - <<: *if-label-component_ut_esp32c3
+    - <<: *if-label-component_ut_esp32s2
+    - <<: *if-label-component_ut_esp32s3
+    - <<: *if-label-custom_test
+    - <<: *if-label-custom_test_esp32
+    - <<: *if-label-custom_test_esp32c3
+    - <<: *if-label-custom_test_esp32s2
+    - <<: *if-label-custom_test_esp32s3
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32
+    - <<: *if-label-example_test_esp32c3
+    - <<: *if-label-example_test_esp32s2
+    - <<: *if-label-example_test_esp32s3
+    - <<: *if-label-host_test
+    - <<: *if-label-integration_test
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32
+    - <<: *if-label-unit_test_esp32c3
+    - <<: *if-label-unit_test_esp32s2
+    - <<: *if-label-unit_test_esp32s3
+    - <<: *if-dev-push
+      changes: *patterns-build-example_test
+    - <<: *if-dev-push
+      changes: *patterns-component_ut
+    - <<: *if-dev-push
+      changes: *patterns-custom_test
+    - <<: *if-dev-push
+      changes: *patterns-example_test
+    - <<: *if-dev-push
+      changes: *patterns-host_test
+    - <<: *if-dev-push
+      changes: *patterns-integration_test
+    - <<: *if-dev-push
+      changes: *patterns-unit_test
+
+.rules:test:component_ut-esp32:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-component_ut
+    - <<: *if-label-component_ut_esp32
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32
+    - <<: *if-dev-push
+      changes: *patterns-component_ut
+
+.rules:test:component_ut-esp32c3:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-component_ut
+    - <<: *if-label-component_ut_esp32c3
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32c3
+    - <<: *if-dev-push
+      changes: *patterns-component_ut
+
+.rules:test:component_ut-esp32s2:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-component_ut
+    - <<: *if-label-component_ut_esp32s2
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32s2
+    - <<: *if-dev-push
+      changes: *patterns-component_ut
+
+.rules:test:component_ut-esp32s3:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-component_ut
+    - <<: *if-label-component_ut_esp32s3
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32s3
+    - <<: *if-dev-push
+      changes: *patterns-component_ut
+
+.rules:test:custom_test-esp32:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-custom_test
+    - <<: *if-label-custom_test_esp32
+    - <<: *if-dev-push
+      changes: *patterns-custom_test
+
+.rules:test:custom_test-esp32c3:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-custom_test
+    - <<: *if-label-custom_test_esp32c3
+    - <<: *if-dev-push
+      changes: *patterns-custom_test
+
+.rules:test:custom_test-esp32s2:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-custom_test
+    - <<: *if-label-custom_test_esp32s2
+    - <<: *if-dev-push
+      changes: *patterns-custom_test
+
+.rules:test:custom_test-esp32s3:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-custom_test
+    - <<: *if-label-custom_test_esp32s3
+    - <<: *if-dev-push
+      changes: *patterns-custom_test
+
+.rules:test:example_test-esp32:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32
+    - <<: *if-dev-push
+      changes: *patterns-build-example_test
+    - <<: *if-dev-push
+      changes: *patterns-example_test
+
+.rules:test:example_test-esp32c3:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32c3
+    - <<: *if-dev-push
+      changes: *patterns-build-example_test
+    - <<: *if-dev-push
+      changes: *patterns-example_test
+
+.rules:test:example_test-esp32s2:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32s2
+    - <<: *if-dev-push
+      changes: *patterns-build-example_test
+    - <<: *if-dev-push
+      changes: *patterns-example_test
+
+.rules:test:example_test-esp32s3:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32s3
+    - <<: *if-dev-push
+      changes: *patterns-build-example_test
+    - <<: *if-dev-push
+      changes: *patterns-example_test
+
+.rules:test:host_test:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-host_test
+    - <<: *if-dev-push
+      changes: *patterns-host_test
+
+.rules:test:integration_test:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-integration_test
+    - <<: *if-dev-push
+      changes: *patterns-integration_test
+
+.rules:test:submodule:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-submodule
+    - <<: *if-dev-push
+      changes: *patterns-submodule
+
+.rules:test:target_test:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-component_ut
+    - <<: *if-label-component_ut_esp32
+    - <<: *if-label-component_ut_esp32c3
+    - <<: *if-label-component_ut_esp32s2
+    - <<: *if-label-component_ut_esp32s3
+    - <<: *if-label-custom_test
+    - <<: *if-label-custom_test_esp32
+    - <<: *if-label-custom_test_esp32c3
+    - <<: *if-label-custom_test_esp32s2
+    - <<: *if-label-custom_test_esp32s3
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32
+    - <<: *if-label-example_test_esp32c3
+    - <<: *if-label-example_test_esp32s2
+    - <<: *if-label-example_test_esp32s3
+    - <<: *if-label-integration_test
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32
+    - <<: *if-label-unit_test_esp32c3
+    - <<: *if-label-unit_test_esp32s2
+    - <<: *if-label-unit_test_esp32s3
+    - <<: *if-dev-push
+      changes: *patterns-build-example_test
+    - <<: *if-dev-push
+      changes: *patterns-component_ut
+    - <<: *if-dev-push
+      changes: *patterns-custom_test
+    - <<: *if-dev-push
+      changes: *patterns-example_test
+    - <<: *if-dev-push
+      changes: *patterns-integration_test
+    - <<: *if-dev-push
+      changes: *patterns-unit_test
+
+.rules:test:unit_test-esp32:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32
+    - <<: *if-dev-push
+      changes: *patterns-unit_test
+
+.rules:test:unit_test-esp32c3:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-unit_test_esp32c3
+
+.rules:test:unit_test-esp32s2:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32s2
+    - <<: *if-dev-push
+      changes: *patterns-unit_test
+
+.rules:test:unit_test-esp32s3:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32s3
+    - <<: *if-dev-push
+      changes: *patterns-unit_test
