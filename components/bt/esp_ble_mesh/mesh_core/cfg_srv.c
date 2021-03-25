@@ -2352,7 +2352,7 @@ send_status:
 
     if (status == STATUS_SUCCESS) {
         bt_mesh_cfg_server_state_change_t change = {0};
-        change.cfg_netkey_delete.net_idx = sub->net_idx;
+        change.cfg_netkey_delete.net_idx = sub ? sub->net_idx : BLE_MESH_KEY_UNUSED;
         bt_mesh_config_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_CONFIG_SERVER_STATE_CHANGE,
                                             model, ctx, (const uint8_t *)&change, sizeof(change));
     }
