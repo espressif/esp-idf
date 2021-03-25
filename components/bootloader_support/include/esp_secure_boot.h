@@ -123,6 +123,19 @@ typedef struct {
 
 esp_err_t esp_secure_boot_verify_signature_block(const esp_secure_boot_sig_block_t *sig_block, const uint8_t *image_digest);
 
+/** @brief Verify the ECDSA secure boot signature block for Secure Boot.
+ *
+ *  Calculates Deterministic ECDSA w/ SHA256 based on the SHA256 hash of the image. ECDSA signature
+ *  verification must be enabled in project configuration to use this function.
+ *
+ * Similar to esp_secure_boot_verify_signature(), but can be used when the digest is precalculated.
+ * @param sig_block Pointer to ECDSA signature block data
+ * @param image_digest Pointer to 32 byte buffer holding SHA-256 hash.
+ * @param verified_digest Pointer to 32 byte buffer that will receive verified digest if verification completes. (Used during bootloader implementation only, result is invalid otherwise.)
+ *
+ */
+esp_err_t esp_secure_boot_verify_ecdsa_signature_block(const esp_secure_boot_sig_block_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest);
+
 #define FLASH_OFFS_SECURE_BOOT_IV_DIGEST 0
 
 /** @brief Secure boot IV+digest header */
