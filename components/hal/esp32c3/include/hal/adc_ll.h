@@ -53,6 +53,7 @@ typedef enum {
     ADC_RTC_DATA_FAIL = -1,
 } adc_ll_rtc_raw_data_t;
 
+//These values should be set according to the HW
 typedef enum {
     ADC_LL_INTR_THRES1_LOW  = BIT(26),
     ADC_LL_INTR_THRES0_LOW  = BIT(27),

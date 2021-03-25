@@ -175,6 +175,7 @@ void adc_power_acquire(void);
  */
 void adc_power_release(void);
 
+#if !CONFIG_IDF_TARGET_ESP32C3
 /**
  * @brief Initialize ADC pad
  * @param adc_unit ADC unit index
@@ -184,12 +185,11 @@ void adc_power_release(void);
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
 esp_err_t adc_gpio_init(adc_unit_t adc_unit, adc_channel_t channel);
+#endif //#if !CONFIG_IDF_TARGET_ESP32C3
 
 /*---------------------------------------------------------------
                     ADC Single Read Setting
 ---------------------------------------------------------------*/
-
-#if !CONFIG_IDF_TARGET_ESP32C3
 /**
  * @brief Get the GPIO number of a specific ADC1 channel.
  *
@@ -201,7 +201,6 @@ esp_err_t adc_gpio_init(adc_unit_t adc_unit, adc_channel_t channel);
  *   - ESP_ERR_INVALID_ARG if channel not valid
  */
 esp_err_t adc1_pad_get_io_num(adc1_channel_t channel, gpio_num_t *gpio_num);
-#endif  //#if !CONFIG_IDF_TARGET_ESP32C3
 
 /**
  * @brief Set the attenuation of a particular channel on ADC1, and configure its associated GPIO pin mux.
@@ -326,6 +325,7 @@ esp_err_t adc_set_data_width(adc_unit_t adc_unit, adc_bits_width_t width_bit);
  * to be called to configure ADC1 channels, before ADC1 is used by the ULP.
  */
 void adc1_ulp_enable(void);
+#endif  //#if !CONFIG_IDF_TARGET_ESP32C3
 
 /**
  * @brief Get the GPIO number of a specific ADC2 channel.
@@ -339,7 +339,6 @@ void adc1_ulp_enable(void);
  *   - ESP_ERR_INVALID_ARG if channel not valid
  */
 esp_err_t adc2_pad_get_io_num(adc2_channel_t channel, gpio_num_t *gpio_num);
-#endif  //#if !CONFIG_IDF_TARGET_ESP32C3
 
 /**
  * @brief Configure the ADC2 channel, including setting attenuation.
@@ -420,7 +419,6 @@ esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten);
  */
 esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *raw_out);
 
-#if !CONFIG_IDF_TARGET_ESP32C3
 /**
  *  @brief Output ADC1 or ADC2's reference voltage to ``adc2_channe_t``'s IO.
  *
@@ -454,7 +452,7 @@ esp_err_t adc_vref_to_gpio(adc_unit_t adc_unit, gpio_num_t gpio);
  *                  - ESP_ERR_INVALID_ARG: Unsupported GPIO
  */
 esp_err_t adc2_vref_to_gpio(gpio_num_t gpio) __attribute__((deprecated));
-#endif  //#if !CONFIG_IDF_TARGET_ESP32C3
+
 /*---------------------------------------------------------------
                     Digital controller setting
 ---------------------------------------------------------------*/

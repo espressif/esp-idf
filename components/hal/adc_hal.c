@@ -95,7 +95,6 @@ static void cal_setup(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t att
 {
     adc_ll_onetime_sample_enable(ADC_NUM_1, false);
     adc_ll_onetime_sample_enable(ADC_NUM_2, false);
-    adc_ll_set_power_manage(ADC_POWER_SW_ON);
     /* Enable/disable internal connect GND (for calibration). */
     if (internal_gnd) {
         const int esp32c3_invalid_chan = (adc_n == ADC_NUM_1)? 0xF: 0x1;
@@ -220,7 +219,7 @@ void adc_hal_fifo_reset(adc_hal_context_t *hal)
     gdma_ll_rx_reset_channel(hal->dev, hal->dma_chan);
 }
 
-static void adc_hal_digi_dma_multi_descriptor(dma_descriptor_t *desc, uint8_t *data_buf, uint32_t size, uint32_t num)
+static void adc_hal_digi_dma_link_descriptors(dma_descriptor_t *desc, uint8_t *data_buf, uint32_t size, uint32_t num)
 {
     assert(((uint32_t)data_buf % 4) == 0);
     assert((size % 4) == 0);
@@ -238,18 +237,18 @@ static void adc_hal_digi_dma_multi_descriptor(dma_descriptor_t *desc, uint8_t *d
     desc[n-1].next = NULL;
 }
 
-void adc_hal_digi_rxdma_start(adc_hal_context_t *hal, uint8_t *data_buf, uint32_t size)
+void adc_hal_digi_rxdma_start(adc_hal_context_t *hal, uint8_t *data_buf)
 {
     //reset the current descriptor address
     hal->cur_desc_ptr = &hal->desc_dummy_head;
-    adc_hal_digi_dma_multi_descriptor(hal->rx_desc, data_buf, size, hal->desc_max_num);
+    adc_hal_digi_dma_link_descriptors(hal->rx_desc, data_buf, hal->eof_num * ADC_HAL_DATA_LEN_PER_CONV, hal->desc_max_num);
     gdma_ll_rx_set_desc_addr(hal->dev, hal->dma_chan, (uint32_t)hal->rx_desc);
     gdma_ll_rx_start(hal->dev, hal->dma_chan);
 }
 
 void adc_hal_digi_start(adc_hal_context_t *hal)
 {
-    //Set to 1: the ADC data will be sent to the DMA
+    //the ADC data will be sent to the DMA
     adc_ll_digi_dma_enable();
     //enable sar adc timer
     adc_ll_digi_trigger_enable();
@@ -257,17 +256,18 @@ void adc_hal_digi_start(adc_hal_context_t *hal)
 
 adc_hal_dma_desc_status_t adc_hal_get_reading_result(adc_hal_context_t *hal, const intptr_t eof_desc_addr, dma_descriptor_t **cur_desc)
 {
+    assert(hal->cur_desc_ptr);
     if (!hal->cur_desc_ptr->next) {
-        return ADC_DMA_DESC_NULL;
+        return ADC_HAL_DMA_DESC_NULL;
     }
     if ((intptr_t)hal->cur_desc_ptr == eof_desc_addr) {
-        return ADC_DMA_DESC_NOT_FINISH;
+        return ADC_HAL_DMA_DESC_WAITING;
     }
 
     hal->cur_desc_ptr = hal->cur_desc_ptr->next;
     *cur_desc = hal->cur_desc_ptr;
 
-    return ADC_DMA_DESC_FINISH;
+    return ADC_HAL_DMA_DESC_VALID;
 }
 
 void adc_hal_digi_rxdma_stop(adc_hal_context_t *hal)
@@ -372,6 +372,8 @@ esp_err_t adc_hal_convert(adc_ll_num_t adc_n, int channel, int *out_raw)
     }
 
     adc_hal_intr_clear(event);
+    adc_ll_onetime_sample_enable(ADC_NUM_1, false);
+    adc_ll_onetime_sample_enable(ADC_NUM_2, false);
     adc_ll_onetime_sample_enable(adc_n, true);
     adc_ll_onetime_set_channel(adc_n, channel);
 
@@ -379,7 +381,6 @@ esp_err_t adc_hal_convert(adc_ll_num_t adc_n, int channel, int *out_raw)
     adc_hal_onetime_start();
     while (!adc_hal_intr_get_raw(event));
     ret = adc_hal_single_read(adc_n, out_raw);
-    adc_ll_onetime_sample_enable(adc_n, false);
 
     return ret;
 }
