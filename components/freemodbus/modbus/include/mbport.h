@@ -74,14 +74,15 @@ typedef enum {
     EV_MASTER_PROCESS_SUCCESS = 0x0040,         /*!< Request process success. */
     EV_MASTER_ERROR_RESPOND_TIMEOUT = 0x0080,   /*!< Request respond timeout. */
     EV_MASTER_ERROR_RECEIVE_DATA = 0x0100,      /*!< Request receive data error. */
-    EV_MASTER_ERROR_EXECUTE_FUNCTION = 0x0200,  /*!< Request execute function error. */
+    EV_MASTER_ERROR_EXECUTE_FUNCTION = 0x0200   /*!< Request execute function error. */
 } eMBMasterEventType;
 
 typedef enum {
+    EV_ERROR_INIT,             /*!< No error, initial state. */
     EV_ERROR_RESPOND_TIMEOUT,  /*!< Slave respond timeout. */
-    EV_ERROR_RECEIVE_DATA,     /*!< Receive frame data erroe. */
+    EV_ERROR_RECEIVE_DATA,     /*!< Receive frame data error. */
     EV_ERROR_EXECUTE_FUNCTION, /*!< Execute function error. */
-    EV_ERROR_OK,               /*!< Data processed. */
+    EV_ERROR_OK                /*!< No error, processing completed. */
 } eMBMasterErrorEventType;
 #endif
 
