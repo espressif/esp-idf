@@ -1188,7 +1188,8 @@ static bool relay_to_adv(enum bt_mesh_net_if net_if)
     case BLE_MESH_NET_IF_LOCAL:
         return true;
     case BLE_MESH_NET_IF_ADV:
-        return (bt_mesh_relay_get() == BLE_MESH_RELAY_ENABLED);
+        return ((bt_mesh_relay_get() == BLE_MESH_RELAY_ENABLED) ||
+                (bt_mesh_friend_get() == BLE_MESH_FRIEND_ENABLED));
     case BLE_MESH_NET_IF_PROXY:
         return (bt_mesh_gatt_proxy_get() == BLE_MESH_GATT_PROXY_ENABLED);
     default:
@@ -1221,7 +1222,8 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 
     if (rx->net_if == BLE_MESH_NET_IF_ADV &&
             bt_mesh_relay_get() != BLE_MESH_RELAY_ENABLED &&
-            bt_mesh_gatt_proxy_get() != BLE_MESH_GATT_PROXY_ENABLED) {
+            bt_mesh_gatt_proxy_get() != BLE_MESH_GATT_PROXY_ENABLED &&
+            bt_mesh_friend_get() != BLE_MESH_FRIEND_ENABLED) {
         return;
     }
 
@@ -1378,8 +1380,9 @@ int bt_mesh_net_decode(struct net_buf_simple *data, enum bt_mesh_net_if net_if,
         return -EBADMSG;
     }
 
+    /* For case MESH/NODE/RLY/BV-01-C, even the DST is RFU, it needs to be forwarded. */
     if (BLE_MESH_ADDR_IS_RFU(rx->ctx.recv_dst)) {
-        BT_ERR("Destination address is RFU; dropping packet");
+        BT_ERR("Destination address is RFU; dropping packet 0x%02x", rx->ctx.recv_dst);
         return -EBADMSG;
     }
 
