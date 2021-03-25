@@ -169,7 +169,7 @@ def start_redirect_server(ota_image_dir, server_ip, server_port, redirection_por
     httpd.serve_forever()
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
 def test_examples_protocol_advanced_https_ota_example(env, extra_data):
     """
     This is a positive test case, which downloads complete binary file multiple number of times.
@@ -213,7 +213,7 @@ def test_examples_protocol_advanced_https_ota_example(env, extra_data):
         dut1.reset()
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
 def test_examples_protocol_advanced_https_ota_example_truncated_bin(env, extra_data):
     """
     Working of OTA if binary file is truncated is validated in this test case.
@@ -264,7 +264,7 @@ def test_examples_protocol_advanced_https_ota_example_truncated_bin(env, extra_d
     os.remove(binary_file)
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
 def test_examples_protocol_advanced_https_ota_example_truncated_header(env, extra_data):
     """
     Working of OTA if headers of binary file are truncated is vaildated in this test case.
@@ -314,7 +314,7 @@ def test_examples_protocol_advanced_https_ota_example_truncated_header(env, extr
     os.remove(binary_file)
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
 def test_examples_protocol_advanced_https_ota_example_random(env, extra_data):
     """
     Working of OTA if random data is added in binary file are validated in this test case.
@@ -363,7 +363,7 @@ def test_examples_protocol_advanced_https_ota_example_random(env, extra_data):
     os.remove(binary_file)
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
 def test_examples_protocol_advanced_https_ota_example_chunked(env, extra_data):
     """
     This is a positive test case, which downloads complete binary file multiple number of times.
@@ -401,7 +401,7 @@ def test_examples_protocol_advanced_https_ota_example_chunked(env, extra_data):
     os.remove(os.path.join(dut1.app.binary_path, 'server_key.pem'))
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
 def test_examples_protocol_advanced_https_ota_example_redirect_url(env, extra_data):
     """
     This is a positive test case, which starts a server and a redirection server.
@@ -512,7 +512,7 @@ def test_examples_protocol_advanced_https_ota_example_anti_rollback(env, extra_d
     os.remove(anti_rollback_bin_name)
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
 def test_examples_protocol_advanced_https_ota_example_partial_request(env, extra_data):
     """
     This is a positive test case, to test OTA workflow with Range HTTP header.

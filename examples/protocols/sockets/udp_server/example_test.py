@@ -44,7 +44,7 @@ def udp_client(address, payload):
     return reply.decode()
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
 def test_examples_protocol_socket_udpserver(env, extra_data):
     MESSAGE = 'Data to ESP'
     """

@@ -62,7 +62,7 @@ class http_client_thread(threading.Thread):
 # > make print_flash_cmd | tail -n 1 > build/download.config
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
 def test_examples_protocol_http_server_simple(env, extra_data):
     # Acquire DUT
     dut1 = env.get_dut('http_server', 'examples/protocols/http_server/simple', dut_class=ttfw_idf.ESP32DUT)
@@ -129,7 +129,7 @@ def test_examples_protocol_http_server_simple(env, extra_data):
     dut1.expect('Found URL query => ' + query, timeout=30)
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
 def test_examples_protocol_http_server_lru_purge_enable(env, extra_data):
     # Acquire DUT
     dut1 = env.get_dut('http_server', 'examples/protocols/http_server/simple', dut_class=ttfw_idf.ESP32DUT)

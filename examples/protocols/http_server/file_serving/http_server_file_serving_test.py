@@ -25,7 +25,7 @@ from idf_http_server_test import adder as client
 from tiny_test_fw import Utility
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
 def test_examples_protocol_http_server_file_serving(env, extra_data):  # type: (tiny_test_fw.Env.Env, None) -> None # pylint: disable=unused-argument
     # Acquire DUT
     dut1 = env.get_dut('http file_serving', 'examples/protocols/http_server/file_serving', dut_class=ttfw_idf.ESP32DUT)

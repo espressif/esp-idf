@@ -97,7 +97,7 @@ def test_recv_long_msg(dut, websocket, msg_len, repeats):
                             \nreceived: {}\nwith length {}'.format(send_msg, len(send_msg), recv_msg, len(recv_msg)))
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
 def test_examples_protocol_websocket(env, extra_data):
     """
     steps:
