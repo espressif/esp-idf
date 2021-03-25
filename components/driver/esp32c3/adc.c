@@ -82,7 +82,6 @@ portMUX_TYPE adc_reg_lock = portMUX_INITIALIZER_UNLOCKED;
                     Digital Controller Context
 ---------------------------------------------------------------*/
 typedef struct adc_digi_context_t {
-    uint32_t                bytes_between_intr;         //bytes between in suc eof intr
     uint8_t                 *rx_dma_buf;                //dma buffer
     adc_hal_context_t       hal;                        //hal context
     gdma_channel_handle_t   rx_dma_channel;             //dma rx channel handle
@@ -158,8 +157,7 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
     }
 
     //malloc internal buffer used by DMA
-    s_adc_digi_ctx->bytes_between_intr = init_config->conv_num_each_intr;
-    s_adc_digi_ctx->rx_dma_buf = heap_caps_calloc(1, s_adc_digi_ctx->bytes_between_intr * INTERNAL_BUF_NUM, MALLOC_CAP_INTERNAL);
+    s_adc_digi_ctx->rx_dma_buf = heap_caps_calloc(1, init_config->conv_num_each_intr * INTERNAL_BUF_NUM, MALLOC_CAP_INTERNAL);
     if (!s_adc_digi_ctx->rx_dma_buf) {
         ret = ESP_ERR_NO_MEM;
         goto cleanup;
@@ -227,7 +225,7 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
     adc_hal_config_t config = {
         .desc_max_num = INTERNAL_BUF_NUM,
         .dma_chan = dma_chan,
-        .eof_num = s_adc_digi_ctx->bytes_between_intr / 4
+        .eof_num = init_config->conv_num_each_intr / ADC_HAL_DATA_LEN_PER_CONV
     };
     adc_hal_context_config(&s_adc_digi_ctx->hal, &config);
 
@@ -249,6 +247,7 @@ static IRAM_ATTR bool adc_dma_intr(adc_digi_context_t *adc_digi_ctx);
 
 static IRAM_ATTR bool adc_dma_in_suc_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
+    assert(event_data);
     adc_digi_context_t *adc_digi_ctx = (adc_digi_context_t *)user_data;
     adc_digi_ctx->rx_eof_desc_addr = event_data->rx_eof_desc_addr;
     return adc_dma_intr(adc_digi_ctx);
@@ -263,7 +262,7 @@ static IRAM_ATTR bool adc_dma_intr(adc_digi_context_t *adc_digi_ctx)
 
     while (1) {
         status = adc_hal_get_reading_result(&adc_digi_ctx->hal, adc_digi_ctx->rx_eof_desc_addr, &current_desc);
-        if (status != ADC_DMA_DESC_FINISH) {
+        if (status != ADC_HAL_DMA_DESC_VALID) {
             break;
         }
 
@@ -274,16 +273,12 @@ static IRAM_ATTR bool adc_dma_intr(adc_digi_context_t *adc_digi_ctx)
         }
     }
 
-    if (status == ADC_DMA_DESC_NULL) {
+    if (status == ADC_HAL_DMA_DESC_NULL) {
         //start next turns of dma operation
-        adc_hal_digi_rxdma_start(&adc_digi_ctx->hal, adc_digi_ctx->rx_dma_buf, adc_digi_ctx->bytes_between_intr);
+        adc_hal_digi_rxdma_start(&adc_digi_ctx->hal, adc_digi_ctx->rx_dma_buf);
     }
 
-    if (taskAwoken == pdTRUE) {
-        return true;
-    } else {
-        return false;
-    }
+    return (taskAwoken == pdTRUE);
 }
 
 esp_err_t adc_digi_start(void)
@@ -295,9 +290,6 @@ esp_err_t adc_digi_start(void)
     //reset flags
     s_adc_digi_ctx->ringbuf_overflow_flag = 0;
     s_adc_digi_ctx->driver_start_flag = 1;
-
-    esp_rom_printf("adc start\n");
-
     if (s_adc_digi_ctx->use_adc1) {
         SAR_ADC1_LOCK_ACQUIRE();
     }
@@ -328,7 +320,7 @@ esp_err_t adc_digi_start(void)
     //reset ADC and DMA
     adc_hal_fifo_reset(&s_adc_digi_ctx->hal);
     //start DMA
-    adc_hal_digi_rxdma_start(&s_adc_digi_ctx->hal, s_adc_digi_ctx->rx_dma_buf, s_adc_digi_ctx->bytes_between_intr);
+    adc_hal_digi_rxdma_start(&s_adc_digi_ctx->hal, s_adc_digi_ctx->rx_dma_buf);
     //start ADC
     adc_hal_digi_start(&s_adc_digi_ctx->hal);
 
@@ -442,6 +434,38 @@ esp_err_t adc_digi_deinitialize(void)
 static adc_atten_t s_atten1_single[ADC1_CHANNEL_MAX];    //Array saving attenuate of each channel of ADC1, used by single read API
 static adc_atten_t s_atten2_single[ADC2_CHANNEL_MAX];    //Array saving attenuate of each channel of ADC2, used by single read API
 
+esp_err_t adc_vref_to_gpio(adc_unit_t adc_unit, gpio_num_t gpio)
+{
+    esp_err_t ret;
+    uint32_t channel = ADC2_CHANNEL_MAX;
+    if (adc_unit == ADC_UNIT_2) {
+        for (int i = 0; i < ADC2_CHANNEL_MAX; i++) {
+            if (gpio == ADC_GET_IO_NUM(ADC_NUM_2, i)) {
+                channel = i;
+                break;
+            }
+        }
+        if (channel == ADC2_CHANNEL_MAX) {
+            return ESP_ERR_INVALID_ARG;
+        }
+    }
+
+    adc_hal_set_power_manage(ADC_POWER_SW_ON);
+    if (adc_unit & ADC_UNIT_1) {
+        ADC_ENTER_CRITICAL();
+        adc_hal_vref_output(ADC_NUM_1, channel, true);
+        ADC_EXIT_CRITICAL()
+    } else if (adc_unit & ADC_UNIT_2) {
+        ADC_ENTER_CRITICAL();
+        adc_hal_vref_output(ADC_NUM_2, channel, true);
+        ADC_EXIT_CRITICAL()
+    }
+
+    ret = adc_digi_gpio_init(ADC_NUM_2, BIT(channel));
+
+    return ret;
+}
+
 esp_err_t adc1_config_width(adc_bits_width_t width_bit)
 {
     //On ESP32C3, the data width is always 12-bits.
@@ -470,22 +494,24 @@ int adc1_get_raw(adc1_channel_t channel)
 {
     int raw_out = 0;
 
-    SAR_ADC1_LOCK_ACQUIRE();
     periph_module_enable(PERIPH_SARADC_MODULE);
+
+    SAR_ADC1_LOCK_ACQUIRE();
 
     adc_atten_t atten = s_atten1_single[channel];
     uint32_t cal_val = adc_get_calibration_offset(ADC_NUM_1, channel, atten);
+    adc_hal_set_calibration_param(ADC_NUM_1, cal_val);
 
     ADC_REG_LOCK_ENTER();
-    adc_hal_set_calibration_param(ADC_NUM_1, cal_val);
     adc_hal_set_power_manage(ADC_POWER_SW_ON);
     adc_hal_set_atten(ADC_NUM_2, channel, atten);
     adc_hal_convert(ADC_NUM_1, channel, &raw_out);
     adc_hal_set_power_manage(ADC_POWER_BY_FSM);
     ADC_REG_LOCK_EXIT();
 
-    periph_module_disable(PERIPH_SARADC_MODULE);
     SAR_ADC1_LOCK_RELEASE();
+
+    periph_module_disable(PERIPH_SARADC_MODULE);
 
     return raw_out;
 }
@@ -513,22 +539,24 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 
     esp_err_t ret = ESP_OK;
 
-    SAR_ADC2_LOCK_ACQUIRE();
     periph_module_enable(PERIPH_SARADC_MODULE);
+
+    SAR_ADC2_LOCK_ACQUIRE();
 
     adc_atten_t atten = s_atten2_single[channel];
     uint32_t cal_val = adc_get_calibration_offset(ADC_NUM_2, channel, atten);
+    adc_hal_set_calibration_param(ADC_NUM_2, cal_val);
 
     ADC_REG_LOCK_ENTER();
-    adc_hal_set_calibration_param(ADC_NUM_2, cal_val);
     adc_hal_set_power_manage(ADC_POWER_SW_ON);
     adc_hal_set_atten(ADC_NUM_2, channel, atten);
     ret = adc_hal_convert(ADC_NUM_2, channel, raw_out);
     adc_hal_set_power_manage(ADC_POWER_BY_FSM);
     ADC_REG_LOCK_EXIT();
 
-    periph_module_disable(PERIPH_SARADC_MODULE);
     SAR_ADC2_LOCK_RELEASE();
+
+    periph_module_disable(PERIPH_SARADC_MODULE);
 
     return ret;
 }

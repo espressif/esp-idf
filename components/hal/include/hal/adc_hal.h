@@ -13,13 +13,16 @@
 #include "hal/dma_types.h"
 #include "esp_err.h"
 
+//For ADC module, each conversion contains 4 bytes
+#define ADC_HAL_DATA_LEN_PER_CONV 4
+
 /**
  * @brief Enum for DMA descriptor status
  */
-typedef enum adc_hal_dma_desc_status_t{
-    ADC_DMA_DESC_FINISH     = 0,            ///< This DMA descriptor is written by HW already
-    ADC_DMA_DESC_NOT_FINISH = 1,            ///< This DMA descriptor is not written by HW yet
-    ADC_DMA_DESC_NULL       = 2             ///< This DMA descriptor is NULL
+typedef enum adc_hal_dma_desc_status_t {
+    ADC_HAL_DMA_DESC_VALID   = 0,            ///< This DMA descriptor is written by HW already
+    ADC_HAL_DMA_DESC_WAITING = 1,            ///< This DMA descriptor is not written by HW yet
+    ADC_HAL_DMA_DESC_NULL    = 2             ///< This DMA descriptor is NULL
 } adc_hal_dma_desc_status_t;
 
 /**
@@ -46,7 +49,7 @@ typedef struct adc_hal_context_t {
     /**< these need to be configured by `adc_hal_config_t` via driver layer*/
     uint32_t            desc_max_num;       ///< Number of the descriptors linked once
     uint32_t            dma_chan;           ///< DMA channel to be used
-    uint32_t            eof_num;            ///< Bytes between 2 in_suc_eof interrupts
+    uint32_t            eof_num;            ///< Words between 2 in_suc_eof interrupts
 } adc_hal_context_t;
 #endif
 
@@ -154,6 +157,7 @@ void adc_hal_deinit(void);
  * @prarm adc_n ADC unit.
  */
 #define adc_hal_rtc_output_invert(adc_n, inv_en) adc_ll_rtc_output_invert(adc_n, inv_en)
+#endif  //#if !CONFIG_IDF_TARGET_ESP32C3
 
 /**
  *  Enable/disable the output of ADCn's internal reference voltage to one of ADC2's channels.
@@ -168,7 +172,6 @@ void adc_hal_deinit(void);
  *  @param[in]  en Enable/disable the reference voltage output
  */
 #define adc_hal_vref_output(adc, channel, en) adc_ll_vref_output(adc, channel, en)
-#endif  //#if !CONFIG_IDF_TARGET_ESP32C3
 
 /*---------------------------------------------------------------
                     Digital controller setting
@@ -245,7 +248,7 @@ void adc_hal_digi_controller_config(const adc_digi_config_t *cfg);
 #endif
 
 /**
- * Get the converted value for each ADCn for RTC controller.
+ * Start an ADC conversion and get the converted value.
  *
  * @note It may be block to wait conversion finish.
  *
@@ -330,10 +333,9 @@ void adc_hal_fifo_reset(adc_hal_context_t *hal);
  * @brief Start DMA
  *
  * @param hal      Context of the HAL
- * @param data_buf Pointer to the data buffer
- * @param size     Size of the buffer
+ * @param data_buf Pointer to the data buffer, the length should be multiple of ``desc_max_num`` and ``eof_num`` in ``adc_hal_context_t``
  */
-void adc_hal_digi_rxdma_start(adc_hal_context_t *hal, uint8_t *data_buf, uint32_t size);
+void adc_hal_digi_rxdma_start(adc_hal_context_t *hal, uint8_t *data_buf);
 
 /**
  * @brief Start ADC
