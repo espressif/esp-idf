@@ -71,7 +71,9 @@ void esp_mbedtls_free_keycert(mbedtls_ssl_context *ssl);
 void esp_mbedtls_free_keycert_cert(mbedtls_ssl_context *ssl);
 
 void esp_mbedtls_free_keycert_key(mbedtls_ssl_context *ssl);
+#endif
 
+#ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_CA_CERT
 void esp_mbedtls_free_cacert(mbedtls_ssl_context *ssl);
 #endif
 

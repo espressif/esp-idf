@@ -9,6 +9,7 @@ set(srcs
     "src/bootloader_utility.c"
     "src/esp_image_format.c"
     "src/flash_encrypt.c"
+    "src/secure_boot.c"
     "src/flash_partitions.c"
     "src/flash_qio_mode.c"
     "src/bootloader_flash_config_${IDF_TARGET}.c"

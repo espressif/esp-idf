@@ -5,6 +5,7 @@ entries:
     panic_handler (noflash)
     panic_arch (noflash)
     reset_reason (noflash)
+    esp_err (noflash)
     system_api:esp_system_abort (noflash)
 
     if ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF:

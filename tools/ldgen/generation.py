@@ -22,72 +22,126 @@ from collections import namedtuple
 from entity import Entity
 from fragments import Mapping, Scheme, Sections
 from ldgen_common import LdGenFailure
-from output_commands import InputSectionDesc
+from output_commands import AlignAtAddress, InputSectionDesc, SymbolAtAddress
 
 
-class RuleNode():
+class Placement():
+    """
+    A Placement is an assignment of an entity's input sections to a target
+    in the output linker script - a precursor to the input section description.
 
-    class Section():
+    A placement can be excluded from another placement. These are represented
+    as contents of EXCLUDE_FILE in the input section description. Since the linker uses the
+    first matching rule, these exclusions make sure that accidental matching
+    of entities with higher specificity does not occur.
 
-        def __init__(self, target, exclusions, explicit=False):
-            self.target = target
-            self.exclusions = set(exclusions)
+    The placement which a placement is excluded from is referred to as the
+    'basis' placement. It operates on the same input section of the entity on
+    one of the parent (or parent's parent and so forth), but might have
+    a different target (see is_significant() for the criteria).
 
-            # Indicate whether this node has been created explicitly from a mapping,
-            # or simply just to create a path to the explicitly created node.
-            #
-            # For example,
-            #
-            # lib.a
-            #       obj:sym (scheme)
-            #
-            # Nodes for lib.a and obj will be created, but only the node for
-            # sym will have been created explicitly.
-            #
-            # This is used in deciding whether or not an output command should
-            # be emitted for this node, or for exclusion rule generation.
-            self.explicit = explicit
+    A placement is explicit if it was derived from an actual entry in one of
+    the mapping fragments. Just as intermediate entity nodes are created in some cases,
+    intermediate placements are created particularly for symbol placements.
+    The reason is that EXCLUDE_FILE does not work on symbols (see ObjectNode
+    for details).
+    """
 
-    def __init__(self, parent, name, sections):
+    def __init__(self, node, sections, target, flags, explicit, force=False, dryrun=False):
+        self.node = node
+        self.sections = sections
+        self.target = target
+        self.flags = flags
+
+        self.exclusions = set()
+        self.subplacements = set()
+
+        # Force this placement to be output
+        self.force = force
+
+        # This placement was created from a mapping
+        # fragment entry.
+        self.explicit = explicit
+
+        # Find basis placement.
+        parent = node.parent
+        candidate = None
+        while parent:
+            try:
+                candidate = parent.placements[sections]
+            except KeyError:
+                pass
+
+            if candidate and candidate.is_significant():
+                break
+            else:
+                parent = parent.parent
+
+        self.basis = candidate
+
+        if self.is_significant() and not dryrun and self.basis:
+            self.basis.add_exclusion(self)
+
+    def is_significant(self):
+        # Check if the placement is significant. Significant placements
+        # are the end of a basis chain (not self.basis) or a change
+        # in target (self.target != self.basis.target)
+        #
+        # Placement can also be a basis if it has flags
+        # (self.flags) or its basis has flags (self.basis.flags)
+        return (not self.basis or
+                self.target != self.basis.target or
+                (self.flags and not self.basis.flags) or
+                (not self.flags and self.basis.flags) or
+                self.force)
+
+    def force_significant(self):
+        if not self.is_significant():
+            self.force = True
+            if self.basis:
+                self.basis.add_exclusion(self)
+
+    def add_exclusion(self, exclusion):
+        self.exclusions.add(exclusion)
+
+    def add_subplacement(self, subplacement):
+        self.subplacements.add(subplacement)
+
+
+class EntityNode():
+    """
+    Node in entity tree. An EntityNode
+    is created from an Entity (see entity.py).
+
+    The entity tree has a maximum depth of 3. Nodes at different
+    depths are derived from this class for special behavior (see
+    RootNode, ArchiveNode, ObjectNode, SymbolNode) depending
+    on entity specificity.
+
+    Nodes for entities are inserted at the appropriate depth, creating
+    intermediate nodes along the path if necessary. For example, a node
+    for entity `lib1.a:obj1:sym1` needs to be inserted. If the node for `lib1:obj1`
+    does not exist, then it needs to be created.
+
+    A node contains a dictionary of placements (see Placement).
+    The key to this dictionary are contents of sections fragments,
+    representing the input sections of an entity. For example,
+    a node for entity `lib1.a` might have a placement entry for its `.text` input section
+    in this dictionary. The placement will contain details about the
+    target, the flags, etc.
+
+    Generation of output commands to be written to the output linker script
+    requires traversal of the tree, each node collecting the output commands
+    from its children, so on and so forth.
+    """
+
+    def __init__(self, parent, name):
         self.children = []
         self.parent = parent
         self.name = name
-        self.child_node = None
+        self.child_t = EntityNode
         self.entity = None
-
-        self.sections = dict()
-
-        # A node inherits the section -> target entries from
-        # its parent. This is to simplify logic, avoiding
-        # going up the parental chain to try a 'basis' rule
-        # in creating exclusions. This relies on the fact that
-        # the mappings must be inserted from least to most specific.
-        # This sort is done in generate_rules().
-        if sections:
-            for (s, v) in sections.items():
-                self.sections[s] = RuleNode.Section(v.target, [], [])
-
-    def add_exclusion(self, sections, exclusion):
-        self.sections[sections].exclusions.add(exclusion)
-
-        # Recursively create exclusions in parents
-        if self.parent:
-            self.exclude_from_parent(sections)
-
-    def add_sections(self, sections, target):
-        try:
-            _sections = self.sections[sections]
-            if not _sections.explicit:
-                _sections.target = target
-                _sections.explicit = True
-            else:
-                if target != _sections.target:
-                    raise GenerationException('Sections mapped to multiple targets')
-        except KeyError:
-            self.sections[sections] = RuleNode.Section(target, [], True)
-
-    def exclude_from_parent(self, sections):
-        self.parent.add_exclusion(sections, self.entity)
+        self.placements = dict()
 
     def add_child(self, entity):
         child_specificity = self.entity.specificity.value + 1
@@ -99,7 +153,7 @@ class RuleNode():
         assert(len(child) <= 1)
 
         if not child:
-            child = self.child_node(self, name, self.sections)
+            child = self.child_t(self, name)
             self.children.append(child)
         else:
             child = child[0]
@@ -125,151 +179,202 @@ class RuleNode():
 
         return commands
 
-    def add_node_child(self, entity, sections, target, sections_db):
+    def get_node_output_commands(self):
+        commands = collections.defaultdict(list)
+
+        for sections in self.get_output_sections():
+            placement = self.placements[sections]
+            if placement.is_significant():
+                assert(placement.node == self)
+
+                keep = False
+                sort = None
+                surround_type = []
+
+                placement_flags = placement.flags if placement.flags is not None else []
+
+                for flag in placement_flags:
+                    if isinstance(flag, Mapping.Keep):
+                        keep = True
+                    elif isinstance(flag, Mapping.Sort):
+                        sort = (flag.first, flag.second)
+                    else:  # SURROUND or ALIGN
+                        surround_type.append(flag)
+
+                for flag in surround_type:
+                    if flag.pre:
+                        if isinstance(flag, Mapping.Surround):
+                            commands[placement.target].append(SymbolAtAddress('_%s_start' % flag.symbol))
+                        else:  # ALIGN
+                            commands[placement.target].append(AlignAtAddress(flag.alignment))
+
+                # This is for expanded object node and symbol node placements without checking for
+                # the type.
+                placement_sections = frozenset(placement.sections)
+                command_sections = sections if sections == placement_sections else placement_sections
+
+                command = InputSectionDesc(placement.node.entity, command_sections, [e.node.entity for e in placement.exclusions], keep, sort)
+                commands[placement.target].append(command)
+
+                # Generate commands for intermediate, non-explicit exclusion placements here, so that they can be enclosed by
+                # flags that affect the parent placement.
+                for subplacement in placement.subplacements:
+                    if not subplacement.flags and not subplacement.explicit:
+                        command = InputSectionDesc(subplacement.node.entity, subplacement.sections,
+                                                   [e.node.entity for e in subplacement.exclusions], keep, sort)
+                        commands[placement.target].append(command)
+
+                for flag in surround_type:
+                    if flag.post:
+                        if isinstance(flag, Mapping.Surround):
+                            commands[placement.target].append(SymbolAtAddress('_%s_end' % flag.symbol))
+                        else:  # ALIGN
+                            commands[placement.target].append(AlignAtAddress(flag.alignment))
+
+        return commands
+
+    def self_placement(self, sections, target, flags, explicit=True, force=False):
+        placement = Placement(self, sections, target, flags, explicit, force)
+        self.placements[sections] = placement
+        return placement
+
+    def child_placement(self, entity, sections, target, flags, sections_db):
         child = self.add_child(entity)
-        child.insert(entity, sections, target, sections_db)
+        child.insert(entity, sections, target, flags, sections_db)
 
-    def get_node_output_commands(self):
-        commands = collections.defaultdict(list)
-
-        for sections in self.get_section_keys():
-            info = self.sections[sections]
-            if info.exclusions or info.explicit:
-                command = InputSectionDesc(self.entity, sections, info.exclusions)
-                commands[info.target].append(command)
-
-        return commands
-
-    def insert(self, entity, sections, target, sections_db):
+    def insert(self, entity, sections, target, flags, sections_db):
         if self.entity.specificity == entity.specificity:
-            if self.parent.sections[sections].target != target:
-                self.add_sections(sections, target)
-                self.exclude_from_parent(sections)
+            # Since specificities match, create the placement in this node.
+            self.self_placement(sections, target, flags)
         else:
-            self.add_node_child(entity, sections, target, sections_db)
+            # If not, create a child node and try to create the placement there.
+            self.child_placement(entity, sections, target, flags, sections_db)
 
-    def get_section_keys(self):
-        return sorted(self.sections.keys(), key=' '.join)
-
-
-class SymbolNode(RuleNode):
-
-    def __init__(self, parent, name, sections):
-        RuleNode.__init__(self, parent, name, sections)
-        self.entity = Entity(self.parent.parent.name, self.parent.name, self.name)
-
-    def insert(self, entity, sections, target, sections_db):
-        self.add_sections(sections, target)
-
-    def get_node_output_commands(self):
-        commands = collections.defaultdict(list)
-
-        for sections in self.get_section_keys():
-            info = self.sections[sections]
-            if info.explicit:
-                command = InputSectionDesc(Entity(self.parent.parent.name, self.parent.name), sections, [])
-                commands[info.target].append(command)
-
-        return commands
+    def get_output_sections(self):
+        return sorted(self.placements.keys(), key=' '.join)
 
 
-class ObjectNode(RuleNode):
+class SymbolNode(EntityNode):
+    """
+    Entities at depth=3. Represents entities with archive, object
+    and symbol specified.
+    """
+    def __init__(self, parent, name):
+        EntityNode.__init__(self, parent, name)
+        self.entity = Entity(self.parent.parent.name, self.parent.name)
 
-    def __init__(self, parent, name, sections):
-        RuleNode.__init__(self, parent, name, sections)
-        self.child_node = SymbolNode
-        self.expanded_sections = dict()
+
+class ObjectNode(EntityNode):
+    """
+    Entities at depth=2. Represents entities with archive
+    and object specified.
+
+    Creating a placement on a child node (SymbolNode) has a different behavior, since
+    exclusions using EXCLUDE_FILE for symbols does not work.
+
+    The sections of this entity has to be 'expanded'. That is, we must
+    look into the actual input sections of this entity and remove
+    the ones corresponding to the symbol. The remaining sections of an expanded
+    object entity will be listed one-by-one in the corresponding
+    input section description.
+
+    An intermediate placement on this node is created, if one does not exist,
+    and is the one excluded from its basis placement.
+    """
+    def __init__(self, parent, name):
+        EntityNode.__init__(self, parent, name)
+        self.child_t = SymbolNode
         self.entity = Entity(self.parent.name, self.name)
+        self.subplacements = list()
 
-    def add_node_child(self, entity, sections, target, sections_db):
-        if self.sections[sections].target != target:
-            symbol = entity.symbol
-            match_sections = None
+    def child_placement(self, entity, sections, target, flags, sections_db):
+        child = self.add_child(entity)
+        sym_placement = Placement(child, sections, target, flags, True, dryrun=True)
 
-            obj_sections = sections_db.get_sections(self.parent.name, self.name)
-
+        # The basis placement for sym_placement can either be
+        # an existing placement on this node, or nonexistent.
+        if sym_placement.is_significant():
             try:
-                match_sections = self.expanded_sections[sections]
+                obj_sections = self.placements[sections].sections
             except KeyError:
-                match_sections = []
+                obj_sections = None
+
+            if not obj_sections or obj_sections == sections:
+                # Expand this section for the first time
+                found_sections = sections_db.get_sections(self.parent.name, self.name)
+                obj_sections = []
                 for s in sections:
-                    match_sections.extend(fnmatch.filter(obj_sections, s))
+                    obj_sections.extend(fnmatch.filter(found_sections, s))
 
-            if match_sections:
+            if obj_sections:
+                symbol = entity.symbol
                 remove_sections = [s.replace('.*', '.%s' % symbol) for s in sections if '.*' in s]
-                filtered_sections = [s for s in match_sections if s not in remove_sections]
+                filtered_sections = [s for s in obj_sections if s not in remove_sections]
 
-                if set(filtered_sections) != set(match_sections):  # some sections removed
-                    child = self.add_child(entity)
-                    child.insert(entity, frozenset(remove_sections), target, obj_sections)
+                if set(filtered_sections) != set(obj_sections):
+                    if sym_placement.basis:
+                        subplace = False
+                        try:
+                            # If existing placement exists, make sure that
+                            # it is emitted.
+                            obj_placement = self.placements[sections]
+                        except KeyError:
+                            # Create intermediate placement.
+                            obj_placement = self.self_placement(sections, sym_placement.basis.target, None, False)
+                            if obj_placement.basis.flags:
+                                subplace = True
 
-                    # Remember the result for node command generation
-                    self.expanded_sections[sections] = filtered_sections
-                    self.exclude_from_parent(sections)
+                        if subplace:
+                            obj_placement.basis.add_subplacement(obj_placement)
+                            self.subplacements.append(sections)
+                        else:
+                            obj_placement.force_significant()
 
-    def get_node_output_commands(self):
-        commands = collections.defaultdict(list)
+                        obj_placement.sections = filtered_sections
+                        sym_placement.basis = obj_placement
 
-        for sections in self.get_section_keys():
-            info = self.sections[sections]
+                    sym_placement.sections = remove_sections
+                    child.placements[sections] = sym_placement
 
-            try:
-                match_sections = self.expanded_sections[sections]
-            except KeyError:
-                match_sections = []
-
-            if match_sections or info.explicit:
-                command_sections = match_sections if match_sections else sections
-                command = InputSectionDesc(self.entity, command_sections, [])
-                commands[info.target].append(command)
-
-        return commands
-
-    def exclude_from_parent(self, sections):
-        # Check if there is an explicit emmission for the parent node, which is an archive node.
-        # If there is, make the exclusion there. If not, make the exclusion on the root node.
-        # This is to avoid emitting unecessary command and exclusions for the archive node and
-        # from the root node, respectively.
-        if self.parent.sections[sections].explicit:
-            self.parent.add_exclusion(sections, self.entity)
-        else:
-            self.parent.parent.add_exclusion(sections, self.entity)
+    def get_output_sections(self):
+        output_sections = [key for key in self.placements if key not in self.subplacements]
+        return sorted(output_sections, key=' '.join)
 
 
-class ArchiveNode(RuleNode):
-
-    def __init__(self, parent, name, sections):
-        RuleNode.__init__(self, parent, name, sections)
-        self.child_node = ObjectNode
+class ArchiveNode(EntityNode):
+    """
+    Entities at depth=1. Represents entities with archive specified.
+    """
+    def __init__(self, parent, name):
+        EntityNode.__init__(self, parent, name)
+        self.child_t = ObjectNode
         self.entity = Entity(self.name)
 
 
-class RootNode(RuleNode):
+class RootNode(EntityNode):
+    """
+    Single entity at depth=0. Represents entities with no specific members
+    specified.
+    """
     def __init__(self):
-        RuleNode.__init__(self, None, Entity.ALL, None)
-        self.child_node = ArchiveNode
-        self.entity = Entity('*')
-
-    def insert(self, entity, sections, target, sections_db):
-        if self.entity.specificity == entity.specificity:
-            self.add_sections(sections, target)
-        else:
-            self.add_node_child(entity, sections, target, sections_db)
+        EntityNode.__init__(self, None, Entity.ALL)
+        self.child_t = ArchiveNode
+        self.entity = Entity(Entity.ALL)
 
 
 class Generation:
     """
-    Implements generation of placement rules based on collected sections, scheme and mapping fragment.
+    Processes all fragments processed from fragment files included in the build.
+    Generates output commands (see output_commands.py) that LinkerScript (see linker_script.py) can
+    write to the output linker script.
     """
 
-    DEFAULT_SCHEME = 'default'
-
     # Processed mapping, scheme and section entries
-    EntityMapping = namedtuple('EntityMapping', 'entity sections_group target')
+    EntityMapping = namedtuple('EntityMapping', 'entity sections_group target flags')
 
     def __init__(self, check_mappings=False, check_mapping_exceptions=None):
         self.schemes = {}
-        self.sections = {}
+        self.placements = {}
         self.mappings = {}
 
         self.check_mappings = check_mappings
@@ -279,7 +384,7 @@ class Generation:
         else:
             self.check_mapping_exceptions = []
 
-    def _build_scheme_dictionary(self):
+    def _prepare_scheme_dictionary(self):
         scheme_dictionary = collections.defaultdict(dict)
 
         # Collect sections into buckets based on target name
@@ -292,7 +397,7 @@ class Generation:
                 sections_in_bucket = sections_bucket[target_name]
 
                 try:
-                    sections = self.sections[sections_name]
+                    sections = self.placements[sections_name]
                 except KeyError:
                     message = GenerationException.UNDEFINED_REFERENCE + " to sections '" + sections_name + "'."
                     raise GenerationException(message, scheme)
@@ -324,12 +429,13 @@ class Generation:
 
         return scheme_dictionary
 
-    def get_section_strs(self, section):
-        s_list = [Sections.get_section_data_from_entry(s) for s in section.entries]
-        return frozenset([item for sublist in s_list for item in sublist])
+    def _prepare_entity_mappings(self, scheme_dictionary, entities):
+        # Prepare entity mappings processed from mapping fragment entries.
+        def get_section_strs(section):
+            s_list = [Sections.get_section_data_from_entry(s) for s in section.entries]
+            return frozenset([item for sublist in s_list for item in sublist])
 
-    def _generate_entity_mappings(self, scheme_dictionary, entities):
-        entity_mappings = []
+        entity_mappings = dict()
 
         for mapping in self.mappings.values():
             archive = mapping.archive
@@ -345,45 +451,77 @@ class Generation:
                         message = "'%s' not found" % str(entity)
                         raise GenerationException(message, mapping)
 
-                # Create placement rule for each 'section -> target' in the scheme.
-                #
-                # For example. for the mapping entry:
-                #
-                # obj (scheme)
-                #
-                # The enumrated to:
-                #
-                # obj (section1 -> target1)
-                # obj (section2 -> target2)
-                # ...
+                if (obj, symbol, scheme_name) in mapping.flags.keys():
+                    flags = mapping.flags[(obj, symbol, scheme_name)]
+                    # Check if all section->target defined in the current
+                    # scheme.
+                    for (s, t, f) in flags:
+                        if (t not in scheme_dictionary[scheme_name].keys() or
+                                s not in [_s.name for _s in scheme_dictionary[scheme_name][t]]):
+
+                            message = "%s->%s not defined in scheme '%s'" % (s, t, scheme_name)
+                            raise GenerationException(message, mapping)
+                else:
+                    flags = None
+
+                # Create placement for each 'section -> target' in the scheme.
                 for (target, sections) in scheme_dictionary[scheme_name].items():
                     for section in sections:
-                        entity_mappings.append(Generation.EntityMapping(entity, self.get_section_strs(section), target))
+                        # Find the applicable flags
+                        _flags = []
 
-        return entity_mappings
+                        if flags:
+                            for (s, t, f) in flags:
+                                if (s, t) == (section.name, target):
+                                    _flags.extend(f)
 
-    def generate_rules(self, entities):
-        scheme_dictionary = self._build_scheme_dictionary()
+                        sections_str = get_section_strs(section)
 
-        entity_mappings = self._generate_entity_mappings(scheme_dictionary, entities)
+                        key = (entity, section.name)
 
-        entity_mappings.sort(key=lambda m: m.entity)
+                        try:
+                            existing = entity_mappings[key]
+                        except KeyError:
+                            existing = None
 
-        # Create root nodes dictionary for the default scheme, whose
-        # key is the target name and value is a list of the root nodes for that target.
+                        if not existing:
+                            entity_mappings[key] = Generation.EntityMapping(entity, sections_str, target, _flags)
+                        else:
+                            # Check for conflicts.
+                            if (target != existing.target):
+                                raise GenerationException('Sections mapped to multiple targets.', mapping)
+
+                            # Combine flags here if applicable, to simplify
+                            # insertion logic.
+                            if (_flags or existing.flags):
+                                if ((_flags and not existing.flags) or (not _flags and existing.flags)):
+                                    _flags.extend(existing.flags)
+                                    entity_mappings[key] = Generation.EntityMapping(entity,
+                                                                                    sections_str,
+                                                                                    target, _flags)
+                                elif (_flags == existing.flags):
+                                    pass
+                                else:
+                                    raise GenerationException('Conflicting flags specified.', mapping)
+
+        # Sort the mappings by specificity, so as to simplify
+        # insertion logic.
+        res = list(entity_mappings.values())
+        res.sort(key=lambda m: m.entity)
+        return res
+
+    def generate(self, entities):
+        scheme_dictionary = self._prepare_scheme_dictionary()
+        entity_mappings = self._prepare_entity_mappings(scheme_dictionary, entities)
         root_node = RootNode()
-        for (target, sections) in scheme_dictionary['default'].items():
-            for section in sections:
-                root_node.insert(Entity(), self.get_section_strs(section), target, entities)
-
         for mapping in entity_mappings:
-            (entity, sections, target) = mapping
+            (entity, sections, target, flags) = mapping
             try:
-                root_node.insert(entity, sections, target, entities)
+                root_node.insert(entity, sections, target, flags, entities)
             except ValueError as e:
                 raise GenerationException(str(e))
 
-        # Traverse the tree, creating the rules
+        # Traverse the tree, creating the placements
         commands = root_node.get_output_commands()
 
         return commands
@@ -398,7 +536,7 @@ class Generation:
                 if isinstance(fragment, Scheme):
                     dict_to_append_to = self.schemes
                 elif isinstance(fragment, Sections):
-                    dict_to_append_to = self.sections
+                    dict_to_append_to = self.placements
                 else:
                     dict_to_append_to = self.mappings
 

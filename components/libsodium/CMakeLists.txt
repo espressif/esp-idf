@@ -173,3 +173,8 @@ set_source_files_properties(
     PROPERTIES COMPILE_FLAGS
     -DRANDOMBYTES_DEFAULT_IMPLEMENTATION
 )
+
+if(CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE)
+    # some libsodium variables are only used for asserts
+    target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-unused-but-set-variable)
+endif()

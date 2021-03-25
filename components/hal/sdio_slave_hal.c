@@ -178,7 +178,7 @@ void sdio_slave_hal_hw_init(sdio_slave_context_t *hal)
 static esp_err_t init_send_queue(sdio_slave_context_t *hal)
 {
     esp_err_t ret;
-    esp_err_t rcv_res;
+    esp_err_t rcv_res __attribute((unused));
     sdio_ringbuf_t *buf = &(hal->send_desc_queue);
 
     //initialize pointers

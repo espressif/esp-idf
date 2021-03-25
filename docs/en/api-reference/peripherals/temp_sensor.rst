@@ -25,7 +25,7 @@ The conversion relationship is the first columns of the table below. Among them,
 Application Example
 -------------------
 
-Temperature sensor reading example: :example:`peripherals/temp_sensor_esp32s2`.
+Temperature sensor reading example: :example:`peripherals/temp_sensor`.
 
 API Reference - Normal Temp Sensor
 ----------------------------------

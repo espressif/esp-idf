@@ -504,8 +504,6 @@ static void rsa_key_operations(int keysize, bool check_performance, bool use_bli
     private_perf = ccomp_timer_stop();
     TEST_ASSERT_EQUAL_HEX16(0, -res);
 
-    private_perf = ccomp_timer_stop();
-
     if (check_performance && keysize == 2048) {
         TEST_PERFORMANCE_CCOMP_LESS_THAN(RSA_2048KEY_PUBLIC_OP, "public operations %d us", public_perf);
         TEST_PERFORMANCE_CCOMP_LESS_THAN(RSA_2048KEY_PRIVATE_OP, "private operations %d us", private_perf);

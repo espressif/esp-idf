@@ -84,7 +84,7 @@ void IRAM_ATTR esp_restart_noos(void)
     esp_rom_uart_tx_wait_idle(2);
 
 #ifdef CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
-    if (esp_ptr_external_ram(get_sp())) {
+    if (esp_ptr_external_ram(esp_cpu_get_sp())) {
         // If stack_addr is from External Memory (CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY is used)
         // then need to switch SP to Internal Memory otherwise
         // we will get the "Cache disabled but cached memory region accessed" error after Cache_Read_Disable.

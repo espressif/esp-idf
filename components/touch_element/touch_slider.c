@@ -406,7 +406,7 @@ static inline void slider_dispatch(te_slider_handle_t slider_handle, touch_elem_
         slider_info.event = slider_handle->event;
         slider_info.position = slider_handle->position;
         void *arg = slider_handle->config->arg;
-        slider_handle->config->callback(slider_handle, slider_info, arg);  //Event callback
+        slider_handle->config->callback(slider_handle, &slider_info, arg);  //Event callback
     }
 }
 

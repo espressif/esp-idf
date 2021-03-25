@@ -1,0 +1,135 @@
+# pre_check stage
+clang_tidy_check:
+  extends:
+    - .pre_check_base_template
+    - .rules:patterns:clang_tidy
+  image: ${CI_DOCKER_REGISTRY}/clang-static-analysis
+  artifacts:
+    reports:
+      junit: $IDF_PATH/output.xml
+    when: always
+    paths:
+      - $IDF_PATH/examples/get-started/hello_world/tidybuild/report/*
+    expire_in: 1 day
+  script:
+    - retry_failed git clone $IDF_ANALYSIS_UTILS static_analysis_utils && cd static_analysis_utils
+    # Setup parameters of triggered/regular job
+    - export TARGET_BRANCH=${BOT_CUSTOMIZED_REVISION-}
+    - ./analyze.sh $IDF_PATH/examples/get-started/hello_world/ $IDF_PATH/tools/ci/static-analysis-rules.yml $IDF_PATH/output.xml
+
+# build stage
+# Sonarqube related jobs put here for this reason:
+# Here we have two jobs. code_quality_check and code_quality_report.
+#
+# code_quality_check will analyze the code changes between your MR and
+# code repo stored in sonarqube server. The analysis result is only shown in
+# the comments under this MR and won't be transferred to the server.
+#
+# code_quality_report will analyze and transfer both of the newly added code
+# and the analysis result to the server.
+#
+# Put in the front to ensure that the newly merged code can be stored in
+# sonarqube server ASAP, in order to avoid reporting unrelated code issues
+.sonar_scan_template:
+  stage: build
+  image:
+    name: $CI_DOCKER_REGISTRY/sonarqube-scanner:2
+  before_script:
+    - source tools/ci/utils.sh
+    - export PYTHONPATH="$CI_PROJECT_DIR/tools:$CI_PROJECT_DIR/tools/ci/python_packages:$PYTHONPATH"
+    - fetch_submodules
+    # Exclude the submodules, all paths ends with /**
+    - export SUBMODULES=$(get_all_submodules)
+    # get all exclude paths specified in tools/ci/sonar_exclude_list.txt | ignore lines start with # | xargs | replace all <space> to <comma>
+    - export CUSTOM_EXCLUDES=$(cat $CI_PROJECT_DIR/tools/ci/sonar_exclude_list.txt | grep -v '^#' | xargs | sed -e 's/ /,/g')
+    # Exclude the report dir
+    - export EXCLUSIONS="$SUBMODULES,$REPORT_DIR/**,docs/_static/**,**/*.png,**/*.jpg"
+    - python $NORMALIZE_CLANGTIDY_PY $CI_PROJECT_DIR/$REPORT_DIR/warnings.txt $CI_PROJECT_DIR/$REPORT_DIR/clang_tidy_report.txt $CI_PROJECT_DIR
+  variables:
+    GIT_DEPTH: 0
+    NORMALIZE_CLANGTIDY_PY: $CI_PROJECT_DIR/tools/ci/normalize_clangtidy_path.py
+    REPORT_DIR: examples/get-started/hello_world/tidybuild/report
+  tags:
+    - host_test
+  dependencies:  # Here is not a hard dependency relationship, could be skipped when only python files changed. so we do not use "needs" here.
+    - clang_tidy_check
+
+code_quality_check:
+  extends:
+    - .sonar_scan_template
+    - .rules:patterns:static-code-analysis-preview
+  allow_failure: true  # since now it's using exit code to indicate the code analysis result,
+                       # we don't want to block ci when critical issues founded
+  script:
+    - export CI_MERGE_REQUEST_COMMITS=$(python ${CI_PROJECT_DIR}/tools/ci/ci_get_mr_info.py commits ${CI_COMMIT_REF_NAME} | tr '\n' ',')
+    # test if this branch have merge request, if not, exit 0
+    - test -n "$CI_MERGE_REQUEST_IID" || exit 0
+    - test -n "$CI_MERGE_REQUEST_COMMITS" || exit 0
+    - sonar-scanner
+      -Dsonar.analysis.mode=preview
+      -Dsonar.branch.name=$CI_COMMIT_REF_NAME
+      -Dsonar.cxx.clangtidy.reportPath=$REPORT_DIR/clang_tidy_report.txt
+      -Dsonar.cxx.includeDirectories=components,/usr/include
+      -Dsonar.exclusions=$EXCLUSIONS
+      -Dsonar.gitlab.ci_merge_request_iid=$CI_MERGE_REQUEST_IID
+      -Dsonar.gitlab.commit_sha=$CI_MERGE_REQUEST_COMMITS
+      -Dsonar.gitlab.failure_notification_mode=exit-code
+      -Dsonar.gitlab.merge_request_discussion=true
+      -Dsonar.gitlab.project_id=$CI_PROJECT_ID
+      -Dsonar.gitlab.ref_name=$CI_COMMIT_REF_NAME
+      -Dsonar.host.url=$SONAR_HOST_URL
+      -Dsonar.login=$SONAR_LOGIN
+      -Dsonar.projectBaseDir=$CI_PROJECT_DIR
+      -Dsonar.projectKey=esp-idf
+      -Dsonar.python.pylint_config=.pylintrc
+      -Dsonar.sourceEncoding=UTF-8
+      -Dsonar.sources=$CI_PROJECT_DIR
+
+code_quality_report:
+  extends:
+    - .sonar_scan_template
+    - .rules:protected
+  allow_failure: true  # since now it's using exit code to indicate the code analysis result,
+                       # we don't want to block ci when critical issues founded
+  script:
+    - sonar-scanner
+      -Dsonar.branch.name=$CI_COMMIT_REF_NAME
+      -Dsonar.cxx.clangtidy.reportPath=$REPORT_DIR/clang_tidy_report.txt
+      -Dsonar.cxx.includeDirectories=components,/usr/include
+      -Dsonar.exclusions=$EXCLUSIONS
+      -Dsonar.gitlab.commit_sha=$CI_COMMIT_SHA
+      -Dsonar.gitlab.failure_notification_mode=exit-code
+      -Dsonar.gitlab.project_id=$CI_PROJECT_ID
+      -Dsonar.gitlab.ref_name=$CI_COMMIT_REF_NAME
+      -Dsonar.host.url=$SONAR_HOST_URL
+      -Dsonar.login=$SONAR_LOGIN
+      -Dsonar.projectBaseDir=$CI_PROJECT_DIR
+      -Dsonar.projectKey=esp-idf
+      -Dsonar.python.pylint_config=.pylintrc
+      -Dsonar.sourceEncoding=UTF-8
+      -Dsonar.sources=$CI_PROJECT_DIR
+
+# deploy stage
+clang_tidy_deploy:
+  extends:
+    - .deploy_job_template
+    - .rules:patterns:clang_tidy
+  dependencies:  # set dependencies to null to avoid missing artifacts issue
+  needs:
+    - clang_tidy_check
+  tags:
+    - deploy
+    - shiny
+  script:
+    - add_doc_server_ssh_keys $DOCS_DEPLOY_KEY $DOCS_SERVER $DOCS_SERVER_USER
+    - export GIT_VER=$(git describe --always)
+    - cd $IDF_PATH/examples/get-started/hello_world/tidybuild
+    - mv report $GIT_VER
+    - tar czvf $GIT_VER.tar.gz $GIT_VER
+    - export STATIC_REPORT_PATH="web/static_analysis/esp-idf/"
+    - ssh $DOCS_SERVER -x "mkdir -p $STATIC_REPORT_PATH/clang-tidy"
+    - scp $GIT_VER.tar.gz $DOCS_SERVER:$STATIC_REPORT_PATH/clang-tidy
+    - ssh $DOCS_SERVER -x "cd $STATIC_REPORT_PATH/clang-tidy && tar xzvf $GIT_VER.tar.gz && rm -f latest && ln -s $GIT_VER latest"
+    # add link to view the report
+    - echo "[static analysis][clang tidy] $CI_DOCKER_REGISTRY/static_analysis/esp-idf/clang-tidy/${GIT_VER}/index.html"
+    - test ! -e ${GIT_VER}/FAILED_RULES || { echo 'Failed static analysis rules!'; cat ${GIT_VER}/FAILED_RULES; exit 1; }

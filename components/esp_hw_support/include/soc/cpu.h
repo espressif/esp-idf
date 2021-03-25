@@ -19,6 +19,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "esp_cpu.h"
+
 #if __XTENSA__
 #include "xt_instr_macros.h"
 // [refactor-todo] not actually needed in this header now,
@@ -29,59 +31,18 @@
 #include "xtensa/config/specreg.h"
 #endif
 
-#include "hal/cpu_hal.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** @brief Read current stack pointer address
- *
+/** @brief Read current stack pointer address.
+ * Superseded by esp_cpu_get_sp in esp_cpu.h.
  */
-static inline void *get_sp(void)
+static inline __attribute__((deprecated)) void *get_sp(void)
 {
-    return cpu_hal_get_sp();
+    return esp_cpu_get_sp();
 }
 
-/**
- * @brief Stall CPU using RTC controller
- * @param cpu_id ID of the CPU to stall (0 = PRO, 1 = APP)
- */
-void esp_cpu_stall(int cpu_id);
-
-/**
- * @brief Un-stall CPU using RTC controller
- * @param cpu_id ID of the CPU to un-stall (0 = PRO, 1 = APP)
- */
-void esp_cpu_unstall(int cpu_id);
-
-/**
- * @brief Reset CPU using RTC controller
- * @param cpu_id ID of the CPU to reset (0 = PRO, 1 = APP)
- */
-void esp_cpu_reset(int cpu_id);
-
-
-/**
- * @brief Returns true if a JTAG debugger is attached to CPU
- * OCD (on chip debug) port.
- *
- * @note If "Make exception and panic handlers JTAG/OCD aware"
- * is disabled, this function always returns false.
- */
-bool esp_cpu_in_ocd_debug_mode(void);
-
-/**
- * @brief Convert the PC register value to its true address
- *
- * The address of the current instruction is not stored as an exact uint32_t
- * representation in PC register. This function will convert the value stored in
- * the PC register to a uint32_t address.
- *
- * @param pc_raw The PC as stored in register format.
- *
- * @return Address in uint32_t format
- */
 static inline uint32_t esp_cpu_process_stack_pc(uint32_t pc)
 {
     if (pc & 0x80000000) {
@@ -90,18 +51,6 @@ static inline uint32_t esp_cpu_process_stack_pc(uint32_t pc)
     }
     //Minus 3 to get PC of previous instruction (i.e. instruction executed before return address)
     return pc - 3;
-}
-
-typedef uint32_t esp_cpu_ccount_t;
-
-static inline esp_cpu_ccount_t esp_cpu_get_ccount(void)
-{
-    return cpu_hal_get_cycle_count();
-}
-
-static inline void esp_cpu_set_ccount(esp_cpu_ccount_t val)
-{
-    cpu_hal_set_cycle_count(val);
 }
 
 /**

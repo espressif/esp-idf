@@ -1,7 +1,7 @@
 
 .. first_boot_enc
 
-.. code-block:: bash
+.. code-block:: none
 
     rst:0x1 (POWERON),boot:0xf (SPI_FAST_FLASH_BOOT)
     SPIWP:0xee
@@ -69,7 +69,7 @@
 
 .. already_en_enc
 
-.. code-block:: bash
+.. code-block:: none
 
     rst:0x3 (RTC_SW_SYS_RST),boot:0xf (SPI_FAST_FLASH_BOOT)
     Saved PC:0x403d0dde

@@ -722,6 +722,11 @@ pki_sni_callback(void *p_info, mbedtls_ssl_context *ssl,
     coap_dtls_key_t *new_entry;
 
     name = mbedtls_malloc(name_len+1);
+    if (name == NULL) {
+      ret = -1;
+      goto end;
+    }
+
     memcpy(name, uname, name_len);
     name[name_len] = '\000';
     new_entry =
@@ -736,6 +741,12 @@ pki_sni_callback(void *p_info, mbedtls_ssl_context *ssl,
     m_context->pki_sni_entry_list =
              mbedtls_realloc(m_context->pki_sni_entry_list,
                                    (i+1)*sizeof(pki_sni_entry));
+    if (m_context->pki_sni_entry_list == NULL) {
+      ret = -1;
+      mbedtls_free(name);
+      goto end;
+    }
+
     m_context->pki_sni_entry_list[i].sni = name;
     m_context->pki_sni_entry_list[i].pki_key = *new_entry;
     sni_setup_data = m_context->setup_data;
@@ -797,6 +808,11 @@ psk_sni_callback(void *p_info, mbedtls_ssl_context *ssl,
     const coap_dtls_spsk_info_t *new_entry;
 
     name = mbedtls_malloc(name_len+1);
+    if (name == NULL) {
+      ret = -1;
+      goto end;
+    }
+
     memcpy(name, uname, name_len);
     name[name_len] = '\000';
 
@@ -815,6 +831,12 @@ psk_sni_callback(void *p_info, mbedtls_ssl_context *ssl,
     m_context->psk_sni_entry_list =
              mbedtls_realloc(m_context->psk_sni_entry_list,
                                    (i+1)*sizeof(psk_sni_entry));
+
+    if (m_context->psk_sni_entry_list == NULL) {
+      ret = -1;
+      mbedtls_free(name);
+      goto end;
+    }
 
     m_context->psk_sni_entry_list[i].sni.s = name;
     m_context->psk_sni_entry_list[i].sni.length = name_len;

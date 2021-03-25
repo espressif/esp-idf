@@ -198,7 +198,6 @@ EventBits_t xEventGroupSync( EventGroupHandle_t xEventGroup, const EventBits_t u
 {
 EventBits_t uxOriginalBitValue, uxReturn;
 EventGroup_t *pxEventBits = xEventGroup;
-BaseType_t xAlreadyYielded = pdFALSE;
 BaseType_t xTimeoutOccurred = pdFALSE;
 
 	configASSERT( ( uxBitsToWaitFor & eventEVENT_BITS_CONTROL_BYTES ) == 0 );
@@ -257,14 +256,7 @@ BaseType_t xTimeoutOccurred = pdFALSE;
 
 	if( xTicksToWait != ( TickType_t ) 0 )
 	{
-		if( xAlreadyYielded == pdFALSE )
-		{
-			portYIELD_WITHIN_API();
-		}
-		else
-		{
-			mtCOVERAGE_TEST_MARKER();
-		}
+		portYIELD_WITHIN_API();
 
 		/* The task blocked to wait for its required bits to be set - at this
 		point either the required bits were set or the block time expired.  If

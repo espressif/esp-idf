@@ -21,7 +21,7 @@
 #include "driver/rtc_io.h"
 #include "hal/rtc_io_hal.h"
 
-static const char *RTCIO_TAG = "RTCIO";
+static const char __attribute__((__unused__)) *RTCIO_TAG = "RTCIO";
 
 #define RTCIO_CHECK(a, str, ret_val) ({                                             \
     if (!(a)) {                                                                     \
@@ -164,29 +164,19 @@ esp_err_t rtc_gpio_pulldown_dis(gpio_num_t gpio_num)
 
 esp_err_t rtc_gpio_hold_en(gpio_num_t gpio_num)
 {
-#ifdef CONFIG_IDF_TARGET_ESP32C3 // should use HAL here, TODO ESP32-C3 IDF-2511
-    RTCIO_CHECK(gpio_num <= GPIO_NUM_5, "RTCIO number error", ESP_ERR_INVALID_ARG);
-    REG_SET_BIT(RTC_CNTL_PAD_HOLD_REG, BIT(gpio_num));
-#else
     RTCIO_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTCIO number error", ESP_ERR_INVALID_ARG);
     RTCIO_ENTER_CRITICAL();
     rtcio_hal_hold_enable(rtc_io_number_get(gpio_num));
     RTCIO_EXIT_CRITICAL();
-#endif
     return ESP_OK;
 }
 
 esp_err_t rtc_gpio_hold_dis(gpio_num_t gpio_num)
 {
-#ifdef CONFIG_IDF_TARGET_ESP32C3 // should use HAL here, TODO ESP32-C3 IDF-2511
-    RTCIO_CHECK(gpio_num <= GPIO_NUM_5, "RTCIO number error", ESP_ERR_INVALID_ARG);
-    REG_CLR_BIT(RTC_CNTL_PAD_HOLD_REG, BIT(gpio_num));
-#else
     RTCIO_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTCIO number error", ESP_ERR_INVALID_ARG);
     RTCIO_ENTER_CRITICAL();
     rtcio_hal_hold_disable(rtc_io_number_get(gpio_num));
     RTCIO_EXIT_CRITICAL();
-#endif
     return ESP_OK;
 }
 
@@ -224,16 +214,6 @@ esp_err_t rtc_gpio_force_hold_dis_all(void)
 
 esp_err_t rtc_gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
 {
-#ifdef CONFIG_IDF_TARGET_ESP32C3 // should use HAL here, TODO ESP32-C3 IDF-2511
-    RTCIO_CHECK(gpio_num <= GPIO_NUM_5, "RTCIO number error", ESP_ERR_INVALID_ARG);
-    REG_SET_BIT(RTC_CNTL_GPIO_WAKEUP_REG, RTC_CNTL_GPIO_PIN0_WAKEUP_ENABLE_M >> gpio_num);
-
-    uint32_t reg = REG_READ(RTC_CNTL_GPIO_WAKEUP_REG);
-    reg &= (~(RTC_CNTL_GPIO_PIN0_INT_TYPE_V << (RTC_CNTL_GPIO_PIN0_INT_TYPE_S - gpio_num * 3)));
-    reg |= (intr_type << (RTC_CNTL_GPIO_PIN0_INT_TYPE_S - gpio_num * 3));
-    REG_WRITE(RTC_CNTL_GPIO_WAKEUP_REG, reg);
-    ESP_LOGD(RTCIO_TAG, "gpio wake up 0x%08x", REG_READ(RTC_CNTL_GPIO_WAKEUP_REG));
-#else
     RTCIO_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTCIO number error", ESP_ERR_INVALID_ARG);
     if (intr_type == GPIO_INTR_POSEDGE || intr_type == GPIO_INTR_NEGEDGE || intr_type == GPIO_INTR_ANYEDGE) {
         return ESP_ERR_INVALID_ARG; // Dont support this mode.
@@ -241,21 +221,15 @@ esp_err_t rtc_gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
     RTCIO_ENTER_CRITICAL();
     rtcio_hal_wakeup_enable(rtc_io_number_get(gpio_num), intr_type);
     RTCIO_EXIT_CRITICAL();
-#endif // CONFIG_IDF_TARGET_ESP32C3
     return ESP_OK;
 }
 
 esp_err_t rtc_gpio_wakeup_disable(gpio_num_t gpio_num)
 {
-#ifdef CONFIG_IDF_TARGET_ESP32C3 // should use HAL here, TODO ESP32-C3 IDF-2511
-    RTCIO_CHECK(gpio_num <= GPIO_NUM_5, "RTCIO number error", ESP_ERR_INVALID_ARG);
-    REG_CLR_BIT(RTC_CNTL_GPIO_WAKEUP_REG, RTC_CNTL_GPIO_PIN0_WAKEUP_ENABLE_M >> gpio_num);
-#else
     RTCIO_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTCIO number error", ESP_ERR_INVALID_ARG);
     RTCIO_ENTER_CRITICAL();
     rtcio_hal_wakeup_disable(rtc_io_number_get(gpio_num));
     RTCIO_EXIT_CRITICAL();
-#endif
     return ESP_OK;
 }
 

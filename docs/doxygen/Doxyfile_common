@@ -94,43 +94,42 @@ INPUT = \
     ##
     ## Peripherals - API Reference
     ##
-    $(IDF_PATH)/components/driver/include/driver/dedic_gpio.h \
+    $(IDF_PATH)/components/hal/include/hal/adc_types.h \
+    $(IDF_PATH)/components/soc/$(IDF_TARGET)/include/soc/adc_channel.h \
+    $(IDF_PATH)/components/driver/include/driver/adc_common.h \
+    $(IDF_PATH)/components/driver/$(IDF_TARGET)/include/driver/adc.h \
+    $(IDF_PATH)/components/esp_adc_cal/include/esp_adc_cal.h \
+    $(IDF_PATH)/components/hal/include/hal/dac_types.h \
+    $(IDF_PATH)/components/driver/include/driver/dac_common.h \
+    $(IDF_PATH)/components/hal/include/hal/gpio_types.h \
     $(IDF_PATH)/components/driver/include/driver/gpio.h \
+    $(IDF_PATH)/components/driver/include/driver/dedic_gpio.h \
+    $(IDF_PATH)/components/hal/include/hal/rtc_io_types.h \
     $(IDF_PATH)/components/driver/include/driver/rtc_io.h \
+    $(IDF_PATH)/components/hal/include/hal/i2c_types.h \
     $(IDF_PATH)/components/driver/include/driver/i2c.h \
+    $(IDF_PATH)/components/hal/include/hal/i2s_types.h \
     $(IDF_PATH)/components/driver/include/driver/i2s.h \
+    $(IDF_PATH)/components/hal/include/hal/ledc_types.h \
     $(IDF_PATH)/components/driver/include/driver/ledc.h \
+    $(IDF_PATH)/components/hal/include/hal/rmt_types.h \
     $(IDF_PATH)/components/driver/include/driver/rmt.h \
+    $(IDF_PATH)/components/hal/include/hal/sigmadelta_types.h \
     $(IDF_PATH)/components/driver/include/driver/sigmadelta.h \
+    $(IDF_PATH)/components/hal/include/hal/spi_types.h \
     $(IDF_PATH)/components/driver/include/driver/spi_common.h \
     $(IDF_PATH)/components/driver/include/driver/spi_master.h \
     $(IDF_PATH)/components/driver/include/driver/spi_slave.h \
     $(IDF_PATH)/components/driver/include/driver/spi_slave_hd.h \
-    $(IDF_PATH)/components/driver/$(IDF_TARGET)/include/driver/adc.h \
-    $(IDF_PATH)/components/driver/include/driver/timer.h \
-    $(IDF_PATH)/components/driver/include/driver/touch_sensor_common.h \
-    $(IDF_PATH)/components/driver/include/driver/twai.h \
-    $(IDF_PATH)/components/driver/include/driver/adc_common.h \
-    $(IDF_PATH)/components/driver/include/driver/dac_common.h \
-    $(IDF_PATH)/components/driver/include/driver/uart.h \
-    $(IDF_PATH)/components/esp_adc_cal/include/esp_adc_cal.h \
-    $(IDF_PATH)/components/hal/include/hal/dma_types.h \
-    $(IDF_PATH)/components/hal/include/hal/gpio_types.h \
-    $(IDF_PATH)/components/hal/include/hal/uart_types.h \
-    $(IDF_PATH)/components/hal/include/hal/rmt_types.h \
-    $(IDF_PATH)/components/hal/include/hal/spi_types.h \
-    $(IDF_PATH)/components/hal/include/hal/i2s_types.h \
-    $(IDF_PATH)/components/hal/include/hal/rtc_io_types.h \
-    $(IDF_PATH)/components/hal/include/hal/sigmadelta_types.h \
     $(IDF_PATH)/components/hal/include/hal/timer_types.h \
-    $(IDF_PATH)/components/hal/include/hal/ledc_types.h \
-    $(IDF_PATH)/components/hal/include/hal/i2c_types.h \
-    $(IDF_PATH)/components/hal/include/hal/dac_types.h \
-    $(IDF_PATH)/components/hal/include/hal/adc_types.h \
-    $(IDF_PATH)/components/hal/include/hal/twai_types.h \
+    $(IDF_PATH)/components/driver/include/driver/timer.h \
     $(IDF_PATH)/components/hal/include/hal/touch_sensor_types.h \
-    $(IDF_PATH)/components/soc/$(IDF_TARGET)/include/soc/adc_channel.h \
+    $(IDF_PATH)/components/driver/include/driver/touch_sensor_common.h \
+    $(IDF_PATH)/components/hal/include/hal/twai_types.h \
+    $(IDF_PATH)/components/driver/include/driver/twai.h \
+    $(IDF_PATH)/components/hal/include/hal/uart_types.h \
     $(IDF_PATH)/components/soc/$(IDF_TARGET)/include/soc/uart_channel.h \
+    $(IDF_PATH)/components/driver/include/driver/uart.h \
     ## esp_netif - API Reference
     $(IDF_PATH)/components/esp_netif/include/esp_netif.h \
     $(IDF_PATH)/components/esp_netif/include/esp_netif_net_stack.h \
@@ -182,21 +181,21 @@ INPUT = \
     ## Storage - API Reference
     ##
     ## SPI Flash and Partition APIs
+    $(IDF_PATH)/components/hal/include/hal/spi_flash_types.h \
     $(IDF_PATH)/components/spi_flash/include/esp_flash_spi_init.h \
     $(IDF_PATH)/components/spi_flash/include/esp_flash.h \
     $(IDF_PATH)/components/spi_flash/include/esp_partition.h \
     $(IDF_PATH)/components/bootloader_support/include/esp_flash_encrypt.h \
-    $(IDF_PATH)/components/hal/include/hal/spi_flash_types.h \
     ## SPIFFS
     $(IDF_PATH)/components/spiffs/include/esp_spiffs.h \
     ## SD/MMC Card Host
+    $(IDF_PATH)/components/driver/include/driver/sdmmc_types.h \
     $(IDF_PATH)/components/sdmmc/include/sdmmc_cmd.h \
     $(IDF_PATH)/components/driver/include/driver/sdmmc_host.h \
-    $(IDF_PATH)/components/driver/include/driver/sdmmc_types.h \
     $(IDF_PATH)/components/driver/include/driver/sdspi_host.h \
     ## SDIO slave
-    $(IDF_PATH)/components/driver/include/driver/sdio_slave.h \
     $(IDF_PATH)/components/hal/include/hal/sdio_slave_types.h \
+    $(IDF_PATH)/components/driver/include/driver/sdio_slave.h \
     ## Non-Volatile Storage
     $(IDF_PATH)/components/nvs_flash/include/nvs.h \
     $(IDF_PATH)/components/nvs_flash/include/nvs_flash.h \
@@ -227,15 +226,15 @@ INPUT = \
     $(IDF_PATH)/components/esp_system/include/esp_intr_alloc.h \
     ## Watchdogs
     ## NOTE: for two lines below header_file.inc is not used
-    $(IDF_PATH)/components/esp_common/include/esp_int_wdt.h \
-    $(IDF_PATH)/components/esp_common/include/esp_task_wdt.h \
-    $(IDF_PATH)/components/esp_common/include/esp_crc.h \
+    $(IDF_PATH)/components/esp_system/include/esp_int_wdt.h \
+    $(IDF_PATH)/components/esp_system/include/esp_task_wdt.h \
+    $(IDF_PATH)/components/esp_hw_support/include/esp_crc.h \
     ## Hooks
-    $(IDF_PATH)/components/esp_common/include/esp_freertos_hooks.h \
+    $(IDF_PATH)/components/esp_system/include/esp_freertos_hooks.h \
     ## Inter-Processor Call
     $(IDF_PATH)/components/esp_ipc/include/esp_ipc.h \
     ## Call Function with External stack
-    $(IDF_PATH)/components/esp_common/include/esp_expression_with_stack.h \
+    $(IDF_PATH)/components/esp_system/include/esp_expression_with_stack.h \
     ## Over The Air Updates (OTA)
     $(IDF_PATH)/components/app_update/include/esp_ota_ops.h \
     ## ESP HTTPS OTA

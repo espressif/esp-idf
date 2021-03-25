@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "esp_attr.h"
 
 #include "sdkconfig.h"
@@ -39,14 +40,14 @@ IRAM_ATTR void esp_rom_install_channel_putc(int channel, void (*putc)(char c))
     }
 }
 
-void esp_rom_disable_logging(void)
+#if CONFIG_IDF_TARGET_ESP32C3
+IRAM_ATTR void esp_rom_install_uart_printf(void)
 {
-#if CONFIG_IDF_TARGET_ESP32 // [refactor-todo]: ESP32S2 seem to also reference disabling logging in its ROM code
-    /* To disable logging in the ROM, only the least significant bit of the register is used,
-     * but since this register is also used to store the frequency of the main crystal (RTC_XTAL_FREQ_REG),
-     * you need to write to this register in the same format.
-     * Namely, the upper 16 bits and lower should be the same.
-     */
-    REG_SET_BIT(RTC_CNTL_STORE4_REG, RTC_DISABLE_ROM_LOG);
-#endif
+    extern void ets_install_uart_printf(void);
+    extern bool g_uart_print;
+    // If ROM log is disabled permanently via eFuse or temporarily via RTC storage register,
+    // this ROM symbol will be set to false, and cause ``esp_rom_printf`` can't work on esp-idf side.
+    g_uart_print = true;
+    ets_install_uart_printf();
 }
+#endif

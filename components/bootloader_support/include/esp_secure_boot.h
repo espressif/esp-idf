@@ -214,6 +214,17 @@ typedef struct {
     uint8_t digest[64];
 } esp_secure_boot_iv_digest_t;
 
+/** @brief Check the secure boot V2 during startup
+ *
+ * @note This function is called automatically during app startup,
+ * it doesn't need to be called from the app.
+ *
+ * Verifies the secure boot config during startup:
+ *
+ * - Correct any insecure secure boot settings
+ */
+void esp_secure_boot_init_checks(void);
+
 #ifdef __cplusplus
 }
 #endif

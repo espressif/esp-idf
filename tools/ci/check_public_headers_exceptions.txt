@@ -55,8 +55,6 @@ components/wpa_supplicant/port/
 components/mbedtls/port/include/
 components/mbedtls/mbedtls/include/mbedtls/
 
-components/espcoredump/include/esp_core_dump.h
-
 components/coap/
 components/nghttp/
 components/cbor/
@@ -92,6 +90,8 @@ components/unity/include/unity_test_runner.h
 components/cmock/CMock/src/cmock.h
 components/cmock/CMock/src/cmock_internals.h
 
+components/efuse/include/esp_efuse.h
+
 ### Here are the files that do not compile for some reason
 #
 components/app_trace/include/esp_sysview_trace.h
@@ -119,7 +119,6 @@ components/esp_rom/include/esp32s2/rom/cache.h
 components/esp_rom/include/esp32s2/rom/secure_boot.h
 components/esp_rom/include/esp32s2/rom/opi_flash.h
 components/esp_rom/include/esp32s2/rom/efuse.h
-components/esp_common/include/esp_freertos_hooks.h
 components/esp32/include/esp32/dport_access.h
 components/esp32/include/rom/sha.h
 components/esp32/include/rom/secure_boot.h

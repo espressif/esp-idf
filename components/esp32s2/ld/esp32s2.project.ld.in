@@ -45,9 +45,7 @@ SECTIONS
     . = ALIGN(4);
     _rtc_force_fast_start = ABSOLUTE(.);
 
-    _coredump_rtc_fast_start = ABSOLUTE(.);
-    mapping[rtc_fast_coredump]
-    _coredump_rtc_fast_end = ABSOLUTE(.);
+    mapping[rtc_force_fast]
 
     *(.rtc.force_fast .rtc.force_fast.*)
     . = ALIGN(4) ;
@@ -65,12 +63,6 @@ SECTIONS
   {
     _rtc_data_start = ABSOLUTE(.);
 
-    /* coredump mapping */
-    _coredump_rtc_start = ABSOLUTE(.);
-    mapping[rtc_coredump]
-    _coredump_rtc_end = ABSOLUTE(.);
-
-    /* should be placed after coredump mapping */
     mapping[rtc_data]
 
     *rtc_wake_stub*.*(.data .rodata .data.* .rodata.* .bss .bss.*)
@@ -208,12 +200,6 @@ SECTIONS
     *(.gnu.linkonce.s2.*)
     *(.jcr)
 
-    /* coredump mapping */
-    _coredump_dram_start = ABSOLUTE(.);
-    mapping[dram_coredump]
-    _coredump_dram_end = ABSOLUTE(.);
-
-    /* should be placed after coredump mapping */
     _esp_system_init_fn_array_start = ABSOLUTE(.);
     KEEP (*(SORT(.esp_system_init_fn) SORT(.esp_system_init_fn.*)))
     _esp_system_init_fn_array_end = ABSOLUTE(.);

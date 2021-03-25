@@ -24,8 +24,11 @@ from pyparsing import ParseException, Suppress, White
 
 class LinkerScript:
     """
-    Encapsulates a linker script template file. Finds marker syntax and handles replacement to generate the
-    final output.
+    Process a linker script template, which contains markers with grammar:
+
+    [<target>]
+
+    The <target> is where output commands (see output_commands.py) are placed.
     """
 
     Marker = collections.namedtuple('Marker', 'target indent rules')

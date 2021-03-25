@@ -220,3 +220,56 @@ TEST_CASE("Calling esp_wifi_stop() without start", "[wifi_init]")
     sema = NULL;
     test_utils_task_delete(th);
 }
+
+static void wifi_deinit_task(void* arg)
+{
+    SemaphoreHandle_t *sema = (SemaphoreHandle_t *) arg;
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_LOGI(TAG, EMPH_STR("nvs_flash_init"));
+    esp_err_t r = nvs_flash_init();
+    if (r == ESP_ERR_NVS_NO_FREE_PAGES || r == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+	    ESP_LOGI(TAG, EMPH_STR("no free pages or NFS version mismatch, erase.."));
+	    TEST_ESP_OK(nvs_flash_erase());
+	    r = nvs_flash_init();
+    }
+    TEST_ESP_OK(r);
+    //init tcpip stack
+    test_case_uses_tcpip();
+    ESP_LOGI(TAG, EMPH_STR("event_init"));
+    TEST_ESP_OK(event_init());
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_init"));
+    TEST_ESP_OK(esp_wifi_init(&cfg));
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_start"));
+    TEST_ESP_OK(esp_wifi_start());
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_deinit"));
+    TEST_ESP_ERR(ESP_ERR_WIFI_NOT_STOPPED, esp_wifi_deinit());
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_stop"));
+    TEST_ESP_OK(esp_wifi_stop());
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_deinit"));
+    TEST_ESP_OK(esp_wifi_deinit());
+    ESP_LOGI(TAG, EMPH_STR("event_deinit"));
+    TEST_ESP_OK(event_deinit());
+    ESP_LOGI(TAG, EMPH_STR("nvs_flash_deinit..."));
+    nvs_flash_deinit();
+    ESP_LOGI(TAG, "test passed...");
+    xSemaphoreGive(*sema);
+    vTaskSuspend(NULL);
+}
+
+TEST_CASE("Calling esp_wifi_deinit() without stop", "[wifi_init]")
+{
+    TaskHandle_t th = NULL;
+    SemaphoreHandle_t sema = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(sema);
+    printf("Creating tasks\n");
+#ifndef CONFIG_FREERTOS_UNICORE
+    xTaskCreatePinnedToCore(wifi_deinit_task, "wifi_deinit_task", 2048*2, &sema, 3, &th, 0);
+#else
+    xTaskCreate(wifi_deinit_task, "wifi_deinit_task", 2048*2, &sema, 3, &th);
+#endif
+    TEST_ASSERT_NOT_NULL(th);
+    xSemaphoreTake(sema, portMAX_DELAY);
+    vSemaphoreDelete(sema);
+    sema = NULL;
+    test_utils_task_delete(th);
+}

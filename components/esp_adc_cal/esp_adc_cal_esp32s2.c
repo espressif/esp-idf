@@ -21,7 +21,7 @@
 #include "esp_adc_cal.h"
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
-#include "esp32s2/esp_efuse_rtc_table.h"
+#include "esp_efuse_rtc_table.h"
 #include "hal/adc_hal.h"
 
 #define ADC_CAL_CHECK(cond, ret) ({                                         \
@@ -177,7 +177,7 @@ esp_adc_cal_value_t esp_adc_cal_characterize(adc_unit_t adc_num,
         uint32_t default_vref,
         esp_adc_cal_characteristics_t *chars)
 {
-    bool res;
+    bool res __attribute__((unused));
     adc_calib_parsed_info efuse_parsed_data = {0};
     // Check parameters
     assert((adc_num == ADC_UNIT_1) || (adc_num == ADC_UNIT_2));

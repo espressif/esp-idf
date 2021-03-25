@@ -71,7 +71,7 @@ void mqtt_app_publish(char* topic, char *publish_string)
 void mqtt_app_start(void)
 {
     esp_mqtt_client_config_t mqtt_cfg = {
-            .uri = "mqtt://mqtt.eclipse.org",
+            .uri = "mqtt://mqtt.eclipseprojects.io",
     };
 
     s_client = esp_mqtt_client_init(&mqtt_cfg);

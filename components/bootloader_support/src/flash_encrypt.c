@@ -23,13 +23,7 @@
 #if CONFIG_IDF_TARGET_ESP32
 #define CRYPT_CNT ESP_EFUSE_FLASH_CRYPT_CNT
 #define WR_DIS_CRYPT_CNT ESP_EFUSE_WR_DIS_FLASH_CRYPT_CNT
-#elif CONFIG_IDF_TARGET_ESP32S2
-#define CRYPT_CNT ESP_EFUSE_SPI_BOOT_CRYPT_CNT
-#define WR_DIS_CRYPT_CNT ESP_EFUSE_WR_DIS_SPI_BOOT_CRYPT_CNT
-#elif CONFIG_IDF_TARGET_ESP32S3
-#define CRYPT_CNT ESP_EFUSE_SPI_BOOT_CRYPT_CNT
-#define WR_DIS_CRYPT_CNT ESP_EFUSE_WR_DIS_SPI_BOOT_CRYPT_CNT
-#elif CONFIG_IDF_TARGET_ESP32C3
+#else
 #define CRYPT_CNT ESP_EFUSE_SPI_BOOT_CRYPT_CNT
 #define WR_DIS_CRYPT_CNT ESP_EFUSE_WR_DIS_SPI_BOOT_CRYPT_CNT
 #endif
@@ -40,6 +34,13 @@ static const char *TAG = "flash_encrypt";
 void esp_flash_encryption_init_checks()
 {
     esp_flash_enc_mode_t mode;
+
+#ifdef CONFIG_SECURE_FLASH_CHECK_ENC_EN_IN_APP
+    if (!esp_flash_encryption_enabled()) {
+        ESP_LOGE(TAG, "Flash encryption eFuse bit was not enabled in bootloader but CONFIG_SECURE_FLASH_ENC_ENABLED is on");
+        abort();
+    }
+#endif
 
     // First check is: if Release mode flash encryption & secure boot are enabled then
     // FLASH_CRYPT_CNT *must* be write protected. This will have happened automatically

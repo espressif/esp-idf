@@ -39,9 +39,7 @@ SECTIONS
     . = ALIGN(4);
     _rtc_force_fast_start = ABSOLUTE(.);
 
-    _coredump_rtc_fast_start = ABSOLUTE(.);
-    mapping[rtc_fast_coredump]
-    _coredump_rtc_fast_end = ABSOLUTE(.);
+    mapping[rtc_force_fast]
 
     *(.rtc.force_fast .rtc.force_fast.*)
     . = ALIGN(4) ;
@@ -60,12 +58,6 @@ SECTIONS
   {
     _rtc_data_start = ABSOLUTE(.);
 
-    /* coredump mapping */
-    _coredump_rtc_start = ABSOLUTE(.);
-    mapping[rtc_coredump]
-    _coredump_rtc_end = ABSOLUTE(.);
-
-    /* should be placed after coredump mapping */
     mapping[rtc_data]
 
     *rtc_wake_stub*.*(.data .rodata .data.* .rodata.* .bss .bss.*)
@@ -189,18 +181,6 @@ SECTIONS
   .dram0.data :
   {
     _data_start = ABSOLUTE(.);
-    _bt_data_start = ABSOLUTE(.);
-    *libbt.a:(.data .data.*)
-    . = ALIGN (4);
-    _bt_data_end = ABSOLUTE(.);
-    _btdm_data_start = ABSOLUTE(.);
-    *libbtdm_app.a:(.data .data.*)
-    . = ALIGN (4);
-    _btdm_data_end = ABSOLUTE(.);
-    _nimble_data_start = ABSOLUTE(.);
-    *libnimble.a:(.data .data.*)
-    . = ALIGN (4);
-    _nimble_data_end = ABSOLUTE(.);
     *(.gnu.linkonce.d.*)
     *(.data1)
     *(.sdata)
@@ -211,12 +191,6 @@ SECTIONS
     *(.gnu.linkonce.s2.*)
     *(.jcr)
 
-    /* coredump mapping */
-    _coredump_dram_start = ABSOLUTE(.);
-    mapping[dram_coredump]
-    _coredump_dram_end = ABSOLUTE(.);
-
-    /* should be placed after coredump mapping */
     _esp_system_init_fn_array_start = ABSOLUTE(.);
     KEEP (*(SORT(.esp_system_init_fn) SORT(.esp_system_init_fn.*)))
     _esp_system_init_fn_array_end = ABSOLUTE(.);
@@ -248,18 +222,6 @@ SECTIONS
     . = ALIGN (8);
     _bss_start = ABSOLUTE(.);
     *(.ext_ram.bss*)
-    _bt_bss_start = ABSOLUTE(.);
-    *libbt.a:(.bss .bss.* COMMON)
-    . = ALIGN (4);
-    _bt_bss_end = ABSOLUTE(.);
-    _btdm_bss_start = ABSOLUTE(.);
-    *libbtdm_app.a:(.bss .bss.* COMMON)
-    . = ALIGN (4);
-    _btdm_bss_end = ABSOLUTE(.);
-    _nimble_bss_start = ABSOLUTE(.);
-    *libnimble.a:(.bss .bss.* COMMON)
-    . = ALIGN (4);
-    _nimble_bss_end = ABSOLUTE(.);
 
     mapping[dram0_bss]
 
@@ -386,12 +348,6 @@ SECTIONS
     . = ALIGN(4);
     _iram_data_start = ABSOLUTE(.);
 
-    /* coredump mapping */
-    _coredump_iram_start = ABSOLUTE(.);
-    mapping[iram_coredump]
-    _coredump_iram_end = ABSOLUTE(.);
-
-    /* should be placed after coredump mapping */
     mapping[iram0_data]
 
     _iram_data_end = ABSOLUTE(.);

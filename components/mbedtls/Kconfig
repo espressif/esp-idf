@@ -115,16 +115,26 @@ menu "mbedTLS"
             Free peer certificate after its usage in handshake process.
 
     config MBEDTLS_DYNAMIC_FREE_CONFIG_DATA
-        bool "Free certificate, key and DHM data after its usage"
+        bool "Free private key and DHM data after its usage"
         default n
         depends on MBEDTLS_DYNAMIC_BUFFER
         help
-            Free certificate, private key and DHM data after its usage in handshake process.
+            Free private key and DHM data after its usage in handshake process.
 
             The option will decrease heap cost when handshake, but also lead to problem:
 
             Becasue all certificate, private key and DHM data are freed so users should register
             certificate and private key to ssl config object again.
+
+    config MBEDTLS_DYNAMIC_FREE_CA_CERT
+        bool "Free SSL ca certificate after its usage"
+        default y
+        depends on MBEDTLS_DYNAMIC_FREE_CONFIG_DATA
+        help
+            Free ca certificate after its usage in the handshake process.
+            This option will decrease the heap footprint for the TLS handshake, but may lead to a problem:
+            If the respective ssl object needs to perform the TLS handshake again,
+            the ca certificate should once again be registered to the ssl object.
 
     config MBEDTLS_DEBUG
         bool "Enable mbedTLS debugging"

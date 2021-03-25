@@ -64,12 +64,12 @@ static inline size_t bits_to_words(size_t bits)
     return (bits + 31) / 32;
 }
 
-/* Return the number of words actually used to represent an mpi
-   number.
-*/
 int __wrap_mbedtls_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, const mbedtls_mpi *M, mbedtls_mpi *_Rinv );
 extern int __real_mbedtls_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, const mbedtls_mpi *M, mbedtls_mpi *_Rinv );
 
+/* Return the number of words actually used to represent an mpi
+   number.
+*/
 static size_t mpi_words(const mbedtls_mpi *mpi)
 {
     for (size_t i = mpi->n; i > 0; i--) {

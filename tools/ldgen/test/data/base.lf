@@ -82,3 +82,8 @@ entries:
 [scheme:noflash_data]
 entries:
     rodata -> dram0_data
+
+[mapping:default]
+archive: *
+entries:
+    * (default)

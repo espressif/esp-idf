@@ -159,15 +159,15 @@ The TWAI driver contains an alert feature that is used to notify the application
 Bit Timing
 ^^^^^^^^^^
 
-The operating bit rate of the TWAI driver is configured using the :cpp:type:`twai_timing_config_t` structure. The period of each bit is made up of multiple **time quanta**, and the period of a **time quanta** is determined by a prescaled version of the TWAI controller's source clock. A single bit contains the following segments in the following order:
+The operating bit rate of the TWAI driver is configured using the :cpp:type:`twai_timing_config_t` structure. The period of each bit is made up of multiple **time quanta**, and the period of a **time quantum** is determined by a prescaled version of the TWAI controller's source clock. A single bit contains the following segments in the following order:
 
-    1. The **Synchronization Segment** consists of a single time quanta
+    1. The **Synchronization Segment** consists of a single time quantum
     2. **Timing Segment 1** consists of 1 to 16 time quanta before sample point
     3. **Timing Segment 2** consists of 1 to 8 time quanta after sample point
 
 {IDF_TARGET_MAX_BRP:default="128", esp32="128", esp32s2="32768"}
 
-The **Baudrate Prescaler** is used to determine the period of each time quanta by dividing the TWAI controller's source clock (80 MHz APB clock). On the {IDF_TARGET_NAME}, the ``brp`` can be **any even number from 2 to {IDF_TARGET_MAX_BRP}**.
+The **Baudrate Prescaler** is used to determine the period of each time quantum by dividing the TWAI controller's source clock (80 MHz APB clock). On the {IDF_TARGET_NAME}, the ``brp`` can be **any even number from 2 to {IDF_TARGET_MAX_BRP}**.
 
 .. only:: esp32
 

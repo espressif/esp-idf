@@ -3,6 +3,7 @@ import os
 import re
 import socket
 import ssl
+import sys
 from threading import Thread
 
 import ttfw_idf
@@ -68,22 +69,20 @@ def get_my_ip():
     return my_ip
 
 
-def start_https_server(ota_image_dir, server_ip, server_port):
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument('-p', '--port', dest='port', type= int,
-    #     help= "Server Port", default= 8000)
-    # args = parser.parse_args()
+def start_https_server(ota_image_dir, server_ip, server_port, server_file=None, key_file=None):
     os.chdir(ota_image_dir)
 
-    server_file = os.path.join(ota_image_dir, 'server_cert.pem')
-    cert_file_handle = open(server_file, 'w+')
-    cert_file_handle.write(server_cert)
-    cert_file_handle.close()
+    if server_file is None:
+        server_file = os.path.join(ota_image_dir, 'server_cert.pem')
+        cert_file_handle = open(server_file, 'w+')
+        cert_file_handle.write(server_cert)
+        cert_file_handle.close()
 
-    key_file = os.path.join(ota_image_dir, 'server_key.pem')
-    key_file_handle = open('server_key.pem', 'w+')
-    key_file_handle.write(server_key)
-    key_file_handle.close()
+    if key_file is None:
+        key_file = os.path.join(ota_image_dir, 'server_key.pem')
+        key_file_handle = open('server_key.pem', 'w+')
+        key_file_handle.write(server_key)
+        key_file_handle.close()
 
     httpd = http.server.HTTPServer((server_ip, server_port), http.server.SimpleHTTPRequestHandler)
 
@@ -201,6 +200,17 @@ def test_examples_protocol_simple_ota_example_with_flash_encryption(env, extra_d
 
 
 if __name__ == '__main__':
-    test_examples_protocol_simple_ota_example()
-    test_examples_protocol_simple_ota_example_ethernet_with_spiram_config()
-    test_examples_protocol_simple_ota_example_with_flash_encryption()
+    if sys.argv[2:]:    # if two or more arguments provided:
+        # Usage: example_test.py <image_dir> <server_port> [cert_di>]
+        this_dir = os.path.dirname(os.path.realpath(__file__))
+        bin_dir = os.path.join(this_dir, sys.argv[1])
+        port = int(sys.argv[2])
+        cert_dir = bin_dir if not sys.argv[3:] else os.path.join(this_dir, sys.argv[3])  # optional argument
+        print('Starting HTTPS server at "https://:{}"'.format(port))
+        start_https_server(bin_dir, '', port,
+                           server_file=os.path.join(cert_dir, 'ca_cert.pem'),
+                           key_file=os.path.join(cert_dir, 'ca_key.pem'))
+    else:
+        test_examples_protocol_simple_ota_example()
+        test_examples_protocol_simple_ota_example_ethernet_with_spiram_config()
+        test_examples_protocol_simple_ota_example_with_flash_encryption()

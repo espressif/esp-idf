@@ -73,7 +73,7 @@ typedef enum {
     ESP_BT_SLEEP_CLOCK_NONE            = 0,   /*!< Sleep clock not configured */
     ESP_BT_SLEEP_CLOCK_MAIN_XTAL       = 1,   /*!< SoC main crystal */
     ESP_BT_SLEEP_CLOCK_EXT_32K_XTAL    = 2,   /*!< External 32.768kHz crystal */
-    ESP_BT_SLEEP_CLOCK_RTC_SLOW        = 3,   /*!< Internal 150kHz RC oscillator */
+    ESP_BT_SLEEP_CLOCK_RTC_SLOW        = 3,   /*!< Internal 90kHz RC oscillator */
     ESP_BT_SLEEP_CLOCK_FPGA_32K        = 4,   /*!< Hardwired 32KHz clock temporarily used for FPGA */
 } esp_bt_sleep_clock_t;
 

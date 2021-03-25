@@ -18,6 +18,10 @@
 #include "esp_err.h"
 #include "esp_private/panic_internal.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**************************************************************************************/
 /******************************** EXCEPTION MODE API **********************************/
 /**************************************************************************************/
@@ -39,13 +43,13 @@ void esp_core_dump_init(void);
  * .            .       .         .
  * .            .       .         .
  * | TCB_ADDR_N | STACK_TOP_N | STACK_END_N | TCB_N    | STACK_N |
- * |    CRC32   |
+ * |  CHECKSUM  |
  *
  * Core dump in flash consists of header and data for every task in the system at the moment of crash.
- * For flash data integrity control CRC is used at the end of core the dump data.
+ * For flash data integrity, a checksum is used at the end of core the dump data.
  * The structure of core dump data is described below in details.
  * 1) Core dump starts with header:
- * 1.1) TOTAL_LEN is total length of core dump data in flash including CRC. Size is 4 bytes.
+ * 1.1) TOTAL_LEN is total length of core dump data in flash including the checksum. Size is 4 bytes.
  * 1.2) VERSION field keeps 4 byte version of core dump.
  * 1.2) TASKS_NUM is the number of tasks for which data are stored. Size is 4 bytes.
  * 1.3) TCB_SIZE is the size of task's TCB structure. Size is 4 bytes.
@@ -56,7 +60,7 @@ void esp_core_dump_init(void);
  * 2.2) STACK_END is the end of task's stack (address from which task's stack starts). Size is 4 bytes.
  * 3) Task header is followed by TCB data. Size is TCB_SIZE bytes.
  * 4) Task's stack is placed after TCB data. Size is (STACK_END - STACK_TOP) bytes.
- * 5) CRC is placed at the end of the data.
+ * 5) The checksum is placed at the end of the data.
  */
 void esp_core_dump_to_flash(panic_info_t *info);
 
@@ -64,8 +68,8 @@ void esp_core_dump_to_flash(panic_info_t *info);
  * @brief  Print base64-encoded core dump to UART.
  *
  * The structure of core dump data is the same as for data stored in flash (@see esp_core_dump_to_flash) with some notes:
- * 1) CRC is not present in core dump printed to UART.
- * 2) Since CRC is omitted TOTAL_LEN does not include its size.
+ * 1) The checksum is not present in core dump printed to UART.
+ * 2) Since checksum is omitted TOTAL_LEN does not include its size.
  * 3) Printed base64 data are surrounded with special messages to help user recognize the start and end of actual data.
  */
 void esp_core_dump_to_uart(panic_info_t *info);
@@ -84,5 +88,9 @@ void esp_core_dump_to_uart(panic_info_t *info);
  * @return ESP_OK on success, otherwise \see esp_err_t
  */
 esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

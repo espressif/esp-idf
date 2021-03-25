@@ -64,7 +64,7 @@ void rmt_hal_rx_channel_reset(rmt_hal_context_t *hal, uint32_t channel);
  * @param base_clk_hz: base clock for RMT internal channel (counter clock will divide from it)
  * @param counter_clk_hz: target counter clock
  */
-void rmt_hal_tx_set_counter_clock(rmt_hal_context_t *hal, uint32_t channel, uint32_t base_clk_hz, uint32_t counter_clk_hz);
+void rmt_hal_tx_set_channel_clock(rmt_hal_context_t *hal, uint32_t channel, uint32_t base_clk_hz, uint32_t counter_clk_hz);
 
 /**
  * @brief Set carrier clock for RMT channel

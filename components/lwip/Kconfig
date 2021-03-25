@@ -133,6 +133,7 @@ menu "LWIP"
     config LWIP_IP6_FRAG
         bool "Enable fragment outgoing IP6 packets"
         default y
+        depends on LWIP_IPV6
         help
             Enabling this option allows fragmenting outgoing IP6 packets if their size
             exceeds MTU.
@@ -146,6 +147,7 @@ menu "LWIP"
     config LWIP_IP6_REASSEMBLY
         bool "Enable reassembly incoming fragmented IP6 packets"
         default n
+        depends on LWIP_IPV6
         help
             Enabling this option allows reassemblying incoming fragmented IP6 packets.
 
@@ -299,8 +301,18 @@ menu "LWIP"
             If rate limiting self-assignment requests, wait this long between
             each request.
 
+    config LWIP_IPV6
+        bool "Enable IPv6"
+        default y
+        help
+            Enable IPv6 function. If not use IPv6 function, set this option to n.
+            If disable LWIP_IPV6, not adding coap and asio component into the build.
+            Please assign them to EXCLUDE_COMPONENTS in the make or cmake file in your
+            project directory, so that the component will not be compiled.
+
     config LWIP_IPV6_AUTOCONFIG
         bool "Enable IPV6 stateless address autoconfiguration (SLAAC)"
+        depends on LWIP_IPV6
         default n
         help
             Enabling this option allows the devices to IPV6 stateless address autoconfiguration (SLAAC).
@@ -627,7 +639,7 @@ menu "LWIP"
 
     config LWIP_PPP_ENABLE_IPV6
         bool "Enable IPV6 support for PPP connections (IPV6CP)"
-        depends on LWIP_PPP_SUPPORT
+        depends on LWIP_PPP_SUPPORT && LWIP_IPV6
         default y
         help
             Enable IPV6 support in PPP for the local link between the DTE (processor) and DCE (modem).
@@ -638,6 +650,7 @@ menu "LWIP"
 
     config LWIP_IPV6_MEMP_NUM_ND6_QUEUE
         int "Max number of IPv6 packets to queue during MAC resolution"
+        depends on LWIP_IPV6
         range 3 20
         default 3
         help
@@ -645,6 +658,7 @@ menu "LWIP"
 
     config LWIP_IPV6_ND6_NUM_NEIGHBORS
         int "Max number of entries in IPv6 neighbor cache"
+        depends on LWIP_IPV6
         range 3 10
         default 5
         help
@@ -757,9 +771,13 @@ menu "LWIP"
     config LWIP_ESP_LWIP_ASSERT
         bool "Enable LWIP ASSERT checks"
         default y
+        depends on !COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE
         help
-            Enable this option allows lwip to check assert.
-            It is recommended to keep it open, do not close it.
+            Enable this option keeps LWIP assertion checks enabled.
+            It is recommended to keep this option enabled.
+
+            If asserts are disabled for the entire project, they are also disabled
+            for LWIP and this option is ignored.
 
     menu "Hooks"
 
@@ -791,6 +809,7 @@ menu "LWIP"
 
         choice LWIP_HOOK_IP6_ROUTE
             prompt "IPv6 route Hook"
+            depends on LWIP_IPV6
             default LWIP_HOOK_IP6_ROUTE_NONE
             help
                 Enables custom IPv6 route hook.

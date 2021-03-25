@@ -141,7 +141,7 @@ static void reassemble_and_dispatch(BT_HDR *packet)
         uint8_t *stream = packet->data + packet->offset;
         uint16_t handle;
         uint16_t l2cap_length;
-        uint16_t acl_length;
+        uint16_t acl_length __attribute__((unused));
 
         STREAM_TO_UINT16(handle, stream);
         STREAM_TO_UINT16(acl_length, stream);

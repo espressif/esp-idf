@@ -88,22 +88,19 @@
 
 /* configASSERT behaviour */
 #ifndef __ASSEMBLER__
-#include <stdlib.h> /* for abort() */
+#include <assert.h>
 #include "esp32c3/rom/ets_sys.h"
 
-#if defined(CONFIG_FREERTOS_ASSERT_DISABLE)
-#define configASSERT(a) /* assertions disabled */
-#elif defined(CONFIG_FREERTOS_ASSERT_FAIL_PRINT_CONTINUE)
+// If CONFIG_FREERTOS_ASSERT_DISABLE is set then configASSERT is defined empty later in FreeRTOS.h and the macro
+// configASSERT_DEFINED remains unset (meaning some warnings are avoided)
+
+#if defined(CONFIG_FREERTOS_ASSERT_FAIL_PRINT_CONTINUE)
 #define configASSERT(a) if (unlikely(!(a))) {                               \
         esp_rom_printf("%s:%d (%s)- assert failed!\n", __FILE__, __LINE__,  \
                    __FUNCTION__);                                           \
     }
-#else /* CONFIG_FREERTOS_ASSERT_FAIL_ABORT */
-#define configASSERT(a) if (unlikely(!(a))) {                               \
-        esp_rom_printf("%s:%d (%s)- assert failed!\n", __FILE__, __LINE__,  \
-                   __FUNCTION__);                                           \
-        abort();                                                            \
-        }
+#elif defined(CONFIG_FREERTOS_ASSERT_FAIL_ABORT)
+#define configASSERT(a) assert(a)
 #endif
 
 #if CONFIG_FREERTOS_ASSERT_ON_UNTESTED_FUNCTION
@@ -146,15 +143,37 @@
 #define configMAX_PRIORITIES			( 25 )
 #endif
 
-#if defined(CONFIG_APPTRACE_ENABLE)
-/* apptrace module requires at least 2KB of stack per task */
-#define configMINIMAL_STACK_SIZE		2048
-#elif defined(CONFIG_COMPILER_OPTIMIZATION_NONE)
-/* with optimizations disabled, scheduler uses additional stack */
-#define configMINIMAL_STACK_SIZE		1024
+/* Various things that impact minimum stack sizes */
+
+/* Higher stack checker modes cause overhead on each function call */
+#if CONFIG_STACK_CHECK_ALL || CONFIG_STACK_CHECK_STRONG
+#define configSTACK_OVERHEAD_CHECKER 256
 #else
-#define configMINIMAL_STACK_SIZE		768
+#define configSTACK_OVERHEAD_CHECKER 0
 #endif
+
+/* with optimizations disabled, scheduler uses additional stack */
+#if CONFIG_COMPILER_OPTIMIZATION_NONE
+#define configSTACK_OVERHEAD_OPTIMIZATION 320
+#else
+#define configSTACK_OVERHEAD_OPTIMIZATION 0
+#endif
+
+/* apptrace mdule increases minimum stack usage */
+#if CONFIG_APPTRACE_ENABLE
+#define configSTACK_OVERHEAD_APPTRACE 1280
+#else
+#define configSTACK_OVERHEAD_APPTRACE 0
+#endif
+
+#define configSTACK_OVERHEAD_TOTAL (                                    \
+                                    configSTACK_OVERHEAD_CHECKER +      \
+                                    configSTACK_OVERHEAD_OPTIMIZATION + \
+                                    configSTACK_OVERHEAD_APPTRACE       \
+                                                                        )
+
+#define configMINIMAL_STACK_SIZE  (768 + configSTACK_OVERHEAD_TOTAL)
+
 
 #define configNUM_THREAD_LOCAL_STORAGE_POINTERS CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS
 #define configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS 1

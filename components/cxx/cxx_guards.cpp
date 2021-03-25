@@ -82,6 +82,7 @@ static void wait_for_guard_obj(guard_t* g)
     do {
         auto result = xSemaphoreGive(s_static_init_mutex);
         assert(result);
+        static_cast<void>(result);
         /* Task may be preempted here, but this isn't a problem,
          * as the semaphore will be given exactly the s_static_init_waiting_count
          * number of times; eventually the current task will execute next statement,
@@ -140,6 +141,7 @@ extern "C" int __cxa_guard_acquire(__guard* pg)
          */
         auto result = xSemaphoreTake(s_static_init_mutex, portMAX_DELAY);
         assert(result);
+        static_cast<void>(result);
         if (g->pending) {
             /* Another task is doing initialization at the moment; wait until it calls
              * __cxa_guard_release or __cxa_guard_abort
@@ -168,6 +170,7 @@ extern "C" int __cxa_guard_acquire(__guard* pg)
     if (scheduler_started) {
         auto result = xSemaphoreGive(s_static_init_mutex);
         assert(result);
+        static_cast<void>(result);
     }
     return ret;
 }
@@ -179,6 +182,7 @@ extern "C" void __cxa_guard_release(__guard* pg)
     if (scheduler_started) {
         auto result = xSemaphoreTake(s_static_init_mutex, portMAX_DELAY);
         assert(result);
+        static_cast<void>(result);
     }
     assert(g->pending && "tried to release a guard which wasn't acquired");
     g->pending = 0;
@@ -189,6 +193,7 @@ extern "C" void __cxa_guard_release(__guard* pg)
         signal_waiting_tasks();
         auto result = xSemaphoreGive(s_static_init_mutex);
         assert(result);
+        static_cast<void>(result);
     }
 }
 
@@ -199,6 +204,7 @@ extern "C" void __cxa_guard_abort(__guard* pg)
     if (scheduler_started) {
         auto result = xSemaphoreTake(s_static_init_mutex, portMAX_DELAY);
         assert(result);
+        static_cast<void>(result);
     }
     assert(!g->ready && "tried to abort a guard which is ready");
     assert(g->pending && "tried to release a guard which is not acquired");
@@ -208,6 +214,7 @@ extern "C" void __cxa_guard_abort(__guard* pg)
         signal_waiting_tasks();
         auto result = xSemaphoreGive(s_static_init_mutex);
         assert(result);
+        static_cast<void>(result);
     }
 }
 

@@ -28,35 +28,70 @@ ESP-IDF 需要安装一些必备工具，才能围绕 {IDF_TARGET_NAME} 构建�
 
 .. _get-started-windows-tools-installer:
 
+
 ESP-IDF 工具安装器
 =======================
 
-安装 ESP-IDF 必备工具最简易的方式是下载 ESP-IDF 工具安装器，地址如下：
+安装 ESP-IDF 必备工具最简易的方式是下载 ESP-IDF 工具安装器，请选择下列地址之一：
 
-https://dl.espressif.com/dl/esp-idf-tools-setup-2.4.exe
+- 在线安装（30 MB）：https://dl.espressif.com/dl/esp-idf-tools-setup-online-2.5.exe
+- 离线安装（包括 ESP-IDF v4.2、v4.1.1，810 MB）：https://dl.espressif.com/dl/esp-idf-tools-setup-offline-2.5.exe
 
 .. 重要：下次更新此链接时，请重新写文件 get-started/index.rst 中“其它文件下载方式”这一章节，然后将此条注意事项删除。
 
-本安装器可为您安装所需的交叉编译器、OpenOCD、CMake_ 和 Ninja_ 编译工具。此外，本安装器还可在有需要时下载、运行 Python_ 3.7 和 `Git For Windows`_ 的安装器。
+在线安装与离线安装的区别
+-----------------------------------------
 
-您可以使用之前已经下载的 ESP-IDF 版本，如果没有的话，本安装器还可用于下载任意 ESP-IDF 发布版本。推荐将 ESP-IDF 下载到 ``%userprofile%\esp`` 目录下，其中 ``%userprofile%`` 代表家目录。可运行以下命令，创建 ``%userprofile%\esp``。
+在线安装程序非常小，可以安装 ESP-IDF 的所有版本。在安装过程中，安装程序只下载必要的依赖文件，包括 `Git For Windows`_ 安装器。在线安装程序会将下载的文件存储在缓存目录 ``%userprofile%/espressif`` 中。
 
-.. code-block:: batch
+离线安装程序不需要任何网络连接。安装程序中包含了所有需要的依赖文件，包括 `Git For Windows`_ 安装器。该安装程序可以安装 v4.2 和 v4.1.1 版本的 ESP-IDF。
 
-    mkdir %userprofile%\esp
+安装内容
+------------
 
-在安装结束时，如果勾选了 ``Run ESP-IDF Command Prompt (cmd.exe)``，则会弹出一个 Windows 命令提示符窗口，即 ESP-IDF 命令提示符窗口。
+安装程序会安装以下组件：
+
+- 内置的 Python
+- 交叉编译器
+- OpenOCD
+- CMake_ 和 Ninja_ 编译工具
+- ESP-IDF
+
+安装程序允许将程序下载到现有的 ESP-IDF 目录。推荐将 ESP-IDF 下载到 ``%userprofile%\Desktop\esp-idf`` 目录下，其中 ``%userprofile%`` 代表家目录。
+
+启动 ESP-IDF 环境
+------------------
+
+安装结束时，如果勾选了 ``Run ESP-IDF PowerShell Environment`` 或 ``Run ESP-IDF Command Prompt (cmd.exe)``，安装程序会在选定的提示符窗口启动 ESP-IDF。
+
+``Run ESP-IDF PowerShell Environment``:
+
+.. figure:: ../../_static/esp-idf-installer-screenshot-powershell.png
+    :align: center
+    :alt: 完成 ESP-IDF 工具安装向导时运行 Run ESP-IDF PowerShell Environment
+    :figclass: align-center
+
+    完成 ESP-IDF 工具安装向导时运行 Run ESP-IDF PowerShell Environment
+
+.. figure:: ../../_static/esp-idf-installer-powershell.png
+    :align: center
+    :alt: ESP-IDF PowerShell
+    :figclass: align-center
+
+    ESP-IDF PowerShell
+
+``Run ESP-IDF Command Prompt (cmd.exe)``:
 
 .. figure:: ../../_static/esp-idf-installer-screenshot.png
     :align: center
-    :alt: 安装结束时，勾选运行 Run ESP-IDF Command Prompt (cmd.exe)
+    :alt: 完成 ESP-IDF 工具安装向导时运行 Run ESP-IDF Command Prompt (cmd.exe)
     :figclass: align-center
 
-    安装结束时，勾选运行 Run ESP-IDF Command Prompt (cmd.exe)
+    完成 ESP-IDF 工具安装向导时运行 Run ESP-IDF Command Prompt (cmd.exe)
 
 .. figure:: ../../_static/esp-idf-installer-command-prompt.png
     :align: center
-    :alt: ESP-IDF Command Prompt
+    :alt: ESP-IDF 命令提示符窗口
     :figclass: align-center
 
     ESP-IDF 命令提示符窗口
@@ -68,14 +103,14 @@ https://dl.espressif.com/dl/esp-idf-tools-setup-2.4.exe
 
 ESP-IDF 工具安装器可在“开始”菜单中，创建一个打开 ESP-IDF 命令提示符窗口的快捷方式。本快捷方式可以打开 Windows 命令提示符（即 cmd.exe），并运行 ``export.bat`` 脚本以设置各环境变量（比如 ``PATH``，``IDF_PATH`` 等）。此外，您可还以通过 Windows 命令提示符使用各种已经安装的工具。
 
-注意，本快捷方式仅适用 ESP-IDF 工具安装器中指定的 ESP-IDF 路径。如果您的电脑上存在多个 ESP-IDF（比如您需要不同版本的 ESP-IDF）需要使用快捷方式，您有以下两种解决方法：
+注意，本快捷方式仅适用 ESP-IDF 工具安装器中指定的 ESP-IDF 路径。如果您的电脑上存在多个 ESP-IDF 路径（比如您需要不同版本的 ESP-IDF），您有以下两种解决方法：
 
-1. 为 ESP-IDF 工具安装器创建的快捷方式创建一个副本，并将新快捷方式的“当前路径”指定为您希望使用的 ESP-IDF 路径。
+1. 为 ESP-IDF 工具安装器创建的快捷方式创建一个副本，并将新快捷方式的 ESP-IDF 工作路径指定为您希望使用的 ESP-IDF 路径。
 
 2. 或者，您可以运行 ``cmd.exe``，并切换至您希望使用的 ESP-IDF 目录，然后运行 ``export.bat``。注意，这种方法要求 ``PATH`` 中存在 Python 和 Git。如果您在使用时遇到有关“找不到 Python 或 Git”的错误信息，请使用第一种方法。
 
 后续步骤
-==========
+============
 
 当 ESP-IDF 工具安装器安装成功后，开发环境设置也到此结束。后续开发步骤，请前往 :ref:`get-started-start-project` 查看。
 
@@ -88,6 +123,7 @@ ESP-IDF 工具安装器可在“开始”菜单中，创建一个打开 ESP-IDF 
     :maxdepth: 1
 
     windows-setup-update
+
 
 .. _MSYS2: https://www.msys2.org/
 .. _CMake: https://cmake.org/download/

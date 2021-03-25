@@ -391,7 +391,8 @@ esp_err_t gpio_config(const gpio_config_t *pGPIOConfig)
                 gpio_intr_disable(io_num);
             }
 
-            PIN_FUNC_SELECT(io_reg, PIN_FUNC_GPIO); /*function number 2 is GPIO_FUNC for each pin */
+            /* By default, all the pins have to be configured as GPIO pins. */
+            PIN_FUNC_SELECT(io_reg, PIN_FUNC_GPIO);
         }
 
         io_num++;
@@ -554,9 +555,11 @@ esp_err_t gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
     esp_err_t ret = ESP_OK;
 
     if ((intr_type == GPIO_INTR_LOW_LEVEL) || (intr_type == GPIO_INTR_HIGH_LEVEL)) {
+#if SOC_RTCIO_WAKE_SUPPORTED
         if (rtc_gpio_is_valid_gpio(gpio_num)) {
             ret = rtc_gpio_wakeup_enable(gpio_num, intr_type);
         }
+#endif
         portENTER_CRITICAL(&gpio_context.gpio_spinlock);
         gpio_hal_wakeup_enable(gpio_context.gpio_hal, gpio_num, intr_type);
         portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
@@ -572,10 +575,11 @@ esp_err_t gpio_wakeup_disable(gpio_num_t gpio_num)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
     esp_err_t ret = ESP_OK;
-
+#if SOC_RTCIO_WAKE_SUPPORTED
     if (rtc_gpio_is_valid_gpio(gpio_num)) {
         ret = rtc_gpio_wakeup_disable(gpio_num);
     }
+#endif
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
     gpio_hal_wakeup_disable(gpio_context.gpio_hal, gpio_num);
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
@@ -630,7 +634,9 @@ esp_err_t gpio_hold_en(gpio_num_t gpio_num)
     int ret = ESP_OK;
 
     if (rtc_gpio_is_valid_gpio(gpio_num)) {
+#if SOC_RTCIO_HOLD_SUPPORTED
         ret = rtc_gpio_hold_en(gpio_num);
+#endif
     } else if (GPIO_HOLD_MASK[gpio_num]) {
         portENTER_CRITICAL(&gpio_context.gpio_spinlock);
         gpio_hal_hold_en(gpio_context.gpio_hal, gpio_num);
@@ -648,7 +654,9 @@ esp_err_t gpio_hold_dis(gpio_num_t gpio_num)
     int ret = ESP_OK;
 
     if (rtc_gpio_is_valid_gpio(gpio_num)) {
+#if SOC_RTCIO_HOLD_SUPPORTED
         ret = rtc_gpio_hold_dis(gpio_num);
+#endif
     }else if (GPIO_HOLD_MASK[gpio_num]) {
         portENTER_CRITICAL(&gpio_context.gpio_spinlock);
         gpio_hal_hold_dis(gpio_context.gpio_hal, gpio_num);
@@ -678,7 +686,9 @@ void gpio_deep_sleep_hold_dis(void)
 
 esp_err_t gpio_force_hold_all()
 {
+#if SOC_RTCIO_HOLD_SUPPORTED
     rtc_gpio_force_hold_all();
+#endif
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
     gpio_hal_force_hold_all(gpio_context.gpio_hal);
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
@@ -687,9 +697,11 @@ esp_err_t gpio_force_hold_all()
 
 esp_err_t gpio_force_unhold_all()
 {
+#if SOC_RTCIO_HOLD_SUPPORTED
     rtc_gpio_force_hold_dis_all();
+#endif
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
-    gpio_hal_force_unhold_all(gpio_context.gpio_hal);
+    gpio_hal_force_unhold_all();
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
     return ESP_OK;
 }
@@ -876,5 +888,35 @@ esp_err_t gpio_sleep_pupd_config_unapply(gpio_num_t gpio_num)
     gpio_hal_sleep_pupd_config_unapply(gpio_context.gpio_hal, gpio_num);
     return ESP_OK;
 }
-#endif
-#endif
+#endif // CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
+#endif // SOC_GPIO_SUPPORT_SLP_SWITCH
+
+#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+esp_err_t gpio_deep_sleep_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
+{
+    if (!gpio_hal_is_valid_deepsleep_wakeup_gpio(gpio_num)) {
+        ESP_LOGE(GPIO_TAG, "GPIO %d does not support deep sleep wakeup", gpio_num);
+        return ESP_ERR_INVALID_ARG;
+    }
+    if ((intr_type != GPIO_INTR_LOW_LEVEL) && (intr_type != GPIO_INTR_HIGH_LEVEL)) {
+        ESP_LOGE(GPIO_TAG, "GPIO wakeup only supports level mode, but edge mode set. gpio_num:%u", gpio_num);
+        return ESP_ERR_INVALID_ARG;
+    }
+    portENTER_CRITICAL(&gpio_context.gpio_spinlock);
+    gpio_hal_deepsleep_wakeup_enable(gpio_context.gpio_hal, gpio_num, intr_type);
+    portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
+    return ESP_OK;
+}
+
+esp_err_t gpio_deep_sleep_wakeup_disable(gpio_num_t gpio_num)
+{
+    if (!gpio_hal_is_valid_deepsleep_wakeup_gpio(gpio_num)) {
+        ESP_LOGE(GPIO_TAG, "GPIO %d does not support deep sleep wakeup", gpio_num);
+        return ESP_ERR_INVALID_ARG;
+    }
+    portENTER_CRITICAL(&gpio_context.gpio_spinlock);
+    gpio_hal_deepsleep_wakeup_disable(gpio_context.gpio_hal, gpio_num);
+    portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
+    return ESP_OK;
+}
+#endif // SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP

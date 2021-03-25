@@ -49,14 +49,6 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
         return DPORT_TIMERGROUP_CLK_EN;
     case PERIPH_TIMG1_MODULE:
         return DPORT_TIMERGROUP1_CLK_EN;
-    case PERIPH_PWM0_MODULE:
-        return DPORT_PWM0_CLK_EN;
-    case PERIPH_PWM1_MODULE:
-        return DPORT_PWM1_CLK_EN;
-    case PERIPH_PWM2_MODULE:
-        return DPORT_PWM2_CLK_EN;
-    case PERIPH_PWM3_MODULE:
-        return DPORT_PWM3_CLK_EN;
     case PERIPH_UHCI0_MODULE:
         return DPORT_UHCI0_CLK_EN;
     case PERIPH_UHCI1_MODULE:
@@ -129,14 +121,6 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return DPORT_TIMERGROUP_RST;
     case PERIPH_TIMG1_MODULE:
         return DPORT_TIMERGROUP1_RST;
-    case PERIPH_PWM0_MODULE:
-        return DPORT_PWM0_RST;
-    case PERIPH_PWM1_MODULE:
-        return DPORT_PWM1_RST;
-    case PERIPH_PWM2_MODULE:
-        return DPORT_PWM2_RST;
-    case PERIPH_PWM3_MODULE:
-        return DPORT_PWM3_RST;
     case PERIPH_UHCI0_MODULE:
         return DPORT_UHCI0_RST;
     case PERIPH_UHCI1_MODULE:

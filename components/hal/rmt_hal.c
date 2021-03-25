@@ -41,11 +41,11 @@ void rmt_hal_rx_channel_reset(rmt_hal_context_t *hal, uint32_t channel)
     rmt_ll_clear_rx_end_interrupt(hal->regs, channel);
 }
 
-void rmt_hal_tx_set_counter_clock(rmt_hal_context_t *hal, uint32_t channel, uint32_t base_clk_hz, uint32_t counter_clk_hz)
+void rmt_hal_tx_set_channel_clock(rmt_hal_context_t *hal, uint32_t channel, uint32_t base_clk_hz, uint32_t counter_clk_hz)
 {
-    rmt_ll_tx_reset_counter_clock_div(hal->regs, channel);
+    rmt_ll_tx_reset_channel_clock_div(hal->regs, channel);
     uint32_t counter_div = (base_clk_hz + counter_clk_hz / 2) / counter_clk_hz;
-    rmt_ll_tx_set_counter_clock_div(hal->regs, channel, counter_div);
+    rmt_ll_tx_set_channel_clock_div(hal->regs, channel, counter_div);
 }
 
 void rmt_hal_set_carrier_clock(rmt_hal_context_t *hal, uint32_t channel, uint32_t base_clk_hz, uint32_t carrier_clk_hz, float carrier_clk_duty)
@@ -72,7 +72,7 @@ uint32_t rmt_hal_receive(rmt_hal_context_t *hal, uint32_t channel, rmt_item32_t 
 {
     uint32_t len = 0;
     rmt_ll_rx_set_mem_owner(hal->regs, channel, RMT_MEM_OWNER_SW);
-    for (len = 0; len < SOC_RMT_CHANNEL_MEM_WORDS; len++) {
+    for (len = 0; len < SOC_RMT_MEM_WORDS_PER_CHANNEL; len++) {
         buf[len].val = hal->mem->chan[channel].data32[len].val;
         if (!(buf[len].val & 0x7FFF)) {
             break;

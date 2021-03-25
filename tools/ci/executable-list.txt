@@ -1,3 +1,4 @@
+.gitlab/ci/dependencies/generate_rules.py
 components/app_update/otatool.py
 components/efuse/efuse_table_gen.py
 components/efuse/test_efuse_host/efuse_tests.py
@@ -33,7 +34,6 @@ install.fish
 install.sh
 tools/build_apps.py
 tools/check_python_dependencies.py
-tools/ci/apply_bot_filter.py
 tools/ci/build_template_app.sh
 tools/ci/check_build_warnings.py
 tools/ci/check_callgraph.py
@@ -46,6 +46,9 @@ tools/ci/check_idf_version.sh
 tools/ci/check_kconfigs.py
 tools/ci/check_readme_links.py
 tools/ci/check_rom_apis.sh
+tools/ci/check_rules_yml.py
+tools/ci/check_tools_files_patterns.py
+tools/ci/check_type_comments.py
 tools/ci/check_ut_cmake_make.sh
 tools/ci/checkout_project_ref.py
 tools/ci/deploy_docs.py
@@ -96,6 +99,7 @@ tools/mass_mfg/mfg_gen.py
 tools/mkdfu.py
 tools/mkuf2.py
 tools/set-submodules-to-github.sh
+tools/test_apps/system/no_embedded_paths/check_for_file_paths.py
 tools/test_idf_monitor/run_test_idf_monitor.py
 tools/test_idf_py/test_idf_py.py
 tools/test_idf_size/test.sh

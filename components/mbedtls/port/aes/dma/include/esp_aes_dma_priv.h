@@ -22,27 +22,6 @@
 extern "C" {
 #endif
 
-#if SOC_AES_GDMA
-
-/**
- * @brief Initialize the GDMA channel
- *
- * @note Allocate and initialize a DMA channel (rx and tx) for the AES peripheral
- *       Only one channel will be initialized at any given time. If two or more AES operations are
- *       run in parallel the channel will be shared sequentially.
- *
- */
-void esp_aes_dma_init(void);
-
-/**
- * @brief Free the GDMA channel
- *
- * @note The channel will only be freed if there are no other AES operations currently using it
- *
- */
-void esp_aes_dma_free(void);
-#endif //SOC_AES_GDMA
-
 /**
  * @brief Start the DMA engine
  *

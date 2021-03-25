@@ -94,7 +94,7 @@ def test_examples_pppos_client(env, extra_data):
                        'pppos_example: GOT ip event!!!',
                        'pppos_example: MQTT other event id: 7',
                        # There are no fake DNS server and MQTT server set up so the example fails at this point
-                       'TRANS_TCP: DNS lookup failed err=202 res=0x0',
+                       'esp-tls: couldn\'t get hostname',
                        'MQTT_CLIENT: Error transport connect',
                        'pppos_example: MQTT_EVENT_ERROR',
                        'pppos_example: MQTT_EVENT_DISCONNECTED')

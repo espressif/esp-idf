@@ -1,0 +1,773 @@
+# for parallel jobs, CI_JOB_NAME will be "job_name index/total" (for example, "IT_001 1/2")
+# we need to convert to pattern "job_name_index.yml"
+.define_config_file_name: &define_config_file_name |
+  JOB_NAME_PREFIX=$(echo ${CI_JOB_NAME} | awk '{print $1}')
+  JOB_FULL_NAME="${JOB_NAME_PREFIX}_${CI_NODE_INDEX}"
+  CONFIG_FILE="${CONFIG_FILE_PATH}/${JOB_FULL_NAME}.yml"
+
+.target_test_job_template:
+  stage: target_test
+  needs:
+    - assign_test
+  artifacts:
+    when: always
+    paths:
+      - $LOG_PATH
+    expire_in: 1 week
+    reports:
+      junit: $LOG_PATH/*/XUNIT_RESULT.xml
+  variables:
+    TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
+    LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
+    ENV_FILE: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/EnvConfig.yml"
+    SUBMODULES_TO_FETCH: "components/esptool_py/esptool"
+  script:
+    - *define_config_file_name
+    # first test if config file exists, if not exist, exit 0
+    - test -e $CONFIG_FILE || exit 0
+    # clone test env configs
+    - retry_failed git clone $TEST_ENV_CONFIG_REPO
+    - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
+    # git clone the known failure cases repo, run test
+    - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
+    # run test
+    - cd tools/ci/python_packages/tiny_test_fw/bin
+    - run_cmd python Runner.py $TEST_CASE_PATH -c $CONFIG_FILE -e $ENV_FILE --known_failure_cases_file $CI_PROJECT_DIR/known_failure_cases/known_failure_cases.txt
+
+.example_test_template:
+  extends: .target_test_job_template
+  variables:
+    TEST_CASE_PATH: "$CI_PROJECT_DIR/examples"
+    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/examples/test_configs"
+
+.example_debug_template:
+  extends:
+    - .example_test_template
+    - .rules:test:example_test-esp32
+variables:
+    SUBMODULES_TO_FETCH: "all"
+
+test_weekend_mqtt:
+  extends:
+    - .example_test_template
+    - .rules:labels:weekend_test
+  tags:
+    - ESP32
+    - Example_WIFI
+  variables:
+    ENV_FILE: "$CI_PROJECT_DIR/components/mqtt/weekend_test/env.yml"
+    TEST_CASE_PATH: "$CI_PROJECT_DIR/components/mqtt/weekend_test"
+    CONFIG_FILE_PATH: "$CI_PROJECT_DIR/components/mqtt/weekend_test"
+
+test_weekend_network:
+  extends:
+    - .example_test_template
+    - .rules:labels:weekend_test
+  image: $CI_DOCKER_REGISTRY/rpi-net-suite$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - ESP32
+    - Example_WIFI
+  variables:
+    ENV_FILE: "$CI_PROJECT_DIR/components/lwip/weekend_test/env.yml"
+    TEST_CASE_PATH: "$CI_PROJECT_DIR/components/lwip/weekend_test"
+    CONFIG_FILE_PATH: "$CI_PROJECT_DIR/components/lwip/weekend_test"
+
+.example_test_esp32_template:
+  extends:
+    - .example_test_template
+    - .rules:test:example_test-esp32
+
+.example_test_esp32s2_template:
+  extends:
+    - .example_test_template
+    - .rules:test:example_test-esp32s2
+
+example_test_001A:
+  extends: .example_test_esp32_template
+  parallel: 4
+  tags:
+    - ESP32
+    - Example_WIFI
+
+example_test_001B:
+  extends: .example_test_esp32_template
+  tags:
+    - ESP32
+    - Example_EthKitV1
+
+example_test_001C:
+  extends: .example_test_esp32_template
+  parallel: 3
+  tags:
+    - ESP32
+    - Example_GENERIC
+
+example_test_001D:
+  extends: .example_test_esp32_template
+  tags:
+    - ESP32
+    - Example_8Mflash_Ethernet
+
+example_test_002:
+  extends: .example_test_esp32_template
+  image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - ESP32
+    - Example_ShieldBox_Basic
+
+.example_test_003:
+  extends: .example_test_esp32_template
+  tags:
+    - ESP32
+    - Example_SDIO
+
+example_test_004A:
+  extends: .example_test_esp32_template
+  tags:
+    - ESP32
+    - Example_TWAI1
+
+example_test_004B:
+  extends: .example_test_esp32_template
+  tags:
+    - ESP32
+    - Example_TWAI2
+
+example_test_005:
+  extends: .example_test_esp32_template
+  tags:
+    - ESP32
+    - Example_WIFI_BT
+
+example_test_006:
+  extends:
+    - .example_test_esp32_template
+    - .rules:labels:iperf_stress_test
+  image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - ESP32
+    - Example_ShieldBox
+
+example_test_007:
+  extends: .example_test_esp32_template
+  tags:
+    - ESP32
+    - Example_I2C_CCS811_SENSOR
+
+example_test_008A:
+  extends: .example_test_esp32_template
+  tags:
+    - ESP32
+    - Example_Flash_Encryption
+
+example_test_008B:
+  extends: .example_test_esp32_template
+  tags:
+    - ESP32
+    - Example_Flash_Encryption_OTA
+
+example_test_009:
+  extends: .example_test_esp32_template
+  tags:
+    - ESP32
+    - test_jtag_arm
+  artifacts:
+    paths:
+      - $CI_PROJECT_DIR/examples/*/*/*.log
+  variables:
+    SETUP_TOOLS: "1"
+    PYTHON_VER: 3
+
+example_test_010:
+  extends: .example_test_esp32_template
+  tags:
+    - ESP32
+    - Example_ExtFlash
+
+example_test_011:
+  extends: .example_debug_template
+  tags:
+    - ESP32
+    - Example_T2_RS485
+  artifacts:
+    paths:
+      - $CI_PROJECT_DIR/examples/protocols/modbus/serial/*.log
+      - $LOG_PATH
+  variables:
+    SETUP_TOOLS: "1"
+
+example_test_012:
+  extends: .example_test_esp32_template
+  tags:
+    - ESP32
+    - Example_RMT_IR_PROTOCOLS
+
+example_test_013:
+  extends: .example_test_esp32_template
+  tags:
+    - ESP32
+    - UT_T1_SDMODE
+
+example_test_014:
+  extends: .example_test_esp32_template
+  tags:
+    - ESP32
+    - 8Mpsram
+
+example_test_015:
+  extends: .example_test_esp32_template
+  tags:
+    - ESP32
+    - Example_PPP
+  artifacts:
+    paths:
+      - $CI_PROJECT_DIR/examples/*/*/*.log
+      - $LOG_PATH
+
+example_test_016:
+  extends: .example_test_esp32_template
+  tags:
+    - ESP32
+    - Example_Modbus_TCP
+  artifacts:
+    paths:
+      - $CI_PROJECT_DIR/examples/*/*/*.log
+      - $LOG_PATH
+
+example_test_017:
+  extends: .example_test_esp32s2_template
+  tags:
+    - ESP32S2
+    - Example_GENERIC
+
+.test_app_template:
+  extends: .target_test_job_template
+  variables:
+    TEST_CASE_PATH: "$CI_PROJECT_DIR/tools/test_apps"
+    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/tools/test_apps/test_configs"
+
+.test_app_esp32_template:
+  extends:
+    - .test_app_template
+    - .rules:test:custom_test-esp32
+
+.test_app_esp32s2_template:
+  extends:
+    - .test_app_template
+    - .rules:test:custom_test-esp32s2
+
+test_app_test_001:
+  extends: .test_app_esp32_template
+  tags:
+    - ESP32
+    - test_jtag_arm
+  artifacts:
+    paths:
+      - $CI_PROJECT_DIR/tools/test_apps/system/*/*.log
+  variables:
+    SETUP_TOOLS: "1"
+
+test_app_test_002:
+  extends: .test_app_esp32_template
+  tags:
+    - ESP32
+    - Example_WIFI
+
+test_app_test_003:
+  extends: .test_app_esp32_template
+  tags:
+    - ESP32
+    - Example_PPP
+
+test_app_test_004:
+  extends: .test_app_esp32s2_template
+  tags:
+    - ESP32S2
+    - Example_GENERIC
+
+test_app_test_esp32_generic:
+  extends: .test_app_esp32_template
+  parallel: 4
+  tags:
+    - ESP32
+    - Example_GENERIC
+  variables:
+    SETUP_TOOLS: "1"
+
+.component_ut_template:
+  extends: .target_test_job_template
+  variables:
+    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/component_ut/test_configs"
+  script:
+    - *define_config_file_name
+    # first test if config file exists, if not exist, exit 0
+    - test -e $CONFIG_FILE || exit 0
+    - set_component_ut_vars
+    # clone test env configs
+    - retry_failed git clone $TEST_ENV_CONFIG_REPO
+    - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
+    # git clone the known failure cases repo, run test
+    - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
+    # run test
+    - cd tools/ci/python_packages/tiny_test_fw/bin
+    - run_cmd python Runner.py $COMPONENT_UT_DIRS -c $CONFIG_FILE -e $ENV_FILE --known_failure_cases_file $CI_PROJECT_DIR/known_failure_cases/known_failure_cases.txt
+
+.component_ut_esp32_template:
+  extends:
+    - .component_ut_template
+    - .rules:test:component_ut-esp32
+
+component_ut_test_001:
+  extends: .component_ut_esp32_template
+  tags:
+    - ESP32
+    - COMPONENT_UT_GENERIC
+
+.unit_test_template:
+  extends: .target_test_job_template
+  variables:
+    TEST_CASE_PATH: "$CI_PROJECT_DIR/tools/unit-test-app"
+    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/components/idf_test/unit_test/CIConfigs"
+
+.unit_test_esp32_template:
+  extends:
+    - .unit_test_template
+    - .rules:test:unit_test-esp32
+
+.unit_test_esp32s2_template:
+  extends:
+    - .unit_test_template
+    - .rules:test:unit_test-esp32s2
+
+.unit_test_esp32c3_template:
+  extends:
+    - .unit_test_template
+    - .rules:test:unit_test-esp32c3
+
+UT_001:
+  extends: .unit_test_esp32_template
+  parallel: 49
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
+# Max. allowed value of 'parallel' is 50.
+
+UT_002:
+  extends: .unit_test_esp32_template
+  parallel: 13
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - psram
+
+UT_003:
+  extends: .unit_test_esp32_template
+  parallel: 2
+  tags:
+    - ESP32_IDF
+    - UT_T1_SDMODE
+
+UT_004:
+  extends: .unit_test_esp32_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_SPIMODE
+
+UT_005:
+  extends: .unit_test_esp32_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_SDMODE
+    - psram
+
+UT_006:
+  extends: .unit_test_esp32_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_SPIMODE
+    - psram
+
+UT_008:
+  extends: .unit_test_esp32_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_GPIO
+    - psram
+
+UT_012:
+  extends: .unit_test_esp32_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_LEDC
+    - psram
+
+UT_014:
+  extends: .unit_test_esp32_template
+  tags:
+    - ESP32_IDF
+    - UT_T2_RS485
+    - psram
+
+UT_015:
+  extends: .unit_test_esp32_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_RMT
+
+UT_016:
+  extends: .unit_test_esp32_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_RMT
+    - psram
+
+UT_017:
+  extends: .unit_test_esp32_template
+  tags:
+    - ESP32_IDF
+    - EMMC
+
+UT_018:
+  extends: .unit_test_esp32_template
+  parallel: 2
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - 8Mpsram
+
+UT_020:
+  extends: .unit_test_esp32_template
+  tags:
+    - ESP32_IDF
+    - Example_SPI_Multi_device
+    - psram
+
+UT_021:
+  extends: .unit_test_esp32_template
+  parallel: 2
+  tags:
+    - ESP32_IDF
+    - psram
+    - UT_T1_FlashEncryption
+
+UT_022:
+  extends: .unit_test_esp32_template
+  tags:
+    - ESP32_IDF
+    - UT_T2_I2C
+    - psram
+
+UT_023:
+  extends: .unit_test_esp32_template
+  parallel: 2
+  tags:
+    - ESP32_IDF
+    - UT_T1_MCPWM
+
+UT_024:
+  extends: .unit_test_esp32_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_MCPWM
+    - psram
+
+UT_028:
+  extends: .unit_test_esp32_template
+  tags:
+    - ESP32_IDF
+    - UT_T2_1
+    - psram
+
+UT_031:
+  extends: .unit_test_esp32_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_FlashEncryption
+
+UT_033:
+  extends: .unit_test_esp32_template
+  tags:
+    - ESP32_IDF
+    - UT_T2_Ethernet
+    - psram
+
+UT_034:
+  extends: .unit_test_esp32_template
+  parallel: 3
+  tags:
+    - ESP32_IDF
+    - UT_T1_ESP_FLASH
+
+UT_035:
+  extends: .unit_test_esp32s2_template
+  parallel: 50
+  tags:
+    - ESP32S2_IDF
+    - UT_T1_1
+
+UT_036:
+  extends: .unit_test_esp32_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_PSRAMV0
+    - psram
+
+# ToDo: re-enable this job when ESP32-S2 LEDC runner installed
+# UT_037:
+#   extends: .unit_test_esp32s2_template
+#   tags:
+#     - ESP32S2_IDF
+#     - UT_T1_LEDC
+
+UT_038:
+  extends: .unit_test_esp32s2_template
+  parallel: 3
+  tags:
+    - ESP32S2_IDF
+    - UT_T1_ESP_FLASH
+
+UT_041:
+  extends: .unit_test_esp32_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_no32kXTAL
+    - psram
+
+UT_043:
+  extends: .unit_test_esp32_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_32kXTAL
+    - psram
+
+UT_044:
+  extends: .unit_test_esp32_template
+  tags:
+    - ESP32_IDF
+    - UT_SDIO
+
+UT_045:
+  extends: .unit_test_esp32_template
+  tags:
+    - ESP32_IDF
+    - UT_SDIO
+    - psram
+
+UT_046:
+  extends: .unit_test_esp32_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_GPIO
+
+UT_047:
+  extends: .unit_test_esp32s2_template
+  parallel: 3
+  tags:
+    - ESP32S2_IDF
+    - UT_T1_1
+
+UT_C3:
+  extends: .unit_test_esp32c3_template
+  parallel: 30
+  tags:
+    - ESP32C3_IDF
+    - UT_T1_1
+
+UT_C3_FLASH:
+  extends: .unit_test_esp32c3_template
+  parallel: 3
+  tags:
+    - ESP32C3_IDF
+    - UT_T1_ESP_FLASH
+
+.integration_test_template:
+  extends:
+    - .target_test_job_template
+    - .rules:test:integration_test
+  needs:
+    - assign_test
+    - build_ssc_esp32
+  variables:
+    LOCAL_ENV_CONFIG_PATH: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32_IDF"
+    LOG_PATH: "${CI_PROJECT_DIR}/${CI_COMMIT_SHA}"
+    TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/auto_test_script/TestCaseFiles"
+    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/ModuleDefinition.yml"
+    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/components/idf_test/integration_test/CIConfigs"
+    KNOWN_ISSUE_FILE: "${CI_PROJECT_DIR}/components/idf_test/integration_test/KnownIssues"
+    CI_RUNNER_SCRIPT: "${CI_PROJECT_DIR}/auto_test_script/bin/CIRunner.py"
+    PYTHONPATH: ${CI_PROJECT_DIR}/auto_test_script/packages
+    # auto_test_script only supports python 3.7.x
+    PYTHON_VER: 3.7.7
+  script:
+    - *define_config_file_name
+    # first test if config file exists, if not exist, exit 0
+    - test -e $CONFIG_FILE || exit 0
+    # clone local test env configs
+    - retry_failed git clone $TEST_ENV_CONFIG_REPO
+    - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
+    # clone test bench
+    # can not retry if downing git lfs files failed, so using empty_branch first.
+    - retry_failed git clone ${CI_AUTO_TEST_SCRIPT_REPO_URL} -b empty_branch
+    - retry_failed git -C auto_test_script checkout -f ${CI_AUTO_TEST_SCRIPT_REPO_BRANCH}
+    - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script --customized_only
+    - cat ${KNOWN_ISSUE_FILE} >> ${TEST_CASE_FILE_PATH}/KnownIssues
+    # run test
+    - python ${CI_RUNNER_SCRIPT} -l "$LOG_PATH/$JOB_FULL_NAME" -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH
+
+nvs_compatible_test:
+  extends: .integration_test_template
+  artifacts:
+    when: always
+    paths:
+      - $LOG_PATH
+      - nvs_wifi.bin
+    expire_in: 1 mos
+  tags:
+    - ESP32_IDF
+    - NVS_Compatible
+  script:
+    - *define_config_file_name
+    # first test if config file exists, if not exist, exit 0
+    - test -e $CONFIG_FILE || exit 0
+    # clone local test env configs
+    - retry_failed git clone $TEST_ENV_CONFIG_REPO
+    - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
+    # clone test bench
+    # can not retry if downing git lfs files failed, so using empty_branch first.
+    - retry_failed git clone ${CI_AUTO_TEST_SCRIPT_REPO_URL} -b empty_branch
+    - retry_failed git -C auto_test_script checkout -f ${CI_AUTO_TEST_SCRIPT_REPO_BRANCH}
+    - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script --customized_only
+    # prepare nvs bins
+    - cd auto_test_script
+    - ./tools/prepare_nvs_bin.sh
+    # run test
+    - python ${CI_RUNNER_SCRIPT} -l "$LOG_PATH/$JOB_FULL_NAME" -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH
+
+IT_001:
+  extends: .integration_test_template
+  parallel: 3
+  tags:
+    - ESP32_IDF
+    - SSC_T1_4
+
+IT_002:
+  extends: .integration_test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_2
+
+IT_003:
+  extends: .integration_test_template
+  parallel: 14
+  tags:
+    - ESP32_IDF
+    - SSC_T2_5
+
+IT_004:
+  extends: .integration_test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_APC
+
+IT_005:
+  extends: .integration_test_template
+  parallel: 2
+  tags:
+    - ESP32_IDF
+    - SSC_T1_5
+
+IT_006:
+  extends: .integration_test_template
+  parallel: 12
+  tags:
+    - ESP32_IDF
+    - SSC_T1_6
+
+IT_007:
+  extends: .integration_test_template
+  parallel: 3
+  tags:
+    - ESP32_IDF
+    - SSC_T1_7
+
+IT_008:
+  extends: .integration_test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_8
+
+IT_009:
+  extends: .integration_test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_3
+
+IT_011:
+  extends: .integration_test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_MESH1
+
+IT_012:
+  extends: .integration_test_template
+  parallel: 2
+  tags:
+    - ESP32_IDF
+    - SSC_T2_MESH1
+
+IT_013:
+  extends: .integration_test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T3_MESH1
+
+IT_014:
+  extends: .integration_test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T6_MESH1
+
+IT_015:
+  extends: .integration_test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T12_MESH1
+
+IT_016:
+  extends: .integration_test_template
+  allow_failure: true
+  tags:
+    - ESP32_IDF
+    - SSC_T50_MESH1
+
+IT_017:
+  extends: .integration_test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_MESH2
+
+IT_018:
+  extends: .integration_test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_9
+
+IT_019:
+  extends: .integration_test_template
+  parallel: 2
+  tags:
+    - ESP32_IDF
+    - SSC_T2_2
+
+IT_020:
+  extends: .integration_test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T2_3
+
+IT_021:
+  extends: .integration_test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T2_4

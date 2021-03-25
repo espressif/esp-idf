@@ -16,6 +16,20 @@ Each outgoing frame has the FIN flag set by default.
 In case an application wants to send fragmented data, it must be done manually by setting the
 `fragmented` option and using the `final` flag as described in [RFC6455, section 5.4](https://tools.ietf.org/html/rfc6455#section-5.4).
 
+`httpd_ws_recv_frame` support two ways to get frame payload.
+* Static buffer -- Allocate maximum expected packet length (either statically or dynamically) and call `httpd_ws_recv_frame()` referencing this buffer and it's size. (Unnecessarily large buffers might cause memory waste)
+
+```
+#define MAX_PAYLOAD_LEN 128
+uint8_t buf[MAX_PAYLOAD_LEN] = { 0 };
+httpd_ws_frame_t ws_pkt;
+ws_pkt.payload = buf;
+httpd_ws_recv_frame(req, &ws_pkt, MAX_PAYLOAD_LEN);
+```
+* Dynamic buffer -- Refer to the examples, which receive websocket data in these three steps:
+   1) Call `httpd_ws_recv_frame()` with zero buffer size
+   2) Allocate the size based on the received packet length
+   3) Call `httpd_ws_recv_frame()` with the allocated buffer
 
 ### Hardware Required
 

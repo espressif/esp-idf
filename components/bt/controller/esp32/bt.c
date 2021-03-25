@@ -1309,7 +1309,8 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     btdm_lpclk_sel = BTDM_LPCLK_SEL_XTAL; // set default value
 #endif
 
-    bool select_src_ret, set_div_ret;
+    bool select_src_ret __attribute__((unused));
+    bool set_div_ret __attribute__((unused));
     if (btdm_lpclk_sel == BTDM_LPCLK_SEL_XTAL) {
         select_src_ret = btdm_lpclk_select_src(BTDM_LPCLK_SEL_XTAL);
         set_div_ret = btdm_lpclk_set_div(rtc_clk_xtal_freq_get() * 2 - 1);
@@ -1442,15 +1443,11 @@ esp_err_t esp_bt_controller_deinit(void)
 static void bt_shutdown(void)
 {
     esp_err_t ret = ESP_OK;
-    ESP_LOGD(BTDM_LOG_TAG, "stop/deinit bt");
+    ESP_LOGD(BTDM_LOG_TAG, "stop Bluetooth");
 
     ret = esp_bt_controller_disable();
     if (ESP_OK != ret) {
         ESP_LOGW(BTDM_LOG_TAG, "controller disable ret=%d", ret);
-    }
-    ret = esp_bt_controller_deinit();
-    if (ESP_OK != ret) {
-        ESP_LOGW(BTDM_LOG_TAG, "controller deinit ret=%d", ret);
     }
     return;
 }

@@ -81,6 +81,7 @@
 
 #include "sdkconfig.h"
 
+#include "soc/soc_caps.h"
 #include "soc/periph_defs.h"
 #include "soc/system_reg.h"
 #include "hal/systimer_hal.h"
@@ -147,8 +148,7 @@ void vPortExitCritical(void)
 void vPortSetupTimer(void)
 {
     /* set system timer interrupt vector */
-    esp_err_t err = esp_intr_alloc(ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE, ESP_INTR_FLAG_IRAM, vPortSysTickHandler, NULL, NULL);
-    assert(err == ESP_OK);
+    ESP_ERROR_CHECK(esp_intr_alloc(ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE, ESP_INTR_FLAG_IRAM, vPortSysTickHandler, NULL, NULL));
 
     /* configure the timer */
     systimer_hal_init();
@@ -177,6 +177,24 @@ void prvTaskExitError(void)
 void vPortClearInterruptMask(int mask)
 {
     REG_WRITE(INTERRUPT_CORE0_CPU_INT_THRESH_REG, mask);
+    /**
+     * The delay between the moment we unmask the interrupt threshold register
+     * and the moment the potential requested interrupt is triggered is not
+     * null: up to three machine cycles/instructions can be executed.
+     *
+     * When compilation size optimization is enabled, this function and its
+     * callers returning void will have NO epilogue, thus the instruction
+     * following these calls will be executed.
+     *
+     * If the requested interrupt is a context switch to a higher priority
+     * task then the one currently running, we MUST NOT execute any instruction
+     * before the interrupt effectively happens.
+     * In order to prevent this, force this routine to have a 3-instruction
+     * delay before exiting.
+     */
+    asm volatile ( "nop" );
+    asm volatile ( "nop" );
+    asm volatile ( "nop" );
 }
 
 /* Set interrupt mask and return current interrupt enable register */
@@ -187,6 +205,17 @@ int vPortSetInterruptMask(void)
     ret = REG_READ(INTERRUPT_CORE0_CPU_INT_THRESH_REG);
     REG_WRITE(INTERRUPT_CORE0_CPU_INT_THRESH_REG, RVHAL_EXCM_LEVEL);
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
+    /**
+     * In theory, this function should not return immediately as there is a
+     * delay between the moment we mask the interrupt threshold register and
+     * the moment a potential lower-priority interrupt is triggered (as said
+     * above), it should have a delay of 2 machine cycles/instructions.
+     *
+     * However, in practice, this function has an epilogue of one instruction,
+     * thus the instruction masking the interrupt threshold register is
+     * followed by two instructions: `ret` and `csrrs` (RV_SET_CSR).
+     * That's why we don't need any additional nop instructions here.
+     */
     return ret;
 }
 
@@ -302,11 +331,17 @@ void vPortYield(void)
 }
 
 #define STACK_WATCH_AREA_SIZE 32
+#define STACK_WATCH_POINT_NUMBER (SOC_CPU_WATCHPOINTS_NUM - 1)
+
 void vPortSetStackWatchpoint(void *pxStackStart)
 {
     uint32_t addr = (uint32_t)pxStackStart;
     addr = (addr + (STACK_WATCH_AREA_SIZE - 1)) & (~(STACK_WATCH_AREA_SIZE - 1));
-    esp_set_watchpoint(7, (char *)addr, STACK_WATCH_AREA_SIZE, ESP_WATCHPOINT_STORE);
+    esp_cpu_set_watchpoint(STACK_WATCH_POINT_NUMBER, (char *)addr, STACK_WATCH_AREA_SIZE, ESP_WATCHPOINT_STORE);
+}
+
+uint32_t xPortGetTickRateHz(void) {
+	return (uint32_t)configTICK_RATE_HZ;
 }
 
 BaseType_t xPortInIsrContext(void)

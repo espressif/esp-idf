@@ -10,13 +10,13 @@ Overview
 Identifying and handling run-time errors is important for developing robust applications. There can be multiple kinds of run-time errors:
 
 - Recoverable errors:
-  
+
   - Errors indicated by functions through return values (error codes)
   - C++ exceptions, thrown using ``throw`` keyword
 
 - Unrecoverable (fatal) errors:
-  
-  - Failed assertions (using ``assert`` macro and equivalent methods) and ``abort()`` calls.
+
+  - Failed assertions (using ``assert`` macro and equivalent methods, see :ref:`assertions`) and ``abort()`` calls.
   - CPU exceptions: access to protected regions of memory, illegal instruction, etc.
   - System level checks: watchdog timeout, cache access error, stack overflow, stack smashing, heap corruption, etc.
 
@@ -42,6 +42,8 @@ For each error code defined in ESP-IDF components, :cpp:type:`esp_err_t` value c
 Additionally, :cpp:func:`esp_err_to_name_r` function will attempt to interpret the error code as a `standard POSIX error code <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/errno.h.html>`_, if no matching ``ESP_ERR_`` value is found. This is done using ``strerror_r`` function. POSIX error codes (such as ``ENOENT``, ``ENOMEM``) are defined in ``errno.h`` and are typically obtained from ``errno`` variable. In ESP-IDF this variable is thread-local: multiple FreeRTOS tasks have their own copies of ``errno``. Functions which set ``errno`` only modify its value for the task they run in.
 
 This feature is enabled by default, but can be disabled to reduce application binary size. See :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP`. When this feature is disabled, :cpp:func:`esp_err_to_name` and :cpp:func:`esp_err_to_name_r` are still defined and can be called. In this case, :cpp:func:`esp_err_to_name` will return ``UNKNOWN ERROR``, and :cpp:func:`esp_err_to_name_r` will return ``Unknown error 0xXXXX(YYYYY)``, where ``0xXXXX`` and ``YYYYY`` are the hexadecimal and decimal representations of the error code, respectively.
+
+.. _esp-error-check-macro:
 
 ``ESP_ERROR_CHECK`` macro
 -------------------------

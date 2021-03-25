@@ -74,6 +74,9 @@ static int64_t s_phy_rf_en_ts = 0;
 /* PHY spinlock for libphy.a */
 static DRAM_ATTR portMUX_TYPE s_phy_int_mux = portMUX_INITIALIZER_UNLOCKED;
 
+/* Memory to store PHY digital registers */
+static uint32_t* s_phy_digital_regs_mem = NULL;
+
 #if CONFIG_MAC_BB_PD
 uint32_t* s_mac_bb_pd_mem = NULL;
 #endif
@@ -198,6 +201,24 @@ IRAM_ATTR void esp_phy_common_clock_disable(void)
     wifi_bt_common_module_disable();
 }
 
+static inline void phy_digital_regs_store(void)
+{
+    if (s_phy_digital_regs_mem == NULL) {
+        s_phy_digital_regs_mem = (uint32_t *)malloc(SOC_PHY_DIG_REGS_MEM_SIZE);
+    }
+
+    if (s_phy_digital_regs_mem != NULL) {
+        phy_dig_reg_backup(true, s_phy_digital_regs_mem);
+    }
+}
+
+static inline void phy_digital_regs_load(void)
+{
+    if (s_phy_digital_regs_mem != NULL) {
+        phy_dig_reg_backup(false, s_phy_digital_regs_mem);
+    }
+}
+
 void esp_phy_enable(void)
 {
     _lock_acquire(&s_phy_access_lock);
@@ -217,6 +238,7 @@ void esp_phy_enable(void)
         }
         else {
             phy_wakeup_init();
+            phy_digital_regs_load();
         }
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -240,6 +262,7 @@ void esp_phy_disable(void)
 
     s_phy_access_ref--;
     if (s_phy_access_ref == 0) {
+        phy_digital_regs_store();
         // Disable PHY and RF.
         phy_close_rf();
 #if CONFIG_IDF_TARGET_ESP32C3
@@ -263,7 +286,7 @@ void esp_mac_bb_pd_mem_init(void)
     _lock_acquire(&s_phy_access_lock);
 
     if (s_mac_bb_pd_mem == NULL) {
-        s_mac_bb_pd_mem = (uint32_t *)heap_caps_malloc(MAC_BB_PD_MEM_SIZE, MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
+        s_mac_bb_pd_mem = (uint32_t *)heap_caps_malloc(SOC_MAC_BB_PD_MEM_SIZE, MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
     }
 
     _lock_release(&s_phy_access_lock);

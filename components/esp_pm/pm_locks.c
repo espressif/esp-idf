@@ -168,10 +168,16 @@ esp_err_t esp_pm_dump_locks(FILE* stream)
 
     _lock_acquire(&s_list_lock);
 #ifdef WITH_PROFILING
-    fprintf(stream, "Time: %lld\n", cur_time);
+    fprintf(stream, "Time since bootup: %lld us\n", cur_time);
 #endif
 
     fprintf(stream, "Lock stats:\n");
+#ifdef WITH_PROFILING
+    fprintf(stream, "%-15s %-14s  %-5s  %-8s  %-13s  %-8s  %-8s\n",
+            "Name", "Type", "Arg", "Active", "Total_count", "Time(us)", "Time(%)");
+#else
+    fprintf(stream, "%-15s %-14s  %-5s  %-8s\n", "Name", "Type", "Arg", "Active");
+#endif
     esp_pm_lock_t* it;
     char line[80];
     SLIST_FOREACH(it, &s_list, next) {
@@ -193,12 +199,12 @@ esp_err_t esp_pm_dump_locks(FILE* stream)
         if (it->count > 0) {
             time_held += cur_time - it->last_taken;
         }
-        snprintf(buf, len, "%14s  %3d  %3d  %9d  %12lld  %3lld%%\n",
+        snprintf(buf, len, "%-14s  %-5d  %-8d  %-13d  %-8lld  %-3lld%%\n",
                 s_lock_type_names[it->type], it->arg,
                 it->count, it->times_taken, time_held,
                 (time_held + cur_time_d100 - 1) / cur_time_d100);
 #else
-        snprintf(buf, len, "%14s  %3d  %3d\n", s_lock_type_names[it->type], it->arg, it->count);
+        snprintf(buf, len, "%-14s  %-5d  %-8d\n", s_lock_type_names[it->type], it->arg, it->count);
 #endif // WITH_PROFILING
         portEXIT_CRITICAL(&it->spinlock);
         fputs(line, stream);
