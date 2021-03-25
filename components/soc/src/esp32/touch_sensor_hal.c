@@ -19,7 +19,9 @@
 
 void touch_hal_init(void)
 {
+    touch_ll_stop_fsm();
     touch_ll_intr_disable();
+    touch_ll_intr_clear();
     touch_ll_clear_channel_mask(SOC_TOUCH_SENSOR_BIT_MASK_MAX);
     touch_ll_clear_group_mask(SOC_TOUCH_SENSOR_BIT_MASK_MAX, SOC_TOUCH_SENSOR_BIT_MASK_MAX);
     touch_ll_set_trigger_mode(TOUCH_TRIGGER_MODE_DEFAULT);

@@ -37,6 +37,9 @@
 #include "hal/wdt_hal.h"
 #include "hal/clk_gate_ll.h"
 #include "driver/rtc_io.h"
+#include "hal/touch_sensor_hal.h"
+#include "driver/touch_sensor.h"
+#include "driver/touch_sensor_common.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "sdkconfig.h"
@@ -458,6 +461,7 @@ static void touch_wakeup_prepare(void)
     touch_pad_sleep_channel_t slp_config;
     touch_pad_fsm_stop();
     touch_pad_clear_channel_mask(SOC_TOUCH_SENSOR_BIT_MASK_MAX);
+    touch_ll_intr_clear(TOUCH_PAD_INTR_MASK_ALL); // Clear state from previous wakeup
     touch_pad_sleep_channel_get_info(&slp_config);
     touch_pad_set_channel_mask(BIT(slp_config.touch_num));
     touch_pad_fsm_start();
