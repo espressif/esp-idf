@@ -42,7 +42,6 @@ void adc_hal_digi_deinit(void)
     adc_ll_digi_filter_reset(ADC_NUM_2);
     adc_ll_digi_reset();
     adc_ll_digi_controller_clk_disable();
-    adc_hal_deinit();
 }
 
 /**
@@ -62,8 +61,6 @@ void adc_hal_digi_controller_config(const adc_digi_config_t *cfg)
     //only one pattern table is supported on C3, but LL still needs one argument.
     const int pattern_both = 0;
 
-    /* If enable digtal controller, adc xpd should always on. */
-    adc_ll_set_power_manage(ADC_POWER_SW_ON);
     if (cfg->adc_pattern_len) {
         adc_ll_digi_clear_pattern_table(pattern_both);
         adc_ll_digi_set_pattern_table_len(pattern_both, cfg->adc_pattern_len);

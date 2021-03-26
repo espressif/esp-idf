@@ -287,6 +287,7 @@ esp_err_t adc_digi_start(void)
         ESP_LOGE(ADC_TAG, "The driver is already started");
         return ESP_ERR_INVALID_STATE;
     }
+    adc_power_acquire();
     //reset flags
     s_adc_digi_ctx->ringbuf_overflow_flag = 0;
     s_adc_digi_ctx->driver_start_flag = 1;
@@ -356,6 +357,7 @@ esp_err_t adc_digi_stop(void)
     if (s_adc_digi_ctx->use_adc2) {
         SAR_ADC2_LOCK_RELEASE();
     }
+    adc_power_release();
 
     return ESP_OK;
 }
@@ -450,7 +452,7 @@ esp_err_t adc_vref_to_gpio(adc_unit_t adc_unit, gpio_num_t gpio)
         }
     }
 
-    adc_hal_set_power_manage(ADC_POWER_SW_ON);
+    adc_power_acquire();
     if (adc_unit & ADC_UNIT_1) {
         ADC_ENTER_CRITICAL();
         adc_hal_vref_output(ADC_NUM_1, channel, true);
@@ -495,6 +497,7 @@ int adc1_get_raw(adc1_channel_t channel)
     int raw_out = 0;
 
     periph_module_enable(PERIPH_SARADC_MODULE);
+    adc_power_acquire();
 
     SAR_ADC1_LOCK_ACQUIRE();
 
@@ -503,14 +506,13 @@ int adc1_get_raw(adc1_channel_t channel)
     adc_hal_set_calibration_param(ADC_NUM_1, cal_val);
 
     ADC_REG_LOCK_ENTER();
-    adc_hal_set_power_manage(ADC_POWER_SW_ON);
     adc_hal_set_atten(ADC_NUM_2, channel, atten);
     adc_hal_convert(ADC_NUM_1, channel, &raw_out);
-    adc_hal_set_power_manage(ADC_POWER_BY_FSM);
     ADC_REG_LOCK_EXIT();
 
     SAR_ADC1_LOCK_RELEASE();
 
+    adc_power_release();
     periph_module_disable(PERIPH_SARADC_MODULE);
 
     return raw_out;
@@ -540,6 +542,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     esp_err_t ret = ESP_OK;
 
     periph_module_enable(PERIPH_SARADC_MODULE);
+    adc_power_acquire();
 
     SAR_ADC2_LOCK_ACQUIRE();
 
@@ -548,14 +551,13 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     adc_hal_set_calibration_param(ADC_NUM_2, cal_val);
 
     ADC_REG_LOCK_ENTER();
-    adc_hal_set_power_manage(ADC_POWER_SW_ON);
     adc_hal_set_atten(ADC_NUM_2, channel, atten);
     ret = adc_hal_convert(ADC_NUM_2, channel, raw_out);
-    adc_hal_set_power_manage(ADC_POWER_BY_FSM);
     ADC_REG_LOCK_EXIT();
 
     SAR_ADC2_LOCK_RELEASE();
 
+    adc_power_release();
     periph_module_disable(PERIPH_SARADC_MODULE);
 
     return ret;
