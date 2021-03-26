@@ -12,9 +12,9 @@ A Universal Asynchronous Receiver/Transmitter (UART) is a hardware feature that 
 
     The ESP32 chip has three UART controllers (UART0, UART1, and UART2) that feature an identical set of registers for ease of programming and flexibility.
 
-.. only:: esp32s2
+.. only:: esp32s2 or esp32c3
 
-    The ESP32-S2 chip has two UART controllers (UART0 and UART1) that feature an identical set of registers for ease of programming and flexibility.
+    The {IDF_TARGET_NAME} chip has two UART controllers (UART0 and UART1) that feature an identical set of registers for ease of programming and flexibility.
 
 Each UART controller is independently configurable with parameters such as baud rate, data bit length, bit ordering, number of stop bits, parity bit etc. All the controllers are compatible with UART-enabled devices from various manufacturers and can also support Infrared Data Association protocols (IrDA).
 
@@ -115,6 +115,12 @@ The same macro should be specified for pins that will not be used.
     // Set UART pins(TX: IO17 (UART1 default), RX: IO18 (UART1 default), RTS: IO19, CTS: IO20)
     ESP_ERROR_CHECK(uart_set_pin(UART_NUM_1, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, 19, 20));
 
+.. only:: esp32c3
+
+  .. code-block:: c
+  
+    // Set UART pins(TX: IO4, RX: IO5, RTS: IO19, CTS: IO20)
+    ESP_ERROR_CHECK(uart_set_pin(UART_NUM_1, 4, 5, 19, 20));
 
 .. _uart-api-driver-installation:
 
