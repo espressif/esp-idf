@@ -2362,6 +2362,10 @@ extern "C" {
 #define RTC_CNTL_FIB_SEL_V  0x7
 #define RTC_CNTL_FIB_SEL_S  0
 
+#define RTC_CNTL_FIB_GLITCH_RST BIT(0)
+#define RTC_CNTL_FIB_BOR_RST BIT(1)
+#define RTC_CNTL_FIB_SUPER_WDT_RST BIT(2)
+
 #define RTC_CNTL_GPIO_WAKEUP_REG          (DR_REG_RTCCNTL_BASE + 0x0110)
 /* RTC_CNTL_GPIO_PIN0_WAKEUP_ENABLE : R/W ;bitpos:[31] ;default: 1'b0 ; */
 /*description: */
