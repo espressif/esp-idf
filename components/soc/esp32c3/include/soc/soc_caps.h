@@ -39,7 +39,7 @@
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_BRP_MIN                2
-#define SOC_TWAI_BRP_MAX                32768
+#define SOC_TWAI_BRP_MAX                16384
 #define SOC_TWAI_SUPPORTS_RX_STATUS     1
 
 /*--------------------------- SHA CAPS ---------------------------------------*/
