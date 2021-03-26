@@ -223,6 +223,7 @@ typedef struct {
 } adc_digi_clk_t;
 
 #endif //!CONFIG_IDF_TARGET_ESP32
+
 /**
   * @brief ADC digital controller (DMA mode) configuration parameters.
   *
@@ -294,6 +295,18 @@ typedef struct {
 #endif
 } adc_digi_config_t;
 
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+/**
+ * @brief ADC digital controller (DMA mode) interrupt type options.
+ */
+typedef enum {
+    ADC_DIGI_INTR_MASK_MONITOR = 0x1,
+    ADC_DIGI_INTR_MASK_MEAS_DONE = 0x2,
+    ADC_DIGI_INTR_MASK_ALL = 0x3,
+} adc_digi_intr_t;
+FLAG_ATTR(adc_digi_intr_t)
+#endif
+
 #if !CONFIG_IDF_TARGET_ESP32
 
 /**
@@ -331,24 +344,6 @@ typedef struct {
     .dig_pri = 0, \
     .pwdet_pri = 2, \
 }
-
-/**
- * @brief ADC digital controller (DMA mode) interrupt type options.
- */
-typedef enum {
-#if CONFIG_IDF_TARGET_ESP32C3
-    ADC_DIGI_INTR_MASK_MONITOR0_HIGH = BIT(0),
-    ADC_DIGI_INTR_MASK_MONITOR0_LOW  = BIT(1),
-    ADC_DIGI_INTR_MASK_MONITOR1_HIGH = BIT(2),
-    ADC_DIGI_INTR_MASK_MONITOR1_LOW  = BIT(3),
-    ADC_DIGI_INTR_MASK_MEAS_DONE     = BIT(4),
-#else
-    ADC_DIGI_INTR_MASK_MONITOR = 0x1,
-    ADC_DIGI_INTR_MASK_MEAS_DONE = 0x2,
-    ADC_DIGI_INTR_MASK_ALL = 0x3,
-#endif
-} adc_digi_intr_t;
-FLAG_ATTR(adc_digi_intr_t)
 
 /**
  * @brief ADC digital controller (DMA mode) filter index options.
@@ -444,10 +439,3 @@ typedef struct {
 } adc_digi_monitor_t;
 
 #endif // CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-
-#if CONFIG_IDF_TARGET_ESP32C3
-typedef enum {
-    ADC_EVENT_ADC1_DONE = BIT(0),
-    ADC_EVENT_ADC2_DONE = BIT(1),
-} adc_event_t;
-#endif

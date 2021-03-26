@@ -45,6 +45,18 @@ void adc_hal_digi_deinit(void)
     adc_hal_deinit();
 }
 
+/**
+ * - Set ADC digital controller clock division factor. The clock is divided from `APLL` or `APB` clock.
+ *   Expression: controller_clk = APLL/APB * (div_num  + div_a / div_b + 1).
+ * - Enable clock and select clock source for ADC digital controller.
+ */
+static void adc_hal_digi_clk_config(void)
+{
+    //Here we set the clock divider factor to make the digital clock to 5M Hz
+    adc_ll_digi_controller_clk_div(ADC_LL_CLKM_DIV_NUM_DEFAULT, ADC_LL_CLKM_DIV_B_DEFAULT, ADC_LL_CLKM_DIV_A_DEFAULT);
+    adc_ll_digi_controller_clk_enable(0);
+}
+
 void adc_hal_digi_controller_config(const adc_digi_config_t *cfg)
 {
     //only one pattern table is supported on C3, but LL still needs one argument.
@@ -60,7 +72,6 @@ void adc_hal_digi_controller_config(const adc_digi_config_t *cfg)
         }
     }
 
-    adc_ll_set_controller(pattern_both, ADC_CTRL_DIG);
     if (cfg->conv_limit_en) {
         adc_ll_digi_set_convert_limit_num(cfg->conv_limit_num);
         adc_ll_digi_convert_limit_enable();
@@ -72,31 +83,6 @@ void adc_hal_digi_controller_config(const adc_digi_config_t *cfg)
     uint32_t interval = APB_CLK_FREQ / (ADC_LL_CLKM_DIV_NUM_DEFAULT + ADC_LL_CLKM_DIV_A_DEFAULT / ADC_LL_CLKM_DIV_B_DEFAULT + 1) / 2 / cfg->sample_freq_hz;
     adc_ll_digi_set_trigger_interval(interval);
     adc_hal_digi_clk_config();
-}
-
-void adc_hal_digi_clk_config(void)
-{
-    //Here we set the clock divider factor to make the digital clock to 5M Hz
-    adc_ll_digi_controller_clk_div(ADC_LL_CLKM_DIV_NUM_DEFAULT, ADC_LL_CLKM_DIV_B_DEFAULT, ADC_LL_CLKM_DIV_A_DEFAULT);
-    adc_ll_digi_controller_clk_enable(0);
-}
-
-/**
- * Enable digital controller to trigger the measurement.
- */
-void adc_hal_digi_enable(void)
-{
-    adc_ll_digi_dma_enable();
-    adc_ll_digi_trigger_enable();
-}
-
-/**
- * Disable digital controller to trigger the measurement.
- */
-void adc_hal_digi_disable(void)
-{
-    adc_ll_digi_trigger_disable();
-    adc_ll_digi_dma_disable();
 }
 
 static void filter_update(adc_digi_filter_idx_t idx)
