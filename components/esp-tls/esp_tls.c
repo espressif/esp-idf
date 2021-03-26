@@ -292,6 +292,11 @@ static int create_ssl_handle(esp_tls_t *tls, const char *hostname, size_t hostle
             ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%x\n\n", -ret);
             goto exit;
         }
+        if (ret > 0) {
+            /* This will happen if the CA chain contains one or more invalid certs, going ahead as the hadshake
+            * may still succeed if the other certificates in the CA chain are enough for the authentication */
+            ESP_LOGW(TAG, "mbedtls_x509_crt_parse was partly successful. No. of failed certificates: %d", ret);
+        }
         mbedtls_ssl_conf_authmode(&tls->conf, MBEDTLS_SSL_VERIFY_REQUIRED);
         mbedtls_ssl_conf_ca_chain(&tls->conf, tls->cacert_ptr, NULL);
     } else {
