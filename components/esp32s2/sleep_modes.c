@@ -27,6 +27,9 @@
 #include "esp32s2/rom/uart.h"
 #include "esp32s2/rom/ets_sys.h"
 #include "esp32s2/brownout.h"
+#include "hal/touch_sensor_hal.h"
+#include "driver/touch_sensor.h"
+#include "driver/touch_sensor_common.h"
 #include "soc/cpu.h"
 #include "soc/rtc.h"
 #include "soc/spi_periph.h"
@@ -197,9 +200,22 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     if (s_config.wakeup_triggers & RTC_ULP_TRIG_EN) {
         // no-op for esp32s2
     }
-    // Enable Touch wakeup
-    if (s_config.wakeup_triggers & RTC_TOUCH_TRIG_EN) {
-        touch_wakeup_prepare();
+
+    if (deep_sleep) {
+        if (s_config.wakeup_triggers & RTC_TOUCH_TRIG_EN) {
+            touch_wakeup_prepare();
+            /* Workaround: In deep sleep, for ESP32S2, Power down the RTC_PERIPH will change the slope configuration of Touch sensor sleep pad.
+             * The configuration change will change the reading of the sleep pad, which will cause the touch wake-up sensor to trigger falsely.
+             */
+            pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
+        }
+    } else {
+        /* In light sleep, the RTC_PERIPH power domain should be in the power-on state (Power on the touch circuit in light sleep),
+         * otherwise the touch sensor FSM will be cleared, causing touch sensor false triggering.
+         */
+        if (touch_ll_get_fsm_state()) { // Check if the touch sensor is working properly.
+            pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
+        }
     }
 
     // Enter sleep
@@ -458,13 +474,14 @@ static void timer_wakeup_prepare(void)
 /* In deep sleep mode, only the sleep channel is supported, and other touch channels should be turned off. */
 static void touch_wakeup_prepare(void)
 {
-    touch_pad_sleep_channel_t slp_config;
-    touch_pad_fsm_stop();
-    touch_pad_clear_channel_mask(SOC_TOUCH_SENSOR_BIT_MASK_MAX);
-    touch_ll_intr_clear(TOUCH_PAD_INTR_MASK_ALL); // Clear state from previous wakeup
-    touch_pad_sleep_channel_get_info(&slp_config);
-    touch_pad_set_channel_mask(BIT(slp_config.touch_num));
-    touch_pad_fsm_start();
+    touch_pad_t touch_num = TOUCH_PAD_NUM0;
+    touch_ll_sleep_get_channel_num(&touch_num); // Check if the sleep pad is enabled.
+    if ((touch_num > TOUCH_PAD_NUM0) && (touch_num < TOUCH_PAD_MAX) && touch_ll_get_fsm_state()) {
+        touch_ll_stop_fsm();
+        touch_ll_clear_channel_mask(TOUCH_PAD_BIT_MASK_MAX);
+        touch_ll_set_channel_mask(BIT(touch_num));
+        touch_ll_start_fsm();
+    }
 }
 
 esp_err_t esp_sleep_enable_touchpad_wakeup(void)
