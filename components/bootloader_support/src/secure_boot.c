@@ -163,6 +163,11 @@ static void rsa_check_signature_on_update_check(void)
         ESP_LOGE(TAG, "This app is not signed, but check signature on update is enabled in config. It won't be possible to verify any update.");
         abort();
     }
+#if CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT && SECURE_BOOT_NUM_BLOCKS > 1
+    if (digests.num_digests > 1) {
+        ESP_LOGW(TAG, "App has %d signatures. Only the first position of signature blocks is used to verify any update", digests.num_digests);
+    }
+#endif
 }
 #endif // CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME && CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
 

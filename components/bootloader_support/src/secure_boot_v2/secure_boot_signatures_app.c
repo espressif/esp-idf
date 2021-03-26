@@ -198,7 +198,13 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
         goto exit;
     }
 
-    for (unsigned app_blk_idx = 0; app_blk_idx < SECURE_BOOT_NUM_BLOCKS; app_blk_idx++) {
+#ifdef CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
+    const unsigned secure_boot_num_blocks = 1;
+#else
+    const unsigned secure_boot_num_blocks = SECURE_BOOT_NUM_BLOCKS;
+#endif
+
+    for (unsigned app_blk_idx = 0; app_blk_idx < secure_boot_num_blocks; app_blk_idx++) {
         uint8_t app_blk_digest[ESP_SECURE_BOOT_DIGEST_LEN] = { 0 };
         const ets_secure_boot_sig_block_t *app_blk = &sig_block->block[app_blk_idx];
         const ets_secure_boot_sig_block_t *trusted_block = NULL;
@@ -213,7 +219,7 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
         bootloader_sha256_finish(sig_block_sha, app_blk_digest);
 
         /* Check if the key is one we trust */
-        for (unsigned trusted_key_idx = 0; trusted_key_idx < SECURE_BOOT_NUM_BLOCKS; trusted_key_idx++) {
+        for (unsigned trusted_key_idx = 0; trusted_key_idx < secure_boot_num_blocks; trusted_key_idx++) {
             if (memcmp(app_blk_digest, trusted.key_digests[trusted_key_idx], ESP_SECURE_BOOT_DIGEST_LEN) == 0) {
                 ESP_LOGI(TAG, "#%d app key digest == #%d trusted key digest", app_blk_idx, trusted_key_idx);
                 trusted_block = app_blk;
