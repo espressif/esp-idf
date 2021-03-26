@@ -145,7 +145,8 @@
   labels:
     - example_test_esp32c3
   included_in:
-    - "build:example_test-esp32c3"
+    - build:example_test-esp32c3
+    - build:target_test
 
 "test:integration_test":
   labels:
