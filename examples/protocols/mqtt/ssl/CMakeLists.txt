@@ -9,4 +9,4 @@ set(EXTRA_COMPONENT_DIRS $ENV{IDF_PATH}/examples/common_components/protocol_exam
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(mqtt_ssl)
 
-target_add_binary_data(mqtt_ssl.elf "main/mqtt_eclipse_org.pem" TEXT)
+target_add_binary_data(mqtt_ssl.elf "main/mqtt_eclipseprojects_io.pem" TEXT)
