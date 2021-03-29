@@ -217,7 +217,8 @@ class RulesWriter:
         else:
             if not (name.endswith('-preview') or name.startswith('labels:')):
                 _rules.append(self.RULE_PROTECTED)
-            if name.startswith('test:'):
+            # Special case for esp32c3 example_test, for now it only run with label
+            if name.startswith('test:') or name == 'labels:example_test-esp32c3':
                 _rules.append(self.RULE_BUILD_ONLY)
             for label in cfg['labels']:
                 _rules.append(self.RULE_LABEL_TEMPLATE.format(label))

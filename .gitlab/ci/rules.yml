@@ -602,6 +602,7 @@
     - <<: *if-label-custom_test_esp32s3
     - <<: *if-label-example_test
     - <<: *if-label-example_test_esp32
+    - <<: *if-label-example_test_esp32c3
     - <<: *if-label-example_test_esp32s2
     - <<: *if-label-example_test_esp32s3
     - <<: *if-label-integration_test
@@ -691,6 +692,8 @@
 
 .rules:labels:example_test-esp32c3:
   rules:
+    - <<: *if-label-build-only
+      when: never
     - <<: *if-label-example_test_esp32c3
 
 .rules:labels:fuzzer_test-weekend_test:
