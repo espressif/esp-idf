@@ -410,9 +410,9 @@ static inline void gpio_sleep_mode_config_unapply(void)
 }
 #endif
 
-void esp_sleep_gpio_status_init(void)
+void esp_sleep_config_gpio_isolate(void)
 {
-    ESP_LOGI(TAG, "Init to disable all pins at light sleep");
+    ESP_LOGI(TAG, "Configure to isolate all GPIO pins in sleep state");
     for (gpio_num_t gpio_num = GPIO_NUM_0; gpio_num < GPIO_NUM_MAX; gpio_num++) {
         if (GPIO_IS_VALID_GPIO(gpio_num)) {
             gpio_sleep_set_direction(gpio_num, GPIO_MODE_DISABLE);
@@ -421,13 +421,9 @@ void esp_sleep_gpio_status_init(void)
     }
 }
 
-void esp_sleep_gpio_status_switch_configure(bool enable)
+void esp_sleep_enable_gpio_switch(bool enable)
 {
-    if (enable) {
-        ESP_LOGI(TAG, "Light sleep enabled, start GPIO status switching");
-    } else {
-        ESP_LOGI(TAG, "Light sleep disabled, stop GPIO status switching");
-    }
+    ESP_LOGI(TAG, "%s automatic switching of GPIO sleep configuration", enable ? "Enable" : "Disable");
     for (gpio_num_t gpio_num = GPIO_NUM_0; gpio_num < GPIO_NUM_MAX; gpio_num++) {
         if (GPIO_IS_VALID_GPIO(gpio_num)) {
             if (enable) {
