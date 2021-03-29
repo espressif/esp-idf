@@ -76,7 +76,7 @@
 /* ESP31 and ESP32 are dualcore processors. */
 #ifndef CONFIG_FREERTOS_UNICORE
 #define portNUM_PROCESSORS 2
-#else 
+#else
 #define portNUM_PROCESSORS 1
 #endif
 
@@ -155,7 +155,7 @@ int xt_clock_freq(void) __attribute__((deprecated));
  * memory.
  *
  * THESE PARAMETERS ARE DESCRIBED WITHIN THE 'CONFIGURATION' SECTION OF THE
- * FreeRTOS API DOCUMENTATION AVAILABLE ON THE FreeRTOS.org WEB SITE. 
+ * FreeRTOS API DOCUMENTATION AVAILABLE ON THE FreeRTOS.org WEB SITE.
  *----------------------------------------------------------*/
 
 #define configUSE_PREEMPTION			1
@@ -174,12 +174,36 @@ int xt_clock_freq(void) __attribute__((deprecated));
 #define configMAX_PRIORITIES			( 25 )
 #endif
 
-#ifndef CONFIG_ESP32_APPTRACE_ENABLE
-#define configMINIMAL_STACK_SIZE		768
+/* Various things that impact minimum stack sizes */
+
+/* Higher stack checker modes cause overhead on each function call */
+#if CONFIG_STACK_CHECK_ALL || CONFIG_STACK_CHECK_STRONG
+#define configSTACK_OVERHEAD_CHECKER 256
 #else
-/* apptrace module requires at least 2KB of stack per task */
-#define configMINIMAL_STACK_SIZE		2048
+#define configSTACK_OVERHEAD_CHECKER 0
 #endif
+
+/* with optimizations disabled, scheduler uses additional stack */
+#if CONFIG_COMPILER_OPTIMIZATION_NONE
+#define configSTACK_OVERHEAD_OPTIMIZATION 320
+#else
+#define configSTACK_OVERHEAD_OPTIMIZATION 0
+#endif
+
+/* apptrace mdule increases minimum stack usage */
+#if CONFIG_APPTRACE_ENABLE
+#define configSTACK_OVERHEAD_APPTRACE 1280
+#else
+#define configSTACK_OVERHEAD_APPTRACE 0
+#endif
+
+#define configSTACK_OVERHEAD_TOTAL (                                    \
+                                    configSTACK_OVERHEAD_CHECKER +      \
+                                    configSTACK_OVERHEAD_OPTIMIZATION + \
+                                    configSTACK_OVERHEAD_APPTRACE       \
+                                                                        )
+
+#define configMINIMAL_STACK_SIZE  (768 + configSTACK_OVERHEAD_TOTAL)
 
 #ifndef configIDLE_TASK_STACK_SIZE
 #define configIDLE_TASK_STACK_SIZE CONFIG_FREERTOS_IDLE_TASK_STACKSIZE
