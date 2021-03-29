@@ -252,6 +252,18 @@ example_test_C3_GENERIC:
     - ESP32C3
     - Example_GENERIC
 
+example_test_C3_FLASH_ENC:
+  extends: .example_test_esp32c3_template
+  tags:
+    - ESP32C3
+    - Example_Flash_Encryption
+
+example_test_C3_FLASH_ENC_OTA:
+  extends: .example_test_esp32c3_template
+  tags:
+    - ESP32C3
+    - Example_Flash_Encryption_OTA_WiFi
+
 
 .test_app_template:
   extends: .target_test_job_template
@@ -600,6 +612,12 @@ UT_C3_SPI_DUAL:
   tags:
     - ESP32C3_IDF
     - Example_SPI_Multi_device
+
+UT_C3_FLASH_ENC:
+  extends: .unit_test_esp32c3_template
+  tags:
+    - ESP32C3_IDF
+    - UT_T1_FlashEncryption
 
 .integration_test_template:
   extends:
