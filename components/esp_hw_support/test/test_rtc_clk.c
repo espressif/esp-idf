@@ -327,7 +327,7 @@ TEST_CASE("Test rtc clk calibration compensation", "[rtc_clk]")
     // so that t2 > t1 remains true
     int64_t t2 = esp_rtc_get_time_us();
 
-    TEST_ASSERT(t2 > t1);
+    TEST_ASSERT_GREATER_THAN(t1, t2);
 
     // Restore calibration value
     esp_clk_slowclk_cal_set(esp_clk_slowclk_cal_get() * 2);
@@ -337,7 +337,7 @@ TEST_CASE("Test rtc clk calibration compensation", "[rtc_clk]")
 
     t2 = esp_rtc_get_time_us();
 
-    TEST_ASSERT(t2 > t1);
+    TEST_ASSERT_GREATER_THAN(t1, t2);
 }
 
 static void trigger_deepsleep(void)
@@ -364,7 +364,7 @@ static void check_time_deepsleep_1(void)
     RESET_REASON reason = rtc_get_reset_reason(0);
     TEST_ASSERT(reason == DEEPSLEEP_RESET);
     int64_t end = esp_rtc_get_time_us();
-    TEST_ASSERT(end > start);
+    TEST_ASSERT_GREATER_THAN(start, end);
 
     esp_clk_slowclk_cal_set(esp_clk_slowclk_cal_get() * 2);
 
@@ -384,7 +384,7 @@ static void check_time_deepsleep_2(void)
     RESET_REASON reason = rtc_get_reset_reason(0);
     TEST_ASSERT(reason == DEEPSLEEP_RESET);
     int64_t end = esp_rtc_get_time_us();
-    TEST_ASSERT(end > start);
+    TEST_ASSERT_GREATER_THAN(start, end);
 }
 
 TEST_CASE_MULTIPLE_STAGES("Test rtc clk calibration compensation across deep sleep", "[rtc_clk][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET]", trigger_deepsleep, check_time_deepsleep_1, check_time_deepsleep_2);
