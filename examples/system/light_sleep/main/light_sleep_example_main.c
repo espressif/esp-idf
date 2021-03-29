@@ -29,7 +29,7 @@
 #define BUTTON_GPIO_NUM_DEFAULT     0
 #endif
 
-/* "Boot" button on GPIO0 is active low */
+/* "Boot" button is active low */
 #define BUTTON_WAKEUP_LEVEL_DEFAULT     0
 
 void app_main(void)
