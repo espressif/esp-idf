@@ -43,10 +43,6 @@ void adc_hal_init(void)
     adc_ll_digi_set_clk_div(SOC_ADC_DIGI_SAR_CLK_DIV_DEFAULT);
 }
 
-void adc_hal_deinit(void)
-{
-    adc_ll_set_power_manage(ADC_POWER_SW_OFF);
-}
 /*---------------------------------------------------------------
                     ADC calibration setting
 ---------------------------------------------------------------*/
@@ -381,6 +377,8 @@ esp_err_t adc_hal_convert(adc_ll_num_t adc_n, int channel, int *out_raw)
     adc_hal_onetime_start();
     while (!adc_hal_intr_get_raw(event));
     ret = adc_hal_single_read(adc_n, out_raw);
+    //HW workaround: when enabling periph clock, this should be false
+    adc_ll_onetime_sample_enable(adc_n, false);
 
     return ret;
 }

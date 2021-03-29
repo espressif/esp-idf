@@ -177,7 +177,11 @@ void adc_power_on(void)
 
 static void adc_power_off_internal(void)
 {
+#if CONFIG_IDF_TARGET_ESP32
     adc_hal_set_power_manage(ADC_POWER_SW_OFF);
+#else
+    adc_hal_set_power_manage(ADC_POWER_BY_FSM);
+#endif
 }
 
 void adc_power_release(void)

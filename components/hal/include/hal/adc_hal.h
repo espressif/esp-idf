@@ -62,11 +62,6 @@ typedef struct adc_hal_context_t {
 void adc_hal_init(void);
 
 /**
- * ADC module deinitialization.
- */
-void adc_hal_deinit(void);
-
-/**
  * Set ADC module power management.
  *
  * @prarm manage Set ADC power status.
