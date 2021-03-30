@@ -19,6 +19,7 @@
 #include "sdkconfig.h"
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
+#include "esp_pm.h"
 #include "sys/lock.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -58,38 +59,34 @@ extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate posi
 #define ADC_ENTER_CRITICAL()  portENTER_CRITICAL(&rtc_spinlock)
 #define ADC_EXIT_CRITICAL()  portEXIT_CRITICAL(&rtc_spinlock)
 
-/*---------------------------------------------------------------
-                    Digital Controller Context
----------------------------------------------------------------*/
 /**
- * 1. adc_digi_mutex: this mutex lock is used for ADC digital controller. On ESP32-C3, the ADC single read APIs (unit1 & unit2)
- * and ADC DMA continuous read APIs share the ``apb_saradc_struct.h`` regs.
- *
- * 2. sar_adc_mutex: this mutex lock is used for SARADC2 module. On ESP32C-C3, the ADC single read APIs (unit2), ADC DMA
- * continuous read APIs and WIFI share the SARADC2 analog IP.
- *
- * Sequence:
- *          Acquire: 1. sar_adc_mutex;  2. adc_digi_mutex;
- *          Release: 1. adc_digi_mutex; 2. sar_adc_mutex;
+ * 1. sar_adc1_lock: this mutex lock is to protect the SARADC1 module.
+ * 2. sar_adc2_lock: this mutex lock is to protect the SARADC2 module. On C3, it is controlled by the digital controller
+ *    and PWDET controller.
+ * 3. adc_reg_lock:  this spin lock is to protect the shared registers used by ADC1 / ADC2 single read mode.
  */
-static _lock_t adc_digi_mutex;
-#define ADC_DIGI_LOCK_ACQUIRE()     _lock_acquire(&adc_digi_mutex)
-#define ADC_DIGI_LOCK_RELEASE()     _lock_release(&adc_digi_mutex)
-static _lock_t sar_adc2_mutex;
-#define SAC_ADC2_LOCK_ACQUIRE()     _lock_acquire(&sar_adc2_mutex)
-#define SAC_ADC2_LOCK_RELEASE()     _lock_release(&sar_adc2_mutex)
+static _lock_t sar_adc1_lock;
+#define SAR_ADC1_LOCK_ACQUIRE()    _lock_acquire(&sar_adc1_lock)
+#define SAR_ADC1_LOCK_RELEASE()    _lock_release(&sar_adc1_lock)
+static _lock_t sar_adc2_lock;
+#define SAR_ADC2_LOCK_ACQUIRE()    _lock_acquire(&sar_adc2_lock)
+#define SAR_ADC2_LOCK_RELEASE()    _lock_release(&sar_adc2_lock)
+portMUX_TYPE adc_reg_lock = portMUX_INITIALIZER_UNLOCKED;
+#define ADC_REG_LOCK_ENTER()       portENTER_CRITICAL(&adc_reg_lock)
+#define ADC_REG_LOCK_EXIT()        portEXIT_CRITICAL(&adc_reg_lock)
 
 #define INTERNAL_BUF_NUM 5
 #define IN_SUC_EOF_BIT GDMA_LL_EVENT_RX_SUC_EOF
 
+/*---------------------------------------------------------------
+                    Digital Controller Context
+---------------------------------------------------------------*/
 typedef struct adc_digi_context_t {
-    intr_handle_t           dma_intr_hdl;               //MD interrupt handle
-    uint32_t                bytes_between_intr;         //bytes between in suc eof intr
     uint8_t                 *rx_dma_buf;                //dma buffer
-    adc_dma_hal_context_t   hal_dma;                    //dma context (hal)
-    adc_dma_hal_config_t    hal_dma_config;             //dma config (hal)
+    adc_hal_context_t       hal;                        //hal context
     gdma_channel_handle_t   rx_dma_channel;             //dma rx channel handle
     RingbufHandle_t         ringbuf_hdl;                //RX ringbuffer handler
+    intptr_t                rx_eof_desc_addr;           //eof descriptor address of RX channel
     bool                    ringbuf_overflow_flag;      //1: ringbuffer overflow
     bool                    driver_start_flag;          //1: driver is started; 0: driver is stoped
     bool                    use_adc1;                   //1: ADC unit1 will be used; 0: ADC unit1 won't be used.
@@ -97,6 +94,7 @@ typedef struct adc_digi_context_t {
     adc_atten_t             adc1_atten;                 //Attenuation for ADC1. On this chip each ADC can only support one attenuation.
     adc_atten_t             adc2_atten;                 //Attenuation for ADC2. On this chip each ADC can only support one attenuation.
     adc_digi_config_t       digi_controller_config;     //Digital Controller Configuration
+    esp_pm_lock_handle_t    pm_lock;                    //For power management
 } adc_digi_context_t;
 
 static adc_digi_context_t *s_adc_digi_ctx = NULL;
@@ -159,20 +157,18 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
     }
 
     //malloc internal buffer used by DMA
-    s_adc_digi_ctx->bytes_between_intr = init_config->conv_num_each_intr;
-    s_adc_digi_ctx->rx_dma_buf = heap_caps_calloc(1, s_adc_digi_ctx->bytes_between_intr * INTERNAL_BUF_NUM, MALLOC_CAP_INTERNAL);
+    s_adc_digi_ctx->rx_dma_buf = heap_caps_calloc(1, init_config->conv_num_each_intr * INTERNAL_BUF_NUM, MALLOC_CAP_INTERNAL);
     if (!s_adc_digi_ctx->rx_dma_buf) {
         ret = ESP_ERR_NO_MEM;
         goto cleanup;
     }
 
     //malloc dma descriptor
-    s_adc_digi_ctx->hal_dma_config.rx_desc = heap_caps_calloc(1, (sizeof(dma_descriptor_t)) * INTERNAL_BUF_NUM, MALLOC_CAP_DMA);
-    if (!s_adc_digi_ctx->hal_dma_config.rx_desc) {
+    s_adc_digi_ctx->hal.rx_desc = heap_caps_calloc(1, (sizeof(dma_descriptor_t)) * INTERNAL_BUF_NUM, MALLOC_CAP_DMA);
+    if (!s_adc_digi_ctx->hal.rx_desc) {
         ret = ESP_ERR_NO_MEM;
         goto cleanup;
     }
-    s_adc_digi_ctx->hal_dma_config.desc_max_num = INTERNAL_BUF_NUM;
 
     //malloc pattern table
     s_adc_digi_ctx->digi_controller_config.adc_pattern = calloc(1, SOC_ADC_PATT_LEN_MAX * sizeof(adc_digi_pattern_table_t));
@@ -180,6 +176,13 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
         ret = ESP_ERR_NO_MEM;
         goto cleanup;
     }
+
+#if CONFIG_PM_ENABLE
+    ret = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "adc_dma", &s_adc_digi_ctx->pm_lock);
+    if (ret != ESP_OK) {
+        goto cleanup;
+    }
+#endif //CONFIG_PM_ENABLE
 
     //init gpio pins
     if (init_config->adc1_chan_mask) {
@@ -218,7 +221,13 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
 
     int dma_chan;
     gdma_get_channel_id(s_adc_digi_ctx->rx_dma_channel, &dma_chan);
-    s_adc_digi_ctx->hal_dma_config.dma_chan = dma_chan;
+
+    adc_hal_config_t config = {
+        .desc_max_num = INTERNAL_BUF_NUM,
+        .dma_chan = dma_chan,
+        .eof_num = init_config->conv_num_each_intr / ADC_HAL_DATA_LEN_PER_CONV
+    };
+    adc_hal_context_config(&s_adc_digi_ctx->hal, &config);
 
     //enable SARADC module clock
     periph_module_enable(PERIPH_SARADC_MODULE);
@@ -238,7 +247,9 @@ static IRAM_ATTR bool adc_dma_intr(adc_digi_context_t *adc_digi_ctx);
 
 static IRAM_ATTR bool adc_dma_in_suc_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
+    assert(event_data);
     adc_digi_context_t *adc_digi_ctx = (adc_digi_context_t *)user_data;
+    adc_digi_ctx->rx_eof_desc_addr = event_data->rx_eof_desc_addr;
     return adc_dma_intr(adc_digi_ctx);
 }
 
@@ -246,40 +257,28 @@ static IRAM_ATTR bool adc_dma_intr(adc_digi_context_t *adc_digi_ctx)
 {
     portBASE_TYPE taskAwoken = 0;
     BaseType_t ret;
+    adc_hal_dma_desc_status_t status = false;
+    dma_descriptor_t *current_desc = NULL;
 
-    while (adc_digi_ctx->hal_dma_config.cur_desc_ptr->dw0.owner == 0) {
-        dma_descriptor_t *current_desc = adc_digi_ctx->hal_dma_config.cur_desc_ptr;
+    while (1) {
+        status = adc_hal_get_reading_result(&adc_digi_ctx->hal, adc_digi_ctx->rx_eof_desc_addr, &current_desc);
+        if (status != ADC_HAL_DMA_DESC_VALID) {
+            break;
+        }
+
         ret = xRingbufferSendFromISR(adc_digi_ctx->ringbuf_hdl, current_desc->buffer, current_desc->dw0.length, &taskAwoken);
         if (ret == pdFALSE) {
             //ringbuffer overflow
             adc_digi_ctx->ringbuf_overflow_flag = 1;
         }
-
-        adc_digi_ctx->hal_dma_config.desc_cnt += 1;
-        //cycle the dma descriptor and buffers
-        adc_digi_ctx->hal_dma_config.cur_desc_ptr = adc_digi_ctx->hal_dma_config.cur_desc_ptr->next;
-        if (!adc_digi_ctx->hal_dma_config.cur_desc_ptr) {
-            break;
-        }
     }
 
-    if (!adc_digi_ctx->hal_dma_config.cur_desc_ptr) {
-
-        assert(adc_digi_ctx->hal_dma_config.desc_cnt == adc_digi_ctx->hal_dma_config.desc_max_num);
-        //reset the current descriptor status
-        adc_digi_ctx->hal_dma_config.cur_desc_ptr = adc_digi_ctx->hal_dma_config.rx_desc;
-        adc_digi_ctx->hal_dma_config.desc_cnt = 0;
-
+    if (status == ADC_HAL_DMA_DESC_NULL) {
         //start next turns of dma operation
-        adc_hal_digi_dma_multi_descriptor(&adc_digi_ctx->hal_dma_config, adc_digi_ctx->rx_dma_buf, adc_digi_ctx->bytes_between_intr, adc_digi_ctx->hal_dma_config.desc_max_num);
-        adc_hal_digi_rxdma_start(&adc_digi_ctx->hal_dma, &adc_digi_ctx->hal_dma_config);
+        adc_hal_digi_rxdma_start(&adc_digi_ctx->hal, adc_digi_ctx->rx_dma_buf);
     }
 
-    if(taskAwoken == pdTRUE) {
-        return true;
-    } else {
-        return false;
-    }
+    return (taskAwoken == pdTRUE);
 }
 
 esp_err_t adc_digi_start(void)
@@ -288,15 +287,21 @@ esp_err_t adc_digi_start(void)
         ESP_LOGE(ADC_TAG, "The driver is already started");
         return ESP_ERR_INVALID_STATE;
     }
+    adc_power_acquire();
     //reset flags
     s_adc_digi_ctx->ringbuf_overflow_flag = 0;
     s_adc_digi_ctx->driver_start_flag = 1;
-
-    //When using SARADC2 module, this task needs to be protected from WIFI
-    if (s_adc_digi_ctx->use_adc2) {
-        SAC_ADC2_LOCK_ACQUIRE();
+    if (s_adc_digi_ctx->use_adc1) {
+        SAR_ADC1_LOCK_ACQUIRE();
     }
-    ADC_DIGI_LOCK_ACQUIRE();
+    if (s_adc_digi_ctx->use_adc2) {
+        SAR_ADC2_LOCK_ACQUIRE();
+    }
+
+#if CONFIG_PM_ENABLE
+    // Lock APB frequency while ADC driver is in use
+    esp_pm_lock_acquire(s_adc_digi_ctx->pm_lock);
+#endif
 
     adc_arbiter_t config = ADC_ARBITER_CONFIG_DEFAULT();
     if (s_adc_digi_ctx->use_adc1) {
@@ -309,26 +314,16 @@ esp_err_t adc_digi_start(void)
     }
 
     adc_hal_init();
-
     adc_hal_arbiter_config(&config);
-    adc_hal_digi_init(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config);
+    adc_hal_digi_init(&s_adc_digi_ctx->hal);
     adc_hal_digi_controller_config(&s_adc_digi_ctx->digi_controller_config);
 
-    //create dma descriptors
-    adc_hal_digi_dma_multi_descriptor(&s_adc_digi_ctx->hal_dma_config, s_adc_digi_ctx->rx_dma_buf, s_adc_digi_ctx->bytes_between_intr, s_adc_digi_ctx->hal_dma_config.desc_max_num);
-    adc_hal_digi_set_eof_num(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config, (s_adc_digi_ctx->bytes_between_intr)/4);
-    //set the current descriptor pointer
-    s_adc_digi_ctx->hal_dma_config.cur_desc_ptr = s_adc_digi_ctx->hal_dma_config.rx_desc;
-    s_adc_digi_ctx->hal_dma_config.desc_cnt = 0;
-
-    //enable in suc eof intr
-    adc_hal_digi_ena_intr(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config, IN_SUC_EOF_BIT);
-
-    //start ADC
-    adc_hal_digi_start(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config);
-
+    //reset ADC and DMA
+    adc_hal_fifo_reset(&s_adc_digi_ctx->hal);
     //start DMA
-    adc_hal_digi_rxdma_start(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config);
+    adc_hal_digi_rxdma_start(&s_adc_digi_ctx->hal, s_adc_digi_ctx->rx_dma_buf);
+    //start ADC
+    adc_hal_digi_start(&s_adc_digi_ctx->hal);
 
     return ESP_OK;
 }
@@ -342,20 +337,27 @@ esp_err_t adc_digi_stop(void)
     s_adc_digi_ctx->driver_start_flag = 0;
 
     //disable the in suc eof intrrupt
-    adc_hal_digi_dis_intr(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config, IN_SUC_EOF_BIT);
+    adc_hal_digi_dis_intr(&s_adc_digi_ctx->hal, IN_SUC_EOF_BIT);
     //clear the in suc eof interrupt
-    adc_hal_digi_clr_intr(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config, IN_SUC_EOF_BIT);
-    //stop DMA
-    adc_hal_digi_rxdma_stop(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config);
+    adc_hal_digi_clr_intr(&s_adc_digi_ctx->hal, IN_SUC_EOF_BIT);
     //stop ADC
-    adc_hal_digi_stop(&s_adc_digi_ctx->hal_dma, &s_adc_digi_ctx->hal_dma_config);
+    adc_hal_digi_stop(&s_adc_digi_ctx->hal);
+    //stop DMA
+    adc_hal_digi_rxdma_stop(&s_adc_digi_ctx->hal);
     adc_hal_digi_deinit();
-
-    ADC_DIGI_LOCK_RELEASE();
-    //When using SARADC2 module, this task needs to be protected from WIFI
-    if (s_adc_digi_ctx->use_adc2) {
-        SAC_ADC2_LOCK_RELEASE();
+#if CONFIG_PM_ENABLE
+    if (s_adc_digi_ctx->pm_lock) {
+        esp_pm_lock_release(s_adc_digi_ctx->pm_lock);
     }
+#endif  //CONFIG_PM_ENABLE
+
+    if (s_adc_digi_ctx->use_adc1) {
+        SAR_ADC1_LOCK_RELEASE();
+    }
+    if (s_adc_digi_ctx->use_adc2) {
+        SAR_ADC2_LOCK_RELEASE();
+    }
+    adc_power_release();
 
     return ESP_OK;
 }
@@ -403,17 +405,19 @@ esp_err_t adc_digi_deinitialize(void)
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (s_adc_digi_ctx->dma_intr_hdl) {
-        esp_intr_free(s_adc_digi_ctx->dma_intr_hdl);
-    }
-
-    if(s_adc_digi_ctx->ringbuf_hdl) {
+    if (s_adc_digi_ctx->ringbuf_hdl) {
         vRingbufferDelete(s_adc_digi_ctx->ringbuf_hdl);
         s_adc_digi_ctx->ringbuf_hdl = NULL;
     }
 
+#if CONFIG_PM_ENABLE
+    if (s_adc_digi_ctx->pm_lock) {
+        esp_pm_lock_delete(s_adc_digi_ctx->pm_lock);
+    }
+#endif  //CONFIG_PM_ENABLE
+
     free(s_adc_digi_ctx->rx_dma_buf);
-    free(s_adc_digi_ctx->hal_dma_config.rx_desc);
+    free(s_adc_digi_ctx->hal.rx_desc);
     free(s_adc_digi_ctx->digi_controller_config.adc_pattern);
     gdma_disconnect(s_adc_digi_ctx->rx_dma_channel);
     gdma_del_channel(s_adc_digi_ctx->rx_dma_channel);
@@ -431,6 +435,38 @@ esp_err_t adc_digi_deinitialize(void)
 ---------------------------------------------------------------*/
 static adc_atten_t s_atten1_single[ADC1_CHANNEL_MAX];    //Array saving attenuate of each channel of ADC1, used by single read API
 static adc_atten_t s_atten2_single[ADC2_CHANNEL_MAX];    //Array saving attenuate of each channel of ADC2, used by single read API
+
+esp_err_t adc_vref_to_gpio(adc_unit_t adc_unit, gpio_num_t gpio)
+{
+    esp_err_t ret;
+    uint32_t channel = ADC2_CHANNEL_MAX;
+    if (adc_unit == ADC_UNIT_2) {
+        for (int i = 0; i < ADC2_CHANNEL_MAX; i++) {
+            if (gpio == ADC_GET_IO_NUM(ADC_NUM_2, i)) {
+                channel = i;
+                break;
+            }
+        }
+        if (channel == ADC2_CHANNEL_MAX) {
+            return ESP_ERR_INVALID_ARG;
+        }
+    }
+
+    adc_power_acquire();
+    if (adc_unit & ADC_UNIT_1) {
+        ADC_ENTER_CRITICAL();
+        adc_hal_vref_output(ADC_NUM_1, channel, true);
+        ADC_EXIT_CRITICAL()
+    } else if (adc_unit & ADC_UNIT_2) {
+        ADC_ENTER_CRITICAL();
+        adc_hal_vref_output(ADC_NUM_2, channel, true);
+        ADC_EXIT_CRITICAL()
+    }
+
+    ret = adc_digi_gpio_init(ADC_NUM_2, BIT(channel));
+
+    return ret;
+}
 
 esp_err_t adc1_config_width(adc_bits_width_t width_bit)
 {
@@ -459,40 +495,25 @@ esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten)
 int adc1_get_raw(adc1_channel_t channel)
 {
     int raw_out = 0;
-    adc_digi_config_t dig_cfg = {
-        .conv_limit_en = 0,
-        .conv_limit_num = 250,
-        .sample_freq_hz = SOC_ADC_SAMPLE_FREQ_THRES_HIGH,
-    };
-
-    ADC_DIGI_LOCK_ACQUIRE();
 
     periph_module_enable(PERIPH_SARADC_MODULE);
+    adc_power_acquire();
+
+    SAR_ADC1_LOCK_ACQUIRE();
 
     adc_atten_t atten = s_atten1_single[channel];
     uint32_t cal_val = adc_get_calibration_offset(ADC_NUM_1, channel, atten);
     adc_hal_set_calibration_param(ADC_NUM_1, cal_val);
 
-    adc_hal_digi_controller_config(&dig_cfg);
+    ADC_REG_LOCK_ENTER();
+    adc_hal_set_atten(ADC_NUM_2, channel, atten);
+    adc_hal_convert(ADC_NUM_1, channel, &raw_out);
+    ADC_REG_LOCK_EXIT();
 
-    adc_hal_intr_clear(ADC_EVENT_ADC1_DONE);
+    SAR_ADC1_LOCK_RELEASE();
 
-    adc_hal_adc1_onetime_sample_enable(true);
-    adc_hal_onetime_channel(ADC_NUM_1, channel);
-    adc_hal_set_onetime_atten(atten);
-
-    //Trigger single read.
-    adc_hal_onetime_start(&dig_cfg);
-    while (!adc_hal_intr_get_raw(ADC_EVENT_ADC1_DONE));
-    adc_hal_single_read(ADC_NUM_1, &raw_out);
-
-    adc_hal_intr_clear(ADC_EVENT_ADC1_DONE);
-    adc_hal_adc1_onetime_sample_enable(false);
-
-    adc_hal_digi_deinit();
+    adc_power_release();
     periph_module_disable(PERIPH_SARADC_MODULE);
-
-    ADC_DIGI_LOCK_RELEASE();
 
     return raw_out;
 }
@@ -519,41 +540,25 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     }
 
     esp_err_t ret = ESP_OK;
-    adc_digi_config_t dig_cfg = {
-        .conv_limit_en = 0,
-        .conv_limit_num = 250,
-        .sample_freq_hz = SOC_ADC_SAMPLE_FREQ_THRES_HIGH,
-    };
 
-    SAC_ADC2_LOCK_ACQUIRE();
-    ADC_DIGI_LOCK_ACQUIRE();
     periph_module_enable(PERIPH_SARADC_MODULE);
+    adc_power_acquire();
+
+    SAR_ADC2_LOCK_ACQUIRE();
 
     adc_atten_t atten = s_atten2_single[channel];
     uint32_t cal_val = adc_get_calibration_offset(ADC_NUM_2, channel, atten);
     adc_hal_set_calibration_param(ADC_NUM_2, cal_val);
 
-    adc_hal_digi_controller_config(&dig_cfg);
+    ADC_REG_LOCK_ENTER();
+    adc_hal_set_atten(ADC_NUM_2, channel, atten);
+    ret = adc_hal_convert(ADC_NUM_2, channel, raw_out);
+    ADC_REG_LOCK_EXIT();
 
-    adc_hal_intr_clear(ADC_EVENT_ADC2_DONE);
+    SAR_ADC2_LOCK_RELEASE();
 
-    adc_hal_adc2_onetime_sample_enable(true);
-    adc_hal_onetime_channel(ADC_NUM_2, channel);
-    adc_hal_set_onetime_atten(atten);
-
-    //Trigger single read.
-    adc_hal_onetime_start(&dig_cfg);
-    while (!adc_hal_intr_get_raw(ADC_EVENT_ADC2_DONE));
-    ret = adc_hal_single_read(ADC_NUM_2, raw_out);
-
-    adc_hal_intr_clear(ADC_EVENT_ADC2_DONE);
-    adc_hal_adc2_onetime_sample_enable(false);
-
-    adc_hal_digi_deinit();
+    adc_power_release();
     periph_module_disable(PERIPH_SARADC_MODULE);
-
-    ADC_DIGI_LOCK_RELEASE();
-    SAC_ADC2_LOCK_RELEASE();
 
     return ret;
 }
@@ -581,7 +586,7 @@ esp_err_t adc_digi_controller_config(const adc_digi_config_t *config)
     s_adc_digi_ctx->use_adc1 = 0;
     s_adc_digi_ctx->use_adc2 = 0;
     for (int i = 0; i < config->adc_pattern_len; i++) {
-        const adc_digi_pattern_table_t* pat = &config->adc_pattern[i];
+        const adc_digi_pattern_table_t *pat = &config->adc_pattern[i];
         if (pat->unit == ADC_NUM_1) {
             s_adc_digi_ctx->use_adc1 = 1;
 
@@ -602,86 +607,6 @@ esp_err_t adc_digi_controller_config(const adc_digi_config_t *config)
         }
     }
 
-    return ESP_OK;
-}
-
-esp_err_t adc_arbiter_config(adc_unit_t adc_unit, adc_arbiter_t *config)
-{
-    if (adc_unit & ADC_UNIT_1) {
-        return ESP_ERR_NOT_SUPPORTED;
-    }
-    ADC_ENTER_CRITICAL();
-    adc_hal_arbiter_config(config);
-    ADC_EXIT_CRITICAL();
-    return ESP_OK;
-}
-
-/**
- * @brief Set ADC module controller.
- *        There are five SAR ADC controllers:
- *        Two digital controller: Continuous conversion mode (DMA). High performance with multiple channel scan modes;
- *        Two RTC controller: Single conversion modes (Polling). For low power purpose working during deep sleep;
- *        the other is dedicated for Power detect (PWDET / PKDET), Only support ADC2.
- *
- * @note  Only ADC2 support arbiter to switch controllers automatically. Access to the ADC is based on the priority of the controller.
- * @note  For ADC1, Controller access is mutually exclusive.
- *
- * @param adc_unit ADC unit.
- * @param ctrl ADC controller, Refer to `adc_controller_t`.
- *
- * @return
- *      - ESP_OK Success
- */
-esp_err_t adc_set_controller(adc_unit_t adc_unit, adc_controller_t ctrl)
-{
-    adc_arbiter_t config = {0};
-    adc_arbiter_t cfg = ADC_ARBITER_CONFIG_DEFAULT();
-
-    if (adc_unit & ADC_UNIT_1) {
-        adc_hal_set_controller(ADC_NUM_1, ctrl);
-    }
-    if (adc_unit & ADC_UNIT_2) {
-        adc_hal_set_controller(ADC_NUM_2, ctrl);
-        switch (ctrl) {
-        case ADC2_CTRL_FORCE_PWDET:
-            config.pwdet_pri = 2;
-            config.mode = ADC_ARB_MODE_SHIELD;
-            adc_hal_arbiter_config(&config);
-            adc_hal_set_controller(ADC_NUM_2, ADC2_CTRL_PWDET);
-            break;
-        case ADC2_CTRL_FORCE_RTC:
-            config.rtc_pri = 2;
-            config.mode = ADC_ARB_MODE_SHIELD;
-            adc_hal_arbiter_config(&config);
-            adc_hal_set_controller(ADC_NUM_2, ADC_CTRL_RTC);
-            break;
-        case ADC2_CTRL_FORCE_DIG:
-            config.dig_pri = 2;
-            config.mode = ADC_ARB_MODE_SHIELD;
-            adc_hal_arbiter_config(&config);
-            adc_hal_set_controller(ADC_NUM_2, ADC_CTRL_DIG);
-            break;
-        default:
-            adc_hal_arbiter_config(&cfg);
-            break;
-        }
-    }
-    return ESP_OK;
-}
-
-/**
- * @brief Reset FSM of adc digital controller.
- *
- * @return
- *      - ESP_OK Success
- */
-esp_err_t adc_digi_reset(void)
-{
-    ADC_ENTER_CRITICAL();
-    adc_hal_digi_reset();
-    adc_hal_digi_clear_pattern_table(ADC_NUM_1);
-    adc_hal_digi_clear_pattern_table(ADC_NUM_2);
-    ADC_EXIT_CRITICAL();
     return ESP_OK;
 }
 
@@ -740,90 +665,6 @@ esp_err_t adc_digi_monitor_enable(adc_digi_monitor_idx_t idx, bool enable)
     adc_hal_digi_monitor_enable(idx, enable);
     ADC_EXIT_CRITICAL();
     return ESP_OK;
-}
-
-/**************************************/
-/*   Digital controller intr setting  */
-/**************************************/
-
-esp_err_t adc_digi_intr_enable(adc_unit_t adc_unit, adc_digi_intr_t intr_mask)
-{
-    ADC_ENTER_CRITICAL();
-    if (adc_unit & ADC_UNIT_1) {
-        adc_hal_digi_intr_enable(ADC_NUM_1, intr_mask);
-    }
-    if (adc_unit & ADC_UNIT_2) {
-        adc_hal_digi_intr_enable(ADC_NUM_2, intr_mask);
-    }
-    ADC_EXIT_CRITICAL();
-    return ESP_OK;
-}
-
-esp_err_t adc_digi_intr_disable(adc_unit_t adc_unit, adc_digi_intr_t intr_mask)
-{
-    ADC_ENTER_CRITICAL();
-    if (adc_unit & ADC_UNIT_1) {
-        adc_hal_digi_intr_disable(ADC_NUM_1, intr_mask);
-    }
-    if (adc_unit & ADC_UNIT_2) {
-        adc_hal_digi_intr_disable(ADC_NUM_2, intr_mask);
-    }
-    ADC_EXIT_CRITICAL();
-    return ESP_OK;
-}
-
-esp_err_t adc_digi_intr_clear(adc_unit_t adc_unit, adc_digi_intr_t intr_mask)
-{
-    ADC_ENTER_CRITICAL();
-    if (adc_unit & ADC_UNIT_1) {
-        adc_hal_digi_intr_clear(ADC_NUM_1, intr_mask);
-    }
-    if (adc_unit & ADC_UNIT_2) {
-        adc_hal_digi_intr_clear(ADC_NUM_2, intr_mask);
-    }
-    ADC_EXIT_CRITICAL();
-    return ESP_OK;
-}
-
-uint32_t adc_digi_intr_get_status(adc_unit_t adc_unit)
-{
-    uint32_t ret = 0;
-    ADC_ENTER_CRITICAL();
-    if (adc_unit & ADC_UNIT_1) {
-        ret = adc_hal_digi_get_intr_status(ADC_NUM_1);
-    }
-    if (adc_unit & ADC_UNIT_2) {
-        ret = adc_hal_digi_get_intr_status(ADC_NUM_2);
-    }
-    ADC_EXIT_CRITICAL();
-    return ret;
-}
-
-static bool s_isr_registered = 0;
-static intr_handle_t s_adc_isr_handle = NULL;
-
-esp_err_t adc_digi_isr_register(void (*fn)(void *), void *arg, int intr_alloc_flags)
-{
-    ADC_CHECK((fn != NULL), "Parameter error", ESP_ERR_INVALID_ARG);
-    ADC_CHECK(s_isr_registered == 0, "ADC ISR have installed, can not install again", ESP_FAIL);
-
-    esp_err_t ret = esp_intr_alloc(ETS_APB_ADC_INTR_SOURCE, intr_alloc_flags, fn, arg, &s_adc_isr_handle);
-    if (ret == ESP_OK) {
-        s_isr_registered = 1;
-    }
-    return ret;
-}
-
-esp_err_t adc_digi_isr_deregister(void)
-{
-    esp_err_t ret = ESP_FAIL;
-    if (s_isr_registered) {
-        ret = esp_intr_free(s_adc_isr_handle);
-        if (ret == ESP_OK) {
-            s_isr_registered = 0;
-        }
-    }
-    return ret;
 }
 
 /*---------------------------------------------------------------
