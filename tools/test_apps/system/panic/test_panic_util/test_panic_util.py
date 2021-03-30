@@ -144,6 +144,13 @@ class PanicTestMixin(object):
         output_file_name = os.path.join(log_folder, 'coredump_flash_result_' + self.test_name + '.txt')
         self._call_espcoredump(['--core-format', 'raw'], coredump_file_name, output_file_name)
 
+    def _gdb_write(self, command):
+        """
+        Wrapper to write to gdb with a longer timeout, as test runner
+        host can be slow sometimes
+        """
+        return self.gdb.write(command, timeout_sec=3)
+
     def start_gdb(self):
         """
         Runs GDB and connects it to the "serial" port of the DUT.
@@ -168,20 +175,20 @@ class PanicTestMixin(object):
 
         # Set up logging for GDB remote protocol
         gdb_remotelog_file_name = os.path.join(log_folder, 'gdb_remote_log_' + self.test_name + '.txt')
-        self.gdb.write('-gdb-set remotelogfile ' + gdb_remotelog_file_name)
+        self._gdb_write('-gdb-set remotelogfile ' + gdb_remotelog_file_name)
 
         # Load the ELF file
-        self.gdb.write('-file-exec-and-symbols {}'.format(self.app.elf_file))
+        self._gdb_write('-file-exec-and-symbols {}'.format(self.app.elf_file))
 
         # Connect GDB to UART
         Utility.console_log('Connecting to GDB Stub...', 'orange')
-        self.gdb.write('-gdb-set serial baud 115200')
-        responses = self.gdb.write('-target-select remote ' + self.get_gdb_remote(), timeout_sec=3)
+        self._gdb_write('-gdb-set serial baud 115200')
+        responses = self._gdb_write('-target-select remote ' + self.get_gdb_remote())
 
         # Make sure we get the 'stopped' notification
         stop_response = self.find_gdb_response('stopped', 'notify', responses)
         if not stop_response:
-            responses = self.gdb.write('-exec-interrupt', timeout_sec=3)
+            responses = self._gdb_write('-exec-interrupt')
             stop_response = self.find_gdb_response('stopped', 'notify', responses)
             assert stop_response
         frame = stop_response['payload']['frame']
@@ -201,7 +208,7 @@ class PanicTestMixin(object):
         """
         assert self.gdb
 
-        responses = self.gdb.write('-stack-list-frames', timeout_sec=3)
+        responses = self._gdb_write('-stack-list-frames')
         return self.find_gdb_response('done', 'result', responses)['payload']['stack']
 
     @staticmethod
