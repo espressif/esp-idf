@@ -322,6 +322,26 @@ The build system provides special treatment to the ``main`` component. It is a c
 2. Set ``EXTRA_COMPONENT_DIRS`` in the project CMakeLists.txt to include the renamed ``main`` directory.
 3. Specify the dependencies in the renamed component's CMakeLists.txt file via REQUIRES or PRIV_REQUIRES arguments :ref:`on component registration<cmake_minimal_component_cmakelists>`.
 
+
+Overriding default build specifications
+---------------------------------------
+
+The build sets some global build specifications (compile flags, definitions, etc.) that gets used in compiling all sources from all components. 
+
+.. highlight:: cmake
+
+For example, one of the default build specifications set is the compile option ``-Wextra``. Suppose a user wants to use override this with ``-Wno-extra``,
+it should be done after ``project()``::
+
+
+    cmake_minimum_required(VERSION 3.5)
+    include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+    project(myProject)
+
+    idf_build_set_property(COMPILE_OPTIONS "-Wno-error" APPEND)
+
+This ensures that the compile options set by the user won't be overriden by the default build specifications, since the latter are set inside ``project()``.
+
 .. _component-directories:
 
 Component CMakeLists Files
