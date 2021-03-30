@@ -114,6 +114,10 @@ void mdns_free(void);
  */
 esp_err_t mdns_hostname_set(const char * hostname);
 
+esp_err_t mdns_delegate_hostname_add(const char * hostname, const esp_ip_addr_t *address);
+
+bool mdns_hostname_exists(const char *hostname);
+
 /**
  * @brief  Set the default instance name for mDNS server
  *
@@ -145,6 +149,12 @@ esp_err_t mdns_instance_name_set(const char * instance_name);
  */
 esp_err_t mdns_service_add(const char * instance_name, const char * service_type, const char * proto, uint16_t port, mdns_txt_item_t txt[], size_t num_items);
 
+
+esp_err_t mdns_service_add_custom_host(const char *instance_name, const char *service_type, const char *proto,
+                                       const char *hostname, uint16_t port, mdns_txt_item_t txt[], size_t num_items);
+
+bool mdns_service_exists(const char *service_type, const char *proto, const char *hostname);
+
 /**
  * @brief  Remove service from mDNS server
  *
@@ -158,6 +168,8 @@ esp_err_t mdns_service_add(const char * instance_name, const char * service_type
  *     - ESP_ERR_NO_MEM memory error
  */
 esp_err_t mdns_service_remove(const char * service_type, const char * proto);
+
+esp_err_t mdns_service_remove_for_host(const char * service_type, const char * proto, const char *hostname);
 
 /**
  * @brief  Set instance name for service
@@ -174,6 +186,8 @@ esp_err_t mdns_service_remove(const char * service_type, const char * proto);
  */
 esp_err_t mdns_service_instance_name_set(const char * service_type, const char * proto, const char * instance_name);
 
+esp_err_t mdns_service_instance_name_set_for_host(const char * service_type, const char * proto, const char *hostname, const char * instance_name);
+
 /**
  * @brief  Set service port
  *
@@ -188,6 +202,10 @@ esp_err_t mdns_service_instance_name_set(const char * service_type, const char *
  *     - ESP_ERR_NO_MEM memory error
  */
 esp_err_t mdns_service_port_set(const char * service_type, const char * proto, uint16_t port);
+
+
+esp_err_t mdns_service_port_set_for_host(const char *service_type, const char *proto, const char *hostname,
+                                         uint16_t port);
 
 /**
  * @brief  Replace all TXT items for service
@@ -205,6 +223,9 @@ esp_err_t mdns_service_port_set(const char * service_type, const char * proto, u
  */
 esp_err_t mdns_service_txt_set(const char * service_type, const char * proto, mdns_txt_item_t txt[], uint8_t num_items);
 
+esp_err_t mdns_service_txt_set_for_host(const char *service_type, const char *proto, const char *hostname,
+                                        mdns_txt_item_t txt[], uint8_t num_items);
+
 /**
  * @brief  Set/Add TXT item for service TXT record
  *
@@ -221,6 +242,10 @@ esp_err_t mdns_service_txt_set(const char * service_type, const char * proto, md
  */
 esp_err_t mdns_service_txt_item_set(const char * service_type, const char * proto, const char * key, const char * value);
 
+
+esp_err_t mdns_service_txt_item_set_for_host(const char *service_type, const char *proto, const char *hostname,
+                                             const char *key, const char *value);
+
 /**
  * @brief  Remove TXT item for service TXT record
  *
@@ -235,6 +260,9 @@ esp_err_t mdns_service_txt_item_set(const char * service_type, const char * prot
  *     - ESP_ERR_NO_MEM memory error
  */
 esp_err_t mdns_service_txt_item_remove(const char * service_type, const char * proto, const char * key);
+
+esp_err_t mdns_service_txt_item_remove_for_host(const char *service_type, const char *proto, const char *hostname,
+                                                const char *key);
 
 /**
  * @brief  Remove and free all services from mDNS server

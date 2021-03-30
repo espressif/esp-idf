@@ -17,8 +17,10 @@
 #include "esp_event_base.h"
 #include "esp_task.h"
 #include "esp_timer.h"
+#include "esp_netif_ip_addr.h"
+#include "freertos/FreeRTOS.h"
 
-//#define MDNS_ENABLE_DEBUG
+#define MDNS_ENABLE_DEBUG
 
 #ifdef MDNS_ENABLE_DEBUG
 #define _mdns_dbg_printf(...) printf(__VA_ARGS__)
@@ -182,6 +184,7 @@ typedef enum {
     ACTION_TX_HANDLE,
     ACTION_RX_HANDLE,
     ACTION_TASK_STOP,
+    ACTION_DELEGATE_HOSTNAME_ADD,
     ACTION_MAX
 } mdns_action_type_t;
 
@@ -280,6 +283,7 @@ typedef struct {
     const char * instance;
     const char * service;
     const char * proto;
+    const char * hostname;
     uint16_t priority;
     uint16_t weight;
     uint16_t port;
@@ -302,12 +306,19 @@ typedef struct mdns_out_question_s {
     bool own_dynamic_memory;
 } mdns_out_question_t;
 
+typedef struct mdns_host_item_t {
+    const char * hostname;
+    esp_ip_addr_t address;
+    struct mdns_host_item_t *next;
+} mdns_host_item_t;
+
 typedef struct mdns_out_answer_s {
     struct mdns_out_answer_s * next;
     uint16_t type;
     uint8_t bye;
     uint8_t flush;
     mdns_service_t * service;
+    mdns_host_item_t* host;
     const char * custom_instance;
     const char * custom_service;
     const char * custom_proto;
@@ -381,7 +392,10 @@ typedef struct mdns_server_s {
 typedef struct {
     mdns_action_type_t type;
     union {
-        char * hostname;
+        struct {
+            char * hostname;
+            xTaskHandle calling_task;
+        } hostname_set;
         char * instance;
         struct {
             esp_event_base_t event_base;
@@ -424,6 +438,10 @@ typedef struct {
         struct {
             mdns_rx_packet_t * packet;
         } rx_handle;
+        struct {
+            const char * hostname;
+            esp_ip_addr_t address;
+        } delegate_hostname;
     } data;
 } mdns_action_t;
 
