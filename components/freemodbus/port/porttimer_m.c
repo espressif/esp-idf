@@ -57,7 +57,7 @@
 /* ----------------------- Variables ----------------------------------------*/
 static USHORT usT35TimeOut50us;
 
-static const USHORT usTimerIndex = MB_TIMER_INDEX;      // Initialize Modbus Timer index used by stack,
+static const USHORT usTimerIndex = MB_TIMER_INDEX ^ 1;      // Initialize Modbus Timer index used by stack,
 static const USHORT usTimerGroupIndex = MB_TIMER_GROUP; // Timer group index used by stack
 static timer_isr_handle_t xTimerIntHandle;              // Timer interrupt handle
 
