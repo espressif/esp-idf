@@ -58,9 +58,9 @@ const DRAM_ATTR flash_chip_op_timeout_t spi_flash_chip_generic_timeout = {
     .page_program_timeout = SPI_FLASH_GENERIC_PAGE_PROGRAM_TIMEOUT_MS * 1000,
 };
 
-#ifndef CONFIG_SPI_FLASH_ROM_IMPL
-
 static const char TAG[] = "chip_generic";
+
+#ifndef CONFIG_SPI_FLASH_ROM_IMPL
 
 esp_err_t spi_flash_chip_generic_probe(esp_flash_t *chip, uint32_t flash_id)
 {
@@ -645,6 +645,11 @@ esp_err_t spi_flash_common_set_io_mode(esp_flash_t *chip, esp_flash_wrsr_func_t 
 
 esp_err_t spi_flash_chip_generic_suspend_cmd_conf(esp_flash_t *chip)
 {
+    // Only XMC support auto-suspend
+    if (chip->chip_id >> 16 != 0x20) {
+        ESP_EARLY_LOGE(TAG, "The flash you use doesn't support auto suspend, only \'XMC\' is supported");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
     spi_flash_sus_cmd_conf sus_conf = {
         .sus_mask = 0x80,
         .cmd_rdsr = CMD_RDSR2,

@@ -17,12 +17,6 @@
 #include "spi_flash_chip_gd.h"
 #include "spi_flash_defs.h"
 
-/* Driver for BOYA flash chip */
-esp_err_t spi_flash_chip_gd_suspend_cmd_conf(esp_flash_t *chip);
-
-// Use the same implementation as GD chips
-#define spi_flash_chip_boya_suspend_cmd_conf spi_flash_chip_gd_suspend_cmd_conf
-
 esp_err_t spi_flash_chip_boya_probe(esp_flash_t *chip, uint32_t flash_id)
 {
     /* Check manufacturer and product IDs match our desired masks */
@@ -76,5 +70,5 @@ const spi_flash_chip_t esp_flash_chip_boya = {
 
     .read_reg = spi_flash_chip_generic_read_reg,
     .yield = spi_flash_chip_generic_yield,
-    .sus_setup = spi_flash_chip_boya_suspend_cmd_conf,
+    .sus_setup = spi_flash_chip_generic_suspend_cmd_conf,
 };
