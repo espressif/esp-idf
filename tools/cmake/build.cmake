@@ -269,8 +269,12 @@ function(__build_check_python)
         message(STATUS "Checking Python dependencies...")
         execute_process(COMMAND "${python}" "${idf_path}/tools/check_python_dependencies.py"
             RESULT_VARIABLE result)
-        if(NOT result EQUAL 0)
+        if(result EQUAL 1)
+            # check_python_dependencies returns error code 1 on failure
             message(FATAL_ERROR "Some Python dependencies must be installed. Check above message for details.")
+        elseif(NOT result EQUAL 0)
+            # means check_python_dependencies.py failed to run at all, result should be an error message
+            message(FATAL_ERROR "Failed to run Python dependency check. Python: ${python}, Error: ${result}")
         endif()
     endif()
 endfunction()
