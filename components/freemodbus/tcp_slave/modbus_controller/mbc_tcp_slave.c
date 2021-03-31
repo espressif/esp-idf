@@ -223,4 +223,4 @@ esp_err_t mbc_tcp_slave_create(void** handler)
     return ESP_OK;
 }
 
-#endif
+#endif //#if MB_MASTER_TCP_ENABLED

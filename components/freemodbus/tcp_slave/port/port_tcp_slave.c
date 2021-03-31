@@ -731,4 +731,4 @@ xMBTCPPortSendResponse( UCHAR * pucMBTCPFrame, USHORT usTCPLength )
     return bFrameSent;
 }
 
-#endif
+#endif //#if MB_MASTER_TCP_ENABLED

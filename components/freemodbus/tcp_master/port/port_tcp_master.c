@@ -947,4 +947,4 @@ xMBMasterTCPTimerExpired(void)
     return xNeedPoll;
 }
 
-#endif
+#endif //#if MB_MASTER_TCP_ENABLED
