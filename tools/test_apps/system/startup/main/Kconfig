@@ -1,0 +1,6 @@
+menu "Test app config"
+    config SINGLE_CORE_VARIANT
+        bool "Patch esp_chip_info to return single core in a multicore chip"
+        default "n"
+        depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3
+endmenu
