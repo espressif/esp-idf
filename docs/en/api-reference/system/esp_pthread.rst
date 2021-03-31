@@ -5,6 +5,7 @@ Overview
 --------
 
 This module offers Espressif specific extensions to the pthread library that can be used to influence the behaviour of pthreads. Currently the following configuration can be tuned:
+
   * Stack size of the pthreads
   * Priority of the created pthreads
   * Inheriting this configuration across threads
@@ -35,9 +36,9 @@ Example to tune the stack size of the pthread:
 The API can also be used for inheriting the settings across threads. For example:
 
 .. code-block:: c
-       
+
     void * my_thread2(void * p)
-    {   
+    {
         /* This thread will inherit the stack size of 4K */
         printf("In my_thread2\n");
 

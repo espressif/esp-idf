@@ -62,7 +62,7 @@ You can also see the information on segments in the IDF logs while your applicat
 
     For more details on the type of memory segments and their address ranges, see *{IDF_TARGET_NAME} Technical Reference Manual* > *System and Memory* > *Embedded Memory* [`PDF <{IDF_TARGET_TRM_EN_URL}#sysmem>`__].
 
-.. only:: esp32s2
+.. only:: esp32s2 or esp32c3
 
     For more details on the type of memory segments and their address ranges, see *{IDF_TARGET_NAME} Technical Reference Manual* > *System and Memory* > *Internal Memory* [`PDF <{IDF_TARGET_TRM_EN_URL}#sysmem>`__].
 

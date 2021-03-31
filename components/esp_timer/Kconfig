@@ -44,7 +44,7 @@ menu "High resolution timer (esp_timer)"
             - "LAC timer of Timer Group 0" implementation is simpler, and has smaller
               run time overhead because software handling of timer overflow is not needed.
 
-            - "SYSTIMER" implementation is similar to "LAC timer of Timer Group 0" but for ESP32-S2 chip.
+            - "SYSTIMER" implementation is similar to "LAC timer of Timer Group 0" but for non ESP32 chips.
 
         config ESP_TIMER_IMPL_FRC2
             bool "FRC2 (legacy) timer"

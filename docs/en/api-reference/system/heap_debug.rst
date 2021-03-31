@@ -304,13 +304,13 @@ To gather and analyse heap trace do the following on the host:
 
     tb heap_trace_start
     commands
-    mon esp32 sysview start file:///tmp/heap.svdat
+    mon esp sysview start file:///tmp/heap.svdat
     c
     end
 
     tb heap_trace_stop
     commands
-    mon esp32 sysview stop
+    mon esp sysview stop
     end
 
     c
