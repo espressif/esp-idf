@@ -24,15 +24,9 @@
 #include "bt_common.h"
 #include "osi/semaphore.h"
 
-typedef uint8_t UINT8;
-typedef uint16_t UINT16;
-typedef uint32_t UINT32;
-typedef uint64_t UINT64;
-
 typedef int8_t INT8;
 typedef int16_t INT16;
 typedef int32_t INT32;
-typedef bool BOOLEAN;
 
 #define PACKED  __packed
 // #define INLINE  __inline
@@ -304,8 +298,6 @@ typedef struct {
 
 
 /* Common Bluetooth field definitions */
-#define BD_ADDR_LEN     6                   /* Device address length */
-typedef UINT8 BD_ADDR[BD_ADDR_LEN];         /* Device address */
 typedef UINT8 *BD_ADDR_PTR;                 /* Pointer to Device Address */
 
 #define AMP_KEY_TYPE_GAMP       0
@@ -421,23 +413,6 @@ typedef UINT8 ACCESS_CODE[ACCESS_CODE_BYTE_LEN];
 
 #define BT_CLK_TO_MICROSECS(x)  (((x) * 5000 + 3) / 8)
 #define BT_MICROSECS_TO_CLK(x)  (((x) * 8 + 2499) / 5000)
-
-/* Maximum UUID size - 16 bytes, and structure to hold any type of UUID. */
-#define MAX_UUID_SIZE              16
-typedef struct {
-#define LEN_UUID_16     2
-#define LEN_UUID_32     4
-#define LEN_UUID_128    16
-
-    UINT16          len;
-
-    union {
-        UINT16      uuid16;
-        UINT32      uuid32;
-        UINT8       uuid128[MAX_UUID_SIZE];
-    } uu;
-
-} tBT_UUID;
 
 #define BT_EIR_FLAGS_TYPE                   0x01
 #define BT_EIR_MORE_16BITS_UUID_TYPE        0x02

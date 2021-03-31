@@ -80,4 +80,17 @@
 #define UC_BT_LOG_OSI_TRACE_LEVEL           UC_TRACE_LEVEL_WARNING
 #endif
 
+#ifdef CONFIG_BT_LOG_BLUFI_TRACE_LEVEL
+#define UC_BT_LOG_BLUFI_TRACE_LEVEL         CONFIG_BT_LOG_BLUFI_TRACE_LEVEL
+#else
+#define UC_BT_LOG_BLUFI_TRACE_LEVEL         UC_TRACE_LEVEL_WARNING
+#endif
+
+//BLUFI
+#if  defined(CONFIG_BT_BLE_BLUFI_ENABLE) || defined(CONFIG_BT_NIMBLE_BLUFI_ENABLE)
+#define UC_BT_BLUFI_ENABLE                  TRUE
+#else
+#define UC_BT_BLUFI_ENABLE                  FALSE
+#endif
+
 #endif /* __BT_USER_CONFIG_H__ */

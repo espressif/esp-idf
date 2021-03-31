@@ -28,7 +28,9 @@ README.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_run(uint32_t entr
 
 # This seems like a bug, as the field are ::model_id and ::vnd::model_id
 esp_ble_mesh_defs.inc:line: WARNING: Duplicate declaration, uint16_t esp_ble_mesh_model::model_id
-
+WARNING:esp_bt_defs, use :noindex: for one of them
+WARNING:esp_blufi, use :noindex: for one of them
+esp_bt_defs.inc:line: WARNING: Duplicate declaration, uint8_t esp_bd_addr_t[ESP_BD_ADDR_LEN]
 
 #
 # Issue present only when building on msys2 / mingw32 START >>>
