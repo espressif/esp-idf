@@ -127,9 +127,11 @@ function(__build_init idf_path)
     # Must be global so as to be accessible from any subdirectory in custom projects.
     add_library(__idf_build_target STATIC IMPORTED GLOBAL)
 
-    set_default(python "python")
+    # Set the Python path (which may be passed in via -DPYTHON=) and store in a build property
+    set_default(PYTHON "python")
+    file(TO_CMAKE_PATH ${PYTHON} PYTHON)
+    idf_build_set_property(PYTHON ${PYTHON})
 
-    idf_build_set_property(PYTHON ${python})
     idf_build_set_property(IDF_PATH ${idf_path})
 
     idf_build_set_property(__PREFIX idf)
