@@ -129,7 +129,6 @@ drv_create_failed:
 void esp_modem_netif_teardown(void *h)
 {
     esp_modem_netif_driver_t *driver = h;
-    esp_netif_destroy(driver->base.netif);
     free(driver);
 }
 
