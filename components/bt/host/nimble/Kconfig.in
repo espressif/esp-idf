@@ -493,3 +493,10 @@ config BT_NIMBLE_MAX_PERIODIC_SYNCS
         Set this option to set the upper limit for number of periodic sync
         connections. This should be less than maximum connections allowed by
         controller.
+
+config BT_NIMBLE_BLUFI_ENABLE
+    bool "Enable blufi functionality"
+    depends on BT_NIMBLE_ENABLED
+    default n
+    help
+        Set this option to enable blufi functionality.

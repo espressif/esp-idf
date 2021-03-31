@@ -11,3 +11,5 @@ uint16_t blufi_crc_checksum(uint8_t iv8, uint8_t *data, int len);
 
 int blufi_security_init(void);
 void blufi_security_deinit(void);
+int esp_blufi_gap_register_callback(void);
+esp_err_t esp_blufi_host_init(void);
