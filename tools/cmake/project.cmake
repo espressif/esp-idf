@@ -6,15 +6,15 @@ cmake_minimum_required(VERSION 3.5)
 # call.
 include(${CMAKE_CURRENT_LIST_DIR}/idf.cmake)
 
-# legacy variable for compatibility
-set(IDFTOOL ${PYTHON} "${IDF_PATH}/tools/idf.py")
-
 # setting PYTHON variable here for compatibility only, new code should use
 # idf_build_get_property(variable PYTHON)
 idf_build_get_property(PYTHON PYTHON)
 if(NOT PYTHON)
     message(FATAL_ERROR "Internal error, PYTHON build property not set correctly.")
 endif()
+
+# legacy variable for compatibility
+set(IDFTOOL ${PYTHON} "${IDF_PATH}/tools/idf.py")
 
 # On processing, checking Python required modules can be turned off if it was
 # already checked externally.
