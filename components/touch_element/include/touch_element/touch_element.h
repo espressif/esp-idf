@@ -256,6 +256,21 @@ esp_err_t touch_element_waterproof_add(touch_elem_handle_t element_handle);
  */
 esp_err_t touch_element_waterproof_remove(touch_elem_handle_t element_handle);
 
+typedef struct {
+    uint16_t scan_time;
+    uint16_t sleep_time;
+} touch_elem_sleep_config_t;
+
+esp_err_t touch_element_sleep_install(touch_elem_sleep_config_t *sleep_config);
+void touch_element_sleep_uninstall(void);
+esp_err_t touch_element_sleep_add_wakeup(touch_elem_handle_t element_handle);
+esp_err_t touch_element_sleep_remove_wakeup(touch_elem_handle_t element_handle);
+esp_err_t touch_element_sleep_add_wakeup_channel(touch_pad_t wakeup_channel);
+esp_err_t touch_element_sleep_remove_wakeup_channel(touch_pad_t wakeup_channel);
+#ifdef CONFIG_TE_SKIP_DSLEEP_WAKEUP_CALIBRATION
+esp_err_t touch_element_sleep_config_wakeup_calibration(touch_elem_handle_t element_handle, bool en);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

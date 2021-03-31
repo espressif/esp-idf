@@ -144,6 +144,8 @@ static void tp_example_read_task(void *pvParameter)
     }
 }
 
+#include "esp_sleep.h"
+#include "hal/touch_sensor_ll.h"
 void app_main(void)
 {
     if (que_touch == NULL) {
@@ -209,4 +211,11 @@ void app_main(void)
 
     // Start a task to show what pads have been touched
     xTaskCreate(&tp_example_read_task, "touch_pad_read_task", 4096, NULL, 5, NULL);
+
+    touch_ll_sleep_low_power(true);
+    while (1) {
+        esp_sleep_enable_timer_wakeup(100 * 1000);
+        esp_light_sleep_start();
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
 }
