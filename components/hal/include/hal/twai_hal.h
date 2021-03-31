@@ -26,13 +26,14 @@ extern "C" {
 
 #include <stddef.h>
 #include <stdbool.h>
+#include "sdkconfig.h"
 #include "hal/twai_types.h"
 #include "hal/twai_ll.h"
 
 /* ------------------------- Defines and Typedefs --------------------------- */
 
-#define TWAI_HAL_SET_FLAG(var, flag)            ((var) |= (flag))
-#define TWAI_HAL_RESET_FLAG(var, flag)          ((var) &= ~(flag))
+#define TWAI_HAL_SET_BITS(var, flag)            ((var) |= (flag))
+#define TWAI_HAL_CLEAR_BITS(var, flag)          ((var) &= ~(flag))
 
 //HAL state flags
 #define TWAI_HAL_STATE_FLAG_RUNNING             (1 << 0)    //Controller is active (not in reset mode)
@@ -41,8 +42,11 @@ extern "C" {
 #define TWAI_HAL_STATE_FLAG_ERR_PASSIVE         (1 << 3)    //TEC or REC is >= 128
 #define TWAI_HAL_STATE_FLAG_BUS_OFF             (1 << 4)    //Bus-off due to TEC >= 256
 #define TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED    (1 << 5)    //Transmit buffer is occupied
+#if defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
+#define TWAI_HAL_STATE_FLAG_TX_NEED_RETRY       (1 << 7)    //TX needs to be restarted due to errata workarounds
+#endif
 
-//Error active interrupt related
+//Interrupt Events
 #define TWAI_HAL_EVENT_BUS_OFF                  (1 << 0)
 #define TWAI_HAL_EVENT_BUS_RECOV_CPLT           (1 << 1)
 #define TWAI_HAL_EVENT_BUS_RECOV_PROGRESS       (1 << 2)
@@ -54,13 +58,21 @@ extern "C" {
 #define TWAI_HAL_EVENT_ARB_LOST                 (1 << 8)
 #define TWAI_HAL_EVENT_RX_BUFF_FRAME            (1 << 9)
 #define TWAI_HAL_EVENT_TX_BUFF_FREE             (1 << 10)
+#if defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
+#define TWAI_HAL_EVENT_NEED_PERIPH_RESET        (1 << 11)
+#endif
+
+typedef twai_ll_frame_buffer_t twai_hal_frame_t;
 
 typedef struct {
     twai_dev_t *dev;
     uint32_t state_flags;
+#if defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
+    twai_hal_frame_t tx_frame_save;
+    twai_ll_reg_save_t reg_save;
+    uint8_t rx_msg_cnt_save;
+#endif
 } twai_hal_context_t;
-
-typedef twai_ll_frame_buffer_t twai_hal_frame_t;
 
 /* ---------------------------- Init and Config ----------------------------- */
 
@@ -125,7 +137,7 @@ void twai_hal_stop(twai_hal_context_t *hal_ctx);
  */
 static inline void twai_hal_start_bus_recovery(twai_hal_context_t *hal_ctx)
 {
-    TWAI_HAL_SET_FLAG(hal_ctx->state_flags, TWAI_HAL_STATE_FLAG_RECOVERING);
+    TWAI_HAL_SET_BITS(hal_ctx->state_flags, TWAI_HAL_STATE_FLAG_RECOVERING);
     twai_ll_exit_reset_mode(hal_ctx->dev);
 }
 
@@ -193,22 +205,23 @@ static inline bool twai_hal_check_state_flags(twai_hal_context_t *hal_ctx, uint3
 /* ----------------------------- Event Handling ----------------------------- */
 
 /**
- * @brief Decode current events that triggered an interrupt
+ * @brief Get a bit mask of the events that triggered that triggered an interrupt
  *
- * This function should be the called at the beginning of an ISR. This
- * function will do the following:
- * - Read and clear interrupts
- * - Decode current events that triggered an interrupt
+ * This function should be called at the beginning of an interrupt. This function will do the following:
+ * - Read and clear interrupt register
+ * - Calculate what events have triggered the interrupt
  * - Respond to low latency interrupt events
- *      - Bus off: Change to LOM to free TEC/REC
+ *      - Bus off: Change to LOM to freeze TEC/REC. Errata 1 Fix
  *      - Recovery complete: Enter reset mode
- *      - Clear ECC and ALC
- * - Update state flags based on events that have occurred.
+ *      - Clear ECC and ALC so that their interrupts are re-armed
+ * - Update HAL state flags based on interrupts that have occurred.
+ * - For the ESP32, check for errata conditions. If a HW reset is required, this function
+ *   will set the TWAI_HAL_EVENT_NEED_PERIPH_RESET event.
  *
  * @param hal_ctx Context of the HAL layer
  * @return Bit mask of events that have occurred
  */
-uint32_t twai_hal_decode_interrupt_events(twai_hal_context_t *hal_ctx);
+uint32_t twai_hal_get_events(twai_hal_context_t *hal_ctx);
 
 /* ------------------------------- TX and RX -------------------------------- */
 
@@ -260,24 +273,105 @@ void twai_hal_set_tx_buffer_and_transmit(twai_hal_context_t *hal_ctx, twai_hal_f
  * @brief Copy a frame from the RX buffer and release
  *
  * This function copies a frame from the RX buffer, then release the buffer (so
- * that it loads the next frame in the RX FIFO).
+ * that it loads the next frame in the RX FIFO). False is returned under the
+ * following conditions:
+ * - On the ESP32S2, false is returned if the RX buffer points to an overrun frame
+ * - On the ESP32, false is returned if the RX buffer points to the first overrun
+ * frame in the RX FIFO
  *
  * @param hal_ctx Context of the HAL layer
  * @param rx_frame Pointer to structure to store RX frame
+ * @return True if a valid frame was copied and released. False if overrun.
  */
-static inline void twai_hal_read_rx_buffer_and_clear(twai_hal_context_t *hal_ctx, twai_hal_frame_t *rx_frame)
+static inline bool twai_hal_read_rx_buffer_and_clear(twai_hal_context_t *hal_ctx, twai_hal_frame_t *rx_frame)
 {
+#ifdef SOC_TWAI_SUPPORTS_RX_STATUS
+    if (twai_ll_get_status(hal_ctx->dev) & TWAI_LL_STATUS_MS) {
+        //Release the buffer for this particular overrun frame
+        twai_ll_set_cmd_release_rx_buffer(hal_ctx->dev);
+        return false;
+    }
+#else
+    if (twai_ll_get_status(hal_ctx->dev) & TWAI_LL_STATUS_DOS) {
+        //No need to release RX buffer as we'll be releaseing all RX frames in continuously later
+        return false;
+    }
+#endif
     twai_ll_get_rx_buffer(hal_ctx->dev, rx_frame);
     twai_ll_set_cmd_release_rx_buffer(hal_ctx->dev);
-    /*
-     * Todo: Support overrun handling by:
-     * - Check overrun status bit. Return false if overrun
-     */
+    return true;
 }
 
+#ifndef SOC_TWAI_SUPPORTS_RX_STATUS
+/**
+ * @brief Clear the RX FIFO of overrun frames
+ *
+ * This function will clear the RX FIFO of overrun frames. The RX message count
+ * will return to 0 after calling this function.
+ *
+ * @param hal_ctx Context of the HAL layer
+ * @return Number of overrun messages cleared from RX FIFO
+ */
+static inline uint32_t twai_hal_clear_rx_fifo_overrun(twai_hal_context_t *hal_ctx)
+{
+    uint32_t msg_cnt = 0;
+    //Note: Need to keep polling th rx message counter incase another message arrives whilst clearing
+    while (twai_ll_get_rx_msg_count(hal_ctx->dev) > 0) {
+        twai_ll_set_cmd_release_rx_buffer(hal_ctx->dev);
+        msg_cnt++;
+    }
+    //Set a clear data overrun command to clear the data overrun status bit
+    twai_ll_set_cmd_clear_data_overrun(hal_ctx->dev);
 
-//Todo: Decode ALC register
-//Todo: Decode error code capture
+    return msg_cnt;
+}
+#endif  //SOC_TWAI_SUPPORTS_RX_STATUS
+
+/* --------------------------- Errata Workarounds --------------------------- */
+
+#if defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
+/**
+ * @brief Prepare the peripheral for a HW reset
+ *
+ * Some HW erratas will require the peripheral be reset. This function should be
+ * called if twai_hal_get_events() returns the TWAI_HAL_EVENT_NEED_PERIPH_RESET event.
+ * Preparing for a reset involves the following:
+ * - Checking if a reset will cancel a TX. If so, mark that we need to retry that message after the reset
+ * - Save how many RX messages were lost due to this reset
+ * - Enter reset mode to stop any the peripheral from receiving any bus activity
+ * - Store the regsiter state of the peripheral
+ *
+ * @param hal_ctx Context of the HAL layer
+ */
+void twai_hal_prepare_for_reset(twai_hal_context_t *hal_ctx);
+
+/**
+ * @brief Recover the peripheral after a HW reset
+ *
+ * This should be called after calling twai_hal_prepare_for_reset() and then
+ * executing the HW reset.
+ * Recovering the peripheral from a HW reset involves the following:
+ * - Restoring the previously saved register state
+ * - Exiting reset mode to allow receiving of bus activity
+ * - Retrying any TX message that was cancelled by the HW reset
+ *
+ * @param hal_ctx Context of the HAL layer
+ */
+void twai_hal_recover_from_reset(twai_hal_context_t *hal_ctx);
+
+/**
+ * @brief Get how many RX messages were lost due to HW reset
+ *
+ * @note The number of lost RX messages are saved during twai_hal_prepare_for_reset()
+ *
+ * @param hal_ctx Context of the HAL layer
+ * @return uint32_t Number of RX messages lost due to HW reset
+ */
+static inline uint32_t twai_hal_get_reset_lost_rx_cnt(twai_hal_context_t *hal_ctx)
+{
+    return hal_ctx->rx_msg_cnt_save;
+}
+#endif  //defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
 
 #ifdef __cplusplus
 }
