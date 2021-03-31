@@ -4,6 +4,10 @@ set(COMPONENT_SRCS "unity/src/unity.c"
 set(COMPONENT_ADD_INCLUDEDIRS "include"
                               "unity/src")
 
+if(CONFIG_UNITY_ENABLE_BACKTRACE_ON_FAIL)
+    list(APPEND COMPONENT_PRIV_INCLUDEDIRS "include/priv")
+endif()
+
 if(CONFIG_UNITY_ENABLE_IDF_TEST_RUNNER)
     list(APPEND COMPONENT_SRCS "unity_runner.c")
 endif()

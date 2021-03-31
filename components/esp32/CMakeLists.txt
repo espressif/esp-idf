@@ -16,6 +16,8 @@ else()
                    "coexist.c"
                    "cpu_start.c"
                    "crosscore_int.c"
+                   "debug_helpers.c"
+                   "debug_helpers_asm.S"
                    "dbg_stubs.c"
                    "dport_access.c"
                    "dport_panic_highint_hdl.S"
