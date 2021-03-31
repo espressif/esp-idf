@@ -50,24 +50,23 @@ ESP-IDF 可以显式地指定和配置每个组件。在构建项目的时候，
 示例项目
 ~~~~~~~~
 
-示例项目的目录树结构可能如下所示：
+示例项目的目录树结构可能如下所示::
 
-.. code:: 
+    - myProject/
+                 - Makefile
+                 - sdkconfig
+                 - components/ - component1/ - component.mk
+                                             - Kconfig
+                                             - src1.c
+                               - component2/ - component.mk
+                                             - Kconfig
+                                             - src1.c
+                                             - include/ - component2.h
+                 - main/       - src1.c
+                               - src2.c
+                               - component.mk
 
-   - myProject/
-                - Makefile
-                - sdkconfig
-                - components/ - component1/ - component.mk
-                                            - Kconfig
-                                            - src1.c
-                              - component2/ - component.mk
-                                            - Kconfig
-                                            - src1.c
-                                            - include/ - component2.h
-                - main/       - src1.c
-                              - src2.c
-                              - component.mk
-                - build/
+                 - build/
 
 该示例项目 ``myProject`` 包含以下组成部分：
 
@@ -93,7 +92,7 @@ ESP-IDF 可以显式地指定和配置每个组件。在构建项目的时候，
 最小 Makefile 示例
 ^^^^^^^^^^^^^^^^^^
 
-.. code::
+::
 
    PROJECT_NAME := myProject
 
@@ -109,13 +108,13 @@ ESP-IDF 可以显式地指定和配置每个组件。在构建项目的时候，
 
 以下这些变量都有默认值，用户可以重写这些变量以自定义构建行为。查看 ``make/project.mk`` 文件可以获得所有的实现细节。
 
--  ``PROJECT_PATH``： 顶层项目目录，默认是包含 Makefile 文件的目录，许多其他的项目变量都基于此变量。注意，项目路径中不能包含有空格。
--  ``BUILD_DIR_BASE``： 所有对象、库、二进制文件的输出目录，默认为 ``$(PROJECT_PATH)/build``。
--  ``COMPONENT_DIRS``： 组件的搜索目录，默认为 ``$(IDF_PATH)/components``，``$(PROJECT_PATH)/components``，``$(PROJECT_PATH)/main`` 和 ``EXTRA_COMPONENT_DIRS`` 。如果您不希望从这些目录中搜索组件，请重写此变量。
--  ``EXTRA_COMPONENT_DIRS``： 组件额外的搜索路径，可选。
+-  ``PROJECT_PATH``：顶层项目目录，默认是包含 Makefile 文件的目录，许多其他的项目变量都基于此变量。注意，项目路径中不能包含有空格。
+-  ``BUILD_DIR_BASE``：所有对象、库、二进制文件的输出目录，默认为 ``$(PROJECT_PATH)/build``。
+-  ``COMPONENT_DIRS``：组件的搜索目录，默认为 ``$(IDF_PATH)/components``，``$(PROJECT_PATH)/components``，``$(PROJECT_PATH)/main`` 和 ``EXTRA_COMPONENT_DIRS`` 。如果您不希望从这些目录中搜索组件，请重写此变量。
+-  ``EXTRA_COMPONENT_DIRS``：组件额外的搜索路径，可选。
 -  ``COMPONENTS``： 要构建进项目中的组件列表，默认为 ``COMPONENT_DIRS`` 指定目录中所有的组件。
 -  ``EXCLUDE_COMPONENTS``： 在构建的过程中需要剔除的组件列表，可选。请注意这只会减少构建的时间，并不会减少最终二进制文件的大小。
--  ``TEST_EXCLUDE_COMPONENTS``： 在构建单元测试的过程中需要剔除的组件列表，可选。
+-  ``TEST_EXCLUDE_COMPONENTS``：在构建单元测试的过程中需要剔除的组件列表，可选。
 
 以上这些 Makefile 变量中的任何路径都要使用绝对路径，您可以使用 ``$(PROJECT_PATH)/xxx``，``$(IDF_PATH)/xxx``，或者使用 Make 内置函数 ``$(abspath xxx)`` 将相对路径转换为绝对路径。
 
@@ -179,6 +178,13 @@ ESP-IDF 搜索组件时，会按照 ``COMPONENT_DIRS`` 指定的顺序依次进�
 -  ``HOSTCC``，``HOSTLD``，``HOSTAR``： 主机本地工具链中每个工具的全名。
 -  ``IDF_VER``： ESP-IDF 的版本号，可以通过检索 ``$(IDF_PATH)/version.txt`` 文件（假如存在的话）或者使用 git 命令 ``git describe`` 来获取。这里推荐的格式是在一行中指定主 IDF 的发布版本号，例如标记为 ``v2.0`` 的发布版本或者是标记任意一次提交记录的 ``v2.0-275-g0efaa4f``。应用程序可以通过调用 :cpp:func:`esp_get_idf_version` 函数来使用该变量。
 -  ``IDF_VERSION_MAJOR``, ``IDF_VERSION_MINOR``, ``IDF_VERSION_PATCH``: ESP-IDF 的组件版本，可用于条件表达式。请注意这些信息的精确度不如 ``IDF_VER`` 变量，版本号 ``v4.0-dev-*``， ``v4.0-beta1``， ``v4.0-rc1`` 和 ``v4.0`` 对应的 ``IDF_VERSION_*`` 变量值是相同的，但是 ``IDF_VER`` 的值是不同的。
+- ``PROJECT_VER``：项目版本。
+
+  * 如果设置了 :ref:`CONFIG_APP_PROJECT_VER_FROM_CONFIG` 选项，则将使用 :ref:`CONFIG_APP_PROJECT_VER` 的值作为项目版本。
+  * 如果在项目 Makefile 文件中设置了 ``PROJECT_VER`` 变量，则使用该值作为项目版本。
+  * 如果存在 ``$PROJECT_PATH/version.txt``，则用其内容为 ``PROJECT_VER``。
+  * 如果项目位于 Git 仓库中，将使用 git 描述部分的内容作为项目版本。
+  * 如果以上均不存在，则 ``PROJECT_VER`` 为 "1"。
 
 如果您在 ``component.mk`` 文件中修改这些变量，这并不会影响其它组件的构建，但可能会使您的组件变得难以构建或调试。
 
@@ -214,12 +220,11 @@ ESP-IDF 搜索组件时，会按照 ``COMPONENT_DIRS`` 指定的顺序依次进�
 -  ``CFLAGS``： 传递给 C 编译器的标志。根据项目设置已经定义一组默认的 ``CFLAGS``，可以通过 ``CFLAGS +=`` 来为组件添加特定的标志，也可以完全重写该变量（尽管不推荐这么做）。
 -  ``CPPFLAGS``： 传递给 C 预处理器的标志（用于 ``.c``，``.cpp`` 和 ``.S`` 文件）。根据项目设置已经定义一组默认的 ``CPPFLAGS`` ，可以通过 ``CPPFLAGS +=`` 来为组件添加特定的标志，也可以完全重写该变量（尽管不推荐这么做）。
 -  ``CXXFLAGS``： 传递给 C++ 编译器的标志。根据项目设置已经定义一组默认的 ``CXXFLAGS`` ，可以通过 ``CXXFLAGS +=`` 来为组件添加特定的标志，也可以完全重写该变量（尽管不推荐这么做）。
+- ``COMPONENT_ADD_LDFRAGMENTS``：链接器脚本生成功能的链接器片段文件的路径，请查看 :doc:`链接器脚本生成 <linker-script-generation>`.
 
-如果要将编译标志应用于单个源文件，您可以将该源文件的目标规则覆盖，例如：
+如果要将编译标志应用于单个源文件，您可以将该源文件的目标规则覆盖，例如::
 
-.. code:: makefile
-
-    apps/dhcpserver.o: CFLAGS += -Wno-unused-variable
+  apps/dhcpserver.o: CFLAGS += -Wno-unused-variable
 
 如果上游代码在编译的时候发出了警告，那这么做可能会很有效。
 
@@ -275,7 +280,7 @@ ESP-IDF 构建系统会在命令行中添加以下 C 预处理定义：
 以非交互的方式运行 Make
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-如果在运行 ``make`` 的时候不希望出现交互式提示（例如：在IDE或自动构建系统中），可以将 ``BATCH_BUILD=1`` 添加到make的参数中（或者将其设置为环境变量）。
+如果在运行 ``make`` 的时候不希望出现交互式提示（例如：在 IDE 或自动构建系统中），可以将 ``BATCH_BUILD=1`` 添加到 make 的参数中（或者将其设置为环境变量）。
 
 设置 ``BATCH_BUILD`` 意味着：
 
@@ -329,9 +334,7 @@ Makefile.projbuild
 
 请注意， ``Makefile.projbuild`` 对于最常见的组件不是必需的 - 例如向项目中添加 include 目录，或者将 LDFLAGS 添加到最终链接步骤，同样可以通过 ``component.mk`` 文件来自定义这些值。有关详细信息，请参阅 `可选的项目通用组件变量 <#optional-project-wide-component-variables>`_ 。
 
-.. warning::
-
-	在此文件中设置变量或者目标时要小心，由于这些值包含在项目的顶层 makefile 中，因此他们可以影响或者破坏所有组件的功能！
+在此文件中设置变量或者目标时要小心，由于这些值包含在项目的顶层 makefile 中，因此他们可以影响或者破坏所有组件的功能！
 
 KConfig.projbuild
 ^^^^^^^^^^^^^^^^^
@@ -375,12 +378,10 @@ Makefile.componentbuild
 指定源文件
 ^^^^^^^^^^
 
-标准 ``component.mk`` 逻辑将源目录中的所有 .S 和 .c 文件添加为无条件编译的源。通过将 ``COMPONENT_OBJS`` 变量手动设置为需要生成的对象的名称，可以绕过该逻辑并对要编译的对象进行硬编码。
+标准 ``component.mk`` 逻辑将源目录中的所有 .S 和 .c 文件添加为无条件编译的源。通过将 ``COMPONENT_OBJS`` 变量手动设置为需要生成的对象的名称，可以绕过该逻辑并对要编译的对象进行硬编码::
 
-.. code:: 
-
-   COMPONENT_OBJS := file1.o file2.o thing/filea.o thing/fileb.o anotherthing/main.o
-   COMPONENT_SRCDIRS := . thing anotherthing
+    COMPONENT_OBJS := file1.o file2.o thing/filea.o thing/fileb.o anotherthing/main.o
+    COMPONENT_SRCDIRS := . thing anotherthing
 
 请注意，还需要另外设置 ``COMPONENT_SRCDIRS`` 。
 
@@ -391,58 +392,51 @@ Makefile.componentbuild
 
 配置系统可用于有条件地编译某些文件，具体取决于 ``make menuconfig`` 中选择的选项。为此，ESP-IDF 具有 ``compile_only_if`` 和 ``compile_only_if_not`` 的宏：
 
-``Kconfig``:
+``Kconfig``::
 
-.. code:: 
+    config FOO_ENABLE_BAR
+        bool "Enable the BAR feature."
+        help
+            This enables the BAR feature of the FOO component.
 
-   config FOO_ENABLE_BAR
-       bool "Enable the BAR feature."
-       help
-           This enables the BAR feature of the FOO component.
+``component.mk``::
 
-``component.mk``:
-
-.. code:: 
-
-   $(call compile_only_if,$(CONFIG_FOO_ENABLE_BAR),bar.o)
+    $(call compile_only_if,$(CONFIG_FOO_ENABLE_BAR),bar.o)
 
 从示例中可以看出， ``compile_only_if`` 宏将条件和目标文件列表作为参数。如果条件为真（在这种情况下：如果在 menuconfig 中启用了 BAR 功能），将始终编译目标文件（在本例中为 bar.o）。相反的情况也是如此，如果条件不成立，bar.o 将永远不会被编译。 ``compile_only_if_not`` 执行相反的操作，如果条件为 false 则编译，如果条件为 true 则不编译。
 
 这也可以用于选择或者删除实现，如下所示：
 
-``Kconfig``:
+``Kconfig``::
 
-.. code:: 
+    config ENABLE_LCD_OUTPUT
+        bool "Enable LCD output."
+        help
+            Select this if your board has a LCD.
 
-   config ENABLE_LCD_OUTPUT
-       bool "Enable LCD output."
-       help
-           Select this if your board has a LCD.
+    config ENABLE_LCD_CONSOLE
+        bool "Output console text to LCD"
+        depends on ENABLE_LCD_OUTPUT
+        help
+            Select this to output debugging output to the lcd
 
-   config ENABLE_LCD_CONSOLE
-       bool "Output console text to LCD"
-       depends on ENABLE_LCD_OUTPUT
-       help
-           Select this to output debugging output to the lcd
+    config ENABLE_LCD_PLOT
+        bool "Output temperature plots to LCD"
+        depends on ENABLE_LCD_OUTPUT
+        help
+            Select this to output temperature plots
 
-   config ENABLE_LCD_PLOT
-       bool "Output temperature plots to LCD"
-       depends on ENABLE_LCD_OUTPUT
-       help
-           Select this to output temperature plots
 
-``component.mk``:
+``component.mk``::
 
-.. code:: 
+    # If LCD is enabled, compile interface to it, otherwise compile dummy interface
+    $(call compile_only_if,$(CONFIG_ENABLE_LCD_OUTPUT),lcd-real.o lcd-spi.o)
+    $(call compile_only_if_not,$(CONFIG_ENABLE_LCD_OUTPUT),lcd-dummy.o)
 
-   # If LCD is enabled, compile interface to it, otherwise compile dummy interface
-   $(call compile_only_if,$(CONFIG_ENABLE_LCD_OUTPUT),lcd-real.o lcd-spi.o)
-   $(call compile_only_if_not,$(CONFIG_ENABLE_LCD_OUTPUT),lcd-dummy.o)
+    #We need font if either console or plot is enabled
+    $(call compile_only_if,$(or $(CONFIG_ENABLE_LCD_CONSOLE),$(CONFIG_ENABLE_LCD_PLOT)), font.o)
 
-   #We need font if either console or plot is enabled
-   $(call compile_only_if,$(or $(CONFIG_ENABLE_LCD_CONSOLE),$(CONFIG_ENABLE_LCD_PLOT)), font.o)
-
-请注意使用 Make 或者函数来包含字体文件。其他的替换函数，比如 ``and`` 和 ``if`` 也适用于此处。也可以使用不在 menuconfig 中定义的变量，ESP-IDF 使用默认的 Make 策略，将一个空的或者只包含空格的变量视为 false ，而其中任何非空格的比那辆都为 true 。
+请注意使用 Make 或者函数来包含字体文件。其他的替换函数，比如 ``and`` 和 ``if`` 也适用于此处。也可以使用不在 menuconfig 中定义的变量，ESP-IDF 使用默认的 Make 策略，判断一个空的或只包含空格的变量视为 false，而其中任何非空格的变量都为 true 。
 
 （注意：本文档的历史版本建议将目标文件添加到 ``COMPONENT_OBJS`` 中，虽然这仍然可行，但是只有当组件中的所有目标文件都明确命名时才会起作用，并且在 ``make clean`` 后并不会清除 make 中取消选择的目标文件）。
 
@@ -451,16 +445,14 @@ Makefile.componentbuild
 源代码生成
 ^^^^^^^^^^
 
-某些组件会出现源文件未随组件本身提供，而必须从另外一个文件生成的情况。假设我们的组件有一个头文件，该文件由 BMP 文件转换后的二进制数据组成，假设使用 bmp2h 的工具进行转换，然后将头文件包含在名为 graphics_lib.c 的文件中：
+某些组件会出现源文件未随组件本身提供，而必须从另外一个文件生成的情况。假设我们的组件有一个头文件，该文件由 BMP 文件转换后的二进制数据组成，假设使用 bmp2h 的工具进行转换，然后将头文件包含在名为 graphics_lib.c 的文件中::
 
-.. code:: 
+    COMPONENT_EXTRA_CLEAN := logo.h
 
-   COMPONENT_EXTRA_CLEAN := logo.h
+    graphics_lib.o: logo.h
 
-   graphics_lib.o: logo.h
-
-   logo.h: $(COMPONENT_PATH)/logo.bmp
-       bmp2h -i $^ -o $@
+    logo.h: $(COMPONENT_PATH)/logo.bmp
+        bmp2h -i $^ -o $@
 
 这个示例会在当前目录（构建目录）中生成 graphics_lib.o 和 logo.h 文件，而 logo.bmp 随组件一起提供并位于组件路径下。因为 logo.h 是一个生成的文件，所以当调用 ``make clean`` 时需要清理它，这就是为什么要将它添加到 ``COMPONENT_EXTRA_CLEAN`` 变量中。
 
@@ -476,28 +468,27 @@ Makefile.componentbuild
 
 有时您的组件希望使用一个二进制文件或者文本文件，但是您又不希望将它重新格式化为 C 源文件。
 
-这时，您可以在 ``component.mk`` 文件中设置变量 ``COMPONENT_EMBED_FILES``，以这种方式指定要嵌入的文件的名称：
+这时，您可以在 ``component.mk`` 文件中设置变量 ``COMPONENT_EMBED_FILES``，以这种方式指定要嵌入的文件的名称::
 
-.. code:: 
+  COMPONENT_EMBED_FILES := server_root_cert.der
 
-   COMPONENT_EMBED_FILES := server_root_cert.der
+或者，如果文件是字符串，则可以使用变量 ``COMPONENT_EMBED_TXTFILES``，这将把文本文件的内容当成以 null 结尾的字符串嵌入::
 
-或者，如果文件是字符串，则可以使用变量 ``COMPONENT_EMBED_TXTFILES``，这将把文本文件的内容当成以 null 结尾的字符串嵌入：
+  COMPONENT_EMBED_TXTFILES := server_root_cert.pem
 
-.. code:: 
+文件的内容会被编译进 flash 中的 .rodata 段，并通过符号名称来访问，如下所示::
 
-   COMPONENT_EMBED_TXTFILES := server_root_cert.pem
-
-文件的内容会被编译进 flash 中的 .rodata 段，并通过符号名称来访问，如下所示：
-
-.. code:: c
-
-   extern const uint8_t server_root_cert_pem_start[] asm("_binary_server_root_cert_pem_start");
-   extern const uint8_t server_root_cert_pem_end[]   asm("_binary_server_root_cert_pem_end");
+  extern const uint8_t server_root_cert_pem_start[] asm("_binary_server_root_cert_pem_start");
+  extern const uint8_t server_root_cert_pem_end[]   asm("_binary_server_root_cert_pem_end");
 
 符号名称是根据文件的全名生成的，如 ``COMPONENT_EMBED_FILES`` 中的所示，字符 / ， . ， 等都将会被下划线替代。符号名称中的 ``_binary`` 前缀由 ``objcopy`` 添加，对于文本和二进制文件都是相同的。
 
-有关使用此技术的示例，请参考 :example:`protocols/https_request` - 证书文件的内容会在编译时从 .pem 文件中加载。
+有关使用此技术的示例，请查看 file_serving 示例 :example_file:`protocols/http_server/file_serving/main/CMakeLists.txt` 中的 main 组件，两个文件会在编译时加载并链接到固件中。
+
+代码和数据的存放
+----------------
+
+ESP-IDF 还支持自动生成链接脚本，它允许组件通过链接片段文件定义其代码和数据在内存中的存放位置。构建系统会处理这些链接片段文件，并将处理后的结果扩充进链接脚本，从而指导应用程序二进制文件的链接过程。更多详细信息与快速上手指南，请参阅 :doc:`链接脚本生成机制 <linker-script-generation>`。
 
 .. _fully-overriding-component-makefile:
 
@@ -507,6 +498,12 @@ Makefile.componentbuild
 显然，在某些情况下，所有这些配置都不足以满足某个组件，例如，当组件基本上是另一个第三方组件的包装器时，该第三方组件最初不打算在 ESP-IDF 构建系统下工作，在这种情况下，可以通过设置 ``COMPONENT_OWNBUILDTARGET`` 和可能的 ``COMPONENT_OWNCLEANTARGET``，并在 ``component.mk`` 中定义名为 ``build`` 和 ``clean`` 的目标。构建目标可以执行任何操作，只要它为项目生成了 ``$(COMPONENT_LIBRARY)`` ，并最终被链接到应用程序二进制文件中即可。
 
 （实际上，这并不是必须的 - 如果 ``COMPONENT_ADD_LDFLAGS`` 变量被覆盖，那么组件可以指示链接器链接其他二进制文件。）
+
+.. note:: 当外部构建系统使用 PSRAM 时，请记得将 ``-mfix-esp32-psram-cache-issue`` 添加到 C 编译器的参数中。关于该标志的更多详细信息，请参考 :ref:`CONFIG_SPIRAM_CACHE_WORKAROUND`。
+
+.. _esp-idf-template: https://github.com/espressif/esp-idf-template
+.. _GNU Make Manual: https://www.gnu.org/software/make/manual/make.html
+
 
 .. _custom-sdkconfig-defaults-legacy:
 
@@ -520,17 +517,13 @@ Makefile.componentbuild
 保存 flash 参数
 ~~~~~~~~~~~~~~~
 
-在某些情况下，我们希望在没有 IDF 的情况下烧写目标板卡，对于这种情况，我们希望保存构建的二进制文件、esptool.py 和 esptool write_flash 命令的参数。可以简单编写一段脚本来保存二进制文件和 esptool.py，并且使用命令 ``make print_flash_cmd`` 来查看烧写 flash 时的参数。
+在某些情况下，我们希望在没有 IDF 的情况下烧写目标板，对于这种情况，我们希望保存构建的二进制文件、esptool.py 和 esptool write_flash 命令的参数。可以简单编写一段脚本来保存二进制文件和 esptool.py，并且使用命令 ``make print_flash_cmd`` 来查看烧写 flash 时的参数::
 
-.. code:: bash
+    --flash_mode dio --flash_freq 40m --flash_size detect 0x1000 bootloader/bootloader.bin 0x10000 example_app.bin 0x8000 partition_table_unit_test_app.bin
 
-   --flash_mode dio --flash_freq 40m --flash_size detect 0x1000 bootloader/bootloader.bin 0x10000 example_app.bin 0x8000 partition_table_unit_test_app.bin
+然后使用这段 flash 参数作为 esptool write_flash 命令的参数::
 
-然后使用这段 flash 参数作为 esptool write_flash 命令的参数：
-
-.. code:: bash
-
-   python esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 40m --flash_size detect 0x1000 bootloader/bootloader.bin 0x10000 example_app.bin 0x8000 partition_table_unit_test_app.bin
+    python esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 40m --flash_size detect 0x1000 bootloader/bootloader.bin 0x10000 example_app.bin 0x8000 partition_table_unit_test_app.bin
 
 构建 Bootloader
 ---------------
