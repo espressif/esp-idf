@@ -289,6 +289,7 @@ test_app_test_001:
   artifacts:
     paths:
       - $CI_PROJECT_DIR/tools/test_apps/system/*/*.log
+      - $LOG_PATH/*/XUNIT_RESULT.xml
   variables:
     SETUP_TOOLS: "1"
 
