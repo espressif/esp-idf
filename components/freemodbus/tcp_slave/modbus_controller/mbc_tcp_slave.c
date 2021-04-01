@@ -28,7 +28,7 @@
 #include "mbc_tcp_slave.h"          // for tcp slave mb controller defines
 #include "port_tcp_slave.h"         // for tcp slave port defines
 
-#if CONFIG_FMB_COMM_MODE_TCP_EN
+#if MB_TCP_ENABLED
 
 // Shared pointer to interface structure
 static mb_slave_interface_t* mbs_interface_ptr = NULL;
@@ -223,4 +223,4 @@ esp_err_t mbc_tcp_slave_create(void** handler)
     return ESP_OK;
 }
 
-#endif //#if CONFIG_FMB_COMM_MODE_TCP_EN
+#endif //#if MB_TCP_ENABLED
