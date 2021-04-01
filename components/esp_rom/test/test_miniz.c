@@ -10,6 +10,7 @@
 #ifdef CONFIG_SPIRAM
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32)
+// miniz unit test can't pass on ESP32 non-ECO3 version IDF-1807
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/miniz.h"

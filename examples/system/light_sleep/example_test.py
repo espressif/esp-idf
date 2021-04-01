@@ -7,12 +7,12 @@ import ttfw_idf
 
 ENTERING_SLEEP_STR = 'Entering light sleep'
 EXIT_SLEEP_REGEX = re.compile(r'Returned from light sleep, reason: (\w+), t=(\d+) ms, slept for (\d+) ms')
-WAITING_FOR_GPIO_STR = 'Waiting for GPIO0 to go high...'
+WAITING_FOR_GPIO_STR = re.compile(r'Waiting for GPIO\d to go high...')
 
 WAKEUP_INTERVAL_MS = 2000
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32'])
+@ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32', 'esp32c3'])
 def test_examples_system_light_sleep(env, extra_data):
     dut = env.get_dut('light_sleep_example', 'examples/system/light_sleep')
     dut.start_app()
