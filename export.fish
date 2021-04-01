@@ -7,8 +7,8 @@ end
 
 function __main
     if not set -q IDF_PATH
-        echo "IDF_PATH must be set before sourcing this script"
-        return 1
+        set -x IDF_PATH (cd (dirname (status -f)); and pwd)
+        echo "Chosen IDF_PATH: $IDF_PATH"
     end
 
     set script_dir (cd (dirname (status -f)); and pwd)
