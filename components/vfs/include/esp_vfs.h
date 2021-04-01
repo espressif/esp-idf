@@ -29,7 +29,7 @@
 #include <sys/time.h>
 #include <sys/termios.h>
 #include <sys/poll.h>
-#include <dirent.h>
+#include <sys/dirent.h>
 #include <string.h>
 #include "sdkconfig.h"
 
