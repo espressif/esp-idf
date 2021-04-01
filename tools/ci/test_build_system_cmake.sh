@@ -814,6 +814,19 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     (idf.py reconfigure | grep "kconfig:$IDF_PATH/components/esp32/Kconfig") || failure  "Failed to verify original `main` directory"
     rm -rf components
 
+    print_status "Project components prioritized over EXTRA_COMPONENT_DIRS"
+    clean_build_dir
+    mkdir -p extra_dir/my_component
+    echo "idf_component_register()" > extra_dir/my_component/CMakeLists.txt
+    cp CMakeLists.txt CMakeLists.bak # set EXTRA_COMPONENT_DIRS to point to the other directory
+    ${SED} -i "s%cmake_minimum_required(VERSION \([0-9]\+\).\([0-9]\+\))%cmake_minimum_required(VERSION \1.\2)\nset(EXTRA_COMPONENT_DIRS extra_dir)%" CMakeLists.txt
+    (idf.py reconfigure | grep "$PWD/extra_dir/my_component") || failure  "Unable to find component specified in EXTRA_COMPONENT_DIRS"
+    mkdir -p components/my_component
+    echo "idf_component_register()" > components/my_component/CMakeLists.txt
+    (idf.py reconfigure | grep "$PWD/components/my_component") || failure  "Project components should be prioritized over EXTRA_COMPONENT_DIRS"
+    mv CMakeLists.bak CMakeLists.txt # revert previous modifications
+    rm -rf extra_dir components
+
     print_status "Create project using idf.py and build it"
     echo "Trying to create project."
     (idf.py -C projects create-project temp_test_project) || failure "Failed to create the project."
@@ -849,8 +862,6 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     EXPECTED_EXIT_VALUE=4
     expected_failure $EXPECTED_EXIT_VALUE idf.py create-project --path "$IDF_PATH/example_proj" temp_test_project || failure "Command exit value is wrong."
     rm -rf "$IDF_PATH/example_proj"
-
-
 
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
