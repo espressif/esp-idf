@@ -33,6 +33,9 @@ extern "C" {
 #define UART_LL_MIN_WAKEUP_THRESH (2)
 #define UART_LL_INTR_MASK         (0x7ffff) //All interrupt mask
 
+#define UART_LL_FSM_IDLE          (0x0)
+#define UART_LL_FSM_TX_WAIT_SEND  (0xf)
+
 // Define UART interrupts
 typedef enum {
     UART_INTR_RXFIFO_FULL      = (0x1 << 0),
