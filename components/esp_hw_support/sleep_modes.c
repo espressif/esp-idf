@@ -100,8 +100,8 @@
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (28)
 #elif CONFIG_IDF_TARGET_ESP32S3
 #define DEFAULT_CPU_FREQ_MHZ                CONFIG_ESP32S3_DEFAULT_CPU_FREQ_MHZ
-#define DEFAULT_SLEEP_OUT_OVERHEAD_US       (0)
-#define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (0)
+#define DEFAULT_SLEEP_OUT_OVERHEAD_US       (382)
+#define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (133)
 #elif CONFIG_IDF_TARGET_ESP32C3
 #define DEFAULT_CPU_FREQ_MHZ                CONFIG_ESP32C3_DEFAULT_CPU_FREQ_MHZ
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (105)
@@ -113,11 +113,7 @@
 #endif
 
 #define LIGHT_SLEEP_TIME_OVERHEAD_US        DEFAULT_HARDWARE_OUT_OVERHEAD_US
-#if defined(CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS)   || \
-    defined(CONFIG_ESP32S2_RTC_CLK_SRC_EXT_CRYS) || \
-    defined(CONFIG_ESP32C3_RTC_CLK_SRC_EXT_CRYS) || \
-    defined(CONFIG_ESP32H2_RTC_CLK_SRC_EXT_CRYS) || \
-    defined(CONFIG_ESP32S3_RTC_CLK_SRC_EXT_CRYS)
+#ifdef CONFIG_ESP_SYSTEM_RTC_EXT_XTAL
 #define DEEP_SLEEP_TIME_OVERHEAD_US         (650 + 100 * 240 / DEFAULT_CPU_FREQ_MHZ)
 #else
 #define DEEP_SLEEP_TIME_OVERHEAD_US         (250 + 100 * 240 / DEFAULT_CPU_FREQ_MHZ)
@@ -125,6 +121,8 @@
 
 #if defined(CONFIG_IDF_TARGET_ESP32) && defined(CONFIG_ESP32_DEEP_SLEEP_WAKEUP_DELAY)
 #define DEEP_SLEEP_WAKEUP_DELAY     CONFIG_ESP32_DEEP_SLEEP_WAKEUP_DELAY
+#elif defined(CONFIG_IDF_TARGET_ESP32S3) && defined(CONFIG_ESP32S3_DEEP_SLEEP_WAKEUP_DELAY)
+#define DEEP_SLEEP_WAKEUP_DELAY     CONFIG_ESP32S3_DEEP_SLEEP_WAKEUP_DELAY
 #else
 #define DEEP_SLEEP_WAKEUP_DELAY     0
 #endif
@@ -539,7 +537,6 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     // Enter sleep
     rtc_sleep_config_t config = RTC_SLEEP_CONFIG_DEFAULT(pd_flags);
     rtc_sleep_init(config);
-    rtc_sleep_low_init(s_config.rtc_clk_cal_period);
 
     // Set state machine time for light sleep
     if (!deep_sleep) {
@@ -710,7 +707,7 @@ esp_err_t esp_light_sleep_start(void)
     uint32_t pd_flags = get_power_down_flags();
 
     // Re-calibrate the RTC Timer clock
-#if defined(CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS) || defined(CONFIG_ESP32S2_RTC_CLK_SRC_EXT_CRYS) || defined(CONFIG_ESP32C3_RTC_CLK_SRC_EXT_CRYS)
+#ifdef CONFIG_ESP_SYSTEM_RTC_EXT_XTAL
     uint64_t time_per_us = 1000000ULL;
     s_config.rtc_clk_cal_period = (time_per_us << RTC_CLK_CAL_FRACT) / rtc_clk_slow_freq_get_hz();
 #elif defined(CONFIG_ESP32S2_RTC_CLK_SRC_INT_RC)
