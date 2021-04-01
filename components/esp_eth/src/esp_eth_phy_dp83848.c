@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <sys/cdefs.h>
 #include "esp_log.h"
+#include "esp_check.h"
 #include "esp_eth.h"
 #include "eth_phy_regs_struct.h"
 #include "freertos/FreeRTOS.h"
@@ -24,15 +25,6 @@
 #include "esp_rom_sys.h"
 
 static const char *TAG = "dp83848";
-#define PHY_CHECK(a, str, goto_tag, ...)                                          \
-    do                                                                            \
-    {                                                                             \
-        if (!(a))                                                                 \
-        {                                                                         \
-            ESP_LOGE(TAG, "%s(%d): " str, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
-            goto goto_tag;                                                        \
-        }                                                                         \
-    } while (0)
 
 /***************Vendor Specific Register***************/
 
@@ -97,16 +89,15 @@ typedef struct {
 
 static esp_err_t dp83848_update_link_duplex_speed(phy_dp83848_t *dp83848)
 {
+    esp_err_t ret = ESP_OK;
     esp_eth_mediator_t *eth = dp83848->eth;
     eth_speed_t speed = ETH_SPEED_10M;
     eth_duplex_t duplex = ETH_DUPLEX_HALF;
     uint32_t peer_pause_ability = false;
     anlpar_reg_t anlpar;
     physts_reg_t physts;
-    PHY_CHECK(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_ANLPAR_REG_ADDR, &(anlpar.val)) == ESP_OK,
-              "read ANLPAR failed", err);
-    PHY_CHECK(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_STS_REG_ADDR, &(physts.val)) == ESP_OK,
-              "read PHYSTS failed", err);
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_ANLPAR_REG_ADDR, &(anlpar.val)), err, TAG, "read ANLPAR failed");
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_STS_REG_ADDR, &(physts.val)), err, TAG, "read PHYSTS failed");
     eth_link_t link = physts.link_status ? ETH_LINK_UP : ETH_LINK_DOWN;
     /* check if link status changed */
     if (dp83848->link_status != link) {
@@ -122,70 +113,67 @@ static esp_err_t dp83848_update_link_duplex_speed(phy_dp83848_t *dp83848)
             } else {
                 duplex = ETH_DUPLEX_HALF;
             }
-            PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_SPEED, (void *)speed) == ESP_OK,
-                      "change speed failed", err);
-            PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_DUPLEX, (void *)duplex) == ESP_OK,
-                      "change duplex failed", err);
+            ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_SPEED, (void *)speed), err, TAG, "change speed failed");
+            ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_DUPLEX, (void *)duplex), err, TAG, "change duplex failed");
             /* if we're in duplex mode, and peer has the flow control ability */
             if (duplex == ETH_DUPLEX_FULL && anlpar.symmetric_pause) {
                 peer_pause_ability = 1;
             } else {
                 peer_pause_ability = 0;
             }
-            PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_PAUSE, (void *)peer_pause_ability) == ESP_OK,
-                      "change pause ability failed", err);
+            ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_PAUSE, (void *)peer_pause_ability), err, TAG, "change pause ability failed");
         }
-        PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)link) == ESP_OK,
-                  "change link failed", err);
+        ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)link), err, TAG, "change link failed");
         dp83848->link_status = link;
     }
     return ESP_OK;
 err:
-    return ESP_FAIL;
+    return ret;
 }
 
 static esp_err_t dp83848_set_mediator(esp_eth_phy_t *phy, esp_eth_mediator_t *eth)
 {
-    PHY_CHECK(eth, "can't set mediator to null", err);
+    esp_err_t ret = ESP_OK;
+    ESP_GOTO_ON_FALSE(eth, ESP_ERR_INVALID_ARG, err, TAG, "can't set mediator to null");
     phy_dp83848_t *dp83848 = __containerof(phy, phy_dp83848_t, parent);
     dp83848->eth = eth;
     return ESP_OK;
 err:
-    return ESP_ERR_INVALID_ARG;
+    return ret;
 }
 
 static esp_err_t dp83848_get_link(esp_eth_phy_t *phy)
 {
+    esp_err_t ret = ESP_OK;
     phy_dp83848_t *dp83848 = __containerof(phy, phy_dp83848_t, parent);
     /* Updata information about link, speed, duplex */
-    PHY_CHECK(dp83848_update_link_duplex_speed(dp83848) == ESP_OK, "update link duplex speed failed", err);
+    ESP_GOTO_ON_ERROR(dp83848_update_link_duplex_speed(dp83848), err, TAG, "update link duplex speed failed");
     return ESP_OK;
 err:
-    return ESP_FAIL;
+    return ret;
 }
 
 static esp_err_t dp83848_reset(esp_eth_phy_t *phy)
 {
+    esp_err_t ret = ESP_OK;
     phy_dp83848_t *dp83848 = __containerof(phy, phy_dp83848_t, parent);
     dp83848->link_status = ETH_LINK_DOWN;
     esp_eth_mediator_t *eth = dp83848->eth;
     bmcr_reg_t bmcr = {.reset = 1};
-    PHY_CHECK(eth->phy_reg_write(eth, dp83848->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val) == ESP_OK,
-              "write BMCR failed", err);
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, dp83848->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
     /* Wait for reset complete */
     uint32_t to = 0;
     for (to = 0; to < dp83848->reset_timeout_ms / 10; to++) {
         vTaskDelay(pdMS_TO_TICKS(10));
-        PHY_CHECK(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)) == ESP_OK,
-                  "read BMCR failed", err);
+        ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
         if (!bmcr.reset) {
             break;
         }
     }
-    PHY_CHECK(to < dp83848->reset_timeout_ms / 10, "reset timeout", err);
+    ESP_GOTO_ON_FALSE(to < dp83848->reset_timeout_ms / 10, ESP_FAIL, err, TAG, "reset timeout");
     return ESP_OK;
 err:
-    return ESP_FAIL;
+    return ret;
 }
 
 static esp_err_t dp83848_reset_hw(esp_eth_phy_t *phy)
@@ -203,6 +191,7 @@ static esp_err_t dp83848_reset_hw(esp_eth_phy_t *phy)
 
 static esp_err_t dp83848_negotiate(esp_eth_phy_t *phy)
 {
+    esp_err_t ret = ESP_OK;
     phy_dp83848_t *dp83848 = __containerof(phy, phy_dp83848_t, parent);
     esp_eth_mediator_t *eth = dp83848->eth;
     /* Start auto negotiation */
@@ -212,18 +201,15 @@ static esp_err_t dp83848_negotiate(esp_eth_phy_t *phy)
         .en_auto_nego = 1,     /* Auto Negotiation */
         .restart_auto_nego = 1 /* Restart Auto Negotiation */
     };
-    PHY_CHECK(eth->phy_reg_write(eth, dp83848->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val) == ESP_OK,
-              "write BMCR failed", err);
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, dp83848->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
     /* Wait for auto negotiation complete */
     bmsr_reg_t bmsr;
     physts_reg_t physts;
     uint32_t to = 0;
     for (to = 0; to < dp83848->autonego_timeout_ms / 10; to++) {
         vTaskDelay(pdMS_TO_TICKS(10));
-        PHY_CHECK(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)) == ESP_OK,
-                  "read BMSR failed", err);
-        PHY_CHECK(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_STS_REG_ADDR, &(physts.val)) == ESP_OK,
-                  "read PHYSTS failed", err);
+        ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)), err, TAG, "read BMSR failed");
+        ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_STS_REG_ADDR, &(physts.val)), err, TAG, "read PHYSTS failed");
         if (bmsr.auto_nego_complete && physts.auto_nego_complete) {
             break;
         }
@@ -233,19 +219,19 @@ static esp_err_t dp83848_negotiate(esp_eth_phy_t *phy)
         ESP_LOGW(TAG, "auto negotiation timeout");
     }
     /* Updata information about link, speed, duplex */
-    PHY_CHECK(dp83848_update_link_duplex_speed(dp83848) == ESP_OK, "update link duplex speed failed", err);
+    ESP_GOTO_ON_ERROR(dp83848_update_link_duplex_speed(dp83848), err, TAG, "update link duplex speed failed");
     return ESP_OK;
 err:
-    return ESP_FAIL;
+    return ret;
 }
 
 static esp_err_t dp83848_pwrctl(esp_eth_phy_t *phy, bool enable)
 {
+    esp_err_t ret = ESP_OK;
     phy_dp83848_t *dp83848 = __containerof(phy, phy_dp83848_t, parent);
     esp_eth_mediator_t *eth = dp83848->eth;
     bmcr_reg_t bmcr;
-    PHY_CHECK(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)) == ESP_OK,
-              "read BMCR failed", err);
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
     if (!enable) {
         /* Enable IEEE Power Down Mode */
         bmcr.power_down = 1;
@@ -253,28 +239,25 @@ static esp_err_t dp83848_pwrctl(esp_eth_phy_t *phy, bool enable)
         /* Disable IEEE Power Down Mode */
         bmcr.power_down = 0;
     }
-    PHY_CHECK(eth->phy_reg_write(eth, dp83848->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val) == ESP_OK,
-              "write BMCR failed", err);
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, dp83848->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
     if (!enable) {
-        PHY_CHECK(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)) == ESP_OK,
-                  "read BMCR failed", err);
-        PHY_CHECK(bmcr.power_down == 1, "power down failed", err);
+        ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+        ESP_GOTO_ON_FALSE(bmcr.power_down == 1, ESP_FAIL, err, TAG, "power down failed");
     } else {
         /* wait for power up complete */
         uint32_t to = 0;
         for (to = 0; to < dp83848->reset_timeout_ms / 10; to++) {
             vTaskDelay(pdMS_TO_TICKS(10));
-            PHY_CHECK(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)) == ESP_OK,
-                      "read BMCR failed", err);
+            ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
             if (bmcr.power_down == 0) {
                 break;
             }
         }
-        PHY_CHECK(to < dp83848->reset_timeout_ms / 10, "power up timeout", err);
+        ESP_GOTO_ON_FALSE(to < dp83848->reset_timeout_ms / 10, ESP_FAIL, err, TAG, "power up timeout");
     }
     return ESP_OK;
 err:
-    return ESP_FAIL;
+    return ret;
 }
 
 static esp_err_t dp83848_set_addr(esp_eth_phy_t *phy, uint32_t addr)
@@ -286,12 +269,13 @@ static esp_err_t dp83848_set_addr(esp_eth_phy_t *phy, uint32_t addr)
 
 static esp_err_t dp83848_get_addr(esp_eth_phy_t *phy, uint32_t *addr)
 {
-    PHY_CHECK(addr, "addr can't be null", err);
+    esp_err_t ret = ESP_OK;
+    ESP_GOTO_ON_FALSE(addr, ESP_ERR_INVALID_ARG, err, TAG, "addr can't be null");
     phy_dp83848_t *dp83848 = __containerof(phy, phy_dp83848_t, parent);
     *addr = dp83848->addr;
     return ESP_OK;
 err:
-    return ESP_ERR_INVALID_ARG;
+    return ret;
 }
 
 static esp_err_t dp83848_del(esp_eth_phy_t *phy)
@@ -303,12 +287,12 @@ static esp_err_t dp83848_del(esp_eth_phy_t *phy)
 
 static esp_err_t dp83848_advertise_pause_ability(esp_eth_phy_t *phy, uint32_t ability)
 {
+    esp_err_t ret = ESP_OK;
     phy_dp83848_t *dp83848 = __containerof(phy, phy_dp83848_t, parent);
     esp_eth_mediator_t *eth = dp83848->eth;
     /* Set PAUSE function ability */
     anar_reg_t anar;
-    PHY_CHECK(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_ANAR_REG_ADDR, &(anar.val)) == ESP_OK,
-              "read ANAR failed", err);
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_ANAR_REG_ADDR, &(anar.val)), err, TAG, "read ANAR failed");
     if (ability) {
         anar.asymmetric_pause = 1;
         anar.symmetric_pause = 1;
@@ -316,53 +300,52 @@ static esp_err_t dp83848_advertise_pause_ability(esp_eth_phy_t *phy, uint32_t ab
         anar.asymmetric_pause = 0;
         anar.symmetric_pause = 0;
     }
-    PHY_CHECK(eth->phy_reg_write(eth, dp83848->addr, ETH_PHY_ANAR_REG_ADDR, anar.val) == ESP_OK,
-              "write ANAR failed", err);
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, dp83848->addr, ETH_PHY_ANAR_REG_ADDR, anar.val), err, TAG, "write ANAR failed");
     return ESP_OK;
 err:
-    return ESP_FAIL;
+    return ret;
 }
 
 static esp_err_t dp83848_init(esp_eth_phy_t *phy)
 {
+    esp_err_t ret = ESP_OK;
     phy_dp83848_t *dp83848 = __containerof(phy, phy_dp83848_t, parent);
     esp_eth_mediator_t *eth = dp83848->eth;
     // Detect PHY address
     if (dp83848->addr == ESP_ETH_PHY_ADDR_AUTO) {
-        PHY_CHECK(esp_eth_detect_phy_addr(eth, &dp83848->addr) == ESP_OK, "Detect PHY address failed", err);
+        ESP_GOTO_ON_ERROR(esp_eth_detect_phy_addr(eth, &dp83848->addr), err, TAG, "Detect PHY address failed");
     }
     /* Power on Ethernet PHY */
-    PHY_CHECK(dp83848_pwrctl(phy, true) == ESP_OK, "power control failed", err);
+    ESP_GOTO_ON_ERROR(dp83848_pwrctl(phy, true), err, TAG, "power control failed");
     /* Reset Ethernet PHY */
-    PHY_CHECK(dp83848_reset(phy) == ESP_OK, "reset failed", err);
+    ESP_GOTO_ON_ERROR(dp83848_reset(phy), err, TAG, "reset failed");
     /* Check PHY ID */
     phyidr1_reg_t id1;
     phyidr2_reg_t id2;
-    PHY_CHECK(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_IDR1_REG_ADDR, &(id1.val)) == ESP_OK,
-              "read ID1 failed", err);
-    PHY_CHECK(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_IDR2_REG_ADDR, &(id2.val)) == ESP_OK,
-              "read ID2 failed", err);
-    PHY_CHECK(id1.oui_msb == 0x2000 && id2.oui_lsb == 0x17 && id2.vendor_model == 0x09,
-              "wrong chip ID", err);
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_IDR1_REG_ADDR, &(id1.val)), err, TAG, "read ID1 failed");
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_IDR2_REG_ADDR, &(id2.val)), err, TAG, "read ID2 failed");
+    ESP_GOTO_ON_FALSE(id1.oui_msb == 0x2000 && id2.oui_lsb == 0x17 && id2.vendor_model == 0x09, ESP_FAIL, err, TAG, "wrong chip ID");
     return ESP_OK;
 err:
-    return ESP_FAIL;
+    return ret;
 }
 
 static esp_err_t dp83848_deinit(esp_eth_phy_t *phy)
 {
+    esp_err_t ret = ESP_OK;
     /* Power off Ethernet PHY */
-    PHY_CHECK(dp83848_pwrctl(phy, false) == ESP_OK, "power control failed", err);
+    ESP_GOTO_ON_ERROR(dp83848_pwrctl(phy, false), err, TAG, "power control failed");
     return ESP_OK;
 err:
-    return ESP_FAIL;
+    return ret;
 }
 
 esp_eth_phy_t *esp_eth_phy_new_dp83848(const eth_phy_config_t *config)
 {
-    PHY_CHECK(config, "can't set phy config to null", err);
+    esp_eth_phy_t *ret = NULL;
+    ESP_GOTO_ON_FALSE(config, NULL, err, TAG, "can't set phy config to null");
     phy_dp83848_t *dp83848 = calloc(1, sizeof(phy_dp83848_t));
-    PHY_CHECK(dp83848, "calloc dp83848 failed", err);
+    ESP_GOTO_ON_FALSE(dp83848, NULL, err, TAG, "calloc dp83848 failed");
     dp83848->addr = config->phy_addr;
     dp83848->reset_timeout_ms = config->reset_timeout_ms;
     dp83848->link_status = ETH_LINK_DOWN;
@@ -380,8 +363,7 @@ esp_eth_phy_t *esp_eth_phy_new_dp83848(const eth_phy_config_t *config)
     dp83848->parent.set_addr = dp83848_set_addr;
     dp83848->parent.advertise_pause_ability = dp83848_advertise_pause_ability;
     dp83848->parent.del = dp83848_del;
-
     return &(dp83848->parent);
 err:
-    return NULL;
+    return ret;
 }
