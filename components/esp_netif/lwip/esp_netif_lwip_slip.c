@@ -34,6 +34,7 @@
 
 static const char *TAG = "esp-netif_lwip-slip";
 
+#if CONFIG_LWIP_SLIP_SUPPORT
 /**
  * @brief LWIP SLIP context object extends esp-netif related data
  */
@@ -160,7 +161,6 @@ esp_err_t esp_netif_slip_set_ipv6(esp_netif_t *netif, const esp_ip6_addr_t *ipv6
  */
 void esp_netif_lwip_slip_input(void *h, void *buffer, unsigned int len, void *eb)
 {
-#if CONFIG_LWIP_SLIP_SUPPORT
     esp_netif_t *netif = h;
     lwip_slip_ctx_t *slip_ctx = (lwip_slip_ctx_t *)netif->related_data;
     assert(slip_ctx->base.netif_type == SLIP_LWIP_NETIF);
@@ -181,7 +181,6 @@ void esp_netif_lwip_slip_input(void *h, void *buffer, unsigned int len, void *eb
     for (int i = 0; i < len; i++) {
         slipif_process_rxqueue(netif->lwip_netif);
     }
-#endif
 }
 
 /**
@@ -313,4 +312,28 @@ void sio_send(uint8_t c, sio_fd_t fd)
         ESP_LOGD(TAG, "%s: uart_write_bytes error %i", __func__, ret);
     }
 }
+#else /* CONFIG_LWIP_SLIP_SUPPORT */
+typedef struct lwip_slip_ctx lwip_slip_ctx_t;
+
+/**
+ * @brief If SLIP not enabled in menuconfig, log the error and return appropriate code indicating failure
+*/
+#define LOG_SLIP_DISABLED_AND_DO(action) \
+    {   \
+    ESP_LOGE(TAG, "%s not supported, please enable SLIP in lwIP component configuration", __func__); \
+    action; \
+    }
+
+netif_related_data_t * esp_netif_new_slip(esp_netif_t *esp_netif, const esp_netif_netstack_config_t *esp_netif_stack_config)
+    LOG_SLIP_DISABLED_AND_DO(return NULL)
+
+void esp_netif_destroy_slip(netif_related_data_t *slip)
+    LOG_SLIP_DISABLED_AND_DO()
+
+esp_err_t esp_netif_stop_slip(esp_netif_t *esp_netif)
+    LOG_SLIP_DISABLED_AND_DO(return ESP_ERR_NOT_SUPPORTED)
+
+esp_err_t esp_netif_start_slip(esp_netif_t *esp_netif)
+    LOG_SLIP_DISABLED_AND_DO(return ESP_ERR_NOT_SUPPORTED)
+#endif
 #endif /* CONFIG_ESP_NETIF_TCPIP_LWIP */
