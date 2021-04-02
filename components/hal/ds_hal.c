@@ -26,18 +26,6 @@ void ds_hal_finish(void)
     ds_ll_finish();
 }
 
-ds_key_check_t ds_hal_check_decryption_key(void)
-{
-    uint64_t start_time = systimer_hal_get_time(SYSTIMER_COUNTER_0);
-    while (ds_ll_busy() != 0) {
-        if ((systimer_hal_get_time(SYSTIMER_COUNTER_0) - start_time) > DS_KEY_CHECK_MAX_WAIT_US) {
-            return ds_ll_key_error_source();
-        }
-    }
-
-    return DS_KEY_INPUT_OK;
-}
-
 void ds_hal_configure_iv(const uint32_t *iv)
 {
     ds_ll_configure_iv(iv);
