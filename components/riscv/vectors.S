@@ -139,6 +139,7 @@ _vector_table:
 	.size _vector_table, .-_vector_table
 
 	/* Exception handler.*/
+	.global _panic_handler
 	.type _panic_handler, @function
 _panic_handler:
 	addi sp, sp, -RV_STK_FRMSZ /* allocate space on stack to store necessary registers */

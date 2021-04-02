@@ -47,6 +47,12 @@ extern "C" {
 #define ESP_INTR_FLAG_EDGE          (1<<9)  ///< Edge-triggered interrupt
 #define ESP_INTR_FLAG_IRAM          (1<<10) ///< ISR can be called if cache is disabled
 #define ESP_INTR_FLAG_INTRDISABLED  (1<<11) ///< Return with this interrupt disabled
+#define ESP_INTR_FLAG_FIXED         (1<<15) ///< Force interrupt specified by #<<ESP_INTR_FLAG_FIXED_OFF_S to be returned interrupt.
+
+#define ESP_INTR_FLAG_FIXED_OFF   0x3f0000
+#define ESP_INTR_FLAG_FIXED_OFF_M 0x3f0000
+#define ESP_INTR_FLAG_FIXED_OFF_V 0x3f
+#define ESP_INTR_FLAG_FIXED_OFF_S 16
 
 #define ESP_INTR_FLAG_LOWMED    (ESP_INTR_FLAG_LEVEL1|ESP_INTR_FLAG_LEVEL2|ESP_INTR_FLAG_LEVEL3) ///< Low and medium prio interrupts. These can be handled in C.
 #define ESP_INTR_FLAG_HIGH      (ESP_INTR_FLAG_LEVEL4|ESP_INTR_FLAG_LEVEL5|ESP_INTR_FLAG_LEVEL6|ESP_INTR_FLAG_NMI) ///< High level interrupts. Need to be handled in assembly.

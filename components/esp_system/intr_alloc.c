@@ -304,6 +304,11 @@ static int get_available_int(int flags, int cpu, int force, int source)
     vector_desc_t empty_vect_desc;
     memset(&empty_vect_desc, 0, sizeof(vector_desc_t));
 
+	if (flags & ESP_INTR_FLAG_FIXED)
+	{
+		return flags>>ESP_INTR_FLAG_FIXED_OFF_S;
+	}
+
     //Level defaults to any low/med interrupt
     if (!(flags&ESP_INTR_FLAG_LEVELMASK)) flags|=ESP_INTR_FLAG_LOWMED;
 

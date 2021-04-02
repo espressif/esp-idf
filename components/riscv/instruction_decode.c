@@ -32,7 +32,7 @@ int riscv_decode_offset_from_jal_instruction(const intptr_t inst_addr)
     riscv_jal_intruction_t *jal_inst = (riscv_jal_intruction_t *)inst_addr;
     // check if it's a valid JAL instruction
     if (jal_inst->opcode != 0x6f && jal_inst->rd != 0) {
-        abort();
+        return -1; // Invalid interrupt.
     }
     return (jal_inst->imm_10_1 | jal_inst->imm_11 << 10 | jal_inst->imm_19_12 << 11 | jal_inst->imm20 << 19) << 1;
 }
