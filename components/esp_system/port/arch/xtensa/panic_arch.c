@@ -444,14 +444,6 @@ void panic_soc_fill_info(void *f, panic_info_t *info)
 #endif
 }
 
-static void print_backtrace_entry(uint32_t pc, uint32_t sp)
-{
-    panic_print_str("0x");
-    panic_print_hex(pc);
-    panic_print_str(":0x");
-    panic_print_hex(sp);
-}
-
 uint32_t panic_get_address(const void* f)
 {
     return ((XtExcFrame*)f)->pc;
@@ -469,34 +461,7 @@ void panic_set_address(void *f, uint32_t addr)
 
 void panic_print_backtrace(const void *f, int core)
 {
-    // [refactor-todo] once debug helpers have support for both xtensa and riscv, move to
-    // common panic_handler.c
-    XtExcFrame *frame = (XtExcFrame *) f;
-    int depth = 100;
-    //Initialize stk_frame with first frame of stack
-    esp_backtrace_frame_t stk_frame = {.pc = frame->pc, .sp = frame->a1, .next_pc = frame->a0};
-    panic_print_str("\r\nBacktrace:");
-    print_backtrace_entry(esp_cpu_process_stack_pc(stk_frame.pc), stk_frame.sp);
-
-    //Check if first frame is valid
-    bool corrupted = !(esp_stack_ptr_is_sane(stk_frame.sp) &&
-                       (esp_ptr_executable((void *)esp_cpu_process_stack_pc(stk_frame.pc)) ||
-                        /* Ignore the first corrupted PC in case of InstrFetchProhibited */
-                        frame->exccause == EXCCAUSE_INSTR_PROHIBITED));
-
-    uint32_t i = ((depth <= 0) ? INT32_MAX : depth) - 1;    //Account for stack frame that's already printed
-    while (i-- > 0 && stk_frame.next_pc != 0 && !corrupted) {
-        if (!esp_backtrace_get_next_frame(&stk_frame)) {    //Get next stack frame
-            corrupted = true;
-        }
-        panic_print_str(" ");
-        print_backtrace_entry(esp_cpu_process_stack_pc(stk_frame.pc), stk_frame.sp);
-    }
-
-    //Print backtrace termination marker
-    if (corrupted) {
-        panic_print_str(" |<-CORRUPTED");
-    } else if (stk_frame.next_pc != 0) {    //Backtrace continues
-        panic_print_str(" |<-CONTINUES");
-    }
+    XtExcFrame *xt_frame = (XtExcFrame *) f;
+    esp_backtrace_frame_t frame = {.pc = xt_frame->pc, .sp = xt_frame->a1, .next_pc = xt_frame->a0};
+    esp_backtrace_print_from_frame(100, &frame, true);
 }
