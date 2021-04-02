@@ -199,6 +199,11 @@ INPUT = \
     ## Non-Volatile Storage
     $(IDF_PATH)/components/nvs_flash/include/nvs.h \
     $(IDF_PATH)/components/nvs_flash/include/nvs_flash.h \
+    ## OpenThread
+    $(IDF_PATH)/components/openthread/include/esp_openthread.h \
+    $(IDF_PATH)/components/openthread/include/esp_openthread_lock.h \
+    $(IDF_PATH)/components/openthread/include/esp_openthread_types.h \
+    $(IDF_PATH)/components/openthread/include/openthread-core-esp32x-config.h \
     ## Virtual Filesystem
     $(IDF_PATH)/components/vfs/include/esp_vfs.h \
     $(IDF_PATH)/components/vfs/include/esp_vfs_dev.h \

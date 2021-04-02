@@ -69,6 +69,8 @@ These third party libraries can be included into the application (firmware) prod
 
 * `qrcode`_ QR Code generator library Copyright (c) Project Nayuki, is licensed under MIT license.
 
+* :component:`openthread`, Copyright (c) The OpenThread Authors, is licensed under  Apache License 2.0 as described in :component_file:`LICENSE file<openthread/openthread/LICENSE>`.
+
 Build Tools
 -----------
 

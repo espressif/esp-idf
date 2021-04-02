@@ -90,3 +90,7 @@
 [submodule "components/cmock/CMock"]
 	path = components/cmock/CMock
 	url = ../../ThrowTheSwitch/CMock.git
+
+[submodule "components/openthread/openthread"]
+	path = components/openthread/openthread
+	url = ../../espressif/openthread.git
