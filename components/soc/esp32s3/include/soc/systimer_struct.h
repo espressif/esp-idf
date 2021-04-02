@@ -19,9 +19,9 @@
 extern "C" {
 #endif
 
-/** Configuration Register */
+/** SYSTEM TIMER CLK CONTROL REGISTER */
 /** Type of conf register
- *  SYSTIMER_CONF.
+ *  Configure system timer clock
  */
 typedef union {
     struct {
@@ -74,6 +74,7 @@ typedef union {
     uint32_t val;
 } systimer_conf_reg_t;
 
+
 /** Type of unit_op register
  *  SYSTIMER_UNIT_OP.
  */
@@ -116,6 +117,7 @@ typedef struct {
     } lo;
 } systimer_unit_load_val_reg_t;
 
+
 /** Type of target register
  *  SYSTIMER_TARGET.
  */
@@ -140,6 +142,7 @@ typedef struct {
     } lo;
 } systimer_target_val_reg_t;
 
+
 /** Type of target_conf register
  *  SYSTIMER_TARGET_CONF.
  */
@@ -161,6 +164,7 @@ typedef union {
     };
     uint32_t val;
 } systimer_target_conf_reg_t;
+
 
 /** Type of unit_value_hi register
  *  SYSTIMER_UNIT_VALUE_HI.
@@ -186,6 +190,7 @@ typedef struct {
     } lo;
 } systimer_unit_value_reg_t;
 
+
 /** Type of comp_load register
  *  SYSTIMER_COMP_LOAD.
  */
@@ -198,6 +203,7 @@ typedef union {
     };
     uint32_t val;
 } systimer_comp_load_reg_t;
+
 
 /** Type of unit_load register
  *  SYSTIMER_UNIT_LOAD.
@@ -212,9 +218,10 @@ typedef union {
     uint32_t val;
 } systimer_unit_load_reg_t;
 
-/** Interrupt Register */
+
+/** SYSTEM TIMER INTERRUPT REGISTER */
 /** Type of int_ena register
- *  SYSTIMER_INT_ENA.
+ *  systimer interrupt enable register
  */
 typedef union {
     struct {
@@ -235,7 +242,7 @@ typedef union {
 } systimer_int_ena_reg_t;
 
 /** Type of int_raw register
- *  SYSTIMER_INT_RAW.
+ *  systimer interrupt raw register
  */
 typedef union {
     struct {
@@ -256,7 +263,7 @@ typedef union {
 } systimer_int_raw_reg_t;
 
 /** Type of int_clr register
- *  SYSTIMER_INT_CLR.
+ *  systimer interrupt clear register
  */
 typedef union {
     struct {
@@ -277,20 +284,20 @@ typedef union {
 } systimer_int_clr_reg_t;
 
 /** Type of int_st register
- *  SYSTIMER_INT_ST.
+ *  systimer interrupt status register
  */
 typedef union {
     struct {
         /** target0_int_st : RO; bitpos: [0]; default: 0;
-         *  reg_target0_int_st
+         *  interupt0 status
          */
         uint32_t target0_int_st: 1;
         /** target1_int_st : RO; bitpos: [1]; default: 0;
-         *  reg_target1_int_st
+         *  interupt1 status
          */
         uint32_t target1_int_st: 1;
         /** target2_int_st : RO; bitpos: [2]; default: 0;
-         *  reg_target2_int_st
+         *  interupt2 status
          */
         uint32_t target2_int_st: 1;
     };
@@ -298,14 +305,39 @@ typedef union {
 } systimer_int_st_reg_t;
 
 
-/** Version Register */
+/** SYSTEM TIMER COMP STATUS REGISTER
+ *  systimer comp actual target value low register
+ */
+typedef struct {
+    union {
+        struct {
+            /** target_lo_ro : RO; bitpos: [31:0]; default: 0;
+             *  actual target value value low 32bits
+             */
+            uint32_t target_lo_ro: 32;
+        };
+        uint32_t val;
+    } lo;
+    union {
+        struct {
+            /** target_hi_ro : RO; bitpos: [19:0]; default: 0;
+             *  actual target value value high 20bits
+             */
+            uint32_t target_hi_ro: 20;
+        };
+        uint32_t val;
+    } hi;
+} systimer_real_target_val_reg_t;
+
+
+/** VERSION REGISTER */
 /** Type of date register
- *  SYSTIMER_DATE.
+ *  system timer version control register
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [31:0]; default: 33579377;
-         *  reg_date
+        /** date : R/W; bitpos: [31:0]; default: 33628753;
+         *  systimer register version
          */
         uint32_t date: 32;
     };
@@ -326,12 +358,7 @@ typedef struct {
     volatile systimer_int_raw_reg_t int_raw;
     volatile systimer_int_clr_reg_t int_clr;
     volatile systimer_int_st_reg_t int_st;
-    uint32_t reserved_074;
-    uint32_t reserved_078;
-    uint32_t reserved_07c;
-    uint32_t reserved_080;
-    uint32_t reserved_084;
-    uint32_t reserved_088;
+    volatile systimer_real_target_val_reg_t real_target_val[3];
     uint32_t reserved_08c;
     uint32_t reserved_090;
     uint32_t reserved_094;

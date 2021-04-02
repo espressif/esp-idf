@@ -58,7 +58,7 @@
 #define DR_REG_BB_BASE                          0x6001D000
 #define DR_REG_TIMERGROUP0_BASE                 0x6001F000
 #define DR_REG_TIMERGROUP1_BASE                 0x60020000
-#define DR_REG_SYS_TIMER_BASE                   0x60023000
+#define DR_REG_SYSTIMER_BASE                    0x60023000
 #define DR_REG_SPI2_BASE                        0x60024000
 #define DR_REG_SYSCON_BASE                      0x60026000
 #define DR_REG_APB_CTRL_BASE                    0x60026000    /* Old name for SYSCON, to be removed */

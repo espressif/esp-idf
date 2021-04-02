@@ -21,7 +21,7 @@ extern "C" {
 #endif
 
 /** SYSTIMER_CONF_REG register
- *  SYSTIMER_CONF.
+ *  Configure system timer clock
  */
 #define SYSTIMER_CONF_REG (DR_REG_SYSTIMER_BASE + 0x0)
 /** SYSTIMER_SYSTIMER_CLK_FO : R/W; bitpos: [0]; default: 0;
@@ -103,11 +103,11 @@ extern "C" {
 #define SYSTIMER_CLK_EN_S  31
 
 /** SYSTIMER_UNIT0_OP_REG register
- *  SYSTIMER_UNIT0_OP.
+ *  system timer unit0 value update register
  */
 #define SYSTIMER_UNIT0_OP_REG (DR_REG_SYSTIMER_BASE + 0x4)
 /** SYSTIMER_TIMER_UNIT0_VALUE_VALID : R/SS/WTC; bitpos: [29]; default: 0;
- *  reg_timer_unit0_value_valid
+ *  timer value is sync and valid
  */
 #define SYSTIMER_TIMER_UNIT0_VALUE_VALID    (BIT(29))
 #define SYSTIMER_TIMER_UNIT0_VALUE_VALID_M  (SYSTIMER_TIMER_UNIT0_VALUE_VALID_V << SYSTIMER_TIMER_UNIT0_VALUE_VALID_S)
@@ -122,7 +122,7 @@ extern "C" {
 #define SYSTIMER_TIMER_UNIT0_UPDATE_S  30
 
 /** SYSTIMER_UNIT1_OP_REG register
- *  SYSTIMER_UNIT1_OP.
+ *  system timer unit1 value update register
  */
 #define SYSTIMER_UNIT1_OP_REG (DR_REG_SYSTIMER_BASE + 0x8)
 /** SYSTIMER_TIMER_UNIT1_VALUE_VALID : R/SS/WTC; bitpos: [29]; default: 0;
@@ -141,11 +141,11 @@ extern "C" {
 #define SYSTIMER_TIMER_UNIT1_UPDATE_S  30
 
 /** SYSTIMER_UNIT0_LOAD_HI_REG register
- *  SYSTIMER_UNIT0_LOAD_HI.
+ *  system timer unit0 value high load register
  */
 #define SYSTIMER_UNIT0_LOAD_HI_REG (DR_REG_SYSTIMER_BASE + 0xc)
 /** SYSTIMER_TIMER_UNIT0_LOAD_HI : R/W; bitpos: [19:0]; default: 0;
- *  timer unit0 load high 32 bit
+ *  timer unit0 load high 20 bits
  */
 #define SYSTIMER_TIMER_UNIT0_LOAD_HI    0x000FFFFF
 #define SYSTIMER_TIMER_UNIT0_LOAD_HI_M  (SYSTIMER_TIMER_UNIT0_LOAD_HI_V << SYSTIMER_TIMER_UNIT0_LOAD_HI_S)
@@ -153,11 +153,11 @@ extern "C" {
 #define SYSTIMER_TIMER_UNIT0_LOAD_HI_S  0
 
 /** SYSTIMER_UNIT0_LOAD_LO_REG register
- *  SYSTIMER_UNIT0_LOAD_LO.
+ *  system timer unit0 value low load register
  */
 #define SYSTIMER_UNIT0_LOAD_LO_REG (DR_REG_SYSTIMER_BASE + 0x10)
 /** SYSTIMER_TIMER_UNIT0_LOAD_LO : R/W; bitpos: [31:0]; default: 0;
- *  timer unit0 load low 32 bit
+ *  timer unit0 load low 32 bits
  */
 #define SYSTIMER_TIMER_UNIT0_LOAD_LO    0xFFFFFFFF
 #define SYSTIMER_TIMER_UNIT0_LOAD_LO_M  (SYSTIMER_TIMER_UNIT0_LOAD_LO_V << SYSTIMER_TIMER_UNIT0_LOAD_LO_S)
@@ -165,11 +165,11 @@ extern "C" {
 #define SYSTIMER_TIMER_UNIT0_LOAD_LO_S  0
 
 /** SYSTIMER_UNIT1_LOAD_HI_REG register
- *  SYSTIMER_UNIT1_LOAD_HI.
+ *  system timer unit1 value high load register
  */
 #define SYSTIMER_UNIT1_LOAD_HI_REG (DR_REG_SYSTIMER_BASE + 0x14)
 /** SYSTIMER_TIMER_UNIT1_LOAD_HI : R/W; bitpos: [19:0]; default: 0;
- *  timer unit1 load high 32 bit
+ *  timer unit1 load high 20 bits
  */
 #define SYSTIMER_TIMER_UNIT1_LOAD_HI    0x000FFFFF
 #define SYSTIMER_TIMER_UNIT1_LOAD_HI_M  (SYSTIMER_TIMER_UNIT1_LOAD_HI_V << SYSTIMER_TIMER_UNIT1_LOAD_HI_S)
@@ -177,11 +177,11 @@ extern "C" {
 #define SYSTIMER_TIMER_UNIT1_LOAD_HI_S  0
 
 /** SYSTIMER_UNIT1_LOAD_LO_REG register
- *  SYSTIMER_UNIT1_LOAD_LO.
+ *  system timer unit1 value low load register
  */
 #define SYSTIMER_UNIT1_LOAD_LO_REG (DR_REG_SYSTIMER_BASE + 0x18)
 /** SYSTIMER_TIMER_UNIT1_LOAD_LO : R/W; bitpos: [31:0]; default: 0;
- *  timer unit1 load low 32 bit
+ *  timer unit1 load low 32 bits
  */
 #define SYSTIMER_TIMER_UNIT1_LOAD_LO    0xFFFFFFFF
 #define SYSTIMER_TIMER_UNIT1_LOAD_LO_M  (SYSTIMER_TIMER_UNIT1_LOAD_LO_V << SYSTIMER_TIMER_UNIT1_LOAD_LO_S)
@@ -189,11 +189,11 @@ extern "C" {
 #define SYSTIMER_TIMER_UNIT1_LOAD_LO_S  0
 
 /** SYSTIMER_TARGET0_HI_REG register
- *  SYSTIMER_TARGET0_HI.
+ *  system timer comp0 value high register
  */
 #define SYSTIMER_TARGET0_HI_REG (DR_REG_SYSTIMER_BASE + 0x1c)
 /** SYSTIMER_TIMER_TARGET0_HI : R/W; bitpos: [19:0]; default: 0;
- *  timer taget0 high 32 bit
+ *  timer taget0 high 20 bits
  */
 #define SYSTIMER_TIMER_TARGET0_HI    0x000FFFFF
 #define SYSTIMER_TIMER_TARGET0_HI_M  (SYSTIMER_TIMER_TARGET0_HI_V << SYSTIMER_TIMER_TARGET0_HI_S)
@@ -201,11 +201,11 @@ extern "C" {
 #define SYSTIMER_TIMER_TARGET0_HI_S  0
 
 /** SYSTIMER_TARGET0_LO_REG register
- *  SYSTIMER_TARGET0_LO.
+ *  system timer comp0 value low register
  */
 #define SYSTIMER_TARGET0_LO_REG (DR_REG_SYSTIMER_BASE + 0x20)
 /** SYSTIMER_TIMER_TARGET0_LO : R/W; bitpos: [31:0]; default: 0;
- *  timer taget0 low 32 bit
+ *  timer taget0 low 32 bits
  */
 #define SYSTIMER_TIMER_TARGET0_LO    0xFFFFFFFF
 #define SYSTIMER_TIMER_TARGET0_LO_M  (SYSTIMER_TIMER_TARGET0_LO_V << SYSTIMER_TIMER_TARGET0_LO_S)
@@ -213,11 +213,11 @@ extern "C" {
 #define SYSTIMER_TIMER_TARGET0_LO_S  0
 
 /** SYSTIMER_TARGET1_HI_REG register
- *  SYSTIMER_TARGET1_HI.
+ *  system timer comp1 value high register
  */
 #define SYSTIMER_TARGET1_HI_REG (DR_REG_SYSTIMER_BASE + 0x24)
 /** SYSTIMER_TIMER_TARGET1_HI : R/W; bitpos: [19:0]; default: 0;
- *  timer taget1 high 32 bit
+ *  timer taget1 high 20 bits
  */
 #define SYSTIMER_TIMER_TARGET1_HI    0x000FFFFF
 #define SYSTIMER_TIMER_TARGET1_HI_M  (SYSTIMER_TIMER_TARGET1_HI_V << SYSTIMER_TIMER_TARGET1_HI_S)
@@ -225,11 +225,11 @@ extern "C" {
 #define SYSTIMER_TIMER_TARGET1_HI_S  0
 
 /** SYSTIMER_TARGET1_LO_REG register
- *  SYSTIMER_TARGET1_LO.
+ *  system timer comp1 value low register
  */
 #define SYSTIMER_TARGET1_LO_REG (DR_REG_SYSTIMER_BASE + 0x28)
 /** SYSTIMER_TIMER_TARGET1_LO : R/W; bitpos: [31:0]; default: 0;
- *  timer taget1 low 32 bit
+ *  timer taget1 low 32 bits
  */
 #define SYSTIMER_TIMER_TARGET1_LO    0xFFFFFFFF
 #define SYSTIMER_TIMER_TARGET1_LO_M  (SYSTIMER_TIMER_TARGET1_LO_V << SYSTIMER_TIMER_TARGET1_LO_S)
@@ -237,11 +237,11 @@ extern "C" {
 #define SYSTIMER_TIMER_TARGET1_LO_S  0
 
 /** SYSTIMER_TARGET2_HI_REG register
- *  SYSTIMER_TARGET2_HI.
+ *  system timer comp2 value high register
  */
 #define SYSTIMER_TARGET2_HI_REG (DR_REG_SYSTIMER_BASE + 0x2c)
 /** SYSTIMER_TIMER_TARGET2_HI : R/W; bitpos: [19:0]; default: 0;
- *  timer taget2 high 32 bit
+ *  timer taget2 high 20 bits
  */
 #define SYSTIMER_TIMER_TARGET2_HI    0x000FFFFF
 #define SYSTIMER_TIMER_TARGET2_HI_M  (SYSTIMER_TIMER_TARGET2_HI_V << SYSTIMER_TIMER_TARGET2_HI_S)
@@ -249,11 +249,11 @@ extern "C" {
 #define SYSTIMER_TIMER_TARGET2_HI_S  0
 
 /** SYSTIMER_TARGET2_LO_REG register
- *  SYSTIMER_TARGET2_LO.
+ *  system timer comp2 value low register
  */
 #define SYSTIMER_TARGET2_LO_REG (DR_REG_SYSTIMER_BASE + 0x30)
 /** SYSTIMER_TIMER_TARGET2_LO : R/W; bitpos: [31:0]; default: 0;
- *  timer taget2 low 32 bit
+ *  timer taget2 low 32 bits
  */
 #define SYSTIMER_TIMER_TARGET2_LO    0xFFFFFFFF
 #define SYSTIMER_TIMER_TARGET2_LO_M  (SYSTIMER_TIMER_TARGET2_LO_V << SYSTIMER_TIMER_TARGET2_LO_S)
@@ -261,7 +261,7 @@ extern "C" {
 #define SYSTIMER_TIMER_TARGET2_LO_S  0
 
 /** SYSTIMER_TARGET0_CONF_REG register
- *  SYSTIMER_TARGET0_CONF.
+ *  system timer comp0 target mode register
  */
 #define SYSTIMER_TARGET0_CONF_REG (DR_REG_SYSTIMER_BASE + 0x34)
 /** SYSTIMER_TARGET0_PERIOD : R/W; bitpos: [25:0]; default: 0;
@@ -287,7 +287,7 @@ extern "C" {
 #define SYSTIMER_TARGET0_TIMER_UNIT_SEL_S  31
 
 /** SYSTIMER_TARGET1_CONF_REG register
- *  SYSTIMER_TARGET1_CONF.
+ *  system timer comp1 target mode register
  */
 #define SYSTIMER_TARGET1_CONF_REG (DR_REG_SYSTIMER_BASE + 0x38)
 /** SYSTIMER_TARGET1_PERIOD : R/W; bitpos: [25:0]; default: 0;
@@ -313,7 +313,7 @@ extern "C" {
 #define SYSTIMER_TARGET1_TIMER_UNIT_SEL_S  31
 
 /** SYSTIMER_TARGET2_CONF_REG register
- *  SYSTIMER_TARGET2_CONF.
+ *  system timer comp2 target mode register
  */
 #define SYSTIMER_TARGET2_CONF_REG (DR_REG_SYSTIMER_BASE + 0x3c)
 /** SYSTIMER_TARGET2_PERIOD : R/W; bitpos: [25:0]; default: 0;
@@ -339,11 +339,11 @@ extern "C" {
 #define SYSTIMER_TARGET2_TIMER_UNIT_SEL_S  31
 
 /** SYSTIMER_UNIT0_VALUE_HI_REG register
- *  SYSTIMER_UNIT0_VALUE_HI.
+ *  system timer unit0 value high register
  */
 #define SYSTIMER_UNIT0_VALUE_HI_REG (DR_REG_SYSTIMER_BASE + 0x40)
 /** SYSTIMER_TIMER_UNIT0_VALUE_HI : RO; bitpos: [19:0]; default: 0;
- *  timer read value high 32bit
+ *  timer read value high 20bits
  */
 #define SYSTIMER_TIMER_UNIT0_VALUE_HI    0x000FFFFF
 #define SYSTIMER_TIMER_UNIT0_VALUE_HI_M  (SYSTIMER_TIMER_UNIT0_VALUE_HI_V << SYSTIMER_TIMER_UNIT0_VALUE_HI_S)
@@ -351,11 +351,11 @@ extern "C" {
 #define SYSTIMER_TIMER_UNIT0_VALUE_HI_S  0
 
 /** SYSTIMER_UNIT0_VALUE_LO_REG register
- *  SYSTIMER_UNIT0_VALUE_LO.
+ *  system timer unit0 value low register
  */
 #define SYSTIMER_UNIT0_VALUE_LO_REG (DR_REG_SYSTIMER_BASE + 0x44)
 /** SYSTIMER_TIMER_UNIT0_VALUE_LO : RO; bitpos: [31:0]; default: 0;
- *  timer read value low 32bit
+ *  timer read value low 32bits
  */
 #define SYSTIMER_TIMER_UNIT0_VALUE_LO    0xFFFFFFFF
 #define SYSTIMER_TIMER_UNIT0_VALUE_LO_M  (SYSTIMER_TIMER_UNIT0_VALUE_LO_V << SYSTIMER_TIMER_UNIT0_VALUE_LO_S)
@@ -363,11 +363,11 @@ extern "C" {
 #define SYSTIMER_TIMER_UNIT0_VALUE_LO_S  0
 
 /** SYSTIMER_UNIT1_VALUE_HI_REG register
- *  SYSTIMER_UNIT1_VALUE_HI.
+ *  system timer unit1 value high register
  */
 #define SYSTIMER_UNIT1_VALUE_HI_REG (DR_REG_SYSTIMER_BASE + 0x48)
 /** SYSTIMER_TIMER_UNIT1_VALUE_HI : RO; bitpos: [19:0]; default: 0;
- *  timer read value high 32bit
+ *  timer read value high 20bits
  */
 #define SYSTIMER_TIMER_UNIT1_VALUE_HI    0x000FFFFF
 #define SYSTIMER_TIMER_UNIT1_VALUE_HI_M  (SYSTIMER_TIMER_UNIT1_VALUE_HI_V << SYSTIMER_TIMER_UNIT1_VALUE_HI_S)
@@ -375,11 +375,11 @@ extern "C" {
 #define SYSTIMER_TIMER_UNIT1_VALUE_HI_S  0
 
 /** SYSTIMER_UNIT1_VALUE_LO_REG register
- *  SYSTIMER_UNIT1_VALUE_LO.
+ *  system timer unit1 value low register
  */
 #define SYSTIMER_UNIT1_VALUE_LO_REG (DR_REG_SYSTIMER_BASE + 0x4c)
 /** SYSTIMER_TIMER_UNIT1_VALUE_LO : RO; bitpos: [31:0]; default: 0;
- *  timer read value low 32bit
+ *  timer read value low 32bits
  */
 #define SYSTIMER_TIMER_UNIT1_VALUE_LO    0xFFFFFFFF
 #define SYSTIMER_TIMER_UNIT1_VALUE_LO_M  (SYSTIMER_TIMER_UNIT1_VALUE_LO_V << SYSTIMER_TIMER_UNIT1_VALUE_LO_S)
@@ -387,11 +387,11 @@ extern "C" {
 #define SYSTIMER_TIMER_UNIT1_VALUE_LO_S  0
 
 /** SYSTIMER_COMP0_LOAD_REG register
- *  SYSTIMER_COMP0_LOAD.
+ *  system timer comp0 conf sync register
  */
 #define SYSTIMER_COMP0_LOAD_REG (DR_REG_SYSTIMER_BASE + 0x50)
 /** SYSTIMER_TIMER_COMP0_LOAD : WT; bitpos: [0]; default: 0;
- *  timer comp0 load value
+ *  timer comp0 sync enable signal
  */
 #define SYSTIMER_TIMER_COMP0_LOAD    (BIT(0))
 #define SYSTIMER_TIMER_COMP0_LOAD_M  (SYSTIMER_TIMER_COMP0_LOAD_V << SYSTIMER_TIMER_COMP0_LOAD_S)
@@ -399,11 +399,11 @@ extern "C" {
 #define SYSTIMER_TIMER_COMP0_LOAD_S  0
 
 /** SYSTIMER_COMP1_LOAD_REG register
- *  SYSTIMER_COMP1_LOAD.
+ *  system timer comp1 conf sync register
  */
 #define SYSTIMER_COMP1_LOAD_REG (DR_REG_SYSTIMER_BASE + 0x54)
 /** SYSTIMER_TIMER_COMP1_LOAD : WT; bitpos: [0]; default: 0;
- *  timer comp1 load value
+ *  timer comp1 sync enable signal
  */
 #define SYSTIMER_TIMER_COMP1_LOAD    (BIT(0))
 #define SYSTIMER_TIMER_COMP1_LOAD_M  (SYSTIMER_TIMER_COMP1_LOAD_V << SYSTIMER_TIMER_COMP1_LOAD_S)
@@ -411,11 +411,11 @@ extern "C" {
 #define SYSTIMER_TIMER_COMP1_LOAD_S  0
 
 /** SYSTIMER_COMP2_LOAD_REG register
- *  SYSTIMER_COMP2_LOAD.
+ *  system timer comp2 conf sync register
  */
 #define SYSTIMER_COMP2_LOAD_REG (DR_REG_SYSTIMER_BASE + 0x58)
 /** SYSTIMER_TIMER_COMP2_LOAD : WT; bitpos: [0]; default: 0;
- *  timer comp2 load value
+ *  timer comp2 sync enable signal
  */
 #define SYSTIMER_TIMER_COMP2_LOAD    (BIT(0))
 #define SYSTIMER_TIMER_COMP2_LOAD_M  (SYSTIMER_TIMER_COMP2_LOAD_V << SYSTIMER_TIMER_COMP2_LOAD_S)
@@ -423,11 +423,11 @@ extern "C" {
 #define SYSTIMER_TIMER_COMP2_LOAD_S  0
 
 /** SYSTIMER_UNIT0_LOAD_REG register
- *  SYSTIMER_UNIT0_LOAD.
+ *  system timer unit0 conf sync register
  */
 #define SYSTIMER_UNIT0_LOAD_REG (DR_REG_SYSTIMER_BASE + 0x5c)
 /** SYSTIMER_TIMER_UNIT0_LOAD : WT; bitpos: [0]; default: 0;
- *  timer unit0 load value
+ *  timer unit0 sync enable signal
  */
 #define SYSTIMER_TIMER_UNIT0_LOAD    (BIT(0))
 #define SYSTIMER_TIMER_UNIT0_LOAD_M  (SYSTIMER_TIMER_UNIT0_LOAD_V << SYSTIMER_TIMER_UNIT0_LOAD_S)
@@ -435,11 +435,11 @@ extern "C" {
 #define SYSTIMER_TIMER_UNIT0_LOAD_S  0
 
 /** SYSTIMER_UNIT1_LOAD_REG register
- *  SYSTIMER_UNIT1_LOAD.
+ *  system timer unit1 conf sync register
  */
 #define SYSTIMER_UNIT1_LOAD_REG (DR_REG_SYSTIMER_BASE + 0x60)
 /** SYSTIMER_TIMER_UNIT1_LOAD : WT; bitpos: [0]; default: 0;
- *  timer unit1 load value
+ *  timer unit1 sync enable signal
  */
 #define SYSTIMER_TIMER_UNIT1_LOAD    (BIT(0))
 #define SYSTIMER_TIMER_UNIT1_LOAD_M  (SYSTIMER_TIMER_UNIT1_LOAD_V << SYSTIMER_TIMER_UNIT1_LOAD_S)
@@ -447,7 +447,7 @@ extern "C" {
 #define SYSTIMER_TIMER_UNIT1_LOAD_S  0
 
 /** SYSTIMER_INT_ENA_REG register
- *  SYSTIMER_INT_ENA.
+ *  systimer interrupt enable register
  */
 #define SYSTIMER_INT_ENA_REG (DR_REG_SYSTIMER_BASE + 0x64)
 /** SYSTIMER_TARGET0_INT_ENA : R/W; bitpos: [0]; default: 0;
@@ -473,7 +473,7 @@ extern "C" {
 #define SYSTIMER_TARGET2_INT_ENA_S  2
 
 /** SYSTIMER_INT_RAW_REG register
- *  SYSTIMER_INT_RAW.
+ *  systimer interrupt raw register
  */
 #define SYSTIMER_INT_RAW_REG (DR_REG_SYSTIMER_BASE + 0x68)
 /** SYSTIMER_TARGET0_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
@@ -499,7 +499,7 @@ extern "C" {
 #define SYSTIMER_TARGET2_INT_RAW_S  2
 
 /** SYSTIMER_INT_CLR_REG register
- *  SYSTIMER_INT_CLR.
+ *  systimer interrupt clear register
  */
 #define SYSTIMER_INT_CLR_REG (DR_REG_SYSTIMER_BASE + 0x6c)
 /** SYSTIMER_TARGET0_INT_CLR : WT; bitpos: [0]; default: 0;
@@ -525,37 +525,109 @@ extern "C" {
 #define SYSTIMER_TARGET2_INT_CLR_S  2
 
 /** SYSTIMER_INT_ST_REG register
- *  SYSTIMER_INT_ST.
+ *  systimer interrupt status register
  */
 #define SYSTIMER_INT_ST_REG (DR_REG_SYSTIMER_BASE + 0x70)
 /** SYSTIMER_TARGET0_INT_ST : RO; bitpos: [0]; default: 0;
- *  reg_target0_int_st
+ *  interupt0 status
  */
 #define SYSTIMER_TARGET0_INT_ST    (BIT(0))
 #define SYSTIMER_TARGET0_INT_ST_M  (SYSTIMER_TARGET0_INT_ST_V << SYSTIMER_TARGET0_INT_ST_S)
 #define SYSTIMER_TARGET0_INT_ST_V  0x00000001
 #define SYSTIMER_TARGET0_INT_ST_S  0
 /** SYSTIMER_TARGET1_INT_ST : RO; bitpos: [1]; default: 0;
- *  reg_target1_int_st
+ *  interupt1 status
  */
 #define SYSTIMER_TARGET1_INT_ST    (BIT(1))
 #define SYSTIMER_TARGET1_INT_ST_M  (SYSTIMER_TARGET1_INT_ST_V << SYSTIMER_TARGET1_INT_ST_S)
 #define SYSTIMER_TARGET1_INT_ST_V  0x00000001
 #define SYSTIMER_TARGET1_INT_ST_S  1
 /** SYSTIMER_TARGET2_INT_ST : RO; bitpos: [2]; default: 0;
- *  reg_target2_int_st
+ *  interupt2 status
  */
 #define SYSTIMER_TARGET2_INT_ST    (BIT(2))
 #define SYSTIMER_TARGET2_INT_ST_M  (SYSTIMER_TARGET2_INT_ST_V << SYSTIMER_TARGET2_INT_ST_S)
 #define SYSTIMER_TARGET2_INT_ST_V  0x00000001
 #define SYSTIMER_TARGET2_INT_ST_S  2
 
+/** SYSTIMER_REAL_TARGET0_LO_REG register
+ *  system timer comp0 actual target value low register
+ */
+#define SYSTIMER_REAL_TARGET0_LO_REG (DR_REG_SYSTIMER_BASE + 0x74)
+/** SYSTIMER_TARGET0_LO_RO : RO; bitpos: [31:0]; default: 0;
+ *  actual target value value low 32bits
+ */
+#define SYSTIMER_TARGET0_LO_RO    0xFFFFFFFF
+#define SYSTIMER_TARGET0_LO_RO_M  (SYSTIMER_TARGET0_LO_RO_V << SYSTIMER_TARGET0_LO_RO_S)
+#define SYSTIMER_TARGET0_LO_RO_V  0xFFFFFFFF
+#define SYSTIMER_TARGET0_LO_RO_S  0
+
+/** SYSTIMER_REAL_TARGET0_HI_REG register
+ *  system timer comp0 actual target value high register
+ */
+#define SYSTIMER_REAL_TARGET0_HI_REG (DR_REG_SYSTIMER_BASE + 0x78)
+/** SYSTIMER_TARGET0_HI_RO : RO; bitpos: [19:0]; default: 0;
+ *  actual target value value high 20bits
+ */
+#define SYSTIMER_TARGET0_HI_RO    0x000FFFFF
+#define SYSTIMER_TARGET0_HI_RO_M  (SYSTIMER_TARGET0_HI_RO_V << SYSTIMER_TARGET0_HI_RO_S)
+#define SYSTIMER_TARGET0_HI_RO_V  0x000FFFFF
+#define SYSTIMER_TARGET0_HI_RO_S  0
+
+/** SYSTIMER_REAL_TARGET1_LO_REG register
+ *  system timer comp1 actual target value low register
+ */
+#define SYSTIMER_REAL_TARGET1_LO_REG (DR_REG_SYSTIMER_BASE + 0x7c)
+/** SYSTIMER_TARGET1_LO_RO : RO; bitpos: [31:0]; default: 0;
+ *  actual target value value low 32bits
+ */
+#define SYSTIMER_TARGET1_LO_RO    0xFFFFFFFF
+#define SYSTIMER_TARGET1_LO_RO_M  (SYSTIMER_TARGET1_LO_RO_V << SYSTIMER_TARGET1_LO_RO_S)
+#define SYSTIMER_TARGET1_LO_RO_V  0xFFFFFFFF
+#define SYSTIMER_TARGET1_LO_RO_S  0
+
+/** SYSTIMER_REAL_TARGET1_HI_REG register
+ *  system timer comp1 actual target value high register
+ */
+#define SYSTIMER_REAL_TARGET1_HI_REG (DR_REG_SYSTIMER_BASE + 0x80)
+/** SYSTIMER_TARGET1_HI_RO : RO; bitpos: [19:0]; default: 0;
+ *  actual target value value high 20bits
+ */
+#define SYSTIMER_TARGET1_HI_RO    0x000FFFFF
+#define SYSTIMER_TARGET1_HI_RO_M  (SYSTIMER_TARGET1_HI_RO_V << SYSTIMER_TARGET1_HI_RO_S)
+#define SYSTIMER_TARGET1_HI_RO_V  0x000FFFFF
+#define SYSTIMER_TARGET1_HI_RO_S  0
+
+/** SYSTIMER_REAL_TARGET2_LO_REG register
+ *  system timer comp2 actual target value low register
+ */
+#define SYSTIMER_REAL_TARGET2_LO_REG (DR_REG_SYSTIMER_BASE + 0x84)
+/** SYSTIMER_TARGET2_LO_RO : RO; bitpos: [31:0]; default: 0;
+ *  actual target value value low 32bits
+ */
+#define SYSTIMER_TARGET2_LO_RO    0xFFFFFFFF
+#define SYSTIMER_TARGET2_LO_RO_M  (SYSTIMER_TARGET2_LO_RO_V << SYSTIMER_TARGET2_LO_RO_S)
+#define SYSTIMER_TARGET2_LO_RO_V  0xFFFFFFFF
+#define SYSTIMER_TARGET2_LO_RO_S  0
+
+/** SYSTIMER_REAL_TARGET2_HI_REG register
+ *  system timer comp2 actual target value high register
+ */
+#define SYSTIMER_REAL_TARGET2_HI_REG (DR_REG_SYSTIMER_BASE + 0x88)
+/** SYSTIMER_TARGET2_HI_RO : RO; bitpos: [19:0]; default: 0;
+ *  actual target value value high 20bits
+ */
+#define SYSTIMER_TARGET2_HI_RO    0x000FFFFF
+#define SYSTIMER_TARGET2_HI_RO_M  (SYSTIMER_TARGET2_HI_RO_V << SYSTIMER_TARGET2_HI_RO_S)
+#define SYSTIMER_TARGET2_HI_RO_V  0x000FFFFF
+#define SYSTIMER_TARGET2_HI_RO_S  0
+
 /** SYSTIMER_DATE_REG register
- *  SYSTIMER_DATE.
+ *  system timer version control register
  */
 #define SYSTIMER_DATE_REG (DR_REG_SYSTIMER_BASE + 0xfc)
-/** SYSTIMER_DATE : R/W; bitpos: [31:0]; default: 33579377;
- *  reg_date
+/** SYSTIMER_DATE : R/W; bitpos: [31:0]; default: 33628753;
+ *  systimer register version
  */
 #define SYSTIMER_DATE    0xFFFFFFFF
 #define SYSTIMER_DATE_M  (SYSTIMER_DATE_V << SYSTIMER_DATE_S)
