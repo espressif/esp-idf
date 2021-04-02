@@ -116,6 +116,8 @@ esp_err_t mdns_hostname_set(const char * hostname);
 
 esp_err_t mdns_delegate_hostname_add(const char * hostname, const esp_ip_addr_t *address);
 
+esp_err_t mdns_delegate_hostname_remove(const char * hostname);
+
 bool mdns_hostname_exists(const char *hostname);
 
 /**

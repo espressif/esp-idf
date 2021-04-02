@@ -2472,6 +2472,48 @@ static bool _mdns_delegate_hostname_add(const char *hostname, const esp_ip_addr_
     return true;
 }
 
+static bool _mdns_delegate_hostname_remove(const char *hostname)
+{
+    mdns_srv_item_t *srv = _mdns_server->services;
+    mdns_srv_item_t *prev_srv = NULL;
+    while (srv) {
+        if (strcasecmp(srv->service->hostname, hostname) == 0) {
+            mdns_srv_item_t *to_free = srv;
+            _mdns_send_bye(&srv, 1, false);
+            _mdns_remove_scheduled_service_packets(srv->service);
+            if (prev_srv == NULL) {
+                _mdns_server->services = srv->next;
+                srv = srv->next;
+            } else {
+                prev_srv->next = srv->next;
+            }
+            _mdns_free_service(to_free->service);
+            free(to_free);
+        } else {
+            prev_srv = srv;
+            srv = srv->next;
+        }
+    }
+    mdns_host_item_t *host = _mdns_host_list;
+    mdns_host_item_t *prev_host = NULL;
+    while (host != NULL) {
+        if (strcasecmp(hostname, host->hostname) == 0) {
+            if (prev_host == NULL) {
+                _mdns_host_list = host->next;
+            } else {
+                prev_host->next = host->next;
+            }
+            free((char *)host->hostname);
+            free(host);
+            break;
+        } else {
+            prev_host = host;
+            host = host->next;
+        }
+    }
+    return true;
+}
+
 /**
  * @brief  Check if parsed name is discovery
  */
@@ -4191,6 +4233,11 @@ static void _mdns_execute_action(mdns_action_t * action)
         break;
     case ACTION_DELEGATE_HOSTNAME_ADD:
         _mdns_delegate_hostname_add(action->data.delegate_hostname.hostname, &action->data.delegate_hostname.address);
+        break;
+    case ACTION_DELEGATE_HOSTNAME_REMOVE:
+        _mdns_delegate_hostname_remove(action->data.delegate_hostname.hostname);
+        free((char *)action->data.delegate_hostname.hostname);
+        break;
     default:
         break;
     }
@@ -4628,6 +4675,35 @@ esp_err_t mdns_delegate_hostname_add(const char * hostname, const esp_ip_addr_t 
     action->type = ACTION_DELEGATE_HOSTNAME_ADD;
     action->data.delegate_hostname.hostname = new_hostname;
     action->data.delegate_hostname.address = *address;
+    if (xQueueSend(_mdns_server->action_queue, &action, (portTickType)0) != pdPASS) {
+        free(new_hostname);
+        free(action);
+        return ESP_ERR_NO_MEM;
+    }
+    return ERR_OK;
+}
+
+esp_err_t mdns_delegate_hostname_remove(const char * hostname)
+{
+    if (!_mdns_server) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (_str_null_or_empty(hostname) || strlen(hostname) > (MDNS_NAME_BUF_LEN - 1)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    char * new_hostname = strndup(hostname, MDNS_NAME_BUF_LEN - 1);
+    if (!new_hostname) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    mdns_action_t * action = (mdns_action_t *)malloc(sizeof(mdns_action_t));
+    if (!action) {
+        HOOK_MALLOC_FAILED;
+        free(new_hostname);
+        return ESP_ERR_NO_MEM;
+    }
+    action->type = ACTION_DELEGATE_HOSTNAME_REMOVE;
+    action->data.delegate_hostname.hostname = new_hostname;
     if (xQueueSend(_mdns_server->action_queue, &action, (portTickType)0) != pdPASS) {
         free(new_hostname);
         free(action);

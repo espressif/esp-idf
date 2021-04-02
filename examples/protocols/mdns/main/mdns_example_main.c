@@ -187,10 +187,16 @@ static void mdns_example_task(void *pvParameters)
     query_mdns_host_with_gethostbyname("tinytester-lwip.local");
     query_mdns_host_with_getaddrinfo("tinytester-lwip.local");
 #endif
+    bool removed = false;
 
     while (1) {
         check_button();
         vTaskDelay(50 / portTICK_PERIOD_MS);
+        if (pdTICKS_TO_MS(xTaskGetTickCount()) >= 15 * 1000 && ! removed) {
+            printf("Remove device\n");
+            ESP_ERROR_CHECK(mdns_delegate_hostname_remove("test-device"));
+            removed = true;
+        }
     }
 }
 
