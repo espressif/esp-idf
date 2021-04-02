@@ -24,6 +24,7 @@
 #include "driver/periph_ctrl.h"
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
+#include <sys/param.h>
 
 static const char *I2C_TAG = "i2c";
 #define I2C_CHECK(a, str, ret)  if(!(a)) {                                             \
@@ -51,6 +52,7 @@ static const char *I2C_TAG = "i2c";
 #define I2C_MASTER_MODE_ERR_STR        "Only allowed in master mode"
 #define I2C_MODE_SLAVE_ERR_STR         "Only allowed in slave mode"
 #define I2C_CMD_MALLOC_ERR_STR         "i2c command link malloc error"
+#define I2C_CMD_USER_ALLOC_ERR_STR     "i2c command link allocation error: the buffer provided is too small."
 #define I2C_TRANS_MODE_ERR_STR         "i2c trans mode error"
 #define I2C_MODE_ERR_STR               "i2c mode error"
 #define I2C_SDA_IO_ERR_STR             "sda gpio number error"
@@ -78,6 +80,10 @@ static const char *I2C_TAG = "i2c";
 #define I2C_FILTER_CYC_NUM_DEF         (7)         /* The number of apb cycles filtered by default*/
 #define I2C_CLR_BUS_SCL_NUM            (9)
 #define I2C_CLR_BUS_HALF_PERIOD_US     (5)
+#define I2C_CMD_WR_MINIMUM_SIZE        (sizeof(i2c_cmd_desc_t) * 8) /* It is required to have allocate one i2c_cmd_desc_t per command:
+                                                                     * start + write (device address) + write buffer +
+                                                                     * start + write (device address) + read buffer + read buffer for NACK +
+                                                                     * stop */
 
 #define I2C_CONTEX_INIT_DEF(uart_num) {\
     .hal.dev = I2C_LL_GET_HW(uart_num),\
@@ -106,6 +112,9 @@ typedef struct {
     i2c_cmd_link_t *head;     /*!< head of the command link */
     i2c_cmd_link_t *cur;      /*!< last node of the command link */
     i2c_cmd_link_t *free;     /*!< the first node to free of the command link */
+
+    void     *free_buffer;    /*!< pointer to the next free data in user's buffer */
+    uint32_t  free_size;      /*!< remaining size of the user's buffer */
 } i2c_cmd_desc_t;
 
 typedef enum {
@@ -857,6 +866,144 @@ esp_err_t i2c_set_pin(i2c_port_t i2c_num, int sda_io_num, int scl_io_num, bool s
     return ESP_OK;
 }
 
+esp_err_t i2c_master_write_to_device(i2c_port_t i2c_num, uint8_t device_address,
+                                     const uint8_t* write_buffer, size_t write_size,
+                                     TickType_t ticks_to_wait)
+{
+    esp_err_t err = ESP_OK;
+    uint8_t buffer[I2C_CMD_WR_MINIMUM_SIZE] = { 0 };
+
+    i2c_cmd_handle_t handle = i2c_cmd_link_create_static(buffer, sizeof(buffer));
+    assert (handle != NULL);
+
+    err = i2c_master_start(handle);
+    if (err != ESP_OK) {
+        goto end;
+    }
+
+    err = i2c_master_write_byte(handle, device_address << 1 | I2C_MASTER_WRITE, true);
+    if (err != ESP_OK) {
+        goto end;
+    }
+
+    err = i2c_master_write(handle, write_buffer, write_size, true);
+    if (err != ESP_OK) {
+        goto end;
+    }
+
+    i2c_master_stop(handle);
+    err = i2c_master_cmd_begin(i2c_num, handle, ticks_to_wait);
+
+end:
+    i2c_cmd_link_delete_static(handle);
+    return err;
+}
+
+
+esp_err_t i2c_master_read_from_device(i2c_port_t i2c_num, uint8_t device_address,
+                                      uint8_t* read_buffer, size_t read_size,
+                                      TickType_t ticks_to_wait)
+{
+    esp_err_t err = ESP_OK;
+    uint8_t buffer[I2C_CMD_WR_MINIMUM_SIZE] = { 0 };
+
+    i2c_cmd_handle_t handle = i2c_cmd_link_create_static(buffer, sizeof(buffer));
+    assert (handle != NULL);
+
+    err = i2c_master_start(handle);
+    if (err != ESP_OK) {
+        goto end;
+    }
+
+    err = i2c_master_write_byte(handle, device_address << 1 | I2C_MASTER_READ, true);
+    if (err != ESP_OK) {
+        goto end;
+    }
+
+    err = i2c_master_read(handle, read_buffer, read_size, I2C_MASTER_LAST_NACK);
+    if (err != ESP_OK) {
+        goto end;
+    }
+
+    i2c_master_stop(handle);
+    err = i2c_master_cmd_begin(i2c_num, handle, ticks_to_wait);
+
+end:
+    i2c_cmd_link_delete_static(handle);
+    return err;
+}
+
+
+esp_err_t i2c_master_write_read_device(i2c_port_t i2c_num, uint8_t device_address,
+                                       const uint8_t* write_buffer, size_t write_size,
+                                       uint8_t* read_buffer, size_t read_size,
+                                       TickType_t ticks_to_wait)
+{
+    esp_err_t err = ESP_OK;
+    uint8_t buffer[I2C_CMD_WR_MINIMUM_SIZE] = { 0 };
+
+    i2c_cmd_handle_t handle = i2c_cmd_link_create_static(buffer, sizeof(buffer));
+    assert (handle != NULL);
+
+    err = i2c_master_start(handle);
+    if (err != ESP_OK) {
+        goto end;
+    }
+
+    err = i2c_master_write_byte(handle, device_address << 1 | I2C_MASTER_WRITE, true);
+    if (err != ESP_OK) {
+        goto end;
+    }
+
+    err = i2c_master_write(handle, write_buffer, write_size, true);
+    if (err != ESP_OK) {
+        goto end;
+    }
+
+    err = i2c_master_start(handle);
+    if (err != ESP_OK) {
+        goto end;
+    }
+
+    err = i2c_master_write_byte(handle, device_address << 1 | I2C_MASTER_READ, true);
+    if (err != ESP_OK) {
+        goto end;
+    }
+
+    err = i2c_master_read(handle, read_buffer, read_size, I2C_MASTER_LAST_NACK);
+    if (err != ESP_OK) {
+        goto end;
+    }
+
+    i2c_master_stop(handle);
+    err = i2c_master_cmd_begin(i2c_num, handle, ticks_to_wait);
+
+end:
+    i2c_cmd_link_delete_static(handle);
+    return err;
+}
+
+static inline bool i2c_cmd_link_is_static(i2c_cmd_desc_t *cmd_desc)
+{
+    return (cmd_desc->free_buffer != NULL);
+}
+
+i2c_cmd_handle_t i2c_cmd_link_create_static(uint8_t* buffer, uint32_t size)
+{
+    if (buffer == NULL || size <= sizeof(i2c_cmd_desc_t)) {
+        return NULL;
+    }
+
+    i2c_cmd_desc_t *cmd_desc = (i2c_cmd_desc_t *) buffer;
+    cmd_desc->head = NULL;
+    cmd_desc->cur = NULL;
+    cmd_desc->free = NULL;
+    cmd_desc->free_buffer = cmd_desc + 1;
+    cmd_desc->free_size = size - sizeof(i2c_cmd_desc_t);
+
+    return (i2c_cmd_handle_t) cmd_desc;
+}
+
 i2c_cmd_handle_t i2c_cmd_link_create(void)
 {
 #if !CONFIG_SPIRAM_USE_MALLOC
@@ -867,12 +1014,27 @@ i2c_cmd_handle_t i2c_cmd_link_create(void)
     return (i2c_cmd_handle_t) cmd_desc;
 }
 
-void i2c_cmd_link_delete(i2c_cmd_handle_t cmd_handle)
+void i2c_cmd_link_delete_static(i2c_cmd_handle_t cmd_handle)
 {
-    if (cmd_handle == NULL) {
+    i2c_cmd_desc_t *cmd = (i2c_cmd_desc_t *) cmd_handle;
+    if (cmd == NULL || !i2c_cmd_link_is_static(cmd)) {
         return;
     }
+    /* Currently, this function does nothing, but it is not impossible
+     * that it will change in a near future. */
+}
+
+void i2c_cmd_link_delete(i2c_cmd_handle_t cmd_handle)
+{
     i2c_cmd_desc_t *cmd = (i2c_cmd_desc_t *) cmd_handle;
+
+    /* Memory should be freed only if allocated dynamically.
+     * If the user gave the buffer for a static allocation, do
+     * nothing. */
+    if (cmd == NULL || i2c_cmd_link_is_static(cmd)) {
+        return;
+    }
+
     while (cmd->free) {
         i2c_cmd_link_t *ptmp = cmd->free;
         cmd->free = cmd->free->next;
@@ -885,64 +1047,89 @@ void i2c_cmd_link_delete(i2c_cmd_handle_t cmd_handle)
     return;
 }
 
+static esp_err_t i2c_cmd_allocate(i2c_cmd_desc_t *cmd_desc, size_t n, size_t size, void** outptr)
+{
+    esp_err_t err = ESP_OK;
+
+    if (i2c_cmd_link_is_static(cmd_desc)) {
+        const size_t required = n * size;
+        /* User defined buffer.
+         * Check whether there is enough space in the buffer. */
+        if (cmd_desc->free_size < required) {
+            err = ESP_ERR_NO_MEM;
+        } else {
+            /* Allocate the pointer. */
+            *outptr = cmd_desc->free_buffer;
+
+            /* Decrement the free size from the user's bufffer. */
+            cmd_desc->free_buffer += required;
+            cmd_desc->free_size -= required;
+        }
+    } else {
+#if !CONFIG_SPIRAM_USE_MALLOC
+        *outptr = calloc(n, size);
+#else
+        *outptr = heap_caps_calloc(n, size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+#endif
+        if (*outptr == NULL) {
+            err = ESP_FAIL;
+        }
+    }
+
+    return err;
+}
+
+static inline void i2c_cmd_log_alloc_error(i2c_cmd_desc_t *cmd_desc)
+{
+    if (i2c_cmd_link_is_static(cmd_desc)) {
+        ESP_LOGE(I2C_TAG, I2C_CMD_USER_ALLOC_ERR_STR);
+    } else {
+        ESP_LOGE(I2C_TAG, I2C_CMD_MALLOC_ERR_STR);
+    }
+}
+
 static esp_err_t i2c_cmd_link_append(i2c_cmd_handle_t cmd_handle, i2c_cmd_t *cmd)
 {
+    esp_err_t err = ESP_OK;
     i2c_cmd_desc_t *cmd_desc = (i2c_cmd_desc_t *) cmd_handle;
+
+    assert(cmd_desc != NULL);
+
     if (cmd_desc->head == NULL) {
-#if !CONFIG_SPIRAM_USE_MALLOC
-        cmd_desc->head = (i2c_cmd_link_t *) calloc(1, sizeof(i2c_cmd_link_t));
-#else
-        cmd_desc->head = (i2c_cmd_link_t *) heap_caps_calloc(1, sizeof(i2c_cmd_link_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-#endif
-        if (cmd_desc->head == NULL) {
-            ESP_LOGE(I2C_TAG, I2C_CMD_MALLOC_ERR_STR);
-            goto err;
+        err = i2c_cmd_allocate(cmd_desc, 1, sizeof(i2c_cmd_link_t), (void**) &cmd_desc->head);
+        if (err != ESP_OK) {
+            i2c_cmd_log_alloc_error(cmd_desc);
+            return err;
         }
         cmd_desc->cur = cmd_desc->head;
         cmd_desc->free = cmd_desc->head;
     } else {
-#if !CONFIG_SPIRAM_USE_MALLOC
-        cmd_desc->cur->next = (i2c_cmd_link_t *) calloc(1, sizeof(i2c_cmd_link_t));
-#else
-        cmd_desc->cur->next = (i2c_cmd_link_t *) heap_caps_calloc(1, sizeof(i2c_cmd_link_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-#endif
-        if (cmd_desc->cur->next == NULL) {
-            ESP_LOGE(I2C_TAG, I2C_CMD_MALLOC_ERR_STR);
-            goto err;
+        assert(cmd_desc->cur != NULL);
+        err = i2c_cmd_allocate(cmd_desc, 1, sizeof(i2c_cmd_link_t), (void**) &cmd_desc->cur->next);
+        if (err != ESP_OK) {
+            i2c_cmd_log_alloc_error(cmd_desc);
+            return err;
         }
         cmd_desc->cur = cmd_desc->cur->next;
     }
     memcpy((uint8_t *) &cmd_desc->cur->cmd, (uint8_t *) cmd, sizeof(i2c_cmd_t));
     cmd_desc->cur->next = NULL;
-    return ESP_OK;
-
-err:
-    return ESP_FAIL;
+    return err;
 }
 
 esp_err_t i2c_master_start(i2c_cmd_handle_t cmd_handle)
 {
     I2C_CHECK(cmd_handle != NULL, I2C_CMD_LINK_INIT_ERR_STR, ESP_ERR_INVALID_ARG);
-    i2c_cmd_t cmd;
-    cmd.hw_cmd.ack_en = 0;
-    cmd.hw_cmd.ack_exp = 0;
-    cmd.hw_cmd.ack_val = 0;
+    i2c_cmd_t cmd = { 0 };
     cmd.hw_cmd.op_code = I2C_LL_CMD_RESTART;
-    cmd.hw_cmd.byte_num = 0;
-    cmd.data = NULL;
     return i2c_cmd_link_append(cmd_handle, &cmd);
 }
 
 esp_err_t i2c_master_stop(i2c_cmd_handle_t cmd_handle)
 {
     I2C_CHECK(cmd_handle != NULL, I2C_CMD_LINK_INIT_ERR_STR, ESP_ERR_INVALID_ARG);
-    i2c_cmd_t cmd;
-    cmd.hw_cmd.ack_en = 0;
-    cmd.hw_cmd.ack_exp = 0;
-    cmd.hw_cmd.ack_val = 0;
+    i2c_cmd_t cmd = { 0 };
     cmd.hw_cmd.op_code = I2C_LL_CMD_STOP;
-    cmd.hw_cmd.byte_num = 0;
-    cmd.data = NULL;
     return i2c_cmd_link_append(cmd_handle, &cmd);
 }
 
@@ -951,13 +1138,14 @@ esp_err_t i2c_master_write(i2c_cmd_handle_t cmd_handle, const uint8_t *data, siz
     I2C_CHECK((data != NULL), I2C_ADDR_ERROR_STR, ESP_ERR_INVALID_ARG);
     I2C_CHECK(cmd_handle != NULL, I2C_CMD_LINK_INIT_ERR_STR, ESP_ERR_INVALID_ARG);
 
-    uint8_t len_tmp;
+    uint8_t len_tmp = 0;
     int data_offset = 0;
-    esp_err_t ret;
-    while (data_len > 0) {
-        len_tmp = data_len > 0xff ? 0xff : data_len;
+    esp_err_t ret = ESP_OK;
+    i2c_cmd_t cmd;
+
+    while (data_len > 0 && ret == ESP_OK) {
+        len_tmp = MIN(0xff, data_len);
         data_len -= len_tmp;
-        i2c_cmd_t cmd;
         cmd.hw_cmd.ack_en = ack_en;
         cmd.hw_cmd.ack_exp = 0;
         cmd.hw_cmd.ack_val = 0;
@@ -966,36 +1154,32 @@ esp_err_t i2c_master_write(i2c_cmd_handle_t cmd_handle, const uint8_t *data, siz
         cmd.data = (uint8_t*) data + data_offset;
         ret = i2c_cmd_link_append(cmd_handle, &cmd);
         data_offset += len_tmp;
-        if (ret != ESP_OK) {
-            return ret;
-        }
     }
-    return ESP_OK;
+
+    return ret;
 }
 
 esp_err_t i2c_master_write_byte(i2c_cmd_handle_t cmd_handle, uint8_t data, bool ack_en)
 {
     I2C_CHECK(cmd_handle != NULL, I2C_CMD_LINK_INIT_ERR_STR, ESP_ERR_INVALID_ARG);
-    i2c_cmd_t cmd;
+    i2c_cmd_t cmd = { 0 };
     cmd.hw_cmd.ack_en = ack_en;
-    cmd.hw_cmd.ack_exp = 0;
-    cmd.hw_cmd.ack_val = 0;
     cmd.hw_cmd.op_code = I2C_LL_CMD_WRITE;
     cmd.hw_cmd.byte_num = 1;
-    cmd.data = NULL;
     cmd.byte_cmd = data;
     return i2c_cmd_link_append(cmd_handle, &cmd);
 }
 
 static esp_err_t i2c_master_read_static(i2c_cmd_handle_t cmd_handle, uint8_t *data, size_t data_len, i2c_ack_type_t ack)
 {
-    int len_tmp;
+    int len_tmp = 0;
     int data_offset = 0;
-    esp_err_t ret;
-    while (data_len > 0) {
-        len_tmp = data_len > 0xff ? 0xff : data_len;
+    esp_err_t ret = ESP_OK;
+    i2c_cmd_t cmd;
+
+    while (data_len > 0 && ret == ESP_OK) {
+        len_tmp = MIN(0xff, data_len);
         data_len -= len_tmp;
-        i2c_cmd_t cmd;
         cmd.hw_cmd.ack_en = 0;
         cmd.hw_cmd.ack_exp = 0;
         cmd.hw_cmd.ack_val = ack & 0x1;
@@ -1004,11 +1188,9 @@ static esp_err_t i2c_master_read_static(i2c_cmd_handle_t cmd_handle, uint8_t *da
         cmd.data = data + data_offset;
         ret = i2c_cmd_link_append(cmd_handle, &cmd);
         data_offset += len_tmp;
-        if (ret != ESP_OK) {
-            return ret;
-        }
     }
-    return ESP_OK;
+
+    return ret;
 }
 
 esp_err_t i2c_master_read_byte(i2c_cmd_handle_t cmd_handle, uint8_t *data, i2c_ack_type_t ack)
@@ -1017,13 +1199,12 @@ esp_err_t i2c_master_read_byte(i2c_cmd_handle_t cmd_handle, uint8_t *data, i2c_a
     I2C_CHECK(cmd_handle != NULL, I2C_CMD_LINK_INIT_ERR_STR, ESP_ERR_INVALID_ARG);
     I2C_CHECK(ack < I2C_MASTER_ACK_MAX, I2C_ACK_TYPE_ERR_STR, ESP_ERR_INVALID_ARG);
 
-    i2c_cmd_t cmd;
-    cmd.hw_cmd.ack_en = 0;
-    cmd.hw_cmd.ack_exp = 0;
+    i2c_cmd_t cmd = { 0 };
     cmd.hw_cmd.ack_val = ((ack == I2C_MASTER_LAST_NACK) ? I2C_MASTER_NACK : (ack & 0x1));
     cmd.hw_cmd.byte_num = 1;
     cmd.hw_cmd.op_code = I2C_LL_CMD_READ;
     cmd.data = data;
+
     return i2c_cmd_link_append(cmd_handle, &cmd);
 }
 
@@ -1034,19 +1215,29 @@ esp_err_t i2c_master_read(i2c_cmd_handle_t cmd_handle, uint8_t *data, size_t dat
     I2C_CHECK(ack < I2C_MASTER_ACK_MAX, I2C_ACK_TYPE_ERR_STR, ESP_ERR_INVALID_ARG);
     I2C_CHECK(data_len > 0, I2C_DATA_LEN_ERR_STR, ESP_ERR_INVALID_ARG);
 
+    esp_err_t ret = ESP_OK;
+
+    /* Check if we can perform a single transfer.
+     * This is the case if a NACK is NOT required at the end of the last transferred byte
+     * (i.e. ACK is required at the end), or if a single byte has to be read.
+     */
     if (ack != I2C_MASTER_LAST_NACK) {
-        return i2c_master_read_static(cmd_handle, data, data_len, ack);
+        ret = i2c_master_read_static(cmd_handle, data, data_len, ack);
+    } else if (data_len == 1) {
+        ret = i2c_master_read_byte(cmd_handle, data, I2C_MASTER_NACK);
     } else {
-        if (data_len == 1) {
-            return i2c_master_read_byte(cmd_handle, data, I2C_MASTER_NACK);
-        } else {
-            esp_err_t ret;
-            if ((ret =  i2c_master_read_static(cmd_handle, data, data_len - 1, I2C_MASTER_ACK)) != ESP_OK) {
-                return ret;
-            }
-            return i2c_master_read_byte(cmd_handle, data + data_len - 1, I2C_MASTER_NACK);
+        /* In this case, we have to read data_len-1 bytes sending an ACK at the end
+         * of each one.
+         */
+        ret = i2c_master_read_static(cmd_handle, data, data_len - 1, I2C_MASTER_ACK);
+
+        /* Last byte has to be NACKed. */
+        if (ret == ESP_OK) {
+            ret = i2c_master_read_byte(cmd_handle, data + data_len - 1, I2C_MASTER_NACK);
         }
     }
+
+    return ret;
 }
 
 static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num)
