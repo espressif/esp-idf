@@ -149,6 +149,7 @@ exclude =
         components/libsodium/libsodium,
         components/mbedtls/mbedtls,
         components/nghttp/nghttp2,
+        components/openthread/openthread,
         components/tinyusb,
         components/unity/unity,
         examples/build_system/cmake/import_lib/main/lib/tinyxml2,
