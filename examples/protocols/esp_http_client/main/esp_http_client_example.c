@@ -18,6 +18,7 @@
 #include "esp_netif.h"
 #include "protocol_examples_common.h"
 #include "esp_tls.h"
+#include "esp_crt_bundle.h"
 
 #include "esp_http_client.h"
 
@@ -371,7 +372,7 @@ static void https_with_url(void)
     esp_http_client_config_t config = {
         .url = "https://www.howsmyssl.com",
         .event_handler = _http_event_handler,
-        .cert_pem = howsmyssl_com_root_cert_pem_start,
+        .crt_bundle_attach = esp_crt_bundle_attach,
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err = esp_http_client_perform(client);
