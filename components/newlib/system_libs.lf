@@ -1,0 +1,11 @@
+[mapping:gcc]
+archive: libgcc.a
+entries:
+    lib2funcs (noflash_text)
+    if IDF_TARGET_ESP32 = n:
+        _divsf3 (noflash)
+
+[mapping:gcov]
+archive: libgcov.a
+entries:
+    * (noflash)

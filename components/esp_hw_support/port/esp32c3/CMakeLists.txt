@@ -5,6 +5,7 @@ set(srcs "cpu_util_esp32c3.c"
          "rtc_pm.c"
          "rtc_sleep.c"
          "rtc_time.c"
+         "chip_info.c"
          )
 
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")

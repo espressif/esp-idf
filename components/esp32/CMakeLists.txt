@@ -12,16 +12,11 @@ if(BOOTLOADER_BUILD)
 else()
     # Regular app build
     set(srcs
-        "cache_err_int.c"
         "cache_sram_mmu.c"
-        "clk.c"
-        "crosscore_int.c"
         "dport_access.c"
         "esp_himem.c"
-        "hw_random.c"
         "spiram.c"
-        "spiram_psram.c"
-        "system_api_esp32.c")
+        "spiram_psram.c")
 
     set(include_dirs "include")
 
@@ -31,11 +26,9 @@ else()
     # esp_timer is added here because cpu_start.c uses esp_timer
     set(priv_requires app_trace app_update bootloader_support esp_system log mbedtls nvs_flash pthread
         spi_flash vfs espcoredump esp_common perfmon esp_timer esp_ipc esp_pm)
-    set(fragments linker.lf ld/esp32_fragments.lf)
 
     idf_component_register(SRCS "${srcs}"
                         INCLUDE_DIRS "${include_dirs}"
-                        LDFRAGMENTS "${fragments}"
                         REQUIRES "${requires}"
                         PRIV_REQUIRES "${priv_requires}"
                         REQUIRED_IDF_TARGETS esp32)

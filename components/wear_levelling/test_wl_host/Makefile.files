@@ -25,6 +25,8 @@ INCLUDE_DIRS := \
 	esp_rom/include \
 	esp_system/include \
 	esp_common/include \
+	esp_hw_support/include \
+	esp_hw_support/include/soc \
 	xtensa/include \
 	xtensa/esp32/include \
 	soc/esp32/include \

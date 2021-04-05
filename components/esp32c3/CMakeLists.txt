@@ -11,16 +11,11 @@ if(BOOTLOADER_BUILD)
 else()
     # Regular app build
 
-    set(srcs "cache_err_int.c"
-             "clk.c"
-             "crosscore_int.c"
-             "dport_access.c"
+    set(srcs "dport_access.c"
              "esp_hmac.c"
              "esp_ds.c"
              "esp_crypto_lock.c"
-             "hw_random.c"
-             "memprot.c"
-             "system_api_esp32c3.c")
+             "memprot.c")
     set(include_dirs "include")
 
     set(requires driver efuse soc riscv) #unfortunately rom/uart uses SOC registers directly
@@ -32,11 +27,8 @@ else()
         app_trace app_update bootloader_support log mbedtls nvs_flash
         pthread spi_flash vfs espcoredump esp_common esp_timer)
 
-    set(fragments linker.lf ld/esp32c3_fragments.lf)
-
     idf_component_register(SRCS "${srcs}"
                         INCLUDE_DIRS "${include_dirs}"
-                        LDFRAGMENTS "${fragments}"
                         REQUIRES "${requires}"
                         PRIV_REQUIRES "${priv_requires}"
                         REQUIRED_IDF_TARGETS esp32c3)

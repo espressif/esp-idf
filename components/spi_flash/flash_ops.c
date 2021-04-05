@@ -40,6 +40,7 @@
 #include "esp32s3/rom/spi_flash.h"
 #include "esp32s3/rom/cache.h"
 #include "esp32s3/clk.h"
+#include "esp32s3/clk.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/cache.h"
 #include "esp32c3/rom/spi_flash.h"

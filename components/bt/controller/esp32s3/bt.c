@@ -41,7 +41,7 @@
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/soc_memory_layout.h"
-#include "esp_clk.h"
+#include "esp32c3/clk.h"
 #include "esp_coexist_internal.h"
 
 #if CONFIG_BT_ENABLED

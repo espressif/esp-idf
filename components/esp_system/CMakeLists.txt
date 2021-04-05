@@ -10,13 +10,14 @@ if(BOOTLOADER_BUILD)
     # Bootloader relies on some Kconfig options defined in esp_system.
     idf_component_register(SRCS "${srcs}")
 else()
-    list(APPEND srcs "esp_err.c"
+    list(APPEND srcs "crosscore_int.c"
+            "esp_err.c"
             "freertos_hooks.c"
             "intr_alloc.c"
             "int_wdt.c"
             "esp_async_memcpy.c"
             "panic.c"
-            "system_api.c"
+            "esp_system.c"
             "startup.c"
             "system_time.c"
             "stack_check.c"
@@ -35,7 +36,7 @@ else()
                                     # link-time registration is used.
                                     esp_pm app_update nvs_flash pthread app_trace esp_gdbstub esp_ipc
                                     espcoredump
-                        LDFRAGMENTS "linker.lf")
+                        LDFRAGMENTS "linker.lf" "app.lf")
     add_subdirectory(port)
 
     # After system initialization, `start_app` (and its other cores variant) is called.

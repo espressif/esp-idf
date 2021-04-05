@@ -25,21 +25,19 @@
 #include "hal/soc_hal.h"
 #include "hal/cpu_hal.h"
 
+#include "cache_err_int.h"
+
 #include "sdkconfig.h"
 #include "esp_rom_sys.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/dport_access.h"
-#include "esp32/cache_err_int.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/memprot.h"
-#include "esp32s2/cache_err_int.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/memprot.h"
-#include "esp32s3/cache_err_int.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/memprot.h"
-#include "esp32c3/cache_err_int.h"
 #endif
 
 #include "esp_private/panic_internal.h"

@@ -11,5 +11,8 @@ menu "Hardware Settings"
 
         config ESP_MAC_ADDR_UNIVERSE_ETH
             bool
+
+            # Insert chip-specific MAC config
+            rsource "./port/$IDF_TARGET/Kconfig.mac"
     endmenu
 endmenu

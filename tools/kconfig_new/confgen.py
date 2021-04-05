@@ -119,8 +119,11 @@ class DeprecatedOptions(object):
                         return True
                 return False
             else:
-                # otherwise if any of the nodes associated with the option was visible
-                return any(visibility.visible(node) for node in config.syms[opt].nodes)
+                try:
+                    # otherwise if any of the nodes associated with the option was visible
+                    return any(visibility.visible(node) for node in config.syms[opt].nodes)
+                except KeyError:
+                    return False
 
         if len(self.r_dic) > 0:
             with open(path_output, 'a') as f_o:

@@ -1,9 +1,0 @@
-[mapping:gcc]
-archive: libgcc.a
-entries:
-    lib2funcs (noflash_text)
-
-[mapping:gcov]
-archive: libgcov.a
-entries:
-    * (noflash)

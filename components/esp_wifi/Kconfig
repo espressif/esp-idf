@@ -488,4 +488,12 @@ menu "PHY"
             by a small amount but increases RAM use by approximately 4 KB(Wi-Fi only),
             2 KB(Bluetooth only) or 5.3 KB(Wi-Fi + Bluetooth).
 
+            #Reduce PHY TX power when brownout reset
+    config ESP32_REDUCE_PHY_TX_POWER
+        bool "Reduce PHY TX power when brownout reset"
+        depends on ESP32_BROWNOUT_DET
+        default y
+        help
+            When brownout reset occurs, reduce PHY TX power to keep the code running.
+
 endmenu  # PHY

@@ -18,14 +18,11 @@
 #include "esp_private/panic_internal.h"
 #include "esp_private/panic_reason.h"
 #include "riscv/rvruntime-frames.h"
+#include "cache_err_int.h"
 
-#if CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/cache_err_int.h"
-#endif
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 #include "esp32c3/memprot.h"
 #endif
-
 
 #define DIM(array) (sizeof(array)/sizeof(*array))
 

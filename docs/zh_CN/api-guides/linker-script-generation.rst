@@ -388,7 +388,7 @@ ESP-IDF v4.0 变更了链接器脚本片段文件使用的一些语法：
 
 这些生成的包罗规则将用于未指定映射规则的情况。
 
-``默认`` 协议在 :component_file:`{IDF_TARGET_PATH_NAME}/ld/{IDF_TARGET_PATH_NAME}_fragments.lf` 文件中定义，快速上手指南中提到的内置 ``noflash`` 协议和 ``rtc`` 协议也在该文件中定义。
+``默认`` 协议在 :component_file:`esp_system/app.lf` 文件中定义，快速上手指南中提到的内置 ``noflash`` 协议和 ``rtc`` 协议也在该文件中定义。
 
 .. _ldgen-mapping-fragment :
 
