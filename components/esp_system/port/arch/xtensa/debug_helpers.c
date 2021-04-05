@@ -23,6 +23,8 @@
 #include "soc/cpu.h"
 #include "esp_private/panic_internal.h"
 
+#include "xtensa/xtensa_context.h"
+
 #include "sdkconfig.h"
 
 #include "esp_rom_sys.h"
@@ -75,9 +77,10 @@ esp_err_t IRAM_ATTR esp_backtrace_print_from_frame(int depth, const esp_backtrac
     print_entry(esp_cpu_process_stack_pc(stk_frame.pc), stk_frame.sp, panic);
 
     //Check if first frame is valid
-    bool corrupted = (esp_stack_ptr_is_sane(stk_frame.sp) &&
-                      esp_ptr_executable((void*)esp_cpu_process_stack_pc(stk_frame.pc))) ?
-                      false : true;
+    bool corrupted = !(esp_stack_ptr_is_sane(stk_frame.sp) &&
+                       (esp_ptr_executable((void *)esp_cpu_process_stack_pc(stk_frame.pc)) ||
+                        /* Ignore the first corrupted PC in case of InstrFetchProhibited */
+                        (stk_frame.exc_frame && ((XtExcFrame *)stk_frame.exc_frame)->exccause == EXCCAUSE_INSTR_PROHIBITED)));
 
     uint32_t i = (depth <= 0) ? INT32_MAX : depth;
     while (i-- > 0 && stk_frame.next_pc != 0 && !corrupted) {
@@ -103,7 +106,7 @@ esp_err_t IRAM_ATTR esp_backtrace_print_from_frame(int depth, const esp_backtrac
 esp_err_t IRAM_ATTR esp_backtrace_print(int depth)
 {
     //Initialize stk_frame with first frame of stack
-    esp_backtrace_frame_t start;
+    esp_backtrace_frame_t start = { 0 };
     esp_backtrace_get_start(&(start.pc), &(start.sp), &(start.next_pc));
     return esp_backtrace_print_from_frame(depth, &start, false);
 }
