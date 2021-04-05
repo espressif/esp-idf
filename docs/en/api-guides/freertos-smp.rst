@@ -21,7 +21,7 @@ found via https://www.freertos.org/a00106.html
 For information regarding features that are exclusive to ESP-IDF FreeRTOS,
 see :doc:`ESP-IDF FreeRTOS Additions<../api-reference/system/freertos_additions>`.
 
-.. only:: esp32
+.. only:: not CONFIG_FREERTOS_UNICORE
 
   :ref:`tasks-and-task-creation`: Use :cpp:func:`xTaskCreatePinnedToCore` or 
   :cpp:func:`xTaskCreateStaticPinnedToCore` to create tasks in ESP-IDF FreeRTOS. The 
@@ -53,6 +53,8 @@ see :doc:`ESP-IDF FreeRTOS Additions<../api-reference/system/freertos_additions>
   unaffected. If the other core attemps to take same mutex, it will spin until
   the calling core has released the mutex by exiting the critical section.
 
+.. only:: esp32
+
   :ref:`floating-points`: The ESP32 supports hardware acceleration of single
   precision floating point arithmetic (``float``). However the use of hardware
   acceleration leads to some behavioral restrictions in ESP-IDF FreeRTOS.
@@ -69,6 +71,9 @@ Callbacks.
 set in the project configuration (``idf.py menuconfig``) such as running ESP-IDF in
 Unicore (single core) Mode, or configuring the number of Thread Local Storage Pointers
 each task will have.
+
+It is not necessary to manually start the FreeRTOS scheduler by calling :cpp:func:`vTaskStartScheduler`. In ESP-IDF the
+scheduler is started by the :doc:`startup` and is already running when the ``app_main`` function is called (see :ref:`app-main-task` for details).
 
 .. _tasks-and-task-creation:
 

@@ -2,13 +2,18 @@ Bootloader
 =====================
 :link_to_translation:`zh_CN:[中文]`
 
-Bootloader performs the following functions:
+{IDF_TARGET_BOOTLOADER_OFFSET:default="0x0", esp32="0x1000", esp32s2="0x1000"}
+
+The ESP-IDF Software Bootloader performs the following functions:
 
 1. Minimal initial configuration of internal modules;
-2. Select the application partition to boot, based on the partition table and ota_data (if any);
-3. Load this image to RAM (IRAM & DRAM) and transfer management to it.
+2. Initialize :doc:`/security/flash-encryption` and/or :doc:`Secure </security/secure-boot-v2>` features, if configured;
+3. Select the application partition to boot, based on the partition table and ota_data (if any);
+4. Load this image to RAM (IRAM & DRAM) and transfer management to it.
 
-Bootloader is located at the address `0x1000` in the flash.
+Bootloader is located at the address {IDF_TARGET_BOOTLOADER_OFFSET} in the flash.
+
+For a full description of the startup process including the the ESP-IDF bootloader, see :doc:`startup`.
 
 Bootloader compatibility
 ------------------------
@@ -67,8 +72,9 @@ Fast boot from Deep Sleep
 -------------------------
 The bootloader has the :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` option which allows to reduce the wake-up time (useful to reduce consumption). This option is available when the :ref:`CONFIG_SECURE_BOOT` option is disabled. Reduction of time is achieved due to the lack of image verification. During the first boot, the bootloader stores the address of the application being launched in the RTC FAST memory. And during the awakening, this address is used for booting without any checks, thus fast loading is achieved.
 
-Customer bootloader
----------------------
+Custom bootloader
+-----------------
+
 The current bootloader implementation allows a project to override it. To do this, you must copy the directory ``/esp-idf/components/bootloader`` to your project components directory and then edit ``/your_project/components/bootloader/subproject/main/bootloader_start.c``.
 
 In the bootloader space, you cannot use the drivers and functions from other components. If necessary, then the required functionality should be placed in the project's ``bootloader`` directory (note that this will increase its size).

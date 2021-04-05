@@ -153,6 +153,8 @@ To get the version at build time, additional version macros are provided. They c
       #endif
 
 
+.. _app-version:
+
 App version
 -----------
 Application version is stored in :cpp:class:`esp_app_desc_t` structure. It is located in DROM sector and has a fixed offset from the beginning of the binary file.
