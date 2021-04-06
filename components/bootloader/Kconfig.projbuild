@@ -471,7 +471,7 @@ menu "Security features"
     config SECURE_BOOT
         bool "Enable hardware Secure Boot in bootloader (READ DOCS FIRST)"
         default n
-        depends on !IDF_TARGET_ESP32C3 # IDF-2647
+        depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || ESP32C3_REV_MIN_3
         help
             Build a bootloader which enables Secure Boot on first boot.
 
@@ -488,7 +488,7 @@ menu "Security features"
         help
             Select the Secure Boot Version. Depends on the Chip Revision.
             Secure Boot V2 is the new RSA based secure boot scheme.
-            Supported in ESP32-ECO3. (ESP32 Chip Revision 3 onwards)
+            Supported in ESP32-ECO3 (ESP32 Chip Revision 3 onwards), ESP32-S2, ESP32-C3 ECO3.
             Secure Boot V1 is the AES based secure boot scheme.
             Supported in ESP32 and ESP32-ECO3.
 
