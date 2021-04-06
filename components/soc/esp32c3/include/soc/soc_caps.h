@@ -13,10 +13,6 @@
 #define SOC_HMAC_SUPPORTED          1
 #define SOC_ASYNC_MEMCPY_SUPPORTED  1
 
-/*-------------------------- DAC CAPS ----------------------------------------*/
-#define SOC_DAC_PERIPH_NUM      0
-
-
 #include "i2c_caps.h"
 #include "mpu_caps.h"
 #include "sigmadelta_caps.h"
