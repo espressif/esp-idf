@@ -3,6 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "sdkconfig.h"
+
+#if CONFIG_IDF_TARGET_ESP32
+
 #include <stdio.h>
 #include "unity.h"
 #include "esp_rom_sys.h"
@@ -23,3 +27,6 @@ TEST_CASE("can control TSENS using registers", "[rtc][ignore]")
     int res = GET_PERI_REG_BITS2(SENS_SAR_SLAVE_ADDR3_REG, SENS_TSENS_OUT, SENS_TSENS_OUT_S);
     printf("res=%d\n", res);
 }
+
+
+#endif // CONFIG_IDF_TARGET_ESP32

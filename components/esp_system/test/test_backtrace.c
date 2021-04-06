@@ -10,6 +10,9 @@
  */
 #include <stdlib.h>
 #include "unity.h"
+
+#if __XTENSA__
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/xtensa_api.h"
@@ -88,3 +91,5 @@ TEST_CASE("Test backtrace with a ROM function", "[reset_reason][reset=StoreProhi
     ets_install_putc1(&write_char_crash);
     esp_rom_printf("foo");
 }
+
+#endif

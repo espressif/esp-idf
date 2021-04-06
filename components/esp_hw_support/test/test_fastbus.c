@@ -3,6 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "sdkconfig.h"
+
+#if CONFIG_IDF_TARGET_ESP32
 
 #include <stdio.h>
 
@@ -134,3 +137,5 @@ TEST_CASE("Fast I/O bus test", "[hw][ignore]")
     }
     xt_ints_off(1 << ETS_UART0_INUM);
 }
+
+#endif // CONFIG_IDF_TARGET_ESP32

@@ -1,3 +1,7 @@
+#include "sdkconfig.h"
+
+#if CONFIG_IDF_TARGET_ESP32
+
 /*
 This little bit of code is executed in-place by one CPU, but copied to a different memory region
 by the other CPU. Make sure it stays position-independent.
@@ -49,3 +53,5 @@ unlockloop:
 	bne a3, a6, unlockloop
 
 	retw
+
+#endif // CONFIG_IDF_TARGET_ESP32

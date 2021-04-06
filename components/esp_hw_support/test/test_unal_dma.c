@@ -3,10 +3,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "sdkconfig.h"
+
+#if CONFIG_IDF_TARGET_ESP32
 
 #include <esp_types.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "esp32/rom/lldesc.h"
 #include "driver/periph_ctrl.h"
 #include "hal/gpio_hal.h"
@@ -15,28 +19,23 @@
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
 #include "freertos/xtensa_api.h"
-
 #include "unity.h"
 
-#include "soc/uart_periph.h"
 #include "soc/dport_reg.h"
 #include "soc/gpio_periph.h"
 #include "soc/i2s_periph.h"
 
 
-
 #define DPORT_I2S0_CLK_EN   (BIT(4))
 #define DPORT_I2S0_RST   (BIT(4))
 
+static volatile lldesc_t dmaDesc[2];
 
-/*
-This test tests the s32c1i instruction when the AHB bus is also used. To create some AHB traffic, we use the I2S interface
-to copy bytes over from one memory location to another. DO NOT USE the i2s routines inhere, they've been trial-and-error'ed until
-the point where they happened to do what I want.
-*/
 
-static void lcdIfaceInit(void)
+//hacked up routine to essentially do a memcpy() using dma. Supports max 4K-1 bytes.
+static void dmaMemcpy(void *in, void *out, int len)
 {
+    volatile int i;
     periph_module_enable(PERIPH_I2S0_MODULE);
 
     //Init pins to i2s functions
@@ -73,7 +72,7 @@ static void lcdIfaceInit(void)
     SET_PERI_REG_MASK(I2S_CONF_REG(0), I2S_RX_RESET | I2S_TX_RESET);
     CLEAR_PERI_REG_MASK(I2S_CONF_REG(0), I2S_RX_RESET | I2S_TX_RESET);
 
-    WRITE_PERI_REG(I2S_CONF_REG(0), 0);//I2S_SIG_LOOPBACK);
+    WRITE_PERI_REG(I2S_CONF_REG(0), 0);//I2S_I2S_SIG_LOOPBACK);
     WRITE_PERI_REG(I2S_CONF2_REG(0), 0);
 
     WRITE_PERI_REG(I2S_SAMPLE_RATE_CONF_REG(0),
@@ -97,56 +96,22 @@ static void lcdIfaceInit(void)
     //Invert WS to active-low
     SET_PERI_REG_MASK(I2S_CONF_REG(0), I2S_TX_RIGHT_FIRST | I2S_RX_RIGHT_FIRST);
     WRITE_PERI_REG(I2S_TIMING_REG(0), 0);
-}
 
-
-static volatile lldesc_t dmaDesc[2];
-
-static void finishDma(void)
-{
-    //No need to finish if no DMA transfer going on
-    if (!(READ_PERI_REG(I2S_FIFO_CONF_REG(0))&I2S_DSCR_EN)) {
-        return;
-    }
-
-    //Wait till fifo done
-    while (!(READ_PERI_REG(I2S_INT_RAW_REG(0))&I2S_TX_REMPTY_INT_RAW)) ;
-    //Wait for last bytes to leave i2s xmit thing
-    //ToDo: poll bit in next hw
-//  for (i=0; i<(1<<8); i++);
-    while (!(READ_PERI_REG(I2S_STATE_REG(0))&I2S_TX_IDLE));
-
-    //Reset I2S for next transfer
-    CLEAR_PERI_REG_MASK(I2S_CONF_REG(0), I2S_TX_START | I2S_RX_START);
-    CLEAR_PERI_REG_MASK(I2S_OUT_LINK_REG(0), I2S_OUTLINK_START | I2S_INLINK_START);
-
-    SET_PERI_REG_MASK(I2S_CONF_REG(0), I2S_TX_RESET | I2S_TX_FIFO_RESET | I2S_RX_RESET | I2S_RX_FIFO_RESET);
-    CLEAR_PERI_REG_MASK(I2S_CONF_REG(0), I2S_TX_RESET | I2S_TX_FIFO_RESET | I2S_RX_RESET | I2S_RX_FIFO_RESET);
-
-//  for (i=0; i<(1<<8); i++);
-    while ((READ_PERI_REG(I2S_STATE_REG(0))&I2S_TX_FIFO_RESET_BACK));
-}
-
-
-/*
-This is a very, very, very hacked up LCD routine which ends up basically doing a memcpy from sbuf to rbuf.
-*/
-static void sendRecvBufDma(uint16_t *sbuf, uint16_t *rbuf, int len)
-{
+//--
     //Fill DMA descriptor
-    dmaDesc[0].length = len * 2;
-    dmaDesc[0].size = len * 2;
+    dmaDesc[0].length = len;
+    dmaDesc[0].size = len;
     dmaDesc[0].owner = 1;
     dmaDesc[0].sosf = 0;
-    dmaDesc[0].buf = (uint8_t *)sbuf;
+    dmaDesc[0].buf = (uint8_t *)in;
     dmaDesc[0].offset = 0; //unused in hw
     dmaDesc[0].empty = 0;
     dmaDesc[0].eof = 1;
-    dmaDesc[1].length = len * 2;
-    dmaDesc[1].size = len * 2;
+    dmaDesc[1].length = len;
+    dmaDesc[1].size = len;
     dmaDesc[1].owner = 1;
     dmaDesc[1].sosf = 0;
-    dmaDesc[1].buf = (uint8_t *)rbuf;
+    dmaDesc[1].buf = (uint8_t *)out;
     dmaDesc[1].offset = 0; //unused in hw
     dmaDesc[1].empty = 0;
     dmaDesc[1].eof = 1;
@@ -181,114 +146,65 @@ static void sendRecvBufDma(uint16_t *sbuf, uint16_t *rbuf, int len)
     SET_PERI_REG_MASK(I2S_CONF_REG(0), I2S_TX_START | I2S_RX_START);
     //Clear int flags
     WRITE_PERI_REG(I2S_INT_CLR_REG(0), 0xFFFFFFFF);
-}
-
-
-#define DMALEN (2048-2)
-
-static void tskLcd(void *pvParameters)
-{
-    uint16_t *sbuf = malloc(DMALEN * 2);
-    uint16_t *rbuf = malloc(DMALEN * 2);
-    uint16_t xorval = 0;
-    int x;
-    lcdIfaceInit();
-//  lcdFlush();
-    while (1) {
-        for (x = 0; x < DMALEN; x++) {
-            sbuf[x] = x ^ xorval;
-        }
-        for (x = 0; x < DMALEN; x++) {
-            rbuf[x] = 0;    //clear rbuf
-        }
-        sendRecvBufDma(sbuf, rbuf, DMALEN);
-        vTaskDelay(20 / portTICK_PERIOD_MS);
-        finishDma();
-        for (x = 0; x < DMALEN; x++) if (rbuf[x] != (x ^ xorval)) {
-                printf("Rxbuf err! pos %d val %x xor %x", x, (int)rbuf[x], (int)xorval);
-            }
-        printf(".");
-        fflush(stdout);
-        xorval++;
+//--
+    //No need to finish if no DMA transfer going on
+    if (!(READ_PERI_REG(I2S_FIFO_CONF_REG(0))&I2S_DSCR_EN)) {
+        return;
     }
+
+    //Wait till fifo done
+    while (!(READ_PERI_REG(I2S_INT_RAW_REG(0))&I2S_TX_REMPTY_INT_RAW)) ;
+    //Wait for last bytes to leave i2s xmit thing
+    //ToDo: poll bit in next hw
+    for (i = 0; i < (1 << 8); i++);
+    while (!(READ_PERI_REG(I2S_STATE_REG(0))&I2S_TX_IDLE));
+
+    //Reset I2S for next transfer
+    CLEAR_PERI_REG_MASK(I2S_CONF_REG(0), I2S_TX_START | I2S_RX_START);
+    CLEAR_PERI_REG_MASK(I2S_OUT_LINK_REG(0), I2S_OUTLINK_START | I2S_INLINK_START);
+
+    SET_PERI_REG_MASK(I2S_CONF_REG(0), I2S_TX_RESET | I2S_TX_FIFO_RESET | I2S_RX_RESET | I2S_RX_FIFO_RESET);
+    CLEAR_PERI_REG_MASK(I2S_CONF_REG(0), I2S_TX_RESET | I2S_TX_FIFO_RESET | I2S_RX_RESET | I2S_RX_FIFO_RESET);
+
+//  for (i=0; i<(1<<8); i++);
+    while ((READ_PERI_REG(I2S_STATE_REG(0))&I2S_TX_FIFO_RESET_BACK));
+
 }
 
 
-
-void test_s32c1i_lock(volatile int *lockvar, int lockval, int unlockval, volatile int *ctr);
-
-static volatile int ctr = 0, state = 0;
-static volatile int lock = 0;
-
-static void tskOne(void *pvParameters)
+int mymemcmp(char *a, char *b, int len)
 {
     int x;
-    int err = 0, run = 0;
-    while (1) {
-        ctr = 0; lock = 0;
-        state = 1;
-        for (x = 0; x < 16 * 1024; x++) {
-            test_s32c1i_lock(&lock, 1, 0, &ctr);
+    for (x = 0; x < len; x++) {
+        if (a[x] != b[x]) {
+            printf("Not equal at byte %d. a=%x, b=%x\n", x, (int)a[x], (int)b[x]);
+            return 1;
         }
-        vTaskDelay(60 / portTICK_PERIOD_MS);
-        state = 2;
-        if (ctr != 16 * 1024 * 2) {
-            printf("Lock malfunction detected! Ctr=0x%x instead of %x\n", ctr, 16 * 1024 * 2);
-            err++;
-        }
-        run++;
-        printf("Run %d err %d\n", run, err);
-        vTaskDelay(20 / portTICK_PERIOD_MS);
     }
+    return 0;
 }
 
-#define FB2ADDR 0x40098000
 
-static void tskTwo(void *pvParameters)
+
+TEST_CASE("Unaligned DMA test (needs I2S)", "[hw][ignore]")
 {
     int x;
-    int *p = (int *)FB2ADDR;
-    int *s = (int *)test_s32c1i_lock;
-    void (*test_s32c1i_lock2)(volatile int * lockvar, int lockval, int unlockval, volatile int * ctr) = (void *)FB2ADDR;
-    volatile int w;
-    int delay;
-    for (x = 0; x < 100; x++) {
-        *p++ = *s++;    //copy routine to different pool
+    char src[2049], dest[2049];
+    for (x = 0; x < sizeof(src); x++) {
+        src[x] = x & 0xff;
     }
 
-    while (1) {
-        while (state != 1) ;
-        for (x = 0; x < 16 * 1024; x++) {
-            test_s32c1i_lock2(&lock, 2, 0, &ctr);
-            //Some random delay to increase chance of weirdness
-            if ((x & 0x1f) == 0) {
-                delay = rand() & 0x1f;
-                for (w = 0; w < delay; w++);
-            }
-        }
-        while (state != 2);
-    }
+    printf("Aligned dma\n");
+    memset(dest, 0, 2049);
+    dmaMemcpy(src, dest, 2048 + 1);
+    TEST_ASSERT(mymemcmp(src, dest, 2048) == 0);
+    printf("Src unaligned\n");
+    dmaMemcpy(src + 1, dest, 2048 + 1);
+    TEST_ASSERT(mymemcmp(src + 1, dest, 2048) == 0);
+    printf("Dst unaligned\n");
+    dmaMemcpy(src, dest + 1, 2048 + 2);
+    TEST_ASSERT(mymemcmp(src, dest + 1, 2048) == 0);
 }
 
 
-TEST_CASE("S32C1I vs AHB test (needs I2S)", "[hw][ignore]")
-{
-    int i;
-    TaskHandle_t th[3];
-    state = 0;
-
-    printf("Creating tasks\n");
-    xTaskCreatePinnedToCore(tskTwo  , "tsktwo"  , 2048, NULL, 3, &th[1], 1);
-    xTaskCreatePinnedToCore(tskOne  , "tskone"  , 2048, NULL, 3, &th[0], 0);
-    xTaskCreatePinnedToCore(tskLcd  , "tsklcd"  , 2048, NULL, 3, &th[2], 0);
-
-    // Let stuff run for 20s
-    while (1) {
-        vTaskDelay(20000 / portTICK_PERIOD_MS);
-    }
-
-    //Shut down all the tasks
-    for (i = 0; i < 3; i++) {
-        vTaskDelete(th[i]);
-    }
-}
+#endif // CONFIG_IDF_TARGET_ESP32

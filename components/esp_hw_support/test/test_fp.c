@@ -3,6 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "sdkconfig.h"
+
+#if CONFIG_IDF_TARGET_ESP32
+
 #include <math.h>
 #include <stdio.h>
 #include "soc/cpu.h"
@@ -272,3 +276,5 @@ TEST_CASE("floating point square root performance", "[fp]")
 
     TEST_PERFORMANCE_LESS_THAN(CYCLES_PER_SQRT, "%d cycles", cycles);
 }
+
+#endif // CONFIG_IDF_TARGET_ESP32
