@@ -184,6 +184,11 @@ struct wpa_ptk {
 	} u;
 } STRUCT_PACKED;
 
+struct wpa_gtk {
+	u8 gtk[WPA_GTK_MAX_LEN];
+	size_t gtk_len;
+};
+
 struct wpa_gtk_data {
 	enum wpa_alg alg;
 	int tx, key_rsc_len, keyidx;
