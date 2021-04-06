@@ -32,7 +32,7 @@ API Guides
     :esp32: RF Calibration <RF_calibration>
     :esp32: ROM debug console <romconsole>
     :esp32: Secure Boot <../security/secure-boot-v1>
-    :not esp32c3: Secure Boot V2 <../security/secure-boot-v2>
+    Secure Boot V2 <../security/secure-boot-v2>
     Thread Local Storage <thread-local-storage>
     Tools <tools/index>
     :SOC_ULP_SUPPORTED: ULP Coprocessor <ulp>
