@@ -59,6 +59,7 @@ extensions = ['breathe',
               'extensions.html_redirects',
               'extensions.toctree_filter',
               'extensions.list_filter',
+              'extensions.google_analytics',
 
               # Note: order is important here, events must
               # be registered by one extension before they can be
@@ -360,6 +361,8 @@ html_static_path = ['../_static']
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'ReadtheDocsTemplatedoc'
+
+google_analytics_id = os.environ['CI_GOOGLE_ANALYTICS_ID']
 
 # -- Options for LaTeX output ---------------------------------------------
 
