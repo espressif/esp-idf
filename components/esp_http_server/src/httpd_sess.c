@@ -244,7 +244,7 @@ void httpd_sess_free_ctx(void **ctx, httpd_free_ctx_fn_t free_fn)
 
 void httpd_sess_clear_ctx(struct sock_db *session)
 {
-    if ((!session) || (!session->ctx)) {
+    if ((!session) || ((!session->ctx) && (!session->transport_ctx))) {
         return;
     }
 
