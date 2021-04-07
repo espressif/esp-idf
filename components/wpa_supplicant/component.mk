@@ -4,6 +4,10 @@ COMPONENT_PRIV_INCLUDEDIRS := src src/utils esp_supplicant/src
 COMPONENT_SRCDIRS := port src/ap src/common src/crypto src/eap_peer src/rsn_supp src/tls src/utils src/wps esp_supplicant/src
 COMPONENT_ADD_INCLUDEDIRS := include port/include esp_supplicant/include src/utils
 
+ifeq ($(CONFIG_ESP_WIFI_SOFTAP_SUPPORT), y)
+    COMPONENT_OBJEXCLUDE += src/esp_hostap.o
+endif
+
 ifeq ($(CONFIG_WPA_MBEDTLS_CRYPTO), y)
     COMPONENT_OBJEXCLUDE += src/tls/asn1.o \
     src/tls/bignum.o \
