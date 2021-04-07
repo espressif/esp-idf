@@ -460,6 +460,6 @@ void panic_set_address(void *f, uint32_t addr)
 void panic_print_backtrace(const void *f, int core)
 {
     XtExcFrame *xt_frame = (XtExcFrame *) f;
-    esp_backtrace_frame_t frame = {.pc = xt_frame->pc, .sp = xt_frame->a1, .next_pc = xt_frame->a0};
+    esp_backtrace_frame_t frame = {.pc = xt_frame->pc, .sp = xt_frame->a1, .next_pc = xt_frame->a0, .exc_frame = xt_frame};
     esp_backtrace_print_from_frame(100, &frame, true);
 }
