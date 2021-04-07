@@ -20,8 +20,10 @@ import os
 import re
 
 import esp_prov
+import tiny_test_fw
 import ttfw_idf
 import wifi_tools
+from tiny_test_fw import Utility
 
 # Have esp_prov throw exception
 esp_prov.config_throw_except = True
@@ -54,10 +56,21 @@ def test_examples_provisioning_softap(env, extra_data):
     try:
         ctrl = wifi_tools.wpa_cli(iface, reset_on_exit=True)
         print('Connecting to DUT SoftAP...')
-        ip = ctrl.connect(ssid, password)
-        got_ip = dut1.expect(re.compile(r'DHCP server assigned IP to a station, IP is: (\d+.\d+.\d+.\d+)'), timeout=60)[0]
-        if ip != got_ip:
-            raise RuntimeError('SoftAP connected to another host! ' + ip + '!=' + got_ip)
+        try:
+            ip = ctrl.connect(ssid, password)
+        except RuntimeError as err:
+            Utility.console_log('error: {}'.format(err))
+        try:
+            got_ip = dut1.expect(re.compile(r'DHCP server assigned IP to a station, IP is: (\d+.\d+.\d+.\d+)'), timeout=60)
+            Utility.console_log('got_ip: {}'.format(got_ip))
+            got_ip = got_ip[0]
+            if ip != got_ip:
+                raise RuntimeError('SoftAP connected to another host! {} != {}'.format(ip, got_ip))
+        except tiny_test_fw.DUT.ExpectTimeout:
+            # print what is happening on dut side
+            Utility.console_log('in exception tiny_test_fw.DUT.ExpectTimeout')
+            Utility.console_log(dut1.read())
+            raise
         print('Connected to DUT SoftAP')
 
         print('Starting Provisioning')
@@ -68,7 +81,7 @@ def test_examples_provisioning_softap(env, extra_data):
         provmode = 'softap'
         ap_ssid = 'myssid'
         ap_password = 'mypassword'
-        softap_endpoint = ip.split('.')[0] + '.' + ip.split('.')[1] + '.' + ip.split('.')[2] + '.1:80'
+        softap_endpoint = '{}.{}.{}.1:80'.format(ip.split('.')[0], ip.split('.')[1], ip.split('.')[2])
 
         print('Getting security')
         security = esp_prov.get_security(secver, pop, verbose)

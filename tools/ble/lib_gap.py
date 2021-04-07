@@ -32,7 +32,6 @@ except ImportError as e:
     print('Run `pip install -r $IDF_PATH/tools/ble/requirements.txt` for resolving the issue')
     raise
 
-ADV_OBJ = False
 
 DBUS_PROP_IFACE = 'org.freedesktop.DBus.Properties'
 LE_ADVERTISEMENT_IFACE = 'org.bluez.LEAdvertisement1'
@@ -75,10 +74,8 @@ class Advertisement(dbus.service.Object):
                          in_signature='s',
                          out_signature='a{sv}')
     def GetAll(self, interface):
-        global ADV_OBJ
         if interface != LE_ADVERTISEMENT_IFACE:
             raise InvalidArgsException()
-        ADV_OBJ = True
         return self.get_properties()[LE_ADVERTISEMENT_IFACE]
 
     @dbus.service.method(LE_ADVERTISEMENT_IFACE,
