@@ -3049,7 +3049,7 @@ static void heartbeat_pub_set(struct bt_mesh_model *model,
         goto failed;
     }
 
-    if (param->period_log > 0x10) {
+    if (param->period_log > 0x11) {
         status = STATUS_CANNOT_SET;
         goto failed;
     }
