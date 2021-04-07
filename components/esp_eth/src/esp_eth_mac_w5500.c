@@ -93,6 +93,7 @@ static esp_err_t w5500_read(emac_w5500_t *emac, uint32_t address, void *value, u
     esp_err_t ret = ESP_OK;
 
     spi_transaction_t trans = {
+        .flags = len <= 4 ? SPI_TRANS_USE_RXDATA : 0, // use direct reads for registers to prevent overwrites by 4-byte boundary writes
         .cmd = (address >> W5500_ADDR_OFFSET),
         .addr = ((address & 0xFFFF) | (W5500_ACCESS_MODE_READ << W5500_RWB_OFFSET) | W5500_SPI_OP_MODE_VDM),
         .length = 8 * len,
@@ -106,6 +107,9 @@ static esp_err_t w5500_read(emac_w5500_t *emac, uint32_t address, void *value, u
         w5500_unlock(emac);
     } else {
         ret = ESP_ERR_TIMEOUT;
+    }
+    if ((trans.flags&SPI_TRANS_USE_RXDATA) && len <= 4) {
+        memcpy(value, trans.rx_data, len);  // copy register values to output
     }
     return ret;
 }
