@@ -510,11 +510,13 @@ static esp_err_t esp_http_client_prepare(esp_http_client_handle_t client)
 
         if (client->connection_info.auth_type == HTTP_AUTH_TYPE_BASIC) {
             auth_response = http_auth_basic(client->connection_info.username, client->connection_info.password);
+#ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_DIGEST_AUTH
         } else if (client->connection_info.auth_type == HTTP_AUTH_TYPE_DIGEST && client->auth_data) {
             client->auth_data->uri = client->connection_info.path;
             client->auth_data->cnonce = ((uint64_t)esp_random() << 32) + esp_random();
             auth_response = http_auth_digest(client->connection_info.username, client->connection_info.password, client->auth_data);
             client->auth_data->nc ++;
+#endif
         }
 
         if (auth_response) {
@@ -609,15 +611,27 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
     if (config->use_global_ca_store == true) {
         esp_transport_ssl_enable_global_ca_store(ssl);
     } else if (config->cert_pem) {
-        esp_transport_ssl_set_cert_data(ssl, config->cert_pem, strlen(config->cert_pem));
+        if (!config->cert_len) {
+            esp_transport_ssl_set_cert_data(ssl, config->cert_pem, strlen(config->cert_pem));
+        } else {
+            esp_transport_ssl_set_cert_data_der(ssl, config->cert_pem, config->cert_len);
+        }
     }
 
     if (config->client_cert_pem) {
-        esp_transport_ssl_set_client_cert_data(ssl, config->client_cert_pem, strlen(config->client_cert_pem));
+        if (!config->client_cert_len) {
+            esp_transport_ssl_set_client_cert_data(ssl, config->client_cert_pem, strlen(config->client_cert_pem));
+        } else {
+            esp_transport_ssl_set_client_cert_data_der(ssl, config->client_cert_pem, config->client_cert_len);
+        }
     }
 
     if (config->client_key_pem) {
-        esp_transport_ssl_set_client_key_data(ssl, config->client_key_pem, strlen(config->client_key_pem));
+        if (!config->client_key_len) {
+            esp_transport_ssl_set_client_key_data(ssl, config->client_key_pem, strlen(config->client_key_pem));
+        } else {
+            esp_transport_ssl_set_client_key_data_der(ssl, config->client_key_pem, config->client_key_len);
+        }
     }
 
     if (config->skip_cert_common_name_check) {
@@ -1159,7 +1173,6 @@ static int http_client_prepare_first_line(esp_http_client_handle_t client, int w
         http_header_set_format(client->request->headers, "Content-Length", "%d", write_len);
     } else {
         esp_http_client_set_header(client, "Transfer-Encoding", "chunked");
-        esp_http_client_set_method(client, HTTP_METHOD_POST);
     }
 
     const char *method = HTTP_METHOD_MAPPING[client->connection_info.method];
@@ -1398,19 +1411,27 @@ void esp_http_client_add_auth(esp_http_client_handle_t client)
         http_utils_trim_whitespace(&auth_header);
         ESP_LOGD(TAG, "UNAUTHORIZED: %s", auth_header);
         client->redirect_counter++;
+#ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_DIGEST_AUTH
         if (http_utils_str_starts_with(auth_header, "Digest") == 0) {
             ESP_LOGD(TAG, "type = Digest");
             client->connection_info.auth_type = HTTP_AUTH_TYPE_DIGEST;
+        } else {
+#endif
 #ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_BASIC_AUTH
-        } else if (http_utils_str_starts_with(auth_header, "Basic") == 0) {
+        if (http_utils_str_starts_with(auth_header, "Basic") == 0) {
             ESP_LOGD(TAG, "type = Basic");
             client->connection_info.auth_type = HTTP_AUTH_TYPE_BASIC;
-#endif
         } else {
+#endif
             client->connection_info.auth_type = HTTP_AUTH_TYPE_NONE;
             ESP_LOGE(TAG, "This authentication method is not supported: %s", auth_header);
             return;
+#ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_BASIC_AUTH
         }
+#endif
+#ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_DIGEST_AUTH
+        }
+#endif
 
         _clear_auth_data(client);
 

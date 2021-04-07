@@ -7,6 +7,15 @@ menu "LWIP"
             The default name this device will report to other devices on the network.
             Could be updated at runtime with esp_netif_set_hostname()
 
+    config LWIP_NETIF_API
+        bool "Enable usage of standard POSIX APIs in LWIP"
+        default n
+        help
+            If this feature is enabled, standard POSIX APIs: if_indextoname(), if_nametoindex()
+            could be used to convert network interface index to name
+            instead of IDF specific esp-netif APIs (such as esp_netif_get_netif_impl_name())
+
+
     config LWIP_DNS_SUPPORT_MDNS_QUERIES
         bool "Enable mDNS queries in resolving host name"
         default y
@@ -767,6 +776,24 @@ menu "LWIP"
                 (SNTPv4 RFC 4330 enforces a minimum update time of 15 seconds).
 
     endmenu # SNTP
+
+    menu "LCP"
+
+        config LCP_ECHOINTERVAL
+            int "Echo interval (s)"
+            range 0 1000000
+            default 0
+            help
+                Interval in seconds between keepalive LCP echo requests, 0 to disable.
+
+        config LCP_MAXECHOFAILS
+            int "Maximum echo failures"
+            range 0 100000
+            default 3
+            help
+                Number of consecutive unanswered echo requests before failure is indicated.
+
+    endmenu # LCP
 
     config LWIP_ESP_LWIP_ASSERT
         bool "Enable LWIP ASSERT checks"

@@ -9,7 +9,7 @@ entries:
       SEGGER_SYSVIEW_Config_FreeRTOS (noflash)
       SEGGER_SYSVIEW_FreeRTOS (noflash)
 
-[mapping:driver]
+[mapping:app_trace_driver]
 archive: libdriver.a
 entries:
     if SYSVIEW_TS_SOURCE_TIMER_00 = y || SYSVIEW_TS_SOURCE_TIMER_01 = y

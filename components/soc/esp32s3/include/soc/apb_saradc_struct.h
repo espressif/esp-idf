@@ -1,4 +1,4 @@
-// Copyright 2017-2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,170 +11,130 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#pragma once
+#ifndef _SOC_APB_SARADC_STRUCT_H_
+#define _SOC_APB_SARADC_STRUCT_H_
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdint.h>
+#include "soc.h"
 
 typedef volatile struct {
     union {
         struct {
-            uint32_t start_force:              1;
-            uint32_t start:                    1;
-            uint32_t reserved2:                1;
-            uint32_t work_mode:                2;             /*0: single mode  1: double mode  2: alternate mode*/
-            uint32_t sar_sel:                  1;             /*0: SAR1  1: SAR2  only work for single SAR mode*/
-            uint32_t sar_clk_gated:            1;
-            uint32_t sar_clk_div:              8;             /*SAR clock divider*/
-            uint32_t sar1_patt_len:            4;             /*0 ~ 15 means length 1 ~ 16*/
-            uint32_t sar2_patt_len:            4;             /*0 ~ 15 means length 1 ~ 16*/
-            uint32_t sar1_patt_p_clear:        1;             /*clear the pointer of pattern table for DIG ADC1 CTRL*/
-            uint32_t sar2_patt_p_clear:        1;             /*clear the pointer of pattern table for DIG ADC2 CTRL*/
-            uint32_t data_sar_sel:             1;             /*1: sar_sel will be coded by the MSB of the 16-bit output data  in this case the resolution should not be larger than 11 bits.*/
-            uint32_t data_to_i2s:              1;             /*1: I2S input data is from SAR ADC (for DMA)  0: I2S input data is from GPIO matrix*/
-            uint32_t xpd_sar_force:            2;             /*force option to xpd sar blocks*/
-            uint32_t reserved29:               1;
-            uint32_t wait_arb_cycle:           2;             /*wait arbit signal stable after sar_done*/
+            uint32_t start_force                   :    1;
+            uint32_t start                         :    1;
+            uint32_t reserved2                     :    1;
+            uint32_t work_mode                     :    2;  /* 0: single mode, 1: double mode, 2: alternate mode*/
+            uint32_t sar_sel                       :    1;  /* 0: SAR1, 1: SAR2, only work for single SAR mode*/
+            uint32_t sar_clk_gated                 :    1;
+            uint32_t sar_clk_div                   :    8;  /*SAR clock divider*/
+            uint32_t sar1_patt_len                 :    4;  /* 0 ~ 15 means length 1 ~ 16*/
+            uint32_t sar2_patt_len                 :    4;  /* 0 ~ 15 means length 1 ~ 16*/
+            uint32_t sar1_patt_p_clear             :    1;  /*clear the pointer of pattern table for DIG ADC1 CTRL*/
+            uint32_t sar2_patt_p_clear             :    1;  /*clear the pointer of pattern table for DIG ADC2 CTRL*/
+            uint32_t data_sar_sel                  :    1;  /*1: sar_sel will be coded by the MSB of the 16-bit output data, in this case the resolution should not be larger than 11 bits.*/
+            uint32_t data_to_i2s                   :    1;  /*1: I2S input data is from SAR ADC (for DMA), 0: I2S input data is from GPIO matrix*/
+            uint32_t xpd_sar_force                 :    2;  /*force option to xpd sar blocks*/
+            uint32_t reserved29                    :    1;
+            uint32_t wait_arb_cycle                :    2;  /*wait arbit signal stable after sar_done*/
         };
         uint32_t val;
     } ctrl;
     union {
         struct {
-            uint32_t meas_num_limit:        1;
-            uint32_t max_meas_num:          8;                /*max conversion number*/
-            uint32_t sar1_inv:              1;                /*1: data to DIG ADC1 CTRL is inverted  otherwise not*/
-            uint32_t sar2_inv:              1;                /*1: data to DIG ADC2 CTRL is inverted  otherwise not*/
-            uint32_t timer_sel:             1;                /*1: select saradc timer 0: i2s_ws trigger*/
-            uint32_t timer_target:         12;                /*to set saradc timer target*/
-            uint32_t timer_en:              1;                /*to enable saradc timer trigger*/
-            uint32_t reserved25:            7;
+            uint32_t meas_num_limit                :    1;
+            uint32_t max_meas_num                  :    8;  /*max conversion number*/
+            uint32_t sar1_inv                      :    1;  /*1: data to DIG ADC1 CTRL is inverted, otherwise not*/
+            uint32_t sar2_inv                      :    1;  /*1: data to DIG ADC2 CTRL is inverted, otherwise not*/
+            uint32_t timer_sel                     :    1;  /*1: select saradc timer 0: i2s_ws trigger*/
+            uint32_t timer_target                  :    12;  /*to set saradc timer target*/
+            uint32_t timer_en                      :    1;  /*to enable saradc timer trigger*/
+            uint32_t reserved25                    :    7;
         };
         uint32_t val;
     } ctrl2;
     union {
         struct {
-            uint32_t reserved0:     26;
-            uint32_t filter_factor1: 3;
-            uint32_t filter_factor0: 3;
+            uint32_t reserved0                     :    26;
+            uint32_t filter_factor1                :    3;
+            uint32_t filter_factor0                :    3;
         };
         uint32_t val;
     } filter_ctrl1;
     union {
         struct {
-            uint32_t xpd_wait:            8;
-            uint32_t rstb_wait:           8;
-            uint32_t standby_wait:        8;
-            uint32_t reserved24:          8;
+            uint32_t xpd_wait                      :    8;
+            uint32_t rstb_wait                     :    8;
+            uint32_t standby_wait                  :    8;
+            uint32_t reserved24                    :    8;
         };
         uint32_t val;
     } fsm_wait;
-    uint32_t sar1_status;                                     /**/
-    uint32_t sar2_status;                                     /**/
+    uint32_t sar1_status;
+    uint32_t sar2_status;
     union {
         struct {
-            uint32_t sar1_patt_tab1:       24;                /*item 0 ~ 3 for pattern table 1 (each item one byte)*/
-            uint32_t reserved24:            8;
+            uint32_t sar1_patt_tab                 :    24;  /*item 0 ~ 3 for pattern table 1 (each item one byte)*/
+            uint32_t reserved24                    :    8;
         };
         uint32_t val;
-    } sar1_patt_tab1;
+    } sar1_patt_tab[4];
     union {
         struct {
-            uint32_t sar1_patt_tab2:       24;                /*Item 4 ~ 7 for pattern table 1 (each item one byte)*/
-            uint32_t reserved24:            8;
+            uint32_t sar2_patt_tab                 :    24;  /*item 0 ~ 3 for pattern table 2 (each item one byte)*/
+            uint32_t reserved24                    :    8;
         };
         uint32_t val;
-    } sar1_patt_tab2;
+    } sar2_patt_tab[4];
     union {
         struct {
-            uint32_t sar1_patt_tab3:       24;                /*Item 8 ~ 11 for pattern table 1 (each item one byte)*/
-            uint32_t reserved24:            8;
-        };
-        uint32_t val;
-    } sar1_patt_tab3;
-    union {
-        struct {
-            uint32_t sar1_patt_tab4:       24;                /*Item 12 ~ 15 for pattern table 1 (each item one byte)*/
-            uint32_t reserved24:            8;
-        };
-        uint32_t val;
-    } sar1_patt_tab4;
-    union {
-        struct {
-            uint32_t sar2_patt_tab1:       24;                /*item 0 ~ 3 for pattern table 2 (each item one byte)*/
-            uint32_t reserved24:            8;
-        };
-        uint32_t val;
-    } sar2_patt_tab1;
-    union {
-        struct {
-            uint32_t sar2_patt_tab2:       24;                /*Item 4 ~ 7 for pattern table 2 (each item one byte)*/
-            uint32_t reserved24:            8;
-        };
-        uint32_t val;
-    } sar2_patt_tab2;
-    union {
-        struct {
-            uint32_t sar2_patt_tab3:       24;                /*Item 8 ~ 11 for pattern table 2 (each item one byte)*/
-            uint32_t reserved24:            8;
-        };
-        uint32_t val;
-    } sar2_patt_tab3;
-    union {
-        struct {
-            uint32_t sar2_patt_tab4:       24;                /*Item 12 ~ 15 for pattern table 2 (each item one byte)*/
-            uint32_t reserved24:            8;
-        };
-        uint32_t val;
-    } sar2_patt_tab4;
-    union {
-        struct {
-            uint32_t reserved0:             2;
-            uint32_t adc_arb_apb_force:     1;                /*adc2 arbiter force to enableapb controller*/
-            uint32_t adc_arb_rtc_force:     1;                /*adc2 arbiter force to enable rtc controller*/
-            uint32_t adc_arb_wifi_force:    1;                /*adc2 arbiter force to enable wifi controller*/
-            uint32_t adc_arb_grant_force:   1;                /*adc2 arbiter force grant*/
-            uint32_t adc_arb_apb_priority:  2;                /*Set adc2 arbiterapb priority*/
-            uint32_t adc_arb_rtc_priority:  2;                /*Set adc2 arbiter rtc priority*/
-            uint32_t adc_arb_wifi_priority: 2;                /*Set adc2 arbiter wifi priority*/
-            uint32_t adc_arb_fix_priority:  1;                /*adc2 arbiter uses fixed priority*/
-            uint32_t reserved13:           19;
+            uint32_t reserved0                     :    2;
+            uint32_t adc_arb_apb_force             :    1;  /*adc2 arbiter force to enableapb controller*/
+            uint32_t adc_arb_rtc_force             :    1;  /*adc2 arbiter force to enable rtc controller*/
+            uint32_t adc_arb_wifi_force            :    1;  /*adc2 arbiter force to enable wifi controller*/
+            uint32_t adc_arb_grant_force           :    1;  /*adc2 arbiter force grant*/
+            uint32_t adc_arb_apb_priority          :    2;  /*Set adc2 arbiterapb priority*/
+            uint32_t adc_arb_rtc_priority          :    2;  /*Set adc2 arbiter rtc priority*/
+            uint32_t adc_arb_wifi_priority         :    2;  /*Set adc2 arbiter wifi priority*/
+            uint32_t adc_arb_fix_priority          :    1;  /*adc2 arbiter uses fixed priority*/
+            uint32_t reserved13                    :    19;
         };
         uint32_t val;
     } apb_adc_arb_ctrl;
     union {
         struct {
-            uint32_t reserved0:      14;
-            uint32_t filter_channel1: 5;
-            uint32_t filter_channel0: 5;                      /*apb_adc1_filter_factor*/
-            uint32_t reserved24:      7;
-            uint32_t filter_reset:    1;                      /*enable apb_adc1_filter*/
+            uint32_t reserved0                     :    14;
+            uint32_t filter_channel1               :    5;
+            uint32_t filter_channel0               :    5;  /*apb_adc1_filter_factor*/
+            uint32_t reserved24                    :    7;
+            uint32_t filter_reset                  :    1;  /*enable apb_adc1_filter*/
         };
         uint32_t val;
     } filter_ctrl0;
     union {
         struct {
-            uint32_t adc1_data: 17;
-            uint32_t reserved17: 15;
+            uint32_t adc1_data                     :    17;
+            uint32_t reserved17                    :    15;
         };
         uint32_t val;
     } apb_saradc1_data_status;
     union {
         struct {
-            uint32_t thres0_channel: 5;
-            uint32_t thres0_high:   13;                       /*saradc1's thres0 monitor thres*/
-            uint32_t thres0_low:    13;                       /*saradc1's thres0 monitor thres*/
+            uint32_t thres0_channel                :    5;
+            uint32_t thres0_high                   :    13;  /*saradc1's thres0 monitor thres*/
+            uint32_t thres0_low                    :    13;  /*saradc1's thres0 monitor thres*/
+            uint32_t reserved31                    :    1;
         };
         uint32_t val;
     } thres0_ctrl;
     union {
         struct {
-            uint32_t thres1_channel: 5;
-            uint32_t thres1_high:   13;                       /*saradc1's thres0 monitor thres*/
-            uint32_t thres1_low:    13;                       /*saradc1's thres0 monitor thres*/
-            uint32_t reserved31:     1;
+            uint32_t thres1_channel                :    5;
+            uint32_t thres1_high                   :    13;  /*saradc1's thres0 monitor thres*/
+            uint32_t thres1_low                    :    13;  /*saradc1's thres0 monitor thres*/
+            uint32_t reserved31                    :    1;
         };
         uint32_t val;
     } thres1_ctrl;
@@ -183,111 +143,92 @@ typedef volatile struct {
     uint32_t reserved_54;
     union {
         struct {
-            uint32_t reserved0:   27;
-            uint32_t thres_all_en: 1;
-            uint32_t thres3_en:    1;
-            uint32_t thres2_en:    1;
-            uint32_t thres1_en:    1;
-            uint32_t thres0_en:    1;
+            uint32_t reserved0                     :    27;
+            uint32_t thres_all_en                  :    1;
+            uint32_t thres3_en                     :    1;
+            uint32_t thres2_en                     :    1;
+            uint32_t thres1_en                     :    1;
+            uint32_t thres0_en                     :    1;
         };
         uint32_t val;
     } thres_ctrl;
     union {
         struct {
-            uint32_t reserved0:          26;
-            uint32_t thres1_low:          1;
-            uint32_t thres0_low:          1;
-            uint32_t thres1_high:         1;
-            uint32_t thres0_high:         1;
-            uint32_t adc2_done:           1;
-            uint32_t adc1_done:           1;
+            uint32_t reserved0                     :    26;
+            uint32_t thres1_low                    :    1;
+            uint32_t thres0_low                    :    1;
+            uint32_t thres1_high                   :    1;
+            uint32_t thres0_high                   :    1;
+            uint32_t adc2_done                     :    1;
+            uint32_t adc1_done                     :    1;
         };
         uint32_t val;
     } int_ena;
     union {
         struct {
-            uint32_t reserved0:          26;
-            uint32_t thres1_low:          1;
-            uint32_t thres0_low:          1;
-            uint32_t thres1_high:         1;
-            uint32_t thres0_high:         1;
-            uint32_t adc2_done:           1;
-            uint32_t adc1_done:           1;
+            uint32_t reserved0                     :    26;
+            uint32_t thres1_low                    :    1;
+            uint32_t thres0_low                    :    1;
+            uint32_t thres1_high                   :    1;
+            uint32_t thres0_high                   :    1;
+            uint32_t adc2_done                     :    1;
+            uint32_t adc1_done                     :    1;
         };
         uint32_t val;
     } int_raw;
     union {
         struct {
-            uint32_t reserved0:         26;
-            uint32_t thres1_low:         1;
-            uint32_t thres0_low:         1;
-            uint32_t thres1_high:        1;
-            uint32_t thres0_high:        1;
-            uint32_t adc2_done:          1;
-            uint32_t adc1_done:          1;
+            uint32_t reserved0                     :    26;
+            uint32_t thres1_low                    :    1;
+            uint32_t thres0_low                    :    1;
+            uint32_t thres1_high                   :    1;
+            uint32_t thres0_high                   :    1;
+            uint32_t adc2_done                     :    1;
+            uint32_t adc1_done                     :    1;
         };
         uint32_t val;
     } int_st;
     union {
         struct {
-            uint32_t reserved0:          26;
-            uint32_t thres1_low:          1;
-            uint32_t thres0_low:          1;
-            uint32_t thres1_high:         1;
-            uint32_t thres0_high:         1;
-            uint32_t adc2_done:           1;
-            uint32_t adc1_done:           1;
+            uint32_t reserved0                     :    26;
+            uint32_t thres1_low                    :    1;
+            uint32_t thres0_low                    :    1;
+            uint32_t thres1_high                   :    1;
+            uint32_t thres0_high                   :    1;
+            uint32_t adc2_done                     :    1;
+            uint32_t adc1_done                     :    1;
         };
         uint32_t val;
     } int_clr;
     union {
         struct {
-            uint32_t apb_adc_eof_num:  16;                    /*the dma_in_suc_eof gen when sample cnt = spi_eof_num*/
-            uint32_t reserved16:       14;
-            uint32_t apb_adc_reset_fsm: 1;                    /*reset_apb_adc_state*/
-            uint32_t apb_adc_trans:     1;                    /*enable apb_adc use spi_dma*/
+            uint32_t apb_adc_eof_num               :    16;  /*the dma_in_suc_eof gen when sample cnt = spi_eof_num*/
+            uint32_t reserved16                    :    14;
+            uint32_t apb_adc_reset_fsm             :    1;  /*reset_apb_adc_state*/
+            uint32_t apb_adc_trans                 :    1;  /*enable apb_adc use spi_dma*/
         };
         uint32_t val;
     } dma_conf;
     union {
         struct {
-            uint32_t clkm_div_num: 8;                         /*Integral I2S clock divider value*/
-            uint32_t clkm_div_b:   6;                         /*Fractional clock divider numerator value*/
-            uint32_t clkm_div_a:   6;                         /*Fractional clock divider denominator value*/
-            uint32_t clk_en:       1;
-            uint32_t clk_sel:      2;                         /*Set this bit to enable clk_apll*/
-            uint32_t reserved23:   9;
+            uint32_t clkm_div_num                  :    8;  /*Integral I2S clock divider value*/
+            uint32_t clkm_div_b                    :    6;  /*Fractional clock divider numerator value*/
+            uint32_t clkm_div_a                    :    6;  /*Fractional clock divider denominator value*/
+            uint32_t clk_en                        :    1;
+            uint32_t clk_sel                       :    2;  /*Set this bit to enable clk_apll*/
+            uint32_t reserved23                    :    9;
         };
         uint32_t val;
     } apb_adc_clkm_conf;
+    uint32_t reserved_74;
     union {
         struct {
-            uint32_t dac_timer_target:  12;                   /*dac_timer target*/
-            uint32_t dac_timer_en:       1;                   /*enable read dac data*/
-            uint32_t apb_dac_alter_mode: 1;                   /*enable dac alter mode*/
-            uint32_t apb_dac_trans:      1;                   /*enable dma_dac*/
-            uint32_t dac_reset_fifo:     1;
-            uint32_t apb_dac_rst:        1;
-            uint32_t dac_clk_fo:         1;
-            uint32_t dac_clk_gate_en:    1;
-            uint32_t reserved19:        13;
-        };
-        uint32_t val;
-    } apb_dac_ctrl;
-    union {
-        struct {
-            uint32_t adc2_data: 17;
-            uint32_t reserved17: 15;
+            uint32_t adc2_data                     :    17;
+            uint32_t reserved17                    :    15;
         };
         uint32_t val;
     } apb_saradc2_data_status;
-    union {
-        struct {
-            uint32_t dac_clk_div: 8;
-            uint32_t reserved8:  24;
-        };
-        uint32_t val;
-    } apb_dac_clk_ctrl;
+    uint32_t reserved_7c;
     uint32_t reserved_80;
     uint32_t reserved_84;
     uint32_t reserved_88;
@@ -511,11 +452,13 @@ typedef volatile struct {
     uint32_t reserved_3f0;
     uint32_t reserved_3f4;
     uint32_t reserved_3f8;
-    uint32_t apb_ctrl_date;                                   /**/
+    uint32_t apb_ctrl_date;
 } apb_saradc_dev_t;
-
 extern apb_saradc_dev_t APB_SARADC;
-
 #ifdef __cplusplus
 }
 #endif
+
+
+
+#endif /*_SOC_APB_SARADC_STRUCT_H_ */

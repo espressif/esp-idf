@@ -1,9 +1,6 @@
-| Supported Targets | ESP32 |
-| ----------------- | ----- |
-
 # Flash Encryption
 
-The example checks if the flash encryption feature is enabled/disabled and if enabled prints the flash encryption mode (DEVELOPMENT / RELEASE) and FLASH_CRYPT_CNT eFuse value.
+The example checks if the flash encryption feature is enabled/disabled and if enabled prints the flash encryption mode (DEVELOPMENT / RELEASE) and FLASH_CRYPT_CNT (for ESP32) or SPI_BOOT_CRYPT_CNT (for ESP32-S2 and newer targets) eFuse value.
 
 The example also demonstrates writing and reading encrypted partitions in flash.
 
@@ -51,7 +48,7 @@ The configuration for NVS encryption involves generating the XTS encryption keys
 
 ### Build and Flash
 
-When building the project and flashing it to the board FOR THE FIRST TIME after enabling flash encryption feature in menuconfig, run following command to program ESP32 and monitor the output:
+When building the project and flashing it to the board FOR THE FIRST TIME after enabling flash encryption feature in menuconfig, run following command to program the target and monitor the output:
 
 ```
 idf.py -p PORT flash monitor
@@ -75,7 +72,7 @@ idf.py -p PORT encrypted-flash monitor
 
 ## Example Output
 
-When running the example without enabling flash encryption, the output would be as follows:
+When running the example without enabling flash encryption, the output would be as follows (on ESP32):
 
 ```
 Example to check Flash Encryption status
@@ -145,4 +142,4 @@ It is also possible to use esptool.py utility to read the eFuse values and check
 python $IDF_PATH/components/esptool_py/esptool/espefuse.py --port PORT summary
 ```
 
-If FLASH_CRYPT_CNT eFuse value is non-zero flash encryption is enabled
+If FLASH_CRYPT_CNT (for ESP32) or SPI_BOOT_CRYPT_CNT (for ESP32-S2 and newer targets) eFuse value is non-zero flash encryption is enabled

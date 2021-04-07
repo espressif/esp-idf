@@ -31,7 +31,6 @@ try:
 except ImportError:
     COMPONENTS_PATH = os.path.expandvars(os.path.join('$IDF_PATH', 'components'))
     PARTTOOL_DIR = os.path.join(COMPONENTS_PATH, 'partition_table')
-
     sys.path.append(PARTTOOL_DIR)
     from parttool import PARTITION_TABLE_OFFSET, PartitionName, PartitionType, ParttoolTarget
 
@@ -102,7 +101,6 @@ class OtatoolTarget():
     def switch_ota_partition(self, ota_id):
         self._check_otadata_partition()
 
-        sys.path.append(PARTTOOL_DIR)
         import gen_esp32part as gen
 
         def is_otadata_info_valid(status):

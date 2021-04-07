@@ -89,7 +89,9 @@ menu "ESP System Settings"
         default y
         help
             If enabled, chip will try to power down flash at light sleep, which costs more time when chip wakes up.
-            Only can be enabled if there is no SPIRAM configured.
+            Can only be enabled if there is no SPIRAM configured. This option will in fact consider VDD_SDIO auto power
+            value (ESP_PD_OPTION_AUTO) as OFF. Also, it is possible to force a power domain to stay ON during light
+            sleep by using esp_sleep_pd_config() function.
 
     config ESP_SYSTEM_PM_POWER_DOWN_CPU
         bool "Power down CPU in light sleep"
@@ -143,6 +145,29 @@ menu "ESP System Settings"
             which calls app_main(). If app_main() returns then this task is deleted
             and its stack memory is freed.
 
+    choice ESP_MAIN_TASK_AFFINITY
+        prompt "Main task core affinity"
+        default ESP_MAIN_TASK_AFFINITY_CPU0
+        help
+            Configure the "main task" core affinity. This is the used core of the task
+            which calls app_main(). If app_main() returns then this task is deleted.
+
+        config ESP_MAIN_TASK_AFFINITY_CPU0
+            bool "CPU0"
+        config ESP_MAIN_TASK_AFFINITY_CPU1
+            bool "CPU1"
+            depends on !FREERTOS_UNICORE
+        config ESP_MAIN_TASK_AFFINITY_NO_AFFINITY
+            bool "No affinity"
+
+    endchoice
+
+    config ESP_MAIN_TASK_AFFINITY
+        hex
+        default 0x0 if ESP_MAIN_TASK_AFFINITY_CPU0
+        default 0x1 if ESP_MAIN_TASK_AFFINITY_CPU1
+        default FREERTOS_NO_AFFINITY if ESP_MAIN_TASK_AFFINITY_NO_AFFINITY
+
     config ESP_MINIMAL_SHARED_STACK_SIZE
         int "Minimal allowed size for shared stack"
         default 2048
@@ -171,7 +196,7 @@ menu "ESP System Settings"
             bool "USB CDC"
             # The naming is confusing: USB_ENABLED means that TinyUSB driver is enabled, not USB in general.
             # && !USB_ENABLED is because the ROM CDC driver is currently incompatible with TinyUSB.
-            depends on IDF_TARGET_ESP32S2 && !USB_ENABLED
+            depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3)  && !USB_ENABLED
         config ESP_CONSOLE_UART_CUSTOM
             bool "Custom UART"
         config ESP_CONSOLE_NONE

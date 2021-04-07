@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-C3 |
+| ----------------- | ----- | -------- | -------- |
+
 # ESP-OPENSSL connect test project
 
 Main purpose of this application is to test the ESP-OPENSSL library to correctly connect/refuse connectio with TLS servers.

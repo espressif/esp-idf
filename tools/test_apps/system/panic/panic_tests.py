@@ -19,6 +19,7 @@ def test_common(dut, test_name, expected_backtrace=None):
         expected_backtrace = get_default_backtrace(dut.test_name)
 
     if 'gdbstub' in test_name:
+        dut.expect('Entering gdb stub now.')
         dut.start_gdb()
         frames = dut.gdb_backtrace()
         if not dut.match_backtrace(frames, expected_backtrace):

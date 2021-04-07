@@ -76,7 +76,8 @@ idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS ${includes}
                     PRIV_INCLUDE_DIRS "include/driver"
                     PRIV_REQUIRES efuse esp_timer esp_ipc
-                    REQUIRES esp_pm esp_ringbuf freertos soc hal esp_hw_support)
+                    REQUIRES esp_pm esp_ringbuf freertos soc hal esp_hw_support
+                    LDFRAGMENTS linker.lf)
 # (REQUIRES cannot hide soc headers, since many arguments in the driver headers are chip-dependent)
 
 # uses C11 atomic feature

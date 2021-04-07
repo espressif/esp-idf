@@ -419,6 +419,19 @@ endmenu\n" >> ${IDF_PATH}/Kconfig;
     git checkout -- sdkconfig.rename Kconfig
     popd
 
+    print_status "Project components prioritized over EXTRA_COMPONENT_DIRS"
+    clean_build_dir
+    mkdir -p extra_dir/my_component
+    echo "COMPONENT_CONFIG_ONLY := 1" > extra_dir/my_component/component.mk
+    cp Makefile Makefile.bak # set EXTRA_COMPONENT_DIRS to point to the other directory
+    sed -i "s%PROJECT_NAME := app-template%PROJECT_NAME := app-template\nEXTRA_COMPONENT_DIRS := extra_dir%" Makefile
+    (make list-components | grep "$PWD/extra_dir/my_component") || failure  "Unable to find component specified in EXTRA_COMPONENT_DIRS"
+    mkdir -p components/my_component
+    echo "COMPONENT_CONFIG_ONLY := 1" > components/my_component/component.mk
+    (make list-components | grep "$PWD/components/my_component") || failure  "Project components should be prioritized over EXTRA_COMPONENT_DIRS"
+    mv Makefile.bak Makefile # revert previous modifications
+    rm -rf extra_dir components
+
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
         echo "Some failures were detected:"

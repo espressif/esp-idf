@@ -1,4 +1,4 @@
-idf_component_register(PRIV_REQUIRES partition_table)
+idf_component_register(PRIV_REQUIRES partition_table esptool_py)
 
 # Do not generate flash file when building bootloader or is in early expansion of the build
 if(BOOTLOADER_BUILD OR NOT CONFIG_APP_BUILD_BOOTLOADER)

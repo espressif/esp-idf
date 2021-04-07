@@ -8,6 +8,7 @@ Application Protocols
     ASIO <asio>
     ESP-MQTT <mqtt>
     ESP-TLS <esp_tls>
+    OpenSSL APIs <openssl_apis>
     HTTP Client <esp_http_client>
     HTTP Server <esp_http_server>
     HTTPS Server <esp_https_server>

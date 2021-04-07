@@ -227,8 +227,14 @@ uint32_t esp_core_dump_get_isr_stack_end(void)
  */
 static inline bool esp_core_dump_task_stack_end_is_sane(uint32_t sp)
 {
-    //TODO: currently core dump supports stacks in DRAM only, external SRAM not supported yet
-    return esp_ptr_in_dram((void *)sp);
+    return esp_ptr_in_dram((void *)sp)
+#if CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+        || esp_stack_ptr_in_extram(sp)
+#endif
+#if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
+        || esp_ptr_in_rtc_dram_fast((void*) sp)
+#endif
+    ;
 }
 
 bool esp_core_dump_check_stack(core_dump_task_header_t *task)
@@ -329,7 +335,7 @@ uint32_t esp_core_dump_get_task_regs_dump(core_dump_task_header_t *task, void **
 
     ESP_COREDUMP_LOG_PROCESS("Add regs for task 0x%x", task->tcb_addr);
 
-    stack_len = esp_core_dump_get_stack(task, &stack_paddr, &stack_vaddr);
+    stack_len = esp_core_dump_get_stack(task, &stack_vaddr, &stack_paddr);
 
     if (stack_len < sizeof(RvExcFrame)) {
         ESP_COREDUMP_LOGE("Too small stack to keep frame: %d bytes!", stack_len);

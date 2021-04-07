@@ -14,4 +14,11 @@ menu "ESP HTTP client"
             This option will enable HTTP Basic Authentication. It is disabled by default as Basic
             auth uses unencrypted encoding, so it introduces a vulnerability when not using TLS
 
+    config ESP_HTTP_CLIENT_ENABLE_DIGEST_AUTH
+        bool "Enable HTTP Digest Authentication"
+        default y
+        help
+            This option will enable HTTP Digest Authentication. It is enabled by default, but use of this
+            configuration is not recommended as the password can be derived from the exchange, so it introduces
+            a vulnerability when not using TLS
 endmenu

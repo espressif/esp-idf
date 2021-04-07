@@ -95,6 +95,8 @@ typedef struct {
 #define I2C_LL_CLK_SRC_FREQ(src_clk)  (((src_clk) == I2C_SCLK_RTC) ? 20*1000*1000 : 40*1000*1000); // Another clock is XTAL clock
 // delay time after rtc_clk swiching on
 #define DELAY_RTC_CLK_SWITCH          (5)
+// I2C max timeout value
+#define I2C_LL_MAX_TIMEOUT I2C_TIME_OUT_REG_V
 
 /**
  * @brief  Calculate I2C bus frequency

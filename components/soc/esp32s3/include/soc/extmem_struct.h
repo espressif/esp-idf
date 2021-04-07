@@ -22,28 +22,28 @@ extern "C" {
 typedef volatile struct {
     union {
         struct {
-            uint32_t dcache_enable:         1;                  /*The bit is used to activate the data cache. 0: disable  1: enable*/
-            uint32_t reserved1:             1;                  /*Reserved*/
-            uint32_t dcache_size_mode:      1;                  /*The bit is used to configure cache memory size.0: 32KB  1: 64KB*/
-            uint32_t dcache_blocksize_mode: 1;                  /*The bit is used to configure cache block size.0: 16 bytes  1: 32 bytes*/
-            uint32_t reserved4:            28;
+            uint32_t dcache_enable                 :    1;  /*The bit is used to activate the data cache. 0: disable, 1: enable*/
+            uint32_t reserved1                     :    1;  /*Reserved*/
+            uint32_t dcache_size_mode              :    1;  /*The bit is used to configure cache memory size.0: 32KB, 1: 64KB*/
+            uint32_t dcache_blocksize_mode         :    2;  /*The bit is used to configure cache block size.0: 16 bytes, 1: 32 bytes,2: 64 bytes*/
+            uint32_t reserved5                     :    27;
         };
         uint32_t val;
     } dcache_ctrl;
     union {
         struct {
-            uint32_t dcache_shut_core0_bus: 1;                  /*The bit is used to disable core0 dbus  0: enable  1: disable*/
-            uint32_t dcache_shut_core1_bus: 1;                  /*The bit is used to disable core1 dbus  0: enable  1: disable*/
-            uint32_t reserved2:            30;
+            uint32_t dcache_shut_core0_bus         :    1;  /*The bit is used to disable core0 dbus, 0: enable, 1: disable*/
+            uint32_t dcache_shut_core1_bus         :    1;  /*The bit is used to disable core1 dbus, 0: enable, 1: disable*/
+            uint32_t reserved2                     :    30;
         };
         uint32_t val;
     } dcache_ctrl1;
     union {
         struct {
-            uint32_t dcache_tag_mem_force_on: 1;                /*The bit is used to close clock gating of dcache tag memory. 1: close gating  0: open clock gating.*/
-            uint32_t dcache_tag_mem_force_pd: 1;                /*The bit is used to power dcache tag memory down  0: follow  rtc_lslp_pd  1: power down*/
-            uint32_t dcache_tag_mem_force_pu: 1;                /*The bit is used to power dcache tag memory up  0: follow  rtc_lslp_pd  1: power up*/
-            uint32_t reserved3:              29;
+            uint32_t dcache_tag_mem_force_on       :    1;  /*The bit is used to close clock gating of dcache tag memory. 1: close gating, 0: open clock gating.*/
+            uint32_t dcache_tag_mem_force_pd       :    1;  /*The bit is used to power dcache tag memory down, 0: follow  rtc_lslp_pd, 1: power down*/
+            uint32_t dcache_tag_mem_force_pu       :    1;  /*The bit is used to power dcache tag memory up, 0: follow  rtc_lslp_pd, 1: power up*/
+            uint32_t reserved3                     :    29;
         };
         uint32_t val;
     } dcache_tag_power_ctrl;
@@ -59,8 +59,8 @@ typedef volatile struct {
     uint32_t dcache_prelock_sct1_addr;                          /*The bits are used to configure the second start virtual address of data prelock  which is combined with DCACHE_PRELOCK_SCT1_SIZE_REG*/
     union {
         struct {
-            uint32_t dcache_prelock_sct1_size: 16;              /*The bits are used to configure the second length of data locking  which is combined with DCACHE_PRELOCK_SCT1_ADDR_REG*/
-            uint32_t dcache_prelock_sct0_size: 16;              /*The bits are used to configure the first length of data locking  which is combined with DCACHE_PRELOCK_SCT0_ADDR_REG*/
+            uint32_t dcache_prelock_sct1_size:16;               /*The bits are used to configure the second length of data locking  which is combined with DCACHE_PRELOCK_SCT1_ADDR_REG*/
+            uint32_t dcache_prelock_sct0_size:16;               /*The bits are used to configure the first length of data locking  which is combined with DCACHE_PRELOCK_SCT0_ADDR_REG*/
         };
         uint32_t val;
     } dcache_prelock_sct_size;
@@ -76,7 +76,7 @@ typedef volatile struct {
     uint32_t dcache_lock_addr;                                  /*The bits are used to configure the start virtual address for lock operations. It should be combined with DCACHE_LOCK_SIZE_REG.*/
     union {
         struct {
-            uint32_t dcache_lock_size: 16;                      /*The bits are used to configure the length for lock operations. The bits are the counts of cache block. It should be combined with DCACHE_LOCK_ADDR_REG.*/
+            uint32_t dcache_lock_size:16;                       /*The bits are used to configure the length for lock operations. The bits are the counts of cache block. It should be combined with DCACHE_LOCK_ADDR_REG.*/
             uint32_t reserved16:      16;
         };
         uint32_t val;
@@ -94,7 +94,7 @@ typedef volatile struct {
     uint32_t dcache_sync_addr;                                  /*The bits are used to configure the start virtual address for clean operations. It should be combined with DCACHE_SYNC_SIZE_REG.*/
     union {
         struct {
-            uint32_t dcache_sync_size: 23;                      /*The bits are used to configure the length for sync operations. The bits are the counts of cache block. It should be combined with DCACHE_SYNC_ADDR_REG.*/
+            uint32_t dcache_sync_size:23;                       /*The bits are used to configure the length for sync operations. The bits are the counts of cache block. It should be combined with DCACHE_SYNC_ADDR_REG.*/
             uint32_t reserved23:       9;
         };
         uint32_t val;
@@ -110,7 +110,7 @@ typedef volatile struct {
     uint32_t dcache_occupy_addr;                                /*The bits are used to configure the start virtual address for occupy operation. It should be combined with DCACHE_OCCUPY_SIZE_REG.*/
     union {
         struct {
-            uint32_t dcache_occupy_size: 16;                    /*The bits are used to configure the length for occupy operation. The bits are the counts of cache block. It should be combined with DCACHE_OCCUPY_ADDR_REG.*/
+            uint32_t dcache_occupy_size:16;                     /*The bits are used to configure the length for occupy operation. The bits are the counts of cache block. It should be combined with DCACHE_OCCUPY_ADDR_REG.*/
             uint32_t reserved16:        16;
         };
         uint32_t val;
@@ -127,28 +127,29 @@ typedef volatile struct {
     uint32_t dcache_preload_addr;                               /*The bits are used to configure the start virtual address for preload operation. It should be combined with DCACHE_PRELOAD_SIZE_REG.*/
     union {
         struct {
-            uint32_t dcache_preload_size: 16;                   /*The bits are used to configure the length for preload operation. The bits are the counts of cache block. It should be combined with DCACHE_PRELOAD_ADDR_REG..*/
+            uint32_t dcache_preload_size:16;                    /*The bits are used to configure the length for preload operation. The bits are the counts of cache block. It should be combined with DCACHE_PRELOAD_ADDR_REG..*/
             uint32_t reserved16:         16;
         };
         uint32_t val;
     } dcache_preload_size;
     union {
         struct {
-            uint32_t dcache_autoload_sct0_ena: 1;               /*The bits are used to enable the first section for autoload operation.*/
-            uint32_t dcache_autoload_sct1_ena: 1;               /*The bits are used to enable the second section for autoload operation.*/
-            uint32_t dcache_autoload_ena:      1;               /*The bit is used to enable and disable autoload operation. It is combined with dcache_autoload_done. 1: enable  0: disable.*/
-            uint32_t dcache_autoload_done:     1;               /*The bit is used to indicate autoload operation is finished.*/
-            uint32_t dcache_autoload_order:    1;               /*The bits are used to configure the direction of autoload. 1: descending  0: ascending.*/
-            uint32_t dcache_autoload_rqst:     2;               /*The bits are used to configure trigger conditions for autoload. 0/3: cache miss  1: cache hit  2: both cache miss and hit.*/
-            uint32_t dcache_autoload_size:     2;               /*The bits are used to configure the numbers of the cache block for the issuing autoload operation.*/
-            uint32_t reserved9:               23;
+            uint32_t dcache_autoload_sct0_ena:     1;           /*The bits are used to enable the first section for autoload operation.*/
+            uint32_t dcache_autoload_sct1_ena:     1;           /*The bits are used to enable the second section for autoload operation.*/
+            uint32_t dcache_autoload_ena:          1;           /*The bit is used to enable and disable autoload operation. It is combined with dcache_autoload_done. 1: enable  0: disable.*/
+            uint32_t dcache_autoload_done:         1;           /*The bit is used to indicate autoload operation is finished.*/
+            uint32_t dcache_autoload_order:        1;           /*The bits are used to configure the direction of autoload. 1: descending  0: ascending.*/
+            uint32_t dcache_autoload_rqst:         2;           /*The bits are used to configure trigger conditions for autoload. 0/3: cache miss  1: cache hit  2: both cache miss and hit.*/
+            uint32_t dcache_autoload_size:         2;           /*The bits are used to configure the numbers of the cache block for the issuing autoload operation.*/
+            uint32_t dcache_autoload_buffer_clear: 1;           /*The bit is used to clear autoload buffer in dcache.*/
+            uint32_t reserved10:                  22;
         };
         uint32_t val;
     } dcache_autoload_ctrl;
     uint32_t dcache_autoload_sct0_addr;                         /*The bits are used to configure the start virtual address of the first section for autoload operation. It should be combined with dcache_autoload_sct0_ena.*/
     union {
         struct {
-            uint32_t dcache_autoload_sct0_size: 27;             /*The bits are used to configure the length of the first section for autoload operation. It should be combined with dcache_autoload_sct0_ena.*/
+            uint32_t dcache_autoload_sct0_size:27;              /*The bits are used to configure the length of the first section for autoload operation. It should be combined with dcache_autoload_sct0_ena.*/
             uint32_t reserved27:                5;
         };
         uint32_t val;
@@ -156,7 +157,7 @@ typedef volatile struct {
     uint32_t dcache_autoload_sct1_addr;                         /*The bits are used to configure the start virtual address of the second section for autoload operation. It should be combined with dcache_autoload_sct1_ena.*/
     union {
         struct {
-            uint32_t dcache_autoload_sct1_size: 27;             /*The bits are used to configure the length of the second section for autoload operation. It should be combined with dcache_autoload_sct1_ena.*/
+            uint32_t dcache_autoload_sct1_size:27;              /*The bits are used to configure the length of the second section for autoload operation. It should be combined with dcache_autoload_sct1_ena.*/
             uint32_t reserved27:                5;
         };
         uint32_t val;
@@ -200,8 +201,8 @@ typedef volatile struct {
     uint32_t icache_prelock_sct1_addr;                          /*The bits are used to configure the second start virtual address of data prelock  which is combined with ICACHE_PRELOCK_SCT1_SIZE_REG*/
     union {
         struct {
-            uint32_t icache_prelock_sct1_size: 16;              /*The bits are used to configure the second length of data locking  which is combined with ICACHE_PRELOCK_SCT1_ADDR_REG*/
-            uint32_t icache_prelock_sct0_size: 16;              /*The bits are used to configure the first length of data locking  which is combined with ICACHE_PRELOCK_SCT0_ADDR_REG*/
+            uint32_t icache_prelock_sct1_size:16;               /*The bits are used to configure the second length of data locking  which is combined with ICACHE_PRELOCK_SCT1_ADDR_REG*/
+            uint32_t icache_prelock_sct0_size:16;               /*The bits are used to configure the first length of data locking  which is combined with ICACHE_PRELOCK_SCT0_ADDR_REG*/
         };
         uint32_t val;
     } icache_prelock_sct_size;
@@ -217,7 +218,7 @@ typedef volatile struct {
     uint32_t icache_lock_addr;                                  /*The bits are used to configure the start virtual address for lock operations. It should be combined with ICACHE_LOCK_SIZE_REG.*/
     union {
         struct {
-            uint32_t icache_lock_size: 16;                      /*The bits are used to configure the length for lock operations. The bits are the counts of cache block. It should be combined with ICACHE_LOCK_ADDR_REG.*/
+            uint32_t icache_lock_size:16;                       /*The bits are used to configure the length for lock operations. The bits are the counts of cache block. It should be combined with ICACHE_LOCK_ADDR_REG.*/
             uint32_t reserved16:      16;
         };
         uint32_t val;
@@ -233,7 +234,7 @@ typedef volatile struct {
     uint32_t icache_sync_addr;                                  /*The bits are used to configure the start virtual address for clean operations. It should be combined with ICACHE_SYNC_SIZE_REG.*/
     union {
         struct {
-            uint32_t icache_sync_size: 23;                      /*The bits are used to configure the length for sync operations. The bits are the counts of cache block. It should be combined with ICACHE_SYNC_ADDR_REG.*/
+            uint32_t icache_sync_size:23;                       /*The bits are used to configure the length for sync operations. The bits are the counts of cache block. It should be combined with ICACHE_SYNC_ADDR_REG.*/
             uint32_t reserved23:       9;
         };
         uint32_t val;
@@ -250,36 +251,37 @@ typedef volatile struct {
     uint32_t icache_preload_addr;                               /*The bits are used to configure the start virtual address for preload operation. It should be combined with ICACHE_PRELOAD_SIZE_REG.*/
     union {
         struct {
-            uint32_t icache_preload_size: 16;                   /*The bits are used to configure the length for preload operation. The bits are the counts of cache block. It should be combined with ICACHE_PRELOAD_ADDR_REG..*/
+            uint32_t icache_preload_size:16;                    /*The bits are used to configure the length for preload operation. The bits are the counts of cache block. It should be combined with ICACHE_PRELOAD_ADDR_REG..*/
             uint32_t reserved16:         16;
         };
         uint32_t val;
     } icache_preload_size;
     union {
         struct {
-            uint32_t icache_autoload_sct0_ena: 1;               /*The bits are used to enable the first section for autoload operation.*/
-            uint32_t icache_autoload_sct1_ena: 1;               /*The bits are used to enable the second section for autoload operation.*/
-            uint32_t icache_autoload_ena:      1;               /*The bit is used to enable and disable autoload operation. It is combined with dcache_autoload_done. 1: enable  0: disable.*/
-            uint32_t icache_autoload_done:     1;               /*The bit is used to indicate autoload operation is finished.*/
-            uint32_t icache_autoload_order:    1;               /*The bits are used to configure the direction of autoload. 1: descending  0: ascending.*/
-            uint32_t icache_autoload_rqst:     2;               /*The bits are used to configure trigger conditions for autoload. 0/3: cache miss  1: cache hit  2: both cache miss and hit.*/
-            uint32_t icache_autoload_size:     2;               /*The bits are used to configure the numbers of the cache block for the issuing autoload operation.*/
-            uint32_t reserved9:               23;
+            uint32_t icache_autoload_sct0_ena:     1;           /*The bits are used to enable the first section for autoload operation.*/
+            uint32_t icache_autoload_sct1_ena:     1;           /*The bits are used to enable the second section for autoload operation.*/
+            uint32_t icache_autoload_ena:          1;           /*The bit is used to enable and disable autoload operation. It is combined with icache_autoload_done. 1: enable  0: disable.*/
+            uint32_t icache_autoload_done:         1;           /*The bit is used to indicate autoload operation is finished.*/
+            uint32_t icache_autoload_order:        1;           /*The bits are used to configure the direction of autoload. 1: descending  0: ascending.*/
+            uint32_t icache_autoload_rqst:         2;           /*The bits are used to configure trigger conditions for autoload. 0/3: cache miss  1: cache hit  2: both cache miss and hit.*/
+            uint32_t icache_autoload_size:         2;           /*The bits are used to configure the numbers of the cache block for the issuing autoload operation.*/
+            uint32_t icache_autoload_buffer_clear: 1;           /*The bit is used to clear autoload buffer in icache.*/
+            uint32_t reserved10:                  22;
         };
         uint32_t val;
     } icache_autoload_ctrl;
-    uint32_t icache_autoload_sct0_addr;                         /*The bits are used to configure the start virtual address of the first section for autoload operation. It should be combined with dcache_autoload_sct0_ena.*/
+    uint32_t icache_autoload_sct0_addr;                         /*The bits are used to configure the start virtual address of the first section for autoload operation. It should be combined with icache_autoload_sct0_ena.*/
     union {
         struct {
-            uint32_t icache_autoload_sct0_size: 27;             /*The bits are used to configure the length of the first section for autoload operation. It should be combined with dcache_autoload_sct0_ena.*/
+            uint32_t icache_autoload_sct0_size:27;              /*The bits are used to configure the length of the first section for autoload operation. It should be combined with icache_autoload_sct0_ena.*/
             uint32_t reserved27:                5;
         };
         uint32_t val;
     } icache_autoload_sct0_size;
-    uint32_t icache_autoload_sct1_addr;                         /*The bits are used to configure the start virtual address of the second section for autoload operation. It should be combined with dcache_autoload_sct1_ena.*/
+    uint32_t icache_autoload_sct1_addr;                         /*The bits are used to configure the start virtual address of the second section for autoload operation. It should be combined with icache_autoload_sct1_ena.*/
     union {
         struct {
-            uint32_t icache_autoload_sct1_size: 27;             /*The bits are used to configure the length of the second section for autoload operation. It should be combined with dcache_autoload_sct1_ena.*/
+            uint32_t icache_autoload_sct1_size:27;              /*The bits are used to configure the length of the second section for autoload operation. It should be combined with icache_autoload_sct1_ena.*/
             uint32_t reserved27:                5;
         };
         uint32_t val;
@@ -457,7 +459,7 @@ typedef volatile struct {
     uint32_t core1_ibus_reject_vaddr;                           /*The bits are used to indicate the virtual address of CPU access  ibus when authentication fail.*/
     union {
         struct {
-            uint32_t cache_mmu_fault_content: 16;               /*The bits are used to indicate the content of mmu entry which cause mmu fault..*/
+            uint32_t cache_mmu_fault_content:16;                /*The bits are used to indicate the content of mmu entry which cause mmu fault..*/
             uint32_t cache_mmu_fault_code:    4;                /*The right-most 3 bits are used to indicate the operations which cause mmu fault occurrence. 0: default  1: cpu miss  2: preload miss  3: writeback  4: cpu miss evict recovery address  5: load miss evict recovery address  6: external dma tx  7: external dma rx. The most significant bit is used to indicate this operation occurs in which one icache.*/
             uint32_t reserved20:             12;
         };
@@ -483,8 +485,8 @@ typedef volatile struct {
     } cache_mmu_power_ctrl;
     union {
         struct {
-            uint32_t icache_state: 12;                          /*The bit is used to indicate whether  icache main fsm is in idle state or not. 1: in idle state   0: not in idle state*/
-            uint32_t dcache_state: 12;                          /*The bit is used to indicate whether dcache main fsm is in idle state or not. 1: in idle state   0: not in idle state*/
+            uint32_t icache_state:12;                           /*The bit is used to indicate whether  icache main fsm is in idle state or not. 1: in idle state   0: not in idle state*/
+            uint32_t dcache_state:12;                           /*The bit is used to indicate whether dcache main fsm is in idle state or not. 1: in idle state   0: not in idle state*/
             uint32_t reserved24:   8;
         };
         uint32_t val;
@@ -515,32 +517,32 @@ typedef volatile struct {
     } cache_bridge_arbiter_ctrl;
     union {
         struct {
-            uint32_t icache_preload:         1;                 /*The bit is used to indicate the interrupt by  icache pre-load done.*/
-            uint32_t icache_preload:         1;                 /*The bit is used to enable the interrupt by  icache pre-load done.*/
-            uint32_t icache_preload:         1;                 /*The bit is used to clear the interrupt by  icache pre-load done.*/
-            uint32_t dcache_preload:         1;                 /*The bit is used to indicate the interrupt by dcache pre-load done.*/
-            uint32_t dcache_preload:         1;                 /*The bit is used to enable the interrupt by dcache pre-load done.*/
-            uint32_t dcache_preload:         1;                 /*The bit is used to clear the interrupt by dcache pre-load done.*/
-            uint32_t reserved6:             26;
+            uint32_t icache_preload_ist            :    1;  /*The bit is used to indicate the interrupt by  icache pre-load done.*/
+            uint32_t icache_preload_iena           :    1;  /*The bit is used to enable the interrupt by  icache pre-load done.*/
+            uint32_t icache_preload_iclr           :    1;  /*The bit is used to clear the interrupt by  icache pre-load done.*/
+            uint32_t dcache_preload_ist            :    1;  /*The bit is used to indicate the interrupt by dcache pre-load done.*/
+            uint32_t dcache_preload_iena           :    1;  /*The bit is used to enable the interrupt by dcache pre-load done.*/
+            uint32_t dcache_preload_iclr           :    1;  /*The bit is used to clear the interrupt by dcache pre-load done.*/
+            uint32_t reserved6                     :    26;
         };
         uint32_t val;
     } cache_preload_int_ctrl;
     union {
         struct {
-            uint32_t icache_sync:         1;                    /*The bit is used to indicate the interrupt by  icache sync done.*/
-            uint32_t icache_sync:         1;                    /*The bit is used to enable the interrupt by  icache sync done.*/
-            uint32_t icache_sync:         1;                    /*The bit is used to clear the interrupt by  icache sync done.*/
-            uint32_t dcache_sync:         1;                    /*The bit is used to indicate the interrupt by dcache sync done.*/
-            uint32_t dcache_sync:         1;                    /*The bit is used to enable the interrupt by dcache sync done.*/
-            uint32_t dcache_sync:         1;                    /*The bit is used to clear the interrupt by dcache sync done.*/
-            uint32_t reserved6:          26;
+            uint32_t icache_sync_ist               :    1;  /*The bit is used to indicate the interrupt by  icache sync done.*/
+            uint32_t icache_sync_iena              :    1;  /*The bit is used to enable the interrupt by  icache sync done.*/
+            uint32_t icache_sync_iclr              :    1;  /*The bit is used to clear the interrupt by  icache sync done.*/
+            uint32_t dcache_sync_ist               :    1;  /*The bit is used to indicate the interrupt by dcache sync done.*/
+            uint32_t dcache_sync_iena              :    1;  /*The bit is used to enable the interrupt by dcache sync done.*/
+            uint32_t dcache_sync_iclr              :    1;  /*The bit is used to clear the interrupt by dcache sync done.*/
+            uint32_t reserved6                     :    26;
         };
         uint32_t val;
     } cache_sync_int_ctrl;
     union {
         struct {
-            uint32_t cache_mmu_owner: 24;                       /*The bits are used to specify the owner of MMU.bit0: icache  bit1: dcache  bit2: dma  bit3: reserved.*/
-            uint32_t reserved24:      8;
+            uint32_t cache_mmu_owner               :    24;  /*The bits are used to specify the owner of MMU.bit0: icache, bit1: dcache, bit2: dma, bit3: reserved.*/
+            uint32_t reserved24                    :    8;
         };
         uint32_t val;
     } cache_mmu_owner;
@@ -605,10 +607,23 @@ typedef volatile struct {
     uint32_t reserved_174;
     uint32_t reserved_178;
     uint32_t reserved_17c;
-    uint32_t reserved_180;
-    uint32_t reserved_184;
-    uint32_t reserved_188;
-    uint32_t reserved_18c;
+    union {
+        struct {
+            uint32_t icache_tag_object: 1;                      /*Set this bit to set icache tag memory as object. This bit should be onehot with the others fields inside this register.*/
+            uint32_t dcache_tag_object: 1;                      /*Set this bit to set dcache tag memory as object. This bit should be onehot with the others fields inside this register.*/
+            uint32_t reserved2:        30;                      /*Reserved*/
+        };
+        uint32_t val;
+    } cache_tag_object_ctrl;
+    union {
+        struct {
+            uint32_t cache_tag_way_object: 3;                   /*Set this bits to select which way of the tag-object will be accessed. 0: way0  1: way1  2: way2  3: way3  ..  7: way7.*/
+            uint32_t reserved3:           29;                   /*Reserved*/
+        };
+        uint32_t val;
+    } cache_tag_way_object;
+    uint32_t cache_vaddr;                                       /*Those bits stores the virtual address which will decide where inside the specified tag memory object will be accessed.*/
+    uint32_t cache_tag_content;                                 /*This is a constant place where we can write data to or read data from the tag memory on the specified cache.*/
     uint32_t reserved_190;
     uint32_t reserved_194;
     uint32_t reserved_198;

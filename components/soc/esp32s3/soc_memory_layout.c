@@ -76,7 +76,6 @@ const soc_memory_region_t soc_memory_regions[] = {
 
 const size_t soc_memory_region_count = sizeof(soc_memory_regions) / sizeof(soc_memory_region_t);
 
-extern int _dram0_rtos_reserved_start;                       // defined in esp32s3.rom.ld
 extern int _data_start, _heap_start, _iram_start, _iram_end; // defined in esp32s3.project.ld.in
 
 /**
@@ -84,8 +83,6 @@ extern int _data_start, _heap_start, _iram_start, _iram_end; // defined in esp32
  * These are removed from the soc_memory_regions array when heaps are created.
  *
  */
-//ROM data region
-SOC_RESERVE_MEMORY_REGION((intptr_t)&_dram0_rtos_reserved_start, SOC_DIRAM_DRAM_HIGH, rom_data_region);
 
 // Static data region. DRAM used by data+bss and possibly rodata
 SOC_RESERVE_MEMORY_REGION((intptr_t)&_data_start, (intptr_t)&_heap_start, dram_data);

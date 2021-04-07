@@ -284,15 +284,9 @@ gatt_svr_dsc_access(uint16_t conn_handle, uint16_t attr_handle, struct
     }
 
     int rc;
-    char *temp_outbuf = strdup(ctxt->dsc->arg);
-    if (temp_outbuf == NULL) {
-        ESP_LOGE(TAG, "Error duplicating user description of characteristic");
-        return BLE_ATT_ERR_INSUFFICIENT_RES;
-    }
+    ssize_t temp_outlen = strlen(ctxt->dsc->arg);
 
-    ssize_t temp_outlen = strlen(temp_outbuf);
-    rc = os_mbuf_append(ctxt->om, temp_outbuf, temp_outlen);
-    free(temp_outbuf);
+    rc = os_mbuf_append(ctxt->om, ctxt->dsc->arg, temp_outlen);
     return rc;
 }
 
@@ -489,6 +483,16 @@ static int simple_ble_start(const simple_ble_cfg_t *cfg)
     ble_hs_cfg.reset_cb = simple_ble_on_reset;
     ble_hs_cfg.sync_cb = simple_ble_on_sync;
     ble_hs_cfg.gatts_register_cb = gatt_svr_register_cb;
+    ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
+
+    /* Initialize security manager configuration in NimBLE host  */
+    ble_hs_cfg.sm_io_cap = BLE_SM_IO_CAP_NO_IO; /* Just Works */
+    ble_hs_cfg.sm_bonding = 1; /* Enable bonding inline with bluedroid */
+    ble_hs_cfg.sm_mitm = 1;
+    ble_hs_cfg.sm_sc = 1; /* Enable secure connection by default */
+    /* Distribute LTK and IRK */
+    ble_hs_cfg.sm_our_key_dist = BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID;
+    ble_hs_cfg.sm_their_key_dist = BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID;
 
     rc = gatt_svr_init(cfg);
     if (rc != 0) {
@@ -620,7 +624,10 @@ ble_gatt_add_characteristics(struct ble_gatt_chr_def *characteristics, int idx)
     memcpy(temp_uuid128_name.value, ble_uuid_base, BLE_UUID128_VAL_LENGTH);
     memcpy(&temp_uuid128_name.value[12], &protoble_internal->g_nu_lookup[idx].uuid, 2);
 
-    (characteristics + idx)->flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE;
+    (characteristics + idx)->flags = BLE_GATT_CHR_F_READ |
+                                     BLE_GATT_CHR_F_WRITE |
+                                     BLE_GATT_CHR_F_READ_ENC |
+                                     BLE_GATT_CHR_F_WRITE_ENC;
     (characteristics + idx)->access_cb = gatt_svr_chr_access;
 
     /* Out of 128 bit UUID, 16 bits from g_nu_lookup table. Currently

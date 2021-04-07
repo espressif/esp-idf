@@ -18,6 +18,7 @@
    Suitable for use with spi_flash_hal_common_command static function.
 */
 #define CMD_RDID       0x9F
+#define CMD_RDUID      0x4B   /* Read the flash unique ID*/
 #define CMD_WRSR       0x01
 #define  SR_WIP         (1<<0) /* Status register write-in-progress bit */
 #define  SR_WREN        (1<<1) /* Status register write enable bit */

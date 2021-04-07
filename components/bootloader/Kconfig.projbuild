@@ -424,7 +424,7 @@ menu "Security features"
             1. ECDSA based secure boot scheme. (Only choice for Secure Boot V1)
             Supported in ESP32 and ESP32-ECO3.
             2. The RSA based secure boot scheme. (Only choice for Secure Boot V2)
-            Supported in ESP32-ECO3. (ESP32 Chip Revision 3 onwards)
+            Supported in ESP32-ECO3 (ESP32 Chip Revision 3 onwards), ESP32-S2, ESP32-C3, ESP32-S3.
 
         config SECURE_SIGNED_APPS_ECDSA_SCHEME
             bool "ECDSA"
@@ -436,7 +436,7 @@ menu "Security features"
 
         config SECURE_SIGNED_APPS_RSA_SCHEME
             bool "RSA"
-            depends on SECURE_BOOT_SUPPORTS_RSA && SECURE_BOOT_V2_ENABLED
+            depends on SECURE_BOOT_SUPPORTS_RSA && (SECURE_SIGNED_APPS_NO_SECURE_BOOT || SECURE_BOOT_V2_ENABLED)
             help
                 Appends the RSA-3072 based Signature block to the application.
                 Refer to <Secure Boot Version 2 documentation link> before enabling.
@@ -445,7 +445,7 @@ menu "Security features"
     config SECURE_SIGNED_ON_BOOT_NO_SECURE_BOOT
         bool "Bootloader verifies app signatures"
         default n
-        depends on SECURE_SIGNED_APPS_NO_SECURE_BOOT
+        depends on SECURE_SIGNED_APPS_NO_SECURE_BOOT && SECURE_SIGNED_APPS_ECDSA_SCHEME
         help
             If this option is set, the bootloader will be compiled with code to verify that an app is signed before
             booting it.
@@ -502,8 +502,6 @@ menu "Security features"
         config SECURE_BOOT_V2_ENABLED
             bool "Enable Secure Boot version 2"
             depends on SECURE_BOOT_SUPPORTS_RSA
-            select SECURE_ENABLE_SECURE_ROM_DL_MODE if !IDF_TARGET_ESP32 && !SECURE_INSECURE_ALLOW_DL_MODE && !SECURE_DISABLE_ROM_DL_MODE # NOERROR
-            select SECURE_DISABLE_ROM_DL_MODE if ESP32_REV_MIN_3 && !SECURE_INSECURE_ALLOW_DL_MODE
             help
                 Build a bootloader which enables Secure Boot version 2 on first boot.
                 Refer to Secure Boot V2 section of the ESP-IDF Programmer's Guide for this version before enabling.
@@ -672,8 +670,6 @@ menu "Security features"
 
         config SECURE_FLASH_ENCRYPTION_MODE_RELEASE
             bool "Release"
-            select SECURE_ENABLE_SECURE_ROM_DL_MODE if SECURE_TARGET_HAS_SECURE_ROM_DL_MODE && !SECURE_DISABLE_ROM_DL_MODE # NOERROR
-
     endchoice
 
     menu "Potentially insecure options"
@@ -748,19 +744,6 @@ menu "Security features"
                 Revoking unused digest slots makes ensures that no trusted keys can be added later by an attacker.
                 If set, it means that you have a plan to use unused digests slots later.
 
-        config SECURE_INSECURE_ALLOW_DL_MODE
-            bool "Don't automatically restrict UART download mode"
-            depends on SECURE_BOOT_INSECURE && SECURE_BOOT_V2_ENABLED
-            default N
-            help
-                By default, enabling either flash encryption in release mode or secure boot will automatically
-                disable UART download mode on ESP32 ECO3, or enable secure download mode on newer chips.
-                This is recommended to reduce the attack surface of the chip.
-
-                To allow the full UART download mode to stay enabled, enable this option and ensure
-                the options SECURE_DISABLE_ROM_DL_MODE and SECURE_ENABLE_SECURE_ROM_DL_MODE are disabled as applicable.
-                This is not recommended.
-
         config SECURE_FLASH_UART_BOOTLOADER_ALLOW_ENC
             bool "Leave UART bootloader encryption enabled"
             depends on SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
@@ -808,48 +791,6 @@ menu "Security features"
 
     endmenu  # Potentially Insecure
 
-    config SECURE_DISABLE_ROM_DL_MODE
-        bool "Permanently disable ROM Download Mode"
-        depends on !IDF_TARGET_ESP32 || ESP32_REV_MIN_3
-        default n
-        help
-            If set, during startup the app will burn an eFuse bit to permanently disable the UART ROM
-            Download Mode. This prevents any future use of esptool.py, espefuse.py and similar tools.
-
-            Once disabled, if the SoC is booted with strapping pins set for ROM Download Mode
-            then an error is printed instead.
-
-            It is recommended to enable this option in any production application where Flash
-            Encryption and/or Secure Boot is enabled and access to Download Mode is not required.
-
-            It is also possible to permanently disable Download Mode by calling
-            esp_efuse_disable_rom_download_mode() at runtime.
-
-    config SECURE_ENABLE_SECURE_ROM_DL_MODE
-        bool "Permanently switch to ROM UART Secure Download mode"
-        depends on SECURE_TARGET_HAS_SECURE_ROM_DL_MODE && !SECURE_DISABLE_ROM_DL_MODE
-        select ESPTOOLPY_NO_STUB
-        help
-            If set, during startup the app will burn an eFuse bit to permanently switch the UART ROM
-            Download Mode into a separate Secure Download mode. This option can only work if
-            Download Mode is not already disabled by eFuse.
-
-            Secure Download mode limits the use of Download Mode functions to simple flash read,
-            write and erase operations, plus a command to return a summary of currently enabled
-            security features.
-
-            Secure Download mode is not compatible with the esptool.py flasher stub feature,
-            espefuse.py, read/writing memory or registers, encrypted download, or any other
-            features that interact with unsupported Download Mode commands.
-
-            Secure Download mode should be enabled in any application where Flash Encryption
-            and/or Secure Boot is enabled. Disabling this option does not immediately cancel
-            the benefits of the security features, but it increases the potential "attack
-            surface" for an attacker to try and bypass them with a successful physical attack.
-
-            It is also possible to enable secure download mode at runtime by calling
-            esp_efuse_enable_rom_secure_download_mode()
-
     config SECURE_FLASH_CHECK_ENC_EN_IN_APP
         bool "Check Flash Encryption enabled on app startup"
         depends on SECURE_FLASH_ENC_ENABLED
@@ -862,4 +803,58 @@ menu "Security features"
 
             If not set, the app does not care if the flash encryption eFuse bit is set or not.
 
+    choice SECURE_UART_ROM_DL_MODE
+        bool "UART ROM download mode"
+        default SECURE_ENABLE_SECURE_ROM_DL_MODE if SECURE_TARGET_HAS_SECURE_ROM_DL_MODE && !SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT # NOERROR
+        default SECURE_INSECURE_ALLOW_DL_MODE
+        depends on SECURE_BOOT_V2_ENABLED || SECURE_FLASH_ENC_ENABLED
+        depends on !IDF_TARGET_ESP32 || ESP32_REV_MIN_3
+
+        config SECURE_DISABLE_ROM_DL_MODE
+            bool "UART ROM download mode (Permanently disabled (recommended))"
+            help
+                If set, during startup the app will burn an eFuse bit to permanently disable the UART ROM
+                Download Mode. This prevents any future use of esptool.py, espefuse.py and similar tools.
+
+                Once disabled, if the SoC is booted with strapping pins set for ROM Download Mode
+                then an error is printed instead.
+
+                It is recommended to enable this option in any production application where Flash
+                Encryption and/or Secure Boot is enabled and access to Download Mode is not required.
+
+                It is also possible to permanently disable Download Mode by calling
+                esp_efuse_disable_rom_download_mode() at runtime.
+
+        config SECURE_ENABLE_SECURE_ROM_DL_MODE
+            bool "UART ROM download mode (Permanently switch to Secure mode (recommended))"
+            depends on SECURE_TARGET_HAS_SECURE_ROM_DL_MODE
+            select ESPTOOLPY_NO_STUB
+            help
+                If set, during startup the app will burn an eFuse bit to permanently switch the UART ROM
+                Download Mode into a separate Secure Download mode. This option can only work if
+                Download Mode is not already disabled by eFuse.
+
+                Secure Download mode limits the use of Download Mode functions to simple flash read,
+                write and erase operations, plus a command to return a summary of currently enabled
+                security features.
+
+                Secure Download mode is not compatible with the esptool.py flasher stub feature,
+                espefuse.py, read/writing memory or registers, encrypted download, or any other
+                features that interact with unsupported Download Mode commands.
+
+                Secure Download mode should be enabled in any application where Flash Encryption
+                and/or Secure Boot is enabled. Disabling this option does not immediately cancel
+                the benefits of the security features, but it increases the potential "attack
+                surface" for an attacker to try and bypass them with a successful physical attack.
+
+                It is also possible to enable secure download mode at runtime by calling
+                esp_efuse_enable_rom_secure_download_mode()
+
+        config SECURE_INSECURE_ALLOW_DL_MODE
+            bool "UART ROM download mode (Enabled (not recommended))"
+            help
+                This is a potentially insecure option.
+                Enabling this option will allow the full UART download mode to stay enabled.
+                This option SHOULD NOT BE ENABLED for production use cases.
+    endchoice
 endmenu  # Security features

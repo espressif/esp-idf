@@ -206,7 +206,7 @@ typedef volatile struct {
     union {
         struct {
             uint32_t reserved0:          29;
-            uint32_t clk_is_active:       1;
+            uint32_t wdt_clk_is_active:   1;
             uint32_t timer_clk_is_active: 1;
             uint32_t en:                  1;
         };

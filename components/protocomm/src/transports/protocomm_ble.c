@@ -393,7 +393,8 @@ static ssize_t populate_gatt_db(esp_gatts_attr_db_t **gatt_db_generated)
             (*gatt_db_generated)[i].att_desc.value        = (uint8_t *) &character_prop_read_write;
         } else if (i % 3 == 2) {
             /* Characteristic Value */
-            (*gatt_db_generated)[i].att_desc.perm         = ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE;
+            (*gatt_db_generated)[i].att_desc.perm         = ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE | \
+							    ESP_GATT_PERM_READ_ENCRYPTED | ESP_GATT_PERM_WRITE_ENCRYPTED;
             (*gatt_db_generated)[i].att_desc.uuid_length  = ESP_UUID_LEN_128;
             (*gatt_db_generated)[i].att_desc.uuid_p       = protoble_internal->g_nu_lookup[i / 3].uuid128;
             (*gatt_db_generated)[i].att_desc.max_length   = CHAR_VAL_LEN_MAX;

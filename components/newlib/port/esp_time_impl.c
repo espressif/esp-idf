@@ -16,6 +16,7 @@
 #include <sys/time.h>
 #include <sys/lock.h>
 
+#include "esp_attr.h"
 #include "esp_system.h"
 
 #include "soc/rtc.h"
@@ -50,7 +51,7 @@
 // Offset between FRC timer and the RTC.
 // Initialized after reset or light sleep.
 #if defined(CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER) && defined(CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER)
-uint64_t s_microseconds_offset = 0;
+int64_t s_microseconds_offset = 0;
 #endif
 
 #ifndef CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER
@@ -60,7 +61,7 @@ static uint64_t s_boot_time; // when RTC is used to persist time, two RTC_STORE 
 static _lock_t s_boot_time_lock;
 
 static _lock_t s_esp_rtc_time_lock;
-static uint64_t s_esp_rtc_time_us, s_rtc_last_ticks;
+static RTC_DATA_ATTR uint64_t s_esp_rtc_time_us = 0, s_rtc_last_ticks = 0;
 
 #if defined( CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER ) || defined( CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER )
 uint64_t esp_time_impl_get_time_since_boot(void)

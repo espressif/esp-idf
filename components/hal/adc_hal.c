@@ -23,6 +23,12 @@
 #include "soc/gdma_channel.h"
 #include "soc/soc.h"
 #include "esp_rom_sys.h"
+
+typedef enum {
+    ADC_EVENT_ADC1_DONE = BIT(0),
+    ADC_EVENT_ADC2_DONE = BIT(1),
+} adc_hal_event_t;
+
 #endif
 
 void adc_hal_init(void)
@@ -36,22 +42,6 @@ void adc_hal_init(void)
     adc_ll_digi_output_invert(ADC_NUM_2, SOC_ADC_DIGI_DATA_INVERT_DEFAULT(ADC_NUM_2));
     adc_ll_digi_set_clk_div(SOC_ADC_DIGI_SAR_CLK_DIV_DEFAULT);
 }
-
-void adc_hal_deinit(void)
-{
-    adc_ll_set_power_manage(ADC_POWER_SW_OFF);
-}
-
-#ifndef CONFIG_IDF_TARGET_ESP32C3
-int adc_hal_convert(adc_ll_num_t adc_n, int channel, int *value)
-{
-    adc_ll_rtc_enable_channel(adc_n, channel);
-    adc_ll_rtc_start_convert(adc_n, channel);
-    while (adc_ll_rtc_convert_is_done(adc_n) != true);
-    *value = adc_ll_rtc_get_convert_value(adc_n);
-    return (int)adc_ll_rtc_analysis_raw_data(adc_n, (uint16_t)(*value));
-}
-#endif
 
 /*---------------------------------------------------------------
                     ADC calibration setting
@@ -99,15 +89,8 @@ static uint32_t read_cal_channel(adc_ll_num_t adc_n, int channel)
 #elif CONFIG_IDF_TARGET_ESP32C3
 static void cal_setup(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten, bool internal_gnd)
 {
-    adc_hal_set_controller(adc_n, ADC_CTRL_DIG);    //Set controller
-
-    adc_digi_config_t dig_cfg = {
-        .conv_limit_en = 0,
-        .conv_limit_num = 250,
-        .sample_freq_hz = SOC_ADC_SAMPLE_FREQ_THRES_HIGH,
-    };
-    adc_hal_digi_controller_config(&dig_cfg);
-
+    adc_ll_onetime_sample_enable(ADC_NUM_1, false);
+    adc_ll_onetime_sample_enable(ADC_NUM_2, false);
     /* Enable/disable internal connect GND (for calibration). */
     if (internal_gnd) {
         const int esp32c3_invalid_chan = (adc_n == ADC_NUM_1)? 0xF: 0x1;
@@ -116,8 +99,7 @@ static void cal_setup(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t att
         adc_ll_onetime_set_channel(adc_n, channel);
     }
     adc_ll_onetime_set_atten(atten);
-    adc_hal_adc1_onetime_sample_enable((adc_n == ADC_NUM_1));
-    adc_hal_adc2_onetime_sample_enable((adc_n == ADC_NUM_2));
+    adc_ll_onetime_sample_enable(adc_n, true);
 }
 
 static uint32_t read_cal_channel(adc_ll_num_t adc_n, int channel)
@@ -209,11 +191,34 @@ uint32_t adc_hal_self_calibration(adc_ll_num_t adc_n, adc_channel_t channel, adc
 /*---------------------------------------------------------------
                     DMA setting
 ---------------------------------------------------------------*/
-void adc_hal_digi_dma_multi_descriptor(adc_dma_hal_config_t *dma_config, uint8_t *data_buf, uint32_t size, uint32_t num)
+void adc_hal_context_config(adc_hal_context_t *hal, const adc_hal_config_t *config)
+{
+    hal->dev = &GDMA;
+    hal->desc_dummy_head.next = hal->rx_desc;
+    hal->desc_max_num = config->desc_max_num;
+    hal->dma_chan = config->dma_chan;
+    hal->eof_num = config->eof_num;
+}
+
+void adc_hal_digi_init(adc_hal_context_t *hal)
+{
+    gdma_ll_clear_interrupt_status(hal->dev, hal->dma_chan, UINT32_MAX);
+    gdma_ll_enable_interrupt(hal->dev, hal->dma_chan, GDMA_LL_EVENT_RX_SUC_EOF, true);
+    adc_ll_digi_dma_set_eof_num(hal->eof_num);
+    adc_ll_onetime_sample_enable(ADC_NUM_1, false);
+    adc_ll_onetime_sample_enable(ADC_NUM_2, false);
+}
+
+void adc_hal_fifo_reset(adc_hal_context_t *hal)
+{
+    adc_ll_digi_reset();
+    gdma_ll_rx_reset_channel(hal->dev, hal->dma_chan);
+}
+
+static void adc_hal_digi_dma_link_descriptors(dma_descriptor_t *desc, uint8_t *data_buf, uint32_t size, uint32_t num)
 {
     assert(((uint32_t)data_buf % 4) == 0);
     assert((size % 4) == 0);
-    dma_descriptor_t *desc = dma_config->rx_desc;
     uint32_t n = 0;
 
     while (num--) {
@@ -228,49 +233,55 @@ void adc_hal_digi_dma_multi_descriptor(adc_dma_hal_config_t *dma_config, uint8_t
     desc[n-1].next = NULL;
 }
 
-void adc_hal_digi_rxdma_start(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config)
+void adc_hal_digi_rxdma_start(adc_hal_context_t *hal, uint8_t *data_buf)
 {
-    gdma_ll_rx_reset_channel(adc_dma_ctx->dev, dma_config->dma_chan);
-    gdma_ll_rx_set_desc_addr(adc_dma_ctx->dev, dma_config->dma_chan, (uint32_t)dma_config->rx_desc);
-    gdma_ll_rx_start(adc_dma_ctx->dev, dma_config->dma_chan);
+    //reset the current descriptor address
+    hal->cur_desc_ptr = &hal->desc_dummy_head;
+    adc_hal_digi_dma_link_descriptors(hal->rx_desc, data_buf, hal->eof_num * ADC_HAL_DATA_LEN_PER_CONV, hal->desc_max_num);
+    gdma_ll_rx_set_desc_addr(hal->dev, hal->dma_chan, (uint32_t)hal->rx_desc);
+    gdma_ll_rx_start(hal->dev, hal->dma_chan);
 }
 
-void adc_hal_digi_rxdma_stop(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config)
+void adc_hal_digi_start(adc_hal_context_t *hal)
 {
-    gdma_ll_rx_stop(adc_dma_ctx->dev, dma_config->dma_chan);
-}
-
-void adc_hal_digi_ena_intr(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config, uint32_t mask)
-{
-    gdma_ll_enable_interrupt(adc_dma_ctx->dev, dma_config->dma_chan, mask, true);
-}
-
-void adc_hal_digi_clr_intr(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config, uint32_t mask)
-{
-    gdma_ll_clear_interrupt_status(adc_dma_ctx->dev, dma_config->dma_chan, mask);
-}
-
-void adc_hal_digi_dis_intr(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config, uint32_t mask)
-{
-    gdma_ll_enable_interrupt(adc_dma_ctx->dev, dma_config->dma_chan, mask, false);
-}
-
-void adc_hal_digi_set_eof_num(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config, uint32_t num)
-{
-    adc_ll_digi_dma_set_eof_num(num);
-}
-
-void adc_hal_digi_start(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config)
-{
-    //Set to 1: the ADC data will be sent to the DMA
+    //the ADC data will be sent to the DMA
     adc_ll_digi_dma_enable();
     //enable sar adc timer
     adc_ll_digi_trigger_enable();
-    //reset the adc state
-    adc_ll_digi_reset();
 }
 
-void adc_hal_digi_stop(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config)
+adc_hal_dma_desc_status_t adc_hal_get_reading_result(adc_hal_context_t *hal, const intptr_t eof_desc_addr, dma_descriptor_t **cur_desc)
+{
+    assert(hal->cur_desc_ptr);
+    if (!hal->cur_desc_ptr->next) {
+        return ADC_HAL_DMA_DESC_NULL;
+    }
+    if ((intptr_t)hal->cur_desc_ptr == eof_desc_addr) {
+        return ADC_HAL_DMA_DESC_WAITING;
+    }
+
+    hal->cur_desc_ptr = hal->cur_desc_ptr->next;
+    *cur_desc = hal->cur_desc_ptr;
+
+    return ADC_HAL_DMA_DESC_VALID;
+}
+
+void adc_hal_digi_rxdma_stop(adc_hal_context_t *hal)
+{
+    gdma_ll_rx_stop(hal->dev, hal->dma_chan);
+}
+
+void adc_hal_digi_clr_intr(adc_hal_context_t *hal, uint32_t mask)
+{
+    gdma_ll_clear_interrupt_status(hal->dev, hal->dma_chan, mask);
+}
+
+void adc_hal_digi_dis_intr(adc_hal_context_t *hal, uint32_t mask)
+{
+    gdma_ll_enable_interrupt(hal->dev, hal->dma_chan, mask, false);
+}
+
+void adc_hal_digi_stop(adc_hal_context_t *hal)
 {
     //Set to 0: the ADC data won't be sent to the DMA
     adc_ll_digi_dma_disable();
@@ -278,18 +289,35 @@ void adc_hal_digi_stop(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t 
     adc_ll_digi_trigger_disable();
 }
 
-void adc_hal_digi_init(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config)
-{
-    adc_dma_ctx->dev = &GDMA;
-    gdma_ll_clear_interrupt_status(adc_dma_ctx->dev, dma_config->dma_chan, UINT32_MAX);
-    adc_ll_adc1_onetime_sample_enable(false);
-    adc_ll_adc2_onetime_sample_enable(false);
-}
-
 /*---------------------------------------------------------------
                     Single Read
 ---------------------------------------------------------------*/
-void adc_hal_onetime_start(adc_digi_config_t *adc_digi_config)
+
+//--------------------INTR-------------------------------//
+static adc_ll_intr_t get_event_intr(adc_hal_event_t event)
+{
+    adc_ll_intr_t intr_mask = 0;
+    if (event & ADC_EVENT_ADC1_DONE) {
+        intr_mask |= ADC_LL_INTR_ADC1_DONE;
+    }
+    if (event & ADC_EVENT_ADC2_DONE) {
+        intr_mask |= ADC_LL_INTR_ADC2_DONE;
+    }
+    return intr_mask;
+}
+
+static void adc_hal_intr_clear(adc_hal_event_t event)
+{
+    adc_ll_intr_clear(get_event_intr(event));
+}
+
+static bool adc_hal_intr_get_raw(adc_hal_event_t event)
+{
+    return adc_ll_intr_get_raw(get_event_intr(event));
+}
+
+//--------------------Single Read-------------------------------//
+static void adc_hal_onetime_start(void)
 {
     /**
      * There is a hardware limitation. If the APB clock frequency is high, the step of this reg signal: ``onetime_start`` may not be captured by the
@@ -315,74 +343,57 @@ void adc_hal_onetime_start(adc_digi_config_t *adc_digi_config)
     //No need to delay here. Becuase if the start signal is not seen, there won't be a done intr.
 }
 
-void adc_hal_adc1_onetime_sample_enable(bool enable)
+static esp_err_t adc_hal_single_read(adc_ll_num_t adc_n, int *out_raw)
 {
-    adc_ll_adc1_onetime_sample_enable(enable);
-}
-
-void adc_hal_adc2_onetime_sample_enable(bool enable)
-{
-    adc_ll_adc2_onetime_sample_enable(enable);
-}
-
-void adc_hal_onetime_channel(adc_ll_num_t unit, adc_channel_t channel)
-{
-    adc_ll_onetime_set_channel(unit, channel);
-}
-
-void adc_hal_set_onetime_atten(adc_atten_t atten)
-{
-    adc_ll_onetime_set_atten(atten);
-}
-
-esp_err_t adc_hal_single_read(adc_ll_num_t unit, int *out_raw)
-{
-    if (unit == ADC_NUM_1) {
+    if (adc_n == ADC_NUM_1) {
         *out_raw = adc_ll_adc1_read();
-    } else if (unit == ADC_NUM_2) {
+    } else if (adc_n == ADC_NUM_2) {
         *out_raw = adc_ll_adc2_read();
-        if (adc_ll_analysis_raw_data(unit, *out_raw)) {
+        if (adc_ll_analysis_raw_data(adc_n, *out_raw)) {
             return ESP_ERR_INVALID_STATE;
         }
     }
     return ESP_OK;
 }
 
-//--------------------INTR-------------------------------
-static adc_ll_intr_t get_event_intr(adc_event_t event)
+esp_err_t adc_hal_convert(adc_ll_num_t adc_n, int channel, int *out_raw)
 {
-    adc_ll_intr_t intr_mask = 0;
-    if (event & ADC_EVENT_ADC1_DONE) {
-        intr_mask |= ADC_LL_INTR_ADC1_DONE;
+    esp_err_t ret;
+    adc_hal_event_t event;
+
+    if (adc_n == ADC_NUM_1) {
+        event = ADC_EVENT_ADC1_DONE;
+    } else {
+        event = ADC_EVENT_ADC2_DONE;
     }
-    if (event & ADC_EVENT_ADC2_DONE) {
-        intr_mask |= ADC_LL_INTR_ADC2_DONE;
+
+    adc_hal_intr_clear(event);
+    adc_ll_onetime_sample_enable(ADC_NUM_1, false);
+    adc_ll_onetime_sample_enable(ADC_NUM_2, false);
+    adc_ll_onetime_sample_enable(adc_n, true);
+    adc_ll_onetime_set_channel(adc_n, channel);
+
+    //Trigger single read.
+    adc_hal_onetime_start();
+    while (!adc_hal_intr_get_raw(event));
+    ret = adc_hal_single_read(adc_n, out_raw);
+    //HW workaround: when enabling periph clock, this should be false
+    adc_ll_onetime_sample_enable(adc_n, false);
+
+    return ret;
+}
+#else // !CONFIG_IDF_TARGET_ESP32C3
+esp_err_t adc_hal_convert(adc_ll_num_t adc_n, int channel, int *out_raw)
+{
+    adc_ll_rtc_enable_channel(adc_n, channel);
+    adc_ll_rtc_start_convert(adc_n, channel);
+    while (adc_ll_rtc_convert_is_done(adc_n) != true);
+    *out_raw = adc_ll_rtc_get_convert_value(adc_n);
+
+    if ((int)adc_ll_rtc_analysis_raw_data(adc_n, (uint16_t)(*out_raw))) {
+        return ESP_ERR_INVALID_STATE;
     }
-    return intr_mask;
-}
 
-void adc_hal_intr_enable(adc_event_t event)
-{
-    adc_ll_intr_enable(get_event_intr(event));
+    return ESP_OK;
 }
-
-void adc_hal_intr_disable(adc_event_t event)
-{
-    adc_ll_intr_disable(get_event_intr(event));
-}
-
-void adc_hal_intr_clear(adc_event_t event)
-{
-    adc_ll_intr_clear(get_event_intr(event));
-}
-
-bool adc_hal_intr_get_raw(adc_event_t event)
-{
-    return adc_ll_intr_get_raw(get_event_intr(event));
-}
-
-bool adc_hal_intr_get_status(adc_event_t event)
-{
-    return adc_ll_intr_get_status(get_event_intr(event));
-}
-#endif
+#endif  //#if !CONFIG_IDF_TARGET_ESP32C3

@@ -19,7 +19,7 @@
 #if (CONFIG_GATTS_ENABLE || CONFIG_GATTC_ENABLE)
 #include "esp_gatt_defs.h"
 #endif
-const char *TAG = "hid_parser";
+static const char *TAG = "hid_parser";
 
 typedef struct {
     uint16_t appearance;

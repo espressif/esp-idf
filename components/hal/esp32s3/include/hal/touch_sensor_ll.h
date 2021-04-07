@@ -72,7 +72,7 @@ static inline void touch_ll_get_measure_times(uint16_t *meas_time)
  */
 static inline void touch_ll_set_sleep_time(uint16_t sleep_time)
 {
-    // touch sensor sleep cycle Time = sleep_cycle / RTC_SLOW_CLK(90k)
+    // touch sensor sleep cycle Time = sleep_cycle / RTC_SLOW_CLK(150k)
     RTCCNTL.touch_ctrl1.touch_sleep_cycles = sleep_time;
 }
 
@@ -745,9 +745,9 @@ static inline void touch_ll_filter_get_debounce(uint32_t *dbc_cnt)
 static inline void touch_ll_filter_set_noise_thres(uint32_t noise_thr)
 {
     RTCCNTL.touch_filter_ctrl.touch_noise_thres = noise_thr;
-    RTCCNTL.touch_filter_ctrl.config2 = noise_thr;
-    RTCCNTL.touch_filter_ctrl.config1 = 0xF;
-    RTCCNTL.touch_filter_ctrl.config3 = 2;
+    RTCCNTL.touch_filter_ctrl.touch_neg_noise_thres = noise_thr;
+    RTCCNTL.touch_filter_ctrl.touch_neg_noise_limit = 0xF;
+    RTCCNTL.touch_filter_ctrl.touch_hysteresis = 2;
 }
 
 /**

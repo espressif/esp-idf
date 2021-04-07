@@ -87,8 +87,8 @@ typedef struct {
 
 /// Configuration of each operator
 typedef struct {
-    mcpwm_hal_generator_config_t gen[SOC_MCPWM_GENERATOR_NUM];  ///< Configuration of the generators
-    float duty[SOC_MCPWM_COMPARATOR_NUM];   ///< Duty rate for each comparator, 10 means 10%.
+    mcpwm_hal_generator_config_t gen[SOC_MCPWM_GENERATORS_PER_OPERATOR];  ///< Configuration of the generators
+    float duty[SOC_MCPWM_COMPARATORS_PER_OPERATOR];   ///< Duty rate for each comparator, 10 means 10%.
     int timer;      ///< The timer this operator is using
 } mcpwm_hal_operator_config_t;
 
@@ -102,8 +102,8 @@ typedef struct {
 typedef struct {
     mcpwm_dev_t *dev;           ///< Beginning address of the MCPWM peripheral registers. Call `mcpwm_hal_init` to initialize it.
     uint32_t    prescale;       ///< Prescale from the 160M clock to MCPWM main clock.
-    mcpwm_hal_timer_config_t    timer[SOC_MCPWM_TIMER_NUM]; ///< Configuration of the timers
-    mcpwm_hal_operator_config_t op[SOC_MCPWM_OP_NUM];       ///< Configuration of the operators
+    mcpwm_hal_timer_config_t    timer[SOC_MCPWM_TIMERS_PER_GROUP]; ///< Configuration of the timers
+    mcpwm_hal_operator_config_t op[SOC_MCPWM_OPERATORS_PER_GROUP];       ///< Configuration of the operators
 } mcpwm_hal_context_t;
 
 /// Configuration of the carrier
@@ -125,7 +125,7 @@ typedef struct {
 typedef struct {
     uint32_t cbc_enabled_mask;  ///< Whether the cycle-by-cycle fault handling is enabled on each fault signal. BIT(n) stands for signal n.
     uint32_t ost_enabled_mask;  ///< Whether the oneshot fault handling is enabled on each on each fault signal. BIT(n) stands for signal n.
-    mcpwm_output_action_t   action_on_fault[SOC_MCPWM_GENERATOR_NUM];   ///< Action to perform on each generator when any one of the fault signal triggers.
+    mcpwm_output_action_t   action_on_fault[SOC_MCPWM_GENERATORS_PER_OPERATOR];   ///< Action to perform on each generator when any one of the fault signal triggers.
 } mcpwm_hal_fault_conf_t;
 
 /// Configuration of the synchronization of each clock

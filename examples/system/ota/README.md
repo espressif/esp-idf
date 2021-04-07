@@ -70,7 +70,7 @@ After a successful build, we need to create a self-signed certificate and run a 
   (Some windows builds of openssl translate CR/LF sequences to LF in the served files, leading to corrupted image received by the OTA client; Others might interpret `0x1a`/`SUB` character in the binary as an escape sequence, i.e. end of file, thus closing the connection, failing the OTA client to receive the entire image).
   * It's recommended to use `openssl` bundled in `Git For Windows` from the [ESP-IDF Tool installer](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/windows-setup.html):
   Open the ESP-IDF command prompt and add the internal openssl binary to your path: `set PATH=%LocalAppData%\Git\usr\bin;%PATH%` and run the openssl's http server command as above.
-  * Alternatively, you can use any windows based openssl of version at least `v1.1.1i` build on `Msys-x86_64` platform, or a simple python https server -- see start_https_server in the [example_test](simple_ota/example_test.py) script.
+  * Alternatively, you can use any windows based openssl of version at least `v1.1.1i` build on `Msys-x86_64` platform, or a simple python https server -- see start_https_server in the [example_test](simple_ota_example/example_test.py) script.
 
 ### Flash Certificate to ESP32
 
@@ -141,7 +141,7 @@ Running a local https server might be tricky in some cases (due to self signed c
     - Execute `python -m http.server 8070` in the directory with the firmware image.
     - Use http://<host-ip>:8070/<firmware-name> as firmware upgrade URL.
     - Enable *Allow HTTP for OTA* (`CONFIG_OTA_ALLOW_HTTP`) in `Component config -> ESP HTTPS OTA` so the URI with no certificate is accepted.
-* Start the https server using [example_test](simple_ota/example_test.py) with two or more parameters: `example_test.py <BIN_DIR> <PORT> [CERT_DIR]`, where
+* Start the https server using [example_test](simple_ota_example/example_test.py) with two or more parameters: `example_test.py <BIN_DIR> <PORT> [CERT_DIR]`, where
     - `<BIN_DIR>` is a directory containing the image and by default also the certificate and key files:`ca_cert.pem` and `ca_key.pem`.
     - `<PORT>` is the server's port, here `8070`
     - `[CERT_DIR]` is an optional argument pointing to a specific directory with the certificate and key file.

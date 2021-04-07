@@ -22,6 +22,7 @@
 #include <sys/signal.h>
 #include <sys/unistd.h>
 #include <sys/reent.h>
+#include <assert.h>
 #include "esp_newlib.h"
 #include "esp_attr.h"
 #include "sdkconfig.h"
@@ -111,7 +112,7 @@ static struct syscall_stub_table s_stub_table = {
     ._printf_float = NULL,
     ._scanf_float = NULL,
 #endif
-#ifdef CONFIG_IDF_TARGET_ESP32C3
+#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
     /* TODO IDF-2570 : mark that this assert failed in ROM, to avoid confusion between IDF & ROM
        assertion failures (as function names & source file names will be similar)
     */

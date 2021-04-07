@@ -60,7 +60,7 @@ typedef enum {
     ADC1_CHANNEL_1,     /*!< ADC1 channel 1 is GPIO1 */
     ADC1_CHANNEL_2,     /*!< ADC1 channel 2 is GPIO2 */
     ADC1_CHANNEL_3,     /*!< ADC1 channel 3 is GPIO3 */
-    ADC1_CHANNEL_4,     /*!< ADC1 channel 4 is GPIO34 */
+    ADC1_CHANNEL_4,     /*!< ADC1 channel 4 is GPIO4 */
     ADC1_CHANNEL_MAX,
 } adc1_channel_t;
 #endif // CONFIG_IDF_TARGET_*
@@ -175,6 +175,7 @@ void adc_power_acquire(void);
  */
 void adc_power_release(void);
 
+#if !CONFIG_IDF_TARGET_ESP32C3
 /**
  * @brief Initialize ADC pad
  * @param adc_unit ADC unit index
@@ -184,11 +185,11 @@ void adc_power_release(void);
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
 esp_err_t adc_gpio_init(adc_unit_t adc_unit, adc_channel_t channel);
+#endif //#if !CONFIG_IDF_TARGET_ESP32C3
 
 /*---------------------------------------------------------------
-                    RTC controller setting
+                    ADC Single Read Setting
 ---------------------------------------------------------------*/
-
 /**
  * @brief Get the GPIO number of a specific ADC1 channel.
  *
@@ -283,6 +284,7 @@ esp_err_t adc1_config_width(adc_bits_width_t width_bit);
  */
 int adc1_get_raw(adc1_channel_t channel);
 
+#if !CONFIG_IDF_TARGET_ESP32C3
 /**
  * @brief Set ADC data invert
  * @param adc_unit ADC unit index
@@ -323,6 +325,7 @@ esp_err_t adc_set_data_width(adc_unit_t adc_unit, adc_bits_width_t width_bit);
  * to be called to configure ADC1 channels, before ADC1 is used by the ULP.
  */
 void adc1_ulp_enable(void);
+#endif  //#if !CONFIG_IDF_TARGET_ESP32C3
 
 /**
  * @brief Get the GPIO number of a specific ADC2 channel.
@@ -449,6 +452,7 @@ esp_err_t adc_vref_to_gpio(adc_unit_t adc_unit, gpio_num_t gpio);
  *                  - ESP_ERR_INVALID_ARG: Unsupported GPIO
  */
 esp_err_t adc2_vref_to_gpio(gpio_num_t gpio) __attribute__((deprecated));
+
 /*---------------------------------------------------------------
                     Digital controller setting
 ---------------------------------------------------------------*/
@@ -489,7 +493,7 @@ esp_err_t adc_digi_controller_config(const adc_digi_config_t *config);
 /**
  * @brief Initialize the Digital ADC.
  *
- * @param init_config Pointer to Digital ADC initilisation config. Refer to ``adc_digi_init_config_t``.
+ * @param init_config Pointer to Digital ADC initilization config. Refer to ``adc_digi_init_config_t``.
  *
  * @return
  *         - ESP_ERR_INVALID_ARG   If the combination of arguments is invalid.

@@ -11,13 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#pragma once
+#ifndef _SOC_SENS_STRUCT_H_
+#define _SOC_SENS_STRUCT_H_
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdint.h>
+#include "soc.h"
 
 typedef volatile struct {
     union {
@@ -234,26 +235,18 @@ typedef volatile struct {
     } sar_touch_conf;
     union {
         struct {
-            uint32_t thresh:       22;                                     /*Finger threshold for touch pad 1*/
-            uint32_t reserved22:   10;
+            uint32_t touch_denoise_data            :    22;
+            uint32_t reserved22                    :    10;
+        };
+        uint32_t val;
+    } sar_touch_denoise;
+    union {
+        struct {
+            uint32_t thresh                        :    22;  /*Finger threshold for touch pad 1*/
+            uint32_t reserved22                    :    10;
         };
         uint32_t val;
     } touch_thresh[14];
-    uint32_t reserved_98;
-    uint32_t reserved_9c;
-    uint32_t reserved_a0;
-    uint32_t reserved_a4;
-    uint32_t reserved_a8;
-    uint32_t reserved_ac;
-    uint32_t reserved_b0;
-    uint32_t reserved_b4;
-    uint32_t reserved_b8;
-    uint32_t reserved_bc;
-    uint32_t reserved_c0;
-    uint32_t reserved_c4;
-    uint32_t reserved_c8;
-    uint32_t reserved_cc;
-    uint32_t reserved_d0;
     union {
         struct {
             uint32_t touch_pad_active: 15;                                 /*touch active status*/
@@ -431,13 +424,12 @@ typedef volatile struct {
     uint32_t sar_nouse;                                                    /**/
     union {
         struct {
-            uint32_t reserved0:     26;
-            uint32_t dac_clk_en:     1;
-            uint32_t rtc_i2c_clk_en: 1;
-            uint32_t reserved28:     1;
-            uint32_t tsens_clk_en:   1;
-            uint32_t saradc_clk_en:  1;
-            uint32_t iomux_clk_en:   1;
+            uint32_t reserved0                     :    27;
+            uint32_t rtc_i2c_clk_en                :    1;
+            uint32_t reserved28                    :    1;
+            uint32_t tsens_clk_en                  :    1;
+            uint32_t saradc_clk_en                 :    1;
+            uint32_t iomux_clk_en                  :    1;
         };
         uint32_t val;
     } sar_peri_clk_gate_conf;
@@ -445,7 +437,7 @@ typedef volatile struct {
         struct {
             uint32_t reserved0:    25;
             uint32_t reset:         1;
-            uint32_t dac_reset:     1;
+            uint32_t reserved26                    :    1;
             uint32_t rtc_i2c_reset: 1;
             uint32_t reserved28:    1;
             uint32_t tsens_reset:   1;
@@ -492,15 +484,81 @@ typedef volatile struct {
     } sar_cocpu_int_ena_w1tc;
     union {
         struct {
-            uint32_t sar_date:  28;
-            uint32_t reserved28: 4;
+            uint32_t debug_bit_sel                 :    5;
+            uint32_t reserved5                     :    27;
+        };
+        uint32_t val;
+    } sar_debug_conf;
+    uint32_t reserved_118;
+    uint32_t reserved_11c;
+    uint32_t reserved_120;
+    uint32_t reserved_124;
+    uint32_t reserved_128;
+    uint32_t reserved_12c;
+    uint32_t reserved_130;
+    uint32_t reserved_134;
+    uint32_t reserved_138;
+    uint32_t reserved_13c;
+    uint32_t reserved_140;
+    uint32_t reserved_144;
+    uint32_t reserved_148;
+    uint32_t reserved_14c;
+    uint32_t reserved_150;
+    uint32_t reserved_154;
+    uint32_t reserved_158;
+    uint32_t reserved_15c;
+    uint32_t reserved_160;
+    uint32_t reserved_164;
+    uint32_t reserved_168;
+    uint32_t reserved_16c;
+    uint32_t reserved_170;
+    uint32_t reserved_174;
+    uint32_t reserved_178;
+    uint32_t reserved_17c;
+    uint32_t reserved_180;
+    uint32_t reserved_184;
+    uint32_t reserved_188;
+    uint32_t reserved_18c;
+    uint32_t reserved_190;
+    uint32_t reserved_194;
+    uint32_t reserved_198;
+    uint32_t reserved_19c;
+    uint32_t reserved_1a0;
+    uint32_t reserved_1a4;
+    uint32_t reserved_1a8;
+    uint32_t reserved_1ac;
+    uint32_t reserved_1b0;
+    uint32_t reserved_1b4;
+    uint32_t reserved_1b8;
+    uint32_t reserved_1bc;
+    uint32_t reserved_1c0;
+    uint32_t reserved_1c4;
+    uint32_t reserved_1c8;
+    uint32_t reserved_1cc;
+    uint32_t reserved_1d0;
+    uint32_t reserved_1d4;
+    uint32_t reserved_1d8;
+    uint32_t reserved_1dc;
+    uint32_t reserved_1e0;
+    uint32_t reserved_1e4;
+    uint32_t reserved_1e8;
+    uint32_t reserved_1ec;
+    uint32_t reserved_1f0;
+    uint32_t reserved_1f4;
+    uint32_t reserved_1f8;
+    union {
+        struct {
+            uint32_t sar_date                      :    28;
+            uint32_t reserved28                    :    4;
         };
         uint32_t val;
     } sardate;
 } sens_dev_t;
-
 extern sens_dev_t SENS;
-
 #ifdef __cplusplus
 }
 #endif
+
+
+
+#endif /*_SOC_SENS_STRUCT_H_ */

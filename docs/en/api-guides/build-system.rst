@@ -322,6 +322,26 @@ The build system provides special treatment to the ``main`` component. It is a c
 2. Set ``EXTRA_COMPONENT_DIRS`` in the project CMakeLists.txt to include the renamed ``main`` directory.
 3. Specify the dependencies in the renamed component's CMakeLists.txt file via REQUIRES or PRIV_REQUIRES arguments :ref:`on component registration<cmake_minimal_component_cmakelists>`.
 
+
+Overriding default build specifications
+---------------------------------------
+
+The build sets some global build specifications (compile flags, definitions, etc.) that gets used in compiling all sources from all components. 
+
+.. highlight:: cmake
+
+For example, one of the default build specifications set is the compile option ``-Wextra``. Suppose a user wants to use override this with ``-Wno-extra``,
+it should be done after ``project()``::
+
+
+    cmake_minimum_required(VERSION 3.5)
+    include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+    project(myProject)
+
+    idf_build_set_property(COMPILE_OPTIONS "-Wno-error" APPEND)
+
+This ensures that the compile options set by the user won't be overriden by the default build specifications, since the latter are set inside ``project()``.
+
 .. _component-directories:
 
 Component CMakeLists Files
@@ -343,7 +363,7 @@ When CMake runs to configure the project, it logs the components included in the
 Multiple components with the same name
 --------------------------------------
 
-When ESP-IDF is collecting all the components to compile, it will do this in the order specified by ``COMPONENT_DIRS``; by default, this means ESP-IDF's internal components first, then the project's components, and finally any components set in ``EXTRA_COMPONENT_DIRS``. If two or more of these directories contain component sub-directories with the same name, the component in the last place searched is used. This allows, for example, overriding ESP-IDF components with a modified version by copying that component from the ESP-IDF components directory to the project components directory and then modifying it there. If used in this way, the ESP-IDF directory itself can remain untouched.
+When ESP-IDF is collecting all the components to compile, it will do this in the order specified by ``COMPONENT_DIRS``; by default, this means ESP-IDF's internal components first (``IDF_PATH/components``), then any components in directories specified in ``EXTRA_COMPONENT_DIRS``, and finally the project's components (``PROJECT_DIR/components``). If two or more of these directories contain component sub-directories with the same name, the component in the last place searched is used. This allows, for example, overriding ESP-IDF components with a modified version by copying that component from the ESP-IDF components directory to the project components directory and then modifying it there. If used in this way, the ESP-IDF directory itself can remain untouched.
 
 .. note:: If a component is overridden in an existing project by moving it to a new location, the project will not automatically see the new component path. Run ``idf.py reconfigure`` (or delete the project build folder) and then build again.
 

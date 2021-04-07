@@ -45,7 +45,9 @@ At startup, the DRAM heap contains all data memory which is not statically alloc
 
 To find the amount of statically allocated memory, use the :ref:`idf.py size <idf.py-size>` command.
 
-.. note:: Due to a technical limitation, the maximum statically allocated DRAM usage is 160KB. The remaining 160KB (for a total of 320KB of DRAM) can only be allocated at runtime as heap.
+.. only:: esp32
+
+    .. note:: Due to a technical limitation, the maximum statically allocated DRAM usage is 160KB. The remaining 160KB (for a total of 320KB of DRAM) can only be allocated at runtime as heap.
 
 .. note:: At runtime, the available heap DRAM may be less than calculated at compile time, because at startup some memory is allocated from the heap before the FreeRTOS scheduler is started (including memory for the stacks of initial FreeRTOS tasks).
 

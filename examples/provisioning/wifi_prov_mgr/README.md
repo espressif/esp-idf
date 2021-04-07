@@ -22,6 +22,8 @@ Right after provisioning is complete, BLE is turned off and disabled to free the
 
 This example can be used, as it is, for adding a provisioning service to any application intended for IoT.
 
+> Note: If you use this example code in your own project, in BLE mode, then remember to enable the BT stack and BTDM BLE control settings in your SDK configuration (e.g. by using the `sdkconfig.defaults` file from this project).
+
 ## How to use example
 
 ### Hardware Required

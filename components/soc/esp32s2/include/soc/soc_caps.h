@@ -50,6 +50,7 @@
 #define SOC_CCOMP_TIMER_SUPPORTED       1
 #define SOC_DIG_SIGN_SUPPORTED          1
 #define SOC_HMAC_SUPPORTED              1
+#define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS 3
 
 #define SOC_CACHE_SUPPORT_WRAP          1
@@ -217,14 +218,11 @@
 #define SOC_SYSTIMER_BIT_WIDTH_HI (32) // Bit width of systimer high part
 
 /*-------------------------- TIMER GROUP CAPS --------------------------------*/
-#define SOC_TIMER_GROUP_SUPPORT_XTAL (1)
-#define SOC_TIMER_GROUP_XTAL_MHZ (40)
-#define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH  (64)
-#define SOC_TIMER_GROUP_PRESCALE_BIT_WIDTH (16)
-#define SOC_TIMER_GROUPS (2)
-#define SOC_TIMER_GROUP_TIMERS_PER_GROUP (2)
+#define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH (64)
+#define SOC_TIMER_GROUPS                  (2)
+#define SOC_TIMER_GROUP_TIMERS_PER_GROUP  (2)
+#define SOC_TIMER_GROUP_SUPPORT_XTAL      (1)
 #define SOC_TIMER_GROUP_TOTAL_TIMERS (SOC_TIMER_GROUPS * SOC_TIMER_GROUP_TIMERS_PER_GROUP)
-#define SOC_TIMER_GROUP_LAYOUT {2,2}
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_SENSOR_NUM                (15)    /*! 15 Touch channels */
@@ -237,6 +235,7 @@
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_BRP_MIN                2
 #define SOC_TWAI_BRP_MAX                32768
+#define SOC_TWAI_SUPPORTS_RX_STATUS     1
 
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32-S2 have 2 UART.

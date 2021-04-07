@@ -5,12 +5,13 @@
 
 #pragma once
 
-#define SOC_CPU_CORES_NUM       1
-#define SOC_GDMA_SUPPORTED      1
-#define SOC_TWAI_SUPPORTED      1
-#define SOC_BT_SUPPORTED        1
-#define SOC_DIG_SIGN_SUPPORTED  1
-#define SOC_HMAC_SUPPORTED      1
+#define SOC_CPU_CORES_NUM           1
+#define SOC_GDMA_SUPPORTED          1
+#define SOC_TWAI_SUPPORTED          1
+#define SOC_BT_SUPPORTED            1
+#define SOC_DIG_SIGN_SUPPORTED      1
+#define SOC_HMAC_SUPPORTED          1
+#define SOC_ASYNC_MEMCPY_SUPPORTED  1
 
 /*-------------------------- DAC CAPS ----------------------------------------*/
 #define SOC_DAC_PERIPH_NUM      0
@@ -26,7 +27,6 @@
 #include "i2s_caps.h"
 #include "rtc_io_caps.h"
 #include "soc_caps.h"
-#include "timer_group_caps.h"
 #include "cpu_caps.h"
 #include "gpio_caps.h"
 #include "ledc_caps.h"
@@ -44,17 +44,7 @@
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_BRP_MIN                2
 #define SOC_TWAI_BRP_MAX                32768
-
-#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM) ((PERIPH_NUM==0)? 5 : 1)
-#define SOC_ADC_MAX_CHANNEL_NUM         (10)
-
-/**
- * Check if adc support digital controller (DMA) mode.
- * @value
- *      - 1 : support;
- *      - 0 : not support;
- */
-#define SOC_ADC_SUPPORT_DMA_MODE(PERIPH_NUM) 1
+#define SOC_TWAI_SUPPORTS_RX_STATUS     1
 
 /*--------------------------- SHA CAPS ---------------------------------------*/
 
@@ -76,6 +66,12 @@
 #define SOC_SHA_SUPPORT_SHA224          (1)
 #define SOC_SHA_SUPPORT_SHA256          (1)
 
+/*--------------------------- TIMER GROUP CAPS ---------------------------------------*/
+#define SOC_TIMER_GROUPS                  (2)
+#define SOC_TIMER_GROUP_TIMERS_PER_GROUP  (1)
+#define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH (54)
+#define SOC_TIMER_GROUP_SUPPORT_XTAL      (1)
+#define SOC_TIMER_GROUP_TOTAL_TIMERS (SOC_TIMER_GROUPS * SOC_TIMER_GROUP_TIMERS_PER_GROUP)
 
 /*--------------------------- RMT CAPS ---------------------------------------*/
 #define SOC_RMT_GROUPS                  (1)  /*!< One RMT group */
@@ -107,7 +103,7 @@
 #define SOC_ADC_PERIPH_NUM                      (2)
 #define SOC_ADC_PATT_LEN_MAX                    (16)
 #define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         ((PERIPH_NUM==0)? 5 : 1)
-#define SOC_ADC_MAX_CHANNEL_NUM                 (10)
+#define SOC_ADC_MAX_CHANNEL_NUM                 (5)
 #define SOC_ADC_MAX_BITWIDTH                    (12)
 #define SOC_ADC_DIGI_FILTER_NUM                 (2)
 #define SOC_ADC_DIGI_MONITOR_NUM                (2)

@@ -22,25 +22,6 @@ extern "C" {
 /*---------------------------------------------------------------
                     Common setting
 ---------------------------------------------------------------*/
-
-/**
- * @brief Config ADC module arbiter.
- *        The arbiter is to improve the use efficiency of ADC2. After the control right is robbed by the high priority,
- *        the low priority controller will read the invalid ADC2 data, and the validity of the data can be judged by the flag bit in the data.
- *
- * @note Only ADC2 support arbiter.
- * @note Default priority: Wi-Fi > RTC > Digital;
- * @note In normal use, there is no need to call this interface to config arbiter.
- *
- * @param adc_unit ADC unit.
- * @param config Refer to `adc_arbiter_t`.
- *
- * @return
- *      - ESP_OK Success
- *      - ESP_ERR_NOT_SUPPORTED ADC unit not support arbiter.
- */
-esp_err_t adc_arbiter_config(adc_unit_t adc_unit, adc_arbiter_t *config);
-
 /*************************************/
 /* Digital controller filter setting */
 /*************************************/
@@ -113,78 +94,6 @@ esp_err_t adc_digi_monitor_set_config(adc_digi_monitor_idx_t idx, adc_digi_monit
  *      - ESP_OK Success
  */
 esp_err_t adc_digi_monitor_enable(adc_digi_monitor_idx_t idx, bool enable);
-
-/**************************************/
-/*   Digital controller intr setting  */
-/**************************************/
-
-/**
- * @brief Enable interrupt of adc digital controller by bitmask.
- *
- * @param adc_unit ADC unit.
- * @param intr_mask Interrupt bitmask. See ``adc_digi_intr_t``.
- *
- * @return
- *      - ESP_OK Success
- */
-esp_err_t adc_digi_intr_enable(adc_unit_t adc_unit, adc_digi_intr_t intr_mask);
-
-/**
- * @brief Disable interrupt of adc digital controller by bitmask.
- *
- * @param adc_unit ADC unit.
- * @param intr_mask Interrupt bitmask. See ``adc_digi_intr_t``.
- *
- * @return
- *      - ESP_OK Success
- */
-esp_err_t adc_digi_intr_disable(adc_unit_t adc_unit, adc_digi_intr_t intr_mask);
-
-/**
- * @brief Clear interrupt of adc digital controller by bitmask.
- *
- * @param adc_unit ADC unit.
- * @param intr_mask Interrupt bitmask. See ``adc_digi_intr_t``.
- *
- * @return
- *      - ESP_OK Success
- */
-esp_err_t adc_digi_intr_clear(adc_unit_t adc_unit, adc_digi_intr_t intr_mask);
-
-/**
- * @brief Get interrupt status mask of adc digital controller.
- *
- * @param adc_unit ADC unit.
- * @return
- *     - intr Interrupt bitmask, See ``adc_digi_intr_t``.
- */
-uint32_t adc_digi_intr_get_status(adc_unit_t adc_unit);
-
-/**
- * @brief Register ADC interrupt handler, the handler is an ISR.
- *        The handler will be attached to the same CPU core that this function is running on.
- *
- * @param fn Interrupt handler function.
- * @param arg Parameter for handler function
- * @param intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
- *        ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
- *
- * @return
- *     - ESP_OK Success
- *     - ESP_ERR_NOT_FOUND Can not find the interrupt that matches the flags.
- *     - ESP_ERR_INVALID_ARG Function pointer error.
- */
-esp_err_t adc_digi_isr_register(void (*fn)(void *), void *arg, int intr_alloc_flags);
-
-/**
- * @brief Deregister ADC interrupt handler, the handler is an ISR.
- *
- * @return
- *     - ESP_OK Success
- *     - ESP_ERR_INVALID_ARG hander error.
- *     - ESP_FAIL ISR not be registered.
- */
-esp_err_t adc_digi_isr_deregister(void);
 
 #ifdef __cplusplus
 }

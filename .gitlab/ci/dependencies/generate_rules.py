@@ -119,6 +119,8 @@ class RulesWriter:
             res.update(self._expand_matrix(k, v))
 
         for k, v in self.cfg.items():
+            if not v:
+                continue
             deploy = v.get('deploy')
             if deploy:
                 for item in _list(deploy):
@@ -147,6 +149,8 @@ class RulesWriter:
     def expand_rules(self):  # type: () -> dict[str, dict[str, list]]
         res = defaultdict(lambda: defaultdict(set))  # type: dict[str, dict[str, set]]
         for k, v in self.cfg.items():
+            if not v:
+                continue
             for vk, vv in v.items():
                 if vk in self.KEYWORDS:
                     res[k][vk] = set(_list(vv))
@@ -213,7 +217,8 @@ class RulesWriter:
         else:
             if not (name.endswith('-preview') or name.startswith('labels:')):
                 _rules.append(self.RULE_PROTECTED)
-            if name.startswith('test:'):
+            # Special case for esp32c3 example_test, for now it only run with label
+            if name.startswith('test:') or name == 'labels:example_test-esp32c3':
                 _rules.append(self.RULE_BUILD_ONLY)
             for label in cfg['labels']:
                 _rules.append(self.RULE_LABEL_TEMPLATE.format(label))

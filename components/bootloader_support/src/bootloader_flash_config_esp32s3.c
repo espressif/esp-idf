@@ -32,7 +32,8 @@
 
 void bootloader_flash_update_id()
 {
-    g_rom_flashchip.device_id = bootloader_read_flash_id();
+    esp_rom_spiflash_chip_t *chip = &rom_spiflash_legacy_data->chip;
+    chip->device_id = bootloader_read_flash_id();
 }
 
 void IRAM_ATTR bootloader_flash_cs_timing_config()
