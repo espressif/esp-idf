@@ -3202,19 +3202,18 @@ static void heartbeat_sub_set(struct bt_mesh_model *model,
     }
 
     if (sub_src == BLE_MESH_ADDR_UNASSIGNED ||
-            sub_dst == BLE_MESH_ADDR_UNASSIGNED ||
-            sub_period == 0x00) {
+        sub_dst == BLE_MESH_ADDR_UNASSIGNED ||
+        sub_period == 0x00) {
         /* Only an explicit address change to unassigned should
          * trigger clearing of the values according to
          * MESH/NODE/CFG/HBS/BV-02-C.
          */
         if (sub_src == BLE_MESH_ADDR_UNASSIGNED ||
-                sub_dst == BLE_MESH_ADDR_UNASSIGNED) {
+            sub_dst == BLE_MESH_ADDR_UNASSIGNED) {
             cfg->hb_sub.src = BLE_MESH_ADDR_UNASSIGNED;
             cfg->hb_sub.dst = BLE_MESH_ADDR_UNASSIGNED;
             cfg->hb_sub.min_hops = BLE_MESH_TTL_MAX;
             cfg->hb_sub.max_hops = 0U;
-            cfg->hb_sub.count = 0U;
         }
 
         period_ms = 0;
@@ -3239,6 +3238,11 @@ static void heartbeat_sub_set(struct bt_mesh_model *model,
     }
 
     hb_sub_send_status(model, ctx, STATUS_SUCCESS);
+
+    /* For case MESH/NODE/CFG/HBS/BV-02-C, set count_log to 0
+     * when Heartbeat Subscription Status message is sent.
+     */
+    cfg->hb_sub.count = 0U;
 
     /* MESH/NODE/CFG/HBS/BV-01-C expects the MinHops to be 0x7f after
      * disabling subscription, but 0x00 for subsequent Get requests.
