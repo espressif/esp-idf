@@ -31,6 +31,7 @@ components/xtensa/trax/traceparse.py
 docs/build_docs.py
 docs/conf_common.py
 docs/en/conf.py
+docs/extensions/google_analytics.py
 docs/extensions/html_redirects.py
 docs/extensions/list_filter.py
 docs/extensions/toctree_filter.py
