@@ -290,7 +290,9 @@ static void bootloader_check_wdt_reset(void)
 
 static void bootloader_super_wdt_auto_feed(void)
 {
+    REG_WRITE(RTC_CNTL_SWD_WPROTECT_REG, RTC_CNTL_SWD_WKEY_VALUE);
     REG_SET_BIT(RTC_CNTL_SWD_CONF_REG, RTC_CNTL_SWD_AUTO_FEED_EN);
+    REG_WRITE(RTC_CNTL_SWD_WPROTECT_REG, 0);
 }
 
 esp_err_t bootloader_init(void)

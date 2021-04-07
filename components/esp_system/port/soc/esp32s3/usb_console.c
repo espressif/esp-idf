@@ -1,0 +1,426 @@
+// Copyright 2019-2020 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include <stdio.h>
+#include <string.h>
+#include <assert.h>
+#include <sys/param.h>
+#include "sdkconfig.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/semphr.h"
+#include "esp_system.h"
+#include "esp_intr_alloc.h"
+#include "esp_private/usb_console.h"
+#include "soc/periph_defs.h"
+#include "soc/rtc_cntl_reg.h"
+#include "soc/usb_struct.h"
+#include "soc/usb_reg.h"
+#include "soc/spinlock.h"
+#include "hal/soc_hal.h"
+#include "esp_rom_uart.h"
+#include "esp_rom_sys.h"
+#include "esp32s3/rom/usb/usb_dc.h"
+#include "esp32s3/rom/usb/cdc_acm.h"
+#include "esp32s3/rom/usb/usb_dfu.h"
+#include "esp32s3/rom/usb/usb_device.h"
+#include "esp32s3/rom/usb/usb_os_glue.h"
+#include "esp32s3/rom/usb/usb_persist.h"
+#include "esp32s3/rom/usb/chip_usb_dw_wrapper.h"
+
+#define CDC_WORK_BUF_SIZE (ESP_ROM_CDC_ACM_WORK_BUF_MIN + CONFIG_ESP_CONSOLE_USB_CDC_RX_BUF_SIZE)
+
+typedef enum {
+    REBOOT_NONE,
+    REBOOT_NORMAL,
+    REBOOT_BOOTLOADER,
+    REBOOT_BOOTLOADER_DFU,
+} reboot_type_t;
+
+
+static reboot_type_t s_queue_reboot = REBOOT_NONE;
+static int s_prev_rts_state;
+static intr_handle_t s_usb_int_handle;
+static cdc_acm_device *s_cdc_acm_device;
+static char s_usb_tx_buf[ACM_BYTES_PER_TX];
+static size_t s_usb_tx_buf_pos;
+static uint8_t cdcmem[CDC_WORK_BUF_SIZE];
+static esp_usb_console_cb_t s_rx_cb;
+static esp_usb_console_cb_t s_tx_cb;
+static void *s_cb_arg;
+
+#ifdef CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
+static spinlock_t s_write_lock = SPINLOCK_INITIALIZER;
+void esp_usb_console_write_char(char c);
+#define ISR_FLAG  ESP_INTR_FLAG_IRAM
+#else
+#define ISR_FLAG  0
+#endif // CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
+
+
+/* Optional write lock routines; used only if esp_rom_printf output via CDC is enabled */
+static inline void write_lock_acquire(void);
+static inline void write_lock_release(void);
+
+/* The two functions below need to be revisited in the multicore case TODO ESP32-S3 IDF-2048*/
+_Static_assert(SOC_CPU_CORES_NUM == 1, "usb_osglue_*_int is not multicore capable");
+
+/* Called by ROM to disable the interrupts
+ * Non-static to allow placement into IRAM by ldgen.
+ */
+void esp_usb_console_osglue_dis_int(void)
+{
+    if (s_usb_int_handle) {
+        esp_intr_disable(s_usb_int_handle);
+    }
+}
+
+/* Called by ROM to enable the interrupts
+ * Non-static to allow placement into IRAM by ldgen.
+ */
+void esp_usb_console_osglue_ena_int(void)
+{
+    if (s_usb_int_handle) {
+        esp_intr_enable(s_usb_int_handle);
+    }
+}
+
+/* Delay function called by ROM USB driver.
+ * Non-static to allow placement into IRAM by ldgen.
+ */
+int esp_usb_console_osglue_wait_proc(int delay_us)
+{
+    if (xTaskGetSchedulerState() != taskSCHEDULER_RUNNING ||
+            !xPortCanYield()) {
+        esp_rom_delay_us(delay_us);
+        return delay_us;
+    }
+    if (delay_us == 0) {
+        /* We should effectively yield */
+        vPortYield();
+        return 1;
+    } else {
+        /* Just delay */
+        int ticks = MAX(delay_us / (portTICK_PERIOD_MS * 1000), 1);
+        vTaskDelay(ticks);
+        return ticks * portTICK_PERIOD_MS * 1000;
+    }
+}
+
+/* Called by ROM CDC ACM driver from interrupt context./
+ * Non-static to allow placement into IRAM by ldgen.
+ */
+void esp_usb_console_cdc_acm_cb(cdc_acm_device *dev, int status)
+{
+    if (status == USB_DC_RESET || status == USB_DC_CONNECTED) {
+        s_prev_rts_state = 0;
+    } else if (status == ACM_STATUS_LINESTATE_CHANGED) {
+        uint32_t rts, dtr;
+        cdc_acm_line_ctrl_get(dev, LINE_CTRL_RTS, &rts);
+        cdc_acm_line_ctrl_get(dev, LINE_CTRL_DTR, &dtr);
+        if (!rts && s_prev_rts_state) {
+            if (dtr) {
+                s_queue_reboot = REBOOT_BOOTLOADER;
+            } else {
+                s_queue_reboot = REBOOT_NORMAL;
+            }
+        }
+        s_prev_rts_state = rts;
+    } else if (status == ACM_STATUS_RX && s_rx_cb) {
+        (*s_rx_cb)(s_cb_arg);
+    } else if (status == ACM_STATUS_TX && s_tx_cb) {
+        (*s_tx_cb)(s_cb_arg);
+    }
+}
+
+/* Non-static to allow placement into IRAM by ldgen. */
+void esp_usb_console_dfu_detach_cb(int timeout)
+{
+    s_queue_reboot = REBOOT_BOOTLOADER_DFU;
+}
+
+/* USB interrupt handler, forward the call to the ROM driver.
+ * Non-static to allow placement into IRAM by ldgen.
+ */
+void esp_usb_console_interrupt(void *arg)
+{
+    usb_dc_check_poll_for_interrupts();
+    /* Restart can be requested from esp_usb_console_cdc_acm_cb or esp_usb_console_dfu_detach_cb */
+    if (s_queue_reboot != REBOOT_NONE) {
+        esp_restart();
+    }
+}
+
+/* Call the USB interrupt handler while any interrupts are pending,
+ * but not more than a few times.
+ * Non-static to allow placement into IRAM by ldgen.
+ */
+void esp_usb_console_poll_interrupts(void)
+{
+    const int max_poll_count = 10;
+    for (int i = 0; (USB0.gintsts & USB0.gintmsk) != 0 && i < max_poll_count; i++) {
+        usb_dc_check_poll_for_interrupts();
+    }
+}
+
+/* This function gets registered as a restart handler.
+ * Prepares USB peripheral for restart and sets up persistence.
+ * Non-static to allow placement into IRAM by ldgen.
+ */
+void esp_usb_console_before_restart(void)
+{
+    esp_usb_console_poll_interrupts();
+    usb_dc_prepare_persist();
+    if (s_queue_reboot == REBOOT_BOOTLOADER) {
+        chip_usb_set_persist_flags(USBDC_PERSIST_ENA);
+        REG_WRITE(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
+    } else if (s_queue_reboot == REBOOT_BOOTLOADER_DFU) {
+        chip_usb_set_persist_flags(USBDC_BOOT_DFU);
+        REG_WRITE(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
+    } else {
+        chip_usb_set_persist_flags(USBDC_PERSIST_ENA);
+        esp_usb_console_poll_interrupts();
+    }
+}
+
+/* Reset some static state in ROM, which survives when going from the
+ * 2nd stage bootloader into the app. This cleans some variables which
+ * indicates that the driver is already initialized, allowing us to
+ * initialize it again, in the app.
+ */
+static void esp_usb_console_rom_cleanup(void)
+{
+    /* TODO ESP32-S3 IDF-2987 */
+    // extern char rom_usb_dev, rom_usb_dev_end;
+    // extern char rom_usb_dw_ctrl, rom_usb_dw_ctrl_end;
+
+    // uart_acm_dev = NULL;
+    // memset((void *) &rom_usb_dev, 0, &rom_usb_dev_end - &rom_usb_dev);
+    // memset((void *) &rom_usb_dw_ctrl, 0, &rom_usb_dw_ctrl_end - &rom_usb_dw_ctrl);
+}
+
+esp_err_t esp_usb_console_init(void)
+{
+    esp_err_t err;
+    err = esp_register_shutdown_handler(esp_usb_console_before_restart);
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    esp_usb_console_rom_cleanup();
+
+    /* Install OS hooks */
+    s_usb_osglue.int_dis_proc = esp_usb_console_osglue_dis_int;
+    s_usb_osglue.int_ena_proc = esp_usb_console_osglue_ena_int;
+    s_usb_osglue.wait_proc = esp_usb_console_osglue_wait_proc;
+
+    /* Install interrupt.
+     * In case of ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF:
+     *   Note that this the interrupt handler has to be placed into IRAM because
+     *   the interrupt handler can also be called in polling mode, when
+     *   interrupts are disabled, and a write to USB is performed with cache disabled.
+     *   Since the handler function is in IRAM, we can register the interrupt as IRAM capable.
+     *   It is not because we actually need the interrupt to work with cache disabled!
+     */
+    err = esp_intr_alloc(ETS_USB_INTR_SOURCE, ISR_FLAG | ESP_INTR_FLAG_INTRDISABLED,
+            esp_usb_console_interrupt, NULL, &s_usb_int_handle);
+    if (err != ESP_OK) {
+        esp_unregister_shutdown_handler(esp_usb_console_before_restart);
+        return err;
+    }
+
+    /* Initialize USB / CDC */
+    s_cdc_acm_device = cdc_acm_init(cdcmem, CDC_WORK_BUF_SIZE);
+    usb_dc_check_poll_for_interrupts();
+
+    /* Set callback for handling DTR/RTS lines and TX/RX events */
+    cdc_acm_irq_callback_set(s_cdc_acm_device, esp_usb_console_cdc_acm_cb);
+    cdc_acm_irq_state_enable(s_cdc_acm_device);
+
+    /* Set callback for handling DFU detach */
+    usb_dfu_set_detach_cb(esp_usb_console_dfu_detach_cb);
+
+    /* Enable interrupts on USB peripheral side */
+    USB0.gahbcfg |= USB_GLBLLNTRMSK_M;
+
+    /* Enable the interrupt handler */
+    esp_intr_enable(s_usb_int_handle);
+
+#ifdef CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
+    /* Install esp_rom_printf handler */
+    ets_install_putc1(&esp_usb_console_write_char);
+#endif // CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
+
+    return ESP_OK;
+}
+
+/* Non-static to allow placement into IRAM by ldgen.
+ * Must be called with the write lock held.
+ */
+ssize_t esp_usb_console_flush_internal(size_t last_write_size)
+{
+    if (s_usb_tx_buf_pos == 0) {
+        return 0;
+    }
+    assert(s_usb_tx_buf_pos >= last_write_size);
+    ssize_t ret;
+    size_t tx_buf_pos_before = s_usb_tx_buf_pos - last_write_size;
+    int sent = cdc_acm_fifo_fill(s_cdc_acm_device, (const uint8_t*) s_usb_tx_buf, s_usb_tx_buf_pos);
+    if (sent == last_write_size) {
+        /* everything was sent */
+        ret = last_write_size;
+        s_usb_tx_buf_pos = 0;
+    } else if (sent == 0) {
+        /* nothing was sent, roll back to the original state */
+        ret = 0;
+        s_usb_tx_buf_pos = tx_buf_pos_before;
+    } else {
+        /* Some data was sent, but not all of the buffer.
+         * We can still tell the caller that all the new data
+         * was "sent" since it is in the buffer now.
+         */
+        ret = last_write_size;
+        memmove(s_usb_tx_buf, s_usb_tx_buf + sent, s_usb_tx_buf_pos - sent);
+        s_usb_tx_buf_pos = s_usb_tx_buf_pos - sent;
+    }
+    return ret;
+}
+
+ssize_t esp_usb_console_flush(void)
+{
+    if (s_cdc_acm_device == NULL) {
+        return -1;
+    }
+    write_lock_acquire();
+    int ret = esp_usb_console_flush_internal(0);
+    write_lock_release();
+    return ret;
+}
+
+ssize_t esp_usb_console_write_buf(const char* buf, size_t size)
+{
+    if (s_cdc_acm_device == NULL) {
+        return -1;
+    }
+    if (size == 0) {
+        return 0;
+    }
+    write_lock_acquire();
+    ssize_t tx_buf_available = ACM_BYTES_PER_TX - s_usb_tx_buf_pos;
+    ssize_t will_write = MIN(size, tx_buf_available);
+    memcpy(s_usb_tx_buf + s_usb_tx_buf_pos, buf, will_write);
+    s_usb_tx_buf_pos += will_write;
+
+    ssize_t ret;
+    if (s_usb_tx_buf_pos == ACM_BYTES_PER_TX || buf[size - 1] == '\n') {
+        /* Buffer is full, or a newline is found.
+         * For binary streams, we probably shouldn't do line buffering,
+         * but text streams are likely going to be the most common case.
+         */
+        ret = esp_usb_console_flush_internal(will_write);
+    } else {
+        /* nothing sent out yet, but all the new data is in the buffer now */
+        ret = will_write;
+    }
+    write_lock_release();
+    return ret;
+}
+
+ssize_t esp_usb_console_read_buf(char *buf, size_t buf_size)
+{
+    if (s_cdc_acm_device == NULL) {
+        return -1;
+    }
+    if (!esp_usb_console_read_available()) {
+        return 0;
+    }
+    int bytes_read = cdc_acm_fifo_read(s_cdc_acm_device, (uint8_t*) buf, buf_size);
+    return bytes_read;
+}
+
+esp_err_t esp_usb_console_set_cb(esp_usb_console_cb_t rx_cb, esp_usb_console_cb_t tx_cb, void *arg)
+{
+    if (s_cdc_acm_device == NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    s_rx_cb = rx_cb;
+    if (s_rx_cb) {
+        cdc_acm_irq_rx_enable(s_cdc_acm_device);
+    } else {
+        cdc_acm_irq_rx_disable(s_cdc_acm_device);
+    }
+    s_tx_cb = tx_cb;
+    if (s_tx_cb) {
+        cdc_acm_irq_tx_enable(s_cdc_acm_device);
+    } else {
+        cdc_acm_irq_tx_disable(s_cdc_acm_device);
+    }
+    s_cb_arg = arg;
+    return ESP_OK;
+}
+
+bool esp_usb_console_read_available(void)
+{
+    if (s_cdc_acm_device == NULL) {
+        return false;
+    }
+    return cdc_acm_rx_fifo_cnt(s_cdc_acm_device) > 0;
+}
+
+bool esp_usb_console_write_available(void)
+{
+    if (s_cdc_acm_device == NULL) {
+        return false;
+    }
+    return cdc_acm_irq_tx_ready(s_cdc_acm_device) != 0;
+}
+
+
+#ifdef CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
+/* Used as an output function by esp_rom_printf.
+ * The LF->CRLF replacement logic replicates the one in esp_rom_uart_putc.
+ * Not static to allow placement into IRAM by ldgen.
+ */
+void esp_usb_console_write_char(char c)
+{
+    char cr = '\r';
+    char lf = '\n';
+
+    if (c == lf) {
+        esp_usb_console_write_buf(&cr, 1);
+        esp_usb_console_write_buf(&lf, 1);
+    } else if (c == '\r') {
+    } else {
+        esp_usb_console_write_buf(&c, 1);
+    }
+}
+static inline void write_lock_acquire(void)
+{
+    spinlock_acquire(&s_write_lock, SPINLOCK_WAIT_FOREVER);
+}
+static inline void write_lock_release(void)
+{
+    spinlock_release(&s_write_lock);
+}
+
+#else // CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
+
+static inline void write_lock_acquire(void)
+{
+}
+
+static inline void write_lock_release(void)
+{
+}
+#endif // CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF

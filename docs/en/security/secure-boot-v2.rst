@@ -171,16 +171,18 @@ How To Enable Secure Boot V2
     2. For ESP32, Secure Boot V2 is available only ESP32 ECO3 onwards. To view the "Secure Boot V2" option the chip revision should be changed to revision 3 (ESP32- ECO3). To change the chip revision, set "Minimum Supported ESP32 Revision" to Rev 3 in "Component Config" -> "ESP32- Specific".
 
     3. Specify the secure boot signing key path. The file can be anywhere on your system. A relative path will be evaluated from the project directory. The file does not need to exist yet.
+    4. Select the UART ROM download mode in "Security features -> UART ROM download mode". By default the UART ROM download mode has been kept enabled in order to prevent permanently disabling it in the development phase, this option is a potentially insecure option. It is recommended to disable the UART download mode for better security.
 
 .. only:: esp32s2
 
     2. The "Secure Boot V2" option will be selected and the "App Signing Scheme" would be set to RSA by default.
 
     3. Select the number of keys to be used to sign the bootloader binary and chose one of them to sign the application. Specify the secure boot signing key paths for each one of these. The file can be anywhere on your system. A relative path will be evaluated from the project directory. The file does not need to exist yet.
+    4. Select the UART ROM download mode in "Security features -> UART ROM download mode".
 
-4. Set other menuconfig options (as desired). Pay particular attention to the "Bootloader Config" options, as you can only flash the bootloader once. Then exit menuconfig and save your configuration.
+5. Set other menuconfig options (as desired). Pay particular attention to the "Bootloader Config" options, as you can only flash the bootloader once. Then exit menuconfig and save your configuration.
 
-5. The first time you run ``make`` or ``idf.py build``, if the signing key is not found then an error message will be printed with a command to generate a signing key via ``espsecure.py generate_signing_key``.
+6. The first time you run ``make`` or ``idf.py build``, if the signing key is not found then an error message will be printed with a command to generate a signing key via ``espsecure.py generate_signing_key``.
 
 .. important::
    A signing key generated this way will use the best random number source available to the OS and its Python installation (`/dev/urandom` on OSX/Linux and `CryptGenRandom()` on Windows). If this random number source is weak, then the private key will be weak.
@@ -188,21 +190,21 @@ How To Enable Secure Boot V2
 .. important::
    For production environments, we recommend generating the keypair using openssl or another industry standard encryption program. See :ref:`secure-boot-v2-generate-key` for more details.
 
-6. Run ``idf.py bootloader`` to build a secure boot enabled bootloader. The build output will include a prompt for a flashing command, using ``esptool.py write_flash``.
+7. Run ``idf.py bootloader`` to build a secure boot enabled bootloader. The build output will include a prompt for a flashing command, using ``esptool.py write_flash``.
 
-7. When you're ready to flash the bootloader, run the specified command (you have to enter it yourself, this step is not performed by the build system) and then wait for flashing to complete.
+8. When you're ready to flash the bootloader, run the specified command (you have to enter it yourself, this step is not performed by the build system) and then wait for flashing to complete.
 
-8. Run ``idf.py flash`` to build and flash the partition table and the just-built app image. The app image will be signed using the signing key you generated in step 4.
+9. Run ``idf.py flash`` to build and flash the partition table and the just-built app image. The app image will be signed using the signing key you generated in step 4.
 
 .. note:: ``idf.py flash`` doesn't flash the bootloader if secure boot is enabled.
 
-9. Reset the {IDF_TARGET_NAME} and it will boot the software bootloader you flashed. The software bootloader will enable secure boot on the chip, and then it verifies the app image signature and boots the app. You should watch the serial console output from the {IDF_TARGET_NAME} to verify that secure boot is enabled and no errors have occurred due to the build configuration.
+10. Reset the {IDF_TARGET_NAME} and it will boot the software bootloader you flashed. The software bootloader will enable secure boot on the chip, and then it verifies the app image signature and boots the app. You should watch the serial console output from the {IDF_TARGET_NAME} to verify that secure boot is enabled and no errors have occurred due to the build configuration.
 
 .. note:: Secure boot won't be enabled until after a valid partition table and app image have been flashed. This is to prevent accidents before the system is fully configured.
 
 .. note:: If the {IDF_TARGET_NAME} is reset or powered down during the first boot, it will start the process again on the next boot.
 
-10. On subsequent boots, the secure boot hardware will verify the software bootloader has not changed and the software bootloader will verify the signed app image (using the validated public key portion of its appended signature block).
+11. On subsequent boots, the secure boot hardware will verify the software bootloader has not changed and the software bootloader will verify the signed app image (using the validated public key portion of its appended signature block).
 
 Restrictions after Secure Boot is enabled
 -----------------------------------------
@@ -323,6 +325,48 @@ Secure Boot & Flash Encryption
 ------------------------------
 
 If secure boot is used without :doc:`Flash Encryption <flash-encryption>`, it is possible to launch "time-of-check to time-of-use" attack, where flash contents are swapped after the image is verified and running. Therefore, it is recommended to use both the features together.
+
+.. _signed-app-verify-v2:
+
+Signed App Verification Without Hardware Secure Boot
+----------------------------------------------------
+
+The Secure Boot V2 signature of apps can be checked on OTA update, without enabling the hardware secure boot option. This option uses the same app signature scheme as Secure Boot V2, but unlike hardware secure boot it does not prevent an attacker who can write to flash from bypassing the signature protection.
+
+This may be desirable in cases where the delay of Secure Boot verification on startup is unacceptable, and/or where the threat model does not include physical access or attackers writing to bootloader or app partitions in flash.
+
+In this mode, any public key which is present in the signature block of the currently running app will be used to verify the signature of a newly updated app. (The signature on the running app isn't verified during the update process, it's assumed to be valid.) In this way the system creates a chain of trust from the running app to the newly updated app.
+
+For this reason, it's essential that the initial app flashed to the device is also signed. A check is run on app startup and the app will abort if no signatures are found. This is to try and prevent a situation where no update is possible. The app should have only one valid signature block in the first position. Note again that, unlike hardware Secure Boot V2, the signature of the running app isn't verified on boot.The system only verifies a signature block in the first position and ignores the other (2) appended signatures.
+
+.. note::
+
+   In general, it's recommended to use full hardware Secure Boot unless certain that this option is sufficient for application security needs
+
+.. _signed-app-verify-v2-howto:
+
+How To Enable Signed App Verification
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. Open :ref:`project-configuration-menu` -> Security features
+
+.. only:: esp32
+
+    2. Ensure `App Signing Scheme` is `RSA`. For ESP32 ECO3 chip, select :ref:`CONFIG_ESP32_REV_MIN` to `Rev 3` to get `RSA` option available
+
+.. only:: not esp32
+
+    2. Ensure `App Signing Scheme` is `RSA`
+
+3. Enable :ref:`CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT`
+
+4. By default, "Sign binaries during build" will be enabled on selecting "Require signed app images" option, which will sign binary files as a part of build process. The file named in "Secure boot private signing key" will be used to sign the image.
+
+5. If you disable "Sign binaries during build" option then all app binaries must be manually signed by following instructions in :ref:`remote-sign-v2-image`.
+
+.. warning::
+
+   It is very important that all apps flashed have been signed, either during the build or after the build.
 
 Advanced Features
 -----------------

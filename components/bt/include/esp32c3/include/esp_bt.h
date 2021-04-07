@@ -26,7 +26,7 @@ extern "C" {
 #endif
 
 #define ESP_BT_CTRL_CONFIG_MAGIC_VAL    0x5A5AA5A5
-#define ESP_BT_CTRL_CONFIG_VERSION      0x02101290
+#define ESP_BT_CTRL_CONFIG_VERSION      0x02103080
 
 #define ESP_BT_HCI_TL_MAGIC_VALUE   0xfadebead
 #define ESP_BT_HCI_TL_VERSION       0x00010000
@@ -73,7 +73,7 @@ typedef enum {
     ESP_BT_SLEEP_CLOCK_NONE            = 0,   /*!< Sleep clock not configured */
     ESP_BT_SLEEP_CLOCK_MAIN_XTAL       = 1,   /*!< SoC main crystal */
     ESP_BT_SLEEP_CLOCK_EXT_32K_XTAL    = 2,   /*!< External 32.768kHz crystal */
-    ESP_BT_SLEEP_CLOCK_RTC_SLOW        = 3,   /*!< Internal 90kHz RC oscillator */
+    ESP_BT_SLEEP_CLOCK_RTC_SLOW        = 3,   /*!< Internal 150kHz RC oscillator */
     ESP_BT_SLEEP_CLOCK_FPGA_32K        = 4,   /*!< Hardwired 32KHz clock temporarily used for FPGA */
 } esp_bt_sleep_clock_t;
 
@@ -133,6 +133,8 @@ enum {
 
 #define CFG_NASK      CFG_MASK_BIT_SCAN_DUPLICATE_OPTION
 
+#define BLE_HW_TARGET_CODE_ESP32C3_CHIP_ECO0                      (0x01010000)
+
 #define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {                              \
     .magic = ESP_BT_CTRL_CONFIG_MAGIC_VAL,                                 \
     .version = ESP_BT_CTRL_CONFIG_VERSION,                                 \
@@ -158,6 +160,7 @@ enum {
     .normal_adv_size = NORMAL_SCAN_DUPLICATE_CACHE_SIZE,                   \
     .mesh_adv_size = MESH_DUPLICATE_SCAN_CACHE_SIZE,                       \
     .coex_phy_coded_tx_rx_time_limit = CONFIG_BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_EFF, \
+    .hw_target_code = BLE_HW_TARGET_CODE_ESP32C3_CHIP_ECO0,                \
 };
 
 #else
@@ -221,6 +224,7 @@ typedef struct {
     uint16_t normal_adv_size;               /*!< Normal adv size for scan duplicate */
     uint16_t mesh_adv_size;                 /*!< Mesh adv size for scan duplicate */
     uint8_t coex_phy_coded_tx_rx_time_limit;  /*!< limit on max tx/rx time in case of connection using CODED-PHY with Wi-Fi coexistence */
+    uint32_t hw_target_code;                /*!< hardware target */
 } esp_bt_controller_config_t;
 
 /**
@@ -263,22 +267,23 @@ typedef enum {
  * @brief Bluetooth TX power level(index), it's just a index corresponding to power(dbm).
  */
 typedef enum {
-    ESP_PWR_LVL_N12 = 0,                /*!< Corresponding to -12dbm */
-    ESP_PWR_LVL_N9  = 1,                /*!< Corresponding to  -9dbm */
-    ESP_PWR_LVL_N6  = 2,                /*!< Corresponding to  -6dbm */
-    ESP_PWR_LVL_N3  = 3,                /*!< Corresponding to  -3dbm */
-    ESP_PWR_LVL_N0  = 4,                /*!< Corresponding to   0dbm */
-    ESP_PWR_LVL_P3  = 5,                /*!< Corresponding to  +3dbm */
-    ESP_PWR_LVL_P6  = 6,                /*!< Corresponding to  +6dbm */
-    ESP_PWR_LVL_P9  = 7,                /*!< Corresponding to  +9dbm */
-    ESP_PWR_LVL_N14 = ESP_PWR_LVL_N12,  /*!< Backward compatibility! Setting to -14dbm will actually result to -12dbm */
-    ESP_PWR_LVL_N11 = ESP_PWR_LVL_N9,   /*!< Backward compatibility! Setting to -11dbm will actually result to  -9dbm */
-    ESP_PWR_LVL_N8  = ESP_PWR_LVL_N6,   /*!< Backward compatibility! Setting to  -8dbm will actually result to  -6dbm */
-    ESP_PWR_LVL_N5  = ESP_PWR_LVL_N3,   /*!< Backward compatibility! Setting to  -5dbm will actually result to  -3dbm */
-    ESP_PWR_LVL_N2  = ESP_PWR_LVL_N0,   /*!< Backward compatibility! Setting to  -2dbm will actually result to   0dbm */
-    ESP_PWR_LVL_P1  = ESP_PWR_LVL_P3,   /*!< Backward compatibility! Setting to  +1dbm will actually result to  +3dbm */
-    ESP_PWR_LVL_P4  = ESP_PWR_LVL_P6,   /*!< Backward compatibility! Setting to  +4dbm will actually result to  +6dbm */
-    ESP_PWR_LVL_P7  = ESP_PWR_LVL_P9,   /*!< Backward compatibility! Setting to  +7dbm will actually result to  +9dbm */
+    ESP_PWR_LVL_N27 = 0,              /*!< Corresponding to -27dbm */
+    ESP_PWR_LVL_N24 = 1,              /*!< Corresponding to -24dbm */
+    ESP_PWR_LVL_N21 = 2,              /*!< Corresponding to -21dbm */
+    ESP_PWR_LVL_N18 = 3,              /*!< Corresponding to -18dbm */
+    ESP_PWR_LVL_N15 = 4,              /*!< Corresponding to -15dbm */
+    ESP_PWR_LVL_N12 = 5,              /*!< Corresponding to -12dbm */
+    ESP_PWR_LVL_N9  = 6,              /*!< Corresponding to  -9dbm */
+    ESP_PWR_LVL_N6  = 7,              /*!< Corresponding to  -6dbm */
+    ESP_PWR_LVL_N3  = 8,              /*!< Corresponding to  -3dbm */
+    ESP_PWR_LVL_N0  = 9,              /*!< Corresponding to   0dbm */
+    ESP_PWR_LVL_P3  = 10,             /*!< Corresponding to  +3dbm */
+    ESP_PWR_LVL_P6  = 11,             /*!< Corresponding to  +6dbm */
+    ESP_PWR_LVL_P9  = 12,             /*!< Corresponding to  +9dbm */
+    ESP_PWR_LVL_P12 = 13,             /*!< Corresponding to  +12dbm */
+    ESP_PWR_LVL_P15 = 14,             /*!< Corresponding to  +15dbm */
+    ESP_PWR_LVL_P18 = 15,             /*!< Corresponding to  +18dbm */
+    ESP_PWR_LVL_INVALID = 0xFF,         /*!< Indicates an invalid value */
 } esp_power_level_t;
 
 /**

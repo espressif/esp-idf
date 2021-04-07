@@ -50,6 +50,7 @@ typedef enum {
     ESP_PD_DOMAIN_RTC_FAST_MEM,    //!< RTC fast memory
     ESP_PD_DOMAIN_XTAL,            //!< XTAL oscillator
     ESP_PD_DOMAIN_CPU,             //!< CPU core
+    ESP_PD_DOMAIN_VDDSDIO,         //!< VDD_SDIO
     ESP_PD_DOMAIN_MAX              //!< Number of domains
 } esp_sleep_pd_domain_t;
 
@@ -434,24 +435,23 @@ esp_deep_sleep_wake_stub_fn_t esp_get_deep_sleep_wake_stub(void);
 void esp_default_wake_deep_sleep(void);
 
 /**
- *  @brief Disable logging from the ROM code after deep sleep.
+ * @brief Disable logging from the ROM code after deep sleep.
  *
- *  Using LSB of RTC_STORE4.
+ * Using LSB of RTC_STORE4.
  */
 void esp_deep_sleep_disable_rom_logging(void);
 
 #if SOC_GPIO_SUPPORT_SLP_SWITCH
 /**
- *  @brief Disable all GPIO pins at slept status.
- *
+ * @brief Configure to isolate all GPIO pins in sleep state
  */
-void esp_sleep_gpio_status_init(void);
+void esp_sleep_config_gpio_isolate(void);
 
 /**
- *  @brief Configure GPIO pins status switching between slept status and waked status.
- *  @param enable decide whether to switch status or not
+ * @brief Enable or disable GPIO pins status switching between slept status and waked status.
+ * @param enable decide whether to switch status or not
  */
-void esp_sleep_gpio_status_switch_configure(bool enable);
+void esp_sleep_enable_gpio_switch(bool enable);
 #endif
 
 #if CONFIG_MAC_BB_PD

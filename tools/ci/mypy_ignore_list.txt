@@ -239,7 +239,6 @@ tools/idf_py_actions/serial_ext.py
 tools/idf_py_actions/tools.py
 tools/idf_py_actions/uf2_ext.py
 tools/idf_size.py
-tools/idf_tools.py
 tools/idf.py
 tools/kconfig_new/confgen.py
 tools/kconfig_new/confserver.py

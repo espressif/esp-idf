@@ -341,8 +341,7 @@ tBTM_STATUS BTM_BleSetExtendedAdvParams(UINT8 instance, tBTM_BLE_GAP_EXT_ADV_PAR
                                       params->peer_addr, params->filter_policy, params->tx_power,
                                       params->primary_phy, params->max_skip,
                                       params->secondary_phy, params->sid, params->scan_req_notif)) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("%s, fail to send the hci command, the error code = %s(0x%x)",
-                                __func__, btm_ble_hci_status_to_str(err), err);
+        BTM_TRACE_ERROR("LE EA SetParams: cmd err=0x%x", err);
         status = BTM_ILLEGAL_VALUE;
 	goto end;
     }
@@ -390,14 +389,12 @@ tBTM_STATUS BTM_BleConfigExtendedAdvDataRaw(BOOLEAN is_scan_rsp, UINT8 instance,
         }
         if (!is_scan_rsp) {
             if ((err = btsnd_hcic_ble_set_ext_adv_data(instance, operation, 0, send_data_len, &data[data_offset])) != HCI_SUCCESS) {
-                BTM_TRACE_ERROR("%s, line %d, fail to send the hci command, the error code = %s",
-                                __func__, __LINE__, btm_ble_hci_status_to_str(err));
+                BTM_TRACE_ERROR("LE EA SetAdvData: cmd err=0x%x", err);
                 status = BTM_ILLEGAL_VALUE;
             }
         } else {
             if ((err = btsnd_hcic_ble_set_ext_adv_scan_rsp_data(instance, operation, 0, send_data_len, &data[data_offset])) != HCI_SUCCESS) {
-                BTM_TRACE_ERROR("%s, line %d, fail to send the hci command, the error code = %s(0x%x)",
-                                             __func__, __LINE__, btm_ble_hci_status_to_str(err), err);
+                BTM_TRACE_ERROR("LE EA SetScanRspData: cmd err=0x%x", err);
                 status = BTM_ILLEGAL_VALUE;
             }
         }
@@ -452,8 +449,7 @@ tBTM_STATUS BTM_BleStartExtAdv(BOOLEAN enable, UINT8 num, tBTM_BLE_EXT_ADV *ext_
 
         if ((err = btsnd_hcic_ble_ext_adv_enable(enable, num, instance,
                                       duration, max_events)) != HCI_SUCCESS) {
-            BTM_TRACE_ERROR("%s, fail to send the hci command, the error code = %s(0x%x)",
-                                                 __func__, btm_ble_hci_status_to_str(err), err);
+            BTM_TRACE_ERROR("LE EA En=%d: cmd err=0x%x", enable, err);
             status = BTM_ILLEGAL_VALUE;
         }
 
@@ -464,9 +460,8 @@ tBTM_STATUS BTM_BleStartExtAdv(BOOLEAN enable, UINT8 num, tBTM_BLE_EXT_ADV *ext_
         // enable = false, num == 0 or ext_adv = NULL
 
         if ((err = btsnd_hcic_ble_ext_adv_enable(enable, num, NULL, NULL, NULL)) != HCI_SUCCESS) {
-            BTM_TRACE_ERROR("%s, fail to send the hci command, the error code = %s(0x%x)",
-                                             __func__, btm_ble_hci_status_to_str(err), err);
-             status = BTM_ILLEGAL_VALUE;
+            BTM_TRACE_ERROR("LE EA En=%d: cmd err=0x%x", enable, err);
+            status = BTM_ILLEGAL_VALUE;
         }
         goto end;
     }
@@ -504,8 +499,7 @@ tBTM_STATUS BTM_BleExtAdvSetRemove(UINT8 instance)
     }
 
     if ((err = btsnd_hcic_ble_remove_adv_set(instance)) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("%s, fail to send the hci command, the error code = %s(0x%x)",
-                                                __func__, btm_ble_hci_status_to_str(err), err);
+        BTM_TRACE_ERROR("LE EAS Rm: cmd err=0x%x", err);
         status = BTM_ILLEGAL_VALUE;
     }
 
@@ -527,8 +521,7 @@ tBTM_STATUS BTM_BleExtAdvSetClear(void)
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
     if ((err = btsnd_hcic_ble_clear_adv_set()) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("%s, fail to send the hci command, the error code = %s(0x%x)",
-                                                __func__, btm_ble_hci_status_to_str(err), err);
+        BTM_TRACE_ERROR("LE EAS Clr: cmd err=0x%x", err);
         status = BTM_ILLEGAL_VALUE;
     }
 
@@ -559,15 +552,14 @@ tBTM_STATUS BTM_BlePeriodicAdvSetParams(UINT8 instance, tBTM_BLE_Periodic_Adv_Pa
         extend_adv_cb.inst[instance].connetable ||
         extend_adv_cb.inst[instance].legacy_pdu) {
         BTM_TRACE_ERROR("%s, instance = %d, Before set the periodic adv parameters, please configure the the \
-                extend adv to nonscannable and nonconnectable fisrt, and it shouldn't include the legacy bit.", __func__, instance);
+                extend adv to nonscannable and nonconnectable first, and it shouldn't include the legacy bit.", __func__, instance);
         status = BTM_ILLEGAL_VALUE;
         goto end;
     }
 
     if ((err= btsnd_hcic_ble_set_periodic_adv_params(instance, params->interval_min,
                                                params->interval_max, params->properties)) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("%s, fail to send the hci command, the error code = %s(0x%x)",
-                                             __func__, btm_ble_hci_status_to_str(err), err);
+        BTM_TRACE_ERROR("LE PA SetParams: cmd err=0x%x", err);
         status = BTM_ILLEGAL_VALUE;
     }
 
@@ -619,8 +611,7 @@ tBTM_STATUS BTM_BlePeriodicAdvCfgDataRaw(UINT8 instance, UINT16 len, UINT8 *data
         }
 
         if ((err = btsnd_hcic_ble_set_periodic_adv_data(instance, operation, send_data_len, &data[data_offset])) != HCI_SUCCESS) {
-            BTM_TRACE_ERROR("%s, fail to send the hci command, the error code = %s(0x%x)",
-                                             __func__, btm_ble_hci_status_to_str(err), err);
+            BTM_TRACE_ERROR("LE PA SetData: cmd err=0x%x", err);
             status = BTM_ILLEGAL_VALUE;
         }
         rem_len -= send_data_len;
@@ -643,14 +634,13 @@ tBTM_STATUS BTM_BlePeriodicAdvEnable(UINT8 instance, BOOLEAN enable)
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
     if (instance >= MAX_BLE_ADV_INSTANCE) {
-        BTM_TRACE_ERROR("%s, invalid insatnce %d", __func__, instance);
+        BTM_TRACE_ERROR("%s, invalid instance %d", __func__, instance);
         status = BTM_ILLEGAL_VALUE;
         goto end;
     }
 
     if ((err = btsnd_hcic_ble_periodic_adv_enable(enable, instance)) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("%s, fail to send the hci command, the error code = %s(0x%x)",
-                                             __func__, btm_ble_hci_status_to_str(err), err);
+        BTM_TRACE_ERROR("LE PA En=%d: cmd err=0x%x", enable, err);
         status = BTM_ILLEGAL_VALUE;
     }
 
@@ -688,7 +678,7 @@ tBTM_STATUS BTM_BlePeriodicAdvCreateSync(tBTM_BLE_Periodic_Sync_Params *params)
 
     if (!btsnd_hcic_ble_periodic_adv_create_sync(params->filter_policy, params->sid, params->addr_type,
                                             params->addr, params->sync_timeout, 0)) {
-        BTM_TRACE_ERROR("%s, send cmd failed", __func__);
+        BTM_TRACE_ERROR("LE PA CreateSync cmd failed");
         status = BTM_ILLEGAL_VALUE;
     }
 
@@ -749,8 +739,7 @@ tBTM_STATUS BTM_BlePeriodicAdvSyncCancel(void)
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
     if ((err = btsnd_hcic_ble_periodic_adv_create_sync_cancel()) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("%s, fail to send the hci command, the error code = %s(0x%x)",
-                                             __func__, btm_ble_hci_status_to_str(err), err);
+        BTM_TRACE_ERROR("LE PA SyncCancel, cmd err=0x%x", err);
         status = BTM_ILLEGAL_VALUE;
     }
 
@@ -770,8 +759,7 @@ tBTM_STATUS BTM_BlePeriodicAdvSyncTerm(UINT16 sync_handle)
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
     if (( err = btsnd_hcic_ble_periodic_adv_term_sync(sync_handle)) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("%s, fail to send the hci command, the error code = %s(0x%x)",
-                                             __func__, btm_ble_hci_status_to_str(err), err);
+        BTM_TRACE_ERROR("LE PA SyncTerm: cmd err=0x%x", err);
         status = BTM_ILLEGAL_VALUE;
     }
 
@@ -797,8 +785,7 @@ tBTM_STATUS BTM_BlePeriodicAdvAddDevToList(tBLE_ADDR_TYPE addr_type, BD_ADDR add
     }
 
     if ((err = btsnd_hcic_ble_add_dev_to_periodic_adv_list(addr_type, addr, sid)) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("%s, fail to send the hci command, the error code = %s(0x%x)",
-                                             __func__, btm_ble_hci_status_to_str(err), err);
+        BTM_TRACE_ERROR("LE PA AddDevToList: cmd err=0x%x", err);
         status = BTM_ILLEGAL_VALUE;
     }
 
@@ -824,8 +811,7 @@ tBTM_STATUS BTM_BlePeriodicAdvRemoveDevFromList(tBLE_ADDR_TYPE addr_type, BD_ADD
     }
 
     if ((err = btsnd_hcic_ble_rm_dev_from_periodic_adv_list(addr_type, addr, sid)) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("%s, fail to send the hci command, the error code = %s(0x%x)",
-                                             __func__, btm_ble_hci_status_to_str(err), err);
+        BTM_TRACE_ERROR("LE PA RmDevFromList: cmd err=0x%x", err);
         status = BTM_ILLEGAL_VALUE;
     }
 
@@ -845,8 +831,7 @@ tBTM_STATUS BTM_BlePeriodicAdvClearDev(void)
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
     if ((err = btsnd_hcic_ble_clear_periodic_adv_list()) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("%s, fail to send the hci command, the error code = %s(0x%x)",
-                                             __func__, btm_ble_hci_status_to_str(err), err);
+        BTM_TRACE_ERROR("LE PA ClrDev: cmd err=0x%x", err);
         status = BTM_ILLEGAL_VALUE;
     }
 
@@ -894,8 +879,7 @@ tBTM_STATUS BTM_BleSetExtendedScanParams(tBTM_BLE_EXT_SCAN_PARAMS *params)
 
     if ((err = btsnd_hcic_ble_set_ext_scan_params(params->own_addr_type, params->filter_policy, phy_mask, phy_count,
                                       hci_params)) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("%s, fail to send the hci command, the error code = %s(0x%x)",
-                                             __func__, btm_ble_hci_status_to_str(err), err);
+        BTM_TRACE_ERROR("LE ES SetParams: cmd err=0x%x", err);
         status = BTM_ILLEGAL_VALUE;
     }
 
@@ -923,8 +907,7 @@ tBTM_STATUS BTM_BleExtendedScan(BOOLEAN enable, UINT16 duration, UINT16 period)
     }
 
     if ((err = btsnd_hcic_ble_ext_scan_enable(enable, extend_adv_cb.scan_duplicate, duration, period)) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("%s, fail to send the hci command, the error code = %s(0x%x)",
-                                             __func__, btm_ble_hci_status_to_str(err), err);
+        BTM_TRACE_ERROR("LE ES En=%d: cmd err=0x%x", enable, err);
         status = BTM_ILLEGAL_VALUE;
     }
 

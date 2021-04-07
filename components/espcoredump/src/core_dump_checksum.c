@@ -128,7 +128,10 @@ uint32_t esp_core_dump_checksum_finish(core_dump_checksum_ctx* cks_ctx, core_dum
 
 #endif
 
-    ESP_COREDUMP_LOG_PROCESS("Total length of hashed data: %d!", cks_ctx->total_bytes_checksum);
+    if (cks_ctx) {
+        ESP_COREDUMP_LOG_PROCESS("Total length of hashed data: %d", cks_ctx->total_bytes_checksum);
+    }
+
     return chs_len;
 }
 

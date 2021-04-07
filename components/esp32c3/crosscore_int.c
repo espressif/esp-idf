@@ -58,6 +58,10 @@ static void IRAM_ATTR esp_crosscore_isr(void *arg)
          * to allow DFS features without the extra latency of the ISR hook.
          */
     }
+    // TODO: ESP32-C3 IDF-2986
+    // if (my_reason_val & REASON_PRINT_BACKTRACE) {
+    //     esp_backtrace_print(100);
+    // }
 }
 
 // Initialize the crosscore interrupt on this core.

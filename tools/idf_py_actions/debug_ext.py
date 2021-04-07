@@ -98,10 +98,10 @@ def action_extensions(base_actions, project_path):
 
     def create_local_gdbinit(gdbinit, elf_file):
         with open(gdbinit, 'w') as f:
-            f.write('target remote :3333\n')
             if os.name == 'nt':
                 elf_file = elf_file.replace('\\','\\\\')
-            f.write('symbol-file {}\n'.format(elf_file))
+            f.write('file {}\n'.format(elf_file))
+            f.write('target remote :3333\n')
             f.write('mon reset halt\n')
             f.write('flushregs\n')
             f.write('thb app_main\n')

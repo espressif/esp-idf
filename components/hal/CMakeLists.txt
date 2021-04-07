@@ -72,6 +72,7 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs
             "dac_hal.c"
             "gdma_hal.c"
+            "lcd_hal.c"
             "pcnt_hal.c"
             "spi_flash_hal_gpspi.c"
             "spi_slave_hd_hal.c"

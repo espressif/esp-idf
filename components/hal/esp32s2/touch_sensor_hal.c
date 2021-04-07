@@ -18,6 +18,9 @@
 #include "hal/touch_sensor_hal.h"
 #include "hal/touch_sensor_types.h"
 
+static int s_sleep_cycle = -1;
+static int s_meas_times = -1;
+
 void touch_hal_init(void)
 {
     touch_ll_stop_fsm();
@@ -156,4 +159,24 @@ void touch_hal_sleep_channel_get_config(touch_pad_sleep_channel_t *slp_config)
 {
     touch_ll_sleep_get_channel_num(&slp_config->touch_num);
     slp_config->en_proximity = touch_ll_sleep_get_approach_status();
+}
+
+void touch_hal_sleep_channel_set_work_time(uint16_t sleep_cycle, uint16_t meas_times)
+{
+    s_sleep_cycle = (int)sleep_cycle;
+    s_meas_times = (int)meas_times;
+}
+
+void touch_hal_sleep_channel_get_work_time(uint16_t *sleep_cycle, uint16_t *meas_times)
+{
+    if (s_meas_times < 0) {
+        touch_ll_get_measure_times(meas_times);
+    } else {
+        *meas_times = (uint16_t)s_meas_times;
+    }
+    if (s_sleep_cycle < 0) {
+        touch_ll_get_sleep_time(sleep_cycle);
+    } else {
+        *sleep_cycle = (uint16_t)s_sleep_cycle;
+    }
 }

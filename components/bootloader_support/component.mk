@@ -34,10 +34,13 @@ COMPONENT_OBJEXCLUDE += src/bootloader_flash_config_esp32s2.o \
 			src/bootloader_random_esp32c3.o
 
 ifndef CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME
-ifndef CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
-COMPONENT_OBJEXCLUDE += src/$(IDF_TARGET)/secure_boot_signatures.o \
-			src/idf/secure_boot_signatures.o
+COMPONENT_OBJEXCLUDE += src/secure_boot_v1/secure_boot_signatures_bootloader.o \
+			src/secure_boot_v1/secure_boot_signatures_app.o
 endif
+
+ifndef CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
+COMPONENT_OBJEXCLUDE += src/secure_boot_v2/secure_boot_signatures_bootloader.o \
+			src/secure_boot_v2/secure_boot_signatures_app.o
 endif
 
 ifndef CONFIG_SECURE_BOOT

@@ -6,17 +6,19 @@ Overview
 
 .. only:: esp32
 
-  The {IDF_TARGET_NAME} has two cores, with 32 interrupts each. Each interrupt has a certain priority level, most (but not all) interrupts are connected
-  to the interrupt mux. Because there are more interrupt sources than interrupts, sometimes it makes sense to share an interrupt in
-  multiple drivers. The esp_intr_alloc abstraction exists to hide all these implementation details.
+  The {IDF_TARGET_NAME} has two cores, with 32 interrupts each. Each interrupt has a certain priority level, most (but not all) interrupts are connected to the interrupt mux.
 
 .. only:: esp32s2
 
-  The {IDF_TARGET_NAME} has one core, with 32 interrupts. Each interrupt has a certain priority level, most (but not all) interrupts are connected
-  to the interrupt mux. Because there are more interrupt sources than interrupts, sometimes it makes sense to share an interrupt in
-  multiple drivers. The esp_intr_alloc abstraction exists to hide all these implementation details.
+  The {IDF_TARGET_NAME} has one core, with 32 interrupts. Each interrupt has a certain priority level, most (but not all) interrupts are connected to the interrupt mux.
 
-A driver can allocate an interrupt for a certain peripheral by calling esp_intr_alloc (or esp_intr_alloc_sintrstatus). It can use
+.. only:: esp32c3
+
+  The {IDF_TARGET_NAME} has one core, with 31 interrupts. Each interrupt has a programmable priority level.
+
+Because there are more interrupt sources than interrupts, sometimes it makes sense to share an interrupt in multiple drivers. The :cpp:func:`esp_intr_alloc` abstraction exists to hide all these implementation details.
+
+A driver can allocate an interrupt for a certain peripheral by calling :cpp:func:`esp_intr_alloc` (or :cpp:func:`esp_intr_alloc_intrstatus`). It can use
 the flags passed to this function to set the type of interrupt allocated, specifying a specific level or trigger method. The
 interrupt allocation code will then find an applicable interrupt, use the interrupt mux to hook it up to the peripheral, and
 install the given interrupt handler and ISR to it.
@@ -37,48 +39,50 @@ interrupt for DevA is still pending, but because the int line never went low (De
 even when the int for DevB was cleared) the interrupt is never serviced.)
 
 
-Multicore issues
-----------------
+.. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
-Peripherals that can generate interrupts can be divided in two types:
+  Multicore issues
+  ----------------
 
-  - External peripherals, within the {IDF_TARGET_NAME} but outside the Xtensa cores themselves. Most {IDF_TARGET_NAME} peripherals are of this type.
-  - Internal peripherals, part of the Xtensa CPU cores themselves.
+  Peripherals that can generate interrupts can be divided in two types:
 
-Interrupt handling differs slightly between these two types of peripherals.
+    - External peripherals, within the {IDF_TARGET_NAME} but outside the Xtensa cores themselves. Most {IDF_TARGET_NAME} peripherals are of this type.
+    - Internal peripherals, part of the Xtensa CPU cores themselves.
 
-Internal peripheral interrupts
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  Interrupt handling differs slightly between these two types of peripherals.
 
-Each Xtensa CPU core has its own set of six internal peripherals:
+  Internal peripheral interrupts
+  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  - Three timer comparators
-  - A performance monitor
-  - Two software interrupts.
+  Each Xtensa CPU core has its own set of six internal peripherals:
 
-Internal interrupt sources are defined in esp_intr_alloc.h as ``ETS_INTERNAL_*_INTR_SOURCE``.
+    - Three timer comparators
+    - A performance monitor
+    - Two software interrupts.
 
-These peripherals can only be configured from the core they are associated with. When generating an interrupt,
-the interrupt they generate is hard-wired to their associated core; it's not possible to have e.g. an internal
-timer comparator of one core generate an interrupt on another core. That is why these sources can only be managed
-using a task running on that specific core. Internal interrupt sources are still allocatable using esp_intr_alloc
-as normal, but they cannot be shared and will always have a fixed interrupt level (namely, the one associated in
-hardware with the peripheral).
+  Internal interrupt sources are defined in esp_intr_alloc.h as ``ETS_INTERNAL_*_INTR_SOURCE``.
 
-External Peripheral Interrupts
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  These peripherals can only be configured from the core they are associated with. When generating an interrupt,
+  the interrupt they generate is hard-wired to their associated core; it's not possible to have e.g. an internal
+  timer comparator of one core generate an interrupt on another core. That is why these sources can only be managed
+  using a task running on that specific core. Internal interrupt sources are still allocatable using esp_intr_alloc
+  as normal, but they cannot be shared and will always have a fixed interrupt level (namely, the one associated in
+  hardware with the peripheral).
 
-The remaining interrupt sources are from external peripherals. These are defined in soc/soc.h as ``ETS_*_INTR_SOURCE``.
+  External Peripheral Interrupts
+  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Non-internal interrupt slots in both CPU cores are wired to an interrupt multiplexer, which can be used to
-route any external interrupt source to any of these interrupt slots.
+  The remaining interrupt sources are from external peripherals. These are defined in soc/soc.h as ``ETS_*_INTR_SOURCE``.
 
-- Allocating an external interrupt will always allocate it on the core that does the allocation.
-- Freeing an external interrupt must always happen on the same core it was allocated on.
-- Disabling and enabling external interrupts from another core is allowed.
-- Multiple external interrupt sources can share an interrupt slot by passing ``ESP_INTR_FLAG_SHARED`` as a flag to esp_intr_alloc().
+  Non-internal interrupt slots in both CPU cores are wired to an interrupt multiplexer, which can be used to
+  route any external interrupt source to any of these interrupt slots.
 
-Care should be taken when calling esp_intr_alloc() from a task which is not pinned to a core. During task switching, these tasks can migrate between cores. Therefore it is impossible to tell which CPU the interrupt is allocated on, which makes it difficult to free the interrupt handle and may also cause debugging difficulties. It is advised to use xTaskCreatePinnedToCore() with a specific CoreID argument to create tasks that will allocate interrupts. In the case of internal interrupt sources, this is required.
+  - Allocating an external interrupt will always allocate it on the core that does the allocation.
+  - Freeing an external interrupt must always happen on the same core it was allocated on.
+  - Disabling and enabling external interrupts from another core is allowed.
+  - Multiple external interrupt sources can share an interrupt slot by passing ``ESP_INTR_FLAG_SHARED`` as a flag to esp_intr_alloc().
+
+  Care should be taken when calling esp_intr_alloc() from a task which is not pinned to a core. During task switching, these tasks can migrate between cores. Therefore it is impossible to tell which CPU the interrupt is allocated on, which makes it difficult to free the interrupt handle and may also cause debugging difficulties. It is advised to use xTaskCreatePinnedToCore() with a specific CoreID argument to create tasks that will allocate interrupts. In the case of internal interrupt sources, this is required.
 
 IRAM-Safe Interrupt Handlers
 ----------------------------

@@ -488,6 +488,7 @@ esp_err_t esp_bt_sleep_disable(void);
  * Note that scan duplicate list will be automatically cleared when the maximum amount of device in the filter is reached
  * the amount of device in the filter can be configured in menuconfig.
  *
+ * @note This function name is incorrectly spelled, it will be fixed in release 5.x version.
  *
  * @return
  *                  - ESP_OK : success

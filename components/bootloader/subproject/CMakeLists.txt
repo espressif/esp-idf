@@ -15,11 +15,13 @@ if(NOT IDF_TARGET)
         "in by the parent build process.")
 endif()
 
+# A number of these components are implemented as config-only when built in the bootloader
 set(COMPONENTS
     bootloader
     esptool_py
     esp_hw_support
     esp_system
+    freertos
     hal
     partition_table
     soc

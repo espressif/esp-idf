@@ -23,111 +23,111 @@ typedef volatile struct {
     struct {
         union {
             struct {
-                uint32_t filter_thres:     10;
-                uint32_t filter_en:         1;
-                uint32_t thr_zero_en:       1;
-                uint32_t thr_h_lim_en:      1;
-                uint32_t thr_l_lim_en:      1;
-                uint32_t thr_thres0_en:     1;
-                uint32_t thr_thres1_en:     1;
-                uint32_t ch0_neg_mode:      2;
-                uint32_t ch0_pos_mode:      2;
-                uint32_t ch0_hctrl_mode:    2;
-                uint32_t ch0_lctrl_mode:    2;
-                uint32_t ch1_neg_mode:      2;
-                uint32_t ch1_pos_mode:      2;
-                uint32_t ch1_hctrl_mode:    2;
-                uint32_t ch1_lctrl_mode:    2;
+                uint32_t filter_thres                  :    10;
+                uint32_t filter_en                     :    1;
+                uint32_t thr_zero_en                   :    1;
+                uint32_t thr_h_lim_en                  :    1;
+                uint32_t thr_l_lim_en                  :    1;
+                uint32_t thr_thres0_en                 :    1;
+                uint32_t thr_thres1_en                 :    1;
+                uint32_t ch0_neg_mode                  :    2;
+                uint32_t ch0_pos_mode                  :    2;
+                uint32_t ch0_hctrl_mode                :    2;
+                uint32_t ch0_lctrl_mode                :    2;
+                uint32_t ch1_neg_mode                  :    2;
+                uint32_t ch1_pos_mode                  :    2;
+                uint32_t ch1_hctrl_mode                :    2;
+                uint32_t ch1_lctrl_mode                :    2;
             };
             uint32_t val;
         } conf0;
         union {
             struct {
-                uint32_t cnt_thres0:   16;
-                uint32_t cnt_thres1:   16;
+                uint32_t cnt_thres0                    :    16;
+                uint32_t cnt_thres1                    :    16;
             };
             uint32_t val;
         } conf1;
         union {
             struct {
-                uint32_t cnt_h_lim:   16;
-                uint32_t cnt_l_lim:   16;
+                uint32_t cnt_h_lim                     :    16;
+                uint32_t cnt_l_lim                     :    16;
             };
             uint32_t val;
         } conf2;
     } conf_unit[4];
     union {
         struct {
-            uint32_t cnt_val:     16;
-            uint32_t reserved16:  16;
+            uint32_t cnt_val                       :    16;
+            uint32_t reserved16                    :    16;
         };
         uint32_t val;
     } cnt_unit[4];
     union {
         struct {
-            uint32_t cnt_thr_event_u0:         1;
-            uint32_t cnt_thr_event_u1:         1;
-            uint32_t cnt_thr_event_u2:         1;
-            uint32_t cnt_thr_event_u3:         1;
-            uint32_t reserved4:               28;
+            uint32_t cnt_thr_event_u0              :    1;
+            uint32_t cnt_thr_event_u1              :    1;
+            uint32_t cnt_thr_event_u2              :    1;
+            uint32_t cnt_thr_event_u3              :    1;
+            uint32_t reserved4                     :    28;
         };
         uint32_t val;
     } int_raw;
     union {
         struct {
-            uint32_t cnt_thr_event_u0:        1;
-            uint32_t cnt_thr_event_u1:        1;
-            uint32_t cnt_thr_event_u2:        1;
-            uint32_t cnt_thr_event_u3:        1;
-            uint32_t reserved4:              28;
+            uint32_t cnt_thr_event_u0              :    1;
+            uint32_t cnt_thr_event_u1              :    1;
+            uint32_t cnt_thr_event_u2              :    1;
+            uint32_t cnt_thr_event_u3              :    1;
+            uint32_t reserved4                     :    28;
         };
         uint32_t val;
     } int_st;
     union {
         struct {
-            uint32_t cnt_thr_event_u0:         1;
-            uint32_t cnt_thr_event_u1:         1;
-            uint32_t cnt_thr_event_u2:         1;
-            uint32_t cnt_thr_event_u3:         1;
-            uint32_t reserved4:               28;
+            uint32_t cnt_thr_event_u0              :    1;
+            uint32_t cnt_thr_event_u1              :    1;
+            uint32_t cnt_thr_event_u2              :    1;
+            uint32_t cnt_thr_event_u3              :    1;
+            uint32_t reserved4                     :    28;
         };
         uint32_t val;
     } int_ena;
     union {
         struct {
-            uint32_t cnt_thr_event_u0:         1;
-            uint32_t cnt_thr_event_u1:         1;
-            uint32_t cnt_thr_event_u2:         1;
-            uint32_t cnt_thr_event_u3:         1;
-            uint32_t reserved4:               28;
+            uint32_t cnt_thr_event_u0              :    1;
+            uint32_t cnt_thr_event_u1              :    1;
+            uint32_t cnt_thr_event_u2              :    1;
+            uint32_t cnt_thr_event_u3              :    1;
+            uint32_t reserved4                     :    28;
         };
         uint32_t val;
     } int_clr;
     union {
         struct {
-            uint32_t cnt_mode:              2;
-            uint32_t thres1_lat:            1;
-            uint32_t thres0_lat:            1;
-            uint32_t l_lim_lat:             1;
-            uint32_t h_lim_lat:             1;
-            uint32_t zero_lat:              1;
-            uint32_t reserved7:            25;
+            uint32_t zero_mode                     :    2;
+            uint32_t thres1_lat                    :    1;
+            uint32_t thres0_lat                    :    1;
+            uint32_t l_lim_lat                     :    1;
+            uint32_t h_lim_lat                     :    1;
+            uint32_t zero_lat                      :    1;
+            uint32_t reserved7                     :    25;
         };
         uint32_t val;
     } status_unit[4];
     union {
         struct {
-            uint32_t cnt_rst_u0:       1;
-            uint32_t cnt_pause_u0:     1;
-            uint32_t cnt_rst_u1:       1;
-            uint32_t cnt_pause_u1:     1;
-            uint32_t cnt_rst_u2:       1;
-            uint32_t cnt_pause_u2:     1;
-            uint32_t cnt_rst_u3:       1;
-            uint32_t cnt_pause_u3:     1;
-            uint32_t reserved8:        8;
-            uint32_t clk_en:           1;
-            uint32_t reserved17:      15;
+            uint32_t cnt_rst_u0                    :    1;
+            uint32_t cnt_pause_u0                  :    1;
+            uint32_t cnt_rst_u1                    :    1;
+            uint32_t cnt_pause_u1                  :    1;
+            uint32_t cnt_rst_u2                    :    1;
+            uint32_t cnt_pause_u2                  :    1;
+            uint32_t cnt_rst_u3                    :    1;
+            uint32_t cnt_pause_u3                  :    1;
+            uint32_t reserved8                     :    8;
+            uint32_t clk_en                        :    1;
+            uint32_t reserved17                    :    15;
         };
         uint32_t val;
     } ctrl;
@@ -169,11 +169,9 @@ typedef volatile struct {
     uint32_t reserved_f0;
     uint32_t reserved_f4;
     uint32_t reserved_f8;
-    uint32_t date;                                  /**/
+    uint32_t date;
 } pcnt_dev_t;
-
 extern pcnt_dev_t PCNT;
-
 #ifdef __cplusplus
 }
 #endif

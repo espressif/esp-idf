@@ -33,13 +33,10 @@ void adc_hal_digi_deinit(void)
     adc_ll_digi_filter_reset(ADC_NUM_2);
     adc_ll_digi_reset();
     adc_ll_digi_controller_clk_disable();
-    adc_hal_deinit();
 }
 
 void adc_hal_digi_controller_config(const adc_digi_config_t *cfg)
 {
-    /* If enable digtal controller, adc xpd should always on. */
-    adc_ll_set_power_manage(ADC_POWER_SW_ON);
     /* Single channel mode or multi channel mode. */
     adc_ll_digi_set_convert_mode(cfg->conv_mode);
     if (cfg->conv_mode & ADC_CONV_SINGLE_UNIT_1) {

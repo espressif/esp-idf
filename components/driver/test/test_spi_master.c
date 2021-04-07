@@ -838,7 +838,7 @@ void test_cmd_addr(spi_slave_task_context_t *slave_context, bool lsb_first)
         }
 
         //clean
-        vRingbufferReturnItem(slave_context->data_received, buffer);
+        vRingbufferReturnItem(slave_context->data_received, rcv_data);
     }
 
     TEST_ASSERT(spi_bus_remove_device(spi) == ESP_OK);
@@ -1050,7 +1050,6 @@ TEST_CASE("SPI master hd dma TX without RX test", "[spi]")
 #endif  //#if !DISABLED_FOR_TARGETS(ESP32C3)
 
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3)
 /********************************************************************************
  *      Test SPI transaction interval
  ********************************************************************************/
@@ -1058,8 +1057,8 @@ TEST_CASE("SPI master hd dma TX without RX test", "[spi]")
 #ifndef CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
 
 #define RECORD_TIME_PREPARE() uint32_t __t1, __t2
-#define RECORD_TIME_START()   do {__t1 = xthal_get_ccount();}while(0)
-#define RECORD_TIME_END(p_time) do{__t2 = xthal_get_ccount(); *p_time = (__t2-__t1);}while(0)
+#define RECORD_TIME_START()   do {__t1 = esp_cpu_get_ccount();}while(0)
+#define RECORD_TIME_END(p_time) do{__t2 = esp_cpu_get_ccount(); *p_time = (__t2-__t1);}while(0)
 #ifdef CONFIG_IDF_TARGET_ESP32
 #define GET_US_BY_CCOUNT(t) ((double)t/CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ)
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -1203,5 +1202,3 @@ TEST_CASE("spi_speed","[spi]")
     master_free_device_bus(spi);
 }
 #endif // CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
-
-#endif // #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3)

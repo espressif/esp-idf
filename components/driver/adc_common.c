@@ -160,17 +160,12 @@ static void adc_power_on_internal(void)
 
 void adc_power_acquire(void)
 {
-    bool powered_on = false;
     ADC_POWER_ENTER();
     s_adc_power_on_cnt++;
     if (s_adc_power_on_cnt == 1) {
         adc_power_on_internal();
-        powered_on = true;
     }
     ADC_POWER_EXIT();
-    if (powered_on) {
-        ESP_LOGV(ADC_TAG, "%s: ADC powered on", __func__);
-    }
 }
 
 void adc_power_on(void)
@@ -182,12 +177,15 @@ void adc_power_on(void)
 
 static void adc_power_off_internal(void)
 {
+#if CONFIG_IDF_TARGET_ESP32
     adc_hal_set_power_manage(ADC_POWER_SW_OFF);
+#else
+    adc_hal_set_power_manage(ADC_POWER_BY_FSM);
+#endif
 }
 
 void adc_power_release(void)
 {
-    bool powered_off = false;
     ADC_POWER_ENTER();
     s_adc_power_on_cnt--;
     /* Sanity check */
@@ -197,12 +195,8 @@ void adc_power_release(void)
         abort();
     } else if (s_adc_power_on_cnt == 0) {
         adc_power_off_internal();
-        powered_off = true;
     }
     ADC_POWER_EXIT();
-    if (powered_off) {
-        ESP_LOGV(ADC_TAG, "%s: ADC powered off", __func__);
-    }
 }
 
 void adc_power_off(void)
@@ -212,6 +206,33 @@ void adc_power_off(void)
     ADC_POWER_EXIT();
 }
 
+esp_err_t adc1_pad_get_io_num(adc1_channel_t channel, gpio_num_t *gpio_num)
+{
+    ADC_CHANNEL_CHECK(ADC_NUM_1, channel);
+
+    int io = ADC_GET_IO_NUM(ADC_NUM_1, channel);
+    if (io < 0) {
+        return ESP_ERR_INVALID_ARG;
+    } else {
+        *gpio_num = (gpio_num_t)io;
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t adc2_pad_get_io_num(adc2_channel_t channel, gpio_num_t *gpio_num)
+{
+    ADC_CHANNEL_CHECK(ADC_NUM_2, channel);
+
+    int io = ADC_GET_IO_NUM(ADC_NUM_2, channel);
+    if (io < 0) {
+        return ESP_ERR_INVALID_ARG;
+    } else {
+        *gpio_num = (gpio_num_t)io;
+    }
+
+    return ESP_OK;
+}
 
 #if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 esp_err_t adc_set_clk_div(uint8_t clk_div)
@@ -323,20 +344,6 @@ esp_err_t adc_rtc_reset(void)
 /*-------------------------------------------------------------------------------------
  *                      ADC1
  *------------------------------------------------------------------------------------*/
-esp_err_t adc1_pad_get_io_num(adc1_channel_t channel, gpio_num_t *gpio_num)
-{
-    ADC_CHANNEL_CHECK(ADC_NUM_1, channel);
-
-    int io = ADC_GET_IO_NUM(ADC_NUM_1, channel);
-    if (io < 0) {
-        return ESP_ERR_INVALID_ARG;
-    } else {
-        *gpio_num = (gpio_num_t)io;
-    }
-
-    return ESP_OK;
-}
-
 esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten)
 {
     ADC_CHANNEL_CHECK(ADC_NUM_1, channel);
@@ -466,20 +473,6 @@ void adc1_ulp_enable(void)
 /*---------------------------------------------------------------
                     ADC2
 ---------------------------------------------------------------*/
-esp_err_t adc2_pad_get_io_num(adc2_channel_t channel, gpio_num_t *gpio_num)
-{
-    ADC_CHANNEL_CHECK(ADC_NUM_2, channel);
-
-    int io = ADC_GET_IO_NUM(ADC_NUM_2, channel);
-    if (io < 0) {
-        return ESP_ERR_INVALID_ARG;
-    } else {
-        *gpio_num = (gpio_num_t)io;
-    }
-
-    return ESP_OK;
-}
-
 /** For ESP32S2 the ADC2 The right to use ADC2 is controlled by the arbiter, and there is no need to set a lock.*/
 esp_err_t adc2_wifi_acquire(void)
 {
@@ -562,6 +555,7 @@ static inline void adc2_dac_disable( adc2_channel_t channel)
  */
 esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *raw_out)
 {
+    esp_err_t ret = ESP_OK;
     int adc_value = 0;
 
     ADC_CHECK(raw_out != NULL, "ADC out value err", ESP_ERR_INVALID_ARG);
@@ -601,7 +595,8 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 #endif //CONFIG_PM_ENABLE
 #endif //CONFIG_IDF_TARGET_ESP32
 
-    if (adc_hal_convert(ADC_NUM_2, channel, &adc_value)) {
+    ret = adc_hal_convert(ADC_NUM_2, channel, &adc_value);
+    if (ret != ESP_OK) {
         adc_value = -1;
     }
 
@@ -618,13 +613,8 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     adc_power_release();
     SARADC2_RELEASE();
 
-    if (adc_value < 0) {
-        ESP_LOGD( ADC_TAG, "ADC2 ARB: Return data is invalid." );
-        return ESP_ERR_INVALID_STATE;
-    }
-
     *raw_out = adc_value;
-    return ESP_OK;
+    return ret;
 }
 
 esp_err_t adc2_vref_to_gpio(gpio_num_t gpio)

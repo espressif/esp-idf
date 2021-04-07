@@ -195,16 +195,19 @@ Restrictions:
 
   - In ESP32 it is stored in efuse ``EFUSE_BLK3_RDATA4_REG``. (when a eFuse bit is programmed to 1, it can never be reverted to 0). The number of bits set in this register is the ``security_version`` from app.
 
+
+.. _secure-ota-updates:
+
+Secure OTA Updates Without Secure boot
+--------------------------------------
+
+The verification of signed OTA updates can be performed even without enabling hardware secure boot. This can be achieved by setting :ref:`CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT` and :ref:`CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT`
+
 .. only:: esp32
 
-  .. _secure-ota-updates:
+  For more information refer to :ref:`signed-app-verify`
 
-  Secure OTA Updates Without Secure boot
-  --------------------------------------
 
-  The verification of signed OTA updates can be performed even without enabling hardware secure boot. For doing so, refer :ref:`signed-app-verify`
-
-    
 OTA Tool (otatool.py)
 ---------------------
 

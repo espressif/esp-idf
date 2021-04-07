@@ -225,6 +225,14 @@ SECTIONS
     *(.fini.literal)
     *(.fini)
     *(.gnu.version)
+
+    /** CPU will try to prefetch up to 16 bytes of
+      * of instructions. This means that any configuration (e.g. MMU, PMS) must allow
+      * safe access to up to 16 bytes after the last real instruction, add
+      * dummy bytes to ensure this
+      */
+    . += 16;
+
     _text_end = ABSOLUTE(.);
     _instruction_reserved_end = ABSOLUTE(.);
     _etext = .;
@@ -237,9 +245,18 @@ SECTIONS
     _flash_cache_start = ABSOLUTE(0);
   } > default_code_seg
 
+  /**
+   * This dummy section represents the .flash.text section but in default_rodata_seg.
+   * Thus, it must have its alignement and (at least) its size.
+   */
   .flash_rodata_dummy (NOLOAD):
   {
-    . = SIZEOF(.flash.text);
+    /* Start at the same alignement constraint than .flash.text */
+    . = ALIGN(ALIGNOF(.flash.text));
+    /* Create an empty gap as big as .flash.text section */
+    . = . + SIZEOF(.flash.text);
+    /* Prepare the alignement of the section above. Few bytes (0x20) must be
+     * added for the mapping header. */
     . = ALIGN(0x10000) + 0x20;
     _rodata_reserved_start = .;
   } > default_rodata_seg

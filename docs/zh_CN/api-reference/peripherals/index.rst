@@ -8,6 +8,7 @@
 
     ADC <adc>
     :SOC_DAC_PERIPH_NUM: DAC <dac>
+    通用定时器 <timer>
     GPIO (包括 RTC 低功耗 I/O) <gpio>
     :SOC_DEDICATED_GPIO_SUPPORTED: 专用 GPIO <dedic_gpio>
     :SOC_HMAC_SUPPORTED: HMAC <hmac>
@@ -27,7 +28,6 @@
     :esp32: Secure Element <secure_element>
     :esp32s2: SPI Slave 半双工 (half duplex) <spi_slave_hd>
     :esp32s2: Temp sensor <temp_sensor>
-    Timer <timer>
     :SOC_TOUCH_SENSOR_NUM: Touch Sensor <touch_pad>
     :esp32s2: Touch Element <touch_element>
     TWAI <twai>

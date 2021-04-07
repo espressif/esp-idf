@@ -448,6 +448,11 @@
  */
 #define LWIP_NETIF_TX_SINGLE_PBUF             1
 
+/**
+ * LWIP_NETIF_API==1: Enable usage of standard POSIX APIs in LWIP.
+ */
+#define LWIP_NETIF_API                      CONFIG_LWIP_NETIF_API
+
 /*
    ------------------------------------
    ---------- LOOPIF options ----------
@@ -733,7 +738,23 @@
 #define PPP_DEBUG                       LWIP_DBG_OFF
 #endif
 
-#endif
+#endif  /* PPP SUPPORT */
+
+/*
+   ------------------------------------
+   --------- LCP Echo options ---------
+   ------------------------------------
+*/
+/**
+ * LCP_ECHOINTERVAL: Interval in seconds between keepalive LCP echo requests, 0 to disable.
+ */
+#define LCP_ECHOINTERVAL                CONFIG_LCP_ECHOINTERVAL
+
+/**
+ * LCP_MAXECHOFAILS: Number of consecutive unanswered echo requests before failure is indicated.
+ */
+#define LCP_MAXECHOFAILS                CONFIG_LCP_MAXECHOFAILS
+
 
 /*
    --------------------------------------
@@ -949,6 +970,7 @@
 #define ESP_IP4_ATON                    1
 #define ESP_LIGHT_SLEEP                 1
 #define ESP_L2_TO_L3_COPY               CONFIG_LWIP_L2_TO_L3_COPY
+#define LWIP_NETIF_API                  CONFIG_LWIP_NETIF_API
 #define ESP_STATS_MEM                   CONFIG_LWIP_STATS
 #define ESP_STATS_DROP                  CONFIG_LWIP_STATS
 #define ESP_STATS_TCP                   0
@@ -966,6 +988,7 @@
 #define ESP_SOCKET                      1
 #define ESP_LWIP_SELECT                 1
 #define ESP_LWIP_LOCK                   1
+#define ESP_THREAD_PROTECTION           1
 
 #ifdef CONFIG_LWIP_IPV6_AUTOCONFIG
 #define ESP_IPV6_AUTOCONFIG             CONFIG_LWIP_IPV6_AUTOCONFIG

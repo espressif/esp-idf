@@ -63,6 +63,6 @@ I (6194) Touch pad: TouchSensor [9] be inactived, status mask 0x0
 
 For a simpler example how to configure and read capacitive touch pads, please refer to [touch_pad_read](../touch_pad_read).
 
-Design and implementation of the touch sensor system is a complex process. The [Touch Sensor Application Note](https://github.com/espressif/esp-iot-solution/blob/master/documents/touch_pad_solution/touch_sensor_design_en.md) contains several ESP32 specific notes and comments to optimize the design and get the best out of the application with sensors controlled with the ESP32.
+Design and implementation of the touch sensor system is a complex process. The [Touch Sensor Application Note](https://github.com/espressif/esp-iot-solution/blob/release/v1.0/documents/touch_pad_solution/touch_sensor_design_en.md) contains several ESP32 specific notes and comments to optimize the design and get the best out of the application with sensors controlled with the ESP32.  
 
 See the README.md file in the upper level 'examples' directory for more information about examples.

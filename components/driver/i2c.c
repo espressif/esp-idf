@@ -13,6 +13,7 @@
 // limitations under the License.
 #include <string.h>
 #include <stdio.h>
+#include "sdkconfig.h"
 #include "esp_types.h"
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
@@ -779,7 +780,7 @@ esp_err_t i2c_get_data_timing(i2c_port_t i2c_num, int *sample_time, int *hold_ti
 esp_err_t i2c_set_timeout(i2c_port_t i2c_num, int timeout)
 {
     I2C_CHECK(i2c_num < I2C_NUM_MAX, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK((timeout <= I2C_TIME_OUT_REG_V) && (timeout > 0), I2C_TIMEING_VAL_ERR_STR, ESP_ERR_INVALID_ARG);
+    I2C_CHECK((timeout <= I2C_LL_MAX_TIMEOUT) && (timeout > 0), I2C_TIMEING_VAL_ERR_STR, ESP_ERR_INVALID_ARG);
 
     I2C_ENTER_CRITICAL(&(i2c_context[i2c_num].spinlock));
     i2c_hal_set_tout(&(i2c_context[i2c_num].hal), timeout);

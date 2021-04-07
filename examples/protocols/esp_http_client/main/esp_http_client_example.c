@@ -341,6 +341,7 @@ static void http_auth_basic_redirect(void)
 }
 #endif
 
+#if CONFIG_ESP_HTTP_CLIENT_ENABLE_DIGEST_AUTH
 static void http_auth_digest(void)
 {
     esp_http_client_config_t config = {
@@ -359,6 +360,7 @@ static void http_auth_digest(void)
     }
     esp_http_client_cleanup(client);
 }
+#endif
 
 static void https_with_url(void)
 {
@@ -681,7 +683,9 @@ static void http_test_task(void *pvParameters)
     http_auth_basic();
     http_auth_basic_redirect();
 #endif
+#if CONFIG_ESP_HTTP_CLIENT_ENABLE_DIGEST_AUTH
     http_auth_digest();
+#endif
     http_relative_redirect();
     http_absolute_redirect();
     https_with_url();

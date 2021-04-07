@@ -46,8 +46,12 @@ typedef struct {
  *
  * @return None
  */
-static inline void timer_ll_set_divider(timg_dev_t *hw, timer_idx_t timer_num, uint16_t divider)
+static inline void timer_ll_set_divider(timg_dev_t *hw, timer_idx_t timer_num, uint32_t divider)
 {
+    assert(divider >= 2 && divider <= 65536);
+    if (divider >= 65536) {
+        divider = 0;
+    }
     int timer_en = hw->hw_timer[timer_num].config.enable;
     hw->hw_timer[timer_num].config.enable = 0;
     hw->hw_timer[timer_num].config.divider = divider;
@@ -68,6 +72,8 @@ static inline void timer_ll_get_divider(timg_dev_t *hw, timer_idx_t timer_num, u
     uint32_t d = hw->hw_timer[timer_num].config.divider;
     if (d == 0) {
         d = 65536;
+    } else if (d == 1) {
+        d = 2;
     }
     *divider = d;
 }
@@ -326,16 +332,7 @@ FORCE_INLINE_ATTR void timer_ll_get_intr_raw_status(timer_group_t group_num, uin
  */
 static inline void timer_ll_set_level_int_enable(timg_dev_t *hw, timer_idx_t timer_num, bool level_int_en)
 {
-    switch (timer_num) {
-    case 0:
-        hw->int_ena.t0 = level_int_en;
-        break;
-    case 1:
-        hw->int_ena.t1 = level_int_en;
-        break;
-    default:
-        break;
-    }
+    // Only "level" interrupts are supported on this target
 }
 
 /**
@@ -350,18 +347,7 @@ static inline void timer_ll_set_level_int_enable(timg_dev_t *hw, timer_idx_t tim
  */
 static inline bool timer_ll_get_level_int_enable(timg_dev_t *hw, timer_idx_t timer_num)
 {
-    bool enable = false;
-    switch (timer_num) {
-    case 0:
-        enable = hw->int_ena.t0;
-        break;
-    case 1:
-        enable = hw->int_ena.t1;
-        break;
-    default:
-        break;
-    }
-    return enable;
+    return true;
 }
 
 /**

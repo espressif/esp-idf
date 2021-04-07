@@ -89,6 +89,8 @@ typedef struct {
 #define I2C_LL_SLAVE_RX_INT           (I2C_RXFIFO_WM_INT_ENA_M | I2C_TRANS_COMPLETE_INT_ENA_M)
 // I2C source clock
 #define I2C_LL_CLK_SRC_FREQ(src_clk)  (((src_clk) == I2C_SCLK_REF_TICK) ? 1000*1000 : 80*1000*1000); // Another clock is APB clock
+// I2C max timeout value
+#define I2C_LL_MAX_TIMEOUT I2C_TIME_OUT_REG_V
 /**
  * @brief  Calculate I2C bus frequency
  *

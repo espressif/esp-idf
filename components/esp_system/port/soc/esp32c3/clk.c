@@ -60,7 +60,7 @@
  * For convenience, lower 2 bits should correspond to rtc_slow_freq_t values.
  */
 typedef enum {
-    SLOW_CLK_RTC = RTC_SLOW_FREQ_RTC,           //!< Internal 90 kHz RC oscillator
+    SLOW_CLK_RTC = RTC_SLOW_FREQ_RTC,           //!< Internal 150 kHz RC oscillator
     SLOW_CLK_32K_XTAL = RTC_SLOW_FREQ_32K_XTAL, //!< External 32 kHz XTAL
     SLOW_CLK_8MD256 = RTC_SLOW_FREQ_8MD256,     //!< Internal 8 MHz RC oscillator, divided by 256
     SLOW_CLK_32K_EXT_OSC = RTC_SLOW_FREQ_32K_XTAL | EXT_OSC_FLAG //!< External 32k oscillator connected to 32K_XP pin
@@ -89,10 +89,10 @@ static const char *TAG = "clk";
 
 #ifdef CONFIG_BOOTLOADER_WDT_ENABLE
     // WDT uses a SLOW_CLK clock source. After a function select_rtc_slow_clk a frequency of this source can changed.
-    // If the frequency changes from 90kHz to 32kHz, then the timeout set for the WDT will increase 2.8 times.
+    // If the frequency changes from 150kHz to 32kHz, then the timeout set for the WDT will increase 4.6 times.
     // Therefore, for the time of frequency change, set a new lower timeout value (1.6 sec).
     // This prevents excessive delay before resetting in case the supply voltage is drawdown.
-    // (If frequency is changed from 90kHz to 32kHz then WDT timeout will increased to 1.6sec * 90/32 = 4.5 sec).
+    // (If frequency is changed from 150kHz to 32kHz then WDT timeout will increased to 1.6sec * 150/32 = 7.5 sec).
     wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
     uint32_t stage_timeout_ticks = (uint32_t)(1600ULL * rtc_clk_slow_freq_get_hz() / 1000ULL);
     wdt_hal_write_protect_disable(&rtc_wdt_ctx);
@@ -172,7 +172,7 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
                     if (retry_32k_xtal-- > 0) {
                         continue;
                     }
-                    ESP_EARLY_LOGW(TAG, "32 kHz XTAL not found, switching to internal 90 kHz oscillator");
+                    ESP_EARLY_LOGW(TAG, "32 kHz XTAL not found, switching to internal 150 kHz oscillator");
                     rtc_slow_freq = RTC_SLOW_FREQ_RTC;
                 }
             }

@@ -86,7 +86,7 @@ typedef enum {
     MCPWM_UNIT_MAX,    /*!<Num of MCPWM units on ESP32*/
 } mcpwm_unit_t;
 
-_Static_assert(MCPWM_UNIT_MAX == SOC_MCPWM_PERIPH_NUM, "MCPWM unit number not equal to chip capabilities");
+_Static_assert(MCPWM_UNIT_MAX == SOC_MCPWM_GROUPS, "MCPWM unit number not equal to chip capabilities");
 
 /**
  * @brief Select MCPWM timer

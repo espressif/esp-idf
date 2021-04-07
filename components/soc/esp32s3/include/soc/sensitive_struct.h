@@ -1,4 +1,4 @@
-// Copyright 2017-2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,976 +11,1049 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#pragma once
+#ifndef _SOC_SENSITIVE_STRUCT_H_
+#define _SOC_SENSITIVE_STRUCT_H_
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdint.h>
+#include "soc.h"
 
 typedef volatile struct {
     union {
         struct {
-            uint32_t cache_dataarray_connect_lock: 1;
-            uint32_t reserved1:                   31;
+            uint32_t cache_dataarray_connect_lock  :    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } cache_dataarray_connect_0;
     union {
         struct {
-            uint32_t cache_dataarray_connect_flatten: 8;
-            uint32_t reserved8:                      24;
+            uint32_t cache_dataarray_connect_flatten:    8;
+            uint32_t reserved8                     :    24;
         };
         uint32_t val;
     } cache_dataarray_connect_1;
     union {
         struct {
-            uint32_t apb_peripheral_access_lock: 1;
-            uint32_t reserved1:                 31;
+            uint32_t apb_peripheral_access_lock    :    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } apb_peripheral_access_0;
     union {
         struct {
-            uint32_t apb_peripheral_access_split_burst: 1;
-            uint32_t reserved1:                        31;
+            uint32_t apb_peripheral_access_split_burst:    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } apb_peripheral_access_1;
     union {
         struct {
-            uint32_t internal_sram_usage_lock: 1;
-            uint32_t reserved1:               31;
+            uint32_t internal_sram_usage_lock      :    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } internal_sram_usage_0;
     union {
         struct {
-            uint32_t internal_sram_usage_flatten_0: 11;
-            uint32_t reserved11:                   21;
+            uint32_t internal_sram_icache_usage    :    2;
+            uint32_t internal_sram_dcache_usage    :    2;
+            uint32_t internal_sram_cpu_usage       :    7;
+            uint32_t reserved11                    :    21;
         };
         uint32_t val;
     } internal_sram_usage_1;
     union {
         struct {
-            uint32_t internal_sram_usage_flatten_1: 18;
-            uint32_t reserved18:                   14;
+            uint32_t internal_sram_core0_trace_usage:    7;
+            uint32_t internal_sram_core1_trace_usage:    7;
+            uint32_t internal_sram_core0_trace_alloc:    2;
+            uint32_t internal_sram_core1_trace_alloc:    2;
+            uint32_t reserved18                    :    14;
         };
         uint32_t val;
     } internal_sram_usage_2;
     union {
         struct {
-            uint32_t internal_sram_usage_flatten_2: 4;
-            uint32_t reserved4:                    28;
+            uint32_t internal_sram_mac_dump_usage  :    4;
+            uint32_t reserved4                     :    28;
         };
         uint32_t val;
     } internal_sram_usage_3;
     union {
         struct {
-            uint32_t internal_sram_usage_flatten_3: 7;
-            uint32_t reserved7:                    25;
+            uint32_t internal_sram_log_usage       :    7;
+            uint32_t reserved7                     :    25;
         };
         uint32_t val;
     } internal_sram_usage_4;
     union {
         struct {
-            uint32_t cache_tag_access_lock: 1;
-            uint32_t reserved1:            31;
+            uint32_t retention_disable             :    1;
+            uint32_t reserved1                     :    31;
+        };
+        uint32_t val;
+    } retention_disable;
+    union {
+        struct {
+            uint32_t cache_tag_access_lock         :    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } cache_tag_access_0;
     union {
         struct {
-            uint32_t pro_i_tag_rd_acs: 1;
-            uint32_t pro_i_tag_wr_acs: 1;
-            uint32_t pro_d_tag_rd_acs: 1;
-            uint32_t pro_d_tag_wr_acs: 1;
-            uint32_t reserved4:       28;
+            uint32_t pro_i_tag_rd_acs              :    1;
+            uint32_t pro_i_tag_wr_acs              :    1;
+            uint32_t pro_d_tag_rd_acs              :    1;
+            uint32_t pro_d_tag_wr_acs              :    1;
+            uint32_t reserved4                     :    28;
         };
         uint32_t val;
     } cache_tag_access_1;
     union {
         struct {
-            uint32_t cache_mmu_access_lock: 1;
-            uint32_t reserved1:            31;
+            uint32_t cache_mmu_access_lock         :    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } cache_mmu_access_0;
     union {
         struct {
-            uint32_t pro_mmu_rd_acs: 1;
-            uint32_t pro_mmu_wr_acs: 1;
-            uint32_t reserved2:     30;
+            uint32_t pro_mmu_rd_acs                :    1;
+            uint32_t pro_mmu_wr_acs                :    1;
+            uint32_t reserved2                     :    30;
         };
         uint32_t val;
     } cache_mmu_access_1;
     union {
         struct {
-            uint32_t dma_apbperi_spi2_pms_constrain_lock: 1;
-            uint32_t reserved1:                          31;
+            uint32_t dma_apbperi_spi2_pms_constrain_lock:    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } dma_apbperi_spi2_pms_constrain_0;
     union {
         struct {
-            uint32_t dma_apbperi_spi2_pms_constrain_sram_world_0_pms_0:                2;
-            uint32_t dma_apbperi_spi2_pms_constrain_sram_world_0_pms_1:                2;
-            uint32_t dma_apbperi_spi2_pms_constrain_sram_world_0_pms_2:                2;
-            uint32_t dma_apbperi_spi2_pms_constrain_sram_world_0_pms_3:                2;
-            uint32_t dma_apbperi_spi2_pms_constrain_sram_world_0_cachedataarray_pms_0: 2;
-            uint32_t dma_apbperi_spi2_pms_constrain_sram_world_0_cachedataarray_pms_1: 2;
-            uint32_t dma_apbperi_spi2_pms_constrain_sram_world_1_pms_0:                2;
-            uint32_t dma_apbperi_spi2_pms_constrain_sram_world_1_pms_1:                2;
-            uint32_t dma_apbperi_spi2_pms_constrain_sram_world_1_pms_2:                2;
-            uint32_t dma_apbperi_spi2_pms_constrain_sram_world_1_pms_3:                2;
-            uint32_t dma_apbperi_spi2_pms_constrain_sram_world_1_cachedataarray_pms_0: 2;
-            uint32_t dma_apbperi_spi2_pms_constrain_sram_world_1_cachedataarray_pms_1: 2;
-            uint32_t reserved24:                                                       8;
+            uint32_t dma_apbperi_spi2_pms_constrain_sram_pms_0:    2;
+            uint32_t dma_apbperi_spi2_pms_constrain_sram_pms_1:    2;
+            uint32_t dma_apbperi_spi2_pms_constrain_sram_pms_2:    2;
+            uint32_t dma_apbperi_spi2_pms_constrain_sram_pms_3:    2;
+            uint32_t dma_apbperi_spi2_pms_constrain_sram_cachedataarray_pms_0:    2;
+            uint32_t dma_apbperi_spi2_pms_constrain_sram_cachedataarray_pms_1:    2;
+            uint32_t reserved12                    :    20;
         };
         uint32_t val;
     } dma_apbperi_spi2_pms_constrain_1;
     union {
         struct {
-            uint32_t dma_apbperi_spi3_pms_constrain_lock: 1;
-            uint32_t reserved1:                          31;
+            uint32_t dma_apbperi_spi3_pms_constrain_lock:    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } dma_apbperi_spi3_pms_constrain_0;
     union {
         struct {
-            uint32_t dma_apbperi_spi3_pms_constrain_sram_world_0_pms_0:                2;
-            uint32_t dma_apbperi_spi3_pms_constrain_sram_world_0_pms_1:                2;
-            uint32_t dma_apbperi_spi3_pms_constrain_sram_world_0_pms_2:                2;
-            uint32_t dma_apbperi_spi3_pms_constrain_sram_world_0_pms_3:                2;
-            uint32_t dma_apbperi_spi3_pms_constrain_sram_world_0_cachedataarray_pms_0: 2;
-            uint32_t dma_apbperi_spi3_pms_constrain_sram_world_0_cachedataarray_pms_1: 2;
-            uint32_t dma_apbperi_spi3_pms_constrain_sram_world_1_pms_0:                2;
-            uint32_t dma_apbperi_spi3_pms_constrain_sram_world_1_pms_1:                2;
-            uint32_t dma_apbperi_spi3_pms_constrain_sram_world_1_pms_2:                2;
-            uint32_t dma_apbperi_spi3_pms_constrain_sram_world_1_pms_3:                2;
-            uint32_t dma_apbperi_spi3_pms_constrain_sram_world_1_cachedataarray_pms_0: 2;
-            uint32_t dma_apbperi_spi3_pms_constrain_sram_world_1_cachedataarray_pms_1: 2;
-            uint32_t reserved24:                                                       8;
+            uint32_t dma_apbperi_spi3_pms_constrain_sram_pms_0:    2;
+            uint32_t dma_apbperi_spi3_pms_constrain_sram_pms_1:    2;
+            uint32_t dma_apbperi_spi3_pms_constrain_sram_pms_2:    2;
+            uint32_t dma_apbperi_spi3_pms_constrain_sram_pms_3:    2;
+            uint32_t dma_apbperi_spi3_pms_constrain_sram_cachedataarray_pms_0:    2;
+            uint32_t dma_apbperi_spi3_pms_constrain_sram_cachedataarray_pms_1:    2;
+            uint32_t reserved12                    :    20;
         };
         uint32_t val;
     } dma_apbperi_spi3_pms_constrain_1;
     union {
         struct {
-            uint32_t dma_apbperi_uchi0_pms_constrain_lock: 1;
-            uint32_t reserved1:                           31;
+            uint32_t dma_apbperi_uhci0_pms_constrain_lock:    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
-    } dma_apbperi_uchi0_pms_constrain_0;
+    } dma_apbperi_uhci0_pms_constrain_0;
     union {
         struct {
-            uint32_t dma_apbperi_uchi0_pms_constrain_sram_world_0_pms_0:                2;
-            uint32_t dma_apbperi_uchi0_pms_constrain_sram_world_0_pms_1:                2;
-            uint32_t dma_apbperi_uchi0_pms_constrain_sram_world_0_pms_2:                2;
-            uint32_t dma_apbperi_uchi0_pms_constrain_sram_world_0_pms_3:                2;
-            uint32_t dma_apbperi_uchi0_pms_constrain_sram_world_0_cachedataarray_pms_0: 2;
-            uint32_t dma_apbperi_uchi0_pms_constrain_sram_world_0_cachedataarray_pms_1: 2;
-            uint32_t dma_apbperi_uchi0_pms_constrain_sram_world_1_pms_0:                2;
-            uint32_t dma_apbperi_uchi0_pms_constrain_sram_world_1_pms_1:                2;
-            uint32_t dma_apbperi_uchi0_pms_constrain_sram_world_1_pms_2:                2;
-            uint32_t dma_apbperi_uchi0_pms_constrain_sram_world_1_pms_3:                2;
-            uint32_t dma_apbperi_uchi0_pms_constrain_sram_world_1_cachedataarray_pms_0: 2;
-            uint32_t dma_apbperi_uchi0_pms_constrain_sram_world_1_cachedataarray_pms_1: 2;
-            uint32_t reserved24:                                                        8;
+            uint32_t dma_apbperi_uhci0_pms_constrain_sram_pms_0:    2;
+            uint32_t dma_apbperi_uhci0_pms_constrain_sram_pms_1:    2;
+            uint32_t dma_apbperi_uhci0_pms_constrain_sram_pms_2:    2;
+            uint32_t dma_apbperi_uhci0_pms_constrain_sram_pms_3:    2;
+            uint32_t dma_apbperi_uhci0_pms_constrain_sram_cachedataarray_pms_0:    2;
+            uint32_t dma_apbperi_uhci0_pms_constrain_sram_cachedataarray_pms_1:    2;
+            uint32_t reserved12                    :    20;
         };
         uint32_t val;
-    } dma_apbperi_uchi0_pms_constrain_1;
+    } dma_apbperi_uhci0_pms_constrain_1;
     union {
         struct {
-            uint32_t dma_apbperi_i2s0_pms_constrain_lock: 1;
-            uint32_t reserved1:                          31;
+            uint32_t dma_apbperi_i2s0_pms_constrain_lock:    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } dma_apbperi_i2s0_pms_constrain_0;
     union {
         struct {
-            uint32_t dma_apbperi_i2s0_pms_constrain_sram_world_0_pms_0:                2;
-            uint32_t dma_apbperi_i2s0_pms_constrain_sram_world_0_pms_1:                2;
-            uint32_t dma_apbperi_i2s0_pms_constrain_sram_world_0_pms_2:                2;
-            uint32_t dma_apbperi_i2s0_pms_constrain_sram_world_0_pms_3:                2;
-            uint32_t dma_apbperi_i2s0_pms_constrain_sram_world_0_cachedataarray_pms_0: 2;
-            uint32_t dma_apbperi_i2s0_pms_constrain_sram_world_0_cachedataarray_pms_1: 2;
-            uint32_t dma_apbperi_i2s0_pms_constrain_sram_world_1_pms_0:                2;
-            uint32_t dma_apbperi_i2s0_pms_constrain_sram_world_1_pms_1:                2;
-            uint32_t dma_apbperi_i2s0_pms_constrain_sram_world_1_pms_2:                2;
-            uint32_t dma_apbperi_i2s0_pms_constrain_sram_world_1_pms_3:                2;
-            uint32_t dma_apbperi_i2s0_pms_constrain_sram_world_1_cachedataarray_pms_0: 2;
-            uint32_t dma_apbperi_i2s0_pms_constrain_sram_world_1_cachedataarray_pms_1: 2;
-            uint32_t reserved24:                                                       8;
+            uint32_t dma_apbperi_i2s0_pms_constrain_sram_pms_0:    2;
+            uint32_t dma_apbperi_i2s0_pms_constrain_sram_pms_1:    2;
+            uint32_t dma_apbperi_i2s0_pms_constrain_sram_pms_2:    2;
+            uint32_t dma_apbperi_i2s0_pms_constrain_sram_pms_3:    2;
+            uint32_t dma_apbperi_i2s0_pms_constrain_sram_cachedataarray_pms_0:    2;
+            uint32_t dma_apbperi_i2s0_pms_constrain_sram_cachedataarray_pms_1:    2;
+            uint32_t reserved12                    :    20;
         };
         uint32_t val;
     } dma_apbperi_i2s0_pms_constrain_1;
     union {
         struct {
-            uint32_t dma_apbperi_i2s1_pms_constrain_lock: 1;
-            uint32_t reserved1:                          31;
+            uint32_t dma_apbperi_i2s1_pms_constrain_lock:    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } dma_apbperi_i2s1_pms_constrain_0;
     union {
         struct {
-            uint32_t dma_apbperi_i2s1_pms_constrain_sram_world_0_pms_0:                2;
-            uint32_t dma_apbperi_i2s1_pms_constrain_sram_world_0_pms_1:                2;
-            uint32_t dma_apbperi_i2s1_pms_constrain_sram_world_0_pms_2:                2;
-            uint32_t dma_apbperi_i2s1_pms_constrain_sram_world_0_pms_3:                2;
-            uint32_t dma_apbperi_i2s1_pms_constrain_sram_world_0_cachedataarray_pms_0: 2;
-            uint32_t dma_apbperi_i2s1_pms_constrain_sram_world_0_cachedataarray_pms_1: 2;
-            uint32_t dma_apbperi_i2s1_pms_constrain_sram_world_1_pms_0:                2;
-            uint32_t dma_apbperi_i2s1_pms_constrain_sram_world_1_pms_1:                2;
-            uint32_t dma_apbperi_i2s1_pms_constrain_sram_world_1_pms_2:                2;
-            uint32_t dma_apbperi_i2s1_pms_constrain_sram_world_1_pms_3:                2;
-            uint32_t dma_apbperi_i2s1_pms_constrain_sram_world_1_cachedataarray_pms_0: 2;
-            uint32_t dma_apbperi_i2s1_pms_constrain_sram_world_1_cachedataarray_pms_1: 2;
-            uint32_t reserved24:                                                       8;
+            uint32_t dma_apbperi_i2s1_pms_constrain_sram_pms_0:    2;
+            uint32_t dma_apbperi_i2s1_pms_constrain_sram_pms_1:    2;
+            uint32_t dma_apbperi_i2s1_pms_constrain_sram_pms_2:    2;
+            uint32_t dma_apbperi_i2s1_pms_constrain_sram_pms_3:    2;
+            uint32_t dma_apbperi_i2s1_pms_constrain_sram_cachedataarray_pms_0:    2;
+            uint32_t dma_apbperi_i2s1_pms_constrain_sram_cachedataarray_pms_1:    2;
+            uint32_t reserved12                    :    20;
         };
         uint32_t val;
     } dma_apbperi_i2s1_pms_constrain_1;
     union {
         struct {
-            uint32_t dma_apbperi_mac_pms_constrain_lock: 1;
-            uint32_t reserved1:                         31;
+            uint32_t dma_apbperi_mac_pms_constrain_lock:    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } dma_apbperi_mac_pms_constrain_0;
     union {
         struct {
-            uint32_t dma_apbperi_mac_pms_constrain_sram_world_0_pms_0:                2;
-            uint32_t dma_apbperi_mac_pms_constrain_sram_world_0_pms_1:                2;
-            uint32_t dma_apbperi_mac_pms_constrain_sram_world_0_pms_2:                2;
-            uint32_t dma_apbperi_mac_pms_constrain_sram_world_0_pms_3:                2;
-            uint32_t dma_apbperi_mac_pms_constrain_sram_world_0_cachedataarray_pms_0: 2;
-            uint32_t dma_apbperi_mac_pms_constrain_sram_world_0_cachedataarray_pms_1: 2;
-            uint32_t dma_apbperi_mac_pms_constrain_sram_world_1_pms_0:                2;
-            uint32_t dma_apbperi_mac_pms_constrain_sram_world_1_pms_1:                2;
-            uint32_t dma_apbperi_mac_pms_constrain_sram_world_1_pms_2:                2;
-            uint32_t dma_apbperi_mac_pms_constrain_sram_world_1_pms_3:                2;
-            uint32_t dma_apbperi_mac_pms_constrain_sram_world_1_cachedataarray_pms_0: 2;
-            uint32_t dma_apbperi_mac_pms_constrain_sram_world_1_cachedataarray_pms_1: 2;
-            uint32_t reserved24:                                                      8;
+            uint32_t dma_apbperi_mac_pms_constrain_sram_pms_0:    2;
+            uint32_t dma_apbperi_mac_pms_constrain_sram_pms_1:    2;
+            uint32_t dma_apbperi_mac_pms_constrain_sram_pms_2:    2;
+            uint32_t dma_apbperi_mac_pms_constrain_sram_pms_3:    2;
+            uint32_t dma_apbperi_mac_pms_constrain_sram_cachedataarray_pms_0:    2;
+            uint32_t dma_apbperi_mac_pms_constrain_sram_cachedataarray_pms_1:    2;
+            uint32_t reserved12                    :    20;
         };
         uint32_t val;
     } dma_apbperi_mac_pms_constrain_1;
     union {
         struct {
-            uint32_t dma_apbperi_slc_pms_constrain_lock: 1;
-            uint32_t reserved1:                         31;
+            uint32_t dma_apbperi_backup_pms_constrain_lock:    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
-    } dma_apbperi_slc_pms_constrain_0;
+    } dma_apbperi_backup_pms_constrain_0;
     union {
         struct {
-            uint32_t dma_apbperi_slc_pms_constrain_sram_world_0_pms_0:                2;
-            uint32_t dma_apbperi_slc_pms_constrain_sram_world_0_pms_1:                2;
-            uint32_t dma_apbperi_slc_pms_constrain_sram_world_0_pms_2:                2;
-            uint32_t dma_apbperi_slc_pms_constrain_sram_world_0_pms_3:                2;
-            uint32_t dma_apbperi_slc_pms_constrain_sram_world_0_cachedataarray_pms_0: 2;
-            uint32_t dma_apbperi_slc_pms_constrain_sram_world_0_cachedataarray_pms_1: 2;
-            uint32_t dma_apbperi_slc_pms_constrain_sram_world_1_pms_0:                2;
-            uint32_t dma_apbperi_slc_pms_constrain_sram_world_1_pms_1:                2;
-            uint32_t dma_apbperi_slc_pms_constrain_sram_world_1_pms_2:                2;
-            uint32_t dma_apbperi_slc_pms_constrain_sram_world_1_pms_3:                2;
-            uint32_t dma_apbperi_slc_pms_constrain_sram_world_1_cachedataarray_pms_0: 2;
-            uint32_t dma_apbperi_slc_pms_constrain_sram_world_1_cachedataarray_pms_1: 2;
-            uint32_t reserved24:                                                      8;
+            uint32_t dma_apbperi_backup_pms_constrain_sram_pms_0:    2;
+            uint32_t dma_apbperi_backup_pms_constrain_sram_pms_1:    2;
+            uint32_t dma_apbperi_backup_pms_constrain_sram_pms_2:    2;
+            uint32_t dma_apbperi_backup_pms_constrain_sram_pms_3:    2;
+            uint32_t dma_apbperi_backup_pms_constrain_sram_cachedataarray_pms_0:    2;
+            uint32_t dma_apbperi_backup_pms_constrain_sram_cachedataarray_pms_1:    2;
+            uint32_t reserved12                    :    20;
         };
         uint32_t val;
-    } dma_apbperi_slc_pms_constrain_1;
+    } dma_apbperi_backup_pms_constrain_1;
     union {
         struct {
-            uint32_t dma_apbperi_aes_pms_constrain_lock: 1;
-            uint32_t reserved1:                         31;
+            uint32_t dma_apbperi_aes_pms_constrain_lock:    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } dma_apbperi_aes_pms_constrain_0;
     union {
         struct {
-            uint32_t dma_apbperi_aes_pms_constrain_sram_world_0_pms_0:                2;
-            uint32_t dma_apbperi_aes_pms_constrain_sram_world_0_pms_1:                2;
-            uint32_t dma_apbperi_aes_pms_constrain_sram_world_0_pms_2:                2;
-            uint32_t dma_apbperi_aes_pms_constrain_sram_world_0_pms_3:                2;
-            uint32_t dma_apbperi_aes_pms_constrain_sram_world_0_cachedataarray_pms_0: 2;
-            uint32_t dma_apbperi_aes_pms_constrain_sram_world_0_cachedataarray_pms_1: 2;
-            uint32_t dma_apbperi_aes_pms_constrain_sram_world_1_pms_0:                2;
-            uint32_t dma_apbperi_aes_pms_constrain_sram_world_1_pms_1:                2;
-            uint32_t dma_apbperi_aes_pms_constrain_sram_world_1_pms_2:                2;
-            uint32_t dma_apbperi_aes_pms_constrain_sram_world_1_pms_3:                2;
-            uint32_t dma_apbperi_aes_pms_constrain_sram_world_1_cachedataarray_pms_0: 2;
-            uint32_t dma_apbperi_aes_pms_constrain_sram_world_1_cachedataarray_pms_1: 2;
-            uint32_t reserved24:                                                      8;
+            uint32_t dma_apbperi_aes_pms_constrain_sram_pms_0:    2;
+            uint32_t dma_apbperi_aes_pms_constrain_sram_pms_1:    2;
+            uint32_t dma_apbperi_aes_pms_constrain_sram_pms_2:    2;
+            uint32_t dma_apbperi_aes_pms_constrain_sram_pms_3:    2;
+            uint32_t dma_apbperi_aes_pms_constrain_sram_cachedataarray_pms_0:    2;
+            uint32_t dma_apbperi_aes_pms_constrain_sram_cachedataarray_pms_1:    2;
+            uint32_t reserved12                    :    20;
         };
         uint32_t val;
     } dma_apbperi_aes_pms_constrain_1;
     union {
         struct {
-            uint32_t dma_apbperi_sha_pms_constrain_lock: 1;
-            uint32_t reserved1:                         31;
+            uint32_t dma_apbperi_sha_pms_constrain_lock:    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } dma_apbperi_sha_pms_constrain_0;
     union {
         struct {
-            uint32_t dma_apbperi_sha_pms_constrain_sram_world_0_pms_0:                2;
-            uint32_t dma_apbperi_sha_pms_constrain_sram_world_0_pms_1:                2;
-            uint32_t dma_apbperi_sha_pms_constrain_sram_world_0_pms_2:                2;
-            uint32_t dma_apbperi_sha_pms_constrain_sram_world_0_pms_3:                2;
-            uint32_t dma_apbperi_sha_pms_constrain_sram_world_0_cachedataarray_pms_0: 2;
-            uint32_t dma_apbperi_sha_pms_constrain_sram_world_0_cachedataarray_pms_1: 2;
-            uint32_t dma_apbperi_sha_pms_constrain_sram_world_1_pms_0:                2;
-            uint32_t dma_apbperi_sha_pms_constrain_sram_world_1_pms_1:                2;
-            uint32_t dma_apbperi_sha_pms_constrain_sram_world_1_pms_2:                2;
-            uint32_t dma_apbperi_sha_pms_constrain_sram_world_1_pms_3:                2;
-            uint32_t dma_apbperi_sha_pms_constrain_sram_world_1_cachedataarray_pms_0: 2;
-            uint32_t dma_apbperi_sha_pms_constrain_sram_world_1_cachedataarray_pms_1: 2;
-            uint32_t reserved24:                                                      8;
+            uint32_t dma_apbperi_sha_pms_constrain_sram_pms_0:    2;
+            uint32_t dma_apbperi_sha_pms_constrain_sram_pms_1:    2;
+            uint32_t dma_apbperi_sha_pms_constrain_sram_pms_2:    2;
+            uint32_t dma_apbperi_sha_pms_constrain_sram_pms_3:    2;
+            uint32_t dma_apbperi_sha_pms_constrain_sram_cachedataarray_pms_0:    2;
+            uint32_t dma_apbperi_sha_pms_constrain_sram_cachedataarray_pms_1:    2;
+            uint32_t reserved12                    :    20;
         };
         uint32_t val;
     } dma_apbperi_sha_pms_constrain_1;
     union {
         struct {
-            uint32_t dma_apbperi_adc_dac_pms_constrain_lock: 1;
-            uint32_t reserved1:                             31;
+            uint32_t dma_apbperi_adc_dac_pms_constrain_lock:    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } dma_apbperi_adc_dac_pms_constrain_0;
     union {
         struct {
-            uint32_t dma_apbperi_adc_dac_pms_constrain_sram_world_0_pms_0:                2;
-            uint32_t dma_apbperi_adc_dac_pms_constrain_sram_world_0_pms_1:                2;
-            uint32_t dma_apbperi_adc_dac_pms_constrain_sram_world_0_pms_2:                2;
-            uint32_t dma_apbperi_adc_dac_pms_constrain_sram_world_0_pms_3:                2;
-            uint32_t dma_apbperi_adc_dac_pms_constrain_sram_world_0_cachedataarray_pms_0: 2;
-            uint32_t dma_apbperi_adc_dac_pms_constrain_sram_world_0_cachedataarray_pms_1: 2;
-            uint32_t dma_apbperi_adc_dac_pms_constrain_sram_world_1_pms_0:                2;
-            uint32_t dma_apbperi_adc_dac_pms_constrain_sram_world_1_pms_1:                2;
-            uint32_t dma_apbperi_adc_dac_pms_constrain_sram_world_1_pms_2:                2;
-            uint32_t dma_apbperi_adc_dac_pms_constrain_sram_world_1_pms_3:                2;
-            uint32_t dma_apbperi_adc_dac_pms_constrain_sram_world_1_cachedataarray_pms_0: 2;
-            uint32_t dma_apbperi_adc_dac_pms_constrain_sram_world_1_cachedataarray_pms_1: 2;
-            uint32_t reserved24:                                                          8;
+            uint32_t dma_apbperi_adc_dac_pms_constrain_sram_pms_0:    2;
+            uint32_t dma_apbperi_adc_dac_pms_constrain_sram_pms_1:    2;
+            uint32_t dma_apbperi_adc_dac_pms_constrain_sram_pms_2:    2;
+            uint32_t dma_apbperi_adc_dac_pms_constrain_sram_pms_3:    2;
+            uint32_t dma_apbperi_adc_dac_pms_constrain_sram_cachedataarray_pms_0:    2;
+            uint32_t dma_apbperi_adc_dac_pms_constrain_sram_cachedataarray_pms_1:    2;
+            uint32_t reserved12                    :    20;
         };
         uint32_t val;
     } dma_apbperi_adc_dac_pms_constrain_1;
     union {
         struct {
-            uint32_t dma_apbperi_lcd_cam_pms_constrain_lock: 1;
-            uint32_t reserved1:                             31;
+            uint32_t dma_apbperi_rmt_pms_constrain_lock:    1;
+            uint32_t reserved1                     :    31;
+        };
+        uint32_t val;
+    } dma_apbperi_rmt_pms_constrain_0;
+    union {
+        struct {
+            uint32_t dma_apbperi_rmt_pms_constrain_sram_pms_0:    2;
+            uint32_t dma_apbperi_rmt_pms_constrain_sram_pms_1:    2;
+            uint32_t dma_apbperi_rmt_pms_constrain_sram_pms_2:    2;
+            uint32_t dma_apbperi_rmt_pms_constrain_sram_pms_3:    2;
+            uint32_t dma_apbperi_rmt_pms_constrain_sram_cachedataarray_pms_0:    2;
+            uint32_t dma_apbperi_rmt_pms_constrain_sram_cachedataarray_pms_1:    2;
+            uint32_t reserved12                    :    20;
+        };
+        uint32_t val;
+    } dma_apbperi_rmt_pms_constrain_1;
+    union {
+        struct {
+            uint32_t dma_apbperi_lcd_cam_pms_constrain_lock:    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } dma_apbperi_lcd_cam_pms_constrain_0;
     union {
         struct {
-            uint32_t dma_apbperi_lcd_cam_pms_constrain_sram_world_0_pms_0:                2;
-            uint32_t dma_apbperi_lcd_cam_pms_constrain_sram_world_0_pms_1:                2;
-            uint32_t dma_apbperi_lcd_cam_pms_constrain_sram_world_0_pms_2:                2;
-            uint32_t dma_apbperi_lcd_cam_pms_constrain_sram_world_0_pms_3:                2;
-            uint32_t dma_apbperi_lcd_cam_pms_constrain_sram_world_0_cachedataarray_pms_0: 2;
-            uint32_t dma_apbperi_lcd_cam_pms_constrain_sram_world_0_cachedataarray_pms_1: 2;
-            uint32_t dma_apbperi_lcd_cam_pms_constrain_sram_world_1_pms_0:                2;
-            uint32_t dma_apbperi_lcd_cam_pms_constrain_sram_world_1_pms_1:                2;
-            uint32_t dma_apbperi_lcd_cam_pms_constrain_sram_world_1_pms_2:                2;
-            uint32_t dma_apbperi_lcd_cam_pms_constrain_sram_world_1_pms_3:                2;
-            uint32_t dma_apbperi_lcd_cam_pms_constrain_sram_world_1_cachedataarray_pms_0: 2;
-            uint32_t dma_apbperi_lcd_cam_pms_constrain_sram_world_1_cachedataarray_pms_1: 2;
-            uint32_t reserved24:                                                          8;
+            uint32_t dma_apbperi_lcd_cam_pms_constrain_sram_pms_0:    2;
+            uint32_t dma_apbperi_lcd_cam_pms_constrain_sram_pms_1:    2;
+            uint32_t dma_apbperi_lcd_cam_pms_constrain_sram_pms_2:    2;
+            uint32_t dma_apbperi_lcd_cam_pms_constrain_sram_pms_3:    2;
+            uint32_t dma_apbperi_lcd_cam_pms_constrain_sram_cachedataarray_pms_0:    2;
+            uint32_t dma_apbperi_lcd_cam_pms_constrain_sram_cachedataarray_pms_1:    2;
+            uint32_t reserved12                    :    20;
         };
         uint32_t val;
     } dma_apbperi_lcd_cam_pms_constrain_1;
     union {
         struct {
-            uint32_t dma_apbperi_usb_pms_constrain_lock: 1;
-            uint32_t reserved1:                         31;
+            uint32_t dma_apbperi_usb_pms_constrain_lock:    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } dma_apbperi_usb_pms_constrain_0;
     union {
         struct {
-            uint32_t dma_apbperi_usb_pms_constrain_sram_world_0_pms_0:                2;
-            uint32_t dma_apbperi_usb_pms_constrain_sram_world_0_pms_1:                2;
-            uint32_t dma_apbperi_usb_pms_constrain_sram_world_0_pms_2:                2;
-            uint32_t dma_apbperi_usb_pms_constrain_sram_world_0_pms_3:                2;
-            uint32_t dma_apbperi_usb_pms_constrain_sram_world_0_cachedataarray_pms_0: 2;
-            uint32_t dma_apbperi_usb_pms_constrain_sram_world_0_cachedataarray_pms_1: 2;
-            uint32_t dma_apbperi_usb_pms_constrain_sram_world_1_pms_0:                2;
-            uint32_t dma_apbperi_usb_pms_constrain_sram_world_1_pms_1:                2;
-            uint32_t dma_apbperi_usb_pms_constrain_sram_world_1_pms_2:                2;
-            uint32_t dma_apbperi_usb_pms_constrain_sram_world_1_pms_3:                2;
-            uint32_t dma_apbperi_usb_pms_constrain_sram_world_1_cachedataarray_pms_0: 2;
-            uint32_t dma_apbperi_usb_pms_constrain_sram_world_1_cachedataarray_pms_1: 2;
-            uint32_t reserved24:                                                      8;
+            uint32_t dma_apbperi_usb_pms_constrain_sram_pms_0:    2;
+            uint32_t dma_apbperi_usb_pms_constrain_sram_pms_1:    2;
+            uint32_t dma_apbperi_usb_pms_constrain_sram_pms_2:    2;
+            uint32_t dma_apbperi_usb_pms_constrain_sram_pms_3:    2;
+            uint32_t dma_apbperi_usb_pms_constrain_sram_cachedataarray_pms_0:    2;
+            uint32_t dma_apbperi_usb_pms_constrain_sram_cachedataarray_pms_1:    2;
+            uint32_t reserved12                    :    20;
         };
         uint32_t val;
     } dma_apbperi_usb_pms_constrain_1;
     union {
         struct {
-            uint32_t dma_apbperi_lc_pms_constrain_lock: 1;
-            uint32_t reserved1:                        31;
+            uint32_t dma_apbperi_lc_pms_constrain_lock:    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } dma_apbperi_lc_pms_constrain_0;
     union {
         struct {
-            uint32_t dma_apbperi_lc_pms_constrain_sram_world_0_pms_0:                2;
-            uint32_t dma_apbperi_lc_pms_constrain_sram_world_0_pms_1:                2;
-            uint32_t dma_apbperi_lc_pms_constrain_sram_world_0_pms_2:                2;
-            uint32_t dma_apbperi_lc_pms_constrain_sram_world_0_pms_3:                2;
-            uint32_t dma_apbperi_lc_pms_constrain_sram_world_0_cachedataarray_pms_0: 2;
-            uint32_t dma_apbperi_lc_pms_constrain_sram_world_0_cachedataarray_pms_1: 2;
-            uint32_t dma_apbperi_lc_pms_constrain_sram_world_1_pms_0:                2;
-            uint32_t dma_apbperi_lc_pms_constrain_sram_world_1_pms_1:                2;
-            uint32_t dma_apbperi_lc_pms_constrain_sram_world_1_pms_2:                2;
-            uint32_t dma_apbperi_lc_pms_constrain_sram_world_1_pms_3:                2;
-            uint32_t dma_apbperi_lc_pms_constrain_sram_world_1_cachedataarray_pms_0: 2;
-            uint32_t dma_apbperi_lc_pms_constrain_sram_world_1_cachedataarray_pms_1: 2;
-            uint32_t reserved24:                                                     8;
+            uint32_t dma_apbperi_lc_pms_constrain_sram_pms_0:    2;
+            uint32_t dma_apbperi_lc_pms_constrain_sram_pms_1:    2;
+            uint32_t dma_apbperi_lc_pms_constrain_sram_pms_2:    2;
+            uint32_t dma_apbperi_lc_pms_constrain_sram_pms_3:    2;
+            uint32_t dma_apbperi_lc_pms_constrain_sram_cachedataarray_pms_0:    2;
+            uint32_t dma_apbperi_lc_pms_constrain_sram_cachedataarray_pms_1:    2;
+            uint32_t reserved12                    :    20;
         };
         uint32_t val;
     } dma_apbperi_lc_pms_constrain_1;
     union {
         struct {
-            uint32_t dma_apbperi_sdio_host_pms_constrain_lock: 1;
-            uint32_t reserved1:                               31;
+            uint32_t dma_apbperi_sdio_pms_constrain_lock:    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
-    } dma_apbperi_sdio_host_pms_constrain_0;
+    } dma_apbperi_sdio_pms_constrain_0;
     union {
         struct {
-            uint32_t dma_apbperi_sdio_host_pms_constrain_sram_world_0_pms_0:                2;
-            uint32_t dma_apbperi_sdio_host_pms_constrain_sram_world_0_pms_1:                2;
-            uint32_t dma_apbperi_sdio_host_pms_constrain_sram_world_0_pms_2:                2;
-            uint32_t dma_apbperi_sdio_host_pms_constrain_sram_world_0_pms_3:                2;
-            uint32_t dma_apbperi_sdio_host_pms_constrain_sram_world_0_cachedataarray_pms_0: 2;
-            uint32_t dma_apbperi_sdio_host_pms_constrain_sram_world_0_cachedataarray_pms_1: 2;
-            uint32_t dma_apbperi_sdio_host_pms_constrain_sram_world_1_pms_0:                2;
-            uint32_t dma_apbperi_sdio_host_pms_constrain_sram_world_1_pms_1:                2;
-            uint32_t dma_apbperi_sdio_host_pms_constrain_sram_world_1_pms_2:                2;
-            uint32_t dma_apbperi_sdio_host_pms_constrain_sram_world_1_pms_3:                2;
-            uint32_t dma_apbperi_sdio_host_pms_constrain_sram_world_1_cachedataarray_pms_0: 2;
-            uint32_t dma_apbperi_sdio_host_pms_constrain_sram_world_1_cachedataarray_pms_1: 2;
-            uint32_t reserved24:                                                            8;
+            uint32_t dma_apbperi_sdio_pms_constrain_sram_pms_0:    2;
+            uint32_t dma_apbperi_sdio_pms_constrain_sram_pms_1:    2;
+            uint32_t dma_apbperi_sdio_pms_constrain_sram_pms_2:    2;
+            uint32_t dma_apbperi_sdio_pms_constrain_sram_pms_3:    2;
+            uint32_t dma_apbperi_sdio_pms_constrain_sram_cachedataarray_pms_0:    2;
+            uint32_t dma_apbperi_sdio_pms_constrain_sram_cachedataarray_pms_1:    2;
+            uint32_t reserved12                    :    20;
         };
         uint32_t val;
-    } dma_apbperi_sdio_host_pms_constrain_1;
+    } dma_apbperi_sdio_pms_constrain_1;
     union {
         struct {
-            uint32_t dma_apbperi_pms_monitor_lock: 1;
-            uint32_t reserved1:                   31;
+            uint32_t dma_apbperi_pms_monitor_lock  :    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } dma_apbperi_pms_monitor_0;
     union {
         struct {
-            uint32_t dma_apbperi_pms_monitor_violate_clr: 1;
-            uint32_t dma_apbperi_pms_monitor_violate_en:  1;
-            uint32_t reserved2:                          30;
+            uint32_t dma_apbperi_pms_monitor_violate_clr:    1;
+            uint32_t dma_apbperi_pms_monitor_violate_en:    1;
+            uint32_t reserved2                     :    30;
         };
         uint32_t val;
     } dma_apbperi_pms_monitor_1;
     union {
         struct {
-            uint32_t dma_apbperi_pms_monitor_violate_intr:         1;
-            uint32_t dma_apbperi_pms_monitor_violate_status_world: 2;
-            uint32_t dma_apbperi_pms_monitor_violate_status_addr: 22;
-            uint32_t reserved25:                                   7;
+            uint32_t dma_apbperi_pms_monitor_violate_intr:    1;
+            uint32_t dma_apbperi_pms_monitor_violate_status_world:    2;
+            uint32_t dma_apbperi_pms_monitor_violate_status_addr:    22;
+            uint32_t reserved25                    :    7;
         };
         uint32_t val;
     } dma_apbperi_pms_monitor_2;
     union {
         struct {
-            uint32_t dma_apbperi_pms_monitor_violate_status_wr:     1;
-            uint32_t dma_apbperi_pms_monitor_violate_status_byteen: 16;
-            uint32_t reserved17:                                   15;
+            uint32_t dma_apbperi_pms_monitor_violate_status_wr:    1;
+            uint32_t dma_apbperi_pms_monitor_violate_status_byteen:    16;
+            uint32_t reserved17                    :    15;
         };
         uint32_t val;
     } dma_apbperi_pms_monitor_3;
     union {
         struct {
-            uint32_t core_x_iram0_dram0_dma_split_line_constrain_lock: 1;
-            uint32_t reserved1:                                       31;
+            uint32_t core_x_iram0_dram0_dma_split_line_constrain_lock:    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } core_x_iram0_dram0_dma_split_line_constrain_0;
     union {
         struct {
-            uint32_t core_x_iram0_dram0_dma_sram_category_0: 2;
-            uint32_t core_x_iram0_dram0_dma_sram_category_1: 2;
-            uint32_t core_x_iram0_dram0_dma_sram_category_2: 2;
-            uint32_t core_x_iram0_dram0_dma_sram_category_3: 2;
-            uint32_t core_x_iram0_dram0_dma_sram_category_4: 2;
-            uint32_t core_x_iram0_dram0_dma_sram_category_5: 2;
-            uint32_t core_x_iram0_dram0_dma_sram_category_6: 2;
-            uint32_t core_x_iram0_dram0_dma_sram_splitaddr:  7;
-            uint32_t reserved21:                            11;
+            uint32_t core_x_iram0_dram0_dma_sram_category_0:    2;
+            uint32_t core_x_iram0_dram0_dma_sram_category_1:    2;
+            uint32_t core_x_iram0_dram0_dma_sram_category_2:    2;
+            uint32_t core_x_iram0_dram0_dma_sram_category_3:    2;
+            uint32_t core_x_iram0_dram0_dma_sram_category_4:    2;
+            uint32_t core_x_iram0_dram0_dma_sram_category_5:    2;
+            uint32_t core_x_iram0_dram0_dma_sram_category_6:    2;
+            uint32_t core_x_iram0_dram0_dma_sram_splitaddr:    8;
+            uint32_t reserved22                    :    10;
         };
         uint32_t val;
     } core_x_iram0_dram0_dma_split_line_constrain_1;
     union {
         struct {
-            uint32_t core_x_iram0_sram_line_0_category_0: 2;
-            uint32_t core_x_iram0_sram_line_0_category_1: 2;
-            uint32_t core_x_iram0_sram_line_0_category_2: 2;
-            uint32_t core_x_iram0_sram_line_0_category_3: 2;
-            uint32_t core_x_iram0_sram_line_0_category_4: 2;
-            uint32_t core_x_iram0_sram_line_0_category_5: 2;
-            uint32_t core_x_iram0_sram_line_0_category_6: 2;
-            uint32_t core_x_iram0_sram_line_0_splitaddr:  7;
-            uint32_t reserved21:                         11;
+            uint32_t core_x_iram0_sram_line_0_category_0:    2;
+            uint32_t core_x_iram0_sram_line_0_category_1:    2;
+            uint32_t core_x_iram0_sram_line_0_category_2:    2;
+            uint32_t core_x_iram0_sram_line_0_category_3:    2;
+            uint32_t core_x_iram0_sram_line_0_category_4:    2;
+            uint32_t core_x_iram0_sram_line_0_category_5:    2;
+            uint32_t core_x_iram0_sram_line_0_category_6:    2;
+            uint32_t core_x_iram0_sram_line_0_splitaddr:    8;
+            uint32_t reserved22                    :    10;
         };
         uint32_t val;
     } core_x_iram0_dram0_dma_split_line_constrain_2;
     union {
         struct {
-            uint32_t core_x_iram0_sram_line_1_category_0: 2;
-            uint32_t core_x_iram0_sram_line_1_category_1: 2;
-            uint32_t core_x_iram0_sram_line_1_category_2: 2;
-            uint32_t core_x_iram0_sram_line_1_category_3: 2;
-            uint32_t core_x_iram0_sram_line_1_category_4: 2;
-            uint32_t core_x_iram0_sram_line_1_category_5: 2;
-            uint32_t core_x_iram0_sram_line_1_category_6: 2;
-            uint32_t core_x_iram0_sram_line_1_splitaddr:  7;
-            uint32_t reserved21:                         11;
+            uint32_t core_x_iram0_sram_line_1_category_0:    2;
+            uint32_t core_x_iram0_sram_line_1_category_1:    2;
+            uint32_t core_x_iram0_sram_line_1_category_2:    2;
+            uint32_t core_x_iram0_sram_line_1_category_3:    2;
+            uint32_t core_x_iram0_sram_line_1_category_4:    2;
+            uint32_t core_x_iram0_sram_line_1_category_5:    2;
+            uint32_t core_x_iram0_sram_line_1_category_6:    2;
+            uint32_t core_x_iram0_sram_line_1_splitaddr:    8;
+            uint32_t reserved22                    :    10;
         };
         uint32_t val;
     } core_x_iram0_dram0_dma_split_line_constrain_3;
     union {
         struct {
-            uint32_t core_x_dram0_dma_sram_line_0_category_0: 2;
-            uint32_t core_x_dram0_dma_sram_line_0_category_1: 2;
-            uint32_t core_x_dram0_dma_sram_line_0_category_2: 2;
-            uint32_t core_x_dram0_dma_sram_line_0_category_3: 2;
-            uint32_t core_x_dram0_dma_sram_line_0_category_4: 2;
-            uint32_t core_x_dram0_dma_sram_line_0_category_5: 2;
-            uint32_t core_x_dram0_dma_sram_line_0_category_6: 2;
-            uint32_t core_x_dram0_dma_sram_line_0_splitaddr:  7;
-            uint32_t reserved21:                             11;
+            uint32_t core_x_dram0_dma_sram_line_0_category_0:    2;
+            uint32_t core_x_dram0_dma_sram_line_0_category_1:    2;
+            uint32_t core_x_dram0_dma_sram_line_0_category_2:    2;
+            uint32_t core_x_dram0_dma_sram_line_0_category_3:    2;
+            uint32_t core_x_dram0_dma_sram_line_0_category_4:    2;
+            uint32_t core_x_dram0_dma_sram_line_0_category_5:    2;
+            uint32_t core_x_dram0_dma_sram_line_0_category_6:    2;
+            uint32_t core_x_dram0_dma_sram_line_0_splitaddr:    8;
+            uint32_t reserved22                    :    10;
         };
         uint32_t val;
     } core_x_iram0_dram0_dma_split_line_constrain_4;
     union {
         struct {
-            uint32_t core_x_dram0_dma_sram_line_1_category_0: 2;
-            uint32_t core_x_dram0_dma_sram_line_1_category_1: 2;
-            uint32_t core_x_dram0_dma_sram_line_1_category_2: 2;
-            uint32_t core_x_dram0_dma_sram_line_1_category_3: 2;
-            uint32_t core_x_dram0_dma_sram_line_1_category_4: 2;
-            uint32_t core_x_dram0_dma_sram_line_1_category_5: 2;
-            uint32_t core_x_dram0_dma_sram_line_1_category_6: 2;
-            uint32_t core_x_dram0_dma_sram_line_1_splitaddr:  7;
-            uint32_t reserved21:                             11;
+            uint32_t core_x_dram0_dma_sram_line_1_category_0:    2;
+            uint32_t core_x_dram0_dma_sram_line_1_category_1:    2;
+            uint32_t core_x_dram0_dma_sram_line_1_category_2:    2;
+            uint32_t core_x_dram0_dma_sram_line_1_category_3:    2;
+            uint32_t core_x_dram0_dma_sram_line_1_category_4:    2;
+            uint32_t core_x_dram0_dma_sram_line_1_category_5:    2;
+            uint32_t core_x_dram0_dma_sram_line_1_category_6:    2;
+            uint32_t core_x_dram0_dma_sram_line_1_splitaddr:    8;
+            uint32_t reserved22                    :    10;
         };
         uint32_t val;
     } core_x_iram0_dram0_dma_split_line_constrain_5;
     union {
         struct {
-            uint32_t core_x_iram0_pms_constrain_lock: 1;
-            uint32_t reserved1:                      31;
+            uint32_t core_x_iram0_pms_constrain_lock:    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } core_x_iram0_pms_constrain_0;
     union {
         struct {
-            uint32_t core_x_iram0_pms_constrain_sram_world_1_pms_0:                3;
-            uint32_t core_x_iram0_pms_constrain_sram_world_1_pms_1:                3;
-            uint32_t core_x_iram0_pms_constrain_sram_world_1_pms_2:                3;
-            uint32_t core_x_iram0_pms_constrain_sram_world_1_pms_3:                3;
-            uint32_t core_x_iram0_pms_constrain_sram_world_1_cachedataarray_pms_0: 3;
-            uint32_t core_x_iram0_pms_constrain_sram_world_1_cachedataarray_pms_1: 3;
-            uint32_t core_x_iram0_pms_constrain_rom_world_1_pms:                   3;
-            uint32_t reserved21:                                                  11;
+            uint32_t core_x_iram0_pms_constrain_sram_world_1_pms_0:    3;
+            uint32_t core_x_iram0_pms_constrain_sram_world_1_pms_1:    3;
+            uint32_t core_x_iram0_pms_constrain_sram_world_1_pms_2:    3;
+            uint32_t core_x_iram0_pms_constrain_sram_world_1_pms_3:    3;
+            uint32_t core_x_iram0_pms_constrain_sram_world_1_cachedataarray_pms_0:    3;
+            uint32_t core_x_iram0_pms_constrain_sram_world_1_cachedataarray_pms_1:    3;
+            uint32_t core_x_iram0_pms_constrain_rom_world_1_pms:    3;
+            uint32_t reserved21                    :    11;
         };
         uint32_t val;
     } core_x_iram0_pms_constrain_1;
     union {
         struct {
-            uint32_t core_x_iram0_pms_constrain_sram_world_0_pms_0:                3;
-            uint32_t core_x_iram0_pms_constrain_sram_world_0_pms_1:                3;
-            uint32_t core_x_iram0_pms_constrain_sram_world_0_pms_2:                3;
-            uint32_t core_x_iram0_pms_constrain_sram_world_0_pms_3:                3;
-            uint32_t core_x_iram0_pms_constrain_sram_world_0_cachedataarray_pms_0: 3;
-            uint32_t core_x_iram0_pms_constrain_sram_world_0_cachedataarray_pms_1: 3;
-            uint32_t core_x_iram0_pms_constrain_rom_world_0_pms:                   3;
-            uint32_t reserved21:                                                  11;
+            uint32_t core_x_iram0_pms_constrain_sram_world_0_pms_0:    3;
+            uint32_t core_x_iram0_pms_constrain_sram_world_0_pms_1:    3;
+            uint32_t core_x_iram0_pms_constrain_sram_world_0_pms_2:    3;
+            uint32_t core_x_iram0_pms_constrain_sram_world_0_pms_3:    3;
+            uint32_t core_x_iram0_pms_constrain_sram_world_0_cachedataarray_pms_0:    3;
+            uint32_t core_x_iram0_pms_constrain_sram_world_0_cachedataarray_pms_1:    3;
+            uint32_t core_x_iram0_pms_constrain_rom_world_0_pms:    3;
+            uint32_t reserved21                    :    11;
         };
         uint32_t val;
     } core_x_iram0_pms_constrain_2;
     union {
         struct {
-            uint32_t core_0_iram0_pms_monitor_lock: 1;
-            uint32_t reserved1:                    31;
+            uint32_t core_0_iram0_pms_monitor_lock :    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } core_0_iram0_pms_monitor_0;
     union {
         struct {
-            uint32_t core_0_iram0_pms_monitor_violate_clr: 1;
-            uint32_t core_0_iram0_pms_monitor_violate_en:  1;
-            uint32_t reserved2:                           30;
+            uint32_t core_0_iram0_pms_monitor_violate_clr:    1;
+            uint32_t core_0_iram0_pms_monitor_violate_en:    1;
+            uint32_t reserved2                     :    30;
         };
         uint32_t val;
     } core_0_iram0_pms_monitor_1;
     union {
         struct {
-            uint32_t core_0_iram0_pms_monitor_violate_intr:             1;
-            uint32_t core_0_iram0_pms_monitor_violate_status_wr:        1;
-            uint32_t core_0_iram0_pms_monitor_violate_status_loadstore: 1;
-            uint32_t core_0_iram0_pms_monitor_violate_status_world:     2;
-            uint32_t core_0_iram0_pms_monitor_violate_status_addr:     24;
-            uint32_t reserved29:                                        3;
+            uint32_t core_0_iram0_pms_monitor_violate_intr:    1;
+            uint32_t core_0_iram0_pms_monitor_violate_status_wr:    1;
+            uint32_t core_0_iram0_pms_monitor_violate_status_loadstore:    1;
+            uint32_t core_0_iram0_pms_monitor_violate_status_world:    2;
+            uint32_t core_0_iram0_pms_monitor_violate_status_addr:    24;
+            uint32_t reserved29                    :    3;
         };
         uint32_t val;
     } core_0_iram0_pms_monitor_2;
     union {
         struct {
-            uint32_t core_1_iram0_pms_monitor_lock: 1;
-            uint32_t reserved1:                    31;
+            uint32_t core_1_iram0_pms_monitor_lock :    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } core_1_iram0_pms_monitor_0;
     union {
         struct {
-            uint32_t core_1_iram0_pms_monitor_violate_clr: 1;
-            uint32_t core_1_iram0_pms_monitor_violate_en:  1;
-            uint32_t reserved2:                           30;
+            uint32_t core_1_iram0_pms_monitor_violate_clr:    1;
+            uint32_t core_1_iram0_pms_monitor_violate_en:    1;
+            uint32_t reserved2                     :    30;
         };
         uint32_t val;
     } core_1_iram0_pms_monitor_1;
     union {
         struct {
-            uint32_t core_1_iram0_pms_monitor_violate_intr:             1;
-            uint32_t core_1_iram0_pms_monitor_violate_status_wr:        1;
-            uint32_t core_1_iram0_pms_monitor_violate_status_loadstore: 1;
-            uint32_t core_1_iram0_pms_monitor_violate_status_world:     2;
-            uint32_t core_1_iram0_pms_monitor_violate_status_addr:     24;
-            uint32_t reserved29:                                        3;
+            uint32_t core_1_iram0_pms_monitor_violate_intr:    1;
+            uint32_t core_1_iram0_pms_monitor_violate_status_wr:    1;
+            uint32_t core_1_iram0_pms_monitor_violate_status_loadstore:    1;
+            uint32_t core_1_iram0_pms_monitor_violate_status_world:    2;
+            uint32_t core_1_iram0_pms_monitor_violate_status_addr:    24;
+            uint32_t reserved29                    :    3;
         };
         uint32_t val;
     } core_1_iram0_pms_monitor_2;
     union {
         struct {
-            uint32_t core_x_dram0_pms_constrain_lock: 1;
-            uint32_t reserved1:                      31;
+            uint32_t core_x_dram0_pms_constrain_lock:    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } core_x_dram0_pms_constrain_0;
     union {
         struct {
-            uint32_t core_x_dram0_pms_constrain_sram_world_0_pms_0:                2;
-            uint32_t core_x_dram0_pms_constrain_sram_world_0_pms_1:                2;
-            uint32_t core_x_dram0_pms_constrain_sram_world_0_pms_2:                2;
-            uint32_t core_x_dram0_pms_constrain_sram_world_0_pms_3:                2;
-            uint32_t core_x_dram0_pms_constrain_sram_world_0_cachedataarray_pms_0: 2;
-            uint32_t core_x_dram0_pms_constrain_sram_world_0_cachedataarray_pms_1: 2;
-            uint32_t core_x_dram0_pms_constrain_sram_world_1_pms_0:                2;
-            uint32_t core_x_dram0_pms_constrain_sram_world_1_pms_1:                2;
-            uint32_t core_x_dram0_pms_constrain_sram_world_1_pms_2:                2;
-            uint32_t core_x_dram0_pms_constrain_sram_world_1_pms_3:                2;
-            uint32_t core_x_dram0_pms_constrain_sram_world_1_cachedataarray_pms_0: 2;
-            uint32_t core_x_dram0_pms_constrain_sram_world_1_cachedataarray_pms_1: 2;
-            uint32_t core_x_dram0_pms_constrain_rom_world_0_pms:                   2;
-            uint32_t core_x_dram0_pms_constrain_rom_world_1_pms:                   2;
-            uint32_t reserved28:                                                   4;
+            uint32_t core_x_dram0_pms_constrain_sram_world_0_pms_0:    2;
+            uint32_t core_x_dram0_pms_constrain_sram_world_0_pms_1:    2;
+            uint32_t core_x_dram0_pms_constrain_sram_world_0_pms_2:    2;
+            uint32_t core_x_dram0_pms_constrain_sram_world_0_pms_3:    2;
+            uint32_t core_x_dram0_pms_constrain_sram_world_0_cachedataarray_pms_0:    2;
+            uint32_t core_x_dram0_pms_constrain_sram_world_0_cachedataarray_pms_1:    2;
+            uint32_t core_x_dram0_pms_constrain_sram_world_1_pms_0:    2;
+            uint32_t core_x_dram0_pms_constrain_sram_world_1_pms_1:    2;
+            uint32_t core_x_dram0_pms_constrain_sram_world_1_pms_2:    2;
+            uint32_t core_x_dram0_pms_constrain_sram_world_1_pms_3:    2;
+            uint32_t core_x_dram0_pms_constrain_sram_world_1_cachedataarray_pms_0:    2;
+            uint32_t core_x_dram0_pms_constrain_sram_world_1_cachedataarray_pms_1:    2;
+            uint32_t core_x_dram0_pms_constrain_rom_world_0_pms:    2;
+            uint32_t core_x_dram0_pms_constrain_rom_world_1_pms:    2;
+            uint32_t reserved28                    :    4;
         };
         uint32_t val;
     } core_x_dram0_pms_constrain_1;
     union {
         struct {
-            uint32_t core_0_dram0_pms_monitor_lock: 1;
-            uint32_t reserved1:                    31;
+            uint32_t core_0_dram0_pms_monitor_lock :    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } core_0_dram0_pms_monitor_0;
     union {
         struct {
-            uint32_t core_0_dram0_pms_monitor_violate_clr: 1;
-            uint32_t core_0_dram0_pms_monitor_violate_en:  1;
-            uint32_t reserved2:                           30;
+            uint32_t core_0_dram0_pms_monitor_violate_clr:    1;
+            uint32_t core_0_dram0_pms_monitor_violate_en:    1;
+            uint32_t reserved2                     :    30;
         };
         uint32_t val;
     } core_0_dram0_pms_monitor_1;
     union {
         struct {
-            uint32_t core_0_dram0_pms_monitor_violate_intr:         1;
-            uint32_t core_0_dram0_pms_monitor_violate_status_lock:  1;
-            uint32_t core_0_dram0_pms_monitor_violate_status_world: 2;
-            uint32_t core_0_dram0_pms_monitor_violate_status_addr: 22;
-            uint32_t reserved26:                                    6;
+            uint32_t core_0_dram0_pms_monitor_violate_intr:    1;
+            uint32_t core_0_dram0_pms_monitor_violate_status_lock:    1;
+            uint32_t core_0_dram0_pms_monitor_violate_status_world:    2;
+            uint32_t core_0_dram0_pms_monitor_violate_status_addr:    22;
+            uint32_t reserved26                    :    6;
         };
         uint32_t val;
     } core_0_dram0_pms_monitor_2;
     union {
         struct {
-            uint32_t core_0_dram0_pms_monitor_violate_status_wr:     1;
-            uint32_t core_0_dram0_pms_monitor_violate_status_byteen: 16;
-            uint32_t reserved17:                                    15;
+            uint32_t core_0_dram0_pms_monitor_violate_status_wr:    1;
+            uint32_t core_0_dram0_pms_monitor_violate_status_byteen:    16;
+            uint32_t reserved17                    :    15;
         };
         uint32_t val;
     } core_0_dram0_pms_monitor_3;
     union {
         struct {
-            uint32_t core_1_dram0_pms_monitor_lock: 1;
-            uint32_t reserved1:                    31;
+            uint32_t core_1_dram0_pms_monitor_lock :    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } core_1_dram0_pms_monitor_0;
     union {
         struct {
-            uint32_t core_1_dram0_pms_monitor_violate_clr: 1;
-            uint32_t core_1_dram0_pms_monitor_violate_en:  1;
-            uint32_t reserved2:                           30;
+            uint32_t core_1_dram0_pms_monitor_violate_clr:    1;
+            uint32_t core_1_dram0_pms_monitor_violate_en:    1;
+            uint32_t reserved2                     :    30;
         };
         uint32_t val;
     } core_1_dram0_pms_monitor_1;
     union {
         struct {
-            uint32_t core_1_dram0_pms_monitor_violate_intr:         1;
-            uint32_t core_1_dram0_pms_monitor_violate_status_lock:  1;
-            uint32_t core_1_dram0_pms_monitor_violate_status_world: 2;
-            uint32_t core_1_dram0_pms_monitor_violate_status_addr: 22;
-            uint32_t reserved26:                                    6;
+            uint32_t core_1_dram0_pms_monitor_violate_intr:    1;
+            uint32_t core_1_dram0_pms_monitor_violate_status_lock:    1;
+            uint32_t core_1_dram0_pms_monitor_violate_status_world:    2;
+            uint32_t core_1_dram0_pms_monitor_violate_status_addr:    22;
+            uint32_t reserved26                    :    6;
         };
         uint32_t val;
     } core_1_dram0_pms_monitor_2;
     union {
         struct {
-            uint32_t core_1_dram0_pms_monitor_violate_status_wr:     1;
-            uint32_t core_1_dram0_pms_monitor_violate_status_byteen: 16;
-            uint32_t reserved17:                                    15;
+            uint32_t core_1_dram0_pms_monitor_violate_status_wr:    1;
+            uint32_t core_1_dram0_pms_monitor_violate_status_byteen:    16;
+            uint32_t reserved17                    :    15;
         };
         uint32_t val;
     } core_1_dram0_pms_monitor_3;
     union {
         struct {
-            uint32_t core_0_pif_pms_constrain_lock: 1;
-            uint32_t reserved1:                    31;
+            uint32_t core_0_pif_pms_constrain_lock :    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } core_0_pif_pms_constrain_0;
     union {
         struct {
-            uint32_t core_0_pif_pms_constrain_world_0_uart:       2;
+            uint32_t core_0_pif_pms_constrain_world_0_uart:    2;
             uint32_t core_0_pif_pms_constrain_world_0_g0spi_1:    2;
             uint32_t core_0_pif_pms_constrain_world_0_g0spi_0:    2;
-            uint32_t core_0_pif_pms_constrain_world_0_gpio:       2;
-            uint32_t core_0_pif_pms_constrain_world_0_fe2:        2;
-            uint32_t core_0_pif_pms_constrain_world_0_fe:         2;
-            uint32_t core_0_pif_pms_constrain_world_0_timer:      2;
-            uint32_t core_0_pif_pms_constrain_world_0_rtc_config: 2;
-            uint32_t core_0_pif_pms_constrain_world_0_io_mux:     2;
-            uint32_t core_0_pif_pms_constrain_world_0_wdg:        2;
-            uint32_t core_0_pif_pms_constrain_world_0_hinf:       2;
-            uint32_t core_0_pif_pms_constrain_world_0_uhci1:      2;
-            uint32_t core_0_pif_pms_constrain_world_0_misc:       2;
-            uint32_t core_0_pif_pms_constrain_world_0_i2c:        2;
-            uint32_t core_0_pif_pms_constrain_world_0_i2s0:       2;
-            uint32_t core_0_pif_pms_constrain_world_0_uart1:      2;
+            uint32_t core_0_pif_pms_constrain_world_0_gpio:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_fe2:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_fe:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_timer:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_rtc:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_io_mux:    2;
+            uint32_t reserved18                    :    2;
+            uint32_t core_0_pif_pms_constrain_world_0_hinf:    2;
+            uint32_t reserved22                    :    2;
+            uint32_t core_0_pif_pms_constrain_world_0_misc:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_i2c:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_i2s0:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_uart1:    2;
         };
         uint32_t val;
     } core_0_pif_pms_constrain_1;
     union {
         struct {
-            uint32_t core_0_pif_pms_constrain_world_0_bt:            2;
-            uint32_t core_0_pif_pms_constrain_world_0_bt_buffer:     2;
-            uint32_t core_0_pif_pms_constrain_world_0_i2c_ext0:      2;
-            uint32_t core_0_pif_pms_constrain_world_0_uhci0:         2;
-            uint32_t core_0_pif_pms_constrain_world_0_slchost:       2;
-            uint32_t core_0_pif_pms_constrain_world_0_rmt:           2;
-            uint32_t core_0_pif_pms_constrain_world_0_pcnt:          2;
-            uint32_t core_0_pif_pms_constrain_world_0_slc:           2;
-            uint32_t core_0_pif_pms_constrain_world_0_ledc:          2;
-            uint32_t core_0_pif_pms_constrain_world_0_efuse:         2;
-            uint32_t core_0_pif_pms_constrain_world_0_g0spi_encrypt: 2;
-            uint32_t core_0_pif_pms_constrain_world_0_bb:            2;
-            uint32_t core_0_pif_pms_constrain_world_0_pwm0:          2;
+            uint32_t core_0_pif_pms_constrain_world_0_bt:    2;
+            uint32_t reserved2                     :    2;
+            uint32_t core_0_pif_pms_constrain_world_0_i2c_ext0:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_uhci0:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_slchost:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_rmt:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_pcnt:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_slc:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_ledc:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_backup:    2;
+            uint32_t reserved20                    :    2;
+            uint32_t core_0_pif_pms_constrain_world_0_bb:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_pwm0:    2;
             uint32_t core_0_pif_pms_constrain_world_0_timergroup:    2;
-            uint32_t core_0_pif_pms_constrain_world_0_timergroup1:   2;
-            uint32_t core_0_pif_pms_constrain_world_0_systimer:      2;
+            uint32_t core_0_pif_pms_constrain_world_0_timergroup1:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_systimer:    2;
         };
         uint32_t val;
     } core_0_pif_pms_constrain_2;
     union {
         struct {
-            uint32_t core_0_pif_pms_constrain_world_0_spi_2:     2;
-            uint32_t core_0_pif_pms_constrain_world_0_spi_3:     2;
-            uint32_t core_0_pif_pms_constrain_world_0_apb_ctrl:  2;
-            uint32_t core_0_pif_pms_constrain_world_0_i2c_ext1:  2;
-            uint32_t core_0_pif_pms_constrain_world_0_sdio_host: 2;
-            uint32_t core_0_pif_pms_constrain_world_0_can:       2;
-            uint32_t core_0_pif_pms_constrain_world_0_pwm1:      2;
-            uint32_t core_0_pif_pms_constrain_world_0_i2s1:      2;
-            uint32_t core_0_pif_pms_constrain_world_0_uart2:     2;
-            uint32_t core_0_pif_pms_constrain_world_0_pwm2:      2;
-            uint32_t core_0_pif_pms_constrain_world_0_pwm3:      2;
-            uint32_t core_0_pif_pms_constrain_world_0_rwbt:      2;
-            uint32_t core_0_pif_pms_constrain_world_0_btmac:     2;
-            uint32_t core_0_pif_pms_constrain_world_0_wifimac:   2;
-            uint32_t core_0_pif_pms_constrain_world_0_pwr:       2;
-            uint32_t core_0_pif_pms_constrain_world_0_g1spi_0:   2;
+            uint32_t core_0_pif_pms_constrain_world_0_spi_2:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_spi_3:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_apb_ctrl:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_i2c_ext1:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_sdio_host:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_can:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_pwm1:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_i2s1:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_uart2:    2;
+            uint32_t reserved18                    :    2;
+            uint32_t reserved20                    :    2;
+            uint32_t core_0_pif_pms_constrain_world_0_rwbt:    2;
+            uint32_t reserved24                    :    2;
+            uint32_t core_0_pif_pms_constrain_world_0_wifimac:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_pwr:    2;
+            uint32_t reserved30                    :    2;
         };
         uint32_t val;
     } core_0_pif_pms_constrain_3;
     union {
         struct {
-            uint32_t core_0_pif_pms_constrain_world_0_g1spi_encrypt:    2;
-            uint32_t core_0_pif_pms_constrain_world_0_usb_wrap:         2;
-            uint32_t core_0_pif_pms_constrain_world_0_crypto_peri:      2;
-            uint32_t core_0_pif_pms_constrain_world_0_crypto_dma:       2;
-            uint32_t core_0_pif_pms_constrain_world_0_apb_adc:          2;
-            uint32_t core_0_pif_pms_constrain_world_0_lcd_cam:          2;
-            uint32_t core_0_pif_pms_constrain_world_0_usb:              2;
-            uint32_t core_0_pif_pms_constrain_world_0_system:           2;
-            uint32_t core_0_pif_pms_constrain_world_0_sensitive:        2;
-            uint32_t core_0_pif_pms_constrain_world_0_interrupt:        2;
-            uint32_t core_0_pif_pms_constrain_world_0_dma_copy:         2;
-            uint32_t core_0_pif_pms_constrain_world_0_cache_config:     2;
-            uint32_t core_0_pif_pms_constrain_world_0_ad:               2;
-            uint32_t core_0_pif_pms_constrain_world_0_dio:              2;
-            uint32_t core_0_pif_pms_constrain_world_0_world_controller: 2;
-            uint32_t reserved30:                                        2;
+            uint32_t core_0_pif_pms_constrain_world_0_usb_device:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_usb_wrap:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_crypto_peri:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_crypto_dma:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_apb_adc:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_lcd_cam:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_bt_pwr:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_usb:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_system:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_sensitive:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_interrupt:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_dma_copy:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_cache_config:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_ad:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_dio:    2;
+            uint32_t core_0_pif_pms_constrain_world_0_world_controller:    2;
         };
         uint32_t val;
     } core_0_pif_pms_constrain_4;
     union {
         struct {
-            uint32_t core_0_pif_pms_constrain_world_1_uart:       2;
+            uint32_t core_0_pif_pms_constrain_world_1_uart:    2;
             uint32_t core_0_pif_pms_constrain_world_1_g0spi_1:    2;
             uint32_t core_0_pif_pms_constrain_world_1_g0spi_0:    2;
-            uint32_t core_0_pif_pms_constrain_world_1_gpio:       2;
-            uint32_t core_0_pif_pms_constrain_world_1_fe2:        2;
-            uint32_t core_0_pif_pms_constrain_world_1_fe:         2;
-            uint32_t core_0_pif_pms_constrain_world_1_timer:      2;
-            uint32_t core_0_pif_pms_constrain_world_1_rtc_config: 2;
-            uint32_t core_0_pif_pms_constrain_world_1_io_mux:     2;
-            uint32_t core_0_pif_pms_constrain_world_1_wdg:        2;
-            uint32_t core_0_pif_pms_constrain_world_1_hinf:       2;
-            uint32_t core_0_pif_pms_constrain_world_1_uhci1:      2;
-            uint32_t core_0_pif_pms_constrain_world_1_misc:       2;
-            uint32_t core_0_pif_pms_constrain_world_1_i2c:        2;
-            uint32_t core_0_pif_pms_constrain_world_1_i2s0:       2;
-            uint32_t core_0_pif_pms_constrain_world_1_uart1:      2;
+            uint32_t core_0_pif_pms_constrain_world_1_gpio:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_fe2:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_fe:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_timer:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_rtc:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_io_mux:    2;
+            uint32_t reserved18                    :    2;
+            uint32_t core_0_pif_pms_constrain_world_1_hinf:    2;
+            uint32_t reserved22                    :    2;
+            uint32_t core_0_pif_pms_constrain_world_1_misc:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_i2c:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_i2s0:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_uart1:    2;
         };
         uint32_t val;
     } core_0_pif_pms_constrain_5;
     union {
         struct {
-            uint32_t core_0_pif_pms_constrain_world_1_bt:            2;
-            uint32_t core_0_pif_pms_constrain_world_1_bt_buffer:     2;
-            uint32_t core_0_pif_pms_constrain_world_1_i2c_ext0:      2;
-            uint32_t core_0_pif_pms_constrain_world_1_uhci0:         2;
-            uint32_t core_0_pif_pms_constrain_world_1_slchost:       2;
-            uint32_t core_0_pif_pms_constrain_world_1_rmt:           2;
-            uint32_t core_0_pif_pms_constrain_world_1_pcnt:          2;
-            uint32_t core_0_pif_pms_constrain_world_1_slc:           2;
-            uint32_t core_0_pif_pms_constrain_world_1_ledc:          2;
-            uint32_t core_0_pif_pms_constrain_world_1_efuse:         2;
-            uint32_t core_0_pif_pms_constrain_world_1_g0spi_encrypt: 2;
-            uint32_t core_0_pif_pms_constrain_world_1_bb:            2;
-            uint32_t core_0_pif_pms_constrain_world_1_pwm0:          2;
+            uint32_t core_0_pif_pms_constrain_world_1_bt:    2;
+            uint32_t reserved2                     :    2;
+            uint32_t core_0_pif_pms_constrain_world_1_i2c_ext0:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_uhci0:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_slchost:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_rmt:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_pcnt:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_slc:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_ledc:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_backup:    2;
+            uint32_t reserved20                    :    2;
+            uint32_t core_0_pif_pms_constrain_world_1_bb:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_pwm0:    2;
             uint32_t core_0_pif_pms_constrain_world_1_timergroup:    2;
-            uint32_t core_0_pif_pms_constrain_world_1_timergroup1:   2;
-            uint32_t core_0_pif_pms_constrain_world_1_systimer:      2;
+            uint32_t core_0_pif_pms_constrain_world_1_timergroup1:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_systimer:    2;
         };
         uint32_t val;
     } core_0_pif_pms_constrain_6;
     union {
         struct {
-            uint32_t core_0_pif_pms_constrain_world_1_spi_2:     2;
-            uint32_t core_0_pif_pms_constrain_world_1_spi_3:     2;
-            uint32_t core_0_pif_pms_constrain_world_1_apb_ctrl:  2;
-            uint32_t core_0_pif_pms_constrain_world_1_i2c_ext1:  2;
-            uint32_t core_0_pif_pms_constrain_world_1_sdio_host: 2;
-            uint32_t core_0_pif_pms_constrain_world_1_can:       2;
-            uint32_t core_0_pif_pms_constrain_world_1_pwm1:      2;
-            uint32_t core_0_pif_pms_constrain_world_1_i2s1:      2;
-            uint32_t core_0_pif_pms_constrain_world_1_uart2:     2;
-            uint32_t core_0_pif_pms_constrain_world_1_pwm2:      2;
-            uint32_t core_0_pif_pms_constrain_world_1_pwm3:      2;
-            uint32_t core_0_pif_pms_constrain_world_1_rwbt:      2;
-            uint32_t core_0_pif_pms_constrain_world_1_btmac:     2;
-            uint32_t core_0_pif_pms_constrain_world_1_wifimac:   2;
-            uint32_t core_0_pif_pms_constrain_world_1_pwr:       2;
-            uint32_t core_0_pif_pms_constrain_world_1_g1spi_0:   2;
+            uint32_t core_0_pif_pms_constrain_world_1_spi_2:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_spi_3:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_apb_ctrl:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_i2c_ext1:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_sdio_host:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_can:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_pwm1:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_i2s1:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_uart2:    2;
+            uint32_t reserved18                    :    2;
+            uint32_t reserved20                    :    2;
+            uint32_t core_0_pif_pms_constrain_world_1_rwbt:    2;
+            uint32_t reserved24                    :    2;
+            uint32_t core_0_pif_pms_constrain_world_1_wifimac:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_pwr:    2;
+            uint32_t reserved30                    :    2;
         };
         uint32_t val;
     } core_0_pif_pms_constrain_7;
     union {
         struct {
-            uint32_t core_0_pif_pms_constrain_world_1_g1spi_encrypt:    2;
-            uint32_t core_0_pif_pms_constrain_world_1_usb_wrap:         2;
-            uint32_t core_0_pif_pms_constrain_world_1_crypto_peri:      2;
-            uint32_t core_0_pif_pms_constrain_world_1_crypto_dma:       2;
-            uint32_t core_0_pif_pms_constrain_world_1_apb_adc:          2;
-            uint32_t core_0_pif_pms_constrain_world_1_lcd_cam:          2;
-            uint32_t core_0_pif_pms_constrain_world_1_usb:              2;
-            uint32_t core_0_pif_pms_constrain_world_1_system:           2;
-            uint32_t core_0_pif_pms_constrain_world_1_sensitive:        2;
-            uint32_t core_0_pif_pms_constrain_world_1_interrupt:        2;
-            uint32_t core_0_pif_pms_constrain_world_1_dma_copy:         2;
-            uint32_t core_0_pif_pms_constrain_world_1_cache_config:     2;
-            uint32_t core_0_pif_pms_constrain_world_1_ad:               2;
-            uint32_t core_0_pif_pms_constrain_world_1_dio:              2;
-            uint32_t core_0_pif_pms_constrain_world_1_world_controller: 2;
-            uint32_t reserved30:                                        2;
+            uint32_t core_0_pif_pms_constrain_world_1_usb_device:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_usb_wrap:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_crypto_peri:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_crypto_dma:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_apb_adc:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_lcd_cam:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_bt_pwr:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_usb:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_system:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_sensitive:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_interrupt:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_dma_copy:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_cache_config:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_ad:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_dio:    2;
+            uint32_t core_0_pif_pms_constrain_world_1_world_controller:    2;
         };
         uint32_t val;
     } core_0_pif_pms_constrain_8;
     union {
         struct {
-            uint32_t core_0_pif_pms_constrain_rtcfast_spltaddr_world_0: 11;
-            uint32_t core_0_pif_pms_constrain_rtcfast_spltaddr_world_1: 11;
-            uint32_t reserved22:                                       10;
+            uint32_t core_0_pif_pms_constrain_rtcfast_spltaddr_world_0:    11;
+            uint32_t core_0_pif_pms_constrain_rtcfast_spltaddr_world_1:    11;
+            uint32_t reserved22                    :    10;
         };
         uint32_t val;
     } core_0_pif_pms_constrain_9;
     union {
         struct {
-            uint32_t core_0_pif_pms_constrain_rtcfast_world_0_l: 3;
-            uint32_t core_0_pif_pms_constrain_rtcfast_world_0_h: 3;
-            uint32_t core_0_pif_pms_constrain_rtcfast_world_1_l: 3;
-            uint32_t core_0_pif_pms_constrain_rtcfast_world_1_h: 3;
-            uint32_t reserved12:                                20;
+            uint32_t core_0_pif_pms_constrain_rtcfast_world_0_l:    3;
+            uint32_t core_0_pif_pms_constrain_rtcfast_world_0_h:    3;
+            uint32_t core_0_pif_pms_constrain_rtcfast_world_1_l:    3;
+            uint32_t core_0_pif_pms_constrain_rtcfast_world_1_h:    3;
+            uint32_t reserved12                    :    20;
         };
         uint32_t val;
     } core_0_pif_pms_constrain_10;
     union {
         struct {
-            uint32_t core_0_pif_pms_constrain_rtcslow_0_spltaddr_world_0: 11;
-            uint32_t core_0_pif_pms_constrain_rtcslow_0_spltaddr_world_1: 11;
-            uint32_t reserved22:                                         10;
+            uint32_t core_0_pif_pms_constrain_rtcslow_0_spltaddr_world_0:    11;
+            uint32_t core_0_pif_pms_constrain_rtcslow_0_spltaddr_world_1:    11;
+            uint32_t reserved22                    :    10;
         };
         uint32_t val;
     } core_0_pif_pms_constrain_11;
     union {
         struct {
-            uint32_t core_0_pif_pms_constrain_rtcslow_0_world_0_l: 3;
-            uint32_t core_0_pif_pms_constrain_rtcslow_0_world_0_h: 3;
-            uint32_t core_0_pif_pms_constrain_rtcslow_0_world_1_l: 3;
-            uint32_t core_0_pif_pms_constrain_rtcslow_0_world_1_h: 3;
-            uint32_t reserved12:                                  20;
+            uint32_t core_0_pif_pms_constrain_rtcslow_0_world_0_l:    3;
+            uint32_t core_0_pif_pms_constrain_rtcslow_0_world_0_h:    3;
+            uint32_t core_0_pif_pms_constrain_rtcslow_0_world_1_l:    3;
+            uint32_t core_0_pif_pms_constrain_rtcslow_0_world_1_h:    3;
+            uint32_t reserved12                    :    20;
         };
         uint32_t val;
     } core_0_pif_pms_constrain_12;
     union {
         struct {
-            uint32_t core_0_pif_pms_constrain_rtcslow_1_spltaddr_world_0: 11;
-            uint32_t core_0_pif_pms_constrain_rtcslow_1_spltaddr_world_1: 11;
-            uint32_t reserved22:                                         10;
+            uint32_t core_0_pif_pms_constrain_rtcslow_1_spltaddr_world_0:    11;
+            uint32_t core_0_pif_pms_constrain_rtcslow_1_spltaddr_world_1:    11;
+            uint32_t reserved22                    :    10;
         };
         uint32_t val;
     } core_0_pif_pms_constrain_13;
     union {
         struct {
-            uint32_t core_0_pif_pms_constrain_rtcslow_1_world_0_l: 3;
-            uint32_t core_0_pif_pms_constrain_rtcslow_1_world_0_h: 3;
-            uint32_t core_0_pif_pms_constrain_rtcslow_1_world_1_l: 3;
-            uint32_t core_0_pif_pms_constrain_rtcslow_1_world_1_h: 3;
-            uint32_t reserved12:                                  20;
+            uint32_t core_0_pif_pms_constrain_rtcslow_1_world_0_l:    3;
+            uint32_t core_0_pif_pms_constrain_rtcslow_1_world_0_h:    3;
+            uint32_t core_0_pif_pms_constrain_rtcslow_1_world_1_l:    3;
+            uint32_t core_0_pif_pms_constrain_rtcslow_1_world_1_h:    3;
+            uint32_t reserved12                    :    20;
         };
         uint32_t val;
     } core_0_pif_pms_constrain_14;
+    union {
+        struct {
+            uint32_t core_0ion_pms_constrain_lock: 1;
+            uint32_t reserved1:                   31;
+        };
+        uint32_t val;
+    } core_0ion_pms_constrain_0;
+    union {
+        struct {
+            uint32_t core_0ion_pms_constrain_world_0_area_0:  2;
+            uint32_t core_0ion_pms_constrain_world_0_area_1:  2;
+            uint32_t core_0ion_pms_constrain_world_0_area_2:  2;
+            uint32_t core_0ion_pms_constrain_world_0_area_3:  2;
+            uint32_t core_0ion_pms_constrain_world_0_area_4:  2;
+            uint32_t core_0ion_pms_constrain_world_0_area_5:  2;
+            uint32_t core_0ion_pms_constrain_world_0_area_6:  2;
+            uint32_t core_0ion_pms_constrain_world_0_area_7:  2;
+            uint32_t core_0ion_pms_constrain_world_0_area_8:  2;
+            uint32_t core_0ion_pms_constrain_world_0_area_9:  2;
+            uint32_t core_0ion_pms_constrain_world_0_area_10: 2;
+            uint32_t reserved22:                             10;
+        };
+        uint32_t val;
+    } core_0ion_pms_constrain_1;
+    union {
+        struct {
+            uint32_t core_0ion_pms_constrain_world_1_area_0:  2;
+            uint32_t core_0ion_pms_constrain_world_1_area_1:  2;
+            uint32_t core_0ion_pms_constrain_world_1_area_2:  2;
+            uint32_t core_0ion_pms_constrain_world_1_area_3:  2;
+            uint32_t core_0ion_pms_constrain_world_1_area_4:  2;
+            uint32_t core_0ion_pms_constrain_world_1_area_5:  2;
+            uint32_t core_0ion_pms_constrain_world_1_area_6:  2;
+            uint32_t core_0ion_pms_constrain_world_1_area_7:  2;
+            uint32_t core_0ion_pms_constrain_world_1_area_8:  2;
+            uint32_t core_0ion_pms_constrain_world_1_area_9:  2;
+            uint32_t core_0ion_pms_constrain_world_1_area_10: 2;
+            uint32_t reserved22:                             10;
+        };
+        uint32_t val;
+    } core_0ion_pms_constrain_2;
+    union {
+        struct {
+            uint32_t core_0ion_pms_constrain_addr_0:30;
+            uint32_t reserved30:                     2;
+        };
+        uint32_t val;
+    } core_0ion_pms_constrain_3;
+    union {
+        struct {
+            uint32_t core_0ion_pms_constrain_addr_1:30;
+            uint32_t reserved30:                     2;
+        };
+        uint32_t val;
+    } core_0ion_pms_constrain_4;
+    union {
+        struct {
+            uint32_t core_0ion_pms_constrain_addr_2:30;
+            uint32_t reserved30:                     2;
+        };
+        uint32_t val;
+    } core_0ion_pms_constrain_5;
+    union {
+        struct {
+            uint32_t core_0ion_pms_constrain_addr_3:30;
+            uint32_t reserved30:                     2;
+        };
+        uint32_t val;
+    } core_0ion_pms_constrain_6;
+    union {
+        struct {
+            uint32_t core_0ion_pms_constrain_addr_4:30;
+            uint32_t reserved30:                     2;
+        };
+        uint32_t val;
+    } core_0ion_pms_constrain_7;
+    union {
+        struct {
+            uint32_t core_0ion_pms_constrain_addr_5:30;
+            uint32_t reserved30:                     2;
+        };
+        uint32_t val;
+    } core_0ion_pms_constrain_8;
+    union {
+        struct {
+            uint32_t core_0ion_pms_constrain_addr_6:30;
+            uint32_t reserved30:                     2;
+        };
+        uint32_t val;
+    } core_0ion_pms_constrain_9;
+    union {
+        struct {
+            uint32_t core_0ion_pms_constrain_addr_7:30;
+            uint32_t reserved30:                     2;
+        };
+        uint32_t val;
+    } core_0ion_pms_constrain_10;
+    union {
+        struct {
+            uint32_t core_0ion_pms_constrain_addr_8:30;
+            uint32_t reserved30:                     2;
+        };
+        uint32_t val;
+    } core_0ion_pms_constrain_11;
+    union {
+        struct {
+            uint32_t core_0ion_pms_constrain_addr_9:30;
+            uint32_t reserved30:                     2;
+        };
+        uint32_t val;
+    } core_0ion_pms_constrain_12;
+    union {
+        struct {
+            uint32_t core_0ion_pms_constrain_addr_10:30;
+            uint32_t reserved30:                      2;
+        };
+        uint32_t val;
+    } core_0ion_pms_constrain_13;
+    union {
+        struct {
+            uint32_t core_0ion_pms_constrain_addr_11:30;
+            uint32_t reserved30:                      2;
+        };
+        uint32_t val;
+    } core_0ion_pms_constrain_14;
     union {
         struct {
             uint32_t core_0_pif_pms_monitor_lock: 1;
@@ -1007,7 +1080,7 @@ typedef volatile struct {
         };
         uint32_t val;
     } core_0_pif_pms_monitor_2;
-    uint32_t core_0_pif_pms_monitor_3;                                                           /**/
+    uint32_t core_0_pif_pms_monitor_3;                                                  /**/
     union {
         struct {
             uint32_t core_0_pif_pms_monitor_nonword_violate_clr: 1;
@@ -1025,22 +1098,36 @@ typedef volatile struct {
         };
         uint32_t val;
     } core_0_pif_pms_monitor_5;
-    uint32_t core_0_pif_pms_monitor_6;                                                           /**/
+    uint32_t core_0_pif_pms_monitor_6;                                                  /**/
     union {
         struct {
             uint32_t core_0_vecbase_override_lock: 1;
             uint32_t reserved1:                   31;
         };
         uint32_t val;
+    } core_0_vecbase_override_lock;
+    union {
+        struct {
+            uint32_t core_0_vecbase_world_mask     :    1;
+            uint32_t reserved1                     :    31;
+        };
+        uint32_t val;
     } core_0_vecbase_override_0;
     union {
         struct {
-            uint32_t core_0_vecbase_override_value: 22;
+            uint32_t core_0_vecbase_override_value:22;
             uint32_t core_0_vecbase_override_sel:   2;
             uint32_t reserved24:                    8;
         };
         uint32_t val;
     } core_0_vecbase_override_1;
+    union {
+        struct {
+            uint32_t core_0_vecbase_override_world1_value:    22;
+            uint32_t reserved22                    :    10;
+        };
+        uint32_t val;
+    } core_0_vecbase_override_2;
     union {
         struct {
             uint32_t core_0_toomanyexceptions_m_override_lock: 1;
@@ -1064,43 +1151,43 @@ typedef volatile struct {
     } core_1_pif_pms_constrain_0;
     union {
         struct {
-            uint32_t core_1_pif_pms_constrain_world_0_uart:       2;
-            uint32_t core_1_pif_pms_constrain_world_0_g0spi_1:    2;
-            uint32_t core_1_pif_pms_constrain_world_0_g0spi_0:    2;
-            uint32_t core_1_pif_pms_constrain_world_0_gpio:       2;
-            uint32_t core_1_pif_pms_constrain_world_0_fe2:        2;
-            uint32_t core_1_pif_pms_constrain_world_0_fe:         2;
-            uint32_t core_1_pif_pms_constrain_world_0_timer:      2;
-            uint32_t core_1_pif_pms_constrain_world_0_rtc_config: 2;
-            uint32_t core_1_pif_pms_constrain_world_0_io_mux:     2;
-            uint32_t core_1_pif_pms_constrain_world_0_wdg:        2;
-            uint32_t core_1_pif_pms_constrain_world_0_hinf:       2;
-            uint32_t core_1_pif_pms_constrain_world_0_uhci1:      2;
-            uint32_t core_1_pif_pms_constrain_world_0_misc:       2;
-            uint32_t core_1_pif_pms_constrain_world_0_i2c:        2;
-            uint32_t core_1_pif_pms_constrain_world_0_i2s0:       2;
-            uint32_t core_1_pif_pms_constrain_world_0_uart1:      2;
+            uint32_t core_1_pif_pms_constrain_world_0_uart:    2;
+            uint32_t core_1_pif_pms_constrain_world_0_g0spi_1: 2;
+            uint32_t core_1_pif_pms_constrain_world_0_g0spi_0: 2;
+            uint32_t core_1_pif_pms_constrain_world_0_gpio:    2;
+            uint32_t core_1_pif_pms_constrain_world_0_fe2:     2;
+            uint32_t core_1_pif_pms_constrain_world_0_fe:      2;
+            uint32_t core_1_pif_pms_constrain_world_0_timer:   2;
+            uint32_t core_1_pif_pms_constrain_world_0_rtc:     2;
+            uint32_t core_1_pif_pms_constrain_world_0_io_mux:  2;
+            uint32_t reserved18:                               2;
+            uint32_t core_1_pif_pms_constrain_world_0_hinf:    2;
+            uint32_t reserved22:                               2;
+            uint32_t core_1_pif_pms_constrain_world_0_misc:    2;
+            uint32_t core_1_pif_pms_constrain_world_0_i2c:     2;
+            uint32_t core_1_pif_pms_constrain_world_0_i2s0:    2;
+            uint32_t core_1_pif_pms_constrain_world_0_uart1:   2;
         };
         uint32_t val;
     } core_1_pif_pms_constrain_1;
     union {
         struct {
-            uint32_t core_1_pif_pms_constrain_world_0_bt:            2;
-            uint32_t core_1_pif_pms_constrain_world_0_bt_buffer:     2;
-            uint32_t core_1_pif_pms_constrain_world_0_i2c_ext0:      2;
-            uint32_t core_1_pif_pms_constrain_world_0_uhci0:         2;
-            uint32_t core_1_pif_pms_constrain_world_0_slchost:       2;
-            uint32_t core_1_pif_pms_constrain_world_0_rmt:           2;
-            uint32_t core_1_pif_pms_constrain_world_0_pcnt:          2;
-            uint32_t core_1_pif_pms_constrain_world_0_slc:           2;
-            uint32_t core_1_pif_pms_constrain_world_0_ledc:          2;
-            uint32_t core_1_pif_pms_constrain_world_0_efuse:         2;
-            uint32_t core_1_pif_pms_constrain_world_0_g0spi_encrypt: 2;
-            uint32_t core_1_pif_pms_constrain_world_0_bb:            2;
-            uint32_t core_1_pif_pms_constrain_world_0_pwm0:          2;
-            uint32_t core_1_pif_pms_constrain_world_0_timergroup:    2;
-            uint32_t core_1_pif_pms_constrain_world_0_timergroup1:   2;
-            uint32_t core_1_pif_pms_constrain_world_0_systimer:      2;
+            uint32_t core_1_pif_pms_constrain_world_0_bt:          2;
+            uint32_t reserved2:                                    2;
+            uint32_t core_1_pif_pms_constrain_world_0_i2c_ext0:    2;
+            uint32_t core_1_pif_pms_constrain_world_0_uhci0:       2;
+            uint32_t core_1_pif_pms_constrain_world_0_slchost:     2;
+            uint32_t core_1_pif_pms_constrain_world_0_rmt:         2;
+            uint32_t core_1_pif_pms_constrain_world_0_pcnt:        2;
+            uint32_t core_1_pif_pms_constrain_world_0_slc:         2;
+            uint32_t core_1_pif_pms_constrain_world_0_ledc:        2;
+            uint32_t core_1_pif_pms_constrain_world_0_backup:      2;
+            uint32_t reserved20:                                   2;
+            uint32_t core_1_pif_pms_constrain_world_0_bb:          2;
+            uint32_t core_1_pif_pms_constrain_world_0_pwm0:        2;
+            uint32_t core_1_pif_pms_constrain_world_0_timergroup:  2;
+            uint32_t core_1_pif_pms_constrain_world_0_timergroup1: 2;
+            uint32_t core_1_pif_pms_constrain_world_0_systimer:    2;
         };
         uint32_t val;
     } core_1_pif_pms_constrain_2;
@@ -1115,24 +1202,25 @@ typedef volatile struct {
             uint32_t core_1_pif_pms_constrain_world_0_pwm1:      2;
             uint32_t core_1_pif_pms_constrain_world_0_i2s1:      2;
             uint32_t core_1_pif_pms_constrain_world_0_uart2:     2;
-            uint32_t core_1_pif_pms_constrain_world_0_pwm2:      2;
-            uint32_t core_1_pif_pms_constrain_world_0_pwm3:      2;
+            uint32_t reserved18:                                 2;
+            uint32_t reserved20:                                 2;
             uint32_t core_1_pif_pms_constrain_world_0_rwbt:      2;
-            uint32_t core_1_pif_pms_constrain_world_0_btmac:     2;
+            uint32_t reserved24:                                 2;
             uint32_t core_1_pif_pms_constrain_world_0_wifimac:   2;
             uint32_t core_1_pif_pms_constrain_world_0_pwr:       2;
-            uint32_t core_1_pif_pms_constrain_world_0_g1spi_0:   2;
+            uint32_t reserved30:                                 2;
         };
         uint32_t val;
     } core_1_pif_pms_constrain_3;
     union {
         struct {
-            uint32_t core_1_pif_pms_constrain_world_0_g1spi_encrypt:    2;
+            uint32_t core_1_pif_pms_constrain_world_0_usb_device:       2;
             uint32_t core_1_pif_pms_constrain_world_0_usb_wrap:         2;
             uint32_t core_1_pif_pms_constrain_world_0_crypto_peri:      2;
             uint32_t core_1_pif_pms_constrain_world_0_crypto_dma:       2;
             uint32_t core_1_pif_pms_constrain_world_0_apb_adc:          2;
             uint32_t core_1_pif_pms_constrain_world_0_lcd_cam:          2;
+            uint32_t core_1_pif_pms_constrain_world_0_bt_pwr:           2;
             uint32_t core_1_pif_pms_constrain_world_0_usb:              2;
             uint32_t core_1_pif_pms_constrain_world_0_system:           2;
             uint32_t core_1_pif_pms_constrain_world_0_sensitive:        2;
@@ -1142,49 +1230,48 @@ typedef volatile struct {
             uint32_t core_1_pif_pms_constrain_world_0_ad:               2;
             uint32_t core_1_pif_pms_constrain_world_0_dio:              2;
             uint32_t core_1_pif_pms_constrain_world_0_world_controller: 2;
-            uint32_t reserved30:                                        2;
         };
         uint32_t val;
     } core_1_pif_pms_constrain_4;
     union {
         struct {
-            uint32_t core_1_pif_pms_constrain_world_1_uart:       2;
-            uint32_t core_1_pif_pms_constrain_world_1_g0spi_1:    2;
-            uint32_t core_1_pif_pms_constrain_world_1_g0spi_0:    2;
-            uint32_t core_1_pif_pms_constrain_world_1_gpio:       2;
-            uint32_t core_1_pif_pms_constrain_world_1_fe2:        2;
-            uint32_t core_1_pif_pms_constrain_world_1_fe:         2;
-            uint32_t core_1_pif_pms_constrain_world_1_timer:      2;
-            uint32_t core_1_pif_pms_constrain_world_1_rtc_config: 2;
-            uint32_t core_1_pif_pms_constrain_world_1_io_mux:     2;
-            uint32_t core_1_pif_pms_constrain_world_1_wdg:        2;
-            uint32_t core_1_pif_pms_constrain_world_1_hinf:       2;
-            uint32_t core_1_pif_pms_constrain_world_1_uhci1:      2;
-            uint32_t core_1_pif_pms_constrain_world_1_misc:       2;
-            uint32_t core_1_pif_pms_constrain_world_1_i2c:        2;
-            uint32_t core_1_pif_pms_constrain_world_1_i2s0:       2;
-            uint32_t core_1_pif_pms_constrain_world_1_uart1:      2;
+            uint32_t core_1_pif_pms_constrain_world_1_uart:    2;
+            uint32_t core_1_pif_pms_constrain_world_1_g0spi_1: 2;
+            uint32_t core_1_pif_pms_constrain_world_1_g0spi_0: 2;
+            uint32_t core_1_pif_pms_constrain_world_1_gpio:    2;
+            uint32_t core_1_pif_pms_constrain_world_1_fe2:     2;
+            uint32_t core_1_pif_pms_constrain_world_1_fe:      2;
+            uint32_t core_1_pif_pms_constrain_world_1_timer:   2;
+            uint32_t core_1_pif_pms_constrain_world_1_rtc:     2;
+            uint32_t core_1_pif_pms_constrain_world_1_io_mux:  2;
+            uint32_t reserved18:                               2;
+            uint32_t core_1_pif_pms_constrain_world_1_hinf:    2;
+            uint32_t reserved22:                               2;
+            uint32_t core_1_pif_pms_constrain_world_1_misc:    2;
+            uint32_t core_1_pif_pms_constrain_world_1_i2c:     2;
+            uint32_t core_1_pif_pms_constrain_world_1_i2s0:    2;
+            uint32_t core_1_pif_pms_constrain_world_1_uart1:   2;
         };
         uint32_t val;
     } core_1_pif_pms_constrain_5;
     union {
         struct {
-            uint32_t core_1_pif_pms_constrain_world_1_bt:            2;
-            uint32_t core_1_pif_pms_constrain_world_1_bt_buffer:     2;
-            uint32_t core_1_pif_pms_constrain_world_1_i2c_ext0:      2;
-            uint32_t core_1_pif_pms_constrain_world_1_uhci0:         2;
-            uint32_t core_1_pif_pms_constrain_world_1_slchost:       2;
-            uint32_t core_1_pif_pms_constrain_world_1_rmt:           2;
-            uint32_t core_1_pif_pms_constrain_world_1_pcnt:          2;
-            uint32_t core_1_pif_pms_constrain_world_1_slc:           2;
-            uint32_t core_1_pif_pms_constrain_world_1_ledc:          2;
-            uint32_t core_1_pif_pms_constrain_world_1_efuse:         2;
-            uint32_t core_1_pif_pms_constrain_world_1_g0spi_encrypt: 2;
-            uint32_t core_1_pif_pms_constrain_world_1_bb:            2;
-            uint32_t core_1_pif_pms_constrain_world_1_pwm0:          2;
-            uint32_t core_1_pif_pms_constrain_world_1_timergroup:    2;
-            uint32_t core_1_pif_pms_constrain_world_1_timergroup1:   2;
-            uint32_t core_1_pif_pms_constrain_world_1_systimer:      2;
+            uint32_t core_1_pif_pms_constrain_world_1_bt:          2;
+            uint32_t reserved2:                                    2;
+            uint32_t core_1_pif_pms_constrain_world_1_i2c_ext0:    2;
+            uint32_t core_1_pif_pms_constrain_world_1_uhci0:       2;
+            uint32_t core_1_pif_pms_constrain_world_1_slchost:     2;
+            uint32_t core_1_pif_pms_constrain_world_1_rmt:         2;
+            uint32_t core_1_pif_pms_constrain_world_1_pcnt:        2;
+            uint32_t core_1_pif_pms_constrain_world_1_slc:         2;
+            uint32_t core_1_pif_pms_constrain_world_1_ledc:        2;
+            uint32_t core_1_pif_pms_constrain_world_1_backup:      2;
+            uint32_t reserved20:                                   2;
+            uint32_t core_1_pif_pms_constrain_world_1_bb:          2;
+            uint32_t core_1_pif_pms_constrain_world_1_pwm0:        2;
+            uint32_t core_1_pif_pms_constrain_world_1_timergroup:  2;
+            uint32_t core_1_pif_pms_constrain_world_1_timergroup1: 2;
+            uint32_t core_1_pif_pms_constrain_world_1_systimer:    2;
         };
         uint32_t val;
     } core_1_pif_pms_constrain_6;
@@ -1199,24 +1286,25 @@ typedef volatile struct {
             uint32_t core_1_pif_pms_constrain_world_1_pwm1:      2;
             uint32_t core_1_pif_pms_constrain_world_1_i2s1:      2;
             uint32_t core_1_pif_pms_constrain_world_1_uart2:     2;
-            uint32_t core_1_pif_pms_constrain_world_1_pwm2:      2;
-            uint32_t core_1_pif_pms_constrain_world_1_pwm3:      2;
+            uint32_t reserved18:                                 2;
+            uint32_t reserved20:                                 2;
             uint32_t core_1_pif_pms_constrain_world_1_rwbt:      2;
-            uint32_t core_1_pif_pms_constrain_world_1_btmac:     2;
+            uint32_t reserved24:                                 2;
             uint32_t core_1_pif_pms_constrain_world_1_wifimac:   2;
             uint32_t core_1_pif_pms_constrain_world_1_pwr:       2;
-            uint32_t core_1_pif_pms_constrain_world_1_g1spi_0:   2;
+            uint32_t reserved30:                                 2;
         };
         uint32_t val;
     } core_1_pif_pms_constrain_7;
     union {
         struct {
-            uint32_t core_1_pif_pms_constrain_world_1_g1spi_encrypt:    2;
+            uint32_t core_1_pif_pms_constrain_world_1_usb_device:       2;
             uint32_t core_1_pif_pms_constrain_world_1_usb_wrap:         2;
             uint32_t core_1_pif_pms_constrain_world_1_crypto_peri:      2;
             uint32_t core_1_pif_pms_constrain_world_1_crypto_dma:       2;
             uint32_t core_1_pif_pms_constrain_world_1_apb_adc:          2;
             uint32_t core_1_pif_pms_constrain_world_1_lcd_cam:          2;
+            uint32_t core_1_pif_pms_constrain_world_1_bt_pwr:           2;
             uint32_t core_1_pif_pms_constrain_world_1_usb:              2;
             uint32_t core_1_pif_pms_constrain_world_1_system:           2;
             uint32_t core_1_pif_pms_constrain_world_1_sensitive:        2;
@@ -1226,14 +1314,13 @@ typedef volatile struct {
             uint32_t core_1_pif_pms_constrain_world_1_ad:               2;
             uint32_t core_1_pif_pms_constrain_world_1_dio:              2;
             uint32_t core_1_pif_pms_constrain_world_1_world_controller: 2;
-            uint32_t reserved30:                                        2;
         };
         uint32_t val;
     } core_1_pif_pms_constrain_8;
     union {
         struct {
-            uint32_t core_1_pif_pms_constrain_rtcfast_spltaddr_world_0: 11;
-            uint32_t core_1_pif_pms_constrain_rtcfast_spltaddr_world_1: 11;
+            uint32_t core_1_pif_pms_constrain_rtcfast_spltaddr_world_0:11;
+            uint32_t core_1_pif_pms_constrain_rtcfast_spltaddr_world_1:11;
             uint32_t reserved22:                                       10;
         };
         uint32_t val;
@@ -1250,8 +1337,8 @@ typedef volatile struct {
     } core_1_pif_pms_constrain_10;
     union {
         struct {
-            uint32_t core_1_pif_pms_constrain_rtcslow_0_spltaddr_world_0: 11;
-            uint32_t core_1_pif_pms_constrain_rtcslow_0_spltaddr_world_1: 11;
+            uint32_t core_1_pif_pms_constrain_rtcslow_0_spltaddr_world_0:11;
+            uint32_t core_1_pif_pms_constrain_rtcslow_0_spltaddr_world_1:11;
             uint32_t reserved22:                                         10;
         };
         uint32_t val;
@@ -1268,8 +1355,8 @@ typedef volatile struct {
     } core_1_pif_pms_constrain_12;
     union {
         struct {
-            uint32_t core_1_pif_pms_constrain_rtcslow_1_spltaddr_world_0: 11;
-            uint32_t core_1_pif_pms_constrain_rtcslow_1_spltaddr_world_1: 11;
+            uint32_t core_1_pif_pms_constrain_rtcslow_1_spltaddr_world_0:11;
+            uint32_t core_1_pif_pms_constrain_rtcslow_1_spltaddr_world_1:11;
             uint32_t reserved22:                                         10;
         };
         uint32_t val;
@@ -1284,6 +1371,131 @@ typedef volatile struct {
         };
         uint32_t val;
     } core_1_pif_pms_constrain_14;
+    union {
+        struct {
+            uint32_t core_1ion_pms_constrain_lock: 1;
+            uint32_t reserved1:                   31;
+        };
+        uint32_t val;
+    } core_1ion_pms_constrain_0;
+    union {
+        struct {
+            uint32_t core_1ion_pms_constrain_world_0_area_0:  2;
+            uint32_t core_1ion_pms_constrain_world_0_area_1:  2;
+            uint32_t core_1ion_pms_constrain_world_0_area_2:  2;
+            uint32_t core_1ion_pms_constrain_world_0_area_3:  2;
+            uint32_t core_1ion_pms_constrain_world_0_area_4:  2;
+            uint32_t core_1ion_pms_constrain_world_0_area_5:  2;
+            uint32_t core_1ion_pms_constrain_world_0_area_6:  2;
+            uint32_t core_1ion_pms_constrain_world_0_area_7:  2;
+            uint32_t core_1ion_pms_constrain_world_0_area_8:  2;
+            uint32_t core_1ion_pms_constrain_world_0_area_9:  2;
+            uint32_t core_1ion_pms_constrain_world_0_area_10: 2;
+            uint32_t reserved22:                             10;
+        };
+        uint32_t val;
+    } core_1ion_pms_constrain_1;
+    union {
+        struct {
+            uint32_t core_1ion_pms_constrain_world_1_area_0:  2;
+            uint32_t core_1ion_pms_constrain_world_1_area_1:  2;
+            uint32_t core_1ion_pms_constrain_world_1_area_2:  2;
+            uint32_t core_1ion_pms_constrain_world_1_area_3:  2;
+            uint32_t core_1ion_pms_constrain_world_1_area_4:  2;
+            uint32_t core_1ion_pms_constrain_world_1_area_5:  2;
+            uint32_t core_1ion_pms_constrain_world_1_area_6:  2;
+            uint32_t core_1ion_pms_constrain_world_1_area_7:  2;
+            uint32_t core_1ion_pms_constrain_world_1_area_8:  2;
+            uint32_t core_1ion_pms_constrain_world_1_area_9:  2;
+            uint32_t core_1ion_pms_constrain_world_1_area_10: 2;
+            uint32_t reserved22:                             10;
+        };
+        uint32_t val;
+    } core_1ion_pms_constrain_2;
+    union {
+        struct {
+            uint32_t core_1ion_pms_constrain_addr_0:30;
+            uint32_t reserved30:                     2;
+        };
+        uint32_t val;
+    } core_1ion_pms_constrain_3;
+    union {
+        struct {
+            uint32_t core_1ion_pms_constrain_addr_1:30;
+            uint32_t reserved30:                     2;
+        };
+        uint32_t val;
+    } core_1ion_pms_constrain_4;
+    union {
+        struct {
+            uint32_t core_1ion_pms_constrain_addr_2:30;
+            uint32_t reserved30:                     2;
+        };
+        uint32_t val;
+    } core_1ion_pms_constrain_5;
+    union {
+        struct {
+            uint32_t core_1ion_pms_constrain_addr_3:30;
+            uint32_t reserved30:                     2;
+        };
+        uint32_t val;
+    } core_1ion_pms_constrain_6;
+    union {
+        struct {
+            uint32_t core_1ion_pms_constrain_addr_4:30;
+            uint32_t reserved30:                     2;
+        };
+        uint32_t val;
+    } core_1ion_pms_constrain_7;
+    union {
+        struct {
+            uint32_t core_1ion_pms_constrain_addr_5:30;
+            uint32_t reserved30:                     2;
+        };
+        uint32_t val;
+    } core_1ion_pms_constrain_8;
+    union {
+        struct {
+            uint32_t core_1ion_pms_constrain_addr_6:30;
+            uint32_t reserved30:                     2;
+        };
+        uint32_t val;
+    } core_1ion_pms_constrain_9;
+    union {
+        struct {
+            uint32_t core_1ion_pms_constrain_addr_7:30;
+            uint32_t reserved30:                     2;
+        };
+        uint32_t val;
+    } core_1ion_pms_constrain_10;
+    union {
+        struct {
+            uint32_t core_1ion_pms_constrain_addr_8:30;
+            uint32_t reserved30:                     2;
+        };
+        uint32_t val;
+    } core_1ion_pms_constrain_11;
+    union {
+        struct {
+            uint32_t core_1ion_pms_constrain_addr_9:30;
+            uint32_t reserved30:                     2;
+        };
+        uint32_t val;
+    } core_1ion_pms_constrain_12;
+    union {
+        struct {
+            uint32_t core_1ion_pms_constrain_addr_10:30;
+            uint32_t reserved30:                      2;
+        };
+        uint32_t val;
+    } core_1ion_pms_constrain_13;
+    union {
+        struct {
+            uint32_t core_1ion_pms_constrain_addr_11:30;
+            uint32_t reserved30:                      2;
+        };
+        uint32_t val;
+    } core_1ion_pms_constrain_14;
     union {
         struct {
             uint32_t core_1_pif_pms_monitor_lock: 1;
@@ -1310,7 +1522,7 @@ typedef volatile struct {
         };
         uint32_t val;
     } core_1_pif_pms_monitor_2;
-    uint32_t core_1_pif_pms_monitor_3;                                                           /**/
+    uint32_t core_1_pif_pms_monitor_3;                                                  /**/
     union {
         struct {
             uint32_t core_1_pif_pms_monitor_nonword_violate_clr: 1;
@@ -1328,22 +1540,36 @@ typedef volatile struct {
         };
         uint32_t val;
     } core_1_pif_pms_monitor_5;
-    uint32_t core_1_pif_pms_monitor_6;                                                           /**/
+    uint32_t core_1_pif_pms_monitor_6;                                                  /**/
     union {
         struct {
             uint32_t core_1_vecbase_override_lock: 1;
             uint32_t reserved1:                   31;
         };
         uint32_t val;
+    } core_1_vecbase_override_lock;
+    union {
+        struct {
+            uint32_t core_1_vecbase_world_mask     :    1;
+            uint32_t reserved1                     :    31;
+        };
+        uint32_t val;
     } core_1_vecbase_override_0;
     union {
         struct {
-            uint32_t core_1_vecbase_override_value: 22;
+            uint32_t core_1_vecbase_override_value:22;
             uint32_t core_1_vecbase_override_sel:   2;
             uint32_t reserved24:                    8;
         };
         uint32_t val;
     } core_1_vecbase_override_1;
+    union {
+        struct {
+            uint32_t core_1_vecbase_override_world1_value:    22;
+            uint32_t reserved22                    :    10;
+        };
+        uint32_t val;
+    } core_1_vecbase_override_2;
     union {
         struct {
             uint32_t core_1_toomanyexceptions_m_override_lock: 1;
@@ -1360,84 +1586,328 @@ typedef volatile struct {
     } core_1_toomanyexceptions_m_override_1;
     union {
         struct {
+            uint32_t backup_bus_pms_constrain_lock: 1;
+            uint32_t reserved1:                    31;
+        };
+        uint32_t val;
+    } backup_bus_pms_constrain_0;
+    union {
+        struct {
+            uint32_t backup_bus_pms_constrain_uart:    2;
+            uint32_t backup_bus_pms_constrain_g0spi_1: 2;
+            uint32_t backup_bus_pms_constrain_g0spi_0: 2;
+            uint32_t backup_bus_pms_constrain_gpio:    2;
+            uint32_t backup_bus_pms_constrain_fe2:     2;
+            uint32_t backup_bus_pms_constrain_fe:      2;
+            uint32_t backup_bus_pms_constrain_timer:   2;
+            uint32_t backup_bus_pms_constrain_rtc:     2;
+            uint32_t backup_bus_pms_constrain_io_mux:  2;
+            uint32_t reserved18:                       2;
+            uint32_t backup_bus_pms_constrain_hinf:    2;
+            uint32_t reserved22:                       2;
+            uint32_t backup_bus_pms_constrain_misc:    2;
+            uint32_t backup_bus_pms_constrain_i2c:     2;
+            uint32_t backup_bus_pms_constrain_i2s0:    2;
+            uint32_t backup_bus_pms_constrain_uart1:   2;
+        };
+        uint32_t val;
+    } backup_bus_pms_constrain_1;
+    union {
+        struct {
+            uint32_t backup_bus_pms_constrain_bt:          2;
+            uint32_t reserved2:                            2;
+            uint32_t backup_bus_pms_constrain_i2c_ext0:    2;
+            uint32_t backup_bus_pms_constrain_uhci0:       2;
+            uint32_t backup_bus_pms_constrain_slchost:     2;
+            uint32_t backup_bus_pms_constrain_rmt:         2;
+            uint32_t backup_bus_pms_constrain_pcnt:        2;
+            uint32_t backup_bus_pms_constrain_slc:         2;
+            uint32_t backup_bus_pms_constrain_ledc:        2;
+            uint32_t backup_bus_pms_constrain_backup:      2;
+            uint32_t reserved20:                           2;
+            uint32_t backup_bus_pms_constrain_bb:          2;
+            uint32_t backup_bus_pms_constrain_pwm0:        2;
+            uint32_t backup_bus_pms_constrain_timergroup:  2;
+            uint32_t backup_bus_pms_constrain_timergroup1: 2;
+            uint32_t backup_bus_pms_constrain_systimer:    2;
+        };
+        uint32_t val;
+    } backup_bus_pms_constrain_2;
+    union {
+        struct {
+            uint32_t backup_bus_pms_constrain_spi_2:     2;
+            uint32_t backup_bus_pms_constrain_spi_3:     2;
+            uint32_t backup_bus_pms_constrain_apb_ctrl:  2;
+            uint32_t backup_bus_pms_constrain_i2c_ext1:  2;
+            uint32_t backup_bus_pms_constrain_sdio_host: 2;
+            uint32_t backup_bus_pms_constrain_can:       2;
+            uint32_t backup_bus_pms_constrain_pwm1:      2;
+            uint32_t backup_bus_pms_constrain_i2s1:      2;
+            uint32_t backup_bus_pms_constrain_uart2:     2;
+            uint32_t reserved18:                         2;
+            uint32_t reserved20:                         2;
+            uint32_t backup_bus_pms_constrain_rwbt:      2;
+            uint32_t reserved24:                         2;
+            uint32_t backup_bus_pms_constrain_wifimac:   2;
+            uint32_t backup_bus_pms_constrain_pwr:       2;
+            uint32_t reserved30:                         2;
+        };
+        uint32_t val;
+    } backup_bus_pms_constrain_3;
+    union {
+        struct {
+            uint32_t backup_bus_pms_constrain_usb_device:       2;
+            uint32_t backup_bus_pms_constrain_usb_wrap:         2;
+            uint32_t backup_bus_pms_constrain_crypto_peri:      2;
+            uint32_t backup_bus_pms_constrain_crypto_dma:       2;
+            uint32_t backup_bus_pms_constrain_apb_adc:          2;
+            uint32_t backup_bus_pms_constrain_lcd_cam:          2;
+            uint32_t backup_bus_pms_constrain_bt_pwr:           2;
+            uint32_t backup_bus_pms_constrain_usb:              2;
+            uint32_t backup_bus_pms_constrain_system:           2;
+            uint32_t backup_bus_pms_constrain_sensitive:        2;
+            uint32_t backup_bus_pms_constrain_interrupt:        2;
+            uint32_t backup_bus_pms_constrain_dma_copy:         2;
+            uint32_t backup_bus_pms_constrain_cache_config:     2;
+            uint32_t backup_bus_pms_constrain_ad:               2;
+            uint32_t backup_bus_pms_constrain_dio:              2;
+            uint32_t backup_bus_pms_constrain_world_controller: 2;
+        };
+        uint32_t val;
+    } backup_bus_pms_constrain_4;
+    union {
+        struct {
+            uint32_t backup_bus_pms_constrain_rtcfast_spltaddr:11;
+            uint32_t reserved11:                               21;
+        };
+        uint32_t val;
+    } backup_bus_pms_constrain_5;
+    union {
+        struct {
+            uint32_t backup_bus_pms_constrain_rtcfast_l: 3;
+            uint32_t backup_bus_pms_constrain_rtcfast_h: 3;
+            uint32_t reserved6:                         26;
+        };
+        uint32_t val;
+    } backup_bus_pms_constrain_6;
+    union {
+        struct {
+            uint32_t backup_bus_pms_monitor_lock: 1;
+            uint32_t reserved1:                  31;
+        };
+        uint32_t val;
+    } backup_bus_pms_monitor_0;
+    union {
+        struct {
+            uint32_t backup_bus_pms_monitor_violate_clr: 1;
+            uint32_t backup_bus_pms_monitor_violate_en:  1;
+            uint32_t reserved2:                         30;
+        };
+        uint32_t val;
+    } backup_bus_pms_monitor_1;
+    union {
+        struct {
+            uint32_t backup_bus_pms_monitor_violate_intr:          1;
+            uint32_t backup_bus_pms_monitor_violate_status_htrans: 2;
+            uint32_t backup_bus_pms_monitor_violate_status_hsize:  3;
+            uint32_t backup_bus_pms_monitor_violate_status_hwrite: 1;
+            uint32_t reserved7:                                   25;
+        };
+        uint32_t val;
+    } backup_bus_pms_monitor_2;
+    uint32_t backup_bus_pms_monitor_3;                                                  /**/
+    union {
+        struct {
+            uint32_t edma_boundary_lock: 1;
+            uint32_t reserved1:         31;
+        };
+        uint32_t val;
+    } edma_boundary_lock;
+    union {
+        struct {
+            uint32_t edma_boundary_0:14;
+            uint32_t reserved14:     18;
+        };
+        uint32_t val;
+    } edma_boundary_0;
+    union {
+        struct {
+            uint32_t edma_boundary_1:14;
+            uint32_t reserved14:     18;
+        };
+        uint32_t val;
+    } edma_boundary_1;
+    union {
+        struct {
+            uint32_t edma_boundary_2:14;
+            uint32_t reserved14:     18;
+        };
+        uint32_t val;
+    } edma_boundary_2;
+    union {
+        struct {
+            uint32_t edma_pms_spi2_lock: 1;
+            uint32_t reserved1:         31;
+        };
+        uint32_t val;
+    } edma_pms_spi2_lock;
+    union {
+        struct {
+            uint32_t edma_pms_spi2_attr1: 2;
+            uint32_t edma_pms_spi2_attr2: 2;
+            uint32_t reserved4:          28;
+        };
+        uint32_t val;
+    } edma_pms_spi2;
+    union {
+        struct {
+            uint32_t edma_pms_spi3_lock: 1;
+            uint32_t reserved1:         31;
+        };
+        uint32_t val;
+    } edma_pms_spi3_lock;
+    union {
+        struct {
+            uint32_t edma_pms_spi3_attr1: 2;
+            uint32_t edma_pms_spi3_attr2: 2;
+            uint32_t reserved4:          28;
+        };
+        uint32_t val;
+    } edma_pms_spi3;
+    union {
+        struct {
+            uint32_t edma_pms_uhci0_lock: 1;
+            uint32_t reserved1:          31;
+        };
+        uint32_t val;
+    } edma_pms_uhci0_lock;
+    union {
+        struct {
+            uint32_t edma_pms_uhci0_attr1: 2;
+            uint32_t edma_pms_uhci0_attr2: 2;
+            uint32_t reserved4:           28;
+        };
+        uint32_t val;
+    } edma_pms_uhci0;
+    union {
+        struct {
+            uint32_t edma_pms_i2s0_lock: 1;
+            uint32_t reserved1:         31;
+        };
+        uint32_t val;
+    } edma_pms_i2s0_lock;
+    union {
+        struct {
+            uint32_t edma_pms_i2s0_attr1: 2;
+            uint32_t edma_pms_i2s0_attr2: 2;
+            uint32_t reserved4:          28;
+        };
+        uint32_t val;
+    } edma_pms_i2s0;
+    union {
+        struct {
+            uint32_t edma_pms_i2s1_lock: 1;
+            uint32_t reserved1:         31;
+        };
+        uint32_t val;
+    } edma_pms_i2s1_lock;
+    union {
+        struct {
+            uint32_t edma_pms_i2s1_attr1: 2;
+            uint32_t edma_pms_i2s1_attr2: 2;
+            uint32_t reserved4:          28;
+        };
+        uint32_t val;
+    } edma_pms_i2s1;
+    union {
+        struct {
+            uint32_t edma_pms_lcd_cam_lock: 1;
+            uint32_t reserved1:            31;
+        };
+        uint32_t val;
+    } edma_pms_lcd_cam_lock;
+    union {
+        struct {
+            uint32_t edma_pms_lcd_cam_attr1: 2;
+            uint32_t edma_pms_lcd_cam_attr2: 2;
+            uint32_t reserved4:             28;
+        };
+        uint32_t val;
+    } edma_pms_lcd_cam;
+    union {
+        struct {
+            uint32_t edma_pms_aes_lock: 1;
+            uint32_t reserved1:        31;
+        };
+        uint32_t val;
+    } edma_pms_aes_lock;
+    union {
+        struct {
+            uint32_t edma_pms_aes_attr1: 2;
+            uint32_t edma_pms_aes_attr2: 2;
+            uint32_t reserved4:         28;
+        };
+        uint32_t val;
+    } edma_pms_aes;
+    union {
+        struct {
+            uint32_t edma_pms_sha_lock: 1;
+            uint32_t reserved1:        31;
+        };
+        uint32_t val;
+    } edma_pms_sha_lock;
+    union {
+        struct {
+            uint32_t edma_pms_sha_attr1: 2;
+            uint32_t edma_pms_sha_attr2: 2;
+            uint32_t reserved4:         28;
+        };
+        uint32_t val;
+    } edma_pms_sha;
+    union {
+        struct {
+            uint32_t edma_pms_adc_dac_lock: 1;
+            uint32_t reserved1:            31;
+        };
+        uint32_t val;
+    } edma_pms_adc_dac_lock;
+    union {
+        struct {
+            uint32_t edma_pms_adc_dac_attr1: 2;
+            uint32_t edma_pms_adc_dac_attr2: 2;
+            uint32_t reserved4:             28;
+        };
+        uint32_t val;
+    } edma_pms_adc_dac;
+    union {
+        struct {
+            uint32_t edma_pms_rmt_lock: 1;
+            uint32_t reserved1:        31;
+        };
+        uint32_t val;
+    } edma_pms_rmt_lock;
+    union {
+        struct {
+            uint32_t edma_pms_rmt_attr1: 2;
+            uint32_t edma_pms_rmt_attr2: 2;
+            uint32_t reserved4:         28;
+        };
+        uint32_t val;
+    } edma_pms_rmt;
+    union {
+        struct {
             uint32_t clk_en:     1;
             uint32_t reserved1: 31;
         };
         uint32_t val;
     } clock_gate;
-    uint32_t reserved_1ec;
-    uint32_t reserved_1f0;
-    uint32_t reserved_1f4;
-    uint32_t reserved_1f8;
-    uint32_t reserved_1fc;
-    uint32_t reserved_200;
-    uint32_t reserved_204;
-    uint32_t reserved_208;
-    uint32_t reserved_20c;
-    uint32_t reserved_210;
-    uint32_t reserved_214;
-    uint32_t reserved_218;
-    uint32_t reserved_21c;
-    uint32_t reserved_220;
-    uint32_t reserved_224;
-    uint32_t reserved_228;
-    uint32_t reserved_22c;
-    uint32_t reserved_230;
-    uint32_t reserved_234;
-    uint32_t reserved_238;
-    uint32_t reserved_23c;
-    uint32_t reserved_240;
-    uint32_t reserved_244;
-    uint32_t reserved_248;
-    uint32_t reserved_24c;
-    uint32_t reserved_250;
-    uint32_t reserved_254;
-    uint32_t reserved_258;
-    uint32_t reserved_25c;
-    uint32_t reserved_260;
-    uint32_t reserved_264;
-    uint32_t reserved_268;
-    uint32_t reserved_26c;
-    uint32_t reserved_270;
-    uint32_t reserved_274;
-    uint32_t reserved_278;
-    uint32_t reserved_27c;
-    uint32_t reserved_280;
-    uint32_t reserved_284;
-    uint32_t reserved_288;
-    uint32_t reserved_28c;
-    uint32_t reserved_290;
-    uint32_t reserved_294;
-    uint32_t reserved_298;
-    uint32_t reserved_29c;
-    uint32_t reserved_2a0;
-    uint32_t reserved_2a4;
-    uint32_t reserved_2a8;
-    uint32_t reserved_2ac;
-    uint32_t reserved_2b0;
-    uint32_t reserved_2b4;
-    uint32_t reserved_2b8;
-    uint32_t reserved_2bc;
-    uint32_t reserved_2c0;
-    uint32_t reserved_2c4;
-    uint32_t reserved_2c8;
-    uint32_t reserved_2cc;
-    uint32_t reserved_2d0;
-    uint32_t reserved_2d4;
-    uint32_t reserved_2d8;
-    uint32_t reserved_2dc;
-    uint32_t reserved_2e0;
-    uint32_t reserved_2e4;
-    uint32_t reserved_2e8;
-    uint32_t reserved_2ec;
-    uint32_t reserved_2f0;
-    uint32_t reserved_2f4;
-    uint32_t reserved_2f8;
-    uint32_t reserved_2fc;
-    uint32_t reserved_300;
-    uint32_t reserved_304;
-    uint32_t reserved_308;
-    uint32_t reserved_30c;
+    union {
+        struct {
+            uint32_t dis_rtc_cpu                   :    1;
+            uint32_t reserved1                     :    31;
+        };
+        uint32_t val;
+    } rtc_pms;
     uint32_t reserved_310;
     uint32_t reserved_314;
     uint32_t reserved_318;
@@ -2273,9 +2743,11 @@ typedef volatile struct {
         uint32_t val;
     } date;
 } sensitive_dev_t;
-
 extern sensitive_dev_t SENSITIVE;
-
 #ifdef __cplusplus
 }
 #endif
+
+
+
+#endif /*_SOC_SENSITIVE_STRUCT_H_ */

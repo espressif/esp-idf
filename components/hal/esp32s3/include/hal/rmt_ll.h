@@ -88,16 +88,16 @@ static inline void rmt_ll_tx_reset_pointer(rmt_dev_t *dev, uint32_t channel)
 {
     dev->tx_conf[channel].mem_rd_rst = 1;
     dev->tx_conf[channel].mem_rd_rst = 0;
-    dev->tx_conf[channel].apb_mem_rst = 1;
-    dev->tx_conf[channel].apb_mem_rst = 0;
+    dev->tx_conf[channel].mem_rst = 1;
+    dev->tx_conf[channel].mem_rst = 0;
 }
 
 static inline void rmt_ll_rx_reset_pointer(rmt_dev_t *dev, uint32_t channel)
 {
     dev->rx_conf[channel].conf1.mem_wr_rst = 1;
     dev->rx_conf[channel].conf1.mem_wr_rst = 0;
-    dev->rx_conf[channel].conf1.apb_mem_rst = 1;
-    dev->rx_conf[channel].conf1.apb_mem_rst = 0;
+    dev->rx_conf[channel].conf1.mem_rst = 1;
+    dev->rx_conf[channel].conf1.mem_rst = 0;
 }
 
 static inline void rmt_ll_tx_start(rmt_dev_t *dev, uint32_t channel)

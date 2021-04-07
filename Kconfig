@@ -48,14 +48,14 @@ mainmenu "Espressif IoT Development Framework Configuration"
     choice IDF_TARGET_ESP32S3_BETA_VERSION
         prompt "ESP32-S3 beta version"
         depends on IDF_TARGET_ESP32S3
-        default IDF_TARGET_ESP32S3_BETA_VERSION_2
+        default IDF_TARGET_ESP32S3_BETA_VERSION_3
         help
             Currently ESP32-S3 has several beta versions for internal use only.
             Select the one that matches your chip model.
 
-        config IDF_TARGET_ESP32S3_BETA_VERSION_2
+        config IDF_TARGET_ESP32S3_BETA_VERSION_3
             bool
-            prompt "ESP32-S3 beta2"
+            prompt "ESP32-S3 beta3"
     endchoice
 
     config IDF_TARGET_ESP32C3
@@ -68,8 +68,8 @@ mainmenu "Espressif IoT Development Framework Configuration"
         hex
         default 0x0000 if IDF_TARGET_ESP32
         default 0x0002 if IDF_TARGET_ESP32S2
-        default 0x0004 if IDF_TARGET_ESP32S3
         default 0x0005 if IDF_TARGET_ESP32C3
+        default 0x0006 if IDF_TARGET_ESP32S3
         default 0xFFFF
 
     menu "SDK tool configuration"
@@ -278,6 +278,16 @@ mainmenu "Espressif IoT Development Framework Configuration"
                     If assertions are disabled, -DNDEBUG is added to CPPFLAGS.
 
         endchoice # assertions
+
+        config COMPILER_OPTIMIZATION_CHECKS_SILENT
+            bool "Disable messages in ESP_RETURN_ON_* and ESP_EXIT_ON_* macros"
+            default n
+            help
+                If enabled, the error messages will be discarded in following check macros:
+                - ESP_RETURN_ON_ERROR
+                - ESP_EXIT_ON_ERROR
+                - ESP_RETURN_ON_FALSE
+                - ESP_EXIT_ON_FALSE
 
         menuconfig COMPILER_HIDE_PATHS_MACROS
             bool "Replace ESP-IDF and project paths in binaries"

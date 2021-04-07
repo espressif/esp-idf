@@ -591,7 +591,7 @@ void l2cble_process_conn_update_evt (UINT16 handle, UINT8 status, UINT16 conn_in
     /* See if we have a link control block for the remote device */
     p_lcb = l2cu_find_lcb_by_handle(handle);
     if (!p_lcb) {
-        L2CAP_TRACE_WARNING("l2cble_process_conn_update_evt: Invalid handle: %d", handle);
+        L2CAP_TRACE_WARNING("le con upd: inv hdl=%d", handle);
         return;
     }
     if (status == HCI_SUCCESS){
@@ -599,7 +599,7 @@ void l2cble_process_conn_update_evt (UINT16 handle, UINT8 status, UINT16 conn_in
         p_lcb->current_used_conn_latency = conn_latency;
         p_lcb->current_used_conn_timeout = conn_timeout;
     }else{
-        L2CAP_TRACE_WARNING("l2cble_process_conn_update_evt: Error status: %d", status);
+        L2CAP_TRACE_WARNING("le con upd: err_stat=0x%x", status);
     }
 
     p_lcb->conn_update_mask &= ~L2C_BLE_UPDATE_PENDING;
@@ -617,7 +617,7 @@ void l2cble_process_conn_update_evt (UINT16 handle, UINT8 status, UINT16 conn_in
 
     btu_stop_timer (&p_lcb->timer_entry);
 
-    L2CAP_TRACE_DEBUG("l2cble_process_conn_update_evt: conn_update_mask=%d", p_lcb->conn_update_mask);
+    L2CAP_TRACE_DEBUG("le con upd: conn_update_mask=%d", p_lcb->conn_update_mask);
 }
 
 /*******************************************************************************

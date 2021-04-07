@@ -5,7 +5,7 @@ import re
 import ttfw_idf
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_GENERIC')
+@ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32', 'esp32c3'])
 def test_examples_efuse(env, extra_data):
 
     dut = env.get_dut('efuse', 'examples/system/efuse')
