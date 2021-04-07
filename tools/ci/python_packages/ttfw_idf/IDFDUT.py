@@ -369,9 +369,27 @@ class IDFDUT(DUT.SerialDUT):
         with open(output_file, 'wb') as f:
             f.write(content)
 
+    @staticmethod
+    def _sort_usb_ports(ports):
+        """
+        Move the usb ports to the very beginning
+        :param ports: list of ports
+        :return: list of ports with usb ports at beginning
+        """
+        usb_ports = []
+        rest_ports = []
+        for port in ports:
+            if 'usb' in port.lower():
+                usb_ports.append(port)
+            else:
+                rest_ports.append(port)
+        return usb_ports + rest_ports
+
     @classmethod
     def list_available_ports(cls):
-        ports = [x.device for x in list_ports.comports()]
+        # It will return other kinds of ports as well, such as ttyS* ports.
+        # Give the usb ports higher priority
+        ports = cls._sort_usb_ports([x.device for x in list_ports.comports()])
         espport = os.getenv('ESPPORT')
         if not espport:
             # It's a little hard filter out invalid port with `serial.tools.list_ports.grep()`:
