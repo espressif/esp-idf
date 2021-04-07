@@ -114,11 +114,49 @@ void mdns_free(void);
  */
 esp_err_t mdns_hostname_set(const char * hostname);
 
-esp_err_t mdns_delegate_hostname_add(const char * hostname, const esp_ip_addr_t *address);
+/**
+ * @brief  Adds a hostname and address to be delegated
+ *         A/AAAA queries will be replied for the hostname and
+ *         services can be added to this host.
+ *
+ * @param  hostname     Hostname to add
+ * @param  address_list The IP address list of the host
+ *
+ * @return
+ *     - ESP_OK success
+ *     - ESP_ERR_INVALID_STATE mDNS is not running
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ *     - ESP_ERR_NO_MEM memory error
+ *
+ */
+esp_err_t mdns_delegate_hostname_add(const char * hostname, const mdns_ip_addr_t *address_list);
 
+/**
+ * @brief  Remove a delegated hostname
+ *         All the services added to this host will also be removed.
+ *
+ * @param  hostname     Hostname to remove
+ *
+ * @return
+ *     - ESP_OK success
+ *     - ESP_ERR_INVALID_STATE mDNS is not running
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ *     - ESP_ERR_NO_MEM memory error
+ *
+ */
 esp_err_t mdns_delegate_hostname_remove(const char * hostname);
 
-bool mdns_hostname_exists(const char *hostname);
+/**
+ * @brief  Query whether a hostname has been added
+ *
+ * @param  hostname     Hostname to query
+ *
+ * @return
+ *     - true   The hostname has been added.
+ *     - false  The hostname has not been added.
+ *
+ */
+bool mdns_hostname_exists(const char * hostname);
 
 /**
  * @brief  Set the default instance name for mDNS server
@@ -152,10 +190,39 @@ esp_err_t mdns_instance_name_set(const char * instance_name);
 esp_err_t mdns_service_add(const char * instance_name, const char * service_type, const char * proto, uint16_t port, mdns_txt_item_t txt[], size_t num_items);
 
 
-esp_err_t mdns_service_add_custom_host(const char *instance_name, const char *service_type, const char *proto,
-                                       const char *hostname, uint16_t port, mdns_txt_item_t txt[], size_t num_items);
+/**
+ * @brief  Add service to mDNS server with a delegated hostname
+ *
+ * @param  instance_name    instance name to set. If NULL,
+ *                          global instance name or hostname will be used
+ * @param  service_type     service type (_http, _ftp, etc)
+ * @param  proto            service protocol (_tcp, _udp)
+ * @param  hostname         service hostname. If NULL, local hostname will be used.
+ * @param  port             service port
+ * @param  txt              string array of TXT data (eg. {{"var","val"},{"other","2"}})
+ * @param  num_items        number of items in TXT data
+ *
+ * @return
+ *     - ESP_OK success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ *     - ESP_ERR_NO_MEM memory error
+ *     - ESP_FAIL failed to add service
+ */
+esp_err_t mdns_service_add_for_host(const char * instance_name, const char * service_type, const char * proto,
+                                    const char * hostname, uint16_t port, mdns_txt_item_t txt[], size_t num_items);
 
-bool mdns_service_exists(const char *service_type, const char *proto, const char *hostname);
+/**
+ * @brief  Check whether a service has been added.
+ *
+ * @param  service_type     service type (_http, _ftp, etc)
+ * @param  proto            service protocol (_tcp, _udp)
+ * @param  hostname         service hostname. If NULL, checks for the local hostname.
+ *
+ * @return
+ *     - true   Correspondding service has been added.
+ *     - false  Service not found.
+ */
+bool mdns_service_exists(const char * service_type, const char * proto, const char * hostname);
 
 /**
  * @brief  Remove service from mDNS server
@@ -171,6 +238,19 @@ bool mdns_service_exists(const char *service_type, const char *proto, const char
  */
 esp_err_t mdns_service_remove(const char * service_type, const char * proto);
 
+/**
+ * @brief  Remove service from mDNS server with hostname
+ *
+ * @param  service_type service type (_http, _ftp, etc)
+ * @param  proto        service protocol (_tcp, _udp)
+ * @param  hostname     service hostname. If NULL, local hostname will be used.
+ *
+ * @return
+ *     - ESP_OK success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ *     - ESP_ERR_NOT_FOUND Service not found
+ *     - ESP_ERR_NO_MEM memory error
+ */
 esp_err_t mdns_service_remove_for_host(const char * service_type, const char * proto, const char *hostname);
 
 /**
@@ -188,7 +268,22 @@ esp_err_t mdns_service_remove_for_host(const char * service_type, const char * p
  */
 esp_err_t mdns_service_instance_name_set(const char * service_type, const char * proto, const char * instance_name);
 
-esp_err_t mdns_service_instance_name_set_for_host(const char * service_type, const char * proto, const char *hostname, const char * instance_name);
+/**
+ * @brief  Set instance name for service with hostname
+ *
+ * @param  service_type     service type (_http, _ftp, etc)
+ * @param  proto            service protocol (_tcp, _udp)
+ * @param  hostname         service hostname. If NULL, local hostname will be used.
+ * @param  instance_name    instance name to set
+ *
+ * @return
+ *     - ESP_OK success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ *     - ESP_ERR_NOT_FOUND Service not found
+ *     - ESP_ERR_NO_MEM memory error
+ */
+esp_err_t mdns_service_instance_name_set_for_host(const char * service_type, const char * proto, const char * hostname,
+                                                  const char * instance_name);
 
 /**
  * @brief  Set service port
@@ -206,7 +301,21 @@ esp_err_t mdns_service_instance_name_set_for_host(const char * service_type, con
 esp_err_t mdns_service_port_set(const char * service_type, const char * proto, uint16_t port);
 
 
-esp_err_t mdns_service_port_set_for_host(const char *service_type, const char *proto, const char *hostname,
+/**
+ * @brief  Set service port with hostname
+ *
+ * @param  service_type service type (_http, _ftp, etc)
+ * @param  proto        service protocol (_tcp, _udp)
+ * @param  hostname     service hostname. If NULL, local hostname will be used.
+ * @param  port         service port
+ *
+ * @return
+ *     - ESP_OK success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ *     - ESP_ERR_NOT_FOUND Service not found
+ *     - ESP_ERR_NO_MEM memory error
+ */
+esp_err_t mdns_service_port_set_for_host(const char * service_type, const char * proto, const char * hostname,
                                          uint16_t port);
 
 /**
@@ -225,7 +334,22 @@ esp_err_t mdns_service_port_set_for_host(const char *service_type, const char *p
  */
 esp_err_t mdns_service_txt_set(const char * service_type, const char * proto, mdns_txt_item_t txt[], uint8_t num_items);
 
-esp_err_t mdns_service_txt_set_for_host(const char *service_type, const char *proto, const char *hostname,
+/**
+ * @brief  Replace all TXT items for service with hostname
+ *
+ * @param  service_type service type (_http, _ftp, etc)
+ * @param  proto        service protocol (_tcp, _udp)
+ * @param  hostname     service hostname. If NULL, local hostname will be used.
+ * @param  txt          array of TXT data (eg. {{"var","val"},{"other","2"}})
+ * @param  num_items    number of items in TXT data
+ *
+ * @return
+ *     - ESP_OK success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ *     - ESP_ERR_NOT_FOUND Service not found
+ *     - ESP_ERR_NO_MEM memory error
+ */
+esp_err_t mdns_service_txt_set_for_host(const char * service_type, const char * proto, const char * hostname,
                                         mdns_txt_item_t txt[], uint8_t num_items);
 
 /**
@@ -245,8 +369,23 @@ esp_err_t mdns_service_txt_set_for_host(const char *service_type, const char *pr
 esp_err_t mdns_service_txt_item_set(const char * service_type, const char * proto, const char * key, const char * value);
 
 
-esp_err_t mdns_service_txt_item_set_for_host(const char *service_type, const char *proto, const char *hostname,
-                                             const char *key, const char *value);
+/**
+ * @brief  Set/Add TXT item for service TXT record with hostname
+ *
+ * @param  service_type service type (_http, _ftp, etc)
+ * @param  proto        service protocol (_tcp, _udp)
+ * @param  hostname     service hostname. If NULL, local hostname will be used.
+ * @param  key          the key that you want to add/update
+ * @param  value        the new value of the key
+ *
+ * @return
+ *     - ESP_OK success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ *     - ESP_ERR_NOT_FOUND Service not found
+ *     - ESP_ERR_NO_MEM memory error
+ */
+esp_err_t mdns_service_txt_item_set_for_host(const char * service_type, const char * proto, const char * hostname,
+                                             const char * key, const char * value);
 
 /**
  * @brief  Remove TXT item for service TXT record
@@ -263,8 +402,22 @@ esp_err_t mdns_service_txt_item_set_for_host(const char *service_type, const cha
  */
 esp_err_t mdns_service_txt_item_remove(const char * service_type, const char * proto, const char * key);
 
-esp_err_t mdns_service_txt_item_remove_for_host(const char *service_type, const char *proto, const char *hostname,
-                                                const char *key);
+/**
+ * @brief  Remove TXT item for service TXT record with hostname
+ *
+ * @param  service_type service type (_http, _ftp, etc)
+ * @param  proto        service protocol (_tcp, _udp)
+ * @param  hostname     service hostname. If NULL, local hostname will be used.
+ * @param  key          the key that you want to remove
+ *
+ * @return
+ *     - ESP_OK success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ *     - ESP_ERR_NOT_FOUND Service not found
+ *     - ESP_ERR_NO_MEM memory error
+ */
+esp_err_t mdns_service_txt_item_remove_for_host(const char * service_type, const char * proto, const char * hostname,
+                                                const char * key);
 
 /**
  * @brief  Remove and free all services from mDNS server

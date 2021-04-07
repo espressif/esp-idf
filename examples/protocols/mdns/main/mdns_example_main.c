@@ -23,27 +23,23 @@
 #define EXAMPLE_MDNS_INSTANCE CONFIG_MDNS_INSTANCE
 #define EXAMPLE_BUTTON_GPIO     0
 
-static const char *TAG = "mdns-test";
-static char *generate_hostname(void);
+static const char * TAG = "mdns-test";
+static char * generate_hostname(void);
 
 #if CONFIG_MDNS_RESOLVE_TEST_SERVICES == 1
-static void  query_mdns_host_with_gethostbyname(char *host);
-static void  query_mdns_host_with_getaddrinfo(char *host);
+static void  query_mdns_host_with_gethostbyname(char * host);
+static void  query_mdns_host_with_getaddrinfo(char * host);
 #endif
 
 static void initialise_mdns(void)
 {
-    printf("generate_hostname\n");
     char *hostname = generate_hostname();
     //initialize mDNS
-    printf("mdns_init\n");
     ESP_ERROR_CHECK( mdns_init() );
-    printf("mdns_hostname_set\n");
     //set mDNS hostname (required if you want to advertise services)
     ESP_ERROR_CHECK( mdns_hostname_set(hostname) );
     ESP_LOGI(TAG, "mdns hostname set to: [%s]", hostname);
     //set default mDNS instance name
-    printf("mdns_instance_name_set\n");
     ESP_ERROR_CHECK( mdns_instance_name_set(EXAMPLE_MDNS_INSTANCE) );
 
     //structure with TXT records
@@ -54,17 +50,21 @@ static void initialise_mdns(void)
     };
 
     //initialize service
-    printf("mdns_service_add\n");
     ESP_ERROR_CHECK( mdns_service_add("ESP32-WebServer", "_http", "_tcp", 80, serviceTxtData, 3) );
-    esp_ip_addr_t addr;
+    mdns_ip_addr_t addr4, addr6;
+    ip4_addr_t ip4_addr;
     ip6_addr_t ip6_addr;
-    ip6addr_aton("fe80::849b:bb01:415c:b722", &ip6_addr);
-    addr.type = ESP_IPADDR_TYPE_V6;
-    memcpy(addr.u_addr.ip6.addr, ip6_addr.addr, sizeof(ip6_addr.addr));
-    ESP_ERROR_CHECK(mdns_delegate_hostname_add("test-device", &addr));
-    ESP_ERROR_CHECK( mdns_service_add_custom_host("test0", "_http", "_tcp", "test-device", 1234, serviceTxtData, 3) );
+    ip4addr_aton("10.0.0.1", &ip4_addr);
+    addr4.addr.u_addr.ip4.addr = ip4_addr.addr;
+    addr4.addr.type = ESP_IPADDR_TYPE_V4;
+    addr4.next = &addr6;
+    ip6addr_aton("fd11:22::1", &ip6_addr);
+    memcpy(addr6.addr.u_addr.ip6.addr, ip6_addr.addr, sizeof(ip6_addr.addr));
+    addr6.addr.type = ESP_IPADDR_TYPE_V6;
+    addr6.next = NULL;
+    ESP_ERROR_CHECK( mdns_delegate_hostname_add("test-device", &addr4) );
+    ESP_ERROR_CHECK( mdns_service_add_for_host("test0", "_http", "_tcp", "test-device", 1234, serviceTxtData, 3) );
     //add another TXT item
-    printf("mdns_service_txt_item_set\n");
     ESP_ERROR_CHECK( mdns_service_txt_item_set("_http", "_tcp", "path", "/foobar") );
     //change TXT item value
     ESP_ERROR_CHECK( mdns_service_txt_item_set("_http", "_tcp", "u", "admin") );
@@ -72,34 +72,33 @@ static void initialise_mdns(void)
 }
 
 /* these strings match tcpip_adapter_if_t enumeration */
-static const char *if_str[] = {"STA", "AP", "ETH", "MAX"};
+static const char * if_str[] = {"STA", "AP", "ETH", "MAX"};
 
 /* these strings match mdns_ip_protocol_t enumeration */
-static const char *ip_protocol_str[] = {"V4", "V6", "MAX"};
+static const char * ip_protocol_str[] = {"V4", "V6", "MAX"};
 
-static void mdns_print_results(mdns_result_t *results)
-{
-    mdns_result_t *r = results;
-    mdns_ip_addr_t *a = NULL;
+static void mdns_print_results(mdns_result_t * results){
+    mdns_result_t * r = results;
+    mdns_ip_addr_t * a = NULL;
     int i = 1, t;
-    while (r) {
+    while(r){
         printf("%d: Interface: %s, Type: %s\n", i++, if_str[r->tcpip_if], ip_protocol_str[r->ip_protocol]);
-        if (r->instance_name) {
+        if(r->instance_name){
             printf("  PTR : %s\n", r->instance_name);
         }
-        if (r->hostname) {
+        if(r->hostname){
             printf("  SRV : %s.local:%u\n", r->hostname, r->port);
         }
-        if (r->txt_count) {
+        if(r->txt_count){
             printf("  TXT : [%u] ", r->txt_count);
-            for (t = 0; t < r->txt_count; t++) {
-                printf("%s=%s; ", r->txt[t].key, r->txt[t].value ? r->txt[t].value : "NULL");
+            for(t=0; t<r->txt_count; t++){
+                printf("%s=%s; ", r->txt[t].key, r->txt[t].value?r->txt[t].value:"NULL");
             }
             printf("\n");
         }
         a = r->addr;
-        while (a) {
-            if (a->addr.type == ESP_IPADDR_TYPE_V6) {
+        while(a){
+            if(a->addr.type == ESP_IPADDR_TYPE_V6){
                 printf("  AAAA: " IPV6STR "\n", IPV62STR(a->addr.u_addr.ip6));
             } else {
                 printf("  A   : " IPSTR "\n", IP2STR(&(a->addr.u_addr.ip4)));
@@ -111,17 +110,17 @@ static void mdns_print_results(mdns_result_t *results)
 
 }
 
-static void query_mdns_service(const char *service_name, const char *proto)
+static void query_mdns_service(const char * service_name, const char * proto)
 {
     ESP_LOGI(TAG, "Query PTR: %s.%s.local", service_name, proto);
 
-    mdns_result_t *results = NULL;
+    mdns_result_t * results = NULL;
     esp_err_t err = mdns_query_ptr(service_name, proto, 3000, 20,  &results);
-    if (err) {
+    if(err){
         ESP_LOGE(TAG, "Query Failed: %s", esp_err_to_name(err));
         return;
     }
-    if (!results) {
+    if(!results){
         ESP_LOGW(TAG, "No results found!");
         return;
     }
@@ -130,7 +129,7 @@ static void query_mdns_service(const char *service_name, const char *proto)
     mdns_query_results_free(results);
 }
 
-static void query_mdns_host(const char *host_name)
+static void query_mdns_host(const char * host_name)
 {
     ESP_LOGI(TAG, "Query A: %s.local", host_name);
 
@@ -138,8 +137,8 @@ static void query_mdns_host(const char *host_name)
     addr.addr = 0;
 
     esp_err_t err = mdns_query_a(host_name, 2000,  &addr);
-    if (err) {
-        if (err == ESP_ERR_NOT_FOUND) {
+    if(err){
+        if(err == ESP_ERR_NOT_FOUND){
             ESP_LOGW(TAG, "%s: Host was not found!", esp_err_to_name(err));
             return;
         }
@@ -193,7 +192,7 @@ static void mdns_example_task(void *pvParameters)
         check_button();
         vTaskDelay(50 / portTICK_PERIOD_MS);
         if (pdTICKS_TO_MS(xTaskGetTickCount()) >= 15 * 1000 && ! removed) {
-            printf("Remove device\n");
+            ESP_LOGI(TAG, "Remove delegate device\n");
             ESP_ERROR_CHECK(mdns_delegate_hostname_remove("test-device"));
             removed = true;
         }
@@ -221,7 +220,7 @@ void app_main(void)
 /** Generate host name based on sdkconfig, optionally adding a portion of MAC address to it.
  *  @return host name string allocated from the heap
  */
-static char *generate_hostname(void)
+static char* generate_hostname(void)
 {
 #ifndef CONFIG_MDNS_ADD_MAC_TO_HOSTNAME
     return strdup(CONFIG_MDNS_HOSTNAME);
@@ -241,7 +240,7 @@ static char *generate_hostname(void)
  *  @brief Executes gethostbyname and displays list of resolved addresses.
  *  Note: This function is used only to test advertised mdns hostnames resolution
  */
-static void  query_mdns_host_with_gethostbyname(char *host)
+static void  query_mdns_host_with_gethostbyname(char * host)
 {
     struct hostent *res = gethostbyname(host);
     if (res) {
@@ -257,10 +256,10 @@ static void  query_mdns_host_with_gethostbyname(char *host)
  *  @brief Executes getaddrinfo and displays list of resolved addresses.
  *  Note: This function is used only to test advertised mdns hostnames resolution
  */
-static void  query_mdns_host_with_getaddrinfo(char *host)
+static void  query_mdns_host_with_getaddrinfo(char * host)
 {
     struct addrinfo hints;
-    struct addrinfo *res;
+    struct addrinfo * res;
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
@@ -269,8 +268,8 @@ static void  query_mdns_host_with_getaddrinfo(char *host)
     if (!getaddrinfo(host, NULL, &hints, &res)) {
         while (res) {
             ESP_LOGI(TAG, "getaddrinfo: %s resolved to: %s", host,
-                     res->ai_family == AF_INET ?
-                     inet_ntoa(((struct sockaddr_in *) res->ai_addr)->sin_addr) :
+                     res->ai_family == AF_INET?
+                     inet_ntoa(((struct sockaddr_in *) res->ai_addr)->sin_addr):
                      inet_ntoa(((struct sockaddr_in6 *) res->ai_addr)->sin6_addr));
             res = res->ai_next;
         }

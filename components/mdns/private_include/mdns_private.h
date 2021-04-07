@@ -19,8 +19,9 @@
 #include "esp_timer.h"
 #include "esp_netif_ip_addr.h"
 #include "freertos/FreeRTOS.h"
+#include "mdns.h"
 
-#define MDNS_ENABLE_DEBUG
+//#define MDNS_ENABLE_DEBUG
 
 #ifdef MDNS_ENABLE_DEBUG
 #define _mdns_dbg_printf(...) printf(__VA_ARGS__)
@@ -309,7 +310,7 @@ typedef struct mdns_out_question_s {
 
 typedef struct mdns_host_item_t {
     const char * hostname;
-    esp_ip_addr_t address;
+    mdns_ip_addr_t *address_list;
     struct mdns_host_item_t *next;
 } mdns_host_item_t;
 
@@ -441,7 +442,7 @@ typedef struct {
         } rx_handle;
         struct {
             const char * hostname;
-            esp_ip_addr_t address;
+            mdns_ip_addr_t *address_list;
         } delegate_hostname;
     } data;
 } mdns_action_t;
