@@ -11,13 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "esp32_compat.h"
 
-// mock the types to decouple from lwip
-typedef void * esp_netif_t;
-typedef enum { DHCP_MOCK } esp_netif_dhcp_status_t;
-typedef tcpip_adapter_ip_info_t esp_netif_ip_info_t;
-typedef ip6_addr_t esp_ip6_addr_t;
+#include "esp32_compat.h"
+#include "esp_netif_lwip_internal.h"
 
 esp_err_t esp_netif_get_ip_info(esp_netif_t *esp_netif, esp_netif_ip_info_t *ip_info)
 {

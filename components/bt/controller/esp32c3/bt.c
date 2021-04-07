@@ -212,6 +212,7 @@ extern void btdm_controller_disable(void);
 extern uint8_t btdm_controller_get_mode(void);
 extern const char *btdm_controller_get_compile_version(void);
 extern void btdm_rf_bb_init_phase2(void); // shall be called after PHY/RF is enabled
+
 /* Sleep */
 extern void btdm_controller_enable_sleep(bool enable);
 extern uint8_t btdm_controller_get_sleep_mode(void);
@@ -740,13 +741,16 @@ static void IRAM_ATTR btdm_sleep_exit_phase0(void *param)
     }
 #endif
 
-    btdm_wakeup_request();
+    int event = (int) param;
+    if (event == BTDM_ASYNC_WAKEUP_SRC_VHCI || event == BTDM_ASYNC_WAKEUP_SRC_DISA) {
+        btdm_wakeup_request();
+    }
 
     if (s_lp_cntl.wakeup_timer_required && s_lp_stat.wakeup_timer_started) {
         esp_timer_stop(s_btdm_slp_tmr);
         s_lp_stat.wakeup_timer_started = 0;
     }
-    int event = (int) param;
+
     if (event == BTDM_ASYNC_WAKEUP_SRC_VHCI || event == BTDM_ASYNC_WAKEUP_SRC_DISA) {
         semphr_give_wrapper(s_wakeup_req_sem);
     }
@@ -1050,7 +1054,8 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_XTAL; // set default value
 #endif
 
-        bool select_src_ret, set_div_ret;
+        bool select_src_ret __attribute__((unused));
+        bool set_div_ret __attribute__((unused));
         if (s_lp_cntl.lpclk_sel == BTDM_LPCLK_SEL_XTAL) {
             select_src_ret = btdm_lpclk_select_src(BTDM_LPCLK_SEL_XTAL);
             set_div_ret = btdm_lpclk_set_div(rtc_clk_xtal_freq_get() * 2);
@@ -1331,14 +1336,51 @@ esp_bt_controller_status_t esp_bt_controller_get_status(void)
 /* extra functions */
 esp_err_t esp_ble_tx_power_set(esp_ble_power_type_t power_type, esp_power_level_t power_level)
 {
-    ESP_LOGW(BTDM_LOG_TAG, "%s not implemented, return OK", __func__);
-    return ESP_OK;
+    esp_err_t stat = ESP_FAIL;
+
+    switch (power_type) {
+    case ESP_BLE_PWR_TYPE_ADV:
+    case ESP_BLE_PWR_TYPE_SCAN:
+    case ESP_BLE_PWR_TYPE_DEFAULT:
+        if (ble_txpwr_set(power_type, power_level) == 0) {
+            stat = ESP_OK;
+        }
+        break;
+    default:
+        stat = ESP_ERR_NOT_SUPPORTED;
+        break;
+    }
+
+    return stat;
 }
 
 esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type)
 {
-    ESP_LOGW(BTDM_LOG_TAG, "%s not implemented, return 0", __func__);
-    return 0;
+    esp_power_level_t lvl;
+
+    switch (power_type) {
+    case ESP_BLE_PWR_TYPE_ADV:
+    case ESP_BLE_PWR_TYPE_SCAN:
+        lvl = (esp_power_level_t)ble_txpwr_get(power_type);
+        break;
+    case ESP_BLE_PWR_TYPE_CONN_HDL0:
+    case ESP_BLE_PWR_TYPE_CONN_HDL1:
+    case ESP_BLE_PWR_TYPE_CONN_HDL2:
+    case ESP_BLE_PWR_TYPE_CONN_HDL3:
+    case ESP_BLE_PWR_TYPE_CONN_HDL4:
+    case ESP_BLE_PWR_TYPE_CONN_HDL5:
+    case ESP_BLE_PWR_TYPE_CONN_HDL6:
+    case ESP_BLE_PWR_TYPE_CONN_HDL7:
+    case ESP_BLE_PWR_TYPE_CONN_HDL8:
+    case ESP_BLE_PWR_TYPE_DEFAULT:
+        lvl = (esp_power_level_t)ble_txpwr_get(ESP_BLE_PWR_TYPE_DEFAULT);
+        break;
+    default:
+        lvl = ESP_PWR_LVL_INVALID;
+        break;
+    }
+
+    return lvl;
 }
 
 esp_err_t esp_bt_sleep_enable (void)

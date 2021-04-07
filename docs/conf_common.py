@@ -169,7 +169,8 @@ ULP_DOCS = ['api-guides/ulp.rst', 'api-guides/ulp_macros.rst']
 
 RISCV_COPROC_DOCS = ['api-guides/ulp-risc-v.rst',]
 
-XTENSA_DOCS = ['api-guides/hlinterrupts.rst']
+XTENSA_DOCS = ['api-guides/hlinterrupts.rst',
+               'api-reference/system/perfmon.rst']
 
 RISCV_DOCS = []
 
@@ -191,6 +192,7 @@ ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-reference/peripherals/spi_slave_hd.rst',
                 'api-reference/peripherals/temp_sensor.rst',
                 'api-reference/system/async_memcpy.rst',
+                'api-reference/peripherals/touch_element.rst',
                 'api-reference/peripherals/dac.rst']
 
 ESP32C3_DOCS = ['hw-reference/esp32c3/**']
@@ -208,6 +210,9 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_TOUCH_SENSOR_NUM':TOUCH_SENSOR_DOCS,
                             'SOC_ULP_SUPPORTED':ULP_DOCS,
                             'SOC_RISCV_COPROC_SUPPORTED':RISCV_COPROC_DOCS,
+                            'SOC_DIG_SIGN_SUPPORTED':['api-reference/peripherals/ds.rst'],
+                            'SOC_HMAC_SUPPORTED':['api-reference/peripherals/hmac.rst'],
+                            'SOC_ASYNC_MEMCPY_SUPPORTED':['api-reference/system/async_memcpy.rst'],
                             'CONFIG_IDF_TARGET_ARCH_XTENSA':XTENSA_DOCS,
                             'CONFIG_IDF_TARGET_ARCH_RISCV':RISCV_DOCS,
                             'esp32':ESP32_DOCS,

@@ -118,7 +118,8 @@ void app_main(void)
     reg_area.type = MB_PARAM_HOLDING; // Set type of register area
     reg_area.start_offset = MB_REG_HOLDING_START_AREA0; // Offset of register area in Modbus protocol
     reg_area.address = (void*)&holding_reg_params.holding_data0; // Set pointer to storage instance
-    reg_area.size = sizeof(float) << 2; // Set the size of register storage instance
+    // Set the size of register storage instance = 150 holding registers
+    reg_area.size = (size_t)(HOLD_OFFSET(holding_data4) - HOLD_OFFSET(test_regs));
     ESP_ERROR_CHECK(mbc_slave_set_descriptor(reg_area));
     reg_area.type = MB_PARAM_HOLDING; // Set type of register area
     reg_area.start_offset = MB_REG_HOLDING_START_AREA1; // Offset of register area in Modbus protocol
@@ -132,7 +133,6 @@ void app_main(void)
     reg_area.address = (void*)&input_reg_params.input_data0;
     reg_area.size = sizeof(float) << 2;
     ESP_ERROR_CHECK(mbc_slave_set_descriptor(reg_area));
-    // Initialization of Input Registers area
     reg_area.type = MB_PARAM_INPUT;
     reg_area.start_offset = MB_REG_INPUT_START_AREA1;
     reg_area.address = (void*)&input_reg_params.input_data4;

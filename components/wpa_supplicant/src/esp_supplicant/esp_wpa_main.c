@@ -177,6 +177,7 @@ void  wpa_sta_connect(uint8_t *bssid)
     wpa_config_profile();
     ret = wpa_config_bss(bssid);
     WPA_ASSERT(ret == 0);
+    (void)ret;
 }
 
 int wpa_parse_wpa_ie_wrapper(const u8 *wpa_ie, size_t wpa_ie_len, wifi_wpa_ie_t *data)

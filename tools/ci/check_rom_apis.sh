@@ -6,7 +6,7 @@ set -uo pipefail
 
 cd ${IDF_PATH} # git ls-files operates on working directory only, make sure we're at the top directory
 deprecated_rom_apis=$(cat ${IDF_PATH}/components/esp_rom/esp32/ld/esp32.rom.api.ld | grep "esp_rom_" | cut -d "=" -f 2 | cut -d " " -f 2)
-files_to_search=$(git ls-files --full-name '*.c')
+files_to_search=$(git ls-files --full-name '*.c' ':!:components/esp_rom/')
 count=0
 for api in $deprecated_rom_apis; do
     found_files=$(grep -E "\W+"$api"\W+" $files_to_search)

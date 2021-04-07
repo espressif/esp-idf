@@ -107,17 +107,28 @@ static IRAM_ATTR esp_err_t iot_ledc_duty_config(ledc_mode_t speed_mode, ledc_cha
         uint32_t duty_direction, uint32_t duty_num, uint32_t duty_cycle, uint32_t duty_scale)
 {
     if (hpoint_val >= 0) {
+#if CONFIG_IDF_TARGET_ESP32C3
+        LEDC.channel_group[speed_mode].channel[channel].hpoint.hpoint = hpoint_val & LEDC_HPOINT_LSCH1_V;
+#elif CONFIG_IDF_TARGET_ESP32
         LEDC.channel_group[speed_mode].channel[channel].hpoint.hpoint = hpoint_val & LEDC_HPOINT_HSCH1_V;
+#endif
     }
 
     if (duty_val >= 0) {
         LEDC.channel_group[speed_mode].channel[channel].duty.duty = duty_val;
     }
 
+#if CONFIG_IDF_TARGET_ESP32C3
+    LEDC.channel_group[speed_mode].channel[channel].conf1.val = ((duty_direction & LEDC_DUTY_INC_LSCH0_V) << LEDC_DUTY_INC_LSCH0_S) |
+            ((duty_num & LEDC_DUTY_NUM_LSCH0_V) << LEDC_DUTY_NUM_LSCH0_S) |
+            ((duty_cycle & LEDC_DUTY_CYCLE_LSCH0_V) << LEDC_DUTY_CYCLE_LSCH0_S) |
+            ((duty_scale & LEDC_DUTY_SCALE_LSCH0_V) << LEDC_DUTY_SCALE_LSCH0_S);
+#elif CONFIG_IDF_TARGET_ESP32
     LEDC.channel_group[speed_mode].channel[channel].conf1.val = ((duty_direction & LEDC_DUTY_INC_HSCH0_V) << LEDC_DUTY_INC_HSCH0_S) |
             ((duty_num & LEDC_DUTY_NUM_HSCH0_V) << LEDC_DUTY_NUM_HSCH0_S) |
             ((duty_cycle & LEDC_DUTY_CYCLE_HSCH0_V) << LEDC_DUTY_CYCLE_HSCH0_S) |
             ((duty_scale & LEDC_DUTY_SCALE_HSCH0_V) << LEDC_DUTY_SCALE_HSCH0_S);
+#endif
 
     LEDC.channel_group[speed_mode].channel[channel].conf0.sig_out_en = 1;
     LEDC.channel_group[speed_mode].channel[channel].conf1.duty_start = 1;
@@ -190,16 +201,28 @@ static IRAM_ATTR esp_err_t _iot_set_fade_with_time(ledc_mode_t speed_mode, ledc_
         scale = 1;
         cycle_num = total_cycles / duty_delta;
 
+#if CONFIG_IDF_TARGET_ESP32C3
+        if (cycle_num > LEDC_DUTY_NUM_LSCH0_V) {
+            cycle_num = LEDC_DUTY_NUM_LSCH0_V;
+        }
+#elif CONFIG_IDF_TARGET_ESP32
         if (cycle_num > LEDC_DUTY_NUM_HSCH0_V) {
             cycle_num = LEDC_DUTY_NUM_HSCH0_V;
         }
+#endif
     } else {
         cycle_num = 1;
         scale = duty_delta / total_cycles;
 
+#if CONFIG_IDF_TARGET_ESP32C3
+        if (scale > LEDC_DUTY_SCALE_LSCH0_V) {
+            scale = LEDC_DUTY_SCALE_LSCH0_V;
+        }
+#elif CONFIG_IDF_TARGET_ESP32
         if (scale > LEDC_DUTY_SCALE_HSCH0_V) {
             scale = LEDC_DUTY_SCALE_HSCH0_V;
         }
+#endif
     }
 
     return _iot_set_fade_with_step(speed_mode, channel, target_duty, scale, cycle_num);
@@ -263,27 +286,45 @@ static IRAM_ATTR void fade_timercb(void *para)
 
     if (HW_TIMER_GROUP == TIMER_GROUP_0) {
         /* Retrieve the interrupt status */
+#if CONFIG_IDF_TARGET_ESP32C3
+        uint32_t intr_status = TIMERG0.int_st.val;
+        TIMERG0.hw_timer[timer_idx].update.val = 1;
+#elif CONFIG_IDF_TARGET_ESP32
         uint32_t intr_status = TIMERG0.int_st_timers.val;
         TIMERG0.hw_timer[timer_idx].update = 1;
+#endif
 
         /* Clear the interrupt */
         if ((intr_status & BIT(timer_idx)) && timer_idx == TIMER_0) {
+#if CONFIG_IDF_TARGET_ESP32C3
+            TIMERG0.int_clr.t0 = 1;
+#elif CONFIG_IDF_TARGET_ESP32
             TIMERG0.int_clr_timers.t0 = 1;
         } else if ((intr_status & BIT(timer_idx)) && timer_idx == TIMER_1) {
             TIMERG0.int_clr_timers.t1 = 1;
+#endif
         }
 
         /* After the alarm has been triggered
           we need enable it again, so it is triggered the next time */
         TIMERG0.hw_timer[timer_idx].config.alarm_en = TIMER_ALARM_EN;
     } else if (HW_TIMER_GROUP == TIMER_GROUP_1) {
+#if CONFIG_IDF_TARGET_ESP32C3
+        uint32_t intr_status = TIMERG1.int_st.val;
+        TIMERG1.hw_timer[timer_idx].update.val = 1;
+#elif CONFIG_IDF_TARGET_ESP32
         uint32_t intr_status = TIMERG1.int_st_timers.val;
         TIMERG1.hw_timer[timer_idx].update = 1;
+#endif
 
         if ((intr_status & BIT(timer_idx)) && timer_idx == TIMER_0) {
+#if CONFIG_IDF_TARGET_ESP32C3
+            TIMERG1.int_clr.t0 = 1;
+#elif CONFIG_IDF_TARGET_ESP32
             TIMERG1.int_clr_timers.t0 = 1;
         } else if ((intr_status & BIT(timer_idx)) && timer_idx == TIMER_1) {
             TIMERG1.int_clr_timers.t1 = 1;
+#endif
         }
 
         TIMERG1.hw_timer[timer_idx].config.alarm_en = TIMER_ALARM_EN;

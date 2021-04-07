@@ -75,7 +75,7 @@ typedef struct {
 } touch_matrix_message_t;
 
 typedef touch_elem_handle_t touch_matrix_handle_t;  //!< Matrix button instance handle
-typedef void(*touch_matrix_callback_t)(touch_matrix_handle_t, touch_matrix_message_t, void *); //!< Matrix button callback type
+typedef void(*touch_matrix_callback_t)(touch_matrix_handle_t, touch_matrix_message_t *, void *); //!< Matrix button callback type
 
 /**
  * @brief   Touch matrix button initialize
@@ -177,6 +177,8 @@ esp_err_t touch_matrix_set_dispatch_method(touch_matrix_handle_t matrix_handle, 
  *
  * @param[in] matrix_handle     Matrix button handle
  * @param[in] matrix_callback   User input callback
+ *
+ * @note        Matrix message will be passed from the callback function and it will be destroyed when the callback function return.
  *
  * @warning     Since this input callback routine runs on driver core (esp-timer callback routine),
  *              it should not do something that attempts to Block, such as calling vTaskDelay().

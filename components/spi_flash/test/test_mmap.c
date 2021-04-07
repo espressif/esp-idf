@@ -153,8 +153,11 @@ TEST_CASE("Can mmap into data address space", "[spi_flash][mmap]")
     TEST_ASSERT_EQUAL_PTR(NULL, spi_flash_phys2cache(start, SPI_FLASH_MMAP_DATA));
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3)
-// TODO ESP32C3 IDF-2458
+#if !DISABLED_FOR_TARGETS(ESP32C3)
+/* On C3 the cache is programmatically split between Icache and dcache and with the default setup we dont leave a lot pages
+   available for additional mmaps into instruction space. Disabling this test for now since any hypothetical use case for this
+   is no longer supported "out of the box"
+*/
 
 TEST_CASE("Can mmap into instruction address space", "[spi_flash][mmap]")
 {
@@ -212,7 +215,7 @@ TEST_CASE("Can mmap into instruction address space", "[spi_flash][mmap]")
 
 }
 
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3)
+#endif //!DISABLED_FOR_TARGETS(ESP32C3)
 
 
 TEST_CASE("Can mmap unordered pages into contiguous memory", "[spi_flash][mmap]")

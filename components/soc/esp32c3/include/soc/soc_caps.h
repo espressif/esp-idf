@@ -5,26 +5,13 @@
 
 #pragma once
 
-#define SOC_CPU_CORES_NUM   1
-#define SOC_GDMA_SUPPORTED  1
-#define SOC_TWAI_SUPPORTED  1
-#define SOC_BT_SUPPORTED    1
-
-// There are 3 DMA channels on ESP32-C3
-// Attention: These fixed DMA channels are temporarily workaround before we have a centralized DMA controller API to help alloc the channel dynamically
-// Remove them when GDMA driver API is ready
-#define SOC_GDMA_SPI2_DMA_CHANNEL   (2)
-#define SOC_GDMA_ADC_DMA_CHANNEL    (0)
-
-//NOTE: The CHx number should be consistent with the selected DMA channel above
-#define SOC_GDMA_SPI2_INTR_SOURCE   ETS_DMA_CH2_INTR_SOURCE
-//On C3, there is only 1 GPSPI controller (GPSPI2)
-#define SOC_GDMA_SPI3_DMA_CHANNEL   SOC_GDMA_SPI2_DMA_CHANNEL
-
-#define SOC_GDMA_ADC_INTR_SOURCE    ETS_DMA_CH0_INTR_SOURCE
-
-#include "rmt_caps.h"
-
+#define SOC_CPU_CORES_NUM           1
+#define SOC_GDMA_SUPPORTED          1
+#define SOC_TWAI_SUPPORTED          1
+#define SOC_BT_SUPPORTED            1
+#define SOC_DIG_SIGN_SUPPORTED      1
+#define SOC_HMAC_SUPPORTED          1
+#define SOC_ASYNC_MEMCPY_SUPPORTED  1
 
 /*-------------------------- DAC CAPS ----------------------------------------*/
 #define SOC_DAC_PERIPH_NUM      0
@@ -40,11 +27,9 @@
 #include "i2s_caps.h"
 #include "rtc_io_caps.h"
 #include "soc_caps.h"
-#include "timer_group_caps.h"
 #include "cpu_caps.h"
 #include "gpio_caps.h"
 #include "ledc_caps.h"
-#include "rmt_caps.h"
 #include "spi_caps.h"
 #include "uart_caps.h"
 #include "rtc_caps.h"
@@ -59,17 +44,7 @@
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_BRP_MIN                2
 #define SOC_TWAI_BRP_MAX                32768
-
-#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM) ((PERIPH_NUM==0)? 5 : 1)
-#define SOC_ADC_MAX_CHANNEL_NUM         (10)
-
-/**
- * Check if adc support digital controller (DMA) mode.
- * @value
- *      - 1 : support;
- *      - 0 : not support;
- */
-#define SOC_ADC_SUPPORT_DMA_MODE(PERIPH_NUM) 1
+#define SOC_TWAI_SUPPORTS_RX_STATUS     1
 
 /*--------------------------- SHA CAPS ---------------------------------------*/
 
@@ -91,6 +66,24 @@
 #define SOC_SHA_SUPPORT_SHA224          (1)
 #define SOC_SHA_SUPPORT_SHA256          (1)
 
+/*--------------------------- TIMER GROUP CAPS ---------------------------------------*/
+#define SOC_TIMER_GROUPS                  (2)
+#define SOC_TIMER_GROUP_TIMERS_PER_GROUP  (1)
+#define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH (54)
+#define SOC_TIMER_GROUP_SUPPORT_XTAL      (1)
+#define SOC_TIMER_GROUP_TOTAL_TIMERS (SOC_TIMER_GROUPS * SOC_TIMER_GROUP_TIMERS_PER_GROUP)
+
+/*--------------------------- RMT CAPS ---------------------------------------*/
+#define SOC_RMT_GROUPS                  (1)  /*!< One RMT group */
+#define SOC_RMT_TX_CANDIDATES_PER_GROUP (2)  /*!< Number of channels that capable of Transmit */
+#define SOC_RMT_RX_CANDIDATES_PER_GROUP (2)  /*!< Number of channels that capable of Receive */
+#define SOC_RMT_CHANNELS_PER_GROUP      (4)  /*!< Total 4 channels */
+#define SOC_RMT_MEM_WORDS_PER_CHANNEL   (48) /*!< Each channel owns 48 words memory (1 word = 4 Bytes) */
+#define SOC_RMT_SUPPORT_RX_PINGPONG     (1)  /*!< Support Ping-Pong mode on RX path */
+#define SOC_RMT_SUPPORT_RX_DEMODULATION (1)  /*!< Support signal demodulation on RX path (i.e. remove carrier) */
+#define SOC_RMT_SUPPORT_TX_LOOP_COUNT   (1)  /*!< Support transmit specified number of cycles in loop mode */
+#define SOC_RMT_SUPPORT_TX_SYNCHRO      (1)  /*!< Support coordinate a group of TX channels to start simultaneously */
+#define SOC_RMT_SUPPORT_XTAL            (1)  /*!< Support set XTAL clock as the RMT clock source */
 
 /*--------------------------- RSA CAPS ---------------------------------------*/
 #define SOC_RSA_MAX_BIT_LEN    (3072)
@@ -110,7 +103,7 @@
 #define SOC_ADC_PERIPH_NUM                      (2)
 #define SOC_ADC_PATT_LEN_MAX                    (16)
 #define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         ((PERIPH_NUM==0)? 5 : 1)
-#define SOC_ADC_MAX_CHANNEL_NUM                 (10)
+#define SOC_ADC_MAX_CHANNEL_NUM                 (5)
 #define SOC_ADC_MAX_BITWIDTH                    (12)
 #define SOC_ADC_DIGI_FILTER_NUM                 (2)
 #define SOC_ADC_DIGI_MONITOR_NUM                (2)
@@ -129,6 +122,13 @@
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)
 
+/*--------------- PHY REGISTER AND MEMORY SIZE CAPS --------------------------*/
+#define SOC_PHY_DIG_REGS_MEM_SIZE       (21*4)
+#define SOC_MAC_BB_PD_MEM_SIZE          (192*4)
+
+/*--------------- WIFI LIGHT SLEEP CLOCK WIDTH CAPS --------------------------*/
+#define SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH  (12)
+
 /*-------------------------- SPI MEM CAPS ---------------------------------------*/
 #define SOC_SPI_MEM_SUPPORT_AUTO_WAIT_IDLE                (1)
 #define SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND                  (1)
@@ -142,3 +142,7 @@
 #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
 
 #define SOC_PM_SUPPORT_CPU_PD           (1)
+
+#define SOC_PM_SUPPORT_WIFI_PD          (1)
+
+#define SOC_PM_SUPPORT_BT_PD            (1)

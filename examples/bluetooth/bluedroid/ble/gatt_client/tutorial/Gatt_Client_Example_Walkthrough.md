@@ -437,7 +437,7 @@ esp_log_buffer_hex(GATTC_TAG, gl_profile_tab[PROFILE_A_APP_ID].remote_bda,
 		sizeof(esp_bd_addr_t));
 ```
 
-The typical MTU size for a Bluetooth 4.0 connection is 23 bytes. A client can change the size of MUT, using `esp_ble_gattc_send_mtu_req()` function, which takes the GATT interface and the connection ID. The size of the requested MTU is defined by `esp_ble_gatt_set_local_mtu()`. The server can then accept or reject the request. The ESP32 supports a MTU size of up to 517 bytes, which is defined by the `ESP_GATT_MAX_MTU_SIZE` in `esp_gattc_api.h`. In this example, the MTU size is set to 500 bytes. In case the configuration fails, the returned error is printed:
+The typical MTU size for a Bluetooth 4.0 connection is 23 bytes. A client can change the size of MTU, using `esp_ble_gattc_send_mtu_req()` function, which takes the GATT interface and the connection ID. The size of the requested MTU is defined by `esp_ble_gatt_set_local_mtu()`. The server can then accept or reject the request. The ESP32 supports a MTU size of up to 517 bytes, which is defined by the `ESP_GATT_MAX_MTU_SIZE` in `esp_gattc_api.h`. In this example, the MTU size is set to 500 bytes. In case the configuration fails, the returned error is printed:
 
 ```c
 esp_err_t mtu_ret = esp_ble_gattc_send_mtu_req (gattc_if, conn_id);

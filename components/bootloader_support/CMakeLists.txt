@@ -9,6 +9,7 @@ set(srcs
     "src/bootloader_utility.c"
     "src/esp_image_format.c"
     "src/flash_encrypt.c"
+    "src/secure_boot.c"
     "src/flash_partitions.c"
     "src/flash_qio_mode.c"
     "src/bootloader_flash_config_${IDF_TARGET}.c"
@@ -34,16 +35,28 @@ else()
         "src/idf/bootloader_sha.c")
     set(include_dirs "include")
     set(priv_include_dirs "include_bootloader")
-    set(priv_requires spi_flash mbedtls efuse)
+    set(priv_requires spi_flash mbedtls efuse app_update)
 endif()
 
-if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME OR CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
-    if(BOOTLOADER_BUILD)
-        list(APPEND srcs
-        "src/${IDF_TARGET}/secure_boot_signatures.c")
-    else()
-        list(APPEND srcs
-            "src/idf/secure_boot_signatures.c")
+if(BOOTLOADER_BUILD)
+    if(CONFIG_SECURE_SIGNED_ON_BOOT)
+        if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
+            list(APPEND srcs "src/secure_boot_v1/secure_boot_signatures_bootloader.c")
+        endif()
+
+        if(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
+            list(APPEND srcs "src/secure_boot_v2/secure_boot_signatures_bootloader.c")
+        endif()
+    endif()
+else()
+    if(CONFIG_SECURE_SIGNED_ON_UPDATE)
+        if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
+            list(APPEND srcs "src/secure_boot_v1/secure_boot_signatures_app.c")
+        endif()
+
+        if(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
+            list(APPEND srcs "src/secure_boot_v2/secure_boot_signatures_app.c")
+        endif()
     endif()
 endif()
 

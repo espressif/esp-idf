@@ -10,13 +10,13 @@ Overview
 Identifying and handling run-time errors is important for developing robust applications. There can be multiple kinds of run-time errors:
 
 - Recoverable errors:
-  
+
   - Errors indicated by functions through return values (error codes)
   - C++ exceptions, thrown using ``throw`` keyword
 
 - Unrecoverable (fatal) errors:
-  
-  - Failed assertions (using ``assert`` macro and equivalent methods) and ``abort()`` calls.
+
+  - Failed assertions (using ``assert`` macro and equivalent methods, see :ref:`assertions`) and ``abort()`` calls.
   - CPU exceptions: access to protected regions of memory, illegal instruction, etc.
   - System level checks: watchdog timeout, cache access error, stack overflow, stack smashing, heap corruption, etc.
 
@@ -43,6 +43,8 @@ Additionally, :cpp:func:`esp_err_to_name_r` function will attempt to interpret t
 
 This feature is enabled by default, but can be disabled to reduce application binary size. See :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP`. When this feature is disabled, :cpp:func:`esp_err_to_name` and :cpp:func:`esp_err_to_name_r` are still defined and can be called. In this case, :cpp:func:`esp_err_to_name` will return ``UNKNOWN ERROR``, and :cpp:func:`esp_err_to_name_r` will return ``Unknown error 0xXXXX(YYYYY)``, where ``0xXXXX`` and ``YYYYY`` are the hexadecimal and decimal representations of the error code, respectively.
 
+.. _esp-error-check-macro:
+
 ``ESP_ERROR_CHECK`` macro
 -------------------------
 
@@ -66,6 +68,71 @@ Error message will typically look like this::
 
 - Finally, backtrace is printed. This is part of panic handler output common to all fatal errors. See :doc:`Fatal Errors <fatal-errors>` for more information about the backtrace.
 
+.. _esp-error-check-without-abort-macro:
+
+``ESP_ERROR_CHECK_WITHOUT_ABORT`` macro
+---------------------------------------
+
+:cpp:func:`ESP_ERROR_CHECK_WITHOUT_ABORT` macro serves similar purpose as ``ESP_ERROR_CHECK``, except that it won't call ``abort()``.
+
+.. _esp-return-on-error-macro:
+
+``ESP_RETURN_ON_ERROR`` macro
+-----------------------------
+
+:cpp:func:`ESP_RETURN_ON_ERROR` macro checks the error code, if the error code is not equal :c:macro:`ESP_OK`, it prints the message and returns.
+
+.. _esp-goto-on-error-macro:
+
+``ESP_GOTO_ON_ERROR`` macro
+---------------------------
+
+:cpp:func:`ESP_GOTO_ON_ERROR` macro checks the error code, if the error code is not equal :c:macro:`ESP_OK`, it prints the message, sets the local variable `ret` to the code, and then exits by jumping to `goto_tag`.
+
+.. _esp-return-on-false-macro:
+
+``ESP_RETURN_ON_FALSE`` macro
+-----------------------------
+
+:cpp:func:`ESP_RETURN_ON_FALSE` macro checks the condition, if the condition is not equal `true`, it prints the message and returns with the supplied `err_code`.
+
+.. _esp-goto-on-false-macro:
+
+``ESP_GOTO_ON_FALSE`` macro
+---------------------------
+
+:cpp:func:`ESP_GOTO_ON_FALSE` macro checks the condition, if the condition is not equal `true`, it prints the message, sets the local variable `ret` to the supplied `err_code`, and then exits by jumping to `goto_tag`.
+
+.. _check_macros_examples:
+
+``CHECK MACROS Examples``
+-------------------------
+
+Some examples::
+
+    static const char* TAG = "Test";
+
+    esp_err_t test_func(void)
+    {
+        esp_err_t ret = ESP_OK;
+
+        ESP_ERROR_CHECK(x);                                         // err message printed if `x` is not `ESP_OK`, and then `abort()`.
+        ESP_ERROR_CHECK_WITHOUT_ABORT(x);                           // err message printed if `x` is not `ESP_OK`, without `abort()`.
+        ESP_RETURN_ON_ERROR(x, TAG, "fail reason 1");               // err message printed if `x` is not `ESP_OK`, and then function returns with code `x`.
+        ESP_GOTO_ON_ERROR(x, err, TAG, "fail reason 2");            // err message printed if `x` is not `ESP_OK`, `ret` is set to `x`, and then jumps to `err`.
+        ESP_RETURN_ON_FALSE(a, err_code, TAG, "fail reason 3");     // err message printed if `a` is not `true`, and then function returns with code `err_code`.
+        ESP_GOTO_ON_FALSE(a, err_code, err, TAG, "fail reason 4");  // err message printed if `a` is not `true`, `ret` is set to `err_code`, and then jumps to `err`.
+
+    err:
+        // clean up
+        return ret;
+    }
+
+.. note::
+
+     If the option :ref:`CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT` in Kconfig is enabled, the err message will be discarded, while the other action works as is.
+
+     The ``ESP_RETURN_XX`` and ``ESP_GOTO_xx`` macros can't be called from ISR. While there are ``xx_ISR`` versions for each of them, e.g., `ESP_RETURN_ON_ERROR_ISR`, these macros could be used in ISR.
 
 Error handling patterns
 -----------------------

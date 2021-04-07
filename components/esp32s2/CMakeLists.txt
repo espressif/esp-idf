@@ -61,7 +61,8 @@ else()
     add_custom_command(
         OUTPUT esp32s2_out.ld
         COMMAND "${CMAKE_C_COMPILER}" -C -P -x c -E -o esp32s2_out.ld -I ${config_dir} ${LD_DIR}/esp32s2.ld
-        MAIN_DEPENDENCY ${LD_DIR}/esp32s2.ld ${sdkconfig_header}
+        MAIN_DEPENDENCY ${LD_DIR}/esp32s2.ld
+        DEPENDS ${sdkconfig_header}
         COMMENT "Generating linker script..."
         VERBATIM)
 

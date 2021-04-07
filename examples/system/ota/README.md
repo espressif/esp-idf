@@ -66,9 +66,11 @@ After a successful build, we need to create a self-signed certificate and run a 
 * To start the HTTPS server, you can simply run command `openssl s_server -WWW -key ca_key.pem -cert ca_cert.pem -port 8070`.
 * In the same directory, there should be the firmware (e.g. hello-world.bin) that ESP32 will download later. It can be any other ESP-IDF application as well, as long as you also update the `Firmware Upgrade URL` in the menuconfig. The only difference is that when flashed via serial the binary is flashed to the "factory" app partition, and an OTA update flashes to an OTA app partition.
 * **Notes:** If you have any firewall software running that will block incoming access to port *8070*, configure it to allow access while running the example.
-* **Notes:** For Windows users, you should add `winpty` before `openssl` command:
-  * `winpty openssl req -x509 -newkey rsa:2048 -keyout ca_key.pem -out ca_cert.pem -days 365 -nodes`
-  * `winpty openssl s_server -WWW -key ca_key.pem -cert ca_cert.pem -port 8070`
+* **Notes:** Windows users may encounter certain issues while running `openssl s_server -WWW`, due to CR/LF translation and/or closing the connection prematurely
+  (Some windows builds of openssl translate CR/LF sequences to LF in the served files, leading to corrupted image received by the OTA client; Others might interpret `0x1a`/`SUB` character in the binary as an escape sequence, i.e. end of file, thus closing the connection, failing the OTA client to receive the entire image).
+  * It's recommended to use `openssl` bundled in `Git For Windows` from the [ESP-IDF Tool installer](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/windows-setup.html):
+  Open the ESP-IDF command prompt and add the internal openssl binary to your path: `set PATH=%LocalAppData%\Git\usr\bin;%PATH%` and run the openssl's http server command as above.
+  * Alternatively, you can use any windows based openssl of version at least `v1.1.1i` build on `Msys-x86_64` platform, or a simple python https server -- see start_https_server in the [example_test](simple_ota_example/example_test.py) script.
 
 ### Flash Certificate to ESP32
 
@@ -131,3 +133,23 @@ In ``native_ota_example``, ``$PROJECT_PATH/version.txt`` is used to define the v
 If you see this error then check that the configured (and actual) flash size is large enough for the partitions in the partition table. The default "two OTA slots" partition table only works with 4MB flash size. To use OTA with smaller flash sizes, create a custom partition table CSV (look in components/partition_table) and configure it in menuconfig.
 
 If changing partition layout, it is usually wise to run "idf.py erase_flash" between steps.
+
+### Local https server
+
+Running a local https server might be tricky in some cases (due to self signed certificates, or potential issues with `openssl s_server` on Windows). Here are some tips of using other means of running http(s) server:
+* Run a non secure HTTP server to test the connection. (Note that using a plain http is **not secure** and should be used for testing purpose only)
+    - Execute `python -m http.server 8070` in the directory with the firmware image.
+    - Use http://<host-ip>:8070/<firmware-name> as firmware upgrade URL.
+    - Enable *Allow HTTP for OTA* (`CONFIG_OTA_ALLOW_HTTP`) in `Component config -> ESP HTTPS OTA` so the URI with no certificate is accepted.
+* Start the https server using [example_test](simple_ota_example/example_test.py) with two or more parameters: `example_test.py <BIN_DIR> <PORT> [CERT_DIR]`, where
+    - `<BIN_DIR>` is a directory containing the image and by default also the certificate and key files:`ca_cert.pem` and `ca_key.pem`.
+    - `<PORT>` is the server's port, here `8070`
+    - `[CERT_DIR]` is an optional argument pointing to a specific directory with the certificate and key file.
+    - example of the script output:
+``` bash
+$ cd idf/examples/system/ota/simple_ota_example
+$ python example_test.py build 8070
+Starting HTTPS server at "https://:8070"
+192.168.10.106 - - [02/Mar/2021 14:32:26] "GET /simple_ota.bin HTTP/1.1" 200 -
+```
+* Post the firmware image to some public server (e.g. github.com) and copy it's root certificate to the `server_certs` dir as `ca_cert.pem`. (The certificate could be downloaded using the `s_client` openssl command, if the host includes the root certificate in the chain, for example `openssl s_client -showcerts -connect github.com:443 </dev/null`)

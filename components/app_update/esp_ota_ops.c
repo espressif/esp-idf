@@ -41,16 +41,6 @@
 #include "esp_efuse.h"
 #include "esp_attr.h"
 
-#ifdef CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/crc.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/crc.h"
-#include "esp32s2/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/crc.h"
-#include "esp32c3/rom/secure_boot.h"
-#endif
-
 #define SUB_TYPE_ID(i) (i & 0x0F)
 
 /* Partial_data is word aligned so no reallocation is necessary for encrypted flash write */

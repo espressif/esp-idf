@@ -233,8 +233,9 @@ static void wdt_reset_cpu0_info_enable(void)
 
 static void wdt_reset_info_dump(int cpu)
 {
-    // TODO ESP32-C3 IDF-2118
-    ESP_LOGE(TAG, "WDT reset info dump is not supported yet");
+    (void) cpu;
+    // saved PC was already printed by the ROM bootloader.
+    // nothing to do here.
 }
 
 static void bootloader_check_wdt_reset(void)
@@ -262,27 +263,32 @@ static void bootloader_super_wdt_auto_feed(void)
     REG_WRITE(RTC_CNTL_SWD_WPROTECT_REG, 0);
 }
 
+#if CONFIG_ESP32C3_REV_MIN < 3
 static inline void bootloader_hardware_init(void)
 {
-    // TODO ESP32-C3 IDF-2452
-    REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_FORCE_XPD_IPH, 1);
-    REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1_PVT, 12);
+    if (bootloader_common_get_chip_revision() < 3) {
+        REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_FORCE_XPD_IPH, 1);
+        REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1_PVT, 12);
+    }
 }
+#endif
 
-/* There happend clock glitch reset for some chip when testing wifi[BIT0] and brownout reset when chip startup[BIT1].
- * But super_watch_dog_reset function is ok, so open it[BIT2].
- * Whether this api will deleted or not depends on analog design & test result when ECO chip come back.
- */
 static inline void bootloader_glitch_reset_disable(void)
 {
-    // TODO ESP32-C3 IDF-2453
-    REG_SET_FIELD(RTC_CNTL_FIB_SEL_REG, RTC_CNTL_FIB_SEL, BIT2);
+    uint8_t chip_version = bootloader_common_get_chip_revision();
+    if (chip_version < 2) {
+        REG_SET_FIELD(RTC_CNTL_FIB_SEL_REG, RTC_CNTL_FIB_SEL, RTC_CNTL_FIB_SUPER_WDT_RST);
+    } else {
+        REG_SET_FIELD(RTC_CNTL_FIB_SEL_REG, RTC_CNTL_FIB_SEL, RTC_CNTL_FIB_SUPER_WDT_RST | RTC_CNTL_FIB_BOR_RST);
+    }
 }
 
 esp_err_t bootloader_init(void)
 {
     esp_err_t ret = ESP_OK;
+#if CONFIG_ESP32C3_REV_MIN < 3
     bootloader_hardware_init();
+#endif
     bootloader_glitch_reset_disable();
     bootloader_super_wdt_auto_feed();
     // protect memory region

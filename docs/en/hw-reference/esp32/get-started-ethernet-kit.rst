@@ -391,8 +391,10 @@ Other Versions of ESP32-Ethernet-Kit
 Related Documents
 -----------------
 
-* `ESP32-Ethernet-Kit V1.2 Ethernet board (A) schematic`_ (PDF)
-* `ESP32-Ethernet-Kit PoE board (B) schematic`_ (PDF)
+* `ESP32-Ethernet-Kit V1.2 Ethernet Board (A) Schematic`_ (PDF)
+* `ESP32-Ethernet-Kit PoE Board (B) Schematic`_ (PDF)
+* `ESP32-Ethernet-Kit V1.2 Ethernet Board (A) PCB Layout <https://dl.espressif.com/dl/schematics/PCB_ESP32-Ethernet-Kit_A_V1_2_20190829.pdf>`_ (PDF)
+* `ESP32-Ethernet-Kit PoE Board (B) PCB Layout <https://dl.espressif.com/dl/schematics/PCB_ESP32-Ethernet-Kit_B_V1_0_20190306.pdf>`_ (PDF)
 * `ESP32 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF)
 * `ESP32-WROVER-E Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-e_esp32-wrover-ie_datasheet_en.pdf>`_ (PDF)
 * :doc:`../../api-guides/jtag-debugging/index`

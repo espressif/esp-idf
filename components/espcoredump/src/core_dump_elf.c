@@ -16,7 +16,11 @@
 #include "esp_partition.h"
 #include "esp_ota_ops.h"
 #include "sdkconfig.h"
+#include "core_dump_checksum.h"
 #include "core_dump_elf.h"
+#include "esp_core_dump_port.h"
+#include "esp_core_dump_port_impl.h"
+#include "esp_core_dump_common.h"
 
 #define ELF_CLASS ELFCLASS32
 
@@ -277,7 +281,7 @@ static int elf_add_stack(core_dump_elf_t *self, core_dump_task_header_t *task)
 
     ELF_CHECK_ERR((task), ELF_PROC_ERR_OTHER, "Invalid task pointer.");
 
-    stack_paddr = esp_core_dump_get_stack(task, &stack_vaddr, &stack_len);
+    stack_len = esp_core_dump_get_stack(task, &stack_vaddr, &stack_paddr);
     ESP_COREDUMP_LOG_PROCESS("Add stack for task 0x%x: addr 0x%x, sz %u",
                                 task->tcb_addr, stack_vaddr, stack_len);
     int ret = elf_add_segment(self, PT_LOAD,
@@ -296,7 +300,7 @@ static int elf_add_tcb(core_dump_elf_t *self, core_dump_task_header_t *task)
                                 esp_core_dump_get_tcb_len());
     int ret = elf_add_segment(self, PT_LOAD,
                                 (uint32_t)task->tcb_addr,
-                                (void*)task->tcb_addr,
+                                task->tcb_addr,
                                 esp_core_dump_get_tcb_len());
     return ret;
 }
@@ -364,9 +368,10 @@ static int elf_process_note_segment(core_dump_elf_t *self, int notes_size)
 
 static int elf_process_tasks_regs(core_dump_elf_t *self)
 {
-    void *task;
-    int len = 0, ret;
-    core_dump_task_header_t task_hdr;
+    core_dump_task_header_t task_hdr = { 0 };
+    void *task = NULL;
+    int len = 0;
+    int ret = 0;
 
     esp_core_dump_reset_tasks_snapshots_iter();
     task = esp_core_dump_get_current_task_handle();
@@ -424,13 +429,13 @@ static int elf_save_task(core_dump_elf_t *self, core_dump_task_header_t *task)
 static int elf_write_tasks_data(core_dump_elf_t *self)
 {
     int elf_len = 0;
-    void *task;
-    core_dump_task_header_t task_hdr;
-    core_dump_mem_seg_header_t interrupted_stack;
+    void *task = NULL;
+    core_dump_task_header_t task_hdr = { 0 };
+    core_dump_mem_seg_header_t interrupted_stack = { 0 };
     int ret = ELF_PROC_ERR_OTHER;
-    uint16_t tasks_num = 0, bad_tasks_num = 0;
+    uint16_t tasks_num = 0;
+    uint16_t bad_tasks_num = 0;
 
-    bad_tasks_num = 0;
     ESP_COREDUMP_LOG_PROCESS("================ Processing task registers ================");
     ret = elf_process_tasks_regs(self);
     ELF_CHECK_ERR((ret > 0), ret, "Tasks regs addition failed, return (%d).", ret);
@@ -493,14 +498,14 @@ static int elf_write_core_dump_user_data(core_dump_elf_t *self)
 
 static int elf_write_core_dump_info(core_dump_elf_t *self)
 {
-    void *extra_info;
+    void *extra_info = NULL;
 
     ESP_COREDUMP_LOG_PROCESS("================ Processing coredump info ================");
     int data_len = (int)sizeof(self->elf_version_info.app_elf_sha256);
     data_len = esp_ota_get_app_elf_sha256((char*)self->elf_version_info.app_elf_sha256, (size_t)data_len);
     ESP_COREDUMP_LOG_PROCESS("Application SHA256='%s', length=%d.",
                                 self->elf_version_info.app_elf_sha256, data_len);
-    self->elf_version_info.version = COREDUMP_VERSION;
+    self->elf_version_info.version = esp_core_dump_elf_version();
     int ret = elf_add_note(self,
                             "ESP_CORE_DUMP_INFO",
                             ELF_ESP_CORE_DUMP_INFO_TYPE,
@@ -561,9 +566,9 @@ static int esp_core_dump_do_write_elf_pass(core_dump_elf_t *self)
 
 esp_err_t esp_core_dump_write_elf(core_dump_write_config_t *write_cfg)
 {
+    static core_dump_elf_t self = { 0 };
+    static core_dump_header_t dump_hdr = { 0 };
     esp_err_t err = ESP_OK;
-    static core_dump_elf_t self;
-    static core_dump_header_t dump_hdr;
     int tot_len = sizeof(dump_hdr);
     int write_len = sizeof(dump_hdr);
 
@@ -600,13 +605,13 @@ esp_err_t esp_core_dump_write_elf(core_dump_write_config_t *write_cfg)
 
     // Write core dump header
     dump_hdr.data_len = tot_len;
-    dump_hdr.version = COREDUMP_VERSION;
+    dump_hdr.version = esp_core_dump_elf_version();
     dump_hdr.tasks_num = 0; // unused in ELF format
     dump_hdr.tcb_sz = 0; // unused in ELF format
     dump_hdr.mem_segs_num = 0; // unused in ELF format
     err = write_cfg->write(write_cfg->priv,
-                            (void*)&dump_hdr,
-                            sizeof(core_dump_header_t));
+                           (void*)&dump_hdr,
+                           sizeof(core_dump_header_t));
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Failed to write core dump header (%d)!", err);
         return err;
@@ -628,11 +633,6 @@ esp_err_t esp_core_dump_write_elf(core_dump_write_config_t *write_cfg)
     write_len += ret;
     ESP_COREDUMP_LOG_PROCESS("=========== Data written size = %d bytes ==========", write_len);
 
-    // Get checksum size
-    write_len += esp_core_dump_checksum_finish(write_cfg->priv, NULL);
-    if (write_len != tot_len) {
-        ESP_COREDUMP_LOGD("Write ELF failed (wrong length): %d != %d.", tot_len, write_len);
-    }
     // Write end, update checksum
     if (write_cfg->end) {
         err = write_cfg->end(write_cfg->priv);

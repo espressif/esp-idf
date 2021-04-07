@@ -214,51 +214,61 @@ int64_t IRAM_ATTR esp_timer_impl_get_time(void)
 
 int64_t esp_timer_get_time(void) __attribute__((alias("esp_timer_impl_get_time")));
 
+void IRAM_ATTR esp_timer_impl_set_alarm_id(uint64_t timestamp, unsigned alarm_id)
+{
+    static uint64_t timestamp_id[2] = { UINT64_MAX, UINT64_MAX };
+    portENTER_CRITICAL_SAFE(&s_time_update_lock);
+    timestamp_id[alarm_id] = timestamp;
+    timestamp = MIN(timestamp_id[0], timestamp_id[1]);
+    if (timestamp != UINT64_MAX) {
+        // Use calculated alarm value if it is less than ALARM_OVERFLOW_VAL.
+        // Note that if by the time we update ALARM_REG, COUNT_REG value is higher,
+        // interrupt will not happen for another ALARM_OVERFLOW_VAL timer ticks,
+        // so need to check if alarm value is too close in the future (e.g. <2 us away).
+        int32_t offset = s_timer_ticks_per_us * 2;
+        do {
+            // Adjust current time if overflow has happened
+            if (timer_overflow_happened() ||
+                ((REG_READ(FRC_TIMER_COUNT_REG(1)) > ALARM_OVERFLOW_VAL) &&
+                ((REG_READ(FRC_TIMER_CTRL_REG(1)) & FRC_TIMER_INT_STATUS) == 0))) {
+                // 1. timer_overflow_happened() checks overflow with the interrupt flag.
+                // 2. During several loops, the counter can be higher than the alarm and even step over ALARM_OVERFLOW_VAL boundary (the interrupt flag is not set).
+                timer_count_reload();
+                s_time_base_us += s_timer_us_per_overflow;
+            }
+            s_mask_overflow = false;
+            int64_t cur_count = REG_READ(FRC_TIMER_COUNT_REG(1));
+            // Alarm time relative to the moment when counter was 0
+            int64_t time_after_timebase_us = (int64_t)timestamp - s_time_base_us;
+            // Calculate desired timer compare value (may exceed 2^32-1)
+            int64_t compare_val = time_after_timebase_us * s_timer_ticks_per_us;
+
+            compare_val = MAX(compare_val, cur_count + offset);
+            uint32_t alarm_reg_val = ALARM_OVERFLOW_VAL;
+            if (compare_val < ALARM_OVERFLOW_VAL) {
+                alarm_reg_val = (uint32_t) compare_val;
+            }
+            REG_WRITE(FRC_TIMER_ALARM_REG(1), alarm_reg_val);
+            int64_t delta = (int64_t)alarm_reg_val - (int64_t)REG_READ(FRC_TIMER_COUNT_REG(1));
+            if (delta <= 0) {
+                /*
+                    When the timestamp is a bit less than the current counter then the alarm = current_counter + offset.
+                    But due to CPU_freq in some case can be equal APB_freq the offset time can not exceed the overhead
+                    (the alarm will be less than the counter) and it leads to the infinity loop.
+                    To exclude this behavior to the offset was added the delta to have the opportunity to go through it.
+                */
+                offset += abs((int)delta) + s_timer_ticks_per_us * 2;
+            } else {
+                break;
+            }
+        } while (1);
+    }
+    portEXIT_CRITICAL_SAFE(&s_time_update_lock);
+}
+
 void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
 {
-    portENTER_CRITICAL_SAFE(&s_time_update_lock);
-    // Use calculated alarm value if it is less than ALARM_OVERFLOW_VAL.
-    // Note that if by the time we update ALARM_REG, COUNT_REG value is higher,
-    // interrupt will not happen for another ALARM_OVERFLOW_VAL timer ticks,
-    // so need to check if alarm value is too close in the future (e.g. <2 us away).
-    int32_t offset = s_timer_ticks_per_us * 2;
-    do {
-        // Adjust current time if overflow has happened
-        if (timer_overflow_happened() ||
-            ((REG_READ(FRC_TIMER_COUNT_REG(1)) > ALARM_OVERFLOW_VAL) &&
-            ((REG_READ(FRC_TIMER_CTRL_REG(1)) & FRC_TIMER_INT_STATUS) == 0))) {
-            // 1. timer_overflow_happened() checks overflow with the interrupt flag.
-            // 2. During several loops, the counter can be higher than the alarm and even step over ALARM_OVERFLOW_VAL boundary (the interrupt flag is not set).
-            timer_count_reload();
-            s_time_base_us += s_timer_us_per_overflow;
-        }
-        s_mask_overflow = false;
-        int64_t cur_count = REG_READ(FRC_TIMER_COUNT_REG(1));
-        // Alarm time relative to the moment when counter was 0
-        int64_t time_after_timebase_us = (int64_t)timestamp - s_time_base_us;
-        // Calculate desired timer compare value (may exceed 2^32-1)
-        int64_t compare_val = time_after_timebase_us * s_timer_ticks_per_us;
-
-        compare_val = MAX(compare_val, cur_count + offset);
-        uint32_t alarm_reg_val = ALARM_OVERFLOW_VAL;
-        if (compare_val < ALARM_OVERFLOW_VAL) {
-            alarm_reg_val = (uint32_t) compare_val;
-        }
-        REG_WRITE(FRC_TIMER_ALARM_REG(1), alarm_reg_val);
-        int64_t delta = (int64_t)alarm_reg_val - (int64_t)REG_READ(FRC_TIMER_COUNT_REG(1));
-        if (delta <= 0) {
-            /*
-                When the timestamp is a bit less than the current counter then the alarm = current_counter + offset.
-                But due to CPU_freq in some case can be equal APB_freq the offset time can not exceed the overhead
-                (the alarm will be less than the counter) and it leads to the infinity loop.
-                To exclude this behavior to the offset was added the delta to have the opportunity to go through it.
-            */
-            offset += abs((int)delta) + s_timer_ticks_per_us * 2;
-        } else {
-            break;
-        }
-    } while (1);
-    portEXIT_CRITICAL_SAFE(&s_time_update_lock);
+    esp_timer_impl_set_alarm_id(timestamp, 0);
 }
 
 static void IRAM_ATTR timer_alarm_isr(void *arg)
@@ -360,8 +370,9 @@ esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
 {
     s_alarm_handler = alarm_handler;
 
+    const int interrupt_lvl = (1 << CONFIG_ESP_TIMER_INTERRUPT_LEVEL) & ESP_INTR_FLAG_LEVELMASK;
     esp_err_t err = esp_intr_alloc(ETS_TIMER2_INTR_SOURCE,
-            ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_IRAM,
+            ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_IRAM | interrupt_lvl,
             &timer_alarm_isr, NULL, &s_timer_interrupt_handle);
 
     if (err != ESP_OK) {

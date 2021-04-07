@@ -50,8 +50,8 @@
 #if __has_include("esp_supplicant/esp_wps.h")
 #include "esp_supplicant/esp_wps.h"
 #endif
-#if __has_include("esp_tls.h")
-#include "esp_tls.h"
+#if __has_include("esp_tls_errors.h")
+#include "esp_tls_errors.h"
 #endif
 #if __has_include("esp_wifi.h")
 #include "esp_wifi.h"
@@ -588,7 +588,7 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_HTTP_EAGAIN
     ERR_TBL_IT(ESP_ERR_HTTP_EAGAIN),                            /* 28679 0x7007 Mapping of errno EAGAIN to esp_err_t */
 #   endif
-    // components/esp-tls/esp_tls.h
+    // components/esp-tls/esp_tls_errors.h
 #   ifdef      ESP_ERR_ESP_TLS_BASE
     ERR_TBL_IT(ESP_ERR_ESP_TLS_BASE),                           /* 32768 0x8000 Starting number of ESP-TLS error codes */
 #   endif
@@ -606,7 +606,7 @@ static const esp_err_msg_t esp_err_msg_table[] = {
     ERR_TBL_IT(ESP_ERR_ESP_TLS_FAILED_CONNECT_TO_HOST),         /* 32772 0x8004 Failed to connect to host */
 #   endif
 #   ifdef      ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED
-    ERR_TBL_IT(ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED),           /* 32773 0x8005 failed to set socket option */
+    ERR_TBL_IT(ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED),           /* 32773 0x8005 failed to set/get socket option */
 #   endif
 #   ifdef      ESP_ERR_MBEDTLS_CERT_PARTLY_OK
     ERR_TBL_IT(ESP_ERR_MBEDTLS_CERT_PARTLY_OK),                 /* 32774 0x8006 mbedtls parse certificates was partly successful */
@@ -674,6 +674,9 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   endif
 #   ifdef      ESP_ERR_ESP_TLS_SE_FAILED
     ERR_TBL_IT(ESP_ERR_ESP_TLS_SE_FAILED),                      /* 32795 0x801b */
+#   endif
+#   ifdef      ESP_ERR_ESP_TLS_TCP_CLOSED_FIN
+    ERR_TBL_IT(ESP_ERR_ESP_TLS_TCP_CLOSED_FIN),                 /* 32796 0x801c */
 #   endif
     // components/esp_https_ota/include/esp_https_ota.h
 #   ifdef      ESP_ERR_HTTPS_OTA_BASE

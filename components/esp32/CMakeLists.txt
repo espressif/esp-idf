@@ -30,7 +30,7 @@ else()
     # app_update is added here because cpu_start.c uses esp_ota_get_app_description() function.
     # esp_timer is added here because cpu_start.c uses esp_timer
     set(priv_requires app_trace app_update bootloader_support esp_system log mbedtls nvs_flash pthread
-        spi_flash vfs espcoredump esp_common perfmon esp_timer esp_ipc)
+        spi_flash vfs espcoredump esp_common perfmon esp_timer esp_ipc esp_pm)
     set(fragments linker.lf ld/esp32_fragments.lf)
 
     idf_component_register(SRCS "${srcs}"
@@ -57,7 +57,8 @@ else()
     add_custom_command(
         OUTPUT esp32_out.ld
         COMMAND "${CMAKE_C_COMPILER}" -C -P -x c -E -o esp32_out.ld -I ${config_dir} ${LD_DIR}/esp32.ld
-        MAIN_DEPENDENCY ${LD_DIR}/esp32.ld ${sdkconfig_header}
+        MAIN_DEPENDENCY ${LD_DIR}/esp32.ld
+        DEPENDS ${sdkconfig_header}
         COMMENT "Generating linker script..."
         VERBATIM)
 

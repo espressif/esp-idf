@@ -2,22 +2,22 @@
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example demonstrates how to read and write a single integer value and a blob (binary large object) using NVS to preserve them between ESP32 module restarts.
+This example demonstrates how to read and write a single integer value and a blob (binary large object) using NVS to preserve them between ESP module restarts.
 
-  * value - tracks number of ESP32 module soft and hard restarts.
-  * blob - contains a table with module run times. The table is read from NVS to dynamically allocated RAM. New run time is added to the table on each manually triggered soft restart and written back to NVS. Triggering is done by pulling down GPIO0.
+  * value - tracks number of soft and hard restarts.
+  * blob - contains a table with module run times. The table is read from NVS to dynamically allocated RAM. New run time is added to the table on each manually triggered soft restart and written back to NVS. Triggering is done by pulling down the boot mode pin (GPIO0 on ESP32 and ESP32-S2, GPIO9 on ESP32-C3).
 
-Example also shows how to implement diagnostics if read / write operation was successful. 
+Example also shows how to implement diagnostics if read / write operation was successful.
 
 Detailed functional description of NVS and API is provided in [documentation](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/storage/nvs_flash.html).
 
-If not done already, consider checking simpler example *storage/nvs_rw_value*, that has been used as a starting point for preparing this one. 
+If not done already, consider checking simpler example *storage/nvs_rw_value*, that has been used as a starting point for preparing this one.
 
 ## How to use example
 
 ### Hardware required
 
-This example can be run on most common development boards which have an active button connected to GPIO0. On most boards, this button is labeled as "Boot". When pressed, the button connects GPIO0 to ground.
+This example can be run on most common development boards which have an active button connected to boot mode pin. On most boards, this button is labeled as "Boot". When pressed, the button connects boot mode pin to ground.
 
 ### Build and flash
 

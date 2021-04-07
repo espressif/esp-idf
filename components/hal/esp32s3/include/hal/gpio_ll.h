@@ -413,7 +413,7 @@ static inline void gpio_ll_force_hold_all(gpio_dev_t *hw)
     SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_HOLD);
 }
 
-static inline void gpio_ll_force_unhold_all(gpio_dev_t *hw)
+static inline void gpio_ll_force_unhold_all(void)
 {
     CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_HOLD);
     SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_UNHOLD);

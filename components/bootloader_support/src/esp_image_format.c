@@ -327,11 +327,24 @@ err:
 
 esp_err_t bootloader_load_image(const esp_partition_pos_t *part, esp_image_metadata_t *data)
 {
-#ifdef BOOTLOADER_BUILD
-    return image_load(ESP_IMAGE_LOAD, part, data);
-#else
+#if !defined(BOOTLOADER_BUILD)
     return ESP_FAIL;
-#endif
+#else
+    esp_image_load_mode_t mode = ESP_IMAGE_LOAD;
+
+#if !defined(CONFIG_SECURE_BOOT)
+    /* Skip validation under particular configurations */
+#if CONFIG_BOOTLOADER_SKIP_VALIDATE_ALWAYS
+    mode = ESP_IMAGE_LOAD_NO_VALIDATE;
+#elif CONFIG_BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON
+    if (rtc_get_reset_reason(0) == POWERON_RESET) {
+        mode = ESP_IMAGE_LOAD_NO_VALIDATE;
+    }
+#endif // CONFIG_BOOTLOADER_SKIP_...
+#endif // CONFIG_SECURE_BOOT
+
+ return image_load(mode, part, data);
+#endif // BOOTLOADER_BUILD
 }
 
 esp_err_t bootloader_load_image_no_verify(const esp_partition_pos_t *part, esp_image_metadata_t *data)
@@ -348,26 +361,54 @@ esp_err_t esp_image_verify(esp_image_load_mode_t mode, const esp_partition_pos_t
     return image_load(mode, part, data);
 }
 
+esp_err_t esp_image_get_metadata(const esp_partition_pos_t *part, esp_image_metadata_t *metadata)
+{
+    if (metadata == NULL || part == NULL || part->size > SIXTEEN_MB) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    memset(metadata, 0, sizeof(esp_image_metadata_t));
+    metadata->start_addr = part->offset;
+
+    esp_err_t err = bootloader_flash_read(metadata->start_addr, &metadata->image, sizeof(esp_image_header_t), true);
+    if (err != ESP_OK) {
+        return err;
+    }
+    uint32_t next_addr = metadata->start_addr + sizeof(esp_image_header_t);
+    for (int i = 0; i < metadata->image.segment_count; i++) {
+        esp_image_segment_header_t *header = &metadata->segments[i];
+        err = process_segment(i, next_addr, header, true, false, NULL, NULL);
+        if (err != ESP_OK) {
+            return err;
+        }
+        next_addr += sizeof(esp_image_segment_header_t);
+        metadata->segment_data[i] = next_addr;
+        next_addr += header->data_len;
+    }
+    metadata->image_len = next_addr - metadata->start_addr;
+
+    // checksum
+    uint32_t unpadded_length = metadata->image_len;
+    uint32_t length = unpadded_length + 1; // Add a byte for the checksum
+    length = (length + 15) & ~15; // Pad to next full 16 byte block
+    if (metadata->image.hash_appended) {
+        // Account for the hash in the total image length
+        length += HASH_LEN;
+    }
+    metadata->image_len = length;
+
+    return ESP_OK;
+}
+
 static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t *image, bool silent)
 {
     esp_err_t err = ESP_OK;
 
     if (image->magic != ESP_IMAGE_HEADER_MAGIC) {
         if (!silent) {
-            ESP_LOGE(TAG, "image at 0x%x has invalid magic byte", src_addr);
+            ESP_LOGE(TAG, "image at 0x%x has invalid magic byte (nothing flashed here?)", src_addr);
         }
         err = ESP_ERR_IMAGE_INVALID;
-    }
-    if (!silent) {
-        if (image->spi_mode > ESP_IMAGE_SPI_MODE_SLOW_READ) {
-            ESP_LOGW(TAG, "image at 0x%x has invalid SPI mode %d", src_addr, image->spi_mode);
-        }
-        if (image->spi_speed > ESP_IMAGE_SPI_SPEED_80M) {
-            ESP_LOGW(TAG, "image at 0x%x has invalid SPI speed %d", src_addr, image->spi_speed);
-        }
-        if (image->spi_size > ESP_IMAGE_FLASH_SIZE_MAX) {
-            ESP_LOGW(TAG, "image at 0x%x has invalid SPI size %d", src_addr, image->spi_size);
-        }
     }
 
     if (err == ESP_OK) {
@@ -400,7 +441,7 @@ static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_
 
     if (esp_ptr_in_dram(load_addr_p) && esp_ptr_in_dram(load_end_p)) { /* Writing to DRAM */
         /* Check if we're clobbering the stack */
-        intptr_t sp = (intptr_t)get_sp();
+        intptr_t sp = (intptr_t)esp_cpu_get_sp();
         if (bootloader_util_regions_overlap(sp - STACK_LOAD_HEADROOM, SOC_ROM_STACK_START,
                                            load_addr, load_end)) {
             reason = "overlaps bootloader stack";
@@ -808,18 +849,18 @@ static esp_err_t verify_secure_boot_signature(bootloader_sha256_handle_t sha_han
 
     // Use hash to verify signature block
     esp_err_t err = ESP_ERR_IMAGE_INVALID;
+#if defined(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME) || defined(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
     const void *sig_block;
-#ifdef CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME
     ESP_FAULT_ASSERT(memcmp(image_digest, verified_digest, HASH_LEN) != 0); /* sanity check that these values start differently */
+#ifdef CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME
     sig_block = bootloader_mmap(data->start_addr + data->image_len, sizeof(esp_secure_boot_sig_block_t));
     err = esp_secure_boot_verify_ecdsa_signature_block(sig_block, image_digest, verified_digest);
-#elif CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
-    ESP_FAULT_ASSERT(memcmp(image_digest, verified_digest, HASH_LEN) != 0);  /* sanity check that these values start differently */
+#else
     sig_block = bootloader_mmap(end, sizeof(ets_secure_boot_signature_t));
     err = esp_secure_boot_verify_rsa_signature_block(sig_block, image_digest, verified_digest);
 #endif
-
     bootloader_munmap(sig_block);
+#endif // CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME or CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Secure boot signature verification failed");
 

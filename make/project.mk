@@ -134,6 +134,13 @@ export COMMON_MAKEFILES
 ifndef BUILD_DIR_BASE
 BUILD_DIR_BASE := $(PROJECT_PATH)/build
 endif
+
+ifneq ("$(BUILD_DIR_BASE)","$(subst :,,$(BUILD_DIR_BASE))")
+$(error BUILD_DIR_BASE ($(BUILD_DIR_BASE)) cannot contain colons. If setting this path on Windows, use MSYS Unix-style /c/dir instead of C:/dir)
+endif
+
+BUILD_DIR_BASE := $(abspath $(BUILD_DIR_BASE))
+
 export BUILD_DIR_BASE
 
 # Component directories. These directories are searched for components (either the directory is a component,
@@ -338,7 +345,7 @@ endif
 
 # If we have `version.txt` then prefer that for extracting IDF version
 ifeq ("$(wildcard ${IDF_PATH}/version.txt)","")
-IDF_VER_T := $(shell cd ${IDF_PATH} && git describe --always --dirty)
+IDF_VER_T := $(shell cd ${IDF_PATH} && git describe --always --dirty --match v*.*)
 else
 IDF_VER_T := $(shell cat ${IDF_PATH}/version.txt)
 endif

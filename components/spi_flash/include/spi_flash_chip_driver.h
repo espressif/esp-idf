@@ -22,10 +22,10 @@ typedef struct spi_flash_chip_t spi_flash_chip_t;
 
 /** Timeout configurations for flash operations, all in us */
 typedef struct {
+    uint32_t idle_timeout;          ///< Default timeout for other commands to be sent by host and get done by flash
     uint32_t chip_erase_timeout;    ///< Timeout for chip erase operation
     uint32_t block_erase_timeout;   ///< Timeout for block erase operation
     uint32_t sector_erase_timeout;  ///< Timeout for sector erase operation
-    uint32_t idle_timeout;          ///< Default timeout for other commands to be sent by host and get done by flash
     uint32_t page_program_timeout;  ///< Timeout for page program operation
 } flash_chip_op_timeout_t;
 
@@ -188,6 +188,11 @@ struct spi_flash_chip_t {
 
     /** Setup flash suspend configuration. */
     esp_err_t (*sus_setup)(esp_flash_t *chip);
+
+    /**
+     * Read the chip unique ID.
+     */
+    esp_err_t (*read_unique_id)(esp_flash_t *chip, uint64_t* flash_unique_id);
 };
 
 /* Pointer to an array of pointers to all known drivers for flash chips. This array is used

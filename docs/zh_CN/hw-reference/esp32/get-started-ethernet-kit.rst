@@ -400,6 +400,8 @@ ESP32-Ethernet-Kit 的其他版本
 
 * `ESP32-Ethernet-Kit V1.2 以太网母板（A 板）原理图`_ (PDF)
 * `ESP32-Ethernet-Kit PoE 子板（B 板）原理图`_ (PDF)
+* `ESP32-Ethernet-Kit V1.2 以太网母板（A 板）PCB 布局图 <https://dl.espressif.com/dl/schematics/PCB_ESP32-Ethernet-Kit_A_V1_2_20190829.pdf>`_ (PDF)
+* `ESP32-Ethernet-Kit PoE 子板（B 板）PCB 布局图 <https://dl.espressif.com/dl/schematics/PCB_ESP32-Ethernet-Kit_B_V1_0_20190306.pdf>`_ (PDF)
 * `ESP32 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_cn.pdf>`_ (PDF)
 * `ESP32-WROVER-E 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-e_esp32-wrover-ie_datasheet_cn.pdf>`_ (PDF)
 * :doc:`../../api-guides/jtag-debugging/index`

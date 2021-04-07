@@ -29,7 +29,7 @@
 #include "driver/rtc_cntl.h"
 #include "driver/gpio.h"
 #include "driver/adc.h"
-#include "esp32s2/esp_efuse_rtc_table.h"
+#include "esp_efuse_rtc_table.h"
 
 #include "hal/adc_types.h"
 #include "hal/adc_hal.h"
@@ -89,6 +89,7 @@ esp_err_t adc_digi_deinit(void)
         s_adc_digi_arbiter_lock = NULL;
     }
 #endif
+    adc_power_release();
     ADC_ENTER_CRITICAL();
     adc_hal_digi_deinit();
     ADC_EXIT_CRITICAL();
@@ -124,6 +125,8 @@ esp_err_t adc_digi_controller_config(const adc_digi_config_t *config)
         }
     }
 
+    /* If enable digtal controller, adc xpd should always on. */
+    adc_power_acquire();
     ADC_ENTER_CRITICAL();
     adc_hal_digi_controller_config(config);
     ADC_EXIT_CRITICAL();

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "sys/param.h"
 #include "esp_timer_impl.h"
 #include "esp_err.h"
 #include "esp_timer.h"
@@ -73,11 +74,21 @@ int64_t IRAM_ATTR esp_timer_impl_get_time(void)
 
 int64_t esp_timer_get_time(void) __attribute__((alias("esp_timer_impl_get_time")));
 
+void IRAM_ATTR esp_timer_impl_set_alarm_id(uint64_t timestamp, unsigned alarm_id)
+{
+    static uint64_t timestamp_id[2] = { UINT64_MAX, UINT64_MAX };
+    portENTER_CRITICAL_SAFE(&s_time_update_lock);
+    timestamp_id[alarm_id] = timestamp;
+    timestamp = MIN(timestamp_id[0], timestamp_id[1]);
+    if (timestamp != UINT64_MAX) {
+        systimer_hal_set_alarm_target(SYSTIMER_ALARM_2, timestamp);
+    }
+    portEXIT_CRITICAL_SAFE(&s_time_update_lock);
+}
+
 void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
 {
-    portENTER_CRITICAL_SAFE(&s_time_update_lock);
-    systimer_hal_set_alarm_target(SYSTIMER_ALARM_2, timestamp);
-    portEXIT_CRITICAL_SAFE(&s_time_update_lock);
+    esp_timer_impl_set_alarm_id(timestamp, 0);
 }
 
 static void IRAM_ATTR timer_alarm_isr(void *arg)
@@ -103,13 +114,14 @@ void esp_timer_impl_advance(int64_t time_us)
 esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
 {
     s_alarm_handler = alarm_handler;
+    const int interrupt_lvl = (1 << CONFIG_ESP_TIMER_INTERRUPT_LEVEL) & ESP_INTR_FLAG_LEVELMASK;
 #if SOC_SYSTIMER_INT_LEVEL
     int int_type = 0;
 #else
     int int_type = ESP_INTR_FLAG_EDGE;
 #endif // SOC_SYSTIMER_INT_LEVEL
     esp_err_t err = esp_intr_alloc(ETS_SYSTIMER_TARGET2_EDGE_INTR_SOURCE,
-                                   ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_IRAM | int_type,
+                                   ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_IRAM | int_type | interrupt_lvl,
                                    &timer_alarm_isr, NULL, &s_timer_interrupt_handle);
 
     if (err != ESP_OK) {

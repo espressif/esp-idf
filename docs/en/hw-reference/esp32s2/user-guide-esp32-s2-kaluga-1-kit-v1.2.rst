@@ -68,7 +68,7 @@ The ESP32-S2-Kaluga-1 board has connectors for boards with:
 
 - Extension header (ESP-LyraT-8311A, ESP-LyraP-LCD32)
 - Camera header (ESP-LyraP-CAM)
-- Touch FPC coneector (ESP-LyraP-TouchA)
+- Touch FPC connector (ESP-LyraP-TouchA)
 - LCD FPC connector (no official extension boards yet)
 - I2C FPC connector (no official extension boards yet)
 
@@ -316,7 +316,7 @@ If you want to use more than one extension board at the same time, please check 
      - **Solution 1**: For ESP-LyraP-TouchA, do not initialize IO1 (VOL_UP), IO2 (PLAY), IO3 (VOL_DOWN), IO6 (PHOTO) and IO11 (NETWORK). **Solution 2**: It will allow you to initialize IO6 (PHOTO) properly, but will stop you from controlling the background brightness with software. On your ESP-LyraP-LCD32, remove R39, change R41 to 100 Ohm, switch BLCT_L to on.
    * - TouchA v1.1 + LCD32 v1.1 + 8311A v1.2
      - IO6, IO11
-     - IO11 is multiplexed; IO11 is also multiplexed stopping you from using ESP-LyraT-8311A's pin BT_ADC that is needed to initialize the board's six buttons.
+     - IO11 is multiplexed; IO6 is also multiplexed stopping you from using ESP-LyraT-8311A's pin BT_ADC that is needed to initialize the board's six buttons.
      - **Solution 1**: For ESP-LyraP-TouchA, do not initialize IO6 (PHOTO) and IO11 (NETWORK). Please note that the six buttons on ESP-LyraT-8311A still cannot be used. **Solution 2**: On your ESP-LyraP-LCD32, remove R39, change R41 to 100 Ohm, switch BLCT_L to on. For your ESP-LyraP-TouchA, do not initialize IO11 (NETWORK). If you want to use the six buttons on your ESP-LyraT-8311A, also do not initialize IO6 (PHOTO).
 
 

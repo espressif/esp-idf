@@ -57,7 +57,7 @@ extern "C" {
 #define RTC_SLOW_CLK_8MD256_CAL_TIMEOUT_THRES(cycles)  (cycles << 12)
 #define RTC_SLOW_CLK_150K_CAL_TIMEOUT_THRES(cycles)  (cycles << 10)
 
-#define RTC_SLOW_CLK_FREQ_90K      90000
+#define RTC_SLOW_CLK_FREQ_150K      150000
 #define RTC_SLOW_CLK_FREQ_8MD256    (RTC_FAST_CLK_FREQ_APPROX / 256)
 #define RTC_SLOW_CLK_FREQ_32K       32768
 
@@ -123,7 +123,7 @@ set sleep_init default param
 #define RTC_CNTL_DBG_ATTEN_MONITOR_DEFAULT  0
 #define RTC_CNTL_BIASSLP_MONITOR_DEFAULT  0
 #define RTC_CNTL_BIASSLP_SLEEP_DEFAULT  1
-#define RTC_CNTL_PD_CUR_MONITOR_DEFAULT  0
+#define RTC_CNTL_PD_CUR_MONITOR_DEFAULT  1
 #define RTC_CNTL_PD_CUR_SLEEP_DEFAULT  1
 
 /**
@@ -249,10 +249,16 @@ typedef struct {
 typedef struct {
     uint16_t wifi_powerup_cycles : 7;
     uint16_t wifi_wait_cycles : 9;
+    uint16_t bt_powerup_cycles : 7;
+    uint16_t bt_wait_cycles : 9;
     uint16_t rtc_powerup_cycles : 7;
     uint16_t rtc_wait_cycles : 9;
+    uint16_t cpu_top_powerup_cycles : 7;
+    uint16_t cpu_top_wait_cycles : 9;
     uint16_t dg_wrap_powerup_cycles : 7;
     uint16_t dg_wrap_wait_cycles : 9;
+    uint16_t dg_peri_powerup_cycles : 7;
+    uint16_t dg_peri_wait_cycles : 9;
     uint16_t rtc_mem_powerup_cycles : 7;
     uint16_t rtc_mem_wait_cycles : 9;
 } rtc_init_config_t;
@@ -633,6 +639,9 @@ typedef struct {
     uint32_t rtc_slowmem_pd_en : 1;     //!< power down RTC slow memory
     uint32_t rtc_peri_pd_en : 1;        //!< power down RTC peripherals
     uint32_t wifi_pd_en : 1;            //!< power down WiFi
+    uint32_t bt_pd_en : 1;              //!< power down BT
+    uint32_t cpu_pd_en : 1;             //!< power down CPU, but not restart when lightsleep.
+    uint32_t dig_peri_pd_en : 1;        //!< power down digital peripherals
     uint32_t deep_slp : 1;              //!< power down digital domain
     uint32_t wdt_flashboot_mod_en : 1;  //!< enable WDT flashboot mode
     uint32_t dig_dbias_wak : 5;         //!< set bias for digital domain, in active mode

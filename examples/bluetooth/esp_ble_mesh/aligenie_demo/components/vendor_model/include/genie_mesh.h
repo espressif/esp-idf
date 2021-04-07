@@ -16,6 +16,8 @@
 #ifndef _GENIE_MESH_H_
 #define _GENIE_MESH_H_
 
+#include "esp_timer.h"
+
 #include "esp_ble_mesh_defs.h"
 #include "esp_ble_mesh_common_api.h"
 

@@ -19,4 +19,4 @@ nwdiag==2.0.0
 recommonmark
 future>=0.16.0 # for ../tools/gen_esp_err_to_name.py
 sphinx_selective_exclude==1.0.3
-sphinx_idf_theme==0.2
+sphinx_idf_theme==0.2.2

@@ -60,8 +60,8 @@ static const char *RMT_TAG = "rmt";
 #define RMT_ENTER_CRITICAL()  portENTER_CRITICAL_SAFE(&(rmt_contex.rmt_spinlock))
 #define RMT_EXIT_CRITICAL()   portEXIT_CRITICAL_SAFE(&(rmt_contex.rmt_spinlock))
 
-#define RMT_RX_CHANNEL_ENCODING_START (SOC_RMT_CHANNELS_NUM-SOC_RMT_TX_CHANNELS_NUM)
-#define RMT_TX_CHANNEL_ENCODING_END   (SOC_RMT_TX_CHANNELS_NUM-1)
+#define RMT_RX_CHANNEL_ENCODING_START (SOC_RMT_CHANNELS_PER_GROUP-SOC_RMT_TX_CANDIDATES_PER_GROUP)
+#define RMT_TX_CHANNEL_ENCODING_END   (SOC_RMT_TX_CANDIDATES_PER_GROUP-1)
 
 #define RMT_IS_RX_CHANNEL(channel) ((channel) >= RMT_RX_CHANNEL_ENCODING_START)
 #define RMT_IS_TX_CHANNEL(channel) ((channel) <= RMT_TX_CHANNEL_ENCODING_END)
@@ -76,6 +76,7 @@ typedef struct {
     rmt_tx_end_callback_t rmt_tx_end_callback;// Event called when transmission is ended
     uint8_t rmt_driver_channels; // Bitmask of installed drivers' channels
     bool rmt_module_enabled;
+    uint32_t synchro_channel_mask; // Bitmap of channels already added in the synchronous group
 } rmt_contex_t;
 
 typedef struct {
@@ -115,6 +116,7 @@ static rmt_contex_t rmt_contex = {
     },
     .rmt_driver_channels = 0,
     .rmt_module_enabled = false,
+    .synchro_channel_mask = 0
 };
 
 static rmt_obj_t *p_rmt_obj[RMT_CHANNEL_MAX] = {0};
@@ -153,9 +155,9 @@ esp_err_t rmt_set_clk_div(rmt_channel_t channel, uint8_t div_cnt)
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
     RMT_ENTER_CRITICAL();
     if (RMT_IS_RX_CHANNEL(channel)) {
-        rmt_ll_rx_set_counter_clock_div(rmt_contex.hal.regs, RMT_DECODE_RX_CHANNEL(channel), div_cnt);
+        rmt_ll_rx_set_channel_clock_div(rmt_contex.hal.regs, RMT_DECODE_RX_CHANNEL(channel), div_cnt);
     } else {
-        rmt_ll_tx_set_counter_clock_div(rmt_contex.hal.regs, channel, div_cnt);
+        rmt_ll_tx_set_channel_clock_div(rmt_contex.hal.regs, channel, div_cnt);
     }
     RMT_EXIT_CRITICAL();
     return ESP_OK;
@@ -167,9 +169,9 @@ esp_err_t rmt_get_clk_div(rmt_channel_t channel, uint8_t *div_cnt)
     RMT_CHECK(div_cnt != NULL, RMT_ADDR_ERROR_STR, ESP_ERR_INVALID_ARG);
     RMT_ENTER_CRITICAL();
     if (RMT_IS_RX_CHANNEL(channel)) {
-        *div_cnt = (uint8_t)rmt_ll_rx_get_counter_clock_div(rmt_contex.hal.regs, RMT_DECODE_RX_CHANNEL(channel));
+        *div_cnt = (uint8_t)rmt_ll_rx_get_channel_clock_div(rmt_contex.hal.regs, RMT_DECODE_RX_CHANNEL(channel));
     } else {
-        *div_cnt = (uint8_t)rmt_ll_tx_get_counter_clock_div(rmt_contex.hal.regs, channel);
+        *div_cnt = (uint8_t)rmt_ll_tx_get_channel_clock_div(rmt_contex.hal.regs, channel);
     }
     RMT_EXIT_CRITICAL();
     return ESP_OK;
@@ -395,7 +397,7 @@ esp_err_t rmt_set_source_clk(rmt_channel_t channel, rmt_source_clk_t base_clk)
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
     RMT_CHECK(base_clk < RMT_BASECLK_MAX, RMT_BASECLK_ERROR_STR, ESP_ERR_INVALID_ARG);
     RMT_ENTER_CRITICAL();
-    rmt_ll_set_counter_clock_src(rmt_contex.hal.regs, channel, base_clk, 0, 0, 0);
+    rmt_ll_set_group_clock_src(rmt_contex.hal.regs, channel, base_clk, 0, 0, 0);
     RMT_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -404,7 +406,7 @@ esp_err_t rmt_get_source_clk(rmt_channel_t channel, rmt_source_clk_t *src_clk)
 {
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
     RMT_ENTER_CRITICAL();
-    *src_clk = (rmt_source_clk_t)rmt_ll_get_counter_clock_src(rmt_contex.hal.regs, channel);
+    *src_clk = (rmt_source_clk_t)rmt_ll_get_group_clock_src(rmt_contex.hal.regs, channel);
     RMT_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -526,7 +528,7 @@ esp_err_t rmt_set_tx_thr_intr_en(rmt_channel_t channel, bool en, uint16_t evt_th
     return ESP_OK;
 }
 
-esp_err_t rmt_set_pin(rmt_channel_t channel, rmt_mode_t mode, gpio_num_t gpio_num)
+esp_err_t rmt_set_gpio(rmt_channel_t channel, rmt_mode_t mode, gpio_num_t gpio_num, bool invert_signal)
 {
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
     RMT_CHECK(mode < RMT_MODE_MAX, RMT_MODE_ERROR_STR, ESP_ERR_INVALID_ARG);
@@ -538,13 +540,19 @@ esp_err_t rmt_set_pin(rmt_channel_t channel, rmt_mode_t mode, gpio_num_t gpio_nu
     if (mode == RMT_MODE_TX) {
         RMT_CHECK(RMT_IS_TX_CHANNEL(channel), RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
         gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);
-        esp_rom_gpio_connect_out_signal(gpio_num, rmt_periph_signals.channels[channel].tx_sig, 0, 0);
+        esp_rom_gpio_connect_out_signal(gpio_num, rmt_periph_signals.channels[channel].tx_sig, invert_signal, 0);
     } else {
         RMT_CHECK(RMT_IS_RX_CHANNEL(channel), RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
         gpio_set_direction(gpio_num, GPIO_MODE_INPUT);
-        esp_rom_gpio_connect_in_signal(gpio_num, rmt_periph_signals.channels[channel].rx_sig, 0);
+        esp_rom_gpio_connect_in_signal(gpio_num, rmt_periph_signals.channels[channel].rx_sig, invert_signal);
     }
     return ESP_OK;
+}
+
+esp_err_t rmt_set_pin(rmt_channel_t channel, rmt_mode_t mode, gpio_num_t gpio_num)
+{
+    // only for backword compatibility
+    return rmt_set_gpio(channel, mode, gpio_num, false);
 }
 
 static bool rmt_is_channel_number_valid(rmt_channel_t channel, uint8_t mode)
@@ -583,16 +591,16 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
 #if SOC_RMT_SUPPORT_XTAL
         // clock src: XTAL_CLK
         rmt_source_clk_hz = rtc_clk_xtal_freq_get() * 1000000;
-        rmt_ll_set_counter_clock_src(dev, channel, RMT_BASECLK_XTAL, 0, 0, 0);
+        rmt_ll_set_group_clock_src(dev, channel, RMT_BASECLK_XTAL, 0, 0, 0);
 #elif SOC_RMT_SUPPORT_REF_TICK
         // clock src: REF_CLK
         rmt_source_clk_hz = REF_CLK_FREQ;
-        rmt_ll_set_counter_clock_src(dev, channel, RMT_BASECLK_REF, 0, 0, 0);
+        rmt_ll_set_group_clock_src(dev, channel, RMT_BASECLK_REF, 0, 0, 0);
 #endif
     } else {
         // clock src: APB_CLK
         rmt_source_clk_hz = APB_CLK_FREQ;
-        rmt_ll_set_counter_clock_src(dev, channel, RMT_BASECLK_APB, 0, 0, 0);
+        rmt_ll_set_group_clock_src(dev, channel, RMT_BASECLK_APB, 0, 0, 0);
     }
     RMT_EXIT_CRITICAL();
 
@@ -612,7 +620,7 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
         uint8_t idle_level = rmt_param->tx_config.idle_level;
 
         RMT_ENTER_CRITICAL();
-        rmt_ll_tx_set_counter_clock_div(dev, channel, clk_div);
+        rmt_ll_tx_set_channel_clock_div(dev, channel, clk_div);
         rmt_ll_tx_set_mem_blocks(dev, channel, mem_cnt);
         rmt_ll_tx_reset_pointer(dev, channel);
         rmt_ll_tx_enable_loop(dev, channel, rmt_param->tx_config.loop_en);
@@ -648,7 +656,7 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
         uint16_t threshold = rmt_param->rx_config.idle_threshold;
 
         RMT_ENTER_CRITICAL();
-        rmt_ll_rx_set_counter_clock_div(dev, RMT_DECODE_RX_CHANNEL(channel), clk_div);
+        rmt_ll_rx_set_channel_clock_div(dev, RMT_DECODE_RX_CHANNEL(channel), clk_div);
         rmt_ll_rx_set_mem_blocks(dev, RMT_DECODE_RX_CHANNEL(channel), mem_cnt);
         rmt_ll_rx_reset_pointer(dev, RMT_DECODE_RX_CHANNEL(channel));
         rmt_ll_rx_set_mem_owner(dev, RMT_DECODE_RX_CHANNEL(channel), RMT_MEM_OWNER_HW);
@@ -666,7 +674,7 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
 #if SOC_RMT_SUPPORT_RX_DEMODULATION
         rmt_ll_rx_enable_carrier_demodulation(dev, RMT_DECODE_RX_CHANNEL(channel), rmt_param->rx_config.rm_carrier);
         if (rmt_param->rx_config.rm_carrier) {
-            uint32_t duty_total = rmt_source_clk_hz / rmt_ll_rx_get_counter_clock_div(dev, RMT_DECODE_RX_CHANNEL(channel)) / rmt_param->rx_config.carrier_freq_hz;
+            uint32_t duty_total = rmt_source_clk_hz / rmt_ll_rx_get_channel_clock_div(dev, RMT_DECODE_RX_CHANNEL(channel)) / rmt_param->rx_config.carrier_freq_hz;
             uint32_t duty_high = duty_total * rmt_param->rx_config.carrier_duty_percent / 100;
             // there could be residual in timing the carrier pulse, so double enlarge the theoretical value
             rmt_ll_rx_set_carrier_high_low_ticks(dev, RMT_DECODE_RX_CHANNEL(channel), duty_high * 2, (duty_total - duty_high) * 2);
@@ -686,7 +694,7 @@ esp_err_t rmt_config(const rmt_config_t *rmt_param)
 {
     rmt_module_enable();
 
-    RMT_CHECK(rmt_set_pin(rmt_param->channel, rmt_param->rmt_mode, rmt_param->gpio_num) == ESP_OK,
+    RMT_CHECK(rmt_set_gpio(rmt_param->channel, rmt_param->rmt_mode, rmt_param->gpio_num, rmt_param->flags & RMT_CHANNEL_FLAGS_INVERT_SIG) == ESP_OK,
               "set gpio for RMT driver failed", ESP_ERR_INVALID_ARG);
 
     RMT_CHECK(rmt_internal_config(&RMT, rmt_param) == ESP_OK,
@@ -1321,22 +1329,23 @@ esp_err_t rmt_get_counter_clock(rmt_channel_t channel, uint32_t *clock_hz)
     rmt_source_clk_hz = s_rmt_source_clock_hz;
 #endif
     if (RMT_IS_RX_CHANNEL(channel)) {
-        *clock_hz = rmt_source_clk_hz / rmt_ll_rx_get_counter_clock_div(rmt_contex.hal.regs, RMT_DECODE_RX_CHANNEL(channel));
+        *clock_hz = rmt_source_clk_hz / rmt_ll_rx_get_channel_clock_div(rmt_contex.hal.regs, RMT_DECODE_RX_CHANNEL(channel));
     } else {
-        *clock_hz = rmt_source_clk_hz / rmt_ll_tx_get_counter_clock_div(rmt_contex.hal.regs, channel);
+        *clock_hz = rmt_source_clk_hz / rmt_ll_tx_get_channel_clock_div(rmt_contex.hal.regs, channel);
     }
     RMT_EXIT_CRITICAL();
     return ESP_OK;
 }
 
-#if SOC_RMT_SUPPORT_TX_GROUP
+#if SOC_RMT_SUPPORT_TX_SYNCHRO
 esp_err_t rmt_add_channel_to_group(rmt_channel_t channel)
 {
     RMT_CHECK(RMT_IS_TX_CHANNEL(channel), RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
     RMT_ENTER_CRITICAL();
     rmt_ll_tx_enable_sync(rmt_contex.hal.regs, true);
-    rmt_ll_tx_add_channel_to_group(rmt_contex.hal.regs, channel);
-    rmt_ll_tx_reset_counter_clock_div(rmt_contex.hal.regs, channel);
+    rmt_contex.synchro_channel_mask |= (1 << channel);
+    rmt_ll_tx_add_to_sync_group(rmt_contex.hal.regs, channel);
+    rmt_ll_tx_reset_channels_clock_div(rmt_contex.hal.regs, rmt_contex.synchro_channel_mask);
     RMT_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -1345,7 +1354,9 @@ esp_err_t rmt_remove_channel_from_group(rmt_channel_t channel)
 {
     RMT_CHECK(RMT_IS_TX_CHANNEL(channel), RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
     RMT_ENTER_CRITICAL();
-    if (rmt_ll_tx_remove_channel_from_group(rmt_contex.hal.regs, channel) == 0) {
+    rmt_contex.synchro_channel_mask &= ~(1 << channel);
+    rmt_ll_tx_remove_from_sync_group(rmt_contex.hal.regs, channel);
+    if (rmt_contex.synchro_channel_mask == 0) {
         rmt_ll_tx_enable_sync(rmt_contex.hal.regs, false);
     }
     RMT_EXIT_CRITICAL();

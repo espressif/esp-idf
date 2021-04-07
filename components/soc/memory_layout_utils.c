@@ -20,6 +20,9 @@
 #ifdef CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/rom_layout.h"
 #define ROM_HAS_LAYOUT_TABLE 1
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/rom_layout.h"
+#define ROM_HAS_LAYOUT_TABLE 1
 #else
 #define ROM_HAS_LAYOUT_TABLE 0
 #endif

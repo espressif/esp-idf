@@ -3,6 +3,7 @@ import os
 import re
 import socket
 import ssl
+import sys
 from threading import Thread
 
 import ttfw_idf
@@ -68,22 +69,20 @@ def get_my_ip():
     return my_ip
 
 
-def start_https_server(ota_image_dir, server_ip, server_port):
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument('-p', '--port', dest='port', type= int,
-    #     help= "Server Port", default= 8000)
-    # args = parser.parse_args()
+def start_https_server(ota_image_dir, server_ip, server_port, server_file=None, key_file=None):
     os.chdir(ota_image_dir)
 
-    server_file = os.path.join(ota_image_dir, 'server_cert.pem')
-    cert_file_handle = open(server_file, 'w+')
-    cert_file_handle.write(server_cert)
-    cert_file_handle.close()
+    if server_file is None:
+        server_file = os.path.join(ota_image_dir, 'server_cert.pem')
+        cert_file_handle = open(server_file, 'w+')
+        cert_file_handle.write(server_cert)
+        cert_file_handle.close()
 
-    key_file = os.path.join(ota_image_dir, 'server_key.pem')
-    key_file_handle = open('server_key.pem', 'w+')
-    key_file_handle.write(server_key)
-    key_file_handle.close()
+    if key_file is None:
+        key_file = os.path.join(ota_image_dir, 'server_key.pem')
+        key_file_handle = open('server_key.pem', 'w+')
+        key_file_handle.write(server_key)
+        key_file_handle.close()
 
     httpd = http.server.HTTPServer((server_ip, server_port), http.server.SimpleHTTPRequestHandler)
 
@@ -118,7 +117,6 @@ def test_examples_protocol_simple_ota_example(env, extra_data):
         print('Connected to AP with IP: {}'.format(ip_address))
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
-        thread1.close()
     dut1.expect('Starting OTA example', timeout=30)
 
     print('writing to device: {}'.format('https://' + host_ip + ':8000/simple_ota.bin'))
@@ -152,7 +150,6 @@ def test_examples_protocol_simple_ota_example_ethernet_with_spiram_config(env, e
         print('Connected to AP with IP: {}'.format(ip_address))
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
-        thread1.close()
     dut1.expect('Starting OTA example', timeout=30)
 
     print('writing to device: {}'.format('https://' + host_ip + ':8000/simple_ota.bin'))
@@ -190,7 +187,44 @@ def test_examples_protocol_simple_ota_example_with_flash_encryption(env, extra_d
         print('Connected to AP with IP: {}'.format(ip_address))
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
-        thread1.close()
+    dut1.expect('Starting OTA example', timeout=30)
+
+    print('writing to device: {}'.format('https://' + host_ip + ':8000/simple_ota.bin'))
+    dut1.write('https://' + host_ip + ':8000/simple_ota.bin')
+    dut1.expect('Loaded app from partition at offset 0x120000', timeout=60)
+    dut1.expect('Flash encryption mode is DEVELOPMENT (not secure)', timeout=10)
+    dut1.expect('Starting OTA example', timeout=30)
+
+
+@ttfw_idf.idf_example_test(env_tag='Example_Flash_Encryption_OTA_WiFi', target=['esp32c3'])
+def test_examples_protocol_simple_ota_example_with_flash_encryption_wifi(env, extra_data):
+    """
+    steps: |
+      1. join AP
+      2. Fetch OTA image over HTTPS
+      3. Reboot with the new OTA image
+    """
+    dut1 = env.get_dut('simple_ota_example', 'examples/system/ota/simple_ota_example', app_config_name='flash_enc_wifi')
+    # check and log bin size
+    binary_file = os.path.join(dut1.app.binary_path, 'simple_ota.bin')
+    bin_size = os.path.getsize(binary_file)
+    ttfw_idf.log_performance('simple_ota_bin_size', '{}KB'.format(bin_size // 1024))
+    # erase flash on the device
+    print('Erasing the flash in order to have an empty NVS key partiton')
+    dut1.erase_flash()
+    # start test
+    host_ip = get_my_ip()
+    thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path, host_ip, 8000))
+    thread1.daemon = True
+    thread1.start()
+    dut1.start_app()
+    dut1.expect('Loaded app from partition at offset 0x20000', timeout=30)
+    dut1.expect('Flash encryption mode is DEVELOPMENT (not secure)', timeout=10)
+    try:
+        ip_address = dut1.expect(re.compile(r' sta ip: ([^,]+),'), timeout=30)
+        print('Connected to AP with IP: {}'.format(ip_address))
+    except DUT.ExpectTimeout:
+        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
     dut1.expect('Starting OTA example', timeout=30)
 
     print('writing to device: {}'.format('https://' + host_ip + ':8000/simple_ota.bin'))
@@ -201,6 +235,18 @@ def test_examples_protocol_simple_ota_example_with_flash_encryption(env, extra_d
 
 
 if __name__ == '__main__':
-    test_examples_protocol_simple_ota_example()
-    test_examples_protocol_simple_ota_example_ethernet_with_spiram_config()
-    test_examples_protocol_simple_ota_example_with_flash_encryption()
+    if sys.argv[2:]:    # if two or more arguments provided:
+        # Usage: example_test.py <image_dir> <server_port> [cert_di>]
+        this_dir = os.path.dirname(os.path.realpath(__file__))
+        bin_dir = os.path.join(this_dir, sys.argv[1])
+        port = int(sys.argv[2])
+        cert_dir = bin_dir if not sys.argv[3:] else os.path.join(this_dir, sys.argv[3])  # optional argument
+        print('Starting HTTPS server at "https://:{}"'.format(port))
+        start_https_server(bin_dir, '', port,
+                           server_file=os.path.join(cert_dir, 'ca_cert.pem'),
+                           key_file=os.path.join(cert_dir, 'ca_key.pem'))
+    else:
+        test_examples_protocol_simple_ota_example()
+        test_examples_protocol_simple_ota_example_ethernet_with_spiram_config()
+        test_examples_protocol_simple_ota_example_with_flash_encryption()
+        test_examples_protocol_simple_ota_example_with_flash_encryption_wifi()

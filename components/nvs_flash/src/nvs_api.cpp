@@ -103,7 +103,10 @@ static esp_err_t close_handles_and_deinit(const char* part_name)
 
 extern "C" esp_err_t nvs_flash_init_partition_ptr(const esp_partition_t *partition)
 {
-    Lock::init();
+    esp_err_t lock_result = Lock::init();
+    if (lock_result != ESP_OK) {
+        return lock_result;
+    }
     Lock lock;
 
     if (partition == nullptr) {
@@ -129,7 +132,10 @@ extern "C" esp_err_t nvs_flash_init_partition_ptr(const esp_partition_t *partiti
 #ifndef LINUX_TARGET
 extern "C" esp_err_t nvs_flash_init_partition(const char *part_name)
 {
-    Lock::init();
+    esp_err_t lock_result = Lock::init();
+    if (lock_result != ESP_OK) {
+        return lock_result;
+    }
     Lock lock;
 
     return NVSPartitionManager::get_instance()->init_partition(part_name);
@@ -175,7 +181,10 @@ extern "C" esp_err_t nvs_flash_init(void)
 #ifdef CONFIG_NVS_ENCRYPTION
 extern "C" esp_err_t nvs_flash_secure_init_partition(const char *part_name, nvs_sec_cfg_t* cfg)
 {
-    Lock::init();
+    esp_err_t lock_result = Lock::init();
+    if (lock_result != ESP_OK) {
+        return lock_result;
+    }
     Lock lock;
 
     return NVSPartitionManager::get_instance()->secure_init_partition(part_name, cfg);
@@ -189,7 +198,10 @@ extern "C" esp_err_t nvs_flash_secure_init(nvs_sec_cfg_t* cfg)
 
 extern "C" esp_err_t nvs_flash_erase_partition(const char *part_name)
 {
-    Lock::init();
+    esp_err_t lock_result = Lock::init();
+    if (lock_result != ESP_OK) {
+        return lock_result;
+    }
     Lock lock;
 
     // if the partition is initialized, uninitialize it first
@@ -213,7 +225,10 @@ extern "C" esp_err_t nvs_flash_erase_partition(const char *part_name)
 
 extern "C" esp_err_t nvs_flash_erase_partition_ptr(const esp_partition_t *partition)
 {
-    Lock::init();
+    esp_err_t lock_result = Lock::init();
+    if (lock_result != ESP_OK) {
+        return lock_result;
+    }
     Lock lock;
 
     if (partition == nullptr) {
@@ -241,7 +256,10 @@ extern "C" esp_err_t nvs_flash_erase(void)
 
 extern "C" esp_err_t nvs_flash_deinit_partition(const char* partition_name)
 {
-    Lock::init();
+    esp_err_t lock_result = Lock::init();
+    if (lock_result != ESP_OK) {
+        return lock_result;
+    }
     Lock lock;
 
     return close_handles_and_deinit(partition_name);
@@ -565,22 +583,38 @@ extern "C" esp_err_t nvs_get_used_entry_count(nvs_handle_t c_handle, size_t* use
 
 extern "C" esp_err_t nvs_flash_generate_keys(const esp_partition_t* partition, nvs_sec_cfg_t* cfg)
 {
+    if (cfg == nullptr || partition == nullptr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     auto err = esp_partition_erase_range(partition, 0, partition->size);
     if(err != ESP_OK) {
         return err;
     }
 
     for(uint8_t cnt = 0; cnt < NVS_KEY_SIZE; cnt++) {
-        cfg->eky[cnt] = 0xff;
-        cfg->tky[cnt] = 0xee;
+        /* Adjacent 16-byte blocks should be different */
+        if (((cnt / 16) & 1) == 0) {
+            cfg->eky[cnt] = 0xff;
+            cfg->tky[cnt] = 0xee;
+        } else {
+            cfg->eky[cnt] = 0x99;
+            cfg->tky[cnt] = 0x88;
+        }
     }
 
-    err = esp_partition_write(partition, 0, cfg->eky, NVS_KEY_SIZE);
+    /**
+     * Write key configuration without encryption engine (using raw partition write APIs).
+     * But the read is decrypted through flash encryption engine. This allows unique NVS encryption configuration,
+     * as flash encryption key is randomly generated per device.
+     */
+    err = esp_partition_write_raw(partition, 0, cfg->eky, NVS_KEY_SIZE);
     if(err != ESP_OK) {
         return err;
     }
 
-    err = esp_partition_write(partition, NVS_KEY_SIZE, cfg->tky, NVS_KEY_SIZE);
+    /* Write without encryption, see note above */
+    err = esp_partition_write_raw(partition, NVS_KEY_SIZE, cfg->tky, NVS_KEY_SIZE);
     if(err != ESP_OK) {
         return err;
     }
@@ -613,6 +647,10 @@ extern "C" esp_err_t nvs_flash_generate_keys(const esp_partition_t* partition, n
 
 extern "C" esp_err_t nvs_flash_read_security_cfg(const esp_partition_t* partition, nvs_sec_cfg_t* cfg)
 {
+    if (cfg == nullptr || partition == nullptr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     uint8_t eky_raw[NVS_KEY_SIZE], tky_raw[NVS_KEY_SIZE];
     uint32_t crc_raw, crc_read, crc_calc;
 

@@ -1,33 +1,17 @@
 idf_build_get_property(target IDF_TARGET)
-if(${target} STREQUAL "esp32c3")
+
+if("${target}" STREQUAL "esp32c3")
     return()
 endif()
-if(BOOTLOADER_BUILD)
-    # bootloader only needs headers from this component
-    set(priv_requires soc)
-else()
-    set(priv_requires soc freertos)
-    set(srcs "debug_helpers.c"
-             "debug_helpers_asm.S"
-             "expression_with_stack_xtensa.c"
-             "expression_with_stack_xtensa_asm.S"
-             "eri.c"
-             "trax.c"
-             "xtensa_intr.c"
-             "xtensa_intr_asm.S"
-             "${target}/trax_init.c"
-             )
 
-    if(IDF_TARGET STREQUAL "esp32s2")
-        list(APPEND srcs "stdatomic.c")
-    endif()
+set(srcs "eri.c" "xt_trax.c")
+
+if(NOT BOOTLOADER_BUILD)
+    list(APPEND srcs "xtensa_intr.c" "xtensa_intr_asm.S")
 endif()
 
 idf_component_register(SRCS ${srcs}
                     INCLUDE_DIRS include ${target}/include
-                    LDFRAGMENTS linker.lf
-                    PRIV_REQUIRES ${priv_requires})
+                    LDFRAGMENTS linker.lf)
 
-if(NOT BOOTLOADER_BUILD)
-    target_link_libraries(${COMPONENT_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/${target}/libxt_hal.a")
-endif()
+target_link_libraries(${COMPONENT_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/${target}/libxt_hal.a")

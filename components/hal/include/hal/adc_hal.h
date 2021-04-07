@@ -3,6 +3,55 @@
 #include "soc/soc_caps.h"
 #include "hal/adc_types.h"
 #include "hal/adc_ll.h"
+#include "esp_err.h"
+
+#if CONFIG_IDF_TARGET_ESP32C3
+#include "soc/gdma_struct.h"
+#include "hal/gdma_ll.h"
+#include "hal/dma_types.h"
+#include "hal/adc_ll.h"
+#include "hal/dma_types.h"
+#include "esp_err.h"
+
+//For ADC module, each conversion contains 4 bytes
+#define ADC_HAL_DATA_LEN_PER_CONV 4
+
+/**
+ * @brief Enum for DMA descriptor status
+ */
+typedef enum adc_hal_dma_desc_status_t {
+    ADC_HAL_DMA_DESC_VALID   = 0,            ///< This DMA descriptor is written by HW already
+    ADC_HAL_DMA_DESC_WAITING = 1,            ///< This DMA descriptor is not written by HW yet
+    ADC_HAL_DMA_DESC_NULL    = 2             ///< This DMA descriptor is NULL
+} adc_hal_dma_desc_status_t;
+
+/**
+ * @brief Configuration of the HAL
+ */
+typedef struct adc_hal_config_t {
+    uint32_t            desc_max_num;       ///< Number of the descriptors linked once
+    uint32_t            dma_chan;           ///< DMA channel to be used
+    uint32_t            eof_num;            ///< Bytes between 2 in_suc_eof interrupts
+} adc_hal_config_t;
+
+/**
+ * @brief Context of the HAL
+ */
+typedef struct adc_hal_context_t {
+    /**< this needs to be malloced by the driver layer first */
+    dma_descriptor_t    *rx_desc;           ///< DMA descriptors
+
+    /**< these will be assigned by hal layer itself */
+    gdma_dev_t          *dev;               ///< GDMA address
+    dma_descriptor_t    desc_dummy_head;    ///< Dummy DMA descriptor for ``cur_desc_ptr`` to start
+    dma_descriptor_t    *cur_desc_ptr;      ///< Pointer to the current descriptor
+
+    /**< these need to be configured by `adc_hal_config_t` via driver layer*/
+    uint32_t            desc_max_num;       ///< Number of the descriptors linked once
+    uint32_t            dma_chan;           ///< DMA channel to be used
+    uint32_t            eof_num;            ///< Words between 2 in_suc_eof interrupts
+} adc_hal_context_t;
+#endif
 
 /*---------------------------------------------------------------
                     Common setting
@@ -13,32 +62,11 @@
 void adc_hal_init(void);
 
 /**
- * ADC module deinitialization.
- */
-void adc_hal_deinit(void);
-
-/**
- * Set adc sample cycle.
- *
- * @note Normally, please use default value.
- * @param sample_cycle The number of ADC sampling cycles. Range: 1 ~ 7.
- */
-#define adc_hal_set_sample_cycle(sample_cycle) adc_ll_set_sample_cycle(sample_cycle)
-
-/**
  * Set ADC module power management.
  *
  * @prarm manage Set ADC power status.
  */
 #define adc_hal_set_power_manage(manage) adc_ll_set_power_manage(manage)
-
-/**
- * Get ADC module power management.
- *
- * @return
- *      - ADC power status.
- */
-#define adc_hal_get_power_manage() adc_ll_get_power_manage()
 
 /**
  * ADC module clock division factor setting. ADC clock devided from APB clock.
@@ -47,6 +75,7 @@ void adc_hal_deinit(void);
  */
 #define adc_hal_digi_set_clk_div(div) adc_ll_digi_set_clk_div(div)
 
+#if !CONFIG_IDF_TARGET_ESP32C3
 /**
  * ADC SAR clock division factor setting. ADC SAR clock devided from `RTC_FAST_CLK`.
  *
@@ -65,42 +94,9 @@ void adc_hal_deinit(void);
  * @prarm ctrl ADC controller.
  */
 #define adc_hal_set_controller(adc_n, ctrl) adc_ll_set_controller(adc_n, ctrl)
+#endif  //#if !CONFIG_IDF_TARGET_ESP32C3
 
-/**
- * Set the attenuation of a particular channel on ADCn.
- *
- * @note For any given channel, this function must be called before the first time conversion.
- *
- * The default ADC full-scale voltage is 1.1V. To read higher voltages (up to the pin maximum voltage,
- * usually 3.3V) requires setting >0dB signal attenuation for that ADC channel.
- *
- * When VDD_A is 3.3V:
- *
- * - 0dB attenuaton (ADC_ATTEN_DB_0) gives full-scale voltage 1.1V
- * - 2.5dB attenuation (ADC_ATTEN_DB_2_5) gives full-scale voltage 1.5V
- * - 6dB attenuation (ADC_ATTEN_DB_6) gives full-scale voltage 2.2V
- * - 11dB attenuation (ADC_ATTEN_DB_11) gives full-scale voltage 3.9V (see note below)
- *
- * @note The full-scale voltage is the voltage corresponding to a maximum reading (depending on ADC1 configured
- * bit width, this value is: 4095 for 12-bits, 2047 for 11-bits, 1023 for 10-bits, 511 for 9 bits.)
- *
- * @note At 11dB attenuation the maximum voltage is limited by VDD_A, not the full scale voltage.
- *
- * Due to ADC characteristics, most accurate results are obtained within the following approximate voltage ranges:
- *
- * - 0dB attenuaton (ADC_ATTEN_DB_0) between 100 and 950mV
- * - 2.5dB attenuation (ADC_ATTEN_DB_2_5) between 100 and 1250mV
- * - 6dB attenuation (ADC_ATTEN_DB_6) between 150 to 1750mV
- * - 11dB attenuation (ADC_ATTEN_DB_11) between 150 to 2450mV
- *
- * For maximum accuracy, use the ADC calibration APIs and measure voltages within these recommended ranges.
- *
- * @prarm adc_n ADC unit.
- * @prarm channel ADCn channel number.
- * @prarm atten The attenuation option.
- */
-#define adc_hal_set_atten(adc_n, channel, atten) adc_ll_set_atten(adc_n, channel, atten)
-
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 /**
  * Get the attenuation of a particular channel on ADCn.
  *
@@ -109,11 +105,14 @@ void adc_hal_deinit(void);
  * @return atten The attenuation option.
  */
 #define adc_hal_get_atten(adc_n, channel) adc_ll_get_atten(adc_n, channel)
+#endif
 
+#if CONFIG_IDF_TARGET_ESP32
 /**
  * Close ADC AMP module if don't use it for power save.
  */
 #define adc_hal_amp_disable() adc_ll_amp_disable()
+#endif
 
 /*---------------------------------------------------------------
                     PWDET(Power detect) controller setting
@@ -135,26 +134,10 @@ void adc_hal_deinit(void);
  */
 #define adc_hal_pwdet_get_cct() adc_ll_pwdet_get_cct()
 
-#ifndef CONFIG_IDF_TARGET_ESP32C3
 /*---------------------------------------------------------------
                     RTC controller setting
 ---------------------------------------------------------------*/
-
-/**
- * Get the converted value for each ADCn for RTC controller.
- *
- * @note It may be block to wait conversion finish.
- *
- * @prarm adc_n ADC unit.
- * @param channel adc channel number.
- * @param value Pointer for touch value.
- *
- * @return
- *      - 0: The value is valid.
- *      - ~0: The value is invalid.
- */
-int adc_hal_convert(adc_ll_num_t adc_n, int channel, int *value);
-
+#if !CONFIG_IDF_TARGET_ESP32C3
 /**
  * Set adc output data format for RTC controller.
  *
@@ -169,7 +152,7 @@ int adc_hal_convert(adc_ll_num_t adc_n, int channel, int *value);
  * @prarm adc_n ADC unit.
  */
 #define adc_hal_rtc_output_invert(adc_n, inv_en) adc_ll_rtc_output_invert(adc_n, inv_en)
-#endif
+#endif  //#if !CONFIG_IDF_TARGET_ESP32C3
 
 /**
  *  Enable/disable the output of ADCn's internal reference voltage to one of ADC2's channels.
@@ -206,6 +189,73 @@ void adc_hal_digi_controller_config(const adc_digi_config_t *cfg);
  * @param adc_n ADC unit.
  */
 #define adc_hal_digi_clear_pattern_table(adc_n) adc_ll_digi_clear_pattern_table(adc_n)
+
+/*---------------------------------------------------------------
+                    ADC Single Read
+---------------------------------------------------------------*/
+#if !CONFIG_IDF_TARGET_ESP32C3
+/**
+ * Set the attenuation of a particular channel on ADCn.
+ *
+ * @note For any given channel, this function must be called before the first time conversion.
+ *
+ * The default ADC full-scale voltage is 1.1V. To read higher voltages (up to the pin maximum voltage,
+ * usually 3.3V) requires setting >0dB signal attenuation for that ADC channel.
+ *
+ * When VDD_A is 3.3V:
+ *
+ * - 0dB attenuaton (ADC_ATTEN_DB_0) gives full-scale voltage 1.1V
+ * - 2.5dB attenuation (ADC_ATTEN_DB_2_5) gives full-scale voltage 1.5V
+ * - 6dB attenuation (ADC_ATTEN_DB_6) gives full-scale voltage 2.2V
+ * - 11dB attenuation (ADC_ATTEN_DB_11) gives full-scale voltage 3.9V (see note below)
+ *
+ * @note The full-scale voltage is the voltage corresponding to a maximum reading (depending on ADC1 configured
+ * bit width, this value is: 4095 for 12-bits, 2047 for 11-bits, 1023 for 10-bits, 511 for 9 bits.)
+ *
+ * @note At 11dB attenuation the maximum voltage is limited by VDD_A, not the full scale voltage.
+ *
+ * Due to ADC characteristics, most accurate results are obtained within the following approximate voltage ranges:
+ *
+ * - 0dB attenuaton (ADC_ATTEN_DB_0) between 100 and 950mV
+ * - 2.5dB attenuation (ADC_ATTEN_DB_2_5) between 100 and 1250mV
+ * - 6dB attenuation (ADC_ATTEN_DB_6) between 150 to 1750mV
+ * - 11dB attenuation (ADC_ATTEN_DB_11) between 150 to 2450mV
+ *
+ * For maximum accuracy, use the ADC calibration APIs and measure voltages within these recommended ranges.
+ *
+ * @param adc_n   ADC unit.
+ * @param channel ADCn channel number.
+ * @param atten   ADC attenuation. See ``adc_atten_t``
+ */
+#define adc_hal_set_atten(adc_n, channel, atten) adc_ll_set_atten(adc_n, channel, atten)
+
+#else // CONFIG_IDF_TARGET_ESP32C3
+/**
+ * Set the attenuation for ADC to single read
+ *
+ * @note All ADC units and channels will share the setting. So PLEASE DO save your attenuations and reset them by calling this API again in your driver
+ *
+ * @param adc_n    Not used, leave here for chip version compatibility
+ * @param channel  Not used, leave here for chip version compatibility
+ * @param atten    ADC attenuation. See ``adc_atten_t``
+ */
+#define adc_hal_set_atten(adc_n, channel, atten) adc_ll_onetime_set_atten(atten)
+#endif
+
+/**
+ * Start an ADC conversion and get the converted value.
+ *
+ * @note It may be block to wait conversion finish.
+ *
+ * @param      adc_n   ADC unit.
+ * @param      channel ADC channel number.
+ * @param[out] out_raw ADC converted result
+ *
+ * @return
+ *      - ESP_OK:                The value is valid.
+ *      - ESP_ERR_INVALID_STATE: The value is invalid.
+ */
+esp_err_t adc_hal_convert(adc_ll_num_t adc_n, int channel, int *out_raw);
 
 /*---------------------------------------------------------------
                     ADC calibration setting
@@ -252,68 +302,82 @@ uint32_t adc_hal_self_calibration(adc_ll_num_t adc_n, adc_channel_t channel, adc
 /*---------------------------------------------------------------
                     DMA setting
 ---------------------------------------------------------------*/
-#include "soc/gdma_struct.h"
-#include "hal/gdma_ll.h"
-#include "hal/dma_types.h"
-#include "hal/adc_ll.h"
-#include "hal/dma_types.h"
-#include "esp_err.h"
+/**
+ * @brief Initialize the hal context
+ *
+ * @param hal    Context of the HAL
+ * @param config Configuration of the HAL
+ */
+void adc_hal_context_config(adc_hal_context_t *hal, const adc_hal_config_t *config);
 
-typedef struct adc_dma_hal_context_t {
-    gdma_dev_t          *dev;           //address of the general DMA
-} adc_dma_hal_context_t;
+/**
+ * @brief Initialize the HW
+ *
+ * @param hal Context of the HAL
+ */
+void adc_hal_digi_init(adc_hal_context_t *hal);
 
-typedef struct adc_dma_hal_config_t {
-    dma_descriptor_t    *rx_desc;       //dma descriptor
-    dma_descriptor_t    *cur_desc_ptr;  //pointer to the current descriptor
-    uint32_t            desc_max_num;   //number of the descriptors linked once
-    uint32_t            desc_cnt;
-    uint32_t            dma_chan;
-} adc_dma_hal_config_t;
+/**
+ * @brief Reset ADC / DMA fifo
+ *
+ * @param hal Context of the HAL
+ */
+void adc_hal_fifo_reset(adc_hal_context_t *hal);
 
-void adc_hal_digi_dma_multi_descriptor(adc_dma_hal_config_t *dma_config, uint8_t *data_buf, uint32_t size, uint32_t num);
+/**
+ * @brief Start DMA
+ *
+ * @param hal      Context of the HAL
+ * @param data_buf Pointer to the data buffer, the length should be multiple of ``desc_max_num`` and ``eof_num`` in ``adc_hal_context_t``
+ */
+void adc_hal_digi_rxdma_start(adc_hal_context_t *hal, uint8_t *data_buf);
 
-void adc_hal_digi_rxdma_start(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config);
+/**
+ * @brief Start ADC
+ *
+ * @param hal Context of the HAL
+ */
+void adc_hal_digi_start(adc_hal_context_t *hal);
 
-void adc_hal_digi_rxdma_stop(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config);
+/**
+ * @brief Get the ADC reading result
+ *
+ * @param      hal           Context of the HAL
+ * @param      eof_desc_addr The last descriptor that is finished by HW. Should be got from DMA
+ * @param[out] cur_desc      The descriptor with ADC reading result (from the 1st one to the last one (``eof_desc_addr``))
+ *
+ * @return                   See ``adc_hal_dma_desc_status_t``
+ */
+adc_hal_dma_desc_status_t adc_hal_get_reading_result(adc_hal_context_t *hal, const intptr_t eof_desc_addr, dma_descriptor_t **cur_desc);
 
-void adc_hal_digi_ena_intr(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config, uint32_t mask);
+/**
+ * @brief Stop DMA
+ *
+ * @param hal Context of the HAL
+ */
+void adc_hal_digi_rxdma_stop(adc_hal_context_t *hal);
 
-void adc_hal_digi_clr_intr(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config, uint32_t mask);
+/**
+ * @brief Clear interrupt
+ *
+ * @param hal  Context of the HAL
+ * @param mask mask of the interrupt
+ */
+void adc_hal_digi_clr_intr(adc_hal_context_t *hal, uint32_t mask);
 
-void adc_hal_digi_dis_intr(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config, uint32_t mask);
+/**
+ * @brief Enable interrupt
+ *
+ * @param hal  Context of the HAL
+ * @param mask mask of the interrupt
+ */
+void adc_hal_digi_dis_intr(adc_hal_context_t *hal, uint32_t mask);
 
-void adc_hal_digi_set_eof_num(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config, uint32_t num);
-
-void adc_hal_digi_start(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config);
-
-void adc_hal_digi_stop(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config);
-
-void adc_hal_digi_init(adc_dma_hal_context_t *adc_dma_ctx, adc_dma_hal_config_t *dma_config);
-
-/*---------------------------------------------------------------
-                    Single Read
----------------------------------------------------------------*/
-void adc_hal_onetime_start(adc_digi_config_t *adc_digi_config);
-
-void adc_hal_adc1_onetime_sample_enable(bool enable);
-
-void adc_hal_adc2_onetime_sample_enable(bool enable);
-
-void adc_hal_onetime_channel(adc_ll_num_t unit, adc_channel_t channel);
-
-void adc_hal_set_onetime_atten(adc_atten_t atten);
-
-esp_err_t adc_hal_single_read(adc_ll_num_t unit, int *out_raw);
-
-void adc_hal_intr_enable(adc_event_t event);
-
-void adc_hal_intr_disable(adc_event_t event);
-
-void adc_hal_intr_clear(adc_event_t event);
-
-bool adc_hal_intr_get_raw(adc_event_t event);
-
-bool adc_hal_intr_get_status(adc_event_t event);
+/**
+ * @brief Stop ADC
+ *
+ * @param hal Context of the HAL
+ */
+void adc_hal_digi_stop(adc_hal_context_t *hal);
 
 #endif  //#if CONFIG_IDF_TARGET_ESP32C3

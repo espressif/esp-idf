@@ -20,7 +20,7 @@
 #include "esp_log.h"
 #include "driver/adc.h"
 #include "hal/adc_ll.h"
-#include "esp32c3/esp_efuse_rtc_calib.h"
+#include "esp_efuse_rtc_calib.h"
 #include "esp_adc_cal.h"
 
 

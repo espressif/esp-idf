@@ -30,6 +30,7 @@ static const char *TAG = "spiflash_s3";
 #define SPICACHE SPIMEM0
 #define SPIFLASH SPIMEM1
 
+extern void IRAM_ATTR flash_rom_init(void);
 esp_rom_spiflash_result_t IRAM_ATTR spi_flash_write_encrypted_chip(size_t dest_addr, const void *src, size_t size)
 {
     const spi_flash_guard_funcs_t *ops = spi_flash_guard_get();
@@ -68,7 +69,8 @@ esp_rom_spiflash_result_t IRAM_ATTR spi_flash_write_encrypted_chip(size_t dest_a
         if (ops && ops->start) {
             ops->start();
         }
-        rc = SPI_Encrypt_Write(dest_addr, src, size);
+        flash_rom_init();
+        rc = esp_rom_spiflash_write_encrypted(dest_addr, (void *)src, size);
         if (ops && ops->end) {
             ops->end();
         }

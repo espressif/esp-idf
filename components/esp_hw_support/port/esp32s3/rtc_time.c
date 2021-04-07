@@ -39,7 +39,7 @@
 uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 {
     /* On ESP32S3, choosing RTC_CAL_RTC_MUX results in calibration of
-     * the 90k RTC clock regardless of the currenlty selected SLOW_CLK.
+     * the 150k RTC clock regardless of the currenlty selected SLOW_CLK.
      * On the ESP32, it used the currently selected SLOW_CLK.
      * The following code emulates ESP32 behavior:
      */
@@ -84,7 +84,7 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
         expected_freq = RTC_SLOW_CLK_FREQ_8MD256;
     } else {
         REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, RTC_SLOW_CLK_150K_CAL_TIMEOUT_THRES(slowclk_cycles));
-        expected_freq = RTC_SLOW_CLK_FREQ_90K;
+        expected_freq = RTC_SLOW_CLK_FREQ_150K;
     }
     uint32_t us_time_estimate = (uint32_t) (((uint64_t) slowclk_cycles) * MHZ / expected_freq);
     /* Start calibration */

@@ -1,4 +1,4 @@
-idf_component_register()
+idf_component_register(PRIV_REQUIRES esptool_py)
 
 if(BOOTLOADER_BUILD)
     return()

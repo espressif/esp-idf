@@ -5,7 +5,6 @@ Documenting Code
 
 The purpose of this description is to provide quick summary on documentation style used in `espressif/esp-idf`_ repository and how to add new documentation.
 
-
 Introduction
 ------------
 
@@ -251,7 +250,8 @@ Writing generic documentation for multiple chips
 The documentation for all of Espressif's chips is built from the same files. To faciliate the writing of documents that can be re-used for multiple different chips (called below "targets"), we provide you with the following functionality:
 
 Exclusion of content based on chip-target
-"""""""""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""""""
+
 Occasionally there will be content that is only relevant for one of targets. When this is the case, you can exclude that content by using the ''.. only:: TAG'' directive, where you replace 'TAG' with one of the following names:
 
 Chip name:
@@ -287,7 +287,7 @@ This directive also supports the boolean operators 'and', 'or' and 'not'. Exampl
 
 This functionality is provided by the `Sphinx selective exclude <https://github.com/pfalcon/sphinx_selective_exclude>`_ extension.
 
-A weakness in this extension is that it does not correctly handle the case were you exclude a section, and that is directly followed by a labeled new section. In these cases everything will render correctly, but the label will not correctly link to the section that follows. A temporary work-around for the cases were this can't be avoided is the following:
+A weakness in this extension is that it does not correctly handle the case where you exclude a section, that is directly followed by a labeled new section. In these cases everything will render correctly, but the label will not correctly link to the section that follows. A temporary work-around for the cases where this can't be avoided is the following:
 
 .. code-block:: none
 
@@ -302,9 +302,9 @@ A weakness in this extension is that it does not correctly handle the case were 
 
         .. _section_2_label:
 
-    .. only:: esp32s2
+    .. only:: not esp32
 
-        _section_2_label:
+        .. _section_2_label:
 
     Section 2
     ^^^^^^^^^
@@ -376,7 +376,7 @@ Once documentation is ready, follow instruction in :doc:`../api-reference/templa
 OK, but I am new to Sphinx!
 ---------------------------
 
-1. No worries. All the software you need is well documented. It is also open source and free. Start by checking `Sphinx`_ documentation. If you are not clear how to write using rst markup language, see `reStructuredText Primer <https://www.sphinx-doc.org/en/stable/rest.html>`_. You can also use markdown (.md) files, and find out about more about the specific markdown syntax that we use on `Recommonmark parser's documentation page <https://recommonmark.readthedocs.io/en/latest/>`_.
+1. No worries. All the software you need is well documented. It is also open source and free. Start by checking `Sphinx`_ documentation. If you are not clear how to write using rst markup language, see `reStructuredText Primer <https://www.sphinx-doc.org/en/stable/rest.html>`_. You can also use markdown (.md) files, and find out more about the specific markdown syntax that we use on `Recommonmark parser's documentation page <https://recommonmark.readthedocs.io/en/latest/>`_.
 
 2. Check the source files of this documentation to understand what is behind of what you see now on the screen. Sources are maintained on GitHub in `espressif/esp-idf`_ repository in :idf:`docs` folder. You can go directly to the source file of this page by scrolling up and clicking the link in the top right corner. When on GitHub, see what's really inside, open source files by clicking ``Raw`` button.
 
@@ -406,7 +406,6 @@ You can setup environment to build documentation locally on your PC by installin
 5. Custom 404 page "sphinx-notfound-page" - https://github.com/readthedocs/sphinx-notfound-page
 6. Blockdiag - http://blockdiag.com/en/index.html
 7. Recommonmark - https://github.com/rtfd/recommonmark
-
 
 The package "sphinx_idf_theme" is added to have the same "look and feel" of `ESP-IDF Programming Guide <https://docs.espressif.com/projects/esp-idf/en/latest/index.html>`_.
 

@@ -1,12 +1,17 @@
 #!/usr/bin/env python
 import argparse
 import re
-from os.path import dirname, join, normpath, relpath
+from os.path import dirname, exists, join, normpath, relpath
 
 CLANG_TIDY_REGEX = re.compile(r'(.+|[a-zA-Z]:\\\\.+):([0-9]+):([0-9]+): ([^:]+): (.+)')
 
 
 def normalize_clang_tidy_path(file_path, output_path, base_dir):
+    if not exists(file_path):
+        print('Skipping normalizing. This could only happen when skipping clang-tidy check '
+              'because of no c file modified. Please double check')
+        return
+
     with open(output_path, 'w') as fw:
         for line in open(file_path):
             result = CLANG_TIDY_REGEX.match(line)

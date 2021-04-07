@@ -22,6 +22,8 @@ Right after provisioning is complete, BLE is turned off and disabled to free the
 
 This example can be used, as it is, for adding a provisioning service to any application intended for IoT.
 
+> Note: If you use this example code in your own project, in BLE mode, then remember to enable the BT stack and BTDM BLE control settings in your SDK configuration (e.g. by using the `sdkconfig.defaults` file from this project).
+
 ## How to use example
 
 ### Hardware Required
@@ -110,6 +112,42 @@ I (52355) app: Hello World!
 I (53355) app: Hello World!
 I (54355) app: Hello World!
 I (55355) app: Hello World!
+```
+
+### QR Code Scanning
+
+Enabling `CONFIG_EXAMPLE_PROV_SHOW_QR` will display a QR code on the serial terminal, which can be scanned from the ESP Provisioning phone apps to start the Wi-Fi provisioning process.
+
+The monitor log should display something like this : 
+
+```
+I (1462) app: Provisioning started
+I (1472) app: Scan this QR code from the provisioning application for Provisioning.
+I (1472) QRCODE: Encoding below text with ECC LVL 0 & QR Code Version 10
+I (1482) QRCODE: {"ver":"v1","name":"PROV_EA69FC","pop":"abcd1234","transport":"ble"}
+GAP procedure initiated: advertise; disc_mode=2 adv_channel_map=0 own_addr_type=0 adv_filter_policy=0 adv_itvl_min=256 adv_itvl_max=256
+                                      
+  █▀▀▀▀▀█ ▀▀▀█▄█   ▀▀▄ █▄ ▀ █▀▀▀▀▀█   
+  █ ███ █  ▀▄█ █▄ ▀▄█ ▄██ █ █ ███ █   
+  █ ▀▀▀ █  ▄▀█▀▄▀ ▀█▄▀  ██  █ ▀▀▀ █   
+  ▀▀▀▀▀▀▀ █▄▀ █▄█▄█ ▀ █ █ ▀ ▀▀▀▀▀▀▀   
+  ▀▀ ▀▀ ▀  ▀▄ ▀▄ ▄▀▀▀█ ▀▄ ▀ ▀▄▄ ▄▄▀   
+  ███▄█▄▀ █▀  ▀▀▀▀▄▄█   █▀ █  ▄█▄█▀   
+  ▀███▀ ▀▄▄██ ▄▄██▄ ▀▀▀▀   ▄▀█ ▀▄▄▀   
+  ▄███  ▀██▀▀ ▄ ▄█▄▀▀█▄ ▀▄▀▄▄█  ▄     
+  ▀█▀ █▄▀▀ ▀▀█▀▀ █▀▄▀▄▀ ▄█  ███▄ ██   
+  ██▀█  ▀▄█ █▄▀▄███▀▄▀█ ▀█ █▀▀ ▀▄▄▀   
+  █▄▀▄█▀▀ ▀▄ ▀▄▄█▄▀▀█▄█▄█▀▀█ ▀▄ ▄▀    
+  █ ▄█▄ ▀ ▄▀ █▄  ▀█▄█▄▀▀█▀█ ▄█ ▀▄▄█   
+  ▀▀▀▀  ▀ █▀█▀▀▄▄██▄█▀█ ▀██▀▀▀█▄▄▀    
+  █▀▀▀▀▀█   ▄█▀▀▀██ ▄▀▄ █▄█ ▀ █ ▄ ▄   
+  █ ███ █ █ ▀▄█▀▀█▀▄█▄▄ ▀██▀▀▀▀▄▄▀▀   
+  █ ▀▀▀ █ ▄█ ▀ ▄█▀█ █▀ ▀▀███▄▀█ █▄█   
+  ▀▀▀▀▀▀▀ ▀  ▀  ▀▀ ▀     ▀▀▀▀▀▀       
+                                      
+
+I (1702) app: If QR code is not visible, copy paste the below URL in a browser.
+https://espressif.github.io/esp-jumpstart/qrcode.html?data={"ver":"v1","name":"PROV_EA69FC","pop":"abcd1234","transport":"ble"}
 ```
 
 ### Wi-Fi Scanning

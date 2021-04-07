@@ -31,6 +31,8 @@ typedef struct {
     const esp_http_client_config_t *http_config;   /*!< ESP HTTP client configuration */
     http_client_init_cb_t http_client_init_cb;     /*!< Callback after ESP HTTP client is initialised */
     bool bulk_flash_erase;                         /*!< Erase entire flash partition during initialization. By default flash partition is erased during write operation and in chunk of 4K sector size */
+    bool partial_http_download;                    /*!< Enable Firmware image to be downloaded over multiple HTTP requests */
+    int max_http_request_size;                     /*!< Maximum request size for partial HTTP download */
 } esp_https_ota_config_t;
 
 #define ESP_ERR_HTTPS_OTA_BASE            (0x9000)

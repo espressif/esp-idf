@@ -47,28 +47,17 @@ void esp_crypto_ds_lock_acquire(void);
 void esp_crypto_ds_lock_release(void);
 
 /**
- * @brief Acquire lock for the SHA cryptography peripheral.
+ * @brief Acquire lock for the SHA and AES cryptography peripheral.
  *
  */
-void esp_crypto_sha_lock_acquire(void);
+void esp_crypto_sha_aes_lock_acquire(void);
 
 /**
- * @brief Release lock for the SHA cryptography peripheral.
+ * @brief Release lock for the SHA and AES cryptography peripheral.
  *
  */
-void esp_crypto_sha_lock_release(void);
+void esp_crypto_sha_aes_lock_release(void);
 
-/**
- * @brief Acquire lock for the aes cryptography peripheral.
- *
- */
-void esp_crypto_aes_lock_acquire(void);
-
-/**
- * @brief Release lock for the aes cryptography peripheral.
- *
- */
-void esp_crypto_aes_lock_release(void);
 
 /**
  * @brief Acquire lock for the mpi cryptography peripheral.

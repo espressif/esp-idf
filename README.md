@@ -12,8 +12,9 @@ See setup guides for detailed instructions to set up the ESP-IDF:
 
 | Chip | Getting Started Guides for ESP-IDF |
 |:----:|:----|
-| <img src="docs/_static/chip-esp32.svg" height="85" alt="ESP32"> |  <ul><li>[stable](https://docs.espressif.com/projects/esp-idf/en/stable/get-started/) version</li><li>[latest (master branch)](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/) version</li></ul> |
-| <img src="docs/_static/chip-esp32-s2.svg" height="100" alt="ESP32-S2"> | <ul><li>[latest (master branch)](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/get-started/) version</li></ul> |
+| <img src="docs/_static/chip-esp32.svg" height="90" alt="ESP32"> |  <ul><li>[stable](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/) version</li><li>[latest (master branch)](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/) version</li></ul> |
+| <img src="docs/_static/chip-esp32-s2.svg" height="105" alt="ESP32-S2"> | <ul><li>[stable](https://docs.espressif.com/projects/esp-idf/en/stable/esp32s2/get-started/) version</li><li>[latest (master branch)](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/get-started/) version</li></ul> |
+| <img src="docs/_static/chip-esp32-c3.svg" height="75" alt="ESP32-C3"> | <ul><li>[latest (master branch)](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/get-started/) version</li></ul> |
 
 **Note:** Each ESP-IDF release has its own documentation. Please see Section [Versions](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/versions.html) how to find documentation and how to checkout specific release of ESP-IDF.
 

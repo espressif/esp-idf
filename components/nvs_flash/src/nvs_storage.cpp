@@ -455,10 +455,9 @@ esp_err_t Storage::readMultiPageBlob(uint8_t nsIndex, const char* key, void* dat
 
     uint8_t chunkCount = item.blobIndex.chunkCount;
     VerOffset chunkStart = item.blobIndex.chunkStart;
-    size_t readSize = item.blobIndex.dataSize;
     size_t offset = 0;
 
-    assert(dataSize == readSize);
+    assert(dataSize == item.blobIndex.dataSize);
 
     /* Now read corresponding chunks */
     for (uint8_t chunkNum = 0; chunkNum < chunkCount; chunkNum++) {

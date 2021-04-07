@@ -66,6 +66,7 @@ void vMBPortEventClose( void );
 
 /* ----------------------- Static variables ---------------------------------*/
 static int xListenSock = -1;
+static SemaphoreHandle_t xShutdownSemaphore = NULL;
 static MbSlavePortConfig_t xConfig = { 0 };
 
 /* ----------------------- Static functions ---------------------------------*/
@@ -183,12 +184,11 @@ static int xMBTCPPortAcceptConnection(int xListenSockId, char** pcIPAddr)
     MB_PORT_CHECK((xListenSockId > 0), -1, "Incorrect listen socket ID.");
 
     // Address structure large enough for both IPv4 or IPv6 address
-    struct sockaddr_in6 xSrcAddr;
-
+    struct sockaddr_storage xSrcAddr;
     CHAR cAddrStr[128];
     int xSockId = -1;
     CHAR* pcStr = NULL;
-    socklen_t xSize = sizeof(struct sockaddr_in6);
+    socklen_t xSize = sizeof(struct sockaddr_storage);
 
     // Accept new socket connection if not active
     xSockId = accept(xListenSockId, (struct sockaddr *)&xSrcAddr, &xSize);
@@ -197,11 +197,14 @@ static int xMBTCPPortAcceptConnection(int xListenSockId, char** pcIPAddr)
         close(xSockId);
     } else {
         // Get the sender's ip address as string
-        if (xSrcAddr.sin6_family == PF_INET) {
+        if (xSrcAddr.ss_family == PF_INET) {
             inet_ntoa_r(((struct sockaddr_in *)&xSrcAddr)->sin_addr.s_addr, cAddrStr, sizeof(cAddrStr) - 1);
-        } else if (xSrcAddr.sin6_family == PF_INET6) {
-            inet6_ntoa_r(xSrcAddr.sin6_addr, cAddrStr, sizeof(cAddrStr) - 1);
         }
+#if CONFIG_LWIP_IPV6
+        else if (xSrcAddr.ss_family == PF_INET6) {
+            inet6_ntoa_r(((struct sockaddr_in6 *)&xSrcAddr)->sin6_addr, cAddrStr, sizeof(cAddrStr) - 1);
+        }
+#endif
         ESP_LOGI(MB_TCP_SLAVE_PORT_TAG, "Socket (#%d), accept client connection from address: %s", xSockId, cAddrStr);
         pcStr = calloc(1, strlen(cAddrStr) + 1);
         if (pcStr && pcIPAddr) {
@@ -462,6 +465,11 @@ static void vMBTCPPortServerTask(void *pvParameters)
             // Wait for an activity on one of the sockets, timeout is NULL, so wait indefinitely
             xErr = select(xMaxSd + 1 , &xReadSet , NULL , NULL , NULL);
             if ((xErr < 0) && (errno != EINTR)) {
+                // First check if the task is not flagged for shutdown
+                if (xListenSock == -1 && xShutdownSemaphore) {
+                    xSemaphoreGive(xShutdownSemaphore);
+                    vTaskDelete(NULL);
+                }
                 // error occurred during wait for read
                 ESP_LOGE(MB_TCP_SLAVE_PORT_TAG, "select() errno = %d.", errno);
                 continue;
@@ -626,8 +634,22 @@ void
 vMBTCPPortClose( )
 {
     // Release resources for the event queue.
+
+    // Try to exit the task gracefully, so select could release its internal callbacks
+    // that were allocated on the stack of the task we're going to delete
+    xShutdownSemaphore = xSemaphoreCreateBinary();
+    vTaskResume(xConfig.xMbTcpTaskHandle);
+    if (xShutdownSemaphore == NULL || // if no semaphore (alloc issues) or couldn't acquire it, just delete the task
+        xSemaphoreTake(xShutdownSemaphore, 2*pdMS_TO_TICKS(CONFIG_FMB_MASTER_TIMEOUT_MS_RESPOND)) != pdTRUE) {
+        ESP_LOGE(MB_TCP_SLAVE_PORT_TAG, "Task couldn't exit gracefully within timeout -> abruptly deleting the task");
+        vTaskDelete(xConfig.xMbTcpTaskHandle);
+    }
+    if (xShutdownSemaphore) {
+        vSemaphoreDelete(xShutdownSemaphore);
+        xShutdownSemaphore = NULL;
+    }
+
     vMBPortEventClose( );
-    vTaskDelete(xConfig.xMbTcpTaskHandle);
 }
 
 void

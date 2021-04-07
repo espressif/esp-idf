@@ -39,16 +39,21 @@
 #include "esp_timer.h"
 #include "esp_efuse.h"
 #include "esp_flash_encrypt.h"
+#include "esp_secure_boot.h"
+#include "esp_sleep.h"
 
 /***********************************************/
 // Headers for other components init functions
 #include "nvs_flash.h"
 #include "esp_phy_init.h"
 #include "esp_coexist_internal.h"
+
+#if CONFIG_ESP_COREDUMP_ENABLE
 #include "esp_core_dump.h"
+#endif
+
 #include "esp_app_trace.h"
 #include "esp_private/dbg_stubs.h"
-#include "esp_flash_encrypt.h"
 #include "esp_pm.h"
 #include "esp_private/pm_impl.h"
 #include "esp_pthread.h"
@@ -272,11 +277,7 @@ static void do_core_init(void)
     _REENT_SMALL_CHECK_INIT(_GLOBAL_REENT);
 #endif // defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_NONE)
 
-#ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
-    esp_flash_encryption_init_checks();
-#endif
-
-    esp_err_t err;
+    esp_err_t err __attribute__((unused));
 
 #if CONFIG_SECURE_DISABLE_ROM_DL_MODE
     err = esp_efuse_disable_rom_download_mode();
@@ -315,6 +316,16 @@ static void do_core_init(void)
     esp_flash_app_init();
     esp_err_t flash_ret = esp_flash_init_default_chip();
     assert(flash_ret == ESP_OK);
+    (void)flash_ret;
+
+#ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
+    esp_flash_encryption_init_checks();
+#endif
+
+#if defined(CONFIG_SECURE_BOOT) || defined(CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT)
+    // Note: in some configs this may read flash, so placed after flash init
+    esp_secure_boot_init_checks();
+#endif
 }
 
 static void do_secondary_init(void)
@@ -402,6 +413,14 @@ static void start_cpu0_default(void)
 IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components0, BIT(0))
 {
     esp_timer_init();
+
+#if CONFIG_ESP32C3_LIGHTSLEEP_GPIO_RESET_WORKAROUND && !CONFIG_PM_SLP_DISABLE_GPIO
+    // Configure to isolate (disable the Input/Output/Pullup/Pulldown
+    // function of the pin) all GPIO pins in sleep state
+    esp_sleep_config_gpio_isolate();
+    // Enable automatic switching of GPIO configuration
+    esp_sleep_enable_gpio_switch(true);
+#endif
 
 #if defined(CONFIG_PM_ENABLE)
     esp_pm_impl_init();

@@ -45,10 +45,15 @@ typedef struct {
  *
  * @return None
  */
-static inline void timer_ll_set_divider(timg_dev_t *hw, timer_idx_t timer_num, uint16_t divider)
+static inline void timer_ll_set_divider(timg_dev_t *hw, timer_idx_t timer_num, uint32_t divider)
 {
+    assert(divider >= 2 && divider <= 65536);
+    if (divider >= 65536) {
+        divider = 0;
+    }
     int timer_en = hw->hw_timer[timer_num].config.enable;
     hw->hw_timer[timer_num].config.enable = 0;
+    hw->hw_timer[timer_num].config.divcnt_rst = 1;
     hw->hw_timer[timer_num].config.divider = divider;
     hw->hw_timer[timer_num].config.enable = timer_en;
 }
@@ -67,6 +72,8 @@ static inline void timer_ll_get_divider(timg_dev_t *hw, timer_idx_t timer_num, u
     uint32_t d = hw->hw_timer[timer_num].config.divider;
     if (d == 0) {
         d = 65536;
+    } else if (d == 1) {
+        d = 2;
     }
     *divider = d;
 }

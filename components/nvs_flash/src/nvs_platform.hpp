@@ -21,7 +21,11 @@ class Lock
 public:
     Lock() { }
     ~Lock() { }
-    static void init() {}
+    static esp_err_t init()
+    {
+        return ESP_OK;
+    }
+
     static void uninit() {}
 };
 } // namespace nvs

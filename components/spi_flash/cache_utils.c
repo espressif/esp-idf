@@ -125,7 +125,7 @@ void IRAM_ATTR spi_flash_op_block_func(void *arg)
 
 void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu(void)
 {
-    assert(esp_ptr_in_dram((const void *)get_sp()));
+    assert(esp_ptr_in_dram((const void *)esp_cpu_get_sp()));
 
     spi_flash_op_lock();
 
@@ -152,8 +152,8 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu(void)
         // Signal to the spi_flash_op_block_task on the other CPU that we need it to
         // disable cache there and block other tasks from executing.
         s_flash_op_can_start = false;
-        esp_err_t ret = esp_ipc_call(other_cpuid, &spi_flash_op_block_func, (void *) other_cpuid);
-        assert(ret == ESP_OK);
+        ESP_ERROR_CHECK(esp_ipc_call(other_cpuid, &spi_flash_op_block_func, (void *) other_cpuid));
+
         while (!s_flash_op_can_start) {
             // Busy loop and wait for spi_flash_op_block_func to disable cache
             // on the other CPU

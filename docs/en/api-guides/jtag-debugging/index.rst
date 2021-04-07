@@ -2,8 +2,7 @@ JTAG Debugging
 ==============
 :link_to_translation:`zh_CN:[中文]`
 
-This document provides a guide to installing OpenOCD for {IDF_TARGET_NAME} and debugging using
-GDB. The document is structured as follows:
+This document provides a guide to installing OpenOCD for {IDF_TARGET_NAME} and debugging using GDB. The document is structured as follows:
 
 :ref:`jtag-debugging-introduction`
     Introduction to the purpose of this guide.
@@ -199,7 +198,7 @@ You are now ready to start application debugging. Follow steps described in sect
 .. _jtag-debugging-launching-debugger:
 
 Launching Debugger
-------------------
+---------------------
 
 The toolchain for {IDF_TARGET_NAME} features GNU Debugger, in short GDB. It is available with other toolchain programs under filename: {IDF_TARGET_TOOLCHAIN_PREFIX}-gdb. GDB can be called and operated directly from command line in a terminal. Another option is to call it from within IDE (like Eclipse, Visual Studio Code, etc.) and operate indirectly with help of GUI instead of typing commands in a terminal.
 
@@ -214,7 +213,7 @@ It is recommended to first check if debugger works from :ref:`jtag-debugging-usi
 .. _jtag-debugging-examples:
 
 Debugging Examples
-------------------
+----------------------
 
 This section is intended for users not familiar with GDB. It presents example debugging session from :ref:`jtag-debugging-examples-eclipse` using simple application available under :example:`get-started/blink` and covers the following debugging actions:
 
@@ -234,7 +233,7 @@ Before proceeding to examples, set up your {IDF_TARGET_NAME} target and load it 
 .. _jtag-debugging-building-openocd:
 
 Building OpenOCD from Sources
------------------------------
+---------------------------------
 
 Please refer to separate documents listed below, that describe build process.
 
@@ -276,7 +275,7 @@ and Windows:
 .. _jtag-debugging-tips-and-quirks:
 
 Tips and Quirks
----------------
+------------------
 
 This section provides collection of links to all tips and quirks referred to from various parts of this guide.
 
@@ -287,12 +286,20 @@ This section provides collection of links to all tips and quirks referred to fro
 
 
 Related Documents
------------------
+---------------------
 
 .. toctree::
+    :hidden:
+    
     :maxdepth: 1
 
     using-debugger
     debugging-examples
     tips-and-quirks
     ../app_trace
+
+- :doc:`using-debugger`
+- :doc:`debugging-examples`
+- :doc:`tips-and-quirks`
+- :doc:`../app_trace`
+- `Introduction to ESP-Prog Board <https://docs.espressif.com/projects/espressif-esp-iot-solution/en/latest/hw-reference/ESP-Prog_guide.html>`__ 

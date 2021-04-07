@@ -1,7 +1,8 @@
 idf_build_get_property(target IDF_TARGET)
 
 set(srcs "src/esp_timer.c"
-         "src/ets_timer_legacy.c")
+         "src/ets_timer_legacy.c"
+         "src/system_time.c")
 
 if(CONFIG_ESP_TIMER_IMPL_FRC2)
     list(APPEND srcs "src/esp_timer_impl_frc_legacy.c")

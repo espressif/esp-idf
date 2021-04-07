@@ -339,8 +339,11 @@ esp_err_t mdns_query_txt(const char * instance_name, const char * service_type, 
  */
 esp_err_t mdns_query_a(const char * host_name, uint32_t timeout, esp_ip4_addr_t * addr);
 
+#if CONFIG_LWIP_IPV6
 /**
  * @brief  Query mDNS for A record
+ *
+ * Please note that hostname must not contain domain name, as mDNS uses '.local' domain.
  *
  * @param  host_name    host name to look for
  * @param  timeout      time in milliseconds to wait for answer. If 0, max_results needs to be defined
@@ -353,11 +356,14 @@ esp_err_t mdns_query_a(const char * host_name, uint32_t timeout, esp_ip4_addr_t 
  *     - ESP_ERR_INVALID_ARG    parameter error
  */
 esp_err_t mdns_query_aaaa(const char * host_name, uint32_t timeout, esp_ip6_addr_t * addr);
+#endif
 
 /**
  * @brief   System event handler
  *          This method controls the service state on all active interfaces and applications are required
  *          to call it from the system event handler for normal operation of mDNS service.
+ *
+ * Please note that hostname must not contain domain name, as mDNS uses '.local' domain.
  *
  * @param  ctx          The system event context
  * @param  event        The system event

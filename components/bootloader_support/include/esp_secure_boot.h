@@ -19,16 +19,21 @@
 #include "esp_image_format.h"
 #include "esp_rom_efuse.h"
 #include "sdkconfig.h"
+#include "esp_rom_crc.h"
 
 #if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/efuse.h"
 #include "esp32/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/efuse.h"
+#include "esp32s2/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/efuse.h"
+#include "esp32c3/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/efuse.h"
+#include "esp32s3/rom/secure_boot.h"
 #endif
-
-typedef struct ets_secure_boot_signature ets_secure_boot_signature_t;
 
 #ifdef CONFIG_SECURE_BOOT_V1_ENABLED
 #if !defined(CONFIG_SECURE_SIGNED_ON_BOOT) || !defined(CONFIG_SECURE_SIGNED_ON_UPDATE) || !defined(CONFIG_SECURE_SIGNED_APPS)
@@ -44,6 +49,8 @@ extern "C" {
 
    Can be compiled as part of app or bootloader code.
 */
+
+#define ESP_SECURE_BOOT_DIGEST_LEN 32
 
 /** @brief Is secure boot currently enabled in hardware?
  *
@@ -181,6 +188,16 @@ typedef struct {
  */
 esp_err_t esp_secure_boot_verify_ecdsa_signature_block(const esp_secure_boot_sig_block_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest);
 
+#if !CONFIG_IDF_TARGET_ESP32 || CONFIG_ESP32_REV_MIN_3
+/**
+ * @brief Structure to hold public key digests calculated from the signature blocks of a single image.
+ *
+ * Each image can have one or more signature blocks (up to SECURE_BOOT_NUM_BLOCKS). Each signature block includes a public key.
+ */
+typedef struct {
+    uint8_t key_digests[SECURE_BOOT_NUM_BLOCKS][ESP_SECURE_BOOT_DIGEST_LEN];    /* SHA of the public key components in the signature block */
+    unsigned num_digests;                                       /* Number of valid digests, starting at index 0 */
+} esp_image_sig_public_key_digests_t;
 
 /** @brief Verify the RSA secure boot signature block for Secure Boot V2.
  *
@@ -194,6 +211,7 @@ esp_err_t esp_secure_boot_verify_ecdsa_signature_block(const esp_secure_boot_sig
  *
  */
 esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signature_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest);
+#endif // !CONFIG_IDF_TARGET_ESP32 || CONFIG_ESP32_REV_MIN_3
 
 /** @brief Legacy ECDSA verification function
  *
@@ -213,6 +231,45 @@ typedef struct {
     uint8_t iv[128];
     uint8_t digest[64];
 } esp_secure_boot_iv_digest_t;
+
+/** @brief Check the secure boot V2 during startup
+ *
+ * @note This function is called automatically during app startup,
+ * it doesn't need to be called from the app.
+ *
+ * Verifies the secure boot config during startup:
+ *
+ * - Correct any insecure secure boot settings
+ */
+void esp_secure_boot_init_checks(void);
+
+#if !BOOTLOADER_BUILD && CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
+
+/** @brief Scan the current running app for signature blocks
+ *
+ * @note This function doesn't verify that the signatures are valid or the
+ * corresponding public keys are trusted, it only reads the number of signature
+ * blocks present and optionally calculates the digests of the public keys
+ * provided in the signature blocks.
+ *
+ * @param digest_public_keys If true, the key_digests fields in the
+ * public_key_digests structure will be filled with the digests of the public
+ * key provided in each signature block. Note that if Secure Boot V2 is enabled,
+ * each public key will only be trusted if the same digest is also present in
+ * eFuse (but this is not checked by this function).
+ *
+ * @param public_key_digests[out] Structure is initialized with the num_digests
+ * field set to the number of signatures found. If digest_public_keys is set,
+ * the public key digests are also calculated and stored here.
+ *
+ * @return
+ *  - ESP_OK - At least one signature was found
+ *  - ESP_ERR_NOT_FOUND - No signatures were found, num_digests value will be zero
+ *  - ESP_FAIL - An error occured trying to read the signature blocks from flash
+ */
+esp_err_t esp_secure_boot_get_signature_blocks_for_running_app(bool digest_public_keys, esp_image_sig_public_key_digests_t *public_key_digests);
+
+#endif // !BOOTLOADER_BUILD && CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
 
 #ifdef __cplusplus
 }

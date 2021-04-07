@@ -3,7 +3,7 @@ import os
 import sys
 
 import click
-from idf_py_actions.errors import FatalError
+from idf_py_actions.errors import FatalError, NoSerialPortFoundError
 from idf_py_actions.global_options import global_options
 from idf_py_actions.tools import ensure_build_directory, get_sdkconfig_value, run_target, run_tool
 
@@ -19,12 +19,21 @@ def action_extensions(base_actions, project_path):
             sys.path.insert(0, esptool_path)
             import esptool
             ports = list(sorted(p.device for p in serial.tools.list_ports.comports()))
-            esp = esptool.get_default_connected_device(serial_list=ports, port=None, connect_attempts=3,
-                                                       initial_baud=args.baud)
+            # high baud rate could cause the failure of creation of the connection
+            esp = esptool.get_default_connected_device(serial_list=ports, port=None, connect_attempts=4,
+                                                       initial_baud=115200)
+            if esp is None:
+                raise NoSerialPortFoundError(
+                    "No serial ports found. Connect a device, or use '-p PORT' option to set a specific port.")
 
-            return esp.serial_port
-        except Exception:
-            raise FatalError("No serial ports found. Connect a device, or use '-p PORT' option to set a specific port.")
+            serial_port = esp.serial_port
+            esp._port.close()
+
+            return serial_port
+        except NoSerialPortFoundError:
+            raise
+        except Exception as e:
+            raise FatalError('An exception occurred during detection of the serial port: {}'.format(e))
 
     def _get_esptool_args(args):
         esptool_path = os.path.join(os.environ['IDF_PATH'], 'components/esptool_py/esptool/esptool.py')

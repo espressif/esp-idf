@@ -48,7 +48,7 @@ static void master_init_nodma( spi_device_handle_t* spi)
         .cs_ena_pretrans=1,
     };
     //Initialize the SPI bus
-    ret=spi_bus_initialize(TEST_SPI_HOST, &buscfg, 0);
+    ret=spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO);
     TEST_ASSERT(ret==ESP_OK);
     //Attach the LCD to the SPI bus
     ret=spi_bus_add_device(TEST_SPI_HOST, &devcfg, spi);
@@ -75,7 +75,7 @@ static void slave_init(void)
     gpio_set_pull_mode(PIN_NUM_CLK, GPIO_PULLUP_ONLY);
     gpio_set_pull_mode(PIN_NUM_CS, GPIO_PULLUP_ONLY);
     //Initialize SPI slave interface
-    TEST_ESP_OK( spi_slave_initialize(TEST_SLAVE_HOST, &buscfg, &slvcfg, 2) );
+    TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &buscfg, &slvcfg, SPI_DMA_CH_AUTO));
 }
 
 TEST_CASE("test slave send unaligned","[spi]")
@@ -176,6 +176,8 @@ static void unaligned_test_master(void)
     devcfg.queue_size = 7;
     TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &spi));
 
+    unity_send_signal("Master ready");
+
     uint8_t *master_send_buf = heap_caps_malloc(BUF_SIZE, MALLOC_CAP_DMA);
     uint8_t *master_recv_buf = heap_caps_calloc(BUF_SIZE, 1, MALLOC_CAP_DMA);
     //This buffer is used for 2-board test and should be assigned totally the same as the ``test_slave_loop`` does.
@@ -197,7 +199,8 @@ static void unaligned_test_master(void)
             .length = length_in_bytes * 8,
         };
 
-        unity_wait_for_signal("slave ready");
+        vTaskDelay(50);
+        unity_wait_for_signal("Slave ready");
         TEST_ESP_OK(spi_device_transmit(spi, (spi_transaction_t*)&t));
 
         //show result
@@ -218,9 +221,10 @@ static void unaligned_test_master(void)
 
 static void unaligned_test_slave(void)
 {
+    unity_wait_for_signal("Master ready");
     spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
     spi_slave_interface_config_t slvcfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
-    TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &buscfg, &slvcfg, TEST_SLAVE_HOST));
+    TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &buscfg, &slvcfg, SPI_DMA_CH_AUTO));
 
     uint8_t *slave_send_buf = heap_caps_malloc(BUF_SIZE, MALLOC_CAP_DMA);
     uint8_t *slave_recv_buf = heap_caps_calloc(BUF_SIZE, 1, MALLOC_CAP_DMA);
@@ -243,7 +247,7 @@ static void unaligned_test_slave(void)
             .length = 32 * 8,
         };
 
-        unity_send_signal("slave ready");
+        unity_send_signal("Slave ready");
         TEST_ESP_OK(spi_slave_transmit(TEST_SLAVE_HOST, &slave_t, portMAX_DELAY));
 
         //show result
@@ -264,7 +268,6 @@ static void unaligned_test_slave(void)
     TEST_ASSERT(spi_slave_free(TEST_SLAVE_HOST) == ESP_OK);
 }
 
-TEST_CASE_MULTIPLE_DEVICES("SPI_Slave_Unaligned_Test", "[spi_ms][spi_slave]", unaligned_test_master, unaligned_test_slave);
-
+TEST_CASE_MULTIPLE_DEVICES("SPI_Slave_Unaligned_Test", "[spi_ms][test_env=Example_SPI_Multi_device][timeout=120]", unaligned_test_master, unaligned_test_slave);
 
 #endif  //#if !DISABLED_FOR_TARGETS(ESP32, ESP32S2, ESP32S3)

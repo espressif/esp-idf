@@ -1,7 +1,7 @@
 System Time
 ===========
 
-{IDF_TARGET_RTC_CLK_FRE:default="150kHz", esp32="150kHz", esp32s2="90kHz"}
+{IDF_TARGET_RTC_CLK_FRE:default="150kHz", esp32s2="90kHz"}
 {IDF_TARGET_HARDWARE_DESIGN_URL:default="`ESP32 Hardware Design Guidelines <https://www.espressif.com/sites/default/files/documentation/esp32_hardware_design_guidelines_en.pdf#page=10>`_", esp32="`ESP32 Hardware Design Guidelines <https://www.espressif.com/sites/default/files/documentation/esp32_hardware_design_guidelines_en.pdf#page=10>`_", esp32s2="`ESP32-S2 Hardware Design Guidelines <https://www.espressif.com/sites/default/files/documentation/esp32-s2_hardware_design_guidelines_en.pdf#page=10>`_"}
 
 Overview

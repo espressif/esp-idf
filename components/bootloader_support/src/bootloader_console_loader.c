@@ -27,6 +27,11 @@
 #include "esp32s2/rom/usb/usb_dc.h"
 #include "esp32s2/rom/usb/cdc_acm.h"
 #include "esp32s2/rom/usb/usb_persist.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/usb/chip_usb_dw_wrapper.h"
+#include "esp32s3/rom/usb/usb_dc.h"
+#include "esp32s3/rom/usb/cdc_acm.h"
+#include "esp32s3/rom/usb/usb_persist.h"
 #endif
 
 #ifdef CONFIG_ESP_CONSOLE_USB_CDC

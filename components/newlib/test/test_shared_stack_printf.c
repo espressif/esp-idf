@@ -14,19 +14,26 @@ static StackType_t *shared_stack_sp = NULL;
 
 void external_stack_function(void)
 {
-    printf("Executing this printf from external stack! sp=%p\n", get_sp());
-    shared_stack_sp = (StackType_t *)get_sp();
+    printf("Executing this printf from external stack! sp=%p\n", esp_cpu_get_sp());
+
+    shared_stack_sp = (StackType_t *)esp_cpu_get_sp();
+
+    char *res = NULL;
+    /* Test return value from asprintf, this could potentially help catch a misaligned
+       stack pointer error */
+    asprintf(&res, "%d %011i %lu %p %x %c %.4f\n", 42, 2147483647, 2147483648UL, (void *) 0x40010000, 0x40020000, 'Q', 1.0f / 137.0f);
+    TEST_ASSERT_NOT_NULL(res);
+    TEST_ASSERT_EQUAL_STRING("42 02147483647 2147483648 0x40010000 40020000 Q 0.0073\n", res);
+    free(res);
 }
 
 void another_external_stack_function(void)
 {
     //We can even use Freertos resources inside of this context.
-    printf("We can even use FreeRTOS resources... yielding, sp=%p\n", get_sp());
+    printf("We can even use FreeRTOS resources... yielding, sp=%p\n", esp_cpu_get_sp());
     taskYIELD();
-    shared_stack_sp = (StackType_t *)get_sp();
+    shared_stack_sp = (StackType_t *)esp_cpu_get_sp();
 }
-
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3)
 
 TEST_CASE("test printf using shared buffer stack", "[newlib]")
 {
@@ -36,7 +43,7 @@ TEST_CASE("test printf using shared buffer stack", "[newlib]")
 
     SemaphoreHandle_t printf_lock = xSemaphoreCreateMutex();
     TEST_ASSERT_NOT_NULL(printf_lock);
-    printf("current task sp: %p\n", get_sp());
+    printf("current task sp: %p\n", esp_cpu_get_sp());
     printf("shared_stack: %p\n", (void *)shared_stack);
     printf("shared_stack expected top: %p\n", (void *)(shared_stack + SHARED_STACK_SIZE));
 
@@ -60,5 +67,3 @@ TEST_CASE("test printf using shared buffer stack", "[newlib]")
     vSemaphoreDelete(printf_lock);
     free(shared_stack);
 }
-
-#endif

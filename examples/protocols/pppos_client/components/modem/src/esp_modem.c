@@ -87,7 +87,6 @@ esp_err_t esp_modem_set_rx_cb(modem_dte_t *dte, esp_modem_on_receive receive_cb,
     return ESP_OK;
 }
 
-
 /**
  * @brief Handle one line in DTE
  *
@@ -330,8 +329,6 @@ err:
     return -1;
 }
 
-
-
 /**
  * @brief Send data and wait for prompt from DCE
  *
@@ -445,8 +442,6 @@ static esp_err_t esp_modem_dte_deinit(modem_dte_t *dte)
     free(esp_dte);
     return ESP_OK;
 }
-
-
 
 modem_dte_t *esp_modem_dte_init(const esp_modem_dte_config_t *config)
 {

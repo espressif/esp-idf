@@ -217,6 +217,46 @@ Enums should be defined through the `typedef` and be namespaced::
         MODULE_FOO_THREE
     } module_foo_t;
 
+
+.. _assertions:
+
+Assertions
+^^^^^^^^^^
+
+The standard C ``assert()`` function, defined in ``assert.h`` should be used to check conditions that should be true in source code. In the default configuration, an assert condition that returns ``false`` or 0 will call ``abort()`` and trigger a :doc:`Fatal Error</api-guides/fatal-errors>`.
+
+``assert()`` should only be used to detect unrecoverable errors due to a serious internal logic bug or corruption, where it's not possible for the program to continue. For recoverable errors, including errors that are possible due to invalid external input, an :doc:`error value should be returned </api-guides/error-handling>`.
+
+.. note::
+
+   When asserting a value of type ``esp_err_t``is equal to ``ESP_OK``, use the :ref:`esp-error-check-macro` instead of an ``assert()``.
+
+It's possible to configure ESP-IDF projects with assertions disabled (see :ref:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL`). Therefore, functions called in an ``assert()`` statement should not have side-effects.
+
+It's also necessary to use particular techniques to avoid "variable set but not used" warnings when assertions are disabled, due to code patterns such as::
+
+  int res = do_something();
+  assert(res == 0);
+
+Once the ``assert`` is optimized out, the ``res`` value is unused and the compiler will warn about this. However the function ``do_something()`` must still be called, even if assertions are disabled.
+
+When the variable is declared and initialized in a single statement, a good strategy is to cast it to ``void`` on a new line. The compiler will not produce a warning, and the variable can still be optimized out of the final binary::
+
+  int res = do_something();
+  assert(res == 0);
+  (void)res;
+
+If the variable is declared separately, for example if it is used for multiple assertions, then it can be declared with the GCC attribute ``__attribute__((unused))``. The compiler will not produce any unused variable warnings, but the variable can still be optimized out::
+
+  int res __attribute__((unused));
+
+  res = do_something();
+  assert(res == 0);
+
+  res = do_something_else();
+  assert(res != 0);
+
+
 C++ Code Formatting
 -------------------
 

@@ -1683,8 +1683,7 @@ static void bta_gattc_conn_cback(tGATT_IF gattc_if, BD_ADDR bda, UINT16 conn_id,
     tBTA_GATTC_DATA *p_buf;
 
     if (reason != 0) {
-        APPL_TRACE_WARNING("%s() - cif=%d connected=%d conn_id=%d reason=0x%04x",
-                           __FUNCTION__, gattc_if, connected, conn_id, reason);
+        APPL_TRACE_WARNING("gattc_conn_cb: if=%d st=%d id=%d rsn=0x%x", gattc_if, connected, conn_id, reason);
     }
 
     bt_bdaddr_t bdaddr;
@@ -1702,7 +1701,7 @@ static void bta_gattc_conn_cback(tGATT_IF gattc_if, BD_ADDR bda, UINT16 conn_id,
                 p_buf->int_conn.conn_params.latency = p_lcb->current_used_conn_latency;
                 p_buf->int_conn.conn_params.timeout = p_lcb->current_used_conn_timeout;
             } else {
-                APPL_TRACE_WARNING("%s not found connection parameters of the device ", __func__);
+                APPL_TRACE_WARNING("gattc_conn_cb: conn params not found");
             }
         }
         p_buf->int_conn.hdr.layer_specific   = conn_id;

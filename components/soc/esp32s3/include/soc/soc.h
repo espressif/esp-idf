@@ -74,7 +74,7 @@
 #define DR_REG_EFUSE_BASE                       0x6001A000
 #define DR_REG_NRX_BASE                         0x6001CC00
 #define DR_REG_BB_BASE                          0x6001D000
-#define DR_REG_PWM_BASE                         0x6001E000
+#define DR_REG_PWM0_BASE                        0x6001E000
 #define DR_REG_TIMERGROUP0_BASE                 0x6001F000
 #define DR_REG_TIMERGROUP1_BASE                 0x60020000
 #define DR_REG_RTC_SLOWMEM_BASE                 0x60021000
@@ -85,13 +85,13 @@
 #define DR_REG_APB_CTRL_BASE                    0x60026000    /* Old name for SYSCON, to be removed */
 #define DR_REG_I2C1_EXT_BASE                    0x60027000
 #define DR_REG_SDMMC_BASE                       0x60028000
+#define DR_REG_PERI_BACKUP_BASE                 0x6002A000
 #define DR_REG_TWAI_BASE                        0x6002B000
 #define DR_REG_PWM1_BASE                        0x6002C000
 #define DR_REG_I2S1_BASE                        0x6002D000
 #define DR_REG_UART2_BASE                       0x6002E000
-#define DR_REG_PWM2_BASE                        0x6002F000
-#define DR_REG_PWM3_BASE                        0x60030000
 #define DR_REG_SPI4_BASE                        0x60037000
+#define DR_REG_USB_DEVICE_BASE                  0x60038000
 #define DR_REG_USB_WRAP_BASE                    0x60039000
 #define DR_REG_APB_SARADC_BASE                  0x60040000
 #define DR_REG_LCD_CAM_BASE                     0x60041000
@@ -263,8 +263,9 @@
 #define SOC_DMA_HIGH 0x3FD00000
 
 // Region of memory accessible via DMA in external memory. See esp_ptr_dma_ext_capable().
-#define SOC_DMA_EXT_LOW     0x3C000000
-#define SOC_DMA_EXT_HIGH    0x3DFFFFFF
+#define SOC_DMA_EXT_LOW     SOC_EXTRAM_DATA_LOW
+#define SOC_DMA_EXT_HIGH    SOC_EXTRAM_DATA_HIGH
+
 
 // Region of memory that is byte-accessible. See esp_ptr_byte_accessible().
 #define SOC_BYTE_ACCESSIBLE_LOW     0x3FC88000

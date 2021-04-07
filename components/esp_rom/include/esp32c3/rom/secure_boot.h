@@ -85,6 +85,8 @@ ets_secure_boot_status_t ets_secure_boot_verify_signature(const ets_secure_boot_
  */
 void ets_secure_boot_revoke_public_key_digest(int index);
 
+#define CRC_SIGN_BLOCK_LEN 1196
+#define SIG_BLOCK_PADDING 4096
 #define ETS_SECURE_BOOT_V2_SIGNATURE_MAGIC 0xE7
 
 /* Secure Boot V2 signature block

@@ -19,9 +19,9 @@ Line editing
 
 Line editing feature lets users compose commands by typing them, erasing symbols using 'backspace' key, navigating within the command using left/right keys, navigating to previously typed commands using up/down keys, and performing autocompletion using 'tab' key.
 
-.. note:: 
+.. note::
 
-  This feature relies on ANSI escape sequence support in the terminal application. As such, serial monitors which display raw UART data can not be used together with the line editing library. If you see ``[6n`` or similar escape sequence when running :example:`system/console` example instead of a command prompt (e.g. ``esp> ``), it means that the serial monitor does not support escape sequences. Programs which are known to work are  GNU screen, minicom, and idf_monitor.py (which can be invoked using ``idf.py monitor`` from project directory).
+  This feature relies on ANSI escape sequence support in the terminal application. As such, serial monitors which display raw UART data can not be used together with the line editing library. If you see ``[6n`` or similar escape sequence when running :example:`system/console` example instead of a command prompt (e.g. ``esp>`` ), it means that the serial monitor does not support escape sequences. Programs which are known to work are  GNU screen, minicom, and idf_monitor.py (which can be invoked using ``idf.py monitor`` from project directory).
 
 Here is an overview of functions provided by `linenoise`_ library.
 
@@ -148,7 +148,7 @@ Initialize console REPL environment
 
 To establish a basic REPL environment, ``console`` component provides several useful APIs, combining those functions described above.
 
-In a typical application, you only need to call :cpp:func:`esp_console_new_repl_uart` to initialize the REPL environment based on UART device, including driver install, basic console configuration, spawning a thread to do REPL task and register several useful commands (e.g. `help`). 
+In a typical application, you only need to call :cpp:func:`esp_console_new_repl_uart` to initialize the REPL environment based on UART device, including driver install, basic console configuration, spawning a thread to do REPL task and register several useful commands (e.g. `help`).
 
 After that, you can register your own commands with :cpp:func:`esp_console_cmd_register`. The REPL environment keeps in init state until you call :cpp:func:`esp_console_start_repl`.
 

@@ -16,6 +16,7 @@
 #define _ESP_TRANSPORT_TCP_H_
 
 #include "esp_transport.h"
+#include <sys/socket.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,6 +30,15 @@ extern "C" {
  *
  */
 void esp_transport_tcp_set_keep_alive(esp_transport_handle_t t, esp_transport_keep_alive_t *keep_alive_cfg);
+
+/**
+ * @brief      Set name of interface that socket can be binded on
+ *             So the data can transport on this interface
+ *
+ * @param[in]  t        The transport handle
+ * @param[in]  if_name  The interface name
+ */
+void esp_transport_tcp_set_interface_name(esp_transport_handle_t t, struct ifreq *if_name);
 
 /**
  * @brief      Create TCP transport, the transport handle must be release esp_transport_destroy callback

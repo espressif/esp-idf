@@ -29,12 +29,23 @@ Application Example
             return ESP_OK;
         }
 
-.. only:: esp32
+Partial Image Download over HTTPS
+---------------------------------
 
-    Signature Verification
-    ----------------------
+To use partial image download feature, enable ``partial_http_download`` configuration in ``esp_https_ota_config_t``.
+When this configuration is enabled, firmware image will be downloaded in multiple HTTP requests of specified size.
+Maximum content length of each request can be specified by setting ``max_http_request_size`` to required value.
 
-    For additional security, signature of OTA firmware images can be verified. For that, refer :ref:`secure-ota-updates`
+This option is useful while fetching image from a service like AWS S3, where mbedTLS Rx buffer size (:ref:`CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN`)
+can be set to lower value which is not possible without enabling this configuration.
+
+Default value of mbedTLS Rx buffer size is set to 16K. By using partial_http_download with max_http_request_size of 4K,
+size of mbedTLS Rx buffer can be reduced to 4K. With this confiuration, memory saving of around 12K is expected.
+
+Signature Verification
+----------------------
+
+For additional security, signature of OTA firmware images can be verified. For that, refer :ref:`secure-ota-updates`
 
 API Reference
 -------------

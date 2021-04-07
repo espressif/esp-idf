@@ -52,6 +52,21 @@ void esp_timer_impl_deinit(void);
 void esp_timer_impl_set_alarm(uint64_t timestamp);
 
 /**
+ * @brief Set up the timer interrupt to fire at a particular time for a particular alarm module.
+ *
+ * If the alarm time is too close in the future, implementation should set the
+ * alarm to the earliest time possible.
+ *
+ * @param timestamp time in microseconds when interrupt should fire (relative to
+ *                  boot time, i.e. as returned by esp_timer_impl_get_time)
+ *
+ * @param alarm_id Id alarm:
+ *                 0 - alarm_0 for the ESP_TIMER_TASK dispatch method,
+ *                 1 - alarm_1 for the ESP_TIMER_ISR dispatch method.
+ */
+void esp_timer_impl_set_alarm_id(uint64_t timestamp, unsigned alarm_id);
+
+/**
  * @brief Notify esp_timer implementation that APB frequency has changed
  *
  * Called by the frequency switching code.
@@ -117,3 +132,10 @@ uint64_t esp_timer_impl_get_counter_reg(void);
  * @return the value of the alarm register
  */
 uint64_t esp_timer_impl_get_alarm_reg(void);
+
+#if CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER
+/**
+ * @brief Initialize esp_timer as system time provider.
+ */
+void esp_timer_impl_init_system_time(void);
+#endif

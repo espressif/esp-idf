@@ -416,6 +416,9 @@ void vPortAssertIfInISR(void)
 	configASSERT(xPortInIsrContext());
 }
 
+#define STACK_WATCH_AREA_SIZE 32
+#define STACK_WATCH_POINT_NUMBER (SOC_CPU_WATCHPOINTS_NUM - 1)
+
 void vPortSetStackWatchpoint( void* pxStackStart ) {
 	//Set watchpoint 1 to watch the last 32 bytes of the stack.
 	//Unfortunately, the Xtensa watchpoints can't set a watchpoint on a random [base - base+n] region because
@@ -425,7 +428,7 @@ void vPortSetStackWatchpoint( void* pxStackStart ) {
 	//This way, we make sure we trigger before/when the stack canary is corrupted, not after.
 	int addr=(int)pxStackStart;
 	addr=(addr+31)&(~31);
-	esp_set_watchpoint(1, (char*)addr, 32, ESP_WATCHPOINT_STORE);
+	esp_cpu_set_watchpoint(STACK_WATCH_POINT_NUMBER, (char*)addr, 32, ESP_WATCHPOINT_STORE);
 }
 
 uint32_t xPortGetTickRateHz(void) {
@@ -530,15 +533,6 @@ void esp_startup_start_app(void)
 	assert(!soc_has_cache_lock_bug() && "ESP32 Rev 3 + Dual Core + PSRAM requires INT WDT enabled in project config!");
 #endif
 #endif
-
-	// ESP32 has single core variants. Check that FreeRTOS has been configured properly.
-#if CONFIG_IDF_TARGET_ESP32 && !CONFIG_FREERTOS_UNICORE
-	if (REG_GET_BIT(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_DIS_APP_CPU)) {
-		ESP_EARLY_LOGE(TAG, "Running on single core chip, but FreeRTOS is built with dual core support.");
-		ESP_EARLY_LOGE(TAG, "Please enable CONFIG_FREERTOS_UNICORE option in menuconfig.");
-		abort();
-	}
-#endif // CONFIG_IDF_TARGET_ESP32 && !CONFIG_FREERTOS_UNICORE
 
 	esp_startup_start_app_common();
 

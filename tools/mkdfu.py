@@ -38,7 +38,7 @@ except ImportError:
     pass
 
 try:
-    from itertools import izip as zip
+    from itertools import izip as zip  # type: ignore
 except ImportError:
     # Python 3
     pass
@@ -125,7 +125,7 @@ def pad_bytes(b, multiple, padding=b'\x00'):  # type: (bytes, int, bytes) -> byt
 
 
 class EspDfuWriter(object):
-    def __init__(self, dest_file, pid):  # type: (typing.BinaryIO) -> None
+    def __init__(self, dest_file, pid):  # type: (typing.BinaryIO, int) -> None
         self.dest = dest_file
         self.pid = pid
         self.entries = []  # type: typing.List[bytes]
@@ -187,7 +187,7 @@ class EspDfuWriter(object):
             self.entries.insert(0, entry)
 
 
-def action_write(args):
+def action_write(args):  # type: (typing.Mapping[str, typing.Any]) -> None
     writer = EspDfuWriter(args['output_file'], args['pid'])
     for addr, f in args['files']:
         print('Adding {} at {:#x}'.format(f, addr))
@@ -196,7 +196,7 @@ def action_write(args):
     print('"{}" has been written. You may proceed with DFU flashing.'.format(args['output_file'].name))
 
 
-def main():
+def main():  # type: () -> None
     parser = argparse.ArgumentParser()
 
     # Provision to add "info" command
@@ -218,7 +218,7 @@ def main():
 
     args = parser.parse_args()
 
-    def check_file(file_name):
+    def check_file(file_name):  # type: (str) -> str
         if not os.path.isfile(file_name):
             raise RuntimeError('{} is not a regular file!'.format(file_name))
         return file_name
@@ -230,7 +230,7 @@ def main():
     if args.json:
         json_dir = os.path.dirname(os.path.abspath(args.json))
 
-        def process_json_file(path):
+        def process_json_file(path):  # type: (str) -> str
             '''
             The input path is relative to json_dir. This function makes it relative to the current working
             directory.

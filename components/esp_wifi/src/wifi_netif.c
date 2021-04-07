@@ -66,7 +66,7 @@ static esp_err_t wifi_transmit(void *h, void *buffer, size_t len)
 static esp_err_t wifi_transmit_wrap(void *h, void *buffer, size_t len, void *netstack_buf)
 {
     wifi_netif_driver_t driver = h;
-#if (CONFIG_ESP32_SPIRAM_SUPPORT | CONFIG_ESP32S2_SPIRAM_SUPPORT)
+#if (CONFIG_ESP32_SPIRAM_SUPPORT || CONFIG_ESP32S2_SPIRAM_SUPPORT || CONFIG_ESP32S3_SPIRAM_SUPPORT)
     return esp_wifi_internal_tx_by_ref(driver->wifi_if, buffer, len, netstack_buf);
 #else
     return esp_wifi_internal_tx(driver->wifi_if, buffer, len);

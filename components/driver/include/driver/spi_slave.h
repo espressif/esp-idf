@@ -90,12 +90,13 @@ struct spi_slave_transaction_t {
  *
  * @warning For now, only supports HSPI and VSPI.
  *
- * @param host SPI peripheral to use as a SPI slave interface
- * @param bus_config Pointer to a spi_bus_config_t struct specifying how the host should be initialized
- * @param slave_config Pointer to a spi_slave_interface_config_t struct specifying the details for the slave interface
- * @param dma_chan Either 1 or 2. A SPI bus used by this driver must have a DMA channel associated with
- *                 it. The SPI hardware has two DMA channels to share. This parameter indicates which
- *                 one to use.
+ * @param host          SPI peripheral to use as a SPI slave interface
+ * @param bus_config    Pointer to a spi_bus_config_t struct specifying how the host should be initialized
+ * @param slave_config  Pointer to a spi_slave_interface_config_t struct specifying the details for the slave interface
+ * @param dma_chan      - Selecting a DMA channel for an SPI bus allows transactions on the bus with size only limited by the amount of internal memory.
+ *                      - Selecting SPI_DMA_DISABLED limits the size of transactions.
+ *                      - Set to SPI_DMA_DISABLED if only the SPI flash uses this bus.
+ *                      - Set to SPI_DMA_CH_AUTO to let the driver to allocate the DMA channel.
  *
  * @warning If a DMA channel is selected, any transmit and receive buffer used should be allocated in
  *          DMA-capable memory.
@@ -107,10 +108,11 @@ struct spi_slave_transaction_t {
  * @return
  *         - ESP_ERR_INVALID_ARG   if configuration is invalid
  *         - ESP_ERR_INVALID_STATE if host already is in use
+ *         - ESP_ERR_NOT_FOUND     if there is no available DMA channel
  *         - ESP_ERR_NO_MEM        if out of memory
  *         - ESP_OK                on success
  */
-esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *bus_config, const spi_slave_interface_config_t *slave_config, int dma_chan);
+esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *bus_config, const spi_slave_interface_config_t *slave_config, spi_dma_chan_t dma_chan);
 
 /**
  * @brief Free a SPI bus claimed as a SPI slave interface

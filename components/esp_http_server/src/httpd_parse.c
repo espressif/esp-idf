@@ -722,6 +722,7 @@ static void httpd_req_cleanup(httpd_req_t *r)
     ra->sd = NULL;
     r->handle = NULL;
     r->aux = NULL;
+    r->user_ctx = NULL;
 }
 
 /* Function that processes incoming TCP data and
@@ -752,6 +753,8 @@ esp_err_t httpd_req_new(struct httpd_data *hd, struct sock_db *sd)
     esp_err_t ret;
 
 #ifdef CONFIG_HTTPD_WS_SUPPORT
+    /* Copy user_ctx to the request */
+    r->user_ctx = sd->ws_user_ctx;
     /* Handle WebSocket */
     ESP_LOGD(TAG, LOG_FMT("New request, has WS? %s, sd->ws_handler valid? %s, sd->ws_close? %s"),
              sd->ws_handshake_done ? "Yes" : "No",

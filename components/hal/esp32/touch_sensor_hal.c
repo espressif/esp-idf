@@ -19,7 +19,9 @@
 
 void touch_hal_init(void)
 {
+    touch_ll_stop_fsm();
     touch_ll_intr_disable();
+    touch_ll_intr_clear();
     touch_ll_clear_channel_mask(TOUCH_PAD_BIT_MASK_ALL);
     touch_ll_clear_group_mask(TOUCH_PAD_BIT_MASK_ALL, TOUCH_PAD_BIT_MASK_ALL);
     touch_ll_set_trigger_mode(TOUCH_TRIGGER_MODE_DEFAULT);

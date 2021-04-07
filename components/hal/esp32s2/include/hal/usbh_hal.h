@@ -44,6 +44,7 @@ NOTE: Thread safety is the responsibility fo the HAL user. All USB Host HAL
 
 /**
  * @brief Channel states
+ *
  */
 typedef enum {
     USBH_HAL_CHAN_STATE_HALTED = 0,         /**< The channel is halted. No transfer descriptor list is being executed */
@@ -57,6 +58,7 @@ typedef enum {
  * @brief Host port HAL events
  */
 typedef enum {
+    USBH_HAL_PORT_EVENT_NONE,               /**< No event occurred, or could not decode interrupt */
     USBH_HAL_PORT_EVENT_CHAN,               /**< A channel event has occurred. Call the the channel event handler instead */
     USBH_HAL_PORT_EVENT_CONN,               /**< The host port has detected a connection */
     USBH_HAL_PORT_EVENT_DISCONN,            /**< The host port has been disconnected */
@@ -74,7 +76,6 @@ typedef enum {
     USBH_HAL_CHAN_EVENT_SLOT_HALT,          /**< The channel as completed execution of a single transfer descriptor in a list. Channel is now halted */
     USBH_HAL_CHAN_EVENT_ERROR,              /**< The channel has encountered an error. Channel is now halted. */
     USBH_HAL_CHAN_EVENT_HALT_REQ,           /**< The channel has been successfully halted as requested */
-    USBH_HAL_CHAN_EVENT_SUDDEN_HLT,         /**< The channel was suddenly halted (e.g. due to a disconnect). */
 } usbh_hal_chan_event_t;
 
 // ------------------------------- HAL Errors ----------------------------------
@@ -87,7 +88,6 @@ typedef enum {
     USBH_HAL_CHAN_ERROR_BNA,                /**< Buffer Not Available error (i.e., transfer slot is unfilled */
     USBH_HAL_CHAN_ERROR_PKT_BBL,            /**< Packet babbler error (packet exceeded MPS) */
     USBH_HAL_CHAN_ERROR_STALL,              /**< STALL response received */
-    USBH_HAL_CHAN_ERROR_AHB,                /**< AHB error */
 } usbh_hal_chan_error_t;
 
 // ----------------------- Transfer Descriptor Related -------------------------
@@ -102,6 +102,11 @@ typedef enum {
 
 /**
  * @brief Status value of a transfer descriptor
+ *
+ * A transfer descriptor's status remains unexecuted until the entire transfer
+ * descriptor completes (either successfully or an error). Therefore, if a
+ * channel halt is requested before a transfer descriptor completes, the
+ * transfer descriptoor remains unexecuted.
  */
 #define USBH_HAL_XFER_DESC_STS_SUCCESS      USBH_LL_QTD_STATUS_SUCCESS
 #define USBH_HAL_XFER_DESC_STS_PKTERR       USBH_LL_QTD_STATUS_PKTERR
@@ -120,7 +125,9 @@ typedef struct {
             uint32_t bEndpointAddress: 8;   /**< Endpoint address (containing endpoint number and direction) */
             uint32_t mps: 11;               /**< Maximum Packet Size */
             uint32_t dev_addr: 8;           /**< Device Address */
-            uint32_t reserved3: 3;
+            uint32_t ls_via_fs_hub: 1;      /**< The endpoint is on a LS device that is routed through an FS hub.
+                                                 Setting this bit will lead to the addition of the PREamble packet */
+            uint32_t reserved2: 2;
         };
         uint32_t val;
     };
@@ -148,7 +155,7 @@ typedef struct {
     struct {
         union {
             struct {
-                bool slot_acquired: 1;      /**< The transfer descriptor list slot has been acquired */
+                uint32_t slot_acquired: 1;  /**< The transfer descriptor list slot has been acquired */
                 uint32_t reserved7: 7;
                 uint32_t cur_qtd_idx: 8;    /**< Index of the first QTD in chain of QTDs being executed */
                 uint32_t qtd_list_len: 8;   /**< Length of QTD list in number of QTDs */
@@ -178,8 +185,8 @@ typedef struct {
     } flags;
     //Channel related
     struct {
-        int num_allocd;                         /**< Number of channels currently allocated */
-        int chan_pend_intrs_msk;                /**< Bit mask of channels with pending interrupts */
+        int num_allocd;                             /**< Number of channels currently allocated */
+        uint32_t chan_pend_intrs_msk;               /**< Bit mask of channels with pending interrupts */
         usbh_hal_chan_t *hdls[USBH_HAL_NUM_CHAN];   /**< Handles of each channel. Set to NULL if channel has not been allocated */
     } channels;
 } usbh_hal_context_t;
@@ -417,13 +424,17 @@ static inline usb_speed_t usbh_hal_port_get_conn_speed(usbh_hal_context_t *hal)
  * @brief Disable the debounce lock
  *
  * This function should be called after calling usbh_hal_port_check_if_connected()
- * and will allow connection/disconnection events to occur again.
+ * and will allow connection/disconnection events to occur again. Any pending
+ * connection or disconenction interrupts are cleared.
  *
  * @param hal Context of the HAL layer
  */
 static inline void usbh_hal_disable_debounce_lock(usbh_hal_context_t *hal)
 {
     hal->flags.dbnc_lock_enabled = 0;
+    //Clear Conenction and disconenction interrupt in case it triggered again
+    usb_ll_intr_clear(hal->dev, USB_LL_INTR_CORE_DISCONNINT);
+    usbh_ll_hprt_intr_clear(hal->dev, USBH_LL_INTR_HPRT_PRTENCHNG);
     //Reenable the hprt (connection) and disconnection interrupts
     usb_ll_en_intrs(hal->dev, USB_LL_INTR_CORE_PRTINT | USB_LL_INTR_CORE_DISCONNINT);
 }
@@ -659,7 +670,7 @@ static inline void usbh_hal_chan_slot_acquire(usbh_hal_chan_t *chan_obj, void *x
     chan_obj->slot.owner_ctx = owner_ctx;
     chan_obj->slot.flags.cur_qtd_idx = 0;   //Start from the first descriptor
     chan_obj->slot.flags.qtd_list_len = desc_list_len;
-    chan_obj->slot.flags.slot_acquired = true;
+    chan_obj->slot.flags.slot_acquired = 1;
     //Store the descriptor list length in the HCTSIZ register. Address of desc list is set when channel is activated
     usbh_ll_chan_set_qtd_list_len(chan_obj->regs, desc_list_len);
 }
@@ -696,7 +707,7 @@ static inline void usbh_hal_chan_slot_release(usbh_hal_chan_t *chan_obj, void **
     assert(chan_obj->slot.flags.slot_acquired);
     *xfer_desc_list = (void *)chan_obj->slot.xfer_desc_list;
     *desc_list_len = chan_obj->slot.flags.qtd_list_len;
-    chan_obj->slot.flags.slot_acquired = false;
+    chan_obj->slot.flags.slot_acquired = 0;
 }
 
 /**
@@ -734,11 +745,16 @@ static inline int usbh_hal_chan_get_next_desc_index(usbh_hal_chan_t *chan_obj)
  * active, this function will return false and users must wait for the
  * USBH_HAL_CHAN_EVENT_HALT_REQ event before treating the channel as halted.
  *
+ * @note When a transfer is in progress (i.e., the channel is active) and a halt
+ *       is requested, the channel will halt after the next USB packet is completed.
+ *       If the transfer has more pending packets, the transfer will just be
+ *       marked as USBH_HAL_XFER_DESC_STS_NOT_EXECUTED.
+ *
  * @param chan_obj Channel object
  * @return true The channel is already halted
  * @return false The halt was requested, wait for USBH_HAL_CHAN_EVENT_HALT_REQ
  */
-bool usbh_hal_chan_request_halt(usbh_hal_chan_t *chan_obj);
+bool usbh_hal_chan_slot_request_halt(usbh_hal_chan_t *chan_obj);
 
 /* -----------------------------------------------------------------------------
 -------------------------------- Event Handling --------------------------------

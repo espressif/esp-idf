@@ -49,6 +49,8 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
         return SYSTEM_I2S0_CLK_EN;
     case PERIPH_I2S1_MODULE:
         return SYSTEM_I2S1_CLK_EN;
+    case PERIPH_LCD_CAM_MODULE:
+        return SYSTEM_LCD_CAM_CLK_EN;
     case PERIPH_TIMG0_MODULE:
         return SYSTEM_TIMERGROUP_CLK_EN;
     case PERIPH_TIMG1_MODULE:
@@ -57,10 +59,6 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
         return SYSTEM_PWM0_CLK_EN;
     case PERIPH_PWM1_MODULE:
         return SYSTEM_PWM1_CLK_EN;
-    case PERIPH_PWM2_MODULE:
-        return SYSTEM_PWM2_CLK_EN;
-    case PERIPH_PWM3_MODULE:
-        return SYSTEM_PWM3_CLK_EN;
     case PERIPH_UHCI0_MODULE:
         return SYSTEM_UHCI0_CLK_EN;
     case PERIPH_UHCI1_MODULE:
@@ -134,6 +132,8 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return SYSTEM_I2S0_RST;
     case PERIPH_I2S1_MODULE:
         return SYSTEM_I2S1_RST;
+    case PERIPH_LCD_CAM_MODULE:
+        return SYSTEM_LCD_CAM_RST;
     case PERIPH_TIMG0_MODULE:
         return SYSTEM_TIMERGROUP_RST;
     case PERIPH_TIMG1_MODULE:
@@ -142,10 +142,6 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return SYSTEM_PWM0_RST;
     case PERIPH_PWM1_MODULE:
         return SYSTEM_PWM1_RST;
-    case PERIPH_PWM2_MODULE:
-        return SYSTEM_PWM2_RST;
-    case PERIPH_PWM3_MODULE:
-        return SYSTEM_PWM3_RST;
     case PERIPH_UHCI0_MODULE:
         return SYSTEM_UHCI0_RST;
     case PERIPH_UHCI1_MODULE:
@@ -213,6 +209,7 @@ static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
         return SYSTEM_WIFI_CLK_EN_REG ;
     case PERIPH_UART2_MODULE:
     case PERIPH_SDMMC_MODULE:
+    case PERIPH_LCD_CAM_MODULE:
     case PERIPH_GDMA_MODULE:
     case PERIPH_AES_MODULE:
     case PERIPH_SHA_MODULE:
@@ -238,6 +235,7 @@ static uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
     case PERIPH_UART2_MODULE:
     case PERIPH_SDMMC_MODULE:
     case PERIPH_GDMA_MODULE:
+    case PERIPH_LCD_CAM_MODULE:
     case PERIPH_AES_MODULE:
     case PERIPH_SHA_MODULE:
     case PERIPH_RSA_MODULE:

@@ -29,7 +29,7 @@ typedef enum {
     RMT_CHANNEL_1,  /*!< RMT channel number 1 */
     RMT_CHANNEL_2,  /*!< RMT channel number 2 */
     RMT_CHANNEL_3,  /*!< RMT channel number 3 */
-#if SOC_RMT_CHANNELS_NUM > 4
+#if SOC_RMT_CHANNELS_PER_GROUP > 4
     RMT_CHANNEL_4,  /*!< RMT channel number 4 */
     RMT_CHANNEL_5,  /*!< RMT channel number 5 */
     RMT_CHANNEL_6,  /*!< RMT channel number 6 */

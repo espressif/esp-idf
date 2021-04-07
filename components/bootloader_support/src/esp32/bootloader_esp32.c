@@ -364,7 +364,7 @@ esp_err_t bootloader_init(void)
     {
         assert(&_bss_start <= &_bss_end);
         assert(&_data_start <= &_data_end);
-        int *sp = get_sp();
+        int *sp = esp_cpu_get_sp();
         assert(sp < &_bss_start);
         assert(sp < &_data_start);
     }

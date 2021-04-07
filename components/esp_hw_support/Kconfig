@@ -1,0 +1,15 @@
+menu "Hardware Settings"
+    menu "MAC Config"
+        config ESP_MAC_ADDR_UNIVERSE_WIFI_STA
+            bool
+
+        config ESP_MAC_ADDR_UNIVERSE_WIFI_AP
+            bool
+
+        config ESP_MAC_ADDR_UNIVERSE_BT
+            bool
+
+        config ESP_MAC_ADDR_UNIVERSE_ETH
+            bool
+    endmenu
+endmenu

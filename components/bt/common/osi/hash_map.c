@@ -144,6 +144,7 @@ bool hash_map_set(hash_map_t *hash_map, const void *key, void *data)
         // Calls hash_map callback to delete the hash_map_entry.
         bool rc = list_remove(hash_bucket_list, hash_map_entry);
         assert(rc == true);
+        (void)rc;
     } else {
         hash_map->hash_size++;
     }

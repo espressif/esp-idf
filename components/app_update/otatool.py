@@ -31,7 +31,6 @@ try:
 except ImportError:
     COMPONENTS_PATH = os.path.expandvars(os.path.join('$IDF_PATH', 'components'))
     PARTTOOL_DIR = os.path.join(COMPONENTS_PATH, 'partition_table')
-
     sys.path.append(PARTTOOL_DIR)
     from parttool import PARTITION_TABLE_OFFSET, PartitionName, PartitionType, ParttoolTarget
 
@@ -102,7 +101,6 @@ class OtatoolTarget():
     def switch_ota_partition(self, ota_id):
         self._check_otadata_partition()
 
-        sys.path.append(PARTTOOL_DIR)
         import gen_esp32part as gen
 
         def is_otadata_info_valid(status):
@@ -290,7 +288,7 @@ def main():
     subparsers.add_parser('switch_ota_partition', help='switch otadata partition', parents=[slot_or_name_parser, spi_flash_sec_size])
 
     read_ota_partition_subparser = subparsers.add_parser('read_ota_partition', help='read contents of an ota partition', parents=[slot_or_name_parser])
-    read_ota_partition_subparser.add_argument('--output', help='file to write the contents of the ota partition to')
+    read_ota_partition_subparser.add_argument('--output', help='file to write the contents of the ota partition to', required=True)
 
     write_ota_partition_subparser = subparsers.add_parser('write_ota_partition', help='write contents to an ota partition', parents=[slot_or_name_parser])
     write_ota_partition_subparser.add_argument('--input', help='file whose contents to write to the ota partition')

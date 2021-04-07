@@ -55,7 +55,7 @@ extern "C" {
 
 #define RTC_SLOW_CLK_X32K_CAL_TIMEOUT_THRES(cycles)  (cycles << 12)
 #define RTC_SLOW_CLK_8MD256_CAL_TIMEOUT_THRES(cycles)  (cycles << 12)
-#define RTC_SLOW_CLK_150K_CAL_TIMEOUT_THRES(cycles)  (cycles << 10)
+#define RTC_SLOW_CLK_90K_CAL_TIMEOUT_THRES(cycles)  (cycles << 10)
 
 #define RTC_SLOW_CLK_FREQ_90K      90000
 #define RTC_SLOW_CLK_FREQ_8MD256    (RTC_FAST_CLK_FREQ_APPROX / 256)
@@ -121,7 +121,7 @@ set sleep_init default param
 #define RTC_CNTL_DBG_ATTEN_MONITOR_DEFAULT  0
 #define RTC_CNTL_BIASSLP_MONITOR_DEFAULT  0
 #define RTC_CNTL_BIASSLP_SLEEP_DEFAULT  1
-#define RTC_CNTL_PD_CUR_MONITOR_DEFAULT  0
+#define RTC_CNTL_PD_CUR_MONITOR_DEFAULT  1
 #define RTC_CNTL_PD_CUR_SLEEP_DEFAULT  1
 
 #define APLL_SDM_STOP_VAL_1         0x09
@@ -178,7 +178,7 @@ typedef struct rtc_cpu_freq_config_s {
  * @brief RTC SLOW_CLK frequency values
  */
 typedef enum {
-    RTC_SLOW_FREQ_RTC = 0,      //!< Internal 150 kHz RC oscillator
+    RTC_SLOW_FREQ_RTC = 0,      //!< Internal 90 kHz RC oscillator
     RTC_SLOW_FREQ_32K_XTAL = 1, //!< External 32 kHz XTAL
     RTC_SLOW_FREQ_8MD256 = 2,   //!< Internal 8 MHz RC oscillator, divided by 256
 } rtc_slow_freq_t;
@@ -218,7 +218,7 @@ typedef struct {
     rtc_slow_freq_t slow_freq : 2;  //!< RTC_SLOW_CLK frequency to set
     uint32_t clk_rtc_clk_div : 8;
     uint32_t clk_8m_clk_div : 3;        //!< RTC 8M clock divider (division is by clk_8m_div+1, i.e. 0 means 8MHz frequency)
-    uint32_t slow_clk_dcap : 8;     //!< RTC 150k clock adjustment parameter (higher value leads to lower frequency)
+    uint32_t slow_clk_dcap : 8;     //!< RTC 90k clock adjustment parameter (higher value leads to lower frequency)
     uint32_t clk_8m_dfreq : 8;      //!< RTC 8m clock adjustment parameter (higher value leads to higher frequency)
 } rtc_clk_config_t;
 
@@ -426,7 +426,7 @@ rtc_slow_freq_t rtc_clk_slow_freq_get(void);
 /**
  * @brief Get the approximate frequency of RTC_SLOW_CLK, in Hz
  *
- * - if RTC_SLOW_FREQ_RTC is selected, returns ~150000
+ * - if RTC_SLOW_FREQ_RTC is selected, returns ~90000
  * - if RTC_SLOW_FREQ_32K_XTAL is selected, returns 32768
  * - if RTC_SLOW_FREQ_8MD256 is selected, returns ~33000
  *

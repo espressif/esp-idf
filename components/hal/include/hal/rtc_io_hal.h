@@ -22,14 +22,17 @@
 
 #pragma once
 
+#include <esp_err.h>
+#if !CONFIG_IDF_TARGET_ESP32C3
 #include "soc/soc_caps.h"
 #include "hal/rtc_io_ll.h"
-#include <esp_err.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 /**
  * Select the rtcio function.
  *
@@ -38,8 +41,6 @@ extern "C" {
  * @param func Select pin function.
  */
 #define rtcio_hal_function_select(rtcio_num, func) rtcio_ll_function_select(rtcio_num, func)
-
-#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
 /**
  * Enable rtcio output.
@@ -210,7 +211,6 @@ void rtcio_hal_set_direction_in_sleep(int rtcio_num, rtc_gpio_mode_t mode);
  * @param rtcio_num The index of rtcio. 0 ~ SOC_RTCIO_PIN_COUNT.
  */
 #define rtcio_hal_unhold_all() rtcio_ll_force_unhold_all()
-
 #endif // SOC_RTCIO_HOLD_SUPPORTED
 
 #if SOC_RTCIO_WAKE_SUPPORTED

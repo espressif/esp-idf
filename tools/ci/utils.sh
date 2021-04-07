@@ -1,10 +1,5 @@
 # Modified from https://gitlab.com/gitlab-org/gitlab/-/blob/master/scripts/utils.sh
 
-# before each job, we need to check if this job is filtered by bot stage/job filter
-function apply_bot_filter() {
-  python "${IDF_PATH}"/tools/ci/apply_bot_filter.py || exit 0
-}
-
 function add_ssh_keys() {
   local key_string="${1}"
   mkdir -p ~/.ssh

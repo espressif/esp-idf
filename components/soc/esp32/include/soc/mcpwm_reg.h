@@ -15,7 +15,8 @@
 #define _SOC_MCPWM_REG_H_
 #include "soc.h"
 
-#define REG_MCPWM_BASE(i)               (DR_REG_PWM_BASE + i * (0xE000))
+#define REG_MCPWM_BASE(i)             (DR_REG_PWM0_BASE + i * (0xE000))
+
 #define MCPWM_CLK_CFG_REG(i)          (REG_MCPWM_BASE(i) + 0x0000)
 /* MCPWM_CLK_PRESCALE : R/W ;bitpos:[7:0] ;default: 8'h0 ; */
 /*description: Period of PWM_clk = 6.25ns * (PWM_CLK_PRESCALE + 1)*/

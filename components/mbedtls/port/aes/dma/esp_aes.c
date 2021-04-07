@@ -54,8 +54,8 @@
 #endif
 
 #if SOC_AES_GDMA
-#define AES_LOCK() esp_crypto_aes_lock_acquire()
-#define AES_RELEASE() esp_crypto_aes_lock_release()
+#define AES_LOCK() esp_crypto_sha_aes_lock_acquire()
+#define AES_RELEASE() esp_crypto_sha_aes_lock_release()
 #elif SOC_AES_CRYPTO_DMA
 #define AES_LOCK() esp_crypto_dma_lock_acquire()
 #define AES_RELEASE() esp_crypto_dma_lock_release()
@@ -291,7 +291,8 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
 {
     lldesc_t stream_in_desc, stream_out_desc;
     lldesc_t *in_desc_head = NULL, *out_desc_head = NULL;
-    lldesc_t *block_desc = NULL, *block_in_desc, *block_out_desc;
+    lldesc_t *out_desc_tail = NULL; /* pointer to the final output descriptor */
+    lldesc_t *block_desc = NULL, *block_in_desc = NULL, *block_out_desc = NULL;
     size_t lldesc_num;
     uint8_t stream_in[16] = {};
     unsigned stream_bytes = len % AES_BLOCK_BYTES; // bytes which aren't in a full block
@@ -357,8 +358,10 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
         block_in_desc = block_desc;
         block_out_desc = block_desc + lldesc_num;
 
-        lldesc_setup_link(block_desc, input, block_bytes, 0);
-        lldesc_setup_link(block_desc + lldesc_num, output, block_bytes, 0);
+        lldesc_setup_link(block_in_desc, input, block_bytes, 0);
+        lldesc_setup_link(block_out_desc, output, block_bytes, 0);
+
+        out_desc_tail = &block_out_desc[lldesc_num - 1];
     }
 
     /* Any leftover bytes which are appended as an additional DMA list */
@@ -373,6 +376,8 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
             block_in_desc[lldesc_num - 1].empty = (uint32_t)&stream_in_desc;
             block_out_desc[lldesc_num - 1].empty = (uint32_t)&stream_out_desc;
         }
+
+        out_desc_tail = &stream_out_desc;
     }
 
     // block buffers are sent to DMA first, unless there aren't any
@@ -401,7 +406,7 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
     }
 
     aes_hal_transform_dma_start(blocks);
-    esp_aes_dma_wait_complete(use_intr, out_desc_head);
+    esp_aes_dma_wait_complete(use_intr, out_desc_tail);
 
 #if (CONFIG_SPIRAM_USE_CAPS_ALLOC || CONFIG_SPIRAM_USE_MALLOC)
     if (block_bytes > 0) {

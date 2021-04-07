@@ -23,12 +23,15 @@
 #include "hal/spi_slave_hd_hal.h"
 
 
-//SPI1 can never be used as the slave
-#define VALID_HOST(x) (x>SPI_HOST && x<=HSPI_HOST)
+#if (SOC_SPI_PERIPH_NUM == 2)
+#define VALID_HOST(x) ((x) == SPI2_HOST)
+#elif (SOC_SPI_PERIPH_NUM == 3)
+#define VALID_HOST(x) ((x) >= SPI2_HOST && (x) <= SPI3_HOST)
+#endif
 #define SPIHD_CHECK(cond,warn,ret) do{if(!(cond)){ESP_LOGE(TAG, warn); return ret;}} while(0)
 
 typedef struct {
-    int dma_chan;
+    bool dma_enabled;
     int max_transfer_sz;
     uint32_t flags;
     portMUX_TYPE int_spinlock;
@@ -64,12 +67,18 @@ static void spi_slave_hd_intr_append(void *arg);
 esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *bus_config,
                             const spi_slave_hd_slot_config_t *config)
 {
-    bool spi_chan_claimed, dma_chan_claimed;
+    bool spi_chan_claimed;
     bool append_mode = (config->flags & SPI_SLAVE_HD_APPEND_MODE);
+    uint32_t actual_tx_dma_chan = 0;
+    uint32_t actual_rx_dma_chan = 0;
     esp_err_t ret = ESP_OK;
 
     SPIHD_CHECK(VALID_HOST(host_id), "invalid host", ESP_ERR_INVALID_ARG);
-    SPIHD_CHECK(config->dma_chan == 0 || config->dma_chan == host_id, "invalid dma channel", ESP_ERR_INVALID_ARG);
+#if CONFIG_IDF_TARGET_ESP32S2
+    SPIHD_CHECK(config->dma_chan == SPI_DMA_DISABLED || config->dma_chan == (int)host_id || config->dma_chan == SPI_DMA_CH_AUTO, "invalid dma channel", ESP_ERR_INVALID_ARG);
+#elif SOC_GDMA_SUPPORTED
+    SPIHD_CHECK(config->dma_chan == SPI_DMA_DISABLED || config->dma_chan == SPI_DMA_CH_AUTO, "invalid dma channel, chip only support spi dma channel auto-alloc", ESP_ERR_INVALID_ARG);
+#endif
 #if !CONFIG_IDF_TARGET_ESP32S2
 //Append mode is only supported on ESP32S2 now
     SPIHD_CHECK(append_mode == 0, "Append mode is only supported on ESP32S2 now", ESP_ERR_INVALID_ARG);
@@ -78,29 +87,23 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
     spi_chan_claimed = spicommon_periph_claim(host_id, "slave_hd");
     SPIHD_CHECK(spi_chan_claimed, "host already in use", ESP_ERR_INVALID_STATE);
 
-    if ( config->dma_chan != 0 ) {
-        dma_chan_claimed = spicommon_dma_chan_claim(config->dma_chan);
-        if (!dma_chan_claimed) {
-            spicommon_periph_free(host_id);
-            SPIHD_CHECK(dma_chan_claimed, "dma channel already in use", ESP_ERR_INVALID_STATE);
-        }
-
-        spicommon_connect_spi_and_dma(host_id, config->dma_chan);
-    }
-
-    spi_slave_hd_slot_t* host = malloc(sizeof(spi_slave_hd_slot_t));
+    spi_slave_hd_slot_t* host = calloc(1, sizeof(spi_slave_hd_slot_t));
     if (host == NULL) {
         ret = ESP_ERR_NO_MEM;
         goto cleanup;
     }
     spihost[host_id] = host;
-    memset(host, 0, sizeof(spi_slave_hd_slot_t));
-
-    host->dma_chan = config->dma_chan;
     host->int_spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
+    host->dma_enabled = (config->dma_chan != SPI_DMA_DISABLED);
 
-    ret = spicommon_bus_initialize_io(host_id, bus_config, config->dma_chan,
-                SPICOMMON_BUSFLAG_SLAVE | bus_config->flags, &host->flags);
+    if (host->dma_enabled) {
+        ret = spicommon_slave_dma_chan_alloc(host_id, config->dma_chan, &actual_tx_dma_chan, &actual_rx_dma_chan);
+        if (ret != ESP_OK) {
+            goto cleanup;
+        }
+    }
+
+    ret = spicommon_bus_initialize_io(host_id, bus_config, SPICOMMON_BUSFLAG_SLAVE | bus_config->flags, &host->flags);
     if (ret != ESP_OK) {
         goto cleanup;
     }
@@ -113,14 +116,16 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
         .host_id = host_id,
         .dma_in = SPI_LL_GET_HW(host_id),
         .dma_out = SPI_LL_GET_HW(host_id),
-        .dma_chan = config->dma_chan,
+        .dma_enabled = host->dma_enabled,
+        .tx_dma_chan = actual_tx_dma_chan,
+        .rx_dma_chan = actual_rx_dma_chan,
         .append_mode = append_mode,
         .mode = config->mode,
         .tx_lsbfirst = (config->flags & SPI_SLAVE_HD_RXBIT_LSBFIRST),
         .rx_lsbfirst = (config->flags & SPI_SLAVE_HD_TXBIT_LSBFIRST),
     };
 
-    if (config->dma_chan != 0) {
+    if (host->dma_enabled) {
         //Malloc for all the DMA descriptors
         uint32_t total_desc_size = spi_slave_hd_hal_get_total_desc_size(&host->hal, bus_config->max_transfer_sz);
         host->hal.dmadesc_tx = heap_caps_malloc(total_desc_size, MALLOC_CAP_DMA);
@@ -243,8 +248,8 @@ esp_err_t spi_slave_hd_deinit(spi_host_device_t host_id)
     }
 
     spicommon_periph_free(host_id);
-    if (host->dma_chan) {
-        spicommon_dma_chan_free(host->dma_chan);
+    if (host->dma_enabled) {
+        spicommon_slave_free_dma(host_id);
     }
     free(host);
     spihost[host_id] = NULL;
@@ -375,7 +380,7 @@ static IRAM_ATTR void spi_slave_hd_intr_append(void *arg)
     spi_slave_hd_callback_config_t *callback = &host->callback;
     spi_slave_hd_hal_context_t *hal = &host->hal;
     BaseType_t awoken = pdFALSE;
-    BaseType_t ret;
+    BaseType_t ret __attribute__((unused));
 
     bool tx_done = false;
     bool rx_done = false;
@@ -392,9 +397,7 @@ static IRAM_ATTR void spi_slave_hd_intr_append(void *arg)
         spi_slave_hd_data_t *trans_desc;
         while (1) {
             bool trans_finish = false;
-            portENTER_CRITICAL_ISR(&host->int_spinlock);
             trans_finish = spi_slave_hd_hal_get_tx_finished_trans(hal, (void **)&trans_desc);
-            portEXIT_CRITICAL_ISR(&host->int_spinlock);
             if (!trans_finish) {
                 break;
             }
@@ -425,9 +428,7 @@ static IRAM_ATTR void spi_slave_hd_intr_append(void *arg)
         size_t trans_len;
         while (1) {
             bool trans_finish = false;
-            portENTER_CRITICAL_ISR(&host->int_spinlock);
             trans_finish = spi_slave_hd_hal_get_rx_finished_trans(hal, (void **)&trans_desc, &trans_len);
-            portEXIT_CRITICAL_ISR(&host->int_spinlock);
             if (!trans_finish) {
                 break;
             }
@@ -546,17 +547,13 @@ esp_err_t spi_slave_hd_append_trans(spi_host_device_t host_id, spi_slave_chan_t 
         if (ret == pdFALSE) {
             return ESP_ERR_TIMEOUT;
         }
-        portENTER_CRITICAL(&host->int_spinlock);
         err = spi_slave_hd_hal_txdma_append(hal, trans->data, trans->len, trans);
-        portEXIT_CRITICAL(&host->int_spinlock);
     } else {
         BaseType_t ret = xSemaphoreTake(host->rx_cnting_sem, timeout);
         if (ret == pdFALSE) {
             return ESP_ERR_TIMEOUT;
         }
-        portENTER_CRITICAL(&host->int_spinlock);
         err = spi_slave_hd_hal_rxdma_append(hal, trans->data, trans->len, trans);
-        portEXIT_CRITICAL(&host->int_spinlock);
     }
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Wait until the DMA finishes its transaction");

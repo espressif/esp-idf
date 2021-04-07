@@ -118,6 +118,7 @@ If you have one of {IDF_TARGET_NAME} development boards listed below, you can cl
         :maxdepth: 1
 
         ESP32-C3-DevKitM-1 <../hw-reference/esp32c3/user-guide-devkitm-1>
+        ESP32-C3-DevKitC-02 <../hw-reference/esp32c3/user-guide-devkitc-02>
         
 .. _get-started-step-by-step:
 
@@ -255,13 +256,14 @@ The tools installer downloads a number of files attached to GitHub Releases. If 
 Windows
 -------
 
-To prefer the Espressif download server when running the ESP-IDF Tools Installer or installing tools from the command line, open the System control panel, then click on Advanced Settings. Add a new Environment Variable (of type either User or System) with the name ``IDF_GITHUB_ASSETS`` and value ``dl.espressif.com/github_assets``. Click OK once done.
+To prefer the Espressif download server when running the ESP-IDF Tools Installer check out the following option in the installer window: ``Use Espressif download server instead of downloading tool packages from GitHub.``
 
-If the command line window or ESP-IDF Tools Installer window was already open before you added the new environment variable, you will need to close and reopen it.
+.. figure:: ../../_static/esp-idf-installer-download-server.png
+    :align: center
+    :alt: Configuring the ESP-IDF Tools Setup Wizard Espressif download server
+    :figclass: align-center
 
-While this environment variable is still set, the ESP-IDF Tools Installer and the command line installer will prefer the Espressif download server.
-
-.. Once the ESP-IDF Tools Installer binary is updated to include the checkbox, the above can be rewritten to refer to it
+    Configuring the ESP-IDF Tools Setup Wizard Espressif download server
 
 Linux and macOS
 ---------------

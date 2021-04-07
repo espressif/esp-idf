@@ -33,7 +33,7 @@ from io import StringIO
 from entity import Entity, EntityDB
 from fragments import FragmentFile
 from linker_script import LinkerScript
-from output_commands import InputSectionDesc
+from output_commands import AlignAtAddress, InputSectionDesc, SymbolAtAddress
 from sdkconfig import SDKConfig
 
 ROOT = Entity('*')
@@ -120,28 +120,29 @@ class GenerationTest(unittest.TestCase):
         self.assertEqual(set(expected.keys()), set(actual.keys()))
 
         for target in sorted(actual.keys()):
+            message = 'failed target %s' % target
             a_cmds = actual[target]
             e_cmds = expected[target]
 
-            self.assertEqual(len(a_cmds), len(e_cmds))
+            self.assertEqual(len(a_cmds), len(e_cmds), message)
 
             for a, e in zip(a_cmds, e_cmds):
-                self.assertEqual(a, e)
+                self.assertEqual(a, e, message)
 
     def get_default(self, target, rules):
         return rules[target][0]
+
+
+class DefaultMappingTest(GenerationTest):
 
     def test_rule_generation_default(self):
         # Checks that default rules are generated from
         # the default scheme properly and even if no mappings
         # are defined.
-        actual = self.generation.generate_rules(self.entities)
+        actual = self.generation.generate(self.entities)
         expected = self.generate_default_rules()
 
         self.compare_rules(expected, actual)
-
-
-class DefaultMappingTest(GenerationTest):
 
     def test_default_mapping_lib(self):
         # Mapping a library with default mapping. This should not emit additional rules,
@@ -249,7 +250,7 @@ entries:
     * (noflash)                     #1
 """
         self.add_fragments(alt if alt else mapping)
-        actual = self.generation.generate_rules(self.entities)
+        actual = self.generation.generate(self.entities)
         expected = self.generate_default_rules()
 
         flash_text = expected['flash_text']
@@ -287,7 +288,7 @@ entries:
 """
 
         self.add_fragments(alt if alt else mapping)
-        actual = self.generation.generate_rules(self.entities)
+        actual = self.generation.generate(self.entities)
         expected = self.generate_default_rules()
 
         flash_text = expected['flash_text']
@@ -326,7 +327,7 @@ entries:
     croutine:prvCheckPendingReadyList (noflash)         #1
 """
         self.add_fragments(mapping)
-        actual = self.generation.generate_rules(self.entities)
+        actual = self.generation.generate(self.entities)
         expected = self.generate_default_rules()
 
         flash_text = expected['flash_text']
@@ -382,7 +383,7 @@ entries:
 """
 
         self.add_fragments(mapping)
-        actual = self.generation.generate_rules(self.entities)
+        actual = self.generation.generate(self.entities)
         expected = self.generate_default_rules()
 
         flash_text = expected['flash_text']
@@ -443,7 +444,7 @@ entries:
     croutine:prvCheckPendingReadyList (default)         #2
 """
         self.add_fragments(mapping)
-        actual = self.generation.generate_rules(self.entities)
+        actual = self.generation.generate(self.entities)
         expected = self.generate_default_rules()
 
         flash_text = expected['flash_text']
@@ -512,7 +513,7 @@ entries:
 """
 
         self.add_fragments(mapping)
-        actual = self.generation.generate_rules(self.entities)
+        actual = self.generation.generate(self.entities)
         expected = self.generate_default_rules()
 
         flash_text = expected['flash_text']
@@ -606,7 +607,7 @@ entries:
 """
 
         self.add_fragments(mapping)
-        actual = self.generation.generate_rules(self.entities)
+        actual = self.generation.generate(self.entities)
         expected = self.generate_default_rules()
 
         flash_text = expected['flash_text']
@@ -631,6 +632,40 @@ entries:
         # Commands for #1 & 2
         iram0_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckDelayedList', '.literal.prvCheckDelayedList']), []))
         iram0_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), []))
+
+        self.compare_rules(expected, actual)
+
+    def test_root_mapping_fragment(self):
+        # Test creation of a mapping fragment that maps '*'.
+        # This should generate another default command in iram0_text:
+        #
+        # iram0_text
+        #   * (.custom_section)                                  A
+        #   * (.iram .iram.*)
+        mapping = u"""
+[sections:custom_section]
+entries:
+    .custom_section
+
+[scheme:custom_scheme]
+entries:
+    custom_section -> iram0_text
+
+[mapping:default2]
+archive: *
+entries:
+    * (custom_scheme)                                           #1
+"""
+
+        self.add_fragments(mapping)
+        actual = self.generation.generate(self.entities)
+        expected = self.generate_default_rules()
+
+        # Generate default command                              A
+        # Since these are the same 'specificity', the commands
+        # are arranged alphabetically.
+        expected['iram0_text'].append(expected['iram0_text'][0])
+        expected['iram0_text'][0] = InputSectionDesc(ROOT, ['.custom_section'], [])
 
         self.compare_rules(expected, actual)
 
@@ -671,7 +706,7 @@ entries:
     croutine (noflash_data)                         #2
 """
         self.add_fragments(mapping)
-        actual = self.generation.generate_rules(self.entities)
+        actual = self.generation.generate(self.entities)
         expected = self.generate_default_rules()
 
         flash_text = expected['flash_text']
@@ -725,7 +760,7 @@ entries:
     croutine (noflash_data)                         #2
 """
         self.add_fragments(mapping)
-        actual = self.generation.generate_rules(self.entities)
+        actual = self.generation.generate(self.entities)
         expected = self.generate_default_rules()
 
         flash_text = expected['flash_text']
@@ -764,7 +799,7 @@ entries:
         self.add_fragments(alt if alt else mapping)
 
         with self.assertRaises(GenerationException):
-            self.generation.generate_rules(self.entities)
+            self.generation.generate(self.entities)
 
     def test_complex_mapping_case(self, alt=None):
         # Test a complex case where an object is mapped using
@@ -818,7 +853,7 @@ entries:
 """
 
         self.add_fragments(alt if alt else mapping)
-        actual = self.generation.generate_rules(self.entities)
+        actual = self.generation.generate(self.entities)
         expected = self.generate_default_rules()
 
         flash_text = expected['flash_text']
@@ -907,7 +942,7 @@ entries:
 """
 
         self.add_fragments(mapping)
-        actual = self.generation.generate_rules(self.entities)
+        actual = self.generation.generate(self.entities)
         expected = self.generate_default_rules()
 
         flash_text = expected['flash_text']
@@ -1004,7 +1039,7 @@ entries:
 """
 
         self.add_fragments(mapping)
-        actual = self.generation.generate_rules(self.entities)
+        actual = self.generation.generate(self.entities)
         expected = self.generate_default_rules()
 
         flash_text = expected['flash_text']
@@ -1046,7 +1081,7 @@ entries:
         self.add_fragments(mapping)
 
         with self.assertRaises(GenerationException):
-            self.generation.generate_rules(self.entities)
+            self.generation.generate(self.entities)
 
     def test_disambiguated_obj(self):
         # Test command generation for disambiguated entry. Should produce similar
@@ -1059,7 +1094,7 @@ entries:
 """
         port = Entity('libfreertos.a', 'port.c')
         self.add_fragments(mapping)
-        actual = self.generation.generate_rules(self.entities)
+        actual = self.generation.generate(self.entities)
         expected = self.generate_default_rules()
 
         flash_text = expected['flash_text']
@@ -1082,6 +1117,60 @@ entries:
 
         # Input section commands in iram_text for #1                                     C
         iram0_text.append(InputSectionDesc(port, set(['.text.xPortGetTickRateHz', '.literal.xPortGetTickRateHz']), []))
+
+        self.compare_rules(expected, actual)
+
+    def test_root_mapping_fragment_conflict(self):
+        # Test that root mapping fragments are also checked for
+        # conflicts.
+        #
+        # 'custom_scheme' entries conflict the 'default' scheme
+        # entries.
+        mapping = u"""
+[scheme:custom_scheme]
+entries:
+    flash_text -> iram0_text
+
+[mapping:default2]
+archive: *
+entries:
+    * (custom_scheme)
+"""
+
+        self.add_fragments(mapping)
+        with self.assertRaises(GenerationException):
+            self.generation.generate(self.entities)
+
+    def test_root_mapping_fragment_duplicate(self):
+        # Same root mappings have no effect.
+        #
+        # custom_scheme has the 'iram -> iram0_text' in common with
+        # default scheme
+        mapping = u"""
+[sections:custom_section]
+entries:
+    .custom_section
+
+[scheme:custom_scheme]
+entries:
+    iram -> iram0_text
+    custom_section -> iram0_text
+
+[mapping:default2]
+archive: *
+entries:
+    * (custom_scheme)
+"""
+
+        self.add_fragments(mapping)
+        actual = self.generation.generate(self.entities)
+        expected = self.generate_default_rules()
+
+        # Generate default command                              A
+        # Since these are the same 'specificity', the commands
+        # are arranged alphabetically.
+        expected['iram0_text'].append(expected['iram0_text'][0])
+        expected['iram0_text'][0] = InputSectionDesc(ROOT, ['.custom_section'], [])
 
         self.compare_rules(expected, actual)
 
@@ -1119,7 +1208,7 @@ entries:
         self.add_fragments(scheme)
         self.add_fragments(alt if alt else mapping)
 
-        actual = self.generation.generate_rules(self.entities)
+        actual = self.generation.generate(self.entities)
         expected = self.generate_default_rules()
 
         if perf >= 1:
@@ -1145,6 +1234,11 @@ entries:
         # Test that proper commands are generated
         # in conditional mapping entries.
         mapping = u"""
+[mapping:default]
+archive: *
+entries:
+    * (default)
+
 [mapping:test]
 archive: lib.a
 entries:
@@ -1165,7 +1259,7 @@ entries:
             self.generation.mappings = {}
             self.add_fragments(alt if alt else mapping)
 
-            actual = self.generation.generate_rules(self.entities)
+            actual = self.generation.generate(self.entities)
             expected = self.generate_default_rules()
 
             if perf_level < 4 and perf_level > 0:
@@ -1208,6 +1302,11 @@ entries:
     def test_conditional_entries_legacy_mapping_fragment(self):
         # Test conditional entries on legacy mapping fragment grammar.
         mapping = u"""
+[mapping:default]
+archive: *
+entries:
+    * (default)
+
 [mapping]
 archive: lib.a
 entries:
@@ -1228,6 +1327,11 @@ entries:
         # Test conditional entries on legacy mapping fragment grammar
         # across multiple fragments.
         mapping = u"""
+[mapping:default]
+archive: *
+entries:
+    * (default)
+
 [mapping]
 archive: lib.a
 entries:
@@ -1257,6 +1361,11 @@ entries:
         # Test conditional entries on new mapping fragment grammar.
         # across multiple fragments.
         mapping = u"""
+[mapping:default]
+archive: *
+entries:
+    * (default)
+
 [mapping:base]
 archive: lib.a
 entries:
@@ -1280,6 +1389,443 @@ entries:
 """
 
         self.test_conditional_mapping(mapping)
+
+
+class FlagTest(GenerationTest):
+
+    # Test correct generation of mapping fragment entries
+    # with flags.
+
+    def test_flags_basics(self):
+        # Test that input section commands additions are done (KEEP SORT).
+        # Test that order dependent commands are properly generated (ALIGN, SURROUND)
+        # Normally, if an entry has the same mapping as parent, commands.
+        #   are not emitted for them. However, if there are flags, they should be -
+        #   only for the scheme entries that have flags, though.
+        # Flag entries split across multiple entries work.
+        #
+        # flash_text
+        #   *((EXCLUDE_FILE(libfreertos:timers libfreertos:croutine).text ...)          A
+        #   KEEP(* (SORT_BY_NAME(EXCLUDE_FILE(libfreertos:timers).text) ...)            B
+        #
+        # flash_rodata
+        #   *((EXCLUDE_FILE(libfreertos:timers) .rodata ...)                            C
+        #   _sym2_start                                                                 D.1
+        #   . = ALIGN(4)                                                                E.1
+        #   KEEP(* (EXCLUDE_FILE(libfreertos:timers) .rodata ...)                       F
+        #   _sym2_end                                                                   D.2
+        #   . = ALIGN(4)                                                                E.2
+        #
+        # iram0_text
+        #   *(.iram .iram.*)
+        #   . = ALIGN(4)                                                                G.1
+        #   _sym1_start                                                                 H.1
+        #   libfreertos.a:croutine(.text .literal ...)                                  I
+        #   . = ALIGN(4)                                                                G.2
+        #   _sym1_end                                                                   H.2
+        mapping = u"""
+[mapping:test]
+archive: libfreertos.a
+entries:
+    croutine (noflash_text);
+        text->iram0_text ALIGN(4, pre, post) SURROUND(sym1)                             #1
+    timers (default);
+        text->flash_text KEEP() SORT(name)                                                #2
+    timers (default);
+        rodata->flash_rodata SURROUND(sym2) ALIGN(4, pre, post)                         #3
+"""
+
+        self.add_fragments(mapping)
+
+        actual = self.generation.generate(self.entities)
+        expected = self.generate_default_rules()
+
+        flash_text = expected['flash_text']
+        iram0_text = expected['iram0_text']
+        flash_rodata = expected['flash_rodata']
+
+        # Exclusions in flash_text for timers and croutine                      A
+        flash_text[0].exclusions.add(CROUTINE)
+        flash_text[0].exclusions.add(TIMERS)
+
+        # Command for #3                                                        B
+        flash_text.append(InputSectionDesc(TIMERS, flash_text[0].sections, [], keep=True, sort=('name', None)))
+
+        # Exclusions in flash_rodata for timers                                 C
+        flash_rodata[0].exclusions.add(TIMERS)
+
+        # Commands for #3                                                       D.1, E.1, F, D.2, E.2
+        flash_rodata.append(SymbolAtAddress('_sym2_start'))
+        flash_rodata.append(AlignAtAddress(4))
+        flash_rodata.append(InputSectionDesc(TIMERS, flash_rodata[0].sections, []))
+        flash_rodata.append(SymbolAtAddress('_sym2_end'))
+        flash_rodata.append(AlignAtAddress(4))
+
+        # Commands for #                                                        G.1, H.1, I, G.2, H.2
+        iram0_text.append(AlignAtAddress(4))
+        iram0_text.append(SymbolAtAddress('_sym1_start'))
+        iram0_text.append(InputSectionDesc(CROUTINE, flash_text[0].sections, []))
+        iram0_text.append(AlignAtAddress(4))
+        iram0_text.append(SymbolAtAddress('_sym1_end'))
+
+        self.compare_rules(expected, actual)
+
+    def test_flags_intermediate_exclusion_command_root(self):
+        # Test that intermediate exclusion commands from root-level commands
+        # are included in the flags.
+        #
+        # flash_text
+        #   _sym1_start                                                                 A.1
+        #   KEEP(* (EXCLUDE_FILE(libfreertos:croutine).text ...)                        B
+        #   KEEP(libfreertos.a:croutine(...)))                                          C
+        #   _sym1_end                                                                   A.2
+        #
+        # iram0_text
+        #   *(.iram .iram.*)
+        #   libfreertos.a:croutine(.text.prvCheckPendingReadyList ...)                  D
+        mapping = u"""
+[mapping:default]
+archive: *
+entries:
+    # 1
+    * (default);
+        text->flash_text SURROUND(sym1) KEEP()                            #2
+
+[mapping:test]
+archive: libfreertos.a
+entries:
+    croutine:prvCheckPendingReadyList (noflash_text)                    #3
+"""
+
+        self.generation.mappings = {}
+        self.add_fragments(mapping)
+
+        actual = self.generation.generate(self.entities)
+        expected = self.generate_default_rules()
+
+        flash_text = expected['flash_text']
+        iram0_text = expected['iram0_text']
+
+        # Command for #2, pre                                          A.1
+        flash_text.insert(0, SymbolAtAddress('_sym1_start'))
+
+        # Command for #1 with KEEP()                                     B
+        # and exclusion for #3
+        flash_text[1].keep = True
+        flash_text[1].exclusions.add(CROUTINE)
+
+        # Implicit exclusion command for #3                            C
+        croutine_sections = self.entities.get_sections('libfreertos.a', 'croutine')
+        filtered_sections = fnmatch.filter(croutine_sections, '.literal.*')
+        filtered_sections.extend(fnmatch.filter(croutine_sections, '.text.*'))
+
+        filtered_sections = [s for s in filtered_sections if not s.endswith('prvCheckPendingReadyList')]
+        filtered_sections.append('.text')
+        flash_text.append(InputSectionDesc(CROUTINE, set(filtered_sections), [], keep=True))
+
+        # Command for #2, post                                         A.2
+        flash_text.append(SymbolAtAddress('_sym1_end'))
+
+        # Command for #3                                               D
+        iram0_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), []))
+
+        self.compare_rules(expected, actual)
+
+    def test_flags_intermediate_exclusion_command_lib(self):
+        # Test that intermediate exclusion commands from lib-level commands
+        # are included in the flags.
+        #
+        # flash_text
+        #   *(EXCLUDE_FILE(libfreertos.a).text  ...)
+        #   _sym1_start                                                                 A.1
+        #   KEEP(libfreertos.a(EXCLUDE_FILE(libfreertos:croutine).text.* ...))          B
+        #   KEEP(libfreertos.a:croutine(...)))                                          C
+        #   _sym1_end                                                                   A.2
+        #
+        # iram0_text
+        #   *(.iram .iram.*)
+        #   libfreertos.a:croutine(.text.prvCheckPendingReadyList ...)                  D
+        mapping = u"""
+[mapping:test]
+archive: libfreertos.a
+entries:
+    # 1
+    * (default);
+        text->flash_text SURROUND(sym1) KEEP()                            #2
+    croutine:prvCheckPendingReadyList (noflash_text)                    #3
+"""
+
+        self.add_fragments(mapping)
+
+        actual = self.generation.generate(self.entities)
+        expected = self.generate_default_rules()
+
+        flash_text = expected['flash_text']
+        iram0_text = expected['iram0_text']
+
+        # Command for #2, pre                                          A.1
+        flash_text.append(SymbolAtAddress('_sym1_start'))
+        flash_text[0].exclusions.add(FREERTOS)
+
+        # Command for #1 with KEEP()                                     B
+        # and exclusion for #3
+        flash_text.append(InputSectionDesc(FREERTOS, flash_text[0].sections, [CROUTINE], keep=True))
+
+        # Implicit exclusion command for #3                            C
+        croutine_sections = self.entities.get_sections('libfreertos.a', 'croutine')
+        filtered_sections = fnmatch.filter(croutine_sections, '.literal.*')
+        filtered_sections.extend(fnmatch.filter(croutine_sections, '.text.*'))
+
+        filtered_sections = [s for s in filtered_sections if not s.endswith('prvCheckPendingReadyList')]
+        filtered_sections.append('.text')
+        flash_text.append(InputSectionDesc(CROUTINE, set(filtered_sections), [], keep=True))
+
+        # Command for #2, post                                         A.2
+        flash_text.append(SymbolAtAddress('_sym1_end'))
+
+        # Command for #3                                               C
+        iram0_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), []))
+
+        self.compare_rules(expected, actual)
+
+    def test_flags_intermediate_exclusion_command_obj(self):
+        # Test that intermediate exclusion commands from obj-level commands
+        # are included in the flags.
+        #
+        # flash_text
+        #   *(EXCLUDE_FILE(libfreertos.a).text  ...)
+        #   _sym1_start                                                                 A.1
+        #   KEEP(libfreertos.a:croutine(...)))                                          B
+        #   _sym1_end                                                                   A.2
+        #
+        # iram0_text
+        #   *(.iram .iram.*)
+        #   libfreertos.a:croutine(.text.prvCheckPendingReadyList ...)                  C
+        mapping = u"""
+[mapping:test]
+archive: libfreertos.a
+entries:
+    # 1
+    croutine (default);
+        text->flash_text SURROUND(sym1) KEEP()                            #2
+    croutine:prvCheckPendingReadyList (noflash_text)                    #3
+"""
+
+        self.add_fragments(mapping)
+
+        actual = self.generation.generate(self.entities)
+        expected = self.generate_default_rules()
+
+        flash_text = expected['flash_text']
+        iram0_text = expected['iram0_text']
+
+        # Command for #2, pre                                          A.1
+        flash_text.append(SymbolAtAddress('_sym1_start'))
+        flash_text[0].exclusions.add(CROUTINE)
+
+        # Implicit exclusion command for #3                            B
+        croutine_sections = self.entities.get_sections('libfreertos.a', 'croutine')
+        filtered_sections = fnmatch.filter(croutine_sections, '.literal.*')
+        filtered_sections.extend(fnmatch.filter(croutine_sections, '.text.*'))
+
+        filtered_sections = [s for s in filtered_sections if not s.endswith('prvCheckPendingReadyList')]
+        filtered_sections.append('.text')
+        flash_text.append(InputSectionDesc(CROUTINE, set(filtered_sections), [], keep=True))
+
+        # Command for #2, post                                         A.2
+        flash_text.append(SymbolAtAddress('_sym1_end'))
+
+        # Command for #3                                               C
+        iram0_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), []))
+
+        self.compare_rules(expected, actual)
+
+    def test_flags_separate_exclusion_command_if_explicit_root(self):
+        # Explicit commands are separated from the parent's flags.
+        #
+        # flash_text
+        #   _sym1_start                                                                 A.1
+        #   KEEP(* (EXCLUDE_FILE(libfreertos:croutine).text ...)                        B
+        #   _sym1_end                                                                   A.2
+        #   KEEP(libfreertos.a:croutine(...)))                                          C
+        #
+        # iram0_text
+        #   *(.iram .iram.*)
+        #   libfreertos.a:croutine(.text.prvCheckPendingReadyList ...)                  D
+        mapping = u"""
+[mapping:default]
+archive: *
+entries:
+    # 1
+    * (default);
+        text->flash_text SURROUND(sym1) KEEP()                            #2
+
+[mapping:test]
+archive: libfreertos.a
+entries:
+    croutine (default)                                                  #3
+    croutine:prvCheckPendingReadyList (noflash_text)                    #4
+"""
+
+        self.generation.mappings = {}
+        self.add_fragments(mapping)
+
+        actual = self.generation.generate(self.entities)
+        expected = self.generate_default_rules()
+
+        flash_text = expected['flash_text']
+        iram0_text = expected['iram0_text']
+
+        # Command for #2, pre                                          A.1
+        flash_text.insert(0, SymbolAtAddress('_sym1_start'))
+
+        # Command for #1 with KEEP()                                     B
+        # and exclusion for #3
+        flash_text[1].keep = True
+        flash_text[1].exclusions.add(CROUTINE)
+
+        # Command for #2, post                                         A.2
+        flash_text.append(SymbolAtAddress('_sym1_end'))
+
+        # Command for #3                                               C
+        croutine_sections = self.entities.get_sections('libfreertos.a', 'croutine')
+        filtered_sections = fnmatch.filter(croutine_sections, '.literal.*')
+        filtered_sections.extend(fnmatch.filter(croutine_sections, '.text.*'))
+
+        filtered_sections = [s for s in filtered_sections if not s.endswith('prvCheckPendingReadyList')]
+        filtered_sections.append('.text')
+        flash_text.append(InputSectionDesc(CROUTINE, set(filtered_sections), []))
+
+        # Command for #4                                               D
+        iram0_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), []))
+
+        self.compare_rules(expected, actual)
+
+    def test_flags_separate_exclusion_command_if_explicit_lib(self):
+        # Explicit commands are separated from the parent's flags.
+        #
+        # flash_text
+        #   *(EXCLUDE_FILE(libfreertos.a).text  ...)
+        #   _sym1_start                                                                 A.1
+        #   KEEP(libfreertos.a(EXCLUDE_FILE(libfreertos:croutine).text.* ...))          B
+        #   _sym1_end                                                                   A.2
+        #   KEEP(libfreertos.a:croutine(...)))                                          C
+        #
+        # iram0_text
+        #   *(.iram .iram.*)
+        #   libfreertos.a:croutine(.text.prvCheckPendingReadyList ...)                  D
+        mapping = u"""
+[mapping:test]
+archive: libfreertos.a
+entries:
+    # 1
+    * (default);
+        text->flash_text SURROUND(sym1) KEEP()
+    croutine (default)                                              #2
+    croutine:prvCheckPendingReadyList (noflash_text)                #3
+"""
+
+        self.add_fragments(mapping)
+
+        actual = self.generation.generate(self.entities)
+        expected = self.generate_default_rules()
+
+        flash_text = expected['flash_text']
+        iram0_text = expected['iram0_text']
+
+        # Command for #2, pre                                          A.1
+        flash_text.append(SymbolAtAddress('_sym1_start'))
+        flash_text[0].exclusions.add(FREERTOS)
+
+        # Command for #1 with KEEP()                                     B
+        # and exclusion for #3
+        flash_text.append(InputSectionDesc(FREERTOS, flash_text[0].sections, [CROUTINE], keep=True))
+
+        # Command for #2, post                                         A.2
+        flash_text.append(SymbolAtAddress('_sym1_end'))
+
+        # Implicit exclusion command for #3                            C
+        croutine_sections = self.entities.get_sections('libfreertos.a', 'croutine')
+        filtered_sections = fnmatch.filter(croutine_sections, '.literal.*')
+        filtered_sections.extend(fnmatch.filter(croutine_sections, '.text.*'))
+
+        filtered_sections = [s for s in filtered_sections if not s.endswith('prvCheckPendingReadyList')]
+        filtered_sections.append('.text')
+        flash_text.append(InputSectionDesc(CROUTINE, set(filtered_sections), []))
+
+        # Command for #3                                               C
+        iram0_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), []))
+
+        self.compare_rules(expected, actual)
+
+    def test_flag_additions(self):
+        # Test ability to add flags as long as no other mapping fragments
+        # does the same thing.
+        mapping = u"""
+[mapping:default_add_flag]
+archive: *
+entries:
+    * (default);
+        text->flash_text KEEP()
+"""
+
+        self.add_fragments(mapping)
+
+        actual = self.generation.generate(self.entities)
+        expected = self.generate_default_rules()
+
+        flash_text = expected['flash_text']
+        flash_text[0].keep = True
+
+        self.compare_rules(expected, actual)
+
+    def test_flags_flag_additions_duplicate(self):
+        # Test same flags added to same entity - these
+        # are ignored.
+        mapping = u"""
+[mapping:default_add_flag_1]
+archive: *
+entries:
+    * (default);
+        text->flash_text KEEP()
+
+[mapping:default_add_flag_2]
+archive: *
+entries:
+    * (default);
+        text->flash_text KEEP()
+"""
+
+        self.add_fragments(mapping)
+
+        actual = self.generation.generate(self.entities)
+        expected = self.generate_default_rules()
+
+        flash_text = expected['flash_text']
+        flash_text[0].keep = True
+
+        self.compare_rules(expected, actual)
+
+    def test_flags_flag_additions_conflict(self):
+        # Test condition where multiple fragments specifies flags
+        # to same entity - should generate exception.
+        mapping = u"""
+[mapping:default_add_flag_1]
+archive: *
+entries:
+    * (default);
+        text->flash_text ALIGN(2)
+
+[mapping:default_add_flag_2]
+archive: *
+entries:
+    * (default);
+        text->flash_text SURROUND(sym1)
+"""
+        self.add_fragments(mapping)
+
+        with self.assertRaises(GenerationException):
+            self.generation.generate(self.entities)
 
 
 if __name__ == '__main__':

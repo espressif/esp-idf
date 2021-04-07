@@ -167,7 +167,7 @@ lwip_hook_tcp_isn(const ip_addr_t *local_ip, u16_t local_port,
    * APIs should not create any issues.
    */
 #if CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
-  assert(!esp_ptr_external_ram(get_sp()));
+  assert(!esp_ptr_external_ram(esp_cpu_get_sp()));
 #endif
 
   struct MD5Context ctx;

@@ -1,4 +1,4 @@
-// Copyright 2017-2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,13 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#pragma once
-
+#ifndef _SOC_RTC_CNTL_STRUCT_H_
+#define _SOC_RTC_CNTL_STRUCT_H_
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdint.h>
 
 typedef volatile struct {
     union {
@@ -71,7 +69,7 @@ typedef volatile struct {
     uint32_t time_low0;                                          /*RTC timer low 32 bits*/
     union {
         struct {
-            uint32_t rtc_timer_value0_high: 16;                      /*RTC timer high 16 bits*/
+            uint32_t rtc_timer_value0_high:16;                       /*RTC timer high 16 bits*/
             uint32_t reserved16:           16;
         };
         uint32_t val;
@@ -110,10 +108,10 @@ typedef volatile struct {
     } timer2;
     union {
         struct {
-            uint32_t wifi_wait_timer:       9;
-            uint32_t wifi_powerup_timer:    7;
-            uint32_t rom_ram_wait_timer:    9;
-            uint32_t rom_ram_powerup_timer: 7;
+            uint32_t wifi_wait_timer:    9;
+            uint32_t wifi_powerup_timer: 7;
+            uint32_t bt_wait_timer:      9;
+            uint32_t bt_powerup_timer:   7;
         };
         uint32_t val;
     } timer3;
@@ -128,18 +126,18 @@ typedef volatile struct {
     } timer4;
     union {
         struct {
-            uint32_t reserved0:            8;
-            uint32_t min_slp_val:          8;                        /*minimal sleep cycles in slow_clk_rtc*/
-            uint32_t rtcmem_wait_timer:    9;
-            uint32_t rtcmem_powerup_timer: 7;
+            uint32_t reserved0:   8;
+            uint32_t min_slp_val: 8;                                 /*minimal sleep cycles in slow_clk_rtc*/
+            uint32_t reserved16: 16;
         };
         uint32_t val;
     } timer5;
     union {
         struct {
-            uint32_t reserved0:            16;
-            uint32_t dg_dcdc_wait_timer:    9;
-            uint32_t dg_dcdc_powerup_timer: 7;
+            uint32_t cpu_top_wait_timer:    9;
+            uint32_t cpu_top_powerup_timer: 7;
+            uint32_t dg_peri_wait_timer:    9;
+            uint32_t dg_peri_powerup_timer: 7;
         };
         uint32_t val;
     } timer6;
@@ -188,7 +186,7 @@ typedef volatile struct {
     union {
         struct {
             uint32_t reserved0:     15;
-            uint32_t rtc_wakeup_ena: 17;                             /*wakeup enable bitmap*/
+            uint32_t rtc_wakeup_ena:17;                              /*wakeup enable bitmap*/
         };
         uint32_t val;
     } wakeup_state;
@@ -337,7 +335,7 @@ typedef volatile struct {
     union {
         struct {
             uint32_t reserved0:           12;
-            uint32_t rtc_sleep_reject_ena: 18;                       /*sleep reject enable*/
+            uint32_t rtc_sleep_reject_ena:18;                        /*sleep reject enable*/
             uint32_t light_slp_reject_en:  1;                        /*enable reject for light sleep*/
             uint32_t deep_slp_reject_en:   1;                        /*enable reject for deep sleep*/
         };
@@ -354,7 +352,7 @@ typedef volatile struct {
     union {
         struct {
             uint32_t reserved0:    22;
-            uint32_t sdio_act_dnum: 10;
+            uint32_t sdio_act_dnum:10;
         };
         uint32_t val;
     } sdio_act_conf;
@@ -425,7 +423,8 @@ typedef volatile struct {
             uint32_t bias_sleep_monitor:  1;                         /*bias_sleep when rtc in monitor state*/
             uint32_t dbg_atten_deep_slp:  4;                         /*DBG_ATTEN when rtc in sleep state*/
             uint32_t dbg_atten_monitor:   4;                         /*DBG_ATTEN when rtc in monitor state*/
-            uint32_t reserved26:          6;
+            uint32_t dbg_atten_wakeup:    4;
+            uint32_t reserved30:          2;
         };
         uint32_t val;
     } bias_conf;
@@ -457,12 +456,7 @@ typedef volatile struct {
             uint32_t slowmem_folw_cpu:        1;                     /*1: RTC memory  PD following CPU*/
             uint32_t slowmem_force_lpd:       1;                     /*RTC memory force PD*/
             uint32_t slowmem_force_lpu:       1;                     /*RTC memory force no PD*/
-            uint32_t fastmem_force_pd:        1;                     /*Fast RTC memory force power down*/
-            uint32_t fastmem_force_pu:        1;                     /*Fast RTC memory force power up*/
-            uint32_t fastmem_pd_en:           1;                     /*enable power down fast RTC memory in sleep*/
-            uint32_t slowmem_force_pd:        1;                     /*RTC memory force power down*/
-            uint32_t slowmem_force_pu:        1;                     /*RTC memory force power up*/
-            uint32_t slowmem_pd_en:           1;                     /*enable power down RTC memory in sleep*/
+            uint32_t reserved12:              6;                     /*enable power down RTC memory in sleep*/
             uint32_t rtc_force_pd:            1;                     /*rtc_peri force power down*/
             uint32_t rtc_force_pu:            1;                     /*rtc_peri force power up*/
             uint32_t rtc_pd_en:               1;                     /*enable power down rtc_peri in sleep*/
@@ -473,67 +467,53 @@ typedef volatile struct {
     } rtc_pwc;
     union {
         struct {
-            uint32_t reserved0:           3;
-            uint32_t lslp_mem_force_pd:   1;                         /*memories in digital core force PD in sleep*/
-            uint32_t lslp_mem_force_pu:   1;                         /*memories in digital core force no PD in sleep*/
-            uint32_t rom0_force_pd:       1;                         /*ROM force power down*/
-            uint32_t rom0_force_pu:       1;                         /*ROM force power up*/
-            uint32_t inter_ram0_force_pd: 1;                         /*internal SRAM 0 force power down*/
-            uint32_t inter_ram0_force_pu: 1;                         /*internal SRAM 0 force power up*/
-            uint32_t inter_ram1_force_pd: 1;                         /*internal SRAM 1 force power down*/
-            uint32_t inter_ram1_force_pu: 1;                         /*internal SRAM 1 force power up*/
-            uint32_t inter_ram2_force_pd: 1;                         /*internal SRAM 2 force power down*/
-            uint32_t inter_ram2_force_pu: 1;                         /*internal SRAM 2 force power up*/
-            uint32_t inter_ram3_force_pd: 1;                         /*internal SRAM 3 force power down*/
-            uint32_t inter_ram3_force_pu: 1;                         /*internal SRAM 3 force power up*/
-            uint32_t inter_ram4_force_pd: 1;                         /*internal SRAM 4 force power down*/
-            uint32_t inter_ram4_force_pu: 1;                         /*internal SRAM 4 force power up*/
-            uint32_t wifi_force_pd:       1;                         /*wifi force power down*/
-            uint32_t wifi_force_pu:       1;                         /*wifi force power up*/
-            uint32_t dg_wrap_force_pd:    1;                         /*digital core force power down*/
-            uint32_t dg_wrap_force_pu:    1;                         /*digital core force power up*/
-            uint32_t dg_dcdc_force_pd:    1;                         /*digital dcdc force power down*/
-            uint32_t dg_dcdc_force_pu:    1;                         /*digital dcdc force power up*/
-            uint32_t dg_dcdc_pd_en:       1;                         /*enable power down digital dcdc in sleep*/
-            uint32_t rom0_pd_en:          1;                         /*enable power down ROM in sleep*/
-            uint32_t inter_ram0_pd_en:    1;                         /*enable power down internal SRAM 0 in sleep*/
-            uint32_t inter_ram1_pd_en:    1;                         /*enable power down internal SRAM 1 in sleep*/
-            uint32_t inter_ram2_pd_en:    1;                         /*enable power down internal SRAM 2 in sleep*/
-            uint32_t inter_ram3_pd_en:    1;                         /*enable power down internal SRAM 3 in sleep*/
-            uint32_t inter_ram4_pd_en:    1;                         /*enable power down internal SRAM 4 in sleep*/
-            uint32_t wifi_pd_en:          1;                         /*enable power down wifi in sleep*/
-            uint32_t dg_wrap_pd_en:       1;
+            uint32_t reserved0:         3;
+            uint32_t lslp_mem_force_pd: 1;                           /*memories in digital core force PD in sleep*/
+            uint32_t lslp_mem_force_pu: 1;                           /*memories in digital core force no PD in sleep*/
+            uint32_t reserved5:         6;                           /*internal SRAM 1 force power up*/
+            uint32_t bt_force_pd:       1;                           /*internal SRAM 2 force power down*/
+            uint32_t bt_force_pu:       1;                           /*internal SRAM 2 force power up*/
+            uint32_t dg_peri_force_pd:  1;                           /*internal SRAM 3 force power down*/
+            uint32_t dg_peri_force_pu:  1;                           /*internal SRAM 3 force power up*/
+            uint32_t reserved15:        2;                           /*internal SRAM 4 force power up*/
+            uint32_t wifi_force_pd:     1;                           /*wifi force power down*/
+            uint32_t wifi_force_pu:     1;                           /*wifi force power up*/
+            uint32_t dg_wrap_force_pd:  1;                           /*digital core force power down*/
+            uint32_t dg_wrap_force_pu:  1;                           /*digital core force power up*/
+            uint32_t cpu_top_force_pd:  1;                           /*digital dcdc force power down*/
+            uint32_t cpu_top_force_pu:  1;                           /*digital dcdc force power up*/
+            uint32_t reserved23:        4;                           /*enable power down internal SRAM 1 in sleep*/
+            uint32_t bt_pd_en:          1;                           /*enable power down internal SRAM 2 in sleep*/
+            uint32_t dg_peri_pd_en:     1;                           /*enable power down internal SRAM 3 in sleep*/
+            uint32_t cpu_top_pd_en:     1;                           /*enable power down internal SRAM 4 in sleep*/
+            uint32_t wifi_pd_en:        1;                           /*enable power down wifi in sleep*/
+            uint32_t dg_wrap_pd_en:     1;
         };
         uint32_t val;
     } dig_pwc;
     union {
         struct {
-            uint32_t reserved0:              7;
-            uint32_t dig_iso_force_off:      1;
-            uint32_t dig_iso_force_on:       1;
-            uint32_t dg_pad_autohold:        1;                      /*read only register to indicate digital pad auto-hold status*/
-            uint32_t clr_dg_pad_autohold:    1;                      /*wtite only register to clear digital pad auto-hold*/
-            uint32_t dg_pad_autohold_en:     1;                      /*digital pad enable auto-hold*/
-            uint32_t dg_pad_force_noiso:     1;                      /*digital pad force no ISO*/
-            uint32_t dg_pad_force_iso:       1;                      /*digital pad force ISO*/
-            uint32_t dg_pad_force_unhold:    1;                      /*digital pad force un-hold*/
-            uint32_t dg_pad_force_hold:      1;                      /*digital pad force hold*/
-            uint32_t rom0_force_iso:         1;                      /*ROM force ISO*/
-            uint32_t rom0_force_noiso:       1;                      /*ROM force no ISO*/
-            uint32_t inter_ram0_force_iso:   1;                      /*internal SRAM 0 force ISO*/
-            uint32_t inter_ram0_force_noiso: 1;                      /*internal SRAM 0 force no ISO*/
-            uint32_t inter_ram1_force_iso:   1;                      /*internal SRAM 1 force ISO*/
-            uint32_t inter_ram1_force_noiso: 1;                      /*internal SRAM 1 force no ISO*/
-            uint32_t inter_ram2_force_iso:   1;                      /*internal SRAM 2 force ISO*/
-            uint32_t inter_ram2_force_noiso: 1;                      /*internal SRAM 2 force no ISO*/
-            uint32_t inter_ram3_force_iso:   1;                      /*internal SRAM 3 force ISO*/
-            uint32_t inter_ram3_force_noiso: 1;                      /*internal SRAM 3 force no ISO*/
-            uint32_t inter_ram4_force_iso:   1;                      /*internal SRAM 4 force ISO*/
-            uint32_t inter_ram4_force_noiso: 1;                      /*internal SRAM 4 force no ISO*/
-            uint32_t wifi_force_iso:         1;                      /*wifi force ISO*/
-            uint32_t wifi_force_noiso:       1;                      /*wifi force no ISO*/
-            uint32_t dg_wrap_force_iso:      1;                      /*digital core force ISO*/
-            uint32_t dg_wrap_force_noiso:    1;
+            uint32_t reserved0:           7;
+            uint32_t dig_iso_force_off:   1;
+            uint32_t dig_iso_force_on:    1;
+            uint32_t dg_pad_autohold:     1;                         /*read only register to indicate digital pad auto-hold status*/
+            uint32_t clr_dg_pad_autohold: 1;                         /*wtite only register to clear digital pad auto-hold*/
+            uint32_t dg_pad_autohold_en:  1;                         /*digital pad enable auto-hold*/
+            uint32_t dg_pad_force_noiso:  1;                         /*digital pad force no ISO*/
+            uint32_t dg_pad_force_iso:    1;                         /*digital pad force ISO*/
+            uint32_t dg_pad_force_unhold: 1;                         /*digital pad force un-hold*/
+            uint32_t dg_pad_force_hold:   1;                         /*digital pad force hold*/
+            uint32_t reserved16:          6;                         /*internal SRAM 1 force no ISO*/
+            uint32_t bt_force_iso:        1;                         /*internal SRAM 2 force ISO*/
+            uint32_t bt_force_noiso:      1;                         /*internal SRAM 2 force no ISO*/
+            uint32_t dg_peri_force_iso:   1;                         /*internal SRAM 3 force ISO*/
+            uint32_t dg_peri_force_noiso: 1;                         /*internal SRAM 3 force no ISO*/
+            uint32_t cpu_top_force_iso:   1;                         /*internal SRAM 4 force ISO*/
+            uint32_t cpu_top_force_noiso: 1;                         /*internal SRAM 4 force no ISO*/
+            uint32_t wifi_force_iso:      1;                         /*wifi force ISO*/
+            uint32_t wifi_force_noiso:    1;                         /*wifi force no ISO*/
+            uint32_t dg_wrap_force_iso:   1;                         /*digital core force ISO*/
+            uint32_t dg_wrap_force_noiso: 1;
         };
         uint32_t val;
     } dig_iso;
@@ -573,7 +553,7 @@ typedef volatile struct {
             uint32_t swd_feed_int:     1;                            /*swd interrupt for feeding*/
             uint32_t reserved2:       15;
             uint32_t swd_bypass_rst:   1;
-            uint32_t swd_signal_width: 10;                           /*adjust signal width send to swd*/
+            uint32_t swd_signal_width:10;                            /*adjust signal width send to swd*/
             uint32_t swd_rst_flag_clr: 1;                            /*reset swd reset flag*/
             uint32_t swd_feed:         1;                            /*Sw feed swd*/
             uint32_t swd_disable:      1;                            /*disabel SWD*/
@@ -692,7 +672,7 @@ typedef volatile struct {
     uint32_t time_low1;                                          /*RTC timer low 32 bits*/
     union {
         struct {
-            uint32_t rtc_timer_value1_high: 16;                      /*RTC timer high 16 bits*/
+            uint32_t rtc_timer_value1_high:16;                       /*RTC timer high 16 bits*/
             uint32_t reserved16:           16;
         };
         uint32_t val;
@@ -701,7 +681,7 @@ typedef volatile struct {
     union {
         struct {
             uint32_t xtal32k_return_wait:  4;                        /*cycles to wait to return noral xtal 32k*/
-            uint32_t xtal32k_restart_wait: 16;                       /*cycles to wait to repower on xtal 32k*/
+            uint32_t xtal32k_restart_wait:16;                        /*cycles to wait to repower on xtal 32k*/
             uint32_t xtal32k_wdt_timeout:  8;                        /*If no clock detected for this amount of time*/
             uint32_t xtal32k_stable_thres: 4;                        /*if restarted xtal32k period is smaller than this*/
         };
@@ -749,7 +729,7 @@ typedef volatile struct {
     } cocpu_ctrl;
     union {
         struct {
-            uint32_t touch_sleep_cycles: 16;                         /*sleep cycles for timer*/
+            uint32_t touch_sleep_cycles:16;                          /*sleep cycles for timer*/
             uint32_t touch_meas_num:    16;                          /*the meas length (in 8MHz)*/
         };
         uint32_t val;
@@ -809,14 +789,14 @@ typedef volatile struct {
     union {
         struct {
             uint32_t reserved0:                    7;
-            uint32_t touch_bypass_neg_thres:         1;
+            uint32_t touch_bypass_neg_noise_thres: 1;
             uint32_t touch_bypass_noise_thres:     1;
             uint32_t touch_smooth_lvl:             2;
             uint32_t touch_jitter_step:            4;                /*touch jitter step*/
-            uint32_t config1:                      4;
-            uint32_t config2:                      2;
+            uint32_t touch_neg_noise_limit:        4;                /*negative threshold counter limit*/
+            uint32_t touch_neg_noise_thres:        2;
             uint32_t touch_noise_thres:            2;
-            uint32_t config3:                      2;
+            uint32_t touch_hysteresis:             2;
             uint32_t touch_debounce:               3;                /*debounce counter*/
             uint32_t touch_filter_mode:            3;                /*0: IIR ? 1: IIR ? 2: IIR 1/8 3: Jitter*/
             uint32_t touch_filter_en:              1;                /*touch filter enable*/
@@ -848,7 +828,7 @@ typedef volatile struct {
     } usb_conf;
     union {
         struct {
-            uint32_t touch_timeout_num: 22;
+            uint32_t touch_timeout_num:22;
             uint32_t touch_timeout_en:  1;
             uint32_t reserved23:        9;
         };
@@ -856,7 +836,7 @@ typedef volatile struct {
     } touch_timeout_ctrl;
     union {
         struct {
-            uint32_t reject_cause: 18;                               /*sleep reject cause*/
+            uint32_t reject_cause:18;                                /*sleep reject cause*/
             uint32_t reserved18:  14;
         };
         uint32_t val;
@@ -870,7 +850,7 @@ typedef volatile struct {
     } option1;
     union {
         struct {
-            uint32_t wakeup_cause: 17;                               /*sleep wakeup cause*/
+            uint32_t wakeup_cause:17;                                /*sleep wakeup cause*/
             uint32_t reserved17:  15;
         };
         uint32_t val;
@@ -878,7 +858,7 @@ typedef volatile struct {
     union {
         struct {
             uint32_t reserved0:              8;
-            uint32_t ulp_cp_timer_slp_cycle: 24;                     /*sleep cycles for ULP-coprocessor timer*/
+            uint32_t ulp_cp_timer_slp_cycle:24;                      /*sleep cycles for ULP-coprocessor timer*/
         };
         uint32_t val;
     } ulp_cp_timer_1;
@@ -938,9 +918,12 @@ typedef volatile struct {
     } int_ena_w1tc;
     union {
         struct {
-            uint32_t reserved0:     26;
-            uint32_t retention_en:   1;
-            uint32_t retention_wait: 5;                              /*wait cycles for rention operation*/
+            uint32_t reserved0:            18;
+            uint32_t retention_clk_sel:     1;
+            uint32_t retention_done_wait:   3;
+            uint32_t retention_clkoff_wait: 4;
+            uint32_t retention_en:          1;
+            uint32_t retention_wait:        5;                       /*wait cycles for rention operation*/
         };
         uint32_t val;
     } retention_ctrl;
@@ -959,9 +942,9 @@ typedef volatile struct {
         uint32_t val;
     } date;
 } rtc_cntl_dev_t;
-
 extern rtc_cntl_dev_t RTCCNTL;
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif  /* _SOC_RTC_CNTL_STRUCT_H_ */

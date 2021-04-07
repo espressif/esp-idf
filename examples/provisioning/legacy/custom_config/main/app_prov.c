@@ -246,7 +246,8 @@ esp_err_t app_prov_is_provisioned(bool *provisioned)
     *provisioned = false;
 
 #ifdef CONFIG_EXAMPLE_RESET_PROVISIONED
-    nvs_flash_erase();
+    esp_wifi_restore();
+    return ESP_OK;
 #endif
 
     /* Get WiFi Station configuration */
