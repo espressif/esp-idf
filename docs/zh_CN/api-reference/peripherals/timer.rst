@@ -3,10 +3,12 @@
 
 :link_to_translation:`en:[English]`
 
+{IDF_TARGET_TIMER_COUNTER_BIT_WIDTH:default="54", esp32="64", esp32s2="64"}
+
 简介
 ----
 
-{IDF_TARGET_NAME} 芯片提供两组硬件定时器，每组包含两个通用硬件定时器。所有定时器均为 {SOC_TIMER_GROUP_COUNTER_BIT_WIDTH} 位通用定时器，包括 16 位预分频器和 {SOC_TIMER_GROUP_COUNTER_BIT_WIDTH} 位自动重载向上/向下计数器。
+{IDF_TARGET_NAME} 芯片提供两组硬件定时器，每组包含两个通用硬件定时器。所有定时器均为 {IDF_TARGET_TIMER_COUNTER_BIT_WIDTH} 位通用定时器，包括 16 位预分频器和 {IDF_TARGET_TIMER_COUNTER_BIT_WIDTH} 位自动重载向上/向下计数器。
 
 
 功能概述
@@ -94,7 +96,7 @@
 应用示例
 --------
 
-{SOC_TIMER_GROUP_COUNTER_BIT_WIDTH} 位通用硬件定时器示例：:example:`peripherals/timer_group`。
+{IDF_TARGET_TIMER_COUNTER_BIT_WIDTH} 位通用硬件定时器示例：:example:`peripherals/timer_group`。
 
 API 参考
 --------

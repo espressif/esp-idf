@@ -3,10 +3,12 @@ General Purpose Timer
 
 :link_to_translation:`zh_CN:[中文]`
 
+{IDF_TARGET_TIMER_COUNTER_BIT_WIDTH:default="54", esp32="64", esp32s2="64"}
+
 Introduction
 ------------
 
-The {IDF_TARGET_NAME} chip contains two hardware timer groups. Each group has two general-purpose hardware timers. They are all {SOC_TIMER_GROUP_COUNTER_BIT_WIDTH}-bit generic timers based on 16-bit pre-scalers and {SOC_TIMER_GROUP_COUNTER_BIT_WIDTH}-bit up / down counters which are capable of being auto-reloaded.
+The {IDF_TARGET_NAME} chip contains two hardware timer groups. Each group has two general-purpose hardware timers. They are all {IDF_TARGET_TIMER_COUNTER_BIT_WIDTH}-bit generic timers based on 16-bit pre-scalers and {IDF_TARGET_TIMER_COUNTER_BIT_WIDTH}-bit up / down counters which are capable of being auto-reloaded.
 
 
 Functional Overview
@@ -94,7 +96,7 @@ For more information on how to use interrupts, please see the application exampl
 Application Example
 -------------------
 
-The {SOC_TIMER_GROUP_COUNTER_BIT_WIDTH}-bit hardware timer example: :example:`peripherals/timer_group`.
+The {IDF_TARGET_TIMER_COUNTER_BIT_WIDTH}-bit hardware timer example: :example:`peripherals/timer_group`.
 
 
 API Reference
