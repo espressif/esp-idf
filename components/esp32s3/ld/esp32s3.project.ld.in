@@ -363,7 +363,13 @@ SECTIONS
     . = ALIGN(4);
   } > default_rodata_seg
 
-  _flash_rodata_align = ALIGNOF(.flash.rodata);
+  .flash.rodata_noload (NOLOAD) :
+  {
+    . = ALIGN (4);
+    mapping[rodata_noload]
+  } > default_rodata_seg
+
+  _flash_rodata_align = ALIGNOF(.flash.rodata_noload);
 
   /* Marks the end of IRAM code segment */
   .iram0.text_end (NOLOAD) :
