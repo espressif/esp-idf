@@ -1,11 +1,38 @@
 # Roaming Example
 
+(See the README.md file in the upper level 'examples' directory for more information about examples.)
+
 This example demonstrate a roaming example using 11k and 11v APIs.
+
+## How to use example
+
+Before project configuration and build, be sure to set the correct chip target using `idf.py set-target <chip_name>`.
+
+### Hardware Required
+
+* A development board with ESP32/ESP32-S2/ESP32-C3 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
+* A USB cable for Power supply and programming
+
+### Build and Flash
+
+Build the project and flash it to the board, then run the monitor tool to view the serial output:
+
+Run `idf.py -p PORT flash monitor` to build, flash and monitor the project.
+
+(To exit the serial monitor, type ``Ctrl-]``.)
+
+See the Getting Started Guide for all the steps to configure and use the ESP-IDF to build projects.
+
+* [ESP-IDF Getting Started Guide on ESP32](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html)
+* [ESP-IDF Getting Started Guide on ESP32-S2](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/get-started/index.html)
+* [ESP-IDF Getting Started Guide on ESP32-C3](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/get-started/index.html)
+
+## Example Output
 
 All the logs are taken after debug enabled:
 
 Beacon request:
-
+```
 I (11125) wpa: scan issued at time=7579442263
 I (11125) wpa: BSS: Add new id 1 BSSID b6:fb:e4:4d:6e:22 SSID 'ESPTest' chan 1
 I (11135) wpa: BSS: Add new id 2 BSSID d6:fb:e4:4d:6e:22 SSID 'ESPDedicated' chan 1
@@ -21,9 +48,11 @@ I (12485) wpa: BSS: Add new id 11 BSSID b4:fb:e4:4d:7c:89 SSID 'ESPIndia' chan 1
 I (12825) wpa: scan done received
 I (12845) wpa: action frame sent
 I (12845) wpa: action frame sent
+```
 
 Sta's moving from one AP to another on BTM request:
 
+```
 I (379479) wpa: WNM: RX action 7 from 50:3e:aa:26:35:42
 I (379479) wpa: WNM: BSS Transition Management Request: dialog_token=1 request_mode=0x1 disassoc_timer=0 validity_interval=1
 I (379489) wpa: WNM: Neighbor report tag 52
@@ -56,3 +85,8 @@ I (384729) wifi:pm start, type: 1
 
 I (384789) wifi:AP's beacon interval = 102400 us, DTIM period = 2
 I (385609) esp_netif_handlers: sta ip: 192.168.4.2, mask: 255.255.255.0, gw: 192.168.4.1
+```
+
+## Troubleshooting
+
+For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
