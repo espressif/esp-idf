@@ -24,7 +24,10 @@ tBTM_BLE_EXTENDED_CB extend_adv_cb;
 tBTM_BLE_5_HCI_CBACK ble_5_hci_cb;
 
 #define INVALID_VALUE   0XFF
-
+extern BOOLEAN BTM_GetLocalResolvablePrivateAddr(BD_ADDR bda);
+extern void BTM_UpdateAddrInfor(uint8_t addr_type, BD_ADDR bda);
+extern void BTM_BleSetStaticAddr(BD_ADDR rand_addr);
+extern uint32_t BTM_BleUpdateOwnType(uint8_t *own_bda_type, tBTM_START_ADV_CMPL_CBACK *cb);
 static tBTM_STATUS btm_ble_ext_adv_params_validate(tBTM_BLE_GAP_EXT_ADV_PARAMS *params);
 static tBTM_STATUS btm_ble_ext_adv_set_data_validate(UINT8 instance, UINT16 len, UINT8 *data);
 
@@ -316,6 +319,12 @@ tBTM_STATUS BTM_BleSetExtendedAdvRandaddr(UINT8 instance, BD_ADDR rand_addr)
             BTM_TRACE_ERROR("%s, fail to send the hci command, the error code = %s(0x%x)",
                             __func__, btm_ble_hci_status_to_str(err), err);
             status = BTM_ILLEGAL_VALUE;
+        } else {
+            // set random address success, update address infor
+            if(extend_adv_cb.inst[instance].configured && extend_adv_cb.inst[instance].connetable) {
+                BTM_BleSetStaticAddr(rand_addr);
+                BTM_UpdateAddrInfor(BLE_ADDR_RANDOM, rand_addr);
+            }
         }
     } else {
         BTM_TRACE_ERROR("%s invalid random address", __func__);
@@ -336,6 +345,8 @@ tBTM_STATUS BTM_BleSetExtendedAdvParams(UINT8 instance, tBTM_BLE_GAP_EXT_ADV_PAR
     tBTM_STATUS status = BTM_SUCCESS;
     tHCI_STATUS err = HCI_SUCCESS;
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+    bool use_rpa_addr = false;
+    BD_ADDR rand_addr;
 
     if (instance >= MAX_BLE_ADV_INSTANCE) {
         status = BTM_ILLEGAL_VALUE;
@@ -364,6 +375,15 @@ tBTM_STATUS BTM_BleSetExtendedAdvParams(UINT8 instance, tBTM_BLE_GAP_EXT_ADV_PAR
     } else {
         extend_adv_cb.inst[instance].legacy_pdu = false;
     }
+    // if own_addr_type == BLE_ADDR_PUBLIC_ID or BLE_ADDR_RANDOM_ID,
+    if((params->own_addr_type == BLE_ADDR_PUBLIC_ID || params->own_addr_type == BLE_ADDR_RANDOM_ID) && BTM_GetLocalResolvablePrivateAddr(rand_addr)) {
+        params->own_addr_type = BLE_ADDR_RANDOM;
+        use_rpa_addr = true;
+    } else if(params->own_addr_type == BLE_ADDR_PUBLIC_ID){
+        params->own_addr_type = BLE_ADDR_PUBLIC;
+    } else if (params->own_addr_type == BLE_ADDR_RANDOM_ID) {
+        params->own_addr_type = BLE_ADDR_RANDOM;
+    }
 
     if ((err = btsnd_hcic_ble_set_ext_adv_params(instance, params->type, params->interval_min, params->interval_max,
                                       params->channel_map, params->own_addr_type, params->peer_addr_type,
@@ -372,13 +392,22 @@ tBTM_STATUS BTM_BleSetExtendedAdvParams(UINT8 instance, tBTM_BLE_GAP_EXT_ADV_PAR
                                       params->secondary_phy, params->sid, params->scan_req_notif)) != HCI_SUCCESS) {
         BTM_TRACE_ERROR("LE EA SetParams: cmd err=0x%x", err);
         status = BTM_ILLEGAL_VALUE;
-	goto end;
+        goto end;
     }
 
     extend_adv_cb.inst[instance].configured = true;
 
 end:
-
+    if(use_rpa_addr) {
+        // update RPA address
+        if((err = btsnd_hcic_ble_set_extend_rand_address(instance, rand_addr)) != HCI_SUCCESS) {
+            BTM_TRACE_ERROR("LE EA SetParams: cmd err=0x%x", err);
+            status = BTM_ILLEGAL_VALUE;
+        } else {
+            // set addr success, update address infor
+            BTM_UpdateAddrInfor(BLE_ADDR_RANDOM, rand_addr);
+        }
+    }
     cb_params.status = status;
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_EXT_ADV_SET_PARAMS_COMPLETE_EVT, &cb_params);
 
@@ -579,6 +608,12 @@ tBTM_STATUS BTM_BleExtAdvSetRemove(UINT8 instance)
     if ((err = btsnd_hcic_ble_remove_adv_set(instance)) != HCI_SUCCESS) {
         BTM_TRACE_ERROR("LE EAS Rm: cmd err=0x%x", err);
         status = BTM_ILLEGAL_VALUE;
+    } else {
+        extend_adv_cb.inst[instance].configured = false;
+        extend_adv_cb.inst[instance].legacy_pdu = false;
+        extend_adv_cb.inst[instance].directed = false;
+        extend_adv_cb.inst[instance].scannable = false;
+        extend_adv_cb.inst[instance].connetable = false;
     }
 
 end:
@@ -599,6 +634,14 @@ tBTM_STATUS BTM_BleExtAdvSetClear(void)
     if ((err = btsnd_hcic_ble_clear_adv_set()) != HCI_SUCCESS) {
         BTM_TRACE_ERROR("LE EAS Clr: cmd err=0x%x", err);
         status = BTM_ILLEGAL_VALUE;
+    } else {
+        for (uint8_t i = 0; i < MAX_BLE_ADV_INSTANCE; i++) {
+            extend_adv_cb.inst[i].configured = false;
+            extend_adv_cb.inst[i].legacy_pdu = false;
+            extend_adv_cb.inst[i].directed = false;
+            extend_adv_cb.inst[i].scannable = false;
+            extend_adv_cb.inst[i].connetable = false;
+        }
     }
 
     cb_params.status = status;
@@ -924,6 +967,12 @@ tBTM_STATUS BTM_BleSetExtendedScanParams(tBTM_BLE_EXT_SCAN_PARAMS *params)
         phy_mask |= 0x04;
         memcpy(&hci_params[phy_count], &params->coded_cfg, sizeof(tHCI_EXT_SCAN_PARAMS));
         phy_count++;
+    }
+
+    if (BTM_BleUpdateOwnType(&params->own_addr_type, NULL) != 0 ) {
+        status = BTM_ILLEGAL_VALUE;
+        BTM_TRACE_ERROR("LE UpdateOwnType err");
+        goto end;
     }
 
     extend_adv_cb.scan_duplicate = params->scan_duplicate;

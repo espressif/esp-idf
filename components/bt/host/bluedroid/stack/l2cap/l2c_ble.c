@@ -802,7 +802,6 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
 
 #if ( (defined BLE_PRIVACY_SPT) && (BLE_PRIVACY_SPT == TRUE))
     own_addr_type = btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type;
-
 #if (!CONTROLLER_RPA_LIST_ENABLE)
     if(dev_rec_exist) {
         // if the current address information is valid, get the real address information
@@ -826,7 +825,7 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
 
 #endif // (!CONTROLLER_RPA_LIST_ENABLE)
 
-#if CONTROLLER_RPA_LIST_ENABLE
+#if (CONTROLLER_RPA_LIST_ENABLE && CONFIG_BT_CTRL_ESP32)
 
     if (p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) {
         if (btm_cb.ble_ctr_cb.privacy_mode >=  BTM_PRIVACY_1_2) {
@@ -840,7 +839,6 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
     }
 
 #endif // CONTROLLER_RPA_LIST_ENABLE
-
 #endif // (defined BLE_PRIVACY_SPT) && (BLE_PRIVACY_SPT == TRUE)
 
     if (!btm_ble_topology_check(BTM_BLE_STATE_INIT)) {
@@ -892,6 +890,21 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
         }
     } else {
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
+
+        /*
+        * 0x00 Public Device Address
+        * 0x01 Random Device Address
+        * 0x02 Public Identity Address (corresponds to Resolved Private Address)
+        * 0x03 Random (static) Identity Address (corresponds to Resolved Private Address)
+        * 0xFF No address provided (anonymous advertisement)
+        */
+
+        if ((peer_addr_type & BLE_ADDR_RANDOM) == BLE_ADDR_RANDOM) {
+            peer_addr_type = BLE_ADDR_RANDOM;
+        } else {
+            peer_addr_type = BLE_ADDR_PUBLIC;
+        }
+
         tHCI_CreatExtConn aux_conn = {0};
         aux_conn.filter_policy = FALSE;
         aux_conn.own_addr_type = own_addr_type;
