@@ -1418,7 +1418,7 @@ void esp_http_client_add_auth(esp_http_client_handle_t client)
         } else {
 #endif
 #ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_BASIC_AUTH
-        } else if (http_utils_str_starts_with_case_insensitive(auth_header, "Basic") == 0) {
+        if (http_utils_str_starts_with_case_insensitive(auth_header, "Basic") == 0) {
             ESP_LOGD(TAG, "type = Basic");
             client->connection_info.auth_type = HTTP_AUTH_TYPE_BASIC;
         } else {
