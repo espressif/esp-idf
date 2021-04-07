@@ -123,3 +123,20 @@ int http_utils_str_starts_with(const char *str, const char *start)
     }
     return 0;
 }
+
+int http_utils_str_starts_with_case_insensitive(const char *str, const char *start)
+{
+    int i;
+    int match_str_len = strlen(str);
+    int start_len = strlen(start);
+
+    if (start_len > match_str_len) {
+        return -1;
+    }
+    for (i = 0; i < start_len; i++) {
+        if (tolower(str[i]) != tolower(start[i])) {
+            return 1;
+        }
+    }
+    return 0;
+}

@@ -1382,11 +1382,11 @@ void esp_http_client_add_auth(esp_http_client_handle_t client)
         http_utils_trim_whitespace(&auth_header);
         ESP_LOGD(TAG, "UNAUTHORIZED: %s", auth_header);
         client->redirect_counter++;
-        if (http_utils_str_starts_with(auth_header, "Digest") == 0) {
+        if (http_utils_str_starts_with_case_insensitive(auth_header, "Digest") == 0) {
             ESP_LOGD(TAG, "type = Digest");
             client->connection_info.auth_type = HTTP_AUTH_TYPE_DIGEST;
 #ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_BASIC_AUTH
-        } else if (http_utils_str_starts_with(auth_header, "Basic") == 0) {
+        } else if (http_utils_str_starts_with_case_insensitive(auth_header, "Basic") == 0) {
             ESP_LOGD(TAG, "type = Basic");
             client->connection_info.auth_type = HTTP_AUTH_TYPE_BASIC;
 #endif

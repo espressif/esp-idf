@@ -79,6 +79,19 @@ char *http_utils_join_string(const char *first_str, size_t len_first, const char
  */
 int http_utils_str_starts_with(const char *str, const char *start);
 
+/**
+ * @brief      Check if ``str`` is start with ``start`` comparing the
+ *             strings in a case-insensitive fashion.
+ *
+ * @param[in]  str    The string
+ * @param[in]  start  The start
+ *
+ * @return
+ *     - (-1) if length of ``start`` larger than length of ``str``
+ *     - (1) if ``start`` NOT starts with ``start``
+ *     - (0) if ``str`` starts with ``start``
+ */
+int http_utils_str_starts_with_case_insensitive(const char *str, const char *start);
 
 #define HTTP_MEM_CHECK(TAG, a, action) if (!(a)) {                                                  \
         ESP_LOGE(TAG,"%s(%d): %s", __FUNCTION__, __LINE__, "Memory exhausted");                     \
