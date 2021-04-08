@@ -33,7 +33,10 @@ ifndef CONFIG_SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS
 LINKER_SCRIPTS += esp32.rom.newlib-time.ld
 endif
 
+COMPONENT_SRCDIRS := patches
+
 COMPONENT_ADD_LDFLAGS += -L $(COMPONENT_PATH)/esp32/ld \
                          $(addprefix -T ,$(LINKER_SCRIPTS)) \
+                         -l$(COMPONENT_NAME) -Wl,--wrap=longjmp \
 
 COMPONENT_ADD_LINKER_DEPS += $(addprefix esp32/ld/, $(LINKER_SCRIPTS))
