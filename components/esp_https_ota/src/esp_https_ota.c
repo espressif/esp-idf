@@ -123,9 +123,9 @@ static esp_err_t _http_connect(esp_http_client_handle_t http_client)
                     ESP_LOGE(TAG, "Write failed");
                     return ESP_FAIL;
                 }
+                post_len -= write_len;
+                post_data += write_len;
             }
-            post_len -= write_len;
-            post_data += write_len;
         }
         header_ret = esp_http_client_fetch_headers(http_client);
         if (header_ret < 0) {
