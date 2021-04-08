@@ -25,6 +25,7 @@
 #include "hal/i2s_types.h"
 #include "driver/periph_ctrl.h"
 #include "esp_intr_alloc.h"
+
 #if SOC_I2S_SUPPORTS_ADC_DAC
 #include "driver/adc.h"
 #endif
@@ -81,21 +82,6 @@ esp_err_t i2s_set_pin(i2s_port_t i2s_num, const i2s_pin_config_t *pin);
  */
 esp_err_t i2s_set_pdm_rx_down_sample(i2s_port_t i2s_num, i2s_pdm_dsr_t dsr);
 #endif
-
-/**
- * @brief Set I2S dac mode, I2S built-in DAC is disabled by default
- *
- * @param dac_mode DAC mode configurations - see i2s_dac_mode_t
- *
- * @note Built-in DAC functions are only supported on I2S0 for current ESP32 chip.
- *       If either of the built-in DAC channel are enabled, the other one can not
- *       be used as RTC DAC function at the same time.
- *
- * @return
- *     - ESP_OK               Success
- *     - ESP_ERR_INVALID_ARG  Parameter error
- */
-esp_err_t i2s_set_dac_mode(i2s_dac_mode_t dac_mode);
 
 /**
  * @brief Install and start I2S driver.
@@ -331,7 +317,23 @@ esp_err_t i2s_adc_enable(i2s_port_t i2s_num);
  *     - ESP_ERR_INVALID_STATE  Driver state error
  */
 esp_err_t i2s_adc_disable(i2s_port_t i2s_num);
-#endif
+
+/**
+ * @brief Set I2S dac mode, I2S built-in DAC is disabled by default
+ *
+ * @param dac_mode DAC mode configurations - see i2s_dac_mode_t
+ *
+ * @note Built-in DAC functions are only supported on I2S0 for current ESP32 chip.
+ *       If either of the built-in DAC channel are enabled, the other one can not
+ *       be used as RTC DAC function at the same time.
+ *
+ * @return
+ *     - ESP_OK               Success
+ *     - ESP_ERR_INVALID_ARG  Parameter error
+ */
+esp_err_t i2s_set_dac_mode(i2s_dac_mode_t dac_mode);
+#endif //SOC_I2S_SUPPORTS_ADC_DAC
+
 
 #ifdef __cplusplus
 }
