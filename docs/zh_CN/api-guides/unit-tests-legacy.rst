@@ -113,9 +113,9 @@ DUT1 终端::
 
     Waiting for signal: [dut2 mac address]!
     Please input parameter value from any board send this signal and press "Enter" key.
-    
 
-DUT2 终端:: 
+
+DUT2 终端::
 
     Send signal: [dut2 mac address][10:20:30:40:50:60]!
 
@@ -204,7 +204,7 @@ DUT2 终端::
    (14)    "SPI Master clockdiv calculation routines" [spi]
    (15)    "SPI Master test" [spi][ignore]
    (16)    "SPI Master test, interaction of multiple devs" [spi][ignore]
-   (17)    "SPI Master no response when switch from host1 (HSPI) to host2 (VSPI)" [spi]
+   (17)    "SPI Master no response when switch from host1 (SPI2) to host2 (SPI3)" [spi]
    (18)    "SPI Master DMA test, TX and RX in different regions" [spi]
    (19)    "SPI Master DMA test: length, start, not aligned" [spi]
    (20)    "reset reason check for deepsleep" [esp32][test_env=UT_T2_1][multi_stage]

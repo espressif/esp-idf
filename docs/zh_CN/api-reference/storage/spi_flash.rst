@@ -8,7 +8,7 @@ SPI Flash API
 
 SPI Flash 组件提供外部 flash 数据读取、写入、擦除和内存映射相关的 API 函数，同时也提供了更高层级的，面向分区的 API 函数（定义在 :doc:`分区表 </api-guides/partition-tables>` 中）。
 
-与 ESP-IDF V4.0 之前的 API 不同，这一版 `esp_flash_*` API 功能并不局限于主 SPI Flash 芯片（即运行程序的 SPI Flash 芯片）。使用不同的芯片指针，您可以通过 SPI0/1 或 HSPI/VSPI 总线访问外部 flash。
+与 ESP-IDF V4.0 之前的 API 不同，这一版 `esp_flash_*` API 功能并不局限于主 SPI Flash 芯片（即运行程序的 SPI Flash 芯片）。使用不同的芯片指针，您可以通过 SPI0/1 或 SPI2/SPI3 总线访问外部 flash。
 
 .. note::
 

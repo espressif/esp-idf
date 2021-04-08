@@ -115,8 +115,8 @@ static void init_slave_hd(int mode, bool append_mode, const spi_slave_hd_callbac
 {
     spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
     bus_cfg.max_transfer_sz = TEST_DMA_MAX_SIZE*30;
-    bus_cfg.quadwp_io_num = SLAVE_PIN_NUM_WP;
-    bus_cfg.quadhd_io_num = SLAVE_PIN_NUM_HD;
+    bus_cfg.quadwp_io_num = -1;
+    bus_cfg.quadhd_io_num = -1;
 #ifdef TEST_SLAVE_GPIO_MATRIX
     bus_cfg.flags |= SPICOMMON_BUSFLAG_FORCE_GPIO;
 #endif
