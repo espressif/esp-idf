@@ -112,7 +112,7 @@ bool esp_memprot_get_split_line_lock()
 void esp_memprot_set_split_line(split_line_t line_type, const void *line_addr)
 {
     uint32_t addr = (uint32_t)line_addr;
-    ESP_LOGD(TAG, "Setting split line %s, addr: 0x%08X", split_line_to_str(line_type), addr);
+    ESP_EARLY_LOGD(TAG, "Setting split line %s, addr: 0x%08X", split_line_to_str(line_type), addr);
 
     //split-line must be divisible by 512
     assert( addr % 0x200 == 0 );
@@ -134,7 +134,7 @@ void esp_memprot_set_split_line(split_line_t line_type, const void *line_addr)
         memprot_ll_set_dram0_split_line_D_1(line_addr);
         break;
     default:
-        ESP_LOGE(TAG, "Invalid split line type, aborting: 0x%08X", addr);
+        ESP_EARLY_LOGE(TAG, "Invalid split line type, aborting: 0x%08X", addr);
         abort();
     }
 }
@@ -146,7 +146,7 @@ void esp_memprot_set_split_line(split_line_t line_type, const void *line_addr)
 
 void esp_memprot_set_pms_lock(mem_type_prot_t mem_type, bool lock)
 {
-    ESP_LOGD(TAG, "esp_memprot_set_pms_lock(%s, %s)", mem_type_to_str(mem_type), lock ? "true" : "false");
+    ESP_EARLY_LOGD(TAG, "esp_memprot_set_pms_lock(%s, %s)", mem_type_to_str(mem_type), lock ? "true" : "false");
 
     switch ( mem_type ) {
     case MEMPROT_IRAM0_SRAM:
@@ -156,14 +156,14 @@ void esp_memprot_set_pms_lock(mem_type_prot_t mem_type, bool lock)
         memprot_ll_dram0_set_pms_lock(lock);
         break;
     default:
-        ESP_LOGE(TAG, "Invalid mem_type (%s), aborting", mem_type_to_str(mem_type));
+        ESP_EARLY_LOGE(TAG, "Invalid mem_type (%s), aborting", mem_type_to_str(mem_type));
         abort();
     }
 }
 
 bool esp_memprot_get_pms_lock(mem_type_prot_t mem_type)
 {
-    ESP_LOGD(TAG, "esp_memprot_get_pms_lock(%s)", mem_type_to_str(mem_type));
+    ESP_EARLY_LOGD(TAG, "esp_memprot_get_pms_lock(%s)", mem_type_to_str(mem_type));
 
     switch ( mem_type ) {
     case MEMPROT_IRAM0_SRAM:
@@ -171,14 +171,14 @@ bool esp_memprot_get_pms_lock(mem_type_prot_t mem_type)
     case MEMPROT_DRAM0_SRAM:
         return memprot_ll_dram0_get_pms_lock();
     default:
-        ESP_LOGE(TAG, "Invalid mem_type (%s), aborting", mem_type_to_str(mem_type));
+        ESP_EARLY_LOGE(TAG, "Invalid mem_type (%s), aborting", mem_type_to_str(mem_type));
         abort();
     }
 }
 
 void esp_memprot_iram_set_pms_area(pms_area_t area_type, bool r, bool w, bool x)
 {
-    ESP_LOGD(TAG, "esp_memprot_iram_set_pms_area(area:%s r:%u w:%u, x:%u)", pms_to_str(area_type), r, w, x);
+    ESP_EARLY_LOGD(TAG, "esp_memprot_iram_set_pms_area(area:%s r:%u w:%u, x:%u)", pms_to_str(area_type), r, w, x);
 
     switch ( area_type ) {
     case MEMPROT_IRAM0_PMS_AREA_0:
@@ -194,14 +194,14 @@ void esp_memprot_iram_set_pms_area(pms_area_t area_type, bool r, bool w, bool x)
         memprot_ll_iram0_set_pms_area_3(r, w, x);
         break;
     default:
-        ESP_LOGE(TAG, "Invalid area_type %d", pms_to_str(area_type));
+        ESP_EARLY_LOGE(TAG, "Invalid area_type %d", pms_to_str(area_type));
         abort();
     }
 }
 
 void esp_memprot_dram_set_pms_area(pms_area_t area_type, bool r, bool w)
 {
-    ESP_LOGD(TAG, "esp_memprot_dram_set_pms_area(area:%s r:%u w:%u)", pms_to_str(area_type), r, w);
+    ESP_EARLY_LOGD(TAG, "esp_memprot_dram_set_pms_area(area:%s r:%u w:%u)", pms_to_str(area_type), r, w);
 
     switch ( area_type ) {
     case MEMPROT_DRAM0_PMS_AREA_0:
@@ -217,7 +217,7 @@ void esp_memprot_dram_set_pms_area(pms_area_t area_type, bool r, bool w)
         memprot_ll_dram0_set_pms_area_3(r, w);
         break;
     default:
-        ESP_LOGE(TAG, "Invalid area_type %d", pms_to_str(area_type));
+        ESP_EARLY_LOGE(TAG, "Invalid area_type %d", pms_to_str(area_type));
         abort();
     }
 }
@@ -229,7 +229,7 @@ void esp_memprot_dram_set_pms_area(pms_area_t area_type, bool r, bool w)
 
 void esp_memprot_set_monitor_lock(mem_type_prot_t mem_type, bool lock)
 {
-    ESP_LOGD(TAG, "esp_memprot_set_monitor_lock(%s, %s)", mem_type_to_str(mem_type), lock ? "true" : "false");
+    ESP_EARLY_LOGD(TAG, "esp_memprot_set_monitor_lock(%s, %s)", mem_type_to_str(mem_type), lock ? "true" : "false");
 
     switch ( mem_type ) {
     case MEMPROT_IRAM0_SRAM:
@@ -239,14 +239,14 @@ void esp_memprot_set_monitor_lock(mem_type_prot_t mem_type, bool lock)
         memprot_ll_dram0_set_monitor_lock(lock);
         break;
     default:
-        ESP_LOGE(TAG, "Invalid mem_type (%s), aborting", mem_type_to_str(mem_type));
+        ESP_EARLY_LOGE(TAG, "Invalid mem_type (%s), aborting", mem_type_to_str(mem_type));
         abort();
     }
 }
 
 bool esp_memprot_get_monitor_lock(mem_type_prot_t mem_type)
 {
-    ESP_LOGD(TAG, "esp_memprot_get_monitor_lock(%s)", mem_type_to_str(mem_type));
+    ESP_EARLY_LOGD(TAG, "esp_memprot_get_monitor_lock(%s)", mem_type_to_str(mem_type));
 
     switch ( mem_type ) {
     case MEMPROT_IRAM0_SRAM:
@@ -254,14 +254,14 @@ bool esp_memprot_get_monitor_lock(mem_type_prot_t mem_type)
     case MEMPROT_DRAM0_SRAM:
         return memprot_ll_dram0_get_monitor_lock();
     default:
-        ESP_LOGE(TAG, "Invalid mem_type (%s), aborting", mem_type_to_str(mem_type));
+        ESP_EARLY_LOGE(TAG, "Invalid mem_type (%s), aborting", mem_type_to_str(mem_type));
         abort();
     }
 }
 
 void esp_memprot_set_monitor_en(mem_type_prot_t mem_type, bool enable)
 {
-    ESP_LOGD(TAG, "esp_memprot_set_monitor_en(%s)", mem_type_to_str(mem_type));
+    ESP_EARLY_LOGD(TAG, "esp_memprot_set_monitor_en(%s)", mem_type_to_str(mem_type));
 
     switch ( mem_type ) {
     case MEMPROT_IRAM0_SRAM:
@@ -271,14 +271,14 @@ void esp_memprot_set_monitor_en(mem_type_prot_t mem_type, bool enable)
         memprot_ll_dram0_set_monitor_en(enable);
         break;
     default:
-        ESP_LOGE(TAG, "Invalid mem_type (%s), aborting", mem_type_to_str(mem_type));
+        ESP_EARLY_LOGE(TAG, "Invalid mem_type (%s), aborting", mem_type_to_str(mem_type));
         abort();
     }
 }
 
 bool esp_memprot_get_monitor_en(mem_type_prot_t mem_type)
 {
-    ESP_LOGD(TAG, "esp_memprot_set_monitor_en(%s)", mem_type_to_str(mem_type));
+    ESP_EARLY_LOGD(TAG, "esp_memprot_set_monitor_en(%s)", mem_type_to_str(mem_type));
 
     switch ( mem_type ) {
     case MEMPROT_IRAM0_SRAM:
@@ -286,7 +286,7 @@ bool esp_memprot_get_monitor_en(mem_type_prot_t mem_type)
     case MEMPROT_DRAM0_SRAM:
         return memprot_ll_dram0_get_monitor_en();
     default:
-        ESP_LOGE(TAG, "Invalid mem_type (%s), aborting", mem_type_to_str(mem_type));
+        ESP_EARLY_LOGE(TAG, "Invalid mem_type (%s), aborting", mem_type_to_str(mem_type));
         abort();
     }
 }
@@ -298,7 +298,7 @@ bool esp_memprot_is_intr_ena_any()
 
 void esp_memprot_monitor_clear_intr(mem_type_prot_t mem_type)
 {
-    ESP_LOGD(TAG, "esp_memprot_monitor_clear_intr(%s)", mem_type_to_str(mem_type));
+    ESP_EARLY_LOGD(TAG, "esp_memprot_monitor_clear_intr(%s)", mem_type_to_str(mem_type));
 
     switch ( mem_type ) {
     case MEMPROT_IRAM0_SRAM:
@@ -308,7 +308,7 @@ void esp_memprot_monitor_clear_intr(mem_type_prot_t mem_type)
         memprot_ll_dram0_clear_monitor_intr();
         break;
     default:
-        ESP_LOGE(TAG, "Invalid mem_type (%s), aborting", mem_type_to_str(mem_type));
+        ESP_EARLY_LOGE(TAG, "Invalid mem_type (%s), aborting", mem_type_to_str(mem_type));
         abort();
     }
 }
@@ -342,7 +342,7 @@ uint32_t esp_memprot_get_violate_intr_on(mem_type_prot_t mem_type)
     case MEMPROT_DRAM0_SRAM:
         return memprot_ll_dram0_get_monitor_status_intr();
     default:
-        ESP_LOGE(TAG, "Invalid mem_type (%s), aborting", mem_type_to_str(mem_type));
+        ESP_EARLY_LOGE(TAG, "Invalid mem_type (%s), aborting", mem_type_to_str(mem_type));
         abort();
     }
 }
@@ -355,7 +355,7 @@ uint32_t esp_memprot_get_violate_addr(mem_type_prot_t mem_type)
     case MEMPROT_DRAM0_SRAM:
         return memprot_ll_dram0_get_monitor_status_fault_addr();
     default:
-        ESP_LOGE(TAG, "Invalid mem_type (%s), aborting", mem_type_to_str(mem_type));
+        ESP_EARLY_LOGE(TAG, "Invalid mem_type (%s), aborting", mem_type_to_str(mem_type));
         abort();
     }
 }
@@ -368,7 +368,7 @@ uint32_t esp_memprot_get_violate_world(mem_type_prot_t mem_type)
     case MEMPROT_DRAM0_SRAM:
         return memprot_ll_dram0_get_monitor_status_fault_world();
     default:
-        ESP_LOGE(TAG, "Invalid mem_type (%s), aborting", mem_type_to_str(mem_type));
+        ESP_EARLY_LOGE(TAG, "Invalid mem_type (%s), aborting", mem_type_to_str(mem_type));
         abort();
     }
 }
@@ -381,7 +381,7 @@ uint32_t esp_memprot_get_violate_wr(mem_type_prot_t mem_type)
     case MEMPROT_DRAM0_SRAM:
         return memprot_ll_dram0_get_monitor_status_fault_wr();
     default:
-        ESP_LOGE(TAG, "Invalid mem_type (%s), aborting", mem_type_to_str(mem_type));
+        ESP_EARLY_LOGE(TAG, "Invalid mem_type (%s), aborting", mem_type_to_str(mem_type));
         abort();
     }
 }
@@ -392,7 +392,7 @@ uint32_t esp_memprot_get_violate_loadstore(mem_type_prot_t mem_type)
     case MEMPROT_IRAM0_SRAM:
         return memprot_ll_iram0_get_monitor_status_fault_loadstore();
     default:
-        ESP_LOGE(TAG, "Invalid mem_type (%s), aborting", mem_type_to_str(mem_type));
+        ESP_EARLY_LOGE(TAG, "Invalid mem_type (%s), aborting", mem_type_to_str(mem_type));
         abort();
     }
 }
@@ -403,7 +403,7 @@ uint32_t esp_memprot_get_violate_byte_en(mem_type_prot_t mem_type)
     case MEMPROT_DRAM0_SRAM:
         return memprot_ll_dram0_get_monitor_status_fault_byte_en();
     default:
-        ESP_LOGE(TAG, "Invalid mem_type (%s), aborting", mem_type_to_str(mem_type));
+        ESP_EARLY_LOGE(TAG, "Invalid mem_type (%s), aborting", mem_type_to_str(mem_type));
         abort();
     }
 }
@@ -415,7 +415,7 @@ int esp_memprot_intr_get_cpuid()
 
 void esp_memprot_set_intr_matrix(mem_type_prot_t mem_type)
 {
-    ESP_LOGD(TAG, "esp_memprot_set_intr_matrix(%s)", mem_type_to_str(mem_type));
+    ESP_EARLY_LOGD(TAG, "esp_memprot_set_intr_matrix(%s)", mem_type_to_str(mem_type));
 
     ESP_INTR_DISABLE(ETS_MEMPROT_ERR_INUM);
 
@@ -427,7 +427,7 @@ void esp_memprot_set_intr_matrix(mem_type_prot_t mem_type)
         intr_matrix_set(esp_memprot_intr_get_cpuid(), memprot_ll_dram0_get_intr_source_num(), ETS_MEMPROT_ERR_INUM);
         break;
     default:
-        ESP_LOGE(TAG, "Invalid mem_type (%s), aborting", mem_type_to_str(mem_type));
+        ESP_EARLY_LOGE(TAG, "Invalid mem_type (%s), aborting", mem_type_to_str(mem_type));
         abort();
     }
 
@@ -445,7 +445,7 @@ void esp_memprot_set_prot(bool invoke_panic_handler, bool lock_feature, uint32_t
 
 void esp_memprot_set_prot_int(bool invoke_panic_handler, bool lock_feature, void *split_addr, uint32_t *mem_type_mask)
 {
-    ESP_LOGD(TAG, "esp_memprot_set_prot(panic_handler: %u, lock: %u, split.addr: 0x%08X, mem.types: 0x%08X", invoke_panic_handler, lock_feature, (uint32_t)split_addr, (uint32_t)mem_type_mask);
+    ESP_EARLY_LOGD(TAG, "esp_memprot_set_prot(panic_handler: %u, lock: %u, split.addr: 0x%08X, mem.types: 0x%08X", invoke_panic_handler, lock_feature, (uint32_t)split_addr, (uint32_t)mem_type_mask);
 
     uint32_t required_mem_prot = mem_type_mask == NULL ? (uint32_t)MEMPROT_ALL : *mem_type_mask;
     bool use_iram0 = required_mem_prot & MEMPROT_IRAM0_SRAM;
