@@ -502,6 +502,16 @@ static esp_err_t emac_w5500_set_peer_pause_ability(esp_eth_mac_t *mac, uint32_t 
     return ESP_ERR_NOT_SUPPORTED;
 }
 
+static inline bool is_w5500_sane_for_rxtx(emac_w5500_t *emac)
+{
+    uint8_t phycfg;
+    /* phy is ok for rx and tx operations if bits RST and LNK are set (no link down, no reset) */
+    if (w5500_read(emac, W5500_REG_PHYCFGR, &phycfg, 1) == ESP_OK && (phycfg & 0x8001)) {
+        return true;
+    }
+   return false;
+}
+
 static esp_err_t emac_w5500_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint32_t length)
 {
     esp_err_t ret = ESP_OK;
@@ -525,10 +535,14 @@ static esp_err_t emac_w5500_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint32_t 
     MAC_CHECK(w5500_send_command(emac, W5500_SCR_SEND, 100) == ESP_OK, "issue SEND command failed", err, ESP_FAIL);
 
     // pooling the TX done event
+    int retry = 0;
     uint8_t status = 0;
-    do {
+    while (!(status & W5500_SIR_SEND)) {
         MAC_CHECK(w5500_read(emac, W5500_REG_SOCK_IR(0), &status, sizeof(status)) == ESP_OK, "read SOCK0 IR failed", err, ESP_FAIL);
-    } while (!(status & W5500_SIR_SEND));
+        if ((retry++ > 3 && !is_w5500_sane_for_rxtx(emac)) || retry > 10) {
+            return ESP_FAIL;
+        }
+    }
     // clear the event bit
     status  = W5500_SIR_SEND;
     MAC_CHECK(w5500_write(emac, W5500_REG_SOCK_IR(0), &status, sizeof(status)) == ESP_OK, "write SOCK0 IR failed", err, ESP_FAIL);
