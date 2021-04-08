@@ -116,11 +116,11 @@ void http_utils_trim_whitespace(char **str)
 
 char *http_utils_get_string_between(const char *str, const char *begin, const char *end)
 {
-    char *found = strstr(str, begin);
+    char *found = strcasestr(str, begin);
     char *ret = NULL;
     if (found) {
         found += strlen(begin);
-        char *found_end = strstr(found, end);
+        char *found_end = strcasestr(found, end);
         if (found_end) {
             ret = calloc(1, found_end - found + 1);
             mem_check(ret);
@@ -141,7 +141,7 @@ int http_utils_str_starts_with(const char *str, const char *start)
         return -1;
     }
     for (i = 0; i < start_len; i++) {
-        if (str[i] != start[i]) {
+        if (tolower(str[i]) != tolower(start[i])) {
             return 1;
         }
     }
