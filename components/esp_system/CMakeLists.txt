@@ -58,6 +58,7 @@ else()
         PROPERTIES COMPILE_FLAGS
         -fno-stack-protector)
 
+    include(${CMAKE_CURRENT_LIST_DIR}/ld/ld.cmake)
 endif()
 
 if(CONFIG_IDF_ENV_FPGA)

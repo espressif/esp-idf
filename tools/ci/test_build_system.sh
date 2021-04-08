@@ -160,7 +160,7 @@ function run_tests()
 
     print_status "Touching app-only template ld file should only re-link app"
     take_build_snapshot
-    touch ${IDF_PATH}/components/esp32/ld/esp32.project.ld.in
+    touch ${IDF_PATH}/components/esp_system/ld/esp32/sections.ld.in
     make
     assert_rebuilt ${APP_BINS}
     assert_not_rebuilt ${BOOTLOADER_BINS}
