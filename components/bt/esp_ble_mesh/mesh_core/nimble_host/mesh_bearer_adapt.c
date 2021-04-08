@@ -88,7 +88,7 @@ int bt_mesh_host_init(void)
     int rc;
 
     if (init == true) {
-        return 0;
+        return -EALREADY;
     }
 
     rc = btc_init();
