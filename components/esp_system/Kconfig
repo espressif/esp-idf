@@ -88,7 +88,9 @@ menu "ESP System Settings"
         default y
         help
             If enabled, chip will try to power down flash at light sleep, which costs more time when chip wakes up.
-            Only can be enabled if there is no SPIRAM configured.
+            Can only be enabled if there is no SPIRAM configured. This option will in fact consider VDD_SDIO auto power
+            value (ESP_PD_OPTION_AUTO) as OFF. Also, it is possible to force a power domain to stay ON during light
+            sleep by using esp_sleep_pd_config() function.
 
     config ESP_SYSTEM_PM_POWER_DOWN_CPU
         bool "Power down CPU in light sleep"
