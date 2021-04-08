@@ -1,8 +1,14 @@
 idf_build_get_property(target IDF_TARGET)
 
-idf_component_register(SRCS "patches/esp_rom_crc.c"
-                            "patches/esp_rom_sys.c"
-                            "patches/esp_rom_uart.c"
+set(sources "patches/esp_rom_crc.c"
+            "patches/esp_rom_sys.c"
+            "patches/esp_rom_uart.c")
+
+if(CONFIG_IDF_TARGET_ARCH_XTENSA)
+    list(APPEND sources "patches/esp_rom_longjmp.S")
+endif()
+
+idf_component_register(SRCS ${sources}
                        INCLUDE_DIRS include "${target}"
                        PRIV_REQUIRES soc hal)
 
@@ -96,6 +102,9 @@ else() # Regular app build
         endif()
     endif()
 
+    if(CONFIG_IDF_TARGET_ARCH_XTENSA)
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=longjmp")
+    endif()
 endif()
 
 if(target STREQUAL "esp32s2")

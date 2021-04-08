@@ -267,6 +267,7 @@ tools/test_apps/protocols/mqtt/publish_connect_test/app_test.py
 tools/test_apps/protocols/openssl/app_test.py
 tools/test_apps/protocols/pppos/app_test.py
 tools/test_apps/system/gdb_loadable_elf/app_test.py
+tools/test_apps/system/longjmp_test/app_test.py
 tools/test_apps/system/memprot/app_test.py
 tools/test_apps/system/monitor_ide_integration/app_test.py
 tools/test_apps/system/panic/app_test.py
