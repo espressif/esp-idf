@@ -24,7 +24,10 @@ ifndef CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
 LINKER_SCRIPTS += esp32.rom.spiflash.ld
 endif
 
+COMPONENT_SRCDIRS := patches
+
 COMPONENT_ADD_LDFLAGS += -L $(COMPONENT_PATH)/esp32/ld \
                          $(addprefix -T ,$(LINKER_SCRIPTS)) \
+                         -l$(COMPONENT_NAME) -Wl,--wrap=longjmp \
 
 COMPONENT_ADD_LINKER_DEPS += $(addprefix esp32/ld/, $(LINKER_SCRIPTS))

@@ -9,7 +9,7 @@ if(BOOTLOADER_BUILD)
     target_linker_script(${COMPONENT_LIB} INTERFACE "${scripts}")
 else()
     # Regular app build
-    idf_component_register(SRCS "esp_rom.c"
+    idf_component_register(SRCS "esp_rom.c" "patches/esp_rom_longjmp.S"
                         INCLUDE_DIRS include)
 
     set(scripts
@@ -35,4 +35,6 @@ else()
     if(NOT CONFIG_SPI_FLASH_ROM_DRIVER_PATCH)
         target_linker_script(${COMPONENT_LIB} INTERFACE "esp32/ld/esp32.rom.spiflash.ld")
     endif()
+
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=longjmp")
 endif()
