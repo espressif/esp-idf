@@ -83,24 +83,6 @@ menu "ESP System Settings"
             heap initialization order by early startup services and scheduler related code. Speed
             wise RTC fast memory operates on APB clock and hence does not have much performance impact.
 
-    config ESP_SYSTEM_PD_FLASH
-        bool "PD flash at light sleep when there is no SPIRAM"
-        depends on !SPIRAM
-        default y
-        help
-            If enabled, chip will try to power down flash at light sleep, which costs more time when chip wakes up.
-            Can only be enabled if there is no SPIRAM configured. This option will in fact consider VDD_SDIO auto power
-            value (ESP_PD_OPTION_AUTO) as OFF. Also, it is possible to force a power domain to stay ON during light
-            sleep by using esp_sleep_pd_config() function.
-
-    config ESP_SYSTEM_PM_POWER_DOWN_CPU
-        bool "Power down CPU in light sleep"
-        depends on IDF_TARGET_ESP32C3
-        default y
-        help
-            If enabled, the CPU will be powered down in light sleep. Enabling this option will consume
-            1.68 KB of internal RAM and will reduce sleep current consumption by about 100 uA.
-
     menu "Memory protection"
 
         config ESP_SYSTEM_MEMPROT_FEATURE

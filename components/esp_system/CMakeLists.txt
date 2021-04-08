@@ -13,15 +13,12 @@ else()
     list(APPEND srcs "crosscore_int.c"
             "esp_err.c"
             "freertos_hooks.c"
-            "intr_alloc.c"
             "int_wdt.c"
-            "esp_async_memcpy.c"
             "panic.c"
             "esp_system.c"
             "startup.c"
             "system_time.c"
             "stack_check.c"
-            "sleep_modes.c"
             "task_wdt.c")
 
     if(NOT (${target} STREQUAL "esp32c3") )
@@ -34,7 +31,7 @@ else()
                                     # [refactor-todo] requirements due to init code,
                                     # should be removable once using component init functions
                                     # link-time registration is used.
-                                    esp_pm app_update nvs_flash pthread app_trace esp_gdbstub esp_ipc
+                                    esp_pm app_update nvs_flash pthread app_trace esp_gdbstub
                                     espcoredump
                         LDFRAGMENTS "linker.lf" "app.lf")
     add_subdirectory(port)

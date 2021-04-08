@@ -1,4 +1,5 @@
-target_include_directories(${COMPONENT_LIB} PRIVATE include . PUBLIC soc)
+target_include_directories(${COMPONENT_LIB} PRIVATE . include PUBLIC soc)
+target_include_directories(${COMPONENT_LIB} PUBLIC public_compat)
 
 set(srcs "cpu_start.c" "panic_handler.c" "brownout.c")
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" ${srcs})

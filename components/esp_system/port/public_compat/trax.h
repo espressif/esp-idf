@@ -18,6 +18,10 @@
 #include "xtensa-debug-module.h"
 #include "xt_trax.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
     TRAX_DOWNCOUNT_WORDS,
     TRAX_DOWNCOUNT_INSTRUCTIONS
@@ -70,3 +74,7 @@ int trax_start_trace(trax_downcount_unit_t units_until_stop);
  * @return esp_err_t
  */
 int trax_trigger_traceend_after_delay(int delay);
+
+#ifdef __cplusplus
+}
+#endif

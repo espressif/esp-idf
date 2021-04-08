@@ -15,4 +15,19 @@ menu "Hardware Settings"
             # Insert chip-specific MAC config
             rsource "./port/$IDF_TARGET/Kconfig.mac"
     endmenu
+
+    menu "Sleep Config"
+        # This is here since this option affect behavior of esp_light_sleep_start
+        # regardless of power management configuration.
+        config ESP_SLEEP_POWER_DOWN_FLASH
+            bool "Power down flash in light sleep when there is no SPIRAM"
+            depends on !SPIRAM
+            default y
+            help
+                If enabled, chip will try to power down flash as part of esp_light_sleep_start(), which costs
+                more time when chip wakes up. Can only be enabled if there is no SPIRAM configured.
+                This option will in fact consider VDD_SDIO auto power value (ESP_PD_OPTION_AUTO) as OFF. Also, it is
+                possible to force a power domain to stay ON during light sleep by using esp_sleep_pd_config()
+                function.
+    endmenu
 endmenu

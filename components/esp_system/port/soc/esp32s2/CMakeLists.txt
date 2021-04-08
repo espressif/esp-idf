@@ -1,5 +1,4 @@
-set(srcs "async_memcpy_impl_cp_dma.c"
-         "dport_panic_highint_hdl.S"
+set(srcs "dport_panic_highint_hdl.S"
          "clk.c"
          "reset_reason.c"
          "system_internal.c"

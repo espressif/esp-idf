@@ -75,7 +75,7 @@ I2C 驱动程序管理在 I2C 总线上设备的通信，该驱动程序具备�
 - 端口号，从 :cpp:type:`i2c_port_t` 中二选一
 - 主机或从机模式，从 :cpp:type:`i2c_mode_t` 中选择 
 - （仅限从机模式）分配用于在从机模式下发送和接收数据的缓存区大小。I2C 是一个以主机为中心的总线，数据只能根据主机的请求从从机传输到主机。因此，从机通常有一个发送缓存区，供从应用程序写入数据使用。数据保留在发送缓存区中，由主机自行读取。 
-- 用于分配中断的标志（请参考 ESP_INTR_FLAG_* values in :component_file:`esp_system/include/esp_intr_alloc.h`）
+- 用于分配中断的标志（请参考 ESP_INTR_FLAG_* values in :component_file:`esp_hw_support/include/esp_intr_alloc.h`）
 
 
 .. _i2c-api-master-mode:
