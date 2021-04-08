@@ -38,3 +38,13 @@ int __weak lwip_hook_netconn_external_resolve(const char *name, ip_addr_t *addr,
     return 0;
 }
 #endif
+
+#ifdef CONFIG_LWIP_HOOK_ND6_GET_GW_DEFAULT
+const ip6_addr_t *lwip_hook_nd6_get_gw(struct netif *netif, const ip6_addr_t *dest)
+{
+    LWIP_UNUSED_ARG(netif);
+    LWIP_UNUSED_ARG(dest);
+
+    return 0;
+}
+#endif
