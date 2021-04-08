@@ -65,7 +65,7 @@ __attribute__((unused)) static const char TAG[] = "spi_flash";
 //TODO: modify cs hold to meet requirements of all chips!!!
 #if CONFIG_IDF_TARGET_ESP32
 #define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
-    .host_id = SPI_HOST,\
+    .host_id = SPI1_HOST,\
     .speed = DEFAULT_FLASH_SPEED, \
     .cs_num = 0, \
     .iomux = false, \
@@ -73,7 +73,7 @@ __attribute__((unused)) static const char TAG[] = "spi_flash";
 }
 #elif CONFIG_IDF_TARGET_ESP32S2
 #define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
-    .host_id = SPI_HOST,\
+    .host_id = SPI1_HOST,\
     .speed = DEFAULT_FLASH_SPEED, \
     .cs_num = 0, \
     .iomux = true, \
@@ -82,7 +82,7 @@ __attribute__((unused)) static const char TAG[] = "spi_flash";
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/efuse.h"
 #define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
-    .host_id = SPI_HOST,\
+    .host_id = SPI1_HOST,\
     .speed = DEFAULT_FLASH_SPEED, \
     .cs_num = 0, \
     .iomux = true, \
@@ -92,7 +92,7 @@ __attribute__((unused)) static const char TAG[] = "spi_flash";
 #include "esp32c3/rom/efuse.h"
 #if !CONFIG_SPI_FLASH_AUTO_SUSPEND
 #define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
-    .host_id = SPI_HOST,\
+    .host_id = SPI1_HOST,\
     .speed = DEFAULT_FLASH_SPEED, \
     .cs_num = 0, \
     .iomux = true, \
@@ -100,7 +100,7 @@ __attribute__((unused)) static const char TAG[] = "spi_flash";
 }
 #else
 #define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
-    .host_id = SPI_HOST,\
+    .host_id = SPI1_HOST,\
     .speed = DEFAULT_FLASH_SPEED, \
     .cs_num = 0, \
     .iomux = true, \
@@ -161,7 +161,7 @@ esp_err_t spi_bus_add_flash_device(esp_flash_t **out_chip, const esp_flash_spi_d
     esp_err_t ret = ESP_OK;
 
     uint32_t caps = MALLOC_CAP_DEFAULT;
-    if (config->host_id == SPI_HOST) caps = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
+    if (config->host_id == SPI1_HOST) caps = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
 
     chip = (esp_flash_t*)heap_caps_malloc(sizeof(esp_flash_t), caps);
     if (!chip) {
@@ -193,7 +193,7 @@ esp_err_t spi_bus_add_flash_device(esp_flash_t **out_chip, const esp_flash_spi_d
     // When `CONFIG_SPI_FLASH_SHARE_SPI1_BUS` is not enabled on SPI1 bus, the
     // `esp_flash_init_os_functions` will not be able to assign a new device ID. In this case, we
     // use the `cs_id` in the config structure.
-    if (dev_id == -1 && config->host_id == SPI_HOST) {
+    if (dev_id == -1 && config->host_id == SPI1_HOST) {
         dev_id = config->cs_id;
     }
     assert(dev_id < SOC_SPI_PERIPH_CS_NUM(config->host_id) && dev_id >= 0);

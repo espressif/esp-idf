@@ -38,10 +38,9 @@ typedef enum {
     PERIPH_UHCI1_MODULE,
     PERIPH_RMT_MODULE,
     PERIPH_PCNT_MODULE,
-    PERIPH_SPI_MODULE,  //SPI1
-    PERIPH_FSPI_MODULE, //SPI2
-    PERIPH_HSPI_MODULE, //SPI3
-    PERIPH_VSPI_MODULE, //SPI4
+    PERIPH_SPI_MODULE,
+    PERIPH_SPI2_MODULE,
+    PERIPH_SPI3_MODULE,
     PERIPH_SDMMC_MODULE,
     PERIPH_TWAI_MODULE,
     PERIPH_RNG_MODULE,
@@ -84,8 +83,7 @@ typedef enum {
     ETS_SPI1_INTR_SOURCE,                       /**< interrupt of SPI1, level, SPI1 is for flash read/write, do not use this*/
     ETS_SPI2_INTR_SOURCE,                       /**< interrupt of SPI2, level*/
     ETS_SPI3_INTR_SOURCE,                       /**< interrupt of SPI3, level*/
-    ETS_SPI4_INTR_SOURCE,                       /**< interrupt of SPI4, level*/
-    ETS_LCD_CAM_INTR_SOURCE,                    /**< interrupt of LCD camera, level*/
+    ETS_LCD_CAM_INTR_SOURCE = 24,               /**< interrupt of LCD camera, level*/
     ETS_I2S0_INTR_SOURCE,                       /**< interrupt of I2S0, level*/
     ETS_I2S1_INTR_SOURCE,                       /**< interrupt of I2S1, level*/
     ETS_UART0_INTR_SOURCE,                      /**< interrupt of UART0, level*/
@@ -108,8 +106,7 @@ typedef enum {
     ETS_I2C_EXT1_INTR_SOURCE,                   /**< interrupt of I2C controller0, level*/
     ETS_SPI2_DMA_INTR_SOURCE,                   /**< interrupt of SPI2 DMA, level*/
     ETS_SPI3_DMA_INTR_SOURCE,                   /**< interrupt of SPI3 DMA, level*/
-    ETS_SPI4_DMA_INTR_SOURCE,                   /**< interrupt of SPI4 DMA, level*/
-    ETS_WDT_INTR_SOURCE,                        /**< will be cancelled*/
+    ETS_WDT_INTR_SOURCE = 47,                   /**< will be cancelled*/
 
     ETS_TIMER1_INTR_SOURCE = 48,
     ETS_TIMER2_INTR_SOURCE,

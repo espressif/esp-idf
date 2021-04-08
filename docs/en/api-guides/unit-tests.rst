@@ -229,7 +229,7 @@ When unit test app is idle, press "Enter" will make it print test menu with all 
     (14)    "SPI Master clockdiv calculation routines" [spi]
     (15)    "SPI Master test" [spi][ignore]
     (16)    "SPI Master test, interaction of multiple devs" [spi][ignore]
-    (17)    "SPI Master no response when switch from host1 (HSPI) to host2 (VSPI)" [spi]
+    (17)    "SPI Master no response when switch from host1 (SPI2) to host2 (SPI3)" [spi]
     (18)    "SPI Master DMA test, TX and RX in different regions" [spi]
     (19)    "SPI Master DMA test: length, start, not aligned" [spi]
     (20)    "reset reason check for deepsleep" [{IDF_TARGET_PATH_NAME}][test_env=UT_T2_1][multi_stage]
