@@ -32,4 +32,6 @@ CFLAGS += -D BOOTLOADER_BUILD=1
 # include the top-level "project" include directory, for sdkconfig.h
 CFLAGS += -I$(BUILD_DIR_BASE)/../include
 
+COMPONENT_ADD_LDFLAGS += -l$(COMPONENT_NAME) -Wl,--wrap=longjmp \
+
 include $(IDF_PATH)/make/project.mk
