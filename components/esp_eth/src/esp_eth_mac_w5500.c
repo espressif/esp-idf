@@ -267,9 +267,12 @@ static esp_err_t w5500_setup_default(emac_w5500_t *emac)
     /* Enable MAC RAW mode for SOCK0, enable MAC filter, no blocking broadcast and multicast */
     reg_value = W5500_SMR_MAC_RAW | W5500_SMR_MAC_FILTER;
     MAC_CHECK(w5500_write(emac, W5500_REG_SOCK_MR(0), &reg_value, sizeof(reg_value)) == ESP_OK, "write SMR failed", err, ESP_FAIL);
-    /* Enable receive and send event for SOCK0 */
-    reg_value = W5500_SIR_RECV | W5500_SIR_SEND;
+    /* Enable receive event for SOCK0 */
+    reg_value = W5500_SIR_RECV;
     MAC_CHECK(w5500_write(emac, W5500_REG_SOCK_IMR(0), &reg_value, sizeof(reg_value)) == ESP_OK, "write SOCK0 IMR failed", err, ESP_FAIL);
+    /* Set the interrupt re-assert level to maximum (~1.5ms) to lower the chances of missing it */
+    uint16_t int_level = __builtin_bswap16(0xFFFF);
+    MAC_CHECK(w5500_write(emac, W5500_REG_INTLEVEL, &int_level, sizeof(int_level)) == ESP_OK, "write INTLEVEL failed", err, ESP_FAIL);
 
 err:
     return ret;
