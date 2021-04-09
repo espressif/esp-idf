@@ -57,11 +57,11 @@ class StringSubstituter:
 
     TRM_EN_URL = {'esp32': 'https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf',
                   'esp32s2': 'https://www.espressif.com/sites/default/files/documentation/esp32-s2_technical_reference_manual_en.pdf',
-                  'esp32c3': '#'}
+                  'esp32c3': 'https://www.espressif.com/sites/default/files/documentation/esp32-c3_technical_reference_manual_en.pdf'}
 
     TRM_CN_URL = {'esp32': 'https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_cn.pdf',
                   'esp32s2': 'https://www.espressif.com/sites/default/files/documentation/esp32-s2_technical_reference_manual_cn.pdf',
-                  'esp32c3': '#'}
+                  'esp32c3': 'https://www.espressif.com/sites/default/files/documentation/esp32-c3_technical_reference_manual_cn.pdf'}
     RE_PATTERN = re.compile(r'^\s*{IDF_TARGET_(\w+?):(.+?)}', re.MULTILINE)
 
     def __init__(self):
