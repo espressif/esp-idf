@@ -382,22 +382,22 @@ static inline void memprot_ll_set_dram0_split_line(const void *line_addr, uint32
 
 static inline void memprot_ll_set_dram0_split_line_D_0(const void *line_addr)
 {
-    memprot_ll_set_dram0_split_line(line_addr, SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_2_REG);
+    memprot_ll_set_dram0_split_line(line_addr, SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_4_REG);
 }
 
 static inline void memprot_ll_set_dram0_split_line_D_1(const void *line_addr)
 {
-    memprot_ll_set_dram0_split_line(line_addr, SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_3_REG);
+    memprot_ll_set_dram0_split_line(line_addr, SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_5_REG);
 }
 
 static inline void* memprot_ll_get_dram0_split_line_D_0(void)
 {
-    return memprot_ll_get_split_addr_from_reg(REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_2_REG), SOC_DIRAM_DRAM_LOW);
+    return memprot_ll_get_split_addr_from_reg(REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_4_REG), SOC_DIRAM_DRAM_LOW);
 }
 
 static inline void* memprot_ll_get_dram0_split_line_D_1(void)
 {
-    return memprot_ll_get_split_addr_from_reg(REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_3_REG), SOC_DIRAM_DRAM_LOW);
+    return memprot_ll_get_split_addr_from_reg(REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_5_REG), SOC_DIRAM_DRAM_LOW);
 }
 
 
