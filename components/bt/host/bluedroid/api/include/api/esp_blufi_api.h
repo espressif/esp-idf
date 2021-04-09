@@ -301,6 +301,7 @@ typedef void (* esp_blufi_event_cb_t)(esp_blufi_cb_event_t event, esp_blufi_cb_p
  * @param len  : length of data from phone
  * @param output_data : data want to send to phone
  * @param output_len : length of data want to send to phone
+ * @param need_free : output reporting if memory needs to be freed or not *
  */
 typedef void (*esp_blufi_negotiate_data_handler_t)(uint8_t *data, int len, uint8_t **output_data, int *output_len, bool *need_free);
 
@@ -311,7 +312,7 @@ typedef void (*esp_blufi_negotiate_data_handler_t)(uint8_t *data, int len, uint8
  * @param crypt_len  : length of plain text
  * @return  Nonnegative number is encrypted length, if error, return negative number;
  */
-typedef int (* esp_blufi_encrypt_func_t)(uint8_t iv8, uint8_t *crypt_data, int cyprt_len);
+typedef int (* esp_blufi_encrypt_func_t)(uint8_t iv8, uint8_t *crypt_data, int crypt_len);
 
 /**
  * @brief BLUFI  decrypt the data after negotiate a share key
