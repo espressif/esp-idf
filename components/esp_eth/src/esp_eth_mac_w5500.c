@@ -314,8 +314,12 @@ static void emac_w5500_task(void *arg)
     uint8_t *buffer = NULL;
     uint32_t length = 0;
     while (1) {
-        // block indefinitely until some task notifies me
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        // check if the task receives any notification
+        if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000)) == 0 &&    // if no notification ...
+            gpio_get_level(emac->int_gpio_num) != 0) {               // ...and no interrupt asserted
+            continue;                                                // -> just continue to check again
+        }
+
         /* read interrupt status */
         w5500_read(emac, W5500_REG_SOCK_IR(0), &status, sizeof(status));
         /* packet received */
