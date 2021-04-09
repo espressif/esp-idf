@@ -26,6 +26,9 @@
 #include "sh2lib.h"
 
 
+extern const uint8_t server_root_cert_pem_start[] asm("_binary_golang_root_cert_pem_start");
+extern const uint8_t server_root_cert_pem_end[]   asm("_binary_golang_root_cert_pem_end");
+
 /* The HTTP/2 server to connect to */
 #define HTTP2_SERVER_URI  "https://http2.golang.org"
 /* A GET request that keeps streaming current time every second */
@@ -101,8 +104,14 @@ static void http2_task(void *args)
 
     /* HTTP2: one connection multiple requests. Do the TLS/TCP connection first */
     printf("Connecting to server\n");
+    struct sh2lib_config_t cfg = {
+        .uri = HTTP2_SERVER_URI,
+        .cacert_buf = server_root_cert_pem_start,
+        .cacert_bytes = server_root_cert_pem_end - server_root_cert_pem_start,
+    };
     struct sh2lib_handle hd;
-    if (sh2lib_connect(&hd, HTTP2_SERVER_URI) != 0) {
+
+    if (sh2lib_connect(&cfg, &hd) != 0) {
         printf("Failed to connect\n");
         vTaskDelete(NULL);
         return;
