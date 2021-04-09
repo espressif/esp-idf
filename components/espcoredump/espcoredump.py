@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# ESP32 core dump Utility
+# ESP-IDF Core Dump Utility
 
 import argparse
 import logging
@@ -10,7 +10,7 @@ import sys
 from shutil import copyfile
 
 from construct import GreedyRange, Int32ul, Struct
-from corefile import __version__, xtensa
+from corefile import RISCV_TARGETS, SUPPORTED_TARGETS, XTENSA_TARGETS, __version__, xtensa
 from corefile.elf import TASK_STATUS_CORRECT, ElfFile, ElfSegment, ESPCoreDumpElfFile, EspTaskStatus
 from corefile.gdb import EspGDB
 from corefile.loader import ESPCoreDumpFileLoader, ESPCoreDumpFlashLoader
@@ -28,32 +28,40 @@ except ImportError:
     sys.stderr.write('esptool is not found!\n')
     sys.exit(2)
 
+try:
+    from typing import Optional, Tuple
+except ImportError:
+    pass
+
 if os.name == 'nt':
     CLOSE_FDS = False
 else:
     CLOSE_FDS = True
 
 
-def load_aux_elf(elf_path):  # type: (str) -> (ElfFile, str)
+def load_aux_elf(elf_path):  # type: (str) -> str
     """
     Loads auxiliary ELF file and composes GDB command to read its symbols.
     """
-    elf = None
     sym_cmd = ''
     if os.path.exists(elf_path):
         elf = ElfFile(elf_path)
         for s in elf.sections:
             if s.name == '.text':
                 sym_cmd = 'add-symbol-file %s 0x%x' % (elf_path, s.addr)
-    return elf, sym_cmd
+    return sym_cmd
 
 
-def core_prepare():
+def get_core_dump_elf(e_machine=ESPCoreDumpFileLoader.ESP32):
+    # type: (int) -> Tuple[str, Optional[str], Optional[list[str]]]
     loader = None
     core_filename = None
+    target = None
+    temp_files = None
+
     if not args.core:
         # Core file not specified, try to read core dump from flash.
-        loader = ESPCoreDumpFlashLoader(args.off, port=args.port, baud=args.baud)
+        loader = ESPCoreDumpFlashLoader(args.off, args.chip, port=args.port, baud=args.baud)
     elif args.core_format != 'elf':
         # Core file specified, but not yet in ELF format. Convert it from raw or base64 into ELF.
         loader = ESPCoreDumpFileLoader(args.core, args.core_format == 'b64')
@@ -63,50 +71,85 @@ def core_prepare():
 
     # Load/convert the core file
     if loader:
-        loader.create_corefile(exe_name=args.prog)
-        core_filename = loader.core_elf_file.name
+        loader.create_corefile(exe_name=args.prog, e_machine=e_machine)
+        core_filename = loader.core_elf_file
         if args.save_core:
             # We got asked to save the core file, make a copy
-            copyfile(loader.core_elf_file.name, args.save_core)
+            copyfile(loader.core_elf_file, args.save_core)
+        target = loader.target
+        temp_files = loader.temp_files
 
-    return core_filename, loader
+    return core_filename, target, temp_files  # type: ignore
 
 
-def dbg_corefile():
+def get_target():  # type: () -> str
+    if args.chip != 'auto':
+        return args.chip  # type: ignore
+
+    inst = esptool.ESPLoader.detect_chip(args.port, args.baud)
+    return inst.CHIP_NAME.lower().replace('-', '')  # type: ignore
+
+
+def get_gdb_path(target=None):  # type: (Optional[str]) -> str
+    if args.gdb:
+        return args.gdb  # type: ignore
+
+    if target is None:
+        target = get_target()
+
+    if target in XTENSA_TARGETS:
+        # For some reason, xtensa-esp32s2-elf-gdb will report some issue.
+        # Use xtensa-esp32-elf-gdb instead.
+        return 'xtensa-esp32-elf-gdb'
+    if target in RISCV_TARGETS:
+        return 'riscv32-esp-elf-gdb'
+    raise ValueError('Invalid value: {}. For now we only support {}'.format(target, SUPPORTED_TARGETS))
+
+
+def get_rom_elf_path(target=None):  # type: (Optional[str]) -> str
+    if args.rom_elf:
+        return args.rom_elf  # type: ignore
+
+    if target is None:
+        target = get_target()
+
+    return '{}_rom.elf'.format(target)
+
+
+def dbg_corefile():  # type: () -> Optional[list[str]]
     """
     Command to load core dump from file or flash and run GDB debug session with it
     """
-    rom_elf, rom_sym_cmd = load_aux_elf(args.rom_elf)
-    core_filename, loader = core_prepare()
+    exe_elf = ESPCoreDumpElfFile(args.prog)
+    core_elf_path, target, temp_files = get_core_dump_elf(e_machine=exe_elf.e_machine)
 
+    rom_elf_path = get_rom_elf_path(target)
+    rom_sym_cmd = load_aux_elf(rom_elf_path)
+
+    gdb_tool = get_gdb_path(target)
     p = subprocess.Popen(bufsize=0,
-                         args=[args.gdb,
+                         args=[gdb_tool,
                                '--nw',  # ignore .gdbinit
-                               '--core=%s' % core_filename,  # core file,
+                               '--core=%s' % core_elf_path,  # core file,
                                '-ex', rom_sym_cmd,
                                args.prog],
                          stdin=None, stdout=None, stderr=None,
                          close_fds=CLOSE_FDS)
     p.wait()
     print('Done!')
+    return temp_files
 
 
-def info_corefile():
+def info_corefile():  # type: () -> Optional[list[str]]
     """
     Command to load core dump from file or flash and print it's data in user friendly form
     """
-    core_filename, loader = core_prepare()
-
-    exe_elf = ElfFile(args.prog)
-    core_elf = ESPCoreDumpElfFile(core_filename)
+    exe_elf = ESPCoreDumpElfFile(args.prog)
+    core_elf_path, target, temp_files = get_core_dump_elf(e_machine=exe_elf.e_machine)
+    core_elf = ESPCoreDumpElfFile(core_elf_path)
 
     if exe_elf.e_machine != core_elf.e_machine:
         raise ValueError('The arch should be the same between core elf and exe elf')
-
-    if core_elf.e_machine == ESPCoreDumpElfFile.EM_XTENSA:
-        exception_registers_info = xtensa.print_exc_regs_info
-    else:
-        raise NotImplementedError
 
     extra_note = None
     task_info = []
@@ -119,8 +162,11 @@ def info_corefile():
                 task_info.append(task_info_struct)
     print('===============================================================')
     print('==================== ESP32 CORE DUMP START ====================')
-    rom_elf, rom_sym_cmd = load_aux_elf(args.rom_elf)
-    gdb = EspGDB(args.gdb, [rom_sym_cmd], core_filename, args.prog, timeout_sec=args.gdb_timeout_sec)
+    rom_elf_path = get_rom_elf_path(target)
+    rom_sym_cmd = load_aux_elf(rom_elf_path)
+
+    gdb_tool = get_gdb_path(target)
+    gdb = EspGDB(gdb_tool, [rom_sym_cmd], core_elf_path, args.prog, timeout_sec=args.gdb_timeout_sec)
 
     extra_info = None
     if extra_note:
@@ -132,10 +178,12 @@ def info_corefile():
             task_name = gdb.get_freertos_task_name(marker)
             print("\nCrashed task handle: 0x%x, name: '%s', GDB name: 'process %d'" % (marker, task_name, marker))
     print('\n================== CURRENT THREAD REGISTERS ===================')
-    if extra_note and extra_info:
-        exception_registers_info(extra_info)
-    else:
-        print('Exception registers have not been found!')
+    # Only xtensa have exception registers
+    if exe_elf.e_machine == ESPCoreDumpElfFile.EM_XTENSA:
+        if extra_note and extra_info:
+            xtensa.print_exc_regs_info(extra_info)
+        else:
+            print('Exception registers have not been found!')
     print(gdb.run_cmd('info registers'))
     print('\n==================== CURRENT THREAD STACK =====================')
     print(gdb.run_cmd('bt'))
@@ -235,10 +283,14 @@ def info_corefile():
 
     del gdb
     print('Done!')
+    return temp_files
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='espcoredump.py v%s - ESP32 Core Dump Utility' % __version__)
+    parser.add_argument('--chip', default=os.environ.get('ESPTOOL_CHIP', 'auto'),
+                        choices=['auto'] + SUPPORTED_TARGETS,
+                        help='Target chip type')
     parser.add_argument('--port', '-p', default=os.environ.get('ESPTOOL_PORT', esptool.ESPLoader.DEFAULT_PORT),
                         help='Serial port device')
     parser.add_argument('--baud', '-b', type=int,
@@ -250,20 +302,20 @@ if __name__ == '__main__':
     common_args = argparse.ArgumentParser(add_help=False)
     common_args.add_argument('--debug', '-d', type=int, default=3,
                              help='Log level (0..3)')
-    common_args.add_argument('--gdb', '-g', default='xtensa-esp32-elf-gdb',
+    common_args.add_argument('--gdb', '-g',
                              help='Path to gdb')
     common_args.add_argument('--core', '-c',
                              help='Path to core dump file (if skipped core dump will be read from flash)')
     common_args.add_argument('--core-format', '-t', choices=['b64', 'elf', 'raw'], default='elf',
-                             help='(elf, raw or b64). File specified with "-c" is an ELF ("elf"), '
+                             help='File specified with "-c" is an ELF ("elf"), '
                                   'raw (raw) or base64-encoded (b64) binary')
     common_args.add_argument('--off', '-o', type=int,
                              help='Offset of coredump partition in flash (type "make partition_table" to see).')
     common_args.add_argument('--save-core', '-s',
                              help='Save core to file. Otherwise temporary core file will be deleted. '
                                   'Does not work with "-c"', )
-    common_args.add_argument('--rom-elf', '-r', default='esp32_rom.elf',
-                             help='Path to ROM ELF file.')
+    common_args.add_argument('--rom-elf', '-r',
+                             help='Path to ROM ELF file. Will use "<target>_rom.elf" if not specified')
     common_args.add_argument('prog', help='Path to program\'s ELF binary')
 
     operations = parser.add_subparsers(dest='operation')
@@ -291,9 +343,18 @@ if __name__ == '__main__':
     logging.basicConfig(format='%(levelname)s: %(message)s', level=log_level)
 
     print('espcoredump.py v%s' % __version__)
-    if args.operation == 'info_corefile':
-        info_corefile()
-    elif args.operation == 'dbg_corefile':
-        dbg_corefile()
-    else:
-        raise ValueError('Please specify action, should be info_corefile or dbg_corefile')
+    temp_core_files = None
+    try:
+        if args.operation == 'info_corefile':
+            temp_core_files = info_corefile()
+        elif args.operation == 'dbg_corefile':
+            temp_core_files = dbg_corefile()
+        else:
+            raise ValueError('Please specify action, should be info_corefile or dbg_corefile')
+    finally:
+        if temp_core_files:
+            for f in temp_core_files:
+                try:
+                    os.remove(f)
+                except OSError:
+                    pass
