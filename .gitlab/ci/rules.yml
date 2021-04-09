@@ -573,7 +573,12 @@
 .rules:build:integration_test:
   rules:
     - <<: *if-protected
+    - <<: *if-label-build
     - <<: *if-label-integration_test
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
     - <<: *if-dev-push
       changes: *patterns-integration_test
 
