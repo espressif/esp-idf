@@ -5,7 +5,7 @@ Secure Boot V2
 
 .. important::
 
-    The references in this document are related to Secure Boot V2, the preferred scheme from ESP32-ECO3 onwards and in ESP32-S2.
+    The references in this document are related to Secure Boot V2, the preferred scheme from ESP32 ECO3 onwards, in ESP32-S2, and from ESP32-C3 ECO3 onwards.
 
     .. only:: esp32
 
@@ -13,11 +13,20 @@ Secure Boot V2
 
     Secure Boot V2 uses RSA based app and bootloader verification. This document can also be referred for signing apps with the RSA scheme without signing the bootloader.
 
+
+.. only:: esp32
+
+    ``Secure Boot V2`` and RSA scheme (``App Signing Scheme``) options are available for ESP32 from ECO3 onwards. To get these options visible in the menuconfig set :ref:`CONFIG_ESP32_REV_MIN` greater than or equal to `Rev 3`.
+
+.. only:: esp32c3
+
+    ``Secure Boot V2`` is available for ESP32-C3 from ECO3 onwards. To get these options visible in the menuconfig set :ref:`CONFIG_ESP32C3_REV_MIN` greater than or equal to `Rev 3`.
+
 Background
 ----------
 
 Secure Boot protects a device from running unsigned code (verification at time of load). A new RSA based secure boot
-verification scheme (Secure Boot V2) has been introduced for ESP32-S2 and ESP32 ECO3 onwards.
+verification scheme (Secure Boot V2) has been introduced for ESP32-S2, ESP32-C3 ECO3 onwards, and ESP32 ECO3 onwards.
 
 - The software bootloader’s RSA-PSS signature is verified by the Mask ROM and it is executed post successful verification.
 - The verified software bootloader verifies the RSA-PSS signature of the application image before it is executed.
@@ -31,7 +40,7 @@ Advantages
 
     - Only one public key can be generated and stored in ESP32 ECO3 during manufacturing.
 
-  .. only:: esp32s2
+  .. only:: esp32s2 or esp32c3
 
     - Up to three public keys can be generated and stored in the chip during manufacturing.
 
@@ -108,7 +117,7 @@ A signature block is “valid” if the first byte is 0xe7 and a valid CRC32 is 
 
     Only one signature block can be appended to the bootloader or application image in ESP32 ECO3.
 
-  .. only:: esp32s2
+  .. only:: esp32s2 or esp32c3
 
     Upto 3 signature blocks can be appended to the bootloader or application image in {IDF_TARGET_NAME}.
 
@@ -145,7 +154,7 @@ eFuse usage
 
     - BLK2 - Stores the SHA-256 digest of the public key. SHA-256 hash of public key modulus, exponent, precalculated R & M’ values (represented as 776 bytes – offsets 36 to 812 - as per the :ref:`signature-block-format`) is written to an eFuse key block.
 
-.. only:: esp32s2
+.. only:: esp32s2 or esp32c3
 
     - SECURE_BOOT_EN - Enables secure boot protection on boot.
 
@@ -171,7 +180,7 @@ How To Enable Secure Boot V2
     3. Specify the secure boot signing key path. The file can be anywhere on your system. A relative path will be evaluated from the project directory. The file does not need to exist yet.
     4. Select the UART ROM download mode in "Security features -> UART ROM download mode". By default the UART ROM download mode has been kept enabled in order to prevent permanently disabling it in the development phase, this option is a potentially insecure option. It is recommended to disable the UART download mode for better security.
 
-.. only:: esp32s2
+.. only:: esp32s2 or esp32c3
 
     2. The "Secure Boot V2" option will be selected and the "App Signing Scheme" would be set to RSA by default.
 
@@ -254,7 +263,7 @@ Secure Boot Best Practices
 * Enable all secure boot options in the Secure Boot Configuration. These include flash encryption, disabling of JTAG, disabling BASIC ROM interpeter, and disabling the UART bootloader encrypted flash access.
 * Use secure boot in combination with :doc:`flash encryption<flash-encryption>` to prevent local readout of the flash contents.
 
-.. only:: esp32s2
+.. only:: esp32s2 or esp32c3
 
     Key Management
     --------------
