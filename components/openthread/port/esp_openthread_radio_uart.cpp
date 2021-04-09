@@ -223,6 +223,21 @@ int8_t otPlatRadioGetReceiveSensitivity(otInstance *instance)
     return s_radio.GetReceiveSensitivity();
 }
 
+void otPlatRadioSetMacKey(otInstance     *aInstance,
+                          uint8_t         aKeyIdMode,
+                          uint8_t         aKeyId,
+                          const otMacKey *aPrevKey,
+                          const otMacKey *aCurrKey,
+                          const otMacKey *aNextKey)
+{
+    SuccessOrDie(s_radio.SetMacKey(aKeyIdMode, aKeyId, *aPrevKey, *aCurrKey, *aNextKey));
+}
+
+void otPlatRadioSetMacFrameCounter(otInstance *aInstance, uint32_t aMacFrameCounter)
+{
+    SuccessOrDie(s_radio.SetMacFrameCounter(aMacFrameCounter));
+}
+
 #if OPENTHREAD_CONFIG_DIAG_ENABLE
 otError otPlatDiagProcess(otInstance *instance, int argc, char *argv[], char *output, size_t output_max_len)
 {
