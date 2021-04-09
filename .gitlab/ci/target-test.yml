@@ -24,7 +24,8 @@
   script:
     - *define_config_file_name
     # first test if config file exists, if not exist, exit 0
-    - test -e $CONFIG_FILE || exit 0
+    - |
+      { [[ -e $CONFIG_FILE ]]; } || { echo 'No config file found. Consider decreasing the parallel count of this job in ".gitlab/ci/target-test.yml"'; exit 0; }
     # clone test env configs
     - retry_failed git clone $TEST_ENV_CONFIG_REPO
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
