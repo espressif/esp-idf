@@ -20,9 +20,11 @@
 #include "sys/queue.h"      // for list
 #include "esp_log.h"        // for log write
 #include "string.h"         // for strerror()
+#include "freertos/event_groups.h"
 
-#include "esp_modbus_slave.h"    // for public type defines
+//#include "esp_modbus_slave.h"    // for public type defines
 #include "esp_modbus_callbacks.h"   // for callback functions
+#include "mb_temp.h"
 
 /* ----------------------- Defines ------------------------------------------*/
 #define MB_INST_MIN_SIZE                    (2) // The minimal size of Modbus registers area in bytes

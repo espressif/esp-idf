@@ -83,9 +83,9 @@ static void mbc_slave_free_descriptors(void) {
     }
 }
 
-void mbc_slave_init_iface(void* handler)
+void mbc_slave_init_iface(mb_slave_interface_t* handler)
 {
-    slave_interface_ptr = (mb_slave_interface_t*) handler;
+    slave_interface_ptr = handler;
     mb_slave_options_t* mbs_opts = &slave_interface_ptr->opts;
     // Initialize list head for register areas
     LIST_INIT(&mbs_opts->mbs_area_descriptors[MB_PARAM_INPUT]);
@@ -483,7 +483,8 @@ eMBErrorCode eMBRegDiscreteCB(UCHAR * pucRegBuffer, USHORT usAddress, USHORT usN
     if (slave_interface_ptr->slave_reg_cb_discrete) {
         error = slave_interface_ptr->slave_reg_cb_discrete(pucRegBuffer, usAddress, usNDiscrete);
     } else {
-        error = mbc_reg_discrete_slave_cb(pucRegBuffer, usAddress, usNDiscrete);
+        error = MB_EIO;
+        ESP_LOGE(MB_SLAVE_TAG, "slave_reg_cb_discrete invalid");
     }
 
     return error;
@@ -500,7 +501,8 @@ eMBErrorCode eMBRegCoilsCB(UCHAR* pucRegBuffer, USHORT usAddress,
     if (slave_interface_ptr->slave_reg_cb_coils) {
         error = slave_interface_ptr->slave_reg_cb_coils(pucRegBuffer, usAddress, usNCoils, eMode);
     } else {
-        error = mbc_reg_coils_slave_cb(pucRegBuffer, usAddress, usNCoils, eMode);
+        error = MB_EIO;
+        ESP_LOGE(MB_SLAVE_TAG, "slave_reg_cb_coils invalid");
     }
     return error;
 }
@@ -516,7 +518,8 @@ eMBErrorCode eMBRegHoldingCB(UCHAR * pucRegBuffer, USHORT usAddress,
     if (slave_interface_ptr->slave_reg_cb_holding) {
         error = slave_interface_ptr->slave_reg_cb_holding(pucRegBuffer, usAddress, usNRegs, eMode);
     } else {
-        error = mbc_reg_holding_slave_cb(pucRegBuffer, usAddress, usNRegs, eMode);
+        error = MB_EIO;
+        ESP_LOGE(MB_SLAVE_TAG, "slave_reg_cb_holding invalid");
     }
     return error;
 }
@@ -531,7 +534,8 @@ eMBErrorCode eMBRegInputCB(UCHAR * pucRegBuffer, USHORT usAddress, USHORT usNReg
     if (slave_interface_ptr->slave_reg_cb_input) {
         error = slave_interface_ptr->slave_reg_cb_input(pucRegBuffer, usAddress, usNRegs);
     } else {
-        error = mbc_reg_input_slave_cb(pucRegBuffer, usAddress, usNRegs);
+        error = MB_EIO;
+        ESP_LOGE(MB_SLAVE_TAG, "slave_reg_cb_input invalid");
     }
     return error;
 }

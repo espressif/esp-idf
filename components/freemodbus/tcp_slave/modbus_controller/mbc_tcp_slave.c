@@ -156,7 +156,7 @@ static esp_err_t mbc_tcp_slave_get_param_info(mb_param_info_t* reg_info, uint32_
 #pragma GCC diagnostic ignored "-Wtype-limits"
 
 // Initialization of Modbus controller
-esp_err_t mbc_tcp_slave_create(void** handler)
+esp_err_t mbc_tcp_slave_create(mb_slave_interface_t** handler)
 {
     // Allocate space for options
     if (mbs_interface_ptr == NULL) {
@@ -211,10 +211,10 @@ esp_err_t mbc_tcp_slave_create(void** handler)
     mbs_interface_ptr->set_descriptor = NULL; // Use common descriptor setter
 
     // Initialize stack callback function pointers
-    mbs_interface_ptr->slave_reg_cb_discrete = NULL; // implemented in common layer
-    mbs_interface_ptr->slave_reg_cb_input = NULL;
-    mbs_interface_ptr->slave_reg_cb_holding = NULL;
-    mbs_interface_ptr->slave_reg_cb_coils = NULL;
+    mbs_interface_ptr->slave_reg_cb_discrete = mbc_reg_discrete_slave_cb;
+    mbs_interface_ptr->slave_reg_cb_input = mbc_reg_input_slave_cb;
+    mbs_interface_ptr->slave_reg_cb_holding = mbc_reg_holding_slave_cb;
+    mbs_interface_ptr->slave_reg_cb_coils = mbc_reg_coils_slave_cb;
 
     *handler = (void*)mbs_interface_ptr;
 

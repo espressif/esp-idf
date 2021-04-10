@@ -22,9 +22,9 @@
 /**
  * Initialization of Modbus Serial slave controller
  */
-esp_err_t mbc_slave_init(mb_port_type_t port_type, void** handler)
+esp_err_t mbc_slave_init(mb_port_type_t port_type, mb_slave_interface_t **handler)
 {
-    void* port_handler = NULL;
+    mb_slave_interface_t* port_handler = NULL;
     esp_err_t error = ESP_ERR_NOT_SUPPORTED;
     switch(port_type)
     {

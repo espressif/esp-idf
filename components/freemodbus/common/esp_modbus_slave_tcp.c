@@ -20,9 +20,9 @@
 /**
  * Initialization of Modbus TCP Slave controller
  */
-esp_err_t mbc_slave_init_tcp(void** handler)
+esp_err_t mbc_slave_init_tcp(mb_slave_interface_t** handler)
 {
-    void* port_handler = NULL;
+    mb_slave_interface_t* port_handler = NULL;
     esp_err_t error = mbc_tcp_slave_create(&port_handler);
 
     if ((port_handler != NULL) && (error == ESP_OK)) {
