@@ -117,7 +117,7 @@ typedef struct {
  *     - ESP_ERR_NOT_SUPPORTED  Port type not supported
  *     - ESP_ERR_INVALID_STATE  Initialization failure
  */
-esp_err_t mbc_master_init_tcp(void** handler);
+esp_err_t mbc_master_init_tcp(void** handler, bool start_controller_task);
 
 /**
  * @brief Initialize Modbus Master controller and stack for Serial port
@@ -130,7 +130,7 @@ esp_err_t mbc_master_init_tcp(void** handler);
  *     - ESP_ERR_NOT_SUPPORTED  Port type not supported
  *     - ESP_ERR_INVALID_STATE  Initialization failure
  */
-esp_err_t mbc_master_init(mb_port_type_t port_type, void** handler);
+esp_err_t mbc_master_init(mb_port_type_t port_type, void** handler, bool start_controller_task);
 
 /**
  * @brief Initialize Modbus Master controller interface handle

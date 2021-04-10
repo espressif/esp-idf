@@ -34,6 +34,6 @@
  *     - ESP_OK   Success
  *     - ESP_ERR_NO_MEM Parameter error
  */
-esp_err_t mbc_serial_slave_create(mb_slave_interface_t **handler, bool start_controller_task);
+esp_err_t mbc_serial_slave_create(void **handler, bool start_controller_task);
 
 #endif // _MODBUS_SERIAL_CONTROLLER_SLAVE

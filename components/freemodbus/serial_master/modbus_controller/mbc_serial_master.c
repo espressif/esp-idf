@@ -643,7 +643,7 @@ eMBErrorCode eMBRegDiscreteCBSerialMaster(UCHAR * pucRegBuffer, USHORT usAddress
 }
 
 // Initialization of resources for Modbus serial master controller
-esp_err_t mbc_serial_master_create(void** handler)
+esp_err_t mbc_serial_master_create(void** handler, bool start_controller_task)
 {
     // Allocate space for master interface structure
     if (mbm_interface_ptr == NULL) {
@@ -668,20 +668,25 @@ esp_err_t mbc_serial_master_create(void** handler)
     mbm_opts->mbm_event_group = xEventGroupCreate();
     MB_MASTER_CHECK((mbm_opts->mbm_event_group != NULL),
                         ESP_ERR_NO_MEM, "mb event group error.");
-    // Create modbus controller task
-    status = xTaskCreate((void*)&modbus_master_task,
-                            "modbus_matask",
-                            MB_CONTROLLER_STACK_SIZE,
-                            NULL,                       // No parameters
-                            MB_CONTROLLER_PRIORITY,
-                            &mbm_opts->mbm_task_handle);
-    if (status != pdPASS) {
-        vTaskDelete(mbm_opts->mbm_task_handle);
-        MB_MASTER_CHECK((status == pdPASS), ESP_ERR_NO_MEM,
-                "mb controller task creation error, xTaskCreate() returns (0x%x).",
-                (uint32_t)status);
+    if (start_controller_task)
+    {
+        // Create modbus controller task
+        status = xTaskCreate((void*)&modbus_master_task,
+                                "modbus_matask",
+                                MB_CONTROLLER_STACK_SIZE,
+                                NULL,                       // No parameters
+                                MB_CONTROLLER_PRIORITY,
+                                &mbm_opts->mbm_task_handle);
+        if (status != pdPASS) {
+            vTaskDelete(mbm_opts->mbm_task_handle);
+            MB_MASTER_CHECK((status == pdPASS), ESP_ERR_NO_MEM,
+                    "mb controller task creation error, xTaskCreate() returns (0x%x).",
+                    (uint32_t)status);
+        }
+        MB_MASTER_ASSERT(mbm_opts->mbm_task_handle != NULL); // The task is created but handle is incorrect
     }
-    MB_MASTER_ASSERT(mbm_opts->mbm_task_handle != NULL); // The task is created but handle is incorrect
+    else
+        mbm_opts->mbm_task_handle = NULL;
 
     // Initialize public interface methods of the interface
     mbm_interface_ptr->init = mbc_serial_master_create;

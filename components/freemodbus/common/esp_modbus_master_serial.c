@@ -21,14 +21,14 @@
 /**
  * Initialization of Modbus master serial
  */
-esp_err_t mbc_master_init(mb_port_type_t port_type, void** handler)
+esp_err_t mbc_master_init(mb_port_type_t port_type, void** handler, bool start_controller_task)
 {
     void* port_handler = NULL;
     esp_err_t error = ESP_ERR_NOT_SUPPORTED;
     switch(port_type)
     {
     case MB_PORT_SERIAL_MASTER:
-        error = mbc_serial_master_create(&port_handler);
+        error = mbc_serial_master_create(&port_handler, start_controller_task);
         break;
     default:
         return ESP_ERR_NOT_SUPPORTED;

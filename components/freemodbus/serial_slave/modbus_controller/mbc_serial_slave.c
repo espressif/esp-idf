@@ -47,7 +47,7 @@ static void modbus_slave_task(void *pvParameters)
                                                 portMAX_DELAY);
         // Check if stack started then poll for data
         if (status & MB_EVENT_STACK_STARTED) {
-            (void)eMBPoll(); // allow stack to process data
+            (void)eMBPoll(portMAX_DELAY); // allow stack to process data
             // Send response buffer
             BOOL xSentState = xMBPortSerialTxPoll();
             if (xSentState) {
@@ -177,7 +177,7 @@ static esp_err_t mbc_serial_slave_destroy(void)
 }
 
 // Initialization of Modbus controller
-esp_err_t mbc_serial_slave_create(mb_slave_interface_t** handler, bool start_controller_task)
+esp_err_t mbc_serial_slave_create(void** handler, bool start_controller_task)
 {
     // Allocate space for options
     if (mbs_interface_ptr == NULL) {

@@ -22,11 +22,11 @@
  */
 esp_err_t mbc_slave_init_tcp(mb_slave_interface_t** handler, bool start_controller_task)
 {
-    mb_slave_interface_t* port_handler = NULL;
+    void* port_handler = NULL;
     esp_err_t error = mbc_tcp_slave_create(&port_handler, start_controller_task);
 
     if ((port_handler != NULL) && (error == ESP_OK)) {
-        mbc_slave_init_iface(port_handler);
+        mbc_slave_init_iface((mb_slave_interface_t*)port_handler);
         *handler = port_handler;
     }
     return  error;

@@ -105,7 +105,7 @@ BOOL            xMBPortEventInit( void );
 
 BOOL            xMBPortEventPost( eMBEventType eEvent );
 
-BOOL            xMBPortEventGet(  /*@out@ */ eMBEventType * eEvent );
+BOOL            xMBPortEventGet(  /*@out@ */ eMBEventType * eEvent, TickType_t xTicksToWait );
 
 #if MB_MASTER_RTU_ENABLED || MB_MASTER_ASCII_ENABLED || MB_MASTER_TCP_ENABLED
 BOOL            xMBMasterPortEventInit( void );

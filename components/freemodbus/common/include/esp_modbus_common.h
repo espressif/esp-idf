@@ -143,7 +143,7 @@ typedef union {
 /**
  * common interface method types
  */
-typedef esp_err_t (*iface_init)(void**);        /*!< Interface method init */
+typedef esp_err_t (*iface_init)(void**,bool);   /*!< Interface method init */
 typedef esp_err_t (*iface_destroy)(void);       /*!< Interface method destroy */
 typedef esp_err_t (*iface_setup)(void*);        /*!< Interface method setup */
 typedef esp_err_t (*iface_start)(void);         /*!< Interface method start */

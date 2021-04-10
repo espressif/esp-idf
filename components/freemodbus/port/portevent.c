@@ -109,12 +109,12 @@ xMBPortEventPost( eMBEventType eEvent )
 }
 
 BOOL
-xMBPortEventGet(eMBEventType * peEvent)
+xMBPortEventGet(eMBEventType * peEvent, TickType_t xTicksToWait)
 {
     assert(xQueueHdl != NULL);
     BOOL xEventHappened = FALSE;
 
-    if (xQueueReceive(xQueueHdl, peEvent, portMAX_DELAY) == pdTRUE) {
+    if (xQueueReceive(xQueueHdl, peEvent, xTicksToWait) == pdTRUE) {
         xEventHappened = TRUE;
     }
     return xEventHappened;

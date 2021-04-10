@@ -218,7 +218,7 @@ eMBErrorCode    eMBDisable( void );
  *   returns eMBErrorCode::MB_EILLSTATE. Otherwise it returns
  *   eMBErrorCode::MB_ENOERR.
  */
-eMBErrorCode    eMBPoll( void );
+eMBErrorCode    eMBPoll( TickType_t xTicksToWait );
 
 /*! \ingroup modbus
  * \brief Configure the slave id of the device.
