@@ -54,6 +54,9 @@ string(REPLACE ";" " " esptoolpy_write_flash
 string(REPLACE ";" " " espsecurepy "${ESPSECUREPY}")
 string(REPLACE ";" " " espefusepy "${ESPEFUSEPY}")
 
+# Suppress warning: "Manually-specified variables were not used by the project: SECURE_BOOT_SIGNING_KEY"
+set(ignore_signing_key "${SECURE_BOOT_SIGNING_KEY}")
+
 if(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
     if(CONFIG_SECURE_BOOTLOADER_KEY_ENCODING_192BIT)
         set(key_digest_len 192)
