@@ -436,22 +436,22 @@ static void IRAM_ATTR gpio_intr_service(void *arg)
         return;
     }
 
-    //read status to get interrupt status for GPIO0-31
     uint32_t gpio_intr_status;
     gpio_hal_get_intr_status(gpio_context.gpio_hal, gpio_context.isr_core_id, &gpio_intr_status);
+    gpio_hal_clear_intr_status(gpio_context.gpio_hal, gpio_intr_status);
 
+    uint32_t gpio_intr_status_h;
+    gpio_hal_get_intr_status_high(gpio_context.gpio_hal, gpio_context.isr_core_id, &gpio_intr_status_h);
+    gpio_hal_clear_intr_status_high(gpio_context.gpio_hal, gpio_intr_status_h);
+
+    //read status to get interrupt status for GPIO0-31
     if (gpio_intr_status) {
         gpio_isr_loop(gpio_intr_status, 0);
-        gpio_hal_clear_intr_status(gpio_context.gpio_hal, gpio_intr_status);
     }
 
     //read status1 to get interrupt status for GPIO32-39
-    uint32_t gpio_intr_status_h;
-    gpio_hal_get_intr_status_high(gpio_context.gpio_hal, gpio_context.isr_core_id, &gpio_intr_status_h);
-
     if (gpio_intr_status_h) {
         gpio_isr_loop(gpio_intr_status_h, 32);
-        gpio_hal_clear_intr_status_high(gpio_context.gpio_hal, gpio_intr_status_h);
     }
 }
 
