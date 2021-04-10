@@ -418,6 +418,34 @@ const struct oper_class_map global_op_class[] = {
 
 size_t global_op_class_size = ARRAY_SIZE(global_op_class);
 
+bool ieee802_11_rsnx_capab_len(const u8 *rsnxe, size_t rsnxe_len,
+                              unsigned int capab)
+{
+       const u8 *end;
+       size_t flen, i;
+       u32 capabs = 0;
+
+       if (!rsnxe || rsnxe_len == 0)
+               return false;
+       end = rsnxe + rsnxe_len;
+       flen = (rsnxe[0] & 0x0f) + 1;
+       if (rsnxe + flen > end)
+               return false;
+       if (flen > 4)
+               flen = 4;
+       for (i = 0; i < flen; i++)
+               capabs |= rsnxe[i] << (8 * i);
+
+       return capabs & BIT(capab);
+}
+
+
+bool ieee802_11_rsnx_capab(const u8 *rsnxe, unsigned int capab)
+{
+       return ieee802_11_rsnx_capab_len(rsnxe ? rsnxe + 2 : NULL,
+                                        rsnxe ? rsnxe[1] : 0, capab);
+}
+
 u8 get_operating_class(u8 chan, int sec_channel)
 {
 	u8 op_class = 0;
