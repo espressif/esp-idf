@@ -164,7 +164,8 @@ static esp_err_t mbc_serial_slave_destroy(void)
     // Disable and then destroy the Modbus stack
     mb_error = eMBDisable();
     MB_SLAVE_CHECK((mb_error == MB_ENOERR), ESP_ERR_INVALID_STATE, "mb stack disable failure.");
-    (void)vTaskDelete(mbs_opts->mbs_task_handle);
+    if (mbs_opts->mbs_task_handle)
+        (void)vTaskDelete(mbs_opts->mbs_task_handle);
     (void)vQueueDelete(mbs_opts->mbs_notification_queue_handle);
     (void)vEventGroupDelete(mbs_opts->mbs_event_group);
     mb_error = eMBClose();
@@ -176,7 +177,7 @@ static esp_err_t mbc_serial_slave_destroy(void)
 }
 
 // Initialization of Modbus controller
-esp_err_t mbc_serial_slave_create(mb_slave_interface_t** handler)
+esp_err_t mbc_serial_slave_create(mb_slave_interface_t** handler, bool start_controller_task)
 {
     // Allocate space for options
     if (mbs_interface_ptr == NULL) {
@@ -208,20 +209,25 @@ esp_err_t mbc_serial_slave_create(mb_slave_interface_t** handler)
                                                 sizeof(mb_param_info_t));
     MB_SLAVE_CHECK((mbs_opts->mbs_notification_queue_handle != NULL),
             ESP_ERR_NO_MEM, "mb notify queue creation error.");
-    // Create Modbus controller task
-    status = xTaskCreate((void*)&modbus_slave_task,
-                            "modbus_slave_task",
-                            MB_CONTROLLER_STACK_SIZE,
-                            NULL,
-                            MB_CONTROLLER_PRIORITY,
-                            &mbs_opts->mbs_task_handle);
-    if (status != pdPASS) {
-        vTaskDelete(mbs_opts->mbs_task_handle);
-        MB_SLAVE_CHECK((status == pdPASS), ESP_ERR_NO_MEM,
-                "mb controller task creation error, xTaskCreate() returns (0x%x).",
-                (uint32_t)status);
+    if (start_controller_task)
+    {
+        // Create Modbus controller task
+        status = xTaskCreate((void*)&modbus_slave_task,
+                                "modbus_slave_task",
+                                MB_CONTROLLER_STACK_SIZE,
+                                NULL,
+                                MB_CONTROLLER_PRIORITY,
+                                &mbs_opts->mbs_task_handle);
+        if (status != pdPASS) {
+            vTaskDelete(mbs_opts->mbs_task_handle);
+            MB_SLAVE_CHECK((status == pdPASS), ESP_ERR_NO_MEM,
+                    "mb controller task creation error, xTaskCreate() returns (0x%x).",
+                    (uint32_t)status);
+        }
+        MB_SLAVE_ASSERT(mbs_opts->mbs_task_handle != NULL); // The task is created but handle is incorrect
     }
-    MB_SLAVE_ASSERT(mbs_opts->mbs_task_handle != NULL); // The task is created but handle is incorrect
+    else
+        mbs_opts->mbs_task_handle = false;
 
     // Initialize interface function pointers
     mbs_interface_ptr->check_event = mbc_serial_slave_check_event;

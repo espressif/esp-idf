@@ -40,7 +40,7 @@ extern "C" {
  *     - ESP_ERR_NOT_SUPPORTED  Port type not supported
  *     - ESP_ERR_INVALID_STATE  Initialization failure
  */
-esp_err_t mbc_slave_init_tcp(mb_slave_interface_t** handler);
+esp_err_t mbc_slave_init_tcp(mb_slave_interface_t** handler, bool start_controller_task);
 
 /**
  * @brief Initialize Modbus Slave controller and stack for Serial port
@@ -53,7 +53,7 @@ esp_err_t mbc_slave_init_tcp(mb_slave_interface_t** handler);
  *     - ESP_ERR_NOT_SUPPORTED  Port type not supported
  *     - ESP_ERR_INVALID_STATE  Initialization failure
  */
-esp_err_t mbc_slave_init(mb_port_type_t port_type, mb_slave_interface_t **handler);
+esp_err_t mbc_slave_init(mb_port_type_t port_type, mb_slave_interface_t **handler, bool start_controller_task);
 
 /**
  * @brief Initialize Modbus Slave controller interface handle

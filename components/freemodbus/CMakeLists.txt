@@ -48,7 +48,7 @@ set(srcs
 set(include_dirs common/include)
 
 set(priv_include_dirs common port modbus modbus/ascii modbus/functions
-                                modbus/rtu modbus/tcp modbus/include)
+                                modbus/rtu modbus/tcp)
 
 list(APPEND priv_include_dirs serial_slave/port serial_slave/modbus_controller
                                         serial_master/port serial_master/modbus_controller
