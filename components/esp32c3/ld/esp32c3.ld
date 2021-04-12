@@ -8,6 +8,14 @@
 
 #include "sdkconfig.h"
 
+#ifdef CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
+#define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE + CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE)
+#elif defined(CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP)
+#define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE)
+#else
+#define ESP_BOOTLOADER_RESERVE_RTC 0
+#endif
+
 #define SRAM_IRAM_START     0x4037C000
 #define SRAM_DRAM_START     0x3FC7C000
 #define ICACHE_SIZE         0x4000 /* ICache size is fixed to 16KB on ESP32-C3 */
@@ -65,7 +73,7 @@ MEMORY
   /**
    * RTC fast memory (executable). Persists over deep sleep.
    */
-  rtc_iram_seg(RWX) :                org = 0x50000000, len = 0x2000
+  rtc_iram_seg(RWX) :                org = 0x50000000, len = 0x2000 - ESP_BOOTLOADER_RESERVE_RTC
 }
 
 #if CONFIG_ESP32C3_USE_FIXED_STATIC_RAM_SIZE
