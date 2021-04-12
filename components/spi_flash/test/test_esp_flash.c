@@ -664,7 +664,11 @@ static void test_flash_suspend_resume(const esp_partition_t* part)
     vTaskDelay(200);
 }
 
-FLASH_TEST_CASE("SPI flash suspend and resume test", test_flash_suspend_resume);
+TEST_CASE("SPI flash suspend and resume test", "[esp_flash][test_env=UT_T1_Flash_Suspend]")
+{
+    flash_test_func(test_flash_suspend_resume, 1 /* first index reserved for main flash */ );
+}
+
 #endif //CONFIG_SPI_FLASH_AUTO_SUSPEND
 
 static void test_write_protection(const esp_partition_t* part)
@@ -920,8 +924,8 @@ FLASH_TEST_CASE_3("Test esp_flash_write large RAM buffer", test_write_large_ram_
 static void write_large_buffer(const esp_partition_t *part, const uint8_t *source, size_t length)
 {
     esp_flash_t* chip = part->flash_chip;
-    printf("Writing chip %p %p, %d bytes from source %p\n", chip, (void*)part->address, length, source);
 
+    printf("Writing chip %p %p, %d bytes from source %p\n", chip, (void*)part->address, length, source);
     ESP_ERROR_CHECK( esp_flash_erase_region(chip, part->address, (length + SPI_FLASH_SEC_SIZE) & ~(SPI_FLASH_SEC_SIZE - 1)) );
 
     // note writing to unaligned address
