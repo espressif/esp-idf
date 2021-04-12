@@ -32,6 +32,17 @@
 extern "C" {
 #endif
 
+/*
+ * The following defines are used to disable USB JTAG when pins 18 and pins 19
+ * are set to be used as GPIO.
+ * See gpio_pad_select_gpio() below.
+ *
+ * TODO: Delete these definitions once the USB device registers definition is
+ * merged.
+ */
+#define USB_DEVICE_CONF0_REG        (0x60043018)
+#define USB_DEVICE_USB_PAD_ENABLE   (BIT(14))
+
 // Get GPIO hardware instance with giving gpio num
 #define GPIO_LL_GET_HW(num) (((num) == 0) ? (&GPIO) : NULL)
 
@@ -380,6 +391,20 @@ static inline void gpio_ll_iomux_in(gpio_dev_t *hw, uint32_t gpio, uint32_t sign
 }
 
 /**
+ * @brief  Select a function for the pin in the IOMUX
+ *
+ * @param  pin_name Pin name to configure
+ * @param  func Function to assign to the pin
+ */
+static inline void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
+{
+    if (pin_name == IO_MUX_GPIO18_REG || pin_name == IO_MUX_GPIO19_REG) {
+        CLEAR_PERI_REG_MASK(USB_DEVICE_CONF0_REG, USB_DEVICE_USB_PAD_ENABLE);
+    }
+    PIN_FUNC_SELECT(pin_name, func);
+}
+
+/**
   * @brief Set peripheral output to an GPIO pad through the IOMUX.
   *
   * @param hw Peripheral GPIO hardware instance address.
@@ -392,7 +417,7 @@ static inline void gpio_ll_iomux_out(gpio_dev_t *hw, uint8_t gpio_num, int func,
 {
     hw->func_out_sel_cfg[gpio_num].oen_sel = 0;
     hw->func_out_sel_cfg[gpio_num].oen_inv_sel = oen_inv;
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], func);
+    gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_num], func);
 }
 
 static inline void gpio_ll_force_hold_all(gpio_dev_t *hw)
