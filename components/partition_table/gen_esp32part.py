@@ -115,15 +115,15 @@ class PartitionTable(list):
 
     @classmethod
     def from_file(cls, f):
-        input = f.read()
-        input_is_binary = input[0:2] == PartitionDefinition.MAGIC_BYTES
-        if input_is_binary:
+        data = f.read()
+        data_is_binary = data[0:2] == PartitionDefinition.MAGIC_BYTES
+        if data_is_binary:
             status('Parsing binary partition input...')
-            return cls.from_binary(input), True
-        else:
-            input = input.decode()
-            status('Parsing CSV input...')
-            return cls.from_csv(input), False
+            return cls.from_binary(data), True
+
+        data = data.decode()
+        status('Parsing CSV input...')
+        return cls.from_csv(data), False
 
     @classmethod
     def from_csv(cls, csv_contents):
@@ -186,7 +186,7 @@ class PartitionTable(list):
         None if not found """
         # convert ptype & subtypes names (if supplied this way) to integer values
         ptype = get_ptype_as_int(ptype)
-        subtype = get_subtype_as_int(subtype)
+        subtype = get_subtype_as_int(ptype, subtype)
 
         for p in self:
             if p.type == ptype and p.subtype == subtype:
