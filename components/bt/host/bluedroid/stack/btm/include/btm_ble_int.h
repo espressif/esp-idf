@@ -403,6 +403,7 @@ tBTM_STATUS btm_ble_start_adv(void);
 tBTM_STATUS btm_ble_stop_adv(void);
 tBTM_STATUS btm_ble_start_scan(void);
 void btm_ble_create_ll_conn_complete (UINT8 status);
+void btm_ble_create_conn_cancel_complete (UINT8 *p);
 
 /* LE security function from btm_sec.c */
 #if SMP_INCLUDED == TRUE

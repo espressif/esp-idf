@@ -2032,6 +2032,30 @@ void btm_ble_create_ll_conn_complete (UINT8 status)
         btm_ble_update_mode_operation(HCI_ROLE_UNKNOWN, NULL, status);
     }
 }
+
+/*****************************************************************************
+** Function btm_ble_create_conn_cancel_complete
+**
+** Description LE connection cancel complete.
+**
+******************************************************************************/
+void btm_ble_create_conn_cancel_complete (UINT8 *p)
+{
+    UINT8       status;
+
+    STREAM_TO_UINT8 (status, p);
+
+    switch (status) {
+    case HCI_SUCCESS:
+        if (btm_ble_get_conn_st() == BLE_CONN_CANCEL) {
+            btm_ble_set_conn_st (BLE_CONN_IDLE);
+        }
+        break;
+    default:
+        break;
+    }
+}
+
 /*****************************************************************************
 **  Function        btm_proc_smp_cback
 **
