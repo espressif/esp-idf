@@ -116,6 +116,7 @@ static void register_mdns_query_a(void)
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd_init) );
 }
 
+#if CONFIG_LWIP_IPV6
 static int cmd_mdns_query_aaaa(int argc, char** argv)
 {
     int nerrors = arg_parse(argc, argv, (void**) &mdns_query_a_args);
@@ -172,6 +173,7 @@ static void register_mdns_query_aaaa(void)
 
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd_init) );
 }
+#endif
 
 static struct {
     struct arg_str *instance;
@@ -1049,7 +1051,9 @@ void mdns_console_register(void)
     register_mdns_service_remove_all();
 
     register_mdns_query_a();
+#if CONFIG_LWIP_IPV6
     register_mdns_query_aaaa();
+#endif
     register_mdns_query_txt();
     register_mdns_query_srv();
     register_mdns_query_ptr();

@@ -40,6 +40,7 @@ typedef struct esp_netif_slip_config {
  */
 esp_err_t esp_netif_slip_set_params(esp_netif_t *netif, const esp_netif_slip_config_t *config);
 
+#if CONFIG_LWIP_IPV6
 /** @brief Sets IPV6 address for the supplied esp-netif.
  *
  * @param[in]  netif handle to slip esp-netif instance
@@ -48,6 +49,7 @@ esp_err_t esp_netif_slip_set_params(esp_netif_t *netif, const esp_netif_slip_con
  * @return     ESP_OK on success, ESP_ERR_ESP_NETIF_INVALID_PARAMS if netif null or not SLIP
  */
 esp_err_t esp_netif_slip_set_ipv6(esp_netif_t *netif, const esp_ip6_addr_t *ipv6);
+#endif
 
 /**
  * @brief  Data path API to write raw packet ous the SLIP interface

@@ -183,12 +183,11 @@ static int xMBTCPPortAcceptConnection(int xListenSockId, char** pcIPAddr)
     MB_PORT_CHECK((xListenSockId > 0), -1, "Incorrect listen socket ID.");
 
     // Address structure large enough for both IPv4 or IPv6 address
-    struct sockaddr_in6 xSrcAddr;
-
+    struct sockaddr_storage xSrcAddr;
     CHAR cAddrStr[128];
     int xSockId = -1;
     CHAR* pcStr = NULL;
-    socklen_t xSize = sizeof(struct sockaddr_in6);
+    socklen_t xSize = sizeof(struct sockaddr_storage);
 
     // Accept new socket connection if not active
     xSockId = accept(xListenSockId, (struct sockaddr *)&xSrcAddr, &xSize);
@@ -197,11 +196,14 @@ static int xMBTCPPortAcceptConnection(int xListenSockId, char** pcIPAddr)
         close(xSockId);
     } else {
         // Get the sender's ip address as string
-        if (xSrcAddr.sin6_family == PF_INET) {
+        if (xSrcAddr.ss_family == PF_INET) {
             inet_ntoa_r(((struct sockaddr_in *)&xSrcAddr)->sin_addr.s_addr, cAddrStr, sizeof(cAddrStr) - 1);
-        } else if (xSrcAddr.sin6_family == PF_INET6) {
-            inet6_ntoa_r(xSrcAddr.sin6_addr, cAddrStr, sizeof(cAddrStr) - 1);
         }
+#if CONFIG_LWIP_IPV6
+        else if (xSrcAddr.ss_family == PF_INET6) {
+            inet6_ntoa_r(((struct sockaddr_in6 *)&xSrcAddr)->sin6_addr, cAddrStr, sizeof(cAddrStr) - 1);
+        }
+#endif
         ESP_LOGI(MB_TCP_SLAVE_PORT_TAG, "Socket (#%d), accept client connection from address: %s", xSockId, cAddrStr);
         pcStr = calloc(1, strlen(cAddrStr) + 1);
         if (pcStr && pcIPAddr) {

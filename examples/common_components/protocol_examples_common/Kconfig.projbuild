@@ -189,6 +189,7 @@ menu "Example Connection Configuration"
         bool "Obtain IPv6 address"
         default y
         depends on EXAMPLE_CONNECT_WIFI || EXAMPLE_CONNECT_ETHERNET
+        select LWIP_IPV6
         help
             By default, examples will wait until IPv4 and IPv6 local link addresses are obtained.
             Disable this option if the network does not support IPv6.
