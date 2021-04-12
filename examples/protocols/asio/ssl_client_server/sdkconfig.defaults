@@ -2,3 +2,9 @@ CONFIG_ASIO_SSL_SUPPORT=y
 CONFIG_PARTITION_TABLE_CUSTOM=y
 CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
 CONFIG_PARTITION_TABLE_FILENAME="partitions.csv"
+
+#
+# Partition Table
+#
+# Leave some room for larger apps without needing to reduce other features
+CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y
