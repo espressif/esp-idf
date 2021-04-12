@@ -55,7 +55,7 @@ The flow chart of BluFi
         node_height = 60;
         edge_length = 380;
         span_height = 10;
-        default_fontsize = 12; 
+        default_fontsize = 12;
 
         Phone <- ESP32 [label="Advertising"];
         Phone -> ESP32 [label="Create GATT connection"];
@@ -144,8 +144,8 @@ The format of Ack Frame（8 bit）：
    * The control frame is not encrypted for the time being and supports to be verified;
 
    * The data frame supports to be encrypted and verified.
-   
- **1.1 Control Frame (0x0b’00)**  
+
+ **1.1 Control Frame (0x0b’00)**
 
   +-------------------------+--------------------------------------------------------------+---------------------------------------------------------------+---------------------------------------------------------------+
   | Control Frame / 0x0b’00 | Implication                                                  | Explanation                                                   | Note                                                          |
@@ -411,10 +411,10 @@ The Security Implementation of ESP32
    It is added to the Sequence field and used during the checksum verification.
 
    For the coding of ESP32, you can determine and develop the security processing, such as key negotiation. The mobile application sends the negotiation data to ESP32 and then the data will be sent to the application layer for processing. If the application layer does not process it, you can use the DH encryption algorithm provided by BluFi to negotiate the key.
-  
+
    The application layer needs to register several security-related functions to BluFi:
 
-.. code-block:: c 
+.. code-block:: c
 
    typedef void (*esp_blufi_negotiate_data_handler_t)(uint8_t *data, int len, uint8_t **output_data, int *output_len, bool *need_free)
 
@@ -426,7 +426,7 @@ Here are two "*", because the length of the data to be emitted is unknown that r
 
 .. code-block:: c
 
-   typedef int (* esp_blufi_encrypt_func_t)(uint8_t iv8, uint8_t *crypt_data, int cyprt_len) 
+   typedef int (* esp_blufi_encrypt_func_t)(uint8_t iv8, uint8_t *crypt_data, int crypt_len)
 
 The data to be encrypted and decrypted must use the same length. The IV8 is a 8 bit sequence value of frames, which can be used as a 8 bit of IV.
 
