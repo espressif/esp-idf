@@ -708,6 +708,29 @@ menu "LWIP"
         help
             Enable Microsoft Point-to-Point Encryption (MPPE) support
 
+    config LWIP_ENABLE_LCP_ECHO
+        bool "Enable LCP ECHO"
+        depends on LWIP_PPP_SUPPORT
+        default n
+        help
+            Enable LCP echo keepalive requests
+
+    config LWIP_LCP_ECHOINTERVAL
+        int "Echo interval (s)"
+        range 0 1000000
+        depends on LWIP_ENABLE_LCP_ECHO
+        default 3
+        help
+            Interval in seconds between keepalive LCP echo requests, 0 to disable.
+
+    config LWIP_LCP_MAXECHOFAILS
+        int "Maximum echo failures"
+        range 0 100000
+        depends on LWIP_ENABLE_LCP_ECHO
+        default 3
+        help
+            Number of consecutive unanswered echo requests before failure is indicated.
+
     config LWIP_PPP_DEBUG_ON
         bool "Enable PPP debug log output"
         depends on LWIP_PPP_SUPPORT
@@ -776,24 +799,6 @@ menu "LWIP"
                 (SNTPv4 RFC 4330 enforces a minimum update time of 15 seconds).
 
     endmenu # SNTP
-
-    menu "LCP"
-
-        config LCP_ECHOINTERVAL
-            int "Echo interval (s)"
-            range 0 1000000
-            default 0
-            help
-                Interval in seconds between keepalive LCP echo requests, 0 to disable.
-
-        config LCP_MAXECHOFAILS
-            int "Maximum echo failures"
-            range 0 100000
-            default 3
-            help
-                Number of consecutive unanswered echo requests before failure is indicated.
-
-    endmenu # LCP
 
     config LWIP_ESP_LWIP_ASSERT
         bool "Enable LWIP ASSERT checks"
