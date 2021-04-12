@@ -271,7 +271,7 @@ typedef void (* esp_hf_client_incoming_data_cb_t)(const uint8_t *buf, uint32_t l
  *                  buffer is allocated inside bluetooth protocol stack and will be released after
  *                  invoke of the callback is finished.
  * @param[in]       len : size(in bytes) in buf
- * @param[out]      length of data successfully read
+ * @return          length of data successfully read
  */
 typedef uint32_t (* esp_hf_client_outgoing_data_cb_t)(uint8_t *buf, uint32_t len);
 

@@ -59,7 +59,7 @@ ESP32 配网流程
         node_height = 60;
         edge_length = 380;
         span_height = 10;
-        default_fontsize = 12; 
+        default_fontsize = 12;
 
         Phone <- ESP32 [label="广播"];
         Phone -> ESP32 [label="建立 GATT 链接"];
@@ -139,17 +139,17 @@ Ack 帧格式（8 bit）：
 |                  |                       |                    |
 +------------------+-----------------------+--------------------+
 | MSB - CheckSum   | 2                                          |
-+------------------+--------------------------------------------+ 
++------------------+--------------------------------------------+
 
 1. Type
 
    类型域，占 1 byte。分为 Type 和 Subtype（子类型域）两部分, Type 占低 2 bit，Subtype 占高 6 bit。
-   
+
    * 控制帧，暂不进行加密，可校验；
-   
+
    * 数据帧，可加密，可校验。
 
- **1.1 控制帧 (0x0 b’00)** 
+ **1.1 控制帧 (0x0 b’00)**
 
   +------------------+-----------------------------------+----------------------------------------------------------------+----------------------------------------------------------------------+
   | 控制帧 (二进制)  | 含义                              | 解释                                                           | 备注                                                                 |
@@ -333,7 +333,7 @@ Ack 帧格式（8 bit）：
 2. Frame Control
 
    帧控制域，占 1 byte，每个 bit 表示不同含义。
-   
+
    +----------------+-------------------------------------------------------------------------------------------------------------------------------+
    | 位             | 含义                                                                                                                          |
    +================+===============================================================================================================================+
@@ -376,11 +376,11 @@ Ack 帧格式（8 bit）：
 3. Sequence Control
 
    序列控制域。帧发送时，无论帧的类型是什么，序列 (Sequence) 都会自动加 1，用来防止重放攻击 (Replay Attack)。每次重现连接后，序列清零。
-   
+
 4. Length
 
    Data 域的长度，不包含 CheckSum。
-   
+
 5. Data
 
    不同的 Type 或 Subtype，Data 域的含义均不同。请参考上方表格。
@@ -388,7 +388,7 @@ Ack 帧格式（8 bit）：
 6. CheckSum
 
    此域为 2 byte 的校验，用来校验『序列 + 数据长度 + 明文数据』。
-   
+
 ESP32 端的安全实现
 ------------------
 
@@ -415,29 +415,29 @@ ESP32 端的安全实现
    typedef void (*esp_blufi_negotiate_data_handler_t)(uint8_t *data, int len, uint8_t **output_data, int *output_len, bool *need_free);
 
 该函数用来接收协商期间的正常数据 (normal data)，处理完成后，需要将待发送的数据使用 output_data 和 output_len 传出。
-   
+
 BluFi 会在调用完 negotiate_data_handler 后，发送 negotiate_data_handler 传出的 output_data。
-   
+
 这里的两个『*』，因为需要发出去的数据长度未知，所以需要函数自行分配 (malloc) 或者指向全局变量，通过 need_free 通知是否需要释放内存。
- 
+
 .. code-block:: c
 
-   typedef int (* esp_blufi_encrypt_func_t)(uint8_t iv8, uint8_t *crypt_data, int cyprt_len);	
-  
+   typedef int (* esp_blufi_encrypt_func_t)(uint8_t iv8, uint8_t *crypt_data, int crypt_len);
+
 加密和解密的数据长度必须一致。其中 iv8 为帧的 8 bit 序列 (sequence)，可作为 iv 的某 8 bit 来使用。
-  
+
 .. code-block:: c
-   
+
    typedef int (* esp_blufi_decrypt_func_t)(uint8_t iv8, uint8_t *crypt_data, int crypt_len);
 
 加密和解密的数据长度必须一致。其中 iv8 为帧的 8 bit 序列 (sequence)，可作为 iv 的某 8 bit 来使用。
-   
+
 .. code-block:: c
-   
+
    typedef uint16_t (*esp_blufi_checksum_func_t)(uint8_t iv8, uint8_t *data, int len);
-   
+
 该函数用来计算 CheckSum，返回值为 CheckSum 的值。BluFi 会使用该函数返回值与包末尾的 CheckSum 做比较。
-      
+
 GATT 相关说明
 -------------
 

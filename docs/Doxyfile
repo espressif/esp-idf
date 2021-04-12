@@ -21,45 +21,30 @@ PROJECT_NAME = "ESP32 Programming Guide"
 ## and used to include in API reference documentation
 
 INPUT = \
-    ##
-    ## Wi-Fi - API Reference
-    ##
     ../../components/esp_wifi/include/esp_wifi.h \
     ../../components/esp_wifi/include/esp_wifi_types.h \
     ../../components/esp_wifi/include/esp_smartconfig.h \
     ../../components/esp_wifi/include/esp_now.h \
-    ## Mesh - API Reference
     ../../components/esp_wifi/include/esp_mesh.h \
-    ## Event loop - API Reference
     ../../components/esp_event/include/esp_event.h \
     ../../components/esp_event/include/esp_event_base.h \
     ../../components/esp_event/include/esp_event_legacy.h \
-    ## Bluetooth - API Reference
-    ## Controller && VHCI
     ../../components/bt/include/esp_bt.h \
-    ## Bluetooth COMMON
-    ## Issue with __attribute__
     ../../components/bt/host/bluedroid/api/include/api/esp_bt_defs.h \
     ../../components/bt/host/bluedroid/api/include/api/esp_bt_main.h \
     ../../components/bt/host/bluedroid/api/include/api/esp_bt_device.h \
-    ## Bluetooth LE
     ../../components/bt/host/bluedroid/api/include/api/esp_gap_ble_api.h \
-    ## Issue with __attribute__
     ../../components/bt/host/bluedroid/api/include/api/esp_gatt_defs.h \
     ../../components/bt/host/bluedroid/api/include/api/esp_gatts_api.h \
     ../../components/bt/host/bluedroid/api/include/api/esp_gattc_api.h \
     ../../components/bt/host/bluedroid/api/include/api/esp_blufi_api.h \
-    ## Bluetooth Classic
     ../../components/bt/host/bluedroid/api/include/api/esp_gap_bt_api.h \
-    ## Issue with __attribute__
     ../../components/bt/host/bluedroid/api/include/api/esp_a2dp_api.h \
     ../../components/bt/host/bluedroid/api/include/api/esp_avrc_api.h \
     ../../components/bt/host/bluedroid/api/include/api/esp_spp_api.h \
     ../../components/bt/host/bluedroid/api/include/api/esp_hf_defs.h \
     ../../components/bt/host/bluedroid/api/include/api/esp_hf_client_api.h \
-    ## NimBLE related Bluetooth APIs
     ../../components/bt/host/nimble/esp-hci/include/esp_nimble_hci.h \
-    ## ESP BLE Mesh APIs
     ../../components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_common_api.h \
     ../../components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_local_data_operation_api.h \
     ../../components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_low_power_api.h \
@@ -73,16 +58,10 @@ INPUT = \
     ../../components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_sensor_model_api.h \
     ../../components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_time_scene_model_api.h \
     ../../components/bt/esp_ble_mesh/api/esp_ble_mesh_defs.h \
-    ##
-    ## Ethernet - API Reference
-    ##
     ../../components/esp_eth/include/esp_eth.h \
     ../../components/esp_eth/include/esp_eth_com.h \
     ../../components/esp_eth/include/esp_eth_mac.h \
     ../../components/esp_eth/include/esp_eth_phy.h \
-    ##
-    ## Peripherals - API Reference
-    ##
     ../../components/driver/include/driver/adc.h \
     ../../components/driver/include/driver/can.h \
     ../../components/driver/include/driver/dac.h \
@@ -108,28 +87,15 @@ INPUT = \
     ../../components/soc/esp32/include/soc/touch_channel.h \
     ../../components/soc/esp32/include/soc/uart_channel.h \
     ../../components/soc/esp32/include/soc/rtc_gpio_channel.h \
-    ## tcpip_adapter - API Reference
     ../../components/tcpip_adapter/include/tcpip_adapter.h \
-    ##
-    ## Protocols - API Reference
-    ##
-    ## ESP-TLS
     ../../components/esp-tls/esp_tls.h \
-    ## MQTT
     ../../components/mqtt/esp-mqtt/include/mqtt_client.h \
-    ## mDNS
     ../../components/mdns/include/mdns.h \
     ../../components/esp_http_client/include/esp_http_client.h \
     ../../components/esp_websocket_client/include/esp_websocket_client.h \
-    ## HTTP / HTTPS Server
     ../../components/esp_http_server/include/esp_http_server.h \
     ../../components/esp_https_server/include/esp_https_server.h \
-    ## ESP Local Ctrl
     ../../components/esp_local_ctrl/include/esp_local_ctrl.h \
-    ##
-    ## Provisioning - API Reference
-    ##
-    ## Protocol Communication
     ../../components/protocomm/include/common/protocomm.h \
     ../../components/protocomm/include/security/protocomm_security.h \
     ../../components/protocomm/include/security/protocomm_security0.h \
@@ -137,119 +103,69 @@ INPUT = \
     ../../components/protocomm/include/transports/protocomm_ble.h \
     ../../components/protocomm/include/transports/protocomm_console.h \
     ../../components/protocomm/include/transports/protocomm_httpd.h \
-    ## WiFi Provisioning
     ../../components/wifi_provisioning/include/wifi_provisioning/manager.h \
     ../../components/wifi_provisioning/include/wifi_provisioning/scheme_ble.h \
     ../../components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h \
     ../../components/wifi_provisioning/include/wifi_provisioning/scheme_console.h \
     ../../components/wifi_provisioning/include/wifi_provisioning/wifi_config.h \
     ../../components/wifi_provisioning/include/wifi_provisioning/wifi_scan.h \
-    ##
-    ## Storage - API Reference
-    ##
-    ## SPI Flash and Partition APIs
     ../../components/spi_flash/include/esp_flash_spi_init.h \
     ../../components/spi_flash/include/esp_flash.h \
     ../../components/spi_flash/include/esp_partition.h \
     ../../components/bootloader_support/include/esp_flash_encrypt.h \
     ../../components/soc/include/hal/spi_flash_types.h \
-    ## SPIFFS
     ../../components/spiffs/include/esp_spiffs.h \
-    ## SD/MMC Card Host
     ../../components/sdmmc/include/sdmmc_cmd.h \
     ../../components/driver/include/driver/sdmmc_host.h \
     ../../components/driver/include/driver/sdmmc_types.h \
     ../../components/driver/include/driver/sdspi_host.h \
-    ## SDIO slave
     ../../components/driver/include/driver/sdio_slave.h \
-    ## Non-Volatile Storage
     ../../components/nvs_flash/include/nvs.h \
     ../../components/nvs_flash/include/nvs_flash.h \
-    ## Virtual Filesystem
     ../../components/vfs/include/esp_vfs.h \
     ../../components/vfs/include/esp_vfs_dev.h \
     ../../components/vfs/include/esp_vfs_semihost.h \
-    ## FAT Filesystem
-    ## NOTE: for two lines below header_file.inc is not used
     ../../components/fatfs/vfs/esp_vfs_fat.h \
     ../../components/fatfs/diskio/diskio_impl.h \
     ../../components/fatfs/diskio/diskio_sdmmc.h \
     ../../components/fatfs/diskio/diskio_wl.h \
     ../../components/fatfs/diskio/diskio_rawflash.h \
-    ## Wear Levelling
     ../../components/wear_levelling/include/wear_levelling.h \
-    ##
-    ## System - API Reference
-    ##
-    ## Memory Allocation    #
     ../../components/heap/include/esp_heap_caps.h \
     ../../components/heap/include/esp_heap_trace.h \
     ../../components/heap/include/esp_heap_caps_init.h \
     ../../components/heap/include/multi_heap.h \
-    ## Himem
     ../../components/esp32/include/esp32/himem.h \
-    ## Interrupt Allocation
     ../../components/esp32/include/esp_intr_alloc.h \
-    ## Watchdogs
-    ## NOTE: for two lines below header_file.inc is not used
     ../../components/esp_common/include/esp_int_wdt.h \
     ../../components/esp_common/include/esp_task_wdt.h \
-    ## Hooks
     ../../components/esp_common/include/esp_freertos_hooks.h \
-    ## Inter-Processor Call
     ../../components/esp_common/include/esp_ipc.h \
-    ## Over The Air Updates (OTA)
     ../../components/app_update/include/esp_ota_ops.h \
-    ## ESP HTTPS OTA
     ../../components/esp_https_ota/include/esp_https_ota.h \
-    ## Sleep
     ../../components/esp32/include/esp_sleep.h \
-    ## Logging
     ../../components/log/include/esp_log.h \
-    ## Base MAC address
-    ## NOTE: for line below header_file.inc is not used
     ../../components/esp_common/include/esp_system.h \
-    ## IDF version
     ../../components/esp_common/include/esp_idf_version.h \
-    ##
-    ## ULP Coprocessor - API Guides
-    ##
-    ## NOTE: for line below header_file.inc is not used
     ../../components/ulp/include/esp32/ulp.h \
-    ##
-    ## Application Level Tracing - API Reference
-    ##
     ../../components/app_trace/include/esp_app_trace.h \
     ../../components/app_trace/include/esp_sysview_trace.h \
-    ### Power management
     ../../components/esp_common/include/esp_pm.h \
     ../../components/esp32/include/esp32/pm.h \
-    ### esp_timer, High Resolution Timer
     ../../components/esp_common/include/esp_timer.h \
-    ### esp_event, Event Loop Library
     ../../components/esp_event/include/esp_event.h \
     ../../components/esp_event/include/esp_event_base.h \
-    ### eFuse Manager
     ../../components/efuse/include/esp_efuse.h \
-    ### App Image Format
     ../../components/bootloader_support/include/esp_app_format.h \
-    ### ESP Pthread parameters
     ../../components/pthread/include/esp_pthread.h \
-    ###
-    ### FreeRTOS
-    ###
     ../../components/freertos/include/freertos/task.h \
     ../../components/freertos/include/freertos/queue.h \
     ../../components/freertos/include/freertos/semphr.h \
     ../../components/freertos/include/freertos/timers.h \
     ../../components/freertos/include/freertos/event_groups.h \
-    ### Ringbuffer
     ../../components/esp_ringbuf/include/freertos/ringbuf.h \
-    ### Helper functions for error codes
     ../../components/esp_common/include/esp_err.h \
-    ### System APIs
     ../../components/esp_common/include/esp_system.h \
-    ### Modbus controller component header file
     ../../components/freemodbus/common/include/esp_modbus_common.h \
     ../../components/freemodbus/common/include/esp_modbus_slave.h \
     ../../components/freemodbus/common/include/esp_modbus_master.h
