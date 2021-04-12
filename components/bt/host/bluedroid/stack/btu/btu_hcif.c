@@ -981,6 +981,9 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
     case HCI_BLE_TEST_END:
         btm_ble_test_command_complete(p);
         break;
+    case HCI_BLE_CREATE_CONN_CANCEL:
+        btm_ble_create_conn_cancel_complete(p);
+        break;
 
 #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
     case HCI_BLE_ADD_DEV_RESOLVING_LIST:
