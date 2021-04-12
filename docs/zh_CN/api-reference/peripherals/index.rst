@@ -7,7 +7,7 @@
     :maxdepth: 1
 
     ADC <adc>
-    :SOC_DAC_PERIPH_NUM: DAC <dac>
+    :SOC_DAC_SUPPORTED: DAC <dac>
     通用定时器 <timer>
     GPIO (包括 RTC 低功耗 I/O) <gpio>
     :SOC_DEDICATED_GPIO_SUPPORTED: 专用 GPIO <dedic_gpio>

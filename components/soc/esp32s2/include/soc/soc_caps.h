@@ -37,6 +37,7 @@
 #pragma once
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
+#define SOC_DAC_SUPPORTED               1
 #define SOC_TWAI_SUPPORTED              1
 #define SOC_CP_DMA_SUPPORTED            1
 #define SOC_CPU_CORES_NUM               1
@@ -87,7 +88,6 @@
 
 /*-------------------------- DAC CAPS ----------------------------------------*/
 #define SOC_DAC_PERIPH_NUM      2
-
 #define SOC_DAC_RESOLUTION      8 // DAC resolution ratio 8 bit
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
