@@ -103,6 +103,16 @@ begin
   end;
 end;
 
+<event('ShouldSkipPage')>
+function ShouldSkipIDFPage(PageID: Integer): Boolean;
+begin
+  { The page does not make sense in offline mode }
+  if (PageID = IDFPage.ID) and IsOfflineMode then begin
+    Result := True;
+  end;
+end;
+
+
 <event('InitializeWizard')>
 procedure CreateIDFPage();
 begin

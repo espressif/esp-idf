@@ -651,12 +651,12 @@
       "version_regex": "Python ([0-9.]+)",
       "versions": [
         {
-          "name": "3.9.1",
+          "name": "3.8.7",
           "status": "recommended",
           "win64": {
-            "sha256": "d5a0e625dd5b2bc6872de90292d71009c17e2396e3d1575d886a94d0dfb00c87",
-            "size": 20362758,
-            "url": "https://dl.espressif.com/dl/idf-python/idf-python-3.9.1-embed-win64.zip"
+            "sha256": "5fdf20350e71570642377fc58e61138f407cf286a87f11416829d94c4d9f2019",
+            "size": 20086226,
+            "url": "https://dl.espressif.com/dl/idf-python/idf-python-3.8.7-embed-win64.zip"
           }
         }
       ]
@@ -680,17 +680,17 @@
       "version_cmd": [
         "cmd",
         "/c",
-        "echo idf4.3_py3.9_2021-01-07"
+        "echo 3.8-2020-01-21"
       ],
-      "version_regex": "(idf4.3_py3.9_2021-01-07)",
+      "version_regex": "(3.8-2020-01-21)",
       "versions": [
         {
-          "name": "idf4.3_py3.9_2021-01-07",
+          "name": "3.8-2020-01-21",
           "status": "recommended",
           "win64": {
-            "sha256": "2a33dbaa106aec9c5098b1af46f04c69923be947291c19855ff355b9707314b6",
-            "size": 8316997,
-            "url": "https://dl.espressif.com/dl/idf-python-wheels/idf-python-wheels-idf4.3_py3.9_2021-01-07-win64.zip"
+            "sha256": "0c2f40b615ce7a3d70c6690b44ef550c7c9fe4a480a92dfeb151ba4952e0212b",
+            "size": 9107660,
+            "url": "https://dl.espressif.com/dl/idf-python-wheels/idf-python-wheels-3.8-2020-01-21-win64.zip"
           }
         }
       ]

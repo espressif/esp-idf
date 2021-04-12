@@ -32,12 +32,7 @@ For this Getting Started we're going to use the Command Prompt, but after ESP-ID
 ESP-IDF Tools Installer
 =======================
 
-The easiest way to install ESP-IDF's prerequisites is to download one of ESP-IDF Tools Installers from this URL:
-
-- Online Installer (30 MB): https://dl.espressif.com/dl/esp-idf-tools-setup-online-2.5.exe
-- Offline Installer - includes ESP-IDF v4.2, v4.1.1 (810 MB): https://dl.espressif.com/dl/esp-idf-tools-setup-offline-2.5.exe
-
-.. IMPORTANT: Next time this link is updated, please go to get-started/index.rst and rewrite the section under "Alternative File Downloads ... Windows". Then delete this comment.
+The easiest way to install ESP-IDF's prerequisites is to download one of ESP-IDF Tools Installers from this URL: https://dl.espressif.com/dl/esp-idf/?idf=4.4
 
 What is the usecase for Online and Offline Installer
 ----------------------------------------------------

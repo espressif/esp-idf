@@ -23,7 +23,7 @@ ESP-IDF 需要安装一些必备工具，才能围绕 {IDF_TARGET_NAME} 构建�
 
 .. 注解::
     限定条件：Python 或 ESP-IDF 的安装路径中一定不能包含空格或括号。与此同时，除非操作系统配置为支持 Unicode UTF-8，否则 Python 或 ESP-IDF 的安装路径中也不能包括特殊字符（非 ASCII 码字符）
-   
+
     系统管理员可以通过如下方式将操作系统配置为支持 Unicode UTF-8：控制面板-更改日期、时间或数字格式-管理选项卡-更改系统地域-勾选选项 “Beta：使用 Unicode UTF-8 支持全球语言”-点击确定-重启电脑。
 
 .. _get-started-windows-tools-installer:
@@ -32,12 +32,7 @@ ESP-IDF 需要安装一些必备工具，才能围绕 {IDF_TARGET_NAME} 构建�
 ESP-IDF 工具安装器
 =======================
 
-安装 ESP-IDF 必备工具最简易的方式是下载 ESP-IDF 工具安装器，请选择下列地址之一：
-
-- 在线安装（30 MB）：https://dl.espressif.com/dl/esp-idf-tools-setup-online-2.5.exe
-- 离线安装（包括 ESP-IDF v4.2、v4.1.1，810 MB）：https://dl.espressif.com/dl/esp-idf-tools-setup-offline-2.5.exe
-
-.. 重要：下次更新此链接时，请重新写文件 get-started/index.rst 中“其它文件下载方式”这一章节，然后将此条注意事项删除。
+安装 ESP-IDF 必备工具最简易的方式是从 https://dl.espressif.com/dl/esp-idf/?idf=4.4 中下载 ESP-IDF 工具安装器。
 
 在线安装与离线安装的区别
 -----------------------------------------
