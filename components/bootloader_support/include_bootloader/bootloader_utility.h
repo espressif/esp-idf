@@ -14,6 +14,7 @@
 #pragma once
 
 #include "esp_image_format.h"
+#include "bootloader_config.h"
 
 /**
  * @brief Load partition table.

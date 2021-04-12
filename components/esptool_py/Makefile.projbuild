@@ -57,7 +57,7 @@ ifndef IS_BOOTLOADER_BUILD
 APP_BIN_UNSIGNED := $(APP_BIN:.bin=-unsigned.bin)
 
 $(APP_BIN): $(APP_BIN_UNSIGNED) $(SECURE_BOOT_SIGNING_KEY) $(SDKCONFIG_MAKEFILE)
-	$(ESPSECUREPY) sign_data --keyfile $(SECURE_BOOT_SIGNING_KEY) -o $@ $<
+	$(ESPSECUREPY) sign_data --version 1 --keyfile $(SECURE_BOOT_SIGNING_KEY) -o $@ $<
 endif
 endif
 # non-secure boot (or bootloader), both these files are the same
