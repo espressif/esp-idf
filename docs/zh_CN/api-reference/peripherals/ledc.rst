@@ -192,7 +192,9 @@ LED PWM 控制器 API 会在设定的频率和占空比分辨率超过 LED PWM �
 应用实例
 -------------------
 
-LED PWM 改变占空比和渐变控制的实例请参照 :example:`peripherals/ledc`。
+使用 LEDC 改变占空比和渐变控制的实例请参照 :example:`peripherals/ledc/ledc_fade`。
+
+使用 LEDC 基本实例请参照 :example:`peripherals/ledc/ledc_basic`。
 
 
 API 参考
