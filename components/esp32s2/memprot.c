@@ -694,25 +694,25 @@ void esp_memprot_set_prot(bool invoke_panic_handler, bool lock_feature, uint32_t
 
         //set permissions
         if (required_mem_prot & MEMPROT_IRAM0_SRAM) {
-            esp_memprot_set_prot_iram(MEMPROT_IRAM0_SRAM, NULL, false, true, true, true, true, true);
+            esp_memprot_set_prot_iram(MEMPROT_IRAM0_SRAM, DEF_SPLIT_LINE, WR_LOW_DIS, RD_LOW_ENA, EX_LOW_ENA, WR_HIGH_DIS, RD_HIGH_DIS, EX_HIGH_DIS);
         }
         if (required_mem_prot & MEMPROT_IRAM0_RTCFAST) {
-            esp_memprot_set_prot_iram(MEMPROT_IRAM0_RTCFAST, NULL, false, true, true, true, true, true);
+            esp_memprot_set_prot_iram(MEMPROT_IRAM0_RTCFAST, DEF_SPLIT_LINE, WR_LOW_DIS, RD_LOW_ENA, EX_LOW_ENA, WR_HIGH_DIS, RD_HIGH_DIS, EX_HIGH_DIS);
         }
         if (required_mem_prot & MEMPROT_DRAM0_SRAM) {
-            esp_memprot_set_prot_dram(MEMPROT_DRAM0_SRAM, NULL, false, true, true, true);
+            esp_memprot_set_prot_dram(MEMPROT_DRAM0_SRAM, DEF_SPLIT_LINE, WR_LOW_DIS, RD_LOW_ENA, WR_HIGH_ENA, RD_HIGH_ENA);
         }
         if (required_mem_prot & MEMPROT_DRAM0_RTCFAST) {
-            esp_memprot_set_prot_dram(MEMPROT_DRAM0_RTCFAST, NULL, false, true, true, true);
+            esp_memprot_set_prot_dram(MEMPROT_DRAM0_RTCFAST, DEF_SPLIT_LINE, WR_LOW_DIS, RD_LOW_ENA, WR_HIGH_ENA, RD_HIGH_ENA);
         }
         if (required_mem_prot & MEMPROT_PERI1_RTCSLOW) {
-            esp_memprot_set_prot_peri1(MEMPROT_PERI1_RTCSLOW, NULL, true, true, true, true);
+            esp_memprot_set_prot_peri1(MEMPROT_PERI1_RTCSLOW, DEF_SPLIT_LINE, WR_LOW_DIS, RD_LOW_DIS, WR_HIGH_DIS, RD_HIGH_DIS);
         }
         if (required_mem_prot & MEMPROT_PERI2_RTCSLOW_0) {
-            esp_memprot_set_prot_peri2(MEMPROT_PERI2_RTCSLOW_0, NULL, true, true, false, true, true, false);
+            esp_memprot_set_prot_peri2(MEMPROT_PERI2_RTCSLOW_0, DEF_SPLIT_LINE, WR_LOW_ENA, RD_LOW_ENA, EX_LOW_DIS, WR_HIGH_ENA, RD_HIGH_ENA, EX_HIGH_DIS);
         }
         if (required_mem_prot & MEMPROT_PERI2_RTCSLOW_1) {
-            esp_memprot_set_prot_peri2(MEMPROT_PERI2_RTCSLOW_1, NULL, true, true, false, true, true, false);
+            esp_memprot_set_prot_peri2(MEMPROT_PERI2_RTCSLOW_1, DEF_SPLIT_LINE, WR_LOW_DIS, RD_LOW_DIS, EX_LOW_DIS, WR_HIGH_DIS, RD_HIGH_DIS, EX_HIGH_DIS);
         }
 
         //reenable protection (bus based)

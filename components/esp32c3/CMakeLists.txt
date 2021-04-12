@@ -46,9 +46,9 @@ else()
     # Process the template file through the linker script generation mechanism, and use the output for linking the
     # final binary
     target_linker_script(${COMPONENT_LIB} INTERFACE "${CMAKE_CURRENT_LIST_DIR}/ld/esp32c3.project.ld.in"
-                                          PROCESS "${CMAKE_CURRENT_BINARY_DIR}/ld/esp32c3.project.ld")
-
+            PROCESS "${CMAKE_CURRENT_BINARY_DIR}/ld/esp32c3.project.ld")
     target_linker_script(${COMPONENT_LIB} INTERFACE "ld/esp32c3.peripherals.ld")
+
     target_link_libraries(${COMPONENT_LIB} PUBLIC gcc)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u call_user_start_cpu0")
 

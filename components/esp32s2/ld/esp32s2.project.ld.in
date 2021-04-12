@@ -93,7 +93,7 @@ SECTIONS
      and will be retained during deep sleep.
      User data marked with RTC_NOINIT_ATTR will be placed
      into this section. See the file "esp_attr.h" for more information.
-	 The memory location of the data is dependent on
+     The memory location of the data is dependent on
      CONFIG_ESP32S2_RTCDATA_IN_FAST_MEM option.
   */
   .rtc_noinit (NOLOAD):
@@ -186,6 +186,8 @@ SECTIONS
 
     /* align + add 16B for CPU dummy speculative instr. fetch */
     . = ALIGN(4) + 16;
+    /* iram_end_test section exists for use by memprot unit tests only */
+    *(.iram_end_test)
     _iram_text_end = ABSOLUTE(.);
     _iram_end = ABSOLUTE(.);
   } > iram0_0_seg
