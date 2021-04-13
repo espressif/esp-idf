@@ -31,7 +31,6 @@
 #define DR_REG_SYSTEM_BASE                      0x600c0000
 #define DR_REG_SENSITIVE_BASE                   0x600c1000
 #define DR_REG_INTERRUPT_BASE                   0x600c2000
-#define DR_REG_DMA_COPY_BASE                    0x600c3000
 #define DR_REG_EXTMEM_BASE                      0x600c4000
 #define DR_REG_MMU_TABLE                        0x600c5000
 #define DR_REG_ITAG_TABLE                       0x600c6000

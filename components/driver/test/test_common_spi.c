@@ -2,6 +2,7 @@
 #include "driver/spi_slave.h"
 #include "esp_log.h"
 #include "driver/gpio.h"
+#include "hal/gpio_hal.h"
 
 int test_freq_default[]=TEST_FREQ_DEFAULT();
 
@@ -202,13 +203,13 @@ void master_free_device_bus(spi_device_handle_t spi)
 
 void spitest_gpio_output_sel(uint32_t gpio_num, int func, uint32_t signal_idx)
 {
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], func);
+    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_num], func);
     GPIO.func_out_sel_cfg[gpio_num].func_sel = signal_idx;
 }
 
 void spitest_gpio_input_sel(uint32_t gpio_num, int func, uint32_t signal_idx)
 {
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], func);
+    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_num], func);
     GPIO.func_in_sel_cfg[signal_idx].func_sel = gpio_num;
 }
 

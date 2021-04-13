@@ -273,44 +273,13 @@ static void get_chip_host(esp_flash_t* chip, spi_host_device_t* out_host_id, int
     }
 }
 
+#if CONFIG_IDF_TARGET_ESP32
 static void setup_bus(spi_host_device_t host_id)
 {
     if (host_id == SPI1_HOST) {
         ESP_LOGI(TAG, "setup flash on SPI1 CS1...\n");
         //no need to initialize the bus, however the CLK may need one more output if it's on the usual place of PSRAM
-#ifdef EXTRA_SPI1_CLK_IO
         esp_rom_gpio_connect_out_signal(EXTRA_SPI1_CLK_IO, SPICLK_OUT_IDX, 0, 0);
-#endif
-
-#if !DISABLED_FOR_TARGETS(ESP32)
-#if !CONFIG_ESPTOOLPY_FLASHMODE_QIO && !CONFIG_ESPTOOLPY_FLASHMODE_QOUT
-        //Initialize the WP and HD pins, which are not automatically initialized on ESP32-S2.
-        int wp_pin = spi_periph_signal[host_id].spiwp_iomux_pin;
-        int hd_pin = spi_periph_signal[host_id].spihd_iomux_pin;
-        gpio_iomux_in(wp_pin, spi_periph_signal[host_id].spiwp_in);
-        gpio_iomux_out(wp_pin, spi_periph_signal[host_id].func, false);
-        gpio_iomux_in(hd_pin, spi_periph_signal[host_id].spihd_in);
-        gpio_iomux_out(hd_pin, spi_periph_signal[host_id].func, false);
-#endif //CONFIG_ESPTOOLPY_FLASHMODE_QIO || CONFIG_ESPTOOLPY_FLASHMODE_QOUT
-#endif //!DISABLED_FOR_TARGETS(ESP32)
-
-#if !DISABLED_FOR_TARGETS(ESP32)
-    } else if (host_id == SPI2_HOST) {
-        ESP_LOGI(TAG, "setup flash on SPI%d (FSPI) CS0...\n", host_id + 1);
-        spi_bus_config_t fspi_bus_cfg = {
-            .mosi_io_num = FSPI_PIN_NUM_MOSI,
-            .miso_io_num = FSPI_PIN_NUM_MISO,
-            .sclk_io_num = FSPI_PIN_NUM_CLK,
-            .quadhd_io_num = FSPI_PIN_NUM_HD,
-            .quadwp_io_num = FSPI_PIN_NUM_WP,
-            .max_transfer_sz = 64,
-        };
-#ifdef FORCE_GPIO_MATRIX
-        fspi_bus_cfg.quadhd_io_num = 5;
-#endif
-        esp_err_t ret = spi_bus_initialize(host_id, &fspi_bus_cfg, 0);
-        TEST_ESP_OK(ret);
-#endif
         //currently the SPI bus for main flash chip is initialized through GPIO matrix
     } else if (host_id == SPI2_HOST) {
         ESP_LOGI(TAG, "setup flash on SPI%d (HSPI) CS0...\n", host_id + 1);
@@ -322,25 +291,9 @@ static void setup_bus(spi_host_device_t host_id)
             .quadwp_io_num = HSPI_PIN_NUM_WP,
             .max_transfer_sz = 64,
         };
-#if !DISABLED_FOR_TARGETS(ESP32S2)
-#ifdef FORCE_GPIO_MATRIX
-        hspi_bus_cfg.quadhd_io_num = 23;
-#endif
-#endif
         esp_err_t ret = spi_bus_initialize(host_id, &hspi_bus_cfg, 0);
         TEST_ESP_OK(ret);
-
-#if !DISABLED_FOR_TARGETS(ESP32)
-        // HSPI have no multiline mode, use GPIO to pull those pins up
-        gpio_set_direction(HSPI_PIN_NUM_HD, GPIO_MODE_OUTPUT);
-        gpio_set_level(HSPI_PIN_NUM_HD, 1);
-
-        gpio_set_direction(HSPI_PIN_NUM_WP, GPIO_MODE_OUTPUT);
-        gpio_set_level(HSPI_PIN_NUM_WP, 1);
-#endif
-    }
-#if !DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
-    else if (host_id == VSPI_HOST) {
+    } else if (host_id == SPI3_HOST) {
         ESP_LOGI(TAG, "setup flash on SPI%d (VSPI) CS0...\n", host_id + 1);
         spi_bus_config_t vspi_bus_cfg = {
             .mosi_io_num = VSPI_PIN_NUM_MOSI,
@@ -350,17 +303,63 @@ static void setup_bus(spi_host_device_t host_id)
             .quadwp_io_num = VSPI_PIN_NUM_WP,
             .max_transfer_sz = 64,
         };
-#ifdef FORCE_GPIO_MATRIX
-        vspi_bus_cfg.quadhd_io_num = 23;
-#endif
         esp_err_t ret = spi_bus_initialize(host_id, &vspi_bus_cfg, 0);
         TEST_ESP_OK(ret);
-    }
-#endif // disabled for esp32s2
-    else {
+    } else {
         ESP_LOGE(TAG, "invalid bus");
     }
 }
+#else // FOR ESP32-S2, ESP32-S3, ESP32-C3
+static void setup_bus(spi_host_device_t host_id)
+{
+    if (host_id == SPI1_HOST) {
+        ESP_LOGI(TAG, "setup flash on SPI1 CS1...\n");
+#if !CONFIG_ESPTOOLPY_FLASHMODE_QIO && !CONFIG_ESPTOOLPY_FLASHMODE_QOUT
+        //Initialize the WP and HD pins, which are not automatically initialized on ESP32-S2.
+        int wp_pin = spi_periph_signal[host_id].spiwp_iomux_pin;
+        int hd_pin = spi_periph_signal[host_id].spihd_iomux_pin;
+        gpio_iomux_in(wp_pin, spi_periph_signal[host_id].spiwp_in);
+        gpio_iomux_out(wp_pin, spi_periph_signal[host_id].func, false);
+        gpio_iomux_in(hd_pin, spi_periph_signal[host_id].spihd_in);
+        gpio_iomux_out(hd_pin, spi_periph_signal[host_id].func, false);
+#endif //CONFIG_ESPTOOLPY_FLASHMODE_QIO || CONFIG_ESPTOOLPY_FLASHMODE_QOUT
+        //currently the SPI bus for main flash chip is initialized through GPIO matrix
+    } else if (host_id == SPI2_HOST) {
+        ESP_LOGI(TAG, "setup flash on SPI%d (FSPI) CS0...\n", host_id + 1);
+        spi_bus_config_t fspi_bus_cfg = {
+            .mosi_io_num = FSPI_PIN_NUM_MOSI,
+            .miso_io_num = FSPI_PIN_NUM_MISO,
+            .sclk_io_num = FSPI_PIN_NUM_CLK,
+            .quadhd_io_num = FSPI_PIN_NUM_HD,
+            .quadwp_io_num = FSPI_PIN_NUM_WP,
+            .max_transfer_sz = 64,
+        };
+        esp_err_t ret = spi_bus_initialize(host_id, &fspi_bus_cfg, 0);
+        TEST_ESP_OK(ret);
+    } else if (host_id == SPI3_HOST) {
+        ESP_LOGI(TAG, "setup flash on SPI%d (HSPI) CS0...\n", host_id + 1);
+        spi_bus_config_t hspi_bus_cfg = {
+            .mosi_io_num = HSPI_PIN_NUM_MOSI,
+            .miso_io_num = HSPI_PIN_NUM_MISO,
+            .sclk_io_num = HSPI_PIN_NUM_CLK,
+            .quadhd_io_num = HSPI_PIN_NUM_HD,
+            .quadwp_io_num = HSPI_PIN_NUM_WP,
+            .max_transfer_sz = 64,
+        };
+        esp_err_t ret = spi_bus_initialize(host_id, &hspi_bus_cfg, 0);
+        TEST_ESP_OK(ret);
+
+        // HSPI have no multiline mode, use GPIO to pull those pins up
+        gpio_set_direction(HSPI_PIN_NUM_HD, GPIO_MODE_OUTPUT);
+        gpio_set_level(HSPI_PIN_NUM_HD, 1);
+
+        gpio_set_direction(HSPI_PIN_NUM_WP, GPIO_MODE_OUTPUT);
+        gpio_set_level(HSPI_PIN_NUM_WP, 1);
+    } else {
+        ESP_LOGE(TAG, "invalid bus");
+    }
+}
+#endif // CONFIG_IDF_TARGET_ESP32
 
 static void release_bus(int host_id)
 {

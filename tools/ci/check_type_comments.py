@@ -66,9 +66,6 @@ def check_files(files):  # type: (List[str]) -> List[str]
             if not types_valid(file_name):
                 type_issues.append(file_name)
 
-    ignore_list.sort()
-    updated_list.sort()
-
     if updated_list != ignore_list:
         with open(IGNORE_LIST_MYPY, 'w') as f:
             for item in updated_list:

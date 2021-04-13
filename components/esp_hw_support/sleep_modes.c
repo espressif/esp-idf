@@ -54,13 +54,13 @@
 #include "esp32/rom/cache.h"
 #include "esp32/clk.h"
 #include "esp32/rom/rtc.h"
-#include "driver/gpio.h"
+#include "esp_private/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/clk.h"
 #include "esp32s2/rom/cache.h"
 #include "esp32s2/rom/rtc.h"
 #include "soc/extmem_reg.h"
-#include "driver/gpio.h"
+#include "esp_private/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/clk.h"
 #include "esp32s3/rom/cache.h"
@@ -702,6 +702,7 @@ esp_err_t esp_light_sleep_start(void)
     esp_clk_slowclk_cal_set(s_config.rtc_clk_cal_period);
 #else
     s_config.rtc_clk_cal_period = rtc_clk_cal(RTC_CAL_RTC_MUX, RTC_CLK_SRC_CAL_CYCLES);
+    esp_clk_slowclk_cal_set(s_config.rtc_clk_cal_period);
 #endif
 
     /*

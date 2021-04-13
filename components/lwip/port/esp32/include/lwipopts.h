@@ -745,16 +745,17 @@
    --------- LCP Echo options ---------
    ------------------------------------
 */
+#if CONFIG_LWIP_ENABLE_LCP_ECHO
 /**
  * LCP_ECHOINTERVAL: Interval in seconds between keepalive LCP echo requests, 0 to disable.
  */
-#define LCP_ECHOINTERVAL                CONFIG_LCP_ECHOINTERVAL
+#define LCP_ECHOINTERVAL                CONFIG_LWIP_LCP_ECHOINTERVAL
 
 /**
  * LCP_MAXECHOFAILS: Number of consecutive unanswered echo requests before failure is indicated.
  */
-#define LCP_MAXECHOFAILS                CONFIG_LCP_MAXECHOFAILS
-
+#define LCP_MAXECHOFAILS                CONFIG_LWIP_LCP_MAXECHOFAILS
+#endif /* CONFIG_LWIP_ENABLE_LCP_ECHO */
 
 /*
    --------------------------------------
@@ -1013,7 +1014,11 @@
 /**
  * LWIP_DEBUG: Enable lwip debugging in other modules.
  */
-#define LWIP_DEBUG                      LWIP_DBG_OFF
+#ifdef CONFIG_LWIP_DEBUG
+#define LWIP_DEBUG                      LWIP_DBG_ON
+#else
+#undef LWIP_DEBUG
+#endif
 
 #define CHECKSUM_CHECK_UDP              CONFIG_LWIP_CHECKSUM_CHECK_UDP
 #define CHECKSUM_CHECK_IP               CONFIG_LWIP_CHECKSUM_CHECK_IP

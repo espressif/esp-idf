@@ -240,8 +240,6 @@ tools/idf_py_actions/serial_ext.py
 tools/idf_py_actions/tools.py
 tools/idf_py_actions/uf2_ext.py
 tools/idf_size.py
-tools/idf.py
-tools/idf_tools.py
 tools/kconfig_new/confgen.py
 tools/kconfig_new/confserver.py
 tools/kconfig_new/esp-windows-curses/setup.py
