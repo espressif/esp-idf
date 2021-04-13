@@ -971,6 +971,13 @@ config BT_ACL_CONNECTIONS
     help
         Maximum BT/BLE connection count
 
+config BT_MULTI_CONNECTION_ENBALE
+    bool "Enable BLE multi-conections"
+    depends on BT_BLUEDROID_ENABLED
+    default y
+    help
+        Enable this option if there are multiple connections
+
 config BT_ALLOCATION_FROM_SPIRAM_FIRST
     bool "BT/BLE will first malloc the memory from the PSRAM"
     depends on BT_BLUEDROID_ENABLED
