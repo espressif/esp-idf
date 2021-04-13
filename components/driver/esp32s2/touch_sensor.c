@@ -629,3 +629,9 @@ esp_err_t touch_pad_sleep_channel_read_proximity_cnt(touch_pad_t pad_num, uint32
     touch_hal_sleep_read_proximity_cnt(approach_cnt);
     return ESP_OK;
 }
+
+esp_err_t touch_pad_sleep_channel_set_work_time(uint16_t sleep_cycle, uint16_t meas_times)
+{
+    touch_hal_sleep_channel_set_work_time(sleep_cycle, meas_times);
+    return ESP_OK;
+}
