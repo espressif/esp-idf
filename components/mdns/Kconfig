@@ -56,6 +56,17 @@ menu "mDNS"
             Configures timeout for adding a new mDNS service. Adding a service
             fails if could not be completed within this time.
 
+    config MDNS_STRICT_MODE
+        bool "mDNS strict mode"
+        default "n"
+        help
+            Configures strict mode. Set this to 1 for the mDNS library to strictly follow the RFC6762:
+            Currently the only strict feature: Do not repeat original questions in response packets
+            (defined in RFC6762 sec. 6).
+            Default configuration is 0, i.e. non-strict mode, since some implementations,
+            such as lwIP mdns resolver (used by standard POSIX API like getaddrinfo, gethostbyname)
+            could not correctly resolve advertised names.
+
     config MDNS_TIMER_PERIOD_MS
         int "mDNS timer period (ms)"
         range 10 10000
