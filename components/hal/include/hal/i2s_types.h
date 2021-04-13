@@ -115,7 +115,6 @@ typedef enum {
     I2S_CLK_APLL,                    /*!< Clock from APLL*/
 } i2s_clock_src_t;
 
-
 /**
  * @brief I2S configuration parameters for i2s_param_config function
  *
@@ -145,6 +144,7 @@ typedef enum {
     I2S_EVENT_MAX,         /*!< I2S event max index*/
 } i2s_event_type_t;
 
+#if SOC_I2S_SUPPORTS_ADC_DAC
 /**
  * @brief I2S DAC mode for i2s_set_dac_mode.
  *
@@ -157,6 +157,7 @@ typedef enum {
     I2S_DAC_CHANNEL_BOTH_EN  = 0x3,  /*!< Enable both of the I2S built-in DAC channels.*/
     I2S_DAC_CHANNEL_MAX      = 0x4,  /*!< I2S built-in DAC mode max index*/
 } i2s_dac_mode_t;
+#endif //SOC_I2S_SUPPORTS_ADC_DAC
 
 /**
  * @brief Event structure used in I2S event queue
