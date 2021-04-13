@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <sys/cdefs.h>
 #include "esp_log.h"
+#include "esp_check.h"
 #include "esp_eth.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -23,16 +24,7 @@
 #include "esp_rom_sys.h"
 #include "w5500.h"
 
-static const char *TAG = "w5500-phy";
-#define PHY_CHECK(a, str, goto_tag, ...)                                          \
-    do                                                                            \
-    {                                                                             \
-        if (!(a))                                                                 \
-        {                                                                         \
-            ESP_LOGE(TAG, "%s(%d): " str, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
-            goto goto_tag;                                                        \
-        }                                                                         \
-    } while (0)
+static const char *TAG = "w5500.phy";
 
 /***************Vendor Specific Register***************/
 /**
@@ -64,12 +56,13 @@ typedef struct {
 
 static esp_err_t w5500_update_link_duplex_speed(phy_w5500_t *w5500)
 {
+    esp_err_t ret = ESP_OK;
     esp_eth_mediator_t *eth = w5500->eth;
     eth_speed_t speed = ETH_SPEED_10M;
     eth_duplex_t duplex = ETH_DUPLEX_HALF;
     phycfg_reg_t phycfg;
 
-    PHY_CHECK(eth->phy_reg_read(eth, w5500->addr, W5500_REG_PHYCFGR, (uint32_t *) & (phycfg.val)) == ESP_OK, "read PHYCFG failed", err);
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, w5500->addr, W5500_REG_PHYCFGR, (uint32_t *) & (phycfg.val)), err, TAG, "read PHYCFG failed");
     eth_link_t link = phycfg.link ? ETH_LINK_UP : ETH_LINK_DOWN;
     /* check if link status changed */
     if (w5500->link_status != link) {
@@ -85,55 +78,55 @@ static esp_err_t w5500_update_link_duplex_speed(phy_w5500_t *w5500)
             } else {
                 duplex = ETH_DUPLEX_HALF;
             }
-            PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_SPEED, (void *)speed) == ESP_OK,
-                      "change speed failed", err);
-            PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_DUPLEX, (void *)duplex) == ESP_OK,
-                      "change duplex failed", err);
+            ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_SPEED, (void *)speed), err, TAG, "change speed failed");
+            ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_DUPLEX, (void *)duplex), err, TAG, "change duplex failed");
         }
-        PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)link) == ESP_OK,
-                  "change link failed", err);
+        ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)link), err, TAG, "change link failed");
         w5500->link_status = link;
     }
     return ESP_OK;
 err:
-    return ESP_FAIL;
+    return ret;
 }
 
 static esp_err_t w5500_set_mediator(esp_eth_phy_t *phy, esp_eth_mediator_t *eth)
 {
-    PHY_CHECK(eth, "can't set mediator to null", err);
+    esp_err_t ret = ESP_OK;
+    ESP_GOTO_ON_FALSE(eth, ESP_ERR_INVALID_ARG, err, TAG, "can't set mediator to null");
     phy_w5500_t *w5500 = __containerof(phy, phy_w5500_t, parent);
     w5500->eth = eth;
     return ESP_OK;
 err:
-    return ESP_ERR_INVALID_ARG;
+    return ret;
 }
 
 static esp_err_t w5500_get_link(esp_eth_phy_t *phy)
 {
+    esp_err_t ret = ESP_OK;
     phy_w5500_t *w5500 = __containerof(phy, phy_w5500_t, parent);
     /* Updata information about link, speed, duplex */
-    PHY_CHECK(w5500_update_link_duplex_speed(w5500) == ESP_OK, "update link duplex speed failed", err);
+    ESP_GOTO_ON_ERROR(w5500_update_link_duplex_speed(w5500), err, TAG, "update link duplex speed failed");
     return ESP_OK;
 err:
-    return ESP_FAIL;
+    return ret;
 }
 
 static esp_err_t w5500_reset(esp_eth_phy_t *phy)
 {
+    esp_err_t ret = ESP_OK;
     phy_w5500_t *w5500 = __containerof(phy, phy_w5500_t, parent);
     w5500->link_status = ETH_LINK_DOWN;
     esp_eth_mediator_t *eth = w5500->eth;
     phycfg_reg_t phycfg;
-    PHY_CHECK(eth->phy_reg_read(eth, w5500->addr, W5500_REG_PHYCFGR, (uint32_t *) & (phycfg.val)) == ESP_OK, "read PHYCFG failed", err);
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, w5500->addr, W5500_REG_PHYCFGR, (uint32_t *) & (phycfg.val)), err, TAG, "read PHYCFG failed");
     phycfg.reset = 0; // set to '0' will reset internal PHY
-    PHY_CHECK(eth->phy_reg_write(eth, w5500->addr, W5500_REG_PHYCFGR, phycfg.val) == ESP_OK, "write PHYCFG failed", err);
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, w5500->addr, W5500_REG_PHYCFGR, phycfg.val), err, TAG, "write PHYCFG failed");
     vTaskDelay(pdMS_TO_TICKS(10));
     phycfg.reset = 1; // set to '1' after reset
-    PHY_CHECK(eth->phy_reg_write(eth, w5500->addr, W5500_REG_PHYCFGR, phycfg.val) == ESP_OK, "write PHYCFG failed", err);
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, w5500->addr, W5500_REG_PHYCFGR, phycfg.val), err, TAG, "write PHYCFG failed");
     return ESP_OK;
 err:
-    return ESP_FAIL;
+    return ret;
 }
 
 static esp_err_t w5500_reset_hw(esp_eth_phy_t *phy)
@@ -152,20 +145,21 @@ static esp_err_t w5500_reset_hw(esp_eth_phy_t *phy)
 
 static esp_err_t w5500_negotiate(esp_eth_phy_t *phy)
 {
+    esp_err_t ret = ESP_OK;
     phy_w5500_t *w5500 = __containerof(phy, phy_w5500_t, parent);
     esp_eth_mediator_t *eth = w5500->eth;
 
     phycfg_reg_t phycfg;
-    PHY_CHECK(eth->phy_reg_read(eth, w5500->addr, W5500_REG_PHYCFGR, (uint32_t *) & (phycfg.val)) == ESP_OK, "read PHYCFG failed", err);
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, w5500->addr, W5500_REG_PHYCFGR, (uint32_t *) & (phycfg.val)), err, TAG, "read PHYCFG failed");
     phycfg.opsel = 1;  // PHY working mode configured by register
     phycfg.opmode = 7; // all capable, auto-negotiation enabled
-    PHY_CHECK(eth->phy_reg_write(eth, w5500->addr, W5500_REG_PHYCFGR, phycfg.val) == ESP_OK, "write PHYCFG failed", err);
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, w5500->addr, W5500_REG_PHYCFGR, phycfg.val), err, TAG, "write PHYCFG failed");
 
     /* Update information about link, speed, duplex */
-    PHY_CHECK(w5500_update_link_duplex_speed(w5500) == ESP_OK, "update link duplex speed failed", err);
+    ESP_GOTO_ON_ERROR(w5500_update_link_duplex_speed(w5500), err, TAG, "update link duplex speed failed");
     return ESP_OK;
 err:
-    return ESP_FAIL;
+    return ret;
 }
 
 static esp_err_t w5500_pwrctl(esp_eth_phy_t *phy, bool enable)
@@ -183,12 +177,13 @@ static esp_err_t w5500_set_addr(esp_eth_phy_t *phy, uint32_t addr)
 
 static esp_err_t w5500_get_addr(esp_eth_phy_t *phy, uint32_t *addr)
 {
-    PHY_CHECK(addr, "addr can't be null", err);
+    esp_err_t ret = ESP_OK;
+    ESP_GOTO_ON_FALSE(addr, ESP_ERR_INVALID_ARG, err, TAG, "addr can't be null");
     phy_w5500_t *w5500 = __containerof(phy, phy_w5500_t, parent);
     *addr = w5500->addr;
     return ESP_OK;
 err:
-    return ESP_ERR_INVALID_ARG;
+    return ret;
 }
 
 static esp_err_t w5500_del(esp_eth_phy_t *phy)
@@ -206,29 +201,32 @@ static esp_err_t w5500_advertise_pause_ability(esp_eth_phy_t *phy, uint32_t abil
 
 static esp_err_t w5500_init(esp_eth_phy_t *phy)
 {
+    esp_err_t ret = ESP_OK;
     /* Power on Ethernet PHY */
-    PHY_CHECK(w5500_pwrctl(phy, true) == ESP_OK, "power control failed", err);
+    ESP_GOTO_ON_ERROR(w5500_pwrctl(phy, true), err, TAG, "power control failed");
     /* Reset Ethernet PHY */
-    PHY_CHECK(w5500_reset(phy) == ESP_OK, "reset failed", err);
+    ESP_GOTO_ON_ERROR(w5500_reset(phy), err, TAG, "reset failed");
     return ESP_OK;
 err:
-    return ESP_FAIL;
+    return ret;
 }
 
 static esp_err_t w5500_deinit(esp_eth_phy_t *phy)
 {
+    esp_err_t ret = ESP_OK;
     /* Power off Ethernet PHY */
-    PHY_CHECK(w5500_pwrctl(phy, false) == ESP_OK, "power control failed", err);
+    ESP_GOTO_ON_ERROR(w5500_pwrctl(phy, false), err, TAG, "power control failed");
     return ESP_OK;
 err:
-    return ESP_FAIL;
+    return ret;
 }
 
 esp_eth_phy_t *esp_eth_phy_new_w5500(const eth_phy_config_t *config)
 {
-    PHY_CHECK(config, "invalid arguments", err);
+    esp_eth_phy_t *ret = NULL;
+    ESP_GOTO_ON_FALSE(config, NULL, err, TAG, "invalid arguments");
     phy_w5500_t *w5500 = calloc(1, sizeof(phy_w5500_t));
-    PHY_CHECK(w5500, "no mem for PHY instance", err);
+    ESP_GOTO_ON_FALSE(w5500, NULL, err, TAG, "no mem for PHY instance");
     w5500->addr = config->phy_addr;
     w5500->reset_timeout_ms = config->reset_timeout_ms;
     w5500->reset_gpio_num = config->reset_gpio_num;
@@ -248,5 +246,5 @@ esp_eth_phy_t *esp_eth_phy_new_w5500(const eth_phy_config_t *config)
     w5500->parent.del = w5500_del;
     return &(w5500->parent);
 err:
-    return NULL;
+    return ret;
 }

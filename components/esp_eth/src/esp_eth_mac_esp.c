@@ -18,6 +18,7 @@
 #include "driver/gpio.h"
 #include "esp_attr.h"
 #include "esp_log.h"
+#include "esp_check.h"
 #include "esp_eth.h"
 #include "esp_pm.h"
 #include "esp_system.h"
@@ -34,20 +35,9 @@
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
 
-static const char *TAG = "emac_esp32";
-#define MAC_CHECK(a, str, goto_tag, ret_value, ...)                               \
-    do                                                                            \
-    {                                                                             \
-        if (!(a))                                                                 \
-        {                                                                         \
-            ESP_LOGE(TAG, "%s(%d): " str, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
-            ret = ret_value;                                                      \
-            goto goto_tag;                                                        \
-        }                                                                         \
-    } while (0)
+static const char *TAG = "esp.emac";
 
 #define PHY_OPERATION_TIMEOUT_US (1000)
-
 #define FLOW_CONTROL_LOW_WATER_MARK (CONFIG_ETH_DMA_RX_BUFFER_NUM / 3)
 #define FLOW_CONTROL_HIGH_WATER_MARK (FLOW_CONTROL_LOW_WATER_MARK * 2)
 
@@ -78,7 +68,7 @@ typedef struct {
 static esp_err_t emac_esp32_set_mediator(esp_eth_mac_t *mac, esp_eth_mediator_t *eth)
 {
     esp_err_t ret = ESP_OK;
-    MAC_CHECK(eth, "can't set mac's mediator to null", err, ESP_ERR_INVALID_ARG);
+    ESP_GOTO_ON_FALSE(eth, ESP_ERR_INVALID_ARG, err, TAG, "can't set mac's mediator to null");
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     emac->eth = eth;
     return ESP_OK;
@@ -90,7 +80,7 @@ static esp_err_t emac_esp32_write_phy_reg(esp_eth_mac_t *mac, uint32_t phy_addr,
 {
     esp_err_t ret = ESP_OK;
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    MAC_CHECK(!emac_hal_is_mii_busy(&emac->hal), "phy is busy", err, ESP_ERR_INVALID_STATE);
+    ESP_GOTO_ON_FALSE(!emac_hal_is_mii_busy(&emac->hal), ESP_ERR_INVALID_STATE, err, TAG, "phy is busy");
     emac_hal_set_phy_data(&emac->hal, reg_value);
     emac_hal_set_phy_cmd(&emac->hal, phy_addr, phy_reg, true);
     /* polling the busy flag */
@@ -101,7 +91,7 @@ static esp_err_t emac_esp32_write_phy_reg(esp_eth_mac_t *mac, uint32_t phy_addr,
         busy = emac_hal_is_mii_busy(&emac->hal);
         to += 100;
     } while (busy && to < PHY_OPERATION_TIMEOUT_US);
-    MAC_CHECK(!busy, "phy is busy", err, ESP_ERR_TIMEOUT);
+    ESP_GOTO_ON_FALSE(!busy, ESP_ERR_TIMEOUT, err, TAG, "phy is busy");
     return ESP_OK;
 err:
     return ret;
@@ -110,9 +100,9 @@ err:
 static esp_err_t emac_esp32_read_phy_reg(esp_eth_mac_t *mac, uint32_t phy_addr, uint32_t phy_reg, uint32_t *reg_value)
 {
     esp_err_t ret = ESP_OK;
-    MAC_CHECK(reg_value, "can't set reg_value to null", err, ESP_ERR_INVALID_ARG);
+    ESP_GOTO_ON_FALSE(reg_value, ESP_ERR_INVALID_ARG, err, TAG, "can't set reg_value to null");
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    MAC_CHECK(!emac_hal_is_mii_busy(&emac->hal), "phy is busy", err, ESP_ERR_INVALID_STATE);
+    ESP_GOTO_ON_FALSE(!emac_hal_is_mii_busy(&emac->hal), ESP_ERR_INVALID_STATE, err, TAG, "phy is busy");
     emac_hal_set_phy_cmd(&emac->hal, phy_addr, phy_reg, false);
     /* polling the busy flag */
     uint32_t to = 0;
@@ -122,7 +112,7 @@ static esp_err_t emac_esp32_read_phy_reg(esp_eth_mac_t *mac, uint32_t phy_addr, 
         busy = emac_hal_is_mii_busy(&emac->hal);
         to += 100;
     } while (busy && to < PHY_OPERATION_TIMEOUT_US);
-    MAC_CHECK(!busy, "phy is busy", err, ESP_ERR_TIMEOUT);
+    ESP_GOTO_ON_FALSE(!busy, ESP_ERR_TIMEOUT, err, TAG, "phy is busy");
     /* Store value */
     *reg_value = emac_hal_get_phy_data(&emac->hal);
     return ESP_OK;
@@ -133,7 +123,7 @@ err:
 static esp_err_t emac_esp32_set_addr(esp_eth_mac_t *mac, uint8_t *addr)
 {
     esp_err_t ret = ESP_OK;
-    MAC_CHECK(addr, "can't set mac addr to null", err, ESP_ERR_INVALID_ARG);
+    ESP_GOTO_ON_FALSE(addr, ESP_ERR_INVALID_ARG, err, TAG, "can't set mac addr to null");
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     memcpy(emac->addr, addr, 6);
     emac_hal_set_address(&emac->hal, emac->addr);
@@ -145,7 +135,7 @@ err:
 static esp_err_t emac_esp32_get_addr(esp_eth_mac_t *mac, uint8_t *addr)
 {
     esp_err_t ret = ESP_OK;
-    MAC_CHECK(addr, "can't set mac addr to null", err, ESP_ERR_INVALID_ARG);
+    ESP_GOTO_ON_FALSE(addr, ESP_ERR_INVALID_ARG, err, TAG, "can't set mac addr to null");
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     memcpy(addr, emac->addr, 6);
     return ESP_OK;
@@ -159,15 +149,15 @@ static esp_err_t emac_esp32_set_link(esp_eth_mac_t *mac, eth_link_t link)
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     switch (link) {
     case ETH_LINK_UP:
-        MAC_CHECK(esp_intr_enable(emac->intr_hdl) == ESP_OK, "enable interrupt failed", err, ESP_FAIL);
+        ESP_GOTO_ON_ERROR(esp_intr_enable(emac->intr_hdl), err, TAG, "enable interrupt failed");
         emac_hal_start(&emac->hal);
         break;
     case ETH_LINK_DOWN:
-        MAC_CHECK(esp_intr_disable(emac->intr_hdl) == ESP_OK, "disable interrupt failed", err, ESP_FAIL);
+        ESP_GOTO_ON_ERROR(esp_intr_disable(emac->intr_hdl), err, TAG, "disable interrupt failed");
         emac_hal_stop(&emac->hal);
         break;
     default:
-        MAC_CHECK(false, "unknown link status", err, ESP_ERR_INVALID_ARG);
+        ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "unknown link status");
         break;
     }
     return ESP_OK;
@@ -189,7 +179,7 @@ static esp_err_t emac_esp32_set_speed(esp_eth_mac_t *mac, eth_speed_t speed)
         ESP_LOGD(TAG, "working in 100Mbps");
         break;
     default:
-        MAC_CHECK(false, "unknown speed", err, ESP_ERR_INVALID_ARG);
+        ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "unknown speed");
         break;
     }
     return ESP_OK;
@@ -211,7 +201,7 @@ static esp_err_t emac_esp32_set_duplex(esp_eth_mac_t *mac, eth_duplex_t duplex)
         ESP_LOGD(TAG, "working in full duplex");
         break;
     default:
-        MAC_CHECK(false, "unknown duplex", err, ESP_ERR_INVALID_ARG);
+        ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "unknown duplex");
         break;
     }
     return ESP_OK;
@@ -254,7 +244,7 @@ static esp_err_t emac_esp32_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint32_t 
     esp_err_t ret = ESP_OK;
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     uint32_t sent_len = emac_hal_transmit_frame(&emac->hal, buf, length);
-    MAC_CHECK(sent_len == length, "insufficient TX buffer size", err, ESP_ERR_INVALID_SIZE);
+    ESP_GOTO_ON_FALSE(sent_len == length, ESP_ERR_INVALID_SIZE, err, TAG, "insufficient TX buffer size");
     return ESP_OK;
 err:
     return ret;
@@ -265,11 +255,11 @@ static esp_err_t emac_esp32_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32_t *
     esp_err_t ret = ESP_OK;
     uint32_t expected_len = *length;
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    MAC_CHECK(buf && length, "can't set buf and length to null", err, ESP_ERR_INVALID_ARG);
+    ESP_GOTO_ON_FALSE(buf && length, ESP_ERR_INVALID_ARG, err, TAG, "can't set buf and length to null");
     uint32_t receive_len = emac_hal_receive_frame(&emac->hal, buf, expected_len, &emac->frames_remain, &emac->free_rx_descriptor);
     /* we need to check the return value in case the buffer size is not enough */
     ESP_LOGD(TAG, "receive len= %d", receive_len);
-    MAC_CHECK(expected_len >= receive_len, "received buffer longer than expected", err, ESP_ERR_INVALID_SIZE);
+    ESP_GOTO_ON_FALSE(expected_len >= receive_len, ESP_ERR_INVALID_SIZE, err, TAG, "received buffer longer than expected");
     *length = receive_len;
     return ESP_OK;
 err:
@@ -341,7 +331,7 @@ static esp_err_t emac_esp32_init(esp_eth_mac_t *mac)
     emac_hal_lowlevel_init(&emac->hal);
     /* init gpio used by smi interface */
     emac_esp32_init_smi_gpio(emac);
-    MAC_CHECK(eth->on_state_changed(eth, ETH_STATE_LLINIT, NULL) == ESP_OK, "lowlevel init failed", err, ESP_FAIL);
+    ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LLINIT, NULL), err, TAG, "lowlevel init failed");
     /* software reset */
     emac_hal_reset(&emac->hal);
     uint32_t to = 0;
@@ -351,7 +341,7 @@ static esp_err_t emac_esp32_init(esp_eth_mac_t *mac)
         }
         vTaskDelay(pdMS_TO_TICKS(10));
     }
-    MAC_CHECK(to < emac->sw_reset_timeout_ms / 10, "reset timeout", err, ESP_ERR_TIMEOUT);
+    ESP_GOTO_ON_FALSE(to < emac->sw_reset_timeout_ms / 10, ESP_ERR_TIMEOUT, err, TAG, "reset timeout");
     /* set smi clock */
     emac_hal_set_csr_clock_range(&emac->hal);
     /* reset descriptor chain */
@@ -361,7 +351,7 @@ static esp_err_t emac_esp32_init(esp_eth_mac_t *mac)
     /* init dma registers by default */
     emac_hal_init_dma_default(&emac->hal);
     /* get emac address from efuse */
-    MAC_CHECK(esp_read_mac(emac->addr, ESP_MAC_ETH) == ESP_OK, "fetch ethernet mac address failed", err, ESP_FAIL);
+    ESP_GOTO_ON_ERROR(esp_read_mac(emac->addr, ESP_MAC_ETH), err, TAG, "fetch ethernet mac address failed");
     /* set MAC address to emac register */
     emac_hal_set_address(&emac->hal, emac->addr);
 #ifdef CONFIG_PM_ENABLE
@@ -441,18 +431,18 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config)
     esp_eth_mac_t *ret = NULL;
     void *descriptors = NULL;
     emac_esp32_t *emac = NULL;
-    MAC_CHECK(config, "can't set mac config to null", err, NULL);
+    ESP_GOTO_ON_FALSE(config, NULL, err, TAG, "can't set mac config to null");
     if (config->flags & ETH_MAC_FLAG_WORK_WITH_CACHE_DISABLE) {
         emac = heap_caps_calloc(1, sizeof(emac_esp32_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     } else {
         emac = calloc(1, sizeof(emac_esp32_t));
     }
-    MAC_CHECK(emac, "calloc emac failed", err, NULL);
+    ESP_GOTO_ON_FALSE(emac, NULL, err, TAG, "calloc emac failed");
     /* alloc memory for ethernet dma descriptor */
     uint32_t desc_size = CONFIG_ETH_DMA_RX_BUFFER_NUM * sizeof(eth_dma_rx_descriptor_t) +
                          CONFIG_ETH_DMA_TX_BUFFER_NUM * sizeof(eth_dma_tx_descriptor_t);
     descriptors = heap_caps_calloc(1, desc_size, MALLOC_CAP_DMA);
-    MAC_CHECK(descriptors, "calloc descriptors failed", err, NULL);
+    ESP_GOTO_ON_FALSE(descriptors, NULL, err, TAG, "calloc descriptors failed");
     int i = 0;
     /* alloc memory for ethernet dma buffer */
     for (i = 0; i < CONFIG_ETH_DMA_RX_BUFFER_NUM; i++) {
@@ -500,10 +490,9 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config)
         ret_code = esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, 0,
                                   emac_esp32_isr_handler, &emac->hal, &(emac->intr_hdl));
     }
-    MAC_CHECK(ret_code == ESP_OK, "alloc emac interrupt failed", err, NULL);
+    ESP_GOTO_ON_FALSE(ret_code == ESP_OK, NULL, err, TAG, "alloc emac interrupt failed");
 #ifdef CONFIG_PM_ENABLE
-    MAC_CHECK(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "emac_esp32", &emac->pm_lock) == ESP_OK,
-              "create pm lock failed", err, NULL);
+    ESP_GOTO_ON_FALSE(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "emac_esp32", &emac->pm_lock) == ESP_OK, NULL, err, TAG, "create pm lock failed");
 #endif
     /* create rx task */
     BaseType_t core_num = tskNO_AFFINITY;
@@ -512,7 +501,7 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config)
     }
     BaseType_t xReturned = xTaskCreatePinnedToCore(emac_esp32_rx_task, "emac_rx", config->rx_task_stack_size, emac,
                            config->rx_task_prio, &emac->rx_task_hdl, core_num);
-    MAC_CHECK(xReturned == pdPASS, "create emac_rx task failed", err, NULL);
+    ESP_GOTO_ON_FALSE(xReturned == pdPASS, NULL, err, TAG, "create emac_rx task failed");
     return &(emac->parent);
 
 err:
