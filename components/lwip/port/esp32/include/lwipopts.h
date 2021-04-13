@@ -991,7 +991,11 @@
 /**
  * LWIP_DEBUG: Enable lwip debugging in other modules.
  */
-#define LWIP_DEBUG                      LWIP_DBG_OFF
+#ifdef CONFIG_LWIP_DEBUG
+#define LWIP_DEBUG                      LWIP_DBG_ON
+#else
+#undef LWIP_DEBUG
+#endif
 
 #define CHECKSUM_CHECK_UDP              CONFIG_LWIP_CHECKSUM_CHECK_UDP
 #define CHECKSUM_CHECK_IP               CONFIG_LWIP_CHECKSUM_CHECK_IP
