@@ -25,6 +25,7 @@
 #include "esp_pm.h"
 #include "soc/soc_memory_layout.h"
 #include "hal/i2c_hal.h"
+#include "hal/gpio_hal.h"
 #include "soc/i2c_periph.h"
 #include "driver/i2c.h"
 #include "driver/periph_ctrl.h"
@@ -831,7 +832,7 @@ esp_err_t i2c_set_pin(i2c_port_t i2c_num, int sda_io_num, int scl_io_num, bool s
     scl_in_sig = i2c_periph_signal[i2c_num].scl_in_sig;
     if (sda_io_num >= 0) {
         gpio_set_level(sda_io_num, I2C_IO_INIT_LEVEL);
-        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[sda_io_num], PIN_FUNC_GPIO);
+        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[sda_io_num], PIN_FUNC_GPIO);
         gpio_set_direction(sda_io_num, GPIO_MODE_INPUT_OUTPUT_OD);
 
         if (sda_pullup_en == GPIO_PULLUP_ENABLE) {
@@ -844,7 +845,7 @@ esp_err_t i2c_set_pin(i2c_port_t i2c_num, int sda_io_num, int scl_io_num, bool s
     }
     if (scl_io_num >= 0) {
         gpio_set_level(scl_io_num, I2C_IO_INIT_LEVEL);
-        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[scl_io_num], PIN_FUNC_GPIO);
+        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[scl_io_num], PIN_FUNC_GPIO);
         gpio_set_direction(scl_io_num, GPIO_MODE_INPUT_OUTPUT_OD);
         esp_rom_gpio_connect_out_signal(scl_io_num, scl_out_sig, 0, 0);
         esp_rom_gpio_connect_in_signal(scl_io_num, scl_in_sig, 0);

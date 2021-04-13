@@ -10,6 +10,7 @@
 #include "unity.h"
 #include "soc/uart_periph.h"
 #include "soc/dport_reg.h"
+#include "hal/gpio_hal.h"
 #include "driver/gpio.h"
 
 
@@ -104,8 +105,8 @@ TEST_CASE("Fast I/O bus test", "[hw][ignore]")
     }
 
     gpio_pullup_dis(10);
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA2_U, FUNC_SD_DATA2_U1RXD);
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA3_U, FUNC_SD_DATA3_U1TXD);
+    gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_DATA2_U, FUNC_SD_DATA2_U1RXD);
+    gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_DATA3_U, FUNC_SD_DATA3_U1TXD);
 
     int reg_val = (1 << UART_RXFIFO_FULL_THRHD_S);
     WRITE_PERI_REG(UART_CONF1_REG(1), reg_val);
