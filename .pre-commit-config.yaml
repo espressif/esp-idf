@@ -23,7 +23,7 @@ repos:
         exclude: *whitespace_excludes
       - id: check-executables-have-shebangs
       - id: file-contents-sorter
-        files: 'tools/ci/executable-list.txt'
+        files: '(tools\/ci\/executable-list\.txt|tools\/ci\/mypy_ignore_list\.txt)'
       - id: mixed-line-ending
         args: ['-f=lf']
       - id: double-quote-string-fixer
