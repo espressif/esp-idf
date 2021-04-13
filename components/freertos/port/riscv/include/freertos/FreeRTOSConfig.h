@@ -88,7 +88,7 @@
 
 /* configASSERT behaviour */
 #ifndef __ASSEMBLER__
-#include <stdlib.h> /* for abort() */
+#include <assert.h>
 #include "esp32c3/rom/ets_sys.h"
 
 #if defined(CONFIG_FREERTOS_ASSERT_DISABLE)
@@ -98,12 +98,8 @@
         esp_rom_printf("%s:%d (%s)- assert failed!\n", __FILE__, __LINE__,  \
                    __FUNCTION__);                                           \
     }
-#else /* CONFIG_FREERTOS_ASSERT_FAIL_ABORT */
-#define configASSERT(a) if (unlikely(!(a))) {                               \
-        esp_rom_printf("%s:%d (%s)- assert failed!\n", __FILE__, __LINE__,  \
-                   __FUNCTION__);                                           \
-        abort();                                                            \
-        }
+#elif defined(CONFIG_FREERTOS_ASSERT_FAIL_ABORT)
+#define configASSERT(a) assert(a)
 #endif
 
 #if CONFIG_FREERTOS_ASSERT_ON_UNTESTED_FUNCTION
