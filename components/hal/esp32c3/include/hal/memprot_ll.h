@@ -15,21 +15,19 @@
 #pragma once
 
 #include "soc/sensitive_reg.h"
+#include "soc/cache_memory.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/**
- * === globals ====
+/* ******************************************************************************************************
+ * *** GLOBALS ***
+ * NOTE: in this version, all the configurations apply only to WORLD_0
  */
-#ifndef SRAM_IRAM_START
-#define SRAM_IRAM_START             0x4037C000
-#endif
 
-#ifndef SRAM_DRAM_START
-#define SRAM_DRAM_START             0x3FC7C000
-#endif
+#define IRAM_SRAM_START             0x4037C000
+#define DRAM_SRAM_START             0x3FC7C000
 
 /* ICache size is fixed to 16KB on ESP32-C3 */
 #ifndef ICACHE_SIZE
@@ -40,36 +38,12 @@ extern "C" {
 #define I_D_SRAM_SEGMENT_SIZE       0x20000
 #endif
 
-#ifndef I_D_SRAM_OFFSET
-#define I_D_SRAM_OFFSET             (SRAM_IRAM_START - SRAM_DRAM_START)
-#endif
-
-/* 2nd stage bootloader iram_loader_seg start address */
-#ifndef SRAM_DRAM_END
-#define SRAM_DRAM_END               (0x403D0000 - I_D_SRAM_OFFSET)
-#endif
-
-#ifndef SRAM_IRAM_ORG
-#define SRAM_IRAM_ORG               (SRAM_IRAM_START + ICACHE_SIZE)
-#endif
-
-#ifndef SRAM_DRAM_ORG
-#define SRAM_DRAM_ORG               (SRAM_DRAM_START + ICACHE_SIZE)
-#endif
-
-#ifndef I_D_SRAM_SIZE
-#define I_D_SRAM_SIZE               SRAM_DRAM_END - SRAM_DRAM_ORG
-#endif
-
 #define I_D_SPLIT_LINE_SHIFT        0x9
+#define I_D_FAULT_ADDR_SHIFT        0x2
 
-#define MAP_DRAM_TO_IRAM(addr)       (addr - SRAM_DRAM_START + SRAM_IRAM_START)
-#define MAP_IRAM_TO_DRAM(addr)       (addr - SRAM_IRAM_START + SRAM_DRAM_START)
-
-
-static inline void memprot_ll_set_iram0_dram0_split_line_lock(bool lock)
+static inline void memprot_ll_set_iram0_dram0_split_line_lock(void)
 {
-    REG_WRITE(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_0_REG, lock ? 1 : 0);
+    REG_WRITE(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_0_REG, 1);
 }
 
 static inline bool memprot_ll_get_iram0_dram0_split_line_lock(void)
@@ -77,12 +51,19 @@ static inline bool memprot_ll_get_iram0_dram0_split_line_lock(void)
     return REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_0_REG) == 1;
 }
 
+static inline void* memprot_ll_get_split_addr_from_reg(uint32_t regval, uint32_t base)
+{
+    return (void*)
+        (base + ((regval & SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SRAM_SPLITADDR_M)
+        >> (SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SRAM_SPLITADDR_S - I_D_SPLIT_LINE_SHIFT)));
+}
 
-/**
- * === IRAM0 ====
+/* ******************************************************************************************************
+ * *** IRAM0 ***
  */
+
 //16kB (CACHE)
-#define IRAM0_SRAM_LEVEL_0_LOW      SRAM_IRAM_START //0x40370000
+#define IRAM0_SRAM_LEVEL_0_LOW      IRAM_SRAM_START //0x40370000
 #define IRAM0_SRAM_LEVEL_0_HIGH     (IRAM0_SRAM_LEVEL_0_LOW + ICACHE_SIZE - 0x1) //0x4037FFFF
 
 //128kB (LEVEL 1)
@@ -107,7 +88,10 @@ static inline uint32_t memprot_ll_iram0_get_intr_source_num(void)
     return ETS_CORE0_IRAM0_PMS_INTR_SOURCE;
 }
 
-/* SPLIT LINE */
+
+///////////////////////////////////
+// IRAM0 - SPLIT LINES
+///////////////////////////////////
 
 static inline void memprot_ll_set_iram0_split_line(const void *line_addr, uint32_t sensitive_reg)
 {
@@ -125,7 +109,7 @@ static inline void memprot_ll_set_iram0_split_line(const void *line_addr, uint32
         category[2] = 0x2;
     }
 
-    //category bits are the same for all areas
+    //NOTE: category & split line address bits are the same for all the areas
     uint32_t category_bits =
         (category[0] << SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_0_S) |
         (category[1] << SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_1_S) |
@@ -154,12 +138,30 @@ static inline void memprot_ll_set_iram0_split_line_I_1(const void *line_addr)
     memprot_ll_set_iram0_split_line(line_addr, SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_3_REG);
 }
 
-
-/* PMS */
-
-static inline void memprot_ll_iram0_set_pms_lock(bool lock)
+static inline void* memprot_ll_get_iram0_split_line_main_I_D(void)
 {
-    REG_WRITE(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_0_REG, lock ? 1 : 0);
+    return memprot_ll_get_split_addr_from_reg(REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_1_REG), SOC_DIRAM_IRAM_LOW);
+}
+
+static inline void* memprot_ll_get_iram0_split_line_I_0(void)
+{
+    return memprot_ll_get_split_addr_from_reg(REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_2_REG), SOC_DIRAM_IRAM_LOW);
+}
+
+static inline void* memprot_ll_get_iram0_split_line_I_1(void)
+{
+    return memprot_ll_get_split_addr_from_reg(REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_3_REG), SOC_DIRAM_IRAM_LOW);
+}
+
+
+///////////////////////////////////
+// IRAM0 - PMS CONFIGURATION
+///////////////////////////////////
+
+// lock
+static inline void memprot_ll_iram0_set_pms_lock(void)
+{
+    REG_WRITE(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_0_REG, 1);
 }
 
 static inline bool memprot_ll_iram0_get_pms_lock(void)
@@ -167,7 +169,7 @@ static inline bool memprot_ll_iram0_get_pms_lock(void)
     return REG_READ(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_0_REG) == 1;
 }
 
-//world_0 permissions
+// permission settings
 static inline uint32_t memprot_ll_iram0_set_permissions(bool r, bool w, bool x)
 {
     uint32_t permissions = 0;
@@ -204,11 +206,46 @@ static inline void memprot_ll_iram0_set_pms_area_3(bool r, bool w, bool x)
     REG_SET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_3, memprot_ll_iram0_set_permissions(r, w, x));
 }
 
-/* MONITOR */
-
-static inline void memprot_ll_iram0_set_monitor_lock(bool lock)
+static inline void memprot_ll_iram0_get_permissions(uint32_t perms, bool *r, bool *w, bool *x)
 {
-    REG_WRITE(SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_0_REG, lock ? 1 : 0);
+    *r = perms & SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_R;
+    *w = perms & SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_W;
+    *x = perms & SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_F;
+}
+
+static inline void memprot_ll_iram0_get_pms_area_0(bool *r, bool *w, bool *x)
+{
+    uint32_t permissions = REG_GET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_0);
+    memprot_ll_iram0_get_permissions( permissions, r, w, x);
+}
+
+static inline void memprot_ll_iram0_get_pms_area_1(bool *r, bool *w, bool *x)
+{
+    uint32_t permissions = REG_GET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_1);
+    memprot_ll_iram0_get_permissions( permissions, r, w, x);
+}
+
+static inline void memprot_ll_iram0_get_pms_area_2(bool *r, bool *w, bool *x)
+{
+    uint32_t permissions = REG_GET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_2);
+    memprot_ll_iram0_get_permissions( permissions, r, w, x);
+}
+
+static inline void memprot_ll_iram0_get_pms_area_3(bool *r, bool *w, bool *x)
+{
+    uint32_t permissions = REG_GET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_3);
+    memprot_ll_iram0_get_permissions( permissions, r, w, x);
+}
+
+
+///////////////////////////////////
+// IRAM0 - MONITOR
+///////////////////////////////////
+
+// lock
+static inline void memprot_ll_iram0_set_monitor_lock(void)
+{
+    REG_WRITE(SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_0_REG, 1);
 }
 
 static inline bool memprot_ll_iram0_get_monitor_lock(void)
@@ -216,6 +253,7 @@ static inline bool memprot_ll_iram0_get_monitor_lock(void)
     return REG_READ(SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_0_REG) == 1;
 }
 
+// interrupt enable/clear
 static inline void memprot_ll_iram0_set_monitor_en(bool enable)
 {
     if ( enable ) {
@@ -227,27 +265,38 @@ static inline void memprot_ll_iram0_set_monitor_en(bool enable)
 
 static inline bool memprot_ll_iram0_get_monitor_en(void)
 {
-    return REG_GET_BIT( SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_VIOLATE_EN ) == 1;
+    return REG_GET_FIELD( SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_VIOLATE_EN ) == 1;
 }
 
 static inline void memprot_ll_iram0_clear_monitor_intr(void)
 {
+    REG_SET_BIT( SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_VIOLATE_CLR );
+}
+
+static inline void memprot_ll_iram0_reset_clear_monitor_intr(void)
+{
     REG_CLR_BIT( SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_VIOLATE_CLR );
 }
 
+static inline uint32_t memprot_ll_iram0_get_monitor_enable_register(void)
+{
+    return REG_READ(SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_1_REG);
+}
+
+// // permission violation status
 static inline uint32_t memprot_ll_iram0_get_monitor_status_intr(void)
 {
-    return REG_GET_BIT( SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_VIOLATE_INTR );
+    return REG_GET_FIELD( SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_VIOLATE_INTR );
 }
 
 static inline uint32_t memprot_ll_iram0_get_monitor_status_fault_wr(void)
 {
-    return REG_GET_BIT( SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_VIOLATE_STATUS_WR );
+    return REG_GET_FIELD( SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_VIOLATE_STATUS_WR );
 }
 
 static inline uint32_t memprot_ll_iram0_get_monitor_status_fault_loadstore(void)
 {
-    return REG_GET_BIT( SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_VIOLATE_STATUS_LOADSTORE );
+    return REG_GET_FIELD( SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_VIOLATE_STATUS_LOADSTORE );
 }
 
 static inline uint32_t memprot_ll_iram0_get_monitor_status_fault_world(void)
@@ -257,16 +306,22 @@ static inline uint32_t memprot_ll_iram0_get_monitor_status_fault_world(void)
 
 static inline uint32_t memprot_ll_iram0_get_monitor_status_fault_addr(void)
 {
-    return REG_GET_FIELD( SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_VIOLATE_STATUS_ADDR );
+    uint32_t addr = REG_GET_FIELD( SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_VIOLATE_STATUS_ADDR );
+    return addr > 0 ? (addr << I_D_FAULT_ADDR_SHIFT) + IRAM0_ADDRESS_LOW : 0;
+}
+
+static inline uint32_t memprot_ll_iram0_get_monitor_status_register(void)
+{
+    return REG_READ(SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_2_REG);
 }
 
 
-/**
- * === DRAM0 ====
+/* ******************************************************************************************************
+ * *** DRAM0 ***
  */
 
-//cache not available from DRAM
-#define DRAM0_SRAM_LEVEL_0_LOW      SRAM_DRAM_START //0x3FC7C000
+//cache not available from DRAM (!)
+#define DRAM0_SRAM_LEVEL_0_LOW      DRAM_SRAM_START //0x3FC7C000
 #define DRAM0_SRAM_LEVEL_0_HIGH     (DRAM0_SRAM_LEVEL_0_LOW + ICACHE_SIZE - 0x1) //0x3FC7FFFF
 
 //128kB
@@ -291,7 +346,9 @@ static inline uint32_t memprot_ll_dram0_get_intr_source_num(void)
 }
 
 
-/* SPLIT LINE */
+///////////////////////////////////
+// DRAM0 - SPLIT LINES
+///////////////////////////////////
 
 static inline void memprot_ll_set_dram0_split_line(const void *line_addr, uint32_t sensitive_reg)
 {
@@ -309,7 +366,7 @@ static inline void memprot_ll_set_dram0_split_line(const void *line_addr, uint32
         category[2] = 0x2;
     }
 
-    //category bits are the same for all areas
+    //NOTE: line address & category bits, shifts and masks are the same for all the areas
     uint32_t category_bits =
         (category[0] << SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_0_S) |
         (category[1] << SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_1_S) |
@@ -332,12 +389,25 @@ static inline void memprot_ll_set_dram0_split_line_D_1(const void *line_addr)
     memprot_ll_set_dram0_split_line(line_addr, SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_3_REG);
 }
 
-
-/* PMS */
-
-static inline void memprot_ll_dram0_set_pms_lock(bool lock)
+static inline void* memprot_ll_get_dram0_split_line_D_0(void)
 {
-    REG_WRITE(SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_0_REG, lock ? 1 : 0);
+    return memprot_ll_get_split_addr_from_reg(REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_2_REG), SOC_DIRAM_DRAM_LOW);
+}
+
+static inline void* memprot_ll_get_dram0_split_line_D_1(void)
+{
+    return memprot_ll_get_split_addr_from_reg(REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_3_REG), SOC_DIRAM_DRAM_LOW);
+}
+
+
+///////////////////////////////////
+// DRAM0 - PMS CONFIGURATION
+///////////////////////////////////
+
+// lock
+static inline void memprot_ll_dram0_set_pms_lock(void)
+{
+    REG_WRITE(SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_0_REG, 1);
 }
 
 static inline bool memprot_ll_dram0_get_pms_lock(void)
@@ -345,6 +415,7 @@ static inline bool memprot_ll_dram0_get_pms_lock(void)
     return REG_READ(SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_0_REG) == 1;
 }
 
+// permission settings
 static inline uint32_t memprot_ll_dram0_set_permissions(bool r, bool w)
 {
     uint32_t permissions = 0;
@@ -378,12 +449,44 @@ static inline void memprot_ll_dram0_set_pms_area_3(bool r, bool w)
     REG_SET_FIELD(SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_1_REG, SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_3, memprot_ll_dram0_set_permissions(r, w));
 }
 
-
-/* MONITOR */
-
-static inline void memprot_ll_dram0_set_monitor_lock(bool lock)
+static inline void memprot_ll_dram0_get_permissions(uint32_t perms, bool *r, bool *w )
 {
-    REG_WRITE(SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_0_REG, lock ? 1 : 0);
+    *r = perms & SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_R;
+    *w = perms & SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_W;
+}
+
+static inline void memprot_ll_dram0_get_pms_area_0(bool *r, bool *w)
+{
+    uint32_t permissions = REG_GET_FIELD(SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_1_REG, SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_0);
+    memprot_ll_dram0_get_permissions( permissions, r, w);
+}
+
+static inline void memprot_ll_dram0_get_pms_area_1(bool *r, bool *w)
+{
+    uint32_t permissions = REG_GET_FIELD(SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_1_REG, SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_1);
+    memprot_ll_dram0_get_permissions( permissions, r, w);
+}
+
+static inline void memprot_ll_dram0_get_pms_area_2(bool *r, bool *w)
+{
+    uint32_t permissions = REG_GET_FIELD(SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_1_REG, SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_2);
+    memprot_ll_dram0_get_permissions( permissions, r, w);
+}
+
+static inline void memprot_ll_dram0_get_pms_area_3(bool *r, bool *w)
+{
+    uint32_t permissions = REG_GET_FIELD(SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_1_REG, SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_3);
+    memprot_ll_dram0_get_permissions( permissions, r, w);
+}
+
+///////////////////////////////////
+// DRAM0 - MONITOR
+///////////////////////////////////
+
+// lock
+static inline void memprot_ll_dram0_set_monitor_lock(void)
+{
+    REG_WRITE(SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_0_REG, 1);
 }
 
 static inline bool memprot_ll_dram0_get_monitor_lock(void)
@@ -391,6 +494,7 @@ static inline bool memprot_ll_dram0_get_monitor_lock(void)
     return REG_READ(SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_0_REG) == 1;
 }
 
+// interrupt enable/clear
 static inline void memprot_ll_dram0_set_monitor_en(bool enable)
 {
     if ( enable ) {
@@ -407,17 +511,28 @@ static inline bool memprot_ll_dram0_get_monitor_en(void)
 
 static inline void memprot_ll_dram0_clear_monitor_intr(void)
 {
+    REG_SET_BIT( SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_VIOLATE_CLR );
+}
+
+static inline void memprot_ll_dram0_reset_clear_monitor_intr(void)
+{
     REG_CLR_BIT( SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_VIOLATE_CLR );
 }
 
+static inline uint32_t memprot_ll_dram0_get_monitor_enable_register(void)
+{
+    return REG_READ(SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_1_REG);
+}
+
+// permission violation status
 static inline uint32_t memprot_ll_dram0_get_monitor_status_intr(void)
 {
-    return REG_GET_BIT( SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_VIOLATE_INTR );
+    return REG_GET_FIELD( SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_VIOLATE_INTR );
 }
 
 static inline uint32_t memprot_ll_dram0_get_monitor_status_fault_lock(void)
 {
-    return REG_GET_BIT( SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_VIOLATE_STATUS_LOCK );
+    return REG_GET_FIELD( SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_VIOLATE_STATUS_LOCK );
 }
 
 static inline uint32_t memprot_ll_dram0_get_monitor_status_fault_world(void)
@@ -427,19 +542,29 @@ static inline uint32_t memprot_ll_dram0_get_monitor_status_fault_world(void)
 
 static inline uint32_t memprot_ll_dram0_get_monitor_status_fault_addr(void)
 {
-    return REG_GET_FIELD( SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_VIOLATE_STATUS_ADDR );
+    uint32_t addr = REG_GET_FIELD( SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_VIOLATE_STATUS_ADDR );
+    return addr > 0 ? (addr << I_D_FAULT_ADDR_SHIFT) + DRAM0_ADDRESS_LOW : 0;
 }
 
 static inline uint32_t memprot_ll_dram0_get_monitor_status_fault_wr(void)
 {
-    return REG_GET_BIT( SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_3_REG, SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_VIOLATE_STATUS_WR );
+    return REG_GET_FIELD( SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_3_REG, SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_VIOLATE_STATUS_WR );
 }
 
 static inline uint32_t memprot_ll_dram0_get_monitor_status_fault_byte_en(void)
 {
-    return REG_GET_BIT( SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_VIOLATE_STATUS_BYTEEN );
+    return REG_GET_FIELD( SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_VIOLATE_STATUS_BYTEEN );
 }
 
+static inline uint32_t memprot_ll_dram0_get_monitor_status_register_1(void)
+{
+    return REG_READ(SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_2_REG);
+}
+
+static inline uint32_t memprot_ll_dram0_get_monitor_status_register_2(void)
+{
+    return REG_READ(SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_3_REG);
+}
 
 #ifdef __cplusplus
 }
