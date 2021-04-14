@@ -577,6 +577,24 @@ esp_err_t wifi_prov_mgr_configure_sta(wifi_config_t *wifi_cfg);
  */
 esp_err_t wifi_prov_mgr_set_authorization_cb(wifi_prov_cb_auth_t auth_cb);
 
+/**
+ * @brief   Get the count of results in the scan list
+ *
+ * @return
+ *  - count  : Number of Wi-Fi Access Points detected while scanning
+ */
+uint16_t wifi_prov_mgr_wifi_scan_result_count(void);
+
+/**
+ * @brief   Get AP record for a particular index in the scan list result
+ *
+ * @param[out] index  Index of the result to fetch
+ *
+ * @return
+ *  - result : Pointer to Access Point record
+ */
+const wifi_ap_record_t *wifi_prov_mgr_wifi_scan_result(uint16_t index);
+
 #ifdef __cplusplus
 }
 #endif
