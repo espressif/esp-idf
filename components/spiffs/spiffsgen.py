@@ -112,8 +112,7 @@ class SpiffsBuildConfig():
 
 
 class SpiffsFullError(RuntimeError):
-    def __init__(self, message=None):  # type: (typing.Optional[str]) -> None
-        super(SpiffsFullError, self).__init__(message)
+    pass
 
 
 class SpiffsPage():
@@ -134,7 +133,6 @@ class SpiffsPage():
         self.bix = bix
 
     def to_binary(self):  # type: () -> bytes
-        # Consider rewriting this using ABC
         raise NotImplementedError()
 
 
@@ -142,6 +140,9 @@ class SpiffsObjPageWithIdx(SpiffsPage):
     def __init__(self, obj_id, build_config):  # type: (int, SpiffsBuildConfig) -> None
         super(SpiffsObjPageWithIdx, self).__init__(0, build_config)
         self.obj_id = obj_id
+
+    def to_binary(self):  # type: () -> bytes
+        raise NotImplementedError()
 
 
 class SpiffsObjLuPage(SpiffsPage):
@@ -152,7 +153,7 @@ class SpiffsObjLuPage(SpiffsPage):
         self.obj_ids = list()  # type: typing.List[ObjIdsItem]
 
     def _calc_magic(self, blocks_lim):  # type: (int) -> int
-        # Calculate the magic value mirrorring computation done by the macro SPIFFS_MAGIC defined in
+        # Calculate the magic value mirroring computation done by the macro SPIFFS_MAGIC defined in
         # spiffs_nucleus.h
         magic = 0x20140529 ^ self.build_config.page_size
         if self.build_config.use_magic_len:
@@ -300,7 +301,7 @@ class SpiffsBlock():
         self.cur_obj_id = 0
         self.cur_obj_idx_page = None  # type: typing.Optional[SpiffsObjIndexPage]
 
-    def __init__(self, bix, blocks_lim, build_config):  # type: (int, int, SpiffsBuildConfig) -> None
+    def __init__(self, bix, build_config):  # type: (int, SpiffsBuildConfig) -> None
         self.build_config = build_config
         self.offset = bix * self.build_config.block_size
         self.remaining_pages = self.build_config.OBJ_USABLE_PAGES_PER_BLOCK
@@ -408,7 +409,7 @@ class SpiffsFS():
         if self.is_full():
             raise SpiffsFullError('the image size has been exceeded')
 
-        block = SpiffsBlock(len(self.blocks), self.blocks_lim, self.build_config)
+        block = SpiffsBlock(len(self.blocks), self.build_config)
         self.blocks.append(block)
         self.remaining_blocks -= 1
         return block
@@ -479,7 +480,7 @@ class SpiffsFS():
         if self.build_config.use_magic:
             # Create empty blocks with magic numbers
             while self.remaining_blocks > 0:
-                block = SpiffsBlock(bix, self.blocks_lim, self.build_config)
+                block = SpiffsBlock(bix, self.build_config)
                 all_blocks.append(block.to_binary(self.blocks_lim))
                 self.remaining_blocks -= 1
                 bix += 1
