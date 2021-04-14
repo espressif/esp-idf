@@ -108,6 +108,7 @@ This port-layer initialization function initializes the basic C Runtime Environm
    :SOC_SPIRAM_SUPPORTED: - Enable PSRAM if configured.
    - Set the CPU clocks to the frequencies configured for the project.
    :CONFIG_ESP_SYSTEM_MEMPROT_FEATURE: - Initialize memory protection if configured.
+   :esp32: - Reconfigure the main SPI flash based on the app header settings (necessary for compatibility with bootloader versions before ESP-IDF V4.0, see :ref:`bootloader-compatibility`).
    :not CONFIG_FREERTOS_UNICORE: - If the app is configured to run on multiple cores, start the other core and wait for it to initialize as well (inside the similar "port layer" initialization function ``call_start_cpu1``).
 
 .. only:: not CONFIG_FREERTOS_UNICORE
