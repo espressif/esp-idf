@@ -203,6 +203,7 @@ void esp_transport_ssl_enable_global_ca_store(esp_transport_handle_t t)
     }
 }
 
+#ifdef CONFIG_ESP_TLS_PSK_VERIFICATION
 void esp_transport_ssl_set_psk_key_hint(esp_transport_handle_t t, const psk_hint_key_t* psk_hint_key)
 {
     transport_ssl_t *ssl = esp_transport_get_context_data(t);
@@ -210,6 +211,7 @@ void esp_transport_ssl_set_psk_key_hint(esp_transport_handle_t t, const psk_hint
         ssl->cfg.psk_hint_key =  psk_hint_key;
     }
 }
+#endif
 
 void esp_transport_ssl_set_cert_data(esp_transport_handle_t t, const char *data, int len)
 {
@@ -274,6 +276,7 @@ void esp_transport_ssl_set_client_key_data_der(esp_transport_handle_t t, const c
     }
 }
 
+#if defined(CONFIG_MBEDTLS_SSL_ALPN) || defined(CONFIG_WOLFSSL_HAVE_ALPN)
 void esp_transport_ssl_set_alpn_protocol(esp_transport_handle_t t, const char **alpn_protos)
 {
     transport_ssl_t *ssl = esp_transport_get_context_data(t);
@@ -281,6 +284,7 @@ void esp_transport_ssl_set_alpn_protocol(esp_transport_handle_t t, const char **
         ssl->cfg.alpn_protos = alpn_protos;
     }
 }
+#endif
 
 void esp_transport_ssl_skip_common_name_check(esp_transport_handle_t t)
 {
@@ -290,6 +294,7 @@ void esp_transport_ssl_skip_common_name_check(esp_transport_handle_t t)
     }
 }
 
+#ifdef CONFIG_ESP_TLS_USE_SECURE_ELEMENT
 void esp_transport_ssl_use_secure_element(esp_transport_handle_t t)
 {
     transport_ssl_t *ssl = esp_transport_get_context_data(t);
@@ -297,6 +302,7 @@ void esp_transport_ssl_use_secure_element(esp_transport_handle_t t)
         ssl->cfg.use_secure_element = true;
     }
 }
+#endif
 
 static int ssl_get_socket(esp_transport_handle_t t)
 {
@@ -309,6 +315,7 @@ static int ssl_get_socket(esp_transport_handle_t t)
     return -1;
 }
 
+#ifdef CONFIG_ESP_TLS_USE_DS_PERIPHERAL
 void esp_transport_ssl_set_ds_data(esp_transport_handle_t t, void *ds_data)
 {
     transport_ssl_t *ssl = esp_transport_get_context_data(t);
@@ -316,6 +323,7 @@ void esp_transport_ssl_set_ds_data(esp_transport_handle_t t, void *ds_data)
         ssl->cfg.ds_data = ds_data;
     }
 }
+#endif
 
 void esp_transport_ssl_set_keep_alive(esp_transport_handle_t t, esp_transport_keep_alive_t *keep_alive_cfg)
 {
