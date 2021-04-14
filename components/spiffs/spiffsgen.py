@@ -490,13 +490,31 @@ class SpiffsFS():
         return img
 
 
+class CustomHelpFormatter(argparse.HelpFormatter):
+    """
+    Similar to argparse.ArgumentDefaultsHelpFormatter, except it
+    doesn't add the default value if "(default:" is already present.
+    This helps in the case of options with action="store_false", like
+    --no-magic or --no-magic-len.
+    """
+    def _get_help_string(self, action):  # type: (argparse.Action) -> str
+        if action.help is None:
+            return ''
+        if '%(default)' not in action.help and '(default:' not in action.help:
+            if action.default is not argparse.SUPPRESS:
+                defaulting_nargs = [argparse.OPTIONAL, argparse.ZERO_OR_MORE]
+                if action.option_strings or action.nargs in defaulting_nargs:
+                    return action.help + ' (default: %(default)s)'
+        return action.help
+
+
 def main():  # type: () -> None
     if sys.version_info[0] < 3:
         print('WARNING: Support for Python 2 is deprecated and will be removed in future versions.', file=sys.stderr)
     elif sys.version_info[0] == 3 and sys.version_info[1] < 6:
         print('WARNING: Python 3 versions older than 3.6 are not supported.', file=sys.stderr)
     parser = argparse.ArgumentParser(description='SPIFFS Image Generator',
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+                                     formatter_class=CustomHelpFormatter)
 
     parser.add_argument('image_size',
                         help='Size of the created image')
@@ -534,7 +552,7 @@ def main():  # type: () -> None
 
     parser.add_argument('--no-magic',
                         dest='use_magic',
-                        help='Inverse of --use-magic',
+                        help='Inverse of --use-magic (default: --use-magic is enabled)',
                         action='store_false')
 
     parser.add_argument('--use-magic-len',
@@ -544,7 +562,7 @@ def main():  # type: () -> None
 
     parser.add_argument('--no-magic-len',
                         dest='use_magic_len',
-                        help='Inverse of --use-magic-len',
+                        help='Inverse of --use-magic-len (default: --use-magic-len is enabled)',
                         action='store_false')
 
     parser.add_argument('--follow-symlinks',
