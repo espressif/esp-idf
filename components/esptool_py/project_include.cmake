@@ -52,6 +52,12 @@ if(min_rev)
     unset(min_rev)
 endif()
 
+if(CONFIG_ESP32_REV_MIN)
+    set(rev_min ${CONFIG_ESP32_REV_MIN})
+else()
+    set(rev_min -1)
+endif()
+
 if(CONFIG_ESPTOOLPY_FLASHSIZE_DETECT)
     # Set ESPFLASHSIZE to 'detect' *after* elf2image options are generated,
     # as elf2image can't have 'detect' as an option...
@@ -154,7 +160,7 @@ add_custom_target(monitor
     COMMAND ${CMAKE_COMMAND}
     -D IDF_PATH="${idf_path}"
     -D SERIAL_TOOL="${ESPMONITOR}"
-    -D SERIAL_TOOL_ARGS="${elf_dir}/${elf}"
+    -D SERIAL_TOOL_ARGS="--target ${target} --revision ${rev_min} ${elf_dir}/${elf}"
     -D WORKING_DIRECTORY="${build_dir}"
     -P run_serial_tool.cmake
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}

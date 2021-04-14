@@ -6,7 +6,7 @@ setuptools>=21
 # Please keep it as the first item of this list. Version 21 is required to handle PEP 508 environment markers.
 #
 click>=7.0
-pyserial>=3.0
+pyserial>=3.3
 future>=0.15.2
 cryptography>=2.1.4
 pyparsing>=2.0.3,<2.4.0
