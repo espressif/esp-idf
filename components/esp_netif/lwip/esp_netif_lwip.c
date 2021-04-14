@@ -72,6 +72,16 @@
     return esp_netif_lwip_ipc_call(function, netif, (void *)(param)); \
 }
 
+/**
+ * @brief If netif protocol not enabled in menuconfig, log the error and return appropriate code indicating failure
+*/
+
+#define LOG_NETIF_DISABLED_AND_DO(proto, action)                                                \
+do {                                                                                            \
+    ESP_LOGE(TAG, "%s not supported, please enable it in lwIP component configuration", proto); \
+    action;                                                                                     \
+} while(0)
+
 //
 //  Internal types
 //
@@ -630,7 +640,7 @@ esp_err_t esp_netif_get_mac(esp_netif_t *esp_netif, uint8_t mac[])
     return ESP_OK;
 }
 
-
+#if ESP_DHCPS
 static void esp_netif_dhcps_cb(u8_t client_ip[4])
 {
     ESP_LOGI(TAG, "DHCP server assigned IP to a station, IP is: %d.%d.%d.%d",
@@ -644,6 +654,7 @@ static void esp_netif_dhcps_cb(u8_t client_ip[4])
         ESP_LOGE(TAG, "dhcps cb: failed to post IP_EVENT_AP_STAIPASSIGNED (%x)", ret);
     }
 }
+#endif
 
 static esp_err_t esp_netif_config_sanity_check(const esp_netif_t * esp_netif)
 {
@@ -693,6 +704,7 @@ static esp_err_t esp_netif_start_api(esp_netif_api_msg_t *msg)
         netif_set_up(p_netif);
     }
     if (esp_netif->flags & ESP_NETIF_DHCP_SERVER) {
+#if ESP_DHCPS
         if (esp_netif->dhcps_status != ESP_NETIF_DHCP_STARTED) {
             if (p_netif != NULL && netif_is_up(p_netif)) {
                 esp_netif_ip_info_t *default_ip = esp_netif->ip_info;
@@ -715,6 +727,9 @@ static esp_err_t esp_netif_start_api(esp_netif_api_msg_t *msg)
         }
         ESP_LOGD(TAG, "DHCP server already started");
         return ESP_ERR_ESP_NETIF_DHCP_ALREADY_STARTED;
+#else
+        LOG_NETIF_DISABLED_AND_DO("DHCP Server", return ESP_ERR_NOT_SUPPORTED);
+#endif
     } else if (esp_netif->flags & ESP_NETIF_DHCP_CLIENT) {
         if (esp_netif->dhcpc_status != ESP_NETIF_DHCP_STARTED) {
             if (p_netif != NULL) {
@@ -764,10 +779,14 @@ static esp_err_t esp_netif_stop_api(esp_netif_api_msg_t *msg)
     }
 
     if (esp_netif->flags & ESP_NETIF_DHCP_SERVER) {
+#if ESP_DHCPS
         dhcps_stop(lwip_netif);    // TODO(IDF-1099): dhcps checks status by its self
         if (ESP_NETIF_DHCP_STOPPED != esp_netif->dhcps_status) {
             esp_netif->dhcps_status = ESP_NETIF_DHCP_INIT;
         }
+#else
+        LOG_NETIF_DISABLED_AND_DO("DHCP Server", return ESP_ERR_NOT_SUPPORTED);
+#endif
     } else if (esp_netif->flags & ESP_NETIF_DHCP_CLIENT) {
         dhcp_release(lwip_netif);
         dhcp_stop(lwip_netif);
@@ -1052,6 +1071,7 @@ static esp_err_t esp_netif_dhcpc_start_api(esp_netif_api_msg_t *msg)
 
 esp_err_t esp_netif_dhcpc_start(esp_netif_t *esp_netif) _RUN_IN_LWIP_TASK_IF_SUPPORTED(esp_netif_dhcpc_start_api, esp_netif, NULL)
 
+#if ESP_DHCPS
 esp_err_t esp_netif_dhcps_get_status(esp_netif_t *esp_netif, esp_netif_dhcp_status_t *status)
 {
     if (!esp_netif || (esp_netif->flags & ESP_NETIF_DHCP_CLIENT) || _IS_NETIF_ANY_POINT2POINT_TYPE(esp_netif)) {
@@ -1061,6 +1081,7 @@ esp_err_t esp_netif_dhcps_get_status(esp_netif_t *esp_netif, esp_netif_dhcp_stat
     *status = esp_netif->dhcps_status;
     return ESP_OK;
 }
+#endif
 
 esp_err_t esp_netif_dhcpc_get_status(esp_netif_t *esp_netif, esp_netif_dhcp_status_t *status)
 {
@@ -1072,6 +1093,7 @@ esp_err_t esp_netif_dhcpc_get_status(esp_netif_t *esp_netif, esp_netif_dhcp_stat
     return ESP_OK;
 }
 
+#if ESP_DHCPS
 static esp_err_t esp_netif_dhcps_start_api(esp_netif_api_msg_t *msg)
 {
     esp_netif_t *esp_netif = msg->esp_netif;
@@ -1138,6 +1160,7 @@ static esp_err_t esp_netif_dhcps_stop_api(esp_netif_api_msg_t *msg)
 }
 
 esp_err_t esp_netif_dhcps_stop(esp_netif_t *esp_netif) _RUN_IN_LWIP_TASK_IF_SUPPORTED(esp_netif_dhcps_stop_api, esp_netif, NULL)
+#endif
 
 static esp_err_t esp_netif_set_hostname_api(esp_netif_api_msg_t *msg)
 {
@@ -1432,6 +1455,7 @@ static esp_err_t esp_netif_set_dns_info_api(esp_netif_api_msg_t *msg)
     lwip_ip->type = IPADDR_TYPE_V4;
 #endif
     if (esp_netif->flags & ESP_NETIF_DHCP_SERVER) {
+#if ESP_DHCPS
         // if DHCP server configured to set DNS in dhcps API
         if (type != ESP_NETIF_DNS_MAIN) {
             ESP_LOGD(TAG, "set dns invalid type");
@@ -1439,6 +1463,9 @@ static esp_err_t esp_netif_set_dns_info_api(esp_netif_api_msg_t *msg)
         } else {
             dhcps_dns_setserver(lwip_ip);
         }
+#else
+        LOG_NETIF_DISABLED_AND_DO("DHCP Server", return ESP_ERR_NOT_SUPPORTED);
+#endif
     } else {
         dns_setserver(type, lwip_ip);
     }
@@ -1473,8 +1500,12 @@ static esp_err_t esp_netif_get_dns_info_api(esp_netif_api_msg_t *msg)
     }
 
     if (esp_netif->flags & ESP_NETIF_DHCP_SERVER) {
+#if ESP_DHCPS
         ip4_addr_t dns_ip = dhcps_dns_getserver();
         memcpy(&dns->ip.u_addr.ip4, &dns_ip, sizeof(ip4_addr_t));
+#else
+        LOG_NETIF_DISABLED_AND_DO("DHCP Server", return ESP_ERR_NOT_SUPPORTED);
+#endif
     } else {
         const ip_addr_t*  dns_ip = NULL;
         dns_ip = dns_getserver(type);
@@ -1672,6 +1703,7 @@ int32_t esp_netif_get_event_id(esp_netif_t *esp_netif, esp_netif_ip_event_type_t
     }
 }
 
+#if ESP_DHCPS
 esp_err_t esp_netif_dhcps_option(esp_netif_t *esp_netif, esp_netif_dhcp_option_mode_t opt_op, esp_netif_dhcp_option_id_t opt_id, void *opt_val,
                                  uint32_t opt_len)
 {
@@ -1799,6 +1831,7 @@ esp_err_t esp_netif_dhcps_option(esp_netif_t *esp_netif, esp_netif_dhcp_option_m
 
     return ESP_OK;
 }
+#endif
 
 esp_err_t esp_netif_dhcpc_option(esp_netif_t *esp_netif, esp_netif_dhcp_option_mode_t opt_op, esp_netif_dhcp_option_id_t opt_id, void *opt_val,
                                  uint32_t opt_len)
