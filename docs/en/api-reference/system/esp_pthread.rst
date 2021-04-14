@@ -26,7 +26,7 @@ Example to tune the stack size of the pthread:
     {
         pthread_t t1;
 
-        esp_pthread_cfg_t cfg = esp_create_default_pthread_config();
+        esp_pthread_cfg_t cfg = esp_pthread_get_default_config();
         cfg.stack_size = (4 * 1024);
         esp_pthread_set_cfg(&cfg);
 
@@ -58,7 +58,7 @@ The API can also be used for inheriting the settings across threads. For example
     {
         pthread_t t1;
 
-        esp_pthread_cfg_t cfg = esp_create_default_pthread_config();
+        esp_pthread_cfg_t cfg = esp_pthread_get_default_config();
         cfg.stack_size = (4 * 1024);
         cfg.inherit_cfg = true;
         esp_pthread_set_cfg(&cfg);
