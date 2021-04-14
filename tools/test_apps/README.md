@@ -55,8 +55,21 @@ The test apps should be grouped into subdirectories by category. Categories are:
 * `security` contains tests on the chip security features.
 
 # Test Apps local execution
+All the following instructions are general. Part of them may be complemented by more particular instructions in the corresponding app's README.
 
-* Append relevant `sdkconfig.ci.<CONFIG>` to the sdkconfig for the configuration under test
+## Requirements
+The following requirements need to be satisfied in the IDF python virtual environment.
+
+* ttfw needs to be in the `PYTHONPATH`. Add it like this: `export PYTHONPATH=$PYTHONPATH:$IDF_PATH/tools/ci/python_packages`
+* Install all requirements from `tools/ci/python_packages/ttfw_idf/requirements.txt`: `pip install -r $IDF_PATH/tools/ci/python_packages/ttfw_idf/requirements.txt`
+
+You should also set the port via the environment variable ESPPORT to prevent the tools from looking and iterating over all serial ports. The latter causes much trouble, currently:
+```
+export ESPPORT=/dev/ttyUSB<X>
+```
+
+## Execution
+* Create an sdkconfig file from the relevant `sdkconfig.ci.<CONFIG>` and `sdkconfig.defaults`: `cat sdkconfig.defaults sdkconfig.ci.<CONFIG> > sdkconfig`
 * Run `idf.py menuconfig` to configure local project attributes
 * Run `idf.py build` to build the test app
 * Run `python app_test.py` to run the test locally
