@@ -17,7 +17,11 @@ import os
 import re
 import sys
 from io import TextIOBase
-from typing import Union
+
+try:
+    from typing import Optional, Union
+except ImportError:
+    pass
 
 from .output_helpers import ANSI_NORMAL
 
@@ -39,6 +43,17 @@ if os.name == 'nt':
     SetConsoleTextAttribute = ctypes.windll.kernel32.SetConsoleTextAttribute  # type: ignore
 
 
+def get_converter(orig_output_method=None, decode_output=False):
+    # type: (Optional[TextIOBase], bool) -> Union[ANSIColorConverter, Optional[TextIOBase]]
+    """
+    Returns an ANSIColorConverter on Windows and the original output method (orig_output_method) on other platforms.
+    The ANSIColorConverter with decode_output=True will decode the bytes before passing them to the output.
+    """
+    if os.name == 'nt':
+        return ANSIColorConverter(orig_output_method, decode_output)
+    return orig_output_method
+
+
 class ANSIColorConverter(object):
     """Class to wrap a file-like output stream, intercept ANSI color codes,
     and convert them into calls to Windows SetConsoleTextAttribute.
@@ -49,11 +64,6 @@ class ANSIColorConverter(object):
     color changes and convert these back to ANSI color codes for MSYS' terminal to display. However this is the
     least-bad working solution, as winpty doesn't support any "passthrough" mode for raw output.
     """
-
-    def __new__(cls, output=None, decode_output=False):  # type: ignore  # noqa
-        if os.name == 'nt':
-            return cls
-        return output
 
     def __init__(self, output=None, decode_output=False):
         # type: (TextIOBase, bool) -> None

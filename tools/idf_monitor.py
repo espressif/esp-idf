@@ -73,7 +73,7 @@ import tempfile
 import serial
 import serial.tools.list_ports
 # Windows console stuff
-from idf_monitor_base.ansi_color_convertor import ANSIColorConverter
+from idf_monitor_base.ansi_color_converter import get_converter
 
 key_description = miniterm.key_description
 
@@ -101,9 +101,9 @@ class Monitor(object):
         self.console = miniterm.Console()
         self.enable_address_decoding = enable_address_decoding
 
-        sys.stderr = ANSIColorConverter(sys.stderr, decode_output=True)
-        self.console.output = ANSIColorConverter(self.console.output)
-        self.console.byte_output = ANSIColorConverter(self.console.byte_output)
+        sys.stderr = get_converter(sys.stderr, decode_output=True)
+        self.console.output = get_converter(self.console.output)
+        self.console.byte_output = get_converter(self.console.byte_output)
 
         socket_mode = serial_instance.port.startswith(
             'socket://')  # testing hook - data from serial can make exit the monitor
