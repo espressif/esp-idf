@@ -16,6 +16,7 @@
 #include "bootloader_init.h"
 #include "bootloader_utility.h"
 #include "bootloader_common.h"
+#include "bootloader_hooks.h"
 
 static const char *TAG = "boot";
 
@@ -29,9 +30,19 @@ static int selected_boot_partition(const bootloader_state_t *bs);
  */
 void __attribute__((noreturn)) call_start_cpu0(void)
 {
+    // (0. Call the before-init hook, if available)
+    if (bootloader_before_init) {
+        bootloader_before_init();
+    }
+
     // 1. Hardware initialization
     if (bootloader_init() != ESP_OK) {
         bootloader_reset();
+    }
+
+    // (1.1 Call the after-init hook, if available)
+    if (bootloader_after_init) {
+        bootloader_after_init();
     }
 
 #ifdef CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP

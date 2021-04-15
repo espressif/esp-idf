@@ -27,6 +27,9 @@ BOOTLOADER_OFFSET := 0x1000
 # NB: Some variables are cleared in the environment, not
 # overriden, because they need to be re-defined in the child
 # project.
+#
+# Pass PROJECT_PATH variable, it will let the subproject look
+# for user defined bootloader component(s).
 BOOTLOADER_MAKE= +\
 	PROJECT_PATH= \
 	COMPONENT_DIRS= \
@@ -35,7 +38,8 @@ BOOTLOADER_MAKE= +\
 	BUILD_DIR_BASE=$(BOOTLOADER_BUILD_DIR) \
 	TEST_COMPONENTS= \
 	TESTS_ALL= \
-	EXCLUDE_COMPONENTS=
+	EXCLUDE_COMPONENTS= \
+	PROJECT_SOURCE_DIR=$(PROJECT_PATH)
 
 .PHONY: bootloader-clean bootloader-flash bootloader-list-components bootloader $(BOOTLOADER_BIN)
 
