@@ -39,6 +39,9 @@ from collections import Counter, OrderedDict
 from importlib import import_module
 from pkgutil import iter_modules
 
+import signal
+
+
 # pyc files remain in the filesystem when switching between branches which might raise errors for incompatible
 # idf.py extensions. Therefore, pyc file generation is turned off:
 sys.dont_write_bytecode = True
@@ -723,7 +726,16 @@ def init_cli(verbose_output=None):
     return CLI(help=cli_help, verbose_output=verbose_output, all_actions=all_actions)
 
 
+def signal_handler(signal, frame):
+    # The Ctrl+C processed by other threads inside
+    pass
+
+
 def main():
+
+    # Processing of Ctrl+C event for all threads made by main()
+    signal.signal(signal.SIGINT, signal_handler)
+
     checks_output = check_environment()
     cli = init_cli(verbose_output=checks_output)
     # the argument `prog_name` must contain name of the file - not the absolute path to it!

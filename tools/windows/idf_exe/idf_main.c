@@ -16,6 +16,9 @@
 #include <shlwapi.h>
 #include <strsafe.h>
 #include <stdarg.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
 
 #define LINESIZE 1024
 
@@ -30,6 +33,17 @@ static void fail(LPCSTR message, ...)
     StringCchVPrintfA(msg, sizeof(msg), message, args);
     WriteFile(GetStdHandle(STD_ERROR_HANDLE), message, lstrlen(msg), &written, NULL);
     ExitProcess(1);
+}
+
+BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
+{
+    switch (fdwCtrlType) {
+    // Handle the CTRL-C signal.
+    case CTRL_C_EVENT:
+        return TRUE;
+    default:
+        return FALSE;
+    }
 }
 
 BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
