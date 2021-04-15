@@ -246,6 +246,10 @@ esp_err_t esp_https_ota_begin(esp_https_ota_config_t *ota_config, esp_https_ota_
         goto http_cleanup;
     }
 
+    if (!https_ota_handle->partial_http_download) {
+        https_ota_handle->image_length = esp_http_client_get_content_length(https_ota_handle->http_client);
+    }
+
     https_ota_handle->update_partition = NULL;
     ESP_LOGI(TAG, "Starting OTA...");
     https_ota_handle->update_partition = esp_ota_get_next_update_partition(NULL);
@@ -519,6 +523,18 @@ int esp_https_ota_get_image_len_read(esp_https_ota_handle_t https_ota_handle)
         return -1;
     }
     return handle->binary_file_len;
+}
+
+int esp_https_ota_get_image_size(esp_https_ota_handle_t https_ota_handle)
+{
+    esp_https_ota_t *handle = (esp_https_ota_t *)https_ota_handle;
+    if (handle == NULL) {
+        return -1;
+    }
+    if (handle->state < ESP_HTTPS_OTA_BEGIN) {
+        return -1;
+    }
+    return handle->image_length;
 }
 
 esp_err_t esp_https_ota(const esp_http_client_config_t *config)
