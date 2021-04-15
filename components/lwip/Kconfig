@@ -741,13 +741,21 @@ menu "LWIP"
 
     menu "ICMP"
 
+        config LWIP_ICMP
+            bool "ICMP: Enable ICMP"
+            default y
+            help
+                Enable ICMP module for check network stability
+
         config LWIP_MULTICAST_PING
             bool "Respond to multicast pings"
             default n
+            depends on LWIP_ICMP6 || LWIP_ICMP
 
         config LWIP_BROADCAST_PING
             bool "Respond to broadcast pings"
             default n
+            depends on LWIP_ICMP
 
     endmenu # ICMP
 
@@ -902,7 +910,7 @@ menu "LWIP"
 
     config LWIP_ICMP_DEBUG
         bool "Enable ICMP debug messages"
-        depends on LWIP_DEBUG
+        depends on LWIP_DEBUG && LWIP_ICMP
         default n
 
     config LWIP_DHCP_STATE_DEBUG
