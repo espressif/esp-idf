@@ -94,7 +94,8 @@ typedef volatile struct twai_dev_s {
     uint32_t reserved_05;                       /* Address 5 */
     union {
         struct {
-            uint32_t brp: 14;                   /* BTR0[13:0] Baud Rate Prescaler */
+            uint32_t brp: 13;                   /* BTR0[12:0] Baud Rate Prescaler */
+            uint32_t reserved1: 1;              /* Internal Reserved */
             uint32_t sjw: 2;                    /* BTR0[15:14] Synchronization Jump Width*/
             uint32_t reserved16: 16;            /* Internal Reserved */
         };
