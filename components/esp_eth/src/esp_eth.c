@@ -55,6 +55,8 @@ typedef struct {
     esp_err_t (*stack_input)(esp_eth_handle_t eth_handle, uint8_t *buffer, uint32_t length, void *priv);
     esp_err_t (*on_lowlevel_init_done)(esp_eth_handle_t eth_handle);
     esp_err_t (*on_lowlevel_deinit_done)(esp_eth_handle_t eth_handle);
+    esp_err_t (*customized_read_phy_reg)(esp_eth_handle_t eth_handle, uint32_t phy_addr, uint32_t phy_reg, uint32_t *reg_value);
+    esp_err_t (*customized_write_phy_reg)(esp_eth_handle_t eth_handle, uint32_t phy_addr, uint32_t phy_reg, uint32_t reg_value);
 } esp_eth_driver_t;
 
 ////////////////////////////////Mediator Functions////////////////////////////////////////////
@@ -69,6 +71,11 @@ typedef struct {
 static esp_err_t eth_phy_reg_read(esp_eth_mediator_t *eth, uint32_t phy_addr, uint32_t phy_reg, uint32_t *reg_value)
 {
     esp_eth_driver_t *eth_driver = __containerof(eth, esp_eth_driver_t, mediator);
+    // invoking user customized PHY IO function if necessary
+    if (eth_driver->customized_read_phy_reg) {
+        return eth_driver->customized_read_phy_reg(eth_driver, phy_addr, phy_reg, reg_value);
+    }
+    // by default, PHY device is managed by MAC's SMI interface
     esp_eth_mac_t *mac = eth_driver->mac;
     return mac->read_phy_reg(mac, phy_addr, phy_reg, reg_value);
 }
@@ -76,6 +83,11 @@ static esp_err_t eth_phy_reg_read(esp_eth_mediator_t *eth, uint32_t phy_addr, ui
 static esp_err_t eth_phy_reg_write(esp_eth_mediator_t *eth, uint32_t phy_addr, uint32_t phy_reg, uint32_t reg_value)
 {
     esp_eth_driver_t *eth_driver = __containerof(eth, esp_eth_driver_t, mediator);
+    // invoking user customized PHY IO function if necessary
+    if (eth_driver->customized_write_phy_reg) {
+        return eth_driver->customized_write_phy_reg(eth_driver, phy_addr, phy_reg, reg_value);
+    }
+    // by default, PHY device is managed by MAC's SMI interface
     esp_eth_mac_t *mac = eth_driver->mac;
     return mac->write_phy_reg(mac, phy_addr, phy_reg, reg_value);
 }
@@ -184,6 +196,8 @@ esp_err_t esp_eth_driver_install(const esp_eth_config_t *config, esp_eth_handle_
     eth_driver->stack_input = config->stack_input;
     eth_driver->on_lowlevel_init_done = config->on_lowlevel_init_done;
     eth_driver->on_lowlevel_deinit_done = config->on_lowlevel_deinit_done;
+    eth_driver->customized_read_phy_reg = config->read_phy_reg;
+    eth_driver->customized_write_phy_reg = config->write_phy_reg;
     eth_driver->mediator.phy_reg_read = eth_phy_reg_read;
     eth_driver->mediator.phy_reg_write = eth_phy_reg_write;
     eth_driver->mediator.stack_input = eth_stack_input;
