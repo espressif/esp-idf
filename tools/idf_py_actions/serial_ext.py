@@ -100,7 +100,9 @@ def action_extensions(base_actions, project_path):
 
         target_arch_riscv = get_sdkconfig_value(project_desc['config_file'], 'CONFIG_IDF_TARGET_ARCH_RISCV')
         monitor_args += ['--target', project_desc['target']]
-        monitor_args += ['--revision', project_desc.get('rev', -1)]
+        revision = project_desc.get('rev')
+        if revision:
+            monitor_args += ['--revision', revision]
 
         if target_arch_riscv:
             monitor_args += ['--decode-panic', 'backtrace']
