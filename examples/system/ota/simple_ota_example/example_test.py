@@ -92,7 +92,7 @@ def start_https_server(ota_image_dir, server_ip, server_port, server_file=None, 
     httpd.serve_forever()
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
 def test_examples_protocol_simple_ota_example(env, extra_data):
     """
     steps: |

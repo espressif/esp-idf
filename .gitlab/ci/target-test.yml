@@ -89,7 +89,6 @@ test_weekend_network:
 
 example_test_001A:
   extends: .example_test_esp32_template
-  parallel: 4
   tags:
     - ESP32
     - Example_WIFI
@@ -118,6 +117,19 @@ example_test_001D:
   tags:
     - ESP32
     - Example_8Mflash_Ethernet
+
+example_test_OTA:
+  extends: .example_test_esp32_template
+  tags:
+    - ESP32
+    - Example_WIFI_OTA
+
+example_test_protocols:
+  extends: .example_test_esp32_template
+  parallel: 2
+  tags:
+    - ESP32
+    - Example_WIFI_Protocols
 
 example_test_002:
   extends: .example_test_esp32_template

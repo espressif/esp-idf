@@ -35,7 +35,7 @@ from tiny_test_fw import Utility
 # features to this component.
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
 def test_examples_protocol_http_server_advanced(env, extra_data):
     # Acquire DUT
     dut1 = env.get_dut('http_server', 'examples/protocols/http_server/advanced_tests', dut_class=ttfw_idf.ESP32DUT)

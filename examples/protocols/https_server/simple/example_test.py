@@ -46,7 +46,7 @@ server_cert_pem = '-----BEGIN CERTIFICATE-----\n'\
 success_response = '<h1>Hello Secure World!</h1>'
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
 def test_examples_protocol_https_server_simple(env, extra_data):  # type: (tiny_test_fw.Env.Env, None) -> None # pylint: disable=unused-argument
     """
     steps: |

@@ -6,7 +6,7 @@ import textwrap
 import ttfw_idf
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
 def test_examples_cbor(env, extra_data):
 
     dut = env.get_dut('cbor', 'examples/protocols/cbor')
