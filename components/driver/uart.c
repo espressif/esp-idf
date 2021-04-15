@@ -1319,6 +1319,9 @@ esp_err_t uart_flush_input(uart_port_t uart_num)
 esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_buffer_size, int queue_size, QueueHandle_t *uart_queue, int intr_alloc_flags)
 {
     esp_err_t r;
+#ifdef CONFIG_ESP_GDBSTUB_ENABLED
+    UART_CHECK((uart_num != CONFIG_ESP_CONSOLE_UART_NUM), "UART used by GDB-stubs! Please disable GDB in menuconfig.", ESP_FAIL);
+#endif // CONFIG_ESP_GDBSTUB_ENABLED
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
     UART_CHECK((rx_buffer_size > SOC_UART_FIFO_LEN), "uart rx buffer length error", ESP_FAIL);
     UART_CHECK((tx_buffer_size > SOC_UART_FIFO_LEN) || (tx_buffer_size == 0), "uart tx buffer length error", ESP_FAIL);
