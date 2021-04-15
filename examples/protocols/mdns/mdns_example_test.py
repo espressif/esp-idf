@@ -13,6 +13,7 @@ from tiny_test_fw import DUT
 
 stop_mdns_server = Event()
 esp_answered = Event()
+esp_delegated_answered = Event()
 
 
 def get_dns_query_for_esp(esp_host):
@@ -68,6 +69,8 @@ def mdns_server(esp_host):
             if not esp_answered.is_set():
                 sock.sendto(get_dns_query_for_esp(esp_host), (MCAST_GRP,UDP_PORT))
                 time.sleep(0.2)
+                sock.sendto(get_dns_query_for_esp(esp_host + '-delegated'), (MCAST_GRP,UDP_PORT))
+                time.sleep(0.2)
             data, addr = sock.recvfrom(1024)
             dns = dpkt.dns.DNS(data)
             if len(dns.qd) > 0 and dns.qd[0].type == dpkt.dns.DNS_A:
@@ -81,6 +84,9 @@ def mdns_server(esp_host):
                 if dns.an[0].name == esp_host + u'.local':
                     print('Received answer to esp32-mdns query: {}'.format(dns.__repr__()))
                     esp_answered.set()
+                if dns.an[0].name == esp_host + u'-delegated.local':
+                    print('Received answer to esp32-mdns-delegate query: {}'.format(dns.__repr__()))
+                    esp_delegated_answered.set()
         except socket.timeout:
             break
         except dpkt.UnpackError:
@@ -120,6 +126,8 @@ def test_examples_protocol_mdns(env, extra_data):
         # 3. check the mdns name is accessible
         if not esp_answered.wait(timeout=30):
             raise ValueError('Test has failed: did not receive mdns answer within timeout')
+        if not esp_delegated_answered.wait(timeout=30):
+            raise ValueError('Test has failed: did not receive mdns answer for delegated host within timeout')
         # 4. check DUT output if mdns advertized host is resolved
         dut1.expect(re.compile(r'mdns-test: Query A: tinytester.local resolved to: 127.0.0.1'), timeout=30)
         dut1.expect(re.compile(r'mdns-test: gethostbyname: tinytester-lwip.local resolved to: 127.0.0.1'), timeout=30)

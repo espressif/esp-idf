@@ -5,6 +5,7 @@ Shows how to use mDNS to advertise lookup services and hosts
 ## Example workflow
 
 - mDNS is initialized with host name and instance name defined through the project configuration and `_http._tcp` service is added to be advertised
+- A delegated host `esp32-delegated._local` is added and another `_http._tcp` service is added for this host.
 - WiFi STA is started and trying to connect to the access point defined through the project configuration
 - The system event handler is used to pass the network events to mDNS so the service is aware when the interface comes up or down
 - GPIO0 (BOOT Button) is initialized as pulled-up input that can be monitored for button press
