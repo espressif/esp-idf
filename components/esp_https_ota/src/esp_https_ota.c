@@ -427,6 +427,14 @@ int esp_https_ota_get_image_len_read(esp_https_ota_handle_t https_ota_handle)
     return handle->binary_file_len;
 }
 
+int esp_https_ota_get_image_size(esp_https_ota_handle_t https_ota_handle)
+{
+    esp_https_ota_t *handle = (esp_https_ota_t *)https_ota_handle;
+    return esp_http_client_is_chunked_response(handle->http_client) ?
+                -1 :
+                esp_http_client_get_content_length(handle->http_client);
+}
+
 esp_err_t esp_https_ota(const esp_http_client_config_t *config)
 {
     if (!config) {
