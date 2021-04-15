@@ -16,7 +16,7 @@ else()
              "esp_crypto_lock.c"
              "memprot.c"
              "spiram.c"
-             "spiram_psram.c")
+             "spi_timing_config.c")
     set(include_dirs "include")
 
     set(requires driver efuse soc xtensa) #unfortunately rom/uart uses SOC registers directly
@@ -26,6 +26,12 @@ else()
     # esp_timer is added here because cpu_start.c uses esp_timer
     set(priv_requires app_trace app_update bootloader_support log mbedtls nvs_flash pthread
         spi_flash vfs espcoredump esp_common perfmon esp_timer esp_ipc)
+
+    if(CONFIG_SPIRAM_MODE_QUAD)
+        list(APPEND srcs "spiram_psram.c")
+    elseif(CONFIG_SPIRAM_MODE_OCT)
+        list(APPEND srcs "opiram_psram.c")
+    endif()
 
     idf_component_register(SRCS "${srcs}"
                         INCLUDE_DIRS "${include_dirs}"

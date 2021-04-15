@@ -28,9 +28,11 @@ typedef enum {
 } psram_cache_mode_t;
 
 typedef enum {
-    PSRAM_SIZE_16MBITS = 0,
-    PSRAM_SIZE_32MBITS = 1,
-    PSRAM_SIZE_64MBITS = 2,
+    PSRAM_SIZE_16MBITS  = 0,
+    PSRAM_SIZE_32MBITS  = 1,
+    PSRAM_SIZE_64MBITS  = 2,
+    PSRAM_SIZE_128MBITS = 3,
+    PSRAM_SIZE_256MBITS = 4,
     PSRAM_SIZE_MAX,
 } psram_size_t;
 

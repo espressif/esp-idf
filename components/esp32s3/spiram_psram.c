@@ -45,7 +45,7 @@
 #include "driver/periph_ctrl.h"
 #include "bootloader_common.h"
 
-#if CONFIG_SPIRAM
+#if CONFIG_SPIRAM_MODE_QUAD
 #include "soc/rtc.h"
 
 static const char* TAG = "psram";

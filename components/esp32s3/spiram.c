@@ -50,7 +50,7 @@ static const char *TAG = "spiram";
 #define PSRAM_SPEED PSRAM_CACHE_S20M
 #endif
 
-static bool spiram_inited = false;
+static bool s_spiram_inited = false;
 
 
 /*
@@ -245,8 +245,7 @@ esp_err_t esp_spiram_init(void)
 #endif
         return r;
     }
-
-    spiram_inited = true;
+    s_spiram_inited = true;
 #if (CONFIG_SPIRAM_SIZE != -1)
     if (esp_spiram_get_size() != CONFIG_SPIRAM_SIZE) {
         ESP_EARLY_LOGE(TAG, "Expected %dKiB chip but found %dKiB chip. Bailing out..", CONFIG_SPIRAM_SIZE / 1024, esp_spiram_get_size() / 1024);
@@ -296,7 +295,7 @@ esp_err_t esp_spiram_reserve_dma_pool(size_t size)
 
 size_t esp_spiram_get_size(void)
 {
-    if (!spiram_inited) {
+    if (!s_spiram_inited) {
         ESP_EARLY_LOGE(TAG, "SPI RAM not initialized");
         abort();
     }
@@ -310,6 +309,12 @@ size_t esp_spiram_get_size(void)
     }
     if (size == PSRAM_SIZE_64MBITS) {
         return 8 * 1024 * 1024;
+    }
+    if (size == PSRAM_SIZE_128MBITS) {
+        return 16 * 1024 * 1024;
+    }
+    if (size == PSRAM_SIZE_256MBITS) {
+        return 32 * 1024 * 1024;
     }
     return CONFIG_SPIRAM_SIZE;
 }
