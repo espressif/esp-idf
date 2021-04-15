@@ -2065,7 +2065,7 @@ int bt_mesh_provisioner_set_oob_input_data(const u8_t idx, const u8_t *val, bool
     memset(link[idx].auth, 0, 16);
     if (num_flag) {
         /* Provisioner inputs number */
-        memcpy(link[idx].auth + 12, val, sizeof(u32_t));
+        sys_memcpy_swap(link[idx].auth + 12, val, sizeof(uint32_t));
     } else {
         /* Provisioner inputs string */
         memcpy(link[idx].auth, val, link[idx].auth_size);
@@ -2102,7 +2102,7 @@ int bt_mesh_provisioner_set_oob_output_data(const u8_t idx, const u8_t *num,
     if (num_flag) {
         /* Provisioner output number */
         memset(link[idx].auth, 0, 16);
-        memcpy(link[idx].auth + 16 - size, num, size);
+        sys_memcpy_swap(link[idx].auth + 16 - size, num, size);
     } else {
         /* Provisioner output string */
         memset(link[idx].auth, 0, 16);
