@@ -73,7 +73,6 @@ def int_wdt_inner(env, test_name):
 
 def int_wdt_cache_disabled_inner(env, test_name):
     with get_dut(env, test_name, 'test_int_wdt_cache_disabled', qemu_wdt_enable=True) as dut:
-        dut.expect('Re-enable cpu cache.')
         dut.expect_gme('Interrupt wdt timeout on CPU0')
         dut.expect_reg_dump(0)
         dut.expect('Backtrace:')
@@ -87,7 +86,6 @@ def int_wdt_cache_disabled_inner(env, test_name):
 
 def cache_error_inner(env, test_name):
     with get_dut(env, test_name, 'test_cache_error') as dut:
-        dut.expect('Re-enable cpu cache.')
         dut.expect_gme('Cache disabled but cached memory region accessed')
         dut.expect_reg_dump(0)
         dut.expect_backtrace()

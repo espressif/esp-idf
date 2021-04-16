@@ -394,10 +394,10 @@ menu "ESP System Settings"
             automatically re-enable flash cache before running GDB Stub or Core Dump. This adds some minor
             risk, if the flash cache status is also corrupted during the crash.
 
-            If this option is enabled, the panic handler code is placed in IRAM. This allows the panic
-            handler to run without needing to re-enable cache first. This may be necessary to debug some
-            complex issues with crashes while flash cache is disabled (for example, when writing to
-            SPI flash.)
+            If this option is enabled, the panic handler code (including required UART functions) is placed
+            in IRAM. This may be necessary to debug some complex issues with crashes while flash cache is
+            disabled (for example, when writing to SPI flash) or when flash cache is corrupted when an exception
+            is triggered.
 
     config ESP_DEBUG_STUBS_ENABLE
         bool

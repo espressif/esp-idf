@@ -113,7 +113,7 @@ esp_reset_reason_t IRAM_ATTR esp_reset_reason_get_hint(void)
     }
     return (esp_reset_reason_t) low;
 }
-static void esp_reset_reason_clear_hint(void)
+static inline void esp_reset_reason_clear_hint(void)
 {
     REG_WRITE(RTC_RESET_CAUSE_REG, 0);
 }
