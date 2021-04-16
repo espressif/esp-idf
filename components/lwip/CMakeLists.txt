@@ -7,7 +7,6 @@ set(include_dirs
     )
 
 set(srcs
-    "apps/dhcpserver/dhcpserver.c"
     "apps/ping/esp_ping.c"
     "apps/ping/ping.c"
     "apps/ping/ping_sock.c"
@@ -135,6 +134,10 @@ if(CONFIG_VFS_SUPPORT_IO)
     list(APPEND srcs "port/esp32/vfs_lwip.c")
 else()
     list(APPEND srcs "port/esp32/no_vfs_syscalls.c")
+endif()
+
+if(CONFIG_LWIP_DHCPS)
+    list(APPEND srcs "apps/dhcpserver/dhcpserver.c")
 endif()
 
 idf_component_register(SRCS "${srcs}"

@@ -40,6 +40,10 @@ ifdef CONFIG_LWIP_PPP_SUPPORT
     COMPONENT_SRCDIRS += lwip/src/netif/ppp lwip/src/netif/ppp/polarssl
 endif
 
+ifndef CONFIG_LWIP_DHCPS
+    COMPONENT_OBJEXCLUDE += apps/dhcpserver/dhcpserver.o
+endif
+
 CFLAGS += -Wno-address  # lots of LWIP source files evaluate macros that check address of stack variables
 
 lwip/src/netif/ppp/ppp.o: CFLAGS += -Wno-uninitialized
