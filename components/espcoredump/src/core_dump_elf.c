@@ -700,7 +700,7 @@ static void elf_parse_exc_task_name(esp_core_dump_summary_t *summary, void *tcb_
      * But that has assumption that TCB pointer can be used as TaskHandle. So let's
      * keep it this way. */
     memset(summary->exc_task, 0, sizeof(summary->exc_task));
-    strncpy(summary->exc_task, (char *)tcb->ucDummy7, sizeof(summary->exc_task) - 1);
+    strlcpy(summary->exc_task, (char *)tcb->ucDummy7, sizeof(summary->exc_task));
     ESP_COREDUMP_LOGD("Crashing task %s", summary->exc_task);
 }
 
