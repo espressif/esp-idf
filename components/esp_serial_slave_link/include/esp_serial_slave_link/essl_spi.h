@@ -28,7 +28,7 @@ extern "C"
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * @brief Read the shared buffer from the slave.
+ * @brief Read the shared buffer from the slave in ISR way
  *
  * @note ``out_data`` should be prepared in words and in the DRAM. The buffer may be written in words
  *       by the DMA. When a byte is written, the remaining bytes in the same word will also be
@@ -46,7 +46,25 @@ extern "C"
 esp_err_t essl_spi_rdbuf(spi_device_handle_t spi, uint8_t *out_data, int addr, int len, uint32_t flags);
 
 /**
- * @brief Write the shared buffer of the slave.
+ * @brief Read the shared buffer from the slave in polling way
+ *
+ * @note ``out_data`` should be prepared in words and in the DRAM. The buffer may be written in words
+ *       by the DMA. When a byte is written, the remaining bytes in the same word will also be
+ *       overwritten, even the ``len`` is shorter than a word.
+ *
+ * @param spi       SPI device handle representing the slave
+ * @param out_data  Buffer for read data, strongly suggested to be in the DRAM and align to 4
+ * @param addr      Address of the slave shared buffer
+ * @param len       Length to read
+ * @param flags     `SPI_TRANS_*` flags to control the transaction mode of the transaction to send.
+ * @return
+ *      - ESP_OK: on success
+ *      - or other return value from :cpp:func:`spi_device_transmit`.
+ */
+esp_err_t essl_spi_rdbuf_polling(spi_device_handle_t spi, uint8_t *out_data, int addr, int len, uint32_t flags);
+
+/**
+ * @brief Write the shared buffer of the slave in ISR way
  *
  * @note ``out_data`` should be prepared in words and in the DRAM. The buffer may be written in words
  *       by the DMA. When a byte is written, the remaining bytes in the same word will also be
@@ -62,6 +80,24 @@ esp_err_t essl_spi_rdbuf(spi_device_handle_t spi, uint8_t *out_data, int addr, i
  *      - or other return value from :cpp:func:`spi_device_transmit`.
  */
 esp_err_t essl_spi_wrbuf(spi_device_handle_t spi, const uint8_t *data, int addr, int len, uint32_t flags);
+
+/**
+ * @brief Write the shared buffer of the slave in polling way
+ *
+ * @note ``out_data`` should be prepared in words and in the DRAM. The buffer may be written in words
+ *       by the DMA. When a byte is written, the remaining bytes in the same word will also be
+ *       overwritten, even the ``len`` is shorter than a word.
+ *
+ * @param spi       SPI device handle representing the slave
+ * @param data      Buffer for data to send, strongly suggested to be in the DRAM and align to 4
+ * @param addr      Address of the slave shared buffer,
+ * @param len       Length to write
+ * @param flags     `SPI_TRANS_*` flags to control the transaction mode of the transaction to send.
+ * @return
+ *      - ESP_OK: success
+ *      - or other return value from :cpp:func:`spi_device_polling_transmit`.
+ */
+esp_err_t essl_spi_wrbuf_polling(spi_device_handle_t spi, const uint8_t *data, int addr, int len, uint32_t flags);
 
 /**
  * @brief Receive long buffer in segments from the slave through its DMA.
