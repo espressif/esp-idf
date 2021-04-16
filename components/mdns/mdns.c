@@ -1057,7 +1057,26 @@ static void _mdns_free_tx_packet(mdns_tx_packet_t * packet)
     if (!packet) {
         return;
     }
-    queueFree(mdns_out_question_t, packet->questions);
+    mdns_out_question_t *q = packet->questions;
+    while (q) {
+        mdns_out_question_t *next = q->next;
+        if (q->own_dynamic_memory) {
+            if (q->host) {
+                free((char *)q->host);
+            }
+            if (q->service) {
+                free((char *)q->service);
+            }
+            if (q->proto) {
+                free((char *)q->proto);
+            }
+            if (q->domain) {
+                free((char *)q->domain);
+            }
+        }
+        free(q);
+        q = next;
+    }
     queueFree(mdns_out_answer_t, packet->answers);
     queueFree(mdns_out_answer_t, packet->servers);
     queueFree(mdns_out_answer_t, packet->additional);
@@ -1341,8 +1360,18 @@ static void _mdns_create_answer_from_parsed_packet(mdns_parsed_packet_t * parsed
                     _mdns_free_tx_packet(packet);
                     return;
                 }
-                memcpy(out_question, q, sizeof(mdns_out_question_t));
+                out_question->type = q->type;
+                out_question->unicast = q->unicast;
+                out_question->host = q->host;
+                q->host = NULL;
+                out_question->service = q->service;
+                q->service = NULL;
+                out_question->proto = q->proto;
+                q->proto = NULL;
+                out_question->domain = q->domain;
+                q->domain = NULL;
                 out_question->next = NULL;
+                out_question->own_dynamic_memory = true;
                 queueToEnd(mdns_out_question_t, packet->questions, out_question);
 #endif // MDNS_REPEAT_QUERY_IN_RESPONSE
             } else if (!_mdns_alloc_answer(&packet->answers, q->type, NULL, send_flush, false)) {
@@ -1409,6 +1438,7 @@ static mdns_tx_packet_t * _mdns_create_probe_packet(mdns_if_t tcpip_if, mdns_ip_
         q->service = services[i]->service->service;
         q->proto = services[i]->service->proto;
         q->domain = MDNS_DEFAULT_DOMAIN;
+        q->own_dynamic_memory = false;
         if (!q->host || _mdns_question_exists(q, packet->questions)) {
             free(q);
             continue;
@@ -1436,6 +1466,7 @@ static mdns_tx_packet_t * _mdns_create_probe_packet(mdns_if_t tcpip_if, mdns_ip_
         q->service = NULL;
         q->proto = NULL;
         q->domain = MDNS_DEFAULT_DOMAIN;
+        q->own_dynamic_memory = false;
         if (_mdns_question_exists(q, packet->questions)) {
             free(q);
         } else {
@@ -3117,10 +3148,18 @@ clear_rx_packet:
     while (parsed_packet->questions) {
         mdns_parsed_question_t * question = parsed_packet->questions;
         parsed_packet->questions = parsed_packet->questions->next;
-        free(question->host);
-        free(question->service);
-        free(question->proto);
-        free(question->domain);
+        if (question->host) {
+            free(question->host);
+        }
+        if (question->service) {
+            free(question->service);
+        }
+        if (question->proto) {
+            free(question->proto);
+        }
+        if (question->domain) {
+            free(question->domain);
+        }
         free(question);
     }
     free(parsed_packet);
@@ -3650,6 +3689,7 @@ static mdns_tx_packet_t * _mdns_create_search_packet(mdns_search_once_t * search
     q->service = search->service;
     q->proto = search->proto;
     q->domain = MDNS_DEFAULT_DOMAIN;
+    q->own_dynamic_memory = false;
     queueToEnd(mdns_out_question_t, packet->questions, q);
 
     if (search->type == MDNS_TYPE_PTR) {
