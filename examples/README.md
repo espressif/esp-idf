@@ -15,6 +15,7 @@ The examples are grouped into subdirectories by category. Each category director
 * `ethernet` Ethernet network examples.
 * `get-started` Simple examples with minimal functionality. Good start point for beginners.
 * `mesh` Wi-Fi Mesh examples.
+* `openthread` OpenThread examples.
 * `peripherals` Examples showing driver functionality for the various onboard ESP32 peripherals.
 * `protocols` Examples showing network protocol interactions.
 * `provisioning` Wi-Fi provisioning examples.
