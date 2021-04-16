@@ -108,6 +108,13 @@ Receiving General Purpose Interrupts From the Master
 
 When the master sends CMD 0x08, 0x09 or 0x0A, the slave corresponding will be triggered. Currently the CMD8 is permanently used to indicate the termination of RDDMA segments. To receiving general purpose interrupts, register callbacks for CMD 0x09 and 0x0A when the slave is initialized, see :ref:`spi_slave_hd_callbacks`.
 
+
+Application Example
+-------------------
+
+The code example for Device/Host communication can be found in the :example:`peripherals/spi_slave_hd` directory of ESP-IDF examples.
+
+
 API reference
 -------------
 
