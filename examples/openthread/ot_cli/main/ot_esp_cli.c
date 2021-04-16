@@ -33,6 +33,8 @@
 
 #define TAG "ot_esp_cli"
 
+extern void otAppCliInit(otInstance *instance);
+
 static void ot_task_worker(void *aContext)
 {
     esp_openthread_platform_config_t config = {
@@ -84,7 +86,7 @@ static void ot_task_worker(void *aContext)
     assert(instance != NULL);
 
     esp_openthread_lock_acquire(portMAX_DELAY);
-    otCliUartInit(instance);
+    otAppCliInit(instance);
     esp_openthread_lock_release();
 
     while (true) {

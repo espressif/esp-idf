@@ -27,7 +27,7 @@
 #include "esp_vfs_dev.h"
 #include "common/logging.hpp"
 #include "driver/uart.h"
-#include "openthread/platform/uart.h"
+#include "utils/uart.h"
 
 static int s_uart_port;
 static int s_uart_fd;
