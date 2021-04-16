@@ -235,3 +235,14 @@ Such a design has the following consequences:
 - It is possible to set ``stdin``, ``stdout``, and ``stderr`` for any given task without affecting other tasks, e.g., by doing ``stdin = fopen("/dev/uart/1", "r")``.
 - Closing default ``stdin``, ``stdout``, or ``stderr`` using ``fclose`` will close the ``FILE`` stream object, which will affect all other tasks.
 - To change the default ``stdin``, ``stdout``, ``stderr`` streams for new tasks, modify ``_GLOBAL_REENT->_stdin`` (``_stdout``, ``_stderr``) before creating the task.
+
+Event fds
+-------------------------------------------
+
+``eventfd()`` call is a powerful tool to notify a ``select()`` based loop of custom events. The ``eventfd()`` implementation in ESP-IDF is generally the same as described in ``man(2) eventfd`` except for:
+
+- ``esp_vfs_eventfd_register()`` has to be called before calling ``eventfd()``
+- Options ``EFD_CLOEXEC``, ``EFD_NONBLOCK`` and ``EFD_SEMAPHORE`` are not supported in flags.
+- Option ``EFD_SUPPORT_ISR`` has been added in flags. This flag is required to read and the write the eventfd in an interrupt handler.
+
+Note that creating an eventfd with ``EFD_SUPPORT_ISR`` will cause interrupts to be temporarily disabled when reading, writing the file and during the beginning and the ending of the ``select()`` when this file is set.

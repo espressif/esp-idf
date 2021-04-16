@@ -172,6 +172,27 @@ esp_err_t esp_vfs_register_with_id(const esp_vfs_t *vfs, void *ctx, esp_vfs_id_t
     return esp_vfs_register_common("", LEN_PATH_PREFIX_IGNORED, vfs, ctx, vfs_id);
 }
 
+esp_err_t esp_vfs_unregister_with_id(esp_vfs_id_t vfs_id)
+{
+    if (vfs_id < 0 || vfs_id >= MAX_FDS || s_vfs[vfs_id] == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    vfs_entry_t* vfs = s_vfs[vfs_id];
+    free(vfs);
+    s_vfs[vfs_id] = NULL;
+
+    _lock_acquire(&s_fd_table_lock);
+    // Delete all references from the FD lookup-table
+    for (int j = 0; j < VFS_MAX_COUNT; ++j) {
+        if (s_fd_table[j].vfs_index == vfs_id) {
+            s_fd_table[j] = FD_TABLE_ENTRY_UNUSED;
+        }
+    }
+    _lock_release(&s_fd_table_lock);
+
+    return ESP_OK;
+}
+
 esp_err_t esp_vfs_unregister(const char* base_path)
 {
     const size_t base_path_len = strlen(base_path);
@@ -182,19 +203,7 @@ esp_err_t esp_vfs_unregister(const char* base_path)
         }
         if (base_path_len == vfs->path_prefix_len &&
                 memcmp(base_path, vfs->path_prefix, vfs->path_prefix_len) == 0) {
-            free(vfs);
-            s_vfs[i] = NULL;
-
-            _lock_acquire(&s_fd_table_lock);
-            // Delete all references from the FD lookup-table
-            for (int j = 0; j < MAX_FDS; ++j) {
-                if (s_fd_table[j].vfs_index == i) {
-                    s_fd_table[j] = FD_TABLE_ENTRY_UNUSED;
-                }
-            }
-            _lock_release(&s_fd_table_lock);
-
-            return ESP_OK;
+            return esp_vfs_unregister_with_id(i);
         }
     }
     return ESP_ERR_INVALID_STATE;
@@ -202,8 +211,14 @@ esp_err_t esp_vfs_unregister(const char* base_path)
 
 esp_err_t esp_vfs_register_fd(esp_vfs_id_t vfs_id, int *fd)
 {
+    return esp_vfs_register_fd_with_local_fd(vfs_id, -1, true, fd);
+}
+
+esp_err_t esp_vfs_register_fd_with_local_fd(esp_vfs_id_t vfs_id, int local_fd, bool permanent, int *fd)
+{
     if (vfs_id < 0 || vfs_id >= s_vfs_count || fd == NULL) {
-        ESP_LOGD(TAG, "Invalid arguments for esp_vfs_register_fd(%d, 0x%x)", vfs_id, (int) fd);
+        ESP_LOGD(TAG, "Invalid arguments for esp_vfs_register_fd_with_local_fd(%d, %d, %d, 0x%p)",
+                 vfs_id, local_fd, permanent, fd);
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -211,9 +226,13 @@ esp_err_t esp_vfs_register_fd(esp_vfs_id_t vfs_id, int *fd)
     _lock_acquire(&s_fd_table_lock);
     for (int i = 0; i < MAX_FDS; ++i) {
         if (s_fd_table[i].vfs_index == -1) {
-            s_fd_table[i].permanent = true;
+            s_fd_table[i].permanent = permanent;
             s_fd_table[i].vfs_index = vfs_id;
-            s_fd_table[i].local_fd = i;
+            if (local_fd >= 0) {
+                s_fd_table[i].local_fd = local_fd;
+            } else {
+                s_fd_table[i].local_fd = i;
+            }
             *fd = i;
             ret = ESP_OK;
             break;
@@ -221,7 +240,8 @@ esp_err_t esp_vfs_register_fd(esp_vfs_id_t vfs_id, int *fd)
     }
     _lock_release(&s_fd_table_lock);
 
-    ESP_LOGD(TAG, "esp_vfs_register_fd(%d, 0x%x) finished with %s", vfs_id, (int) fd, esp_err_to_name(ret));
+    ESP_LOGD(TAG, "esp_vfs_register_fd_with_local_fd(%d, %d, %d, 0x%p) finished with %s",
+             vfs_id, local_fd, permanent, fd, esp_err_to_name(ret));
 
     return ret;
 }
@@ -806,21 +826,23 @@ static int set_global_fd_sets(const fds_triple_t *vfs_fds_triple, int size, fd_s
         const fds_triple_t *item = &vfs_fds_triple[i];
         if (item->isset) {
             for (int fd = 0; fd < MAX_FDS; ++fd) {
-                const int local_fd = s_fd_table[fd].local_fd; // single read -> no locking is required
-                if (readfds && esp_vfs_safe_fd_isset(local_fd, &item->readfds)) {
-                    ESP_LOGD(TAG, "FD %d in readfds was set from VFS ID %d", fd, i);
-                    FD_SET(fd, readfds);
-                    ++ret;
-                }
-                if (writefds && esp_vfs_safe_fd_isset(local_fd, &item->writefds)) {
-                    ESP_LOGD(TAG, "FD %d in writefds was set from VFS ID %d", fd, i);
-                    FD_SET(fd, writefds);
-                    ++ret;
-                }
-                if (errorfds && esp_vfs_safe_fd_isset(local_fd, &item->errorfds)) {
-                    ESP_LOGD(TAG, "FD %d in errorfds was set from VFS ID %d", fd, i);
-                    FD_SET(fd, errorfds);
-                    ++ret;
+                if (s_fd_table[fd].vfs_index == i) {
+                    const int local_fd = s_fd_table[fd].local_fd; // single read -> no locking is required
+                    if (readfds && esp_vfs_safe_fd_isset(local_fd, &item->readfds)) {
+                        ESP_LOGD(TAG, "FD %d in readfds was set from VFS ID %d", fd, i);
+                        FD_SET(fd, readfds);
+                        ++ret;
+                    }
+                    if (writefds && esp_vfs_safe_fd_isset(local_fd, &item->writefds)) {
+                        ESP_LOGD(TAG, "FD %d in writefds was set from VFS ID %d", fd, i);
+                        FD_SET(fd, writefds);
+                        ++ret;
+                    }
+                    if (errorfds && esp_vfs_safe_fd_isset(local_fd, &item->errorfds)) {
+                        ESP_LOGD(TAG, "FD %d in errorfds was set from VFS ID %d", fd, i);
+                        FD_SET(fd, errorfds);
+                        ++ret;
+                    }
                 }
             }
         }
