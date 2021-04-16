@@ -293,6 +293,12 @@ menu "mbedTLS"
             SHA hardware acceleration is faster than software in some situations but
             slower in others. You should benchmark to find the best setting for you.
 
+    config MBEDTLS_ROM_MD5
+        bool "Use MD5 implementation in ROM"
+        default y
+        help
+            Use ROM MD5 in mbedTLS.
+
     config MBEDTLS_ATCA_HW_ECDSA_SIGN
         bool "Enable hardware ECDSA sign acceleration when using ATECC608A"
         default n

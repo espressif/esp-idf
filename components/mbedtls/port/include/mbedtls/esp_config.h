@@ -144,6 +144,15 @@
 #undef MBEDTLS_SHA512_ALT
 #endif
 
+/* MBEDTLS_MDx_ALT to enable ROM MD support
+   with software fallback.
+*/
+#ifdef CONFIG_MBEDTLS_ROM_MD5
+#define MBEDTLS_MD5_ALT
+#else
+#undef MBEDTLS_MD5_ALT
+#endif
+
 /* The following MPI (bignum) functions have ESP32 hardware support.
    For exponential mod, both software and hardware implementation
    will be compiled. If CONFIG_MBEDTLS_HARDWARE_MPI is enabled, mod APIs
