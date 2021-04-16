@@ -24,6 +24,9 @@ IGNORE_WARNS = [
     re.compile(r_str) for r_str in [
         r'library/error\.o',
         r'.*error.*\.c\.obj',
+        r'.*error.*\.cpp\.obj',
+        r'.*error.*\.cxx\.obj',
+        r'.*error.*\.cc\.obj',
         r'-Werror',
         r'error\.d',
         r'reassigning to symbol',
@@ -49,7 +52,7 @@ def line_has_warnings(line):  # type: (str) -> bool
     return has_warnings
 
 
-def main():
+def main():  # type: () -> None
     parser = argparse.ArgumentParser(description='ESP-IDF app builder')
     parser.add_argument(
         '-v',
