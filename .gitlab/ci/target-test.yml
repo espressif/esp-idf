@@ -656,6 +656,12 @@ UT_C3_I2C:
     - ESP32C3_IDF
     - UT_T2_I2C
 
+UT_C3_FLASH_SUSPEND:
+  extends: .unit_test_esp32c3_template
+  tags:
+    - ESP32C3_IDF
+    - UT_T1_Flash_Suspend
+
 .integration_test_template:
   extends:
     - .target_test_job_template
