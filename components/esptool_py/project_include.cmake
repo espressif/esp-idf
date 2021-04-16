@@ -12,7 +12,7 @@ if(target STREQUAL "esp32s3")
     endif()
 endif()
 
-set(ESPTOOLPY ${python} "$ENV{ESPTOOL_FTDI}" "${CMAKE_CURRENT_LIST_DIR}/esptool/esptool.py" --chip ${chip_model})
+set(ESPTOOLPY ${python} "$ENV{ESPTOOL_WRAPPER}" "${CMAKE_CURRENT_LIST_DIR}/esptool/esptool.py" --chip ${chip_model})
 set(ESPSECUREPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espsecure.py")
 set(ESPEFUSEPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espefuse.py")
 set(ESPMONITOR ${python} "${idf_path}/tools/idf_monitor.py")
