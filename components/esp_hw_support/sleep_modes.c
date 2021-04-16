@@ -552,8 +552,12 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 
 #if !CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
         /* If not possible stack is in RTC FAST memory, use the ROM function to calculate the CRC and save ~140 bytes IRAM */
+#if CONFIG_IDF_TARGET_ESP32S3//TODO: WIFI-3542
+        result = 0;
+#else
         set_rtc_memory_crc();
         result = call_rtc_sleep_start(reject_triggers);
+#endif
 #else
         /* Otherwise, need to call the dedicated soc function for this */
         result = rtc_deep_sleep_start(s_config.wakeup_triggers, reject_triggers);
