@@ -45,8 +45,9 @@ static esp_gdbstub_gdb_regfile_t *gdb_local_regfile = &s_scratch.regfile;
 /**
  * @breef panic handler
 */
-void esp_gdbstub_panic_handler(esp_gdbstub_frame_t *frame)
+void esp_gdbstub_panic_handler(void *in_frame)
 {
+    esp_gdbstub_frame_t* frame = (esp_gdbstub_frame_t*)in_frame;
 #ifndef CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
     esp_gdbstub_frame_to_regfile(frame, &s_scratch.regfile);
 #else

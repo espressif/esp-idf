@@ -15,7 +15,6 @@
 #pragma once
 #include <stdint.h>
 #include "freertos/xtensa_context.h"
-#include "gdbstub_target_config.h"
 
 #ifdef __cplusplus
 extern "C" {

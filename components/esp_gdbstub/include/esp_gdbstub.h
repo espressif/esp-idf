@@ -19,6 +19,7 @@ extern "C" {
 #endif
 
 void esp_gdbstub_init(void);
+void esp_gdbstub_panic_handler(void *frame);
 
 #ifdef __cplusplus
 }

@@ -18,6 +18,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#include "gdbstub_target_config.h"
 #include "esp_gdbstub_arch.h"
 #include "sdkconfig.h"
 
