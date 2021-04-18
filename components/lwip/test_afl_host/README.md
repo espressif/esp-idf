@@ -1,14 +1,14 @@
 ## Introduction
-This test uses [american fuzzy lop](http://lcamtuf.coredump.cx/afl/) to mangle real mdns packets and look for exceptions caused by the parser.
+This test uses [american fuzzy lop](http://lcamtuf.coredump.cx/afl/) to mangle real dns, dhcp client, dhcp server packets and look for exceptions caused by the parser.
 
-A few actual packets are collected and exported as bins in the ```in``` folder, which is then passed as input to AFL when testing. The setup procedure for the test includes all possible services and scenarios that could be used with the given input packets.The output of the parser before fuzzing can be found in [input_packets.txt](input_packets.txt)
+A few actual packets are collected and exported as bins in the ```in_dns, in_dhcp_client, in_dhcp_server``` folders, which is then passed as input to AFL when testing. The setup procedure for the test includes all possible services and scenarios that could be used with the given input packets. The output of the parser before fuzzing can be found in [input_packets.txt](input_packets.txt)
 
 ## Building and running the tests using AFL
 To build and run the tests using AFL(afl-clang-fast) instrumentation
 
 ```bash
-cd $IDF_PATH/components/mdns/test_afl_host
-make fuzz
+cd $IDF_PATH/components/lwip/test_afl_host
+make fuzz MODE=dns/dhcp_client/dhcp_server
 ```
 
 (Please note you have to install AFL instrumentation first, check `Installing AFL` section)
@@ -17,12 +17,12 @@ make fuzz
 To build the tests without AFL instrumentations and instead of that use GCC compiler(In this case it will only check for compilation issues and will not run AFL tests).
 
 ```bash
-cd $IDF_PATH/components/mdns/test_afl_host
-make INSTR=off
+cd $IDF_PATH/components/lwip/test_afl_host
+make INSTR=off MODE=dns/dhcp_client/dhcp_server
 ```
 
 ## Installing AFL
-To run the test yourself, you need to dounload the [latest afl archive](http://lcamtuf.coredump.cx/afl/releases/afl-latest.tgz) and extract it to a folder on your computer.
+To run the test yourself, you need to download the [latest afl archive](http://lcamtuf.coredump.cx/afl/releases/afl-latest.tgz) and extract it to a folder on your computer.
 
 The rest of the document will refer to that folder as ```PATH_TO_AFL```.
 
@@ -41,7 +41,7 @@ The rest of the document will refer to that folder as ```PATH_TO_AFL```.
     sudo apt-get install make clang-4.0(or <=4.0) llvm-4.0(or <=4.0) libbsd-dev
     ```
 
-Please note that if specified package version can't be installed(due to system is the latest), you can download, build and install it manually.
+Please note that if specified package version can't be installed(becouse the system is newer than 2017), you can install it from source.
 
 ### Compile AFL
 Compiling AFL is as easy as running make:
@@ -63,7 +63,7 @@ export PATH="$AFL_PATH:$PATH"
 Please note LLVM must be <=4.0.0, otherwise afl does not compile, as there are some limitations with building AFL on MacOS/Linux with the latest LLVM. Also, Windows build on cygwin is not fully supported.
 
 ## Additional info
-Apple has a crash reporting service that could interfere with AFLs normal operation. To turn that off, run the following command:
+Apple has a crash reporting service that could interfere with AFL's normal operation. To turn that off, run the following command:
 
 ```bash
 launchctl unload -w /System/Library/LaunchAgents/com.apple.ReportCrash.plist
