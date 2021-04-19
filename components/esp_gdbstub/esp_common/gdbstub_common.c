@@ -29,12 +29,16 @@ void esp_gdbstub_target_init(void)
     case 0:
         gdb_uart = &UART0;
         break;
+#if SOC_UART_NUM > 1
     case 1:
         gdb_uart = &UART1;
         break;
+#endif
+#if SOC_UART_NUM > 2
     case 2:
         gdb_uart = &UART2;
         break;
+#endif
     default:
         gdb_uart = &UART0;
         break;

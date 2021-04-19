@@ -24,7 +24,6 @@
 #include "hal/wdt_hal.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-//#include "esp_task_wdt.h"
 
 
 #ifdef CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
@@ -43,11 +42,11 @@ static esp_gdbstub_scratch_t s_scratch;
 static esp_gdbstub_gdb_regfile_t *gdb_local_regfile = &s_scratch.regfile;
 
 /**
- * @breef panic handler
+ * @brief panic handler
 */
 void esp_gdbstub_panic_handler(void *in_frame)
 {
-    esp_gdbstub_frame_t* frame = (esp_gdbstub_frame_t*)in_frame;
+    esp_gdbstub_frame_t *frame = (esp_gdbstub_frame_t *)in_frame;
 #ifndef CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
     esp_gdbstub_frame_to_regfile(frame, &s_scratch.regfile);
 #else
@@ -186,7 +185,7 @@ static inline void enable_all_wdts(void)
  * @param curr_regs - actual registers frame
  *
 */
-void gdbstub_handle_uart_int(XtExcFrame *regs_frame)
+void gdbstub_handle_uart_int(esp_gdbstub_frame_t *regs_frame)
 {
     // Disable all enabled WDT on enter
     disable_all_wdts();
@@ -234,7 +233,7 @@ intr_handle_t intr_handle_;
 extern void _xt_gdbstub_int(void * );
 
 #ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
-/** @breef Init gdbstub
+/** @brief Init gdbstub
  * Init uart interrupt for gdbstub
  * */
 void esp_gdbstub_init(void)
@@ -395,18 +394,6 @@ static bool get_task_handle(size_t index, TaskHandle_t *handle)
     return true;
 }
 
-static eTaskState get_task_state(size_t index)
-{
-    return eSuspended;
-//    return s_scratch.tasks[index].eCurrentState;
-}
-
-static int get_task_cpu_id(size_t index)
-{
-    return 0;
-    // return s_scratch.tasks[index].xCoreID;
-}
-
 /** Get the index of the task running on the current CPU, and save the result */
 static void find_paniced_task_index(void)
 {
@@ -531,29 +518,8 @@ static void handle_qThreadExtraInfo_command(const unsigned char *cmd, int len)
     esp_gdbstub_send_str_as_hex((const char *)pcTaskGetTaskName(handle));
     esp_gdbstub_send_hex(' ', 8);
 
-    eTaskState state = get_task_state(task_index);
-    switch (state) {
-    case eRunning:
-        esp_gdbstub_send_str_as_hex("State: Running ");
-        esp_gdbstub_send_str_as_hex("@CPU");
-        esp_gdbstub_send_hex(get_task_cpu_id(task_index) + '0', 8);
-        break;
-    case eReady:
-        esp_gdbstub_send_str_as_hex("State: Ready");
-        break;
-    case eBlocked:
-        esp_gdbstub_send_str_as_hex("State: Blocked");
-        break;
-    case eSuspended:
-        esp_gdbstub_send_str_as_hex("State: Suspended");
-        break;
-    case eDeleted:
-        esp_gdbstub_send_str_as_hex("State: Deleted");
-        break;
-    default:
-        esp_gdbstub_send_str_as_hex("State: Invalid");
-        break;
-    }
+    // Current version report only Suspended state
+    esp_gdbstub_send_str_as_hex("State: Suspended");
 
     esp_gdbstub_send_end();
 }
@@ -605,4 +571,3 @@ static int handle_task_commands(unsigned char *cmd, int len)
 }
 
 #endif // CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
-

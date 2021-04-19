@@ -58,3 +58,8 @@ int esp_gdbstub_get_signal(const esp_gdbstub_frame_t *frame)
 {
       return 5; // SIGTRAP, see IDF-2490
 }
+
+void _xt_gdbstub_int(void * frame)
+{
+
+}

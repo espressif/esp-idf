@@ -41,4 +41,3 @@ _xt_gdbstub_int:
     mov     a6,sp
     call0   gdbstub_handle_uart_int
     ret
-

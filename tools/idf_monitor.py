@@ -202,10 +202,10 @@ class Monitor(object):
                     elif event_tag == TAG_SERIAL_FLUSH:
                         self.handle_serial_input(data, finalize_line=True)
                     else:
-                        raise RuntimeError("Bad event data %r" % ((event_tag,data),))
+                        raise RuntimeError('Bad event data %r' % ((event_tag,data),))
                 except KeyboardInterrupt:
                     try:
-                        yellow_print("To exit from IDF monitor please use \"Ctrl+]\"")
+                        yellow_print('To exit from IDF monitor please use \"Ctrl+]\"')
                         self.serial.write(codecs.encode('\x03'))
                     except serial.SerialException:
                         pass  # this shouldn't happen, but sometimes port has closed in serial thread
@@ -232,9 +232,9 @@ class Monitor(object):
         # Remove "+" after Continue command
         if self.start_cmd_sent is True:
             self.start_cmd_sent = False
-            pos = data.find(b"+")
+            pos = data.find(b'+')
             if pos != -1:
-                data = data[1:]
+                data = data[(pos + 1):]
 
         sp = data.split(b'\n')
         if self._last_line_part != b'':
@@ -520,21 +520,20 @@ class Monitor(object):
                        self.elf_file]
 
                 # Here we handling GDB as a process
-                if True:
-                    # Open GDB process
-                    try:
-                        process = subprocess.Popen(cmd, cwd=".")
-                    except KeyboardInterrupt:
-                        pass
+                # Open GDB process
+                try:
+                    process = subprocess.Popen(cmd, cwd='.')
+                except KeyboardInterrupt:
+                    pass
 
-                    # We ignore Ctrl+C interrupt form external process abd wait responce util GDB will be finished.
-                    while True:
-                        try:
-                            process.wait()
-                            break
-                        except KeyboardInterrupt:
-                            pass    # We ignore the Ctrl+C
-                    self.gdb_exit = True
+                # We ignore Ctrl+C interrupt form external process abd wait responce util GDB will be finished.
+                while True:
+                    try:
+                        process.wait()
+                        break
+                    except KeyboardInterrupt:
+                        pass    # We ignore the Ctrl+C
+                self.gdb_exit = True
 
             except OSError as e:
                 red_print('%s: %s' % (' '.join(cmd), e))

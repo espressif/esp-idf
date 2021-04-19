@@ -6,4 +6,3 @@
 PROJECT_NAME := gdbstub
 
 include $(IDF_PATH)/make/project.mk
-

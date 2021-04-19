@@ -50,18 +50,16 @@ class SerialReader(StoppableThread):
             self.serial.baudrate = self.baud
             # We can come to this thread at startup or from external application line GDB.
             # If we come from GDB we would like to continue to run without reset.
-            if self.gdb_exit is False:
+            if self.gdb_exit:
+                self.serial.rts = False
+                self.serial.dtr = True
+            else:                           # if we exit from GDB, we don't need to reset the target
                 # This sequence of DTR/RTS and open/close set the serial port to
                 # condition when GDB not make reset of the target by switching DTR/RTS.
                 self.serial.rts = True  # IO0=LOW
                 self.serial.dtr = self.serial.dtr   # usbser.sys workaround
-                self.serial.open()
-                self.serial.close()
                 self.serial.rts = False     # IO0=HIGH
                 self.serial.dtr = False
-            else:                           # if we exit from GDB, we don't need to reset the target
-                self.serial.rts = False
-                self.serial.dtr = True
 
             # Current state not reset the target!
             self.gdb_exit = False
