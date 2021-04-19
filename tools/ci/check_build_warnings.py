@@ -32,6 +32,7 @@ IGNORE_WARNS = [
         r'CryptographyDeprecationWarning',
         r'Python 3 versions older than 3.6 are not supported.',
         r'Support for Python 2 is deprecated and will be removed in future versions.',
+        r'Warning: \d+/\d+ app partitions are too small for binary'
     ]
 ]
 
@@ -49,7 +50,7 @@ def line_has_warnings(line):  # type: (str) -> bool
     return has_warnings
 
 
-def main():
+def main():  # type: () -> None
     parser = argparse.ArgumentParser(description='ESP-IDF app builder')
     parser.add_argument(
         '-v',

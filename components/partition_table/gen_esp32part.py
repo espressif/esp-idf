@@ -48,6 +48,18 @@ TYPES = {
     'data': DATA_TYPE,
 }
 
+
+def get_ptype_as_int(ptype):
+    """ Convert a string which might be numeric or the name of a partition type to an integer """
+    try:
+        return TYPES[ptype]
+    except KeyError:
+        try:
+            return int(ptype, 0)
+        except TypeError:
+            return ptype
+
+
 # Keep this map in sync with esp_partition_subtype_t enum in esp_partition.h
 SUBTYPES = {
     APP_TYPE: {
@@ -66,6 +78,18 @@ SUBTYPES = {
         'spiffs': 0x82,
     },
 }
+
+
+def get_subtype_as_int(ptype, subtype):
+    """ Convert a string which might be numeric or the name of a partition subtype to an integer """
+    try:
+        return SUBTYPES[get_ptype_as_int(ptype)][subtype]
+    except KeyError:
+        try:
+            return int(subtype, 0)
+        except TypeError:
+            return subtype
+
 
 quiet = False
 md5sum = True
@@ -88,6 +112,18 @@ def critical(msg):
 class PartitionTable(list):
     def __init__(self):
         super(PartitionTable, self).__init__(self)
+
+    @classmethod
+    def from_file(cls, f):
+        data = f.read()
+        data_is_binary = data[0:2] == PartitionDefinition.MAGIC_BYTES
+        if data_is_binary:
+            status('Parsing binary partition input...')
+            return cls.from_binary(data), True
+
+        data = data.decode()
+        status('Parsing CSV input...')
+        return cls.from_csv(data), False
 
     @classmethod
     def from_csv(cls, csv_contents):
@@ -149,20 +185,8 @@ class PartitionTable(list):
         """ Return a partition by type & subtype, returns
         None if not found """
         # convert ptype & subtypes names (if supplied this way) to integer values
-        try:
-            ptype = TYPES[ptype]
-        except KeyError:
-            try:
-                ptype = int(ptype, 0)
-            except TypeError:
-                pass
-        try:
-            subtype = SUBTYPES[int(ptype)][subtype]
-        except KeyError:
-            try:
-                subtype = int(subtype, 0)
-            except TypeError:
-                pass
+        ptype = get_ptype_as_int(ptype)
+        subtype = get_subtype_as_int(ptype, subtype)
 
         for p in self:
             if p.type == ptype and p.subtype == subtype:
@@ -471,15 +495,7 @@ def main():
     md5sum = not args.disable_md5sum
     secure = args.secure
     offset_part_table = int(args.offset, 0)
-    input = args.input.read()
-    input_is_binary = input[0:2] == PartitionDefinition.MAGIC_BYTES
-    if input_is_binary:
-        status('Parsing binary partition input...')
-        table = PartitionTable.from_binary(input)
-    else:
-        input = input.decode()
-        status('Parsing CSV input...')
-        table = PartitionTable.from_csv(input)
+    table, input_is_binary = PartitionTable.from_file(args.input)
 
     if not args.no_verify:
         status('Verifying table...')

@@ -1,1 +1,7 @@
 CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192
+
+#
+# Partition Table
+#
+# Leave some room for larger apps without needing to reduce other features
+CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y
