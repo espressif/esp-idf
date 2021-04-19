@@ -474,14 +474,14 @@ bool IRAM_ATTR timer_group_get_auto_reload_in_isr(timer_group_t group_num, timer
     return timer_hal_get_auto_reload(&(p_timer_obj[group_num][timer_num]->hal));
 }
 
-esp_err_t timer_spinlock_take(timer_group_t group_num)
+esp_err_t IRAM_ATTR timer_spinlock_take(timer_group_t group_num)
 {
     TIMER_CHECK(group_num < TIMER_GROUP_MAX, TIMER_GROUP_NUM_ERROR, ESP_ERR_INVALID_ARG);
     TIMER_ENTER_CRITICAL(&timer_spinlock[group_num]);
     return ESP_OK;
 }
 
-esp_err_t timer_spinlock_give(timer_group_t group_num)
+esp_err_t IRAM_ATTR timer_spinlock_give(timer_group_t group_num)
 {
     TIMER_CHECK(group_num < TIMER_GROUP_MAX, TIMER_GROUP_NUM_ERROR, ESP_ERR_INVALID_ARG);
     TIMER_EXIT_CRITICAL(&timer_spinlock[group_num]);
