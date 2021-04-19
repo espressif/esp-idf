@@ -1,4 +1,0 @@
-[mapping:main]
-archive: libmain.a
-entries:
-    eventfd_example:eventfd_timer_group0_isr (noflash)
