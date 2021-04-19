@@ -196,6 +196,13 @@ int64_t esp_timer_get_time(void);
 int64_t esp_timer_get_next_alarm(void);
 
 /**
+ * @brief Get the timestamp when the next timeout is expected to occur skipping those which have skip_unhandled_events flag
+ * @return Timestamp of the nearest timer event, in microseconds.
+ *         The timebase is the same as for the values returned by esp_timer_get_time.
+ */
+int64_t esp_timer_get_next_alarm_for_wake_up(void);
+
+/**
  * @brief Dump the list of timers to a stream
  *
  * If CONFIG_ESP_TIMER_PROFILING option is enabled, this prints the list of all

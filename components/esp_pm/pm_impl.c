@@ -622,7 +622,7 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
     int core_id = xPortGetCoreID();
     if (!should_skip_light_sleep(core_id)) {
         /* Calculate how much we can sleep */
-        int64_t next_esp_timer_alarm = esp_timer_get_next_alarm();
+        int64_t next_esp_timer_alarm = esp_timer_get_next_alarm_for_wake_up();
         int64_t now = esp_timer_get_time();
         int64_t time_until_next_alarm = next_esp_timer_alarm - now;
         int64_t wakeup_delay_us = portTICK_PERIOD_MS * 1000LL * xExpectedIdleTime;

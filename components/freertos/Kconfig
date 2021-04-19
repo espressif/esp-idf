@@ -368,6 +368,7 @@ menu "FreeRTOS"
 
             Note that timers created using esp_timer APIs may prevent the system from
             entering sleep mode, even when no tasks need to run.
+            To skip unnecessary wake-up initialize a timer with the "skip_unhandled_events" option as true.
 
             If disabled, automatic light sleep support will be disabled.
 

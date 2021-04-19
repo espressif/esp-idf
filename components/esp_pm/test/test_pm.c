@@ -360,6 +360,42 @@ TEST_CASE("esp_timer produces correct delays with light sleep", "[pm]")
 #undef NUM_INTERVALS
 }
 
+static void timer_cb1(void *arg)
+{
+    ++*((int*) arg);
+}
+
+TEST_CASE("esp_timer with SKIP_UNHANDLED_EVENTS does not wake up CPU from sleep", "[pm]")
+{
+    int count_calls = 0;
+    int timer_interval_ms = 50;
+
+    const esp_timer_create_args_t timer_args = {
+            .name = "timer_cb1",
+            .arg  = &count_calls,
+            .callback = &timer_cb1,
+            .skip_unhandled_events = true,
+    };
+    esp_timer_handle_t periodic_timer;
+    esp_timer_create(&timer_args, &periodic_timer);
+    TEST_ESP_OK(esp_timer_start_periodic(periodic_timer, timer_interval_ms * 1000));
+
+    light_sleep_enable();
+
+    const unsigned count_delays = 5;
+    unsigned i = count_delays;
+    while (i-- > 0) {
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
+    TEST_ASSERT_INT_WITHIN(1, count_delays, count_calls);
+
+    light_sleep_disable();
+
+    TEST_ESP_OK(esp_timer_stop(periodic_timer));
+    TEST_ESP_OK(esp_timer_dump(stdout));
+    TEST_ESP_OK(esp_timer_delete(periodic_timer));
+}
+
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
 #endif // CONFIG_PM_ENABLE
