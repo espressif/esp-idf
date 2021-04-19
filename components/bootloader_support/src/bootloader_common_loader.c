@@ -77,7 +77,9 @@ esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hd
     }
     uint8_t revision = bootloader_common_get_chip_revision();
     if (revision < img_hdr->min_chip_rev) {
-        ESP_LOGE(TAG, "can't run on lower chip revision, expected %d, found %d", revision, img_hdr->min_chip_rev);
+        /* To fix this error, please update mininum supported chip revision from configuration,
+         * located in TARGET (e.g. ESP32) specific options under "Component config" menu */
+        ESP_LOGE(TAG, "This chip is revision %d but the application is configured for minimum revision %d. Can't run.", revision, img_hdr->min_chip_rev);
         err = ESP_FAIL;
     } else if (revision != img_hdr->min_chip_rev) {
 #ifdef BOOTLOADER_BUILD
