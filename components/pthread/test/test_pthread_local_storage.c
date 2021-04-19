@@ -4,6 +4,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "test_utils.h"
+#include "esp_system.h"
 
 TEST_CASE("pthread local storage basics", "[pthread]")
 {
@@ -127,4 +128,37 @@ static void task_test_pthread_destructor(void *v_key)
     /* call the pthread main routine, then delete ourselves... */
     thread_test_pthread_destructor(v_key);
     vTaskDelete(NULL);
+}
+
+#define STRESS_NUMITER 2000000
+#define STRESS_NUMTASKS 16
+
+static void *thread_stress_test(void *v_key)
+{
+    pthread_key_t key = (pthread_key_t) v_key;
+    void *tls_value = (void *)esp_random();
+
+    pthread_setspecific(key, tls_value);
+
+    for(int i = 0; i < STRESS_NUMITER; i++) {
+        TEST_ASSERT_EQUAL_HEX32(pthread_getspecific(key), tls_value);
+    }
+
+    return NULL;
+}
+
+
+// This test case added to reproduce issues with unpinned tasks and TLS
+TEST_CASE("pthread local storage stress test", "[pthread]")
+{
+    pthread_key_t key = -1;
+    pthread_t threads[STRESS_NUMTASKS] = { 0 };
+    TEST_ASSERT_EQUAL(0, pthread_key_create(&key, test_pthread_destructor));
+
+    for (int i = 0; i < STRESS_NUMTASKS; i++) {
+        TEST_ASSERT_EQUAL(0, pthread_create(&threads[i], NULL, thread_stress_test, (void *)key));
+    }
+    for (int i = 0; i < STRESS_NUMTASKS; i++) {
+        TEST_ASSERT_EQUAL(0, pthread_join(threads[i], NULL));
+    }
 }
