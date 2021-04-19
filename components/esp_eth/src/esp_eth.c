@@ -1,4 +1,4 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2019-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,16 +11,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #include <sys/cdefs.h>
 #include <stdatomic.h>
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_eth.h"
 #include "esp_event.h"
+#include "esp_heap_caps.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/timers.h"
-#include "esp_heap_caps.h"
 
 static const char *TAG = "esp_eth";
 
@@ -45,7 +46,8 @@ typedef struct {
     esp_eth_mediator_t mediator;
     esp_eth_phy_t *phy;
     esp_eth_mac_t *mac;
-    TimerHandle_t check_link_timer;
+    esp_timer_handle_t check_link_timer;
+    uint32_t check_link_period_ms;
     eth_speed_t speed;
     eth_duplex_t duplex;
     eth_link_t link;
@@ -97,10 +99,10 @@ static esp_err_t eth_stack_input(esp_eth_mediator_t *eth, uint8_t *buffer, uint3
     esp_eth_driver_t *eth_driver = __containerof(eth, esp_eth_driver_t, mediator);
     if (eth_driver->stack_input) {
         return eth_driver->stack_input((esp_eth_handle_t)eth_driver, buffer, length, eth_driver->priv);
-    } else {
-        free(buffer);
-        return ESP_OK;
     }
+    // No stack input path has been installed, just drop the incoming packets
+    free(buffer);
+    return ESP_OK;
 }
 
 static esp_err_t eth_on_state_changed(esp_eth_mediator_t *eth, esp_eth_state_t state, void *args)
@@ -155,18 +157,15 @@ static esp_err_t eth_on_state_changed(esp_eth_mediator_t *eth, esp_eth_state_t s
         ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "unknown ethernet state: %d", state);
         break;
     }
-    return ESP_OK;
 err:
     return ret;
 }
 
-static void eth_check_link_timer_cb(TimerHandle_t xTimer)
+static void eth_check_link_timer_cb(void *args)
 {
-    esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)pvTimerGetTimerID(xTimer);
+    esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)args;
     esp_eth_phy_t *phy = eth_driver->phy;
-    esp_eth_increase_reference(eth_driver);
     phy->get_link(phy);
-    esp_eth_decrease_reference(eth_driver);
 }
 
 ////////////////////////////////User face APIs////////////////////////////////////////////////
@@ -178,14 +177,23 @@ static void eth_check_link_timer_cb(TimerHandle_t xTimer)
 esp_err_t esp_eth_driver_install(const esp_eth_config_t *config, esp_eth_handle_t *out_hdl)
 {
     esp_err_t ret = ESP_OK;
-    ESP_GOTO_ON_FALSE(config, ESP_ERR_INVALID_ARG, err, TAG, "eth config can't be null");
-    ESP_GOTO_ON_FALSE(out_hdl, ESP_ERR_INVALID_ARG, err, TAG, "eth handle can't be null");
-    esp_eth_mac_t *mac = config->mac;
-    esp_eth_phy_t *phy = config->phy;
+    esp_eth_mac_t *mac = NULL;
+    esp_eth_phy_t *phy = NULL;
+    esp_eth_driver_t *eth_driver = NULL;
+    ESP_GOTO_ON_FALSE(config && out_hdl, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    mac = config->mac;
+    phy = config->phy;
     ESP_GOTO_ON_FALSE(mac && phy, ESP_ERR_INVALID_ARG, err, TAG, "can't set eth->mac or eth->phy to null");
     // eth_driver contains an atomic variable, which should not be put in PSRAM
-    esp_eth_driver_t *eth_driver = heap_caps_calloc(1, sizeof(esp_eth_driver_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-    ESP_GOTO_ON_FALSE(eth_driver, ESP_ERR_NO_MEM, err, TAG, "request memory for eth_driver failed");
+    eth_driver = heap_caps_calloc(1, sizeof(esp_eth_driver_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    ESP_GOTO_ON_FALSE(eth_driver, ESP_ERR_NO_MEM, err, TAG, "no mem for eth_driver");
+    const esp_timer_create_args_t check_link_timer_args = {
+        .callback = eth_check_link_timer_cb,
+        .name = "eth_link_timer",
+        .arg = eth_driver,
+        .skip_unhandled_events = true
+    };
+    ESP_GOTO_ON_ERROR(esp_timer_create(&check_link_timer_args, &eth_driver->check_link_timer), err, TAG, "create link timer failed");
     atomic_init(&eth_driver->ref_count, 1);
     atomic_init(&eth_driver->fsm, ESP_ETH_FSM_STOP);
     eth_driver->mac = mac;
@@ -196,22 +204,24 @@ esp_err_t esp_eth_driver_install(const esp_eth_config_t *config, esp_eth_handle_
     eth_driver->stack_input = config->stack_input;
     eth_driver->on_lowlevel_init_done = config->on_lowlevel_init_done;
     eth_driver->on_lowlevel_deinit_done = config->on_lowlevel_deinit_done;
+    eth_driver->check_link_period_ms = config->check_link_period_ms;
     eth_driver->customized_read_phy_reg = config->read_phy_reg;
     eth_driver->customized_write_phy_reg = config->write_phy_reg;
     eth_driver->mediator.phy_reg_read = eth_phy_reg_read;
     eth_driver->mediator.phy_reg_write = eth_phy_reg_write;
     eth_driver->mediator.stack_input = eth_stack_input;
     eth_driver->mediator.on_state_changed = eth_on_state_changed;
-    /* some PHY can't output RMII clock if in reset state, so hardware reset PHY chip firstly */
+    // set mediator for both mac and phy object, so that mac and phy are connected to each other via mediator
+    mac->set_mediator(mac, &eth_driver->mediator);
+    phy->set_mediator(phy, &eth_driver->mediator);
+    // for PHY whose internal PLL has been configured to generate RMII clock, but is put in reset state during power up,
+    // we need to deasseert the reset GPIO of PHY device first, ensure the RMII is clocked out from PHY
     phy->reset_hw(phy);
-    ESP_GOTO_ON_ERROR(mac->set_mediator(mac, &eth_driver->mediator), err_mediator, TAG, "set mediator for mac failed");
-    ESP_GOTO_ON_ERROR(phy->set_mediator(phy, &eth_driver->mediator), err_mediator, TAG, "set mediator for phy failed");
-    ESP_GOTO_ON_ERROR(mac->init(mac), err_init_mac, TAG, "init mac failed");
-    ESP_GOTO_ON_ERROR(phy->init(phy), err_init_phy, TAG, "init phy failed");
-    eth_driver->check_link_timer = xTimerCreate("eth_link_timer", pdMS_TO_TICKS(config->check_link_period_ms), pdTRUE,
-                                   eth_driver, eth_check_link_timer_cb);
-    ESP_GOTO_ON_FALSE(eth_driver->check_link_timer, ESP_FAIL, err_create_timer, TAG, "create eth_link_timer failed");
-    *out_hdl = (esp_eth_handle_t)eth_driver;
+    // init MAC first, so that MAC can generate the correct SMI signals
+    ESP_GOTO_ON_ERROR(mac->init(mac), err, TAG, "init mac failed");
+    ESP_GOTO_ON_ERROR(phy->init(phy), err, TAG, "init phy failed");
+    ESP_LOGD(TAG, "new ethernet driver @%p", eth_driver);
+    *out_hdl = eth_driver;
 
     // for backward compatible to 4.0, and will get removed in 5.0
 #if CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
@@ -220,14 +230,13 @@ esp_err_t esp_eth_driver_install(const esp_eth_config_t *config, esp_eth_handle_
 #endif
 
     return ESP_OK;
-err_create_timer:
-    phy->deinit(phy);
-err_init_phy:
-    mac->deinit(mac);
-err_init_mac:
-err_mediator:
-    free(eth_driver);
 err:
+    if (eth_driver) {
+        if (eth_driver->check_link_timer) {
+            esp_timer_delete(eth_driver->check_link_timer);
+        }
+        free(eth_driver);
+    }
     return ret;
 }
 
@@ -235,28 +244,21 @@ esp_err_t esp_eth_driver_uninstall(esp_eth_handle_t hdl)
 {
     esp_err_t ret = ESP_OK;
     esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
-    ESP_GOTO_ON_FALSE(eth_driver, ESP_ERR_INVALID_ARG, err, TAG, "ethernet driver handle can't be null");
-    // check if driver has started
+    ESP_GOTO_ON_FALSE(eth_driver, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    // check if driver has stopped
     esp_eth_fsm_t expected_fsm = ESP_ETH_FSM_STOP;
-    if (!atomic_compare_exchange_strong(&eth_driver->fsm, &expected_fsm, ESP_ETH_FSM_STOP)) {
-        ESP_LOGW(TAG, "driver not stopped yet");
-        ret = ESP_ERR_INVALID_STATE;
-        goto err;
-    }
+    ESP_GOTO_ON_FALSE(atomic_compare_exchange_strong(&eth_driver->fsm, &expected_fsm, ESP_ETH_FSM_STOP),
+                      ESP_ERR_INVALID_STATE, err, TAG, "driver not stopped yet");
     // don't uninstall driver unless there's only one reference
     int expected_ref_count = 1;
-    if (!atomic_compare_exchange_strong(&eth_driver->ref_count, &expected_ref_count, 0)) {
-        ESP_LOGE(TAG, "%d ethernet reference in use", expected_ref_count);
-        ret = ESP_ERR_INVALID_STATE;
-        goto err;
-    }
+    ESP_GOTO_ON_FALSE(atomic_compare_exchange_strong(&eth_driver->ref_count, &expected_ref_count, 0),
+                      ESP_ERR_INVALID_STATE, err, TAG, "%d ethernet reference in use", expected_ref_count);
     esp_eth_mac_t *mac = eth_driver->mac;
     esp_eth_phy_t *phy = eth_driver->phy;
-    ESP_GOTO_ON_FALSE(xTimerDelete(eth_driver->check_link_timer, 0) == pdPASS, ESP_FAIL, err, TAG, "delete eth_link_timer failed");
+    ESP_GOTO_ON_ERROR(esp_timer_delete(eth_driver->check_link_timer), err, TAG, "delete link timer failed");
     ESP_GOTO_ON_ERROR(phy->deinit(phy), err, TAG, "deinit phy failed");
     ESP_GOTO_ON_ERROR(mac->deinit(mac), err, TAG, "deinit mac failed");
     free(eth_driver);
-    return ESP_OK;
 err:
     return ret;
 }
@@ -266,19 +268,17 @@ esp_err_t esp_eth_start(esp_eth_handle_t hdl)
     esp_err_t ret = ESP_OK;
     esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
     ESP_GOTO_ON_FALSE(eth_driver, ESP_ERR_INVALID_ARG, err, TAG, "ethernet driver handle can't be null");
-    // check if driver has started
+    esp_eth_phy_t *phy = eth_driver->phy;
+    // check if driver has stopped
     esp_eth_fsm_t expected_fsm = ESP_ETH_FSM_STOP;
-    if (!atomic_compare_exchange_strong(&eth_driver->fsm, &expected_fsm, ESP_ETH_FSM_START)) {
-        ESP_LOGW(TAG, "driver started already");
-        ret = ESP_ERR_INVALID_STATE;
-        goto err;
-    }
-    ESP_GOTO_ON_ERROR(eth_driver->phy->reset(eth_driver->phy), err, TAG, "reset phy failed");
-    ESP_GOTO_ON_FALSE(xTimerStart(eth_driver->check_link_timer, 0), ESP_FAIL, err, TAG, "start eth_link_timer failed");
-    ESP_GOTO_ON_ERROR(esp_event_post(ETH_EVENT, ETHERNET_EVENT_START, &eth_driver, sizeof(esp_eth_driver_t *), 0), err_event, TAG, "send ETHERNET_EVENT_START event failed");
-    return ESP_OK;
-err_event:
-    xTimerStop(eth_driver->check_link_timer, 0);
+    ESP_GOTO_ON_FALSE(atomic_compare_exchange_strong(&eth_driver->fsm, &expected_fsm, ESP_ETH_FSM_START),
+                      ESP_ERR_INVALID_STATE, err, TAG, "driver started already");
+    // reset PHY device, to put it back to LINK_DOWN state
+    ESP_GOTO_ON_ERROR(phy->reset(phy), err, TAG, "reset phy failed");
+    ESP_GOTO_ON_ERROR(esp_event_post(ETH_EVENT, ETHERNET_EVENT_START, &eth_driver, sizeof(esp_eth_driver_t *), 0),
+                      err, TAG, "send ETHERNET_EVENT_START event failed");
+    ESP_GOTO_ON_ERROR(esp_timer_start_periodic(eth_driver->check_link_timer, eth_driver->check_link_period_ms * 1000),
+                      err, TAG, "start link timer failed");
 err:
     return ret;
 }
@@ -288,18 +288,15 @@ esp_err_t esp_eth_stop(esp_eth_handle_t hdl)
     esp_err_t ret = ESP_OK;
     esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
     ESP_GOTO_ON_FALSE(eth_driver, ESP_ERR_INVALID_ARG, err, TAG, "ethernet driver handle can't be null");
+    esp_eth_mac_t *mac = eth_driver->mac;
     // check if driver has started
     esp_eth_fsm_t expected_fsm = ESP_ETH_FSM_START;
-    if (!atomic_compare_exchange_strong(&eth_driver->fsm, &expected_fsm, ESP_ETH_FSM_STOP)) {
-        ESP_LOGW(TAG, "driver not started yet");
-        ret = ESP_ERR_INVALID_STATE;
-        goto err;
-    }
-    esp_eth_mac_t *mac = eth_driver->mac;
+    ESP_GOTO_ON_FALSE(atomic_compare_exchange_strong(&eth_driver->fsm, &expected_fsm, ESP_ETH_FSM_STOP),
+                      ESP_ERR_INVALID_STATE, err, TAG, "driver not started yet");
+    ESP_GOTO_ON_ERROR(esp_timer_stop(eth_driver->check_link_timer), err, TAG, "stop link timer failed");
     ESP_GOTO_ON_ERROR(mac->stop(mac), err, TAG, "stop mac failed");
-    ESP_GOTO_ON_FALSE(xTimerStop(eth_driver->check_link_timer, 0), ESP_FAIL, err, TAG, "stop eth_link_timer failed");
-    ESP_GOTO_ON_ERROR(esp_event_post(ETH_EVENT, ETHERNET_EVENT_STOP, &eth_driver, sizeof(esp_eth_driver_t *), 0), err, TAG, "send ETHERNET_EVENT_STOP event failed");
-    return ESP_OK;
+    ESP_GOTO_ON_ERROR(esp_event_post(ETH_EVENT, ETHERNET_EVENT_STOP, &eth_driver, sizeof(esp_eth_driver_t *), 0),
+                      err, TAG, "send ETHERNET_EVENT_STOP event failed");
 err:
     return ret;
 }
@@ -314,7 +311,6 @@ esp_err_t esp_eth_update_input_path(
     ESP_GOTO_ON_FALSE(eth_driver, ESP_ERR_INVALID_ARG, err, TAG, "ethernet driver handle can't be null");
     eth_driver->priv = priv;
     eth_driver->stack_input = stack_input;
-    return ESP_OK;
 err:
     return ret;
 }
@@ -327,7 +323,7 @@ esp_err_t esp_eth_transmit(esp_eth_handle_t hdl, void *buf, size_t length)
     ESP_GOTO_ON_FALSE(length, ESP_ERR_INVALID_ARG, err, TAG, "buf length can't be zero");
     ESP_GOTO_ON_FALSE(eth_driver, ESP_ERR_INVALID_ARG, err, TAG, "ethernet driver handle can't be null");
     esp_eth_mac_t *mac = eth_driver->mac;
-    return mac->transmit(mac, buf, length);
+    ret = mac->transmit(mac, buf, length);
 err:
     return ret;
 }
@@ -340,7 +336,7 @@ esp_err_t esp_eth_receive(esp_eth_handle_t hdl, uint8_t *buf, uint32_t *length)
     ESP_GOTO_ON_FALSE(*length > 60, ESP_ERR_INVALID_ARG, err, TAG, "length can't be less than 60");
     ESP_GOTO_ON_FALSE(eth_driver, ESP_ERR_INVALID_ARG, err, TAG, "ethernet driver handle can't be null");
     esp_eth_mac_t *mac = eth_driver->mac;
-    return mac->receive(mac, buf, length);
+    ret = mac->receive(mac, buf, length);
 err:
     return ret;
 }
@@ -388,7 +384,6 @@ esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data)
         ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "unknown io command: %d", cmd);
         break;
     }
-    return ESP_OK;
 err:
     return ret;
 }
@@ -399,7 +394,6 @@ esp_err_t esp_eth_increase_reference(esp_eth_handle_t hdl)
     esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
     ESP_GOTO_ON_FALSE(eth_driver, ESP_ERR_INVALID_ARG, err, TAG, "ethernet driver handle can't be null");
     atomic_fetch_add(&eth_driver->ref_count, 1);
-    return ESP_OK;
 err:
     return ret;
 }
@@ -410,7 +404,6 @@ esp_err_t esp_eth_decrease_reference(esp_eth_handle_t hdl)
     esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
     ESP_GOTO_ON_FALSE(eth_driver, ESP_ERR_INVALID_ARG, err, TAG, "ethernet driver handle can't be null");
     atomic_fetch_sub(&eth_driver->ref_count, 1);
-    return ESP_OK;
 err:
     return ret;
 }

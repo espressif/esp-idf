@@ -8,7 +8,7 @@ set(priv_requires)
 if(CONFIG_ETH_ENABLED)
     set(srcs "src/esp_eth.c" "src/esp_eth_phy.c")
     set(include "include")
-    set(priv_requires "driver" "log") # require "driver" for using some GPIO APIs
+    set(priv_requires "driver" "log" "esp_timer") # require "driver" for using some GPIO APIs
 
     if(NOT CMAKE_BUILD_EARLY_EXPANSION)
         # esp_netif related
