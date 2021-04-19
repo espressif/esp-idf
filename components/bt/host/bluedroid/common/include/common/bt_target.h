@@ -1224,7 +1224,7 @@
 #endif
 
 #ifndef GATT_MAX_SR_PROFILES
-#define GATT_MAX_SR_PROFILES        8 /* max is 32 */
+#define GATT_MAX_SR_PROFILES        UC_CONFIG_BT_GATT_MAX_SR_PROFILES
 #endif
 
 #ifndef GATT_MAX_APPS
