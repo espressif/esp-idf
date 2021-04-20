@@ -32,6 +32,14 @@ menu "Example Configuration"
             select ETH_SPI_ETHERNET_W5500
             help
                 Select external SPI-Ethernet module (W5500).
+
+        config EXAMPLE_USE_KSZ8851SNL
+            bool "KSZ8851SNL Module"
+            select EXAMPLE_USE_SPI_ETHERNET
+            select ETH_USE_SPI_ETHERNET
+            select ETH_SPI_ETHERNET_KSZ8851SNL
+            help
+                Select external SPI-Ethernet module (KSZ8851SNL).
     endchoice # EXAMPLE_ETHERNET_TYPE
 
     if EXAMPLE_USE_INTERNAL_ETHERNET
