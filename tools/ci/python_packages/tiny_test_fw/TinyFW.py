@@ -199,6 +199,7 @@ def test_method(**kwargs):
             junit_test_case = JunitReport.create_test_case(format_case_id(case_info['ID'],
                                                                           target=env_inst.default_dut_cls.TARGET))
             result = False
+            unexpected_error = False
             try:
                 Utility.console_log('starting running test: ' + test_func.__name__, color='green')
                 # execute test function
@@ -209,6 +210,7 @@ def test_method(**kwargs):
                 junit_test_case.add_failure_info(str(e))
             except Exception as e:
                 Utility.handle_unexpected_exception(junit_test_case, e)
+                unexpected_error = True
             finally:
                 # do close all DUTs, if result is False then print DUT debug info
                 close_errors = env_inst.close(dut_debug=(not result))
@@ -222,7 +224,7 @@ def test_method(**kwargs):
                     for error in close_errors:
                         junit_test_case.add_failure_info(str(error))
                     result = False
-                if not case_info['junit_report_by_case']:
+                if not case_info['junit_report_by_case'] or unexpected_error:
                     JunitReport.test_case_finish(junit_test_case)
 
             # end case and output result
