@@ -69,7 +69,7 @@ void phy_wakeup_init(void);
  */
 void phy_close_rf(void);
 
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S2
+#if !CONFIG_IDF_TARGET_ESP32
 /**
  * @brief Disable PHY temperature sensor.
  */
