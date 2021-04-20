@@ -973,10 +973,11 @@ void bta_gattc_start_discover(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
             p_clcb->p_srcb->srvc_hdl_chg = FALSE;
             p_clcb->p_srcb->update_count = 0;
             p_clcb->p_srcb->state = BTA_GATTC_SERV_DISC_ACT;
-
+            #if (BT_MULTI_CONNECTION_ENBALE == FALSE)
             if (p_clcb->transport == BTA_TRANSPORT_LE) {
                 L2CA_EnableUpdateBleConnParams(p_clcb->p_srcb->server_bda, FALSE);
             }
+            #endif
 
             /* set all srcb related clcb into discovery ST */
             bta_gattc_set_discover_st(p_clcb->p_srcb);

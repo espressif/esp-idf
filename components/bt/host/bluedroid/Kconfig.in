@@ -193,6 +193,14 @@ config BT_GATTC_CACHE_NVS_FLASH
     help
         This select can save gattc cache data to nvs flash
 
+config BT_GATTC_CONNECT_RETRY_COUNT
+    int "The number of attempts to reconnect if the connection establishment failed"
+    depends on BT_GATTC_ENABLE
+    range 1 7
+    default 3
+    help
+        The number of attempts to reconnect if the connection establishment failed
+
 config BT_BLE_SMP_ENABLE
     bool "Include BLE security module(SMP)"
     depends on BT_BLE_ENABLED
@@ -962,6 +970,13 @@ config BT_ACL_CONNECTIONS
     default 4
     help
         Maximum BT/BLE connection count
+
+config BT_MULTI_CONNECTION_ENBALE
+    bool "Enable BLE multi-conections"
+    depends on BT_BLUEDROID_ENABLED
+    default y
+    help
+        Enable this option if there are multiple connections
 
 config BT_ALLOCATION_FROM_SPIRAM_FIRST
     bool "BT/BLE will first malloc the memory from the PSRAM"

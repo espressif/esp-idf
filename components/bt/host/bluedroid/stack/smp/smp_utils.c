@@ -1021,7 +1021,9 @@ void smp_proc_pairing_cmpl(tSMP_CB *p_cb)
             //clear flag
             p_rec->ble.skip_update_conn_param = false;
         } else {
+            #if (BT_MULTI_CONNECTION_ENBALE == FALSE)
             L2CA_EnableUpdateBleConnParams(p_cb->pairing_bda, TRUE);
+            #endif
         }
     }
 
