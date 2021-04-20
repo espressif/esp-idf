@@ -1168,10 +1168,31 @@ def action_install(args):
         tool_obj.install(tool_version)
 
 
-def action_install_python_env(args):
+def action_install_python_env(args):  # type: ignore
+    reinstall = args.reinstall
     idf_python_env_path, _, virtualenv_python = get_python_env_path()
 
-    if args.reinstall and os.path.exists(idf_python_env_path):
+    is_virtualenv = hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix)
+    if is_virtualenv and (not os.path.exists(idf_python_env_path) or reinstall):
+        fatal('This script was called from a virtual environment, can not create a virtual environment again')
+        raise SystemExit(1)
+
+    if os.path.exists(virtualenv_python):
+        try:
+            subprocess.check_call([virtualenv_python, '--version'], stdout=sys.stdout, stderr=sys.stderr)
+        except subprocess.CalledProcessError:
+            # At this point we can reinstall the virtual environment if it is non-functional. This can happen at least
+            # when the Python interpreter was removed which was used to create the virtual environment.
+            reinstall = True
+
+        try:
+            subprocess.check_call([virtualenv_python, '-m', 'pip', '--version'], stdout=sys.stdout, stderr=sys.stderr)
+        except subprocess.CalledProcessError:
+            warn('PIP is not available in the virtual environment.')
+            # Reinstallation of the virtual environment could help if PIP was installed for the main Python
+            reinstall = True
+
+    if reinstall and os.path.exists(idf_python_env_path):
         warn('Removing the existing Python environment in {}'.format(idf_python_env_path))
         shutil.rmtree(idf_python_env_path)
 
