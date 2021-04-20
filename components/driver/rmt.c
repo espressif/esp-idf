@@ -114,7 +114,7 @@ static rmt_contex_t rmt_contex = {
 
 static rmt_obj_t *p_rmt_obj[RMT_CHANNEL_MAX] = {0};
 
-#if SOC_RMT_SOURCE_CLK_INDEPENDENT
+#if SOC_RMT_CHANNEL_CLK_INDEPENDENT
 static uint32_t s_rmt_source_clock_hz[RMT_CHANNEL_MAX];
 #else
 static uint32_t s_rmt_source_clock_hz;
@@ -597,7 +597,7 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
     }
     RMT_EXIT_CRITICAL();
 
-#if SOC_RMT_SOURCE_CLK_INDEPENDENT
+#if SOC_RMT_CHANNEL_CLK_INDEPENDENT
     s_rmt_source_clock_hz[channel] = rmt_source_clk_hz;
 #else
     if (s_rmt_source_clock_hz && rmt_source_clk_hz != s_rmt_source_clock_hz) {
@@ -1316,7 +1316,7 @@ esp_err_t rmt_get_counter_clock(rmt_channel_t channel, uint32_t *clock_hz)
     RMT_CHECK(clock_hz, "parameter clock_hz can't be null", ESP_ERR_INVALID_ARG);
     RMT_ENTER_CRITICAL();
     uint32_t rmt_source_clk_hz = 0;
-#if SOC_RMT_SOURCE_CLK_INDEPENDENT
+#if SOC_RMT_CHANNEL_CLK_INDEPENDENT
     rmt_source_clk_hz = s_rmt_source_clock_hz[channel];
 #else
     rmt_source_clk_hz = s_rmt_source_clock_hz;
@@ -1355,6 +1355,7 @@ esp_err_t rmt_remove_channel_from_group(rmt_channel_t channel)
     RMT_EXIT_CRITICAL();
     return ESP_OK;
 }
+#endif
 
 esp_err_t rmt_memory_rw_rst(rmt_channel_t channel)
 {
@@ -1368,7 +1369,6 @@ esp_err_t rmt_memory_rw_rst(rmt_channel_t channel)
     RMT_EXIT_CRITICAL();
     return ESP_OK;
 }
-#endif
 
 #if SOC_RMT_SUPPORT_TX_LOOP_COUNT
 esp_err_t rmt_set_tx_loop_count(rmt_channel_t channel, uint32_t count)
