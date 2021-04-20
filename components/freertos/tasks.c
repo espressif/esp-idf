@@ -231,7 +231,12 @@ count overflows. */
  * task should be used in place of the parameter.  This macro simply checks to
  * see if the parameter is NULL and returns a pointer to the appropriate TCB.
  */
-#define prvGetTCBFromHandle( pxHandle ) ( ( ( pxHandle ) == NULL ) ? (TaskHandle_t)pxCurrentTCB[xPortGetCoreID()] : ( (TaskHandle_t)pxHandle ) )
+#if portNUM_PROCESSORS > 1
+/* In SMP, we need to disable interrupts if getting the current task handle outside a critical section. Calling xTaskGetCurrentTaskHandle() ensures this. */
+#define prvGetTCBFromHandle( pxHandle ) ( ( ( pxHandle ) == NULL ) ? xTaskGetCurrentTaskHandle() : ( (TaskHandle_t)pxHandle ) )
+#else
+#define prvGetTCBFromHandle( pxHandle ) ( ( ( pxHandle ) == NULL ) ? (TaskHandle_t) pxCurrentTCB[0] : ( (TaskHandle_t)pxHandle ) )
+#endif
 
 /* The item value of the event list item is normally used to hold the priority
 of the task to which it belongs (coded to allow it to be held in reverse
@@ -4465,7 +4470,7 @@ TCB_t *pxTCB;
 }
 /*-----------------------------------------------------------*/
 
-#if ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) )
+#if ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) || (portNUM_PROCESSORS > 1) )
 
 	TaskHandle_t xTaskGetCurrentTaskHandle( void )
 	{
