@@ -296,6 +296,13 @@ class IDFApp(App.BaseApp):
                     d[configs[0]] = configs[1].rstrip()
         return d
 
+    def get_sdkconfig_config_value(self, config_key):    # type: (str) -> Any
+        sdkconfig_dict = self.get_sdkconfig()
+        value = None
+        if (config_key in sdkconfig_dict):
+            value = sdkconfig_dict[config_key]
+        return value
+
     @abstractmethod
     def _try_get_binary_from_local_fs(self):  # type: () -> Optional[str]
         pass
