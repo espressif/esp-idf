@@ -37,6 +37,12 @@ tBTM_CB  btm_cb;
 tBTM_CB  *btm_cb_ptr;
 #endif
 
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+extern void btm_ble_extendadvcb_init(void);
+extern void btm_ble_advrecod_init(void);
+#endif
+
+
 /*******************************************************************************
 **
 ** Function         btm_init
@@ -80,6 +86,11 @@ void btm_init (void)
     btm_ble_sem_init();
 #endif
     btm_sec_dev_init();
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+    btm_ble_extendadvcb_init();
+    btm_ble_advrecod_init();
+#endif
+
 }
 
 
