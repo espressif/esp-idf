@@ -1957,7 +1957,17 @@ static int prov_auth(const u8_t idx, u8_t method, u8_t action, u8_t size)
             u32_t num = 0U;
 
             bt_mesh_rand(&num, sizeof(num));
-            num %= div[size - 1];
+
+            if (input == BLE_MESH_PUSH ||
+                input == BLE_MESH_TWIST) {
+                /** NOTE: According to the Bluetooth Mesh Profile Specification
+                 *  Section 5.4.2.4, push and twist should be a random integer
+                 *  between 0 and 10^size.
+                 */
+                num = (num % (div[size - 1] - 1)) + 1;
+            } else {
+                num %= div[size - 1];
+            }
 
             sys_put_be32(num, &link[idx].auth[12]);
             memset(link[idx].auth, 0, 12);
