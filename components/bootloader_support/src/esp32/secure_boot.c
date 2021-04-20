@@ -369,11 +369,7 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
 
     if (efuse_key_write_protected == false) {
         ESP_LOGI(TAG, "Write protecting public key digest...");
-        ret = esp_efuse_set_write_protect(EFUSE_BLK2);
-        if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Write protecting public key digest...failed.");
-            return ret;
-        }
+        new_wdata0 |= EFUSE_WR_DIS_BLK2; // delay burning until second half of this function
         efuse_key_write_protected = true;
     }
 
