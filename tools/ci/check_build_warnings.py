@@ -23,12 +23,14 @@ WARNING_REGEX = re.compile(r'(?:error|warning)[^\w]', re.MULTILINE | re.IGNORECA
 IGNORE_WARNS = [
     re.compile(r_str) for r_str in [
         r'library/error\.o',
+        r'/.*error\S*\.o',
         r'.*error.*\.c\.obj',
         r'.*error.*\.cpp\.obj',
         r'.*error.*\.cxx\.obj',
         r'.*error.*\.cc\.obj',
         r'-Werror',
         r'error\.d',
+        r'/.*error\S*.d',
         r'reassigning to symbol',
         r'changes choice state',
         r'crosstool_version_check\.cmake',
