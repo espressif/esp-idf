@@ -1,6 +1,3 @@
-| Supported Targets | ESP32 |
-| ----------------- | ----- |
-
 # I2C Tools Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -65,7 +62,7 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
  |                                                            |
  ==============================================================
 
-esp32> help
+i2c-tools> help
 help 
   Print the list of registered commands
 
