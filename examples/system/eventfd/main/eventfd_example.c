@@ -34,10 +34,9 @@ static const char *TAG = "eventfd_example";
 int s_timer_fd;
 int s_progress_fd;
 
-static void eventfd_timer_group0_isr(void *para)
+static bool eventfd_timer_isr_callback(void *arg)
 {
-    timer_spinlock_take(TIMER_GROUP_0);
-    int timer_idx = (int) para;
+    int timer_idx = (int) arg;
 
     uint32_t timer_intr = timer_group_get_intr_status_in_isr(TIMER_GROUP_0);
     uint64_t timer_counter_value = timer_group_get_counter_value_in_isr(TIMER_GROUP_0, timer_idx);
@@ -53,7 +52,8 @@ static void eventfd_timer_group0_isr(void *para)
     uint64_t signal = TIMER_SIGNAL;
     ssize_t val = write(s_timer_fd, &signal, sizeof(signal));
     assert(val == sizeof(signal));
-    timer_spinlock_give(TIMER_GROUP_0);
+
+    return true;
 }
 
 static void eventfd_timer_init(int timer_idx, double timer_interval_sec)
@@ -71,8 +71,7 @@ static void eventfd_timer_init(int timer_idx, double timer_interval_sec)
 
     ESP_ERROR_CHECK(timer_set_alarm_value(TIMER_GROUP_0, timer_idx, timer_interval_sec * TIMER_SCALE));
     ESP_ERROR_CHECK(timer_enable_intr(TIMER_GROUP_0, timer_idx));
-    ESP_ERROR_CHECK(timer_isr_register(TIMER_GROUP_0, timer_idx, eventfd_timer_group0_isr,
-                                       NULL, ESP_INTR_FLAG_IRAM, NULL));
+    ESP_ERROR_CHECK(timer_isr_callback_add(TIMER_GROUP_0, timer_idx, &eventfd_timer_isr_callback, (void*) timer_idx, 0));
 
     ESP_ERROR_CHECK(timer_start(TIMER_GROUP_0, timer_idx));
 }
