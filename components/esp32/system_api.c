@@ -115,6 +115,10 @@ esp_err_t esp_efuse_mac_get_default(uint8_t* mac)
                 return ESP_OK;
             }
         } else {
+            if (esp_efuse_get_pkg_ver() ==  3) {
+                ESP_LOGI(TAG, "Found OEM-type ESP32, ignore EFUSE CRC error ...");
+                return ESP_OK; // override for Xiaomi SOC's and maybe others too
+            }
             ESP_LOGE(TAG, "Base MAC address from BLK0 of EFUSE CRC error, efuse_crc = 0x%02x; calc_crc = 0x%02x", efuse_crc, calc_crc);
             abort();
         }
