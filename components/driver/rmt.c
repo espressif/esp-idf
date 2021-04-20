@@ -125,8 +125,8 @@ static void rmt_module_enable(void)
 {
     RMT_ENTER_CRITICAL();
     if (rmt_contex.rmt_module_enabled == false) {
-        periph_module_reset(rmt_periph_signals.module);
-        periph_module_enable(rmt_periph_signals.module);
+        periph_module_reset(rmt_periph_signals.groups[0].module);
+        periph_module_enable(rmt_periph_signals.groups[0].module);
         rmt_contex.rmt_module_enabled = true;
     }
     RMT_EXIT_CRITICAL();
@@ -137,7 +137,7 @@ static void rmt_module_disable(void)
 {
     RMT_ENTER_CRITICAL();
     if (rmt_contex.rmt_module_enabled == true) {
-        periph_module_disable(rmt_periph_signals.module);
+        periph_module_disable(rmt_periph_signals.groups[0].module);
         rmt_contex.rmt_module_enabled = false;
     }
     RMT_EXIT_CRITICAL();
@@ -533,11 +533,11 @@ esp_err_t rmt_set_gpio(rmt_channel_t channel, rmt_mode_t mode, gpio_num_t gpio_n
     if (mode == RMT_MODE_TX) {
         RMT_CHECK(RMT_IS_TX_CHANNEL(channel), RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
         gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);
-        esp_rom_gpio_connect_out_signal(gpio_num, rmt_periph_signals.channels[channel].tx_sig, invert_signal, 0);
+        esp_rom_gpio_connect_out_signal(gpio_num, rmt_periph_signals.groups[0].channels[channel].tx_sig, invert_signal, 0);
     } else {
         RMT_CHECK(RMT_IS_RX_CHANNEL(channel), RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
         gpio_set_direction(gpio_num, GPIO_MODE_INPUT);
-        esp_rom_gpio_connect_in_signal(gpio_num, rmt_periph_signals.channels[channel].rx_sig, invert_signal);
+        esp_rom_gpio_connect_in_signal(gpio_num, rmt_periph_signals.groups[0].channels[channel].rx_sig, invert_signal);
     }
     return ESP_OK;
 }
@@ -722,7 +722,7 @@ esp_err_t rmt_isr_register(void (*fn)(void *), void *arg, int intr_alloc_flags, 
     RMT_CHECK((fn != NULL), RMT_ADDR_ERROR_STR, ESP_ERR_INVALID_ARG);
     RMT_CHECK(rmt_contex.rmt_driver_channels == 0, "RMT driver installed, can not install generic ISR handler", ESP_FAIL);
 
-    return esp_intr_alloc(rmt_periph_signals.irq, intr_alloc_flags, fn, arg, handle);
+    return esp_intr_alloc(rmt_periph_signals.groups[0].irq, intr_alloc_flags, fn, arg, handle);
 }
 
 esp_err_t rmt_isr_deregister(rmt_isr_handle_t handle)
