@@ -249,7 +249,6 @@ SECTIONS
   ASSERT(((_bss_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)),
           "DRAM segment data does not fit.")
 
-  /* When modifying the alignment, update tls_section_alignment in pxPortInitialiseStack */
   .flash.appdesc : ALIGN(0x10)
   {
     _rodata_start = ABSOLUTE(.);
@@ -265,6 +264,8 @@ SECTIONS
 
   .flash.rodata : ALIGN(0x10)
   {
+    _flash_rodata_start = ABSOLUTE(.);
+
     mapping[flash_rodata]
 
     *(.irom1.text) /* catch stray ICACHE_RODATA_ATTR */
@@ -319,6 +320,8 @@ SECTIONS
     _thread_local_end = ABSOLUTE(.);
     . = ALIGN(4);
   } >default_rodata_seg
+
+  _flash_rodata_align = ALIGNOF(.flash.rodata);
 
   .flash.text :
   {
