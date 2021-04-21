@@ -70,8 +70,7 @@ original support periods apply:
 
 * ESP-IDF V4.0.x will be supported until October 2021
 * ESP-IDF V3.3.x will be supported until February 2022
-* ESP-IDF V3.1.x and V3.2.x will both be supported until October 2020.
-* ESP-IDF versions before V3.1 are already End of Life.
+* ESP-IDF versions before V3.3 are already End of Life.
 
 Policy History
 --------------
