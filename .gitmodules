@@ -7,10 +7,6 @@
 	path = components/esptool_py/esptool
 	url = ../../espressif/esptool.git
 
-[submodule "components/bt/controller/lib"]
-	path = components/bt/controller/lib
-	url = ../../espressif/esp32-bt-lib.git
-
 [submodule "components/bootloader/subproject/components/micro-ecc/micro-ecc"]
 	path = components/bootloader/subproject/components/micro-ecc/micro-ecc
 	url = ../../kmackay/micro-ecc.git
