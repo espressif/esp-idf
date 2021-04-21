@@ -813,11 +813,20 @@ int   wpa_supplicant_install_gtk(struct wpa_sm *sm,
 
     wpa_hexdump(MSG_DEBUG, "WPA: Group Key", gd->gtk, gd->gtk_len);
 
+    /* Detect possible key reinstallation */
+    if (sm->gtk.gtk_len == (size_t) gd->gtk_len &&
+        os_memcmp(sm->gtk.gtk, gd->gtk, sm->gtk.gtk_len) == 0) {
+            wpa_printf(MSG_DEBUG,
+                    "WPA: Not reinstalling already in-use GTK to the driver (keyidx=%d tx=%d len=%d)",
+                    gd->keyidx, gd->tx, gd->gtk_len);
+            return 0;
+    }
     #ifdef DEBUG_PRINT
     wpa_printf(MSG_DEBUG, "WPA: Installing GTK to the driver "
            "(keyidx=%d tx=%d len=%d).\n", gd->keyidx, gd->tx,
            gd->gtk_len);
     #endif
+
     wpa_hexdump(MSG_DEBUG, "WPA: RSC", key_rsc, gd->key_rsc_len);
     if (sm->group_cipher == WPA_CIPHER_TKIP) {
         /* Swap Tx/Rx keys for Michael MIC */
@@ -850,6 +859,9 @@ int   wpa_supplicant_install_gtk(struct wpa_sm *sm,
         #endif
         return -1;
     }
+
+    sm->gtk.gtk_len = gd->gtk_len;
+    os_memcpy(sm->gtk.gtk, gd->gtk, sm->gtk.gtk_len);
 
     return 0;
 }
