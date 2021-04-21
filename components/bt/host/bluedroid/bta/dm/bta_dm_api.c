@@ -2588,9 +2588,7 @@ void BTA_VendorCleanup (void)
     }
 #endif
 
-    if (cmn_ble_vsc_cb.adv_inst_max > 0) {
-        btm_ble_multi_adv_cleanup();
-    }
+    btm_ble_multi_adv_cleanup();
 }
 
 #endif

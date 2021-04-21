@@ -138,13 +138,28 @@ esp_err_t esp_ble_gap_update_conn_params(esp_ble_conn_update_params_t *params)
     btc_ble_gap_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    if(!params) {
+        LOG_ERROR("%s,params is NULL", __func__);
+        return ESP_FAIL;
+    }
 
-    msg.sig = BTC_SIG_API_CALL;
-    msg.pid = BTC_PID_GAP_BLE;
-    msg.act = BTC_GAP_BLE_ACT_UPDATE_CONN_PARAM;
-    memcpy(&arg.conn_update_params.conn_params, params, sizeof(esp_ble_conn_update_params_t));
+    if (ESP_BLE_IS_VALID_PARAM(params->min_int, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
+        ESP_BLE_IS_VALID_PARAM(params->max_int, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
+        ESP_BLE_IS_VALID_PARAM(params->timeout, ESP_BLE_CONN_SUP_TOUT_MIN, ESP_BLE_CONN_SUP_TOUT_MAX) &&
+        (params->latency <= ESP_BLE_CONN_LATENCY_MAX || params->latency == ESP_BLE_CONN_PARAM_UNDEF) &&
+        ((params->timeout * 10) >= ((1 + params->latency) * ((params->max_int * 5) >> 1))) && params->min_int <= params->max_int) {
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+        msg.sig = BTC_SIG_API_CALL;
+        msg.pid = BTC_PID_GAP_BLE;
+        msg.act = BTC_GAP_BLE_ACT_UPDATE_CONN_PARAM;
+        memcpy(&arg.conn_update_params.conn_params, params, sizeof(esp_ble_conn_update_params_t));
+
+        return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    } else {
+        LOG_ERROR("%s,invalid connection params:min_int = %d, max_int = %d, latency = %d, timeout = %d",\
+                            __func__, params->min_int, params->max_int, params->latency, params->timeout);
+        return ESP_FAIL;
+    }
 }
 
 esp_err_t esp_ble_gap_set_pkt_data_len(esp_bd_addr_t remote_device, uint16_t tx_data_length)
