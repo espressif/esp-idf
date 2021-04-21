@@ -251,7 +251,6 @@ SECTIONS
     _bss_end = ABSOLUTE(.);
   } > dram0_0_seg
 
-  /* When modifying the alignment, update tls_section_alignment in pxPortInitialiseStack */
   .flash.appdesc : ALIGN(0x10)
   {
     _rodata_reserved_start = ABSOLUTE(.);
@@ -268,6 +267,8 @@ SECTIONS
 
   .flash.rodata : ALIGN(0x10)
   {
+    _flash_rodata_start = ABSOLUTE(.);
+
     mapping[flash_rodata]
 
     *(.irom1.text) /* catch stray ICACHE_RODATA_ATTR */
@@ -323,6 +324,8 @@ SECTIONS
     _rodata_reserved_end = ABSOLUTE(.);
     . = ALIGN(4);
   } >default_rodata_seg
+
+  _flash_rodata_align = ALIGNOF(.flash.rodata);
 
   .flash.text :
   {
