@@ -28,6 +28,10 @@
 #include "esp_wifi.h"
 #endif
 
+#if CONFIG_BT_BLE_ENABLED || CONFIG_BT_NIMBLE_ENABLED
+#include "ble_api.h"
+#endif
+
 static const char *TAG = "advanced_https_ota_example";
 extern const uint8_t server_cert_pem_start[] asm("_binary_ca_cert_pem_start");
 extern const uint8_t server_cert_pem_end[] asm("_binary_ca_cert_pem_end");
@@ -213,11 +217,24 @@ void app_main(void)
 #endif
 
 #if CONFIG_EXAMPLE_CONNECT_WIFI
+#if !CONFIG_BT_ENABLED
     /* Ensure to disable any WiFi power save mode, this allows best throughput
      * and hence timings for overall OTA operation.
      */
     esp_wifi_set_ps(WIFI_PS_NONE);
+#else
+    /* WIFI_PS_MIN_MODEM is the default mode for WiFi Power saving. When both
+     * WiFi and Bluetooth are running, WiFI modem has to go down, hence we
+     * need WIFI_PS_MIN_MODEM. And as WiFi modem goes down, OTA download time
+     * increases.
+     */
+    esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
+#endif // CONFIG_BT_ENABLED
 #endif // CONFIG_EXAMPLE_CONNECT_WIFI
+
+#if CONFIG_BT_BLE_ENABLED || CONFIG_BT_NIMBLE_ENABLED
+    esp_ble_helper_init();
+#endif
 
     xTaskCreate(&advanced_ota_example_task, "advanced_ota_example_task", 1024 * 8, NULL, 5, NULL);
 }
