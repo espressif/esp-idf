@@ -17,33 +17,42 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-#include "ksz8851.h"
-
-#include "driver/gpio.h"
-#include "esp_heap_caps.h"
-#include "esp_log.h"
-#include "esp_rom_gpio.h"
 
 #include <stdlib.h>
-#include <string.h>
+#include "esp_check.h"
+#include "esp_heap_caps.h"
+#include "esp_log.h"
+#include "driver/gpio.h"
+#include "esp_rom_gpio.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_eth.h"
+#include "ksz8851.h"
+
+
+typedef struct {
+    esp_eth_phy_t parent;
+    esp_eth_mediator_t *eth;
+    int32_t addr;
+    uint32_t reset_timeout_ms;
+    uint32_t autonego_timeout_ms;
+    eth_link_t link_status;
+    int reset_gpio_num;
+} phy_ksz8851snl_t;
+
 
 static const char *TAG = "ksz8851snl-phy";
-#define PHY_CHECK(a, str, goto_tag, ...)                                      \
-    do {                                                                      \
-        if (!(a)) {                                                           \
-        ESP_LOGE(TAG, "%s(%d): " str, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
-        goto goto_tag;                                                        \
-        }                                                                     \
-    } while (0)
+
 
 static esp_err_t ksz8851_update_link_duplex_speed(phy_ksz8851snl_t *ksz8851)
 {
+    esp_err_t ret = ESP_OK;
     esp_eth_mediator_t *eth = ksz8851->eth;
     eth_speed_t speed       = ETH_SPEED_10M;
     eth_duplex_t duplex     = ETH_DUPLEX_HALF;
     uint32_t status;
 
-    PHY_CHECK(eth->phy_reg_read(eth, ksz8851->addr, KSZ8851_P1SR, &status) == ESP_OK, "P1SR read failed", err);
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz8851->addr, KSZ8851_P1SR, &status), err, TAG, "P1SR read failed");
     eth_link_t link = (status & P1SR_LINK_GOOD) ? ETH_LINK_UP : ETH_LINK_DOWN;
     if (ksz8851->link_status != link) {
         if (link == ETH_LINK_UP) {
@@ -61,40 +70,41 @@ static esp_err_t ksz8851_update_link_duplex_speed(phy_ksz8851snl_t *ksz8851)
                 duplex = ETH_DUPLEX_HALF;
                 ESP_LOGD(TAG, "duplex half");
             }
-            PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_SPEED, (void *)speed) == ESP_OK, "change speed failed", err);
-            PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_DUPLEX, (void *)duplex) == ESP_OK, "change duplex failed", err);
+            ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_SPEED, (void *)speed), err, TAG, "change speed failed");
+            ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_DUPLEX, (void *)duplex), err, TAG, "change duplex failed");
         }
-        PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)link) == ESP_OK, "change link failed", err);
+        ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)link), err, TAG, "change link failed");
         ksz8851->link_status = link;
     }
     return ESP_OK;
 err:
-    return ESP_FAIL;
+    return ret;
 }
 
 static esp_err_t phy_ksz8851_set_mediator(esp_eth_phy_t *phy, esp_eth_mediator_t *eth)
 {
-    PHY_CHECK(eth, "mediator can not be null", err);
+    esp_err_t ret = ESP_OK;
+    ESP_GOTO_ON_FALSE(eth, ESP_ERR_INVALID_ARG, err, TAG, "mediator can not be null");
     phy_ksz8851snl_t *ksz8851 = __containerof(phy, phy_ksz8851snl_t, parent);
     ksz8851->eth              = eth;
     return ESP_OK;
 err:
-    return ESP_ERR_INVALID_ARG;
+    return ret;
 }
 
 static esp_err_t phy_ksz8851_reset(esp_eth_phy_t *phy)
 {
+    esp_err_t ret = ESP_OK;
     phy_ksz8851snl_t *ksz8851 = __containerof(phy, phy_ksz8851snl_t, parent);
     ksz8851->link_status      = ETH_LINK_DOWN;
     esp_eth_mediator_t *eth   = ksz8851->eth;
     ESP_LOGD(TAG, "soft reset");
     // NOTE(v.chistyakov): PHY_RESET bit is self-clearing
-    PHY_CHECK(eth->phy_reg_write(eth, ksz8851->addr, KSZ8851_PHYRR, PHYRR_PHY_RESET) == ESP_OK, "PHYRR write failed",
-              err);
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz8851->addr, KSZ8851_PHYRR, PHYRR_PHY_RESET), err, TAG, "PHYRR write failed");
     vTaskDelay(pdMS_TO_TICKS(ksz8851->reset_timeout_ms));
     return ESP_OK;
 err:
-    return ESP_FAIL;
+    return ret;
 }
 
 static esp_err_t phy_ksz8851_reset_hw(esp_eth_phy_t *phy)
@@ -114,64 +124,74 @@ static esp_err_t phy_ksz8851_reset_hw(esp_eth_phy_t *phy)
 
 static esp_err_t phy_ksz8851_pwrctl(esp_eth_phy_t *phy, bool enable)
 {
+    esp_err_t ret = ESP_OK;
     phy_ksz8851snl_t *ksz8851 = __containerof(phy, phy_ksz8851snl_t, parent);
     esp_eth_mediator_t *eth   = ksz8851->eth;
     if (enable) {
         ESP_LOGD(TAG, "normal mode");
-        PHY_CHECK(eth->phy_reg_write(eth, ksz8851->addr, KSZ8851_PMECR, PMECR_PME_MODE_POWER_SAVING) == ESP_OK,
-                  "PMECR write failed", err);
+        ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz8851->addr, KSZ8851_PMECR, PMECR_PME_MODE_POWER_SAVING), err, TAG, "PMECR write failed");
     } else {
         ESP_LOGD(TAG, "power saving mode");
-        PHY_CHECK(eth->phy_reg_write(eth, ksz8851->addr, KSZ8851_PMECR, PMECR_PME_MODE_NORMAL) == ESP_OK,
-                  "PMECR write failed", err);
+        ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz8851->addr, KSZ8851_PMECR, PMECR_PME_MODE_NORMAL), err, TAG, "PMECR write failed");
     }
     return ESP_OK;
 err:
-    return ESP_FAIL;
+    return ret;
 }
 
 static esp_err_t phy_ksz8851_init(esp_eth_phy_t *phy)
 {
+    esp_err_t ret = ESP_OK;
     ESP_LOGD(TAG, "initializing PHY");
-    PHY_CHECK(phy_ksz8851_pwrctl(phy, true) == ESP_OK, "power control failed", err);
-    PHY_CHECK(phy_ksz8851_reset(phy) == ESP_OK, "reset failed", err);
+    ESP_GOTO_ON_ERROR(phy_ksz8851_pwrctl(phy, true), err, TAG, "power control failed");
+    ESP_GOTO_ON_ERROR(phy_ksz8851_reset(phy), err, TAG, "reset failed");
     return ESP_OK;
 err:
-    return ESP_FAIL;
+    return ret;
 }
 
 static esp_err_t phy_ksz8851_deinit(esp_eth_phy_t *phy)
 {
+    esp_err_t ret = ESP_OK;
     ESP_LOGD(TAG, "deinitializing PHY");
-    PHY_CHECK(phy_ksz8851_pwrctl(phy, false) == ESP_OK, "power control failed", err);
+    ESP_GOTO_ON_ERROR(phy_ksz8851_pwrctl(phy, false), err, TAG, "power control failed");
     return ESP_OK;
 err:
-    return ESP_FAIL;
+    return ret;
 }
 
 static esp_err_t phy_ksz8851_negotiate(esp_eth_phy_t *phy)
 {
+    esp_err_t ret = ESP_OK;
     phy_ksz8851snl_t *ksz8851 = __containerof(phy, phy_ksz8851snl_t, parent);
     esp_eth_mediator_t *eth   = ksz8851->eth;
     ESP_LOGD(TAG, "restart negotiation");
 
     uint32_t control;
-    PHY_CHECK(eth->phy_reg_read(eth, ksz8851->addr, KSZ8851_P1CR, &control) == ESP_OK, "P1CR read failed", err);
-    PHY_CHECK(eth->phy_reg_write(eth, ksz8851->addr, KSZ8851_P1CR, control | P1CR_RESTART_AN) == ESP_OK,
-              "P1CR write failed", err);
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz8851->addr, KSZ8851_P1CR, &control), err, TAG, "P1CR read failed");
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz8851->addr, KSZ8851_P1CR, control | P1CR_RESTART_AN), err, TAG, "P1CR write failed");
 
-    vTaskDelay(pdMS_TO_TICKS(ksz8851->autonego_timeout_ms));
     uint32_t status;
-    PHY_CHECK(eth->phy_reg_read(eth, ksz8851->addr, KSZ8851_P1SR, &status) == ESP_OK, "P1SR read failed", err);
-    PHY_CHECK(status & P1SR_AN_DONE, "auto-negotiation failed", err);
-    PHY_CHECK(eth->phy_reg_write(eth, ksz8851->addr, KSZ8851_P1CR, control) == ESP_OK, "P1CR write failed", err);
+    unsigned to;
+    for (to = 0; to < ksz8851->autonego_timeout_ms / 10; to++) {
+        vTaskDelay(pdMS_TO_TICKS(10));
+        ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz8851->addr, KSZ8851_P1SR, &status), err, TAG, "P1SR read failed");
+        if (status & P1SR_AN_DONE) {
+            break;
+        }
+    }
+    if (to >= ksz8851->autonego_timeout_ms / 10) {
+        ESP_LOGW(TAG, "Ethernet PHY auto negotiation timeout");
+    }
 
-    PHY_CHECK(ksz8851_update_link_duplex_speed(ksz8851) == ESP_OK, "update link duplex speed failed", err);
-    ESP_LOGD(TAG, "negotiation succeded");
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz8851->addr, KSZ8851_P1CR, control), err, TAG, "P1CR write failed");
+
+    ESP_GOTO_ON_ERROR(ksz8851_update_link_duplex_speed(ksz8851), err, TAG, "update link duplex speed failed");
+    ESP_LOGD(TAG, "negotiation succeeded");
     return ESP_OK;
 err:
     ESP_LOGD(TAG, "negotiation failed");
-    return ESP_FAIL;
+    return ret;
 }
 
 static esp_err_t phy_ksz8851_get_link(esp_eth_phy_t *phy)
@@ -190,33 +210,33 @@ static esp_err_t phy_ksz8851_set_addr(esp_eth_phy_t *phy, uint32_t addr)
 
 static esp_err_t phy_ksz8851_get_addr(esp_eth_phy_t *phy, uint32_t *addr)
 {
-    PHY_CHECK(addr, "addr can not be null", err);
+    esp_err_t ret = ESP_OK;
+    ESP_GOTO_ON_FALSE(addr, ESP_ERR_INVALID_ARG, err, TAG, "addr can not be null");
     phy_ksz8851snl_t *ksz8851 = __containerof(phy, phy_ksz8851snl_t, parent);
     *addr                     = ksz8851->addr;
     return ESP_OK;
 err:
-    return ESP_ERR_INVALID_ARG;
+    return ret;
 }
 
 static esp_err_t phy_ksz8851_advertise_pause_ability(esp_eth_phy_t *phy, uint32_t ability)
 {
+    esp_err_t ret = ESP_OK;
     phy_ksz8851snl_t *ksz8851 = __containerof(phy, phy_ksz8851snl_t, parent);
     esp_eth_mediator_t *eth   = ksz8851->eth;
 
     uint32_t anar;
-    PHY_CHECK(eth->phy_reg_read(eth, ksz8851->addr, KSZ8851_P1ANAR, &anar) == ESP_OK, "P1ANAR read failed", err);
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz8851->addr, KSZ8851_P1ANAR, &anar), err, TAG, "P1ANAR read failed");
     if (ability) {
-        PHY_CHECK(eth->phy_reg_write(eth, ksz8851->addr, KSZ8851_P1ANAR, anar | P1ANAR_PAUSE) == ESP_OK,
-                  "P1ANAR write failed", err);
+        ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz8851->addr, KSZ8851_P1ANAR, anar | P1ANAR_PAUSE), err, TAG, "P1ANAR write failed");
         ESP_LOGD(TAG, "start advertising pause ability");
     } else {
-        PHY_CHECK(eth->phy_reg_write(eth, ksz8851->addr, KSZ8851_P1ANAR, anar & ~P1ANAR_PAUSE) == ESP_OK,
-                  "P1ANAR write failed", err);
+        ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz8851->addr, KSZ8851_P1ANAR, anar & ~P1ANAR_PAUSE), err, TAG, "P1ANAR write failed");
         ESP_LOGD(TAG, "stop advertising pause ability");
     }
     return ESP_OK;
 err:
-    return ESP_FAIL;
+    return ret;
 }
 
 static esp_err_t phy_ksz8851_del(esp_eth_phy_t *phy)
@@ -229,9 +249,10 @@ static esp_err_t phy_ksz8851_del(esp_eth_phy_t *phy)
 
 esp_eth_phy_t *esp_eth_phy_new_ksz8851snl(const eth_phy_config_t *config)
 {
-    PHY_CHECK(config, "config can not be null", err);
+    esp_eth_phy_t *ret = NULL;
+    ESP_GOTO_ON_FALSE(config, NULL, err, TAG, "config can not be null");
     phy_ksz8851snl_t *ksz8851 = calloc(1, sizeof(phy_ksz8851snl_t));
-    PHY_CHECK(ksz8851, "no mem for PHY instance", err);
+    ESP_GOTO_ON_FALSE(ksz8851, NULL, err, TAG, "no mem for PHY instance");
     ksz8851->addr                           = config->phy_addr;
     ksz8851->reset_timeout_ms               = config->reset_timeout_ms;
     ksz8851->reset_gpio_num                 = config->reset_gpio_num;
@@ -251,5 +272,5 @@ esp_eth_phy_t *esp_eth_phy_new_ksz8851snl(const eth_phy_config_t *config)
     ksz8851->parent.del                     = phy_ksz8851_del;
     return &(ksz8851->parent);
 err:
-    return NULL;
+    return ret;
 }

@@ -18,13 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 #pragma once
-#include "driver/spi_master.h"
-#include "esp_eth.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
-#include "freertos/task.h"
 
-#include <stdint.h>
 
 typedef enum {
     KSZ8851_CCR                = 0x08, ///< Chip Configuration Register
@@ -366,25 +360,3 @@ typedef enum {
     P1SR_PARTNER_10BT_FULL_DUPLEX_CAPABILITY  = 0x0002U, ///< RO Partner 10BT full-duplex capability
     P1SR_PARTNER_10BT_HALF_DUPLEX_CAPABILITY  = 0x0001U, ///< RO Partner 10BT half-duplex capability
 } ksz8851_register_bits_t;
-
-typedef struct {
-    esp_eth_mac_t parent;
-    esp_eth_mediator_t *eth;
-    spi_device_handle_t spi_hdl;
-    SemaphoreHandle_t spi_lock;
-    TaskHandle_t rx_task_hdl;
-    uint32_t sw_reset_timeout_ms;
-    int int_gpio_num;
-    uint8_t *rx_buffer;
-    uint8_t *tx_buffer;
-} emac_ksz8851snl_t;
-
-typedef struct {
-    esp_eth_phy_t parent;
-    esp_eth_mediator_t *eth;
-    int32_t addr;
-    uint32_t reset_timeout_ms;
-    uint32_t autonego_timeout_ms;
-    eth_link_t link_status;
-    int reset_gpio_num;
-} phy_ksz8851snl_t;
