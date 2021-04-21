@@ -25,7 +25,7 @@ Use this example to perform FTM between a Station and a SoftAP or en external AP
 ## How to use example
 
 With this example, users can scan for AP's that support FTM Responder role and perform FTM procedure with different configurations. Below steps show how to do this using 2 devices in Station and SoftAP mode.
-First make sure that `FTM Initiator support` on Station and `FTM Responder support` on SoftAP is enabled in the project configuration menu (`idf.py menuconfig`). These options are located in `Component config -> Wi-Fi`. Furthermore for getting a per frame detailed report of the FTM procedure on the console, enable `FTM Report logging` option. Users can also access this report data in the example code.
+First make sure that `WiFi FTM` is enabled in the project configuration menu (`idf.py menuconfig`). This option is located in `Component config -> Wi-Fi`. `FTM Initiator support` needs to be enabled on Station side and `FTM Responder support` needs to be enabled on SoftAP side, both are enabled by default. Furthermore for getting a detailed report on FTM sessions, enable `FTM Report logging` option in the `Example Configuration`.
 Build and flash the example on a supported device to see below output -
 
 ```bash

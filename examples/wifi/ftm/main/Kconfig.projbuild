@@ -1,0 +1,30 @@
+menu "Example Configuration"
+
+    config ESP_FTM_REPORT_LOG_ENABLE
+        bool "FTM Report logging"
+        default n
+        depends on ESP_WIFI_FTM_INITIATOR_SUPPORT
+        help
+            Select this option to get a detailed report of FTM Procedure with raw values
+
+    config ESP_FTM_REPORT_SHOW_DIAG
+        depends on ESP_FTM_REPORT_LOG_ENABLE
+        bool "Show dialog tokens"
+        default y
+
+    config ESP_FTM_REPORT_SHOW_RTT
+        depends on ESP_FTM_REPORT_LOG_ENABLE
+        bool "Show RTT values"
+        default y
+
+    config ESP_FTM_REPORT_SHOW_T1T2T3T4
+        depends on ESP_FTM_REPORT_LOG_ENABLE
+        bool "Show T1 to T4"
+        default y
+
+    config ESP_FTM_REPORT_SHOW_RSSI
+        depends on ESP_FTM_REPORT_LOG_ENABLE
+        bool "Show RSSI levels"
+        default y
+
+endmenu
