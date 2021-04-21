@@ -72,11 +72,15 @@ config BT_NIMBLE_LOG_LEVEL
 
 config BT_NIMBLE_MAX_CONNECTIONS
     int "Maximum number of concurrent connections"
-    range 1 9
-    default BTDM_CTRL_BLE_MAX_CONN
+    range 1 8 if (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
+    range 1 9 if IDF_TARGET_ESP32
+    default 3
     depends on BT_NIMBLE_ENABLED
     help
-        Defines maximum number of concurrent BLE connections
+        Defines maximum number of concurrent BLE connections. For ESP32, user
+        is expected to configure BTDM_CTRL_BLE_MAX_CONN from controller menu
+        along with this option. Similarly for ESP32-C3 or ESP32-S3, user is expected to
+        configure BT_CTRL_BLE_MAX_ACT from controller menu.
 
 config BT_NIMBLE_MAX_BONDS
     int "Maximum number of bonds to save across reboots"
