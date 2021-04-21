@@ -224,18 +224,58 @@ StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxC
     extern uint32_t __global_pointer$;
     uint8_t* task_thread_local_start;
     uint8_t* threadptr;
-    extern char _thread_local_start, _thread_local_end, _rodata_start;
+    extern char _thread_local_start, _thread_local_end, _flash_rodata_start;
 
     /* Byte pointer, so that subsequent calculations don't depend on sizeof(StackType_t). */
     uint8_t* sp = (uint8_t*) pxTopOfStack;
 
-    /* Set up TLS area */
+    /* Set up TLS area.
+     * The following diagram illustrates the layout of link-time and run-time
+     * TLS sections.
+     *
+     *          +-------------+
+     *          |Section:     |      Linker symbols:
+     *          |.flash.rodata|      ---------------
+     *       0x0+-------------+ <-- _flash_rodata_start
+     *        ^ |             |
+     *        | | Other data  |
+     *        | |     ...     |
+     *        | +-------------+ <-- _thread_local_start
+     *        | |.tbss        | ^
+     *        v |             | |
+     *    0xNNNN|int example; | | (thread_local_size)
+     *          |.tdata       | v
+     *          +-------------+ <-- _thread_local_end
+     *          | Other data  |
+     *          |     ...     |
+     *          |             |
+     *          +-------------+
+     *
+     *                                Local variables of
+     *                              pxPortInitialiseStack
+     *                             -----------------------
+     *          +-------------+ <-- pxTopOfStack
+     *          |.tdata (*)   |  ^
+     *        ^ |int example; |  |(thread_local_size
+     *        | |             |  |
+     *        | |.tbss (*)    |  v
+     *        | +-------------+ <-- task_thread_local_start
+     * 0xNNNN | |             |  ^
+     *        | |             |  |
+     *        | |             |  |_thread_local_start - _rodata_start
+     *        | |             |  |
+     *        | |             |  v
+     *        v +-------------+ <-- threadptr
+     *
+     *   (*) The stack grows downward!
+     */
+
     uint32_t thread_local_sz = (uint32_t) (&_thread_local_end - &_thread_local_start);
     thread_local_sz = ALIGNUP(0x10, thread_local_sz);
     sp -= thread_local_sz;
     task_thread_local_start = sp;
     memcpy(task_thread_local_start, &_thread_local_start, thread_local_sz);
-    threadptr = task_thread_local_start - (&_thread_local_start - &_rodata_start);
+    threadptr = task_thread_local_start - (&_thread_local_start - &_flash_rodata_start);
 
     /* Simulate the stack frame as it would be created by a context switch interrupt. */
     sp -= RV_STK_FRMSZ;
