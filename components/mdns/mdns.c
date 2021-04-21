@@ -1613,6 +1613,23 @@ static mdns_tx_packet_t * _mdns_create_probe_packet(mdns_if_t tcpip_if, mdns_ip_
 }
 
 /**
+ * @brief  Create announce packet for self IP addresses
+ */
+static mdns_tx_packet_t * _mdns_create_announce_self_ip(mdns_if_t tcpip_if, mdns_ip_protocol_t ip_protocol)
+{
+    mdns_tx_packet_t * packet = _mdns_alloc_packet_default(tcpip_if, ip_protocol);
+    if (!packet) {
+        return NULL;
+    }
+    mdns_host_item_t * host = mdns_get_host_item(_mdns_server->hostname);
+    if (!_mdns_append_host(&packet->servers, host, true, false)) {
+        _mdns_free_tx_packet(packet);
+        return NULL;
+    }
+    return packet;
+}
+
+/**
  * @brief  Create announce packet for particular services on particular PCB
  */
 static mdns_tx_packet_t * _mdns_create_announce_packet(mdns_if_t tcpip_if, mdns_ip_protocol_t ip_protocol, mdns_srv_item_t * services[], size_t len, bool include_ip)
@@ -1872,7 +1889,12 @@ static void _mdns_announce_pcb(mdns_if_t tcpip_if, mdns_ip_protocol_t ip_protoco
             }
 
             _pcb->state = PCB_ANNOUNCE_1;
-            mdns_tx_packet_t *  p = _mdns_create_announce_packet(tcpip_if, ip_protocol, services, len, include_ip);
+            mdns_tx_packet_t * p = NULL;
+            if (services != NULL) {
+                p = _mdns_create_announce_packet(tcpip_if, ip_protocol, services, len, include_ip);
+            } else {
+                p = _mdns_create_announce_self_ip(tcpip_if, ip_protocol);
+            }
             if (p) {
                 _mdns_schedule_tx_packet(p, 0);
             }
