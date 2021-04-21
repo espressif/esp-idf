@@ -28,6 +28,8 @@
 #include "esp32c3/rom/ets_sys.h"
 #include "esp_log.h"
 
+#include "soc/cpu.h"
+
 extern int _iram_text_end;
 static const char *TAG = "memprot";
 
@@ -530,6 +532,11 @@ void esp_memprot_set_prot_int(bool invoke_panic_handler, bool lock_feature, void
     }
     if (use_dram0) {
         esp_memprot_set_monitor_en(MEMPROT_DRAM0_SRAM, false);
+    }
+
+    // do not enable if being debugged
+    if (esp_cpu_in_ocd_debug_mode()) {
+        return;
     }
 
     //panic handling
