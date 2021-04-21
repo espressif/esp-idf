@@ -126,29 +126,6 @@ bool rtc_clk_8md256_enabled(void)
     return GET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M_DIV) == 0;
 }
 
-void rtc_clk_set_xtal_wait(void)
-{
-    /*
-     the `xtal_wait` time need 1ms, so we need calibrate slow clk period,
-     and `RTC_CNTL_XTL_BUF_WAIT` depend on it.
-    */
-    rtc_slow_freq_t slow_clk_freq = rtc_clk_slow_freq_get();
-    rtc_slow_freq_t rtc_slow_freq_x32k = RTC_SLOW_FREQ_32K_XTAL;
-    rtc_slow_freq_t rtc_slow_freq_8MD256 = RTC_SLOW_FREQ_8MD256;
-    rtc_cal_sel_t cal_clk = RTC_CAL_RTC_MUX;
-    if (slow_clk_freq == (rtc_slow_freq_x32k)) {
-        cal_clk = RTC_CAL_32K_XTAL;
-    } else if (slow_clk_freq == rtc_slow_freq_8MD256) {
-        cal_clk  = RTC_CAL_8MD256;
-    }
-    uint32_t slow_clk_period = rtc_clk_cal(cal_clk, 2000);
-    uint32_t xtal_wait_1ms = 100;
-    if (slow_clk_period) {
-        xtal_wait_1ms = (1000 << RTC_CLK_CAL_FRACT) / slow_clk_period;
-    }
-    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_XTL_BUF_WAIT, xtal_wait_1ms);
-}
-
 static void wait_dig_dbias_valid(uint64_t rtc_cycles)
 {
     rtc_slow_freq_t slow_clk_freq = rtc_clk_slow_freq_get();
@@ -175,7 +152,6 @@ void rtc_clk_slow_freq_set(rtc_slow_freq_t slow_freq)
     so if the slow_clk is 8md256, clk_8m must be force power on
     */
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_FORCE_PU, (slow_freq == RTC_SLOW_FREQ_8MD256) ? 1 : 0);
-    rtc_clk_set_xtal_wait();
     esp_rom_delay_us(DELAY_SLOW_CLK_SWITCH);
 }
 
