@@ -189,7 +189,7 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 	#endif
 	uint32_t *threadptr;
 	void *task_thread_local_start;
-	extern int _thread_local_start, _thread_local_end, _rodata_start;
+	extern int _thread_local_start, _thread_local_end, _flash_rodata_start, _flash_rodata_align;
 	// TODO: check that TLS area fits the stack
 	uint32_t thread_local_sz = (uint8_t *)&_thread_local_end - (uint8_t *)&_thread_local_start;
 
@@ -248,24 +248,25 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 	frame->vpri = 0xFFFFFFFF;
 	#endif
 
-	/* Init threadptr reg and TLS vars */
+	/* Init threadptr register and set up TLS run-time area.
+	 * The diagram in port/riscv/port.c illustrates the calculations below.
+	 */
 	task_thread_local_start = (void *)(((uint32_t)pxTopOfStack - XT_CP_SIZE - thread_local_sz) & ~0xf);
 	memcpy(task_thread_local_start, &_thread_local_start, thread_local_sz);
 	threadptr = (uint32_t *)(sp + XT_STK_EXTRA);
-	/* Calculate THREADPTR value:
+	/* Calculate THREADPTR value.
 	 * The generated code will add THREADPTR value to a constant value determined at link time,
 	 * to get the address of the TLS variable.
 	 * The constant value is calculated by the linker as follows
 	 * (search for 'tpoff' in elf32-xtensa.c in BFD):
 	 *    offset = address - tls_section_vma + align_up(TCB_SIZE, tls_section_alignment)
-	 * where TCB_SIZE is hardcoded to 8. There doesn't seem to be a way to propagate
-	 * the section alignment value from the ld script into the code, so it is hardcoded
-	 * in both places.
+	 * where TCB_SIZE is hardcoded to 8.
+	 * Note this is slightly different compared to the RISC-V port, where offset = address - tls_section_vma.
 	 */
-	const uint32_t tls_section_alignment = 0x10;  /* has to be in sync with ALIGN value of .flash.rodata section */
+	const uint32_t tls_section_alignment = (uint32_t) &_flash_rodata_align;  /* ALIGN value of .flash.rodata section */
 	const uint32_t tcb_size = 8; /* Unrelated to FreeRTOS, this is the constant from BFD */
 	const uint32_t base = (tcb_size + tls_section_alignment - 1) & (~(tls_section_alignment - 1));
-	*threadptr = (uint32_t)task_thread_local_start - ((uint32_t)&_thread_local_start - (uint32_t)&_rodata_start) - base;
+	*threadptr = (uint32_t)task_thread_local_start - ((uint32_t)&_thread_local_start - (uint32_t)&_flash_rodata_start) - base;
 
 	#if XCHAL_CP_NUM > 0
 	/* Init the coprocessor save area (see xtensa_context.h) */
