@@ -1446,6 +1446,12 @@ static int time_scene_server_deinit(struct bt_mesh_model *model)
         }
         break;
     }
+    case BLE_MESH_MODEL_ID_TIME_SRV:
+    case BLE_MESH_MODEL_ID_TIME_SETUP_SRV:
+    case BLE_MESH_MODEL_ID_SCENE_SETUP_SRV:
+    case BLE_MESH_MODEL_ID_SCHEDULER_SRV:
+    case BLE_MESH_MODEL_ID_SCHEDULER_SETUP_SRV:
+        break;
     default:
         BT_WARN("Unknown Time Scene Server, model id 0x%04x", model->id);
         return -EINVAL;

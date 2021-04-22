@@ -2666,6 +2666,18 @@ static int generic_server_deinit(struct bt_mesh_model *model)
         }
         break;
     }
+    case BLE_MESH_MODEL_ID_GEN_DEF_TRANS_TIME_SRV:
+    case BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_SRV:
+    case BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_SETUP_SRV:
+    case BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_SETUP_SRV:
+    case BLE_MESH_MODEL_ID_GEN_BATTERY_SRV:
+    case BLE_MESH_MODEL_ID_GEN_LOCATION_SRV:
+    case BLE_MESH_MODEL_ID_GEN_LOCATION_SETUP_SRV:
+    case BLE_MESH_MODEL_ID_GEN_USER_PROP_SRV:
+    case BLE_MESH_MODEL_ID_GEN_ADMIN_PROP_SRV:
+    case BLE_MESH_MODEL_ID_GEN_MANUFACTURER_PROP_SRV:
+    case BLE_MESH_MODEL_ID_GEN_CLIENT_PROP_SRV:
+        break;
     default:
         BT_WARN("Unknown Generic Server, model id 0x%04x", model->id);
         return -EINVAL;
