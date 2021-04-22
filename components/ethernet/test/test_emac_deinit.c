@@ -88,7 +88,7 @@ static esp_err_t eth_event_handler(void *ctx, system_event_t *event)
         break;
     case SYSTEM_EVENT_ETH_GOT_IP:
         memset(&ip, 0, sizeof(tcpip_adapter_ip_info_t));
-        ESP_ERROR_CHECK(tcpip_adapter_get_ip_info(ESP_IF_ETH, &ip));
+        ESP_ERROR_CHECK(tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_ETH, &ip));
         ESP_LOGI(TAG, "Ethernet Got IP Addr");
         ESP_LOGI(TAG, "~~~~~~~~~~~");
         ESP_LOGI(TAG, "ETHIP:" IPSTR, IP2STR(&ip.ip));

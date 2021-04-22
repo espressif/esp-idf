@@ -683,7 +683,7 @@ esp_err_t tcpip_adapter_dhcps_option(tcpip_adapter_dhcp_option_mode_t opt_op, tc
 
             if (poll->enable) {
                 memset(&info, 0x00, sizeof(tcpip_adapter_ip_info_t));
-                tcpip_adapter_get_ip_info(ESP_IF_WIFI_AP, &info);
+                tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP, &info);
                 softap_ip = htonl(info.ip.addr);
                 start_ip = htonl(poll->start_ip.addr);
                 end_ip = htonl(poll->end_ip.addr);
@@ -854,7 +854,7 @@ esp_err_t tcpip_adapter_dhcps_start(tcpip_adapter_if_t tcpip_if)
 
         if (p_netif != NULL && netif_is_up(p_netif)) {
             tcpip_adapter_ip_info_t default_ip;
-            tcpip_adapter_get_ip_info(ESP_IF_WIFI_AP, &default_ip);
+            tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP, &default_ip);
             dhcps_set_new_lease_cb(tcpip_adapter_dhcps_cb);
             dhcps_start(p_netif, default_ip.ip);
             dhcps_status = TCPIP_ADAPTER_DHCP_STARTED;
