@@ -118,8 +118,7 @@ Tests For Different Targets
 
 Some tests (especially those related to hardware) cannot run on all targets. Below is a guide how to make your unit tests run on only specified targets.
 
-1. Wrap your test code by ``!(TEMPORARY_)DISABLED_FOR_TARGETS()`` macros and place them either in the original test file, or sepeprate the code into files grouped by functions, but make sure all these files will be processed by the compiler. E.g.
-::
+1. Wrap your test code by ``!(TEMPORARY_)DISABLED_FOR_TARGETS()`` macros and place them either in the original test file, or sepeprate the code into files grouped by functions, but make sure all these files will be processed by the compiler. E.g.::
 
       #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32, ESP8266)
       TEST_CASE("a test that is not ready for esp32 and esp8266 yet", "[]")

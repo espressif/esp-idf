@@ -527,7 +527,6 @@ Note that ALIGN and SURROUND, as mentioned in the flag descriptions, are order s
     KEEP(lib1.a:obj1.*( SORT(.rodata) SORT(.rodata.*) ))
     _my_sym_end = ABSOLUTE(.)
 
-
 .. _ldgen-symbol-granularity-placements :
 
 On Symbol-Granularity Placements
