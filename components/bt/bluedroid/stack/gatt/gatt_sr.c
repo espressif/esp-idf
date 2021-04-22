@@ -527,6 +527,7 @@ void gatt_process_read_multi_req (tGATT_TCB *p_tcb, UINT8 op_code, UINT16 len, U
 
     if (ll != 0) {
         GATT_TRACE_ERROR("max attribute handle reached in ReadMultiple Request.");
+        err = GATT_INVALID_HANDLE;
     }
 
     if (p_tcb->sr_cmd.multi_req.num_handles == 0) {

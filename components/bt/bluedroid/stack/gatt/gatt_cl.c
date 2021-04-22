@@ -263,7 +263,7 @@ void gatt_act_write (tGATT_CLCB *p_clcb, UINT8 sec_act)
     if ((rt != GATT_SUCCESS  && rt != GATT_CMD_STARTED && rt != GATT_CONGESTED)
             || (rt != GATT_CMD_STARTED && p_clcb->op_subtype == GATT_WRITE_NO_RSP)) {
         if (rt != GATT_SUCCESS) {
-            GATT_TRACE_ERROR("gatt_act_write() failed op_code=0x%x rt=%d", op_code, rt);
+            GATT_TRACE_DEBUG("gatt_act_write() failed op_code=0x%x rt=%d", op_code, rt);
         }
         gatt_end_operation(p_clcb, rt, NULL);
     }

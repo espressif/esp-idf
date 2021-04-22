@@ -129,7 +129,7 @@ typedef UINT8   tBTM_BLE_SFP;
 #define BTM_BLE_EXT_SCAN_WIN_MAX        0xFFFF
 #define BTM_BLE_CONN_INT_MIN            0x0006
 #define BTM_BLE_CONN_INT_MAX            0x0C80
-#define BTM_BLE_CONN_LATENCY_MAX        500
+#define BTM_BLE_CONN_LATENCY_MAX        499
 #define BTM_BLE_CONN_SUP_TOUT_MIN       0x000A
 #define BTM_BLE_CONN_SUP_TOUT_MAX       0x0C80
 #define BTM_BLE_CONN_PARAM_UNDEF        0xffff      /* use this value when a specific value not to be overwritten */
