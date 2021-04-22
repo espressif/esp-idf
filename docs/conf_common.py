@@ -55,8 +55,8 @@ extensions = ['breathe',
               'sphinxcontrib.rackdiag',
               'sphinxcontrib.packetdiag',
               'sphinxcontrib.cairosvgconverter',
+              'sphinx_reredirects',
 
-              'extensions.html_redirects',
               'extensions.toctree_filter',
               'extensions.list_filter',
               'extensions.google_analytics',
@@ -256,16 +256,24 @@ project_homepage = 'https://github.com/espressif/esp-idf'
 
 # -- Options for HTML output ----------------------------------------------
 
-# Custom added feature to allow redirecting old URLs
+# Add redirections for sphinx_reredirects extension
 #
-# Redirects should be listed in page_redirects.xt
+# sphinx_reredirects requires extensions be specified in a Dictionary called 'redirects'
+# See https://pypi.org/project/sphinx-reredirects/ for more details
 #
+# We need to read the redirections from page_redirects.txt that are spaced separated
+# and convert them into a Dict
+
+redirects = {}
 with open('../page_redirects.txt') as f:
     lines = [re.sub(' +', ' ', line.strip()) for line in f.readlines() if line.strip() != '' and not line.startswith('#')]
     for line in lines:  # check for well-formed entries
         if len(line.split(' ')) != 2:
             raise RuntimeError('Invalid line in page_redirects.txt: %s' % line)
-html_redirect_pages = [tuple(line.split(' ')) for line in lines]
+        else:
+            old_path = line.split(' ')[0]
+            new_path = line.split(' ')[1]
+            redirects[old_path] = new_path
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
