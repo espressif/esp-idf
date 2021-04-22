@@ -42,7 +42,7 @@ struct esp_transport_item_t {
     trans_func      _destroy;       /*!< Destroy and free transport */
     connect_async_func _connect_async;      /*!< non-blocking connect function of this transport */
     payload_transfer_func  _parent_transfer;       /*!< Function returning underlying transport layer */
-
+    esp_transport_keep_alive_t *keep_alive_cfg;    /*!< TCP keep-alive config */
     STAILQ_ENTRY(esp_transport_item_t) next;
 };
 
@@ -276,4 +276,19 @@ esp_err_t esp_transport_set_parent_transport_func(esp_transport_handle_t t, payl
     }
     t->_parent_transfer = _parent_transport;
     return ESP_OK;
+}
+
+void esp_transport_set_keep_alive(esp_transport_handle_t t, esp_transport_keep_alive_t *keep_alive_cfg)
+{
+    if (t && keep_alive_cfg) {
+        t->keep_alive_cfg = keep_alive_cfg;
+    }
+}
+
+void *esp_transport_get_keep_alive(esp_transport_handle_t t)
+{
+    if (t) {
+        return t->keep_alive_cfg;
+    }
+    return NULL;
 }
