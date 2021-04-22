@@ -106,7 +106,7 @@ static esp_err_t read_otadata(const esp_partition_pos_t *ota_info, esp_ota_selec
 
     // partition table has OTA data partition
     if (ota_info->size < 2 * SPI_SEC_SIZE) {
-        ESP_LOGE(TAG, "ota_info partition size %d is too small (minimum %d bytes)", ota_info->size, sizeof(esp_ota_select_entry_t));
+        ESP_LOGE(TAG, "ota_info partition size %d is too small (minimum %d bytes)", ota_info->size, (2 * SPI_SEC_SIZE));
         return ESP_FAIL; // can't proceed
     }
 
