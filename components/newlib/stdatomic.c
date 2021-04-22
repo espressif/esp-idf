@@ -60,7 +60,11 @@
     portEXIT_CRITICAL_NESTED(state); \
     } while (0)
 
-#define NO_ATOMICS_SUPPORT 1    // [todo] Get the equivalent XCHAL_HAVE_S32C1I check for RISCV
+#ifndef __riscv_atomic              // GCC toolchain will define this pre-processor if "A" extension is supported
+#define __riscv_atomic      0
+#endif
+
+#define NO_ATOMICS_SUPPORT (__riscv_atomic == 0)
 
 #endif
 
@@ -68,6 +72,15 @@
 //reserved to measure atomic operation time
 #define atomic_benchmark_intr_disable()
 #define atomic_benchmark_intr_restore(STATE)
+
+#define ATOMIC_EXCHANGE(n, type) type __atomic_exchange_ ## n (type* mem, type val, int memorder) \
+{                                                   \
+    unsigned state = _ATOMIC_ENTER_CRITICAL();      \
+    type ret = *mem;                                \
+    *mem = val;                                     \
+    _ATOMIC_EXIT_CRITICAL(state);                   \
+    return ret;                                     \
+}
 
 #define CMP_EXCHANGE(n, type) bool __atomic_compare_exchange_ ## n (type* mem, type* expect, type desired, int success, int failure) \
 { \
@@ -128,9 +141,42 @@
     return ret; \
 }
 
+#define SYNC_FETCH_OP(op, n, type) type __sync_fetch_and_ ## op ##_ ## n (type* ptr, type value, ...) \
+{                                                                               \
+    return __atomic_fetch_ ## op ##_ ## n (ptr, value, __ATOMIC_SEQ_CST);       \
+}
+
+#define SYNC_BOOL_CMP_EXCHANGE(n, type) bool  __sync_bool_compare_and_swap_ ## n  (type *ptr, type oldval, type newval, ...) \
+{                                                                                \
+    bool ret = false;                                                            \
+    unsigned state = _ATOMIC_ENTER_CRITICAL();                                   \
+    if (*ptr == oldval) {                                                        \
+        *ptr = newval;                                                           \
+        ret = true;                                                              \
+    }                                                                            \
+    _ATOMIC_EXIT_CRITICAL(state);                                                \
+    return ret;                                                                  \
+}
+
+#define SYNC_VAL_CMP_EXCHANGE(n, type) type  __sync_val_compare_and_swap_ ## n  (type *ptr, type oldval, type newval, ...) \
+{                                                                                \
+    unsigned state = _ATOMIC_ENTER_CRITICAL();                                   \
+    type ret = *ptr;                                                             \
+    if (*ptr == oldval) {                                                        \
+        *ptr = newval;                                                           \
+    }                                                                            \
+    _ATOMIC_EXIT_CRITICAL(state);                                                \
+    return ret;                                                                  \
+}
+
 #pragma GCC diagnostic ignored "-Wbuiltin-declaration-mismatch"
 
 #if NO_ATOMICS_SUPPORT
+
+ATOMIC_EXCHANGE(1, uint8_t)
+ATOMIC_EXCHANGE(2, uint16_t)
+ATOMIC_EXCHANGE(4, uint32_t)
+ATOMIC_EXCHANGE(8, uint64_t)
 
 CMP_EXCHANGE(1, uint8_t)
 CMP_EXCHANGE(2, uint16_t)
