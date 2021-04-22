@@ -981,9 +981,12 @@ static bt_status_t btc_av_init(int service_id)
         } else {
             btc_dm_enable_service(BTA_A2DP_SOURCE_SERVICE_ID);
         }
-
         btc_a2dp_on_init();
 
+        esp_a2d_cb_param_t param;
+        memset(&param, 0, sizeof(esp_a2d_cb_param_t));
+        param.a2d_prof_stat.init_state = ESP_A2D_INIT_SUCCESS;
+        btc_a2d_cb_to_app(ESP_A2D_PROF_STATE_EVT, &param);
         return BT_STATUS_SUCCESS;
     }
 
@@ -1048,6 +1051,11 @@ static void clean_up(int service_id)
     /* Also shut down the AV state machine */
     btc_sm_shutdown(btc_av_cb.sm_handle);
     btc_av_cb.sm_handle = NULL;
+
+    esp_a2d_cb_param_t param;
+    memset(&param, 0, sizeof(esp_a2d_cb_param_t));
+    param.a2d_prof_stat.init_state = ESP_A2D_DEINIT_SUCCESS;
+    btc_a2d_cb_to_app(ESP_A2D_PROF_STATE_EVT, &param);
 
     g_a2dp_on_init = false;
     g_a2dp_on_deinit = true;
@@ -1386,7 +1394,7 @@ void btc_a2dp_call_handler(btc_msg_t *msg)
     }
     case BTC_AV_SINK_API_DISCONNECT_EVT: {
         CHECK_BTAV_INIT();
-        btc_av_disconn_req_t disconn_req;   
+        btc_av_disconn_req_t disconn_req;
         memcpy(&disconn_req.target_bda, &arg->disconn, sizeof(bt_bdaddr_t));
         btc_sm_dispatch(btc_av_cb.sm_handle, BTC_AV_DISCONNECT_REQ_EVT, &disconn_req);
         break;
