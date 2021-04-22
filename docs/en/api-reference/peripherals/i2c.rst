@@ -102,7 +102,7 @@ At this stage, :cpp:func:`i2c_param_config` also sets a few other I2C configurat
 Source Clock Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**Clock sources allocator** is added for supporting different clock sources (Master only). The clock allocator will choose one clock source that meets all the requirements of frequency and capability (as requested in :cpp:member:`i2c_config_t::clk_flags`).
+**Clock sources allocator** is added for supporting different clock sources. The clock allocator will choose one clock source that meets all the requirements of frequency and capability (as requested in :cpp:member:`i2c_config_t::clk_flags`).
 
 When :cpp:member:`i2c_config_t::clk_flags` is 0, the clock allocator will select only according to the desired frequency. If no special capabilities are needed, such as APB, you can configure the clock allocator to select the source clock only according to the desired frequency. For this, set :cpp:member:`i2c_config_t::clk_flags` to 0. For clock characteristics, see the table below.
 
@@ -188,7 +188,6 @@ After the I2C driver is configured, install it by calling the function :cpp:func
 - Master or slave, selected from :cpp:type:`i2c_mode_t`
 - (Slave only) Size of buffers to allocate for sending and receiving data. As I2C is a master-centric bus, data can only go from the slave to the master at the master's request. Therefore, the slave will usually have a send buffer where the slave application writes data. The data remains in the send buffer to be read by the master at the master's own discretion.
 - Flags for allocating the interrupt (see ESP_INTR_FLAG_* values in :component_file:`esp_hw_support/include/esp_intr_alloc.h`)
-
 
 .. _i2c-api-master-mode:
 
