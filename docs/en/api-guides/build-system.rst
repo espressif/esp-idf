@@ -884,7 +884,6 @@ Place this line after the ``project()`` line in your project CMakeLists.txt file
 
 For an example of using this technique, see the "main" component of the file_serving example :example_file:`protocols/http_server/file_serving/main/CMakeLists.txt` - two files are loaded at build time and linked into the firmware.
 
-
 .. highlight:: cmake
 
 It is also possible embed a generated file::

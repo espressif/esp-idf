@@ -182,9 +182,7 @@ DUT2（slave）终端::
 
 烧写完成后重启 {IDF_TARGET_NAME}， 它将启动单元测试程序。
 
-当单元测试应用程序空闲时，输入回车键，它会打印出测试菜单，其中包含所有的测试项目。
-
-.. code::
+当单元测试应用程序空闲时，输入回车键，它会打印出测试菜单，其中包含所有的测试项目::
 
    Here's the test menu, pick your combo:
    (1)     "esp_ota_begin() verifies arguments" [ota]

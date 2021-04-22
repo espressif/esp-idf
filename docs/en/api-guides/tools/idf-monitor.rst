@@ -267,7 +267,6 @@ Issues Observed on Windows
 - Occasionally, when "idf.py" or "make" exits, it might stall for up to 30 seconds before IDF Monitor resumes.
 - When "gdb" is run, it might stall for a short time before it begins communicating with the GDBStub.
 
-
 .. _addr2line: https://sourceware.org/binutils/docs/binutils/addr2line.html
 .. _gdb: https://sourceware.org/gdb/download/onlinedocs/
 .. _pySerial: https://github.com/pyserial/pyserial
