@@ -41,6 +41,21 @@
  \
 })
 
+typedef enum {
+    ESP_MBEDTLS_SSL_BUF_CACHED,
+    ESP_MBEDTLS_SSL_BUF_NO_CACHED,
+} esp_mbedtls_ssl_buf_states;
+
+struct esp_mbedtls_ssl_buf {
+    esp_mbedtls_ssl_buf_states state;
+    unsigned int len;
+    unsigned char buf[];
+};
+
+#define SSL_BUF_HEAD_OFFSET_SIZE offsetof(struct esp_mbedtls_ssl_buf, buf)
+
+void esp_mbedtls_free_buf(unsigned char *buf);
+
 int esp_mbedtls_setup_tx_buffer(mbedtls_ssl_context *ssl);
 
 void esp_mbedtls_setup_rx_buffer(mbedtls_ssl_context *ssl);
