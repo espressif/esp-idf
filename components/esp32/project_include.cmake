@@ -1,4 +1,4 @@
-if(CONFIG_SPIRAM_CACHE_WORKAROUND)
+if(CONFIG_SPIRAM_CACHE_WORKAROUND AND NOT BOOTLOADER_BUILD)
     # We do this here as well as in CMakeLists.txt, because targets that
     # are not part of the ESP-IDF build system (for cases where a generic
     # non-IDF CMakeLists.txt file is imported into a component) don't depend
