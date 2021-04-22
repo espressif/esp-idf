@@ -63,6 +63,7 @@ int wpa_sm_get_key(uint8_t *ifx, int *alg, u8 *addr, int *key_idx, u8 *key, size
 void wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len);
 
 void wpa_sm_set_pmk_from_pmksa(struct wpa_sm *sm);
+static bool wpa_supplicant_gtk_in_use(struct wpa_sm *sm, struct wpa_gtk_data *gd);
 static inline enum wpa_states   wpa_sm_get_state(struct wpa_sm *sm)
 {
     return sm->wpa_state;;
@@ -806,8 +807,7 @@ int   wpa_supplicant_install_gtk(struct wpa_sm *sm,
     wpa_hexdump(MSG_DEBUG, "WPA: Group Key", gd->gtk, gd->gtk_len);
 
     /* Detect possible key reinstallation */
-    if (sm->gtk.gtk_len == (size_t) gd->gtk_len &&
-        os_memcmp(sm->gtk.gtk, gd->gtk, sm->gtk.gtk_len) == 0) {
+    if (wpa_supplicant_gtk_in_use(sm, &(sm->gd))) {
             wpa_printf(MSG_DEBUG,
                     "WPA: Not reinstalling already in-use GTK to the driver (keyidx=%d tx=%d len=%d)",
                     gd->keyidx, gd->tx, gd->gtk_len);
@@ -852,13 +852,10 @@ int   wpa_supplicant_install_gtk(struct wpa_sm *sm,
         return -1;
     }
 
-    sm->gtk.gtk_len = gd->gtk_len;
-    os_memcpy(sm->gtk.gtk, gd->gtk, sm->gtk.gtk_len);
-
     return 0;
 }
 
-bool wpa_supplicant_gtk_in_use(struct wpa_sm *sm, struct wpa_gtk_data *gd)
+static bool wpa_supplicant_gtk_in_use(struct wpa_sm *sm, struct wpa_gtk_data *gd)
 {
     u8 *_gtk = gd->gtk;
     u8 gtk_buf[32];
@@ -867,8 +864,6 @@ bool wpa_supplicant_gtk_in_use(struct wpa_sm *sm, struct wpa_gtk_data *gd)
     int alg;
     u8 bssid[6];
     int keyidx;
-
-    wpa_hexdump(MSG_DEBUG, "WPA: Group Key", gd->gtk, gd->gtk_len);
 
     #ifdef DEBUG_PRINT
     wpa_printf(MSG_DEBUG, "WPA: Judge GTK: (keyidx=%d len=%d).", gd->keyidx, gd->gtk_len);
@@ -882,19 +877,10 @@ bool wpa_supplicant_gtk_in_use(struct wpa_sm *sm, struct wpa_gtk_data *gd)
         _gtk = gtk_buf;
     }
 
-    //check if gtk is in use.
-    if (wpa_sm_get_key(&ifx, &alg, bssid, &keyidx, gtk_get, gd->gtk_len, gd->keyidx) == 0) {
+    if (wpa_sm_get_key(&ifx, &alg, bssid, &keyidx, gtk_get, gd->gtk_len, gd->keyidx - 2) == 0) {
         if (ifx == 0 && alg == gd->alg && memcmp(bssid, sm->bssid, ETH_ALEN) == 0 &&
         		memcmp(_gtk, gtk_get, gd->gtk_len) == 0) {
-            wpa_printf(MSG_DEBUG, "GTK %d is already in use in entry %d, it may be an attack, ignor it.", gd->keyidx, gd->keyidx + 2);
-            return true;
-        }
-    }
-
-    if (wpa_sm_get_key(&ifx, &alg, bssid, &keyidx, gtk_get, gd->gtk_len, (gd->keyidx+1)%2) == 0) {
-    	if (ifx == 0 && alg == gd->alg && memcmp(bssid, sm->bssid, ETH_ALEN) == 0 &&
-    			memcmp(_gtk, gtk_get, gd->gtk_len) == 0) {
-            wpa_printf(MSG_DEBUG, "GTK %d is already in use in entry %d, it may be an attack, ignor it.", gd->keyidx, (gd->keyidx+1)%2 + 2);
+            wpa_printf(MSG_DEBUG, "GTK %d is already in use in entry %d, it may be an attack, ignore it.", gd->keyidx, hw_keyidx);
             return true;
         }
     }
@@ -1573,10 +1559,8 @@ failed:
     u16 rekey= (WPA_SM_STATE(sm) == WPA_COMPLETED);
 
     if((sm->gd).gtk_len) {
-    	if (wpa_supplicant_gtk_in_use(sm, &(sm->gd)) == false) {
-            if (wpa_supplicant_install_gtk(sm, &(sm->gd)))
-                goto failed;
-    	}
+        if (wpa_supplicant_install_gtk(sm, &(sm->gd)))
+            goto failed;
     } else {
         goto failed;
     }
