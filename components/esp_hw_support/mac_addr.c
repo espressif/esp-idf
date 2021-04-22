@@ -182,13 +182,15 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type)
 #endif // IDF_TARGET_ESP32S2
 #else
         esp_derive_local_mac(mac, efuse_mac);
-#endif
+#endif // CONFIG_ESP_MAC_ADDR_UNIVERSE_WIFI_AP
         break;
     case ESP_MAC_BT:
 #if CONFIG_ESP_MAC_ADDR_UNIVERSE_BT
         memcpy(mac, efuse_mac, 6);
         mac[5] += MAC_ADDR_UNIVERSE_BT_OFFSET;
-#endif
+#else
+        return ESP_ERR_NOT_SUPPORTED;
+#endif // CONFIG_ESP_MAC_ADDR_UNIVERSE_BT
         break;
     case ESP_MAC_ETH:
 #if CONFIG_ESP_MAC_ADDR_UNIVERSE_ETH
@@ -197,7 +199,7 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type)
 #else
         efuse_mac[5] += 1;
         esp_derive_local_mac(mac, efuse_mac);
-#endif
+#endif // CONFIG_ESP_MAC_ADDR_UNIVERSE_ETH
         break;
     default:
         ESP_LOGE(TAG, "unsupported mac type");
