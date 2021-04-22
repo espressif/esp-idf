@@ -1572,16 +1572,9 @@ void bt_mesh_net_init(void)
     k_work_init(&bt_mesh.local_work, bt_mesh_net_local);
 }
 
-#if CONFIG_BLE_MESH_DEINIT
-void bt_mesh_net_deinit(void)
+void bt_mesh_net_reset(void)
 {
-    k_delayed_work_free(&bt_mesh.ivu_timer);
-
-    k_work_init(&bt_mesh.local_work, NULL);
-
-    /* Local queue uses a while loop, currently no need
-     * to handle this.
-     */
+    k_delayed_work_cancel(&bt_mesh.ivu_timer);
 
 #if FRIEND_CRED_COUNT > 0
     memset(friend_cred, 0, sizeof(friend_cred));
@@ -1595,5 +1588,19 @@ void bt_mesh_net_deinit(void)
 
     bt_mesh.iv_index = 0U;
     bt_mesh.seq = 0U;
+}
+
+#if CONFIG_BLE_MESH_DEINIT
+void bt_mesh_net_deinit(void)
+{
+    bt_mesh_net_reset();
+
+    k_delayed_work_free(&bt_mesh.ivu_timer);
+
+    k_work_init(&bt_mesh.local_work, NULL);
+
+    /* Local queue uses a while loop, currently no need
+     * to handle this.
+     */
 }
 #endif /* CONFIG_BLE_MESH_DEINIT */

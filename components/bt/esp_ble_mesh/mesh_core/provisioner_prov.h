@@ -142,6 +142,8 @@ int bt_mesh_provisioner_pb_gatt_recv(struct bt_mesh_conn *conn, struct net_buf_s
  */
 int bt_mesh_provisioner_prov_init(const struct bt_mesh_prov *prov_info);
 
+int bt_mesh_provisioner_prov_reset(bool erase);
+
 /**
  * @brief This function de-initializes provisioner's PB-GATT and PB-ADV
  *        related information.

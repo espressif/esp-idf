@@ -20,6 +20,7 @@
 #include "mesh_common.h"
 #include "settings_nvs.h"
 #include "settings.h"
+#include "settings_uid.h"
 #include "provisioner_main.h"
 #include "provisioner_prov.h"
 
@@ -2663,5 +2664,15 @@ int bt_mesh_settings_deinit(bool erase)
     return 0;
 }
 #endif /* CONFIG_BLE_MESH_DEINIT */
+
+void bt_mesh_settings_reset(bool erase)
+{
+    k_delayed_work_cancel(&pending_store);
+    if (erase) {
+        bt_mesh_clear_net();
+        bt_mesh_clear_seq();
+        bt_mesh_clear_role();
+    }
+}
 
 #endif /* CONFIG_BLE_MESH_SETTINGS */

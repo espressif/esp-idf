@@ -161,8 +161,7 @@ done:
     return 0;
 }
 
-#if CONFIG_BLE_MESH_DEINIT
-int bt_mesh_provisioner_deinit(bool erase)
+void bt_mesh_provisioner_main_reset(bool erase)
 {
     int i;
 
@@ -192,9 +191,13 @@ int bt_mesh_provisioner_deinit(bool erase)
     }
 
     node_count = 0U;
+}
 
+#if CONFIG_BLE_MESH_DEINIT
+int bt_mesh_provisioner_deinit(bool erase)
+{
+    bt_mesh_provisioner_main_reset(erase);
     bt_mesh_provisioner_mutex_free();
-
     return 0;
 }
 #endif /* CONFIG_BLE_MESH_DEINIT */

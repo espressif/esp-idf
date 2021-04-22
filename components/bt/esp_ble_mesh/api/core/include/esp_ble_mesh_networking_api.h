@@ -474,6 +474,171 @@ esp_err_t esp_ble_mesh_provisioner_set_heartbeat_filter_type(uint8_t type);
 esp_err_t esp_ble_mesh_provisioner_set_heartbeat_filter_info(uint8_t op, esp_ble_mesh_heartbeat_filter_info_t *info);
 
 /**
+ * @brief         This function is called by Provisioner to directly erase the mesh
+ *                information from nvs namespace.
+ *
+ * @note          This function can be invoked when the mesh stack is not initialized
+ *                or has been de-initialized.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_direct_erase_settings(void);
+
+/**
+ * @brief         This function is called by Provisioner to open a nvs namespace
+ *                for storing mesh information.
+ *
+ * @note          Before open another nvs namespace, the previously opened nvs
+ *                namespace must be closed firstly.
+ *
+ * @param[in]     index: Settings index.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_open_settings_with_index(uint8_t index);
+
+/**
+ * @brief         This function is called by Provisioner to open a nvs namespace
+ *                for storing mesh information.
+ *
+ * @note          Before open another nvs namespace, the previously opened nvs
+ *                namespace must be closed firstly.
+ *
+ * @param[in]     uid: Settings user id.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_open_settings_with_uid(const char *uid);
+
+/**
+ * @brief         This function is called by Provisioner to close a nvs namespace
+ *                which is opened previously for storing mesh information.
+ *
+ * @note          1. Before closing the nvs namespace, it must be open.
+ *                2. When the function is invoked, the Provisioner functionality
+ *                   will be disabled firstly, and:
+ *                   a) If the "erase" flag is set to false, the mesh information
+ *                      will be cleaned (e.g. removing NetKey, AppKey, nodes, etc)
+ *                      from the mesh stack.
+ *                   b) If the "erase" flag is set to true, the mesh information
+ *                      stored in the nvs namespace will also be erased besides
+ *                      been cleaned from the mesh stack.
+ *                3. If Provisioner tries to work properly again, we can invoke the
+ *                   open function to open a new nvs namespace or a previously added
+ *                   one, and restore the mesh information from it if not erased.
+ *                4. The working process shall be as following:
+ *                   a) Open settings A
+ *                   b) Start to provision and control nodes
+ *                   c) Close settings A
+ *                   d) Open settings B
+ *                   e) Start to provision and control other nodes
+ *                   f) Close settings B
+ *                   g) ......
+ *
+ * @param[in]     index: Settings index.
+ * @param[in]     erase: Indicate if erasing mesh information.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_close_settings_with_index(uint8_t index, bool erase);
+
+/**
+ * @brief         This function is called by Provisioner to close a nvs namespace
+ *                which is opened previously for storing mesh information.
+ *
+ * @note          1. Before closing the nvs namespace, it must be open.
+ *                2. When the function is invoked, the Provisioner functionality
+ *                   will be disabled firstly, and:
+ *                   a) If the "erase" flag is set to false, the mesh information
+ *                      will be cleaned (e.g. removing NetKey, AppKey, nodes, etc)
+ *                      from the mesh stack.
+ *                   b) If the "erase" flag is set to true, the mesh information
+ *                      stored in the nvs namespace will also be erased besides
+ *                      been cleaned from the mesh stack.
+ *                3. If Provisioner tries to work properly again, we can invoke the
+ *                   open function to open a new nvs namespace or a previously added
+ *                   one, and restore the mesh information from it if not erased.
+ *                4. The working process shall be as following:
+ *                   a) Open settings A
+ *                   b) Start to provision and control nodes
+ *                   c) Close settings A
+ *                   d) Open settings B
+ *                   e) Start to provision and control other nodes
+ *                   f) Close settings B
+ *                   g) ......
+ *
+ * @param[in]     uid: Settings user id.
+ * @param[in]     erase: Indicate if erasing mesh information.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_close_settings_with_uid(const char *uid, bool erase);
+
+/**
+ * @brief         This function is called by Provisioner to erase the mesh information
+ *                and settings user id from a nvs namespace.
+ *
+ * @note          When this function is called, the nvs namespace must not be open.
+ *                This function is used to erase the mesh information and settings
+ *                user id which are not used currently.
+ *
+ * @param[in]     index: Settings index.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_delete_settings_with_index(uint8_t index);
+
+/**
+ * @brief         This function is called by Provisioner to erase the mesh information
+ *                and settings user id from a nvs namespace.
+ *
+ * @note          When this function is called, the nvs namespace must not be open.
+ *                This function is used to erase the mesh information and settings
+ *                user id which are not used currently.
+ *
+ * @param[in]     uid: Settings user id.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_delete_settings_with_uid(const char *uid);
+
+/**
+ * @brief         This function is called by Provisioner to get settings user id.
+ *
+ * @param[in]     index: Settings index.
+ *
+ * @return        Setting user id on success or NULL on failure.
+ *
+ */
+const char *esp_ble_mesh_provisioner_get_settings_uid(uint8_t index);
+
+/**
+ * @brief         This function is called by Provisioner to get settings index.
+ *
+ * @param[in]     uid: Settings user id.
+ *
+ * @return        Settings index.
+ *
+ */
+uint8_t esp_ble_mesh_provisioner_get_settings_index(const char *uid);
+
+/**
+ * @brief         This function is called by Provisioner to get the number of free
+ *                settings user id.
+ *
+ * @return        Number of free settings user id.
+ *
+ */
+uint8_t esp_ble_mesh_provisioner_get_free_settings_count(void);
+
+/**
  * @brief         This function is called to get fast provisioning application key.
  *
  * @param[in]     net_idx: Network key index.
