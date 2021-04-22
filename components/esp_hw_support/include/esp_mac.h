@@ -116,11 +116,12 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type);
 /**
   * @brief Derive local MAC address from universal MAC address.
   *
-  * This function derives a local MAC address from an universal MAC address.
-  * A `definition of local vs universal MAC address can be found on Wikipedia
-  * <https://en.wikipedia.org/wiki/MAC_address#Universal_vs._local>`.
-  * In ESP32, universal MAC address is generated from base MAC address in EFUSE or other external storage.
-  * Local MAC address is derived from the universal MAC address.
+  * This function copies a universal MAC address and then sets the U/L bit
+  * (bit 0x2) in the first octet, creating a locally administered MAC address.
+  *
+  * It's not recommended that the universal MAC address argument is already a
+  * locally administered MAC address, but in this case the first octet is XORed
+  * with 0x4 in order to create a different locally administered MAC address.
   *
   * @param  local_mac  Derived local MAC address, length: 6 bytes.
   * @param  universal_mac  Source universal MAC address, length: 6 bytes.
