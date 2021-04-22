@@ -38,7 +38,7 @@ static esp_err_t _udp_pcb_main_init(void)
         _pcb_main = NULL;
         return ESP_ERR_INVALID_STATE;
     }
-    _pcb_main->mcast_ttl = 1;
+    _pcb_main->mcast_ttl = 255;
     _pcb_main->remote_port = MDNS_SERVICE_PORT;
     ip_addr_copy(_pcb_main->remote_ip, ip_addr_any_type);
     udp_recv(_pcb_main, &_udp_recv, _mdns_server);

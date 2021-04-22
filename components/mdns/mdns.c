@@ -2665,7 +2665,7 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
     }
 
     //if we have not set the hostname, we can not answer questions
-    if (header.questions && _str_null_or_empty(_mdns_server->hostname)) {
+    if (header.questions && !header.answers && _str_null_or_empty(_mdns_server->hostname)) {
         free(parsed_packet);
         return;
     }
@@ -2796,13 +2796,12 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
 
             if (parsed_packet->discovery && _mdns_name_is_discovery(name, type)) {
                 discovery = true;
-            } else {
-                if (!name->sub && _mdns_name_is_ours(name)) {
-                    ours = true;
-                    if (name->service && name->service[0] && name->proto && name->proto[0]) {
-                        service = _mdns_get_service_item(name->service, name->proto);
-                    }
+            } else if (!name->sub && _mdns_name_is_ours(name)) {
+                ours = true;
+                if (name->service && name->service[0] && name->proto && name->proto[0]) {
+                    service = _mdns_get_service_item(name->service, name->proto);
                 }
+            } else {
                 if (!parsed_packet->authoritative || record_type == MDNS_NS) {
                     //skip this record
                     continue;
