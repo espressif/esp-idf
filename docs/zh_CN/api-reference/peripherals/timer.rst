@@ -1,40 +1,42 @@
-定时器
-============
+通用定时器
+==========
 
 :link_to_translation:`en:[English]`
 
-简介
-------------
+{IDF_TARGET_TIMER_COUNTER_BIT_WIDTH:default="54", esp32="64", esp32s2="64"}
 
-ESP32 芯片提供两组硬件定时器，每组包含两个通用硬件定时器。所有定时器均为 64 位通用定时器，包括 16 位预分频器和 64 位自动重载向上/向下计数器。
+简介
+----
+
+{IDF_TARGET_NAME} 芯片提供两组硬件定时器，每组包含两个通用硬件定时器。所有定时器均为 {IDF_TARGET_TIMER_COUNTER_BIT_WIDTH} 位通用定时器，包括 16 位预分频器和 {IDF_TARGET_TIMER_COUNTER_BIT_WIDTH} 位自动重载向上/向下计数器。
 
 
 功能概述
--------------------
+--------
 
 下文介绍了配置和操作定时器的常规步骤：
 
 * :ref:`timer-api-timer-initialization` - 启动定时器前应设置的参数，以及每个设置提供的具体功能。
 * :ref:`timer-api-timer-control` - 如何读取定时器的值，如何暂停/启动定时器以及如何改变定时器的操作方式。
 * :ref:`timer-api-alarms` - 如何设置和使用警报。
-* :ref:`timer-api-interrupts`- 如何使能和使用中断。
+* :ref:`timer-api-interrupts`- 如何使用中断提供的回调函数。
 
 
 .. _timer-api-timer-initialization:
 
 定时器初始化
-^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^
 
-两个 ESP32 定时器组中，每组都有两个定时器，两组共有四个定时器供使用。ESP32 定时器组应使用 :cpp:type:`timer_group_t` 识别，而每组中的个体定时器则应使用 :cpp:type:`timer_idx_t` 识别。
+两个 {IDF_TARGET_NAME} 定时器组中，每组都有两个定时器，两组共有四个定时器供使用。{IDF_TARGET_NAME} 定时器组的类型为 :cpp:type:`timer_group_t`，每组中的个体定时器类型为 :cpp:type:`timer_idx_t`。
 
 首先调用 :cpp:func:`timer_init` 函数，并将 :cpp:type:`timer_config_t` 结构体传递给此函数，用于定义定时器的工作方式，实现定时器初始化。特别注意以下定时器参数可设置为：
 
-    * **分频器**: 设置定时器中计数器计数的速度，:cpp:member:`divider` 的设置将用作输入的 80 MHz APB_CLK 时钟的除数。
+    * **时钟源**: 选择时钟源，它同时钟分频器一起决定了定时器的分辨率。默认的时钟源是 APB_CLK (一般是 80 MHz)。
+    * **分频器**: 设置定时器中计数器计数的速度，:cpp:member:`divider` 的设置将用作输入时钟源的除数。
     * **模式**: 设置计数器是递增还是递减。可通过从 :cpp:type:`timer_count_dir_t` 中选取一个值，后使用 :cpp:member:`counter_dir` 来选择模式。
     * **计数器使能**: 如果计数器已使能，则在调用 :cpp:func:`timer_init` 后计数器将立即开始递增/递减。您可通过从 :cpp:type:`timer_start_t` 中选取一个值，后使用 :cpp:member:`counter_en` 改变此行为。
     * **报警使能**: 可使用 :cpp:member:`alarm_en` 设置。
     * **自动重载**: 设置计数器是否应该在定时器警报上使用 :cpp:member:`auto_reload` 自动重载首个计数值，还是继续递增或递减。
-    * **中断类型**: 选择定时器警报上应触发的中断类型，请设置 :cpp:type:`timer_intr_mode_t` 中定义的值。
 
 要获取定时器设置的当前值，请使用函数 :cpp:func:`timer_get_config`。
 
@@ -82,27 +84,22 @@ ESP32 芯片提供两组硬件定时器，每组包含两个通用硬件定时�
 
 .. _timer-api-interrupts:
 
-中断
-^^^^^^^^^^
+处理中断事务
+^^^^^^^^^^^^
 
-可通过调用函数 :cpp:func:`timer_isr_register` 为特定定时器组和定时器注册中断处理程序。
+调用 :cpp:func:`timer_isr_callback_add` 函数可以给某个定时器注册一个中断回调函数，顾名思义，该函数会在中断上下文中被执行，因此用户不能在回调函数中调用任何会阻塞 CPU 的 API。
+相较于从头编写中断处理程序，使用中断回调函数的好处是，用户无需检测和处理中断的状态位，这些操作会由驱动中默认的中断处理程序替我们完成。
 
-调用 :cpp:func:`timer_group_intr_enable` 使能定时器组的中断程序，调用 :cpp:func:`timer_enable_intr` 使能某定时器的中断程序。调用 :cpp:func:`timer_group_intr_disable` 关闭定时器组的中断程序，调用 :cpp:func:`timer_disable_intr` 关闭某定时器的中断程序。
-
-在中断服务程序（ISR）中处理中断时，需要明确地清除中断状态位。为此，请设置定义在 :component_file:`soc/esp32/include/soc/timer_group_struct.h` 中的 ``TIMERGN.int_clr_timers.tM`` 结构。该结构中 ``N`` 是定时器组别编号 [0, 1]，``M`` 是定时器编号 [0, 1]。例如，要清除定时器组别 0 中定时器 1 的中断状态位，请调用以下命令:: 
-
-    TIMERG0.int_clr_timers.t1 = 1
-
-有关如何使用中断，请参阅应用示例。
+有关如何使用中断回调函数，请参考如下应用示例。
 
 
 应用示例
--------------------
+--------
 
-64 位硬件定时器示例：:example:`peripherals/timer_group`。
+{IDF_TARGET_TIMER_COUNTER_BIT_WIDTH} 位通用硬件定时器示例：:example:`peripherals/timer_group`。
 
 API 参考
--------------
+--------
 
 .. include-build-file:: inc/timer.inc
 .. include-build-file:: inc/timer_types.inc
