@@ -8,3 +8,6 @@ set(EXTRA_COMPONENT_DIRS $ENV{IDF_PATH}/examples/common_components/protocol_exam
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(openssl_server)
+
+target_add_binary_data(openssl_server.elf "server_certs/ca.crt" TEXT)
+target_add_binary_data(openssl_server.elf "server_certs/ca.key" TEXT)

@@ -8,3 +8,11 @@ set(EXTRA_COMPONENT_DIRS $ENV{IDF_PATH}/examples/common_components/protocol_exam
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(openssl_client)
+
+if(CONFIG_EXAMPLE_OPENSSL_CLIENT_URI_FROM_STDIN)
+    # This ca.crt is used when connecting to local(python executed) server
+    target_add_binary_data(openssl_client.elf "server_certs/ca.crt" TEXT)
+else()
+    # This ca.crt is used when connecting to www.baidu.com
+    target_add_binary_data(openssl_client.elf "main/baidu_ca.crt" TEXT)
+endif()
