@@ -589,13 +589,15 @@ idf_component_register(SRCS "${srcs}"
 if(CONFIG_BT_ENABLED)
     target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-implicit-fallthrough -Wno-unused-const-variable)
     if(CONFIG_IDF_TARGET_ESP32)
-        target_link_libraries(${COMPONENT_LIB} INTERFACE "-L${CMAKE_CURRENT_LIST_DIR}/controller/lib/esp32")
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-L${CMAKE_CURRENT_LIST_DIR}/controller/lib_esp32/esp32")
         target_link_libraries(${COMPONENT_LIB} PUBLIC btdm_app)
     elseif(CONFIG_IDF_TARGET_ESP32C3)
-        target_link_libraries(${COMPONENT_LIB} INTERFACE "-L${CMAKE_CURRENT_LIST_DIR}/controller/lib/esp32c3")
+        target_link_libraries(${COMPONENT_LIB} INTERFACE
+                "-L${CMAKE_CURRENT_LIST_DIR}/controller/lib_esp32c3_family/esp32c3")
         target_link_libraries(${COMPONENT_LIB} PUBLIC btdm_app btbb)
     elseif(CONFIG_IDF_TARGET_ESP32S3)
-        target_link_libraries(${COMPONENT_LIB} INTERFACE "-L${CMAKE_CURRENT_LIST_DIR}/controller/lib/esp32s3")
+        target_link_libraries(${COMPONENT_LIB} INTERFACE
+                "-L${CMAKE_CURRENT_LIST_DIR}/controller/lib_esp32c3_family/esp32s3")
         target_link_libraries(${COMPONENT_LIB} PUBLIC btdm_app btbb)
     endif()
 endif()
