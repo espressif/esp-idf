@@ -112,7 +112,21 @@ void app_main(void)
         .quadhd_io_num = -1,
     };
     ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_EXAMPLE_ETH_SPI_HOST, &buscfg, 1));
-#if CONFIG_EXAMPLE_USE_DM9051
+
+#if CONFIG_EXAMPLE_USE_KSZ8851SNL
+    spi_device_interface_config_t devcfg = {
+        .mode = 0,
+        .clock_speed_hz = CONFIG_EXAMPLE_ETH_SPI_CLOCK_MHZ * 1000 * 1000,
+        .spics_io_num = CONFIG_EXAMPLE_ETH_SPI_CS_GPIO,
+        .queue_size = 20
+    };
+    ESP_ERROR_CHECK(spi_bus_add_device(CONFIG_EXAMPLE_ETH_SPI_HOST, &devcfg, &spi_handle));
+    /* KSZ8851SNL ethernet driver is based on spi driver */
+    eth_ksz8851snl_config_t ksz8851snl_config = ETH_KSZ8851SNL_DEFAULT_CONFIG(spi_handle);
+    ksz8851snl_config.int_gpio_num = CONFIG_EXAMPLE_ETH_SPI_INT_GPIO;
+    esp_eth_mac_t *mac = esp_eth_mac_new_ksz8851snl(&ksz8851snl_config, &mac_config);
+    esp_eth_phy_t *phy = esp_eth_phy_new_ksz8851snl(&phy_config);
+#elif CONFIG_EXAMPLE_USE_DM9051
     spi_device_interface_config_t devcfg = {
         .command_bits = 1,
         .address_bits = 7,
