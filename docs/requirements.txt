@@ -9,7 +9,6 @@ sphinx==2.3.1
 breathe==4.14.1
 sphinx-copybutton==0.3.0
 sphinx-notfound-page
-sphinx-reredirects==0.0.0
 sphinxcontrib-blockdiag==2.0.0
 sphinxcontrib-seqdiag==2.0.0
 sphinxcontrib-actdiag==2.0.0

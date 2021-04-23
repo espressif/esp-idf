@@ -75,6 +75,8 @@ ESP-IDF 中包含多种芯片的双语文档（英文，简体中文）。如运
 :idf_file:`docs/extensions/list_filter.py`
     Sphinx 扩展功能，提供一个 ``.. list::`` 指令，允许系统根据是否有标签（如 ``:tagname: - list content``）来过滤条目列表。完整描述请参考 Python 文件。
 
+:idf_file:`docs/extensions/html_redirects.py`
+    在文档的维护过程中，一些源文件可能会转移位置或被重命名。这个 Sphinx 扩展功能便添加了一个重新导向机制，通过在 Sphinx 输出中生成静态 HTML 重新导向页面来为 URL 地址已改变的文档重新导向。该脚本与重新导向列表 ``html_redirect_pages`` 一起使用。``conf_common.py`` 将负责从 :idf_file:`docs/page_redirects.txt` 中生成这个重新导向列表。
 
 
 第三方扩展
