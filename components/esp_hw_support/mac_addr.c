@@ -117,21 +117,20 @@ esp_err_t esp_efuse_mac_get_default(uint8_t* mac)
 
 esp_err_t esp_derive_local_mac(uint8_t* local_mac, const uint8_t* universal_mac)
 {
-    uint8_t idx;
-
     if (local_mac == NULL || universal_mac == NULL) {
         ESP_LOGE(TAG, "mac address param is NULL");
         return ESP_ERR_INVALID_ARG;
     }
 
     memcpy(local_mac, universal_mac, 6);
-    for (idx = 0; idx < 64; idx++) {
-        local_mac[0] = universal_mac[0] | 0x02;
-        local_mac[0] ^= idx << 2;
 
-        if (memcmp(local_mac, universal_mac, 6)) {
-            break;
-        }
+    const unsigned UL_BIT = 0x2;
+    local_mac[0] |= UL_BIT;
+
+    if (local_mac[0] == universal_mac[0]) {
+        // universal_mac was already local, so flip this bit instead
+        // (this is kept to be compatible with the previous behaviour of this function)
+        local_mac[0] ^= 0x4;
     }
 
     return ESP_OK;
@@ -183,13 +182,15 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type)
 #endif // IDF_TARGET_ESP32S2
 #else
         esp_derive_local_mac(mac, efuse_mac);
-#endif
+#endif // CONFIG_ESP_MAC_ADDR_UNIVERSE_WIFI_AP
         break;
     case ESP_MAC_BT:
 #if CONFIG_ESP_MAC_ADDR_UNIVERSE_BT
         memcpy(mac, efuse_mac, 6);
         mac[5] += MAC_ADDR_UNIVERSE_BT_OFFSET;
-#endif
+#else
+        return ESP_ERR_NOT_SUPPORTED;
+#endif // CONFIG_ESP_MAC_ADDR_UNIVERSE_BT
         break;
     case ESP_MAC_ETH:
 #if CONFIG_ESP_MAC_ADDR_UNIVERSE_ETH
@@ -198,7 +199,7 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type)
 #else
         efuse_mac[5] += 1;
         esp_derive_local_mac(mac, efuse_mac);
-#endif
+#endif // CONFIG_ESP_MAC_ADDR_UNIVERSE_ETH
         break;
     default:
         ESP_LOGE(TAG, "unsupported mac type");
