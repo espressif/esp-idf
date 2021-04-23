@@ -56,7 +56,7 @@
 #include "soc/system_reg.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rtc.h"
-#include "esp32s3/rom/cache.h"
+#include "esp32c3/rom/cache.h"
 #include "esp32c3/rom/rtc.h"
 #include "soc/cache_memory.h"
 #include "esp32c3/memprot.h"
@@ -85,16 +85,13 @@
 #if CONFIG_APP_BUILD_TYPE_ELF_RAM
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/spi_flash.h"
-#endif // CONFIG_IDF_TARGET_ESP32
-#if CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/spi_flash.h"
-#endif // CONFIG_IDF_TARGET_ESP32S2
-#if CONFIG_IDF_TARGET_ESP32S3
+#elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/spi_flash.h"
-#endif // CONFIG_IDF_TARGET_ESP32S3
-#if CONFIG_IDF_TARGET_ESP32C3
+#elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/spi_flash.h"
-#endif // CONFIG_IDF_TARGET_ESP32C3
+#endif
 #endif // CONFIG_APP_BUILD_TYPE_ELF_RAM
 
 // Set efuse ROM_LOG_MODE on first boot
