@@ -28,7 +28,7 @@ NOTE: Thread safety is the responsibility fo the HAL user. All USB Host HAL
 #include "soc/usbh_struct.h"
 #include "soc/usb_wrap_struct.h"
 #include "hal/usbh_ll.h"
-#include "hal/usb_types.h"
+#include "hal/usb_types_private.h"
 
 /* -----------------------------------------------------------------------------
 ------------------------------- Macros and Types -------------------------------
@@ -121,7 +121,7 @@ typedef enum {
 typedef struct {
     union {
         struct {
-            usb_xfer_type_t type: 2;        /**< The type of endpoint */
+            usb_priv_xfer_type_t type: 2;   /**< The type of endpoint */
             uint32_t bEndpointAddress: 8;   /**< Endpoint address (containing endpoint number and direction) */
             uint32_t mps: 11;               /**< Maximum Packet Size */
             uint32_t dev_addr: 8;           /**< Device Address */
@@ -413,9 +413,9 @@ static inline bool usbh_hal_port_check_if_connected(usbh_hal_context_t *hal)
  *       connected to the host port
  *
  * @param hal Context of the HAL layer
- * @return usb_speed_t Speed of the connected device
+ * @return usb_priv_speed_t Speed of the connected device (FS or LS only on the esp32-s2)
  */
-static inline usb_speed_t usbh_hal_port_get_conn_speed(usbh_hal_context_t *hal)
+static inline usb_priv_speed_t usbh_hal_port_get_conn_speed(usbh_hal_context_t *hal)
 {
     return usbh_ll_hprt_get_speed(hal->dev);
 }

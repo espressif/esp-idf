@@ -21,9 +21,8 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 #include <sys/queue.h>
-#include "hal/usb_types.h"
-#include "hal/usbh_hal.h"
 #include "esp_err.h"
+#include "usb.h"
 
 // ------------------------------------------------- Macros & Types ----------------------------------------------------
 
