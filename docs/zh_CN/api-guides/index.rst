@@ -38,7 +38,8 @@ API 指南
    :SOC_ULP_SUPPORTED: ULP 协处理器 <ulp>
    :esp32: ULP (传统 GNU Make) <ulp-legacy>
    :esp32s2: ULP-RISC-V 协处理器 <ulp-risc-v>
-   单元测试 <unit-tests>
+   单元测试 (Target) <unit-tests>
+   单元测试 (Linux Host) <linux-host-testing>
    :esp32: 单元测试 (传统 GNU Make) <unit-tests-legacy>
    :esp32s2: USB 控制台 <usb-console>
    Wi-Fi 驱动 <wifi>
