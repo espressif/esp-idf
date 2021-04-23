@@ -71,6 +71,8 @@ These third party libraries can be included into the application (firmware) prod
 
 * :component:`openthread`, Copyright (c) The OpenThread Authors, is licensed under  Apache License 2.0 as described in :component_file:`LICENSE file<openthread/openthread/LICENSE>`.
 
+* :component_file:` UBSAN runtime <esp_system/ubsan.c>` — Copyright (c) 2016, Linaro Limited and Jiří Zárevúcky, licensed under the BSD 2-clause license.
+
 Build Tools
 -----------
 

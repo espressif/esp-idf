@@ -19,7 +19,8 @@ else()
             "startup.c"
             "system_time.c"
             "stack_check.c"
-            "task_wdt.c")
+            "task_wdt.c"
+            "ubsan.c")
 
     if(NOT (${target} STREQUAL "esp32c3") )
         list(APPEND srcs  "dbg_stubs.c")
@@ -58,3 +59,7 @@ if(CONFIG_IDF_ENV_FPGA)
     # Forces the linker to include fpga stubs from this component
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_common_include_fpga_overrides")
 endif()
+
+# Force linking UBSAN hooks. If UBSAN is not enabled, the hooks will ultimately be removed
+# due to -ffunction-sections -Wl,--gc-sections options.
+target_link_libraries(${COMPONENT_LIB} INTERFACE "-u __ubsan_include")

@@ -345,7 +345,7 @@ test_app_test_005:
 
 test_app_test_esp32_generic:
   extends: .test_app_esp32_template
-  parallel: 4
+  parallel: 5
   tags:
     - ESP32
     - Example_GENERIC

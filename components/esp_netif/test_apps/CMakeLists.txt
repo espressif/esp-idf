@@ -5,3 +5,6 @@ set(EXTRA_COMPONENT_DIRS "$ENV{IDF_PATH}/tools/unit-test-app/components")
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(esp_netif_test)
+
+idf_component_get_property(lib esp_netif COMPONENT_LIB)
+target_compile_options(${lib} PRIVATE "-fsanitize=undefined" "-fno-sanitize=shift-base")

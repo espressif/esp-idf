@@ -17,6 +17,7 @@ In certain situations, execution of the program can not be continued in a well d
   - Stack overflow
   - Stack smashing protection check
   - Heap integrity check
+  - Undefined behavior sanitizer (UBSAN) checks
 
 - Failed assertions, via ``assert``, ``configASSERT`` and similar macros.
 
@@ -389,3 +390,98 @@ The backtrace should point to the function where stack smashing has occured. Che
     .. |CPU_EXCEPTIONS_LIST| replace:: Illegal Instruction, Load/Store Alignment Error, Load/Store Prohibited error.
     .. |ILLEGAL_INSTR_MSG| replace:: Illegal instruction
     .. |CACHE_ERR_MSG| replace:: Cache error
+
+Undefined behavior sanitizer (UBSAN) checks
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Undefined behavior sanitizer (UBSAN) is a compiler feature which adds run-time checks for potentially incorrect operations, such as:
+
+- overflows (multiplication overflow, signed integer overflow)
+- shift base or exponent errors (e.g. shift by more than 32 bits)
+- integer conversion errors
+
+See `GCC documentation <https://gcc.gnu.org/onlinedocs/gcc/Instrumentation-Options.html>`_ of ``-fsanitize=undefined`` option for the complete list of supported checks.
+
+Enabling UBSAN
+""""""""""""""
+
+UBSAN is disabled by default. It can be enabled at file, component, or project level by adding ``-fsanitize=undefined`` compiler option in the build system.
+
+When enabling UBSAN for the code which uses hardware register header files (``soc/xxx_reg.h``), it is recommended to disable shift-base sanitizer using ``-fno-sanitize=shift-base`` option. This is due to the fact that ESP-IDF register header files currently contain patterns which cause false positives for this specific sanitizer option.
+
+To enable UBSAN at project level, add the following at the end of the project CMakeLists.txt file::
+
+    idf_build_set_property(COMPILE_OPTIONS "-fsanitize=undefined" "-fno-sanitize=shift-base" APPEND)
+
+Alternatively, pass these options through ``EXTRA_CFLAGS`` and ``EXTRA_CXXFLAGS`` environment variables.
+
+Enabling UBSAN results in significant increase of code and data size. Most applications, except for the trivial ones, will not fit into the available RAM of the microcontroller when UBSAN is enabled for the whole application. Therefore it is recommended that UBSAN is instead enabled for specific components under test.
+
+To enable UBSAN for the specific component (``component_name``) from the project CMakeLists.txt file, add the following at the end of the file::
+
+    idf_component_get_property(lib component_name COMPONENT_LIB)
+    target_compile_options(${lib} PRIVATE "-fsanitize=undefined" "-fno-sanitize=shift-base")
+
+.. note:: See the build system documentation for more information about :ref:`build properties<cmake-build-properties>` and :ref:`component properties<cmake-component-properties>`.
+
+To enable UBSAN for the specific component (``component_name``) from CMakeLists.txt of the same component, add the following at the end of the file::
+
+    target_compile_options(${COMPONENT_LIB} PRIVATE "-fsanitize=undefined" "-fno-sanitize=shift-base")
+
+UBSAN output
+""""""""""""
+
+When UBSAN detects an error, a message and the backtrace are printed, for example::
+
+    Undefined behavior of type out_of_bounds
+
+    Backtrace:0x4008b383:0x3ffcd8b0 0x4008c791:0x3ffcd8d0 0x4008c587:0x3ffcd8f0 0x4008c6be:0x3ffcd950 0x400db74f:0x3ffcd970 0x400db99c:0x3ffcd9a0
+
+When using :doc:`IDF Monitor <tools/idf-monitor>`, the backtrace will be decoded to function names and source code locations, pointing to the location where the issue has happened (here it is ``main.c:128``)::
+
+    0x4008b383: panic_abort at /path/to/esp-idf/components/esp_system/panic.c:367
+
+    0x4008c791: esp_system_abort at /path/to/esp-idf/components/esp_system/system_api.c:106
+
+    0x4008c587: __ubsan_default_handler at /path/to/esp-idf/components/esp_system/ubsan.c:152
+
+    0x4008c6be: __ubsan_handle_out_of_bounds at /path/to/esp-idf/components/esp_system/ubsan.c:223
+
+    0x400db74f: test_ub at main.c:128
+
+    0x400db99c: app_main at main.c:56 (discriminator 1)
+
+The types of errors reported by UBSAN can be as follows:
+
+.. list-table::
+  :widths: 40 60
+  :header-rows: 1
+
+  * - Name
+    - Meaning
+  * - ``type_mismatch``, ``type_mismatch_v1``
+    - Incorrect pointer value: null, unaligned, not compatible with the given type.
+  * - ``add_overflow``, ``sub_overflow``, ``mul_overflow``, ``negate_overflow``
+    - Integer overflow during addition, subtraction, multiplication, negation.
+  * - ``divrem_overflow``
+    - Integer division by 0 or ``INT_MIN``.
+  * - ``shift_out_of_bounds``
+    - Overflow in left or right shift operators.
+  * - ``out_of_bounds``
+    - Access outside of bounds of an array.
+  * - ``unreachable``
+    - Unreachable code executed.
+  * - ``missing_return``
+    - Non-void function has reached its end without returning a value (C++ only).
+  * - ``vla_bound_not_positive``
+    - Size of variable length array is not positive.
+  * - ``load_invalid_value``
+    - Value of ``bool`` or ``enum`` (C++ only) variable is invalid (out of bounds).
+  * - ``nonnull_arg``
+    - Null argument passed to a function which is declared with a ``nonnull`` attribute.
+  * - ``nonnull_return``
+    - Null value returned from a function which is declared with ``returns_nonnull`` attribute.
+  * - ``builtin_unreachable``
+    - ``__builtin_unreachable`` function called.
+  * - ``pointer_overflow``
+    - Overflow in pointer arithmetic.
