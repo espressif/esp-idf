@@ -92,6 +92,8 @@ Condition Variables
 * ``pthread_cond_wait()``
 * ``pthread_cond_timedwait()``
 
+Static initializer constant ``PTHREAD_COND_INITIALIZER`` is supported.
+
 .. note:: These functions can be called from tasks created using either pthread or FreeRTOS APIs
 
 Thread-Specific Data
@@ -113,7 +115,6 @@ The ``pthread.h`` header is a standard header and includes additional APIs and f
 
 * ``pthread_cancel()`` returns ``ENOSYS`` if called.
 * ``pthread_condattr_init()`` returns ``ENOSYS`` if called.
-* ``PTHREAD_COND_INITIALIZER`` static initializer constant is not implemented and will crash if passed to a function.
 
 Other POSIX Threads functions (not listed here) are not implemented and will produce either a compiler or a linker error if referenced from an ESP-IDF application. If you identify a useful API that you would like to see implemented in ESP-IDF, please open a `feature request on GitHub <https://github.com/espressif/esp-idf/issues>` with the details.
 
