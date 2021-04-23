@@ -152,6 +152,10 @@ if(CONFIG_MBEDTLS_HARDWARE_GCM)
     target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/aes/esp_aes_gcm.c")
 endif()
 
+if(CONFIG_MBEDTLS_ROM_MD5)
+    target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/md/esp_md.c")
+endif()
+
 foreach(target ${mbedtls_targets})
     target_compile_definitions(${target} PUBLIC -DMBEDTLS_CONFIG_FILE="mbedtls/esp_config.h")
 endforeach()
