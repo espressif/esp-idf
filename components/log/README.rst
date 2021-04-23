@@ -50,6 +50,10 @@ Additionally, there are ``ESP_EARLY_LOGx`` versions for each of these macros, e.
 
 There are also ``ESP_DRAM_LOGx`` versions for each of these macros, e.g. :c:macro:`ESP_DRAM_LOGE`. These versions are used in some places where logging may occur with interrupts disabled or with flash cache inaccessible. Use of this macros should be as sparing as possible, as logging in these types of code should be avoided for performance reasons.
 
+.. note::
+
+   Inside critical sections interrupts are disabled so it's only possible to use ``ESP_DRAM_LOGx`` (preferred) or ``ESP_EARLY_LOGx``. Even though it's possible to log in these situations, it's better if your program can be structured not to require it.
+
 To override default verbosity level at file or component scope, define the ``LOG_LOCAL_LEVEL`` macro.
 
 At file scope, define it before including ``esp_log.h``, e.g.:

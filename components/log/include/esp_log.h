@@ -280,7 +280,7 @@ void esp_log_writev(esp_log_level_t level, const char* tag, const char* format, 
 
 /** @endcond */
 
-/// macro to output logs in startup code, before heap allocator and syscalls have been initialized. log at ``ESP_LOG_ERROR`` level. @see ``printf``,``ESP_LOGE``
+/// macro to output logs in startup code, before heap allocator and syscalls have been initialized. log at ``ESP_LOG_ERROR`` level. @see ``printf``,``ESP_LOGE``,``ESP_DRAM_LOGE``
 #define ESP_EARLY_LOGE( tag, format, ... ) ESP_LOG_EARLY_IMPL(tag, format, ESP_LOG_ERROR,   E, ##__VA_ARGS__)
 /// macro to output logs in startup code at ``ESP_LOG_WARN`` level.  @see ``ESP_EARLY_LOGE``,``ESP_LOGE``, ``printf``
 #define ESP_EARLY_LOGW( tag, format, ... ) ESP_LOG_EARLY_IMPL(tag, format, ESP_LOG_WARN,    W, ##__VA_ARGS__)
@@ -312,7 +312,9 @@ void esp_log_writev(esp_log_level_t level, const char* tag, const char* format, 
 #define ESP_LOGV( tag, format, ... ) ESP_LOG_LEVEL_LOCAL(ESP_LOG_VERBOSE, tag, format, ##__VA_ARGS__)
 #else
 /**
- * macro to output logs at ESP_LOG_ERROR level.
+ * Macro to output logs at ESP_LOG_ERROR level.
+ *
+ * @note This macro cannot be used when interrupts are disabled or inside an ISR. @see ``ESP_DRAM_LOGE``.
  *
  * @param tag tag of the log, which can be used to change the log level by ``esp_log_level_set`` at runtime.
  *
@@ -368,7 +370,10 @@ void esp_log_writev(esp_log_level_t level, const char* tag, const char* format, 
 /**
  * @brief Macro to output logs when the cache is disabled. log at ``ESP_LOG_ERROR`` level.
  *
- * Similar to `ESP_EARLY_LOGE`, the log level cannot be changed per-tag, however
+ * @note Unlike normal logging macros, it's possible to use this macro when interrupts are
+ * disabled or inside an ISR.
+ *
+ * Similar to @see ``ESP_EARLY_LOGE``, the log level cannot be changed per-tag, however
  * esp_log_level_set("*", level) will set the default level which controls these log lines also.
  *
  * Usage: `ESP_DRAM_LOGE(DRAM_STR("my_tag"), "format", or `ESP_DRAM_LOGE(TAG, "format", ...)`,
