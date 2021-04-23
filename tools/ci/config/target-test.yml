@@ -181,6 +181,12 @@ example_test_001B:
     - ESP32
     - Example_EthKitV1
 
+example_test_001B_V3:
+  extends: .example_test_template
+  tags:
+    - ESP32
+    - Example_EthKitV12
+
 example_test_001C:
   extends: .example_test_template
   parallel: 3
