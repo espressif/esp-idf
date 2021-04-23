@@ -210,10 +210,9 @@
 
 #define SOC_MEMSPI_IS_INDEPENDENT 1
 
-/*-------------------------- SYS TIMER CAPS ----------------------------------*/
-#define SOC_SYSTIMER_COUNTER_NUM (1)   // Number of counter units
-#define SOC_SYSTIMER_ALARM_NUM (3)     // Number of alarm units
-
+/*-------------------------- SYSTIMER CAPS ----------------------------------*/
+#define SOC_SYSTIMER_COUNTER_NUM  (1)  // Number of counter units
+#define SOC_SYSTIMER_ALARM_NUM    (3)  // Number of alarm units
 #define SOC_SYSTIMER_BIT_WIDTH_LO (32) // Bit width of systimer low part
 #define SOC_SYSTIMER_BIT_WIDTH_HI (32) // Bit width of systimer high part
 

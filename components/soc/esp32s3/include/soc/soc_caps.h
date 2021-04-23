@@ -103,7 +103,13 @@
 #define SOC_SPIRAM_SUPPORTED            1
 
 /*-------------------------- SYS TIMER CAPS ----------------------------------*/
-#include "systimer_caps.h"
+#define SOC_SYSTIMER_COUNTER_NUM           (2)  // Number of counter units
+#define SOC_SYSTIMER_ALARM_NUM             (3)  // Number of alarm units
+#define SOC_SYSTIMER_BIT_WIDTH_LO          (32) // Bit width of systimer low part
+#define SOC_SYSTIMER_BIT_WIDTH_HI          (20) // Bit width of systimer high part
+#define SOC_SYSTIMER_FIXED_TICKS_US        (16) // Number of ticks per microsecond is fixed
+#define SOC_SYSTIMER_INT_LEVEL             (1)  // Systimer peripheral uses level
+#define SOC_SYSTIMER_ALARM_MISS_COMPENSATE (1)  // Systimer peripheral can generate interrupt immediately if t(target) > t(current)
 
 /*-------------------------- TIMER GROUP CAPS --------------------------------*/
 #define SOC_TIMER_GROUPS                  (2)
