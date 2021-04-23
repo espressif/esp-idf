@@ -728,6 +728,7 @@ int pthread_mutexattr_init(pthread_mutexattr_t *attr)
     if (!attr) {
         return EINVAL;
     }
+    memset(attr, 0, sizeof(*attr));
     attr->type = PTHREAD_MUTEX_NORMAL;
     attr->is_initialized = 1;
     return 0;
@@ -769,6 +770,7 @@ int pthread_attr_init(pthread_attr_t *attr)
 {
     if (attr) {
         /* Nothing to allocate. Set everything to default */
+        memset(attr, 0, sizeof(*attr));
         attr->stacksize   = CONFIG_PTHREAD_TASK_STACK_SIZE_DEFAULT;
         attr->detachstate = PTHREAD_CREATE_JOINABLE;
         return 0;
@@ -778,13 +780,8 @@ int pthread_attr_init(pthread_attr_t *attr)
 
 int pthread_attr_destroy(pthread_attr_t *attr)
 {
-    if (attr) {
-        /* Nothing to deallocate. Reset everything to default */
-        attr->stacksize   = CONFIG_PTHREAD_TASK_STACK_SIZE_DEFAULT;
-        attr->detachstate = PTHREAD_CREATE_JOINABLE;
-        return 0;
-    }
-    return EINVAL;
+    /* Nothing to deallocate. Reset everything to default */
+    return pthread_attr_init(attr);
 }
 
 int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize)
