@@ -26,9 +26,12 @@
 #include "esp_vfs.h"
 #include "esp_vfs_dev.h"
 #include "esp_attr.h"
+#include "esp_log.h"
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "hal/usb_serial_jtag_ll.h"
+#include "esp_vfs_usb_serial_jtag.h"
+#include "driver/usb_serial_jtag.h"
 
 // Token signifying that no character is available
 #define NONE -1
@@ -382,4 +385,44 @@ esp_err_t esp_vfs_dev_usb_serial_jtag_register(void)
     };
     // "/dev/usb_serial_jtag" unfortunately is too long for vfs
     return esp_vfs_register("/dev/usbserjtag", &vfs, NULL);
+}
+
+/***********************************************************
+ * VFS uses USB-SERIAL-JTAG driver part.
+ **********************************************************/
+
+static int usbjtag_rx_char_via_driver(int fd)
+{
+    uint8_t c;
+    int n = usb_serial_jtag_read_bytes(&c, 1, portMAX_DELAY);
+    if (n <= 0) {
+        return NONE;
+    }
+    return c;
+}
+
+static void usbjtag_tx_char_via_driver(int fd, int c)
+{
+    char ch = (char) c;
+    usb_serial_jtag_write_bytes(&ch, 1, portMAX_DELAY);
+}
+
+void esp_vfs_usb_serial_jtag_use_nonblocking(void)
+{
+    _lock_acquire_recursive(&s_ctx.read_lock);
+    _lock_acquire_recursive(&s_ctx.write_lock);
+    s_ctx.tx_func = usb_serial_jtag_tx_char;
+    s_ctx.rx_func = usb_serial_jtag_rx_char;
+    _lock_release_recursive(&s_ctx.write_lock);
+    _lock_release_recursive(&s_ctx.read_lock);
+}
+
+void esp_vfs_usb_serial_jtag_use_driver(void)
+{
+    _lock_acquire_recursive(&s_ctx.read_lock);
+    _lock_acquire_recursive(&s_ctx.write_lock);
+    s_ctx.tx_func = usbjtag_tx_char_via_driver;
+    s_ctx.rx_func = usbjtag_rx_char_via_driver;
+    _lock_release_recursive(&s_ctx.write_lock);
+    _lock_release_recursive(&s_ctx.read_lock);
 }

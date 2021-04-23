@@ -14,9 +14,11 @@
 #include "esp_console.h"
 #include "esp_vfs_dev.h"
 #include "esp_vfs_cdcacm.h"
+#include "esp_vfs_usb_serial_jtag.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/uart.h"
+#include "driver/usb_serial_jtag.h"
 #include "linenoise/linenoise.h"
 
 static const char *TAG = "console.repl";
@@ -46,6 +48,9 @@ typedef struct {
 static void esp_console_repl_task(void *args);
 static esp_err_t esp_console_repl_uart_delete(esp_console_repl_t *repl);
 static esp_err_t esp_console_repl_usb_cdc_delete(esp_console_repl_t *repl);
+#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+static esp_err_t esp_console_repl_usb_serial_jtag_delete(esp_console_repl_t *repl);
+#endif //CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
 static esp_err_t esp_console_common_init(esp_console_repl_com_t *repl_com);
 static esp_err_t esp_console_setup_prompt(const char *prompt, esp_console_repl_com_t *repl_com);
 static esp_err_t esp_console_setup_history(const char *history_path, uint32_t max_history_len, esp_console_repl_com_t *repl_com);
@@ -113,6 +118,84 @@ _exit:
     }
     return ret;
 }
+
+#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+esp_err_t esp_console_new_repl_usb_serial_jtag(const esp_console_dev_usb_serial_jtag_config_t *dev_config, const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl)
+{
+    esp_console_repl_universal_t *usb_serial_jtag_repl = NULL;
+    if (!repl_config | !dev_config | !ret_repl) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_err_t ret = ESP_OK;
+    // allocate memory for console REPL context
+    usb_serial_jtag_repl = calloc(1, sizeof(esp_console_repl_universal_t));
+    if (!usb_serial_jtag_repl) {
+        ret = ESP_ERR_NO_MEM;
+        goto _exit;
+    }
+
+    /* Disable buffering on stdin */
+    setvbuf(stdin, NULL, _IONBF, 0);
+
+    /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
+    esp_vfs_dev_usb_serial_jtag_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
+    /* Move the caret to the beginning of the next line on '\n' */
+    esp_vfs_dev_usb_serial_jtag_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
+
+    /* Enable non-blocking mode on stdin and stdout */
+    fcntl(fileno(stdout), F_SETFL, 0);
+    fcntl(fileno(stdin), F_SETFL, 0);
+
+    usb_serial_jtag_driver_config_t usb_serial_jtag_config = USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();
+
+    /* Install USB-SERIAL-JTAG driver for interrupt-driven reads and writes */
+    ret = usb_serial_jtag_driver_install(&usb_serial_jtag_config);
+    if (ret != ESP_OK) {
+        goto _exit;
+    }
+
+    // initialize console, common part
+    ret = esp_console_common_init(&usb_serial_jtag_repl->repl_com);
+    if (ret != ESP_OK) {
+        goto _exit;
+    }
+
+    /* Tell vfs to use usb-serial-jtag driver */
+    esp_vfs_usb_serial_jtag_use_driver();
+
+    // setup history
+    ret = esp_console_setup_history(repl_config->history_save_path, repl_config->max_history_len, &usb_serial_jtag_repl->repl_com);
+    if (ret != ESP_OK) {
+        goto _exit;
+    }
+
+    // setup prompt
+    esp_console_setup_prompt(repl_config->prompt, &usb_serial_jtag_repl->repl_com);
+
+    /* spawn a single thread to run REPL */
+    if (xTaskCreate(esp_console_repl_task, "console_repl", repl_config->task_stack_size,
+                    &usb_serial_jtag_repl->repl_com, repl_config->task_priority, &usb_serial_jtag_repl->repl_com.task_hdl) != pdTRUE) {
+        ret = ESP_FAIL;
+        goto _exit;
+    }
+
+    usb_serial_jtag_repl->uart_channel = CONFIG_ESP_CONSOLE_UART_NUM;
+    usb_serial_jtag_repl->repl_com.state = CONSOLE_REPL_STATE_INIT;
+    usb_serial_jtag_repl->repl_com.repl_core.del = esp_console_repl_usb_serial_jtag_delete;
+    *ret_repl = &usb_serial_jtag_repl->repl_com.repl_core;
+    return ESP_OK;
+_exit:
+    if (usb_serial_jtag_repl) {
+        esp_console_deinit();
+        free(usb_serial_jtag_repl);
+    }
+    if (ret_repl) {
+        *ret_repl = NULL;
+    }
+    return ret;
+}
+#endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
 
 esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_config, const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl)
 {
@@ -338,6 +421,28 @@ static esp_err_t esp_console_repl_usb_cdc_delete(esp_console_repl_t *repl)
 _exit:
     return ret;
 }
+
+#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+static esp_err_t esp_console_repl_usb_serial_jtag_delete(esp_console_repl_t *repl)
+{
+    esp_err_t ret = ESP_OK;
+    esp_console_repl_com_t *repl_com = __containerof(repl, esp_console_repl_com_t, repl_core);
+    esp_console_repl_universal_t *usb_serial_jtag_repl = __containerof(repl_com, esp_console_repl_universal_t, repl_com);
+    // check if already de-initialized
+    if (repl_com->state == CONSOLE_REPL_STATE_DEINIT) {
+        ESP_LOGE(TAG, "already de-initialized");
+        ret = ESP_ERR_INVALID_STATE;
+        goto _exit;
+    }
+    repl_com->state = CONSOLE_REPL_STATE_DEINIT;
+    esp_console_deinit();
+    esp_vfs_usb_serial_jtag_use_nonblocking();
+    usb_serial_jtag_driver_uninstall();
+    free(usb_serial_jtag_repl);
+_exit:
+    return ret;
+}
+#endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
 
 static void esp_console_repl_task(void *args)
 {
