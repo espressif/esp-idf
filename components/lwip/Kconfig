@@ -328,6 +328,28 @@ menu "LWIP"
 
             See RFC 4862.
 
+    config LWIP_IPV6_NUM_ADDRESSES
+        int "Number of IPv6 addresses on each network interface"
+        depends on LWIP_IPV6
+        default 3
+        help
+            The maximum number of IPv6 addresses on each interface. Any additional
+            addresses will be discarded.
+
+    config LWIP_IPV6_FORWARD
+        bool "Enable IPv6 forwarding between interfaces"
+        depends on LWIP_IPV6
+        default n
+        help
+            Forwarding IPv6 packets between interfaces is only required when acting as
+            a router.
+
+    config LWIP_NETIF_STATUS_CALLBACK
+        bool "Enable status callback for network interfaces"
+        default n
+        help
+            Enable callbacks when the network interface is up/down and addresses are changed.
+
     menuconfig LWIP_NETIF_LOOPBACK
         bool "Support per-interface loopback"
         default y
@@ -855,6 +877,26 @@ menu "LWIP"
             config LWIP_HOOK_IP6_ROUTE_DEFAULT
                 bool "Default (weak) implementation"
             config LWIP_HOOK_IP6_ROUTE_CUSTOM
+                bool "Custom implementation"
+
+        endchoice
+
+        choice LWIP_HOOK_ND6_GET_GW
+            prompt "IPv6 get gateway Hook"
+            depends on LWIP_IPV6
+            default LWIP_HOOK_ND6_GET_GW_NONE
+            help
+                Enables custom IPv6 route hook.
+                Setting this to "default" provides weak implementation
+                stub that could be overwritten in application code.
+                Setting this to "custom" provides hook's declaration
+                only and expects the application to implement it.
+
+            config LWIP_HOOK_ND6_GET_GW_NONE
+                bool "No hook declared"
+            config LWIP_HOOK_ND6_GET_GW_DEFAULT
+                bool "Default (weak) implementation"
+            config LWIP_HOOK_ND6_GET_GW_CUSTOM
                 bool "Custom implementation"
 
         endchoice

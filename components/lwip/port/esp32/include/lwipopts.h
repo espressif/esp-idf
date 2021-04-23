@@ -453,6 +453,8 @@
  */
 #define LWIP_NETIF_API                      CONFIG_LWIP_NETIF_API
 
+#define LWIP_NETIF_STATUS_CALLBACK      CONFIG_LWIP_NETIF_STATUS_CALLBACK
+
 /*
    ------------------------------------
    ---------- LOOPIF options ----------
@@ -688,7 +690,7 @@
  * Some modems do not support IPV6 addressing in local link and
  * the only option available is to disable IPV6 address negotiation.
  */
-#define PPP_IPV6_SUPPORT				CONFIG_LWIP_PPP_ENABLE_IPV6
+#define PPP_IPV6_SUPPORT                               CONFIG_LWIP_PPP_ENABLE_IPV6
 
 /**
  * PPP_NOTIFY_PHASE==1: Support PPP notify phase.
@@ -956,6 +958,10 @@
  * socket descriptors.
  */
 #define LWIP_SOCKET_OFFSET              (FD_SETSIZE - CONFIG_LWIP_MAX_SOCKETS)
+
+#define LWIP_IPV6_FORWARD               CONFIG_LWIP_IPV6_FORWARD
+
+#define LWIP_IPV6_NUM_ADDRESSES         CONFIG_LWIP_IPV6_NUM_ADDRESSES
 
 /* Enable all Espressif-only options */
 
