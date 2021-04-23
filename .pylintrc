@@ -247,7 +247,7 @@ missing-member-hint-distance=1
 missing-member-max-choices=1
 
 # List of decorators that change the signature of a decorated function.
-signature-mutators=
+signature-mutators=ttfw_idf.idf_example_test,ttfw_idf.idf_unit_test,ttfw_idf.idf_custom_test,ttfw_idf.idf_component_unit_test
 
 
 [SPELLING]

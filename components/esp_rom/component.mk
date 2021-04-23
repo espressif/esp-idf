@@ -39,5 +39,6 @@ endif
 
 COMPONENT_ADD_LDFLAGS += -L $(COMPONENT_PATH)/esp32/ld \
                          $(addprefix -T ,$(LINKER_SCRIPTS)) \
+                         -l$(COMPONENT_NAME) -Wl,--wrap=longjmp \
 
 COMPONENT_ADD_LINKER_DEPS += $(addprefix esp32/ld/, $(LINKER_SCRIPTS))
