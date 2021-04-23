@@ -456,7 +456,7 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
 {
     intr_handle_data_t *ret=NULL;
     int force=-1;
-    ESP_EARLY_LOGV(TAG, "esp_intr_alloc_intrstatus (cpu %d): checking args", cpu_hal_get_core_id());
+    ESP_EARLY_LOGV(TAG, "esp_intr_alloc_intrstatus (cpu %u): checking args", cpu_hal_get_core_id());
     //Shared interrupts should be level-triggered.
     if ((flags&ESP_INTR_FLAG_SHARED) && (flags&ESP_INTR_FLAG_EDGE)) return ESP_ERR_INVALID_ARG;
     //You can't set an handler / arg for a non-C-callable interrupt.
@@ -481,7 +481,7 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
             flags|=ESP_INTR_FLAG_LOWMED;
         }
     }
-    ESP_EARLY_LOGV(TAG, "esp_intr_alloc_intrstatus (cpu %d): Args okay. Resulting flags 0x%X", cpu_hal_get_core_id(), flags);
+    ESP_EARLY_LOGV(TAG, "esp_intr_alloc_intrstatus (cpu %u): Args okay. Resulting flags 0x%X", cpu_hal_get_core_id(), flags);
 
     //Check 'special' interrupt sources. These are tied to one specific interrupt, so we
     //have to force get_free_int to only look at that.
@@ -497,7 +497,7 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
     if (ret==NULL) return ESP_ERR_NO_MEM;
 
     portENTER_CRITICAL(&spinlock);
-    int cpu=cpu_hal_get_core_id();
+    uint32_t cpu = cpu_hal_get_core_id();
     //See if we can find an interrupt that matches the flags.
     int intr=get_available_int(flags, cpu, force, source);
     if (intr==-1) {
@@ -796,23 +796,32 @@ esp_err_t IRAM_ATTR esp_intr_disable(intr_handle_t handle)
 
 void IRAM_ATTR esp_intr_noniram_disable(void)
 {
+    portENTER_CRITICAL_SAFE(&spinlock);
     uint32_t oldint;
-    int cpu=cpu_hal_get_core_id();
-    uint32_t intmask=~non_iram_int_mask[cpu];
-    if (non_iram_int_disabled_flag[cpu]) abort();
-    non_iram_int_disabled_flag[cpu]=true;
-    oldint = interrupt_controller_hal_disable_int_mask(intmask);
-    //Save which ints we did disable
-    non_iram_int_disabled[cpu]=oldint&non_iram_int_mask[cpu];
+    uint32_t cpu = cpu_hal_get_core_id();
+    uint32_t non_iram_ints = non_iram_int_mask[cpu];
+    if (non_iram_int_disabled_flag[cpu]) {
+        abort();
+    }
+    non_iram_int_disabled_flag[cpu] = true;
+    oldint = interrupt_controller_hal_read_interrupt_mask();
+    interrupt_controller_hal_disable_interrupts(non_iram_ints);
+    // Save disabled ints
+    non_iram_int_disabled[cpu] = oldint & non_iram_ints;
+    portEXIT_CRITICAL_SAFE(&spinlock);
 }
 
 void IRAM_ATTR esp_intr_noniram_enable(void)
 {
-    int cpu=cpu_hal_get_core_id();
-    int intmask=non_iram_int_disabled[cpu];
-    if (!non_iram_int_disabled_flag[cpu]) abort();
-    non_iram_int_disabled_flag[cpu]=false;
-    interrupt_controller_hal_enable_int_mask(intmask);
+    portENTER_CRITICAL_SAFE(&spinlock);
+    uint32_t cpu = cpu_hal_get_core_id();
+    int non_iram_ints = non_iram_int_disabled[cpu];
+    if (!non_iram_int_disabled_flag[cpu]) {
+        abort();
+    }
+    non_iram_int_disabled_flag[cpu] = false;
+    interrupt_controller_hal_enable_interrupts(non_iram_ints);
+    portEXIT_CRITICAL_SAFE(&spinlock);
 }
 
 //These functions are provided in ROM, but the ROM-based functions use non-multicore-capable
