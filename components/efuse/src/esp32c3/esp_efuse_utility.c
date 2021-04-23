@@ -63,8 +63,14 @@ const esp_efuse_range_addr_t range_write_addr_blocks[] = {
 // Update Efuse timing configuration
 static esp_err_t esp_efuse_set_timing(void)
 {
-    uint32_t clock_hz = esp_clk_apb_freq();
-    return ets_efuse_set_timing(clock_hz) ? ESP_FAIL : ESP_OK;
+    // efuse clock is fixed in ESP32-C3, so the ets_efuse_set_timing() function
+    // takes an argument for compatibility with older ROM functions but it's ignored.
+    int res = ets_efuse_set_timing(0);
+    assert(res == 0);
+
+    REG_SET_FIELD(EFUSE_WR_TIM_CONF2_REG, EFUSE_PWR_OFF_NUM, 0x60);
+
+    return ESP_OK;
 }
 #endif // ifndef CONFIG_EFUSE_VIRTUAL
 
