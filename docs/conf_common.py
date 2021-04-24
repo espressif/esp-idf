@@ -165,6 +165,10 @@ USB_DOCS = ['api-reference/peripherals/usb.rst',
             'api-guides/usb-console.rst',
             'api-guides/dfu.rst']
 
+FTDI_JTAG_DOCS = ['api-guides/jtag-debugging/configure-ft2232h-jtag.rst']
+
+BUILTIN_JTAG_DOCS = ['api-guides/jtag-debugging/configure-builtin-jtag.rst']
+
 ULP_DOCS = ['api-guides/ulp.rst', 'api-guides/ulp_macros.rst']
 
 RISCV_COPROC_DOCS = ['api-guides/ulp-risc-v.rst',]
@@ -182,7 +186,7 @@ ESP32_DOCS = ['api-guides/ulp_instruction_set.rst',
               'security/secure-boot-v1.rst',
               'api-reference/peripherals/secure_element.rst',
               'api-reference/peripherals/dac.rst',
-              'hw-reference/esp32/**'] + LEGACY_DOCS
+              'hw-reference/esp32/**'] + LEGACY_DOCS + FTDI_JTAG_DOCS
 
 ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-guides/ulps2_instruction_set.rst',
@@ -193,9 +197,9 @@ ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-reference/peripherals/temp_sensor.rst',
                 'api-reference/system/async_memcpy.rst',
                 'api-reference/peripherals/touch_element.rst',
-                'api-reference/peripherals/dac.rst']
+                'api-reference/peripherals/dac.rst'] + FTDI_JTAG_DOCS
 
-ESP32C3_DOCS = ['hw-reference/esp32c3/**']
+ESP32C3_DOCS = ['hw-reference/esp32c3/**'] + BUILTIN_JTAG_DOCS
 
 # format: {tag needed to include: documents to included}, tags are parsed from sdkconfig and peripheral_caps.h headers
 conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
