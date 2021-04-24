@@ -287,7 +287,7 @@ This directive also supports the boolean operators 'and', 'or' and 'not'. Exampl
 
 This functionality is provided by the `Sphinx selective exclude <https://github.com/pfalcon/sphinx_selective_exclude>`_ extension.
 
-A weakness in this extension is that it does not correctly handle the case were you exclude a section, and that is directly followed by a labeled new section. In these cases everything will render correctly, but the label will not correctly link to the section that follows. A temporary work-around for the cases were this can't be avoided is the following:
+A weakness in this extension is that it does not correctly handle the case where you exclude a section, that is directly followed by a labeled new section. In these cases everything will render correctly, but the label will not correctly link to the section that follows. A temporary work-around for the cases where this can't be avoided is the following:
 
 .. code-block:: none
 
@@ -302,9 +302,9 @@ A weakness in this extension is that it does not correctly handle the case were 
 
         .. _section_2_label:
 
-    .. only:: esp32s2
+    .. only:: not esp32
 
-        _section_2_label:
+        .. _section_2_label:
 
     Section 2
     ^^^^^^^^^
