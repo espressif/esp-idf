@@ -65,7 +65,6 @@ examples/get-started/blink/example_test.py
 examples/get-started/hello_world/example_test.py
 examples/peripherals/gpio/generic_gpio/example_test.py
 examples/peripherals/i2c/i2c_tools/example_test.py
-examples/peripherals/i2s_adc_dac/tools/generate_audio_file.py
 examples/peripherals/rmt/ir_protocols/example_test.py
 examples/peripherals/sdio/sdio_test.py
 examples/peripherals/twai/twai_alert_and_recovery/example_test.py

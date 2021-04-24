@@ -5,8 +5,13 @@ import struct
 import wave
 from builtins import range
 
+try:
+    from typing import List
+except ImportError:
+    pass
 
-def get_wave_array_str(filename, target_bits):
+
+def get_wave_array_str(filename, target_bits):  # type: (str, int) -> str
     wave_read = wave.open(filename, 'r')
     array_str = ''
     nchannels, sampwidth, framerate, nframes, comptype, compname = wave_read.getparams()
@@ -24,7 +29,7 @@ def get_wave_array_str(filename, target_bits):
     return array_str
 
 
-def gen_wave_table(wav_file_list, target_file_name, scale_bits=8):
+def gen_wave_table(wav_file_list, target_file_name, scale_bits=8):  # type: (List[str], str, int) -> None
     with open(target_file_name, 'w') as audio_table:
         print('#include <stdio.h>', file=audio_table)
         print('const unsigned char audio_table[] = {', file=audio_table)
@@ -38,7 +43,7 @@ def gen_wave_table(wav_file_list, target_file_name, scale_bits=8):
 if __name__ == '__main__':
     print('Generating audio array...')
     wav_list = []
-    for filename in os.listdir('./'):
-        if filename.endswith('.wav'):
-            wav_list.append(filename)
+    for wavefile in os.listdir('./'):
+        if wavefile.endswith('.wav'):
+            wav_list.append(wavefile)
     gen_wave_table(wav_file_list=wav_list, target_file_name='audio_example_file.h')
