@@ -21,6 +21,8 @@
 #define SYSTIMER_LL_COUNTER_CLOCK (0) // Counter used for "wallclock" time
 #define SYSTIMER_LL_ALARM_CLOCK   (2) // Alarm used for "wallclock" time
 
+#define SYSTIMER_LL_TICKS_PER_US  (80) // 80 systimer ticks == 1us
+
 #ifdef __cplusplus
 extern "C" {
 #endif

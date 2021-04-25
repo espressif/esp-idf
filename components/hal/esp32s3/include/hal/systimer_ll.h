@@ -24,6 +24,8 @@
 #define SYSTIMER_LL_ALARM_OS_TICK_CORE1 (1) // Alarm used for OS tick of CPU core 1
 #define SYSTIMER_LL_ALARM_CLOCK         (2) // Alarm used for "wallclock" time
 
+#define SYSTIMER_LL_TICKS_PER_US        (16) // 16 systimer ticks == 1us
+
 #ifdef __cplusplus
 extern "C" {
 #endif
