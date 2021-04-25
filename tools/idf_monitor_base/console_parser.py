@@ -13,7 +13,11 @@
 # limitations under the License.
 
 import textwrap
-from typing import Optional
+
+try:
+    from typing import Optional
+except ImportError:
+    pass
 
 import serial.tools.miniterm as miniterm
 

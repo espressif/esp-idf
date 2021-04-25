@@ -14,7 +14,11 @@
 
 
 import sys
-from typing import Optional
+
+try:
+    from typing import Optional
+except ImportError:
+    pass
 
 # ANSI terminal codes (if changed, regular expressions in LineMatcher need to be udpated)
 ANSI_RED = '\033[1;31m'
