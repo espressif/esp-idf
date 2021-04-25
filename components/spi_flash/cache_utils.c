@@ -131,9 +131,9 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu(void)
         // Scheduler hasn't been started yet, it means that spi_flash API is being
         // called from the 2nd stage bootloader or from user_start_cpu0, i.e. from
         // PRO CPU. APP CPU is either in reset or spinning inside user_start_cpu1,
-        // which is in IRAM. So it is safe to disable cache for the other_cpuid here.
+        // which is in IRAM. So it is safe to disable cache for the other_cpuid after
+        // esp_intr_noniram_disable.
         assert(other_cpuid == 1);
-        spi_flash_disable_cache(other_cpuid, &s_flash_op_cache_state[other_cpuid]);
     } else {
         // Temporarily raise current task priority to prevent a deadlock while
         // waiting for IPC task to start on the other CPU
