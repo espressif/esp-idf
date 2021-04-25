@@ -2,6 +2,7 @@
 archive: libxtensa.a
 entries:
     eri (noflash_text)
+    xtensa_intr_asm (noflash_text)
     if IDF_TARGET_ESP32S2 = y:
         stdatomic (noflash)
 
