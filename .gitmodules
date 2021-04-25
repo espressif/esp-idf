@@ -7,8 +7,8 @@
 	path = components/esptool_py/esptool
 	url = ../../espressif/esptool.git
 
-[submodule "components/bt/controller/lib"]
-	path = components/bt/controller/lib
+[submodule "components/bt/controller/lib_esp32"]
+	path = components/bt/controller/lib_esp32
 	url = ../../espressif/esp32-bt-lib.git
 
 [submodule "components/bootloader/subproject/components/micro-ecc/micro-ecc"]
@@ -90,3 +90,7 @@
 [submodule "components/cmock/CMock"]
 	path = components/cmock/CMock
 	url = ../../ThrowTheSwitch/CMock.git
+
+[submodule "components/bt/controller/lib_esp32c3_family"]
+	path = components/bt/controller/lib_esp32c3_family
+	url = ../../espressif/esp32c3-bt-lib.git
