@@ -398,7 +398,7 @@ esp_eth_mac_t *esp_eth_mac_new_openeth(const eth_mac_config_t *config)
     emac->parent.receive = emac_opencores_receive;
 
     // Initialize the interrupt
-    ESP_GOTO_ON_FALSE(esp_intr_alloc(OPENETH_INTR_SOURCE, ESP_INTR_FLAG_IRAM, emac_opencores_isr_handler, emac, &(emac->intr_hdl)), NULL, out, TAG, "alloc emac interrupt failed");
+    ESP_GOTO_ON_FALSE(esp_intr_alloc(OPENETH_INTR_SOURCE, ESP_INTR_FLAG_IRAM, emac_opencores_isr_handler, emac, &(emac->intr_hdl)) == ESP_OK, NULL, out, TAG, "alloc emac interrupt failed");
 
     // Create the RX task
     BaseType_t core_num = tskNO_AFFINITY;
