@@ -138,6 +138,13 @@ TEST_CASE("probe eMMC, slot 0, 4-bit, DDR", "[sd][test_env=EMMC]")
     probe_sd(SDMMC_HOST_SLOT_0, 4, SDMMC_FREQ_HIGHSPEED, 1);
 }
 
+TEST_CASE("probe eMMC, slot 0, 4-bit", "[sd][test_env=EMMC]")
+{
+    probe_sd(SDMMC_HOST_SLOT_0, 4, SDMMC_FREQ_PROBING, 0);
+    probe_sd(SDMMC_HOST_SLOT_0, 4, SDMMC_FREQ_DEFAULT, 0);
+    probe_sd(SDMMC_HOST_SLOT_0, 4, SDMMC_FREQ_HIGHSPEED, 0);
+}
+
 TEST_CASE("probe eMMC, slot 0, 8-bit", "[sd][test_env=EMMC]")
 {
     probe_sd(SDMMC_HOST_SLOT_0, 8, SDMMC_FREQ_PROBING, 0);
