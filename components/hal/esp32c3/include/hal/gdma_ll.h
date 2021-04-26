@@ -17,7 +17,7 @@
 #include <stdbool.h>
 #include "soc/gdma_struct.h"
 #include "soc/gdma_reg.h"
-#include "soc/gdma_caps.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {

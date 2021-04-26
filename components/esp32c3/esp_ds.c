@@ -131,7 +131,7 @@ esp_err_t esp_ds_start_sign(const void *message,
     // check encryption key from HMAC
     int64_t start_time = esp_timer_get_time();
     while (ds_ll_busy() != 0) {
-        if ((esp_timer_get_time() - start_time) > DS_KEY_CHECK_MAX_WAIT_US) {
+        if ((esp_timer_get_time() - start_time) > SOC_DS_KEY_CHECK_MAX_WAIT_US) {
             ds_disable_release();
             return ESP32C3_ERR_HW_CRYPTO_DS_INVALID_KEY;
         }

@@ -24,7 +24,7 @@
 #include <string.h>
 
 #include "soc/hwcrypto_reg.h"
-#include "soc/ds_caps.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -69,7 +69,7 @@ static inline ds_key_check_t ds_ll_key_error_source(void)
  */
 static inline void ds_ll_configure_iv(const uint32_t *iv)
 {
-    for (size_t i = 0; i < (DS_KEY_PARAM_MD_IV_LENGTH / sizeof(uint32_t)); i++) {
+    for (size_t i = 0; i < (SOC_DS_KEY_PARAM_MD_IV_LENGTH / sizeof(uint32_t)); i++) {
         REG_WRITE(DS_IV_BASE + (i * 4) , iv[i]);
     }
 }
@@ -99,9 +99,9 @@ static inline void ds_ll_write_private_key_params(const uint8_t *encrypted_key_p
     */
     typedef struct { uint32_t addr; size_t len; } frag_t;
     const frag_t frags[] = {
-                            {DS_C_Y_BASE,  DS_SIGNATURE_MAX_BIT_LEN / 8},
-                            {DS_C_M_BASE,  DS_SIGNATURE_MAX_BIT_LEN / 8},
-                            {DS_C_RB_BASE, DS_SIGNATURE_MAX_BIT_LEN / 8},
+                            {DS_C_Y_BASE,  SOC_DS_SIGNATURE_MAX_BIT_LEN / 8},
+                            {DS_C_M_BASE,  SOC_DS_SIGNATURE_MAX_BIT_LEN / 8},
+                            {DS_C_RB_BASE, SOC_DS_SIGNATURE_MAX_BIT_LEN / 8},
                             {DS_C_BOX_BASE, DS_IV_BASE - DS_C_BOX_BASE},
     };
     const size_t NUM_FRAGS = sizeof(frags)/sizeof(frag_t);
