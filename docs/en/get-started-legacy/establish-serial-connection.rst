@@ -26,12 +26,12 @@ Below are the links to drivers for ESP32 and other boards produced by Espressif:
     :ref:`ESP-WROVER-KIT <esp-modules-and-boards-esp-wrover-kit>`, `FTDI`_
     :ref:`ESP32 Demo Board <esp-modules-and-boards-esp32-demo-board>`, `FTDI`_
     `ESP-Prog`_, `FTDI`_, Programmer board (w/o ESP32)
-    `ESP32-MeshKit-Sense <https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/ESP32-MeshKit-Sense_guide_en.md#esp32-meshkit-sense-hardware-design-guidelines>`_, n/a, Use with `ESP-Prog`_
-    `ESP32-Sense Kit <https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/esp32_sense_kit_guide_en.md#guide-for-esp32-sense-development-kit>`_, n/a, Use with `ESP-Prog`_
+    `ESP32-MeshKit-Sense <https://github.com/espressif/esp-dev-kits/blob/master/esp32-meshkit-sensor/docs/ESP32-MeshKit-Sense_guide_en.md>`_, n/a, Use with `ESP-Prog`_
+    `ESP32-Sense-Kit <https://github.com/espressif/esp-dev-kits/blob/master/esp32-sense-kit/docs/esp32_sense_kit_guide_en.md>`_, n/a, Use with `ESP-Prog`_
 
 .. _CP210x: https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers
 .. _FTDI: https://www.ftdichip.com/Drivers/VCP.htm
-.. _ESP-Prog: https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/ESP-Prog_guide_en.md#introduction-to-the-esp-prog-board
+.. _ESP-Prog: https://github.com/espressif/esp-dev-kits/blob/master/esp-prog/docs/ESP-Prog_guide_en.md
 
 * CP210x: `CP210x USB to UART Bridge VCP Drivers <https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers>`_
 * FTDI: `FTDI Virtual COM Port Drivers <https://www.ftdichip.com/Drivers/VCP.htm>`_

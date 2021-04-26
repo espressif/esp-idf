@@ -20,11 +20,11 @@ A touch sensor system is built on a substrate which carries electrodes and relev
 
 For design, operation, and control registers of a touch sensor, see *{IDF_TARGET_NAME} Technical Reference Manual* > *On-Chip Sensors and Analog Signal Processing* [`PDF <{IDF_TARGET_TRM_EN_URL}#sensor>`__].
 
-In-depth design details of touch sensors and firmware development guidelines for {IDF_TARGET_NAME} are available in `Touch Sensor Application Note <https://github.com/espressif/esp-iot-solution/blob/master/documents/touch_pad_solution/touch_sensor_design_en.md>`_.
+In-depth design details of touch sensors and firmware development guidelines for {IDF_TARGET_NAME} are available in `Touch Sensor Application Note <https://github.com/espressif/esp-iot-solution/blob/release/v1.0/documents/touch_pad_solution/touch_sensor_design_en.md>`_.
 
 .. only:: esp32
 
-    If you want to test touch sensors in various configurations without building them on your own, check the `Guide for ESP32-Sense Development Kit <https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/esp32_sense_kit_guide_en.md>`_.
+    For more information about testing touch sensors in various configurations, please check the `Guide for ESP32-Sense-Kit <https://github.com/espressif/esp-dev-kits/blob/master/esp32-sense-kit/docs/esp32_sense_kit_guide_en.md>`_.
 
 
 Functionality Overview
