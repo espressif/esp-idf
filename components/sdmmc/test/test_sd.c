@@ -133,20 +133,19 @@ TEST_CASE("probe SD, slot 1, 1-bit", "[sd][test_env=UT_T1_SDMODE]")
 }
 
 #ifdef WITH_EMMC_TEST
-TEST_CASE("probe eMMC, slot 0, 4-bit, DDR", "[sd][test_env=EMMC]")
-{
-    probe_sd(SDMMC_HOST_SLOT_0, 4, SDMMC_FREQ_HIGHSPEED, 1);
-}
-
 TEST_CASE("probe eMMC, slot 0, 4-bit", "[sd][test_env=EMMC]")
 {
+    //Test with SDR
     probe_sd(SDMMC_HOST_SLOT_0, 4, SDMMC_FREQ_PROBING, 0);
     probe_sd(SDMMC_HOST_SLOT_0, 4, SDMMC_FREQ_DEFAULT, 0);
     probe_sd(SDMMC_HOST_SLOT_0, 4, SDMMC_FREQ_HIGHSPEED, 0);
+    //Test with DDR
+    probe_sd(SDMMC_HOST_SLOT_0, 4, SDMMC_FREQ_HIGHSPEED, 1);
 }
 
 TEST_CASE("probe eMMC, slot 0, 8-bit", "[sd][test_env=EMMC]")
 {
+    //8-bit DDR not supported yet, test with SDR only
     probe_sd(SDMMC_HOST_SLOT_0, 8, SDMMC_FREQ_PROBING, 0);
     probe_sd(SDMMC_HOST_SLOT_0, 8, SDMMC_FREQ_DEFAULT, 0);
     probe_sd(SDMMC_HOST_SLOT_0, 8, SDMMC_FREQ_HIGHSPEED, 0);
