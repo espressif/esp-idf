@@ -73,17 +73,17 @@ static void on_ppp_status_changed(ppp_pcb *pcb, int err_code, void *ctx)
                 ip4_addr_set(&ip_info->netmask, ip_2_ip4(&pppif->netmask));
                 ip4_addr_set(&ip_info->gw, ip_2_ip4(&pppif->gw));
 
-                evt.ip_info.ip.addr = pppif->ip_addr.u_addr.ip4.addr;
-                evt.ip_info.gw.addr = pppif->gw.u_addr.ip4.addr;
-                evt.ip_info.netmask.addr = pppif->netmask.u_addr.ip4.addr;
+                ip4_addr_set(&evt.ip_info.ip, ip_2_ip4(&pppif->ip_addr));
+                ip4_addr_set(&evt.ip_info.gw, ip_2_ip4(&pppif->gw));
+                ip4_addr_set(&evt.ip_info.netmask, ip_2_ip4(&pppif->netmask));
 
                 dest_ip = dns_getserver(0);
                 if(dest_ip != NULL){
-                    ns1.addr = (*dest_ip).u_addr.ip4.addr;
+                    ip4_addr_set(&ns1, ip_2_ip4(dest_ip));
                 }
                 dest_ip = dns_getserver(1);
                 if(dest_ip != NULL){
-                    ns2.addr = (*dest_ip).u_addr.ip4.addr;
+                    ip4_addr_set(&ns2, ip_2_ip4(dest_ip));
                 }
                 ESP_LOGI(TAG, "Name Server1: " IPSTR, IP2STR(&ns1));
                 ESP_LOGI(TAG, "Name Server2: " IPSTR, IP2STR(&ns2));
