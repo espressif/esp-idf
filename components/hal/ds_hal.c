@@ -30,7 +30,7 @@ ds_key_check_t ds_hal_check_decryption_key(void)
 {
     uint64_t start_time = systimer_hal_get_time(SYSTIMER_COUNTER_0);
     while (ds_ll_busy() != 0) {
-        if ((systimer_hal_get_time(SYSTIMER_COUNTER_0) - start_time) > DS_KEY_CHECK_MAX_WAIT_US) {
+        if ((systimer_hal_get_time(SYSTIMER_COUNTER_0) - start_time) > SOC_DS_KEY_CHECK_MAX_WAIT_US) {
             return ds_ll_key_error_source();
         }
     }
