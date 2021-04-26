@@ -28,6 +28,9 @@ extern "C"
 {
 #endif
 
+#include <stdint.h>
+#include <sys/queue.h>
+
 #define USB_CTRL_REQ_ATTR       __attribute__((packed))
 #define USB_DESC_ATTR           __attribute__((packed))
 
@@ -64,7 +67,7 @@ typedef enum {
     USB_TRANSFER_STATUS_COMPLETED,      /**< The transfer was successful (but may be short) */
     USB_TRANSFER_STATUS_ERROR,          /**< The transfer failed because due to excessive errors (e.g. no response or CRC error) */
     USB_TRANSFER_STATUS_TIMED_OUT,      /**< The transfer failed due to a time out */
-    USB_TRANSFER_STATUS_CANCELLED,      /**< The transfer was cancelled */
+    USB_TRANSFER_STATUS_CANCELLED,      /**< The transfer was canceled */
     USB_TRANSFER_STATUS_STALL,          /**< The transfer was stalled */
     USB_TRANSFER_STATUS_NO_DEVICE,      /**< The transfer failed because the device is no longer valid (e.g., disconnected */
     USB_TRANSFER_STATUS_OVERFLOW,       /**< The transfer as more data was sent than was requested */
@@ -87,33 +90,38 @@ typedef struct {
 /**
  * @brief USB IRP (I/O Request Packet). See USB2.0 Spec
  *
- * An identifiable request by a software client to move data between itself (on the
- * host) and an endpoint of a device in an appropriate direction.
+ * An IRP is used to represent data transfer request form a software client to and endpoint over the USB bus. The same
+ * IRP object type is used at each layer of the USB stack. This minimizes copying/conversion across the different layers
+ * of the stack as each layer will pass a pointer to this type of object.
  *
- * This structure represents the bare-bones of the request. Different layers of
- * USB drivers will wrap their own objects around this.
+ * See 10.5.3.1 os USB2.0 specification
+ * Bulk: Represents a single bulk transfer which a pipe will transparently split into multiple MPS transactions (until
+ *       the last)
+ * Control: Represents a single control transfer with the setup packet at the first 8 bytes of the buffer.
+ * Interrupt: Represents a single interrupt transaction
+ * Isochronous: Represents a buffer of a stream of bytes which the pipe will transparently transfer the stream of bytes
+ *              one or more service periods
  *
- * See 10.5.3.1 of USB2.0 specification for the full details regarding IRPs and their implications on each transfer type.
- * - Bulk: Represents a single bulk transfer where a pipe will internally split the transfer into one or more MPS
- *         packets (except for the last packet) until all the bytes have been sent/received.
- * Control: Represents a single control transfer with the setup packet at the first 8 bytes of the buffer. A pipe will
- *          internally split the transfer into its Setup, Data, and Status stages.
- * Interrupt: Represents an interrupt transfer where a pipe will internally split the transfer into one or more MPS
- *            packets (except for the last packet). Each packet is transmitted at the pipes established period (i.e.,
- *            the period specified by bInterval).
- * Isochronous: Represents an Isochronous transfer (i.e., buffer of a stream of bytes). The pipe will internally split
- *              the stream into one or more packets and transmit each packet at the pipe's established period (i.e., the
- *              period specified by bInterval). The size of each packet is specified in its respective Isochronous
- *              Packet Descriptor in the IRP.
+ * @note The tailq_entry and reserved variables are used by the USB Host stack internally. Users should not modify those fields.
+ * @note Once an IRP is submitted, users should not modify the IRP as the Host stack takes ownership of the IRP.
  */
-typedef struct {
-    int num_bytes;                      /**< Number of bytes in IRP. Control should exclude size of setup. IN should be integer multiple of MPS */
-    int actual_num_bytes;               /**< Actual number of bytes transmitted/received in the IRP */
-    uint8_t *data_buffer;               /**< Pointer to data buffer. Must be DMA capable memory */
-    usb_transfer_status_t status;       /**< Status of the transfer */
-    int num_iso_packets;                /**< Only relevant to isochronous. Number of service periods to transfer data buffer over. Set to 0 for non-iso transfers */
+struct usb_irp_obj {
+    //Internal members
+    TAILQ_ENTRY(usb_irp_obj) tailq_entry;   /**< TAILQ entry that allows this object to be added to linked lists. Users should NOT modify this field */
+    void *reserved_ptr;                     /**< Reserved pointer variable for internal use in the stack. Users should set this to NULL on allocation and NOT modify this afterwards */
+    uint32_t reserved_flags;                   /**< Reserved variable for flags used internally in the stack. Users should set this to 0 on allocation and NOT modify this afterwards */
+    //Public members
+    uint8_t *data_buffer;                   /**< Pointer to data buffer. Must be DMA capable memory */
+    int num_bytes;                          /**< Number of bytes in IRP. Control should exclude size of setup. IN should be integer multiple of MPS */
+    int actual_num_bytes;                   /**< Actual number of bytes transmitted/receives in the IRP */
+    usb_transfer_status_t status;           /**< Status of the transfer */
+    uint32_t timeout;                       /**< Timeout (in milliseconds) of the packet */
+    void *context;                          /**< Context variable used to associate the IRP object with another object */
+    int num_iso_packets;                    /**< Only relevant to Isochronous. Number of service periods to transfer data buffer over. Set to 0 for non-iso transfers */
     usb_iso_packet_desc_t iso_packet_desc[0];   /**< Descriptors for each ISO packet */
-} usb_irp_t;
+};
+
+typedef struct usb_irp_obj usb_irp_t;
 
 // ---------------------------------------------------- Chapter 9 ------------------------------------------------------
 
