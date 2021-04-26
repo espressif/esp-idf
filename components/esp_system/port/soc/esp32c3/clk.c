@@ -243,9 +243,6 @@ __attribute__((weak)) void esp_perip_clk_init(void)
 #if CONFIG_CONSOLE_UART_NUM != 1
                            SYSTEM_UART1_CLK_EN |
 #endif
-#if CONFIG_CONSOLE_UART_NUM != 2
-                           SYSTEM_UART2_CLK_EN |
-#endif
                            SYSTEM_SPI2_CLK_EN |
                            SYSTEM_I2C_EXT0_CLK_EN |
                            SYSTEM_UHCI0_CLK_EN |
@@ -276,9 +273,6 @@ __attribute__((weak)) void esp_perip_clk_init(void)
 #endif
 #if CONFIG_CONSOLE_UART_NUM != 1
                         SYSTEM_UART1_CLK_EN |
-#endif
-#if CONFIG_CONSOLE_UART_NUM != 2
-                        SYSTEM_UART2_CLK_EN |
 #endif
                         SYSTEM_SPI2_CLK_EN |
                         SYSTEM_I2C_EXT0_CLK_EN |
