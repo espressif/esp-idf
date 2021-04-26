@@ -339,7 +339,7 @@ esp_err_t esp_http_client_get_password(esp_http_client_handle_t client, char **v
     return ESP_OK;
 }
 
-esp_err_t esp_http_client_set_password(esp_http_client_handle_t client, char *password)
+esp_err_t esp_http_client_set_password(esp_http_client_handle_t client, const char *password)
 {
     if (client == NULL) {
         ESP_LOGE(TAG, "client must not be NULL");
