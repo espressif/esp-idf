@@ -248,6 +248,14 @@
 #define OPENTHREAD_CONFIG_PLATFORM_RADIO_SPINEL_RX_FRAME_BUFFER_SIZE 1024
 
 /**
+ * @def OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE
+ *
+ * Define as 1 to enable microsecond timer.
+ *
+ */
+#define OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE 1
+
+/**
  * @def OPENTHREAD_CONFIG_DTLS_MAX_CONTENT_LEN
  *
  * The max length of the OpenThread dtls content buffer.
