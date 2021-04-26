@@ -464,10 +464,11 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
  * reg_addr register and offset_ field (this offset is expressed in 32-bit words).
  * 32 bits written to RTC memory are built as follows:
  * - bits [31:21] hold the PC of current instruction, expressed in 32-bit words
- * - bits [20:16] = 5'b1
+ * - bits [20:18] = 3'b0
+ * - bits [17:16] reg_addr (0..3)
  * - bits [15:0] are assigned the contents of reg_val
  *
- * RTC_SLOW_MEM[addr + offset_] = { 5'b0, insn_PC[10:0], val[15:0] }
+ * RTC_SLOW_MEM[addr + offset_] = { insn_PC[10:0], 3'b0, reg_addr, reg_val[15:0] }
  */
 #define I_ST(reg_val, reg_addr, offset_) { .st = { \
     .dreg = reg_val, \
