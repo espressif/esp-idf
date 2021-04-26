@@ -13,6 +13,7 @@
 // limitations under the License.
 #ifndef _SOC_SPI_STRUCT_H_
 #define _SOC_SPI_STRUCT_H_
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -49,9 +50,9 @@ typedef volatile struct {
             uint32_t d_pol                         :    1;  /*The bit is used to set MOSI line polarity, 1: high 0, low. Can be configured in CONF state.*/
             uint32_t hold_pol                      :    1;  /*SPI_HOLD output value when SPI is idle. 1: output high, 0: output low. Can be configured in CONF state.*/
             uint32_t wp_pol                        :    1;  /*Write protect signal output when SPI is idle.  1: output high, 0: output low.  Can be configured in CONF state.*/
-            uint32_t reserved22                    :    1;  /*reserved*/
-            uint32_t rd_bit_order                  :    2;  /*In read-data (MISO) phase 1: LSB first 0: MSB first. Can be configured in CONF state.*/
-            uint32_t wr_bit_order                  :    2;  /*In command address write-data (MOSI) phases 1: LSB firs 0: MSB first. Can be configured in CONF state.*/
+            uint32_t reserved22                    :    3;  /*reserved*/
+            uint32_t rd_bit_order                  :    1;  /*In read-data (MISO) phase 1: LSB first 0: MSB first. Can be configured in CONF state.*/
+            uint32_t wr_bit_order                  :    1;  /*In command address write-data (MOSI) phases 1: LSB firs 0: MSB first. Can be configured in CONF state.*/
             uint32_t reserved27                    :    5;  /*reserved*/
         };
         uint32_t val;
@@ -195,9 +196,7 @@ typedef volatile struct {
     } dout_mode;
     union {
         struct {
-            uint32_t outfifo_empty                 :    1;  /*Records the status of DMA TX FIFO. 1: DMA TX FIFO is not ready for sending data. 0: DMA TX FIFO is ready for sending data.*/
-            uint32_t infifo_full                   :    1;  /*Records the status of DMA RX FIFO. 1: DMA RX FIFO is not ready for receiving data. 0: DMA RX FIFO is ready for receiving data.*/
-            uint32_t reserved2                     :    16;  /*reserved*/
+            uint32_t reserved0                     :    18;  /*reserved*/
             uint32_t dma_seg_trans_en              :    1;  /*Enable dma segment transfer in spi dma half slave mode. 1: enable. 0: disable.*/
             uint32_t rx_seg_trans_clr_en           :    1;  /*1: spi_dma_infifo_full_vld is cleared by spi slave cmd 5. 0: spi_dma_infifo_full_vld is cleared by spi_trans_done.*/
             uint32_t tx_seg_trans_clr_en           :    1;  /*1: spi_dma_outfifo_empty_vld is cleared by spi slave cmd 6. 0: spi_dma_outfifo_empty_vld is cleared by spi_trans_done.*/
@@ -366,7 +365,7 @@ typedef volatile struct {
     uint32_t reserved_8c;
     uint32_t reserved_90;
     uint32_t reserved_94;
-    uint32_t data_buf[16];                                               /*SPI CPU-controlled buffer0*/
+    uint32_t data_buf[16];
     uint32_t reserved_d8;
     uint32_t reserved_dc;
     union {
@@ -420,4 +419,4 @@ extern spi_dev_t GPSPI3;
 }
 #endif
 
-#endif  /* _SOC_SPI_STRUCT_H_ */
+#endif /*_SOC_SPI_STRUCT_H_ */
