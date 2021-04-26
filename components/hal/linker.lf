@@ -8,6 +8,7 @@ entries:
     else:
         uart_hal_iram (default)
     spi_flash_hal_iram (noflash)
+    spi_flash_encrypt_hal_iram (noflash)
     ledc_hal_iram (noflash)
     i2c_hal_iram (noflash)
     cpu_hal (noflash)
