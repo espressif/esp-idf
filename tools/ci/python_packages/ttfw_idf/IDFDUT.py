@@ -14,6 +14,7 @@
 
 """ DUT for IDF applications """
 import functools
+import io
 import os
 import os.path
 import re
@@ -308,6 +309,32 @@ class IDFDUT(DUT.SerialDUT):
                 last_error = e
         else:
             raise last_error
+
+    def image_info(self, path_to_file):
+        """
+        get hash256 of app
+
+        :param: path: path to file
+        :return: sha256 appended to app
+        """
+
+        old_stdout = sys.stdout
+        new_stdout = io.StringIO()
+        sys.stdout = new_stdout
+
+        class Args(object):
+            def __init__(self, attributes):
+                for key, value in attributes.items():
+                    self.__setattr__(key, value)
+
+        args = Args({
+            'chip': self.TARGET,
+            'filename': path_to_file,
+        })
+        esptool.image_info(args)
+        output = new_stdout.getvalue()
+        sys.stdout = old_stdout
+        return output
 
     @_uses_esptool
     def reset(self, esp):
