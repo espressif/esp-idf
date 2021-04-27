@@ -6,7 +6,7 @@ import ssl
 from threading import Thread
 
 import ttfw_idf
-from tiny_test_fw import DUT
+from tiny_test_fw import DUT, Utility
 
 server_cert = '-----BEGIN CERTIFICATE-----\n' \
               'MIIDXTCCAkWgAwIBAgIJAP4LF7E72HakMA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNV\n'\
@@ -93,6 +93,29 @@ def start_https_server(ota_image_dir, server_ip, server_port):
     httpd.serve_forever()
 
 
+def check_sha256(sha256_expected, sha256_reported):
+    Utility.console_log('sha256_expected: %s' % (sha256_expected))
+    Utility.console_log('sha256_reported: %s' % (sha256_reported))
+    if sha256_reported not in sha256_expected:
+        raise ValueError('SHA256 mismatch')
+    else:
+        Utility.console_log('SHA256 expected and reported are the same')
+
+
+def calc_all_sha256(dut):
+    bootloader_path = os.path.join(dut.app.binary_path, 'bootloader', 'bootloader.bin')
+    output = dut.image_info(bootloader_path)
+    sha256_bootloader = re.search(r'Validation Hash:\s+([a-f0-9]+)', output).group(1)
+    Utility.console_log('bootloader SHA256: %s' % sha256_bootloader)
+
+    app_path = os.path.join(dut.app.binary_path, 'simple_ota.bin')
+    output = dut.image_info(app_path)
+    sha256_app = re.search(r'Validation Hash:\s+([a-f0-9]+)', output).group(1)
+    Utility.console_log('app SHA256: %s' % sha256_app)
+
+    return sha256_bootloader, sha256_app
+
+
 @ttfw_idf.idf_example_test(env_tag='Example_WIFI')
 def test_examples_protocol_simple_ota_example(env, extra_data):
     """
@@ -106,6 +129,7 @@ def test_examples_protocol_simple_ota_example(env, extra_data):
     binary_file = os.path.join(dut1.app.binary_path, 'simple_ota.bin')
     bin_size = os.path.getsize(binary_file)
     ttfw_idf.log_performance('simple_ota_bin_size', '{}KB'.format(bin_size // 1024))
+    sha256_bootloader, sha256_app = calc_all_sha256(dut1)
     # start test
     host_ip = get_my_ip()
     thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path, host_ip, 8000))
@@ -113,6 +137,8 @@ def test_examples_protocol_simple_ota_example(env, extra_data):
     thread1.start()
     dut1.start_app()
     dut1.expect('Loaded app from partition at offset 0x10000', timeout=30)
+    check_sha256(sha256_bootloader, dut1.expect(re.compile(r'SHA-256 for bootloader:\s+([a-f0-9]+)'))[0])
+    check_sha256(sha256_app, dut1.expect(re.compile(r'SHA-256 for current firmware:\s+([a-f0-9]+)'))[0])
     try:
         ip_address = dut1.expect(re.compile(r' sta ip: ([^,]+),'), timeout=30)
         print('Connected to AP with IP: {}'.format(ip_address))
@@ -214,6 +240,7 @@ def test_examples_protocol_simple_ota_example_with_verify_app_signature_on_updat
     binary_file = os.path.join(dut1.app.binary_path, 'simple_ota.bin')
     bin_size = os.path.getsize(binary_file)
     ttfw_idf.log_performance('simple_ota_bin_size', '{}KB'.format(bin_size // 1024))
+    sha256_bootloader, sha256_app = calc_all_sha256(dut1)
     # start test
     host_ip = get_my_ip()
     thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path, host_ip, 8000))
@@ -221,6 +248,8 @@ def test_examples_protocol_simple_ota_example_with_verify_app_signature_on_updat
     thread1.start()
     dut1.start_app()
     dut1.expect('Loaded app from partition at offset 0x20000', timeout=30)
+    check_sha256(sha256_bootloader, dut1.expect(re.compile(r'SHA-256 for bootloader:\s+([a-f0-9]+)'))[0])
+    check_sha256(sha256_app, dut1.expect(re.compile(r'SHA-256 for current firmware:\s+([a-f0-9]+)'))[0])
     try:
         ip_address = dut1.expect(re.compile(r' eth ip: ([^,]+),'), timeout=30)
         print('Connected to AP with IP: {}'.format(ip_address))
@@ -252,6 +281,7 @@ def test_examples_protocol_simple_ota_example_with_verify_app_signature_on_updat
     binary_file = os.path.join(dut1.app.binary_path, 'simple_ota.bin')
     bin_size = os.path.getsize(binary_file)
     ttfw_idf.log_performance('simple_ota_bin_size', '{}KB'.format(bin_size // 1024))
+    sha256_bootloader, sha256_app = calc_all_sha256(dut1)
     # start test
     host_ip = get_my_ip()
     thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path, host_ip, 8000))
@@ -259,6 +289,8 @@ def test_examples_protocol_simple_ota_example_with_verify_app_signature_on_updat
     thread1.start()
     dut1.start_app()
     dut1.expect('Loaded app from partition at offset 0x20000', timeout=30)
+    check_sha256(sha256_bootloader, dut1.expect(re.compile(r'SHA-256 for bootloader:\s+([a-f0-9]+)'))[0])
+    check_sha256(sha256_app, dut1.expect(re.compile(r'SHA-256 for current firmware:\s+([a-f0-9]+)'))[0])
     try:
         ip_address = dut1.expect(re.compile(r' eth ip: ([^,]+),'), timeout=30)
         print('Connected to AP with IP: {}'.format(ip_address))
