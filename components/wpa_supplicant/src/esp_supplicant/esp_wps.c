@@ -1343,28 +1343,28 @@ int wps_dev_init(void)
         ret = ESP_FAIL;
         goto _out;
     }
-    sprintf(dev->manufacturer, s_factory_info->manufacturer);
+    sprintf(dev->manufacturer, "%s", s_factory_info->manufacturer);
 
     dev->model_name = (char *)os_zalloc(WPS_MAX_MODEL_NAME_LEN);
     if (!dev->model_name) {
         ret = ESP_FAIL;
         goto _out;
     }
-    sprintf(dev->model_name, s_factory_info->model_name);
+    sprintf(dev->model_name, "%s", s_factory_info->model_name);
 
     dev->model_number = (char *)os_zalloc(WPS_MAX_MODEL_NAME_LEN);
     if (!dev->model_number) {
         ret = ESP_FAIL;
         goto _out;
     }
-    sprintf(dev->model_number, s_factory_info->model_number);
+    sprintf(dev->model_number, "%s", s_factory_info->model_number);
 
     dev->device_name = (char *)os_zalloc(WPS_MAX_DEVICE_NAME_LEN);
     if (!dev->device_name) {
         ret = ESP_FAIL;
         goto _out;
     }
-    sprintf(dev->device_name, s_factory_info->device_name);
+    sprintf(dev->device_name, "%s", s_factory_info->device_name);
 
     dev->serial_number = (char *)os_zalloc(16);
     if (!dev->serial_number) {
