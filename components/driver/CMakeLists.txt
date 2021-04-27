@@ -36,7 +36,6 @@ if(${target} STREQUAL "esp32")
                      "esp32/touch_sensor.c"
                      "esp32/adc.c"
                      "esp32/dac.c")
-    list(APPEND includes "esp32/include")
 endif()
 
 if(IDF_TARGET STREQUAL "esp32s2")
@@ -50,7 +49,6 @@ if(IDF_TARGET STREQUAL "esp32s2")
                      "esp32s2/adc.c"
                      "esp32s2/adc2_init_cal.c"
                      "esp32s2/dac.c")
-    list(APPEND includes "esp32s2/include")
 endif()
 
 if(${target} STREQUAL "esp32s3")
