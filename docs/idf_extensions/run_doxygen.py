@@ -73,6 +73,8 @@ def convert_api_xml_to_inc(app, doxyfiles):
     xml_directory_path = '{}/xml'.format(build_dir)
     inc_directory_path = '{}/inc'.format(build_dir)
 
+    fast_build = os.environ.get('DOCS_FAST_BUILD', None)
+
     if not os.path.isdir(xml_directory_path):
         raise RuntimeError('Directory {} does not exist!'.format(xml_directory_path))
 
@@ -95,6 +97,13 @@ def convert_api_xml_to_inc(app, doxyfiles):
         if previous_rst_output != rst_output:
             with open(inc_file_path, 'w', encoding='utf-8') as inc_file:
                 inc_file.write(rst_output)
+
+        # For fast builds we wipe the doxygen api documention.
+        # Parsing this output during the sphinx build process is
+        # what takes 95% of the build time
+        if fast_build:
+            with open(inc_file_path, 'w', encoding='utf-8') as inc_file:
+                inc_file.write('')
 
 
 def get_doxyfile_input_paths(app, doxyfile_path):

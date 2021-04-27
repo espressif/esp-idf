@@ -513,6 +513,16 @@ As well as wildcards::
 
 Note that this is a feature intended to simply testing and debugging during writing of documentation. The HTML output won't be perfect, i.e. it will not build a proper index that lists all the documents, and any references to documents that are not built will result in warnings.
 
+Fast build
+""""""""""
+Another trick to speed up building is to skip including doxygen generated API documention into the Sphinx build process, skipping this drastically reduces build times.
+
+This can be achieved by adding the fast-build argument::
+
+    ./build_docs.py build -f
+
+or by setting the environment variable `DOCS_FAST_BUILD`. Note that the the `-f` argument is a subargument to `build` and thus must be listed after `build`.
+
 Building PDF
 """"""""""""
 
