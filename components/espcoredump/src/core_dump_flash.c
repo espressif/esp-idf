@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include <string.h>
+#include <assert.h>
+#include "esp_core_dump.h"
 #include "esp_partition.h"
 #include "esp_log.h"
 #include "esp_core_dump_types.h"
@@ -484,9 +486,21 @@ esp_err_t esp_core_dump_image_erase(void)
         return err;
     }
 
+    // helper to create (multiple of) 16 byte long write buffers
+    struct __attribute__((__packed__)) {
+        uint32_t size;
+        char buf[16-sizeof(uint32_t)];
+    } helper;
+
+    _Static_assert(sizeof(helper) % 16 == 0, "esp_partition_write() needs multiple of 16 byte long buffers");
+
     // Mark core dump as deleted by setting field size
-    const uint32_t blank_size = BLANK_COREDUMP_SIZE;
-    err = esp_partition_write(core_part, 0, &blank_size, sizeof(blank_size));
+    helper.size = BLANK_COREDUMP_SIZE;
+
+    // fill the remaining bytes
+    memset(&helper.buf, '\0', sizeof(helper.buf));
+
+    err = esp_partition_write(core_part, 0, &helper, sizeof(helper));
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to write core dump partition size (%d)!", err);
     }
