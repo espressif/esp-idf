@@ -16,8 +16,9 @@ gdbgui==0.13.2.0
 # 0.13.2.1 supports Python 3.6+ only
 # Windows is not supported since 0.14.0.0. See https://github.com/cs01/gdbgui/issues/348
 pygdbmi<=0.9.0.2
-# The pygdbmi required max version 0.9.0.2 since 0.9.0.3 is not copatible with latest gdbgui (>=0.13.2.0)
-python-socketio<5; python_version<="2.7"
+# The pygdbmi required max version 0.9.0.2 since 0.9.0.3 is not compatible with latest gdbgui (>=0.13.2.0)
+# A compatible Socket.IO should be used. See https://github.com/miguelgrinberg/python-socketio/issues/578
+python-socketio<5
 
 # esptool requirements (see components/esptool_py/esptool/setup.py)
 reedsolo>=1.5.3,<=1.5.4
