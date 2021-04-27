@@ -1,5 +1,5 @@
 #
-# Copyright 2021 Espressif Systems (Shanghai) PTE LTD
+# Copyright 2021 Espressif Systems (Shanghai) CO., LTD
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,8 +17,13 @@
 import hashlib
 import os
 
-from construct import (AlignedStruct, Bytes, Const, GreedyRange, Int16ul, Int32ul, Padding, Pointer, Sequence, Struct,
-                       this)
+from construct import (AlignedStruct, Bytes, Const, Container, GreedyRange, Int16ul, Int32ul, Padding, Pointer,
+                       Sequence, Struct, this)
+
+try:
+    from typing import Optional
+except ImportError:
+    pass
 
 # Following structs are based on spec
 # https://refspecs.linuxfoundation.org/elf/elf.pdf
@@ -110,12 +115,13 @@ class ElfFile(object):
     EV_CURRENT = 0x01
 
     def __init__(self, elf_path=None, e_type=None, e_machine=None):
+        # type: (Optional[str], Optional[int], Optional[int]) -> None
         self.e_type = e_type
         self.e_machine = e_machine
 
-        self._struct = None  # construct Struct
-        self._model = None  # construct Container
-        self._section_names = []  # type: list[str]
+        self._struct = None  # type: Optional[Struct]
+        self._model = None  # type: Optional[Container]
+        self._section_names = {}  # type: dict[int, str]
 
         self.sections = []  # type: list[ElfSection]
         self.load_segments = []  # type: list[ElfSegment]
@@ -171,7 +177,7 @@ class ElfFile(object):
                 name += c
         return res
 
-    def _generate_struct_from_headers(self, header_tables):
+    def _generate_struct_from_headers(self, header_tables):  # type: (Container) -> Struct
         """
         Generate ``construct`` Struct for this file
         :param header_tables: contains elf_header, program_headers, section_headers
@@ -219,12 +225,12 @@ class ElfFile(object):
         return Struct(*args)
 
     @property
-    def sha256(self):
+    def sha256(self):  # type: () -> bytes
         """
         :return: SHA256 hash of the input ELF file
         """
         sha256 = hashlib.sha256()
-        sha256.update(self._struct.build(self._model))
+        sha256.update(self._struct.build(self._model))  # type: ignore
         return sha256.digest()
 
 
@@ -234,13 +240,13 @@ class ElfSection(object):
     SHF_EXECINSTR = 0x04
     SHF_MASKPROC = 0xf0000000
 
-    def __init__(self, name, addr, data, flags):
+    def __init__(self, name, addr, data, flags):  # type: (str, int, bytes, int) -> None
         self.name = name
         self.addr = addr
         self.data = data
         self.flags = flags
 
-    def attr_str(self):
+    def attr_str(self):  # type: () -> str
         if self.flags & self.SHF_MASKPROC:
             return 'MS'
 
@@ -250,7 +256,7 @@ class ElfSection(object):
         res += 'A' if self.flags & self.SHF_ALLOC else ' '
         return res
 
-    def __repr__(self):
+    def __repr__(self):  # type: () -> str
         return '{:>32} [Addr] 0x{:>08X}, [Size] 0x{:>08X} {:>4}' \
             .format(self.name, self.addr, len(self.data), self.attr_str())
 
@@ -260,13 +266,13 @@ class ElfSegment(object):
     PF_W = 0x02
     PF_R = 0x04
 
-    def __init__(self, addr, data, flags):
+    def __init__(self, addr, data, flags):  # type: (int, bytes, int) -> None
         self.addr = addr
         self.data = data
         self.flags = flags
         self.type = ElfFile.PT_LOAD
 
-    def attr_str(self):
+    def attr_str(self):  # type: () -> str
         res = ''
         res += 'R' if self.flags & self.PF_R else ' '
         res += 'W' if self.flags & self.PF_W else ' '
@@ -274,22 +280,22 @@ class ElfSegment(object):
         return res
 
     @staticmethod
-    def _type_str():
+    def _type_str():  # type: () -> str
         return 'LOAD'
 
-    def __repr__(self):
+    def __repr__(self):  # type: () -> str
         return '{:>8} Addr 0x{:>08X}, Size 0x{:>08X} Flags {:4}' \
             .format(self._type_str(), self.addr, len(self.data), self.attr_str())
 
 
 class ElfNoteSegment(ElfSegment):
-    def __init__(self, addr, data, flags):
+    def __init__(self, addr, data, flags):  # type: (int, bytes, int) -> None
         super(ElfNoteSegment, self).__init__(addr, data, flags)
         self.type = ElfFile.PT_NOTE
         self.note_secs = NoteSections.parse(self.data)
 
     @staticmethod
-    def _type_str():
+    def _type_str():  # type: () -> str
         return 'NOTE'
 
 
@@ -316,13 +322,15 @@ class ESPCoreDumpElfFile(ElfFile):
 
     # ELF file machine type
     EM_XTENSA = 0x5E
+    EM_RISCV = 0xF3
 
     def __init__(self, elf_path=None, e_type=None, e_machine=None):
+        # type: (Optional[str], Optional[int], Optional[int]) -> None
         _e_type = e_type or self.ET_CORE
         _e_machine = e_machine or self.EM_XTENSA
         super(ESPCoreDumpElfFile, self).__init__(elf_path, _e_type, _e_machine)
 
-    def add_segment(self, addr, data, seg_type, flags):
+    def add_segment(self, addr, data, seg_type, flags):  # type: (int, bytes, int, int) -> None
         if seg_type != self.PT_NOTE:
             self.load_segments.append(ElfSegment(addr, data, flags))
         else:
@@ -352,7 +360,7 @@ class ESPCoreDumpElfFile(ElfFile):
         })
 
         offset = ElfHeader.sizeof() + (len(self.load_segments) + len(self.note_segments)) * ProgramHeader.sizeof()
-        _segments = self.load_segments + self.note_segments
+        _segments = self.load_segments + self.note_segments  # type: ignore
         for seg in _segments:
             res += ProgramHeader.build({
                 'p_type': seg.type,
