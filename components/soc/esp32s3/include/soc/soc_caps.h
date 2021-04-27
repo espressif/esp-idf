@@ -33,7 +33,10 @@
 #include "cpu_caps.h"
 
 /*-------------------------- GDMA CAPS ---------------------------------------*/
-#include "gdma_caps.h"
+#define SOC_GDMA_GROUPS            (1)  // Number of GDMA groups
+#define SOC_GDMA_PAIRS_PER_GROUP   (5)  // Number of GDMA pairs in each group
+#define SOC_GDMA_L2_FIFO_BASE_SIZE (16) // Basic size of GDMA Level 2 FIFO
+#define SOC_GDMA_SUPPORT_EXTMEM    (1)  // GDMA can access external PSRAM
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 #include "gpio_caps.h"
