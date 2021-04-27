@@ -15,6 +15,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
 
     set(src_dirs
         "openthread/examples/apps/cli"
+        "openthread/examples/platforms/utils"
         "openthread/src/cli"
         "openthread/src/core/api"
         "openthread/src/core/backbone_router"
@@ -35,6 +36,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
 
     set(exclude_srcs
         "openthread/examples/apps/cli/main.cpp"
+        "openthread/examples/platforms/utils/logging_rtt.c"
         "openthread/src/core/common/extension_example.cpp")
 
     if(CONFIG_OPENTHREAD_FTD)
