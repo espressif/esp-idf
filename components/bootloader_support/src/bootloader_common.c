@@ -163,9 +163,7 @@ esp_err_t bootloader_common_get_sha256_of_partition (uint32_t address, uint32_t 
             .size = size,
         };
         esp_image_metadata_t data;
-        // Function esp_image_verify() verifies and fills the structure data.
-        // here important to get: image_digest, image_len, hash_appended.
-        if (esp_image_verify(ESP_IMAGE_VERIFY_SILENT, &partition_pos, &data) != ESP_OK) {
+        if (esp_image_get_metadata(&partition_pos, &data) != ESP_OK) {
             return ESP_ERR_IMAGE_INVALID;
         }
         if (data.image.hash_appended) {
