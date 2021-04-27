@@ -22,6 +22,7 @@
 #if CONFIG_SNIFFER_PCAP_DESTINATION_SD
 #include "driver/sdmmc_host.h"
 #include "driver/sdspi_host.h"
+#include "driver/spi_common.h"
 #endif
 #include "nvs_flash.h"
 #include "sdmmc_cmd.h"
@@ -32,6 +33,23 @@
 #define HISTORY_MOUNT_POINT "/data"
 #define HISTORY_FILE_PATH HISTORY_MOUNT_POINT "/history.txt"
 #endif
+
+#if CONFIG_SNIFFER_SD_SPI_MODE
+
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
+#define PIN_NUM_MISO 2
+#define PIN_NUM_MOSI 15
+#define PIN_NUM_CLK  14
+#define PIN_NUM_CS   13
+
+#elif CONFIG_IDF_TARGET_ESP32C3
+#define PIN_NUM_MISO 18
+#define PIN_NUM_MOSI 9
+#define PIN_NUM_CLK  8
+#define PIN_NUM_CS   19
+#endif //CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
+
+#endif  // CONFIG_SNIFFER_SD_SPI_MODE
 
 static const char *TAG = "example";
 
@@ -82,6 +100,8 @@ static struct {
 /** 'mount' command */
 static int mount(int argc, char **argv)
 {
+    esp_err_t ret;
+
     int nerrors = arg_parse(argc, argv, (void **)&mount_args);
     if (nerrors != 0) {
         arg_print_errors(stderr, mount_args.end, argv[0]);
@@ -90,6 +110,41 @@ static int mount(int argc, char **argv)
     /* mount sd card */
     if (!strncmp(mount_args.device->sval[0], "sd", 2)) {
         ESP_LOGI(TAG, "Initializing SD card");
+        esp_vfs_fat_sdmmc_mount_config_t mount_config = {
+            .format_if_mount_failed = true,
+            .max_files = 4,
+            .allocation_unit_size = 16 * 1024
+        };
+
+        // initialize SD card and mount FAT filesystem.
+        sdmmc_card_t *card;
+
+#if CONFIG_SNIFFER_SD_SPI_MODE
+        ESP_LOGI(TAG, "Using SPI peripheral");
+        sdmmc_host_t host = SDSPI_HOST_DEFAULT();
+        spi_bus_config_t bus_cfg = {
+            .mosi_io_num = PIN_NUM_MOSI,
+            .miso_io_num = PIN_NUM_MISO,
+            .sclk_io_num = PIN_NUM_CLK,
+            .quadwp_io_num = -1,
+            .quadhd_io_num = -1,
+            .max_transfer_sz = 4000,
+        };
+        ret = spi_bus_initialize(host.slot, &bus_cfg, SPI_DMA_CH_AUTO);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to initialize bus.");
+            return 1;
+        }
+
+        // This initializes the slot without card detect (CD) and write protect (WP) signals.
+        // Modify slot_config.gpio_cd and slot_config.gpio_wp if your board has these signals.
+        sdspi_device_config_t slot_config = SDSPI_DEVICE_CONFIG_DEFAULT();
+        slot_config.gpio_cs = PIN_NUM_CS;
+        slot_config.host_id = host.slot;
+
+        ret = esp_vfs_fat_sdspi_mount(CONFIG_SNIFFER_MOUNT_POINT, &host, &slot_config, &mount_config, &card);
+
+#else
         ESP_LOGI(TAG, "Using SDMMC peripheral");
         sdmmc_host_t host = SDMMC_HOST_DEFAULT();
         sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
@@ -100,15 +155,9 @@ static int mount(int argc, char **argv)
         gpio_set_pull_mode(12, GPIO_PULLUP_ONLY); // D2, needed in 4-line mode only
         gpio_set_pull_mode(13, GPIO_PULLUP_ONLY); // D3, needed in 4- and 1-line modes
 
-        esp_vfs_fat_sdmmc_mount_config_t mount_config = {
-            .format_if_mount_failed = true,
-            .max_files = 4,
-            .allocation_unit_size = 16 * 1024
-        };
+        ret = esp_vfs_fat_sdmmc_mount(CONFIG_SNIFFER_MOUNT_POINT, &host, &slot_config, &mount_config, &card);
+#endif
 
-        // initialize SD card and mount FAT filesystem.
-        sdmmc_card_t *card;
-        esp_err_t ret = esp_vfs_fat_sdmmc_mount(CONFIG_SNIFFER_MOUNT_POINT, &host, &slot_config, &mount_config, &card);
         if (ret != ESP_OK) {
             if (ret == ESP_FAIL) {
                 ESP_LOGE(TAG, "Failed to mount filesystem. "
