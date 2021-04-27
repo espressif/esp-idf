@@ -56,8 +56,8 @@ def _check_git_filemode(full_path):  # type: (str) -> bool
 
     mode = stdout.split(' ', 1)[0]  # e.g. 100644 for a rw-r--r--
     if any([int(i, 8) & 1 for i in mode[-3:]]):
-        return False
-    return True
+        return True
+    return False
 
 
 def is_executable(full_path):  # type: (str) -> bool
@@ -90,7 +90,7 @@ def get_git_files(path=IDF_PATH, full_path=False):  # type: (str, bool) -> list[
 # https://github.com/python/cpython/pull/6299/commits/bfd63120c18bd055defb338c075550f975e3bec1
 # In order to solve python https://bugs.python.org/issue9584
 # glob pattern does not support brace expansion issue
-def _translate(pat):
+def _translate(pat):  # type: (str) -> str
     """Translate a shell PATTERN to a regular expression.
     There is no way to quote meta-characters.
     """
@@ -179,7 +179,7 @@ def _translate(pat):
     return res
 
 
-def translate(pat):
+def translate(pat):  # type: (str) -> str
     res = _translate(pat)
     return r'(?s:%s)\Z' % res
 
