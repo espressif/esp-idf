@@ -75,7 +75,7 @@ int64_t IRAM_ATTR esp_timer_impl_get_time(void)
     if (unlikely(s_alarm_handler == NULL)) {
         return 0;
     }
-    return systimer_hal_get_time(&systimer_hal, SYSTIMER_LL_COUNTER_CLOCK);
+    return systimer_hal_get_counter_value(&systimer_hal, SYSTIMER_LL_COUNTER_CLOCK) / SYSTIMER_LL_TICKS_PER_US;
 }
 
 int64_t esp_timer_get_time(void) __attribute__((alias("esp_timer_impl_get_time")));
