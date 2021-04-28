@@ -34,6 +34,7 @@
     LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
     ENV_FILE: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/EnvConfig.yml"
     SUBMODULES_TO_FETCH: "components/esptool_py/esptool"
+    PYTHON_VER: 3
   script:
     - *define_config_file_name
     # first test if config file exists, if not exist, exit 0
