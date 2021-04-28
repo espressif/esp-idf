@@ -1350,7 +1350,7 @@ int wps_dev_init(void)
         ret = ESP_FAIL;
         goto _out;
     }
-    strncpy(dev->model_name, s_factory_info->model_name, WPS_MAX_MODEL_NUMBER_LEN);
+    strncpy(dev->model_name, s_factory_info->model_name, WPS_MAX_MODEL_NAME_LEN);
 
     dev->model_number = (char *)os_zalloc(WPS_MAX_MODEL_NAME_LEN);
     if (!dev->model_number) {
