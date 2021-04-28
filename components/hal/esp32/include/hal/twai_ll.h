@@ -395,7 +395,7 @@ static inline uint32_t twai_ll_get_and_clear_intrs(twai_dev_t *hw)
  */
 static inline void twai_ll_set_enabled_intrs(twai_dev_t *hw, uint32_t intr_mask)
 {
-#if TWAI_BRP_DIV_SUPPORTED
+#if SOC_TWAI_BRP_DIV_SUPPORTED
     //ESP32 Rev 2 or later has brp div field. Need to mask it out
     hw->interrupt_enable_reg.val = (hw->interrupt_enable_reg.val & 0x10) | intr_mask;
 #else
@@ -421,7 +421,7 @@ static inline void twai_ll_set_enabled_intrs(twai_dev_t *hw, uint32_t intr_mask)
  */
 static inline void twai_ll_set_bus_timing(twai_dev_t *hw, uint32_t brp, uint32_t sjw, uint32_t tseg1, uint32_t tseg2, bool triple_sampling)
 {
-#if TWAI_BRP_DIV_SUPPORTED
+#if SOC_TWAI_BRP_DIV_SUPPORTED
     if (brp > SOC_TWAI_BRP_DIV_THRESH) {
         //Need to set brp_div bit
         hw->interrupt_enable_reg.brp_div = 1;

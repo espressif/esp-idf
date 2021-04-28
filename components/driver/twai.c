@@ -412,11 +412,7 @@ esp_err_t twai_driver_install(const twai_general_config_t *g_config, const twai_
     TWAI_CHECK(g_config->rx_queue_len > 0, ESP_ERR_INVALID_ARG);
     TWAI_CHECK(g_config->tx_io >= 0 && g_config->tx_io < GPIO_NUM_MAX, ESP_ERR_INVALID_ARG);
     TWAI_CHECK(g_config->rx_io >= 0 && g_config->rx_io < GPIO_NUM_MAX, ESP_ERR_INVALID_ARG);
-#if (CONFIG_ESP32_REV_MIN >= 2)
-    TWAI_CHECK(t_config->brp >= SOC_TWAI_BRP_MIN && t_config->brp <= SOC_TWAI_BRP_MAX_ECO, ESP_ERR_INVALID_ARG);
-#else
     TWAI_CHECK(t_config->brp >= SOC_TWAI_BRP_MIN && t_config->brp <= SOC_TWAI_BRP_MAX, ESP_ERR_INVALID_ARG);
-#endif
 #ifndef CONFIG_TWAI_ISR_IN_IRAM
     TWAI_CHECK(!(g_config->intr_flags & ESP_INTR_FLAG_IRAM), ESP_ERR_INVALID_ARG);
 #endif
