@@ -7,9 +7,7 @@ ESP-IDF comes with a unit test application that is based on the Unity - unit tes
 Normal Test Cases
 ------------------
 
-Unit tests are located in the ``test`` subdirectory of a component.
-Tests are written in C, and a single C source file can contain multiple test cases.
-Test files start with the word "test".
+Unit tests are located in the ``test`` subdirectory of a component. Tests are written in C, and a single C source file can contain multiple test cases. Test files start with the word "test".
 
 Each test file should include the ``unity.h`` header and the header for the C module to be tested.
 
@@ -22,8 +20,8 @@ Tests are added in a function in the C file as follows:
             // Add test here
     }
 
-The first argument is a descriptive name for the test, the second argument is an identifier in square brackets.
-Identifiers are used to group related test, or tests with specific properties.
+- The first argument is a descriptive name for the test.
+- The second argument is an identifier in square brackets. Identifiers are used to group related test, or tests with specific properties.
 
 .. note:: 
     There is no need to add a main function with ``UNITY_BEGIN()`` and ``​UNITY_END()`` in each test case. ``unity_platform.c`` will run ``UNITY_BEGIN()`` autonomously, and run the test cases, then call ``​UNITY_END()``.
@@ -44,8 +42,7 @@ See http://www.throwtheswitch.org/unity for more information about writing tests
 Multi-device Test Cases
 -------------------------
 
-The normal test cases will be executed on one DUT (Device Under Test). However, components that require some form of communication (e.g., GPIO, SPI) require another device to communicate with, thus cannot be tested normal test cases.
-Multi-device test cases involve writing multiple test functions, and running them on multiple DUTs.
+The normal test cases will be executed on one DUT (Device Under Test). However, components that require some form of communication (e.g., GPIO, SPI) require another device to communicate with, thus cannot be tested normal test cases. Multi-device test cases involve writing multiple test functions, and running them on multiple DUTs.
 
 The following is an example of a multi-device test case:
 
@@ -75,13 +72,13 @@ The following is an example of a multi-device test case:
 
     TEST_CASE_MULTIPLE_DEVICES("gpio multiple devices test example", "[driver]", gpio_master_test, gpio_slave_test);
 
-
 The macro ``TEST_CASE_MULTIPLE_DEVICES`` is used to declare a multi-device test case.
-The first argument is test case name, the second argument is test case description.
-From the third argument, up to 5 test functions can be defined, each function will be the entry point of tests running on each DUT.
 
-Running test cases from different DUTs could require synchronizing between DUTs. We provide ``unity_wait_for_signal`` and ``unity_send_signal`` to support synchronizing with UART.
-As the scenario in the above example, the slave should get GPIO level after master set level. DUT UART console will prompt and user interaction is required:
+- The first argument is test case name.
+- The second argument is test case description.
+- From the third argument, up to 5 test functions can be defined, each function will be the entry point of tests running on each DUT.
+
+Running test cases from different DUTs could require synchronizing between DUTs. We provide ``unity_wait_for_signal`` and ``unity_send_signal`` to support synchronizing with UART. As the scenario in the above example, the slave should get GPIO level after master set level. DUT UART console will prompt and user interaction is required:
 
 DUT1 (master) console::
 
@@ -98,9 +95,7 @@ Once the signal is sent from DUT2, you need to press "Enter" on DUT1, then DUT1 
 Multi-stage Test Cases
 -----------------------
 
-The normal test cases are expected to finish without reset (or only need to check if reset happens). Sometimes we expect to run some specific tests after certain kinds of reset. 
-For example, we expect to test if the reset reason is correct after a wakeup from deep sleep. We need to create a deep-sleep reset first and then check the reset reason.
-To support this, we can define multi-stage test cases, to group a set of test functions::
+The normal test cases are expected to finish without reset (or only need to check if reset happens). Sometimes we expect to run some specific tests after certain kinds of reset. For example, we expect to test if the reset reason is correct after a wakeup from deep sleep. We need to create a deep-sleep reset first and then check the reset reason. To support this, we can define multi-stage test cases, to group a set of test functions::
 
     static void trigger_deepsleep(void)
     {
@@ -118,20 +113,17 @@ To support this, we can define multi-stage test cases, to group a set of test fu
 
 Multi-stage test cases present a group of test functions to users. It needs user interactions (select cases and select different stages) to run the case.
 
-
 Building Unit Test App
 ----------------------
 
-Follow the setup instructions in the top-level esp-idf README.
-Make sure that ``IDF_PATH`` environment variable is set to point to the path of esp-idf top-level directory.
+Follow the setup instructions in the top-level esp-idf README. Make sure that ``IDF_PATH`` environment variable is set to point to the path of esp-idf top-level directory.
 
 Change into ``tools/unit-test-app`` directory to configure and build it:
 
 * ``idf.py menuconfig`` - configure unit test app.
-
 * ``idf.py -T all build`` - build unit test app with tests for each component having tests in the ``test`` subdirectory.
 * ``idf.py -T "xxx yyy" build`` - build unit test app with tests for some space-separated specific components (For instance: ``idf.py -T heap build`` - build unit tests only for ``heap`` component directory).
-* ``idf.py -T all -E "xxx yyy" build`` - build unit test app with all unit tests, except for unit tests of some components (For instance: ``idf.py -T all -E "ulp mbedtls" build`` - build all unit tests excluding ``ulp`` and ``mbedtls`` components).
+* ``idf.py -T all -E "xxx yyy" build`` - build unit test app with all unit tests, except for unit tests of some components (For instance: ``idf.py -T all -E "ulp mbedtls" build`` - build all unit tests exludes ``ulp`` and ``mbedtls`` components).
 
 When the build finishes, it will print instructions for flashing the chip. You can simply run ``idf.py flash`` to flash all build output.
 
@@ -184,8 +176,7 @@ Test cases can be run by inputting one of the following:
 
 - An asterisk to run all test cases
 
-``[multi_device]`` and ``[multi_stage]`` tags tell the test runner whether a test case is a multiple devices or multiple stages of test case.
-These tags are automatically added by ```TEST_CASE_MULTIPLE_STAGES`` and ``TEST_CASE_MULTIPLE_DEVICES`` macros.
+``[multi_device]`` and ``[multi_stage]`` tags tell the test runner whether a test case is a multiple devices or multiple stages of test case. These tags are automatically added by ```TEST_CASE_MULTIPLE_STAGES`` and ``TEST_CASE_MULTIPLE_DEVICES`` macros.
 
 After you select a multi-device test case, it will print sub-menu::
 
@@ -203,10 +194,7 @@ Similar to multi-device test cases, multi-stage test cases will also print sub-m
             (1)     "trigger_deepsleep"
             (2)     "check_deepsleep_reset_reason"
 
-
-First time you execute this case, input ``1`` to run first stage (trigger deepsleep).
-After DUT is rebooted and able to run test cases, select this case again and input ``2`` to run the second stage.
-The case only passes if the last stage passes and all previous stages trigger reset.
+First time you execute this case, input ``1`` to run first stage (trigger deepsleep). After DUT is rebooted and able to run test cases, select this case again and input ``2`` to run the second stage. The case only passes if the last stage passes and all previous stages trigger reset.
 
 
 Timing Code with Cache Compensated Timer
@@ -218,13 +206,9 @@ However, if the instruction or data is not in cache, it needs to be fetched from
 
 Code and data placements can vary between builds, and some arrangements may be more favorable with regards to cache access (i.e., minimizing cache misses). This can technically affect execution speed, however these factors are usually irrelevant as their effect 'average out' over the device's operation.
 
-The effect of the cache on execution speed, however, can be relevant in benchmarking scenarios (espcially microbenchmarks). There might be some variability in measured time
-between runs and between different builds. A technique for eliminating for some of the
-variability is to place code and data in instruction or data RAM (IRAM/DRAM), respectively. The CPU can access IRAM and DRAM directly, eliminating the cache out of the equation.
-However, this might not always be viable as the size of IRAM and DRAM is limited.
+The effect of the cache on execution speed, however, can be relevant in benchmarking scenarios (espcially microbenchmarks). There might be some variability in measured time between runs and between different builds. A technique for eliminating for some of the variability is to place code and data in instruction or data RAM (IRAM/DRAM), respectively. The CPU can access IRAM and DRAM directly, eliminating the cache out of the equation. However, this might not always be viable as the size of IRAM and DRAM is limited.
 
-The cache compensated timer is an alternative to placing the code/data to be benchmarked in IRAM/DRAM. This timer uses the processor's internal event counters in order to determine the amount 
-of time spent on waiting for code/data in case of a cache miss, then subtract that from the recorded wall time. 
+The cache compensated timer is an alternative to placing the code/data to be benchmarked in IRAM/DRAM. This timer uses the processor's internal event counters in order to determine the amount of time spent on waiting for code/data in case of a cache miss, then subtract that from the recorded wall time. 
 
   .. code-block:: c
 
@@ -240,5 +224,3 @@ of time spent on waiting for code/data in case of a cache miss, then subtract th
 
 
 One limitation of the cache compensated timer is that the task that benchmarked functions should be pinned to a core. This is due to each core having its own event counters that are independent of each other. For example, if ``ccomp_timer_start`` gets called on one core, put to sleep by the scheduler, wakes up, and gets rescheduled on the other core, then the corresponding ``ccomp_timer_stop`` will be invalid.
-invalid.
-
