@@ -342,8 +342,7 @@ xMBRTUTimerT35Expired( void )
 
         /* Function called in an illegal state. */
     default:
-        assert( ( eRcvState == STATE_RX_INIT ) ||
-                ( eRcvState == STATE_RX_RCV ) || ( eRcvState == STATE_RX_ERROR ) );
+        assert( ( eRcvState == STATE_RX_IDLE ) || ( eRcvState == STATE_RX_ERROR ) );
     }
 
     vMBPortTimersDisable(  );

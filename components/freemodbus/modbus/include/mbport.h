@@ -47,14 +47,14 @@ typedef enum
     EV_FRAME_SENT = 0x08               /*!< Frame sent. */
 } eMBEventType;
 
-#if MB_MASTER_RTU_ENABLED > 0 || MB_MASTER_ASCII_ENABLED > 0
+#if MB_MASTER_RTU_ENABLED || MB_MASTER_ASCII_ENABLED 
 typedef enum {
     EV_MASTER_NO_EVENT = 0x0000,
     EV_MASTER_READY = 0x0001,                   /*!< Startup finished. */
     EV_MASTER_FRAME_RECEIVED = 0x0002,          /*!< Frame received. */
     EV_MASTER_EXECUTE = 0x0004,                 /*!< Execute function. */
     EV_MASTER_FRAME_SENT = 0x0008,              /*!< Frame sent. */
-    EV_MASTER_FRAME_TRANSMITTED = 0x0010,       /*!< Request execute function error. */
+    EV_MASTER_FRAME_TRANSMIT = 0x0010,          /*!< Frame transmission. */
     EV_MASTER_ERROR_PROCESS = 0x0020,           /*!< Frame error process. */
     EV_MASTER_PROCESS_SUCCESS = 0x0040,         /*!< Request process success. */
     EV_MASTER_ERROR_RESPOND_TIMEOUT = 0x0080,   /*!< Request respond timeout. */
@@ -63,9 +63,11 @@ typedef enum {
 } eMBMasterEventType;
 
 typedef enum {
+    EV_ERROR_INIT,             /*!< No error, initial state. */
     EV_ERROR_RESPOND_TIMEOUT,  /*!< Slave respond timeout. */
-    EV_ERROR_RECEIVE_DATA,     /*!< Receive frame data erroe. */
+    EV_ERROR_RECEIVE_DATA,     /*!< Receive frame data error. */
     EV_ERROR_EXECUTE_FUNCTION, /*!< Execute function error. */
+    EV_ERROR_OK                /*!< No error, processing completed. */
 } eMBMasterErrorEventType;
 #endif
 
@@ -156,7 +158,7 @@ void            vMBMasterPortTimersConvertDelayEnable( void );
 void            vMBMasterPortTimersRespondTimeoutEnable( void );
 
 void            vMBMasterPortTimersDisable( void );
-#endif
+
 
 /* ----------------- Callback for the master error process ------------------*/
 void            vMBMasterErrorCBRespondTimeout( UCHAR ucDestAddress, const UCHAR* pucPDUData,
@@ -169,7 +171,7 @@ void            vMBMasterErrorCBExecuteFunction( UCHAR ucDestAddress, const UCHA
                                                  USHORT ucPDULength );
 
 void            vMBMasterCBRequestSuccess( void );
-
+#endif
 /* ----------------------- Callback for the protocol stack ------------------*/
 /*!
  * \brief Callback function for the porting layer when a new byte is
@@ -206,8 +208,8 @@ void            vMBTCPPortDisable( void );
 BOOL            xMBTCPPortGetRequest( UCHAR **ppucMBTCPFrame, USHORT * usTCPLength );
 
 BOOL            xMBTCPPortSendResponse( const UCHAR *pucMBTCPFrame, USHORT usTCPLength );
-#endif
 
+#endif
 #ifdef __cplusplus
 PR_END_EXTERN_C
 #endif

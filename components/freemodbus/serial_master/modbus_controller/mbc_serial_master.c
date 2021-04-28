@@ -64,7 +64,7 @@ static void modbus_master_task(void *pvParameters)
             BOOL xSentState = xMBMasterPortSerialTxPoll();
             if (xSentState) {
                 // Let state machine know that response was transmitted out
-                (void)xMBMasterPortEventPost(EV_MASTER_FRAME_TRANSMITTED);
+                (void)xMBMasterPortEventPost(EV_MASTER_FRAME_SENT);
             }
         }
     }
@@ -279,7 +279,13 @@ static esp_err_t mbc_serial_master_send_request(mb_param_request_t* request, voi
         case MB_MRE_REV_DATA:
             error = ESP_ERR_INVALID_RESPONSE;
             break;
+
+        case MB_MRE_MASTER_BUSY:
+            error = ESP_ERR_INVALID_STATE; // Master is busy (previous request is pending)
+            break;
+
         default:
+            ESP_LOGE(MB_MASTER_TAG, "%s: Incorrect return code (%x) ", __FUNCTION__, mb_error);
             error = ESP_FAIL;
             break;
     }
