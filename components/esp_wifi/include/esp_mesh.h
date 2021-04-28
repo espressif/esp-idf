@@ -655,7 +655,7 @@ esp_err_t esp_mesh_stop(void);
  *               - If the packet is to the root ("to" parameter isn't NULL) or to external IP network, MESH_DATA_TODS should be set.
  *               - If the packet is from the root to an internal device, MESH_DATA_FROMDS should be set.
  *             - Specify whether this API is block or non-block, block by default
- *               - If needs non-block, MESH_DATA_NONBLOCK should be set.
+ *               - If needs non-blocking, MESH_DATA_NONBLOCK should be set. Otherwise, may use esp_mesh_send_block_time() to specify a blocking time.
  *             - In the situation of the root change, MESH_DATA_DROP identifies this packet can be dropped by the new root
  *               for upstream data to external IP network, we try our best to avoid data loss caused by the root change, but
  *               there is a risk that the new root is running out of memory because most of memory is occupied by the pending data which
@@ -688,6 +688,17 @@ esp_err_t esp_mesh_stop(void);
  */
 esp_err_t esp_mesh_send(const mesh_addr_t *to, const mesh_data_t *data,
                         int flag, const mesh_opt_t opt[],  int opt_count);
+/**
+ * @brief      Set blocking time of esp_mesh_send()
+ *
+ * @attention  This API shall be called before mesh is started.
+ *
+ * @param[in]  time_ms  blocking time of esp_mesh_send(), unit:ms
+ *
+ * @return
+ *    - ESP_OK
+ */
+esp_err_t esp_mesh_send_block_time(uint32_t time_ms);
 
 /**
  * @brief      Receive a packet targeted to self over the mesh network
@@ -1665,7 +1676,6 @@ int esp_mesh_get_running_active_duty_cycle(void);
  *    - ESP_OK
  */
 esp_err_t esp_mesh_ps_duty_signaling(int fwd_times);
-
 #ifdef __cplusplus
 }
 #endif
