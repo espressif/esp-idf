@@ -350,6 +350,15 @@ static IRAM_ATTR void spi_slave_hd_intr_segment(void *arg)
         if (ret == pdTRUE) {
             spi_slave_hd_hal_txdma(hal, host->tx_desc->data, host->tx_desc->len);
             tx_sent = true;
+            if (callback->cb_send_dma_ready) {
+                spi_slave_hd_event_t ev = {
+                    .event = SPI_EV_SEND_DMA_READY,
+                    .trans = host->tx_desc,
+                };
+                BaseType_t cb_awoken = pdFALSE;
+                callback->cb_send_dma_ready(callback->arg, &ev, &cb_awoken);
+                awoken |= cb_awoken;
+            }
         }
     }
     if (!host->rx_desc) {
@@ -357,6 +366,15 @@ static IRAM_ATTR void spi_slave_hd_intr_segment(void *arg)
         if (ret == pdTRUE) {
             spi_slave_hd_hal_rxdma(hal, host->rx_desc->data, host->rx_desc->len);
             rx_sent = true;
+            if (callback->cb_recv_dma_ready) {
+                spi_slave_hd_event_t ev = {
+                    .event = SPI_EV_RECV_DMA_READY,
+                    .trans = host->rx_desc,
+                };
+                BaseType_t cb_awoken = pdFALSE;
+                callback->cb_recv_dma_ready(callback->arg, &ev, &cb_awoken);
+                awoken |= cb_awoken;
+            }
         }
     }
 
@@ -483,7 +501,6 @@ esp_err_t spi_slave_hd_queue_trans(spi_host_device_t host_id, spi_slave_chan_t c
 {
     spi_slave_hd_slot_t* host = spihost[host_id];
 
-    SPIHD_CHECK(trans->len <= SPI_MAX_DMA_LEN, "Currently we only support transaction with data length within 4092 bytes", ESP_ERR_INVALID_ARG);
     SPIHD_CHECK(host->append_mode == 0, "This API should be used for SPI Slave HD Segment Mode", ESP_ERR_INVALID_STATE);
     SPIHD_CHECK(esp_ptr_dma_capable(trans->data), "The buffer should be DMA capable.", ESP_ERR_INVALID_ARG);
     SPIHD_CHECK(trans->len <= host->max_transfer_sz && trans->len > 0, "Invalid buffer size", ESP_ERR_INVALID_ARG);
