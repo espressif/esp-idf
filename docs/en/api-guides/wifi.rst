@@ -1461,23 +1461,23 @@ Detailed information on creating certificates and how to run wpa2_enterprise exa
 
 .. only:: esp32s2 or esp32c3
 
-Wi-Fi Location
--------------------------------
+    Wi-Fi Location
+    -------------------------------
 
-Wi-Fi Location will improve the accuracy of a device's location data beyond the Access Point, which will enable creation of new, feature-rich applications and services such as geo-fencing, network management, navigation and others. One of the protocols used to determine the device location with respect to the Access Point is Fine Timing Measurement which calculates Time-of-Flight of a WiFi frame.
+    Wi-Fi Location will improve the accuracy of a device's location data beyond the Access Point, which will enable creation of new, feature-rich applications and services such as geo-fencing, network management, navigation and others. One of the protocols used to determine the device location with respect to the Access Point is Fine Timing Measurement which calculates Time-of-Flight of a WiFi frame.
 
-Fine Timing Measurement (FTM)
-+++++++++++++++++++++++++++++
+    Fine Timing Measurement (FTM)
+    +++++++++++++++++++++++++++++
 
-FTM is used to measure Wi-Fi Round Trip Time (Wi-Fi RTT) which is the time a Wi-Fi signal takes to travel from a device to another device and back again. Using Wi-Fi RTT the distance between the devices can be calculated with a simple formula of `RTT * c / 2`, where c is the speed of light.
-FTM uses timestamps given by Wi-Fi interface hardware at the time of arrival or departure of frames exchanged between a pair of devices. One entity called FTM Initiator (mostly a Station device) discovers the FTM Responder (can be a Station or an Access Point) and negotiates to start an FTM procedure. The procedure uses multiple Action frames sent in bursts and its ACK's to gather the timestamps data. FTM Initiator gathers the data in the end to calculate an average Round-Trip-Time.
-{IDF_TARGET_NAME} supports FTM in below configuration:
+    FTM is used to measure Wi-Fi Round Trip Time (Wi-Fi RTT) which is the time a Wi-Fi signal takes to travel from a device to another device and back again. Using Wi-Fi RTT the distance between the devices can be calculated with a simple formula of `RTT * c / 2`, where c is the speed of light.
+    FTM uses timestamps given by Wi-Fi interface hardware at the time of arrival or departure of frames exchanged between a pair of devices. One entity called FTM Initiator (mostly a Station device) discovers the FTM Responder (can be a Station or an Access Point) and negotiates to start an FTM procedure. The procedure uses multiple Action frames sent in bursts and its ACK's to gather the timestamps data. FTM Initiator gathers the data in the end to calculate an average Round-Trip-Time.
+    {IDF_TARGET_NAME} supports FTM in below configuration:
 
- - {IDF_TARGET_NAME} as FTM Initiator in Station mode.
- - {IDF_TARGET_NAME} as FTM Responder in SoftAP mode.
+    - {IDF_TARGET_NAME} as FTM Initiator in Station mode.
+    - {IDF_TARGET_NAME} as FTM Responder in SoftAP mode.
 
-Distance measurement using RTT is not accurate, factors such as RF interference, multi-path travel, antenna orientation and lack of calibration increase these inaccuracies. For better results it is suggested to perform FTM between two {IDF_TARGET_NAME} devices as Station and SoftAP.
-Refer to IDF example :idf_file:`examples/wifi/ftm/README.md` for steps on how to setup and perform FTM.
+    Distance measurement using RTT is not accurate, factors such as RF interference, multi-path travel, antenna orientation and lack of calibration increase these inaccuracies. For better results it is suggested to perform FTM between two {IDF_TARGET_NAME} devices as Station and SoftAP.
+    Refer to IDF example :idf_file:`examples/wifi/ftm/README.md` for steps on how to setup and perform FTM.
 
 {IDF_TARGET_NAME} Wi-Fi Power-saving Mode
 -----------------------------------------
@@ -1509,24 +1509,68 @@ In the future, all power save features will be supported on {IDF_TARGET_NAME} AP
 
 The table below shows the best throughput results we got in Espressif's lab and in a shield box.
 
-+----------------------+-----------------+-----------------+---------------+--------------+
-| Type/Throughput      | Air In Lab      | Shield-box      | Test Tool     | IDF Version  |
-|                      |                 |                 |               | (commit ID)  |
-+======================+=================+=================+===============+==============+
-| Raw 802.11 Packet RX |   N/A           | **130 MBit/s**  | Internal tool | NA           |
-+----------------------+-----------------+-----------------+---------------+--------------+
-| Raw 802.11 Packet TX |   N/A           | **130 MBit/s**  | Internal tool | NA           |
-+----------------------+-----------------+-----------------+---------------+--------------+
-| UDP RX               |   30 MBit/s     | 90 MBit/s       | iperf example | 05838641     |
-+----------------------+-----------------+-----------------+---------------+--------------+
-| UDP TX               |   30 MBit/s     | 60 MBit/s       | iperf example | 05838641     |
-+----------------------+-----------------+-----------------+---------------+--------------+
-| TCP RX               |   20 MBit/s     | 50 MBit/s       | iperf example | 05838641     |
-+----------------------+-----------------+-----------------+---------------+--------------+
-| TCP TX               |   20 MBit/s     | 50 MBit/s       | iperf example | 05838641     |
-+----------------------+-----------------+-----------------+---------------+--------------+
+.. only:: esp32
 
-When the throughput is tested by iperf example, the sdkconfig is :idf_file:`examples/wifi/iperf/sdkconfig.ci.99`.
+    +----------------------+-----------------+-----------------+---------------+--------------+
+    | Type/Throughput      | Air In Lab      | Shield-box      | Test Tool     | IDF Version  |
+    |                      |                 |                 |               | (commit ID)  |
+    +======================+=================+=================+===============+==============+
+    | Raw 802.11 Packet RX |   N/A           | **130 MBit/s**  | Internal tool | NA           |
+    +----------------------+-----------------+-----------------+---------------+--------------+
+    | Raw 802.11 Packet TX |   N/A           | **130 MBit/s**  | Internal tool | NA           |
+    +----------------------+-----------------+-----------------+---------------+--------------+
+    | UDP RX               |   30 MBit/s     | 85 MBit/s       | iperf example | 15575346     |
+    +----------------------+-----------------+-----------------+---------------+--------------+
+    | UDP TX               |   30 MBit/s     | 75 MBit/s       | iperf example | 15575346     |
+    +----------------------+-----------------+-----------------+---------------+--------------+
+    | TCP RX               |   20 MBit/s     | 65 MBit/s       | iperf example | 15575346     |
+    +----------------------+-----------------+-----------------+---------------+--------------+
+    | TCP TX               |   20 MBit/s     | 75 MBit/s       | iperf example | 15575346     |
+    +----------------------+-----------------+-----------------+---------------+--------------+
+
+    When the throughput is tested by iperf example, the sdkconfig is :idf_file:`examples/wifi/iperf/sdkconfig.defaults.esp32`.
+
+.. only:: esp32s2
+
+    +----------------------+-----------------+-----------------+---------------+--------------+
+    | Type/Throughput      | Air In Lab      | Shield-box      | Test Tool     | IDF Version  |
+    |                      |                 |                 |               | (commit ID)  |
+    +======================+=================+=================+===============+==============+
+    | Raw 802.11 Packet RX |   N/A           | **130 MBit/s**  | Internal tool | NA           |
+    +----------------------+-----------------+-----------------+---------------+--------------+
+    | Raw 802.11 Packet TX |   N/A           | **130 MBit/s**  | Internal tool | NA           |
+    +----------------------+-----------------+-----------------+---------------+--------------+
+    | UDP RX               |   30 MBit/s     | 70 MBit/s       | iperf example | 15575346     |
+    +----------------------+-----------------+-----------------+---------------+--------------+
+    | UDP TX               |   30 MBit/s     | 50 MBit/s       | iperf example | 15575346     |
+    +----------------------+-----------------+-----------------+---------------+--------------+
+    | TCP RX               |   20 MBit/s     | 32 MBit/s       | iperf example | 15575346     |
+    +----------------------+-----------------+-----------------+---------------+--------------+
+    | TCP TX               |   20 MBit/s     | 37 MBit/s       | iperf example | 15575346     |
+    +----------------------+-----------------+-----------------+---------------+--------------+
+
+    When the throughput is tested by iperf example, the sdkconfig is :idf_file:`examples/wifi/iperf/sdkconfig.defaults.esp32s2`.
+
+.. only:: esp32c3
+
+    +----------------------+-----------------+-----------------+---------------+--------------+
+    | Type/Throughput      | Air In Lab      | Shield-box      | Test Tool     | IDF Version  |
+    |                      |                 |                 |               | (commit ID)  |
+    +======================+=================+=================+===============+==============+
+    | Raw 802.11 Packet RX |   N/A           | **130 MBit/s**  | Internal tool | NA           |
+    +----------------------+-----------------+-----------------+---------------+--------------+
+    | Raw 802.11 Packet TX |   N/A           | **130 MBit/s**  | Internal tool | NA           |
+    +----------------------+-----------------+-----------------+---------------+--------------+
+    | UDP RX               |   30 MBit/s     | 50 MBit/s       | iperf example | 15575346     |
+    +----------------------+-----------------+-----------------+---------------+--------------+
+    | UDP TX               |   30 MBit/s     | 40 MBit/s       | iperf example | 15575346     |
+    +----------------------+-----------------+-----------------+---------------+--------------+
+    | TCP RX               |   20 MBit/s     | 35 MBit/s       | iperf example | 15575346     |
+    +----------------------+-----------------+-----------------+---------------+--------------+
+    | TCP TX               |   20 MBit/s     | 37 MBit/s       | iperf example | 15575346     |
+    +----------------------+-----------------+-----------------+---------------+--------------+
+
+    When the throughput is tested by iperf example, the sdkconfig is :idf_file:`examples/wifi/iperf/sdkconfig.defaults.esp32c3`.
 
 Wi-Fi 80211 Packet Send
 ---------------------------
@@ -1818,12 +1862,18 @@ Theoretically the higher priority AC has better performance than the low priorit
 Wi-Fi AMSDU
 -------------------------
 
-{IDF_TARGET_NAME} supports receiving AMSDU but doesn't support transmitting AMSDU. The transmitting AMSDU is not necessary since {IDF_TARGET_NAME} has transmitting AMPDU.
+{IDF_TARGET_NAME} supports receiving and transmitting AMSDU.
 
 Wi-Fi Fragment
 -------------------------
 
-{IDF_TARGET_NAME} supports Wi-Fi receiving fragment, but doesn't support Wi-Fi transmitting fragment. The Wi-Fi transmitting fragment will be supported in future release.
+.. only:: esp32 or esp32s2
+
+    supports Wi-Fi receiving fragment, but doesn't support Wi-Fi transmitting fragment.
+
+.. only:: esp32c3
+    
+    ESP32C3 supports Wi-Fi receiving and transmitting fragment.
 
 WPS Enrollee
 -------------------------
@@ -1930,11 +1980,13 @@ Increasing the size or number of the buffers mentioned above properly can improv
 
 **Throughput optimization by placing code in IRAM:**
 
- - :ref:`CONFIG_ESP32_WIFI_IRAM_OPT`
-    If this option is enabled, some Wi-Fi functions are moved to IRAM, improving throughput. This increases IRAM usage by 15 kB.
+.. only:: esp32 or esp32s2
 
- - :ref:`CONFIG_ESP32_WIFI_RX_IRAM_OPT`
-    If this option is enabled, some Wi-Fi RX functions are moved to IRAM, improving throughput. This increases IRAM usage by 16 kB.
+    - :ref:`CONFIG_ESP32_WIFI_IRAM_OPT`
+        If this option is enabled, some Wi-Fi functions are moved to IRAM, improving throughput. This increases IRAM usage by 15 kB.
+
+    - :ref:`CONFIG_ESP32_WIFI_RX_IRAM_OPT`
+        If this option is enabled, some Wi-Fi RX functions are moved to IRAM, improving throughput. This increases IRAM usage by 16 kB.
 
  - :ref:`CONFIG_LWIP_IRAM_OPTIMIZATION`
     If this option is enabled, some LWIP functions are moved to IRAM, improving throughput. This increases IRAM usage by 13 kB.
@@ -2033,9 +2085,45 @@ The parameters not mentioned in the following table should be set to the default
     | UDP RX throughput          | 78.1  | 66.7             | 65.3    | 53.8          | 28.5    | 
     +----------------------------+-------+------------------+---------+---------------+---------+  
 
-.. note::
-    The result is tested with a single stream in a shielded box using an ASUS RT-N66U router.
-    {IDF_TARGET_NAME}'s CPU is dual core with 240 MHz, {IDF_TARGET_NAME}'s flash is in QIO mode with 80 MHz.
+.. only:: esp32c3
+
+    +----------------------------+-------+---------+---------+
+    | Rank                       | Iperf | Default | Minimum |
+    +============================+=======+=========+=========+
+    | Available memory(KB)       | 59    | 160     | 180     |
+    +----------------------------+-------+---------+---------+
+    | WIFI_STATIC_RX_BUFFER_NUM  | 20    | 8       | 3       |
+    +----------------------------+-------+---------+---------+
+    | WIFI_DYNAMIC_RX_BUFFER_NUM | 40    | 16      | 6       |
+    +----------------------------+-------+---------+---------+
+    | WIFI_DYNAMIC_TX_BUFFER_NUM | 40    | 16      | 6       |
+    +----------------------------+-------+---------+---------+
+    | WIFI_RX_BA_WIN             | 32    | 16      | 6       |
+    +----------------------------+-------+---------+---------+
+    | TCP_SND_BUF_DEFAULT(KB)    | 40    | 16      | 6       |
+    +----------------------------+-------+---------+---------+
+    | TCP_WND_DEFAULT(KB)        | 40    | 16      | 6       |
+    +----------------------------+-------+---------+---------+
+    | WIFI_IRAM_OPT              | -     | -       | -       |
+    +----------------------------+-------+---------+---------+
+    | WIFI_RX_IRAM_OPT           | -     | -       | -       |
+    +----------------------------+-------+---------+---------+
+    | LWIP_IRAM_OPTIMIZATION     | 13    | 13      | 0       |
+    +----------------------------+-------+---------+---------+
+    | TCP TX throughput          | 38.1  | 27.2    | 20.4    |
+    +----------------------------+-------+---------+---------+
+    | TCP RX throughput          | 35.3  | 24.2    | 17.4    |
+    +----------------------------+-------+---------+---------+
+    | UDP TX throughput          | 40.6  | 38.9    | 34.1    |
+    +----------------------------+-------+---------+---------+
+    | UDP RX throughput          | 52.4  | 44.5    | 44.2    |
+    +----------------------------+-------+---------+---------+
+
+.. only:: esp32 or esp32s2
+
+    .. note::
+        The result is tested with a single stream in a shielded box using an ASUS RT-N66U router.
+        {IDF_TARGET_NAME}'s CPU is dual core with 240 MHz, {IDF_TARGET_NAME}'s flash is in QIO mode with 80 MHz.
 
 .. only:: esp32
 
@@ -2075,11 +2163,26 @@ The parameters not mentioned in the following table should be set to the default
      - **Minimum rank** 
         This is the minimum configuration rank of {IDF_TARGET_NAME}. The protocol stack only uses the necessary memory for running. It is suitable for scenarios that have no requirement for performance and the application requires lots of space.
 
-Using PSRAM
-++++++++++++++++++++++++++++
+.. only:: esp32c3
 
-PSRAM is generally used when the application takes up a lot of memory. In this mode, the :ref:`CONFIG_ESP32_WIFI_TX_BUFFER` is forced to be static. :ref:`CONFIG_ESP32_WIFI_STATIC_TX_BUFFER_NUM` indicates the number of DMA buffers at the hardware layer, increase this parameter can improve performance.
-The following are the recommended ranks for using PSRAM:
+    **Ranks:**
+
+     - **Iperf rank** 
+        {IDF_TARGET_NAME} extreme performance rank used to test extreme performance.
+
+     - **Default rank** 
+        {IDF_TARGET_NAME}'s default configuration rank, the available memory, and performance are in balance.
+
+     - **Minimum rank** 
+        This is the minimum configuration rank of {IDF_TARGET_NAME}. The protocol stack only uses the necessary memory for running. It is suitable for scenarios that have no requirement for performance and the application requires lots of space.
+
+.. only:: esp32 or esp32s2
+
+    Using PSRAM
+    ++++++++++++++++++++++++++++
+
+    PSRAM is generally used when the application takes up a lot of memory. In this mode, the :ref:`CONFIG_ESP32_WIFI_TX_BUFFER` is forced to be static. :ref:`CONFIG_ESP32_WIFI_STATIC_TX_BUFFER_NUM` indicates the number of DMA buffers at the hardware layer, increase this parameter can improve performance.
+    The following are the recommended ranks for using PSRAM:
 
 .. only:: esp32
 
