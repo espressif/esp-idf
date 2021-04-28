@@ -31,6 +31,7 @@ static const char *TAG = "rtc_init";
 
 static void set_ocode_by_efuse(int calib_version);
 static void calibrate_ocode(void);
+static void set_rtc_dig_dbias(void);
 
 void rtc_init(rtc_config_t cfg)
 {
@@ -55,9 +56,21 @@ void rtc_init(rtc_config_t cfg)
     REG_SET_FIELD(RTC_CNTL_TIMER6_REG, RTC_CNTL_DG_PERI_POWERUP_TIMER, rtc_init_cfg.dg_peri_powerup_cycles);
     REG_SET_FIELD(RTC_CNTL_TIMER6_REG, RTC_CNTL_DG_PERI_WAIT_TIMER, rtc_init_cfg.dg_peri_wait_cycles);
 
-    /* Reset RTC bias to default value (needed if waking up from deep sleep) */
-    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG_SLEEP, RTC_CNTL_DBIAS_1V10);
-    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG, RTC_CNTL_DBIAS_1V10);
+    if (cfg.cali_ocode) {
+        uint32_t rtc_calib_version = 0;
+        esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_BLOCK2_VERSION, &rtc_calib_version, 3);
+        if (err != ESP_OK) {
+            rtc_calib_version = 0;
+            SOC_LOGW(TAG, "efuse read fail, set default rtc_calib_version: %d\n", rtc_calib_version);
+        }
+        if (rtc_calib_version == 1) {
+            set_ocode_by_efuse(rtc_calib_version);
+        } else {
+            calibrate_ocode();
+        }
+    }
+
+    set_rtc_dig_dbias();
 
     if (cfg.clkctl_init) {
         //clear CMMU clock force on
@@ -138,16 +151,6 @@ void rtc_init(rtc_config_t cfg)
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_UNHOLD);
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_NOISO);
     }
-    if (cfg.cali_ocode) {
-        uint32_t rtc_calib_version = 0;
-        esp_efuse_read_field_blob(ESP_EFUSE_BLOCK2_VERSION, &rtc_calib_version, 3);
-        if (rtc_calib_version == 1) {
-            set_ocode_by_efuse(rtc_calib_version);
-        } else {
-            calibrate_ocode();
-        }
-    }
-
     REG_WRITE(RTC_CNTL_INT_ENA_REG, 0);
     REG_WRITE(RTC_CNTL_INT_CLR_REG, UINT32_MAX);
 }
@@ -195,7 +198,9 @@ static void set_ocode_by_efuse(int calib_version)
     assert(calib_version == 1);
     // use efuse ocode.
     uint32_t ocode;
-    ESP_ERROR_CHECK(esp_efuse_read_field_blob(ESP_EFUSE_OCODE, &ocode, 8));
+    esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_OCODE, &ocode, 8);
+    assert(err == ESP_OK);
+    (void) err;
     REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_EXT_CODE, ocode);
     REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_FORCE_CODE, 1);
 }
@@ -249,4 +254,86 @@ static void calibrate_ocode(void)
         }
     }
     rtc_clk_cpu_freq_set_config(&old_config);
+}
+
+static uint32_t get_dig_dbias_by_efuse(uint8_t chip_version)
+{
+    assert(chip_version >= 3);
+    uint32_t dig_dbias = 28;
+    esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_DIG_DBIAS_HVT, &dig_dbias, 5);
+    if (err != ESP_OK) {
+        dig_dbias = 28;
+        SOC_LOGW(TAG, "efuse read fail, set default dig_dbias value: %d\n", dig_dbias);
+    }
+    return dig_dbias;
+}
+
+uint32_t get_rtc_dbias_by_efuse(uint8_t chip_version, uint32_t dig_dbias)
+{
+    assert(chip_version >= 3);
+    uint32_t rtc_dbias = 0;
+    signed int k_rtc_ldo = 0, k_dig_ldo = 0, v_rtc_bias20 = 0, v_dig_bias20 = 0;
+    esp_err_t err0 = esp_efuse_read_field_blob(ESP_EFUSE_K_RTC_LDO, &k_rtc_ldo, 7);
+    esp_err_t err1 = esp_efuse_read_field_blob(ESP_EFUSE_K_DIG_LDO, &k_dig_ldo, 7);
+    esp_err_t err2 = esp_efuse_read_field_blob(ESP_EFUSE_V_RTC_DBIAS20, &v_rtc_bias20, 8);
+    esp_err_t err3 = esp_efuse_read_field_blob(ESP_EFUSE_V_DIG_DBIAS20, &v_dig_bias20, 8);
+    if ((err0 != ESP_OK) | (err1 != ESP_OK) | (err2 != ESP_OK) | (err3 != ESP_OK)) {
+        k_rtc_ldo = 0;
+        k_dig_ldo = 0;
+        v_rtc_bias20 = 0;
+        v_dig_bias20 = 0;
+        SOC_LOGW(TAG, "efuse read fail, k_rtc_ldo: %d, k_dig_ldo: %d, v_rtc_bias20: %d,  v_dig_bias20: %d\n", k_rtc_ldo, k_dig_ldo, v_rtc_bias20, v_dig_bias20);
+    }
+
+    k_rtc_ldo =  ((k_rtc_ldo & BIT(6)) != 0)? -(k_rtc_ldo & 0x3f): k_rtc_ldo;
+    k_dig_ldo =  ((k_dig_ldo & BIT(6)) != 0)? -(k_dig_ldo & 0x3f): (uint8_t)k_dig_ldo;
+    v_rtc_bias20 =  ((v_rtc_bias20 & BIT(7)) != 0)? -(v_rtc_bias20 & 0x7f): (uint8_t)v_rtc_bias20;
+    v_dig_bias20 =  ((v_dig_bias20 & BIT(7)) != 0)? -(v_dig_bias20 & 0x7f): (uint8_t)v_dig_bias20;
+
+    uint32_t v_rtc_dbias20_real_mul10000 = V_RTC_MID_MUL10000 + v_rtc_bias20 * 10000 / 500;
+    uint32_t v_dig_dbias20_real_mul10000 = V_DIG_MID_MUL10000 + v_dig_bias20 * 10000 / 500;
+    signed int k_rtc_ldo_real_mul10000 = K_RTC_MID_MUL10000 + k_rtc_ldo;
+    signed int k_dig_ldo_real_mul10000 = K_DIG_MID_MUL10000 + k_dig_ldo;
+    uint32_t v_dig_nearest_1v15_mul10000 = v_dig_dbias20_real_mul10000 + k_dig_ldo_real_mul10000 * (dig_dbias - 20);
+    uint32_t v_rtc_nearest_1v15_mul10000 = 0;
+    for (rtc_dbias = 15; rtc_dbias < 32; rtc_dbias++) {
+        v_rtc_nearest_1v15_mul10000 = v_rtc_dbias20_real_mul10000 + k_rtc_ldo_real_mul10000 * (rtc_dbias - 20);
+        if (v_rtc_nearest_1v15_mul10000 >= v_dig_nearest_1v15_mul10000 - 250)
+            break;
+    }
+    return rtc_dbias;
+}
+
+static void set_rtc_dig_dbias()
+{
+    /*
+    1. a reasonable dig_dbias which by scaning pvt to make 160 CPU run successful stored in efuse;
+    2. also we store some value in efuse, include:
+        k_rtc_ldo (slope of rtc voltage & rtc_dbias);
+        k_dig_ldo (slope of digital voltage & digital_dbias);
+        v_rtc_bias20 (rtc voltage when rtc dbais is 20);
+        v_dig_bias20 (digital voltage when digital dbais is 20).
+    3. a reasonable rtc_dbias can be calculated by a certion formula.
+    */
+    uint32_t rtc_dbias = 28, dig_dbias = 28;
+    uint8_t chip_version = esp_efuse_get_chip_ver();
+    if (chip_version >= 3) {
+        dig_dbias = get_dig_dbias_by_efuse(chip_version);
+        if (dig_dbias != 0) {
+            if (dig_dbias + 4 > 28) {
+                dig_dbias = 28;
+            } else {
+                dig_dbias += 4;
+            }
+            rtc_dbias = get_rtc_dbias_by_efuse(chip_version, dig_dbias); // already burn dig_dbias in efuse
+        } else {
+            dig_dbias = 28;
+            SOC_LOGD(TAG, "not burn core voltage in efuse or burn wrong voltage value in chip version: 0%d\n", chip_version);
+        }
+    }
+    else {
+        SOC_LOGD(TAG, "chip_version is less than 3, not burn core voltage in efuse\n");
+    }
+    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG, rtc_dbias);
+    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG, dig_dbias);
 }
