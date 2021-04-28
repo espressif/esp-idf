@@ -995,7 +995,7 @@ static inline void spi_ll_set_intr(spi_dev_t* hw, spi_ll_intr_t intr_mask)
 
 static inline void spi_ll_clear_intr(spi_dev_t* hw, spi_ll_intr_t intr_mask)
 {
-#define CLR_INTR(intr_bit, _, __, clr_op) if (intr_mask & (intr_bit)) hw->clr_op;
+#define CLR_INTR(intr_bit, _, __, clr_reg) if (intr_mask & (intr_bit)) hw->clr_reg;
     FOR_EACH_ITEM(CLR_INTR, INTR_LIST);
 #undef CLR_INTR
 }
