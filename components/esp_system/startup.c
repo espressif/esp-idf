@@ -55,6 +55,7 @@
 #include "esp_pthread.h"
 #include "esp_private/usb_console.h"
 #include "esp_vfs_cdcacm.h"
+#include "esp_vfs_usb_serial_jtag.h"
 
 #include "esp_rom_sys.h"
 
@@ -277,6 +278,10 @@ static void do_core_init(void)
     ESP_ERROR_CHECK(esp_vfs_dev_cdcacm_register());
     const char *default_stdio_dev = "/dev/cdcacm";
 #endif // CONFIG_ESP_CONSOLE_USB_CDC
+#ifdef CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+    ESP_ERROR_CHECK(esp_vfs_dev_usb_serial_jtag_register());
+    const char *default_stdio_dev = "/dev/usbserjtag";
+#endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
 #endif // CONFIG_VFS_SUPPORT_IO
 
 #if defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_NONE)

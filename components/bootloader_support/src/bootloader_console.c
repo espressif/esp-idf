@@ -111,3 +111,11 @@ void bootloader_console_init(void)
     esp_rom_install_channel_putc(1, bootloader_console_write_char_usb);
 }
 #endif //CONFIG_ESP_CONSOLE_USB_CDC
+
+#ifdef CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+void bootloader_console_init(void)
+{
+    //Nothing to do; ROM already outputs here by default.
+    //(But also to the UART; should we disable that? hmm.)
+}
+#endif //CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
