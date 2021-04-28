@@ -41,5 +41,6 @@ API 指南
    单元测试 (Target) <unit-tests>
    单元测试 (Linux Host) <linux-host-testing>
    :esp32: 单元测试 (传统 GNU Make) <unit-tests-legacy>
-   :esp32s2: USB 控制台 <usb-console>
+   :SOC_USB_SUPPORTED: USB 控制台 <usb-otg-console>
+   :SOC_USB_SERIAL_JTAG_SUPPORTED: USB Serial/JTAG Controller Console <usb-serial-jtag-console>
    Wi-Fi 驱动 <wifi>
