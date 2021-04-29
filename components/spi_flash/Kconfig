@@ -186,8 +186,21 @@ menu "SPI Flash driver"
         help
             This option is helpful if you are using a flash chip whose timeout is quite large or unpredictable.
 
+    config SPI_FLASH_OVERRIDE_CHIP_DRIVER_LIST
+        bool "Override default chip driver list"
+        depends on !SPI_FLASH_USE_LEGACY_IMPL
+        default n
+        help
+            This option allows the chip driver list to be customized, instead of using the default list provided by
+            ESP-IDF.
+
+            When this option is enabled, the default list is no longer compiled or linked. Instead, the
+            `default_registered_chips` structure must be provided by the user.
+
+            See example: custom_chip_driver under examples/storage for more details.
 
     menu "Auto-detect flash chips"
+        visible if !SPI_FLASH_OVERRIDE_CHIP_DRIVER_LIST
 
         config SPI_FLASH_SUPPORT_ISSI_CHIP
             bool "ISSI"

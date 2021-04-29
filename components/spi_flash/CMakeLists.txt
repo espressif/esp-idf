@@ -102,7 +102,7 @@ else()
                         REQUIRES hal
                         PRIV_REQUIRES "${priv_requires}"
                         INCLUDE_DIRS include
-                        PRIV_INCLUDE_DIRS private_include
+                        PRIV_INCLUDE_DIRS include/spi_flash
                         LDFRAGMENTS linker.lf)
 
     # Avoid cache miss by unexpected inlineing when built by -Os
