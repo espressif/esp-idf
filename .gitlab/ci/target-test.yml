@@ -284,6 +284,26 @@ example_test_C3_FLASH_ENC_OTA:
     - ESP32C3
     - Example_Flash_Encryption_OTA_WiFi
 
+example_test_ESP32_SDSPI:
+  extends: .example_test_esp32_template
+  tags:
+    - ESP32
+    - UT_T1_SPIMODE
+
+# uncomment when ESP32S2 & ESP32C3 runners with external SD connected over SPI are available
+# ensure the runners have required tags created
+#
+#example_test_ESP32S2_SDSPI:
+#  extends: .example_test_esp32s2_template
+#  tags:
+#    - ESP32S2
+#    - UT_T1_SPIMODE
+#
+#example_test_ESP32C3_SDSPI:
+#  extends: .example_test_esp32c3_template
+#  tags:
+#    - ESP32C3
+#    - UT_T1_SPIMODE
 
 .test_app_template:
   extends: .target_test_job_template
