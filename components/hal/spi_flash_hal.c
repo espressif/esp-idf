@@ -80,7 +80,7 @@ esp_err_t spi_flash_hal_init(spi_flash_hal_context_t *data_out, const spi_flash_
         return ESP_ERR_INVALID_ARG;
     }
 
-    bool gpspi = (cfg->host_id > SPI_HOST);
+    bool gpspi = (cfg->host_id > SPI1_HOST);
     const spi_flash_hal_clock_config_t *clock_cfg = gpspi? &spi_flash_gpspi_clk_cfg_reg[cfg->speed]: &spi_flash_clk_cfg_reg[cfg->speed];
 
     *data_out = (spi_flash_hal_context_t) {
@@ -102,7 +102,7 @@ esp_err_t spi_flash_hal_init(spi_flash_hal_context_t *data_out, const spi_flash_
 
 bool spi_flash_hal_supports_direct_write(spi_flash_host_inst_t *host, const void *p)
 {
-    bool direct_write = ( ((spi_flash_hal_context_t *)host)->spi != spi_flash_ll_get_hw(SPI_HOST)
+    bool direct_write = ( ((spi_flash_hal_context_t *)host)->spi != spi_flash_ll_get_hw(SPI1_HOST)
                           || esp_ptr_in_dram(p) );
     return direct_write;
 }
@@ -111,7 +111,7 @@ bool spi_flash_hal_supports_direct_write(spi_flash_host_inst_t *host, const void
 bool spi_flash_hal_supports_direct_read(spi_flash_host_inst_t *host, const void *p)
 {
   //currently the host doesn't support to read through dma, no word-aligned requirements
-    bool direct_read = ( ((spi_flash_hal_context_t *)host)->spi != spi_flash_ll_get_hw(SPI_HOST)
+    bool direct_read = ( ((spi_flash_hal_context_t *)host)->spi != spi_flash_ll_get_hw(SPI1_HOST)
                          || esp_ptr_in_dram(p) );
     return direct_read;
 }

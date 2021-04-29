@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <string.h>
+
 #include "sdkconfig.h"
 #include "esp_types.h"
 #include "esp_attr.h"
@@ -19,6 +21,9 @@
 #include "esp_debug_helpers.h"
 #include "soc/soc_memory_layout.h"
 #include "soc/cpu.h"
+#include "esp_private/panic_internal.h"
+
+#include "xtensa/xtensa_context.h"
 
 #include "sdkconfig.h"
 
@@ -36,7 +41,28 @@ bool IRAM_ATTR esp_backtrace_get_next_frame(esp_backtrace_frame_t *frame)
     return (esp_stack_ptr_is_sane(frame->sp) && esp_ptr_executable((void*)esp_cpu_process_stack_pc(frame->pc)));
 }
 
-esp_err_t IRAM_ATTR esp_backtrace_print(int depth)
+static void IRAM_ATTR print_entry(uint32_t pc, uint32_t sp, bool panic)
+{
+    if (panic) {
+        panic_print_str("0x");
+        panic_print_hex(pc);
+        panic_print_str(":0x");
+        panic_print_hex(sp);
+    } else {
+        esp_rom_printf("0x%08X:0x%08X", pc, sp);
+    }
+}
+
+static void IRAM_ATTR print_str(const char* str, bool panic)
+{
+    if (panic) {
+        panic_print_str(str);
+    } else {
+        esp_rom_printf(str);
+    }
+}
+
+esp_err_t IRAM_ATTR esp_backtrace_print_from_frame(int depth, const esp_backtrace_frame_t* frame, bool panic)
 {
     //Check arguments
     if (depth <= 0) {
@@ -44,33 +70,43 @@ esp_err_t IRAM_ATTR esp_backtrace_print(int depth)
     }
 
     //Initialize stk_frame with first frame of stack
-    esp_backtrace_frame_t stk_frame;
-    esp_backtrace_get_start(&(stk_frame.pc), &(stk_frame.sp), &(stk_frame.next_pc));
-    //esp_cpu_get_backtrace_start(&stk_frame);
-    esp_rom_printf("\r\n\r\nBacktrace:");
-    esp_rom_printf("0x%08X:0x%08X ", esp_cpu_process_stack_pc(stk_frame.pc), stk_frame.sp);
+    esp_backtrace_frame_t stk_frame = { 0 };
+    memcpy(&stk_frame, frame, sizeof(esp_backtrace_frame_t));
+
+    print_str("\r\n\r\nBacktrace:", panic);
+    print_entry(esp_cpu_process_stack_pc(stk_frame.pc), stk_frame.sp, panic);
 
     //Check if first frame is valid
-    bool corrupted = (esp_stack_ptr_is_sane(stk_frame.sp) &&
-                      esp_ptr_executable((void*)esp_cpu_process_stack_pc(stk_frame.pc))) ?
-                      false : true;
+    bool corrupted = !(esp_stack_ptr_is_sane(stk_frame.sp) &&
+                       (esp_ptr_executable((void *)esp_cpu_process_stack_pc(stk_frame.pc)) ||
+                        /* Ignore the first corrupted PC in case of InstrFetchProhibited */
+                        (stk_frame.exc_frame && ((XtExcFrame *)stk_frame.exc_frame)->exccause == EXCCAUSE_INSTR_PROHIBITED)));
 
     uint32_t i = (depth <= 0) ? INT32_MAX : depth;
     while (i-- > 0 && stk_frame.next_pc != 0 && !corrupted) {
         if (!esp_backtrace_get_next_frame(&stk_frame)) {    //Get previous stack frame
             corrupted = true;
         }
-        esp_rom_printf("0x%08X:0x%08X ", esp_cpu_process_stack_pc(stk_frame.pc), stk_frame.sp);
+        print_entry(esp_cpu_process_stack_pc(stk_frame.pc), stk_frame.sp, panic);
+        print_str(" ", panic);
     }
 
     //Print backtrace termination marker
     esp_err_t ret = ESP_OK;
     if (corrupted) {
-        esp_rom_printf(" |<-CORRUPTED");
+        print_str(" |<-CORRUPTED", panic);
         ret =  ESP_FAIL;
     } else if (stk_frame.next_pc != 0) {    //Backtrace continues
-        esp_rom_printf(" |<-CONTINUES");
+        print_str(" |<-CONTINUES", panic);
     }
-    esp_rom_printf("\r\n\r\n");
+    print_str("\r\n\r\n", panic);
     return ret;
+}
+
+esp_err_t IRAM_ATTR esp_backtrace_print(int depth)
+{
+    //Initialize stk_frame with first frame of stack
+    esp_backtrace_frame_t start = { 0 };
+    esp_backtrace_get_start(&(start.pc), &(start.sp), &(start.next_pc));
+    return esp_backtrace_print_from_frame(depth, &start, false);
 }

@@ -58,7 +58,9 @@ typedef enum {
 typedef struct {
     slave_cb_t cb_buffer_tx;                    ///< Callback when master reads from shared buffer
     slave_cb_t cb_buffer_rx;                    ///< Callback when master writes to shared buffer
+    slave_cb_t cb_send_dma_ready;               ///< Callback when TX data buffer is loaded to the hardware (DMA)
     slave_cb_t cb_sent;                         ///< Callback when data are sent
+    slave_cb_t cb_recv_dma_ready;               ///< Callback when RX data buffer is loaded to the hardware (DMA)
     slave_cb_t cb_recv;                         ///< Callback when data are received
     slave_cb_t cb_cmd9;                         ///< Callback when CMD9 received
     slave_cb_t cb_cmdA;                         ///< Callback when CMDA received

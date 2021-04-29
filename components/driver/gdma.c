@@ -22,6 +22,7 @@
 #include "soc/periph_defs.h"
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
+#include "esp_check.h"
 #include "driver/periph_ctrl.h"
 #include "esp_private/gdma.h"
 #include "hal/gdma_hal.h"
@@ -29,15 +30,6 @@
 #include "soc/gdma_periph.h"
 
 static const char *TAG = "gdma";
-
-#define DMA_CHECK(a, msg, tag, ret, ...)                                          \
-    do {                                                                          \
-        if (unlikely(!(a))) {                                                     \
-            ESP_LOGE(TAG, "%s(%d): " msg, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
-            ret_code = ret;                                                       \
-            goto tag;                                                             \
-        }                                                                         \
-    } while (0)
 
 #define GDMA_INVALID_PERIPH_TRIG  (0x3F)
 #define SEARCH_REQUEST_RX_CHANNEL (1 << 0)
@@ -123,13 +115,13 @@ static gdma_platform_t s_platform = {
 
 esp_err_t gdma_new_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_chan)
 {
-    esp_err_t ret_code = ESP_OK;
+    esp_err_t ret = ESP_OK;
     gdma_tx_channel_t *alloc_tx_channel = NULL;
     gdma_rx_channel_t *alloc_rx_channel = NULL;
     int search_code = 0;
     gdma_pair_t *pair = NULL;
     gdma_group_t *group = NULL;
-    DMA_CHECK(config && ret_chan, "invalid argument", err, ESP_ERR_INVALID_ARG);
+    ESP_GOTO_ON_FALSE(config && ret_chan, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
 
     if (config->flags.reserve_sibling) {
         search_code = SEARCH_REQUEST_RX_CHANNEL | SEARCH_REQUEST_TX_CHANNEL; // search for a pair of channels
@@ -137,18 +129,17 @@ esp_err_t gdma_new_channel(const gdma_channel_alloc_config_t *config, gdma_chann
     if (config->direction == GDMA_CHANNEL_DIRECTION_TX) {
         search_code |= SEARCH_REQUEST_TX_CHANNEL; // search TX only
         alloc_tx_channel = calloc(1, sizeof(gdma_tx_channel_t));
-        DMA_CHECK(alloc_tx_channel, "no mem for gdma tx channel", err, ESP_ERR_NO_MEM);
+        ESP_GOTO_ON_FALSE(alloc_tx_channel, ESP_ERR_NO_MEM, err, TAG, "no mem for gdma tx channel");
     } else if (config->direction == GDMA_CHANNEL_DIRECTION_RX) {
         search_code |= SEARCH_REQUEST_RX_CHANNEL; // search RX only
         alloc_rx_channel = calloc(1, sizeof(gdma_rx_channel_t));
-        DMA_CHECK(alloc_rx_channel, "no mem for gdma rx channel", err, ESP_ERR_NO_MEM);
+        ESP_GOTO_ON_FALSE(alloc_rx_channel, ESP_ERR_NO_MEM, err, TAG, "no mem for gdma rx channel");
     }
 
     if (config->sibling_chan) {
         pair = config->sibling_chan->pair;
-        DMA_CHECK(pair, "invalid sibling channel", err, ESP_ERR_INVALID_ARG);
-        DMA_CHECK(config->sibling_chan->direction != config->direction,
-                  "sibling channel should have a different direction", err, ESP_ERR_INVALID_ARG);
+        ESP_GOTO_ON_FALSE(pair, ESP_ERR_INVALID_ARG, err, TAG, "invalid sibling channel");
+        ESP_GOTO_ON_FALSE(config->sibling_chan->direction != config->direction, ESP_ERR_INVALID_ARG, err, TAG, "sibling channel should have a different direction");
         group = pair->group;
         portENTER_CRITICAL(&group->spinlock);
         group->pair_ref_counts[pair->pair_id]++; // channel obtains a reference to pair
@@ -177,7 +168,7 @@ esp_err_t gdma_new_channel(const gdma_channel_alloc_config_t *config, gdma_chann
         } // loop used to search pair
         gdma_release_group_handle(group);
     } // loop used to search group
-    DMA_CHECK(search_code == 0, "no free gdma channel, search code=%d", err, ESP_ERR_NOT_FOUND, search_code);
+    ESP_GOTO_ON_FALSE(search_code == 0, ESP_ERR_NOT_FOUND, err, TAG, "no free gdma channel, search code=%d", search_code);
 
 search_done:
     // register TX channel
@@ -211,38 +202,38 @@ err:
     if (alloc_rx_channel) {
         free(alloc_rx_channel);
     }
-    return ret_code;
+    return ret;
 }
 
 esp_err_t gdma_del_channel(gdma_channel_handle_t dma_chan)
 {
-    esp_err_t ret_code = ESP_OK;
-    DMA_CHECK(dma_chan, "invalid argument", err, ESP_ERR_INVALID_ARG);
+    esp_err_t ret = ESP_OK;
+    ESP_GOTO_ON_FALSE(dma_chan, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
 
-    ret_code = dma_chan->del(dma_chan); // call `gdma_del_tx_channel` or `gdma_del_rx_channel`
+    ret = dma_chan->del(dma_chan); // call `gdma_del_tx_channel` or `gdma_del_rx_channel`
 
 err:
-    return ret_code;
+    return ret;
 }
 
 esp_err_t gdma_get_channel_id(gdma_channel_handle_t dma_chan, int *channel_id)
 {
-    esp_err_t ret_code = ESP_OK;
+    esp_err_t ret = ESP_OK;
     gdma_pair_t *pair = NULL;
-    DMA_CHECK(dma_chan, "invalid argument", err, ESP_ERR_INVALID_ARG);
+    ESP_GOTO_ON_FALSE(dma_chan, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     pair = dma_chan->pair;
     *channel_id = pair->pair_id;
 err:
-    return ret_code;
+    return ret;
 }
 
 esp_err_t gdma_connect(gdma_channel_handle_t dma_chan, gdma_trigger_t trig_periph)
 {
-    esp_err_t ret_code = ESP_OK;
+    esp_err_t ret = ESP_OK;
     gdma_pair_t *pair = NULL;
     gdma_group_t *group = NULL;
-    DMA_CHECK(dma_chan, "invalid argument", err, ESP_ERR_INVALID_ARG);
-    DMA_CHECK(dma_chan->periph_id == GDMA_INVALID_PERIPH_TRIG, "channel is using by peripheral: %d", err, ESP_ERR_INVALID_STATE, dma_chan->periph_id);
+    ESP_GOTO_ON_FALSE(dma_chan, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    ESP_GOTO_ON_FALSE(dma_chan->periph_id == GDMA_INVALID_PERIPH_TRIG, ESP_ERR_INVALID_STATE, err, TAG, "channel is using by peripheral: %d", dma_chan->periph_id);
     pair = dma_chan->pair;
     group = pair->group;
 
@@ -263,16 +254,16 @@ esp_err_t gdma_connect(gdma_channel_handle_t dma_chan, gdma_trigger_t trig_perip
     }
 
 err:
-    return ret_code;
+    return ret;
 }
 
 esp_err_t gdma_disconnect(gdma_channel_handle_t dma_chan)
 {
-    esp_err_t ret_code = ESP_OK;
+    esp_err_t ret = ESP_OK;
     gdma_pair_t *pair = NULL;
     gdma_group_t *group = NULL;
-    DMA_CHECK(dma_chan, "invalid argument", err, ESP_ERR_INVALID_ARG);
-    DMA_CHECK(dma_chan->periph_id != GDMA_INVALID_PERIPH_TRIG, "no peripheral is connected to the channel", err, ESP_ERR_INVALID_STATE);
+    ESP_GOTO_ON_FALSE(dma_chan, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    ESP_GOTO_ON_FALSE(dma_chan->periph_id != GDMA_INVALID_PERIPH_TRIG, ESP_ERR_INVALID_STATE, err, TAG, "no peripheral is connected to the channel");
     pair = dma_chan->pair;
     group = pair->group;
 
@@ -284,15 +275,15 @@ esp_err_t gdma_disconnect(gdma_channel_handle_t dma_chan)
     }
 
 err:
-    return ret_code;
+    return ret;
 }
 
 esp_err_t gdma_apply_strategy(gdma_channel_handle_t dma_chan, const gdma_strategy_config_t *config)
 {
-    esp_err_t ret_code = ESP_OK;
+    esp_err_t ret = ESP_OK;
     gdma_pair_t *pair = NULL;
     gdma_group_t *group = NULL;
-    DMA_CHECK(dma_chan, "invalid argument", err, ESP_ERR_INVALID_ARG);
+    ESP_GOTO_ON_FALSE(dma_chan, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     pair = dma_chan->pair;
     group = pair->group;
 
@@ -304,21 +295,21 @@ esp_err_t gdma_apply_strategy(gdma_channel_handle_t dma_chan, const gdma_strateg
     }
 
 err:
-    return ret_code;
+    return ret;
 }
 
 esp_err_t gdma_register_tx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_tx_event_callbacks_t *cbs, void *user_data)
 {
-    esp_err_t ret_code = ESP_OK;
+    esp_err_t ret = ESP_OK;
     gdma_pair_t *pair = NULL;
     gdma_group_t *group = NULL;
-    DMA_CHECK(dma_chan && dma_chan->direction == GDMA_CHANNEL_DIRECTION_TX, "invalid argument", err, ESP_ERR_INVALID_ARG);
+    ESP_GOTO_ON_FALSE(dma_chan && dma_chan->direction == GDMA_CHANNEL_DIRECTION_TX, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     pair = dma_chan->pair;
     group = pair->group;
     gdma_tx_channel_t *tx_chan = __containerof(dma_chan, gdma_tx_channel_t, base);
 
     // lazy install interrupt service
-    DMA_CHECK(gdma_install_interrupt(pair) == ESP_OK, "install interrupt service failed", err, ESP_FAIL);
+    ESP_GOTO_ON_ERROR(gdma_install_interrupt(pair), err, TAG, "install interrupt service failed");
 
     // enable/disable GDMA interrupt events for TX channel
     portENTER_CRITICAL(&pair->spinlock);
@@ -328,24 +319,24 @@ esp_err_t gdma_register_tx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
     tx_chan->on_trans_eof = cbs->on_trans_eof;
     tx_chan->user_data = user_data;
 
-    DMA_CHECK(esp_intr_enable(pair->intr) == ESP_OK, "enable interrupt failed", err, ESP_FAIL);
+    ESP_GOTO_ON_ERROR(esp_intr_enable(pair->intr), err, TAG, "enable interrupt failed");
 
 err:
-    return ret_code;
+    return ret;
 }
 
 esp_err_t gdma_register_rx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_rx_event_callbacks_t *cbs, void *user_data)
 {
-    esp_err_t ret_code = ESP_OK;
+    esp_err_t ret = ESP_OK;
     gdma_pair_t *pair = NULL;
     gdma_group_t *group = NULL;
-    DMA_CHECK(dma_chan && dma_chan->direction == GDMA_CHANNEL_DIRECTION_RX, "invalid argument", err, ESP_ERR_INVALID_ARG);
+    ESP_GOTO_ON_FALSE(dma_chan && dma_chan->direction == GDMA_CHANNEL_DIRECTION_RX, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     pair = dma_chan->pair;
     group = pair->group;
     gdma_rx_channel_t *rx_chan = __containerof(dma_chan, gdma_rx_channel_t, base);
 
     // lazy install interrupt service
-    DMA_CHECK(gdma_install_interrupt(pair) == ESP_OK, "install interrupt service failed", err, ESP_FAIL);
+    ESP_GOTO_ON_ERROR(gdma_install_interrupt(pair), err, TAG, "install interrupt service failed");
 
     // enable/disable GDMA interrupt events for RX channel
     portENTER_CRITICAL(&pair->spinlock);
@@ -355,18 +346,18 @@ esp_err_t gdma_register_rx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
     rx_chan->on_recv_eof = cbs->on_recv_eof;
     rx_chan->user_data = user_data;
 
-    DMA_CHECK(esp_intr_enable(pair->intr) == ESP_OK, "enable interrupt failed", err, ESP_FAIL);
+    ESP_GOTO_ON_ERROR(esp_intr_enable(pair->intr), err, TAG, "enable interrupt failed");
 
 err:
-    return ret_code;
+    return ret;
 }
 
 esp_err_t gdma_start(gdma_channel_handle_t dma_chan, intptr_t desc_base_addr)
 {
-    esp_err_t ret_code = ESP_OK;
+    esp_err_t ret = ESP_OK;
     gdma_pair_t *pair = NULL;
     gdma_group_t *group = NULL;
-    DMA_CHECK(dma_chan, "invalid argument", err, ESP_ERR_INVALID_ARG);
+    ESP_GOTO_ON_FALSE(dma_chan, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     pair = dma_chan->pair;
     group = pair->group;
 
@@ -379,15 +370,15 @@ esp_err_t gdma_start(gdma_channel_handle_t dma_chan, intptr_t desc_base_addr)
     }
 
 err:
-    return ret_code;
+    return ret;
 }
 
 esp_err_t gdma_stop(gdma_channel_handle_t dma_chan)
 {
-    esp_err_t ret_code = ESP_OK;
+    esp_err_t ret = ESP_OK;
     gdma_pair_t *pair = NULL;
     gdma_group_t *group = NULL;
-    DMA_CHECK(dma_chan, "invalid argument", err, ESP_ERR_INVALID_ARG);
+    ESP_GOTO_ON_FALSE(dma_chan, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     pair = dma_chan->pair;
     group = pair->group;
 
@@ -398,15 +389,15 @@ esp_err_t gdma_stop(gdma_channel_handle_t dma_chan)
     }
 
 err:
-    return ret_code;
+    return ret;
 }
 
 esp_err_t gdma_append(gdma_channel_handle_t dma_chan)
 {
-    esp_err_t ret_code = ESP_OK;
+    esp_err_t ret = ESP_OK;
     gdma_pair_t *pair = NULL;
     gdma_group_t *group = NULL;
-    DMA_CHECK(dma_chan, "invalid argument", err, ESP_ERR_INVALID_ARG);
+    ESP_GOTO_ON_FALSE(dma_chan, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     pair = dma_chan->pair;
     group = pair->group;
 
@@ -417,7 +408,7 @@ esp_err_t gdma_append(gdma_channel_handle_t dma_chan)
     }
 
 err:
-    return ret_code;
+    return ret;
 }
 
 static void gdma_uninstall_group(gdma_group_t *group)
@@ -632,15 +623,15 @@ static void IRAM_ATTR gdma_default_isr(void *args)
 
 static esp_err_t gdma_install_interrupt(gdma_pair_t *pair)
 {
-    esp_err_t ret_code = ESP_OK;
+    esp_err_t ret = ESP_OK;
     gdma_group_t *group = pair->group;
     bool do_install_isr = false;
     // pre-alloc a interrupt handle, shared with other handle, with handler disabled
     // This is used to prevent potential concurrency between interrupt install and uninstall
     int isr_flags = ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_INTRDISABLED;
     intr_handle_t intr = NULL;
-    ret_code = esp_intr_alloc(gdma_periph_signals.groups[group->group_id].pairs[pair->pair_id].irq_id, isr_flags, gdma_default_isr, pair, &intr);
-    DMA_CHECK(ret_code == ESP_OK, "alloc interrupt failed", err, ret_code);
+    ret = esp_intr_alloc(gdma_periph_signals.groups[group->group_id].pairs[pair->pair_id].irq_id, isr_flags, gdma_default_isr, pair, &intr);
+    ESP_GOTO_ON_ERROR(ret, err, TAG, "alloc interrupt failed");
 
     if (!pair->intr) {
         portENTER_CRITICAL(&pair->spinlock);
@@ -660,5 +651,5 @@ static esp_err_t gdma_install_interrupt(gdma_pair_t *pair)
     }
 
 err:
-    return ret_code;
+    return ret;
 }

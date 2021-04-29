@@ -54,6 +54,23 @@ menu "Example Configuration"
                 Enter the peer phone number that you want to send message to.
     endif
 
+    config EXAMPLE_UART_ISR_IN_RAM
+        bool "Use UART ISR in RAM"
+        default n
+        select UART_ISR_IN_IRAM
+        help
+            Enable placing UART ISR to IRAM.
+            This options is useful if PPPoS client needs to perform
+            flash operations (e.g. OTA) while keeping the network operational.
+
+    config EXAMPLE_LCP_ECHO
+        bool "Enable LCP ECHO"
+        default n
+        select LWIP_ENABLE_LCP_ECHO
+        help
+            Enable this option to make use of LCP keepalive using
+            LCP_ECHO_INTERVAL and LCP_MAXECHOFAILS to default values
+
     menu "UART Configuration"
         config EXAMPLE_MODEM_UART_TX_PIN
             int "TXD Pin Number"

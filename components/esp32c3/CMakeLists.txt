@@ -11,16 +11,11 @@ if(BOOTLOADER_BUILD)
 else()
     # Regular app build
 
-    set(srcs "cache_err_int.c"
-             "clk.c"
-             "crosscore_int.c"
-             "dport_access.c"
+    set(srcs "dport_access.c"
              "esp_hmac.c"
              "esp_ds.c"
              "esp_crypto_lock.c"
-             "hw_random.c"
-             "memprot.c"
-             "system_api_esp32c3.c")
+             "memprot.c")
     set(include_dirs "include")
 
     set(requires driver efuse soc riscv) #unfortunately rom/uart uses SOC registers directly
@@ -32,11 +27,8 @@ else()
         app_trace app_update bootloader_support log mbedtls nvs_flash
         pthread spi_flash vfs espcoredump esp_common esp_timer)
 
-    set(fragments linker.lf ld/esp32c3_fragments.lf)
-
     idf_component_register(SRCS "${srcs}"
                         INCLUDE_DIRS "${include_dirs}"
-                        LDFRAGMENTS "${fragments}"
                         REQUIRES "${requires}"
                         PRIV_REQUIRES "${priv_requires}"
                         REQUIRED_IDF_TARGETS esp32c3)
@@ -46,9 +38,9 @@ else()
     # Process the template file through the linker script generation mechanism, and use the output for linking the
     # final binary
     target_linker_script(${COMPONENT_LIB} INTERFACE "${CMAKE_CURRENT_LIST_DIR}/ld/esp32c3.project.ld.in"
-                                          PROCESS "${CMAKE_CURRENT_BINARY_DIR}/ld/esp32c3.project.ld")
-
+            PROCESS "${CMAKE_CURRENT_BINARY_DIR}/ld/esp32c3.project.ld")
     target_linker_script(${COMPONENT_LIB} INTERFACE "ld/esp32c3.peripherals.ld")
+
     target_link_libraries(${COMPONENT_LIB} PUBLIC gcc)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u call_user_start_cpu0")
 

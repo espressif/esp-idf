@@ -183,6 +183,9 @@ test_idf_tools:
     - export PATH=$(p=$(echo $PATH | tr ":" "\n" | grep -v "/root/.espressif/tools\|/opt/espressif" | tr "\n" ":"); echo ${p%:})
     - cd ${IDF_PATH}/tools/test_idf_tools
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_idf_tools.py
+    # Test for create virtualenv. It must be invoked from Python, not from virtualenv.
+    - cd ${IDF_PATH}/tools
+    - python3 ./idf_tools.py install-python-env
 
 test_esp_err_to_name_on_host:
   extends: .host_test_template
@@ -349,3 +352,10 @@ test_detect_python:
     - "dash -c '. tools/detect_python.sh && echo Our Python: ${ESP_PYTHON?Python is not set}'"
     - "zsh -c '. tools/detect_python.sh && echo Our Python: ${ESP_PYTHON?Python is not set}'"
     - "fish -c 'source tools/detect_python.fish && echo Our Python: $ESP_PYTHON'"
+
+test_nvs_page:
+  extends: .host_test_template
+  script:
+    - cd ${IDF_PATH}/components/nvs_flash/host_test/nvs_page_test
+    - idf.py build
+    - build/host_nvs_page_test.elf

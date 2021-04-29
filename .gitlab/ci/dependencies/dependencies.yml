@@ -78,6 +78,13 @@
     - build_components
     - build_system
 
+build:integration_test:
+  labels:
+    - build
+  patterns:
+    - build_components
+    - build_system
+
 # -------------
 # Special Cases
 # -------------

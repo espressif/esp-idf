@@ -169,6 +169,24 @@ To display the contents of a binary partition table on stdout (this is how the s
 
   python gen_esp32part.py binary_partitions.bin
 
+Partition Size Checks
+---------------------
+
+The ESP-IDF build system will automatically check if generated binaries fit in the available partition space, and will fail with an error if a binary is too large.
+
+Currently these checks are performed for the following binaries:
+
+* Bootloader binary must fit in space before partition table (see :ref:`secure-boot-bootloader-size`)
+* App binary should fit in at least one partition of type "app". If the app binary doesn't fit in any app partition, the build will fail. If it only fits in some of the app partitions, a warning is printed about this.
+
+.. note::
+
+   Although the build process will fail if the size check returns an error, the binary files are still generated and can be flashed (although they may not work if they are too large for the available space.)
+
+.. note::
+
+   Build system binary size checks are only performed when using the CMake build system. When using the legacy GNU Make build system, file sizes can be checked manually or an error will be logged during boot.
+
 MD5 checksum
 ~~~~~~~~~~~~
 

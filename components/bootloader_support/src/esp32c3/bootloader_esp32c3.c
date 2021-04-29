@@ -263,15 +263,15 @@ static void bootloader_super_wdt_auto_feed(void)
     REG_WRITE(RTC_CNTL_SWD_WPROTECT_REG, 0);
 }
 
-#if CONFIG_ESP32C3_REV_MIN < 3
 static inline void bootloader_hardware_init(void)
 {
+    // This check is always included in the bootloader so it can
+    // print the minimum revision error message later in the boot
     if (bootloader_common_get_chip_revision() < 3) {
         REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_FORCE_XPD_IPH, 1);
         REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1_PVT, 12);
     }
 }
-#endif
 
 static inline void bootloader_glitch_reset_disable(void)
 {
@@ -286,9 +286,8 @@ static inline void bootloader_glitch_reset_disable(void)
 esp_err_t bootloader_init(void)
 {
     esp_err_t ret = ESP_OK;
-#if CONFIG_ESP32C3_REV_MIN < 3
+
     bootloader_hardware_init();
-#endif
     bootloader_glitch_reset_disable();
     bootloader_super_wdt_auto_feed();
     // protect memory region

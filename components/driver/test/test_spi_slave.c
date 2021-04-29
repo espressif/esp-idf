@@ -224,7 +224,7 @@ static void unaligned_test_slave(void)
     unity_wait_for_signal("Master ready");
     spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
     spi_slave_interface_config_t slvcfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
-    TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &buscfg, &slvcfg, SPI_DMA_CH_AUTO));
+    TEST_ESP_OK(spi_slave_initialize(TEST_SPI_HOST, &buscfg, &slvcfg, SPI_DMA_CH_AUTO));
 
     uint8_t *slave_send_buf = heap_caps_malloc(BUF_SIZE, MALLOC_CAP_DMA);
     uint8_t *slave_recv_buf = heap_caps_calloc(BUF_SIZE, 1, MALLOC_CAP_DMA);
@@ -248,7 +248,7 @@ static void unaligned_test_slave(void)
         };
 
         unity_send_signal("Slave ready");
-        TEST_ESP_OK(spi_slave_transmit(TEST_SLAVE_HOST, &slave_t, portMAX_DELAY));
+        TEST_ESP_OK(spi_slave_transmit(TEST_SPI_HOST, &slave_t, portMAX_DELAY));
 
         //show result
         ESP_LOGI(SLAVE_TAG, "trans_len: %d", slave_t.trans_len);
@@ -265,7 +265,7 @@ static void unaligned_test_slave(void)
     free(slave_send_buf);
     free(slave_recv_buf);
     free(master_send_buf);
-    TEST_ASSERT(spi_slave_free(TEST_SLAVE_HOST) == ESP_OK);
+    TEST_ASSERT(spi_slave_free(TEST_SPI_HOST) == ESP_OK);
 }
 
 TEST_CASE_MULTIPLE_DEVICES("SPI_Slave_Unaligned_Test", "[spi_ms][test_env=Example_SPI_Multi_device][timeout=120]", unaligned_test_master, unaligned_test_slave);

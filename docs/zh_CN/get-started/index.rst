@@ -74,7 +74,7 @@
 或者，您也可以通过以下集成开发环境 (IDE) 中的官方插件完成安装流程：
 
     * `Eclipse 插件 <https://github.com/espressif/idf-eclipse-plugin>`_ (`安装 <https://github.com/espressif/idf-eclipse-plugin#installing-idf-plugin-using-update-site-url>`__)
-    * `VS Code 插件 <https://github.com/espressif/vscode-esp-idf-extension>`_ (`安装 <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/ONBOARDING.md>`__)
+    * `VS Code 插件 <https://github.com/espressif/vscode-esp-idf-extension>`_ (`安装 <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`__)
 
 .. figure:: ../../_static/what-you-need.png
     :align: center

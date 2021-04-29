@@ -16,6 +16,12 @@ SECTIONS
         *(.text*)
     } >ram
 
+    .rodata ALIGN(4):
+    {
+        *(.rodata)
+        *(.rodata*)
+    } > ram
+
     .data ALIGN(4):
     {
         *(.data)

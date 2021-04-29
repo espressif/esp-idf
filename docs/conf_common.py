@@ -59,6 +59,7 @@ extensions = ['breathe',
               'extensions.html_redirects',
               'extensions.toctree_filter',
               'extensions.list_filter',
+              'extensions.google_analytics',
 
               # Note: order is important here, events must
               # be registered by one extension before they can be
@@ -165,6 +166,10 @@ USB_DOCS = ['api-reference/peripherals/usb.rst',
             'api-guides/usb-console.rst',
             'api-guides/dfu.rst']
 
+FTDI_JTAG_DOCS = ['api-guides/jtag-debugging/configure-ft2232h-jtag.rst']
+
+BUILTIN_JTAG_DOCS = ['api-guides/jtag-debugging/configure-builtin-jtag.rst']
+
 ULP_DOCS = ['api-guides/ulp.rst', 'api-guides/ulp_macros.rst']
 
 RISCV_COPROC_DOCS = ['api-guides/ulp-risc-v.rst',]
@@ -182,7 +187,7 @@ ESP32_DOCS = ['api-guides/ulp_instruction_set.rst',
               'security/secure-boot-v1.rst',
               'api-reference/peripherals/secure_element.rst',
               'api-reference/peripherals/dac.rst',
-              'hw-reference/esp32/**'] + LEGACY_DOCS
+              'hw-reference/esp32/**'] + LEGACY_DOCS + FTDI_JTAG_DOCS
 
 ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-guides/ulps2_instruction_set.rst',
@@ -193,9 +198,9 @@ ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-reference/peripherals/temp_sensor.rst',
                 'api-reference/system/async_memcpy.rst',
                 'api-reference/peripherals/touch_element.rst',
-                'api-reference/peripherals/dac.rst']
+                'api-reference/peripherals/dac.rst'] + FTDI_JTAG_DOCS
 
-ESP32C3_DOCS = ['hw-reference/esp32c3/**']
+ESP32C3_DOCS = ['hw-reference/esp32c3/**'] + BUILTIN_JTAG_DOCS
 
 # format: {tag needed to include: documents to included}, tags are parsed from sdkconfig and peripheral_caps.h headers
 conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
@@ -206,7 +211,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_DEDICATED_GPIO_SUPPORTED':DEDIC_GPIO_DOCS,
                             'SOC_SPIRAM_SUPPORTED':SPIRAM_DOCS,
                             'SOC_PCNT_SUPPORTED':PCNT_DOCS,
-                            'SOC_DAC_PERIPH_NUM':DAC_DOCS,
+                            'SOC_DAC_SUPPORTED':DAC_DOCS,
                             'SOC_TOUCH_SENSOR_NUM':TOUCH_SENSOR_DOCS,
                             'SOC_ULP_SUPPORTED':ULP_DOCS,
                             'SOC_RISCV_COPROC_SUPPORTED':RISCV_COPROC_DOCS,
@@ -357,6 +362,8 @@ html_static_path = ['../_static']
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'ReadtheDocsTemplatedoc'
+
+google_analytics_id = os.environ.get('CI_GOOGLE_ANALYTICS_ID', None)
 
 # -- Options for LaTeX output ---------------------------------------------
 

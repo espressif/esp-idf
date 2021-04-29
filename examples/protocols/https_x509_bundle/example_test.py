@@ -4,7 +4,7 @@ import re
 import ttfw_idf
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI', ignore=True)
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols', ignore=True)
 def test_examples_protocol_https_x509_bundle(env, extra_data):
     """
     steps: |

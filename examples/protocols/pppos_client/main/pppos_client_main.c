@@ -59,7 +59,7 @@ static esp_err_t example_handle_cmgs(modem_dce_t *dce, const char *line)
 
 #define MODEM_SMS_MAX_LENGTH (128)
 #define MODEM_COMMAND_TIMEOUT_SMS_MS (120000)
-#define MODEM_PROMPT_TIMEOUT_MS (10)
+#define MODEM_PROMPT_TIMEOUT_MS (100)
 
 static esp_err_t example_send_message_text(modem_dce_t *dce, const char *phone_num, const char *text)
 {

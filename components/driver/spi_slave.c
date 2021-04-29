@@ -119,7 +119,6 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     uint32_t actual_rx_dma_chan = 0;
     esp_err_t ret = ESP_OK;
     esp_err_t err;
-    //We only support HSPI/VSPI, period.
     SPI_CHECK(is_valid_host(host), "invalid host", ESP_ERR_INVALID_ARG);
 #ifdef CONFIG_IDF_TARGET_ESP32
     SPI_CHECK(dma_chan >= SPI_DMA_DISABLED && dma_chan <= SPI_DMA_CH_AUTO, "invalid dma channel", ESP_ERR_INVALID_ARG );

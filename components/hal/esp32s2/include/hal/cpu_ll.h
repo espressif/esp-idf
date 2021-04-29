@@ -165,7 +165,7 @@ static inline bool cpu_ll_is_debugger_attached(void)
 
 static inline void cpu_ll_break(void)
 {
-    __asm__ ("break 0,0");
+    __asm__ ("break 1,15");
 }
 
 static inline void cpu_ll_set_vecbase(const void* vecbase)

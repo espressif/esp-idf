@@ -61,11 +61,6 @@ void ds_hal_start(void);
 void ds_hal_finish(void);
 
 /**
- * @brief Check whether the key input (HMAC on ESP32-C3) is correct.
- */
-ds_key_check_t ds_hal_check_decryption_key(void);
-
-/**
  * @brief Write the initialization vector.
  */
 void ds_hal_configure_iv(const uint32_t *iv);

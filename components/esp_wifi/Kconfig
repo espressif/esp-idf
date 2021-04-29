@@ -349,42 +349,22 @@ menu "Wi-Fi"
         help
             The maximum time that wifi keep alive, unit: seconds.
 
+    config ESP_WIFI_FTM_ENABLE
+        bool "WiFi FTM"
+        default n
+        depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3)
+        help
+            Enable feature Fine Timing Measurement for calculating WiFi Round-Trip-Time (RTT).
+
     config ESP_WIFI_FTM_INITIATOR_SUPPORT
         bool "FTM Initiator support"
         default y
-        depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3)
-
-    config ESP_WIFI_FTM_REPORT_LOG_ENABLE
-        bool "FTM Report logging"
-        default n
-        depends on ESP_WIFI_FTM_INITIATOR_SUPPORT
-        help
-            Select this option to get a detailed report of FTM Procedure with raw values
-
-    config ESP_WIFI_FTM_REPORT_SHOW_RTT
-        depends on ESP_WIFI_FTM_REPORT_LOG_ENABLE
-        bool "Show RTT values"
-        default y
-
-    config ESP_WIFI_FTM_REPORT_SHOW_DIAG
-        depends on ESP_WIFI_FTM_REPORT_LOG_ENABLE
-        bool "Show dialog tokens"
-        default y
-
-    config ESP_WIFI_FTM_REPORT_SHOW_T1T2T3T4
-        depends on ESP_WIFI_FTM_REPORT_LOG_ENABLE
-        bool "Show T1 to T4"
-        default y
-
-    config ESP_WIFI_FTM_REPORT_SHOW_RSSI
-        depends on ESP_WIFI_FTM_REPORT_LOG_ENABLE
-        bool "Show RSSI levels"
-        default y
+        depends on ESP_WIFI_FTM_ENABLE
 
     config ESP_WIFI_FTM_RESPONDER_SUPPORT
         bool "FTM Responder support"
         default y
-        depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3)
+        depends on ESP_WIFI_FTM_ENABLE
 
     config ESP_WIFI_STA_DISCONNECTED_PM_ENABLE
         bool "Power Management for station at disconnected"
@@ -487,5 +467,13 @@ menu "PHY"
             down when PHY is disabled. Enabling this setting reduces power consumption
             by a small amount but increases RAM use by approximately 4 KB(Wi-Fi only),
             2 KB(Bluetooth only) or 5.3 KB(Wi-Fi + Bluetooth).
+
+            #Reduce PHY TX power when brownout reset
+    config ESP32_REDUCE_PHY_TX_POWER
+        bool "Reduce PHY TX power when brownout reset"
+        depends on ESP32_BROWNOUT_DET
+        default y
+        help
+            When brownout reset occurs, reduce PHY TX power to keep the code running.
 
 endmenu  # PHY

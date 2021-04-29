@@ -17,6 +17,7 @@
 #include <sys/param.h> // For MIN/MAX
 #include "spi_flash_chip_generic.h"
 #include "spi_flash_defs.h"
+#include "hal/spi_flash_encrypt_hal.h"
 #include "esp_log.h"
 #include "esp_attr.h"
 
@@ -37,6 +38,16 @@ DRAM_ATTR const static flash_chip_dummy_t default_flash_chip_dummy = {
     .dout_dummy_bitlen = SPI_FLASH_DOUT_DUMMY_BITLEN,
     .fastrd_dummy_bitlen = SPI_FLASH_FASTRD_DUMMY_BITLEN,
     .slowrd_dummy_bitlen = SPI_FLASH_SLOWRD_DUMMY_BITLEN,
+};
+
+// These are the pointer to HW flash encryption. Default using hardware encryption.
+DRAM_ATTR static spi_flash_encryption_t esp_flash_encryption_default __attribute__((__unused__)) = {
+    .flash_encryption_enable = spi_flash_encryption_hal_enable,
+    .flash_encryption_disable = spi_flash_encryption_hal_disable,
+    .flash_encryption_data_prepare = spi_flash_encryption_hal_prepare,
+    .flash_encryption_done = spi_flash_encryption_hal_done,
+    .flash_encryption_destroy = spi_flash_encryption_hal_destroy,
+    .flash_encryption_check = spi_flash_encryption_hal_check,
 };
 
 DRAM_ATTR flash_chip_dummy_t *rom_flash_chip_dummy = (flash_chip_dummy_t *)&default_flash_chip_dummy;
@@ -265,7 +276,65 @@ esp_err_t spi_flash_chip_generic_write(esp_flash_t *chip, const void *buffer, ui
 
 esp_err_t spi_flash_chip_generic_write_encrypted(esp_flash_t *chip, const void *buffer, uint32_t address, uint32_t length)
 {
-    return ESP_ERR_FLASH_UNSUPPORTED_HOST; // TODO
+    spi_flash_encryption_t *esp_flash_encryption = &esp_flash_encryption_default;
+    esp_err_t err = ESP_OK;
+    // Encryption must happen on main flash.
+    if (chip != esp_flash_default_chip) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    /* Check if the buffer and length can qualify the requirments */
+    if (esp_flash_encryption->flash_encryption_check(address, length) != true) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    const uint8_t *data_bytes = (const uint8_t *)buffer;
+    esp_flash_encryption->flash_encryption_enable();
+    while (length > 0) {
+        int block_size;
+        /* Write the largest block if possible */
+        if (address % 64 == 0 && length >= 64) {
+            block_size = 64;
+        } else if (address % 32 == 0 && length >= 32) {
+            block_size = 32;
+        } else {
+            block_size = 16;
+        }
+        // Prepare the flash chip (same time as AES operation, for performance)
+        esp_flash_encryption->flash_encryption_data_prepare(address, (uint32_t *)data_bytes, block_size);
+        err = chip->chip_drv->set_chip_write_protect(chip, false);
+        if (err != ESP_OK) {
+            return err;
+        }
+        // Waiting for encrypting buffer to finish and making result visible for SPI1
+        esp_flash_encryption->flash_encryption_done();
+
+        // Note: For encryption function, after write flash command is sent. The hardware will write the encrypted buffer
+        // prepared in XTS_FLASH_ENCRYPTION register in function `flash_encryption_data_prepare`, instead of the origin
+        // buffer named `data_bytes`.
+
+        err = chip->chip_drv->write(chip, (uint32_t *)data_bytes, address, length);
+        if (err != ESP_OK) {
+            return err;
+        }
+        err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->page_program_timeout);
+        if (err != ESP_OK) {
+            return err;
+        }
+
+        // Note: we don't wait for idle status here, because this way
+        // the AES peripheral can start encrypting the next
+        // block while the SPI flash chip is busy completing the write
+
+        esp_flash_encryption->flash_encryption_destroy();
+
+        length -= block_size;
+        data_bytes += block_size;
+        address += block_size;
+    }
+
+    esp_flash_encryption->flash_encryption_disable();
+    return err;
 }
 
 esp_err_t spi_flash_chip_generic_set_write_protect(esp_flash_t *chip, bool write_protect)

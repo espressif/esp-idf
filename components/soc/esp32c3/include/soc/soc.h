@@ -27,7 +27,6 @@
 #define DR_REG_SYSTEM_BASE                      0x600c0000
 #define DR_REG_SENSITIVE_BASE                   0x600c1000
 #define DR_REG_INTERRUPT_BASE                   0x600c2000
-#define DR_REG_DMA_COPY_BASE                    0x600c3000
 #define DR_REG_EXTMEM_BASE                      0x600c4000
 #define DR_REG_MMU_TABLE                        0x600c5000
 #define DR_REG_AES_BASE                         0x6003a000
@@ -59,7 +58,7 @@
 #define DR_REG_BB_BASE                          0x6001D000
 #define DR_REG_TIMERGROUP0_BASE                 0x6001F000
 #define DR_REG_TIMERGROUP1_BASE                 0x60020000
-#define DR_REG_SYS_TIMER_BASE                   0x60023000
+#define DR_REG_SYSTIMER_BASE                    0x60023000
 #define DR_REG_SPI2_BASE                        0x60024000
 #define DR_REG_SYSCON_BASE                      0x60026000
 #define DR_REG_APB_CTRL_BASE                    0x60026000    /* Old name for SYSCON, to be removed */

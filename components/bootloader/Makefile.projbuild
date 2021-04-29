@@ -17,6 +17,8 @@ CONFIG_SECURE_BOOT_SIGNING_KEY ?=
 SECURE_BOOT_SIGNING_KEY=$(abspath $(call dequote,$(CONFIG_SECURE_BOOT_SIGNING_KEY)))
 export SECURE_BOOT_SIGNING_KEY  # used by bootloader_support component
 
+BOOTLOADER_SIGNED_BIN ?=
+
 # Has a matching value in bootloader_support esp_flash_partitions.h
 BOOTLOADER_OFFSET := 0x1000
 

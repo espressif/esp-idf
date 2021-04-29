@@ -21,9 +21,10 @@
 #include "driver/periph_ctrl.h"
 #include "esp_crypto_lock.h"
 #include "hal/ds_hal.h"
+#include "hal/ds_ll.h"
 #include "hal/hmac_hal.h"
 #include "esp32c3/rom/digital_signature.h"
-
+#include "esp_timer.h"
 #include "esp_ds.h"
 
 struct esp_ds_context {
@@ -128,10 +129,12 @@ esp_err_t esp_ds_start_sign(const void *message,
     ds_hal_start();
 
     // check encryption key from HMAC
-    ds_key_check_t key_check_result = ds_hal_check_decryption_key();
-    if (key_check_result != DS_KEY_INPUT_OK) {
-        ds_disable_release();
-        return ESP32C3_ERR_HW_CRYPTO_DS_INVALID_KEY;
+    int64_t start_time = esp_timer_get_time();
+    while (ds_ll_busy() != 0) {
+        if ((esp_timer_get_time() - start_time) > DS_KEY_CHECK_MAX_WAIT_US) {
+            ds_disable_release();
+            return ESP32C3_ERR_HW_CRYPTO_DS_INVALID_KEY;
+        }
     }
 
     esp_ds_context_t *context = malloc(sizeof(esp_ds_context_t));

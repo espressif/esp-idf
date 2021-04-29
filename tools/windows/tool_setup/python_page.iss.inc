@@ -128,13 +128,10 @@ end;
 
 <event('ShouldSkipPage')>
 function ShouldSkipPythonPage(PageID: Integer): Boolean;
-var
-  UseEmbeddedPythonParam: String;
 begin
   if (PageID = PythonPage.ID) then begin
     { Skip in case of embedded Python. }
-    UseEmbeddedPythonParam := ExpandConstant('{param:USEEMBEDDEDPYTHON|yes}');
-    if (UseEmbeddedPythonParam = 'yes') then begin
+    if (UseEmbeddedPython) then begin
       ApplyPythonConfigurationByIndex(0);
       Result := True;
     end;

@@ -60,6 +60,7 @@
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 #define SOC_CAPS_ECO_VER_MAX        3
 
+#define SOC_DAC_SUPPORTED           1
 #define SOC_MCPWM_SUPPORTED         1
 #define SOC_SDMMC_HOST_SUPPORTED    1
 #define SOC_BT_SUPPORTED            1
@@ -164,7 +165,7 @@
 /*-------------------------- MPU CAPS ----------------------------------------*/
 //TODO: correct the caller and remove unsupported lines
 #define SOC_MPU_CONFIGURABLE_REGIONS_SUPPORTED    0
-#define SOC_MPU_MIN_REGION_SIZE                   0x20000000
+#define SOC_MPU_MIN_REGION_SIZE                   0x20000000U
 #define SOC_MPU_REGIONS_MAX_NUM                   8
 #define SOC_MPU_REGION_RO_SUPPORTED               0
 #define SOC_MPU_REGION_WO_SUPPORTED               0
@@ -223,25 +224,14 @@
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_BRP_MIN                        2
-#define SOC_TWAI_SUPPORT_MULTI_ADDRESS_LAYOUT   1
-
-#define SOC_TWAI_BRP_MAX_ECO0               128
-//Any even number from 2 to 128
-#define SOC_TWAI_BRP_IS_VALID_ECO0(brp)     ((brp) >= 2 && (brp) <= 128 && ((brp) & 0x1) == 0)
-
-#define SOC_TWAI_BRP_MAX_ECO                256
-//Any even number from 2 to 128, or multiples of 4 from 132 to 256
-#define SOC_TWAI_BRP_IS_VALID_ECO(brp)      (((brp) >= 2 && (brp) <= 128 && ((brp) & 0x1) == 0) || ((brp) >= 132 && (brp) <= 256 && ((brp) & 0x3) == 0))
-
 #if SOC_CAPS_ECO_VER >= 2
+#  define SOC_TWAI_BRP_MAX              256
 #  define SOC_TWAI_BRP_DIV_SUPPORTED    1
 #  define SOC_TWAI_BRP_DIV_THRESH       128
-#  define SOC_TWAI_BRP_IS_VALID         SOC_TWAI_BRP_IS_VALID_ECO
-#  define SOC_TWAI_BRP_MAX              SOC_TWAI_BRP_MAX_ECO
 #else
-#  define SOC_TWAI_BRP_IS_VALID         SOC_TWAI_BRP_IS_VALID_ECO0
-#  define SOC_TWAI_BRP_MAX              SOC_TWAI_BRP_MAX_ECO0
+#  define SOC_TWAI_BRP_MAX              128
 #endif
+#define SOC_TWAI_SUPPORT_MULTI_ADDRESS_LAYOUT   1
 
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32 have 3 UART.
@@ -274,6 +264,9 @@
 #define SOC_AES_SUPPORT_AES_192 (1)
 #define SOC_AES_SUPPORT_AES_256 (1)
 
+/*-------------------------- Flash Encryption CAPS----------------------------*/
+#define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (32)
+
 /*--------------- PHY REGISTER AND MEMORY SIZE CAPS --------------------------*/
 #define SOC_PHY_DIG_REGS_MEM_SIZE       (21*4)
 
@@ -284,5 +277,8 @@
 #define SOC_CAN_SUPPORTED                   SOC_TWAI_SUPPORTED
 #define CAN_BRP_MIN                         SOC_TWAI_BRP_MIN
 #define CAN_BRP_MAX                         SOC_TWAI_BRP_MAX
-#define CAN_BRP_DIV_THRESH                  SOC_TWAI_BRP_DIV_THRESH
 #define CAN_SUPPORT_MULTI_ADDRESS_LAYOUT    SOC_TWAI_SUPPORT_MULTI_ADDRESS_LAYOUT
+#if SOC_CAPS_ECO_VER >= 2
+#  define CAN_BRP_DIV_SUPPORTED             SOC_TWAI_BRP_DIV_SUPPORTED
+#  define CAN_BRP_DIV_THRESH                SOC_TWAI_BRP_DIV_THRESH
+#endif

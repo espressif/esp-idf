@@ -395,7 +395,11 @@ esp_err_t esp_partition_write(const esp_partition_t* partition,
         if (partition->flash_chip != esp_flash_default_chip) {
             return ESP_ERR_NOT_SUPPORTED;
         }
+#ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
+        return esp_flash_write_encrypted(partition->flash_chip, dst_offset, src, size);
+#else
         return spi_flash_write_encrypted(dst_offset, src, size);
+#endif // CONFIG_SPI_FLASH_USE_LEGACY_IMPL
 #else
         return ESP_ERR_NOT_SUPPORTED;
 #endif // CONFIG_SPI_FLASH_ENABLE_ENCRYPTED_READ_WRITE

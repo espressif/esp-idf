@@ -91,8 +91,8 @@ typedef struct {
 /**
  * Init the peripheral and the context.
  *
- * @param hal     Context of the HAL layer.
- * @param host_id Index of the SPI peripheral. 0 for SPI1, 1 for HSPI (SPI2) and 2 for VSPI (SPI3).
+ * @param hal        Context of the HAL layer.
+ * @param hal_config Configuration of the HAL
  */
 void spi_slave_hal_init(spi_slave_hal_context_t *hal, const spi_slave_hal_config_t *hal_config);
 

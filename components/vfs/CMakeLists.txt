@@ -1,4 +1,5 @@
 idf_component_register(SRCS "vfs.c"
+                            "vfs_eventfd.c"
                             "vfs_uart.c"
                             "vfs_semihost.c"
                     INCLUDE_DIRS include)

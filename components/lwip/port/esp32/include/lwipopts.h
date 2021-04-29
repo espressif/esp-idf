@@ -453,6 +453,8 @@
  */
 #define LWIP_NETIF_API                      CONFIG_LWIP_NETIF_API
 
+#define LWIP_NETIF_STATUS_CALLBACK      CONFIG_LWIP_NETIF_STATUS_CALLBACK
+
 /*
    ------------------------------------
    ---------- LOOPIF options ----------
@@ -688,7 +690,7 @@
  * Some modems do not support IPV6 addressing in local link and
  * the only option available is to disable IPV6 address negotiation.
  */
-#define PPP_IPV6_SUPPORT				CONFIG_LWIP_PPP_ENABLE_IPV6
+#define PPP_IPV6_SUPPORT                               CONFIG_LWIP_PPP_ENABLE_IPV6
 
 /**
  * PPP_NOTIFY_PHASE==1: Support PPP notify phase.
@@ -745,16 +747,17 @@
    --------- LCP Echo options ---------
    ------------------------------------
 */
+#if CONFIG_LWIP_ENABLE_LCP_ECHO
 /**
  * LCP_ECHOINTERVAL: Interval in seconds between keepalive LCP echo requests, 0 to disable.
  */
-#define LCP_ECHOINTERVAL                CONFIG_LCP_ECHOINTERVAL
+#define LCP_ECHOINTERVAL                CONFIG_LWIP_LCP_ECHOINTERVAL
 
 /**
  * LCP_MAXECHOFAILS: Number of consecutive unanswered echo requests before failure is indicated.
  */
-#define LCP_MAXECHOFAILS                CONFIG_LCP_MAXECHOFAILS
-
+#define LCP_MAXECHOFAILS                CONFIG_LWIP_LCP_MAXECHOFAILS
+#endif /* CONFIG_LWIP_ENABLE_LCP_ECHO */
 
 /*
    --------------------------------------
@@ -956,6 +959,10 @@
  */
 #define LWIP_SOCKET_OFFSET              (FD_SETSIZE - CONFIG_LWIP_MAX_SOCKETS)
 
+#define LWIP_IPV6_FORWARD               CONFIG_LWIP_IPV6_FORWARD
+
+#define LWIP_IPV6_NUM_ADDRESSES         CONFIG_LWIP_IPV6_NUM_ADDRESSES
+
 /* Enable all Espressif-only options */
 
 #define ESP_LWIP                        1
@@ -1013,7 +1020,11 @@
 /**
  * LWIP_DEBUG: Enable lwip debugging in other modules.
  */
-#define LWIP_DEBUG                      LWIP_DBG_OFF
+#ifdef CONFIG_LWIP_DEBUG
+#define LWIP_DEBUG                      LWIP_DBG_ON
+#else
+#undef LWIP_DEBUG
+#endif
 
 #define CHECKSUM_CHECK_UDP              CONFIG_LWIP_CHECKSUM_CHECK_UDP
 #define CHECKSUM_CHECK_IP               CONFIG_LWIP_CHECKSUM_CHECK_IP

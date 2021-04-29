@@ -46,7 +46,7 @@ def tcp_client(address, payload):
     return data.decode()
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
 def test_examples_protocol_socket_tcpserver(env, extra_data):
     MESSAGE = 'Data to ESP'
     """

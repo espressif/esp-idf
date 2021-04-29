@@ -8,6 +8,14 @@
 
 #include "sdkconfig.h"
 
+#ifdef CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
+#define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE + CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE)
+#elif defined(CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP)
+#define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE)
+#else
+#define ESP_BOOTLOADER_RESERVE_RTC 0
+#endif
+
 #define SRAM_IRAM_START     0x40370000
 #define SRAM_DRAM_START     0x3FC80000
 #define I_D_SRAM_OFFSET     (SRAM_IRAM_START - SRAM_DRAM_START)
@@ -65,7 +73,7 @@ MEMORY
   /**
    * RTC fast memory (executable). Persists over deep sleep.
    */
-  rtc_iram_seg(RWX) :                org = 0x600fe000, len = 0x2000
+  rtc_iram_seg(RWX) :                org = 0x600fe000, len = 0x2000 - ESP_BOOTLOADER_RESERVE_RTC
 
   /**
    * RTC fast memory (same block as above), viewed from data bus
@@ -109,3 +117,12 @@ REGION_ALIAS("default_rodata_seg", drom0_0_seg);
 #else
 REGION_ALIAS("default_rodata_seg", dram0_0_seg);
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+
+/**
+ *  If rodata default segment is placed in `drom0_0_seg`, then flash's first rodata section must
+ *  also be first in the segment.
+ */
+#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+  ASSERT(_flash_rodata_dummy_start == ORIGIN(default_rodata_seg),
+         ".flash_rodata_dummy section must be placed at the beginning of the rodata segment.")
+#endif

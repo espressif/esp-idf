@@ -608,7 +608,13 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
         goto error;
     }
 
-    if (config->use_global_ca_store == true) {
+    if (config->crt_bundle_attach != NULL) {
+#ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+        esp_transport_ssl_crt_bundle_attach(ssl, config->crt_bundle_attach);
+#else //CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+        ESP_LOGE(TAG, "use_crt_bundle configured but not enabled in menuconfig: Please enable MBEDTLS_CERTIFICATE_BUNDLE option");
+#endif
+    } else if (config->use_global_ca_store == true) {
         esp_transport_ssl_enable_global_ca_store(ssl);
     } else if (config->cert_pem) {
         if (!config->cert_len) {
@@ -985,7 +991,7 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
                 }
                 ESP_LOG_LEVEL(sev, TAG, "esp_transport_read returned:%d and errno:%d ", rlen, errno);
             }
-            if (rlen < 0 && ridx == 0) {
+            if (rlen < 0 && ridx == 0 && !esp_http_client_is_complete_data_received(client)) {
                 return ESP_FAIL;
             } else {
                 return ridx;

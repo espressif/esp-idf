@@ -40,6 +40,7 @@
 #include "esp_phy_init.h"
 #include "soc/dport_reg.h"
 #include "soc/syscon_reg.h"
+#include "hal/interrupt_controller_hal.h"
 #include "phy_init_data.h"
 #include "driver/periph_ctrl.h"
 #include "nvs.h"
@@ -667,8 +668,8 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._set_intr = set_intr_wrapper,
     ._clear_intr = clear_intr_wrapper,
     ._set_isr = set_isr_wrapper,
-    ._ints_on = xt_ints_on,
-    ._ints_off = xt_ints_off,
+    ._ints_on = interrupt_controller_hal_enable_interrupts,
+    ._ints_off = interrupt_controller_hal_disable_interrupts,
     ._is_from_isr = is_from_isr_wrapper,
     ._spin_lock_create = spin_lock_create_wrapper,
     ._spin_lock_delete = free,

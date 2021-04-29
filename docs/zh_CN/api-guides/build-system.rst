@@ -36,7 +36,7 @@ ESP-IDF 可以显式地指定和配置每个组件。在构建项目的时候，
 
 - ``组件`` 是模块化且独立的代码，会被编译成静态库（.a 文件）并链接到应用程序。部分组件由 ESP-IDF 官方提供，其他组件则来源于其它开源项目。
 
-- ``目标`` 特指运行构建后应用程序的硬件设备。ESP-IDF 当前仅支持 ``esp32`` 和 ``esp32s2`` 这两个硬件目标。
+- ``目标`` 特指运行构建后应用程序的硬件设备。ESP-IDF 当前仅支持 ``esp32`` 和 ``esp32s2`` 以及 ``esp32c3`` 这三个硬件目标。
 
 请注意，以下内容并不属于项目的组成部分：
 
@@ -83,7 +83,7 @@ idf.py
 
 对于 ``idf.py`` 不知道的指令，``idf.py`` 会尝试将其作为构建系统的目标来执行。
 
-``idf.py`` 命令支持 bash, zsh 以及 fish shell 的 `自动补全 <https://click.palletsprojects.com/bashcomplete/>`_。
+``idf.py`` 命令支持 bash、 zsh 以及 fish shell 的 `自动补全 <https://click.palletsprojects.com/bashcomplete/>`_。
 
 要实现实现 shell `自动补全 <https://click.palletsprojects.com/bashcomplete/>`_，请先确保您安装了 Python 3.5 以及 `click <https://click.palletsprojects.com/>`_ 7.1 及以上版本（:ref:`请参考这里 <get-started-get-prerequisites>`)。
 
@@ -216,7 +216,7 @@ ESP-IDF 适用于所有支持的 Python 版本。即使您系统中默认的 ``p
 .. code-block:: none
 
     Traceback (most recent call last):
-      File "/Users/user_name/e/esp-idf/tools/kconfig_new/confgen.py", line 27, in <module>
+      File "/Users/user_name/e/esp-idf/tools/kconfig_new/confgen.py"、 line 27、 in <module>
         import kconfiglib
     ImportError: bad magic number in 'kconfiglib': b'\x03\xf3\r\n'
 
@@ -322,6 +322,26 @@ ESP-IDF 适用于所有支持的 Python 版本。即使您系统中默认的 ``p
 2. 在项目 CMakeLists.txt 文件中设置 ``EXTRA_COMPONENT_DIRS``，并添加重命名后的 ``main`` 目录。
 3. 在组件的 CMakeLists.txt 文件中设置 ``COMPONENT_REQUIRES`` 或 ``COMPONENT_PRIV_REQUIRES`` 以指定依赖项。
 
+
+覆盖默认的构建规范
+---------------------------------------
+
+构建系统设置了一些全局的构建规范（编译标志、定义等），这些规范可用于编译来自所有组件的所有源文件。
+
+.. highlight:: cmake
+
+例如，其中一个默认的构建规范是编译选项 ``Wextra``。假设一个用户想用 ``Wno-extra`` 来覆盖这个选项，
+应在 ``project()`` 之后进行::
+
+
+    cmake_minimum_required(VERSION 3.5)
+    include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+    project(myProject)
+
+    idf_build_set_property(COMPILE_OPTIONS "-Wno-error" APPEND)
+
+这确保了用户设置的编译选项不会被默认的构建规范所覆盖，因为默认的构建规范是在 ``project()`` 内设置的。
+
 .. _component-directories:
 
 组件 CMakeLists 文件
@@ -343,7 +363,7 @@ ESP-IDF 适用于所有支持的 Python 版本。即使您系统中默认的 ``p
 同名组件
 --------
 
-ESP-IDF 在搜索所有待构建的组件时，会按照 ``COMPONENT_DIRS`` 指定的顺序依次进行，这意味着在默认情况下，首先搜索 ESP-IDF 内部组件，然后是项目组件，最后是 ``EXTRA_COMPONENT_DIRS`` 中的组件。如果这些目录中的两个或者多个包含具有相同名字的组件，则使用搜索到的最后一个位置的组件。这就允许将组件复制到项目目录中再修改以覆盖 ESP-IDF 组件，如果使用这种方式，ESP-IDF 目录本身可以保持不变。
+ESP-IDF 在搜索所有待构建的组件时，会按照 ``COMPONENT_DIRS`` 指定的顺序依次进行，这意味着在默认情况下，首先搜索 ESP-IDF 内部组件（``IDF_PATH/components``），然后是 ``EXTRA_COMPONENT_DIRS`` 中的组件，最后是项目组件（``PROJECT_DIR/components``）。如果这些目录中的两个或者多个包含具有相同名字的组件，则使用搜索到的最后一个位置的组件。这就允许将组件复制到项目目录中再修改以覆盖 ESP-IDF 组件，如果使用这种方式，ESP-IDF 目录本身可以保持不变。
 
 .. 注解:: 如果在现有项目中通过将组件移动到一个新位置来覆盖它，项目不会自动看到新组件的路径。请运行 ``idf.py reconfigure`` 命令后（或删除项目构建文件夹）再重新构建。 
 
@@ -362,7 +382,7 @@ ESP-IDF 在搜索所有待构建的组件时，会按照 ``COMPONENT_DIRS`` 指�
 
 - ``SRCS`` 是源文件列表（``*.c``、``*.cpp``、``*.cc``、``*.S``），里面所有的源文件都将会编译进组件库中。
 - ``INCLUDE_DIRS`` 是目录列表，里面的路径会被添加到所有需要该组件的组件（包括 main 组件）全局 include 搜索路径中。
-- ``REQUIRES`` 实际上并不是必需的，但通常需要它来声明该组件需要使用哪些其它组件，请参考 :ref:`component requirements`.
+- ``REQUIRES`` 实际上并不是必需的，但通常需要它来声明该组件需要使用哪些其它组件，请参考 :ref:`component requirements`。
 
 上述命令会构建生成与组件同名的库，并最终被链接到应用程序中。
 
@@ -370,7 +390,7 @@ ESP-IDF 在搜索所有待构建的组件时，会按照 ``COMPONENT_DIRS`` 指�
 
 还有其它参数可以传递给 ``idf_component_register``，具体可参考 :ref:`here<cmake-component-register>`。
 
-有关更完整的 ``CMakeLists.txt`` 示例，请参阅 `组件依赖示例`_ 和  `组件 CMakeLists 示例`_。
+有关更完整的 ``CMakeLists.txt`` 示例，请参阅 `组件依赖示例`_ 和 `组件 CMakeLists 示例`_。
 
 创建新组件
 -------------
@@ -393,9 +413,9 @@ ESP-IDF 在搜索所有待构建的组件时，会按照 ``COMPONENT_DIRS`` 指�
 以下专用于组件的变量可以在组件 CMakeLists 中使用，但不建议修改：
 
 - ``COMPONENT_DIR``：组件目录，即包含 ``CMakeLists.txt`` 文件的绝对路径，它与 ``CMAKE_CURRENT_SOURCE_DIR`` 变量一样，路径中不能包含空格。
-- ``COMPONENT_NAME``： 组件名，与组件目录名相同。
-- ``COMPONENT_ALIAS``： 库别名，由构建系统在内部为组件创建。
-- ``COMPONENT_LIB``： 库名，由构建系统在内部为组件创建。
+- ``COMPONENT_NAME``：组件名，与组件目录名相同。
+- ``COMPONENT_ALIAS``：库别名，由构建系统在内部为组件创建。
+- ``COMPONENT_LIB``：库名，由构建系统在内部为组件创建。
 
 以下变量在项目级别中被设置，但可在组件 CMakeLists 中使用：
 
@@ -412,7 +432,7 @@ ESP-IDF 在搜索所有待构建的组件时，会按照 ``COMPONENT_DIRS`` 指�
 - ``PROJECT_DIR``：项目目录（包含项目 CMakeLists 文件）的绝对路径，与 ``CMAKE_SOURCE_DIR`` 变量相同。
 - ``COMPONENTS``：此次构建中包含的所有组件的名称，具体格式为用分号隔开的 CMake 列表。
 - ``IDF_VER``：ESP-IDF 的 git 版本号，由 ``git describe`` 命令生成。
-- ``IDF_VERSION_MAJOR``, ``IDF_VERSION_MINOR``, ``IDF_VERSION_PATCH``: ESP-IDF 的组件版本，可用于条件表达式。请注意这些信息的精确度不如 ``IDF_VER`` 变量，版本号 ``v4.0-dev-*``， ``v4.0-beta1``， ``v4.0-rc1`` 和 ``v4.0`` 对应的 ``IDF_VERSION_*`` 变量值是相同的，但是 ``IDF_VER`` 的值是不同的。
+- ``IDF_VERSION_MAJOR``、 ``IDF_VERSION_MINOR``、 ``IDF_VERSION_PATCH``: ESP-IDF 的组件版本，可用于条件表达式。请注意这些信息的精确度不如 ``IDF_VER`` 变量，版本号 ``v4.0-dev-*``， ``v4.0-beta1``， ``v4.0-rc1`` 和 ``v4.0`` 对应的 ``IDF_VERSION_*`` 变量值是相同的，但是 ``IDF_VER`` 的值是不同的。
 - ``IDF_TARGET``：项目的硬件目标名称。
 - ``PROJECT_VER``：项目版本号。
 
@@ -618,7 +638,7 @@ Spark Plug 组件
 
 为避免重复性工作，各组件都用自动依赖一些“通用” IDF 组件，即使它们没有被明确提及。这些组件的头文件会一直包含在构建系统中。
 
-通用组件包括：freertos、newlib、heap、log、soc、esp_rom、esp_common、xtensa/riscv、cxx。
+通用组件包括：cxx、newlib、freertos、esp_hw_support、heap、log、lwip、soc、hal、esp_rom、esp_common、esp_system。
 
 在构建中导入组件
 -----------------
@@ -864,7 +884,6 @@ CMake 文件可以使用 ``IDF_TARGET`` 变量来获取当前的硬件目标。
 
 有关使用此技术的示例，请查看 file_serving 示例 :example_file:`protocols/http_server/file_serving/main/CMakeLists.txt` 中的 main 组件，两个文件会在编译时加载并链接到固件中。
 
-
 .. highlight:: cmake
 
 也可以嵌入生成的文件::
@@ -1092,7 +1111,7 @@ CMake 在许多开源的 C/C++ 项目中广泛使用，用户可以在自己的�
   add_library(foo bar.c fizz.cpp buzz.cpp)
 
   if(ESP_PLATFORM)
-    # 在 ESP-IDF 中, bar.c 需要包含 spi_flash 组件中的 esp_spi_flash.h 
+    # 在 ESP-IDF 中、 bar.c 需要包含 spi_flash 组件中的 esp_spi_flash.h 
     target_link_libraries(foo PRIVATE idf::spi_flash)
   endif()
 
@@ -1300,7 +1319,7 @@ idf 组件命令
 ``idf_component_register`` 的参数包括：
 
   - SRCS - 组件的源文件，用于为组件创建静态库；如果没有指定，组件将被视为仅配置组件，从而创建接口库。
-  - SRC_DIRS, EXCLUDE_SRCS - 用于通过指定目录来 glob 源文件 (.c、.cpp、.S)，而不是通过 SRCS 手动指定源文件。请注意，这受 :ref:`CMake 中通配符的限制<cmake-file-globbing>`。 在 EXCLUDE_SRCS 中指定的源文件会从被 glob 的文件中移除。
+  - SRC_DIRS、 EXCLUDE_SRCS - 用于通过指定目录来 glob 源文件 (.c、.cpp、.S)，而不是通过 SRCS 手动指定源文件。请注意，这受 :ref:`CMake 中通配符的限制<cmake-file-globbing>`。 在 EXCLUDE_SRCS 中指定的源文件会从被 glob 的文件中移除。
   - INCLUDE_DIRS - 相对于组件目录的路径，该路径将被添加到需要当前组件的所有其他组件的 include 搜索路径中。
   - PRIV_INCLUDE_DIRS - 必须是相对于组件目录的目录路径，它仅被添加到这个组件源文件的 include 搜索路径中。
   - REQUIRES - 组件的公共组件依赖项。

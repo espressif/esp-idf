@@ -6,6 +6,7 @@ API 指南
    :maxdepth: 1
 
    应用层跟踪 <app_trace>
+   Application Startup Flow <startup>
    :SOC_BT_SUPPORTED: BluFi <blufi>
    引导加载程序 <bootloader>
    构建系统 <build-system>
@@ -21,12 +22,12 @@ API 指南
    严重错误 <fatal-errors>
    Flash 加密 <../security/flash-encryption>
    FreeRTOS SMP 变化 <freertos-smp>
-   一般注意事项 <general-notes>
    硬件抽象层 <hardware-abstraction>
    :CONFIG_IDF_TARGET_ARCH_XTENSA: 高层中断 <hlinterrupts>
    JTAG 调试 <jtag-debugging/index>
    链接脚本生成机制 <linker-script-generation>
    lwIP TCP/IP 协议栈 <lwip>
+   Memory Types <memory-types>
    分区表 <partition-tables>
    :esp32: 射频校准 <RF_calibration>
    :esp32: ROM 调试控制台 <romconsole>
@@ -37,7 +38,8 @@ API 指南
    :SOC_ULP_SUPPORTED: ULP 协处理器 <ulp>
    :esp32: ULP (传统 GNU Make) <ulp-legacy>
    :esp32s2: ULP-RISC-V 协处理器 <ulp-risc-v>
-   单元测试 <unit-tests>
+   单元测试 (Target) <unit-tests>
+   单元测试 (Linux Host) <linux-host-testing>
    :esp32: 单元测试 (传统 GNU Make) <unit-tests-legacy>
    :esp32s2: USB 控制台 <usb-console>
    Wi-Fi 驱动 <wifi>

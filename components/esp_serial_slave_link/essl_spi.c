@@ -76,6 +76,22 @@ esp_err_t essl_spi_rdbuf(spi_device_handle_t spi, uint8_t *out_data, int addr, i
     return spi_device_transmit(spi, (spi_transaction_t*)&t);
 }
 
+esp_err_t essl_spi_rdbuf_polling(spi_device_handle_t spi, uint8_t *out_data, int addr, int len, uint32_t flags)
+{
+    spi_transaction_ext_t t = {
+        .base = {
+            .cmd = get_hd_command(CMD_HD_RDBUF_REG, flags),
+            .addr = addr % 72,
+            .rxlength = len * 8,
+            .rx_buffer = out_data,
+            .flags = flags | SPI_TRANS_VARIABLE_DUMMY,
+        },
+        .dummy_bits = get_hd_dummy_bits(flags),
+    };
+
+    return spi_device_polling_transmit(spi, (spi_transaction_t*)&t);
+}
+
 esp_err_t essl_spi_wrbuf(spi_device_handle_t spi, const uint8_t *data, int addr, int len, uint32_t flags)
 {
     spi_transaction_ext_t t = {
@@ -89,6 +105,21 @@ esp_err_t essl_spi_wrbuf(spi_device_handle_t spi, const uint8_t *data, int addr,
         .dummy_bits = get_hd_dummy_bits(flags),
     };
     return spi_device_transmit(spi, (spi_transaction_t*)&t);
+}
+
+esp_err_t essl_spi_wrbuf_polling(spi_device_handle_t spi, const uint8_t *data, int addr, int len, uint32_t flags)
+{
+    spi_transaction_ext_t t = {
+        .base = {
+            .cmd = get_hd_command(CMD_HD_WRBUF_REG, flags),
+            .addr = addr % 72,
+            .length = len * 8,
+            .tx_buffer = data,
+            .flags = flags | SPI_TRANS_VARIABLE_DUMMY,
+        },
+        .dummy_bits = get_hd_dummy_bits(flags),
+    };
+    return spi_device_polling_transmit(spi, (spi_transaction_t*)&t);
 }
 
 esp_err_t essl_spi_rddma_seg(spi_device_handle_t spi, uint8_t *out_data, int seg_len, uint32_t flags)

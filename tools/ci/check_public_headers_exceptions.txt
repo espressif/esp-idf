@@ -92,6 +92,8 @@ components/cmock/CMock/src/cmock_internals.h
 
 components/efuse/include/esp_efuse.h
 
+components/openthread/openthread/
+
 ### Here are the files that do not compile for some reason
 #
 components/app_trace/include/esp_sysview_trace.h

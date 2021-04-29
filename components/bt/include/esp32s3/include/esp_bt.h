@@ -25,8 +25,8 @@
 extern "C" {
 #endif
 
-#define ESP_BT_CTRL_CONFIG_MAGIC_VAL          0x5A5AA5A5
-#define ESP_BT_CTRL_CONFIG_VERSION            0x02004260
+#define ESP_BT_CTRL_CONFIG_MAGIC_VAL    0x5A5AA5A5
+#define ESP_BT_CTRL_CONFIG_VERSION      0x02103310
 
 #define ESP_BT_HCI_TL_MAGIC_VALUE   0xfadebead
 #define ESP_BT_HCI_TL_VERSION       0x00010000
@@ -73,7 +73,8 @@ typedef enum {
     ESP_BT_SLEEP_CLOCK_NONE            = 0,   /*!< Sleep clock not configured */
     ESP_BT_SLEEP_CLOCK_MAIN_XTAL       = 1,   /*!< SoC main crystal */
     ESP_BT_SLEEP_CLOCK_EXT_32K_XTAL    = 2,   /*!< External 32.768kHz crystal */
-    ESP_BT_SLEEP_CLOCK_FPGA_32K        = 3,   /*!< Hardwired 32KHz clock temporarily used for FPGA */
+    ESP_BT_SLEEP_CLOCK_RTC_SLOW        = 3,   /*!< Internal 90kHz RC oscillator */
+    ESP_BT_SLEEP_CLOCK_FPGA_32K        = 4,   /*!< Hardwired 32KHz clock temporarily used for FPGA */
 } esp_bt_sleep_clock_t;
 
 /**
@@ -84,22 +85,56 @@ enum {
     ESP_BT_ANT_IDX_1 = 1,               /*!< anntena NO 1 */
 };
 
+/**
+ * @brief Maximum Tx/Rx time limit on Coded-PHY connection
+ */
+enum {
+    ESP_BT_COEX_PHY_CODED_TX_RX_TIME_LIMIT_FORCE_DISABLE = 0,    /*!< Disable the limit */
+    ESP_BT_COEX_PHY_CODED_TX_RX_TIME_LIMIT_FORCE_ENABLE,         /*!< Always Enable the limit */
+};
+
 #ifdef CONFIG_BT_ENABLED
 
-#ifdef CONFIG_BT_CTRL_COEX_PARAMETERS_ENABLE
-#define BT_CTRL_COEX_PARAMETERS_ENABLE true
-#else
-#define BT_CTRL_COEX_PARAMETERS_ENABLE false
-#endif
-
-#ifdef CONFIG_BT_CTRL_COEX_USE_HOOKS
-#define BT_CTRL_COEX_USE_HOOKS true
-#else
-#define BT_CTRL_COEX_USE_HOOKS false
-#endif
-
 #define BT_CTRL_BLE_MAX_ACT_LIMIT           10  //Maximum BLE activity limitation
+#define SLAVE_CE_LEN_MIN_DEFAULT             5
 
+#ifdef CONFIG_BT_CTRL_SCAN_DUPL_TYPE
+#define SCAN_DUPLICATE_TYPE_VALUE  CONFIG_BT_CTRL_SCAN_DUPL_TYPE
+#else
+#define SCAN_DUPLICATE_TYPE_VALUE  0
+#endif
+
+/* normal adv cache size */
+#ifdef CONFIG_BT_CTRL_SCAN_DUPL_CACHE_SIZE
+#define NORMAL_SCAN_DUPLICATE_CACHE_SIZE            CONFIG_BT_CTRL_SCAN_DUPL_CACHE_SIZE
+#else
+#define NORMAL_SCAN_DUPLICATE_CACHE_SIZE            20
+#endif
+
+#ifndef CONFIG_BT_CTRL_BLE_MESH_SCAN_DUPL_EN
+#define CONFIG_BT_CTRL_BLE_MESH_SCAN_DUPL_EN FALSE
+#endif
+
+#define SCAN_DUPLICATE_MODE_NORMAL_ADV_ONLY         0
+#define SCAN_DUPLICATE_MODE_NORMAL_ADV_MESH_ADV     1
+
+#if CONFIG_BT_CTRL_BLE_MESH_SCAN_DUPL_EN
+    #define SCAN_DUPLICATE_MODE                     SCAN_DUPLICATE_MODE_NORMAL_ADV_MESH_ADV
+    #ifdef CONFIG_BT_CTRL_MESH_DUPL_SCAN_CACHE_SIZE
+    #define MESH_DUPLICATE_SCAN_CACHE_SIZE          CONFIG_BT_CTRL_MESH_DUPL_SCAN_CACHE_SIZE
+    #else
+    #define MESH_DUPLICATE_SCAN_CACHE_SIZE          50
+    #endif
+#else
+    #define SCAN_DUPLICATE_MODE SCAN_DUPLICATE_MODE_NORMAL_ADV_ONLY
+    #define MESH_DUPLICATE_SCAN_CACHE_SIZE          0
+#endif
+
+#define CFG_MASK_BIT_SCAN_DUPLICATE_OPTION    (1<<0)
+
+#define CFG_MASK      CFG_MASK_BIT_SCAN_DUPLICATE_OPTION
+
+#define BLE_HW_TARGET_CODE_ESP32S3_CHIP_ECO0                      (0x02010000)
 
 #define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {                              \
     .magic = ESP_BT_CTRL_CONFIG_MAGIC_VAL,                                 \
@@ -114,16 +149,21 @@ enum {
     .ble_st_acl_tx_buf_nb = CONFIG_BT_CTRL_BLE_STATIC_ACL_TX_BUF_NB,       \
     .ble_hw_cca_check = CONFIG_BT_CTRL_HW_CCA_EFF,                         \
     .ble_adv_dup_filt_max = CONFIG_BT_CTRL_ADV_DUP_FILT_MAX,               \
-    .coex_param_en = BT_CTRL_COEX_PARAMETERS_ENABLE,                       \
     .ce_len_type = CONFIG_BT_CTRL_CE_LENGTH_TYPE_EFF,                      \
-    .coex_use_hooks = BT_CTRL_COEX_USE_HOOKS,                              \
     .hci_tl_type = CONFIG_BT_CTRL_HCI_TL_EFF,                              \
     .hci_tl_funcs = NULL,                                                  \
     .txant_dft = CONFIG_BT_CTRL_TX_ANTENNA_INDEX_EFF,                      \
     .rxant_dft = CONFIG_BT_CTRL_RX_ANTENNA_INDEX_EFF,                      \
     .txpwr_dft = CONFIG_BT_CTRL_DFT_TX_POWER_LEVEL_EFF,                    \
+    .cfg_mask = CFG_MASK,                                                  \
+    .scan_duplicate_mode = SCAN_DUPLICATE_MODE,                            \
+    .scan_duplicate_type = SCAN_DUPLICATE_TYPE_VALUE,                      \
+    .normal_adv_size = NORMAL_SCAN_DUPLICATE_CACHE_SIZE,                   \
+    .mesh_adv_size = MESH_DUPLICATE_SCAN_CACHE_SIZE,                       \
+    .coex_phy_coded_tx_rx_time_limit = CONFIG_BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_EFF, \
+    .hw_target_code = BLE_HW_TARGET_CODE_ESP32S3_CHIP_ECO0,                \
+    .slave_ce_len_min = SLAVE_CE_LEN_MIN_DEFAULT,                          \
 };
-
 
 #else
 #define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {0}; _Static_assert(0, "please enable bluetooth in menuconfig to use bt.h");
@@ -172,14 +212,22 @@ typedef struct {
     uint8_t ble_st_acl_tx_buf_nb;           /*!< controller static ACL TX BUFFER number */
     uint8_t ble_hw_cca_check;               /*!< controller hardware triggered CCA check */
     uint16_t ble_adv_dup_filt_max;          /*!< maxinum number of duplicate scan filter */
-    bool coex_param_en;                     /*!< init coex parameters*/
+    bool coex_param_en;                     /*!< deprecated */
     uint8_t ce_len_type;                    /*!< connection event length computation method */
-    bool coex_use_hooks;                    /*!< use hooks in bluetooth to assist WiFi behavouir determination */
+    bool coex_use_hooks;                    /*!< deprecated */
     uint8_t hci_tl_type;                    /*!< HCI transport layer, UART, VHCI, etc */
     esp_bt_hci_tl_t *hci_tl_funcs;          /*!< hci transport functions used, must be set when hci_tl_type is UART */
     uint8_t txant_dft;                      /*!< default Tx antenna */
     uint8_t rxant_dft;                      /*!< default Rx antenna */
     uint8_t txpwr_dft;                      /*!< default Tx power */
+    uint32_t cfg_mask;
+    uint8_t scan_duplicate_mode;            /*!< scan duplicate mode */
+    uint8_t scan_duplicate_type;            /*!< scan duplicate type */
+    uint16_t normal_adv_size;               /*!< Normal adv size for scan duplicate */
+    uint16_t mesh_adv_size;                 /*!< Mesh adv size for scan duplicate */
+    uint8_t coex_phy_coded_tx_rx_time_limit;  /*!< limit on max tx/rx time in case of connection using CODED-PHY with Wi-Fi coexistence */
+    uint32_t hw_target_code;                /*!< hardware target */
+    uint8_t slave_ce_len_min;               /*!< slave minimum ce length*/
 } esp_bt_controller_config_t;
 
 /**
@@ -222,14 +270,23 @@ typedef enum {
  * @brief Bluetooth TX power level(index), it's just a index corresponding to power(dbm).
  */
 typedef enum {
-    ESP_PWR_LVL_N12 = 0,                /*!< Corresponding to -12dbm */
-    ESP_PWR_LVL_N9  = 1,                /*!< Corresponding to  -9dbm */
-    ESP_PWR_LVL_N6  = 2,                /*!< Corresponding to  -6dbm */
-    ESP_PWR_LVL_N3  = 3,                /*!< Corresponding to  -3dbm */
-    ESP_PWR_LVL_N0  = 4,                /*!< Corresponding to   0dbm */
-    ESP_PWR_LVL_P3  = 5,                /*!< Corresponding to  +3dbm */
-    ESP_PWR_LVL_P6  = 6,                /*!< Corresponding to  +6dbm */
-    ESP_PWR_LVL_P9  = 7,                /*!< Corresponding to  +9dbm */
+    ESP_PWR_LVL_N27 = 0,              /*!< Corresponding to -27dbm */
+    ESP_PWR_LVL_N24 = 1,              /*!< Corresponding to -24dbm */
+    ESP_PWR_LVL_N21 = 2,              /*!< Corresponding to -21dbm */
+    ESP_PWR_LVL_N18 = 3,              /*!< Corresponding to -18dbm */
+    ESP_PWR_LVL_N15 = 4,              /*!< Corresponding to -15dbm */
+    ESP_PWR_LVL_N12 = 5,              /*!< Corresponding to -12dbm */
+    ESP_PWR_LVL_N9  = 6,              /*!< Corresponding to  -9dbm */
+    ESP_PWR_LVL_N6  = 7,              /*!< Corresponding to  -6dbm */
+    ESP_PWR_LVL_N3  = 8,              /*!< Corresponding to  -3dbm */
+    ESP_PWR_LVL_N0  = 9,              /*!< Corresponding to   0dbm */
+    ESP_PWR_LVL_P3  = 10,             /*!< Corresponding to  +3dbm */
+    ESP_PWR_LVL_P6  = 11,             /*!< Corresponding to  +6dbm */
+    ESP_PWR_LVL_P9  = 12,             /*!< Corresponding to  +9dbm */
+    ESP_PWR_LVL_P12 = 13,             /*!< Corresponding to  +12dbm */
+    ESP_PWR_LVL_P15 = 14,             /*!< Corresponding to  +15dbm */
+    ESP_PWR_LVL_P18 = 15,             /*!< Corresponding to  +18dbm */
+    ESP_PWR_LVL_INVALID = 0xFF,       /*!< Indicates an invalid value */
 } esp_power_level_t;
 
 /**

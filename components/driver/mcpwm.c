@@ -24,6 +24,7 @@
 #include "driver/periph_ctrl.h"
 #include "sdkconfig.h"
 #include "hal/mcpwm_hal.h"
+#include "hal/gpio_hal.h"
 #include "esp_rom_gpio.h"
 
 typedef struct {
@@ -109,7 +110,7 @@ esp_err_t mcpwm_gpio_init(mcpwm_unit_t mcpwm_num, mcpwm_io_signals_t io_signal, 
     MCPWM_CHECK((GPIO_IS_VALID_GPIO(gpio_num)), MCPWM_GPIO_ERROR, ESP_ERR_INVALID_ARG);
 
     // we enabled both input and output mode for GPIO used here, which can help to simulate trigger source especially in test code
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
+    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
     if (io_signal <= MCPWM2B) { // Generator output signal
         MCPWM_CHECK((GPIO_IS_VALID_OUTPUT_GPIO(gpio_num)), MCPWM_GPIO_ERROR, ESP_ERR_INVALID_ARG);
         gpio_set_direction(gpio_num, GPIO_MODE_INPUT_OUTPUT);

@@ -1,0 +1,50 @@
+[scheme:default]
+entries:
+    if APP_BUILD_USE_FLASH_SECTIONS = y:
+        text -> flash_text
+        rodata -> flash_rodata
+    else:
+        text -> iram0_text
+        rodata -> dram0_data
+    data -> dram0_data
+    bss -> dram0_bss
+    common -> dram0_bss
+    if ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY = y:
+        extram_bss -> extern_ram
+    else:
+        extram_bss -> dram0_bss
+    legacy_bss -> dram0_bss
+    iram -> iram0_text
+    iram_data -> iram0_data
+    iram_bss -> iram0_bss
+    dram -> dram0_data
+    rtc_text -> rtc_text
+    rtc_data -> rtc_data
+    rtc_rodata -> rtc_data
+    rtc_bss -> rtc_bss
+
+[scheme:rtc]
+entries:
+    text -> rtc_text
+    data -> rtc_data
+    rodata -> rtc_data
+    bss -> rtc_bss
+    common -> rtc_bss
+
+[scheme:noflash]
+entries:
+    text -> iram0_text
+    rodata -> dram0_data
+
+[scheme:noflash_data]
+entries:
+    rodata -> dram0_data
+
+[scheme:noflash_text]
+entries:
+    text -> iram0_text
+
+[mapping:default]
+archive: *
+entries:
+    * (default)

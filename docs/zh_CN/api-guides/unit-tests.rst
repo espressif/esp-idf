@@ -184,31 +184,31 @@ DUT2（slave）终端::
 
 当单元测试应用程序空闲时，输入回车键，它会打印出测试菜单，其中包含所有的测试项目::
 
-    Here's the test menu, pick your combo:
-    (1)     "esp_ota_begin() verifies arguments" [ota]
-    (2)     "esp_ota_get_next_update_partition logic" [ota]
-    (3)     "Verify bootloader image in flash" [bootloader_support]
-    (4)     "Verify unit test app image" [bootloader_support]
-    (5)     "can use new and delete" [cxx]
-    (6)     "can call virtual functions" [cxx]
-    (7)     "can use static initializers for non-POD types" [cxx]
-    (8)     "can use std::vector" [cxx]
-    (9)     "static initialization guards work as expected" [cxx]
-    (10)    "global initializers run in the correct order" [cxx]
-    (11)    "before scheduler has started, static initializers work correctly" [cxx]
-    (12)    "adc2 work with wifi" [adc]
-    (13)    "gpio master/slave test example" [ignore][misc][test_env=UT_T2_1][multi_device]
-            (1)     "gpio_master_test"
-            (2)     "gpio_slave_test"
-    (14)    "SPI Master clockdiv calculation routines" [spi]
-    (15)    "SPI Master test" [spi][ignore]
-    (16)    "SPI Master test, interaction of multiple devs" [spi][ignore]
-    (17)    "SPI Master no response when switch from host1 (HSPI) to host2 (VSPI)" [spi]
-    (18)    "SPI Master DMA test, TX and RX in different regions" [spi]
-    (19)    "SPI Master DMA test: length, start, not aligned" [spi]
-    (20)    "reset reason check for deepsleep" [{IDF_TARGET_PATH_NAME}][test_env=UT_T2_1][multi_stage]
-            (1)     "trigger_deepsleep"
-            (2)     "check_deepsleep_reset_reason"
+   Here's the test menu, pick your combo:
+   (1)     "esp_ota_begin() verifies arguments" [ota]
+   (2)     "esp_ota_get_next_update_partition logic" [ota]
+   (3)     "Verify bootloader image in flash" [bootloader_support]
+   (4)     "Verify unit test app image" [bootloader_support]
+   (5)     "can use new and delete" [cxx]
+   (6)     "can call virtual functions" [cxx]
+   (7)     "can use static initializers for non-POD types" [cxx]
+   (8)     "can use std::vector" [cxx]
+   (9)     "static initialization guards work as expected" [cxx]
+   (10)    "global initializers run in the correct order" [cxx]
+   (11)    "before scheduler has started, static initializers work correctly" [cxx]
+   (12)    "adc2 work with wifi" [adc]
+   (13)    "gpio master/slave test example" [ignore][misc][test_env=UT_T2_1][multi_device]
+           (1)     "gpio_master_test"
+           (2)     "gpio_slave_test"
+   (14)    "SPI Master clockdiv calculation routines" [spi]
+   (15)    "SPI Master test" [spi][ignore]
+   (16)    "SPI Master test, interaction of multiple devs" [spi][ignore]
+   (17)    "SPI Master no response when switch from host1 (SPI2) to host2 (SPI3)" [spi]
+   (18)    "SPI Master DMA test, TX and RX in different regions" [spi]
+   (19)    "SPI Master DMA test: length, start, not aligned" [spi]
+   (20)    "reset reason check for deepsleep" [{IDF_TARGET_PATH_NAME}][test_env=UT_T2_1][multi_stage]
+           (1)     "trigger_deepsleep"
+           (2)     "check_deepsleep_reset_reason"
 
 常规测试用例会打印用例名字和描述，主从测试用例还会打印子菜单（已注册的测试函数的名字）。
 

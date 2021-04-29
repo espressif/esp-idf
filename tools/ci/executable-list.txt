@@ -10,9 +10,11 @@ components/heap/test_multi_heap_host/test_all_configs.sh
 components/mbedtls/esp_crt_bundle/gen_crt_bundle.py
 components/mbedtls/esp_crt_bundle/test_gen_crt_bundle/test_gen_crt_bundle.py
 components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py
+components/partition_table/check_sizes.py
 components/partition_table/gen_empty_partition.py
 components/partition_table/gen_esp32part.py
 components/partition_table/parttool.py
+components/partition_table/test_gen_esp32part_host/check_sizes_test.py
 components/partition_table/test_gen_esp32part_host/gen_esp32part_tests.py
 components/spiffs/spiffsgen.py
 components/ulp/esp32ulp_mapgen.py

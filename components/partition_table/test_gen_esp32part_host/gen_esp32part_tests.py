@@ -10,6 +10,8 @@ import sys
 import tempfile
 import unittest
 
+from test_utils import Py23TestCase
+
 try:
     import gen_esp32part
 except ImportError:
@@ -57,18 +59,6 @@ def _strip_trailing_ffs(binary_table):
     while binary_table.endswith(b'\xFF' * 64):
         binary_table = binary_table[0:len(binary_table) - 32]
     return binary_table
-
-
-class Py23TestCase(unittest.TestCase):
-
-    def __init__(self, *args, **kwargs):
-        super(Py23TestCase, self).__init__(*args, **kwargs)
-        try:
-            self.assertRaisesRegex
-        except AttributeError:
-            # assertRaisesRegexp is deprecated in Python3 but assertRaisesRegex doesn't exist in Python2
-            # This fix is used in order to avoid using the alias from the six library
-            self.assertRaisesRegex = self.assertRaisesRegexp
 
 
 class CSVParserTests(Py23TestCase):

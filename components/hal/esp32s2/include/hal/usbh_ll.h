@@ -22,7 +22,7 @@ extern "C" {
 #include <stdbool.h>
 #include "soc/usbh_struct.h"
 #include "soc/usb_wrap_struct.h"
-#include "hal/usb_types.h"
+#include "hal/usb_types_private.h"
 
 /* -----------------------------------------------------------------------------
 ------------------------------- Global Registers -------------------------------
@@ -419,7 +419,7 @@ static inline void usbh_ll_hcfg_set_fsls_pclk_sel(usbh_dev_t *hw)
  *
  * @param hw
  */
-static inline void usbh_ll_hcfg_set_defaults(usbh_dev_t *hw, usb_speed_t speed)
+static inline void usbh_ll_hcfg_set_defaults(usbh_dev_t *hw, usb_priv_speed_t speed)
 {
     hw->hcfg_reg.descdma = 1;   //Enable scatt/gatt
     hw->hcfg_reg.fslssupp = 1;  //FS/LS supp only
@@ -428,13 +428,13 @@ static inline void usbh_ll_hcfg_set_defaults(usbh_dev_t *hw, usb_speed_t speed)
     Note: It seems like our PHY has an implicit 8 divider applied when in LS mode,
           so the values of FSLSPclkSel and FrInt have to be adjusted accordingly.
     */
-    hw->hcfg_reg.fslspclksel = (speed == USB_SPEED_FULL) ? 1 : 2;
+    hw->hcfg_reg.fslspclksel = (speed == USB_PRIV_SPEED_FULL) ? 1 : 2;  //esp32-s2 only supports FS or LS
     hw->hcfg_reg.perschedena = 0;   //Disable perio sched
 }
 
 // ----------------------------- HFIR Register ---------------------------------
 
-static inline void usbh_ll_hfir_set_defaults(usbh_dev_t *hw, usb_speed_t speed)
+static inline void usbh_ll_hfir_set_defaults(usbh_dev_t *hw, usb_priv_speed_t speed)
 {
     usb_hfir_reg_t hfir;
     hfir.val = hw->hfir_reg.val;
@@ -444,7 +444,7 @@ static inline void usbh_ll_hfir_set_defaults(usbh_dev_t *hw, usb_speed_t speed)
     Note: It seems like our PHY has an implicit 8 divider applied when in LS mode,
           so the values of FSLSPclkSel and FrInt have to be adjusted accordingly.
     */
-    hfir.frint = (speed == USB_SPEED_FULL) ? 48000 : 6000;
+    hfir.frint = (speed == USB_PRIV_SPEED_FULL) ? 48000 : 6000; //esp32-s2 only supports FS or LS
     hw->hfir_reg.val = hfir.val;
 }
 
@@ -510,14 +510,19 @@ static inline uint32_t usbh_ll_get_frame_list_base_addr(usbh_dev_t *hw)
 
 // ----------------------------- HPRT Register ---------------------------------
 
-static inline usb_speed_t usbh_ll_hprt_get_speed(usbh_dev_t *hw)
+static inline usb_priv_speed_t usbh_ll_hprt_get_speed(usbh_dev_t *hw)
 {
-    int prtspd = hw->hprt_reg.prtspd;
-    if (prtspd == 1) {
-        return USB_SPEED_FULL;
-    } else {
-        return USB_SPEED_LOW;
+    usb_priv_speed_t speed;
+    //esp32-s2 only supports FS or LS
+    switch (hw->hprt_reg.prtspd) {
+        case 1:
+            speed = USB_PRIV_SPEED_FULL;
+            break;
+        default:
+            speed = USB_PRIV_SPEED_LOW;
+            break;
     }
+    return speed;
 }
 
 static inline uint32_t usbh_ll_hprt_get_test_ctl(usbh_dev_t *hw)
@@ -674,24 +679,24 @@ static inline void usbh_ll_chan_set_dev_addr(volatile usb_host_chan_regs_t *chan
     chan->hcchar_reg.devaddr = addr;
 }
 
-static inline void usbh_ll_chan_set_ep_type(volatile usb_host_chan_regs_t *chan, usb_xfer_type_t type)
+static inline void usbh_ll_chan_set_ep_type(volatile usb_host_chan_regs_t *chan, usb_priv_xfer_type_t type)
 {
+    uint32_t ep_type;
     switch (type) {
-        case USB_XFER_TYPE_CTRL:
-            chan->hcchar_reg.eptype = 0x0;
+        case USB_PRIV_XFER_TYPE_CTRL:
+            ep_type = 0;
             break;
-        case USB_XFER_TYPE_ISOCHRONOUS:
-            chan->hcchar_reg.eptype = 0x1;
+        case USB_PRIV_XFER_TYPE_ISOCHRONOUS:
+            ep_type = 1;
             break;
-        case USB_XFER_TYPE_BULK:
-            chan->hcchar_reg.eptype = 0x2;
+        case USB_PRIV_XFER_TYPE_BULK:
+            ep_type = 2;
             break;
-        case USB_XFER_TYPE_INTR:
-            chan->hcchar_reg.eptype = 0x3;
+        default:    //USB_PRIV_XFER_TYPE_INTR
+            ep_type = 3;
             break;
-        default:
-            ;
     }
+    chan->hcchar_reg.eptype = ep_type;
 }
 
 //Indicates whether channel is commuunicating with a LS device connected via a FS hub. Setting this bit to 1 will cause
@@ -716,9 +721,9 @@ static inline void usbh_ll_chan_set_mps(volatile usb_host_chan_regs_t *chan, uin
     chan->hcchar_reg.mps = mps;
 }
 
-static inline void usbh_ll_chan_hcchar_init(volatile usb_host_chan_regs_t *chan, int dev_addr, int ep_num, int mps, usb_xfer_type_t type, bool is_in, bool is_ls)
+static inline void usbh_ll_chan_hcchar_init(volatile usb_host_chan_regs_t *chan, int dev_addr, int ep_num, int mps, usb_priv_xfer_type_t type, bool is_in, bool is_ls)
 {
-    //Sets all persistent fields of the channel over its lifetime
+    //Sets all persistent fields of the channel over its lifetimez
     usbh_ll_chan_set_dev_addr(chan, dev_addr);
     usbh_ll_chan_set_ep_type(chan, type);
     usbh_ll_chan_set_lspddev(chan, is_ls);

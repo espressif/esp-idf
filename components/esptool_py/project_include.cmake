@@ -3,6 +3,7 @@
 # Many of these are read when generating flash_app_args & flash_project_args
 idf_build_get_property(target IDF_TARGET)
 idf_build_get_property(python PYTHON)
+idf_build_get_property(idf_path IDF_PATH)
 
 set(chip_model ${target})
 if(target STREQUAL "esp32s3")
@@ -14,6 +15,7 @@ endif()
 set(ESPTOOLPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/esptool.py" --chip ${chip_model})
 set(ESPSECUREPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espsecure.py")
 set(ESPEFUSEPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espefuse.py")
+set(ESPMONITOR ${python} "${idf_path}/tools/idf_monitor.py")
 
 set(ESPFLASHMODE ${CONFIG_ESPTOOLPY_FLASHMODE})
 set(ESPFLASHFREQ ${CONFIG_ESPTOOLPY_FLASHFREQ})
@@ -47,6 +49,7 @@ endif()
 
 if(min_rev)
     list(APPEND esptool_elf2image_args --min-rev ${min_rev})
+    set(monitor_rev_args --revision ${min_rev})
     unset(min_rev)
 endif()
 
@@ -151,8 +154,8 @@ add_custom_target(erase_flash
 add_custom_target(monitor
     COMMAND ${CMAKE_COMMAND}
     -D IDF_PATH="${idf_path}"
-    -D SERIAL_TOOL="${idf_path}/tools/idf_monitor.py"
-    -D SERIAL_TOOL_ARGS="${elf_dir}/${elf}"
+    -D SERIAL_TOOL="${ESPMONITOR}"
+    -D SERIAL_TOOL_ARGS="--target ${target} ${monitor_rev_args} ${elf_dir}/${elf}"
     -D WORKING_DIRECTORY="${build_dir}"
     -P run_serial_tool.cmake
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}

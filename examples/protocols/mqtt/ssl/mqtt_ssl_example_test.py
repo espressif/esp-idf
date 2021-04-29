@@ -58,7 +58,7 @@ def on_message(client, userdata, msg):
     message_log += 'Received data:' + msg.topic + ' ' + payload + '\n'
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
 def test_examples_protocol_mqtt_ssl(env, extra_data):
     broker_url = ''
     broker_port = 0

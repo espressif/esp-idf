@@ -26,10 +26,12 @@ extern "C" {
 //IRAM0 interrupt status bitmasks
 #define IRAM0_INTR_ST_OP_TYPE_BIT           BIT(1)      //instruction: 0, data: 1
 #define IRAM0_INTR_ST_OP_RW_BIT             BIT(0)      //read: 0, write: 1
+#define CONF_REG_ADDRESS_SHIFT              2
 
 static inline void esp_memprot_iram0_clear_intr(void)
 {
     DPORT_SET_PERI_REG_MASK(DPORT_PMS_PRO_IRAM0_4_REG, DPORT_PMS_PRO_IRAM0_ILG_CLR);
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_PMS_PRO_IRAM0_4_REG, DPORT_PMS_PRO_IRAM0_ILG_CLR);
 }
 
 static inline uint32_t esp_memprot_iram0_get_intr_source_num(void)
@@ -104,6 +106,7 @@ static inline uint32_t esp_memprot_iram0_get_lock_bit(void)
  * === IRAM0 SRAM
  * ========================================================================================
  */
+#define IRAM0_SRAM_BASE_ADDRESS             0x40000000
 #define IRAM0_SRAM_ADDRESS_LOW              0x40020000
 #define IRAM0_SRAM_ADDRESS_HIGH             0x4006FFFF
 
@@ -126,6 +129,7 @@ static inline uint32_t esp_memprot_iram0_get_lock_bit(void)
 #define IRAM0_INTR_ST_FAULTADDR_M           0x003FFFFC  //bits 21:6 in the reg, as well as in real address
 #define IRAM0_SRAM_INTR_ST_FAULTADDR_HI     0x40000000  //high nonsignificant bits 31:22 of the faulting address - constant
 
+#define IRAM0_SRAM_ADDR_TO_CONF_REG(addr)   (((addr >> CONF_REG_ADDRESS_SHIFT) & DPORT_PMS_PRO_IRAM0_SRAM_4_SPLTADDR) << DPORT_PMS_PRO_IRAM0_SRAM_4_SPLTADDR_S)
 
 static inline uint32_t *esp_memprot_iram0_sram_get_fault_address(void)
 {
@@ -290,6 +294,7 @@ static inline void esp_memprot_iram0_sram_set_prot(uint32_t *split_addr, bool lw
 {
     uint32_t addr = (uint32_t)split_addr;
     assert(addr <= IRAM0_SRAM_SPL_BLOCK_HIGH);
+    assert(addr % 0x4 == 0);
 
     //find possible split.address in low region blocks
     int uni_blocks_low = -1;
@@ -339,11 +344,7 @@ static inline void esp_memprot_iram0_sram_set_prot(uint32_t *split_addr, bool lw
     uint32_t reg_split_addr = 0;
 
     if (addr >= IRAM0_SRAM_SPL_BLOCK_LOW) {
-
-        //[16:0]
-        reg_split_addr = addr >> 2;
-        assert(addr == (reg_split_addr << 2));
-        reg_split_addr &= DPORT_PMS_PRO_IRAM0_SRAM_4_SPLTADDR_M;
+        reg_split_addr = IRAM0_SRAM_ADDR_TO_CONF_REG( addr ); //cfg reg - [16:0]
     }
 
     //prepare high & low permission mask (bits: [22:20] high range, [19:17] low range)
@@ -406,9 +407,11 @@ static inline void esp_memprot_iram0_sram_set_exec_perm(bool lx, bool hx)
  * === IRAM0 RTC FAST
  * ========================================================================================
  */
-#define IRAM0_RTCFAST_ADDRESS_LOW           0x40070000
-#define IRAM0_RTCFAST_ADDRESS_HIGH          0x40071FFF
-#define IRAM0_RTCFAST_INTR_ST_FAULTADDR_HI  0x40070000  //RTCFAST faulting address high bits (31:22, constant)
+#define IRAM0_RTCFAST_ADDRESS_LOW               0x40070000
+#define IRAM0_RTCFAST_ADDRESS_HIGH              0x40071FFF
+#define IRAM0_RTCFAST_INTR_ST_FAULTADDR_HI      0x40070000  //RTCFAST faulting address high bits (31:22, constant)
+
+#define IRAM0_RTCFAST_ADDR_TO_CONF_REG(addr)    (((addr >> CONF_REG_ADDRESS_SHIFT) & DPORT_PMS_PRO_IRAM0_RTCFAST_SPLTADDR) << DPORT_PMS_PRO_IRAM0_RTCFAST_SPLTADDR_S)
 
 
 static inline uint32_t *esp_memprot_iram0_rtcfast_get_fault_address(void)
@@ -434,14 +437,10 @@ static inline uint32_t esp_memprot_iram0_rtcfast_get_perm_split_reg(void)
 static inline void esp_memprot_iram0_rtcfast_set_prot(uint32_t *split_addr, bool lw, bool lr, bool lx, bool hw, bool hr, bool hx)
 {
     uint32_t addr = (uint32_t)split_addr;
+    assert( addr % 0x4 == 0 );
 
-    //if splt.ddr not set yet, do required normalization to make the addr writeble into splt.mgmt cfg register
-    uint32_t reg_split_addr = 0;
-
-    //[10:0]
-    reg_split_addr = addr >> 2;
-    assert(addr == (reg_split_addr << 2));
-    reg_split_addr &= DPORT_PMS_PRO_IRAM0_RTCFAST_SPLTADDR_M;
+    //conf reg [10:0]
+    uint32_t reg_split_addr = IRAM0_RTCFAST_ADDR_TO_CONF_REG(addr);
 
     //prepare high & low permission mask (bits: [16:14] high range, [13:11] low range)
     uint32_t permission_mask = 0;
@@ -531,6 +530,7 @@ static inline bool esp_memprot_dram0_is_assoc_intr(void)
 static inline void esp_memprot_dram0_clear_intr(void)
 {
     DPORT_SET_PERI_REG_MASK(DPORT_PMS_PRO_DRAM0_3_REG, DPORT_PMS_PRO_DRAM0_ILG_CLR);
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_PMS_PRO_DRAM0_3_REG, DPORT_PMS_PRO_DRAM0_ILG_CLR);
 }
 
 static inline uint32_t esp_memprot_dram0_get_intr_ena_bit(void)
@@ -605,6 +605,8 @@ static inline void esp_memprot_dram0_get_fault_op_type(uint32_t *op_type, uint32
 //split management (SRAM blocks 4-21)
 #define DRAM0_SRAM_SPL_BLOCK_HIGH           0x3FFFFFFF  //block 21 high
 #define DRAM0_SRAM_INTR_ST_FAULTADDR_HI     0x3FF00000  //SRAM high bits 31:22 of the faulting address - constant
+
+#define DRAM0_SRAM_ADDR_TO_CONF_REG(addr)   (((addr >> CONF_REG_ADDRESS_SHIFT) & DPORT_PMS_PRO_DRAM0_SRAM_4_SPLTADDR) << DPORT_PMS_PRO_DRAM0_SRAM_4_SPLTADDR_S)
 
 
 static inline uint32_t *esp_memprot_dram0_sram_get_fault_address(void)
@@ -716,6 +718,7 @@ static inline void esp_memprot_dram0_sram_set_prot(uint32_t *split_addr, bool lw
 
     //low boundary check provided by LD script. see comment in esp_memprot_iram0_sram_set_prot()
     assert( addr <= DRAM0_SRAM_SPL_BLOCK_HIGH );
+    assert( addr % 0x4 == 0 );
 
     //set low region
     int uni_blocks_low = -1;
@@ -753,10 +756,8 @@ static inline void esp_memprot_dram0_sram_set_prot(uint32_t *split_addr, bool lw
         }
     }
 
-    //[24:8]
-    uint32_t reg_split_addr = addr >> 2;
-    assert(addr == (reg_split_addr << 2));
-    reg_split_addr = (reg_split_addr & DPORT_PMS_PRO_DRAM0_SRAM_4_SPLTADDR_V) << DPORT_PMS_PRO_DRAM0_SRAM_4_SPLTADDR_S;
+    //conf reg [24:8]
+    uint32_t reg_split_addr = DRAM0_SRAM_ADDR_TO_CONF_REG(addr);
 
     //prepare high & low permission mask
     uint32_t permission_mask = 0;
@@ -803,9 +804,10 @@ static inline void esp_memprot_dram0_sram_set_write_perm(bool lw, bool hw)
  * === DRAM0 RTC FAST
  * ========================================================================================
  */
-#define DRAM0_RTCFAST_ADDRESS_LOW           0x3FF9E000
-#define DRAM0_RTCFAST_ADDRESS_HIGH          0x3FF9FFFF
-#define DRAM0_RTCFAST_INTR_ST_FAULTADDR_HI  0x3FF00000  //RTCFAST high bits 31:22 of the faulting address - constant
+#define DRAM0_RTCFAST_ADDRESS_LOW               0x3FF9E000
+#define DRAM0_RTCFAST_ADDRESS_HIGH              0x3FF9FFFF
+#define DRAM0_RTCFAST_INTR_ST_FAULTADDR_HI      0x3FF00000  //RTCFAST high bits 31:22 of the faulting address - constant
+#define DRAM0_RTCFAST_ADDR_TO_CONF_REG(addr)   (((addr >> CONF_REG_ADDRESS_SHIFT) & DPORT_PMS_PRO_DRAM0_RTCFAST_SPLTADDR) << DPORT_PMS_PRO_DRAM0_RTCFAST_SPLTADDR_S)
 
 
 static inline uint32_t *esp_memprot_dram0_rtcfast_get_fault_address(void)
@@ -826,11 +828,10 @@ static inline bool esp_memprot_dram0_rtcfast_is_intr_mine(void)
 static inline void esp_memprot_dram0_rtcfast_set_prot(uint32_t *split_addr, bool lw, bool lr, bool hw, bool hr)
 {
     uint32_t addr = (uint32_t)split_addr;
+    assert( addr % 0x4 == 0 );
 
-    //[10:0]
-    uint32_t reg_split_addr = addr >> 2;
-    assert(addr == (reg_split_addr << 2));
-    reg_split_addr &= DPORT_PMS_PRO_DRAM0_RTCFAST_SPLTADDR_M;
+    //conf reg [10:0]
+    uint32_t reg_split_addr = DRAM0_RTCFAST_ADDR_TO_CONF_REG( addr );
 
     //prepare high & low permission mask
     uint32_t permission_mask = 0;

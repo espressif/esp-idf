@@ -44,7 +44,7 @@ def chat_server_sketch(my_ip):
     print('server closed')
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
 def test_examples_protocol_asio_chat_client(env, extra_data):
     """
     steps: |

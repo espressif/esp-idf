@@ -8,15 +8,6 @@ else()
     set(ldfragments "linker.lf")
 endif()
 
-# remove these when wifi support is ready on esp32-s3
-if(${idf_target} STREQUAL "esp32s3")
-    idf_component_register(INCLUDE_DIRS "include"
-                           REQUIRES esp_event
-                           PRIV_REQUIRES wpa_supplicant nvs_flash esp_netif)
-    return()
-endif()
-
-
 if(IDF_TARGET_ESP32)
     # dport workaround headers are in esp32 component
     set(extra_priv_requires esp32)
@@ -37,7 +28,7 @@ idf_component_register(SRCS "src/coexist.c"
                     INCLUDE_DIRS "include" "${idf_target}/include"
                     REQUIRES esp_event
                     PRIV_REQUIRES driver esptool_py esp_netif esp_pm esp_timer nvs_flash
-                                  wpa_supplicant ${extra_priv_requires}
+                                  wpa_supplicant hal ${extra_priv_requires}
                     LDFRAGMENTS "${ldfragments}")
 
 idf_build_get_property(build_dir BUILD_DIR)

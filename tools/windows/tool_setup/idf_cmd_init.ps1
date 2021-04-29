@@ -17,6 +17,24 @@ if (-not $isEspIdfRoot) {
     Write-Output "This script must be invoked from ESP-IDF directory."
 }
 
+# Clear PYTHONPATH as it may contain libraries of other Python versions
+if ($null -ne $env:PYTHONPATH) {
+    "Clearing PYTHONPATH, was set to $env:PYTHONPATH"
+    $env:PYTHONPATH=$null
+}
+
+# Clear PYTHONHOME as it may contain path to other Python versions which can cause crash of Python using virtualenv
+if ($null -ne $env:PYTHONHOME) {
+    "Clearing PYTHONHOME, was set to $env:PYTHONHOME"
+    $env:PYTHONHOME=$null
+}
+
+# Set PYTHONNOUSERSITE to avoid loading of Python packages from AppData\Roaming profile
+if ($null -eq $env:PYTHONNOUSERSITE) {
+    "Setting PYTHONNOUSERSITE, was not set"
+    $env:PYTHONNOUSERSITE="True"
+}
+
 # Strip quotes
 $IdfGitDir = $IdfGitDir.Trim("`"")
 $IdfPythonDir = $IdfPythonDir.Trim("`"")

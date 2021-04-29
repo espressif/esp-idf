@@ -86,6 +86,47 @@ typedef struct {
     */
     esp_err_t (*on_lowlevel_deinit_done)(esp_eth_handle_t eth_handle);
 
+    /**
+    * @brief Read PHY register
+    *
+    * @note Usually the PHY register read/write function is provided by MAC (SMI interface),
+    *       but if the PHY device is managed by other interface (e.g. I2C), then user needs to
+    *       implement the corresponding read/write.
+    *       Setting this to NULL means your PHY device is managed by MAC's SMI interface.
+    *
+    * @param[in] eth_handle: handle of Ethernet driver
+    * @param[in] phy_addr: PHY chip address (0~31)
+    * @param[in] phy_reg: PHY register index code
+    * @param[out] reg_value: PHY register value
+    *
+    * @return
+    *      - ESP_OK: read PHY register successfully
+    *      - ESP_ERR_INVALID_ARG: read PHY register failed because of invalid argument
+    *      - ESP_ERR_TIMEOUT: read PHY register failed because of timeout
+    *      - ESP_FAIL: read PHY register failed because some other error occurred
+    */
+    esp_err_t (*read_phy_reg)(esp_eth_handle_t eth_handle, uint32_t phy_addr, uint32_t phy_reg, uint32_t *reg_value);
+
+    /**
+    * @brief Write PHY register
+    *
+    * @note Usually the PHY register read/write function is provided by MAC (SMI interface),
+    *       but if the PHY device is managed by other interface (e.g. I2C), then user needs to
+    *       implement the corresponding read/write.
+    *       Setting this to NULL means your PHY device is managed by MAC's SMI interface.
+    *
+    * @param[in] eth_handle: handle of Ethernet driver
+    * @param[in] phy_addr: PHY chip address (0~31)
+    * @param[in] phy_reg: PHY register index code
+    * @param[in] reg_value: PHY register value
+    *
+    * @return
+    *      - ESP_OK: write PHY register successfully
+    *      - ESP_ERR_INVALID_ARG: read PHY register failed because of invalid argument
+    *      - ESP_ERR_TIMEOUT: write PHY register failed because of timeout
+    *      - ESP_FAIL: write PHY register failed because some other error occurred
+    */
+    esp_err_t (*write_phy_reg)(esp_eth_handle_t eth_handle, uint32_t phy_addr, uint32_t phy_reg, uint32_t reg_value);
 } esp_eth_config_t;
 
 /**
@@ -100,6 +141,8 @@ typedef struct {
         .stack_input = NULL,             \
         .on_lowlevel_init_done = NULL,   \
         .on_lowlevel_deinit_done = NULL, \
+        .read_phy_reg = NULL,            \
+        .write_phy_reg = NULL,           \
     }
 
 /**

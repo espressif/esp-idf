@@ -22,6 +22,11 @@ Install pre-commit hook
 
 3. pre-commit hook will run automatically when you're running ``git commit`` command
 
+Uninstall pre-commit
+--------------------
+
+Run ``pre-commit uninstall``
+
 What's More?
 ------------
 

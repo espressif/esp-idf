@@ -13,6 +13,11 @@ var
 BaseName: String;
 RepeatIndex: Integer;
 begin
+  if (IDFDirectory <> '') then begin
+    Result := IDFDirectory
+    Exit;
+  end;
+
   { Start with Desktop\esp-idf name and if it already exists,
     keep trying with Desktop\esp-idf-N for N=2 and above. }
   BaseName := ExpandConstant('{userdesktop}\esp-idf');
@@ -41,19 +46,22 @@ begin
     Result := '';
 end;
 
+procedure ExtractIDFVersionList();
+begin
+  ExtractTemporaryFile('idf_versions.txt');
+end;
+
 procedure DownloadIDFVersionsList();
 var
-  Url: String;
   VersionFile: String;
 begin
-  Url := ExpandConstant('{param:IDFVERSIONSURL|https://dl.espressif.com/dl/esp-idf/idf_versions.txt}')
   VersionFile := ExpandConstant('{tmp}\idf_versions.txt');
-  if idpDownloadFile(Url, VersionFile) then
+  if idpDownloadFile(IDFVersionUrl, VersionFile) then
   begin
-    Log('Downloaded ' + Url + ' to ' + VersionFile);
+    Log('Downloaded ' + IDFVersionUrl + ' to ' + VersionFile);
   end else begin
-    Log('Download of ' + Url + ' failed, using a fallback versions list');
-    ExtractTemporaryFile('idf_versions.txt');
+    Log('Download of ' + IDFVersionUrl + ' failed, using a fallback versions list');
+    ExtractIDFVersionList();
   end;
 end;
 
@@ -62,14 +70,18 @@ var
   Page: TInputOptionWizardPage;
   VersionFile: String;
   i: Integer;
-  SuggestedIDFDirectory: String;
 begin
   Page := TInputOptionWizardPage(Sender);
   Log('OnIDFDownloadPagePrepare');
   if Page.CheckListBox.Items.Count > 0 then
     exit;
 
-  DownloadIDFVersionsList();
+  if (IsOfflineMode) then begin
+    Log('Offline Mode: using embedded idf_versions.txt')
+    ExtractIDFVersionList();
+  end else begin
+    DownloadIDFVersionsList();
+  end;
 
   VersionFile := ExpandConstant('{tmp}\idf_versions.txt');
   if not LoadStringsFromFile(VersionFile, IDFDownloadAvailableVersions) then
@@ -87,8 +99,7 @@ begin
   end;
   Page.SelectedValueIndex := 0;
 
-  SuggestedIDFDirectory := ExpandConstant('{param:IDFDIR|' + GetSuggestedIDFDirectory() + '}');
-  ChoicePageSetInputText(Page, SuggestedIDFDirectory);
+  ChoicePageSetInputText(Page, GetSuggestedIDFDirectory());
 end;
 
 { Validation of PATH for IDF releases which does not support special characters. }
@@ -143,15 +154,15 @@ begin
 
   IDFDownloadPath := IDFPath;
 
-  { Use parameter /IDFVE=x to override selection in the box. }
-  IDFDownloadVersion := ExpandConstant('{param:IDFVERSION|}');
+  { Use parameter /IDFVERSION=x to override selection in the box. }
+  IDFDownloadVersion := IDFVersion;
   if (IDFDownloadVersion = '') then begin
     IDFDownloadVersion := IDFDownloadAvailableVersions[Page.SelectedValueIndex];
   end;
 
   { Following ZIP versions of IDF does not support installation on path with special characters. }
   { Issue: https://github.com/espressif/esp-idf/issues/5996 }
-  if ((IDFDownloadVersion = 'v4.1') or (IDFDownloadVersion = 'v4.0.2') or
+  if ((IDFDownloadVersion = 'v4.2') or (IDFDownloadVersion = 'v4.0.2') or
     (IDFDownloadVersion = 'v3.3.4')) then begin
     if (not IsDirNameValid(IDFPath)) then begin
       MsgBox('The installation of selected version of IDF is not supported on path with special characters.' + #13#10
@@ -175,10 +186,10 @@ procedure CreateIDFDownloadPage();
 begin
   IDFDownloadPage := ChoicePageCreate(
     IDFPage.ID,
-    'Download ESP-IDF', 'Please choose ESP-IDF version to download',
+    'Version of ESP-IDF', 'Please choose ESP-IDF version to install',
     'For more information about ESP-IDF versions, see' + #13#10 +
       'https://docs.espressif.com/projects/esp-idf/en/latest/versions.html',
-    'Choose a directory to download ESP-IDF to',
+    'Choose a directory to install ESP-IDF to',
     True,
     @OnIDFDownloadPagePrepare,
     @OnIDFDownloadSelectionChange,

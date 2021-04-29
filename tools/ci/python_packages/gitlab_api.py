@@ -41,17 +41,22 @@ class Gitlab(object):
         :return: project ID
         """
         projects = self.gitlab_inst.projects.list(search=name)
+        res = []
         for project in projects:
             if namespace is None:
                 if len(projects) == 1:
-                    project_id = project.id
+                    res.append(project.id)
                     break
+
             if project.namespace['path'] == namespace:
-                project_id = project.id
-                break
-        else:
+                if project.name == name:
+                    res.insert(0, project.id)
+                else:
+                    res.append(project.id)
+
+        if not res:
             raise ValueError("Can't find project")
-        return project_id
+        return res[0]
 
     def download_artifacts(self, job_id, destination):
         """

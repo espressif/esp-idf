@@ -2,7 +2,10 @@ Unit Testing in {IDF_TARGET_NAME}
 =================================
 :link_to_translation:`zh_CN:[中文]`
 
-ESP-IDF comes with a unit test application that is based on the Unity - unit test framework. Unit tests are integrated in the ESP-IDF repository and are placed in the ``test`` subdirectories of each component respectively.
+ESP-IDF comes with two possibilities to test software.
+
+- A unit test application which runs on the target and that is based on the Unity - unit test framework. These unit tests are integrated in the ESP-IDF repository and are placed in the ``test`` subdirectories of each component respectively. Target-based unit tests are covered in this document.
+- Linux-host based unit tests in which all the hardware is abstracted via mocks. Linux-host based tests are still under development and only a small fraction of IDF components supports them currently. They are covered here: :doc:`target based unit testing <linux-host-testing>`.
 
 Normal Test Cases
 ------------------
@@ -118,8 +121,7 @@ Tests For Different Targets
 
 Some tests (especially those related to hardware) cannot run on all targets. Below is a guide how to make your unit tests run on only specified targets.
 
-1. Wrap your test code by ``!(TEMPORARY_)DISABLED_FOR_TARGETS()`` macros and place them either in the original test file, or sepeprate the code into files grouped by functions, but make sure all these files will be processed by the compiler. E.g.
-::
+1. Wrap your test code by ``!(TEMPORARY_)DISABLED_FOR_TARGETS()`` macros and place them either in the original test file, or sepeprate the code into files grouped by functions, but make sure all these files will be processed by the compiler. E.g.::
 
       #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32, ESP8266)
       TEST_CASE("a test that is not ready for esp32 and esp8266 yet", "[]")
@@ -204,7 +206,7 @@ When unit test app is idle, press "Enter" will make it print test menu with all 
     (14)    "SPI Master clockdiv calculation routines" [spi]
     (15)    "SPI Master test" [spi][ignore]
     (16)    "SPI Master test, interaction of multiple devs" [spi][ignore]
-    (17)    "SPI Master no response when switch from host1 (HSPI) to host2 (VSPI)" [spi]
+    (17)    "SPI Master no response when switch from host1 (SPI2) to host2 (SPI3)" [spi]
     (18)    "SPI Master DMA test, TX and RX in different regions" [spi]
     (19)    "SPI Master DMA test: length, start, not aligned" [spi]
     (20)    "reset reason check for deepsleep" [{IDF_TARGET_PATH_NAME}][test_env=UT_T2_1][multi_stage]
@@ -275,13 +277,24 @@ One limitation of the cache compensated timer is that the task that benchmarked 
 Mocks
 -----
 
-ESP-IDF has a component which integrates the CMock mocking framework. CMock usually uses Unity as a submodule, but due to some Espressif-internal limitations with CI, we still have Unity as an ordinary module in ESP-IDF.
+One of the biggest problems for unit testing in embedded systems are the strong hardware dependencies. This is why ESP-IDF has a component which integrates the `CMock <https://www.throwtheswitch.org/cmock>`_ mocking framework. Ideally, all components other than the one which should be tested *(component under test)* are mocked. This way, the test environment has complete control over all the interaction with the component under test. However, if mocking becomes problematic due to the tests becoming too specific, more "real" IDF code can always be included into the tests.
 
-To use the IDF-supplied Unity component which isn't a submodule, the build system needs to pass an environment variable ``UNITY_IDR`` to CMock. This variable simply contains the path to the Unity directory in IDF, e.g. ``export "UNITY_DIR=${IDF_PATH}/components/unity/unity"``.
+Besides the usual IDF requirements, ``ruby`` is necessary to generate the mocks. Refer to :component_file:`cmock/CMock/docs/CMock_Summary.md` for more details on how CMock works and how to create and use mocks.
 
-Refer to :component_file:`cmock/CMock/lib/cmock_generator.rb` to see how the Unity directory is determined in CMock.
+In IDF, adjustments are necessary inside the component(s) that should be mocked as well as inside the unit test, compared to writing normal components or unit tests without mocking.
 
-An example cmake build command to create mocks of a component inside that component's CMakeLists.txt may look like this:
+Adjustments in Mock Component 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The component that should be mocked requires a separate ``mock`` directory containing all additional files needed specifically for the mocking. Most importantly, it contains ``mock_config.yaml`` which configures CMock. For more details on what the options inside that configuration file mean and how to write your own, please take a look at the :component_file:`CMock documentation <cmock/CMock/docs/CMock_Summary.md>`. It may be necessary to have some more files related to mocking which should also be placed inside the `mock` directory.
+
+Furthermore, the component's ``CMakeLists.txt`` needs a switch to build mocks instead of the actual code. This is usually done by checking the component property ``USE_MOCK`` for the particular component. E.g., the ``spi_flash`` component execute the following code in its ``CMakeLists.txt`` to check whether mocks should be built:
+
+.. code-block:: cmake
+
+    idf_component_get_property(spi_flash_mock ${COMPONENT_NAME} USE_MOCK)
+
+An example CMake build command to create mocks of a component inside its ``CMakeLists.txt`` may look like this:
 
 .. code-block:: cmake
 
@@ -291,6 +304,19 @@ An example cmake build command to create mocks of a component inside that compon
     COMMAND ${CMAKE_COMMAND} -E env "UNITY_DIR=${IDF_PATH}/components/unity/unity" ruby ${CMOCK_DIR}/lib/cmock.rb -o${CMAKE_CURRENT_SOURCE_DIR}/mock/mock_config.yaml ${MOCK_HEADERS}
     )
 
-${MOCK_OUTPUT} contains all CMock generated output files, ${MOCK_HEADERS} contains all headers to be mocked and ${CMOCK_DIR} needs to be set to CMock directory inside IDF. ${CMAKE_COMMAND} is automatically set.
+``${MOCK_OUTPUT}`` contains all CMock generated output files, ``${MOCK_HEADERS}`` contains all headers to be mocked and ``${CMOCK_DIR}`` needs to be set to the CMock directory inside IDF. ``${CMAKE_COMMAND}`` is automatically set by the IDF build system.
 
-Refer to :component_file:`cmock/CMock/docs/CMock_Summary.md` for more details on how CMock works and how to create and use mocks.
+One aspect of CMock's usage is special here: CMock usually uses Unity as a submodule, but due to some Espressif-internal limitations with CI, IDF still uses Unity as an ordinary module in ESP-IDF. To use the IDF-supplied Unity component, which isn't a submodule, the build system needs to pass an environment variable ``UNITY_IDR`` to CMock. This variable simply contains the path to the Unity directory in IDF, e.g. ``export "UNITY_DIR=${IDF_PATH}/components/unity/unity"``. Refer to :component_file:`cmock/CMock/lib/cmock_generator.rb` to see how the Unity directory is determined in CMock.
+
+An example ``CMakeLists.txt`` which enables mocking exists :component_file:`in spi_flash <spi_flash/CMakeLists.txt>`
+
+Adjustments in Unit Test
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The unit test needs to set the component property ``USE_MOCK`` for the component that should be mocked. This lets the dependent component build the mocks instead of the actual component. E.g., in the nvs host test's :component_file:`CMakeLists.txt <nvs_flash/host_test/nvs_page_test/CMakeLists.txt>`, ``spi_flash`` mocks are enabled by the following line:
+
+.. code-block:: cmake
+
+    idf_component_set_property(spi_flash USE_MOCK 1)
+
+Refer to the :component_file:`NVS host unit test <nvs_flash/host_test/nvs_page_test/README.md>` for more information on how to use and control CMock inside a unit test.
