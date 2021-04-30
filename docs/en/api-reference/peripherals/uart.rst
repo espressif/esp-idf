@@ -50,7 +50,7 @@ Call the function :cpp:func:`uart_param_config` and pass to it a :cpp:type:`uart
 
 .. code-block:: c
 
-    const int uart_num = {IDF_TARGET_UART_NUM};
+    const uart_port_t uart_num = {IDF_TARGET_UART_NUM};
     uart_config_t uart_config = {
         .baud_rate = 115200,
         .data_bits = UART_DATA_8_BITS,
@@ -195,7 +195,7 @@ There is a 'companion' function :cpp:func:`uart_wait_tx_done` that monitors the 
 .. code-block:: c
 
     // Wait for packet to be sent
-    const int uart_num = {IDF_TARGET_UART_NUM};
+    const uart_port_t uart_num = {IDF_TARGET_UART_NUM};
     ESP_ERROR_CHECK(uart_wait_tx_done(uart_num, 100)); // wait timeout is 100 RTOS ticks (TickType_t)
 
 
@@ -207,7 +207,7 @@ Once the data is received by the UART and saved in the Rx FIFO buffer, it needs 
 .. code-block:: c
 
     // Read data from UART.
-    const int uart_num = {IDF_TARGET_UART_NUM};
+    const uart_port_t uart_num = {IDF_TARGET_UART_NUM};
     uint8_t data[128];
     int length = 0;
     ESP_ERROR_CHECK(uart_get_buffered_data_len(uart_num, (size_t*)&length));
