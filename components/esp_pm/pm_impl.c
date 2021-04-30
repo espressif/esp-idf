@@ -580,10 +580,12 @@ esp_err_t esp_pm_unregister_skip_light_sleep_callback(skip_light_sleep_cb_t cb)
 
 static inline bool IRAM_ATTR periph_should_skip_light_sleep(void)
 {
-    for (int i = 0; i < PERIPH_SKIP_LIGHT_SLEEP_NO; i++) {
-        if (s_periph_skip_light_sleep_cb[i]) {
-            if (s_periph_skip_light_sleep_cb[i]() == true) {
-                return true;
+    if (s_light_sleep_en) {
+        for (int i = 0; i < PERIPH_SKIP_LIGHT_SLEEP_NO; i++) {
+            if (s_periph_skip_light_sleep_cb[i]) {
+                if (s_periph_skip_light_sleep_cb[i]() == true) {
+                    return true;
+                }
             }
         }
     }

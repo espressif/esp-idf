@@ -303,6 +303,12 @@ esp_err_t esp_sleep_enable_uart_wakeup(int uart_num);
  */
 esp_err_t esp_sleep_enable_wifi_wakeup(void);
 
+/**
+ * @brief Disable wakeup by WiFi MAC
+ * @return
+ *      - ESP_OK on success
+ */
+esp_err_t esp_sleep_disable_wifi_wakeup(void);
 
 /**
  * @brief Get the bit mask of GPIOs which caused wakeup (ext1)
