@@ -203,6 +203,7 @@ No previous versions available.
 
 Related Documents
 =================
+* `Build Secure and Cost-effective Connected Devices with ESP32-C3 <http://c3.espressif.com/>`_
 * `ESP32-C3 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf>`_ (PDF) 
 * `ESP32-C3-WROOM-02 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-c3-wroom-02_datasheet_en.pdf>`_ (PDF)
 * `ESP32-C3-DevKitC-02 Schematic <https://dl.espressif.com/dl/schematics/SCH_ESP32-C3-DEVKITC-02_V1_1_20210126A.pdf>`_ (PDF)
