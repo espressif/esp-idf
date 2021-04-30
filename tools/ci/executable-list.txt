@@ -17,6 +17,7 @@ components/partition_table/parttool.py
 components/partition_table/test_gen_esp32part_host/check_sizes_test.py
 components/partition_table/test_gen_esp32part_host/gen_esp32part_tests.py
 components/spiffs/spiffsgen.py
+components/spiffs/test_spiffsgen/test_spiffsgen.py
 components/ulp/esp32ulp_mapgen.py
 docs/build_docs.py
 docs/check_lang_folder_sync.sh

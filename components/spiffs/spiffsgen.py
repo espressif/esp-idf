@@ -49,7 +49,7 @@ SPIFFS_PAGE_IX_LEN = 2  # spiffs_page_ix
 SPIFFS_BLOCK_IX_LEN = 2  # spiffs_block_ix
 
 
-class SpiffsBuildConfig():
+class SpiffsBuildConfig(object):
     def __init__(self,
                  page_size,  # type: int
                  page_ix_len,  # type: int
@@ -115,7 +115,7 @@ class SpiffsFullError(RuntimeError):
     pass
 
 
-class SpiffsPage():
+class SpiffsPage(object):
     _endianness_dict = {
         'little': '<',
         'big': '>'
@@ -294,7 +294,7 @@ class SpiffsObjDataPage(SpiffsObjPageWithIdx):
         return img
 
 
-class SpiffsBlock():
+class SpiffsBlock(object):
     def _reset(self):  # type: () -> None
         self.cur_obj_index_span_ix = 0
         self.cur_obj_data_span_ix = 0
@@ -392,7 +392,7 @@ class SpiffsBlock():
         return img
 
 
-class SpiffsFS():
+class SpiffsFS(object):
     def __init__(self, img_size, build_config):  # type: (int, SpiffsBuildConfig) -> None
         if img_size % build_config.block_size != 0:
             raise RuntimeError('image size should be a multiple of block size')
@@ -486,7 +486,7 @@ class SpiffsFS():
                 bix += 1
         else:
             # Just fill remaining spaces FF's
-            all_blocks.append(b'\xFF' * (self.img_size - len(img)))
+            all_blocks.append(b'\xFF' * (self.img_size - len(all_blocks) * self.build_config.block_size))
         img += b''.join([blk for blk in all_blocks])
         return img
 

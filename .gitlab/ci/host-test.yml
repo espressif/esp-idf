@@ -110,6 +110,8 @@ test_spiffs_on_host:
   script:
     - cd components/spiffs/test_spiffs_host/
     - make test
+    - cd ../test_spiffsgen
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_spiffsgen.py
 
 test_multi_heap_on_host:
   extends: .host_test_template
