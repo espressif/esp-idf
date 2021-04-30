@@ -47,6 +47,7 @@ static void _mdns_search_result_add_txt(mdns_search_once_t * search, mdns_txt_it
 static mdns_result_t * _mdns_search_result_add_ptr(mdns_search_once_t * search, const char * instance, mdns_if_t tcpip_if, mdns_ip_protocol_t ip_protocol);
 static bool _mdns_append_host_list_in_services(mdns_out_answer_t ** destination, mdns_srv_item_t * services[], size_t services_len, bool flush, bool bye);
 static bool _mdns_append_host_list(mdns_out_answer_t ** destination, bool flush, bool bye);
+static void _mdns_remap_self_service_hostname(const char *old_hostname, const char *new_hostname);
 
 /*
  * @brief  Internal collection of mdns supported interfaces
@@ -3227,8 +3228,10 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
                                 } else {
                                     char * new_host = _mdns_mangle_name((char *)_mdns_server->hostname);
                                     if (new_host) {
+                                        _mdns_remap_self_service_hostname(_mdns_server->hostname, new_host);
                                         free((char *)_mdns_server->hostname);
                                         _mdns_server->hostname = new_host;
+                                        _mdns_self_host.hostname = new_host;
                                     }
                                     _mdns_restart_all_pcbs();
                                 }
@@ -3333,8 +3336,10 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
                                 _mdns_server->interfaces[packet->tcpip_if].pcbs[packet->ip_protocol].failed_probes++;
                                 char * new_host = _mdns_mangle_name((char *)_mdns_server->hostname);
                                 if (new_host) {
+                                    _mdns_remap_self_service_hostname(_mdns_server->hostname, new_host);
                                     free((char *)_mdns_server->hostname);
                                     _mdns_server->hostname = new_host;
+                                    _mdns_self_host.hostname = new_host;
                                 }
                                 _mdns_restart_all_pcbs();
                             }
@@ -3381,8 +3386,10 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
                                 _mdns_server->interfaces[packet->tcpip_if].pcbs[packet->ip_protocol].failed_probes++;
                                 char * new_host = _mdns_mangle_name((char *)_mdns_server->hostname);
                                 if (new_host) {
+                                    _mdns_remap_self_service_hostname(_mdns_server->hostname, new_host);
                                     free((char *)_mdns_server->hostname);
                                     _mdns_server->hostname = new_host;
+                                    _mdns_self_host.hostname = new_host;
                                 }
                                 _mdns_restart_all_pcbs();
                             }
@@ -4087,6 +4094,19 @@ static void _mdns_tx_handle_packet(mdns_tx_packet_t * p)
     }
 }
 
+static void _mdns_remap_self_service_hostname(const char * old_hostname, const char * new_hostname)
+{
+    mdns_srv_item_t * service = _mdns_server->services;
+
+    while (service) {
+        if (strcmp(service->service->hostname, old_hostname) == 0) {
+            free((char *)service->service->hostname);
+            service->service->hostname = strdup(new_hostname);
+        }
+        service = service->next;
+    }
+}
+
 /**
  * @brief  Free action data
  */
@@ -4154,6 +4174,7 @@ static void _mdns_execute_action(mdns_action_t * action)
         break;
     case ACTION_HOSTNAME_SET:
         _mdns_send_bye_all_pcbs_no_instance(true);
+        _mdns_remap_self_service_hostname(_mdns_server->hostname, action->data.hostname_set.hostname);
         free((char*)_mdns_server->hostname);
         _mdns_server->hostname = action->data.hostname_set.hostname;
         _mdns_self_host.hostname = action->data.hostname_set.hostname;
