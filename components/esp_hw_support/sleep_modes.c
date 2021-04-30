@@ -1176,6 +1176,15 @@ esp_err_t esp_sleep_enable_wifi_wakeup(void)
 #endif
 }
 
+esp_err_t esp_sleep_disable_wifi_wakeup(void)
+{
+#if SOC_PM_SUPPORT_WIFI_WAKEUP
+    s_config.wakeup_triggers &= (~RTC_WIFI_TRIG_EN);
+    return ESP_OK;
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+}
 
 esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
 {
