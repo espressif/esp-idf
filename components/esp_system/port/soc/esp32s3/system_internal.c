@@ -54,16 +54,6 @@ void IRAM_ATTR esp_restart_noos(void)
     wdt_hal_set_flashboot_en(&rtc_wdt_ctx, true);
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 
-    // Reset and stall the other CPU.
-    // CPU must be reset before stalling, in case it was running a s32c1i
-    // instruction. This would cause memory pool to be locked by arbiter
-    // to the stalled CPU, preventing current CPU from accessing this pool.
-    const uint32_t core_id = cpu_hal_get_core_id();
-#if !CONFIG_FREERTOS_UNICORE
-    const uint32_t other_core_id = (core_id == 0) ? 1 : 0;
-    esp_cpu_reset(other_core_id);
-    esp_cpu_stall(other_core_id);
-#endif
 
     // Disable TG0/TG1 watchdogs
     wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
@@ -82,6 +72,17 @@ void IRAM_ATTR esp_restart_noos(void)
     // Disable cache
     Cache_Disable_ICache();
     Cache_Disable_DCache();
+
+    // Reset and stall the other CPU.
+    // CPU must be reset before stalling, in case it was running a s32c1i
+    // instruction. This would cause memory pool to be locked by arbiter
+    // to the stalled CPU, preventing current CPU from accessing this pool.
+    const uint32_t core_id = cpu_hal_get_core_id();
+#if !CONFIG_FREERTOS_UNICORE
+    const uint32_t other_core_id = (core_id == 0) ? 1 : 0;
+    esp_cpu_reset(other_core_id);
+    esp_cpu_stall(other_core_id);
+#endif
 
     // 2nd stage bootloader reconfigures SPI flash signals.
     // Reset them to the defaults expected by ROM.
