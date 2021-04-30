@@ -93,6 +93,13 @@ enum {
     ESP_BT_COEX_PHY_CODED_TX_RX_TIME_LIMIT_FORCE_ENABLE,         /*!< Always Enable the limit */
 };
 
+#define ESP_BT_HCI_TL_STATUS_OK            (0)   /*!< HCI_TL Tx/Rx operation status OK */
+
+/**
+ * @brief callback function for HCI Transport Layer send/receive operations
+ */
+typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
+
 #ifdef CONFIG_BT_ENABLED
 
 #define BT_CTRL_BLE_MAX_ACT_LIMIT           10  //Maximum BLE activity limitation
@@ -180,8 +187,8 @@ typedef struct {
     int (* _open)(void);                    /* hci tl open */
     void (* _close)(void);                  /* hci tl close */
     void (* _finish_transfers)(void);       /* hci tl finish trasnfers */
-    void (* _recv)(uint8_t *buf, uint32_t len, void (*callback) (void*, uint8_t), void* dummy); /* hci tl recv */
-    void (* _send)(uint8_t *buf, uint32_t len, void (*callback) (void*, uint8_t), void* dummy); /* hci tl send */
+    void (* _recv)(uint8_t *buf, uint32_t len, esp_bt_hci_tl_callback_t callback, void* arg); /* hci tl recv */
+    void (* _send)(uint8_t *buf, uint32_t len, esp_bt_hci_tl_callback_t callback, void* arg); /* hci tl send */
     bool (* _flow_off)(void); /* hci tl flow off */
     void (* _flow_on)(void); /* hci tl flow on */
 } esp_bt_hci_tl_t;
