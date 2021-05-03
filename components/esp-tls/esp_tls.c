@@ -267,13 +267,13 @@ static esp_err_t esp_tls_set_socket_non_blocking(int fd, bool non_blocking)
     return ESP_OK;
 }
 
-static esp_err_t esp_tcp_connect(const char *host, int hostlen, int port, int *sockfd, const esp_tls_t *tls, const esp_tls_cfg_t *cfg)
+static esp_err_t esp_tcp_connect(const char *host, int hostlen, int port, int *sockfd, esp_tls_error_handle_t error_handle, const esp_tls_cfg_t *cfg)
 {
     struct sockaddr_storage address;
     int fd;
     esp_err_t ret = esp_tls_hostname_to_fd(host, hostlen, port, &address, &fd);
     if (ret != ESP_OK) {
-        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_SYSTEM, errno);
+        ESP_INT_EVENT_TRACKER_CAPTURE(error_handle, ESP_TLS_ERR_TYPE_SYSTEM, errno);
         return ret;
     }
 
@@ -311,7 +311,7 @@ static esp_err_t esp_tcp_connect(const char *host, int hostlen, int port, int *s
             int res = select(fd+1, NULL, &fdset, NULL, &tv);
             if (res < 0) {
                 ESP_LOGE(TAG, "[sock=%d] select() error: %s", fd, strerror(errno));
-                ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_SYSTEM, errno);
+                ESP_INT_EVENT_TRACKER_CAPTURE(error_handle, ESP_TLS_ERR_TYPE_SYSTEM, errno);
                 goto err;
             }
             else if (res == 0) {
@@ -328,7 +328,7 @@ static esp_err_t esp_tcp_connect(const char *host, int hostlen, int port, int *s
                     goto err;
                 }
                 else if (sockerr) {
-                    ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_SYSTEM, sockerr);
+                    ESP_INT_EVENT_TRACKER_CAPTURE(error_handle, ESP_TLS_ERR_TYPE_SYSTEM, sockerr);
                     ESP_LOGE(TAG, "[sock=%d] delayed connect error: %s", fd, strerror(sockerr));
                     goto err;
                 }
@@ -371,7 +371,7 @@ static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, c
             _esp_tls_net_init(tls);
             tls->is_tls = true;
         }
-        if ((esp_ret = esp_tcp_connect(hostname, hostlen, port, &tls->sockfd, tls, cfg)) != ESP_OK) {
+        if ((esp_ret = esp_tcp_connect(hostname, hostlen, port, &tls->sockfd, tls->error_handle, cfg)) != ESP_OK) {
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, esp_ret);
             return -1;
         }
