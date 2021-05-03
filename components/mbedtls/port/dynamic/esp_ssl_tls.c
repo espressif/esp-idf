@@ -85,7 +85,16 @@ int __wrap_mbedtls_ssl_read(mbedtls_ssl_context *ssl, unsigned char *buf, size_t
 {
     int ret;
 
-    CHECK_OK(esp_mbedtls_add_rx_buffer(ssl));
+    ESP_LOGD(TAG, "add mbedtls RX buffer");
+    ret = esp_mbedtls_add_rx_buffer(ssl);
+    if (ret == MBEDTLS_ERR_SSL_CONN_EOF) {
+        ESP_LOGD(TAG, "fail, the connection indicated an EOF");
+        return 0;
+    } else if (ret < 0) {
+        ESP_LOGD(TAG, "fail, error=-0x%x", -ret);
+        return ret;
+    }
+    ESP_LOGD(TAG, "end");
 
     ret = __real_mbedtls_ssl_read(ssl, buf, len);
 
@@ -99,12 +108,12 @@ int __wrap_mbedtls_ssl_read(mbedtls_ssl_context *ssl, unsigned char *buf, size_t
 void __wrap_mbedtls_ssl_free(mbedtls_ssl_context *ssl)
 {
     if (ssl->out_buf) {
-        mbedtls_free(ssl->out_buf);
+        esp_mbedtls_free_buf(ssl->out_buf);
         ssl->out_buf = NULL;
     }
 
     if (ssl->in_buf) {
-        mbedtls_free(ssl->in_buf);
+        esp_mbedtls_free_buf(ssl->in_buf);
         ssl->in_buf = NULL;
     }
 
