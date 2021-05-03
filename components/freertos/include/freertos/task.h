@@ -1203,6 +1203,10 @@ BaseType_t xTaskResumeFromISR( TaskHandle_t xTaskToResume ) PRIVILEGED_FUNCTION;
 /**
  * Starts the real time kernel tick processing.
  *
+ * NOTE: In ESP-IDF the scheduler is started automatically during
+ * application startup, vTaskStartScheduler() should not be called from
+ * ESP-IDF applications.
+ *
  * After calling the kernel has control over which tasks are executed and when.
  *
  * See the demo application file main.c for an example of creating
