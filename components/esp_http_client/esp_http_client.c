@@ -898,7 +898,7 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
                 }
                 ESP_LOG_LEVEL(sev, TAG, "esp_transport_read returned:%d and errno:%d ", rlen, errno);
             }
-            if (rlen < 0 && ridx == 0) {
+            if (rlen < 0 && ridx == 0 && !esp_http_client_is_complete_data_received(client)) {
                 return ESP_FAIL;
             } else {
                 return ridx;
