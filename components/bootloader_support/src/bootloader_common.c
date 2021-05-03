@@ -34,6 +34,7 @@
 #include "soc/gpio_periph.h"
 #include "soc/rtc.h"
 #include "soc/efuse_reg.h"
+#include "soc/soc_memory_layout.h"
 #include "esp_image_format.h"
 #include "bootloader_sha.h"
 #include "sys/param.h"
@@ -295,7 +296,18 @@ RESET_REASON bootloader_common_get_reset_reason(int cpu_no)
 
 #if defined( CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP ) || defined( CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC )
 
-rtc_retain_mem_t *const rtc_retain_mem = (rtc_retain_mem_t *)(SOC_RTC_DRAM_HIGH - sizeof(rtc_retain_mem_t));
+#define RTC_RETAIN_MEM_ADDR (SOC_RTC_DATA_HIGH - sizeof(rtc_retain_mem_t))
+
+rtc_retain_mem_t *const rtc_retain_mem = (rtc_retain_mem_t *)RTC_RETAIN_MEM_ADDR;
+
+#if !IS_BOOTLOADER_BUILD
+/* The app needs to be told this memory is reserved, important if configured to use RTC memory as heap.
+
+   Note that keeping this macro here only works when other symbols in this file are referenced by the app, as
+   this feature is otherwise 100% part of the bootloader. However this seems to happen in all apps.
+ */
+SOC_RESERVE_MEMORY_REGION(RTC_RETAIN_MEM_ADDR, RTC_RETAIN_MEM_ADDR + sizeof(rtc_retain_mem_t), rtc_retain_mem);
+#endif
 
 static bool check_rtc_retain_mem(void)
 {
