@@ -365,6 +365,10 @@ void esp_transport_ssl_set_interface_name(esp_transport_handle_t t, struct ifreq
 esp_transport_handle_t esp_transport_ssl_init(void)
 {
     esp_transport_handle_t t = esp_transport_init();
+    if (t == NULL) {
+        return NULL;
+    }
+
     esp_transport_set_func(t, ssl_connect, ssl_read, ssl_write, ssl_close, ssl_poll_read, ssl_poll_write, ssl_destroy);
     esp_transport_set_async_connect_func(t, ssl_connect_async);
     t->_get_socket = ssl_get_socket;
@@ -385,6 +389,9 @@ void esp_transport_esp_tls_destroy(struct transport_esp_tls* transport_esp_tls)
 esp_transport_handle_t esp_transport_tcp_init(void)
 {
     esp_transport_handle_t t = esp_transport_init();
+    if (t == NULL) {
+        return NULL;
+    }
     esp_transport_set_func(t, tcp_connect, ssl_read, ssl_write, ssl_close, ssl_poll_read, ssl_poll_write, ssl_destroy);
     esp_transport_set_async_connect_func(t, tcp_connect_async);
     t->_get_socket = ssl_get_socket;

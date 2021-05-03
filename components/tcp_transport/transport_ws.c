@@ -580,6 +580,9 @@ static int ws_get_socket(esp_transport_handle_t t)
 esp_transport_handle_t esp_transport_ws_init(esp_transport_handle_t parent_handle)
 {
     esp_transport_handle_t t = esp_transport_init();
+    if (t == NULL) {
+        return NULL;
+    }
     transport_ws_t *ws = calloc(1, sizeof(transport_ws_t));
     ESP_TRANSPORT_MEM_CHECK(TAG, ws, return NULL);
     ws->parent = parent_handle;
