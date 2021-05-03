@@ -34,7 +34,6 @@
 
 #define ESP_GCOV_DOWN_BUF_SIZE  4200
 
-#define LOG_LOCAL_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include "esp_log.h"
 const static char *TAG = "esp_gcov_rtio";
 

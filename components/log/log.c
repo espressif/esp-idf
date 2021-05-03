@@ -61,7 +61,7 @@ typedef struct uncached_tag_entry_ {
     char tag[0];    // beginning of a zero-terminated string
 } uncached_tag_entry_t;
 
-static esp_log_level_t s_log_default_level = ESP_LOG_VERBOSE;
+esp_log_level_t esp_log_default_level = CONFIG_LOG_DEFAULT_LEVEL;
 static SLIST_HEAD(log_tags_head, uncached_tag_entry_) s_log_tags = SLIST_HEAD_INITIALIZER(s_log_tags);
 static cached_tag_entry_t s_log_cache[TAG_CACHE_SIZE];
 static uint32_t s_log_cache_max_generation = 0;
@@ -96,7 +96,7 @@ void esp_log_level_set(const char *tag, esp_log_level_t level)
 
     // for wildcard tag, remove all linked list items and clear the cache
     if (strcmp(tag, "*") == 0) {
-        s_log_default_level = level;
+        esp_log_default_level = level;
         clear_log_level_list();
         esp_log_impl_unlock();
         return;
@@ -166,7 +166,7 @@ void esp_log_writev(esp_log_level_t level,
     // Look for the tag in cache first, then in the linked list of all tags
     if (!get_cached_log_level(tag, &level_for_tag)) {
         if (!get_uncached_log_level(tag, &level_for_tag)) {
-            level_for_tag = s_log_default_level;
+            level_for_tag = esp_log_default_level;
         }
         add_to_cache(tag, level_for_tag);
 #ifdef LOG_BUILTIN_CHECKS

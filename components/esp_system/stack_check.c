@@ -18,7 +18,6 @@
 
 #if CONFIG_COMPILER_STACK_CHECK
 
-#define LOG_LOCAL_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include "esp_log.h"
 const static char *TAG = "stack_chk";
 

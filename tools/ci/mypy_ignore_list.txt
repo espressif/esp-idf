@@ -141,6 +141,7 @@ examples/system/ota/otatool/otatool_example.py
 examples/system/ota/simple_ota_example/example_test.py
 examples/system/perfmon/example_test.py
 examples/system/select/example_test.py
+examples/system/startup_time/example_test.py
 examples/system/sysview_tracing/example_test.py
 examples/system/sysview_tracing_heap_log/example_test.py
 examples/system/task_watchdog/example_test.py

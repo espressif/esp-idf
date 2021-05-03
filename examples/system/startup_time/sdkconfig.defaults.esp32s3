@@ -1,0 +1,5 @@
+# Not calibrating RTC_SLOW_CLK saves a small amount of time during boot.
+#
+# Setting option to zero is only recommended if not using sleep modes, or
+# if you don't need accurate sleep times.
+CONFIG_ESP32S3_RTC_CLK_CAL_CYCLES=0
