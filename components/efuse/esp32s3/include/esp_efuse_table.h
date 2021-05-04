@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 
-// md5_digest_table 6a29c09c943d9cb07bd874af57b5870e
+// md5_digest_table 47c4cec4f1affd33418ee25442586183
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -90,6 +90,10 @@ extern const esp_efuse_desc_t* ESP_EFUSE_KEY_PURPOSE_4[];
 extern const esp_efuse_desc_t* ESP_EFUSE_KEY_PURPOSE_5[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_EN[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE[];
+extern const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_JTAG[];
+extern const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_SERIAL_JTAG[];
+extern const esp_efuse_desc_t* ESP_EFUSE_STRAP_JTAG_SEL[];
+extern const esp_efuse_desc_t* ESP_EFUSE_USB_PHY_SEL[];
 extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_TPUW[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_DOWNLOAD_MODE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_LEGACY_SPI_BOOT[];
