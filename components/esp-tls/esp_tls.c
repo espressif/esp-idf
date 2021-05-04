@@ -267,7 +267,7 @@ static esp_err_t esp_tls_set_socket_non_blocking(int fd, bool non_blocking)
     return ESP_OK;
 }
 
-static esp_err_t esp_tcp_connect(const char *host, int hostlen, int port, int *sockfd, esp_tls_error_handle_t error_handle, const esp_tls_cfg_t *cfg)
+esp_err_t esp_tls_tcp_connect(const char *host, int hostlen, int port, const esp_tls_cfg_t *cfg, esp_tls_error_handle_t error_handle, int *sockfd)
 {
     struct sockaddr_storage address;
     int fd;
@@ -371,7 +371,7 @@ static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, c
             _esp_tls_net_init(tls);
             tls->is_tls = true;
         }
-        if ((esp_ret = esp_tcp_connect(hostname, hostlen, port, &tls->sockfd, tls->error_handle, cfg)) != ESP_OK) {
+        if ((esp_ret = esp_tls_tcp_connect(hostname, hostlen, port, cfg, tls->error_handle, &tls->sockfd)) != ESP_OK) {
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, esp_ret);
             return -1;
         }

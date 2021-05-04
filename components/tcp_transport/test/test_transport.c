@@ -315,6 +315,7 @@ static void socket_operation_test(esp_transport_handle_t transport_under_test,
     close(params.listen_sock);
     close(params.accepted_sock);
 
+    xEventGroupWaitBits(params.tcp_connect_done, TCP_LISTENER_DONE, true, true, max_wait);
     // Cleanup
     TEST_ASSERT_EQUAL(false, params.tcp_listener_failed);
     vEventGroupDelete(params.tcp_connect_done);

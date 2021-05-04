@@ -599,6 +599,20 @@ int esp_tls_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls
 void esp_tls_server_session_delete(esp_tls_t *tls);
 #endif /* ! CONFIG_ESP_TLS_SERVER */
 
+/**
+ * @brief Creates a plain TCP connection, returning a valid socket fd on success or an error handle
+ *
+ * @param[in]  host      Hostname of the host.
+ * @param[in]  hostlen   Length of hostname.
+ * @param[in]  port      Port number of the host.
+ * @param[in]  cfg       ESP-TLS configuration as esp_tls_cfg_t.
+ * @param[out] error_handle ESP-TLS error handle holding potential errors occurred during connection
+ * @param[out] sockfd    Socket descriptor if successfully connected on TCP layer
+ * @return     ESP_OK   on success
+ *             ESP-TLS based error codes on failure
+ */
+esp_err_t esp_tls_tcp_connect(const char *host, int hostlen, int port, const esp_tls_cfg_t *cfg, esp_tls_error_handle_t error_handle, int *sockfd);
+
 #ifdef __cplusplus
 }
 #endif
