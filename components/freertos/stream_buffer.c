@@ -256,8 +256,15 @@ static void prvInitialiseNewStreamBuffer( StreamBuffer_t * const pxStreamBuffer,
 		this is a quirk of the implementation that means otherwise the free
 		space would be reported as one byte smaller than would be logically
 		expected. */
-		xBufferSizeBytes++;
-		pucAllocatedMemory = ( uint8_t * ) pvPortMalloc( xBufferSizeBytes + sizeof( StreamBuffer_t ) ); /*lint !e9079 malloc() only returns void*. */
+		if( xBufferSizeBytes < ( xBufferSizeBytes + 1 + sizeof( StreamBuffer_t ) ) )
+		{
+			xBufferSizeBytes++;
+			pucAllocatedMemory = ( uint8_t * ) pvPortMalloc( xBufferSizeBytes + sizeof( StreamBuffer_t ) ); /*lint !e9079 malloc() only returns void*. */
+		}
+		else
+		{
+			pucAllocatedMemory = NULL;
+		}
 
 		if( pucAllocatedMemory != NULL )
 		{
