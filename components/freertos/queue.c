@@ -388,7 +388,22 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 			xQueueSizeInBytes = ( size_t ) ( uxQueueLength * uxItemSize ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
 		}
 
-		pxNewQueue = ( Queue_t * ) pvPortMalloc( sizeof( Queue_t ) + xQueueSizeInBytes );
+		/* Check for multiplication overflow. */
+		configASSERT( ( uxItemSize == 0 ) || ( uxQueueLength == ( xQueueSizeInBytes / uxItemSize ) ) );
+
+		/* Check for addition overflow. */
+		configASSERT( ( sizeof( Queue_t ) + xQueueSizeInBytes ) >  xQueueSizeInBytes );
+
+		/* Allocate the queue and storage area.  Justification for MISRA
+		deviation as follows:  pvPortMalloc() always ensures returned memory
+		blocks are aligned per the requirements of the MCU stack.  In this case
+		pvPortMalloc() must return a pointer that is guaranteed to meet the
+		alignment requirements of the Queue_t structure - which in this case
+		is an int8_t *.  Therefore, whenever the stack alignment requirements
+		are greater than or equal to the pointer to char requirements the cast
+		is safe.  In other cases alignment requirements are not strict (one or
+		two bytes). */
+		pxNewQueue = ( Queue_t * ) pvPortMalloc( sizeof( Queue_t ) + xQueueSizeInBytes ); /*lint !e9087 !e9079 see comment above. */
 
 		if( pxNewQueue != NULL )
 		{
