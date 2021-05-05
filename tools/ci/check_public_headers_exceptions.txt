@@ -20,7 +20,6 @@ components/esp_rom/include/esp32s2/rom/rsa_pss.h
 components/esp_common/include/esp_private/
 
 components/esp32/include/esp32/brownout.h
-components/esp32/include/esp32/spiram.h
 components/esp32/include/esp32/cache_err_int.h
 
 components/driver/include/driver/sdmmc_defs.h
