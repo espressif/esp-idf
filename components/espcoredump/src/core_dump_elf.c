@@ -646,6 +646,8 @@ esp_err_t esp_core_dump_write_elf(core_dump_write_config_t *write_cfg)
     return err;
 }
 
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+
 /* Below are the helper function to parse the core dump ELF stored in flash */
 
 static esp_err_t elf_core_dump_image_mmap(spi_flash_mmap_handle_t* core_data_handle, const void **map_addr)
@@ -772,5 +774,7 @@ esp_err_t esp_core_dump_get_summary(esp_core_dump_summary_t *summary)
     spi_flash_munmap(core_data_handle);
     return ESP_OK;
 }
+
+#endif // CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
 
 #endif //CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF

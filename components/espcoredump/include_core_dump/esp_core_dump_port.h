@@ -24,6 +24,7 @@
  * both Xtensa and RISC-V architecture.
  */
 
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "soc/cpu.h"
 #include "esp_debug_helpers.h"
@@ -165,6 +166,8 @@ void esp_core_dump_port_set_crashed_tcb(uint32_t handle);
  */
 uint32_t esp_core_dump_get_extra_info(void **info);
 
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
+
 /**
  * @brief Parse extra information into summary
  *
@@ -191,6 +194,7 @@ void esp_core_dump_summary_parse_exc_regs(esp_core_dump_summary_t *summary, void
  */
 void esp_core_dump_summary_parse_backtrace_info(esp_core_dump_bt_info_t *bt_info, const void *vaddr,
                                                 const void *paddr, uint32_t stack_size);
+#endif /* CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF */
 
 #ifdef __cplusplus
 }
