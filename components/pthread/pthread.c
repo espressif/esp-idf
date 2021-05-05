@@ -360,7 +360,7 @@ int pthread_join(pthread_t thread, void **retval)
             if (pthread->state == PTHREAD_TASK_STATE_RUN) {
                 pthread->join_task = xTaskGetCurrentTaskHandle();
                 wait = true;
-            } else {
+            } else { // thread has exited and task is already suspended, or about to be suspended
                 child_task_retval = pthread->retval;
                 pthread_delete(pthread);
             }
@@ -451,9 +451,13 @@ void pthread_exit(void *value_ptr)
             pthread->state = PTHREAD_TASK_STATE_EXIT;
         }
     }
-    xSemaphoreGive(s_threads_mux);
 
     ESP_LOGD(TAG, "Task stk_wm = %d", uxTaskGetStackHighWaterMark(NULL));
+
+    xSemaphoreGive(s_threads_mux);
+    // note: if this thread is joinable then after giving back s_threads_mux
+    // this task could be deleted at any time, so don't take another lock or
+    // do anything that might lock (such as printing to stdout)
 
     if (detached) {
         vTaskDelete(NULL);
