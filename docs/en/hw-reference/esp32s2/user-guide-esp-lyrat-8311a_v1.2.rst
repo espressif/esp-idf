@@ -8,7 +8,7 @@ This user guide provides information on the ESP-LyraT-8311A extension board.
 
 This board cannot be bought separately and is usually sold together with other Espressif development boards (e.g., ESP32-S2-Kaluga-1), which will be referred to as *main boards* below.
 
-Currently, ESP-LyraT-8311A v1.3 is sold as part of the :doc:`user-guide-esp32-s2-kaluga-1-kit-v1.2`.
+Currently, ESP-LyraT-8311A v1.2 is sold as part of the :doc:`user-guide-esp32-s2-kaluga-1-kit-v1.2`.
 
 The ESP-LyraT-8311A extends the functionality of your main board by adding sound processing functionality:
 
