@@ -258,7 +258,7 @@ typedef union {
 /**
  * @brief GATT Client callback function type
  * @param event : Event type
- * @param gatts_if : GATT client access interface, normally
+ * @param gattc_if : GATT client access interface, normally
  *                   different gattc_if correspond to different profile
  * @param param : Point to callback parameter, currently is union type
  */
