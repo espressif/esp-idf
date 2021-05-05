@@ -21,47 +21,32 @@ PROJECT_NAME = "ESP32 Programming Guide"
 ## and used to include in API reference documentation
 
 INPUT = \
-    ##
-    ## Wi-Fi - API Reference
-    ##
     $(IDF_PATH)/components/esp_wifi/include/esp_wifi.h \
     $(IDF_PATH)/components/esp_wifi/include/esp_wifi_types.h \
     $(IDF_PATH)/components/esp_wifi/include/esp_smartconfig.h \
     $(IDF_PATH)/components/esp_wifi/include/esp_now.h \
     $(IDF_PATH)/components/esp_wifi/include/esp_wifi_default.h \
-    ## Mesh - API Reference
     $(IDF_PATH)/components/esp_wifi/include/esp_mesh.h \
-    ## Event loop - API Reference
     $(IDF_PATH)/components/esp_event/include/esp_event.h \
     $(IDF_PATH)/components/esp_event/include/esp_event_base.h \
     $(IDF_PATH)/components/esp_event/include/esp_event_legacy.h \
-    ## Bluetooth - API Reference
-    ## Controller && VHCI
     $(IDF_PATH)/components/bt/include/esp_bt.h \
-    ## Bluetooth COMMON
-    ## Issue with __attribute__
     $(IDF_PATH)/components/bt/host/bluedroid/api/include/api/esp_bt_defs.h \
     $(IDF_PATH)/components/bt/host/bluedroid/api/include/api/esp_bt_main.h \
     $(IDF_PATH)/components/bt/host/bluedroid/api/include/api/esp_bt_device.h \
-    ## Bluetooth LE
     $(IDF_PATH)/components/bt/host/bluedroid/api/include/api/esp_gap_ble_api.h \
-    ## Issue with __attribute__
     $(IDF_PATH)/components/bt/host/bluedroid/api/include/api/esp_gatt_defs.h \
     $(IDF_PATH)/components/bt/host/bluedroid/api/include/api/esp_gatts_api.h \
     $(IDF_PATH)/components/bt/host/bluedroid/api/include/api/esp_gattc_api.h \
     $(IDF_PATH)/components/bt/host/bluedroid/api/include/api/esp_blufi_api.h \
-    ## Bluetooth Classic
     $(IDF_PATH)/components/bt/host/bluedroid/api/include/api/esp_gap_bt_api.h \
-    ## Issue with __attribute__
     $(IDF_PATH)/components/bt/host/bluedroid/api/include/api/esp_a2dp_api.h \
     $(IDF_PATH)/components/bt/host/bluedroid/api/include/api/esp_avrc_api.h \
     $(IDF_PATH)/components/bt/host/bluedroid/api/include/api/esp_spp_api.h \
     $(IDF_PATH)/components/bt/host/bluedroid/api/include/api/esp_hf_defs.h \
     $(IDF_PATH)/components/bt/host/bluedroid/api/include/api/esp_hf_client_api.h \
     $(IDF_PATH)/components/bt/host/bluedroid/api/include/api/esp_hf_ag_api.h \
-    ## NimBLE related Bluetooth APIs
     $(IDF_PATH)/components/bt/host/nimble/esp-hci/include/esp_nimble_hci.h \
-    ## ESP BLE Mesh APIs
     $(IDF_PATH)/components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_common_api.h \
     $(IDF_PATH)/components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_local_data_operation_api.h \
     $(IDF_PATH)/components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_low_power_api.h \
@@ -75,17 +60,11 @@ INPUT = \
     $(IDF_PATH)/components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_sensor_model_api.h \
     $(IDF_PATH)/components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_time_scene_model_api.h \
     $(IDF_PATH)/components/bt/esp_ble_mesh/api/esp_ble_mesh_defs.h \
-    ##
-    ## Ethernet - API Reference
-    ##
     $(IDF_PATH)/components/esp_eth/include/esp_eth.h \
     $(IDF_PATH)/components/esp_eth/include/esp_eth_com.h \
     $(IDF_PATH)/components/esp_eth/include/esp_eth_mac.h \
     $(IDF_PATH)/components/esp_eth/include/esp_eth_phy.h \
     $(IDF_PATH)/components/esp_eth/include/esp_eth_netif_glue.h \
-    ##
-    ## Peripherals - API Reference
-    ##
     $(IDF_PATH)/components/driver/include/driver/gpio.h \
     $(IDF_PATH)/components/driver/include/driver/rtc_io.h \
     $(IDF_PATH)/components/driver/include/driver/i2c.h \
@@ -132,38 +111,21 @@ INPUT = \
     $(IDF_PATH)/components/soc/soc/esp32/include/soc/touch_sensor_channel.h \
     $(IDF_PATH)/components/soc/soc/esp32/include/soc/uart_channel.h \
     $(IDF_PATH)/components/soc/soc/esp32/include/soc/rtc_io_channel.h \
-    ## esp_netif - API Reference
     $(IDF_PATH)/components/esp_netif/include/esp_netif.h \
     $(IDF_PATH)/components/esp_netif/include/esp_netif_net_stack.h \
-    ##
-    ## Protocols - API Reference
-    ##
-    ## ESP-TLS
     $(IDF_PATH)/components/esp-tls/esp_tls.h \
-    ## MQTT
     $(IDF_PATH)/components/mqtt/esp-mqtt/include/mqtt_client.h \
-    ## ICMP-ECHO
     $(IDF_PATH)/components/lwip/include/apps/ping/ping_sock.h \
-    ## SNTP
     $(IDF_PATH)/components/lwip/include/apps/sntp/sntp.h \
-    ## mDNS
     $(IDF_PATH)/components/mdns/include/mdns.h \
     $(IDF_PATH)/components/esp_http_client/include/esp_http_client.h \
     $(IDF_PATH)/components/esp_websocket_client/include/esp_websocket_client.h \
-    ## HTTP / HTTPS Server
     $(IDF_PATH)/components/esp_http_server/include/esp_http_server.h \
     $(IDF_PATH)/components/esp_https_server/include/esp_https_server.h \
-    ## ESP Local Ctrl
     $(IDF_PATH)/components/esp_local_ctrl/include/esp_local_ctrl.h \
-    ## ESP Serial Slave Link
     $(IDF_PATH)/components/esp_serial_slave_link/include/esp_serial_slave_link/essl.h \
     $(IDF_PATH)/components/esp_serial_slave_link/include/esp_serial_slave_link/essl_sdio.h \
-    ## ESP Certificate Bundle
     $(IDF_PATH)/components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h \
-    ##
-    ## Provisioning - API Reference
-    ##
-    ## Protocol Communication
     $(IDF_PATH)/components/protocomm/include/common/protocomm.h \
     $(IDF_PATH)/components/protocomm/include/security/protocomm_security.h \
     $(IDF_PATH)/components/protocomm/include/security/protocomm_security0.h \
@@ -171,132 +133,79 @@ INPUT = \
     $(IDF_PATH)/components/protocomm/include/transports/protocomm_ble.h \
     $(IDF_PATH)/components/protocomm/include/transports/protocomm_console.h \
     $(IDF_PATH)/components/protocomm/include/transports/protocomm_httpd.h \
-    ## WiFi Provisioning
     $(IDF_PATH)/components/wifi_provisioning/include/wifi_provisioning/manager.h \
     $(IDF_PATH)/components/wifi_provisioning/include/wifi_provisioning/scheme_ble.h \
     $(IDF_PATH)/components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h \
     $(IDF_PATH)/components/wifi_provisioning/include/wifi_provisioning/scheme_console.h \
     $(IDF_PATH)/components/wifi_provisioning/include/wifi_provisioning/wifi_config.h \
     $(IDF_PATH)/components/wifi_provisioning/include/wifi_provisioning/wifi_scan.h \
-    ##
-    ## Storage - API Reference
-    ##
-    ## SPI Flash and Partition APIs
     $(IDF_PATH)/components/spi_flash/include/esp_flash_spi_init.h \
     $(IDF_PATH)/components/spi_flash/include/esp_flash.h \
     $(IDF_PATH)/components/spi_flash/include/esp_partition.h \
     $(IDF_PATH)/components/bootloader_support/include/esp_flash_encrypt.h \
     $(IDF_PATH)/components/soc/include/hal/spi_flash_types.h \
-    ## SPIFFS
     $(IDF_PATH)/components/spiffs/include/esp_spiffs.h \
-    ## SD/MMC Card Host
     $(IDF_PATH)/components/sdmmc/include/sdmmc_cmd.h \
     $(IDF_PATH)/components/driver/include/driver/sdmmc_host.h \
     $(IDF_PATH)/components/driver/include/driver/sdmmc_types.h \
     $(IDF_PATH)/components/driver/include/driver/sdspi_host.h \
-    ## SDIO slave
     $(IDF_PATH)/components/driver/include/driver/sdio_slave.h \
     $(IDF_PATH)/components/soc/include/hal/sdio_slave_types.h \
-    ## Non-Volatile Storage
     $(IDF_PATH)/components/nvs_flash/include/nvs.h \
     $(IDF_PATH)/components/nvs_flash/include/nvs_flash.h \
-    ## Virtual Filesystem
     $(IDF_PATH)/components/vfs/include/esp_vfs.h \
     $(IDF_PATH)/components/vfs/include/esp_vfs_dev.h \
     $(IDF_PATH)/components/vfs/include/esp_vfs_semihost.h \
-    ## FAT Filesystem
-    ## NOTE: for two lines below header_file.inc is not used
     $(IDF_PATH)/components/fatfs/vfs/esp_vfs_fat.h \
     $(IDF_PATH)/components/fatfs/diskio/diskio_impl.h \
     $(IDF_PATH)/components/fatfs/diskio/diskio_sdmmc.h \
     $(IDF_PATH)/components/fatfs/diskio/diskio_wl.h \
     $(IDF_PATH)/components/fatfs/diskio/diskio_rawflash.h \
-    ## Wear Levelling
     $(IDF_PATH)/components/wear_levelling/include/wear_levelling.h \
-    ##
-    ## System - API Reference
-    ##
-    ## ESP Console
     $(IDF_PATH)/components/console/esp_console.h \
-    ## Memory Allocation
     $(IDF_PATH)/components/heap/include/esp_heap_caps.h \
     $(IDF_PATH)/components/heap/include/esp_heap_trace.h \
     $(IDF_PATH)/components/heap/include/esp_heap_caps_init.h \
     $(IDF_PATH)/components/heap/include/multi_heap.h \
-    ## Himem
     $(IDF_PATH)/components/esp32/include/esp32/himem.h \
-    ## Interrupt Allocation
     $(IDF_PATH)/components/$(IDF_TARGET)/include/esp_intr_alloc.h \
-    ## Watchdogs
-    ## NOTE: for two lines below header_file.inc is not used
     $(IDF_PATH)/components/esp_common/include/esp_int_wdt.h \
     $(IDF_PATH)/components/esp_common/include/esp_task_wdt.h \
-    ## Hooks
     $(IDF_PATH)/components/esp_common/include/esp_freertos_hooks.h \
-    ## Inter-Processor Call
     $(IDF_PATH)/components/esp_ipc/include/esp_ipc.h \
-    ## Call Function with External stack
     $(IDF_PATH)/components/esp_common/include/esp_expression_with_stack.h \
-    ## Over The Air Updates (OTA)
     $(IDF_PATH)/components/app_update/include/esp_ota_ops.h \
-    ## ESP HTTPS OTA
     $(IDF_PATH)/components/esp_https_ota/include/esp_https_ota.h \
-    ## Sleep
     $(IDF_PATH)/components/$(IDF_TARGET)/include/esp_sleep.h \
-    ## Logging
     $(IDF_PATH)/components/log/include/esp_log.h \
-    ## Base MAC address
-    ## NOTE: for line below header_file.inc is not used
     $(IDF_PATH)/components/esp_system/include/esp_system.h \
-    ## IDF version
     $(IDF_PATH)/components/esp_common/include/esp_idf_version.h \
-    ##
-    ## ULP Coprocessor - API Guides
-    ##
-    ## NOTE: for line below header_file.inc is not used
     $(IDF_PATH)/components/ulp/include/$(IDF_TARGET)/ulp.h \
     $(IDF_PATH)/components/ulp/include/ulp_common.h \
-    ##
-    ## Application Level Tracing - API Reference
-    ##
     $(IDF_PATH)/components/app_trace/include/esp_app_trace.h \
     $(IDF_PATH)/components/app_trace/include/esp_sysview_trace.h \
-    ### Power management
     $(IDF_PATH)/components/esp_common/include/esp_pm.h \
     $(IDF_PATH)/components/$(IDF_TARGET)/include/$(IDF_TARGET)/pm.h \
-    ### esp_timer, High Resolution Timer
     $(IDF_PATH)/components/esp_timer/include/esp_timer.h \
-    ### esp_event, Event Loop Library
     $(IDF_PATH)/components/esp_event/include/esp_event.h \
     $(IDF_PATH)/components/esp_event/include/esp_event_base.h \
-    ### eFuse Manager
     $(IDF_PATH)/components/efuse/include/esp_efuse.h \
-    ### App Image Format
     $(IDF_PATH)/components/bootloader_support/include/esp_app_format.h \
-    ### ESP Pthread parameters
     $(IDF_PATH)/components/pthread/include/esp_pthread.h \
-    ###
-    ### FreeRTOS
-    ###
     $(IDF_PATH)/components/freertos/include/freertos/task.h \
     $(IDF_PATH)/components/freertos/include/freertos/queue.h \
     $(IDF_PATH)/components/freertos/include/freertos/semphr.h \
     $(IDF_PATH)/components/freertos/include/freertos/timers.h \
     $(IDF_PATH)/components/freertos/include/freertos/event_groups.h \
-    ### Ringbuffer
     $(IDF_PATH)/components/esp_ringbuf/include/freertos/ringbuf.h \
-    ### Helper functions for error codes
     $(IDF_PATH)/components/esp_common/include/esp_err.h \
-    ### System APIs
     $(IDF_PATH)/components/esp_system/include/esp_system.h \
-    ### Modbus controller component header file
     $(IDF_PATH)/components/freemodbus/common/include/esp_modbus_common.h \
     $(IDF_PATH)/components/freemodbus/common/include/esp_modbus_slave.h \
     $(IDF_PATH)/components/freemodbus/common/include/esp_modbus_master.h \
-     ### Performance Monitor component header file
-     $(IDF_PATH)/components/perfmon/include/xtensa_perfmon_access.h \
-     $(IDF_PATH)/components/perfmon/include/xtensa_perfmon_apis.h \
-     $(IDF_PATH)/components/perfmon/include/xtensa_perfmon_masks.h
+    $(IDF_PATH)/components/perfmon/include/xtensa_perfmon_access.h \
+    $(IDF_PATH)/components/perfmon/include/xtensa_perfmon_apis.h \
+    $(IDF_PATH)/components/perfmon/include/xtensa_perfmon_masks.h
 
 
 ## Get warnings for functions that have no documentation for their parameters or return value
