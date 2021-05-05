@@ -1,4 +1,4 @@
-	.section .text
+	.section .text.vectors
 	.global irq_vector
 	.global reset_vector
 
@@ -10,6 +10,8 @@ reset_vector:
 .balign 16
 irq_vector:
 	ret
+
+	.section .text
 
 __start:
 	/* setup the stack pointer */
