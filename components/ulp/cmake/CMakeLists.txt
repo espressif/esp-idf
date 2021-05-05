@@ -149,3 +149,4 @@ add_custom_target(build
                 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 target_link_libraries(${ULP_APP_NAME} -T${CMAKE_CURRENT_BINARY_DIR}/${ULP_LD_SCRIPT} ${EXTRA_LINKER_ARGS})
+set_target_properties(${ULP_APP_NAME} PROPERTIES LINK_DEPENDS ${ULP_LD_SCRIPT})
