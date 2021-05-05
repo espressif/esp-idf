@@ -88,6 +88,11 @@ esp_partition_iterator_t esp_partition_find(esp_partition_type_t type,
     if (ensure_partitions_loaded() != ESP_OK) {
         return NULL;
     }
+    // Searching for a specific subtype without specifying the type doesn't make
+    // sense, and is likely a usage error.
+    if (type == ESP_PARTITION_TYPE_ANY && subtype != ESP_PARTITION_SUBTYPE_ANY) {
+        return NULL;
+    }
     // create an iterator pointing to the start of the list
     // (next item will be the first one)
     esp_partition_iterator_t it = iterator_create(type, subtype, label);
