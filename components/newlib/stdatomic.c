@@ -82,7 +82,7 @@
     return ret;                                     \
 }
 
-#define CMP_EXCHANGE(n, type) bool __atomic_compare_exchange_ ## n (type* mem, type* expect, type desired, int success, int failure) \
+#define CMP_EXCHANGE(n, type) bool __atomic_compare_exchange_ ## n (type* mem, type* expect, type desired, bool weak, int success, int failure) \
 { \
     bool ret = false; \
     unsigned state = _ATOMIC_ENTER_CRITICAL(); \
@@ -141,12 +141,12 @@
     return ret; \
 }
 
-#define SYNC_FETCH_OP(op, n, type) type __sync_fetch_and_ ## op ##_ ## n (type* ptr, type value, ...) \
+#define SYNC_FETCH_OP(op, n, type) type __sync_fetch_and_ ## op ##_ ## n (type* ptr, type value) \
 {                                                                               \
     return __atomic_fetch_ ## op ##_ ## n (ptr, value, __ATOMIC_SEQ_CST);       \
 }
 
-#define SYNC_BOOL_CMP_EXCHANGE(n, type) bool  __sync_bool_compare_and_swap_ ## n  (type *ptr, type oldval, type newval, ...) \
+#define SYNC_BOOL_CMP_EXCHANGE(n, type) bool  __sync_bool_compare_and_swap_ ## n  (type *ptr, type oldval, type newval) \
 {                                                                                \
     bool ret = false;                                                            \
     unsigned state = _ATOMIC_ENTER_CRITICAL();                                   \
@@ -158,7 +158,7 @@
     return ret;                                                                  \
 }
 
-#define SYNC_VAL_CMP_EXCHANGE(n, type) type  __sync_val_compare_and_swap_ ## n  (type *ptr, type oldval, type newval, ...) \
+#define SYNC_VAL_CMP_EXCHANGE(n, type) type  __sync_val_compare_and_swap_ ## n  (type *ptr, type oldval, type newval) \
 {                                                                                \
     unsigned state = _ATOMIC_ENTER_CRITICAL();                                   \
     type ret = *ptr;                                                             \
@@ -168,8 +168,6 @@
     _ATOMIC_EXIT_CRITICAL(state);                                                \
     return ret;                                                                  \
 }
-
-#pragma GCC diagnostic ignored "-Wbuiltin-declaration-mismatch"
 
 #if NO_ATOMICS_SUPPORT
 
