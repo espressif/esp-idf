@@ -49,22 +49,6 @@
     - build_system
     - macos
 
-"build:docs":
-  labels:
-    - docs
-    - build_docs  # for backward compatibility
-  patterns:
-    - docs
-  deploy:
-    - production
-
-"build:docs:label-only":
-  labels:
-    - docs
-    - build_docs  # for backward compatibility
-  deploy:
-    - preview
-
 # ---------------
 # Build Test Jobs
 # ---------------

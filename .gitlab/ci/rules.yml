@@ -1,16 +1,6 @@
 ############
 # Patterns #
 ############
-.patterns-docs: &patterns-docs
-  - ".gitlab/ci/docs.yml"
-  - "docs/**/*"
-  - "components/**/*.h"
-  - "components/**/Kconfig*"
-  - "components/**/CMakeList.txt"
-  - "components/**/sdkconfig*"
-  - "tools/kconfig_new/**/*"
-  - "CONTRIBUTING.rst"
-
 .patterns-c-files: &patterns-c-files
   - ".gitlab/ci/static-code-analysis.yml"
   - "tools/ci/static-analysis-rules.yml"
@@ -258,9 +248,6 @@
 .if-label-build: &if-label-build
   if: '$BOT_LABEL_BUILD || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*build(?:,[^,\n\r]+)*$/i'
 
-.if-label-build_docs: &if-label-build_docs
-  if: '$BOT_LABEL_BUILD_DOCS || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*build_docs(?:,[^,\n\r]+)*$/i'
-
 .if-label-component_ut: &if-label-component_ut
   if: '$BOT_LABEL_COMPONENT_UT || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*component_ut(?:,[^,\n\r]+)*$/i'
 
@@ -293,9 +280,6 @@
 
 .if-label-docker: &if-label-docker
   if: '$BOT_LABEL_DOCKER || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*docker(?:,[^,\n\r]+)*$/i'
-
-.if-label-docs: &if-label-docs
-  if: '$BOT_LABEL_DOCS || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*docs(?:,[^,\n\r]+)*$/i'
 
 .if-label-example_test: &if-label-example_test
   if: '$BOT_LABEL_EXAMPLE_TEST || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*example_test(?:,[^,\n\r]+)*$/i'
@@ -485,29 +469,6 @@
     - <<: *if-label-docker
     - <<: *if-dev-push
       changes: *patterns-docker
-
-.rules:build:docs:
-  rules:
-    - <<: *if-protected
-    - <<: *if-label-build_docs
-    - <<: *if-label-docs
-    - <<: *if-dev-push
-      changes: *patterns-docs
-
-.rules:build:docs-production:
-  rules:
-    - <<: *if-protected-no_label
-
-.rules:build:docs:label-only:
-  rules:
-    - <<: *if-protected
-    - <<: *if-label-build_docs
-    - <<: *if-label-docs
-
-.rules:build:docs:label-only-preview:
-  rules:
-    - <<: *if-label-build_docs
-    - <<: *if-label-docs
 
 .rules:build:example_test-esp32:
   rules:
