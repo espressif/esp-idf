@@ -3,6 +3,12 @@ I2C Driver
 
 :link_to_translation:`zh_CN:[中文]`
 
+.. only:: esp32c3
+
+    .. warning::
+
+        This document is not updated for ESP32-C3 yet.
+
 Overview
 --------
 
