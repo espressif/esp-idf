@@ -22,7 +22,7 @@ Initialization
             .scheme_event_handler = WIFI_PROV_SCHEME_BLE_EVENT_HANDLER_FREE_BTDM
         };
 
-        ESP_ERR_CHECK( wifi_prov_mgr_init(config) );
+        ESP_ERROR_CHECK( wifi_prov_mgr_init(config) );
 
 
 The configuration structure ``wifi_prov_mgr_config_t`` has a few fields to specify the behavior desired of the manager :
@@ -105,7 +105,7 @@ If provisioning state needs to be reset, any of the following approaches may be 
     ::
 
         bool provisioned = false;
-        ESP_ERR_CHECK( wifi_prov_mgr_is_provisioned(&provisioned) );
+        ESP_ERROR_CHECK( wifi_prov_mgr_is_provisioned(&provisioned) );
 
 
 Start Provisioning Service
@@ -133,7 +133,7 @@ See :doc:`Provisioning<provisioning>` for details about the security features.
         wifi_prov_security_t security = WIFI_PROV_SECURITY_1;
         const char *pop = "abcd1234";
 
-        ESP_ERR_CHECK( wifi_prov_mgr_start_provisioning(security, pop, service_name, service_key) );
+        ESP_ERROR_CHECK( wifi_prov_mgr_start_provisioning(security, pop, service_name, service_key) );
 
 
 The provisioning service will automatically finish only if it receives valid Wi-Fi AP credentials followed by successfully connection of device to the AP (IP obtained). Regardless of that, the provisioning service can be stopped at any moment by making a call to :cpp:func:`wifi_prov_mgr_stop_provisioning()`.
@@ -155,7 +155,7 @@ There are two ways for making this possible. The simpler way is to use a blockin
     ::
 
         // Start provisioning service
-        ESP_ERR_CHECK( wifi_prov_mgr_start_provisioning(security, pop, service_name, service_key) );
+        ESP_ERROR_CHECK( wifi_prov_mgr_start_provisioning(security, pop, service_name, service_key) );
 
         // Wait for service to complete
         wifi_prov_mgr_wait();
