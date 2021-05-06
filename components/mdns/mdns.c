@@ -1418,7 +1418,7 @@ static void _mdns_create_answer_from_parsed_packet(mdns_parsed_packet_t *parsed_
         if (q->service && q->proto) {
             mdns_srv_item_t *service = _mdns_server->services;
             while (service) {
-                if (_mdns_service_match(service->service, q->service, q->proto, q->host)) {
+                if (_mdns_service_match(service->service, q->service, q->proto, NULL)) {
                     if (!_mdns_create_answer_from_service(packet, service->service, q, shared, send_flush)) {
                         _mdns_free_tx_packet(packet);
                         return;
@@ -1515,6 +1515,13 @@ static bool _mdns_append_host(mdns_out_answer_t ** destination, mdns_host_item_t
 static bool _mdns_append_host_list_in_services(mdns_out_answer_t ** destination, mdns_srv_item_t * services[],
                                                size_t services_len, bool flush, bool bye)
 {
+    if (services == NULL) {
+        mdns_host_item_t * host = mdns_get_host_item(_mdns_server->hostname);
+        if (host != NULL) {
+            return _mdns_append_host(destination, host, flush, bye);
+        }
+        return true;
+    }
     for (size_t i = 0; i < services_len; i++) {
         mdns_host_item_t *host = mdns_get_host_item(services[i]->service->hostname);
         if (!_mdns_append_host(destination, host, flush, bye)) {
@@ -1536,6 +1543,44 @@ static bool _mdns_append_host_list(mdns_out_answer_t ** destination, bool flush,
     while (host != NULL) {
         host = host->next;
         if (!_mdns_append_host(destination, host, flush, bye)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool _mdns_append_host_question(mdns_out_question_t **questions, const char *hostname, bool unicast)
+{
+    mdns_out_question_t *q = (mdns_out_question_t *)malloc(sizeof(mdns_out_question_t));
+    if (!q) {
+        HOOK_MALLOC_FAILED;
+        return false;
+    }
+    q->next = NULL;
+    q->unicast = unicast;
+    q->type = MDNS_TYPE_ANY;
+    q->host = hostname;
+    q->service = NULL;
+    q->proto = NULL;
+    q->domain = MDNS_DEFAULT_DOMAIN;
+    q->own_dynamic_memory = false;
+    if (_mdns_question_exists(q, *questions)) {
+        free(q);
+    } else {
+        queueToEnd(mdns_out_question_t, *questions, q);
+    }
+    return true;
+}
+
+static bool _mdns_append_host_questions_for_services(mdns_out_question_t **questions, mdns_srv_item_t *services[],
+                                                     size_t len, bool unicast)
+{
+    if (!_str_null_or_empty(_mdns_server->hostname) &&
+        !_mdns_append_host_question(questions, _mdns_server->hostname, unicast)) {
+        return false;
+    }
+    for (size_t i = 0; i < len; i++) {
+        if (!_mdns_append_host_question(questions, services[i]->service->hostname, unicast)) {
             return false;
         }
     }
@@ -1582,26 +1627,9 @@ static mdns_tx_packet_t * _mdns_create_probe_packet(mdns_if_t tcpip_if, mdns_ip_
     }
 
     if (include_ip) {
-        for (i = 0; i < len; i++) {
-            mdns_out_question_t * q = (mdns_out_question_t *)malloc(sizeof(mdns_out_question_t));
-            if (!q) {
-                HOOK_MALLOC_FAILED;
-                _mdns_free_tx_packet(packet);
-                return NULL;
-            }
-            q->next = NULL;
-            q->unicast = first;
-            q->type = MDNS_TYPE_ANY;
-            q->host = services[i]->service->hostname;
-            q->service = NULL;
-            q->proto = NULL;
-            q->domain = MDNS_DEFAULT_DOMAIN;
-            q->own_dynamic_memory = false;
-            if (_mdns_question_exists(q, packet->questions)) {
-                free(q);
-            } else {
-                queueToEnd(mdns_out_question_t, packet->questions, q);
-            }
+        if (!_mdns_append_host_questions_for_services(&packet->questions, services, len, first)) {
+            _mdns_free_tx_packet(packet);
+            return NULL;
         }
 
         if (!_mdns_append_host_list_in_services(&packet->servers, services, len, false, false)) {
@@ -1610,23 +1638,6 @@ static mdns_tx_packet_t * _mdns_create_probe_packet(mdns_if_t tcpip_if, mdns_ip_
         }
     }
 
-    return packet;
-}
-
-/**
- * @brief  Create announce packet for self IP addresses
- */
-static mdns_tx_packet_t * _mdns_create_announce_self_ip(mdns_if_t tcpip_if, mdns_ip_protocol_t ip_protocol)
-{
-    mdns_tx_packet_t * packet = _mdns_alloc_packet_default(tcpip_if, ip_protocol);
-    if (!packet) {
-        return NULL;
-    }
-    mdns_host_item_t * host = mdns_get_host_item(_mdns_server->hostname);
-    if (!_mdns_append_host(&packet->servers, host, true, false)) {
-        _mdns_free_tx_packet(packet);
-        return NULL;
-    }
     return packet;
 }
 
@@ -1890,12 +1901,7 @@ static void _mdns_announce_pcb(mdns_if_t tcpip_if, mdns_ip_protocol_t ip_protoco
             }
 
             _pcb->state = PCB_ANNOUNCE_1;
-            mdns_tx_packet_t * p = NULL;
-            if (services != NULL) {
-                p = _mdns_create_announce_packet(tcpip_if, ip_protocol, services, len, include_ip);
-            } else {
-                p = _mdns_create_announce_self_ip(tcpip_if, ip_protocol);
-            }
+            mdns_tx_packet_t * p = _mdns_create_announce_packet(tcpip_if, ip_protocol, services, len, include_ip);
             if (p) {
                 _mdns_schedule_tx_packet(p, 0);
             }
@@ -2646,7 +2652,7 @@ static bool _mdns_name_is_ours(mdns_name_t * name)
     }
 
     //find the service
-    mdns_srv_item_t * service = _mdns_get_service_item(name->service, name->proto, name->host);
+    mdns_srv_item_t * service = _mdns_get_service_item(name->service, name->proto, NULL);
     if (!service) {
         return false;
     }
@@ -3124,7 +3130,7 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
             } else if (!name->sub && _mdns_name_is_ours(name)) {
                 ours = true;
                 if (name->service && name->service[0] && name->proto && name->proto[0]) {
-                    service = _mdns_get_service_item(name->service, name->proto, name->host);
+                    service = _mdns_get_service_item(name->service, name->proto, NULL);
                 }
             } else {
                 if (!parsed_packet->authoritative || record_type == MDNS_NS) {
@@ -3142,7 +3148,7 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
                     _mdns_search_result_add_ptr(search_result, name->host, packet->tcpip_if, packet->ip_protocol);
                 } else if ((discovery || ours) && !name->sub && _mdns_name_is_ours(name)) {
                     if (discovery) {
-                        service = _mdns_get_service_item(name->service, name->proto, name->host);
+                        service = _mdns_get_service_item(name->service, name->proto, NULL);
                         _mdns_remove_parsed_question(parsed_packet, MDNS_TYPE_SDPTR, service);
                     } else if (parsed_packet->questions && !parsed_packet->probe) {
                         _mdns_remove_parsed_question(parsed_packet, type, service);

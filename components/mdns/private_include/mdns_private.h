@@ -215,7 +215,7 @@ typedef struct {
 } mdns_header_t;
 
 typedef struct {
-    char host[MDNS_NAME_BUF_LEN];
+    char host[MDNS_NAME_BUF_LEN]; // hostname for A/AAAA records, instance name for SRV records
     char service[MDNS_NAME_BUF_LEN];
     char proto[MDNS_NAME_BUF_LEN];
     char domain[MDNS_NAME_BUF_LEN];
