@@ -90,7 +90,7 @@
 #define DR_REG_I2S1_BASE                        0x6002D000
 #define DR_REG_UART2_BASE                       0x6002E000
 #define DR_REG_SPI4_BASE                        0x60037000
-#define DR_REG_USB_DEVICE_BASE                  0x60038000
+#define DR_REG_USB_DEVICE_BASE                  0x60080000
 #define DR_REG_USB_WRAP_BASE                    0x60039000
 #define DR_REG_APB_SARADC_BASE                  0x60040000
 #define DR_REG_LCD_CAM_BASE                     0x60041000

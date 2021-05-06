@@ -28,9 +28,9 @@ extern "C" {
 #define SOC_GPIO_SUPPORT_FORCE_HOLD      (1)
 
 // 0~47 except from 22~25 are valid
-#define SOC_GPIO_VALID_GPIO_MASK             (0xFFFFFFFFFFFFULL & ~(0ULL | BIT22 | BIT23 | BIT24 | BIT25))
+#define SOC_GPIO_VALID_GPIO_MASK         (0xFFFFFFFFFFFFULL & ~(0ULL | BIT22 | BIT23 | BIT24 | BIT25))
 // GPIO 46 is input only
-#define SOC_GPIO_VALID_OUTPUT_GPIO_MASK     (SOC_GPIO_VALID_GPIO_MASK & ~(0ULL | BIT46))
+#define SOC_GPIO_VALID_OUTPUT_GPIO_MASK  (SOC_GPIO_VALID_GPIO_MASK & ~(0ULL | BIT46))
 
 
 #ifdef __cplusplus

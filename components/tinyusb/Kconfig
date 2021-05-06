@@ -3,7 +3,7 @@ menu "TinyUSB"
     config USB_ENABLED
         bool "Enable TinyUSB driver"
         default n
-        depends on IDF_TARGET_ESP32S2
+        depends on IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
         select FREERTOS_USE_AUTHENTIC_INCLUDE_PATHS
         help
             Adds support for TinyUSB
