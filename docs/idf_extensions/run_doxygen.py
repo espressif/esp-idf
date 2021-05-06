@@ -104,6 +104,7 @@ def convert_api_xml_to_inc(app, doxyfiles):
         if fast_build:
             with open(inc_file_path, 'w', encoding='utf-8') as inc_file:
                 inc_file.write('')
+            app.tags.add('fast_build')
 
 
 def get_doxyfile_input_paths(app, doxyfile_path):
