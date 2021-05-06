@@ -29,15 +29,15 @@ typedef struct essl_dev_t* essl_handle_t;
 /**
  * @brief Initialize the slave.
  *
- * @param handle Handle of a ``essl`` device.
+ * @param handle Handle of an ESSL device.
  * @param wait_ms Millisecond to wait before timeout, will not wait at all if set to 0-9.
  * @return ESP_OK if success, or other value returned from lower layer `init`.
  */
 esp_err_t essl_init(essl_handle_t handle, uint32_t wait_ms);
 
-/** Wait for interrupt of a ESP32 slave device.
+/** Wait for interrupt of an ESP slave device.
  *
- * @param handle Handle of a ``essl`` device.
+ * @param handle Handle of an ESSL device.
  * @param wait_ms Millisecond to wait before timeout, will not wait at all if set to 0-9.
  *
  * @return
@@ -48,8 +48,8 @@ esp_err_t essl_wait_for_ready(essl_handle_t handle, uint32_t wait_ms);
 
 /** Get buffer num for the host to send data to the slave. The buffers are size of ``buffer_size``.
  *
- * @param handle Handle of a ``essl`` device.
- * @param out_tx_num Output of buffer num that host can send data to ESP32 slave.
+ * @param handle Handle of an ESSL device.
+ * @param out_tx_num Output of buffer num that host can send data to an ESP slave.
  * @param wait_ms Millisecond to wait before timeout, will not wait at all if set to 0-9.
  *
  * @return
@@ -58,9 +58,9 @@ esp_err_t essl_wait_for_ready(essl_handle_t handle, uint32_t wait_ms);
  */
 esp_err_t essl_get_tx_buffer_num(essl_handle_t handle, uint32_t *out_tx_num, uint32_t wait_ms);
 
-/** Get amount of data the ESP32 slave preparing to send to host.
+/** Get amount of data the ESP slave preparing to send to host.
  *
- * @param handle Handle of a ``essl`` device.
+ * @param handle Handle of an ESSL device.
  * @param out_rx_size Output of data size to read from slave.
  * @param wait_ms Millisecond to wait before timeout, will not wait at all if set to 0-9.
  *
@@ -73,13 +73,13 @@ esp_err_t essl_get_rx_data_size(essl_handle_t handle, uint32_t *out_rx_size, uin
 
 /** Reset the counters of this component. Usually you don't need to do this unless you know the slave is reset.
  *
- * @param handle Handle of a ``essl`` device.
+ * @param handle Handle of an ESSL device.
  */
 esp_err_t essl_reset_cnt(essl_handle_t handle);
 
-/** Send a packet to the ESP32 slave. The slave receive the packet into buffers whose size is ``buffer_size`` (configured during initialization).
+/** Send a packet to the ESP slave. The slave receive the packet into buffers whose size is ``buffer_size`` (configured during initialization).
  *
- * @param handle Handle of a ``essl`` device.
+ * @param handle Handle of an ESSL device.
  * @param start Start address of the packet to send
  * @param length Length of data to send, if the packet is over-size, the it will be divided into blocks and hold into different buffers automatically.
  * @param wait_ms Millisecond to wait before timeout, will not wait at all if set to 0-9.
@@ -91,9 +91,9 @@ esp_err_t essl_reset_cnt(essl_handle_t handle);
  */
 esp_err_t essl_send_packet(essl_handle_t handle, const void *start, size_t length, uint32_t wait_ms);
 
-/** Get a packet from ESP32 slave.
+/** Get a packet from an ESP slave.
  *
- * @param handle Handle of a ``essl`` device.
+ * @param handle Handle of an ESSL device.
  * @param[out] out_data Data output address
  * @param size The size of the output buffer, if the buffer is smaller than the size of data to receive from slave, the driver returns ``ESP_ERR_NOT_FINISHED``
  * @param[out] out_length Output of length the data actually received from slave.
@@ -106,9 +106,9 @@ esp_err_t essl_send_packet(essl_handle_t handle, const void *start, size_t lengt
  */
 esp_err_t essl_get_packet(essl_handle_t handle, void *out_data, size_t size, size_t *out_length, uint32_t wait_ms);
 
-/** Write general purpose R/W registers (8-bit) of ESP32 slave.
+/** Write general purpose R/W registers (8-bit) of an ESP slave.
  *
- * @param handle Handle of a ``essl`` device.
+ * @param handle Handle of an ESSL device.
  * @param addr Address of register to write. Valid address: 0-59.
  * @param value Value to write to the register.
  * @param value_o Output of the returned written value.
@@ -123,9 +123,9 @@ esp_err_t essl_get_packet(essl_handle_t handle, void *out_data, size_t size, siz
  */
 esp_err_t essl_write_reg(essl_handle_t handle, uint8_t addr, uint8_t value, uint8_t *value_o, uint32_t wait_ms);
 
-/** Read general purpose R/W registers (8-bit) of ESP32 slave.
+/** Read general purpose R/W registers (8-bit) of an ESP slave.
  *
- * @param handle Handle of a ``essl`` device.
+ * @param handle Handle of an ESSL device.
  * @param add Address of register to read. Valid address: 0-27, 32-63 (28-31 reserved, return interrupt bits on read).
  * @param value_o Output value read from the register.
  * @param wait_ms Millisecond to wait before timeout, will not wait at all if set to 0-9.
@@ -139,7 +139,7 @@ esp_err_t essl_read_reg(essl_handle_t handle, uint8_t add, uint8_t *value_o, uin
 
 /** wait for an interrupt of the slave
  *
- * @param handle Handle of a ``essl`` device.
+ * @param handle Handle of an ESSL device.
  * @param wait_ms Millisecond to wait before timeout, will not wait at all if set to 0-9.
  *
  * @return
@@ -149,9 +149,9 @@ esp_err_t essl_read_reg(essl_handle_t handle, uint8_t add, uint8_t *value_o, uin
  */
 esp_err_t essl_wait_int(essl_handle_t handle, uint32_t wait_ms);
 
-/** Clear interrupt bits of ESP32 slave. All the bits set in the mask will be cleared, while other bits will stay the same.
+/** Clear interrupt bits of an ESP slave. All the bits set in the mask will be cleared, while other bits will stay the same.
  *
- * @param handle Handle of a ``essl`` device.
+ * @param handle Handle of an ESSL device.
  * @param intr_mask Mask of interrupt bits to clear.
  * @param wait_ms Millisecond to wait before timeout, will not wait at all if set to 0-9.
  *
@@ -161,9 +161,9 @@ esp_err_t essl_wait_int(essl_handle_t handle, uint32_t wait_ms);
  */
 esp_err_t essl_clear_intr(essl_handle_t handle, uint32_t intr_mask, uint32_t wait_ms);
 
-/** Get interrupt bits of ESP32 slave.
+/** Get interrupt bits of an ESP slave.
  *
- * @param handle Handle of a ``essl`` device.
+ * @param handle Handle of an ESSL device.
  * @param intr_raw Output of the raw interrupt bits. Set to NULL if only masked bits are read.
  * @param intr_st Output of the masked interrupt bits. set to NULL if only raw bits are read.
  * @param wait_ms Millisecond to wait before timeout, will not wait at all if set to 0-9.
@@ -175,9 +175,9 @@ esp_err_t essl_clear_intr(essl_handle_t handle, uint32_t intr_mask, uint32_t wai
  */
 esp_err_t essl_get_intr(essl_handle_t handle, uint32_t *intr_raw, uint32_t *intr_st, uint32_t wait_ms);
 
-/** Set interrupt enable bits of ESP32 slave. The slave only sends interrupt on the line when there is a bit both the raw status and the enable are set.
+/** Set interrupt enable bits of an ESP slave. The slave only sends interrupt on the line when there is a bit both the raw status and the enable are set.
  *
- * @param handle Handle of a ``essl`` device.
+ * @param handle Handle of an ESSL device.
  * @param ena_mask Mask of the interrupt bits to enable.
  * @param wait_ms Millisecond to wait before timeout, will not wait at all if set to 0-9.
  *
@@ -187,9 +187,9 @@ esp_err_t essl_get_intr(essl_handle_t handle, uint32_t *intr_raw, uint32_t *intr
  */
 esp_err_t essl_set_intr_ena(essl_handle_t handle, uint32_t ena_mask, uint32_t wait_ms);
 
-/** Get interrupt enable bits of ESP32 slave.
+/** Get interrupt enable bits of an ESP slave.
  *
- * @param handle Handle of a ``essl`` device.
+ * @param handle Handle of an ESSL device.
  * @param ena_mask_o Output of interrupt bit enable mask.
  * @param wait_ms Millisecond to wait before timeout, will not wait at all if set to 0-9.
  *
@@ -201,7 +201,7 @@ esp_err_t essl_get_intr_ena(essl_handle_t handle, uint32_t *ena_mask_o, uint32_t
 
 /** Send interrupts to slave. Each bit of the interrupt will be triggered.
  *
- * @param handle Handle of a ``essl`` device.
+ * @param handle Handle of an ESSL device.
  * @param intr_mask Mask of interrupt bits to send to slave.
  * @param wait_ms Millisecond to wait before timeout, will not wait at all if set to 0-9.
  *
