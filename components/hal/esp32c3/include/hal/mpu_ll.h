@@ -14,7 +14,7 @@
 
 #include <stdint.h>
 
-#include "soc/mpu_caps.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {

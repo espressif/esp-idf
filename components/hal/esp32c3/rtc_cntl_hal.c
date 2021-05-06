@@ -19,7 +19,7 @@
 #include "esp32c3/rom/lldesc.h"
 #include "esp_attr.h"
 
-#define RTC_CNTL_HAL_LINK_BUF_SIZE_MIN  (RTC_CNTL_CPU_PD_DMA_BLOCK_SIZE) /* The minimum size of dma link buffer */
+#define RTC_CNTL_HAL_LINK_BUF_SIZE_MIN  (SOC_RTC_CNTL_CPU_PD_DMA_BLOCK_SIZE) /* The minimum size of dma link buffer */
 
 typedef struct rtc_cntl_link_buf_conf {
     uint32_t cfg[4];    /* 4 word for dma link buffer configuration */
