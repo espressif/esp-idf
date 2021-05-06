@@ -21,6 +21,10 @@
 #include <stdbool.h>
 #include "esp_err.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Initialize spiram interface/hardware. Normally called from cpu_start.c.
  *
@@ -133,6 +137,10 @@ uint32_t rodata_flash_end_page_get(void);
  * @return rodata offset
  */
 int rodata_flash2spiram_offset(void);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif
