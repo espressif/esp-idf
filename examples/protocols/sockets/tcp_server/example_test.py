@@ -36,13 +36,13 @@ def tcp_client(address, payload):
         print('Could not open socket: ', msg)
         sock.close()
         raise
-    sock.sendall(payload)
+    sock.sendall(payload.encode())
     data = sock.recv(1024)
     if not data:
         return
     print('Reply : ' + data.decode())
     sock.close()
-    return data
+    return data.decode()
 
 
 @ttfw_idf.idf_example_test(env_tag="Example_WIFI")

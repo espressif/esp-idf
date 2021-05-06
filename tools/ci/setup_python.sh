@@ -1,14 +1,7 @@
 #!/usr/bin/env bash
 
-# Regexp for matching job names which are incompatible with Python 3
-# - UT_009_ - multi-device tests are not compatible
-# - UT_014_ - multi-device tests are not compatible
-# - UT_017_ - multi-device tests are not compatible
-py3_incomp='UT_009_|UT_013_|UT_014_|UT_017_'
-
-if [ -z ${PYTHON_VER+x} ] || [[ $CI_JOB_NAME =~ $py3_incomp ]]; then
-    # Use this version of the Python interpreter if it was not defined before or
-    # the given job is not compatible with Python 3
+if [ -z ${PYTHON_VER+x} ]; then
+    # Use this version of the Python interpreter if it was not defined before
     PYTHON_VER=2.7.15
 fi
 
