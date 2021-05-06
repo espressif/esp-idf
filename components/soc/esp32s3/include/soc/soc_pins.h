@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include "soc/usb_pins.h"
 #include "soc/gpio_pins.h"
 #include "soc/spi_pins.h"
 #include "soc/sdio_slave_pins.h"

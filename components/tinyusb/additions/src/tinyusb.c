@@ -16,7 +16,6 @@
 #include "esp_rom_gpio.h"
 #include "driver/gpio.h"
 #include "driver/periph_ctrl.h"
-#include "esp32s2/rom/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "hal/gpio_ll.h"
