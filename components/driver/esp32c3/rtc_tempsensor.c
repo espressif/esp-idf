@@ -23,6 +23,7 @@
 #include "esp_efuse_rtc_calib.h"
 
 static const char *TAG = "tsens";
+static bool temp_sensor_start_flag = false;
 
 #define TSENS_XPD_WAIT_DEFAULT 0xFF   /* Set wait cycle time(8MHz) from power up to reset enable. */
 #define TSENS_ADC_FACTOR  (0.4386)
@@ -83,16 +84,26 @@ esp_err_t temp_sensor_get_config(temp_sensor_config_t *tsens)
 
 esp_err_t temp_sensor_start(void)
 {
+    if (temp_sensor_start_flag == true) {
+        ESP_LOGE(TAG, "Temperature sensor has been started!");
+        return ESP_ERR_INVALID_STATE;
+    }
     REG_SET_BIT(SYSTEM_PERIP_CLK_EN1_REG, SYSTEM_TSENS_CLK_EN);
     APB_SARADC.apb_tsens_ctrl2.tsens_clk_sel = 1;
     APB_SARADC.apb_tsens_ctrl.tsens_pu = 1;
+    temp_sensor_start_flag = true;
     return ESP_OK;
 }
 
 esp_err_t temp_sensor_stop(void)
 {
+    if (temp_sensor_start_flag == false) {
+        ESP_LOGE(TAG, "Temperature sensor has been stopped!");
+        return ESP_ERR_INVALID_STATE;
+    }
     APB_SARADC.apb_tsens_ctrl.tsens_pu = 0;
     APB_SARADC.apb_tsens_ctrl2.tsens_clk_sel = 0;
+    temp_sensor_start_flag = false;
     return ESP_OK;
 }
 
