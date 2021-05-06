@@ -202,8 +202,8 @@ void adc_hal_context_config(adc_hal_context_t *hal, const adc_hal_config_t *conf
 
 void adc_hal_digi_init(adc_hal_context_t *hal)
 {
-    gdma_ll_clear_interrupt_status(hal->dev, hal->dma_chan, UINT32_MAX);
-    gdma_ll_enable_interrupt(hal->dev, hal->dma_chan, GDMA_LL_EVENT_RX_SUC_EOF, true);
+    gdma_ll_rx_clear_interrupt_status(hal->dev, hal->dma_chan, UINT32_MAX);
+    gdma_ll_rx_enable_interrupt(hal->dev, hal->dma_chan, GDMA_LL_EVENT_RX_SUC_EOF, true);
     adc_ll_digi_dma_set_eof_num(hal->eof_num);
     adc_ll_onetime_sample_enable(ADC_NUM_1, false);
     adc_ll_onetime_sample_enable(ADC_NUM_2, false);
@@ -273,12 +273,12 @@ void adc_hal_digi_rxdma_stop(adc_hal_context_t *hal)
 
 void adc_hal_digi_clr_intr(adc_hal_context_t *hal, uint32_t mask)
 {
-    gdma_ll_clear_interrupt_status(hal->dev, hal->dma_chan, mask);
+    gdma_ll_rx_clear_interrupt_status(hal->dev, hal->dma_chan, mask);
 }
 
 void adc_hal_digi_dis_intr(adc_hal_context_t *hal, uint32_t mask)
 {
-    gdma_ll_enable_interrupt(hal->dev, hal->dma_chan, mask, false);
+    gdma_ll_rx_enable_interrupt(hal->dev, hal->dma_chan, mask, false);
 }
 
 void adc_hal_digi_stop(adc_hal_context_t *hal)

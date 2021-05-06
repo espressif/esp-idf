@@ -20,19 +20,24 @@ const gdma_signal_conn_t gdma_periph_signals = {
             .module = PERIPH_GDMA_MODULE,
             .pairs = {
                 [0]  = {
-                    .irq_id = ETS_DMA_CH0_INTR_SOURCE
+                    .rx_irq_id = ETS_DMA_IN_CH0_INTR_SOURCE,
+                    .tx_irq_id = ETS_DMA_OUT_CH0_INTR_SOURCE,
                 },
                 [1]  = {
-                    .irq_id = ETS_DMA_CH1_INTR_SOURCE
+                    .rx_irq_id = ETS_DMA_IN_CH1_INTR_SOURCE,
+                    .tx_irq_id = ETS_DMA_OUT_CH1_INTR_SOURCE,
                 },
                 [2]  = {
-                    .irq_id = ETS_DMA_CH2_INTR_SOURCE
+                    .rx_irq_id = ETS_DMA_IN_CH2_INTR_SOURCE,
+                    .tx_irq_id = ETS_DMA_OUT_CH2_INTR_SOURCE,
                 },
                 [3]  = {
-                    .irq_id = ETS_DMA_CH3_INTR_SOURCE
+                    .rx_irq_id = ETS_DMA_IN_CH3_INTR_SOURCE,
+                    .tx_irq_id = ETS_DMA_OUT_CH3_INTR_SOURCE,
                 },
                 [4]  = {
-                    .irq_id = ETS_DMA_CH4_INTR_SOURCE
+                    .rx_irq_id = ETS_DMA_IN_CH4_INTR_SOURCE,
+                    .tx_irq_id = ETS_DMA_OUT_CH4_INTR_SOURCE,
                 }
             }
         }

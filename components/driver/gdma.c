@@ -51,7 +51,7 @@ typedef struct gdma_rx_channel_t gdma_rx_channel_t;
  * We don't use an all-in-one spin lock in this driver, instead, we created different spin locks at different level.
  * For platform, it has a spinlock, which is used to protect the group handle slots and reference count of each group.
  * For group, it has a spinlock, which is used to protect group level stuffs, e.g. hal object, pair handle slots and reference count of each pair.
- * For pair, it has a sinlock, which is used to protect pair level stuffs, e.g. interrupt handle, channel handle slots, occupy code.
+ * For pair, it has a spinlock, which is used to protect pair level stuffs, e.g. channel handle slots, occupy code.
  */
 
 struct gdma_platform_t {
@@ -74,12 +74,12 @@ struct gdma_pair_t {
     gdma_tx_channel_t *tx_chan; // pointer of tx channel in the pair
     gdma_rx_channel_t *rx_chan; // pointer of rx channel in the pair
     int occupy_code;            // each bit indicates which channel has been occupied (an occupied channel will be skipped during channel search)
-    intr_handle_t intr;         // Interrupt is at pair level
     portMUX_TYPE spinlock;      // pair level spinlock
 };
 
 struct gdma_channel_t {
     gdma_pair_t *pair;  // which pair the channel belongs to
+    intr_handle_t intr; // per-channel interrupt handle
     gdma_channel_direction_t direction; // channel direction
     int periph_id; // Peripheral instance ID, indicates which peripheral is connected to this GDMA channel
     esp_err_t (*del)(gdma_channel_t *channel); // channel deletion function, it's polymorphic, see `gdma_del_tx_channel` or `gdma_del_rx_channel`
@@ -105,7 +105,8 @@ static void gdma_uninstall_group(gdma_group_t *group);
 static void gdma_uninstall_pair(gdma_pair_t *pair);
 static esp_err_t gdma_del_tx_channel(gdma_channel_t *dma_channel);
 static esp_err_t gdma_del_rx_channel(gdma_channel_t *dma_channel);
-static esp_err_t gdma_install_interrupt(gdma_pair_t *pair);
+static esp_err_t gdma_install_rx_interrupt(gdma_rx_channel_t *rx_chan);
+static esp_err_t gdma_install_tx_interrupt(gdma_tx_channel_t *tx_chan);
 
 // gdma driver platform
 static gdma_platform_t s_platform = {
@@ -309,17 +310,17 @@ esp_err_t gdma_register_tx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
     gdma_tx_channel_t *tx_chan = __containerof(dma_chan, gdma_tx_channel_t, base);
 
     // lazy install interrupt service
-    ESP_GOTO_ON_ERROR(gdma_install_interrupt(pair), err, TAG, "install interrupt service failed");
+    ESP_GOTO_ON_ERROR(gdma_install_tx_interrupt(tx_chan), err, TAG, "install interrupt service failed");
 
     // enable/disable GDMA interrupt events for TX channel
     portENTER_CRITICAL(&pair->spinlock);
-    gdma_ll_enable_interrupt(group->hal.dev, pair->pair_id, GDMA_LL_EVENT_TX_EOF, cbs->on_trans_eof != NULL);
+    gdma_ll_tx_enable_interrupt(group->hal.dev, pair->pair_id, GDMA_LL_EVENT_TX_EOF, cbs->on_trans_eof != NULL);
     portEXIT_CRITICAL(&pair->spinlock);
 
     tx_chan->on_trans_eof = cbs->on_trans_eof;
     tx_chan->user_data = user_data;
 
-    ESP_GOTO_ON_ERROR(esp_intr_enable(pair->intr), err, TAG, "enable interrupt failed");
+    ESP_GOTO_ON_ERROR(esp_intr_enable(dma_chan->intr), err, TAG, "enable interrupt failed");
 
 err:
     return ret;
@@ -336,17 +337,17 @@ esp_err_t gdma_register_rx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
     gdma_rx_channel_t *rx_chan = __containerof(dma_chan, gdma_rx_channel_t, base);
 
     // lazy install interrupt service
-    ESP_GOTO_ON_ERROR(gdma_install_interrupt(pair), err, TAG, "install interrupt service failed");
+    ESP_GOTO_ON_ERROR(gdma_install_rx_interrupt(rx_chan), err, TAG, "install interrupt service failed");
 
     // enable/disable GDMA interrupt events for RX channel
     portENTER_CRITICAL(&pair->spinlock);
-    gdma_ll_enable_interrupt(group->hal.dev, pair->pair_id, GDMA_LL_EVENT_RX_SUC_EOF, cbs->on_recv_eof != NULL);
+    gdma_ll_rx_enable_interrupt(group->hal.dev, pair->pair_id, GDMA_LL_EVENT_RX_SUC_EOF, cbs->on_recv_eof != NULL);
     portEXIT_CRITICAL(&pair->spinlock);
 
     rx_chan->on_recv_eof = cbs->on_recv_eof;
     rx_chan->user_data = user_data;
 
-    ESP_GOTO_ON_ERROR(esp_intr_enable(pair->intr), err, TAG, "enable interrupt failed");
+    ESP_GOTO_ON_ERROR(esp_intr_enable(dma_chan->intr), err, TAG, "enable interrupt failed");
 
 err:
     return ret;
@@ -486,20 +487,10 @@ static void gdma_uninstall_pair(gdma_pair_t *pair)
         assert(group->pairs[pair_id]);
         do_deinitialize = true;
         group->pairs[pair_id] = NULL; // deregister from pair
-        if (pair->intr) {
-            // disable interrupt handler (but not freed, esp_intr_free is a blocking API, we can't use it in a critical section)
-            esp_intr_disable(pair->intr);
-            gdma_ll_enable_interrupt(group->hal.dev, pair->pair_id, UINT32_MAX, false); // disable all interupt events
-            gdma_ll_clear_interrupt_status(group->hal.dev, pair->pair_id, UINT32_MAX);  // clear all pending events
-        }
     }
     portEXIT_CRITICAL(&group->spinlock);
 
     if (do_deinitialize) {
-        if (pair->intr) {
-            esp_intr_free(pair->intr); // free interrupt resource
-            ESP_LOGD(TAG, "uninstall interrupt service for pair (%d,%d)", group->group_id, pair_id);
-        }
         free(pair);
         ESP_LOGD(TAG, "del pair (%d,%d)", group->group_id, pair_id);
 
@@ -559,6 +550,15 @@ static esp_err_t gdma_del_tx_channel(gdma_channel_t *dma_channel)
     pair->occupy_code &= ~SEARCH_REQUEST_TX_CHANNEL;
     portEXIT_CRITICAL(&pair->spinlock);
 
+    if (dma_channel->intr) {
+        esp_intr_free(dma_channel->intr);
+        portENTER_CRITICAL(&pair->spinlock);
+        gdma_ll_tx_enable_interrupt(group->hal.dev, pair->pair_id, UINT32_MAX, false); // disable all interupt events
+        gdma_ll_tx_clear_interrupt_status(group->hal.dev, pair->pair_id, UINT32_MAX);  // clear all pending events
+        portEXIT_CRITICAL(&pair->spinlock);
+        ESP_LOGD(TAG, "uninstall interrupt service for tx channel (%d,%d)", group->group_id, pair->pair_id);
+    }
+
     ESP_LOGD(TAG, "del tx channel (%d,%d)", group->group_id, pair->pair_id);
     free(tx_chan);
     gdma_uninstall_pair(pair);
@@ -575,22 +575,30 @@ static esp_err_t gdma_del_rx_channel(gdma_channel_t *dma_channel)
     pair->occupy_code &= ~SEARCH_REQUEST_RX_CHANNEL;
     portEXIT_CRITICAL(&pair->spinlock);
 
+    if (dma_channel->intr) {
+        esp_intr_free(dma_channel->intr);
+        portENTER_CRITICAL(&pair->spinlock);
+        gdma_ll_rx_enable_interrupt(group->hal.dev, pair->pair_id, UINT32_MAX, false); // disable all interupt events
+        gdma_ll_rx_clear_interrupt_status(group->hal.dev, pair->pair_id, UINT32_MAX);  // clear all pending events
+        portEXIT_CRITICAL(&pair->spinlock);
+        ESP_LOGD(TAG, "uninstall interrupt service for rx channel (%d,%d)", group->group_id, pair->pair_id);
+    }
+
     ESP_LOGD(TAG, "del rx channel (%d,%d)", group->group_id, pair->pair_id);
     free(rx_chan);
     gdma_uninstall_pair(pair);
     return ESP_OK;
 }
 
-static void IRAM_ATTR gdma_default_isr(void *args)
+static void IRAM_ATTR gdma_default_rx_isr(void *args)
 {
-    gdma_pair_t *pair = (gdma_pair_t *)args;
+    gdma_rx_channel_t *rx_chan = (gdma_rx_channel_t *)args;
+    gdma_pair_t *pair = rx_chan->base.pair;
     gdma_group_t *group = pair->group;
-    gdma_rx_channel_t *rx_chan = pair->rx_chan;
-    gdma_tx_channel_t *tx_chan = pair->tx_chan;
     bool need_yield = false;
     // clear pending interrupt event
-    uint32_t intr_status = gdma_ll_get_interrupt_status(group->hal.dev, pair->pair_id);
-    gdma_ll_clear_interrupt_status(group->hal.dev, pair->pair_id, intr_status);
+    uint32_t intr_status = gdma_ll_rx_get_interrupt_status(group->hal.dev, pair->pair_id);
+    gdma_ll_rx_clear_interrupt_status(group->hal.dev, pair->pair_id, intr_status);
 
     if (intr_status & GDMA_LL_EVENT_RX_SUC_EOF) {
         if (rx_chan && rx_chan->on_recv_eof) {
@@ -603,6 +611,21 @@ static void IRAM_ATTR gdma_default_isr(void *args)
             }
         }
     }
+
+    if (need_yield) {
+        portYIELD_FROM_ISR();
+    }
+}
+
+static void IRAM_ATTR gdma_default_tx_isr(void *args)
+{
+    gdma_tx_channel_t *tx_chan = (gdma_tx_channel_t *)args;
+    gdma_pair_t *pair = tx_chan->base.pair;
+    gdma_group_t *group = pair->group;
+    bool need_yield = false;
+    // clear pending interrupt event
+    uint32_t intr_status = gdma_ll_tx_get_interrupt_status(group->hal.dev, pair->pair_id);
+    gdma_ll_tx_clear_interrupt_status(group->hal.dev, pair->pair_id, intr_status);
 
     if (intr_status & GDMA_LL_EVENT_TX_EOF) {
         if (tx_chan && tx_chan->on_trans_eof) {
@@ -621,34 +644,55 @@ static void IRAM_ATTR gdma_default_isr(void *args)
     }
 }
 
-static esp_err_t gdma_install_interrupt(gdma_pair_t *pair)
+static esp_err_t gdma_install_rx_interrupt(gdma_rx_channel_t *rx_chan)
 {
     esp_err_t ret = ESP_OK;
+    gdma_pair_t *pair = rx_chan->base.pair;
     gdma_group_t *group = pair->group;
-    bool do_install_isr = false;
-    // pre-alloc a interrupt handle, shared with other handle, with handler disabled
-    // This is used to prevent potential concurrency between interrupt install and uninstall
-    int isr_flags = ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_INTRDISABLED;
+    // pre-alloc a interrupt handle, with handler disabled
+    int isr_flags = ESP_INTR_FLAG_INTRDISABLED;
+#if SOC_GDMA_TX_RX_SHARE_INTERRUPT
+    isr_flags |= ESP_INTR_FLAG_SHARED;
+#endif
     intr_handle_t intr = NULL;
-    ret = esp_intr_alloc(gdma_periph_signals.groups[group->group_id].pairs[pair->pair_id].irq_id, isr_flags, gdma_default_isr, pair, &intr);
+    ret = esp_intr_alloc_intrstatus(gdma_periph_signals.groups[group->group_id].pairs[pair->pair_id].rx_irq_id, isr_flags,
+                                    (uint32_t)gdma_ll_rx_get_interrupt_status_reg(group->hal.dev, pair->pair_id), GDMA_LL_RX_EVENT_MASK,
+                                    gdma_default_rx_isr, rx_chan, &intr);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "alloc interrupt failed");
+    rx_chan->base.intr = intr;
 
-    if (!pair->intr) {
-        portENTER_CRITICAL(&pair->spinlock);
-        if (!pair->intr) {
-            do_install_isr = true;
-            pair->intr = intr;
-            gdma_ll_enable_interrupt(group->hal.dev, pair->pair_id, UINT32_MAX, false); // disable all interupt events
-            gdma_ll_clear_interrupt_status(group->hal.dev, pair->pair_id, UINT32_MAX);  // clear all pending events
-        }
-        portEXIT_CRITICAL(&pair->spinlock);
-    }
-    if (do_install_isr) {
-        ESP_LOGD(TAG, "install interrupt service for pair (%d,%d)", group->group_id, pair->pair_id);
-    } else {
-        // interrupt handle has been installed before, so removed this one
-        esp_intr_free(intr);
-    }
+    portENTER_CRITICAL(&pair->spinlock);
+    gdma_ll_rx_enable_interrupt(group->hal.dev, pair->pair_id, UINT32_MAX, false); // disable all interupt events
+    gdma_ll_rx_clear_interrupt_status(group->hal.dev, pair->pair_id, UINT32_MAX);  // clear all pending events
+    portEXIT_CRITICAL(&pair->spinlock);
+    ESP_LOGD(TAG, "install interrupt service for rx channel (%d,%d)", group->group_id, pair->pair_id);
+
+err:
+    return ret;
+}
+
+static esp_err_t gdma_install_tx_interrupt(gdma_tx_channel_t *tx_chan)
+{
+    esp_err_t ret = ESP_OK;
+    gdma_pair_t *pair = tx_chan->base.pair;
+    gdma_group_t *group = pair->group;
+    // pre-alloc a interrupt handle, with handler disabled
+    int isr_flags = ESP_INTR_FLAG_INTRDISABLED;
+#if SOC_GDMA_TX_RX_SHARE_INTERRUPT
+    isr_flags |= ESP_INTR_FLAG_SHARED;
+#endif
+    intr_handle_t intr = NULL;
+    ret = esp_intr_alloc_intrstatus(gdma_periph_signals.groups[group->group_id].pairs[pair->pair_id].tx_irq_id, isr_flags,
+                                    (uint32_t)gdma_ll_tx_get_interrupt_status_reg(group->hal.dev, pair->pair_id), GDMA_LL_TX_EVENT_MASK,
+                                    gdma_default_tx_isr, tx_chan, &intr);
+    ESP_GOTO_ON_ERROR(ret, err, TAG, "alloc interrupt failed");
+    tx_chan->base.intr = intr;
+
+    portENTER_CRITICAL(&pair->spinlock);
+    gdma_ll_tx_enable_interrupt(group->hal.dev, pair->pair_id, UINT32_MAX, false); // disable all interupt events
+    gdma_ll_tx_clear_interrupt_status(group->hal.dev, pair->pair_id, UINT32_MAX);  // clear all pending events
+    portEXIT_CRITICAL(&pair->spinlock);
+    ESP_LOGD(TAG, "install interrupt service for tx channel (%d,%d)", group->group_id, pair->pair_id);
 
 err:
     return ret;

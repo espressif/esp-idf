@@ -124,16 +124,16 @@ typedef enum {
     ETS_DCACHE_SYNC0_INTR_SOURCE,               /**< interrupt of data cache sync done, LEVEL*/
     ETS_ICACHE_SYNC0_INTR_SOURCE,               /**< interrupt of instruction cache sync done, LEVEL*/
     ETS_APB_ADC_INTR_SOURCE,                    /**< interrupt of APB ADC, LEVEL*/
-    ETS_DMA_CH0_INTR_SOURCE,                    /**< interrupt of general DMA channel 0, LEVEL*/
-    ETS_DMA_CH1_INTR_SOURCE,                    /**< interrupt of general DMA channel 1, LEVEL*/
-    ETS_DMA_CH2_INTR_SOURCE,                    /**< interrupt of general DMA channel 2, LEVEL*/
-    ETS_DMA_CH3_INTR_SOURCE,                    /**< interrupt of general DMA channel 3, LEVEL*/
-    ETS_DMA_CH4_INTR_SOURCE,                    /**< interrupt of general DMA channel 4, LEVEL*/
-    ETS_DMA_OUT_CH0_INTR_SOURCE,
-    ETS_DMA_OUT_CH1_INTR_SOURCE,
-    ETS_DMA_OUT_CH2_INTR_SOURCE,
-    ETS_DMA_OUT_CH3_INTR_SOURCE,
-    ETS_DMA_OUT_CH4_INTR_SOURCE,
+    ETS_DMA_IN_CH0_INTR_SOURCE,                 /**< interrupt of general DMA RX channel 0, LEVEL*/
+    ETS_DMA_IN_CH1_INTR_SOURCE,                 /**< interrupt of general DMA RX channel 1, LEVEL*/
+    ETS_DMA_IN_CH2_INTR_SOURCE,                 /**< interrupt of general DMA RX channel 2, LEVEL*/
+    ETS_DMA_IN_CH3_INTR_SOURCE,                 /**< interrupt of general DMA RX channel 3, LEVEL*/
+    ETS_DMA_IN_CH4_INTR_SOURCE,                 /**< interrupt of general DMA RX channel 4, LEVEL*/
+    ETS_DMA_OUT_CH0_INTR_SOURCE,                /**< interrupt of general DMA TX channel 0, LEVEL*/
+    ETS_DMA_OUT_CH1_INTR_SOURCE,                /**< interrupt of general DMA TX channel 1, LEVEL*/
+    ETS_DMA_OUT_CH2_INTR_SOURCE,                /**< interrupt of general DMA TX channel 2, LEVEL*/
+    ETS_DMA_OUT_CH3_INTR_SOURCE,                /**< interrupt of general DMA TX channel 3, LEVEL*/
+    ETS_DMA_OUT_CH4_INTR_SOURCE,                /**< interrupt of general DMA TX channel 4, LEVEL*/
     ETS_RSA_INTR_SOURCE,                        /**< interrupt of RSA accelerator, level*/
     ETS_AES_INTR_SOURCE,                        /**< interrupt of AES accelerator, level*/
     ETS_SHA_INTR_SOURCE,                        /**< interrupt of SHA accelerator, level*/
