@@ -278,6 +278,8 @@ static esp_err_t lan8720_negotiate(esp_eth_phy_t *phy)
     esp_err_t ret = ESP_OK;
     phy_lan8720_t *lan8720 = __containerof(phy, phy_lan8720_t, parent);
     esp_eth_mediator_t *eth = lan8720->eth;
+    /* in case any link status has changed, let's assume we're in link down status */
+    lan8720->link_status = ETH_LINK_DOWN;
     /* Restart auto negotiation */
     bmcr_reg_t bmcr = {
         .speed_select = 1,     /* 100Mbps */
@@ -290,8 +292,8 @@ static esp_err_t lan8720_negotiate(esp_eth_phy_t *phy)
     bmsr_reg_t bmsr;
     pscsr_reg_t pscsr;
     uint32_t to = 0;
-    for (to = 0; to < lan8720->autonego_timeout_ms / 10; to++) {
-        vTaskDelay(pdMS_TO_TICKS(10));
+    for (to = 0; to < lan8720->autonego_timeout_ms / 100; to++) {
+        vTaskDelay(pdMS_TO_TICKS(100));
         ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, lan8720->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)), err, TAG, "read BMSR failed");
         ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, lan8720->addr, ETH_PHY_PSCSR_REG_ADDR, &(pscsr.val)), err, TAG, "read PSCSR failed");
         if (bmsr.auto_nego_complete && pscsr.auto_nego_done) {
@@ -299,11 +301,9 @@ static esp_err_t lan8720_negotiate(esp_eth_phy_t *phy)
         }
     }
     /* Auto negotiation failed, maybe no network cable plugged in, so output a warning */
-    if (to >= lan8720->autonego_timeout_ms / 10) {
+    if (to >= lan8720->autonego_timeout_ms / 100) {
         ESP_LOGW(TAG, "auto negotiation timeout");
     }
-    /* Updata information about link, speed, duplex */
-    ESP_GOTO_ON_ERROR(lan8720_update_link_duplex_speed(lan8720), err, TAG, "update link duplex speed failed");
     return ESP_OK;
 err:
     return ret;

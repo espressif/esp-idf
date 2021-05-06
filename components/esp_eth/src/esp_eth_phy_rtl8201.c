@@ -188,6 +188,8 @@ static esp_err_t rtl8201_negotiate(esp_eth_phy_t *phy)
     esp_err_t ret = ESP_OK;
     phy_rtl8201_t *rtl8201 = __containerof(phy, phy_rtl8201_t, parent);
     esp_eth_mediator_t *eth = rtl8201->eth;
+    /* in case any link status has changed, let's assume we're in link down status */
+    rtl8201->link_status = ETH_LINK_DOWN;
     /* Restart auto negotiation */
     bmcr_reg_t bmcr = {
         .speed_select = 1,     /* 100Mbps */
@@ -199,19 +201,17 @@ static esp_err_t rtl8201_negotiate(esp_eth_phy_t *phy)
     /* Wait for auto negotiation complete */
     bmsr_reg_t bmsr;
     uint32_t to = 0;
-    for (to = 0; to < rtl8201->autonego_timeout_ms / 10; to++) {
-        vTaskDelay(pdMS_TO_TICKS(10));
+    for (to = 0; to < rtl8201->autonego_timeout_ms / 100; to++) {
+        vTaskDelay(pdMS_TO_TICKS(100));
         ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)), err, TAG, "read BMSR failed");
         if (bmsr.auto_nego_complete) {
             break;
         }
     }
     /* Auto negotiation failed, maybe no network cable plugged in, so output a warning */
-    if (to >= rtl8201->autonego_timeout_ms / 10) {
+    if (to >= rtl8201->autonego_timeout_ms / 100) {
         ESP_LOGW(TAG, "auto negotiation timeout");
     }
-    /* Updata information about link, speed, duplex */
-    ESP_GOTO_ON_ERROR(rtl8201_update_link_duplex_speed(rtl8201), err, TAG, "update link duplex speed failed");
     return ESP_OK;
 err:
     return ret;
