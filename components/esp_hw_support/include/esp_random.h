@@ -24,16 +24,27 @@ extern "C" {
 /**
  * @brief  Get one random 32-bit word from hardware RNG
  *
- * The hardware RNG is fully functional whenever an RF subsystem is running (ie Bluetooth or WiFi is enabled). For
- * random values, call this function after WiFi or Bluetooth are started.
+ * The hardware RNG produces true random numbers under any of the following conditions:
  *
- * If the RF subsystem is not used by the program, the function bootloader_random_enable() can be called to enable an
- * entropy source. bootloader_random_disable() must be called before RF subsystem or I2S peripheral are used. See these functions'
- * documentation for more details.
+ * - An RF subsystem is running (i.e. Bluetooth or WiFi is enabled)
+ * - An internal entropy source has been enabled by calling bootloader_random_enable()
+ *   and not yet disabled by calling bootloader_random_disable()
+ * - While the ESP-IDF bootloader is running (due to the internal entropy source being enabled
+ *   for the duration of bootloader execution).
  *
- * Any time the app is running without an RF subsystem (or bootloader_random) enabled, RNG hardware should be
- * considered a PRNG. A very small amount of entropy is available due to pre-seeding while the IDF
- * bootloader is running, but this should not be relied upon for any use.
+ * If none of the above conditions are true, the hardware RNG will produce pseudo-random numbers only.
+ *
+ * When the hardware RNG is producing true random numbers, external entropy (noise samples) are
+ * continuously mixed into the internal hardware RNG state. Consult the SoC Technical Reference Manual
+ * for more details.
+ *
+ * This function automatically busy-waits to ensure enough external entropy has been
+ * introduced into the hardware RNG state, before returning a new random number.
+ *
+ * If generating random numbers from an app which has not yet enabled Bluetooth or Wi-Fi, call the
+ * API function bootloader_random_enable() before generating random numbers and then call
+ * bootloader_random_disable() before using any APIs for Bluetooth, Wi-Fi, ADC, or I2S. Consult the
+ * bootloader_random.h header for more details.
  *
  * @return Random value between 0 and UINT32_MAX
  */
