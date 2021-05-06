@@ -397,11 +397,6 @@ bool rtc_clk_8md256_enabled(void);
 void rtc_clk_apll_enable(bool enable, uint32_t sdm0, uint32_t sdm1, uint32_t sdm2, uint32_t o_div);
 
 /**
- * @brief Set XTAL wait cycles by RTC slow clock's period
- */
-void rtc_clk_set_xtal_wait(void);
-
-/**
  * @brief Select source for RTC_SLOW_CLK
  * @param slow_freq clock source (one of rtc_slow_freq_t values)
  */
