@@ -433,6 +433,11 @@ ifdef CONFIG_COMPILER_STACK_CHECK_MODE_ALL
 COMMON_FLAGS += -fstack-protector-all
 endif
 
+# Placing jump tables in flash would cause issues with code that required
+# to be placed in IRAM
+COMMON_FLAGS += -fno-jump-tables
+COMMON_FLAGS += -fno-tree-switch-conversion
+
 # Optimization flags are set based on menuconfig choice
 ifdef CONFIG_COMPILER_OPTIMIZATION_SIZE
 OPTIMIZATION_FLAGS = -Os -freorder-blocks

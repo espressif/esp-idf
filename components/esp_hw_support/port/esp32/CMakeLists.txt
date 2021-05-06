@@ -13,8 +13,3 @@ set(srcs
 
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")
 target_sources(${COMPONENT_LIB} PRIVATE "${srcs}")
-
-if(NOT CMAKE_BUILD_EARLY_EXPANSION)
-    set_source_files_properties("${CMAKE_CURRENT_LIST_DIR}/rtc_clk.c" PROPERTIES
-                                COMPILE_FLAGS "-fno-jump-tables -fno-tree-switch-conversion")
-endif()
