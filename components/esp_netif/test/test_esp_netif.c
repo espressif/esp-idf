@@ -334,18 +334,13 @@ TEST_CASE("esp_netif: create and destroy default wifi interfaces", "[esp_netif][
     TEST_ASSERT_EQUAL(default_ap_cfg.route_prio, esp_netif_get_route_prio(ap));
 
     // destroy the station
-    esp_wifi_clear_default_wifi_driver_and_handlers(sta);
-    esp_netif_destroy(sta);
-
+    esp_netif_destroy_default_wifi(sta);
     // destroy the AP
-    esp_wifi_clear_default_wifi_driver_and_handlers(ap);
-    esp_netif_destroy(ap);
-
+    esp_netif_destroy_default_wifi(ap);
 
     // quick check on create-destroy cycle of the default station again
     sta = NULL;
     sta = esp_netif_create_default_wifi_sta();
     TEST_ASSERT_NOT_NULL(sta);
-    esp_wifi_clear_default_wifi_driver_and_handlers(sta);
-    esp_netif_destroy(sta);
+    esp_netif_destroy_default_wifi(sta);
 }
