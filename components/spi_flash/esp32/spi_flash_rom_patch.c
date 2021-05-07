@@ -63,7 +63,7 @@ esp_rom_spiflash_result_t esp_rom_spiflash_wait_idle(esp_rom_spiflash_chip_t *sp
    about interrupts, CPU coordination, flash mapping. However some of
    the functions in esp_spi_flash.c call it.
  */
-esp_rom_spiflash_result_t esp_rom_spiflash_unlock(void)
+__attribute__((__unused__)) esp_rom_spiflash_result_t esp_rom_spiflash_unlock(void)
 {
     uint32_t status;
     uint32_t new_status;
