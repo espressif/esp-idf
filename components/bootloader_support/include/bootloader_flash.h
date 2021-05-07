@@ -48,6 +48,14 @@ esp_err_t bootloader_flash_wrap_set(spi_flash_wrap_mode_t mode);
  */
 esp_err_t bootloader_flash_xmc_startup(void);
 
+/**
+  * @brief Unlock Flash write protect.
+  *        Please do not call this function in SDK.
+  *
+  * @note This can be overridden because it's attribute weak.
+  */
+esp_err_t bootloader_flash_unlock(void);
+
 #ifdef __cplusplus
 }
 #endif

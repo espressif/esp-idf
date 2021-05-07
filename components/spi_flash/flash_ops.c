@@ -42,6 +42,7 @@
 #include "esp_flash.h"
 #include "esp_attr.h"
 #include "esp_timer.h"
+#include "bootloader_flash.h"
 
 esp_rom_spiflash_result_t IRAM_ATTR spi_flash_write_encrypted_chip(size_t dest_addr, const void *src, size_t size);
 
@@ -199,11 +200,8 @@ static esp_rom_spiflash_result_t IRAM_ATTR spi_flash_unlock(void)
     static bool unlocked = false;
     if (!unlocked) {
         spi_flash_guard_start();
-        esp_rom_spiflash_result_t rc = esp_rom_spiflash_unlock();
+        bootloader_flash_unlock();
         spi_flash_guard_end();
-        if (rc != ESP_ROM_SPIFLASH_RESULT_OK) {
-            return rc;
-        }
         unlocked = true;
     }
     return ESP_ROM_SPIFLASH_RESULT_OK;

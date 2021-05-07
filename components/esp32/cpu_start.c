@@ -70,6 +70,7 @@
 #include "esp_ota_ops.h"
 #include "esp_efuse.h"
 #include "bootloader_flash_config.h"
+#include "bootloader_flash.h"
 #include "bootloader_mem.h"
 
 #ifdef CONFIG_APP_BUILD_TYPE_ELF_RAM
@@ -439,7 +440,7 @@ void start_cpu0_default(void)
 
     extern void esp_rom_spiflash_attach(uint32_t, bool);
     esp_rom_spiflash_attach(ets_efuse_get_spiconfig(), false);
-    esp_rom_spiflash_unlock();
+    bootloader_flash_unlock();
 #else
     // This assumes that DROM is the first segment in the application binary, i.e. that we can read
     // the binary header through cache by accessing SOC_DROM_LOW address.
