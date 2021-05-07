@@ -24,16 +24,19 @@
 #include "esp_system.h"
 #include "esp_heap_caps.h"
 #include "esp_intr_alloc.h"
+#include "esp_private/esp_clk.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "hal/cpu_hal.h"
-#include "hal/emac.h"
+#include "hal/emac_hal.h"
 #include "hal/gpio_hal.h"
 #include "soc/soc.h"
+#include "soc/rtc.h"
 #include "sdkconfig.h"
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
+#include "hal/emac_ll.h"
 
 static const char *TAG = "esp.emac";
 
@@ -80,15 +83,15 @@ static esp_err_t emac_esp32_write_phy_reg(esp_eth_mac_t *mac, uint32_t phy_addr,
 {
     esp_err_t ret = ESP_OK;
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    ESP_GOTO_ON_FALSE(!emac_hal_is_mii_busy(&emac->hal), ESP_ERR_INVALID_STATE, err, TAG, "phy is busy");
-    emac_hal_set_phy_data(&emac->hal, reg_value);
+    ESP_GOTO_ON_FALSE(!emac_ll_is_mii_busy(emac->hal.mac_regs), ESP_ERR_INVALID_STATE, err, TAG, "phy is busy");
+    emac_ll_set_phy_data(emac->hal.mac_regs, reg_value);
     emac_hal_set_phy_cmd(&emac->hal, phy_addr, phy_reg, true);
     /* polling the busy flag */
     uint32_t to = 0;
     bool busy = true;
     do {
         esp_rom_delay_us(100);
-        busy = emac_hal_is_mii_busy(&emac->hal);
+        busy = emac_ll_is_mii_busy(emac->hal.mac_regs);
         to += 100;
     } while (busy && to < PHY_OPERATION_TIMEOUT_US);
     ESP_GOTO_ON_FALSE(!busy, ESP_ERR_TIMEOUT, err, TAG, "phy is busy");
@@ -102,19 +105,19 @@ static esp_err_t emac_esp32_read_phy_reg(esp_eth_mac_t *mac, uint32_t phy_addr, 
     esp_err_t ret = ESP_OK;
     ESP_GOTO_ON_FALSE(reg_value, ESP_ERR_INVALID_ARG, err, TAG, "can't set reg_value to null");
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    ESP_GOTO_ON_FALSE(!emac_hal_is_mii_busy(&emac->hal), ESP_ERR_INVALID_STATE, err, TAG, "phy is busy");
+    ESP_GOTO_ON_FALSE(!emac_ll_is_mii_busy(emac->hal.mac_regs), ESP_ERR_INVALID_STATE, err, TAG, "phy is busy");
     emac_hal_set_phy_cmd(&emac->hal, phy_addr, phy_reg, false);
     /* polling the busy flag */
     uint32_t to = 0;
     bool busy = true;
     do {
         esp_rom_delay_us(100);
-        busy = emac_hal_is_mii_busy(&emac->hal);
+        busy = emac_ll_is_mii_busy(emac->hal.mac_regs);
         to += 100;
     } while (busy && to < PHY_OPERATION_TIMEOUT_US);
     ESP_GOTO_ON_FALSE(!busy, ESP_ERR_TIMEOUT, err, TAG, "phy is busy");
     /* Store value */
-    *reg_value = emac_hal_get_phy_data(&emac->hal);
+    *reg_value = emac_ll_get_phy_data(emac->hal.mac_regs);
     return ESP_OK;
 err:
     return ret;
@@ -167,52 +170,32 @@ err:
 
 static esp_err_t emac_esp32_set_speed(esp_eth_mac_t *mac, eth_speed_t speed)
 {
-    esp_err_t ret = ESP_OK;
+    esp_err_t ret = ESP_ERR_INVALID_ARG;
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    switch (speed) {
-    case ETH_SPEED_10M:
-        emac_hal_set_speed(&emac->hal, EMAC_SPEED_10M);
-        ESP_LOGD(TAG, "working in 10Mbps");
-        break;
-    case ETH_SPEED_100M:
-        emac_hal_set_speed(&emac->hal, EMAC_SPEED_100M);
-        ESP_LOGD(TAG, "working in 100Mbps");
-        break;
-    default:
-        ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "unknown speed");
-        break;
+    if (speed >= ETH_SPEED_10M && speed < ETH_SPEED_MAX) {
+        emac_ll_set_port_speed(emac->hal.mac_regs, speed);
+        ESP_LOGD(TAG, "working in %dMbps", speed == ETH_SPEED_10M ? 10 : 100);
+        return ESP_OK;
     }
-    return ESP_OK;
-err:
     return ret;
 }
 
 static esp_err_t emac_esp32_set_duplex(esp_eth_mac_t *mac, eth_duplex_t duplex)
 {
-    esp_err_t ret = ESP_OK;
+    esp_err_t ret = ESP_ERR_INVALID_ARG;
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    switch (duplex) {
-    case ETH_DUPLEX_HALF:
-        emac_hal_set_duplex(&emac->hal, EMAC_DUPLEX_HALF);
-        ESP_LOGD(TAG, "working in half duplex");
-        break;
-    case ETH_DUPLEX_FULL:
-        emac_hal_set_duplex(&emac->hal, EMAC_DUPLEX_FULL);
-        ESP_LOGD(TAG, "working in full duplex");
-        break;
-    default:
-        ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "unknown duplex");
-        break;
+    if (duplex == ETH_DUPLEX_HALF || duplex == ETH_DUPLEX_FULL) {
+        emac_ll_set_duplex(emac->hal.mac_regs, duplex);
+        ESP_LOGD(TAG, "working in %s duplex", duplex == ETH_DUPLEX_HALF ? "half" : "full");
+        return ESP_OK;
     }
-    return ESP_OK;
-err:
     return ret;
 }
 
 static esp_err_t emac_esp32_set_promiscuous(esp_eth_mac_t *mac, bool enable)
 {
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    emac_hal_set_promiscuous(&emac->hal, enable);
+    emac_ll_promiscuous_mode_enable(emac->hal.mac_regs, enable);
     return ESP_OK;
 }
 
@@ -293,9 +276,9 @@ static void emac_esp32_rx_task(void *arg)
 #if CONFIG_ETH_SOFT_FLOW_CONTROL
             // we need to do extra checking of remained frames in case there are no unhandled frames left, but pause frame is still undergoing
             if ((emac->free_rx_descriptor < emac->flow_control_low_water_mark) && emac->do_flow_ctrl && emac->frames_remain) {
-                emac_hal_send_pause_frame(&emac->hal, true);
+                emac_ll_pause_frame_enable(emac->hal.ext_regs, true);
             } else if ((emac->free_rx_descriptor > emac->flow_control_high_water_mark) || !emac->frames_remain) {
-                emac_hal_send_pause_frame(&emac->hal, false);
+                emac_ll_pause_frame_enable(emac->hal.ext_regs, false);
             }
 #endif
         } while (emac->frames_remain);
@@ -320,30 +303,93 @@ static void emac_esp32_init_smi_gpio(emac_esp32_t *emac)
     }
 }
 
+#if CONFIG_ETH_RMII_CLK_OUTPUT
+static void emac_config_apll_clock(void)
+{
+    /* apll_freq = xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536)/((o_div + 2) * 2) */
+    rtc_xtal_freq_t rtc_xtal_freq = rtc_clk_xtal_freq_get();
+    switch (rtc_xtal_freq) {
+    case RTC_XTAL_FREQ_40M: // Recommended
+        /* 50 MHz = 40MHz * (4 + 6) / (2 * (2 + 2) = 50.000 */
+        /* sdm0 = 0, sdm1 = 0, sdm2 = 6, o_div = 2 */
+        rtc_clk_apll_enable(true, 0, 0, 6, 2);
+        break;
+    case RTC_XTAL_FREQ_26M:
+        /* 50 MHz = 26MHz * (4 + 15 + 118 / 256 + 39/65536) / ((3 + 2) * 2) = 49.999992 */
+        /* sdm0 = 39, sdm1 = 118, sdm2 = 15, o_div = 3 */
+        rtc_clk_apll_enable(true, 39, 118, 15, 3);
+        break;
+    case RTC_XTAL_FREQ_24M:
+        /* 50 MHz = 24MHz * (4 + 12 + 255 / 256 + 255/65536) / ((2 + 2) * 2) = 49.499977 */
+        /* sdm0 = 255, sdm1 = 255, sdm2 = 12, o_div = 2 */
+        rtc_clk_apll_enable(true, 255, 255, 12, 2);
+        break;
+    default: // Assume we have a 40M xtal
+        rtc_clk_apll_enable(true, 0, 0, 6, 2);
+        break;
+    }
+}
+#endif
+
 static esp_err_t emac_esp32_init(esp_eth_mac_t *mac)
 {
     esp_err_t ret = ESP_OK;
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     esp_eth_mediator_t *eth = emac->eth;
-    /* enable peripheral clock */
+    /* enable APB to access Ethernet peripheral registers */
     periph_module_enable(PERIPH_EMAC_MODULE);
+
     /* init clock, config gpio, etc */
-    emac_hal_lowlevel_init(&emac->hal);
+#if CONFIG_ETH_PHY_INTERFACE_MII
+    /* MII interface GPIO initialization */
+    emac_hal_iomux_init_mii();
+    /* Enable MII clock */
+    emac_ll_clock_enable_mii(emac->hal.ext_regs);
+#elif CONFIG_ETH_PHY_INTERFACE_RMII
+    /* RMII interface GPIO initialization */
+    emac_hal_iomux_init_rmii();
+    /* If ref_clk is configured as input */
+#if CONFIG_ETH_RMII_CLK_INPUT
+#if CONFIG_ETH_RMII_CLK_IN_GPIO == 0
+    emac_hal_iomux_rmii_clk_input();
+#else
+#error "ESP32 EMAC only support input RMII clock to GPIO0"
+#endif // CONFIG_ETH_RMII_CLK_IN_GPIO == 0
+    emac_ll_clock_enable_rmii_input(emac->hal.ext_regs);
+#endif // CONFIG_ETH_RMII_CLK_INPUT
+
+    /* If ref_clk is configured as output */
+#if CONFIG_ETH_RMII_CLK_OUTPUT
+#if CONFIG_ETH_RMII_CLK_OUTPUT_GPIO0
+    emac_hal_iomux_rmii_clk_ouput(0);
+    /* Choose the APLL clock1 to output on specific GPIO */
+    REG_SET_FIELD(PIN_CTRL, CLK_OUT1, 6);
+#elif CONFIG_ETH_RMII_CLK_OUT_GPIO == 16
+    emac_hal_iomux_rmii_clk_ouput(16);
+#elif CONFIG_ETH_RMII_CLK_OUT_GPIO == 17
+    emac_hal_iomux_rmii_clk_ouput(17);
+#endif // CONFIG_ETH_RMII_CLK_OUTPUT_GPIO0
+    /* Enable RMII clock */
+    emac_ll_clock_enable_rmii_output(emac->hal.ext_regs);
+    emac_config_apll_clock();
+#endif // CONFIG_ETH_RMII_CLK_OUTPUT
+#endif // CONFIG_ETH_PHY_INTERFACE_MII
+
     /* init gpio used by smi interface */
     emac_esp32_init_smi_gpio(emac);
     ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LLINIT, NULL), err, TAG, "lowlevel init failed");
     /* software reset */
-    emac_hal_reset(&emac->hal);
+    emac_ll_reset(emac->hal.dma_regs);
     uint32_t to = 0;
     for (to = 0; to < emac->sw_reset_timeout_ms / 10; to++) {
-        if (emac_hal_is_reset_done(&emac->hal)) {
+        if (emac_ll_is_reset_done(emac->hal.dma_regs)) {
             break;
         }
         vTaskDelay(pdMS_TO_TICKS(10));
     }
     ESP_GOTO_ON_FALSE(to < emac->sw_reset_timeout_ms / 10, ESP_ERR_TIMEOUT, err, TAG, "reset timeout");
     /* set smi clock */
-    emac_hal_set_csr_clock_range(&emac->hal);
+    emac_hal_set_csr_clock_range(&emac->hal, esp_clk_apb_freq());
     /* reset descriptor chain */
     emac_hal_reset_desc_chain(&emac->hal);
     /* init mac registers by default */
@@ -414,15 +460,23 @@ static esp_err_t emac_esp32_del(esp_eth_mac_t *mac)
 }
 
 // To achieve a better performance, we put the ISR always in IRAM
-IRAM_ATTR void emac_esp32_isr_handler(void *args)
+IRAM_ATTR void emac_isr_default_handler(void *args)
 {
     emac_hal_context_t *hal = (emac_hal_context_t *)args;
     emac_esp32_t *emac = __containerof(hal, emac_esp32_t, hal);
-    emac_hal_isr(args);
-    if (emac->isr_need_yield) {
-        emac->isr_need_yield = false;
-        portYIELD_FROM_ISR();
+    BaseType_t high_task_wakeup = pdFALSE;
+    uint32_t intr_stat = emac_ll_get_intr_status(hal->dma_regs);
+    emac_ll_clear_corresponding_intr(hal->dma_regs, intr_stat);
+
+#if EMAC_LL_CONFIG_ENABLE_INTR_MASK & EMAC_LL_INTR_RECEIVE_ENABLE
+    if (intr_stat & EMAC_LL_DMA_RECEIVE_FINISH_INTR) {
+        /* notify receive task */
+        vTaskNotifyGiveFromISR(emac->rx_task_hdl, &high_task_wakeup);
+        if (high_task_wakeup == pdTRUE) {
+            portYIELD_FROM_ISR();
+        }
     }
+#endif
 }
 
 esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config)
@@ -485,10 +539,10 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config)
     /* Interrupt configuration */
     if (config->flags & ETH_MAC_FLAG_WORK_WITH_CACHE_DISABLE) {
         ret_code = esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, ESP_INTR_FLAG_IRAM,
-                                  emac_esp32_isr_handler, &emac->hal, &(emac->intr_hdl));
+                                  emac_isr_default_handler, &emac->hal, &(emac->intr_hdl));
     } else {
         ret_code = esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, 0,
-                                  emac_esp32_isr_handler, &emac->hal, &(emac->intr_hdl));
+                                  emac_isr_default_handler, &emac->hal, &(emac->intr_hdl));
     }
     ESP_GOTO_ON_FALSE(ret_code == ESP_OK, NULL, err, TAG, "alloc emac interrupt failed");
 #ifdef CONFIG_PM_ENABLE
@@ -529,40 +583,4 @@ err:
         free(descriptors);
     }
     return ret;
-}
-
-IRAM_ATTR void emac_hal_rx_complete_cb(void *arg)
-{
-    emac_hal_context_t *hal = (emac_hal_context_t *)arg;
-    emac_esp32_t *emac = __containerof(hal, emac_esp32_t, hal);
-    BaseType_t high_task_wakeup;
-    /* notify receive task */
-    vTaskNotifyGiveFromISR(emac->rx_task_hdl, &high_task_wakeup);
-    if (high_task_wakeup == pdTRUE) {
-        emac->isr_need_yield = true;
-    }
-}
-
-IRAM_ATTR void emac_hal_rx_unavail_cb(void *arg)
-{
-    emac_hal_context_t *hal = (emac_hal_context_t *)arg;
-    emac_esp32_t *emac = __containerof(hal, emac_esp32_t, hal);
-    BaseType_t high_task_wakeup;
-    /* notify receive task */
-    vTaskNotifyGiveFromISR(emac->rx_task_hdl, &high_task_wakeup);
-    if (high_task_wakeup == pdTRUE) {
-        emac->isr_need_yield = true;
-    }
-}
-
-IRAM_ATTR void emac_hal_rx_early_cb(void *arg)
-{
-    emac_hal_context_t *hal = (emac_hal_context_t *)arg;
-    emac_esp32_t *emac = __containerof(hal, emac_esp32_t, hal);
-    BaseType_t high_task_wakeup;
-    /* notify receive task */
-    vTaskNotifyGiveFromISR(emac->rx_task_hdl, &high_task_wakeup);
-    if (high_task_wakeup == pdTRUE) {
-        emac->isr_need_yield = true;
-    }
 }

@@ -47,7 +47,7 @@ if(NOT BOOTLOADER_BUILD)
                     "esp32/touch_sensor_hal.c"
                     "esp32/gpio_hal_workaround.c")
         if(NOT BOOTLOADER_BUILD AND CONFIG_ETH_USE_ESP32_EMAC)
-            list(APPEND srcs "esp32/emac_hal.c")
+            list(APPEND srcs "emac_hal.c")
         endif()
     endif()
 
