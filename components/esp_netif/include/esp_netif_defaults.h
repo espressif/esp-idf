@@ -55,7 +55,7 @@ extern "C" {
         ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(mac) \
         ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(ip_info) \
         .get_ip_event = IP_EVENT_ETH_GOT_IP, \
-        .lost_ip_event = 0, \
+        .lost_ip_event = IP_EVENT_ETH_LOST_IP, \
         .if_key = "ETH_DEF", \
         .if_desc = "eth", \
         .route_prio = 50 \
