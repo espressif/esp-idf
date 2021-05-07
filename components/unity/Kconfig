@@ -13,6 +13,14 @@ menu "Unity unit testing library"
         help
             If not set, assertions on double arguments will not be available.
 
+    config UNITY_ENABLE_64BIT
+        bool "Support for 64-bit integer types"
+        default n
+        help
+            If not set, assertions on 64-bit integer types will always fail.
+            If this feature is enabled, take care not to pass pointers (which are 32 bit)
+            to UNITY_ASSERT_EQUAL, as that will cause pointer-to-int-cast warnings.
+
     config UNITY_ENABLE_COLOR
         bool "Colorize test output"
         default n
