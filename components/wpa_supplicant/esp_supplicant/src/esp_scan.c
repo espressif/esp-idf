@@ -27,7 +27,7 @@
 #include "common/bss.h"
 #include "common/rrm.h"
 #include "common/ieee802_11_common.h"
-#include "esp_supplicant/esp_common_i.h"
+#include "esp_common_i.h"
 #include "common/wnm_sta.h"
 
 extern struct wpa_supplicant g_wpa_supp;

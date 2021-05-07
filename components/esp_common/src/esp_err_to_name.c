@@ -5,6 +5,9 @@
 #if __has_include("soc/soc.h")
 #include "soc/soc.h"
 #endif
+#if __has_include("esp_dpp.h")
+#include "esp_dpp.h"
+#endif
 #if __has_include("esp_efuse.h")
 #include "esp_efuse.h"
 #endif
@@ -38,17 +41,14 @@
 #if __has_include("esp_spi_flash.h")
 #include "esp_spi_flash.h"
 #endif
-#if __has_include("esp_supplicant/esp_dpp.h")
-#include "esp_supplicant/esp_dpp.h"
-#endif
-#if __has_include("esp_supplicant/esp_wps.h")
-#include "esp_supplicant/esp_wps.h"
-#endif
 #if __has_include("esp_tls_errors.h")
 #include "esp_tls_errors.h"
 #endif
 #if __has_include("esp_wifi.h")
 #include "esp_wifi.h"
+#endif
+#if __has_include("esp_wps.h")
+#include "esp_wps.h"
 #endif
 #if __has_include("hal/esp_flash_err.h")
 #include "hal/esp_flash_err.h"
@@ -376,7 +376,7 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_WIFI_TX_DISALLOW
     ERR_TBL_IT(ESP_ERR_WIFI_TX_DISALLOW),                       /* 12310 0x3016 The WiFi TX is disallowed */
 #   endif
-    // components/wpa_supplicant/include/esp_supplicant/esp_wps.h
+    // components/wpa_supplicant/esp_supplicant/include/esp_wps.h
 #   ifdef      ESP_ERR_WIFI_REGISTRAR
     ERR_TBL_IT(ESP_ERR_WIFI_REGISTRAR),                         /* 12339 0x3033 WPS registrar is not supported */
 #   endif
@@ -414,7 +414,7 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_ESPNOW_IF
     ERR_TBL_IT(ESP_ERR_ESPNOW_IF),                              /* 12396 0x306c Interface error */
 #   endif
-    // components/wpa_supplicant/include/esp_supplicant/esp_dpp.h
+    // components/wpa_supplicant/esp_supplicant/include/esp_dpp.h
 #   ifdef      ESP_ERR_DPP_FAILURE
     ERR_TBL_IT(ESP_ERR_DPP_FAILURE),                            /* 12439 0x3097 Generic failure during DPP Operation */
 #   endif

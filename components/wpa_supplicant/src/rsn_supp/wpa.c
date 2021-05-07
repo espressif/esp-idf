@@ -21,8 +21,8 @@
 #include "common/eapol_common.h"
 #include "common/ieee802_11_defs.h"
 #include "rsn_supp/wpa_ie.h"
-#include "esp_supplicant/esp_wpas_glue.h"
-#include "esp_supplicant/esp_wifi_driver.h"
+#include "esp_wpas_glue.h"
+#include "esp_wifi_driver.h"
 
 #include "crypto/crypto.h"
 #include "crypto/sha1.h"

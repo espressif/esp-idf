@@ -20,7 +20,7 @@
 #include "esp_wifi_types.h"
 #include "utils/common.h"
 #include "common/ieee802_11_defs.h"
-#include "../src/esp_supplicant/esp_wifi_driver.h"
+#include "../esp_supplicant/src/esp_wifi_driver.h"
 #include "esp_log.h"
 #include "test_utils.h"
 #include "freertos/event_groups.h"

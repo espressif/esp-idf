@@ -17,7 +17,7 @@
 #include "scan.h"
 #include "bss.h"
 #ifdef ESP_SUPPLICANT
-#include "esp_supplicant/esp_wifi_driver.h"
+#include "esp_wifi_driver.h"
 #endif
 
 #define MAX_BSS_COUNT 20
