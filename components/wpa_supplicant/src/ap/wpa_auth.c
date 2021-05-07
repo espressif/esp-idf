@@ -1064,7 +1064,7 @@ void __wpa_send_eapol(struct wpa_authenticator *wpa_auth,
                 buf, key_data_len);
         if (version == WPA_KEY_INFO_TYPE_HMAC_SHA1_AES ||
             version == WPA_KEY_INFO_TYPE_AES_128_CMAC) {
-            if (aes_wrap(sm->PTK.kek, (key_data_len - 8) / 8, buf,
+            if (aes_wrap(sm->PTK.kek, 16, (key_data_len - 8) / 8, buf,
             		(u8 *) (key + 1))) {
             	os_free(hdr);
             	os_free(buf);

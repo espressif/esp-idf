@@ -6,12 +6,12 @@
  * See README for more details.
  */
 
-#include "utils/includes.h"
-#include "utils/common.h"
+#include "includes.h"
 
-#include "crypto/aes.h"
-#include "crypto/aes_wrap.h"
-#include "crypto/aes_siv.h"
+#include "common.h"
+#include "aes.h"
+#include "aes_wrap.h"
+#include "aes_siv.h"
 
 
 static const u8 zero[AES_BLOCK_SIZE];

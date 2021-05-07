@@ -2460,6 +2460,21 @@
 #undef MBEDTLS_THREADING_PTHREAD
 #endif
 
+/**
+ * \def MBEDTLS_NIST_KW_C
+ *
+ * Enable AES key wrapping as per NIST
+ *
+ * Requires: MBEDTLS_AES_C
+ *
+ * Uncomment this to enable aes key wrap.
+ */
+#ifdef CONFIG_MBEDTLS_NIST_KW_C
+#define MBEDTLS_NIST_KW_C
+#else
+#undef MBEDTLS_NIST_KW_C
+#endif
+
 /* \} name SECTION: Module configuration options */
 
 #if defined(TARGET_LIKE_MBED)

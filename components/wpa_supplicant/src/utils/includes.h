@@ -21,6 +21,10 @@
 
 #include "supplicant_opt.h"
 
+#define AES_SMALL_TABLES
+#define CONFIG_NO_RANDOM_POOL
+#define CONFIG_INTERNAL_LIBTOMMATH
+
 /* Include possible build time configuration before including anything else */
 #ifndef __ets__
 #include <stdlib.h>
