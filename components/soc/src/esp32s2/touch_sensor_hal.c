@@ -26,6 +26,10 @@ void touch_hal_init(void)
     touch_ll_clear_trigger_status_mask();
     touch_ll_set_meas_times(TOUCH_PAD_MEASURE_CYCLE_DEFAULT);
     touch_ll_set_sleep_time(TOUCH_PAD_SLEEP_CYCLE_DEFAULT);
+    /* Configure the touch-sensor power domain into self-bias since bandgap-bias
+     * level is different under sleep-mode compared to running-mode. self-bias is
+     * always on after chip startup. */
+    touch_ll_sleep_low_power(true);
     touch_ll_set_voltage_high(TOUCH_PAD_HIGH_VOLTAGE_THRESHOLD);
     touch_ll_set_voltage_low(TOUCH_PAD_LOW_VOLTAGE_THRESHOLD);
     touch_ll_set_voltage_attenuation(TOUCH_PAD_ATTEN_VOLTAGE_THRESHOLD);
@@ -142,9 +146,6 @@ void touch_hal_sleep_channel_enable(touch_pad_t pad_num, bool enable)
     if (enable) {
         touch_ll_sleep_set_channel_num(pad_num);
         touch_ll_sleep_set_threshold(SOC_TOUCH_PAD_THRESHOLD_MAX);
-        /* Default change touch dbias to self-dbias to save power.
-        Measuring the sleep pad threshold after `sleep_channel_set_config`. */
-        touch_ll_sleep_low_power(true);
         touch_ll_sleep_reset_benchmark();
     } else {
         touch_ll_sleep_set_channel_num(TOUCH_PAD_NUM0);
