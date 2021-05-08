@@ -219,6 +219,22 @@ menu "Bootloader config"
             It allow to test anti-rollback implemention without permanent write eFuse bits.
             In partition table should be exist this partition `emul_efuse, data, 5, , 0x2000`.
 
+    choice BOOTLOADER_FLASH_XMC_OVERERASE_PATCH
+        bool "Patch strategy for XMC over-erase issue"
+        default BOOTLOADER_FLASH_XMC_OVERERASE_PATCH_DEFAULT
+        help
+            Specify the patch strategy for XMC chips. The over-erase issue may exist on
+            XM25QH16C, XM25QH32C and XM25QH128C.
+
+        config BOOTLOADER_FLASH_XMC_OVERERASE_PATCH_ALL
+            bool "Run the patch for all XMC chips. This can completely avoid over-erase issue. But may cost some time."
+        config BOOTLOADER_FLASH_XMC_OVERERASE_PATCH_DEFAULT
+            bool "Run the patch on XMC chips when there are clues indicating the flash is running incorrectly."
+        config BOOTLOADER_FLASH_XMC_OVERERASE_PATCH_BYPASS
+            bool "Not using the patch"
+
+    endchoice # BOOTLOADER_FLASH_XMC_OVERERASE_PATCH
+
 endmenu  # Bootloader
 
 

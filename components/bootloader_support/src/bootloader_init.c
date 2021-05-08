@@ -120,8 +120,16 @@ esp_err_t bootloader_init()
 static esp_err_t bootloader_main()
 {
     bootloader_common_vddsdio_configure();
+
     /* Read and keep flash ID, for further use. */
     g_rom_flashchip.device_id = bootloader_read_flash_id();
+#if CONFIG_BOOTLOADER_FLASH_XMC_OVERERASE_PATCH_ALL || CONFIG_BOOTLOADER_FLASH_XMC_OVERERASE_PATCH_DEFAULT
+    if (bootloader_xmc_flash_overerase_fix() != ESP_OK) {
+        ESP_LOGE(TAG, "failed to fix XMC flash overerase, reboot!");
+        return ESP_FAIL;
+    }
+#endif
+
     esp_image_header_t fhdr;
     if (bootloader_flash_read(ESP_BOOTLOADER_OFFSET, &fhdr, sizeof(esp_image_header_t), true) != ESP_OK) {
         ESP_LOGE(TAG, "failed to load bootloader header!");

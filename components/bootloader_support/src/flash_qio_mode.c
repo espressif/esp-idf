@@ -306,3 +306,111 @@ static uint32_t execute_flash_command(uint8_t command, uint32_t mosi_data, uint8
     SPIFLASH.ctrl.val = old_ctrl_reg;
     return SPIFLASH.data_buf[0];
 }
+
+// cmd(0x5A) + 24bit address + 8 cycles dummy
+static uint32_t bootloader_flash_read_sfdp(uint32_t sfdp_addr, unsigned int miso_byte_num)
+{
+    assert(miso_byte_num <= 4);
+    uint8_t command = 0x5A;
+    uint8_t miso_len = miso_byte_num * 8;
+    uint8_t mosi_len = 0;
+    uint32_t mosi_data = 0;
+
+    uint32_t old_ctrl_reg = SPIFLASH.ctrl.val;
+    SPIFLASH.ctrl.val = SPI_WP_REG_M; // keep WP high while idle, otherwise leave DIO mode
+    SPIFLASH.user.usr_dummy = 1;
+    SPIFLASH.user1.usr_dummy_cyclelen = 7 + g_rom_spiflash_dummy_len_plus[1];
+    SPIFLASH.user.usr_addr = 1;
+    SPIFLASH.addr = (sfdp_addr<<8);
+    SPIFLASH.user1.usr_addr_bitlen = 23;
+    SPIFLASH.user.usr_command = 1;
+    SPIFLASH.user2.usr_command_bitlen = 7;
+
+    SPIFLASH.user2.usr_command_value = command;
+    SPIFLASH.user.usr_miso = miso_len > 0;
+    SPIFLASH.miso_dlen.usr_miso_dbitlen = miso_len ? (miso_len - 1) : 0;
+    SPIFLASH.user.usr_mosi = mosi_len > 0;
+    SPIFLASH.mosi_dlen.usr_mosi_dbitlen = mosi_len ? (mosi_len - 1) : 0;
+    SPIFLASH.data_buf[0] = mosi_data;
+
+    SPIFLASH.cmd.usr = 1;
+    while(SPIFLASH.cmd.usr != 0)
+    { }
+
+    SPIFLASH.ctrl.val = old_ctrl_reg;
+    uint32_t ret = SPIFLASH.data_buf[0];
+    if (miso_len < 32) {
+        //set unused bits to 0
+        ret &= ~(UINT32_MAX << miso_len);
+    }
+    return ret;
+}
+
+#define XMC_VENDOR_ID 0x20
+
+//use strict model checking for over-erase issue
+static bool is_xmc_chip_strict(uint32_t rdid)
+{
+    uint32_t vendor_id = (rdid >> 16) & 0xFF;
+    uint32_t mfid = (rdid >> 8) & 0xFF;
+    uint32_t cpid = rdid & 0xFF;
+
+    if (vendor_id != XMC_VENDOR_ID) {
+        return false;
+    }
+
+    bool matched = false;
+    if (mfid == 0x40) {
+        if (cpid >= 0x13 && cpid <= 0x20) {
+            matched = true;
+        }
+    } else if (mfid == 0x41) {
+        if (cpid >= 0x17 && cpid <= 0x20) {
+            matched = true;
+        }
+    } else if (mfid == 0x50) {
+        if (cpid >= 0x15 && cpid <= 0x16) {
+            matched =  true;
+        }
+    }
+    return matched;
+}
+
+esp_err_t bootloader_xmc_flash_overerase_fix()
+{
+#if CONFIG_BOOTLOADER_FLASH_XMC_OVERERASE_PATCH_DEFAULT
+    //correct RDID value means the issue doesn't occur
+    if (is_xmc_chip_strict(g_rom_flashchip.device_id)) {
+        return ESP_OK;
+    }
+#endif
+
+    // Check vendor ID in SFDP registers. If not XMC chip, no need to run the patch
+    uint8_t mf_id = (bootloader_flash_read_sfdp(0x10, 1) & 0xff);
+    if (mf_id != XMC_VENDOR_ID) {
+        return ESP_OK;
+    }
+
+    ESP_LOGI(TAG, "XM25QHxxC flash overerase fix");
+    // Enter DPD
+    execute_flash_command(0xB9, 0, 0, 0);
+    // Enter UDPD
+    execute_flash_command(0x79, 0, 0, 0);
+    // Exit UDPD
+    execute_flash_command(0xFF, 0, 0, 0);
+    // Delay tXUDPD
+    ets_delay_us(2000);
+    // Release Power-down
+    execute_flash_command(0xAB, 0, 0, 0);
+    ets_delay_us(20);
+    // Read flash ID and check
+    g_rom_flashchip.device_id = bootloader_read_flash_id();
+    if (!is_xmc_chip_strict(g_rom_flashchip.device_id)) {
+        // fail
+        ESP_LOGE(TAG, "XM25QH32C flash overerase fix fail");
+        return ESP_FAIL;
+    }
+
+    return ESP_OK;
+}
+
