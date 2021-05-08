@@ -44,11 +44,7 @@ To compile the ULP code as part of the component, the following steps must be ta
 
     ulp_embed_binary(${ulp_app_name} "${ulp_s_sources}" "${ulp_exp_dep_srcs}")
 
- The first argument to ``ulp_embed_binary`` specifies the ULP binary name. The name specified here will also be used by other generated artifacts
- such as the ELF file, map file, header file and linker export file. The second argument specifies the ULP assembly source files.
- Finally, the third argument specifies the list of component source files which include the header file to be generated.
- This list is needed to build the dependencies correctly and ensure that the generated header file will be created before any of these files are compiled.
- See section below for the concept of generated header files for ULP applications.
+ The first argument to ``ulp_embed_binary`` specifies the ULP binary name. The name specified here will also be used by other generated artifacts such as the ELF file, map file, header file and linker export file. The second argument specifies the ULP assembly source files. Finally, the third argument specifies the list of component source files which include the header file to be generated. This list is needed to build the dependencies correctly and ensure that the generated header file will be created before any of these files are compiled. See section below for the concept of generated header files for ULP applications.
 
 3. Build the application as usual (e.g. `idf.py app`)
 
@@ -149,7 +145,7 @@ Declaration of the entry point symbol comes from the generated header file menti
 ULP Program Flow
 ----------------
 
-The ULP coprocessor is started by a timer. The timer is started once ``ulp_run`` is called. The timer counts the number of RTC_SLOW_CLK ticks (by default, produced by an internal 150kHz RC oscillator). The number of ticks is set using ``SENS_ULP_CP_SLEEP_CYCx_REG`` registers (x = 0..4). When starting the ULP for the first time, ``SENS_ULP_CP_SLEEP_CYC0_REG`` will be used to set the number of timer ticks. Later the ULP program can select another ``SENS_ULP_CP_SLEEP_CYCx_REG`` register using the ``sleep`` instruction.
+The ULP coprocessor is started by a timer. The timer is started once ``ulp_run`` is called. The timer counts a number of RTC_SLOW_CLK ticks (by default, produced by an internal 150 kHz RC oscillator). The number of ticks is set using ``SENS_ULP_CP_SLEEP_CYCx_REG`` registers (x = 0..4). When starting the ULP for the first time, ``SENS_ULP_CP_SLEEP_CYC0_REG`` will be used to set the number of timer ticks. Later the ULP program can select another ``SENS_ULP_CP_SLEEP_CYCx_REG`` register using the ``sleep`` instruction.
 
 The application can set ULP timer period values (SENS_ULP_CP_SLEEP_CYCx_REG, x = 0..4) using the ``ulp_set_wakeup_period`` function.
 

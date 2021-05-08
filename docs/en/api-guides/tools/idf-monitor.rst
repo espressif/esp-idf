@@ -8,47 +8,63 @@ The IDF monitor tool is mainly a serial terminal program which relays serial dat
 
 This tool can be launched from an IDF project by running ``idf.py monitor``.
 
-(For the legacy GNU Make system, run ``make monitor``.)
+For the legacy GNU Make system, run ``make monitor``.
+
 
 Keyboard Shortcuts
 ==================
 
 For easy interaction with IDF Monitor, use the keyboard shortcuts given in the table.
 
-+-------------------+--------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Keyboard Shortcut | Action                                                 | Description                                                                                                                                                                                                                                          |
-+===================+========================================================+======================================================================================================================================================================================================================================================+
-| Ctrl+]            | Exit the program                                       |                                                                                                                                                                                                                                                      |
-+-------------------+--------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Ctrl+T            | Menu escape key                                        | Press and follow it by one of the keys given below.                                                                                                                                                                                                  |
-+-------------------+--------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|  - Ctrl+T         | Send the menu character itself to remote               |                                                                                                                                                                                                                                                      |
-+-------------------+--------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|  - Ctrl+]         | Send the exit character itself to remote               |                                                                                                                                                                                                                                                      |
-+-------------------+--------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|  - Ctrl+P         | Reset target into bootloader to pause app via RTS line | Resets the target, into bootloader via the RTS line (if connected), so that the board runs nothing. Useful when you need to wait for another device to startup.                                                                                      |
-+-------------------+--------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|  - Ctrl+R         | Reset target board via RTS                             | Resets the target board and re-starts the application via the RTS line (if connected).                                                                                                                                                               |
-+-------------------+--------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|  - Ctrl+F         | Build and flash the project                            | Pauses idf_monitor to run the project ``flash`` target, then resumes idf_monitor. Any changed source files are recompiled and then re-flashed. Target ``encrypted-flash`` is run if idf_monitor was started with argument ``-E``.                    |
-+-------------------+--------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|  - Ctrl+A (or A)  | Build and flash the app only                           | Pauses idf_monitor to run the ``app-flash`` target, then resumes idf_monitor. Similar to the ``flash`` target, but only the main app is built and re-flashed. Target ``encrypted-app-flash`` is run if idf_monitor was started with argument ``-E``. |
-+-------------------+--------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|  - Ctrl+Y         | Stop/resume log output printing on screen              | Discards all incoming serial data while activated. Allows to quickly pause and examine log output without quitting the monitor.                                                                                                                      |
-+-------------------+--------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|  - Ctrl+L         | Stop/resume log output saved to file                   | Creates a file in the project directory and the output is written to that file until this is disabled with the same keyboard shortcut (or IDF Monitor exits).                                                                                        |
-+-------------------+--------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|  - Ctrl+H (or H)  | Display all keyboard shortcuts                         |                                                                                                                                                                                                                                                      |
-+-------------------+--------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|  - Ctrl+X (or X)  | Exit the program                                       |                                                                                                                                                                                                                                                      |
-+-------------------+--------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+.. list-table::               
+   :header-rows: 1                
+   :widths: 15 25 55                
+                              
+   * - Keyboard Shortcut
+     - Action
+     - Description                
+   * - Ctrl+]
+     - Exit the program
+     -                
+   * - Ctrl+T
+     - Menu escape key
+     - Press and follow it by one of the keys given below.                 
+   * - * Ctrl+T
+     - Send the menu character itself to remote
+     -                
+   * - * Ctrl+]
+     - Send the exit character itself to remote
+     -                
+   * - * Ctrl+P
+     - Reset target into bootloader to pause app via RTS line
+     - Resets the target, into bootloader via the RTS line (if connected), so that the board runs nothing. Useful when you need to wait for another device to startup.                
+   * - * Ctrl+R
+     - Reset target board via RTS
+     - Resets the target board and re-starts the application via the RTS line (if connected).               
+   * - * Ctrl+F
+     - Build and flash the project
+     - Pauses idf_monitor to run the project ``flash`` target, then resumes idf_monitor. Any changed source files are recompiled and then re-flashed. Target ``encrypted-flash`` is run if idf_monitor was started with argument ``-E``.                
+   * - * Ctrl+A (or A)
+     - Build and flash the app only
+     - Pauses idf_monitor to run the ``app-flash`` target, then resumes idf_monitor. Similar to the ``flash`` target, but only the main app is built and re-flashed. Target ``encrypted-app-flash`` is run if idf_monitor was started with argument ``-E``.                
+   * - * Ctrl+Y
+     - Stop/resume log output printing on screen
+     - Discards all incoming serial data while activated. Allows to quickly pause and examine log output without quitting the monitor.                
+   * - * Ctrl+L
+     - Stop/resume log output saved to file
+     - Creates a file in the project directory and the output is written to that file until this is disabled with the same keyboard shortcut (or IDF Monitor exits).                
+   * - * Ctrl+H (or H)
+     - Display all keyboard shortcuts
+     -                
+   * - * Ctrl+X (or X)
+     - Exit the program
+     -                
 
 Any keys pressed, other than ``Ctrl-]`` and ``Ctrl-T``, will be sent through the serial port.
 
 
 IDF-specific features
 =====================
-
 
 Automatic Address Decoding
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -122,40 +138,23 @@ Restrictions on what to print can be specified as a series of ``<tag>:<log_level
 For example, ``PRINT_FILTER="tag1:W"`` matches and prints only the outputs written with ``ESP_LOGW("tag1", ...)`` or at lower verbosity level, i.e. ``ESP_LOGE("tag1", ...)``. Not specifying a ``<log_level>`` or using ``*`` defaults to Verbose level.
 
 .. note::
-   Use primary logging to disable at compilation the outputs you do not
-   need through the :doc:`logging library<../../api-reference/system/log>`.
-   Output filtering with IDF monitor is a secondary solution
-   which can be useful for adjusting the filtering options without
-   recompiling the application.
+   Use primary logging to disable at compilation the outputs you do not need through the :doc:`logging library<../../api-reference/system/log>`. Output filtering with IDF monitor is a secondary solution which can be useful for adjusting the filtering options without recompiling the application.
 
-Your app tags must not contain spaces, asterisks ``*``,
-and semicolons ``:`` to be compatible with the output filtering feature.
+Your app tags must not contain spaces, asterisks ``*``, or colons ``:`` to be compatible with the output filtering feature.
 
 If the last line of the output in your app is not followed by a carriage return, the output filtering might get confused, i.e., the monitor starts to print the line and later finds out that the line should not have been written. This is a known issue and can be avoided by always adding a carriage return (especially when no output follows immediately afterwards).
 
 Examples Of Filtering Rules:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- ``*`` can be used to match any tags. However, the string
-  ``PRINT_FILTER="*:I tag1:E"`` with regards to ``tag1`` prints errors
-  only, because the rule for ``tag1`` has a higher priority over the rule for ``*``.
-- The default (empty) rule is equivalent to ``*:V`` because matching every tag
-  at the Verbose level or lower means matching everything.
-- ``"*:N"`` suppresses not only the outputs from logging functions, but also
-  the prints made by ``printf``, etc. To avoid this, use ``*:E`` or a higher verbosity level.
-- Rules ``"tag1:V"``, ``"tag1:v"``, ``"tag1:"``, ``"tag1:*"``, and ``"tag1"``
-  are equivalent.
-- Rule ``"tag1:W tag1:E"`` is equivalent to ``"tag1:E"`` because any
-  consequent occurrence of the same tag name overwrites the previous one.
-- Rule ``"tag1:I tag2:W"`` only prints ``tag1`` at the Info verbosity level or
-  lower and ``tag2`` at the Warning verbosity level or lower.
-- Rule ``"tag1:I tag2:W tag3:N"`` is essentially equivalent to the previous
-  one because ``tag3:N`` specifies that ``tag3`` should not be printed.
-- ``tag3:N`` in the rule ``"tag1:I tag2:W tag3:N *:V"`` is more meaningful because
-  without ``tag3:N`` the ``tag3`` messages could have been printed;
-  the errors for ``tag1`` and ``tag2`` will be printed at the specified (or lower)
-  verbosity level and everything else will be printed by default.
-
+- ``*`` can be used to match any tags. However, the string ``PRINT_FILTER="*:I tag1:E"`` with regards to ``tag1`` prints errors only, because the rule for ``tag1`` has a higher priority over the rule for ``*``.
+- The default (empty) rule is equivalent to ``*:V`` because matching every tag at the Verbose level or lower means matching everything.
+- ``"*:N"`` suppresses not only the outputs from logging functions, but also the prints made by ``printf``, etc. To avoid this, use ``*:E`` or a higher verbosity level.
+- Rules ``"tag1:V"``, ``"tag1:v"``, ``"tag1:"``, ``"tag1:*"``, and ``"tag1"`` are equivalent.
+- Rule ``"tag1:W tag1:E"`` is equivalent to ``"tag1:E"`` because any consequent occurrence of the same tag name overwrites the previous one.
+- Rule ``"tag1:I tag2:W"`` only prints ``tag1`` at the Info verbosity level or lower and ``tag2`` at the Warning verbosity level or lower.
+- Rule ``"tag1:I tag2:W tag3:N"`` is essentially equivalent to the previous one because ``tag3:N`` specifies that ``tag3`` should not be printed.
+- ``tag3:N`` in the rule ``"tag1:I tag2:W tag3:N *:V"`` is more meaningful because without ``tag3:N`` the ``tag3`` messages could have been printed; the errors for ``tag1`` and ``tag2`` will be printed at the specified (or lower) verbosity level and everything else will be printed by default.
 
 
 A More Complex Filtering Example
@@ -192,7 +191,7 @@ Known Issues with IDF Monitor
 =============================
 
 Issues Observed on Windows
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - If in the Windows environment you receive the error "winpty: command not found", fix it by running ``pacman -S winpty``.
 - Arrow keys, as well as some other keys, do not work in GDB due to Windows Console limitations.
