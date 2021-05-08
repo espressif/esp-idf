@@ -23,11 +23,12 @@
 
 #define SNIFFER_DEFAULT_FILE_NAME "esp-sniffer"
 #define SNIFFER_FILE_NAME_MAX_LEN CONFIG_SNIFFER_PCAP_FILE_NAME_MAX_LEN
-#define SNIFFER_DEFAULT_CHANNEL (1)
-#define SNIFFER_PAYLOAD_FCS_LEN (4)
-#define SNIFFER_PROCESS_PACKET_TIMEOUT_MS (100)
+#define SNIFFER_DEFAULT_CHANNEL             (1)
+#define SNIFFER_PAYLOAD_FCS_LEN             (4)
+#define SNIFFER_PROCESS_PACKET_TIMEOUT_MS   (100)
 #define SNIFFER_PROCESS_APPTRACE_TIMEOUT_US (100)
-#define SNIFFER_APPTRACE_RETRY  (10)
+#define SNIFFER_APPTRACE_RETRY              (10)
+#define SNIFFER_RX_FCS_ERR                  (0X41)
 
 static const char *SNIFFER_TAG = "cmd_sniffer";
 #define SNIFFER_CHECK(a, str, goto_tag, ...)                                              \
@@ -82,10 +83,11 @@ static uint32_t hash_func(const char *str, uint32_t max_num)
 
 static void create_wifi_filter_hashtable(void)
 {
-    char *wifi_filter_keys[SNIFFER_WLAN_FILTER_MAX] = {"mgmt", "data", "ctrl", "misc", "mpdu", "ampdu"};
+    char *wifi_filter_keys[SNIFFER_WLAN_FILTER_MAX] = {"mgmt", "data", "ctrl", "misc", "mpdu", "ampdu", "fcsfail"};
     uint32_t wifi_filter_values[SNIFFER_WLAN_FILTER_MAX] = {WIFI_PROMIS_FILTER_MASK_MGMT, WIFI_PROMIS_FILTER_MASK_DATA,
                                                             WIFI_PROMIS_FILTER_MASK_CTRL, WIFI_PROMIS_FILTER_MASK_MISC,
-                                                            WIFI_PROMIS_FILTER_MASK_DATA_MPDU, WIFI_PROMIS_FILTER_MASK_DATA_AMPDU
+                                                            WIFI_PROMIS_FILTER_MASK_DATA_MPDU, WIFI_PROMIS_FILTER_MASK_DATA_AMPDU,
+                                                            WIFI_PROMIS_FILTER_MASK_FCSFAIL
                                                            };
     for (int i = 0; i < SNIFFER_WLAN_FILTER_MAX; i++) {
         uint32_t idx = hash_func(wifi_filter_keys[i], SNIFFER_WLAN_FILTER_MAX);
@@ -126,6 +128,7 @@ static void wifi_sniffer_cb(void *recv_buf, wifi_promiscuous_pkt_type_t type)
     packet_info.seconds = sniffer->rx_ctrl.timestamp / 1000000U;
     packet_info.microseconds = sniffer->rx_ctrl.timestamp % 1000000U;
     packet_info.length = sniffer->rx_ctrl.sig_len;
+
     /* For now, the sniffer only dumps the length of the MISC type frame */
     if (type != WIFI_PKT_MISC && !sniffer->rx_ctrl.rx_state) {
         packet_info.length -= SNIFFER_PAYLOAD_FCS_LEN;
@@ -378,7 +381,7 @@ void register_sniffer(void)
                                  "name of the file storing the packets in pcap format");
     sniffer_args.interface = arg_str0("i", "interface", "<wlan>",
                                       "which interface to capture packet");
-    sniffer_args.filter = arg_strn("F", "filter", "<mgmt|data|ctrl|misc|mpdu|ampdu>", 0, 6, "filter parameters");
+    sniffer_args.filter = arg_strn("F", "filter", "<mgmt|data|ctrl|misc|mpdu|ampdu|fcsfail>", 0, 7, "filter parameters");
     sniffer_args.channel = arg_int0("c", "channel", "<channel>", "communication channel to use");
     sniffer_args.stop = arg_lit0(NULL, "stop", "stop running sniffer");
     sniffer_args.end = arg_end(1);

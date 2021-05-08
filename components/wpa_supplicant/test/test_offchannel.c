@@ -128,7 +128,7 @@ void esp_send_action_frame(uint8_t *dest_mac, const uint8_t *buf, uint32_t len,
     wifi_action_tx_req_t *req = os_zalloc(sizeof(*req) + len);;
     TEST_ASSERT( req != NULL);
 
-    req->ifx = ESP_IF_WIFI_STA;
+    req->ifx = WIFI_IF_STA;
     memcpy(req->dest_mac, dest_mac, ETH_ALEN);
     req->no_ack = false;
     req->data_len = len;
@@ -155,7 +155,7 @@ TEST_CASE("Test scan and ROC simultaneously", "[Offchan]")
 
     xEventGroupWaitBits(wifi_event, WIFI_START_EVENT, 1, 0, 5000 / portTICK_RATE_MS);
 
-    TEST_ESP_OK(esp_wifi_remain_on_channel(ESP_IF_WIFI_STA, WIFI_ROC_REQ, TEST_LISTEN_CHANNEL,
+    TEST_ESP_OK(esp_wifi_remain_on_channel(WIFI_IF_STA, WIFI_ROC_REQ, TEST_LISTEN_CHANNEL,
                                            100, rx_cb));
     ESP_ERROR_CHECK(esp_wifi_scan_start(NULL, false));
     bits = xEventGroupWaitBits(wifi_event, WIFI_ROC_DONE_EVENT | WIFI_SCAN_DONE_EVENT,
@@ -164,7 +164,7 @@ TEST_CASE("Test scan and ROC simultaneously", "[Offchan]")
 
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     ESP_ERROR_CHECK(esp_wifi_scan_start(NULL, false));
-    TEST_ESP_OK(esp_wifi_remain_on_channel(ESP_IF_WIFI_STA, WIFI_ROC_REQ, TEST_LISTEN_CHANNEL,
+    TEST_ESP_OK(esp_wifi_remain_on_channel(WIFI_IF_STA, WIFI_ROC_REQ, TEST_LISTEN_CHANNEL,
                                            100, rx_cb));
     bits = xEventGroupWaitBits(wifi_event, WIFI_ROC_DONE_EVENT | WIFI_SCAN_DONE_EVENT,
                                pdTRUE, pdFALSE, 5000 / portTICK_RATE_MS);
@@ -221,17 +221,17 @@ static void test_wifi_roc(void)
     start_wifi_as_sta();
 
     xEventGroupWaitBits(wifi_event, WIFI_START_EVENT, 1, 0, 5000 / portTICK_RATE_MS);
-    TEST_ESP_OK(esp_wifi_get_mac(ESP_IF_WIFI_STA, mac));
+    TEST_ESP_OK(esp_wifi_get_mac(WIFI_IF_STA, mac));
     sprintf(mac_str, MACSTR, MAC2STR(mac));
     unity_send_signal_param("Listener mac", mac_str);
 
-    TEST_ESP_OK(esp_wifi_remain_on_channel(ESP_IF_WIFI_STA, WIFI_ROC_REQ, TEST_LISTEN_CHANNEL,
+    TEST_ESP_OK(esp_wifi_remain_on_channel(WIFI_IF_STA, WIFI_ROC_REQ, TEST_LISTEN_CHANNEL,
                                            10000, rx_cb));
     bits = xEventGroupWaitBits(wifi_event, WIFI_ROC_DONE_EVENT | WIFI_ACTION_RX_EVENT,
                                pdTRUE, pdFALSE, portMAX_DELAY);
     /* Confirm that Frame has been received successfully */
     if (bits == WIFI_ACTION_RX_EVENT) {
-        TEST_ESP_OK(esp_wifi_remain_on_channel(ESP_IF_WIFI_STA, WIFI_ROC_CANCEL, 0, 0, NULL));
+        TEST_ESP_OK(esp_wifi_remain_on_channel(WIFI_IF_STA, WIFI_ROC_CANCEL, 0, 0, NULL));
         vTaskDelay(1000 / portTICK_PERIOD_MS);
         stop_wifi();
     } else {

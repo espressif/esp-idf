@@ -31,6 +31,7 @@ typedef enum {
     SNIFFER_WLAN_FILTER_MISC,     /*!< MISC */
     SNIFFER_WLAN_FILTER_MPDU,     /*!< MPDU */
     SNIFFER_WLAN_FILTER_AMPDU,    /*!< AMPDU */
+    SNIFFER_WLAN_FILTER_FCSFAIL,  /*!< When this bit is set, the hardware will receive packets for which frame check sequence failed */
     SNIFFER_WLAN_FILTER_MAX
 } sniffer_wlan_filter_t;
 
