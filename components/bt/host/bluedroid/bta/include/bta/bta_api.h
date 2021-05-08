@@ -1475,6 +1475,20 @@ extern void BTA_DmSetDeviceName(const char *p_name);
 *******************************************************************************/
 extern void BTA_DmConfigEir(tBTA_DM_EIR_CONF *eir_config);
 
+#if (BTA_DM_QOS_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         BTA_DmSetQos
+**
+** Description      This function sets the QOS
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_DmSetQos(BD_ADDR bd_addr, UINT32 t_poll, tBTM_CMPL_CB *p_cb);
+#endif /// (BTA_DM_QOS_INCLUDED == TRUE)
+
 #if (BLE_INCLUDED == TRUE)
 extern void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr, tBLE_ADDR_TYPE addr_type, tBTA_ADD_WHITELIST_CBACK *add_wl_cb);
 

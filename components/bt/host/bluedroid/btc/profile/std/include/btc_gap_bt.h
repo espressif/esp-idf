@@ -35,6 +35,7 @@ typedef enum {
     BTC_GAP_BT_READ_RSSI_DELTA_EVT,
     BTC_GAP_BT_CONFIG_EIR_DATA_EVT,
     BTC_GAP_BT_REMOVE_BOND_DEV_COMPLETE_EVT,
+    BTC_GAP_BT_QOS_EVT,
 }btc_gap_bt_evt_t;
 
 typedef enum {
@@ -52,6 +53,7 @@ typedef enum {
     BTC_GAP_BT_ACT_PASSKEY_REPLY,
     BTC_GAP_BT_ACT_CONFIRM_REPLY,
     BTC_GAP_BT_ACT_CONFIG_EIR,
+    BTC_GAP_BT_ACT_SET_QOS,
 } btc_gap_bt_act_t;
 
 /* btc_bt_gap_args_t */
@@ -133,6 +135,13 @@ typedef union {
     struct config_eir_args {
        esp_bt_eir_data_t eir_data;
     } config_eir;
+
+    // BTC_GAP_BT_ACT_SET_QOS
+    struct set_qos_args {
+        bt_bdaddr_t bda;
+        uint32_t t_poll;
+    } set_qos;
+
 } btc_gap_bt_args_t;
 
 void btc_gap_bt_call_handler(btc_msg_t *msg);

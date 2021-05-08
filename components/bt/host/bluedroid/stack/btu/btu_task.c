@@ -385,17 +385,17 @@ static void btu_general_alarm_process(void *param)
     }
     break;
 
-    default:;
-        int i = 0;
-        BOOLEAN handled = FALSE;
-
-        for (; !handled && i < BTU_MAX_REG_TIMER; i++) {
+    case BTU_TTYPE_BTM_QOS:
+        btm_qos_setup_timeout(p_tle);
+        break;
+    default:
+        for (int i = 0; i < BTU_MAX_REG_TIMER; i++) {
             if (btu_cb.timer_reg[i].timer_cb == NULL) {
                 continue;
             }
             if (btu_cb.timer_reg[i].p_tle == p_tle) {
                 btu_cb.timer_reg[i].timer_cb(p_tle);
-                handled = TRUE;
+                break;
             }
         }
         break;
