@@ -20,8 +20,6 @@
 #include "freertos/semphr.h"
 
 
-#define ESP_ERR_NOT_FINISHED    0x201   ///< There is still remaining data.
-
 struct essl_dev_t;
 /// Handle of an ESSL device
 typedef struct essl_dev_t* essl_handle_t;

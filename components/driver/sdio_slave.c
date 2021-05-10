@@ -704,10 +704,26 @@ sdio_slave_buf_handle_t sdio_slave_recv_register_buf(uint8_t *start)
 
 esp_err_t sdio_slave_recv(sdio_slave_buf_handle_t* handle_ret, uint8_t **out_addr, size_t *out_len, TickType_t wait)
 {
-    SDIO_SLAVE_CHECK(handle_ret != NULL, "handle address cannot be 0", ESP_ERR_INVALID_ARG);
-    portBASE_TYPE ret = xSemaphoreTake(context.recv_event, wait);
-    if (ret == pdFALSE) return ESP_ERR_TIMEOUT;
+    esp_err_t ret = sdio_slave_recv_packet(handle_ret, wait);
+    if (ret == ESP_ERR_NOT_FINISHED) {
+        //This API was not awared of the EOF info, return ESP_OK to keep back-compatible.
+        ret = ESP_OK;
+    }
+    if (ret == ESP_OK) {
+        recv_desc_t *desc = (recv_desc_t*)(*handle_ret);
+        if (out_addr) *out_addr = (uint8_t*)desc->hal_desc.buf;
+        if (out_len) *out_len = desc->hal_desc.length;
+    }
+    return ret;
+}
 
+esp_err_t sdio_slave_recv_packet(sdio_slave_buf_handle_t* handle_ret, TickType_t wait)
+{
+    SDIO_SLAVE_CHECK(handle_ret != NULL, "handle address cannot be 0", ESP_ERR_INVALID_ARG);
+    portBASE_TYPE err = xSemaphoreTake(context.recv_event, wait);
+    if (err == pdFALSE) return ESP_ERR_TIMEOUT;
+
+    esp_err_t ret = ESP_OK;
     critical_enter_recv();
     //remove from queue, add back to reg list.
     recv_desc_t *desc = (recv_desc_t*)sdio_slave_hal_recv_unload_desc(context.hal);
@@ -716,9 +732,11 @@ esp_err_t sdio_slave_recv(sdio_slave_buf_handle_t* handle_ret, uint8_t **out_add
     critical_exit_recv();
 
     *handle_ret = (sdio_slave_buf_handle_t)desc;
-    if (out_addr) *out_addr = (uint8_t*)desc->hal_desc.buf;
-    if (out_len) *out_len = desc->hal_desc.length;
-    return ESP_OK;
+
+    if (!desc->hal_desc.eof) {
+        ret = ESP_ERR_NOT_FINISHED;
+    }
+    return ret;
 }
 
 esp_err_t sdio_slave_recv_unregister_buf(sdio_slave_buf_handle_t handle)

@@ -39,6 +39,8 @@ typedef int esp_err_t;
 #define ESP_ERR_INVALID_CRC         0x109   /*!< CRC or checksum was invalid */
 #define ESP_ERR_INVALID_VERSION     0x10A   /*!< Version was invalid */
 #define ESP_ERR_INVALID_MAC         0x10B   /*!< MAC address was invalid */
+#define ESP_ERR_NOT_FINISHED        0x10C   /*!< There are items remained to retrieve */
+
 
 #define ESP_ERR_WIFI_BASE           0x3000  /*!< Starting number of WiFi error codes */
 #define ESP_ERR_MESH_BASE           0x4000  /*!< Starting number of MESH error codes */
