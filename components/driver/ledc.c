@@ -16,6 +16,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "esp_log.h"
+#include "esp_check.h"
 #include "soc/gpio_periph.h"
 #include "soc/ledc_periph.h"
 #include "soc/rtc.h"
@@ -29,12 +30,8 @@
 
 static const char* LEDC_TAG = "ledc";
 
-#define LEDC_CHECK(a, str, ret_val) \
-    if (!(a)) { \
-        ESP_LOGE(LEDC_TAG, "%s(%d): %s", __FUNCTION__, __LINE__, str); \
-        return (ret_val); \
-    }
-#define LEDC_ARG_CHECK(a, param) LEDC_CHECK(a, param " argument is invalid", ESP_ERR_INVALID_ARG)
+#define LEDC_CHECK(a, str, ret_val) ESP_RETURN_ON_FALSE(a, ret_val, LEDC_TAG, "%s", str);
+#define LEDC_ARG_CHECK(a, param) ESP_RETURN_ON_FALSE(a, ESP_ERR_INVALID_ARG, LEDC_TAG, param " argument is invalid");
 
 typedef struct {
     ledc_mode_t speed_mode;
