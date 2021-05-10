@@ -59,6 +59,14 @@ typedef enum {
  */
 esp_err_t esp_pm_configure(const void* config);
 
+/**
+ * @brief Get implementation-specific power management configuration
+ * @param config pointer to implementation-specific configuration structure (e.g. esp_pm_config_esp32)
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if the pointer is null
+ */
+esp_err_t esp_pm_get_configuration(void* config);
 
 /**
  * @brief Opaque handle to the power management lock

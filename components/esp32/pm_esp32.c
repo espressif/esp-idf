@@ -237,6 +237,23 @@ esp_err_t esp_pm_configure(const void* vconfig)
     return ESP_OK;
 }
 
+esp_err_t esp_pm_get_configuration(void* vconfig)
+{
+    if (vconfig == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_pm_config_esp32_t* config = (esp_pm_config_esp32_t*) vconfig;
+
+    portENTER_CRITICAL(&s_switch_lock);
+    config->light_sleep_enable = s_light_sleep_en;
+    config->max_freq_mhz = s_cpu_freq_by_mode[PM_MODE_CPU_MAX].freq_mhz;
+    config->min_freq_mhz = s_cpu_freq_by_mode[PM_MODE_APB_MIN].freq_mhz;
+    portEXIT_CRITICAL(&s_switch_lock);
+
+    return ESP_OK;
+}
+
 static pm_mode_t IRAM_ATTR get_lowest_allowed_mode(void)
 {
     /* TODO: optimize using ffs/clz */
