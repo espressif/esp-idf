@@ -1,4 +1,9 @@
 /*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/*
  * Tests for switching between partitions: factory, OTAx, test.
  */
 
