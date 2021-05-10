@@ -20,14 +20,48 @@ extern "C" {
  * @return
  *     - ESP_OK success
  */
-esp_err_t dac_digi_init(void);
+esp_err_t __attribute__((unused)) dac_digi_init(void);
+
+/**
+ * @brief Initialize the Digital DAC.
+ *
+ * @param init_cfg Pointer to Digital DAC initilization config. Refer to ``dac_digi_config_t``.
+ *
+ * @return
+ *         - ESP_ERR_INVALID_ARG   If the combination of arguments is invalid.
+ *         - ESP_ERR_NOT_FOUND     No free interrupt found with the specified flags
+ *         - ESP_ERR_NO_MEM        If out of memory
+ *         - ESP_OK                On success
+ */
+esp_err_t dac_digi_initialize(const dac_digi_config_t *init_cfg);
 
 /**
  * @brief DAC digital controller deinitialization.
  * @return
  *     - ESP_OK success
  */
-esp_err_t dac_digi_deinit(void);
+esp_err_t __attribute__((unused)) dac_digi_deinit(void);
+
+/**
+ * @brief Deinitialize the Digital DAC.
+ *
+ * @return
+ *         - ESP_ERR_INVALID_STATE Driver state is invalid.
+ *         - ESP_OK                On success
+ */
+esp_err_t dac_digi_deinitialize(void);
+
+/**
+ * @brief Write bytes to Digital DAC through DMA.
+ *
+ * @param[in] buffer                 Buffer to write to DAC.
+ *
+ * @return
+ *         - ESP_ERR_INVALID_STATE Driver state is invalid. Usually it means the ADC sampling rate is faster than the task processing rate.
+ *         - ESP_ERR_TIMEOUT       Operation timed out
+ *         - ESP_OK                On success
+ */
+esp_err_t dac_digi_write_bytes(const void *buffer);
 
 /**
  * @brief Setting the DAC digital controller.
@@ -38,7 +72,7 @@ esp_err_t dac_digi_deinit(void);
  *     - ESP_OK success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t dac_digi_controller_config(const dac_digi_config_t *cfg);
+esp_err_t __attribute__((unused)) dac_digi_controller_config(const dac_digi_config_t *cfg);
 
 /**
  * @brief DAC digital controller start output voltage.

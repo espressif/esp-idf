@@ -52,6 +52,14 @@ typedef enum {
 } dac_digi_convert_mode_t;
 
 /**
+ * @brief The type of the DAC DMA link.
+*/
+typedef enum {
+    DAC_DMA_LINK_LINE = BIT(0),        /*!< The link is Linear. */
+    DAC_DMA_LINK_RECURSIVE = BIT(1),   /*!< The link is recursive. */
+} dac_dma_link_type_t;
+
+/**
  * @brief DAC digital controller (DMA mode) configuration parameters.
  */
 typedef struct {
@@ -62,6 +70,9 @@ typedef struct {
                                     Note: The sampling rate of each channel is also related to the conversion mode (See ``dac_digi_convert_mode_t``) and pattern table settings. */
     adc_digi_clk_t dig_clk;     /*!<DAC digital controller clock divider settings. Refer to ``adc_digi_clk_t``.
                                     Note: The clocks of the DAC digital controller use the ADC digital controller clock divider. */
+    uint32_t dac_dma_cnt;       /*!< DMA buffer count, number of buffer. */
+    uint32_t dac_dma_length;    /*!< DMA buffer length, length of each buffer. */
+    dac_dma_link_type_t dac_dma_link_type; /*!< The type of the link, see `dac_dma_link_type_t` */
 } dac_digi_config_t;
 
 #endif //CONFIG_IDF_TARGET_ESP32S2

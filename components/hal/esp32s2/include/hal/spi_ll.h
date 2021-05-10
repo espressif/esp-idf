@@ -1290,6 +1290,11 @@ static inline bool spi_ll_tx_get_empty_err(spi_dev_t *hw)
     return hw->dma_int_raw.outfifo_empty_err;
 }
 
+static inline uint32_t spi_ll_read_intr_status(spi_dev_t *hw)
+{
+    return hw->dma_int_st.val;
+}
+
 #undef SPI_LL_RST_MASK
 #undef SPI_LL_UNUSED_INT_MASK
 
