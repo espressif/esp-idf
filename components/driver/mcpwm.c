@@ -49,6 +49,7 @@ static const char *MCPWM_TAG = "MCPWM";
 
 #define MCPWM_DRIVER_INIT_ERROR "MCPWM DRIVER NOT INITIALIZED"
 #define MCPWM_GROUP_NUM_ERROR   "MCPWM GROUP NUM ERROR"
+#define MCPWM_PRESCALE_ERROR    "MCPWM PRESCALE ERROR"
 #define MCPWM_TIMER_ERROR       "MCPWM TIMER NUM ERROR"
 #define MCPWM_CAPTURE_ERROR     "MCPWM CAPTURE NUM ERROR"
 #define MCPWM_PARAM_ADDR_ERROR  "MCPWM PARAM ADDR ERROR"
@@ -531,6 +532,7 @@ esp_err_t mcpwm_capture_enable(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t ca
                                uint32_t num_of_pulse)
 {
     MCPWM_CHECK(mcpwm_num < SOC_MCPWM_GROUPS, MCPWM_GROUP_NUM_ERROR, ESP_ERR_INVALID_ARG);
+    MCPWM_CHECK(num_of_pulse <= MCPWM_LL_MAX_PRESCALE, MCPWM_PRESCALE_ERROR, ESP_ERR_INVALID_ARG);
     // enable MCPWM module incase user don't use `mcpwm_init` at all
     periph_module_enable(mcpwm_periph_signals.groups[mcpwm_num].module);
     mcpwm_hal_init_config_t init_config = {
