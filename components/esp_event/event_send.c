@@ -121,6 +121,9 @@ static system_event_id_t esp_event_legacy_ip_event_id(int32_t event_id)
     case IP_EVENT_ETH_GOT_IP:
         return SYSTEM_EVENT_ETH_GOT_IP;
 
+    case IP_EVENT_ETH_LOST_IP:
+        return SYSTEM_EVENT_ETH_LOST_IP;
+
     default:
         ESP_LOGE(TAG, "invalid ip event id %d", event_id);
         return SYSTEM_EVENT_MAX;
