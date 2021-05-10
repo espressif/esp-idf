@@ -143,9 +143,9 @@ extern "C" esp_err_t nvs_flash_secure_init_custom(const char *partName, uint32_t
 }
 #endif
 
-static esp_err_t close_handles_and_deinit(const char* part_name)
+static esp_err_t close_handles_and_deinit(const char* partition_name)
 {
-    nvs::Storage* storage = lookup_storage_from_name(part_name);
+    nvs::Storage* storage = lookup_storage_from_name(partition_name);
     if (!storage) {
         return ESP_ERR_NVS_NOT_INITIALIZED;
     }
@@ -158,17 +158,13 @@ static esp_err_t close_handles_and_deinit(const char* part_name)
 #endif
 
     /* Clean up handles related to the storage being deinitialized */
-    auto it = s_nvs_handles.begin();
-    auto next = it;
-    while(it != s_nvs_handles.end()) {
-        next++;
+    for (auto it = s_nvs_handles.begin(), next = it; it != s_nvs_handles.end() && next++; it = next) {
         if (it->mStoragePtr == storage) {
             ESP_LOGD(TAG, "Deleting handle %d (ns=%d) related to partition \"%s\" (missing call to nvs_close?)",
-                     it->mHandle, it->mNsIndex, part_name);
+                     it->mHandle, it->mNsIndex, partition_name);
             s_nvs_handles.erase(it);
             delete static_cast<HandleEntry*>(it);
         }
-        it = next;
     }
 
     /* Finally delete the storage itself */
@@ -176,6 +172,20 @@ static esp_err_t close_handles_and_deinit(const char* part_name)
     delete storage;
 
     return ESP_OK;
+}
+
+extern "C" esp_err_t nvs_flash_init_partition_ptr(const esp_partition_t *partition)
+{
+    Lock::init();
+    Lock lock;
+
+    if (!partition) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return nvs_flash_init_custom(partition->label,
+                                 partition->address / SPI_FLASH_SEC_SIZE,
+                                 partition->size / SPI_FLASH_SEC_SIZE);
 }
 
 #ifdef ESP_PLATFORM
@@ -252,6 +262,23 @@ extern "C" esp_err_t nvs_flash_erase_partition(const char *part_name)
             ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, part_name);
     if (partition == NULL) {
         return ESP_ERR_NOT_FOUND;
+    }
+
+    return esp_partition_erase_range(partition, 0, partition->size);
+}
+
+extern "C" esp_err_t nvs_flash_erase_partition_ptr(const esp_partition_t *partition)
+{
+    Lock::init();
+    Lock lock;
+
+    if (!partition) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // if the partition is initialized, uninitialize it first
+    if (lookup_storage_from_name(partition->label)) {
+        close_handles_and_deinit(partition->label);
     }
 
     return esp_partition_erase_range(partition, 0, partition->size);
