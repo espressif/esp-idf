@@ -396,31 +396,6 @@ static inline void uart_ll_set_tx_idle_num(uart_dev_t *hw, uint32_t idle_num)
 }
 
 /**
- * @brief  Configure the timeout value for receiver receiving a byte, and enable rx timeout function.
- *
- * @param  hw Beginning address of the peripheral registers.
- * @param  tout_thr The timeout value. The rx timeout function will be disabled if `tout_thr == 0`.
- *
- * @return None.
- */
-static inline void uart_ll_set_rx_tout(uart_dev_t *hw, uint8_t tout_thr)
-{
-    // The tout_thresh = 1, defines TOUT interrupt timeout equal to
-    // transmission time of one symbol (~11 bit) on current baudrate
-    if (hw->conf0.tick_ref_always_on == 0) {
-        //Hardware issue workaround: when using ref_tick, the rx timeout threshold needs increase to 10 times.
-        //T_ref = T_apb * APB_CLK/(REF_TICK << CLKDIV_FRAG_BIT_WIDTH)
-        tout_thr = tout_thr * UART_LL_TOUT_REF_FACTOR_DEFAULT;
-    }
-    if(tout_thr > 0) {
-        hw->conf1.rx_tout_thrhd = tout_thr;
-        hw->conf1.rx_tout_en = 1;
-    } else {
-        hw->conf1.rx_tout_en = 0;
-    }
-}
-
-/**
  * @brief  Configure the transmiter to send break chars.
  *
  * @param  hw Beginning address of the peripheral registers.
@@ -822,4 +797,66 @@ static inline void uart_ll_inverse_signal(uart_dev_t *hw, uint32_t inv_mask)
     hw->conf0.val = conf0_reg.val;
 }
 
+/**
+ * @brief  Configure the timeout value for receiver receiving a byte, and enable rx timeout function.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  tout_thr The timeout value as a bit time. The rx timeout function will be disabled if `tout_thr == 0`.
+ *
+ * @return None.
+ */
+static inline void uart_ll_set_rx_tout(uart_dev_t *hw, uint16_t tout_thr)
+{
+    if (hw->conf0.tick_ref_always_on == 0) {
+        //Hardware issue workaround: when using ref_tick, the rx timeout threshold needs increase to 10 times.
+        //T_ref = T_apb * APB_CLK/(REF_TICK << CLKDIV_FRAG_BIT_WIDTH)
+        tout_thr = tout_thr * UART_LL_TOUT_REF_FACTOR_DEFAULT;
+    } else {
+        //If APB_CLK is used: counting rate is BAUD tick rate / 8
+        tout_thr = (tout_thr + 7) / 8;
+    }
+    if (tout_thr > 0) {
+        hw->conf1.rx_tout_thrhd = tout_thr;
+        hw->conf1.rx_tout_en = 1;
+    } else {
+        hw->conf1.rx_tout_en = 0;
+    }
+}
+/**
+ * @brief  Get the timeout value for receiver receiving a byte.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ *
+ * @return tout_thr The timeout threshold value. If timeout feature is disabled returns 0.
+ */
+static inline uint16_t uart_ll_get_rx_tout_thr(uart_dev_t *hw)
+{
+    uint16_t tout_thrd = 0;
+    if (hw->conf1.rx_tout_en > 0) {
+        if (hw->conf0.tick_ref_always_on == 0) {
+            tout_thrd = (uint16_t)(hw->conf1.rx_tout_thrhd / UART_LL_TOUT_REF_FACTOR_DEFAULT);
+        } else {
+            tout_thrd = (uint16_t)(hw->conf1.rx_tout_thrhd  << 3);
+        }
+    }
+    return tout_thrd;
+}
+
+/**
+ * @brief  Get UART maximum timeout threshold.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ *
+ * @return maximum timeout threshold.
+ */
+static inline uint16_t uart_ll_max_tout_thrd(uart_dev_t *hw)
+{
+    uint16_t tout_thrd = 0;
+    if (hw->conf0.tick_ref_always_on == 0) {
+        tout_thrd = (uint16_t)(UART_RX_TOUT_THRHD_V / UART_LL_TOUT_REF_FACTOR_DEFAULT);
+    } else {
+        tout_thrd = (uint16_t)(UART_RX_TOUT_THRHD_V  << 3);
+    }
+    return tout_thrd;
+}
 #undef UART_LL_TOUT_REF_FACTOR_DEFAULT
