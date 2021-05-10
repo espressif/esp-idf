@@ -751,7 +751,18 @@ static int prov_auth(uint8_t method, uint8_t action, uint8_t size)
             uint32_t num = 0U;
 
             bt_mesh_rand(&num, sizeof(num));
-            num %= div[size - 1];
+
+            if (output == BLE_MESH_BLINK ||
+                output == BLE_MESH_BEEP ||
+                output == BLE_MESH_VIBRATE) {
+                /** NOTE: According to the Bluetooth Mesh Profile Specification
+                 *  Section 5.4.2.4, blink, beep and vibrate should be a random
+                 *  integer between 0 and 10^size.
+                 */
+                num = (num % (div[size - 1] - 1)) + 1;
+            } else {
+                num %= div[size - 1];
+            }
 
             sys_put_be32(num, &link.auth[12]);
             (void)memset(link.auth, 0, 12);
