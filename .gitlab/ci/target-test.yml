@@ -395,10 +395,32 @@ test_app_test_esp32_generic:
     - .component_ut_template
     - .rules:test:component_ut-esp32
 
+.component_ut_esp32s2_template:
+  extends:
+    - .component_ut_template
+    - .rules:test:component_ut-esp32s2
+
+.component_ut_esp32c3_template:
+  extends:
+    - .component_ut_template
+    - .rules:test:component_ut-esp32c3
+
 component_ut_test_001:
   extends: .component_ut_esp32_template
   tags:
     - ESP32
+    - COMPONENT_UT_GENERIC
+
+component_ut_test_esp32s2:
+  extends: .component_ut_esp32s2_template
+  tags:
+    - ESP32S2
+    - COMPONENT_UT_GENERIC
+
+component_ut_test_esp32c3:
+  extends: .component_ut_esp32c3_template
+  tags:
+    - ESP32C3
     - COMPONENT_UT_GENERIC
 
 .unit_test_template:
