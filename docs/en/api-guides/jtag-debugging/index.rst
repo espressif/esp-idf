@@ -66,17 +66,19 @@ Under "Application Loading and Monitoring" there is another software and hardwar
 
 Debugging using JTAG and application loading / monitoring is integrated under the `Eclipse <https://www.eclipse.org/>`_ environment, to provide quick and easy transition from writing, compiling and loading the code to debugging, back to writing the code, and so on. All the software is available for Windows, Linux and MacOS platforms.
 
-.. only:: not esp32c3
+.. only:: not SOC_USB_SERIAL_JTAG_SUPPORTED
 
     If the |devkit-name-with-link| is used, then connection from PC to {IDF_TARGET_NAME} is done effectively with a single USB cable. This is made possible by the FT2232H chip, which provides two USB channels, one for JTAG and the one for UART connection.
 
-.. only:: esp32c3
+.. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
 
     The connection from PC to {IDF_TARGET_NAME} is done effectively with a single USB cable. This is made possible by the {IDF_TARGET_NAME} chip itself, which provides two USB channels, one for JTAG and one for the USB terminal connection. The USB cable should be connected the D+/D- USB pins of {IDF_TARGET_NAME} and not to the serial RxD/TxD throught an USB-to-UART chip. The proper connection is explained later in subsection :ref:`jtag-debugging-configuring-target`.
 
+.. only:: esp32c3
+
     .. note::
 
-        Debugging through the USB interface implemented in {IDF_TARGET_NAME} requires to have a chip with revision 3 or newer. Please use other debugging options (e.g. with ESP-Prog) for chip revision 1 and 2. The easiest way to determine the chip revision is to look for the `Chip is ESP32-C3 (revision 3)` message near the end of a successful chip flashing done by `idf.py flash`.
+        Debugging through the USB interface implemented in ESP32-C3 requires to have a chip with revision 3 or newer. Please use other debugging options (e.g. with ESP-Prog) for chip revision 1 and 2. The easiest way to determine the chip revision is to look for the `Chip is ESP32-C3 (revision 3)` message near the end of a successful chip flashing done by `idf.py flash`.
 
 Depending on user preferences, both `debugger` and `idf.py build` can be operated directly from terminal/command line, instead from Eclipse.
 
@@ -86,11 +88,11 @@ Depending on user preferences, both `debugger` and `idf.py build` can be operate
 Selecting JTAG Adapter
 ----------------------
 
-.. only:: not esp32c3
+.. only:: not SOC_USB_SERIAL_JTAG_SUPPORTED
 
     The quickest and most convenient way to start with JTAG debugging is by using |devkit-name-with-link|. Each version of this development board has JTAG interface already built in. No need for an external JTAG adapter and extra wiring / cable to connect JTAG to {IDF_TARGET_NAME}. |devkit-name| is using FT2232H JTAG interface operating at 20 MHz clock speed, which is difficult to achieve with an external adapter.
 
-.. only:: esp32c3
+.. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
 
     The quickest and most convenient way to start with JTAG debugging is through an USB cable connected to the D+/D- USB pins of {IDF_TARGET_NAME}. No need for an external JTAG adapter and extra wiring / cable to connect JTAG to {IDF_TARGET_NAME}.
 
@@ -152,7 +154,7 @@ This step depends on JTAG and {IDF_TARGET_NAME} board you are using - see the tw
 
     :esp32: configure-ft2232h-jtag
     :esp32s2: configure-ft2232h-jtag
-    :esp32c3: configure-builtin-jtag
+    :SOC_USB_SERIAL_JTAG_SUPPORTED: configure-builtin-jtag
     configure-other-jtag
 
 
