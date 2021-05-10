@@ -535,11 +535,10 @@ esp_err_t gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
     if ((intr_type == GPIO_INTR_LOW_LEVEL) || (intr_type == GPIO_INTR_HIGH_LEVEL)) {
         if (rtc_gpio_is_valid_gpio(gpio_num)) {
             ret = rtc_gpio_wakeup_enable(gpio_num, intr_type);
-        } else {
-            portENTER_CRITICAL(&gpio_context.gpio_spinlock);
-            gpio_hal_wakeup_enable(gpio_context.gpio_hal, gpio_num, intr_type);
-            portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
         }
+        portENTER_CRITICAL(&gpio_context.gpio_spinlock);
+        gpio_hal_wakeup_enable(gpio_context.gpio_hal, gpio_num, intr_type);
+        portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
     } else {
         ESP_LOGE(GPIO_TAG, "GPIO wakeup only supports level mode, but edge mode set. gpio_num:%u", gpio_num);
         ret = ESP_ERR_INVALID_ARG;
@@ -555,11 +554,10 @@ esp_err_t gpio_wakeup_disable(gpio_num_t gpio_num)
 
     if (rtc_gpio_is_valid_gpio(gpio_num)) {
         ret = rtc_gpio_wakeup_disable(gpio_num);
-    } else {
-        portENTER_CRITICAL(&gpio_context.gpio_spinlock);
-        gpio_hal_wakeup_disable(gpio_context.gpio_hal, gpio_num);
-        portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
     }
+    portENTER_CRITICAL(&gpio_context.gpio_spinlock);
+    gpio_hal_wakeup_disable(gpio_context.gpio_hal, gpio_num);
+    portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
     return ret;
 }
 
