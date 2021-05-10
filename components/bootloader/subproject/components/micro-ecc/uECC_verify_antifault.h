@@ -1,8 +1,10 @@
-/* Copyright 2014, Kenneth MacKay. Licensed under the BSD 2-clause license.
-
-   Modifications Copyright 2020, Espressif Systems (Shanghai) PTE LTD. Licensed under the BSD
-   2-clause license.
-*/
+/*
+ * SPDX-FileCopyrightText: 2014, Kenneth MacKay
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
+ * SPDX-FileContributor: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ */
 #pragma once
 #include "uECC.h"
 
