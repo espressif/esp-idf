@@ -10,7 +10,7 @@
 #include <stddef.h>
 #include <string.h>
 #include "mbedtls/ssl.h"
-#include "mbedtls/ssl_internal.h"
+#include "ssl_misc.h" // located at mbedtls/library/ssl_misc.h
 #include "mbedtls/platform.h"
 #include "esp_log.h"
 

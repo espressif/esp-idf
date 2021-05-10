@@ -18,6 +18,7 @@
 #include <mbedtls/error.h>
 #include <mbedtls/ssl_internal.h>
 #include <mbedtls/constant_time.h>
+#include <mbedtls/library/ssl_misc.h>
 
 #include <protocomm_security.h>
 #include <protocomm_security1.h>

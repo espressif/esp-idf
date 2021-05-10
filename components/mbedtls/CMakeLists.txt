@@ -8,10 +8,11 @@ if(NOT BOOTLOADER_BUILD)
 endif()
 
 idf_component_register(SRCS "esp_crt_bundle/esp_crt_bundle.c"
-    INCLUDE_DIRS "port/include" "mbedtls/include" "esp_crt_bundle/include"
+    INCLUDE_DIRS "port/include" "mbedtls/include" "esp_crt_bundle/include" "."
     REQUIRES lwip
     PRIV_REQUIRES "${priv_requires}"
     )
+
 
 if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
     set(bundle_name "x509_crt_bundle")

@@ -56,10 +56,10 @@ static int tx_buffer_len(mbedtls_ssl_context *ssl, int len)
         return MBEDTLS_SSL_OUT_BUFFER_LEN;
     } else {
         return len + MBEDTLS_SSL_HEADER_LEN
-                   + MBEDTLS_SSL_COMPRESSION_ADD
                    + MBEDTLS_MAX_IV_LENGTH
                    + MBEDTLS_SSL_MAC_ADD
-                   + MBEDTLS_SSL_PADDING_ADD;
+                   + MBEDTLS_SSL_PADDING_ADD
+                   + MBEDTLS_SSL_MAX_CID_EXPANSION;
     }
 }
 

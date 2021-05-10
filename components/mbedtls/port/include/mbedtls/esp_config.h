@@ -2766,6 +2766,10 @@
 #include MBEDTLS_USER_CONFIG_FILE
 #endif
 
+/* Define this flag for now */
+/* To Do - while updating to v3.0 remove all the code where this flag is used */
+#define MBEDTLS_DEPRECATED_REMOVED
+
 #include "mbedtls/check_config.h"
 
 #endif /* MBEDTLS_CONFIG_H */

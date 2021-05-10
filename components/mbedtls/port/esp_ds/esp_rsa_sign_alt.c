@@ -34,7 +34,6 @@ static const char *TAG = "ESP_RSA_SIGN_ALT";
 #define SWAP_INT32(x) (((x) >> 24) | (((x) & 0x00FF0000) >> 8) | (((x) & 0x0000FF00) << 8) | ((x) << 24))
 
 #include "mbedtls/rsa.h"
-#include "mbedtls/rsa_internal.h"
 #include "mbedtls/oid.h"
 #include "mbedtls/platform_util.h"
 #include <string.h>
