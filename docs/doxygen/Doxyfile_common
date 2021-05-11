@@ -142,6 +142,7 @@ INPUT = \
     $(IDF_PATH)/components/spi_flash/include/esp_flash.h \
     $(IDF_PATH)/components/spi_flash/include/esp_partition.h \
     $(IDF_PATH)/components/bootloader_support/include/esp_flash_encrypt.h \
+    $(IDF_PATH)/components/bootloader_support/include/bootloader_random.h \
     $(IDF_PATH)/components/spiffs/include/esp_spiffs.h \
     $(IDF_PATH)/components/driver/include/driver/sdmmc_types.h \
     $(IDF_PATH)/components/sdmmc/include/sdmmc_cmd.h \
@@ -179,8 +180,9 @@ INPUT = \
     $(IDF_PATH)/components/esp_system/include/esp_expression_with_stack.h \
     $(IDF_PATH)/components/app_update/include/esp_ota_ops.h \
     $(IDF_PATH)/components/esp_https_ota/include/esp_https_ota.h \
-    $(IDF_PATH)/components/esp_hw_support/include/esp_sleep.h \
     $(IDF_PATH)/components/esp_hw_support/include/esp_async_memcpy.h \
+    $(IDF_PATH)/components/esp_hw_support/include/esp_random.h \
+    $(IDF_PATH)/components/esp_hw_support/include/esp_sleep.h \
     $(IDF_PATH)/components/log/include/esp_log.h \
     $(IDF_PATH)/components/esp_rom/include/esp_rom_sys.h \
     $(IDF_PATH)/components/esp_system/include/esp_system.h \

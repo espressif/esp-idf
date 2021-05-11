@@ -25,13 +25,6 @@ Two heap memory related functions are provided:
 
 Note that ESP-IDF supports multiple heaps with different capabilities. Functions mentioned in this section return the size of heap memory which can be allocated using ``malloc`` family of functions. For further information about heap memory see :doc:`Heap Memory Allocation <mem_alloc>`.
 
-Random number generation
-------------------------
-
-{IDF_TARGET_NAME} contains a hardware random number generator, values from it can be obtained using :cpp:func:`esp_random`.
-
-When Wi-Fi or Bluetooth are enabled, numbers returned by hardware random number generator (RNG) can be considered true random numbers. Without Wi-Fi or Bluetooth enabled, hardware RNG is a pseudo-random number generator. At startup, ESP-IDF bootloader seeds the hardware RNG with entropy, but care must be taken when reading random values between the start of ``app_main`` and initialization of Wi-Fi or Bluetooth drivers.
-
 .. _MAC-Address-Allocation:
 
 MAC Address
@@ -189,12 +182,9 @@ To set version in your project manually you need to set ``PROJECT_VER`` variable
 
 If :ref:`CONFIG_APP_PROJECT_VER_FROM_CONFIG` option is set, the value of :ref:`CONFIG_APP_PROJECT_VER` will be used. Otherwise if ``PROJECT_VER`` variable is not set in the project then it will be retrieved from either ``$(PROJECT_PATH)/version.txt`` file (if present) else using git command ``git describe``. If neither is available then ``PROJECT_VER`` will be set to "1". Application can make use of this by calling :cpp:func:`esp_ota_get_app_description` or :cpp:func:`esp_ota_get_partition_description` functions.
 
-
-
 API Reference
 -------------
 
 .. include-build-file:: inc/esp_system.inc
 .. include-build-file:: inc/esp_idf_version.inc
-
 

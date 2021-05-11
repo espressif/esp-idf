@@ -2,13 +2,15 @@
 ===================
 :link_to_translation:`en:[English]`
 
+{IDF_TARGET_BOOTLOADER_OFFSET:default="0x0", esp32="0x1000", esp32s2="0x1000"}
+
 本文将会介绍 {IDF_TARGET_NAME} 从上电到运行 ``app_main``
 函数中间所经历的步骤（即启动流程）。
 
 宏观上，该启动流程可以分为如下 3 个步骤：
 
 1. 一级引导程序被固化在了 {IDF_TARGET_NAME} 内部的 ROM 中，它会从 Flash 的
-   ``0x1000`` 偏移地址处加载二级引导程序至 RAM(IRAM & DRAM) 中。
+   {IDF_TARGET_BOOTLOADER_OFFSET} 偏移地址处加载二级引导程序至 RAM(IRAM & DRAM) 中。
 
 2. 二级引导程序从 Flash 中加载分区表和主程序镜像至内存中，主程序中包含了
    RAM 段和通过 Flash 高速缓存映射的只读段。
@@ -53,20 +55,22 @@ SoC 复位后，PRO CPU 会立即开始运行，执行复位向量代码，而 A
    SoC，重复整个过程。如果解析器收到了来自 UART
    的输入，程序会关闭看门狗。
 
-应用程序的二进制镜像会从 Flash 的 ``0x1000`` 地址处加载。Flash 的第一个
+应用程序的二进制镜像会从 Flash 的 {IDF_TARGET_BOOTLOADER_OFFSET} 地址处加载。Flash 的第一个
 4kB
 扇区用于存储安全引导程序和应用程序镜像的签名。有关详细信息，请查看安全启动文档。
 
 .. TODO: describe application binary image format, describe optional flash configuration commands.
 
+.. _second-stage-bootloader:
+
 二级引导程序
 ~~~~~~~~~~~~
 
-在 ESP-IDF 中，存放在 Flash 的 ``0x1000``
+在 ESP-IDF 中，存放在 Flash 的 {IDF_TARGET_BOOTLOADER_OFFSET}
 偏移地址处的二进制镜像就是二级引导程序。二级引导程序的源码可以在 ESP-IDF
 的 components/bootloader 目录下找到。请注意，对于 {IDF_TARGET_NAME}
 芯片来说，这并不是唯一的安排程序镜像的方式。事实上用户完全可以把一个功能齐全的应用程序烧写到
-Flash 的 ``0x1000`` 偏移地址处运行，但这超出本文档的范围。ESP-IDF
+Flash 的 {IDF_TARGET_BOOTLOADER_OFFSET} 偏移地址处运行，但这超出本文档的范围。ESP-IDF
 使用二级引导程序可以增加 Flash 分区的灵活性（使用分区表），并且方便实现
 Flash 加密，安全引导和空中升级（OTA）等功能。
 
