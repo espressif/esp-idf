@@ -37,22 +37,29 @@ extern "C" {
 #define I2C_SCLK_SRC_FLAG_LIGHT_SLEEP     (1 << 1)    /*!< For light sleep mode.*/
 
 /**
+ * @brief Minimum size, in bytes, of the internal private structure used to describe
+ * I2C commands link.
+ */
+#define I2C_INTERNAL_STRUCT_SIZE (24)
+
+/**
  * @brief The following macro is used to determine the recommended size of the
  * buffer to pass to `i2c_cmd_link_create_static()` function.
- * It requires one parameter, `COMMANDS`, describing the number of commands
+ * It requires one parameter, `TRANSACTIONS`, describing the number of transactions
  * intended to be performed on the I2C port.
- * For example, if one wants to perform a read on an I2C device register, `COMMANDS`
+ * For example, if one wants to perform a read on an I2C device register, `TRANSACTIONS`
  * must be at least 2, because the commands required are the following:
  *  - write device register
  *  - read register content
  *
  * Signals such as "(repeated) start", "stop", "nack", "ack" shall not be counted.
  */
-#define I2C_LINK_RECOMMENDED_SIZE(COMMANDS)     (sizeof(i2c_cmd_desc_t) * \
-                                                        (4 * COMMANDS + 1)) /* Make the assumption that each transaction
+#define I2C_LINK_RECOMMENDED_SIZE(TRANSACTIONS)     (2 * I2C_INTERNAL_STRUCT_SIZE + I2C_INTERNAL_STRUCT_SIZE * \
+                                                        (5 * TRANSACTIONS)) /* Make the assumption that each transaction
                                                                              * of the user is surrounded by a "start", device address
                                                                              * and a "nack/ack" signal. Allocate one more room for
                                                                              * "stop" signal at the end.
+                                                                             * Allocate 2 more internal struct size for headers.
                                                                              */
 
 /**
@@ -239,6 +246,8 @@ esp_err_t i2c_master_read_from_device(i2c_port_t i2c_num, uint8_t device_address
 
 /**
  * @brief Perform a write followed by a read to a device on the I2C bus.
+ *        A repeated start signal is used between the `write` and `read`, thus, the bus is
+ *        not released until the two transactions are finished.
  *        This function is a wrapper to `i2c_master_start()`, `i2c_master_write()`, `i2c_master_read()`, etc...
  *        It shall only be called in I2C master mode.
  *

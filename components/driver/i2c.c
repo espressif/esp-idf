@@ -80,7 +80,8 @@ static const char *I2C_TAG = "i2c";
 #define I2C_FILTER_CYC_NUM_DEF         (7)         /* The number of apb cycles filtered by default*/
 #define I2C_CLR_BUS_SCL_NUM            (9)
 #define I2C_CLR_BUS_HALF_PERIOD_US     (5)
-#define I2C_CMD_WR_MINIMUM_SIZE        (sizeof(i2c_cmd_desc_t) * 8) /* It is required to have allocate one i2c_cmd_desc_t per command:
+#define I2C_TRANS_BUF_MINIMUM_SIZE     (sizeof(i2c_cmd_desc_t) + \
+                                        sizeof(i2c_cmd_link_t) * 8) /* It is required to have allocate one i2c_cmd_desc_t per command:
                                                                      * start + write (device address) + write buffer +
                                                                      * start + write (device address) + read buffer + read buffer for NACK +
                                                                      * stop */
@@ -99,8 +100,12 @@ static const char *I2C_TAG = "i2c";
 
 typedef struct {
     i2c_hw_cmd_t hw_cmd;
-    uint8_t *data;     /*!< data address */
-    size_t remaining_bytes;
+    union {
+        uint8_t* data;      // When total_bytes > 1
+        uint8_t data_byte;  //when total_byte == 1
+    };
+    size_t bytes_used;
+    size_t total_bytes;
 } i2c_cmd_t;
 
 typedef struct i2c_cmd_link {
@@ -116,6 +121,10 @@ typedef struct {
     void     *free_buffer;    /*!< pointer to the next free data in user's buffer */
     uint32_t  free_size;      /*!< remaining size of the user's buffer */
 } i2c_cmd_desc_t;
+
+/* INTERNAL_STRUCT_SIZE must be at least sizeof(i2c_cmd_link_t) */
+_Static_assert(I2C_INTERNAL_STRUCT_SIZE >= sizeof(i2c_cmd_link_t),
+                "I2C_INTERNAL_STRUCT_SIZE must be at least sizeof(i2c_cmd_link_t), please adjust this value.");
 
 typedef enum {
     I2C_STATUS_READ,      /*!< read status for current master command */
@@ -871,7 +880,7 @@ esp_err_t i2c_master_write_to_device(i2c_port_t i2c_num, uint8_t device_address,
                                      TickType_t ticks_to_wait)
 {
     esp_err_t err = ESP_OK;
-    uint8_t buffer[I2C_CMD_WR_MINIMUM_SIZE] = { 0 };
+    uint8_t buffer[I2C_TRANS_BUF_MINIMUM_SIZE] = { 0 };
 
     i2c_cmd_handle_t handle = i2c_cmd_link_create_static(buffer, sizeof(buffer));
     assert (handle != NULL);
@@ -905,7 +914,7 @@ esp_err_t i2c_master_read_from_device(i2c_port_t i2c_num, uint8_t device_address
                                       TickType_t ticks_to_wait)
 {
     esp_err_t err = ESP_OK;
-    uint8_t buffer[I2C_CMD_WR_MINIMUM_SIZE] = { 0 };
+    uint8_t buffer[I2C_TRANS_BUF_MINIMUM_SIZE] = { 0 };
 
     i2c_cmd_handle_t handle = i2c_cmd_link_create_static(buffer, sizeof(buffer));
     assert (handle != NULL);
@@ -940,7 +949,7 @@ esp_err_t i2c_master_write_read_device(i2c_port_t i2c_num, uint8_t device_addres
                                        TickType_t ticks_to_wait)
 {
     esp_err_t err = ESP_OK;
-    uint8_t buffer[I2C_CMD_WR_MINIMUM_SIZE] = { 0 };
+    uint8_t buffer[I2C_TRANS_BUF_MINIMUM_SIZE] = { 0 };
 
     i2c_cmd_handle_t handle = i2c_cmd_link_create_static(buffer, sizeof(buffer));
     assert (handle != NULL);
@@ -1144,7 +1153,7 @@ esp_err_t i2c_master_write(i2c_cmd_handle_t cmd_handle, const uint8_t *data, siz
             .op_code = I2C_LL_CMD_WRITE,
         },
         .data = (uint8_t*) data,
-        .remaining_bytes = data_len,
+        .total_bytes = data_len,
     };
 
     return i2c_cmd_link_append(cmd_handle, &cmd);
@@ -1154,14 +1163,13 @@ esp_err_t i2c_master_write_byte(i2c_cmd_handle_t cmd_handle, uint8_t data, bool 
 {
     I2C_CHECK(cmd_handle != NULL, I2C_CMD_LINK_INIT_ERR_STR, ESP_ERR_INVALID_ARG);
 
-    /* The marker to test whether we need to send a single byte is `data` field.
-     * If `data` is NULL, `remaning_bytes` contains the single byte to send. */
     i2c_cmd_t cmd = {
         .hw_cmd = {
             .ack_en = ack_en,
             .op_code = I2C_LL_CMD_WRITE,
         },
-        .remaining_bytes = data,
+        .data_byte = data,
+        .total_bytes = 1,
     };
 
     return i2c_cmd_link_append(cmd_handle, &cmd);
@@ -1175,7 +1183,7 @@ static esp_err_t i2c_master_read_static(i2c_cmd_handle_t cmd_handle, uint8_t *da
             .op_code = I2C_LL_CMD_READ,
         },
         .data = data,
-        .remaining_bytes = data_len,
+        .total_bytes = data_len,
     };
 
     return i2c_cmd_link_append(cmd_handle, &cmd);
@@ -1193,7 +1201,7 @@ esp_err_t i2c_master_read_byte(i2c_cmd_handle_t cmd_handle, uint8_t *data, i2c_a
             .op_code = I2C_LL_CMD_READ,
         },
         .data = data,
-        .remaining_bytes = 1,
+        .total_bytes = 1,
     };
 
     return i2c_cmd_link_append(cmd_handle, &cmd);
@@ -1232,7 +1240,7 @@ esp_err_t i2c_master_read(i2c_cmd_handle_t cmd_handle, uint8_t *data, size_t dat
 }
 
 static inline bool i2c_cmd_is_single_byte(const i2c_cmd_t *cmd) {
-    return cmd->data == NULL;
+    return cmd->total_bytes == 1;
 }
 
 static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num)
@@ -1242,12 +1250,16 @@ static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num)
     i2c_cmd_evt_t evt = { 0 };
     if (p_i2c->cmd_link.head != NULL && p_i2c->status == I2C_STATUS_READ) {
         i2c_cmd_t *cmd = &p_i2c->cmd_link.head->cmd;
-        i2c_hal_read_rxfifo(&(i2c_context[i2c_num].hal), cmd->data, p_i2c->rx_cnt);
-        cmd->data += p_i2c->rx_cnt;
-        if (cmd->remaining_bytes > 0) {
+        i2c_hal_read_rxfifo(&(i2c_context[i2c_num].hal), cmd->data + cmd->bytes_used, p_i2c->rx_cnt);
+        /* rx_cnt bytes have just been read, increment the number of bytes used from the buffer */
+        cmd->bytes_used += p_i2c->rx_cnt;
+
+        /* Test if there are still some remaining bytes to send. */
+        if (cmd->bytes_used != cmd->total_bytes) {
             p_i2c->cmd_idx = 0;
         } else {
             p_i2c->cmd_link.head = p_i2c->cmd_link.head->next;
+            p_i2c->cmd_link.head->cmd.bytes_used = 0;
         }
     } else if ((p_i2c->status == I2C_STATUS_ACK_ERROR)
                || (p_i2c->status == I2C_STATUS_TIMEOUT)) {
@@ -1271,24 +1283,29 @@ static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num)
     };
     while (p_i2c->cmd_link.head) {
         i2c_cmd_t *cmd = &p_i2c->cmd_link.head->cmd;
+        const size_t remaining_bytes = cmd->total_bytes - cmd->bytes_used;
+
         i2c_hw_cmd_t hw_cmd = cmd->hw_cmd;
         uint8_t fifo_fill = 0;
+
         if (cmd->hw_cmd.op_code == I2C_LL_CMD_WRITE) {
             uint8_t *write_pr = NULL;
+
             //TODO: to reduce interrupt number
             if (!i2c_cmd_is_single_byte(cmd)) {
-                fifo_fill = MIN(cmd->remaining_bytes, SOC_I2C_FIFO_LEN);
-                write_pr = cmd->data;
-                cmd->data += fifo_fill;
-                cmd->remaining_bytes -= fifo_fill;
+                fifo_fill = MIN(remaining_bytes, SOC_I2C_FIFO_LEN);
+                /* cmd->data shall not be altered!
+                 * Else it would not be possible to reuse the commands list. */
+                write_pr = cmd->data + cmd->bytes_used;
+                cmd->bytes_used += fifo_fill;
             } else {
                 fifo_fill = 1;
-                /* In that case, `remaining_bytes` contains the data itself.
-                 * NOTE: It is possible to use `remaining_bytes` as a byte pointer
-                 * because both Xtensa and RISC-V architectures used are little-endian.
+                /* `data_byte` field contains the data itself.
+                 * NOTE: It is possible to get the correct data (and not 0s)
+                 * because both Xtensa and RISC-V architectures used on ESP
+                 * boards are little-endian.
                  */
-                write_pr = (uint8_t*) &cmd->remaining_bytes;
-                cmd->hw_cmd.byte_num = 0;
+                write_pr = (uint8_t*) &cmd->data_byte;
             }
             hw_cmd.byte_num = fifo_fill;
             i2c_hal_write_txfifo(&(i2c_context[i2c_num].hal), write_pr, fifo_fill);
@@ -1296,16 +1313,16 @@ static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num)
             i2c_hal_write_cmd_reg(&(i2c_context[i2c_num].hal), hw_end_cmd, p_i2c->cmd_idx + 1);
             i2c_hal_enable_master_tx_it(&(i2c_context[i2c_num].hal));
             p_i2c->cmd_idx = 0;
-            if (i2c_cmd_is_single_byte(cmd) || cmd->remaining_bytes == 0) {
+            if (i2c_cmd_is_single_byte(cmd) || cmd->total_bytes == cmd->bytes_used) {
                 p_i2c->cmd_link.head = p_i2c->cmd_link.head->next;
+                p_i2c->cmd_link.head->cmd.bytes_used = 0;
             }
             p_i2c->status = I2C_STATUS_WRITE;
             break;
         } else if (cmd->hw_cmd.op_code == I2C_LL_CMD_READ) {
             //TODO: to reduce interrupt number
-            fifo_fill = MIN(cmd->remaining_bytes, SOC_I2C_FIFO_LEN);
+            fifo_fill = MIN(remaining_bytes, SOC_I2C_FIFO_LEN);
             p_i2c->rx_cnt = fifo_fill;
-            cmd->remaining_bytes -= fifo_fill;
             hw_cmd.byte_num = fifo_fill;
             i2c_hal_write_cmd_reg(&(i2c_context[i2c_num].hal), hw_cmd, p_i2c->cmd_idx);
             i2c_hal_write_cmd_reg(&(i2c_context[i2c_num].hal), hw_end_cmd, p_i2c->cmd_idx + 1);
@@ -1382,6 +1399,10 @@ esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, 
     i2c_reset_tx_fifo(i2c_num);
     i2c_reset_rx_fifo(i2c_num);
     const i2c_cmd_desc_t *cmd = (const i2c_cmd_desc_t *) cmd_handle;
+    /* Before starting the transfer, resetset the number of bytes sent to 0.
+     * `i2c_master_cmd_begin_static` will also reset this field for each node
+     * while browsing the command list. */
+    cmd->head->cmd.bytes_used = 0;
     p_i2c->cmd_link.free = cmd->free;
     p_i2c->cmd_link.cur = cmd->cur;
     p_i2c->cmd_link.head = cmd->head;
