@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 6a29c09c943d9cb07bd874af57b5870e
+// md5_digest_table 47c4cec4f1affd33418ee25442586183
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -285,6 +285,22 @@ static const esp_efuse_desc_t SECURE_BOOT_EN[] = {
 
 static const esp_efuse_desc_t SECURE_BOOT_AGGRESSIVE_REVOKE[] = {
     {EFUSE_BLK0, 117, 1}, 	 // Enable aggressive secure boot revoke,
+};
+
+static const esp_efuse_desc_t DIS_USB_JTAG[] = {
+    {EFUSE_BLK0, 118, 1}, 	 // Set to disable usb_serial_jtag-to-jtag function,
+};
+
+static const esp_efuse_desc_t DIS_USB_SERIAL_JTAG[] = {
+    {EFUSE_BLK0, 119, 1}, 	 // Set to disable usb_serial_jtag module,
+};
+
+static const esp_efuse_desc_t STRAP_JTAG_SEL[] = {
+    {EFUSE_BLK0, 120, 1}, 	 // Enable selection between usb_to_jtag or pad_to_jtag through gpio10,
+};
+
+static const esp_efuse_desc_t USB_PHY_SEL[] = {
+    {EFUSE_BLK0, 121, 1}, 	 // Select internal/external PHY for USB OTG and usb_serial_jtag,
 };
 
 static const esp_efuse_desc_t FLASH_TPUW[] = {
@@ -783,6 +799,26 @@ const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_EN[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE[] = {
     &SECURE_BOOT_AGGRESSIVE_REVOKE[0],    		// Enable aggressive secure boot revoke
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_JTAG[] = {
+    &DIS_USB_JTAG[0],    		// Set to disable usb_serial_jtag-to-jtag function
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_SERIAL_JTAG[] = {
+    &DIS_USB_SERIAL_JTAG[0],    		// Set to disable usb_serial_jtag module
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_STRAP_JTAG_SEL[] = {
+    &STRAP_JTAG_SEL[0],    		// Enable selection between usb_to_jtag or pad_to_jtag through gpio10
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_USB_PHY_SEL[] = {
+    &USB_PHY_SEL[0],    		// Select internal/external PHY for USB OTG and usb_serial_jtag
     NULL
 };
 
