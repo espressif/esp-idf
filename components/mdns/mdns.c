@@ -160,6 +160,7 @@ static bool _mdns_service_match(const mdns_service_t * srv, const char * service
  * @param  server       the server
  * @param  service      service type to match
  * @param  proto        proto to match
+ * @param  hostname     hostname of the service (if non-null)
  *
  * @return the service item if found or NULL on error
  */
@@ -177,7 +178,7 @@ static mdns_srv_item_t * _mdns_get_service_item(const char * service, const char
 
 static mdns_host_item_t * mdns_get_host_item(const char * hostname)
 {
-    if (hostname == NULL || strcasecmp(hostname, _mdns_server->hostname) == 0) {
+    if (strcasecmp(hostname, _mdns_server->hostname) == 0) {
         return &_mdns_self_host;
     }
     mdns_host_item_t * host = _mdns_host_list;
@@ -1122,22 +1123,14 @@ static void _mdns_free_tx_packet(mdns_tx_packet_t * packet)
     if (!packet) {
         return;
     }
-    mdns_out_question_t *q = packet->questions;
+    mdns_out_question_t * q = packet->questions;
     while (q) {
-        mdns_out_question_t *next = q->next;
+        mdns_out_question_t * next = q->next;
         if (q->own_dynamic_memory) {
-            if (q->host) {
-                free((char *)q->host);
-            }
-            if (q->service) {
-                free((char *)q->service);
-            }
-            if (q->proto) {
-                free((char *)q->proto);
-            }
-            if (q->domain) {
-                free((char *)q->domain);
-            }
+            free((char *)q->host);
+            free((char *)q->service);
+            free((char *)q->proto);
+            free((char *)q->domain);
         }
         free(q);
         q = next;
@@ -4870,7 +4863,8 @@ esp_err_t mdns_instance_name_set(const char * instance)
 esp_err_t mdns_service_add_for_host(const char * instance, const char * service, const char * proto,
                                     const char * hostname, uint16_t port, mdns_txt_item_t txt[], size_t num_items)
 {
-    if (!_mdns_server || _str_null_or_empty(service) || _str_null_or_empty(proto) || !port) {
+    if (!_mdns_server || _str_null_or_empty(service) || _str_null_or_empty(proto) || _str_null_or_empty(hostname) ||
+        !port) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -4930,7 +4924,7 @@ esp_err_t mdns_service_add_for_host(const char * instance, const char * service,
 esp_err_t mdns_service_add(const char * instance, const char * service, const char * proto, uint16_t port,
                            mdns_txt_item_t txt[], size_t num_items)
 {
-    if (!_mdns_server) {
+    if (!_mdns_server || _str_null_or_empty(_mdns_server->hostname)) {
         return ESP_ERR_INVALID_STATE;
     }
     return mdns_service_add_for_host(instance, service, proto, _mdns_server->hostname, port, txt, num_items);
@@ -5405,7 +5399,7 @@ void mdns_debug_packet(const uint8_t * data, size_t len)
                 header.answers = 0;
                 header.additional = 0;
                 header.servers = 0;
-                _mdns_dbg_printf("ERROR: %s:%u\n", __FILE__, __LINE__);
+                _mdns_dbg_printf("ERROR: parse header questions\n");
                 break;
             }
 
@@ -5453,7 +5447,7 @@ void mdns_debug_packet(const uint8_t * data, size_t len)
 
             content = _mdns_parse_fqdn(data, content, name);
             if (!content) {
-                _mdns_dbg_printf("ERROR: %s:%u\n", __FILE__, __LINE__);
+                _mdns_dbg_printf("ERROR: parse mdns records\n");
                 break;
             }
 
@@ -5467,7 +5461,7 @@ void mdns_debug_packet(const uint8_t * data, size_t len)
 
             content = data_ptr + data_len;
             if (content > (data + len)) {
-                _mdns_dbg_printf("ERROR: %s:%u\n", __FILE__, __LINE__);
+                _mdns_dbg_printf("ERROR: content length overflow\n");
                 break;
             }
 
@@ -5520,13 +5514,13 @@ void mdns_debug_packet(const uint8_t * data, size_t len)
             _mdns_dbg_printf("[%u] ", data_len);
             if (type == MDNS_TYPE_PTR) {
                 if (!_mdns_parse_fqdn(data, data_ptr, name)) {
-                    _mdns_dbg_printf("ERROR: %s:%u\n", __FILE__, __LINE__);
+                    _mdns_dbg_printf("ERROR: parse PTR\n");
                     continue;
                 }
                 _mdns_dbg_printf("%s.%s.%s.%s.\n", name->host, name->service, name->proto, name->domain);
             } else if (type == MDNS_TYPE_SRV) {
                 if (!_mdns_parse_fqdn(data, data_ptr + MDNS_SRV_FQDN_OFFSET, name)) {
-                    _mdns_dbg_printf("ERROR: %s:%u\n", __FILE__, __LINE__);
+                    _mdns_dbg_printf("ERROR: parse SRV\n");
                     continue;
                 }
                 uint16_t priority = _mdns_read_u16(data_ptr, MDNS_SRV_PRIORITY_OFFSET);
@@ -5538,7 +5532,7 @@ void mdns_debug_packet(const uint8_t * data, size_t len)
                 while (i < data_len) {
                     uint8_t partLen = data_ptr[i++];
                     if ((i+partLen) > data_len) {
-                        _mdns_dbg_printf("ERROR: %s:%u\n", __FILE__, __LINE__);
+                        _mdns_dbg_printf("ERROR: parse TXT\n");
                         break;
                     }
                     char txt[partLen+1];

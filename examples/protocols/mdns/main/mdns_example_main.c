@@ -9,6 +9,7 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp_netif_ip_addr.h"
 #include "esp_system.h"
 #include "esp_event.h"
 #include "esp_log.h"
@@ -33,10 +34,8 @@ static void  query_mdns_host_with_getaddrinfo(char * host);
 
 static void initialise_mdns(void)
 {
-    char *hostname = generate_hostname();
-    char delegated_hostname[64];
+    char * hostname = generate_hostname();
 
-    snprintf(delegated_hostname, sizeof(delegated_hostname), "%s-delegated", hostname);
     //initialize mDNS
     ESP_ERROR_CHECK( mdns_init() );
     //set mDNS hostname (required if you want to advertise services)
@@ -56,19 +55,21 @@ static void initialise_mdns(void)
     ESP_ERROR_CHECK( mdns_service_add("ESP32-WebServer", "_http", "_tcp", 80, serviceTxtData, 3) );
 
 #if CONFIG_MDNS_PUBLISH_DELEGATE_HOST
+    char *delegated_hostname;
+    if (-1 == asprintf(&delegated_hostname, "%s-delegated", hostname)) {
+        abort();
+    }
+
     mdns_ip_addr_t addr4, addr6;
-    ip4_addr_t ip4_addr;
-    ip6_addr_t ip6_addr;
-    ip4addr_aton("10.0.0.1", &ip4_addr); // mock address
-    addr4.addr.u_addr.ip4.addr = ip4_addr.addr;
+    esp_netif_str_to_ip4("10.0.0.1", &addr4.addr.u_addr.ip4);
     addr4.addr.type = ESP_IPADDR_TYPE_V4;
-    addr4.next = &addr6;
-    ip6addr_aton("fd11:22::1", &ip6_addr); // mock address
-    memcpy(addr6.addr.u_addr.ip6.addr, ip6_addr.addr, sizeof(ip6_addr.addr));
+    esp_netif_str_to_ip6("fd11:22::1", &addr6.addr.u_addr.ip6);
     addr6.addr.type = ESP_IPADDR_TYPE_V6;
+    addr4.next = &addr6;
     addr6.next = NULL;
     ESP_ERROR_CHECK( mdns_delegate_hostname_add(delegated_hostname, &addr4) );
     ESP_ERROR_CHECK( mdns_service_add_for_host("test0", "_http", "_tcp", delegated_hostname, 1234, serviceTxtData, 3) );
+    free(delegated_hostname);
 #endif // CONFIG_MDNS_PUBLISH_DELEGATE_HOST
 
     //add another TXT item
