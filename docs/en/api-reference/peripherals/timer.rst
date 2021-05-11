@@ -31,12 +31,14 @@ The two {IDF_TARGET_NAME} timer groups, with two timers in each, provide the tot
 
 First of all, the timer should be initialized by calling the function :cpp:func:`timer_init` and passing a structure :cpp:type:`timer_config_t` to it to define how the timer should operate. In particular, the following timer parameters can be set:
 
-    * **Clock Source**: Select the clock source, which together with the **Divider** define the resolution of the working timer. By default the clock source is APB_CLK (typically 80 MHz).
-    * **Divider**: Sets how quickly the timer's counter is "ticking". The setting :cpp:member:`divider` is used as a divisor of the clock source.
-    * **Mode**: Sets if the counter should be incrementing or decrementing. It can be defined using :cpp:member:`counter_dir` by selecting one of the values from :cpp:type:`timer_count_dir_t`.
-    * **Counter Enable**: If the counter is enabled, it will start incrementing / decrementing immediately after calling :cpp:func:`timer_init`. You can change the behavior with :cpp:member:`counter_en` by selecting one of the values from :cpp:type:`timer_start_t`.
-    * **Alarm Enable**: Can be set using :cpp:member:`alarm_en`.
-    * **Auto Reload**: Sets if the counter should :cpp:member:`auto_reload` the initial counter value on the timer's alarm or continue incrementing or decrementing.
+.. list::
+
+    :not esp32: - **Clock Source**: Select the clock source, which together with the **Divider** define the resolution of the working timer. By default the clock source is APB_CLK (typically 80 MHz).    
+    - **Divider**: Sets how quickly the timer's counter is "ticking". The setting :cpp:member:`divider` is used as a divisor of the clock source.
+    - **Mode**: Sets if the counter should be incrementing or decrementing. It can be defined using :cpp:member:`counter_dir` by selecting one of the values from :cpp:type:`timer_count_dir_t`.
+    - **Counter Enable**: If the counter is enabled, it will start incrementing / decrementing immediately after calling :cpp:func:`timer_init`. You can change the behavior with :cpp:member:`counter_en` by selecting one of the values from :cpp:type:`timer_start_t`.
+    - **Alarm Enable**: Can be set using :cpp:member:`alarm_en`.
+    - **Auto Reload**: Sets if the counter should :cpp:member:`auto_reload` the initial counter value on the timer's alarm or continue incrementing or decrementing.
 
 To get the current values of the timer's settings, use the function :cpp:func:`timer_get_config`.
 

@@ -45,117 +45,86 @@ Other types of data can be encrypted conditionally:
 Relevant eFuses
 ---------------
 
-The flash encryption operation is controlled by various eFuses available on {IDF_TARGET_NAME}. The list of eFuses and their descriptions is given in the table below. The names in eFuse column are also used by espefuse.py tool. For usage in the eFuse API, modify the name by adding ``ESP_EFUSE_``, for example: esp_efuse_read_field_bit(ESP_EFUSE_**DISABLE_DL_ENCRYPT**).
+The flash encryption operation is controlled by various eFuses available on {IDF_TARGET_NAME}. The list of eFuses and their descriptions is given in the table below. The names in eFuse column are also used by espefuse.py tool. For usage in the eFuse API, modify the name by adding ``ESP_EFUSE_``, for example: esp_efuse_read_field_bit(ESP_EFUSE_DISABLE_DL_ENCRYPT).
 
 .. Comment: As text in cells of list-table header rows does not wrap, it is necessary to make 0 header rows and apply bold typeface to the first row. Otherwise, the table goes beyond the html page limits on the right.
 
 .. only:: esp32
 
     .. list-table:: eFuses Used in Flash Encryption
-       :widths: 25 40 10 15 10
+       :widths: 25 40 10
        :header-rows: 0
 
        * - **eFuse**
          - **Description**
          - **Bit Depth**
-         - **R/W Access Control Available**
-         - **Default Value**
        * - ``CODING_SCHEME``
          - Controls actual number of block1 bits used to derive final 256-bit AES key. Possible values: ``0`` for 256 bits, ``1`` for 192 bits, ``2`` for 128 bits. Final AES key is derived based on the ``FLASH_CRYPT_CONFIG`` value.
          - 2
-         - Yes
-         - 0
        * - ``flash_encryption`` (block1)
          - AES key storage.
          - 256
-         - Yes
-         - x
        * - ``FLASH_CRYPT_CONFIG``
          - Controls the AES encryption process.
          - 4
-         - Yes
-         - 0xF
        * - ``DISABLE_DL_ENCRYPT``
          - If set, disables flash encryption operation while running in Firmware Download mode.
          - 1
-         - Yes
-         - 0
        * - ``DISABLE_DL_DECRYPT``
          - If set, disables flash decryption while running in UART Firmware Download mode.
          - 1
-         - Yes
-         - 0
        * - ``{IDF_TARGET_CRYPT_CNT}``
          - Enables/disables encryption at boot time. If even number of bits set (0, 2, 4, 6) - encrypt flash at boot time. If odd number of bits set (1, 3, 5, 7) - do not encrypt flash at boot time.
          - 7
-         - Yes
-         - 0
 
 
 .. only:: esp32s2
 
     .. list-table:: eFuses Used in Flash Encryption
-       :widths: 25 40 10 15 10
+       :widths: 25 40 10
        :header-rows: 0
 
        * - **eFuse**
          - **Description**
          - **Bit Depth**
-         - **R/W Access Control Available**
-         - **Default Value**
        * - ``BLOCK_KEYN``
          - AES key storage. N is between 0 and 5.
          - 256
-         - Yes
-         - x
        * - ``KEY_PURPOSE_N``
          - Controls the purpose of eFuse block ``BLOCK_KEYN``, where N is between 0 and 5. Possible values: ``2`` for ``XTS_AES_256_KEY_1`` , ``3`` for ``XTS_AES_256_KEY_2``, and ``4`` for ``XTS_AES_128_KEY``. Final AES key is derived based on the value of one or two of these purpose eFuses. For a detailed description of the possible combinations, see *{IDF_TARGET_NAME} Technical Reference Manual* > *External Memory Encryption and Decryption (XTS_AES)* [`PDF <{IDF_TARGET_TRM_EN_URL}#extmemencr>`__].
          - 4
-         - Yes
-         - 0
        * - ``DIS_DOWNLOAD_MANUAL_ENCRYPT``
          - If set, disables flash encryption when in download bootmodes.
          - 1
-         - Yes
-         - 0
        * - ``{IDF_TARGET_CRYPT_CNT}``
          - Enables encryption and decryption, when an SPI boot mode is set. Feature is enabled if 1 or 3 bits are set in the eFuse, disabled otherwise.
          - 3
-         - Yes
-         - 0
 
 .. only:: esp32c3
 
     .. list-table:: eFuses Used in Flash Encryption
-       :widths: 25 40 10 15 10
+       :widths: 25 40 10
        :header-rows: 0
 
        * - **eFuse**
          - **Description**
          - **Bit Depth**
-         - **R/W Access Control Available**
-         - **Default Value**
        * - ``BLOCK_KEYN``
          - AES key storage. N is between 0 and 5.
          - 256
-         - Yes
-         - x
        * - ``KEY_PURPOSE_N``
          - Controls the purpose of eFuse block ``BLOCK_KEYN``, where N is between 0 and 5. For flash encryption the only valid value is ``4`` for ``XTS_AES_128_KEY``.
          - 4
-         - Yes
-         - 0
        * - ``DIS_DOWNLOAD_MANUAL_ENCRYPT``
          - If set, disables flash encryption when in download bootmodes.
          - 1
-         - Yes
-         - 0
        * - ``{IDF_TARGET_CRYPT_CNT}``
          - Enables encryption and decryption, when an SPI boot mode is set. Feature is enabled if 1 or 3 bits are set in the eFuse, disabled otherwise.
          - 3
-         - Yes
-         - 0
 
+.. note::
+  * R/W access control is available for all the eFuse bits listed in the table above.
+  * The default value of these bits is 0 afer manufacturing.
 
 Read and write access to eFuse bits is controlled by appropriate fields in the registers ``WR_DIS`` and ``RD_DIS``. For more information on {IDF_TARGET_NAME} eFuses, see :doc:`eFuse manager <../api-reference/system/efuse>`. To change protection bits of eFuse field using espefuse.py, use these two commands: read_protect_efuse and write_protect_efuse. Example ``espefuse.py write_protect_efuse DISABLE_DL_ENCRYPT``.
 

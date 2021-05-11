@@ -393,7 +393,7 @@ Command usage examples:
 
         esp sysview start file://pro-cpu.SVDat file://app-cpu.SVDat
 
-    The tracing data will be retrieved and saved in non-blocking mode. To stop data this process enter ``esp apptrace stop`` command on OpenOCD telnet prompt, optionally pressing Ctrl+C in OpenOCD window.
+    The tracing data will be retrieved and saved in non-blocking mode. To stop data this process enter ``esp sysview stop`` command on OpenOCD telnet prompt, optionally pressing Ctrl+C in OpenOCD window.
 
 2.  Retrieve tracing data and save them indefinitely.
 
