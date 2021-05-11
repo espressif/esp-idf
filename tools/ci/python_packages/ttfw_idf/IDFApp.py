@@ -28,20 +28,55 @@ except ImportError:
     gitlab_api = None
 
 
-def parse_flash_settings(path):
+def parse_encrypted_flag(args, offs, binary):
+    # Find partition entries (e.g. the entries with an offset and a file)
+    for _, entry in args.items():
+        # If the current entry is a partition, we have to check whether it is
+        # the one we are looking for or not
+        try:
+            if (entry["offset"], entry["file"]) == (offs, binary):
+                return entry["encrypted"] == "true"
+        except (TypeError, KeyError):
+            # TypeError occurs if the entry is a list, which is possible in JSON
+            # data structure.
+            # KeyError occurs if the entry doesn't have "encrypted" field.
+            continue
+
+    # The entry was not found, return None. The caller will have to check
+    # CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT macro
+    return None
+
+
+def parse_flash_settings(path, default_encryption=False):
     file_name = os.path.basename(path)
+
+    # For compatibility reasons, this list contains all the files to be
+    # flashed
+    flash_files = []
+    # The following list only contains the files that need encryption
+    encrypt_files = []
+
     if file_name == "flasher_args.json":
         # CMake version using build metadata file
         with open(path, "r") as f:
             args = json.load(f)
-        flash_files = [(offs, binary) for (offs, binary) in args["flash_files"].items() if offs != ""]
+
+        for (offs, binary) in args["flash_files"].items():
+            if offs:
+                flash_files.append((offs, binary))
+                encrypted = parse_encrypted_flag(args, offs, binary)
+
+                # default_encryption should be taken into account if and only if
+                # encrypted flag is not provided in the JSON file.
+                if (encrypted is None and default_encryption) or encrypted:
+                    encrypt_files.append((offs, binary))
+
         flash_settings = args["flash_settings"]
         app_name = os.path.splitext(args["app"]["file"])[0]
     else:
         # GNU Make version uses download.config arguments file
         with open(path, "r") as f:
             args = f.readlines()[-1].split(" ")
-            flash_files = []
             flash_settings = {}
             for idx in range(0, len(args), 2):  # process arguments in pairs
                 if args[idx].startswith("--"):
@@ -50,6 +85,9 @@ def parse_flash_settings(path):
                 else:
                     # offs, filename
                     flash_files.append((args[idx], args[idx + 1]))
+            # Parameter default_encryption tells us if the files need encryption
+            if default_encryption:
+                encrypt_files = flash_files
             # we can only guess app name in download.config.
             for p in flash_files:
                 if not os.path.dirname(p[1]) and "partition" not in p[1]:
@@ -58,7 +96,7 @@ def parse_flash_settings(path):
                     break
             else:
                 app_name = None
-    return flash_files, flash_settings, app_name
+    return flash_files, encrypt_files, flash_settings, app_name
 
 
 class Artifacts(object):
@@ -106,8 +144,7 @@ class Artifacts(object):
             self.gitlab_inst.download_artifact(job_id, [flash_arg_file], self.dest_root_path)
 
             # 2. download all binary files
-            flash_files, flash_settings, app_name = parse_flash_settings(os.path.join(self.dest_root_path,
-                                                                                      flash_arg_file))
+            flash_files, _, _, app_name = parse_flash_settings(os.path.join(self.dest_root_path, flash_arg_file))
             artifact_files = [os.path.join(base_path, p[1]) for p in flash_files]
             artifact_files.append(os.path.join(base_path, app_name + ".elf"))
 
@@ -165,7 +202,9 @@ class IDFApp(App.BaseApp):
                                   self.binary_path, self.IDF_DOWNLOAD_CONFIG_FILE)
                 raise AssertionError(msg)
 
-        self.flash_files, self.flash_settings = self._parse_flash_download_config()
+        # In order to keep backward compatibility, flash_files is unchanged.
+        # However, we now have a new attribute encrypt_files.
+        self.flash_files, self.encrypt_files, self.flash_settings = self._parse_flash_download_config()
         self.partition_table = self._parse_partition_table()
 
     @classmethod
@@ -227,6 +266,11 @@ class IDFApp(App.BaseApp):
                 ret = os.path.join(binary_path, fn)
         return ret
 
+    def _int_offs_abs_paths(self, files_list):
+        return [(int(offs, 0),
+                 os.path.join(self.binary_path, file_path.strip()))
+                for (offs, file_path) in files_list]
+
     def _parse_flash_download_config(self):
         """
         Parse flash download config from build metadata files
@@ -235,7 +279,7 @@ class IDFApp(App.BaseApp):
 
         (Called from constructor)
 
-        Returns (flash_files, flash_settings)
+        Returns (flash_files, encrypt_files, flash_settings)
         """
 
         if self.IDF_FLASH_ARGS_FILE in os.listdir(self.binary_path):
@@ -245,16 +289,20 @@ class IDFApp(App.BaseApp):
             # GNU Make version uses download.config arguments file
             path = os.path.join(self.binary_path, self.IDF_DOWNLOAD_CONFIG_FILE)
 
-        flash_files, flash_settings, app_name = parse_flash_settings(path)
-        # The build metadata file does not currently have details, which files should be encrypted and which not.
-        # Assume that all files should be encrypted if flash encryption is enabled in development mode.
+        # If the JSON doesn't find the encrypted flag for our files, provide
+        # a default encrpytion flag: the macro
+        # CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
         sdkconfig_dict = self.get_sdkconfig()
-        flash_settings["encrypt"] = "CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT" in sdkconfig_dict
+        default_encryption = "CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT" in sdkconfig_dict
 
-        # make file offsets into integers, make paths absolute
-        flash_files = [(int(offs, 0), os.path.join(self.binary_path, file_path.strip())) for (offs, file_path) in flash_files]
+        flash_files, encrypt_files, flash_settings, _ = parse_flash_settings(path, default_encryption)
 
-        return flash_files, flash_settings
+        # Flash setting "encrypt" only and only if all the files to flash
+        # must be encrypted. Else, this parameter should be False.
+        # All files must be encrypted is both file lists are the same
+        flash_settings["encrypt"] = sorted(flash_files) == sorted(encrypt_files)
+
+        return self._int_offs_abs_paths(flash_files), self._int_offs_abs_paths(encrypt_files), flash_settings
 
     def _parse_partition_table(self):
         """
