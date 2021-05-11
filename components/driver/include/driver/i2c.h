@@ -46,9 +46,6 @@ extern "C" {
  *  - write device register
  *  - read register content
  *
- * Moreover, any command that includes strictly more than 255 bytes shall be divided into multiple commands.
- * For example, a write of 256 bytes shall be considered as 2 commands, a write of 1024 bytes shall be considered
- * as 5 commands. (1024/255 rounded up)
  * Signals such as "(repeated) start", "stop", "nack", "ack" shall not be counted.
  */
 #define I2C_LINK_RECOMMENDED_SIZE(COMMANDS)     (sizeof(i2c_cmd_desc_t) * \

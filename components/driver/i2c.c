@@ -100,7 +100,7 @@ static const char *I2C_TAG = "i2c";
 typedef struct {
     i2c_hw_cmd_t hw_cmd;
     uint8_t *data;     /*!< data address */
-    uint8_t byte_cmd;  /*!< to save cmd for one byte command mode */
+    size_t remaining_bytes;
 } i2c_cmd_t;
 
 typedef struct i2c_cmd_link {
@@ -1138,59 +1138,47 @@ esp_err_t i2c_master_write(i2c_cmd_handle_t cmd_handle, const uint8_t *data, siz
     I2C_CHECK((data != NULL), I2C_ADDR_ERROR_STR, ESP_ERR_INVALID_ARG);
     I2C_CHECK(cmd_handle != NULL, I2C_CMD_LINK_INIT_ERR_STR, ESP_ERR_INVALID_ARG);
 
-    uint8_t len_tmp = 0;
-    int data_offset = 0;
-    esp_err_t ret = ESP_OK;
-    i2c_cmd_t cmd;
+    i2c_cmd_t cmd = {
+        .hw_cmd = {
+            .ack_en = ack_en,
+            .op_code = I2C_LL_CMD_WRITE,
+        },
+        .data = (uint8_t*) data,
+        .remaining_bytes = data_len,
+    };
 
-    while (data_len > 0 && ret == ESP_OK) {
-        len_tmp = MIN(0xff, data_len);
-        data_len -= len_tmp;
-        cmd.hw_cmd.ack_en = ack_en;
-        cmd.hw_cmd.ack_exp = 0;
-        cmd.hw_cmd.ack_val = 0;
-        cmd.hw_cmd.op_code = I2C_LL_CMD_WRITE;
-        cmd.hw_cmd.byte_num = len_tmp;
-        cmd.data = (uint8_t*) data + data_offset;
-        ret = i2c_cmd_link_append(cmd_handle, &cmd);
-        data_offset += len_tmp;
-    }
-
-    return ret;
+    return i2c_cmd_link_append(cmd_handle, &cmd);
 }
 
 esp_err_t i2c_master_write_byte(i2c_cmd_handle_t cmd_handle, uint8_t data, bool ack_en)
 {
     I2C_CHECK(cmd_handle != NULL, I2C_CMD_LINK_INIT_ERR_STR, ESP_ERR_INVALID_ARG);
-    i2c_cmd_t cmd = { 0 };
-    cmd.hw_cmd.ack_en = ack_en;
-    cmd.hw_cmd.op_code = I2C_LL_CMD_WRITE;
-    cmd.hw_cmd.byte_num = 1;
-    cmd.byte_cmd = data;
+
+    /* The marker to test whether we need to send a single byte is `data` field.
+     * If `data` is NULL, `remaning_bytes` contains the single byte to send. */
+    i2c_cmd_t cmd = {
+        .hw_cmd = {
+            .ack_en = ack_en,
+            .op_code = I2C_LL_CMD_WRITE,
+        },
+        .remaining_bytes = data,
+    };
+
     return i2c_cmd_link_append(cmd_handle, &cmd);
 }
 
 static esp_err_t i2c_master_read_static(i2c_cmd_handle_t cmd_handle, uint8_t *data, size_t data_len, i2c_ack_type_t ack)
 {
-    int len_tmp = 0;
-    int data_offset = 0;
-    esp_err_t ret = ESP_OK;
-    i2c_cmd_t cmd;
+    i2c_cmd_t cmd = {
+        .hw_cmd = {
+            .ack_val = ack & 0x1,
+            .op_code = I2C_LL_CMD_READ,
+        },
+        .data = data,
+        .remaining_bytes = data_len,
+    };
 
-    while (data_len > 0 && ret == ESP_OK) {
-        len_tmp = MIN(0xff, data_len);
-        data_len -= len_tmp;
-        cmd.hw_cmd.ack_en = 0;
-        cmd.hw_cmd.ack_exp = 0;
-        cmd.hw_cmd.ack_val = ack & 0x1;
-        cmd.hw_cmd.byte_num = len_tmp;
-        cmd.hw_cmd.op_code = I2C_LL_CMD_READ;
-        cmd.data = data + data_offset;
-        ret = i2c_cmd_link_append(cmd_handle, &cmd);
-        data_offset += len_tmp;
-    }
-
-    return ret;
+    return i2c_cmd_link_append(cmd_handle, &cmd);
 }
 
 esp_err_t i2c_master_read_byte(i2c_cmd_handle_t cmd_handle, uint8_t *data, i2c_ack_type_t ack)
@@ -1199,11 +1187,14 @@ esp_err_t i2c_master_read_byte(i2c_cmd_handle_t cmd_handle, uint8_t *data, i2c_a
     I2C_CHECK(cmd_handle != NULL, I2C_CMD_LINK_INIT_ERR_STR, ESP_ERR_INVALID_ARG);
     I2C_CHECK(ack < I2C_MASTER_ACK_MAX, I2C_ACK_TYPE_ERR_STR, ESP_ERR_INVALID_ARG);
 
-    i2c_cmd_t cmd = { 0 };
-    cmd.hw_cmd.ack_val = ((ack == I2C_MASTER_LAST_NACK) ? I2C_MASTER_NACK : (ack & 0x1));
-    cmd.hw_cmd.byte_num = 1;
-    cmd.hw_cmd.op_code = I2C_LL_CMD_READ;
-    cmd.data = data;
+    i2c_cmd_t cmd = {
+        .hw_cmd = {
+            .ack_val = ((ack == I2C_MASTER_LAST_NACK) ? I2C_MASTER_NACK : (ack & 0x1)),
+            .op_code = I2C_LL_CMD_READ,
+        },
+        .data = data,
+        .remaining_bytes = 1,
+    };
 
     return i2c_cmd_link_append(cmd_handle, &cmd);
 }
@@ -1240,16 +1231,20 @@ esp_err_t i2c_master_read(i2c_cmd_handle_t cmd_handle, uint8_t *data, size_t dat
     return ret;
 }
 
+static inline bool i2c_cmd_is_single_byte(const i2c_cmd_t *cmd) {
+    return cmd->data == NULL;
+}
+
 static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num)
 {
     i2c_obj_t *p_i2c = p_i2c_obj[i2c_num];
     portBASE_TYPE HPTaskAwoken = pdFALSE;
-    i2c_cmd_evt_t evt;
+    i2c_cmd_evt_t evt = { 0 };
     if (p_i2c->cmd_link.head != NULL && p_i2c->status == I2C_STATUS_READ) {
         i2c_cmd_t *cmd = &p_i2c->cmd_link.head->cmd;
         i2c_hal_read_rxfifo(&(i2c_context[i2c_num].hal), cmd->data, p_i2c->rx_cnt);
         cmd->data += p_i2c->rx_cnt;
-        if (cmd->hw_cmd.byte_num > 0) {
+        if (cmd->remaining_bytes > 0) {
             p_i2c->cmd_idx = 0;
         } else {
             p_i2c->cmd_link.head = p_i2c->cmd_link.head->next;
@@ -1277,36 +1272,41 @@ static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num)
     while (p_i2c->cmd_link.head) {
         i2c_cmd_t *cmd = &p_i2c->cmd_link.head->cmd;
         i2c_hw_cmd_t hw_cmd = cmd->hw_cmd;
+        uint8_t fifo_fill = 0;
         if (cmd->hw_cmd.op_code == I2C_LL_CMD_WRITE) {
-            uint8_t wr_filled = 0;
             uint8_t *write_pr = NULL;
             //TODO: to reduce interrupt number
-            if (cmd->data) {
-                wr_filled = (cmd->hw_cmd.byte_num > SOC_I2C_FIFO_LEN) ? SOC_I2C_FIFO_LEN : cmd->hw_cmd.byte_num;
+            if (!i2c_cmd_is_single_byte(cmd)) {
+                fifo_fill = MIN(cmd->remaining_bytes, SOC_I2C_FIFO_LEN);
                 write_pr = cmd->data;
-                cmd->data += wr_filled;
-                cmd->hw_cmd.byte_num -= wr_filled;
+                cmd->data += fifo_fill;
+                cmd->remaining_bytes -= fifo_fill;
             } else {
-                wr_filled = 1;
-                write_pr = &(cmd->byte_cmd);
-                cmd->hw_cmd.byte_num--;
+                fifo_fill = 1;
+                /* In that case, `remaining_bytes` contains the data itself.
+                 * NOTE: It is possible to use `remaining_bytes` as a byte pointer
+                 * because both Xtensa and RISC-V architectures used are little-endian.
+                 */
+                write_pr = (uint8_t*) &cmd->remaining_bytes;
+                cmd->hw_cmd.byte_num = 0;
             }
-            hw_cmd.byte_num = wr_filled;
-            i2c_hal_write_txfifo(&(i2c_context[i2c_num].hal), write_pr, wr_filled);
+            hw_cmd.byte_num = fifo_fill;
+            i2c_hal_write_txfifo(&(i2c_context[i2c_num].hal), write_pr, fifo_fill);
             i2c_hal_write_cmd_reg(&(i2c_context[i2c_num].hal), hw_cmd, p_i2c->cmd_idx);
             i2c_hal_write_cmd_reg(&(i2c_context[i2c_num].hal), hw_end_cmd, p_i2c->cmd_idx + 1);
             i2c_hal_enable_master_tx_it(&(i2c_context[i2c_num].hal));
             p_i2c->cmd_idx = 0;
-            if (cmd->hw_cmd.byte_num == 0) {
+            if (i2c_cmd_is_single_byte(cmd) || cmd->remaining_bytes == 0) {
                 p_i2c->cmd_link.head = p_i2c->cmd_link.head->next;
             }
             p_i2c->status = I2C_STATUS_WRITE;
             break;
         } else if (cmd->hw_cmd.op_code == I2C_LL_CMD_READ) {
             //TODO: to reduce interrupt number
-            p_i2c->rx_cnt = cmd->hw_cmd.byte_num > SOC_I2C_FIFO_LEN ? SOC_I2C_FIFO_LEN : cmd->hw_cmd.byte_num;
-            cmd->hw_cmd.byte_num -= p_i2c->rx_cnt;
-            hw_cmd.byte_num = p_i2c->rx_cnt;
+            fifo_fill = MIN(cmd->remaining_bytes, SOC_I2C_FIFO_LEN);
+            p_i2c->rx_cnt = fifo_fill;
+            cmd->remaining_bytes -= fifo_fill;
+            hw_cmd.byte_num = fifo_fill;
             i2c_hal_write_cmd_reg(&(i2c_context[i2c_num].hal), hw_cmd, p_i2c->cmd_idx);
             i2c_hal_write_cmd_reg(&(i2c_context[i2c_num].hal), hw_end_cmd, p_i2c->cmd_idx + 1);
             i2c_hal_enable_master_rx_it(&(i2c_context[i2c_num].hal));

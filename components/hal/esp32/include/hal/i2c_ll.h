@@ -25,7 +25,7 @@ extern "C" {
 #define I2C_LL_INTR_MASK          (0x3fff) /*!< I2C all interrupt bitmap */
 
 /**
- * @brief I2C hardware cmd register filed.
+ * @brief I2C hardware cmd register fields.
  */
 typedef union {
     struct {
