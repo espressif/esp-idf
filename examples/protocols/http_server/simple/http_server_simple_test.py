@@ -100,12 +100,6 @@ def test_examples_protocol_http_server_simple(env, extra_data):
         raise RuntimeError
     dut1.expect("Found URL query => " + query, timeout=30)
 
-    query = "abcd\nyz"
-    Utility.console_log("Test /hello with invalid query")
-    if client.test_custom_uri_query(got_ip, got_port, query):
-        raise RuntimeError
-    dut1.expect("400 Bad Request - Server unable to understand request due to invalid syntax", timeout=30)
-
 
 if __name__ == '__main__':
     test_examples_protocol_http_server_simple()
