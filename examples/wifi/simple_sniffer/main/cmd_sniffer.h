@@ -17,7 +17,9 @@ extern "C" {
  *
  */
 typedef enum {
-    SNIFFER_INTF_WLAN = 0, /*!< WLAN interface */
+    SNIFFER_INTF_UNKNOWN = 0,
+    SNIFFER_INTF_WLAN, /*!< WLAN interface */
+    SNIFFER_INTF_ETH, /*!< Ethernet interface */
 } sniffer_intf_t;
 
 /**
@@ -36,6 +38,7 @@ typedef enum {
 } sniffer_wlan_filter_t;
 
 void register_sniffer(void);
+esp_err_t sniffer_reg_eth_intf(esp_eth_handle_t eth_handle);
 
 #ifdef __cplusplus
 }

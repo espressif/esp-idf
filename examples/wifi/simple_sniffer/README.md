@@ -4,18 +4,22 @@
 
 ## Overview
 
-This example demonstrates basic usage of WiFi sniffer mode by saving packets into SD card with pcap format. We can send pcap file to host via JTAG interface as well.
+This example demonstrates basic usage of WiFi and Ethernet sniffer mode by saving packets into SD card with pcap format. There is also an option to send pcap file to host via JTAG interface.
 
 For more information about pcap, please go to [wikipedia](https://en.wikipedia.org/wiki/Pcap).
 
-This example is based on console component. For more information about console, please refer to [console guide](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/console.html).
+This example is based on console component. For more information about console, please refer to [console guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/console.html).
 
 ## How to use example
 
 ### Hardware Required
 
-To run this example, you should have one ESP32 dev board integrated with a SD card slot (e.g [ESP-WROVER-KIT](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/modules-and-boards.html#esp-wrover-kit-v4-1)) or just connect [ESP32-DevKitC](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/modules-and-boards.html#esp32-devkitc-v4) to a SD card breakout board.
+To run this example with WiFi interface, you should have one ESP32 dev board integrated with a SD card slot (e.g. [ESP-WROVER-KIT](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/modules-and-boards.html#esp-wrover-kit-v4-1)) or just connect [ESP32-DevKitC](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/modules-and-boards.html#esp32-devkitc-v4) to a SD card breakout board. To run this example with Ethernet interface option, you should have one ESP32 dev board with physical layer Ethernet support (e.g. [ESP32-Ethernet-Kit](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-ethernet-kit.html#)) or connect SPI-Ethernet module (e.g. DM9051) to your dev board.
 If you want to send packets to host, make sure to connect ESP32 to some kind of [JTAG adapter](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/index.html#jtag-debugging-selecting-jtag-adapter).
+
+#### Ethernet Pin Assignment
+
+See common pin assignments for Ethernet from [ethernet examples folder](../../ethernet/README.md#common-pin-assignments).
 
 ### Configure the project
 
@@ -24,12 +28,17 @@ Open the project configuration menu (`idf.py menuconfig`). Then go into `Example
 - Check `Store command history in flash` if you want to save command history into flash (recommend).
 - Select where to save the pcap file in `Select destination to store pcap file` menu item.
   - `SD Card` means saving packets (pcap format) into the SD card you plug in. The default SD card work mode is set to SDMMC for target ESP32 and ESP32S3, but SPI is the only choice for other targets.
-  - `JTAG (App Trace)` means sending packets (pcap format) to host via JTAG interface. This feature depends on [app trace component](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html), Component config -> Application Lelvel Tracing -> Data Destination -> Trace memory should be enabled to choose `JTAG (App Trace)` as destination.
+  - `JTAG (App Trace)` means sending packets (pcap format) to host via JTAG interface. This feature depends on [app trace component](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html), Component config -> Application Level Tracing -> Data Destination -> Trace memory should be enabled to choose `JTAG (App Trace)` as destination.
 - Set the mount point in your filesystem in `SD card mount point in the filesystem` menu item. This configuration only takes effect when you choose to save packets into SD card.
 - Set max name length of pcap file in `Max name length of pcap file` menu item.
 - Set the length of sniffer work queue in `Length of sniffer work queue` menu item.
 - Set the stack size of the sniffer task in `Stack size of sniffer task` menu item.
-- Set the priority of the sniffer task `Length of sniffer work queue` menu item.
+- Set the priority of the sniffer task in `Length of sniffer work queue` menu item.
+- Select Ethernet Type
+  - `No Ethernet` means your board does not have Ethernet.
+  - `Internal EMAC` means ESP32 EMAC is used in conjunction with with selected PHY.
+  - `DM9051 Module`, `W5500 Module` or `KSZ8851SNL Module` means that SPI-Ethernet module is used with its own EMAC and PHY.
+  - For more information related to Ethernet configurations see common configuration of Ethernet from [ethernet examples folder](../../ethernet/README.md#common-configurations).
 
 ### Build and Flash
 
@@ -47,20 +56,20 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 
 ### `sniffer` Command Usage
 
-> sniffer  [-f <file>][-i ] [-F <mgmt|data|ctrl|misc|mpdu|ampdu>]... [-c <channel>][--stop]
+> sniffer  [-f <file>][-i <wlan|eth0|eth1|...>] [-F <mgmt|data|ctrl|misc|mpdu|ampdu>]... [-c <channel>][--stop]
 >   Capture specific packet and store in pcap format
 >   -f, --file=<file>  name of the file storing the packets in pcap format
->   -i, --interface=<wlan>  which interface to capture packet
+>   -i, --interface=<wlan|eth0|eth1|...>  which interface to capture packet
 >   -F, --filter=<mgmt|data|ctrl|misc|mpdu|ampdu>  filter parameters
 >   -c, --channel=<channel>  communication channel to use
 >         --stop  stop running sniffer
 
 The `sniffer` command support some important options as follow:
 
-* `-f`: Specify the name of file who will store the packets, default value is `sniffer`, and the resulting file name will be like “snifferX.pcap”, here ‘X’ shows the file’s order.
-* `-i`: Specify the interface to sniffer packets, currently only support `wlan`
-* `-c` :Specify the channel to sniffer packet
-* `-F`: Specify the filter condition, currently only support following filter conditions, you can select any number of them
+* `-f`: Specify the name of file which will store the packets, default value is `sniffer`, and the resulting file name will be like “snifferX.pcap”, here ‘X’ shows the file’s order.
+* `-i`: Specify the interface to sniffer packets, currently support `wlan` and `eth0`
+* `-c` :Specify the channel to sniffer packet at `wlan` interface
+* `-F`: Specify the filter condition at `wlan` interface, currently only support following filter conditions, you can select any number of them
   * mgmt: Management packets
   * data: Data packets
   * ctrl: Control packets
@@ -75,7 +84,7 @@ The `sniffer` command support some important options as follow:
  =======================================================
  |       Steps to sniffer WiFi packets                 |
  |                                                     |
- |  1. Enter 'help' to check all commands' usage       |
+ |  1. Enter 'help' to check all commands usage        |
  |  2. Enter 'mount <device>' to mount filesystem      |
  |  3. Enter 'sniffer' to start capture packets        |
  |  4. Enter 'unmount <device>' to unmount filesystem  |

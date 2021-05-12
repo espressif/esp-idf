@@ -22,6 +22,7 @@
 #include "pcap.h"
 
 static const char *PCAP_TAG = "pcap";
+
 #define PCAP_CHECK(a, str, goto_tag, ...)                                              \
     do                                                                                 \
     {                                                                                  \
@@ -92,9 +93,11 @@ esp_err_t pcap_deinit(pcap_handle_t handle)
 {
     PCAP_CHECK(handle, "pcap handle is NULL", err);
     pcap_runtime_t *pcap_rt = (pcap_runtime_t *)handle;
-    PCAP_CHECK(pcap_rt->file, "pcap file is NULL", err);
-    PCAP_CHECK(fclose(pcap_rt->file) == 0, "close pcap file failed", err);
-    pcap_rt->file = NULL;
+
+    if (pcap_rt->file != NULL) {
+        fclose(pcap_rt->file);
+        pcap_rt->file = NULL;
+    }
     free(pcap_rt);
     ESP_LOGD(PCAP_TAG, "pcap deinit OK");
     return ESP_OK;
@@ -107,7 +110,7 @@ esp_err_t pcap_init(pcap_config_t *config, pcap_handle_t *handle)
 {
     PCAP_CHECK(config, "config is NULL", err);
     PCAP_CHECK(handle, "pcap handle is NULL", err);
-    pcap_runtime_t *pcap_rt = calloc(sizeof(pcap_runtime_t), 1);
+    pcap_runtime_t *pcap_rt = calloc(1, sizeof(pcap_runtime_t));
     PCAP_CHECK(pcap_rt, "calloc pcap runtime failed", err);
     pcap_rt->file = config->fp;
     /* Write Pcap File header */
