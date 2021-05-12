@@ -168,7 +168,11 @@ typedef UINT8   tBTM_BLE_SFP;
 
 /* default connection interval max */
 #ifndef BTM_BLE_CONN_INT_MAX_DEF
+#if CONFIG_IDF_TARGET_ESP32
 #define BTM_BLE_CONN_INT_MAX_DEF     12      /* recommended max: 15 ms = 12 * 1.25 */
+#else
+#define BTM_BLE_CONN_INT_MAX_DEF     (((MAX_ACL_CONNECTIONS + 1) * 4) > 12 ? ((MAX_ACL_CONNECTIONS + 1) * 4) : 12)     /* recommended max:  BTM_BLE_CONN_INT_MAX_DEF * 1.25 ms*/
+#endif
 #endif
 
 /* default slave latency */
