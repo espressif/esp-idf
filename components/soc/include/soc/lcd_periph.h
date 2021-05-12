@@ -25,7 +25,7 @@ typedef struct {
     struct {
         const periph_module_t module;
         const int irq_id;
-        const int data_sigs[SOC_LCD_MAX_DATA_WIDTH];
+        const int data_sigs[SOC_LCD_I80_BUS_WIDTH];
         const int cs_sig;
         const int dc_sig;
         const int wr_sig;
@@ -33,7 +33,7 @@ typedef struct {
     struct {
         const periph_module_t module;
         const int irq_id;
-        const int data_sigs[SOC_LCD_MAX_DATA_WIDTH];
+        const int data_sigs[SOC_LCD_RGB_DATA_WIDTH];
         const int hsync_sig;
         const int vsync_sig;
         const int pclk_sig;
