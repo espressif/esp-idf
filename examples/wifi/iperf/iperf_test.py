@@ -524,7 +524,7 @@ class IperfTestUtilitySoftap(IperfTestUtility):
         return server_raw_data, rssi, heap_size
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_ShieldBox_Basic', category='stress')
+@ttfw_idf.idf_example_test(env_tag='Example_ShieldBox_Basic', target=['ESP32', 'ESP32S2', 'ESP32C3'], category='stress')
 def test_wifi_throughput_with_different_configs(env, extra_data):
     """
     steps: |
@@ -552,8 +552,7 @@ def test_wifi_throughput_with_different_configs(env, extra_data):
                                                     'sdkconfig.ci.{}'.format(config_name))
 
         # 2. get DUT and download
-        dut = env.get_dut('iperf', 'examples/wifi/iperf', dut_class=ttfw_idf.ESP32DUT,
-                          app_config_name=config_name)
+        dut = env.get_dut('iperf', 'examples/wifi/iperf', app_config_name=config_name)
         dut.start_app()
         dut.expect_any('iperf>', 'esp32>')
 
@@ -585,7 +584,7 @@ def test_wifi_throughput_with_different_configs(env, extra_data):
     report.generate_report()
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_ShieldBox', category='stress')
+@ttfw_idf.idf_example_test(env_tag='Example_ShieldBox', target=['ESP32', 'ESP32S2', 'ESP32C3'], category='stress')
 def test_wifi_throughput_vs_rssi(env, extra_data):
     """
     steps: |
@@ -608,8 +607,7 @@ def test_wifi_throughput_vs_rssi(env, extra_data):
     }
 
     # 1. get DUT and download
-    dut = env.get_dut('iperf', 'examples/wifi/iperf', dut_class=ttfw_idf.ESP32DUT,
-                      app_config_name=BEST_PERFORMANCE_CONFIG)
+    dut = env.get_dut('iperf', 'examples/wifi/iperf', app_config_name=BEST_PERFORMANCE_CONFIG)
     dut.start_app()
     dut.expect_any('iperf>', 'esp32>')
 
@@ -640,7 +638,8 @@ def test_wifi_throughput_vs_rssi(env, extra_data):
     report.generate_report()
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_ShieldBox_Basic')
+@ttfw_idf.idf_example_test(env_tag='Example_ShieldBox_Basic',
+                           target=['ESP32', 'ESP32S2', 'ESP32C3'], ci_target=['ESP32'])
 def test_wifi_throughput_basic(env, extra_data):
     """
     steps: |
@@ -655,8 +654,7 @@ def test_wifi_throughput_basic(env, extra_data):
     }
 
     # 1. get DUT
-    dut = env.get_dut('iperf', 'examples/wifi/iperf', dut_class=ttfw_idf.ESP32DUT,
-                      app_config_name=BEST_PERFORMANCE_CONFIG)
+    dut = env.get_dut('iperf', 'examples/wifi/iperf', app_config_name=BEST_PERFORMANCE_CONFIG)
     dut.start_app()
     dut.expect_any('iperf>', 'esp32>')
 
@@ -693,7 +691,7 @@ def test_wifi_throughput_basic(env, extra_data):
     env.close_dut('iperf')
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_ShieldBox2', category='stress')
+@ttfw_idf.idf_example_test(env_tag='Example_ShieldBox2', target=['ESP32', 'ESP32S2', 'ESP32C3'], category='stress')
 def test_softap_throughput_vs_rssi(env, extra_data):
     """
     steps: |
@@ -712,13 +710,11 @@ def test_softap_throughput_vs_rssi(env, extra_data):
     }
 
     # 1. get DUT and download
-    softap_dut = env.get_dut('softap_iperf', 'examples/wifi/iperf', dut_class=ttfw_idf.ESP32DUT,
-                             app_config_name=BEST_PERFORMANCE_CONFIG)
+    softap_dut = env.get_dut('softap_iperf', 'examples/wifi/iperf')
     softap_dut.start_app()
     softap_dut.expect_any('iperf>', 'esp32>')
 
-    sta_dut = env.get_dut('sta_iperf', 'examples/wifi/iperf', dut_class=ttfw_idf.ESP32DUT,
-                          app_config_name=BEST_PERFORMANCE_CONFIG)
+    sta_dut = env.get_dut('sta_iperf', 'examples/wifi/iperf', app_config_name=BEST_PERFORMANCE_CONFIG)
     sta_dut.start_app()
     sta_dut.expect_any('iperf>', 'esp32>')
 
@@ -741,7 +737,7 @@ def test_softap_throughput_vs_rssi(env, extra_data):
 
 
 if __name__ == '__main__':
-    test_wifi_throughput_basic(env_config_file='EnvConfig.yml')
-    test_wifi_throughput_with_different_configs(env_config_file='EnvConfig.yml')
-    test_wifi_throughput_vs_rssi(env_config_file='EnvConfig.yml')
+    # test_wifi_throughput_basic(env_config_file='EnvConfig.yml')
+    # test_wifi_throughput_with_different_configs(env_config_file='EnvConfig.yml')
+    test_wifi_throughput_vs_rssi(env_config_file='EnvConfig.yml', target='ESP32C3')
     test_softap_throughput_vs_rssi(env_config_file='EnvConfig.yml')
