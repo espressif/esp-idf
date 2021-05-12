@@ -28,11 +28,7 @@ def test_examples_timergroup(env, extra_data):  # type: (Any, Any) -> None
     dut.expect('Timer Group without auto reload', timeout=5)
     dut.expect('EVENT TIME')
     event_time0 = dut.expect(re.compile(r'Time\s+:\s+(\d+\.\d+)\s+s'))[0]
-    dut.expect('Timer Group without auto reload', timeout=6)
-    dut.expect('EVENT TIME')
-    event_time1 = dut.expect(re.compile(r'Time\s+:\s+(\d+\.\d+)\s+s'))[0]
-    print('event0={}, event1={}'.format(event_time0, event_time1))
-    assert float(event_time1) - float(event_time0) < 5.001
+    print('event0={}'.format(event_time0))
 
 
 if __name__ == '__main__':
