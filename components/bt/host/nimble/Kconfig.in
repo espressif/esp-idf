@@ -435,6 +435,22 @@ config BT_NIMBLE_HOST_BASED_PRIVACY
         Use this option to do host based Random Private Address resolution.
         If this option is disabled then controller based privacy is used.
 
+config BT_NIMBLE_ENABLE_CONN_REATTEMPT
+    bool "Enable connection reattempts on connection establishment error"
+    default y if (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
+    default n if IDF_TARGET_ESP32
+    help
+        Enable to make the NimBLE host to reattempt GAP connection on connection
+        establishment failure.
+
+config BT_NIMBLE_MAX_CONN_REATTEMPT
+    int "Maximum number connection reattempts"
+    range 1 7
+    default 3
+    depends on BT_NIMBLE_ENABLED && BT_NIMBLE_ENABLE_CONN_REATTEMPT
+    help
+        Defines maximum number of connection reattempts.
+
 config BT_NIMBLE_EXT_ADV
     bool "Enable extended advertising."
     default n
