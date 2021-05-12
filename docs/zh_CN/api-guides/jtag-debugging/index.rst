@@ -135,7 +135,7 @@ JTAG 正常工作至少需要连接的信号线有：TDI，TDO，TCK，TMS 和 G
 
     :esp32: configure-ft2232h-jtag
     :esp32s2: configure-ft2232h-jtag
-    :esp32c3: configure-builtin-jtag
+    :SOC_USB_SERIAL_JTAG_SUPPORTED: configure-builtin-jtag
     configure-other-jtag
 
 
