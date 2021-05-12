@@ -24,6 +24,10 @@
  * for reference.
  */
 
+#if !defined(MAXNAMLEN) && __BSD_VISIBLE
+#define MAXNAMLEN 1024
+#endif
+
 /**
  * @brief Opaque directory structure
  */
