@@ -323,7 +323,6 @@ menu "Wi-Fi"
 
     config ESP_WIFI_SLP_IRAM_OPT
         bool "WiFi SLP IRAM speed optimization"
-        depends on FREERTOS_USE_TICKLESS_IDLE
         select PM_SLP_DEFAULT_PARAMS_OPT
         help
             Select this option to place called Wi-Fi library TBTT process and receive beacon functions in IRAM.
@@ -336,7 +335,7 @@ menu "Wi-Fi"
     config ESP_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME
         int "Minimum active time"
         range 8 60
-        default 8
+        default 50
         depends on ESP_WIFI_SLP_IRAM_OPT
         help
             The minimum timeout for waiting to receive data, unit: milliseconds.
@@ -344,7 +343,7 @@ menu "Wi-Fi"
     config ESP_WIFI_SLP_DEFAULT_MAX_ACTIVE_TIME
         int "Maximum keep alive time"
         range 10 60
-        default 60
+        default 10
         depends on ESP_WIFI_SLP_IRAM_OPT
         help
             The maximum time that wifi keep alive, unit: seconds.
