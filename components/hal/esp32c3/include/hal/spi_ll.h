@@ -604,6 +604,16 @@ static inline void spi_ll_master_select_cs(spi_dev_t *hw, int cs_id)
     hw->misc.cs5_dis = (cs_id == 5) ? 0 : 1;
 }
 
+/**
+ * Keep Chip Select activated after the current transaction.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param keep_active if 0 don't keep CS activated, else keep CS activated
+ */
+static inline void spi_ll_master_keep_cs(spi_dev_t *hw, int keep_active) {
+    hw->misc.cs_keep_active = (keep_active != 0) ? 1 : 0;
+}
+
 /*------------------------------------------------------------------------------
  * Configs: parameters
  *----------------------------------------------------------------------------*/

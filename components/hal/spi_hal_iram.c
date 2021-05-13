@@ -131,6 +131,9 @@ void spi_hal_setup_trans(spi_hal_context_t *hal, const spi_hal_dev_config_t *dev
     spi_ll_set_command(hw, trans->cmd, cmdlen, dev->tx_lsbfirst);
     spi_ll_set_address(hw, trans->addr, addrlen, dev->tx_lsbfirst);
 
+    //Configure keep active CS
+    spi_ll_master_keep_cs(hw, trans->cs_keep_active);
+
     //Save the transaction attributes for internal usage.
     memcpy(&hal->trans_config, trans, sizeof(spi_hal_trans_config_t));
 }

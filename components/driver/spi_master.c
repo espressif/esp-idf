@@ -466,14 +466,13 @@ int spi_get_actual_clock(int fapb, int hz, int duty_cycle)
 static SPI_MASTER_ISR_ATTR void spi_setup_device(spi_device_t *dev)
 {
     spi_bus_lock_dev_handle_t dev_lock = dev->dev_lock;
-
-    if (!spi_bus_lock_touch(dev_lock)) {
-        //if the configuration is already applied, skip the following.
-        return;
-    }
     spi_hal_context_t *hal = &dev->host->hal;
     spi_hal_dev_config_t *hal_dev = &(dev->hal_dev);
-    spi_hal_setup_device(hal, hal_dev);
+
+    if (spi_bus_lock_touch(dev_lock)) {
+        /* Configuration has not been applied yet. */
+        spi_hal_setup_device(hal, hal_dev);
+    }
 }
 
 static SPI_MASTER_ISR_ATTR spi_device_t *get_acquiring_dev(spi_host_t *host)
@@ -512,12 +511,11 @@ static void spi_bus_intr_disable(void *host)
 // Setup the transaction-specified registers and linked-list used by the DMA (or FIFO if DMA is not used)
 static void SPI_MASTER_ISR_ATTR spi_new_trans(spi_device_t *dev, spi_trans_priv_t *trans_buf)
 {
-    spi_transaction_t *trans = NULL;
+    spi_transaction_t *trans = trans_buf->trans;
     spi_host_t *host = dev->host;
     spi_hal_context_t *hal = &(host->hal);
     spi_hal_dev_config_t *hal_dev = &(dev->hal_dev);
 
-    trans = trans_buf->trans;
     host->cur_cs = dev->id;
 
     //Reconfigure according to device settings, the function only has effect when the dev_id is changed.
@@ -531,6 +529,7 @@ static void SPI_MASTER_ISR_ATTR spi_new_trans(spi_device_t *dev, spi_trans_priv_
     hal_trans.send_buffer = (uint8_t*)host->cur_trans_buf.buffer_to_send;
     hal_trans.cmd = trans->cmd;
     hal_trans.addr = trans->addr;
+    hal_trans.cs_keep_active = (trans->flags & SPI_TRANS_CS_KEEP_ACTIVE) ? 1 : 0;
     //Set up QIO/DIO if needed
     hal_trans.io_mode = (trans->flags & SPI_TRANS_MODE_DIO ?
                         (trans->flags & SPI_TRANS_MODE_DIOQIO_ADDR ? SPI_LL_IO_MODE_DIO : SPI_LL_IO_MODE_DUAL) :
@@ -784,6 +783,12 @@ esp_err_t SPI_MASTER_ATTR spi_device_queue_trans(spi_device_handle_t handle, spi
 
     SPI_CHECK(!spi_bus_device_is_polling(handle), "Cannot queue new transaction while previous polling transaction is not terminated.", ESP_ERR_INVALID_STATE );
 
+    /* Even when using interrupt transfer, the CS can only be kept activated if the bus has been
+     * acquired with `spi_device_acquire_bus()` first. */
+    if (host->device_acquiring_lock != handle && (trans_desc->flags & SPI_TRANS_CS_KEEP_ACTIVE)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     spi_trans_priv_t trans_buf;
     ret = setup_priv_desc(trans_desc, &trans_buf, (host->bus_attr->dma_enabled));
     if (ret != ESP_OK) return ret;
@@ -921,8 +926,16 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_start(spi_device_handle_t handl
 
     SPI_CHECK(!spi_bus_device_is_polling(handle), "Cannot send polling transaction while the previous polling transaction is not terminated.", ESP_ERR_INVALID_STATE );
 
+    /* If device_acquiring_lock is set to handle, it means that the user has already
+     * acquired the bus thanks to the function `spi_device_acquire_bus()`.
+     * In that case, we don't need to take the lock again. */
     if (host->device_acquiring_lock != handle) {
-        ret = spi_bus_lock_acquire_start(handle->dev_lock, ticks_to_wait);
+        /* The user cannot ask for the CS to keep active has the bus is not locked/acquired. */
+        if ((trans_desc->flags & SPI_TRANS_CS_KEEP_ACTIVE) != 0) {
+            ret = ESP_ERR_INVALID_ARG;
+        } else {
+            ret = spi_bus_lock_acquire_start(handle->dev_lock, ticks_to_wait);
+        }
     } else {
         ret = spi_bus_lock_wait_bg_done(handle->dev_lock, ticks_to_wait);
     }
@@ -963,6 +976,9 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_end(spi_device_handle_t handle,
     uninstall_priv_desc(&host->cur_trans_buf);
 
     host->polling = false;
+    /* Once again here, if device_acquiring_lock is set to `handle`, it means that the user has already
+     * acquired the bus thanks to the function `spi_device_acquire_bus()`.
+     * In that case, the lock must not be released now because . */
     if (host->device_acquiring_lock != handle) {
         assert(host->device_acquiring_lock == NULL);
         spi_bus_lock_acquire_end(handle->dev_lock);
