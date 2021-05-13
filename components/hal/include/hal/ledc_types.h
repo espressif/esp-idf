@@ -134,6 +134,10 @@ typedef struct {
     ledc_timer_t timer_sel;         /*!< Select the timer source of channel (0 - 3) */
     uint32_t duty;                  /*!< LEDC channel duty, the range of duty setting is [0, (2**duty_resolution)] */
     int hpoint;                     /*!< LEDC channel hpoint value, the max value is 0xfffff */
+    struct {
+        unsigned int output_invert: 1;/*!< Enable (1) or disable (0) gpio output invert */
+    } flags;                        /*!< LEDC flags */
+
 } ledc_channel_config_t;
 
 /**
