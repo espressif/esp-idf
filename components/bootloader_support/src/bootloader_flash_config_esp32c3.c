@@ -24,7 +24,7 @@
 #include "soc/efuse_reg.h"
 #include "soc/spi_reg.h"
 #include "soc/spi_mem_reg.h"
-#include "soc/spi_caps.h"
+#include "soc/soc_caps.h"
 #include "flash_qio_mode.h"
 #include "bootloader_flash_config.h"
 #include "bootloader_common.h"

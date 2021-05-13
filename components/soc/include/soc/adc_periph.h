@@ -28,7 +28,6 @@
 #endif
 #include "soc/rtc_cntl_struct.h"
 #include "soc/adc_channel.h"
-#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -16,7 +16,7 @@
 #include "hal/systimer_hal.h"
 #include "hal/systimer_ll.h"
 #include "hal/systimer_types.h"
-#include "soc/systimer_caps.h"
+#include "soc/soc_caps.h"
 #include "hal/clk_gate_ll.h"
 
 #define SYSTIMER_TICKS_PER_US  (16) // Systimer clock source is fixed to 16MHz
