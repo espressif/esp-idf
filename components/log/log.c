@@ -30,6 +30,7 @@
 
 #include <stdbool.h>
 #include <stdarg.h>
+#include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -123,7 +124,7 @@ void esp_log_level_set(const char *tag, esp_log_level_t level)
             return;
         }
         new_entry->level = (uint8_t) level;
-        strlcpy(new_entry->tag, tag, tag_len);
+        memcpy(new_entry->tag, tag, tag_len); // we know the size and strncpy would trigger a compiler warning here
         SLIST_INSERT_HEAD(&s_log_tags, new_entry, entries);
     }
 

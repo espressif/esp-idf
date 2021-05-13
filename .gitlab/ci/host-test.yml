@@ -361,3 +361,10 @@ test_nvs_page:
     - cd ${IDF_PATH}/components/nvs_flash/host_test/nvs_page_test
     - idf.py build
     - build/host_nvs_page_test.elf
+
+test_log:
+  extends: .host_test_template
+  script:
+    - cd ${IDF_PATH}/components/log/host_test/log_test
+    - idf.py build
+    - build/test_log_host.elf
