@@ -571,7 +571,7 @@ static inline void i2c_ll_get_scl_timing(i2c_dev_t *hw, int *high_period, int *l
 static inline void i2c_ll_write_txfifo(i2c_dev_t *hw, uint8_t *ptr, uint8_t len)
 {
     for (int i = 0; i< len; i++) {
-        hw->fifo_data.val = ptr[i];
+        hw->fifo_data.data = ptr[i];
     }
 }
 
@@ -587,7 +587,7 @@ static inline void i2c_ll_write_txfifo(i2c_dev_t *hw, uint8_t *ptr, uint8_t len)
 static inline void i2c_ll_read_rxfifo(i2c_dev_t *hw, uint8_t *ptr, uint8_t len)
 {
     for(int i = 0; i < len; i++) {
-        ptr[i] = hw->fifo_data.val;
+        ptr[i] = hw->fifo_data.data;
     }
 }
 
