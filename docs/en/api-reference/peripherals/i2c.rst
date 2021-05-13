@@ -10,8 +10,13 @@ I2C is a serial, synchronous, half-duplex communication protocol that allows co-
 
 With such advantages as simplicity and low manufacturing cost, I2C is mostly used for communication of low-speed peripheral devices over short distances (within one foot).
 
-{IDF_TARGET_NAME} has two I2C controllers (also referred to as ports) which are responsible for handling communications on two I2C buses. Each I2C controller can operate as master or slave. As an example, one controller can act as a master and the other as a slave at the same time.
+.. only:: esp32c3
 
+    {IDF_TARGET_NAME} has only one I2C controller (also referred to as port) which is responsible for handling communications on I2C bus. The I2C controller can operate as master or slave.
+
+.. only:: not esp32c3
+
+    {IDF_TARGET_NAME} has two I2C controllers (also referred to as ports) which are responsible for handling communications on the I2C bus. Each I2C controller can operate as master or slave. As an example, one controller can act as a master and the other as a slave at the same time.
 
 Driver Features
 ---------------
@@ -140,9 +145,33 @@ When :cpp:member:`i2c_config_t::clk_flags` is 0, the clock allocator will select
          - :c:macro:`I2C_SCLK_SRC_FLAG_AWARE_DFS`, :c:macro:`I2C_SCLK_SRC_FLAG_LIGHT_SLEEP`
 
     Explanations for :cpp:member:`i2c_config_t::clk_flags` are as follows:
-
     1. :c:macro:`I2C_SCLK_SRC_FLAG_AWARE_DFS`: Clock's baud rate will not change while APB clock is changing.
     2. :c:macro:`I2C_SCLK_SRC_FLAG_LIGHT_SLEEP`: It supports Light-sleep mode, which APB clock cannot do.
+
+.. only:: esp32c3
+
+    .. list-table:: Characteristics of {IDF_TARGET_NAME} clock sources
+       :widths: 5 5 50 100
+       :header-rows: 1
+
+       * - Clock name
+         - Clock frequency
+         - MAX freq for SCL
+         - Clock capabilities
+       * - XTAL clock
+         - 40 MHz
+         - 2 MHz
+         - /
+       * - RTC clock
+         - 20 MHz
+         - 1 MHz
+         - :c:macro:`I2C_SCLK_SRC_FLAG_AWARE_DFS`, :c:macro:`I2C_SCLK_SRC_FLAG_LIGHT_SLEEP`
+
+Explanations for :cpp:member:`i2c_config_t::clk_flags` are as follows:
+
+1. :c:macro:`I2C_SCLK_SRC_FLAG_AWARE_DFS`: Clock's baud rate will not change while APB clock is changing.
+2. :c:macro:`I2C_SCLK_SRC_FLAG_LIGHT_SLEEP`: It supports Light-sleep mode, which APB clock cannot do.
+3. Some flags may not be supported on {IDF_TARGET_NAME}, reading technical reference manual before using it.
 
 .. note::
 
