@@ -260,7 +260,7 @@ void uart_tx_flush(uint8_t uart_no);
 /**
   * @brief Wait until uart tx full empty and the last char send ok.
   *
-  * @param  uart_no : 0 for UART0, 1 for UART1, 2 for UART2
+  * @param  uart_no : 0 for UART0, 1 for UART1
   *
   * The function defined in ROM code has a bug, so we define the correct version
   * here for compatibility.
