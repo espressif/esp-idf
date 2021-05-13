@@ -419,6 +419,24 @@ menu "LWIP"
                 Setting a smaller default SNDBUF size can save some RAM, but
                 will decrease performance.
 
+        config LWIP_TCP_SND_QUEUELEN_DEFINED
+            bool "Override TCP_SND_QUEUELEN"
+            default "n"
+
+        config LWIP_TCP_SND_QUEUELEN_DEFAULT
+            int "TCP_SND_QUEUELEN value"
+            depends on LWIP_TCP_SND_QUEUELEN_DEFINED
+            default 17
+
+        config LWIP_TCP_SNDQUEUELOWAT_DEFINED
+            bool "Override TCP_SNDQUEUELOWAT"
+            default "n"
+
+        config LWIP_TCP_SNDQUEUELOWAT_DEFAULT
+            int "TCP_SNDQUEUELOWAT value"
+            depends on LWIP_TCP_SNDQUEUELOWAT_DEFINED
+            default 5
+
         config LWIP_TCP_WND_DEFAULT
             int "Default receive window size"
             default 5744 # 4 * default MSS
