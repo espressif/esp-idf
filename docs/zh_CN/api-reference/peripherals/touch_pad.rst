@@ -12,7 +12,7 @@ ESP32 可支持最多 10 个电容式触摸板/GPIO，触摸板可以以矩阵�
 
 如需了解触摸传感器设计、操作及其控制寄存器等相关信息，请参考《`{IDF_TARGET_NAME} 技术参考手册 <{IDF_TARGET_TRM_CN_URL}>`_》(PDF)，您也可以在《ESP32 技术参考手册》中查看这一子系统是如何运行的。
 
-请参考 `触摸传感器应用方案简介 <https://github.com/espressif/esp-iot-solution/blob/master/documents/touch_pad_solution/touch_sensor_design_cn.md>`_，查看触摸传感器设计详情和固件开发指南。如果不想亲自在多种配置环境下测试触摸传感器，请查看 `ESP32 触摸功能开发套件 <https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/esp32_sense_kit_guide_cn.md>`_。
+请参考 `触摸传感器应用方案简介 <https://github.com/espressif/esp-iot-solution/blob/release/v1.0/documents/touch_pad_solution/touch_sensor_design_cn.md>`_，查看触摸传感器设计详情和固件开发指南。更多关于在多种配置环境下测试触摸传感器的信息，请参考 `ESP32 触摸功能开发套件 <https://github.com/espressif/esp-dev-kits/blob/master/esp32-sense-kit/docs/esp32_sense_kit_guide_cn.md>`_。
 
 功能介绍
 ----------------------

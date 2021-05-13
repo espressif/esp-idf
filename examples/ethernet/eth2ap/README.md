@@ -1,5 +1,5 @@
 # eth2ap Example
-(See the README.md file in the upper level 'examples' directory for more information about examples. To try a more complex application about Ethernet to WiFi data forwarding, please go to [iot-solution](https://github.com/espressif/esp-iot-solution/tree/master/examples/eth2wifi).)
+(See the README.md file in the upper level 'examples' directory for more information about examples. To try a more complex application about Ethernet to WiFi data forwarding, please go to [iot-solution](https://github.com/espressif/esp-iot-solution/tree/release/v1.0/examples/eth2wifi).)
 
 **Note:** This example uses some internal APIs (e.g. `esp_wifi_internal_tx`) which might get changed between minor versions of ESP-IDF.
 
