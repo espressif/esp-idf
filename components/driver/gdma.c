@@ -412,6 +412,25 @@ err:
     return ret;
 }
 
+esp_err_t gdma_reset(gdma_channel_handle_t dma_chan)
+{
+    esp_err_t ret = ESP_OK;
+    gdma_pair_t *pair = NULL;
+    gdma_group_t *group = NULL;
+    ESP_GOTO_ON_FALSE(dma_chan, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    pair = dma_chan->pair;
+    group = pair->group;
+
+    if (dma_chan->direction == GDMA_CHANNEL_DIRECTION_RX) {
+        gdma_ll_rx_reset_channel(group->hal.dev, pair->pair_id);
+    } else {
+        gdma_ll_tx_reset_channel(group->hal.dev, pair->pair_id);
+    }
+
+err:
+    return ret;
+}
+
 static void gdma_uninstall_group(gdma_group_t *group)
 {
     int group_id = group->group_id;

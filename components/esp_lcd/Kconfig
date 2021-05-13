@@ -1,0 +1,20 @@
+menu "LCD and Touch Panel"
+    menu "LCD Peripheral Configuration"
+        depends on IDF_TARGET_ESP32S3
+        choice LCD_PERIPH_CLK_SRC
+            prompt "Select clock source for LCD peripheral"
+            default LCD_PERIPH_CLK_SRC_XTAL if PM_ENABLE
+            default LCD_PERIPH_CLK_SRC_PLL160M
+            help
+                The peripheral clock is where LCD bus clock derives from.
+                Each clock source has its unique feature, e.g.
+                1. XTAL clock can help LCD work stable when DFS is enabled
+                2. PLL160M can achieve higher pixel clock resolution
+
+            config LCD_PERIPH_CLK_SRC_PLL160M
+                bool "PLL_160M clock"
+            config LCD_PERIPH_CLK_SRC_XTAL
+                bool "XTAL clock"
+        endchoice # LCD_PERIPH_CLK_SRC
+    endmenu
+endmenu

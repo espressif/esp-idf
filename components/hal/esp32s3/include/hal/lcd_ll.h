@@ -28,7 +28,6 @@ extern "C" {
 // Interrupt event, bit mask
 #define LCD_LL_EVENT_VSYNC_END  (1 << 0)
 #define LCD_LL_EVENT_TRANS_DONE (1 << 1)
-#define LCD_LL_EVENT_MASK       (LCD_LL_EVENT_VSYNC_END | LCD_LL_EVENT_TRANS_DONE)
 
 // Clock source ID represented in register
 #define LCD_LL_CLOCK_SRC_XTAL    (1)
@@ -185,20 +184,30 @@ static inline void lcd_ll_enable_auto_next_frame(lcd_cam_dev_t *dev, bool en)
     dev->lcd_misc.lcd_next_frame_en = en;
 }
 
+static inline void lcd_ll_enable_output_hsync_in_porch_region(lcd_cam_dev_t *dev, bool en)
+{
+    dev->lcd_ctrl2.lcd_hs_blank_en = en;
+}
+
+static inline void lcd_ll_set_hsync_position(lcd_cam_dev_t *dev, uint32_t offset_in_line)
+{
+    dev->lcd_ctrl2.lcd_hsync_position = offset_in_line;
+}
+
 static inline void lcd_ll_set_horizontal_timing(lcd_cam_dev_t *dev, uint32_t hsw, uint32_t hbp, uint32_t active_width, uint32_t hfp)
 {
-    dev->lcd_ctrl2.lcd_hsync_width = hsw;
-    dev->lcd_ctrl.lcd_hb_front = hbp;
-    dev->lcd_ctrl1.lcd_ha_width = active_width;
-    dev->lcd_ctrl1.lcd_ht_width = hsw + hbp + active_width + hfp;
+    dev->lcd_ctrl2.lcd_hsync_width = hsw - 1;
+    dev->lcd_ctrl.lcd_hb_front = hbp + hsw - 1;
+    dev->lcd_ctrl1.lcd_ha_width = active_width - 1;
+    dev->lcd_ctrl1.lcd_ht_width = hsw + hbp + active_width + hfp - 1;
 }
 
 static inline void lcd_ll_set_vertical_timing(lcd_cam_dev_t *dev, uint32_t vsw, uint32_t vbp, uint32_t active_height, uint32_t vfp)
 {
-    dev->lcd_ctrl2.lcd_vsync_width = vsw;
-    dev->lcd_ctrl1.lcd_vb_front = vbp;
-    dev->lcd_ctrl.lcd_va_height = active_height;
-    dev->lcd_ctrl.lcd_vt_height = vsw + vbp + active_height + vfp;
+    dev->lcd_ctrl2.lcd_vsync_width = vsw - 1;
+    dev->lcd_ctrl1.lcd_vb_front = vbp + vsw - 1;
+    dev->lcd_ctrl.lcd_va_height = active_height - 1;
+    dev->lcd_ctrl.lcd_vt_height = vsw + vbp + active_height + vfp - 1;
 }
 
 static inline void lcd_ll_set_idle_level(lcd_cam_dev_t *dev, bool hsync_idle_level, bool vsync_idle_level, bool de_idle_level)
