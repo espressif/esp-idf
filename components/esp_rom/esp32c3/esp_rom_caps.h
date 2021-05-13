@@ -19,3 +19,4 @@
 #define ESP_ROM_HAS_JPEG_DECODE             (1) // ROM has JPEG decode library
 #define ESP_ROM_UART_CLK_IS_XTAL            (1) // UART clock source is selected to XTAL in ROM
 #define ESP_ROM_HAS_RETARGETABLE_LOCKING    (1) // ROM was built with retargetable locking
+#define ESP_ROM_USB_SERIAL_DEVICE_NUM (3) // UART uses USB_SERIAL_JTAG port in ROM.
