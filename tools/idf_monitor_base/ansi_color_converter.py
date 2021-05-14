@@ -17,11 +17,7 @@ import os
 import re
 import sys
 from io import TextIOBase
-
-try:
-    from typing import Optional, Union
-except ImportError:
-    pass
+from typing import Any, Optional, TextIO, Union
 
 from .output_helpers import ANSI_NORMAL
 
@@ -44,7 +40,7 @@ if os.name == 'nt':
 
 
 def get_converter(orig_output_method=None, decode_output=False):
-    # type: (Optional[TextIOBase], bool) -> Union[ANSIColorConverter, Optional[TextIOBase]]
+    # type: (Any[TextIO, Optional[TextIOBase]], bool) -> Union[ANSIColorConverter, Optional[TextIOBase]]
     """
     Returns an ANSIColorConverter on Windows and the original output method (orig_output_method) on other platforms.
     The ANSIColorConverter with decode_output=True will decode the bytes before passing them to the output.
