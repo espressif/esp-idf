@@ -21,6 +21,7 @@ api-reference/wifi/esp_now                      api-reference/network/esp_now
 api-reference/wifi/esp_smartconfig              api-reference/network/esp_smartconfig
 api-reference/wifi/esp_wifi                     api-reference/network/esp_wifi
 api-reference/system/tcpip_adapter              api-reference/network/esp_netif
+api-reference/system/esp_pthread                api-reference/system/pthread
 get-started/idf-monitor                         api-guides/tools/idf-monitor
 get-started-cmake/idf-monitor                   api-guides/tools/idf-monitor
 get-started/get-started-devkitc                 hw-reference/esp32/get-started-devkitc
