@@ -9,6 +9,7 @@ Peripherals API
 
     ADC <adc>
     :SOC_DAC_PERIPH_NUM: DAC <dac>
+    General Purpose Timer <timer>
     GPIO (including RTC low power I/O) <gpio>
     :SOC_DEDICATED_GPIO_SUPPORTED: Dedicated GPIO <dedic_gpio>
     :SOC_HMAC_SUPPORTED: HMAC <hmac>
@@ -29,7 +30,6 @@ Peripherals API
     :esp32: Secure Element <secure_element>
     :esp32s2: SPI Slave Half Duplex <spi_slave_hd>
     :esp32s2: Temp sensor <temp_sensor>
-    Timer <timer>
     :SOC_TOUCH_SENSOR_NUM: Touch Sensor <touch_pad>
     :esp32s2: Touch Element <touch_element>
     TWAI <twai>

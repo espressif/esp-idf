@@ -1,13 +1,14 @@
-Timer
-=====
+General Purpose Timer
+=====================
 
 :link_to_translation:`zh_CN:[中文]`
-{IDF_TARGET_INT_CLR_REG: default="int_clr", esp32="int_clr_timers"}
+
+{IDF_TARGET_TIMER_COUNTER_BIT_WIDTH:default="54", esp32="64", esp32s2="64"}
 
 Introduction
 ------------
 
-The {IDF_TARGET_NAME} chip contains two hardware timer groups. Each group has two general-purpose hardware timers. They are all 64-bit generic timers based on 16-bit prescalers and 64-bit up / down counters which are capable of being auto-reloaded.
+The {IDF_TARGET_NAME} chip contains two hardware timer groups. Each group has two general-purpose hardware timers. They are all {IDF_TARGET_TIMER_COUNTER_BIT_WIDTH}-bit generic timers based on 16-bit pre-scalers and {IDF_TARGET_TIMER_COUNTER_BIT_WIDTH}-bit up / down counters which are capable of being auto-reloaded.
 
 
 Functional Overview
@@ -18,7 +19,7 @@ The following sections of this document cover the typical steps to configure and
 * :ref:`timer-api-timer-initialization` - covers which parameters should be set up to get the timer working, and also what specific functionality is provided depending on the timer configuration.
 * :ref:`timer-api-timer-control` - describes how to read a timer's value, pause or start a timer, and change how it operates.
 * :ref:`timer-api-alarms` - shows how to set and use alarms.
-* :ref:`timer-api-interrupts`- explains how to enable and use interrupts.
+* :ref:`timer-api-interrupts`- explains how to use interrupt callbacks.
 
 
 .. _timer-api-timer-initialization:
@@ -30,12 +31,12 @@ The two {IDF_TARGET_NAME} timer groups, with two timers in each, provide the tot
 
 First of all, the timer should be initialized by calling the function :cpp:func:`timer_init` and passing a structure :cpp:type:`timer_config_t` to it to define how the timer should operate. In particular, the following timer parameters can be set:
 
-    * **Divider**: Sets how quickly the timer's counter is "ticking". The setting :cpp:member:`divider` is used as a divisor of the incoming 80 MHz APB_CLK clock.
+    * **Clock Source**: Select the clock source, which together with the **Divider** define the resolution of the working timer. By default the clock source is APB_CLK (typically 80 MHz).
+    * **Divider**: Sets how quickly the timer's counter is "ticking". The setting :cpp:member:`divider` is used as a divisor of the clock source.
     * **Mode**: Sets if the counter should be incrementing or decrementing. It can be defined using :cpp:member:`counter_dir` by selecting one of the values from :cpp:type:`timer_count_dir_t`.
     * **Counter Enable**: If the counter is enabled, it will start incrementing / decrementing immediately after calling :cpp:func:`timer_init`. You can change the behavior with :cpp:member:`counter_en` by selecting one of the values from :cpp:type:`timer_start_t`.
     * **Alarm Enable**: Can be set using :cpp:member:`alarm_en`.
     * **Auto Reload**: Sets if the counter should :cpp:member:`auto_reload` the initial counter value on the timer's alarm or continue incrementing or decrementing.
-    * **Interrupt Type**: Select which interrupt type should be triggered on the timer's alarm. Set the value defined in :cpp:type:`timer_intr_mode_t`.
 
 To get the current values of the timer's settings, use the function :cpp:func:`timer_get_config`.
 
@@ -86,14 +87,8 @@ To check the specified alarm value, call :cpp:func:`timer_get_alarm_value`.
 Interrupts
 ^^^^^^^^^^
 
-Registration of the interrupt handler for a specific timer or a timer group can be done by calling :cpp:func:`timer_isr_register`.
-
-To enable interrupts for a timer group, call :cpp:func:`timer_group_intr_enable`, for a specific timer call :cpp:func:`timer_enable_intr`.
-To disable interrupts for a timer group, call :cpp:func:`timer_group_intr_disable`, for a specified timer, call :cpp:func:`timer_disable_intr`.
-
-When handling an interrupt within an interrupt serivce routine (ISR), the interrupt status bit needs to be explicitly cleared. To do that, set the ``TIMERGN.{IDF_TARGET_INT_CLR_REG}.tM`` structure, defined in :component_file:`soc/{IDF_TARGET_PATH_NAME}/include/soc/timer_group_struct.h`. In this structure, ``N`` is the timer group number [0, 1], ``M`` is the timer number [0, 1]. For example, to clear an interrupt status bit for the timer 1 in the timer group 0, call the following::
-
-    TIMERG0.{IDF_TARGET_INT_CLR_REG}.t1 = 1
+Registration of an interrupt callback for a specific timer can be done by calling :cpp:func:`timer_isr_callback_add` and passing in the group ID, timer ID, callback handler and user data. The callback handler will be invoked in ISR context, so user shouldn't put any blocking API in the callback function.
+The benefit of using interrupt callback instead of precessing interrupt from scratch is, you don't have to deal with interrupt status check and clean stuffs, they are all addressed before the callback got run in driver's default interrupt handler.
 
 For more information on how to use interrupts, please see the application example below.
 
@@ -101,7 +96,7 @@ For more information on how to use interrupts, please see the application exampl
 Application Example
 -------------------
 
-The 64-bit hardware timer example: :example:`peripherals/timer_group`.
+The {IDF_TARGET_TIMER_COUNTER_BIT_WIDTH}-bit hardware timer example: :example:`peripherals/timer_group`.
 
 
 API Reference
