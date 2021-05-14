@@ -93,7 +93,8 @@ class Monitor(object):
                  decode_coredumps=COREDUMP_DECODE_INFO,
                  decode_panic=PANIC_DECODE_DISABLE,
                  target='esp32',
-                 websocket_client=None, enable_address_decoding=True):
+                 websocket_client=None, enable_address_decoding=True,
+                 timestamps=False):
         # type: (serial.Serial, str, str, str, bool, str, str, str, str, str, WebSocketClient, bool) -> None
         super(Monitor, self).__init__()
         self.event_queue = queue.Queue()  # type: queue.Queue
@@ -142,6 +143,7 @@ class Monitor(object):
         self._panic_buffer = b''
         self.gdb_exit = False
         self.start_cmd_sent = False
+        self._timestamps = timestamps
 
     def invoke_processing_last_line(self):
         # type: () -> None
@@ -591,7 +593,14 @@ class Monitor(object):
         if console_printer is None:
             console_printer = self.console.write_bytes
         if self._output_enabled:
-            console_printer(string)
+            if self._timestamps:
+                t = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S ")
+                if isinstance(string, type(u'')):
+                    console_printer(t + string)
+                else:
+                    console_printer(t.encode('ascii') + string)
+            else:
+                console_printer(string)
         if self._log_file:
             try:
                 if isinstance(string, type(u'')):
@@ -729,6 +738,12 @@ def main():  # type: () -> None
         help='WebSocket URL for communicating with IDE tools for debugging purposes'
     )
 
+    parser.add_argument(
+        '--timestamps',
+        help='Add timestamp for each line',
+        default=False,
+        action='store_true')
+
     args = parser.parse_args()
 
     # GDB uses CreateFile to open COM port, which requires the COM name to be r'\\.\COMx' if the COM
@@ -771,7 +786,8 @@ def main():  # type: () -> None
         monitor = Monitor(serial_instance, args.elf_file.name, args.print_filter, args.make, args.encrypted,
                           args.toolchain_prefix, args.eol,
                           args.decode_coredumps, args.decode_panic, args.target,
-                          ws, enable_address_decoding=not args.disable_address_decoding)
+                          ws, enable_address_decoding=not args.disable_address_decoding,
+                          timestamps=args.timestamps)
 
         yellow_print('--- idf_monitor on {p.name} {p.baudrate} ---'.format(p=serial_instance))
         yellow_print('--- Quit: {} | Menu: {} | Help: {} followed by {} ---'.format(
