@@ -19,7 +19,7 @@ try:
 except ImportError:
     pass
 
-import serial.tools.miniterm as miniterm
+from serial.tools import miniterm
 
 from .constants import (CMD_APP_FLASH, CMD_ENTER_BOOT, CMD_MAKE, CMD_OUTPUT_TOGGLE, CMD_RESET, CMD_STOP,
                         CMD_TOGGLE_LOGGING, CMD_TOGGLE_TIMESTAMPS, CTRL_A, CTRL_F, CTRL_H, CTRL_I, CTRL_L, CTRL_P,
