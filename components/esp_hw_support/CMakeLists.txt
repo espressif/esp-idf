@@ -15,7 +15,8 @@ if(NOT BOOTLOADER_BUILD)
                      "hw_random.c"
                      "intr_alloc.c"
                      "mac_addr.c"
-                     "sleep_modes.c")
+                     "sleep_modes.c"
+                     "regi2c_ctrl.c")
      list(APPEND priv_requires esp_ipc)
 
      if(NOT CMAKE_BUILD_EARLY_EXPANSION)
