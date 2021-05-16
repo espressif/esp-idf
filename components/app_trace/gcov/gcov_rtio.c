@@ -106,7 +106,7 @@ static int esp_dbg_stub_gcov_dump_do(void)
 }
 
 /**
- * @brief Triggers gcov info dump.
+ * @brief Triggers gcov info dump task
  *        This function is to be called by OpenOCD, not by normal user code.
  * TODO: what about interrupted flash access (when cache disabled)???
  *
@@ -114,11 +114,13 @@ static int esp_dbg_stub_gcov_dump_do(void)
  */
 static int esp_dbg_stub_gcov_entry(void)
 {
-    return esp_dbg_stub_gcov_dump_do();
+    s_do_dump = true;
+    return ESP_OK;
 }
 
 int gcov_rtio_atexit(void (*function)(void) __attribute__ ((unused)))
 {
+    uint32_t capabilities = 0;
     ESP_EARLY_LOGV(TAG, "%s", __FUNCTION__);
     esp_dbg_stub_entry_set(ESP_DBG_STUB_ENTRY_GCOV, (uint32_t)&esp_dbg_stub_gcov_entry);
     return 0;
