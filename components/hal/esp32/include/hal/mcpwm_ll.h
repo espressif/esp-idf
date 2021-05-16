@@ -36,7 +36,7 @@ extern "C" {
 
 /// Get the address of peripheral registers
 #define MCPWM_LL_GET_HW(ID) (((ID)==0)? &MCPWM0: &MCPWM1)
-
+#define MCPWM_LL_MAX_PRESCALE   255
 
 /********************* Global *******************/
 /**
