@@ -39,7 +39,7 @@
 #include "mbedtls/atca_mbedtls_wrap.h"
 #include "tng_atca.h"
 #include "cryptoauthlib.h"
-static const atcacert_def_t* cert_def = NULL;
+static const atcacert_def_t *cert_def = NULL;
 /* Prototypes for functions */
 static esp_err_t esp_set_atecc608a_pki_context(esp_tls_t *tls, esp_tls_cfg_t *cfg);
 #endif /* CONFIG_ESP_TLS_USE_SECURE_ELEMENT */
@@ -669,9 +669,9 @@ void esp_mbedtls_free_global_ca_store(void)
 }
 
 #ifdef CONFIG_ESP_TLS_USE_SECURE_ELEMENT
-static esp_err_t esp_init_atecc608a(uint8_t slave_addr)
+static esp_err_t esp_init_atecc608a(uint8_t i2c_addr)
 {
-    cfg_ateccx08a_i2c_default.atcai2c.slave_address = slave_addr;
+    cfg_ateccx08a_i2c_default.atcai2c.address = i2c_addr;
     int ret = atcab_init(&cfg_ateccx08a_i2c_default);
     if(ret != 0) {
         ESP_LOGE(TAG, "Failed\n !atcab_init returned %02x", ret);
@@ -683,8 +683,10 @@ static esp_err_t esp_init_atecc608a(uint8_t slave_addr)
 static esp_err_t esp_set_atecc608a_pki_context(esp_tls_t *tls, esp_tls_cfg_t *cfg)
 {
     int ret = 0;
-    int esp_ret = ESP_FAIL;
+    esp_err_t esp_ret = ESP_FAIL;
     ESP_LOGI(TAG, "Initialize the ATECC interface...");
+    (void)esp_ret;
+    (void)cert_def;
 #if defined(CONFIG_ATECC608A_TNG) || defined(CONFIG_ATECC608A_TFLEX)
 #ifdef CONFIG_ATECC608A_TNG
     esp_ret = esp_init_atecc608a(ATECC608A_TNG_SLAVE_ADDR);
