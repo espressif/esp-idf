@@ -22,6 +22,7 @@
 #include "spi_flash_chip_boya.h"
 #include "sdkconfig.h"
 
+#if !CONFIG_SPI_FLASH_OVERRIDE_CHIP_DRIVER_LIST
 /*
  * Default registered chip drivers. Note these are tested in order and first
  * match is taken, so generic/catchall entries should go last. Note that the
@@ -52,5 +53,9 @@ static const spi_flash_chip_t *default_registered_chips[] = {
     &esp_flash_chip_generic,
     NULL,
 };
+#else
+//When the config option is enabled, user should provide this struct themselves.
+extern const spi_flash_chip_t *default_registered_chips[];
+#endif //!CONFIG_SPI_FLASH_OVERRIDE_CHIP_DRIVER_LIST
 
 const spi_flash_chip_t **esp_flash_registered_chips = default_registered_chips;

@@ -37,9 +37,13 @@ def action_extensions(base_actions, project_path):
 
     def _get_esptool_args(args):
         esptool_path = os.path.join(os.environ['IDF_PATH'], 'components/esptool_py/esptool/esptool.py')
+        esptool_wrapper_path = os.environ.get('ESPTOOL_WRAPPER', '')
         if args.port is None:
             args.port = _get_default_serial_port(args)
-        result = [PYTHON, esptool_path]
+        result = [PYTHON]
+        if os.path.exists(esptool_wrapper_path):
+            result += [esptool_wrapper_path]
+        result += [esptool_path]
         result += ['-p', args.port]
         result += ['-b', str(args.baud)]
 

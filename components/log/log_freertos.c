@@ -11,11 +11,16 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "hal/cpu_hal.h" // for cpu_hal_get_cycle_count()
+#include "esp_compiler.h"
 #include "esp_log.h"
 #include "esp_log_private.h"
 
 
 // Maximum time to wait for the mutex in a logging statement.
+//
+// We don't expect this to happen in most cases, as contention is low. The most likely case is if a
+// log function is called from an ISR (technically caller should use the ISR-friendly logging macros but
+// possible they use the normal one instead and disable the log type by tag).
 #define MAX_MUTEX_WAIT_MS 10
 #define MAX_MUTEX_WAIT_TICKS ((MAX_MUTEX_WAIT_MS + portTICK_PERIOD_MS - 1) / portTICK_PERIOD_MS)
 
@@ -23,22 +28,31 @@ static SemaphoreHandle_t s_log_mutex = NULL;
 
 void esp_log_impl_lock(void)
 {
-    if (!s_log_mutex) {
+    if (unlikely(!s_log_mutex)) {
         s_log_mutex = xSemaphoreCreateMutex();
+    }
+    if (unlikely(xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED)) {
+        return;
     }
     xSemaphoreTake(s_log_mutex, portMAX_DELAY);
 }
 
 bool esp_log_impl_lock_timeout(void)
 {
-    if (!s_log_mutex) {
+    if (unlikely(!s_log_mutex)) {
         s_log_mutex = xSemaphoreCreateMutex();
+    }
+    if (unlikely(xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED)) {
+        return true;
     }
     return xSemaphoreTake(s_log_mutex, MAX_MUTEX_WAIT_TICKS) == pdTRUE;
 }
 
 void esp_log_impl_unlock(void)
 {
+    if (unlikely(xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED)) {
+        return;
+    }
     xSemaphoreGive(s_log_mutex);
 }
 
@@ -84,7 +98,7 @@ char *esp_log_system_timestamp(void)
 
 uint32_t esp_log_timestamp(void)
 {
-    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
+    if (unlikely(xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED)) {
         return esp_log_early_timestamp();
     }
     static uint32_t base = 0;

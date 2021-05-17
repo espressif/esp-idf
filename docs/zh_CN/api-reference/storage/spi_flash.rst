@@ -23,6 +23,32 @@ Kconfig 选项 :ref:`CONFIG_SPI_FLASH_USE_LEGACY_IMPL` 可将 ``spi_flash_*`` �
 
 即便未启用 :ref:`CONFIG_SPI_FLASH_USE_LEGACY_IMPL`，加密读取和加密写入操作也均使用旧实现。因此，仅有主 flash 芯片支持加密操作，外接（经 SPI1 使用其他不同片选访问，或经其它 SPI 总线访问）的 flash 芯片则不支持加密操作。也仅有主 flash 支持从 cache 当中读取，因为这是由硬件决定的。
 
+Flash 特性支持情况
+-----------------------------------
+
+不同厂家的 Flash 特性通过不同的方式来操作，因此需要特殊的驱动支持。当前驱动支持大多数厂家 Flash 24 位地址范围内的快速/慢速读，以及二线模式（ DIO / DOUT ），因为他们不需要任何厂家自定义的命令。
+
+当前驱动支持以下厂家/型号的 Flash 的四线模式（ QIO / QOUT ）：
+
+1. ISSI
+2. GD
+3. MXIC
+4. FM
+5. Winbond
+6. XMC
+7. BOYA
+
+当前驱动支持以下厂家/型号的 Flash 的 32 位地址范围的访问：
+
+1. W25Q256
+
+如果有需要，也可以自定义 Flash 芯片驱动，参见 :doc:`spi_flash_override_driver` 。但此功能仅供专业用户使用。
+
+.. toctree::
+   :hidden:
+
+   自定义 Flash 芯片驱动 <spi_flash_override_driver>
+
 初始化 Flash 设备
 ---------------------------
 

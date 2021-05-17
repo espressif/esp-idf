@@ -19,6 +19,10 @@
 # Uses redirect_template.html and the list of pages given in
 # the file conf.html_redirect_pages
 #
+# Redirections can be internal or absolute (i.e., external).
+#   - Internal redirects are supplied without quotation marks and must be relative to the document root
+#   - External redirects are wrapped in doulbe quotation marks and are used verbatim
+#
 # Adapted from ideas in https://tech.signavio.com/2017/managing-sphinx-redirects
 import os.path
 
@@ -53,15 +57,19 @@ def create_redirect_pages(app):
         return  # only relevant for standalone HTML output
 
     for (old_url, new_url) in app.config.html_redirect_pages:
-        print('Creating redirect %s to %s...' % (old_url, new_url))
         if old_url.startswith('/'):
             print('Stripping leading / from URL in config file...')
             old_url = old_url[1:]
-
-        new_url = app.builder.get_relative_uri(old_url, new_url)
         out_file = app.builder.get_outfilename(old_url)
-        print('HTML file %s redirects to relative URL %s' % (out_file, new_url))
 
+        if new_url.startswith('\"') and new_url.endswith('\"'):
+            # This is an absolute redirect. Slice away the surrouding quotation marks and copy the url verbatim
+            new_url = new_url[1:-1]
+        else:
+            # This is an internal redirect. Find the relative url to the target document
+            new_url = app.builder.get_relative_uri(old_url, new_url)
+
+        print('HTML file %s redirects to URL %s' % (out_file, new_url))
         out_dir = os.path.dirname(out_file)
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
