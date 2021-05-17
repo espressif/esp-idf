@@ -17,7 +17,7 @@
         "xtensa-esp32-elf-gcc",
         "--version"
       ],
-      "version_regex": "\\(crosstool-NG\\s+(?:crosstool-ng-)?([0-9a-zA-Z\\.\\-]+)\\)\\s*([0-9\\.]+)",
+      "version_regex": "\\(crosstool-NG\\s+(?:crosstool-ng-)?([0-9a-zA-Z\\.\\-_]+)\\)\\s*([0-9\\.]+)",
       "version_regex_replace": "\\1-\\2",
       "versions": [
         {
@@ -73,7 +73,7 @@
         "xtensa-esp32s2-elf-gcc",
         "--version"
       ],
-      "version_regex": "\\(crosstool-NG\\s+(?:crosstool-ng-)?([0-9a-zA-Z\\.\\-]+)\\)\\s*([0-9\\.]+)",
+      "version_regex": "\\(crosstool-NG\\s+(?:crosstool-ng-)?([0-9a-zA-Z\\.\\-_]+)\\)\\s*([0-9\\.]+)",
       "version_regex_replace": "\\1-\\2",
       "versions": [
         {
@@ -129,7 +129,7 @@
         "xtensa-esp32s3-elf-gcc",
         "--version"
       ],
-      "version_regex": "\\(crosstool-NG\\s+(?:crosstool-ng-)?([0-9a-zA-Z\\.\\-]+)\\)\\s*([0-9\\.]+)",
+      "version_regex": "\\(crosstool-NG\\s+(?:crosstool-ng-)?([0-9a-zA-Z\\.\\-_]+)\\)\\s*([0-9\\.]+)",
       "version_regex_replace": "\\1-\\2",
       "versions": [
         {
