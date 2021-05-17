@@ -88,6 +88,11 @@ esp_partition_iterator_t esp_partition_find(esp_partition_type_t type,
     if (ensure_partitions_loaded() != ESP_OK) {
         return NULL;
     }
+    // Searching for a specific subtype without specifying the type doesn't make
+    // sense, and is likely a usage error.
+    if (type == ESP_PARTITION_TYPE_ANY && subtype != ESP_PARTITION_SUBTYPE_ANY) {
+        return NULL;
+    }
     // create an iterator pointing to the start of the list
     // (next item will be the first one)
     esp_partition_iterator_t it = iterator_create(type, subtype, label);
@@ -108,10 +113,10 @@ esp_partition_iterator_t esp_partition_next(esp_partition_iterator_t it)
     _lock_acquire(&s_partition_list_lock);
     for (; it->next_item != NULL; it->next_item = SLIST_NEXT(it->next_item, next)) {
         esp_partition_t* p = &it->next_item->info;
-        if (it->type != p->type) {
+        if (it->type != ESP_PARTITION_TYPE_ANY && it->type != p->type) {
             continue;
         }
-        if (it->subtype != 0xff && it->subtype != p->subtype) {
+        if (it->subtype != ESP_PARTITION_SUBTYPE_ANY && it->subtype != p->subtype) {
             continue;
         }
         if (it->label != NULL && strcmp(it->label, p->label) != 0) {
