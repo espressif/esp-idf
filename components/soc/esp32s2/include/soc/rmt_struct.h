@@ -299,22 +299,11 @@ typedef struct {
     };
 } rmt_item32_t;
 
-typedef struct {
-    union {
-        struct {
-            uint16_t duration :15;
-            uint16_t level :1;
-        };
-        uint16_t val;
-    };
-} rmt_item16_t;
-
 //Allow access to RMT memory using RMTMEM.chan[0].data32[8]
 typedef volatile struct {
     struct {
         union {
             rmt_item32_t data32[64];
-            rmt_item16_t data16[128];
         };
     } chan[4];
 } rmt_mem_t;

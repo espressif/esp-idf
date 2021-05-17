@@ -441,14 +441,14 @@ esp_err_t rmt_get_status(rmt_channel_t channel, uint32_t *status)
 void rmt_set_intr_enable_mask(uint32_t mask)
 {
     RMT_ENTER_CRITICAL();
-    rmt_ll_set_intr_enable_mask(mask);
+    rmt_ll_enable_interrupt(rmt_contex.hal.regs, mask, true);
     RMT_EXIT_CRITICAL();
 }
 
 void rmt_clr_intr_enable_mask(uint32_t mask)
 {
     RMT_ENTER_CRITICAL();
-    rmt_ll_clr_intr_enable_mask(mask);
+    rmt_ll_enable_interrupt(rmt_contex.hal.regs, mask, false);
     RMT_EXIT_CRITICAL();
 }
 
