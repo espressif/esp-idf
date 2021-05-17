@@ -816,6 +816,9 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
         }
         psram_io.psram_clk_io = D2WD_PSRAM_CLK_IO;
         psram_io.psram_cs_io  = D2WD_PSRAM_CS_IO;
+    } else if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4 && esp_efuse_get_chip_ver() >= 3) {
+        ESP_EARLY_LOGE(TAG, "This chip is ESP32-PICO-V3. It does not support PSRAM (disable it in Kconfig)");
+        abort();
     } else if ((pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2) || (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4)) {
         ESP_EARLY_LOGI(TAG, "This chip is ESP32-PICO");
         rtc_vddsdio_config_t cfg = rtc_vddsdio_get_config();
