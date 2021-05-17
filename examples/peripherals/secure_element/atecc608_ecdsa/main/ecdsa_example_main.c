@@ -179,10 +179,10 @@ void app_main(void)
     ret = configure_mbedtls_rng();
 #ifdef CONFIG_ATECC608A_TNG
     ESP_LOGI(TAG, "  . Initialize the ATECC interface for Trust & GO ...");
-    cfg_ateccx08a_i2c_default.atcai2c.slave_address = 0x6A;
+    cfg_ateccx08a_i2c_default.atcai2c.address = 0x6A;
 #elif CONFIG_ATECC608A_TFLEX /* CONFIG_ATECC608A_TNGO */
     ESP_LOGI(TAG, "  . Initialize the ATECC interface for TrustFlex ...");
-    cfg_ateccx08a_i2c_default.atcai2c.slave_address = 0x6C;
+    cfg_ateccx08a_i2c_default.atcai2c.address = 0x6C;
 #elif CONFIG_ATECC608A_TCUSTOM /* CONFIG_ATECC608A_TFLEX */
     ESP_LOGI(TAG, "  . Initialize the ATECC interface for TrustCustom ...");
     /* Default slave address is same as that of TCUSTOM ATECC608A chips */
