@@ -22,7 +22,7 @@ cd examples\get-started\blink\
 idf.py build
 
 # Check whether the repository is clean
-$GitChanges=(git status -s).Lenght
+$GitChanges=(git status -s).Length
 if ($GitChanges -gt 0) {
     "* Warning! Git repository dirty."
     $GitChanges

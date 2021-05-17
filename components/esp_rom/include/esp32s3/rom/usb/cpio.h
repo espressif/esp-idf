@@ -79,7 +79,7 @@ typedef enum {
  * The initial time with reason=CPIO_RSN_FILE_INITIAL, when more data is available with
  * CPIO_RSN_FILE_MORE and finally with CPIO_RSN_FILE_END. For these calls, fileinfo
  * will again contain file information. buff will be the information contained in the
- * file at offset buff_offset, and the lenght of this buffer will be in buff_len.
+ * file at offset buff_offset, and the length of this buffer will be in buff_len.
  *
  * The library guarantees to feed all file data to the callback consequitively, so
  * within the same file, the buff_offset from a call will always be (buff_offset+buff_len)

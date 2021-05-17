@@ -26,7 +26,7 @@ complicated mode which combines the two modes above:
 
    The idea is that to send something to a SPI device, you allocate a
    transaction descriptor. It contains some information about the transfer
-   like the lenghth, address, command etc, plus pointers to transmit and
+   like the length, address, command etc, plus pointers to transmit and
    receive buffer. The address of this block gets pushed into the transmit
    queue. The SPI driver does its magic, and sends and retrieves the data
    eventually. The data gets written to the receive buffers, if needed the
