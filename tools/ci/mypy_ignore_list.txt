@@ -223,7 +223,6 @@ tools/find_build_apps/make.py
 tools/gdb_panic_server.py
 tools/gen_esp_err_to_name.py
 tools/idf.py
-tools/idf_py_actions/constants.py
 tools/idf_py_actions/core_ext.py
 tools/idf_py_actions/create_ext.py
 tools/idf_py_actions/debug_ext.py
