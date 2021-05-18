@@ -14,6 +14,7 @@
 
 #pragma once
 #include "esp_flash.h"
+#include "esp_attr.h"
 
 struct esp_flash_t;
 typedef struct esp_flash_t esp_flash_t;
@@ -32,6 +33,13 @@ typedef struct {
 typedef enum {
     SPI_FLASH_REG_STATUS = 1,
 } spi_flash_register_t;
+
+typedef enum {
+   SPI_FLASH_CHIP_CAP_SUSPEND = BIT(0),            ///< Flash chip support suspend feature.
+   SPI_FLASH_CHIP_CAP_32MB_SUPPORT = BIT(1),       ///< Flash chip driver support flash size larger than 32M Bytes.
+   SPI_FLASH_CHIP_CAP_UNIQUE_ID = BIT(2),          ///< Flash chip driver support read the flash unique id.
+} spi_flash_caps_t;
+FLAG_ATTR(spi_flash_caps_t)
 
 /** @brief SPI flash chip driver definition structure.
  *
@@ -193,6 +201,11 @@ struct spi_flash_chip_t {
      * Read the chip unique ID.
      */
     esp_err_t (*read_unique_id)(esp_flash_t *chip, uint64_t* flash_unique_id);
+
+    /**
+     * Get the capabilities of the flash chip. See SPI_FLASH_CHIP_CAP_* macros as reference.
+     */
+    spi_flash_caps_t (*get_chip_caps)(esp_flash_t *chip);
 };
 
 /* Pointer to an array of pointers to all known drivers for flash chips. This array is used

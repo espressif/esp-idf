@@ -553,6 +553,22 @@ esp_err_t spi_flash_chip_generic_read_unique_id(esp_flash_t *chip, uint64_t* fla
     return err;
 }
 
+spi_flash_caps_t spi_flash_chip_generic_get_caps(esp_flash_t *chip)
+{
+    // For generic part flash capability, take the XMC chip as reference.
+    spi_flash_caps_t caps_flags = 0;
+    // 32M-bits address support
+
+    // flash suspend support
+    // Only `XMC` support suspend for now.
+    if (chip->chip_id >> 16 == 0x20) {
+        caps_flags |= SPI_FLASH_CHIP_CAP_SUSPEND;
+    }
+    // flash read unique id.
+    caps_flags |= SPI_FLASH_CHIP_CAP_UNIQUE_ID;
+    return caps_flags;
+}
+
 static const char chip_name[] = "generic";
 
 const spi_flash_chip_t esp_flash_chip_generic = {
@@ -592,6 +608,7 @@ const spi_flash_chip_t esp_flash_chip_generic = {
     .yield = spi_flash_chip_generic_yield,
     .sus_setup = spi_flash_chip_generic_suspend_cmd_conf,
     .read_unique_id = spi_flash_chip_generic_read_unique_id,
+    .get_chip_caps = spi_flash_chip_generic_get_caps,
 };
 
 #ifndef CONFIG_SPI_FLASH_ROM_IMPL
