@@ -191,7 +191,7 @@ esp_err_t esp_register_mac_bb_pd_callback(mac_bb_power_down_cb_t cb)
     int index = MAC_BB_POWER_DOWN_CB_NO;
     for (int i = MAC_BB_POWER_DOWN_CB_NO - 1; i >= 0; i--) {
         if (s_mac_bb_power_down_cb[i] == cb) {
-            return ESP_ERR_INVALID_STATE;
+            return ESP_OK;
         }
 
         if (s_mac_bb_power_down_cb[i] == NULL) {
@@ -232,7 +232,7 @@ esp_err_t esp_register_mac_bb_pu_callback(mac_bb_power_up_cb_t cb)
     int index = MAC_BB_POWER_UP_CB_NO;
     for (int i = MAC_BB_POWER_UP_CB_NO - 1; i >= 0; i--) {
         if (s_mac_bb_power_up_cb[i] == cb) {
-            return ESP_ERR_INVALID_STATE;
+            return ESP_OK;
         }
 
         if (s_mac_bb_power_up_cb[i] == NULL) {
