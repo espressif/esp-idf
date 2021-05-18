@@ -145,7 +145,7 @@ menu "Example Configuration"
             range 0 34 if IDF_TARGET_ESP32
             range 0 46 if IDF_TARGET_ESP32S2
             range 0 19 if IDF_TARGET_ESP32C3
-            default 5 if IDF_TARGET_ESP32
+            default 16 if IDF_TARGET_ESP32
             default 21 if IDF_TARGET_ESP32S2
             default 10 if IDF_TARGET_ESP32C3
             help
@@ -169,8 +169,7 @@ menu "Example Configuration"
 
     config EXAMPLE_ETH_PHY_RST_GPIO
         int "PHY Reset GPIO number"
-        default 16 if IDF_TARGET_ESP32
-        default 5 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3
+        default 5
         help
             Set the GPIO number used to reset PHY chip.
             Set to -1 to disable PHY chip hardware reset.
