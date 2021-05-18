@@ -9,7 +9,7 @@ if(CONFIG_IDF_TARGET_ARCH_XTENSA)
 endif()
 
 idf_component_register(SRCS ${sources}
-                       INCLUDE_DIRS include "${target}"
+                       INCLUDE_DIRS include "${target}" "include/${target}"
                        PRIV_REQUIRES soc hal)
 
 # Append a target linker script at the target-specific path,
