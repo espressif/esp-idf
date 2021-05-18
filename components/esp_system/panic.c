@@ -322,7 +322,7 @@ void esp_panic_handler(panic_info_t *info)
     wdt_hal_disable(&rtc_wdt_ctx);
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);
     panic_print_str("Entering gdb stub now.\r\n");
-    esp_gdbstub_panic_handler((esp_gdbstub_frame_t *)info->frame);
+    esp_gdbstub_panic_handler((void *)info->frame);
 #else
 #if CONFIG_ESP_COREDUMP_ENABLE
     static bool s_dumping_core;
@@ -373,7 +373,7 @@ void esp_panic_handler(panic_info_t *info)
 }
 
 
-void __attribute__((noreturn,no_sanitize_undefined)) panic_abort(const char *details)
+void __attribute__((noreturn, no_sanitize_undefined)) panic_abort(const char *details)
 {
     g_panic_abort = true;
     s_panic_abort_details = (char *) details;

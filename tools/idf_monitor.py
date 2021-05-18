@@ -140,6 +140,8 @@ class Monitor(object):
         self._decode_panic = decode_panic
         self._reading_panic = PANIC_IDLE
         self._panic_buffer = b''
+        self.gdb_exit = False
+        self.start_cmd_sent = False
 
     def invoke_processing_last_line(self):
         # type: () -> None
@@ -149,43 +151,70 @@ class Monitor(object):
         # type: () -> None
         self.console_reader.start()
         self.serial_reader.start()
+        self.gdb_exit = False
+        self.start_cmd_sent = False
         try:
             while self.console_reader.alive and self.serial_reader.alive:
                 try:
-                    item = self.cmd_queue.get_nowait()
-                except queue.Empty:
-                    try:
-                        item = self.event_queue.get(True, 0.03)
-                    except queue.Empty:
-                        continue
+                    if self.gdb_exit is True:
+                        self.gdb_exit = False
 
-                event_tag, data = item
-                if event_tag == TAG_CMD:
-                    self.handle_commands(data, self.target)
-                elif event_tag == TAG_KEY:
+                        time.sleep(0.3)
+                        try:
+                            # Continue the program after exit from the GDB
+                            self.serial.write(codecs.encode('+$c#63'))
+                            self.start_cmd_sent = True
+                        except serial.SerialException:
+                            pass  # this shouldn't happen, but sometimes port has closed in serial thread
+                        except UnicodeEncodeError:
+                            pass  # this can happen if a non-ascii character was passed, ignoring
+
                     try:
-                        self.serial.write(codecs.encode(data))
+                        item = self.cmd_queue.get_nowait()
+                    except queue.Empty:
+                        try:
+                            item = self.event_queue.get(True, 0.03)
+                        except queue.Empty:
+                            continue
+
+                    (event_tag, data) = item
+
+                    if event_tag == TAG_CMD:
+                        self.handle_commands(data, self.target)
+                    elif event_tag == TAG_KEY:
+                        try:
+                            self.serial.write(codecs.encode(data))
+                        except serial.SerialException:
+                            pass  # this shouldn't happen, but sometimes port has closed in serial thread
+                        except UnicodeEncodeError:
+                            pass  # this can happen if a non-ascii character was passed, ignoring
+                    elif event_tag == TAG_SERIAL:
+                        self.handle_serial_input(data)
+                        if self._invoke_processing_last_line_timer is not None:
+                            self._invoke_processing_last_line_timer.cancel()
+                        self._invoke_processing_last_line_timer = threading.Timer(0.1, self.invoke_processing_last_line)
+                        self._invoke_processing_last_line_timer.start()
+                        # If no futher data is received in the next short period
+                        # of time then the _invoke_processing_last_line_timer
+                        # generates an event which will result in the finishing of
+                        # the last line. This is fix for handling lines sent
+                        # without EOL.
+                    elif event_tag == TAG_SERIAL_FLUSH:
+                        self.handle_serial_input(data, finalize_line=True)
+                    else:
+                        raise RuntimeError('Bad event data %r' % ((event_tag,data),))
+                except KeyboardInterrupt:
+                    try:
+                        yellow_print('To exit from IDF monitor please use \"Ctrl+]\"')
+                        self.serial.write(codecs.encode('\x03'))
                     except serial.SerialException:
                         pass  # this shouldn't happen, but sometimes port has closed in serial thread
                     except UnicodeEncodeError:
                         pass  # this can happen if a non-ascii character was passed, ignoring
-                elif event_tag == TAG_SERIAL:
-                    self.handle_serial_input(data)
-                    if self._invoke_processing_last_line_timer is not None:
-                        self._invoke_processing_last_line_timer.cancel()
-                    self._invoke_processing_last_line_timer = threading.Timer(0.1, self.invoke_processing_last_line)
-                    self._invoke_processing_last_line_timer.start()
-                    # If no further data is received in the next short period
-                    # of time then the _invoke_processing_last_line_timer
-                    # generates an event which will result in the finishing of
-                    # the last line. This is fix for handling lines sent
-                    # without EOL.
-                elif event_tag == TAG_SERIAL_FLUSH:
-                    self.handle_serial_input(data, finalize_line=True)
-                else:
-                    raise RuntimeError('Bad event data %r' % ((event_tag, data),))
         except SerialStopException:
             normal_print('Stopping condition has been received\n')
+        except KeyboardInterrupt:
+            pass
         finally:
             try:
                 self.console_reader.stop()
@@ -200,6 +229,13 @@ class Monitor(object):
 
     def handle_serial_input(self, data, finalize_line=False):
         # type: (bytes, bool) -> None
+        # Remove "+" after Continue command
+        if self.start_cmd_sent is True:
+            self.start_cmd_sent = False
+            pos = data.find(b'+')
+            if pos != -1:
+                data = data[(pos + 1):]
+
         sp = data.split(b'\n')
         if self._last_line_part != b'':
             # add unprocessed part from previous "data" to the first line
@@ -260,6 +296,7 @@ class Monitor(object):
     def __exit__(self, *args, **kwargs):  # type: ignore
         """ Use 'with self' to temporarily disable monitoring behaviour """
         self.console_reader.start()
+        self.serial_reader.gdb_exit = self.gdb_exit     # write gdb_exit flag
         self.serial_reader.start()
 
     def prompt_next_action(self, reason):  # type: (str) -> None
@@ -480,10 +517,24 @@ class Monitor(object):
                 cmd = ['%sgdb' % self.toolchain_prefix,
                        '-ex', 'set serial baud %d' % self.serial.baudrate,
                        '-ex', 'target remote %s' % self.serial.port,
-                       '-ex', 'interrupt',  # monitor has already parsed the first 'reason' command, need a second
                        self.elf_file]
-                process = subprocess.Popen(cmd, cwd='.')
-                process.wait()
+
+                # Here we handling GDB as a process
+                # Open GDB process
+                try:
+                    process = subprocess.Popen(cmd, cwd='.')
+                except KeyboardInterrupt:
+                    pass
+
+                # We ignore Ctrl+C interrupt form external process abd wait responce util GDB will be finished.
+                while True:
+                    try:
+                        process.wait()
+                        break
+                    except KeyboardInterrupt:
+                        pass    # We ignore the Ctrl+C
+                self.gdb_exit = True
+
             except OSError as e:
                 red_print('%s: %s' % (' '.join(cmd), e))
             except KeyboardInterrupt:
@@ -499,7 +550,6 @@ class Monitor(object):
                     subprocess.call(['stty', 'sane'])
                 except Exception:
                     pass  # don't care if there's no stty, we tried...
-            self.prompt_next_action('gdb exited')
 
     def output_enable(self, enable):  # type: (bool) -> None
         self._output_enabled = enable
@@ -733,6 +783,8 @@ def main():  # type: () -> None
             yellow_print('--- Print filter: {} ---'.format(args.print_filter))
 
         monitor.main_loop()
+    except KeyboardInterrupt:
+        pass
     finally:
         if ws:
             ws.close()

@@ -18,7 +18,8 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#include "esp_gdbstub.h"
+#include "gdbstub_target_config.h"
+#include "esp_gdbstub_arch.h"
 #include "sdkconfig.h"
 
 #ifdef CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
@@ -30,6 +31,7 @@
 #define GDBSTUB_ST_ENDPACKET -1
 #define GDBSTUB_ST_ERR -2
 #define GDBSTUB_ST_OK -3
+#define GDBSTUB_ST_CONT -4
 
 /* Special task index values */
 #define GDBSTUB_CUR_TASK_INDEX_UNKNOWN -1
@@ -125,6 +127,20 @@ int esp_gdbstub_readmem(intptr_t addr);
  */
 void esp_gdbstub_flush(void);
 
+/**
+ * Write a byte to target memory
+ * @param addr  address
+ * @param data  data byte
+ * @return 0 in case of success, -1 in case of error
+ */
+int esp_gdbstub_writemem(unsigned int addr, unsigned char data);
+
+/**
+ * Read a data from fifo and detect start symbol
+ * @return  1 if break symbol was detected, or 0 if not
+ */
+int esp_gdbstub_getfifo(void);
+
 /**** GDB packet related functions ****/
 
 /** Begin a packet */
@@ -143,7 +159,7 @@ void esp_gdbstub_send_hex(int val, int bits);
 void esp_gdbstub_send_end(void);
 
 /** Send a packet with a string as content */
-void esp_gdbstub_send_str_packet(const char* str);
+void esp_gdbstub_send_str_packet(const char *str);
 
 /** Get a hex value from the gdb packet */
 uint32_t esp_gdbstub_gethex(const unsigned char **ptr, int bits);

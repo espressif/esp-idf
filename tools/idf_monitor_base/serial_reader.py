@@ -38,6 +38,7 @@ class SerialReader(StoppableThread):
         self.baud = serial_instance.baudrate
         self.serial = serial_instance
         self.event_queue = event_queue
+        self.gdb_exit = False
         if not hasattr(self.serial, 'cancel_read'):
             # enable timeout for checking alive flag,
             # if cancel_read not available
@@ -47,10 +48,25 @@ class SerialReader(StoppableThread):
         #  type: () -> None
         if not self.serial.is_open:
             self.serial.baudrate = self.baud
-            self.serial.rts = True  # Force an RTS reset on open
+            # We can come to this thread at startup or from external application line GDB.
+            # If we come from GDB we would like to continue to run without reset.
+            if self.gdb_exit:
+                self.serial.rts = False
+                self.serial.dtr = True
+            else:                           # if we exit from GDB, we don't need to reset the target
+                # This sequence of DTR/RTS and open/close set the serial port to
+                # condition when GDB not make reset of the target by switching DTR/RTS.
+                self.serial.rts = True  # IO0=LOW
+                self.serial.dtr = self.serial.dtr   # usbser.sys workaround
+                self.serial.rts = False     # IO0=HIGH
+                self.serial.dtr = False
+
+            # Current state not reset the target!
+            self.gdb_exit = False
             self.serial.open()
-            self.serial.rts = False
-            self.serial.dtr = self.serial.dtr  # usbser.sys workaround
+            time.sleep(0.005)  # Add a delay to meet the requirements of minimal EN low time (2ms for ESP32-C3)
+            self.serial.rts = False             # Set rts/dtr to the working state
+            self.serial.dtr = self.serial.dtr   # usbser.sys workaround
         try:
             while self.alive:
                 try:

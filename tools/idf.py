@@ -33,6 +33,7 @@ import json
 import locale
 import os
 import os.path
+import signal
 import subprocess
 import sys
 from collections import Counter, OrderedDict
@@ -723,7 +724,16 @@ def init_cli(verbose_output=None):
     return CLI(help=cli_help, verbose_output=verbose_output, all_actions=all_actions)
 
 
+def signal_handler(_signal, _frame):
+    # The Ctrl+C processed by other threads inside
+    pass
+
+
 def main():
+
+    # Processing of Ctrl+C event for all threads made by main()
+    signal.signal(signal.SIGINT, signal_handler)
+
     checks_output = check_environment()
     cli = init_cli(verbose_output=checks_output)
     # the argument `prog_name` must contain name of the file - not the absolute path to it!

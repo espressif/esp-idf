@@ -53,7 +53,7 @@ void esp_gdbstub_send_str(const char *c)
 // 'bits'/4 dictates the number of hex chars sent.
 void esp_gdbstub_send_hex(int val, int bits)
 {
-    const char* hex_chars = "0123456789abcdef";
+    const char *hex_chars = "0123456789abcdef";
     for (int i = bits; i > 0; i -= 4) {
         esp_gdbstub_send_char(hex_chars[(val >> (i - 4)) & 0xf]);
     }
@@ -68,7 +68,7 @@ void esp_gdbstub_send_end(void)
 }
 
 // Send a packet with a string as content
-void esp_gdbstub_send_str_packet(const char* str)
+void esp_gdbstub_send_str_packet(const char *str)
 {
     esp_gdbstub_send_start();
     if (str != NULL) {
@@ -164,7 +164,7 @@ int esp_gdbstub_read_command(unsigned char **out_cmd, size_t *out_size)
     // A # has been received. Get and check the received chsum.
     sentchs[0] = esp_gdbstub_getchar();
     sentchs[1] = esp_gdbstub_getchar();
-    const unsigned char* c_ptr = &sentchs[0];
+    const unsigned char *c_ptr = &sentchs[0];
     unsigned char rchsum = esp_gdbstub_gethex(&c_ptr, 8);
     if (rchsum != chsum) {
         esp_gdbstub_putchar('-');

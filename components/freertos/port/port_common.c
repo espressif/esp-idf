@@ -61,6 +61,10 @@ volatile unsigned port_xSchedulerRunning[portNUM_PROCESSORS] = {0};
 
 static void main_task(void* args);
 
+#ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+void esp_gdbstub_init(void);
+#endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+
 extern void app_main(void);
 
 void esp_startup_start_app_common(void)
@@ -78,6 +82,10 @@ void esp_startup_start_app_common(void)
 	esp_dport_access_int_init();
 #endif
 #endif
+
+#ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+    esp_gdbstub_init();
+#endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 
 	portBASE_TYPE res = xTaskCreatePinnedToCore(&main_task, "main",
 												ESP_TASK_MAIN_STACK, NULL,

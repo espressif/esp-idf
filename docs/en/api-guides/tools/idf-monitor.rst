@@ -10,7 +10,6 @@ This tool can be launched from an IDF project by running ``idf.py monitor``.
 
 For the legacy GNU Make system, run ``make monitor``.
 
-
 Keyboard Shortcuts
 ==================
 
@@ -59,7 +58,10 @@ For easy interaction with IDF Monitor, use the keyboard shortcuts given in the t
    * - * Ctrl+X (or X)
      - Exit the program
      -                
-     
+   * - Ctrl+C
+     - Interrupt running application
+     - Pauses IDF monitor and run GDB_ project debugger to debug the application at runtime. This requires :ref:CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME option to be enabled.     
+
 Any keys pressed, other than ``Ctrl-]`` and ``Ctrl-T``, will be sent through the serial port.
 
 
@@ -184,17 +186,21 @@ To decode each address, IDF Monitor runs the following command in the background
 Launching GDB with GDBStub
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+
 By default, if esp-idf crashes, the panic handler prints relevant registers and the stack dump (similar to the ones above) over the serial port. Then it resets the board.
+
+Furthermore, the application can be configured to run GDBStub in the background and handle the Ctrl+C event from the monitor.
 
 Optionally, the panic handler can be configured to run GDBStub, the tool which can communicate with  GDB_ project debugger. GDBStub allows to read memory, examine call stack frames and variables, etc. It is not as versatile as JTAG debugging, but this method does not require any special hardware.
 
-To enable GDBStub, open the project configuration menu (``idf.py menuconfig``) and set :ref:`CONFIG_ESP_SYSTEM_PANIC` to ``Invoke GDBStub``.
+To enable GDBStub on panic, open the project configuration menu (``idf.py menuconfig``) and set :ref:`CONFIG_ESP_SYSTEM_PANIC` to ``GDBStub on panic`` or set :ref:`CONFIG_ESP_SYSTEM_PANIC` to ``GDBStub on runtime``.
 
-In this case, if the panic handler is triggered, as soon as IDF Monitor sees that GDBStub has loaded, it automatically pauses serial monitoring and runs GDB with necessary arguments. After GDB exits, the board is reset via the RTS serial line. If this line is not connected, please reset the board manually by pressing its Reset button.
+In this case, if the panic handler or Ctrl+C command is triggered, as soon as IDF Monitor sees that GDBStub has loaded, it automatically pauses serial monitoring and runs GDB with necessary arguments. After GDB exits, the board is reset via the RTS serial line. If this line is not connected, please reset the board manually by pressing its Reset button.
 
 In the background, IDF Monitor runs the following command::
 
   {IDF_TARGET_TOOLCHAIN_PREFIX}-gdb -ex "set serial baud BAUD" -ex "target remote PORT" -ex interrupt build/PROJECT.elf :idf_target:`Hello NAME chip`
+
 
 
 Output Filtering
