@@ -475,11 +475,11 @@ TEST_CASE("mbedtls SHA512/t", "[mbedtls]")
         }
     }
 }
+#endif //CONFIG_MBEDTLS_HARDWARE_SHA
 
-#ifdef CONFIG_SPIRAM
+#ifdef CONFIG_SPIRAM_USE_MALLOC
 TEST_CASE("mbedtls SHA256 PSRAM DMA", "[mbedtls]")
 {
-
     const unsigned CALLS = 256;
     const unsigned CALL_SZ = 16 * 1024;
     mbedtls_sha256_context sha256_ctx;
@@ -510,6 +510,4 @@ TEST_CASE("mbedtls SHA256 PSRAM DMA", "[mbedtls]")
     TEST_ASSERT_EQUAL_STRING(expected_hash, hash_str);
 
 }
-#endif //CONFIG_SPIRAM
-
-#endif //CONFIG_MBEDTLS_HARDWARE_SHA
+#endif //CONFIG_SPIRAM_USE_MALLOC

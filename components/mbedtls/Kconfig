@@ -248,7 +248,7 @@ menu "mbedTLS"
 
     config MBEDTLS_AES_USE_INTERRUPT
         bool "Use interrupt for long AES operations"
-        depends on IDF_TARGET_ESP32S2 && MBEDTLS_HARDWARE_AES
+        depends on !IDF_TARGET_ESP32 && MBEDTLS_HARDWARE_AES
         default y
         help
             Use an interrupt to coordinate long AES operations.
