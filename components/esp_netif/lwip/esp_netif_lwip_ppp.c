@@ -248,18 +248,18 @@ static uint32_t pppos_low_level_output(ppp_pcb *pcb, uint8_t *data, uint32_t len
 
 esp_err_t esp_netif_ppp_set_auth(esp_netif_t *netif, esp_netif_auth_type_t authtype, const char *user, const char *passwd)
 {
-    if (_IS_NETIF_POINT2POINT_TYPE(netif, PPP_LWIP_NETIF)) {
+    if (!_IS_NETIF_POINT2POINT_TYPE(netif, PPP_LWIP_NETIF)) {
         return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
     }
 #if PPP_AUTH_SUPPORT
     lwip_peer2peer_ctx_t *ppp_ctx = (lwip_peer2peer_ctx_t *)netif->related_data;
     assert(ppp_ctx->base.netif_type == PPP_LWIP_NETIF);
     pppapi_set_auth(ppp_ctx->ppp, authtype, user, passwd);
+    return ESP_OK;
 #else
     ESP_LOGE(TAG, "%s failed: No authorisation enabled in menuconfig", __func__);
     return ESP_ERR_ESP_NETIF_IF_NOT_READY;
 #endif
-    return ESP_OK;
 }
 
 void esp_netif_ppp_set_default_netif(netif_related_data_t *netif_related)
