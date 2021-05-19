@@ -16,11 +16,12 @@
 #include <unistd.h>
 
 #include "esp_err.h"
+#include "esp_event.h"
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_openthread.h"
 #include "esp_openthread_lock.h"
-#include "esp_openthread_netif.h"
+#include "esp_openthread_netif_glue.h"
 #include "esp_openthread_types.h"
 #include "esp_vfs_eventfd.h"
 #include "driver/uart.h"
@@ -83,12 +84,17 @@ static void ot_task_worker(void *aContext)
     esp_vfs_eventfd_config_t eventfd_config = {
         .max_fds = 2,
     };
+
+    esp_netif_config_t cfg = ESP_NETIF_DEFAULT_OPENTHREAD();
+    esp_netif_t *netif = esp_netif_new(&cfg);
+    assert(netif != NULL);
+
     esp_openthread_mainloop_context_t mainloop;
 
     ESP_ERROR_CHECK(esp_vfs_eventfd_register(&eventfd_config));
     ESP_ERROR_CHECK(esp_openthread_platform_init(&config));
     otInstance *instance = otInstanceInitSingle();
-    ESP_ERROR_CHECK(esp_openthread_netif_init());
+    ESP_ERROR_CHECK(esp_netif_attach(netif, esp_openthread_netif_glue_init()));
     assert(instance != NULL);
 
     esp_openthread_lock_acquire(portMAX_DELAY);
@@ -126,6 +132,8 @@ static void ot_task_worker(void *aContext)
         }
     }
 
+    esp_netif_destroy(netif);
+    esp_openthread_netif_glue_deinit();
     otInstanceFinalize(instance);
     esp_openthread_platform_deinit();
     esp_vfs_eventfd_unregister();
@@ -134,6 +142,7 @@ static void ot_task_worker(void *aContext)
 
 void app_main(void)
 {
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
     ESP_ERROR_CHECK(esp_netif_init());
     xTaskCreate(ot_task_worker, "ot_cli_main", 10240, xTaskGetCurrentTaskHandle(), 5, NULL);
 }

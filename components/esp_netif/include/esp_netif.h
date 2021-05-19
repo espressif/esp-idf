@@ -238,6 +238,54 @@ void esp_netif_action_disconnected(void *esp_netif, esp_event_base_t base, int32
 void esp_netif_action_got_ip(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data);
 
 /**
+ * @brief Default building block for network interface action upon IPv6 multicast group join
+ *
+ * @note This API can be directly used as event handler
+ *
+ * @param[in]  esp_netif Handle to esp-netif instance
+ * @param base
+ * @param event_id
+ * @param data
+ */
+void esp_netif_action_join_ip6_multicast_group(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data);
+
+/**
+ * @brief Default building block for network interface action upon IPv6 multicast group leave
+ *
+ * @note This API can be directly used as event handler
+ *
+ * @param[in]  esp_netif Handle to esp-netif instance
+ * @param base
+ * @param event_id
+ * @param data
+ */
+void esp_netif_action_leave_ip6_multicast_group(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data);
+
+/**
+ * @brief Default building block for network interface action upon IPv6 address added by the underlying stack
+ *
+ * @note This API can be directly used as event handler
+ *
+ * @param[in]  esp_netif Handle to esp-netif instance
+ * @param base
+ * @param event_id
+ * @param data
+ */
+void esp_netif_action_add_ip6_address(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data);
+
+/**
+ * @brief Default building block for network interface action upon IPv6 address removed by the underlying stack
+ *
+ * @note This API can be directly used as event handler
+ *
+ * @param[in]  esp_netif Handle to esp-netif instance
+ * @param base
+ * @param event_id
+ * @param data
+ */
+void esp_netif_action_remove_ip6_address(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data);
+
+/**
  * @}
  */
 

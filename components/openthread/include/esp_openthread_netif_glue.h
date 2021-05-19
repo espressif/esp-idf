@@ -23,21 +23,20 @@ extern "C" {
 #endif
 
 /**
- * @brief This function initializes the OpenThread lwIP network interface.
+ * @brief This function initializes the OpenThread network interface glue.
  *
  * @return
- *      - ESP_OK on success
- *      - ESP_FAIL if lwIP reports an error
- *      - ESP_ERR_NO_MEM if allocation has failed
+ *      - glue pointer on success
+ *      - NULL on failure
  *
  */
-esp_err_t esp_openthread_netif_init(void);
+void *esp_openthread_netif_glue_init(void);
 
 /**
- * @brief This function deinitializes the OpenThread lwIP network interface.
+ * @brief This function deinitializes the OpenThread network interface glue.
  *
  */
-void esp_openthread_netif_deinit(void);
+void esp_openthread_netif_glue_deinit(void);
 
 /**
  * @brief This function updates the netif fds and timeouts to the main loop.
@@ -45,7 +44,7 @@ void esp_openthread_netif_deinit(void);
  * @param[inout]    mainloop    The main loop context.
  *
  */
-void esp_openthread_netif_update(esp_openthread_mainloop_context_t *mainloop);
+void esp_openthread_netif_glue_update(esp_openthread_mainloop_context_t *mainloop);
 
 /**
  * @brief This function performs the netif process.
@@ -58,7 +57,7 @@ void esp_openthread_netif_update(esp_openthread_mainloop_context_t *mainloop);
  *      - ESP_ERR_NO_MEM on memory allocation failure
  *
  */
-esp_err_t esp_openthread_netif_process(otInstance *instance, const esp_openthread_mainloop_context_t *mainloop);
+esp_err_t esp_openthread_netif_glue_process(otInstance *instance, const esp_openthread_mainloop_context_t *mainloop);
 
 #ifdef __cplusplus
 }

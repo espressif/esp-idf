@@ -19,7 +19,7 @@
 #include "esp_openthread_alarm.h"
 #include "esp_openthread_common_macro.h"
 #include "esp_openthread_lock.h"
-#include "esp_openthread_netif.h"
+#include "esp_openthread_netif_glue.h"
 #include "esp_openthread_radio_uart.h"
 #include "esp_openthread_types.h"
 #include "esp_openthread_uart.h"
@@ -78,7 +78,6 @@ esp_err_t esp_openthread_platform_deinit(void)
     if (!s_openthread_platform_initialized) {
         return ESP_ERR_INVALID_STATE;
     }
-    esp_openthread_netif_deinit();
     esp_openthread_radio_deinit();
     if (s_platform_config.host_config.host_connection_mode == HOST_CONNECTION_MODE_UART) {
         esp_openthread_uart_deinit();
@@ -94,7 +93,7 @@ void esp_openthread_platform_update(esp_openthread_mainloop_context_t *mainloop)
         esp_openthread_uart_update(mainloop);
     }
     esp_openthread_radio_update(mainloop);
-    esp_openthread_netif_update(mainloop);
+    esp_openthread_netif_glue_update(mainloop);
 }
 
 esp_err_t esp_openthread_platform_process(otInstance *instance, const esp_openthread_mainloop_context_t *mainloop)
@@ -104,5 +103,5 @@ esp_err_t esp_openthread_platform_process(otInstance *instance, const esp_openth
     }
     esp_openthread_radio_process(instance, mainloop);
     esp_openthread_alarm_process(instance);
-    return esp_openthread_netif_process(instance, mainloop);
+    return esp_openthread_netif_glue_process(instance, mainloop);
 }
