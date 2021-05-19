@@ -76,7 +76,7 @@ def test_examples_protocol_pppos_connect(env, extra_data):
             af, socktype, proto, canonname, addr = res
         sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
         sock.connect(addr)
-        sock.sendall("Espressif")
+        sock.sendall(b"Espressif")
         sock.close()
 
         dut1.expect(re.compile(r"IPv6 test passed"))
