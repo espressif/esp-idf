@@ -79,9 +79,15 @@ static int esp_tls_connect_async(esp_transport_handle_t t, const char *host, int
             return -1;
         }
         ssl->conn_state = TRANS_SSL_CONNECTING;
+        ssl->sockfd = -1;
     }
     if (ssl->conn_state == TRANS_SSL_CONNECTING) {
-        return esp_tls_conn_new_async(host, strlen(host), port, &ssl->cfg, ssl->tls);
+        int progress = esp_tls_conn_new_async(host, strlen(host), port, &ssl->cfg, ssl->tls);
+        if (progress >= 0) {
+            ssl->sockfd = ssl->tls->sockfd;
+        }
+        return progress;
+
     }
     return 0;
 }
@@ -161,7 +167,7 @@ static int ssl_poll_read(esp_transport_handle_t t, int timeout_ms)
         uint32_t optlen = sizeof(sock_errno);
         getsockopt(ssl->sockfd, SOL_SOCKET, SO_ERROR, &sock_errno, &optlen);
         esp_transport_capture_errno(t, sock_errno);
-        ESP_LOGE(TAG, "poll_read select error %d, errno = %s, fd = %d", sock_errno, strerror(sock_errno), ssl->tls->sockfd);
+        ESP_LOGE(TAG, "poll_read select error %d, errno = %s, fd = %d", sock_errno, strerror(sock_errno), ssl->sockfd);
         ret = -1;
     }
     return ret;
@@ -184,7 +190,7 @@ static int ssl_poll_write(esp_transport_handle_t t, int timeout_ms)
         uint32_t optlen = sizeof(sock_errno);
         getsockopt(ssl->sockfd, SOL_SOCKET, SO_ERROR, &sock_errno, &optlen);
         esp_transport_capture_errno(t, sock_errno);
-        ESP_LOGE(TAG, "poll_write select error %d, errno = %s, fd = %d", sock_errno, strerror(sock_errno), ssl->tls->sockfd);
+        ESP_LOGE(TAG, "poll_write select error %d, errno = %s, fd = %d", sock_errno, strerror(sock_errno), ssl->sockfd);
         ret = -1;
     }
     return ret;
@@ -196,7 +202,7 @@ static int ssl_write(esp_transport_handle_t t, const char *buffer, int len, int 
     transport_esp_tls_t *ssl = ssl_get_context_data(t);
 
     if ((poll = esp_transport_poll_write(t, timeout_ms)) <= 0) {
-        ESP_LOGW(TAG, "Poll timeout or error, errno=%s, fd=%d, timeout_ms=%d", strerror(errno), ssl->tls->sockfd, timeout_ms);
+        ESP_LOGW(TAG, "Poll timeout or error, errno=%s, fd=%d, timeout_ms=%d", strerror(errno), ssl->sockfd, timeout_ms);
         return poll;
     }
     int ret = esp_tls_conn_write(ssl->tls, (const unsigned char *) buffer, len);
@@ -213,7 +219,7 @@ static int tcp_write(esp_transport_handle_t t, const char *buffer, int len, int 
     transport_esp_tls_t *ssl = ssl_get_context_data(t);
 
     if ((poll = esp_transport_poll_write(t, timeout_ms)) <= 0) {
-        ESP_LOGW(TAG, "Poll timeout or error, errno=%s, fd=%d, timeout_ms=%d", strerror(errno), ssl->tls->sockfd, timeout_ms);
+        ESP_LOGW(TAG, "Poll timeout or error, errno=%s, fd=%d, timeout_ms=%d", strerror(errno), ssl->sockfd, timeout_ms);
         return poll;
     }
     int ret = send(ssl->sockfd,(const unsigned char *) buffer, len, 0);
@@ -392,7 +398,7 @@ static int ssl_get_socket(esp_transport_handle_t t)
 {
     transport_esp_tls_t *ssl = ssl_get_context_data(t);
     if (ssl && ssl->tls) {
-        return ssl->tls->sockfd;
+        return ssl->sockfd;
     }
     return -1;
 }
