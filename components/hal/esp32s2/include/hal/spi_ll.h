@@ -24,11 +24,12 @@
 
 #include <stdlib.h> //for abs()
 #include <string.h>
-#include "hal/hal_defs.h"
 #include "esp_types.h"
-#include "soc/spi_periph.h"
-#include "esp32s2/rom/lldesc.h"
 #include "esp_attr.h"
+#include "soc/spi_periph.h"
+#include "soc/lldesc.h"
+#include "hal/assert.h"
+#include "hal/misc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,7 +40,7 @@ extern "C" {
 /// Interrupt not used. Don't use in app.
 #define SPI_LL_UNUSED_INT_MASK  (SPI_INT_TRANS_DONE_EN | SPI_INT_WR_DMA_DONE_EN | SPI_INT_RD_DMA_DONE_EN | SPI_INT_WR_BUF_DONE_EN | SPI_INT_RD_BUF_DONE_EN)
 /// Swap the bit order to its correct place to send
-#define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)data<<(32-len))
+#define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)(data) << (32 - len))
 /// This is the expected clock frequency
 #define SPI_LL_PERIPH_CLK_FREQ (80 * 1000000)
 #define SPI_LL_GET_HW(ID) ((ID)==0? ({abort();NULL;}):((ID)==1? &GPSPI2 : &GPSPI3))
@@ -360,9 +361,9 @@ static inline void spi_ll_read_buffer_byte(spi_dev_t *hw, int byte_addr, uint8_t
 
 static inline void spi_ll_write_buffer_byte(spi_dev_t *hw, int byte_addr, uint8_t *data, int len)
 {
-    assert( byte_addr + len <= 72);
-    assert(len > 0);
-    assert(byte_addr >= 0);
+    HAL_ASSERT(byte_addr + len <= 72);
+    HAL_ASSERT(len > 0);
+    HAL_ASSERT(byte_addr >= 0);
 
     while (len > 0) {
         uint32_t word;
@@ -1088,7 +1089,7 @@ static inline void spi_dma_ll_rx_reset(spi_dma_dev_t *dma_in, uint32_t channel)
 {
     //Reset RX DMA peripheral
     dma_in->dma_in_link.dma_rx_ena = 0;
-    assert(dma_in->dma_in_link.dma_rx_ena == 0);
+    HAL_ASSERT(dma_in->dma_in_link.dma_rx_ena == 0);
 
     dma_in->dma_conf.in_rst = 1;
     dma_in->dma_conf.in_rst = 0;

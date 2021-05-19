@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include "hal/assert.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -133,7 +135,7 @@ static inline uint32_t esp_memprot_iram0_get_lock_bit(void)
 //block 0-3
 static inline void esp_memprot_iram0_set_uni_block_perm(uint32_t block, bool write_perm, bool read_perm, bool exec_perm)
 {
-    assert(block < IRAM0_TOTAL_UNI_BLOCKS);
+    HAL_ASSERT(block < IRAM0_TOTAL_UNI_BLOCKS);
 
     uint32_t write_bit, read_bit, exec_bit;
     switch ( block ) {
@@ -182,7 +184,7 @@ static inline void esp_memprot_iram0_set_uni_block_perm(uint32_t block, bool wri
 
 static inline uint32_t esp_memprot_iram0_get_uni_block_read_bit(uint32_t block)
 {
-    assert(block < IRAM0_TOTAL_UNI_BLOCKS);
+    HAL_ASSERT(block < IRAM0_TOTAL_UNI_BLOCKS);
 
     switch ( block ) {
     case IRAM0_UNI_BLOCK_0:
@@ -200,7 +202,7 @@ static inline uint32_t esp_memprot_iram0_get_uni_block_read_bit(uint32_t block)
 
 static inline uint32_t esp_memprot_iram0_get_uni_block_write_bit(uint32_t block)
 {
-    assert(block < IRAM0_TOTAL_UNI_BLOCKS);
+    HAL_ASSERT(block < IRAM0_TOTAL_UNI_BLOCKS);
 
     switch ( block ) {
     case IRAM0_UNI_BLOCK_0:
@@ -218,7 +220,7 @@ static inline uint32_t esp_memprot_iram0_get_uni_block_write_bit(uint32_t block)
 
 static inline uint32_t esp_memprot_iram0_get_uni_block_exec_bit(uint32_t block)
 {
-    assert(block < IRAM0_TOTAL_UNI_BLOCKS);
+    HAL_ASSERT(block < IRAM0_TOTAL_UNI_BLOCKS);
 
     switch ( block ) {
     case IRAM0_UNI_BLOCK_0:
@@ -236,7 +238,7 @@ static inline uint32_t esp_memprot_iram0_get_uni_block_exec_bit(uint32_t block)
 
 static inline void esp_memprot_iram0_get_uni_block_sgnf_bits(uint32_t block, uint32_t *write_bit, uint32_t *read_bit, uint32_t *exec_bit)
 {
-    assert(block < IRAM0_TOTAL_UNI_BLOCKS);
+    HAL_ASSERT(block < IRAM0_TOTAL_UNI_BLOCKS);
 
     switch ( block ) {
     case IRAM0_UNI_BLOCK_0:
@@ -277,7 +279,7 @@ static inline uint32_t esp_memprot_iram0_get_perm_split_reg(void)
 static inline void esp_memprot_iram0_set_prot(uint32_t *split_addr, bool lw, bool lr, bool lx, bool hw, bool hr, bool hx)
 {
     uint32_t addr = (uint32_t)split_addr;
-    assert( addr <= IRAM0_SPL_BLOCK_HIGH );
+    HAL_ASSERT(addr <= IRAM0_SPL_BLOCK_HIGH);
 
     //find possible split.address in low region blocks
     int uni_blocks_low = -1;
@@ -330,7 +332,7 @@ static inline void esp_memprot_iram0_set_prot(uint32_t *split_addr, bool lw, boo
 
         //split Address must be WORD aligned
         reg_split_addr = addr >> 2;
-        assert(addr == (reg_split_addr << 2));
+        HAL_ASSERT(addr == (reg_split_addr << 2));
 
         //use only 17 signf.bits as the cropped parts are constant for whole section (bits [16:0])
         reg_split_addr = (reg_split_addr << DPORT_PMS_PRO_IRAM0_SRAM_4_SPLTADDR_S) & DPORT_PMS_PRO_IRAM0_SRAM_4_SPLTADDR_M;
@@ -453,7 +455,7 @@ static inline uint32_t esp_memprot_dram0_get_lock_bit(void)
 
 static inline void esp_memprot_dram0_get_uni_block_sgnf_bits(uint32_t block, uint32_t *write_bit, uint32_t *read_bit)
 {
-    assert(block < DRAM0_TOTAL_UNI_BLOCKS);
+    HAL_ASSERT(block < DRAM0_TOTAL_UNI_BLOCKS);
 
     switch ( block ) {
     case DRAM0_UNI_BLOCK_0:
@@ -479,7 +481,7 @@ static inline void esp_memprot_dram0_get_uni_block_sgnf_bits(uint32_t block, uin
 
 static inline void esp_memprot_dram0_set_uni_block_perm(uint32_t block, bool write_perm, bool read_perm)
 {
-    assert(block < DRAM0_TOTAL_UNI_BLOCKS);
+    HAL_ASSERT(block < DRAM0_TOTAL_UNI_BLOCKS);
 
     uint32_t write_bit, read_bit;
     esp_memprot_dram0_get_uni_block_sgnf_bits(block, &write_bit, &read_bit);
@@ -499,7 +501,7 @@ static inline void esp_memprot_dram0_set_uni_block_perm(uint32_t block, bool wri
 
 static inline uint32_t esp_memprot_dram0_get_uni_block_read_bit(uint32_t block)
 {
-    assert(block < DRAM0_TOTAL_UNI_BLOCKS);
+    HAL_ASSERT(block < DRAM0_TOTAL_UNI_BLOCKS);
 
     switch ( block ) {
     case DRAM0_UNI_BLOCK_0:
@@ -517,7 +519,7 @@ static inline uint32_t esp_memprot_dram0_get_uni_block_read_bit(uint32_t block)
 
 static inline uint32_t esp_memprot_dram0_get_uni_block_write_bit(uint32_t block)
 {
-    assert(block < DRAM0_TOTAL_UNI_BLOCKS);
+    HAL_ASSERT(block < DRAM0_TOTAL_UNI_BLOCKS);
 
     switch ( block ) {
     case DRAM0_UNI_BLOCK_0:
@@ -575,7 +577,7 @@ static inline void esp_memprot_dram0_set_prot(uint32_t *split_addr, bool lw, boo
     uint32_t addr = (uint32_t)split_addr;
 
     //low boundary check provided by LD script. see comment in esp_memprot_iram0_set_prot()
-    assert( addr <= DRAM0_SPL_BLOCK_HIGH );
+    HAL_ASSERT(addr <= DRAM0_SPL_BLOCK_HIGH);
 
     //set low region
     int uni_blocks_low = -1;
@@ -615,7 +617,7 @@ static inline void esp_memprot_dram0_set_prot(uint32_t *split_addr, bool lw, boo
 
     //check split address is WORD aligned
     uint32_t reg_split_addr = addr >> 2;
-    assert(addr == (reg_split_addr << 2));
+    HAL_ASSERT(addr == (reg_split_addr << 2));
 
     //shift aligned split address to proper bit offset
     reg_split_addr = (reg_split_addr << DPORT_PMS_PRO_DRAM0_SRAM_4_SPLTADDR_S) & DPORT_PMS_PRO_DRAM0_SRAM_4_SPLTADDR_M;

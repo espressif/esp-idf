@@ -270,6 +270,12 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
         endchoice # assertions
 
+        config COMPILER_OPTIMIZATION_ASSERTION_LEVEL
+            int
+            default 0 if COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE
+            default 1 if COMPILER_OPTIMIZATION_ASSERTIONS_SILENT
+            default 2 if COMPILER_OPTIMIZATION_ASSERTIONS_ENABLE
+
         config COMPILER_OPTIMIZATION_CHECKS_SILENT
             bool "Disable messages in ESP_RETURN_ON_* and ESP_EXIT_ON_* macros"
             default n

@@ -16,6 +16,7 @@
 // make these functions in a seperate file to make sure all LL functions are in the IRAM.
 
 #include "hal/spi_hal.h"
+#include "hal/assert.h"
 #include "soc/soc_caps.h"
 
 //This GDMA related part will be introduced by GDMA dedicated APIs in the future. Here we temporarily use macros.
@@ -64,7 +65,7 @@ void spi_hal_setup_trans(spi_hal_context_t *hal, const spi_hal_dev_config_t *dev
     //clear int bit
     spi_ll_clear_int_stat(hal->hw);
     //We should be done with the transmission.
-    assert(spi_ll_get_running_cmd(hw) == 0);
+    HAL_ASSERT(spi_ll_get_running_cmd(hw) == 0);
 
     spi_ll_master_set_io_mode(hw, trans->io_mode);
 

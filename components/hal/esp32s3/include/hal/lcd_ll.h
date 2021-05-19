@@ -15,9 +15,9 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <assert.h>
 #include "soc/lcd_cam_reg.h"
 #include "soc/lcd_cam_struct.h"
+#include "hal/assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,7 +45,7 @@ static inline void lcd_ll_enable_clock(lcd_cam_dev_t *dev, bool en)
 static inline void lcd_ll_set_group_clock_src(lcd_cam_dev_t *dev, int src, int div_num, int div_a, int div_b)
 {
     // lcd_clk = module_clock_src / (div_num + div_b / div_a)
-    assert(div_num >= 2);
+    HAL_ASSERT(div_num >= 2);
     dev->lcd_clock.lcd_clk_sel = src;
     dev->lcd_clock.lcd_clkm_div_num = div_num;
     dev->lcd_clock.lcd_clkm_div_a = div_a;
@@ -76,7 +76,7 @@ static inline void lcd_ll_enable_rgb_yuv_convert(lcd_cam_dev_t *dev, bool en)
 
 static inline void lcd_ll_set_phase_cycles(lcd_cam_dev_t *dev, uint32_t cmd_cycles, uint32_t dummy_cycles, uint32_t data_cycles)
 {
-    assert(cmd_cycles <= 2);
+    HAL_ASSERT(cmd_cycles <= 2);
     dev->lcd_user.lcd_cmd = (cmd_cycles > 0);
     dev->lcd_user.lcd_dummy = (dummy_cycles > 0);
     dev->lcd_user.lcd_dout = (data_cycles > 0);

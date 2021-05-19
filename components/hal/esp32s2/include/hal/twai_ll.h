@@ -28,6 +28,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "hal/misc.h"
 #include "hal/twai_types.h"
 #include "soc/twai_periph.h"
 
@@ -482,8 +483,8 @@ static inline void twai_ll_set_tec(twai_dev_t *hw, uint32_t tec)
  */
 static inline void twai_ll_set_acc_filter(twai_dev_t* hw, uint32_t code, uint32_t mask, bool single_filter)
 {
-    uint32_t code_swapped = __builtin_bswap32(code);
-    uint32_t mask_swapped = __builtin_bswap32(mask);
+    uint32_t code_swapped = HAL_SWAP32(code);
+    uint32_t mask_swapped = HAL_SWAP32(mask);
     for (int i = 0; i < 4; i++) {
         hw->acceptance_filter.acr[i].byte = ((code_swapped >> (i * 8)) & 0xFF);
         hw->acceptance_filter.amr[i].byte = ((mask_swapped >> (i * 8)) & 0xFF);
@@ -555,12 +556,12 @@ static inline void twai_ll_format_frame_buffer(uint32_t id, uint8_t dlc, const u
 
     //Set ID. The ID registers are big endian and left aligned, therefore a bswap will be required
     if (is_extd) {
-        uint32_t id_temp = __builtin_bswap32((id & TWAI_EXTD_ID_MASK) << 3); //((id << 3) >> 8*(3-i))
+        uint32_t id_temp = HAL_SWAP32((id & TWAI_EXTD_ID_MASK) << 3); //((id << 3) >> 8*(3-i))
         for (int i = 0; i < 4; i++) {
             tx_frame->extended.id[i] = (id_temp >> (8 * i)) & 0xFF;
         }
     } else {
-        uint32_t id_temp =  __builtin_bswap16((id & TWAI_STD_ID_MASK) << 5); //((id << 5) >> 8*(1-i))
+        uint32_t id_temp =  HAL_SWAP16((id & TWAI_STD_ID_MASK) << 5); //((id << 5) >> 8*(1-i))
         for (int i = 0; i < 2; i++) {
             tx_frame->standard.id[i] = (id_temp >> (8 * i)) & 0xFF;
         }
@@ -600,14 +601,14 @@ static inline void twai_ll_prase_frame_buffer(twai_ll_frame_buffer_t *rx_frame, 
         for (int i = 0; i < 4; i++) {
             id_temp |= rx_frame->extended.id[i] << (8 * i);
         }
-        id_temp = __builtin_bswap32(id_temp) >> 3;  //((byte[i] << 8*(3-i)) >> 3)
+        id_temp = HAL_SWAP32(id_temp) >> 3;  //((byte[i] << 8*(3-i)) >> 3)
         *id = id_temp & TWAI_EXTD_ID_MASK;
     } else {
         uint32_t id_temp = 0;
         for (int i = 0; i < 2; i++) {
             id_temp |= rx_frame->standard.id[i] << (8 * i);
         }
-        id_temp = __builtin_bswap16(id_temp) >> 5;  //((byte[i] << 8*(1-i)) >> 5)
+        id_temp = HAL_SWAP16(id_temp) >> 5;  //((byte[i] << 8*(1-i)) >> 5)
         *id = id_temp & TWAI_STD_ID_MASK;
     }
 

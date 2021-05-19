@@ -14,11 +14,11 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <assert.h>
 #include <string.h>
 #include "sdkconfig.h"
 #include "hal/usbh_hal.h"
 #include "hal/usbh_ll.h"
+#include "hal/assert.h"
 
 // ------------------------------------------------ Macros and Types ---------------------------------------------------
 
@@ -117,7 +117,7 @@ void usbh_hal_init(usbh_hal_context_t *hal)
     //Check if a peripheral is alive by reading the core ID registers
     usbh_dev_t *dev = &USBH;
     uint32_t core_id = usb_ll_get_controller_core_id(dev);
-    assert(core_id == CORE_REG_GSNPSID);
+    HAL_ASSERT(core_id == CORE_REG_GSNPSID);
     (void) core_id;     //Suppress unused variable warning if asserts are disabled
     //Initialize HAL context
     memset(hal, 0, sizeof(usbh_hal_context_t));
@@ -157,11 +157,11 @@ void usbh_hal_core_soft_reset(usbh_hal_context_t *hal)
 
 void usbh_hal_set_fifo_size(usbh_hal_context_t *hal, const usbh_hal_fifo_config_t *fifo_config)
 {
-    assert((fifo_config->rx_fifo_lines + fifo_config->nptx_fifo_lines + fifo_config->ptx_fifo_lines) <= USBH_HAL_FIFO_TOTAL_USABLE_LINES);
+    HAL_ASSERT((fifo_config->rx_fifo_lines + fifo_config->nptx_fifo_lines + fifo_config->ptx_fifo_lines) <= USBH_HAL_FIFO_TOTAL_USABLE_LINES);
     //Check that none of the channels are active
     for (int i = 0; i < USBH_HAL_NUM_CHAN; i++) {
         if (hal->channels.hdls[i] != NULL) {
-            assert(!hal->channels.hdls[i]->flags.active);
+            HAL_ASSERT(!hal->channels.hdls[i]->flags.active);
         }
     }
     //Set the new FIFO lengths
@@ -199,7 +199,7 @@ void usbh_hal_port_enable(usbh_hal_context_t *hal)
 
 bool usbh_hal_chan_alloc(usbh_hal_context_t *hal, usbh_hal_chan_t *chan_obj, void *chan_ctx)
 {
-    assert(hal->flags.fifo_sizes_set);  //FIFO sizes should be set befor attempting to allocate a channel
+    HAL_ASSERT(hal->flags.fifo_sizes_set);  //FIFO sizes should be set befor attempting to allocate a channel
     //Attempt to allocate channel
     if (hal->channels.num_allocd == USBH_HAL_NUM_CHAN) {
         return false;    //Out of free channels
@@ -213,7 +213,7 @@ bool usbh_hal_chan_alloc(usbh_hal_context_t *hal, usbh_hal_chan_t *chan_obj, voi
             break;
         }
     }
-    assert(chan_idx != -1);
+    HAL_ASSERT(chan_idx != -1);
     //Initialize channel object
     memset(chan_obj, 0, sizeof(usbh_hal_chan_t));
     chan_obj->flags.chan_idx = chan_idx;
@@ -238,13 +238,13 @@ void usbh_hal_chan_free(usbh_hal_context_t *hal, usbh_hal_chan_t *chan_obj)
         }
     }
     //Can only free a channel when in the disabled state and descriptor list released
-    assert(!chan_obj->flags.active && !chan_obj->flags.error_pending);
+    HAL_ASSERT(!chan_obj->flags.active && !chan_obj->flags.error_pending);
     //Disable channel's interrupt
     usbh_ll_haintmsk_dis_chan_intr(hal->dev, 1 << chan_obj->flags.chan_idx);
     //Deallocate channel
     hal->channels.hdls[chan_obj->flags.chan_idx] = NULL;
     hal->channels.num_allocd--;
-    assert(hal->channels.num_allocd >= 0);
+    HAL_ASSERT(hal->channels.num_allocd >= 0);
 }
 
 // ---------------- Channel Configuration ------------------
@@ -252,7 +252,7 @@ void usbh_hal_chan_free(usbh_hal_context_t *hal, usbh_hal_chan_t *chan_obj)
 void usbh_hal_chan_set_ep_char(usbh_hal_context_t *hal, usbh_hal_chan_t *chan_obj, usbh_hal_ep_char_t *ep_char)
 {
     //Cannot change ep_char whilst channel is still active or in error
-    assert(!chan_obj->flags.active && !chan_obj->flags.error_pending);
+    HAL_ASSERT(!chan_obj->flags.active && !chan_obj->flags.error_pending);
     //Set the endpoint characteristics of the pipe
     usbh_ll_chan_hcchar_init(chan_obj->regs,
                              ep_char->dev_addr,
@@ -265,7 +265,7 @@ void usbh_hal_chan_set_ep_char(usbh_hal_context_t *hal, usbh_hal_chan_t *chan_ob
     chan_obj->type = ep_char->type;
     //If this is a periodic endpoint/channel, set its schedule in the frame list
     if (ep_char->type == USB_PRIV_XFER_TYPE_ISOCHRONOUS || ep_char->type == USB_PRIV_XFER_TYPE_INTR) {
-        assert((int)ep_char->periodic.interval <= (int)hal->frame_list_len);    //Interval cannot exceed the length of the frame list
+        HAL_ASSERT((int)ep_char->periodic.interval <= (int)hal->frame_list_len);    //Interval cannot exceed the length of the frame list
         //Find the effective offset in the frame list (in case the phase_offset_frames > interval)
         int offset = ep_char->periodic.phase_offset_frames % ep_char->periodic.interval;
         //Schedule the channel in the frame list
@@ -280,7 +280,7 @@ void usbh_hal_chan_set_ep_char(usbh_hal_context_t *hal, usbh_hal_chan_t *chan_ob
 void usbh_hal_chan_activate(usbh_hal_chan_t *chan_obj, void *xfer_desc_list, int desc_list_len, int start_idx)
 {
     //Cannot activate a channel that has already been enabled or is pending error handling
-    assert(!chan_obj->flags.active && !chan_obj->flags.error_pending);
+    HAL_ASSERT(!chan_obj->flags.active && !chan_obj->flags.error_pending);
     //Set start address of the QTD list and starting QTD index
     usbh_ll_chan_set_dma_addr_non_iso(chan_obj->regs, xfer_desc_list, start_idx);
     usbh_ll_chan_set_qtd_list_len(chan_obj->regs, desc_list_len);
@@ -291,7 +291,7 @@ void usbh_hal_chan_activate(usbh_hal_chan_t *chan_obj, void *xfer_desc_list, int
 bool usbh_hal_chan_request_halt(usbh_hal_chan_t *chan_obj)
 {
     //Cannot request halt on a channel that is pending error handling
-    assert(!chan_obj->flags.error_pending);
+    HAL_ASSERT(!chan_obj->flags.error_pending);
     if (usbh_ll_chan_is_active(chan_obj->regs) || chan_obj->flags.active) {
         usbh_ll_chan_halt(chan_obj->regs);
         chan_obj->flags.halt_requested = 1;
@@ -379,7 +379,7 @@ usbh_hal_chan_event_t usbh_hal_chan_decode_intr(usbh_hal_chan_t *chan_obj)
     usbh_hal_chan_event_t chan_event;
 
     if (chan_intrs & CHAN_INTRS_ERROR_MSK) {    //Note: Errors are uncommon, so we check against the entire interrupt mask to reduce frequency of entering this call path
-        assert(chan_intrs & USBH_LL_INTR_CHAN_CHHLTD);  //An error should have halted the channel
+        HAL_ASSERT(chan_intrs & USBH_LL_INTR_CHAN_CHHLTD);  //An error should have halted the channel
         //Store the error in hal context
         usbh_hal_chan_error_t error;
         if (chan_intrs & USBH_LL_INTR_CHAN_STALL) {

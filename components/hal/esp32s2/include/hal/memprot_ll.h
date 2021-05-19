@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include "hal/assert.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -149,7 +151,7 @@ static inline bool esp_memprot_iram0_sram_is_intr_mine(void)
 //block 0-3
 static inline void esp_memprot_iram0_sram_set_uni_block_perm(uint32_t block, bool write_perm, bool read_perm, bool exec_perm)
 {
-    assert(block < IRAM0_SRAM_TOTAL_UNI_BLOCKS);
+    HAL_ASSERT(block < IRAM0_SRAM_TOTAL_UNI_BLOCKS);
 
     uint32_t write_bit, read_bit, exec_bit;
     switch (block) {
@@ -198,7 +200,7 @@ static inline void esp_memprot_iram0_sram_set_uni_block_perm(uint32_t block, boo
 
 static inline uint32_t esp_memprot_iram0_sram_get_uni_block_read_bit(uint32_t block)
 {
-    assert(block < IRAM0_SRAM_TOTAL_UNI_BLOCKS);
+    HAL_ASSERT(block < IRAM0_SRAM_TOTAL_UNI_BLOCKS);
 
     switch (block) {
     case IRAM0_SRAM_UNI_BLOCK_0:
@@ -216,7 +218,7 @@ static inline uint32_t esp_memprot_iram0_sram_get_uni_block_read_bit(uint32_t bl
 
 static inline uint32_t esp_memprot_iram0_sram_get_uni_block_write_bit(uint32_t block)
 {
-    assert(block < IRAM0_SRAM_TOTAL_UNI_BLOCKS);
+    HAL_ASSERT(block < IRAM0_SRAM_TOTAL_UNI_BLOCKS);
 
     switch (block) {
     case IRAM0_SRAM_UNI_BLOCK_0:
@@ -234,7 +236,7 @@ static inline uint32_t esp_memprot_iram0_sram_get_uni_block_write_bit(uint32_t b
 
 static inline uint32_t esp_memprot_iram0_sram_get_uni_block_exec_bit(uint32_t block)
 {
-    assert(block < IRAM0_SRAM_TOTAL_UNI_BLOCKS);
+    HAL_ASSERT(block < IRAM0_SRAM_TOTAL_UNI_BLOCKS);
 
     switch (block) {
     case IRAM0_SRAM_UNI_BLOCK_0:
@@ -252,7 +254,7 @@ static inline uint32_t esp_memprot_iram0_sram_get_uni_block_exec_bit(uint32_t bl
 
 static inline void esp_memprot_iram0_sram_get_uni_block_sgnf_bits(uint32_t block, uint32_t *write_bit, uint32_t *read_bit, uint32_t *exec_bit)
 {
-    assert(block < IRAM0_SRAM_TOTAL_UNI_BLOCKS);
+    HAL_ASSERT(block < IRAM0_SRAM_TOTAL_UNI_BLOCKS);
 
     switch (block) {
     case IRAM0_SRAM_UNI_BLOCK_0:
@@ -293,8 +295,8 @@ static inline uint32_t esp_memprot_iram0_sram_get_perm_split_reg(void)
 static inline void esp_memprot_iram0_sram_set_prot(uint32_t *split_addr, bool lw, bool lr, bool lx, bool hw, bool hr, bool hx)
 {
     uint32_t addr = (uint32_t)split_addr;
-    assert(addr <= IRAM0_SRAM_SPL_BLOCK_HIGH);
-    assert(addr % 0x4 == 0);
+    HAL_ASSERT(addr <= IRAM0_SRAM_SPL_BLOCK_HIGH);
+    HAL_ASSERT(addr % 0x4 == 0);
 
     //find possible split.address in low region blocks
     int uni_blocks_low = -1;
@@ -437,7 +439,7 @@ static inline uint32_t esp_memprot_iram0_rtcfast_get_perm_split_reg(void)
 static inline void esp_memprot_iram0_rtcfast_set_prot(uint32_t *split_addr, bool lw, bool lr, bool lx, bool hw, bool hr, bool hx)
 {
     uint32_t addr = (uint32_t)split_addr;
-    assert( addr % 0x4 == 0 );
+    HAL_ASSERT(addr % 0x4 == 0);
 
     //conf reg [10:0]
     uint32_t reg_split_addr = IRAM0_RTCFAST_ADDR_TO_CONF_REG(addr);
@@ -626,7 +628,7 @@ static inline bool esp_memprot_dram0_sram_is_intr_mine(void)
 
 static inline void esp_memprot_dram0_sram_get_uni_block_sgnf_bits(uint32_t block, uint32_t *write_bit, uint32_t *read_bit)
 {
-    assert(block < DRAM0_SRAM_TOTAL_UNI_BLOCKS);
+    HAL_ASSERT(block < DRAM0_SRAM_TOTAL_UNI_BLOCKS);
 
     switch (block) {
     case DRAM0_SRAM_UNI_BLOCK_0:
@@ -652,7 +654,7 @@ static inline void esp_memprot_dram0_sram_get_uni_block_sgnf_bits(uint32_t block
 
 static inline void esp_memprot_dram0_sram_set_uni_block_perm(uint32_t block, bool write_perm, bool read_perm)
 {
-    assert(block < DRAM0_SRAM_TOTAL_UNI_BLOCKS);
+    HAL_ASSERT(block < DRAM0_SRAM_TOTAL_UNI_BLOCKS);
 
     uint32_t write_bit, read_bit;
     esp_memprot_dram0_sram_get_uni_block_sgnf_bits(block, &write_bit, &read_bit);
@@ -672,7 +674,7 @@ static inline void esp_memprot_dram0_sram_set_uni_block_perm(uint32_t block, boo
 
 static inline uint32_t esp_memprot_dram0_sram_get_uni_block_read_bit(uint32_t block)
 {
-    assert(block < DRAM0_SRAM_TOTAL_UNI_BLOCKS);
+    HAL_ASSERT(block < DRAM0_SRAM_TOTAL_UNI_BLOCKS);
 
     switch (block) {
     case DRAM0_SRAM_UNI_BLOCK_0:
@@ -690,7 +692,7 @@ static inline uint32_t esp_memprot_dram0_sram_get_uni_block_read_bit(uint32_t bl
 
 static inline uint32_t esp_memprot_dram0_sram_get_uni_block_write_bit(uint32_t block)
 {
-    assert(block < DRAM0_SRAM_TOTAL_UNI_BLOCKS);
+    HAL_ASSERT(block < DRAM0_SRAM_TOTAL_UNI_BLOCKS);
 
     switch (block) {
     case DRAM0_SRAM_UNI_BLOCK_0:
@@ -717,8 +719,8 @@ static inline void esp_memprot_dram0_sram_set_prot(uint32_t *split_addr, bool lw
     uint32_t addr = (uint32_t)split_addr;
 
     //low boundary check provided by LD script. see comment in esp_memprot_iram0_sram_set_prot()
-    assert( addr <= DRAM0_SRAM_SPL_BLOCK_HIGH );
-    assert( addr % 0x4 == 0 );
+    HAL_ASSERT(addr <= DRAM0_SRAM_SPL_BLOCK_HIGH);
+    HAL_ASSERT(addr % 0x4 == 0 );
 
     //set low region
     int uni_blocks_low = -1;
@@ -828,7 +830,7 @@ static inline bool esp_memprot_dram0_rtcfast_is_intr_mine(void)
 static inline void esp_memprot_dram0_rtcfast_set_prot(uint32_t *split_addr, bool lw, bool lr, bool hw, bool hr)
 {
     uint32_t addr = (uint32_t)split_addr;
-    assert( addr % 0x4 == 0 );
+    HAL_ASSERT(addr % 0x4 == 0);
 
     //conf reg [10:0]
     uint32_t reg_split_addr = DRAM0_RTCFAST_ADDR_TO_CONF_REG( addr );

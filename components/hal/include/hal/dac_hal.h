@@ -21,8 +21,6 @@
 #pragma once
 
 #include "hal/dac_ll.h"
-#include "hal/hal_defs.h"
-#include <esp_err.h>
 
 /**
  * Power on dac module and start output voltage.
