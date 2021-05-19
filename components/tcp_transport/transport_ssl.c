@@ -23,6 +23,8 @@
 #include "esp_transport_utils.h"
 #include "esp_transport_internal.h"
 
+#define INVALID_SOCKET (-1)
+
 #define GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t)         \
     transport_esp_tls_t *ssl = ssl_get_context_data(t);  \
     if (!ssl) { return; }
@@ -64,8 +66,6 @@ static inline struct transport_esp_tls * ssl_get_context_data(esp_transport_hand
     return ssl;
 }
 
-static int ssl_close(esp_transport_handle_t t);
-
 static int esp_tls_connect_async(esp_transport_handle_t t, const char *host, int port, int timeout_ms, bool is_plain_tcp)
 {
     transport_esp_tls_t *ssl = ssl_get_context_data(t);
@@ -79,7 +79,7 @@ static int esp_tls_connect_async(esp_transport_handle_t t, const char *host, int
             return -1;
         }
         ssl->conn_state = TRANS_SSL_CONNECTING;
-        ssl->sockfd = -1;
+        ssl->sockfd = INVALID_SOCKET;
     }
     if (ssl->conn_state == TRANS_SSL_CONNECTING) {
         int progress = esp_tls_conn_new_async(host, strlen(host), port, &ssl->cfg, ssl->tls);
@@ -121,7 +121,7 @@ static int ssl_connect(esp_transport_handle_t t, const char *host, int port, int
         esp_transport_set_errors(t, ssl->tls->error_handle);
         esp_tls_conn_destroy(ssl->tls);
         ssl->tls = NULL;
-        ssl->sockfd = -1;
+        ssl->sockfd = INVALID_SOCKET;
         return -1;
     }
     ssl->sockfd = ssl->tls->sockfd;
@@ -138,13 +138,13 @@ static int tcp_connect(esp_transport_handle_t t, const char *host, int port, int
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to open a new connection: %d", err);
         err_handle->last_error = err;
-        ssl->sockfd = -1;
+        ssl->sockfd = INVALID_SOCKET;
         return -1;
     }
     return 0;
 }
 
-static int ssl_poll_read(esp_transport_handle_t t, int timeout_ms)
+static int base_poll_read(esp_transport_handle_t t, int timeout_ms)
 {
     transport_esp_tls_t *ssl = ssl_get_context_data(t);
     int ret = -1;
@@ -173,7 +173,7 @@ static int ssl_poll_read(esp_transport_handle_t t, int timeout_ms)
     return ret;
 }
 
-static int ssl_poll_write(esp_transport_handle_t t, int timeout_ms)
+static int base_poll_write(esp_transport_handle_t t, int timeout_ms)
 {
     transport_esp_tls_t *ssl = ssl_get_context_data(t);
     int ret = -1;
@@ -276,7 +276,7 @@ static int tcp_read(esp_transport_handle_t t, char *buffer, int len, int timeout
     return ret;
 }
 
-static int ssl_close(esp_transport_handle_t t)
+static int base_close(esp_transport_handle_t t)
 {
     int ret = -1;
     transport_esp_tls_t *ssl = ssl_get_context_data(t);
@@ -284,15 +284,15 @@ static int ssl_close(esp_transport_handle_t t)
         ret = esp_tls_conn_destroy(ssl->tls);
         ssl->conn_state = TRANS_SSL_INIT;
         ssl->ssl_initialized = false;
-        ssl->sockfd = -1;
+        ssl->sockfd = INVALID_SOCKET;
     } else if (ssl && ssl->sockfd >= 0) {
         close(ssl->sockfd);
-        ssl->sockfd = -1;
+        ssl->sockfd = INVALID_SOCKET;
     }
     return ret;
 }
 
-static int ssl_destroy(esp_transport_handle_t t)
+static int base_destroy(esp_transport_handle_t t)
 {
     transport_esp_tls_t *ssl = ssl_get_context_data(t);
     if (ssl) {
@@ -394,22 +394,13 @@ void esp_transport_ssl_crt_bundle_attach(esp_transport_handle_t t, esp_err_t ((*
     ssl->cfg.crt_bundle_attach = crt_bundle_attach;
 }
 
-static int ssl_get_socket(esp_transport_handle_t t)
-{
-    transport_esp_tls_t *ssl = ssl_get_context_data(t);
-    if (ssl && ssl->tls) {
-        return ssl->sockfd;
-    }
-    return -1;
-}
-
-static int tcp_get_socket(esp_transport_handle_t t)
+static int base_get_socket(esp_transport_handle_t t)
 {
     transport_esp_tls_t *ctx = ssl_get_context_data(t);
     if (ctx) {
         return ctx->sockfd;
     }
-    return -1;
+    return INVALID_SOCKET;
 }
 
 void esp_transport_ssl_set_ds_data(esp_transport_handle_t t, void *ds_data)
@@ -436,17 +427,16 @@ esp_transport_handle_t esp_transport_ssl_init(void)
     if (t == NULL) {
         return NULL;
     }
-
-    esp_transport_set_func(t, ssl_connect, ssl_read, ssl_write, ssl_close, ssl_poll_read, ssl_poll_write, ssl_destroy);
+    esp_transport_set_func(t, ssl_connect, ssl_read, ssl_write, base_close, base_poll_read, base_poll_write, base_destroy);
     esp_transport_set_async_connect_func(t, ssl_connect_async);
-    t->_get_socket = ssl_get_socket;
+    t->_get_socket = base_get_socket;
     return t;
 }
 
 struct transport_esp_tls* esp_transport_esp_tls_create(void)
 {
     transport_esp_tls_t *transport_esp_tls = calloc(1, sizeof(transport_esp_tls_t));
-    transport_esp_tls->sockfd = -1;
+    transport_esp_tls->sockfd = INVALID_SOCKET;
     return transport_esp_tls;
 }
 
@@ -461,9 +451,9 @@ esp_transport_handle_t esp_transport_tcp_init(void)
     if (t == NULL) {
         return NULL;
     }
-    esp_transport_set_func(t, tcp_connect, tcp_read, tcp_write, ssl_close, ssl_poll_read, ssl_poll_write, ssl_destroy);
+    esp_transport_set_func(t, tcp_connect, tcp_read, tcp_write, base_close, base_poll_read, base_poll_write, base_destroy);
     esp_transport_set_async_connect_func(t, tcp_connect_async);
-    t->_get_socket = tcp_get_socket;
+    t->_get_socket = base_get_socket;
     return t;
 }
 
