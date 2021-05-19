@@ -115,10 +115,12 @@
 #include <sys/types.h>
 #include <sys/fcntl.h>
 #include <unistd.h>
+#include <assert.h>
 #include "linenoise.h"
 
 #define LINENOISE_DEFAULT_HISTORY_MAX_LEN 100
 #define LINENOISE_MAX_LINE 4096
+#define LINENOISE_COMMAND_MAX_LEN 32
 
 static linenoiseCompletionCallback *completionCallback = NULL;
 static linenoiseHintsCallback *hintsCallback = NULL;
@@ -203,6 +205,11 @@ void linenoiseSetDumbMode(int set) {
     dumbmode = set;
 }
 
+/* Returns whether the current mode is dumbmode or not. */
+bool linenoiseIsDumbMode(void) {
+    return dumbmode;
+}
+
 static void flushWrite(void) {
     if (__fbufsize(stdout) > 0) {
         fflush(stdout);
@@ -214,47 +221,106 @@ static void flushWrite(void) {
  * and return it. On error -1 is returned, on success the position of the
  * cursor. */
 static int getCursorPosition(void) {
-    char buf[32];
-    int cols, rows;
-    unsigned int i = 0;
+    char buf[LINENOISE_COMMAND_MAX_LEN] = { 0 };
+    int cols = 0;
+    int rows = 0;
+    int i = 0;
+    const int out_fd = fileno(stdout);
+    const int in_fd = fileno(stdin);
+    /* The following ANSI escape sequence is used to get from the TTY the
+     * cursor position. */
+    const char get_cursor_cmd[] = "\x1b[6n";
 
-    /* Report cursor location */
-    fprintf(stdout, "\x1b[6n");
+    /* Send the command to the TTY on the other end of the UART.
+     * Let's use unistd's write function. Thus, data sent through it are raw
+     * reducing the overhead compared to using fputs, fprintf, etc... */
+    write(out_fd, get_cursor_cmd, sizeof(get_cursor_cmd));
+
+    /* For USB CDC, it is required to flush the output. */
     flushWrite();
-    /* Read the response: ESC [ rows ; cols R */
+
+    /* The other end will send its response which format is ESC [ rows ; cols R
+     * We don't know exactly how many bytes we have to read, thus, perform a
+     * read for each byte.
+     * Stop right before the last character of the buffer, to be able to NULL
+     * terminate it. */
     while (i < sizeof(buf)-1) {
-        if (fread(buf+i, 1, 1, stdin) != 1) break;
-        if (buf[i] == 'R') break;
-        i++;
+        /* Keep using unistd's functions. Here, using `read` instead of `fgets`
+         * or `fgets` guarantees us that we we can read a byte regardless on
+         * whether the sender sent end of line character(s) (CR, CRLF, LF). */
+        if (read(in_fd, buf + i, 1) != 1 || buf[i] == 'R') {
+            /* If we couldn't read a byte from STDIN or if 'R' was received,
+             * the transmission is finished. */
+            break;
+        }
+
+        /* For some reasons, it is possible that we receive new line character
+         * after querying the cursor position on some UART. Let's ignore them,
+         * this will not affect the rest of the program. */
+        if (buf[i] != '\n') {
+            i++;
+        }
     }
+
+    /* NULL-terminate the buffer, this is required by `sscanf`. */
     buf[i] = '\0';
-    /* Parse it. */
-    if (buf[0] != ESC || buf[1] != '[') return -1;
-    if (sscanf(buf+2,"%d;%d",&rows,&cols) != 2) return -1;
+
+    /* Parse the received data to get the position of the cursor. */
+    if (buf[0] != ESC || buf[1] != '[' || sscanf(buf+2,"%d;%d",&rows,&cols) != 2) {
+        return -1;
+    }
     return cols;
 }
 
 /* Try to get the number of columns in the current terminal, or assume 80
  * if it fails. */
 static int getColumns(void) {
-    int start, cols;
-    int fd = fileno(stdout);
+    int start = 0;
+    int cols = 0;
+    int written = 0;
+    char seq[LINENOISE_COMMAND_MAX_LEN] = { 0 };
+    const int fd = fileno(stdout);
+
+    /* The following ANSI escape sequence is used to tell the TTY to move
+     * the cursor to the most-right position. */
+    const char move_cursor_right[] = "\x1b[999C";
+    const size_t cmd_len = sizeof(move_cursor_right);
+
+    /* This one is used to set the cursor position. */
+    const char set_cursor_pos[] = "\x1b[%dD";
 
     /* Get the initial position so we can restore it later. */
     start = getCursorPosition();
-    if (start == -1) goto failed;
+    if (start == -1) {
+        goto failed;
+    }
 
-    /* Go to right margin and get position. */
-    if (fwrite("\x1b[999C", 1, 6, stdout) != 6) goto failed;
+    /* Send the command to go to right margin. Use `write` function instead of
+     * `fwrite` for the same reasons explained in `getCursorPosition()` */
+    if (write(fd, move_cursor_right, cmd_len) != cmd_len) {
+        goto failed;
+    }
     flushWrite();
-    cols = getCursorPosition();
-    if (cols == -1) goto failed;
 
-    /* Restore position. */
+    /* After sending this command, we can get the new position of the cursor,
+     * we'd get the size, in columns, of the opened TTY. */
+    cols = getCursorPosition();
+    if (cols == -1) {
+        goto failed;
+    }
+
+    /* Restore the position of the cursor back. */
     if (cols > start) {
-        char seq[32];
-        snprintf(seq,32,"\x1b[%dD",cols-start);
-        if (write(fd, seq, strlen(seq)) == -1) {
+        /* Generate the move cursor command. */
+        written = snprintf(seq, LINENOISE_COMMAND_MAX_LEN, set_cursor_pos, cols-start);
+
+        /* If `written` is equal or bigger than LINENOISE_COMMAND_MAX_LEN, it
+         * means that the output has been truncated because the size provided
+         * is too small. */
+        assert (written < LINENOISE_COMMAND_MAX_LEN);
+
+        /* Send the command with `write`, which is not buffered. */
+        if (write(fd, seq, written) == -1) {
             /* Can't recover... */
         }
         flushWrite();

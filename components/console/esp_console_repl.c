@@ -30,6 +30,7 @@
 static const char *TAG = "console.repl";
 
 #define CONSOLE_PROMPT_MAX_LEN (32)
+#define CONSOLE_PATH_MAX_LEN   (ESP_VFS_PATH_MAX)
 
 typedef enum {
     CONSOLE_REPL_STATE_DEINIT,
@@ -48,11 +49,7 @@ typedef struct {
 typedef struct {
     esp_console_repl_com_t repl_com; // base class
     int uart_channel;                // uart channel number
-} esp_console_repl_uart_t;
-
-typedef struct {
-    esp_console_repl_com_t repl_com; // base class
-} esp_console_repl_usb_cdc_t;
+} esp_console_repl_universal_t;
 
 static void esp_console_repl_task(void *args);
 static esp_err_t esp_console_repl_uart_delete(esp_console_repl_t *repl);
@@ -64,20 +61,17 @@ static esp_err_t esp_console_setup_history(const char *history_path, uint32_t ma
 esp_err_t esp_console_new_repl_usb_cdc(const esp_console_dev_usb_cdc_config_t *dev_config, const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl)
 {
     esp_err_t ret = ESP_OK;
-    esp_console_repl_usb_cdc_t *cdc_repl = NULL;
+    esp_console_repl_universal_t *cdc_repl = NULL;
     if (!repl_config | !dev_config | !ret_repl) {
         ret = ESP_ERR_INVALID_ARG;
         goto _exit;
     }
     // allocate memory for console REPL context
-    cdc_repl = calloc(1, sizeof(esp_console_repl_usb_cdc_t));
+    cdc_repl = calloc(1, sizeof(esp_console_repl_universal_t));
     if (!cdc_repl) {
         ret = ESP_ERR_NO_MEM;
         goto _exit;
     }
-
-    /* Disable buffering on stdin */
-    setvbuf(stdin, NULL, _IONBF, 0);
 
     /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
     esp_vfs_dev_cdcacm_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
@@ -103,15 +97,18 @@ esp_err_t esp_console_new_repl_usb_cdc(const esp_console_dev_usb_cdc_config_t *d
     // setup prompt
     esp_console_setup_prompt(repl_config->prompt, &cdc_repl->repl_com);
 
+    /* Fill the structure here as it will be used directly by the created task. */
+    cdc_repl->uart_channel = CONFIG_ESP_CONSOLE_UART_NUM;
+    cdc_repl->repl_com.state = CONSOLE_REPL_STATE_INIT;
+    cdc_repl->repl_com.repl_core.del = esp_console_repl_usb_cdc_delete;
+
     /* spawn a single thread to run REPL */
     if (xTaskCreate(esp_console_repl_task, "console_repl", repl_config->task_stack_size,
-                    &cdc_repl->repl_com, repl_config->task_priority, &cdc_repl->repl_com.task_hdl) != pdTRUE) {
+                    cdc_repl, repl_config->task_priority, &cdc_repl->repl_com.task_hdl) != pdTRUE) {
         ret = ESP_FAIL;
         goto _exit;
     }
 
-    cdc_repl->repl_com.state = CONSOLE_REPL_STATE_INIT;
-    cdc_repl->repl_com.repl_core.del = esp_console_repl_usb_cdc_delete;
     *ret_repl = &cdc_repl->repl_com.repl_core;
     return ESP_OK;
 _exit:
@@ -128,13 +125,13 @@ _exit:
 esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_config, const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl)
 {
     esp_err_t ret = ESP_OK;
-    esp_console_repl_uart_t *uart_repl = NULL;
+    esp_console_repl_universal_t *uart_repl = NULL;
     if (!repl_config | !dev_config | !ret_repl) {
         ret = ESP_ERR_INVALID_ARG;
         goto _exit;
     }
     // allocate memory for console REPL context
-    uart_repl = calloc(1, sizeof(esp_console_repl_uart_t));
+    uart_repl = calloc(1, sizeof(esp_console_repl_universal_t));
     if (!uart_repl) {
         ret = ESP_ERR_NO_MEM;
         goto _exit;
@@ -143,9 +140,6 @@ esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_con
     /* Drain stdout before reconfiguring it */
     fflush(stdout);
     fsync(fileno(stdout));
-
-    /* Disable buffering on stdin */
-    setvbuf(stdin, NULL, _IONBF, 0);
 
     /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
     esp_vfs_dev_uart_port_set_rx_line_endings(dev_config->channel, ESP_LINE_ENDINGS_CR);
@@ -194,16 +188,19 @@ esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_con
     // setup prompt
     esp_console_setup_prompt(repl_config->prompt, &uart_repl->repl_com);
 
-    /* spawn a single thread to run REPL */
+    /* Fill the structure here as it will be used directly by the created task. */
+    uart_repl->uart_channel = dev_config->channel;
+    uart_repl->repl_com.state = CONSOLE_REPL_STATE_INIT;
+    uart_repl->repl_com.repl_core.del = esp_console_repl_uart_delete;
+
+    /* Spawn a single thread to run REPL, we need to pass `uart_repl` to it as
+     * it also requires the uart channel. */
     if (xTaskCreate(esp_console_repl_task, "console_repl", repl_config->task_stack_size,
-                    &uart_repl->repl_com, repl_config->task_priority, &uart_repl->repl_com.task_hdl) != pdTRUE) {
+                    uart_repl, repl_config->task_priority, &uart_repl->repl_com.task_hdl) != pdTRUE) {
         ret = ESP_FAIL;
         goto _exit;
     }
 
-    uart_repl->uart_channel = dev_config->channel;
-    uart_repl->repl_com.state = CONSOLE_REPL_STATE_INIT;
-    uart_repl->repl_com.repl_core.del = esp_console_repl_uart_delete;
     *ret_repl = &uart_repl->repl_com.repl_core;
     return ESP_OK;
 _exit:
@@ -244,19 +241,10 @@ static esp_err_t esp_console_setup_prompt(const char *prompt, esp_console_repl_c
     }
     snprintf(repl_com->prompt, CONSOLE_PROMPT_MAX_LEN - 1, LOG_COLOR_I "%s " LOG_RESET_COLOR, prompt_temp);
 
-    printf("\r\n"
-           "Type 'help' to get the list of commands.\r\n"
-           "Use UP/DOWN arrows to navigate through command history.\r\n"
-           "Press TAB when typing command name to auto-complete.\r\n");
-
     /* Figure out if the terminal supports escape sequences */
     int probe_status = linenoiseProbe();
     if (probe_status) {
         /* zero indicates success */
-        printf("\r\n"
-               "Your terminal application does not support escape sequences.\n\n"
-               "Line editing and history features are disabled.\n\n"
-               "On Windows, try using Putty instead.\r\n");
         linenoiseSetDumbMode(1);
 #if CONFIG_LOG_COLORS
         /* Since the terminal doesn't support escape sequences,
@@ -325,7 +313,7 @@ static esp_err_t esp_console_repl_uart_delete(esp_console_repl_t *repl)
 {
     esp_err_t ret = ESP_OK;
     esp_console_repl_com_t *repl_com = __containerof(repl, esp_console_repl_com_t, repl_core);
-    esp_console_repl_uart_t *uart_repl = __containerof(repl_com, esp_console_repl_uart_t, repl_com);
+    esp_console_repl_universal_t *uart_repl = __containerof(repl_com, esp_console_repl_universal_t, repl_com);
     // check if already de-initialized
     if (repl_com->state == CONSOLE_REPL_STATE_DEINIT) {
         ESP_LOGE(TAG, "already de-initialized");
@@ -345,7 +333,7 @@ static esp_err_t esp_console_repl_usb_cdc_delete(esp_console_repl_t *repl)
 {
     esp_err_t ret = ESP_OK;
     esp_console_repl_com_t *repl_com = __containerof(repl, esp_console_repl_com_t, repl_core);
-    esp_console_repl_usb_cdc_t *cdc_repl = __containerof(repl_com, esp_console_repl_usb_cdc_t, repl_com);
+    esp_console_repl_universal_t *cdc_repl = __containerof(repl_com, esp_console_repl_universal_t, repl_com);
     // check if already de-initialized
     if (repl_com->state == CONSOLE_REPL_STATE_DEINIT) {
         ESP_LOGE(TAG, "already de-initialized");
@@ -361,9 +349,45 @@ _exit:
 
 static void esp_console_repl_task(void *args)
 {
-    esp_console_repl_com_t *repl_com = (esp_console_repl_com_t *)args;
-    // waiting for task notify
+    esp_console_repl_universal_t *repl_conf = (esp_console_repl_universal_t *) args;
+    esp_console_repl_com_t *repl_com = &repl_conf->repl_com;
+    const int uart_channel = repl_conf->uart_channel;
+
+    /* Waiting for task notify. This happens when `esp_console_start_repl()`
+     * function is called. */
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    /* Change standard input and output of the task if the requested UART is
+     * NOT the default one. This block will replace stdin, stdout and stderr.
+     */
+    if (uart_channel != CONFIG_ESP_CONSOLE_UART_NUM) {
+        char path[CONSOLE_PATH_MAX_LEN] = { 0 };
+        snprintf(path, CONSOLE_PATH_MAX_LEN, "/dev/uart/%d", uart_channel);
+
+        stdin = fopen(path, "r");
+        stdout = fopen(path, "w");
+        stderr = stdout;
+    }
+
+    /* Disable buffering on stdin of the current task.
+     * If the console is ran on a different UART than the default one,
+     * buffering shall only be disabled for the current one. */
+    setvbuf(stdin, NULL, _IONBF, 0);
+
+    /* This message shall be printed here and not earlier as the stdout
+     * has just been set above. */
+    printf("\r\n"
+        "Type 'help' to get the list of commands.\r\n"
+        "Use UP/DOWN arrows to navigate through command history.\r\n"
+        "Press TAB when typing command name to auto-complete.\r\n");
+
+    if (linenoiseIsDumbMode()) {
+        printf("\r\n"
+               "Your terminal application does not support escape sequences.\n\n"
+               "Line editing and history features are disabled.\n\n"
+               "On Windows, try using Putty instead.\r\n");
+    }
+
     while (repl_com->state == CONSOLE_REPL_STATE_START) {
         char *line = linenoise(repl_com->prompt);
         if (line == NULL) {
