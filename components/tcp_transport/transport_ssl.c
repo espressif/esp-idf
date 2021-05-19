@@ -134,7 +134,7 @@ static int tcp_connect(esp_transport_handle_t t, const char *host, int port, int
     esp_tls_last_error_t *err_handle = esp_transport_get_error_handle(t);
 
     ssl->cfg.timeout_ms = timeout_ms;
-    esp_err_t err = esp_tls_tcp_connect(host, strlen(host), port, &ssl->cfg, err_handle, &ssl->sockfd);
+    esp_err_t err = esp_tls_plain_tcp_connect(host, strlen(host), port, &ssl->cfg, err_handle, &ssl->sockfd);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to open a new connection: %d", err);
         err_handle->last_error = err;
