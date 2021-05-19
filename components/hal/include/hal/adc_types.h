@@ -56,9 +56,9 @@ typedef enum {
  */
 typedef enum {
     ADC_ATTEN_DB_0   = 0,  /*!<No input attenumation, ADC can measure up to approx. 800 mV. */
-    ADC_ATTEN_DB_2_5 = 1,  /*!<The input voltage of ADC will be attenuated, extending the range of measurement to up to approx. 1100 mV. */
-    ADC_ATTEN_DB_6   = 2,  /*!<The input voltage of ADC will be attenuated, extending the range of measurement to up to  approx. 1350 mV. */
-    ADC_ATTEN_DB_11  = 3,  /*!<The input voltage of ADC will be attenuated, extending the range of measurement to up to  approx. 2600 mV. */
+    ADC_ATTEN_DB_2_5 = 1,  /*!<The input voltage of ADC will be attenuated extending the range of measurement by about 2.5 dB (1.33 x) */
+    ADC_ATTEN_DB_6   = 2,  /*!<The input voltage of ADC will be attenuated extending the range of measurement by about 6 dB (2 x) */
+    ADC_ATTEN_DB_11  = 3,  /*!<The input voltage of ADC will be attenuated extending the range of measurement by about 11 dB (3.55 x) */
     ADC_ATTEN_MAX,
 } adc_atten_t;
 
