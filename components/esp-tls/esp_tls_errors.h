@@ -31,18 +31,19 @@ extern "C" {
 #define ESP_ERR_MBEDTLS_PK_PARSE_KEY_FAILED               (ESP_ERR_ESP_TLS_BASE + 0x0F)  /*!< mbedtls api returned failed  */
 #define ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED              (ESP_ERR_ESP_TLS_BASE + 0x10)  /*!< mbedtls api returned failed  */
 #define ESP_ERR_MBEDTLS_SSL_CONF_PSK_FAILED               (ESP_ERR_ESP_TLS_BASE + 0x11)  /*!< mbedtls api returned failed  */
-#define ESP_ERR_ESP_TLS_CONNECTION_TIMEOUT                (ESP_ERR_ESP_TLS_BASE + 0x12)  /*!< new connection in esp_tls_low_level_conn connection timeouted */
-#define ESP_ERR_WOLFSSL_SSL_SET_HOSTNAME_FAILED           (ESP_ERR_ESP_TLS_BASE + 0x13)  /*!< wolfSSL api returned error */
-#define ESP_ERR_WOLFSSL_SSL_CONF_ALPN_PROTOCOLS_FAILED    (ESP_ERR_ESP_TLS_BASE + 0x14)  /*!< wolfSSL api returned error */
-#define ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED          (ESP_ERR_ESP_TLS_BASE + 0x15)  /*!< wolfSSL api returned error */
-#define ESP_ERR_WOLFSSL_KEY_VERIFY_SETUP_FAILED           (ESP_ERR_ESP_TLS_BASE + 0x16)  /*!< wolfSSL api returned error */
-#define ESP_ERR_WOLFSSL_SSL_HANDSHAKE_FAILED              (ESP_ERR_ESP_TLS_BASE + 0x17)  /*!< wolfSSL api returned failed  */
-#define ESP_ERR_WOLFSSL_CTX_SETUP_FAILED                  (ESP_ERR_ESP_TLS_BASE + 0x18)  /*!< wolfSSL api returned failed */
-#define ESP_ERR_WOLFSSL_SSL_SETUP_FAILED                  (ESP_ERR_ESP_TLS_BASE + 0x19)  /*!< wolfSSL api returned failed */
-#define ESP_ERR_WOLFSSL_SSL_WRITE_FAILED                  (ESP_ERR_ESP_TLS_BASE + 0x1A)  /*!< wolfSSL api returned failed */
+#define ESP_ERR_MBEDTLS_SSL_SESSION_TICKET_SETUP_FAILED   (ESP_ERR_ESP_TLS_BASE + 0x12)  /*!< mbedtls api returned failed  */
+#define ESP_ERR_ESP_TLS_CONNECTION_TIMEOUT                (ESP_ERR_ESP_TLS_BASE + 0x13)  /*!< new connection in esp_tls_low_level_conn connection timeouted */
+#define ESP_ERR_WOLFSSL_SSL_SET_HOSTNAME_FAILED           (ESP_ERR_ESP_TLS_BASE + 0x14)  /*!< wolfSSL api returned error */
+#define ESP_ERR_WOLFSSL_SSL_CONF_ALPN_PROTOCOLS_FAILED    (ESP_ERR_ESP_TLS_BASE + 0x15)  /*!< wolfSSL api returned error */
+#define ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED          (ESP_ERR_ESP_TLS_BASE + 0x16)  /*!< wolfSSL api returned error */
+#define ESP_ERR_WOLFSSL_KEY_VERIFY_SETUP_FAILED           (ESP_ERR_ESP_TLS_BASE + 0x17)  /*!< wolfSSL api returned error */
+#define ESP_ERR_WOLFSSL_SSL_HANDSHAKE_FAILED              (ESP_ERR_ESP_TLS_BASE + 0x18)  /*!< wolfSSL api returned failed  */
+#define ESP_ERR_WOLFSSL_CTX_SETUP_FAILED                  (ESP_ERR_ESP_TLS_BASE + 0x19)  /*!< wolfSSL api returned failed */
+#define ESP_ERR_WOLFSSL_SSL_SETUP_FAILED                  (ESP_ERR_ESP_TLS_BASE + 0x1A)  /*!< wolfSSL api returned failed */
+#define ESP_ERR_WOLFSSL_SSL_WRITE_FAILED                  (ESP_ERR_ESP_TLS_BASE + 0x1B)  /*!< wolfSSL api returned failed */
 
-#define ESP_ERR_ESP_TLS_SE_FAILED                         (ESP_ERR_ESP_TLS_BASE + 0x1B)  /*< esp-tls use Secure Element returned failed */
-#define ESP_ERR_ESP_TLS_TCP_CLOSED_FIN                    (ESP_ERR_ESP_TLS_BASE + 0x1C)  /*< esp-tls's TPC transport connection has benn closed (in a clean way) */
+#define ESP_ERR_ESP_TLS_SE_FAILED                         (ESP_ERR_ESP_TLS_BASE + 0x1C)  /*< esp-tls use Secure Element returned failed */
+#define ESP_ERR_ESP_TLS_TCP_CLOSED_FIN                    (ESP_ERR_ESP_TLS_BASE + 0x1D)  /*< esp-tls's TPC transport connection has benn closed (in a clean way) */
 
 /**
 * Definition of errors reported from IO API (potentially non-blocking) in case of error:

@@ -368,8 +368,28 @@ static esp_err_t set_global_ca_store(esp_tls_t *tls)
     return ESP_OK;
 }
 
-
 #ifdef CONFIG_ESP_TLS_SERVER
+#ifdef CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS
+int esp_tls_session_ticket_write(void *p_ticket, const mbedtls_ssl_session *session, unsigned char *start, const unsigned char *end, size_t *tlen, uint32_t *lifetime) {
+    int ret = mbedtls_ssl_ticket_write(p_ticket, session, start, end, tlen, lifetime);
+#ifndef NDEBUG
+    if (ret != 0) {
+        ESP_LOGD(TAG, "Writing session ticket resulted in error code %d", ret);
+    }
+#endif
+    return ret;
+}
+int esp_tls_session_ticket_parse(void *p_ticket, mbedtls_ssl_session *session, unsigned char *buf, size_t len) {
+    int ret = mbedtls_ssl_ticket_parse(p_ticket, session, buf, len);
+#ifndef NDEBUG
+    if (ret != 0) {
+        ESP_LOGD(TAG, "Parsing session ticket resulted in error code %d", ret);
+    }
+#endif
+    return ret;
+}
+#endif
+
 esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
 {
     assert(cfg != NULL);
@@ -421,6 +441,16 @@ esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
         ESP_LOGE(TAG, "Missing server certificate and/or key");
         return ESP_ERR_INVALID_STATE;
     }
+
+#ifdef CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS
+    ESP_LOGD(TAG, "Enabling server-side tls session ticket support");
+
+    mbedtls_ssl_conf_session_tickets_cb( &tls->conf,
+            esp_tls_session_ticket_write,
+            esp_tls_session_ticket_parse,
+            &cfg->ticket_ctx.ticket_ctx );
+#endif
+
     return ESP_OK;
 }
 #endif /* ! CONFIG_ESP_TLS_SERVER */

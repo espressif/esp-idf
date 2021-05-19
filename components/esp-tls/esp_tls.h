@@ -20,6 +20,9 @@
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/error.h"
 #include "mbedtls/certs.h"
+#ifdef CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS
+    #include "mbedtls/ssl_ticket.h"
+#endif
 #elif CONFIG_ESP_TLS_USING_WOLFSSL
 #include "wolfssl/wolfcrypt/settings.h"
 #include "wolfssl/ssl.h"
@@ -171,6 +174,19 @@ typedef struct esp_tls_cfg {
 } esp_tls_cfg_t;
 
 #ifdef CONFIG_ESP_TLS_SERVER
+#if defined(CONFIG_ESP_TLS_USING_MBEDTLS) && defined(CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS)
+typedef struct esp_tls_session_ticket_ctx {
+    mbedtls_entropy_context entropy;                                            /*!< mbedTLS entropy context structure */
+
+    mbedtls_ctr_drbg_context ctr_drbg;                                          /*!< mbedTLS ctr drbg context structure.
+                                                                                     CTR_DRBG is deterministic random
+                                                                                     bit generation based on AES-256 */
+    mbedtls_ssl_ticket_context ticket_ctx;                                     /*!< Session ticket generation context */
+} esp_tls_session_ticket_ctx_t;
+int esp_tls_session_ticket_ctx_init(esp_tls_session_ticket_ctx_t * cfg);
+void esp_tls_session_ticket_ctx_free(esp_tls_session_ticket_ctx_t * cfg);
+#endif
+
 typedef struct esp_tls_cfg_server {
     const char **alpn_protos;                   /*!< Application protocols required for HTTP2.
                                                      If HTTP2/ALPN support is required, a list
@@ -222,7 +238,13 @@ typedef struct esp_tls_cfg_server {
     unsigned int serverkey_password_len;        /*!< String length of the password pointed to by
                                                      serverkey_password */
 
+#if defined(CONFIG_ESP_TLS_USING_MBEDTLS) && defined(CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS)
+    esp_tls_session_ticket_ctx_t ticket_ctx;                          /*!< Session ticket generation context */
+#endif
 } esp_tls_cfg_server_t;
+
+int esp_tls_cfg_server_init(esp_tls_cfg_server_t * cfg);
+void esp_tls_cfg_server_free(esp_tls_cfg_server_t * cfg);
 #endif /* ! CONFIG_ESP_TLS_SERVER */
 
 /**

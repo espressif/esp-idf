@@ -145,6 +145,7 @@ static void free_secure_context(void *ctx)
     if (cfg->serverkey_buf) {
         free((void *)cfg->serverkey_buf);
     }
+    esp_tls_cfg_server_free(cfg);
     free(cfg);
     free(ssl_ctx);
 }
@@ -160,6 +161,13 @@ static httpd_ssl_ctx_t *create_secure_context(const struct httpd_ssl_config *con
         free(ssl_ctx);
         return NULL;
     }
+
+    if (esp_tls_cfg_server_init(cfg) != ESP_OK) {
+        free(ssl_ctx);
+        free(cfg);
+        return NULL;
+    }
+
     ssl_ctx->tls_cfg = cfg;
 /* cacert = CA which signs client cert, or client cert itself , which is mapped to client_verify_cert_pem */
     if(config->client_verify_cert_pem != NULL) {

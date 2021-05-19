@@ -569,6 +569,54 @@ mbedtls_x509_crt *esp_tls_get_global_ca_store(void)
 
 #endif /* CONFIG_ESP_TLS_USING_MBEDTLS */
 #ifdef CONFIG_ESP_TLS_SERVER
+
+#if defined(CONFIG_ESP_TLS_USING_MBEDTLS) && defined(CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS)
+
+int esp_tls_session_ticket_ctx_init(esp_tls_session_ticket_ctx_t * ctx) {
+
+    mbedtls_ctr_drbg_init(&ctx->ctr_drbg);
+    mbedtls_entropy_init(&ctx->entropy);
+    mbedtls_ssl_ticket_init(&ctx->ticket_ctx);
+    int ret;
+    if ((ret = mbedtls_ctr_drbg_seed(&ctx->ctr_drbg,
+                                     mbedtls_entropy_func, &ctx->entropy, NULL, 0)) != 0) {
+        ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned -0x%x", -ret);
+        return ESP_ERR_MBEDTLS_CTR_DRBG_SEED_FAILED;
+    }
+
+    if( ( ret = mbedtls_ssl_ticket_setup( &ctx->ticket_ctx,
+                    mbedtls_ctr_drbg_random, &ctx->ctr_drbg,
+                    MBEDTLS_CIPHER_AES_256_GCM,
+                    CONFIG_ESP_TLS_SERVER_SESSION_TICKET_TIMEOUT ) ) != 0 )
+        {
+            ESP_LOGE(TAG, "Failed mbedtls_ssl_ticket_setup with error code %d", ret);
+            return ESP_ERR_MBEDTLS_SSL_SESSION_TICKET_SETUP_FAILED;
+        }
+    return ESP_OK;
+}
+
+void esp_tls_session_ticket_ctx_free(esp_tls_session_ticket_ctx_t * ctx) {
+    mbedtls_ssl_ticket_free(&ctx->ticket_ctx);
+    mbedtls_ctr_drbg_init(&ctx->ctr_drbg);
+    mbedtls_entropy_free(&ctx->entropy);
+}
+
+#endif
+
+int esp_tls_cfg_server_init(esp_tls_cfg_server_t * cfg) {
+#if defined(CONFIG_ESP_TLS_USING_MBEDTLS) && defined(CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS)
+    return esp_tls_session_ticket_ctx_init(&cfg->ticket_ctx);
+#else
+    return ESP_OK;
+#endif
+}
+
+void esp_tls_cfg_server_free(esp_tls_cfg_server_t * cfg) {
+#if defined(CONFIG_ESP_TLS_USING_MBEDTLS) && defined(CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS)
+    esp_tls_session_ticket_ctx_free(&cfg->ticket_ctx);
+#endif
+}
+
 /**
  * @brief      Create a server side TLS/SSL connection
  */
