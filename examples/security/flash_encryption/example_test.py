@@ -35,8 +35,8 @@ def test_examples_security_flash_encryption(env, extra_data):
     plain_data = binascii.unhexlify(plain_hex_str.replace(' ', ''))
 
     # Emulate espsecure encrypt_flash_data command
-    EncryptFlashDataArgs = namedtuple('EncryptFlashDataArgs', ['output', 'plaintext_file', 'address', 'keyfile', 'flash_crypt_conf'])
-    args = EncryptFlashDataArgs(BytesIO(), BytesIO(plain_data), flash_addr, BytesIO(b'\x00' * 32), 0xF)
+    EncryptFlashDataArgs = namedtuple('EncryptFlashDataArgs', ['output', 'plaintext_file', 'address', 'keyfile', 'flash_crypt_conf', 'aes_xts'])
+    args = EncryptFlashDataArgs(BytesIO(), BytesIO(plain_data), flash_addr, BytesIO(b'\x00' * 32), 0xF, False)
     espsecure.encrypt_flash_data(args)
 
     expected_ciphertext = args.output.getvalue()
