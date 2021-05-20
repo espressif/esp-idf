@@ -324,9 +324,8 @@ menu "LWIP"
         default y
         help
             Enable IPv6 function. If not use IPv6 function, set this option to n.
-            If disable LWIP_IPV6, not adding coap and asio component into the build.
-            Please assign them to EXCLUDE_COMPONENTS in the make or cmake file in your
-            project directory, so that the component will not be compiled.
+            If disabling LWIP_IPV6 then some other components (coap and asio) will
+            no longer be available.
 
     config LWIP_IPV6_AUTOCONFIG
         bool "Enable IPV6 stateless address autoconfiguration (SLAAC)"
