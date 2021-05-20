@@ -7,9 +7,9 @@ import sys
 import ttfw_idf
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_GENERIC')
+@ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32', 'esp32c3'])
 def test_examples_parttool(env, extra_data):
-    dut = env.get_dut('parttool', 'examples/storage/parttool', dut_class=ttfw_idf.ESP32DUT)
+    dut = env.get_dut('parttool', 'examples/storage/parttool')
     dut.start_app(False)
 
     # Verify factory firmware

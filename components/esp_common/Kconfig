@@ -295,12 +295,6 @@ menu "Common ESP-related"
     config ESP_MAC_ADDR_UNIVERSE_BT
         bool
 
-    config ESP_MAC_ADDR_UNIVERSE_BT_OFFSET
-        int
-        default 2 if ESP32_UNIVERSAL_MAC_ADDRESSES_FOUR
-        default 1 if ESP32_UNIVERSAL_MAC_ADDRESSES_TWO
-        default 1
-
     config ESP_MAC_ADDR_UNIVERSE_ETH
         bool
 

@@ -3,9 +3,9 @@ from __future__ import print_function
 import ttfw_idf
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_GENERIC')
+@ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32', 'esp32c3'])
 def test_examples_system_cpp_exceptions(env, extra_data):
-    dut = env.get_dut('cpp_exceptions_example', 'examples/cxx/exceptions', dut_class=ttfw_idf.ESP32DUT)
+    dut = env.get_dut('cpp_exceptions_example', 'examples/cxx/exceptions')
     # start test
     dut.start_app()
     lines = ['app_main starting',

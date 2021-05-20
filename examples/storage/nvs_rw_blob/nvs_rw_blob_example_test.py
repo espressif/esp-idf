@@ -6,7 +6,7 @@ import ttfw_idf
 from tiny_test_fw import Utility
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_GENERIC')
+@ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32', 'esp32c3'])
 def test_examples_nvs_rw_blob(env, extra_data):
 
     dut = env.get_dut('nvs_rw_blob', 'examples/storage/nvs_rw_blob')
@@ -24,7 +24,7 @@ def test_examples_nvs_rw_blob(env, extra_data):
     for i in range(1, 10):
         time.sleep(random.uniform(0.1, 2))  # in order to randomize the runtimes stored in NVS
         try:
-            # Pulling GPIO0 low using DTR
+            # Pulling pin low using DTR
             dut.port_inst.setDTR(True)
             dut.expect('Restarting...', timeout=5)  # the application waits for a second
         finally:
