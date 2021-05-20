@@ -71,6 +71,7 @@ __attribute__((unused)) static const char TAG[] = "spi_flash";
     .cs_num = 0, \
     .iomux = false, \
     .input_delay_ns = 0,\
+    .cs_setup = 1,\
 }
 #elif CONFIG_IDF_TARGET_ESP32S2
 #define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
@@ -79,6 +80,7 @@ __attribute__((unused)) static const char TAG[] = "spi_flash";
     .cs_num = 0, \
     .iomux = true, \
     .input_delay_ns = 0,\
+    .cs_setup = 1,\
 }
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/efuse.h"
@@ -88,6 +90,7 @@ __attribute__((unused)) static const char TAG[] = "spi_flash";
     .cs_num = 0, \
     .iomux = true, \
     .input_delay_ns = 0,\
+    .cs_setup = 1,\
 }
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/efuse.h"
@@ -98,6 +101,7 @@ __attribute__((unused)) static const char TAG[] = "spi_flash";
     .cs_num = 0, \
     .iomux = true, \
     .input_delay_ns = 0,\
+    .cs_setup = 1,\
 }
 #else
 #define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
@@ -107,6 +111,7 @@ __attribute__((unused)) static const char TAG[] = "spi_flash";
     .iomux = true, \
     .input_delay_ns = 0,\
     .auto_sus_en = true,\
+    .cs_setup = 1,\
 }
 #endif //!CONFIG_SPI_FLASH_AUTO_SUSPEND
 #endif
