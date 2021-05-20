@@ -151,39 +151,39 @@ esp_netif_t* esp_netif_next_unsafe(esp_netif_t* netif)
 
 bool esp_netif_is_netif_listed(esp_netif_t *esp_netif)
 {
+    struct slist_netifs_s *item;
     esp_err_t ret;
     if ((ret = esp_netif_list_lock()) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to lock esp-netif list with %d", ret);
-        return NULL;
+        return false;
     }
 
-    // looking for the netif in the list of registered interfaces
-    esp_netif_t *it = esp_netif_next_unsafe(NULL);
-    do {
-        if (it && it == esp_netif) {
+    SLIST_FOREACH(item, &s_head, next) {
+        if (item->netif == esp_netif) {
             esp_netif_list_unlock();
             return true;
         }
-    } while (NULL != (it = esp_netif_next_unsafe(it)));
+    }
     esp_netif_list_unlock();
     return false;
 }
 
 esp_netif_t *esp_netif_get_handle_from_ifkey(const char *if_key)
 {
+    struct slist_netifs_s *item;
     esp_err_t ret;
     if ((ret = esp_netif_list_lock()) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to lock esp-netif list with %d", ret);
         return NULL;
     }
 
-    esp_netif_t *esp_netif = esp_netif_next_unsafe(NULL);
-    do {
-        if (esp_netif && strcmp(if_key, esp_netif_get_ifkey(esp_netif))==0) {
+    SLIST_FOREACH(item, &s_head, next) {
+        esp_netif_t *esp_netif = item->netif;
+        if (strcmp(if_key, esp_netif_get_ifkey(esp_netif)) == 0) {
             esp_netif_list_unlock();
             return esp_netif;
         }
-    } while (NULL != (esp_netif = esp_netif_next_unsafe(esp_netif)));
+    }
     esp_netif_list_unlock();
     return NULL;
 }
