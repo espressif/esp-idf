@@ -13,32 +13,37 @@ extern "C" {
 #endif
 
 /**
- * @brief Enable early entropy source for RNG
+ * @brief Enable an entropy source for RNG if RF is disabled
  *
- * Uses the SAR ADC to feed entropy into the HWRNG. The ADC is put
- * into a test mode that reads an internal reference voltage and
- * constantly feeds the LSB of data into the HWRNG. Consult the
- * SoC Technical Reference Manual for more information.
+ * The exact internal entropy source mechanism depends on the chip in use but
+ * all SoCs use the SAR ADC to continuously mix random bits (an internal
+ * noise reading) into the HWRNG. Consult the SoC Technical Reference
+ * Manual for more information.
  *
  * Can also be used from app code early during operation, if true
- * random numbers are required before WiFi stack is initialised.
- * Call this function from app code only if WiFi/BT are not yet
- * enabled and I2S and ADC are not in use.
- *
- * Call bootloader_random_disable() when done.
+ * random numbers are required before RF is initialised. Consult
+ * ESP-IDF Programming Guide "Random Number Generation" section for
+ * details.
  */
 void bootloader_random_enable(void);
 
 /**
- * @brief Disable early entropy source for RNG
+ * @brief Disable entropy source for RNG
  *
- * Disables SAR ADC source and resets the I2S hardware.
+ * Disables internal entropy source. Must be called after
+ * bootloader_random_enable() and before RF features, ADC, or
+ * I2S (ESP32 only) are initialized.
  *
+ * Consult the ESP-IDF Programming Guide "Random Number Generation"
+ * section for details.
  */
 void bootloader_random_disable(void);
 
 /**
  * @brief Fill buffer with 'length' random bytes
+ *
+ * @note If this function is being called from app code only, and never
+ * from the bootloader, then it's better to call esp_fill_random().
  *
  * @param buffer Pointer to buffer
  * @param length This many bytes of random data will be copied to buffer
