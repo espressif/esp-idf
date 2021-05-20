@@ -29,7 +29,8 @@ extern "C" {
  * Guide "Random Number Generation" section for necessary prerequisites.
  *
  * This function automatically busy-waits to ensure enough external entropy has been
- * introduced into the hardware RNG state, before returning a new random number.
+ * introduced into the hardware RNG state, before returning a new random number. This delay
+ * is very short (always less than 100 CPU cycles).
  *
  * @return Random value between 0 and UINT32_MAX
  */
