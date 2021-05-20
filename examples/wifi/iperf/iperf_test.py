@@ -446,7 +446,7 @@ class IperfTestUtility(object):
         return ret
 
 
-@ttfw_idf.idf_example_test(env_tag="Example_ShieldBox_Basic", category="stress")
+@ttfw_idf.idf_example_test(env_tag="Example_ShieldBox_Basic", category="stress", target=['ESP32', 'ESP32S2'])
 def test_wifi_throughput_with_different_configs(env, extra_data):
     """
     steps: |
@@ -507,7 +507,7 @@ def test_wifi_throughput_with_different_configs(env, extra_data):
     report.generate_report()
 
 
-@ttfw_idf.idf_example_test(env_tag="Example_ShieldBox", category="stress")
+@ttfw_idf.idf_example_test(env_tag="Example_ShieldBox", category="stress", target=['ESP32', 'ESP32S2'])
 def test_wifi_throughput_vs_rssi(env, extra_data):
     """
     steps: |
