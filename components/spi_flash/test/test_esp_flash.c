@@ -186,6 +186,7 @@ static const char TAG[] = "test_esp_flash";
         /* the pin which is usually used by the PSRAM */ \
         .cs_io_num = SPI1_CS_IO, \
         .input_delay_ns = 0, \
+        .cs_setup = 1,\
     }
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -208,6 +209,7 @@ flashtest_config_t config_list[] = {
         .cs_id = 0,
         .cs_io_num = VSPI_PIN_NUM_CS,
         .input_delay_ns = 0,
+        .cs_setup = 1,\
     },
 };
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -220,6 +222,7 @@ flashtest_config_t config_list[] = {
         .cs_id = 0,
         .cs_io_num = FSPI_PIN_NUM_CS,
         .input_delay_ns = 0,
+        .cs_setup = 1,\
     },
     {
         .io_mode = TEST_SPI_READ_MODE,
@@ -229,6 +232,7 @@ flashtest_config_t config_list[] = {
         // uses GPIO matrix on esp32s2 regardless of FORCE_GPIO_MATRIX
         .cs_io_num = HSPI_PIN_NUM_CS,
         .input_delay_ns = 0,
+        .cs_setup = 1,\
     },
 };
 #elif CONFIG_IDF_TARGET_ESP32S3
@@ -242,6 +246,7 @@ flashtest_config_t config_list[] = {
         .cs_id = 0,
         .cs_io_num = FSPI_PIN_NUM_CS,
         .input_delay_ns = 0,
+        .cs_setup = 1,\
     },
 };
 #elif CONFIG_IDF_TARGET_ESP32C3
@@ -258,6 +263,7 @@ flashtest_config_t config_list[] = {
         .cs_id = 0,
         .cs_io_num = FSPI_PIN_NUM_CS,
         .input_delay_ns = 0,
+        .cs_setup = 1,\
     },
 };
 #endif
@@ -394,6 +400,7 @@ static void setup_new_chip(const flashtest_config_t* test_cfg, esp_flash_t** out
         .cs_id = test_cfg->cs_id,
         .cs_io_num = test_cfg->cs_io_num,
         .input_delay_ns = test_cfg->input_delay_ns,
+        .cs_setup = test_cfg->cs_setup,
     };
     esp_flash_t* init_chip;
     esp_err_t err = spi_bus_add_flash_device(&init_chip, &dev_cfg);
