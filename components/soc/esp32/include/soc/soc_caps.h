@@ -282,3 +282,11 @@
 #  define CAN_BRP_DIV_SUPPORTED             SOC_TWAI_BRP_DIV_SUPPORTED
 #  define CAN_BRP_DIV_THRESH                SOC_TWAI_BRP_DIV_THRESH
 #endif
+
+/*-------------------------- SDMMC CAPS -----------------------------------------*/
+
+/* On ESP32, clock/cmd/data pins use IO MUX.
+ * Card detect, write protect, interrupt use GPIO Matrix on all chips.
+ */
+#define SOC_SDMMC_USE_IOMUX  1
+#define SOC_SDMMC_NUM_SLOTS  2

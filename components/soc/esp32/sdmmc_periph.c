@@ -14,37 +14,44 @@
 
 #include "soc/sdmmc_periph.h"
 
-const sdmmc_slot_info_t sdmmc_slot_info[2]  = {
+const sdmmc_slot_info_t sdmmc_slot_info[SOC_SDMMC_NUM_SLOTS] = {
     {
-        .clk_gpio = SDMMC_SLOT0_IOMUX_PIN_NUM_CLK,
-        .cmd_gpio = SDMMC_SLOT0_IOMUX_PIN_NUM_CMD,
-        .d0_gpio = SDMMC_SLOT0_IOMUX_PIN_NUM_D0,
-        .d1_gpio = SDMMC_SLOT0_IOMUX_PIN_NUM_D1,
-        .d2_gpio = SDMMC_SLOT0_IOMUX_PIN_NUM_D2,
-        .d3_gpio = SDMMC_SLOT0_IOMUX_PIN_NUM_D3,
-        .d4_gpio = SDMMC_SLOT0_IOMUX_PIN_NUM_D4,
-        .d5_gpio = SDMMC_SLOT0_IOMUX_PIN_NUM_D5,
-        .d6_gpio = SDMMC_SLOT0_IOMUX_PIN_NUM_D6,
-        .d7_gpio = SDMMC_SLOT0_IOMUX_PIN_NUM_D7,
+        .width = 8,
         .card_detect = HOST_CARD_DETECT_N_1_IDX,
         .write_protect = HOST_CARD_WRITE_PRT_1_IDX,
         .card_int = HOST_CARD_INT_N_1_IDX,
-        .width = 8
     },
     {
-        .clk_gpio = SDMMC_SLOT1_IOMUX_PIN_NUM_CLK,
-        .cmd_gpio = SDMMC_SLOT1_IOMUX_PIN_NUM_CMD,
-        .d0_gpio = SDMMC_SLOT1_IOMUX_PIN_NUM_D0,
-        .d1_gpio = SDMMC_SLOT1_IOMUX_PIN_NUM_D1,
-        .d2_gpio = SDMMC_SLOT1_IOMUX_PIN_NUM_D2,
-        .d3_gpio = SDMMC_SLOT1_IOMUX_PIN_NUM_D3,
-        .d4_gpio = -1,  //slot1 has no D4-7
-        .d5_gpio = -1,
-        .d6_gpio = -1,
-        .d7_gpio = -1,
+        .width = 4,
         .card_detect = HOST_CARD_DETECT_N_2_IDX,
         .write_protect = HOST_CARD_WRITE_PRT_2_IDX,
         .card_int = HOST_CARD_INT_N_2_IDX,
-        .width = 4
+    }
+};
+
+const sdmmc_slot_io_info_t sdmmc_slot_gpio_num[SOC_SDMMC_NUM_SLOTS] = {
+    {
+        .clk = SDMMC_SLOT0_IOMUX_PIN_NUM_CLK,
+        .cmd = SDMMC_SLOT0_IOMUX_PIN_NUM_CMD,
+        .d0 = SDMMC_SLOT0_IOMUX_PIN_NUM_D0,
+        .d1 = SDMMC_SLOT0_IOMUX_PIN_NUM_D1,
+        .d2 = SDMMC_SLOT0_IOMUX_PIN_NUM_D2,
+        .d3 = SDMMC_SLOT0_IOMUX_PIN_NUM_D3,
+        .d4 = SDMMC_SLOT0_IOMUX_PIN_NUM_D4,
+        .d5 = SDMMC_SLOT0_IOMUX_PIN_NUM_D5,
+        .d6 = SDMMC_SLOT0_IOMUX_PIN_NUM_D6,
+        .d7 = SDMMC_SLOT0_IOMUX_PIN_NUM_D7,
+    },
+    {
+        .clk = SDMMC_SLOT1_IOMUX_PIN_NUM_CLK,
+        .cmd = SDMMC_SLOT1_IOMUX_PIN_NUM_CMD,
+        .d0 = SDMMC_SLOT1_IOMUX_PIN_NUM_D0,
+        .d1 = SDMMC_SLOT1_IOMUX_PIN_NUM_D1,
+        .d2 = SDMMC_SLOT1_IOMUX_PIN_NUM_D2,
+        .d3 = SDMMC_SLOT1_IOMUX_PIN_NUM_D3,
+        .d4 = -1,  //slot1 has no D4-7
+        .d5 = -1,
+        .d6 = -1,
+        .d7 = -1,
     }
 };

@@ -21,6 +21,7 @@
 #define SOC_HMAC_SUPPORTED              1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS 3
+#define SOC_SDMMC_HOST_SUPPORTED        1
 
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
@@ -218,3 +219,13 @@
 #define SOC_SPI_MEM_SUPPORT_SW_SUSPEND                    (1)
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)
+
+/*-------------------------- SDMMC CAPS -----------------------------------------*/
+
+/* Card detect, write protect, interrupt use GPIO Matrix on all chips.
+ * On ESP32-S3, clock/cmd/data pins use GPIO Matrix as well.
+ */
+#define SOC_SDMMC_USE_GPIO_MATRIX  1
+#define SOC_SDMMC_NUM_SLOTS        2
+/* Indicates that there is an option to use XTAL clock instead of PLL for SDMMC */
+#define SOC_SDMMC_SUPPORT_XTAL_CLOCK    1
