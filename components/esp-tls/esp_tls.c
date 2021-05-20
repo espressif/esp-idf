@@ -570,7 +570,7 @@ mbedtls_x509_crt *esp_tls_get_global_ca_store(void)
 #endif /* CONFIG_ESP_TLS_USING_MBEDTLS */
 #ifdef CONFIG_ESP_TLS_SERVER
 
-#if defined(CONFIG_ESP_TLS_USING_MBEDTLS) && defined(CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS)
+#if defined(CONFIG_ESP_TLS_USING_MBEDTLS) && defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
 
 int esp_tls_session_ticket_ctx_init(esp_tls_session_ticket_ctx_t * ctx) {
 
@@ -604,7 +604,7 @@ void esp_tls_session_ticket_ctx_free(esp_tls_session_ticket_ctx_t * ctx) {
 #endif
 
 int esp_tls_cfg_server_init(esp_tls_cfg_server_t * cfg) {
-#if defined(CONFIG_ESP_TLS_USING_MBEDTLS) && defined(CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS)
+#if defined(CONFIG_ESP_TLS_USING_MBEDTLS) && defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
     return esp_tls_session_ticket_ctx_init(&cfg->ticket_ctx);
 #else
     return ESP_OK;
@@ -612,7 +612,7 @@ int esp_tls_cfg_server_init(esp_tls_cfg_server_t * cfg) {
 }
 
 void esp_tls_cfg_server_free(esp_tls_cfg_server_t * cfg) {
-#if defined(CONFIG_ESP_TLS_USING_MBEDTLS) && defined(CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS)
+#if defined(CONFIG_ESP_TLS_USING_MBEDTLS) && defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
     esp_tls_session_ticket_ctx_free(&cfg->ticket_ctx);
 #endif
 }

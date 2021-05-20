@@ -20,7 +20,7 @@
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/error.h"
 #include "mbedtls/certs.h"
-#ifdef CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS
+#ifdef CONFIG_ESP_TLS_SERVER_SESSION_TICKETS
     #include "mbedtls/ssl_ticket.h"
 #endif
 #elif CONFIG_ESP_TLS_USING_WOLFSSL
@@ -174,7 +174,7 @@ typedef struct esp_tls_cfg {
 } esp_tls_cfg_t;
 
 #ifdef CONFIG_ESP_TLS_SERVER
-#if defined(CONFIG_ESP_TLS_USING_MBEDTLS) && defined(CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS)
+#if defined(CONFIG_ESP_TLS_USING_MBEDTLS) && defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
 typedef struct esp_tls_session_ticket_ctx {
     mbedtls_entropy_context entropy;                                            /*!< mbedTLS entropy context structure */
 
@@ -238,7 +238,7 @@ typedef struct esp_tls_cfg_server {
     unsigned int serverkey_password_len;        /*!< String length of the password pointed to by
                                                      serverkey_password */
 
-#if defined(CONFIG_ESP_TLS_USING_MBEDTLS) && defined(CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS)
+#if defined(CONFIG_ESP_TLS_USING_MBEDTLS) && defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
     esp_tls_session_ticket_ctx_t ticket_ctx;                          /*!< Session ticket generation context */
 #endif
 } esp_tls_cfg_server_t;
