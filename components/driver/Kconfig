@@ -99,6 +99,7 @@ menu "Driver configurations"
         config UART_ISR_IN_IRAM
             bool "Place UART ISR function into IRAM"
             default n
+            select FREERTOS_SUPPORT_STATIC_ALLOCATION
             help
                 If this option is not selected, UART interrupt will be disabled for a long time and
                 may cause data lost when doing spi flash operation.
