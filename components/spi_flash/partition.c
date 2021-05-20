@@ -235,8 +235,8 @@ static esp_err_t load_partitions(void)
             item->info.encrypted = true;
         }
 
-        // note: if label in flash is not null terminated, one byte will be truncated here
-        strlcpy(item->info.label, (const char*) entry.label, sizeof(item->info.label));
+        // item->info.label is initialized by calloc, so resulting string will be null terminated
+        strncpy(item->info.label, (const char*) entry.label, sizeof(item->info.label) - 1);
 
         // add it to the list
         if (last == NULL) {
