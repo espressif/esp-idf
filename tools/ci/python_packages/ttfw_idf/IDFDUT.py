@@ -506,8 +506,7 @@ class IDFDUT(DUT.SerialDUT):
     def close(self):
         super(IDFDUT, self).close()
         if not self.allow_dut_exception and self.get_exceptions():
-            Utility.console_log('DUT exception detected on {}'.format(self), color='red')
-            raise IDFDUTException()
+            raise IDFDUTException('DUT exception detected on {}'.format(self))
 
 
 class ESP32DUT(IDFDUT):
