@@ -71,8 +71,8 @@ void spi_slave_hal_prepare_data(const spi_slave_hal_context_t *hal)
     spi_ll_slave_set_rx_bitlen(hal->hw, hal->bitlen);
     spi_ll_slave_set_tx_bitlen(hal->hw, hal->bitlen);
 
-    spi_ll_enable_mosi(hal->hw, (hal->tx_buffer == NULL) ? 0 : 1);
-    spi_ll_enable_miso(hal->hw, (hal->rx_buffer == NULL) ? 0 : 1);
+    spi_ll_enable_mosi(hal->hw, (hal->rx_buffer == NULL) ? 0 : 1);
+    spi_ll_enable_miso(hal->hw, (hal->tx_buffer == NULL) ? 0 : 1);
 }
 
 void spi_slave_hal_store_result(spi_slave_hal_context_t *hal)
