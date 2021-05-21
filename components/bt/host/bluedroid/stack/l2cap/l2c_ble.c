@@ -829,7 +829,7 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
 
 #endif // (!CONTROLLER_RPA_LIST_ENABLE)
 
-#if (CONTROLLER_RPA_LIST_ENABLE && CONFIG_BT_CTRL_ESP32)
+#if (CONTROLLER_RPA_LIST_ENABLE)
 
     if (p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) {
         if (btm_cb.ble_ctr_cb.privacy_mode >=  BTM_PRIVACY_1_2) {
