@@ -4,19 +4,9 @@
 #
 # Converts efuse table to header file efuse_table.h.
 #
-# Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+# SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http:#www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
 from __future__ import division, print_function
 
 import argparse
@@ -24,6 +14,7 @@ import hashlib
 import os
 import re
 import sys
+from datetime import datetime
 
 __version__ = '1.0'
 
@@ -31,20 +22,15 @@ quiet = False
 max_blk_len = 256
 idf_target = 'esp32'
 
-copyright = '''// Copyright 2017-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at",
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License
+
+def get_copyright():
+    copyright_str = '''/*
+ * SPDX-FileCopyrightText: 2017-%d Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 '''
+    return copyright_str % datetime.today().year
 
 
 def status(msg):
@@ -130,6 +116,7 @@ class FuseTable(list):
     def verify_duplicate_name(self):
         # check on duplicate name
         names = [p.field_name for p in self]
+        names += [name.replace('.', '_') for name in names if '.' in name]
         duplicates = set(n for n in names if names.count(n) > 1)
 
         # print sorted duplicate partitions by name
@@ -144,20 +131,70 @@ class FuseTable(list):
             if fl_error is True:
                 raise InputError('Field names must be unique')
 
+    def check_struct_field_name(self):
+        # check that stuctured fields have a root field
+        for p in self:
+            if '.' in p.field_name:
+                name = ''
+                for sub in p.field_name.split('.')[:-1]:
+                    name = sub if name == '' else name + '.' + sub
+                    missed_name = True
+                    for d in self:
+                        if p is not d and p.efuse_block == d.efuse_block and name == d.field_name:
+                            missed_name = False
+                    if missed_name:
+                        raise InputError('%s is not found' % name)
+
     def verify(self, type_table=None):
+        def check(p, n):
+            left = n.bit_start
+            right = n.bit_start + n.bit_count - 1
+            start = p.bit_start
+            end = p.bit_start + p.bit_count - 1
+            if left <= start <= right:
+                if left <= end <= right:
+                    return 'included in'  # [n  [p...p]  n]
+                return 'intersected with'  # [n  [p..n]..p]
+            if left <= end <= right:
+                return 'intersected with'  # [p..[n..p] n]
+            if start <= left and right <= end:
+                return 'wraps'  # [p  [n...n]  p]
+            return 'ok'  # [p] [n]  or  [n] [p]
+
+        def print_error(p, n, state):
+            raise InputError('Field at %s, %s, %s, %s  %s  %s, %s, %s, %s' %
+                             (p.field_name, p.efuse_block, p.bit_start, p.bit_count, state,
+                              n.field_name, n.efuse_block, n.bit_start, n.bit_count))
         for p in self:
             p.verify(type_table)
 
         self.verify_duplicate_name()
+        if type_table != 'custom_table':
+            # check will be done for common and custom tables together
+            self.check_struct_field_name()
 
         # check for overlaps
-        last = None
-        for p in sorted(self, key=lambda x:(x.efuse_block, x.bit_start)):
-            if last is not None and last.efuse_block == p.efuse_block and p.bit_start < last.bit_start + last.bit_count:
-                raise InputError('Field at %s, %s, %s, %s overlaps %s, %s, %s, %s' %
-                                 (p.field_name, p.efuse_block, p.bit_start, p.bit_count,
-                                  last.field_name, last.efuse_block, last.bit_start, last.bit_count))
-            last = p
+        for p in self:
+            for n in self:
+                if p is not n and p.efuse_block == n.efuse_block:
+                    state = check(p, n)
+                    if state != 'ok':
+                        if '.' in p.field_name:
+                            name = ''
+                            for sub in p.field_name.split('.'):
+                                name = sub if name == '' else name + '.' + sub
+                                for d in self:
+                                    if p is not d and p.efuse_block == d.efuse_block and name == d.field_name:
+                                        state = check(p, d)
+                                        if state == 'included in':
+                                            break
+                                        elif state != 'intersected with':
+                                            state = 'out of range'
+                                        print_error(p, d, state)
+                            continue
+                        elif '.' in n.field_name:
+                            continue
+                        print_error(p, n, state)
 
     def calc_md5(self):
         txt_table = ''
@@ -204,7 +241,7 @@ class FuseTable(list):
         return str(last_used_bit)
 
     def to_header(self, file_name):
-        rows = [copyright]
+        rows = [get_copyright()]
         rows += ['#ifdef __cplusplus',
                  'extern "C" {',
                  '#endif',
@@ -221,7 +258,7 @@ class FuseTable(list):
         last_field_name = ''
         for p in self:
             if (p.field_name != last_field_name):
-                rows += ['extern const esp_efuse_desc_t* ' + 'ESP_EFUSE_' + p.field_name + '[];']
+                rows += ['extern const esp_efuse_desc_t* ' + 'ESP_EFUSE_' + p.field_name.replace('.', '_') + '[];']
                 last_field_name = p.field_name
 
         rows += ['',
@@ -232,7 +269,7 @@ class FuseTable(list):
         return '\n'.join(rows)
 
     def to_c_file(self, file_name, debug):
-        rows = [copyright]
+        rows = [get_copyright()]
         rows += ['#include "sdkconfig.h"',
                  '#include "esp_efuse.h"',
                  '#include <assert.h>',
@@ -282,7 +319,7 @@ class FuseTable(list):
             if (p.field_name != last_name):
                 if last_name != '':
                     rows += ['};\n']
-                rows += ['static const esp_efuse_desc_t ' + p.field_name + '[] = {']
+                rows += ['static const esp_efuse_desc_t ' + p.field_name.replace('.', '_') + '[] = {']
                 last_name = p.field_name
             rows += [p.to_struct(debug) + ',']
         rows += ['};\n']
@@ -294,10 +331,10 @@ class FuseTable(list):
                 if last_name != '':
                     rows += ['    NULL',
                              '};\n']
-                rows += ['const esp_efuse_desc_t* ' + 'ESP_EFUSE_' + p.field_name + '[] = {']
+                rows += ['const esp_efuse_desc_t* ' + 'ESP_EFUSE_' + p.field_name.replace('.', '_') + '[] = {']
             last_name = p.field_name
             index = str(0) if str(p.group) == '' else str(p.group)
-            rows += ['    &' + p.field_name + '[' + index + '],    \t\t// ' + p.comment]
+            rows += ['    &' + p.field_name.replace('.', '_') + '[' + index + '],    \t\t// ' + p.comment]
         rows += ['    NULL',
                  '};\n']
 
@@ -376,25 +413,9 @@ class FuseDefinition(object):
             raise ValidationError(self, 'efuse_block field is not set')
         if self.bit_count is None:
             raise ValidationError(self, 'bit_count field is not set')
-
-        if type_table is not None:
-            if type_table == 'custom_table':
-                if self.efuse_block != 'EFUSE_BLK3':
-                    raise ValidationError(self, 'custom_table should use only EFUSE_BLK3')
-
         max_bits = self.get_max_bits_of_block()
-
         if self.bit_start + self.bit_count > max_bits:
             raise ValidationError(self, 'The field is outside the boundaries(max_bits = %d) of the %s block' % (max_bits, self.efuse_block))
-
-    def get_full_name(self):
-        def get_postfix(group):
-            postfix = ''
-            if group != '':
-                postfix = '_PART_' + group
-            return postfix
-
-        return self.field_name + get_postfix(self.group)
 
     def get_bit_count(self, check_define=True):
         if check_define is True and self.define is not None:
