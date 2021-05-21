@@ -14,9 +14,10 @@ COMPONENTS := esp_hw_support esptool_py bootloader_support log spi_flash micro-e
 CFLAGS =
 CXXFLAGS =
 
-#We cannot include the idf_target, esp_common component directly but we need their includes.
+#We cannot include the some components like idf_target, esp_common directly but we need their includes.
 CFLAGS += -I $(IDF_PATH)/components/$(IDF_TARGET)/include
 CFLAGS += -I $(IDF_PATH)/components/esp_common/include
+CFLAGS += -I $(IDF_PATH)/components/newlib/platform_include
 CFLAGS += -I $(IDF_PATH)/components/xtensa/include -I $(IDF_PATH)/components/xtensa/$(IDF_TARGET)/include
 
 # The bootloader pseudo-component is also included in this build, for its Kconfig.projbuild to be included.

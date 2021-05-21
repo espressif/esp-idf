@@ -14,6 +14,7 @@
 
 #include <stdint.h>
 #include <sys/param.h>
+#include <sys/lock.h>
 
 #include "esp_attr.h"
 #include "soc/rtc.h"
