@@ -62,6 +62,9 @@ void rtc_init(rtc_config_t cfg)
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DBIAS_WAK, RTC_CNTL_DBIAS_1V10);
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DBIAS_SLP, RTC_CNTL_DBIAS_1V10);
 
+    /* Recover default wait cycle for touch or COCPU after wakeup from deep sleep. */
+    REG_SET_FIELD(RTC_CNTL_TIMER2_REG, RTC_CNTL_ULPCP_TOUCH_START_WAIT, RTC_CNTL_ULPCP_TOUCH_START_WAIT_DEFAULT);
+
     if (cfg.clkctl_init) {
         //clear CMMU clock force on
         CLEAR_PERI_REG_MASK(EXTMEM_PRO_CACHE_MMU_POWER_CTRL_REG, EXTMEM_PRO_CACHE_MMU_MEM_FORCE_ON);
