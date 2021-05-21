@@ -124,14 +124,16 @@
     SPI_PAD_CONFIG_D6,                    EFUSE_BLK1,  102,    6,     SPI_PAD_configure D6
     SPI_PAD_CONFIG_D7,                    EFUSE_BLK1,  108,    6,     SPI_PAD_configure D7
     WAFER_VERSION,                        EFUSE_BLK1,  114,    3,     WAFER version 0:A
-    PKG_VERSION,                          EFUSE_BLK1,  117,    4,     Package version 0:ESP32-S2 1:ESP32-S2FH16 2:ESP32-S2FH32
-    BLOCK1_VERSION,                       EFUSE_BLK1,  121,    3,     BLOCK1 efuse version 0:No calibration 1:With calibration
-    SYS_DATA_PART0,                       EFUSE_BLK1,  126,   66,     System configuration
+    FLASH_VERSION,                        EFUSE_BLK1,  117,    4,     Flash_version
+    BLOCK1_VERSION,                       EFUSE_BLK1,  121,    3,     BLOCK1 efuse version
+    PSRAM_VERSION,                        EFUSE_BLK1,  124,    4,     PSRAM version
+    PKG_VERSION,                          EFUSE_BLK1,  128,    4,     Package version
+    # SYS_DATA_PART0,                      EFUSE_BLK1,  132,   60,     System configuration (Reserve)
 
 # SYS_DATA_PART1 BLOCK# - System configuration
 #######################
     OPTIONAL_UNIQUE_ID,                   EFUSE_BLK2,    0,  128,     Optional unique 128-bit ID
-    BLOCK2_VERSION,                       EFUSE_BLK2,  132,    3,     Version of BLOCK2
+    BLOCK2_VERSION,                       EFUSE_BLK2,  132,    3,     Version of BLOCK2: 0-No ADC calib; 1-ADC calib V1; 2-ADC calib V2
 
 ################
 USER_DATA,                                EFUSE_BLK3,    0,  256,     User data
