@@ -149,7 +149,7 @@ class JunitReport(object):
         assert cls.JUNIT_CURRENT_TEST_CASE
 
         for item in performance_items:
-            cls.JUNIT_CURRENT_TEST_CASE.stdout += '[{}]: {}\n'.format(item[0], item[1])
+            cls.JUNIT_CURRENT_TEST_CASE.stdout += '[Performance][{}]: {}\n'.format(item[0], item[1])
 
 
 def test_method(**kwargs):
