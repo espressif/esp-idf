@@ -512,7 +512,7 @@ CXXFLAGS += -fno-rtti
 LDFLAGS += -fno-rtti
 endif
 
-ARFLAGS := cru
+ARFLAGS := cr
 
 export CFLAGS CPPFLAGS CXXFLAGS ARFLAGS
 
