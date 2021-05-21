@@ -114,7 +114,6 @@ clang_tidy_deploy:
   extends:
     - .deploy_job_template
     - .rules:patterns:clang_tidy
-  dependencies:  # set dependencies to null to avoid missing artifacts issue
   needs:
     - clang_tidy_check
   tags:
