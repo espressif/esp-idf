@@ -1,6 +1,12 @@
 /*
+ * SPDX-FileCopyrightText: 2006 Uwe Stuehler <uwe@openbsd.org>
+ *
+ * SPDX-License-Identifier: ISC
+ *
+ * SPDX-FileContributor: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ */
+/*
  * Copyright (c) 2006 Uwe Stuehler <uwe@openbsd.org>
- * Adaptations to ESP-IDF Copyright (c) 2016 Espressif Systems (Shanghai) PTE LTD
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
