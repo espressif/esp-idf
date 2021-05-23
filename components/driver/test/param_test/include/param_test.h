@@ -1,4 +1,9 @@
 /*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/*
  * Parameterized Test Framework
  *
  * Peripherals like SPI has several parameters like: freq, mode, DMA, etc.
