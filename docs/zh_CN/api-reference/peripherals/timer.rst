@@ -31,12 +31,14 @@
 
 首先调用 :cpp:func:`timer_init` 函数，并将 :cpp:type:`timer_config_t` 结构体传递给此函数，用于定义定时器的工作方式，实现定时器初始化。特别注意以下定时器参数可设置为：
 
-    * **时钟源**: 选择时钟源，它同时钟分频器一起决定了定时器的分辨率。默认的时钟源是 APB_CLK (一般是 80 MHz)。
-    * **分频器**: 设置定时器中计数器计数的速度，:cpp:member:`divider` 的设置将用作输入时钟源的除数。
-    * **模式**: 设置计数器是递增还是递减。可通过从 :cpp:type:`timer_count_dir_t` 中选取一个值，后使用 :cpp:member:`counter_dir` 来选择模式。
-    * **计数器使能**: 如果计数器已使能，则在调用 :cpp:func:`timer_init` 后计数器将立即开始递增/递减。您可通过从 :cpp:type:`timer_start_t` 中选取一个值，后使用 :cpp:member:`counter_en` 改变此行为。
-    * **报警使能**: 可使用 :cpp:member:`alarm_en` 设置。
-    * **自动重载**: 设置计数器是否应该在定时器警报上使用 :cpp:member:`auto_reload` 自动重载首个计数值，还是继续递增或递减。
+.. list::
+
+    :not esp32: - **时钟源**: 选择时钟源，它同时钟分频器一起决定了定时器的分辨率。默认的时钟源是 APB_CLK (一般是 80 MHz)。
+    - **分频器**: 设置定时器中计数器计数的速度，:cpp:member:`divider` 的设置将用作输入时钟源的除数。
+    - **模式**: 设置计数器是递增还是递减。可通过从 :cpp:type:`timer_count_dir_t` 中选取一个值，后使用 :cpp:member:`counter_dir` 来选择模式。
+    - **计数器使能**: 如果计数器已使能，则在调用 :cpp:func:`timer_init` 后计数器将立即开始递增/递减。您可通过从 :cpp:type:`timer_start_t` 中选取一个值，后使用 :cpp:member:`counter_en` 改变此行为。
+    - **报警使能**: 可使用 :cpp:member:`alarm_en` 设置。
+    - **自动重载**: 设置计数器是否应该在定时器警报上使用 :cpp:member:`auto_reload` 自动重载首个计数值，还是继续递增或递减。
 
 要获取定时器设置的当前值，请使用函数 :cpp:func:`timer_get_config`。
 

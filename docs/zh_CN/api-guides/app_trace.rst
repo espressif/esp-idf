@@ -172,7 +172,7 @@ OpenOCD 应用程序跟踪命令
 
 命令用法：
 
-``esp32 apptrace [start <options>] | [stop] | [status] | [dump <cores_num> <outfile>]``
+``esp apptrace [start <options>] | [stop] | [status] | [dump <cores_num> <outfile>]``
 
 子命令：
 
@@ -215,7 +215,7 @@ Start 子命令的语法：
 
 	::
 
-		esp32 apptrace start file://trace.log 1 2048 5 0 0
+		esp apptrace start file://trace.log 1 2048 5 0 0
 
     	跟踪数据会被检索并以非阻塞的模式保存到文件中，如果收集满 2048 字节的数据或者在 5 秒内都没有新的数据，那么该过程就会停止。
 
@@ -227,15 +227,15 @@ Start 子命令的语法：
 
 	::
 
-		esp32 apptrace start file://trace.log 1 -1 -1 0 0
+		esp apptrace start file://trace.log 1 -1 -1 0 0
 
-    	对收集数据的大小没有限制，并且没有设置任何超时时间。可以通过在 OpenOCD 的 telnet 会话窗口中发送 ``esp32 apptrace stop`` 命令，或者在 OpenOCD 窗口中使用快捷键 Ctrl+C 来停止此过程。
+    	对收集数据的大小没有限制，并且没有设置任何超时时间。可以通过在 OpenOCD 的 telnet 会话窗口中发送 ``esp apptrace stop`` 命令，或者在 OpenOCD 窗口中使用快捷键 Ctrl+C 来停止此过程。
 
 3. 	检索跟踪数据并无限期保存。
 
 	::
 
-		esp32 apptrace start file://trace.log 0 -1 -1 0 0
+		esp apptrace start file://trace.log 0 -1 -1 0 0
 
     	在跟踪停止之前，OpenOCD 的 telnet 会话窗口将不可用。要停止跟踪，请在 OpenOCD 的窗口中使用快捷键 Ctrl+C。
 
@@ -243,7 +243,7 @@ Start 子命令的语法：
 
 	::
 
-		esp32 apptrace start file://trace.log 0 2048 -1 1 0
+		esp apptrace start file://trace.log 0 2048 -1 1 0
 
     	想要复位后立即开始跟踪，请使用 OpenOCD 的 ``reset halt`` 命令。
 
@@ -353,7 +353,7 @@ OpenOCD SystemView 跟踪命令选项
 
 命令用法：
 
-``esp32 sysview [start <options>] | [stop] | [status]``
+``esp sysview [start <options>] | [stop] | [status]``
 
 子命令：
 
@@ -391,9 +391,9 @@ Start 子命令语法：
 
 	::
 
-		esp32 sysview start file://pro-cpu.SVDat file://app-cpu.SVDat
+		esp sysview start file://pro-cpu.SVDat file://app-cpu.SVDat
 
-	跟踪数据被检索并以非阻塞的方式保存，要停止此过程，需要在 OpenOCD 的 telnet 会话窗口输入 ``esp32 apptrace stop`` 命令，或者也可以在 OpenOCD 窗口中按下 Ctrl+C。
+	跟踪数据被检索并以非阻塞的方式保存，要停止此过程，需要在 OpenOCD 的 telnet 会话窗口输入 ``esp sysview stop`` 命令，或者也可以在 OpenOCD 窗口中按下 Ctrl+C。
 
 2.	检索跟踪数据并无限保存。
 
