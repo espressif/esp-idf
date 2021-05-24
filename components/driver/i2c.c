@@ -631,7 +631,7 @@ static esp_err_t i2c_hw_fsm_reset(i2c_port_t i2c_num)
     return ESP_OK;
 }
 
-static i2c_sclk_t i2c_get_clk_src(const i2c_config_t *i2c_conf)
+static i2c_sclk_t i2c_get_clk_src(const uint32_t clk_flags, const uint32_t clk_speed)
 {
     for (i2c_sclk_t clk = I2C_SCLK_DEFAULT + 1; clk < I2C_SCLK_MAX; clk++) {
 #if CONFIG_IDF_TARGET_ESP32S3
@@ -639,7 +639,8 @@ static i2c_sclk_t i2c_get_clk_src(const i2c_config_t *i2c_conf)
             continue;
         }
 #endif
-        if (((i2c_conf->clk_flags & i2c_clk_alloc[clk].character) == i2c_conf->clk_flags) && (i2c_conf->master.clk_speed <= i2c_clk_alloc[clk].clk_freq)) {
+        if ( ((clk_flags & i2c_clk_alloc[clk].character) == clk_flags) &&
+             (clk_speed <= i2c_clk_alloc[clk].clk_freq) ) {
             return clk;
         }
     }
@@ -648,15 +649,30 @@ static i2c_sclk_t i2c_get_clk_src(const i2c_config_t *i2c_conf)
 
 esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t *i2c_conf)
 {
+    i2c_sclk_t src_clk = I2C_SCLK_DEFAULT;
+    esp_err_t ret = ESP_OK;
+
     ESP_RETURN_ON_FALSE(i2c_num < I2C_NUM_MAX, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
     ESP_RETURN_ON_FALSE(i2c_conf != NULL, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_ADDR_ERROR_STR);
     ESP_RETURN_ON_FALSE(i2c_conf->mode < I2C_MODE_MAX, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_MODE_ERR_STR);
+
     if (i2c_conf->mode == I2C_MODE_MASTER) {
-        ESP_RETURN_ON_FALSE(i2c_get_clk_src(i2c_conf) != I2C_SCLK_MAX, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_CLK_FLAG_ERR_STR);
+        src_clk = i2c_get_clk_src(i2c_conf->clk_flags, i2c_conf->master.clk_speed);
+        ESP_RETURN_ON_FALSE(src_clk != I2C_SCLK_MAX, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_CLK_FLAG_ERR_STR);
+    } else {
+#if CONFIG_IDF_TARGET_ESP32S2
+        /* On ESP32-S2, APB clock shall always be used in slave mode as the
+         * other one, I2C_SCLK_REF_TICK, is too slow, even for sampling a
+         * 100KHz SCL. */
+        src_clk = I2C_SCLK_APB;
+#else
+        src_clk = i2c_get_clk_src(i2c_conf->clk_flags, i2c_conf->slave.maximum_speed);
+        ESP_RETURN_ON_FALSE(src_clk != I2C_SCLK_MAX, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_CLK_FLAG_ERR_STR);
+#endif
     }
 
-    esp_err_t ret = i2c_set_pin(i2c_num, i2c_conf->sda_io_num, i2c_conf->scl_io_num,
-                                i2c_conf->sda_pullup_en, i2c_conf->scl_pullup_en, i2c_conf->mode);
+    ret = i2c_set_pin(i2c_num, i2c_conf->sda_io_num, i2c_conf->scl_io_num,
+                      i2c_conf->sda_pullup_en, i2c_conf->scl_pullup_en, i2c_conf->mode);
     if (ret != ESP_OK) {
         return ret;
     }
@@ -666,6 +682,7 @@ esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t *i2c_conf)
     i2c_hal_clr_intsts_mask(&(i2c_context[i2c_num].hal), I2C_LL_INTR_MASK);
     if (i2c_conf->mode == I2C_MODE_SLAVE) {  //slave mode
         i2c_hal_slave_init(&(i2c_context[i2c_num].hal), i2c_num);
+        i2c_hal_set_source_clk(&(i2c_context[i2c_num].hal), src_clk);
         i2c_hal_set_slave_addr(&(i2c_context[i2c_num].hal), i2c_conf->slave.slave_addr, i2c_conf->slave.addr_10bit_en);
         i2c_hal_set_rxfifo_full_thr(&(i2c_context[i2c_num].hal), I2C_FIFO_FULL_THRESH_VAL);
         i2c_hal_set_txfifo_empty_thr(&(i2c_context[i2c_num].hal), I2C_FIFO_EMPTY_THRESH_VAL);
@@ -678,7 +695,7 @@ esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t *i2c_conf)
         i2c_hal_master_init(&(i2c_context[i2c_num].hal), i2c_num);
         //Default, we enable hardware filter
         i2c_hal_set_filter(&(i2c_context[i2c_num].hal), I2C_FILTER_CYC_NUM_DEF);
-        i2c_hal_set_bus_timing(&(i2c_context[i2c_num].hal), i2c_conf->master.clk_speed, i2c_get_clk_src(i2c_conf));
+        i2c_hal_set_bus_timing(&(i2c_context[i2c_num].hal), i2c_conf->master.clk_speed, src_clk);
     }
     I2C_EXIT_CRITICAL(&(i2c_context[i2c_num].spinlock));
     return ESP_OK;
