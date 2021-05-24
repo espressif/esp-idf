@@ -1,0 +1,27 @@
+if IDF_TARGET_ESP32 = y:
+    [scheme:phy_iram]
+    entries:
+        phy_iram -> iram0_text
+
+    [sections:phy_iram]
+    entries:
+        .phyiram+
+
+[mapping:phy]
+archive: libphy.a
+entries:
+    * (noflash_data)
+    if ESP_WIFI_SLP_IRAM_OPT = y && IDF_TARGET_ESP32 = y:
+        * (phy_iram)
+
+[mapping:rtc]
+archive: librtc.a
+entries:
+    * (noflash_text)
+
+[mapping:esp_phy]
+archive: libesp_phy.a
+entries:
+    if ESP_WIFI_SLP_IRAM_OPT =y:
+        phy_init:esp_phy_enable (noflash)
+        phy_init:esp_phy_disable (noflash)

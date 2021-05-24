@@ -2,11 +2,12 @@
 # Component Makefile
 #
 
-COMPONENT_ADD_INCLUDEDIRS := include
-COMPONENT_SRCDIRS := src $(IDF_TARGET)
+COMPONENT_ADD_INCLUDEDIRS := include $(IDF_TARGET)/include
+COMPONENT_SRCDIRS := src
 
 ifndef CONFIG_ESP32_NO_BLOBS
-    LIBS := core net80211 pp smartconfig coexist espnow mesh
+    LIBS := phy rtc
+
     COMPONENT_ADD_LDFLAGS += -L$(COMPONENT_PATH)/lib/$(IDF_TARGET) \
                           $(addprefix -l,$(LIBS))
 

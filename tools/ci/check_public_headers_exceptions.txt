@@ -32,7 +32,7 @@ components/lwip/lwip/src/include/lwip/priv/memp_std.h
 
 components/vfs/include/sys/dirent.h
 
-components/esp_wifi/esp32/include/phy_init_data.h
+components/esp_phy/esp32/include/phy_init_data.h
 
 components/spi_flash/include/spi_flash_chip_issi.h
 components/spi_flash/include/spi_flash_chip_mxic.h

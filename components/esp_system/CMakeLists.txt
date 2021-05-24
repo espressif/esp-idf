@@ -33,7 +33,7 @@ else()
                                     # should be removable once using component init functions
                                     # link-time registration is used.
                                     esp_pm app_update nvs_flash pthread app_trace esp_gdbstub
-                                    espcoredump
+                                    espcoredump esp_phy
                         LDFRAGMENTS "linker.lf" "app.lf")
     add_subdirectory(port)
 
