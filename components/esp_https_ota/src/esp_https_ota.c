@@ -77,8 +77,11 @@ static esp_err_t _http_handle_response_code(esp_http_client_handle_t http_client
     } else if(status_code == HttpStatus_NotFound || status_code == HttpStatus_Forbidden) {
         ESP_LOGE(TAG, "File not found(%d)", status_code);
         return ESP_FAIL;
-    } else if (status_code == HttpStatus_InternalError) {
-        ESP_LOGE(TAG, "Server error occurred(%d)", status_code);
+    } else if (status_code >= HttpStatus_BadRequest && status_code < HttpStatus_InternalError) {
+        ESP_LOGE(TAG, "Client error (%d)", status_code);
+        return ESP_FAIL;
+    } else if (status_code >= HttpStatus_InternalError) {
+        ESP_LOGE(TAG, "Server error (%d)", status_code);
         return ESP_FAIL;
     }
 
