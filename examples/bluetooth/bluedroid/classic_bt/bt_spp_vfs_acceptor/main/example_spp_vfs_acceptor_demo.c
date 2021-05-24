@@ -80,8 +80,6 @@ static void esp_spp_cb(uint16_t e, void *p)
         ESP_LOGI(SPP_TAG, "ESP_SPP_INIT_EVT status=%d", param->init.status);
         if (param->init.status == ESP_SPP_SUCCESS) {
             esp_spp_vfs_register();
-            esp_bt_dev_set_device_name(EXAMPLE_DEVICE_NAME);
-            esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
             esp_spp_start_srv(sec_mask, role_slave, 0, SPP_SERVER_NAME);
         }
         break;
@@ -96,6 +94,8 @@ static void esp_spp_cb(uint16_t e, void *p)
         break;
     case ESP_SPP_START_EVT:
         ESP_LOGI(SPP_TAG, "ESP_SPP_START_EVT");
+        esp_bt_dev_set_device_name(EXAMPLE_DEVICE_NAME);
+        esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
         break;
     case ESP_SPP_CL_INIT_EVT:
         ESP_LOGI(SPP_TAG, "ESP_SPP_CL_INIT_EVT");
