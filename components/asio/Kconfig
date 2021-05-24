@@ -1,4 +1,6 @@
 menu "ESP-ASIO"
+    visible if LWIP_IPV6
+
     config ASIO_SSL_SUPPORT
         bool "Enable SSL/TLS support of ASIO"
         default n

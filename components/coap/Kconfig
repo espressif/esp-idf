@@ -1,4 +1,5 @@
 menu "CoAP Configuration"
+    visible if LWIP_IPV6
 
     choice COAP_MBEDTLS_ENCRYPTION_MODE
         prompt "CoAP Encryption method"
