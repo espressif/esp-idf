@@ -51,16 +51,18 @@ class StringSubstituter:
         This will define a replacement of the tag {IDF_TARGET_TX_PIN} in the current rst-file, see e.g. uart.rst for example
 
     """
-    TARGET_NAMES = {'esp32': 'ESP32', 'esp32s2': 'ESP32-S2', 'esp32c3': 'ESP32-C3'}
-    TOOLCHAIN_PREFIX = {'esp32': 'xtensa-esp32-elf', 'esp32s2': 'xtensa-esp32s2-elf', 'esp32c3': 'riscv32-esp-elf'}
-    CONFIG_PREFIX = {'esp32': 'ESP32', 'esp32s2': 'ESP32S2', 'esp32c3': 'ESP32C3'}
+    TARGET_NAMES = {'esp32': 'ESP32', 'esp32s2': 'ESP32-S2', 'esp32s3': 'ESP32-S3', 'esp32c3': 'ESP32-C3'}
+    TOOLCHAIN_PREFIX = {'esp32': 'xtensa-esp32-elf', 'esp32s2': 'xtensa-esp32s2-elf', 'esp32s3': 'xtensa-esp32s3-elf', 'esp32c3': 'riscv32-esp-elf'}
+    CONFIG_PREFIX = {'esp32': 'ESP32', 'esp32s2': 'ESP32S2', 'esp32s3': 'ESP32S3', 'esp32c3': 'ESP32C3'}
 
     TRM_EN_URL = {'esp32': 'https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf',
                   'esp32s2': 'https://www.espressif.com/sites/default/files/documentation/esp32-s2_technical_reference_manual_en.pdf',
+                  'esp32s3': '#',
                   'esp32c3': 'https://www.espressif.com/sites/default/files/documentation/esp32-c3_technical_reference_manual_en.pdf'}
 
     TRM_CN_URL = {'esp32': 'https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_cn.pdf',
                   'esp32s2': 'https://www.espressif.com/sites/default/files/documentation/esp32-s2_technical_reference_manual_cn.pdf',
+                  'esp32s3': '#',
                   'esp32c3': 'https://www.espressif.com/sites/default/files/documentation/esp32-c3_technical_reference_manual_cn.pdf'}
     RE_PATTERN = re.compile(r'^\s*{IDF_TARGET_(\w+?):(.+?)}', re.MULTILINE)
 

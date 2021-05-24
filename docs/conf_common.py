@@ -178,7 +178,7 @@ RISCV_COPROC_DOCS = ['api-guides/ulp-risc-v.rst',]
 XTENSA_DOCS = ['api-guides/hlinterrupts.rst',
                'api-reference/system/perfmon.rst']
 
-RISCV_DOCS = []
+RISCV_DOCS = []  # type: list[str]
 
 ESP32_DOCS = ['api-guides/ulp_instruction_set.rst',
               'api-reference/system/himem.rst',
@@ -199,6 +199,8 @@ ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-reference/system/async_memcpy.rst',
                 'api-reference/peripherals/touch_element.rst',
                 'api-reference/peripherals/dac.rst'] + FTDI_JTAG_DOCS
+
+ESP32S3_DOCS = ['api-reference/system/ipc.rst']
 
 # No JTAG docs for this one as it gets gated on SOC_USB_SERIAL_JTAG_SUPPORTED down below.
 ESP32C3_DOCS = ['hw-reference/esp32c3/**']
@@ -224,6 +226,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'CONFIG_IDF_TARGET_ARCH_RISCV':RISCV_DOCS,
                             'esp32':ESP32_DOCS,
                             'esp32s2':ESP32S2_DOCS,
+                            'esp32s3':ESP32S3_DOCS,
                             'esp32c3':ESP32C3_DOCS}
 
 # The reST default role (used for this markup: `text`) to use for all
