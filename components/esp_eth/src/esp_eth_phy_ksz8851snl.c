@@ -166,27 +166,27 @@ static esp_err_t phy_ksz8851_negotiate(esp_eth_phy_t *phy)
     phy_ksz8851snl_t *ksz8851 = __containerof(phy, phy_ksz8851snl_t, parent);
     esp_eth_mediator_t *eth   = ksz8851->eth;
     ESP_LOGD(TAG, "restart negotiation");
-
+    /* in case any link status has changed, let's assume we're in link down status */
+    ksz8851->link_status = ETH_LINK_DOWN;
     uint32_t control;
     ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz8851->addr, KSZ8851_P1CR, &control), err, TAG, "P1CR read failed");
     ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz8851->addr, KSZ8851_P1CR, control | P1CR_RESTART_AN), err, TAG, "P1CR write failed");
 
     uint32_t status;
     unsigned to;
-    for (to = 0; to < ksz8851->autonego_timeout_ms / 10; to++) {
-        vTaskDelay(pdMS_TO_TICKS(10));
+    for (to = 0; to < ksz8851->autonego_timeout_ms / 100; to++) {
+        vTaskDelay(pdMS_TO_TICKS(100));
         ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz8851->addr, KSZ8851_P1SR, &status), err, TAG, "P1SR read failed");
         if (status & P1SR_AN_DONE) {
             break;
         }
     }
-    if (to >= ksz8851->autonego_timeout_ms / 10) {
+    if (to >= ksz8851->autonego_timeout_ms / 100) {
         ESP_LOGW(TAG, "Ethernet PHY auto negotiation timeout");
     }
 
     ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz8851->addr, KSZ8851_P1CR, control), err, TAG, "P1CR write failed");
 
-    ESP_GOTO_ON_ERROR(ksz8851_update_link_duplex_speed(ksz8851), err, TAG, "update link duplex speed failed");
     ESP_LOGD(TAG, "negotiation succeeded");
     return ESP_OK;
 err:

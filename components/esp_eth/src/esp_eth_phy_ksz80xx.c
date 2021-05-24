@@ -213,6 +213,8 @@ static esp_err_t ksz80xx_negotiate(esp_eth_phy_t *phy)
     esp_err_t ret = ESP_OK;
     phy_ksz80xx_t *ksz80xx = __containerof(phy, phy_ksz80xx_t, parent);
     esp_eth_mediator_t *eth = ksz80xx->eth;
+    /* in case any link status has changed, let's assume we're in link down status */
+    ksz80xx->link_status = ETH_LINK_DOWN;
     /* Restart auto negotiation */
     bmcr_reg_t bmcr = {
         .speed_select = 1,     /* 100Mbps */
@@ -224,19 +226,17 @@ static esp_err_t ksz80xx_negotiate(esp_eth_phy_t *phy)
     /* Wait for auto negotiation complete */
     bmsr_reg_t bmsr;
     uint32_t to = 0;
-    for (to = 0; to < ksz80xx->autonego_timeout_ms / 10; to++) {
-        vTaskDelay(pdMS_TO_TICKS(10));
+    for (to = 0; to < ksz80xx->autonego_timeout_ms / 100; to++) {
+        vTaskDelay(pdMS_TO_TICKS(100));
         ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)), err, TAG, "read BMSR failed");
         if (bmsr.auto_nego_complete) {
             break;
         }
     }
     /* Auto negotiation failed, maybe no network cable plugged in, so output a warning */
-    if (to >= ksz80xx->autonego_timeout_ms / 10) {
+    if (to >= ksz80xx->autonego_timeout_ms / 100) {
         ESP_LOGW(TAG, "auto negotiation timeout");
     }
-    /* Updata information about link, speed, duplex */
-    ESP_GOTO_ON_ERROR(ksz80xx_update_link_duplex_speed(ksz80xx), err, TAG, "update link duplex speed failed");
     return ESP_OK;
 err:
     return ret;

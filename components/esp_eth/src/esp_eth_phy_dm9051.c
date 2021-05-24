@@ -200,6 +200,8 @@ static esp_err_t dm9051_negotiate(esp_eth_phy_t *phy)
     esp_err_t ret = ESP_OK;
     phy_dm9051_t *dm9051 = __containerof(phy, phy_dm9051_t, parent);
     esp_eth_mediator_t *eth = dm9051->eth;
+    /* in case any link status has changed, let's assume we're in link down status */
+    dm9051->link_status = ETH_LINK_DOWN;
     /* Start auto negotiation */
     bmcr_reg_t bmcr = {
         .speed_select = 1,     /* 100Mbps */
@@ -212,19 +214,17 @@ static esp_err_t dm9051_negotiate(esp_eth_phy_t *phy)
     bmsr_reg_t bmsr;
     dscsr_reg_t dscsr;
     uint32_t to = 0;
-    for (to = 0; to < dm9051->autonego_timeout_ms / 10; to++) {
-        vTaskDelay(pdMS_TO_TICKS(10));
+    for (to = 0; to < dm9051->autonego_timeout_ms / 100; to++) {
+        vTaskDelay(pdMS_TO_TICKS(100));
         ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, dm9051->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)), err, TAG, "read BMSR failed");
         ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, dm9051->addr, ETH_PHY_DSCSR_REG_ADDR, &(dscsr.val)), err, TAG, "read DSCSR failed");
         if (bmsr.auto_nego_complete && dscsr.anmb & 0x08) {
             break;
         }
     }
-    if (to >= dm9051->autonego_timeout_ms / 10) {
+    if (to >= dm9051->autonego_timeout_ms / 100) {
         ESP_LOGW(TAG, "Ethernet PHY auto negotiation timeout");
     }
-    /* Updata information about link, speed, duplex */
-    ESP_GOTO_ON_ERROR(dm9051_update_link_duplex_speed(dm9051), err, TAG, "update link duplex speed failed");
     return ESP_OK;
 err:
     return ret;
