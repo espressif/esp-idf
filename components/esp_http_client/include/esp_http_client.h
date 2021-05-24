@@ -151,6 +151,7 @@ typedef enum {
     HttpStatus_TemporaryRedirect = 307,
 
     /* 4xx - Client Error */
+    HttpStatus_BadRequest        = 400,
     HttpStatus_Unauthorized      = 401,
     HttpStatus_Forbidden         = 403,
     HttpStatus_NotFound          = 404,
