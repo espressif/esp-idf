@@ -746,7 +746,7 @@ static inline void spi_ll_set_mosi_bitlen(spi_dev_t *hw, size_t bitlen)
  */
 static inline void spi_ll_slave_set_rx_bitlen(spi_dev_t *hw, size_t bitlen)
 {
-    hw->slv_wrbuf_dlen.bit_len = bitlen - 1;
+    hw->slv_rdbuf_dlen.bit_len = bitlen - 1;
 }
 
 /**
@@ -757,7 +757,7 @@ static inline void spi_ll_slave_set_rx_bitlen(spi_dev_t *hw, size_t bitlen)
  */
 static inline void spi_ll_slave_set_tx_bitlen(spi_dev_t *hw, size_t bitlen)
 {
-    hw->slv_rdbuf_dlen.bit_len = bitlen - 1;
+    hw->slv_wrbuf_dlen.bit_len = bitlen - 1;
 }
 
 /**
