@@ -876,6 +876,7 @@ u32_t lwip_hook_tcp_isn(const struct ip_addr *local_ip, u16_t local_port,
 #define ESP_SOCKET                      1
 #define ESP_LWIP_SELECT                 1
 #define ESP_LWIP_LOCK                   1
+#define ESP_THREAD_PROTECTION           1
 
 #ifdef CONFIG_LWIP_IPV6_AUTOCONFIG
 #define ESP_IPV6_AUTOCONFIG             CONFIG_LWIP_IPV6_AUTOCONFIG
@@ -901,6 +902,7 @@ u32_t lwip_hook_tcp_isn(const struct ip_addr *local_ip, u16_t local_port,
  * DHCP_DEBUG: Enable debugging in dhcp.c.
  */
 #define DHCP_DEBUG                      LWIP_DBG_OFF
+#define ESP_DHCP_DEBUG                  LWIP_DBG_OFF
 #define LWIP_DEBUG                      LWIP_DBG_OFF
 #define TCP_DEBUG                       LWIP_DBG_OFF
 
