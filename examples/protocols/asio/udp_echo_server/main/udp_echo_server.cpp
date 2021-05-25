@@ -84,5 +84,7 @@ extern "C" void app_main(void)
 
     server s(io_context, std::atoi(CONFIG_EXAMPLE_PORT));
 
+    std::cout << "ASIO engine is up and running" << std::endl;
+
     io_context.run();
 }
