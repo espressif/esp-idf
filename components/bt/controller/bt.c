@@ -238,7 +238,6 @@ extern uint8_t coex_schm_curr_period_get(void);
 extern void * coex_schm_curr_phase_get(void);
 extern int coex_wifi_channel_get(uint8_t *primary, uint8_t *secondary);
 extern int coex_register_wifi_channel_change_callback(void *cb);
-extern void coex_ble_adv_priority_high_set(bool high);
 
 extern char _bss_start_btdm;
 extern char _bss_end_btdm;
@@ -1460,12 +1459,6 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         err = ESP_ERR_NO_MEM;
         goto error;
     }
-
-    #ifdef CONFIG_BTDM_COEX_BLE_ADV_HIGH_PRIORITY
-        coex_ble_adv_priority_high_set(true);
-    #else
-        coex_ble_adv_priority_high_set(false);
-    #endif
 
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
 
