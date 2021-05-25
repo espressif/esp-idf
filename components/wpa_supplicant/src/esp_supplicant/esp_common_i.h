@@ -52,6 +52,7 @@ int esp_ieee80211_handle_rx_frm(u8 type, u8 *frame, size_t len, u8 *sender,
 void esp_set_rm_enabled_ie(void);
 void esp_get_tx_power(uint8_t *tx_power);
 void esp_supplicant_common_init(struct wpa_funcs *wpa_cb);
+void esp_supplicant_common_deinit(void);
 #else
 
 #include "esp_rrm.h"

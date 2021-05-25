@@ -74,7 +74,7 @@ void  wpa_deauthenticate(u8 reason_code)
     esp_wifi_deauthenticate_internal(reason_code);
 }
 
-void  wpa_config_profile(void)
+int  wpa_config_profile(void)
 {
     if (esp_wifi_sta_prof_is_wpa_internal()) {
         wpa_set_profile(WPA_PROTO_WPA, esp_wifi_sta_get_prof_authmode_internal());
@@ -83,8 +83,10 @@ void  wpa_config_profile(void)
     } else if (esp_wifi_sta_prof_is_wapi_internal()) {
         wpa_set_profile(WPA_PROTO_WAPI, esp_wifi_sta_get_prof_authmode_internal());
     } else {
-        WPA_ASSERT(0);
+        /* do nothing */
+        return -1;
     }
+    return 0;
 }
 
 int wpa_config_bss(uint8_t *bssid)
@@ -106,7 +108,6 @@ void  wpa_config_assoc_ie(u8 proto, u8 *assoc_buf, u32 assoc_wpa_ie_len)
     } else {
         esp_wifi_set_appie_internal(WIFI_APPIE_RSN, assoc_buf, assoc_wpa_ie_len, 1);
     }
-    esp_set_rm_enabled_ie();
 }
 
 void  wpa_neg_complete(void)
@@ -172,12 +173,19 @@ bool  wpa_deattach(void)
 
 void  wpa_sta_connect(uint8_t *bssid)
 {
-
+    /* use this API to set AP specific IEs during connection */
     int ret = 0;
-    wpa_config_profile();
-    ret = wpa_config_bss(bssid);
-    WPA_ASSERT(ret == 0);
-    (void)ret;
+    ret = wpa_config_profile();
+    if (ret == 0) {
+        ret = wpa_config_bss(bssid);
+        WPA_ASSERT(ret == 0);
+    }
+}
+
+void wpa_config_done(void)
+{
+    /* used in future for setting scan and assoc IEs */
+    esp_set_rm_enabled_ie();
 }
 
 int wpa_parse_wpa_ie_wrapper(const u8 *wpa_ie, size_t wpa_ie_len, wifi_wpa_ie_t *data)
@@ -223,6 +231,9 @@ static inline void esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
 {
 	wpa_cb->wpa_sta_rx_mgmt = NULL;
 }
+static inline void esp_supplicant_common_deinit(void)
+{
+}
 #endif
 
 int esp_supplicant_init(void)
@@ -254,6 +265,8 @@ int esp_supplicant_init(void)
     wpa_cb->wpa_parse_wpa_ie  = wpa_parse_wpa_ie_wrapper;
     wpa_cb->wpa_config_bss = NULL;//wpa_config_bss;
     wpa_cb->wpa_michael_mic_failure = wpa_michael_mic_failure;
+    wpa_cb->wpa_config_done = wpa_config_done;
+
     esp_wifi_register_wpa3_cb(wpa_cb);
     esp_supplicant_common_init(wpa_cb);
 
@@ -268,5 +281,6 @@ int esp_supplicant_init(void)
 
 int esp_supplicant_deinit(void)
 {
+    esp_supplicant_common_deinit();
     return esp_wifi_unregister_wpa_cb_internal();
 }
