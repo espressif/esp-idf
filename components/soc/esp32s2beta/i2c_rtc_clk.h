@@ -16,6 +16,7 @@
 
 #include "i2c_apll.h"
 #include "i2c_bbpll.h"
+#include <stdint.h>
 
 /* Analog function control register */
 #define ANA_CONFIG_REG  0x6000E044
@@ -32,17 +33,42 @@ uint8_t rom_i2c_readReg_Mask(uint8_t block, uint8_t host_id, uint8_t reg_add, ui
 void rom_i2c_writeReg(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t data);
 void rom_i2c_writeReg_Mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb, uint8_t data);
 
+#ifdef BOOTLOADER_BUILD
+
+/**
+ * If compiling for the bootloader, ROM functions can be called directly,
+ * without the need of a lock.
+ */
+#define regi2c_ctrl_read_reg         rom_i2c_readReg
+#define regi2c_ctrl_read_reg_mask    rom_i2c_readReg_Mask
+#define regi2c_ctrl_write_reg        rom_i2c_writeReg
+#define regi2c_ctrl_write_reg_mask   rom_i2c_writeReg_Mask
+
+#else
+
+#define i2c_read_reg_raw        rom_i2c_readReg
+#define i2c_read_reg_mask_raw   rom_i2c_readReg_Mask
+#define i2c_write_reg_raw       rom_i2c_writeReg
+#define i2c_write_reg_mask_raw  rom_i2c_writeReg_Mask
+
+uint8_t regi2c_ctrl_read_reg(uint8_t block, uint8_t host_id, uint8_t reg_add);
+uint8_t regi2c_ctrl_read_reg_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb);
+void regi2c_ctrl_write_reg(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t data);
+void regi2c_ctrl_write_reg_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb, uint8_t data);
+
+#endif // BOOTLOADER_BUILD
+
 /* Convenience macros for the above functions, these use register definitions
  * from i2c_apll.h/i2c_bbpll.h header files.
  */
 #define I2C_WRITEREG_MASK_RTC(block, reg_add, indata) \
-      rom_i2c_writeReg_Mask(block, block##_HOSTID,  reg_add,  reg_add##_MSB,  reg_add##_LSB,  indata)
+      regi2c_ctrl_write_reg_mask(block, block##_HOSTID,  reg_add,  reg_add##_MSB,  reg_add##_LSB,  indata)
 
 #define I2C_READREG_MASK_RTC(block, reg_add) \
-      rom_i2c_readReg_Mask(block, block##_HOSTID,  reg_add,  reg_add##_MSB,  reg_add##_LSB)
+      regi2c_ctrl_read_reg_mask(block, block##_HOSTID,  reg_add,  reg_add##_MSB,  reg_add##_LSB)
 
 #define I2C_WRITEREG_RTC(block, reg_add, indata) \
-      rom_i2c_writeReg(block, block##_HOSTID,  reg_add, indata)
+      regi2c_ctrl_write_reg(block, block##_HOSTID,  reg_add, indata)
 
 #define I2C_READREG_RTC(block, reg_add) \
-      rom_i2c_readReg(block, block##_HOSTID,  reg_add)
+      regi2c_ctrl_read_reg(block, block##_HOSTID,  reg_add)

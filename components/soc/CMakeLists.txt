@@ -5,7 +5,7 @@ if(EXISTS "${COMPONENT_DIR}/${soc_name}")
 
     spaces2list(SOC_SRCS)
     add_prefix(srcs "${soc_name}/" ${SOC_SRCS})
-    set(include_dirs ${soc_name}/include)
+    set(include_dirs ${soc_name} ${soc_name}/include)
 endif()
 
 list(APPEND include_dirs include)
@@ -36,6 +36,10 @@ list(APPEND srcs
     "src/hal/spi_flash_hal.c"
     "src/hal/spi_flash_hal_iram.c"
     )
+
+if (NOT(BOOTLOADER_BUILD))
+    list(APPEND srcs "src/regi2c_ctrl.c")
+endif()
 
 if(IDF_TARGET STREQUAL "esp32")
     list(APPEND srcs "src/hal/mcpwm_hal.c"
