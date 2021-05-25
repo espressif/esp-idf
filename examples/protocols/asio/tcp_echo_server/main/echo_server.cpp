@@ -86,6 +86,8 @@ void asio_main()
 
     server s(io_context, std::atoi(CONFIG_EXAMPLE_PORT));
 
+    std::cout << "ASIO engine is up and running" << std::endl;
+
     io_context.run();
 
 }
