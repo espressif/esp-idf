@@ -259,9 +259,12 @@ static esp_err_t w5500_setup_default(emac_w5500_t *emac)
     /* Enable MAC RAW mode for SOCK0, enable MAC filter, no blocking broadcast and multicast */
     reg_value = W5500_SMR_MAC_RAW | W5500_SMR_MAC_FILTER;
     ESP_GOTO_ON_ERROR(w5500_write(emac, W5500_REG_SOCK_MR(0), &reg_value, sizeof(reg_value)), err, TAG, "write SMR failed");
-    /* Enable receive and send event for SOCK0 */
-    reg_value = W5500_SIR_RECV | W5500_SIR_SEND;
+    /* Enable receive event for SOCK0 */
+    reg_value = W5500_SIR_RECV;
     ESP_GOTO_ON_ERROR(w5500_write(emac, W5500_REG_SOCK_IMR(0), &reg_value, sizeof(reg_value)), err, TAG, "write SOCK0 IMR failed");
+    /* Set the interrupt re-assert level to maximum (~1.5ms) to lower the chances of missing it */
+    uint16_t int_level = __builtin_bswap16(0xFFFF);
+    ESP_GOTO_ON_ERROR(w5500_write(emac, W5500_REG_INTLEVEL, &int_level, sizeof(int_level)), err, TAG, "write INTLEVEL failed");
 
 err:
     return ret;
@@ -314,8 +317,12 @@ static void emac_w5500_task(void *arg)
     uint8_t *buffer = NULL;
     uint32_t length = 0;
     while (1) {
-        // block indefinitely until some task notifies me
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        // check if the task receives any notification
+        if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000)) == 0 &&    // if no notification ...
+            gpio_get_level(emac->int_gpio_num) != 0) {               // ...and no interrupt asserted
+            continue;                                                // -> just continue to check again
+        }
+
         /* read interrupt status */
         w5500_read(emac, W5500_REG_SOCK_IR(0), &status, sizeof(status));
         /* packet received */
