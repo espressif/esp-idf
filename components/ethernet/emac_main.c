@@ -1109,8 +1109,6 @@ esp_err_t esp_eth_init_internal(eth_config_t *config)
         goto _verify_err;
     }
 
-    emac_config.emac_phy_power_enable(true);
-
     //before set emac reg must enable clk
     periph_module_enable(PERIPH_EMAC_MODULE);
 
@@ -1145,10 +1143,6 @@ esp_err_t esp_eth_init_internal(eth_config_t *config)
         }
     }
 
-    emac_enable_clk(true);
-    REG_SET_FIELD(EMAC_EX_PHYINF_CONF_REG, EMAC_EX_PHY_INTF_SEL, EMAC_EX_PHY_INTF_RMII);
-    emac_dma_init();
-
     if (emac_config.clock_mode == ETH_CLOCK_GPIO0_IN) {
         // external clock on GPIO0
         REG_SET_BIT(EMAC_EX_CLK_CTRL_REG, EMAC_EX_EXT_OSC_EN);
@@ -1165,6 +1159,12 @@ esp_err_t esp_eth_init_internal(eth_config_t *config)
         REG_SET_BIT(EMAC_EX_CLK_CTRL_REG, EMAC_EX_INT_OSC_EN);
         REG_CLR_BIT(EMAC_EX_OSCCLK_CONF_REG, EMAC_EX_OSC_CLK_SEL);
     }
+
+    emac_config.emac_phy_power_enable(true);
+
+    emac_enable_clk(true);
+    REG_SET_FIELD(EMAC_EX_PHYINF_CONF_REG, EMAC_EX_PHY_INTF_SEL, EMAC_EX_PHY_INTF_RMII);
+    emac_dma_init();
 
     emac_config.emac_gpio_config();
 
