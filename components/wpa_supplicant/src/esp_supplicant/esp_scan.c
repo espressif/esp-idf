@@ -36,16 +36,14 @@ static void esp_scan_done_event_handler(void* arg, esp_event_base_t event_base,
 					int32_t event_id, void* event_data)
 {
 	struct wpa_supplicant *wpa_s = &g_wpa_supp;
-	if (!wpa_s->scanning) {
-		/* update last scan time */
-		wpa_s->scan_start_tsf = esp_wifi_get_tsf_time(WIFI_IF_STA);
-		wpa_printf(MSG_DEBUG, "scan not triggered by supplicant, ignore");
-		return;
-	}
-	wpa_s->type &= ~(1 << WLAN_FC_STYPE_BEACON) & ~(1 << WLAN_FC_STYPE_PROBE_RESP);
-	esp_wifi_register_mgmt_frame_internal(wpa_s->type, wpa_s->subtype);
-	esp_supplicant_post_evt(SIG_SUPPLICANT_SCAN_DONE, 0);
 
+	/* update last scan time */
+	wpa_s->scan_start_tsf = esp_wifi_get_tsf_time(WIFI_IF_STA);
+	if (!wpa_s->scanning) {
+		wpa_s->type &= ~(1 << WLAN_FC_STYPE_BEACON) & ~(1 << WLAN_FC_STYPE_PROBE_RESP);
+		esp_wifi_register_mgmt_frame_internal(wpa_s->type, wpa_s->subtype);
+	}
+	esp_supplicant_post_evt(SIG_SUPPLICANT_SCAN_DONE, 0);
 }
 
 static void esp_supp_handle_wnm_scan_done(struct wpa_supplicant *wpa_s)
@@ -88,7 +86,9 @@ void esp_supplicant_handle_scan_done_evt(void)
 	} else if (wpa_s->scan_reason == REASON_WNM_BSS_TRANS_REQ) {
 		esp_supp_handle_wnm_scan_done(wpa_s);
 	}
-	esp_supp_scan_done_cleanup(wpa_s);
+	if (wpa_s->scanning) {
+		esp_supp_scan_done_cleanup(wpa_s);
+	}
 	wpa_bss_update_end(wpa_s);
 #ifndef SCAN_CACHE_SUPPORTED
 	wpa_bss_flush(wpa_s);
@@ -107,6 +107,10 @@ void esp_scan_init(struct wpa_supplicant *wpa_s)
 void esp_scan_deinit(struct wpa_supplicant *wpa_s)
 {
 	wpa_bss_deinit(wpa_s);
+	os_free(wpa_s->last_scan_res);
+	wpa_s->last_scan_res = NULL;
+	esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_SCAN_DONE,
+			&esp_scan_done_event_handler);
 }
 
 int esp_handle_beacon_probe(u8 type, u8 *frame, size_t len, u8 *sender,

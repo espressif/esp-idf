@@ -257,6 +257,22 @@ void esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
 	wpa_cb->wpa_sta_rx_mgmt = esp_ieee80211_handle_rx_frm;
 }
 
+void esp_supplicant_common_deinit(void)
+{
+	struct wpa_supplicant *wpa_s = &g_wpa_supp;
+
+	if (esp_supplicant_post_evt(SIG_SUPPLICANT_DEL_TASK, 0) != 0) {
+		wpa_printf(MSG_ERROR, "failed to send task delete event");
+	}
+	esp_scan_deinit(wpa_s);
+	wpas_rrm_reset(wpa_s);
+	wpas_clear_beacon_rep_data(wpa_s);
+	esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED,
+			&esp_supplicant_sta_conn_handler);
+	esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED,
+			&esp_supplicant_sta_disconn_handler);
+}
+
 int esp_rrm_send_neighbor_rep_request(neighbor_rep_request_cb cb,
 				      void *cb_ctx)
 {
