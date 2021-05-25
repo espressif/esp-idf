@@ -93,6 +93,10 @@
 #include "bta_hf_client_int.h"
 #endif
 
+#if BTA_AG_INCLUDED == TRUE
+#include "bta_ag_int.h"
+#endif
+
 #if BTA_SDP_INCLUDED == TRUE
 #include "bta_sdp_int.h"
 #endif
@@ -215,6 +219,12 @@ void BTE_DeinitStack(void)
     if (bta_hf_client_cb_ptr){
         osi_free(bta_hf_client_cb_ptr);
         bta_hf_client_cb_ptr = NULL;
+    }
+#endif
+#if (defined BTA_AG_INCLUDED && BTA_AG_INCLUDED == TRUE)
+    if (bta_ag_cb_ptr){
+        osi_free(bta_ag_cb_ptr);
+        bta_ag_cb_ptr = NULL;
     }
 #endif
     if (bta_dm_conn_srvcs_ptr){
@@ -373,6 +383,12 @@ bt_status_t BTE_InitStack(void)
         goto error_exit;
     }
     memset((void *)bta_hf_client_cb_ptr, 0, sizeof(tBTA_HF_CLIENT_CB));
+#endif
+#if (defined BTA_AG_INCLUDED && BTA_AG_INCLUDED == TRUE)
+    if ((bta_ag_cb_ptr = (tBTA_AG_CB *)osi_malloc(sizeof(tBTA_AG_CB))) == NULL) {
+        goto error_exit;
+    }
+    memset((void *)bta_ag_cb_ptr, 0, sizeof(tBTA_AG_CB));
 #endif
 #if (defined BTA_JV_INCLUDED && BTA_JV_INCLUDED == TRUE)
     if ((bta_jv_cb_ptr = (tBTA_JV_CB *)osi_malloc(sizeof(tBTA_JV_CB))) == NULL) {

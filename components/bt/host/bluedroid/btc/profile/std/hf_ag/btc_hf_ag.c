@@ -53,7 +53,11 @@
 /* Max HF Clients Supported From App */
 static UINT16 btc_max_hf_clients = 1;
 /* HF Param Definition */
+#if HFP_DYNAMIC_MEMORY == FALSE
 static hf_local_param_t hf_local_param[BTC_HF_NUM_CB];
+#else
+static hf_local_param_t *hf_local_param;
+#endif
 
 #if (BTM_WBS_INCLUDED == TRUE)
 #ifndef BTC_HF_FEATURES
@@ -296,7 +300,15 @@ bt_status_t btc_hf_execute_service(BOOLEAN b_enable)
 ************************************************************************************/
 bt_status_t btc_hf_init(bt_bdaddr_t *bd_addr)
 {
-    int idx = btc_hf_idx_by_bdaddr(bd_addr);
+    int idx = 0;
+    UNUSED(bd_addr);
+
+#if HFP_DYNAMIC_MEMORY == TRUE
+    if ((hf_local_param = (hf_local_param_t *)osi_malloc(sizeof(hf_local_param_t) * BTC_HF_NUM_CB)) == NULL) {
+        return BT_STATUS_FAIL;
+    }
+#endif
+
     BTC_TRACE_DEBUG("%s - max_hf_clients=%d", __func__, btc_max_hf_clients);
     /* Invoke the enable service API to the core to set the appropriate service_id
      * Internally, the HSP_SERVICE_ID shall also be enabled if HFP is enabled (phone)
@@ -322,10 +334,18 @@ bt_status_t btc_hf_init(bt_bdaddr_t *bd_addr)
 
 void btc_hf_deinit(bt_bdaddr_t *bd_addr)
 {
-    int idx = btc_hf_idx_by_bdaddr(bd_addr);
+    UNUSED(bd_addr);
+
     BTC_TRACE_EVENT("%s", __FUNCTION__);
     btc_dm_disable_service(BTA_HFP_SERVICE_ID);
-    hf_local_param[idx].btc_hf_cb.initialized = false;
+#if HFP_DYNAMIC_MEMORY == TRUE
+    if (hf_local_param) {
+        osi_free(hf_local_param);
+        hf_local_param = NULL;
+    }
+#else
+    hf_local_param[0].btc_hf_cb.initialized = false;
+#endif
 }
 
 static bt_status_t connect_init(bt_bdaddr_t *bd_addr, uint16_t uuid)
