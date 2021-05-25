@@ -754,6 +754,10 @@ static void ieee802_11_rx_bss_trans_mgmt_req(struct wpa_supplicant *wpa_s,
 		if (wpa_s->wnm_dissoc_timer) {
 			/* TODO: mark current BSS less preferred for
 			 * selection */
+#ifdef ESP_SUPPLICANT
+			os_memset(wpa_s->next_scan_bssid, 0, ETH_ALEN);
+			wpa_s->next_scan_chan = 0;
+#endif
 			wpa_printf(MSG_DEBUG, "Trying to find another BSS");
 			wpa_supplicant_req_scan(wpa_s, 0, 0);
 		}
