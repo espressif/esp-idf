@@ -9,11 +9,11 @@ COMPONENT_ADD_INCLUDEDIRS := include
 
 LIBS := btdm_app
 
-COMPONENT_ADD_LDFLAGS     := -lbt -L $(COMPONENT_PATH)/controller/lib \
+COMPONENT_ADD_LDFLAGS     := -lbt -L $(COMPONENT_PATH)/controller/lib/esp32 \
                            $(addprefix -l,$(LIBS))
 
 # re-link program if BT binary libs change
-COMPONENT_ADD_LINKER_DEPS := $(patsubst %,$(COMPONENT_PATH)/controller/lib/lib%.a,$(LIBS))
+COMPONENT_ADD_LINKER_DEPS := $(patsubst %,$(COMPONENT_PATH)/controller/lib/esp32/lib%.a,$(LIBS))
 
 COMPONENT_SUBMODULES += controller/lib
 
