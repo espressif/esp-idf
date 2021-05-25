@@ -2,6 +2,8 @@
 Chip Series Comparison
 ***********************
 
+:link_to_translation:`zh_CN:[中文]`
+
 The comparison below covers key features of chips supported by ESP-IDF. For the full list of features please refer to respective datasheets in Section `Related Documents`_.
 
 .. list-table:: Chip Series Comparison
@@ -71,7 +73,11 @@ The comparison below covers key features of chips supported by ESP-IDF. For the 
    * - DAC
      - Two 8-bit channels
      - Two 8-bit channels
-     - ✖️       
+     - ✖️ 
+   * - Timers
+     - Four 64-bit general-purpose timers, and three watchdog timers
+     - Four 64-bit general-purpose timers, and three watchdog timers
+     - Two 54-bit general-purpose timers, and three watchdog timers       
    * - Temperature sensor
      - ✖️
      - 1
@@ -128,6 +134,10 @@ The comparison below covers key features of chips supported by ESP-IDF. For the 
      - 16 channels
      - 8 channels :sup:`1`
      - 6 channels :sup:`2`
+   * - MCPWM
+     - 2, six PWM outputs
+     - ✖️ 
+     - ✖️ 
    * - USB OTG
      - ✖️
      - 1
@@ -215,9 +225,13 @@ The comparison below covers key features of chips supported by ESP-IDF. For the 
 
 **Note** 1: Reduced chip area compared with ESP32
 
+
 **Note** 2: Reduced chip area compared with ESP32 and ESP32-S2
 
+
 **Note** 3: Die size: ESP32-C3 < ESP32-S2 < ESP32
+
+
 
 
 Related Documents
