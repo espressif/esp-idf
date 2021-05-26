@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /**
  * To test PWM, use the PCNT to calculateit to judge it work right or not.
  * e.g: judge the start and stop.
