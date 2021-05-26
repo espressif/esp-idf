@@ -96,7 +96,7 @@ static inline void touch_ll_set_sleep_time(uint16_t sleep_time)
  */
 static inline void touch_ll_get_sleep_time(uint16_t *sleep_time)
 {
-    *sleep_time = SENS.sar_touch_ctrl1.touch_meas_delay;
+    *sleep_time = SENS.sar_touch_ctrl2.touch_sleep_cycles;
 }
 
 /**
