@@ -15,17 +15,22 @@ menu "mbedTLS"
               mbedtls_platform_set_calloc_free() function
             - Internal IRAM memory wherever applicable else internal DRAM
 
-            Recommended mode here is always internal, since that is most preferred
+            Recommended mode here is always internal (*), since that is most preferred
             from security perspective. But if application requirement does not
             allow sufficient free internal memory then alternate mode can be
             selected.
+
+            (*) In case of ESP32-S2, hardware allows encryption of external
+            SPIRAM contents provided hardware flash encryption feature is enabled.
+            In that case, using external SPIRAM allocation strategy is also safe choice
+            from security perspective.
 
         config MBEDTLS_INTERNAL_MEM_ALLOC
             bool "Internal memory"
 
         config MBEDTLS_EXTERNAL_MEM_ALLOC
             bool "External SPIRAM"
-            depends on ESP32_SPIRAM_SUPPORT
+            depends on SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC
 
         config MBEDTLS_DEFAULT_MEM_ALLOC
             bool "Default alloc mode"
