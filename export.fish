@@ -67,6 +67,12 @@ end
 
 idf_export_main
 
-eval (env _IDF.PY_COMPLETE=source_fish idf.py)
+set click_version (python -c 'import click; print(click.__version__.split(".")[0])')
+if test $click_version -lt 8
+    eval (env _IDF.PY_COMPLETE=source_fish idf.py)
+else
+    eval (env _IDF.PY_COMPLETE=fish_source idf.py)
+end
+
 
 set -e idf_export_main
