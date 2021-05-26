@@ -29,8 +29,8 @@ API Guides
     Memory Types <memory-types>
     lwIP TCP/IP Stack <lwip>
     Partition Tables <partition-tables>
-    :esp32: RF Calibration <RF_calibration>
     :esp32: ROM debug console <romconsole>
+    RF Calibration <RF_calibration>
     :esp32: Secure Boot <../security/secure-boot-v1>
     Secure Boot V2 <../security/secure-boot-v2>
     Thread Local Storage <thread-local-storage>
