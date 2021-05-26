@@ -29,7 +29,7 @@ API 指南
    :esp32: 单元测试 (传统 GNU Make) <unit-tests-legacy>
    应用层跟踪 <app_trace>
    ROM debug console <romconsole>
-   :esp32: RF Calibration <RF_calibration>
+   RF Calibration <RF_calibration>
    WiFi Driver <wifi>
    :SOC_BT_SUPPORTED: ESP-BLE-MESH <esp-ble-mesh/ble-mesh-index>
    ESP-MESH (Wi-Fi) <mesh>
