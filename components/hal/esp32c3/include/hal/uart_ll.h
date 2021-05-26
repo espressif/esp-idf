@@ -921,7 +921,7 @@ static inline void uart_ll_force_xon(uart_port_t uart_num)
 }
 
 /**
- * @brief  Get UART final state machine status.
+ * @brief  Get UART finite-state machine status.
  *
  * @param  uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  *
