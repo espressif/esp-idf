@@ -182,7 +182,6 @@ RISCV_DOCS = []
 
 ESP32_DOCS = ['api-guides/ulp_instruction_set.rst',
               'api-reference/system/himem.rst',
-              'api-guides/RF_calibration.rst',
               'api-guides/romconsole.rst',
               'api-reference/system/ipc.rst',
               'security/secure-boot-v1.rst',
