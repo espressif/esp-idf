@@ -144,7 +144,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
     // For secure boot V1 on ESP32, we don't calculate SHA or verify signature on bootloaders.
     // (For non-secure boot, we don't verify any SHA-256 hash appended to the bootloader because
     // esptool.py may have rewritten the header - rely on esptool.py having verified the bootloader at flashing time, instead.)
-    bool verify_sha = (data->start_addr != ESP_BOOTLOADER_OFFSET) && do_verify;
+    bool verify_sha = (part->offset != ESP_BOOTLOADER_OFFSET) && do_verify;
 #endif
 
     if (data == NULL || part == NULL) {
