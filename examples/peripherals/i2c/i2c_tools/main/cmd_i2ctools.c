@@ -34,17 +34,7 @@ static esp_err_t i2c_get_port(int port, i2c_port_t *i2c_port)
         ESP_LOGE(TAG, "Wrong port number: %d", port);
         return ESP_FAIL;
     }
-    switch (port) {
-    case 0:
-        *i2c_port = I2C_NUM_0;
-        break;
-    case 1:
-        *i2c_port = I2C_NUM_1;
-        break;
-    default:
-        *i2c_port = I2C_NUM_0;
-        break;
-    }
+    *i2c_port = port;
     return ESP_OK;
 }
 
