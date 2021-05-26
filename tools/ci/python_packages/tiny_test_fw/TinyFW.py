@@ -210,7 +210,7 @@ def test_method(**kwargs):
                 # and raise exception in DUT close to fail test case if reset detected.
                 if close_errors:
                     for error in close_errors:
-                        junit_test_case.add_failure_info(str(error))
+                        junit_test_case.add_failure_info("env close error: ".format(error))
                     result = False
                 if not case_info["junit_report_by_case"]:
                     JunitReport.test_case_finish(junit_test_case)
