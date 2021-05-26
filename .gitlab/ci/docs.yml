@@ -55,6 +55,8 @@ check_docs_lang_sync:
 
 .build_docs_template:
   image: $ESP_IDF_DOC_ENV_IMAGE
+  variables:
+    PYTHON_VER: 3.6.10
   tags:
     - build_docs
   dependencies: []
@@ -151,6 +153,8 @@ build_docs_pdf:
   extends:
     - .before_script_no_sync_submodule
   image: $ESP_IDF_DOC_ENV_IMAGE
+  variables:
+    PYTHON_VER: 3.6.10
   stage: test_deploy
   tags:
     - deploy

@@ -1,6 +1,6 @@
 .build_template:
   stage: build
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  image: $ESP_ENV_IMAGE
   tags:
     - build
   variables:
@@ -105,7 +105,7 @@ build_ssc_esp32c3:
     OUTPUT_PATH: ${CI_PROJECT_DIR}/tools/unit-test-app/output
     BUILD_SYSTEM: "cmake"
     TEST_TYPE: "unit_test"
-    PYTHON_VER: 3
+    PYTHON_VER: 3.6.13
     LDGEN_CHECK_MAPPING: 1
   script:
     - ${IDF_PATH}/tools/ci/find_apps_build_apps.sh
@@ -156,7 +156,7 @@ build_esp_idf_tests_cmake_esp32c3:
     TEST_TYPE: example_test
     LOG_PATH: ${CI_PROJECT_DIR}/log_${TEST_PREFIX}
     BUILD_PATH: ${CI_PROJECT_DIR}/build_${TEST_PREFIX}
-    PYTHON_VER: 3
+    PYTHON_VER: 3.6.13
     LDGEN_CHECK_MAPPING: 1
   script:
     # it's not possible to build 100% out-of-tree and have the "artifacts"

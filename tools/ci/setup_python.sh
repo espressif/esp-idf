@@ -2,9 +2,9 @@
 
 if [ -z ${PYTHON_VER+x} ]; then
     # Use this version of the Python interpreter if it was not defined before.
-    # 3.4.8 is the default python3 interpreter in esp32-ci-env
+    # 3.6.13 is the default python3 interpreter in esp32-ci-env
     # Jobs which doesn't support this version should define PYTHON_VER themselves
-    PYTHON_VER=3.4.8
+    PYTHON_VER=3.6.13
 fi
 
 if [ -f /opt/pyenv/activate ];

@@ -48,6 +48,9 @@ variables:
 
   # Docker images
   BOT_DOCKER_IMAGE_TAG: ":latest"
+  ESP_IDF_DOC_ENV_IMAGE: "$CI_DOCKER_REGISTRY/esp-idf-doc-env:v4.4-1-v1"
+  ESP_ENV_IMAGE: "$CI_DOCKER_REGISTRY/esp-env:v4.4-1"
+  AFL_FUZZER_TEST_IMAGE: "$CI_DOCKER_REGISTRY/afl-fuzzer-test:v4.4-1-1"
 
   # target test config file, used by assign test job
   CI_TARGET_TEST_CONFIG_FILE: "$CI_PROJECT_DIR/.gitlab/ci/target-test.yml"
@@ -56,9 +59,6 @@ variables:
   TEST_ENV_CONFIG_REPO: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/qa/ci-test-runner-configs.git"
   CI_AUTO_TEST_SCRIPT_REPO_URL: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/qa/auto_test_script.git"
   CI_AUTO_TEST_SCRIPT_REPO_BRANCH: "ci/v3.1"
-
-  # Versioned esp-idf-doc env image to use for all document building jobs
-  ESP_IDF_DOC_ENV_IMAGE: "$CI_DOCKER_REGISTRY/esp-idf-doc-env:v10"
 
 .setup_tools_unless_target_test: &setup_tools_unless_target_test |
   if [[ -n "$IDF_DONT_USE_MIRRORS" ]]; then

@@ -43,12 +43,6 @@ Linux 平台工具链的标准设置
     apt remove python3-pip python3-virtualenv; rm -r ~/.local
     rm -r ~/.espressif/python_env && python get-pip.py
 
-停用 Python 2 
-====================
-
-Python 2 已经 `结束生命周期 <https://www.python.org/doc/sunset-python-2/>`_，ESP-IDF 很快将不再支持 Python 2。请安装 Python 3.6 或以上版本。可参考上面列出的目前主流 Linux 发行版的安装说明。
-
-
 后续步骤
 ==========
 

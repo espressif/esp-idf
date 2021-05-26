@@ -141,7 +141,7 @@ class PublicHeaderChecker:
 
     def join(self):
         for t in self.check_threads:
-            while t.isAlive and not self.terminate.is_set():
+            while t.is_alive() and not self.terminate.is_set():
                 t.join(1)  # joins with timeout to respond to keyboard interrupt
 
     # Checks one header calling:
