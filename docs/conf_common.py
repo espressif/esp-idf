@@ -153,7 +153,6 @@ LEGACY_DOCS = ['api-guides/build-system-legacy.rst',
 
 ESP32_DOCS = ['api-guides/ulp_instruction_set.rst',
               'api-reference/system/himem.rst',
-              'api-guides/RF_calibration.rst',
               'api-reference/system/ipc.rst',
               'security/secure-boot-v1.rst',
               'api-reference/peripherals/secure_element.rst',
