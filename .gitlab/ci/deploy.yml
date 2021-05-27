@@ -4,13 +4,13 @@
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - deploy
-  dependencies: []
 
 push_to_github:
   extends:
     - .deploy_job_template
     - .before_script_minimal
     - .rules:protected-no_label
+  dependencies: []
   script:
     - add_github_ssh_keys
     - git remote remove github &>/dev/null || true
@@ -64,6 +64,7 @@ check_submodule_sync:
     GIT_STRATEGY: clone
     SUBMODULES_TO_FETCH: "none"
     PUBLIC_IDF_URL: "https://github.com/espressif/esp-idf.git"
+  dependencies: []
   script:
     - git submodule deinit --force .
     # setting the default remote URL to the public one, to resolve relative location URLs
