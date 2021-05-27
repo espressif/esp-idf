@@ -52,6 +52,9 @@ For easy interaction with IDF Monitor, use the keyboard shortcuts given in the t
    * - * Ctrl+L
      - Stop/resume log output saved to file
      - Creates a file in the project directory and the output is written to that file until this is disabled with the same keyboard shortcut (or IDF Monitor exits).                
+   * - * Ctrl+I (or I)
+     - Stop/resume printing timestamps
+     - IDF Monitor can print a timestamp in the beginning of each line. The timestamp format can be changed by the --timestamp-format command line argument.
    * - * Ctrl+H (or H)
      - Display all keyboard shortcuts
      -                
@@ -268,7 +271,6 @@ Known Issues with IDF Monitor
 Issues Observed on Windows
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- If in the Windows environment you receive the error "winpty: command not found", fix it by running ``pacman -S winpty``.
 - Arrow keys, as well as some other keys, do not work in GDB due to Windows Console limitations.
 - Occasionally, when "idf.py" or "make" exits, it might stall for up to 30 seconds before IDF Monitor resumes.
 - When "gdb" is run, it might stall for a short time before it begins communicating with the GDBStub.

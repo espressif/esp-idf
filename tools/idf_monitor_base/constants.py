@@ -17,6 +17,7 @@ CTRL_A = '\x01'
 CTRL_B = '\x02'
 CTRL_F = '\x06'
 CTRL_H = '\x08'
+CTRL_I = '\x09'
 CTRL_R = '\x12'
 CTRL_T = '\x14'
 CTRL_Y = '\x19'
@@ -33,6 +34,7 @@ CMD_APP_FLASH = 4
 CMD_OUTPUT_TOGGLE = 5
 CMD_TOGGLE_LOGGING = 6
 CMD_ENTER_BOOT = 7
+CMD_TOGGLE_TIMESTAMPS = 8
 
 # Tags for tuples in queues
 TAG_KEY = 0
