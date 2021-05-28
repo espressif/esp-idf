@@ -205,7 +205,7 @@ public class WiFiScanActivity extends AppCompatActivity {
 
     private void askForNetwork(final String ssid, final int authMode) {
 
-        final AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AlertDialogTheme);
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
         LayoutInflater inflater = this.getLayoutInflater();
         final View dialogView = inflater.inflate(R.layout.dialog_wifi_network, null);
         builder.setView(dialogView);
@@ -334,7 +334,7 @@ public class WiFiScanActivity extends AppCompatActivity {
 
     private void showAlertForDeviceDisconnected() {
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AlertDialogTheme);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setCancelable(false);
         builder.setTitle(R.string.error_title);
         builder.setMessage(R.string.dialog_msg_ble_device_disconnection);

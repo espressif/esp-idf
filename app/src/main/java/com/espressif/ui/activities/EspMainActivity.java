@@ -235,7 +235,7 @@ public class EspMainActivity extends AppCompatActivity {
         } else {
 
             final String[] deviceTypes = {"BLE", "SoftAP"};
-            AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AlertDialogTheme);
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setCancelable(true);
             builder.setTitle(R.string.dialog_msg_device_selection);
             final int finalSecurityType = securityType;
@@ -274,7 +274,7 @@ public class EspMainActivity extends AppCompatActivity {
 
     private void askForLocation() {
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AlertDialogTheme);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setCancelable(true);
         builder.setMessage(R.string.dialog_msg_gps);
 

@@ -192,6 +192,7 @@ public class BLEProvisionLanding extends AppCompatActivity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
         switch (requestCode) {
 
@@ -376,7 +377,7 @@ public class BLEProvisionLanding extends AppCompatActivity {
 
     private void alertForDeviceNotSupported(String msg) {
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AlertDialogTheme);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setCancelable(false);
 
         builder.setTitle(R.string.error_title);
@@ -504,7 +505,7 @@ public class BLEProvisionLanding extends AppCompatActivity {
 
     private void askForPrefix() {
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AlertDialogTheme);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setCancelable(true);
 
         LayoutInflater layoutInflaterAndroid = LayoutInflater.from(this);

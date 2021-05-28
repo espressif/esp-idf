@@ -7,7 +7,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.9'
+        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.16'
     }
 }
 
@@ -19,12 +19,12 @@ allprojects {
 }
 
 android {
-    compileSdkVersion 29
-    buildToolsVersion "29.0.1"
+    compileSdkVersion 30
+    buildToolsVersion "30.0.3"
 
     defaultConfig {
         minSdkVersion 23
-        targetSdkVersion 29
+        targetSdkVersion 30
         versionCode 1
         versionName "1.0"
 
@@ -42,7 +42,7 @@ android {
 
 protobuf {
     protoc {
-        artifact = 'com.google.protobuf:protoc:3.5.1'
+        artifact = 'com.google.protobuf:protoc:3.7.0'
     }
     plugins {
         javalite {
@@ -64,15 +64,15 @@ protobuf {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'androidx.appcompat:appcompat:1.3.0'
     implementation 'org.greenrobot:eventbus:3.1.1'
     implementation 'com.google.protobuf:protobuf-lite:3.0.1'
     implementation 'com.google.crypto.tink:tink-android:1.1.0'
-    implementation 'com.google.android.gms:play-services-vision:20.0.0'
+    implementation 'com.google.android.gms:play-services-vision:20.1.3'
     implementation 'androidx.preference:preference:1.1.1'
     implementation 'com.budiyev.android:code-scanner:2.1.0'
 
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 }

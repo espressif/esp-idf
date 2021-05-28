@@ -454,7 +454,7 @@ public class AddDeviceActivity extends AppCompatActivity {
 
     private void alertForWiFi() {
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AlertDialogTheme);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setCancelable(false);
         builder.setMessage(R.string.error_wifi_off);
 
@@ -485,7 +485,7 @@ public class AddDeviceActivity extends AppCompatActivity {
 
     private void askForManualDeviceConnection() {
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AlertDialogTheme);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setCancelable(true);
 
         builder.setMessage("Unable to connect with device. \nDo you want to connect device manually ?");
@@ -555,7 +555,7 @@ public class AddDeviceActivity extends AppCompatActivity {
         } else {
 
             final String[] deviceTypes = {"BLE", "SoftAP"};
-            AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AlertDialogTheme);
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setCancelable(true);
             builder.setTitle(R.string.dialog_msg_device_selection);
             final int finalSecurityType = securityType;
