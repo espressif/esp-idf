@@ -45,6 +45,9 @@ static EventGroupHandle_t wifi_event_group;
 static void event_handler(void* arg, esp_event_base_t event_base,
                           int32_t event_id, void* event_data)
 {
+#ifdef CONFIG_EXAMPLE_RESET_PROV_MGR_ON_FAILURE
+    static int retries;
+#endif
     if (event_base == WIFI_PROV_EVENT) {
         switch (event_id) {
             case WIFI_PROV_START:
@@ -64,10 +67,21 @@ static void event_handler(void* arg, esp_event_base_t event_base,
                          "\n\tPlease reset to factory and retry provisioning",
                          (*reason == WIFI_PROV_STA_AUTH_ERROR) ?
                          "Wi-Fi station authentication failed" : "Wi-Fi access-point not found");
+#ifdef CONFIG_EXAMPLE_RESET_PROV_MGR_ON_FAILURE
+                retries++;
+                if (retries >= CONFIG_EXAMPLE_PROV_MGR_MAX_RETRY_CNT) {
+                    ESP_LOGI(TAG, "Failed to connect with provisioned AP, reseting provisioned credentials");
+                    wifi_prov_mgr_reset_sm_state_on_failure();
+                    retries = 0;
+                }
+#endif
                 break;
             }
             case WIFI_PROV_CRED_SUCCESS:
                 ESP_LOGI(TAG, "Provisioning successful");
+#ifdef CONFIG_EXAMPLE_RESET_PROV_MGR_ON_FAILURE
+                retries = 0;
+#endif
                 break;
             case WIFI_PROV_END:
                 /* De-initialize manager once provisioning is finished */
