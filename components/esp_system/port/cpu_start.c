@@ -270,6 +270,13 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
 
 #ifdef __riscv
+    if (cpu_hal_is_debugger_attached()) {
+        /* Let debugger some time to detect that target started, halt it, enable ebreaks and resume.
+           500ms should be enough. */
+        for (uint32_t ms_num = 0; ms_num < 2; ms_num++) {
+            esp_rom_delay_us(100000);
+        }
+    }
     // Configure the global pointer register
     // (This should be the first thing IDF app does, as any other piece of code could be
     // relaxed by the linker to access something relative to __global_pointer$)

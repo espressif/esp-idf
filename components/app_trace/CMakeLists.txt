@@ -16,6 +16,10 @@ if(CONFIG_APPTRACE_MEMBUFS_APPTRACE_PROTO_ENABLE)
         list(APPEND srcs
             "port/xtensa/port.c")
     endif()
+    if(CONFIG_IDF_TARGET_ARCH_RISCV)
+        list(APPEND srcs
+            "port/riscv/port.c")
+    endif()
 endif()
 
 if(CONFIG_APPTRACE_SV_ENABLE)

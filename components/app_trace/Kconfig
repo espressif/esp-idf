@@ -68,7 +68,7 @@ menu "Application Level Tracing"
         depends on APPTRACE_MEMBUFS_APPTRACE_PROTO_ENABLE && !APPTRACE_DEST_TRAX
         default 16384
         help
-            Size of the memory buffer for trace datats in bytes.
+            Size of the memory buffer for trace data in bytes.
 
     config APPTRACE_PENDING_DATA_SIZE_MAX
         int "Size of the pending data buffer"

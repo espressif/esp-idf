@@ -91,4 +91,13 @@
 #define configISR_STACK_SIZE                            (CONFIG_FREERTOS_ISR_STACKSIZE)
 #endif
 
+#ifndef __ASSEMBLER__
+#if CONFIG_APPTRACE_SV_ENABLE
+extern int xPortSwitchFlag;
+#define os_task_switch_is_pended(_cpu_) (xPortSwitchFlag)
+#else
+#define os_task_switch_is_pended(_cpu_) (false)
+#endif
+#endif
+
 #endif // FREERTOS_CONFIG_RISCV_H
