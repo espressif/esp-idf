@@ -1,0 +1,69 @@
+menu "Example Configuration"
+
+    choice
+
+        prompt "Select a button as Deep Sleep wakeup source"
+        default TE_WAKEUP_USE_BUTTON_1
+
+        config TE_WAKEUP_USE_BUTTON_1
+            bool "Button 1"
+
+        config TE_WAKEUP_USE_BUTTON_2
+            bool "Button 2"
+
+        config TE_WAKEUP_USE_BUTTON_3
+            bool "Button 3"
+
+        config TE_WAKEUP_USE_BUTTON_4
+            bool "Button 4"
+
+        config TE_WAKEUP_USE_BUTTON_5
+            bool "Button 5"
+
+    endchoice
+
+    config TE_WAKEUP_BUTTON_INDEX
+        int
+        default 0 if TE_WAKEUP_USE_BUTTON_1
+        default 1 if TE_WAKEUP_USE_BUTTON_2
+        default 2 if TE_WAKEUP_USE_BUTTON_3
+        default 3 if TE_WAKEUP_USE_BUTTON_4
+        default 4 if TE_WAKEUP_USE_BUTTON_5
+
+    choice
+
+        prompt "Select a button as Deep Sleep entry"
+        default TE_ENTRY_USE_BUTTON_1
+
+        config TE_ENTRY_USE_BUTTON_1
+            bool "Button 1"
+
+        config TE_ENTRY_USE_BUTTON_2
+            bool "Button 2"
+
+        config TE_ENTRY_USE_BUTTON_3
+            bool "Button 3"
+
+        config TE_ENTRY_USE_BUTTON_4
+            bool "Button 4"
+
+        config TE_ENTRY_USE_BUTTON_5
+            bool "Button 5"
+
+    endchoice
+
+    config TE_ENTRY_BUTTON_INDEX
+        int
+        default 0 if TE_ENTRY_USE_BUTTON_1
+        default 1 if TE_ENTRY_USE_BUTTON_2
+        default 2 if TE_ENTRY_USE_BUTTON_3
+        default 3 if TE_ENTRY_USE_BUTTON_4
+        default 4 if TE_ENTRY_USE_BUTTON_5
+
+    config TE_SKIP_CALIBRATION
+        bool "Touch Element skip wakeup calibration"
+        depends on TE_SKIP_DSLEEP_WAKEUP_CALIBRATION
+        default y
+
+
+endmenu

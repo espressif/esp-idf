@@ -14,14 +14,12 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "touch_element/touch_button.h"
 #include "esp_log.h"
-#include "esp_sleep.h"
-#include "soc/soc.h"
-#include "soc/rtc_cntl_reg.h"
 #include "esp_pm.h"
+#include "touch_element/touch_button.h"
 
-static const char *TAG = "Touch Button Example";
+static const char *TAG = "Touch elem auto sleep";
+
 #define TOUCH_BUTTON_NUM     5
 
 /* Touch buttons handle */
@@ -45,7 +43,6 @@ static const float channel_sens_array[TOUCH_BUTTON_NUM] = {
     0.03F,
 };
 
-#ifdef CONFIG_TOUCH_ELEM_EVENT
 /* Button event handler task */
 static void button_handler_task(void *arg)
 {
@@ -68,34 +65,24 @@ static void button_handler_task(void *arg)
         }
     }
 }
-#elif CONFIG_TOUCH_ELEM_CALLBACK
-/* Button callback routine */
-static void button_handler(touch_button_handle_t out_handle, touch_button_message_t *out_message, void *arg)
-{
-    (void) out_handle; //Unused
-    if (out_message->event == TOUCH_BUTTON_EVT_ON_PRESS) {
-        ESP_LOGI(TAG, "Button[%d] Press", (uint32_t)arg);
-        if (out_handle == button_handle[0]) {
-//            esp_deep_sleep_start();
-        } else if (out_handle == button_handle[1]) {
-            esp_deep_sleep_start();
-        }
-    } else if (out_message->event == TOUCH_BUTTON_EVT_ON_RELEASE) {
-        ESP_LOGI(TAG, "Button[%d] Release", (uint32_t)arg);
-    } else if (out_message->event == TOUCH_BUTTON_EVT_ON_LONGPRESS) {
-        ESP_LOGI(TAG, "Button[%d] LongPress", (uint32_t)arg);
-    }
-}
-#endif
+
 
 void app_main(void)
 {
-//    esp_pm_config_esp32s2_t pm_config = {
-//        .max_freq_mhz = 160,
-//        .min_freq_mhz = 160,
-//        .light_sleep_enable = true
-//    };
-//    ESP_ERROR_CHECK( esp_pm_configure(&pm_config) );
+#ifdef CONFIG_PM_ENABLE  //System power management
+    esp_pm_config_esp32s2_t pm_config = {
+#ifdef CONFIG_PM_DFS_INIT_AUTO  //Power management dynamic frequency scaling
+        .max_freq_mhz = CONFIG_TE_MAX_CPU_FREQ,
+        .min_freq_mhz = CONFIG_TE_MIN_CPU_FREQ,
+#endif
+#ifdef CONFIG_FREERTOS_USE_TICKLESS_IDLE //FreeRTOS tickless
+        .light_sleep_enable = true
+#else
+        .light_sleep_enable = false
+#endif
+    };
+    ESP_ERROR_CHECK( esp_pm_configure(&pm_config));
+#endif
     /* Initialize Touch Element library */
     touch_elem_global_config_t global_config = TOUCH_ELEM_GLOBAL_DEFAULT_CONFIG();
     ESP_ERROR_CHECK(touch_element_install(&global_config));
@@ -114,30 +101,23 @@ void app_main(void)
         /* Subscribe touch button events (On Press, On Release, On LongPress) */
         ESP_ERROR_CHECK(touch_button_subscribe_event(button_handle[i], TOUCH_ELEM_EVENT_ON_PRESS | TOUCH_ELEM_EVENT_ON_RELEASE | TOUCH_ELEM_EVENT_ON_LONGPRESS,
                                                      (void *)channel_array[i]));
-#ifdef CONFIG_TOUCH_ELEM_EVENT
         /* Set EVENT as the dispatch method */
         ESP_ERROR_CHECK(touch_button_set_dispatch_method(button_handle[i], TOUCH_ELEM_DISP_EVENT));
-#elif CONFIG_TOUCH_ELEM_CALLBACK
-        /* Set EVENT as the dispatch method */
-        ESP_ERROR_CHECK(touch_button_set_dispatch_method(button_handle[i], TOUCH_ELEM_DISP_CALLBACK));
-        /* Register a handler function to handle event messages */
-        ESP_ERROR_CHECK(touch_button_set_callback(button_handle[i], button_handler));
-#endif
         /* Set LongPress event trigger threshold time */
         ESP_ERROR_CHECK(touch_button_set_longpress(button_handle[i], 1000));
     }
     ESP_LOGI(TAG, "Touch buttons created");
+
+#ifdef CONFIG_TE_PM_ENABLE
     touch_elem_sleep_config_t sleep_config = {
         .scan_time = global_config.hardware.sample_count,
         .sleep_time = global_config.hardware.sleep_cycle,
     };
     ESP_ERROR_CHECK(touch_element_sleep_install(&sleep_config));
-    ESP_ERROR_CHECK(touch_element_sleep_add_wakeup(button_handle[0]));
-    ESP_ERROR_CHECK(touch_element_sleep_config_wakeup_calibration(button_handle[0], true));
-    touch_pad_sleep_channel_t sleep_channel_info;
-    touch_pad_sleep_channel_get_info(&sleep_channel_info);
-    printf("----------%d\n", sleep_channel_info.touch_num);
+#endif
+
     touch_element_start();
     ESP_LOGI(TAG, "Touch element library start");
+    xTaskCreate(&button_handler_task, "button_handler_task", 4 * 1024, NULL, 5, NULL);
     vTaskDelay(pdMS_TO_TICKS(1000));
 }

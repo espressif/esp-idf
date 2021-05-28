@@ -380,7 +380,9 @@ static void te_intr_cb(void *arg)
         if (touch_trig_diff & 0x1) {
             if (touch_trig_status & BIT(pad_num)) {
                 if (s_te_obj->sleep_handle != NULL) {
+#ifdef CONFIG_PM_ENABLE
                     esp_pm_lock_acquire(s_te_obj->sleep_handle->pm_lock);
+#endif
                 }
                 te_intr_msg.channel_state = TE_STATE_PRESS;
                 te_intr_msg.intr_type = TE_INTR_PRESS;
@@ -444,7 +446,9 @@ static void te_proc_timer_cb(void *arg)
             te_object_update_state(te_intr_msg);
             if (te_intr_msg.intr_type == TE_INTR_RELEASE) {
                 if (s_te_obj->sleep_handle != NULL) {
+#ifdef CONFIG_PM_ENABLE
                     esp_pm_lock_release(s_te_obj->sleep_handle->pm_lock);
+#endif
                 }
             }
         } else if (te_intr_msg.intr_type == TE_INTR_SCAN_DONE) {
@@ -453,7 +457,9 @@ static void te_proc_timer_cb(void *arg)
                 te_object_set_threshold();  //TODO: add set threshold error processing
                 ESP_LOGD(TE_DEBUG_TAG, "Set threshold");
                 if (s_te_obj->sleep_handle != NULL) {
+#ifdef CONFIG_PM_ENABLE
                     esp_pm_lock_release(s_te_obj->sleep_handle->pm_lock);
+#endif
                 }
             }
             if (waterproof_check_state()) {
@@ -1009,10 +1015,12 @@ esp_err_t touch_element_sleep_install(touch_elem_sleep_config_t *sleep_config)
     s_te_obj->sleep_handle->non_volatile_threshold = threshold_shadow;
 #endif
 
+#ifdef CONFIG_PM_ENABLE
     ret = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "touch_element", &s_te_obj->sleep_handle->pm_lock);
     TE_CHECK_GOTO(ret == ESP_OK, cleanup);
     ret = esp_pm_lock_acquire(s_te_obj->sleep_handle->pm_lock);
     TE_CHECK_GOTO(ret == ESP_OK, cleanup);
+#endif
     return ESP_OK;
 
 cleanup:
@@ -1030,10 +1038,12 @@ void touch_element_sleep_uninstall(void)
 {
     esp_err_t ret;
     if (s_te_obj->sleep_handle->pm_lock != NULL) {
+#ifdef CONFIG_PM_ENABLE
         ret = esp_pm_lock_delete(s_te_obj->sleep_handle->pm_lock);
         if (ret != ESP_OK) {
             abort();
         }
+#endif
     }
     if (s_te_obj->sleep_handle->wakeup_handle != NULL) {
         te_button_handle_t button_handle = s_te_obj->sleep_handle->wakeup_handle;
