@@ -35,7 +35,7 @@ typedef struct MD5Context mbedtls_md5_context;
  *                 stronger message digests instead.
  *
  */
-int esp_md5_init_ret( mbedtls_md5_context *ctx );
+void esp_md5_init( mbedtls_md5_context *ctx );
 
 /**
  * \brief          Clear MD5 context
@@ -63,6 +63,20 @@ void esp_md5_free( mbedtls_md5_context *ctx );
 void esp_md5_clone( mbedtls_md5_context *dst, const mbedtls_md5_context *src );
 
 /**
+ * \brief          MD5 context setup
+ *
+ * \param ctx      context to be initialized
+ *
+ * \return         0 if successful
+ *
+ * \warning        MD5 is considered a weak message digest and its use
+ *                 constitutes a security risk. We recommend considering
+ *                 stronger message digests instead.
+ *
+ */
+int mbedtls_md5_starts( mbedtls_md5_context *ctx );
+
+/**
  * \brief          MD5 process buffer
  *
  * \param ctx      MD5 context
@@ -76,7 +90,7 @@ void esp_md5_clone( mbedtls_md5_context *dst, const mbedtls_md5_context *src );
  *                 stronger message digests instead.
  *
  */
-int esp_md5_update_ret( mbedtls_md5_context *ctx, const unsigned char *input, size_t ilen );
+int esp_md5_update( mbedtls_md5_context *ctx, const unsigned char *input, size_t ilen );
 
 /**
  * \brief          MD5 final digest
@@ -91,7 +105,7 @@ int esp_md5_update_ret( mbedtls_md5_context *ctx, const unsigned char *input, si
  *                 stronger message digests instead.
  *
  */
-int esp_md5_finish_ret( mbedtls_md5_context *ctx, unsigned char output[16] );
+int esp_md5_finish( mbedtls_md5_context *ctx, unsigned char output[16] );
 
 /**
  * \brief          MD5 process data block (internal use only)
@@ -107,51 +121,6 @@ int esp_md5_finish_ret( mbedtls_md5_context *ctx, unsigned char output[16] );
  *
  */
 int esp_md5_process( mbedtls_md5_context *ctx, const unsigned char data[64] );
-
-/**
- * \brief          MD5 context setup
- *
- * \deprecated     Superseded by mbedtls_md5_starts_ret() in 2.7.0
- *
- * \param ctx      context to be initialized
- *
- * \warning        MD5 is considered a weak message digest and its use
- *                 constitutes a security risk. We recommend considering
- *                 stronger message digests instead.
- *
- */
-void esp_md5_init( mbedtls_md5_context *ctx );
-
-/**
- * \brief          MD5 process buffer
- *
- * \deprecated     Superseded by mbedtls_md5_update_ret() in 2.7.0
- *
- * \param ctx      MD5 context
- * \param input    buffer holding the data
- * \param ilen     length of the input data
- *
- * \warning        MD5 is considered a weak message digest and its use
- *                 constitutes a security risk. We recommend considering
- *                 stronger message digests instead.
- *
- */
-void esp_md5_update( mbedtls_md5_context *ctx, const unsigned char *input, size_t ilen );
-
-/**
- * \brief          MD5 final digest
- *
- * \deprecated     Superseded by mbedtls_md5_finish_ret() in 2.7.0
- *
- * \param ctx      MD5 context
- * \param output   MD5 checksum result
- *
- * \warning        MD5 is considered a weak message digest and its use
- *                 constitutes a security risk. We recommend considering
- *                 stronger message digests instead.
- *
- */
-void esp_md5_finish( mbedtls_md5_context *ctx, unsigned char output[16] );
 
 #ifdef __cplusplus
 }

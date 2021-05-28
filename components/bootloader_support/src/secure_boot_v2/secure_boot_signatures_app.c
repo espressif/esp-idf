@@ -230,7 +230,8 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
                                 .n = sizeof(trusted_block->key.e)/sizeof(mbedtls_mpi_uint), // 1
                                 .p = (void *)&trusted_block->key.e,
         };
-        mbedtls_rsa_init(&pk, MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA256);
+        mbedtls_rsa_init(&pk);
+        mbedtls_rsa_set_padding(&pk,MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA256);
         ret = mbedtls_rsa_import(&pk, &N, NULL, NULL, NULL, &e);
         if (ret != 0) {
             ESP_LOGE(TAG, "Failed mbedtls_rsa_import, err: %d", ret);

@@ -114,7 +114,7 @@ TEST_CASE("Test esp_sha() function with long input", "[hw_crypto]")
     /* Compare esp_sha() result to the mbedTLS result, should always be the same */
 
     esp_sha(SHA1, ptr, LEN, sha1_espsha);
-    int r = mbedtls_sha1_ret(ptr, LEN, sha1_mbedtls);
+    int r = mbedtls_sha1(ptr, LEN, sha1_mbedtls);
     TEST_ASSERT_EQUAL(0, r);
 
     esp_sha(SHA2_256, ptr, LEN, sha256_espsha);

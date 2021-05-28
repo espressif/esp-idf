@@ -74,7 +74,7 @@ void esp_core_dump_checksum_init(core_dump_checksum_ctx** out_ctx)
         s_checksum_context.crc = 0;
 #elif CONFIG_ESP_COREDUMP_CHECKSUM_SHA256
         mbedtls_sha256_init(&s_checksum_context.ctx);
-        (void)mbedtls_sha256_starts_ret(&s_checksum_context.ctx, 0);
+        (void)mbedtls_sha256_starts(&s_checksum_context.ctx, 0);
 #endif
         s_checksum_context.total_bytes_checksum = 0;
 
@@ -95,7 +95,7 @@ void esp_core_dump_checksum_update(core_dump_checksum_ctx* cks_ctx, void* data, 
         // set software mode of SHA calculation
         cks_ctx->ctx.mode = ESP_MBEDTLS_SHA256_SOFTWARE;
 #endif
-        (void)mbedtls_sha256_update_ret(&cks_ctx->ctx, data, data_len);
+        (void)mbedtls_sha256_update(&cks_ctx->ctx, data, data_len);
 #endif
         // keep counter of cashed bytes
         cks_ctx->total_bytes_checksum += data_len;
@@ -120,7 +120,7 @@ uint32_t esp_core_dump_checksum_finish(core_dump_checksum_ctx* cks_ctx, core_dum
 
 #elif CONFIG_ESP_COREDUMP_CHECKSUM_SHA256
     if (chs_ptr != NULL) {
-        (void)mbedtls_sha256_finish_ret(&cks_ctx->ctx, (uint8_t*)&cks_ctx->sha_output);
+        (void)mbedtls_sha256_finish(&cks_ctx->ctx, (uint8_t*)&cks_ctx->sha_output);
         *chs_ptr = &cks_ctx->sha_output[0];
         mbedtls_sha256_free(&cks_ctx->ctx);
     }

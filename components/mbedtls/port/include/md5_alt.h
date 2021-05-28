@@ -33,9 +33,7 @@ extern "C" {
 #define mbedtls_md5_init                        esp_md5_init
 #define mbedtls_md5_update                      esp_md5_update
 #define mbedtls_md5_finish                      esp_md5_finish
-#define mbedtls_md5_starts_ret                  esp_md5_init_ret
-#define mbedtls_md5_update_ret                  esp_md5_update_ret
-#define mbedtls_md5_finish_ret                  esp_md5_finish_ret
+#define mbedtls_md5_starts                      esp_md5_starts
 
 #define mbedtls_md5_free                        esp_md5_free
 #define mbedtls_md5_clone                       esp_md5_clone

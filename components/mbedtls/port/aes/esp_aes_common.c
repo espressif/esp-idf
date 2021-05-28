@@ -31,6 +31,7 @@
 #include "hal/aes_hal.h"
 #include "hal/aes_types.h"
 #include "soc/soc_caps.h"
+#include "mbedtls/error.h"
 
 #include <string.h>
 #include "mbedtls/platform.h"

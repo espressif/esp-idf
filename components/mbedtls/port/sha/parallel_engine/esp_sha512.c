@@ -27,11 +27,7 @@
  *  http://csrc.nist.gov/publications/fips/fips180-2/fips180-2.pdf
  */
 
-#if !defined(MBEDTLS_CONFIG_FILE)
-#include "mbedtls/config.h"
-#else
-#include MBEDTLS_CONFIG_FILE
-#endif
+#include <mbedtls/build_info.h>
 
 #if defined(MBEDTLS_SHA512_C) && defined(MBEDTLS_SHA512_ALT)
 
@@ -140,7 +136,7 @@ void mbedtls_sha512_clone( mbedtls_sha512_context *dst,
 /*
  * SHA-512 context setup
  */
-int mbedtls_sha512_starts_ret( mbedtls_sha512_context *ctx, int is384 )
+int mbedtls_sha512_starts( mbedtls_sha512_context *ctx, int is384 )
 {
     ctx->total[0] = 0;
     ctx->total[1] = 0;
@@ -180,7 +176,7 @@ int mbedtls_sha512_starts_ret( mbedtls_sha512_context *ctx, int is384 )
 void mbedtls_sha512_starts( mbedtls_sha512_context *ctx,
                             int is384 )
 {
-    mbedtls_sha512_starts_ret( ctx, is384 );
+    mbedtls_sha512_starts( ctx, is384 );
 }
 #endif
 
@@ -332,7 +328,7 @@ static void mbedtls_sha512_software_process( mbedtls_sha512_context *ctx, const 
 /*
  * SHA-512 process buffer
  */
-int mbedtls_sha512_update_ret( mbedtls_sha512_context *ctx, const unsigned char *input,
+int mbedtls_sha512_update( mbedtls_sha512_context *ctx, const unsigned char *input,
                                size_t ilen )
 {
     int ret;
@@ -384,7 +380,7 @@ void mbedtls_sha512_update( mbedtls_sha512_context *ctx,
                             const unsigned char *input,
                             size_t ilen )
 {
-    mbedtls_sha512_update_ret( ctx, input, ilen );
+    mbedtls_sha512_update( ctx, input, ilen );
 }
 #endif
 
@@ -403,7 +399,7 @@ static const unsigned char sha512_padding[128] = {
 /*
  * SHA-512 final digest
  */
-int mbedtls_sha512_finish_ret( mbedtls_sha512_context *ctx, unsigned char output[64] )
+int mbedtls_sha512_finish( mbedtls_sha512_context *ctx, unsigned char output[64] )
 {
     int ret;
     size_t last, padn;
@@ -420,11 +416,11 @@ int mbedtls_sha512_finish_ret( mbedtls_sha512_context *ctx, unsigned char output
     last = (size_t)( ctx->total[0] & 0x7F );
     padn = ( last < 112 ) ? ( 112 - last ) : ( 240 - last );
 
-    if ( ( ret = mbedtls_sha512_update_ret( ctx, sha512_padding, padn ) ) != 0 ) {
+    if ( ( ret = mbedtls_sha512_update( ctx, sha512_padding, padn ) ) != 0 ) {
         goto out;
     }
 
-    if ( ( ret = mbedtls_sha512_update_ret( ctx, msglen, 16 ) ) != 0 ) {
+    if ( ( ret = mbedtls_sha512_update( ctx, msglen, 16 ) ) != 0 ) {
         goto out;
     }
 
@@ -458,7 +454,7 @@ out:
 void mbedtls_sha512_finish( mbedtls_sha512_context *ctx,
                             unsigned char output[64] )
 {
-    mbedtls_sha512_finish_ret( ctx, output );
+    mbedtls_sha512_finish( ctx, output );
 }
 #endif
 

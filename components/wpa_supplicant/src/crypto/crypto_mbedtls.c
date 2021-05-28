@@ -25,7 +25,6 @@
 #include "mbedtls/nist_kw.h"
 #include "mbedtls/des.h"
 #include "mbedtls/ccm.h"
-#include "mbedtls/arc4.h"
 
 #include "common.h"
 #include "utils/wpabuf.h"

@@ -629,24 +629,6 @@ menu "mbedTLS"
             If you don't need renegotiation, disabling it will save code size and
             reduce the possibility of abuse/vulnerability.
 
-    config MBEDTLS_SSL_PROTO_SSL3
-        bool "Legacy SSL 3.0 support"
-        depends on MBEDTLS_TLS_ENABLED
-        default n
-        help
-            Support the legacy SSL 3.0 protocol. Most servers will speak a newer
-            TLS protocol these days.
-
-    config MBEDTLS_SSL_PROTO_TLS1
-        bool "Support TLS 1.0 protocol"
-        depends on MBEDTLS_TLS_ENABLED
-        default y
-
-    config MBEDTLS_SSL_PROTO_TLS1_1
-        bool "Support TLS 1.1 protocol"
-        depends on MBEDTLS_TLS_ENABLED
-        default y
-
     config MBEDTLS_SSL_PROTO_TLS1_2
         bool "Support TLS 1.2 protocol"
         depends on MBEDTLS_TLS_ENABLED
@@ -662,9 +644,8 @@ menu "mbedTLS"
     config MBEDTLS_SSL_PROTO_DTLS
         bool "Support DTLS protocol (all versions)"
         default n
-        depends on MBEDTLS_SSL_PROTO_TLS1_1 || MBEDTLS_SSL_PROTO_TLS1_2
+        depends on MBEDTLS_SSL_PROTO_TLS1_2
         help
-            Requires TLS 1.1 to be enabled for DTLS 1.0
             Requires TLS 1.2 to be enabled for DTLS 1.2
 
     config MBEDTLS_SSL_ALPN
@@ -681,22 +662,6 @@ menu "mbedTLS"
         help
             Client support for RFC 5077 session tickets. See mbedTLS documentation for more details.
             Disabling this option will save some code size.
-
-    config MBEDTLS_X509_CHECK_KEY_USAGE
-        bool "Enable verification of the keyUsage extension"
-        default y
-        depends on MBEDTLS_TLS_ENABLED
-        help
-            Disabling this avoids problems with mis-issued and/or misused (intermediate) CA and leaf certificates.
-            Depending on your PKI use, disabling this can be a security risk.
-
-    config MBEDTLS_X509_CHECK_EXTENDED_KEY_USAGE
-        bool "Enable verification of the extendedKeyUsage extension"
-        default y
-        depends on MBEDTLS_TLS_ENABLED
-        help
-            Disabling this avoids problems with mis-issued and/or misused certificates.
-            Depending on your PKI use, disabling this can be a security risk.
 
     config MBEDTLS_SERVER_SSL_SESSION_TICKETS
         bool "TLS: Server Support for RFC 5077 SSL session tickets"

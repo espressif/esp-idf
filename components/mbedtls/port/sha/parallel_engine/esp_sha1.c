@@ -26,11 +26,7 @@
  *  http://www.itl.nist.gov/fipspubs/fip180-1.htm
  */
 
-#if !defined(MBEDTLS_CONFIG_FILE)
-#include "mbedtls/config.h"
-#else
-#include MBEDTLS_CONFIG_FILE
-#endif
+#include <mbedtls/build_info.h>
 
 #if defined(MBEDTLS_SHA1_C) && defined(MBEDTLS_SHA1_ALT)
 
@@ -116,7 +112,7 @@ void mbedtls_sha1_clone( mbedtls_sha1_context *dst,
 /*
  * SHA-1 context setup
  */
-int mbedtls_sha1_starts_ret( mbedtls_sha1_context *ctx )
+int mbedtls_sha1_starts( mbedtls_sha1_context *ctx )
 {
     ctx->total[0] = 0;
     ctx->total[1] = 0;
@@ -135,12 +131,6 @@ int mbedtls_sha1_starts_ret( mbedtls_sha1_context *ctx )
     return 0;
 }
 
-#if !defined(MBEDTLS_DEPRECATED_REMOVED)
-void mbedtls_sha1_starts( mbedtls_sha1_context *ctx )
-{
-    mbedtls_sha1_starts_ret( ctx );
-}
-#endif
 
 static void mbedtls_sha1_software_process( mbedtls_sha1_context *ctx, const unsigned char data[64] );
 
@@ -334,7 +324,7 @@ static void mbedtls_sha1_software_process( mbedtls_sha1_context *ctx, const unsi
 /*
  * SHA-1 process buffer
  */
-int mbedtls_sha1_update_ret( mbedtls_sha1_context *ctx, const unsigned char *input, size_t ilen )
+int mbedtls_sha1_update( mbedtls_sha1_context *ctx, const unsigned char *input, size_t ilen )
 {
     int ret;
     size_t fill;
@@ -387,7 +377,7 @@ void mbedtls_sha1_update( mbedtls_sha1_context *ctx,
                           const unsigned char *input,
                           size_t ilen )
 {
-    mbedtls_sha1_update_ret( ctx, input, ilen );
+    mbedtls_sha1_update( ctx, input, ilen );
 }
 #endif
 
@@ -401,7 +391,7 @@ static const unsigned char sha1_padding[64] = {
 /*
 * SHA-1 final digest
  */
-int mbedtls_sha1_finish_ret( mbedtls_sha1_context *ctx, unsigned char output[20] )
+int mbedtls_sha1_finish( mbedtls_sha1_context *ctx, unsigned char output[20] )
 {
     int ret;
     uint32_t last, padn;
@@ -418,10 +408,10 @@ int mbedtls_sha1_finish_ret( mbedtls_sha1_context *ctx, unsigned char output[20]
     last = ctx->total[0] & 0x3F;
     padn = ( last < 56 ) ? ( 56 - last ) : ( 120 - last );
 
-    if ( ( ret = mbedtls_sha1_update_ret( ctx, sha1_padding, padn ) ) != 0 ) {
+    if ( ( ret = mbedtls_sha1_update( ctx, sha1_padding, padn ) ) != 0 ) {
         goto out;
     }
-    if ( ( ret = mbedtls_sha1_update_ret( ctx, msglen, 8 ) ) != 0 ) {
+    if ( ( ret = mbedtls_sha1_update( ctx, msglen, 8 ) ) != 0 ) {
         goto out;
     }
 
@@ -449,7 +439,7 @@ out:
 void mbedtls_sha1_finish( mbedtls_sha1_context *ctx,
                           unsigned char output[20] )
 {
-    mbedtls_sha1_finish_ret( ctx, output );
+    mbedtls_sha1_finish( ctx, output );
 }
 #endif
 

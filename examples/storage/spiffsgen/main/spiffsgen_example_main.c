@@ -57,16 +57,16 @@ static void compute_alice_txt_md5(void)
     unsigned char digest[MD5_MAX_LEN];
 
     mbedtls_md5_init(&ctx);
-    mbedtls_md5_starts_ret(&ctx);
+    mbedtls_md5_starts(&ctx);
 
     size_t read;
 
     do {
         read = fread((void*) buf, 1, sizeof(buf), f);
-        mbedtls_md5_update_ret(&ctx, (unsigned const char*) buf, read);
+        mbedtls_md5_update(&ctx, (unsigned const char*) buf, read);
     } while(read == sizeof(buf));
 
-    mbedtls_md5_finish_ret(&ctx, digest);
+    mbedtls_md5_finish(&ctx, digest);
 
     // Create a string of the digest
     char digest_str[MD5_MAX_LEN * 2];

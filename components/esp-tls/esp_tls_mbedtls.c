@@ -906,7 +906,7 @@ static esp_err_t esp_mbedtls_init_pk_ctx_for_ds(const void *pki)
     int ret = -1;
     /* initialize the mbedtls pk context with rsa context */
     mbedtls_rsa_context rsakey;
-    mbedtls_rsa_init(&rsakey, MBEDTLS_RSA_PKCS_V15, 0);
+    mbedtls_rsa_init(&rsakey);
     if ((ret = mbedtls_pk_setup_rsa_alt(((const esp_tls_pki_t*)pki)->pk_key, &rsakey, NULL, esp_ds_rsa_sign,
                                         esp_ds_get_keylen )) != 0) {
         ESP_LOGE(TAG, "Error in mbedtls_pk_setup_rsa_alt, returned -0x%04X", -ret);

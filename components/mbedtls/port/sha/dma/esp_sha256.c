@@ -25,11 +25,7 @@
  *  http://csrc.nist.gov/publications/fips/fips180-2/fips180-2.pdf
  */
 
-#if !defined(MBEDTLS_CONFIG_FILE)
-#include "mbedtls/config.h"
-#else
-#include MBEDTLS_CONFIG_FILE
-#endif
+#include <mbedtls/build_info.h>
 
 #if defined(MBEDTLS_SHA256_C) && defined(MBEDTLS_SHA256_ALT)
 
@@ -103,7 +99,7 @@ void mbedtls_sha256_clone( mbedtls_sha256_context *dst,
 /*
  * SHA-256 context setup
  */
-int mbedtls_sha256_starts_ret( mbedtls_sha256_context *ctx, int is224 )
+int mbedtls_sha256_starts( mbedtls_sha256_context *ctx, int is224 )
 {
     memset( ctx, 0, sizeof( mbedtls_sha256_context ) );
 
@@ -120,7 +116,7 @@ int mbedtls_sha256_starts_ret( mbedtls_sha256_context *ctx, int is224 )
 void mbedtls_sha256_starts( mbedtls_sha256_context *ctx,
                             int is224 )
 {
-    mbedtls_sha256_starts_ret( ctx, is224 );
+    mbedtls_sha256_starts( ctx, is224 );
 }
 #endif
 
@@ -146,7 +142,7 @@ void mbedtls_sha256_process( mbedtls_sha256_context *ctx,
 /*
  * SHA-256 process buffer
  */
-int mbedtls_sha256_update_ret( mbedtls_sha256_context *ctx, const unsigned char *input,
+int mbedtls_sha256_update( mbedtls_sha256_context *ctx, const unsigned char *input,
                                size_t ilen )
 {
     int ret = 0;
@@ -213,7 +209,7 @@ void mbedtls_sha256_update( mbedtls_sha256_context *ctx,
                             const unsigned char *input,
                             size_t ilen )
 {
-    mbedtls_sha256_update_ret( ctx, input, ilen );
+    mbedtls_sha256_update( ctx, input, ilen );
 }
 #endif
 
@@ -227,7 +223,7 @@ static const unsigned char sha256_padding[64] = {
 /*
  * SHA-256 final digest
  */
-int mbedtls_sha256_finish_ret( mbedtls_sha256_context *ctx, unsigned char output[32] )
+int mbedtls_sha256_finish( mbedtls_sha256_context *ctx, unsigned char output[32] )
 {
     int ret;
     uint32_t last, padn;
@@ -244,11 +240,11 @@ int mbedtls_sha256_finish_ret( mbedtls_sha256_context *ctx, unsigned char output
     last = ctx->total[0] & 0x3F;
     padn = ( last < 56 ) ? ( 56 - last ) : ( 120 - last );
 
-    if ( ( ret = mbedtls_sha256_update_ret( ctx, sha256_padding, padn ) ) != 0 ) {
+    if ( ( ret = mbedtls_sha256_update( ctx, sha256_padding, padn ) ) != 0 ) {
         return ret;
     }
 
-    if ( ( ret = mbedtls_sha256_update_ret( ctx, msglen, 8 ) ) != 0 ) {
+    if ( ( ret = mbedtls_sha256_update( ctx, msglen, 8 ) ) != 0 ) {
         return ret;
     }
 
@@ -261,7 +257,7 @@ int mbedtls_sha256_finish_ret( mbedtls_sha256_context *ctx, unsigned char output
 void mbedtls_sha256_finish( mbedtls_sha256_context *ctx,
                             unsigned char output[32] )
 {
-    mbedtls_sha256_finish_ret( ctx, output );
+    mbedtls_sha256_finish( ctx, output );
 }
 #endif
 

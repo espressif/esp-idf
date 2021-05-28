@@ -33,11 +33,11 @@ TEST_CASE("mbedtls SHA performance", "[aes]")
 
     mbedtls_sha256_init(&sha256_ctx);
     ccomp_timer_start();
-    TEST_ASSERT_EQUAL(0, mbedtls_sha256_starts_ret(&sha256_ctx, false));
+    TEST_ASSERT_EQUAL(0, mbedtls_sha256_starts(&sha256_ctx, false));
     for (int c = 0; c < CALLS; c++) {
-        TEST_ASSERT_EQUAL(0, mbedtls_sha256_update_ret(&sha256_ctx, buf, CALL_SZ));
+        TEST_ASSERT_EQUAL(0, mbedtls_sha256_update(&sha256_ctx, buf, CALL_SZ));
     }
-    TEST_ASSERT_EQUAL(0, mbedtls_sha256_finish_ret(&sha256_ctx, sha256));
+    TEST_ASSERT_EQUAL(0, mbedtls_sha256_finish(&sha256_ctx, sha256));
     elapsed_usec = ccomp_timer_stop();
 
     free(buf);

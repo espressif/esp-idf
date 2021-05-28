@@ -28,11 +28,11 @@ static void tskRunSHA256Test(void *pvParameters)
     for (int i = 0; i < 1000; i++) {
 
         mbedtls_sha256_init(&sha256_ctx);
-        TEST_ASSERT_EQUAL(0, mbedtls_sha256_starts_ret(&sha256_ctx, false));
+        TEST_ASSERT_EQUAL(0, mbedtls_sha256_starts(&sha256_ctx, false));
         for (int j = 0; j < 10; j++) {
-            TEST_ASSERT_EQUAL(0, mbedtls_sha256_update_ret(&sha256_ctx, (unsigned char *)one_hundred_bs, 100));
+            TEST_ASSERT_EQUAL(0, mbedtls_sha256_update(&sha256_ctx, (unsigned char *)one_hundred_bs, 100));
         }
-        TEST_ASSERT_EQUAL(0, mbedtls_sha256_finish_ret(&sha256_ctx, sha256));
+        TEST_ASSERT_EQUAL(0, mbedtls_sha256_finish(&sha256_ctx, sha256));
         mbedtls_sha256_free(&sha256_ctx);
         TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha256_thousand_bs, sha256, 32, "SHA256 calculation");
     }

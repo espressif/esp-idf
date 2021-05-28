@@ -82,21 +82,21 @@ static void mbedtls_sha256_task(void *pvParameters)
 
     mbedtls_sha256_init(&sha256_ctx);
     memset(output, 0, sizeof(output));
-    mbedtls_sha256_starts_ret(&sha256_ctx, false);
+    mbedtls_sha256_starts(&sha256_ctx, false);
     for (int i = 0; i < 3; ++i) {
-        mbedtls_sha256_update_ret(&sha256_ctx, (unsigned char *)input, 100);
+        mbedtls_sha256_update(&sha256_ctx, (unsigned char *)input, 100);
     }
-    mbedtls_sha256_finish_ret(&sha256_ctx, output);
+    mbedtls_sha256_finish(&sha256_ctx, output);
     memcpy(output_origin, output, sizeof(output));
 
     while (exit_flag == false) {
         mbedtls_sha256_init(&sha256_ctx);
         memset(output, 0, sizeof(output));
-        mbedtls_sha256_starts_ret(&sha256_ctx, false);
+        mbedtls_sha256_starts(&sha256_ctx, false);
         for (int i = 0; i < 3; ++i) {
-            mbedtls_sha256_update_ret(&sha256_ctx, (unsigned char *)input, 100);
+            mbedtls_sha256_update(&sha256_ctx, (unsigned char *)input, 100);
         }
-        mbedtls_sha256_finish_ret(&sha256_ctx, output);
+        mbedtls_sha256_finish(&sha256_ctx, output);
 
         TEST_ASSERT_EQUAL_MEMORY_MESSAGE(output, output_origin, sizeof(output), "MBEDTLS SHA256 must match");
     }

@@ -116,7 +116,13 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
                 &blufi_sec->share_len,
                 NULL, NULL);
 
-        mbedtls_md5(blufi_sec->share_key, blufi_sec->share_len, blufi_sec->psk);
+        ret = mbedtls_md5_ret(blufi_sec->share_key, blufi_sec->share_len, blufi_sec->psk);
+
+        if (ret) {
+            BLUFI_ERROR("%s mbedtls_md5 failed %d\n", __func__, ret);
+            btc_blufi_report_error(ESP_BLUFI_CALC_MD5_ERROR);
+            return;
+        }
 
         mbedtls_aes_setkey_enc(&blufi_sec->aes, blufi_sec->psk, 128);
 
