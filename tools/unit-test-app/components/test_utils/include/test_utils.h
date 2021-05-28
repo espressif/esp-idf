@@ -35,13 +35,13 @@
 #define PERFORMANCE_CON(a, b) _PERFORMANCE_CON(a, b)
 #define _PERFORMANCE_CON(a, b) a##b
 
-#define TEST_PERFORMANCE_LESS_THAN(name, value_fmt, value)  do { \
-    printf("[Performance]["PERFORMANCE_STR(name)"]: "value_fmt"\n", value); \
+#define TEST_PERFORMANCE_LESS_THAN(name, value_fmt, value, ...)  do { \
+    IDF_LOG_PERFORMANCE(#name, value_fmt, value, ##__VA_ARGS__); \
     TEST_ASSERT(value < PERFORMANCE_CON(IDF_PERFORMANCE_MAX_, name)); \
 } while(0)
 
-#define TEST_PERFORMANCE_GREATER_THAN(name, value_fmt, value)  do { \
-    printf("[Performance]["PERFORMANCE_STR(name)"]: "value_fmt"\n", value); \
+#define TEST_PERFORMANCE_GREATER_THAN(name, value_fmt, value, ...)  do { \
+    IDF_LOG_PERFORMANCE(#name, value_fmt, value, ##__VA_ARGS__); \
     TEST_ASSERT(value > PERFORMANCE_CON(IDF_PERFORMANCE_MIN_, name)); \
 } while(0)
 
@@ -50,8 +50,8 @@
  * @param value_fmt:    print format and unit of the value, for example: "%02fms", "%dKB"
  * @param value :       the performance value.
 */
-#define IDF_LOG_PERFORMANCE(item, value_fmt, value) \
-    printf("[Performance][%s]: "value_fmt"\n", item, value)
+#define IDF_LOG_PERFORMANCE(item, value_fmt, value, ...) \
+    printf("[Performance][%s]: "value_fmt"\n", item, value, ##__VA_ARGS__)
 
 
 /* Some definitions applicable to Unity running in FreeRTOS */
