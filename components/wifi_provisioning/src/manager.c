@@ -1553,3 +1553,34 @@ void wifi_prov_mgr_stop_provisioning(void)
 
     RELEASE_LOCK(prov_ctx_lock);
 }
+
+esp_err_t wifi_prov_mgr_reset_sm_state_on_failure(void)
+{
+    if (!prov_ctx_lock) {
+        ESP_LOGE(TAG, "Provisioning manager not initialized");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    ACQUIRE_LOCK(prov_ctx_lock);
+
+    esp_err_t err = ESP_OK;
+    if (prov_ctx->prov_state != WIFI_PROV_STATE_FAIL) {
+        ESP_LOGE(TAG, "Trying reset when not in failure state. Current state: %d", prov_ctx->prov_state);
+        err = ESP_ERR_INVALID_STATE;
+        goto exit;
+    }
+
+    wifi_config_t wifi_cfg = {0};
+
+    err = esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set wifi config, 0x%x", err);
+        goto exit;
+    }
+
+    prov_ctx->prov_state = WIFI_PROV_STATE_STARTED;
+
+exit:
+    RELEASE_LOCK(prov_ctx_lock);
+    return err;
+}
