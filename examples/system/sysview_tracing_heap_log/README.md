@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-S2 |
-| ----------------- | ----- | -------- |
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-C3 |
+| ----------------- | ----- | -------- | -------- |
 
 # SystemView Heap and Log Tracing Example
 
