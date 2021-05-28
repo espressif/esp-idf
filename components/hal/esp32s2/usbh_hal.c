@@ -19,11 +19,9 @@
 #include "hal/usbh_hal.h"
 #include "hal/usbh_ll.h"
 
-/* -----------------------------------------------------------------------------
-------------------------------- Macros and Types -------------------------------
------------------------------------------------------------------------------ */
+// ------------------------------------------------ Macros and Types ---------------------------------------------------
 
-// -------------------------------- Constants ----------------------------------
+// ---------------------- Constants ------------------------
 
 #define BENDPOINTADDRESS_NUM_MSK     0x0F   //Endpoint number mask of the bEndpointAddress field of an endpoint descriptor
 #define BENDPOINTADDRESS_DIR_MSK     0x80   //Endpoint direction mask of the bEndpointAddress field of an endpoint descriptor
@@ -34,32 +32,7 @@
 #define CORE_REG_GHWCFG3    0x00C804B5
 #define CORE_REG_GHWCFG4    0xD3F0A030
 
-// ------------------------------ Configurable ---------------------------------
-
-#define CHAN_MAX_SLOTS      16
-
-/*
-FIFO lengths configured as follows:
-
-RXFIFO (Receive FIFO)
- - Recommended: (((LPS/4) + 2) * NUM_PACKETS)  + (NUM_CHAN * 2) + (NUM_BULK_CTRL * 1)
- - Actual: Assume (LPS = 64), (NUM_CHAN = 8), (NUM_BULK_CTRL = 8):
-NPTXFIFO (Non-periodic TX FIFO)
- - Recommended: (((LPS/4) + 2) * 2) Fit two largest packet sizes (and each packets overhead info)
- - Actual: Assume LPS is 64 (is the MPS for CTRL/BULK/INTR in FS)
-PTXFIFO (Periodic TX FIFO)
- - Recommended: ((LPS/4) + 2) * NUM_PACKETS
- - Actual: Assume a single LPS of 64 (quarter of ISO MPS), then 2 packets worth of overhead
-REGFIFO (Register storage)
- - Recommended: 4 * NUM_CHAN
- - Actual: Assume NUM_CHAN is 8
-*/
-#define HW_FIFO_LEN         256
-#define RX_FIFO_LEN         92
-#define NPTX_FIFO_LEN       36
-#define PTX_FIFO_LEN        72
-#define REG_FIFO_LEN        32
-_Static_assert((RX_FIFO_LEN + NPTX_FIFO_LEN + PTX_FIFO_LEN + REG_FIFO_LEN) <= HW_FIFO_LEN, "Sum of FIFO lengths not equal to HW_FIFO_LEN");
+// -------------------- Configurable -----------------------
 
 /**
  * The following core interrupts will be enabled (listed LSB to MSB). Some of these
@@ -114,18 +87,14 @@ _Static_assert((RX_FIFO_LEN + NPTX_FIFO_LEN + PTX_FIFO_LEN + REG_FIFO_LEN) <= HW
                                USBH_LL_INTR_CHAN_BNAINTR | \
                                USBH_LL_INTR_CHAN_XCS_XACT_ERR)
 
-/* -----------------------------------------------------------------------------
---------------------------------- Core (Global) --------------------------------
------------------------------------------------------------------------------ */
-
-// ---------------------------- Private Functions ------------------------------
+// -------------------------------------------------- Core (Global) ----------------------------------------------------
 
 static void set_defaults(usbh_hal_context_t *hal)
 {
     usbh_ll_internal_phy_conf(hal->wrap_dev);   //Enable and configure internal PHY
     //GAHBCFG register
     usb_ll_en_dma_mode(hal->dev);
-    usb_ll_set_hbstlen(hal->dev, 0);    //INCR16 AHB burst length
+    usb_ll_set_hbstlen(hal->dev, 1);    //Use INCR AHB burst. MUST DO SO IN ESP32-S2 DUE TO ARBITER ERRATA.
     //GUSBCFG register
     usb_ll_dis_hnp_cap(hal->dev);       //Disable HNP
     usb_ll_dis_srp_cap(hal->dev);       //Disable SRP
@@ -138,16 +107,13 @@ static void set_defaults(usbh_hal_context_t *hal)
     usb_ll_set_host_mode(hal->dev);
 }
 
-// ---------------------------- Public Functions -------------------------------
-
 void usbh_hal_init(usbh_hal_context_t *hal)
 {
     //Check if a peripheral is alive by reading the core ID registers
     usbh_dev_t *dev = &USBH;
-#ifndef NDEBUG
     uint32_t core_id = usb_ll_get_controller_core_id(dev);
     assert(core_id == CORE_REG_GSNPSID);
-#endif
+    (void) core_id;     //Suppress unused variable warning if asserts are disabled
     //Initialize HAL context
     memset(hal, 0, sizeof(usbh_hal_context_t));
     hal->dev = dev;
@@ -177,15 +143,34 @@ void usbh_hal_core_soft_reset(usbh_hal_context_t *hal)
     //Set the default bits
     set_defaults(hal);
     //Clear all the flags and channels
+    hal->periodic_frame_list = NULL;
     hal->flags.val = 0;
     hal->channels.num_allocd = 0;
     hal->channels.chan_pend_intrs_msk = 0;
     memset(hal->channels.hdls, 0, sizeof(usbh_hal_chan_t *) * USBH_HAL_NUM_CHAN);
 }
 
-/* -----------------------------------------------------------------------------
----------------------------------- Host Port ----------------------------------
------------------------------------------------------------------------------ */
+void usbh_hal_set_fifo_size(usbh_hal_context_t *hal, const usbh_hal_fifo_config_t *fifo_config)
+{
+    assert((fifo_config->rx_fifo_lines + fifo_config->nptx_fifo_lines + fifo_config->ptx_fifo_lines) <= USBH_HAL_FIFO_TOTAL_USABLE_LINES);
+    //Check that none of the channels are active
+    for (int i = 0; i < USBH_HAL_NUM_CHAN; i++) {
+        if (hal->channels.hdls[i] != NULL) {
+            assert(!hal->channels.hdls[i]->flags.active);
+        }
+    }
+    //Set the new FIFO lengths
+    usb_ll_set_rx_fifo_size(hal->dev, fifo_config->rx_fifo_lines);
+    usb_ll_set_nptx_fifo_size(hal->dev, fifo_config->rx_fifo_lines, fifo_config->nptx_fifo_lines);
+    usbh_ll_set_ptx_fifo_size(hal->dev, fifo_config->rx_fifo_lines + fifo_config->nptx_fifo_lines, fifo_config->ptx_fifo_lines);
+    //Flush the FIFOs
+    usb_ll_flush_nptx_fifo(hal->dev);
+    usb_ll_flush_ptx_fifo(hal->dev);
+    usb_ll_flush_rx_fifo(hal->dev);
+    hal->flags.fifo_sizes_set = 1;
+}
+
+// ---------------------------------------------------- Host Port ------------------------------------------------------
 
 static inline void debounce_lock_enable(usbh_hal_context_t *hal)
 {
@@ -199,24 +184,17 @@ void usbh_hal_port_enable(usbh_hal_context_t *hal)
     usb_priv_speed_t speed = usbh_ll_hprt_get_speed(hal->dev);
     //Host Configuration
     usbh_ll_hcfg_set_defaults(hal->dev, speed);
-    //Todo: Set frame list entries and ena per sched
     //Configure HFIR
     usbh_ll_hfir_set_defaults(hal->dev, speed);
-    //Config FIFO sizes
-    usb_ll_set_rx_fifo_size(hal->dev, RX_FIFO_LEN);
-    usb_ll_set_nptx_fifo_size(hal->dev, RX_FIFO_LEN, NPTX_FIFO_LEN);
-    usbh_ll_set_ptx_fifo_size(hal->dev, RX_FIFO_LEN + NPTX_FIFO_LEN, PTX_FIFO_LEN);
 }
 
-/* -----------------------------------------------------------------------------
------------------------------------ Channel ------------------------------------
-------------------------------------------------------------------------------*/
+// ----------------------------------------------------- Channel -------------------------------------------------------
 
-// --------------------------- Channel Allocation ------------------------------
+// ----------------- Channel Allocation --------------------
 
-//Allocate a channel
 bool usbh_hal_chan_alloc(usbh_hal_context_t *hal, usbh_hal_chan_t *chan_obj, void *chan_ctx)
 {
+    assert(hal->flags.fifo_sizes_set);  //FIFO sizes should be set befor attempting to allocate a channel
     //Attempt to allocate channel
     if (hal->channels.num_allocd == USBH_HAL_NUM_CHAN) {
         return false;    //Out of free channels
@@ -246,22 +224,25 @@ bool usbh_hal_chan_alloc(usbh_hal_context_t *hal, usbh_hal_chan_t *chan_obj, voi
     return true;
 }
 
-//Returns object memory
 void usbh_hal_chan_free(usbh_hal_context_t *hal, usbh_hal_chan_t *chan_obj)
 {
+    if (chan_obj->type == USB_PRIV_XFER_TYPE_INTR || chan_obj->type == USB_PRIV_XFER_TYPE_ISOCHRONOUS) {
+        //Unschedule this channel
+        for (int i = 0; i < hal->frame_list_len; i++) {
+            hal->periodic_frame_list[i] &= ~(1 << chan_obj->flags.chan_idx);
+        }
+    }
     //Can only free a channel when in the disabled state and descriptor list released
-    assert(!chan_obj->slot.flags.slot_acquired
-           && !chan_obj->flags.active
-           && !chan_obj->flags.error_pending);
+    assert(!chan_obj->flags.active && !chan_obj->flags.error_pending);
     //Deallocate channel
     hal->channels.hdls[chan_obj->flags.chan_idx] = NULL;
     hal->channels.num_allocd--;
     assert(hal->channels.num_allocd >= 0);
 }
 
-// ---------------------------- Channel Control --------------------------------
+// ---------------- Channel Configuration ------------------
 
-void usbh_hal_chan_set_ep_char(usbh_hal_chan_t *chan_obj, usbh_hal_ep_char_t *ep_char)
+void usbh_hal_chan_set_ep_char(usbh_hal_context_t *hal, usbh_hal_chan_t *chan_obj, usbh_hal_ep_char_t *ep_char)
 {
     //Cannot change ep_char whilst channel is still active or in error
     assert(!chan_obj->flags.active && !chan_obj->flags.error_pending);
@@ -273,29 +254,34 @@ void usbh_hal_chan_set_ep_char(usbh_hal_chan_t *chan_obj, usbh_hal_ep_char_t *ep
                              ep_char->type,
                              ep_char->bEndpointAddress & BENDPOINTADDRESS_DIR_MSK,
                              ep_char->ls_via_fs_hub);
+    //Save channel type
+    chan_obj->type = ep_char->type;
+    //If this is a periodic endpoint/channel, set its schedule in the frame list
+    if (ep_char->type == USB_PRIV_XFER_TYPE_ISOCHRONOUS || ep_char->type == USB_PRIV_XFER_TYPE_INTR) {
+        assert((int)ep_char->periodic.interval <= (int)hal->frame_list_len);    //Interval cannot exceed the length of the frame list
+        //Find the effective offset in the frame list (in case the phase_offset_frames > interval)
+        int offset = ep_char->periodic.phase_offset_frames % ep_char->periodic.interval;
+        //Schedule the channel in the frame list
+        for (int i = offset; i < hal->frame_list_len; i+= ep_char->periodic.interval) {
+            hal->periodic_frame_list[i] |= 1 << chan_obj->flags.chan_idx;
+        }
+    }
 }
 
-/* -----------------------------------------------------------------------------
-------------------------------- Transfers Slots --------------------------------
-------------------------------------------------------------------------------*/
+// ------------------- Channel Control ---------------------
 
-void usbh_hal_chan_activate(usbh_hal_chan_t *chan_obj, int num_to_skip)
+void usbh_hal_chan_activate(usbh_hal_chan_t *chan_obj, void *xfer_desc_list, int desc_list_len, int start_idx)
 {
-    //Cannot enable a channel that has already been enabled or is pending error handling
+    //Cannot activate a channel that has already been enabled or is pending error handling
     assert(!chan_obj->flags.active && !chan_obj->flags.error_pending);
-    assert(chan_obj->slot.flags.slot_acquired);
-    //Update the descriptor list index and check if it's within bounds
-    chan_obj->slot.flags.cur_qtd_idx += num_to_skip;
-    assert(chan_obj->slot.flags.cur_qtd_idx < chan_obj->slot.flags.qtd_list_len);
-    chan_obj->flags.active = 1;
-
     //Set start address of the QTD list and starting QTD index
-    usbh_ll_chan_set_dma_addr_non_iso(chan_obj->regs, chan_obj->slot.xfer_desc_list, chan_obj->slot.flags.cur_qtd_idx);
-    //Start the channel
-    usbh_ll_chan_start(chan_obj->regs);
+    usbh_ll_chan_set_dma_addr_non_iso(chan_obj->regs, xfer_desc_list, start_idx);
+    usbh_ll_chan_set_qtd_list_len(chan_obj->regs, desc_list_len);
+    usbh_ll_chan_start(chan_obj->regs); //Start the channel
+    chan_obj->flags.active = 1;
 }
 
-bool usbh_hal_chan_slot_request_halt(usbh_hal_chan_t *chan_obj)
+bool usbh_hal_chan_request_halt(usbh_hal_chan_t *chan_obj)
 {
     //Cannot request halt on a channel that is pending error handling
     assert(!chan_obj->flags.error_pending);
@@ -307,9 +293,7 @@ bool usbh_hal_chan_slot_request_halt(usbh_hal_chan_t *chan_obj)
     return true;
 }
 
-/* -----------------------------------------------------------------------------
--------------------------------- Event Handling --------------------------------
------------------------------------------------------------------------------ */
+// ------------------------------------------------- Event Handling ----------------------------------------------------
 
 //When a device on the port is no longer valid (e.g., disconnect, port error). All channels are no longer valid
 static void chan_all_halt(usbh_hal_context_t *hal)
@@ -386,12 +370,9 @@ usbh_hal_chan_event_t usbh_hal_chan_decode_intr(usbh_hal_chan_t *chan_obj)
 {
     uint32_t chan_intrs = usbh_ll_chan_intr_read_and_clear(chan_obj->regs);
     usbh_hal_chan_event_t chan_event;
-    //Currently, all cases where channel interrupts occur will also halt the channel, except for BNA
-    assert(chan_intrs & (USBH_LL_INTR_CHAN_CHHLTD | USBH_LL_INTR_CHAN_BNAINTR));
-    chan_obj->flags.active = 0;
-    //Note: Do not change the current checking order of checks. Certain interrupts (e.g., errors) have precedence over others
-    if (chan_intrs & CHAN_INTRS_ERROR_MSK) {  //One of the error interrupts has occurred.
-        //Note: Errors are uncommon, so we check against the entire interrupt mask to reduce frequency of entering this call path
+
+    if (chan_intrs & CHAN_INTRS_ERROR_MSK) {    //Note: Errors are uncommon, so we check against the entire interrupt mask to reduce frequency of entering this call path
+        assert(chan_intrs & USBH_LL_INTR_CHAN_CHHLTD);  //An error should have halted the channel
         //Store the error in hal context
         usbh_hal_chan_error_t error;
         if (chan_intrs & USBH_LL_INTR_CHAN_STALL) {
@@ -405,25 +386,34 @@ usbh_hal_chan_event_t usbh_hal_chan_decode_intr(usbh_hal_chan_t *chan_obj)
         }
         //Update flags
         chan_obj->error = error;
+        chan_obj->flags.active = 0;
         chan_obj->flags.error_pending = 1;
         //Save the error to be handled later
         chan_event = USBH_HAL_CHAN_EVENT_ERROR;
-    } else if (chan_obj->flags.halt_requested) {    //A halt was previously requested and has not been fulfilled
-        chan_obj->flags.halt_requested = 0;
-        chan_event = USBH_HAL_CHAN_EVENT_HALT_REQ;
-    } else if (chan_intrs & USBH_LL_INTR_CHAN_XFERCOMPL) {
-        int cur_qtd_idx = usbh_ll_chan_get_ctd(chan_obj->regs);
-        //Store current qtd index
-        chan_obj->slot.flags.cur_qtd_idx = cur_qtd_idx;
-        if (cur_qtd_idx == 0) {
-            //If the transfer descriptor list has completed, the CTD index should be 0 (wrapped around)
-            chan_event = USBH_HAL_CHAN_EVENT_SLOT_DONE;
+    } else if (chan_intrs & USBH_LL_INTR_CHAN_CHHLTD) {
+        if (chan_obj->flags.halt_requested) {
+            chan_obj->flags.halt_requested = 0;
+            chan_event = USBH_HAL_CHAN_EVENT_HALT_REQ;
         } else {
-            chan_event = USBH_HAL_CHAN_EVENT_SLOT_HALT;
+            //Must have been halted due to QTD HOC
+            chan_event = USBH_HAL_CHAN_EVENT_CPLT;
         }
+        chan_obj->flags.active = 0;
+    } else if (chan_intrs & USBH_LL_INTR_CHAN_XFERCOMPL) {
+        /*
+        A transfer complete interrupt WITHOUT the channel halting only occurs when receiving a short interrupt IN packet
+        and the underlying QTD does not have the HOC bit set. This signifies the last packet of the Interrupt transfer
+        as all interrupt packets must MPS sized except the last.
+        */
+        //The channel isn't halted yet, so we need to halt it manually to stop the execution of the next QTD/packet
+        usbh_ll_chan_halt(chan_obj->regs);
+        /*
+        After setting the halt bit, this will generate another channel halted interrupt. We treat this interrupt as
+        a NONE event, then cycle back with the channel halted interrupt to handle the CPLT event.
+        */
+        chan_event = USBH_HAL_CHAN_EVENT_NONE;
     } else {
-        //Should never reach this point
-        abort();
+        abort();    //Should never reach this point
     }
     return chan_event;
 }

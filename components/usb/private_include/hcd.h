@@ -38,7 +38,7 @@ extern "C" {
  */
 typedef enum {
     HCD_PORT_STATE_NOT_POWERED,     /**< The port is not powered */
-    HCD_PORT_STATE_DISCONNECTED,    /**< The port is powered but no device is conencted */
+    HCD_PORT_STATE_DISCONNECTED,    /**< The port is powered but no device is connected */
     HCD_PORT_STATE_DISABLED,        /**< A device has connected to the port but has not been reset. SOF/keep alive are not being sent */
     HCD_PORT_STATE_RESETTING,       /**< The port is issuing a reset condition */
     HCD_PORT_STATE_SUSPENDED,       /**< The port has been suspended. */
@@ -74,12 +74,12 @@ typedef enum {
  * On receiving a port event, hcd_port_handle_event() should be called to handle that event
  */
 typedef enum {
-    HCD_PORT_EVENT_NONE,            /**< No event has ocurred. Or the previous event is no longer valid */
+    HCD_PORT_EVENT_NONE,            /**< No event has occurred. Or the previous event is no longer valid */
     HCD_PORT_EVENT_CONNECTION,      /**< A device has been connected to the port */
     HCD_PORT_EVENT_DISCONNECTION,   /**< A device disconnection has been detected */
     HCD_PORT_EVENT_ERROR,           /**< A port error has been detected. Port is now HCD_PORT_STATE_RECOVERY  */
     HCD_PORT_EVENT_OVERCURRENT,     /**< Overcurrent detected on the port. Port is now HCD_PORT_STATE_RECOVERY */
-    HCD_PORT_EVENT_SUDDEN_DISCONN,  /**< The port has suddenly disconencted (i.e., there was an enabled device connected
+    HCD_PORT_EVENT_SUDDEN_DISCONN,  /**< The port has suddenly disconnected (i.e., there was an enabled device connected
                                          to the port when the disconnection occurred. Port is now HCD_PORT_STATE_RECOVERY. */
 } hcd_port_event_t;
 
@@ -152,6 +152,12 @@ typedef bool (*hcd_port_isr_callback_t)(hcd_port_handle_t port_hdl, hcd_port_eve
  */
 typedef bool (*hcd_pipe_isr_callback_t)(hcd_pipe_handle_t pipe_hdl, hcd_pipe_event_t pipe_event, void *user_arg, bool in_isr);
 
+typedef enum {
+    HCD_PORT_FIFO_BIAS_BALANCED,    /**< Balanced FIFO sizing for RX, Non-periodic TX, and periodic TX */
+    HCD_PORT_FIFO_BIAS_RX,          /**< Bias towards a large RX FIFO */
+    HCD_PORT_FIFO_BIAS_PTX,         /**< Bias towards periodic TX FIFO */
+} hcd_port_fifo_bias_t;
+
 /**
  * @brief HCD configuration structure
  */
@@ -165,7 +171,7 @@ typedef struct {
 typedef struct {
     hcd_port_isr_callback_t callback;       /**< HCD port event callback */
     void *callback_arg;                     /**< User argument for HCD port callback */
-    void *context;
+    void *context;                          /**< Context variable used to associate the port with upper layer object */
 } hcd_port_config_t;
 
 /**
@@ -177,9 +183,9 @@ typedef struct {
     hcd_pipe_isr_callback_t callback;       /**< HCD pipe event ISR callback */
     void *callback_arg;                     /**< User argument for HCD pipe callback */
     void *context;                          /**< Context variable used to associate the pipe with upper layer object */
-    usb_desc_ep_t *ep_desc;                 /**< Pointer to endpoint descriptor of the pipe */
-    uint8_t dev_addr;                       /**< Device address of the pipe */
+    const usb_desc_ep_t *ep_desc;                 /**< Pointer to endpoint descriptor of the pipe */
     usb_speed_t dev_speed;                  /**< Speed of the device */
+    uint8_t dev_addr;                       /**< Device address of the pipe */
 } hcd_pipe_config_t;
 
 // --------------------------------------------- Host Controller Driver ------------------------------------------------
@@ -297,7 +303,7 @@ esp_err_t hcd_port_get_speed(hcd_port_handle_t port_hdl, usb_speed_t *speed);
  *
  * If the port has no events, this function will return HCD_PORT_EVENT_NONE.
  *
- * @note If callbacks are not used, this function can also be used in a polling manner to repeatedely check for and
+ * @note If callbacks are not used, this function can also be used in a polling manner to repeatedly check for and
  *       handle a port's events.
  * @note This function is internally protected by a mutex. If multiple threads call this function, this function will
  *       can block.
@@ -325,7 +331,22 @@ esp_err_t hcd_port_recover(hcd_port_handle_t port_hdl);
  * @param port_hdl Port handle
  * @return void* Context variable
  */
-void *hcd_port_get_ctx(hcd_port_handle_t port_hdl);
+void *hcd_port_get_context(hcd_port_handle_t port_hdl);
+
+/**
+ * @brief Set the bias of the HCD port's internal FIFO
+ *
+ * @note This function can only be called when the following conditions are met:
+ *  - Port is initialized
+ *  - Port does not have any pending events
+ *  - Port does not have any allocated pipes
+ *
+ * @param port_hdl Port handle
+ * @param bias Fifo bias
+ * @retval ESP_OK FIFO sizing successfully set
+ * @retval ESP_ERR_INVALID_STATE Incorrect state for FIFO sizes to be set
+ */
+esp_err_t hcd_port_set_fifo_bias(hcd_port_handle_t port_hdl, hcd_port_fifo_bias_t bias);
 
 // --------------------------------------------------- HCD Pipes -------------------------------------------------------
 
@@ -346,7 +367,7 @@ void *hcd_port_get_ctx(hcd_port_handle_t port_hdl);
  * @retval ESP_ERR_NO_MEM: Insufficient memory
  * @retval ESP_ERR_INVALID_ARG: Arguments are invalid
  * @retval ESP_ERR_INVALID_STATE: Host port is not in the correct state to allocate a pipe
- * @retval ESP_ERR_NOT_SUPPORTED: The pipe cannot be supported
+ * @retval ESP_ERR_NOT_SUPPORTED: The pipe's configuration cannot be supported
  */
 esp_err_t hcd_pipe_alloc(hcd_port_handle_t port_hdl, const hcd_pipe_config_t *pipe_config, hcd_pipe_handle_t *pipe_hdl);
 
@@ -365,22 +386,38 @@ esp_err_t hcd_pipe_alloc(hcd_port_handle_t port_hdl, const hcd_pipe_config_t *pi
 esp_err_t hcd_pipe_free(hcd_pipe_handle_t pipe_hdl);
 
 /**
- * @brief Update a pipe's device address and maximum packet size
+ * @brief Update a pipe's maximum packet size
+ *
+ * This function is intended to be called on default pipes during enumeration in order to update the pipe's maximum
+ * packet size. This function can only be called on a pipe that has met the following conditions:
+ * - Pipe is still valid (i.e., not in the HCD_PIPE_STATE_INVALID state)
+ * - Pipe is not currently processing a command
+ * - All IRPs have been dequeued from the pipe
+ *
+ * @param pipe_hdl Pipe handle
+ * @param mps New Maximum Packet Size
+ *
+ * @retval ESP_OK: Pipe successfully updated
+ * @retval ESP_ERR_INVALID_STATE: Pipe is not in a condition to be updated
+ */
+esp_err_t hcd_pipe_update_mps(hcd_pipe_handle_t pipe_hdl, int mps);
+
+/**
+ * @brief Update a pipe's device address
  *
  * This function is intended to be called on default pipes during enumeration in order to update the pipe's device
- * address and maximum packet size. This function can only be called on a pipe that has met the following conditions:
+ * address. This function can only be called on a pipe that has met the following conditions:
  * - Pipe is still valid (i.e., not in the HCD_PIPE_STATE_INVALID state)
  * - Pipe is not currently processing a command
  * - All IRPs have been dequeued from the pipe
  *
  * @param pipe_hdl Pipe handle
  * @param dev_addr New device address
- * @param mps New Maximum Packet Size
  *
  * @retval ESP_OK: Pipe successfully updated
- * @retval ESP_ERR_INVALID_STATE: Pipe is no in a condition to be updated
+ * @retval ESP_ERR_INVALID_STATE: Pipe is not in a condition to be updated
  */
-esp_err_t hcd_pipe_update(hcd_pipe_handle_t pipe_hdl, uint8_t dev_addr, int mps);
+esp_err_t hcd_pipe_update_dev_addr(hcd_pipe_handle_t pipe_hdl, uint8_t dev_addr);
 
 /**
  * @brief Get the context variable of a pipe from its handle
@@ -388,7 +425,7 @@ esp_err_t hcd_pipe_update(hcd_pipe_handle_t pipe_hdl, uint8_t dev_addr, int mps)
  * @param pipe_hdl Pipe handle
  * @return void* Context variable
  */
-void *hcd_pipe_get_ctx(hcd_pipe_handle_t pipe_hdl);
+void *hcd_pipe_get_context(hcd_pipe_handle_t pipe_hdl);
 
 /**
  * @brief Get the current sate of the pipe
@@ -406,8 +443,8 @@ hcd_pipe_state_t hcd_pipe_get_state(hcd_pipe_handle_t pipe_hdl);
  * - Pipe is still valid (i.e., not in the HCD_PIPE_STATE_INVALID)
  * - No other thread/task processing a command on the pipe concurrently (will return)
  *
- * @note Some pipe commands will block until the pipe's current inflight IRP is complete. If the pipe's state
- *       changes unexpectedley, this function will return ESP_ERR_INVALID_RESPONSE
+ * @note Some pipe commands will block until the pipe's current in-flight IRP is complete. If the pipe's state
+ *       changes unexpectedly, this function will return ESP_ERR_INVALID_RESPONSE
  *
  * @param pipe_hdl Pipe handle
  * @param command Pipe command
@@ -449,7 +486,7 @@ esp_err_t hcd_irp_enqueue(hcd_pipe_handle_t pipe_hdl, usb_irp_t *irp);
  * @brief Dequeue an IRP from a particular pipe
  *
  * This function should be called on a pipe after a pipe receives a HCD_PIPE_EVENT_IRP_DONE event. If a pipe has
- * multiple IRPs that can be dequeued, this function should be called repeatedely until all IRPs are dequeued. If a pipe
+ * multiple IRPs that can be dequeued, this function should be called repeatedly until all IRPs are dequeued. If a pipe
  * has no more IRPs to dequeue, this function will return NULL.
  *
  * @param pipe_hdl Pipe handle
@@ -461,7 +498,7 @@ usb_irp_t *hcd_irp_dequeue(hcd_pipe_handle_t pipe_hdl);
  * @brief Abort an enqueued IRP
  *
  * This function will attempt to abort an IRP that is already enqueued. If the IRP has yet to be executed, it will be
- * "cancelled" and can then be dequeued. If the IRP is currenty inflight or has already completed, the IRP will not be
+ * "cancelled" and can then be dequeued. If the IRP is currenty in-flight or has already completed, the IRP will not be
  * affected by this function.
  *
  * @param irp I/O Request Packet to abort

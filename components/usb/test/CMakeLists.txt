@@ -5,7 +5,7 @@ if(NOT "${target}" STREQUAL "esp32s2")
     return()
 endif()
 
-idf_component_register(SRC_DIRS "."
-                    PRIV_INCLUDE_DIRS "." "../private_include"
+idf_component_register(SRC_DIRS "hcd"
+                    PRIV_INCLUDE_DIRS "../private_include" "." "hcd"
                     PRIV_REQUIRES cmock usb test_utils
                     )
