@@ -30,6 +30,7 @@
 #include "esp_log.h"
 #include "esp_heap_caps.h"
 #include "esp_rom_gpio.h"
+#include "test_utils.h"
 
 // Can't test eMMC (slot 0) and PSRAM together
 #ifndef CONFIG_SPIRAM
@@ -274,6 +275,96 @@ __attribute__((unused)) static void check_buffer(uint32_t seed, const uint8_t* s
     }
 }
 
+enum {
+    PERFORMANCE_COUNT_1 = 0,
+    PERFORMANCE_COUNT_4,
+    PERFORMANCE_COUNT_8,
+    PERFORMANCE_COUNT_16,
+    PERFORMANCE_COUNT_32,
+    PERFORMANCE_COUNT_64,
+    PERFORMANCE_COUNT_128,
+    PERFORMANCE_COUNT_MAX,
+};
+
+typedef struct {
+    uint32_t rd_speed;
+    uint32_t wr_speed;
+} sd_performance_val_t;
+
+#define PERFORMANCE_DATA_DEFAULT()  {.rd_speed = UINT32_MAX, .wr_speed = UINT32_MAX,}
+
+static sd_performance_val_t performance_data_pool[PERFORMANCE_COUNT_MAX][2];
+static const char wr_speed_str[] = "SDMMC_WR_SPEED";
+static const char rd_speed_str[] = "SDMMC_RD_SPEED";
+
+__attribute__((unused)) static int get_blk_id(int blk_count)
+{
+    int blk_idx = (blk_count == 1)? PERFORMANCE_COUNT_1 :
+                  (blk_count == 4)? PERFORMANCE_COUNT_4 :
+                  (blk_count == 8)? PERFORMANCE_COUNT_8 :
+                  (blk_count == 16)? PERFORMANCE_COUNT_16 :
+                  (blk_count == 32)? PERFORMANCE_COUNT_32 :
+                  (blk_count == 64)? PERFORMANCE_COUNT_64 :
+                  (blk_count == 128)? PERFORMANCE_COUNT_128 :
+                  -1;
+    assert(blk_idx != -1);
+    return blk_idx;
+}
+
+__attribute__((unused)) static void performance_data_pool_flush(void)
+{
+    for (int i = 0; i < sizeof(performance_data_pool)/sizeof(performance_data_pool[0][0]); i++) {
+        ((sd_performance_val_t*)performance_data_pool)[i] = (sd_performance_val_t)PERFORMANCE_DATA_DEFAULT();
+    }
+}
+
+__attribute__((unused)) static void performance_data_pool_update(int block_count, bool aligned, uint32_t wr_speed, uint32_t rd_speed)
+{
+    int blk_idx = get_blk_id(block_count);
+
+    sd_performance_val_t* val = &performance_data_pool[blk_idx][aligned? 1: 0];
+    if (wr_speed < val->wr_speed) {
+        val->wr_speed = wr_speed;
+    }
+    if (rd_speed < val->rd_speed) {
+        val->rd_speed = rd_speed;
+    }
+}
+
+__attribute__((unused)) static void performance_data_pool_dump(void)
+{
+#define LOG_WR_SPEED(blk_size, aligned) do { \
+        int blk_idx = get_blk_id(blk_size); \
+        IDF_LOG_PERFORMANCE(wr_speed_str, "%d, blk_n: %d, aligned: %d", performance_data_pool[blk_idx][(aligned)? 1: 0].wr_speed, (blk_size), aligned); \
+    } while (0)
+#define LOG_RD_SPEED(blk_size, aligned) do { \
+        int blk_idx = get_blk_id(blk_size); \
+        IDF_LOG_PERFORMANCE(rd_speed_str, "%d, blk_n: %d, aligned: %d", performance_data_pool[blk_idx][(aligned)? 1: 0].rd_speed, (blk_size), aligned); \
+    } while (0)
+
+    LOG_WR_SPEED(1, 0);
+    LOG_WR_SPEED(8, 0);
+    LOG_WR_SPEED(128, 0);
+    LOG_RD_SPEED(1, 0);
+    LOG_RD_SPEED(8, 0);
+    LOG_RD_SPEED(128, 0);
+
+    LOG_WR_SPEED(1, 1);
+    LOG_WR_SPEED(4, 1);
+    LOG_WR_SPEED(8, 1);
+    LOG_WR_SPEED(16, 1);
+    LOG_WR_SPEED(32, 1);
+    LOG_WR_SPEED(64, 1);
+    LOG_WR_SPEED(128, 1);
+    LOG_RD_SPEED(1, 1);
+    LOG_RD_SPEED(4, 1);
+    LOG_RD_SPEED(8, 1);
+    LOG_RD_SPEED(16, 1);
+    LOG_RD_SPEED(32, 1);
+    LOG_RD_SPEED(64, 1);
+    LOG_RD_SPEED(128, 1);
+}
+
 __attribute__((unused)) static void do_single_write_read_test(sdmmc_card_t* card,
         size_t start_block, size_t block_count, size_t alignment)
 {
@@ -307,10 +398,14 @@ __attribute__((unused)) static void do_single_write_read_test(sdmmc_card_t* card
             time_rd, total_size / (time_rd / 1000) / (1024 * 1024));
     check_buffer(start_block, c_buffer, total_size / sizeof(buffer[0]));
     free(buffer);
+
+    performance_data_pool_update(block_count, ((alignment % 4) == 0? 1: 0),
+            total_size * 1000 / time_wr, total_size * 1000 / time_rd);
 }
 
 __attribute__((unused)) static void read_write_test(sdmmc_card_t* card)
 {
+    performance_data_pool_flush();
     sdmmc_card_print_info(stdout, card);
     printf("  sector  | count | align | size(kB)  | wr_time(ms) | wr_speed(MB/s)  |  rd_time(ms)  | rd_speed(MB/s)\n");
     do_single_write_read_test(card, 0, 1, 4);
@@ -332,6 +427,7 @@ __attribute__((unused)) static void read_write_test(sdmmc_card_t* card)
     do_single_write_read_test(card, card->csd.capacity/2, 1, 1);
     do_single_write_read_test(card, card->csd.capacity/2, 8, 1);
     do_single_write_read_test(card, card->csd.capacity/2, 128, 1);
+    performance_data_pool_dump();
 }
 
 #if SOC_SDMMC_HOST_SUPPORTED
