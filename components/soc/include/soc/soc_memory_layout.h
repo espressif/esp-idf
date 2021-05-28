@@ -293,9 +293,12 @@ inline static bool IRAM_ATTR esp_stack_ptr_in_extram(uint32_t sp)
 
 inline static bool IRAM_ATTR esp_stack_ptr_is_sane(uint32_t sp)
 {
+    return esp_stack_ptr_in_dram(sp)
 #if CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
-    return (esp_stack_ptr_in_dram(sp) || esp_stack_ptr_in_extram(sp));
-#else
-    return esp_stack_ptr_in_dram(sp);
+        || esp_stack_ptr_in_extram(sp)
 #endif
+#if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
+        || esp_ptr_in_rtc_dram_fast((void*) sp)
+#endif
+        ;
 }
