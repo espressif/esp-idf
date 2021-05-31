@@ -17,7 +17,6 @@ INCLUDE_DIRS := \
 	app_update/include \
 	driver/include \
 	freertos/include \
-	log/include \
 	newlib/include \
 	sdmmc/include \
 	vfs/include \
@@ -28,6 +27,7 @@ INCLUDE_DIRS := \
 	esp_hw_support/include \
 	esp_hw_support/include/soc \
 	esp_system/include \
+	log/include \
 	xtensa/include \
 	xtensa/esp32/include \
 	soc/esp32/include \
