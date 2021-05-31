@@ -76,9 +76,10 @@ bool bootloader_common_ota_select_invalid(const esp_ota_select_entry_t *s);
  *
  * @param[in] num_pin Number of the GPIO input.
  * @param[in] delay_sec Input must be driven low for at least this long, continuously.
+ * @param[in] level Input pin level to trigger lang hold, 0 - LOW, 1 - HIGH
  * @return esp_comm_gpio_hold_t Defines type of hold a GPIO in low state.
  */
-esp_comm_gpio_hold_t bootloader_common_check_long_hold_gpio(uint32_t num_pin, uint32_t delay_sec);
+esp_comm_gpio_hold_t bootloader_common_check_long_hold_gpio(uint32_t num_pin, uint32_t delay_sec, int level);
 
 /**
  * @brief Erase the partition data that is specified in the transferred list.
