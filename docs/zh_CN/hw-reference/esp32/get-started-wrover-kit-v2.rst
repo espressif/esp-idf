@@ -22,8 +22,8 @@ ESP-WROVER-KIT 是 `乐鑫 <https://espressif.com>`_ 一款基于 ESP32 的开�
 
 ESP-WROVER-KIT 可选贴以下 ESP32 模组：
 
-- :ref:`esp-modules-and-boards-esp32-wroom-32`
-- :ref:`ESP32-WROVER <esp-modules-and-boards-esp32-wrover>`
+- ESP32-WROOM-32
+- ESP32-WROVER 系列模组
 
 此外，ESP-WROVER-KIT 的独特之处在于集成了一款先进多协议 USB 桥接器 (FTDI FT2232HL)，允许开发人员直接通过 USB 接口，使用 JTAG 对 ESP32 进行调试，无需额外的 JTAG 调试器。ESP-WROVER-KIT 可为开发人员提供简单、便捷且极具成本效益的开发体验。
 

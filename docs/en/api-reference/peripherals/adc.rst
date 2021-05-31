@@ -47,8 +47,8 @@ ADC Limitations
     .. only:: esp32
 
         - Some of the ADC2 pins are used as strapping pins (GPIO 0, 2, 15) thus cannot be used freely. Such is the case in the following official Development Kits:
-        - :ref:`ESP32 DevKitC <esp-modules-and-boards-esp32-devkitc>`: GPIO 0 cannot be used due to external auto program circuits.
-        - :ref:`ESP-WROVER-KIT <esp-modules-and-boards-esp-wrover-kit>`: GPIO 0, 2, 4 and 15 cannot be used due to external connections for different purposes.
+        - ESP32 DevKitC: GPIO 0 cannot be used due to external auto program circuits.
+        - ESP-WROVER-KIT: GPIO 0, 2, 4 and 15 cannot be used due to external connections for different purposes.
         - Since the ADC2 module is also used by the Wi-Fi, only one of them could get the preemption when using together, which means the :cpp:func:`adc2_get_raw` may get blocked until Wi-Fi stops, and vice versa.
 
     .. only:: not esp32

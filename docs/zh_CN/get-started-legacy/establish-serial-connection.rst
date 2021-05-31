@@ -19,12 +19,12 @@
     :header: 开发板, USB 驱动, 备注
     :widths: 40, 20, 40
 
-    :ref:`ESP32-DevKitC <esp-modules-and-boards-esp32-devkitc>`,  `CP210x`_
+    ESP32-DevKitC,  `CP210x`_
     `ESP32-LyraT <https://www.espressif.com/en/products/hardware/esp32-lyrat>`_, `CP210x`_
     `ESP32-LyraTD-MSC <https://www.espressif.com/en/products/hardware/esp32-lyratd-msc>`_, `CP210x`_
-    :ref:`ESP32-PICO-KIT <esp-modules-and-boards-esp32-pico-kit>`, `CP210x`_
-    :ref:`ESP-WROVER-KIT <esp-modules-and-boards-esp-wrover-kit>`, `FTDI`_
-    :ref:`ESP32 Demo 板 <esp-modules-and-boards-esp32-demo-board>`, `FTDI`_
+    ESP32-PICO-KIT, `CP210x`_
+    ESP-WROVER-KIT, `FTDI`_
+    ESP32 Demo 板, `FTDI`_
     `ESP-Prog`_, `FTDI`_, 编程板 (w/o ESP32)
     `ESP32-MeshKit-Sense <https://github.com/espressif/esp-dev-kits/blob/master/esp32-meshkit-sensor/docs/ESP32-MeshKit-Sense_guide_cn.md>`_, n/a, 搭配 `ESP-Prog`_ 使用
     `ESP32-Sense Kit <https://github.com/espressif/esp-dev-kits/blob/master/esp32-sense-kit/docs/esp32_sense_kit_guide_cn.md>`_, n/a, 搭配 `ESP-Prog`_ 使用

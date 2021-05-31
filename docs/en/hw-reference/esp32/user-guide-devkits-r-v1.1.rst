@@ -39,17 +39,19 @@ ESP32-DevKitS(-R) is Espressif's flashing board designed specifically for ESP32.
 ESP32-DevKitS and ESP32-DevKitS-R boards vary only in layout of spring pins to fit the following ESP32 modules. 
 
 - ESP32-DevKitS:
-   - :ref:`esp-modules-and-boards-esp32-wroom-32`
-   - :ref:`ESP32-WROOM-32D <esp-modules-and-boards-esp32-wroom-32d-and-u>`
-   - :ref:`ESP32-WROOM-32U <esp-modules-and-boards-esp32-wroom-32d-and-u>`
-   - :ref:`esp-modules-and-boards-esp32-solo-1`
-   - `ESP32-WROOM-32E <https://www.espressif.com/en/products/hardware/modules>`_
-   - `ESP32-WROOM-32UE <https://www.espressif.com/en/products/hardware/modules>`_
+   - ESP32-WROOM-32
+   - ESP32-WROOM-32D
+   - ESP32-WROOM-32U
+   - ESP32-SOLO-1
+   - ESP32-WROOM-32E
+   - ESP32-WROOM-32UE
 - ESP32-DevKitS-R:
-   - :ref:`ESP32-WROVER (PCB & IPEX) <esp-modules-and-boards-esp32-wrover>`
-   - :ref:`ESP32-WROVER-B (PCB & IPEX) <esp-modules-and-boards-esp32-wrover>`
-   - `ESP32-WROVER-E <https://www.espressif.com/en/products/hardware/modules>`_
-   - `ESP32-WROVER-IE <https://www.espressif.com/en/products/hardware/modules>`_
+   - ESP32-WROVER (PCB & IPEX)
+   - ESP32-WROVER-B (PCB & IPEX)
+   - ESP32-WROVER-E
+   - ESP32-WROVER-IE
+
+For information about above modules, please refer to `ESP32 Series Modules <https://www.espressif.com/en/products/modules?id=ESP32>`_.
 
 
 Description of Components

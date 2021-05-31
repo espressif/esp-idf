@@ -40,19 +40,19 @@ ESP32-DevKitS(-R) 是乐鑫专为 ESP32 设计的烧录底板，无需将 ESP32 
 ESP32-DevKitS 和 ESP32-DevKitS-R 仅在弹簧布局上有所不同，用于适配不同的 ESP32 模组。
 
 - ESP32-DevKitS:
-   - :ref:`esp-modules-and-boards-esp32-wroom-32`
-   - :ref:`ESP32-WROOM-32D <esp-modules-and-boards-esp32-wroom-32d-and-u>`
-   - :ref:`ESP32-WROOM-32U <esp-modules-and-boards-esp32-wroom-32d-and-u>`
-   - :ref:`esp-modules-and-boards-esp32-solo-1`
-   - `ESP32-WROOM-32E <https://www.espressif.com/en/products/hardware/modules>`_
-   - `ESP32-WROOM-32UE <https://www.espressif.com/en/products/hardware/modules>`_
+   - ESP32-WROOM-32
+   - ESP32-WROOM-32D
+   - ESP32-WROOM-32U
+   - ESP32-SOLO-1
+   - ESP32-WROOM-32E
+   - ESP32-WROOM-32UE
 - ESP32-DevKitS-R:
-   - :ref:`ESP32-WROVER (PCB & IPEX) <esp-modules-and-boards-esp32-wrover>`
-   - :ref:`ESP32-WROVER-B (PCB & IPEX) <esp-modules-and-boards-esp32-wrover>`
-   - `ESP32-WROVER-E <https://www.espressif.com/en/products/hardware/modules>`_
-   - `ESP32-WROVER-IE <https://www.espressif.com/en/products/hardware/modules>`_
+   - ESP32-WROVER (PCB & IPEX)
+   - ESP32-WROVER-B (PCB & IPEX)
+   - ESP32-WROVER-E
+   - ESP32-WROVER-IE
 
-
+有关上述模组的详细信息，请参考 `ESP32 系列模组 <https://www.espressif.com/zh-hans/products/modules?id=ESP32>`_。
 
 组件介绍
 --------

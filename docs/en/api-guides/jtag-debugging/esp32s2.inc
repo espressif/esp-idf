@@ -149,7 +149,7 @@
 .. devkit-defs
 
 .. |devkit-name| replace:: ESP-S2-Kaluga-1
-.. |devkit-name-with-link| replace:: :doc:`ESP-S2-Kaluga-1 <../../hw-reference/modules-and-boards>`
+.. |devkit-name-with-link| replace:: :doc:`ESP-S2-Kaluga-1 <../../hw-reference/index>`
 
 ---
 

@@ -74,4 +74,6 @@ hw-reference/get-started-ethernet-kit-v1.0      hw-reference/esp32/get-started-e
 hw-reference/get-started-ethernet-kit           hw-reference/esp32/get-started-ethernet-kit
 hw-reference/esp32s2/user-guide-kaluga-1-v1.2   hw-reference/esp32s2/user-guide-esp32-s2-kaluga-1-kit
 
-api-guides/jtag-debugging/configure-wrover      api-guides/jtag-debugging/configure-ft2232h-jtag
+api-guides/jtag-debugging/configure-wrover  api-guides/jtag-debugging/configure-ft2232h-jtag
+hw-reference/modules-and-boards             "https://www.espressif.com/en/products/modules"
+hw-reference/modules-and-boards-previous    "https://www.espressif.com/en/products/modules"
