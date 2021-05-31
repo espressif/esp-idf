@@ -208,10 +208,11 @@ menu "ESP32-specific"
             help
                 Because some bits of the ESP32 code environment cannot be recompiled with the cache workaround,
                 normally tasks cannot be safely run with their stack residing in external memory; for this reason
-                xTaskCreate and friends always allocate stack in internal memory and xTaskCreateStatic will check if
-                the memory passed to it is in internal memory. If you have a task that needs a large amount of stack
-                and does not call on ROM code in any way (no direct calls, but also no Bluetooth/WiFi), you can try to
-                disable this and use xTaskCreateStatic to create the tasks stack in external memory.
+                xTaskCreate (and related task creaton functions) always allocate stack in internal memory and
+                xTaskCreateStatic will check if the memory passed to it is in internal memory. If you have a task that
+                needs a large amount of stack and does not call on ROM code in any way (no direct calls, but also no
+                Bluetooth/WiFi), you can try enable this to cause xTaskCreateStatic to allow tasks stack in external
+                memory.
 
         choice SPIRAM_OCCUPY_SPI_HOST
             prompt "SPI host to use for 32MBit PSRAM"
