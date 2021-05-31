@@ -42,7 +42,7 @@ Go for it!
 
 When writing code for this repository, please follow guidelines below.
 
-1. Document all building blocks of code: functions, structs, typedefs, enums, macros, etc. Provide enough information on purpose, functionality and limitations of documented items, as you would like to see them documented when reading the code by others.
+1. Document all building blocks of code: functions, structs, typedefs, enums, macros, etc. Provide enough information about purpose, functionality and limitations of documented items, as you would like to see them documented when reading the code by others.
 
 2. Documentation of function should describe what this function does. If it accepts input parameters and returns some value, all of them should be explained.
 
@@ -75,14 +75,16 @@ When writing code for this repository, please follow guidelines below.
     *    - other error codes from the underlying storage driver
     *
 
-7. Overview of functionality of documented header file, or group of files that make a library, should be placed in the same directory in a separate ``README.rst`` file. If directory contains header files for different APIs, then the file name should be ``apiname-readme.rst``.
+7. Overview of functionality of documented header file, or group of files that make a library, should be placed in a separate ``README.rst`` file of the same directory. If this directory contains header files for different APIs, then the file name should be ``apiname-readme.rst``.
 
 
 Go one extra mile
 -----------------
 
-There is couple of tips, how you can make your documentation even better and more useful to the reader.
+Here are a couple of tips on how you can make your documentation even better and more useful to the reader and writer.
 
+When writing codes, please follow the guidelines below: 
+ 
 1. Add code snippets to illustrate implementation. To do so, enclose snippet using ``@code{c}`` and ``@endcode`` commands. ::
 
     *
@@ -133,7 +135,37 @@ There is couple of tips, how you can make your documentation even better and mor
 
     Code snippets, notes, links, etc. will not make it to the documentation, if not enclosed in a comment block associated with one of documented objects.
 
-6. Prepare one or more complete code examples together with description. Place description in a separate file ``README.md`` in specific folder of :idf:`examples` directory.
+6. Prepare one or more complete code examples together with description. Place description to a separate file ``README.md`` in specific folder of :idf:`examples` directory.
+
+Standardize Document Format
+-------------------------------
+
+When it comes to text, please follow guidelines below to provide well formatted Markdown (.md) or reST (.rst) documents.
+
+1. Please ensure that one paragraph is written in one line. Don't break lines like below. Breaking lines to enhance readability is only suitable for writing codes. To make the text easier to read, it is recommended to place an empty line to separate the paragraph.
+
+    .. figure:: ../../_static/doc-format1-recommend.png
+        :align: center
+        :scale: 30%
+        :alt: One line for one paragraph - recommend (click to enlarge)
+
+        One line for one paragraph (click to enlarge)
+
+    .. figure:: ../../_static/doc-format2-notrecommend.png
+        :align: center
+        :scale: 30%
+        :alt: One line for one paragraph - not recommend (click to enlarge)
+
+        No line breaks within the same paragraph (click to enlarge)
+
+2. Please make the line number of CN and EN documents consistent like below. The benefit of this approach is that it can save time for both writers and translators. When non-bilingual writers need to update text, they only need to update the same line in the corresponding CN or EN document. For translators, if documents are updated in English, then translators can quickly locate where to update in the corresponding CN document later. Besides, by comparing the total number of lines in EN and CN documents, you can quickly find out whether the CN version lags behind the EN version.
+
+    .. figure:: ../../_static/doc-format3-recommend.png
+        :align: center
+        :scale: 50%
+        :alt: Keep the line number for EN and CN files consistent (click to enlarge)
+        
+        Keep the line number for EN and CN documents consistent (click to enlarge)
 
 .. _link-custom-roles:
 
@@ -515,7 +547,7 @@ Note that this is a feature intended to simply testing and debugging during writ
 
 Fast build
 """"""""""
-Another trick to speed up building is to skip including doxygen generated API documention into the Sphinx build process, skipping this drastically reduces build times.
+Another trick to speed up building is to skip including doxygen generated API documention into the Sphinx build process, skipping this drastically reduces build time.
 
 This can be achieved by adding the fast-build argument::
 
