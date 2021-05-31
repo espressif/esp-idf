@@ -78,6 +78,126 @@ static void slave_init(void)
     TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &buscfg, &slvcfg, SPI_DMA_CH_AUTO));
 }
 
+TEST_CASE("test fullduplex slave with only RX direction","[spi]")
+{
+    WORD_ALIGNED_ATTR uint8_t master_txbuf[320]=MASTER_SEND;
+    WORD_ALIGNED_ATTR uint8_t slave_rxbuf[320];
+
+    spi_device_handle_t spi;
+    //initial master
+    master_init_nodma( &spi );
+    //initial slave
+    slave_init();
+
+    //do internal connection
+    int_connect( PIN_NUM_MOSI,  spi_periph_signal[TEST_SPI_HOST].spid_out,      spi_periph_signal[TEST_SLAVE_HOST].spiq_in );
+    int_connect( PIN_NUM_MISO,  spi_periph_signal[TEST_SLAVE_HOST].spiq_out,    spi_periph_signal[TEST_SPI_HOST].spid_in );
+    int_connect( PIN_NUM_CS,    spi_periph_signal[TEST_SPI_HOST].spics_out[0],  spi_periph_signal[TEST_SLAVE_HOST].spics_in );
+    int_connect( PIN_NUM_CLK,   spi_periph_signal[TEST_SPI_HOST].spiclk_out,    spi_periph_signal[TEST_SLAVE_HOST].spiclk_in );
+
+    for ( int i = 0; i < 4; i ++ ) {
+        //slave send
+        spi_slave_transaction_t slave_t;
+        spi_slave_transaction_t* out;
+        memset(&slave_t, 0, sizeof(spi_slave_transaction_t));
+        slave_t.length=8*32;
+        slave_t.tx_buffer=NULL;
+        slave_t.rx_buffer=slave_rxbuf;
+
+        TEST_ESP_OK(spi_slave_queue_trans(TEST_SLAVE_HOST, &slave_t, portMAX_DELAY));
+
+        //send
+        spi_transaction_t t = {};
+        t.length = 32*(i+1);
+        if ( t.length != 0 ) {
+            t.tx_buffer = master_txbuf;
+            t.rx_buffer = NULL;
+        }
+        spi_device_transmit( spi, (spi_transaction_t*)&t );
+
+        //wait for end
+        TEST_ESP_OK(spi_slave_get_trans_result(TEST_SLAVE_HOST, &out, portMAX_DELAY));
+
+        //show result
+        ESP_LOGI(SLAVE_TAG, "trans_len: %d", slave_t.trans_len);
+        ESP_LOG_BUFFER_HEX( "master tx", t.tx_buffer, t.length/8 );
+        ESP_LOG_BUFFER_HEX( "slave rx", slave_t.rx_buffer, (slave_t.trans_len+7)/8);
+
+        TEST_ASSERT_EQUAL_HEX8_ARRAY( t.tx_buffer, slave_t.rx_buffer, t.length/8 );
+        TEST_ASSERT_EQUAL( t.length, slave_t.trans_len );
+
+        //clean
+        memset( slave_rxbuf, 0x66, sizeof(slave_rxbuf));
+    }
+
+    TEST_ASSERT(spi_slave_free(TEST_SLAVE_HOST) == ESP_OK);
+
+    TEST_ASSERT(spi_bus_remove_device(spi) == ESP_OK);
+    TEST_ASSERT(spi_bus_free(TEST_SPI_HOST) == ESP_OK);
+
+    ESP_LOGI(SLAVE_TAG, "test passed.");
+}
+
+TEST_CASE("test fullduplex slave with only TX direction","[spi]")
+{
+    WORD_ALIGNED_ATTR uint8_t master_rxbuf[320];
+    WORD_ALIGNED_ATTR uint8_t slave_txbuf[320]=SLAVE_SEND;
+
+    spi_device_handle_t spi;
+    //initial master
+    master_init_nodma( &spi );
+    //initial slave
+    slave_init();
+
+    //do internal connection
+    int_connect( PIN_NUM_MOSI,  spi_periph_signal[TEST_SPI_HOST].spid_out,      spi_periph_signal[TEST_SLAVE_HOST].spiq_in );
+    int_connect( PIN_NUM_MISO,  spi_periph_signal[TEST_SLAVE_HOST].spiq_out,    spi_periph_signal[TEST_SPI_HOST].spid_in );
+    int_connect( PIN_NUM_CS,    spi_periph_signal[TEST_SPI_HOST].spics_out[0],  spi_periph_signal[TEST_SLAVE_HOST].spics_in );
+    int_connect( PIN_NUM_CLK,   spi_periph_signal[TEST_SPI_HOST].spiclk_out,    spi_periph_signal[TEST_SLAVE_HOST].spiclk_in );
+
+    for ( int i = 0; i < 4; i ++ ) {
+        //slave send
+        spi_slave_transaction_t slave_t;
+        spi_slave_transaction_t* out;
+        memset(&slave_t, 0, sizeof(spi_slave_transaction_t));
+        slave_t.length=8*32;
+        slave_t.tx_buffer=slave_txbuf;
+        slave_t.rx_buffer=NULL;
+
+        TEST_ESP_OK(spi_slave_queue_trans(TEST_SLAVE_HOST, &slave_t, portMAX_DELAY));
+
+        //send
+        spi_transaction_t t = {};
+        t.length = 32*(i+1);
+        if ( t.length != 0 ) {
+            t.tx_buffer = NULL;
+            t.rx_buffer = master_rxbuf;
+        }
+        spi_device_transmit( spi, (spi_transaction_t*)&t );
+
+        //wait for end
+        TEST_ESP_OK(spi_slave_get_trans_result(TEST_SLAVE_HOST, &out, portMAX_DELAY));
+
+        //show result
+        ESP_LOGI(SLAVE_TAG, "trans_len: %d", slave_t.trans_len);
+        ESP_LOG_BUFFER_HEX( "master rx", t.rx_buffer, t.length/8 );
+        ESP_LOG_BUFFER_HEX( "slave tx", slave_t.tx_buffer, (slave_t.trans_len+7)/8);
+
+        TEST_ASSERT_EQUAL_HEX8_ARRAY( slave_t.tx_buffer, t.rx_buffer, t.length/8 );
+        TEST_ASSERT_EQUAL( t.length, slave_t.trans_len );
+
+        //clean
+        memset( master_rxbuf, 0x66, sizeof(master_rxbuf));
+    }
+
+    TEST_ASSERT(spi_slave_free(TEST_SLAVE_HOST) == ESP_OK);
+
+    TEST_ASSERT(spi_bus_remove_device(spi) == ESP_OK);
+    TEST_ASSERT(spi_bus_free(TEST_SPI_HOST) == ESP_OK);
+
+    ESP_LOGI(SLAVE_TAG, "test passed.");
+}
+
 TEST_CASE("test slave send unaligned","[spi]")
 {
     WORD_ALIGNED_ATTR uint8_t master_txbuf[320]=MASTER_SEND;
