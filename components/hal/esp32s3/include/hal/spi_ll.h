@@ -583,7 +583,6 @@ static inline void spi_ll_master_set_io_mode(spi_dev_t *hw, spi_ll_io_mode_t io_
 static inline void spi_ll_slave_set_seg_mode(spi_dev_t *hw, bool seg_trans)
 {
     hw->dma_conf.dma_seg_trans_en = seg_trans;
-    hw->dma_conf.rx_eof_en = seg_trans;
 }
 
 /**
@@ -826,7 +825,7 @@ static inline void spi_ll_set_miso_bitlen(spi_dev_t *hw, size_t bitlen)
  */
 static inline void spi_ll_slave_set_rx_bitlen(spi_dev_t *hw, size_t bitlen)
 {
-    spi_ll_set_mosi_bitlen(hw, bitlen);
+    //This is not used in esp32s3
 }
 
 /**
@@ -837,7 +836,7 @@ static inline void spi_ll_slave_set_rx_bitlen(spi_dev_t *hw, size_t bitlen)
  */
 static inline void spi_ll_slave_set_tx_bitlen(spi_dev_t *hw, size_t bitlen)
 {
-    spi_ll_set_mosi_bitlen(hw, bitlen);
+    //This is not used in esp32s3
 }
 
 /**
