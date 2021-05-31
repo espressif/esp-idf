@@ -4,7 +4,7 @@ ESP32-S2-Saola-1
 
 :link_to_translation:`zh_CN:[中文]`
 
-This user guide provides information on ESP32-S2-Saola-1, a small-sized `ESP32-S2 <https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_en.pdf>`_ based development board produced by Espressif.
+This user guide provides information on ESP32-S2-Saola-1, a small-sized `ESP32-S2 Datasheet`_ based development board produced by Espressif.
 
 .. figure:: ../../../_static/esp32-s2-saola-1-v1.2-isometric.png
     :align: center
@@ -136,13 +136,97 @@ There are three mutually exclusive ways to provide power to the board:
 - 5V and GND header pins
 - 3V3 and GND header pins
 
+Header Block
+------------
+
+The two tables below provide the **Name** and **Function** of I/O header pins on both sides of the board. The numbering and names are the same as in the `ESP32-S2-Saola-1 Schematics`_ (PDF).
+
+J2
+^^^
+===  ====  =====  ===================================
+No.  Name  Type   Function
+===  ====  =====  ===================================
+1    3V3   P      3.3 V power supply
+2    IO0   I/O    GPIO0, Boot
+3    IO1   I/O    GPIO1, ADC1_CH0, TOUCH_CH1
+4    IO2   I/O    GPIO2, ADC1_CH1, TOUCH_CH2
+5    IO3   I/O    GPIO3, ADC1_CH2, TOUCH_CH3
+6    IO4   I/O    GPIO4, ADC1_CH3, TOUCH_CH4
+7    IO5   I/O    GPIO5, ADC1_CH4, TOUCH_CH5
+8    IO6   I/O    GPIO6, ADC1_CH5, TOUCH_CH6
+9    IO7   I/O    GPIO7, ADC1_CH6, TOUCH_CH7
+10   IO8   I/O    GPIO8, ADC1_CH7, TOUCH_CH8
+11   IO9   I/O    GPIO9, ADC1_CH8, TOUCH_CH9
+12   IO10  I/O    GPIO10, ADC1_CH9, TOUCH_CH10
+13   IO11  I/O    GPIO11, ADC2_CH0, TOUCH_CH11
+14   IO12  I/O    GPIO12, ADC2_CH1, TOUCH_CH12
+15   IO13  I/O    GPIO13, ADC2_CH2, TOUCH_CH13
+16   IO14  I/O    GPIO14, ADC2_CH3, TOUCH_CH14
+17   IO15  I/O    GPIO15, ADC2_CH4, XTAL_32K_P
+18   IO16  I/O    GPIO16, ADC2_CH5, XTAL_32K_N
+19   IO17  I/O    GPIO17, ADC2_CH6, DAC_1
+20   5V0   P      5 V power supply
+21   GND   G      Ground
+===  ====  =====  ===================================
+
+J3
+^^^
+===  ====  =====  ====================================
+No.  Name  Type   Function
+===  ====  =====  ====================================
+1    GND   G      Ground
+2    RST   I      CHIP_PU, Reset
+3    IO46  I      GPIO46
+4    IO45  I/O    GPIO45
+5    IO44  I/O    GPIO44, U0RXD
+6    IO43  I/O    GPIO43, U0TXD
+7    IO42  I/O    GPIO42, MTMS
+8    IO41  I/O    GPIO41, MTDI
+9    IO40  I/O    GPIO40, MTDO
+10   IO39  I/O    GPIO39, MTCK
+11   IO38  I/O    GPIO38
+12   IO37  I/O    GPIO37
+13   IO36  I/O    GPIO36
+14   IO35  I/O    GPIO35
+16   IO34  I/O    GPIO34
+17   IO33  I/O    GPIO33
+17   IO26  I/O    GPIO26
+18   IO21  I/O    GPIO21
+19   IO20  I/O    GPIO20, ADC2_CH3, USB_D+
+20   IO19  I/O    GPIO19, ADC2_CH3, USB_D-
+21   IO18  I/O    GPIO18, ADC2_CH3, DAC_2
+===  ====  =====  ====================================
+
+    P: Power supply;
+    I: Input;
+    O: Output;
+    T: High impedance.
+
+Pin Layout
+^^^^^^^^^^^
+.. figure:: ../../../_static/esp32-s2_saola1-pinout.jpg
+    :align: center
+    :scale: 45%
+    :alt: ESP32-S2-Saola1 (click to enlarge)
+    :figclass: align-center
+
+    ESP32-S2 Saola-1 Pin Layout (click to enlarge)
+
 Related Documents
 =================
-* `ESP32-S2-Saola-1 Schematics <https://dl.espressif.com/dl/schematics/ESP32-S2-SAOLA-1_V1.1_schematics.pdf>`_ (PDF)
-* `ESP32-S2-Saola-1 Dimensions <https://dl.espressif.com/dl/schematics/ESP32-S2-Saola-1_V1.2_Dimensions.pdf>`_ (PDF)
-* `ESP32-S2 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_en.pdf>`_ (PDF)
-* `ESP32-S2-WROVER & ESP32-S2-WROVER-I Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-s2-wrover_esp32-s2-wrover-i_datasheet_en.pdf>`_ (PDF)
-* `ESP32-S2-WROOM & ESP32-S2-WROOM-I Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-s2-wroom_esp32-s2-wroom-i_datasheet_en.pdf>`_ (PDF)
-* `Espressif Product Ordering Information <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>`_ (PDF) 
+
+* `ESP32-S2-Saola-1 Schematics`_ (PDF)
+* `ESP32-S2-Saola-1 Dimensions`_ (PDF)
+* `ESP32-S2 Datasheet`_ (PDF)
+* `ESP32-S2-WROVER and ESP32-S2-WROVER-I Datasheet`_ (PDF)
+* `ESP32-S2-WROOM and ESP32-S2-WROOM-I Datasheet`_ (PDF)
+* `Espressif Product Ordering Information`_ (PDF) 
 
 For other design documentation for the board, please contact us at sales@espressif.com.
+
+.. _ESP32-S2-Saola-1 Schematics: https://dl.espressif.com/dl/schematics/ESP32-S2-SAOLA-1_V1.1_schematics.pdf
+.. _ESP32-S2-Saola-1 Dimensions: https://dl.espressif.com/dl/schematics/ESP32-S2-Saola-1_V1.2_Dimensions.pdf
+.. _ESP32-S2 Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_en.pdf
+.. _ESP32-S2-WROVER and ESP32-S2-WROVER-I Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-s2-wrover_esp32-s2-wrover-i_datasheet_en.pdf
+.. _ESP32-S2-WROOM and ESP32-S2-WROOM-I Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-s2-wroom_esp32-s2-wroom-i_datasheet_en.pdf
+.. _Espressif Product Ordering Information: https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf

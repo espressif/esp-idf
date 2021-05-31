@@ -183,9 +183,9 @@ J3
 
 管脚布局
 ^^^^^^^^
-.. figure:: ../../../_static/esp32-c3-devkitm-1-v1-pinout.png
+.. figure:: ../../../_static/esp32-c3-devkitm-1-v1-pinout.jpg
     :align: center
-    :scale: 100%
+    :scale: 45%
     :alt: ESP32-C3-DevKitM-1 管脚布局（点击放大）
     :figclass: align-center
 

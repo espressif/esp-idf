@@ -176,8 +176,8 @@ No.  Name  Type [1]_   Function
 10   IO5   I/O/T       GPIO5, ADC2_CH0, FSPIWP, MTDI
 11   IO4   I/O/T       GPIO4, ADC1_CH4, FSPIHD, MTMS
 12   GND   G           Ground
-13   IO18  I/O/T       GPIO18
-14   IO19  I/O/T       GPIO19
+13   IO18  I/O/T       GPIO18, USB_D-
+14   IO19  I/O/T       GPIO19, USB_D+
 15   GND   G           Ground
 ===  ====  ==========  ====================================
 
@@ -186,9 +186,9 @@ No.  Name  Type [1]_   Function
 
 Pin Layout
 ^^^^^^^^^^^
-.. figure:: ../../../_static/esp32-c3-devkitm-1-v1-pinout.png
+.. figure:: ../../../_static/esp32-c3-devkitm-1-v1-pinout.jpg
     :align: center
-    :scale: 100%
+    :scale: 45%
     :alt: ESP32-C3-DevKitM-1 (click to enlarge)
     :figclass: align-center
 
@@ -205,12 +205,15 @@ Related Documents
 * `ESP32-C3 Datasheet`_ (PDF)
 * `ESP32-C3-MINI-1 Datasheet`_ (PDF)
 * `ESP32-C3-DevKitM-1 Schematic`_ (PDF)
-* `ESP32-C3-DevKitM-1 PCB Layout <https://dl.espressif.com/dl/schematics/PCB_ESP32-C3-DEVKITM-1_V1_20200915AA.pdf>`_ (PDF)
-* `ESP32-C3-DevKitM-1 Dimensions <https://dl.espressif.com/dl/schematics/DIMENSION_ESP32-C3-DEVKITM-1_V1_20200915AA.pdf>`_ (PDF)
-* `ESP32-C3-DevKitM-1 Dimensions source file <https://dl.espressif.com/dl/schematics/DIMENSION_ESP32-C3-DEVKITM-1_V1_20200915AA.dxf>`_ (DXF) - You can view it with `Autodesk Viewer <https://viewer.autodesk.com/>`_ online
+* `ESP32-C3-DevKitM-1 PCB Layout`_ (PDF)
+* `ESP32-C3-DevKitM-1 Dimensions`_ (PDF)
+* `ESP32-C3-DevKitM-1 Dimensions source file`_ (DXF) - You can view it with `Autodesk Viewer <https://viewer.autodesk.com/>`_ online
 
 For further design documentation for the board, please contact us at `sales@espressif.com <sales@espressif.com>`_.
 
 .. _ESP32-C3 Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf
 .. _ESP32-C3-MINI-1 Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-c3-mini-1_datasheet_en.pdf
 .. _ESP32-C3-DevKitM-1 Schematic: https://dl.espressif.com/dl/schematics/SCH_ESP32-C3-DEVKITM-1_V1_20200915A.pdf
+.. _ESP32-C3-DevKitM-1 PCB Layout: https://dl.espressif.com/dl/schematics/PCB_ESP32-C3-DEVKITM-1_V1_20200915AA.pdf
+.. _ESP32-C3-DevKitM-1 Dimensions: https://dl.espressif.com/dl/schematics/DIMENSION_ESP32-C3-DEVKITM-1_V1_20200915AA.pdf
+.. _ESP32-C3-DevKitM-1 Dimensions source file: https://dl.espressif.com/dl/schematics/DIMENSION_ESP32-C3-DEVKITM-1_V1_20200915AA.dxf
