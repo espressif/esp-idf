@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2020 Espressif Systems (Shanghai) PTE LTD
+# Copyright 2020-2021 Espressif Systems (Shanghai) CO LTD
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@
 # This file must be the first one in the archive. It contains binary structures describing each
 # subsequent file (for example, where the file needs to be flashed/loaded).
 
+from __future__ import print_function, unicode_literals
+
 import argparse
 import hashlib
 import json
@@ -28,6 +30,7 @@ import os
 import struct
 import zlib
 from collections import namedtuple
+from functools import partial
 
 from future.utils import iteritems
 
@@ -125,16 +128,31 @@ def pad_bytes(b, multiple, padding=b'\x00'):  # type: (bytes, int, bytes) -> byt
 
 
 class EspDfuWriter(object):
-    def __init__(self, dest_file, pid):  # type: (typing.BinaryIO, int) -> None
+    def __init__(self, dest_file, pid, part_size):  # type: (typing.BinaryIO, int, int) -> None
         self.dest = dest_file
         self.pid = pid
+        self.part_size = part_size
         self.entries = []  # type: typing.List[bytes]
         self.index = []  # type: typing.List[DFUInfo]
 
     def add_file(self, flash_addr, path):  # type: (int, str) -> None
-        """ Add file to be written into flash at given address """
+        """
+        Add file to be written into flash at given address
+
+        Files are split up into chunks in order avoid timing-out during erasing large regions. Instead of adding
+        "app.bin" at flash_addr it will add:
+        1. app.bin   at flash_addr  # sizeof(app.bin) == self.part_size
+        2. app.bin.1 at flash_addr + self.part_size
+        3. app.bin.2 at flash_addr + 2 * self.part_size
+        ...
+
+        """
+        f_name = os.path.basename(path)
         with open(path, 'rb') as f:
-            self._add_cpio_flash_entry(os.path.basename(path), flash_addr, f.read())
+            for i, chunk in enumerate(iter(partial(f.read, self.part_size), b'')):
+                n = f_name if i == 0 else '.'.join([f_name, str(i)])
+                self._add_cpio_flash_entry(n, flash_addr, chunk)
+                flash_addr += len(chunk)
 
     def finish(self):  # type: () -> None
         """ Write DFU file """
@@ -188,12 +206,14 @@ class EspDfuWriter(object):
 
 
 def action_write(args):  # type: (typing.Mapping[str, typing.Any]) -> None
-    writer = EspDfuWriter(args['output_file'], args['pid'])
+    writer = EspDfuWriter(args['output_file'], args['pid'], args['part_size'])
     for addr, f in args['files']:
         print('Adding {} at {:#x}'.format(f, addr))
         writer.add_file(addr, f)
     writer.finish()
     print('"{}" has been written. You may proceed with DFU flashing.'.format(args['output_file'].name))
+    if args['part_size'] % (4 * 1024) != 0:
+        print('WARNING: Partition size of DFU is not multiple of 4k (4096). You might get unexpected behavior.')
 
 
 def main():  # type: () -> None
@@ -212,6 +232,10 @@ def main():  # type: () -> None
                               help='Hexa-decimal product indentificator')
     write_parser.add_argument('--json',
                               help='Optional file for loading "flash_files" dictionary with <address> <file> items')
+    write_parser.add_argument('--part-size',
+                              default=os.environ.get('ESP_DFU_PART_SIZE', 512 * 1024),
+                              type=lambda x: int(x, 0),
+                              help='Larger files are split-up into smaller partitions of this size')
     write_parser.add_argument('files',
                               metavar='<address> <file>', help='Add <file> at <address>',
                               nargs='*')
@@ -241,12 +265,13 @@ def main():  # type: () -> None
             files += [(int(addr, 0),
                        process_json_file(f_name)) for addr, f_name in iteritems(json.load(f)['flash_files'])]
 
-    files = sorted([(addr, f_name) for addr, f_name in iteritems(dict(files))],
+    files = sorted([(addr, f_name.decode('utf-8') if isinstance(f_name, type(b'')) else f_name) for addr, f_name in iteritems(dict(files))],
                    key=lambda x: x[0])  # remove possible duplicates and sort based on the address
 
     cmd_args = {'output_file': args.output_file,
                 'files': files,
                 'pid': args.pid,
+                'part_size': args.part_size,
                 }
 
     {'write': action_write

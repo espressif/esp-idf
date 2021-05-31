@@ -6,7 +6,11 @@ def action_extensions(base_actions, project_path):
 
     SUPPORTED_TARGETS = ['esp32s2']
 
-    def dfu_target(target_name, ctx, args):
+    def dfu_target(target_name, ctx, args, part_size):
+        ensure_build_directory(args, ctx.info_name)
+        run_target(target_name, args, {'ESP_DFU_PART_SIZE': part_size} if part_size else {})
+
+    def dfu_list_target(target_name, ctx, args):
         ensure_build_directory(args, ctx.info_name)
         run_target(target_name, args)
 
@@ -27,9 +31,17 @@ def action_extensions(base_actions, project_path):
                 'callback': dfu_target,
                 'short_help': 'Build the DFU binary',
                 'dependencies': ['all'],
+                'options': [
+                    {
+                        'names': ['--part-size'],
+                        'help': 'Large files are split up into smaller partitions in order to avoid timeout during '
+                                'erasing flash. This option allows to overwrite the default partition size of '
+                                'mkdfu.py.'
+                    }
+                ],
             },
             'dfu-list': {
-                'callback': dfu_target,
+                'callback': dfu_list_target,
                 'short_help': 'List DFU capable devices',
                 'dependencies': [],
             },
@@ -42,7 +54,7 @@ def action_extensions(base_actions, project_path):
                         'names': ['--path'],
                         'default': '',
                         'help': 'Specify path to DFU device. The default empty path works if there is just one '
-                                'ESP device with the same product identificator. See the device list for paths '
+                                'ESP device with the same product identifier. See the device list for paths '
                                 'of available devices.'
                     }
                 ],
