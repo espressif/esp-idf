@@ -131,6 +131,14 @@ menu "Bootloader config"
             To trigger a factory reset, this GPIO must be pulled low on reset.
             Note that GPIO34-39 do not have an internal pullup and an external one must be provided.
 
+    config BOOTLOADER_PIN_LEVEL_FACTORY_RESET
+        int "Level of the GPIO input for factory reset"
+        depends on BOOTLOADER_FACTORY_RESET
+        range 0 1
+        default 0
+        help
+            Pin level for factory reset. 0 for LOW and 1 for HIGH.
+
     config BOOTLOADER_OTA_DATA_ERASE
         bool "Clear OTA data on factory reset (select factory partition)"
         depends on BOOTLOADER_FACTORY_RESET
