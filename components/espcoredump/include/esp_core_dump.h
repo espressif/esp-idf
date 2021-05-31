@@ -14,10 +14,11 @@
 #ifndef ESP_CORE_DUMP_H_
 #define ESP_CORE_DUMP_H_
 
+#include "sdkconfig.h"
 #include <stddef.h>
 #include "esp_err.h"
 #include "esp_private/panic_internal.h"
-#include "esp_core_dump_summary_extra_info.h"
+#include "esp_core_dump_summary_port.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,14 +26,7 @@ extern "C" {
 
 #define APP_ELF_SHA256_SZ (CONFIG_APP_RETRIEVE_LEN_ELF_SHA + 1)
 
-/**
- * @brief Backtrace information
- */
-typedef struct {
-    uint32_t bt[16];    /*!< Backtrace (array of PC) */
-    uint32_t depth;     /*!< Number of backtrace entries */
-    bool corrupted;     /*!< Status flag for backtrace is corrupt or not */
-} esp_core_dump_bt_info_t;
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
 
 /**
  * @brief Core dump summary, Most meaningful contents of the core dump
@@ -47,6 +41,8 @@ typedef struct {
     uint8_t app_elf_sha256[APP_ELF_SHA256_SZ];  /*!< Crashing application's SHA256 sum as a string */
     esp_core_dump_summary_extra_info_t ex_info; /*!< Architecture specific extra data */
 } esp_core_dump_summary_t;
+
+#endif /* CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF */
 
 /**************************************************************************************/
 /******************************** EXCEPTION MODE API **********************************/
@@ -137,14 +133,31 @@ esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size);
  */
 esp_err_t esp_core_dump_image_erase(void);
 
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
+
 /**
- * @brief  Get the summary of a core dump. This function works only with ELF format core dumps.
+ * @brief  Get the summary of a core dump.
  *
  * @param  summary   Summary of the core dump
  *
  * @return ESP_OK on success, otherwise \see esp_err_t
+ *
+ * @note  This function works only if coredump is stored in flash and in ELF format
+ *
+ * Example usage:
+ * @code{c}
+ *  esp_core_dump_summary_t *summary = malloc(sizeof(esp_core_dump_summary_t));
+ *  if (summary) {
+ *      if (esp_core_dump_get_summary(summary) == ESP_OK) {
+ *          // Do stuff
+ *      }
+ *  }
+ *  free(summary);
+ * @endcode
  */
 esp_err_t esp_core_dump_get_summary(esp_core_dump_summary_t *summary);
+
+#endif /* CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF */
 
 #ifdef __cplusplus
 }
