@@ -73,7 +73,7 @@ examples/protocols/cbor/example_test.py
 examples/protocols/esp_http_client/esp_http_client_test.py
 examples/protocols/esp_local_ctrl/example_test.py
 examples/protocols/esp_local_ctrl/scripts/esp_local_ctrl.py
-examples/protocols/esp_local_ctrl/scripts/proto.py
+examples/protocols/esp_local_ctrl/scripts/proto_lc.py
 examples/protocols/http_server/advanced_tests/http_server_advanced_test.py
 examples/protocols/http_server/advanced_tests/scripts/test.py
 examples/protocols/http_server/persistent_sockets/http_server_persistence_test.py
