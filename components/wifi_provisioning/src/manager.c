@@ -871,6 +871,7 @@ static void wifi_prov_mgr_event_handler_internal(
         case WIFI_REASON_AUTH_FAIL:
         case WIFI_REASON_ASSOC_EXPIRE:
         case WIFI_REASON_HANDSHAKE_TIMEOUT:
+        case WIFI_REASON_MIC_FAILURE:
             ESP_LOGE(TAG, "STA Auth Error");
             prov_ctx->wifi_disconnect_reason = WIFI_PROV_STA_AUTH_ERROR;
             break;
