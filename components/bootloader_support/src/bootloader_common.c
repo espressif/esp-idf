@@ -45,7 +45,7 @@
 
 static const char* TAG = "boot_comm";
 
-esp_comm_gpio_hold_t bootloader_common_check_long_hold_gpio(uint32_t num_pin, uint32_t delay_sec)
+esp_comm_gpio_hold_t bootloader_common_check_long_hold_gpio(uint32_t num_pin, uint32_t delay_sec, int level)
 {
     esp_rom_gpio_pad_select_gpio(num_pin);
     if (GPIO_PIN_MUX_REG[num_pin]) {
@@ -53,11 +53,11 @@ esp_comm_gpio_hold_t bootloader_common_check_long_hold_gpio(uint32_t num_pin, ui
     }
     esp_rom_gpio_pad_pullup_only(num_pin);
     uint32_t tm_start = esp_log_early_timestamp();
-    if (gpio_ll_get_level(&GPIO, num_pin) == 1) {
+    if (gpio_ll_get_level(&GPIO, num_pin) != level) {
         return GPIO_NOT_HOLD;
     }
     do {
-        if (gpio_ll_get_level(&GPIO, num_pin) != 0) {
+        if (gpio_ll_get_level(&GPIO, num_pin) != level) {
             return GPIO_SHORT_HOLD;
         }
     } while (delay_sec > ((esp_log_early_timestamp() - tm_start) / 1000L));
