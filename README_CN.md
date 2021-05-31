@@ -2,26 +2,22 @@
 
 * [English Version](./README.md)
 
-ESP-IDF 是由乐鑫官方推出的针对 **ESP32** 和 **ESP32-S2** 系列芯片的开发框架。
+ESP-IDF 是由乐鑫官方针对乐鑫各系列芯片产品（发布于 2016 年后<sup>[1](#fn1)</sup>）推出的开发框架，支持 Windows、Linux 和 macOS 操作系统。
 
 # 使用 ESP-IDF 进行开发
 
 ## 搭建 ESP-IDF 开发环境
 
-请参阅如下指南搭建 ESP-IDF 的开发环境：
+关于不同芯片如何搭建 ESP-IDF 的开发环境，请参考 https://idf.espressif.com/。
 
-| 芯片 | ESP-IDF 入门指南 |
-|:----:|:----|
-| <img src="docs/_static/chip-esp32.svg" height="85" alt="ESP32"> | <ul><li>[稳定](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started/) 版</li><li>[最新（master 分支)](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started/) 版本</li></ul> |
-| <img src="docs/_static/chip-esp32-s2.svg" height="100" alt="ESP32-S2"> | <ul><li>[最新（master 分支)](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32s2/get-started/) 版本</li></ul> |
-
-**注意：** 每个 ESP-IDF 版本都有其对应的文档。 请参阅 [版本](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32/versions.html) 部分，如何查找文档以及如何检出ESP-IDF的特定发行版。
-
+**注意：** 不同系列芯片和不同 ESP-IDF 版本都有其对应的文档。请参阅[版本](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32/versions.html)部分，获得关于如何查找文档以及如何检出 ESP-IDF 的特定发行版的详细信息。
 
 ### 非 GitHub 分叉的 ESP-IDF 项目
 
 ESP-IDF 中的子模块采用相对路径（[详见 .gitmodules 文件](.gitmodules)），所以它们会指向 GitHub。
-如果 ESP-IDF 被分叉到的仓库不在 GitHub 上，那么你需要在克隆结束后运行该[脚本](tools/set-submodules-to-github.sh)。它会为所有的子模块设置绝对路径，接着可以通过 `git submodule update --init --recursive` 完成子模块的更新。
+如果 ESP-IDF 被分叉到的仓库不在 GitHub 上，那么你需要在克隆结束后运行该脚本 [tools/set-submodules-to-github.sh](tools/set-submodules-to-github.sh)。
+
+这个脚本会为所有的子模块设置绝对路径，接着可以通过 `git submodule update --init --recursive` 完成子模块的更新。
 如果 ESP-IDF 是从 GitHub 上克隆得到，则不需要此步骤。
 
 ## 寻找项目
@@ -38,24 +34,16 @@ ESP-IDF 中的子模块采用相对路径（[详见 .gitmodules 文件](.gitmodu
 
 ## 设置构建环境
 
-（请参考入门指南中列出的详细步骤。）
-* 在主机中安装入门指南中提到的构建所依赖的工具。
-* 将 ESP-IDF 中的 `tools/` 目录加入 PATH 环境变量中。
-* 运行 `python -m pip install -r requirements.txt` 安装 Python 依赖库。
+请参考入门指南中列出的详细步骤。
 
+* 在主机中安装入门指南中提到的构建所依赖的工具。
+* 运行安装脚本来设置构建环境。可为 Windows shell 选择 `install.bat` 或 `install.ps1`，为 Unix shell 选择 `install.sh` 和 `install.fish`。
+* 在使用 ESP-IDF 之前，需要在 shell 中运行导出脚本。Windows 下可运行 `export.bat`，Unix 下可运行 `source export.sh`。
+  
 ## 配置项目
 
-`idf.py menuconfig`
-
-* 打开项目的文本配置菜单。
-* 使用上下键浏览菜单。
-* 使用回车键进入子菜单，退出键返回上一级菜单或者退出配置。
-* 输入 `?` 查看帮助界面，按下回车键可以退出帮助界面。
-* 使用空格键或者 `Y` 和 `N` 按键来启用和禁用带复选框“`[*]`”的配置项。
-* 高亮某个配置项的同时按下 `?` 键可以显示该选项的帮助文档。
-* 输入 `/` 可以搜索指定的配置项。
-
-一旦配置完成，请按下退出键多次以退出配置界面，当提示是否保存新的的配置时，选择 “Yes”。
+* `idf.py set-target <chip_name>` 可将项目的目标芯片设置为 `<chip_name>`。运行 `idf.py set-target`，不用带任何参数，可查看所有支持的目标芯片列表。
+* `idf.py menuconfig` 可打开一个基于文本的配置菜单，可以用来对项目进行配置。
 
 ## 编译项目
 
@@ -65,23 +53,23 @@ ESP-IDF 中的子模块采用相对路径（[详见 .gitmodules 文件](.gitmodu
 
 ## 烧写项目
 
-当构建结束，终端会打印出一条命令行，告知如何使用 esptool.py 工具烧写项目到芯片中。但是你还可以运行下面这条命令来自动烧写：
+当构建结束，终端会打印出一条命令行，告知如何使用 esptool.py 工具烧写项目到芯片中。但你也可以运行下面这条命令来自动烧写：
 
 `idf.py -p PORT flash`
 
-将其中的 PORT 替换为系统中实际串口的名字（比如 Windows 下的 `COM3`，Linux 下的 `/dev/ttyUSB0`，或者 MacOS 下的 `/dev/cu.usbserial-X`。如果省略 `-p` 选项，`idf.py flash` 会尝试使用第一个可用的串口进行烧写。
+将其中的 PORT 替换为系统中实际串口的名字（比如 Windows 下的 `COM3`，Linux 下的 `/dev/ttyUSB0`，或者 macOS 下的 `/dev/cu.usbserial-X`。如果省略 `-p` 选项，`idf.py flash` 会尝试使用第一个可用的串口进行烧写。
 
 这会烧写整个项目（包括应用程序，引导程序和分区表）到芯片中，此外还可以使用 `idf.py menuconfig` 来调整串口烧写相关的配置。
 
-你也不必先运行 `idf.py build`，再运行 `idf.py flash`，`idf.py flash` 会根据需要自动重新构建项目。
+不必先运行 `idf.py build` 再运行 `idf.py flash`，`idf.py flash` 会根据需要自动重新构建项目。
 
 ## 观察串口输入
 
-`idf.py monitor` 会调用 [idf_monitor 工具](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/idf-monitor.html)来显示 ESP32 和 ESP32-S2 的串口输出。`idf_monitor` 还包含一系列的功能来解析程序崩溃后的输出结果并与设备进行交互。更多详细内容，请参阅[文档](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/idf-monitor.html).
+`idf.py monitor` 会调用 [idf_monitor 工具](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/idf-monitor.html)来显示乐鑫芯片的串口输出。`idf_monitor` 还包含一系列的功能来解析程序崩溃后的输出结果并与设备进行交互。更多详细内容，请参阅[文档](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/idf-monitor.html).
 
 输入 `Ctrl-]` 可退出监视器。
 
-想要一次性执行构建，烧写和监视，可以运行如下命令：
+想要一次性执行构建、烧写和监视，可以运行如下命令：
 
 `idf.py flash monitor`
 
@@ -92,24 +80,27 @@ ESP-IDF 中的子模块采用相对路径（[详见 .gitmodules 文件](.gitmodu
 * `idf.py app` - 仅构建应用程序。
 * `idf.py app-flash` - 仅烧写应用程序。
 
-`idf.py app-flash` 会自动判断是否有源文件发生了改变而后重新构建应用程序。
+`idf.py app-flash` 会自动判断是否有源文件发生了改变然后重新构建应用程序。
 
 （在正常的开发中，即使引导程序和分区表没有发生变化，每次都重新烧写它们并不会带来什么危害。）
 
 ## 擦除 Flash
 
-`idf.py flash` 并不会擦除 Flash 上所有的内容，但是有时候我们需要设备恢复到完全擦除的状态，尤其是分区表发生了变化或者 OTA 应用升级。要擦除整块 Flash 请运行 `idf.py erase_flash`。
+`idf.py flash` 并不会擦除 flash 上所有的内容，但是有时候我们需要设备恢复到完全擦除的状态，尤其是分区表发生了变化或者 OTA 应用升级时。要擦除整块 flash 请运行 `idf.py erase_flash`。
 
-这条命令还可以和其余命令整合在一起，`idf.py -p PORT erase_flash flash` 会擦除一切然后重新烧写新的应用程序，引导程序和分区表。
+这条命令还可以和其余命令整合在一起，`idf.py -p PORT erase_flash flash` 会擦除一切然后重新烧写新的应用程序、引导程序和分区表。
 
 # 其它参考资源
 
-* 最新版的文档：https://docs.espressif.com/projects/esp-idf/ ，该文档是由本仓库 [docs 目录](docs) 构建得到。
+* 最新版的文档：https://docs.espressif.com/projects/esp-idf/，该文档是由本仓库 [docs 目录](docs) 构建得到。
 
 * 可以前往 [esp32.com 论坛](https://esp32.com/) 提问，挖掘社区资源。
 
-* 如果你在使用中发现了错误或者需要新的功能，请先[查看 GitHub Issues](https://github.com/espressif/esp-idf/issues)，确保该问题不会被重复提交。
+* 如果你在使用中发现了错误或者需要新的功能，请先[查看 GitHub Issues](https://github.com/espressif/esp-idf/issues)，确保该问题没有重复提交。
 
 * 如果你有兴趣为 ESP-IDF 作贡献，请先阅读[贡献指南](https://docs.espressif.com/projects/esp-idf/en/latest/contribute/index.html)。
 
 
+__________
+
+<a name="fn1">1</a>: ESP-IDF 不支持 ESP8266 和 ESP8285。如有需要，请参考 [RTOS SDK](https://github.com/espressif/ESP8266_RTOS_SDK)。
