@@ -34,35 +34,39 @@ constants_pb2 = _load_source("constants_pb2", idf_path + "/components/protocomm/
 local_ctrl_pb2 = _load_source("esp_local_ctrl_pb2", idf_path + "/components/esp_local_ctrl/python/esp_local_ctrl_pb2.py")
 
 
-def get_prop_count_request():
+def get_prop_count_request(security_ctx):
     req = local_ctrl_pb2.LocalCtrlMessage()
     req.msg = local_ctrl_pb2.TypeCmdGetPropertyCount
     payload = local_ctrl_pb2.CmdGetPropertyCount()
     req.cmd_get_prop_count.MergeFrom(payload)
-    return req.SerializeToString()
+    enc_cmd = security_ctx.encrypt_data(req.SerializeToString())
+    return enc_cmd
 
 
-def get_prop_count_response(response_data):
+def get_prop_count_response(security_ctx, response_data):
+    decrypt = security_ctx.decrypt_data(tobytes(response_data))
     resp = local_ctrl_pb2.LocalCtrlMessage()
-    resp.ParseFromString(tobytes(response_data))
+    resp.ParseFromString(decrypt)
     if (resp.resp_get_prop_count.status == 0):
         return resp.resp_get_prop_count.count
     else:
         return 0
 
 
-def get_prop_vals_request(indices):
+def get_prop_vals_request(security_ctx, indices):
     req = local_ctrl_pb2.LocalCtrlMessage()
     req.msg = local_ctrl_pb2.TypeCmdGetPropertyValues
     payload = local_ctrl_pb2.CmdGetPropertyValues()
     payload.indices.extend(indices)
     req.cmd_get_prop_vals.MergeFrom(payload)
-    return req.SerializeToString()
+    enc_cmd = security_ctx.encrypt_data(req.SerializeToString())
+    return enc_cmd
 
 
-def get_prop_vals_response(response_data):
+def get_prop_vals_response(security_ctx, response_data):
+    decrypt = security_ctx.decrypt_data(tobytes(response_data))
     resp = local_ctrl_pb2.LocalCtrlMessage()
-    resp.ParseFromString(tobytes(response_data))
+    resp.ParseFromString(decrypt)
     results = []
     if (resp.resp_get_prop_vals.status == 0):
         for prop in resp.resp_get_prop_vals.props:
@@ -75,7 +79,7 @@ def get_prop_vals_response(response_data):
     return results
 
 
-def set_prop_vals_request(indices, values):
+def set_prop_vals_request(security_ctx, indices, values):
     req = local_ctrl_pb2.LocalCtrlMessage()
     req.msg = local_ctrl_pb2.TypeCmdSetPropertyValues
     payload = local_ctrl_pb2.CmdSetPropertyValues()
@@ -84,10 +88,12 @@ def set_prop_vals_request(indices, values):
         prop.index = i
         prop.value = v
     req.cmd_set_prop_vals.MergeFrom(payload)
-    return req.SerializeToString()
+    enc_cmd = security_ctx.encrypt_data(req.SerializeToString())
+    return enc_cmd
 
 
-def set_prop_vals_response(response_data):
+def set_prop_vals_response(security_ctx, response_data):
+    decrypt = security_ctx.decrypt_data(tobytes(response_data))
     resp = local_ctrl_pb2.LocalCtrlMessage()
-    resp.ParseFromString(tobytes(response_data))
+    resp.ParseFromString(decrypt)
     return (resp.resp_set_prop_vals.status == 0)
