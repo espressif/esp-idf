@@ -5,33 +5,24 @@ Over The Air Updates (OTA)
 OTA Process Overview
 --------------------
 
-The OTA update mechanism allows a device to update itself based on data received while the normal firmware is running
-(for example, over WiFi or Bluetooth.)
+The OTA update mechanism allows a device to update itself based on data received while the normal firmware is running (for example, over Wi-Fi or Bluetooth.)
 
-OTA requires configuring the :doc:`Partition Table <../../api-guides/partition-tables>` of the device with at least two "OTA app slot"
-partitions (ie `ota_0` and `ota_1`) and an "OTA Data Partition".
+OTA requires configuring the :doc:`Partition Table <../../api-guides/partition-tables>` of the device with at least two "OTA app slot" partitions (i.e. `ota_0` and `ota_1`) and an "OTA Data Partition".
 
-The OTA operation functions write a new app firmware image to whichever OTA app slot is not currently being used for
-booting. Once the image is verified, the OTA Data partition is updated to specify that this image should be used for the
-next boot.
+The OTA operation functions write a new app firmware image to whichever OTA app slot that is currently not selected for booting. Once the image is verified, the OTA Data partition is updated to specify that this image should be used for the next boot.
 
 .. _ota_data_partition:
 
 OTA Data Partition
 ------------------
 
-An OTA data partition (type ``data``, subtype ``ota``) must be included in the :doc:`Partition Table <../../api-guides/partition-tables>`
-of any project which uses the OTA functions.
+An OTA data partition (type ``data``, subtype ``ota``) must be included in the :doc:`Partition Table <../../api-guides/partition-tables>` of any project which uses the OTA functions.
 
-For factory boot settings, the OTA data partition should contain no data (all bytes erased to 0xFF). In this case the
-esp-idf software bootloader will boot the factory app if it is present in the the partition table. If no factory app is
-included in the partition table, the first available OTA slot (usually ``ota_0``) is booted.
+For factory boot settings, the OTA data partition should contain no data (all bytes erased to 0xFF). In this case the esp-idf software bootloader will boot the factory app if it is present in the the partition table. If no factory app is included in the partition table, the first available OTA slot (usually ``ota_0``) is booted.
 
 After the first OTA update, the OTA data partition is updated to specify which OTA app slot partition should be booted next.
 
-The OTA data partition is two flash sectors (0x2000 bytes) in size, to prevent problems if there is a power failure
-while it is being written. Sectors are independently erased and written with matching data, and if they disagree a
-counter field is used to determine which sector was written more recently.
+The OTA data partition is two flash sectors (0x2000 bytes) in size, to prevent problems if there is a power failure while it is being written. Sectors are independently erased and written with matching data, and if they disagree a counter field is used to determine which sector was written more recently.
 
 .. _app_rollback:
 
@@ -51,26 +42,19 @@ App OTA State
 
 States control the process of selecting a boot app:
 
-+-----------------------------+--------------------------------------------------------+
-|            States           | Restriction of selecting a boot app in bootloader      |
-+=============================+========================================================+
-| ESP_OTA_IMG_VALID           | None restriction. Will be selected.                    |
-+-----------------------------+--------------------------------------------------------+
-| ESP_OTA_IMG_UNDEFINED       | None restriction. Will be selected.                    |
-+-----------------------------+--------------------------------------------------------+
-| ESP_OTA_IMG_INVALID         | Will not be selected.                                  |
-+-----------------------------+--------------------------------------------------------+
-| ESP_OTA_IMG_ABORTED         | Will not be selected.                                  |
-+-----------------------------+--------------------------------------------------------+
-| ESP_OTA_IMG_NEW             | If :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option |
-|                             | is set it will be selected only once. In bootloader    |
-|                             | the state immediately changes to                       |
-|                             | ``ESP_OTA_IMG_PENDING_VERIFY``.                        |
-+-----------------------------+--------------------------------------------------------+
-| ESP_OTA_IMG_PENDING_VERIFY  | If :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option |
-|                             | is set it will not be selected and the state will      |
-|                             | change to ``ESP_OTA_IMG_ABORTED``.                     |
-+-----------------------------+--------------------------------------------------------+
+============================= ======================================================================
+            States            Restriction of selecting a boot app in bootloader                    
+============================= ======================================================================
+ ESP_OTA_IMG_VALID            None restriction. Will be selected.                                  
+ ESP_OTA_IMG_UNDEFINED        None restriction. Will be selected.                                  
+ ESP_OTA_IMG_INVALID          Will not be selected.                                                
+ ESP_OTA_IMG_ABORTED          Will not be selected.                                                
+ ESP_OTA_IMG_NEW              If :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is set it will
+                              be selected only once. In bootloader the state immediately changes to
+                              ``ESP_OTA_IMG_PENDING_VERIFY``.                                      
+ ESP_OTA_IMG_PENDING_VERIFY   If :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is set it will
+                              not be selected and the state will change to ``ESP_OTA_IMG_ABORTED``.
+============================= ======================================================================
 
 If :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is not enabled (by default), then the use of the following functions :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` and :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` are optional, and ``ESP_OTA_IMG_NEW`` and ``ESP_OTA_IMG_PENDING_VERIFY`` states are not used.
 
@@ -118,8 +102,7 @@ A brief description of where the states are set:
 
 * ``ESP_OTA_IMG_VALID`` state is set by :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` function.
 * ``ESP_OTA_IMG_UNDEFINED`` state is set by :cpp:func:`esp_ota_set_boot_partition` function if :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is not enabled.
-* ``ESP_OTA_IMG_NEW`` state is set by :cpp:func:`esp_ota_set_boot_partition` function if
-  :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is enabled.
+* ``ESP_OTA_IMG_NEW`` state is set by :cpp:func:`esp_ota_set_boot_partition` function if :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is enabled.
 * ``ESP_OTA_IMG_INVALID`` state is set by  :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` function.
 * ``ESP_OTA_IMG_ABORTED`` state is set if there was no confirmation of the application operability and occurs reboots (if :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is enabled).
 * ``ESP_OTA_IMG_PENDING_VERIFY`` state is set in a bootloader if :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is enabled and selected app has ``ESP_OTA_IMG_NEW`` state.
@@ -132,7 +115,6 @@ Anti-rollback
 Anti-rollback prevents rollback to application with security version lower than one programmed in eFuse of chip.
 
 This function works if set :ref:`CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK` option. In the bootloader, when selecting a bootable application, an additional security version check is added which is on the chip and in the application image. The version in the bootable firmware must be greater than or equal to the version in the chip.
-
 
 :ref:`CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK` and :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` options are used together. In this case, rollback is possible only on the security version which is equal or higher than the version in the chip.
 
@@ -220,8 +202,7 @@ The component `app_update` provides a tool :component_file:`otatool.py<app_updat
   - write to OTA partition (write_ota_partition)
   - read contents of OTA partition (read_ota_partition)
 
-The tool can either be imported and used from another Python script or invoked from shell script for users wanting to perform operation programmatically. This is facilitated by the tool's Python API
-and command-line interface, respectively.
+The tool can either be imported and used from another Python script or invoked from shell script for users wanting to perform operation programmatically. This is facilitated by the tool's Python API and command-line interface, respectively.
 
 Python API
 ^^^^^^^^^^
@@ -322,5 +303,14 @@ API Reference
 
 .. include-build-file:: inc/esp_ota_ops.inc
 
+Debugging OTA Failure
+---------------------
 
+.. figure:: ../../../_static/how-to-debug-when-OTA-fails-en.png
+    :align: center
+    :scale: 100%
+    :alt: How to Debug When OTA Fails (click to enlarge)
+    :figclass: align-center
+
+    How to Debug When OTA Fails (click to enlarge)
 
