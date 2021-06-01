@@ -500,3 +500,9 @@ config BT_NIMBLE_BLUFI_ENABLE
     default n
     help
         Set this option to enable blufi functionality.
+
+config BT_NIMBLE_USE_ESP_TIMER
+    bool "Enable Esp Timer for Nimble"
+    default y
+    help
+        Set this option to use Esp Timer which has higher priority timer instead of FreeRTOS timer
