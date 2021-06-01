@@ -1577,7 +1577,7 @@ ppRecycleAmpdu = 0x400016f4;
 ppRecycleRxPkt = 0x400016f8;
 ppResortTxAMPDU = 0x400016fc;
 ppResumeTxAMPDU = 0x40001700;
-ppRxFragmentProc = 0x40001704;
+/* ppRxFragmentProc = 0x40001704; */
 ppRxPkt = 0x40001708;
 ppRxProtoProc = 0x4000170c;
 ppSearchTxQueue = 0x40001710;
@@ -1733,7 +1733,7 @@ ieee80211_search_node = 0x40001890;
 roundup2 = 0x40001894;
 ieee80211_crypto_encap = 0x40001898;
 ieee80211_crypto_decap = 0x4000189c;
-ieee80211_decap = 0x400018a0;
+/* ieee80211_decap = 0x400018a0; */
 ieee80211_set_tx_pti = 0x400018a4;
 wifi_is_started = 0x400018a8;
 /* Data (.data, .bss, .rodata) */
