@@ -15,63 +15,39 @@
 # limitations under the License.
 
 from __future__ import print_function
-import os
-import re
-import uuid
-import subprocess
 
-from tiny_test_fw import Utility
+import os
+import subprocess
+import threading
+import traceback
+
+try:
+    import Queue
+except ImportError:
+    import queue as Queue
+
 import ttfw_idf
 from ble import lib_ble_client
+from tiny_test_fw import Utility
 
 # When running on local machine execute the following before running this script
 # > make app bootloader
 # > make print_flash_cmd | tail -n 1 > build/download.config
 
 
-@ttfw_idf.idf_example_test(env_tag="Example_WIFI_BT")
-def test_example_app_ble_central(env, extra_data):
-    """
-        Steps:
-            1. Discover Bluetooth Adapter and Power On
-    """
-
+def blecent_client_task(dut):
     interface = 'hci0'
-    adv_host_name = "BleCentTestApp"
-    adv_iface_index = 0
+    adv_host_name = 'BleCentTestApp'
     adv_type = 'peripheral'
     adv_uuid = '1811'
 
-    subprocess.check_output(['rm','-rf','/var/lib/bluetooth/*'])
-    subprocess.check_output(['hciconfig','hci0','reset'])
-    # Acquire DUT
-    dut = env.get_dut("blecent", "examples/bluetooth/nimble/blecent", dut_class=ttfw_idf.ESP32DUT)
-
-    # Get binary file
-    binary_file = os.path.join(dut.app.binary_path, "blecent.bin")
-    bin_size = os.path.getsize(binary_file)
-    ttfw_idf.log_performance("blecent_bin_size", "{}KB".format(bin_size // 1024))
-
-    # Upload binary and start testing
-    Utility.console_log("Starting blecent example test app")
-    dut.start_app()
-    dut.reset()
-
-    device_addr = ':'.join(re.findall('..', '%012x' % uuid.getnode()))
-
     # Get BLE client module
-    ble_client_obj = lib_ble_client.BLE_Bluez_Client(interface)
-    if not ble_client_obj:
-        raise RuntimeError("Get DBus-Bluez object failed !!")
+    ble_client_obj = lib_ble_client.BLE_Bluez_Client(iface=interface)
 
     # Discover Bluetooth Adapter and power on
     is_adapter_set = ble_client_obj.set_adapter()
     if not is_adapter_set:
-        raise RuntimeError("Adapter Power On failed !!")
-
-    # Write device address to dut
-    dut.expect("BLE Host Task Started", timeout=60)
-    dut.write(device_addr + "\n")
+        return
 
     '''
     Blecent application run:
@@ -81,28 +57,83 @@ def test_example_app_ble_central(env, extra_data):
         Register advertisement
         Start advertising
     '''
-    ble_client_obj.start_advertising(adv_host_name, adv_iface_index, adv_type, adv_uuid)
+    # Create Gatt Application
+    # Register GATT Application
+    ble_client_obj.register_gatt_app()
 
-    # Call disconnect to perform cleanup operations before exiting application
-    ble_client_obj.disconnect()
+    # Register Advertisement
+    # Check read/write/subscribe is received from device
+    ble_client_obj.register_adv(adv_host_name, adv_type, adv_uuid)
 
     # Check dut responses
-    dut.expect("Connection established", timeout=60)
+    dut.expect('Connection established', timeout=30)
+    dut.expect('Service discovery complete; status=0', timeout=30)
+    dut.expect('GATT procedure initiated: read;', timeout=30)
+    dut.expect('Read complete; status=0', timeout=30)
+    dut.expect('GATT procedure initiated: write;', timeout=30)
+    dut.expect('Write complete; status=0', timeout=30)
+    dut.expect('GATT procedure initiated: write;', timeout=30)
+    dut.expect('Subscribe complete; status=0', timeout=30)
+    dut.expect('received notification;', timeout=30)
 
-    dut.expect("Service discovery complete; status=0", timeout=60)
-    print("Service discovery passed\n\tService Discovery Status: 0")
 
-    dut.expect("GATT procedure initiated: read;", timeout=60)
-    dut.expect("Read complete; status=0", timeout=60)
-    print("Read passed\n\tSupportedNewAlertCategoryCharacteristic\n\tRead Status: 0")
+class BleCentThread(threading.Thread):
+    def __init__(self, dut, exceptions_queue):
+        threading.Thread.__init__(self)
+        self.dut = dut
+        self.exceptions_queue = exceptions_queue
 
-    dut.expect("GATT procedure initiated: write;", timeout=60)
-    dut.expect("Write complete; status=0", timeout=60)
-    print("Write passed\n\tAlertNotificationControlPointCharacteristic\n\tWrite Status: 0")
+    def run(self):
+        try:
+            blecent_client_task(self.dut)
+        except RuntimeError:
+            self.exceptions_queue.put(traceback.format_exc(), block=False)
 
-    dut.expect("GATT procedure initiated: write;", timeout=60)
-    dut.expect("Subscribe complete; status=0", timeout=60)
-    print("Subscribe passed\n\tClientCharacteristicConfigurationDescriptor\n\tSubscribe Status: 0")
+
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_BT')
+def test_example_app_ble_central(env, extra_data):
+    """
+        Steps:
+            1. Discover Bluetooth Adapter and Power On
+            2. Connect BLE Device
+            3. Start Notifications
+            4. Updated value is retrieved
+            5. Stop Notifications
+    """
+    # Remove cached bluetooth devices of any previous connections
+    subprocess.check_output(['rm', '-rf', '/var/lib/bluetooth/*'])
+    subprocess.check_output(['hciconfig', 'hci0', 'reset'])
+
+    # Acquire DUT
+    dut = env.get_dut('blecent', 'examples/bluetooth/nimble/blecent', dut_class=ttfw_idf.ESP32DUT)
+
+    # Get binary file
+    binary_file = os.path.join(dut.app.binary_path, 'blecent.bin')
+    bin_size = os.path.getsize(binary_file)
+    ttfw_idf.log_performance('blecent_bin_size', '{}KB'.format(bin_size // 1024))
+
+    # Upload binary and start testing
+    Utility.console_log('Starting blecent example test app')
+    dut.start_app()
+    dut.reset()
+
+    exceptions_queue = Queue.Queue()
+    # Starting a py-client in a separate thread
+    blehr_thread_obj = BleCentThread(dut, exceptions_queue)
+    blehr_thread_obj.start()
+    blehr_thread_obj.join()
+
+    exception_msg = None
+    while True:
+        try:
+            exception_msg = exceptions_queue.get(block=False)
+        except Queue.Empty:
+            break
+        else:
+            Utility.console_log('\n' + exception_msg)
+
+    if exception_msg:
+        raise Exception('Blecent thread did not run successfully')
 
 
 if __name__ == '__main__':
