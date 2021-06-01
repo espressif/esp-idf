@@ -15,89 +15,102 @@
 # limitations under the License.
 
 from __future__ import print_function
-import re
-import os
 
-import ttfw_idf
+import os
+import re
+
 import esp_prov
+import tiny_test_fw
+import ttfw_idf
 import wifi_tools
+from tiny_test_fw import Utility
 
 # Have esp_prov throw exception
 esp_prov.config_throw_except = True
 
 
-@ttfw_idf.idf_example_test(env_tag="Example_WIFI_BT")
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_BT')
 def test_examples_provisioning_softap(env, extra_data):
     # Acquire DUT
-    dut1 = env.get_dut("softap_prov", "examples/provisioning/legacy/softap_prov", dut_class=ttfw_idf.ESP32DUT)
+    dut1 = env.get_dut('softap_prov', 'examples/provisioning/legacy/softap_prov', dut_class=ttfw_idf.ESP32DUT)
 
     # Get binary file
-    binary_file = os.path.join(dut1.app.binary_path, "softap_prov.bin")
+    binary_file = os.path.join(dut1.app.binary_path, 'softap_prov.bin')
     bin_size = os.path.getsize(binary_file)
-    ttfw_idf.log_performance("softap_prov_bin_size", "{}KB".format(bin_size // 1024))
-    ttfw_idf.check_performance("softap_prov_bin_size", bin_size // 1024, dut1.TARGET)
+    ttfw_idf.log_performance('softap_prov_bin_size', '{}KB'.format(bin_size // 1024))
 
     # Upload binary and start testing
     dut1.start_app()
 
     # Parse IP address of STA
-    dut1.expect("Starting WiFi SoftAP provisioning", timeout=60)
+    dut1.expect('Starting WiFi SoftAP provisioning', timeout=60)
     [ssid, password] = dut1.expect(re.compile(r"SoftAP Provisioning started with SSID '(\S+)', Password '(\S+)'"), timeout=30)
 
     iface = wifi_tools.get_wiface_name()
     if iface is None:
-        raise RuntimeError("Failed to get Wi-Fi interface on host")
-    print("Interface name  : " + iface)
-    print("SoftAP SSID     : " + ssid)
-    print("SoftAP Password : " + password)
+        raise RuntimeError('Failed to get Wi-Fi interface on host')
+    print('Interface name  : ' + iface)
+    print('SoftAP SSID     : ' + ssid)
+    print('SoftAP Password : ' + password)
 
     try:
         ctrl = wifi_tools.wpa_cli(iface, reset_on_exit=True)
-        print("Connecting to DUT SoftAP...")
-        ip = ctrl.connect(ssid, password)
-        got_ip = dut1.expect(re.compile(r"DHCP server assigned IP to a station, IP is: (\d+.\d+.\d+.\d+)"), timeout=60)[0]
-        if ip != got_ip:
-            raise RuntimeError("SoftAP connected to another host! " + ip + "!=" + got_ip)
-        print("Connected to DUT SoftAP")
+        print('Connecting to DUT SoftAP...')
+        try:
+            ip = ctrl.connect(ssid, password)
+        except RuntimeError as err:
+            Utility.console_log('error: {}'.format(err))
+        try:
+            got_ip = dut1.expect(re.compile(r'DHCP server assigned IP to a station, IP is: (\d+.\d+.\d+.\d+)'), timeout=60)
+            Utility.console_log('got_ip: {}'.format(got_ip))
+            got_ip = got_ip[0]
+            if ip != got_ip:
+                raise RuntimeError('SoftAP connected to another host! {} != {}'.format(ip, got_ip))
+        except tiny_test_fw.DUT.ExpectTimeout:
+            # print what is happening on dut side
+            Utility.console_log('in exception tiny_test_fw.DUT.ExpectTimeout')
+            Utility.console_log(dut1.read())
+            raise
+        print('Connected to DUT SoftAP')
 
-        print("Starting Provisioning")
+        print('Starting Provisioning')
         verbose = False
-        protover = "V0.1"
+        protover = 'V0.1'
         secver = 1
-        pop = "abcd1234"
-        provmode = "softap"
-        ap_ssid = "myssid"
-        ap_password = "mypassword"
-        softap_endpoint = ip.split('.')[0] + "." + ip.split('.')[1] + "." + ip.split('.')[2] + ".1:80"
+        pop = 'abcd1234'
+        provmode = 'softap'
+        ap_ssid = 'myssid'
+        ap_password = 'mypassword'
+        softap_endpoint = '{}.{}.{}.1:80'.format(ip.split('.')[0], ip.split('.')[1], ip.split('.')[2])
 
-        print("Getting security")
+        print('Getting security')
         security = esp_prov.get_security(secver, pop, verbose)
         if security is None:
-            raise RuntimeError("Failed to get security")
+            raise RuntimeError('Failed to get security')
 
-        print("Getting transport")
+        print('Getting transport')
         transport = esp_prov.get_transport(provmode, softap_endpoint)
         if transport is None:
-            raise RuntimeError("Failed to get transport")
+            raise RuntimeError('Failed to get transport')
 
-        print("Verifying protocol version")
+        print('Verifying protocol version')
         if not esp_prov.version_match(transport, protover):
-            raise RuntimeError("Mismatch in protocol version")
+            raise RuntimeError('Mismatch in protocol version')
 
-        print("Starting Session")
+        print('Starting Session')
         if not esp_prov.establish_session(transport, security):
-            raise RuntimeError("Failed to start session")
+            raise RuntimeError('Failed to start session')
 
-        print("Sending Wifi credential to DUT")
+        print('Sending Wifi credential to DUT')
         if not esp_prov.send_wifi_config(transport, security, ap_ssid, ap_password):
-            raise RuntimeError("Failed to send Wi-Fi config")
+            raise RuntimeError('Failed to send Wi-Fi config')
 
-        print("Applying config")
+        print('Applying config')
         if not esp_prov.apply_wifi_config(transport, security):
-            raise RuntimeError("Failed to send apply config")
+            raise RuntimeError('Failed to send apply config')
 
         if not esp_prov.wait_wifi_connected(transport, security):
-            raise RuntimeError("Provisioning failed")
+            raise RuntimeError('Provisioning failed')
     finally:
         ctrl.reset()
 

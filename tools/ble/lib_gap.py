@@ -18,6 +18,7 @@
 # Register Advertisement
 
 from __future__ import print_function
+
 import sys
 
 try:
@@ -27,11 +28,10 @@ except ImportError as e:
     if 'linux' not in sys.platform:
         raise e
     print(e)
-    print("Install packages `libgirepository1.0-dev gir1.2-gtk-3.0 libcairo2-dev libdbus-1-dev libdbus-glib-1-dev` for resolving the issue")
-    print("Run `pip install -r $IDF_PATH/tools/ble/requirements.txt` for resolving the issue")
+    print('Install packages `libgirepository1.0-dev gir1.2-gtk-3.0 libcairo2-dev libdbus-1-dev libdbus-glib-1-dev` for resolving the issue')
+    print('Run `pip install -r $IDF_PATH/tools/ble/requirements.txt` for resolving the issue')
     raise
 
-ADV_OBJ = False
 
 DBUS_PROP_IFACE = 'org.freedesktop.DBus.Properties'
 LE_ADVERTISEMENT_IFACE = 'org.bluez.LEAdvertisement1'
@@ -74,10 +74,8 @@ class Advertisement(dbus.service.Object):
                          in_signature='s',
                          out_signature='a{sv}')
     def GetAll(self, interface):
-        global ADV_OBJ
         if interface != LE_ADVERTISEMENT_IFACE:
             raise InvalidArgsException()
-        ADV_OBJ = True
         return self.get_properties()[LE_ADVERTISEMENT_IFACE]
 
     @dbus.service.method(LE_ADVERTISEMENT_IFACE,
