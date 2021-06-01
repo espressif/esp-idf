@@ -294,7 +294,7 @@ menu "ESP32S3-Specific"
         int
         prompt "RTC slow memory reserved for coprocessor" if ESP32S3_ULP_COPROC_ENABLED
         default 512 if ESP32S3_ULP_COPROC_ENABLED
-        range 32 8192 if ESP32S3_ULP_COPROC_ENABLED
+        range 32 8176 if ESP32S3_ULP_COPROC_ENABLED
         default 0 if !ESP32S3_ULP_COPROC_ENABLED
         range 0 0 if !ESP32S3_ULP_COPROC_ENABLED
         help
