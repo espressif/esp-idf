@@ -71,7 +71,7 @@ Table header:
 Individual params in CSV file the following meanings:
 
 field_name
-    Name of field. The prefix `ESP_EFUSE_` will be added to the name, and this field name will be available in the code. This name will be used to access the fields. The name must be unique for all fields. If the line has an empty name, then this line is combined with the previous field. This allows you to set an arbitrary order of bits in the field, and expand the field as well (see ``MAC_FACTORY`` field in the common table).
+    Name of field. The prefix `ESP_EFUSE_` will be added to the name, and this field name will be available in the code. This name will be used to access the fields. The name must be unique for all fields. If the line has an empty name, then this line is combined with the previous field. This allows you to set an arbitrary order of bits in the field, and expand the field as well (see ``MAC_FACTORY`` field in the common table). The field_name supports structured format using `.` to show that the field belongs to another field (see ``WR_DIS`` and ``RD_DIS`` in the common table).
 
 efuse_block
     Block number. It determines where the eFuse bits will be placed for this field. Available EFUSE_BLK0..{IDF_TARGET_MAX_EFUSE_BLK}.
@@ -107,6 +107,29 @@ If a non-sequential bit order is required to describe a field, then the field de
     MAC_FACTORY_CRC,        EFUSE_BLK0,    80,    8,    CRC8 for factory MAC address
 
 This field will available in code as ESP_EFUSE_MAC_FACTORY and ESP_EFUSE_MAC_FACTORY_CRC.
+
+Structured efuse fields
+-----------------------
+
+.. code-block:: none
+
+    WR_DIS,                           EFUSE_BLK0,   0,    32,     Write protection
+    WR_DIS.RD_DIS,                    EFUSE_BLK0,   0,    1,      Write protection for RD_DIS
+    WR_DIS.FIELD_1,                   EFUSE_BLK0,   1,    1,      Write protection for FIELD_1
+    WR_DIS.FIELD_2,                   EFUSE_BLK0,   2,    4,      Write protection for FIELD_2 (includes B1 and B2)
+    WR_DIS.FIELD_2.B1,                EFUSE_BLK0,   2,    2,      Write protection for FIELD_2.B1
+    WR_DIS.FIELD_2.B2,                EFUSE_BLK0,   4,    2,      Write protection for FIELD_2.B2
+    WR_DIS.FIELD_3,                   EFUSE_BLK0,   5,    1,      Write protection for FIELD_3
+    WR_DIS.FIELD_3.ALIAS,             EFUSE_BLK0,   5,    1,      Write protection for FIELD_3 (just a alias for WR_DIS.FIELD_3)
+    WR_DIS.FIELD_4,                   EFUSE_BLK0,   7,    1,      Write protection for FIELD_4
+
+The structured eFuse field looks like ``WR_DIS.RD_DIS`` where the dot points that this field belongs to the parent field - ``WR_DIS`` and can not be out of the parent's range.
+
+It is possible to use some levels of structured fields as WR_DIS.FIELD_2.B1 and B2. These fields should not be crossed each other and should be in the range of two fields: ``WR_DIS`` and ``WR_DIS.FIELD_2``.
+
+It is possible to create aliases for fields with the same range, see ``WR_DIS.FIELD_3`` and ``WR_DIS.FIELD_3.ALIAS``.
+
+The IDF names for structured efuse fields should be unique. The ``efuse_table_gen`` tool will generate the final names where the dot will be replaced by ``_``. The names for using in IDF are ESP_EFUSE_WR_DIS, ESP_EFUSE_WR_DIS_RD_DIS, ESP_EFUSE_WR_DIS_FIELD_2_B1, etc.
 
 efuse_table_gen.py tool
 -----------------------

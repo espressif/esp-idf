@@ -1,27 +1,23 @@
-// Copyright 2017-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at",
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License
+/*
+ * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "sdkconfig.h"
 #include "esp_efuse.h"
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 47c4cec4f1affd33418ee25442586183
+// md5_digest_table 7d78e15a6be433d8520eaf462b450cdc
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
 // To show efuse_table run the command 'show_efuse_table'.
+
+static const esp_efuse_desc_t WR_DIS[] = {
+    {EFUSE_BLK0, 0, 32}, 	 // Write protection,
+};
 
 static const esp_efuse_desc_t WR_DIS_RD_DIS[] = {
     {EFUSE_BLK0, 0, 1}, 	 // Write protection for RD_DIS_KEY0 RD_DIS_KEY1 RD_DIS_KEY2 RD_DIS_KEY3 RD_DIS_KEY4 RD_DIS_KEY5 RD_DIS_SYS_DATA_PART2,
@@ -133,6 +129,10 @@ static const esp_efuse_desc_t WR_DIS_SYS_DATA_PART2[] = {
 
 static const esp_efuse_desc_t WR_DIS_USB_EXCHG_PINS[] = {
     {EFUSE_BLK0, 30, 1}, 	 // Write protection for USB_EXCHG_PINS,
+};
+
+static const esp_efuse_desc_t RD_DIS[] = {
+    {EFUSE_BLK0, 32, 7}, 	 // Read protection,
 };
 
 static const esp_efuse_desc_t RD_DIS_KEY0[] = {
@@ -472,6 +472,11 @@ static const esp_efuse_desc_t SYS_DATA_PART2[] = {
 
 
 
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS[] = {
+    &WR_DIS[0],    		// Write protection
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RD_DIS[] = {
     &WR_DIS_RD_DIS[0],    		// Write protection for RD_DIS_KEY0 RD_DIS_KEY1 RD_DIS_KEY2 RD_DIS_KEY3 RD_DIS_KEY4 RD_DIS_KEY5 RD_DIS_SYS_DATA_PART2
     NULL
@@ -609,6 +614,11 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SYS_DATA_PART2[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_USB_EXCHG_PINS[] = {
     &WR_DIS_USB_EXCHG_PINS[0],    		// Write protection for USB_EXCHG_PINS
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_RD_DIS[] = {
+    &RD_DIS[0],    		// Read protection
     NULL
 };
 
