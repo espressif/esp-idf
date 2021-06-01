@@ -54,7 +54,7 @@ begin
   if IDFZIPFileVersion <> '' then
   begin
     Url := 'https://github.com/espressif/esp-idf/releases/download/' + IDFZIPFileVersion + '/esp-idf-' + IDFZIPFileVersion + '.zip';
-    MirrorUrl := 'https://dl.espressif.com/dl/esp-idf/releases/esp-idf-' + IDFZIPFileVersion + '.zip';
+    MirrorUrl := 'https://dl.espressif.com/github_assets/espressif/esp-idf/releases/download/' + IDFZIPFileVersion + '/esp-idf-' + IDFZIPFileVersion + '.zip';
     IDFZIPFileName := ExpandConstant('{app}\releases\esp-idf-' + IDFZIPFileVersion + '.zip')
     if not FileExists(IDFZIPFileName) then
     begin

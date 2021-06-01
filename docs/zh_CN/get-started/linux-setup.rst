@@ -32,7 +32,7 @@ Linux 平台工具链的标准设置
 权限问题 /dev/ttyUSB0
 ------------------------------------------------------------
 
-使用某些 Linux 版本向 {IDF_TARGET_NAME} 烧录固件时，可能会出现 ``Failed to open port /dev/ttyUSB0`` 错误消息。此时可以将用户添加至 :ref:`Linux Dialout 组<linux-dialout-group>`。
+使用某些 Linux 版本向 ESP32 烧录固件时，可能会出现 ``Failed to open port /dev/ttyUSB0`` 错误消息。此时可以将用户添加至 :ref:`Linux Dialout 组<linux-dialout-group>`。
 
 修复 Ubuntu 16.04 损坏的 pip 
 =================================
