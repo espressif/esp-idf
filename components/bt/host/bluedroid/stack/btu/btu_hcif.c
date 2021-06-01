@@ -2106,9 +2106,12 @@ static void btu_ble_ext_adv_report_evt(UINT8 *p, UINT16 evt_len)
 
         STREAM_TO_UINT8(addr_type, p);
         STREAM_TO_BDADDR(bda, p);
+        // if it is an anonymous adv, skip address resolution
+        if(addr_type != 0xFF) {
 #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
-        btm_identity_addr_to_random_pseudo(bda, &addr_type, FALSE);
+            btm_identity_addr_to_random_pseudo(bda, &addr_type, FALSE);
 #endif
+        }
         ext_adv_report.addr_type = addr_type;
         memcpy(ext_adv_report.addr, bda, 6);
         STREAM_TO_UINT8(ext_adv_report.primary_phy, p);
