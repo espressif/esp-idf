@@ -136,6 +136,8 @@ static inline void spi_ll_slave_init(spi_dev_t *hw)
     hw->user.usr_miso_highpart = 0;
     hw->user.usr_mosi_highpart = 0;
 
+    // Configure DMA In-Link to not be terminated when transaction bit counter exceeds
+    hw->dma_conf.rx_eof_en = 0;
     hw->dma_conf.dma_seg_trans_en = 0;
 
     //Disable unneeded ints
