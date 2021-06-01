@@ -354,14 +354,15 @@ static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_
     const char *reason = NULL;
     extern int _dram_start, _dram_end, _loader_text_start, _loader_text_end;
     void *load_addr_p = (void *)load_addr;
-    void *load_end_p = (void *)load_end;
+    void *load_inclusive_end_p = (void *)load_end - 0x1;
+    void *load_exclusive_end_p = (void *)load_end;
 
     if (load_end == load_addr) {
         return true; // zero-length segments are fine
     }
     assert(load_end > load_addr); // data_len<16MB is checked in verify_segment_header() which is called before this, so this should always be true
 
-    if (esp_ptr_in_dram(load_addr_p) && esp_ptr_in_dram(load_end_p)) { /* Writing to DRAM */
+    if (esp_ptr_in_dram(load_addr_p) && esp_ptr_in_dram(load_inclusive_end_p)) { /* Writing to DRAM */
         /* Check if we're clobbering the stack */
         intptr_t sp = (intptr_t)get_sp();
         if (bootloader_util_regions_overlap(sp - STACK_LOAD_HEADROOM, SOC_ROM_STACK_START,
@@ -396,8 +397,8 @@ static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_
                 iram_load_addr = (intptr_t)esp_ptr_diram_dram_to_iram((void *)SOC_DIRAM_DRAM_LOW);
             }
 
-            if (esp_ptr_in_diram_dram(load_end_p)) {
-                iram_load_end = (intptr_t)esp_ptr_diram_dram_to_iram(load_end_p);
+            if (esp_ptr_in_diram_dram(load_inclusive_end_p)) {
+                iram_load_end = (intptr_t)esp_ptr_diram_dram_to_iram(load_exclusive_end_p);
             } else {
                 iram_load_end = (intptr_t)esp_ptr_diram_dram_to_iram((void *)SOC_DIRAM_DRAM_HIGH);
             }
@@ -409,7 +410,7 @@ static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_
             }
         }
     }
-    else if (esp_ptr_in_iram(load_addr_p) && esp_ptr_in_iram(load_end_p)) { /* Writing to IRAM */
+    else if (esp_ptr_in_iram(load_addr_p) && esp_ptr_in_iram(load_inclusive_end_p)) { /* Writing to IRAM */
         /* Check for overlap of 'loader' section of IRAM */
         if (bootloader_util_regions_overlap((intptr_t)&_loader_text_start, (intptr_t)&_loader_text_end,
                                             load_addr, load_end)) {
@@ -433,8 +434,8 @@ static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_
                 dram_load_addr = (intptr_t)esp_ptr_diram_iram_to_dram((void *)SOC_DIRAM_IRAM_LOW);
             }
 
-            if (esp_ptr_in_diram_iram(load_end_p)) {
-                dram_load_end = (intptr_t)esp_ptr_diram_iram_to_dram(load_end_p);
+            if (esp_ptr_in_diram_iram(load_inclusive_end_p)) {
+                dram_load_end = (intptr_t)esp_ptr_diram_iram_to_dram(load_exclusive_end_p);
             } else {
                 dram_load_end = (intptr_t)esp_ptr_diram_iram_to_dram((void *)SOC_DIRAM_IRAM_HIGH);
             }
@@ -446,11 +447,11 @@ static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_
             }
         }
     /* Sections entirely in RTC memory won't overlap with a vanilla bootloader but are valid load addresses, thus skipping them from the check */
-    } else if (esp_ptr_in_rtc_iram_fast(load_addr_p) && esp_ptr_in_rtc_iram_fast(load_end_p)){
+    } else if (esp_ptr_in_rtc_iram_fast(load_addr_p) && esp_ptr_in_rtc_iram_fast(load_inclusive_end_p)){
         return true;
-    } else if (esp_ptr_in_rtc_dram_fast(load_addr_p) && esp_ptr_in_rtc_dram_fast(load_end_p)){
+    } else if (esp_ptr_in_rtc_dram_fast(load_addr_p) && esp_ptr_in_rtc_dram_fast(load_inclusive_end_p)){
         return true;
-    } else if (esp_ptr_in_rtc_slow(load_addr_p) && esp_ptr_in_rtc_slow(load_end_p)) {
+    } else if (esp_ptr_in_rtc_slow(load_addr_p) && esp_ptr_in_rtc_slow(load_inclusive_end_p)) {
         return true;
     } else { /* Not a DRAM or an IRAM or RTC Fast IRAM, RTC Fast DRAM or RTC Slow address */
         reason = "bad load address range";
