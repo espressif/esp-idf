@@ -8,52 +8,11 @@
 #include "esp_err.h"
 #include "esp_event_base.h"
 #include "hal/eth_types.h"
+#include "esp_eth_spec.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * @brief Maximum Ethernet payload size
- *
- */
-#define ETH_MAX_PAYLOAD_LEN (1500)
-
-/**
- * @brief Minimum Ethernet payload size
- *
- */
-#define ETH_MIN_PAYLOAD_LEN (46)
-
-/**
- * @brief Ethernet frame header size: Dest addr(6 Bytes) + Src addr(6 Bytes) + length/type(2 Bytes)
- *
- */
-#define ETH_HEADER_LEN (14)
-
-/**
- * @brief Optional 802.1q VLAN Tag length
- *
- */
-#define ETH_VLAN_TAG_LEN (4)
-
-/**
- * @brief Jumbo frame payload size
- *
- */
-#define ETH_JUMBO_FRAME_PAYLOAD_LEN (9000)
-
-/**
- * @brief Maximum frame size (1522 Bytes)
- *
- */
-#define ETH_MAX_PACKET_SIZE (ETH_HEADER_LEN + ETH_VLAN_TAG_LEN + ETH_MAX_PAYLOAD_LEN + ETH_CRC_LEN)
-
-/**
- * @brief Minimum frame size (64 Bytes)
- *
- */
-#define ETH_MIN_PACKET_SIZE (ETH_HEADER_LEN + ETH_MIN_PAYLOAD_LEN + ETH_CRC_LEN)
 
 /**
 * @brief Ethernet driver state
@@ -67,26 +26,6 @@ typedef enum {
     ETH_STATE_DUPLEX, /*!< Duplex updated */
     ETH_STATE_PAUSE,  /*!< Pause ability updated */
 } esp_eth_state_t;
-
-/**
-* @brief Command list for ioctl API
-*
-*/
-typedef enum {
-    ETH_CMD_G_MAC_ADDR,    /*!< Get MAC address */
-    ETH_CMD_S_MAC_ADDR,    /*!< Set MAC address */
-    ETH_CMD_G_PHY_ADDR,    /*!< Get PHY address */
-    ETH_CMD_S_PHY_ADDR,    /*!< Set PHY address */
-    ETH_CMD_G_AUTONEGO,    /*!< Get PHY Auto Negotiation */
-    ETH_CMD_S_AUTONEGO,    /*!< Set PHY Auto Negotiation */
-    ETH_CMD_G_SPEED,       /*!< Get Speed */
-    ETH_CMD_S_SPEED,       /*!< Set Speed */
-    ETH_CMD_S_PROMISCUOUS, /*!< Set promiscuous mode */
-    ETH_CMD_S_FLOW_CTRL,   /*!< Set flow control */
-    ETH_CMD_G_DUPLEX_MODE, /*!< Get Duplex mode */
-    ETH_CMD_S_DUPLEX_MODE, /*!< Set Duplex mode */
-    ETH_CMD_S_PHY_LOOPBACK,/*!< Set PHY loopback */
-} esp_eth_io_cmd_t;
 
 /**
 * @brief Ethernet mediator
