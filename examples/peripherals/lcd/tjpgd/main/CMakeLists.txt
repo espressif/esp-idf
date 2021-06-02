@@ -1,5 +1,5 @@
 set(srcs "pretty_effect.c"
-    "spi_master_example_main.c"
+    "lcd_tjpgd_example_main.c"
     )
 
 # Only ESP32 has enough memory to do jpeg decoding

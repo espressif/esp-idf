@@ -555,7 +555,7 @@ Please note that the ISR is disabled during flash operation by default. To keep 
 Application Example
 -------------------
 
-The code example for displaying graphics on an ESP32-WROVER-KIT's 320x240 LCD screen can be found in the :example:`peripherals/spi_master` directory of ESP-IDF examples.
+The code example for using the SPI master half duplex mode to read/write a AT93C46D EEPROM (8-bit mode) can be found in the :example:`peripherals/spi_master/hd_eeprom` directory of ESP-IDF examples.
 
 
 API Reference - SPI Common
