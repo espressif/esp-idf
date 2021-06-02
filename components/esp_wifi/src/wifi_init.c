@@ -112,6 +112,9 @@ esp_err_t esp_wifi_deinit(void)
         return err;
     }
 
+#if CONFIG_ESP_WIFI_SLP_BEACON_LOST_OPT
+    esp_wifi_beacon_monitor_configure(false, 0, 0, 0, 0);
+#endif
 #if CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
     tcpip_adapter_clear_default_wifi_handlers();
 #endif
@@ -269,6 +272,11 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
             return result;
         }
     }
+#if CONFIG_ESP_WIFI_SLP_BEACON_LOST_OPT
+    esp_wifi_beacon_monitor_configure(true, CONFIG_ESP_WIFI_SLP_BEACON_LOST_TIMEOUT,
+            CONFIG_ESP_WIFI_SLP_BEACON_LOST_THRESHOLD, CONFIG_ESP_WIFI_SLP_PHY_ON_DELTA_EARLY_TIME,
+            CONFIG_ESP_WIFI_SLP_PHY_OFF_DELTA_TIMEOUT_TIME);
+#endif
     adc2_cal_include(); //This enables the ADC2 calibration constructor at start up.
 
     esp_wifi_config_info();
