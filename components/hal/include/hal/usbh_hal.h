@@ -495,7 +495,7 @@ static inline bool usbh_hal_port_check_if_connected(usbh_hal_context_t *hal)
  * @note This function should only be called after confirming that a device is connected to the host port
  *
  * @param hal Context of the HAL layer
- * @return usb_priv_speed_t Speed of the connected device (FS or LS only on the esp32-s2)
+ * @return usb_priv_speed_t Speed of the connected device (FS or LS only on the esp32-s2 and esp32-s3)
  */
 static inline usb_priv_speed_t usbh_hal_port_get_conn_speed(usbh_hal_context_t *hal)
 {
