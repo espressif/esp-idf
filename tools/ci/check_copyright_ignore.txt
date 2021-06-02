@@ -1333,7 +1333,6 @@ components/hal/include/hal/i2s_types.h
 components/hal/include/hal/interrupt_controller_hal.h
 components/hal/include/hal/interrupt_controller_types.h
 components/hal/include/hal/ledc_hal.h
-components/hal/include/hal/ledc_types.h
 components/hal/include/hal/mcpwm_hal.h
 components/hal/include/hal/mcpwm_types.h
 components/hal/include/hal/memprot_types.h
@@ -1370,7 +1369,6 @@ components/hal/include/hal/usb_types_private.h
 components/hal/include/hal/wdt_hal.h
 components/hal/include/hal/wdt_types.h
 components/hal/interrupt_controller_hal.c
-components/hal/ledc_hal.c
 components/hal/ledc_hal_iram.c
 components/hal/mcpwm_hal.c
 components/hal/mpu_hal.c
@@ -1928,7 +1926,6 @@ components/soc/esp32c3/include/soc/interrupt_core0_reg.h
 components/soc/esp32c3/include/soc/interrupt_reg.h
 components/soc/esp32c3/include/soc/io_mux_reg.h
 components/soc/esp32c3/include/soc/ledc_reg.h
-components/soc/esp32c3/include/soc/ledc_struct.h
 components/soc/esp32c3/include/soc/mmu.h
 components/soc/esp32c3/include/soc/nrx_reg.h
 components/soc/esp32c3/include/soc/periph_defs.h
@@ -2007,7 +2004,6 @@ components/soc/esp32h2/include/soc/interrupt_core0_reg.h
 components/soc/esp32h2/include/soc/interrupt_reg.h
 components/soc/esp32h2/include/soc/io_mux_reg.h
 components/soc/esp32h2/include/soc/ledc_reg.h
-components/soc/esp32h2/include/soc/ledc_struct.h
 components/soc/esp32h2/include/soc/mmu.h
 components/soc/esp32h2/include/soc/nrx_reg.h
 components/soc/esp32h2/include/soc/periph_defs.h
@@ -2206,7 +2202,6 @@ components/soc/esp32s3/include/soc/interrupt_core1_struct.h
 components/soc/esp32s3/include/soc/interrupt_reg.h
 components/soc/esp32s3/include/soc/interrupt_struct.h
 components/soc/esp32s3/include/soc/io_mux_reg.h
-components/soc/esp32s3/include/soc/ledc_caps.h
 components/soc/esp32s3/include/soc/ledc_reg.h
 components/soc/esp32s3/include/soc/ledc_struct.h
 components/soc/esp32s3/include/soc/mmu.h
