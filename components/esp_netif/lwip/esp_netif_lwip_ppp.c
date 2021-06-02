@@ -347,6 +347,10 @@ void esp_netif_destroy_ppp(netif_related_data_t *netif_related)
 
 esp_err_t esp_netif_ppp_set_params(esp_netif_t *netif, const esp_netif_ppp_config_t *config)
 {
+    if (netif == NULL || netif->related_data == NULL || config == NULL ||
+        ((struct lwip_peer2peer_ctx *)netif->related_data)->base.netif_type != PPP_LWIP_NETIF) {
+        return ESP_ERR_INVALID_ARG;
+    }
     struct lwip_peer2peer_ctx *obj =  (struct lwip_peer2peer_ctx *)netif->related_data;
     obj->ppp_phase_event_enabled = config->ppp_phase_event_enabled;
     obj->ppp_error_event_enabled = config->ppp_error_event_enabled;
@@ -355,6 +359,10 @@ esp_err_t esp_netif_ppp_set_params(esp_netif_t *netif, const esp_netif_ppp_confi
 
 esp_err_t esp_netif_ppp_get_params(esp_netif_t *netif, esp_netif_ppp_config_t *config)
 {
+    if (netif == NULL || netif->related_data == NULL || config == NULL ||
+        ((struct lwip_peer2peer_ctx *)netif->related_data)->base.netif_type != PPP_LWIP_NETIF) {
+        return ESP_ERR_INVALID_ARG;
+    }
     struct lwip_peer2peer_ctx *obj =  (struct lwip_peer2peer_ctx *)netif->related_data;
     config->ppp_phase_event_enabled = obj->ppp_phase_event_enabled;
     config->ppp_error_event_enabled = obj->ppp_error_event_enabled;
