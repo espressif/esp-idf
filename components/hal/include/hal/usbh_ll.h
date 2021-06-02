@@ -443,13 +443,13 @@ static inline void usbh_ll_hcfg_set_fsls_pclk_sel(usbh_dev_t *hw)
 static inline void usbh_ll_hcfg_set_defaults(usbh_dev_t *hw, usb_priv_speed_t speed)
 {
     hw->hcfg_reg.descdma = 1;   //Enable scatt/gatt
-    hw->hcfg_reg.fslssupp = 1;  //FS/LS supp only
+    hw->hcfg_reg.fslssupp = 1;  //FS/LS support only
     /*
     Indicate to the OTG core what speed the PHY clock is at
     Note: It seems like our PHY has an implicit 8 divider applied when in LS mode,
           so the values of FSLSPclkSel and FrInt have to be adjusted accordingly.
     */
-    hw->hcfg_reg.fslspclksel = (speed == USB_PRIV_SPEED_FULL) ? 1 : 2;  //esp32-s2 only supports FS or LS
+    hw->hcfg_reg.fslspclksel = (speed == USB_PRIV_SPEED_FULL) ? 1 : 2;  //PHY clock on esp32-sx for FS/LS-only
     hw->hcfg_reg.perschedena = 0;   //Disable perio sched
 }
 
@@ -465,7 +465,7 @@ static inline void usbh_ll_hfir_set_defaults(usbh_dev_t *hw, usb_priv_speed_t sp
     Note: It seems like our PHY has an implicit 8 divider applied when in LS mode,
           so the values of FSLSPclkSel and FrInt have to be adjusted accordingly.
     */
-    hfir.frint = (speed == USB_PRIV_SPEED_FULL) ? 48000 : 6000; //esp32-s2 only supports FS or LS
+    hfir.frint = (speed == USB_PRIV_SPEED_FULL) ? 48000 : 6000; //esp32-sx targets only support FS or LS
     hw->hfir_reg.val = hfir.val;
 }
 
@@ -550,7 +550,7 @@ static inline uint32_t usbh_ll_get_frame_list_base_addr(usbh_dev_t *hw)
 static inline usb_priv_speed_t usbh_ll_hprt_get_speed(usbh_dev_t *hw)
 {
     usb_priv_speed_t speed;
-    //esp32-s2 only supports FS or LS
+    //esp32-s2 and esp32-s3 only support FS or LS
     switch (hw->hprt_reg.prtspd) {
         case 1:
             speed = USB_PRIV_SPEED_FULL;

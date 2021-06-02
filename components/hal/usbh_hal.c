@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include <string.h>
+#include "sdkconfig.h"
 #include "hal/usbh_hal.h"
 #include "hal/usbh_ll.h"
 
@@ -70,7 +71,7 @@
  * - Those bits proxy their interrupt through the USBH_LL_INTR_CHAN_CHHLTD bit
  * - USBH_LL_INTR_CHAN_XCS_XACT_ERR is always unmasked
  * - When USBH_LL_INTR_CHAN_BNAINTR occurs, USBH_LL_INTR_CHAN_CHHLTD will NOT.
- * - USBH_LL_INTR_CHAN_AHBERR doesn't actually ever happen on our system )i.e., ESP32S2 and later):
+ * - USBH_LL_INTR_CHAN_AHBERR doesn't actually ever happen on our system (i.e., ESP32-S2, ESP32-S3):
  *      - If the QTD list's starting address is an invalid address (e.g., NULL), the core will attempt to fetch that
  *        address for a transfer descriptor and probably gets all zeroes. It will interpret the zero as a bad QTD and
  *        return a USBH_LL_INTR_CHAN_BNAINTR instead.
@@ -94,7 +95,11 @@ static void set_defaults(usbh_hal_context_t *hal)
     usbh_ll_internal_phy_conf(hal->wrap_dev);   //Enable and configure internal PHY
     //GAHBCFG register
     usb_ll_en_dma_mode(hal->dev);
-    usb_ll_set_hbstlen(hal->dev, 1);    //Use INCR AHB burst. MUST DO SO IN ESP32-S2 DUE TO ARBITER ERRATA.
+#ifdef CONFIG_IDF_TARGET_ESP32S2
+    usb_ll_set_hbstlen(hal->dev, 1);    //Use INCR AHB burst. See the ESP32-S2 and later chip ERRATA.
+#elif CONFIG_IDF_TARGET_ESP32S3
+    usb_ll_set_hbstlen(hal->dev, 0);    //Do not use USB burst INCR mode for the ESP32-S3, to avoid interference with other peripherals.
+#endif
     //GUSBCFG register
     usb_ll_dis_hnp_cap(hal->dev);       //Disable HNP
     usb_ll_dis_srp_cap(hal->dev);       //Disable SRP
