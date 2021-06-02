@@ -544,7 +544,7 @@ rors in current receiving data. Only used when peripheral is UHCI0..*/
 #define GDMA_INLINK_DSCR_BF1_CH0_S  0
 
 #define GDMA_IN_WIGHT_CH0_REG          (DR_REG_GDMA_BASE + 0x3C)
-/* GDMA_RX_WEIGHT_CH0 : R/W ;bitpos:[11:8] ;default: 4'h0 ; */
+/* GDMA_RX_WEIGHT_CH0 : R/W ;bitpos:[11:8] ;default: 4'hf ; */
 /*description: The weight of Rx channel 0. .*/
 #define GDMA_RX_WEIGHT_CH0    0x0000000F
 #define GDMA_RX_WEIGHT_CH0_M  ((GDMA_RX_WEIGHT_CH0_V)<<(GDMA_RX_WEIGHT_CH0_S))
@@ -563,7 +563,7 @@ y..*/
 #define GDMA_IN_PERI_SEL_CH0_REG          (DR_REG_GDMA_BASE + 0x48)
 /* GDMA_PERI_IN_SEL_CH0 : R/W ;bitpos:[5:0] ;default: 6'h3f ; */
 /*description: This register is used to select peripheral for Rx channel 0. 0:SPI2. 1: SPI3. 2:
- UHCI0. 3: I2S0. 4: I2S1. 5: I2S2. 6: LCD_CAM. 7: AES. 8: SHA. 9: ADC_DAC..*/
+ UHCI0. 3: I2S0. 4: I2S1. 5: LCD_CAM. 6: AES. 7: SHA. 8: ADC_DAC. 9: RMT..*/
 #define GDMA_PERI_IN_SEL_CH0    0x0000003F
 #define GDMA_PERI_IN_SEL_CH0_M  ((GDMA_PERI_IN_SEL_CH0_V)<<(GDMA_PERI_IN_SEL_CH0_S))
 #define GDMA_PERI_IN_SEL_CH0_V  0x3F
@@ -619,11 +619,6 @@ r has been transmitted..*/
 #define GDMA_OUT_EXT_MEM_BK_SIZE_CH0_M  ((GDMA_OUT_EXT_MEM_BK_SIZE_CH0_V)<<(GDMA_OUT_EXT_MEM_BK_SIZE_CH0_S))
 #define GDMA_OUT_EXT_MEM_BK_SIZE_CH0_V  0x3
 #define GDMA_OUT_EXT_MEM_BK_SIZE_CH0_S  13
-
-/* Memory block size value supported by TX channel */
-#define GDMA_OUT_EXT_MEM_BK_SIZE_16B (0)
-#define GDMA_OUT_EXT_MEM_BK_SIZE_32B (1)
-
 /* GDMA_OUT_CHECK_OWNER_CH0 : R/W ;bitpos:[12] ;default: 1'b0 ; */
 /*description: Set this bit to enable checking the owner attribute of the link descriptor..*/
 #define GDMA_OUT_CHECK_OWNER_CH0    (BIT(12))
@@ -1032,7 +1027,7 @@ nk descriptor..*/
 #define GDMA_OUTLINK_DSCR_BF1_CH0_S  0
 
 #define GDMA_OUT_WIGHT_CH0_REG          (DR_REG_GDMA_BASE + 0x9C)
-/* GDMA_TX_WEIGHT_CH0 : R/W ;bitpos:[11:8] ;default: 4'h0 ; */
+/* GDMA_TX_WEIGHT_CH0 : R/W ;bitpos:[11:8] ;default: 4'hf ; */
 /*description: The weight of Tx channel 0. .*/
 #define GDMA_TX_WEIGHT_CH0    0x0000000F
 #define GDMA_TX_WEIGHT_CH0_M  ((GDMA_TX_WEIGHT_CH0_V)<<(GDMA_TX_WEIGHT_CH0_S))
@@ -1051,7 +1046,8 @@ y..*/
 #define GDMA_OUT_PERI_SEL_CH0_REG          (DR_REG_GDMA_BASE + 0xA8)
 /* GDMA_PERI_OUT_SEL_CH0 : R/W ;bitpos:[5:0] ;default: 6'h3f ; */
 /*description: This register is used to select peripheral for Tx channel 0. 0:SPI2. 1: SPI3. 2:
- UHCI0. 3: I2S0. 4: I2S1. 5: I2S2. 6: LCD_CAM; 7: AES. 8: SHA. 9: ADC_DAC..*/
+ UHCI0. 3: I2S0. 4: I2S1. 5: LCD_CAM. 6: AES. 7: SHA. 8: ADC_DAC. 9: RMT.; 7: AE
+S. 8: SHA. 9: ADC_DAC..*/
 #define GDMA_PERI_OUT_SEL_CH0    0x0000003F
 #define GDMA_PERI_OUT_SEL_CH0_M  ((GDMA_PERI_OUT_SEL_CH0_V)<<(GDMA_PERI_OUT_SEL_CH0_S))
 #define GDMA_PERI_OUT_SEL_CH0_V  0x3F
@@ -1100,11 +1096,6 @@ scriptor when accessing internal SRAM. .*/
 #define GDMA_IN_EXT_MEM_BK_SIZE_CH1_M  ((GDMA_IN_EXT_MEM_BK_SIZE_CH1_V)<<(GDMA_IN_EXT_MEM_BK_SIZE_CH1_S))
 #define GDMA_IN_EXT_MEM_BK_SIZE_CH1_V  0x3
 #define GDMA_IN_EXT_MEM_BK_SIZE_CH1_S  13
-
-/* Memory block size value supported by RX channel */
-#define GDMA_IN_EXT_MEM_BK_SIZE_16B (0)
-#define GDMA_IN_EXT_MEM_BK_SIZE_32B (1)
-
 /* GDMA_IN_CHECK_OWNER_CH1 : R/W ;bitpos:[12] ;default: 1'b0 ; */
 /*description: Set this bit to enable checking the owner attribute of the link descriptor..*/
 #define GDMA_IN_CHECK_OWNER_CH1    (BIT(12))
@@ -1586,7 +1577,7 @@ rors in current receiving data. Only used when peripheral is UHCI0..*/
 #define GDMA_INLINK_DSCR_BF1_CH1_S  0
 
 #define GDMA_IN_WIGHT_CH1_REG          (DR_REG_GDMA_BASE + 0xFC)
-/* GDMA_RX_WEIGHT_CH1 : R/W ;bitpos:[11:8] ;default: 4'h0 ; */
+/* GDMA_RX_WEIGHT_CH1 : R/W ;bitpos:[11:8] ;default: 4'hf ; */
 /*description: The weight of Rx channel 1. .*/
 #define GDMA_RX_WEIGHT_CH1    0x0000000F
 #define GDMA_RX_WEIGHT_CH1_M  ((GDMA_RX_WEIGHT_CH1_V)<<(GDMA_RX_WEIGHT_CH1_S))
@@ -1605,7 +1596,7 @@ y..*/
 #define GDMA_IN_PERI_SEL_CH1_REG          (DR_REG_GDMA_BASE + 0x108)
 /* GDMA_PERI_IN_SEL_CH1 : R/W ;bitpos:[5:0] ;default: 6'h3f ; */
 /*description: This register is used to select peripheral for Rx channel 1. 0:SPI2. 1: SPI3. 2:
- UHCI0. 3: I2S0. 4: I2S1. 5: I2S2. 6: LCD_CAM. 7: AES. 8: SHA. 9: ADC_DAC..*/
+ UHCI0. 3: I2S0. 4: I2S1. 5: LCD_CAM. 6: AES. 7: SHA. 8: ADC_DAC. 9: RMT..*/
 #define GDMA_PERI_IN_SEL_CH1    0x0000003F
 #define GDMA_PERI_IN_SEL_CH1_M  ((GDMA_PERI_IN_SEL_CH1_V)<<(GDMA_PERI_IN_SEL_CH1_S))
 #define GDMA_PERI_IN_SEL_CH1_V  0x3F
@@ -2069,7 +2060,7 @@ nk descriptor..*/
 #define GDMA_OUTLINK_DSCR_BF1_CH1_S  0
 
 #define GDMA_OUT_WIGHT_CH1_REG          (DR_REG_GDMA_BASE + 0x15C)
-/* GDMA_TX_WEIGHT_CH1 : R/W ;bitpos:[11:8] ;default: 4'h0 ; */
+/* GDMA_TX_WEIGHT_CH1 : R/W ;bitpos:[11:8] ;default: 4'hf ; */
 /*description: The weight of Tx channel 1. .*/
 #define GDMA_TX_WEIGHT_CH1    0x0000000F
 #define GDMA_TX_WEIGHT_CH1_M  ((GDMA_TX_WEIGHT_CH1_V)<<(GDMA_TX_WEIGHT_CH1_S))
@@ -2088,7 +2079,8 @@ y..*/
 #define GDMA_OUT_PERI_SEL_CH1_REG          (DR_REG_GDMA_BASE + 0x168)
 /* GDMA_PERI_OUT_SEL_CH1 : R/W ;bitpos:[5:0] ;default: 6'h3f ; */
 /*description: This register is used to select peripheral for Tx channel 1. 0:SPI2. 1: SPI3. 2:
- UHCI0. 3: I2S0. 4: I2S1. 5: I2S2. 6: LCD_CAM; 7: AES. 8: SHA. 9: ADC_DAC..*/
+ UHCI0. 3: I2S0. 4: I2S1. 5: LCD_CAM. 6: AES. 7: SHA. 8: ADC_DAC. 9: RMT.; 7: AE
+S. 8: SHA. 9: ADC_DAC..*/
 #define GDMA_PERI_OUT_SEL_CH1    0x0000003F
 #define GDMA_PERI_OUT_SEL_CH1_M  ((GDMA_PERI_OUT_SEL_CH1_V)<<(GDMA_PERI_OUT_SEL_CH1_S))
 #define GDMA_PERI_OUT_SEL_CH1_V  0x3F
@@ -2618,7 +2610,7 @@ rors in current receiving data. Only used when peripheral is UHCI0..*/
 #define GDMA_INLINK_DSCR_BF1_CH2_S  0
 
 #define GDMA_IN_WIGHT_CH2_REG          (DR_REG_GDMA_BASE + 0x1BC)
-/* GDMA_RX_WEIGHT_CH2 : R/W ;bitpos:[11:8] ;default: 4'h0 ; */
+/* GDMA_RX_WEIGHT_CH2 : R/W ;bitpos:[11:8] ;default: 4'hf ; */
 /*description: The weight of Rx channel 2. .*/
 #define GDMA_RX_WEIGHT_CH2    0x0000000F
 #define GDMA_RX_WEIGHT_CH2_M  ((GDMA_RX_WEIGHT_CH2_V)<<(GDMA_RX_WEIGHT_CH2_S))
@@ -2637,7 +2629,7 @@ y..*/
 #define GDMA_IN_PERI_SEL_CH2_REG          (DR_REG_GDMA_BASE + 0x1C8)
 /* GDMA_PERI_IN_SEL_CH2 : R/W ;bitpos:[5:0] ;default: 6'h3f ; */
 /*description: This register is used to select peripheral for Rx channel 2. 0:SPI2. 1: SPI3. 2:
- UHCI0. 3: I2S0. 4: I2S1. 5: I2S2. 6: LCD_CAM. 7: AES. 8: SHA. 9: ADC_DAC..*/
+ UHCI0. 3: I2S0. 4: I2S1. 5: LCD_CAM. 6: AES. 7: SHA. 8: ADC_DAC. 9: RMT..*/
 #define GDMA_PERI_IN_SEL_CH2    0x0000003F
 #define GDMA_PERI_IN_SEL_CH2_M  ((GDMA_PERI_IN_SEL_CH2_V)<<(GDMA_PERI_IN_SEL_CH2_S))
 #define GDMA_PERI_IN_SEL_CH2_V  0x3F
@@ -3101,7 +3093,7 @@ nk descriptor..*/
 #define GDMA_OUTLINK_DSCR_BF1_CH2_S  0
 
 #define GDMA_OUT_WIGHT_CH2_REG          (DR_REG_GDMA_BASE + 0x21C)
-/* GDMA_TX_WEIGHT_CH2 : R/W ;bitpos:[11:8] ;default: 4'h0 ; */
+/* GDMA_TX_WEIGHT_CH2 : R/W ;bitpos:[11:8] ;default: 4'hf ; */
 /*description: The weight of Tx channel 2. .*/
 #define GDMA_TX_WEIGHT_CH2    0x0000000F
 #define GDMA_TX_WEIGHT_CH2_M  ((GDMA_TX_WEIGHT_CH2_V)<<(GDMA_TX_WEIGHT_CH2_S))
@@ -3120,7 +3112,8 @@ y..*/
 #define GDMA_OUT_PERI_SEL_CH2_REG          (DR_REG_GDMA_BASE + 0x228)
 /* GDMA_PERI_OUT_SEL_CH2 : R/W ;bitpos:[5:0] ;default: 6'h3f ; */
 /*description: This register is used to select peripheral for Tx channel 2. 0:SPI2. 1: SPI3. 2:
- UHCI0. 3: I2S0. 4: I2S1. 5: I2S2. 6: LCD_CAM; 7: AES. 8: SHA. 9: ADC_DAC..*/
+ UHCI0. 3: I2S0. 4: I2S1. 5: LCD_CAM. 6: AES. 7: SHA. 8: ADC_DAC. 9: RMT.; 7: AE
+S. 8: SHA. 9: ADC_DAC..*/
 #define GDMA_PERI_OUT_SEL_CH2    0x0000003F
 #define GDMA_PERI_OUT_SEL_CH2_M  ((GDMA_PERI_OUT_SEL_CH2_V)<<(GDMA_PERI_OUT_SEL_CH2_S))
 #define GDMA_PERI_OUT_SEL_CH2_V  0x3F
@@ -3650,7 +3643,7 @@ rors in current receiving data. Only used when peripheral is UHCI0..*/
 #define GDMA_INLINK_DSCR_BF1_CH3_S  0
 
 #define GDMA_IN_WIGHT_CH3_REG          (DR_REG_GDMA_BASE + 0x27C)
-/* GDMA_RX_WEIGHT_CH3 : R/W ;bitpos:[11:8] ;default: 4'h0 ; */
+/* GDMA_RX_WEIGHT_CH3 : R/W ;bitpos:[11:8] ;default: 4'hf ; */
 /*description: The weight of Rx channel 3. .*/
 #define GDMA_RX_WEIGHT_CH3    0x0000000F
 #define GDMA_RX_WEIGHT_CH3_M  ((GDMA_RX_WEIGHT_CH3_V)<<(GDMA_RX_WEIGHT_CH3_S))
@@ -3669,7 +3662,7 @@ y..*/
 #define GDMA_IN_PERI_SEL_CH3_REG          (DR_REG_GDMA_BASE + 0x288)
 /* GDMA_PERI_IN_SEL_CH3 : R/W ;bitpos:[5:0] ;default: 6'h3f ; */
 /*description: This register is used to select peripheral for Rx channel 3. 0:SPI2. 1: SPI3. 2:
- UHCI0. 3: I2S0. 4: I2S1. 5: I2S2. 6: LCD_CAM. 7: AES. 8: SHA. 9: ADC_DAC..*/
+ UHCI0. 3: I2S0. 4: I2S1. 5: LCD_CAM. 6: AES. 7: SHA. 8: ADC_DAC. 9: RMT..*/
 #define GDMA_PERI_IN_SEL_CH3    0x0000003F
 #define GDMA_PERI_IN_SEL_CH3_M  ((GDMA_PERI_IN_SEL_CH3_V)<<(GDMA_PERI_IN_SEL_CH3_S))
 #define GDMA_PERI_IN_SEL_CH3_V  0x3F
@@ -4133,7 +4126,7 @@ nk descriptor..*/
 #define GDMA_OUTLINK_DSCR_BF1_CH3_S  0
 
 #define GDMA_OUT_WIGHT_CH3_REG          (DR_REG_GDMA_BASE + 0x2DC)
-/* GDMA_TX_WEIGHT_CH3 : R/W ;bitpos:[11:8] ;default: 4'h0 ; */
+/* GDMA_TX_WEIGHT_CH3 : R/W ;bitpos:[11:8] ;default: 4'hf ; */
 /*description: The weight of Tx channel 3. .*/
 #define GDMA_TX_WEIGHT_CH3    0x0000000F
 #define GDMA_TX_WEIGHT_CH3_M  ((GDMA_TX_WEIGHT_CH3_V)<<(GDMA_TX_WEIGHT_CH3_S))
@@ -4152,7 +4145,8 @@ y..*/
 #define GDMA_OUT_PERI_SEL_CH3_REG          (DR_REG_GDMA_BASE + 0x2E8)
 /* GDMA_PERI_OUT_SEL_CH3 : R/W ;bitpos:[5:0] ;default: 6'h3f ; */
 /*description: This register is used to select peripheral for Tx channel 3. 0:SPI2. 1: SPI3. 2:
- UHCI0. 3: I2S0. 4: I2S1. 5: I2S2. 6: LCD_CAM; 7: AES. 8: SHA. 9: ADC_DAC..*/
+ UHCI0. 3: I2S0. 4: I2S1. 5: LCD_CAM. 6: AES. 7: SHA. 8: ADC_DAC. 9: RMT.; 7: AE
+S. 8: SHA. 9: ADC_DAC..*/
 #define GDMA_PERI_OUT_SEL_CH3    0x0000003F
 #define GDMA_PERI_OUT_SEL_CH3_M  ((GDMA_PERI_OUT_SEL_CH3_V)<<(GDMA_PERI_OUT_SEL_CH3_S))
 #define GDMA_PERI_OUT_SEL_CH3_V  0x3F
@@ -4682,7 +4676,7 @@ rors in current receiving data. Only used when peripheral is UHCI0..*/
 #define GDMA_INLINK_DSCR_BF1_CH4_S  0
 
 #define GDMA_IN_WIGHT_CH4_REG          (DR_REG_GDMA_BASE + 0x33C)
-/* GDMA_RX_WEIGHT_CH4 : R/W ;bitpos:[11:8] ;default: 4'h0 ; */
+/* GDMA_RX_WEIGHT_CH4 : R/W ;bitpos:[11:8] ;default: 4'hf ; */
 /*description: The weight of Rx channel 4. .*/
 #define GDMA_RX_WEIGHT_CH4    0x0000000F
 #define GDMA_RX_WEIGHT_CH4_M  ((GDMA_RX_WEIGHT_CH4_V)<<(GDMA_RX_WEIGHT_CH4_S))
@@ -4701,7 +4695,7 @@ y..*/
 #define GDMA_IN_PERI_SEL_CH4_REG          (DR_REG_GDMA_BASE + 0x348)
 /* GDMA_PERI_IN_SEL_CH4 : R/W ;bitpos:[5:0] ;default: 6'h3f ; */
 /*description: This register is used to select peripheral for Rx channel 5. 0:SPI2. 1: SPI3. 2:
- UHCI0. 3: I2S0. 4: I2S1. 5: I2S2. 6: LCD_CAM. 7: AES. 8: SHA. 9: ADC_DAC..*/
+ UHCI0. 3: I2S0. 4: I2S1. 5: LCD_CAM. 6: AES. 7: SHA. 8: ADC_DAC. 9: RMT..*/
 #define GDMA_PERI_IN_SEL_CH4    0x0000003F
 #define GDMA_PERI_IN_SEL_CH4_M  ((GDMA_PERI_IN_SEL_CH4_V)<<(GDMA_PERI_IN_SEL_CH4_S))
 #define GDMA_PERI_IN_SEL_CH4_V  0x3F
@@ -5165,7 +5159,7 @@ nk descriptor..*/
 #define GDMA_OUTLINK_DSCR_BF1_CH4_S  0
 
 #define GDMA_OUT_WIGHT_CH4_REG          (DR_REG_GDMA_BASE + 0x39C)
-/* GDMA_TX_WEIGHT_CH4 : R/W ;bitpos:[11:8] ;default: 4'h0 ; */
+/* GDMA_TX_WEIGHT_CH4 : R/W ;bitpos:[11:8] ;default: 4'hf ; */
 /*description: The weight of Tx channel 4. .*/
 #define GDMA_TX_WEIGHT_CH4    0x0000000F
 #define GDMA_TX_WEIGHT_CH4_M  ((GDMA_TX_WEIGHT_CH4_V)<<(GDMA_TX_WEIGHT_CH4_S))
@@ -5184,7 +5178,8 @@ y..*/
 #define GDMA_OUT_PERI_SEL_CH4_REG          (DR_REG_GDMA_BASE + 0x3A8)
 /* GDMA_PERI_OUT_SEL_CH4 : R/W ;bitpos:[5:0] ;default: 6'h3f ; */
 /*description: This register is used to select peripheral for Tx channel 4. 0:SPI2. 1: SPI3. 2:
- UHCI0. 3: I2S0. 4: I2S1. 5: I2S2. 6: LCD_CAM; 7: AES. 8: SHA. 9: ADC_DAC..*/
+ UHCI0. 3: I2S0. 4: I2S1. 5: LCD_CAM. 6: AES. 7: SHA. 8: ADC_DAC. 9: RMT.; 7: AE
+S. 8: SHA. 9: ADC_DAC..*/
 #define GDMA_PERI_OUT_SEL_CH4    0x0000003F
 #define GDMA_PERI_OUT_SEL_CH4_M  ((GDMA_PERI_OUT_SEL_CH4_V)<<(GDMA_PERI_OUT_SEL_CH4_S))
 #define GDMA_PERI_OUT_SEL_CH4_V  0x3F
@@ -5374,7 +5369,8 @@ ing external RAM..*/
 #define GDMA_EXTMEM_REJECT_CHANNEL_NUM_V  0xF
 #define GDMA_EXTMEM_REJECT_CHANNEL_NUM_S  2
 /* GDMA_EXTMEM_REJECT_ATTR : RO ;bitpos:[1:0] ;default: 2'b0 ; */
-/*description: The reject operation. Bit 0 is 1 indicate write data.*/
+/*description: The reject accessing. Bit 0: if this bit is 1, the rejected accessing is READ. B
+it 1: if this bit is 1, the rejected accessing is WRITE..*/
 #define GDMA_EXTMEM_REJECT_ATTR    0x00000003
 #define GDMA_EXTMEM_REJECT_ATTR_M  ((GDMA_EXTMEM_REJECT_ATTR_V)<<(GDMA_EXTMEM_REJECT_ATTR_S))
 #define GDMA_EXTMEM_REJECT_ATTR_V  0x3
@@ -5414,7 +5410,7 @@ d by permission control..*/
 #define GDMA_EXTMEM_REJECT_INT_CLR_S  0
 
 #define GDMA_DATE_REG          (DR_REG_GDMA_BASE + 0x40C)
-/* GDMA_DATE : R/W ;bitpos:[31:0] ;default: 32'h2101080 ; */
+/* GDMA_DATE : R/W ;bitpos:[31:0] ;default: 32'h2101180 ; */
 /*description: register version..*/
 #define GDMA_DATE    0xFFFFFFFF
 #define GDMA_DATE_M  ((GDMA_DATE_V)<<(GDMA_DATE_S))

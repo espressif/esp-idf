@@ -59,14 +59,6 @@ typedef volatile struct {
         };
         uint32_t val;
     } cpu_per_conf;
-    uint32_t jtag_ctrl_0;
-    uint32_t jtag_ctrl_1;
-    uint32_t jtag_ctrl_2;
-    uint32_t jtag_ctrl_3;
-    uint32_t jtag_ctrl_4;
-    uint32_t jtag_ctrl_5;
-    uint32_t jtag_ctrl_6;
-    uint32_t jtag_ctrl_7;
     union {
         struct {
             uint32_t lslp_mem_pd_mask              :    1;
@@ -428,6 +420,14 @@ typedef volatile struct {
         };
         uint32_t val;
     } comb_pvt_err_hvt_site3;
+    uint32_t reserved_a4;
+    uint32_t reserved_a8;
+    uint32_t reserved_ac;
+    uint32_t reserved_b0;
+    uint32_t reserved_b4;
+    uint32_t reserved_b8;
+    uint32_t reserved_bc;
+    uint32_t reserved_c0;
     uint32_t reserved_c4;
     uint32_t reserved_c8;
     uint32_t reserved_cc;

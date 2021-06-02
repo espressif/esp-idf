@@ -45,19 +45,6 @@ mainmenu "Espressif IoT Development Framework Configuration"
         default "y" if IDF_TARGET="esp32s3"
         select IDF_TARGET_ARCH_XTENSA
 
-    choice IDF_TARGET_ESP32S3_BETA_VERSION
-        prompt "ESP32-S3 beta version"
-        depends on IDF_TARGET_ESP32S3
-        default IDF_TARGET_ESP32S3_BETA_VERSION_3
-        help
-            Currently ESP32-S3 has several beta versions for internal use only.
-            Select the one that matches your chip model.
-
-        config IDF_TARGET_ESP32S3_BETA_VERSION_3
-            bool
-            prompt "ESP32-S3 beta3"
-    endchoice
-
     config IDF_TARGET_ESP32C3
         bool
         default "y" if IDF_TARGET="esp32c3"
@@ -73,7 +60,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
         default 0x0000 if IDF_TARGET_ESP32
         default 0x0002 if IDF_TARGET_ESP32S2
         default 0x0005 if IDF_TARGET_ESP32C3
-        default 0x0006 if IDF_TARGET_ESP32S3
+        default 0x0009 if IDF_TARGET_ESP32S3
         default 0xFFFF
 
     menu "SDK tool configuration"

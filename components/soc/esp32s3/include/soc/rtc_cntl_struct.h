@@ -13,9 +13,12 @@
 // limitations under the License.
 #ifndef _SOC_RTC_CNTL_STRUCT_H_
 #define _SOC_RTC_CNTL_STRUCT_H_
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+#include "soc.h"
 
 typedef volatile struct {
     union {
@@ -149,8 +152,8 @@ typedef volatile struct {
             uint32_t glitch_rst_en:          1;
             uint32_t reserved21:             1;                      /*PLLA force power down*/
             uint32_t sar_i2c_pu:             1;                      /*PLLA force power up*/
-            uint32_t plla_force_pd:          1;                      /*PLLA force power down*/
-            uint32_t plla_force_pu:          1;                      /*PLLA force power up*/
+            uint32_t analog_top_iso_sleep:   1;                      /*PLLA force power down*/
+            uint32_t analog_top_iso_monitor: 1;                      /*PLLA force power up*/
             uint32_t bbpll_cal_slp_start:    1;                      /*start BBPLL calibration during sleep*/
             uint32_t pvtmon_pu:              1;                      /*1: PVTMON power up*/
             uint32_t txrf_i2c_pu:            1;                      /*1: TXRF_I2C power up*/
@@ -358,24 +361,27 @@ typedef volatile struct {
     } sdio_act_conf;
     union {
         struct {
-            uint32_t reserved0:           3;
-            uint32_t ck8m_div_sel_vld:    1;                         /*used to sync reg_ck8m_div_sel bus. Clear vld before set reg_ck8m_div_sel*/
-            uint32_t ck8m_div:            2;                         /*CK8M_D256_OUT divider. 00: div128*/
-            uint32_t enb_ck8m:            1;                         /*disable CK8M and CK8M_D256_OUT*/
-            uint32_t enb_ck8m_div:        1;                         /*1: CK8M_D256_OUT is actually CK8M*/
-            uint32_t dig_xtal32k_en:      1;                         /*enable CK_XTAL_32K for digital core (no relationship with RTC core)*/
-            uint32_t dig_clk8m_d256_en:   1;                         /*enable CK8M_D256_OUT for digital core (no relationship with RTC core)*/
-            uint32_t dig_clk8m_en:        1;                         /*enable CK8M for digital core (no relationship with RTC core)*/
-            uint32_t reserved11:          1;
-            uint32_t ck8m_div_sel:        3;                         /*divider = reg_ck8m_div_sel + 1*/
-            uint32_t xtal_force_nogating: 1;                         /*XTAL force no gating during sleep*/
-            uint32_t ck8m_force_nogating: 1;                         /*CK8M force no gating during sleep*/
-            uint32_t ck8m_dfreq:          8;                         /*CK8M_DFREQ*/
-            uint32_t ck8m_force_pd:       1;                         /*CK8M force power down*/
-            uint32_t ck8m_force_pu:       1;                         /*CK8M force power up*/
-            uint32_t reserved27:          2;
-            uint32_t fast_clk_rtc_sel:    1;                         /*fast_clk_rtc sel. 0: XTAL div 4*/
-            uint32_t ana_clk_rtc_sel:     2;
+            uint32_t reserved0:                  1;
+            uint32_t efuse_clk_force_gating:     1;
+            uint32_t efuse_clk_force_nogating:   1;
+            uint32_t ck8m_div_sel_vld:           1;                  /*used to sync reg_ck8m_div_sel bus. Clear vld before set reg_ck8m_div_sel*/
+            uint32_t ck8m_div:                   2;                  /*CK8M_D256_OUT divider. 00: div128*/
+            uint32_t enb_ck8m:                   1;                  /*disable CK8M and CK8M_D256_OUT*/
+            uint32_t enb_ck8m_div:               1;                  /*1: CK8M_D256_OUT is actually CK8M*/
+            uint32_t dig_xtal32k_en:             1;                  /*enable CK_XTAL_32K for digital core (no relationship with RTC core)*/
+            uint32_t dig_clk8m_d256_en:          1;                  /*enable CK8M_D256_OUT for digital core (no relationship with RTC core)*/
+            uint32_t dig_clk8m_en:               1;                  /*enable CK8M for digital core (no relationship with RTC core)*/
+            uint32_t reserved11:                 1;
+            uint32_t ck8m_div_sel:               3;                  /*divider = reg_ck8m_div_sel + 1*/
+            uint32_t xtal_force_nogating:        1;                  /*XTAL force no gating during sleep*/
+            uint32_t ck8m_force_nogating:        1;                  /*CK8M force no gating during sleep*/
+            uint32_t ck8m_dfreq:                 8;                  /*CK8M_DFREQ*/
+            uint32_t ck8m_force_pd:              1;                  /*CK8M force power down*/
+            uint32_t ck8m_force_pu:              1;                  /*CK8M force power up*/
+            uint32_t xtal_global_force_gating:   1;
+            uint32_t xtal_global_force_nogating: 1;
+            uint32_t fast_clk_rtc_sel:           1;                  /*fast_clk_rtc sel. 0: XTAL div 4*/
+            uint32_t ana_clk_rtc_sel:            2;
         };
         uint32_t val;
     } clk_conf;
@@ -465,6 +471,16 @@ typedef volatile struct {
         };
         uint32_t val;
     } rtc_pwc;
+    union {
+        struct {
+            uint32_t rtculator_drv_b_monitor       :    6;
+            uint32_t rtculator_drv_b_slp           :    6;
+            uint32_t dg_vdd_drv_b_slp              :    8;
+            uint32_t dg_vdd_drv_b_monitor          :    8;
+            uint32_t reserved28                    :    4;
+        };
+        uint32_t val;
+    } regulator_drv_ctrl;
     union {
         struct {
             uint32_t reserved0:         3;
@@ -822,7 +838,9 @@ typedef volatile struct {
             uint32_t usb_tx_en_override:      1;
             uint32_t usb_reset_disable:       1;
             uint32_t io_mux_reset_disable:    1;
-            uint32_t reserved19:             13;
+            uint32_t sw_usb_phy_sel:          1;
+            uint32_t sw_hw_usb_phy_sel:       1;
+            uint32_t reserved21:             11;
         };
         uint32_t val;
     } usb_conf;
@@ -918,26 +936,114 @@ typedef volatile struct {
     } int_ena_w1tc;
     union {
         struct {
-            uint32_t reserved0:            18;
-            uint32_t retention_clk_sel:     1;
-            uint32_t retention_done_wait:   3;
-            uint32_t retention_clkoff_wait: 4;
-            uint32_t retention_en:          1;
-            uint32_t retention_wait:        5;                       /*wait cycles for rention operation*/
+            uint32_t reserved0                     :    10;
+            uint32_t retention_tag_mode            :    4;
+            uint32_t retention_target              :    2;
+            uint32_t retention_clk_sel             :    1;
+            uint32_t retention_done_wait           :    3;
+            uint32_t retention_clkoff_wait         :    4;
+            uint32_t retention_en                  :    1;
+            uint32_t retention_wait                :    7;  /*wait cycles for rention operation*/
         };
         uint32_t val;
     } retention_ctrl;
     union {
         struct {
-            uint32_t rtc_fib_sel: 3;                                 /*select use analog fib signal*/
-            uint32_t reserved3:  29;
+            uint32_t reserved0                     :    26;
+            uint32_t power_glitch_dsense           :    2;
+            uint32_t power_glitch_force_pd         :    1;
+            uint32_t power_glitch_force_pu         :    1;
+            uint32_t power_glitch_efuse_sel        :    1;  /*select use analog fib signal*/
+            uint32_t power_glitch_en               :    1;
+        };
+        uint32_t val;
+    } pg_ctrl;
+    union {
+        struct {
+            uint32_t rtc_fib_sel                   :    3;
+            uint32_t reserved3                     :    29;
         };
         uint32_t val;
     } fib_sel;
     union {
         struct {
-            uint32_t date:      28;
-            uint32_t reserved28: 4;
+            uint32_t reserved0                     :    2;
+            uint32_t touch_pad9_dac                :    3;
+            uint32_t touch_pad8_dac                :    3;
+            uint32_t touch_pad7_dac                :    3;
+            uint32_t touch_pad6_dac                :    3;
+            uint32_t touch_pad5_dac                :    3;
+            uint32_t touch_pad4_dac                :    3;
+            uint32_t touch_pad3_dac                :    3;
+            uint32_t touch_pad2_dac                :    3;
+            uint32_t touch_pad1_dac                :    3;
+            uint32_t touch_pad0_dac                :    3;
+        };
+        uint32_t val;
+    } touch_dac;
+    union {
+        struct {
+            uint32_t reserved0                     :    17;
+            uint32_t touch_pad14_dac               :    3;
+            uint32_t touch_pad13_dac               :    3;
+            uint32_t touch_pad12_dac               :    3;
+            uint32_t touch_pad11_dac               :    3;
+            uint32_t touch_pad10_dac               :    3;
+        };
+        uint32_t val;
+    } touch_dac1;
+    union {
+        struct {
+            uint32_t reserved0                     :    31;
+            uint32_t disable_rtc_cpu               :    1;
+        };
+        uint32_t val;
+    } cocpu_disable;
+    uint32_t reserved_158;
+    uint32_t reserved_15c;
+    uint32_t reserved_160;
+    uint32_t reserved_164;
+    uint32_t reserved_168;
+    uint32_t reserved_16c;
+    uint32_t reserved_170;
+    uint32_t reserved_174;
+    uint32_t reserved_178;
+    uint32_t reserved_17c;
+    uint32_t reserved_180;
+    uint32_t reserved_184;
+    uint32_t reserved_188;
+    uint32_t reserved_18c;
+    uint32_t reserved_190;
+    uint32_t reserved_194;
+    uint32_t reserved_198;
+    uint32_t reserved_19c;
+    uint32_t reserved_1a0;
+    uint32_t reserved_1a4;
+    uint32_t reserved_1a8;
+    uint32_t reserved_1ac;
+    uint32_t reserved_1b0;
+    uint32_t reserved_1b4;
+    uint32_t reserved_1b8;
+    uint32_t reserved_1bc;
+    uint32_t reserved_1c0;
+    uint32_t reserved_1c4;
+    uint32_t reserved_1c8;
+    uint32_t reserved_1cc;
+    uint32_t reserved_1d0;
+    uint32_t reserved_1d4;
+    uint32_t reserved_1d8;
+    uint32_t reserved_1dc;
+    uint32_t reserved_1e0;
+    uint32_t reserved_1e4;
+    uint32_t reserved_1e8;
+    uint32_t reserved_1ec;
+    uint32_t reserved_1f0;
+    uint32_t reserved_1f4;
+    uint32_t reserved_1f8;
+    union {
+        struct {
+            uint32_t date                          :    28;
+            uint32_t reserved28                    :    4;
         };
         uint32_t val;
     } date;

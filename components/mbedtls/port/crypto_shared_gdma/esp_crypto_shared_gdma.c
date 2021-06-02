@@ -67,8 +67,8 @@ static void esp_crypto_shared_dma_init_extmem(void)
     /* An L2 FIFO bigger than 40 bytes is need when accessing external ram */
     gdma_ll_tx_extend_fifo_size_to(&GDMA, tx_ch_id, 40);
     gdma_ll_rx_extend_l2_fifo_size_to(&GDMA, rx_ch_id, 40);
-    gdma_ll_tx_set_block_size_psram(&GDMA, tx_ch_id, GDMA_OUT_EXT_MEM_BK_SIZE_16B);
-    gdma_ll_rx_set_block_size_psram(&GDMA, rx_ch_id, GDMA_OUT_EXT_MEM_BK_SIZE_16B);
+    gdma_ll_tx_set_block_size_psram(&GDMA, tx_ch_id, GDMA_LL_OUT_EXT_MEM_BK_SIZE_16B);
+    gdma_ll_rx_set_block_size_psram(&GDMA, rx_ch_id, GDMA_LL_OUT_EXT_MEM_BK_SIZE_16B);
 }
 #endif //SOC_GDMA_SUPPORT_EXTMEM
 
