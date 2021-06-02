@@ -332,4 +332,45 @@ menu "Wi-Fi"
         help
             WiFi module can be compiled without SoftAP to save code size.
 
+    config ESP_WIFI_SLP_BEACON_LOST_OPT
+        bool "Wifi sleep optimize when beacon lost"
+        help
+            Enable wifi sleep optimization when beacon loss occurs and immediately enter
+            sleep mode when the WiFi module detects beacon loss.
+
+    config ESP_WIFI_SLP_BEACON_LOST_TIMEOUT
+        int "Beacon loss timeout"
+        range 5 100
+        default 10
+        depends on ESP_WIFI_SLP_BEACON_LOST_OPT
+        help
+            Timeout time for close rf phy when beacon loss occurs, Unit: 1024 microsecond.
+
+    config ESP_WIFI_SLP_BEACON_LOST_THRESHOLD
+        int "Maximum number of consecutive lost beacons allowed"
+        range 0 8
+        default 3
+        depends on ESP_WIFI_SLP_BEACON_LOST_OPT
+        help
+            Maximum number of consecutive lost beacons allowed, WiFi keeps Rx state when
+            the number of consecutive beacons lost is greater than the given threshold.
+
+    config ESP_WIFI_SLP_PHY_ON_DELTA_EARLY_TIME
+        int "Delta early time for RF PHY on"
+        range 0 100
+        default 2
+        depends on ESP_WIFI_SLP_BEACON_LOST_OPT
+        help
+            Delta early time for rf phy on, When the beacon is lost, the next rf phy on will
+            be earlier the time specified by the configuration item, Unit: 32 microsecond.
+
+    config ESP_WIFI_SLP_PHY_OFF_DELTA_TIMEOUT_TIME
+        int "Delta timeout time for RF PHY off"
+        range 0 8
+        default 2
+        depends on ESP_WIFI_SLP_BEACON_LOST_OPT
+        help
+            Delta timeout time for rf phy off, When the beacon is lost, the next rf phy off will
+            be delayed for the time specified by the configuration item. Unit: 1024 microsecond.
+
 endmenu  # Wi-Fi
