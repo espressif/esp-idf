@@ -26,6 +26,22 @@ extern "C" {
 #endif
 
 #define LEDC_LL_GET_HW() &LEDC
+#define LEDC_LL_FRACTIONAL_BITS    (8)
+#define LEDC_LL_FRACTIONAL_MAX     ((1 << LEDC_LL_FRACTIONAL_BITS) - 1)
+#define LEDC_LL_GLOBAL_CLOCKS { \
+                                LEDC_USE_APB_CLK, \
+                                LEDC_USE_XTAL_CLK, \
+                                LEDC_USE_RTC8M_CLK, \
+                              }
+#define LEDC_LL_TIMER_SPECIFIC_CLOCKS \
+                            {\
+                                { \
+                                    .clk = LEDC_REF_TICK, \
+                                    .freq = LEDC_REF_CLK_HZ, \
+                                } \
+                            }
+
+#define LEDC_LL_IS_TIMER_SPECIFIC_CLOCK(SPEED, CLK) ((CLK) == LEDC_USE_REF_TICK)
 
 /**
  * @brief Set LEDC low speed timer clock
