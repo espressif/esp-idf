@@ -25,7 +25,7 @@ try:
 except ImportError:
     import contextlib
 
-    @contextlib.contextmanager
+    @contextlib.contextmanager  # type: ignore
     def redirect_stdout(target):
         original = sys.stdout
         sys.stdout = target
@@ -72,7 +72,7 @@ class TestUsage(unittest.TestCase):
             idf_tools.main(['list'])
         output = output_stream.getvalue()
 
-        xtensa_esp32_elf_version = 'esp-2020r3-8.4.0'
+        xtensa_esp32_elf_version = 'esp-2021r1-8.4.0'
         esp32ulp_version = '2.28.51-esp-20191205'
 
         self.assertIn('* xtensa-esp32-elf:', output)
