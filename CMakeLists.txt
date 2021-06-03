@@ -74,6 +74,10 @@ if(CONFIG_COMPILER_DISABLE_GCC8_WARNINGS)
                                 "-Wno-int-in-bool-context")
 endif()
 
+if(CONFIG_COMPILER_WARN_WRITE_STRINGS)
+    list(APPEND compile_options "-Wwrite-strings")
+endif()
+
 if(CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE)
     list(APPEND compile_definitions "-DNDEBUG")
 endif()
