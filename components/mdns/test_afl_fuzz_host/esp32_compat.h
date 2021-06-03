@@ -63,10 +63,10 @@
 
 #define pdMS_TO_TICKS(a) a
 #define portTICK_RATE_MS 10
-#define xSemaphoreTake(s,d)
 #define xTaskDelete(a)
-#define vTaskDelete(a)             free(a)
+#define vTaskDelete(a)              free(a)
 #define xSemaphoreGive(s)
+#define xSemaphoreTake(s,d)         true
 #define xQueueCreateMutex(s)
 #define _mdns_pcb_init(a,b)         true
 #define _mdns_pcb_deinit(a,b)       true

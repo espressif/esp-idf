@@ -138,6 +138,54 @@ static void query_mdns_service(const char * service_name, const char * proto)
     mdns_query_results_free(results);
 }
 
+static bool check_and_print_result(mdns_search_once_t *search)
+{
+    // Check if any result is available
+    mdns_result_t * result = NULL;
+    if (!mdns_query_async_get_results(search, 0, &result)) {
+        return false;
+    }
+
+    if (!result) {   // search timeout, but no result
+        return true;
+    }
+
+    // If yes, print the result
+    mdns_ip_addr_t * a = result->addr;
+    while (a) {
+        if(a->addr.type == ESP_IPADDR_TYPE_V6){
+            printf("  AAAA: " IPV6STR "\n", IPV62STR(a->addr.u_addr.ip6));
+        } else {
+            printf("  A   : " IPSTR "\n", IP2STR(&(a->addr.u_addr.ip4)));
+        }
+        a = a->next;
+    }
+    // and free the result
+    mdns_query_results_free(result);
+    return true;
+}
+
+static void query_mdns_hosts_async(const char * host_name)
+{
+    ESP_LOGI(TAG, "Query both A and AAA: %s.local", host_name);
+
+    mdns_search_once_t *s_a = mdns_query_async_new(host_name, NULL, NULL, MDNS_TYPE_A, 1000, 1);
+    mdns_query_async_delete(s_a);
+    mdns_search_once_t *s_aaaa = mdns_query_async_new(host_name, NULL, NULL, MDNS_TYPE_AAAA, 1000, 1);
+    while (s_a || s_aaaa) {
+        if (s_a && check_and_print_result(s_a)) {
+            ESP_LOGI(TAG, "Query A %s.local finished", host_name);
+            mdns_query_async_delete(s_a);
+            s_a = NULL;
+        }
+        if (s_aaaa && check_and_print_result(s_aaaa)) {
+            ESP_LOGI(TAG, "Query AAAA %s.local finished", host_name);
+            mdns_query_async_delete(s_aaaa);
+            s_aaaa = NULL;
+        }
+    }
+}
+
 static void query_mdns_host(const char * host_name)
 {
     ESP_LOGI(TAG, "Query A: %s.local", host_name);
@@ -174,6 +222,7 @@ static void check_button(void)
     static bool old_level = true;
     bool new_level = gpio_get_level(EXAMPLE_BUTTON_GPIO);
     if (!new_level && old_level) {
+        query_mdns_hosts_async("esp32-mdns");
         query_mdns_host("esp32");
         query_mdns_service("_arduino", "_tcp");
         query_mdns_service("_http", "_tcp");
