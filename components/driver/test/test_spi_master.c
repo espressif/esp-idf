@@ -958,7 +958,6 @@ TEST_CASE("SPI master variable dummy test", "[spi]")
     master_free_device_bus(spi);
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 /**
  * This test is to check when the first transaction of the HD master is to send data without receiving data via DMA,
  * then if the master could receive data correctly.
@@ -974,7 +973,7 @@ TEST_CASE("SPI master variable dummy test", "[spi]")
 TEST_CASE("SPI master hd dma TX without RX test", "[spi]")
 {
     spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
-    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &bus_cfg, TEST_SPI_HOST));
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &bus_cfg, SPI_DMA_CH_AUTO));
 
     spi_device_handle_t spi;
     spi_device_interface_config_t dev_cfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
@@ -983,9 +982,7 @@ TEST_CASE("SPI master hd dma TX without RX test", "[spi]")
     TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &dev_cfg, &spi));
 
     spi_slave_interface_config_t slave_cfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
-
-    printf("TEST_SLAVE_HOST is %d\n", TEST_SLAVE_HOST);
-    TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &bus_cfg, &slave_cfg, TEST_SLAVE_HOST));
+    TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &bus_cfg, &slave_cfg, SPI_DMA_CH_AUTO));
 
     same_pin_func_sel(bus_cfg, dev_cfg, 0);
 
@@ -1049,7 +1046,6 @@ TEST_CASE("SPI master hd dma TX without RX test", "[spi]")
     spi_slave_free(TEST_SLAVE_HOST);
     master_free_device_bus(spi);
 }
-#endif  // #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 
 //There is only one GPSPI controller, so single-board test is disabled.
 #endif  //#if !DISABLED_FOR_TARGETS(ESP32C3)
