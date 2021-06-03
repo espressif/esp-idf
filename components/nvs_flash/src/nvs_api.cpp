@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include "sdkconfig.h"
 #include "nvs.hpp"
 #include "nvs_flash.h"
 #include "nvs_storage.hpp"
@@ -18,7 +19,6 @@
 #include "nvs_platform.hpp"
 #include "nvs_partition_manager.hpp"
 #include "esp_partition.h"
-#include "sdkconfig.h"
 #include <functional>
 #include "nvs_handle_simple.hpp"
 #include "esp_err.h"
