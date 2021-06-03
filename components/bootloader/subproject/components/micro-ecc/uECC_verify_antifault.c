@@ -1,8 +1,10 @@
-/* Copyright 2014, Kenneth MacKay. Licensed under the BSD 2-clause license.
-
-   Modifications Copyright 2020, Espressif Systems (Shanghai) PTE LTD. Licensed under the BSD
-   2-clause license.
-*/
+/*
+ * SPDX-FileCopyrightText: 2014, Kenneth MacKay
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
+ * SPDX-FileContributor: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ */
 
 /* uECC_verify() calls a number of static functions form here and
    uses other definitions, so we just build that whole source file here and then append
