@@ -16,10 +16,32 @@
 
 #include "hal/uart_types.h"
 #include "sys/select.h"
+#include "esp_event_base.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+* @brief OpenThread event declarations
+*
+*/
+typedef enum {
+    OPENTHREAD_EVENT_START,                 /*!< OpenThread stack start */
+    OPENTHREAD_EVENT_STOP,                  /*!< OpenThread stack stop */
+    OPENTHREAD_EVENT_IF_UP,                 /*!< OpenThread network interface up */
+    OPENTHREAD_EVENT_IF_DOWN,               /*!< OpenThread network interface down */
+    OPENTHREAD_EVENT_GOT_IP6,               /*!< OpenThread stack added IPv6 address */
+    OPENTHREAD_EVENT_LOST_IP6,              /*!< OpenThread stack removed IPv6 address */
+    OPENTHREAD_EVENT_MULTICAST_GROUP_JOIN,  /*!< OpenThread stack joined IPv6 multicast group */
+    OPENTHREAD_EVENT_MULTICAST_GROUP_LEAVE, /*!< OpenThread stack left IPv6 multicast group */
+} esp_openthread_event_t;
+
+/**
+* @brief OpenThread event base declaration
+*
+*/
+ESP_EVENT_DECLARE_BASE(OPENTHREAD_EVENT);
 
 /**
  * This structure represents a context for a select() based mainloop.

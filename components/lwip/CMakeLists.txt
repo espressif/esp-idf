@@ -137,11 +137,15 @@ else()
     list(APPEND srcs "port/esp32/no_vfs_syscalls.c")
 endif()
 
+if(CONFIG_OPENTHREAD_ENABLED)
+    list(APPEND srcs "port/esp32/netif/openthreadif.c")
+endif()
+
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "${include_dirs}"
                     LDFRAGMENTS linker.lf
                     REQUIRES vfs esp_wifi
-                    PRIV_REQUIRES esp_eth esp_netif tcpip_adapter nvs_flash)
+                    PRIV_REQUIRES esp_eth esp_netif tcpip_adapter nvs_flash openthread)
 
 # lots of LWIP source files evaluate macros that check address of stack variables
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-address)

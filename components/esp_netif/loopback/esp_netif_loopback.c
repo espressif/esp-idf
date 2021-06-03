@@ -455,4 +455,24 @@ int esp_netif_get_netif_impl_index(esp_netif_t *esp_netif)
     return 0;
 }
 
+esp_err_t esp_netif_join_ip6_multicast_group(esp_netif_t *esp_netif, const esp_ip6_addr_t *addr)
+{
+    return ESP_ERR_NOT_SUPPORTED;
+}
+
+esp_err_t esp_netif_leave_ip6_multicast_group(esp_netif_t *esp_netif, const esp_ip6_addr_t *addr)
+{
+    return ESP_ERR_NOT_SUPPORTED;
+}
+
+esp_err_t esp_netif_add_ip6_address(esp_netif_t *esp_netif, const esp_ip6_addr_t *addr, uint8_t preference)
+{
+    return ESP_ERR_NOT_SUPPORTED;
+}
+
+esp_err_t esp_netif_remove_ip6_address(esp_netif_t *esp_netif, const esp_ip6_addr_t *addr)
+{
+    return ESP_ERR_NOT_SUPPORTED;
+}
+
 #endif /* CONFIG_ESP_NETIF_LOOPBACK */

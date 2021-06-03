@@ -22,13 +22,13 @@ static SemaphoreHandle_t s_openthread_mutex = NULL;
 
 bool esp_openthread_lock_acquire(TickType_t block_ticks)
 {
-    BaseType_t ret = xSemaphoreTake(s_openthread_mutex, block_ticks);
+    BaseType_t ret = xSemaphoreTakeRecursive(s_openthread_mutex, block_ticks);
     return (ret == pdTRUE);
 }
 
 void esp_openthread_lock_release(void)
 {
-    xSemaphoreGive(s_openthread_mutex);
+    xSemaphoreGiveRecursive(s_openthread_mutex);
 }
 
 esp_err_t esp_openthread_lock_init(void)
@@ -36,7 +36,7 @@ esp_err_t esp_openthread_lock_init(void)
     if (s_openthread_mutex != NULL) {
         return ESP_ERR_INVALID_STATE;
     }
-    s_openthread_mutex = xSemaphoreCreateMutex();
+    s_openthread_mutex = xSemaphoreCreateRecursiveMutex();
     if (s_openthread_mutex == NULL) {
         return ESP_ERR_NO_MEM;
     }

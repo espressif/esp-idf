@@ -103,3 +103,31 @@ void esp_netif_action_got_ip(void *esp_netif, esp_event_base_t base, int32_t eve
              IP2STR(&event->ip_info.netmask),
              IP2STR(&event->ip_info.gw));
 }
+
+void esp_netif_action_join_ip6_multicast_group(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data)
+{
+    ESP_LOGD(TAG, "esp_netif action join_ip6_multicast group with netif%p from event_id=%d", esp_netif, event_id);
+    const esp_ip6_addr_t *addr = (const esp_ip6_addr_t *)data;
+    esp_netif_join_ip6_multicast_group(esp_netif, addr);
+}
+
+void esp_netif_action_leave_ip6_multicast_group(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data)
+{
+    ESP_LOGD(TAG, "esp_netif action leave_ip6_multicast_group with netif%p from event_id=%d", esp_netif, event_id);
+    const esp_ip6_addr_t *addr = (const esp_ip6_addr_t *)data;
+    esp_netif_leave_ip6_multicast_group(esp_netif, addr);
+}
+
+void esp_netif_action_add_ip6_address(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data)
+{
+    ESP_LOGD(TAG, "esp_netif action add_ip6_address with netif%p from event_id=%d", esp_netif, event_id);
+    const ip_event_add_ip6_t *addr = (const ip_event_add_ip6_t *)data;
+    esp_netif_add_ip6_address(esp_netif, addr);
+}
+
+void esp_netif_action_remove_ip6_address(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data)
+{
+    ESP_LOGD(TAG, "esp_netif action remove_ip6_address with netif%p from event_id=%d", esp_netif, event_id);
+    const esp_ip6_addr_t *addr = (const esp_ip6_addr_t *)data;
+    esp_netif_remove_ip6_address(esp_netif, addr);
+}
