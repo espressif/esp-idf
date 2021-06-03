@@ -933,6 +933,10 @@ menu "LWIP"
     menuconfig LWIP_DEBUG
         bool "Enable LWIP Debug"
         default n
+        help
+            Enabling this option allows different kinds of lwIP debug output.
+
+            All lwIP debug features increase the size of the final binary.
 
     config LWIP_NETIF_DEBUG
         bool "Enable netif debug messages"
