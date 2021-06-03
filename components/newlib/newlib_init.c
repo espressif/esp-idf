@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "sdkconfig.h"
 #include <string.h>
 #include <stdbool.h>
 #include <unistd.h>
@@ -24,7 +25,6 @@
 #include <sys/reent.h>
 #include "esp_newlib.h"
 #include "esp_attr.h"
-#include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "esp_rom_caps.h"
 
