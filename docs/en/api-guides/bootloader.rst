@@ -10,6 +10,40 @@ Bootloader performs the following functions:
 
 Bootloader is located at the address `0x1000` in the flash.
 
+Bootloader compatibility
+-------------------------
+
+It is recommended to update to newer :doc:`versions of ESP-IDF </versions>`: when they are released. The OTA (over the air) update process can flash new apps in the field but cannot flash a new bootloader. For this reason, the bootloader supports booting apps built from newer versions of ESP-IDF.
+
+The bootloader does not support booting apps from older versions of ESP-IDF. When updating ESP-IDF manually on an existing product that might need to downgrade the app to an older version, keep using the older ESP-IDF bootloader binary as well.
+
+.. note::
+
+   If testing an OTA update for an existing product in production, always test it using the same ESP-IDF bootloader binary that is deployed in production.
+
+.. only:: esp32
+
+    Before ESP-IDF V2.1
+    ^^^^^^^^^^^^^^^^^^^
+
+    Bootloaders built from very old versions of ESP-IDF (before ESP-IDF V2.1) perform less hardware configuration than newer versions. When using a bootloader from these early ESP-IDF versions and building a new app, enable the config option :ref:`CONFIG_ESP32_COMPATIBLE_PRE_V2_1_BOOTLOADERS`.
+
+    Before ESP-IDF V3.1
+    ^^^^^^^^^^^^^^^^^^^
+
+    Bootloaders built from versions of ESP-IDF before V3.1 do not support MD5 checksums in the partition table binary. When using a bootloader from these ESP-IDF versions and building a new app, enable the config option :ref:`CONFIG_ESP32_COMPATIBLE_PRE_V3_1_BOOTLOADERS`.
+
+SPI Flash Configuration
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Each ESP-IDF application or bootloader .bin file contains a header with :ref:`CONFIG_ESPTOOLPY_FLASHMODE`, :ref:`CONFIG_ESPTOOLPY_FLASHFREQ`, :ref:`CONFIG_ESPTOOLPY_FLASHSIZE` embedded in it. These are used to configure the SPI flash during boot.
+
+The :first stage bootloader in ROM reads the second stage bootloader header from flash and uses these settings to load it. However, at this time the system clock speed is lower than configured and not all flash modes are supported.  When the second stage bootloader then runs and re-configures the flash, it reads values from the currently selected app binary header not the bootloader header. This allows an OTA update to change the SPI flash settings in use.
+
+.. only:: esp32
+
+   Bootloaders prior to ESP-IDF V4.0 used the bootloader's own header to configure the SPI flash, meaning these values could not be changed in an update. To maintain compatibility with older bootloaders, the app re-initializes the flash settings during app startup using the configuration found in the app header.
+
 FACTORY reset
 ---------------------------
 The user can write a basic working firmware and load it into the factory partition. 

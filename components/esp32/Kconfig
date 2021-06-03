@@ -695,10 +695,11 @@ menu "ESP32-specific"
             that after enabling this Wi-Fi/Bluetooth will not work.
 
     config ESP32_COMPATIBLE_PRE_V2_1_BOOTLOADERS
-        bool "App compatible with bootloaders before IDF v2.1"
+        bool "App compatible with bootloaders before ESP-IDF v2.1"
+        select ESP32_COMPATIBLE_PRE_V3_1_BOOTLOADERS
         default n
         help
-            Bootloaders before IDF v2.1 did less initialisation of the
+            Bootloaders before ESP-IDF v2.1 did less initialisation of the
             system clock. This setting needs to be enabled to build an app
             which can be booted by these older bootloaders.
 
@@ -709,6 +710,22 @@ menu "ESP32-specific"
             from IDF v2.1 or newer.
 
             Enabling this setting adds approximately 1KB to the app's IRAM usage.
+
+    config ESP32_COMPATIBLE_PRE_V3_1_BOOTLOADERS
+        bool "App compatible with bootloader and partition table before ESP-IDF v3.1"
+        default n
+        help
+            Partition tables before ESP-IDF V3.1 do not contain an MD5 checksum
+            field, and the bootloader before ESP-IDF v3.1 cannot read a partition
+            table that contains an MD5 checksum field.
+
+            Enable this option only if your app needs to boot on a bootloader and/or
+            partition table that was generated from a version *before* ESP-IDF v3.1.
+
+            If this option and Flash Encryption are enabled at the same time, and any
+            data partitions in the partition table are marked Encrypted, then the
+            partition encrypted flag should be manually verified in the app before accessing
+            the partition (see CVE-2021-27926).
 
     config ESP32_APP_INIT_CLK
         bool
