@@ -296,7 +296,7 @@ RESET_REASON bootloader_common_get_reset_reason(int cpu_no)
 
 #if defined( CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP ) || defined( CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC )
 
-#define RTC_RETAIN_MEM_ADDR (SOC_RTC_DATA_HIGH - sizeof(rtc_retain_mem_t))
+#define RTC_RETAIN_MEM_ADDR (SOC_RTC_DRAM_HIGH - sizeof(rtc_retain_mem_t))
 
 rtc_retain_mem_t *const rtc_retain_mem = (rtc_retain_mem_t *)RTC_RETAIN_MEM_ADDR;
 
