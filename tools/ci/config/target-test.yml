@@ -24,6 +24,7 @@
   artifacts:
     when: always
     paths:
+      - "**/*.log"
       - $LOG_PATH
     expire_in: 1 week
     reports:
@@ -64,6 +65,7 @@
   artifacts:
     when: always
     paths:
+      - "**/*.log"
       - $LOG_PATH
     expire_in: 1 week
     reports:
@@ -151,6 +153,7 @@
     reports:
         junit: $LOG_PATH/*/XUNIT_RESULT.xml
     paths:
+      - "**/*.log"
       - $LOG_PATH
     expire_in: 1 week
   variables:
@@ -213,11 +216,6 @@ test_weekend_network:
 example_test_001A:
   extends: .example_test_template
   parallel: 4
-  artifacts:
-      when: always
-      paths:
-        - $CI_PROJECT_DIR/examples/*/*/*.log
-      expire_in: 1 week
   tags:
     - ESP32
     - Example_WIFI
@@ -304,11 +302,6 @@ example_test_009:
   tags:
     - ESP32
     - test_jtag_arm
-  artifacts:
-      when: always
-      paths:
-        - $CI_PROJECT_DIR/examples/*/*/*.log
-      expire_in: 1 week
   variables:
     SETUP_TOOLS: "1"
 
@@ -323,12 +316,6 @@ example_test_011:
   tags:
     - ESP32
     - UT_T2_RS485
-  artifacts:
-      when: always
-      expire_in: 1 week
-      paths:
-        - $CI_PROJECT_DIR/examples/protocols/modbus/serial/*.log
-        - $LOG_PATH
   variables:
     SETUP_TOOLS: "1"
 
@@ -355,23 +342,12 @@ example_test_015:
   tags:
     - ESP32
     - Example_PPP
-  artifacts:
-      when: always
-      expire_in: 1 week
-      paths:
-        - $CI_PROJECT_DIR/examples/*/*/*.log
-        - $LOG_PATH
 
 test_app_test_001:
   extends: .test_app_template
   tags:
     - ESP32
     - test_jtag_arm
-  artifacts:
-      when: always
-      paths:
-        - $CI_PROJECT_DIR/tools/test_apps/system/gdb_loadable_elf/*.log
-      expire_in: 1 week
   variables:
     SETUP_TOOLS: "1"
 
