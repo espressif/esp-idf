@@ -79,7 +79,7 @@ void process_thread_address(const otIp6AddressInfo *address_info, bool is_added,
         } else {
             ip_event_add_ip6_t add_addr;
             add_addr.addr = addr;
-            add_addr.preferred = !address_info->mIsAnycast;
+            add_addr.preferred = address_info->mPreferred;
             if (esp_event_post(OPENTHREAD_EVENT, OPENTHREAD_EVENT_GOT_IP6, &add_addr, sizeof(add_addr), 0) != ESP_OK) {
                 otLogCritPlat("Failed to post OpenThread got ip6 address event");
             }
