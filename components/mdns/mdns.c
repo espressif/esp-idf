@@ -73,6 +73,17 @@ esp_netif_t *_mdns_get_esp_netif(mdns_if_t tcpip_if)
     return NULL;
 }
 
+
+/*
+ * @brief Clean internal mdns interface's pointer
+ */
+static inline void _mdns_clean_netif_ptr(mdns_if_t tcpip_if) {
+    if (tcpip_if < MDNS_IF_MAX) {
+        s_esp_netifs[tcpip_if] = NULL;
+    }
+}
+
+
 /*
  * @brief  Convert esp-netif handle to mdns if
  */
@@ -3133,6 +3144,8 @@ void _mdns_enable_pcb(mdns_if_t tcpip_if, mdns_ip_protocol_t ip_protocol)
  */
 void _mdns_disable_pcb(mdns_if_t tcpip_if, mdns_ip_protocol_t ip_protocol)
 {
+    _mdns_clean_netif_ptr(tcpip_if);
+
     if (_mdns_server->interfaces[tcpip_if].pcbs[ip_protocol].pcb) {
         _mdns_clear_pcb_tx_queue_head(tcpip_if, ip_protocol);
         _mdns_pcb_deinit(tcpip_if, ip_protocol);
