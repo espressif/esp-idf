@@ -27,7 +27,7 @@
 
 #define RTC_CNTL_MEM_FORCE_NOISO (RTC_CNTL_SLOWMEM_FORCE_NOISO | RTC_CNTL_FASTMEM_FORCE_NOISO)
 
-static char *TAG = "rtcinit";
+static const char *TAG = "rtcinit";
 
 void rtc_init(rtc_config_t cfg)
 {
