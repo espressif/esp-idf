@@ -17,7 +17,9 @@ endif()
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "include" "${idf_target}/include"
                     PRIV_REQUIRES nvs_flash
-                    LDFRAGMENTS "${ldfragments}")
+                    LDFRAGMENTS "${ldfragments}"
+                    EMBED_FILES "${CMAKE_CURRENT_SOURCE_DIR}/${idf_target}/phy_multiple_init_data.bin"
+                    )
 
 idf_build_get_property(build_dir BUILD_DIR)
 
@@ -52,7 +54,10 @@ if(CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION)
     partition_table_get_partition_info(phy_partition_offset "--partition-type data --partition-subtype phy" "offset")
 
     if(CONFIG_ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN)
-        set(phy_init_data_bin "${CMAKE_CURRENT_SOURCE_DIR}/phy_multiple_init_data.bin")
+        set(phy_init_data_bin "${CMAKE_CURRENT_SOURCE_DIR}/${idf_target}/phy_multiple_init_data.bin")
+        if(CONFIG_ESP32_MULTIPLE_PHY_DATA_BIN_EMBEDDED)
+            set(COMPONENT_EMBED_FILES "${CMAKE_CURRENT_SOURCE_DIR}/${idf_target}/phy_multiple_init_data.bin")
+        endif()
     else()
         set(phy_init_data_bin "${build_dir}/phy_init_data.bin")
 

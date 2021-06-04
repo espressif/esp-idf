@@ -79,6 +79,10 @@ uint32_t* s_mac_bb_pd_mem = NULL;
 #endif
 
 #if CONFIG_ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN
+#if CONFIG_ESP32_MULTIPLE_PHY_DATA_BIN_EMBEDDED
+extern uint8_t multi_phy_init_data_bin_start[] asm("_binary_phy_multiple_init_data_bin_start");
+extern uint8_t multi_phy_init_data_bin_end[]   asm("_binary_phy_multiple_init_data_bin_end");
+#endif
 /* The following static variables are only used by Wi-Fi tasks, so they can be handled without lock */
 static phy_init_data_type_t s_phy_init_data_type = 0;
 
@@ -322,7 +326,16 @@ IRAM_ATTR void esp_mac_bb_power_down(void)
 
 const esp_phy_init_data_t* esp_phy_get_init_data(void)
 {
-    const esp_partition_t* partition = esp_partition_find_first(
+    esp_err_t err = ESP_OK;
+    const esp_partition_t* partition = NULL;
+#if CONFIG_ESP32_MULTIPLE_PHY_DATA_BIN_EMBEDDED
+    size_t init_data_store_length = sizeof(phy_init_magic_pre) +
+            sizeof(esp_phy_init_data_t) + sizeof(phy_init_magic_post);
+    uint8_t* init_data_store = (uint8_t*) malloc(init_data_store_length);
+    memcpy(init_data_store, multi_phy_init_data_bin_start, init_data_store_length);
+    ESP_LOGI(TAG, "loading embedded multiple PHY init data");
+#else
+    partition = esp_partition_find_first(
             ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_PHY, NULL);
     if (partition == NULL) {
         ESP_LOGE(TAG, "PHY data partition not found");
@@ -337,12 +350,13 @@ const esp_phy_init_data_t* esp_phy_get_init_data(void)
         return NULL;
     }
     // read phy data from flash
-    esp_err_t err = esp_partition_read(partition, 0, init_data_store, init_data_store_length);
+    err = esp_partition_read(partition, 0, init_data_store, init_data_store_length);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "failed to read PHY data partition (0x%x)", err);
         free(init_data_store);
         return NULL;
     }
+#endif
     // verify data
     if (memcmp(init_data_store, PHY_INIT_MAGIC, sizeof(phy_init_magic_pre)) != 0 ||
         memcmp(init_data_store + init_data_store_length - sizeof(phy_init_magic_post),
@@ -716,14 +730,17 @@ static esp_err_t phy_get_multiple_init_data(const esp_partition_t* partition,
         ESP_LOGE(TAG, "failed to allocate memory for PHY init data control info");
         return ESP_FAIL;
     }
-
-    esp_err_t err = esp_partition_read(partition, init_data_store_length, init_data_control_info, sizeof(phy_control_info_data_t));
+    esp_err_t err = ESP_OK;
+#if CONFIG_ESP32_MULTIPLE_PHY_DATA_BIN_EMBEDDED
+    memcpy(init_data_control_info, multi_phy_init_data_bin_start + init_data_store_length, sizeof(phy_control_info_data_t));
+#else
+    err = esp_partition_read(partition, init_data_store_length, init_data_control_info, sizeof(phy_control_info_data_t));
     if (err != ESP_OK) {
         free(init_data_control_info);
         ESP_LOGE(TAG, "failed to read PHY control info data partition (0x%x)", err);
         return ESP_FAIL;
     }
-
+#endif
     if ((init_data_control_info->check_algorithm) == PHY_CRC_ALGORITHM) {
         err =  phy_crc_check_init_data(init_data_control_info->multiple_bin_checksum, init_data_control_info->control_info_checksum,
                 sizeof(phy_control_info_data_t) - sizeof(init_data_control_info->control_info_checksum));
@@ -745,6 +762,9 @@ static esp_err_t phy_get_multiple_init_data(const esp_partition_t* partition,
         return ESP_FAIL;
     }
 
+#if CONFIG_ESP32_MULTIPLE_PHY_DATA_BIN_EMBEDDED
+    memcpy(init_data_multiple, multi_phy_init_data_bin_start + init_data_store_length + sizeof(phy_control_info_data_t), sizeof(esp_phy_init_data_t) * init_data_control_info->number);
+#else
     err = esp_partition_read(partition, init_data_store_length + sizeof(phy_control_info_data_t),
             init_data_multiple, sizeof(esp_phy_init_data_t) * init_data_control_info->number);
     if (err != ESP_OK) {
@@ -753,7 +773,7 @@ static esp_err_t phy_get_multiple_init_data(const esp_partition_t* partition,
         ESP_LOGE(TAG, "failed to read PHY init data multiple bin partition (0x%x)", err);
         return ESP_FAIL;
     }
-
+#endif
     if ((init_data_control_info->check_algorithm) == PHY_CRC_ALGORITHM) {
         err = phy_crc_check_init_data(init_data_multiple, init_data_control_info->multiple_bin_checksum,
                 sizeof(esp_phy_init_data_t) * init_data_control_info->number);
@@ -785,6 +805,19 @@ static esp_err_t phy_get_multiple_init_data(const esp_partition_t* partition,
 
 esp_err_t esp_phy_update_init_data(phy_init_data_type_t init_data_type)
 {
+#if CONFIG_ESP32_MULTIPLE_PHY_DATA_BIN_EMBEDDED
+    esp_err_t err = ESP_OK;
+    const esp_partition_t* partition = NULL;
+    size_t init_data_store_length = sizeof(phy_init_magic_pre) +
+        sizeof(esp_phy_init_data_t) + sizeof(phy_init_magic_post);
+    uint8_t* init_data_store = (uint8_t*) malloc(init_data_store_length);
+    if (init_data_store == NULL) {
+        ESP_LOGE(TAG, "failed to allocate memory for updated country code PHY init data");
+        return ESP_ERR_NO_MEM;
+    }
+    memcpy(init_data_store, multi_phy_init_data_bin_start, init_data_store_length);
+    ESP_LOGI(TAG, "load embedded multi phy init data");
+#else
     const esp_partition_t* partition = esp_partition_find_first(
           ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_PHY, NULL);
     if (partition == NULL) {
@@ -805,6 +838,7 @@ esp_err_t esp_phy_update_init_data(phy_init_data_type_t init_data_type)
         ESP_LOGE(TAG, "failed to read updated country code PHY data partition (0x%x)", err);
         return ESP_FAIL;
     }
+#endif
     if (memcmp(init_data_store, PHY_INIT_MAGIC, sizeof(phy_init_magic_pre)) != 0 ||
             memcmp(init_data_store + init_data_store_length - sizeof(phy_init_magic_post),
                 PHY_INIT_MAGIC, sizeof(phy_init_magic_post)) != 0) {
