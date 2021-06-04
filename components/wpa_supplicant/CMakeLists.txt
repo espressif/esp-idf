@@ -157,7 +157,7 @@ idf_component_register(SRCS "${srcs}" "${tls_src}" "${roaming_src}" "${crypto_sr
                     PRIV_INCLUDE_DIRS src src/utils
                     PRIV_REQUIRES mbedtls esp_timer)
 
-target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-strict-aliasing)
+target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-strict-aliasing -Wno-write-strings)
 target_compile_definitions(${COMPONENT_LIB} PRIVATE
     __ets__
     ESP_SUPPLICANT
