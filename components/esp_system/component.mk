@@ -14,6 +14,7 @@ COMPONENT_SRCDIRS := .
 COMPONENT_ADD_INCLUDEDIRS := include port/public_compat
 COMPONENT_PRIV_INCLUDEDIRS := port/include port
 COMPONENT_ADD_LDFRAGMENTS += linker.lf app.lf
+COMPONENT_DEPENDS := esp_phy
 
 ifndef CONFIG_IDF_ENV_FPGA
 COMPONENT_OBJEXCLUDE += fpga_overrides.o

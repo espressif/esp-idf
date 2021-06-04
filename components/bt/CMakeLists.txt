@@ -582,7 +582,7 @@ endif()
 idf_component_register(SRCS "${srcs}"
                 INCLUDE_DIRS "${include_dirs}"
                 PRIV_INCLUDE_DIRS "${priv_include_dirs}"
-                REQUIRES nvs_flash soc esp_timer esp_pm
+                REQUIRES nvs_flash soc esp_timer esp_pm esp_phy
                 PRIV_REQUIRES esp_ipc
                 LDFRAGMENTS "linker.lf")
 
@@ -594,11 +594,11 @@ if(CONFIG_BT_ENABLED)
     elseif(CONFIG_IDF_TARGET_ESP32C3)
         target_link_libraries(${COMPONENT_LIB} INTERFACE
                 "-L${CMAKE_CURRENT_LIST_DIR}/controller/lib_esp32c3_family/esp32c3")
-        target_link_libraries(${COMPONENT_LIB} PUBLIC btdm_app btbb)
+        target_link_libraries(${COMPONENT_LIB} PUBLIC btdm_app)
     elseif(CONFIG_IDF_TARGET_ESP32S3)
         target_link_libraries(${COMPONENT_LIB} INTERFACE
                 "-L${CMAKE_CURRENT_LIST_DIR}/controller/lib_esp32c3_family/esp32s3")
-        target_link_libraries(${COMPONENT_LIB} PUBLIC btdm_app btbb)
+        target_link_libraries(${COMPONENT_LIB} PUBLIC btdm_app)
     endif()
 endif()
 

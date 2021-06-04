@@ -137,6 +137,7 @@
   - "components/cmock/CMock/vendor/unity"
   - "components/coap/libcoap"
   - "components/coap/libcoap/ext/tinydtls"
+  - "components/esp_phy/lib"
   - "components/esp_wifi/lib"
   - "components/esptool_py/esptool"
   - "components/expat/expat"

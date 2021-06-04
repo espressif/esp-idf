@@ -98,3 +98,7 @@
 [submodule "components/bt/controller/lib_esp32c3_family"]
 	path = components/bt/controller/lib_esp32c3_family
 	url = ../../espressif/esp32c3-bt-lib.git
+
+[submodule "components/esp_phy/lib"]
+	path = components/esp_phy/lib
+	url = ../../espressif/esp-phy-lib.git
