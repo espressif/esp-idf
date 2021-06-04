@@ -21,6 +21,8 @@
  * 4. If the configMAX_PRIORITIES is modified, please make all priority are
  *    greater than 0
  * 5. Make sure esp_task.h is consistent between wifi lib and idf
+ * 6. If changing system task priorities, please check the values documented in /api-guides/performance/speed.rst
+ * are up to date
  */
 
 #ifndef _ESP_TASK_H_

@@ -8,6 +8,8 @@
 
 ESP-IDF 应用程序的代码可以放在以下内存区域之一。
 
+.. _iram:
+
 IRAM（指令 RAM）
 ~~~~~~~~~~~~~~~~
 
@@ -46,6 +48,8 @@ RAM。除了开始的 64kB 用作 PRO CPU 和 APP CPU
    加载代码所消耗的时间。{IDF_TARGET_NAME} 是通过 32kB 的高速缓存来从外部 Flash
    中读取代码和数据的，将函数放在 IRAM
    中运行可以减少由高速缓存未命中引起的时间延迟。
+
+.. _irom:
 
 IROM（代码从 Flash 中运行）
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -100,6 +104,8 @@ DRAM（数据 RAM）
 .. code:: c
 
    __NOINIT_ATTR uint32_t noinit_data;
+
+.. _drom:
 
 DROM（数据存储在 Flash 中）
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~

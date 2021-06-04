@@ -29,6 +29,7 @@ API 指南
    lwIP TCP/IP 协议栈 <lwip>
    Memory Types <memory-types>
    分区表 <partition-tables>
+   Performance <performance/index>
    射频校准 <RF_calibration>
    :esp32: 安全启动 <../security/secure-boot-v1>
    安全启动 V2 <../security/secure-boot-v2>

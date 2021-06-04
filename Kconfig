@@ -361,6 +361,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
                 - coverage: NORMAL < STRONG < OVERALL
 
+                The performance impact includes increasing the amount of stack memory required for each task.
 
             config COMPILER_STACK_CHECK_MODE_NONE
                 bool "None"

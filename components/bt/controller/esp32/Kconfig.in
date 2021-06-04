@@ -31,7 +31,7 @@ config BTDM_CTRL_BR_EDR_MAX_ACL_CONN
     range 1 7
     help
         BR/EDR ACL maximum connections of bluetooth controller.
-        Each connection uses 1.2KB static DRAM whenever the BT controller is enabled.
+        Each connection uses 1.2 KB DRAM whenever the BT controller is enabled.
 
 config BTDM_CTRL_BR_EDR_MAX_SYNC_CONN
     int "BR/EDR Sync(SCO/eSCO) Max Connections"
@@ -40,7 +40,7 @@ config BTDM_CTRL_BR_EDR_MAX_SYNC_CONN
     range 0 3
     help
         BR/EDR Synchronize maximum connections of bluetooth controller.
-        Each connection uses 2KB static DRAM whenever the BT controller is enabled.
+        Each connection uses 2 KB DRAM whenever the BT controller is enabled.
 
 
 
