@@ -35,7 +35,7 @@ The OTA workflow is illustrated in the following diagram:
 
 ### Configure the project
 
-Open the project configuration menu (`idf.py menuconfig`). 
+Open the project configuration menu (`idf.py menuconfig`).
 
 In the `Example Connection Configuration` menu:
 
@@ -88,7 +88,7 @@ cp ca_cert.pem /path/to/ota/example/server_certs/
 
 After booting, the firmware prints "Starting OTA example" to the console and:
 
-1. Connects via Ethernet or to the AP using the provided SSID and password (Wi-Fi case) 
+1. Connects via Ethernet or to the AP using the provided SSID and password (Wi-Fi case)
 2. Connects to the HTTPS server and downloads the new image
 3. Writes the image to flash, and instructs the bootloader to boot from this image after the next reset
 4. Reboots
@@ -107,7 +107,7 @@ ACCEPT
 
 ## Supporting Rollback
 
-This feature allows you to roll back to a previous firmware if new image is not useable. The menuconfig option `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` allows you to track the first boot of the application (see the ``Over The Air Updates (OTA)`` article). 
+This feature allows you to roll back to a previous firmware if new image is not useable. The menuconfig option `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` allows you to track the first boot of the application (see the ``Over The Air Updates (OTA)`` article).
 
 The ``native_ota_example`` contains code to demonstrate how a rollback works. To use it, enable the `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option in the `Example Configuration` submenu of menuconfig to set `Number of the GPIO input for diagnostic` to manipulate the rollback process.
 
@@ -136,7 +136,7 @@ In ``native_ota_example``, ``$PROJECT_PATH/version.txt`` is used to define the a
 
 ### Error "ota_begin error err=0x104"
 
-If you see this error, check that the configured (and actual) flash size is large enough for the partitions in the partition table. The default "two OTA slots" partition table requires at least 4MB flash size. To use OTA with smaller flash sizes, create a custom partition table CSV (for details see [components/partition_table](../../../compenents/partition_table)) and configure it in menuconfig.
+If you see this error, check that the configured (and actual) flash size is large enough for the partitions in the partition table. The default "two OTA slots" partition table requires at least 4MB flash size. To use OTA with smaller flash sizes, create a custom partition table CSV (for details see [Partition Tables](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/partition-tables.html)) and configure it in menuconfig.
 
 Make sure to run "idf.py erase_flash" after making changes to the partition table.
 
