@@ -50,6 +50,8 @@ esp_err_t spi_flash_hal_device_config(spi_flash_host_inst_t *host)
     spi_flash_ll_set_clock(dev, &ctx->clock_conf);
     int cs_hold = ctx->cs_hold;
     spi_flash_ll_set_hold(dev, cs_hold);
+    spi_flash_ll_set_cs_setup(dev, ctx->cs_setup);
+
 #ifndef GPSPI_BUILD
 #if SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
     if ((ctx->flags & SPI_FLASH_HOST_CONTEXT_FLAG_AUTO_SUSPEND) != 0) {

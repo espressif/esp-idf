@@ -42,7 +42,7 @@ typedef struct {
     int cs_num;                 ///< Which cs pin is used, 0-2.
     struct {
         uint8_t extra_dummy;            ///< Pre-calculated extra dummy used for compensation
-        uint8_t reserved1;              ///< Reserved, set to 0.
+        uint8_t cs_setup;               ///< (cycles-1) of prepare phase by spi clock.
         uint8_t cs_hold;                ///< CS hold time config used by the host
         uint8_t reserved2;              ///< Reserved, set to 0.
     };
@@ -63,6 +63,7 @@ typedef struct {
     int input_delay_ns;     ///< Input delay on the MISO pin after the launch clock, used for timing compensation.
     esp_flash_speed_t speed;///< SPI flash clock speed to work at.
     uint32_t cs_hold;       ///< CS hold time config used by the host
+    uint8_t cs_setup;       ///< (cycles-1) of prepare phase by spi clock
     bool auto_sus_en;       ///< Auto suspend feature enable bit 1: enable, 0: disable.
 } spi_flash_hal_config_t;
 
