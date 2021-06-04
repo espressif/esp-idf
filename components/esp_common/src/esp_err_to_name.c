@@ -539,10 +539,10 @@ static const esp_err_msg_t esp_err_msg_table[] = {
     ERR_TBL_IT(ESP_ERR_ESP_NETIF_DNS_NOT_CONFIGURED),           /* 20490 0x500a */
 #   endif
 #   ifdef      ESP_ERR_ESP_NETIF_MLD6_FAILED
-    ERR_TBL_IT(ESP_ERR_ESP_NETIF_MLD6_FAILED),                  /* 20490 0x500b */
+    ERR_TBL_IT(ESP_ERR_ESP_NETIF_MLD6_FAILED),                  /* 20491 0x500b */
 #   endif
 #   ifdef      ESP_ERR_ESP_NETIF_IP6_ADDR_FAILED
-    ERR_TBL_IT(ESP_ERR_ESP_NETIF_IP6_ADDR_FAILED),              /* 20490 0x500a */
+    ERR_TBL_IT(ESP_ERR_ESP_NETIF_IP6_ADDR_FAILED),              /* 20492 0x500c */
 #   endif
     // components/esp_common/include/esp_err.h
 #   ifdef      ESP_ERR_FLASH_BASE
@@ -765,7 +765,7 @@ const char *esp_err_to_name(esp_err_t code)
 #ifdef CONFIG_ESP_ERR_TO_NAME_LOOKUP
     size_t i;
 
-    for (i = 0; i < sizeof(esp_err_msg_table) / sizeof(esp_err_msg_table[0]); ++i) {
+    for (i = 0; i < sizeof(esp_err_msg_table)/sizeof(esp_err_msg_table[0]); ++i) {
         if (esp_err_msg_table[i].code == code) {
             return esp_err_msg_table[i].msg;
         }
@@ -780,7 +780,7 @@ const char *esp_err_to_name_r(esp_err_t code, char *buf, size_t buflen)
 #ifdef CONFIG_ESP_ERR_TO_NAME_LOOKUP
     size_t i;
 
-    for (i = 0; i < sizeof(esp_err_msg_table) / sizeof(esp_err_msg_table[0]); ++i) {
+    for (i = 0; i < sizeof(esp_err_msg_table)/sizeof(esp_err_msg_table[0]); ++i) {
         if (esp_err_msg_table[i].code == code) {
             strlcpy(buf, esp_err_msg_table[i].msg, buflen);
             return buf;
