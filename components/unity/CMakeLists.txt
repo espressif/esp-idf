@@ -19,7 +19,6 @@ if(CONFIG_UNITY_ENABLE_FIXTURE)
 endif()
 
 if(${IDF_TARGET} STREQUAL "linux")
-    message(STATUS "adding linux stuff...")
     idf_component_get_property(spi_flash_dir spi_flash COMPONENT_DIR)
     list(APPEND includes "${spi_flash_dir}/sim/stubs/esp_common")
 else()
