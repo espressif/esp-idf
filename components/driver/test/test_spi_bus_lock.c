@@ -242,7 +242,6 @@ static void test_bus_lock(bool test_flash)
         .io_mode = SPI_FLASH_DIO,
         .speed = ESP_FLASH_5MHZ,
         .input_delay_ns = 0,
-        .cs_setup = 1,
     };
 
     //Clamp the WP and HD pins to VDD to make it work in DIO mode

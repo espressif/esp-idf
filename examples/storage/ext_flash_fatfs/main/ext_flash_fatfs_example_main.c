@@ -104,7 +104,6 @@ static esp_flash_t* example_init_ext_flash(void)
         .cs_io_num = VSPI_IOMUX_PIN_NUM_CS,
         .io_mode = SPI_FLASH_DIO,
         .speed = ESP_FLASH_40MHZ,
-        .cs_setup = 1,
     };
 
     ESP_LOGI(TAG, "Initializing external SPI Flash");
