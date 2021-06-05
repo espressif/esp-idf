@@ -124,7 +124,7 @@ class TestMaintainer(unittest.TestCase):
             json_old = f.read()
         with open(os.path.join(idf_path, 'tools/tools.new.json'), 'r') as f:
             json_new = f.read()
-        self.assertEqual(json_old, json_new)
+        self.assertEqual(json_old, json_new, "Please check 'tools/tools.new.json' to find a cause!")
 
 
 if __name__ == '__main__':
