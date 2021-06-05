@@ -12,8 +12,9 @@
 #include "nvs_flash.h"
 #include "test_utils.h"
 #include "driver/i2s.h"
+#include "soc/soc_caps.h"
 
-#if !DISABLED_FOR_TARGETS(ESP32C3) && !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+#if SOC_DAC_SUPPORTED
 #include "driver/dac.h"
 #include "esp_adc_cal.h"
 
@@ -182,4 +183,4 @@ TEST_CASE("esp32s2 adc2-dac with adc2 calibration", "[adc-dac]")
 }
 #endif
 
-#endif // !DISABLED_FOR_TARGETS(ESP32C3) && !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+#endif // SOC_DAC_SUPPORTED

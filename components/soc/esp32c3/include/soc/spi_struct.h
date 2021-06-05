@@ -18,7 +18,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "soc.h"
 
 typedef volatile struct {
     union {

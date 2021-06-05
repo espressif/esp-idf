@@ -60,7 +60,6 @@
 #include "esp32c3/clk.h"
 #include "esp32c3/pm.h"
 #include "driver/gpio.h"
-#include "esp_private/sleep_modes.h"
 #endif
 
 #define MHZ (1000000)
@@ -307,7 +306,7 @@ esp_err_t esp_pm_configure(const void* vconfig)
     esp_sleep_enable_gpio_switch(config->light_sleep_enable);
 #endif
 
-#if CONFIG_ESP_SYSTEM_PM_POWER_DOWN_CPU && SOC_PM_SUPPORT_CPU_PD
+#if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_SUPPORT_CPU_PD
     esp_err_t ret = esp_sleep_cpu_pd_low_init(config->light_sleep_enable);
     if (config->light_sleep_enable && ret != ESP_OK) {
         ESP_LOGW(TAG, "Failed to enable CPU power down during light sleep.");
@@ -319,6 +318,31 @@ esp_err_t esp_pm_configure(const void* vconfig)
         esp_pm_light_sleep_default_params_config(min_freq_mhz, max_freq_mhz);
     }
 #endif
+
+    return ESP_OK;
+}
+
+esp_err_t esp_pm_get_configuration(void* vconfig)
+{
+    if (vconfig == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+#if CONFIG_IDF_TARGET_ESP32
+    esp_pm_config_esp32_t* config = (esp_pm_config_esp32_t*) vconfig;
+#elif CONFIG_IDF_TARGET_ESP32S2
+    esp_pm_config_esp32s2_t* config = (esp_pm_config_esp32s2_t*) vconfig;
+#elif CONFIG_IDF_TARGET_ESP32S3
+    esp_pm_config_esp32s3_t* config = (esp_pm_config_esp32s3_t*) vconfig;
+#elif CONFIG_IDF_TARGET_ESP32C3
+    esp_pm_config_esp32c3_t* config = (esp_pm_config_esp32c3_t*) vconfig;
+#endif
+
+    portENTER_CRITICAL(&s_switch_lock);
+    config->light_sleep_enable = s_light_sleep_en;
+    config->max_freq_mhz = s_cpu_freq_by_mode[PM_MODE_CPU_MAX].freq_mhz;
+    config->min_freq_mhz = s_cpu_freq_by_mode[PM_MODE_APB_MIN].freq_mhz;
+    portEXIT_CRITICAL(&s_switch_lock);
 
     return ESP_OK;
 }
@@ -555,10 +579,12 @@ esp_err_t esp_pm_unregister_skip_light_sleep_callback(skip_light_sleep_cb_t cb)
 
 static inline bool IRAM_ATTR periph_should_skip_light_sleep(void)
 {
-    for (int i = 0; i < PERIPH_SKIP_LIGHT_SLEEP_NO; i++) {
-        if (s_periph_skip_light_sleep_cb[i]) {
-            if (s_periph_skip_light_sleep_cb[i]() == true) {
-                return true;
+    if (s_light_sleep_en) {
+        for (int i = 0; i < PERIPH_SKIP_LIGHT_SLEEP_NO; i++) {
+            if (s_periph_skip_light_sleep_cb[i]) {
+                if (s_periph_skip_light_sleep_cb[i]() == true) {
+                    return true;
+                }
             }
         }
     }

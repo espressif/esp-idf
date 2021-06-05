@@ -471,7 +471,7 @@ menu "Security features"
     config SECURE_BOOT
         bool "Enable hardware Secure Boot in bootloader (READ DOCS FIRST)"
         default n
-        depends on !IDF_TARGET_ESP32C3 # IDF-2647
+        depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || ESP32C3_REV_MIN_3
         help
             Build a bootloader which enables Secure Boot on first boot.
 
@@ -488,7 +488,7 @@ menu "Security features"
         help
             Select the Secure Boot Version. Depends on the Chip Revision.
             Secure Boot V2 is the new RSA based secure boot scheme.
-            Supported in ESP32-ECO3. (ESP32 Chip Revision 3 onwards)
+            Supported in ESP32-ECO3 (ESP32 Chip Revision 3 onwards), ESP32-S2, ESP32-C3 ECO3.
             Secure Boot V1 is the AES based secure boot scheme.
             Supported in ESP32 and ESP32-ECO3.
 
@@ -656,16 +656,18 @@ menu "Security features"
         depends on SECURE_FLASH_ENC_ENABLED
         default SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
         help
-            By default Development mode is enabled which allows UART bootloader to perform flash encryption operations
+            By default Development mode is enabled which allows ROM download mode to perform flash encryption
+            operations (plaintext is sent to the device, and it encrypts it internally and writes ciphertext
+            to flash.) This mode is not secure, it's possible for an attacker to write their own chosen plaintext
+            to flash.
 
-            Select Release mode only for production or manufacturing. Once enabled you can not reflash using UART
-            bootloader
+            Release mode should always be selected for production or manufacturing. Once enabled it's no longer
+            possible for the device in ROM Download Mode to use the flash encryption hardware.
 
-            Refer to the Secure Boot section of the ESP-IDF Programmer's Guide for this version and
-            https://docs.espressif.com/projects/esp-idf/en/latest/security/flash-encryption.html for details.
+            Refer to the Flash Encryption section of the ESP-IDF Programmer's Guide for details.
 
         config SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
-            bool "Development(NOT SECURE)"
+            bool "Development (NOT SECURE)"
             select SECURE_FLASH_UART_BOOTLOADER_ALLOW_ENC
 
         config SECURE_FLASH_ENCRYPTION_MODE_RELEASE

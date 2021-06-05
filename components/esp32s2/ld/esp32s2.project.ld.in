@@ -85,7 +85,7 @@ SECTIONS
      and will be retained during deep sleep.
      User data marked with RTC_NOINIT_ATTR will be placed
      into this section. See the file "esp_attr.h" for more information.
-	 The memory location of the data is dependent on
+     The memory location of the data is dependent on
      CONFIG_ESP32S2_RTCDATA_IN_FAST_MEM option.
   */
   .rtc_noinit (NOLOAD):
@@ -178,6 +178,8 @@ SECTIONS
 
     /* align + add 16B for CPU dummy speculative instr. fetch */
     . = ALIGN(4) + 16;
+    /* iram_end_test section exists for use by memprot unit tests only */
+    *(.iram_end_test)
     _iram_text_end = ABSOLUTE(.);
     _iram_end = ABSOLUTE(.);
   } > iram0_0_seg
@@ -249,14 +251,23 @@ SECTIONS
     _bss_end = ABSOLUTE(.);
   } > dram0_0_seg
 
-  /* When modifying the alignment, update tls_section_alignment in pxPortInitialiseStack */
-  .flash.rodata : ALIGN(0x10)
+  .flash.appdesc : ALIGN(0x10)
   {
     _rodata_reserved_start = ABSOLUTE(.);
     _rodata_start = ABSOLUTE(.);
 
     *(.rodata_desc .rodata_desc.*)               /* Should be the first.  App version info.        DO NOT PUT ANYTHING BEFORE IT! */
     *(.rodata_custom_desc .rodata_custom_desc.*) /* Should be the second. Custom app version info. DO NOT PUT ANYTHING BEFORE IT! */
+
+    /* Create an empty gap within this section. Thanks to this, the end of this
+     * section will match .flah.rodata's begin address. Thus, both sections
+     * will be merged when creating the final bin image. */
+    . = ALIGN(ALIGNOF(.flash.rodata));
+  } >default_rodata_seg
+
+  .flash.rodata : ALIGN(0x10)
+  {
+    _flash_rodata_start = ABSOLUTE(.);
 
     mapping[flash_rodata]
 
@@ -313,6 +324,8 @@ SECTIONS
     _rodata_reserved_end = ABSOLUTE(.);
     . = ALIGN(4);
   } >default_rodata_seg
+
+  _flash_rodata_align = ALIGNOF(.flash.rodata);
 
   .flash.text :
   {

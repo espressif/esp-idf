@@ -239,6 +239,15 @@ menu "LWIP"
             Enabling this option performs a check (via ARP request) if the offered IP address
             is not already in use by another host on the network.
 
+    config LWIP_DHCP_DISABLE_CLIENT_ID
+        bool "DHCP: Disable Use of HW address as client identification"
+        default n
+        help
+            This option could be used to disable DHCP client identification with its MAC address.
+            (Client id is used by DHCP servers to uniquely identify clients and are included
+            in the DHCP packets as an option 61)
+            Set this option to "y" in order to exclude option 61 from DHCP packets.
+
     config LWIP_DHCP_RESTORE_LAST_IP
         bool "DHCP: Restore last IP obtained from DHCP server"
         default n
@@ -327,6 +336,28 @@ menu "LWIP"
             Enabling this option allows the devices to IPV6 stateless address autoconfiguration (SLAAC).
 
             See RFC 4862.
+
+    config LWIP_IPV6_NUM_ADDRESSES
+        int "Number of IPv6 addresses on each network interface"
+        depends on LWIP_IPV6
+        default 3
+        help
+            The maximum number of IPv6 addresses on each interface. Any additional
+            addresses will be discarded.
+
+    config LWIP_IPV6_FORWARD
+        bool "Enable IPv6 forwarding between interfaces"
+        depends on LWIP_IPV6
+        default n
+        help
+            Forwarding IPv6 packets between interfaces is only required when acting as
+            a router.
+
+    config LWIP_NETIF_STATUS_CALLBACK
+        bool "Enable status callback for network interfaces"
+        default n
+        help
+            Enable callbacks when the network interface is up/down and addresses are changed.
 
     menuconfig LWIP_NETIF_LOOPBACK
         bool "Support per-interface loopback"
@@ -708,6 +739,29 @@ menu "LWIP"
         help
             Enable Microsoft Point-to-Point Encryption (MPPE) support
 
+    config LWIP_ENABLE_LCP_ECHO
+        bool "Enable LCP ECHO"
+        depends on LWIP_PPP_SUPPORT
+        default n
+        help
+            Enable LCP echo keepalive requests
+
+    config LWIP_LCP_ECHOINTERVAL
+        int "Echo interval (s)"
+        range 0 1000000
+        depends on LWIP_ENABLE_LCP_ECHO
+        default 3
+        help
+            Interval in seconds between keepalive LCP echo requests, 0 to disable.
+
+    config LWIP_LCP_MAXECHOFAILS
+        int "Maximum echo failures"
+        range 0 100000
+        depends on LWIP_ENABLE_LCP_ECHO
+        default 3
+        help
+            Number of consecutive unanswered echo requests before failure is indicated.
+
     config LWIP_PPP_DEBUG_ON
         bool "Enable PPP debug log output"
         depends on LWIP_PPP_SUPPORT
@@ -777,24 +831,6 @@ menu "LWIP"
 
     endmenu # SNTP
 
-    menu "LCP"
-
-        config LCP_ECHOINTERVAL
-            int "Echo interval (s)"
-            range 0 1000000
-            default 0
-            help
-                Interval in seconds between keepalive LCP echo requests, 0 to disable.
-
-        config LCP_MAXECHOFAILS
-            int "Maximum echo failures"
-            range 0 100000
-            default 3
-            help
-                Number of consecutive unanswered echo requests before failure is indicated.
-
-    endmenu # LCP
-
     config LWIP_ESP_LWIP_ASSERT
         bool "Enable LWIP ASSERT checks"
         default y
@@ -854,6 +890,26 @@ menu "LWIP"
 
         endchoice
 
+        choice LWIP_HOOK_ND6_GET_GW
+            prompt "IPv6 get gateway Hook"
+            depends on LWIP_IPV6
+            default LWIP_HOOK_ND6_GET_GW_NONE
+            help
+                Enables custom IPv6 route hook.
+                Setting this to "default" provides weak implementation
+                stub that could be overwritten in application code.
+                Setting this to "custom" provides hook's declaration
+                only and expects the application to implement it.
+
+            config LWIP_HOOK_ND6_GET_GW_NONE
+                bool "No hook declared"
+            config LWIP_HOOK_ND6_GET_GW_DEFAULT
+                bool "Default (weak) implementation"
+            config LWIP_HOOK_ND6_GET_GW_CUSTOM
+                bool "Custom implementation"
+
+        endchoice
+
         choice LWIP_HOOK_NETCONN_EXTERNAL_RESOLVE
             prompt "Netconn external resolve Hook"
             default LWIP_HOOK_NETCONN_EXT_RESOLVE_NONE
@@ -875,55 +931,68 @@ menu "LWIP"
 
     endmenu # Hooks
 
-    menu "Debug"
+    menuconfig LWIP_DEBUG
+        bool "Enable LWIP Debug"
+        default n
 
-        config LWIP_NETIF_DEBUG
-            bool "Enable netif debug messages"
-            default n
+    config LWIP_NETIF_DEBUG
+        bool "Enable netif debug messages"
+        depends on LWIP_DEBUG
+        default n
 
-        config LWIP_PBUF_DEBUG
-            bool "Enable pbuf debug messages"
-            default n
+    config LWIP_PBUF_DEBUG
+        bool "Enable pbuf debug messages"
+        depends on LWIP_DEBUG
+        default n
 
-        config LWIP_ETHARP_DEBUG
-            bool "Enable etharp debug messages"
-            default n
+    config LWIP_ETHARP_DEBUG
+        bool "Enable etharp debug messages"
+        depends on LWIP_DEBUG
+        default n
 
-        config LWIP_API_LIB_DEBUG
-            bool "Enable api lib debug messages"
-            default n
+    config LWIP_API_LIB_DEBUG
+        bool "Enable api lib debug messages"
+        depends on LWIP_DEBUG
+        default n
 
-        config LWIP_SOCKETS_DEBUG
-            bool "Enable socket debug messages"
-            default n
+    config LWIP_SOCKETS_DEBUG
+        bool "Enable socket debug messages"
+        depends on LWIP_DEBUG
+        default n
 
-        config LWIP_IP_DEBUG
-            bool "Enable IP debug messages"
-            default n
+    config LWIP_IP_DEBUG
+        bool "Enable IP debug messages"
+        depends on LWIP_DEBUG
+        default n
 
-        config LWIP_ICMP_DEBUG
-            bool "Enable ICMP debug messages"
-            default n
+    config LWIP_ICMP_DEBUG
+        bool "Enable ICMP debug messages"
+        depends on LWIP_DEBUG
+        default n
 
-        config LWIP_DHCP_STATE_DEBUG
-            bool "Enable DHCP state tracking"
-            default n
+    config LWIP_DHCP_STATE_DEBUG
+        bool "Enable DHCP state tracking"
+        depends on LWIP_DEBUG
+        default n
 
-        config LWIP_DHCP_DEBUG
-            bool "Enable DHCP debug messages"
-            default n
+    config LWIP_DHCP_DEBUG
+        bool "Enable DHCP debug messages"
+        depends on LWIP_DEBUG
+        default n
 
-        config LWIP_IP6_DEBUG
-            bool "Enable IP6 debug messages"
-            default n
+    config LWIP_IP6_DEBUG
+        bool "Enable IP6 debug messages"
+        depends on LWIP_DEBUG
+        default n
 
-        config LWIP_ICMP6_DEBUG
-            bool "Enable ICMP6 debug messages"
-            default n
+    config LWIP_ICMP6_DEBUG
+        bool "Enable ICMP6 debug messages"
+        depends on LWIP_DEBUG
+        default n
 
-        config LWIP_TCP_DEBUG
-            bool "Enable TCP debug messages"
-            default n
+    config LWIP_TCP_DEBUG
+        bool "Enable TCP debug messages"
+        depends on LWIP_DEBUG
+        default n
 
-    endmenu #debug
 endmenu

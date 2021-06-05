@@ -25,7 +25,8 @@ typedef struct {
     struct {
         const periph_module_t module;
         struct {
-            const int irq_id;
+            const int rx_irq_id;
+            const int tx_irq_id;
         } pairs[SOC_GDMA_PAIRS_PER_GROUP];
     } groups[SOC_GDMA_GROUPS];
 } gdma_signal_conn_t;

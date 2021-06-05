@@ -581,8 +581,8 @@ class IDFTool(object):
             # tool is not on the path
             raise ToolNotFound('Tool {} not found'.format(self.name))
         except subprocess.CalledProcessError as e:
-            raise ToolExecError('Command {} has returned non-zero exit code ({})\n'.format(
-                ' '.join(self._current_options.version_cmd), e.returncode))  # type: ignore
+            raise ToolExecError('returned non-zero exit code ({}) with error message:\n{}'.format(
+                e.returncode, e.stderr.decode('utf-8',errors='ignore')))  # type: ignore
 
         in_str = version_cmd_result.decode('utf-8')
         match = re.search(self._current_options.version_regex, in_str)  # type: ignore
@@ -633,8 +633,9 @@ class IDFTool(object):
         except ToolNotFound:
             # not in PATH
             pass
-        except ToolExecError:
-            warn('tool {} found in path, but failed to run'.format(self.name))
+        except ToolExecError as e:
+            warn('tool {} found in path, but {}'.format(
+                self.name, e))
         else:
             self.version_in_path = ver_str
 
@@ -652,9 +653,9 @@ class IDFTool(object):
             except ToolNotFound:
                 warn('directory for tool {} version {} is present, but tool was not found'.format(
                     self.name, version))
-            except ToolExecError:
-                warn('tool {} version {} is installed, but the tool failed to run'.format(
-                    self.name, version))
+            except ToolExecError as e:
+                warn('tool {} version {} is installed, but {}'.format(
+                    self.name, version, e))
             else:
                 if ver_str != version:
                     warn('tool {} version {} is installed, but has reported version {}'.format(

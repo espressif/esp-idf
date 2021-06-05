@@ -45,6 +45,8 @@ extern "C" {
 typedef enum {
     ESP_PARTITION_TYPE_APP = 0x00,       //!< Application partition type
     ESP_PARTITION_TYPE_DATA = 0x01,      //!< Data partition type
+
+    ESP_PARTITION_TYPE_ANY = 0xff,       //!< Used to search for partitions with any type
 } esp_partition_type_t;
 
 /**
@@ -123,7 +125,9 @@ typedef struct {
 /**
  * @brief Find partition based on one or more parameters
  *
- * @param type Partition type, one of esp_partition_type_t values or an 8-bit unsigned integer
+ * @param type Partition type, one of esp_partition_type_t values or an 8-bit unsigned integer.
+ *             To find all partitions, no matter the type, use ESP_PARTITION_TYPE_ANY, and set
+ *             subtype argument to ESP_PARTITION_SUBTYPE_ANY.
  * @param subtype Partition subtype, one of esp_partition_subtype_t values or an 8-bit unsigned integer.
  *                To find all partitions of given type, use ESP_PARTITION_SUBTYPE_ANY.
  * @param label (optional) Partition label. Set this value if looking
@@ -139,7 +143,9 @@ esp_partition_iterator_t esp_partition_find(esp_partition_type_t type, esp_parti
 /**
  * @brief Find first partition based on one or more parameters
  *
- * @param type Partition type, one of esp_partition_type_t values or an 8-bit unsigned integer
+ * @param type Partition type, one of esp_partition_type_t values or an 8-bit unsigned integer.
+ *             To find all partitions, no matter the type, use ESP_PARTITION_TYPE_ANY, and set
+ *             subtype argument to ESP_PARTITION_SUBTYPE_ANY.
  * @param subtype Partition subtype, one of esp_partition_subtype_t values or an 8-bit unsigned integer
  *                To find all partitions of given type, use ESP_PARTITION_SUBTYPE_ANY.
  * @param label (optional) Partition label. Set this value if looking

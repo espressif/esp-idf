@@ -1,0 +1,68 @@
+menu "OpenThread"
+
+    config OPENTHREAD_ENABLED
+        bool "OpenThread"
+        default n
+        help
+            Select this option to enable OpenThread and show the submenu with OpenThread configuration choices.
+
+    choice OPENTHREAD_DEVICE_TYPE
+        prompt "Config the Thread device type"
+        depends on OPENTHREAD_ENABLED
+        default OPENTHREAD_FTD
+        help
+            OpenThread can be configured to different device types (FTD, MTD, Radio)
+
+        config OPENTHREAD_FTD
+            bool "Full Thread Device"
+            help
+                Select this to enable Full Thread Device which can act as router and leader in a Thread network.
+
+        config OPENTHREAD_MTD
+            bool "Minimal Thread Device"
+            help
+                Select this to enable Minimal Thread Device which can only act as end device in a Thread network.
+                This will reduce the code size of the OpenThread stack.
+
+        config OPENTHREAD_RADIO
+            bool "Radio Only Device"
+            help
+                Select this to enable Radio Only Device which cannot can only forward 15.4 packets to the host.
+                The OpenThread stack will be run on the host and OpenThread will have minimal footprint on the
+                radio only device.
+    endchoice
+
+    config OPENTHREAD_DIAG
+        bool "Enable diag"
+        depends on OPENTHREAD_ENABLED
+        default y
+        help
+            Select this option to enable Diag in OpenThread. This will enable diag mode and a series of diag commands
+            in the OpenThread command line. These commands allow users to manipulate low-level features of the storage
+            and 15.4 radio.
+
+    config OPENTHREAD_COMMISSIONER
+        bool "Enable Commissioner"
+        depends on OPENTHREAD_ENABLED
+        default n
+        help
+            Select this option to enable commissioner in OpenThread. This will enable the device to act as a
+            commissioner in the Thread network. A commissioner checks the pre-shared key from a joining device with
+            the Thread commissioning protocol and shares the network parameter with the joining device upon success.
+
+    config OPENTHREAD_JOINER
+        bool "Enable Joiner"
+        depends on OPENTHREAD_ENABLED
+        default n
+        help
+            Select this option to enable Joiner in OpenThread. This allows a device to join the Thread network with a
+            pre-shared key using the Thread commissioning protocol.
+
+    config OPENTHREAD_PARTITION_NAME
+        string "The partition for OpenThread to store its network data"
+        depends on OPENTHREAD_ENABLED
+        default "ot_storage"
+        help
+            The storage size should be at least 8192 bytes.
+
+endmenu

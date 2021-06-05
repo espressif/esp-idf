@@ -37,9 +37,13 @@ def action_extensions(base_actions, project_path):
 
     def _get_esptool_args(args):
         esptool_path = os.path.join(os.environ['IDF_PATH'], 'components/esptool_py/esptool/esptool.py')
+        esptool_wrapper_path = os.environ.get('ESPTOOL_WRAPPER', '')
         if args.port is None:
             args.port = _get_default_serial_port(args)
-        result = [PYTHON, esptool_path]
+        result = [PYTHON]
+        if os.path.exists(esptool_wrapper_path):
+            result += [esptool_wrapper_path]
+        result += [esptool_path]
         result += ['-p', args.port]
         result += ['-b', str(args.baud)]
 
@@ -99,8 +103,13 @@ def action_extensions(base_actions, project_path):
             monitor_args += ['--decode-coredumps', coredump_decode]
 
         target_arch_riscv = get_sdkconfig_value(project_desc['config_file'], 'CONFIG_IDF_TARGET_ARCH_RISCV')
+        monitor_args += ['--target', project_desc['target']]
+        revision = project_desc.get('rev')
+        if revision:
+            monitor_args += ['--revision', revision]
+
         if target_arch_riscv:
-            monitor_args += ['--decode-panic', 'backtrace', '--target', project_desc['target']]
+            monitor_args += ['--decode-panic', 'backtrace']
 
         if print_filter is not None:
             monitor_args += ['--print_filter', print_filter]
@@ -114,6 +123,7 @@ def action_extensions(base_actions, project_path):
 
         if 'MSYSTEM' in os.environ:
             monitor_args = ['winpty'] + monitor_args
+
         run_tool('idf_monitor', monitor_args, args.project_dir)
 
     def flash(action, ctx, args):

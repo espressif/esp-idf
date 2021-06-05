@@ -388,7 +388,10 @@ ESP-IDF v4.0 变更了链接器脚本片段文件使用的一些语法：
 
 这些生成的包罗规则将用于未指定映射规则的情况。
 
-``默认`` 协议在 :component_file:`{IDF_TARGET_PATH_NAME}/ld/{IDF_TARGET_PATH_NAME}_fragments.lf` 文件中定义，快速上手指南中提到的内置 ``noflash`` 协议和 ``rtc`` 协议也在该文件中定义。
+
+``默认`` 协议在 :component_file:`esp_system/app.lf` 文件中定义。
+快速上手指南中提到的内置 ``noflash`` 协议和 ``rtc`` 协议也在该文件中定义。
+
 
 .. _ldgen-mapping-fragment :
 
@@ -511,19 +514,18 @@ ESP-IDF v4.0 变更了链接器脚本片段文件使用的一些语法：
 .. code-block:: none
 
     . = ALIGN(8)
-    __my_sym_start = ABSOLUTE(.)
+    _my_sym_start = ABSOLUTE(.)
     KEEP(lib1.a:obj1.*( SORT(.rodata) SORT(.rodata.*) ))
-    __my_sym_end = ABSOLUTE(.)
+    _my_sym_end = ABSOLUTE(.)
 
 注意，正如在 flag 描述中提到的，ALIGN 和 SURROUND 的使用对顺序敏感，因此如果将两者顺序调换后用到相同的映射片段，则会生成：
 
 .. code-block:: none
 
-    __my_sym_start = ABSOLUTE(.)
+    _my_sym_start = ABSOLUTE(.)
     . = ALIGN(8)
     KEEP(lib1.a:obj1.*( SORT(.rodata) SORT(.rodata.*) ))
-    __my_sym_end = ABSOLUTE(.)
-
+    _my_sym_end = ABSOLUTE(.)
 
 .. _ldgen-symbol-granularity-placements :
 

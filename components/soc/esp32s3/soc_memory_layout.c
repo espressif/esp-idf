@@ -72,6 +72,9 @@ const soc_memory_region_t soc_memory_regions[] = {
 #if CONFIG_ESP32S3_DATA_CACHE_32KB
     { 0x3FCF0000, 0x8000,  0, 0},          //Level 9, DRAM
 #endif
+#ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
+    { 0x50000000, 0x2000,  4, 0}, //Fast RTC memory
+#endif
 };
 
 const size_t soc_memory_region_count = sizeof(soc_memory_regions) / sizeof(soc_memory_region_t);

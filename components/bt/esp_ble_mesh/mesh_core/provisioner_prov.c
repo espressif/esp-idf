@@ -1954,7 +1954,17 @@ static int prov_auth(const uint8_t idx, uint8_t method, uint8_t action, uint8_t 
             uint32_t num = 0U;
 
             bt_mesh_rand(&num, sizeof(num));
-            num %= div[size - 1];
+
+            if (input == BLE_MESH_PUSH ||
+                input == BLE_MESH_TWIST) {
+                /** NOTE: According to the Bluetooth Mesh Profile Specification
+                 *  Section 5.4.2.4, push and twist should be a random integer
+                 *  between 0 and 10^size.
+                 */
+                num = (num % (div[size - 1] - 1)) + 1;
+            } else {
+                num %= div[size - 1];
+            }
 
             sys_put_be32(num, &link[idx].auth[12]);
             memset(link[idx].auth, 0, 12);
@@ -2057,7 +2067,7 @@ int bt_mesh_provisioner_set_oob_input_data(const uint8_t idx, const uint8_t *val
     memset(link[idx].auth, 0, 16);
     if (num_flag) {
         /* Provisioner inputs number */
-        memcpy(link[idx].auth + 12, val, sizeof(uint32_t));
+        sys_memcpy_swap(link[idx].auth + 12, val, sizeof(uint32_t));
     } else {
         /* Provisioner inputs string */
         memcpy(link[idx].auth, val, link[idx].auth_size);
@@ -2094,7 +2104,7 @@ int bt_mesh_provisioner_set_oob_output_data(const uint8_t idx, const uint8_t *nu
     if (num_flag) {
         /* Provisioner output number */
         memset(link[idx].auth, 0, 16);
-        memcpy(link[idx].auth + 16 - size, num, size);
+        sys_memcpy_swap(link[idx].auth + 16 - size, num, size);
     } else {
         /* Provisioner output string */
         memset(link[idx].auth, 0, 16);

@@ -113,6 +113,9 @@ extern "C" {
 #define RTC_CNTL_CK8M_DFREQ_DEFAULT 172
 #define RTC_CNTL_SCK_DCAP_DEFAULT   255
 
+#define RTC_CNTL_ULPCP_TOUCH_START_WAIT_IN_SLEEP    (0xFF)
+#define RTC_CNTL_ULPCP_TOUCH_START_WAIT_DEFAULT     (0x10)
+
 /*
 set sleep_init default param
 */
@@ -405,11 +408,6 @@ bool rtc_clk_8md256_enabled(void);
  * @param o_div  frequency divider, 0..31
  */
 void rtc_clk_apll_enable(bool enable, uint32_t sdm0, uint32_t sdm1, uint32_t sdm2, uint32_t o_div);
-
-/**
- * @brief Set XTAL wait cycles by RTC slow clock's period
- */
-void rtc_clk_set_xtal_wait(void);
 
 /**
  * @brief Select source for RTC_SLOW_CLK

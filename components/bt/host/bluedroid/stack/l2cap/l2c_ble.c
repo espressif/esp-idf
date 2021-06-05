@@ -51,6 +51,7 @@ const tHCI_ExtConnParams ext_conn_params = {
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 static BOOLEAN l2cble_start_conn_update (tL2C_LCB *p_lcb);
+extern int64_t esp_system_get_time(void);
 
 /*******************************************************************************
 **
@@ -203,6 +204,10 @@ BOOLEAN L2CA_EnableUpdateBleConnParams (BD_ADDR rem_bda, BOOLEAN enable)
 
     if (p_lcb->current_used_conn_interval <= BTM_BLE_CONN_INT_MAX_DEF && (p_lcb->conn_update_mask & L2C_BLE_CONN_UPDATE_DISABLE) == 0){
         return (FALSE);
+    }
+    bool is_disable = (p_lcb->conn_update_mask & L2C_BLE_CONN_UPDATE_DISABLE);
+    if(l2cu_plcb_active_count() >1 && !(enable && is_disable)) {
+        return FALSE;
     }
 
     if (enable) {
@@ -363,7 +368,7 @@ void l2cble_scanner_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE type,
                                            p_dev_rec->conn_params.max_conn_int,
                                            p_dev_rec->conn_params.slave_latency,
                                            p_dev_rec->conn_params.supervision_tout,
-                                           0, 0);
+                                           BLE_CE_LEN_MIN, BLE_CE_LEN_MIN);
     }
 
     /* Tell BTM Acl management about the link */
@@ -524,7 +529,7 @@ static BOOLEAN l2cble_start_conn_update (tL2C_LCB *p_lcb)
 #endif
                ) {
                 btsnd_hcic_ble_upd_ll_conn_params(p_lcb->handle, min_conn_int, max_conn_int,
-                                                  slave_latency, supervision_tout, 0, 0);
+                                                  slave_latency, supervision_tout, BLE_CE_LEN_MIN, BLE_CE_LEN_MIN);
             } else {
                 l2cu_send_peer_ble_par_req (p_lcb, min_conn_int, max_conn_int, slave_latency, supervision_tout);
             }
@@ -552,7 +557,7 @@ static BOOLEAN l2cble_start_conn_update (tL2C_LCB *p_lcb)
 #endif
                ) {
                 btsnd_hcic_ble_upd_ll_conn_params(p_lcb->handle, p_lcb->waiting_update_conn_min_interval,
-                                                  p_lcb->waiting_update_conn_max_interval, p_lcb->waiting_update_conn_latency, p_lcb->waiting_update_conn_timeout, 0, 0);
+                                                  p_lcb->waiting_update_conn_max_interval, p_lcb->waiting_update_conn_latency, p_lcb->waiting_update_conn_timeout, BLE_CE_LEN_MIN, BLE_CE_LEN_MIN);
             } else {
                 l2cu_send_peer_ble_par_req (p_lcb, p_lcb->waiting_update_conn_min_interval, p_lcb->waiting_update_conn_max_interval,
                                             p_lcb->waiting_update_conn_latency, p_lcb->waiting_update_conn_timeout);
@@ -801,7 +806,6 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
 
 #if ( (defined BLE_PRIVACY_SPT) && (BLE_PRIVACY_SPT == TRUE))
     own_addr_type = btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type;
-
 #if (!CONTROLLER_RPA_LIST_ENABLE)
     if(dev_rec_exist) {
         // if the current address information is valid, get the real address information
@@ -825,7 +829,7 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
 
 #endif // (!CONTROLLER_RPA_LIST_ENABLE)
 
-#if CONTROLLER_RPA_LIST_ENABLE
+#if (CONTROLLER_RPA_LIST_ENABLE && CONFIG_BT_CTRL_ESP32)
 
     if (p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) {
         if (btm_cb.ble_ctr_cb.privacy_mode >=  BTM_PRIVACY_1_2) {
@@ -839,13 +843,24 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
     }
 
 #endif // CONTROLLER_RPA_LIST_ENABLE
-
 #endif // (defined BLE_PRIVACY_SPT) && (BLE_PRIVACY_SPT == TRUE)
 
     if (!btm_ble_topology_check(BTM_BLE_STATE_INIT)) {
         l2cu_release_lcb (p_lcb);
         L2CAP_TRACE_ERROR("initate direct connection fail, topology limitation");
         return FALSE;
+    }
+    uint32_t link_timeout = L2CAP_BLE_LINK_CONNECT_TOUT;
+    if(GATTC_CONNECT_RETRY_COUNT) {
+        if(!p_lcb->retry_create_con) {
+            p_lcb->start_time_s = (esp_system_get_time()/1000);
+        }
+        uint32_t current_time = (esp_system_get_time()/1000);
+        link_timeout = (L2CAP_BLE_LINK_CONNECT_TOUT*1000 - (current_time - p_lcb->start_time_s))/1000;
+
+        if(link_timeout == 0 || link_timeout > L2CAP_BLE_LINK_CONNECT_TOUT) {
+            link_timeout = L2CAP_BLE_LINK_CONNECT_TOUT;
+        }
     }
 
     if (!p_lcb->is_aux) {
@@ -863,8 +878,8 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
                                                     p_dev_rec->conn_params.slave_latency : BTM_BLE_CONN_SLAVE_LATENCY_DEF), /* UINT16 conn_latency  */
                                             (UINT16) ((p_dev_rec->conn_params.supervision_tout != BTM_BLE_CONN_PARAM_UNDEF) ?
                                                     p_dev_rec->conn_params.supervision_tout : BTM_BLE_CONN_TIMEOUT_DEF), /* conn_timeout */
-                                            0,                       /* UINT16 min_len       */
-                                            0)) {                    /* UINT16 max_len       */
+                                            BLE_CE_LEN_MIN,                       /* UINT16 min_len       */
+                                            BLE_CE_LEN_MIN)) {                    /* UINT16 max_len       */
             l2cu_release_lcb (p_lcb);
             L2CAP_TRACE_ERROR("initate direct connection fail, no resources");
             return (FALSE);
@@ -872,13 +887,28 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
             p_lcb->link_state = LST_CONNECTING;
             l2cb.is_ble_connecting = TRUE;
             memcpy (l2cb.ble_connecting_bda, p_lcb->remote_bd_addr, BD_ADDR_LEN);
-            btu_start_timer (&p_lcb->timer_entry, BTU_TTYPE_L2CAP_LINK, L2CAP_BLE_LINK_CONNECT_TOUT);
+            btu_start_timer (&p_lcb->timer_entry, BTU_TTYPE_L2CAP_LINK, link_timeout);
             btm_ble_set_conn_st (BLE_DIR_CONN);
 
             return (TRUE);
         }
     } else {
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
+
+        /*
+        * 0x00 Public Device Address
+        * 0x01 Random Device Address
+        * 0x02 Public Identity Address (corresponds to Resolved Private Address)
+        * 0x03 Random (static) Identity Address (corresponds to Resolved Private Address)
+        * 0xFF No address provided (anonymous advertisement)
+        */
+
+        if ((peer_addr_type & BLE_ADDR_RANDOM) == BLE_ADDR_RANDOM) {
+            peer_addr_type = BLE_ADDR_RANDOM;
+        } else {
+            peer_addr_type = BLE_ADDR_PUBLIC;
+        }
+
         tHCI_CreatExtConn aux_conn = {0};
         aux_conn.filter_policy = FALSE;
         aux_conn.own_addr_type = own_addr_type;
@@ -899,7 +929,7 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
         p_lcb->link_state = LST_CONNECTING;
         l2cb.is_ble_connecting = TRUE;
         memcpy (l2cb.ble_connecting_bda, p_lcb->remote_bd_addr, BD_ADDR_LEN);
-        btu_start_timer (&p_lcb->timer_entry, BTU_TTYPE_L2CAP_LINK, L2CAP_BLE_LINK_CONNECT_TOUT);
+        btu_start_timer (&p_lcb->timer_entry, BTU_TTYPE_L2CAP_LINK, link_timeout);
         btm_ble_set_conn_st (BLE_DIR_CONN);
         if(!btsnd_hcic_ble_create_ext_conn(&aux_conn)) {
             l2cu_release_lcb (p_lcb);
@@ -1104,12 +1134,12 @@ void l2cble_process_rc_param_request_evt(UINT16 handle, UINT16 int_min, UINT16 i
         /* if update is enabled, always accept connection parameter update */
         if ((p_lcb->conn_update_mask & L2C_BLE_CONN_UPDATE_DISABLE) == 0) {
             p_lcb->conn_update_mask |= L2C_BLE_UPDATE_PENDING;
-            btsnd_hcic_ble_rc_param_req_reply(handle, int_min, int_max, latency, timeout, 0, 0);
+            btsnd_hcic_ble_rc_param_req_reply(handle, int_min, int_max, latency, timeout, BLE_CE_LEN_MIN, BLE_CE_LEN_MIN);
         }else {
             /* always accept connection parameters request which is sent by itself */
             if (int_max == BTM_BLE_CONN_INT_MIN) {
                 p_lcb->conn_update_mask |= L2C_BLE_UPDATE_PENDING;
-                btsnd_hcic_ble_rc_param_req_reply(handle, int_min, int_max, latency, timeout, 0, 0);
+                btsnd_hcic_ble_rc_param_req_reply(handle, int_min, int_max, latency, timeout, BLE_CE_LEN_MIN, BLE_CE_LEN_MIN);
             }else {
                 L2CAP_TRACE_EVENT ("L2CAP - LE - update currently disabled");
                 p_lcb->conn_update_mask |= L2C_BLE_NEW_CONN_PARAM;

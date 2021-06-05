@@ -127,6 +127,7 @@ void app_main(void)
     ESP_ERROR_CHECK( esp_ble_gattc_register_callback(esp_hidh_gattc_event_handler) );
     esp_hidh_config_t config = {
         .callback = hidh_callback,
+        .event_stack_size = 4096
     };
     ESP_ERROR_CHECK( esp_hidh_init(&config) );
 

@@ -168,7 +168,11 @@ typedef UINT8   tBTM_BLE_SFP;
 
 /* default connection interval max */
 #ifndef BTM_BLE_CONN_INT_MAX_DEF
+#if CONFIG_IDF_TARGET_ESP32
 #define BTM_BLE_CONN_INT_MAX_DEF     12      /* recommended max: 15 ms = 12 * 1.25 */
+#else
+#define BTM_BLE_CONN_INT_MAX_DEF     (((MAX_ACL_CONNECTIONS + 1) * 4) > 12 ? ((MAX_ACL_CONNECTIONS + 1) * 4) : 12)     /* recommended max:  BTM_BLE_CONN_INT_MAX_DEF * 1.25 ms*/
+#endif
 #endif
 
 /* default slave latency */
@@ -700,8 +704,6 @@ typedef void (tBTM_BLE_PF_PARAM_CBACK) (tBTM_BLE_PF_ACTION action_type,
 #define MAX_BLE_ADV_INSTANCE 10
 typedef struct {
     UINT8                       inst_id;
-    BOOLEAN                     in_use;
-    UINT8                       adv_evt;
     BOOLEAN                     configured;
     BOOLEAN                     legacy_pdu;
 
@@ -714,7 +716,6 @@ typedef struct {
 typedef struct {
     tBTM_BLE_EXTENDED_INST inst[MAX_BLE_ADV_INSTANCE]; /* dynamic array to store adv instance */
     UINT8  scan_duplicate;
-    tBTM_BLE_MULTI_ADV_OPQ  op_q;
 } tBTM_BLE_EXTENDED_CB;
 
 #define BTM_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE       (1 << 0)

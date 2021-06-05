@@ -24,12 +24,14 @@ The ESP-IDF FreeRTOS provides the following API to manage thread local variables
  - :cpp:func:`vTaskSetThreadLocalStoragePointerAndDelCallback`
 
 In this case maximum number of variables that can be allocated is limited by
-``configNUM_THREAD_LOCAL_STORAGE_POINTERS`` macro. Variables are kept in the task control block (TCB)
+:ref:`CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS` configuration value. Variables are kept in the task control block (TCB)
 and accessed by their index. Note that index 0 is reserved for ESP-IDF internal uses.
+
 Using that API user can allocate thread local variables of an arbitrary size and assign them to any number of tasks.
 Different tasks can have different sets of TLS variables.
-If size of the variable is more then 4 bytes then user is responsible for allocating/deallocating memory for it. 
-Variable's deallocation is initiated by FreeRTOS when task is deleted, but user must provide function (callback) 
+
+If size of the variable is more then 4 bytes then user is responsible for allocating/deallocating memory for it.
+Variable's deallocation is initiated by FreeRTOS when task is deleted, but user must provide function (callback)
 to do proper cleanup.
 
 .. _pthread-api:
@@ -37,7 +39,7 @@ to do proper cleanup.
 Pthread API
 ----------------
 
-The ESP-IDF provides the following pthread API to manage thtread local variables:
+The ESP-IDF provides the following :doc:`pthread API </api-reference/system/pthread>` to manage thread local variables:
 
  - :cpp:func:`pthread_key_create`
  - :cpp:func:`pthread_key_delete`
@@ -60,6 +62,6 @@ Note that area for all such variables in the program will be allocated on the st
 every task in the system even if that task does not use such variables at all. For example
 ESP-IDF system tasks (like ``ipc``, ``timer`` tasks etc.) will also have that extra stack space allocated.
 So this feature should be used with care. There is a tradeoff: C11 thread local variables are quite handy
-to use in programming and can be accessed using just a few Xtensa instructions, but this benefit goes
+to use in programming and can be accessed using minimal CPU instructions, but this benefit goes
 with the cost of additional stack usage for all tasks in the system.
 Due to static nature of variables allocation all tasks in the system have the same sets of C11 thread local variables.

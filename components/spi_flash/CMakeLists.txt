@@ -1,4 +1,4 @@
-idf_build_get_property(spi_flash_mock CONFIG_SPI_FLASH_MOCK)
+idf_component_get_property(spi_flash_mock ${COMPONENT_NAME} USE_MOCK)
 idf_build_get_property(target IDF_TARGET)
 if(${spi_flash_mock})
     message(STATUS "building SPI FLASH MOCKS")
@@ -102,7 +102,7 @@ else()
                         REQUIRES hal
                         PRIV_REQUIRES "${priv_requires}"
                         INCLUDE_DIRS include
-                        PRIV_INCLUDE_DIRS private_include
+                        PRIV_INCLUDE_DIRS include/spi_flash
                         LDFRAGMENTS linker.lf)
 
     # Avoid cache miss by unexpected inlineing when built by -Os

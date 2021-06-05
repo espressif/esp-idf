@@ -22,6 +22,7 @@ import concurrent.futures
 import os
 import os.path
 import re
+import sys
 import urllib.error
 import urllib.request
 from collections import defaultdict, namedtuple
@@ -148,8 +149,8 @@ def check_readme_links(args):
     print('Found {} errors:'.format(len(errors)))
     for e in errors:
         print(e)
-    if errors:
-        raise e
+
+    return 1 if len(errors) > 0 else 0
 
 
 if __name__ == '__main__':
@@ -158,4 +159,4 @@ if __name__ == '__main__':
     parser.add_argument('--skip-weburl', '-w', action='store_true', help='Skip checking of web URLs, only check links to local files')
     args = parser.parse_args()
 
-    check_readme_links(args)
+    sys.exit(check_readme_links(args))

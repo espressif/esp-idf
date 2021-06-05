@@ -1,5 +1,5 @@
 #
-# Copyright 2021 Espressif Systems (Shanghai) PTE LTD
+# Copyright 2021 Espressif Systems (Shanghai) CO., LTD
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,19 +18,14 @@ import logging
 import re
 import time
 
-from . import ESPCoreDumpError
-
-try:
-    import typing
-except ImportError:
-    pass
-
 from pygdbmi.gdbcontroller import DEFAULT_GDB_TIMEOUT_SEC, GdbController
+
+from . import ESPCoreDumpError
 
 
 class EspGDB(object):
     def __init__(self, gdb_path, gdb_cmds, core_filename, prog_filename, timeout_sec=DEFAULT_GDB_TIMEOUT_SEC):
-        # type: (str, typing.List[str], str, str, int) -> None
+
         """
         Start GDB and initialize a GdbController instance
         """
@@ -59,7 +54,7 @@ class EspGDB(object):
 
     def _gdbmi_run_cmd_get_responses(self, cmd, resp_message, resp_type, multiple=True,
                                      done_message=None, done_type=None):
-        # type: (str, typing.Optional[str], str, bool, typing.Optional[str], typing.Optional[str]) -> list
+
         self.p.write(cmd, read_response=False)
         t_end = time.time() + self.timeout
         filtered_response_list = []
@@ -80,15 +75,15 @@ class EspGDB(object):
         return filtered_response_list
 
     def _gdbmi_run_cmd_get_one_response(self, cmd, resp_message, resp_type):
-        # type: ( str, typing.Optional[str], str) -> dict
+
         return self._gdbmi_run_cmd_get_responses(cmd, resp_message, resp_type, multiple=False)[0]
 
-    def _gdbmi_data_evaluate_expression(self, expr):  # type: (str) -> str
+    def _gdbmi_data_evaluate_expression(self, expr):
         """ Get the value of an expression, similar to the 'print' command """
         return self._gdbmi_run_cmd_get_one_response("-data-evaluate-expression \"%s\"" % expr,
                                                     'done', 'result')['payload']['value']
 
-    def get_freertos_task_name(self, tcb_addr):  # type: (int) -> str
+    def get_freertos_task_name(self, tcb_addr):
         """ Get FreeRTOS task name given the TCB address """
         try:
             val = self._gdbmi_data_evaluate_expression('(char*)((TCB_t *)0x%x)->pcTaskName' % tcb_addr)
@@ -102,7 +97,7 @@ class EspGDB(object):
             return result.group(1)
         return ''
 
-    def run_cmd(self, gdb_cmd):  # type: (str) -> str
+    def run_cmd(self, gdb_cmd):
         """ Execute a generic GDB console command via MI2
         """
         filtered_responses = self._gdbmi_run_cmd_get_responses(cmd="-interpreter-exec console \"%s\"" % gdb_cmd,
@@ -113,14 +108,14 @@ class EspGDB(object):
             .replace('\\t', '\t') \
             .rstrip('\n')
 
-    def get_thread_info(self):  # type: () -> (typing.List[dict], str)
+    def get_thread_info(self):
         """ Get information about all threads known to GDB, and the current thread ID """
         result = self._gdbmi_run_cmd_get_one_response('-thread-info', 'done', 'result')['payload']
         current_thread_id = result['current-thread-id']
         threads = result['threads']
         return threads, current_thread_id
 
-    def switch_thread(self, thr_id):  # type: (int) -> None
+    def switch_thread(self, thr_id):
         """ Tell GDB to switch to a specific thread, given its ID """
         self._gdbmi_run_cmd_get_one_response('-thread-select %s' % thr_id, 'done', 'result')
 
@@ -129,6 +124,6 @@ class EspGDB(object):
         return list(filter(lambda rsp: rsp['message'] == resp_message and rsp['type'] == resp_type, responses))
 
     @staticmethod
-    def gdb2freertos_thread_id(gdb_target_id):  # type: (str) -> int
+    def gdb2freertos_thread_id(gdb_target_id):
         """ Convert GDB 'target ID' to the FreeRTOS TCB address """
         return int(gdb_target_id.replace('process ', ''), 0)

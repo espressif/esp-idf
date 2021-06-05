@@ -43,6 +43,13 @@ The 32-bit address range of following chip type is supported:
 
 1. W25Q256
 
+Users can also customize their own flash chip driver, see :doc:`spi_flash_override_driver` for more details.
+
+.. toctree::
+   :hidden:
+
+   Custom Flash Driver <spi_flash_override_driver>
+
 Initializing a flash device
 ---------------------------
 

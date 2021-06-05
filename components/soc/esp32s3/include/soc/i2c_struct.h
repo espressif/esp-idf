@@ -116,8 +116,8 @@ typedef volatile struct {
     } fifo_conf;
     union {
         struct {
-            uint8_t data;
-            uint8_t reserved[3];
+            uint32_t data                           :   8;
+            uint32_t reserved8                      :   24;
         };
         uint32_t val;
     } fifo_data;

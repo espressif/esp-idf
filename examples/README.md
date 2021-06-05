@@ -1,31 +1,44 @@
 # Examples
 
-This directory contains a range of example ESP-IDF projects. These are intended to demonstrate parts of ESP-IDF functionality, and to provide code that you can copy and adapt into your own projects.
+This directory contains a range of example ESP-IDF projects. These examples are intended to demonstrate parts of the ESP-IDF functionality, and to provide code that you can copy and adapt into your own projects.
 
 # Example Layout
 
 The examples are grouped into subdirectories by category. Each category directory contains one or more example projects:
 
-* `bluetooth/bluedroid` contains Classic BT, BLE and coex examples using default Bluedroid host stack.
-* `bluetooth/nimble` contains BLE examples using NimBLE host stack.
-* `bluetooth/esp_ble_mesh` contains ESP BLE Mesh examples.
-* `bluetooth/hci` contains HCI transport (VHCI and HCI UART) examples
-* `ethernet` contains Ethernet examples.
-* `get-started` contains some very simple examples with minimal functionality.
-* `mesh` contains Wi-Fi Mesh examples.
-* `peripherals` contains examples showing driver functionality for the various onboard ESP32 peripherals.
-* `protocols` contains examples showing network protocol interactions.
-* `storage` contains examples showing data storage methods using SPI flash or external storage like the SD/MMC interface.
-* `system` contains examples which demonstrate some internal chip features, or debugging & development tools.
-* `wifi` contains examples of advanced Wi-Fi features. (For network protocol examples, see `protocols` instead.)
-* `build_system` contains examples of build system features
+* `bluetooth/bluedroid` Classic BT, BLE and coex examples using default Bluedroid host stack.
+* `bluetooth/nimble` BLE examples using NimBLE host stack.
+* `bluetooth/esp_ble_mesh` ESP BLE Mesh examples.
+* `bluetooth/hci` HCI transport (VHCI and HCI UART) examples.
+* `build_system` Examples of build system features.
+* `cxx` C++ language utilization examples and experimental components.
+* `ethernet` Ethernet network examples.
+* `get-started` Simple examples with minimal functionality. Good start point for beginners.
+* `mesh` Wi-Fi Mesh examples.
+* `openthread` OpenThread examples.
+* `peripherals` Examples showing driver functionality for the various onboard ESP32 peripherals.
+* `protocols` Examples showing network protocol interactions.
+* `provisioning` Wi-Fi provisioning examples.
+* `security` Examples about security features.
+* `storage` Examples showing data storage methods using SPI flash, external storage like the SD/MMC interface and flash partitioning.
+* `system` Demonstrates some internal chip features, or debugging & development tools.
+* `wifi` Advanced Wi-Fi features (For network protocol examples, see `protocols` instead.)
+
+In addition to these examples, `commmon_components` directory contains code shared by several examples.
 
 # Using Examples
 
+Before building an example, be sure to follow the Getting Started guide to ensure you have the required development environment.
+
+* [ESP-IDF Getting Started Guide on ESP32](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html)
+* [ESP-IDF Getting Started Guide on ESP32-S2](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/get-started/index.html)
+* [ESP-IDF Getting Started Guide on ESP32-C3](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/get-started/index.html)
+
+
 Building an example is the same as building any other project:
 
-* Follow the Getting Started instructions which include building the "Hello World" example.
 * Change into the directory of the new example you'd like to build.
+* Run `idf.py set-target TARGET` to select the correct chip target to build before opening the project configuration menu. By default the target is `esp32` and the options are `esp32`, `esp32s2` and `esp32c3`.
 * Run `idf.py menuconfig` to open the project configuration menu. Most examples have a project-specific "Example Configuration" section here (for example, to set the WiFi SSID & password to use).
 * `idf.py build` to build the example.
 * Follow the printed instructions to flash, or run `idf.py -p PORT flash`.

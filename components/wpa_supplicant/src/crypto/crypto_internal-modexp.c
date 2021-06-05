@@ -2,83 +2,91 @@
  * Crypto wrapper for internal crypto implementation - modexp
  * Copyright (c) 2006-2009, Jouni Malinen <j@w1.fi>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * Alternatively, this software may be distributed under the terms of BSD
- * license.
- *
- * See README and COPYING for more details.
- */
-/*
- * Hardware crypto support Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
  */
 
-#include "utils/includes.h"
+#include "includes.h"
 
-#include "utils/common.h"
-#ifdef USE_MBEDTLS_CRYPTO
-#include "mbedtls/bignum.h"
-#else /* USE_MBEDTLS_CRYPTO */
-#include "bignum.h"
-#endif /* USE_MBEDTLS_CRYPTO */
+#include "common.h"
+#include "tls/bignum.h"
 #include "crypto.h"
 
-#ifdef USE_MBEDTLS_CRYPTO
-int
-crypto_mod_exp(const uint8_t *base, size_t base_len,
-	       const uint8_t *power, size_t power_len,
-	       const uint8_t *modulus, size_t modulus_len,
-	       uint8_t *result, size_t *result_len)
+
+int crypto_dh_init(u8 generator, const u8 *prime, size_t prime_len, u8 *privkey,
+		   u8 *pubkey)
 {
-	mbedtls_mpi bn_base, bn_exp, bn_modulus, bn_result, bn_rinv;
-	int ret = 0;
-	mbedtls_mpi_init(&bn_base);
-	mbedtls_mpi_init(&bn_exp);
-	mbedtls_mpi_init(&bn_modulus);
-	mbedtls_mpi_init(&bn_result);
-	mbedtls_mpi_init(&bn_rinv);
+	size_t pubkey_len, pad;
 
-	mbedtls_mpi_read_binary(&bn_base, base, base_len);
-	mbedtls_mpi_read_binary(&bn_exp, power, power_len);
-	mbedtls_mpi_read_binary(&bn_modulus, modulus, modulus_len);
-
-	ret = mbedtls_mpi_exp_mod(&bn_result, &bn_base, &bn_exp, &bn_modulus, &bn_rinv);
-	if (ret < 0) {
-		mbedtls_mpi_free(&bn_base);
-		mbedtls_mpi_free(&bn_exp);
-		mbedtls_mpi_free(&bn_modulus);
-		mbedtls_mpi_free(&bn_result);
-		mbedtls_mpi_free(&bn_rinv);
-		return ret;
+	if (os_get_random(privkey, prime_len) < 0)
+		return -1;
+	if (os_memcmp(privkey, prime, prime_len) > 0) {
+		/* Make sure private value is smaller than prime */
+		privkey[0] = 0;
 	}
 
-	ret = mbedtls_mpi_write_binary(&bn_result, result, *result_len);
+	pubkey_len = prime_len;
+	if (crypto_mod_exp(&generator, 1, privkey, prime_len, prime, prime_len,
+			   pubkey, &pubkey_len) < 0)
+		return -1;
+	if (pubkey_len < prime_len) {
+		pad = prime_len - pubkey_len;
+		os_memmove(pubkey + pad, pubkey, pubkey_len);
+		os_memset(pubkey, 0, pad);
+	}
 
-	mbedtls_mpi_free(&bn_base);
-	mbedtls_mpi_free(&bn_exp);
-	mbedtls_mpi_free(&bn_modulus);
-	mbedtls_mpi_free(&bn_result);
-	mbedtls_mpi_free(&bn_rinv);
-
-	return ret;
+	return 0;
 }
-#else /* USE_MBEDTLS_CRYPTO */
-int
-crypto_mod_exp(const u8 *base, size_t base_len,
+
+
+int crypto_dh_derive_secret(u8 generator, const u8 *prime, size_t prime_len,
+			    const u8 *order, size_t order_len,
+			    const u8 *privkey, size_t privkey_len,
+			    const u8 *pubkey, size_t pubkey_len,
+			    u8 *secret, size_t *len)
+{
+	struct bignum *pub;
+	int res = -1;
+
+	if (pubkey_len > prime_len ||
+	    (pubkey_len == prime_len &&
+	     os_memcmp(pubkey, prime, prime_len) >= 0))
+		return -1;
+
+	pub = bignum_init();
+	if (!pub || bignum_set_unsigned_bin(pub, pubkey, pubkey_len) < 0 ||
+	    bignum_cmp_d(pub, 1) <= 0)
+		goto fail;
+
+	if (order) {
+		struct bignum *p, *q, *tmp;
+		int failed;
+
+		/* verify: pubkey^q == 1 mod p */
+		p = bignum_init();
+		q = bignum_init();
+		tmp = bignum_init();
+		failed = !p || !q || !tmp ||
+			bignum_set_unsigned_bin(p, prime, prime_len) < 0 ||
+			bignum_set_unsigned_bin(q, order, order_len) < 0 ||
+			bignum_exptmod(pub, q, p, tmp) < 0 ||
+			bignum_cmp_d(tmp, 1) != 0;
+		bignum_deinit(p);
+		bignum_deinit(q);
+		bignum_deinit(tmp);
+		if (failed)
+			goto fail;
+	}
+
+	res = crypto_mod_exp(pubkey, pubkey_len, privkey, privkey_len,
+			     prime, prime_len, secret, len);
+fail:
+	bignum_deinit(pub);
+	return res;
+}
+
+
+int crypto_mod_exp(const u8 *base, size_t base_len,
 		   const u8 *power, size_t power_len,
 		   const u8 *modulus, size_t modulus_len,
 		   u8 *result, size_t *result_len)
@@ -112,4 +120,3 @@ error:
 	bignum_deinit(bn_result);
 	return ret;
 }
-#endif /* USE_MBEDTLS_CRYPTO */

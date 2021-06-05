@@ -2,6 +2,12 @@
 # in this example
 
 #
+# Partition Table
+# (It's possible to fit Blufi in 1MB app partition size with some other optimizations, but
+# default config is close to 1MB.)
+CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y
+
+#
 # BT config
 #
 CONFIG_BT_ENABLED=y

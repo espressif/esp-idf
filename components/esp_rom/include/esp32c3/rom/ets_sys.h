@@ -191,7 +191,7 @@ int ets_printf(const char *fmt, ...);
   * @brief  Set the uart channel of ets_printf(uart_tx_one_char).
   *         ROM will set it base on the efuse and gpio setting, however, this can be changed after booting.
   *
-  * @param  uart_no : 0 for UART0, 1 for UART1, 2 for UART2.
+  * @param  uart_no : 0 for UART0, 1 for UART1.
   *
   * @return None
   */

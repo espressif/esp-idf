@@ -32,12 +32,23 @@ using namespace idf;
 #define MAGIC_TEST_NUMBER 47
 
 #define I2C_SLAVE_NUM I2C_NUM_0    /*!<I2C port number for slave dev */
+#if CONFIG_IDF_TARGET_ESP32C3
+#define I2C_SLAVE_SCL_IO     5     /*!<gpio number for i2c slave clock  */
+#define I2C_SLAVE_SDA_IO     6     /*!<gpio number for i2c slave data */
+#else
 #define I2C_SLAVE_SCL_IO     19    /*!<gpio number for i2c slave clock  */
 #define I2C_SLAVE_SDA_IO     18    /*!<gpio number for i2c slave data */
+#endif
 
+#if CONFIG_IDF_TARGET_ESP32C3
+#define I2C_MASTER_NUM I2C_NUM_0   /*!< I2C port number for master dev */
+#define I2C_MASTER_SCL_IO     5     /*!<gpio number for i2c master clock  */
+#define I2C_MASTER_SDA_IO     6     /*!<gpio number for i2c master data */
+#else
 #define I2C_MASTER_NUM I2C_NUM_1   /*!< I2C port number for master dev */
 #define I2C_MASTER_SCL_IO    19    /*!< gpio number for I2C master clock */
-#define I2C_MASTER_SDA_IO    18    /*!< gpio number for I2C master data  */
+#define I2C_MASTER_SDA_IO    18   /*!< gpio number for I2C master data  */
+#endif
 
 struct MasterFixture {
     MasterFixture(const vector<uint8_t> &data_arg = {47u}) :
@@ -59,7 +70,7 @@ TEST_CASE("I2CMaster SDA and SCL equal", "[cxx i2c][leaks=300]")
 }
 
 // TODO The I2C driver tests are disabled, so disable them here, too. Probably due to no runners.
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
 
 static void i2c_slave_read_raw_byte(void)
 {
@@ -107,7 +118,7 @@ static void i2c_slave_read_multiple_raw_bytes(void)
 
 static void i2c_slave_write_multiple_raw_bytes(void)
 {
-    I2CSlave slave(1, I2C_SLAVE_SCL_IO, I2C_SLAVE_SDA_IO, ADDR, 512, 512);
+    I2CSlave slave(I2C_SLAVE_NUM, I2C_SLAVE_SCL_IO, I2C_SLAVE_SDA_IO, ADDR, 512, 512);
     uint8_t WRITE_BUFFER [8] = {0, 1, 2, 3, 4, 5, 6, 7};
 
     unity_wait_for_signal("master init");
@@ -120,7 +131,7 @@ static void i2c_slave_write_multiple_raw_bytes(void)
 
 static void i2c_slave_composed_trans(void)
 {
-    I2CSlave slave(1, I2C_SLAVE_SCL_IO, I2C_SLAVE_SDA_IO, ADDR, 512, 512);
+    I2CSlave slave(I2C_SLAVE_NUM, I2C_SLAVE_SCL_IO, I2C_SLAVE_SDA_IO, ADDR, 512, 512);
     size_t BUF_SIZE = 2;
     const uint8_t SLAVE_WRITE_BUFFER [BUF_SIZE] = {0xde, 0xad};
     uint8_t slave_read_buffer = 0;
@@ -330,7 +341,7 @@ TEST_CASE_MULTIPLE_DEVICES("I2CMaster Composed transfer", "[cxx i2c][test_env=UT
 
 static void i2c_slave_write_multiple_raw_bytes_twice(void)
 {
-    I2CSlave slave(1, I2C_SLAVE_SCL_IO, I2C_SLAVE_SDA_IO, ADDR, 512, 512);
+    I2CSlave slave(I2C_SLAVE_NUM, I2C_SLAVE_SCL_IO, I2C_SLAVE_SDA_IO, ADDR, 512, 512);
     const size_t BUF_SIZE = 8;
     uint8_t WRITE_BUFFER [BUF_SIZE] = {0, 1, 2, 3, 4, 5, 6, 7};
 
@@ -350,7 +361,7 @@ static void i2c_master_reuse_read_multiple_raw_bytes(void)
     unity_send_signal("master init");
     unity_wait_for_signal("slave write");
     const size_t BUF_SIZE = 8;
-
+#if !CONFIG_IDF_TARGET_ESP32C3
     std::shared_ptr<I2CRead> reader(new I2CRead(BUF_SIZE));
 
     future<vector<uint8_t> > fut;
@@ -368,6 +379,22 @@ static void i2c_master_reuse_read_multiple_raw_bytes(void)
         TEST_ASSERT_EQUAL(i, data1[i]);
         TEST_ASSERT_EQUAL(i, data2[i]);
     }
+#else // Cannot read twice because the `prefetch` behaviour on C3.
+    std::shared_ptr<I2CRead> reader(new I2CRead(BUF_SIZE * 2));
+
+    future<vector<uint8_t> > fut;
+    fut = fix.master->transfer(reader, ADDR);
+    vector<uint8_t> data = fut.get();
+
+    unity_send_signal("master read done");
+
+    TEST_ASSERT_EQUAL(BUF_SIZE * 2, data.size());
+    for (int i = 0; i < BUF_SIZE; i++) {
+        TEST_ASSERT_EQUAL((i % BUF_SIZE), data[i]);
+    }
+
+#endif // !CONFIG_IDF_TARGET_ESP32C3
+
 }
 
 TEST_CASE_MULTIPLE_DEVICES("I2CMaster reuse read multiple bytes", "[cxx i2c][test_env=UT_T2_I2C][timeout=150]",
@@ -414,7 +441,7 @@ TEST_CASE_MULTIPLE_DEVICES("I2CMaster reuse write multiple bytes", "[cxx i2c][te
 
 static void i2c_slave_composed_trans_twice(void)
 {
-    I2CSlave slave(1, I2C_SLAVE_SCL_IO, I2C_SLAVE_SDA_IO, ADDR, 512, 512);
+    I2CSlave slave(I2C_SLAVE_NUM, I2C_SLAVE_SCL_IO, I2C_SLAVE_SDA_IO, ADDR, 512, 512);
     size_t BUF_SIZE = 2;
     const uint8_t SLAVE_WRITE_BUFFER1 [BUF_SIZE] = {0xde, 0xad};
     const uint8_t SLAVE_WRITE_BUFFER2 [BUF_SIZE] = {0xbe, 0xef};
@@ -429,8 +456,10 @@ static void i2c_slave_composed_trans_twice(void)
 
     TEST_ASSERT_EQUAL(1, slave.read_raw(&slave_read_buffer, 1, chrono::milliseconds(1000)));
     TEST_ASSERT_EQUAL(MAGIC_TEST_NUMBER, slave_read_buffer);
+#if !CONFIG_IDF_TARGET_ESP32C3
     TEST_ASSERT_EQUAL(1, slave.read_raw(&slave_read_buffer, 1, chrono::milliseconds(1000)));
     TEST_ASSERT_EQUAL(MAGIC_TEST_NUMBER, slave_read_buffer);
+#endif // !CONFIG_IDF_TARGET_ESP32C3
 }
 
 static void i2c_master_reuse_composed_trans(void)
@@ -442,6 +471,7 @@ static void i2c_master_reuse_composed_trans(void)
 
     std::shared_ptr<I2CComposed> composed_transfer(new I2CComposed);
     composed_transfer->add_write({47u});
+#if !CONFIG_IDF_TARGET_ESP32C3
     composed_transfer->add_read(BUF_SIZE);
 
     unity_wait_for_signal("slave init");
@@ -461,9 +491,31 @@ static void i2c_master_reuse_composed_trans(void)
         TEST_ASSERT_EQUAL(SLAVE_WRITE_BUFFER1[i], read_data1[0][i]);
         TEST_ASSERT_EQUAL(SLAVE_WRITE_BUFFER2[i], read_data2[0][i]);
     }
+#else // Cannot read twice because the `prefetch` behaviour on C3.
+    composed_transfer->add_read(BUF_SIZE * 2);
+
+    unity_wait_for_signal("slave init");
+
+    vector<vector<uint8_t> > read_data = fix.master->transfer(composed_transfer, ADDR).get();
+
+    unity_send_signal("master transfer");
+
+    TEST_ASSERT_EQUAL(1, read_data.size());
+    TEST_ASSERT_EQUAL(4, read_data[0].size());
+
+
+    for (int i = 0; i < BUF_SIZE; i++) {
+        TEST_ASSERT_EQUAL(SLAVE_WRITE_BUFFER1[i], read_data[0][i]);
+    }
+    for (int i = BUF_SIZE; i < BUF_SIZE * 2; i++) {
+        TEST_ASSERT_EQUAL(SLAVE_WRITE_BUFFER2[i - BUF_SIZE], read_data[0][i]);
+    }
+
+#endif //!CONFIG_IDF_TARGET_ESP32C3
 }
 
 TEST_CASE_MULTIPLE_DEVICES("I2CMaster reuse composed transfer", "[cxx i2c][test_env=UT_T2_I2C][timeout=150]",
         i2c_master_reuse_composed_trans, i2c_slave_composed_trans_twice);
-#endif  //TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
+
+#endif  //TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
 #endif // __cpp_exceptions

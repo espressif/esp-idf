@@ -55,7 +55,6 @@ endif()
 
 if(${target} STREQUAL "esp32s3")
     list(APPEND srcs "adc_common.c"
-                     "dac_common.c"
                      "dedic_gpio.c"
                      "gdma.c"
                      "spi_slave_hd.c"

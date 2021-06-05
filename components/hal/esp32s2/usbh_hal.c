@@ -25,6 +25,9 @@
 
 // -------------------------------- Constants ----------------------------------
 
+#define BENDPOINTADDRESS_NUM_MSK     0x0F   //Endpoint number mask of the bEndpointAddress field of an endpoint descriptor
+#define BENDPOINTADDRESS_DIR_MSK     0x80   //Endpoint direction mask of the bEndpointAddress field of an endpoint descriptor
+
 #define CORE_REG_GSNPSID    0x4F54400A
 #define CORE_REG_GHWCFG1    0x00000000
 #define CORE_REG_GHWCFG2    0x224DD930
@@ -193,7 +196,7 @@ static inline void debounce_lock_enable(usbh_hal_context_t *hal)
 
 void usbh_hal_port_enable(usbh_hal_context_t *hal)
 {
-    usb_speed_t speed = usbh_ll_hprt_get_speed(hal->dev);
+    usb_priv_speed_t speed = usbh_ll_hprt_get_speed(hal->dev);
     //Host Configuration
     usbh_ll_hcfg_set_defaults(hal->dev, speed);
     //Todo: Set frame list entries and ena per sched
@@ -265,10 +268,10 @@ void usbh_hal_chan_set_ep_char(usbh_hal_chan_t *chan_obj, usbh_hal_ep_char_t *ep
     //Set the endpoint characteristics of the pipe
     usbh_ll_chan_hcchar_init(chan_obj->regs,
                              ep_char->dev_addr,
-                             ep_char->bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_NUM_MASK,
+                             ep_char->bEndpointAddress & BENDPOINTADDRESS_NUM_MSK,
                              ep_char->mps,
                              ep_char->type,
-                             ep_char->bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_DIR_MASK,
+                             ep_char->bEndpointAddress & BENDPOINTADDRESS_DIR_MSK,
                              ep_char->ls_via_fs_hub);
 }
 

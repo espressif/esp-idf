@@ -10,18 +10,17 @@ if(BOOTLOADER_BUILD)
     # Bootloader relies on some Kconfig options defined in esp_system.
     idf_component_register(SRCS "${srcs}")
 else()
-    list(APPEND srcs "esp_err.c"
+    list(APPEND srcs "crosscore_int.c"
+            "esp_err.c"
             "freertos_hooks.c"
-            "intr_alloc.c"
             "int_wdt.c"
-            "esp_async_memcpy.c"
             "panic.c"
-            "system_api.c"
+            "esp_system.c"
             "startup.c"
             "system_time.c"
             "stack_check.c"
-            "sleep_modes.c"
-            "task_wdt.c")
+            "task_wdt.c"
+            "ubsan.c")
 
     if(NOT (${target} STREQUAL "esp32c3") )
         list(APPEND srcs  "dbg_stubs.c")
@@ -33,9 +32,9 @@ else()
                                     # [refactor-todo] requirements due to init code,
                                     # should be removable once using component init functions
                                     # link-time registration is used.
-                                    esp_pm app_update nvs_flash pthread app_trace esp_gdbstub esp_ipc
+                                    esp_pm app_update nvs_flash pthread app_trace esp_gdbstub
                                     espcoredump
-                        LDFRAGMENTS "linker.lf")
+                        LDFRAGMENTS "linker.lf" "app.lf")
     add_subdirectory(port)
 
     # After system initialization, `start_app` (and its other cores variant) is called.
@@ -54,13 +53,13 @@ else()
         PROPERTIES COMPILE_FLAGS
         -fno-stack-protector)
 
-    if(NOT CMAKE_BUILD_EARLY_EXPANSION)
-        set_source_files_properties("${CMAKE_CURRENT_LIST_DIR}/sleep_modes.c" PROPERTIES
-                                    COMPILE_FLAGS "-fno-jump-tables -fno-tree-switch-conversion")
-    endif()
 endif()
 
 if(CONFIG_IDF_ENV_FPGA)
     # Forces the linker to include fpga stubs from this component
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_common_include_fpga_overrides")
 endif()
+
+# Force linking UBSAN hooks. If UBSAN is not enabled, the hooks will ultimately be removed
+# due to -ffunction-sections -Wl,--gc-sections options.
+target_link_libraries(${COMPONENT_LIB} INTERFACE "-u __ubsan_include")

@@ -112,9 +112,20 @@ Manually unloading the driver
 
     sudo kextunload -b com.FTDI.driver.FTDIUSBSerialDriver
 
-   In some cases you may need to unload Apple's FTDI driver as well::
+   In some cases you may need to unload Apple's FTDI driver as well:
 
-    sudo kextunload -b com.apple.driver.AppleUSBFTDI
+   * macOS < 10.15::
+
+        sudo kextunload -b com.apple.driver.AppleUSBFTDI
+
+   * macOS 10.15::
+
+        sudo kextunload -b com.apple.DriverKit-AppleUSBFTDI
+
+   .. warning::
+
+      Attempting to use serial over the wrong channel with the FTDI driver will cause a kernel panic. The ESP-WROVER-KIT uses channel A for JTAG and channel B for serial.
+
 
 4. Run OpenOCD:
 

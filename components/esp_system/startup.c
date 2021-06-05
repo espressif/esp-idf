@@ -59,6 +59,9 @@
 #include "esp_pthread.h"
 #include "esp_private/usb_console.h"
 #include "esp_vfs_cdcacm.h"
+#include "esp_vfs_usb_serial_jtag.h"
+
+#include "brownout.h"
 
 #include "esp_rom_sys.h"
 
@@ -66,18 +69,14 @@
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/clk.h"
 #include "esp32/spiram.h"
-#include "esp32/brownout.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/clk.h"
 #include "esp32s2/spiram.h"
-#include "esp32s2/brownout.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/clk.h"
 #include "esp32s3/spiram.h"
-#include "esp32s3/brownout.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/clk.h"
-#include "esp32c3/brownout.h"
 #endif
 /***********************************************/
 
@@ -114,7 +113,7 @@ void esp_startup_start_app_other_cores(void) __attribute__((weak, alias("esp_sta
 
 static volatile bool s_system_inited[SOC_CPU_CORES_NUM] = { false };
 
-sys_startup_fn_t g_startup_fn[SOC_CPU_CORES_NUM] = { [0] = start_cpu0,
+const sys_startup_fn_t g_startup_fn[SOC_CPU_CORES_NUM] = { [0] = start_cpu0,
 #if SOC_CPU_CORES_NUM > 1
     [1 ... SOC_CPU_CORES_NUM - 1] = start_cpu_other_cores
 #endif
@@ -122,7 +121,7 @@ sys_startup_fn_t g_startup_fn[SOC_CPU_CORES_NUM] = { [0] = start_cpu0,
 
 static volatile bool s_system_full_inited = false;
 #else
-sys_startup_fn_t g_startup_fn[1] = { start_cpu0 };
+const sys_startup_fn_t g_startup_fn[1] = { start_cpu0 };
 #endif
 
 #ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
@@ -266,6 +265,10 @@ static void do_core_init(void)
     ESP_ERROR_CHECK(esp_vfs_dev_cdcacm_register());
     const char *default_stdio_dev = "/dev/cdcacm";
 #endif // CONFIG_ESP_CONSOLE_USB_CDC
+#ifdef CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+    ESP_ERROR_CHECK(esp_vfs_dev_usb_serial_jtag_register());
+    const char *default_stdio_dev = "/dev/usbserjtag";
+#endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
 #endif // CONFIG_VFS_SUPPORT_IO
 
 #if defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_NONE)

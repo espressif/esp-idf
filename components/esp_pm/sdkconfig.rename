@@ -1,0 +1,3 @@
+# sdkconfig replacement configurations for deprecated options formatted as
+# CONFIG_DEPRECATED_OPTION CONFIG_NEW_OPTION
+CONFIG_ESP_SYSTEM_PM_POWER_DOWN_CPU                                      CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP

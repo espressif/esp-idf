@@ -396,6 +396,39 @@ typedef struct {
 esp_eth_mac_t *esp_eth_mac_new_w5500(const eth_w5500_config_t *w5500_config, const eth_mac_config_t *mac_config);
 #endif // CONFIG_ETH_SPI_ETHERNET_W5500
 
+#if CONFIG_ETH_SPI_ETHERNET_KSZ8851SNL
+/**
+ * @brief KSZ8851SNL specific configuration
+ *
+ */
+typedef struct {
+    void *spi_hdl;     /*!< Handle of SPI device driver */
+    int int_gpio_num;  /*!< Interrupt GPIO number */
+} eth_ksz8851snl_config_t;
+
+/**
+ * @brief Default KSZ8851SNL specific configuration
+ *
+ */
+#define ETH_KSZ8851SNL_DEFAULT_CONFIG(spi_device) \
+    {                                        \
+        .spi_hdl = spi_device,               \
+        .int_gpio_num = 14,                   \
+    }
+
+/**
+* @brief Create KSZ8851SNL Ethernet MAC instance
+*
+* @param ksz8851snl_config: KSZ8851SNL specific configuration
+* @param mac_config: Ethernet MAC configuration
+*
+* @return
+*      - instance: create MAC instance successfully
+*      - NULL: create MAC instance failed because some error occurred
+*/
+esp_eth_mac_t *esp_eth_mac_new_ksz8851snl(const eth_ksz8851snl_config_t *ksz8851snl_config, const eth_mac_config_t *mac_config);
+#endif // CONFIG_ETH_SPI_ETHERNET_KSZ8851
+
 #if CONFIG_ETH_USE_OPENETH
 /**
 * @brief Create OpenCores Ethernet MAC instance

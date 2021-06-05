@@ -135,6 +135,8 @@ typedef struct {
     bool                        is_async;                 /*!< Set asynchronous mode, only supported with HTTPS for now */
     bool                        use_global_ca_store;      /*!< Use a global ca_store for all the connections in which this bool is set. */
     bool                        skip_cert_common_name_check;    /*!< Skip any validation of server certificate CN field */
+    esp_err_t (*crt_bundle_attach)(void *conf);      /*!< Function pointer to esp_crt_bundle_attach. Enables the use of certification
+                                                          bundle for server verification, must be enabled in menuconfig */
     bool                        keep_alive_enable;   /*!< Enable keep-alive timeout */
     int                         keep_alive_idle;     /*!< Keep-alive idle time. Default is 5 (second) */
     int                         keep_alive_interval; /*!< Keep-alive interval time. Default is 5 (second) */
@@ -332,7 +334,7 @@ esp_err_t esp_http_client_get_password(esp_http_client_handle_t client, char **v
  *     - ESP_OK
  *     - ESP_ERR_INVALID_ARG
  */
-esp_err_t esp_http_client_set_password(esp_http_client_handle_t client, char *password);
+esp_err_t esp_http_client_set_password(esp_http_client_handle_t client, const char *password);
 
 /**
  * @brief      Set http request auth_type.
@@ -357,6 +359,18 @@ esp_err_t esp_http_client_set_authtype(esp_http_client_handle_t client, esp_http
  *     - ESP_ERR_INVALID_ARG
  */
 esp_err_t esp_http_client_set_method(esp_http_client_handle_t client, esp_http_client_method_t method);
+
+/**
+ * @brief      Set http request timeout
+ *
+ * @param[in]  client      The esp_http_client handle
+ * @param[in]  timeout_ms  The timeout value
+ *
+ * @return
+ *     - ESP_OK
+ *     - ESP_ERR_INVALID_ARG
+ */
+esp_err_t esp_http_client_set_timeout_ms(esp_http_client_handle_t client, int timeout_ms);
 
 /**
  * @brief      Delete http request header

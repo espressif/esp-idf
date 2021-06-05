@@ -1,6 +1,6 @@
 # supplicant make file
 
-COMPONENT_PRIV_INCLUDEDIRS := src
+COMPONENT_PRIV_INCLUDEDIRS := src src/utils
 COMPONENT_SRCDIRS := port src/ap src/common src/crypto src/eap_peer src/rsn_supp src/tls src/utils src/esp_supplicant src/wps
 COMPONENT_ADD_INCLUDEDIRS := include port/include include/esp_supplicant src/utils
 
@@ -21,10 +21,46 @@ ifeq ($(CONFIG_WPA_MBEDTLS_CRYPTO), y)
     src/tls/tlsv1_server.o \
     src/tls/tlsv1_server_read.o \
     src/tls/tlsv1_server_write.o \
-    src/tls/x509v3.o
+    src/tls/x509v3.o \
+    src/crypto/aes-ctr.o \
+    src/crypto/aes-cbc.o \
+    src/crypto/aes-internal-dec.o \
+    src/crypto/aes-internal-enc.o \
+    src/crypto/aes-internal.o \
+    src/crypto/crypto_internal-cipher.o \
+    src/crypto/crypto_internal-modexp.o \
+    src/crypto/crypto_internal-rsa.o \
+    src/crypto/crypto_mbedtls-rsa.o \
+    src/crypto/crypto_internal.o \
+    src/crypto/md5-internal.o \
+    src/crypto/md5.o \
+    src/crypto/sha1-internal.o \
+    src/crypto/sha1-pbkdf2.o \
+    src/crypto/sha1.o \
+    src/crypto/sha256-internal.o \
+    src/crypto/sha256.o
 else
-    COMPONENT_OBJEXCLUDE := src/crypto/tls_mbedtls.o
+    COMPONENT_OBJEXCLUDE += src/crypto/tls_mbedtls.o \
+    src/crypto/crypto_mbedtls.o \
+    src/crypto/crypto_mbedtls-bignum.o \
+    src/crypto/crypto_mbedtls-ec.o
 endif
+
+ifneq ($(CONFIG_MBEDTLS_RC4_DISABLED), y)
+    COMPONENT_OBJEXCLUDE += src/crypto/rc4.o
+endif
+ifeq ($(CONFIG_MBEDTLS_DES_C), y)
+    COMPONENT_OBJEXCLUDE += src/crypto/des-internal.o
+endif
+ifeq ($(CONFIG_MBEDTLS_CMAC_C), y)
+    COMPONENT_OBJEXCLUDE += src/crypto/aes-omac1.o
+endif
+ifeq ($(CONFIG_MBEDTLS_NIST_KW_C), y)
+    COMPONENT_OBJEXCLUDE += src/crypto/aes-wrap.o
+    COMPONENT_OBJEXCLUDE += src/crypto/aes-unwrap.o
+    COMPONENT_OBJEXCLUDE += src/crypto/aes-ccm.o
+endif
+
 ifneq ($(CONFIG_WPA_11KV_SUPPORT), y)
     COMPONENT_OBJEXCLUDE += src/common/rrm.o \
     src/common/wnm_sta.o \

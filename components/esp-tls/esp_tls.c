@@ -220,7 +220,7 @@ static esp_err_t esp_tls_set_socket_options(int fd, const esp_tls_cfg_t *cfg)
                 ESP_LOGE(TAG, "Fail to setsockopt SO_KEEPALIVE");
                 return ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED;
             }
-            if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, &keep_alive_enable, sizeof(keep_alive_enable)) != 0) {
+            if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, &keep_alive_idle, sizeof(keep_alive_idle)) != 0) {
                 ESP_LOGE(TAG, "Fail to setsockopt TCP_KEEPIDLE");
                 return ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED;
             }

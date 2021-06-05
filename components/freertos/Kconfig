@@ -175,7 +175,7 @@ menu "FreeRTOS"
     config FREERTOS_IDLE_TASK_STACKSIZE
         int "Idle Task stack size"
         range 768 32768
-        default 2304
+        default 1536
         help
             The idle task has its own stack, sized in bytes. The default size is enough for most uses. Size can be
             reduced to 768 bytes if no (or simple) FreeRTOS idle hooks are used and pthread local storage or FreeRTOS

@@ -3,19 +3,8 @@
 # otatool is used to perform ota-level operations - flashing ota partition
 # erasing ota partition and switching ota partition
 #
-# Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http:#www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 from __future__ import division, print_function
 
 import argparse
@@ -85,9 +74,8 @@ class OtatoolTarget():
             seq = bytearray(self.otadata[start:start + 4])
             crc = bytearray(self.otadata[start + 28:start + 32])
 
-            seq = struct.unpack('>I', seq)
-            crc = struct.unpack('>I', crc)
-
+            seq = struct.unpack('I', seq)
+            crc = struct.unpack('I', crc)
             info.append(otadata_info(seq[0], crc[0]))
 
         return info
@@ -105,7 +93,7 @@ class OtatoolTarget():
 
         def is_otadata_info_valid(status):
             seq = status.seq % (1 << 32)
-            crc = hex(binascii.crc32(struct.pack('I', seq), 0xFFFFFFFF) % (1 << 32))
+            crc = binascii.crc32(struct.pack('I', seq), 0xFFFFFFFF) % (1 << 32)
             return seq < (int('0xFFFFFFFF', 16) % (1 << 32)) and status.crc == crc
 
         partition_table = self.target.partition_table
@@ -217,7 +205,7 @@ def _read_otadata(target):
     otadata_info = target._get_otadata_info()
 
     print('             {:8s} \t  {:8s} | \t  {:8s} \t   {:8s}'.format('OTA_SEQ', 'CRC', 'OTA_SEQ', 'CRC'))
-    print('Firmware:  0x{:8x} \t0x{:8x} | \t0x{:8x} \t 0x{:8x}'.format(otadata_info[0].seq, otadata_info[0].crc,
+    print('Firmware:  0x{:08x} \t0x{:08x} | \t0x{:08x} \t 0x{:08x}'.format(otadata_info[0].seq, otadata_info[0].crc,
           otadata_info[1].seq, otadata_info[1].crc))
 
 

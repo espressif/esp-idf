@@ -70,6 +70,9 @@ esp_err_t esp_wifi_clear_default_wifi_driver_and_handlers(void *esp_netif);
 /**
  * @brief Creates default WIFI AP. In case of any init error this API aborts.
  *
+ * @note The API creates esp_netif object with default WiFi access point config,
+ * attaches the netif to wifi and registers default wifi handlers.
+ *
  * @return pointer to esp-netif instance
  */
 esp_netif_t* esp_netif_create_default_wifi_ap(void);
@@ -77,9 +80,22 @@ esp_netif_t* esp_netif_create_default_wifi_ap(void);
 /**
  * @brief Creates default WIFI STA. In case of any init error this API aborts.
  *
+ * @note The API creates esp_netif object with default WiFi station config,
+ * attaches the netif to wifi and registers default wifi handlers.
+ *
  * @return pointer to esp-netif instance
  */
 esp_netif_t* esp_netif_create_default_wifi_sta(void);
+
+/**
+ * @brief Destroys default WIFI netif created with esp_netif_create_default_wifi_...() API.
+ *
+ * @param[in] esp_netif object to detach from WiFi and destroy
+ *
+ * @note This API unregisters wifi handlers and detaches the created object from the wifi.
+ * (this function is a no-operation if esp_netif is NULL)
+ */
+void esp_netif_destroy_default_wifi(void *esp_netif);
 
 /**
  * @brief Creates esp_netif WiFi object based on the custom configuration.

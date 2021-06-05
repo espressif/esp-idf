@@ -117,7 +117,7 @@ def test_multiple_client_keep_alive_and_async_response(ip, port, ca_file):  # ty
         t.join()
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
 def test_examples_protocol_https_wss_server(env, extra_data):  # type: (tiny_test_fw.Env.Env, None) -> None # pylint: disable=unused-argument
 
     # Acquire DUT

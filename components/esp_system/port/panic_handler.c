@@ -25,21 +25,19 @@
 #include "hal/soc_hal.h"
 #include "hal/cpu_hal.h"
 
+#include "cache_err_int.h"
+
 #include "sdkconfig.h"
 #include "esp_rom_sys.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/dport_access.h"
-#include "esp32/cache_err_int.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/memprot.h"
-#include "esp32s2/cache_err_int.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/memprot.h"
-#include "esp32s3/cache_err_int.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/memprot.h"
-#include "esp32c3/cache_err_int.h"
 #endif
 
 #include "esp_private/panic_internal.h"
@@ -164,14 +162,6 @@ static void panic_handler(void *frame, bool pseudo_excause)
     esp_dport_access_int_abort();
 #endif
 
-#if !CONFIG_ESP_PANIC_HANDLER_IRAM
-    // Re-enable CPU cache for current CPU if it was disabled
-    if (!spi_flash_cache_enabled()) {
-        spi_flash_enable_cache(core_id);
-        panic_print_str("Re-enable cpu cache.\r\n");
-    }
-#endif
-
     if (esp_cpu_in_ocd_debug_mode()) {
 #if __XTENSA__
         if (!(esp_ptr_executable(cpu_ll_pc_to_ptr(panic_get_address(frame))) && (panic_get_address(frame) & 0xC0000000U))) {
@@ -200,8 +190,25 @@ static void panic_handler(void *frame, bool pseudo_excause)
     esp_panic_handler(&info);
 }
 
-void panicHandler(void *frame)
+/**
+ * This function must always be in IRAM as it is required to
+ * re-enable the flash cache.
+ */
+static void IRAM_ATTR panic_enable_cache(void) {
+    int core_id = cpu_hal_get_core_id();
+
+    if (!spi_flash_cache_enabled()) {
+#ifdef CONFIG_IDF_TARGET_ESP32
+        esp_dport_access_int_abort();
+#endif
+        spi_flash_enable_cache(core_id);
+    }
+}
+
+void IRAM_ATTR panicHandler(void *frame)
 {
+
+    panic_enable_cache();
     // This panic handler gets called for when the double exception vector,
     // kernel exception vector gets used; as well as handling interrupt-based
     // faults cache error, wdt expiry. EXCAUSE register gets written with
@@ -209,8 +216,9 @@ void panicHandler(void *frame)
     panic_handler(frame, true);
 }
 
-void xt_unhandled_exception(void *frame)
+void IRAM_ATTR xt_unhandled_exception(void *frame)
 {
+    panic_enable_cache();
     panic_handler(frame, false);
 }
 

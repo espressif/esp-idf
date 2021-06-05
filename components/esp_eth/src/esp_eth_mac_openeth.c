@@ -26,6 +26,7 @@
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include "esp_log.h"
+#include "esp_check.h"
 #include "esp_eth.h"
 #include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
@@ -34,18 +35,7 @@
 #include "hal/cpu_hal.h"
 #include "openeth.h"
 
-static const char *TAG = "emac_opencores";
-
-#define MAC_CHECK(a, str, goto_tag, ret_value, ...)                               \
-    do                                                                            \
-    {                                                                             \
-        if (!(a))                                                                 \
-        {                                                                         \
-            ESP_LOGE(TAG, "%s(%d): " str, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
-            ret = ret_value;                                                      \
-            goto goto_tag;                                                        \
-        }                                                                         \
-    } while (0)
+static const char *TAG = "opencores.emac";
 
 // Driver state structure
 typedef struct {
@@ -123,7 +113,7 @@ static void emac_opencores_rx_task(void *arg)
 static esp_err_t emac_opencores_set_mediator(esp_eth_mac_t *mac, esp_eth_mediator_t *eth)
 {
     esp_err_t ret = ESP_OK;
-    MAC_CHECK(eth, "can't set mac's mediator to null", err, ESP_ERR_INVALID_ARG);
+    ESP_GOTO_ON_FALSE(eth, ESP_ERR_INVALID_ARG, err, TAG, "can't set mac's mediator to null");
     emac_opencores_t *emac = __containerof(mac, emac_opencores_t, parent);
     emac->eth = eth;
     return ESP_OK;
@@ -144,7 +134,7 @@ static esp_err_t emac_opencores_write_phy_reg(esp_eth_mac_t *mac, uint32_t phy_a
 static esp_err_t emac_opencores_read_phy_reg(esp_eth_mac_t *mac, uint32_t phy_addr, uint32_t phy_reg, uint32_t *reg_value)
 {
     esp_err_t ret = ESP_OK;
-    MAC_CHECK(reg_value, "can't set reg_value to null", err, ESP_ERR_INVALID_ARG);
+    ESP_GOTO_ON_FALSE(reg_value, ESP_ERR_INVALID_ARG, err, TAG, "can't set reg_value to null");
     REG_SET_FIELD(OPENETH_MIIADDRESS_REG, OPENETH_FIAD, phy_addr);
     REG_SET_FIELD(OPENETH_MIIADDRESS_REG, OPENETH_RGAD, phy_reg);
     REG_SET_BIT(OPENETH_MIICOMMAND_REG, OPENETH_RSTAT);
@@ -159,7 +149,7 @@ static esp_err_t emac_opencores_set_addr(esp_eth_mac_t *mac, uint8_t *addr)
 {
     ESP_LOGV(TAG, "%s: " MACSTR, __func__, MAC2STR(addr));
     esp_err_t ret = ESP_OK;
-    MAC_CHECK(addr, "can't set mac addr to null", err, ESP_ERR_INVALID_ARG);
+    ESP_GOTO_ON_FALSE(addr, ESP_ERR_INVALID_ARG, err, TAG, "can't set mac addr to null");
     emac_opencores_t *emac = __containerof(mac, emac_opencores_t, parent);
     memcpy(emac->addr, addr, 6);
     const uint8_t mac0[4] = {addr[5], addr[4], addr[3], addr[2]};
@@ -178,7 +168,7 @@ static esp_err_t emac_opencores_get_addr(esp_eth_mac_t *mac, uint8_t *addr)
 {
     ESP_LOGV(TAG, "%s: " MACSTR, __func__, MAC2STR(addr));
     esp_err_t ret = ESP_OK;
-    MAC_CHECK(addr, "can't set mac addr to null", err, ESP_ERR_INVALID_ARG);
+    ESP_GOTO_ON_FALSE(addr, ESP_ERR_INVALID_ARG, err, TAG, "can't set mac addr to null");
     emac_opencores_t *emac = __containerof(mac, emac_opencores_t, parent);
     memcpy(addr, emac->addr, 6);
     return ESP_OK;
@@ -193,15 +183,15 @@ static esp_err_t emac_opencores_set_link(esp_eth_mac_t *mac, eth_link_t link)
     emac_opencores_t *emac = __containerof(mac, emac_opencores_t, parent);
     switch (link) {
     case ETH_LINK_UP:
-        MAC_CHECK(esp_intr_enable(emac->intr_hdl) == ESP_OK, "enable interrupt failed", err, ESP_FAIL);
+        ESP_GOTO_ON_ERROR(esp_intr_enable(emac->intr_hdl), err, TAG, "enable interrupt failed");
         openeth_enable();
         break;
     case ETH_LINK_DOWN:
-        MAC_CHECK(esp_intr_disable(emac->intr_hdl) == ESP_OK, "disable interrupt failed", err, ESP_FAIL);
+        ESP_GOTO_ON_ERROR(esp_intr_disable(emac->intr_hdl), err, TAG, "disable interrupt failed");
         openeth_disable();
         break;
     default:
-        MAC_CHECK(false, "unknown link status", err, ESP_ERR_INVALID_ARG);
+        ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "unknown link status");
         break;
     }
     return ESP_OK;
@@ -247,7 +237,7 @@ static esp_err_t emac_opencores_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint3
 {
     esp_err_t ret = ESP_OK;
     emac_opencores_t *emac = __containerof(mac, emac_opencores_t, parent);
-    MAC_CHECK(length < DMA_BUF_SIZE * TX_BUF_COUNT, "insufficient TX buffer size", err, ESP_ERR_INVALID_SIZE);
+    ESP_GOTO_ON_FALSE(length < DMA_BUF_SIZE * TX_BUF_COUNT, ESP_ERR_INVALID_SIZE, err, TAG, "insufficient TX buffer size");
 
     uint32_t bytes_remaining = length;
     // In QEMU, there never is a TX operation in progress, so start with descriptor 0.
@@ -287,7 +277,7 @@ static esp_err_t emac_opencores_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32
         goto err;
     }
     size_t rx_length = desc_val.len;
-    MAC_CHECK(*length >= rx_length, "RX length too large", err, ESP_ERR_INVALID_SIZE);
+    ESP_GOTO_ON_FALSE(*length >= rx_length, ESP_ERR_INVALID_SIZE, err, TAG, "RX length too large");
     *length = rx_length;
     memcpy(buf, desc_val.rxpnt, *length);
     desc_val.e = 1;
@@ -304,8 +294,8 @@ static esp_err_t emac_opencores_init(esp_eth_mac_t *mac)
     esp_err_t ret = ESP_OK;
     emac_opencores_t *emac = __containerof(mac, emac_opencores_t, parent);
     esp_eth_mediator_t *eth = emac->eth;
-    MAC_CHECK(eth->on_state_changed(eth, ETH_STATE_LLINIT, NULL) == ESP_OK, "lowlevel init failed", err, ESP_FAIL);
-    MAC_CHECK(esp_read_mac(emac->addr, ESP_MAC_ETH) == ESP_OK, "fetch ethernet mac address failed", err, ESP_FAIL);
+    ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LLINIT, NULL), err, TAG, "lowlevel init failed");
+    ESP_GOTO_ON_ERROR(esp_read_mac(emac->addr, ESP_MAC_ETH), err, TAG, "fetch ethernet mac address failed");
 
     // Sanity check
     if (REG_READ(OPENETH_MODER_REG) != OPENETH_MODER_DEFAULT) {
@@ -363,9 +353,9 @@ esp_eth_mac_t *esp_eth_mac_new_openeth(const eth_mac_config_t *config)
 {
     esp_eth_mac_t *ret = NULL;
     emac_opencores_t *emac = NULL;
-    MAC_CHECK(config, "can't set mac config to null", out, NULL);
+    ESP_GOTO_ON_FALSE(config, NULL, out, TAG, "can't set mac config to null");
     emac = calloc(1, sizeof(emac_opencores_t));
-    MAC_CHECK(emac, "calloc emac failed", out, NULL);
+    ESP_GOTO_ON_FALSE(emac, NULL, out, TAG, "calloc emac failed");
 
     // Allocate DMA buffers
     for (int i = 0; i < RX_BUF_COUNT; i++) {
@@ -408,9 +398,7 @@ esp_eth_mac_t *esp_eth_mac_new_openeth(const eth_mac_config_t *config)
     emac->parent.receive = emac_opencores_receive;
 
     // Initialize the interrupt
-    MAC_CHECK(esp_intr_alloc(OPENETH_INTR_SOURCE, ESP_INTR_FLAG_IRAM, emac_opencores_isr_handler,
-                             emac, &(emac->intr_hdl)) == ESP_OK,
-              "alloc emac interrupt failed", out, NULL);
+    ESP_GOTO_ON_FALSE(esp_intr_alloc(OPENETH_INTR_SOURCE, ESP_INTR_FLAG_IRAM, emac_opencores_isr_handler, emac, &(emac->intr_hdl)) == ESP_OK, NULL, out, TAG, "alloc emac interrupt failed");
 
     // Create the RX task
     BaseType_t core_num = tskNO_AFFINITY;
@@ -419,7 +407,7 @@ esp_eth_mac_t *esp_eth_mac_new_openeth(const eth_mac_config_t *config)
     }
     BaseType_t xReturned = xTaskCreatePinnedToCore(emac_opencores_rx_task, "emac_rx", config->rx_task_stack_size, emac,
                            config->rx_task_prio, &emac->rx_task_hdl, core_num);
-    MAC_CHECK(xReturned == pdPASS, "create emac_rx task failed", out, NULL);
+    ESP_GOTO_ON_FALSE(xReturned == pdPASS, NULL, out, TAG, "create emac_rx task failed");
     return &(emac->parent);
 
 out:

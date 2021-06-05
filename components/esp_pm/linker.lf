@@ -11,7 +11,14 @@ entries:
 archive: libesp_hw_support.a
 entries:
     if PM_SLP_IRAM_OPT = y:
+        sleep_modes:esp_light_sleep_start (noflash)
+        sleep_modes:esp_sleep_enable_timer_wakeup (noflash)
+        sleep_modes:timer_wakeup_prepare (noflash)
+        sleep_modes:get_power_down_flags (noflash)
         rtc_init:rtc_vddsdio_get_config (noflash)
+        esp_clk:esp_clk_slowclk_cal_set (noflash)
+        esp_clk:esp_clk_slowclk_cal_get (noflash)
+        esp_clk:esp_rtc_get_time_us (noflash)
 
 [mapping:esp_system_pm]
 archive: libesp_system.a
@@ -19,10 +26,6 @@ entries:
     if PM_RTOS_IDLE_OPT = y:
         freertos_hooks:esp_vApplicationIdleHook (noflash)
     if PM_SLP_IRAM_OPT = y:
-        sleep_modes:esp_light_sleep_start (noflash)
-        sleep_modes:esp_sleep_enable_timer_wakeup (noflash)
-        sleep_modes:timer_wakeup_prepare (noflash)
-        sleep_modes:get_power_down_flags (noflash)
         task_wdt:idle_hook_cb (noflash)
         task_wdt:esp_task_wdt_reset (noflash)
         task_wdt:find_task_in_twdt_list (noflash)
@@ -47,9 +50,6 @@ entries:
     if PM_SLP_IRAM_OPT = y:
         esp_time_impl:esp_time_impl_set_boot_time (noflash)
         esp_time_impl:esp_time_impl_get_boot_time (noflash)
-        esp_time_impl:esp_clk_slowclk_cal_get (noflash)
-        esp_time_impl:esp_rtc_get_time_us (noflash)
-        esp_time_impl:esp_clk_slowclk_cal_set (noflash)
         esp_time_impl:esp_set_time_from_rtc (noflash)
 
 [mapping:driver_pm]
@@ -70,5 +70,5 @@ entries:
             gpio_hal_workaround:gpio_hal_sleep_pupd_config_unapply  (noflash)
             gpio_hal_workaround:gpio_hal_sleep_mode_setup_wrapper   (noflash)
             gpio_hal_workaround:gpio_hal_fun_pupd_restore           (noflash)
-    if PM_SLP_IRAM_OPT = y && ESP_SYSTEM_PM_POWER_DOWN_CPU = y:
+    if PM_SLP_IRAM_OPT = y && PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP = y:
         rtc_cntl_hal:rtc_cntl_hal_enable_cpu_retention (noflash)

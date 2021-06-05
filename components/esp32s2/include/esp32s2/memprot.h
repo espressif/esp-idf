@@ -26,6 +26,32 @@
 extern "C" {
 #endif
 
+//convenient constants for better code readabilty
+#define RD_ENA                  true
+#define RD_DIS                  false
+#define WR_ENA                  true
+#define WR_DIS                  false
+#define EX_ENA                  true
+#define EX_DIS                  false
+#define RD_LOW_ENA              true
+#define RD_LOW_DIS              false
+#define WR_LOW_ENA              true
+#define WR_LOW_DIS              false
+#define EX_LOW_ENA              true
+#define EX_LOW_DIS              false
+#define RD_HIGH_ENA             true
+#define RD_HIGH_DIS             false
+#define WR_HIGH_ENA             true
+#define WR_HIGH_DIS             false
+#define EX_HIGH_ENA             true
+#define EX_HIGH_DIS             false
+#define PANIC_HNDL_ON           true
+#define PANIC_HNDL_OFF          false
+#define MEMPROT_LOCK            true
+#define MEMPROT_UNLOCK          false
+#define DEF_SPLIT_LINE          NULL
+
+//memory range types
 typedef enum {
     MEMPROT_NONE =              0x00000000,
     MEMPROT_IRAM0_SRAM =        0x00000001, //0x40020000-0x4006FFFF, RWX

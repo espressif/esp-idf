@@ -25,7 +25,6 @@ In-depth design details of touch sensors and firmware development guidelines for
 
     For more information about testing touch sensors in various configurations, please check the `Guide for ESP32-Sense-Kit <https://github.com/espressif/esp-dev-kits/blob/master/esp32-sense-kit/docs/esp32_sense_kit_guide_en.md>`_.
 
-
 Functionality Overview
 ----------------------
 
@@ -50,14 +49,12 @@ Before using a touch pad, you need to initialize the touch pad driver by calling
 
 If the driver is not required anymore, deinitialize it by calling :cpp:func:`touch_pad_deinit`.
 
-
 Configuration
 ^^^^^^^^^^^^^
 
 Enabling the touch sensor functionality for a particular GPIO is done with :cpp:func:`touch_pad_config`.
 
 Use the function :cpp:func:`touch_pad_set_fsm_mode` to select if touch pad measurement (operated by FSM) should be started automatically by a hardware timer, or by software. If software mode is selected, use :cpp:func:`touch_pad_sw_start` to start the FSM.
-
 
 Touch State Measurements
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -84,7 +81,6 @@ Touch State Measurements
     It can also be used, for example, to evaluate a particular touch pad design by checking the range of sensor readings when a pad is touched or released. This information can be then used to establish a touch threshold.
 
 For the demonstration of how to read the touch pad data, check the application example :example:`peripherals/touch_pad_read`.
-
 
 Optimization of Measurements
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -136,7 +132,6 @@ Filtering of Measurements
 
     There is also a configurable hardware implemented IIR-filter (infinite impulse response). This IIR-filter is configured with the function :cpp:func:`touch_pad_filter_set_config` and enabled by calling :cpp:func:`touch_pad_filter_enable`
 
-
 Touch Detection
 ^^^^^^^^^^^^^^^
 
@@ -145,7 +140,6 @@ Touch detection is implemented in ESP32's hardware based on the user-configured 
 Hardware touch detection can also be wired to interrupts. This is described in the next section.
 
 If measurements are noisy and capacity changes are small, hardware touch detection might be unreliable. To resolve this issue, instead of using hardware detection / provided interrupts, implement measurement filtering and perform touch detection in your own application. For sample implementation of both methods of touch detection, see :example:`peripherals/touch_pad_interrupt`.
-
 
 Touch Triggered Interrupts
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -183,16 +177,13 @@ When interrupts are operational, you can obtain the information from which parti
     * :cpp:func:`touch_pad_set_group_mask` / :cpp:func:`touch_pad_get_group_mask`
     * :cpp:func:`touch_pad_clear_group_mask`
 
-
-
+.. _touch_pad-api-examples:
 
 Application Examples
 --------------------
-.. _touch_pad-api-examples:
 
 - Touch sensor read example: :example:`peripherals/touch_pad_read`.
 - Touch sensor interrupt example: :example:`peripherals/touch_pad_interrupt`.
-
 
 .. _touch_pad-api-reference:
 
@@ -204,8 +195,7 @@ API Reference
 
 GPIO Lookup Macros
 ^^^^^^^^^^^^^^^^^^
-Some useful macros can be used to specified the GPIO number of a touch pad channel, or vice versa.
-e.g.
+Some useful macros can be used to specified the GPIO number of a touch pad channel, or vice versa. e.g.
 
 1. ``TOUCH_PAD_NUM5_GPIO_NUM`` is the GPIO number of channel 5 (12);
 2. ``TOUCH_PAD_GPIO4_CHANNEL`` is the channel number of GPIO 4 (channel 0).

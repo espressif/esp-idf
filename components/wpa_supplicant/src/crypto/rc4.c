@@ -2,25 +2,18 @@
  * RC4 stream cipher
  * Copyright (c) 2002-2005, Jouni Malinen <j@w1.fi>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * Alternatively, this software may be distributed under the terms of BSD
- * license.
- *
- * See README and COPYING for more details.
+ * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
  */
 
-#include "utils/includes.h"
+#include "includes.h"
 
-#include "utils/common.h"
+#include "common.h"
 #include "crypto.h"
 
 #define S_SWAP(a,b) do { u8 t = S[a]; S[a] = S[b]; S[b] = t; } while(0)
 
-int
-rc4_skip(const u8 *key, size_t keylen, size_t skip,
+int rc4_skip(const u8 *key, size_t keylen, size_t skip,
 	     u8 *data, size_t data_len)
 {
 	u32 i, j, k;

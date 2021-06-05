@@ -1,4 +1,4 @@
-idf_component_register(REQUIRES bootloader)
+idf_component_register(REQUIRES bootloader PRIV_REQUIRES partition_table)
 
 if(NOT BOOTLOADER_BUILD)
     idf_build_get_property(build_dir BUILD_DIR)
@@ -41,6 +41,7 @@ consist of two ota app without factory or test partitions.")
     endif()
 
     if(CONFIG_APP_BUILD_GENERATE_BINARIES)
+        # Generate flasher args files
         file(READ "flasher_args.json.in" flasher_args_content)
         string(CONFIGURE "${flasher_args_content}" flasher_args_content)
 
@@ -48,5 +49,21 @@ consist of two ota app without factory or test partitions.")
                     CONTENT "${flasher_args_content}")
         file_generate("${CMAKE_BINARY_DIR}/flasher_args.json"
                     INPUT "${CMAKE_CURRENT_BINARY_DIR}/flasher_args.json.in")
+
+        # Generate app_check_size_command target to check the app size against the partition table parameters
+        partition_table_add_check_size_target(app_check_size
+            DEPENDS gen_project_binary
+            BINARY_PATH "${build_dir}/${PROJECT_BIN}"
+            PARTITION_TYPE app)
+        add_dependencies(app app_check_size)
     endif()
+endif()  # NOT BOOTLOADER_BUILD
+
+if(BOOTLOADER_BUILD)
+  # Generate bootloader post-build check of the bootloader size against the offset
+  partition_table_add_check_bootloader_size_target(bootloader_check_size
+      DEPENDS gen_project_binary
+      BOOTLOADER_BINARY_PATH "${build_dir}/${PROJECT_BIN}"
+      RESULT bootloader_check_size_command)
+  add_dependencies(app bootloader_check_size)  # note: in the subproject, so the target is 'app'...
 endif()

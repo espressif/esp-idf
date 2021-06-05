@@ -53,7 +53,7 @@ def mqqt_server_sketch(my_ip, port):
     print('server closed')
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
 def test_examples_protocol_mqtt_qos1(env, extra_data):
     global msgid
     """

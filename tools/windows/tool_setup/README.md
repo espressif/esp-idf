@@ -32,7 +32,60 @@ This uses `wine-innosetup` Docker image and `build_installer.sh` script. This is
 docker run --rm -v $IDF_PATH:/idf -w /idf/tools/windows/tool_setup -it $CI_DOCKER_REGISTRY/wine-innosetup:1 /bin/bash build_installer.sh
 ```
 
-### Manually, step by step
+### Windows development env with WSL2 and Windows Docker Containers
+
+The best approach to quickly develop and test all aspects of the build process is to use Windows with WSL2.
+
+Requirements:
+
+* WSL2 and Ubuntu distribution via Microsoft Store
+* Install Windows Terminal - https://github.com/microsoft/terminal
+* Install Docker and switch container runner to Windows
+* Install Visual Studio Code - install plugin for Inno Setup and Docker
+* Install Inno Setup - `choco install innnosetup`
+
+#### The first build of the installer
+
+This step is bootstrapping the whole process. Open Windows Terminal, click + sign and select Ubuntu.
+
+```
+cd tools/windows/tools_setup/
+./build_installer.sh online
+```
+
+The setup will download the necessary dependencies and it will build the installer.
+
+#### Build of offline version of the installer
+
+The offline version is built by setting /DOFFLINE=yes to ISCC on the command-line. To speed up build, it's possible to redirect stdout of ISCC to the file.
+
+```
+./build_installer.sh offline >out.txt
+```
+
+To speed up development build it's possible to disable compression which is set by default to lzma.
+
+```
+./build_installer.sh offline none >out.txt
+```
+
+#### Development work in idf_tool_setup.iss
+
+Open Inno Setup and open file idf_tool_setup.iss. This is the main file of the installer
+
+Press CTRL+F9 to rebuild the whole installer. Inno Setup detects changes only in the main file. If you change anything in include files, you need to explicitly press CTRL+F9 to build and Run.
+
+Press F9 to run the installer.
+
+Additional parameters to speed up development could be passed via Run - Parameters
+
+#### Development work in iss.inc files
+
+The majority of code is store in iss.inc files. The best way to develop it is to open a whole esp-idf directory in Visual Studio Code.
+
+To configure syntax highlight for inc files, open Settings CTRL+, search for `Associations`. In section TextEditor - Files find `File: Associations`. Click `Add Item`, set `item` to `*.inc`, set `value` to `innnosetup`.
+
+#### Manually, step by step
 
 * Build cmdlinerunner DLL.
   - On Linux/Mac, install mingw-w64 toolchain (`i686-w64-mingw32-gcc`). Then build the DLL using CMake:
@@ -53,15 +106,7 @@ docker run --rm -v $IDF_PATH:/idf -w /idf/tools/windows/tool_setup -it $CI_DOCKE
 
 * Build the installer using Inno Setup Compiler: `ISCC.exe idf_tools_setup.iss`.
 
-## Signing the installer
-
-* Obtain the signing key (e.g `key.pem`) and the certificate chain (e.g. `certchain.pem`). Set the environment variables to point to these files:
-  - `export KEYFILE=key.pem`
-  - `export CERTCHAIN=certchain.pem`
-
-* Run `sign_installer.sh` script. This will ask for the `key.pem` password, and produce the signed installer in the Output directory. If you plan to run the script multiple times, you may also set `KEYPASSWORD` environment variable to the `key.pem` password, to avoid the prompt.
-
-## Development and testing of the installer
+### Testing of the installer
 
 Development and testing of the installer can be simplified by using command line parameters which can be passed to the installer.
 
@@ -85,9 +130,9 @@ Documentation of parameters is available in api-guides/tools/idf-windows-install
 
 ### Testing installation in Docker with Windows containers
 
-The testing script is stored in docker-compose.yml. The test perform full silent installation and executes build of get-started example.
+The testing script is stored in docker-compose.yml. The test performs full silent installation and executes the build of get-started example.
 
-Commands for testing multiple versions:
+Commands for testing of `online` and `offline` installer with support for cache of dist and releases:
 
 ```
 $env:IDF_VERSION="v4.1"; docker-compose.exe run idf-setup-test
@@ -100,7 +145,41 @@ $env:IDF_VERSION="release/v3.3"; docker-compose.exe run idf-setup-test
 $env:IDF_VERSION="master"; docker-compose.exe run idf-setup-test
 ```
 
+Command for testing `offline` type of installer which contains everything but kitchen sink.:
+
+```
+$env:IDF_VERSION="v4.2"; docker-compose.exe run idf-setup-offline-test
+$env:IDF_VERSION="release/v4.2"; docker-compose.exe run idf-setup-offline-test
+```
+
 The installation log is not displayed immediately on the screen. It's stored in the file and it's displayed when the installation finishes. The glitch of Inno Setup is that in case of failed installation it won't terminate and it keeps hanging.
 
 Recommendation: Use Visual Studio Code with Docker plugin to work with container.
 The log file is then accessible under Docker - Containers - Container - Files - Temp - install.txt - right click - Open.
+
+### Testing multiple installations at once
+
+Docker compose contains definition of multiple scenarios. The test can be launched by command:
+
+```
+$env:IDF_VERSION="v4.2"; docker-compose up --force-recreate
+```
+
+Note: `--force-recreate` is necessary otherwise the container will be just resumed from previous state.
+### Testing the installation in Hyper-V
+
+Docker does not support the test of installation with GUI and enabled Windows Defender. These tests can be executed in Hyper-V available on Windows. Launch `Hyper-V Manager`, create VM, and connect to it.
+
+Use the following command to copy the installer to Hyper-V machine with the name "win10":
+
+```
+ Copy-VMFile "win10"  -SourcePath C:\projects\esp-idf\tools\windows\tool_setup\Output\esp-idf-tools-setup-unsigned.exe -DestinationPath "C:\Users\Tester\Desktop\esp-idf-tools-setup-unsigned.exe" -CreateFullPath -FileSource Host -Force
+```
+
+## Signing the installer
+
+* Obtain the signing key (e.g `key.pem`) and the certificate chain (e.g. `certchain.pem`). Set the environment variables to point to these files:
+  - `export KEYFILE=key.pem`
+  - `export CERTCHAIN=certchain.pem`
+
+* Run `sign_installer.sh` script. This will ask for the `key.pem` password and produce the signed installer in the Output directory. If you plan to run the script multiple times, you may also set `KEYPASSWORD` environment variable to the `key.pem` password, to avoid the prompt.

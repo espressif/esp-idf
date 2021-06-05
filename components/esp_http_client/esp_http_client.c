@@ -348,7 +348,7 @@ esp_err_t esp_http_client_get_password(esp_http_client_handle_t client, char **v
     return ESP_OK;
 }
 
-esp_err_t esp_http_client_set_password(esp_http_client_handle_t client, char *password)
+esp_err_t esp_http_client_set_password(esp_http_client_handle_t client, const char *password)
 {
     if (client == NULL) {
         ESP_LOGE(TAG, "client must not be NULL");
@@ -608,7 +608,13 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
         goto error;
     }
 
-    if (config->use_global_ca_store == true) {
+    if (config->crt_bundle_attach != NULL) {
+#ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+        esp_transport_ssl_crt_bundle_attach(ssl, config->crt_bundle_attach);
+#else //CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+        ESP_LOGE(TAG, "use_crt_bundle configured but not enabled in menuconfig: Please enable MBEDTLS_CERTIFICATE_BUNDLE option");
+#endif
+    } else if (config->use_global_ca_store == true) {
         esp_transport_ssl_enable_global_ca_store(ssl);
     } else if (config->cert_pem) {
         if (!config->cert_len) {
@@ -900,6 +906,16 @@ esp_err_t esp_http_client_set_method(esp_http_client_handle_t client, esp_http_c
     return ESP_OK;
 }
 
+esp_err_t esp_http_client_set_timeout_ms(esp_http_client_handle_t client, int timeout_ms)
+{
+    if (client == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    client->timeout_ms = timeout_ms;
+    return ESP_OK;
+}
+
 static int esp_http_client_get_data(esp_http_client_handle_t client)
 {
     if (client->state < HTTP_STATE_RES_COMPLETE_HEADER) {
@@ -985,7 +1001,7 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
                 }
                 ESP_LOG_LEVEL(sev, TAG, "esp_transport_read returned:%d and errno:%d ", rlen, errno);
             }
-            if (rlen < 0 && ridx == 0) {
+            if (rlen < 0 && ridx == 0 && !esp_http_client_is_complete_data_received(client)) {
                 return ESP_FAIL;
             } else {
                 return ridx;

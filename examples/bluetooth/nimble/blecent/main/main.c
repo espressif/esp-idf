@@ -463,7 +463,8 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
                     event->notify_rx.attr_handle,
                     OS_MBUF_PKTLEN(event->notify_rx.om));
 
-        /* Attribute data is contained in event->notify_rx.attr_data. */
+        /* Attribute data is contained in event->notify_rx.om. Use
+         * `os_mbuf_copydata` to copy the data received in notification mbuf */
         return 0;
 
     case BLE_GAP_EVENT_MTU:

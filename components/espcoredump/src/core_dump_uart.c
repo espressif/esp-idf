@@ -15,6 +15,7 @@
 #include "soc/uart_periph.h"
 #include "soc/gpio_periph.h"
 #include "driver/gpio.h"
+#include "hal/gpio_hal.h"
 #include "esp_core_dump_types.h"
 #include "esp_core_dump_port.h"
 #include "esp_core_dump_common.h"
@@ -147,8 +148,8 @@ void esp_core_dump_to_uart(panic_info_t *info)
     //Make sure txd/rxd are enabled
     // use direct reg access instead of gpio_pullup_dis which can cause exception when flash cache is disabled
     REG_CLR_BIT(GPIO_PIN_REG_1, FUN_PU);
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0RXD_U, FUNC_U0RXD_U0RXD);
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD_U0TXD);
+    gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_U0RXD_U, FUNC_U0RXD_U0RXD);
+    gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD_U0TXD);
 
     ESP_COREDUMP_LOGI("Press Enter to print core dump to UART...");
     const int cpu_ticks_per_ms = esp_clk_cpu_freq() / 1000;

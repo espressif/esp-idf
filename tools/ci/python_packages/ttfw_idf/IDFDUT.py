@@ -14,6 +14,7 @@
 
 """ DUT for IDF applications """
 import functools
+import io
 import os
 import os.path
 import re
@@ -32,6 +33,7 @@ except ImportError:
 
 from serial.tools import list_ports
 from tiny_test_fw import DUT, Utility
+from tiny_test_fw.Utility import format_case_id
 
 try:
     import esptool
@@ -70,7 +72,7 @@ class IDFRecvThread(DUT.RecvThread):
     def collect_performance(self, comp_data):
         matches = self.PERFORMANCE_PATTERN.findall(comp_data)
         for match in matches:
-            Utility.console_log('[Performance][{}]: {}'.format(match[0], match[1]),
+            Utility.console_log('[Performance][{}]: {}'.format(format_case_id(match[0], self.dut.app.target, self.dut.app.config_name), match[1]),
                                 color='orange')
             self.performance_items.put((match[0], match[1]))
 
@@ -308,6 +310,32 @@ class IDFDUT(DUT.SerialDUT):
         else:
             raise last_error
 
+    def image_info(self, path_to_file):
+        """
+        get hash256 of app
+
+        :param: path: path to file
+        :return: sha256 appended to app
+        """
+
+        old_stdout = sys.stdout
+        new_stdout = io.StringIO()
+        sys.stdout = new_stdout
+
+        class Args(object):
+            def __init__(self, attributes):
+                for key, value in attributes.items():
+                    self.__setattr__(key, value)
+
+        args = Args({
+            'chip': self.TARGET,
+            'filename': path_to_file,
+        })
+        esptool.image_info(args)
+        output = new_stdout.getvalue()
+        sys.stdout = old_stdout
+        return output
+
     @_uses_esptool
     def reset(self, esp):
         """
@@ -369,9 +397,27 @@ class IDFDUT(DUT.SerialDUT):
         with open(output_file, 'wb') as f:
             f.write(content)
 
+    @staticmethod
+    def _sort_usb_ports(ports):
+        """
+        Move the usb ports to the very beginning
+        :param ports: list of ports
+        :return: list of ports with usb ports at beginning
+        """
+        usb_ports = []
+        rest_ports = []
+        for port in ports:
+            if 'usb' in port.lower():
+                usb_ports.append(port)
+            else:
+                rest_ports.append(port)
+        return usb_ports + rest_ports
+
     @classmethod
     def list_available_ports(cls):
-        ports = [x.device for x in list_ports.comports()]
+        # It will return other kinds of ports as well, such as ttyS* ports.
+        # Give the usb ports higher priority
+        ports = cls._sort_usb_ports([x.device for x in list_ports.comports()])
         espport = os.getenv('ESPPORT')
         if not espport:
             # It's a little hard filter out invalid port with `serial.tools.list_ports.grep()`:

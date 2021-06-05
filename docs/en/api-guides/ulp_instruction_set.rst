@@ -364,9 +364,9 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
   4 cycles to execute, 4 cycles to fetch next instruction
 
 **Description**
-  The instruction stores the 16-bit value of Rsrc to the lower half-word of memory with address Rdst+offset. The upper half-word is written with the current program counter (PC), expressed in words, shifted left by 5 bits::
+  The instruction stores the 16-bit value of Rsrc to the lower half-word of memory with address Rdst+offset. The upper half-word is written with the current program counter (PC) (expressed in words, shifted left by 5 bits) OR'd with Rdst (0..3)::
 
-    Mem[Rdst + offset / 4]{31:0} = {PC[10:0], 5'b0, Rsrc[15:0]}
+    Mem[Rdst + offset / 4]{31:0} = {PC[10:0], 3'b0, Rdst, Rsrc[15:0]}
 
   The application can use higher 16 bits to determine which instruction in the ULP program has written any particular word into memory.
 

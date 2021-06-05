@@ -14,7 +14,7 @@
 
 #include <stdint.h>
 
-#include "soc/mpu_caps.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,7 +22,7 @@ extern "C" {
 
 /* This LL is currently unused for ESP32-C3 - cleanup is TODO ESP32-C3 IDF-2375 */
 
-static inline uint32_t mpu_ll_id_to_addr(int id)
+static inline uint32_t mpu_ll_id_to_addr(unsigned id)
 {
     abort();
 }

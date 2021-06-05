@@ -1,6 +1,8 @@
 set(srcs "dport_panic_highint_hdl.S"
          "clk.c"
          "reset_reason.c"
+         "system_internal.c"
+         "cache_err_int.c"
          "../../arch/xtensa/panic_arch.c"
          "../../arch/xtensa/panic_handler_asm.S"
          "../../arch/xtensa/expression_with_stack.c"

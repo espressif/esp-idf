@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*
  * Log library implementation notes.
@@ -69,7 +61,7 @@ typedef struct uncached_tag_entry_ {
     char tag[0];    // beginning of a zero-terminated string
 } uncached_tag_entry_t;
 
-static esp_log_level_t s_log_default_level = ESP_LOG_VERBOSE;
+esp_log_level_t esp_log_default_level = CONFIG_LOG_DEFAULT_LEVEL;
 static SLIST_HEAD(log_tags_head, uncached_tag_entry_) s_log_tags = SLIST_HEAD_INITIALIZER(s_log_tags);
 static cached_tag_entry_t s_log_cache[TAG_CACHE_SIZE];
 static uint32_t s_log_cache_max_generation = 0;
@@ -104,7 +96,7 @@ void esp_log_level_set(const char *tag, esp_log_level_t level)
 
     // for wildcard tag, remove all linked list items and clear the cache
     if (strcmp(tag, "*") == 0) {
-        s_log_default_level = level;
+        esp_log_default_level = level;
         clear_log_level_list();
         esp_log_impl_unlock();
         return;
@@ -174,7 +166,7 @@ void esp_log_writev(esp_log_level_t level,
     // Look for the tag in cache first, then in the linked list of all tags
     if (!get_cached_log_level(tag, &level_for_tag)) {
         if (!get_uncached_log_level(tag, &level_for_tag)) {
-            level_for_tag = s_log_default_level;
+            level_for_tag = esp_log_default_level;
         }
         add_to_cache(tag, level_for_tag);
 #ifdef LOG_BUILTIN_CHECKS

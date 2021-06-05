@@ -53,7 +53,7 @@ class WsClient:
         return self.ws.send(data)
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
 def test_examples_protocol_http_ws_echo_server(env, extra_data):
     # Acquire DUT
     dut1 = env.get_dut('http_server', 'examples/protocols/http_server/ws_echo_server', dut_class=ttfw_idf.ESP32DUT)

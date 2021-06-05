@@ -5,25 +5,54 @@
 #include <idp.iss>
 
 #define MyAppName "ESP-IDF Tools"
-#define MyAppVersion "2.4"
+#define MyAppVersion "2.5"
 #define MyAppPublisher "Espressif Systems (Shanghai) Co. Ltd."
 #define MyAppURL "https://github.com/espressif/esp-idf"
 
-#define PythonVersion "3.9.1"
-#define PythonInstallerName "idf-python-3.9.1-embed-win64.zip"
-#define PythonInstallerDownloadURL "https://dl.espressif.com/dl/idf-python/idf-python-3.9.1-embed-win64.zip"
+#ifndef PYTHONVERSION
+  #define PYTHONVERSION "3.8.7"
+#endif
+#define PythonInstallerName "idf-python-" + PYTHONVERSION + "-embed-win64.zip"
+#define PythonInstallerDownloadURL "https://dl.espressif.com/dl/idf-python/idf-python-" + PYTHONVERSION + "-embed-win64.zip"
 
-#define GitVersion "2.28.0"
-#define GitInstallerName "Git-2.28.0-64-bit.exe"
-#define GitInstallerDownloadURL "https://github.com/git-for-windows/git/releases/download/v2.28.0.windows.1/Git-2.28.0-64-bit.exe"
+#ifndef GITVERSION
+  #define GITVERSION "2.30.0.2"
+#endif
+; The URL where git is stored is not equal to it's version. Minor build has prefixes with windows
+#ifndef GITVERSIONDIR
+  #define GITVERSIONDIR "v2.30.0.windows.2"
+#endif
+#define GitInstallerName "Git-" + GITVERSION + "-64-bit.exe"
+#define GitInstallerDownloadURL "https://github.com/git-for-windows/git/releases/download/" + GITVERSIONDIR + "/Git-" + GITVERSION + "-64-bit.exe"
 
 #define IDFVersionsURL "https://dl.espressif.com/dl/esp-idf/idf_versions.txt"
 
 #define IDFCmdExeShortcutDescription "Open ESP-IDF Command Prompt (cmd.exe) Environment"
-#define IDFCmdExeShortcutFile "ESP-IDF CMD.lnk"
+#define IDFCmdExeShortcutFile "ESP-IDF Command Prompt (cmd.exe).lnk"
 
 #define IDFPsShortcutDescription "Open ESP-IDF PowerShell Environment"
 #define IDFPsShortcutFile "ESP-IDF PowerShell.lnk"
+
+; List of default values
+;  Default values can be set by command-line option when startig installer
+;  or it can be stored in .INI file which can be passed to installer by /CONFIG=[PATH].
+;  Code for evaluating configuration is in the file configuration.inc.iss.
+#ifndef COMPRESSION
+  #define COMPRESSION = 'lzma';
+#endif
+; In case of large installer set it to 'no' to avoid problem delay during starting installer
+; In case of 1 GB installer it could be 30+ seconds just to start installer.
+#ifndef SOLIDCOMPRESSION
+  #define SOLIDCOMPRESSION = 'yes';
+#endif
+
+; Offline installation specific options
+#ifndef OFFLINE
+  #define OFFLINE = 'no';
+#endif
+#ifndef PYTHONWHEELSVERSION
+  #define PYTHONWHEELSVERSION = '3.8-2021-01-21'
+#endif
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -43,8 +72,8 @@ DirExistsWarning=no
 DefaultGroupName=ESP-IDF
 DisableProgramGroupPage=yes
 OutputBaseFilename=esp-idf-tools-setup-unsigned
-Compression=lzma
-SolidCompression=yes
+Compression={#COMPRESSION}
+SolidCompression={#SOLIDCOMPRESSION}
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
 LicenseFile=license.txt
@@ -53,6 +82,12 @@ SetupLogging=yes
 ChangesEnvironment=yes
 WizardStyle=modern
 
+; https://jrsoftware.org/ishelp/index.php?topic=setup_touchdate
+; Default values are set to 'no' which might result in files that are installed on the machine
+; in the 'future'. This creates a problem for Ninja/CMake which may end up in a neverending loop.
+; Setting this flag to 'yes' should avoid the problem.
+TimeStampsInUTC=yes
+
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl,Languages/idf_tool_en-US.islu"
 
@@ -60,6 +95,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl,Languages/idf_tool_en-US.is
 Name: "{app}\dist"
 
 [Files]
+Source: "configuration.ini"; Flags: dontcopy noencryption
 Source: "cmdlinerunner\build\cmdlinerunner.dll"; Flags: dontcopy
 Source: "unzip\7za.exe"; Flags: dontcopy
 Source: "idf_versions.txt"; Flags: dontcopy
@@ -68,7 +104,13 @@ Source: "..\..\idf_tools.py"; DestDir: "{app}"; DestName: "idf_tools_fallback.py
 Source: "tools_fallback.json"; DestDir: "{app}"; DestName: "tools_fallback.json"
 Source: "idf_cmd_init.bat"; DestDir: "{app}"
 Source: "idf_cmd_init.ps1"; DestDir: "{app}"
-Source: "dist\*"; DestDir: "{app}\dist"
+Source: "dist\*"; DestDir: "{app}\dist"; Flags: skipifsourcedoesntexist;
+
+; esp-idf-bundle - bundle only in case it exists, it's used only in offline installer
+Source: "releases\esp-idf-bundle\*"; DestDir: "{code:GetIDFPath}"; Flags: recursesubdirs skipifsourcedoesntexist;
+
+Source: "tools\idf-python\*"; DestDir: "{app}\tools\idf-python\"; Flags: recursesubdirs;
+Source: "tools\idf-python-wheels\*"; DestDir: "{app}\tools\idf-python-wheels\"; Flags: recursesubdirs skipifsourcedoesntexist;
 ; Helper Python files for sanity check of Python environment - used by system_check_page
 Source: "system_check\system_check_download.py"; Flags: dontcopy
 Source: "system_check\system_check_subprocess.py"; Flags: dontcopy
@@ -88,19 +130,22 @@ Type: files; Name: "{autodesktop}\{#IDFCmdExeShortcutFile}"
 Type: files; Name: "{autodesktop}\{#IDFPsShortcutFile}"
 
 [Tasks]
-Name: CreateLnkStartCmd; Description: "Create Start Menu shortcut for the ESP-IDF Tools Command Prompt Environment";
-Name: CreateLnkStartPs; Description: "Create Start Menu shortcut for the ESP-IDF Tools Powershell Environment";
-Name: CreateLnkDeskCmd; Description: "Create Desktop shortcut for the ESP-IDF Tools Command Prompt Environment";
-Name: CreateLnkDeskPs; Description: "Create Desktop shortcut for the ESP-IDF Tools Powershell Environment";
-; WD registration checkbox is identified by 'Windows Defender' substring anywhere in its caption, not by the position index in WizardForm.TasksList.Items
-; Please, keep this in mind when making changes to the item's description - WD checkbox is to be disabled on systems without the Windows Defender installed
-Name: wdexcl; Description: "Register the ESP-IDF Tools executables as Windows Defender exclusions (improves compilation speed, requires elevation)";
-Name: idf_tools_use_mirror; Description: "Use Espressif download server instead of downloading tool packages from Github"; Flags: unchecked;
+Name: CreateLinkStartPowerShell; GroupDescription: "{cm:CreateShortcutPowerShell}"; Description: "{cm:CreateShortcutStartMenu}";
+Name: CreateLinkDeskPowerShell; GroupDescription: "{cm:CreateShortcutPowerShell}"; Description: "{cm:CreateShortcutDesktop}";
+
+Name: CreateLinkStartCmd; GroupDescription: "{cm:CreateShortcutCMD}"; Description: "{cm:CreateShortcutStartMenu}";
+Name: CreateLinkDeskCmd; GroupDescription: "{cm:CreateShortcutCMD}"; Description: "{cm:CreateShortcutDesktop}";
+
+; Optimization for Online mode
+Name: UseMirror;  GroupDescription:"{cm:OptimizationTitle}"; Description: "{cm:OptimizationDownloadMirror}"; Flags: unchecked; Check: IsOnlineMode
 
 [Run]
 Filename: "{app}\dist\{#GitInstallerName}"; Parameters: "/silent /tasks="""" /norestart"; Description: "Installing Git"; Check: GitInstallRequired
 Filename: "{group}\{#IDFPsShortcutFile}"; Flags: postinstall shellexec unchecked; Description: "Run ESP-IDF PowerShell Environment"; Check: IsPowerShellInstalled
 Filename: "{group}\{#IDFCmdExeShortcutFile}"; Flags: postinstall shellexec unchecked; Description: "Run ESP-IDF Command Prompt Environment"; Check: IsCmdInstalled
+; WD registration checkbox is identified by 'Windows Defender' substring anywhere in its caption, not by the position index in WizardForm.TasksList.Items
+; Please, keep this in mind when making changes to the item's description - WD checkbox is to be disabled on systems without the Windows Defender installed
+Filename: "powershell"; Parameters: "-ExecutionPolicy ByPass -File ""{app}\dist\tools_WD_excl.ps1"" -AddExclPath ""{app}\*.exe"""; Flags: postinstall shellexec runhidden; Description: "{cm:OptimizationWindowsDefender}"; Check: GetIsWindowsDefenderEnabled
 
 
 [UninstallRun]
@@ -113,6 +158,7 @@ Root: HKCU; Subkey: "Environment"; ValueType: string; ValueName: "IDF_TOOLS_PATH
     ValueData: "{app}"; Flags: preservestringtype createvalueifdoesntexist uninsdeletevalue deletevalue;
 
 [Code]
+#include "configuration.iss.inc"
 #include "utils.iss.inc"
 #include "choice_page.iss.inc"
 #include "cmdline_page.iss.inc"

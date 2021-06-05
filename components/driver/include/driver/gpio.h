@@ -3,7 +3,7 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -35,6 +35,8 @@
 #include "esp32s3/rom/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/gpio.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/gpio.h"
 #endif
 
 #ifdef CONFIG_LEGACY_INCLUDE_COMMON_HEADERS
@@ -215,9 +217,9 @@ esp_err_t gpio_wakeup_disable(gpio_num_t gpio_num);
  * per-GPIO ISRs.
  *
  * @param  fn  Interrupt handler function.
+ * @param  arg  Parameter for handler function
  * @param  intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
  *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
- * @param  arg  Parameter for handler function
  * @param  handle Pointer to return handle. If non-NULL, a handle for the interrupt will be returned here.
  *
  * \verbatim embed:rst:leading-asterisk
@@ -494,28 +496,6 @@ esp_err_t gpio_sleep_set_direction(gpio_num_t gpio_num, gpio_mode_t mode);
  *     - ESP_ERR_INVALID_ARG : Parameter error
  */
 esp_err_t gpio_sleep_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull);
-
-#if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
-/**
-  * @brief Emulate ESP32S2 behaviour to backup FUN_PU, FUN_PD information
-  *
-  * @note Need to be called before sleep.
-  *
-  * @return
-  *      - ESP_OK Success
-  */
-esp_err_t gpio_sleep_pupd_config_apply(gpio_num_t gpio_num);
-
-/**
-  * @brief Emulate ESP32S2 behaviour to restore FUN_PU, FUN_PD information
-  *
-  * @note Need to be called after sleep.
-  *
-  * @return
-  *      - ESP_OK Success
-  */
-esp_err_t gpio_sleep_pupd_config_unapply(gpio_num_t gpio_num);
-#endif
 #endif
 
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP

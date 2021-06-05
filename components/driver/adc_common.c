@@ -30,7 +30,7 @@
 #include "hal/adc_types.h"
 #include "hal/adc_hal.h"
 
-#if SOC_DAC_PERIPH_NUM > 0
+#if SOC_DAC_SUPPORTED
 #include "driver/dac.h"
 #include "hal/dac_hal.h"
 #endif
@@ -248,7 +248,9 @@ static void adc_rtc_chan_init(adc_unit_t adc_unit)
     if (adc_unit & ADC_UNIT_1) {
         /* Workaround: Disable the synchronization operation function of ADC1 and DAC.
            If enabled(default), ADC RTC controller sampling will cause the DAC channel output voltage. */
+#if SOC_DAC_SUPPORTED
         dac_hal_rtc_sync_by_adc(false);
+#endif
         adc_hal_rtc_output_invert(ADC_NUM_1, SOC_ADC1_DATA_INVERT_DEFAULT);
         adc_hal_set_sar_clk_div(ADC_NUM_1, SOC_ADC_SAR_CLK_DIV_DEFAULT(ADC_NUM_1));
 #ifdef CONFIG_IDF_TARGET_ESP32
@@ -532,6 +534,7 @@ static inline void adc2_init(void)
 
 static inline void adc2_dac_disable( adc2_channel_t channel)
 {
+#if SOC_DAC_SUPPORTED
 #ifdef CONFIG_IDF_TARGET_ESP32
     if ( channel == ADC2_CHANNEL_8 ) { // the same as DAC channel 1
         dac_output_disable(DAC_CHANNEL_1);
@@ -545,6 +548,7 @@ static inline void adc2_dac_disable( adc2_channel_t channel)
         dac_output_disable(DAC_CHANNEL_2);
     }
 #endif
+#endif // SOC_DAC_SUPPORTED
 }
 
 /**

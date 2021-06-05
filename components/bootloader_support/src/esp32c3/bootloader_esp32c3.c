@@ -263,22 +263,27 @@ static void bootloader_super_wdt_auto_feed(void)
     REG_WRITE(RTC_CNTL_SWD_WPROTECT_REG, 0);
 }
 
-#if CONFIG_ESP32C3_REV_MIN < 3
 static inline void bootloader_hardware_init(void)
 {
+    // This check is always included in the bootloader so it can
+    // print the minimum revision error message later in the boot
     if (bootloader_common_get_chip_revision() < 3) {
         REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_FORCE_XPD_IPH, 1);
         REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1_PVT, 12);
     }
 }
-#endif
 
 static inline void bootloader_glitch_reset_disable(void)
 {
+    /*
+      For origin chip & ECO1: only support swt reset;
+      For ECO2: fix brownout reset bug, support swt & brownout reset;
+      For ECO3: fix clock glitch reset bug, support all reset, include: swt & brownout & clock glitch reset.
+    */
     uint8_t chip_version = bootloader_common_get_chip_revision();
     if (chip_version < 2) {
         REG_SET_FIELD(RTC_CNTL_FIB_SEL_REG, RTC_CNTL_FIB_SEL, RTC_CNTL_FIB_SUPER_WDT_RST);
-    } else {
+    } else if (chip_version == 2) {
         REG_SET_FIELD(RTC_CNTL_FIB_SEL_REG, RTC_CNTL_FIB_SEL, RTC_CNTL_FIB_SUPER_WDT_RST | RTC_CNTL_FIB_BOR_RST);
     }
 }
@@ -286,9 +291,8 @@ static inline void bootloader_glitch_reset_disable(void)
 esp_err_t bootloader_init(void)
 {
     esp_err_t ret = ESP_OK;
-#if CONFIG_ESP32C3_REV_MIN < 3
+
     bootloader_hardware_init();
-#endif
     bootloader_glitch_reset_disable();
     bootloader_super_wdt_auto_feed();
     // protect memory region

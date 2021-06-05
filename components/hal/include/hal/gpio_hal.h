@@ -466,6 +466,14 @@ void gpio_hal_sleep_pupd_config_unapply(gpio_hal_context_t *hal, gpio_num_t gpio
 
 #endif //SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 
+/**
+ * @brief  Select a function for the pin in the IOMUX
+ *
+ * @param  pin_name Pin name to configure
+ * @param  func Function to assign to the pin
+ */
+#define gpio_hal_iomux_func_sel(pin_name, func) gpio_ll_iomux_func_sel(pin_name, func)
+
 #ifdef __cplusplus
 }
 #endif

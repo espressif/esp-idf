@@ -31,10 +31,11 @@ extern bool g_spiram_ok; // [refactor-todo] better way to communicate this from 
 // array, one per core.
 typedef void (*sys_startup_fn_t)(void);
 
+/* This array of per-CPU system layer startup functions is initialized in the non-port part of esp_system */
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-extern sys_startup_fn_t g_startup_fn[SOC_CPU_CORES_NUM];
+extern sys_startup_fn_t const g_startup_fn[SOC_CPU_CORES_NUM];
 #else
-extern sys_startup_fn_t g_startup_fn[1];
+extern sys_startup_fn_t const g_startup_fn[1];
 #endif
 
 // Utility to execute `sys_startup_fn_t` for the current core.

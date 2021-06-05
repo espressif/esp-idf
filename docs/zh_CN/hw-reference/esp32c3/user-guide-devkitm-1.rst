@@ -93,13 +93,13 @@ ESP32-C3-DevKitM-1 是一款入门级开发板，使用以尺寸小而得名的 
 
 零售订单请前往 https://www.espressif.com/zh-hans/company/contact/buy-a-sample。
 
+
 批量订单
 ^^^^^^^^
 
 如批量购买，ESP32-C3-DevKitM-1 烧录底板将以大纸板箱包装。
 
 批量订单请参考 `乐鑫产品订购信息 <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_cn.pdf>`__ (PDF)。
-
 
 硬件参考
 ========
@@ -200,6 +200,7 @@ J3
 
 相关文档
 ========
+* `使用 ESP32-C3 构建安全高性价比的互联设备 <http://c3.espressif.com/>`_
 * `ESP32-C3 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_cn.pdf>`_ (PDF) 
 * `ESP32-C3-MINI-1 规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-c3-mini-1_datasheet_cn.pdf>`_ (PDF)
 * `ESP32-C3-DevKitM-1 原理图 <https://dl.espressif.com/dl/schematics/SCH_ESP32-C3-DEVKITM-1_V1_20200915A.pdf>`_ (PDF)

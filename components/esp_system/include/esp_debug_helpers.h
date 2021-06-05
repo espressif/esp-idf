@@ -41,6 +41,7 @@ typedef struct {
     uint32_t pc;       /* PC of the current frame */
     uint32_t sp;       /* SP of the current frame */
     uint32_t next_pc;  /* PC of the current frame's caller */
+    const void *exc_frame;  /* Pointer to the full frame data structure, if applicable */
 } esp_backtrace_frame_t;
 
 /**
@@ -86,6 +87,24 @@ extern void esp_backtrace_get_start(uint32_t *pc, uint32_t *sp, uint32_t *next_p
  *  - False otherwise
  */
 bool esp_backtrace_get_next_frame(esp_backtrace_frame_t *frame);
+
+/**
+ * @brief Print the backtrace from specified frame.
+ *
+ * @param depth The maximum number of stack frames to print (should be > 0)
+ * @param frame Starting frame to print from
+ * @param panic Indicator if backtrace print is during a system panic
+ *
+ * @note On the ESP32, users must call esp_backtrace_get_start() first to flush the stack.
+ * @note If a esp_backtrace_frame_t* frame is obtained though a call to esp_backtrace_get_start()
+ * from some example function func_a(), then frame is only valid within the frame/scope of func_a().
+ * Users should not attempt to pass/use frame other frames within the same stack of different stacks.
+ *
+ * @return
+ *      - ESP_OK    Backtrace successfully printed to completion or to depth limit
+ *      - ESP_FAIL  Backtrace is corrupted
+ */
+esp_err_t IRAM_ATTR esp_backtrace_print_from_frame(int depth, const esp_backtrace_frame_t* frame, bool panic);
 
 /**
  * @brief Print the backtrace of the current stack

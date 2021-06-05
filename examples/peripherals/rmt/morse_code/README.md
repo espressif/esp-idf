@@ -31,7 +31,7 @@ GPIO18 +----/\/\/\----+------|>|-----+ GND
 
 Open the project configuration menu (`idf.py menuconfig`). 
 
-In the `Example Connection Configuration` menu:
+In the `Example Configuration` menu:
 
 * Set the GPIO number used for transmitting the IR signal under `RMT TX GPIO` optin.
 
@@ -41,7 +41,11 @@ Run `idf.py -p PORT flash monitor` to build, flash and monitor the project.
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 
-See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html) for full steps to configure and use ESP-IDF to build projects.
+See the Getting Started Guide for all the steps to configure and use the ESP-IDF to build projects.
+
+* [ESP-IDF Getting Started Guide on ESP32](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html)
+* [ESP-IDF Getting Started Guide on ESP32-S2](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/get-started/index.html)
+* [ESP-IDF Getting Started Guide on ESP32-C3](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/get-started/index.html)
 
 
 ## Example Output
@@ -59,4 +63,4 @@ I (2814) example: Transmission complete
 
 ## Troubleshooting
 
-For any technical queries, please open an [issue] (https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
+For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.

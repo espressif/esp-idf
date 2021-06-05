@@ -17,6 +17,7 @@
 #include "soc/uart_struct.h"
 #include "driver/periph_ctrl.h"
 #include "esp_rom_gpio.h"
+#include "hal/gpio_hal.h"
 
 
 #define DATA_LENGTH          512  /*!<Data buffer length for test buffer*/
@@ -266,7 +267,7 @@ TEST_CASE("I2C driver memory leaking check", "[i2c]")
     TEST_ASSERT_INT_WITHIN(100, size, esp_get_free_heap_size());
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
 
 // print the reading buffer
 static void disp_buf(uint8_t *buf, int len)
@@ -396,7 +397,7 @@ static void slave_write_buffer_test(void)
 
 TEST_CASE_MULTIPLE_DEVICES("I2C master read slave test", "[i2c][test_env=UT_T2_I2C][timeout=150]", master_read_slave_test, slave_write_buffer_test);
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32, ESP32C3)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32)
 static void i2c_master_write_read_test(void)
 {
     uint8_t *data_rd = (uint8_t *) malloc(DATA_LENGTH);
@@ -537,8 +538,8 @@ static void i2c_slave_repeat_read(void)
 TEST_CASE_MULTIPLE_DEVICES("I2C repeat write test", "[i2c][test_env=UT_T2_I2C][timeout=150]", i2c_master_repeat_write, i2c_slave_repeat_read);
 
 
-#endif  //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
-#endif  //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
+#endif  //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
+#endif  //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
 
 static volatile bool exit_flag;
 static bool test_read_func;
@@ -651,7 +652,7 @@ TEST_CASE("I2C general API test", "[i2c]")
 //Init uart baud rate detection
 static void uart_aut_baud_det_init(int rxd_io_num)
 {
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[rxd_io_num], PIN_FUNC_GPIO);
+    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[rxd_io_num], PIN_FUNC_GPIO);
     gpio_set_direction(rxd_io_num, GPIO_MODE_INPUT_OUTPUT);
     esp_rom_gpio_connect_out_signal(rxd_io_num, I2CEXT1_SCL_OUT_IDX, 0, 0);
     esp_rom_gpio_connect_in_signal(rxd_io_num, U1RXD_IN_IDX, 0);

@@ -234,7 +234,7 @@ esp_err_t esp_flash_init_os_functions(esp_flash_t *chip, int host_id, int* out_d
 
     // Skip initializing the bus lock when the bus is SPI1 and the bus is not shared with SPI Master
     // driver, leaving dev_handle = NULL
-    bool skip_register_dev = (host_id == SPI_HOST);
+    bool skip_register_dev = (host_id == SPI1_HOST);
 #if CONFIG_SPI_FLASH_SHARE_SPI1_BUS
     skip_register_dev = false;
 #endif

@@ -22,6 +22,7 @@ static void test_int_wdt_cache_disabled(void);
 static void test_stack_overflow(void);
 static void test_illegal_instruction(void);
 static void test_instr_fetch_prohibited(void);
+static void test_ub(void);
 
 
 void app_main(void)
@@ -52,6 +53,7 @@ void app_main(void)
     HANDLE_TEST(test_stack_overflow);
     HANDLE_TEST(test_illegal_instruction);
     HANDLE_TEST(test_instr_fetch_prohibited);
+    HANDLE_TEST(test_ub);
 
     #undef HANDLE_TEST
 
@@ -80,7 +82,7 @@ static void test_task_wdt(void)
     }
 }
 
-static void test_storeprohibited(void)
+static void __attribute__((no_sanitize_undefined)) test_storeprohibited(void)
 {
     *(int*) 0x1 = 0;
 }
@@ -142,6 +144,12 @@ static void test_instr_fetch_prohibited(void)
     fptr();
 }
 
+static void test_ub(void)
+{
+    uint8_t stuff[1] = {rand()};
+    printf("%d\n", stuff[rand()]);
+}
+
 /* implementations of the utility functions */
 
 #define BOOT_CMD_MAX_LEN (128)
@@ -183,7 +191,7 @@ static void die(const char* msg)
 {
     printf("Test error: %s\n\n", msg);
     fflush(stdout);
-    fsync(fileno(stdout));
+    usleep(1000);
     /* Don't use abort here as it would enter the panic handler */
     esp_restart_noos();
 }

@@ -50,6 +50,16 @@ static inline void intr_cntrl_ll_disable_interrupts(uint32_t mask)
 }
 
 /**
+ * @brief Read the current interrupt mask of the CPU running this code.
+ *
+ * @return The current interrupt bitmask.
+ */
+static inline uint32_t intr_cntrl_ll_read_interrupt_mask(void)
+{
+    return REG_READ(INTERRUPT_CORE0_CPU_INT_ENABLE_REG);
+}
+
+/**
  * @brief checks if given interrupt number has a valid handler
  *
  * @param intr interrupt number ranged from 0 to 31
@@ -83,36 +93,6 @@ static inline void intr_cntrl_ll_set_int_handler(uint8_t intr, interrupt_handler
 static inline void *intr_cntrl_ll_get_int_handler_arg(uint8_t intr)
 {
     return intr_handler_get_arg(intr);
-}
-
-/**
- * @brief Disables interrupts that are not located in iram
- *
- * @param newmask mask of interrupts TO KEEP ENABLED (note: this is probably a bug, see IDF-2308)
- * @return oldmask previous interrupt mask value
- */
-static inline uint32_t intr_cntrl_ll_disable_int_mask(uint32_t newmask)
-{
-    // Disable interrupts in order to atomically update the interrupt enable register
-    unsigned old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
-
-    uint32_t old_int_enable = REG_READ(INTERRUPT_CORE0_CPU_INT_ENABLE_REG);
-    REG_WRITE(INTERRUPT_CORE0_CPU_INT_ENABLE_REG, old_int_enable & newmask);
-
-    RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
-    return old_int_enable;
-}
-
-/**
- * @brief Enables interrupts that are not located in iram
- *
- * @param newmask mask of interrupts needs to be enabled
- */
-static inline void intr_cntrl_ll_enable_int_mask(uint32_t newmask)
-{
-    unsigned old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
-    esprv_intc_int_enable(newmask);
-    RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
 }
 
 /**

@@ -58,6 +58,7 @@ typedef enum {
     SYSTEM_EVENT_ETH_CONNECTED,            /*!< ESP32 ethernet phy link up */
     SYSTEM_EVENT_ETH_DISCONNECTED,         /*!< ESP32 ethernet phy link down */
     SYSTEM_EVENT_ETH_GOT_IP,               /*!< ESP32 ethernet got IP from connected AP */
+    SYSTEM_EVENT_ETH_LOST_IP,              /*!< ESP32 ethernet lost IP and the IP is reset to 0 */
     SYSTEM_EVENT_MAX                       /*!< Number of members in this enum */
 } system_event_id_t;
 

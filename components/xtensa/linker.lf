@@ -2,6 +2,7 @@
 archive: libxtensa.a
 entries:
     eri (noflash_text)
+    xtensa_intr_asm (noflash_text)
 
 [mapping:xt_hal]
 archive: libxt_hal.a

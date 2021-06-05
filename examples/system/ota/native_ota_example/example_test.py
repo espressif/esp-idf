@@ -135,7 +135,7 @@ def start_chunked_server(ota_image_dir, server_port):
     return chunked_server
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
 def test_examples_protocol_native_ota_example(env, extra_data):
     """
     This is a positive test case, which downloads complete binary file multiple number of times.
@@ -179,7 +179,7 @@ def test_examples_protocol_native_ota_example(env, extra_data):
         dut1.reset()
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
 def test_examples_protocol_native_ota_example_truncated_bin(env, extra_data):
     """
     Working of OTA if binary file is truncated is validated in this test case.
@@ -230,7 +230,7 @@ def test_examples_protocol_native_ota_example_truncated_bin(env, extra_data):
     os.remove(binary_file)
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
 def test_examples_protocol_native_ota_example_truncated_header(env, extra_data):
     """
     Working of OTA if headers of binary file are truncated is vaildated in this test case.
@@ -280,7 +280,7 @@ def test_examples_protocol_native_ota_example_truncated_header(env, extra_data):
     os.remove(binary_file)
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
 def test_examples_protocol_native_ota_example_random(env, extra_data):
     """
     Working of OTA if random data is added in binary file are validated in this test case.
@@ -329,7 +329,7 @@ def test_examples_protocol_native_ota_example_random(env, extra_data):
     os.remove(binary_file)
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
 def test_examples_protocol_native_ota_example_chunked(env, extra_data):
     """
     This is a positive test case, which downloads complete binary file multiple number of times.

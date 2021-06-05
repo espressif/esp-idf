@@ -112,9 +112,19 @@ MacOS
 
     sudo kextunload -b com.FTDI.driver.FTDIUSBSerialDriver
 
-   有时，您可能还需要卸载苹果的 FTDI 驱动::
+   有时，您可能还需要卸载苹果的 FTDI 驱动:
 
-    sudo kextunload -b com.apple.driver.AppleUSBFTDI
+   * macOS < 10.15::
+
+        sudo kextunload -b com.apple.driver.AppleUSBFTDI
+
+   * macOS 10.15::
+
+        sudo kextunload -b com.apple.DriverKit-AppleUSBFTDI
+
+   .. warning::
+
+      对于 FTDI 驱动，如果使用串口的通道不正确，则可能会导致内核崩溃。ESP-WROVER-KIT 将通道 A 用于 JTAG，通道 B 用于串口。
 
 4. 运行 OpenOCD::
 

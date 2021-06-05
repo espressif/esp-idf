@@ -15,7 +15,7 @@
 
 #include <stdint.h>
 
-#include "soc/cpu_caps.h"
+#include "soc/soc_caps.h"
 #include "esp_bit_defs.h"
 #include "soc/assist_debug_reg.h"
 #include "esp_attr.h"

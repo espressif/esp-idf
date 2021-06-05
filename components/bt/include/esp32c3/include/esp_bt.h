@@ -26,7 +26,7 @@ extern "C" {
 #endif
 
 #define ESP_BT_CTRL_CONFIG_MAGIC_VAL    0x5A5AA5A5
-#define ESP_BT_CTRL_CONFIG_VERSION      0x02103080
+#define ESP_BT_CTRL_CONFIG_VERSION      0x02103310
 
 #define ESP_BT_HCI_TL_MAGIC_VALUE   0xfadebead
 #define ESP_BT_HCI_TL_VERSION       0x00010000
@@ -93,9 +93,17 @@ enum {
     ESP_BT_COEX_PHY_CODED_TX_RX_TIME_LIMIT_FORCE_ENABLE,         /*!< Always Enable the limit */
 };
 
+#define ESP_BT_HCI_TL_STATUS_OK            (0)   /*!< HCI_TL Tx/Rx operation status OK */
+
+/**
+ * @brief callback function for HCI Transport Layer send/receive operations
+ */
+typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
+
 #ifdef CONFIG_BT_ENABLED
 
 #define BT_CTRL_BLE_MAX_ACT_LIMIT           10  //Maximum BLE activity limitation
+#define SLAVE_CE_LEN_MIN_DEFAULT             5
 
 #ifdef CONFIG_BT_CTRL_SCAN_DUPL_TYPE
 #define SCAN_DUPLICATE_TYPE_VALUE  CONFIG_BT_CTRL_SCAN_DUPL_TYPE
@@ -161,6 +169,7 @@ enum {
     .mesh_adv_size = MESH_DUPLICATE_SCAN_CACHE_SIZE,                       \
     .coex_phy_coded_tx_rx_time_limit = CONFIG_BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_EFF, \
     .hw_target_code = BLE_HW_TARGET_CODE_ESP32C3_CHIP_ECO0,                \
+    .slave_ce_len_min = SLAVE_CE_LEN_MIN_DEFAULT,                          \
 };
 
 #else
@@ -178,8 +187,8 @@ typedef struct {
     int (* _open)(void);                    /* hci tl open */
     void (* _close)(void);                  /* hci tl close */
     void (* _finish_transfers)(void);       /* hci tl finish trasnfers */
-    void (* _recv)(uint8_t *buf, uint32_t len, void (*callback) (void*, uint8_t), void* dummy); /* hci tl recv */
-    void (* _send)(uint8_t *buf, uint32_t len, void (*callback) (void*, uint8_t), void* dummy); /* hci tl send */
+    void (* _recv)(uint8_t *buf, uint32_t len, esp_bt_hci_tl_callback_t callback, void* arg); /* hci tl recv */
+    void (* _send)(uint8_t *buf, uint32_t len, esp_bt_hci_tl_callback_t callback, void* arg); /* hci tl send */
     bool (* _flow_off)(void); /* hci tl flow off */
     void (* _flow_on)(void); /* hci tl flow on */
 } esp_bt_hci_tl_t;
@@ -225,6 +234,7 @@ typedef struct {
     uint16_t mesh_adv_size;                 /*!< Mesh adv size for scan duplicate */
     uint8_t coex_phy_coded_tx_rx_time_limit;  /*!< limit on max tx/rx time in case of connection using CODED-PHY with Wi-Fi coexistence */
     uint32_t hw_target_code;                /*!< hardware target */
+    uint8_t slave_ce_len_min;
 } esp_bt_controller_config_t;
 
 /**

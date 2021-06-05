@@ -43,7 +43,7 @@ endif()
 
 
 set(ULP_MAP_GEN ${PYTHON} ${IDF_PATH}/components/ulp/esp32ulp_mapgen.py)
-get_filename_component(sdkconfig_dir ${SDKCONFIG} DIRECTORY)
+get_filename_component(sdkconfig_dir ${SDKCONFIG_HEADER} DIRECTORY)
 
 foreach(include ${COMPONENT_INCLUDES})
     list(APPEND component_includes -I${include})
@@ -62,7 +62,7 @@ get_filename_component(ULP_LD_SCRIPT ${ULP_LD_TEMPLATE} NAME)
 add_custom_command(OUTPUT ${ULP_LD_SCRIPT}
                    COMMAND ${CMAKE_C_COMPILER} -E -P -xc -o ${ULP_LD_SCRIPT} ${ULP_PREPROCESSOR_ARGS} ${ULP_LD_TEMPLATE}
                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                   DEPENDS ${ULP_LD_TEMPLATE}
+                   DEPENDS ${ULP_LD_TEMPLATE} ${SDKCONFIG_HEADER}
                    VERBATIM)
 add_custom_target(${ULP_APP_NAME}_ld_script
                   DEPENDS ${ULP_LD_SCRIPT}
@@ -149,3 +149,4 @@ add_custom_target(build
                 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 target_link_libraries(${ULP_APP_NAME} -T${CMAKE_CURRENT_BINARY_DIR}/${ULP_LD_SCRIPT} ${EXTRA_LINKER_ARGS})
+set_target_properties(${ULP_APP_NAME} PROPERTIES LINK_DEPENDS ${ULP_LD_SCRIPT})

@@ -389,7 +389,7 @@ build_installer:
   extends: .test-on-windows
   # using a different stage here to be able to use artifacts from build_cmdlinerunner job
   stage: host_test
-  image: $CI_DOCKER_REGISTRY/wine-innosetup:1
+  image: $CI_DOCKER_REGISTRY/wine-innosetup:2
   dependencies:  # set dependencies to null to avoid missing artifacts issue
   needs:
     - build_cmdlinerunner

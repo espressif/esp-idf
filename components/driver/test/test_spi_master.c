@@ -474,7 +474,7 @@ TEST_CASE("spi bus setting with different pin configs", "[spi]")
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, flags_expected|SPICOMMON_BUSFLAG_SLAVE, &flags_o));
 }
 
-TEST_CASE("SPI Master no response when switch from host1 (HSPI) to host2 (VSPI)", "[spi]")
+TEST_CASE("SPI Master no response when switch from host1 (SPI2) to host2 (SPI3)", "[spi]")
 {
     //spi config
     spi_bus_config_t bus_config;

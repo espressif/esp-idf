@@ -8,6 +8,7 @@
     "app_bin":            "${PROJECT_BIN}",
     "git_revision":       "${IDF_VER}",
     "target":             "${CONFIG_IDF_TARGET}",
+    "rev":                "${CONFIG_ESP32_REV_MIN}",
     "phy_data_partition": "${CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION}",
     "monitor_baud" :      "${CONFIG_ESPTOOLPY_MONITOR_BAUD}",
     "monitor_toolprefix": "${CONFIG_SDK_TOOLPREFIX}",

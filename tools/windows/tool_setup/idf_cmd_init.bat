@@ -31,6 +31,18 @@ if not "%PYTHONPATH%"=="" (
     set PYTHONPATH=
 )
 
+:: Clear PYTHONHOME as it may contain path to other Python versions which can cause crash of Python using virtualenv
+if not "%PYTHONHOME%"=="" (
+    echo Clearing PYTHONHOME, was set to %PYTHONHOME%
+    set PYTHONHOME=
+)
+
+:: Set PYTHONNOUSERSITE to avoid loading of Python packages from AppData\Roaming profile
+if "%PYTHONNOUSERSITE%"=="" (
+    echo Setting PYTHONNOUSERSITE, was not set
+    set PYTHONNOUSERSITE=True
+)
+
 :: Add Python and Git paths to PATH
 set "PATH=%IDF_PYTHON_DIR%;%IDF_GIT_DIR%;%PATH%"
 echo Using Python in %IDF_PYTHON_DIR%

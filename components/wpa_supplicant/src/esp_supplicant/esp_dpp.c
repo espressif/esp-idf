@@ -73,7 +73,7 @@ void esp_send_action_frame(uint8_t *dest_mac, const uint8_t *buf, uint32_t len,
         return;
     }
 
-    req->ifx = ESP_IF_WIFI_STA;
+    req->ifx = WIFI_IF_STA;
     memcpy(req->dest_mac, dest_mac, ETH_ALEN);
     req->no_ack = false;
     req->data_len = len;
@@ -373,7 +373,7 @@ static void esp_dpp_task(void *pvParameters )
                 int channel;
 
                 channel = p->chan_list[counter++ % p->num_chan];
-                esp_wifi_remain_on_channel(ESP_IF_WIFI_STA, WIFI_ROC_REQ, channel,
+                esp_wifi_remain_on_channel(WIFI_IF_STA, WIFI_ROC_REQ, channel,
                                            BOOTSTRAP_ROC_WAIT_TIME, s_action_rx_cb);
             }
             break;
@@ -533,7 +533,7 @@ esp_supp_dpp_bootstrap_gen(const char *chan_list, enum dpp_bootstrap_type type,
         goto fail;
     }
     params->type = type;
-    esp_wifi_get_mac(ESP_IF_WIFI_STA, params->mac);
+    esp_wifi_get_mac(WIFI_IF_STA, params->mac);
 
     if (uri_info) {
         params->info_len = strlen(uri_info);
@@ -608,7 +608,7 @@ esp_err_t esp_supp_dpp_start_listen(void)
 void esp_supp_dpp_stop_listen(void)
 {
     s_dpp_stop_listening = true;
-    esp_wifi_remain_on_channel(ESP_IF_WIFI_STA, WIFI_ROC_CANCEL, 0, 0, NULL);
+    esp_wifi_remain_on_channel(WIFI_IF_STA, WIFI_ROC_CANCEL, 0, 0, NULL);
 }
 
 esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)

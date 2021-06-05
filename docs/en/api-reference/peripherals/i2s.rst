@@ -1,6 +1,12 @@
 I2S
 ===
 
+.. only:: esp32c3
+
+    .. warning::
+
+        This document is not updated for ESP32-C3 yet.
+
 Overview
 --------
 

@@ -25,6 +25,7 @@ import argparse
 import os
 import sys
 import threading
+from fnmatch import fnmatch
 
 from tiny_test_fw.TinyFW import JunitReport, set_default_config
 from tiny_test_fw.Utility import CaseConfig, SearchCases, console_log
@@ -69,12 +70,21 @@ class Runner(threading.Thread):
         for case in self.test_cases:
             case.run()
 
+    @staticmethod
+    def is_known_issue(tc_name, known_cases):
+        for case in known_cases:
+            if tc_name == case:
+                return True
+            if fnmatch(tc_name, case):
+                return True
+        return False
+
     def get_test_result(self):
         _res = True
         console_log('Test Results:')
         for tc in JunitReport.JUNIT_TEST_SUITE.test_cases:
             if tc.failures:
-                if tc.name in self.known_failure_cases:
+                if self.is_known_issue(tc.name, self.known_failure_cases):
                     console_log('  Known Failure: ' + tc.name, color='orange')
                 else:
                     console_log('  Test Fail: ' + tc.name, color='red')

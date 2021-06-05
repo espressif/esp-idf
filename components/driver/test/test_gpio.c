@@ -39,7 +39,7 @@
 #define TEST_GPIO_EXT_IN_IO         20  // default input GPIO
 #define TEST_GPIO_OUTPUT_PIN        12
 #define TEST_GPIO_INPUT_ONLY_PIN    46
-#define TEST_GPIO_OUTPUT_MAX        GPIO_NUM_47
+#define TEST_GPIO_OUTPUT_MAX        GPIO_NUM_MAX
 #elif CONFIG_IDF_TARGET_ESP32C3
 #define TEST_GPIO_EXT_OUT_IO        2  // default output GPIO
 #define TEST_GPIO_EXT_IN_IO         3  // default input GPIO
@@ -166,7 +166,7 @@ static void drive_capability_set_get(gpio_num_t num, gpio_drive_cap_t capability
 TEST_CASE("GPIO config parameters test", "[gpio]")
 {
     //error param test
-    //ESP32 test 41 bit, ESP32-S2 test 48 bit
+    //ESP32 test 41 bit, ESP32-S2 test 48 bit, ESP32-S3 test 49 bit
     gpio_config_t io_config = { 0 };
     io_config.intr_type = GPIO_INTR_DISABLE;
     io_config.pin_bit_mask = ((uint64_t)1<<(GPIO_NUM_MAX+1));
@@ -176,7 +176,7 @@ TEST_CASE("GPIO config parameters test", "[gpio]")
     io_config.pin_bit_mask = 0;
     TEST_ASSERT(gpio_config(&io_config) == ESP_ERR_INVALID_ARG);
 
-    //ESP32 test 40 bit, ESP32-S2 test 47 bit
+    //ESP32 test 40 bit, ESP32-S2 test 47 bit, ESP32-S3 test 48 bit
     io_config.pin_bit_mask = ((uint64_t)1<<GPIO_NUM_MAX);
     TEST_ASSERT(gpio_config(&io_config) == ESP_ERR_INVALID_ARG);
 
@@ -396,12 +396,12 @@ TEST_CASE("GPIO set gpio output level test", "[gpio][ignore]")
     gpio_config_t io_conf;
     io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_OUTPUT;
-    io_conf.pin_bit_mask = (1<<TEST_GPIO_EXT_OUT_IO);
+    io_conf.pin_bit_mask = ((uint64_t)1<<TEST_GPIO_EXT_OUT_IO);
     io_conf.pull_down_en = 0;
     io_conf.pull_up_en = 0;
     gpio_config(&io_conf);
 
-    io_conf.pin_bit_mask = (1<<TEST_GPIO_EXT_IN_IO);
+    io_conf.pin_bit_mask = ((uint64_t)1<<TEST_GPIO_EXT_IN_IO);
     io_conf.mode = GPIO_MODE_INPUT;
     gpio_config(&io_conf);
 
@@ -435,12 +435,6 @@ TEST_CASE("GPIO get input level test", "[gpio][ignore]")
     int level2 = gpio_get_level(num2);
     printf("gpio19's level is: %d\n", level2);
     TEST_ASSERT_EQUAL_INT_MESSAGE(level2, 0, "get level error! the level should be low!");
-    printf("the memory get: %d\n", esp_get_free_heap_size());
-
-    gpio_num_t num3 = 34;  // connect with 3.3v
-    int level3 = gpio_get_level(num3);
-    printf("gpio19's level is: %d\n", level3);
-    TEST_ASSERT_EQUAL_INT_MESSAGE(level3, 0, "get level error! the level should be low!");
     printf("the memory get: %d\n", esp_get_free_heap_size());
     //when case finish, get the result from multimeter, the pin17 is 3.3v, the pin19 is 0.00v
 }

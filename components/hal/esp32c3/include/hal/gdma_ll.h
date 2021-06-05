@@ -17,13 +17,15 @@
 #include <stdbool.h>
 #include "soc/gdma_struct.h"
 #include "soc/gdma_reg.h"
-#include "soc/gdma_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #define GDMA_LL_GET_HW(id) (((id) == 0) ? (&GDMA) : NULL)
+
+#define GDMA_LL_RX_EVENT_MASK       (0x06A7)
+#define GDMA_LL_TX_EVENT_MASK       (0x1958)
 
 #define GDMA_LL_EVENT_TX_FIFO_UDF   (1<<12)
 #define GDMA_LL_EVENT_TX_FIFO_OVF   (1<<11)
@@ -47,38 +49,10 @@ static inline void gdma_ll_enable_m2m_mode(gdma_dev_t *dev, uint32_t channel, bo
 {
     dev->channel[channel].in.in_conf0.mem_trans_en = enable;
     if (enable) {
-        // only have to give it a valid value
+        // to enable m2m mode, the tx chan has to be the same to rx chan, and set to a valid value
         dev->channel[channel].in.in_peri_sel.sel = 0;
         dev->channel[channel].out.out_peri_sel.sel = 0;
     }
-}
-
-/**
- * @brief Get DMA interrupt status word
- */
-static inline uint32_t gdma_ll_get_interrupt_status(gdma_dev_t *dev, uint32_t channel)
-{
-    return dev->intr[channel].st.val;
-}
-
-/**
- * @brief Enable DMA interrupt
- */
-static inline void gdma_ll_enable_interrupt(gdma_dev_t *dev, uint32_t channel, uint32_t mask, bool enable)
-{
-    if (enable) {
-        dev->intr[channel].ena.val |= mask;
-    } else {
-        dev->intr[channel].ena.val &= ~mask;
-    }
-}
-
-/**
- * @brief Clear DMA interrupt
- */
-static inline void gdma_ll_clear_interrupt_status(gdma_dev_t *dev, uint32_t channel, uint32_t mask)
-{
-    dev->intr[channel].clr.val = mask;
 }
 
 /**
@@ -90,6 +64,42 @@ static inline void gdma_ll_enable_clock(gdma_dev_t *dev, bool enable)
 }
 
 ///////////////////////////////////// RX /////////////////////////////////////////
+/**
+ * @brief Get DMA RX channel interrupt status word
+ */
+static inline uint32_t gdma_ll_rx_get_interrupt_status(gdma_dev_t *dev, uint32_t channel)
+{
+    return dev->intr[channel].st.val & GDMA_LL_RX_EVENT_MASK;
+}
+
+/**
+ * @brief Enable DMA RX channel interrupt
+ */
+static inline void gdma_ll_rx_enable_interrupt(gdma_dev_t *dev, uint32_t channel, uint32_t mask, bool enable)
+{
+    if (enable) {
+        dev->intr[channel].ena.val |= (mask & GDMA_LL_RX_EVENT_MASK);
+    } else {
+        dev->intr[channel].ena.val &= ~(mask & GDMA_LL_RX_EVENT_MASK);
+    }
+}
+
+/**
+ * @brief Clear DMA RX channel interrupt
+ */
+static inline void gdma_ll_rx_clear_interrupt_status(gdma_dev_t *dev, uint32_t channel, uint32_t mask)
+{
+    dev->intr[channel].clr.val = (mask & GDMA_LL_RX_EVENT_MASK);
+}
+
+/**
+ * @brief Get DMA RX channel interrupt status register address
+ */
+static inline volatile void *gdma_ll_rx_get_interrupt_status_reg(gdma_dev_t *dev, uint32_t channel)
+{
+    return (volatile void *)(&dev->intr[channel].st);
+}
+
 /**
  * @brief Enable DMA RX channel to check the owner bit in the descriptor, disabled by default
  */
@@ -248,6 +258,42 @@ static inline void gdma_ll_rx_connect_to_periph(gdma_dev_t *dev, uint32_t channe
 }
 
 ///////////////////////////////////// TX /////////////////////////////////////////
+/**
+ * @brief Get DMA TX channel interrupt status word
+ */
+static inline uint32_t gdma_ll_tx_get_interrupt_status(gdma_dev_t *dev, uint32_t channel)
+{
+    return dev->intr[channel].st.val & GDMA_LL_TX_EVENT_MASK;
+}
+
+/**
+ * @brief Enable DMA TX channel interrupt
+ */
+static inline void gdma_ll_tx_enable_interrupt(gdma_dev_t *dev, uint32_t channel, uint32_t mask, bool enable)
+{
+    if (enable) {
+        dev->intr[channel].ena.val |= (mask & GDMA_LL_TX_EVENT_MASK);
+    } else {
+        dev->intr[channel].ena.val &= ~(mask & GDMA_LL_TX_EVENT_MASK);
+    }
+}
+
+/**
+ * @brief Clear DMA TX channel interrupt
+ */
+static inline void gdma_ll_tx_clear_interrupt_status(gdma_dev_t *dev, uint32_t channel, uint32_t mask)
+{
+    dev->intr[channel].clr.val = (mask & GDMA_LL_TX_EVENT_MASK);
+}
+
+/**
+ * @brief Get DMA TX channel interrupt status register address
+ */
+static inline volatile void *gdma_ll_tx_get_interrupt_status_reg(gdma_dev_t *dev, uint32_t channel)
+{
+    return (volatile void *)(&dev->intr[channel].st);
+}
+
 /**
  * @brief Enable DMA TX channel to check the owner bit in the descriptor, disabled by default
  */

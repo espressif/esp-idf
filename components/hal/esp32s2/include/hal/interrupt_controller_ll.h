@@ -18,6 +18,8 @@
 #include "soc/soc_caps.h"
 #include "soc/soc.h"
 #include "xtensa/xtensa_api.h"
+#include "xtensa/config/specreg.h"
+#include "xt_instr_macros.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,6 +43,18 @@ static inline void intr_cntrl_ll_enable_interrupts(uint32_t mask)
 static inline void intr_cntrl_ll_disable_interrupts(uint32_t mask)
 {
     xt_ints_off(mask);
+}
+
+/**
+ * @brief Read the current interrupt mask of the CPU running this code.
+ *
+ * @return The current interrupt bitmask.
+ */
+static inline uint32_t intr_cntrl_ll_read_interrupt_mask(void)
+{
+    uint32_t int_mask;
+    RSR(INTENABLE, int_mask);
+    return int_mask;
 }
 
 /**
@@ -77,27 +91,6 @@ static inline void intr_cntrl_ll_set_int_handler(uint8_t intr, interrupt_handler
 static inline void *intr_cntrl_ll_get_int_handler_arg(uint8_t intr)
 {
     return xt_get_interrupt_handler_arg(intr);
-}
-
-/**
- * @brief Disables interrupts that are not located in iram
- *
- * @param newmask mask of interrupts needs to be disabled
- * @return oldmask where to store old interrupts state
- */
-static inline uint32_t intr_cntrl_ll_disable_int_mask(uint32_t newmask)
-{
-    return xt_int_disable_mask(newmask);
-}
-
-/**
- * @brief Enables interrupts that are not located in iram
- *
- * @param newmask mask of interrupts needs to be disabled
- */
-static inline void intr_cntrl_ll_enable_int_mask(uint32_t newmask)
-{
-    xt_int_enable_mask(newmask);
 }
 
 /**

@@ -17,10 +17,36 @@
 #include <stddef.h>
 #include "esp_err.h"
 #include "esp_private/panic_internal.h"
+#include "esp_core_dump_summary_extra_info.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define APP_ELF_SHA256_SZ (CONFIG_APP_RETRIEVE_LEN_ELF_SHA + 1)
+
+/**
+ * @brief Backtrace information
+ */
+typedef struct {
+    uint32_t bt[16];    /*!< Backtrace (array of PC) */
+    uint32_t depth;     /*!< Number of backtrace entries */
+    bool corrupted;     /*!< Status flag for backtrace is corrupt or not */
+} esp_core_dump_bt_info_t;
+
+/**
+ * @brief Core dump summary, Most meaningful contents of the core dump
+ *        are accommodated in this structure
+ */
+typedef struct {
+    uint32_t exc_tcb;                           /*!< TCB pointer to the task causing exception */
+    char exc_task[16];                          /*!< Name of the task that caused exception */
+    uint32_t exc_pc;                            /*!< Program counter for exception */
+    esp_core_dump_bt_info_t exc_bt_info;        /*!< Backtrace information for task causing exception */
+    uint32_t core_dump_version;                 /*!< Core dump version */
+    uint8_t app_elf_sha256[APP_ELF_SHA256_SZ];  /*!< Crashing application's SHA256 sum as a string */
+    esp_core_dump_summary_extra_info_t ex_info; /*!< Architecture specific extra data */
+} esp_core_dump_summary_t;
 
 /**************************************************************************************/
 /******************************** EXCEPTION MODE API **********************************/
@@ -79,6 +105,19 @@ void esp_core_dump_to_uart(panic_info_t *info);
 /**************************************************************************************/
 
 /**
+ * @brief  Check integrity of coredump data in flash.
+ *         This function reads the coredump data while calculating their checksum. If it
+ *         doesn't match the checksum written on flash, it means data are corrupted,
+ *         an error will be returned. Else, ESP_OK is returned.
+ *
+ * @return `ESP_OK` if core dump is present and valid, `ESP_ERR_NOT_FOUND` if no core dump
+ *         is stored in the partition, `ESP_ERR_INVALID_SIZE` or `ESP_ERR_INVALID_CRC`
+ *         if the core dump is corrupted, other errors when unable to access flash, in that
+ *         case please refer to \see esp_err_t
+ */
+esp_err_t esp_core_dump_image_check(void);
+
+/**
  * @brief  Retrieves address and size of coredump data in flash.
  *         This function is always available, even when core dump is disabled in menuconfig.
  *
@@ -88,6 +127,24 @@ void esp_core_dump_to_uart(panic_info_t *info);
  * @return ESP_OK on success, otherwise \see esp_err_t
  */
 esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size);
+
+/**
+ * @brief  Erases coredump data in flash. esp_core_dump_image_get() will then return
+ *         ESP_ERR_NOT_FOUND. Can be used after a coredump has been transmitted successfully.
+ *         This function is always available, even when core dump is disabled in menuconfig.
+ *
+ * @return ESP_OK on success, otherwise \see esp_err_t
+ */
+esp_err_t esp_core_dump_image_erase(void);
+
+/**
+ * @brief  Get the summary of a core dump. This function works only with ELF format core dumps.
+ *
+ * @param  summary   Summary of the core dump
+ *
+ * @return ESP_OK on success, otherwise \see esp_err_t
+ */
+esp_err_t esp_core_dump_get_summary(esp_core_dump_summary_t *summary);
 
 #ifdef __cplusplus
 }

@@ -9,7 +9,7 @@
 #define SOC_PCNT_SUPPORTED              1
 #define SOC_TWAI_SUPPORTED              1
 #define SOC_GDMA_SUPPORTED              1
-#define SOC_I80_LCD_SUPPORTED           1
+#define SOC_LCDCAM_SUPPORTED            1
 #define SOC_MCPWM_SUPPORTED             1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_CPU_CORES_NUM               2
@@ -32,11 +32,11 @@
 /*-------------------------- CPU CAPS ----------------------------------------*/
 #include "cpu_caps.h"
 
-/*-------------------------- DAC CAPS ----------------------------------------*/
-#include "dac_caps.h"
-
 /*-------------------------- GDMA CAPS ---------------------------------------*/
-#include "gdma_caps.h"
+#define SOC_GDMA_GROUPS            (1)  // Number of GDMA groups
+#define SOC_GDMA_PAIRS_PER_GROUP   (5)  // Number of GDMA pairs in each group
+#define SOC_GDMA_L2_FIFO_BASE_SIZE (16) // Basic size of GDMA Level 2 FIFO
+#define SOC_GDMA_SUPPORT_EXTMEM    (1)  // GDMA can access external PSRAM
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 #include "gpio_caps.h"
@@ -88,9 +88,13 @@
 
 
 /*-------------------------- LCD CAPS ----------------------------------------*/
+/* Notes: On esp32-s3, I80 bus and RGB timing generator can't work at the same time */
+#define SOC_LCD_I80_SUPPORTED           (1)  /*!< Intel 8080 LCD is supported */
+#define SOC_LCD_RGB_SUPPORTED           (1)  /*!< RGB LCD is supported */
 #define SOC_LCD_I80_BUSES               (1)  /*!< Has one LCD Intel 8080 bus */
 #define SOC_LCD_RGB_PANELS              (1)  /*!< Support one RGB LCD panel */
-#define SOC_LCD_MAX_DATA_WIDTH          (16) /*!< Maximum number of LCD data lines */
+#define SOC_LCD_I80_BUS_WIDTH           (16) /*!< Intel 8080 bus width */
+#define SOC_LCD_RGB_DATA_WIDTH          (16) /*!< Number of LCD data lines */
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 #include "rtc_io_caps.h"
@@ -106,7 +110,13 @@
 #define SOC_SPIRAM_SUPPORTED            1
 
 /*-------------------------- SYS TIMER CAPS ----------------------------------*/
-#include "systimer_caps.h"
+#define SOC_SYSTIMER_COUNTER_NUM           (2)  // Number of counter units
+#define SOC_SYSTIMER_ALARM_NUM             (3)  // Number of alarm units
+#define SOC_SYSTIMER_BIT_WIDTH_LO          (32) // Bit width of systimer low part
+#define SOC_SYSTIMER_BIT_WIDTH_HI          (20) // Bit width of systimer high part
+#define SOC_SYSTIMER_FIXED_TICKS_US        (16) // Number of ticks per microsecond is fixed
+#define SOC_SYSTIMER_INT_LEVEL             (1)  // Systimer peripheral uses level
+#define SOC_SYSTIMER_ALARM_MISS_COMPENSATE (1)  // Systimer peripheral can generate interrupt immediately if t(target) > t(current)
 
 /*-------------------------- TIMER GROUP CAPS --------------------------------*/
 #define SOC_TIMER_GROUPS                  (2)
@@ -126,6 +136,10 @@
 
 #define SOC_UART_SUPPORT_RTC_CLK    (1)     /*!< Support RTC clock as the clock source */
 #define SOC_UART_SUPPORT_XTAL_CLK   (1)     /*!< Support XTAL clock as the clock source */
+
+/*-------------------------- USB CAPS ----------------------------------------*/
+#define SOC_USB_PERIPH_NUM 1
+
 
 /*--------------------------- SHA CAPS ---------------------------------------*/
 /* Max amount of bytes in a single DMA operation is 4095,
@@ -178,6 +192,9 @@
 
 #define SOC_AES_SUPPORT_AES_128 (1)
 #define SOC_AES_SUPPORT_AES_256 (1)
+
+/*-------------------------- Flash Encryption CAPS----------------------------*/
+#define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (64)
 
 // Attention: These fixed DMA channels are temporarily workaround before we have a centralized DMA controller API to help alloc the channel dynamically
 // Remove them when GDMA driver API is ready

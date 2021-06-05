@@ -22,12 +22,12 @@
 #define SPI_IOMUX_PIN_NUM_MISO  31
 #define SPI_IOMUX_PIN_NUM_WP    28
 
-#define FSPI_FUNC_NUM           4
-#define FSPI_IOMUX_PIN_NUM_HD   9
-#define FSPI_IOMUX_PIN_NUM_CS   10
-#define FSPI_IOMUX_PIN_NUM_MOSI 11
-#define FSPI_IOMUX_PIN_NUM_CLK  12
-#define FSPI_IOMUX_PIN_NUM_MISO 13
-#define FSPI_IOMUX_PIN_NUM_WP   14
+#define SPI2_FUNC_NUM           4
+#define SPI2_IOMUX_PIN_NUM_HD   9
+#define SPI2_IOMUX_PIN_NUM_CS   10
+#define SPI2_IOMUX_PIN_NUM_MOSI 11
+#define SPI2_IOMUX_PIN_NUM_CLK  12
+#define SPI2_IOMUX_PIN_NUM_MISO 13
+#define SPI2_IOMUX_PIN_NUM_WP   14
 
-//HSPI have no iomux pins
+//SPI3 have no iomux pins

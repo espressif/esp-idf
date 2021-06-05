@@ -123,6 +123,9 @@ Event IDs and Corresponding Data Structures
 | IP_EVENT_ETH_GOT_IP                | :cpp:class:`ip_event_got_ip_t`                |
 | (SYSTEM_EVENT_ETH_GOT_IP)          |                                               |
 +------------------------------------+-----------------------------------------------+
+| IP_EVENT_ETH_LOST_IP               | n/a                                           |
+| (SYSTEM_EVENT_ETH_LOST_IP)         |                                               |
++------------------------------------+-----------------------------------------------+
 
 Mesh Events
 -----------

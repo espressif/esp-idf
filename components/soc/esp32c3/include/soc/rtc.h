@@ -122,6 +122,15 @@ set sleep_init default param
 #define RTC_CNTL_PD_CUR_SLEEP_DEFAULT  1
 #define RTC_CNTL_DG_VDD_DRV_B_SLP_DEFAULT 254
 
+/*
+The follow value is used to get a reasonable rtc voltage dbias value according to digital dbias & some other value
+storing in efuse (based on ATE 5k ECO3 chips)
+*/
+#define K_RTC_MID_MUL10000 215
+#define K_DIG_MID_MUL10000 213
+#define V_RTC_MID_MUL10000  10800
+#define V_DIG_MID_MUL10000  10860
+
 /**
  * @brief Possible main XTAL frequency values.
  *
@@ -375,11 +384,6 @@ bool rtc_clk_8md256_enabled(void);
  * @param o_div  frequency divider, 0..31
  */
 void rtc_clk_apll_enable(bool enable, uint32_t sdm0, uint32_t sdm1, uint32_t sdm2, uint32_t o_div);
-
-/**
- * @brief Set XTAL wait cycles by RTC slow clock's period
- */
-void rtc_clk_set_xtal_wait(void);
 
 /**
  * @brief Select source for RTC_SLOW_CLK

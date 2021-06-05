@@ -24,7 +24,8 @@
   script:
     - *define_config_file_name
     # first test if config file exists, if not exist, exit 0
-    - test -e $CONFIG_FILE || exit 0
+    - |
+      { [[ -e $CONFIG_FILE ]]; } || { echo 'No config file found. Consider decreasing the parallel count of this job in ".gitlab/ci/target-test.yml"'; exit 0; }
     # clone test env configs
     - retry_failed git clone $TEST_ENV_CONFIG_REPO
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
@@ -89,7 +90,6 @@ test_weekend_network:
 
 example_test_001A:
   extends: .example_test_esp32_template
-  parallel: 4
   tags:
     - ESP32
     - Example_WIFI
@@ -99,6 +99,12 @@ example_test_001B:
   tags:
     - ESP32
     - Example_EthKitV1
+
+example_test_001B_V3:
+  extends: .example_test_esp32_template
+  tags:
+    - ESP32
+    - Example_EthKitV12
 
 example_test_001C:
   extends: .example_test_esp32_template
@@ -112,6 +118,20 @@ example_test_001D:
   tags:
     - ESP32
     - Example_8Mflash_Ethernet
+
+example_test_OTA:
+  extends: .example_test_esp32_template
+  parallel: 2
+  tags:
+    - ESP32
+    - Example_WIFI_OTA
+
+example_test_protocols:
+  extends: .example_test_esp32_template
+  parallel: 2
+  tags:
+    - ESP32
+    - Example_WIFI_Protocols
 
 example_test_002:
   extends: .example_test_esp32_template
@@ -264,6 +284,26 @@ example_test_C3_FLASH_ENC_OTA:
     - ESP32C3
     - Example_Flash_Encryption_OTA_WiFi
 
+example_test_ESP32_SDSPI:
+  extends: .example_test_esp32_template
+  tags:
+    - ESP32
+    - UT_T1_SPIMODE
+
+# uncomment when ESP32S2 & ESP32C3 runners with external SD connected over SPI are available
+# ensure the runners have required tags created
+#
+#example_test_ESP32S2_SDSPI:
+#  extends: .example_test_esp32s2_template
+#  tags:
+#    - ESP32S2
+#    - UT_T1_SPIMODE
+#
+#example_test_ESP32C3_SDSPI:
+#  extends: .example_test_esp32c3_template
+#  tags:
+#    - ESP32C3
+#    - UT_T1_SPIMODE
 
 .test_app_template:
   extends: .target_test_job_template
@@ -280,6 +320,11 @@ example_test_C3_FLASH_ENC_OTA:
   extends:
     - .test_app_template
     - .rules:test:custom_test-esp32s2
+
+.test_app_esp32c3_template:
+  extends:
+    - .test_app_template
+    - .rules:test:custom_test-esp32c3
 
 test_app_test_001:
   extends: .test_app_esp32_template
@@ -307,13 +352,20 @@ test_app_test_003:
 
 test_app_test_004:
   extends: .test_app_esp32s2_template
+  parallel: 2
   tags:
     - ESP32S2
     - Example_GENERIC
 
+test_app_test_005:
+  extends: .test_app_esp32c3_template
+  tags:
+    - ESP32C3
+    - Example_GENERIC
+
 test_app_test_esp32_generic:
   extends: .test_app_esp32_template
-  parallel: 4
+  parallel: 5
   tags:
     - ESP32
     - Example_GENERIC
@@ -343,10 +395,32 @@ test_app_test_esp32_generic:
     - .component_ut_template
     - .rules:test:component_ut-esp32
 
+.component_ut_esp32s2_template:
+  extends:
+    - .component_ut_template
+    - .rules:test:component_ut-esp32s2
+
+.component_ut_esp32c3_template:
+  extends:
+    - .component_ut_template
+    - .rules:test:component_ut-esp32c3
+
 component_ut_test_001:
   extends: .component_ut_esp32_template
   tags:
     - ESP32
+    - COMPONENT_UT_GENERIC
+
+component_ut_test_esp32s2:
+  extends: .component_ut_esp32s2_template
+  tags:
+    - ESP32S2
+    - COMPONENT_UT_GENERIC
+
+component_ut_test_esp32c3:
+  extends: .component_ut_esp32c3_template
+  tags:
+    - ESP32C3
     - COMPONENT_UT_GENERIC
 
 .unit_test_template:
@@ -381,7 +455,7 @@ UT_001:
 
 UT_002:
   extends: .unit_test_esp32_template
-  parallel: 13
+  parallel: 15
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -595,14 +669,14 @@ UT_047:
 
 UT_C3:
   extends: .unit_test_esp32c3_template
-  parallel: 30
+  parallel: 31
   tags:
     - ESP32C3_IDF
     - UT_T1_1
 
 UT_C3_FLASH:
   extends: .unit_test_esp32c3_template
-  parallel: 3
+  parallel: 2
   tags:
     - ESP32C3_IDF
     - UT_T1_ESP_FLASH
@@ -619,6 +693,18 @@ UT_C3_FLASH_ENC:
   tags:
     - ESP32C3_IDF
     - UT_T1_FlashEncryption
+
+UT_C3_I2C:
+  extends: .unit_test_esp32c3_template
+  tags:
+    - ESP32C3_IDF
+    - UT_T2_I2C
+
+UT_C3_FLASH_SUSPEND:
+  extends: .unit_test_esp32c3_template
+  tags:
+    - ESP32C3_IDF
+    - UT_T1_Flash_Suspend
 
 .integration_test_template:
   extends:

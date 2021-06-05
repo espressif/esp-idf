@@ -70,7 +70,7 @@ static const spi_flash_host_driver_t esp_flash_gpspi_host = {
 esp_err_t memspi_host_init_pointers(memspi_host_inst_t *host, const memspi_host_config_t *cfg)
 {
 #if SOC_MEMSPI_IS_INDEPENDENT
-    if (cfg->host_id == SPI_HOST)
+    if (cfg->host_id == SPI1_HOST)
         host->inst.driver = &esp_flash_default_host;
     else {
         host->inst.driver = &esp_flash_gpspi_host;
@@ -130,7 +130,7 @@ esp_err_t memspi_host_read_status_hs(spi_flash_host_inst_t *host, uint8_t *out_s
 
 esp_err_t memspi_host_flush_cache(spi_flash_host_inst_t *host, uint32_t addr, uint32_t size)
 {
-    if ((void*)((memspi_host_inst_t*)host)->spi == (void*) spi_flash_ll_get_hw(SPI_HOST)) {
+    if ((void*)((memspi_host_inst_t*)host)->spi == (void*) spi_flash_ll_get_hw(SPI1_HOST)) {
         spi_flash_check_and_flush_cache(addr, size);
     }
     return ESP_OK;

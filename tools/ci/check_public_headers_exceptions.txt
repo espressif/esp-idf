@@ -20,7 +20,6 @@ components/esp_rom/include/esp32s2/rom/rsa_pss.h
 components/esp_common/include/esp_private/
 
 components/esp32/include/esp32/brownout.h
-components/esp32/include/esp32/spiram.h
 components/esp32/include/esp32/cache_err_int.h
 
 components/driver/include/driver/sdmmc_defs.h
@@ -30,9 +29,6 @@ components/lwip/include/apps/dhcpserver/dhcpserver_options.h
 components/lwip/include/apps/dhcpserver/dhcpserver.h
 
 components/lwip/lwip/src/include/lwip/priv/memp_std.h
-components/lwip/port/esp32/include/arch/cc.h
-components/lwip/port/esp32/include/debug/lwip_debug.h
-components/lwip/port/esp32/include/arch/cc.h
 
 components/vfs/include/sys/dirent.h
 
@@ -83,7 +79,6 @@ components/spiffs/include/spiffs_config.h
 
 components/unity/unity/src/unity_internals.h
 components/unity/unity/extras/
-components/unity/include/unity_fixture_extras.h
 components/unity/include/unity_config.h
 components/unity/include/unity_test_runner.h
 
@@ -91,6 +86,8 @@ components/cmock/CMock/src/cmock.h
 components/cmock/CMock/src/cmock_internals.h
 
 components/efuse/include/esp_efuse.h
+
+components/openthread/openthread/
 
 ### Here are the files that do not compile for some reason
 #

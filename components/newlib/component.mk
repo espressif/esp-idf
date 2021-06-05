@@ -20,6 +20,6 @@ COMPONENT_SRCDIRS := . port
 COMPONENT_ADD_LDFLAGS += -u newlib_include_heap_impl
 COMPONENT_ADD_LDFLAGS += -u newlib_include_syscalls_impl
 
-COMPONENT_ADD_LDFRAGMENTS += newlib.lf
+COMPONENT_ADD_LDFRAGMENTS += newlib.lf system_libs.lf
 
 heap.o: CFLAGS += -fno-builtin

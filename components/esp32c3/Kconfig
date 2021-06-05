@@ -25,7 +25,7 @@ menu "ESP32C3-Specific"
 
     choice ESP32C3_REV_MIN
         prompt "Minimum Supported ESP32-C3 Revision"
-        default ESP32C3_REV_MIN_0
+        default ESP32C3_REV_MIN_3
         help
             Minimum revision that ESP-IDF would support.
 
@@ -47,43 +47,6 @@ menu "ESP32C3-Specific"
         default 1 if ESP32C3_REV_MIN_1
         default 2 if ESP32C3_REV_MIN_2
         default 3 if ESP32C3_REV_MIN_3
-
-    choice ESP32C3_UNIVERSAL_MAC_ADDRESSES
-        bool "Number of universally administered (by IEEE) MAC address"
-        default ESP32C3_UNIVERSAL_MAC_ADDRESSES_FOUR
-        help
-            Configure the number of universally administered (by IEEE) MAC addresses.
-            During initialization, MAC addresses for each network interface are generated or derived from a
-            single base MAC address.
-            If the number of universal MAC addresses is four, all four interfaces (WiFi station, WiFi softap,
-            Bluetooth and Ethernet) receive a universally administered MAC address. These are generated
-            sequentially by adding 0, 1, 2 and 3 (respectively) to the final octet of the base MAC address.
-            If the number of universal MAC addresses is two, only two interfaces (WiFi station and Bluetooth)
-            receive a universally administered MAC address. These are generated sequentially by adding 0
-            and 1 (respectively) to the base MAC address. The remaining two interfaces (WiFi softap and Ethernet)
-            receive local MAC addresses. These are derived from the universal WiFi station and Bluetooth MAC
-            addresses, respectively.
-            When using the default (Espressif-assigned) base MAC address, either setting can be used. When using
-            a custom universal MAC address range, the correct setting will depend on the allocation of MAC
-            addresses in this range (either 2 or 4 per device.)
-
-        config ESP32C3_UNIVERSAL_MAC_ADDRESSES_TWO
-            bool "Two"
-            select ESP_MAC_ADDR_UNIVERSE_WIFI_STA
-            select ESP_MAC_ADDR_UNIVERSE_BT
-
-        config ESP32C3_UNIVERSAL_MAC_ADDRESSES_FOUR
-            bool "Four"
-            select ESP_MAC_ADDR_UNIVERSE_WIFI_STA
-            select ESP_MAC_ADDR_UNIVERSE_WIFI_AP
-            select ESP_MAC_ADDR_UNIVERSE_BT
-            select ESP_MAC_ADDR_UNIVERSE_ETH
-    endchoice
-
-    config ESP32C3_UNIVERSAL_MAC_ADDRESSES
-        int
-        default 2 if ESP32C3_UNIVERSAL_MAC_ADDRESSES_TWO
-        default 4 if ESP32C3_UNIVERSAL_MAC_ADDRESSES_FOUR
 
     config ESP32C3_DEBUG_OCDAWARE
         bool "Make exception and panic handlers JTAG/OCD aware"
@@ -200,8 +163,9 @@ menu "ESP32C3-Specific"
     config ESP32C3_RTC_CLK_CAL_CYCLES
         int "Number of cycles for RTC_SLOW_CLK calibration"
         default 3000 if ESP32C3_RTC_CLK_SRC_EXT_CRYS || ESP32C3_RTC_CLK_SRC_EXT_OSC || ESP32C3_RTC_CLK_SRC_INT_8MD256
-        default 576 if ESP32C3_RTC_CLK_SRC_INT_RC
-        range 0 125000
+        default 1024 if ESP32C3_RTC_CLK_SRC_INT_RC
+        range 0 27000 if ESP32C3_RTC_CLK_SRC_EXT_CRYS || ESP32C3_RTC_CLK_SRC_EXT_OSC || ESP32C3_RTC_CLK_SRC_INT_8MD256
+        range 0 32766 if ESP32C3_RTC_CLK_SRC_INT_RC
         help
             When the startup code initializes RTC_SLOW_CLK, it can perform
             calibration by comparing the RTC_SLOW_CLK frequency with main XTAL

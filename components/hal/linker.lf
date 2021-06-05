@@ -3,11 +3,12 @@ archive: libhal.a
 entries:
     spi_hal_iram (noflash)
     spi_slave_hal_iram (noflash)
-    if UART_ISR_IN_IRAM = y:
+    if UART_ISR_IN_IRAM = y || ESP_PANIC_HANDLER_IRAM = y:
         uart_hal_iram (noflash)
     else:
         uart_hal_iram (default)
     spi_flash_hal_iram (noflash)
+    spi_flash_encrypt_hal_iram (noflash)
     ledc_hal_iram (noflash)
     i2c_hal_iram (noflash)
     cpu_hal (noflash)

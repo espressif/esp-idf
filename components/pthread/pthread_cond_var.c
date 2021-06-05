@@ -26,11 +26,11 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "freertos/list.h"
+#include "pthread_internal.h"
 
 #include <sys/queue.h>
 #include <sys/time.h>
 
-#define LOG_LOCAL_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include "esp_log.h"
 const static char *TAG = "esp_pthread";
 
@@ -44,10 +44,30 @@ typedef struct esp_pthread_cond {
     TAILQ_HEAD(, esp_pthread_cond_waiter) waiter_list;  ///< head of the list of semaphores
 } esp_pthread_cond_t;
 
-int pthread_cond_signal(pthread_cond_t *cv)
+static int s_check_and_init_if_static(pthread_cond_t *cv)
 {
+    int res = 0;
+
     if (cv == NULL || *cv == (pthread_cond_t) 0) {
         return EINVAL;
+    }
+
+    if (*cv == PTHREAD_COND_INITIALIZER) {
+        portENTER_CRITICAL(&pthread_lazy_init_lock);
+        if (*cv == PTHREAD_COND_INITIALIZER) {
+            res = pthread_cond_init(cv, NULL);
+        }
+        portEXIT_CRITICAL(&pthread_lazy_init_lock);
+    }
+
+    return res;
+}
+
+int pthread_cond_signal(pthread_cond_t *cv)
+{
+    int res = s_check_and_init_if_static(cv);
+    if (res) {
+        return res;
     }
 
     esp_pthread_cond_t *cond = (esp_pthread_cond_t *) *cv;
@@ -65,8 +85,9 @@ int pthread_cond_signal(pthread_cond_t *cv)
 
 int pthread_cond_broadcast(pthread_cond_t *cv)
 {
-    if (cv == NULL || *cv == (pthread_cond_t) 0) {
-        return EINVAL;
+    int res = s_check_and_init_if_static(cv);
+    if (res) {
+        return res;
     }
 
     esp_pthread_cond_t *cond = (esp_pthread_cond_t *) *cv;
@@ -91,8 +112,9 @@ int pthread_cond_timedwait(pthread_cond_t *cv, pthread_mutex_t *mut, const struc
     int ret;
     TickType_t timeout_ticks;
 
-    if (cv == NULL || *cv == (pthread_cond_t) 0) {
-        return EINVAL;
+    int res = s_check_and_init_if_static(cv);
+    if (res) {
+        return res;
     }
 
     esp_pthread_cond_t *cond = (esp_pthread_cond_t *) *cv;
@@ -181,8 +203,14 @@ int pthread_cond_destroy(pthread_cond_t *cv)
     if (cv == NULL || *cv == (pthread_cond_t) 0) {
         return EINVAL;
     }
+    if (*cv == PTHREAD_COND_INITIALIZER) {
+        return 0; // never initialized
+    }
 
     esp_pthread_cond_t *cond = (esp_pthread_cond_t *) *cv;
+    if (!cond) {
+        return EINVAL;
+    }
 
     _lock_acquire_recursive(&cond->lock);
     if (!TAILQ_EMPTY(&cond->waiter_list)) {

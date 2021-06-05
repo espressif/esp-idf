@@ -433,23 +433,27 @@ bool timer_group_get_auto_reload_in_isr(timer_group_t group_num, timer_idx_t tim
 
 /** @brief Take timer spinlock to enter critical protect
  *
+ *  @note Deprecated, the recommended way is to use ISR callbacks instead, see timer_group_example_main
+ *
  * @param group_num Timer group number, 0 for TIMERG0 or 1 for TIMERG1
  *
  * @return
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t timer_spinlock_take(timer_group_t group_num);
+esp_err_t timer_spinlock_take(timer_group_t group_num) __attribute__ ((deprecated));
 
 /** @brief Give timer spinlock to exit critical protect
  *
+ *  @note Deprecated, the recommended way is to use ISR callbacks instead, see timer_group_example_main
+ *
  * @param group_num Timer group number, 0 for TIMERG0 or 1 for TIMERG1
  *
  * @return
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t timer_spinlock_give(timer_group_t group_num);
+esp_err_t timer_spinlock_give(timer_group_t group_num) __attribute__ ((deprecated));
 
 #ifdef __cplusplus
 }

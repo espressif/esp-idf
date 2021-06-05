@@ -144,6 +144,15 @@
 #undef MBEDTLS_SHA512_ALT
 #endif
 
+/* MBEDTLS_MDx_ALT to enable ROM MD support
+   with software fallback.
+*/
+#ifdef CONFIG_MBEDTLS_ROM_MD5
+#define MBEDTLS_MD5_ALT
+#else
+#undef MBEDTLS_MD5_ALT
+#endif
+
 /* The following MPI (bignum) functions have ESP32 hardware support.
    For exponential mod, both software and hardware implementation
    will be compiled. If CONFIG_MBEDTLS_HARDWARE_MPI is enabled, mod APIs
@@ -2449,6 +2458,21 @@
 #define MBEDTLS_THREADING_PTHREAD
 #else
 #undef MBEDTLS_THREADING_PTHREAD
+#endif
+
+/**
+ * \def MBEDTLS_NIST_KW_C
+ *
+ * Enable AES key wrapping as per NIST
+ *
+ * Requires: MBEDTLS_AES_C
+ *
+ * Uncomment this to enable aes key wrap.
+ */
+#ifdef CONFIG_MBEDTLS_NIST_KW_C
+#define MBEDTLS_NIST_KW_C
+#else
+#undef MBEDTLS_NIST_KW_C
 #endif
 
 /* \} name SECTION: Module configuration options */

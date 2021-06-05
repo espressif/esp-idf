@@ -1,35 +1,14 @@
 /*
  * SHA-256 hash implementation and interface functions
- * Copyright (c) 2003-2007, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2003-2012, Jouni Malinen <j@w1.fi>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * Alternatively, this software may be distributed under the terms of BSD
- * license.
- *
- * See README and COPYING for more details.
- */
-/*
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Hardware crypto support Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
  */
 
-#include "utils/includes.h"
+#include "includes.h"
 
-#include "utils/common.h"
+#include "common.h"
 #include "sha256.h"
 #include "crypto.h"
 
@@ -52,7 +31,7 @@ int hmac_sha256_vector(const u8 *key, size_t key_len, size_t num_elem,
 	const u8 *_addr[11];
 	size_t _len[11], i;
 
-	if (num_elem > 5) {
+	if (num_elem > 10) {
 		/*
 		 * Fixed limit on the number of fragments to avoid having to
 		 * allocate memory (which could fail).
@@ -107,6 +86,7 @@ int hmac_sha256_vector(const u8 *key, size_t key_len, size_t num_elem,
 	_len[1] = SHA256_MAC_LEN;
 	return sha256_vector(2, _addr, _len, mac);
 }
+
 
 /**
  * hmac_sha256 - HMAC-SHA256 over data buffer (RFC 2104)

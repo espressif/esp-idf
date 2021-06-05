@@ -392,7 +392,7 @@ esp_err_t gpio_config(const gpio_config_t *pGPIOConfig)
             }
 
             /* By default, all the pins have to be configured as GPIO pins. */
-            PIN_FUNC_SELECT(io_reg, PIN_FUNC_GPIO);
+            gpio_hal_iomux_func_sel(io_reg, PIN_FUNC_GPIO);
         }
 
         io_num++;
@@ -586,6 +586,9 @@ esp_err_t gpio_wakeup_disable(gpio_num_t gpio_num)
 #endif
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
     gpio_hal_wakeup_disable(gpio_context.gpio_hal, gpio_num);
+#if SOC_GPIO_SUPPORT_SLP_SWITCH && CONFIG_ESP32C3_LIGHTSLEEP_GPIO_RESET_WORKAROUND
+    gpio_hal_sleep_sel_en(gpio_context.gpio_hal, gpio_num);
+#endif
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
     return ret;
 }
@@ -908,6 +911,9 @@ esp_err_t gpio_deep_sleep_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t int
     }
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
     gpio_hal_deepsleep_wakeup_enable(gpio_context.gpio_hal, gpio_num, intr_type);
+#if SOC_GPIO_SUPPORT_SLP_SWITCH && CONFIG_ESP32C3_LIGHTSLEEP_GPIO_RESET_WORKAROUND
+    gpio_hal_sleep_sel_dis(gpio_context.gpio_hal, gpio_num);
+#endif
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
     return ESP_OK;
 }
@@ -920,6 +926,9 @@ esp_err_t gpio_deep_sleep_wakeup_disable(gpio_num_t gpio_num)
     }
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
     gpio_hal_deepsleep_wakeup_disable(gpio_context.gpio_hal, gpio_num);
+#if SOC_GPIO_SUPPORT_SLP_SWITCH && CONFIG_ESP32C3_LIGHTSLEEP_GPIO_RESET_WORKAROUND
+    gpio_hal_sleep_sel_en(gpio_context.gpio_hal, gpio_num);
+#endif
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
     return ESP_OK;
 }

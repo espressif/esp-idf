@@ -26,9 +26,9 @@ See the [README.md](../README.md) file in the upper level [examples](../) direct
 
 * PHY chip has a reset pin, if want to do a hardware reset during initialization, then you have to connect it with one GPIO on ESP32. See more information from [here](#configure-the-project). The default GPIO used for resetting PHY chip is GPIO5.
 
-### Using DM9051
+### Using SPI ethernet modules
 
-* DM9051 Ethernet module consumes one SPI interface plus an interrupt and reset GPIO. By default they're connected as follows:
+* SPI Ethernet modules (DM9051, W5500, ...) typically consume one SPI interface plus an interrupt and reset GPIO. By default they're connected as follows:
 
 | GPIO   | DM9051      |
 | ------ | ----------- |
@@ -38,6 +38,9 @@ See the [README.md](../README.md) file in the upper level [examples](../) direct
 | GPIO22 | SPI_CS      |
 | GPIO4  | Interrupt   |
 | GPIO5  | Reset       |
+
+Please consult Espressif Technical reference manual for assigning any other pins, especially when choosing from system configuration menu for the ethernet examples,
+some pins cannot be used.
 
 ## Common Configurations
 

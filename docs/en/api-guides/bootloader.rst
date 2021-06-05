@@ -2,13 +2,20 @@ Bootloader
 =====================
 :link_to_translation:`zh_CN:[中文]`
 
-Bootloader performs the following functions:
+{IDF_TARGET_BOOTLOADER_OFFSET:default="0x0", esp32="0x1000", esp32s2="0x1000"}
+
+The ESP-IDF Software Bootloader performs the following functions:
 
 1. Minimal initial configuration of internal modules;
-2. Select the application partition to boot, based on the partition table and ota_data (if any);
-3. Load this image to RAM (IRAM & DRAM) and transfer management to it.
+2. Initialize :doc:`/security/flash-encryption` and/or :doc:`Secure </security/secure-boot-v2>` features, if configured;
+3. Select the application partition to boot, based on the partition table and ota_data (if any);
+4. Load this image to RAM (IRAM & DRAM) and transfer management to it.
 
-Bootloader is located at the address `0x1000` in the flash.
+Bootloader is located at the address {IDF_TARGET_BOOTLOADER_OFFSET} in the flash.
+
+For a full description of the startup process including the the ESP-IDF bootloader, see :doc:`startup`.
+
+.. _bootloader-compatibility:
 
 Bootloader compatibility
 ------------------------
@@ -16,6 +23,29 @@ Bootloader compatibility
 It is recommended to update to newer :doc:`versions of ESP-IDF </versions>`: when they are released. The OTA (over the air) update process can flash new apps in the field but cannot flash a new bootloader. For this reason, the bootloader supports booting apps built from newer versions of ESP-IDF.
 
 The bootloader does not support booting apps from older versions of ESP-IDF. When updating ESP-IDF manually on an existing product that might need to downgrade the app to an older version, keep using the older ESP-IDF bootloader binary as well.
+
+.. note::
+
+   If testing an OTA update for an existing product in production, always test it using the same ESP-IDF bootloader binary that is deployed in production.
+
+.. only:: esp32
+
+    Before ESP-IDF V2.1
+    ^^^^^^^^^^^^^^^^^^^
+
+    Bootloaders built from very old versions of ESP-IDF (before ESP-IDF V2.1) perform less hardware configuration than newer versions. When using a bootloader from these early ESP-IDF versions and building a new app, enable the config option :ref:`CONFIG_ESP32_COMPATIBLE_PRE_V2_1_BOOTLOADERS`.
+
+SPI Flash Configuration
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Each ESP-IDF application or bootloader .bin file contains a header with :ref:`CONFIG_ESPTOOLPY_FLASHMODE`, :ref:`CONFIG_ESPTOOLPY_FLASHFREQ`, :ref:`CONFIG_ESPTOOLPY_FLASHSIZE` embedded in it. These are used to configure the SPI flash during boot.
+
+The :ref:`first-stage-bootloader` in ROM reads the :ref:`second-stage-bootloader` header from flash and uses these settings to load it. However, at this time the system clock speed is lower than configured and not all flash modes are supported.  When the :ref:`second-stage-bootloader` then runs and re-configures the flash, it reads values from the currently selected app binary header not the bootloader header. This allows an OTA update to change the SPI flash settings in use.
+
+.. only:: esp32
+
+   Bootloaders prior to ESP-IDF V4.0 used the bootloader's own header to configure the SPI flash, meaning these values could not be changed in an update. To maintain compatibility with older bootloaders, the app re-initializes the flash settings during app startup using the configuration found in the app header.
+
 
 Factory reset
 -------------
@@ -67,8 +97,9 @@ Fast boot from Deep Sleep
 -------------------------
 The bootloader has the :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` option which allows to reduce the wake-up time (useful to reduce consumption). This option is available when the :ref:`CONFIG_SECURE_BOOT` option is disabled. Reduction of time is achieved due to the lack of image verification. During the first boot, the bootloader stores the address of the application being launched in the RTC FAST memory. And during the awakening, this address is used for booting without any checks, thus fast loading is achieved.
 
-Customer bootloader
----------------------
+Custom bootloader
+-----------------
+
 The current bootloader implementation allows a project to override it. To do this, you must copy the directory ``/esp-idf/components/bootloader`` to your project components directory and then edit ``/your_project/components/bootloader/subproject/main/bootloader_start.c``.
 
 In the bootloader space, you cannot use the drivers and functions from other components. If necessary, then the required functionality should be placed in the project's ``bootloader`` directory (note that this will increase its size).

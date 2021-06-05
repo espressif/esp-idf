@@ -100,6 +100,7 @@ def main():
 
     build_parser = action_parsers.add_parser('build', help='Build documentation')
     build_parser.add_argument('--check-warnings-only', '-w', action='store_true')
+    build_parser.add_argument('--fast-build', '-f', action='store_true', help='Skips including doxygen generated APIs into the Sphinx build')
 
     action_parsers.add_parser('linkcheck', help='Check links (a current IDF revision should be uploaded to GitHub)')
 
@@ -124,6 +125,11 @@ def main():
     if args.action == 'build' or args.action is None:
         if args.action is None:
             args.check_warnings_only = False
+            args.fast_build = False
+
+        if args.fast_build:
+            os.environ['DOCS_FAST_BUILD'] = 'y'
+
         sys.exit(action_build(args))
 
     if args.action == 'linkcheck':

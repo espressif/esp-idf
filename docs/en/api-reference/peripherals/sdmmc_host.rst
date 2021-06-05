@@ -1,6 +1,12 @@
 SDMMC Host Driver
 =================
 
+.. only:: esp32c3
+
+    .. warning::
+
+        This document is not updated for ESP32-C3 yet.
+
 Overview
 --------
 
@@ -51,8 +57,8 @@ Supported Speed Modes
 
 SDMMC Host driver supports the following speed modes:
 
-- Default Speed (20 MHz), 4-line/1-line (with SD cards), and 8-line (with 3.3 V eMMC)
-- High Speed (40 MHz), 4-line/1-line (with SD cards), and 8-line (with 3.3 V eMMC)
+- Default Speed (20 MHz), 1/4-line (with SD cards), and 1/4/8-line (with 3.3 V eMMC)
+- High Speed (40 MHz), 1/4-line (with SD cards), and 1/4/8-line (with 3.3 V eMMC)
 - High Speed DDR (40 MHz), 4-line (with 3.3 V eMMC)
 
 Speed modes not supported at present:

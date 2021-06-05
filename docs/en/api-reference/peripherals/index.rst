@@ -8,7 +8,7 @@ Peripherals API
 
 
     ADC <adc>
-    :SOC_DAC_PERIPH_NUM: DAC <dac>
+    :SOC_DAC_SUPPORTED: DAC <dac>
     General Purpose Timer <timer>
     GPIO (including RTC low power I/O) <gpio>
     :SOC_DEDICATED_GPIO_SUPPORTED: Dedicated GPIO <dedic_gpio>

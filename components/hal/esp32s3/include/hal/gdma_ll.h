@@ -25,21 +25,25 @@ extern "C" {
 
 #define GDMA_LL_GET_HW(id) (((id) == 0) ? (&GDMA) : NULL)
 
-#define GDMA_LL_EVENT_TX_L3_FIFO_UDF (1<<17)
-#define GDMA_LL_EVENT_TX_L3_FIFO_OVF (1<<16)
-#define GDMA_LL_EVENT_TX_L1_FIFO_UDF (1<<15)
-#define GDMA_LL_EVENT_TX_L1_FIFO_OVF (1<<14)
-#define GDMA_LL_EVENT_RX_L3_FIFO_UDF (1<<13)
-#define GDMA_LL_EVENT_RX_L3_FIFO_OVF (1<<12)
-#define GDMA_LL_EVENT_RX_L1_FIFO_UDF (1<<11)
-#define GDMA_LL_EVENT_RX_L1_FIFO_OVF (1<<10)
-#define GDMA_LL_EVENT_RX_WATER_MARK  (1<<9)
-#define GDMA_LL_EVENT_TX_TOTAL_EOF   (1<<8)
-#define GDMA_LL_EVENT_RX_DESC_EMPTY  (1<<7)
-#define GDMA_LL_EVENT_TX_DESC_ERROR  (1<<6)
-#define GDMA_LL_EVENT_RX_DESC_ERROR  (1<<5)
-#define GDMA_LL_EVENT_TX_EOF         (1<<4)
-#define GDMA_LL_EVENT_TX_DONE        (1<<3)
+#define GDMA_LL_RX_EVENT_MASK        (0x3FF)
+#define GDMA_LL_TX_EVENT_MASK        (0xFF)
+
+#define GDMA_LL_EVENT_TX_L3_FIFO_UDF (1<<7)
+#define GDMA_LL_EVENT_TX_L3_FIFO_OVF (1<<6)
+#define GDMA_LL_EVENT_TX_L1_FIFO_UDF (1<<5)
+#define GDMA_LL_EVENT_TX_L1_FIFO_OVF (1<<4)
+#define GDMA_LL_EVENT_TX_TOTAL_EOF   (1<<3)
+#define GDMA_LL_EVENT_TX_DESC_ERROR  (1<<2)
+#define GDMA_LL_EVENT_TX_EOF         (1<<1)
+#define GDMA_LL_EVENT_TX_DONE        (1<<0)
+
+#define GDMA_LL_EVENT_RX_L3_FIFO_UDF (1<<9)
+#define GDMA_LL_EVENT_RX_L3_FIFO_OVF (1<<8)
+#define GDMA_LL_EVENT_RX_L1_FIFO_UDF (1<<7)
+#define GDMA_LL_EVENT_RX_L1_FIFO_OVF (1<<6)
+#define GDMA_LL_EVENT_RX_WATER_MARK  (1<<5)
+#define GDMA_LL_EVENT_RX_DESC_EMPTY  (1<<4)
+#define GDMA_LL_EVENT_RX_DESC_ERROR  (1<<3)
 #define GDMA_LL_EVENT_RX_ERR_EOF     (1<<2)
 #define GDMA_LL_EVENT_RX_SUC_EOF     (1<<1)
 #define GDMA_LL_EVENT_RX_DONE        (1<<0)
@@ -59,17 +63,26 @@ static inline void gdma_ll_enable_m2m_mode(gdma_dev_t *dev, uint32_t channel, bo
 }
 
 /**
- * @brief Get DMA interrupt status word
+ * @brief Enable DMA clock gating
  */
-static inline uint32_t gdma_ll_get_interrupt_status(gdma_dev_t *dev, uint32_t channel)
+static inline void gdma_ll_enable_clock(gdma_dev_t *dev, bool enable)
+{
+    dev->misc_conf.clk_en = enable;
+}
+
+///////////////////////////////////// RX /////////////////////////////////////////
+/**
+ * @brief Get DMA RX channel interrupt status word
+ */
+static inline uint32_t gdma_ll_rx_get_interrupt_status(gdma_dev_t *dev, uint32_t channel)
 {
     return dev->in[channel].int_st.val;
 }
 
 /**
- * @brief Enable DMA interrupt
+ * @brief Enable DMA RX channel interrupt
  */
-static inline void gdma_ll_enable_interrupt(gdma_dev_t *dev, uint32_t channel, uint32_t mask, bool enable)
+static inline void gdma_ll_rx_enable_interrupt(gdma_dev_t *dev, uint32_t channel, uint32_t mask, bool enable)
 {
     if (enable) {
         dev->in[channel].int_ena.val |= mask;
@@ -79,22 +92,21 @@ static inline void gdma_ll_enable_interrupt(gdma_dev_t *dev, uint32_t channel, u
 }
 
 /**
- * @brief Clear DMA interrupt
+ * @brief Clear DMA RX channel interrupt
  */
-static inline void gdma_ll_clear_interrupt_status(gdma_dev_t *dev, uint32_t channel, uint32_t mask)
+static inline void gdma_ll_rx_clear_interrupt_status(gdma_dev_t *dev, uint32_t channel, uint32_t mask)
 {
     dev->in[channel].int_clr.val = mask;
 }
 
 /**
- * @brief Enable DMA clock gating
+ * @brief Get DMA RX channel interrupt status register address
  */
-static inline void gdma_ll_enable_clock(gdma_dev_t *dev, bool enable)
+static inline volatile void *gdma_ll_rx_get_interrupt_status_reg(gdma_dev_t *dev, uint32_t channel)
 {
-    dev->misc_conf.clk_en = enable;
+    return (volatile void *)(&dev->in[channel].int_st);
 }
 
-///////////////////////////////////// RX /////////////////////////////////////////
 /**
  * @brief Enable DMA RX channel to check the owner bit in the descriptor, disabled by default
  */
@@ -279,7 +291,7 @@ static inline void gdma_ll_rx_set_priority(gdma_dev_t *dev, uint32_t channel, ui
 /**
  * @brief Connect DMA RX channel to a given peripheral
  */
-static inline void gdma_ll_rx_connect_to_periph(gdma_dev_t *dev, uint32_t channel, uint32_t periph_id)
+static inline void gdma_ll_rx_connect_to_periph(gdma_dev_t *dev, uint32_t channel, int periph_id)
 {
     dev->in[channel].peri_sel.sel = periph_id;
 }
@@ -298,6 +310,42 @@ static inline void gdma_ll_rx_extend_l2_fifo_size_to(gdma_dev_t *dev, uint32_t c
 
 
 ///////////////////////////////////// TX /////////////////////////////////////////
+/**
+ * @brief Get DMA TX channel interrupt status word
+ */
+static inline uint32_t gdma_ll_tx_get_interrupt_status(gdma_dev_t *dev, uint32_t channel)
+{
+    return dev->out[channel].int_st.val;
+}
+
+/**
+ * @brief Enable DMA TX channel interrupt
+ */
+static inline void gdma_ll_tx_enable_interrupt(gdma_dev_t *dev, uint32_t channel, uint32_t mask, bool enable)
+{
+    if (enable) {
+        dev->out[channel].int_ena.val |= mask;
+    } else {
+        dev->out[channel].int_ena.val &= ~mask;
+    }
+}
+
+/**
+ * @brief Clear DMA TX channel interrupt
+ */
+static inline void gdma_ll_tx_clear_interrupt_status(gdma_dev_t *dev, uint32_t channel, uint32_t mask)
+{
+    dev->out[channel].int_clr.val = mask;
+}
+
+/**
+ * @brief Get DMA TX channel interrupt status register address
+ */
+static inline volatile void *gdma_ll_tx_get_interrupt_status_reg(gdma_dev_t *dev, uint32_t channel)
+{
+    return (volatile void *)(&dev->out[channel].int_st);
+}
+
 /**
  * @brief Enable DMA TX channel to check the owner bit in the descriptor, disabled by default
  */
@@ -474,9 +522,9 @@ static inline void gdma_ll_tx_set_priority(gdma_dev_t *dev, uint32_t channel, ui
 /**
  * @brief Connect DMA TX channel to a given peripheral
  */
-static inline void gdma_ll_tx_connect_to_periph(gdma_dev_t *dev, uint32_t channel, uint32_t periph_id)
+static inline void gdma_ll_tx_connect_to_periph(gdma_dev_t *dev, uint32_t channel, int periph_id)
 {
-   dev->out[channel].peri_sel.sel = periph_id;
+    dev->out[channel].peri_sel.sel = periph_id;
 }
 
 /**

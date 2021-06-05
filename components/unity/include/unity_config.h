@@ -21,12 +21,15 @@
 #define UNITY_EXCLUDE_DOUBLE
 #endif //CONFIG_UNITY_ENABLE_DOUBLE
 
+#ifdef CONFIG_UNITY_ENABLE_64BIT
+#define UNITY_SUPPORT_64
+#endif
+
 #ifdef CONFIG_UNITY_ENABLE_COLOR
 #define UNITY_OUTPUT_COLOR
 #endif
 
 #define UNITY_EXCLUDE_TIME_H
-
 
 void unity_flush(void);
 void unity_putc(int c);

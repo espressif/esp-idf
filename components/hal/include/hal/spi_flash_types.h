@@ -86,6 +86,44 @@ typedef struct {
     };
 } spi_flash_sus_cmd_conf;
 
+/// Structure for flash encryption operations.
+typedef struct
+{
+    /**
+     * @brief Enable the flash encryption
+    */
+    void (*flash_encryption_enable)(void);
+    /**
+     * @brief Disable the flash encryption
+    */
+    void (*flash_encryption_disable)(void);
+    /**
+     * Prepare flash encryption before operation.
+     *
+     * @param address The destination address in flash for the write operation.
+     * @param buffer Data for programming
+     * @param size Size to program.
+     *
+     * @note address and buffer must be 8-word aligned.
+     */
+    void (*flash_encryption_data_prepare)(uint32_t address, const uint32_t* buffer, uint32_t size);
+    /**
+     * @brief flash data encryption operation is done.
+     */
+    void (*flash_encryption_done)(void);
+    /**
+     * Destroy encrypted result
+    */
+    void (*flash_encryption_destroy)(void);
+    /**
+     * Check if is qualified to encrypt the buffer
+     *
+     * @param address the address of written flash partition.
+     * @param length Buffer size.
+     */
+    bool (*flash_encryption_check)(uint32_t address, uint32_t length);
+} spi_flash_encryption_t;
+
 ///Slowest io mode supported by ESP32, currently SlowRd
 #define SPI_FLASH_READ_MODE_MIN SPI_FLASH_SLOWRD
 

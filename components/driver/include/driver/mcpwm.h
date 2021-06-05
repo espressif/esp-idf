@@ -568,6 +568,7 @@ esp_err_t mcpwm_fault_deinit(mcpwm_unit_t mcpwm_num, mcpwm_fault_signal_t fault_
  * @param cap_edge set capture edge, BIT(0) - negative edge, BIT(1) - positive edge
  * @param cap_sig capture pin, which needs to be enabled
  * @param num_of_pulse count time between rising/falling edge between 2 *(pulses mentioned), counter uses APB_CLK
+ *                     [0~MCPWM_LL_MAX_PRESCALE] (MCPWM_LL_MAX_PRESCALE = 255 on ESP32);
  *
  * @return
  *     - ESP_OK Success

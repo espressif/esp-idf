@@ -1,4 +1,4 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2020-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,124 +13,158 @@
 // limitations under the License.
 #pragma once
 
+#include <stdint.h>
+#include <stdbool.h>
+#include <assert.h>
+#include "soc/systimer_struct.h"
+
+#define SYSTIMER_LL_COUNTER_CLOCK (0) // Counter used for "wallclock" time
+#define SYSTIMER_LL_ALARM_CLOCK   (2) // Alarm used for "wallclock" time
+
+#define SYSTIMER_LL_TICKS_PER_US  (80) // 80 systimer ticks == 1us
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <stdint.h>
-#include <stdbool.h>
-#include "soc/soc.h"
-#include "soc/systimer_reg.h"
-
 // All these functions get invoked either from ISR or HAL that linked to IRAM.
 // Always inline these functions even no gcc optimization is applied.
 
-/*******************counter*************************/
+/******************* Clock *************************/
 
-__attribute__((always_inline)) static inline void systimer_ll_enable_clock(void)
+__attribute__((always_inline)) static inline void systimer_ll_enable_clock(systimer_dev_t *dev, bool en)
 {
-    REG_SET_BIT(SYSTIMER_CONF_REG, SYSTIMER_CLK_EN);
+    dev->conf.clk_en = en;
 }
 
-__attribute__((always_inline)) static inline void systimer_ll_apply_counter_value(void)
+/******************* Counter *************************/
+
+__attribute__((always_inline)) static inline void systimer_ll_enable_counter(systimer_dev_t *dev, uint32_t counter_id, bool en)
 {
-    REG_SET_BIT(SYSTIMER_LOAD_REG, SYSTIMER_TIMER_LOAD);
+    // ESP32-S2 only has one counter in systimer group
+    (void)dev;
+    (void)counter_id;
 }
 
-__attribute__((always_inline)) static inline void systimer_ll_load_counter_value(uint64_t value)
+__attribute__((always_inline)) static inline void systimer_ll_counter_can_stall_by_cpu(systimer_dev_t *dev, uint32_t counter_id, uint32_t cpu_id, bool can)
 {
-    REG_WRITE(SYSTIMER_LOAD_LO_REG, value & 0xFFFFFFFF);
-    REG_WRITE(SYSTIMER_LOAD_HI_REG, (value & 0xFFFFFFFF00000000) >> 32);
+    (void)dev;
+    (void)counter_id;
+    (void)cpu_id;
+    (void)can;
 }
 
-__attribute__((always_inline)) static inline void systimer_ll_set_step_for_pll(uint32_t step)
+__attribute__((always_inline)) static inline void systimer_ll_counter_snapshot(systimer_dev_t *dev, uint32_t counter_id)
 {
-    REG_SET_FIELD(SYSTIMER_STEP_REG, SYSTIMER_TIMER_PLL_STEP, step);
+    (void)counter_id;
+    dev->update.timer_update = 1;
 }
 
-__attribute__((always_inline)) static inline void systimer_ll_set_step_for_xtal(uint32_t step)
+__attribute__((always_inline)) static inline bool systimer_ll_is_counter_value_valid(systimer_dev_t *dev, uint32_t counter_id)
 {
-    REG_SET_FIELD(SYSTIMER_STEP_REG, SYSTIMER_TIMER_XTAL_STEP, step);
+    (void)counter_id;
+    return dev->update.timer_value_valid;
 }
 
-__attribute__((always_inline)) static inline void systimer_ll_counter_snapshot(void)
+__attribute__((always_inline)) static inline void systimer_ll_set_counter_value(systimer_dev_t *dev, uint32_t counter_id, uint64_t value)
 {
-    REG_WRITE(SYSTIMER_UPDATE_REG, SYSTIMER_TIMER_UPDATE);
+    (void)counter_id;
+    dev->load_hi.timer_load_hi = value >> 32;
+    dev->load_lo.timer_load_lo = value;
 }
 
-__attribute__((always_inline)) static inline bool systimer_ll_is_counter_value_valid(void)
+__attribute__((always_inline)) static inline uint32_t systimer_ll_get_counter_value_low(systimer_dev_t *dev, uint32_t counter_id)
 {
-    return REG_GET_BIT(SYSTIMER_UPDATE_REG, SYSTIMER_TIMER_VALUE_VALID);
+    return dev->value_lo.timer_value_lo;
 }
 
-__attribute__((always_inline)) static inline uint32_t systimer_ll_get_counter_value_low(void)
+__attribute__((always_inline)) static inline uint32_t systimer_ll_get_counter_value_high(systimer_dev_t *dev, uint32_t counter_id)
 {
-    return REG_READ(SYSTIMER_VALUE_LO_REG);
+    return dev->value_hi.timer_value_hi;
 }
 
-__attribute__((always_inline)) static inline uint32_t systimer_ll_get_counter_value_high(void)
+__attribute__((always_inline)) static inline void systimer_ll_apply_counter_value(systimer_dev_t *dev, uint32_t counter_id)
 {
-    return REG_READ(SYSTIMER_VALUE_HI_REG);
+    dev->load.timer_load = 1;
 }
 
-/*******************alarm*************************/
-
-__attribute__((always_inline)) static inline void systimer_ll_set_alarm_value(uint32_t alarm_id, uint64_t value)
+__attribute__((always_inline)) static inline void systimer_ll_set_step_for_pll(systimer_dev_t *dev, uint32_t step)
 {
-    REG_WRITE(SYSTIMER_TARGET0_LO_REG + alarm_id * 8, value & 0xFFFFFFFF);
-    REG_WRITE(SYSTIMER_TARGET0_HI_REG + alarm_id * 8, (value & 0xFFFFFFFF00000000) >> 32);
+    dev->step.timer_pll_step = step;
 }
 
-__attribute__((always_inline)) static inline uint64_t systimer_ll_get_alarm_value(uint32_t alarm_id)
+__attribute__((always_inline)) static inline void systimer_ll_set_step_for_xtal(systimer_dev_t *dev, uint32_t step)
 {
-    return (uint64_t)REG_READ(SYSTIMER_TARGET0_HI_REG + alarm_id * 8) << 32 | REG_READ(SYSTIMER_TARGET0_LO_REG + alarm_id * 8);
+    dev->step.timer_xtal_step = step;
 }
 
-__attribute__((always_inline)) static inline void systimer_ll_enable_alarm(uint32_t alarm_id)
+/******************* Alarm *************************/
+
+__attribute__((always_inline)) static inline void systimer_ll_set_alarm_target(systimer_dev_t *dev, uint32_t alarm_id, uint64_t value)
 {
-    REG_SET_BIT(SYSTIMER_TARGET0_CONF_REG + alarm_id * 4, BIT(31));
+    dev->target_val[alarm_id].hi.timer_target_hi = value >> 32;
+    dev->target_val[alarm_id].lo.timer_target_lo = value;
 }
 
-__attribute__((always_inline)) static inline void systimer_ll_disable_alarm(uint32_t alarm_id)
+__attribute__((always_inline)) static inline uint64_t systimer_ll_get_alarm_target(systimer_dev_t *dev, uint32_t alarm_id)
 {
-    REG_CLR_BIT(SYSTIMER_TARGET0_CONF_REG + alarm_id * 4, BIT(31));
+    return ((uint64_t)(dev->target_val[alarm_id].hi.timer_target_hi) << 32) | dev->target_val[alarm_id].lo.timer_target_lo;
 }
 
-__attribute__((always_inline)) static inline void systimer_ll_enable_alarm_oneshot(uint32_t alarm_id)
+__attribute__((always_inline)) static inline void systimer_ll_connect_alarm_counter(systimer_dev_t *dev, uint32_t alarm_id, uint32_t counter_id)
 {
-    REG_CLR_BIT(SYSTIMER_TARGET0_CONF_REG + alarm_id * 4, BIT(30));
+    // On esp32-s2, counter int the systimer is fixed connectred to other three alarm comparators
+    (void)dev;
+    (void)alarm_id;
+    (void)counter_id;
 }
 
-__attribute__((always_inline)) static inline void systimer_ll_enable_alarm_period(uint32_t alarm_id)
+__attribute__((always_inline)) static inline void systimer_ll_enable_alarm_oneshot(systimer_dev_t *dev, uint32_t alarm_id)
 {
-    REG_SET_BIT(SYSTIMER_TARGET0_CONF_REG + alarm_id * 4, BIT(30));
+    dev->target_conf[alarm_id].target_period_mode = 0;
 }
 
-__attribute__((always_inline)) static inline void systimer_ll_set_alarm_period(uint32_t alarm_id, uint32_t period)
+__attribute__((always_inline)) static inline void systimer_ll_enable_alarm_period(systimer_dev_t *dev, uint32_t alarm_id)
 {
-    REG_SET_FIELD(SYSTIMER_TARGET0_CONF_REG + alarm_id * 4, SYSTIMER_TARGET0_PERIOD, period);
+    dev->target_conf[alarm_id].target_period_mode = 1;
 }
 
-/*******************interrupt*************************/
-
-__attribute__((always_inline)) static inline void systimer_ll_enable_alarm_int(uint32_t alarm_id)
+__attribute__((always_inline)) static inline void systimer_ll_set_alarm_period(systimer_dev_t *dev, uint32_t alarm_id, uint32_t period)
 {
-    REG_SET_BIT(SYSTIMER_INT_ENA_REG, 1 << alarm_id);
+    assert(period < (1 << 30));
+    dev->target_conf[alarm_id].target_period = period;
 }
 
-__attribute__((always_inline)) static inline void systimer_ll_disable_alarm_int(uint32_t alarm_id)
+__attribute__((always_inline)) static inline void systimer_ll_apply_alarm_value(systimer_dev_t *dev, uint32_t alarm_id)
 {
-    REG_CLR_BIT(SYSTIMER_INT_ENA_REG, 1 << alarm_id);
+    (void)dev;
+    (void)alarm_id;
 }
 
-__attribute__((always_inline)) static inline bool systimer_ll_is_alarm_int_fired(uint32_t alarm_id)
+__attribute__((always_inline)) static inline void systimer_ll_enable_alarm(systimer_dev_t *dev, uint32_t alarm_id, bool en)
 {
-    return REG_GET_BIT(SYSTIMER_INT_RAW_REG, 1 << alarm_id);
+    dev->target_conf[alarm_id].target_work_en = en;
 }
 
-__attribute__((always_inline)) static inline void systimer_ll_clear_alarm_int(uint32_t alarm_id)
+/******************* Interrupt *************************/
+
+__attribute__((always_inline)) static inline void systimer_ll_enable_alarm_int(systimer_dev_t *dev, uint32_t alarm_id, bool en)
 {
-    REG_SET_BIT(SYSTIMER_INT_CLR_REG, 1 << alarm_id);
+    if (en) {
+        dev->int_ena.val |= 1 << alarm_id;
+    } else {
+        dev->int_ena.val &= ~(1 << alarm_id);
+    }
+}
+
+__attribute__((always_inline)) static inline bool systimer_ll_is_alarm_int_fired(systimer_dev_t *dev, uint32_t alarm_id)
+{
+    return dev->int_raw.val & (1 << alarm_id);
+}
+
+__attribute__((always_inline)) static inline void systimer_ll_clear_alarm_int(systimer_dev_t *dev, uint32_t alarm_id)
+{
+    dev->int_clr.val |= 1 << alarm_id;
 }
 
 #ifdef __cplusplus

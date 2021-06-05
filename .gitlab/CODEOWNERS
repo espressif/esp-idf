@@ -84,6 +84,7 @@
 /components/esp_https_server/         @esp-idf-codeowners/app-utilities
 /components/esp_hw_support/           @esp-idf-codeowners/system
 /components/esp_ipc/                  @esp-idf-codeowners/system
+/components/esp_lcd/                  @esp-idf-codeowners/peripherals
 /components/esp_local_ctrl/           @esp-idf-codeowners/app-utilities
 /components/esp_netif/                @esp-idf-codeowners/network
 /components/esp_pm/                   @esp-idf-codeowners/power-management
@@ -116,6 +117,7 @@
 /components/nghttp/                   @esp-idf-codeowners/app-utilities
 /components/nvs_flash/                @esp-idf-codeowners/storage
 /components/openssl/                  @esp-idf-codeowners/network
+/components/openthread/               @esp-idf-codeowners/ieee802154
 /components/partition_table/          @esp-idf-codeowners/system
 /components/perfmon/                  @esp-idf-codeowners/tools
 /components/protobuf-c/               @esp-idf-codeowners/app-utilities
@@ -147,6 +149,7 @@
 /examples/ethernet/           @esp-idf-codeowners/network
 /examples/get-started/        @esp-idf-codeowners/system
 /examples/mesh/               @esp-idf-codeowners/wifi
+/examples/openthread/         @esp-idf-codeowners/ieee802154
 /examples/peripherals/        @esp-idf-codeowners/peripherals
 /examples/protocols/          @esp-idf-codeowners/network @esp-idf-codeowners/app-utilities
 /examples/provisioning/       @esp-idf-codeowners/app-utilities

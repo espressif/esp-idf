@@ -30,7 +30,7 @@ from tiny_test_fw import Utility
 # > make print_flash_cmd | tail -n 1 > build/download.config
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
 def test_examples_protocol_http_server_persistence(env, extra_data):
     # Acquire DUT
     dut1 = env.get_dut('http_server', 'examples/protocols/http_server/persistent_sockets',

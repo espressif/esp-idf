@@ -7,12 +7,20 @@ SPI Slave driver is a program that controls {IDF_TARGET_NAME}'s SPI peripherals 
 Overview of {IDF_TARGET_NAME}'s SPI peripherals
 -----------------------------------------------
 
-{IDF_TARGET_NAME} integrates two general purpose SPI controllers which can be used as slave nodes driven by an off-chip SPI master
+.. only:: esp32 or esp32s2
 
-- SPI2, sometimes referred to as HSPI
-- SPI3, sometimes referred to as VSPI
+    {IDF_TARGET_NAME} integrates two general purpose SPI controllers which can be used as slave nodes driven by an off-chip SPI master
 
-SPI2 and SPI3 have independent signal buses with the same respective names.
+    .. only:: esp32
+
+        - SPI2, sometimes referred to as HSPI
+        - SPI3, sometimes referred to as VSPI
+
+    SPI2 and SPI3 have independent signal buses with the same respective names.
+
+.. only:: esp32c3
+
+    {IDF_TARGET_NAME} integrates one general purpose SPI controller which can be used as slave node driven by an off-chip SPI master. The controller is called SPI2 and has an independent signal bus with the same name.
 
 
 Terminology
@@ -24,7 +32,7 @@ The terms used in relation to the SPI slave driver are given in the table below.
 Term               Definition
 =================  =========================================================================================
 **Host**           The SPI controller peripheral external to {IDF_TARGET_NAME} that initiates SPI transmissions over the bus, and acts as an SPI Master.
-**Device**         SPI slave device, in this case the SPI2 and SPI3 controllers. Each Device shares the MOSI, MISO and SCLK signals but is only active on the bus when the Host asserts the Device's individual CS line.
+**Device**         SPI slave device (general purpose SPI controller). Each Device shares the MOSI, MISO and SCLK signals but is only active on the bus when the Host asserts the Device's individual CS line.
 **Bus**            A signal bus, common to all Devices connected to one Host. In general, a bus includes the following lines: MISO, MOSI, SCLK, one or more CS lines, and, optionally, QUADWP and QUADHD. So Devices are connected to the same lines, with the exception that each Device has its own CS line. Several Devices can also share one CS line if connected in the daisy-chain manner.
 - **MISO**         Master In, Slave Out, a.k.a. Q. Data transmission from a Device to Host.
 - **MOSI**         Master In, Slave Out, a.k.a. D. Data transmission from a Host to Device.
@@ -43,7 +51,9 @@ Term               Definition
 Driver Features
 ---------------
 
-The SPI slave driver allows using the SPI2 and/or SPI3 peripherals as full-duplex Devices. The driver can send/receive transactions up to 64 bytes in length, or utilize DMA to send/receive longer transactions. However, there are some :ref:`known issues <spi_dma_known_issues>` related to DMA.
+{IDF_TARGET_MAX_DATA_BUF:default="64", esp32s2="72"}
+
+The SPI slave driver allows using the SPI peripherals as full-duplex Devices. The driver can send/receive transactions up to {IDF_TARGET_MAX_DATA_BUF} bytes in length, or utilize DMA to send/receive longer transactions. However, there are some :ref:`known issues <spi_dma_known_issues>` related to DMA.
 
 
 SPI Transactions
@@ -148,30 +158,34 @@ You can also configure a GPIO pin through which the Device will signal to the Ho
 SCLK Frequency Requirements
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The SPI slaves are designed to operate at up to 10 MHz. The data cannot be recognized or received correctly if the clock is too fast or does not have a 50% duty cycle.
+{IDF_TARGET_MAX_FREQ:default="40", esp32="10", esp32s2="40", esp32c3="60"}
 
-On top of that, there are additional requirements for the data to meet the timing constraints:
+The SPI slaves are designed to operate at up to {IDF_TARGET_MAX_FREQ} MHz. The data cannot be recognized or received correctly if the clock is too fast or does not have a 50% duty cycle.
 
-- Read (MOSI):
-    The Device can read data correctly only if the data is already set at the launch edge. Although it is usually the case for most masters.
+.. only:: esp32
 
-- Write (MISO):
-    The output delay of the MISO signal needs to be shorter than half of a clock cycle period so that the MISO line is stable before the next latch edge. Given that the clock is balanced, the output delay and frequency limitations in different cases are given below.
+    On top of that, there are additional requirements for the data to meet the timing constraints:
 
-    +-------------+---------------------------+------------------------+
-    |             | Output delay of MISO (ns) | Freq. limit (MHz)      |
-    +=============+===========================+========================+
-    | IO_MUX      | 43.75                     | <11.4                  |
-    +-------------+---------------------------+------------------------+
-    | GPIO matrix | 68.75                     | <7.2                   |
-    +-------------+---------------------------+------------------------+
+    - Read (MOSI):
+        The Device can read data correctly only if the data is already set at the launch edge. Although it is usually the case for most masters.
 
-    Note:
-      1. If the frequency is equal to the limitation, it can lead to random errors.
-      2. The clock uncertainty between Host and Device (12.5ns) is included.
-      3. The output delay is measured under ideal circumstances (no load). If the MISO pin is heavily loaded, the output delay will be longer, and the maximum allowed frequency will be lower.
+    - Write (MISO):
+        The output delay of the MISO signal needs to be shorter than half of a clock cycle period so that the MISO line is stable before the next latch edge. Given that the clock is balanced, the output delay and frequency limitations in different cases are given below.
 
-    Exception: The frequency is allowed to be higher if the master has more tolerance for the MISO setup time, e.g., latch data at the next edge than expected, or configurable latching time.
+        +-------------+---------------------------+------------------------+
+        |             | Output delay of MISO (ns) | Freq. limit (MHz)      |
+        +=============+===========================+========================+
+        | IO_MUX      | 43.75                     | <11.4                  |
+        +-------------+---------------------------+------------------------+
+        | GPIO matrix | 68.75                     | <7.2                   |
+        +-------------+---------------------------+------------------------+
+
+        Note:
+        1. If the frequency is equal to the limitation, it can lead to random errors.
+        2. The clock uncertainty between Host and Device (12.5ns) is included.
+        3. The output delay is measured under ideal circumstances (no load). If the MISO pin is heavily loaded, the output delay will be longer, and the maximum allowed frequency will be lower.
+
+        Exception: The frequency is allowed to be higher if the master has more tolerance for the MISO setup time, e.g., latch data at the next edge, or configurable latching time.
 
 
 .. _spi_dma_known_issues:
@@ -183,11 +197,13 @@ Restrictions and Known Issues
 
    Also, a Host should write lengths that are multiples of 4 bytes. The data with inappropriate lengths will be discarded.
 
-2. Furthermore, DMA requires SPI modes 1 and 3. For SPI modes 0 and 2, the MISO signal has to be launched half a clock cycle earlier to meet the timing. The new timing is as follows:
+.. only:: esp32
 
-  .. image:: /../_static/spi_slave_miso_dma.png
+    2. Furthermore, DMA requires SPI modes 1 and 3. For SPI modes 0 and 2, the MISO signal has to be launched half a clock cycle earlier to meet the timing. The new timing is as follows:
 
-If DMA is enabled, a Device's launch edge is half of an SPI clock cycle ahead of the normal time, shifting to the Master's actual latch edge. In this case, if the GPIO matrix is bypassed, the hold time for data sampling is 68.75 ns and no longer a half of an SPI clock cycle. If the GPIO matrix is used, the hold time will increase to 93.75 ns. The Host should sample the data immediately at the latch edge or communicate in SPI modes 1 or 3. If your Host cannot meet these timing requirements, initialize your Device without DMA.
+    .. image:: /../_static/spi_slave_miso_dma.png
+
+    If DMA is enabled, a Device's launch edge is half of an SPI clock cycle ahead of the normal time, shifting to the Master's actual latch edge. In this case, if the GPIO matrix is bypassed, the hold time for data sampling is 68.75 ns and no longer a half of an SPI clock cycle. If the GPIO matrix is used, the hold time will increase to 93.75 ns. The Host should sample the data immediately at the latch edge or communicate in SPI modes 1 or 3. If your Host cannot meet these timing requirements, initialize your Device without DMA.
 
 
 Application Example

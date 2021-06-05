@@ -1,12 +1,14 @@
 [mapping:esp_system]
 archive: libesp_system.a
 entries:
-    panic (noflash)
-    panic_handler (noflash)
-    panic_arch (noflash)
-    reset_reason (noflash)
+    if ESP_PANIC_HANDLER_IRAM = y:
+        panic (noflash)
+        panic_handler (noflash)
+        panic_arch (noflash)
+
     esp_err (noflash)
-    system_api:esp_system_abort (noflash)
+    esp_system:esp_system_abort (noflash)
+    ubsan (noflash)
 
     if ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF:
         usb_console:esp_usb_console_write_char (noflash)
