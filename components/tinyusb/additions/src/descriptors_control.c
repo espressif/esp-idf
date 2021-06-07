@@ -1,4 +1,5 @@
 // Copyright 2020 Espressif Systems (Shanghai) PTE LTD
+// Modifications Copyright © 2021 Ci4Rail GmbH
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +19,26 @@
 static const char *TAG = "tusb_desc";
 static tusb_desc_device_t s_descriptor;
 static char *s_str_descriptor[USB_STRING_DESCRIPTOR_ARRAY_SIZE];
+static uint8_t mac_address[6];
+
 #define MAX_DESC_BUF_SIZE 32
+
+enum
+{
+  STRID_LANGID = 0,
+  STRID_MANUFACTURER,
+  STRID_PRODUCT,
+  STRID_SERIAL,
+  STRID_CDC,
+  STRID_MSC,
+  STRID_HID,
+  STRID_ECM,
+  STRID_MAC,
+};
+
+#define EPNUM_NET_NOTIF   0x81
+#define EPNUM_NET_OUT     0x02
+#define EPNUM_NET_IN      0x82
 
 #if CFG_TUD_HID //HID Report Descriptor
 uint8_t const desc_hid_report[] = {
@@ -27,21 +47,28 @@ uint8_t const desc_hid_report[] = {
 };
 #endif
 
+//#define ALT_CONFIG_TOTAL_LEN     (TUD_CONFIG_DESC_LEN + TUD_CDC_ECM_DESC_LEN)
+#define MAIN_CONFIG_TOTAL_LEN    (TUD_CONFIG_DESC_LEN + TUD_RNDIS_DESC_LEN)
+
 uint8_t const desc_configuration[] = {
     // interface count, string index, total length, attribute, power in mA
-    TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, TUSB_DESC_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
+    TUD_CONFIG_DESCRIPTOR(2, ITF_NUM_TOTAL, 0, TUSB_DESC_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
 
 #   if CFG_TUD_CDC
     // Interface number, string index, EP notification address and size, EP data address (out, in) and size.
-    TUD_CDC_DESCRIPTOR(ITF_NUM_CDC, 4, 0x81, 8, 0x02, 0x82, 64),
+    TUD_CDC_DESCRIPTOR(ITF_NUM_CDC, STRID_CDC, 0x81, 8, 0x02, 0x82, 64),
 #   endif
 #   if CFG_TUD_MSC
     // Interface number, string index, EP Out & EP In address, EP size
-    TUD_MSC_DESCRIPTOR(ITF_NUM_MSC, 5, EPNUM_MSC, 0x80 | EPNUM_MSC, 64), // highspeed 512
+    TUD_MSC_DESCRIPTOR(ITF_NUM_MSC, STRID_MSC, EPNUM_MSC, 0x80 | EPNUM_MSC, 64), // highspeed 512
 #   endif
 #   if CFG_TUD_HID
     // Interface number, string index, protocol, report descriptor len, EP In address, size & polling interval
-    TUD_HID_DESCRIPTOR(ITF_NUM_HID, 6, HID_PROTOCOL_NONE, sizeof(desc_hid_report), 0x84, 16, 10)
+    TUD_HID_DESCRIPTOR(ITF_NUM_HID, STRID_HID, HID_PROTOCOL_NONE, sizeof(desc_hid_report), 0x84, 16, 10),
+#   endif
+#   if CFG_TUD_NET
+    // Interface number, description string index, MAC address string index, EP notification address and size, EP data address (out, in), and size, max segment size.
+    TUD_CDC_ECM_DESCRIPTOR(ITF_NUM_CDC, STRID_ECM, STRID_MAC, EPNUM_NET_NOTIF, 64, EPNUM_NET_OUT, EPNUM_NET_IN, CFG_TUD_NET_ENDPOINT_SIZE, CFG_TUD_NET_MTU),
 #   endif
 };
 
@@ -81,12 +108,22 @@ uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid)
 {
     (void) langid;
 
-    uint8_t chr_count;
+    unsigned int chr_count = 0;
 
-    if ( index == 0) {
-        memcpy(&_desc_str[1], s_str_descriptor[0], 2);
+    if ( index == STRID_LANGID) {
+        memcpy(&_desc_str[1], s_str_descriptor[STRID_LANGID], 2);
         chr_count = 1;
-    } else {
+    }
+    else if (STRID_MAC == index) {
+      // Convert MAC address into UTF-16
+  
+      for (unsigned i=0; i<sizeof(mac_address); i++)
+      {
+        _desc_str[1+chr_count++] = "0123456789ABCDEF"[(mac_address[i] >> 4) & 0xf];
+        _desc_str[1+chr_count++] = "0123456789ABCDEF"[(mac_address[i] >> 0) & 0xf];
+      }
+    }
+    else {
         // Convert ASCII string into UTF-16
 
         if ( index >= sizeof(s_str_descriptor) / sizeof(s_str_descriptor[0]) ) {
@@ -156,6 +193,11 @@ void tusb_set_descriptor(tusb_desc_device_t *desc, char **str_desc)
                sizeof(s_str_descriptor[0])*USB_STRING_DESCRIPTOR_ARRAY_SIZE);
     }
     tusb_desc_set = true;
+}
+
+void tusb_set_mac_address(uint8_t cfg_mac_address[6])
+{
+    memcpy(mac_address, cfg_mac_address, sizeof(mac_address)/sizeof(mac_address[0]));
 }
 
 tusb_desc_device_t *tusb_get_active_desc(void)

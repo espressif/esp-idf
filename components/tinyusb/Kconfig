@@ -117,6 +117,13 @@ menu "TinyUSB"
         help
             MSC FIFO size
 
+    config USB_NET_ENABLED
+        bool "Enable Ethernet over USB TinyUSB driver"
+        default n
+        depends on USB_ENABLED
+        help
+            Enable Ethernet over USB TinyUSB driver.
+
     config USB_CDC_ENABLED
         bool "Enable USB Serial (CDC) TinyUSB driver"
         default n

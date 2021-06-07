@@ -37,8 +37,10 @@ if(CONFIG_USB_ENABLED)
       # tusb:
       "${FREERTOS_ORIG_INCLUDE_PATH}"
       "${COMPONENT_DIR}/tinyusb/src/"
+      "${COMPONENT_DIR}/tinyusb/lib/networking"
       # espressif:
-      "${COMPONENT_DIR}/additions/include")
+      "${COMPONENT_DIR}/additions/include"
+      )
   set(srcs
       # espressif:
       "${COMPONENT_DIR}/additions/src/descriptors_control.c"
@@ -61,8 +63,15 @@ if(CONFIG_USB_ENABLED)
     list(APPEND srcs
         "${COMPONENT_DIR}/additions/src/cdc.c"
         "${COMPONENT_DIR}/additions/src/tusb_cdc_acm.c"
-         "${COMPONENT_DIR}/additions/src/tusb_console.c"
-         "${COMPONENT_DIR}/additions/src/vfs_tinyusb.c")
+        "${COMPONENT_DIR}/additions/src/tusb_console.c"
+        "${COMPONENT_DIR}/additions/src/vfs_tinyusb.c")
+  endif()
+  # ethernet over usb
+  if(CONFIG_USB_NET_ENABLED)
+    list(APPEND srcs
+        "${COMPONENT_DIR}/tinyusb/src/class/net/net_device.c"
+        "${COMPONENT_DIR}/tinyusb/lib/networking/rndis_reports.c"
+        "${COMPONENT_DIR}/additions/src/tusb_cdc_ecm.c")
   endif()
 
   ### tinyusb lib ###

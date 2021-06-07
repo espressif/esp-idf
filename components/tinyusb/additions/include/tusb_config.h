@@ -3,6 +3,7 @@
  *
  * Copyright (c) 2019 Ha Thach (tinyusb.org),
  * Additions Copyright (c) 2020, Espressif Systems (Shanghai) PTE LTD
+ * Additions Copyright © 2021 Ci4Rail GmbH
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +24,9 @@
  * THE SOFTWARE.
  *
  */
+
+#ifndef _TUSB_CONFIG_H_
+#define _TUSB_CONFIG_H_
 
 #pragma once
 #include "tusb_option.h"
@@ -75,6 +79,7 @@ extern "C" {
 #define CFG_TUD_MSC CONFIG_USB_MSC_ENABLED
 #define CFG_TUD_HID CONFIG_USB_HID_ENABLED
 #define CFG_TUD_MIDI CONFIG_USB_MIDI_ENABLED
+#define CFG_TUD_NET CONFIG_USB_NET_ENABLED
 #define CFG_TUD_CUSTOM_CLASS CONFIG_USB_CUSTOM_CLASS_ENABLED
 
 /*         */
@@ -93,6 +98,10 @@ extern "C" {
 #   define CONFIG_USB_HID_ENABLED 0
 #endif
 
+#ifndef CONFIG_USB_NET_ENABLED
+#   define CONFIG_USB_NET_ENABLED 0
+#endif
+
 #ifndef CONFIG_USB_MIDI_ENABLED
 #   define CONFIG_USB_MIDI_ENABLED 0
 #endif
@@ -103,4 +112,6 @@ extern "C" {
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif

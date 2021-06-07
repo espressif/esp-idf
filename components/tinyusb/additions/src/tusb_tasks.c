@@ -1,4 +1,5 @@
 // Copyright 2020 Espressif Systems (Shanghai) PTE LTD
+// Modifications Copyright © 2021 Ci4Rail GmbH
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,6 +32,7 @@ static void tusb_device_task(void *arg)
     ESP_LOGD(TAG, "tinyusb task started");
     while (1) { // RTOS forever loop
         tud_task();
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
 

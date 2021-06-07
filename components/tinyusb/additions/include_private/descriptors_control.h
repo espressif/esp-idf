@@ -1,4 +1,5 @@
 // Copyright 2020 Espressif Systems (Shanghai) PTE LTD
+// Modifications Copyright © 2021 Ci4Rail GmbH
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -39,7 +40,7 @@ enum {
 
 //------------- Configuration Descriptor -------------//
 enum {
-#   if CFG_TUD_CDC
+#   if CFG_TUD_CDC || CFG_TUD_NET
     ITF_NUM_CDC = 0,
     ITF_NUM_CDC_DATA,
 #   endif
@@ -57,7 +58,7 @@ enum {
 
 enum {
     TUSB_DESC_TOTAL_LEN = TUD_CONFIG_DESC_LEN + CFG_TUD_CDC * TUD_CDC_DESC_LEN + CFG_TUD_MSC * TUD_MSC_DESC_LEN +
-                       CFG_TUD_HID * TUD_HID_DESC_LEN
+                       CFG_TUD_HID * TUD_HID_DESC_LEN + CFG_TUD_NET * TUD_CDC_ECM_DESC_LEN
 };
 
 bool tusb_desc_set;
@@ -65,6 +66,8 @@ void tusb_set_descriptor(tusb_desc_device_t *desc, char **str_desc);
 tusb_desc_device_t *tusb_get_active_desc(void);
 char **tusb_get_active_str_desc(void);
 void tusb_clear_descriptor(void);
+
+void tusb_set_mac_address(uint8_t cfg_mac_address[6]);
 
 #ifdef __cplusplus
 }
