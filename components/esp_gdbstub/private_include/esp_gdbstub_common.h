@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -68,7 +60,7 @@ typedef struct {
 #endif // CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 } esp_gdbstub_scratch_t;
 
-
+extern esp_gdbstub_scratch_t s_scratch;
 /**** Functions provided by the architecture specific part ****/
 
 /**
@@ -170,3 +162,19 @@ int esp_gdbstub_read_command(unsigned char **out_cmd, size_t *out_size);
 
 /** Handle a command received from gdb */
 int esp_gdbstub_handle_command(unsigned char *cmd, int len);
+
+void esp_gdbstub_init_dports(void);
+void esp_gdbstub_stall_other_cpus_start(void);
+void esp_gdbstub_stall_other_cpus_end(void);
+
+void esp_gdbstub_clear_step(void);
+void esp_gdbstub_do_step(void);
+void esp_gdbstub_trigger_cpu(void);
+
+/**
+ * Write a value to register in frame
+ * @param frame  gdbstub frame
+ * @param reg_index  register index, depends on architecture
+ * @param value  32 bit data value
+ */
+void esp_gdbstub_set_register(esp_gdbstub_frame_t *frame, uint32_t reg_index, uint32_t value);

@@ -86,6 +86,4 @@ endif()
 
 # [refactor-todo] requirement from the panic handler,
 # need to introduce panic "event" concept to remove this dependency (IDF-2194)
-if(CONFIG_ESP_SYSTEM_PANIC_GDBSTUB)
-    idf_component_optional_requires(PRIVATE esp_gdbstub)
-endif()
+idf_component_optional_requires(PRIVATE esp_gdbstub)

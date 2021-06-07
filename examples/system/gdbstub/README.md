@@ -2,13 +2,14 @@
 
 This example shows how to use gdbstub and it's functionality at runtime to debug an application with GDB. 
 With the gdbstub component it is possible to run GDB from IDF Monitor by pressing Ctrl+C and debug  
-the application using GDB. It is also possible to read/modify memory values, interrupt and continue the application.
+the application using GDB. It is also possible to read/modify memory values, interrupt and continue 
+the application, set breakpoints, make steps and so on.
 Upon exit from GDB, the application will continue to work in IDF Monitor as before.
 
 ## How to use example
 ### Hardware Required
 
-he example can run on any commonly available ESP32 development board.  
+The example can run on any commonly available ESP32 development board.  
 There are two possible ways to execute gdbstub with GDB: from IDF Monitor and as standalone application.
 gdbstub support ESP32, ESP32-S2 and ESP32-S3 chips. 
 
@@ -25,9 +26,6 @@ This selection switches gdbstub to runtime mode.
 Depending on the project, following settings could be used:
 -> Component Config -> GDB Stub -> ...
 The user can enable or disable task list handling and define a maximum amount of tasks.
-Note that gdbstub can now only be used when FreeRTOS is run on the first core only. 
-This setting is located here:
--> Component Config -> FreeRTOS -> Run FreeRTOS only on first core.
 
 ### Build and Flash
 
@@ -56,15 +54,27 @@ The user can continue running the application in GDB by entering "continue" and 
 The user can check again that the application has worked by checking variable "print call_count".
 The user can exit from GDB to continue seeing the trace from IDF Monitor by pressing "quit" and then "y".  
 The user will see in IDF Monitor that call_count and logging level have changed.
+The user can add breakpoint to the label test_point2 by entering "break test_point2" and then enter "continue" or "c". The application will break at this line.
+If user will continue again, the application will break at this line again. 
+Also, user can try to step application by entering "si".
 A typical console output for such a scenario is shown below:
 ```
-I (300) cpu_start: Starting scheduler on PRO CPU.
+I (312) cpu_start: Starting scheduler on PRO CPU.
+I (0) cpu_start: Starting scheduler on APP CPU.
 Hello GDB example!
-I (307) gdbstub_example: INFO  mode enabled. Call - 0. To enter GDB please press "Ctrl+C"
-W (317) gdbstub_example: WARN  mode enabled. Call - 0. To enter GDB please press "Ctrl+C"
-I (1317) gdbstub_example: INFO  mode enabled. Call - 1. To enter GDB please press "Ctrl+C"
-W (1317) gdbstub_example: WARN  mode enabled. Call - 1. To enter GDB please press "Ctrl+C"
-To exit from the idf.py please use "Ctrl+]"
+CPU 0: To enter GDB please press "Ctrl+C"
+I (4317) gdbstub_example: INFO  mode enabled. Task 0, Core ID 0, Call - 0.
+W (4317) gdbstub_example: WARN  mode enabled. Task 0, Core ID 0, Call - 0.
+CPU 1: To enter GDB please press "Ctrl+C"
+I (4327) gdbstub_example: INFO  mode enabled. Task 1, Core ID 1, Call - 0.
+W (4337) gdbstub_example: WARN  mode enabled. Task 1, Core ID 1, Call - 0.
+CPU 0: To enter GDB please press "Ctrl+C"
+I (5137) gdbstub_example: INFO  mode enabled. Task 0, Core ID 0, Call - 1.
+W (5137) gdbstub_example: WARN  mode enabled. Task 0, Core ID 0, Call - 1.
+CPU 1: To enter GDB please press "Ctrl+C"
+I (5157) gdbstub_example: INFO  mode enabled. Task 1, Core ID 1, Call - 1.
+W (5157) gdbstub_example: WARN  mode enabled. Task 1, Core ID 1, Call - 1.
+To exit from IDF monitor please use "Ctrl+]"
 $T02#b6GNU gdb (crosstool-NG esp-2020r3) 8.1.0.20180627-git
 Copyright (C) 2018 Free Software Foundation, Inc.
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
@@ -80,37 +90,71 @@ Find the GDB manual and other documentation resources online at:
 For help, type "help".
 Type "apropos word" to search for commands related to "word"...
 Reading symbols from c:\esp-idf\examples\system\gdbstub\build\gdbstub.elf...done.
-Remote debugging using \\.\COM15
-0x400dff0a in esp_pm_impl_waiti () at C:/esp-idf/components/esp_pm/pm_impl.c:533
-533         asm("waiti 0");
-(gdb) print call_count
+Remote debugging using \\.\COM16
+task4test (param=0x0) at ../main/gdbstub_main.c:41
+41                  asm("               nop;");
+(gdb) print call_counts[0]
 $1 = 2
-(gdb) set call_count = 100
-(gdb) print call_count
-$2 = 100
+(gdb) print call_counts[1]
+$2 = 2
+(gdb) set call_counts[0] = 100
+(gdb) set call_counts[0] = 100(gdb) print call_counts[0]
+$3 = 100
 (gdb) print update_log_level
-$3 = ESP_LOG_DEBUG
+$4 = ESP_LOG_DEBUG
 (gdb) set update_log_level = ESP_LOG_WARN
 (gdb) print update_log_level
-$4 = ESP_LOG_WARN
+$5 = ESP_LOG_WARN
+(gdb) c
+Continuing.
+CPU 0: To enter GDB please press "Ctrl+C"
+W (5927) gdbstub_example: WARN  mode enabled. Task 0, Core ID 0, Call - 100.
+CPU 1: To enter GDB please press "Ctrl+C"
+W (5927) gdbstub_example: WARN  mode enabled. Task 1, Core ID 1, Call - 2.
+CPU 0: To enter GDB please press "Ctrl+C"
+W (5927) gdbstub_example: WARN  mode enabled. Task 0, Core ID 0, Call - 101.
+CPU 1: To enter GDB please press "Ctrl+C"
+W (5927) gdbstub_example: WARN  mode enabled. Task 1, Core ID 1, Call - 3.
+CPU 0: To enter GDB please press "Ctrl+C"
+W (5927) gdbstub_example: WARN  mode enabled. Task 0, Core ID 0, Call - 102.
+CPU 1: To enter GDB please press "Ctrl+C"
+W (5927) gdbstub_example: WARN  mode enabled. Task 1, Core ID 1, Call - 4.
+
+Thread 1 received signal SIGINT, Interrupt.
+task4test (param=0x0) at ../main/gdbstub_main.c:38
+38              for (int i=0 ; i< 10000000; i++)
+(gdb) break test_point2
+Breakpoint 1 at 0x400d511d: file ../main/gdbstub_main.c, line 40.
 (gdb) c
 Continuing.
 
+Thread 1 hit Breakpoint 1, task4test (param=0x1) at ../main/gdbstub_main.c:40
+40                  asm("test_point2:   nop;");
+(gdb) si
+41                  asm("               nop;");
+(gdb) si
+42                  asm("               nop;");
+(gdb) c
+Continuing.
+
+Thread 1 hit Breakpoint 1, task4test (param=0x1) at ../main/gdbstub_main.c:40
+40                  asm("test_point2:   nop;");
+(gdb) delete 1
+(gdb) c
+Continuing.
+CPU 0: To enter GDB please press "Ctrl+C"
+W (36077) gdbstub_example: WARN  mode enabled. Task 0, Core ID 0, Call - 103.
+CPU 1: To enter GDB please press "Ctrl+C"
+W (36107) gdbstub_example: WARN  mode enabled. Task 1, Core ID 1, Call - 5.
+CPU 0: To enter GDB please press "Ctrl+C"
+W (36917) gdbstub_example: WARN  mode enabled. Task 0, Core ID 0, Call - 104.
+CPU 1: To enter GDB please press "Ctrl+C"
+W (36947) gdbstub_example: WARN  mode enabled. Task 1, Core ID 1, Call - 6.
+
 Thread 1 received signal SIGINT, Interrupt.
-0x400dff0a in esp_pm_impl_waiti () at C:/esp-idf/components/esp_pm/pm_impl.c:533
-533         asm("waiti 0");
-(gdb) print call_count
-$6 = 108
-(gdb) quit
-A debugging session is active.
-
-        Inferior 1 [Remote target] will be killed.
-
-Quit anyway? (y or n) y
-W (13977) gdbstub_example: WARN  mode enabled. Call - 108. To enter GDB please press "Ctrl+C"
-W (14977) gdbstub_example: WARN  mode enabled. Call - 109. To enter GDB please press "Ctrl+C"
-W (15977) gdbstub_example: WARN  mode enabled. Call - 110. To enter GDB please press "Ctrl+C"
-W (16977) gdbstub_example: WARN  mode enabled. Call - 111. To enter GDB please press "Ctrl+C"
+task4test (param=0x0) at ../main/gdbstub_main.c:38
+38              for (int i=0 ; i< 10000000; i++)
+(gdb)
 ```
 
 To reproduce this scenario run the application by: idf.py -P PORT flash monitor
@@ -121,7 +165,13 @@ Then:
 4. Continue the application by typing in GDB command line "continue"
 5. Interrupt application by pressing Ctrl+C
 6. Check the value by typing in GDB command line "print call_count" or "print update_log_level"
-7. Exit GDB by typing "quit" and then "y"
+7. Continue the application by typing in GDB command line "continue"
+8. Interrupt the application by pressing Ctrl+C
+9. Add breakpoint by typing in GDB command line "break test_point2" or break 40 (break at line 40).
+10. Continue the application by typing in GDB command line "continue"
+11. After application stop at label "test_point2".
+12. Make stepping by typing "si" 
+13. To exit from GDB to monitor type "exit" and press "y"
 
 To exit from monitor please use Ctrl+]
 

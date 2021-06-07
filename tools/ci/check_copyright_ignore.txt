@@ -448,12 +448,7 @@ components/esp_gdbstub/esp32c3/gdbstub_target_config.h
 components/esp_gdbstub/esp32h2/gdbstub_target_config.h
 components/esp_gdbstub/esp32s2/gdbstub_target_config.h
 components/esp_gdbstub/esp32s3/gdbstub_target_config.h
-components/esp_gdbstub/esp_common/gdbstub_common.c
-components/esp_gdbstub/include/esp_gdbstub.h
-components/esp_gdbstub/private_include/esp_gdbstub_common.h
-components/esp_gdbstub/riscv/esp_gdbstub_arch.h
 components/esp_gdbstub/src/packet.c
-components/esp_gdbstub/xtensa/esp_gdbstub_arch.h
 components/esp_hid/include/esp_hid_common.h
 components/esp_hid/include/esp_hidd.h
 components/esp_hid/include/esp_hidd_gatts.h
