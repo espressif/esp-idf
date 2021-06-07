@@ -202,9 +202,14 @@ def action_extensions(base_actions, project_path):
         if gdbgui_port is not None:
             args += ["--port", gdbgui_port]
         gdbgui_out_name = os.path.join(local_dir, GDBGUI_OUT_FILE)
-        gdbgui_out = open(gdbgui_out_name, "a+")
+        gdbgui_out = open(gdbgui_out_name, 'a+')
+        env = os.environ.copy()
+        # The only known solution for https://github.com/cs01/gdbgui/issues/359 is to set the following environment
+        # variable. The greenlet package cannot be downgraded for compatibility with other requirements (gdbgui,
+        # pygdbmi).
+        env['PURE_PYTHON'] = '1'
         try:
-            process = subprocess.Popen(args, stdout=gdbgui_out, stderr=subprocess.STDOUT, bufsize=1)
+            process = subprocess.Popen(args, stdout=gdbgui_out, stderr=subprocess.STDOUT, bufsize=1, env=env)
         except Exception as e:
             print(e)
             raise FatalError("Error starting gdbgui. Please make sure gdbgui can be started", ctx)
