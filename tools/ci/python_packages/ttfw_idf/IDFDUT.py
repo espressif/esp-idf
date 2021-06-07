@@ -29,7 +29,7 @@ import pexpect
 try:
     import Queue as _queue
 except ImportError:
-    import queue as _queue
+    import queue as _queue  # type: ignore
 
 from serial.tools import list_ports
 from tiny_test_fw import DUT, Utility
@@ -531,6 +531,18 @@ class ESP32S2DUT(IDFDUT):
         raise NotImplementedError()
 
 
+class ESP32S3DUT(IDFDUT):
+    TARGET = 'esp32s3'
+    TOOLCHAIN_PREFIX = 'xtensa-esp32s3-elf-'
+
+    @classmethod
+    def _get_rom(cls):
+        return esptool.ESP32S3ROM
+
+    def erase_partition(self, esp, partition):
+        raise NotImplementedError()
+
+
 class ESP32C3DUT(IDFDUT):
     TARGET = 'esp32c3'
     TOOLCHAIN_PREFIX = 'riscv32-esp-elf-'
@@ -556,7 +568,7 @@ class ESP8266DUT(IDFDUT):
 
 
 def get_target_by_rom_class(cls):
-    for c in [ESP32DUT, ESP32S2DUT, ESP32C3DUT, ESP8266DUT, IDFQEMUDUT]:
+    for c in [ESP32DUT, ESP32S2DUT, ESP32S3DUT, ESP32C3DUT, ESP8266DUT, IDFQEMUDUT]:
         if c._get_rom() == cls:
             return c.TARGET
     return None
@@ -652,5 +664,5 @@ class IDFQEMUDUT(IDFDUT):
 
 
 class ESP32QEMUDUT(IDFQEMUDUT):
-    TARGET = 'esp32'
-    TOOLCHAIN_PREFIX = 'xtensa-esp32-elf-'
+    TARGET = 'esp32'  # type: ignore
+    TOOLCHAIN_PREFIX = 'xtensa-esp32-elf-'  # type: ignore
