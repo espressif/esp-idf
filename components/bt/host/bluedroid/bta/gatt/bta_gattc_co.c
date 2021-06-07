@@ -394,6 +394,8 @@ void bta_gattc_co_cache_addr_init(void)
         return;
     }
 
+    memset(cache_env, 0x0, sizeof(cache_env_t));
+
     if ((err_code = nvs_open(cache_addr, NVS_READWRITE, &fp)) == ESP_OK) {
         cache_env->addr_fp = fp;
         cache_env->is_open = TRUE;
