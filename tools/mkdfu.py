@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2020 Espressif Systems (Shanghai) PTE LTD
+# Copyright 2020-2021 Espressif Systems (Shanghai) CO LTD
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,14 +21,18 @@
 # This file must be the first one in the archive. It contains binary structures describing each
 # subsequent file (for example, where the file needs to be flashed/loaded).
 
-from collections import namedtuple
-from future.utils import iteritems
+from __future__ import print_function, unicode_literals
+
 import argparse
 import hashlib
 import json
 import os
 import struct
 import zlib
+from collections import namedtuple
+from functools import partial
+
+from future.utils import iteritems
 
 try:
     import typing
@@ -43,28 +47,28 @@ except ImportError:
     pass
 
 # CPIO ("new ASCII") format related things
-CPIO_MAGIC = b"070701"
-CPIO_STRUCT = b"=6s" + b"8s" * 13
+CPIO_MAGIC = b'070701'
+CPIO_STRUCT = b'=6s' + b'8s' * 13
 CPIOHeader = namedtuple(
-    "CPIOHeader",
+    'CPIOHeader',
     [
-        "magic",
-        "ino",
-        "mode",
-        "uid",
-        "gid",
-        "nlink",
-        "mtime",
-        "filesize",
-        "devmajor",
-        "devminor",
-        "rdevmajor",
-        "rdevminor",
-        "namesize",
-        "check",
+        'magic',
+        'ino',
+        'mode',
+        'uid',
+        'gid',
+        'nlink',
+        'mtime',
+        'filesize',
+        'devmajor',
+        'devminor',
+        'rdevmajor',
+        'rdevminor',
+        'namesize',
+        'check',
     ],
 )
-CPIO_TRAILER = "TRAILER!!!"
+CPIO_TRAILER = 'TRAILER!!!'
 
 
 def make_cpio_header(
@@ -73,7 +77,7 @@ def make_cpio_header(
     """ Returns CPIOHeader for the given file name and file size """
 
     def as_hex(val):  # type: (int) -> bytes
-        return "{:08x}".format(val).encode("ascii")
+        return '{:08x}'.format(val).encode('ascii')
 
     hex_0 = as_hex(0)
     mode = hex_0 if is_trailer else as_hex(0o0100644)
@@ -98,19 +102,17 @@ def make_cpio_header(
 
 # DFU format related things
 # Structure of one entry in dfuinfo0.dat
-DFUINFO_STRUCT = b"<I I 64s 16s"
-DFUInfo = namedtuple("DFUInfo", ["address", "flags", "name", "md5"])
-DFUINFO_FILE = "dfuinfo0.dat"
+DFUINFO_STRUCT = b'<I I 64s 16s'
+DFUInfo = namedtuple('DFUInfo', ['address', 'flags', 'name', 'md5'])
+DFUINFO_FILE = 'dfuinfo0.dat'
 # Structure which gets added at the end of the entire DFU file
-DFUSUFFIX_STRUCT = b"<H H H H 3s B"
+DFUSUFFIX_STRUCT = b'<H H H H 3s B'
 DFUSuffix = namedtuple(
-    "DFUSuffix", ["bcd_device", "pid", "vid", "bcd_dfu", "sig", "len"]
+    'DFUSuffix', ['bcd_device', 'pid', 'vid', 'bcd_dfu', 'sig', 'len']
 )
 ESPRESSIF_VID = 12346
-# TODO: set PID based on the chip type (add a command line argument)
-DFUSUFFIX_DEFAULT = DFUSuffix(0xFFFF, 0xFFFF, ESPRESSIF_VID, 0x0100, b"UFD", 16)
 # This CRC32 gets added after DFUSUFFIX_STRUCT
-DFUCRC_STRUCT = b"<I"
+DFUCRC_STRUCT = b'<I'
 
 
 def dfu_crc(data, crc=0):  # type: (bytes, int) -> int
@@ -119,39 +121,56 @@ def dfu_crc(data, crc=0):  # type: (bytes, int) -> int
     return uint32_max - (zlib.crc32(data, crc) & uint32_max)
 
 
-def pad_bytes(b, multiple, padding=b"\x00"):  # type: (bytes, int, bytes) -> bytes
+def pad_bytes(b, multiple, padding=b'\x00'):  # type: (bytes, int, bytes) -> bytes
     """ Pad 'b' to a length divisible by 'multiple' """
     padded_len = (len(b) + multiple - 1) // multiple * multiple
     return b + padding * (padded_len - len(b))
 
 
 class EspDfuWriter(object):
-    def __init__(self, dest_file):  # type: (typing.BinaryIO) -> None
+    def __init__(self, dest_file, pid, part_size):  # type: (typing.BinaryIO, int, int) -> None
         self.dest = dest_file
+        self.pid = pid
+        self.part_size = part_size
         self.entries = []  # type: typing.List[bytes]
         self.index = []  # type: typing.List[DFUInfo]
 
     def add_file(self, flash_addr, path):  # type: (int, str) -> None
-        """ Add file to be written into flash at given address """
-        with open(path, "rb") as f:
-            self._add_cpio_flash_entry(os.path.basename(path), flash_addr, f.read())
+        """
+        Add file to be written into flash at given address
+
+        Files are split up into chunks in order avoid timing-out during erasing large regions. Instead of adding
+        "app.bin" at flash_addr it will add:
+        1. app.bin   at flash_addr  # sizeof(app.bin) == self.part_size
+        2. app.bin.1 at flash_addr + self.part_size
+        3. app.bin.2 at flash_addr + 2 * self.part_size
+        ...
+
+        """
+        f_name = os.path.basename(path)
+        with open(path, 'rb') as f:
+            for i, chunk in enumerate(iter(partial(f.read, self.part_size), b'')):
+                n = f_name if i == 0 else '.'.join([f_name, str(i)])
+                self._add_cpio_flash_entry(n, flash_addr, chunk)
+                flash_addr += len(chunk)
 
     def finish(self):  # type: () -> None
         """ Write DFU file """
         # Prepare and add dfuinfo0.dat file
-        dfuinfo = b"".join([struct.pack(DFUINFO_STRUCT, *item) for item in self.index])
+        dfuinfo = b''.join([struct.pack(DFUINFO_STRUCT, *item) for item in self.index])
         self._add_cpio_entry(DFUINFO_FILE, dfuinfo, first=True)
 
         # Add CPIO archive trailer
-        self._add_cpio_entry(CPIO_TRAILER, b"", trailer=True)
+        self._add_cpio_entry(CPIO_TRAILER, b'', trailer=True)
 
         # Combine all the entries and pad the file
-        out_data = b"".join(self.entries)
+        out_data = b''.join(self.entries)
         cpio_block_size = 10240
         out_data = pad_bytes(out_data, cpio_block_size)
 
         # Add DFU suffix and CRC
-        out_data += struct.pack(DFUSUFFIX_STRUCT, *DFUSUFFIX_DEFAULT)
+        dfu_suffix = DFUSuffix(0xFFFF, self.pid, ESPRESSIF_VID, 0x0100, b'UFD', 16)
+        out_data += struct.pack(DFUSUFFIX_STRUCT, *dfu_suffix)
         out_data += struct.pack(DFUCRC_STRUCT, dfu_crc(out_data))
 
         # Finally write the entire binary
@@ -166,7 +185,7 @@ class EspDfuWriter(object):
             DFUInfo(
                 address=flash_addr,
                 flags=0,
-                name=filename.encode("utf-8"),
+                name=filename.encode('utf-8'),
                 md5=md5.digest(),
             )
         )
@@ -175,7 +194,7 @@ class EspDfuWriter(object):
     def _add_cpio_entry(
         self, filename, data, first=False, trailer=False
     ):  # type: (str, bytes, bool, bool) -> None
-        filename_b = filename.encode("utf-8") + b"\x00"
+        filename_b = filename.encode('utf-8') + b'\x00'
         cpio_header = make_cpio_header(len(filename_b), len(data), is_trailer=trailer)
         entry = pad_bytes(
             struct.pack(CPIO_STRUCT, *cpio_header) + filename_b, 4
@@ -186,30 +205,41 @@ class EspDfuWriter(object):
             self.entries.insert(0, entry)
 
 
-def action_write(args):
-    writer = EspDfuWriter(args['output_file'])
+def action_write(args):  # type: (typing.Mapping[str, typing.Any]) -> None
+    writer = EspDfuWriter(args['output_file'], args['pid'], args['part_size'])
     for addr, f in args['files']:
         print('Adding {} at {:#x}'.format(f, addr))
         writer.add_file(addr, f)
     writer.finish()
     print('"{}" has been written. You may proceed with DFU flashing.'.format(args['output_file'].name))
+    if args['part_size'] % (4 * 1024) != 0:
+        print('WARNING: Partition size of DFU is not multiple of 4k (4096). You might get unexpected behavior.')
 
 
 def main():
     parser = argparse.ArgumentParser()
 
     # Provision to add "info" command
-    subparsers = parser.add_subparsers(dest="command")
-    write_parser = subparsers.add_parser("write")
-    write_parser.add_argument("-o", "--output-file",
+    subparsers = parser.add_subparsers(dest='command')
+    write_parser = subparsers.add_parser('write')
+    write_parser.add_argument('-o', '--output-file',
                               help='Filename for storing the output DFU image',
                               required=True,
-                              type=argparse.FileType("wb"))
-    write_parser.add_argument("--json",
+                              type=argparse.FileType('wb'))
+    write_parser.add_argument('--pid',
+                              required=False,  # This ESP-IDF release supports one compatible target only
+                              default=2,  # ESP32-S2
+                              type=lambda h: int(h, 16),
+                              help='Hexa-decimal product indentificator')
+    write_parser.add_argument('--json',
                               help='Optional file for loading "flash_files" dictionary with <address> <file> items')
-    write_parser.add_argument("files",
-                              metavar="<address> <file>", help='Add <file> at <address>',
-                              nargs="*")
+    write_parser.add_argument('--part-size',
+                              default=os.environ.get('ESP_DFU_PART_SIZE', 512 * 1024),
+                              type=lambda x: int(x, 0),
+                              help='Larger files are split-up into smaller partitions of this size')
+    write_parser.add_argument('files',
+                              metavar='<address> <file>', help='Add <file> at <address>',
+                              nargs='*')
 
     args = parser.parse_args()
 
@@ -236,16 +266,18 @@ def main():
             files += [(int(addr, 0),
                        process_json_file(f_name)) for addr, f_name in iteritems(json.load(f)['flash_files'])]
 
-    files = sorted([(addr, f_name) for addr, f_name in iteritems(dict(files))],
+    files = sorted([(addr, f_name.decode('utf-8') if isinstance(f_name, type(b'')) else f_name) for addr, f_name in iteritems(dict(files))],
                    key=lambda x: x[0])  # remove possible duplicates and sort based on the address
 
     cmd_args = {'output_file': args.output_file,
                 'files': files,
+                'pid': args.pid,
+                'part_size': args.part_size,
                 }
 
     {'write': action_write
      }[args.command](cmd_args)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

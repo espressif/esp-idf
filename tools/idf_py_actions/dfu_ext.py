@@ -6,9 +6,9 @@ def action_extensions(base_actions, project_path):
 
     SUPPORTED_TARGETS = ['esp32s2']
 
-    def dfu_target(target_name, ctx, args):
+    def dfu_target(target_name, ctx, args, part_size):
         ensure_build_directory(args, ctx.info_name)
-        run_target(target_name, args)
+        run_target(target_name, args, {'ESP_DFU_PART_SIZE': part_size} if part_size else {})
 
     def dfu_flash_target(target_name, ctx, args):
         ensure_build_directory(args, ctx.info_name)
@@ -22,16 +22,24 @@ def action_extensions(base_actions, project_path):
             raise
 
     dfu_actions = {
-        "actions": {
-            "dfu": {
-                "callback": dfu_target,
-                "short_help": "Build the DFU binary",
-                "dependencies": ["all"],
+        'actions': {
+            'dfu': {
+                'callback': dfu_target,
+                'short_help': 'Build the DFU binary',
+                'dependencies': ['all'],
+                'options': [
+                    {
+                        'names': ['--part-size'],
+                        'help': 'Large files are split up into smaller partitions in order to avoid timeout during '
+                                'erasing flash. This option allows to overwrite the default partition size of '
+                                'mkdfu.py.'
+                    }
+                ],
             },
-            "dfu-flash": {
-                "callback": dfu_flash_target,
-                "short_help": "Flash the DFU binary",
-                "order_dependencies": ["dfu"],
+            'dfu-flash': {
+                'callback': dfu_flash_target,
+                'short_help': 'Flash the DFU binary',
+                'order_dependencies': ['dfu'],
             },
         }
     }
