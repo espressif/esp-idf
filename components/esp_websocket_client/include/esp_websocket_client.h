@@ -89,9 +89,9 @@ typedef struct {
     const char                  *client_key;                /*!< Pointer to private key data in PEM or DER format for SSL mutual authentication, default is NULL, not required if mutual authentication is not needed. If it is not NULL, also `client_cert` has to be provided. PEM-format must have a terminating NULL-character. DER-format requires the length to be passed in client_key_len */
     size_t                      client_key_len;             /*!< Length of the buffer pointed to by client_key_pem. May be 0 for null-terminated pem */
     esp_websocket_transport_t   transport;                  /*!< Websocket transport type, see `esp_websocket_transport_t */
-    char                        *subprotocol;               /*!< Websocket subprotocol */
-    char                        *user_agent;                /*!< Websocket user-agent */
-    char                        *headers;                   /*!< Websocket additional headers */
+    const char                  *subprotocol;               /*!< Websocket subprotocol */
+    const char                  *user_agent;                /*!< Websocket user-agent */
+    const char                  *headers;                   /*!< Websocket additional headers */
     int                         pingpong_timeout_sec;       /*!< Period before connection is aborted due to no PONGs received */
     bool                        disable_pingpong_discon;    /*!< Disable auto-disconnect due to no PONG received within pingpong_timeout_sec */
     bool                        use_global_ca_store;        /*!< Use a global ca_store for all the connections in which this bool is set. */
