@@ -237,7 +237,6 @@ menu "mbedTLS"
 
     config MBEDTLS_HARDWARE_AES
         bool "Enable hardware AES acceleration"
-        default n if IDF_TARGET_ESP32S3
         default y
         depends on !SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST
         help
@@ -270,7 +269,6 @@ menu "mbedTLS"
 
     config MBEDTLS_HARDWARE_MPI
         bool "Enable hardware MPI (bignum) acceleration"
-        default n if IDF_TARGET_ESP32S3
         default y
         depends on !SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST
         help
@@ -283,7 +281,6 @@ menu "mbedTLS"
 
     config MBEDTLS_HARDWARE_SHA
         bool "Enable hardware SHA acceleration"
-        default n if IDF_TARGET_ESP32S3
         default y
         depends on !SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST
         help

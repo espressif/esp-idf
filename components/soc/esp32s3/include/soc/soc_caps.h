@@ -167,12 +167,6 @@
 #define SOC_SHA_SUPPORT_SHA512_256      (1)
 #define SOC_SHA_SUPPORT_SHA512_T        (1)
 
-/* Supported HW algorithms */
-#define SOC_SHA_SUPPORT_SHA1            (1)
-#define SOC_SHA_SUPPORT_SHA256          (1)
-#define SOC_SHA_SUPPORT_SHA384          (1)
-#define SOC_SHA_SUPPORT_SHA512          (1)
-
 
 /*--------------------------- RSA CAPS ---------------------------------------*/
 #define SOC_RSA_MAX_BIT_LEN    (4096)
@@ -181,6 +175,13 @@
 /*-------------------------- AES CAPS -----------------------------------------*/
 #define SOC_AES_SUPPORT_DMA     (1)
 
+/* Has a centralized DMA, which is shared with all peripherals */
+#define SOC_AES_GDMA            (1)
+
+#define SOC_AES_SUPPORT_AES_128 (1)
+#define SOC_AES_SUPPORT_AES_256 (1)
+
+
 /*-------------------------- Power Management CAPS ---------------------------*/
 #define SOC_PM_SUPPORT_EXT_WAKEUP       (1)
 
@@ -188,19 +189,10 @@
 
 #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
 
-/* Has a centralized DMA, which is shared with all peripherals */
-#define SOC_AES_GDMA            (1)
-
-#define SOC_AES_SUPPORT_AES_128 (1)
-#define SOC_AES_SUPPORT_AES_256 (1)
 
 /*-------------------------- Flash Encryption CAPS----------------------------*/
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (64)
 
-// Attention: These fixed DMA channels are temporarily workaround before we have a centralized DMA controller API to help alloc the channel dynamically
-// Remove them when GDMA driver API is ready
-#define SOC_GDMA_SHA_DMA_CHANNEL  (3)
-#define SOC_GDMA_AES_DMA_CHANNEL  (4)
 
 /*-------------------------- WI-FI HARDWARE TSF CAPS -------------------------------*/
 #define SOC_WIFI_HW_TSF                 (1)
