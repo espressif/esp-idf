@@ -219,6 +219,35 @@ Linux and macOS
     cd ~/esp/esp-idf
     ./install.sh
 
+Alternative File Downloads
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The tools installer downloads a number of files attached to GitHub Releases. If accessing GitHub is slow then it is possible to set an environment variable to prefer Espressif's download server for GitHub asset downloads.
+
+.. note:: This setting only controls individual tools downloaded from GitHub releases, it doesn't change the URLs used to access any Git repositories.
+
+Windows
+-------
+
+To prefer the Espressif download server when running the ESP-IDF Tools Installer or installing tools from the command line, open the System control panel, then click on Advanced Settings. Add a new Environment Variable (of type either User or System) with the name ``IDF_GITHUB_ASSETS`` and value ``dl.espressif.com/github_assets``. Click OK once done.
+
+If the command line window or ESP-IDF Tools Installer window was already open before you added the new environment variable, you will need to close and reopen it.
+
+While this environment variable is still set, the ESP-IDF Tools Installer and the command line installer will prefer the Espressif download server.
+
+.. Once the ESP-IDF Tools Installer binary is updated to include the checkbox, the above can be rewritten to refer to it
+
+Linux and macOS
+---------------
+
+To prefer the Espressif download server when installing tools, use the following sequence of commands when running ``install.sh``:
+
+.. code-block:: bash
+
+    cd ~/esp/esp-idf
+    export IDF_GITHUB_ASSETS="dl.espressif.com/github_assets"
+    ./install.sh
+
 Customizing the tools installation path
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

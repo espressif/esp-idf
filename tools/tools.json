@@ -24,34 +24,34 @@
           "linux-amd64": {
             "sha256": "674080a12f9c5ebe5a3a5ce51c6deaeffe6dfb06d6416233df86f25b574e9279",
             "size": 85731226,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_4_0-esp-2020r3-linux-amd64.tar.gz"
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2020r3/xtensa-esp32-elf-gcc8_4_0-esp-2020r3-linux-amd64.tar.gz"
           },
           "linux-armel": {
             "sha256": "6771e011dffa2438ef84ff3474538b4a69df8f9d4cfae3b3707ca31c782ed7db",
             "size": 83888892,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_4_0-esp-2020r3-linux-armel.tar.gz"
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2020r3/xtensa-esp32-elf-gcc8_4_0-esp-2020r3-linux-armel.tar.gz"
           },
           "linux-i686": {
             "sha256": "076b7e05304e26aa6ec105c9e0dc74addca079bc2cae6e42ee7575c5ded29877",
             "size": 87715092,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_4_0-esp-2020r3-linux-i686.tar.gz"
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2020r3/xtensa-esp32-elf-gcc8_4_0-esp-2020r3-linux-i686.tar.gz"
           },
           "macos": {
             "sha256": "6845f786303b26c4a55ede57487ba65bd25737232fe6104be03f25bb62f4631c",
             "size": 92424226,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_4_0-esp-2020r3-macos.tar.gz"
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2020r3/xtensa-esp32-elf-gcc8_4_0-esp-2020r3-macos.tar.gz"
           },
           "name": "esp-2020r3-8.4.0",
           "status": "recommended",
           "win32": {
             "sha256": "81cecd5493a3fcf2118977f3fd60bd0a13a4aeac8fe6760d912f96d2c34fab66",
             "size": 104226379,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_4_0-esp-2020r3-win32.zip"
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2020r3/xtensa-esp32-elf-gcc8_4_0-esp-2020r3-win32.zip"
           },
           "win64": {
             "sha256": "58419852fefb7111fdec056ac2fd7c4bd09c1f4c17610a761a97b788413527cf",
             "size": 106855139,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_4_0-esp-2020r3-win64.zip"
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2020r3/xtensa-esp32-elf-gcc8_4_0-esp-2020r3-win64.zip"
           }
         }
       ]
@@ -80,34 +80,34 @@
           "linux-amd64": {
             "sha256": "40fafa47045167feda0cd07827db5207ebfeb4a3b6b24475957a921bc92805ed",
             "size": 86069526,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32s2-elf-gcc8_4_0-esp-2020r3-linux-amd64.tar.gz"
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2020r3/xtensa-esp32s2-elf-gcc8_4_0-esp-2020r3-linux-amd64.tar.gz"
           },
           "linux-armel": {
             "sha256": "6c1efec4c7829202279388ccb388e8a17a34464bc351d677c4f04d95ea4b4ce0",
             "size": 84254468,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32s2-elf-gcc8_4_0-esp-2020r3-linux-armel.tar.gz"
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2020r3/xtensa-esp32s2-elf-gcc8_4_0-esp-2020r3-linux-armel.tar.gz"
           },
           "linux-i686": {
             "sha256": "bd3a91166206a1a7ff7c572e15389e1938c3cdce588032a5e915be677a945638",
             "size": 88053499,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32s2-elf-gcc8_4_0-esp-2020r3-linux-i686.tar.gz"
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2020r3/xtensa-esp32s2-elf-gcc8_4_0-esp-2020r3-linux-i686.tar.gz"
           },
           "macos": {
             "sha256": "fe19b0c873879d8d89ec040f4db04a3ab27d769d3fd5f55fe59a28b6b111d09c",
             "size": 92817351,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32s2-elf-gcc8_4_0-esp-2020r3-macos.tar.gz"
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2020r3/xtensa-esp32s2-elf-gcc8_4_0-esp-2020r3-macos.tar.gz"
           },
           "name": "esp-2020r3-8.4.0",
           "status": "recommended",
           "win32": {
             "sha256": "d078d614ae864ae4a37fcb5b83323af0a5cfdbd8243607664becdd0f977a1e33",
             "size": 104659541,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32s2-elf-gcc8_4_0-esp-2020r3-win32.zip"
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2020r3/xtensa-esp32s2-elf-gcc8_4_0-esp-2020r3-win32.zip"
           },
           "win64": {
             "sha256": "6ea78b72ec52330b69af91dbe6c77c22bdc827817f044aa30306270453032bb4",
             "size": 107228353,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32s2-elf-gcc8_4_0-esp-2020r3-win64.zip"
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2020r3/xtensa-esp32s2-elf-gcc8_4_0-esp-2020r3-win64.zip"
           }
         }
       ]

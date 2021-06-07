@@ -30,7 +30,15 @@ The easiest way to install ESP-IDF's prerequisites is to download the ESP-IDF To
 
 https://dl.espressif.com/dl/esp-idf-tools-setup-2.3.exe
 
-The installer includes the cross-compilers, OpenOCD, cmake_ and Ninja_ build tool. The installer can also download and run installers for Python_ 3.7 and `Git For Windows`_ if they are not already installed on the computer.
+.. IMPORTANT: Next time this link is updated, please go to get-started/index.rst and rewrite the section under "Alternative File Downloads ... Windows". Then delete this comment.
+
+The installer includes the cross-compilers, OpenOCD, CMake_ and Ninja_ build tool. The installer can also download and run installers for Python_ 3.7 and `Git For Windows`_ if they are not already installed on the computer.
+
+The installer also offers to download one of the ESP-IDF release versions. Please choose a directory for downloading ESP-IDF. The recommended directory is ``%userprofile%\esp`` where ``%userprofile%`` is your home directory. If you do not have it yet, please run the following command to create a new one:
+
+.. code-block:: batch
+
+    mkdir %userprofile%\esp
 
 The installer also offers to download one of the ESP-IDF release versions.
 
@@ -64,7 +72,7 @@ For advanced users who want to customize the install process:
 
 
 .. _MSYS2: https://www.msys2.org/
-.. _cmake: https://cmake.org/download/
+.. _CMake: https://cmake.org/download/
 .. _ninja: https://ninja-build.org/
 .. _Python: https://www.python.org/downloads/windows/
 .. _Git for Windows: https://gitforwindows.org/
