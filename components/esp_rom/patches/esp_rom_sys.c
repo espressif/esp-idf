@@ -18,12 +18,6 @@
 
 #include "sdkconfig.h"
 
-#ifdef CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/rtc.h"
-#endif
-
 IRAM_ATTR void esp_rom_install_channel_putc(int channel, void (*putc)(char c))
 {
     extern void ets_install_putc1(void (*p)(char c));

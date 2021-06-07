@@ -6,11 +6,6 @@ idf_build_get_property(python PYTHON)
 idf_build_get_property(idf_path IDF_PATH)
 
 set(chip_model ${target})
-if(target STREQUAL "esp32s3")
-    if(CONFIG_IDF_TARGET_ESP32S3_BETA_VERSION_3)
-        set(chip_model "esp32s3beta3")
-    endif()
-endif()
 
 set(ESPTOOLPY ${python} "$ENV{ESPTOOL_WRAPPER}" "${CMAKE_CURRENT_LIST_DIR}/esptool/esptool.py" --chip ${chip_model})
 set(ESPSECUREPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espsecure.py")

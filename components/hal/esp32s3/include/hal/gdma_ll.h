@@ -48,17 +48,21 @@ extern "C" {
 #define GDMA_LL_EVENT_RX_SUC_EOF     (1<<1)
 #define GDMA_LL_EVENT_RX_DONE        (1<<0)
 
+/* Memory block size value supported by TX channel */
+#define GDMA_LL_OUT_EXT_MEM_BK_SIZE_16B (0)
+#define GDMA_LL_OUT_EXT_MEM_BK_SIZE_32B (1)
+
 ///////////////////////////////////// Common /////////////////////////////////////////
 /**
  * @brief Enable DMA channel M2M mode (TX channel n forward data to RX channel n), disabled by default
  */
 static inline void gdma_ll_enable_m2m_mode(gdma_dev_t *dev, uint32_t channel, bool enable)
 {
-    dev->in[channel].conf0.mem_trans_en = enable;
+    dev->channel[channel].in.conf0.mem_trans_en = enable;
     if (enable) {
         // to enable m2m mode, the tx chan has to be the same to rx chan, and set to a valid value
-        dev->in[channel].peri_sel.sel = 0;
-        dev->out[channel].peri_sel.sel = 0;
+        dev->channel[channel].in.peri_sel.sel = 0;
+        dev->channel[channel].out.peri_sel.sel = 0;
     }
 }
 
@@ -76,7 +80,7 @@ static inline void gdma_ll_enable_clock(gdma_dev_t *dev, bool enable)
  */
 static inline uint32_t gdma_ll_rx_get_interrupt_status(gdma_dev_t *dev, uint32_t channel)
 {
-    return dev->in[channel].int_st.val;
+    return dev->channel[channel].in.int_st.val;
 }
 
 /**
@@ -85,9 +89,9 @@ static inline uint32_t gdma_ll_rx_get_interrupt_status(gdma_dev_t *dev, uint32_t
 static inline void gdma_ll_rx_enable_interrupt(gdma_dev_t *dev, uint32_t channel, uint32_t mask, bool enable)
 {
     if (enable) {
-        dev->in[channel].int_ena.val |= mask;
+        dev->channel[channel].in.int_ena.val |= mask;
     } else {
-        dev->in[channel].int_ena.val &= ~mask;
+        dev->channel[channel].in.int_ena.val &= ~mask;
     }
 }
 
@@ -96,7 +100,7 @@ static inline void gdma_ll_rx_enable_interrupt(gdma_dev_t *dev, uint32_t channel
  */
 static inline void gdma_ll_rx_clear_interrupt_status(gdma_dev_t *dev, uint32_t channel, uint32_t mask)
 {
-    dev->in[channel].int_clr.val = mask;
+    dev->channel[channel].in.int_clr.val = mask;
 }
 
 /**
@@ -104,7 +108,7 @@ static inline void gdma_ll_rx_clear_interrupt_status(gdma_dev_t *dev, uint32_t c
  */
 static inline volatile void *gdma_ll_rx_get_interrupt_status_reg(gdma_dev_t *dev, uint32_t channel)
 {
-    return (volatile void *)(&dev->in[channel].int_st);
+    return (volatile void *)(&dev->channel[channel].in.int_st);
 }
 
 /**
@@ -112,7 +116,7 @@ static inline volatile void *gdma_ll_rx_get_interrupt_status_reg(gdma_dev_t *dev
  */
 static inline void gdma_ll_rx_enable_owner_check(gdma_dev_t *dev, uint32_t channel, bool enable)
 {
-    dev->in[channel].conf1.in_check_owner = enable;
+    dev->channel[channel].in.conf1.in_check_owner = enable;
 }
 
 /**
@@ -120,7 +124,7 @@ static inline void gdma_ll_rx_enable_owner_check(gdma_dev_t *dev, uint32_t chann
  */
 static inline void gdma_ll_rx_enable_data_burst(gdma_dev_t *dev, uint32_t channel, bool enable)
 {
-    dev->in[channel].conf0.in_data_burst_en = enable;
+    dev->channel[channel].in.conf0.in_data_burst_en = enable;
 }
 
 /**
@@ -128,7 +132,7 @@ static inline void gdma_ll_rx_enable_data_burst(gdma_dev_t *dev, uint32_t channe
  */
 static inline void gdma_ll_rx_enable_descriptor_burst(gdma_dev_t *dev, uint32_t channel, bool enable)
 {
-    dev->in[channel].conf0.indscr_burst_en = enable;
+    dev->channel[channel].in.conf0.indscr_burst_en = enable;
 }
 
 /**
@@ -136,8 +140,8 @@ static inline void gdma_ll_rx_enable_descriptor_burst(gdma_dev_t *dev, uint32_t 
  */
 static inline void gdma_ll_rx_reset_channel(gdma_dev_t *dev, uint32_t channel)
 {
-    dev->in[channel].conf0.in_rst = 1;
-    dev->in[channel].conf0.in_rst = 0;
+    dev->channel[channel].in.conf0.in_rst = 1;
+    dev->channel[channel].in.conf0.in_rst = 0;
 }
 
 /**
@@ -146,7 +150,7 @@ static inline void gdma_ll_rx_reset_channel(gdma_dev_t *dev, uint32_t channel)
  */
 static inline void gdma_ll_rx_set_block_size_psram(gdma_dev_t *dev, uint32_t channel, uint32_t size_index)
 {
-    dev->in[channel].conf1.in_ext_mem_bk_size = size_index;
+    dev->channel[channel].in.conf1.in_ext_mem_bk_size = size_index;
 }
 
 /**
@@ -154,7 +158,7 @@ static inline void gdma_ll_rx_set_block_size_psram(gdma_dev_t *dev, uint32_t cha
  */
 static inline void gdma_ll_rx_set_water_mark(gdma_dev_t *dev, uint32_t channel, uint32_t water_mark)
 {
-    dev->in[channel].conf1.dma_infifo_full_thrs = water_mark;
+    dev->channel[channel].in.conf1.dma_infifo_full_thrs = water_mark;
 }
 
 /**
@@ -163,7 +167,7 @@ static inline void gdma_ll_rx_set_water_mark(gdma_dev_t *dev, uint32_t channel, 
  */
 static inline bool gdma_ll_rx_is_fifo_full(gdma_dev_t *dev, uint32_t channel, uint32_t fifo_level)
 {
-    return dev->in[channel].infifo_status.val & (1 << 2 * (fifo_level - 1));
+    return dev->channel[channel].in.infifo_status.val & (1 << 2 * (fifo_level - 1));
 }
 
 /**
@@ -172,7 +176,7 @@ static inline bool gdma_ll_rx_is_fifo_full(gdma_dev_t *dev, uint32_t channel, ui
  */
 static inline bool gdma_ll_rx_is_fifo_empty(gdma_dev_t *dev, uint32_t channel, uint32_t fifo_level)
 {
-    return dev->in[channel].infifo_status.val & (1 << (2 * (fifo_level - 1) + 1));
+    return dev->channel[channel].in.infifo_status.val & (1 << (2 * (fifo_level - 1) + 1));
 }
 
 /**
@@ -183,11 +187,11 @@ static inline uint32_t gdma_ll_rx_get_fifo_bytes(gdma_dev_t *dev, uint32_t chann
 {
     switch (fifo_level) {
     case 1:
-        return dev->in[channel].infifo_status.infifo_cnt_l1;
+        return dev->channel[channel].in.infifo_status.infifo_cnt_l1;
     case 2:
-        return dev->in[channel].infifo_status.infifo_cnt_l2;
+        return dev->channel[channel].in.infifo_status.infifo_cnt_l2;
     case 3:
-        return dev->in[channel].infifo_status.infifo_cnt_l3;
+        return dev->channel[channel].in.infifo_status.infifo_cnt_l3;
     }
 }
 
@@ -196,8 +200,8 @@ static inline uint32_t gdma_ll_rx_get_fifo_bytes(gdma_dev_t *dev, uint32_t chann
  */
 static inline uint32_t gdma_ll_rx_pop_data(gdma_dev_t *dev, uint32_t channel)
 {
-    dev->in[channel].pop.infifo_pop = 1;
-    return dev->in[channel].pop.infifo_rdata;
+    dev->channel[channel].in.pop.infifo_pop = 1;
+    return dev->channel[channel].in.pop.infifo_rdata;
 }
 
 /**
@@ -205,7 +209,7 @@ static inline uint32_t gdma_ll_rx_pop_data(gdma_dev_t *dev, uint32_t channel)
  */
 static inline void gdma_ll_rx_set_desc_addr(gdma_dev_t *dev, uint32_t channel, uint32_t addr)
 {
-    dev->in[channel].link.addr = addr;
+    dev->channel[channel].in.link.addr = addr;
 }
 
 /**
@@ -213,7 +217,7 @@ static inline void gdma_ll_rx_set_desc_addr(gdma_dev_t *dev, uint32_t channel, u
  */
 static inline void gdma_ll_rx_start(gdma_dev_t *dev, uint32_t channel)
 {
-    dev->in[channel].link.start = 1;
+    dev->channel[channel].in.link.start = 1;
 }
 
 /**
@@ -221,7 +225,7 @@ static inline void gdma_ll_rx_start(gdma_dev_t *dev, uint32_t channel)
  */
 static inline void gdma_ll_rx_stop(gdma_dev_t *dev, uint32_t channel)
 {
-    dev->in[channel].link.stop = 1;
+    dev->channel[channel].in.link.stop = 1;
 }
 
 /**
@@ -229,7 +233,7 @@ static inline void gdma_ll_rx_stop(gdma_dev_t *dev, uint32_t channel)
  */
 static inline void gdma_ll_rx_restart(gdma_dev_t *dev, uint32_t channel)
 {
-    dev->in[channel].link.restart = 1;
+    dev->channel[channel].in.link.restart = 1;
 }
 
 /**
@@ -237,7 +241,7 @@ static inline void gdma_ll_rx_restart(gdma_dev_t *dev, uint32_t channel)
  */
 static inline void gdma_ll_rx_enable_auto_return(gdma_dev_t *dev, uint32_t channel, bool enable)
 {
-    dev->in[channel].link.auto_ret = enable;
+    dev->channel[channel].in.link.auto_ret = enable;
 }
 
 /**
@@ -245,7 +249,7 @@ static inline void gdma_ll_rx_enable_auto_return(gdma_dev_t *dev, uint32_t chann
  */
 static inline bool gdma_ll_rx_is_fsm_idle(gdma_dev_t *dev, uint32_t channel)
 {
-    return dev->in[channel].link.park;
+    return dev->channel[channel].in.link.park;
 }
 
 /**
@@ -253,7 +257,7 @@ static inline bool gdma_ll_rx_is_fsm_idle(gdma_dev_t *dev, uint32_t channel)
  */
 static inline uint32_t gdma_ll_rx_get_success_eof_desc_addr(gdma_dev_t *dev, uint32_t channel)
 {
-    return dev->in[channel].suc_eof_des_addr;
+    return dev->channel[channel].in.suc_eof_des_addr;
 }
 
 /**
@@ -261,7 +265,7 @@ static inline uint32_t gdma_ll_rx_get_success_eof_desc_addr(gdma_dev_t *dev, uin
  */
 static inline uint32_t gdma_ll_rx_get_error_eof_desc_addr(gdma_dev_t *dev, uint32_t channel)
 {
-    return dev->in[channel].err_eof_des_addr;
+    return dev->channel[channel].in.err_eof_des_addr;
 }
 
 /**
@@ -269,7 +273,7 @@ static inline uint32_t gdma_ll_rx_get_error_eof_desc_addr(gdma_dev_t *dev, uint3
  */
 static inline uint32_t gdma_ll_rx_get_current_desc_addr(gdma_dev_t *dev, uint32_t channel)
 {
-    return dev->in[channel].dscr;
+    return dev->channel[channel].in.dscr;
 }
 
 /**
@@ -277,7 +281,7 @@ static inline uint32_t gdma_ll_rx_get_current_desc_addr(gdma_dev_t *dev, uint32_
  */
 static inline void gdma_ll_rx_set_weight(gdma_dev_t *dev, uint32_t channel, uint32_t weight)
 {
-    dev->in[channel].wight.rx_weight = weight;
+    dev->channel[channel].in.wight.rx_weight = weight;
 }
 
 /**
@@ -285,7 +289,7 @@ static inline void gdma_ll_rx_set_weight(gdma_dev_t *dev, uint32_t channel, uint
  */
 static inline void gdma_ll_rx_set_priority(gdma_dev_t *dev, uint32_t channel, uint32_t prio)
 {
-    dev->in[channel].pri.rx_pri = prio;
+    dev->channel[channel].in.pri.rx_pri = prio;
 }
 
 /**
@@ -293,7 +297,7 @@ static inline void gdma_ll_rx_set_priority(gdma_dev_t *dev, uint32_t channel, ui
  */
 static inline void gdma_ll_rx_connect_to_periph(gdma_dev_t *dev, uint32_t channel, int periph_id)
 {
-    dev->in[channel].peri_sel.sel = periph_id;
+    dev->channel[channel].in.peri_sel.sel = periph_id;
 }
 
 /**
@@ -304,7 +308,7 @@ static inline void gdma_ll_rx_connect_to_periph(gdma_dev_t *dev, uint32_t channe
 static inline void gdma_ll_rx_extend_l2_fifo_size_to(gdma_dev_t *dev, uint32_t channel, uint32_t size_in_bytes)
 {
     if (size_in_bytes > SOC_GDMA_L2_FIFO_BASE_SIZE) {
-        dev->in[channel].sram_size.in_size = (size_in_bytes - SOC_GDMA_L2_FIFO_BASE_SIZE) / 8;
+        dev->sram_size[channel].in.in_size = (size_in_bytes - SOC_GDMA_L2_FIFO_BASE_SIZE) / 8;
     }
 }
 
@@ -315,7 +319,7 @@ static inline void gdma_ll_rx_extend_l2_fifo_size_to(gdma_dev_t *dev, uint32_t c
  */
 static inline uint32_t gdma_ll_tx_get_interrupt_status(gdma_dev_t *dev, uint32_t channel)
 {
-    return dev->out[channel].int_st.val;
+    return dev->channel[channel].out.int_st.val;
 }
 
 /**
@@ -324,9 +328,9 @@ static inline uint32_t gdma_ll_tx_get_interrupt_status(gdma_dev_t *dev, uint32_t
 static inline void gdma_ll_tx_enable_interrupt(gdma_dev_t *dev, uint32_t channel, uint32_t mask, bool enable)
 {
     if (enable) {
-        dev->out[channel].int_ena.val |= mask;
+        dev->channel[channel].out.int_ena.val |= mask;
     } else {
-        dev->out[channel].int_ena.val &= ~mask;
+        dev->channel[channel].out.int_ena.val &= ~mask;
     }
 }
 
@@ -335,7 +339,7 @@ static inline void gdma_ll_tx_enable_interrupt(gdma_dev_t *dev, uint32_t channel
  */
 static inline void gdma_ll_tx_clear_interrupt_status(gdma_dev_t *dev, uint32_t channel, uint32_t mask)
 {
-    dev->out[channel].int_clr.val = mask;
+    dev->channel[channel].out.int_clr.val = mask;
 }
 
 /**
@@ -343,7 +347,7 @@ static inline void gdma_ll_tx_clear_interrupt_status(gdma_dev_t *dev, uint32_t c
  */
 static inline volatile void *gdma_ll_tx_get_interrupt_status_reg(gdma_dev_t *dev, uint32_t channel)
 {
-    return (volatile void *)(&dev->out[channel].int_st);
+    return (volatile void *)(&dev->channel[channel].out.int_st);
 }
 
 /**
@@ -351,7 +355,7 @@ static inline volatile void *gdma_ll_tx_get_interrupt_status_reg(gdma_dev_t *dev
  */
 static inline void gdma_ll_tx_enable_owner_check(gdma_dev_t *dev, uint32_t channel, bool enable)
 {
-    dev->out[channel].conf1.out_check_owner = enable;
+    dev->channel[channel].out.conf1.out_check_owner = enable;
 }
 
 /**
@@ -359,7 +363,7 @@ static inline void gdma_ll_tx_enable_owner_check(gdma_dev_t *dev, uint32_t chann
  */
 static inline void gdma_ll_tx_enable_data_burst(gdma_dev_t *dev, uint32_t channel, bool enable)
 {
-    dev->out[channel].conf0.out_data_burst_en = enable;
+    dev->channel[channel].out.conf0.out_data_burst_en = enable;
 }
 
 /**
@@ -367,7 +371,7 @@ static inline void gdma_ll_tx_enable_data_burst(gdma_dev_t *dev, uint32_t channe
  */
 static inline void gdma_ll_tx_enable_descriptor_burst(gdma_dev_t *dev, uint32_t channel, bool enable)
 {
-    dev->out[channel].conf0.outdscr_burst_en = enable;
+    dev->channel[channel].out.conf0.outdscr_burst_en = enable;
 }
 
 /**
@@ -375,7 +379,7 @@ static inline void gdma_ll_tx_enable_descriptor_burst(gdma_dev_t *dev, uint32_t 
  */
 static inline void gdma_ll_tx_set_eof_mode(gdma_dev_t *dev, uint32_t channel, uint32_t mode)
 {
-    dev->out[channel].conf0.out_eof_mode = mode;
+    dev->channel[channel].out.conf0.out_eof_mode = mode;
 }
 
 /**
@@ -383,7 +387,7 @@ static inline void gdma_ll_tx_set_eof_mode(gdma_dev_t *dev, uint32_t channel, ui
  */
 static inline void gdma_ll_tx_enable_auto_write_back(gdma_dev_t *dev, uint32_t channel, bool enable)
 {
-    dev->out[channel].conf0.out_auto_wrback = enable;
+    dev->channel[channel].out.conf0.out_auto_wrback = enable;
 }
 
 /**
@@ -391,8 +395,8 @@ static inline void gdma_ll_tx_enable_auto_write_back(gdma_dev_t *dev, uint32_t c
  */
 static inline void gdma_ll_tx_reset_channel(gdma_dev_t *dev, uint32_t channel)
 {
-    dev->out[channel].conf0.out_rst = 1;
-    dev->out[channel].conf0.out_rst = 0;
+    dev->channel[channel].out.conf0.out_rst = 1;
+    dev->channel[channel].out.conf0.out_rst = 0;
 }
 
 /**
@@ -401,7 +405,7 @@ static inline void gdma_ll_tx_reset_channel(gdma_dev_t *dev, uint32_t channel)
  */
 static inline void gdma_ll_tx_set_block_size_psram(gdma_dev_t *dev, uint32_t channel, uint32_t size_index)
 {
-    dev->out[channel].conf1.out_ext_mem_bk_size = size_index;
+    dev->channel[channel].out.conf1.out_ext_mem_bk_size = size_index;
 }
 
 /**
@@ -410,7 +414,7 @@ static inline void gdma_ll_tx_set_block_size_psram(gdma_dev_t *dev, uint32_t cha
  */
 static inline bool gdma_ll_tx_is_fifo_full(gdma_dev_t *dev, uint32_t channel, uint32_t fifo_level)
 {
-    return dev->out[channel].outfifo_status.val & (1 << 2 * (fifo_level - 1));
+    return dev->channel[channel].out.outfifo_status.val & (1 << 2 * (fifo_level - 1));
 }
 
 /**
@@ -419,7 +423,7 @@ static inline bool gdma_ll_tx_is_fifo_full(gdma_dev_t *dev, uint32_t channel, ui
  */
 static inline bool gdma_ll_tx_is_fifo_empty(gdma_dev_t *dev, uint32_t channel, uint32_t fifo_level)
 {
-    return dev->out[channel].outfifo_status.val & (1 << (2 * (fifo_level - 1) + 1));
+    return dev->channel[channel].out.outfifo_status.val & (1 << (2 * (fifo_level - 1) + 1));
 }
 
 /**
@@ -430,11 +434,11 @@ static inline uint32_t gdma_ll_tx_get_fifo_bytes(gdma_dev_t *dev, uint32_t chann
 {
     switch (fifo_level) {
     case 1:
-        return dev->out[channel].outfifo_status.outfifo_cnt_l1;
+        return dev->channel[channel].out.outfifo_status.outfifo_cnt_l1;
     case 2:
-        return dev->out[channel].outfifo_status.outfifo_cnt_l2;
+        return dev->channel[channel].out.outfifo_status.outfifo_cnt_l2;
     case 3:
-        return dev->out[channel].outfifo_status.outfifo_cnt_l3;
+        return dev->channel[channel].out.outfifo_status.outfifo_cnt_l3;
     }
 }
 
@@ -443,8 +447,8 @@ static inline uint32_t gdma_ll_tx_get_fifo_bytes(gdma_dev_t *dev, uint32_t chann
  */
 static inline void gdma_ll_tx_push_data(gdma_dev_t *dev, uint32_t channel, uint32_t data)
 {
-    dev->out[channel].push.outfifo_wdata = data;
-    dev->out[channel].push.outfifo_push = 1;
+    dev->channel[channel].out.push.outfifo_wdata = data;
+    dev->channel[channel].out.push.outfifo_push = 1;
 }
 
 /**
@@ -452,7 +456,7 @@ static inline void gdma_ll_tx_push_data(gdma_dev_t *dev, uint32_t channel, uint3
  */
 static inline void gdma_ll_tx_set_desc_addr(gdma_dev_t *dev, uint32_t channel, uint32_t addr)
 {
-    dev->out[channel].link.addr = addr;
+    dev->channel[channel].out.link.addr = addr;
 }
 
 /**
@@ -460,7 +464,7 @@ static inline void gdma_ll_tx_set_desc_addr(gdma_dev_t *dev, uint32_t channel, u
  */
 static inline void gdma_ll_tx_start(gdma_dev_t *dev, uint32_t channel)
 {
-    dev->out[channel].link.start = 1;
+    dev->channel[channel].out.link.start = 1;
 }
 
 /**
@@ -468,7 +472,7 @@ static inline void gdma_ll_tx_start(gdma_dev_t *dev, uint32_t channel)
  */
 static inline void gdma_ll_tx_stop(gdma_dev_t *dev, uint32_t channel)
 {
-    dev->out[channel].link.stop = 1;
+    dev->channel[channel].out.link.stop = 1;
 }
 
 /**
@@ -476,7 +480,7 @@ static inline void gdma_ll_tx_stop(gdma_dev_t *dev, uint32_t channel)
  */
 static inline void gdma_ll_tx_restart(gdma_dev_t *dev, uint32_t channel)
 {
-    dev->out[channel].link.restart = 1;
+    dev->channel[channel].out.link.restart = 1;
 }
 
 /**
@@ -484,7 +488,7 @@ static inline void gdma_ll_tx_restart(gdma_dev_t *dev, uint32_t channel)
  */
 static inline bool gdma_ll_tx_is_fsm_idle(gdma_dev_t *dev, uint32_t channel)
 {
-    return dev->out[channel].link.park;
+    return dev->channel[channel].out.link.park;
 }
 
 /**
@@ -492,7 +496,7 @@ static inline bool gdma_ll_tx_is_fsm_idle(gdma_dev_t *dev, uint32_t channel)
  */
 static inline uint32_t gdma_ll_tx_get_eof_desc_addr(gdma_dev_t *dev, uint32_t channel)
 {
-    return dev->out[channel].eof_des_addr;
+    return dev->channel[channel].out.eof_des_addr;
 }
 
 /**
@@ -500,7 +504,7 @@ static inline uint32_t gdma_ll_tx_get_eof_desc_addr(gdma_dev_t *dev, uint32_t ch
  */
 static inline uint32_t gdma_ll_tx_get_current_desc_addr(gdma_dev_t *dev, uint32_t channel)
 {
-    return dev->out[channel].dscr;
+    return dev->channel[channel].out.dscr;
 }
 
 /**
@@ -508,7 +512,7 @@ static inline uint32_t gdma_ll_tx_get_current_desc_addr(gdma_dev_t *dev, uint32_
  */
 static inline void gdma_ll_tx_set_weight(gdma_dev_t *dev, uint32_t channel, uint32_t weight)
 {
-    dev->out[channel].wight.tx_weight = weight;
+    dev->channel[channel].out.wight.tx_weight = weight;
 }
 
 /**
@@ -516,7 +520,7 @@ static inline void gdma_ll_tx_set_weight(gdma_dev_t *dev, uint32_t channel, uint
  */
 static inline void gdma_ll_tx_set_priority(gdma_dev_t *dev, uint32_t channel, uint32_t prio)
 {
-    dev->out[channel].pri.tx_pri = prio;
+    dev->channel[channel].out.pri.tx_pri = prio;
 }
 
 /**
@@ -524,7 +528,7 @@ static inline void gdma_ll_tx_set_priority(gdma_dev_t *dev, uint32_t channel, ui
  */
 static inline void gdma_ll_tx_connect_to_periph(gdma_dev_t *dev, uint32_t channel, int periph_id)
 {
-    dev->out[channel].peri_sel.sel = periph_id;
+    dev->channel[channel].out.peri_sel.sel = periph_id;
 }
 
 /**
@@ -535,7 +539,7 @@ static inline void gdma_ll_tx_connect_to_periph(gdma_dev_t *dev, uint32_t channe
 static inline void gdma_ll_tx_extend_fifo_size_to(gdma_dev_t *dev, uint32_t channel, uint32_t size_in_bytes)
 {
     if (size_in_bytes > SOC_GDMA_L2_FIFO_BASE_SIZE) {
-        dev->out[channel].sram_size.out_size =  (size_in_bytes - SOC_GDMA_L2_FIFO_BASE_SIZE) / 8;
+        dev->sram_size[channel].out.out_size =  (size_in_bytes - SOC_GDMA_L2_FIFO_BASE_SIZE) / 8;
     }
 }
 
