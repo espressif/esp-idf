@@ -657,7 +657,7 @@ def init_cli(verbose_output=None):
             if path not in extension_dirs:
                 extension_dirs.append(path)
 
-    extensions = {}
+    extensions = []
     for directory in extension_dirs:
         if directory and not os.path.exists(directory):
             print('WARNING: Directroy with idf.py extensions doesn\'t exist:\n    %s' % directory)
@@ -666,20 +666,20 @@ def init_cli(verbose_output=None):
         sys.path.append(directory)
         for _finder, name, _ispkg in sorted(iter_modules([directory])):
             if name.endswith('_ext'):
-                extensions[name] = import_module(name)
+                extensions.append((name, import_module(name)))
 
     # Load component manager if available and not explicitly disabled
     if os.getenv('IDF_COMPONENT_MANAGER', None) != '0':
         try:
             from idf_component_manager import idf_extensions
 
-            extensions['component_manager_ext'] = idf_extensions
+            extensions.append(('component_manager_ext', idf_extensions))
             os.environ['IDF_COMPONENT_MANAGER'] = '1'
 
         except ImportError:
             pass
 
-    for name, extension in extensions.items():
+    for name, extension in extensions:
         try:
             all_actions = merge_action_lists(all_actions, extension.action_extensions(all_actions, project_dir))
         except AttributeError:
