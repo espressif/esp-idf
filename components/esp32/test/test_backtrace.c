@@ -1,4 +1,9 @@
 /*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/*
  * Note: Currently, the backtraces must still be checked manually. Therefore,
  * these test cases should always pass.
  * Todo: Automate the checking of backtrace addresses.
