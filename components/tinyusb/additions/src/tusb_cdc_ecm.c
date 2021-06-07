@@ -192,4 +192,3 @@ uint16_t tud_network_xmit_cb(uint8_t *dst, void *ref, uint16_t arg)
 
   return len;
 }
-
