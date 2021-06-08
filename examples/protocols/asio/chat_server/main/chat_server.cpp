@@ -225,5 +225,7 @@ extern "C" void app_main(void)
       servers.emplace_back(io_context, endpoint);
     }
 
+    std::cout << "ASIO engine is up and running" << std::endl;
+
     io_context.run();
 }
