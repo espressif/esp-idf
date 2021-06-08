@@ -377,6 +377,12 @@ class IperfTestUtility(object):
             with open(PC_IPERF_TEMP_LOG_FILE, "w") as f:
                 if proto == "tcp":
                     self.dut.write("iperf -s -i 1 -t {}".format(TEST_TIME))
+                    # wait until DUT TCP server created
+                    try:
+                        self.dut.expect("iperf tcp server create successfully", timeout=1)
+                    except DUT.ExpectTimeout:
+                        # compatible with old iperf example binary
+                        pass
                     process = subprocess.Popen(["iperf", "-c", dut_ip,
                                                 "-t", str(TEST_TIME), "-f", "m"],
                                                stdout=f, stderr=f)
