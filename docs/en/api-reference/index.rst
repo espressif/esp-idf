@@ -15,4 +15,3 @@ API Reference
     System <system/index>
     Configuration Options <kconfig>
     Error Codes Reference <error-codes>
-

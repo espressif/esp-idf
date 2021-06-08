@@ -10,6 +10,7 @@ This tool can be launched from an IDF project by running ``idf.py monitor``.
 
 For the legacy GNU Make system, run ``make monitor``.
 
+
 Keyboard Shortcuts
 ==================
 
@@ -54,7 +55,7 @@ For easy interaction with IDF Monitor, use the keyboard shortcuts given in the t
      - Creates a file in the project directory and the output is written to that file until this is disabled with the same keyboard shortcut (or IDF Monitor exits).                
    * - * Ctrl+I (or I)
      - Stop/resume printing timestamps
-     - IDF Monitor can print a timestamp in the beginning of each line. The timestamp format can be changed by the --timestamp-format command line argument.
+     - IDF Monitor can print a timestamp in the beginning of each line. The timestamp format can be changed by the ``--timestamp-format`` command line argument.
    * - * Ctrl+H (or H)
      - Display all keyboard shortcuts
      -                
@@ -189,7 +190,6 @@ To decode each address, IDF Monitor runs the following command in the background
 Launching GDB with GDBStub
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
 By default, if esp-idf crashes, the panic handler prints relevant registers and the stack dump (similar to the ones above) over the serial port. Then it resets the board.
 
 Furthermore, the application can be configured to run GDBStub in the background and handle the Ctrl+C event from the monitor.
@@ -203,7 +203,6 @@ In this case, if the panic handler or Ctrl+C command is triggered, as soon as ID
 In the background, IDF Monitor runs the following command::
 
   {IDF_TARGET_TOOLCHAIN_PREFIX}-gdb -ex "set serial baud BAUD" -ex "target remote PORT" -ex interrupt build/PROJECT.elf :idf_target:`Hello NAME chip`
-
 
 
 Output Filtering

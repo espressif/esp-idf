@@ -35,5 +35,4 @@ Peripherals API
     UART <uart>
     :SOC_USB_SUPPORTED: USB <usb>
 
-
 Code examples for this API section are provided in the :example:`peripherals` directory of ESP-IDF examples.
