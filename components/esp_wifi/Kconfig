@@ -1,9 +1,16 @@
 
 menu "Wi-Fi"
+    visible if !IDF_TARGET_ESP32H2
+
+    config WIFI_ENABLED
+        bool "Wi-Fi"
+        default "y" if !IDF_TARGET_ESP32H2
+        help
+            Select this option to enable Wi-Fi and show the submenu with Wi-Fi configuration choices.
 
     config ESP32_WIFI_SW_COEXIST_ENABLE
         bool "Software controls WiFi/Bluetooth coexistence"
-        depends on BT_ENABLED
+        depends on WIFI_ENABLED && BT_ENABLED
         default y
         help
             If enabled, WiFi & Bluetooth coexistence is controlled by software rather than hardware.
@@ -14,6 +21,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_STATIC_RX_BUFFER_NUM
         int "Max number of WiFi static RX buffers"
+        depends on WIFI_ENABLED
         range 2 25
         default 10 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP
         default 16 if SPIRAM_TRY_ALLOCATE_WIFI_LWIP
@@ -29,6 +37,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM
         int "Max number of WiFi dynamic RX buffers"
+        depends on WIFI_ENABLED
         range 0 128 if !LWIP_WND_SCALE
         range 0 1024 if LWIP_WND_SCALE
         default 32
@@ -48,6 +57,7 @@ menu "Wi-Fi"
 
     choice ESP32_WIFI_TX_BUFFER
         prompt "Type of WiFi TX buffers"
+        depends on WIFI_ENABLED
         default ESP32_WIFI_DYNAMIC_TX_BUFFER
         help
             Select type of WiFi TX buffers:
@@ -72,11 +82,13 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_TX_BUFFER_TYPE
         int
+        depends on WIFI_ENABLED
         default 0 if ESP32_WIFI_STATIC_TX_BUFFER
         default 1 if ESP32_WIFI_DYNAMIC_TX_BUFFER
 
     config ESP32_WIFI_STATIC_TX_BUFFER_NUM
         int "Max number of WiFi static TX buffers"
+        depends on WIFI_ENABLED
         depends on ESP32_WIFI_STATIC_TX_BUFFER
         range 1 64
         default 16
@@ -92,6 +104,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_CACHE_TX_BUFFER_NUM
         int "Max number of WiFi cache TX buffers"
+        depends on WIFI_ENABLED
         depends on (ESP32_SPIRAM_SUPPORT || ESP32S2_SPIRAM_SUPPORT || ESP32S3_SPIRAM_SUPPORT)
         range 16 128
         default 32
@@ -105,6 +118,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
         int "Max number of WiFi dynamic TX buffers"
+        depends on WIFI_ENABLED
         depends on ESP32_WIFI_DYNAMIC_TX_BUFFER
         range 1 128
         default 32
@@ -119,6 +133,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_CSI_ENABLED
         bool "WiFi CSI(Channel State Information)"
+        depends on WIFI_ENABLED
         default n
         help
             Select this option to enable CSI(Channel State Information) feature. CSI takes about
@@ -127,6 +142,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_AMPDU_TX_ENABLED
         bool "WiFi AMPDU TX"
+        depends on WIFI_ENABLED
         default y
         help
             Select this option to enable AMPDU TX feature
@@ -145,6 +161,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_AMPDU_RX_ENABLED
         bool "WiFi AMPDU RX"
+        depends on WIFI_ENABLED
         default y
         help
             Select this option to enable AMPDU RX feature
@@ -165,6 +182,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_AMSDU_TX_ENABLED
         bool "WiFi AMSDU TX"
+        depends on WIFI_ENABLED
         depends on (ESP32_SPIRAM_SUPPORT || ESP32S2_SPIRAM_SUPPORT || ESP32S3_SPIRAM_SUPPORT)
         default n
         help
@@ -172,11 +190,13 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_NVS_ENABLED
         bool "WiFi NVS flash"
+        depends on WIFI_ENABLED
         default y
         help
             Select this option to enable WiFi NVS flash
 
     choice ESP32_WIFI_TASK_CORE_ID
+        depends on WIFI_ENABLED
         depends on !FREERTOS_UNICORE
         prompt "WiFi Task Core ID"
         default ESP32_WIFI_TASK_PINNED_TO_CORE_0
@@ -191,6 +211,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_SOFTAP_BEACON_MAX_LEN
         int "Max length of WiFi SoftAP Beacon"
+        depends on WIFI_ENABLED
         range 752 1256
         default 752
         help
@@ -213,6 +234,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_MGMT_SBUF_NUM
         int "WiFi mgmt short buffer number"
+        depends on WIFI_ENABLED
         range 6 32
         default 32
         help
@@ -220,6 +242,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_IRAM_OPT
         bool "WiFi IRAM speed optimization"
+        depends on WIFI_ENABLED
         default n if (BT_ENABLED && ESP32_SPIRAM_SUPPORT)
         default y
         help
@@ -229,6 +252,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_RX_IRAM_OPT
         bool "WiFi RX IRAM speed optimization"
+        depends on WIFI_ENABLED
         default n if (BT_ENABLED && ESP32_SPIRAM_SUPPORT)
         default y
         help
@@ -238,6 +262,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_ENABLE_WPA3_SAE
         bool "Enable WPA3-Personal"
+        depends on WIFI_ENABLED
         default y
         depends on WPA_MBEDTLS_CRYPTO
         help
@@ -247,6 +272,7 @@ menu "Wi-Fi"
 
     config ESP_WIFI_SLP_IRAM_OPT
         bool "WiFi SLP IRAM speed optimization"
+        depends on WIFI_ENABLED
         select PM_SLP_DEFAULT_PARAMS_OPT
         help
             Select this option to place called Wi-Fi library TBTT process and receive beacon functions in IRAM.
@@ -274,6 +300,7 @@ menu "Wi-Fi"
 
     config ESP_WIFI_FTM_ENABLE
         bool "WiFi FTM"
+        depends on WIFI_ENABLED
         default n
         depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3)
         help
@@ -291,6 +318,7 @@ menu "Wi-Fi"
 
     config ESP_WIFI_STA_DISCONNECTED_PM_ENABLE
         bool "Power Management for station at disconnected"
+        depends on WIFI_ENABLED
         help
             Select this option to enable power_management for station when disconnected.
             Chip will do modem-sleep when rf module is not in use any more.
