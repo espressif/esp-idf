@@ -11,97 +11,84 @@
 // See the License for the specific language governing permissions and
 // limitations under the License
 
-#include "esp_openthread.h"
-
 #include "esp_check.h"
-#include "esp_err.h"
-#include "esp_log.h"
-#include "esp_openthread_alarm.h"
+#include "esp_openthread.h"
 #include "esp_openthread_common_macro.h"
 #include "esp_openthread_lock.h"
-#include "esp_openthread_netif_glue.h"
-#include "esp_openthread_radio_uart.h"
+#include "esp_openthread_netif_glue_priv.h"
 #include "esp_openthread_types.h"
-#include "esp_openthread_uart.h"
-#include "common/code_utils.hpp"
-#include "common/logging.hpp"
-#include "core/common/instance.hpp"
 #include "freertos/FreeRTOS.h"
-#include "freertos/queue.h"
-#include "openthread/cli.h"
 #include "openthread/instance.h"
-#include "openthread/platform/alarm-milli.h"
-#include "openthread/platform/time.h"
 #include "openthread/tasklet.h"
+#include "platform/logging.h"
 
-static esp_openthread_platform_config_t s_platform_config;
-static bool s_openthread_platform_initialized = false;
-
-esp_err_t esp_openthread_platform_init(const esp_openthread_platform_config_t *config)
+static void esp_openthread_state_callback(otChangedFlags changed_flags, void *ctx)
 {
-    if (config->radio_config.radio_mode != RADIO_MODE_UART_RCP) {
-        otLogCritPlat("Radio mode not supported");
-        return ESP_ERR_INVALID_ARG;
-    }
-    if (config->host_config.host_connection_mode != HOST_CONNECTION_MODE_NONE &&
-            config->host_config.host_connection_mode != HOST_CONNECTION_MODE_UART) {
-        otLogCritPlat("Host connection mode not supported");
-        return ESP_ERR_INVALID_ARG;
-    }
-    if (s_openthread_platform_initialized) {
-        return ESP_ERR_INVALID_STATE;
-    }
-
-    esp_err_t error = ESP_OK;
-
-    s_platform_config = *config;
-    SuccessOrExit(error = esp_openthread_lock_init());
-    if (config->host_config.host_connection_mode == HOST_CONNECTION_MODE_UART) {
-        SuccessOrExit(error = esp_openthread_uart_init(config));
-    }
-    SuccessOrExit(error = esp_openthread_radio_init(config));
-exit:
-    if (error != ESP_OK) {
-        esp_openthread_platform_deinit();
-    }
-
-    return error;
+    esp_openthread_netif_glue_state_callback(changed_flags);
 }
 
-otInstance *esp_openthread_get_instance(void)
+static esp_err_t register_esp_openthread_state_callbacks(void)
 {
-    return &ot::Instance::Get();
-}
-
-esp_err_t esp_openthread_platform_deinit(void)
-{
-    if (!s_openthread_platform_initialized) {
-        return ESP_ERR_INVALID_STATE;
-    }
-    esp_openthread_radio_deinit();
-    if (s_platform_config.host_config.host_connection_mode == HOST_CONNECTION_MODE_UART) {
-        esp_openthread_uart_deinit();
-    }
-    esp_openthread_lock_deinit();
+    otInstance *instance = esp_openthread_get_instance();
+    ESP_RETURN_ON_FALSE(otSetStateChangedCallback(instance, esp_openthread_state_callback, NULL) == OT_ERROR_NONE,
+                        ESP_FAIL, OT_PLAT_LOG_TAG, "Failed to install OpenThread state callback");
     return ESP_OK;
 }
 
-void esp_openthread_platform_update(esp_openthread_mainloop_context_t *mainloop)
+esp_err_t esp_openthread_init(const esp_openthread_platform_config_t *config)
 {
-    esp_openthread_alarm_update(mainloop);
-    if (s_platform_config.host_config.host_connection_mode == HOST_CONNECTION_MODE_UART) {
-        esp_openthread_uart_update(mainloop);
-    }
-    esp_openthread_radio_update(mainloop);
-    esp_openthread_netif_glue_update(mainloop);
+    ESP_RETURN_ON_ERROR(esp_openthread_platform_init(config), OT_PLAT_LOG_TAG,
+                        "Failed to initialize OpenThread platform driver");
+    ESP_RETURN_ON_FALSE(otInstanceInitSingle() != NULL, ESP_FAIL, OT_PLAT_LOG_TAG,
+                        "Failed to initialize OpenThread instance");
+
+    return register_esp_openthread_state_callbacks();
 }
 
-esp_err_t esp_openthread_platform_process(otInstance *instance, const esp_openthread_mainloop_context_t *mainloop)
+esp_err_t esp_openthread_launch_mainloop(void)
 {
-    if (s_platform_config.host_config.host_connection_mode == HOST_CONNECTION_MODE_UART) {
-        ESP_RETURN_ON_ERROR(esp_openthread_uart_process(), OT_PLAT_LOG_TAG, "esp_openthread_uart_process failed");
+    esp_openthread_mainloop_context_t mainloop;
+    otInstance *instance = esp_openthread_get_instance();
+    esp_err_t error = ESP_OK;
+
+    while (true) {
+        FD_ZERO(&mainloop.read_fds);
+        FD_ZERO(&mainloop.write_fds);
+        FD_ZERO(&mainloop.error_fds);
+
+        mainloop.max_fd = -1;
+        mainloop.timeout.tv_sec = 10;
+        mainloop.timeout.tv_usec = 0;
+
+        esp_openthread_lock_acquire(portMAX_DELAY);
+        esp_openthread_platform_update(&mainloop);
+        if (otTaskletsArePending(instance)) {
+            mainloop.timeout.tv_sec = 0;
+            mainloop.timeout.tv_usec = 0;
+        }
+        esp_openthread_lock_release();
+
+        if (select(mainloop.max_fd + 1, &mainloop.read_fds, &mainloop.write_fds, &mainloop.error_fds,
+                   &mainloop.timeout) >= 0) {
+            esp_openthread_lock_acquire(portMAX_DELAY);
+            otTaskletsProcess(instance);
+            error = esp_openthread_platform_process(instance, &mainloop);
+            esp_openthread_lock_release();
+            if (error != ESP_OK) {
+                ESP_LOGE(OT_PLAT_LOG_TAG, "esp_openthread_platform_process failed");
+                break;
+            }
+        } else {
+            error = ESP_FAIL;
+            ESP_LOGE(OT_PLAT_LOG_TAG, "OpenThread system polling failed");
+            break;
+        }
     }
-    esp_openthread_radio_process(instance, mainloop);
-    esp_openthread_alarm_process(instance);
-    return esp_openthread_netif_glue_process(instance, mainloop);
+    return error;
+}
+
+esp_err_t esp_openthread_deinit(void)
+{
+    otInstanceFinalize(esp_openthread_get_instance());
+    return esp_openthread_platform_deinit();
 }

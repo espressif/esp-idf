@@ -24,11 +24,52 @@ extern "C" {
 #endif
 
 /**
+ * @brief   Initializes the full OpenThread stack.
+ *
+ * @note The OpenThread instance will also be initialized in this function.
+ *
+ * @param[in]  init_config      The initialization configuration.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NO_MEM if allocation has failed
+ *      - ESP_ERR_INVALID_ARG if radio or host connection mode not supported
+ *      - ESP_ERR_INVALID_STATE if already initialized
+ *
+ */
+esp_err_t esp_openthread_init(const esp_openthread_platform_config_t *init_config);
+
+/**
+ * @brief   Launches the OpenThread main loop.
+ *
+ * @note Thie function will not return unless error happens when running the OpenThread stack.
+ *
+ * @param[in]  init_config      The initialization configuration.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NO_MEM if allocation has failed
+ *      - ESP_FAIL on other failures
+ *
+ */
+esp_err_t esp_openthread_launch_mainloop(void);
+
+/**
+ * This function performs OpenThread stack and platform driver deinitialization.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_STATE if not initialized
+ *
+ */
+esp_err_t esp_openthread_deinit(void);
+
+/**
  * @brief   Initializes the platform-specific support for the OpenThread stack.
  *
  * @note This function is not called by and will not call the OpenThread library.
  *       The user needs to call otInstanceInitSingle to intialize the OpenThread
- *       stack after calling this fucntion.
+ *       stack after calling this function.
  *
  * @param[in]  init_config      The initialization configuration.
  *
