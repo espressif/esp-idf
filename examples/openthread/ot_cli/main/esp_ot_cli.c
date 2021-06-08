@@ -21,6 +21,7 @@
 #include "esp_netif.h"
 #include "esp_netif_types.h"
 #include "esp_openthread.h"
+#include "esp_openthread_defaults.h"
 #include "esp_openthread_lock.h"
 #include "esp_openthread_netif_glue.h"
 #include "esp_openthread_types.h"
@@ -55,46 +56,8 @@ static esp_netif_t *init_openthread_netif(void)
 static void ot_task_worker(void *aContext)
 {
     esp_openthread_platform_config_t config = {
-        .radio_config =
-        {
-            .radio_mode = RADIO_MODE_UART_RCP,
-            .radio_uart_config =
-            {
-                .port = 1,
-                .uart_config =
-                {
-                    .baud_rate = 115200,
-                    .data_bits = UART_DATA_8_BITS,
-                    .parity = UART_PARITY_DISABLE,
-                    .stop_bits = UART_STOP_BITS_1,
-                    .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-                    .rx_flow_ctrl_thresh = 0,
-                    .source_clk = UART_SCLK_APB,
-                },
-                .rx_pin = 4,
-                .tx_pin = 5,
-            },
-        },
-        .host_config =
-        {
-            .host_connection_mode = HOST_CONNECTION_MODE_UART,
-            .host_uart_config =
-            {
-                .port = 0,
-                .uart_config =
-                {
-                    .baud_rate = 115200,
-                    .data_bits = UART_DATA_8_BITS,
-                    .parity = UART_PARITY_DISABLE,
-                    .stop_bits = UART_STOP_BITS_1,
-                    .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-                    .rx_flow_ctrl_thresh = 0,
-                    .source_clk = UART_SCLK_APB,
-                },
-                .rx_pin = UART_PIN_NO_CHANGE,
-                .tx_pin = UART_PIN_NO_CHANGE,
-            },
-        },
+        .radio_config = ESP_OPENTHREAD_DEFAULT_RADIO_UART_RCP_CONFIG(4, 5),
+        .host_config = ESP_OPENTHREAD_DEFAULT_UART_HOST_CONFIG(),
     };
     esp_netif_t *openthread_netif;
 
@@ -123,6 +86,9 @@ static void ot_task_worker(void *aContext)
 
 void app_main(void)
 {
+    // Used eventfds:
+    // * netif
+    // * radio driver
     esp_vfs_eventfd_config_t eventfd_config = {
         .max_fds = 2,
     };

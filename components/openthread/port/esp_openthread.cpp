@@ -16,11 +16,11 @@
 #include "esp_openthread_common_macro.h"
 #include "esp_openthread_lock.h"
 #include "esp_openthread_netif_glue_priv.h"
+#include "esp_openthread_platform.h"
 #include "esp_openthread_types.h"
 #include "freertos/FreeRTOS.h"
 #include "openthread/instance.h"
 #include "openthread/tasklet.h"
-#include "platform/logging.h"
 
 static void esp_openthread_state_callback(otChangedFlags changed_flags, void *ctx)
 {
