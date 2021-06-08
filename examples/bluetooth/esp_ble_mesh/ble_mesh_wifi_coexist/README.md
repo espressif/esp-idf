@@ -1,23 +1,23 @@
 | Supported Targets | ESP32 |
 | ----------------- | ----- |
 
-ESP BLE Mesh and WiFi Coexist example
-========================
+ESP-BLE-MESH and Wi-Fi Coexistence Example
+=============================================
 
-此 example 是用来测试当 BLE Mesh 实现正常的配网和收发消息的正常功能时，Wi-Fi 所能达到的最大 throughput 值。用户可以根据此 example 中的 throughput 值来实现自己需要的应用场景。如果用户对 ESP32 BLE Mesh 的使用方法还不熟悉，请参考[BLE Mesh Node Example](../ble_mesh_node/onoff_server/README.md).
+This example is used to measure the maximum throughput value that Wi-Fi can achieve when ESP-BLE-MESH is provisioning, sending and receiving messages. Users can implement their own application scenarios based on the throughput value in this example. If users are not familiar with how to use ESP-BLE-MESH, please refer to [ESP-BLE-MESH Node Example](../ble_mesh_node/onoff_server/README.md).
 
-此demo主要分为两个部分：
+This example is divided into two main parts:
 
-- WiFi Iperf协议
-- BLE Mesh fast provision Server
+- Wi-Fi Iperf protocol
+- ESP-BLE-MESH Fast Provisioning Server
 
-WiFi的Iperf协议使用方法请参考[WiFi Iperf README](../../../wifi/iperf/README.md)
+For information on how to use the Iperf protocol for Wi-Fi, please refer to [Wi-Fi Iperf README](../../../wifi/iperf/README.md)
 
-当WiFi的Iperf开起来之后，BLE Mesh就可以使用fast provsion 进行配网了，此demo只实现了fast provsion 的server功能。此demo 的BLE Mesh模块实现了一个Element和以下几个Model：
+When Wi-Fi Iperf is enabled, ESP-BLE-MESH can use fast provision for device provisioning. The node in this example contains one element that supports the following models:
 
-- Config Server Model: 此Model是当对方需要配置APP Key, Dev Key,等信息时，需要使用此Model
-- Config Client Model： 此Model是当需要配置APP Key, Dev Key,等信息时，需要使用此Model
-- Generic OnOff Server Model：此Model通过暴露自己的OnOff State，从而实现LED 灯的开关功能
-- Generic OnOff Client Model： 使用此Model可以实现开关功能，控制别的node 的LED灯的开关
-- Fast Provision Server Model： 此Model是为了进行快速配网而实现的自定义Model，通过此Model当节点作为临时provisioner进行配网成功后，需要将生成的Element地址通过此Model进行传给provisioner
-- Fast Provision Client Model：此Model和Fast Provision Server Model是配合使用的
+- Configuration Server model: This model is mainly for node configuration after the device joins the ESP-BLE-MESH network, such as relay, friend feature, NetKey, etc.
+- Configuration Client model: This model is used to get or set the configuration of other nodes, such as relay, friend feature, adding NetKey, etc.
+- Generic On/Off Server model: This model is mainly used to indicate the value of node's On/Off state, and different state values ​​determine the different states of the device (such as light on and off).
+- Generic On/Off Client model: This model controls the on/off of the device by setting the On/Off state of other nodes.
+- Fast Provision Server model: This model is a vendor server model implemented for fast provisioning. When the device is configured to join the network, it will temporarily act as a Provisioner for other devices; when the provisioning is completed, it will resume the node role and pass the addresses assigned to all nodes to the Fast Provision Client model through this model.
+- Fast Provision Client model: This model needs to be used together with the Fast Provision Server model to get all addresses assigned to the nodes by the Fast Provisioning Server.
