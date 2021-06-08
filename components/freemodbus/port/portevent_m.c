@@ -167,6 +167,8 @@ BOOL xMBMasterRunResTake( LONG lTimeOut )
  */
 void vMBMasterRunResRelease( void )
 {
+    // Check if the semaphore is not released already
+    if (uxSemaphoreGetCount(xSemaphorMasterHdl) == 1) return;
     BaseType_t xStatus = pdFALSE;
     xStatus = xSemaphoreGive(xSemaphorMasterHdl);
     MB_PORT_CHECK((xStatus == pdTRUE), ; , "%s: resource release failure.", __func__);
