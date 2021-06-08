@@ -1,19 +1,8 @@
-/*
-Copyright © 2021 Ci4Rail GmbH
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
- http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
 /* 
  * The MIT License (MIT)
  *
  * Copyright (c) 2020 Peter Lawrence
+ * Modifications Copyright © 2021 Ci4Rail GmbH
  *
  * influenced by lrndis https://github.com/fetisov/lrndis
  *
@@ -37,7 +26,8 @@ limitations under the License.
  *
  */
 
-
+#include <stdio.h>
+#include "esp_log.h"
 #include "lwip/tcpip.h"
 #include "lwip/init.h"
 #include "lwip/ip.h"
@@ -46,30 +36,56 @@ limitations under the License.
 #include "tusb_cdc_ecm.h"
 #include "descriptors_control.h"
 
+const static char *TAG = "CDC-ECM Driver";
+
+#define FRAME_BUFFER_SIZE  100
+
+struct frame_buffer_t {
+  uint8_t read_idx;
+  uint8_t write_idx;
+  struct pbuf* frame[FRAME_BUFFER_SIZE];
+};
+
 /* lwip context */
 static struct netif netif_data;
 /* shared between tud_network_recv_cb() and service_traffic() */
-static struct pbuf *rx_frame;
+struct frame_buffer_t rx_frame_buffer = 
+{
+  .read_idx = 0,
+  .write_idx = 0,
+  .frame = {}
+};
+/* semaphore as receive event, is intended to notify service_traffic thread in case a new frame was received */
+SemaphoreHandle_t rx_event = NULL;
 /* Dummy, not really used. Only required for the usage of RNDIS protocol, but we are using CDC-ECM. Is only declared, that there will be no compile error. */
 const uint8_t tud_network_mac_address[6];
+
 
 static void service_traffic(void)
 {
   /* handle any packet received by tud_network_recv_cb() */
-  if (rx_frame) {
-    ethernet_input(rx_frame, &netif_data);
-    rx_frame = NULL;
+  if(rx_frame_buffer.frame[rx_frame_buffer.read_idx]) {
+    ethernet_input(rx_frame_buffer.frame[rx_frame_buffer.read_idx], &netif_data);
+
+    rx_frame_buffer.frame[rx_frame_buffer.read_idx] = NULL;
+    rx_frame_buffer.read_idx++;
+    if(rx_frame_buffer.read_idx >= FRAME_BUFFER_SIZE) {
+      rx_frame_buffer.read_idx = 0;
+    }
     tud_network_recv_renew();
   }
-
-  sys_check_timeouts();
 }
 
 static void service_traffic_task(void* param)
 {
   while(1) {
-    service_traffic();
-    vTaskDelay(pdMS_TO_TICKS(10));
+    /* do only service traffic if event was received */
+    if(xSemaphoreTake(rx_event, pdMS_TO_TICKS(10)))
+    {
+      service_traffic();
+    }
+
+    sys_check_timeouts();
   }
 }
 
@@ -102,9 +118,10 @@ static err_t output_fn(struct netif *netif, struct pbuf *p, const ip_addr_t *add
 void tud_network_init_cb(void)
 {
   /* if the network is re-initializing and we have a leftover packet, we must do a cleanup */
-  if (rx_frame) {
-    pbuf_free(rx_frame);
-    rx_frame = NULL;
+  for(uint8_t idx = 0; idx < FRAME_BUFFER_SIZE; idx++) {
+    if(rx_frame_buffer.frame[idx] != NULL) {
+      pbuf_free(rx_frame_buffer.frame[idx]);
+    }
   }
 }
 
@@ -124,6 +141,7 @@ static err_t netif_init_cb(struct netif *netif)
 esp_err_t tusb_ethernet_over_usb_init(tinyusb_config_ethernet_over_usb_t cfg)
 {
     struct netif *netif = &netif_data;
+    char mac_str[17];
 
     /* initialize tcp ip stack */
     tcpip_init(NULL, NULL);
@@ -135,27 +153,39 @@ esp_err_t tusb_ethernet_over_usb_init(tinyusb_config_ethernet_over_usb_t cfg)
     /* set host MAC address */
     tusb_set_mac_address(cfg.mac_address);
 
-    printf("MAC: ");
-    for(int i = 0; i < sizeof(cfg.mac_address)/sizeof(cfg.mac_address[0]); i++)
-    {
-      printf("%02x:", cfg.mac_address[i]);
+    for(int i = 0; i < sizeof(cfg.mac_address)/sizeof(cfg.mac_address[0]); i++) {
+      if(i >= (sizeof(cfg.mac_address)/sizeof(cfg.mac_address[0]) - 1)) {
+        snprintf(mac_str + (i*3), 3,"%02x",  cfg.mac_address[i]);
+      }
+      else {
+        snprintf(mac_str + (i*3), 4,"%02x:",  cfg.mac_address[i]);
+      }
     }
-    printf("\n");
+    ESP_LOGI(TAG,"Host NIC MAC Address: %s", mac_str);
 
     netif = netif_add(netif, &(cfg.ipaddr), &(cfg.netmask), &(cfg.gateway), NULL, netif_init_cb, ip_input);
     netif_set_default(netif);
-    while (!netif_is_up(&netif_data));
+    if(!netif_is_up(&netif_data))
+    {
+      return ESP_FAIL;
+    }
 
-    xTaskCreate( service_traffic_task, "service_traffic", 4096, NULL, 5, NULL);
+    /* create receive event */
+    rx_event = xSemaphoreCreateBinary();
+    if(rx_event == NULL) {
+      return ESP_FAIL;
+    }
+
+    xTaskCreate( service_traffic_task, "service_traffic", 4096, NULL, 6, NULL);
 
     return ESP_OK;
 }
 
 bool tud_network_recv_cb(const uint8_t *src, uint16_t size)
 {
-  /* this shouldn't happen, but if we get another packet before 
-  parsing the previous, we must signal our inability to accept it */
-  if (rx_frame) {
+  /* check if buffer run full */
+  if(rx_frame_buffer.frame[rx_frame_buffer.write_idx] != NULL) {
+    /* signal the inability to accept it */
     return false;
   }
 
@@ -167,7 +197,15 @@ bool tud_network_recv_cb(const uint8_t *src, uint16_t size)
       memcpy(p->payload, src, size);
 
       /* store away the pointer for service_traffic() to later handle */
-      rx_frame = p;
+      rx_frame_buffer.frame[rx_frame_buffer.write_idx] = p;
+
+      rx_frame_buffer.write_idx++;
+      if(rx_frame_buffer.write_idx >= FRAME_BUFFER_SIZE) {
+        rx_frame_buffer.write_idx = 0;
+      }
+
+      /* new frame received -> set rx event */
+      xSemaphoreGive(rx_event);
     }
   }
 

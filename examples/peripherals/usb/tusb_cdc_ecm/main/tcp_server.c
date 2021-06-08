@@ -57,7 +57,7 @@ void tcp_server_task(void *pvParameters)
     int ip_protocol = 0;
     struct sockaddr_storage dest_addr;
 
-    printf("Start TCP Server...");
+    ESP_LOGI(TAG, "Start TCP Server...");
 
     if (addr_family == AF_INET) {
         struct sockaddr_in *dest_addr_ip4 = (struct sockaddr_in *)&dest_addr;

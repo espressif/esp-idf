@@ -19,6 +19,7 @@
 static const char *TAG = "tusb_desc";
 static tusb_desc_device_t s_descriptor;
 static char *s_str_descriptor[USB_STRING_DESCRIPTOR_ARRAY_SIZE];
+/* Required for CDC-ECM. MAC Address of the host NIC. */
 static uint8_t mac_address[6];
 
 #define MAX_DESC_BUF_SIZE 32

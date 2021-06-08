@@ -32,7 +32,6 @@ static void tusb_device_task(void *arg)
     ESP_LOGD(TAG, "tinyusb task started");
     while (1) { // RTOS forever loop
         tud_task();
-        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
 

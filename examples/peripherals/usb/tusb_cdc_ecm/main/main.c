@@ -44,10 +44,10 @@ void app_main(void)
   /* get pre-programmed ethernet MAC address */
   esp_read_mac(tusb_ethernet_over_usb_cfg.mac_address, ESP_MAC_ETH);
 
-  tusb_ethernet_over_usb_init(tusb_ethernet_over_usb_cfg);
+  ESP_ERROR_CHECK(tusb_ethernet_over_usb_init(tusb_ethernet_over_usb_cfg));
 
   // Create a tasks for tcp_servers
-  xTaskCreate( tcp_server_task, "tcp_server1", 4096, (void*)1234, 5, NULL);
-  xTaskCreate( tcp_server_task, "tcp_server2", 4096, (void*)3333, 5, NULL);
+  xTaskCreate( tcp_server_task, "tcp_server1", 4096, (void*)1234, 4, NULL);
+  xTaskCreate( tcp_server_task, "tcp_server2", 4096, (void*)3333, 4, NULL);
 }
 
