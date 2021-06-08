@@ -12,7 +12,7 @@ For the convenience of the presentation, this example will only parse the follow
 * RMC
 * GLL
 * VTG
-  
+
 See [Limitation for multiple navigation system](#Limitation) for more information about this example.
 
 Usually, modules will also output some vendor specific statements which common nmea library can not cover. In this example, the NMEA Parser will propagate all unknown statements to the user, where a custom handler can parse information from it.
@@ -21,20 +21,19 @@ Usually, modules will also output some vendor specific statements which common n
 
 ### Hardware Required
 
-To run this example, you need an ESP32 dev board (e.g. ESP32-WROVER Kit) or ESP32 core board (e.g. ESP32-DevKitC). For test purpose, you also need a GPS module. Here we take the [ATGM332D-5N](http://www.icofchina.com/pro/mokuai/2016-08-01/5.html) as an example to show how to parse the NMEA statements and output common information such as UTC time, latitude, longitude, altitude, speed and so on.
+To run this example, you need an ESP32, ESP32-S or ESP32-C series dev board (e.g. ESP32-WROVER Kit). For test purpose, you also need a GPS module. Here we take the [ATGM332D-5N](http://www.icofchina.com/pro/mokuai/2016-08-01/5.html) as an example to show how to parse the NMEA statements and output common information such as UTC time, latitude, longitude, altitude, speed and so on.
 
 #### Pin Assignment:
 
 **Note:** The following pin assignments are used by default which can be changed in `nmea_parser_config_t` structure.
 
-| ESP32            | GPS             |
-| ---------------- | --------------- |
-| UART-TX (option) | GPS-RX (option) |
-| UART-RX          | GPS-TX          |
-| GND              | GND             |
-| 5V               | VCC             |
+| ESP                        | GPS             |
+| -------------------------- | --------------- |
+| UART-RX (GPIO5 by default) | GPS-TX          |
+| GND                        | GND             |
+| 5V                         | VCC             |
 
-**Note:** UART TX pin in ESP32 is not necessary if you only use uart to receive data.
+**Note:** UART TX pin is not necessary if you only use UART to receive data.
 
 
 ### Configure the project
@@ -60,38 +59,38 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 I (0) cpu_start: Starting scheduler on APP CPU.
 I (317) uart: queue free spaces: 16
 I (317) nmea_parser: NMEA Parser init OK
-I (1067) gps_demo: 2018/12/4 13:59:34 => 
+I (1067) gps_demo: 2018/12/4 13:59:34 =>
 						latitude   = 31.20177°N
 						longitude = 121.57933°E
 						altitude   = 17.30m
 						speed      = 0.370400m/s
 W (1177) gps_demo: Unknown statement:$GPTXT,01,01,01,ANTENNA OK*35
-I (2067) gps_demo: 2018/12/4 13:59:35 => 
+I (2067) gps_demo: 2018/12/4 13:59:35 =>
 						latitude   = 31.20177°N
 						longitude  = 121.57933°E
 						altitude   = 17.30m
 						speed      = 0.000000m/s
 W (2177) gps_demo: Unknown statement:$GPTXT,01,01,01,ANTENNA OK*35
-I (3067) gps_demo: 2018/12/4 13:59:36 => 
+I (3067) gps_demo: 2018/12/4 13:59:36 =>
 						latitude   = 31.20178°N
 						longitude  = 121.57933°E
 						altitude   = 17.30m
 						speed      = 0.000000m/s
 W (3177) gps_demo: Unknown statement:$GPTXT,01,01,01,ANTENNA OK*35
-I (4067) gps_demo: 2018/12/4 13:59:37 => 
+I (4067) gps_demo: 2018/12/4 13:59:37 =>
 						latitude   = 31.20178°N
 						longitude  = 121.57933°E
 						altitude   = 17.30m
 						speed      = 0.000000m/s
 W (4177) gps_demo: Unknown statement:$GPTXT,01,01,01,ANTENNA OK*35
-I (5067) gps_demo: 2018/12/4 13:59:38 => 
+I (5067) gps_demo: 2018/12/4 13:59:38 =>
 						latitude   = 31.20178°N
 						longitude  = 121.57933°E
 						altitude   = 17.30m
 						speed      = 0.685240m/s
 W (5177) gps_demo: Unknown statement:$GPTXT,01,01,01,ANTENNA OK*35
 ```
-As shown above, ESP32 finally got the information after parsed the NMEA0183 format statements. But as we didn't add `GPTXT` type statement in the library (that means it is UNKNOWN to NMEA Parser library), so it was propagated to user without any process.
+As shown above, the ESP board finally got the information after parsed the NMEA0183 format statements. But as we didn't add `GPTXT` type statement in the library (that means it is UNKNOWN to NMEA Parser library), so it was propagated to user without any process.
 
 ## Troubleshooting
 
@@ -99,7 +98,7 @@ As shown above, ESP32 finally got the information after parsed the NMEA0183 form
    * Test your GPS via other terminal (e.g. minicom, putty) to check the right communication parameters (e.g. baudrate supported by GPS).
 
 ## Limitation
-If the GPS module supports multiple satellite navigation system (e.g. GPS, BDS), then the satellite ids and descriptions may be delivered in different statements (e.g. GPGSV, BDGSV, GPGSA, BDGSA), depend on the version of NMEA protocol used by the GPS module. This example currently can only record id and description of satellites from one navigation system. 
+If the GPS module supports multiple satellite navigation system (e.g. GPS, BDS), then the satellite ids and descriptions may be delivered in different statements (e.g. GPGSV, BDGSV, GPGSA, BDGSA), depend on the version of NMEA protocol used by the GPS module. This example currently can only record id and description of satellites from one navigation system.
 However, for other statements, this example can parse them correctly whatever the navigation system is.
 
 ### Steps to skip the limitation
