@@ -169,8 +169,129 @@ menu "ESP32-specific"
             config SPIRAM_WORKAROUND_NEED_VOLATILE_SPINLOCK
                 bool
                 default "y" if SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST
+        endmenu
 
+        menu "SPIRAM workaround libraries placement"
+            visible if SPIRAM_CACHE_WORKAROUND
 
+            config SPIRAM_CACHE_LIBJMP_IN_IRAM
+                bool "Put libc's jump related functions in IRAM"
+                depends on SPIRAM_CACHE_WORKAROUND
+                default "y"
+                help
+                    The functions affected by this option are: longjmp and setjmp.
+                    Putting these function in IRAM will allow them to be called when flash cache is disabled
+                    but it will also reduce the available size of free IRAM for the user application.
+
+            config SPIRAM_CACHE_LIBMATH_IN_IRAM
+                bool "Put libc's math related functions in IRAM"
+                depends on SPIRAM_CACHE_WORKAROUND
+                default "y"
+                help
+                    The functions affected by this option are: abs, div, labs, ldiv, quorem, fpclassify,
+                    and nan.
+                    Putting these function in IRAM will allow them to be called when flash cache is disabled
+                    but it will also reduce the available size of free IRAM for the user application.
+
+            config SPIRAM_CACHE_LIBNUMPARSER_IN_IRAM
+                bool "Put libc's number parsing related functions in IRAM"
+                depends on SPIRAM_CACHE_WORKAROUND
+                default "y"
+                help
+                    The functions affected by this option are: utoa, itoa, atoi, atol, strtol, and strtoul.
+                    Putting these function in IRAM will allow them to be called when flash cache is disabled
+                    but it will also reduce the available size of free IRAM for the user application.
+
+            config SPIRAM_CACHE_LIBIO_IN_IRAM
+                bool "Put libc's I/O related functions in IRAM"
+                depends on SPIRAM_CACHE_WORKAROUND
+                default "y"
+                help
+                    The functions affected by this option are: wcrtomb, fvwrite, wbuf, wsetup, fputwc, wctomb_r,
+                    ungetc, makebuf, fflush, refill, and sccl.
+                    Putting these function in IRAM will allow them to be called when flash cache is disabled
+                    but it will also reduce the available size of free IRAM for the user application.
+
+            config SPIRAM_CACHE_LIBTIME_IN_IRAM
+                bool "Put libc's time related functions in IRAM"
+                depends on SPIRAM_CACHE_WORKAROUND
+                default "y"
+                help
+                    The functions affected by this option are: asctime, asctime_r, ctime, ctime_r, lcltime, lcltime_r,
+                    gmtime, gmtime_r, strftime, mktime, tzset_r, tzset, time, gettzinfo, systimes, month_lengths,
+                    timelocal, tzvars, tzlock, tzcalc_limits, and strptime.
+                    Putting these function in IRAM will allow them to be called when flash cache is disabled
+                    but it will also reduce the available size of free IRAM for the user application.
+
+            config SPIRAM_CACHE_LIBCHAR_IN_IRAM
+                bool "Put libc's characters related functions in IRAM"
+                depends on SPIRAM_CACHE_WORKAROUND
+                default "y"
+                help
+                    The functions affected by this option are: ctype_, toupper, tolower, toascii, strupr, bzero,
+                    isalnum, isalpha, isascii, isblank, iscntrl, isdigit, isgraph, islower, isprint, ispunct,
+                    isspace, and isupper.
+                    Putting these function in IRAM will allow them to be called when flash cache is disabled
+                    but it will also reduce the available size of free IRAM for the user application.
+
+            config SPIRAM_CACHE_LIBMEM_IN_IRAM
+                bool "Put libc's memory related functions in IRAM"
+                depends on SPIRAM_CACHE_WORKAROUND
+                default "y"
+                help
+                    The functions affected by this option are: memccpy, memchr memmove, and memrchr.
+                    Putting these function in IRAM will allow them to be called when flash cache is disabled
+                    but it will also reduce the available size of free IRAM for the user application.
+
+            config SPIRAM_CACHE_LIBSTR_IN_IRAM
+                bool "Put libc's string related functions in IRAM"
+                depends on SPIRAM_CACHE_WORKAROUND
+                default "y"
+                help
+                    The functions affected by this option are: strcasecmp, strcasestr, strchr, strcoll,
+                    strcpy, strcspn, strdup, strdup_r, strlcat, strlcpy, strlen, strlwr, strncasecmp,
+                    strncat, strncmp, strncpy, strndup, strndup_r, strrchr, strsep, strspn, strstr,
+                    strtok_r, and strupr.
+                    Putting these function in IRAM will allow them to be called when flash cache is disabled
+                    but it will also reduce the available size of free IRAM for the user application.
+
+            config SPIRAM_CACHE_LIBRAND_IN_IRAM
+                bool "Put libc's random related functions in IRAM"
+                depends on SPIRAM_CACHE_WORKAROUND
+                default "y"
+                help
+                    The functions affected by this option are: srand, rand, and rand_r.
+                    Putting these function in IRAM will allow them to be called when flash cache is disabled
+                    but it will also reduce the available size of free IRAM for the user application.
+
+            config SPIRAM_CACHE_LIBENV_IN_IRAM
+                bool "Put libc's environment related functions in IRAM"
+                depends on SPIRAM_CACHE_WORKAROUND
+                default "y"
+                help
+                    The functions affected by this option are: environ, envlock, and getenv_r.
+                    Putting these function in IRAM will allow them to be called when flash cache is disabled
+                    but it will also reduce the available size of free IRAM for the user application.
+
+            config SPIRAM_CACHE_LIBFILE_IN_IRAM
+                bool "Put libc's file related functions in IRAM"
+                depends on SPIRAM_CACHE_WORKAROUND
+                default "y"
+                help
+                    The functions affected by this option are: lock, isatty, fclose, open, close, creat, read,
+                    rshift, sbrk, stdio, syssbrk, sysclose, sysopen, creat, sysread, syswrite, impure, fwalk,
+                    and findfp.
+                    Putting these function in IRAM will allow them to be called when flash cache is disabled
+                    but it will also reduce the available size of free IRAM for the user application.
+
+            config SPIRAM_CACHE_LIBMISC_IN_IRAM
+                bool "Put libc's miscellaneous functions in IRAM, see help"
+                depends on SPIRAM_CACHE_WORKAROUND
+                default "y"
+                help
+                    The functions affected by this option are: raise and system
+                    Putting these function in IRAM will allow them to be called when flash cache is disabled
+                    but it will also reduce the available size of free IRAM for the user application.
         endmenu
 
         config SPIRAM_BANKSWITCH_ENABLE
