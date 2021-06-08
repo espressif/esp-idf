@@ -119,7 +119,7 @@ esp_err_t esp_openthread_uart_process()
 
     if (rval > 0) {
         otPlatUartReceived(s_uart_buffer, (uint16_t)rval);
-    } else if (rval > 0) {
+    } else if (rval < 0) {
         if (errno != EAGAIN) {
             otLogWarnPlat("read uart failed: %d", errno);
             return ESP_FAIL;
