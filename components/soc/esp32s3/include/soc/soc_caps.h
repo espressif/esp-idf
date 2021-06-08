@@ -28,7 +28,12 @@
 
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
-#include "adc_caps.h"
+#define SOC_ADC_PERIPH_NUM              (2)
+#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM) (10)
+#define SOC_ADC_MAX_CHANNEL_NUM         (10)
+#define SOC_ADC_MAX_BITWIDTH            (12)
+#define SOC_ADC_SUPPORT_RTC_CTRL        (1)
+
 
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 #include "brownout_caps.h"

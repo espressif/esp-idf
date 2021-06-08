@@ -61,8 +61,7 @@ if(${target} STREQUAL "esp32s3")
                      "sdmmc_transaction.c"
                      "mcpwm.c"
                      "spi_slave_hd.c"
-                     "touch_sensor_common.c"
-                    )
+                     "touch_sensor_common.c")
 endif()
 
 if(IDF_TARGET STREQUAL "esp32c3")

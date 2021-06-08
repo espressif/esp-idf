@@ -117,7 +117,7 @@ static _lock_t adc2_wifi_lock;
 
 #endif // CONFIG_IDF_TARGET_*
 
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#if CONFIG_IDF_TARGET_ESP32S2
 #ifdef CONFIG_PM_ENABLE
 static esp_pm_lock_handle_t s_adc2_arbiter_lock;
 #endif  //CONFIG_PM_ENABLE
@@ -127,7 +127,7 @@ static esp_pm_lock_handle_t s_adc2_arbiter_lock;
                     ADC Common
 ---------------------------------------------------------------*/
 
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#if CONFIG_IDF_TARGET_ESP32S2
 static uint32_t get_calibration_offset(adc_ll_num_t adc_n, adc_channel_t chan)
 {
     adc_atten_t atten = adc_hal_get_atten(adc_n, chan);
@@ -299,10 +299,10 @@ esp_err_t adc_set_data_inv(adc_unit_t adc_unit, bool inv_en)
 
 esp_err_t adc_set_data_width(adc_unit_t adc_unit, adc_bits_width_t bits)
 {
-#ifdef CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_TARGET_ESP32
     ADC_CHECK(bits < ADC_WIDTH_MAX, "WIDTH ERR: ESP32 support 9 ~ 12 bit width", ESP_ERR_INVALID_ARG);
 #else
-    ADC_CHECK(bits == ADC_WIDTH_BIT_13, "WIDTH ERR: " CONFIG_IDF_TARGET " support 13 bit width", ESP_ERR_INVALID_ARG);
+    ADC_CHECK(bits == ADC_WIDTH_MAX - 1, "WIDTH ERR: see `adc_bits_width_t` for supported bit width", ESP_ERR_INVALID_ARG);
 #endif
 
     if (adc_unit & ADC_UNIT_1) {
@@ -329,7 +329,7 @@ esp_err_t adc_set_data_width(adc_unit_t adc_unit, adc_bits_width_t bits)
 esp_err_t adc_rtc_reset(void)
 {
     FSM_ENTER();
-    adc_hal_rtc_reset();
+    adc_ll_rtc_reset();
     FSM_EXIT();
     return ESP_OK;
 }
@@ -358,10 +358,10 @@ esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten)
 
 esp_err_t adc1_config_width(adc_bits_width_t width_bit)
 {
-#ifdef CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_TARGET_ESP32
     ADC_CHECK(width_bit < ADC_WIDTH_MAX, "WIDTH ERR: ESP32 support 9 ~ 12 bit width", ESP_ERR_INVALID_ARG);
-#elif !defined(CONFIG_IDF_TARGET_ESP32)
-    ADC_CHECK(width_bit == ADC_WIDTH_BIT_13, "WIDTH ERR: " CONFIG_IDF_TARGET " support 13 bit width", ESP_ERR_INVALID_ARG);
+#else
+    ADC_CHECK(width_bit == ADC_WIDTH_MAX - 1, "WIDTH ERR: see `adc_bits_width_t` for supported bit width", ESP_ERR_INVALID_ARG);
 #endif
 
     SARADC1_ENTER();
@@ -382,7 +382,11 @@ esp_err_t adc1_dma_mode_acquire(void)
 
     SARADC1_ENTER();
     /* switch SARADC into DIG channel */
+#if CONFIG_IDF_TARGET_ESP32S3   // remove this macro. TODO: IDF-1776
+    adc_hal_set_controller(ADC_NUM_1, ADC_LL_CTRL_DIG);
+#else
     adc_hal_set_controller(ADC_NUM_1, ADC_CTRL_DIG);
+#endif
     SARADC1_EXIT();
 
     return ESP_OK;
@@ -397,7 +401,11 @@ esp_err_t adc1_rtc_mode_acquire(void)
 
     SARADC1_ENTER();
     /* switch SARADC into RTC channel. */
+#if CONFIG_IDF_TARGET_ESP32S3  // remove this macro. TODO: IDF-1776
+    adc_hal_set_controller(ADC_NUM_1, ADC_LL_CTRL_RTC);
+#else
     adc_hal_set_controller(ADC_NUM_1, ADC_CTRL_RTC);
+#endif
     SARADC1_EXIT();
 
     return ESP_OK;
@@ -419,7 +427,7 @@ int adc1_get_raw(adc1_channel_t channel)
     ADC_CHANNEL_CHECK(ADC_NUM_1, channel);
     adc1_rtc_mode_acquire();
 
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#if CONFIG_IDF_TARGET_ESP32S2
     // Get calibration value before going into critical section
     uint32_t cal_val = get_calibration_offset(ADC_NUM_1, channel);
     adc_hal_set_calibration_param(ADC_NUM_1, cal_val);
@@ -430,10 +438,14 @@ int adc1_get_raw(adc1_channel_t channel)
     adc_hal_hall_disable(); //Disable other peripherals.
     adc_hal_amp_disable();  //Currently the LNA is not open, close it by default.
 #endif
+#if CONFIG_IDF_TARGET_ESP32S3 // remove this macro. TODO: IDF-1776
+    adc_hal_set_controller(ADC_NUM_1, ADC_LL_CTRL_RTC);    //Set controller
+#else
     adc_hal_set_controller(ADC_NUM_1, ADC_CTRL_RTC);    //Set controller
+#endif
     adc_hal_convert(ADC_NUM_1, channel, &adc_value);   //Start conversion, For ADC1, the data always valid.
 #if !CONFIG_IDF_TARGET_ESP32
-    adc_hal_rtc_reset();    //Reset FSM of rtc controller
+    adc_ll_rtc_reset();    //Reset FSM of rtc controller
 #endif
     SARADC1_EXIT();
 
@@ -452,7 +464,11 @@ void adc1_ulp_enable(void)
     adc_power_acquire();
 
     SARADC1_ENTER();
-    adc_hal_set_controller(ADC_NUM_1, ADC_CTRL_ULP);
+#if CONFIG_IDF_TARGET_ESP32S3 // remove this macro. TODO: IDF-1776
+    adc_hal_set_controller(ADC_NUM_1, ADC_LL_CTRL_ULP);
+#else
+    adc_hal_set_controller(ADC_NUM_1, ADC_CTRL_ULP);    //Set controller
+#endif
     /* since most users do not need LNA and HALL with uLP, we disable them here
        open them in the uLP if needed. */
 #ifdef CONFIG_IDF_TARGET_ESP32
@@ -556,13 +572,13 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 
     ADC_CHECK(raw_out != NULL, "ADC out value err", ESP_ERR_INVALID_ARG);
     ADC_CHECK(channel < ADC2_CHANNEL_MAX, "ADC Channel Err", ESP_ERR_INVALID_ARG);
-#ifdef CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_TARGET_ESP32
     ADC_CHECK(width_bit < ADC_WIDTH_MAX, "WIDTH ERR: ESP32 support 9 ~ 12 bit width", ESP_ERR_INVALID_ARG);
 #else
-    ADC_CHECK(width_bit == ADC_WIDTH_BIT_13, "WIDTH ERR: ESP32S2 support 13 bit width", ESP_ERR_INVALID_ARG);
+    ADC_CHECK(width_bit == ADC_WIDTH_MAX - 1, "WIDTH ERR: see `adc_bits_width_t` for supported bit width", ESP_ERR_INVALID_ARG);
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#if CONFIG_IDF_TARGET_ESP32S2
     // Get calibration value before going into critical section
     uint32_t cal_val = get_calibration_offset(ADC_NUM_2, channel);
     adc_hal_set_calibration_param(ADC_NUM_2, cal_val);
@@ -581,7 +597,11 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     adc2_dac_disable(channel);      //disable other peripherals
 #endif
     adc_hal_rtc_set_output_format(ADC_NUM_2, width_bit);
-    adc_hal_set_controller(ADC_NUM_2, ADC_CTRL_RTC);// set controller
+#if CONFIG_IDF_TARGET_ESP32S3 // remove this macro. TODO: IDF-1776
+    adc_hal_set_controller(ADC_NUM_2, ADC_LL_CTRL_ARB);// set controller
+#else
+    adc_hal_set_controller(ADC_NUM_2, ADC_CTRL_RTC);
+#endif
 
 #if !CONFIG_IDF_TARGET_ESP32
 #ifdef CONFIG_PM_ENABLE
@@ -596,7 +616,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
         adc_value = -1;
     }
 
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#if CONFIG_IDF_TARGET_ESP32S2
 #ifdef CONFIG_PM_ENABLE
     /* Release APB clock. */
     if (s_adc2_arbiter_lock) {

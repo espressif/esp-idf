@@ -133,7 +133,7 @@ typedef struct {
 -                                         2: 11 bit;
 -                                         3: 12 bit. */
             int8_t channel:   4;   /*!< ADC channel index. */
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#elif CONFIG_IDF_TARGET_ESP32S2
             uint8_t reserved:  2;   /*!< reserved0 */
             uint8_t channel:   4;   /*!< ADC channel index. */
 #elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
@@ -295,7 +295,7 @@ typedef struct {
 #endif
 } adc_digi_config_t;
 
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#if CONFIG_IDF_TARGET_ESP32S2
 /**
  * @brief ADC digital controller (DMA mode) interrupt type options.
  */
