@@ -150,6 +150,7 @@ See :ref:`jtag-debugging-tip-why-next-works-as-step` for potential limitation of
 
 Checking and setting memory
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 To display or set contents of memory use "Memory" tab at the bottom of "Debug" perspective.
 
 With the "Memory" tab, we will read from and write to the memory location ``0x3FF44004`` labeled as ``GPIO_OUT_REG`` used to set and clear individual GPIO's.
@@ -177,7 +178,6 @@ You should see one bit being flipped over at memory location ``0x3FF44004`` (and
     Observing memory location 0x3FF44004 changing one bit to "OFF"
 
 To set memory use the same "Monitor" tab and the same memory location. Type in alternate bit pattern as previously observed. Immediately after pressing enter you will see LED changing the state.
-
 
 .. _jtag-debugging-examples-eclipse-06:
 
