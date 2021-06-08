@@ -33,6 +33,10 @@
 #include "openthread/instance.h"
 #include "openthread/tasklet.h"
 
+#if CONFIG_OPENTHREAD_CUSTOM_COMMAND
+#include "esp_ot_cli_extension.h"
+#endif // CONFIG_OPENTHREAD_CUSTOM_COMMAND
+
 #define TAG "ot_esp_cli"
 
 extern void otAppCliInit(otInstance *instance);
@@ -100,6 +104,9 @@ static void ot_task_worker(void *aContext)
     esp_openthread_lock_acquire(portMAX_DELAY);
     otAppCliInit(instance);
     esp_openthread_lock_release();
+#if CONFIG_OPENTHREAD_CUSTOM_COMMAND
+    esp_cli_custom_command_init();
+#endif // CONFIG_OPENTHREAD_CUSTOM_COMMAND
 
     while (true) {
         FD_ZERO(&mainloop.read_fds);
