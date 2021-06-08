@@ -390,7 +390,8 @@ static esp_err_t lan8720_init(esp_eth_phy_t *phy)
               "read ID1 failed", err);
     PHY_CHECK(eth->phy_reg_read(eth, lan8720->addr, ETH_PHY_IDR2_REG_ADDR, &(id2.val)) == ESP_OK,
               "read ID2 failed", err);
-    PHY_CHECK(id1.oui_msb == 0x7 && id2.oui_lsb == 0x30 && id2.vendor_model == 0xF, "wrong chip ID", err);
+                  /* Added Vendor Model lan8740 and lan8742  bug fix*/ 
+    PHY_CHECK(id1.oui_msb == 0x7 && id2.oui_lsb == 0x30 && (id2.vendor_model == 0xF || id2.vendor_model == 0x11 || id2.vendor_model == 0x13), "wrong chip ID", err);
     return ESP_OK;
 err:
     return ESP_FAIL;
