@@ -98,6 +98,7 @@ class Gitlab(object):
             return res
         return wrapper
 
+    @retry_download  # type: ignore
     def download_artifact(self, job_id, artifact_path, destination=None):
         """
         download specific path of job artifacts and extract to destination.
@@ -152,7 +153,7 @@ class Gitlab(object):
                     job_id_list.append({"id": job.id, "parallel_num": match.group(3)})
         return job_id_list
 
-    @retry_download
+    @retry_download  # type: ignore
     def download_archive(self, ref, destination, project_id=None):
         """
         Download archive of certain commit of a repository and extract to destination path
