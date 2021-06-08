@@ -48,12 +48,8 @@ esp_err_t esp_timer_create(const esp_timer_create_args_t* create_args,
 
 uint32_t xTaskGetTickCount(void)
 {
-    struct timeval tv;
-    struct timezone tz;
-    if (gettimeofday(&tv, &tz) == 0) {
-        return (tv.tv_sec * 1000) + (tv.tv_usec / 1000);
-    }
-    return 0;
+    static uint32_t tick = 0;
+    return tick++;
 }
 
 /// Queue mock
