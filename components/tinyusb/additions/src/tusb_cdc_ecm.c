@@ -64,7 +64,7 @@ const uint8_t tud_network_mac_address[6];
 static void service_traffic(void)
 {
   /* handle any packet received by tud_network_recv_cb() */
-  if(rx_frame_buffer.frame[rx_frame_buffer.read_idx]) {
+  while(rx_frame_buffer.frame[rx_frame_buffer.read_idx]) {
     ethernet_input(rx_frame_buffer.frame[rx_frame_buffer.read_idx], &netif_data);
 
     rx_frame_buffer.frame[rx_frame_buffer.read_idx] = NULL;
@@ -80,12 +80,10 @@ static void service_traffic_task(void* param)
 {
   while(1) {
     /* do only service traffic if event was received */
-    if(xSemaphoreTake(rx_event, pdMS_TO_TICKS(10)))
+    if(xSemaphoreTake(rx_event, portMAX_DELAY))
     {
       service_traffic();
     }
-
-    sys_check_timeouts();
   }
 }
 
@@ -152,21 +150,16 @@ esp_err_t tusb_ethernet_over_usb_init(tinyusb_config_ethernet_over_usb_t cfg)
     netif->hwaddr[5] ^= 0x01;
     /* set host MAC address */
     tusb_set_mac_address(cfg.mac_address);
-
-    for(int i = 0; i < sizeof(cfg.mac_address)/sizeof(cfg.mac_address[0]); i++) {
-      if(i >= (sizeof(cfg.mac_address)/sizeof(cfg.mac_address[0]) - 1)) {
-        snprintf(mac_str + (i*3), 3,"%02x",  cfg.mac_address[i]);
-      }
-      else {
-        snprintf(mac_str + (i*3), 4,"%02x:",  cfg.mac_address[i]);
-      }
+    
+    /* print host MAC address */
+    for(int i = 0; i < 6; i++) {
+      snprintf(mac_str + (i*3), 4,"%02x%s", cfg.mac_address[i], i<5 ? ":" : "");
     }
     ESP_LOGI(TAG,"Host NIC MAC Address: %s", mac_str);
 
     netif = netif_add(netif, &(cfg.ipaddr), &(cfg.netmask), &(cfg.gateway), NULL, netif_init_cb, ip_input);
     netif_set_default(netif);
-    if(!netif_is_up(&netif_data))
-    {
+    if(!netif_is_up(&netif_data)) {
       return ESP_FAIL;
     }
 
