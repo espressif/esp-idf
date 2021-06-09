@@ -1,6 +1,8 @@
 Sigma-delta Modulation
 ======================
 
+{IDF_TARGET_SIGMA_DELTA_MODULATION_CHANNEL_NUM:default="8", esp32c3="4"}
+
 Introduction
 ------------
 
@@ -9,13 +11,7 @@ Introduction
 Functionality Overview
 ----------------------
 
-.. only:: esp32 or esp32s2
-
-    There are eight independent sigma-delta modulation channels identified with :cpp:type:`sigmadelta_channel_t`. Each channel is capable to output the binary, hardware generated signal with the sigma-delta modulation.
-
-.. only:: esp32c3
-
-    There are four independent sigma-delta modulation channels identified with :cpp:type:`sigmadelta_channel_t`. Each channel is capable to output the binary, hardware generated signal with the sigma-delta modulation.
+There are {IDF_TARGET_SIGMA_DELTA_MODULATION_CHANNEL_NUM} independent sigma-delta modulation channels identified with :cpp:type:`sigmadelta_channel_t`. Each channel is capable to output the binary, hardware generated signal with the sigma-delta modulation.
 
 Selected channel should be set up by providing configuration parameters in :cpp:type:`sigmadelta_config_t` and then applying this configuration with :cpp:func:`sigmadelta_config`.
 
