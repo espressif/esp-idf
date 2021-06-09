@@ -63,6 +63,7 @@ extern "C" {
 #define RTC_XTAL_FREQ_REG       RTC_CNTL_STORE4_REG
 #define RTC_APB_FREQ_REG        RTC_CNTL_STORE5_REG
 #define RTC_ENTRY_ADDR_REG      RTC_CNTL_STORE6_REG
+#define RTC_RESET_CAUSE_REG     RTC_CNTL_STORE6_REG
 #define RTC_MEMORY_CRC_REG      RTC_CNTL_STORE7_REG
 
 #define RTC_DISABLE_ROM_LOG ((1 << 0) | (1 << 16)) //!< Disable logging from the ROM code.
