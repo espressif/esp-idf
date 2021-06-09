@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
 #define _SOC_RTC_I2C_REG_H_
 
 
+#include "soc.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "soc.h"
 
 #define RTC_I2C_SCL_LOW_REG          (DR_REG_RTC_I2C_BASE + 0x0)
 /* RTC_I2C_SCL_LOW_PERIOD : R/W ;bitpos:[19:0] ;default: 20'h100 ; */
@@ -425,7 +425,7 @@ extern "C" {
 #define RTC_I2C_SLAVE_TRAN_COMP_INT_ENA_S  0
 
 #define RTC_I2C_DATA_REG          (DR_REG_RTC_I2C_BASE + 0x34)
-/* RTC_I2C_DONE : RO ;bitpos:[31] ;default: 1'b0 ; */
+/* RTC_I2C_DONE :  ;bitpos:[31] ;default:  ; */
 /*description: i2c done.*/
 #define RTC_I2C_DONE    (BIT(31))
 #define RTC_I2C_DONE_M  (BIT(31))

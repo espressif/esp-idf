@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include "usb_types.h"
 
+#include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
 #endif

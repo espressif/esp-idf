@@ -1,4 +1,4 @@
-// Copyright 2017-2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,13 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#pragma once
+#ifndef _SOC_RTC_I2C_STRUCT_H_
+#define _SOC_RTC_I2C_STRUCT_H_
 
+
+#include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdint.h>
 
 typedef volatile struct {
     union {
@@ -225,3 +226,7 @@ extern rtc_i2c_dev_t RTC_I2C;
 #ifdef __cplusplus
 }
 #endif
+
+
+
+#endif /*_SOC_RTC_I2C_STRUCT_H_ */

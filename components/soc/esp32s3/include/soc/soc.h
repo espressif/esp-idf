@@ -90,7 +90,7 @@
 #define DR_REG_I2S1_BASE                        0x6002D000
 #define DR_REG_UART2_BASE                       0x6002E000
 #define DR_REG_SPI4_BASE                        0x60037000
-#define DR_REG_USB_DEVICE_BASE                  0x60080000
+#define DR_REG_USB_DEVICE_BASE                  0x60038000
 #define DR_REG_USB_WRAP_BASE                    0x60039000
 #define DR_REG_APB_SARADC_BASE                  0x60040000
 #define DR_REG_LCD_CAM_BASE                     0x60041000
@@ -213,7 +213,7 @@
 
 //Periheral Clock {{
 #define  APB_CLK_FREQ_ROM                            (40*1000000)
-#define  CPU_CLK_FREQ_ROM                            (40*1000000)
+#define  CPU_CLK_FREQ_ROM                            APB_CLK_FREQ_ROM
 #define  UART_CLK_FREQ_ROM                           (40*1000000)
 #define  EFUSE_CLK_FREQ_ROM                          (20*1000000)
 #define  CPU_CLK_FREQ                                APB_CLK_FREQ
@@ -223,9 +223,9 @@
 #define  XTAL_CLK_FREQ                               (40*1000000)
 #define  UART_CLK_FREQ                               APB_CLK_FREQ
 #define  WDT_CLK_FREQ                                APB_CLK_FREQ
-#define  TIMER_CLK_FREQ                              (80000000>>4)
+#define  TIMER_CLK_FREQ                              (80000000>>4) //80MHz divided by 16
 #define  SPI_CLK_DIV                                 4
-#define  TICKS_PER_US_ROM                            40
+#define  TICKS_PER_US_ROM                            40              // CPU is 80MHz
 #define  GPIO_MATRIX_DELAY_NS                        0
 //}}
 

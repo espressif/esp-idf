@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
 #define _SOC_PCNT_REG_H_
 
 
+#include "soc.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "soc.h"
 
 #define PCNT_U0_CONF0_REG          (DR_REG_PCNT_BASE + 0x0)
 /* PCNT_CH1_LCTRL_MODE_U0 : R/W ;bitpos:[31:30] ;default: 2'd0 ; */

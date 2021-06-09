@@ -1,4 +1,4 @@
-// Copyright 2017-2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,13 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef _SOC_TIMG_STRUCT_H_
-#define _SOC_TIMG_STRUCT_H_
+#ifndef _SOC_TIMER_GROUP_STRUCT_H_
+#define _SOC_TIMER_GROUP_STRUCT_H_
+
+
+#include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdint.h>
 
 typedef volatile struct {
     struct {
@@ -31,7 +32,7 @@ typedef volatile struct {
                 uint32_t divider                       :    16;
                 uint32_t autoreload                    :    1;
                 uint32_t increase                      :    1;
-                uint32_t enable                            :    1;
+                uint32_t enable                        :    1;
             };
             uint32_t val;
         } config;
@@ -213,4 +214,6 @@ extern timg_dev_t TIMERG1;
 }
 #endif
 
-#endif  /* _SOC_TIMG_STRUCT_H_ */
+
+
+#endif /*_SOC_TIMG_STRUCT_H_ */

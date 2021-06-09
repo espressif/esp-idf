@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
 #define _SOC_SYSTEM_REG_H_
 
 
+#include "soc.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "soc.h"
 
 #define SYSTEM_CORE_1_CONTROL_0_REG          (DR_REG_SYSTEM_BASE + 0x0)
 /* SYSTEM_CONTROL_CORE_1_RESETING : R/W ;bitpos:[2] ;default: 1'b1 ; */

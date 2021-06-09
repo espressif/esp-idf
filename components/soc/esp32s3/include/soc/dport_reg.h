@@ -13,6 +13,7 @@
 // limitations under the License.
 #pragma once
 
+#include "soc.h"
 #ifdef __cplusplus
 extern "C" {
 #endif

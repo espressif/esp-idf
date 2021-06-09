@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
 #ifndef _SOC_SPI_STRUCT_H_
 #define _SOC_SPI_STRUCT_H_
 
+
+#include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -33,7 +35,7 @@ typedef volatile struct {
     union {
         struct {
             uint32_t reserved0                     :    3;  /*reserved*/
-            uint32_t dummy_out                     :    1;  /*In the dummy phase the signal level of spi is output by the spi controller. Can be configured in CONF state.*/
+            uint32_t dummy_out                     :    1;  /*0: In the dummy phase, the FSPI bus signals are not output. 1: In the dummy phase, the FSPI bus signals are output. Can be configured in CONF state.*/
             uint32_t reserved4                     :    1;  /*reserved*/
             uint32_t faddr_dual                    :    1;  /*Apply 2 signals during addr phase 1:enable 0: disable. Can be configured in CONF state.*/
             uint32_t faddr_quad                    :    1;  /*Apply 4 signals during addr phase 1:enable 0: disable. Can be configured in CONF state.*/
@@ -50,9 +52,9 @@ typedef volatile struct {
             uint32_t d_pol                         :    1;  /*The bit is used to set MOSI line polarity, 1: high 0, low. Can be configured in CONF state.*/
             uint32_t hold_pol                      :    1;  /*SPI_HOLD output value when SPI is idle. 1: output high, 0: output low. Can be configured in CONF state.*/
             uint32_t wp_pol                        :    1;  /*Write protect signal output when SPI is idle.  1: output high, 0: output low.  Can be configured in CONF state.*/
-            uint32_t reserved22                    :    3;  /*reserved*/
-            uint32_t rd_bit_order                  :    1;  /*In read-data (MISO) phase 1: LSB first 0: MSB first. Can be configured in CONF state.*/
-            uint32_t wr_bit_order                  :    1;  /*In command address write-data (MOSI) phases 1: LSB firs 0: MSB first. Can be configured in CONF state.*/
+            uint32_t reserved22                    :    1;  /*reserved*/
+            uint32_t rd_bit_order                  :    2;  /*In read-data (MISO) phase 1: LSB first 0: MSB first. Can be configured in CONF state.*/
+            uint32_t wr_bit_order                  :    2;  /*In command address write-data (MOSI) phases 1: LSB firs 0: MSB first. Can be configured in CONF state.*/
             uint32_t reserved27                    :    5;  /*reserved*/
         };
         uint32_t val;
@@ -146,7 +148,7 @@ typedef volatile struct {
             uint32_t reserved25                    :    4;  /*reserved*/
             uint32_t ck_idle_edge                  :    1;  /*1: spi clk line is high when idle     0: spi clk line is low when idle. Can be configured in CONF state.*/
             uint32_t cs_keep_active                :    1;  /*spi cs line keep low when the bit is set. Can be configured in CONF state.*/
-            uint32_t quad_din_pin_swap             :    1;  /*1:  spi quad input swap enable  0:  spi quad input swap disable. Can be configured in CONF state.*/
+            uint32_t quad_din_pin_swap             :    1;  /*1: SPI quad input swap enable, swap FSPID with FSPIQ, swap FSPIWP with FSPIHD. 0:  spi quad input swap disable. Can be configured in CONF state.*/
         };
         uint32_t val;
     } misc;
@@ -196,7 +198,9 @@ typedef volatile struct {
     } dout_mode;
     union {
         struct {
-            uint32_t reserved0                     :    18;  /*reserved*/
+            uint32_t outfifo_empty                 :    1;  /*Records the status of DMA TX FIFO. 1: DMA TX FIFO is not ready for sending data. 0: DMA TX FIFO is ready for sending data.*/
+            uint32_t infifo_full                   :    1;  /*Records the status of DMA RX FIFO. 1: DMA RX FIFO is not ready for receiving data. 0: DMA RX FIFO is ready for receiving data.*/
+            uint32_t reserved2                     :    16;  /*reserved*/
             uint32_t dma_seg_trans_en              :    1;  /*Enable dma segment transfer in spi dma half slave mode. 1: enable. 0: disable.*/
             uint32_t rx_seg_trans_clr_en           :    1;  /*1: spi_dma_infifo_full_vld is cleared by spi slave cmd 5. 0: spi_dma_infifo_full_vld is cleared by spi_trans_done.*/
             uint32_t tx_seg_trans_clr_en           :    1;  /*1: spi_dma_outfifo_empty_vld is cleared by spi slave cmd 6. 0: spi_dma_outfifo_empty_vld is cleared by spi_trans_done.*/
@@ -365,7 +369,7 @@ typedef volatile struct {
     uint32_t reserved_8c;
     uint32_t reserved_90;
     uint32_t reserved_94;
-    uint32_t data_buf[16];
+    uint32_t data_buf[16];                                               /*SPI CPU-controlled buffer0*/
     uint32_t reserved_d8;
     uint32_t reserved_dc;
     union {
@@ -418,5 +422,7 @@ extern spi_dev_t GPSPI3;
 #ifdef __cplusplus
 }
 #endif
+
+
 
 #endif /*_SOC_SPI_STRUCT_H_ */

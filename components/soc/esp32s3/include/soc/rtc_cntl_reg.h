@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
 #define _SOC_RTC_CNTL_REG_H_
 
 
+#include "soc.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "soc.h"
 
 /* The value that needs to be written to RTC_CNTL_WDT_WKEY to write-enable the wdt registers */
 #define RTC_CNTL_WDT_WKEY_VALUE 0x50D83AA1
@@ -2050,14 +2050,14 @@ ork.*/
 #define RTC_WDT_STG_SEL_RESET_RTC       4
 
 /* RTC_CNTL_WDT_CPU_RESET_LENGTH : R/W ;bitpos:[18:16] ;default: 3'h1 ; */
-/*description: CPU reset counter length*/
-#define RTC_CNTL_WDT_CPU_RESET_LENGTH  0x00000007
+/*description: CPU reset counter length.*/
+#define RTC_CNTL_WDT_CPU_RESET_LENGTH    0x00000007
 #define RTC_CNTL_WDT_CPU_RESET_LENGTH_M  ((RTC_CNTL_WDT_CPU_RESET_LENGTH_V)<<(RTC_CNTL_WDT_CPU_RESET_LENGTH_S))
 #define RTC_CNTL_WDT_CPU_RESET_LENGTH_V  0x7
 #define RTC_CNTL_WDT_CPU_RESET_LENGTH_S  16
 /* RTC_CNTL_WDT_SYS_RESET_LENGTH : R/W ;bitpos:[15:13] ;default: 3'h1 ; */
-/*description: system reset counter length*/
-#define RTC_CNTL_WDT_SYS_RESET_LENGTH  0x00000007
+/*description: system reset counter length.*/
+#define RTC_CNTL_WDT_SYS_RESET_LENGTH    0x00000007
 #define RTC_CNTL_WDT_SYS_RESET_LENGTH_M  ((RTC_CNTL_WDT_SYS_RESET_LENGTH_V)<<(RTC_CNTL_WDT_SYS_RESET_LENGTH_S))
 #define RTC_CNTL_WDT_SYS_RESET_LENGTH_V  0x7
 #define RTC_CNTL_WDT_SYS_RESET_LENGTH_S  13
@@ -3262,7 +3262,7 @@ ork.*/
 #define RTC_CNTL_ULP_CP_TIMER_SLP_CYCLE_V  0xFFFFFF
 #define RTC_CNTL_ULP_CP_TIMER_SLP_CYCLE_S  8
 
-#define RTC_CNTL_INT_ENA_RTC_W1TS_REG          (DR_REG_RTCCNTL_BASE + 0x138)
+#define RTC_CNTL_INT_ENA_W1TS_REG          (DR_REG_RTCCNTL_BASE + 0x138)
 /* RTC_CNTL_TOUCH_APPROACH_LOOP_DONE_INT_ENA_W1TS : WO ;bitpos:[20] ;default: 1'b0 ; */
 /*description: .*/
 #define RTC_CNTL_TOUCH_APPROACH_LOOP_DONE_INT_ENA_W1TS    (BIT(20))
@@ -3390,7 +3390,7 @@ ork.*/
 #define RTC_CNTL_SLP_WAKEUP_INT_ENA_W1TS_V  0x1
 #define RTC_CNTL_SLP_WAKEUP_INT_ENA_W1TS_S  0
 
-#define RTC_CNTL_INT_ENA_RTC_W1TC_REG          (DR_REG_RTCCNTL_BASE + 0x13C)
+#define RTC_CNTL_INT_ENA_W1TC_REG          (DR_REG_RTCCNTL_BASE + 0x13C)
 /* RTC_CNTL_TOUCH_APPROACH_LOOP_DONE_INT_ENA_W1TC : WO ;bitpos:[20] ;default: 1'b0 ; */
 /*description: .*/
 #define RTC_CNTL_TOUCH_APPROACH_LOOP_DONE_INT_ENA_W1TC    (BIT(20))

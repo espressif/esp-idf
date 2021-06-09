@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,6 +13,9 @@
 // limitations under the License.
 #ifndef _SOC_I2S_STRUCT_H_
 #define _SOC_I2S_STRUCT_H_
+
+
+#include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -156,60 +159,60 @@ typedef volatile struct {
     } rx_clkm_conf;
     union {
         struct {
-            uint32_t tx_clkm_div_num: 8;                  /*Integral I2S TX clock divider value. f_I2S_CLK = f_I2S_CLK_S/(N+b/a). There will be (a-b) * n-div and b * (n+1)-div.  So the average combination will be:  for b <= a/2  z * [x * n-div + (n+1)-div] + y * n-div. For b > a/2  z * [n-div + x * (n+1)-div] + y * (n+1)-div.*/
-            uint32_t reserved8:      18;                  /*Reserved*/
-            uint32_t tx_clk_active:   1;                  /*I2S Tx module clock enable signal.*/
-            uint32_t tx_clk_sel:      2;                  /*Select I2S Tx module source clock. 0: XTAL clock. 1: APLL. 2: CLK160. 3: I2S_MCLK_in.*/
-            uint32_t clk_en:          1;                  /*Set this bit to enable clk gate*/
-            uint32_t reserved30:      2;                  /*Reserved*/
+            uint32_t tx_clkm_div_num               :    8;  /*Integral I2S TX clock divider value. f_I2S_CLK = f_I2S_CLK_S/(N+b/a). There will be (a-b) * n-div and b * (n+1)-div.  So the average combination will be:  for b <= a/2, z * [x * n-div + (n+1)-div] + y * n-div. For b > a/2, z * [n-div + x * (n+1)-div] + y * (n+1)-div. */
+            uint32_t reserved8                     :    18;  /* Reserved*/
+            uint32_t tx_clk_active                 :    1;  /*I2S Tx module clock enable signal.*/
+            uint32_t tx_clk_sel                    :    2;  /*Select I2S Tx module source clock. 0: XTAL clock. 1: APLL. 2: CLK160. 3: I2S_MCLK_in.*/
+            uint32_t clk_en                        :    1;  /*Set this bit to enable clk gate*/
+            uint32_t reserved30                    :    2;  /* Reserved*/
         };
         uint32_t val;
     } tx_clkm_conf;
     union {
         struct {
-            uint32_t rx_clkm_div_z:   9;                  /*For b <= a/2  the value of I2S_RX_CLKM_DIV_Z is b. For b > a/2  the value of I2S_RX_CLKM_DIV_Z is (a-b).*/
-            uint32_t rx_clkm_div_y:   9;                  /*For b <= a/2  the value of I2S_RX_CLKM_DIV_Y is (a%b) . For b > a/2  the value of I2S_RX_CLKM_DIV_Y is (a%(a-b)).*/
-            uint32_t rx_clkm_div_x:   9;                  /*For b <= a/2  the value of I2S_RX_CLKM_DIV_X is (a/b) - 1. For b > a/2  the value of I2S_RX_CLKM_DIV_X is (a/(a-b)) - 1.*/
-            uint32_t rx_clkm_div_yn1: 1;                  /*For b <= a/2  the value of I2S_RX_CLKM_DIV_YN1 is 0 . For b > a/2  the value of I2S_RX_CLKM_DIV_YN1 is 1.*/
-            uint32_t reserved28:      4;                  /*Reserved*/
+            uint32_t rx_clkm_div_z                 :    9;  /*For b <= a/2, the value of I2S_RX_CLKM_DIV_Z is b. For b > a/2, the value of I2S_RX_CLKM_DIV_Z is (a-b). */
+            uint32_t rx_clkm_div_y                 :    9;  /*For b <= a/2, the value of I2S_RX_CLKM_DIV_Y is (a%b) . For b > a/2, the value of I2S_RX_CLKM_DIV_Y is (a%(a-b)). */
+            uint32_t rx_clkm_div_x                 :    9;  /*For b <= a/2, the value of I2S_RX_CLKM_DIV_X is (a/b) - 1. For b > a/2, the value of I2S_RX_CLKM_DIV_X is (a/(a-b)) - 1. */
+            uint32_t rx_clkm_div_yn1               :    1;  /*For b <= a/2, the value of I2S_RX_CLKM_DIV_YN1 is 0 . For b > a/2, the value of I2S_RX_CLKM_DIV_YN1 is 1. */
+            uint32_t reserved28                    :    4;  /* Reserved*/
         };
         uint32_t val;
     } rx_clkm_div_conf;
     union {
         struct {
-            uint32_t tx_clkm_div_z:   9;                  /*For b <= a/2  the value of I2S_TX_CLKM_DIV_Z is b. For b > a/2  the value of I2S_TX_CLKM_DIV_Z is (a-b).*/
-            uint32_t tx_clkm_div_y:   9;                  /*For b <= a/2  the value of I2S_TX_CLKM_DIV_Y is (a%b) . For b > a/2  the value of I2S_TX_CLKM_DIV_Y is (a%(a-b)).*/
-            uint32_t tx_clkm_div_x:   9;                  /*For b <= a/2  the value of I2S_TX_CLKM_DIV_X is (a/b) - 1. For b > a/2  the value of I2S_TX_CLKM_DIV_X is (a/(a-b)) - 1.*/
-            uint32_t tx_clkm_div_yn1: 1;                  /*For b <= a/2  the value of I2S_TX_CLKM_DIV_YN1 is 0 . For b > a/2  the value of I2S_TX_CLKM_DIV_YN1 is 1.*/
-            uint32_t reserved28:      4;                  /*Reserved*/
+            uint32_t tx_clkm_div_z                 :    9;  /*For b <= a/2, the value of I2S_TX_CLKM_DIV_Z is b. For b > a/2, the value of I2S_TX_CLKM_DIV_Z is (a-b). */
+            uint32_t tx_clkm_div_y                 :    9;  /*For b <= a/2, the value of I2S_TX_CLKM_DIV_Y is (a%b) . For b > a/2, the value of I2S_TX_CLKM_DIV_Y is (a%(a-b)). */
+            uint32_t tx_clkm_div_x                 :    9;  /*For b <= a/2, the value of I2S_TX_CLKM_DIV_X is (a/b) - 1. For b > a/2, the value of I2S_TX_CLKM_DIV_X is (a/(a-b)) - 1. */
+            uint32_t tx_clkm_div_yn1               :    1;  /*For b <= a/2, the value of I2S_TX_CLKM_DIV_YN1 is 0 . For b > a/2, the value of I2S_TX_CLKM_DIV_YN1 is 1. */
+            uint32_t reserved28                    :    4;  /* Reserved*/
         };
         uint32_t val;
     } tx_clkm_div_conf;
     union {
         struct {
-            uint32_t txhp_bypass:                1;       /*I2S TX PDM bypass hp filter or not. The option has been removed.*/
-            uint32_t tx_sinc_osr2:               4;       /*I2S TX PDM OSR2 value*/
-            uint32_t tx_prescale:                8;       /*I2S TX PDM prescale for sigmadelta*/
-            uint32_t tx_hp_in_shift:             2;       /*I2S TX PDM sigmadelta scale shift number: 0:/2   1:x1   2:x2   3: x4*/
-            uint32_t tx_lp_in_shift:             2;       /*I2S TX PDM sigmadelta scale shift number: 0:/2   1:x1   2:x2   3: x4*/
-            uint32_t tx_sinc_in_shift:           2;       /*I2S TX PDM sigmadelta scale shift number: 0:/2   1:x1   2:x2   3: x4*/
-            uint32_t tx_sigmadelta_in_shift:     2;       /*I2S TX PDM sigmadelta scale shift number: 0:/2   1:x1   2:x2   3: x4*/
-            uint32_t tx_sigmadelta_dither2:      1;       /*I2S TX PDM sigmadelta dither2 value*/
-            uint32_t tx_sigmadelta_dither:       1;       /*I2S TX PDM sigmadelta dither value*/
-            uint32_t tx_dac_2out_en:             1;       /*I2S TX PDM dac mode enable*/
-            uint32_t tx_dac_mode_en:             1;       /*I2S TX PDM dac 2channel enable*/
-            uint32_t pcm2pdm_conv_en:            1;       /*I2S TX PDM Converter enable*/
-            uint32_t reserved26:                 6;       /*Reserved*/
+            uint32_t tx_hp_bypass                  :    1;  /*I2S TX PDM bypass hp filter or not. The option has been removed.*/
+            uint32_t tx_sinc_osr2                  :    4;  /*I2S TX PDM OSR2 value*/
+            uint32_t tx_prescale                   :    8;  /*I2S TX PDM prescale for sigmadelta*/
+            uint32_t tx_hp_in_shift                :    2;  /*I2S TX PDM sigmadelta scale shift number: 0:/2 , 1:x1 , 2:x2 , 3: x4*/
+            uint32_t tx_lp_in_shift                :    2;  /*I2S TX PDM sigmadelta scale shift number: 0:/2 , 1:x1 , 2:x2 , 3: x4*/
+            uint32_t tx_sinc_in_shift              :    2;  /*I2S TX PDM sigmadelta scale shift number: 0:/2 , 1:x1 , 2:x2 , 3: x4*/
+            uint32_t tx_sigmadelta_in_shift        :    2;  /*I2S TX PDM sigmadelta scale shift number: 0:/2 , 1:x1 , 2:x2 , 3: x4*/
+            uint32_t tx_sigmadelta_dither2         :    1;  /*I2S TX PDM sigmadelta dither2 value*/
+            uint32_t tx_sigmadelta_dither          :    1;  /*I2S TX PDM sigmadelta dither value*/
+            uint32_t tx_dac_2out_en                :    1;  /*I2S TX PDM dac mode enable*/
+            uint32_t tx_dac_mode_en                :    1;  /*I2S TX PDM dac 2channel enable*/
+            uint32_t pcm2pdm_conv_en               :    1;  /*I2S TX PDM Converter enable*/
+            uint32_t reserved26                    :    6;  /*Reserved*/
         };
         uint32_t val;
     } tx_pcm2pdm_conf;
     union {
         struct {
-            uint32_t tx_pdm_fp:         10;               /*I2S TX PDM Fp*/
-            uint32_t tx_pdm_fs:         10;               /*I2S TX PDM Fs*/
-            uint32_t tx_iir_hp_mult12_5: 3;               /*The fourth parameter of PDM TX IIR_HP filter stage 2 is (504 + I2S_TX_IIR_HP_MULT12_5[2:0])*/
-            uint32_t tx_iir_hp_mult12_0: 3;               /*The fourth parameter of PDM TX IIR_HP filter stage 1 is (504 + I2S_TX_IIR_HP_MULT12_0[2:0])*/
-            uint32_t reserved26:         6;               /*Reserved*/
+            uint32_t tx_pdm_fp                     :    10;  /*I2S TX PDM Fp*/
+            uint32_t tx_pdm_fs                     :    10;  /*I2S TX PDM Fs*/
+            uint32_t tx_iir_hp_mult12_5            :    3;  /*The fourth parameter of PDM TX IIR_HP filter stage 2 is (504 + I2S_TX_IIR_HP_MULT12_5[2:0])*/
+            uint32_t tx_iir_hp_mult12_0            :    3;  /*The fourth parameter of PDM TX IIR_HP filter stage 1 is (504 + I2S_TX_IIR_HP_MULT12_0[2:0])*/
+            uint32_t reserved26                    :    6;  /*Reserved*/
         };
         uint32_t val;
     } tx_pcm2pdm_conf1;
@@ -217,110 +220,110 @@ typedef volatile struct {
     uint32_t reserved_4c;
     union {
         struct {
-            uint32_t rx_tdm_chan0_en:     1;              /*1: Enable the valid data input of I2S RX TDM or PDM channel $n. 0:  Disable  just input 0 in this channel.*/
-            uint32_t rx_tdm_chan1_en:     1;              /*1: Enable the valid data input of I2S RX TDM or PDM channel $n. 0:  Disable  just input 0 in this channel.*/
-            uint32_t rx_tdm_chan2_en:     1;              /*1: Enable the valid data input of I2S RX TDM or PDM channel $n. 0:  Disable  just input 0 in this channel.*/
-            uint32_t rx_tdm_chan3_en:     1;              /*1: Enable the valid data input of I2S RX TDM or PDM channel $n. 0:  Disable  just input 0 in this channel.*/
-            uint32_t rx_tdm_chan4_en:     1;              /*1: Enable the valid data input of I2S RX TDM or PDM channel $n. 0:  Disable  just input 0 in this channel.*/
-            uint32_t rx_tdm_chan5_en:     1;              /*1: Enable the valid data input of I2S RX TDM or PDM channel $n. 0:  Disable  just input 0 in this channel.*/
-            uint32_t rx_tdm_chan6_en:     1;              /*1: Enable the valid data input of I2S RX TDM or PDM channel $n. 0:  Disable  just input 0 in this channel.*/
-            uint32_t rx_tdm_chan7_en:     1;              /*1: Enable the valid data input of I2S RX TDM or PDM channel $n. 0:  Disable  just input 0 in this channel.*/
-            uint32_t rx_tdm_chan8_en:     1;              /*1: Enable the valid data input of I2S RX TDM channel $n. 0:  Disable  just input 0 in this channel.*/
-            uint32_t rx_tdm_chan9_en:     1;              /*1: Enable the valid data input of I2S RX TDM channel $n. 0:  Disable  just input 0 in this channel.*/
-            uint32_t rx_tdm_chan10_en:    1;              /*1: Enable the valid data input of I2S RX TDM channel $n. 0:  Disable  just input 0 in this channel.*/
-            uint32_t rx_tdm_chan11_en:    1;              /*1: Enable the valid data input of I2S RX TDM channel $n. 0:  Disable  just input 0 in this channel.*/
-            uint32_t rx_tdm_chan12_en:    1;              /*1: Enable the valid data input of I2S RX TDM channel $n. 0:  Disable  just input 0 in this channel.*/
-            uint32_t rx_tdm_chan13_en:    1;              /*1: Enable the valid data input of I2S RX TDM channel $n. 0:  Disable  just input 0 in this channel.*/
-            uint32_t rx_tdm_chan14_en:    1;              /*1: Enable the valid data input of I2S RX TDM channel $n. 0:  Disable  just input 0 in this channel.*/
-            uint32_t rx_tdm_chan15_en:    1;              /*1: Enable the valid data input of I2S RX TDM channel $n. 0:  Disable  just input 0 in this channel.*/
-            uint32_t rx_tdm_tot_chan_num: 4;              /*The total channel number of I2S TX TDM mode.*/
-            uint32_t reserved20:         12;              /*Reserved*/
+            uint32_t rx_tdm_chan0_en               :    1;  /*1: Enable the valid data input of I2S RX TDM or PDM channel $n. 0:  Disable, just input 0 in this channel.*/
+            uint32_t rx_tdm_chan1_en               :    1;  /*1: Enable the valid data input of I2S RX TDM or PDM channel $n. 0:  Disable, just input 0 in this channel.*/
+            uint32_t rx_tdm_chan2_en               :    1;  /*1: Enable the valid data input of I2S RX TDM or PDM channel $n. 0:  Disable, just input 0 in this channel.*/
+            uint32_t rx_tdm_chan3_en               :    1;  /*1: Enable the valid data input of I2S RX TDM or PDM channel $n. 0:  Disable, just input 0 in this channel.*/
+            uint32_t rx_tdm_chan4_en               :    1;  /*1: Enable the valid data input of I2S RX TDM or PDM channel $n. 0:  Disable, just input 0 in this channel.*/
+            uint32_t rx_tdm_chan5_en               :    1;  /*1: Enable the valid data input of I2S RX TDM or PDM channel $n. 0:  Disable, just input 0 in this channel.*/
+            uint32_t rx_tdm_chan6_en               :    1;  /*1: Enable the valid data input of I2S RX TDM or PDM channel $n. 0:  Disable, just input 0 in this channel.*/
+            uint32_t rx_tdm_chan7_en               :    1;  /*1: Enable the valid data input of I2S RX TDM or PDM channel $n. 0:  Disable, just input 0 in this channel.*/
+            uint32_t rx_tdm_chan8_en               :    1;  /*1: Enable the valid data input of I2S RX TDM channel $n. 0:  Disable, just input 0 in this channel.*/
+            uint32_t rx_tdm_chan9_en               :    1;  /*1: Enable the valid data input of I2S RX TDM channel $n. 0:  Disable, just input 0 in this channel.*/
+            uint32_t rx_tdm_chan10_en              :    1;  /*1: Enable the valid data input of I2S RX TDM channel $n. 0:  Disable, just input 0 in this channel.*/
+            uint32_t rx_tdm_chan11_en              :    1;  /*1: Enable the valid data input of I2S RX TDM channel $n. 0:  Disable, just input 0 in this channel.*/
+            uint32_t rx_tdm_chan12_en              :    1;  /*1: Enable the valid data input of I2S RX TDM channel $n. 0:  Disable, just input 0 in this channel.*/
+            uint32_t rx_tdm_chan13_en              :    1;  /*1: Enable the valid data input of I2S RX TDM channel $n. 0:  Disable, just input 0 in this channel.*/
+            uint32_t rx_tdm_chan14_en              :    1;  /*1: Enable the valid data input of I2S RX TDM channel $n. 0:  Disable, just input 0 in this channel.*/
+            uint32_t rx_tdm_chan15_en              :    1;  /*1: Enable the valid data input of I2S RX TDM channel $n. 0:  Disable, just input 0 in this channel.*/
+            uint32_t rx_tdm_tot_chan_num           :    4;  /*The total channel number of I2S TX TDM mode.*/
+            uint32_t reserved20                    :    12;  /* Reserved*/
         };
         uint32_t val;
     } rx_tdm_ctrl;
     union {
         struct {
-            uint32_t tx_tdm_chan0_en:     1;              /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable  just output 0 in this channel.*/
-            uint32_t tx_tdm_chan1_en:     1;              /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable  just output 0 in this channel.*/
-            uint32_t tx_tdm_chan2_en:     1;              /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable  just output 0 in this channel.*/
-            uint32_t tx_tdm_chan3_en:     1;              /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable  just output 0 in this channel.*/
-            uint32_t tx_tdm_chan4_en:     1;              /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable  just output 0 in this channel.*/
-            uint32_t tx_tdm_chan5_en:     1;              /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable  just output 0 in this channel.*/
-            uint32_t tx_tdm_chan6_en:     1;              /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable  just output 0 in this channel.*/
-            uint32_t tx_tdm_chan7_en:     1;              /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable  just output 0 in this channel.*/
-            uint32_t tx_tdm_chan8_en:     1;              /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable  just output 0 in this channel.*/
-            uint32_t tx_tdm_chan9_en:     1;              /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable  just output 0 in this channel.*/
-            uint32_t tx_tdm_chan10_en:    1;              /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable  just output 0 in this channel.*/
-            uint32_t tx_tdm_chan11_en:    1;              /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable  just output 0 in this channel.*/
-            uint32_t tx_tdm_chan12_en:    1;              /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable  just output 0 in this channel.*/
-            uint32_t tx_tdm_chan13_en:    1;              /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable  just output 0 in this channel.*/
-            uint32_t tx_tdm_chan14_en:    1;              /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable  just output 0 in this channel.*/
-            uint32_t tx_tdm_chan15_en:    1;              /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable  just output 0 in this channel.*/
-            uint32_t tx_tdm_tot_chan_num: 4;              /*The total channel number of I2S TX TDM mode.*/
-            uint32_t tx_tdm_skip_msk_en:  1;              /*When DMA TX buffer stores the data of (REG_TX_TDM_TOT_CHAN_NUM + 1)  channels  and only the data of the enabled channels is sent  then this bit should be set. Clear it when all the data stored in DMA TX buffer is for enabled channels.*/
-            uint32_t reserved21:         11;              /*Reserved*/
+            uint32_t tx_tdm_chan0_en               :    1;  /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable, just output 0 in this channel.*/
+            uint32_t tx_tdm_chan1_en               :    1;  /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable, just output 0 in this channel.*/
+            uint32_t tx_tdm_chan2_en               :    1;  /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable, just output 0 in this channel.*/
+            uint32_t tx_tdm_chan3_en               :    1;  /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable, just output 0 in this channel.*/
+            uint32_t tx_tdm_chan4_en               :    1;  /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable, just output 0 in this channel.*/
+            uint32_t tx_tdm_chan5_en               :    1;  /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable, just output 0 in this channel.*/
+            uint32_t tx_tdm_chan6_en               :    1;  /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable, just output 0 in this channel.*/
+            uint32_t tx_tdm_chan7_en               :    1;  /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable, just output 0 in this channel.*/
+            uint32_t tx_tdm_chan8_en               :    1;  /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable, just output 0 in this channel.*/
+            uint32_t tx_tdm_chan9_en               :    1;  /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable, just output 0 in this channel.*/
+            uint32_t tx_tdm_chan10_en              :    1;  /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable, just output 0 in this channel.*/
+            uint32_t tx_tdm_chan11_en              :    1;  /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable, just output 0 in this channel.*/
+            uint32_t tx_tdm_chan12_en              :    1;  /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable, just output 0 in this channel.*/
+            uint32_t tx_tdm_chan13_en              :    1;  /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable, just output 0 in this channel.*/
+            uint32_t tx_tdm_chan14_en              :    1;  /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable, just output 0 in this channel.*/
+            uint32_t tx_tdm_chan15_en              :    1;  /*1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable, just output 0 in this channel.*/
+            uint32_t tx_tdm_tot_chan_num           :    4;  /*The total channel number of I2S TX TDM mode.*/
+            uint32_t tx_tdm_skip_msk_en            :    1;  /*When DMA TX buffer stores the data of (REG_TX_TDM_TOT_CHAN_NUM + 1)  channels, and only the data of the enabled channels is sent, then this bit should be set. Clear it when all the data stored in DMA TX buffer is for enabled channels.*/
+            uint32_t reserved21                    :    11;  /* Reserved*/
         };
         uint32_t val;
     } tx_tdm_ctrl;
     union {
         struct {
-            uint32_t rx_sd_in_dm:   2;                    /*The delay mode of I2S Rx SD input signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
-            uint32_t reserved2:     2;
-            uint32_t rx_sd1_in_dm:  2;                    /*The delay mode of I2S Rx SD1 input signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
-            uint32_t reserved6:     2;
-            uint32_t rx_sd2_in_dm:  2;                    /*The delay mode of I2S Rx SD2 input signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
-            uint32_t reserved10:    2;
-            uint32_t rx_sd3_in_dm:  2;                    /*The delay mode of I2S Rx SD3 input signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
-            uint32_t reserved14:    2;
-            uint32_t rx_ws_out_dm:  2;                    /*The delay mode of I2S Rx WS output signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
-            uint32_t reserved18:    2;                    /*Reserved*/
-            uint32_t rx_bck_out_dm: 2;                    /*The delay mode of I2S Rx BCK output signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
-            uint32_t reserved22:    2;                    /*Reserved*/
-            uint32_t rx_ws_in_dm:   2;                    /*The delay mode of I2S Rx WS input signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
-            uint32_t reserved26:    2;                    /*Reserved*/
-            uint32_t rx_bck_in_dm:  2;                    /*The delay mode of I2S Rx BCK input signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
-            uint32_t reserved30:    2;                    /*Reserved*/
+            uint32_t rx_sd_in_dm                   :    2;  /*The delay mode of I2S Rx SD input signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
+            uint32_t reserved2                     :    2;
+            uint32_t rx_sd1_in_dm                  :    2;  /*The delay mode of I2S Rx SD1 input signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
+            uint32_t reserved6                     :    2;
+            uint32_t rx_sd2_in_dm                  :    2;  /*The delay mode of I2S Rx SD2 input signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
+            uint32_t reserved10                    :    2;
+            uint32_t rx_sd3_in_dm                  :    2;  /*The delay mode of I2S Rx SD3 input signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
+            uint32_t reserved14                    :    2;
+            uint32_t rx_ws_out_dm                  :    2;  /*The delay mode of I2S Rx WS output signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
+            uint32_t reserved18                    :    2;  /* Reserved*/
+            uint32_t rx_bck_out_dm                 :    2;  /*The delay mode of I2S Rx BCK output signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
+            uint32_t reserved22                    :    2;  /* Reserved*/
+            uint32_t rx_ws_in_dm                   :    2;  /*The delay mode of I2S Rx WS input signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
+            uint32_t reserved26                    :    2;  /* Reserved*/
+            uint32_t rx_bck_in_dm                  :    2;  /*The delay mode of I2S Rx BCK input signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
+            uint32_t reserved30                    :    2;  /* Reserved*/
         };
         uint32_t val;
     } rx_timing;
     union {
         struct {
-            uint32_t tx_sd_out_dm:  2;                    /*The delay mode of I2S TX SD output signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
-            uint32_t reserved2:     2;                    /*Reserved*/
-            uint32_t tx_sd1_out_dm: 2;                    /*The delay mode of I2S TX SD1 output signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
-            uint32_t reserved6:    10;                    /*Reserved*/
-            uint32_t tx_ws_out_dm:  2;                    /*The delay mode of I2S TX WS output signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
-            uint32_t reserved18:    2;                    /*Reserved*/
-            uint32_t tx_bck_out_dm: 2;                    /*The delay mode of I2S TX BCK output signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
-            uint32_t reserved22:    2;                    /*Reserved*/
-            uint32_t tx_ws_in_dm:   2;                    /*The delay mode of I2S TX WS input signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
-            uint32_t reserved26:    2;                    /*Reserved*/
-            uint32_t tx_bck_in_dm:  2;                    /*The delay mode of I2S TX BCK input signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
-            uint32_t reserved30:    2;                    /*Reserved*/
+            uint32_t tx_sd_out_dm                  :    2;  /*The delay mode of I2S TX SD output signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
+            uint32_t reserved2                     :    2;  /* Reserved*/
+            uint32_t tx_sd1_out_dm                 :    2;  /*The delay mode of I2S TX SD1 output signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
+            uint32_t reserved6                     :    10;  /* Reserved*/
+            uint32_t tx_ws_out_dm                  :    2;  /*The delay mode of I2S TX WS output signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
+            uint32_t reserved18                    :    2;  /* Reserved*/
+            uint32_t tx_bck_out_dm                 :    2;  /*The delay mode of I2S TX BCK output signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
+            uint32_t reserved22                    :    2;  /* Reserved*/
+            uint32_t tx_ws_in_dm                   :    2;  /*The delay mode of I2S TX WS input signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
+            uint32_t reserved26                    :    2;  /* Reserved*/
+            uint32_t tx_bck_in_dm                  :    2;  /*The delay mode of I2S TX BCK input signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
+            uint32_t reserved30                    :    2;  /* Reserved*/
         };
         uint32_t val;
     } tx_timing;
     union {
         struct {
-            uint32_t fifo_timeout:          8;            /*the i2s_tx_hung_int interrupt or the i2s_rx_hung_int interrupt will be triggered when fifo hung counter is equal to this value*/
-            uint32_t fifo_timeout_shift:    3;            /*The bits are used to scale tick counter threshold. The tick counter is reset when counter value >= 88000/2^i2s_lc_fifo_timeout_shift*/
-            uint32_t fifo_timeout_ena:      1;            /*The enable bit for FIFO timeout*/
-            uint32_t reserved12:           20;            /*Reserved*/
+            uint32_t fifo_timeout                  :    8;  /*the i2s_tx_hung_int interrupt or the i2s_rx_hung_int interrupt will be triggered when fifo hung counter is equal to this value  */
+            uint32_t fifo_timeout_shift            :    3;  /*The bits are used to scale tick counter threshold. The tick counter is reset when counter value >= 88000/2^i2s_lc_fifo_timeout_shift*/
+            uint32_t fifo_timeout_ena              :    1;  /*The enable bit for FIFO timeout*/
+            uint32_t reserved12                    :    20;  /* Reserved*/
         };
         uint32_t val;
     } lc_hung_conf;
     union {
         struct {
-            uint32_t rx_eof_num:12;                       /*The receive data bit length is (I2S_RX_BITS_MOD[4:0] + 1) * (REG_RX_EOF_NUM[11:0] + 1) . It will trigger in_suc_eof interrupt in the configured DMA RX channel.*/
-            uint32_t reserved12:20;                       /*Reserved*/
+            uint32_t rx_eof_num                    :    12;  /*The receive data bit length is (I2S_RX_BITS_MOD[4:0] + 1) * (REG_RX_EOF_NUM[11:0] + 1) . It will trigger in_suc_eof interrupt in the configured DMA RX channel.*/
+            uint32_t reserved12                    :    20;  /* Reserved*/
         };
         uint32_t val;
     } rxeof_num;
-    uint32_t conf_sigle_data;                             /*I2S signal data register*/
+    uint32_t conf_sigle_data;
     union {
         struct {
-            uint32_t tx_idle:    1;                       /*1: i2s_tx is idle state. 0: i2s_tx is working.*/
-            uint32_t reserved1: 31;                       /*Reserved*/
+            uint32_t tx_idle                       :    1;  /*1: i2s_tx is idle state. 0: i2s_tx is working.*/
+            uint32_t reserved1                     :    31;  /* Reserved*/
         };
         uint32_t val;
     } state;
@@ -330,8 +333,8 @@ typedef volatile struct {
     uint32_t reserved_7c;
     union {
         struct {
-            uint32_t date:      28;                       /*I2S version control register*/
-            uint32_t reserved28: 4;                       /*Reserved*/
+            uint32_t date                          :    28;  /*I2S version control register*/
+            uint32_t reserved28                    :    4;  /* Reserved*/
         };
         uint32_t val;
     } date;
@@ -342,4 +345,6 @@ extern i2s_dev_t I2S1;
 }
 #endif
 
-#endif  /* _SOC_I2S_STRUCT_H_ */
+
+
+#endif /*_SOC_I2S_STRUCT_H_ */
