@@ -1,9 +1,9 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -18,716 +18,920 @@
  * See readme.md in hal/include/hal/readme.md
  ******************************************************************************/
 
-// The LL layer for ESP32 MCPWM register operations
+// The LL layer for ESP32-S3 MCPWM register operations
 
 #pragma once
 
+#include <stdbool.h>
 #include "soc/soc_caps.h"
-#include <soc/mcpwm_periph.h>
-#include "soc/mcpwm_periph.h"
+#include "soc/mcpwm_struct.h"
 #include "hal/mcpwm_types.h"
-#include "hal/hal_defs.h"
-
-#include "esp_types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /// Get the address of peripheral registers
-#define MCPWM_LL_GET_HW(ID) (((ID)==0)? &MCPWM0: &MCPWM1)
+#define MCPWM_LL_GET_HW(ID) (((ID) == 0) ? &MCPWM0 : &MCPWM1)
 #define MCPWM_LL_MAX_PRESCALE   255
 
-/********************* Global *******************/
-/**
- * Initialize common registers.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- */
-static inline void mcpwm_ll_init(mcpwm_dev_t *mcpwm)
+/********************* Group registers *******************/
+
+// Set/Get group clock: PWM_clk = CLK_160M / (prescale + 1)
+static inline void mcpwm_ll_group_set_clock(mcpwm_dev_t *mcpwm, unsigned long long group_clk_hz)
+{
+    mcpwm->clk_cfg.prescale = (SOC_MCPWM_BASE_CLK_HZ / group_clk_hz) - 1;
+}
+
+static inline unsigned long long mcpwm_ll_group_get_clock(mcpwm_dev_t *mcpwm)
+{
+    return SOC_MCPWM_BASE_CLK_HZ / (mcpwm->clk_cfg.prescale + 1);
+}
+
+static inline void mcpwm_ll_group_enable_shadow_mode(mcpwm_dev_t *mcpwm)
 {
     mcpwm->update_cfg.global_up_en = 1;
-    mcpwm->update_cfg.global_force_up = 1;
-    mcpwm->update_cfg.global_force_up = 0;
+    mcpwm->update_cfg.op0_up_en = 1;
+    mcpwm->update_cfg.op1_up_en = 1;
+    mcpwm->update_cfg.op2_up_en = 1;
 }
 
-/**
- * Set the prescale of the PWM main clock to the input clock.
- *
- * Input clock is 160MHz, PWM main clock cycle = 6.25ns*(prescale + 1).
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param prescale Prescale factor, 0-255.
- */
-static inline void mcpwm_ll_set_clock_prescale(mcpwm_dev_t *mcpwm, int prescale)
+static inline void mcpwm_ll_group_flush_shadow(mcpwm_dev_t *mcpwm)
 {
-    mcpwm->clk_cfg.prescale = prescale;
+    mcpwm->update_cfg.val ^= (1 << 1);
 }
 
-STATIC_HAL_REG_CHECK(MCPWM, MCPWM_LL_INTR_CAP0, MCPWM_CAP0_INT_RAW);
-STATIC_HAL_REG_CHECK(MCPWM, MCPWM_LL_INTR_CAP1, MCPWM_CAP1_INT_RAW);
-STATIC_HAL_REG_CHECK(MCPWM, MCPWM_LL_INTR_CAP2, MCPWM_CAP2_INT_RAW);
+/********************* Interrupt registers *******************/
 
-/**
- * Get raw interrupt status.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @return The triggered interrupts, ORed by active interrupts.
- */
-static inline mcpwm_intr_t mcpwm_ll_get_intr(mcpwm_dev_t *mcpwm)
+static inline uint32_t mcpwm_ll_intr_get_status(mcpwm_dev_t *mcpwm)
 {
-    return mcpwm->int_raw.val;
+    return mcpwm->int_st.val;
 }
 
-/**
- * Clear the interrupts.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param intr Bitwise ORed interrupts to clear.
- */
-static inline void mcpwm_ll_clear_intr(mcpwm_dev_t* mcpwm, mcpwm_intr_t intr)
+static inline void mcpwm_ll_intr_clear_status(mcpwm_dev_t *mcpwm, uint32_t intr_mask)
 {
-    mcpwm->int_clr.val = intr;
+    mcpwm->int_clr.val = intr_mask;
 }
 
-/********************* Timer *******************/
-/**
- * Set the prescale of the Timer_x clock to the PWM main clock.
- *
- * Timer clock frequency = PWM main clock frequency/(prescale + 1).
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param timer The timer to set the prescale, 0-2.
- * @param prescale Prescale factor, 0-255.
- */
-static inline void mcpwm_ll_timer_set_prescale(mcpwm_dev_t* mcpwm, int timer, uint32_t prescale)
+static inline void mcpwm_ll_intr_disable_all(mcpwm_dev_t *mcpwm)
 {
-    mcpwm->timer[timer].period.prescale = prescale;
+    mcpwm->int_ena.val = 0;
 }
 
+//////////// get interrupt status for each event ////////////////
 
-STATIC_HAL_REG_CHECK(MCPWM, MCPWM_UP_COUNTER,        1);
-STATIC_HAL_REG_CHECK(MCPWM, MCPWM_DOWN_COUNTER,      2);
-STATIC_HAL_REG_CHECK(MCPWM, MCPWM_UP_DOWN_COUNTER,   3);
-
-/**
- * Set the counting mode for the PWM timer.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param timer The timer to change counting mode, 0-2.
- * @param mode Counting mode to use.
- */
-static inline void mcpwm_ll_timer_set_count_mode(mcpwm_dev_t *mcpwm, int timer, mcpwm_counter_type_t mode)
+static inline uint32_t mcpwm_ll_intr_get_timer_stop_status(mcpwm_dev_t *mcpwm)
 {
-    mcpwm->timer[timer].mode.mode = mode;
+    return (mcpwm->int_st.val >> 0) & 0x07;
 }
 
-/**
- * Start a timer.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param timer The timer to start, 0-2.
- */
-static inline void mcpwm_ll_timer_start(mcpwm_dev_t *mcpwm, int timer)
+static inline uint32_t mcpwm_ll_intr_get_timer_tez_status(mcpwm_dev_t *mcpwm)
 {
-    mcpwm->timer[timer].mode.start = 2;
+    return (mcpwm->int_st.val >> 3) & 0x07;
 }
 
-/**
- * Stop a timer.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param timer The timer to stop, 0-2.
- */
-static inline void mcpwm_ll_timer_stop(mcpwm_dev_t *mcpwm, int timer)
+static inline uint32_t mcpwm_ll_intr_get_timer_tep_status(mcpwm_dev_t *mcpwm)
 {
-    mcpwm->timer[timer].mode.start = 0;
+    return (mcpwm->int_st.val >> 6) & 0x07;
 }
 
-/**
- * Set the overflow period of a timer.
- *
- * The overflow rate will be Frequency of timer / period.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param timer The timer to set period, 0-2.
- * @param period Total timer count of each period, 0-65535.
- */
-static inline void mcpwm_ll_timer_set_period(mcpwm_dev_t *mcpwm, int timer, uint32_t period)
+static inline uint32_t mcpwm_ll_intr_get_fault_enter_status(mcpwm_dev_t *mcpwm)
 {
-
-    mcpwm->timer[timer].period.period = period;
-    mcpwm->timer[timer].period.upmethod = 0;
+    return (mcpwm->int_st.val >> 9) & 0x07;
 }
 
-/**
- * Get the period setting of a timer.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param timer The timer to get the period, 0-2.
- * @return Period setting value.
- */
-static inline uint32_t mcpwm_ll_timer_get_period(mcpwm_dev_t *mcpwm, int timer)
+static inline uint32_t mcpwm_ll_intr_get_fault_exit_status(mcpwm_dev_t *mcpwm)
 {
-    return mcpwm->timer[timer].period.period;
+    return (mcpwm->int_st.val >> 12) & 0x07;
 }
 
-/********************* Sync *******************/
-/**
- * Enable the synchronization feature for a timer.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param timer Timer to set, 0-2.
- * @param enable true to enable, otherwise false.
- */
-static inline void mcpwm_ll_sync_enable(mcpwm_dev_t *mcpwm, int timer, bool enable)
+static inline uint32_t mcpwm_ll_intr_get_compare_status(mcpwm_dev_t *mcpwm, uint32_t cmp_id)
+{
+    return (mcpwm->int_st.val >> (15 + cmp_id * 3)) & 0x07;
+}
+
+static inline uint32_t mcpwm_ll_intr_get_trip_cbc_status(mcpwm_dev_t *mcpwm)
+{
+    return (mcpwm->int_st.val >> 21) & 0x07;
+}
+
+static inline uint32_t mcpwm_ll_intr_get_trip_ost_status(mcpwm_dev_t *mcpwm)
+{
+    return (mcpwm->int_st.val >> 24) & 0x07;
+}
+
+static inline uint32_t mcpwm_ll_intr_get_capture_status(mcpwm_dev_t *mcpwm)
+{
+    return (mcpwm->int_st.val >> 27) & 0x07;
+}
+
+//////////// clear interrupt status for each event ////////////////
+
+static inline void mcpwm_ll_intr_clear_timer_stop_status(mcpwm_dev_t *mcpwm, uint32_t timer_mask)
+{
+    mcpwm->int_clr.val |= (timer_mask & 0x07) << 0;
+}
+
+static inline void mcpwm_ll_intr_clear_timer_tez_status(mcpwm_dev_t *mcpwm, uint32_t timer_mask)
+{
+    mcpwm->int_clr.val |= (timer_mask & 0x07) << 3;
+}
+
+static inline void mcpwm_ll_intr_clear_timer_tep_status(mcpwm_dev_t *mcpwm, uint32_t timer_mask)
+{
+    mcpwm->int_clr.val |= (timer_mask & 0x07) << 6;
+}
+
+static inline void mcpwm_ll_intr_clear_fault_enter_status(mcpwm_dev_t *mcpwm, uint32_t fault_mask)
+{
+    mcpwm->int_clr.val |= (fault_mask & 0x07) << 9;
+}
+
+static inline void mcpwm_ll_intr_clear_fault_exit_status(mcpwm_dev_t *mcpwm, uint32_t fault_mask)
+{
+    mcpwm->int_clr.val |= (fault_mask & 0x07) << 12;
+}
+
+static inline void mcpwm_ll_intr_clear_compare_status(mcpwm_dev_t *mcpwm, uint32_t operator_mask, uint32_t cmp_id)
+{
+    mcpwm->int_clr.val |= (operator_mask & 0x07) << (15 + cmp_id * 3);
+}
+
+static inline void mcpwm_ll_intr_clear_trip_cbc_status(mcpwm_dev_t *mcpwm, uint32_t cbc_mask)
+{
+    mcpwm->int_clr.val |= (cbc_mask & 0x07) << 21;
+}
+
+static inline void mcpwm_ll_intr_clear_trip_ost_status(mcpwm_dev_t *mcpwm, uint32_t ost_mask)
+{
+    mcpwm->int_clr.val |= (ost_mask & 0x07) << 24;
+}
+
+static inline void mcpwm_ll_intr_clear_capture_status(mcpwm_dev_t *mcpwm, uint32_t capture_mask)
+{
+    mcpwm->int_clr.val |= (capture_mask & 0x07) << 27;
+}
+
+//////////// enable interrupt for each event ////////////////
+
+static inline void mcpwm_ll_intr_enable_timer_stop(mcpwm_dev_t *mcpwm, uint32_t timer_id, bool enable)
 {
     if (enable) {
-        mcpwm->timer[timer].sync.out_sel = 0;
-        mcpwm->timer[timer].sync.in_en = 1;
+        mcpwm->int_ena.val |= 1 << (timer_id + 0);
     } else {
-        mcpwm->timer[timer].sync.in_en = 0;
+        mcpwm->int_ena.val &= ~(1 << (timer_id + 0));
     }
 }
 
-/**
- * Set the phase (counter value) to reload when the sync signal triggers.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param timer Timer to set, 0-2.
- * @param reload_val The reloaded value.
- */
-static inline void mcpwm_ll_sync_set_phase(mcpwm_dev_t *mcpwm, int timer, uint32_t reload_val)
-{
-    mcpwm->timer[timer].sync.timer_phase = reload_val;
-}
-
-STATIC_HAL_REG_CHECK(MCPWM, MCPWM_SELECT_SYNC0, 4);
-STATIC_HAL_REG_CHECK(MCPWM, MCPWM_SELECT_SYNC1, 5);
-STATIC_HAL_REG_CHECK(MCPWM, MCPWM_SELECT_SYNC2, 6);
-/**
- * Set the sync signal source for a timer.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param timer The timer to set, 0-2.
- * @param sync_sig The synchronization signal to use.
- */
-static inline void mcpwm_ll_sync_set_input(mcpwm_dev_t *mcpwm, int timer, mcpwm_sync_signal_t sync_sig)
-{
-    if (timer == 0) {
-        mcpwm->timer_synci_cfg.t0_in_sel = sync_sig;
-    } else if (timer == 1) {
-        mcpwm->timer_synci_cfg.t1_in_sel = sync_sig;
-    } else {   //MCPWM_TIMER_2
-        mcpwm->timer_synci_cfg.t2_in_sel = sync_sig;
-    }
-}
-
-/********************* Comparator *******************/
-/**
- * Select a timer for the specified operator to use.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param op    The operator to choose timer, 0-2.
- * @param timer The timer to use, 0-2.
- */
-static inline void mcpwm_ll_operator_select_timer(mcpwm_dev_t *mcpwm, int op, int timer)
-{
-    if (op == 0) {
-        mcpwm->timer_sel.operator0_sel = timer;
-    } else if (op == 1) {
-        mcpwm->timer_sel.operator1_sel = timer;
-    } else {
-        mcpwm->timer_sel.operator2_sel = timer;
-    }
-}
-
-/**
- * Set the update method of the compare value of a timer
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param op    Operator to set, 0-2.
- */
-static inline void mcpwm_ll_operator_set_compare_upmethod(mcpwm_dev_t *mcpwm, int op)
-{
-    mcpwm->channel[op].cmpr_cfg.a_upmethod = BIT(0);
-    mcpwm->channel[op].cmpr_cfg.b_upmethod = BIT(0);
-}
-
-/**
- * Get one of the compare value of a timer.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param op    The operator to get, 0-2.
- * @param cmp_n Comparer id to get, 0-1.
- * @return The set compare value.
- */
-static inline uint32_t mcpwm_ll_operator_get_compare(mcpwm_dev_t *mcpwm, int op, int cmp_n)
-{
-    return (mcpwm->channel[op].cmpr_value[cmp_n].cmpr_val);
-}
-
-/**
- * Set one of the compare value of a timer.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param op    The operator to set, 0-2.
- * @param cmp_n The comparer to set value, 0-1.
- * @param compare The compare value, 0-65535.
- */
-static inline void mcpwm_ll_operator_set_compare(mcpwm_dev_t *mcpwm, int op, int cmp_n, uint32_t compare)
-{
-    mcpwm->channel[op].cmpr_value[cmp_n].cmpr_val = compare;
-}
-
-/********************* Generator *******************/
-
-STATIC_HAL_REG_CHECK(MCPWM, MCPWM_ACTION_NO_CHANGE, 0);
-STATIC_HAL_REG_CHECK(MCPWM, MCPWM_ACTION_FORCE_LOW, 1);
-STATIC_HAL_REG_CHECK(MCPWM, MCPWM_ACTION_FORCE_HIGH, 2);
-STATIC_HAL_REG_CHECK(MCPWM, MCPWM_ACTION_TOGGLE,     3);
-/**
- * Set the action will be taken by a operator when its timer counts to zero.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param op     The operator to set action, 0-2.
- * @param gen    One generator of the operator to take the action, 0-1.
- * @param action Action to take.
- */
-static inline void mcpwm_ll_gen_set_zero_action(mcpwm_dev_t *mcpwm, int op, int gen, mcpwm_output_action_t action)
-{
-    mcpwm->channel[op].generator[gen].utez = action;
-    mcpwm->channel[op].generator[gen].dtez = action;
-}
-
-/**
- * Set the action will be taken by a operator when its timer counts to the period value.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param op     The operator to set action, 0-2.
- * @param gen    One generator of the operator to take the action, 0-1.
- * @param action Action to take.
- */
-static inline void mcpwm_ll_gen_set_period_action(mcpwm_dev_t *mcpwm, int op, int gen, mcpwm_output_action_t action)
-{
-    mcpwm->channel[op].generator[gen].utep = action;
-    mcpwm->channel[op].generator[gen].dtep = action;
-}
-
-/**
- * Set the action will be taken by a operator when its timer counts to the compare value.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param op        The operator to set action, 0-2.
- * @param gen       One generator of the operator to take the action, 0-1.
- * @param cmp_n     The comparer to use.
- * @param up_action The action to take when the counter is counting up.
- * @param down_action The action to take when the counter is counting down.
- */
-static inline void mcpwm_ll_gen_set_cmp_action(mcpwm_dev_t *mcpwm, int op, int gen,
-               int cmp_n, mcpwm_output_action_t up_action, mcpwm_output_action_t down_action)
-{
-    if (cmp_n == 0) {
-        mcpwm->channel[op].generator[gen].utea = up_action;
-        mcpwm->channel[op].generator[gen].dtea = down_action;
-    } else {
-        mcpwm->channel[op].generator[gen].uteb = up_action;
-        mcpwm->channel[op].generator[gen].dteb = down_action;
-    }
-}
-
-/********************* Fault *******************/
-/**
- * Enable the fault detection feature for an input signal.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param fault_sig One of the signals to select, 0-2.
- * @param level The active level of the fault-detection signal.
- */
-static inline void mcpwm_ll_fault_enable(mcpwm_dev_t *mcpwm, int fault_sig, bool level)
-{
-    if (fault_sig == 0) {
-        mcpwm->fault_detect.f0_en = 1;
-        mcpwm->fault_detect.f0_pole = level;
-    } else if (fault_sig == 1) {
-        mcpwm->fault_detect.f1_en = 1;
-        mcpwm->fault_detect.f1_pole = level;
-    } else {   //MCPWM_SELECT_F2
-        mcpwm->fault_detect.f2_en = 1;
-        mcpwm->fault_detect.f2_pole = level;
-    }
-}
-
-/**
- * Disable the fault detection of an input signal.
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param fault_sig The signal to disable, 0-2.
- */
-static inline void mcpwm_ll_fault_disable(mcpwm_dev_t *mcpwm, int fault_sig)
-{
-    if (fault_sig == 0) {
-        mcpwm->fault_detect.f0_en = 0;
-    } else if (fault_sig == 1) {
-        mcpwm->fault_detect.f1_en = 0;
-    } else {   //MCPWM_SELECT_F2
-        mcpwm->fault_detect.f2_en = 0;
-    }
-}
-
-/**
- * Clear the oneshot fault status of an operator.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param op The operator to clear, 0-2.
- */
-static inline void mcpwm_ll_fault_clear_ost(mcpwm_dev_t *mcpwm, int op)
-{
-    mcpwm->channel[op].tz_cfg1.clr_ost = 1;
-    mcpwm->channel[op].tz_cfg1.clr_ost = 0;
-}
-
-/**
- * Use the oneshot mode to handle the fault when it occurs
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param op     The operator to handle the fault signal, 0-2.
- * @param signal The fault signal to set, 0-2.
- * @param enable true to enable oneshot, otherwise false.
- */
-static inline void mcpwm_ll_fault_oneshot_enable_signal(mcpwm_dev_t *mcpwm, int op, int signal, bool enable)
-{
-    if (signal == 0) {
-        mcpwm->channel[op].tz_cfg0.f0_ost = enable;
-    } else if (signal == 1) {
-        mcpwm->channel[op].tz_cfg0.f1_ost = enable;
-    } else {   //MCPWM_SELECT_F2
-        mcpwm->channel[op].tz_cfg0.f2_ost = enable;
-    }
-}
-
-/**
- * @brief Get the oneshot enabled status of the operator
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param op     The operator to check, 0-2.
- * @param signal The fault signal to get, 0-2.
- */
-static inline bool mcpwm_ll_fault_oneshot_signal_enabled(mcpwm_dev_t *mcpwm, int op, int signal)
-{
-    if (signal == 0) {
-        return mcpwm->channel[op].tz_cfg0.f0_ost;
-    } else if (signal == 1) {
-        return mcpwm->channel[op].tz_cfg0.f1_ost;
-    } else {   //MCPWM_SELECT_F2
-        return mcpwm->channel[op].tz_cfg0.f2_ost;
-    }
-}
-
-/**
- * Use the CBC (cycle-by-cycle) mode to handle the fault when it occurs.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param op     The operator to handle the fault signal, 0-2.
- * @param signal The fault signal to set, 0-2.
- * @param enable true to enable cbc mode, otherwise false.
- */
-static inline void mcpwm_ll_fault_cbc_enable_signal(mcpwm_dev_t *mcpwm, int op, int signal, bool enable)
-{
-    if (signal == 0) {
-        mcpwm->channel[op].tz_cfg0.f0_cbc = enable;
-    } else if (signal == 1) {
-        mcpwm->channel[op].tz_cfg0.f1_cbc = enable;
-    } else {   //MCPWM_SELECT_F2
-        mcpwm->channel[op].tz_cfg0.f2_cbc = enable;
-    }
-}
-
-/**
- * Set the action that will be taken when the fault is handled by oneshot.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param op     The operator to handle the fault signal, 0-2.
- * @param gen    The generator to take the action, 0-1.
- * @param up_action     Action to take when fault happens when counting up.
- * @param down_action   Action to take when fault happens when counting down.
- */
-static inline void mcpwm_ll_fault_set_oneshot_action(mcpwm_dev_t *mcpwm, int op, int gen,
-        mcpwm_output_action_t up_action, mcpwm_output_action_t down_action)
-{
-    if (gen == 0) {
-        mcpwm->channel[op].tz_cfg0.a_ost_u = up_action;
-        mcpwm->channel[op].tz_cfg0.a_ost_d = down_action;
-    } else {
-        mcpwm->channel[op].tz_cfg0.b_ost_u = up_action;
-        mcpwm->channel[op].tz_cfg0.b_ost_d = down_action;
-    }
-}
-
-/**
- * Set the action that will be taken when the fault is handled cycle by cycle.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param op     The operator to handle the fault signal, 0-2.
- * @param gen    The generator to take the action, 0-1.
- * @param up_action     Action to take when fault happens when counting up.
- * @param down_action   Action to take when fault happens when counting down.
- */
-static inline void mcpwm_ll_fault_set_cyc_action(mcpwm_dev_t *mcpwm, int op, int gen,
-                  mcpwm_output_action_t up_action, mcpwm_output_action_t down_action)
-{
-    mcpwm->channel[op].tz_cfg1.cbcpulse = BIT(0);    //immediately
-    if (gen == 0) {
-        mcpwm->channel[op].tz_cfg0.a_cbc_u = up_action;
-        mcpwm->channel[op].tz_cfg0.a_cbc_d = down_action;
-    } else {
-        mcpwm->channel[op].tz_cfg0.b_cbc_u = up_action;
-        mcpwm->channel[op].tz_cfg0.b_cbc_d = down_action;
-    }
-}
-
-/********************* Dead Zone (deadtime) *******************/
-/**
- * Initialize the dead zone feature.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param op The operator to initialize, 0-2.
- */
-static inline void mcpwm_ll_deadtime_init(mcpwm_dev_t *mcpwm, int op)
-{
-    mcpwm->channel[op].db_cfg.fed_upmethod = BIT(0);
-    mcpwm->channel[op].db_cfg.red_upmethod = BIT(0);
-    mcpwm->channel[op].db_cfg.clk_sel = 0;
-}
-
-/**
- * Set the output dead zone mode applying to the outputs of a timer.
- *
- * If the desired internal connection is not provided, you can write your own inside this function.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param op    The operator to set, 0-2.
- * @param mode  Dead zone mode to use.
- */
-static inline void mcpwm_ll_set_deadtime_mode(mcpwm_dev_t *mcpwm,
-    int op, mcpwm_deadtime_type_t mode)
-{
-#define MCPWM_LL_DEADTIME_REG_MASK (MCPWM_DT0_DEB_MODE_M | MCPWM_DT0_A_OUTSWAP_M | MCPWM_DT0_B_OUTSWAP_M | \
-    MCPWM_DT0_RED_INSEL_M | MCPWM_DT0_FED_INSEL_M | MCPWM_DT0_RED_OUTINVERT_M | MCPWM_DT0_FED_OUTINVERT_M | \
-    MCPWM_DT0_A_OUTBYPASS_M | MCPWM_DT0_B_OUTBYPASS_M)
-
-    static uint32_t deadtime_mode_settings[MCPWM_DEADTIME_TYPE_MAX] = {
-        [MCPWM_BYPASS_RED] =                    0b010010000 << MCPWM_DT0_DEB_MODE_S,
-        [MCPWM_BYPASS_FED] =                    0b100000000 << MCPWM_DT0_DEB_MODE_S,
-        [MCPWM_ACTIVE_HIGH_MODE] =              0b000010000 << MCPWM_DT0_DEB_MODE_S,
-        [MCPWM_ACTIVE_LOW_MODE] =               0b001110000 << MCPWM_DT0_DEB_MODE_S,
-        [MCPWM_ACTIVE_HIGH_COMPLIMENT_MODE] =   0b001010000 << MCPWM_DT0_DEB_MODE_S,
-        [MCPWM_ACTIVE_LOW_COMPLIMENT_MODE] =    0b000101000 << MCPWM_DT0_DEB_MODE_S,
-        [MCPWM_ACTIVE_RED_FED_FROM_PWMXA] =     0b000000011 << MCPWM_DT0_DEB_MODE_S,
-        [MCPWM_ACTIVE_RED_FED_FROM_PWMXB] =     0b000001011 << MCPWM_DT0_DEB_MODE_S,
-        [MCPWM_DEADTIME_BYPASS] =               0b110000000 << MCPWM_DT0_DEB_MODE_S,
-    };
-    mcpwm->channel[op].db_cfg.val =
-        (mcpwm->channel[op].db_cfg.val & (~MCPWM_LL_DEADTIME_REG_MASK)) | deadtime_mode_settings[mode];
-
-#undef MCPWM_LL_DEADTIME_REG_MASK
-}
-
-/**
- * Set the delay of the falling edge on the output.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param op    The operator to set, 0-2.
- * @param fed   Falling delay, by PWM main clock.
- */
-static inline void mcpwm_ll_deadtime_set_falling_delay(mcpwm_dev_t *mcpwm, int op, uint32_t fed)
-{
-    mcpwm->channel[op].db_fed_cfg.fed = fed;
-}
-
-/**
- * Set the delay of the rising edge on the output.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param op    The operator to set, 0-2.
- * @param fed   Rising delay, by PWM main clock.
- */
-static inline void mcpwm_ll_deadtime_set_rising_delay(mcpwm_dev_t *mcpwm, int op, uint32_t red)
-{
-    mcpwm->channel[op].db_red_cfg.red = red;
-}
-
-/**
- * Disable (bypass) the dead zone feature.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param op The operator to set, 0-2.
- */
-static inline void mcpwm_ll_deadtime_bypass(mcpwm_dev_t *mcpwm, int op)
-{
-    mcpwm_ll_set_deadtime_mode(mcpwm, op, MCPWM_DEADTIME_BYPASS);
-}
-
-/********************* Carrier *******************/
-/**
- * Initialize the carrier feature.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param op The operator to set, 0-2.
- */
-static inline void mcpwm_ll_carrier_init(mcpwm_dev_t *mcpwm, int op)
-{
-    mcpwm->channel[op].carrier_cfg.in_invert = 0;
-}
-
-/**
- * Enable the carrier feature for a timer.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param op The operator to set, 0-2.
- * @param enable true to enable, otherwise false.
- */
-static inline void mcpwm_ll_carrier_enable(mcpwm_dev_t *mcpwm, int op, bool enable)
-{
-    mcpwm->channel[op].carrier_cfg.en = enable;
-}
-
-/**
- * Set the prescale of the carrier timer.
- *
- * The carrier period will be Frequency of PWM main clock/(carrier_period+1).
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param op The operator to set, 0-2.
- * @param carrier_period The prescale of the carrier clock, 0-15.
- */
-static inline void mcpwm_ll_carrier_set_prescale(mcpwm_dev_t *mcpwm, int op, uint8_t carrier_period)
-{
-    mcpwm->channel[op].carrier_cfg.prescale = carrier_period;
-}
-
-/**
- * Set the duty rate of the carrier.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param op The operator to set, 0-2.
- * @param carrier_duty Duty rate will be (carrier_duty/8)*100%. 0-7.
- */
-static inline void mcpwm_ll_carrier_set_duty(mcpwm_dev_t *mcpwm, int op, uint8_t carrier_duty)
-{
-    mcpwm->channel[op].carrier_cfg.duty = carrier_duty;
-}
-
-/**
- * Invert output of the carrier.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param op The operator to set, 0-2.
- * @param invert true to invert, otherwise false.
- */
-static inline void mcpwm_ll_carrier_out_invert(mcpwm_dev_t *mcpwm, int op, bool invert)
-{
-    mcpwm->channel[op].carrier_cfg.out_invert = invert;
-}
-
-/**
- * Set the oneshot pulse width of the carrier.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param op The operator to set, 0-2.
- * @param pulse_width The width of the oneshot pulse, by carrier period. 0 to disable the oneshot pulse.
- */
-static inline void mcpwm_ll_carrier_set_oneshot_width(mcpwm_dev_t *mcpwm, int op, uint8_t pulse_width)
-{
-    mcpwm->channel[op].carrier_cfg.oshtwth = pulse_width;
-}
-
-/********************* Capture *******************/
-/**
- * Enable the capture feature for a signal
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param cap_sig Signal to enable, 0-2.
- * @param enable true to enable, otherwise false.
- */
-static inline void mcpwm_ll_capture_enable(mcpwm_dev_t *mcpwm, int cap_sig, int enable)
+static inline void mcpwm_ll_intr_enable_timer_tez(mcpwm_dev_t *mcpwm, uint32_t timer_id, bool enable)
 {
     if (enable) {
-        mcpwm->cap_timer_cfg.timer_en = 1;
-        mcpwm->cap_cfg_ch[cap_sig].en = 1;
+        mcpwm->int_ena.val |= 1 << (timer_id + 3);
     } else {
-        mcpwm->cap_cfg_ch[cap_sig].en = 0;
+        mcpwm->int_ena.val &= ~(1 << (timer_id + 3));
     }
 }
 
-/**
- * Get the captured value.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param cap_sig Of which signal to get the captured value.
- * @return The captured value
- */
-static inline uint32_t mcpwm_ll_get_capture_val(mcpwm_dev_t *mcpwm, int cap_sig)
+static inline void mcpwm_ll_intr_enable_timer_tep(mcpwm_dev_t *mcpwm, uint32_t timer_id, bool enable)
 {
-    return mcpwm->cap_val_ch[cap_sig];
-}
-
-/**
- * Get the set capture edge.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param cap_sig Which signal the edge capture is applied.
- * @return Capture signal edge: 1 - positive edge, 2 - negtive edge
- */
-static inline mcpwm_capture_on_edge_t mcpwm_ll_get_captured_edge(mcpwm_dev_t *mcpwm, int cap_sig)
-{
-    bool edge;
-    if (cap_sig == 0) {
-        edge = mcpwm->cap_status.cap0_edge;
-    } else if (cap_sig == 1) {
-        edge = mcpwm->cap_status.cap0_edge;
-    } else {   //2
-        edge = mcpwm->cap_status.cap0_edge;
+    if (enable) {
+        mcpwm->int_ena.val |= 1 << (timer_id + 6);
+    } else {
+        mcpwm->int_ena.val &= ~(1 << (timer_id + 6));
     }
-    return (edge? MCPWM_NEG_EDGE: MCPWM_POS_EDGE);
 }
 
-STATIC_HAL_REG_CHECK(MCPWM, MCPWM_NEG_EDGE, BIT(0));
-STATIC_HAL_REG_CHECK(MCPWM, MCPWM_POS_EDGE, BIT(1));
-
-/**
- * Select the edge to capture.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param cap_sig   The signal to capture, 0-2.
- * @param cap_edge  The edge to capture, bitwise.
- */
-static inline void mcpwm_ll_capture_select_edge(mcpwm_dev_t *mcpwm, int cap_sig,
-                                  mcpwm_capture_on_edge_t cap_edge)
+static inline void mcpwm_ll_intr_enable_fault(mcpwm_dev_t *mcpwm, uint32_t fault_id, bool enable)
 {
-    mcpwm->cap_cfg_ch[cap_sig].mode = cap_edge;
+    if (enable) {
+        mcpwm->int_ena.val |= 1 << (9 + fault_id);  // enter fault interrupt
+        mcpwm->int_ena.val |= 1 << (12 + fault_id); // exit fault interrupt
+    } else {
+        mcpwm->int_ena.val &= ~(1 << (9 + fault_id));
+        mcpwm->int_ena.val &= ~(1 << (12 + fault_id));
+    }
 }
 
-/**
- * Set the prescale of the input signal to capture.
- *
- * @param mcpwm Address of the MCPWM peripheral registers.
- * @param cap_sig   The prescaled signal to capture, 0-2.
- * @param prescale  Prescal value, 0 to disable.
- */
-static inline void mcpwm_ll_capture_set_prescale(mcpwm_dev_t *mcpwm, int cap_sig, uint32_t prescale)
+static inline void mcpwm_ll_intr_enable_compare(mcpwm_dev_t *mcpwm, uint32_t operator_id, uint32_t cmp_id, bool enable)
 {
-    mcpwm->cap_cfg_ch[cap_sig].prescale = prescale;
+    if (enable) {
+        mcpwm->int_ena.val |= (1 << (15 + cmp_id * 3 + operator_id));
+    } else {
+        mcpwm->int_ena.val &= ~(1 << (15 + cmp_id * 3 + operator_id));
+    }
 }
 
-/**
- * Utility function, get the `mcpwm_intr_t` interrupt enum of a specific capture signal.
- *
- * @param bit x for CAPx.
- * @return the corresponding `mcpwm_intr_t`.
- */
-static inline mcpwm_intr_t mcpwm_ll_get_cap_intr_def(int bit)
+static inline void mcpwm_ll_intr_enable_trip(mcpwm_dev_t *mcpwm, uint32_t operator_id, bool enable)
 {
-    return BIT(bit+MCPWM_CAP0_INT_RAW_S);
+    if (enable) {
+        mcpwm->int_ena.val |= (1 << (21 + operator_id));
+        mcpwm->int_ena.val |= (1 << (24 + operator_id));
+    } else {
+        mcpwm->int_ena.val &= ~(1 << (21 + operator_id));
+        mcpwm->int_ena.val &= ~(1 << (24 + operator_id));
+    }
+}
+
+static inline void mcpwm_ll_intr_enable_capture(mcpwm_dev_t *mcpwm, uint32_t capture_id, bool enable)
+{
+    if (enable) {
+        mcpwm->int_ena.val |= 1 << (27 + capture_id);
+    } else {
+        mcpwm->int_ena.val &= ~(1 << (27 + capture_id));
+    }
+}
+
+/********************* Timer registers *******************/
+
+static inline void mcpwm_ll_timer_set_clock(mcpwm_dev_t *mcpwm, int timer_id, unsigned long long group_clock, unsigned long long timer_clock)
+{
+    mcpwm->timer[timer_id].period.prescale = group_clock / timer_clock - 1;
+}
+
+static inline unsigned long long mcpwm_ll_timer_get_clock(mcpwm_dev_t *mcpwm, int timer_id, unsigned long long group_clock)
+{
+    return group_clock / (mcpwm->timer[timer_id].period.prescale + 1);
+}
+
+static inline void mcpwm_ll_timer_set_peak(mcpwm_dev_t *mcpwm, int timer_id, uint32_t peak, bool symmetric)
+{
+    if (!symmetric) { // in asymmetric mode, period = [0,peak-1]
+        mcpwm->timer[timer_id].period.period = peak - 1;
+    } else { // in symmetric mode, period = [0,peak-1] + [peak,1]
+        mcpwm->timer[timer_id].period.period = peak;
+    }
+}
+
+static inline uint32_t mcpwm_ll_timer_get_peak(mcpwm_dev_t *mcpwm, int timer_id, bool symmetric)
+{
+    // asymmetric mode
+    if (!symmetric) {
+        return mcpwm->timer[timer_id].period.period + 1;
+    }
+    // symmetric mode
+    return mcpwm->timer[timer_id].period.period;
+}
+
+static inline void mcpwm_ll_timer_update_period_at_once(mcpwm_dev_t *mcpwm, int timer_id)
+{
+    mcpwm->timer[timer_id].period.upmethod = 0;
+}
+
+static inline void mcpwm_ll_timer_enable_update_period_on_tez(mcpwm_dev_t *mcpwm, int timer_id, bool enable)
+{
+    if (enable) {
+        mcpwm->timer[timer_id].period.upmethod |= 0x01;
+    } else {
+        mcpwm->timer[timer_id].period.upmethod &= ~0x01;
+    }
+}
+
+static inline void mcpwm_ll_timer_enable_update_period_on_sync(mcpwm_dev_t *mcpwm, int timer_id, bool enable)
+{
+    if (enable) {
+        mcpwm->timer[timer_id].period.upmethod |= 0x02;
+    } else {
+        mcpwm->timer[timer_id].period.upmethod &= ~0x02;
+    }
+}
+
+static inline void mcpwm_ll_timer_set_count_mode(mcpwm_dev_t *mcpwm, int timer_id, mcpwm_timer_count_mode_t mode)
+{
+    switch (mode) {
+    case MCPWM_TIMER_COUNT_MODE_PAUSE:
+        mcpwm->timer[timer_id].mode.mode = 0;
+        break;
+    case MCPWM_TIMER_COUNT_MODE_UP:
+        mcpwm->timer[timer_id].mode.mode = 1;
+        break;
+    case MCPWM_TIMER_COUNT_MODE_DOWN:
+        mcpwm->timer[timer_id].mode.mode = 2;
+        break;
+    case MCPWM_TIMER_COUNT_MODE_UP_DOWN:
+        mcpwm->timer[timer_id].mode.mode = 3;
+        break;
+    }
+}
+
+static inline mcpwm_timer_count_mode_t mcpwm_ll_timer_get_count_mode(mcpwm_dev_t *mcpwm, int timer_id)
+{
+    switch (mcpwm->timer[timer_id].mode.mode) {
+    case 0:
+        return MCPWM_TIMER_COUNT_MODE_PAUSE;
+    case 1:
+        return MCPWM_TIMER_COUNT_MODE_UP;
+    case 2:
+        return MCPWM_TIMER_COUNT_MODE_DOWN;
+    case 3:
+        return MCPWM_TIMER_COUNT_MODE_UP_DOWN;
+    }
+}
+
+static inline void mcpwm_ll_timer_set_operate_command(mcpwm_dev_t *mcpwm, int timer_id, mcpwm_timer_operate_cmd_t mode)
+{
+    switch (mode) {
+    case MCPWM_TIMER_STOP_AT_ZERO:
+        mcpwm->timer[timer_id].mode.start = 0;
+        break;
+    case MCPWM_TIMER_STOP_AT_PEAK:
+        mcpwm->timer[timer_id].mode.start = 1;
+        break;
+    case MCPWM_TIMER_START_NO_STOP:
+        mcpwm->timer[timer_id].mode.start = 2;
+        break;
+    case MCPWM_TIMER_START_STOP_AT_ZERO:
+        mcpwm->timer[timer_id].mode.start = 3;
+        break;
+    case MCPWM_TIMER_START_STOP_AT_PEAK:
+        mcpwm->timer[timer_id].mode.start = 4;
+        break;
+    }
+}
+
+static inline void mcpwm_ll_timer_set_count_value(mcpwm_dev_t *mcpwm, int timer_id, uint32_t value)
+{
+    // we use software sync to set count value
+    int previous_phase = mcpwm->timer[timer_id].sync.timer_phase;
+    mcpwm->timer[timer_id].sync.timer_phase = value;
+    mcpwm->timer[timer_id].sync.sync_sw = ~mcpwm->timer[timer_id].sync.sync_sw;
+    mcpwm->timer[timer_id].sync.timer_phase = previous_phase;
+}
+
+static inline uint32_t mcpwm_ll_timer_get_count_value(mcpwm_dev_t *mcpwm, int timer_id)
+{
+    return mcpwm->timer[timer_id].status.value;
+}
+
+static inline bool mcpwm_ll_is_timer_decreasing(mcpwm_dev_t *mcpwm, int timer_id)
+{
+    return mcpwm->timer[timer_id].status.direction;
+}
+
+static inline void mcpwm_ll_timer_enable_sync_input(mcpwm_dev_t *mcpwm, int timer_id, bool enable)
+{
+    mcpwm->timer[timer_id].sync.in_en = enable;
+}
+
+static inline void mcpwm_ll_timer_sync_out_same_in(mcpwm_dev_t *mcpwm, int timer_id)
+{
+    mcpwm->timer[timer_id].sync.out_sel = 0;
+}
+
+static inline void mcpwm_ll_timer_sync_out_on_timer_event(mcpwm_dev_t *mcpwm, int timer_id, mcpwm_timer_event_t event)
+{
+    if (event == MCPWM_TIMER_EVENT_ZERO) {
+        mcpwm->timer[timer_id].sync.out_sel = 1;
+    } else if (event == MCPWM_TIMER_EVENT_PEAK) {
+        mcpwm->timer[timer_id].sync.out_sel = 2;
+    }
+}
+
+static inline void mcpwm_ll_timer_disable_sync_out(mcpwm_dev_t *mcpwm, int timer_id)
+{
+    mcpwm->timer[timer_id].sync.out_sel = 3;
+}
+
+static inline void mcpwm_ll_timer_trigger_sw_sync(mcpwm_dev_t *mcpwm, int timer_id)
+{
+    mcpwm->timer[timer_id].sync.sync_sw = ~mcpwm->timer[timer_id].sync.sync_sw;
+}
+
+static inline void mcpwm_ll_timer_set_sync_phase_value(mcpwm_dev_t *mcpwm, int timer_id, uint32_t reload_val)
+{
+    mcpwm->timer[timer_id].sync.timer_phase = reload_val;
+}
+
+static inline uint32_t mcpwm_ll_timer_get_sync_phase_value(mcpwm_dev_t *mcpwm, int timer_id)
+{
+    return mcpwm->timer[timer_id].sync.timer_phase;
+}
+
+static inline void mcpwm_ll_timer_set_sync_phase_direction(mcpwm_dev_t *mcpwm, int timer_id, bool decrease)
+{
+    mcpwm->timer[timer_id].sync.phase_direct = decrease;
+}
+
+static inline void mcpwm_ll_timer_enable_sync_from_internal_timer(mcpwm_dev_t *mcpwm, int this_timer, int internal_sync_timer)
+{
+    mcpwm->timer_synci_cfg.val &= ~(0x07 << (this_timer * 3));
+    mcpwm->timer_synci_cfg.val |= (internal_sync_timer + 1) << (this_timer * 3);
+}
+
+static inline void mcpwm_ll_timer_enable_sync_from_external(mcpwm_dev_t *mcpwm, int this_timer, int extern_syncer)
+{
+    mcpwm->timer_synci_cfg.val &= ~(0x07 << (this_timer * 3));
+    mcpwm->timer_synci_cfg.val |= (extern_syncer + 4) << (this_timer * 3);
+}
+
+static inline void mcpwm_ll_invert_external_syncer(mcpwm_dev_t *mcpwm, int sync_id, bool invert)
+{
+    if (invert) {
+        mcpwm->timer_synci_cfg.val |= 1 << (sync_id + 9);
+    } else {
+        mcpwm->timer_synci_cfg.val &= ~(1 << (sync_id + 9));
+    }
+}
+
+/********************* Operator registers *******************/
+
+static inline void mcpwm_ll_operator_flush_shadow(mcpwm_dev_t *mcpwm, int operator_id)
+{
+    mcpwm->update_cfg.val ^= (1 << (2 * operator_id + 3));
+}
+
+static inline void mcpwm_ll_operator_select_timer(mcpwm_dev_t *mcpwm, int operator_id, int timer_id)
+{
+    if (operator_id == 0) {
+        mcpwm->timer_sel.operator0_sel = timer_id;
+    } else if (operator_id == 1) {
+        mcpwm->timer_sel.operator1_sel = timer_id;
+    } else {
+        mcpwm->timer_sel.operator2_sel = timer_id;
+    }
+}
+
+static inline void mcpwm_ll_operator_update_compare_at_once(mcpwm_dev_t *mcpwm, int operator_id, int compare_id)
+{
+    mcpwm->channel[operator_id].cmpr_cfg.val &= ~(0x0F << (4 * compare_id));
+}
+
+static inline void mcpwm_ll_operator_enable_update_compare_on_tez(mcpwm_dev_t *mcpwm, int operator_id, int compare_id, bool enable)
+{
+    if (enable) {
+        mcpwm->channel[operator_id].cmpr_cfg.val |= (1 << 0) << (4 * compare_id);
+    } else {
+        mcpwm->channel[operator_id].cmpr_cfg.val &= ~((1 << 0) << (4 * compare_id));
+    }
+}
+
+static inline void mcpwm_ll_operator_enable_update_compare_on_tep(mcpwm_dev_t *mcpwm, int operator_id, int compare_id, bool enable)
+{
+    if (enable) {
+        mcpwm->channel[operator_id].cmpr_cfg.val |= (1 << 1) << (4 * compare_id);
+    } else {
+        mcpwm->channel[operator_id].cmpr_cfg.val &= ~((1 << 1) << (4 * compare_id));
+    }
+}
+
+static inline void mcpwm_ll_operator_enable_update_compare_on_sync(mcpwm_dev_t *mcpwm, int operator_id, int compare_id, bool enable)
+{
+    if (enable) {
+        mcpwm->channel[operator_id].cmpr_cfg.val |= (1 << 2) << (4 * compare_id);
+    } else {
+        mcpwm->channel[operator_id].cmpr_cfg.val &= ~((1 << 2) << (4 * compare_id));
+    }
+}
+
+static inline void mcpwm_ll_operator_set_compare_value(mcpwm_dev_t *mcpwm, int operator_id, int compare_id, uint32_t compare_value)
+{
+    mcpwm->channel[operator_id].cmpr_value[compare_id].cmpr_val = compare_value;
+}
+
+static inline uint32_t mcpwm_ll_operator_get_compare_value(mcpwm_dev_t *mcpwm, int operator_id, int compare_id)
+{
+    return mcpwm->channel[operator_id].cmpr_value[compare_id].cmpr_val;
+}
+
+static inline void mcpwm_ll_operator_update_action_at_once(mcpwm_dev_t *mcpwm, int operator_id)
+{
+    mcpwm->channel[operator_id].gen_cfg0.upmethod = 0;
+}
+
+static inline void mcpwm_ll_operator_enable_update_action_on_tez(mcpwm_dev_t *mcpwm, int operator_id, bool enable)
+{
+    if (enable) {
+        mcpwm->channel[operator_id].gen_cfg0.upmethod |= 1 << 0;
+    } else {
+        mcpwm->channel[operator_id].gen_cfg0.upmethod &= ~(1 << 0);
+    }
+}
+
+static inline void mcpwm_ll_operator_enable_update_action_on_tep(mcpwm_dev_t *mcpwm, int operator_id, bool enable)
+{
+    if (enable) {
+        mcpwm->channel[operator_id].gen_cfg0.upmethod |= 1 << 1;
+    } else {
+        mcpwm->channel[operator_id].gen_cfg0.upmethod &= ~(1 << 1);
+    }
+}
+
+static inline void mcpwm_ll_operator_enable_update_action_on_sync(mcpwm_dev_t *mcpwm, int operator_id, bool enable)
+{
+    if (enable) {
+        mcpwm->channel[operator_id].gen_cfg0.upmethod |= 1 << 2;
+    } else {
+        mcpwm->channel[operator_id].gen_cfg0.upmethod &= ~(1 << 2);
+    }
+}
+
+/********************* Generator registers *******************/
+
+static inline void mcpwm_ll_generator_reset_actions(mcpwm_dev_t *mcpwm, int operator_id, int generator_id)
+{
+    mcpwm->channel[operator_id].generator[generator_id].val = 0;
+}
+
+static inline void mcpwm_ll_generator_set_action_on_timer_event(mcpwm_dev_t *mcpwm, int operator_id, int generator_id,
+        mcpwm_timer_direction_t direction, mcpwm_timer_event_t event, mcpwm_generator_action_t action)
+{
+    if (direction == MCPWM_TIMER_DIRECTION_UP) { // utez, utep
+        mcpwm->channel[operator_id].generator[generator_id].val &= ~(0x03 << (event * 2));
+        mcpwm->channel[operator_id].generator[generator_id].val |= action << (event * 2);
+    } else if (direction == MCPWM_TIMER_DIRECTION_DOWN) { // dtez, dtep
+        mcpwm->channel[operator_id].generator[generator_id].val &= ~(0x03 << (event * 2 + 12));
+        mcpwm->channel[operator_id].generator[generator_id].val |= action << (event * 2 + 12);
+    }
+}
+
+static inline void mcpwm_ll_generator_set_action_on_compare_event(mcpwm_dev_t *mcpwm, int operator_id, int generator_id,
+        mcpwm_timer_direction_t direction, int cmp_id, int action)
+{
+    if (direction == MCPWM_TIMER_DIRECTION_UP) { // utea, uteb
+        mcpwm->channel[operator_id].generator[generator_id].val &= ~(0x03 << (cmp_id * 2 + 4));
+        mcpwm->channel[operator_id].generator[generator_id].val |= action << (cmp_id * 2 + 4);
+    } else if (direction == MCPWM_TIMER_DIRECTION_DOWN) { // dtea, dteb
+        mcpwm->channel[operator_id].generator[generator_id].val &= ~(0x03 << (cmp_id * 2 + 16));
+        mcpwm->channel[operator_id].generator[generator_id].val |= action << (cmp_id * 2 + 16);
+    }
+}
+
+static inline void mcpwm_ll_generator_set_action_on_trigger_event(mcpwm_dev_t *mcpwm, int operator_id, int generator_id,
+        mcpwm_timer_direction_t direction, int trig_id, int action)
+{
+    if (direction == MCPWM_TIMER_DIRECTION_UP) { // ut0, ut1
+        mcpwm->channel[operator_id].generator[generator_id].val &= ~(0x03 << (trig_id * 2 + 8));
+        mcpwm->channel[operator_id].generator[generator_id].val |= action << (trig_id * 2 + 8);
+    } else if (direction == MCPWM_TIMER_DIRECTION_DOWN) { // dt0, dt1
+        mcpwm->channel[operator_id].generator[generator_id].val &= ~(0x03 << (trig_id * 2 + 20));
+        mcpwm->channel[operator_id].generator[generator_id].val |= action << (trig_id * 2 + 20);
+    }
+}
+
+static inline void mcpwm_ll_gen_set_onetime_force_action(mcpwm_dev_t *mcpwm, int operator_id, int generator_id, int action)
+{
+    if (generator_id == 0) {
+        mcpwm->channel[operator_id].gen_force.a_nciforce_mode = action;
+        mcpwm->channel[operator_id].gen_force.a_nciforce = ~mcpwm->channel[operator_id].gen_force.a_nciforce;
+    } else {
+        mcpwm->channel[operator_id].gen_force.b_nciforce_mode = action;
+        mcpwm->channel[operator_id].gen_force.b_nciforce = ~mcpwm->channel[operator_id].gen_force.b_nciforce;
+    }
+}
+
+static inline void mcpwm_ll_gen_set_continuous_force_action(mcpwm_dev_t *mcpwm, int operator_id, int generator_id, int action)
+{
+    mcpwm->channel[operator_id].gen_force.cntu_force_upmethod = 0; // force action immediately
+    if (generator_id == 0) {
+        mcpwm->channel[operator_id].gen_force.a_cntuforce_mode = action;
+    } else {
+        mcpwm->channel[operator_id].gen_force.b_cntuforce_mode = action;
+    }
+}
+
+/********************* Dead time registers *******************/
+
+static inline void mcpwm_ll_deadtime_set_resolution_same_to_timer(mcpwm_dev_t *mcpwm, int operator_id, bool same)
+{
+    mcpwm->channel[operator_id].db_cfg.clk_sel = same;
+}
+
+static inline void mcpwm_ll_deadtime_red_select_generator(mcpwm_dev_t *mcpwm, int operator_id, int generator)
+{
+    mcpwm->channel[operator_id].db_cfg.red_insel = generator;
+}
+
+static inline void mcpwm_ll_deadtime_fed_select_generator(mcpwm_dev_t *mcpwm, int operator_id, int generator)
+{
+    mcpwm->channel[operator_id].db_cfg.fed_insel = generator;
+}
+
+static inline void mcpwm_ll_deadtime_bypass_path(mcpwm_dev_t *mcpwm, int operator_id, int path, bool bypass)
+{
+    if (bypass) {
+        mcpwm->channel[operator_id].db_cfg.val |= 1 << (path + 15);
+    } else {
+        mcpwm->channel[operator_id].db_cfg.val &= ~(1 << (path + 15));
+    }
+}
+
+static inline void mcpwm_ll_deadtime_invert_outpath(mcpwm_dev_t *mcpwm, int operator_id, int path, bool invert)
+{
+    if (invert) {
+        mcpwm->channel[operator_id].db_cfg.val |= 1 << (path + 13);
+    } else {
+        mcpwm->channel[operator_id].db_cfg.val &= ~(1 << (path + 13));
+    }
+}
+
+static inline void mcpwm_ll_deadtime_swap_out_path(mcpwm_dev_t *mcpwm, int operator_id, int path, bool swap)
+{
+    if (swap) {
+        mcpwm->channel[operator_id].db_cfg.val |= 1 << (path + 9);
+    } else {
+        mcpwm->channel[operator_id].db_cfg.val &= ~(1 << (path + 9));
+    }
+}
+
+static inline void mcpwm_ll_deadtime_enable_deb(mcpwm_dev_t *mcpwm, int operator_id, bool enable)
+{
+    mcpwm->channel[operator_id].db_cfg.deb_mode = enable;
+}
+
+static inline uint32_t mcpwm_ll_deadtime_get_topology_code(mcpwm_dev_t *mcpwm, int operator_id)
+{
+    return (mcpwm->channel[operator_id].db_cfg.deb_mode << 8) | (mcpwm->channel[operator_id].db_cfg.b_outswap << 7) |
+           (mcpwm->channel[operator_id].db_cfg.a_outswap << 6) | (mcpwm->channel[operator_id].db_cfg.fed_insel << 5) |
+           (mcpwm->channel[operator_id].db_cfg.red_insel << 4) | (mcpwm->channel[operator_id].db_cfg.fed_outinvert << 3) |
+           (mcpwm->channel[operator_id].db_cfg.red_outinvert << 2) | (mcpwm->channel[operator_id].db_cfg.a_outbypass << 1) |
+           (mcpwm->channel[operator_id].db_cfg.b_outbypass << 0);
+}
+
+static inline void mcpwm_ll_deadtime_set_falling_delay(mcpwm_dev_t *mcpwm, int operator_id, uint32_t fed)
+{
+    mcpwm->channel[operator_id].db_fed_cfg.fed = fed - 1;
+}
+
+static inline uint32_t mcpwm_ll_deadtime_get_falling_delay(mcpwm_dev_t *mcpwm, int operator_id)
+{
+    return mcpwm->channel[operator_id].db_fed_cfg.fed + 1;
+}
+
+static inline void mcpwm_ll_deadtime_set_rising_delay(mcpwm_dev_t *mcpwm, int operator_id, uint32_t red)
+{
+    mcpwm->channel[operator_id].db_red_cfg.red = red - 1;
+}
+
+static inline uint32_t mcpwm_ll_deadtime_get_rising_delay(mcpwm_dev_t *mcpwm, int operator_id)
+{
+    return mcpwm->channel[operator_id].db_red_cfg.red + 1;
+}
+
+static inline void mcpwm_ll_deadtime_update_delay_at_once(mcpwm_dev_t *mcpwm, int operator_id)
+{
+    mcpwm->channel[operator_id].db_cfg.fed_upmethod = 0;
+    mcpwm->channel[operator_id].db_cfg.red_upmethod = 0;
+}
+
+static inline void mcpwm_ll_deadtime_enable_update_delay_on_tez(mcpwm_dev_t *mcpwm, int operator_id, bool enable)
+{
+    if (enable) {
+        mcpwm->channel[operator_id].db_cfg.fed_upmethod |= 1 << 0;
+        mcpwm->channel[operator_id].db_cfg.red_upmethod |= 1 << 0;
+    } else {
+        mcpwm->channel[operator_id].db_cfg.fed_upmethod &= ~(1 << 0);
+        mcpwm->channel[operator_id].db_cfg.red_upmethod &= ~(1 << 0);
+    }
+}
+
+static inline void mcpwm_ll_deadtime_enable_update_delay_on_tep(mcpwm_dev_t *mcpwm, int operator_id, bool enable)
+{
+    if (enable) {
+        mcpwm->channel[operator_id].db_cfg.fed_upmethod |= 1 << 1;
+        mcpwm->channel[operator_id].db_cfg.red_upmethod |= 1 << 1;
+    } else {
+        mcpwm->channel[operator_id].db_cfg.fed_upmethod &= ~(1 << 1);
+        mcpwm->channel[operator_id].db_cfg.red_upmethod &= ~(1 << 1);
+    }
+}
+
+static inline void mcpwm_ll_deadtime_enable_update_delay_on_sync(mcpwm_dev_t *mcpwm, int operator_id, bool enable)
+{
+    if (enable) {
+        mcpwm->channel[operator_id].db_cfg.fed_upmethod |= 1 << 2;
+        mcpwm->channel[operator_id].db_cfg.red_upmethod |= 1 << 2;
+    } else {
+        mcpwm->channel[operator_id].db_cfg.fed_upmethod &= ~(1 << 2);
+        mcpwm->channel[operator_id].db_cfg.red_upmethod &= ~(1 << 2);
+    }
+}
+
+/********************* Carrier registers *******************/
+
+static inline void mcpwm_ll_carrier_enable(mcpwm_dev_t *mcpwm, int operator_id, bool enable)
+{
+    mcpwm->channel[operator_id].carrier_cfg.en = enable;
+}
+
+static inline void mcpwm_ll_carrier_set_prescale(mcpwm_dev_t *mcpwm, int operator_id, uint8_t prescale)
+{
+    mcpwm->channel[operator_id].carrier_cfg.prescale = prescale - 1;
+}
+
+static inline uint8_t mcpwm_ll_carrier_get_prescale(mcpwm_dev_t *mcpwm, int operator_id)
+{
+    return mcpwm->channel[operator_id].carrier_cfg.prescale + 1;
+}
+
+static inline void mcpwm_ll_carrier_set_duty(mcpwm_dev_t *mcpwm, int operator_id, uint8_t carrier_duty)
+{
+    mcpwm->channel[operator_id].carrier_cfg.duty = carrier_duty;
+}
+
+static inline uint8_t mcpwm_ll_carrier_get_duty(mcpwm_dev_t *mcpwm, int operator_id)
+{
+    return mcpwm->channel[operator_id].carrier_cfg.duty;
+}
+
+static inline void mcpwm_ll_carrier_out_invert(mcpwm_dev_t *mcpwm, int operator_id, bool invert)
+{
+    mcpwm->channel[operator_id].carrier_cfg.out_invert = invert;
+}
+
+static inline void mcpwm_ll_carrier_in_invert(mcpwm_dev_t *mcpwm, int operator_id, bool invert)
+{
+    mcpwm->channel[operator_id].carrier_cfg.in_invert = invert;
+}
+
+static inline void mcpwm_ll_carrier_set_oneshot_width(mcpwm_dev_t *mcpwm, int operator_id, uint8_t pulse_width)
+{
+    mcpwm->channel[operator_id].carrier_cfg.oshtwth = pulse_width - 1;
+}
+
+static inline uint8_t mcpwm_ll_carrier_get_oneshot_width(mcpwm_dev_t *mcpwm, int operator_id)
+{
+    return mcpwm->channel[operator_id].carrier_cfg.oshtwth + 1;
+}
+
+/********************* Fault detector registers *******************/
+
+static inline void mcpwm_ll_fault_enable_detection(mcpwm_dev_t *mcpwm, int fault_sig, bool enable)
+{
+    if (enable) {
+        mcpwm->fault_detect.val |= 1 << fault_sig;
+    } else {
+        mcpwm->fault_detect.val &= ~(1 << fault_sig);
+    }
+}
+
+static inline void mcpwm_ll_fault_set_active_level(mcpwm_dev_t *mcpwm, int fault_sig, bool level)
+{
+    if (level) {
+        mcpwm->fault_detect.val |= 1 << (fault_sig + 3);
+    } else {
+        mcpwm->fault_detect.val &= ~(1 << (fault_sig + 3));
+    }
+}
+
+static inline void mcpwm_ll_fault_clear_ost(mcpwm_dev_t *mcpwm, int operator_id)
+{
+    // a posedge can clear the ost fault status
+    mcpwm->channel[operator_id].tz_cfg1.clr_ost = 0;
+    mcpwm->channel[operator_id].tz_cfg1.clr_ost = 1;
+}
+
+static inline void mcpwm_ll_fault_enable_oneshot_mode(mcpwm_dev_t *mcpwm, int operator_id, int fault_sig, bool enable)
+{
+    if (fault_sig == 0) {
+        mcpwm->channel[operator_id].tz_cfg0.f0_ost = enable;
+    } else if (fault_sig == 1) {
+        mcpwm->channel[operator_id].tz_cfg0.f1_ost = enable;
+    } else {
+        mcpwm->channel[operator_id].tz_cfg0.f2_ost = enable;
+    }
+}
+
+static inline void mcpwm_ll_fault_enable_cbc_mode(mcpwm_dev_t *mcpwm, int operator_id, int fault_sig, bool enable)
+{
+    if (fault_sig == 0) {
+        mcpwm->channel[operator_id].tz_cfg0.f0_cbc = enable;
+    } else if (fault_sig == 1) {
+        mcpwm->channel[operator_id].tz_cfg0.f1_cbc = enable;
+    } else {
+        mcpwm->channel[operator_id].tz_cfg0.f2_cbc = enable;
+    }
+    mcpwm->channel[operator_id].tz_cfg1.cbcpulse = 1 << 0;
+}
+
+static inline void mcpwm_ll_fault_enable_sw_cbc(mcpwm_dev_t *mcpwm, int operator_id, bool enable)
+{
+    mcpwm->channel[operator_id].tz_cfg0.sw_cbc = enable;
+}
+
+static inline void mcpwm_ll_fault_enable_sw_oneshot(mcpwm_dev_t *mcpwm, int operator_id, bool enable)
+{
+    mcpwm->channel[operator_id].tz_cfg0.sw_ost = enable;
+}
+
+static inline void mcpwm_ll_fault_trigger_sw_cbc(mcpwm_dev_t *mcpwm, int operator_id)
+{
+    mcpwm->channel[operator_id].tz_cfg1.force_cbc = ~mcpwm->channel[operator_id].tz_cfg1.force_cbc;
+}
+
+static inline void mcpwm_ll_fault_trigger_sw_oneshot(mcpwm_dev_t *mcpwm, int operator_id)
+{
+    mcpwm->channel[operator_id].tz_cfg1.force_ost = ~mcpwm->channel[operator_id].tz_cfg1.force_ost;
+}
+
+static inline void mcpwm_ll_generator_set_action_on_fault_event(mcpwm_dev_t *mcpwm, int operator_id, int generator_id,
+        mcpwm_timer_direction_t direction, mcpwm_fault_reaction_t reaction, int action)
+{
+    if (direction == MCPWM_TIMER_DIRECTION_UP) {
+        mcpwm->channel[operator_id].tz_cfg0.val &= ~(0x03 << (8 + 8 * generator_id + 4 * reaction + 2));
+        mcpwm->channel[operator_id].tz_cfg0.val |= action << (8 + 8 * generator_id + 4 * reaction + 2);
+    } else if (direction == MCPWM_TIMER_DIRECTION_DOWN) {
+        mcpwm->channel[operator_id].tz_cfg0.val &= ~(0x03 << (8 + 8 * generator_id + 4 * reaction));
+        mcpwm->channel[operator_id].tz_cfg0.val |= action << (8 + 8 * generator_id + 4 * reaction);
+    }
+}
+
+static inline bool mcpwm_ll_fault_is_ost_on(mcpwm_dev_t *mcpwm, int op)
+{
+    return mcpwm->channel[op].tz_status.ost_on;
+}
+
+static inline bool mcpwm_ll_fault_is_cbc_on(mcpwm_dev_t *mcpwm, int op)
+{
+    return mcpwm->channel[op].tz_status.cbc_on;
+}
+
+/********************* Capture registers *******************/
+
+static inline void mcpwm_ll_capture_enable_timer(mcpwm_dev_t *mcpwm, bool enable)
+{
+    mcpwm->cap_timer_cfg.timer_en = enable;
+}
+
+static inline void mcpwm_ll_capture_enable_channel(mcpwm_dev_t *mcpwm, int channel, bool enable)
+{
+    mcpwm->cap_cfg_ch[channel].en = enable;
+}
+
+static inline void mcpwm_ll_capture_set_sync_phase(mcpwm_dev_t *mcpwm, uint32_t phase_value)
+{
+    mcpwm->cap_timer_phase = phase_value;
+}
+
+static inline uint32_t mcpwm_ll_capture_get_sync_phase(mcpwm_dev_t *mcpwm)
+{
+    return mcpwm->cap_timer_phase;
+}
+
+static inline void mcpwm_ll_capture_enable_timer_sync(mcpwm_dev_t *mcpwm, bool enable)
+{
+    mcpwm->cap_timer_cfg.synci_en = enable;
+}
+
+static inline void mcpwm_ll_capture_set_internal_timer_syncer(mcpwm_dev_t *mcpwm, int sync_out_timer)
+{
+    mcpwm->cap_timer_cfg.synci_sel = sync_out_timer + 1;
+}
+
+static inline void mcpwm_ll_capture_set_external_syncer(mcpwm_dev_t *mcpwm, int extern_syncer)
+{
+    mcpwm->cap_timer_cfg.synci_sel = extern_syncer + 4;
+}
+
+static inline void mcpwm_ll_capture_trigger_sw_sync(mcpwm_dev_t *mcpwm)
+{
+    mcpwm->cap_timer_cfg.sync_sw = 1; // auto clear
+}
+
+static inline void mcpwm_ll_capture_enable_posedge(mcpwm_dev_t *mcpwm, int channel, bool enable)
+{
+    if (enable) {
+        mcpwm->cap_cfg_ch[channel].val |= 1 << 2;
+    } else {
+        mcpwm->cap_cfg_ch[channel].val &= ~(1 << 2);
+    }
+}
+
+static inline void mcpwm_ll_capture_enable_negedge(mcpwm_dev_t *mcpwm, int channel, bool enable)
+{
+    if (enable) {
+        mcpwm->cap_cfg_ch[channel].val |= 1 << 1;
+    } else {
+        mcpwm->cap_cfg_ch[channel].val &= ~(1 << 1);
+    }
+}
+
+static inline void mcpwm_ll_invert_input(mcpwm_dev_t *mcpwm, int channel, bool invert)
+{
+    mcpwm->cap_cfg_ch[channel].in_invert = invert;
+}
+
+static inline void mcpwm_ll_trigger_soft_capture(mcpwm_dev_t *mcpwm, int channel)
+{
+    mcpwm->cap_cfg_ch[channel].sw = 1; // auto clear
+}
+
+static inline uint32_t mcpwm_ll_capture_get_value(mcpwm_dev_t *mcpwm, int channel)
+{
+    return mcpwm->cap_val_ch[channel];
+}
+
+static inline bool mcpwm_ll_capture_is_negedge(mcpwm_dev_t *mcpwm, int channel)
+{
+    return mcpwm->cap_status.val & (1 << channel) ? true : false;
+}
+
+static inline void mcpwm_ll_capture_set_prescale(mcpwm_dev_t *mcpwm, int channel, uint32_t prescale)
+{
+    mcpwm->cap_cfg_ch[channel].prescale = prescale - 1;
+}
+
+static inline uint32_t mcpwm_ll_capture_get_prescale(mcpwm_dev_t *mcpwm, int channel)
+{
+    return mcpwm->cap_cfg_ch[channel].prescale + 1;
 }
 
 #ifdef __cplusplus

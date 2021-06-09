@@ -428,7 +428,7 @@ component_ut_test_esp32c3:
 
 UT_001:
   extends: .unit_test_esp32_template
-  parallel: 49
+  parallel: 50
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -538,20 +538,6 @@ UT_022:
   tags:
     - ESP32_IDF
     - UT_T2_I2C
-    - psram
-
-UT_023:
-  extends: .unit_test_esp32_template
-  parallel: 2
-  tags:
-    - ESP32_IDF
-    - UT_T1_MCPWM
-
-UT_024:
-  extends: .unit_test_esp32_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_MCPWM
     - psram
 
 UT_028:

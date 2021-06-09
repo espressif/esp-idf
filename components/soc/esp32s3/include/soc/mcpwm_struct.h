@@ -40,7 +40,7 @@ typedef volatile struct {
         union {
             struct {
                 uint32_t start                         :    3;  /*0: stop @ eqz, 1: stop @ eqp, 2: free run, 3: start and stop @ next eqz, 4: start and stop @ next eqp,*/
-                uint32_t mod                           :    2;  /* 0: freeze, 1: inc, 2: dec, 3: up-down*/
+                uint32_t mode                          :    2;  /* 0: freeze, 1: inc, 2: dec, 3: up-down*/
                 uint32_t reserved5                     :    27;
             };
             uint32_t val;
@@ -50,7 +50,8 @@ typedef volatile struct {
                 uint32_t in_en                         :    1;
                 uint32_t sync_sw                       :    1;  /*write the negate value will trigger a sw sync*/
                 uint32_t out_sel                       :    2;
-                uint32_t phase                         :    17;
+                uint32_t timer_phase                   :    16; /*phase for timer reload on sync event*/
+                uint32_t phase_direct                  :    1;  /*counter direction to apply on sync event*/
                 uint32_t reserved21                    :    11;
             };
             uint32_t val;
