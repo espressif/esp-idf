@@ -36,14 +36,19 @@ set(srcs
     "modbus/functions/mbutils.c"
     "serial_slave/modbus_controller/mbc_serial_slave.c"
     "serial_master/modbus_controller/mbc_serial_master.c"
-    "tcp_slave/port/port_tcp_slave.c"
-    "tcp_slave/modbus_controller/mbc_tcp_slave.c"
-    "tcp_master/modbus_controller/mbc_tcp_master.c"
-    "tcp_master/port/port_tcp_master.c"
     "common/esp_modbus_master_tcp.c"
     "common/esp_modbus_slave_tcp.c"
     "common/esp_modbus_master_serial.c"
     "common/esp_modbus_slave_serial.c")
+
+if(CONFIG_FMB_COMM_MODE_TCP_EN)
+    list(APPEND srcs    "tcp_slave/port/port_tcp_slave.c"
+                        "tcp_slave/modbus_controller/mbc_tcp_slave.c"
+                        "tcp_master/modbus_controller/mbc_tcp_master.c"
+                        "tcp_master/port/port_tcp_master.c"
+    )
+endif(CONFIG_FMB_COMM_MODE_TCP_EN)
+
 
 set(include_dirs common/include)
 
