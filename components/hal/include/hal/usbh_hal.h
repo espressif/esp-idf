@@ -438,7 +438,7 @@ static inline uint32_t *usbh_hal_port_get_frame_list(usbh_hal_context_t *hal)
  */
 static inline void usbh_hal_port_periodic_enable(usbh_hal_context_t *hal)
 {
-    assert(hal->periodic_frame_list != NULL && !hal->flags.periodic_sched_enabled);
+    assert(hal->periodic_frame_list != NULL);
     usbh_ll_set_frame_list_base_addr(hal->dev, (uint32_t)hal->periodic_frame_list);
     usbh_ll_hcfg_set_num_frame_list_entries(hal->dev, hal->frame_list_len);
     usbh_ll_hcfg_en_perio_sched(hal->dev);
