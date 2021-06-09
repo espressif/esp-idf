@@ -480,6 +480,12 @@ void IRAM_ATTR call_start_cpu0(void)
     esp_cache_err_int_init();
 
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+    // Memprot cannot be locked during OS startup as the lock-on prevents any PMS changes until a next reboot
+    // If such a situation appears, it is likely an malicious attempt to bypass the system safety setup -> print error & reset
+    if ( esp_memprot_is_locked_any() ) {
+        ESP_EARLY_LOGE(TAG, "Memprot feature locked after the system reset! Potential safety corruption, rebooting.");
+        esp_restart_noos_dig();
+    }
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE_LOCK
     esp_memprot_set_prot(true, true, NULL);
 #else
