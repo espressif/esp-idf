@@ -204,9 +204,7 @@ int main(int argc, char** argv)
         //
         // Note: parameter1 is a file (mangled packet) which caused the crash
         file = fopen(argv[1], "r");
-        if (file) {
-            len = fread(buf, 1, 1460, file);
-        }
+        assert(file >= 0 );
         fclose(file);
     }
 
