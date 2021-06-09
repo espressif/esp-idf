@@ -50,7 +50,7 @@ The HAL layer abstracts the DWC_OTG operating in Host Mode using Internal Scatte
 The HCD (Host Controller Driver) abstracts the DWC_OTG as N number of ports and an arbitrary number of pipes that can be routed through one of the ports to a device. However note that **the underlying hardware controller only has a single port, so technically only one port can ever be enabled**.
 
 - In other words, the HCD essentially implements a root hub (not fully behavioral compliant) that contains a single port.
-- Pipes are "an association between an endpoint on a device and software on the host". IRPs (I/O Request Packets) that each represent a USB transfer can be enqueued into a pipe for transmission, and dequeued from a pipe when completed.
+- Pipes are "an association between an endpoint on a device and software on the host". URBs (USB Request Block) represent a USB transfer that can be enqueued into a pipe for transmission, and dequeued from a pipe when completed.
 
 The HCD currently has the following limitations:
 
@@ -72,12 +72,11 @@ The HCD currently has the following limitations:
 
 ## HCD Pipes
 
-- Pipes can be opened to a particular endpoint based on a descriptor provided on allocation. If opening a default pipe, a `NULL` descriptor can be provided.
-- IRPs can be enqueued into a pipe. Pipes use a linked list internally, so there is in-theory no limit to the number of IRPs that can be enqueued.
-- IRPs need to be dequeued once they are completed.
-- IRPs need to have the transfer information (such as data buffer, transfer length in bytes) filled before they should be enqueued.
-- IRPs will be owned by the HCD until they are dequeued. Thus, users should not attempt to modify an IRP object (and the IRP's data buffer) until the IRP is dequeued.
-- The IRP is defined in `usb.h` instead of `hcd.h` so that it can be used throughout the entire Host stack. Each layer simply needs to pass the pointer of the IRP to the next layer thus minimizing the amount of copying required.
+- URBs can be enqueued into a pipe. Pipes use a linked list internally, so there is in-theory no limit to the number of URBs that can be enqueued.
+- URBs need to be dequeued once they are completed.
+- URBs need to have the transfer information (such as data buffer, transfer length in bytes) filled before they should be enqueued.
+- URBs will be owned by the HCD until they are dequeued. Thus, users should not attempt to modify an URB object (and the URB's data buffer) until the URB is dequeued.
+- The URB is defined in `usb_private.h` instead of `hcd.h` so that the same structure can shared throughout the entire Host stack. Each layer simply needs to pass the pointer of the URB to the next layer thus minimizing the amount of copying required.
 
 ## HCD SW Arch
 

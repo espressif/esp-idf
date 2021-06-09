@@ -22,6 +22,7 @@ extern "C" {
 #include <stdbool.h>
 #include <sys/queue.h>
 #include "esp_err.h"
+#include "usb_private.h"
 #include "usb.h"
 
 // ------------------------------------------------- Macros & Types ----------------------------------------------------
@@ -51,14 +52,14 @@ typedef enum {
  * @brief States of an HCD pipe
  *
  * Active:
- *  - Pipe is able to transmit data. IRPs can be enqueued.
- *  - Event if pipe has no IRPs enqueued, it can still be in the active state.
+ *  - Pipe is able to transmit data. URBs can be enqueued.
+ *  - Event if pipe has no URBs enqueued, it can still be in the active state.
  * Halted:
- *  - An error has occurred on the pipe. IRPs will no longer be executed.
+ *  - An error has occurred on the pipe. URBs will no longer be executed.
  *  - Halt should be cleared using the clear command
  * Invalid:
  *  - The underlying device that the pipe connects is not longer valid, thus making the pipe invalid.
- *  - Pending IRPs should be dequeued and the pipe should be freed.
+ *  - Pending URBs should be dequeued and the pipe should be freed.
  */
 typedef enum {
     HCD_PIPE_STATE_ACTIVE,          /**< The pipe is active */
@@ -91,10 +92,10 @@ typedef enum {
  */
 typedef enum {
     HCD_PIPE_EVENT_NONE,                    /**< The pipe has no events (used to indicate no events when polling) */
-    HCD_PIPE_EVENT_IRP_DONE,                /**< The pipe has completed an IRP. The IRP can be dequeued */
-    HCD_PIPE_EVENT_INVALID,                 /**< The pipe is invalid because  */
+    HCD_PIPE_EVENT_URB_DONE,                /**< The pipe has completed an URB. The URB can be dequeued */
+    HCD_PIPE_EVENT_INVALID,                 /**< The pipe is invalid because the underlying device is no longer valid */
     HCD_PIPE_EVENT_ERROR_XFER,              /**< Excessive (three consecutive) transaction errors (e.g., no ACK, bad CRC etc) */
-    HCD_PIPE_EVENT_ERROR_IRP_NOT_AVAIL,     /**< IRP was not available */
+    HCD_PIPE_EVENT_ERROR_URB_NOT_AVAIL,     /**< URB was not available */
     HCD_PIPE_EVENT_ERROR_OVERFLOW,          /**< Received more data than requested. Usually a Packet babble error
                                                  (i.e., an IN packet has exceeded the endpoint's MPS) */
     HCD_PIPE_EVENT_ERROR_STALL,             /**< Pipe received a STALL response received */
@@ -107,11 +108,12 @@ typedef enum {
  */
 typedef enum {
     HCD_PORT_CMD_POWER_ON,          /**< Power ON the port */
-    HCD_PORT_CMD_POWER_OFF,         /**< Power OFF the port */
+    HCD_PORT_CMD_POWER_OFF,         /**< Power OFF the port. If the port is enabled, this will cause a HCD_PORT_EVENT_SUDDEN_DISCONN event.
+                                         If the port is disabled, this will cause a HCD_PORT_EVENT_DISCONNECTION event. */
     HCD_PORT_CMD_RESET,             /**< Issue a reset on the port */
     HCD_PORT_CMD_SUSPEND,           /**< Suspend the port */
     HCD_PORT_CMD_RESUME,            /**< Resume the port */
-    HCD_PORT_CMD_DISABLE,           /**< Disable the port (stops the SOFs or keep alive) */
+    HCD_PORT_CMD_DISABLE,           /**< Disable the port (stops the SOFs or keep alive). Any created pipes will receive a HCD_PIPE_EVENT_INVALID event */
 } hcd_port_cmd_t;
 
 /**
@@ -120,8 +122,8 @@ typedef enum {
  * The pipe commands represent the list of pipe manipulations outlined in 10.5.2.2. of USB2.0 specification.
  */
 typedef enum {
-    HCD_PIPE_CMD_ABORT,             /**< Retire all scheduled IRPs. Pipe's state remains unchanged */
-    HCD_PIPE_CMD_RESET,             /**< Retire all scheduled IRPs. Pipe's state moves to active */
+    HCD_PIPE_CMD_ABORT,             /**< Retire all scheduled URBs. Pipe's state remains unchanged */
+    HCD_PIPE_CMD_RESET,             /**< Retire all scheduled URBs. Pipe's state moves to active */
     HCD_PIPE_CMD_CLEAR,             /**< Pipe's state moves from halted to active */
     HCD_PIPE_CMD_HALT               /**< Pipe's state moves to halted */
 } hcd_pipe_cmd_t;
@@ -143,14 +145,14 @@ typedef void * hcd_pipe_handle_t;
  *
  * This callback is run when a port event occurs
  */
-typedef bool (*hcd_port_isr_callback_t)(hcd_port_handle_t port_hdl, hcd_port_event_t port_event, void *user_arg, bool in_isr);
+typedef bool (*hcd_port_callback_t)(hcd_port_handle_t port_hdl, hcd_port_event_t port_event, void *user_arg, bool in_isr);
 
 /**
  * @brief Pipe event callback
  *
  * This callback is run when a pipe event occurs
  */
-typedef bool (*hcd_pipe_isr_callback_t)(hcd_pipe_handle_t pipe_hdl, hcd_pipe_event_t pipe_event, void *user_arg, bool in_isr);
+typedef bool (*hcd_pipe_callback_t)(hcd_pipe_handle_t pipe_hdl, hcd_pipe_event_t pipe_event, void *user_arg, bool in_isr);
 
 typedef enum {
     HCD_PORT_FIFO_BIAS_BALANCED,    /**< Balanced FIFO sizing for RX, Non-periodic TX, and periodic TX */
@@ -169,7 +171,7 @@ typedef struct {
  * @brief Port configuration structure
  */
 typedef struct {
-    hcd_port_isr_callback_t callback;       /**< HCD port event callback */
+    hcd_port_callback_t callback;           /**< HCD port event callback */
     void *callback_arg;                     /**< User argument for HCD port callback */
     void *context;                          /**< Context variable used to associate the port with upper layer object */
 } hcd_port_config_t;
@@ -180,10 +182,10 @@ typedef struct {
  * @note The callback can be set to NULL if no callback is required (e.g., using HCD in a polling manner).
  */
 typedef struct {
-    hcd_pipe_isr_callback_t callback;       /**< HCD pipe event ISR callback */
+    hcd_pipe_callback_t callback;           /**< HCD pipe event ISR callback */
     void *callback_arg;                     /**< User argument for HCD pipe callback */
     void *context;                          /**< Context variable used to associate the pipe with upper layer object */
-    const usb_desc_ep_t *ep_desc;                 /**< Pointer to endpoint descriptor of the pipe */
+    const usb_desc_ep_t *ep_desc;           /**< Pointer to endpoint descriptor of the pipe */
     usb_speed_t dev_speed;                  /**< Speed of the device */
     uint8_t dev_addr;                       /**< Device address of the pipe */
 } hcd_pipe_config_t;
@@ -236,7 +238,7 @@ esp_err_t hcd_uninstall(void);
  * @retval ESP_ERR_NOT_FOUND: Port number not found
  * @retval ESP_ERR_INVALID_ARG: Arguments are invalid
  */
-esp_err_t hcd_port_init(int port_number, hcd_port_config_t *port_config, hcd_port_handle_t *port_hdl);
+esp_err_t hcd_port_init(int port_number, const hcd_port_config_t *port_config, hcd_port_handle_t *port_hdl);
 
 /**
  * @brief Deinitialize a particular port
@@ -376,7 +378,7 @@ esp_err_t hcd_pipe_alloc(hcd_port_handle_t port_hdl, const hcd_pipe_config_t *pi
  *
  * Frees the resources used by an HCD pipe. The pipe's handle should be discarded after calling this function. The pipe
  * must be in following condition before it can be freed:
- * - All IRPs have been dequeued
+ * - All URBs have been dequeued
  *
  * @param pipe_hdl Pipe handle
  *
@@ -392,7 +394,7 @@ esp_err_t hcd_pipe_free(hcd_pipe_handle_t pipe_hdl);
  * packet size. This function can only be called on a pipe that has met the following conditions:
  * - Pipe is still valid (i.e., not in the HCD_PIPE_STATE_INVALID state)
  * - Pipe is not currently processing a command
- * - All IRPs have been dequeued from the pipe
+ * - All URBs have been dequeued from the pipe
  *
  * @param pipe_hdl Pipe handle
  * @param mps New Maximum Packet Size
@@ -409,7 +411,7 @@ esp_err_t hcd_pipe_update_mps(hcd_pipe_handle_t pipe_hdl, int mps);
  * address. This function can only be called on a pipe that has met the following conditions:
  * - Pipe is still valid (i.e., not in the HCD_PIPE_STATE_INVALID state)
  * - Pipe is not currently processing a command
- * - All IRPs have been dequeued from the pipe
+ * - All URBs have been dequeued from the pipe
  *
  * @param pipe_hdl Pipe handle
  * @param dev_addr New device address
@@ -438,19 +440,19 @@ hcd_pipe_state_t hcd_pipe_get_state(hcd_pipe_handle_t pipe_hdl);
 /**
  * @brief Execute a command on a particular pipe
  *
- * Pipe commands allow a pipe to be manipulated (such as clearing a halt, retiring all IRPs etc). The following
+ * Pipe commands allow a pipe to be manipulated (such as clearing a halt, retiring all URBs etc). The following
  * conditions must for a pipe command to be issued:
  * - Pipe is still valid (i.e., not in the HCD_PIPE_STATE_INVALID)
  * - No other thread/task processing a command on the pipe concurrently (will return)
  *
- * @note Some pipe commands will block until the pipe's current in-flight IRP is complete. If the pipe's state
+ * @note Some pipe commands will block until the pipe's current in-flight URB is complete. If the pipe's state
  *       changes unexpectedly, this function will return ESP_ERR_INVALID_RESPONSE
  *
  * @param pipe_hdl Pipe handle
  * @param command Pipe command
  * @retval ESP_OK: Command executed successfully
  * @retval ESP_ERR_INVALID_STATE: The pipe is not in the correct state/condition too execute the command
- * @retval ESP_ERR_INVALID_RESPONSE: The pipe's state changed unexpectedley
+ * @retval ESP_ERR_INVALID_RESPONSE: The pipe's state changed unexpectedly
  */
 esp_err_t hcd_pipe_command(hcd_pipe_handle_t pipe_hdl, hcd_pipe_cmd_t command);
 
@@ -465,47 +467,47 @@ esp_err_t hcd_pipe_command(hcd_pipe_handle_t pipe_hdl, hcd_pipe_cmd_t command);
  */
 hcd_pipe_event_t hcd_pipe_get_event(hcd_pipe_handle_t pipe_hdl);
 
-// ---------------------------------------------------- HCD IRPs -------------------------------------------------------
+// ---------------------------------------------------- HCD URBs -------------------------------------------------------
 
 /**
- * @brief Enqueue an IRP to a particular pipe
+ * @brief Enqueue an URB to a particular pipe
  *
- * The following conditions must be met before an IRP can be enqueued:
- * - The IRP is properly initialized (data buffer and transfer length are set)
- * - The IRP must not already be enqueued
+ * The following conditions must be met before an URB can be enqueued:
+ * - The URB is properly initialized (data buffer and transfer length are set)
+ * - The URB must not already be enqueued
  * - The pipe must be in the HCD_PIPE_STATE_ACTIVE state
  *
  * @param pipe_hdl Pipe handle
- * @param irp I/O Request Packet to enqueue
- * @retval ESP_OK: IRP enqueued successfully
- * @retval ESP_ERR_INVALID_STATE: Conditions not met to enqueue IRP
+ * @param urb URB to enqueue
+ * @retval ESP_OK: URB enqueued successfully
+ * @retval ESP_ERR_INVALID_STATE: Conditions not met to enqueue URB
  */
-esp_err_t hcd_irp_enqueue(hcd_pipe_handle_t pipe_hdl, usb_irp_t *irp);
+esp_err_t hcd_urb_enqueue(hcd_pipe_handle_t pipe_hdl, urb_t *urb);
 
 /**
- * @brief Dequeue an IRP from a particular pipe
+ * @brief Dequeue an URB from a particular pipe
  *
- * This function should be called on a pipe after a pipe receives a HCD_PIPE_EVENT_IRP_DONE event. If a pipe has
- * multiple IRPs that can be dequeued, this function should be called repeatedly until all IRPs are dequeued. If a pipe
- * has no more IRPs to dequeue, this function will return NULL.
+ * This function should be called on a pipe after a pipe receives a HCD_PIPE_EVENT_URB_DONE event. If a pipe has
+ * multiple URBs that can be dequeued, this function should be called repeatedly until all URBs are dequeued. If a pipe
+ * has no more URBs to dequeue, this function will return NULL.
  *
  * @param pipe_hdl Pipe handle
- * @return usb_irp_t* Dequeued I/O Request Packet, or NULL if no more IRPs to dequeue
+ * @return urb_t* Dequeued URB, or NULL if no more URBs to dequeue
  */
-usb_irp_t *hcd_irp_dequeue(hcd_pipe_handle_t pipe_hdl);
+urb_t *hcd_urb_dequeue(hcd_pipe_handle_t pipe_hdl);
 
 /**
- * @brief Abort an enqueued IRP
+ * @brief Abort an enqueued URB
  *
- * This function will attempt to abort an IRP that is already enqueued. If the IRP has yet to be executed, it will be
- * "cancelled" and can then be dequeued. If the IRP is currenty in-flight or has already completed, the IRP will not be
+ * This function will attempt to abort an URB that is already enqueued. If the URB has yet to be executed, it will be
+ * "cancelled" and can then be dequeued. If the URB is currenty in-flight or has already completed, the URB will not be
  * affected by this function.
  *
- * @param irp I/O Request Packet to abort
- * @retval ESP_OK: IRP successfully aborted, or was not affected by this function
- * @retval ESP_ERR_INVALID_STATE: IRP was never enqueued
+ * @param urb URB to abort
+ * @retval ESP_OK: URB successfully aborted, or was not affected by this function
+ * @retval ESP_ERR_INVALID_STATE: URB was never enqueued
  */
-esp_err_t hcd_irp_abort(usb_irp_t *irp);
+esp_err_t hcd_urb_abort(urb_t *urb);
 
 #ifdef __cplusplus
 }

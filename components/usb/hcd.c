@@ -28,8 +28,9 @@
 #include "soc/gpio_pins.h"
 #include "soc/gpio_sig_map.h"
 #include "driver/periph_ctrl.h"
-#include "usb.h"
 #include "hcd.h"
+#include "usb_private.h"
+#include "usb.h"
 
 // ----------------------------------------------------- Macros --------------------------------------------------------
 
@@ -150,18 +151,18 @@ const fifo_mps_limits_t mps_limits_bias_ptx = {
 // ------------------------ Flags --------------------------
 
 /**
- * @brief Bit masks for the HCD to use in the IRPs reserved_flags field
+ * @brief Bit masks for the HCD to use in the URBs reserved_flags field
  *
- * The IRP object has a reserved_flags member for host stack's internal use. The following flags will be set in
- * reserved_flags in order to keep track of state of an IRP within the HCD.
+ * The URB object has a reserved_flags member for host stack's internal use. The following flags will be set in
+ * reserved_flags in order to keep track of state of an URB within the HCD.
  */
-#define IRP_STATE_IDLE                          0x0 //The IRP is not enqueued in an HCD pipe
-#define IRP_STATE_PENDING                       0x1 //The IRP is enqueued and pending execution
-#define IRP_STATE_INFLIGHT                      0x2 //The IRP is currently in flight
-#define IRP_STATE_DONE                          0x3 //The IRP has completed execution or is retired, and is waiting to be dequeued
-#define IRP_STATE_MASK                          0x3 //Bit mask of all the IRP state flags
-#define IRP_STATE_SET(reserved_flags, state)    (reserved_flags = (reserved_flags & ~IRP_STATE_MASK) | state)
-#define IRP_STATE_GET(reserved_flags)           (reserved_flags & IRP_STATE_MASK)
+#define URB_HCD_STATE_IDLE                      0   //The URB is not enqueued in an HCD pipe
+#define URB_HCD_STATE_PENDING                   1   //The URB is enqueued and pending execution
+#define URB_HCD_STATE_INFLIGHT                  2   //The URB is currently in flight
+#define URB_HCD_STATE_DONE                      3   //The URB has completed execution or is retired, and is waiting to be dequeued
+
+#define URB_HCD_STATE_SET(reserved_flags, state)    (reserved_flags = (reserved_flags & ~URB_HCD_STATE_MASK) | state)
+#define URB_HCD_STATE_GET(reserved_flags)           (reserved_flags & URB_HCD_STATE_MASK)
 
 // -------------------- Convenience ------------------------
 
@@ -192,7 +193,7 @@ typedef struct port_obj port_t;
  */
 typedef struct {
     void *xfer_desc_list;
-    usb_irp_t *irp;
+    urb_t *urb;
     union {
         struct {
             uint32_t data_stg_in: 1;        //Data stage of the control transfer is IN
@@ -211,8 +212,8 @@ typedef struct {
         struct {
             uint32_t num_qtds: 8;           //Number of transfer descriptors filled (including NULL descriptors)
             uint32_t interval: 8;           //Interval (in number of SOF i.e., ms)
-            uint32_t irp_start_idx: 8;      //Index of the first transfer descriptor in the list
-            uint32_t next_irp_start_idx: 8; //Index for the first descriptor of the next buffer
+            uint32_t start_idx: 8;          //Index of the first transfer descriptor in the list
+            uint32_t next_start_idx: 8;     //Index for the first descriptor of the next buffer
         } isoc;
         uint32_t val;
     } flags;
@@ -234,11 +235,11 @@ typedef struct {
  * @brief Object representing a pipe in the HCD layer
  */
 struct pipe_obj {
-    //IRP queueing related
-    TAILQ_HEAD(tailhead_irp_pending, usb_irp_obj) pending_irp_tailq;
-    TAILQ_HEAD(tailhead_irp_done, usb_irp_obj) done_irp_tailq;
-    int num_irp_pending;
-    int num_irp_done;
+    //URB queueing related
+    TAILQ_HEAD(tailhead_urb_pending, urb_obj) pending_urb_tailq;
+    TAILQ_HEAD(tailhead_urb_done, urb_obj) done_urb_tailq;
+    int num_urb_pending;
+    int num_urb_done;
     //Multi-buffer control
     dma_buffer_block_t *buffers[NUM_BUFFERS];  //Double buffering scheme
     union {
@@ -276,7 +277,7 @@ struct pipe_obj {
         uint32_t val;
     } cs_flags;
     //Pipe callback and context
-    hcd_pipe_isr_callback_t callback;
+    hcd_pipe_callback_t callback;
     void *callback_arg;
     void *context;
 };
@@ -304,9 +305,9 @@ struct port_obj {
             uint32_t cmd_processing: 1;             //Used to indicate command handling is ongoing
             uint32_t waiting_all_pipes_pause: 1;    //Waiting for all pipes routed through this port to be paused
             uint32_t disable_requested: 1;
-            uint32_t conn_devc_ena: 1;              //Used to indicate the port is connected to a device that has been reset
+            uint32_t conn_dev_ena: 1;               //Used to indicate the port is connected to a device that has been reset
             uint32_t periodic_scheduling_enabled: 1;
-            uint32_t reserved9: 9;
+            uint32_t reserved9:9;
             uint32_t num_pipes_waiting_pause: 16;
         };
         uint32_t val;
@@ -314,7 +315,7 @@ struct port_obj {
     bool initialized;
     hcd_port_fifo_bias_t fifo_bias;
     //Port callback and context
-    hcd_port_isr_callback_t callback;
+    hcd_port_callback_t callback;
     void *callback_arg;
     SemaphoreHandle_t port_mux;
     void *context;
@@ -337,16 +338,16 @@ static hcd_obj_t *s_hcd_obj = NULL;     //Note: "s_" is for the static pointer
 // ------------------- Buffer Control ----------------------
 
 /**
- * @brief Check if an inactive buffer can be filled with a pending IRP
+ * @brief Check if an inactive buffer can be filled with a pending URB
  *
  * @param pipe Pipe object
- * @return true There are one or more pending IRPs, and the inactive buffer is yet to be filled
+ * @return true There are one or more pending URBs, and the inactive buffer is yet to be filled
  * @return false Otherwise
  */
 static inline bool _buffer_can_fill(pipe_t *pipe)
 {
-    //We can only fill if there are pending IRPs and at least one unfilled buffer
-    if (pipe->num_irp_pending > 0 && pipe->multi_buffer_control.buffer_num_to_fill > 0) {
+    //We can only fill if there are pending URBs and at least one unfilled buffer
+    if (pipe->num_urb_pending > 0 && pipe->multi_buffer_control.buffer_num_to_fill > 0) {
         return true;
     } else {
         return false;
@@ -357,8 +358,8 @@ static inline bool _buffer_can_fill(pipe_t *pipe)
  * @brief Fill an empty buffer with
  *
  * This function will:
- * - Remove an IRP from the pending tailq
- * - Fill that IRP into the inactive buffer
+ * - Remove an URB from the pending tailq
+ * - Fill that URB into the inactive buffer
  *
  * @note _buffer_can_fill() must return true before calling this function
  *
@@ -473,13 +474,13 @@ static inline bool _buffer_can_parse(pipe_t *pipe)
  * @brief Parse a completed buffer
  *
  * This function will:
- * - Parse the results of an IRP from a completed buffer
- * - Put the IRP into the done tailq
+ * - Parse the results of an URB from a completed buffer
+ * - Put the URB into the done tailq
  *
  * @note This function should only be called on the completion of a buffer
  *
  * @param pipe Pipe object
- * @param stop_idx (For INTR pipes only) The index of the descriptor that follows the last descriptor of the IRP. Set to 0 otherwise
+ * @param stop_idx (For INTR pipes only) The index of the descriptor that follows the last descriptor of the URB. Set to 0 otherwise
  */
 static void _buffer_parse(pipe_t *pipe);
 
@@ -496,10 +497,10 @@ static void _buffer_flush_all(pipe_t *pipe, bool cancelled);
 // ------------------------ Pipe ---------------------------
 
 /**
- * @brief Wait until a pipe's in-flight IRP is done
+ * @brief Wait until a pipe's in-flight URB is done
  *
- * If the pipe has an in-flight IRP, this function will block until it is done (via a internal pipe event).
- * If the pipe has no in-flight IRP, this function do nothing and return immediately.
+ * If the pipe has an in-flight URB, this function will block until it is done (via a internal pipe event).
+ * If the pipe has no in-flight URB, this function do nothing and return immediately.
  * If the pipe's state changes unexpectedly, this function will return false.
  *
  * Also parses all buffers on exit
@@ -507,29 +508,29 @@ static void _buffer_flush_all(pipe_t *pipe, bool cancelled);
  * @note This function is blocking (will exit and re-enter the critical section to do so)
  *
  * @param pipe Pipe object
- * @return true Pipes in-flight IRP is done
+ * @return true Pipes in-flight URB is done
  * @return false Pipes state unexpectedly changed
  */
 static bool _pipe_wait_done(pipe_t *pipe);
 
 /**
- * @brief Retires all IRPs (those that were previously in-flight or pending)
+ * @brief Retires all URBs (those that were previously in-flight or pending)
  *
- * Retiring all IRPs will result in any pending IRP being moved to the done tailq. This function will update the IPR
- * status of each IRP.
- *  - If the retiring is self-initiated (i.e., due to a pipe command), the IRP status will be set to USB_TRANSFER_STATUS_CANCELED.
- *  - If the retiring is NOT self-initiated (i.e., the pipe is no longer valid), the IRP status will be set to USB_TRANSFER_STATUS_NO_DEVICE
+ * Retiring all URBs will result in any pending URB being moved to the done tailq. This function will update the IPR
+ * status of each URB.
+ *  - If the retiring is self-initiated (i.e., due to a pipe command), the URB status will be set to USB_TRANSFER_STATUS_CANCELED.
+ *  - If the retiring is NOT self-initiated (i.e., the pipe is no longer valid), the URB status will be set to USB_TRANSFER_STATUS_NO_DEVICE
  *
  * Entry:
- * - There can be no in-flight IRP (must already be parsed and returned to done queue)
+ * - There can be no in-flight URB (must already be parsed and returned to done queue)
  * - All buffers must be parsed
  * Exit:
- * - If there was an in-flight IRP, it is parsed and returned to the done queue
- * - If there are any pending IRPs:
+ * - If there was an in-flight URB, it is parsed and returned to the done queue
+ * - If there are any pending URBs:
  *      - They are moved to the done tailq
  *
  * @param pipe Pipe object
- * @param cancelled Are we actively Pipe retire is initialized by the user due to a command, thus IRP are
+ * @param cancelled Are we actively Pipe retire is initialized by the user due to a command, thus URB are
  *                  actively cancelled.
  */
 static void _pipe_retire(pipe_t *pipe, bool self_initiated);
@@ -555,7 +556,7 @@ static inline hcd_pipe_event_t pipe_decode_error_event(usbh_hal_chan_error_t cha
  * Entry:
  *  - The port or its connected device is no longer valid. This guarantees that none of the pipes will be transferring
  * Exit:
- *  - Each pipe will have any pending IRPs moved to their respective done tailq
+ *  - Each pipe will have any pending URBs moved to their respective done tailq
  *  - Each pipe will be put into the invalid state
  *  - Generate a HCD_PIPE_EVENT_INVALID event on each pipe and run their respective callbacks
  *
@@ -571,7 +572,7 @@ static void _port_invalidate_all_pipes(port_t *port);
  * Entry:
  *  - The port is in the HCD_PORT_STATE_ENABLED state (i.e., there is a connected device which has been reset)
  * Exit:
- *  - All pipes routed through the port have either paused, or are waiting to complete their in-flight IRPs before pausing
+ *  - All pipes routed through the port have either paused, or are waiting to complete their in-flight URBs before pausing
  *  - If waiting for one or more pipes to pause, _internal_port_event_wait() must be called after this function returns
  *
  * @param port Port object
@@ -589,7 +590,7 @@ static bool _port_pause_all_pipes(port_t *port);
  *  - The port is in the HCD_PORT_STATE_ENABLED state
  *  - All pipes are paused
  * Exit:
- *  - All pipes un-paused. If those pipes have pending IRPs, they will be started.
+ *  - All pipes un-paused. If those pipes have pending URBs, they will be started.
  *
  * @param port Port object
  */
@@ -797,7 +798,7 @@ static hcd_port_event_t _intr_hdlr_hprt(port_t *port, usbh_hal_port_event_t hal_
             break;
         }
         case USBH_HAL_PORT_EVENT_DISCONN: {
-            if (port->flags.conn_devc_ena) {
+            if (port->flags.conn_dev_ena) {
                 //The port was previously enabled, so this is a sudden disconnection
                 port->state = HCD_PORT_STATE_RECOVERY;
                 port_event = HCD_PORT_EVENT_SUDDEN_DISCONN;
@@ -805,19 +806,19 @@ static hcd_port_event_t _intr_hdlr_hprt(port_t *port, usbh_hal_port_event_t hal_
                 //For normal disconnections, don't update state immediately as we still need to debounce.
                 port_event = HCD_PORT_EVENT_DISCONNECTION;
             }
-            port->flags.conn_devc_ena = 0;
+            port->flags.conn_dev_ena = 0;
             break;
         }
         case USBH_HAL_PORT_EVENT_ENABLED: {
             usbh_hal_port_enable(port->hal);  //Initialize remaining host port registers
             port->speed = (usbh_hal_port_get_conn_speed(port->hal) == USB_PRIV_SPEED_FULL) ? USB_SPEED_FULL : USB_SPEED_LOW;
             port->state = HCD_PORT_STATE_ENABLED;
-            port->flags.conn_devc_ena = 1;
+            port->flags.conn_dev_ena = 1;
             //This was triggered by a command, so no event needs to be propagated.
             break;
         }
         case USBH_HAL_PORT_EVENT_DISABLED: {
-            port->flags.conn_devc_ena = 0;
+            port->flags.conn_dev_ena = 0;
             //Disabled could be due to a disable request or reset request, or due to a port error
             if (port->state != HCD_PORT_STATE_RESETTING) {  //Ignore the disable event if it's due to a reset request
                 port->state = HCD_PORT_STATE_DISABLED;
@@ -840,7 +841,7 @@ static hcd_port_event_t _intr_hdlr_hprt(port_t *port, usbh_hal_port_event_t hal_
                 port->state = HCD_PORT_STATE_NOT_POWERED;
                 port_event = HCD_PORT_EVENT_OVERCURRENT;
             }
-            port->flags.conn_devc_ena = 0;
+            port->flags.conn_dev_ena = 0;
             break;
         }
         default: {
@@ -867,7 +868,7 @@ static hcd_pipe_event_t _intr_hdlr_chan(pipe_t *pipe, usbh_hal_chan_t *chan_obj,
     usbh_hal_chan_event_t chan_event = usbh_hal_chan_decode_intr(chan_obj);
     hcd_pipe_event_t event = HCD_PIPE_EVENT_NONE;
     //Check the the pipe's port still has a connected and enabled device before processing the interrupt
-    if (!pipe->port->flags.conn_devc_ena) {
+    if (!pipe->port->flags.conn_dev_ena) {
         return event;   //Treat as a no event.
     }
     bool handle_waiting_xfer_done = false;
@@ -876,7 +877,7 @@ static hcd_pipe_event_t _intr_hdlr_chan(pipe_t *pipe, usbh_hal_chan_t *chan_obj,
             if (!_buffer_check_done(pipe)) {
                 break;
             }
-            pipe->last_event = HCD_PIPE_EVENT_IRP_DONE;
+            pipe->last_event = HCD_PIPE_EVENT_URB_DONE;
             event = pipe->last_event;
             //Mark the buffer as done
             int stop_idx = usbh_hal_chan_get_qtd_idx(chan_obj);
@@ -891,7 +892,7 @@ static hcd_pipe_event_t _intr_hdlr_chan(pipe_t *pipe, usbh_hal_chan_t *chan_obj,
             if (pipe->cs_flags.waiting_xfer_done) {
                 handle_waiting_xfer_done = true;
             } else if (_buffer_can_fill(pipe)) {
-                //Now that we've parsed a buffer, see if another IRP can be filled in its place
+                //Now that we've parsed a buffer, see if another URB can be filled in its place
                 _buffer_fill(pipe);
             }
             break;
@@ -1117,16 +1118,16 @@ esp_err_t hcd_uninstall(void)
 static void _port_invalidate_all_pipes(port_t *port)
 {
     //This function should only be called when the port is invalid
-    assert(!port->flags.conn_devc_ena);
+    assert(!port->flags.conn_dev_ena);
     pipe_t *pipe;
-    //Process all pipes that have queued IRPs
+    //Process all pipes that have queued URBs
     TAILQ_FOREACH(pipe, &port->pipes_active_tailq, tailq_entry) {
         //Mark the pipe as invalid and set an invalid event
         pipe->state = HCD_PIPE_STATE_INVALID;
         pipe->last_event = HCD_PIPE_EVENT_INVALID;
         //Flush all buffers that are still awaiting exec
         _buffer_flush_all(pipe, false);
-        //Retire any remaining IRPs in the pending tailq
+        //Retire any remaining URBs in the pending tailq
         _pipe_retire(pipe, false);
         if (pipe->task_waiting_pipe_notif != NULL) {
             //Unblock the thread/task waiting for a notification from the pipe as the pipe is no longer valid.
@@ -1156,7 +1157,7 @@ static bool _port_pause_all_pipes(port_t *port)
     assert(port->state == HCD_PORT_STATE_ENABLED);
     pipe_t *pipe;
     int num_pipes_waiting_done = 0;
-    //Process all pipes that have queued IRPs
+    //Process all pipes that have queued URBs
     TAILQ_FOREACH(pipe, &port->pipes_active_tailq, tailq_entry) {
         //Check if pipe is currently executing
         if (pipe->multi_buffer_control.buffer_is_executing) {
@@ -1189,7 +1190,7 @@ static void _port_unpause_all_pipes(port_t *port)
     TAILQ_FOREACH(pipe, &port->pipes_idle_tailq, tailq_entry) {
         pipe->cs_flags.paused = 0;
     }
-    //Process all pipes that have queued IRPs
+    //Process all pipes that have queued URBs
     TAILQ_FOREACH(pipe, &port->pipes_active_tailq, tailq_entry) {
         pipe->cs_flags.paused = 0;
         if (_buffer_can_fill(pipe)) {
@@ -1219,7 +1220,7 @@ static bool _port_bus_reset(port_t *port)
     HCD_EXIT_CRITICAL();
     vTaskDelay(pdMS_TO_TICKS(RESET_RECOVERY_MS));
     HCD_ENTER_CRITICAL();
-    if (port->state != HCD_PORT_STATE_ENABLED || !port->flags.conn_devc_ena) {
+    if (port->state != HCD_PORT_STATE_ENABLED || !port->flags.conn_dev_ena) {
         //The port state has unexpectedly changed
         goto bailout;
     }
@@ -1235,7 +1236,7 @@ static bool _port_bus_suspend(port_t *port)
     if (!_port_pause_all_pipes(port)) {
         //Need to wait for some pipes to pause. Wait for notification from ISR
         _internal_port_event_wait(port);
-        if (port->state != HCD_PORT_STATE_ENABLED || !port->flags.conn_devc_ena) {
+        if (port->state != HCD_PORT_STATE_ENABLED || !port->flags.conn_dev_ena) {
             //Port state unexpectedly changed
             goto bailout;
         }
@@ -1259,14 +1260,14 @@ static bool _port_bus_resume(port_t *port)
     HCD_ENTER_CRITICAL();
     //Return and hold the bus to the J state (as port of the LS EOP)
     usbh_hal_port_toggle_resume(port->hal, false);
-    if (port->state != HCD_PORT_STATE_RESUMING || !port->flags.conn_devc_ena) {
+    if (port->state != HCD_PORT_STATE_RESUMING || !port->flags.conn_dev_ena) {
         //Port state unexpectedly changed
         goto bailout;
     }
     HCD_EXIT_CRITICAL();
     vTaskDelay(pdMS_TO_TICKS(RESUME_RECOVERY_MS));
     HCD_ENTER_CRITICAL();
-    if (port->state != HCD_PORT_STATE_RESUMING || !port->flags.conn_devc_ena) {
+    if (port->state != HCD_PORT_STATE_RESUMING || !port->flags.conn_dev_ena) {
         //Port state unexpectedly changed
         goto bailout;
     }
@@ -1285,7 +1286,7 @@ static bool _port_disable(port_t *port)
         if (!_port_pause_all_pipes(port)) {
             //Need to wait for some pipes to pause. Wait for notification from ISR
             _internal_port_event_wait(port);
-            if (port->state != HCD_PORT_STATE_ENABLED || !port->flags.conn_devc_ena) {
+            if (port->state != HCD_PORT_STATE_ENABLED || !port->flags.conn_dev_ena) {
                 //Port state unexpectedly changed
                 goto bailout;
             }
@@ -1328,7 +1329,7 @@ static bool _port_debounce(port_t *port)
 
 // ----------------------- Public --------------------------
 
-esp_err_t hcd_port_init(int port_number, hcd_port_config_t *port_config, hcd_port_handle_t *port_hdl)
+esp_err_t hcd_port_init(int port_number, const hcd_port_config_t *port_config, hcd_port_handle_t *port_hdl)
 {
     HCD_CHECK(port_number > 0 && port_config != NULL && port_hdl != NULL, ESP_ERR_INVALID_ARG);
     HCD_CHECK(port_number <= NUM_PORTS, ESP_ERR_NOT_FOUND);
@@ -1465,7 +1466,7 @@ esp_err_t hcd_port_get_speed(hcd_port_handle_t port_hdl, usb_speed_t *speed)
     HCD_CHECK(speed != NULL, ESP_ERR_INVALID_ARG);
     HCD_ENTER_CRITICAL();
     //Device speed is only valid if there is device connected to the port that has been reset
-    HCD_CHECK_FROM_CRIT(port->flags.conn_devc_ena, ESP_ERR_INVALID_STATE);
+    HCD_CHECK_FROM_CRIT(port->flags.conn_dev_ena, ESP_ERR_INVALID_STATE);
     usb_priv_speed_t hal_speed = usbh_hal_port_get_conn_speed(port->hal);
     if (hal_speed == USB_PRIV_SPEED_FULL) {
         *speed = USB_SPEED_FULL;
@@ -1613,19 +1614,19 @@ static void _pipe_retire(pipe_t *pipe, bool self_initiated)
 {
     //Cannot have a currently executing buffer
     assert(!pipe->multi_buffer_control.buffer_is_executing);
-    if (pipe->num_irp_pending > 0) {
-        //Process all remaining pending IRPs
-        usb_irp_t *irp;
-        TAILQ_FOREACH(irp, &pipe->pending_irp_tailq, tailq_entry) {
-            //Update the IRP's current state
-            IRP_STATE_SET(irp->reserved_flags, IRP_STATE_DONE);
-            //If we are initiating the retire, mark the IRP as canceled
-            irp->status = (self_initiated) ? USB_TRANSFER_STATUS_CANCELED : USB_TRANSFER_STATUS_NO_DEVICE;
+    if (pipe->num_urb_pending > 0) {
+        //Process all remaining pending URBs
+        urb_t *urb;
+        TAILQ_FOREACH(urb, &pipe->pending_urb_tailq, tailq_entry) {
+            //Update the URB's current state
+            urb->hcd_var = URB_HCD_STATE_DONE;
+            //If we are initiating the retire, mark the URB as canceled
+            urb->transfer.status = (self_initiated) ? USB_TRANSFER_STATUS_CANCELED : USB_TRANSFER_STATUS_NO_DEVICE;
         }
         //Concatenated pending tailq to the done tailq
-        TAILQ_CONCAT(&pipe->done_irp_tailq, &pipe->pending_irp_tailq, tailq_entry);
-        pipe->num_irp_done += pipe->num_irp_pending;
-        pipe->num_irp_pending = 0;
+        TAILQ_CONCAT(&pipe->done_urb_tailq, &pipe->pending_urb_tailq, tailq_entry);
+        pipe->num_urb_done += pipe->num_urb_pending;
+        pipe->num_urb_pending = 0;
     }
 }
 
@@ -1637,7 +1638,7 @@ static inline hcd_pipe_event_t pipe_decode_error_event(usbh_hal_chan_error_t cha
             event = HCD_PIPE_EVENT_ERROR_XFER;
             break;
         case USBH_HAL_CHAN_ERROR_BNA:
-            event = HCD_PIPE_EVENT_ERROR_IRP_NOT_AVAIL;
+            event = HCD_PIPE_EVENT_ERROR_URB_NOT_AVAIL;
             break;
         case USBH_HAL_CHAN_ERROR_PKT_BBL:
             event = HCD_PIPE_EVENT_ERROR_OVERFLOW;
@@ -1806,7 +1807,7 @@ esp_err_t hcd_pipe_alloc(hcd_port_handle_t port_hdl, const hcd_pipe_config_t *pi
     port_t *port = (port_t *)port_hdl;
     HCD_ENTER_CRITICAL();
     //Can only allocate a pipe if the target port is initialized and connected to an enabled device
-    HCD_CHECK_FROM_CRIT(port->initialized && port->flags.conn_devc_ena, ESP_ERR_INVALID_STATE);
+    HCD_CHECK_FROM_CRIT(port->initialized && port->flags.conn_dev_ena, ESP_ERR_INVALID_STATE);
     usb_speed_t port_speed = port->speed;
     hcd_port_fifo_bias_t port_fifo_bias = port->fifo_bias;
     int pipe_idx = port->num_pipes_idle + port->num_pipes_queued;
@@ -1844,8 +1845,8 @@ esp_err_t hcd_pipe_alloc(hcd_port_handle_t port_hdl, const hcd_pipe_config_t *pi
     }
 
     //Initialize pipe object
-    TAILQ_INIT(&pipe->pending_irp_tailq);
-    TAILQ_INIT(&pipe->done_irp_tailq);
+    TAILQ_INIT(&pipe->pending_urb_tailq);
+    TAILQ_INIT(&pipe->done_urb_tailq);
     for (int i = 0; i < NUM_BUFFERS; i++) {
         pipe->buffers[i] = buffers[i];
     }
@@ -1862,7 +1863,7 @@ esp_err_t hcd_pipe_alloc(hcd_port_handle_t port_hdl, const hcd_pipe_config_t *pi
 
     //Allocate channel
     HCD_ENTER_CRITICAL();
-    if (!port->initialized || !port->flags.conn_devc_ena) {
+    if (!port->initialized || !port->flags.conn_dev_ena) {
         HCD_EXIT_CRITICAL();
         ret = ESP_ERR_INVALID_STATE;
         goto err;
@@ -1895,14 +1896,14 @@ esp_err_t hcd_pipe_free(hcd_pipe_handle_t pipe_hdl)
 {
     pipe_t *pipe = (pipe_t *)pipe_hdl;
     HCD_ENTER_CRITICAL();
-    //Check that all IRPs have been removed and pipe has no pending events
+    //Check that all URBs have been removed and pipe has no pending events
     HCD_CHECK_FROM_CRIT(!pipe->multi_buffer_control.buffer_is_executing
                         && pipe->multi_buffer_control.buffer_num_to_parse == 0
                         && pipe->multi_buffer_control.buffer_num_to_exec == 0
-                        && pipe->num_irp_pending == 0
-                        && pipe->num_irp_done == 0,
+                        && pipe->num_urb_pending == 0
+                        && pipe->num_urb_done == 0,
                         ESP_ERR_INVALID_STATE);
-    //Remove pipe from the list of idle pipes (it must be in the idle list because it should have no queued IRPs)
+    //Remove pipe from the list of idle pipes (it must be in the idle list because it should have no queued URBs)
     TAILQ_REMOVE(&pipe->port->pipes_idle_tailq, pipe, tailq_entry);
     pipe->port->num_pipes_idle--;
     usbh_hal_chan_free(pipe->port->hal, pipe->chan_obj);
@@ -1924,8 +1925,8 @@ esp_err_t hcd_pipe_update_mps(hcd_pipe_handle_t pipe_hdl, int mps)
     //Check if pipe is in the correct state to be updated
     HCD_CHECK_FROM_CRIT(pipe->state != HCD_PIPE_STATE_INVALID
                         && !pipe->cs_flags.pipe_cmd_processing
-                        && pipe->num_irp_pending == 0
-                        && pipe->num_irp_done == 0,
+                        && pipe->num_urb_pending == 0
+                        && pipe->num_urb_done == 0,
                         ESP_ERR_INVALID_STATE);
     pipe->ep_char.mps = mps;
     //Update the underlying channel's registers
@@ -1941,8 +1942,8 @@ esp_err_t hcd_pipe_update_dev_addr(hcd_pipe_handle_t pipe_hdl, uint8_t dev_addr)
     //Check if pipe is in the correct state to be updated
     HCD_CHECK_FROM_CRIT(pipe->state != HCD_PIPE_STATE_INVALID
                         && !pipe->cs_flags.pipe_cmd_processing
-                        && pipe->num_irp_pending == 0
-                        && pipe->num_irp_done == 0,
+                        && pipe->num_urb_pending == 0
+                        && pipe->num_urb_done == 0,
                         ESP_ERR_INVALID_STATE);
     pipe->ep_char.dev_addr = dev_addr;
     //Update the underlying channel's registers
@@ -1985,13 +1986,13 @@ esp_err_t hcd_pipe_command(hcd_pipe_handle_t pipe_hdl, hcd_pipe_cmd_t command)
 
     HCD_ENTER_CRITICAL();
     //Cannot execute pipe commands the pipe is already executing a command, or if the pipe or its port are no longer valid
-    if (pipe->cs_flags.pipe_cmd_processing || !pipe->port->flags.conn_devc_ena || pipe->state == HCD_PIPE_STATE_INVALID) {
+    if (pipe->cs_flags.pipe_cmd_processing || !pipe->port->flags.conn_dev_ena || pipe->state == HCD_PIPE_STATE_INVALID) {
         ret = ESP_ERR_INVALID_STATE;
     } else {
         pipe->cs_flags.pipe_cmd_processing = 1;
         switch (command) {
             case HCD_PIPE_CMD_ABORT: {
-                //Retire all scheduled IRPs. Pipe's state remains unchanged
+                //Retire all scheduled URBs. Pipe's state remains unchanged
                 if (!_pipe_wait_done(pipe)) {   //Stop any on going transfers
                     ret = ESP_ERR_INVALID_RESPONSE;
                 }
@@ -2000,7 +2001,7 @@ esp_err_t hcd_pipe_command(hcd_pipe_handle_t pipe_hdl, hcd_pipe_cmd_t command)
                 break;
             }
             case HCD_PIPE_CMD_RESET: {
-                //Retire all scheduled IRPs. Pipe's state moves to active
+                //Retire all scheduled URBs. Pipe's state moves to active
                 if (!_pipe_wait_done(pipe)) {   //Stop any on going transfers
                     ret = ESP_ERR_INVALID_RESPONSE;
                     break;
@@ -2053,14 +2054,14 @@ hcd_pipe_event_t hcd_pipe_get_event(hcd_pipe_handle_t pipe_hdl)
 
 // ------------------------------------------------- Buffer Control ----------------------------------------------------
 
-static inline void _buffer_fill_ctrl(dma_buffer_block_t *buffer, usb_irp_t *irp)
+static inline void _buffer_fill_ctrl(dma_buffer_block_t *buffer, usb_transfer_t *transfer)
 {
-    //Get information about the control transfer by analyzing the setup packet (the first 8 bytes of the IRP's data)
-    usb_ctrl_req_t *ctrl_req = (usb_ctrl_req_t *)irp->data_buffer;
+    //Get information about the control transfer by analyzing the setup packet (the first 8 bytes of the URB's data)
+    usb_ctrl_req_t *ctrl_req = (usb_ctrl_req_t *)transfer->data_buffer;
     bool data_stg_in = (ctrl_req->bRequestType & USB_B_REQUEST_TYPE_DIR_IN);
-    bool data_stg_skip = (irp->num_bytes == 0);
+    bool data_stg_skip = (transfer->num_bytes == 0);
     //Fill setup stage
-    usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 0, irp->data_buffer, sizeof(usb_ctrl_req_t),
+    usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 0, transfer->data_buffer, sizeof(usb_ctrl_req_t),
                             USBH_HAL_XFER_DESC_FLAG_SETUP | USBH_HAL_XFER_DESC_FLAG_HOC);
     //Fill data stage
     if (data_stg_skip) {
@@ -2068,7 +2069,7 @@ static inline void _buffer_fill_ctrl(dma_buffer_block_t *buffer, usb_irp_t *irp)
         usbh_hal_xfer_desc_clear(buffer->xfer_desc_list, 1);
     } else {
         //Fill data stage
-        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 1, irp->data_buffer + sizeof(usb_ctrl_req_t), irp->num_bytes,
+        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 1, transfer->data_buffer + sizeof(usb_ctrl_req_t), transfer->num_bytes,
                                 ((data_stg_in) ? USBH_HAL_XFER_DESC_FLAG_IN : 0) | USBH_HAL_XFER_DESC_FLAG_HOC);
     }
     //Fill status stage (i.e., a zero length packet). If data stage is skipped, the status stage is always IN.
@@ -2080,31 +2081,31 @@ static inline void _buffer_fill_ctrl(dma_buffer_block_t *buffer, usb_irp_t *irp)
     buffer->flags.ctrl.cur_stg = 0;
 }
 
-static inline void _buffer_fill_bulk(dma_buffer_block_t *buffer, usb_irp_t *irp, bool is_in)
+static inline void _buffer_fill_bulk(dma_buffer_block_t *buffer, usb_transfer_t *transfer, bool is_in)
 {
     if (is_in) {
-        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 0, irp->data_buffer, irp->num_bytes,
+        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 0, transfer->data_buffer, transfer->num_bytes,
                                 USBH_HAL_XFER_DESC_FLAG_IN | USBH_HAL_XFER_DESC_FLAG_HOC);
-    } else if (irp->flags & USB_IRP_FLAG_ZERO_PACK) {
+    } else if (transfer->flags & USB_TRANSFER_FLAG_ZERO_PACK) {
         //We need to add an extra zero length packet, so two descriptors are used
-        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 0, irp->data_buffer, irp->num_bytes, 0);
+        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 0, transfer->data_buffer, transfer->num_bytes, 0);
         usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 1, NULL, 0, USBH_HAL_XFER_DESC_FLAG_HOC);
     } else {
-        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 0, irp->data_buffer, irp->num_bytes, USBH_HAL_XFER_DESC_FLAG_HOC);
+        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 0, transfer->data_buffer, transfer->num_bytes, USBH_HAL_XFER_DESC_FLAG_HOC);
     }
     //Update buffer flags
-    buffer->flags.bulk.zero_len_packet = (is_in && (irp->flags & USB_IRP_FLAG_ZERO_PACK)) ? 1 : 0;
+    buffer->flags.bulk.zero_len_packet = (is_in && (transfer->flags & USB_TRANSFER_FLAG_ZERO_PACK)) ? 1 : 0;
 }
 
-static inline void _buffer_fill_intr(dma_buffer_block_t *buffer, usb_irp_t *irp, bool is_in, int mps)
+static inline void _buffer_fill_intr(dma_buffer_block_t *buffer, usb_transfer_t *transfer, bool is_in, int mps)
 {
     int num_qtds;
     if (is_in) {
-        assert(irp->num_bytes % mps == 0);  //IN transfers MUST be integer multiple of MPS
-        num_qtds = irp->num_bytes / mps;
+        assert(transfer->num_bytes % mps == 0);  //IN transfers MUST be integer multiple of MPS
+        num_qtds = transfer->num_bytes / mps;
     } else {
-        num_qtds = irp->num_bytes / mps;    //Floor division for number of MPS packets
-        if (irp->num_bytes % irp->num_bytes > 0) {
+        num_qtds = transfer->num_bytes / mps;    //Floor division for number of MPS packets
+        if (transfer->num_bytes % transfer->num_bytes > 0) {
             num_qtds++; //For the last shot packet
         }
     }
@@ -2112,32 +2113,32 @@ static inline void _buffer_fill_intr(dma_buffer_block_t *buffer, usb_irp_t *irp,
     //Fill all but last descriptor
     int bytes_filled = 0;
     for (int i = 0; i < num_qtds - 1; i++) {
-        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, i, &irp->data_buffer[bytes_filled], mps, (is_in) ? USBH_HAL_XFER_DESC_FLAG_IN : 0);
+        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, i, &transfer->data_buffer[bytes_filled], mps, (is_in) ? USBH_HAL_XFER_DESC_FLAG_IN : 0);
         bytes_filled += mps;
     }
     //Fill in the last descriptor with HOC flag
-    usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, num_qtds - 1, &irp->data_buffer[bytes_filled], irp->num_bytes - bytes_filled,
+    usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, num_qtds - 1, &transfer->data_buffer[bytes_filled], transfer->num_bytes - bytes_filled,
                             ((is_in) ? USBH_HAL_XFER_DESC_FLAG_IN : 0) | USBH_HAL_XFER_DESC_FLAG_HOC);
     //Update buffer members and flags
     buffer->flags.intr.num_qtds = num_qtds;
 }
 
-static inline void _buffer_fill_isoc(dma_buffer_block_t *buffer, usb_irp_t *irp, bool is_in, int mps, int interval, int start_idx)
+static inline void _buffer_fill_isoc(dma_buffer_block_t *buffer, usb_transfer_t *transfer, bool is_in, int mps, int interval, int start_idx)
 {
     assert(interval > 0);
-    int total_num_desc = irp->num_iso_packets * interval;
+    int total_num_desc = transfer->num_isoc_packets * interval;
     assert(total_num_desc <= XFER_LIST_LEN_ISOC);
     int desc_idx = start_idx;
     int bytes_filled = 0;
     //For each packet, fill in a descriptor and a interval-1 blank descriptor after it
-    for (int pkt_idx = 0; pkt_idx < irp->num_iso_packets; pkt_idx++) {
-        int xfer_len = irp->iso_packet_desc[pkt_idx].length;
+    for (int pkt_idx = 0; pkt_idx < transfer->num_isoc_packets; pkt_idx++) {
+        int xfer_len = transfer->isoc_packet_desc[pkt_idx].num_bytes;
         uint32_t flags = (is_in) ? USBH_HAL_XFER_DESC_FLAG_IN : 0;
-        if (pkt_idx == irp->num_iso_packets - 1) {
+        if (pkt_idx == transfer->num_isoc_packets - 1) {
             //Last packet, set the the HOC flag
             flags |= USBH_HAL_XFER_DESC_FLAG_HOC;
         }
-        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, desc_idx, &irp->data_buffer[bytes_filled], xfer_len, flags);
+        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, desc_idx, &transfer->data_buffer[bytes_filled], xfer_len, flags);
         bytes_filled += xfer_len;
         if (++desc_idx >= XFER_LIST_LEN_ISOC) {
             desc_idx = 0;
@@ -2153,27 +2154,28 @@ static inline void _buffer_fill_isoc(dma_buffer_block_t *buffer, usb_irp_t *irp,
     //Update buffer members and flags
     buffer->flags.isoc.num_qtds = total_num_desc;
     buffer->flags.isoc.interval = interval;
-    buffer->flags.isoc.irp_start_idx = start_idx;
-    buffer->flags.isoc.next_irp_start_idx = desc_idx;
+    buffer->flags.isoc.start_idx = start_idx;
+    buffer->flags.isoc.next_start_idx = desc_idx;
 }
 
 static void _buffer_fill(pipe_t *pipe)
 {
-    //Get an IRP from the pending tailq
-    usb_irp_t *irp = TAILQ_FIRST(&pipe->pending_irp_tailq);
-    assert(pipe->num_irp_pending > 0 && irp != NULL);
-    TAILQ_REMOVE(&pipe->pending_irp_tailq, irp, tailq_entry);
-    pipe->num_irp_pending--;
+    //Get an URB from the pending tailq
+    urb_t *urb = TAILQ_FIRST(&pipe->pending_urb_tailq);
+    assert(pipe->num_urb_pending > 0 && urb != NULL);
+    TAILQ_REMOVE(&pipe->pending_urb_tailq, urb, tailq_entry);
+    pipe->num_urb_pending--;
 
     //Select the inactive buffer
     assert(pipe->multi_buffer_control.buffer_num_to_exec <= NUM_BUFFERS);
     dma_buffer_block_t *buffer_to_fill = pipe->buffers[pipe->multi_buffer_control.wr_idx];
-    assert(buffer_to_fill->irp == NULL);
+    assert(buffer_to_fill->urb == NULL);
     bool is_in = pipe->ep_char.bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_DIR_MASK;
     int mps = pipe->ep_char.mps;
+    usb_transfer_t *transfer = &urb->transfer;
     switch (pipe->ep_char.type) {
         case USB_PRIV_XFER_TYPE_CTRL: {
-            _buffer_fill_ctrl(buffer_to_fill, irp);
+            _buffer_fill_ctrl(buffer_to_fill, transfer);
             break;
         }
         case USB_PRIV_XFER_TYPE_ISOCHRONOUS: {
@@ -2197,17 +2199,17 @@ static void _buffer_fill(pipe_t *pipe)
                 //Start index is based on previously filled buffer
                 uint32_t prev_buffer_idx = (pipe->multi_buffer_control.wr_idx - 1) & (NUM_BUFFERS - 1);
                 dma_buffer_block_t *prev_filled_buffer = pipe->buffers[prev_buffer_idx];
-                start_idx = prev_filled_buffer->flags.isoc.next_irp_start_idx;
+                start_idx = prev_filled_buffer->flags.isoc.next_start_idx;
             }
-            _buffer_fill_isoc(buffer_to_fill, irp, is_in, mps, (int)pipe->ep_char.periodic.interval, start_idx);
+            _buffer_fill_isoc(buffer_to_fill, transfer, is_in, mps, (int)pipe->ep_char.periodic.interval, start_idx);
             break;
         }
         case USB_PRIV_XFER_TYPE_BULK: {
-            _buffer_fill_bulk(buffer_to_fill, irp, is_in);
+            _buffer_fill_bulk(buffer_to_fill, transfer, is_in);
             break;
         }
         case USB_PRIV_XFER_TYPE_INTR: {
-            _buffer_fill_intr(buffer_to_fill, irp, is_in, mps);
+            _buffer_fill_intr(buffer_to_fill, transfer, is_in, mps);
             break;
         }
         default: {
@@ -2215,8 +2217,8 @@ static void _buffer_fill(pipe_t *pipe)
             break;
         }
     }
-    buffer_to_fill->irp = irp;
-    IRP_STATE_SET(irp->reserved_flags, IRP_STATE_INFLIGHT);
+    buffer_to_fill->urb = urb;
+    urb->hcd_var = URB_HCD_STATE_INFLIGHT;
     //Update multi buffer flags
     pipe->multi_buffer_control.wr_idx++;
     pipe->multi_buffer_control.buffer_num_to_fill--;
@@ -2227,7 +2229,7 @@ static void _buffer_exec(pipe_t *pipe)
 {
     assert(pipe->multi_buffer_control.rd_idx != pipe->multi_buffer_control.wr_idx || pipe->multi_buffer_control.buffer_num_to_exec > 0);
     dma_buffer_block_t *buffer_to_exec = pipe->buffers[pipe->multi_buffer_control.rd_idx];
-    assert(buffer_to_exec->irp != NULL);
+    assert(buffer_to_exec->urb != NULL);
 
     uint32_t start_idx;
     int desc_list_len;
@@ -2241,7 +2243,7 @@ static void _buffer_exec(pipe_t *pipe)
             break;
         }
         case USB_PRIV_XFER_TYPE_ISOCHRONOUS: {
-            start_idx = buffer_to_exec->flags.isoc.irp_start_idx;
+            start_idx = buffer_to_exec->flags.isoc.start_idx;
             desc_list_len = XFER_LIST_LEN_ISOC;
             break;
         }
@@ -2305,45 +2307,45 @@ static bool _buffer_check_done(pipe_t *pipe)
 
 static inline void _buffer_parse_ctrl(dma_buffer_block_t *buffer)
 {
-    usb_irp_t *irp = buffer->irp;
-    //Update IRP's actual number of bytes
+    usb_transfer_t *transfer = &buffer->urb->transfer;
+    //Update URB's actual number of bytes
     if (buffer->flags.ctrl.data_stg_skip)     {
         //There was no data stage. Just set the actual length to zero
-        irp->actual_num_bytes = 0;
+        transfer->actual_num_bytes = 0;
     } else {
         //Parse the data stage for the remaining length
         int rem_len;
         int desc_status;
         usbh_hal_xfer_desc_parse(buffer->xfer_desc_list, 1, &rem_len, &desc_status);
         assert(desc_status == USBH_HAL_XFER_DESC_STS_SUCCESS);
-        assert(rem_len <= irp->num_bytes);
-        irp->actual_num_bytes = irp->num_bytes - rem_len;
+        assert(rem_len <= transfer->num_bytes);
+        transfer->actual_num_bytes = transfer->num_bytes - rem_len;
     }
-    //Update IRP status
-    irp->status = USB_TRANSFER_STATUS_COMPLETED;
+    //Update URB status
+    transfer->status = USB_TRANSFER_STATUS_COMPLETED;
     //Clear the descriptor list
     memset(buffer->xfer_desc_list, XFER_LIST_LEN_CTRL, sizeof(usbh_ll_dma_qtd_t));
 }
 
 static inline void _buffer_parse_bulk(dma_buffer_block_t *buffer)
 {
-    usb_irp_t *irp = buffer->irp;
-    //Update IRP's actual number of bytes
+    usb_transfer_t *transfer = &buffer->urb->transfer;
+    //Update URB's actual number of bytes
     int rem_len;
     int desc_status;
     usbh_hal_xfer_desc_parse(buffer->xfer_desc_list, 0, &rem_len, &desc_status);
     assert(desc_status == USBH_HAL_XFER_DESC_STS_SUCCESS);
-    assert(rem_len <= irp->num_bytes);
-    irp->actual_num_bytes = irp->num_bytes - rem_len;
-    //Update IRP's status
-    irp->status = USB_TRANSFER_STATUS_COMPLETED;
+    assert(rem_len <= transfer->num_bytes);
+    transfer->actual_num_bytes = transfer->num_bytes - rem_len;
+    //Update URB's status
+    transfer->status = USB_TRANSFER_STATUS_COMPLETED;
     //Clear the descriptor list
     memset(buffer->xfer_desc_list, XFER_LIST_LEN_BULK, sizeof(usbh_ll_dma_qtd_t));
 }
 
 static inline void _buffer_parse_intr(dma_buffer_block_t *buffer, bool is_in, int mps)
 {
-    usb_irp_t *irp = buffer->irp;
+    usb_transfer_t *transfer = &buffer->urb->transfer;
     int intr_stop_idx = buffer->status_flags.stop_idx;
     if (is_in) {
         if (intr_stop_idx > 0) { //This is an early stop (short packet)
@@ -2358,7 +2360,7 @@ static inline void _buffer_parse_intr(dma_buffer_block_t *buffer, bool is_in, in
             usbh_hal_xfer_desc_parse(buffer->xfer_desc_list, intr_stop_idx - 1, &rem_len, &desc_status);
             assert(rem_len > 0 && desc_status == USBH_HAL_XFER_DESC_STS_SUCCESS);
             //Update actual bytes
-            irp->actual_num_bytes = (mps * intr_stop_idx - 2) + (mps - rem_len);
+            transfer->actual_num_bytes = (mps * intr_stop_idx - 2) + (mps - rem_len);
         } else {
             //Check that all but the last packet transmitted MPS
             for (int i = 0; i < buffer->flags.intr.num_qtds - 1; i++) {
@@ -2373,7 +2375,7 @@ static inline void _buffer_parse_intr(dma_buffer_block_t *buffer, bool is_in, in
             usbh_hal_xfer_desc_parse(buffer->xfer_desc_list, buffer->flags.intr.num_qtds - 1, &last_packet_rem_len, &last_packet_desc_status);
             assert(last_packet_desc_status == USBH_HAL_XFER_DESC_STS_SUCCESS);
             //All packets except last MUST be MPS. So just deduct the remaining length of the last packet to get actual number of bytes
-            irp->actual_num_bytes = irp->num_bytes - last_packet_rem_len;
+            transfer->actual_num_bytes = transfer->num_bytes - last_packet_rem_len;
         }
     } else {
         //OUT INTR transfers can only complete successfully if all MPS packets have been transmitted. Double check
@@ -2383,19 +2385,19 @@ static inline void _buffer_parse_intr(dma_buffer_block_t *buffer, bool is_in, in
             usbh_hal_xfer_desc_parse(buffer->xfer_desc_list, i, &rem_len, &desc_status);
             assert(rem_len == 0 && desc_status == USBH_HAL_XFER_DESC_STS_SUCCESS);
         }
-        irp->actual_num_bytes = irp->num_bytes;
+        transfer->actual_num_bytes = transfer->num_bytes;
     }
-    //Update IRP's status
-    irp->status = USB_TRANSFER_STATUS_COMPLETED;
+    //Update URB's status
+    transfer->status = USB_TRANSFER_STATUS_COMPLETED;
     //Clear the descriptor list
     memset(buffer->xfer_desc_list, XFER_LIST_LEN_INTR, sizeof(usbh_ll_dma_qtd_t));
 }
 
 static inline void _buffer_parse_isoc(dma_buffer_block_t *buffer, bool is_in)
 {
-    usb_irp_t *irp = buffer->irp;
-    int desc_idx = buffer->flags.isoc.irp_start_idx;    //Descriptor index tracks which descriptor in the QTD list
-    for (int pkt_idx = 0; pkt_idx < irp->num_iso_packets; pkt_idx++) {
+    usb_transfer_t *transfer = &buffer->urb->transfer;
+    int desc_idx = buffer->flags.isoc.start_idx;    //Descriptor index tracks which descriptor in the QTD list
+    for (int pkt_idx = 0; pkt_idx < transfer->num_isoc_packets; pkt_idx++) {
         //Clear the filled descriptor
         int rem_len;
         int desc_status;
@@ -2403,10 +2405,10 @@ static inline void _buffer_parse_isoc(dma_buffer_block_t *buffer, bool is_in)
         usbh_hal_xfer_desc_clear(buffer->xfer_desc_list, desc_idx);
         assert(rem_len == 0 || is_in);
         assert(desc_status == USBH_HAL_XFER_DESC_STS_SUCCESS || USBH_HAL_XFER_DESC_STS_NOT_EXECUTED);
-        assert(rem_len <= irp->iso_packet_desc[pkt_idx].length);    //Check for DMA errata
+        assert(rem_len <= transfer->isoc_packet_desc[pkt_idx].num_bytes);    //Check for DMA errata
         //Update ISO packet actual length and status
-        irp->iso_packet_desc[pkt_idx].actual_length = irp->iso_packet_desc[pkt_idx].length - rem_len;
-        irp->iso_packet_desc[pkt_idx].status = (desc_status == USBH_HAL_XFER_DESC_STS_NOT_EXECUTED) ? USB_TRANSFER_STATUS_SKIPPED : USB_TRANSFER_STATUS_COMPLETED;
+        transfer->isoc_packet_desc[pkt_idx].actual_num_bytes = transfer->isoc_packet_desc[pkt_idx].num_bytes - rem_len;
+        transfer->isoc_packet_desc[pkt_idx].status = (desc_status == USBH_HAL_XFER_DESC_STS_NOT_EXECUTED) ? USB_TRANSFER_STATUS_SKIPPED : USB_TRANSFER_STATUS_COMPLETED;
         //A descriptor is also allocated for unscheduled frames. We need to skip over them
         desc_idx += buffer->flags.isoc.interval;
         if (desc_idx >= XFER_LIST_LEN_INTR) {
@@ -2417,33 +2419,33 @@ static inline void _buffer_parse_isoc(dma_buffer_block_t *buffer, bool is_in)
 
 static inline void _buffer_parse_error(dma_buffer_block_t *buffer)
 {
-    //The IRP had an error, so we consider that NO bytes were transferred
-    usb_irp_t *irp = buffer->irp;
-    irp->actual_num_bytes = 0;
-    for (int i = 0; i < irp->num_iso_packets; i++) {
-        irp->iso_packet_desc[i].actual_length = 0;
+    //The URB had an error, so we consider that NO bytes were transferred
+    usb_transfer_t *transfer = &buffer->urb->transfer;
+    transfer->actual_num_bytes = 0;
+    for (int i = 0; i < transfer->num_isoc_packets; i++) {
+        transfer->isoc_packet_desc[i].actual_num_bytes = 0;
     }
-    //Update status of IRP
+    //Update status of URB
     if (buffer->status_flags.cancelled) {
-        irp->status = USB_TRANSFER_STATUS_CANCELED;
+        transfer->status = USB_TRANSFER_STATUS_CANCELED;
     } else if (buffer->status_flags.pipe_state == HCD_PIPE_STATE_INVALID) {
-        irp->status = USB_TRANSFER_STATUS_NO_DEVICE;
+        transfer->status = USB_TRANSFER_STATUS_NO_DEVICE;
     } else {
         switch (buffer->status_flags.pipe_event) {
             case HCD_PIPE_EVENT_ERROR_XFER: //Excessive transaction error
-                irp->status = USB_TRANSFER_STATUS_ERROR;
+                transfer->status = USB_TRANSFER_STATUS_ERROR;
                 break;
             case HCD_PIPE_EVENT_ERROR_OVERFLOW:
-                irp->status = USB_TRANSFER_STATUS_OVERFLOW;
+                transfer->status = USB_TRANSFER_STATUS_OVERFLOW;
                 break;
             case HCD_PIPE_EVENT_ERROR_STALL:
-                irp->status = USB_TRANSFER_STATUS_STALL;
+                transfer->status = USB_TRANSFER_STATUS_STALL;
                 break;
-            case HCD_PIPE_EVENT_IRP_DONE:   //Special case where we are cancelling an IRP due to pipe_retire
-                irp->status = USB_TRANSFER_STATUS_CANCELED;
+            case HCD_PIPE_EVENT_URB_DONE:   //Special case where we are cancelling an URB due to pipe_retire
+                transfer->status = USB_TRANSFER_STATUS_CANCELED;
                 break;
             default:
-                //HCD_PIPE_EVENT_ERROR_IRP_NOT_AVAIL should never occur
+                //HCD_PIPE_EVENT_ERROR_URB_NOT_AVAIL should never occur
                 abort();
                 break;
         }
@@ -2456,11 +2458,11 @@ static void _buffer_parse(pipe_t *pipe)
 {
     assert(pipe->multi_buffer_control.buffer_num_to_parse > 0);
     dma_buffer_block_t *buffer_to_parse = pipe->buffers[pipe->multi_buffer_control.fr_idx];
-    assert(buffer_to_parse->irp != NULL);
+    assert(buffer_to_parse->urb != NULL);
     bool is_in = pipe->ep_char.bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_DIR_MASK;
     int mps = pipe->ep_char.mps;
 
-    //Parsing the buffer will update the buffer's corresponding IRP
+    //Parsing the buffer will update the buffer's corresponding URB
     if (buffer_to_parse->status_flags.error_occurred) {
         _buffer_parse_error(buffer_to_parse);
     } else {
@@ -2487,13 +2489,13 @@ static void _buffer_parse(pipe_t *pipe)
             }
         }
     }
-    usb_irp_t *irp = buffer_to_parse->irp;
-    IRP_STATE_SET(irp->reserved_flags, IRP_STATE_DONE);
-    buffer_to_parse->irp = NULL;
+    urb_t *urb = buffer_to_parse->urb;
+    urb->hcd_var = URB_HCD_STATE_DONE;
+    buffer_to_parse->urb = NULL;
     buffer_to_parse->flags.val = 0; //Clear flags
-    //Move the IRP to the done tailq
-    TAILQ_INSERT_TAIL(&pipe->done_irp_tailq, irp, tailq_entry);
-    pipe->num_irp_done++;
+    //Move the URB to the done tailq
+    TAILQ_INSERT_TAIL(&pipe->done_urb_tailq, urb, tailq_entry);
+    pipe->num_urb_done++;
     //Update multi buffer flags
     pipe->multi_buffer_control.fr_idx++;
     pipe->multi_buffer_control.buffer_num_to_parse--;
@@ -2511,34 +2513,32 @@ static void _buffer_flush_all(pipe_t *pipe, bool cancelled)
     for (int i = 0; i < cur_num_to_parse; i++) {
         _buffer_parse(pipe);
     }
-    //At this point, there should be no more filled buffers. Only IRPs in the pending or done tailq
+    //At this point, there should be no more filled buffers. Only URBs in the pending or done tailq
 }
 
 // ---------------------------------------------- HCD Transfer Descriptors ---------------------------------------------
 
 // ----------------------- Public --------------------------
 
-esp_err_t hcd_irp_enqueue(hcd_pipe_handle_t pipe_hdl, usb_irp_t *irp)
+esp_err_t hcd_urb_enqueue(hcd_pipe_handle_t pipe_hdl, urb_t *urb)
 {
-    //Check that IRP has not already been enqueued
-    HCD_CHECK(irp->reserved_ptr == NULL
-              && IRP_STATE_GET(irp->reserved_flags) == IRP_STATE_IDLE,
-              ESP_ERR_INVALID_STATE);
+    //Check that URB has not already been enqueued
+    HCD_CHECK(urb->hcd_ptr == NULL && urb->hcd_var == URB_HCD_STATE_IDLE, ESP_ERR_INVALID_STATE);
     pipe_t *pipe = (pipe_t *)pipe_hdl;
 
     HCD_ENTER_CRITICAL();
-    //Check that pipe and port are in the correct state to receive IRPs
+    //Check that pipe and port are in the correct state to receive URBs
     HCD_CHECK_FROM_CRIT(pipe->port->state == HCD_PORT_STATE_ENABLED         //The pipe's port must be in the correct state
                         && pipe->state == HCD_PIPE_STATE_ACTIVE             //The pipe must be in the correct state
-                        && !pipe->cs_flags.pipe_cmd_processing,            //Pipe cannot currently be processing a pipe command
+                        && !pipe->cs_flags.pipe_cmd_processing,             //Pipe cannot currently be processing a pipe command
                         ESP_ERR_INVALID_STATE);
-    //Use the IRP's reserved_ptr to store the pipe's
-    irp->reserved_ptr = (void *)pipe;
-    //Add the IRP to the pipe's pending tailq
-    IRP_STATE_SET(irp->reserved_flags, IRP_STATE_PENDING);
-    TAILQ_INSERT_TAIL(&pipe->pending_irp_tailq, irp, tailq_entry);
-    pipe->num_irp_pending++;
-    //use the IRP's reserved_flags to store the IRP's current state
+    //Use the URB's reserved_ptr to store the pipe's
+    urb->hcd_ptr = (void *)pipe;
+    //Add the URB to the pipe's pending tailq
+    urb->hcd_var = URB_HCD_STATE_PENDING;
+    TAILQ_INSERT_TAIL(&pipe->pending_urb_tailq, urb, tailq_entry);
+    pipe->num_urb_pending++;
+    //use the URB's reserved_flags to store the URB's current state
     if (_buffer_can_fill(pipe)) {
         _buffer_fill(pipe);
     }
@@ -2546,7 +2546,7 @@ esp_err_t hcd_irp_enqueue(hcd_pipe_handle_t pipe_hdl, usb_irp_t *irp)
         _buffer_exec(pipe);
     }
     if (!pipe->cs_flags.is_active) {
-        //This is the first IRP to be enqueued into the pipe. Move the pipe to the list of active pipes
+        //This is the first URB to be enqueued into the pipe. Move the pipe to the list of active pipes
         TAILQ_REMOVE(&pipe->port->pipes_idle_tailq, pipe, tailq_entry);
         TAILQ_INSERT_TAIL(&pipe->port->pipes_active_tailq, pipe, tailq_entry);
         pipe->port->num_pipes_idle--;
@@ -2557,24 +2557,24 @@ esp_err_t hcd_irp_enqueue(hcd_pipe_handle_t pipe_hdl, usb_irp_t *irp)
     return ESP_OK;
 }
 
-usb_irp_t *hcd_irp_dequeue(hcd_pipe_handle_t pipe_hdl)
+urb_t *hcd_urb_dequeue(hcd_pipe_handle_t pipe_hdl)
 {
     pipe_t *pipe = (pipe_t *)pipe_hdl;
-    usb_irp_t *irp;
+    urb_t *urb;
 
     HCD_ENTER_CRITICAL();
-    if (pipe->num_irp_done > 0) {
-        irp = TAILQ_FIRST(&pipe->done_irp_tailq);
-        TAILQ_REMOVE(&pipe->done_irp_tailq, irp, tailq_entry);
-        pipe->num_irp_done--;
-        //Check the IRP's reserved fields then reset them
-        assert(irp->reserved_ptr == (void *)pipe && IRP_STATE_GET(irp->reserved_flags) == IRP_STATE_DONE);  //The IRP's reserved field should have been set to this pipe
-        irp->reserved_ptr = NULL;
-        IRP_STATE_SET(irp->reserved_flags, IRP_STATE_IDLE);
+    if (pipe->num_urb_done > 0) {
+        urb = TAILQ_FIRST(&pipe->done_urb_tailq);
+        TAILQ_REMOVE(&pipe->done_urb_tailq, urb, tailq_entry);
+        pipe->num_urb_done--;
+        //Check the URB's reserved fields then reset them
+        assert(urb->hcd_ptr == (void *)pipe && urb->hcd_var == URB_HCD_STATE_DONE);  //The URB's reserved field should have been set to this pipe
+        urb->hcd_ptr = NULL;
+        urb->hcd_var = URB_HCD_STATE_IDLE;
         if (pipe->cs_flags.is_active
-            && pipe->num_irp_pending == 0 && pipe->num_irp_done == 0
+            && pipe->num_urb_pending == 0 && pipe->num_urb_done == 0
             && pipe->multi_buffer_control.buffer_num_to_exec == 0 && pipe->multi_buffer_control.buffer_num_to_parse == 0) {
-            //This pipe has no more enqueued IRPs. Move the pipe to the list of idle pipes
+            //This pipe has no more enqueued URBs. Move the pipe to the list of idle pipes
             TAILQ_REMOVE(&pipe->port->pipes_active_tailq, pipe, tailq_entry);
             TAILQ_INSERT_TAIL(&pipe->port->pipes_idle_tailq, pipe, tailq_entry);
             pipe->port->num_pipes_idle++;
@@ -2582,39 +2582,40 @@ usb_irp_t *hcd_irp_dequeue(hcd_pipe_handle_t pipe_hdl)
             pipe->cs_flags.is_active = 0;
         }
     } else {
-        //No more IRPs to dequeue from this pipe
-        irp = NULL;
+        //No more URBs to dequeue from this pipe
+        urb = NULL;
     }
     HCD_EXIT_CRITICAL();
-    return irp;
+    return urb;
 }
 
-esp_err_t hcd_irp_abort(usb_irp_t *irp)
+esp_err_t hcd_urb_abort(urb_t *urb)
 {
     HCD_ENTER_CRITICAL();
-    //Check that the IRP was enqueued to begin with
-    HCD_CHECK_FROM_CRIT(irp->reserved_ptr != NULL
-                        && IRP_STATE_GET(irp->reserved_flags) != IRP_STATE_IDLE,
-                        ESP_ERR_INVALID_STATE);
-    if (IRP_STATE_GET(irp->reserved_flags) == IRP_STATE_PENDING) {
-        //IRP has not been executed so it can be aborted
-        pipe_t *pipe = (pipe_t *)irp->reserved_ptr;
+    //Check that the URB was enqueued to begin with
+    HCD_CHECK_FROM_CRIT(urb->hcd_ptr != NULL && urb->hcd_var != URB_HCD_STATE_IDLE, ESP_ERR_INVALID_STATE);
+    if (urb->hcd_var == URB_HCD_STATE_PENDING) {
+        //URB has not been executed so it can be aborted
+        pipe_t *pipe = (pipe_t *)urb->hcd_ptr;
         //Remove it form the pending queue
-        TAILQ_REMOVE(&pipe->pending_irp_tailq, irp, tailq_entry);
-        pipe->num_irp_pending--;
+        TAILQ_REMOVE(&pipe->pending_urb_tailq, urb, tailq_entry);
+        pipe->num_urb_pending--;
         //Add it to the done queue
-        TAILQ_INSERT_TAIL(&pipe->done_irp_tailq, irp, tailq_entry);
-        pipe->num_irp_done++;
-        //Update the IRP's current state, status, and actual length
-        IRP_STATE_SET(irp->reserved_flags, IRP_STATE_DONE);
-        irp->actual_num_bytes = 0;
-        irp->status = USB_TRANSFER_STATUS_CANCELED;
-        //If this is an ISOC IRP, update the ISO packet descriptors as well
-        for (int i = 0; i < irp->num_iso_packets; i++) {
-            irp->iso_packet_desc[i].actual_length = 0;
-            irp->iso_packet_desc[i].status = USB_TRANSFER_STATUS_CANCELED;
+        TAILQ_INSERT_TAIL(&pipe->done_urb_tailq, urb, tailq_entry);
+        pipe->num_urb_done++;
+        //Update the URB's current state, status, and actual length
+        urb->hcd_var = URB_HCD_STATE_DONE;
+        if (urb->transfer.num_isoc_packets == 0) {
+            urb->transfer.actual_num_bytes = 0;
+            urb->transfer.status = USB_TRANSFER_STATUS_CANCELED;
+        } else {
+            //If this is an ISOC URB, update the ISO packet descriptors instead
+            for (int i = 0; i < urb->transfer.num_isoc_packets; i++) {
+                urb->transfer.isoc_packet_desc[i].actual_num_bytes = 0;
+                urb->transfer.isoc_packet_desc[i].status = USB_TRANSFER_STATUS_CANCELED;
+            }
         }
-    }// Otherwise, the IRP is in-flight or already done thus cannot be aborted
+    }   // Otherwise, the URB is in-flight or already done thus cannot be aborted
     HCD_EXIT_CRITICAL();
     return ESP_OK;
 }

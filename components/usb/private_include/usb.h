@@ -15,8 +15,8 @@
 /*
 Note: This header file contains the types and macros belong/relate to the USB2.0 protocol and are HW implementation
 agnostic. In other words, this header is only meant to be used in the HCD layer and above of the USB Host stack. For
-types and macros that are HW implementation specific (i.e., HAL layer and below), add them to the "usb_types.h" header
-instead.
+types and macros that are HW implementation specific (i.e., HAL layer and below), add them to the
+"hal/usb_types_private.h" header instead.
 */
 
 #pragma once
@@ -27,9 +27,6 @@ instead.
 extern "C"
 {
 #endif
-
-#include <stdint.h>
-#include <sys/queue.h>
 
 #define USB_CTRL_REQ_ATTR       __attribute__((packed))
 #define USB_DESC_ATTR           __attribute__((packed))
@@ -67,76 +64,114 @@ typedef enum {
     USB_TRANSFER_STATUS_COMPLETED,      /**< The transfer was successful (but may be short) */
     USB_TRANSFER_STATUS_ERROR,          /**< The transfer failed because due to excessive errors (e.g. no response or CRC error) */
     USB_TRANSFER_STATUS_TIMED_OUT,      /**< The transfer failed due to a time out */
-    USB_TRANSFER_STATUS_CANCELED,      /**< The transfer was canceled */
+    USB_TRANSFER_STATUS_CANCELED,       /**< The transfer was canceled */
     USB_TRANSFER_STATUS_STALL,          /**< The transfer was stalled */
     USB_TRANSFER_STATUS_NO_DEVICE,      /**< The transfer failed because the device is no longer valid (e.g., disconnected */
     USB_TRANSFER_STATUS_OVERFLOW,       /**< The transfer as more data was sent than was requested */
-    USB_TRANSFER_STATUS_SKIPPED,        /**< ISOC only. The packet was skipped due to system latency */
+    USB_TRANSFER_STATUS_SKIPPED,        /**< ISOC packets only. The packet was skipped due to system latency or bus overload */
 } usb_transfer_status_t;
+
+
+#define USB_TRANSFER_FLAG_ZERO_PACK  0x01   /**< (For bulk OUT only). Indicates that a bulk OUT transfers should always terminate with a short packet, even if it means adding an extra zero length packet */
 
 /**
  * @brief Isochronous packet descriptor
  *
- * If the number of bytes in an IRP (I/O Request Packet, see USB2.0 Spec) is
- * larger than the MPS of the endpoint, the IRP is split over multiple packets
- * (one packet per bInterval of the endpoint). An array of Isochronous packet
- * descriptors describes how an IRP should be split over multiple packets.
+ * If the number of bytes in an Isochronous transfer is larger than the MPS of the endpoint, the transfer is split
+ * into multiple packets transmitted at the endpoint's specified interval. An array of Isochronous packet descriptors
+ * describes how an Isochronous transfer should be split into multiple packets.
  */
 typedef struct {
-    int length;                         /**< Number of bytes to transmit/receive in the packet */
-    int actual_length;                  /**< Actual number of bytes transmitted/received in the packet */
-    usb_transfer_status_t status;       /**< Status of the packet */
-} usb_iso_packet_desc_t;
-
-#define USB_IRP_FLAG_ZERO_PACK  0x01    /**< (For bulk OUT only). Indicates that a bulk OUT transfers should always terminate with a short packet, even if it means adding an extra zero length packet */
+    int num_bytes;                                  /**< Number of bytes to transmit/receive in the packet */
+    int actual_num_bytes;                           /**< Actual number of bytes transmitted/received in the packet */
+    usb_transfer_status_t status;                   /**< Status of the packet */
+} usb_isoc_packet_desc_t;
 
 /**
- * @brief USB IRP (I/O Request Packet). See USB2.0 Spec
+ * @brief USB transfer structure
  *
- * An IRP is used to represent data transfer request form a software client to and endpoint over the USB bus. The same
- * IRP object type is used at each layer of the USB stack. This minimizes copying/conversion across the different layers
- * of the stack as each layer will pass a pointer to this type of object.
+ * This structure is used to represent a transfer from a software client to an endopint over the USB bus. Some of the
+ * fields are made const on purpose as they are fixed on allocation. Users should call the appropriate USB Host Driver
+ * function to allocate a USB transfer structure instead of allocating this structure themselves.
  *
- * See 10.5.3.1 os USB2.0 specification
- * Bulk: Represents a single bulk transfer which a pipe will transparently split into multiple MPS transactions (until
- *       the last)
- * Control: Represents a single control transfer with the setup packet at the first 8 bytes of the buffer.
- * Interrupt: Represents a single interrupt transaction
- * Isochronous: Represents a buffer of a stream of bytes which the pipe will transparently transfer the stream of bytes
- *              one or more service periods
+ * The transfer type is inferred from the endpoint this transfer is sent to. Depending on the transfer type, users
+ * should note the following:
  *
- * @note The tailq_entry and reserved variables are used by the USB Host stack internally. Users should not modify those fields.
- * @note Once an IRP is submitted, users should not modify the IRP as the Host stack takes ownership of the IRP.
+ * - Bulk: This structure represents a single bulk transfer. If the number of bytes exceeds the endpoint's MPS, the
+ *         transfer will be split into multiple MPS sized packets followed by a short packet.
+ * - Control: This structure represents a single control transfer. This first 8 bytes of the data_buffer must be filled
+ *            with the setup packet. The num_bytes field should exclude the size of the setup packet (i.e., set to 0 if
+ *            the control transfer has no data stage).
+ * - Interrupt: Represents an interrupt transfer. If num_bytes exceeds the MPS of the endpoint, the transfer will be
+ *              split into multiple packets, and each packet is transferred at the endpoint's specified interval.
+ * - Isochronous: Represents a stream of bytes that should be transferred to an endpoint at a fixed rate. The transfer
+ *                is split into packets according to the each isoc_packet_desc. A packet is transferred at each interval
+ *                of the endpoint.
+ *
+ * @note For Bulk/Control/Interrupt IN transfers, the num_bytes must be a integer multiple of the endpoint's MPS
+ * @note This structure should be allocated via __insert_func_name__()
+ * @note Once the transfer has be submitted, users should not modify the structure until the transfer has completed
  */
-struct usb_irp_obj {
-    //Internal members
-    TAILQ_ENTRY(usb_irp_obj) tailq_entry;   /**< TAILQ entry that allows this object to be added to linked lists. Users should NOT modify this field */
-    void *reserved_ptr;                     /**< Reserved pointer variable for internal use in the stack. Users should set this to NULL on allocation and NOT modify this afterwards */
-    uint32_t reserved_flags;                   /**< Reserved variable for flags used internally in the stack. Users should set this to 0 on allocation and NOT modify this afterwards */
-    //Public members
-    uint8_t *data_buffer;                   /**< Pointer to data buffer. Must be DMA capable memory */
-    int num_bytes;                          /**< Number of bytes in IRP. Control should exclude size of setup. IN should be integer multiple of MPS */
-    int actual_num_bytes;                   /**< Actual number of bytes transmitted/receives in the IRP */
-    uint32_t flags;                         /**< IRP flags */
-    usb_transfer_status_t status;           /**< Status of the transfer */
-    uint32_t timeout;                       /**< Timeout (in milliseconds) of the packet (currently not supported yet) */
-    void *context;                          /**< Context variable used to associate the IRP object with another object */
-    int num_iso_packets;                    /**< Only relevant to Isochronous. Number of service periods to transfer data buffer over. Set to 0 for non-iso transfers */
-    usb_iso_packet_desc_t iso_packet_desc[0];   /**< Descriptors for each ISO packet */
+typedef struct usb_transfer_obj usb_transfer_t;
+
+/**
+ * @brief USB transfer completion callback
+ */
+typedef void (*usb_transfer_cb_t)(usb_transfer_t *transfer);
+
+struct usb_transfer_obj{
+    uint8_t *const data_buffer;                     /**< Pointer to data buffer */
+    const size_t data_buffer_size;                  /**< Size of the data buffer in bytes */
+    int num_bytes;                                  /**< Number of bytes to transfer. Control transfers should exclude size of setup packet. IN transfers should be integer multiple of MPS */
+    int actual_num_bytes;                           /**< Actual number of bytes transferred */
+    uint32_t flags;                                 /**< Transfer flags */
+    usb_transfer_status_t status;                   /**< Status of the transfer */
+    uint32_t timeout;                               /**< Timeout (in milliseconds) of the packet (currently not supported yet) */
+    usb_transfer_cb_t callback;                     /**< Transfer callback */
+    void *context;                                  /**< Context variable for transfer to associate transfer with something */
+    const int num_isoc_packets;                     /**< Only relevant to Isochronous. Number of service periods (i.e., intervals) to transfer data buffer over. */
+    usb_isoc_packet_desc_t isoc_packet_desc[0];     /**< Descriptors for each Isochronous packet */
 };
 
-typedef struct usb_irp_obj usb_irp_t;
 
 // ---------------------------------------------------- Chapter 9 ------------------------------------------------------
 
-#define USB_B_DESCRIPTOR_TYPE_DEVICE                        1
-#define USB_B_DESCRIPTOR_TYPE_CONFIGURATION                 2
-#define USB_B_DESCRIPTOR_TYPE_STRING                        3
-#define USB_B_DESCRIPTOR_TYPE_INTERFACE                     4
-#define USB_B_DESCRIPTOR_TYPE_ENDPOINT                      5
-#define USB_B_DESCRIPTOR_TYPE_DEVICE_QUALIFIER              6
-#define USB_B_DESCRIPTOR_TYPE_OTHER_SPEED_CONFIGURATION     7
-#define USB_B_DESCRIPTOR_TYPE_INTERFACE_POWER               8
+/**
+ * @brief Descriptor types from USB2.0 specification table 9.5
+ */
+#define USB_B_DESCRIPTOR_TYPE_DEVICE                        0x01
+#define USB_B_DESCRIPTOR_TYPE_CONFIGURATION                 0x02
+#define USB_B_DESCRIPTOR_TYPE_STRING                        0x03
+#define USB_B_DESCRIPTOR_TYPE_INTERFACE                     0x04
+#define USB_B_DESCRIPTOR_TYPE_ENDPOINT                      0x05
+#define USB_B_DESCRIPTOR_TYPE_DEVICE_QUALIFIER              0x06
+#define USB_B_DESCRIPTOR_TYPE_OTHER_SPEED_CONFIGURATION     0x07
+#define USB_B_DESCRIPTOR_TYPE_INTERFACE_POWER               0x08
+
+/**
+ * @brief Descriptor types from USB 2.0 ECN
+ */
+#define USB_B_DESCRIPTOR_TYPE_OTG                           0x09
+#define USB_B_DESCRIPTOR_TYPE_DEBUG                         0x0a
+#define USB_B_DESCRIPTOR_TYPE_INTERFACE_ASSOCIATION         0x0b
+
+/**
+ * @brief Descriptor types from Wireless USB spec
+ */
+#define USB_B_DESCRIPTOR_TYPE_SECURITY                      0x0c
+#define USB_B_DESCRIPTOR_TYPE_KEY                           0x0d
+#define USB_B_DESCRIPTOR_TYPE_ENCRYPTION_TYPE               0x0e
+#define USB_B_DESCRIPTOR_TYPE_BOS                           0x0f
+#define USB_B_DESCRIPTOR_TYPE_DEVICE_CAPABILITY             0x10
+#define USB_B_DESCRIPTOR_TYPE_WIRELESS_ENDPOINT_COMP        0x11
+#define USB_B_DESCRIPTOR_TYPE_WIRE_ADAPTER                  0x21
+#define USB_B_DESCRIPTOR_TYPE_RPIPE                         0x22
+#define USB_B_DESCRIPTOR_TYPE_CS_RADIO_CONTROL              0x23
+
+/**
+ * @brief Descriptor types from UAS specification
+ */
+#define USB_B_DESCRIPTOR_TYPE_PIPE_USAGE                    0x24
 
 // ------------------- Control Request ---------------------
 
@@ -219,7 +254,7 @@ _Static_assert(sizeof(usb_ctrl_req_t) == USB_CTRL_REQ_SIZE, "Size of usb_ctrl_re
 /**
  * @brief Initializer for a request to get a device's device descriptor
  */
-#define USB_CTRL_REQ_INIT_GET_DEVC_DESC(ctrl_req_ptr) ({ \
+#define USB_CTRL_REQ_INIT_GET_DEVICE_DESC(ctrl_req_ptr) ({  \
     (ctrl_req_ptr)->bRequestType = USB_B_REQUEST_TYPE_DIR_IN | USB_B_REQUEST_TYPE_TYPE_STANDARD | USB_B_REQUEST_TYPE_RECIP_DEVICE;   \
     (ctrl_req_ptr)->bRequest = USB_B_REQUEST_GET_DESCRIPTOR;   \
     (ctrl_req_ptr)->wValue = (USB_W_VALUE_DT_DEVICE << 8); \
@@ -244,7 +279,7 @@ _Static_assert(sizeof(usb_ctrl_req_t) == USB_CTRL_REQ_SIZE, "Size of usb_ctrl_re
  * - desc_index indicates the configuration's index number
  * - Number of bytes of the configuration descriptor to get
  */
-#define USB_CTRL_REQ_INIT_GET_CFG_DESC(ctrl_req_ptr, desc_index, desc_len) ({  \
+#define USB_CTRL_REQ_INIT_GET_CONFIG_DESC(ctrl_req_ptr, desc_index, desc_len) ({    \
     (ctrl_req_ptr)->bRequestType = USB_B_REQUEST_TYPE_DIR_IN | USB_B_REQUEST_TYPE_TYPE_STANDARD | USB_B_REQUEST_TYPE_RECIP_DEVICE;   \
     (ctrl_req_ptr)->bRequest = USB_B_REQUEST_GET_DESCRIPTOR;   \
     (ctrl_req_ptr)->wValue = (USB_W_VALUE_DT_CONFIG << 8) | ((desc_index) & 0xFF); \
@@ -274,12 +309,33 @@ _Static_assert(sizeof(usb_ctrl_req_t) == USB_CTRL_REQ_SIZE, "Size of usb_ctrl_re
     (ctrl_req_ptr)->wLength = 0;   \
 })
 
+// ---------------- Standard Descriptor --------------------
+
+/**
+ * @brief Size of dummy USB standard descriptor
+ */
+#define USB_DESC_STANDARD_SIZE      2
+
+/**
+ * @brief Dummy USB standard descriptor
+ *
+ * All USB standard descriptors start with these two bytes. Use this type traversing over descriptors
+ */
+typedef union {
+    struct {
+        uint8_t bLength;
+        uint8_t bDescriptorType;
+    } USB_DESC_ATTR;
+    uint8_t val[USB_DESC_STANDARD_SIZE];
+} usb_desc_standard_t;
+_Static_assert(sizeof(usb_desc_standard_t) == USB_DESC_STANDARD_SIZE, "Size of usb_desc_standard_t incorrect");
+
 // ------------------ Device Descriptor --------------------
 
 /**
  * @brief Size of a USB device descriptor in bytes
  */
-#define USB_DESC_DEVC_SIZE       18
+#define USB_DESC_DEVICE_SIZE            18
 
 /**
  * @brief Structure representing a USB device descriptor
@@ -301,9 +357,9 @@ typedef union {
         uint8_t iSerialNumber;
         uint8_t bNumConfigurations;
     } USB_DESC_ATTR;
-    uint8_t val[USB_DESC_DEVC_SIZE];
-} usb_desc_devc_t;
-_Static_assert(sizeof(usb_desc_devc_t) == USB_DESC_DEVC_SIZE, "Size of usb_desc_devc_t incorrect");
+    uint8_t val[USB_DESC_DEVICE_SIZE];
+} usb_desc_device_t;
+_Static_assert(sizeof(usb_desc_device_t) == USB_DESC_DEVICE_SIZE, "Size of usb_desc_device_t incorrect");
 
 /**
  * @brief Possible base class values of the bDeviceClass field of a USB device descriptor
@@ -343,7 +399,7 @@ _Static_assert(sizeof(usb_desc_devc_t) == USB_DESC_DEVC_SIZE, "Size of usb_desc_
  * @note The size of a full USB configuration includes all the interface and endpoint
  *       descriptors of that configuration.
  */
-#define USB_DESC_CFG_SIZE       9
+#define USB_DESC_CONFIG_SIZE        9
 
 /**
  * @brief Structure representing a short USB configuration descriptor
@@ -362,9 +418,9 @@ typedef union {
         uint8_t bmAttributes;
         uint8_t bMaxPower;
     } USB_DESC_ATTR;
-    uint8_t val[USB_DESC_CFG_SIZE];
-} usb_desc_cfg_t;
-_Static_assert(sizeof(usb_desc_cfg_t) == USB_DESC_CFG_SIZE, "Size of usb_desc_cfg_t incorrect");
+    uint8_t val[USB_DESC_CONFIG_SIZE];
+} usb_desc_config_t;
+_Static_assert(sizeof(usb_desc_config_t) == USB_DESC_CONFIG_SIZE, "Size of usb_desc_config_t incorrect");
 
 /**
  * @brief Bit masks belonging to the bmAttributes field of a configuration descriptor
@@ -373,6 +429,31 @@ _Static_assert(sizeof(usb_desc_cfg_t) == USB_DESC_CFG_SIZE, "Size of usb_desc_cf
 #define USB_BM_ATTRIBUTES_SELFPOWER         (1 << 6)    //Self powered
 #define USB_BM_ATTRIBUTES_WAKEUP            (1 << 5)    //Can wake-up
 #define USB_BM_ATTRIBUTES_BATTERY           (1 << 4)    //Battery powered
+
+// ---------- Interface Association Descriptor -------------
+
+/**
+ * @brief Size of a USB interface association descriptor in bytes
+ */
+#define USB_DESC_INTF_ASSOC_SIZE    9
+
+/**
+ * @brief Structure representing a USB interface association descriptor
+ */
+typedef union {
+    struct {
+        uint8_t bLength;
+        uint8_t bDescriptorType;
+        uint8_t bFirstInterface;
+        uint8_t bInterfaceCount;
+        uint8_t bFunctionClass;
+        uint8_t bFunctionSubClass;
+        uint8_t bFunctionProtocol;
+        uint8_t iFunction;
+    } USB_DESC_ATTR;
+    uint8_t val[USB_DESC_INTF_ASSOC_SIZE];
+} usb_desc_iad_t;
+_Static_assert(sizeof(usb_desc_iad_t) == USB_DESC_INTF_ASSOC_SIZE, "Size of usb_desc_iad_t incorrect");
 
 // ---------------- Interface Descriptor -------------------
 

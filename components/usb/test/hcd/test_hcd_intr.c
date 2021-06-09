@@ -84,32 +84,31 @@ static void mock_hid_process_report(mock_hid_mouse_report_t *report, int iter)
 // --------------------------------------------------- Test Cases ------------------------------------------------------
 
 /*
-Test HCD interrupt pipe IRPs
+Test HCD interrupt pipe URBs
 Purpose:
     - Test that an interrupt pipe can be created
-    - IRPs can be created and enqueued to the interrupt pipe
-    - Interrupt pipe returns HCD_PIPE_EVENT_IRP_DONE
-    - Test that IRPs can be aborted when enqueued
+    - URBs can be created and enqueued to the interrupt pipe
+    - Interrupt pipe returns HCD_PIPE_EVENT_URB_DONE
+    - Test that URBs can be aborted when enqueued
 
 Procedure:
     - Setup HCD and wait for connection
     - Allocate default pipe and enumerate the device
-    - Setup interrupt pipe and allocate IRPs
-    - Enqueue IRPs, expect HCD_PIPE_EVENT_IRP_DONE, and requeue
+    - Setup interrupt pipe and allocate URBs
+    - Enqueue URBs, expect HCD_PIPE_EVENT_URB_DONE, and requeue
     - Stop after fixed number of iterations
-    - Deallocate IRPs
+    - Deallocate URBs
     - Teardown
 
 Note: Some mice will NAK until it is moved, so try moving the mouse around if this test case gets stuck.
 */
 
 #define TEST_HID_DEV_SPEED                  USB_SPEED_LOW
-#define NUM_IRPS                            3
-#define IRP_DATA_BUFF_SIZE                  4       //MPS is 4
-#define MOCK_HID_NUM_REPORT_PER_IRP         2
-#define NUM_IRP_ITERS                       (NUM_IRPS * 100)
+#define NUM_URBS                            3
+#define URB_DATA_BUFF_SIZE                  4       //MPS is 4
+#define NUM_URB_ITERS                       (NUM_URBS * 100)
 
-TEST_CASE("Test HCD interrupt pipe IRPs", "[hcd][ignore]")
+TEST_CASE("Test HCD interrupt pipe URBs", "[hcd][ignore]")
 {
     hcd_port_handle_t port_hdl = test_hcd_setup();  //Setup the HCD and port
     usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl);  //Trigger a connection
@@ -117,39 +116,39 @@ TEST_CASE("Test HCD interrupt pipe IRPs", "[hcd][ignore]")
     vTaskDelay(pdMS_TO_TICKS(100)); //Short delay send of SOF (for FS) or EOPs (for LS)
 
     hcd_pipe_handle_t default_pipe = test_hcd_pipe_alloc(port_hdl, NULL, 0, port_speed); //Create a default pipe (using a NULL EP descriptor)
-    uint8_t dev_addr = test_hcd_enum_devc(default_pipe);
+    uint8_t dev_addr = test_hcd_enum_device(default_pipe);
 
-    //Allocate interrupt pipe and IRPS
+    //Allocate interrupt pipe and URBS
     hcd_pipe_handle_t intr_pipe = test_hcd_pipe_alloc(port_hdl, &in_ep_desc, dev_addr, port_speed);
-    usb_irp_t *irp_list[NUM_IRPS];
-    for (int i = 0; i < NUM_IRPS; i++) {
-        irp_list[i] = test_hcd_alloc_irp(0, IRP_DATA_BUFF_SIZE);
-        irp_list[i]->num_bytes = IRP_DATA_BUFF_SIZE;
-        irp_list[i]->context = IRP_CONTEXT_VAL;
+    urb_t *urb_list[NUM_URBS];
+    for (int i = 0; i < NUM_URBS; i++) {
+        urb_list[i] = test_hcd_alloc_urb(0, URB_DATA_BUFF_SIZE);
+        urb_list[i]->transfer.num_bytes = URB_DATA_BUFF_SIZE;
+        urb_list[i]->transfer.context = URB_CONTEXT_VAL;
     }
 
-    //Enqueue IRPs
-    for (int i = 0; i < NUM_IRPS; i++) {
-        TEST_ASSERT_EQUAL(ESP_OK, hcd_irp_enqueue(intr_pipe, irp_list[i]));
+    //Enqueue URBs
+    for (int i = 0; i < NUM_URBS; i++) {
+        TEST_ASSERT_EQUAL(ESP_OK, hcd_urb_enqueue(intr_pipe, urb_list[i]));
     }
-    int iter_count = NUM_IRP_ITERS;
-    for (iter_count = NUM_IRP_ITERS; iter_count > 0; iter_count--) {
-        //Wait for an IRP to be done
-        test_hcd_expect_pipe_event(intr_pipe, HCD_PIPE_EVENT_IRP_DONE);
-        //Dequeue the IRP and check results
-        usb_irp_t *irp = hcd_irp_dequeue(intr_pipe);
-        TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, irp->status);
-        TEST_ASSERT_EQUAL(IRP_CONTEXT_VAL, irp->context);
-        mock_hid_process_report((mock_hid_mouse_report_t *)irp->data_buffer, iter_count);
-        //Requeue IRP
-        if (iter_count > NUM_IRPS) {
-            TEST_ASSERT_EQUAL(ESP_OK, hcd_irp_enqueue(intr_pipe, irp));
+    int iter_count = NUM_URB_ITERS;
+    for (iter_count = NUM_URB_ITERS; iter_count > 0; iter_count--) {
+        //Wait for an URB to be done
+        test_hcd_expect_pipe_event(intr_pipe, HCD_PIPE_EVENT_URB_DONE);
+        //Dequeue the URB and check results
+        urb_t *urb = hcd_urb_dequeue(intr_pipe);
+        TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.status);
+        TEST_ASSERT_EQUAL(URB_CONTEXT_VAL, urb->transfer.context);
+        mock_hid_process_report((mock_hid_mouse_report_t *)urb->transfer.data_buffer, iter_count);
+        //Requeue URB
+        if (iter_count > NUM_URBS) {
+            TEST_ASSERT_EQUAL(ESP_OK, hcd_urb_enqueue(intr_pipe, urb));
         }
     }
 
-    //Free IRP list and pipe
-    for (int i = 0; i < NUM_IRPS; i++) {
-        test_hcd_free_irp(irp_list[i]);
+    //Free URB list and pipe
+    for (int i = 0; i < NUM_URBS; i++) {
+        test_hcd_free_urb(urb_list[i]);
     }
     test_hcd_pipe_free(intr_pipe);
     test_hcd_pipe_free(default_pipe);
