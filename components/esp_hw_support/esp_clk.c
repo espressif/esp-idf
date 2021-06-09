@@ -51,22 +51,23 @@ extern uint32_t g_ticks_per_us_app;
 static _lock_t s_esp_rtc_time_lock;
 static RTC_DATA_ATTR uint64_t s_esp_rtc_time_us = 0, s_rtc_last_ticks = 0;
 
-int IRAM_ATTR esp_clk_cpu_freq(void)
+inline static int IRAM_ATTR s_get_cpu_freq_mhz(void)
 {
 #if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3
-    return ets_get_cpu_frequency() * MHZ;
+    return ets_get_cpu_frequency();
 #else
-    return g_ticks_per_us_pro * MHZ;
+    return g_ticks_per_us_pro;
 #endif
+}
+
+int IRAM_ATTR esp_clk_cpu_freq(void)
+{
+    return s_get_cpu_freq_mhz() * MHZ;
 }
 
 int IRAM_ATTR esp_clk_apb_freq(void)
 {
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3
-    return MIN(ets_get_cpu_frequency(), 81) * MHZ;
-#else
-    return MIN(g_ticks_per_us_pro, 80) * MHZ;
-#endif
+    return MIN(s_get_cpu_freq_mhz(), 80) * MHZ;
 }
 
 int IRAM_ATTR esp_clk_xtal_freq(void)
