@@ -19,6 +19,7 @@
     :SOC_MCPWM_SUPPORTED: MCPWM <mcpwm>
     :SOC_PCNT_SUPPORTED: Pulse Counter <pcnt>
     Remote Control <rmt>
+    :esp32 or esp32s3: SD Pull-up Requirements <sd_pullup_requirements>
     :SOC_SDMMC_HOST_SUPPORTED: SDMMC Host <sdmmc_host>
     SD SPI Host <sdspi_host>
     :SOC_SDIO_SLAVE_SUPPORTED: SDIO Slave <sdio_slave>
