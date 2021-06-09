@@ -411,7 +411,6 @@ static inline bool usbh_hal_port_check_resume(usbh_hal_context_t *hal)
  */
 static inline void usbh_hal_port_set_frame_list(usbh_hal_context_t *hal, uint32_t *frame_list, usb_hal_frame_list_len_t len)
 {
-    HAL_ASSERT(!hal->flags.periodic_sched_enabled);
     //Clear and save frame list
     hal->periodic_frame_list = frame_list;
     hal->frame_list_len = len;
