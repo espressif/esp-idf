@@ -251,6 +251,7 @@ static esp_netif_t* wifi_start(void)
         .sta = {
             .ssid = CONFIG_EXAMPLE_WIFI_SSID,
             .password = CONFIG_EXAMPLE_WIFI_PASSWORD,
+            .scan_method = WIFI_ALL_CHANNEL_SCAN,
         },
     };
     ESP_LOGI(TAG, "Connecting to %s...", wifi_config.sta.ssid);
