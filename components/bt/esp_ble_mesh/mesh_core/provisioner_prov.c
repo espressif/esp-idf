@@ -2312,6 +2312,12 @@ static void prov_confirm(const uint8_t idx, const uint8_t *data)
 
     BT_DBG("Remote Confirm: %s", bt_hex(data, 16));
 
+    /* NOTE: The Bluetooth SIG recommends that potentially vulnerable mesh
+     * provisioners restrict the authentication procedure and not accept
+     * provisioning random and provisioning confirmation numbers from a remote
+     * peer that are the same as those selected by the local device (CVE-2020-26556
+     * & CVE-2020-26560).
+     * */
     if (!memcmp(data, link[idx].local_conf, 16)) {
         BT_ERR("Confirmation value is identical to ours, rejecting.");
         close_link(idx, CLOSE_REASON_FAILED);
@@ -2528,6 +2534,12 @@ static void prov_random(const uint8_t idx, const uint8_t *data)
 
     BT_DBG("Remote Random: %s", bt_hex(data, 16));
 
+    /* NOTE: The Bluetooth SIG recommends that potentially vulnerable mesh
+     * provisioners restrict the authentication procedure and not accept
+     * provisioning random and provisioning confirmation numbers from a remote
+     * peer that are the same as those selected by the local device (CVE-2020-26556
+     * & CVE-2020-26560).
+     * */
     if (!memcmp(data, link[idx].rand, 16)) {
         BT_ERR("Random value is identical to ours, rejecting.");
         goto fail;
