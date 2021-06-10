@@ -23,7 +23,6 @@
 #include "esp_efuse_rtc_calib.h"
 
 static const char *TAG = "tsens";
-static bool temp_sensor_start_flag = false;
 
 #define TSENS_XPD_WAIT_DEFAULT 0xFF   /* Set wait cycle time(8MHz) from power up to reset enable. */
 #define TSENS_ADC_FACTOR  (0.4386)
@@ -48,10 +47,22 @@ static const tsens_dac_offset_t dac_offset[TSENS_DAC_MAX] = {
     {TSENS_DAC_L4,    2,    10,   -40,   20,   3},
 };
 
+typedef enum {
+    TSENS_HW_STATE_UNCONFIGURED,
+    TSENS_HW_STATE_CONFIGURED,
+    TSENS_HW_STATE_STARTED,
+} tsens_hw_state_t;
+
+static tsens_hw_state_t tsens_hw_state = TSENS_HW_STATE_UNCONFIGURED;
+
 static float s_deltaT = NAN; // unused number
 
 esp_err_t temp_sensor_set_config(temp_sensor_config_t tsens)
 {
+    if (tsens_hw_state == TSENS_HW_STATE_STARTED) {
+        ESP_LOGE(TAG, "Do not configure the temp sensor when it's running!");
+        return ESP_ERR_INVALID_STATE;
+    }
     REG_SET_BIT(SYSTEM_PERIP_CLK_EN1_REG, SYSTEM_TSENS_CLK_EN);
     CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, ANA_I2C_SAR_FORCE_PD);
     SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_I2C_SAR_FORCE_PU);
@@ -63,6 +74,7 @@ esp_err_t temp_sensor_set_config(temp_sensor_config_t tsens)
              dac_offset[tsens.dac_offset].range_min,
              dac_offset[tsens.dac_offset].range_max,
              dac_offset[tsens.dac_offset].error_max);
+    tsens_hw_state = TSENS_HW_STATE_CONFIGURED;
     return ESP_OK;
 }
 
@@ -84,26 +96,21 @@ esp_err_t temp_sensor_get_config(temp_sensor_config_t *tsens)
 
 esp_err_t temp_sensor_start(void)
 {
-    if (temp_sensor_start_flag == true) {
-        ESP_LOGE(TAG, "Temperature sensor has been started!");
+    if (tsens_hw_state != TSENS_HW_STATE_CONFIGURED) {
+        ESP_LOGE(TAG, "Temperature sensor is already running or not be configured");
         return ESP_ERR_INVALID_STATE;
     }
     REG_SET_BIT(SYSTEM_PERIP_CLK_EN1_REG, SYSTEM_TSENS_CLK_EN);
     APB_SARADC.apb_tsens_ctrl2.tsens_clk_sel = 1;
     APB_SARADC.apb_tsens_ctrl.tsens_pu = 1;
-    temp_sensor_start_flag = true;
+    tsens_hw_state = TSENS_HW_STATE_STARTED;
     return ESP_OK;
 }
 
 esp_err_t temp_sensor_stop(void)
 {
-    if (temp_sensor_start_flag == false) {
-        ESP_LOGE(TAG, "Temperature sensor has been stopped!");
-        return ESP_ERR_INVALID_STATE;
-    }
     APB_SARADC.apb_tsens_ctrl.tsens_pu = 0;
     APB_SARADC.apb_tsens_ctrl2.tsens_clk_sel = 0;
-    temp_sensor_start_flag = false;
     return ESP_OK;
 }
 

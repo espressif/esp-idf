@@ -17,6 +17,7 @@
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 #define SOC_SUPPORTS_SECURE_DL_MODE         1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   3
+#define SOC_TEMP_SENSOR_SUPPORTED           1
 
 
 /*-------------------------- AES CAPS -----------------------------------------*/

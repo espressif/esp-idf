@@ -13,6 +13,7 @@
 #define SOC_HMAC_SUPPORTED              1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
+#define SOC_TEMP_SENSOR_SUPPORTED       1
 #define SOC_FLASH_ENCRYPTION_XTS_AES      1
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
