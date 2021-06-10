@@ -18,10 +18,10 @@
 #include <assert.h>
 #include <stdlib.h>
 #include "sdkconfig.h"
-#include "esp32c3/rom/ets_sys.h"
-#include "esp32c3/rom/rtc.h"
-#include "esp32c3/rom/uart.h"
-#include "esp32c3/rom/gpio.h"
+#include "esp32h2/rom/ets_sys.h"
+#include "esp32h2/rom/rtc.h"
+#include "esp32h2/rom/uart.h"
+#include "esp32h2/rom/gpio.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/efuse_reg.h"
@@ -93,32 +93,34 @@ bool rtc_clk_32k_enabled(void)
 void rtc_clk_8m_enable(bool clk_8m_en, bool d256_en)
 {
     if (clk_8m_en) {
-        CLEAR_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M);
+        // CLEAR_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M); // ESP32H2-TODO: IDF-3396
         /* no need to wait once enabled by software */
         REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, RTC_CK8M_ENABLE_WAIT_DEFAULT);
         esp_rom_delay_us(DELAY_8M_ENABLE);
     } else {
-        SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M);
+        // SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M);
         REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, RTC_CNTL_CK8M_WAIT_DEFAULT);
     }
     /* d256 should be independent configured with 8M
      * Maybe we can split this function into 8m and dmd256
      */
     if (d256_en) {
-        CLEAR_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M_DIV);
+        // CLEAR_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M_DIV);
     } else {
-        SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M_DIV);
+        // SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M_DIV);
     }
 }
 
 bool rtc_clk_8m_enabled(void)
 {
-    return GET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M) == 0;
+    return false;
+    // return GET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M) == 0; // ESP32H2-TODO: IDF-3396
 }
 
 bool rtc_clk_8md256_enabled(void)
 {
-    return GET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M_DIV) == 0;
+    return false;
+    // return GET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M_DIV) == 0; // ESP32H2-TODO: IDF-3396
 }
 
 void rtc_clk_slow_freq_set(rtc_slow_freq_t slow_freq)
@@ -191,7 +193,7 @@ void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
     SET_PERI_REG_MASK(I2C_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_LOW);
     if (pll_freq == RTC_PLL_FREQ_480M) {
         /* Set this register to let the digital part know 480M PLL is used */
-        SET_PERI_REG_MASK(SYSTEM_CPU_PER_CONF_REG, SYSTEM_PLL_FREQ_SEL);
+        // SET_PERI_REG_MASK(SYSTEM_CPU_PER_CONF_REG, SYSTEM_PLL_FREQ_SEL); // ESP32H2-TODO: IDF-3396
         /* Configure 480M PLL */
         switch (xtal_freq) {
         case RTC_XTAL_FREQ_40M:
@@ -225,7 +227,7 @@ void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
         REGI2C_WRITE(I2C_BBPLL, I2C_BBPLL_MODE_HF, 0x6B);
     } else {
         /* Clear this register to let the digital part know 320M PLL is used */
-        CLEAR_PERI_REG_MASK(SYSTEM_CPU_PER_CONF_REG, SYSTEM_PLL_FREQ_SEL);
+        // CLEAR_PERI_REG_MASK(SYSTEM_CPU_PER_CONF_REG, SYSTEM_PLL_FREQ_SEL); // ESP32H2-TODO: IDF-3396
         /* Configure 320M PLL */
         switch (xtal_freq) {
         case RTC_XTAL_FREQ_40M:
@@ -289,7 +291,7 @@ static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
         SOC_LOGE(TAG, "invalid frequency");
         abort();
     }
-    REG_SET_FIELD(SYSTEM_CPU_PER_CONF_REG, SYSTEM_CPUPERIOD_SEL, per_conf);
+    // REG_SET_FIELD(SYSTEM_CPU_PER_CONF_REG, SYSTEM_CPUPERIOD_SEL, per_conf); // ESP32H2-TODO: IDF-3396
     REG_SET_FIELD(SYSTEM_SYSCLK_CONF_REG, SYSTEM_PRE_DIV_CNT, 0);
     REG_SET_FIELD(SYSTEM_SYSCLK_CONF_REG, SYSTEM_SOC_CLK_SEL, DPORT_SOC_CLK_SEL_PLL);
     rtc_clk_apb_freq_update(80 * MHZ);
@@ -375,21 +377,11 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config)
     }
     break;
     case DPORT_SOC_CLK_SEL_PLL: {
-        source = RTC_CPU_FREQ_SRC_PLL;
-        uint32_t cpuperiod_sel = REG_GET_FIELD(SYSTEM_CPU_PER_CONF_REG, SYSTEM_CPUPERIOD_SEL);
-        uint32_t pllfreq_sel = REG_GET_FIELD(SYSTEM_CPU_PER_CONF_REG, SYSTEM_PLL_FREQ_SEL);
-        source_freq_mhz = (pllfreq_sel) ? RTC_PLL_FREQ_480M : RTC_PLL_FREQ_320M;
-        if (cpuperiod_sel == DPORT_CPUPERIOD_SEL_80) {
-            div = (source_freq_mhz == RTC_PLL_FREQ_480M) ? 6 : 4;
-            freq_mhz = 80;
-        } else if (cpuperiod_sel == DPORT_CPUPERIOD_SEL_160) {
-            div = (source_freq_mhz == RTC_PLL_FREQ_480M) ? 3 : 2;
-            div = 3;
-            freq_mhz = 160;
-        } else {
-            SOC_LOGE(TAG, "unsupported frequency configuration");
-            abort();
-        }
+        // ESP32H2-TODO: IDF-3396
+        source = 0;
+        div = 0;
+        source_freq_mhz = 0;
+        freq_mhz = 0;
         break;
     }
     case DPORT_SOC_CLK_SEL_8M:

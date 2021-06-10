@@ -16,9 +16,9 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include "esp32c3/rom/ets_sys.h"
-#include "esp32c3/rom/rtc.h"
-#include "esp32c3/rom/uart.h"
+#include "esp32h2/rom/ets_sys.h"
+#include "esp32h2/rom/rtc.h"
+#include "esp32h2/rom/uart.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
 #include "soc/efuse_periph.h"

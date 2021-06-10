@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <stdint.h>
-#include "esp32c3/rom/ets_sys.h"
+#include "esp32h2/rom/ets_sys.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/timer_group_reg.h"
@@ -39,7 +39,7 @@
  */
 uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 {
-    /* On ESP32C3, choosing RTC_CAL_RTC_MUX results in calibration of
+    /* On ESP32H2, choosing RTC_CAL_RTC_MUX results in calibration of
      * the 150k RTC clock regardless of the currenlty selected SLOW_CLK.
      * On the ESP32, it used the currently selected SLOW_CLK.
      * The following code emulates ESP32 behavior:
@@ -59,7 +59,7 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
     }
 
     if (cal_clk == RTC_CAL_8MD256) {
-        SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_D256_EN);
+        // SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_D256_EN); // ESP32H2-TODO: IDF-3396
     }
     /* Prepare calibration */
     REG_SET_FIELD(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_CLK_SEL, cal_clk);
@@ -110,7 +110,7 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_XTAL32K_EN, dig_32k_xtal_state);
 
     if (cal_clk == RTC_CAL_8MD256) {
-        CLEAR_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_D256_EN);
+        // CLEAR_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_D256_EN); // ESP32H2-TODO: IDF-3396
     }
 
     return cal_val;

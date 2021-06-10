@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "esp_system.h"
-#include "esp32c3/rom/rtc.h"
+#include "esp32h2/rom/rtc.h"
 #include "esp_private/system_internal.h"
 #include "soc/rtc_periph.h"
 

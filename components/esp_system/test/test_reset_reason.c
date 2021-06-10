@@ -49,7 +49,7 @@ static RTC_SLOW_ATTR uint32_t s_rtc_force_slow_val;
 #define BROWNOUT            "BROWN_OUT_RST"
 #define STORE_ERROR         "StoreProhibited"
 
-#elif CONFIG_IDF_TARGET_ESP32C3
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
 #define DEEPSLEEP           "DSLEEP"
 #define LOAD_STORE_ERROR    "Store access fault"
 #define RESET               "RTC_SW_CPU_RST"

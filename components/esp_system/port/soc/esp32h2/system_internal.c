@@ -33,8 +33,8 @@
 #include "hal/wdt_hal.h"
 #include "cache_err_int.h"
 
-#include "esp32c3/rom/cache.h"
-#include "esp32c3/rom/rtc.h"
+#include "esp32h2/rom/cache.h"
+#include "esp32h2/rom/rtc.h"
 
 /* "inner" restart function for after RTOS, interrupts & anything else on this
  * core are already stopped. Stalls other core, resets hardware,
@@ -91,17 +91,6 @@ void IRAM_ATTR esp_restart_noos(void)
     WRITE_PERI_REG(GPIO_FUNC3_IN_SEL_CFG_REG, 0x30);
     WRITE_PERI_REG(GPIO_FUNC4_IN_SEL_CFG_REG, 0x30);
     WRITE_PERI_REG(GPIO_FUNC5_IN_SEL_CFG_REG, 0x30);
-
-    // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
-    SET_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG,
-                      SYSTEM_BB_RST | SYSTEM_FE_RST | SYSTEM_MAC_RST |
-                      SYSTEM_BT_RST | SYSTEM_BTMAC_RST | SYSTEM_SDIO_RST |
-                      SYSTEM_EMAC_RST | SYSTEM_MACPWR_RST |
-                      SYSTEM_RW_BTMAC_RST | SYSTEM_RW_BTLP_RST | BLE_REG_REST_BIT
-                      |BLE_PWR_REG_REST_BIT | BLE_BB_REG_REST_BIT);
-
-
-    REG_WRITE(SYSTEM_CORE_RST_EN_REG, 0);
 
     // Reset timer/spi/uart
     SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG,

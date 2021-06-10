@@ -77,6 +77,8 @@
 #include "esp32s3/spiram.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/clk.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/clk.h"
 #endif
 /***********************************************/
 
@@ -264,7 +266,8 @@ static void do_core_init(void)
 #if CONFIG_ESP32_BROWNOUT_DET   || \
     CONFIG_ESP32S2_BROWNOUT_DET || \
     CONFIG_ESP32S3_BROWNOUT_DET || \
-    CONFIG_ESP32C3_BROWNOUT_DET
+    CONFIG_ESP32C3_BROWNOUT_DET || \
+    CONFIG_ESP32H2_BROWNOUT_DET
     // [refactor-todo] leads to call chain rtc_is_register (driver) -> esp_intr_alloc (esp32/esp32s2) ->
     // malloc (newlib) -> heap_caps_malloc (heap), so heap must be at least initialized
     esp_brownout_init();

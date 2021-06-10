@@ -19,7 +19,7 @@
 #include "esp_attr.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
-#include "esp32c3/rom/apb_backup_dma.h"
+#include "esp32h2/rom/apb_backup_dma.h"
 
 static portMUX_TYPE s_apb_backup_dma_mutex = portMUX_INITIALIZER_UNLOCKED;
 

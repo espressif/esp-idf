@@ -18,7 +18,7 @@
  to panic the CPU, which from a debugging perspective is better than grabbing bad
  data from the bus.
 */
-#include "esp32c3/rom/ets_sys.h"
+#include "esp32h2/rom/ets_sys.h"
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
 #include "soc/extmem_reg.h"
@@ -49,7 +49,7 @@ void esp_cache_err_int_init(void)
      *     4. icache preload configurations fault
      *     5. icache sync configuration fault
      *
-     * [1]: On ESP32C3 boards, the caches are shared but buses are still
+     * [1]: On ESP32H2 boards, the caches are shared but buses are still
      * distinct. So, we have an ibus and a dbus sharing the same cache.
      * This error can occur if the dbus performs a request but the icache
      * (or simply cache) is disabled.
