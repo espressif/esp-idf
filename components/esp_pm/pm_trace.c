@@ -21,7 +21,7 @@
  * Feel free to change when debugging.
  */
 static const int DRAM_ATTR s_trace_io[] = {
-#ifndef CONFIG_IDF_TARGET_ESP32C3
+#if !defined(CONFIG_IDF_TARGET_ESP32C3) && !defined(CONFIG_IDF_TARGET_ESP32H2)
         BIT(4),  BIT(5),  // ESP_PM_TRACE_IDLE
         BIT(16), BIT(17), // ESP_PM_TRACE_TICK
         BIT(18), BIT(18), // ESP_PM_TRACE_FREQ_SWITCH

@@ -141,7 +141,7 @@ TEST_CASE("check if ROM or Flash is used for functions", "[newlib]")
 #if defined(CONFIG_IDF_TARGET_ESP32) && !defined(CONFIG_SPIRAM)
     TEST_ASSERT(fn_in_rom(atoi));
     TEST_ASSERT(fn_in_rom(strtol));
-#elif defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)
+#elif defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3) || defined(CONFIG_IDF_TARGET_ESP32H2)
     /* S3 and C3 always use these from ROM */
     TEST_ASSERT(fn_in_rom(atoi));
     TEST_ASSERT(fn_in_rom(strtol));

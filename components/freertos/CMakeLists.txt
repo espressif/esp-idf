@@ -6,7 +6,7 @@ endif()
 
 idf_build_get_property(target IDF_TARGET)
 
-if(NOT "${target}" STREQUAL "esp32c3")  # should test arch here not target, TODO ESP32-C3 IDF-1754
+if(NOT "${target}" STREQUAL "esp32c3" AND NOT "${target}" STREQUAL "esp32h2")  # should test arch here not target, TODO ESP32-C3 IDF-1754
     set(srcs
         "port/xtensa/port.c"
         "port/xtensa/portasm.S"

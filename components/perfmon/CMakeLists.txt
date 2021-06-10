@@ -1,5 +1,5 @@
 idf_build_get_property(target IDF_TARGET)
-if(${target} STREQUAL "esp32c3")
+if(${target} STREQUAL "esp32c3" OR ${target} STREQUAL "esp32h2")
         return()
 endif()
 

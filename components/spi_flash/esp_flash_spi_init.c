@@ -35,6 +35,8 @@
 #include "esp32s3/rom/spi_flash.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/spi_flash.h"
 #endif
 
 __attribute__((unused)) static const char TAG[] = "spi_flash";
@@ -112,6 +114,26 @@ __attribute__((unused)) static const char TAG[] = "spi_flash";
     .input_delay_ns = 0,\
     .auto_sus_en = true,\
     .cs_setup = 1,\
+}
+#endif //!CONFIG_SPI_FLASH_AUTO_SUSPEND
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/efuse.h"
+#if !CONFIG_SPI_FLASH_AUTO_SUSPEND
+#define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
+    .host_id = SPI1_HOST,\
+    .speed = DEFAULT_FLASH_SPEED, \
+    .cs_num = 0, \
+    .iomux = true, \
+    .input_delay_ns = 0,\
+}
+#else
+#define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
+    .host_id = SPI1_HOST,\
+    .speed = DEFAULT_FLASH_SPEED, \
+    .cs_num = 0, \
+    .iomux = true, \
+    .input_delay_ns = 0,\
+    .auto_sus_en = true,\
 }
 #endif //!CONFIG_SPI_FLASH_AUTO_SUSPEND
 #endif
