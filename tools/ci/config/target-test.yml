@@ -151,10 +151,11 @@ test_weekend_mqtt:
   tags:
     - ESP32
     - Example_WIFI
-  variables:
-    ENV_FILE: "$CI_PROJECT_DIR/tools/test_apps/protocols/mqtt/publish_connect_test/env.yml"
-    TEST_CASE_PATH: "$CI_PROJECT_DIR/tools/test_apps/protocols/mqtt/publish_connect_test"
-    CONFIG_FILE_PATH: "$CI_PROJECT_DIR/tools/test_apps/protocols/mqtt/publish_connect_test"
+  script:
+    - export MQTT_PUBLISH_TEST=1
+    - export TEST_PATH=$CI_PROJECT_DIR/tools/test_apps/protocols/mqtt/publish_connect_test
+    - cd $IDF_PATH/tools/ci/python_packages/tiny_test_fw/bin
+    - run_cmd python Runner.py $TEST_PATH -c $TEST_PATH/publish_connect_mqtt_.yml -e $TEST_PATH/env.yml
 
 
 example_test_001A:
