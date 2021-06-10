@@ -148,6 +148,7 @@ static bool wifi_cmd_sta_join(const char* ssid, const char* pass)
     int bits = xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, 0, 1, 0);
 
     wifi_config_t wifi_config = { 0 };
+    wifi_config.sta.pmf_cfg.capable = true;
 
     strlcpy((char*) wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
     if (pass) {
