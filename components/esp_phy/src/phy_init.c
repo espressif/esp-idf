@@ -332,6 +332,10 @@ const esp_phy_init_data_t* esp_phy_get_init_data(void)
     size_t init_data_store_length = sizeof(phy_init_magic_pre) +
             sizeof(esp_phy_init_data_t) + sizeof(phy_init_magic_post);
     uint8_t* init_data_store = (uint8_t*) malloc(init_data_store_length);
+    if (init_data_store == NULL) {
+        ESP_LOGE(TAG, "failed to allocate memory for updated country code PHY init data");
+        return ESP_ERR_NO_MEM;
+    }
     memcpy(init_data_store, multi_phy_init_data_bin_start, init_data_store_length);
     ESP_LOGI(TAG, "loading embedded multiple PHY init data");
 #else
