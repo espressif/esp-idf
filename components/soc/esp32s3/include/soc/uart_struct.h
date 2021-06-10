@@ -1,4 +1,4 @@
-// Copyright 2017-2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,11 +18,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#include "soc.h"
 
 typedef volatile struct {
     union {
         struct {
-            uint32_t rw_byte;                               /*UART $n accesses FIFO via this register.*/
+            uint32_t rw_byte                       ;  /*UART $n accesses FIFO via this register.*/
         };
         uint32_t val;
     } ahb_fifo;
@@ -197,13 +198,13 @@ typedef volatile struct {
     } conf0;
     union {
         struct {
-            uint32_t rxfifo_full_thrhd             :    9;  /*It will produce rxfifo_full_int interrupt when receiver receives more data than this register value.*/
-            uint32_t txfifo_empty_thrhd            :    9;  /*It will produce txfifo_empty_int interrupt when the data amount in Tx-FIFO is less than this register value.*/
+            uint32_t rxfifo_full_thrhd             :    10;  /*It will produce rxfifo_full_int interrupt when receiver receives more data than this register value.*/
+            uint32_t txfifo_empty_thrhd            :    10;  /*It will produce txfifo_empty_int interrupt when the data amount in Tx-FIFO is less than this register value.*/
             uint32_t dis_rx_dat_ovf                :    1;  /*Disable UART Rx data overflow detect. */
             uint32_t rx_tout_flow_dis              :    1;  /*Set this bit to stop accumulating idle_cnt when hardware flow control works.*/
             uint32_t rx_flow_en                    :    1;  /*This is the flow enable bit for UART receiver.*/
             uint32_t rx_tout_en                    :    1;  /*This is the enble bit for uart receiver's timeout function.*/
-            uint32_t reserved22                    :    10;
+            uint32_t reserved24                    :    8;
         };
         uint32_t val;
     } conf1;
@@ -249,17 +250,17 @@ typedef volatile struct {
     } sleep_conf;
     union {
         struct {
-            uint32_t xoff_threshold                :    9;  /*When the data amount in Rx-FIFO is more than this register value with uart_sw_flow_con_en set to 1, it will send a Xoff char.*/
+            uint32_t xoff_threshold                :    10;  /*When the data amount in Rx-FIFO is more than this register value with uart_sw_flow_con_en set to 1, it will send a Xoff char.*/
             uint32_t xoff_char                     :    8;  /*This register stores the Xoff flow control char.*/
-            uint32_t reserved17                    :    15;  /*Reserved*/
+            uint32_t reserved18                    :    14;  /*Reserved*/
         };
         uint32_t val;
     } swfc_conf0;
     union {
         struct {
-            uint32_t xon_threshold                 :    9;  /*When the data amount in Rx-FIFO is less than this register value with uart_sw_flow_con_en set to 1, it will send a Xon char.*/
+            uint32_t xon_threshold                 :    10;  /*When the data amount in Rx-FIFO is less than this register value with uart_sw_flow_con_en set to 1, it will send a Xon char.*/
             uint32_t xon_char                      :    8;  /*This register stores the Xon flow control char.*/
-            uint32_t reserved17                    :    15;  /*Reserved*/
+            uint32_t reserved18                    :    14;  /*Reserved*/
         };
         uint32_t val;
     } swfc_conf1;
@@ -325,11 +326,11 @@ typedef volatile struct {
             uint32_t reserved0                     :    1;
             uint32_t rx_size                       :    3;  /*This register is used to configure the amount of mem allocated for receive-FIFO. The default number is 128 bytes.*/
             uint32_t tx_size                       :    3;  /*This register is used to configure the amount of mem allocated for transmit-FIFO. The default number is 128 bytes.*/
-            uint32_t rx_flow_thrhd                 :    9;  /*This register is used to configure the maximum amount of data that can be received  when hardware flow control works.*/
+            uint32_t rx_flow_thrhd                 :    10;  /*This register is used to configure the maximum amount of data that can be received  when hardware flow control works.*/
             uint32_t rx_tout_thrhd                 :    10;  /*This register is used to configure the threshold time that receiver takes to receive one byte. The rxfifo_tout_int interrupt will be trigger when the receiver takes more time to receive one byte with rx_tout_en set to 1.*/
             uint32_t force_pd                      :    1;  /*Set this bit to force power down UART memory.*/
             uint32_t force_pu                      :    1;  /*Set this bit to force power up UART memory.*/
-            uint32_t reserved28                    :    4;
+            uint32_t reserved29                    :    3;
         };
         uint32_t val;
     } mem_conf;
