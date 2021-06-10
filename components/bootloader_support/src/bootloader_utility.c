@@ -45,6 +45,18 @@
 #include "esp32c3/rom/secure_boot.h"
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/cache.h"
+#include "esp32h2/rom/efuse.h"
+#include "esp32h2/rom/ets_sys.h"
+#include "esp32h2/rom/spi_flash.h"
+#include "esp32h2/rom/crc.h"
+#include "esp32h2/rom/rtc.h"
+#include "esp32h2/rom/uart.h"
+#include "esp32h2/rom/gpio.h"
+#include "esp32h2/rom/secure_boot.h"
+#include "soc/extmem_reg.h"
+#include "soc/cache_memory.h"
 #else // CONFIG_IDF_TARGET_*
 #error "Unsupported IDF_TARGET"
 #endif
@@ -700,6 +712,9 @@ static void set_cache_and_start_app(
 #elif CONFIG_IDF_TARGET_ESP32C3
     uint32_t autoload = Cache_Suspend_ICache();
     Cache_Invalidate_ICache_All();
+#elif CONFIG_IDF_TARGET_ESP32H2
+    uint32_t autoload = Cache_Suspend_ICache();
+    Cache_Invalidate_ICache_All();
 #endif
 
     /* Clear the MMU entries that are already set up,
@@ -725,6 +740,8 @@ static void set_cache_and_start_app(
 #elif CONFIG_IDF_TARGET_ESP32S3
     rc = Cache_Dbus_MMU_Set(MMU_ACCESS_FLASH, drom_load_addr & 0xffff0000, drom_addr & 0xffff0000, 64, drom_page_count, 0);
 #elif CONFIG_IDF_TARGET_ESP32C3
+    rc = Cache_Dbus_MMU_Set(MMU_ACCESS_FLASH, drom_load_addr & 0xffff0000, drom_addr & 0xffff0000, 64, drom_page_count, 0);
+#elif CONFIG_IDF_TARGET_ESP32H2
     rc = Cache_Dbus_MMU_Set(MMU_ACCESS_FLASH, drom_load_addr & 0xffff0000, drom_addr & 0xffff0000, 64, drom_page_count, 0);
 #endif
     ESP_LOGV(TAG, "rc=%d", rc);
@@ -753,6 +770,8 @@ static void set_cache_and_start_app(
     rc = Cache_Ibus_MMU_Set(MMU_ACCESS_FLASH, irom_load_addr & 0xffff0000, irom_addr & 0xffff0000, 64, irom_page_count, 0);
 #elif CONFIG_IDF_TARGET_ESP32C3
     rc = Cache_Ibus_MMU_Set(MMU_ACCESS_FLASH, irom_load_addr & 0xffff0000, irom_addr & 0xffff0000, 64, irom_page_count, 0);
+#elif CONFIG_IDF_TARGET_ESP32H2
+    rc = Cache_Ibus_MMU_Set(MMU_ACCESS_FLASH, irom_load_addr & 0xffff0000, irom_addr & 0xffff0000, 64, irom_page_count, 0);
 #endif
     ESP_LOGV(TAG, "rc=%d", rc);
 #if CONFIG_IDF_TARGET_ESP32
@@ -776,6 +795,9 @@ static void set_cache_and_start_app(
 #elif CONFIG_IDF_TARGET_ESP32C3
     REG_CLR_BIT(EXTMEM_ICACHE_CTRL1_REG, EXTMEM_ICACHE_SHUT_IBUS);
     REG_CLR_BIT(EXTMEM_ICACHE_CTRL1_REG, EXTMEM_ICACHE_SHUT_DBUS);
+#elif CONFIG_IDF_TARGET_ESP32H2
+    REG_CLR_BIT(EXTMEM_ICACHE_CTRL1_REG, EXTMEM_ICACHE_SHUT_IBUS);
+    REG_CLR_BIT(EXTMEM_ICACHE_CTRL1_REG, EXTMEM_ICACHE_SHUT_DBUS);
 #endif
 #if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Enable(0);
@@ -784,6 +806,8 @@ static void set_cache_and_start_app(
 #elif CONFIG_IDF_TARGET_ESP32S3
     Cache_Resume_DCache(autoload);
 #elif CONFIG_IDF_TARGET_ESP32C3
+    Cache_Resume_ICache(autoload);
+#elif CONFIG_IDF_TARGET_ESP32H2
     Cache_Resume_ICache(autoload);
 #endif
     // Application will need to do Cache_Flush(1) and Cache_Read_Enable(1)

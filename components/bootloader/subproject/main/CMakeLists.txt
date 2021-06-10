@@ -4,7 +4,7 @@ idf_component_register(SRCS "bootloader_start.c"
 idf_build_get_property(target IDF_TARGET)
 set(scripts "ld/${target}/bootloader.ld")
 
-if(NOT CONFIG_IDF_TARGET_ESP32C3)
+if(NOT CONFIG_IDF_TARGET_ESP32C3 AND NOT CONFIG_IDF_TARGET_ESP32H2)
     list(APPEND scripts "ld/${target}/bootloader.rom.ld")
 endif()
 

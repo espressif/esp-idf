@@ -89,6 +89,9 @@ esp_flash_enc_mode_t esp_get_flash_encryption_mode(void)
 #elif CONFIG_IDF_TARGET_ESP32C3
     uint8_t dis_dl_enc = 0;
     uint8_t dis_dl_icache = 0;
+#elif CONFIG_IDF_TARGET_ESP32H2
+    uint8_t dis_dl_enc = 0;
+    uint8_t dis_dl_icache = 0;
 #endif
 
     esp_flash_enc_mode_t mode = ESP_FLASH_ENC_MODE_DEVELOPMENT;
@@ -124,6 +127,13 @@ esp_flash_enc_mode_t esp_get_flash_encryption_mode(void)
                 mode = ESP_FLASH_ENC_MODE_RELEASE;
             }
 #elif CONFIG_IDF_TARGET_ESP32C3
+            dis_dl_enc = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT);
+            dis_dl_icache = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE);
+
+            if (dis_dl_enc && dis_dl_icache) {
+                mode = ESP_FLASH_ENC_MODE_RELEASE;
+            }
+#elif CONFIG_IDF_TARGET_ESP32H2
             dis_dl_enc = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT);
             dis_dl_icache = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE);
 
