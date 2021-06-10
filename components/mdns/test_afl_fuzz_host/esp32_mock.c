@@ -98,3 +98,18 @@ void ForceTaskDelete(void)
 {
     g_queue_send_shall_fail = 1;
 }
+
+TaskHandle_t xTaskGetCurrentTaskHandle(void)
+{
+    return NULL;
+}
+
+void xTaskNotifyGive(TaskHandle_t task)
+{
+    return;
+}
+
+BaseType_t xTaskNotifyWait(uint32_t bits_entry_clear, uint32_t bits_exit_clear, uint32_t * value, TickType_t wait_time)
+{
+    return pdTRUE;
+}

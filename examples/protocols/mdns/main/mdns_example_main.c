@@ -9,6 +9,7 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp_netif_ip_addr.h"
 #include "esp_system.h"
 #include "esp_event.h"
 #include "esp_log.h"
@@ -23,8 +24,8 @@
 #define EXAMPLE_MDNS_INSTANCE CONFIG_MDNS_INSTANCE
 #define EXAMPLE_BUTTON_GPIO     0
 
-static const char *TAG = "mdns-test";
-static char* generate_hostname(void);
+static const char * TAG = "mdns-test";
+static char * generate_hostname(void);
 
 #if CONFIG_MDNS_RESOLVE_TEST_SERVICES == 1
 static void  query_mdns_host_with_gethostbyname(char * host);
@@ -33,7 +34,8 @@ static void  query_mdns_host_with_getaddrinfo(char * host);
 
 static void initialise_mdns(void)
 {
-    char* hostname = generate_hostname();
+    char * hostname = generate_hostname();
+
     //initialize mDNS
     ESP_ERROR_CHECK( mdns_init() );
     //set mDNS hostname (required if you want to advertise services)
@@ -44,13 +46,32 @@ static void initialise_mdns(void)
 
     //structure with TXT records
     mdns_txt_item_t serviceTxtData[3] = {
-        {"board","esp32"},
-        {"u","user"},
-        {"p","password"}
+        {"board", "esp32"},
+        {"u", "user"},
+        {"p", "password"}
     };
 
     //initialize service
     ESP_ERROR_CHECK( mdns_service_add("ESP32-WebServer", "_http", "_tcp", 80, serviceTxtData, 3) );
+
+#if CONFIG_MDNS_PUBLISH_DELEGATE_HOST
+    char *delegated_hostname;
+    if (-1 == asprintf(&delegated_hostname, "%s-delegated", hostname)) {
+        abort();
+    }
+
+    mdns_ip_addr_t addr4, addr6;
+    esp_netif_str_to_ip4("10.0.0.1", &addr4.addr.u_addr.ip4);
+    addr4.addr.type = ESP_IPADDR_TYPE_V4;
+    esp_netif_str_to_ip6("fd11:22::1", &addr6.addr.u_addr.ip6);
+    addr6.addr.type = ESP_IPADDR_TYPE_V6;
+    addr4.next = &addr6;
+    addr6.next = NULL;
+    ESP_ERROR_CHECK( mdns_delegate_hostname_add(delegated_hostname, &addr4) );
+    ESP_ERROR_CHECK( mdns_service_add_for_host("test0", "_http", "_tcp", delegated_hostname, 1234, serviceTxtData, 3) );
+    free(delegated_hostname);
+#endif // CONFIG_MDNS_PUBLISH_DELEGATE_HOST
+
     //add another TXT item
     ESP_ERROR_CHECK( mdns_service_txt_item_set("_http", "_tcp", "path", "/foobar") );
     //change TXT item value
@@ -174,7 +195,7 @@ static void mdns_example_task(void *pvParameters)
     query_mdns_host_with_getaddrinfo("tinytester-lwip.local");
 #endif
 
-    while(1) {
+    while (1) {
         check_button();
         vTaskDelay(50 / portTICK_PERIOD_MS);
     }

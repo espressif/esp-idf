@@ -24,4 +24,9 @@ esp_err_t esp_event_handler_unregister(const char * event_base, int32_t event_id
 
 #define _mdns_udp_pcb_write(tcpip_if, ip_protocol, ip, port, data, len) len
 
+// Task signify mock
+TaskHandle_t xTaskGetCurrentTaskHandle(void);
+void xTaskNotifyGive(TaskHandle_t task);
+BaseType_t xTaskNotifyWait(uint32_t bits_entry_clear, uint32_t bits_exit_clear, uint32_t *value, TickType_t wait_time );
+
 #endif /* ESP32_MOCK_H_ */
