@@ -34,7 +34,7 @@
 extern "C" {
 #endif
 
-//NOTE: These macros are changed on c3 for build. MODIFY these when bringup flash.
+//NOTE: These macros are changed on h2 for build. MODIFY these when bringup flash.
 #define gpspi_flash_ll_get_hw(host_id)  ( ((host_id)==SPI2_HOST) ? &GPSPI2 : ({abort();(spi_dev_t*)0;}) )
 #define gpspi_flash_ll_hw_get_id(dev)   ( ((dev) == (void*)&GPSPI2) ? SPI2_HOST : -1 )
 

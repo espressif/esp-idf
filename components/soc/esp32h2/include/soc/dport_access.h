@@ -18,7 +18,7 @@
 #include <stdint.h>
 #include "esp_attr.h"
 #include "esp_attr.h"
-#include "esp32c3/dport_access.h"
+#include "esp32h2/dport_access.h"
 #include "soc.h"
 #include "uart_reg.h"
 

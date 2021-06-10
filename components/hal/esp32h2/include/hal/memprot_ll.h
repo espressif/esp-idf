@@ -29,7 +29,7 @@ extern "C" {
 #define IRAM_SRAM_START             0x4037C000
 #define DRAM_SRAM_START             0x3FC7C000
 
-/* ICache size is fixed to 16KB on ESP32-C3 */
+/* ICache size is fixed to 16KB on ESP32-H2 */
 #ifndef ICACHE_SIZE
 #define ICACHE_SIZE                 0x4000
 #endif

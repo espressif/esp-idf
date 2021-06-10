@@ -17,7 +17,7 @@
 #include "freertos/semphr.h"
 #include "freertos/timers.h"
 #include "freertos/ringbuf.h"
-#include "esp32c3/rom/ets_sys.h"
+#include "esp32h2/rom/ets_sys.h"
 #include "driver/periph_ctrl.h"
 #include "driver/gpio.h"
 #include "driver/adc.h"
@@ -53,7 +53,7 @@ extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate posi
 
 /**
  * 1. sar_adc1_lock: this mutex lock is to protect the SARADC1 module.
- * 2. sar_adc2_lock: this mutex lock is to protect the SARADC2 module. On C3, it is controlled by the digital controller
+ * 2. sar_adc2_lock: this mutex lock is to protect the SARADC2 module. On H2, it is controlled by the digital controller
  *    and PWDET controller.
  * 3. adc_reg_lock:  this spin lock is to protect the shared registers used by ADC1 / ADC2 single read mode.
  */
@@ -462,7 +462,7 @@ esp_err_t adc_vref_to_gpio(adc_unit_t adc_unit, gpio_num_t gpio)
 
 esp_err_t adc1_config_width(adc_bits_width_t width_bit)
 {
-    //On ESP32C3, the data width is always 12-bits.
+    //On ESP32H2, the data width is always 12-bits.
     if (width_bit != ADC_WIDTH_BIT_12) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -526,7 +526,7 @@ esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten)
 
 esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *raw_out)
 {
-    //On ESP32C3, the data width is always 12-bits.
+    //On ESP32H2, the data width is always 12-bits.
     if (width_bit != ADC_WIDTH_BIT_12) {
         return ESP_ERR_INVALID_ARG;
     }

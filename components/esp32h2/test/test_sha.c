@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "esp_types.h"
-#include "esp32c3/clk.h"
+#include "esp32h2/clk.h"
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "esp_heap_caps.h"

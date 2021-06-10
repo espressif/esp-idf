@@ -49,17 +49,12 @@ static inline void rtc_cntl_ll_gpio_clear_wakeup_pins(void)
 
 static inline void rtc_cntl_ll_enable_cpu_retention(uint32_t addr)
 {
-    /* write memory address to register */
-    REG_SET_FIELD(APB_CTRL_RETENTION_CTRL_REG, APB_CTRL_RETENTION_LINK_ADDR, (uint32_t)addr);
-    /* Enable clock */
-    REG_SET_BIT(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN);
-    /* Enable retention when cpu sleep enable */
-    REG_SET_BIT(RTC_CNTL_RETENTION_CTRL_REG, RTC_CNTL_RETENTION_EN);
+    // ESP32H2-TODO: IDF-3383
 }
 
 static inline void rtc_cntl_ll_disable_cpu_retention(void)
 {
-    REG_CLR_BIT(RTC_CNTL_RETENTION_CTRL_REG, RTC_CNTL_RETENTION_EN);
+    // ESP32H2-TODO: IDF-3383
 }
 
 #ifdef __cplusplus

@@ -18,46 +18,13 @@ extern "C" {
 #endif
 
 typedef volatile struct {
-    union {
-        struct {
-            uint32_t apb_ctrl_pre_div_cnt: 10;
-            uint32_t apb_ctrl_clk_320m_en:  1;
-            uint32_t clk_en:                1;
-            uint32_t apb_ctrl_rst_tick_cnt: 1;
-            uint32_t reserved13:           19;
-        };
-        uint32_t val;
-    } apb_ctrl_sysclk_conf;
-    union {
-        struct {
-            uint32_t apb_ctrl_xtal_tick_num: 8;
-            uint32_t apb_ctrl_ck8m_tick_num: 8;
-            uint32_t apb_ctrl_tick_enable:   1;
-            uint32_t reserved17:            15;
-        };
-        uint32_t val;
-    } apb_ctrl_tick_conf;
-    union {
-        struct {
-            uint32_t clk20_oen:       1;
-            uint32_t clk22_oen:       1;
-            uint32_t clk44_oen:       1;
-            uint32_t clk_bb_oen:      1;
-            uint32_t clk80_oen:       1;
-            uint32_t clk160_oen:      1;
-            uint32_t clk_320m_oen:    1;
-            uint32_t clk_adc_inf_oen: 1;
-            uint32_t clk_dac_cpu_oen: 1;
-            uint32_t clk40x_bb_oen:   1;
-            uint32_t clk_xtal_oen:    1;
-            uint32_t reserved11:     21;
-        };
-        uint32_t val;
-    } apb_ctrl_clk_out_en;
+    uint32_t reserved_0;
+    uint32_t reserved_4;
+    uint32_t reserved_8;
     uint32_t wifi_bb_cfg;                               /**/
     uint32_t wifi_bb_cfg_2;                             /**/
-    uint32_t wifi_clk_en;                               /**/
-    uint32_t wifi_rst_en;                               /**/
+    uint32_t reserved_14;
+    uint32_t reserved_18;
     union {
         struct {
             uint32_t peri_io_swap: 8;
@@ -223,20 +190,23 @@ typedef volatile struct {
     uint32_t rnd_data;                                  /**/
     union {
         struct {
-            uint32_t reserved0:               1;
-            uint32_t peri_backup_flow_err:    2;
-            uint32_t reserved3:               1;
-            uint32_t peri_backup_burst_limit: 5;
-            uint32_t peri_backup_tout_thres: 10;
-            uint32_t peri_backup_size:       10;
-            uint32_t peri_backup_start:       1;
-            uint32_t peri_backup_to_mem:      1;
-            uint32_t peri_backup_ena:         1;
+            uint32_t peri_backup_flow_err:      3;
+            uint32_t peri_backup_addr_map_mode: 1;
+            uint32_t peri_backup_burst_limit:   5;
+            uint32_t peri_backup_tout_thres:   10;
+            uint32_t peri_backup_size:         10;
+            uint32_t peri_backup_start:         1;
+            uint32_t peri_backup_to_mem:        1;
+            uint32_t peri_backup_ena:           1;
         };
         uint32_t val;
     } peri_backup_config;
-    uint32_t peri_backup_apb_addr;                      /**/
-    uint32_t peri_backup_mem_addr;                      /**/
+    uint32_t peri_backup_apb_addr;                        /**/
+    uint32_t peri_backup_mem_addr;                        /**/
+    uint32_t peri_backup_map0;                            /**/
+    uint32_t peri_backup_map1;                            /**/
+    uint32_t peri_backup_map2;                            /**/
+    uint32_t peri_backup_map3;                            /**/
     union {
         struct {
             uint32_t peri_backup_done:         1;
@@ -261,7 +231,6 @@ typedef volatile struct {
         };
         uint32_t val;
     } peri_backup_int_ena;
-    uint32_t reserved_cc;
     union {
         struct {
             uint32_t peri_backup_done:         1;
@@ -270,10 +239,13 @@ typedef volatile struct {
         };
         uint32_t val;
     } peri_backup_int_clr;
-    uint32_t reserved_d4;
-    uint32_t reserved_d8;
-    uint32_t reserved_dc;
-    uint32_t reserved_e0;
+    union {
+        struct {
+            uint32_t clk_en:     1;
+            uint32_t reserved1: 31;
+        };
+        uint32_t val;
+    } apb_ctrlclk_conf;
     uint32_t reserved_e4;
     uint32_t reserved_e8;
     uint32_t reserved_ec;
@@ -472,7 +444,7 @@ typedef volatile struct {
     uint32_t reserved_3f0;
     uint32_t reserved_3f4;
     uint32_t reserved_3f8;
-    uint32_t apb_ctrl_date;                             /*Version control*/
+    uint32_t apb_ctrl_date;                               /*Version control*/
 } syscon_dev_t;
 extern syscon_dev_t SYSCON;
 #ifdef __cplusplus

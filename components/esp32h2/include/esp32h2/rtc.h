@@ -21,7 +21,7 @@ extern "C" {
 #endif
 
 /**
- * @file esp32c3/rtc.h
+ * @file esp32h2/rtc.h
  *
  * This file contains declarations of rtc related functions.
  */

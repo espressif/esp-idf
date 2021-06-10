@@ -69,15 +69,21 @@ extern "C" {
  * Valid if RTC_CNTL_DBG_ATTEN is 0.
  */
 #define RTC_CNTL_DBIAS_SLP  0 //sleep dig_dbias & rtc_dbias
-#define RTC_CNTL_DBIAS_0V90 13 //digital voltage
-#define RTC_CNTL_DBIAS_0V95 16
-#define RTC_CNTL_DBIAS_1V00 18
-#define RTC_CNTL_DBIAS_1V05 20
-#define RTC_CNTL_DBIAS_1V10 23
-#define RTC_CNTL_DBIAS_1V15 25
-#define RTC_CNTL_DBIAS_1V20 28
-#define RTC_CNTL_DBIAS_1V25 30
-#define RTC_CNTL_DBIAS_1V30 31 //voltage is about 1.34v in fact
+#define RTC_CNTL_DBIAS_1V00  0
+#define RTC_CNTL_DBIAS_1V05  4
+#define RTC_CNTL_DBIAS_1V10  5
+#define RTC_CNTL_DBIAS_1V15  6
+#define RTC_CNTL_DBIAS_1V20  7 
+/* The value of 1V00 can be adjusted between 0~3*/
+
+#define RTC_CNTL_DIG_DBIAS_0V85  0
+#define RTC_CNTL_DIG_DBIAS_0V90  1
+#define RTC_CNTL_DIG_DBIAS_0V95  2
+#define RTC_CNTL_DIG_DBIAS_1V00  3
+#define RTC_CNTL_DIG_DBIAS_1V05  4
+#define RTC_CNTL_DIG_DBIAS_1V10  5
+#define RTC_CNTL_DIG_DBIAS_1V15  6
+#define RTC_CNTL_DIG_DBIAS_1V20  7
 
 #define DELAY_FAST_CLK_SWITCH           3
 #define DELAY_SLOW_CLK_SWITCH           300
@@ -121,15 +127,6 @@ set sleep_init default param
 #define RTC_CNTL_PD_CUR_MONITOR_DEFAULT  0
 #define RTC_CNTL_PD_CUR_SLEEP_DEFAULT  1
 #define RTC_CNTL_DG_VDD_DRV_B_SLP_DEFAULT 254
-
-/*
-The follow value is used to get a reasonable rtc voltage dbias value according to digital dbias & some other value
-storing in efuse (based on ATE 5k ECO3 chips)
-*/
-#define K_RTC_MID_MUL10000 215
-#define K_DIG_MID_MUL10000 213
-#define V_RTC_MID_MUL10000  10800
-#define V_DIG_MID_MUL10000  10860
 
 /**
  * @brief Possible main XTAL frequency values.

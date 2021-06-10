@@ -91,7 +91,7 @@ SOC_RESERVE_MEMORY_REGION((intptr_t)&_iram_start - I_D_OFFSET, (intptr_t)&_iram_
 
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
 /* We use _rtc_force_slow_end not _rtc_noinit_end here, as rtc "fast" memory ends up in RTC SLOW
-   region on C3, no differentiation. And _rtc_force_slow_end is the end of all the static RTC sections.
+   region on H2, no differentiation. And _rtc_force_slow_end is the end of all the static RTC sections.
 */
 SOC_RESERVE_MEMORY_REGION(SOC_RTC_DRAM_LOW, (intptr_t)&_rtc_force_slow_end, rtcram_data);
 #endif

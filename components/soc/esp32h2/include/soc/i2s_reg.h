@@ -124,6 +124,18 @@ extern "C" {
 #define I2S_RX_DONE_INT_CLR_S  0
 
 #define I2S_RX_CONF_REG(i)          (REG_I2S_BASE(i) + 0x0020)
+/* I2S_RX_PDM_SINC_DSR_16_EN : R/W ;bitpos:[22] ;default: 1'h0 ; */
+/*description: */
+#define I2S_RX_PDM_SINC_DSR_16_EN  (BIT(22))
+#define I2S_RX_PDM_SINC_DSR_16_EN_M  (BIT(22))
+#define I2S_RX_PDM_SINC_DSR_16_EN_V  0x1
+#define I2S_RX_PDM_SINC_DSR_16_EN_S  22
+/* I2S_RX_PDM2PCM_EN : R/W ;bitpos:[21] ;default: 1'h0 ; */
+/*description: 1: Enable PDM2PCM RX mode. 0: DIsable.*/
+#define I2S_RX_PDM2PCM_EN  (BIT(21))
+#define I2S_RX_PDM2PCM_EN_M  (BIT(21))
+#define I2S_RX_PDM2PCM_EN_V  0x1
+#define I2S_RX_PDM2PCM_EN_S  21
 /* I2S_RX_PDM_EN : R/W ;bitpos:[20] ;default: 1'h0 ; */
 /*description: 1: Enable I2S PDM Rx mode . 0: Disable.*/
 #define I2S_RX_PDM_EN  (BIT(20))
@@ -935,6 +947,27 @@ T12_5[2:0]).*/
 #define I2S_RX_WS_OUT_DM_M  ((I2S_RX_WS_OUT_DM_V)<<(I2S_RX_WS_OUT_DM_S))
 #define I2S_RX_WS_OUT_DM_V  0x3
 #define I2S_RX_WS_OUT_DM_S  16
+/* I2S_RX_SD3_IN_DM : R/W ;bitpos:[13:12] ;default: 2'h0 ; */
+/*description: The delay mode of I2S Rx SD3 input signal. 0: bypass. 1: delay
+ by pos edge.  2: delay by neg edge. 3: not used.*/
+#define I2S_RX_SD3_IN_DM  0x00000003
+#define I2S_RX_SD3_IN_DM_M  ((I2S_RX_SD3_IN_DM_V)<<(I2S_RX_SD3_IN_DM_S))
+#define I2S_RX_SD3_IN_DM_V  0x3
+#define I2S_RX_SD3_IN_DM_S  12
+/* I2S_RX_SD2_IN_DM : R/W ;bitpos:[9:8] ;default: 2'h0 ; */
+/*description: The delay mode of I2S Rx SD2 input signal. 0: bypass. 1: delay
+ by pos edge.  2: delay by neg edge. 3: not used.*/
+#define I2S_RX_SD2_IN_DM  0x00000003
+#define I2S_RX_SD2_IN_DM_M  ((I2S_RX_SD2_IN_DM_V)<<(I2S_RX_SD2_IN_DM_S))
+#define I2S_RX_SD2_IN_DM_V  0x3
+#define I2S_RX_SD2_IN_DM_S  8
+/* I2S_RX_SD1_IN_DM : R/W ;bitpos:[5:4] ;default: 2'h0 ; */
+/*description: The delay mode of I2S Rx SD1 input signal. 0: bypass. 1: delay
+ by pos edge.  2: delay by neg edge. 3: not used.*/
+#define I2S_RX_SD1_IN_DM  0x00000003
+#define I2S_RX_SD1_IN_DM_M  ((I2S_RX_SD1_IN_DM_V)<<(I2S_RX_SD1_IN_DM_S))
+#define I2S_RX_SD1_IN_DM_V  0x3
+#define I2S_RX_SD1_IN_DM_S  4
 /* I2S_RX_SD_IN_DM : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
 /*description: The delay mode of I2S Rx SD input signal. 0: bypass. 1: delay
  by pos edge.  2: delay by neg edge. 3: not used.*/

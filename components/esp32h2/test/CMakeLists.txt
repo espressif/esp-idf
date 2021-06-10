@@ -1,4 +1,4 @@
-if(IDF_TARGET STREQUAL "esp32c3")
+if(IDF_TARGET STREQUAL "esp32h2")
     idf_component_register(SRC_DIRS .
                         INCLUDE_DIRS . ${CMAKE_CURRENT_BINARY_DIR}
                         REQUIRES unity test_utils esp_common mbedtls

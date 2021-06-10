@@ -126,7 +126,7 @@ static inline void spimem_flash_ll_resume(spi_mem_dev_t *dev)
 }
 
 /**
- * Initialize auto suspend mode, and esp32c3 doesn't support disable auto-suspend.
+ * Initialize auto suspend mode, and esp32h2 doesn't support disable auto-suspend.
  *
  * @param dev Beginning address of the peripheral registers.
  * @param auto_sus Enable/disable Flash Auto-Suspend.

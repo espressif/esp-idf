@@ -23,9 +23,9 @@
 #include "soc/periph_defs.h"
 #include "esp_intr_alloc.h"
 #include "hal/memprot_ll.h"
-#include "esp32c3/memprot.h"
+#include "esp32h2/memprot.h"
 #include "riscv/interrupt.h"
-#include "esp32c3/rom/ets_sys.h"
+#include "esp32h2/rom/ets_sys.h"
 #include "esp_log.h"
 
 extern int _iram_text_end;

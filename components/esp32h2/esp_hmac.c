@@ -14,8 +14,8 @@
 
 #include <string.h>
 #include "driver/periph_ctrl.h"
-#include "esp32c3/rom/hmac.h"
-#include "esp32c3/rom/ets_sys.h"
+#include "esp32h2/rom/hmac.h"
+#include "esp32h2/rom/ets_sys.h"
 #include "esp_hmac.h"
 #include "esp_crypto_lock.h"
 
@@ -30,13 +30,13 @@
  * @note This function does not check the data length, it is the responsibility of the other functions in this
  * module to make sure that \c data_len is at most SHA256_BLOCK_SZ - 1 so the padding fits in.
  * Otherwise, this function has undefined behavior.
- * Note however, that for the actual HMAC implementation on ESP32C3, the length also needs to be applied at the end
+ * Note however, that for the actual HMAC implementation on ESP32H2, the length also needs to be applied at the end
  * of the block. This function alone deosn't do that.
  */
 static void write_and_padd(uint8_t *block, const uint8_t *data, uint16_t data_len)
 {
     memcpy(block, data, data_len);
-    // Apply a one bit, followed by zero bits (refer to the ESP32C3 TRM).
+    // Apply a one bit, followed by zero bits (refer to the ESP32H2 TRM).
     block[data_len] = 0x80;
     bzero(block + data_len + 1, SHA256_BLOCK_SZ - data_len - 1);
 }

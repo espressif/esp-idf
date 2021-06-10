@@ -444,7 +444,7 @@ static inline void adc_ll_digi_reset(void)
 static inline void adc_ll_pwdet_set_cct(uint32_t cct)
 {
     /* Capacitor tuning of the PA power monitor. cct set to the same value with PHY. */
-    RTCCNTL.sensor_ctrl.sar2_pwdet_cct = cct;
+    // RTCCNTL.sensor_ctrl.sar2_pwdet_cct = cct; // ESP32H2-TODO
 }
 
 /**
@@ -456,7 +456,8 @@ static inline void adc_ll_pwdet_set_cct(uint32_t cct)
 static inline uint32_t adc_ll_pwdet_get_cct(void)
 {
     /* Capacitor tuning of the PA power monitor. cct set to the same value with PHY. */
-    return RTCCNTL.sensor_ctrl.sar2_pwdet_cct;
+    // return RTCCNTL.sensor_ctrl.sar2_pwdet_cct;
+    return 0; // ESP32H2-TODO
 }
 
 /**
@@ -684,45 +685,7 @@ static inline void adc_ll_set_calibration_param(adc_ll_num_t adc_n, uint32_t par
  */
 static inline void adc_ll_vref_output(adc_ll_num_t adc, adc_channel_t channel, bool en)
 {
-    if (en) {
-        REG_SET_FIELD(RTC_CNTL_SENSOR_CTRL_REG, RTC_CNTL_FORCE_XPD_SAR, 3);
-        SET_PERI_REG_MASK(RTC_CNTL_REG, RTC_CNTL_REGULATOR_FORCE_PU);
-
-        REG_SET_FIELD(APB_SARADC_APB_ADC_CLKM_CONF_REG, APB_SARADC_CLK_SEL, 2);
-        SET_PERI_REG_MASK(APB_SARADC_APB_ADC_CLKM_CONF_REG, APB_SARADC_CLK_EN);
-        SET_PERI_REG_MASK(APB_SARADC_APB_ADC_ARB_CTRL_REG, APB_SARADC_ADC_ARB_GRANT_FORCE);
-        SET_PERI_REG_MASK(APB_SARADC_APB_ADC_ARB_CTRL_REG, APB_SARADC_ADC_ARB_APB_FORCE);
-        APB_SARADC.sar_patt_tab[0].sar_patt_tab1 = 0xFFFFFF;
-        APB_SARADC.sar_patt_tab[1].sar_patt_tab1 = 0xFFFFFF;
-        APB_SARADC.onetime_sample.adc1_onetime_sample = 1;
-        APB_SARADC.onetime_sample.onetime_channel = channel;
-        SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_PU);
-        if (adc == ADC_NUM_1) {
-            /* Config test mux to route v_ref to ADC1 Channels */
-            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC1_ENCAL_REF_ADDR, 1);
-            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, 1);
-            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_TSENS_ADDR, 0);
-            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_RTC_ADDR, 1);
-        } else {
-            /* Config test mux to route v_ref to ADC2 Channels */
-            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC2_ENCAL_REF_ADDR, 1);
-            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, 0);
-            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_TSENS_ADDR, 0);
-            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_RTC_ADDR, 0);
-        }
-    } else {
-        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC2_ENCAL_REF_ADDR, 0);
-        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC1_ENCAL_REF_ADDR, 0);
-        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, 0);
-        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_RTC_ADDR, 0);
-        APB_SARADC.onetime_sample.adc1_onetime_sample = 0;
-        APB_SARADC.onetime_sample.onetime_channel = 0xf;
-        REG_SET_FIELD(RTC_CNTL_SENSOR_CTRL_REG, RTC_CNTL_FORCE_XPD_SAR, 0);
-        REG_SET_FIELD(APB_SARADC_APB_ADC_CLKM_CONF_REG, APB_SARADC_CLK_SEL, 0);
-        CLEAR_PERI_REG_MASK(APB_SARADC_APB_ADC_CLKM_CONF_REG, APB_SARADC_CLK_EN);
-        CLEAR_PERI_REG_MASK(APB_SARADC_APB_ADC_ARB_CTRL_REG, APB_SARADC_ADC_ARB_GRANT_FORCE);
-        CLEAR_PERI_REG_MASK(APB_SARADC_APB_ADC_ARB_CTRL_REG, APB_SARADC_ADC_ARB_APB_FORCE);
-    }
+  // ESP32H2-TODO
 }
 
 /*---------------------------------------------------------------
@@ -786,13 +749,13 @@ static inline void adc_ll_onetime_sample_enable(adc_ll_num_t adc_n, bool enable)
 
 static inline uint32_t adc_ll_adc1_read(void)
 {
-    //On ESP32C3, valid data width is 12-bit
+    //On ESP32H2, valid data width is 12-bit
     return (APB_SARADC.apb_saradc1_data_status.adc1_data & 0xfff);
 }
 
 static inline uint32_t adc_ll_adc2_read(void)
 {
-    //On ESP32C3, valid data width is 12-bit
+    //On ESP32H2, valid data width is 12-bit
     return (APB_SARADC.apb_saradc2_data_status.adc2_data & 0xfff);
 }
 

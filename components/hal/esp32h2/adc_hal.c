@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// The HAL layer for ADC (ESP32-C3 specific part)
+// The HAL layer for ADC (ESP32-H2 specific part)
 
 #include <string.h>
 #include "soc/soc_caps.h"
@@ -58,7 +58,7 @@ static void adc_hal_digi_clk_config(void)
 
 void adc_hal_digi_controller_config(const adc_digi_config_t *cfg)
 {
-    //only one pattern table is supported on C3, but LL still needs one argument.
+    //only one pattern table is supported on H2, but LL still needs one argument.
     const int pattern_both = 0;
 
     if (cfg->adc_pattern_len) {
@@ -84,7 +84,7 @@ void adc_hal_digi_controller_config(const adc_digi_config_t *cfg)
 
 static void filter_update(adc_digi_filter_idx_t idx)
 {
-    //ESP32-C3 has no enable bit, the filter will be enabled when the filter channel is configured
+    //ESP32-H2 has no enable bit, the filter will be enabled when the filter channel is configured
     if (s_filter_enabled[idx]) {
         adc_ll_digi_filter_set_factor(idx, &s_filter[idx]);
     } else {
@@ -123,7 +123,7 @@ void adc_hal_digi_filter_enable(adc_digi_filter_idx_t filter_idx, bool enable)
 
 static void update_monitor(adc_digi_monitor_idx_t idx)
 {
-    //ESP32-C3 has no enable bit, the monitor will be enabled when the monitor channel is configured
+    //ESP32-H2 has no enable bit, the monitor will be enabled when the monitor channel is configured
     if (s_monitor_enabled[idx]) {
         adc_ll_digi_monitor_set_mode(idx, &s_monitor_config[idx]);
     } else {

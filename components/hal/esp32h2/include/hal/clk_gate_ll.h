@@ -68,18 +68,6 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
         return SYSTEM_CRYPTO_HMAC_CLK_EN;
     case PERIPH_DS_MODULE:
         return SYSTEM_CRYPTO_DS_CLK_EN;
-    case PERIPH_RNG_MODULE:
-        return SYSTEM_WIFI_CLK_RNG_EN;
-    case PERIPH_WIFI_MODULE:
-        return SYSTEM_WIFI_CLK_WIFI_EN_M;
-    case PERIPH_BT_MODULE:
-        return SYSTEM_WIFI_CLK_BT_EN_M;
-    case PERIPH_WIFI_BT_COMMON_MODULE:
-        return SYSTEM_WIFI_CLK_WIFI_BT_COMMON_M;
-    case PERIPH_BT_BASEBAND_MODULE:
-        return SYSTEM_BT_BASEBAND_EN;
-    case PERIPH_BT_LC_MODULE:
-        return SYSTEM_BT_LC_EN;
     default:
         return 0;
     }
@@ -157,14 +145,6 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
 static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
 {
     switch (periph) {
-    case PERIPH_RNG_MODULE:
-    case PERIPH_WIFI_MODULE:
-    case PERIPH_BT_MODULE:
-    case PERIPH_WIFI_BT_COMMON_MODULE:
-    case PERIPH_BT_BASEBAND_MODULE:
-    case PERIPH_BT_LC_MODULE:
-         return SYSTEM_WIFI_CLK_EN_REG;
-
     case PERIPH_HMAC_MODULE:
     case PERIPH_DS_MODULE:
     case PERIPH_AES_MODULE:
@@ -180,14 +160,6 @@ static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
 static uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
 {
     switch (periph) {
-    case PERIPH_RNG_MODULE:
-    case PERIPH_WIFI_MODULE:
-    case PERIPH_BT_MODULE:
-    case PERIPH_WIFI_BT_COMMON_MODULE:
-    case PERIPH_BT_BASEBAND_MODULE:
-    case PERIPH_BT_LC_MODULE:
-        return SYSTEM_WIFI_RST_EN_REG;
-
     case PERIPH_HMAC_MODULE:
     case PERIPH_DS_MODULE:
     case PERIPH_AES_MODULE:
@@ -212,18 +184,6 @@ static inline void periph_ll_disable_clk_set_rst(periph_module_t periph)
     DPORT_SET_PERI_REG_MASK(periph_ll_get_rst_en_reg(periph), periph_ll_get_rst_en_mask(periph, false));
 }
 
-static inline void IRAM_ATTR periph_ll_wifi_bt_module_enable_clk_clear_rst(void)
-{
-    DPORT_SET_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_WIFI_BT_COMMON_M);
-    DPORT_CLEAR_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG, 0);
-}
-
-static inline void IRAM_ATTR periph_ll_wifi_bt_module_disable_clk_set_rst(void)
-{
-    DPORT_CLEAR_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_WIFI_BT_COMMON_M);
-    DPORT_SET_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG, 0);
-}
-
 static inline void periph_ll_reset(periph_module_t periph)
 {
     DPORT_SET_PERI_REG_MASK(periph_ll_get_rst_en_reg(periph), periph_ll_get_rst_en_mask(periph, false));
@@ -236,17 +196,6 @@ static inline bool IRAM_ATTR periph_ll_periph_enabled(periph_module_t periph)
            DPORT_REG_GET_BIT(periph_ll_get_clk_en_reg(periph), periph_ll_get_clk_en_mask(periph)) != 0;
 }
 
-static inline void periph_ll_wifi_module_enable_clk_clear_rst(void)
-{
-    DPORT_SET_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_WIFI_EN_M);
-    DPORT_CLEAR_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG, 0);
-}
-
-static inline void periph_ll_wifi_module_disable_clk_set_rst(void)
-{
-    DPORT_CLEAR_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_WIFI_EN_M);
-    DPORT_SET_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG, 0);
-}
 #ifdef __cplusplus
 }
 #endif

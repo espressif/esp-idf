@@ -83,7 +83,9 @@ typedef volatile struct {
             uint32_t rx_bit_order:          1;       /*I2S Rx bit endian. 1:small endian  the LSB is received first. 0:big endian  the MSB is received first.*/
             uint32_t rx_tdm_en:             1;       /*1: Enable I2S TDM Rx mode . 0: Disable.*/
             uint32_t rx_pdm_en:             1;       /*1: Enable I2S PDM Rx mode . 0: Disable.*/
-            uint32_t reserved23:            11;       /*Reserve*/
+            uint32_t rx_pdm2pcm_en:         1;       /*1: Enable PDM2PCM RX mode. 0: DIsable.*/
+            uint32_t rx_sinc_dsr_16_en:     1;
+            uint32_t reserved23:            9;       /*Reserve*/
         };
         uint32_t val;
     } rx_conf;
@@ -136,8 +138,7 @@ typedef volatile struct {
             uint32_t tx_half_sample_bits: 6;         /*I2S Tx half sample bits -1.*/
             uint32_t tx_tdm_chan_bits:    5;         /*The Tx bit number for each channel minus 1in TDM mode.*/
             uint32_t tx_msb_shift:        1;         /*Set this bit to enable transmitter in Phillips standard mode*/
-            uint32_t tx_bck_no_dly:       1;         /*1: BCK is not delayed to generate pos/neg edge in master mode. 0: BCK is delayed to generate pos/neg edge in master mode.*/
-            uint32_t reserved31:          1;               /* Reserved*/
+            uint32_t reserved30:          2;         /*Reserved*/
         };
         uint32_t val;
     } tx_conf1;
@@ -263,7 +264,13 @@ typedef volatile struct {
     union {
         struct {
             uint32_t rx_sd_in_dm:   2;               /*The delay mode of I2S Rx SD input signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
-            uint32_t reserved2                     :    14;  /* Reserved*/
+            uint32_t reserved2:     2;
+            uint32_t rx_sd1_in_dm:  2;               /*The delay mode of I2S Rx SD1 input signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
+            uint32_t reserved6:     2;
+            uint32_t rx_sd2_in_dm:  2;               /*The delay mode of I2S Rx SD2 input signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
+            uint32_t reserved10:    2;
+            uint32_t rx_sd3_in_dm:  2;               /*The delay mode of I2S Rx SD3 input signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
+            uint32_t reserved14:    2;
             uint32_t rx_ws_out_dm:  2;               /*The delay mode of I2S Rx WS output signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
             uint32_t reserved18:    2;
             uint32_t rx_bck_out_dm: 2;               /*The delay mode of I2S Rx BCK output signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
@@ -277,18 +284,16 @@ typedef volatile struct {
     } rx_timing;
     union {
         struct {
-            uint32_t tx_sd_out_dm                  :    2;  /*The delay mode of I2S TX SD output signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
-            uint32_t reserved2                     :    2;  /* Reserved*/
-            uint32_t tx_sd1_out_dm                 :    2;  /*The delay mode of I2S TX SD1 output signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
-            uint32_t reserved6                     :    10;  /* Reserved*/
-            uint32_t tx_ws_out_dm                  :    2;  /*The delay mode of I2S TX WS output signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
-            uint32_t reserved18                    :    2;  /* Reserved*/
-            uint32_t tx_bck_out_dm                 :    2;  /*The delay mode of I2S TX BCK output signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
-            uint32_t reserved22                    :    2;  /* Reserved*/
-            uint32_t tx_ws_in_dm                   :    2;  /*The delay mode of I2S TX WS input signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
-            uint32_t reserved26                    :    2;  /* Reserved*/
-            uint32_t tx_bck_in_dm                  :    2;  /*The delay mode of I2S TX BCK input signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
-            uint32_t reserved30                    :    2;  /* Reserved*/
+            uint32_t tx_sd_out_dm:  2;               /*The delay mode of I2S Tx SD output signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
+            uint32_t reserved2:    14;               /*Reserved*/
+            uint32_t tx_ws_out_dm:  2;               /*The delay mode of I2S Tx WS output signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
+            uint32_t reserved18:    2;
+            uint32_t tx_bck_out_dm: 2;               /*The delay mode of I2S Tx BCK output signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
+            uint32_t reserved22:    2;
+            uint32_t tx_ws_in_dm:   2;               /*The delay mode of I2S Tx WS input signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
+            uint32_t reserved26:    2;
+            uint32_t tx_bck_in_dm:  2;               /*The delay mode of I2S Tx BCK input signal. 0: bypass. 1: delay by pos edge.  2: delay by neg edge. 3: not used.*/
+            uint32_t reserved30:    2;
         };
         uint32_t val;
     } tx_timing;
@@ -329,6 +334,7 @@ typedef volatile struct {
     } date;
 } i2s_dev_t;
 extern i2s_dev_t I2S0;
+
 #ifdef __cplusplus
 }
 #endif

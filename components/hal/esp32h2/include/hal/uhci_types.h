@@ -15,7 +15,7 @@
 
 
 // Though the UHCI driver hasn't been published, some types are defined here
-// for users to develop over the HAL. See example: controller_hci_uart_esp32c3
+// for users to develop over the HAL. See example: controller_hci_uart_esp32h2
 
 #pragma once
 

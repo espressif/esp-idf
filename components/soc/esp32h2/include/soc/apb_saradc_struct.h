@@ -76,7 +76,8 @@ typedef volatile struct {
     } sar_patt_tab[2];
     union {
         struct {
-            uint32_t reserved0:             23;
+            uint32_t reserved0:             22;
+            uint32_t onetime_en_test:        1;
             uint32_t onetime_atten:          2;
             uint32_t onetime_channel:        4;
             uint32_t onetime_start:          1;
@@ -148,7 +149,8 @@ typedef volatile struct {
         struct {
             uint32_t reserved0:   27;
             uint32_t thres_all_en: 1;
-            uint32_t reserved28:   2;
+            uint32_t thres3_en:    1;
+            uint32_t thres2_en:    1;
             uint32_t thres1_en:    1;
             uint32_t thres0_en:    1;
         };

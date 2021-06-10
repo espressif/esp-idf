@@ -18,7 +18,7 @@
  * See readme.md in soc/include/hal/readme.md
  ******************************************************************************/
 
-// The LL layer for ESP32-C3 GPIO register operations
+// The LL layer for ESP32-H2 GPIO register operations
 
 #pragma once
 
@@ -125,7 +125,7 @@ static inline void gpio_ll_get_intr_status(gpio_dev_t *hw, uint32_t core_id, uin
   */
 static inline void gpio_ll_get_intr_status_high(gpio_dev_t *hw, uint32_t core_id, uint32_t *status)
 {
-    *status = 0; // Less than 32 GPIOs in ESP32-C3
+    *status = 0; // Less than 32 GPIOs in ESP32-H2
 }
 
 /**

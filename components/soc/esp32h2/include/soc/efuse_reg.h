@@ -767,7 +767,7 @@ extern "C" {
 #define EFUSE_SYS_DATA_PART0_0_V  0xFF
 #define EFUSE_SYS_DATA_PART0_0_S  25
 /* EFUSE_PKG_VERSION : RO ;bitpos:[23:21] ;default: 3'h0 ; */
-/*description: Package version 0:ESP32-C3 */
+/*description: Package version 0:ESP32-H2 */
 #define EFUSE_PKG_VERSION  0x00000007
 #define EFUSE_PKG_VERSION_M  ((EFUSE_PKG_VERSION_V)<<(EFUSE_PKG_VERSION_S))
 #define EFUSE_PKG_VERSION_V  0x7

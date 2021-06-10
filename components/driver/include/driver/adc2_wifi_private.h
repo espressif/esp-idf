@@ -35,7 +35,7 @@ esp_err_t adc2_wifi_acquire(void);
  */
 esp_err_t adc2_wifi_release(void);
 
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
 /**
  * @brief This API help ADC2 calibration constructor be linked.
  *

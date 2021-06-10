@@ -347,7 +347,7 @@ static inline void twai_ll_set_enabled_intrs(twai_dev_t *hw, uint32_t intr_mask)
  * @param triple_sampling Triple Sampling enable/disable
  *
  * @note Must be called in reset mode
- * @note ESP32C3 brp can be any even number between 2 to 32768
+ * @note ESP32H2 brp can be any even number between 2 to 32768
  */
 static inline void twai_ll_set_bus_timing(twai_dev_t *hw, uint32_t brp, uint32_t sjw, uint32_t tseg1, uint32_t tseg2, bool triple_sampling)
 {

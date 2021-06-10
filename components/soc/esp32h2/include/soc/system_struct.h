@@ -58,134 +58,6 @@ typedef volatile struct {
     } mem_pd_mask;
     union {
         struct {
-            uint32_t reg_timers_clk_en             :    1;  /*reg_timers_clk_en*/
-            uint32_t reg_spi01_clk_en              :    1;  /*reg_spi01_clk_en*/
-            uint32_t reg_uart_clk_en               :    1;  /*reg_uart_clk_en*/
-            uint32_t reg_wdg_clk_en                :    1;  /*reg_wdg_clk_en*/
-            uint32_t reg_i2s0_clk_en               :    1;  /*reg_i2s0_clk_en*/
-            uint32_t reg_uart1_clk_en              :    1;  /*reg_uart1_clk_en*/
-            uint32_t reg_spi2_clk_en               :    1;  /*reg_spi2_clk_en*/
-            uint32_t reg_i2c_ext0_clk_en           :    1;  /*reg_i2c_ext0_clk_en*/
-            uint32_t reg_uhci0_clk_en              :    1;  /*reg_uhci0_clk_en*/
-            uint32_t reg_rmt_clk_en                :    1;  /*reg_rmt_clk_en*/
-            uint32_t reg_pcnt_clk_en               :    1;  /*reg_pcnt_clk_en*/
-            uint32_t reg_ledc_clk_en               :    1;  /*reg_ledc_clk_en*/
-            uint32_t reg_uhci1_clk_en              :    1;  /*reg_uhci1_clk_en*/
-            uint32_t reg_timergroup_clk_en         :    1;  /*reg_timergroup_clk_en*/
-            uint32_t reg_efuse_clk_en              :    1;  /*reg_efuse_clk_en*/
-            uint32_t reg_timergroup1_clk_en        :    1;  /*reg_timergroup1_clk_en*/
-            uint32_t reg_spi3_clk_en               :    1;  /*reg_spi3_clk_en*/
-            uint32_t reg_pwm0_clk_en               :    1;  /*reg_pwm0_clk_en*/
-            uint32_t reg_i2c_ext1_clk_en           :    1;  /*reg_i2c_ext1_clk_en*/
-            uint32_t reg_can_clk_en                :    1;  /*reg_can_clk_en*/
-            uint32_t reg_pwm1_clk_en               :    1;  /*reg_pwm1_clk_en*/
-            uint32_t reg_i2s1_clk_en               :    1;  /*reg_i2s1_clk_en*/
-            uint32_t reg_spi2_dma_clk_en           :    1;  /*reg_spi2_dma_clk_en*/
-            uint32_t reg_usb_device_clk_en         :    1;  /*reg_usb_device_clk_en*/
-            uint32_t reg_uart_mem_clk_en           :    1;  /*reg_uart_mem_clk_en*/
-            uint32_t reg_pwm2_clk_en               :    1;  /*reg_pwm2_clk_en*/
-            uint32_t reg_pwm3_clk_en               :    1;  /*reg_pwm3_clk_en*/
-            uint32_t reg_spi3_dma_clk_en           :    1;  /*reg_spi3_dma_clk_en*/
-            uint32_t reg_apb_saradc_clk_en         :    1;  /*reg_apb_saradc_clk_en*/
-            uint32_t reg_systimer_clk_en           :    1;  /*reg_systimer_clk_en*/
-            uint32_t reg_adc2_arb_clk_en           :    1;  /*reg_adc2_arb_clk_en*/
-            uint32_t reg_spi4_clk_en               :    1;  /*reg_spi4_clk_en*/
-        };
-        uint32_t val;
-    } perip_clk_en0;
-    union {
-        struct {
-            uint32_t reserved0                     :    1;  /*peripheral reset register*/
-            uint32_t reg_crypto_aes_clk_en         :    1;  /*reg_crypto_aes_clk_en*/
-            uint32_t reg_crypto_sha_clk_en         :    1;  /*reg_crypto_sha_clk_en*/
-            uint32_t reg_crypto_rsa_clk_en         :    1;  /*reg_crypto_rsa_clk_en*/
-            uint32_t reg_crypto_ds_clk_en          :    1;  /*reg_crypto_ds_clk_en*/
-            uint32_t reg_crypto_hmac_clk_en        :    1;  /*reg_crypto_hmac_clk_en*/
-            uint32_t reg_dma_clk_en                :    1;  /*reg_dma_clk_en*/
-            uint32_t reg_sdio_host_clk_en          :    1;  /*reg_sdio_host_clk_en*/
-            uint32_t reg_lcd_cam_clk_en            :    1;  /*reg_lcd_cam_clk_en*/
-            uint32_t reg_uart2_clk_en              :    1;  /*reg_uart2_clk_en*/
-            uint32_t reg_tsens_clk_en              :    1;  /*reg_tsens_clk_en*/
-            uint32_t reserved11                    :    21;  /*reserved*/
-        };
-        uint32_t val;
-    } perip_clk_en1;
-    union {
-        struct {
-            uint32_t reg_timers_rst                :    1;  /*reg_timers_rst*/
-            uint32_t reg_spi01_rst                 :    1;  /*reg_spi01_rst*/
-            uint32_t reg_uart_rst                  :    1;  /*reg_uart_rst*/
-            uint32_t reg_wdg_rst                   :    1;  /*reg_wdg_rst*/
-            uint32_t reg_i2s0_rst                  :    1;  /*reg_i2s0_rst*/
-            uint32_t reg_uart1_rst                 :    1;  /*reg_uart1_rst*/
-            uint32_t reg_spi2_rst                  :    1;  /*reg_spi2_rst*/
-            uint32_t reg_i2c_ext0_rst              :    1;  /*reg_i2c_ext0_rst*/
-            uint32_t reg_uhci0_rst                 :    1;  /*reg_uhci0_rst*/
-            uint32_t reg_rmt_rst                   :    1;  /*reg_rmt_rst*/
-            uint32_t reg_pcnt_rst                  :    1;  /*reg_pcnt_rst*/
-            uint32_t reg_ledc_rst                  :    1;  /*reg_ledc_rst*/
-            uint32_t reg_uhci1_rst                 :    1;  /*reg_uhci1_rst*/
-            uint32_t reg_timergroup_rst            :    1;  /*reg_timergroup_rst*/
-            uint32_t reg_efuse_rst                 :    1;  /*reg_efuse_rst*/
-            uint32_t reg_timergroup1_rst           :    1;  /*reg_timergroup1_rst*/
-            uint32_t reg_spi3_rst                  :    1;  /*reg_spi3_rst*/
-            uint32_t reg_pwm0_rst                  :    1;  /*reg_pwm0_rst*/
-            uint32_t reg_i2c_ext1_rst              :    1;  /*reg_i2c_ext1_rst*/
-            uint32_t reg_can_rst                   :    1;  /*reg_can_rst*/
-            uint32_t reg_pwm1_rst                  :    1;  /*reg_pwm1_rst*/
-            uint32_t reg_i2s1_rst                  :    1;  /*reg_i2s1_rst*/
-            uint32_t reg_spi2_dma_rst              :    1;  /*reg_spi2_dma_rst*/
-            uint32_t reg_usb_device_rst            :    1;  /*reg_usb_device_rst*/
-            uint32_t reg_uart_mem_rst              :    1;  /*reg_uart_mem_rst*/
-            uint32_t reg_pwm2_rst                  :    1;  /*reg_pwm2_rst*/
-            uint32_t reg_pwm3_rst                  :    1;  /*reg_pwm3_rst*/
-            uint32_t reg_spi3_dma_rst              :    1;  /*reg_spi3_dma_rst*/
-            uint32_t reg_apb_saradc_rst            :    1;  /*reg_apb_saradc_rst*/
-            uint32_t reg_systimer_rst              :    1;  /*reg_systimer_rst*/
-            uint32_t reg_adc2_arb_rst              :    1;  /*reg_adc2_arb_rst*/
-            uint32_t reg_spi4_rst                  :    1;  /*reg_spi4_rst*/
-        };
-        uint32_t val;
-    } perip_rst_en0;
-    union {
-        struct {
-            uint32_t reserved0                     :    1;  /*reserved*/
-            uint32_t reg_crypto_aes_rst            :    1;  /*reg_crypto_aes_rst*/
-            uint32_t reg_crypto_sha_rst            :    1;  /*reg_crypto_sha_rst*/
-            uint32_t reg_crypto_rsa_rst            :    1;  /*reg_crypto_rsa_rst*/
-            uint32_t reg_crypto_ds_rst             :    1;  /*reg_crypto_ds_rst*/
-            uint32_t reg_crypto_hmac_rst           :    1;  /*reg_crypto_hmac_rst*/
-            uint32_t reg_dma_rst                   :    1;  /*reg_dma_rst*/
-            uint32_t reg_sdio_host_rst             :    1;  /*reg_sdio_host_rst*/
-            uint32_t reg_lcd_cam_rst               :    1;  /*reg_lcd_cam_rst*/
-            uint32_t reg_uart2_rst                 :    1;  /*reg_uart2_rst*/
-            uint32_t reg_tsens_rst                 :    1;  /*reg_tsens_rst*/
-            uint32_t reserved11                    :    21;  /*reserved*/
-        };
-        uint32_t val;
-    } perip_rst_en1;
-    union {
-        struct {
-            uint32_t reg_bt_lpck_div_num           :    12;  /*reg_bt_lpck_div_num*/
-            uint32_t reserved12                    :    20;  /*reserved*/
-        };
-        uint32_t val;
-    } bt_lpck_div_int;
-    union {
-        struct {
-            uint32_t reg_bt_lpck_div_b             :    12;  /*reg_bt_lpck_div_b*/
-            uint32_t reg_bt_lpck_div_a             :    12;  /*reg_bt_lpck_div_a*/
-            uint32_t reg_lpclk_sel_rtc_slow        :    1;  /*reg_lpclk_sel_rtc_slow*/
-            uint32_t reg_lpclk_sel_8m              :    1;  /*reg_lpclk_sel_8m*/
-            uint32_t reg_lpclk_sel_xtal            :    1;  /*reg_lpclk_sel_xtal*/
-            uint32_t reg_lpclk_sel_xtal32k         :    1;  /*reg_lpclk_sel_xtal32k*/
-            uint32_t reg_lpclk_rtc_en              :    1;  /*reg_lpclk_rtc_en*/
-            uint32_t reserved29                    :    3;  /*reserved*/
-        };
-        uint32_t val;
-    } bt_lpck_div_frac;
-    union {
-        struct {
             uint32_t reg_cpu_intr_from_cpu_0       :    1;  /*reg_cpu_intr_from_cpu_0*/
             uint32_t reserved1                     :    31;  /*reserved*/
         };
@@ -277,16 +149,6 @@ typedef volatile struct {
     } clock_gate;
     union {
         struct {
-            uint32_t reg_pre_div_cnt               :    10;  /*reg_pre_div_cnt*/
-            uint32_t reg_soc_clk_sel               :    2;  /*reg_soc_clk_sel*/
-            uint32_t reg_clk_xtal_freq             :    7;  /*reg_clk_xtal_freq*/
-            uint32_t reg_clk_div_en                :    1;  /*reg_clk_div_en*/
-            uint32_t reserved20                    :    12;  /*reserved*/
-        };
-        uint32_t val;
-    } sysclk_conf;
-    union {
-        struct {
             uint32_t reg_mem_path_len              :    4;  /*reg_mem_path_len*/
             uint32_t reg_mem_err_cnt_clr           :    1;  /*reg_mem_err_cnt_clr*/
             uint32_t reg_mem_pvt_monitor_en        :    1;  /*reg_mem_pvt_monitor_en*/
@@ -296,120 +158,28 @@ typedef volatile struct {
         };
         uint32_t val;
     } mem_pvt;
-    union {
-        struct {
-            uint32_t reg_comb_path_len_lvt         :    5;  /*reg_comb_path_len_lvt*/
-            uint32_t reg_comb_err_cnt_clr_lvt      :    1;  /*reg_comb_err_cnt_clr_lvt*/
-            uint32_t reg_comb_pvt_monitor_en_lvt   :    1;  /*reg_comb_pvt_monitor_en_lvt*/
-            uint32_t reserved7                     :    18;  /*reserved*/
-            uint32_t reserved25                    :    7;  /*reserved*/
-        };
-        uint32_t val;
-    } comb_pvt_lvt_conf;
-    union {
-        struct {
-            uint32_t reg_comb_path_len_nvt         :    5;  /*reg_comb_path_len_nvt*/
-            uint32_t reg_comb_err_cnt_clr_nvt      :    1;  /*reg_comb_err_cnt_clr_nvt*/
-            uint32_t reg_comb_pvt_monitor_en_nvt   :    1;  /*reg_comb_pvt_monitor_en_nvt*/
-            uint32_t reserved7                     :    18;  /*reserved*/
-            uint32_t reserved25                    :    7;  /*reserved*/
-        };
-        uint32_t val;
-    } comb_pvt_nvt_conf;
-    union {
-        struct {
-            uint32_t reg_comb_path_len_hvt         :    5;  /*reg_comb_path_len_hvt*/
-            uint32_t reg_comb_err_cnt_clr_hvt      :    1;  /*reg_comb_err_cnt_clr_hvt*/
-            uint32_t reg_comb_pvt_monitor_en_hvt   :    1;  /*reg_comb_pvt_monitor_en_hvt*/
-            uint32_t reserved7                     :    18;  /*reserved*/
-            uint32_t reserved25                    :    7;  /*reserved*/
-        };
-        uint32_t val;
-    } comb_pvt_hvt_conf;
-    union {
-        struct {
-            uint32_t reg_comb_timing_err_cnt_lvt_site0:    16;  /*reg_comb_timing_err_cnt_lvt_site0*/
-            uint32_t reserved16                    :    16;  /*reserved*/
-        };
-        uint32_t val;
-    } comb_pvt_err_lvt_site0;
-    union {
-        struct {
-            uint32_t reg_comb_timing_err_cnt_nvt_site0:    16;  /*reg_comb_timing_err_cnt_nvt_site0*/
-            uint32_t reserved16                    :    16;  /*reserved*/
-        };
-        uint32_t val;
-    } comb_pvt_err_nvt_site0;
-    union {
-        struct {
-            uint32_t reg_comb_timing_err_cnt_hvt_site0:    16;  /*reg_comb_timing_err_cnt_hvt_site0*/
-            uint32_t reserved16                    :    16;  /*reserved*/
-        };
-        uint32_t val;
-    } comb_pvt_err_hvt_site0;
-    union {
-        struct {
-            uint32_t reg_comb_timing_err_cnt_lvt_site1:    16;  /*reg_comb_timing_err_cnt_lvt_site1*/
-            uint32_t reserved16                    :    16;  /*reserved*/
-        };
-        uint32_t val;
-    } comb_pvt_err_lvt_site1;
-    union {
-        struct {
-            uint32_t reg_comb_timing_err_cnt_nvt_site1:    16;  /*reg_comb_timing_err_cnt_nvt_site1*/
-            uint32_t reserved16                    :    16;  /*reserved*/
-        };
-        uint32_t val;
-    } comb_pvt_err_nvt_site1;
-    union {
-        struct {
-            uint32_t reg_comb_timing_err_cnt_hvt_site1:    16;  /*reg_comb_timing_err_cnt_hvt_site1*/
-            uint32_t reserved16                    :    16;  /*reserved*/
-        };
-        uint32_t val;
-    } comb_pvt_err_hvt_site1;
-    union {
-        struct {
-            uint32_t reg_comb_timing_err_cnt_lvt_site2:    16;  /*reg_comb_timing_err_cnt_lvt_site2*/
-            uint32_t reserved16                    :    16;  /*reserved*/
-        };
-        uint32_t val;
-    } comb_pvt_err_lvt_site2;
-    union {
-        struct {
-            uint32_t reg_comb_timing_err_cnt_nvt_site2:    16;  /*reg_comb_timing_err_cnt_nvt_site2*/
-            uint32_t reserved16                    :    16;  /*reserved*/
-        };
-        uint32_t val;
-    } comb_pvt_err_nvt_site2;
-    union {
-        struct {
-            uint32_t reg_comb_timing_err_cnt_hvt_site2:    16;  /*reg_comb_timing_err_cnt_hvt_site2*/
-            uint32_t reserved16                    :    16;  /*reserved*/
-        };
-        uint32_t val;
-    } comb_pvt_err_hvt_site2;
-    union {
-        struct {
-            uint32_t reg_comb_timing_err_cnt_lvt_site3:    16;  /*reg_comb_timing_err_cnt_lvt_site3*/
-            uint32_t reserved16                    :    16;  /*reserved*/
-        };
-        uint32_t val;
-    } comb_pvt_err_lvt_site3;
-    union {
-        struct {
-            uint32_t reg_comb_timing_err_cnt_nvt_site3:    16;  /*reg_comb_timing_err_cnt_nvt_site3*/
-            uint32_t reserved16                    :    16;  /*reserved*/
-        };
-        uint32_t val;
-    } comb_pvt_err_nvt_site3;
-    union {
-        struct {
-            uint32_t reg_comb_timing_err_cnt_hvt_site3:    16;  /*reg_comb_timing_err_cnt_hvt_site3*/
-            uint32_t reserved16                    :    16;  /*reserved*/
-        };
-        uint32_t val;
-    } comb_pvt_err_hvt_site3;
+    uint32_t reserved_44;
+    uint32_t reserved_48;
+    uint32_t reserved_4c;
+    uint32_t reserved_50;
+    uint32_t reserved_54;
+    uint32_t reserved_58;
+    uint32_t reserved_5c;
+    uint32_t reserved_60;
+    uint32_t reserved_64;
+    uint32_t reserved_68;
+    uint32_t reserved_6c;
+    uint32_t reserved_70;
+    uint32_t reserved_74;
+    uint32_t reserved_78;
+    uint32_t reserved_7c;
+    uint32_t reserved_80;
+    uint32_t reserved_84;
+    uint32_t reserved_88;
+    uint32_t reserved_8c;
+    uint32_t reserved_90;
+    uint32_t reserved_94;
+    uint32_t reserved_98;
     uint32_t reserved_9c;
     uint32_t reserved_a0;
     uint32_t reserved_a4;

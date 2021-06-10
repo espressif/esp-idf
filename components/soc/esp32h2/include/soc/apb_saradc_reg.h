@@ -204,6 +204,12 @@ extern "C" {
 #define APB_SARADC_ONETIME_ATTEN_M  ((APB_SARADC_ONETIME_ATTEN_V)<<(APB_SARADC_ONETIME_ATTEN_S))
 #define APB_SARADC_ONETIME_ATTEN_V  0x3
 #define APB_SARADC_ONETIME_ATTEN_S  23
+/* APB_SARADC_ONETIME_EN_TEST : R/W ;bitpos:[22] ;default: 1'b0 ; */
+/*description: */
+#define APB_SARADC_ONETIME_EN_TEST  (BIT(22))
+#define APB_SARADC_ONETIME_EN_TEST_M  (BIT(22))
+#define APB_SARADC_ONETIME_EN_TEST_V  0x1
+#define APB_SARADC_ONETIME_EN_TEST_S  22
 
 #define APB_SARADC_APB_ADC_ARB_CTRL_REG          (DR_REG_APB_SARADC_BASE + 0x024)
 /* APB_SARADC_ADC_ARB_FIX_PRIORITY : R/W ;bitpos:[12] ;default: 1'b0 ; */
@@ -344,6 +350,19 @@ extern "C" {
 #define APB_SARADC_THRES1_EN_M  (BIT(30))
 #define APB_SARADC_THRES1_EN_V  0x1
 #define APB_SARADC_THRES1_EN_S  30
+/* APB_SARADC_THRES2_EN : R/W ;bitpos:[29] ;default: 1'b0 ; */
+/*description: */
+#define APB_SARADC_THRES2_EN  (BIT(29))
+#define APB_SARADC_THRES2_EN_M  (BIT(29))
+#define APB_SARADC_THRES2_EN_V  0x1
+#define APB_SARADC_THRES2_EN_S  29
+/* APB_SARADC_THRES3_EN : R/W ;bitpos:[28] ;default: 1'b0 ; */
+/*description: */
+#define APB_SARADC_THRES3_EN  (BIT(28))
+#define APB_SARADC_THRES3_EN_M  (BIT(28))
+#define APB_SARADC_THRES3_EN_V  0x1
+#define APB_SARADC_THRES3_EN_S  28
+/* APB_SARADC_THRES_ALL_EN : R/W ;bitpos:[27] ;default: 1'd0 ; */
 /*description: */
 #define APB_SARADC_THRES_ALL_EN  (BIT(27))
 #define APB_SARADC_THRES_ALL_EN_M  (BIT(27))
@@ -615,7 +634,7 @@ extern "C" {
 #define APB_SARADC_CALI_CFG_S  0
 
 #define APB_SARADC_APB_CTRL_DATE_REG          (DR_REG_APB_SARADC_BASE + 0x3fc)
-/* APB_SARADC_DATE : R/W ;bitpos:[31:0] ;default: 32'h02007171 ; */
+/* APB_SARADC_DATE : R/W ;bitpos:[31:0] ;default: 32'h02102260 ; */
 /*description: */
 #define APB_SARADC_DATE  0xFFFFFFFF
 #define APB_SARADC_DATE_M  ((APB_SARADC_DATE_V)<<(APB_SARADC_DATE_S))

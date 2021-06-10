@@ -27,7 +27,7 @@
 #include "hal/hal_defs.h"
 #include "esp_types.h"
 #include "soc/spi_periph.h"
-#include "esp32c3/rom/lldesc.h"
+#include "esp32h2/rom/lldesc.h"
 #include "esp_attr.h"
 
 #ifdef __cplusplus
@@ -220,7 +220,7 @@ static inline void spi_ll_slave_reset(spi_dev_t *hw)
 /**
  * Reset SPI CPU TX FIFO
  *
- * On ESP32C3, this function is not seperated
+ * On ESP32H2, this function is not seperated
  *
  * @param hw Beginning address of the peripheral registers.
  */
@@ -233,7 +233,7 @@ static inline void spi_ll_cpu_tx_fifo_reset(spi_dev_t *hw)
 /**
  * Reset SPI CPU RX FIFO
  *
- * On ESP32C3, this function is not seperated
+ * On ESP32H2, this function is not seperated
  *
  * @param hw Beginning address of the peripheral registers.
  */

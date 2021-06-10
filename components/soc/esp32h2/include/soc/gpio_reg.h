@@ -56,28 +56,52 @@ extern "C" {
 #define GPIO_BT_SEL_S  0
 
 #define GPIO_OUT_REG          (DR_REG_GPIO_BASE + 0x4)
-/* GPIO_OUT_DATA : R/W ;bitpos:[25:0] ;default: 26'h0 ; */
+/* GPIO_OUT_DATA : R/W ;bitpos:[31:0] ;default: 32'h0 ; */
 /*description: */
-#define GPIO_OUT_DATA  0x03FFFFFF
+#define GPIO_OUT_DATA  0xFFFFFFFF
 #define GPIO_OUT_DATA_M  ((GPIO_OUT_DATA_V)<<(GPIO_OUT_DATA_S))
-#define GPIO_OUT_DATA_V  0x3FFFFFF
+#define GPIO_OUT_DATA_V  0xFFFFFFFF
 #define GPIO_OUT_DATA_S  0
 
 #define GPIO_OUT_W1TS_REG          (DR_REG_GPIO_BASE + 0x8)
-/* GPIO_OUT_W1TS : WO ;bitpos:[25:0] ;default: 26'h0 ; */
+/* GPIO_OUT_W1TS : WO ;bitpos:[31:0] ;default: 32'h0 ; */
 /*description: */
-#define GPIO_OUT_W1TS  0x03FFFFFF
+#define GPIO_OUT_W1TS  0xFFFFFFFF
 #define GPIO_OUT_W1TS_M  ((GPIO_OUT_W1TS_V)<<(GPIO_OUT_W1TS_S))
-#define GPIO_OUT_W1TS_V  0x3FFFFFF
+#define GPIO_OUT_W1TS_V  0xFFFFFFFF
 #define GPIO_OUT_W1TS_S  0
 
 #define GPIO_OUT_W1TC_REG          (DR_REG_GPIO_BASE + 0xC)
-/* GPIO_OUT_W1TC : WO ;bitpos:[25:0] ;default: 26'h0 ; */
+/* GPIO_OUT_W1TC : WO ;bitpos:[31:0] ;default: 32'h0 ; */
 /*description: */
-#define GPIO_OUT_W1TC  0x03FFFFFF
+#define GPIO_OUT_W1TC  0xFFFFFFFF
 #define GPIO_OUT_W1TC_M  ((GPIO_OUT_W1TC_V)<<(GPIO_OUT_W1TC_S))
-#define GPIO_OUT_W1TC_V  0x3FFFFFF
+#define GPIO_OUT_W1TC_V  0xFFFFFFFF
 #define GPIO_OUT_W1TC_S  0
+
+#define GPIO_OUT1_REG          (DR_REG_GPIO_BASE + 0x10)
+/* GPIO_OUT1_DATA : R/W ;bitpos:[12:0] ;default: 13'h0 ; */
+/*description: */
+#define GPIO_OUT1_DATA  0x00001FFF
+#define GPIO_OUT1_DATA_M  ((GPIO_OUT1_DATA_V)<<(GPIO_OUT1_DATA_S))
+#define GPIO_OUT1_DATA_V  0x1FFF
+#define GPIO_OUT1_DATA_S  0
+
+#define GPIO_OUT1_W1TS_REG          (DR_REG_GPIO_BASE + 0x14)
+/* GPIO_OUT1_W1TS : WO ;bitpos:[12:0] ;default: 13'h0 ; */
+/*description: */
+#define GPIO_OUT1_W1TS  0x00001FFF
+#define GPIO_OUT1_W1TS_M  ((GPIO_OUT1_W1TS_V)<<(GPIO_OUT1_W1TS_S))
+#define GPIO_OUT1_W1TS_V  0x1FFF
+#define GPIO_OUT1_W1TS_S  0
+
+#define GPIO_OUT1_W1TC_REG          (DR_REG_GPIO_BASE + 0x18)
+/* GPIO_OUT1_W1TC : WO ;bitpos:[12:0] ;default: 13'h0 ; */
+/*description: */
+#define GPIO_OUT1_W1TC  0x00001FFF
+#define GPIO_OUT1_W1TC_M  ((GPIO_OUT1_W1TC_V)<<(GPIO_OUT1_W1TC_S))
+#define GPIO_OUT1_W1TC_V  0x1FFF
+#define GPIO_OUT1_W1TC_S  0
 
 #define GPIO_SDIO_SELECT_REG          (DR_REG_GPIO_BASE + 0x1C)
 /* GPIO_SDIO_SEL : R/W ;bitpos:[7:0] ;default: 8'h0 ; */
@@ -88,28 +112,52 @@ extern "C" {
 #define GPIO_SDIO_SEL_S  0
 
 #define GPIO_ENABLE_REG          (DR_REG_GPIO_BASE + 0x20)
-/* GPIO_ENABLE_DATA : R/W ;bitpos:[25:0] ;default: 26'h0 ; */
+/* GPIO_ENABLE_DATA : R/W ;bitpos:[31:0] ;default: 32'h0 ; */
 /*description: */
-#define GPIO_ENABLE_DATA  0x03FFFFFF
+#define GPIO_ENABLE_DATA  0xFFFFFFFF
 #define GPIO_ENABLE_DATA_M  ((GPIO_ENABLE_DATA_V)<<(GPIO_ENABLE_DATA_S))
-#define GPIO_ENABLE_DATA_V  0x3FFFFFF
+#define GPIO_ENABLE_DATA_V  0xFFFFFFFF
 #define GPIO_ENABLE_DATA_S  0
 
 #define GPIO_ENABLE_W1TS_REG          (DR_REG_GPIO_BASE + 0x24)
-/* GPIO_ENABLE_W1TS : WO ;bitpos:[25:0] ;default: 26'h0 ; */
+/* GPIO_ENABLE_W1TS : WO ;bitpos:[31:0] ;default: 32'h0 ; */
 /*description: */
-#define GPIO_ENABLE_W1TS  0x03FFFFFF
+#define GPIO_ENABLE_W1TS  0xFFFFFFFF
 #define GPIO_ENABLE_W1TS_M  ((GPIO_ENABLE_W1TS_V)<<(GPIO_ENABLE_W1TS_S))
-#define GPIO_ENABLE_W1TS_V  0x3FFFFFF
+#define GPIO_ENABLE_W1TS_V  0xFFFFFFFF
 #define GPIO_ENABLE_W1TS_S  0
 
 #define GPIO_ENABLE_W1TC_REG          (DR_REG_GPIO_BASE + 0x28)
-/* GPIO_ENABLE_W1TC : WO ;bitpos:[25:0] ;default: 26'h0 ; */
+/* GPIO_ENABLE_W1TC : WO ;bitpos:[31:0] ;default: 32'h0 ; */
 /*description: */
-#define GPIO_ENABLE_W1TC  0x03FFFFFF
+#define GPIO_ENABLE_W1TC  0xFFFFFFFF
 #define GPIO_ENABLE_W1TC_M  ((GPIO_ENABLE_W1TC_V)<<(GPIO_ENABLE_W1TC_S))
-#define GPIO_ENABLE_W1TC_V  0x3FFFFFF
+#define GPIO_ENABLE_W1TC_V  0xFFFFFFFF
 #define GPIO_ENABLE_W1TC_S  0
+
+#define GPIO_ENABLE1_REG          (DR_REG_GPIO_BASE + 0x2C)
+/* GPIO_ENABLE1_DATA : R/W ;bitpos:[12:0] ;default: 13'h0 ; */
+/*description: */
+#define GPIO_ENABLE1_DATA  0x00001FFF
+#define GPIO_ENABLE1_DATA_M  ((GPIO_ENABLE1_DATA_V)<<(GPIO_ENABLE1_DATA_S))
+#define GPIO_ENABLE1_DATA_V  0x1FFF
+#define GPIO_ENABLE1_DATA_S  0
+
+#define GPIO_ENABLE1_W1TS_REG          (DR_REG_GPIO_BASE + 0x30)
+/* GPIO_ENABLE1_W1TS : WO ;bitpos:[12:0] ;default: 13'h0 ; */
+/*description: */
+#define GPIO_ENABLE1_W1TS  0x00001FFF
+#define GPIO_ENABLE1_W1TS_M  ((GPIO_ENABLE1_W1TS_V)<<(GPIO_ENABLE1_W1TS_S))
+#define GPIO_ENABLE1_W1TS_V  0x1FFF
+#define GPIO_ENABLE1_W1TS_S  0
+
+#define GPIO_ENABLE1_W1TC_REG          (DR_REG_GPIO_BASE + 0x34)
+/* GPIO_ENABLE1_W1TC : WO ;bitpos:[12:0] ;default: 13'h0 ; */
+/*description: */
+#define GPIO_ENABLE1_W1TC  0x00001FFF
+#define GPIO_ENABLE1_W1TC_M  ((GPIO_ENABLE1_W1TC_V)<<(GPIO_ENABLE1_W1TC_S))
+#define GPIO_ENABLE1_W1TC_V  0x1FFF
+#define GPIO_ENABLE1_W1TC_S  0
 
 #define GPIO_STRAP_REG          (DR_REG_GPIO_BASE + 0x38)
 /* GPIO_STRAPPING : RO ;bitpos:[15:0] ;default:  ; */
@@ -120,60 +168,116 @@ extern "C" {
 #define GPIO_STRAPPING_S  0
 
 #define GPIO_IN_REG          (DR_REG_GPIO_BASE + 0x3C)
-/* GPIO_IN_DATA : RO ;bitpos:[25:0] ;default:  ; */
+/* GPIO_IN_DATA : RO ;bitpos:[31:0] ;default:  ; */
 /*description: */
-#define GPIO_IN_DATA  0x03FFFFFF
+#define GPIO_IN_DATA  0xFFFFFFFF
 #define GPIO_IN_DATA_M  ((GPIO_IN_DATA_V)<<(GPIO_IN_DATA_S))
-#define GPIO_IN_DATA_V  0x3FFFFFF
+#define GPIO_IN_DATA_V  0xFFFFFFFF
 #define GPIO_IN_DATA_S  0
 
-#define GPIO_STATUS_REG          (DR_REG_GPIO_BASE + 0x44)
-/* GPIO_STATUS_INT : R/W ;bitpos:[25:0] ;default: 26'h0 ; */
+#define GPIO_IN1_REG          (DR_REG_GPIO_BASE + 0x40)
+/* GPIO_IN1_DATA : RO ;bitpos:[12:0] ;default:  ; */
 /*description: */
-#define GPIO_STATUS_INT  0x03FFFFFF
+#define GPIO_IN1_DATA  0x00001FFF
+#define GPIO_IN1_DATA_M  ((GPIO_IN1_DATA_V)<<(GPIO_IN1_DATA_S))
+#define GPIO_IN1_DATA_V  0x1FFF
+#define GPIO_IN1_DATA_S  0
+
+#define GPIO_STATUS_REG          (DR_REG_GPIO_BASE + 0x44)
+/* GPIO_STATUS_INT : R/W ;bitpos:[31:0] ;default: 32'h0 ; */
+/*description: */
+#define GPIO_STATUS_INT  0xFFFFFFFF
 #define GPIO_STATUS_INT_M  ((GPIO_STATUS_INT_V)<<(GPIO_STATUS_INT_S))
-#define GPIO_STATUS_INT_V  0x3FFFFFF
+#define GPIO_STATUS_INT_V  0xFFFFFFFF
 #define GPIO_STATUS_INT_S  0
 
 #define GPIO_STATUS_W1TS_REG          (DR_REG_GPIO_BASE + 0x48)
-/* GPIO_STATUS_W1TS : WO ;bitpos:[25:0] ;default: 26'h0 ; */
+/* GPIO_STATUS_W1TS : WO ;bitpos:[31:0] ;default: 32'h0 ; */
 /*description: */
-#define GPIO_STATUS_W1TS  0x03FFFFFF
+#define GPIO_STATUS_W1TS  0xFFFFFFFF
 #define GPIO_STATUS_W1TS_M  ((GPIO_STATUS_W1TS_V)<<(GPIO_STATUS_W1TS_S))
-#define GPIO_STATUS_W1TS_V  0x3FFFFFF
+#define GPIO_STATUS_W1TS_V  0xFFFFFFFF
 #define GPIO_STATUS_W1TS_S  0
 
 #define GPIO_STATUS_W1TC_REG          (DR_REG_GPIO_BASE + 0x4C)
-/* GPIO_STATUS_W1TC : WO ;bitpos:[25:0] ;default: 26'h0 ; */
+/* GPIO_STATUS_W1TC : WO ;bitpos:[31:0] ;default: 32'h0 ; */
 /*description: */
-#define GPIO_STATUS_W1TC  0x03FFFFFF
+#define GPIO_STATUS_W1TC  0xFFFFFFFF
 #define GPIO_STATUS_W1TC_M  ((GPIO_STATUS_W1TC_V)<<(GPIO_STATUS_W1TC_S))
-#define GPIO_STATUS_W1TC_V  0x3FFFFFF
+#define GPIO_STATUS_W1TC_V  0xFFFFFFFF
 #define GPIO_STATUS_W1TC_S  0
 
-#define GPIO_PCPU_INT_REG          (DR_REG_GPIO_BASE + 0x5C)
-/* GPIO_PROCPU_INT : RO ;bitpos:[25:0] ;default: 26'h0 ; */
+#define GPIO_STATUS1_REG          (DR_REG_GPIO_BASE + 0x50)
+/* GPIO_STATUS1_INT : R/W ;bitpos:[12:0] ;default: 13'h0 ; */
 /*description: */
-#define GPIO_PROCPU_INT  0x03FFFFFF
+#define GPIO_STATUS1_INT  0x00001FFF
+#define GPIO_STATUS1_INT_M  ((GPIO_STATUS1_INT_V)<<(GPIO_STATUS1_INT_S))
+#define GPIO_STATUS1_INT_V  0x1FFF
+#define GPIO_STATUS1_INT_S  0
+
+#define GPIO_STATUS1_W1TS_REG          (DR_REG_GPIO_BASE + 0x54)
+/* GPIO_STATUS1_W1TS : WO ;bitpos:[12:0] ;default: 13'h0 ; */
+/*description: */
+#define GPIO_STATUS1_W1TS  0x00001FFF
+#define GPIO_STATUS1_W1TS_M  ((GPIO_STATUS1_W1TS_V)<<(GPIO_STATUS1_W1TS_S))
+#define GPIO_STATUS1_W1TS_V  0x1FFF
+#define GPIO_STATUS1_W1TS_S  0
+
+#define GPIO_STATUS1_W1TC_REG          (DR_REG_GPIO_BASE + 0x58)
+/* GPIO_STATUS1_W1TC : WO ;bitpos:[12:0] ;default: 13'h0 ; */
+/*description: */
+#define GPIO_STATUS1_W1TC  0x00001FFF
+#define GPIO_STATUS1_W1TC_M  ((GPIO_STATUS1_W1TC_V)<<(GPIO_STATUS1_W1TC_S))
+#define GPIO_STATUS1_W1TC_V  0x1FFF
+#define GPIO_STATUS1_W1TC_S  0
+
+#define GPIO_PCPU_INT_REG          (DR_REG_GPIO_BASE + 0x5C)
+/* GPIO_PROCPU_INT : RO ;bitpos:[31:0] ;default: 32'h0 ; */
+/*description: */
+#define GPIO_PROCPU_INT  0xFFFFFFFF
 #define GPIO_PROCPU_INT_M  ((GPIO_PROCPU_INT_V)<<(GPIO_PROCPU_INT_S))
-#define GPIO_PROCPU_INT_V  0x3FFFFFF
+#define GPIO_PROCPU_INT_V  0xFFFFFFFF
 #define GPIO_PROCPU_INT_S  0
 
 #define GPIO_PCPU_NMI_INT_REG          (DR_REG_GPIO_BASE + 0x60)
-/* GPIO_PROCPU_NMI_INT : RO ;bitpos:[25:0] ;default: 26'h0 ; */
+/* GPIO_PROCPU_NMI_INT : RO ;bitpos:[31:0] ;default: 32'h0 ; */
 /*description: */
-#define GPIO_PROCPU_NMI_INT  0x03FFFFFF
+#define GPIO_PROCPU_NMI_INT  0xFFFFFFFF
 #define GPIO_PROCPU_NMI_INT_M  ((GPIO_PROCPU_NMI_INT_V)<<(GPIO_PROCPU_NMI_INT_S))
-#define GPIO_PROCPU_NMI_INT_V  0x3FFFFFF
+#define GPIO_PROCPU_NMI_INT_V  0xFFFFFFFF
 #define GPIO_PROCPU_NMI_INT_S  0
 
 #define GPIO_CPUSDIO_INT_REG          (DR_REG_GPIO_BASE + 0x64)
-/* GPIO_SDIO_INT : RO ;bitpos:[25:0] ;default: 26'h0 ; */
+/* GPIO_SDIO_INT : RO ;bitpos:[31:0] ;default: 32'h0 ; */
 /*description: */
-#define GPIO_SDIO_INT  0x03FFFFFF
+#define GPIO_SDIO_INT  0xFFFFFFFF
 #define GPIO_SDIO_INT_M  ((GPIO_SDIO_INT_V)<<(GPIO_SDIO_INT_S))
-#define GPIO_SDIO_INT_V  0x3FFFFFF
+#define GPIO_SDIO_INT_V  0xFFFFFFFF
 #define GPIO_SDIO_INT_S  0
+
+#define GPIO_PCPU_INT1_REG          (DR_REG_GPIO_BASE + 0x68)
+/* GPIO_PROCPU_INT_H : RO ;bitpos:[12:0] ;default: 13'h0 ; */
+/*description: */
+#define GPIO_PROCPU_INT_H  0x00001FFF
+#define GPIO_PROCPU_INT_H_M  ((GPIO_PROCPU_INT_H_V)<<(GPIO_PROCPU_INT_H_S))
+#define GPIO_PROCPU_INT_H_V  0x1FFF
+#define GPIO_PROCPU_INT_H_S  0
+
+#define GPIO_PCPU_NMI_INT1_REG          (DR_REG_GPIO_BASE + 0x6C)
+/* GPIO_PROCPU_NMI_INT_H : RO ;bitpos:[12:0] ;default: 13'h0 ; */
+/*description: */
+#define GPIO_PROCPU_NMI_INT_H  0x00001FFF
+#define GPIO_PROCPU_NMI_INT_H_M  ((GPIO_PROCPU_NMI_INT_H_V)<<(GPIO_PROCPU_NMI_INT_H_S))
+#define GPIO_PROCPU_NMI_INT_H_V  0x1FFF
+#define GPIO_PROCPU_NMI_INT_H_S  0
+
+#define GPIO_CPUSDIO_INT1_REG          (DR_REG_GPIO_BASE + 0x70)
+/* GPIO_SDIO_INT_H : RO ;bitpos:[12:0] ;default: 13'h0 ; */
+/*description: */
+#define GPIO_SDIO_INT_H  0x00001FFF
+#define GPIO_SDIO_INT_H_M  ((GPIO_SDIO_INT_H_V)<<(GPIO_SDIO_INT_H_S))
+#define GPIO_SDIO_INT_H_V  0x1FFF
+#define GPIO_SDIO_INT_H_S  0
 
 #define GPIO_PIN0_REG          (DR_REG_GPIO_BASE + 0x74)
 /* GPIO_PIN0_INT_ENA : R/W ;bitpos:[17:13] ;default: 5'h0 ; */
@@ -1319,2572 +1423,3416 @@ extern "C" {
 #define GPIO_PIN25_SYNC2_BYPASS_V  0x3
 #define GPIO_PIN25_SYNC2_BYPASS_S  0
 
-#define GPIO_STATUS_NEXT_REG          (DR_REG_GPIO_BASE + 0x14C)
-/* GPIO_STATUS_INTERRUPT_NEXT : RO ;bitpos:[25:0] ;default: 26'h0 ; */
+#define GPIO_PIN26_REG          (DR_REG_GPIO_BASE + 0xDC)
+/* GPIO_PIN26_INT_ENA : R/W ;bitpos:[17:13] ;default: 5'h0 ; */
 /*description: */
-#define GPIO_STATUS_INTERRUPT_NEXT  0x03FFFFFF
+#define GPIO_PIN26_INT_ENA  0x0000001F
+#define GPIO_PIN26_INT_ENA_M  ((GPIO_PIN26_INT_ENA_V)<<(GPIO_PIN26_INT_ENA_S))
+#define GPIO_PIN26_INT_ENA_V  0x1F
+#define GPIO_PIN26_INT_ENA_S  13
+/* GPIO_PIN26_CONFIG : R/W ;bitpos:[12:11] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN26_CONFIG  0x00000003
+#define GPIO_PIN26_CONFIG_M  ((GPIO_PIN26_CONFIG_V)<<(GPIO_PIN26_CONFIG_S))
+#define GPIO_PIN26_CONFIG_V  0x3
+#define GPIO_PIN26_CONFIG_S  11
+/* GPIO_PIN26_WAKEUP_ENABLE : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN26_WAKEUP_ENABLE  (BIT(10))
+#define GPIO_PIN26_WAKEUP_ENABLE_M  (BIT(10))
+#define GPIO_PIN26_WAKEUP_ENABLE_V  0x1
+#define GPIO_PIN26_WAKEUP_ENABLE_S  10
+/* GPIO_PIN26_INT_TYPE : R/W ;bitpos:[9:7] ;default: 3'h0 ; */
+/*description: */
+#define GPIO_PIN26_INT_TYPE  0x00000007
+#define GPIO_PIN26_INT_TYPE_M  ((GPIO_PIN26_INT_TYPE_V)<<(GPIO_PIN26_INT_TYPE_S))
+#define GPIO_PIN26_INT_TYPE_V  0x7
+#define GPIO_PIN26_INT_TYPE_S  7
+/* GPIO_PIN26_SYNC1_BYPASS : R/W ;bitpos:[4:3] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN26_SYNC1_BYPASS  0x00000003
+#define GPIO_PIN26_SYNC1_BYPASS_M  ((GPIO_PIN26_SYNC1_BYPASS_V)<<(GPIO_PIN26_SYNC1_BYPASS_S))
+#define GPIO_PIN26_SYNC1_BYPASS_V  0x3
+#define GPIO_PIN26_SYNC1_BYPASS_S  3
+/* GPIO_PIN26_PAD_DRIVER : R/W ;bitpos:[2] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN26_PAD_DRIVER  (BIT(2))
+#define GPIO_PIN26_PAD_DRIVER_M  (BIT(2))
+#define GPIO_PIN26_PAD_DRIVER_V  0x1
+#define GPIO_PIN26_PAD_DRIVER_S  2
+/* GPIO_PIN26_SYNC2_BYPASS : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN26_SYNC2_BYPASS  0x00000003
+#define GPIO_PIN26_SYNC2_BYPASS_M  ((GPIO_PIN26_SYNC2_BYPASS_V)<<(GPIO_PIN26_SYNC2_BYPASS_S))
+#define GPIO_PIN26_SYNC2_BYPASS_V  0x3
+#define GPIO_PIN26_SYNC2_BYPASS_S  0
+
+#define GPIO_PIN27_REG          (DR_REG_GPIO_BASE + 0xE0)
+/* GPIO_PIN27_INT_ENA : R/W ;bitpos:[17:13] ;default: 5'h0 ; */
+/*description: */
+#define GPIO_PIN27_INT_ENA  0x0000001F
+#define GPIO_PIN27_INT_ENA_M  ((GPIO_PIN27_INT_ENA_V)<<(GPIO_PIN27_INT_ENA_S))
+#define GPIO_PIN27_INT_ENA_V  0x1F
+#define GPIO_PIN27_INT_ENA_S  13
+/* GPIO_PIN27_CONFIG : R/W ;bitpos:[12:11] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN27_CONFIG  0x00000003
+#define GPIO_PIN27_CONFIG_M  ((GPIO_PIN27_CONFIG_V)<<(GPIO_PIN27_CONFIG_S))
+#define GPIO_PIN27_CONFIG_V  0x3
+#define GPIO_PIN27_CONFIG_S  11
+/* GPIO_PIN27_WAKEUP_ENABLE : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN27_WAKEUP_ENABLE  (BIT(10))
+#define GPIO_PIN27_WAKEUP_ENABLE_M  (BIT(10))
+#define GPIO_PIN27_WAKEUP_ENABLE_V  0x1
+#define GPIO_PIN27_WAKEUP_ENABLE_S  10
+/* GPIO_PIN27_INT_TYPE : R/W ;bitpos:[9:7] ;default: 3'h0 ; */
+/*description: */
+#define GPIO_PIN27_INT_TYPE  0x00000007
+#define GPIO_PIN27_INT_TYPE_M  ((GPIO_PIN27_INT_TYPE_V)<<(GPIO_PIN27_INT_TYPE_S))
+#define GPIO_PIN27_INT_TYPE_V  0x7
+#define GPIO_PIN27_INT_TYPE_S  7
+/* GPIO_PIN27_SYNC1_BYPASS : R/W ;bitpos:[4:3] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN27_SYNC1_BYPASS  0x00000003
+#define GPIO_PIN27_SYNC1_BYPASS_M  ((GPIO_PIN27_SYNC1_BYPASS_V)<<(GPIO_PIN27_SYNC1_BYPASS_S))
+#define GPIO_PIN27_SYNC1_BYPASS_V  0x3
+#define GPIO_PIN27_SYNC1_BYPASS_S  3
+/* GPIO_PIN27_PAD_DRIVER : R/W ;bitpos:[2] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN27_PAD_DRIVER  (BIT(2))
+#define GPIO_PIN27_PAD_DRIVER_M  (BIT(2))
+#define GPIO_PIN27_PAD_DRIVER_V  0x1
+#define GPIO_PIN27_PAD_DRIVER_S  2
+/* GPIO_PIN27_SYNC2_BYPASS : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN27_SYNC2_BYPASS  0x00000003
+#define GPIO_PIN27_SYNC2_BYPASS_M  ((GPIO_PIN27_SYNC2_BYPASS_V)<<(GPIO_PIN27_SYNC2_BYPASS_S))
+#define GPIO_PIN27_SYNC2_BYPASS_V  0x3
+#define GPIO_PIN27_SYNC2_BYPASS_S  0
+
+#define GPIO_PIN28_REG          (DR_REG_GPIO_BASE + 0xE4)
+/* GPIO_PIN28_INT_ENA : R/W ;bitpos:[17:13] ;default: 5'h0 ; */
+/*description: */
+#define GPIO_PIN28_INT_ENA  0x0000001F
+#define GPIO_PIN28_INT_ENA_M  ((GPIO_PIN28_INT_ENA_V)<<(GPIO_PIN28_INT_ENA_S))
+#define GPIO_PIN28_INT_ENA_V  0x1F
+#define GPIO_PIN28_INT_ENA_S  13
+/* GPIO_PIN28_CONFIG : R/W ;bitpos:[12:11] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN28_CONFIG  0x00000003
+#define GPIO_PIN28_CONFIG_M  ((GPIO_PIN28_CONFIG_V)<<(GPIO_PIN28_CONFIG_S))
+#define GPIO_PIN28_CONFIG_V  0x3
+#define GPIO_PIN28_CONFIG_S  11
+/* GPIO_PIN28_WAKEUP_ENABLE : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN28_WAKEUP_ENABLE  (BIT(10))
+#define GPIO_PIN28_WAKEUP_ENABLE_M  (BIT(10))
+#define GPIO_PIN28_WAKEUP_ENABLE_V  0x1
+#define GPIO_PIN28_WAKEUP_ENABLE_S  10
+/* GPIO_PIN28_INT_TYPE : R/W ;bitpos:[9:7] ;default: 3'h0 ; */
+/*description: */
+#define GPIO_PIN28_INT_TYPE  0x00000007
+#define GPIO_PIN28_INT_TYPE_M  ((GPIO_PIN28_INT_TYPE_V)<<(GPIO_PIN28_INT_TYPE_S))
+#define GPIO_PIN28_INT_TYPE_V  0x7
+#define GPIO_PIN28_INT_TYPE_S  7
+/* GPIO_PIN28_SYNC1_BYPASS : R/W ;bitpos:[4:3] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN28_SYNC1_BYPASS  0x00000003
+#define GPIO_PIN28_SYNC1_BYPASS_M  ((GPIO_PIN28_SYNC1_BYPASS_V)<<(GPIO_PIN28_SYNC1_BYPASS_S))
+#define GPIO_PIN28_SYNC1_BYPASS_V  0x3
+#define GPIO_PIN28_SYNC1_BYPASS_S  3
+/* GPIO_PIN28_PAD_DRIVER : R/W ;bitpos:[2] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN28_PAD_DRIVER  (BIT(2))
+#define GPIO_PIN28_PAD_DRIVER_M  (BIT(2))
+#define GPIO_PIN28_PAD_DRIVER_V  0x1
+#define GPIO_PIN28_PAD_DRIVER_S  2
+/* GPIO_PIN28_SYNC2_BYPASS : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN28_SYNC2_BYPASS  0x00000003
+#define GPIO_PIN28_SYNC2_BYPASS_M  ((GPIO_PIN28_SYNC2_BYPASS_V)<<(GPIO_PIN28_SYNC2_BYPASS_S))
+#define GPIO_PIN28_SYNC2_BYPASS_V  0x3
+#define GPIO_PIN28_SYNC2_BYPASS_S  0
+
+#define GPIO_PIN29_REG          (DR_REG_GPIO_BASE + 0xE8)
+/* GPIO_PIN29_INT_ENA : R/W ;bitpos:[17:13] ;default: 5'h0 ; */
+/*description: */
+#define GPIO_PIN29_INT_ENA  0x0000001F
+#define GPIO_PIN29_INT_ENA_M  ((GPIO_PIN29_INT_ENA_V)<<(GPIO_PIN29_INT_ENA_S))
+#define GPIO_PIN29_INT_ENA_V  0x1F
+#define GPIO_PIN29_INT_ENA_S  13
+/* GPIO_PIN29_CONFIG : R/W ;bitpos:[12:11] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN29_CONFIG  0x00000003
+#define GPIO_PIN29_CONFIG_M  ((GPIO_PIN29_CONFIG_V)<<(GPIO_PIN29_CONFIG_S))
+#define GPIO_PIN29_CONFIG_V  0x3
+#define GPIO_PIN29_CONFIG_S  11
+/* GPIO_PIN29_WAKEUP_ENABLE : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN29_WAKEUP_ENABLE  (BIT(10))
+#define GPIO_PIN29_WAKEUP_ENABLE_M  (BIT(10))
+#define GPIO_PIN29_WAKEUP_ENABLE_V  0x1
+#define GPIO_PIN29_WAKEUP_ENABLE_S  10
+/* GPIO_PIN29_INT_TYPE : R/W ;bitpos:[9:7] ;default: 3'h0 ; */
+/*description: */
+#define GPIO_PIN29_INT_TYPE  0x00000007
+#define GPIO_PIN29_INT_TYPE_M  ((GPIO_PIN29_INT_TYPE_V)<<(GPIO_PIN29_INT_TYPE_S))
+#define GPIO_PIN29_INT_TYPE_V  0x7
+#define GPIO_PIN29_INT_TYPE_S  7
+/* GPIO_PIN29_SYNC1_BYPASS : R/W ;bitpos:[4:3] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN29_SYNC1_BYPASS  0x00000003
+#define GPIO_PIN29_SYNC1_BYPASS_M  ((GPIO_PIN29_SYNC1_BYPASS_V)<<(GPIO_PIN29_SYNC1_BYPASS_S))
+#define GPIO_PIN29_SYNC1_BYPASS_V  0x3
+#define GPIO_PIN29_SYNC1_BYPASS_S  3
+/* GPIO_PIN29_PAD_DRIVER : R/W ;bitpos:[2] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN29_PAD_DRIVER  (BIT(2))
+#define GPIO_PIN29_PAD_DRIVER_M  (BIT(2))
+#define GPIO_PIN29_PAD_DRIVER_V  0x1
+#define GPIO_PIN29_PAD_DRIVER_S  2
+/* GPIO_PIN29_SYNC2_BYPASS : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN29_SYNC2_BYPASS  0x00000003
+#define GPIO_PIN29_SYNC2_BYPASS_M  ((GPIO_PIN29_SYNC2_BYPASS_V)<<(GPIO_PIN29_SYNC2_BYPASS_S))
+#define GPIO_PIN29_SYNC2_BYPASS_V  0x3
+#define GPIO_PIN29_SYNC2_BYPASS_S  0
+
+#define GPIO_PIN30_REG          (DR_REG_GPIO_BASE + 0xEC)
+/* GPIO_PIN30_INT_ENA : R/W ;bitpos:[17:13] ;default: 5'h0 ; */
+/*description: */
+#define GPIO_PIN30_INT_ENA  0x0000001F
+#define GPIO_PIN30_INT_ENA_M  ((GPIO_PIN30_INT_ENA_V)<<(GPIO_PIN30_INT_ENA_S))
+#define GPIO_PIN30_INT_ENA_V  0x1F
+#define GPIO_PIN30_INT_ENA_S  13
+/* GPIO_PIN30_CONFIG : R/W ;bitpos:[12:11] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN30_CONFIG  0x00000003
+#define GPIO_PIN30_CONFIG_M  ((GPIO_PIN30_CONFIG_V)<<(GPIO_PIN30_CONFIG_S))
+#define GPIO_PIN30_CONFIG_V  0x3
+#define GPIO_PIN30_CONFIG_S  11
+/* GPIO_PIN30_WAKEUP_ENABLE : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN30_WAKEUP_ENABLE  (BIT(10))
+#define GPIO_PIN30_WAKEUP_ENABLE_M  (BIT(10))
+#define GPIO_PIN30_WAKEUP_ENABLE_V  0x1
+#define GPIO_PIN30_WAKEUP_ENABLE_S  10
+/* GPIO_PIN30_INT_TYPE : R/W ;bitpos:[9:7] ;default: 3'h0 ; */
+/*description: */
+#define GPIO_PIN30_INT_TYPE  0x00000007
+#define GPIO_PIN30_INT_TYPE_M  ((GPIO_PIN30_INT_TYPE_V)<<(GPIO_PIN30_INT_TYPE_S))
+#define GPIO_PIN30_INT_TYPE_V  0x7
+#define GPIO_PIN30_INT_TYPE_S  7
+/* GPIO_PIN30_SYNC1_BYPASS : R/W ;bitpos:[4:3] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN30_SYNC1_BYPASS  0x00000003
+#define GPIO_PIN30_SYNC1_BYPASS_M  ((GPIO_PIN30_SYNC1_BYPASS_V)<<(GPIO_PIN30_SYNC1_BYPASS_S))
+#define GPIO_PIN30_SYNC1_BYPASS_V  0x3
+#define GPIO_PIN30_SYNC1_BYPASS_S  3
+/* GPIO_PIN30_PAD_DRIVER : R/W ;bitpos:[2] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN30_PAD_DRIVER  (BIT(2))
+#define GPIO_PIN30_PAD_DRIVER_M  (BIT(2))
+#define GPIO_PIN30_PAD_DRIVER_V  0x1
+#define GPIO_PIN30_PAD_DRIVER_S  2
+/* GPIO_PIN30_SYNC2_BYPASS : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN30_SYNC2_BYPASS  0x00000003
+#define GPIO_PIN30_SYNC2_BYPASS_M  ((GPIO_PIN30_SYNC2_BYPASS_V)<<(GPIO_PIN30_SYNC2_BYPASS_S))
+#define GPIO_PIN30_SYNC2_BYPASS_V  0x3
+#define GPIO_PIN30_SYNC2_BYPASS_S  0
+
+#define GPIO_PIN31_REG          (DR_REG_GPIO_BASE + 0xF0)
+/* GPIO_PIN31_INT_ENA : R/W ;bitpos:[17:13] ;default: 5'h0 ; */
+/*description: */
+#define GPIO_PIN31_INT_ENA  0x0000001F
+#define GPIO_PIN31_INT_ENA_M  ((GPIO_PIN31_INT_ENA_V)<<(GPIO_PIN31_INT_ENA_S))
+#define GPIO_PIN31_INT_ENA_V  0x1F
+#define GPIO_PIN31_INT_ENA_S  13
+/* GPIO_PIN31_CONFIG : R/W ;bitpos:[12:11] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN31_CONFIG  0x00000003
+#define GPIO_PIN31_CONFIG_M  ((GPIO_PIN31_CONFIG_V)<<(GPIO_PIN31_CONFIG_S))
+#define GPIO_PIN31_CONFIG_V  0x3
+#define GPIO_PIN31_CONFIG_S  11
+/* GPIO_PIN31_WAKEUP_ENABLE : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN31_WAKEUP_ENABLE  (BIT(10))
+#define GPIO_PIN31_WAKEUP_ENABLE_M  (BIT(10))
+#define GPIO_PIN31_WAKEUP_ENABLE_V  0x1
+#define GPIO_PIN31_WAKEUP_ENABLE_S  10
+/* GPIO_PIN31_INT_TYPE : R/W ;bitpos:[9:7] ;default: 3'h0 ; */
+/*description: */
+#define GPIO_PIN31_INT_TYPE  0x00000007
+#define GPIO_PIN31_INT_TYPE_M  ((GPIO_PIN31_INT_TYPE_V)<<(GPIO_PIN31_INT_TYPE_S))
+#define GPIO_PIN31_INT_TYPE_V  0x7
+#define GPIO_PIN31_INT_TYPE_S  7
+/* GPIO_PIN31_SYNC1_BYPASS : R/W ;bitpos:[4:3] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN31_SYNC1_BYPASS  0x00000003
+#define GPIO_PIN31_SYNC1_BYPASS_M  ((GPIO_PIN31_SYNC1_BYPASS_V)<<(GPIO_PIN31_SYNC1_BYPASS_S))
+#define GPIO_PIN31_SYNC1_BYPASS_V  0x3
+#define GPIO_PIN31_SYNC1_BYPASS_S  3
+/* GPIO_PIN31_PAD_DRIVER : R/W ;bitpos:[2] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN31_PAD_DRIVER  (BIT(2))
+#define GPIO_PIN31_PAD_DRIVER_M  (BIT(2))
+#define GPIO_PIN31_PAD_DRIVER_V  0x1
+#define GPIO_PIN31_PAD_DRIVER_S  2
+/* GPIO_PIN31_SYNC2_BYPASS : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN31_SYNC2_BYPASS  0x00000003
+#define GPIO_PIN31_SYNC2_BYPASS_M  ((GPIO_PIN31_SYNC2_BYPASS_V)<<(GPIO_PIN31_SYNC2_BYPASS_S))
+#define GPIO_PIN31_SYNC2_BYPASS_V  0x3
+#define GPIO_PIN31_SYNC2_BYPASS_S  0
+
+#define GPIO_PIN32_REG          (DR_REG_GPIO_BASE + 0xF4)
+/* GPIO_PIN32_INT_ENA : R/W ;bitpos:[17:13] ;default: 5'h0 ; */
+/*description: */
+#define GPIO_PIN32_INT_ENA  0x0000001F
+#define GPIO_PIN32_INT_ENA_M  ((GPIO_PIN32_INT_ENA_V)<<(GPIO_PIN32_INT_ENA_S))
+#define GPIO_PIN32_INT_ENA_V  0x1F
+#define GPIO_PIN32_INT_ENA_S  13
+/* GPIO_PIN32_CONFIG : R/W ;bitpos:[12:11] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN32_CONFIG  0x00000003
+#define GPIO_PIN32_CONFIG_M  ((GPIO_PIN32_CONFIG_V)<<(GPIO_PIN32_CONFIG_S))
+#define GPIO_PIN32_CONFIG_V  0x3
+#define GPIO_PIN32_CONFIG_S  11
+/* GPIO_PIN32_WAKEUP_ENABLE : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN32_WAKEUP_ENABLE  (BIT(10))
+#define GPIO_PIN32_WAKEUP_ENABLE_M  (BIT(10))
+#define GPIO_PIN32_WAKEUP_ENABLE_V  0x1
+#define GPIO_PIN32_WAKEUP_ENABLE_S  10
+/* GPIO_PIN32_INT_TYPE : R/W ;bitpos:[9:7] ;default: 3'h0 ; */
+/*description: */
+#define GPIO_PIN32_INT_TYPE  0x00000007
+#define GPIO_PIN32_INT_TYPE_M  ((GPIO_PIN32_INT_TYPE_V)<<(GPIO_PIN32_INT_TYPE_S))
+#define GPIO_PIN32_INT_TYPE_V  0x7
+#define GPIO_PIN32_INT_TYPE_S  7
+/* GPIO_PIN32_SYNC1_BYPASS : R/W ;bitpos:[4:3] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN32_SYNC1_BYPASS  0x00000003
+#define GPIO_PIN32_SYNC1_BYPASS_M  ((GPIO_PIN32_SYNC1_BYPASS_V)<<(GPIO_PIN32_SYNC1_BYPASS_S))
+#define GPIO_PIN32_SYNC1_BYPASS_V  0x3
+#define GPIO_PIN32_SYNC1_BYPASS_S  3
+/* GPIO_PIN32_PAD_DRIVER : R/W ;bitpos:[2] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN32_PAD_DRIVER  (BIT(2))
+#define GPIO_PIN32_PAD_DRIVER_M  (BIT(2))
+#define GPIO_PIN32_PAD_DRIVER_V  0x1
+#define GPIO_PIN32_PAD_DRIVER_S  2
+/* GPIO_PIN32_SYNC2_BYPASS : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN32_SYNC2_BYPASS  0x00000003
+#define GPIO_PIN32_SYNC2_BYPASS_M  ((GPIO_PIN32_SYNC2_BYPASS_V)<<(GPIO_PIN32_SYNC2_BYPASS_S))
+#define GPIO_PIN32_SYNC2_BYPASS_V  0x3
+#define GPIO_PIN32_SYNC2_BYPASS_S  0
+
+#define GPIO_PIN33_REG          (DR_REG_GPIO_BASE + 0xF8)
+/* GPIO_PIN33_INT_ENA : R/W ;bitpos:[17:13] ;default: 5'h0 ; */
+/*description: */
+#define GPIO_PIN33_INT_ENA  0x0000001F
+#define GPIO_PIN33_INT_ENA_M  ((GPIO_PIN33_INT_ENA_V)<<(GPIO_PIN33_INT_ENA_S))
+#define GPIO_PIN33_INT_ENA_V  0x1F
+#define GPIO_PIN33_INT_ENA_S  13
+/* GPIO_PIN33_CONFIG : R/W ;bitpos:[12:11] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN33_CONFIG  0x00000003
+#define GPIO_PIN33_CONFIG_M  ((GPIO_PIN33_CONFIG_V)<<(GPIO_PIN33_CONFIG_S))
+#define GPIO_PIN33_CONFIG_V  0x3
+#define GPIO_PIN33_CONFIG_S  11
+/* GPIO_PIN33_WAKEUP_ENABLE : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN33_WAKEUP_ENABLE  (BIT(10))
+#define GPIO_PIN33_WAKEUP_ENABLE_M  (BIT(10))
+#define GPIO_PIN33_WAKEUP_ENABLE_V  0x1
+#define GPIO_PIN33_WAKEUP_ENABLE_S  10
+/* GPIO_PIN33_INT_TYPE : R/W ;bitpos:[9:7] ;default: 3'h0 ; */
+/*description: */
+#define GPIO_PIN33_INT_TYPE  0x00000007
+#define GPIO_PIN33_INT_TYPE_M  ((GPIO_PIN33_INT_TYPE_V)<<(GPIO_PIN33_INT_TYPE_S))
+#define GPIO_PIN33_INT_TYPE_V  0x7
+#define GPIO_PIN33_INT_TYPE_S  7
+/* GPIO_PIN33_SYNC1_BYPASS : R/W ;bitpos:[4:3] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN33_SYNC1_BYPASS  0x00000003
+#define GPIO_PIN33_SYNC1_BYPASS_M  ((GPIO_PIN33_SYNC1_BYPASS_V)<<(GPIO_PIN33_SYNC1_BYPASS_S))
+#define GPIO_PIN33_SYNC1_BYPASS_V  0x3
+#define GPIO_PIN33_SYNC1_BYPASS_S  3
+/* GPIO_PIN33_PAD_DRIVER : R/W ;bitpos:[2] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN33_PAD_DRIVER  (BIT(2))
+#define GPIO_PIN33_PAD_DRIVER_M  (BIT(2))
+#define GPIO_PIN33_PAD_DRIVER_V  0x1
+#define GPIO_PIN33_PAD_DRIVER_S  2
+/* GPIO_PIN33_SYNC2_BYPASS : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN33_SYNC2_BYPASS  0x00000003
+#define GPIO_PIN33_SYNC2_BYPASS_M  ((GPIO_PIN33_SYNC2_BYPASS_V)<<(GPIO_PIN33_SYNC2_BYPASS_S))
+#define GPIO_PIN33_SYNC2_BYPASS_V  0x3
+#define GPIO_PIN33_SYNC2_BYPASS_S  0
+
+#define GPIO_PIN34_REG          (DR_REG_GPIO_BASE + 0xFC)
+/* GPIO_PIN34_INT_ENA : R/W ;bitpos:[17:13] ;default: 5'h0 ; */
+/*description: */
+#define GPIO_PIN34_INT_ENA  0x0000001F
+#define GPIO_PIN34_INT_ENA_M  ((GPIO_PIN34_INT_ENA_V)<<(GPIO_PIN34_INT_ENA_S))
+#define GPIO_PIN34_INT_ENA_V  0x1F
+#define GPIO_PIN34_INT_ENA_S  13
+/* GPIO_PIN34_CONFIG : R/W ;bitpos:[12:11] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN34_CONFIG  0x00000003
+#define GPIO_PIN34_CONFIG_M  ((GPIO_PIN34_CONFIG_V)<<(GPIO_PIN34_CONFIG_S))
+#define GPIO_PIN34_CONFIG_V  0x3
+#define GPIO_PIN34_CONFIG_S  11
+/* GPIO_PIN34_WAKEUP_ENABLE : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN34_WAKEUP_ENABLE  (BIT(10))
+#define GPIO_PIN34_WAKEUP_ENABLE_M  (BIT(10))
+#define GPIO_PIN34_WAKEUP_ENABLE_V  0x1
+#define GPIO_PIN34_WAKEUP_ENABLE_S  10
+/* GPIO_PIN34_INT_TYPE : R/W ;bitpos:[9:7] ;default: 3'h0 ; */
+/*description: */
+#define GPIO_PIN34_INT_TYPE  0x00000007
+#define GPIO_PIN34_INT_TYPE_M  ((GPIO_PIN34_INT_TYPE_V)<<(GPIO_PIN34_INT_TYPE_S))
+#define GPIO_PIN34_INT_TYPE_V  0x7
+#define GPIO_PIN34_INT_TYPE_S  7
+/* GPIO_PIN34_SYNC1_BYPASS : R/W ;bitpos:[4:3] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN34_SYNC1_BYPASS  0x00000003
+#define GPIO_PIN34_SYNC1_BYPASS_M  ((GPIO_PIN34_SYNC1_BYPASS_V)<<(GPIO_PIN34_SYNC1_BYPASS_S))
+#define GPIO_PIN34_SYNC1_BYPASS_V  0x3
+#define GPIO_PIN34_SYNC1_BYPASS_S  3
+/* GPIO_PIN34_PAD_DRIVER : R/W ;bitpos:[2] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN34_PAD_DRIVER  (BIT(2))
+#define GPIO_PIN34_PAD_DRIVER_M  (BIT(2))
+#define GPIO_PIN34_PAD_DRIVER_V  0x1
+#define GPIO_PIN34_PAD_DRIVER_S  2
+/* GPIO_PIN34_SYNC2_BYPASS : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN34_SYNC2_BYPASS  0x00000003
+#define GPIO_PIN34_SYNC2_BYPASS_M  ((GPIO_PIN34_SYNC2_BYPASS_V)<<(GPIO_PIN34_SYNC2_BYPASS_S))
+#define GPIO_PIN34_SYNC2_BYPASS_V  0x3
+#define GPIO_PIN34_SYNC2_BYPASS_S  0
+
+#define GPIO_PIN35_REG          (DR_REG_GPIO_BASE + 0x100)
+/* GPIO_PIN35_INT_ENA : R/W ;bitpos:[17:13] ;default: 5'h0 ; */
+/*description: */
+#define GPIO_PIN35_INT_ENA  0x0000001F
+#define GPIO_PIN35_INT_ENA_M  ((GPIO_PIN35_INT_ENA_V)<<(GPIO_PIN35_INT_ENA_S))
+#define GPIO_PIN35_INT_ENA_V  0x1F
+#define GPIO_PIN35_INT_ENA_S  13
+/* GPIO_PIN35_CONFIG : R/W ;bitpos:[12:11] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN35_CONFIG  0x00000003
+#define GPIO_PIN35_CONFIG_M  ((GPIO_PIN35_CONFIG_V)<<(GPIO_PIN35_CONFIG_S))
+#define GPIO_PIN35_CONFIG_V  0x3
+#define GPIO_PIN35_CONFIG_S  11
+/* GPIO_PIN35_WAKEUP_ENABLE : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN35_WAKEUP_ENABLE  (BIT(10))
+#define GPIO_PIN35_WAKEUP_ENABLE_M  (BIT(10))
+#define GPIO_PIN35_WAKEUP_ENABLE_V  0x1
+#define GPIO_PIN35_WAKEUP_ENABLE_S  10
+/* GPIO_PIN35_INT_TYPE : R/W ;bitpos:[9:7] ;default: 3'h0 ; */
+/*description: */
+#define GPIO_PIN35_INT_TYPE  0x00000007
+#define GPIO_PIN35_INT_TYPE_M  ((GPIO_PIN35_INT_TYPE_V)<<(GPIO_PIN35_INT_TYPE_S))
+#define GPIO_PIN35_INT_TYPE_V  0x7
+#define GPIO_PIN35_INT_TYPE_S  7
+/* GPIO_PIN35_SYNC1_BYPASS : R/W ;bitpos:[4:3] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN35_SYNC1_BYPASS  0x00000003
+#define GPIO_PIN35_SYNC1_BYPASS_M  ((GPIO_PIN35_SYNC1_BYPASS_V)<<(GPIO_PIN35_SYNC1_BYPASS_S))
+#define GPIO_PIN35_SYNC1_BYPASS_V  0x3
+#define GPIO_PIN35_SYNC1_BYPASS_S  3
+/* GPIO_PIN35_PAD_DRIVER : R/W ;bitpos:[2] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN35_PAD_DRIVER  (BIT(2))
+#define GPIO_PIN35_PAD_DRIVER_M  (BIT(2))
+#define GPIO_PIN35_PAD_DRIVER_V  0x1
+#define GPIO_PIN35_PAD_DRIVER_S  2
+/* GPIO_PIN35_SYNC2_BYPASS : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN35_SYNC2_BYPASS  0x00000003
+#define GPIO_PIN35_SYNC2_BYPASS_M  ((GPIO_PIN35_SYNC2_BYPASS_V)<<(GPIO_PIN35_SYNC2_BYPASS_S))
+#define GPIO_PIN35_SYNC2_BYPASS_V  0x3
+#define GPIO_PIN35_SYNC2_BYPASS_S  0
+
+#define GPIO_PIN36_REG          (DR_REG_GPIO_BASE + 0x104)
+/* GPIO_PIN36_INT_ENA : R/W ;bitpos:[17:13] ;default: 5'h0 ; */
+/*description: */
+#define GPIO_PIN36_INT_ENA  0x0000001F
+#define GPIO_PIN36_INT_ENA_M  ((GPIO_PIN36_INT_ENA_V)<<(GPIO_PIN36_INT_ENA_S))
+#define GPIO_PIN36_INT_ENA_V  0x1F
+#define GPIO_PIN36_INT_ENA_S  13
+/* GPIO_PIN36_CONFIG : R/W ;bitpos:[12:11] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN36_CONFIG  0x00000003
+#define GPIO_PIN36_CONFIG_M  ((GPIO_PIN36_CONFIG_V)<<(GPIO_PIN36_CONFIG_S))
+#define GPIO_PIN36_CONFIG_V  0x3
+#define GPIO_PIN36_CONFIG_S  11
+/* GPIO_PIN36_WAKEUP_ENABLE : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN36_WAKEUP_ENABLE  (BIT(10))
+#define GPIO_PIN36_WAKEUP_ENABLE_M  (BIT(10))
+#define GPIO_PIN36_WAKEUP_ENABLE_V  0x1
+#define GPIO_PIN36_WAKEUP_ENABLE_S  10
+/* GPIO_PIN36_INT_TYPE : R/W ;bitpos:[9:7] ;default: 3'h0 ; */
+/*description: */
+#define GPIO_PIN36_INT_TYPE  0x00000007
+#define GPIO_PIN36_INT_TYPE_M  ((GPIO_PIN36_INT_TYPE_V)<<(GPIO_PIN36_INT_TYPE_S))
+#define GPIO_PIN36_INT_TYPE_V  0x7
+#define GPIO_PIN36_INT_TYPE_S  7
+/* GPIO_PIN36_SYNC1_BYPASS : R/W ;bitpos:[4:3] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN36_SYNC1_BYPASS  0x00000003
+#define GPIO_PIN36_SYNC1_BYPASS_M  ((GPIO_PIN36_SYNC1_BYPASS_V)<<(GPIO_PIN36_SYNC1_BYPASS_S))
+#define GPIO_PIN36_SYNC1_BYPASS_V  0x3
+#define GPIO_PIN36_SYNC1_BYPASS_S  3
+/* GPIO_PIN36_PAD_DRIVER : R/W ;bitpos:[2] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN36_PAD_DRIVER  (BIT(2))
+#define GPIO_PIN36_PAD_DRIVER_M  (BIT(2))
+#define GPIO_PIN36_PAD_DRIVER_V  0x1
+#define GPIO_PIN36_PAD_DRIVER_S  2
+/* GPIO_PIN36_SYNC2_BYPASS : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN36_SYNC2_BYPASS  0x00000003
+#define GPIO_PIN36_SYNC2_BYPASS_M  ((GPIO_PIN36_SYNC2_BYPASS_V)<<(GPIO_PIN36_SYNC2_BYPASS_S))
+#define GPIO_PIN36_SYNC2_BYPASS_V  0x3
+#define GPIO_PIN36_SYNC2_BYPASS_S  0
+
+#define GPIO_PIN37_REG          (DR_REG_GPIO_BASE + 0x108)
+/* GPIO_PIN37_INT_ENA : R/W ;bitpos:[17:13] ;default: 5'h0 ; */
+/*description: */
+#define GPIO_PIN37_INT_ENA  0x0000001F
+#define GPIO_PIN37_INT_ENA_M  ((GPIO_PIN37_INT_ENA_V)<<(GPIO_PIN37_INT_ENA_S))
+#define GPIO_PIN37_INT_ENA_V  0x1F
+#define GPIO_PIN37_INT_ENA_S  13
+/* GPIO_PIN37_CONFIG : R/W ;bitpos:[12:11] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN37_CONFIG  0x00000003
+#define GPIO_PIN37_CONFIG_M  ((GPIO_PIN37_CONFIG_V)<<(GPIO_PIN37_CONFIG_S))
+#define GPIO_PIN37_CONFIG_V  0x3
+#define GPIO_PIN37_CONFIG_S  11
+/* GPIO_PIN37_WAKEUP_ENABLE : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN37_WAKEUP_ENABLE  (BIT(10))
+#define GPIO_PIN37_WAKEUP_ENABLE_M  (BIT(10))
+#define GPIO_PIN37_WAKEUP_ENABLE_V  0x1
+#define GPIO_PIN37_WAKEUP_ENABLE_S  10
+/* GPIO_PIN37_INT_TYPE : R/W ;bitpos:[9:7] ;default: 3'h0 ; */
+/*description: */
+#define GPIO_PIN37_INT_TYPE  0x00000007
+#define GPIO_PIN37_INT_TYPE_M  ((GPIO_PIN37_INT_TYPE_V)<<(GPIO_PIN37_INT_TYPE_S))
+#define GPIO_PIN37_INT_TYPE_V  0x7
+#define GPIO_PIN37_INT_TYPE_S  7
+/* GPIO_PIN37_SYNC1_BYPASS : R/W ;bitpos:[4:3] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN37_SYNC1_BYPASS  0x00000003
+#define GPIO_PIN37_SYNC1_BYPASS_M  ((GPIO_PIN37_SYNC1_BYPASS_V)<<(GPIO_PIN37_SYNC1_BYPASS_S))
+#define GPIO_PIN37_SYNC1_BYPASS_V  0x3
+#define GPIO_PIN37_SYNC1_BYPASS_S  3
+/* GPIO_PIN37_PAD_DRIVER : R/W ;bitpos:[2] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN37_PAD_DRIVER  (BIT(2))
+#define GPIO_PIN37_PAD_DRIVER_M  (BIT(2))
+#define GPIO_PIN37_PAD_DRIVER_V  0x1
+#define GPIO_PIN37_PAD_DRIVER_S  2
+/* GPIO_PIN37_SYNC2_BYPASS : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN37_SYNC2_BYPASS  0x00000003
+#define GPIO_PIN37_SYNC2_BYPASS_M  ((GPIO_PIN37_SYNC2_BYPASS_V)<<(GPIO_PIN37_SYNC2_BYPASS_S))
+#define GPIO_PIN37_SYNC2_BYPASS_V  0x3
+#define GPIO_PIN37_SYNC2_BYPASS_S  0
+
+#define GPIO_PIN38_REG          (DR_REG_GPIO_BASE + 0x10C)
+/* GPIO_PIN38_INT_ENA : R/W ;bitpos:[17:13] ;default: 5'h0 ; */
+/*description: */
+#define GPIO_PIN38_INT_ENA  0x0000001F
+#define GPIO_PIN38_INT_ENA_M  ((GPIO_PIN38_INT_ENA_V)<<(GPIO_PIN38_INT_ENA_S))
+#define GPIO_PIN38_INT_ENA_V  0x1F
+#define GPIO_PIN38_INT_ENA_S  13
+/* GPIO_PIN38_CONFIG : R/W ;bitpos:[12:11] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN38_CONFIG  0x00000003
+#define GPIO_PIN38_CONFIG_M  ((GPIO_PIN38_CONFIG_V)<<(GPIO_PIN38_CONFIG_S))
+#define GPIO_PIN38_CONFIG_V  0x3
+#define GPIO_PIN38_CONFIG_S  11
+/* GPIO_PIN38_WAKEUP_ENABLE : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN38_WAKEUP_ENABLE  (BIT(10))
+#define GPIO_PIN38_WAKEUP_ENABLE_M  (BIT(10))
+#define GPIO_PIN38_WAKEUP_ENABLE_V  0x1
+#define GPIO_PIN38_WAKEUP_ENABLE_S  10
+/* GPIO_PIN38_INT_TYPE : R/W ;bitpos:[9:7] ;default: 3'h0 ; */
+/*description: */
+#define GPIO_PIN38_INT_TYPE  0x00000007
+#define GPIO_PIN38_INT_TYPE_M  ((GPIO_PIN38_INT_TYPE_V)<<(GPIO_PIN38_INT_TYPE_S))
+#define GPIO_PIN38_INT_TYPE_V  0x7
+#define GPIO_PIN38_INT_TYPE_S  7
+/* GPIO_PIN38_SYNC1_BYPASS : R/W ;bitpos:[4:3] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN38_SYNC1_BYPASS  0x00000003
+#define GPIO_PIN38_SYNC1_BYPASS_M  ((GPIO_PIN38_SYNC1_BYPASS_V)<<(GPIO_PIN38_SYNC1_BYPASS_S))
+#define GPIO_PIN38_SYNC1_BYPASS_V  0x3
+#define GPIO_PIN38_SYNC1_BYPASS_S  3
+/* GPIO_PIN38_PAD_DRIVER : R/W ;bitpos:[2] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN38_PAD_DRIVER  (BIT(2))
+#define GPIO_PIN38_PAD_DRIVER_M  (BIT(2))
+#define GPIO_PIN38_PAD_DRIVER_V  0x1
+#define GPIO_PIN38_PAD_DRIVER_S  2
+/* GPIO_PIN38_SYNC2_BYPASS : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN38_SYNC2_BYPASS  0x00000003
+#define GPIO_PIN38_SYNC2_BYPASS_M  ((GPIO_PIN38_SYNC2_BYPASS_V)<<(GPIO_PIN38_SYNC2_BYPASS_S))
+#define GPIO_PIN38_SYNC2_BYPASS_V  0x3
+#define GPIO_PIN38_SYNC2_BYPASS_S  0
+
+#define GPIO_PIN39_REG          (DR_REG_GPIO_BASE + 0x110)
+/* GPIO_PIN39_INT_ENA : R/W ;bitpos:[17:13] ;default: 5'h0 ; */
+/*description: */
+#define GPIO_PIN39_INT_ENA  0x0000001F
+#define GPIO_PIN39_INT_ENA_M  ((GPIO_PIN39_INT_ENA_V)<<(GPIO_PIN39_INT_ENA_S))
+#define GPIO_PIN39_INT_ENA_V  0x1F
+#define GPIO_PIN39_INT_ENA_S  13
+/* GPIO_PIN39_CONFIG : R/W ;bitpos:[12:11] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN39_CONFIG  0x00000003
+#define GPIO_PIN39_CONFIG_M  ((GPIO_PIN39_CONFIG_V)<<(GPIO_PIN39_CONFIG_S))
+#define GPIO_PIN39_CONFIG_V  0x3
+#define GPIO_PIN39_CONFIG_S  11
+/* GPIO_PIN39_WAKEUP_ENABLE : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN39_WAKEUP_ENABLE  (BIT(10))
+#define GPIO_PIN39_WAKEUP_ENABLE_M  (BIT(10))
+#define GPIO_PIN39_WAKEUP_ENABLE_V  0x1
+#define GPIO_PIN39_WAKEUP_ENABLE_S  10
+/* GPIO_PIN39_INT_TYPE : R/W ;bitpos:[9:7] ;default: 3'h0 ; */
+/*description: */
+#define GPIO_PIN39_INT_TYPE  0x00000007
+#define GPIO_PIN39_INT_TYPE_M  ((GPIO_PIN39_INT_TYPE_V)<<(GPIO_PIN39_INT_TYPE_S))
+#define GPIO_PIN39_INT_TYPE_V  0x7
+#define GPIO_PIN39_INT_TYPE_S  7
+/* GPIO_PIN39_SYNC1_BYPASS : R/W ;bitpos:[4:3] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN39_SYNC1_BYPASS  0x00000003
+#define GPIO_PIN39_SYNC1_BYPASS_M  ((GPIO_PIN39_SYNC1_BYPASS_V)<<(GPIO_PIN39_SYNC1_BYPASS_S))
+#define GPIO_PIN39_SYNC1_BYPASS_V  0x3
+#define GPIO_PIN39_SYNC1_BYPASS_S  3
+/* GPIO_PIN39_PAD_DRIVER : R/W ;bitpos:[2] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN39_PAD_DRIVER  (BIT(2))
+#define GPIO_PIN39_PAD_DRIVER_M  (BIT(2))
+#define GPIO_PIN39_PAD_DRIVER_V  0x1
+#define GPIO_PIN39_PAD_DRIVER_S  2
+/* GPIO_PIN39_SYNC2_BYPASS : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN39_SYNC2_BYPASS  0x00000003
+#define GPIO_PIN39_SYNC2_BYPASS_M  ((GPIO_PIN39_SYNC2_BYPASS_V)<<(GPIO_PIN39_SYNC2_BYPASS_S))
+#define GPIO_PIN39_SYNC2_BYPASS_V  0x3
+#define GPIO_PIN39_SYNC2_BYPASS_S  0
+
+#define GPIO_PIN40_REG          (DR_REG_GPIO_BASE + 0x114)
+/* GPIO_PIN40_INT_ENA : R/W ;bitpos:[17:13] ;default: 5'h0 ; */
+/*description: */
+#define GPIO_PIN40_INT_ENA  0x0000001F
+#define GPIO_PIN40_INT_ENA_M  ((GPIO_PIN40_INT_ENA_V)<<(GPIO_PIN40_INT_ENA_S))
+#define GPIO_PIN40_INT_ENA_V  0x1F
+#define GPIO_PIN40_INT_ENA_S  13
+/* GPIO_PIN40_CONFIG : R/W ;bitpos:[12:11] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN40_CONFIG  0x00000003
+#define GPIO_PIN40_CONFIG_M  ((GPIO_PIN40_CONFIG_V)<<(GPIO_PIN40_CONFIG_S))
+#define GPIO_PIN40_CONFIG_V  0x3
+#define GPIO_PIN40_CONFIG_S  11
+/* GPIO_PIN40_WAKEUP_ENABLE : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN40_WAKEUP_ENABLE  (BIT(10))
+#define GPIO_PIN40_WAKEUP_ENABLE_M  (BIT(10))
+#define GPIO_PIN40_WAKEUP_ENABLE_V  0x1
+#define GPIO_PIN40_WAKEUP_ENABLE_S  10
+/* GPIO_PIN40_INT_TYPE : R/W ;bitpos:[9:7] ;default: 3'h0 ; */
+/*description: */
+#define GPIO_PIN40_INT_TYPE  0x00000007
+#define GPIO_PIN40_INT_TYPE_M  ((GPIO_PIN40_INT_TYPE_V)<<(GPIO_PIN40_INT_TYPE_S))
+#define GPIO_PIN40_INT_TYPE_V  0x7
+#define GPIO_PIN40_INT_TYPE_S  7
+/* GPIO_PIN40_SYNC1_BYPASS : R/W ;bitpos:[4:3] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN40_SYNC1_BYPASS  0x00000003
+#define GPIO_PIN40_SYNC1_BYPASS_M  ((GPIO_PIN40_SYNC1_BYPASS_V)<<(GPIO_PIN40_SYNC1_BYPASS_S))
+#define GPIO_PIN40_SYNC1_BYPASS_V  0x3
+#define GPIO_PIN40_SYNC1_BYPASS_S  3
+/* GPIO_PIN40_PAD_DRIVER : R/W ;bitpos:[2] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN40_PAD_DRIVER  (BIT(2))
+#define GPIO_PIN40_PAD_DRIVER_M  (BIT(2))
+#define GPIO_PIN40_PAD_DRIVER_V  0x1
+#define GPIO_PIN40_PAD_DRIVER_S  2
+/* GPIO_PIN40_SYNC2_BYPASS : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN40_SYNC2_BYPASS  0x00000003
+#define GPIO_PIN40_SYNC2_BYPASS_M  ((GPIO_PIN40_SYNC2_BYPASS_V)<<(GPIO_PIN40_SYNC2_BYPASS_S))
+#define GPIO_PIN40_SYNC2_BYPASS_V  0x3
+#define GPIO_PIN40_SYNC2_BYPASS_S  0
+
+#define GPIO_PIN41_REG          (DR_REG_GPIO_BASE + 0x118)
+/* GPIO_PIN41_INT_ENA : R/W ;bitpos:[17:13] ;default: 5'h0 ; */
+/*description: */
+#define GPIO_PIN41_INT_ENA  0x0000001F
+#define GPIO_PIN41_INT_ENA_M  ((GPIO_PIN41_INT_ENA_V)<<(GPIO_PIN41_INT_ENA_S))
+#define GPIO_PIN41_INT_ENA_V  0x1F
+#define GPIO_PIN41_INT_ENA_S  13
+/* GPIO_PIN41_CONFIG : R/W ;bitpos:[12:11] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN41_CONFIG  0x00000003
+#define GPIO_PIN41_CONFIG_M  ((GPIO_PIN41_CONFIG_V)<<(GPIO_PIN41_CONFIG_S))
+#define GPIO_PIN41_CONFIG_V  0x3
+#define GPIO_PIN41_CONFIG_S  11
+/* GPIO_PIN41_WAKEUP_ENABLE : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN41_WAKEUP_ENABLE  (BIT(10))
+#define GPIO_PIN41_WAKEUP_ENABLE_M  (BIT(10))
+#define GPIO_PIN41_WAKEUP_ENABLE_V  0x1
+#define GPIO_PIN41_WAKEUP_ENABLE_S  10
+/* GPIO_PIN41_INT_TYPE : R/W ;bitpos:[9:7] ;default: 3'h0 ; */
+/*description: */
+#define GPIO_PIN41_INT_TYPE  0x00000007
+#define GPIO_PIN41_INT_TYPE_M  ((GPIO_PIN41_INT_TYPE_V)<<(GPIO_PIN41_INT_TYPE_S))
+#define GPIO_PIN41_INT_TYPE_V  0x7
+#define GPIO_PIN41_INT_TYPE_S  7
+/* GPIO_PIN41_SYNC1_BYPASS : R/W ;bitpos:[4:3] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN41_SYNC1_BYPASS  0x00000003
+#define GPIO_PIN41_SYNC1_BYPASS_M  ((GPIO_PIN41_SYNC1_BYPASS_V)<<(GPIO_PIN41_SYNC1_BYPASS_S))
+#define GPIO_PIN41_SYNC1_BYPASS_V  0x3
+#define GPIO_PIN41_SYNC1_BYPASS_S  3
+/* GPIO_PIN41_PAD_DRIVER : R/W ;bitpos:[2] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN41_PAD_DRIVER  (BIT(2))
+#define GPIO_PIN41_PAD_DRIVER_M  (BIT(2))
+#define GPIO_PIN41_PAD_DRIVER_V  0x1
+#define GPIO_PIN41_PAD_DRIVER_S  2
+/* GPIO_PIN41_SYNC2_BYPASS : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN41_SYNC2_BYPASS  0x00000003
+#define GPIO_PIN41_SYNC2_BYPASS_M  ((GPIO_PIN41_SYNC2_BYPASS_V)<<(GPIO_PIN41_SYNC2_BYPASS_S))
+#define GPIO_PIN41_SYNC2_BYPASS_V  0x3
+#define GPIO_PIN41_SYNC2_BYPASS_S  0
+
+#define GPIO_PIN42_REG          (DR_REG_GPIO_BASE + 0x11C)
+/* GPIO_PIN42_INT_ENA : R/W ;bitpos:[17:13] ;default: 5'h0 ; */
+/*description: */
+#define GPIO_PIN42_INT_ENA  0x0000001F
+#define GPIO_PIN42_INT_ENA_M  ((GPIO_PIN42_INT_ENA_V)<<(GPIO_PIN42_INT_ENA_S))
+#define GPIO_PIN42_INT_ENA_V  0x1F
+#define GPIO_PIN42_INT_ENA_S  13
+/* GPIO_PIN42_CONFIG : R/W ;bitpos:[12:11] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN42_CONFIG  0x00000003
+#define GPIO_PIN42_CONFIG_M  ((GPIO_PIN42_CONFIG_V)<<(GPIO_PIN42_CONFIG_S))
+#define GPIO_PIN42_CONFIG_V  0x3
+#define GPIO_PIN42_CONFIG_S  11
+/* GPIO_PIN42_WAKEUP_ENABLE : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN42_WAKEUP_ENABLE  (BIT(10))
+#define GPIO_PIN42_WAKEUP_ENABLE_M  (BIT(10))
+#define GPIO_PIN42_WAKEUP_ENABLE_V  0x1
+#define GPIO_PIN42_WAKEUP_ENABLE_S  10
+/* GPIO_PIN42_INT_TYPE : R/W ;bitpos:[9:7] ;default: 3'h0 ; */
+/*description: */
+#define GPIO_PIN42_INT_TYPE  0x00000007
+#define GPIO_PIN42_INT_TYPE_M  ((GPIO_PIN42_INT_TYPE_V)<<(GPIO_PIN42_INT_TYPE_S))
+#define GPIO_PIN42_INT_TYPE_V  0x7
+#define GPIO_PIN42_INT_TYPE_S  7
+/* GPIO_PIN42_SYNC1_BYPASS : R/W ;bitpos:[4:3] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN42_SYNC1_BYPASS  0x00000003
+#define GPIO_PIN42_SYNC1_BYPASS_M  ((GPIO_PIN42_SYNC1_BYPASS_V)<<(GPIO_PIN42_SYNC1_BYPASS_S))
+#define GPIO_PIN42_SYNC1_BYPASS_V  0x3
+#define GPIO_PIN42_SYNC1_BYPASS_S  3
+/* GPIO_PIN42_PAD_DRIVER : R/W ;bitpos:[2] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN42_PAD_DRIVER  (BIT(2))
+#define GPIO_PIN42_PAD_DRIVER_M  (BIT(2))
+#define GPIO_PIN42_PAD_DRIVER_V  0x1
+#define GPIO_PIN42_PAD_DRIVER_S  2
+/* GPIO_PIN42_SYNC2_BYPASS : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN42_SYNC2_BYPASS  0x00000003
+#define GPIO_PIN42_SYNC2_BYPASS_M  ((GPIO_PIN42_SYNC2_BYPASS_V)<<(GPIO_PIN42_SYNC2_BYPASS_S))
+#define GPIO_PIN42_SYNC2_BYPASS_V  0x3
+#define GPIO_PIN42_SYNC2_BYPASS_S  0
+
+#define GPIO_PIN43_REG          (DR_REG_GPIO_BASE + 0x120)
+/* GPIO_PIN43_INT_ENA : R/W ;bitpos:[17:13] ;default: 5'h0 ; */
+/*description: */
+#define GPIO_PIN43_INT_ENA  0x0000001F
+#define GPIO_PIN43_INT_ENA_M  ((GPIO_PIN43_INT_ENA_V)<<(GPIO_PIN43_INT_ENA_S))
+#define GPIO_PIN43_INT_ENA_V  0x1F
+#define GPIO_PIN43_INT_ENA_S  13
+/* GPIO_PIN43_CONFIG : R/W ;bitpos:[12:11] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN43_CONFIG  0x00000003
+#define GPIO_PIN43_CONFIG_M  ((GPIO_PIN43_CONFIG_V)<<(GPIO_PIN43_CONFIG_S))
+#define GPIO_PIN43_CONFIG_V  0x3
+#define GPIO_PIN43_CONFIG_S  11
+/* GPIO_PIN43_WAKEUP_ENABLE : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN43_WAKEUP_ENABLE  (BIT(10))
+#define GPIO_PIN43_WAKEUP_ENABLE_M  (BIT(10))
+#define GPIO_PIN43_WAKEUP_ENABLE_V  0x1
+#define GPIO_PIN43_WAKEUP_ENABLE_S  10
+/* GPIO_PIN43_INT_TYPE : R/W ;bitpos:[9:7] ;default: 3'h0 ; */
+/*description: */
+#define GPIO_PIN43_INT_TYPE  0x00000007
+#define GPIO_PIN43_INT_TYPE_M  ((GPIO_PIN43_INT_TYPE_V)<<(GPIO_PIN43_INT_TYPE_S))
+#define GPIO_PIN43_INT_TYPE_V  0x7
+#define GPIO_PIN43_INT_TYPE_S  7
+/* GPIO_PIN43_SYNC1_BYPASS : R/W ;bitpos:[4:3] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN43_SYNC1_BYPASS  0x00000003
+#define GPIO_PIN43_SYNC1_BYPASS_M  ((GPIO_PIN43_SYNC1_BYPASS_V)<<(GPIO_PIN43_SYNC1_BYPASS_S))
+#define GPIO_PIN43_SYNC1_BYPASS_V  0x3
+#define GPIO_PIN43_SYNC1_BYPASS_S  3
+/* GPIO_PIN43_PAD_DRIVER : R/W ;bitpos:[2] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN43_PAD_DRIVER  (BIT(2))
+#define GPIO_PIN43_PAD_DRIVER_M  (BIT(2))
+#define GPIO_PIN43_PAD_DRIVER_V  0x1
+#define GPIO_PIN43_PAD_DRIVER_S  2
+/* GPIO_PIN43_SYNC2_BYPASS : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN43_SYNC2_BYPASS  0x00000003
+#define GPIO_PIN43_SYNC2_BYPASS_M  ((GPIO_PIN43_SYNC2_BYPASS_V)<<(GPIO_PIN43_SYNC2_BYPASS_S))
+#define GPIO_PIN43_SYNC2_BYPASS_V  0x3
+#define GPIO_PIN43_SYNC2_BYPASS_S  0
+
+#define GPIO_PIN44_REG          (DR_REG_GPIO_BASE + 0x124)
+/* GPIO_PIN44_INT_ENA : R/W ;bitpos:[17:13] ;default: 5'h0 ; */
+/*description: */
+#define GPIO_PIN44_INT_ENA  0x0000001F
+#define GPIO_PIN44_INT_ENA_M  ((GPIO_PIN44_INT_ENA_V)<<(GPIO_PIN44_INT_ENA_S))
+#define GPIO_PIN44_INT_ENA_V  0x1F
+#define GPIO_PIN44_INT_ENA_S  13
+/* GPIO_PIN44_CONFIG : R/W ;bitpos:[12:11] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN44_CONFIG  0x00000003
+#define GPIO_PIN44_CONFIG_M  ((GPIO_PIN44_CONFIG_V)<<(GPIO_PIN44_CONFIG_S))
+#define GPIO_PIN44_CONFIG_V  0x3
+#define GPIO_PIN44_CONFIG_S  11
+/* GPIO_PIN44_WAKEUP_ENABLE : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN44_WAKEUP_ENABLE  (BIT(10))
+#define GPIO_PIN44_WAKEUP_ENABLE_M  (BIT(10))
+#define GPIO_PIN44_WAKEUP_ENABLE_V  0x1
+#define GPIO_PIN44_WAKEUP_ENABLE_S  10
+/* GPIO_PIN44_INT_TYPE : R/W ;bitpos:[9:7] ;default: 3'h0 ; */
+/*description: */
+#define GPIO_PIN44_INT_TYPE  0x00000007
+#define GPIO_PIN44_INT_TYPE_M  ((GPIO_PIN44_INT_TYPE_V)<<(GPIO_PIN44_INT_TYPE_S))
+#define GPIO_PIN44_INT_TYPE_V  0x7
+#define GPIO_PIN44_INT_TYPE_S  7
+/* GPIO_PIN44_SYNC1_BYPASS : R/W ;bitpos:[4:3] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN44_SYNC1_BYPASS  0x00000003
+#define GPIO_PIN44_SYNC1_BYPASS_M  ((GPIO_PIN44_SYNC1_BYPASS_V)<<(GPIO_PIN44_SYNC1_BYPASS_S))
+#define GPIO_PIN44_SYNC1_BYPASS_V  0x3
+#define GPIO_PIN44_SYNC1_BYPASS_S  3
+/* GPIO_PIN44_PAD_DRIVER : R/W ;bitpos:[2] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_PIN44_PAD_DRIVER  (BIT(2))
+#define GPIO_PIN44_PAD_DRIVER_M  (BIT(2))
+#define GPIO_PIN44_PAD_DRIVER_V  0x1
+#define GPIO_PIN44_PAD_DRIVER_S  2
+/* GPIO_PIN44_SYNC2_BYPASS : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
+/*description: */
+#define GPIO_PIN44_SYNC2_BYPASS  0x00000003
+#define GPIO_PIN44_SYNC2_BYPASS_M  ((GPIO_PIN44_SYNC2_BYPASS_V)<<(GPIO_PIN44_SYNC2_BYPASS_S))
+#define GPIO_PIN44_SYNC2_BYPASS_V  0x3
+#define GPIO_PIN44_SYNC2_BYPASS_S  0
+
+#define GPIO_STATUS_NEXT_REG          (DR_REG_GPIO_BASE + 0x14C)
+/* GPIO_STATUS_INTERRUPT_NEXT : RO ;bitpos:[31:0] ;default: 32'h0 ; */
+/*description: */
+#define GPIO_STATUS_INTERRUPT_NEXT  0xFFFFFFFF
 #define GPIO_STATUS_INTERRUPT_NEXT_M  ((GPIO_STATUS_INTERRUPT_NEXT_V)<<(GPIO_STATUS_INTERRUPT_NEXT_S))
-#define GPIO_STATUS_INTERRUPT_NEXT_V  0x3FFFFFF
+#define GPIO_STATUS_INTERRUPT_NEXT_V  0xFFFFFFFF
 #define GPIO_STATUS_INTERRUPT_NEXT_S  0
 
+#define GPIO_STATUS_NEXT1_REG          (DR_REG_GPIO_BASE + 0x150)
+/* GPIO_STATUS_INTERRUPT_NEXT1 : RO ;bitpos:[12:0] ;default: 13'h0 ; */
+/*description: */
+#define GPIO_STATUS_INTERRUPT_NEXT1  0x00001FFF
+#define GPIO_STATUS_INTERRUPT_NEXT1_M  ((GPIO_STATUS_INTERRUPT_NEXT1_V)<<(GPIO_STATUS_INTERRUPT_NEXT1_S))
+#define GPIO_STATUS_INTERRUPT_NEXT1_V  0x1FFF
+#define GPIO_STATUS_INTERRUPT_NEXT1_S  0
+
 #define GPIO_FUNC0_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x154)
-/* GPIO_SIG0_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG0_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG0_IN_SEL  (BIT(6))
-#define GPIO_SIG0_IN_SEL_M  (BIT(6))
+#define GPIO_SIG0_IN_SEL  (BIT(7))
+#define GPIO_SIG0_IN_SEL_M  (BIT(7))
 #define GPIO_SIG0_IN_SEL_V  0x1
-#define GPIO_SIG0_IN_SEL_S  6
-/* GPIO_FUNC0_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG0_IN_SEL_S  7
+/* GPIO_FUNC0_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC0_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC0_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC0_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC0_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC0_IN_INV_SEL_V  0x1
-#define GPIO_FUNC0_IN_INV_SEL_S  5
-/* GPIO_FUNC0_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC0_IN_INV_SEL_S  6
+/* GPIO_FUNC0_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC0_IN_SEL  0x0000001F
+#define GPIO_FUNC0_IN_SEL  0x0000003F
 #define GPIO_FUNC0_IN_SEL_M  ((GPIO_FUNC0_IN_SEL_V)<<(GPIO_FUNC0_IN_SEL_S))
-#define GPIO_FUNC0_IN_SEL_V  0x1F
+#define GPIO_FUNC0_IN_SEL_V  0x3F
 #define GPIO_FUNC0_IN_SEL_S  0
 
 #define GPIO_FUNC1_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x158)
-/* GPIO_SIG1_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG1_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG1_IN_SEL  (BIT(6))
-#define GPIO_SIG1_IN_SEL_M  (BIT(6))
+#define GPIO_SIG1_IN_SEL  (BIT(7))
+#define GPIO_SIG1_IN_SEL_M  (BIT(7))
 #define GPIO_SIG1_IN_SEL_V  0x1
-#define GPIO_SIG1_IN_SEL_S  6
-/* GPIO_FUNC1_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG1_IN_SEL_S  7
+/* GPIO_FUNC1_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC1_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC1_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC1_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC1_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC1_IN_INV_SEL_V  0x1
-#define GPIO_FUNC1_IN_INV_SEL_S  5
-/* GPIO_FUNC1_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC1_IN_INV_SEL_S  6
+/* GPIO_FUNC1_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC1_IN_SEL  0x0000001F
+#define GPIO_FUNC1_IN_SEL  0x0000003F
 #define GPIO_FUNC1_IN_SEL_M  ((GPIO_FUNC1_IN_SEL_V)<<(GPIO_FUNC1_IN_SEL_S))
-#define GPIO_FUNC1_IN_SEL_V  0x1F
+#define GPIO_FUNC1_IN_SEL_V  0x3F
 #define GPIO_FUNC1_IN_SEL_S  0
 
 #define GPIO_FUNC2_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x15C)
-/* GPIO_SIG2_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG2_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG2_IN_SEL  (BIT(6))
-#define GPIO_SIG2_IN_SEL_M  (BIT(6))
+#define GPIO_SIG2_IN_SEL  (BIT(7))
+#define GPIO_SIG2_IN_SEL_M  (BIT(7))
 #define GPIO_SIG2_IN_SEL_V  0x1
-#define GPIO_SIG2_IN_SEL_S  6
-/* GPIO_FUNC2_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG2_IN_SEL_S  7
+/* GPIO_FUNC2_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC2_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC2_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC2_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC2_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC2_IN_INV_SEL_V  0x1
-#define GPIO_FUNC2_IN_INV_SEL_S  5
-/* GPIO_FUNC2_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC2_IN_INV_SEL_S  6
+/* GPIO_FUNC2_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC2_IN_SEL  0x0000001F
+#define GPIO_FUNC2_IN_SEL  0x0000003F
 #define GPIO_FUNC2_IN_SEL_M  ((GPIO_FUNC2_IN_SEL_V)<<(GPIO_FUNC2_IN_SEL_S))
-#define GPIO_FUNC2_IN_SEL_V  0x1F
+#define GPIO_FUNC2_IN_SEL_V  0x3F
 #define GPIO_FUNC2_IN_SEL_S  0
 
 #define GPIO_FUNC3_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x160)
-/* GPIO_SIG3_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG3_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG3_IN_SEL  (BIT(6))
-#define GPIO_SIG3_IN_SEL_M  (BIT(6))
+#define GPIO_SIG3_IN_SEL  (BIT(7))
+#define GPIO_SIG3_IN_SEL_M  (BIT(7))
 #define GPIO_SIG3_IN_SEL_V  0x1
-#define GPIO_SIG3_IN_SEL_S  6
-/* GPIO_FUNC3_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG3_IN_SEL_S  7
+/* GPIO_FUNC3_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC3_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC3_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC3_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC3_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC3_IN_INV_SEL_V  0x1
-#define GPIO_FUNC3_IN_INV_SEL_S  5
-/* GPIO_FUNC3_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC3_IN_INV_SEL_S  6
+/* GPIO_FUNC3_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC3_IN_SEL  0x0000001F
+#define GPIO_FUNC3_IN_SEL  0x0000003F
 #define GPIO_FUNC3_IN_SEL_M  ((GPIO_FUNC3_IN_SEL_V)<<(GPIO_FUNC3_IN_SEL_S))
-#define GPIO_FUNC3_IN_SEL_V  0x1F
+#define GPIO_FUNC3_IN_SEL_V  0x3F
 #define GPIO_FUNC3_IN_SEL_S  0
 
 #define GPIO_FUNC4_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x164)
-/* GPIO_SIG4_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG4_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG4_IN_SEL  (BIT(6))
-#define GPIO_SIG4_IN_SEL_M  (BIT(6))
+#define GPIO_SIG4_IN_SEL  (BIT(7))
+#define GPIO_SIG4_IN_SEL_M  (BIT(7))
 #define GPIO_SIG4_IN_SEL_V  0x1
-#define GPIO_SIG4_IN_SEL_S  6
-/* GPIO_FUNC4_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG4_IN_SEL_S  7
+/* GPIO_FUNC4_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC4_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC4_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC4_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC4_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC4_IN_INV_SEL_V  0x1
-#define GPIO_FUNC4_IN_INV_SEL_S  5
-/* GPIO_FUNC4_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC4_IN_INV_SEL_S  6
+/* GPIO_FUNC4_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC4_IN_SEL  0x0000001F
+#define GPIO_FUNC4_IN_SEL  0x0000003F
 #define GPIO_FUNC4_IN_SEL_M  ((GPIO_FUNC4_IN_SEL_V)<<(GPIO_FUNC4_IN_SEL_S))
-#define GPIO_FUNC4_IN_SEL_V  0x1F
+#define GPIO_FUNC4_IN_SEL_V  0x3F
 #define GPIO_FUNC4_IN_SEL_S  0
 
 #define GPIO_FUNC5_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x168)
-/* GPIO_SIG5_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG5_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG5_IN_SEL  (BIT(6))
-#define GPIO_SIG5_IN_SEL_M  (BIT(6))
+#define GPIO_SIG5_IN_SEL  (BIT(7))
+#define GPIO_SIG5_IN_SEL_M  (BIT(7))
 #define GPIO_SIG5_IN_SEL_V  0x1
-#define GPIO_SIG5_IN_SEL_S  6
-/* GPIO_FUNC5_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG5_IN_SEL_S  7
+/* GPIO_FUNC5_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC5_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC5_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC5_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC5_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC5_IN_INV_SEL_V  0x1
-#define GPIO_FUNC5_IN_INV_SEL_S  5
-/* GPIO_FUNC5_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC5_IN_INV_SEL_S  6
+/* GPIO_FUNC5_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC5_IN_SEL  0x0000001F
+#define GPIO_FUNC5_IN_SEL  0x0000003F
 #define GPIO_FUNC5_IN_SEL_M  ((GPIO_FUNC5_IN_SEL_V)<<(GPIO_FUNC5_IN_SEL_S))
-#define GPIO_FUNC5_IN_SEL_V  0x1F
+#define GPIO_FUNC5_IN_SEL_V  0x3F
 #define GPIO_FUNC5_IN_SEL_S  0
 
 #define GPIO_FUNC6_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x16C)
-/* GPIO_SIG6_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG6_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG6_IN_SEL  (BIT(6))
-#define GPIO_SIG6_IN_SEL_M  (BIT(6))
+#define GPIO_SIG6_IN_SEL  (BIT(7))
+#define GPIO_SIG6_IN_SEL_M  (BIT(7))
 #define GPIO_SIG6_IN_SEL_V  0x1
-#define GPIO_SIG6_IN_SEL_S  6
-/* GPIO_FUNC6_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG6_IN_SEL_S  7
+/* GPIO_FUNC6_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC6_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC6_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC6_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC6_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC6_IN_INV_SEL_V  0x1
-#define GPIO_FUNC6_IN_INV_SEL_S  5
-/* GPIO_FUNC6_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC6_IN_INV_SEL_S  6
+/* GPIO_FUNC6_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC6_IN_SEL  0x0000001F
+#define GPIO_FUNC6_IN_SEL  0x0000003F
 #define GPIO_FUNC6_IN_SEL_M  ((GPIO_FUNC6_IN_SEL_V)<<(GPIO_FUNC6_IN_SEL_S))
-#define GPIO_FUNC6_IN_SEL_V  0x1F
+#define GPIO_FUNC6_IN_SEL_V  0x3F
 #define GPIO_FUNC6_IN_SEL_S  0
 
 #define GPIO_FUNC7_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x170)
-/* GPIO_SIG7_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG7_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG7_IN_SEL  (BIT(6))
-#define GPIO_SIG7_IN_SEL_M  (BIT(6))
+#define GPIO_SIG7_IN_SEL  (BIT(7))
+#define GPIO_SIG7_IN_SEL_M  (BIT(7))
 #define GPIO_SIG7_IN_SEL_V  0x1
-#define GPIO_SIG7_IN_SEL_S  6
-/* GPIO_FUNC7_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG7_IN_SEL_S  7
+/* GPIO_FUNC7_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC7_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC7_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC7_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC7_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC7_IN_INV_SEL_V  0x1
-#define GPIO_FUNC7_IN_INV_SEL_S  5
-/* GPIO_FUNC7_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC7_IN_INV_SEL_S  6
+/* GPIO_FUNC7_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC7_IN_SEL  0x0000001F
+#define GPIO_FUNC7_IN_SEL  0x0000003F
 #define GPIO_FUNC7_IN_SEL_M  ((GPIO_FUNC7_IN_SEL_V)<<(GPIO_FUNC7_IN_SEL_S))
-#define GPIO_FUNC7_IN_SEL_V  0x1F
+#define GPIO_FUNC7_IN_SEL_V  0x3F
 #define GPIO_FUNC7_IN_SEL_S  0
 
 #define GPIO_FUNC8_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x174)
-/* GPIO_SIG8_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG8_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG8_IN_SEL  (BIT(6))
-#define GPIO_SIG8_IN_SEL_M  (BIT(6))
+#define GPIO_SIG8_IN_SEL  (BIT(7))
+#define GPIO_SIG8_IN_SEL_M  (BIT(7))
 #define GPIO_SIG8_IN_SEL_V  0x1
-#define GPIO_SIG8_IN_SEL_S  6
-/* GPIO_FUNC8_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG8_IN_SEL_S  7
+/* GPIO_FUNC8_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC8_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC8_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC8_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC8_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC8_IN_INV_SEL_V  0x1
-#define GPIO_FUNC8_IN_INV_SEL_S  5
-/* GPIO_FUNC8_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC8_IN_INV_SEL_S  6
+/* GPIO_FUNC8_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC8_IN_SEL  0x0000001F
+#define GPIO_FUNC8_IN_SEL  0x0000003F
 #define GPIO_FUNC8_IN_SEL_M  ((GPIO_FUNC8_IN_SEL_V)<<(GPIO_FUNC8_IN_SEL_S))
-#define GPIO_FUNC8_IN_SEL_V  0x1F
+#define GPIO_FUNC8_IN_SEL_V  0x3F
 #define GPIO_FUNC8_IN_SEL_S  0
 
 #define GPIO_FUNC9_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x178)
-/* GPIO_SIG9_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG9_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG9_IN_SEL  (BIT(6))
-#define GPIO_SIG9_IN_SEL_M  (BIT(6))
+#define GPIO_SIG9_IN_SEL  (BIT(7))
+#define GPIO_SIG9_IN_SEL_M  (BIT(7))
 #define GPIO_SIG9_IN_SEL_V  0x1
-#define GPIO_SIG9_IN_SEL_S  6
-/* GPIO_FUNC9_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG9_IN_SEL_S  7
+/* GPIO_FUNC9_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC9_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC9_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC9_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC9_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC9_IN_INV_SEL_V  0x1
-#define GPIO_FUNC9_IN_INV_SEL_S  5
-/* GPIO_FUNC9_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC9_IN_INV_SEL_S  6
+/* GPIO_FUNC9_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC9_IN_SEL  0x0000001F
+#define GPIO_FUNC9_IN_SEL  0x0000003F
 #define GPIO_FUNC9_IN_SEL_M  ((GPIO_FUNC9_IN_SEL_V)<<(GPIO_FUNC9_IN_SEL_S))
-#define GPIO_FUNC9_IN_SEL_V  0x1F
+#define GPIO_FUNC9_IN_SEL_V  0x3F
 #define GPIO_FUNC9_IN_SEL_S  0
 
 #define GPIO_FUNC10_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x17C)
-/* GPIO_SIG10_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG10_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG10_IN_SEL  (BIT(6))
-#define GPIO_SIG10_IN_SEL_M  (BIT(6))
+#define GPIO_SIG10_IN_SEL  (BIT(7))
+#define GPIO_SIG10_IN_SEL_M  (BIT(7))
 #define GPIO_SIG10_IN_SEL_V  0x1
-#define GPIO_SIG10_IN_SEL_S  6
-/* GPIO_FUNC10_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG10_IN_SEL_S  7
+/* GPIO_FUNC10_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC10_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC10_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC10_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC10_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC10_IN_INV_SEL_V  0x1
-#define GPIO_FUNC10_IN_INV_SEL_S  5
-/* GPIO_FUNC10_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC10_IN_INV_SEL_S  6
+/* GPIO_FUNC10_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC10_IN_SEL  0x0000001F
+#define GPIO_FUNC10_IN_SEL  0x0000003F
 #define GPIO_FUNC10_IN_SEL_M  ((GPIO_FUNC10_IN_SEL_V)<<(GPIO_FUNC10_IN_SEL_S))
-#define GPIO_FUNC10_IN_SEL_V  0x1F
+#define GPIO_FUNC10_IN_SEL_V  0x3F
 #define GPIO_FUNC10_IN_SEL_S  0
 
 #define GPIO_FUNC11_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x180)
-/* GPIO_SIG11_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG11_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG11_IN_SEL  (BIT(6))
-#define GPIO_SIG11_IN_SEL_M  (BIT(6))
+#define GPIO_SIG11_IN_SEL  (BIT(7))
+#define GPIO_SIG11_IN_SEL_M  (BIT(7))
 #define GPIO_SIG11_IN_SEL_V  0x1
-#define GPIO_SIG11_IN_SEL_S  6
-/* GPIO_FUNC11_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG11_IN_SEL_S  7
+/* GPIO_FUNC11_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC11_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC11_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC11_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC11_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC11_IN_INV_SEL_V  0x1
-#define GPIO_FUNC11_IN_INV_SEL_S  5
-/* GPIO_FUNC11_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC11_IN_INV_SEL_S  6
+/* GPIO_FUNC11_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC11_IN_SEL  0x0000001F
+#define GPIO_FUNC11_IN_SEL  0x0000003F
 #define GPIO_FUNC11_IN_SEL_M  ((GPIO_FUNC11_IN_SEL_V)<<(GPIO_FUNC11_IN_SEL_S))
-#define GPIO_FUNC11_IN_SEL_V  0x1F
+#define GPIO_FUNC11_IN_SEL_V  0x3F
 #define GPIO_FUNC11_IN_SEL_S  0
 
 #define GPIO_FUNC12_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x184)
-/* GPIO_SIG12_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG12_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG12_IN_SEL  (BIT(6))
-#define GPIO_SIG12_IN_SEL_M  (BIT(6))
+#define GPIO_SIG12_IN_SEL  (BIT(7))
+#define GPIO_SIG12_IN_SEL_M  (BIT(7))
 #define GPIO_SIG12_IN_SEL_V  0x1
-#define GPIO_SIG12_IN_SEL_S  6
-/* GPIO_FUNC12_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG12_IN_SEL_S  7
+/* GPIO_FUNC12_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC12_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC12_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC12_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC12_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC12_IN_INV_SEL_V  0x1
-#define GPIO_FUNC12_IN_INV_SEL_S  5
-/* GPIO_FUNC12_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC12_IN_INV_SEL_S  6
+/* GPIO_FUNC12_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC12_IN_SEL  0x0000001F
+#define GPIO_FUNC12_IN_SEL  0x0000003F
 #define GPIO_FUNC12_IN_SEL_M  ((GPIO_FUNC12_IN_SEL_V)<<(GPIO_FUNC12_IN_SEL_S))
-#define GPIO_FUNC12_IN_SEL_V  0x1F
+#define GPIO_FUNC12_IN_SEL_V  0x3F
 #define GPIO_FUNC12_IN_SEL_S  0
 
 #define GPIO_FUNC13_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x188)
-/* GPIO_SIG13_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG13_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG13_IN_SEL  (BIT(6))
-#define GPIO_SIG13_IN_SEL_M  (BIT(6))
+#define GPIO_SIG13_IN_SEL  (BIT(7))
+#define GPIO_SIG13_IN_SEL_M  (BIT(7))
 #define GPIO_SIG13_IN_SEL_V  0x1
-#define GPIO_SIG13_IN_SEL_S  6
-/* GPIO_FUNC13_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG13_IN_SEL_S  7
+/* GPIO_FUNC13_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC13_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC13_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC13_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC13_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC13_IN_INV_SEL_V  0x1
-#define GPIO_FUNC13_IN_INV_SEL_S  5
-/* GPIO_FUNC13_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC13_IN_INV_SEL_S  6
+/* GPIO_FUNC13_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC13_IN_SEL  0x0000001F
+#define GPIO_FUNC13_IN_SEL  0x0000003F
 #define GPIO_FUNC13_IN_SEL_M  ((GPIO_FUNC13_IN_SEL_V)<<(GPIO_FUNC13_IN_SEL_S))
-#define GPIO_FUNC13_IN_SEL_V  0x1F
+#define GPIO_FUNC13_IN_SEL_V  0x3F
 #define GPIO_FUNC13_IN_SEL_S  0
 
 #define GPIO_FUNC14_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x18C)
-/* GPIO_SIG14_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG14_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG14_IN_SEL  (BIT(6))
-#define GPIO_SIG14_IN_SEL_M  (BIT(6))
+#define GPIO_SIG14_IN_SEL  (BIT(7))
+#define GPIO_SIG14_IN_SEL_M  (BIT(7))
 #define GPIO_SIG14_IN_SEL_V  0x1
-#define GPIO_SIG14_IN_SEL_S  6
-/* GPIO_FUNC14_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG14_IN_SEL_S  7
+/* GPIO_FUNC14_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC14_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC14_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC14_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC14_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC14_IN_INV_SEL_V  0x1
-#define GPIO_FUNC14_IN_INV_SEL_S  5
-/* GPIO_FUNC14_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC14_IN_INV_SEL_S  6
+/* GPIO_FUNC14_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC14_IN_SEL  0x0000001F
+#define GPIO_FUNC14_IN_SEL  0x0000003F
 #define GPIO_FUNC14_IN_SEL_M  ((GPIO_FUNC14_IN_SEL_V)<<(GPIO_FUNC14_IN_SEL_S))
-#define GPIO_FUNC14_IN_SEL_V  0x1F
+#define GPIO_FUNC14_IN_SEL_V  0x3F
 #define GPIO_FUNC14_IN_SEL_S  0
 
 #define GPIO_FUNC15_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x190)
-/* GPIO_SIG15_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG15_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG15_IN_SEL  (BIT(6))
-#define GPIO_SIG15_IN_SEL_M  (BIT(6))
+#define GPIO_SIG15_IN_SEL  (BIT(7))
+#define GPIO_SIG15_IN_SEL_M  (BIT(7))
 #define GPIO_SIG15_IN_SEL_V  0x1
-#define GPIO_SIG15_IN_SEL_S  6
-/* GPIO_FUNC15_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG15_IN_SEL_S  7
+/* GPIO_FUNC15_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC15_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC15_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC15_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC15_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC15_IN_INV_SEL_V  0x1
-#define GPIO_FUNC15_IN_INV_SEL_S  5
-/* GPIO_FUNC15_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC15_IN_INV_SEL_S  6
+/* GPIO_FUNC15_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC15_IN_SEL  0x0000001F
+#define GPIO_FUNC15_IN_SEL  0x0000003F
 #define GPIO_FUNC15_IN_SEL_M  ((GPIO_FUNC15_IN_SEL_V)<<(GPIO_FUNC15_IN_SEL_S))
-#define GPIO_FUNC15_IN_SEL_V  0x1F
+#define GPIO_FUNC15_IN_SEL_V  0x3F
 #define GPIO_FUNC15_IN_SEL_S  0
 
 #define GPIO_FUNC16_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x194)
-/* GPIO_SIG16_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG16_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG16_IN_SEL  (BIT(6))
-#define GPIO_SIG16_IN_SEL_M  (BIT(6))
+#define GPIO_SIG16_IN_SEL  (BIT(7))
+#define GPIO_SIG16_IN_SEL_M  (BIT(7))
 #define GPIO_SIG16_IN_SEL_V  0x1
-#define GPIO_SIG16_IN_SEL_S  6
-/* GPIO_FUNC16_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG16_IN_SEL_S  7
+/* GPIO_FUNC16_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC16_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC16_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC16_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC16_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC16_IN_INV_SEL_V  0x1
-#define GPIO_FUNC16_IN_INV_SEL_S  5
-/* GPIO_FUNC16_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC16_IN_INV_SEL_S  6
+/* GPIO_FUNC16_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC16_IN_SEL  0x0000001F
+#define GPIO_FUNC16_IN_SEL  0x0000003F
 #define GPIO_FUNC16_IN_SEL_M  ((GPIO_FUNC16_IN_SEL_V)<<(GPIO_FUNC16_IN_SEL_S))
-#define GPIO_FUNC16_IN_SEL_V  0x1F
+#define GPIO_FUNC16_IN_SEL_V  0x3F
 #define GPIO_FUNC16_IN_SEL_S  0
 
 #define GPIO_FUNC17_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x198)
-/* GPIO_SIG17_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG17_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG17_IN_SEL  (BIT(6))
-#define GPIO_SIG17_IN_SEL_M  (BIT(6))
+#define GPIO_SIG17_IN_SEL  (BIT(7))
+#define GPIO_SIG17_IN_SEL_M  (BIT(7))
 #define GPIO_SIG17_IN_SEL_V  0x1
-#define GPIO_SIG17_IN_SEL_S  6
-/* GPIO_FUNC17_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG17_IN_SEL_S  7
+/* GPIO_FUNC17_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC17_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC17_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC17_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC17_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC17_IN_INV_SEL_V  0x1
-#define GPIO_FUNC17_IN_INV_SEL_S  5
-/* GPIO_FUNC17_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC17_IN_INV_SEL_S  6
+/* GPIO_FUNC17_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC17_IN_SEL  0x0000001F
+#define GPIO_FUNC17_IN_SEL  0x0000003F
 #define GPIO_FUNC17_IN_SEL_M  ((GPIO_FUNC17_IN_SEL_V)<<(GPIO_FUNC17_IN_SEL_S))
-#define GPIO_FUNC17_IN_SEL_V  0x1F
+#define GPIO_FUNC17_IN_SEL_V  0x3F
 #define GPIO_FUNC17_IN_SEL_S  0
 
 #define GPIO_FUNC18_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x19C)
-/* GPIO_SIG18_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG18_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG18_IN_SEL  (BIT(6))
-#define GPIO_SIG18_IN_SEL_M  (BIT(6))
+#define GPIO_SIG18_IN_SEL  (BIT(7))
+#define GPIO_SIG18_IN_SEL_M  (BIT(7))
 #define GPIO_SIG18_IN_SEL_V  0x1
-#define GPIO_SIG18_IN_SEL_S  6
-/* GPIO_FUNC18_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG18_IN_SEL_S  7
+/* GPIO_FUNC18_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC18_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC18_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC18_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC18_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC18_IN_INV_SEL_V  0x1
-#define GPIO_FUNC18_IN_INV_SEL_S  5
-/* GPIO_FUNC18_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC18_IN_INV_SEL_S  6
+/* GPIO_FUNC18_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC18_IN_SEL  0x0000001F
+#define GPIO_FUNC18_IN_SEL  0x0000003F
 #define GPIO_FUNC18_IN_SEL_M  ((GPIO_FUNC18_IN_SEL_V)<<(GPIO_FUNC18_IN_SEL_S))
-#define GPIO_FUNC18_IN_SEL_V  0x1F
+#define GPIO_FUNC18_IN_SEL_V  0x3F
 #define GPIO_FUNC18_IN_SEL_S  0
 
 #define GPIO_FUNC19_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x1A0)
-/* GPIO_SIG19_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG19_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG19_IN_SEL  (BIT(6))
-#define GPIO_SIG19_IN_SEL_M  (BIT(6))
+#define GPIO_SIG19_IN_SEL  (BIT(7))
+#define GPIO_SIG19_IN_SEL_M  (BIT(7))
 #define GPIO_SIG19_IN_SEL_V  0x1
-#define GPIO_SIG19_IN_SEL_S  6
-/* GPIO_FUNC19_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG19_IN_SEL_S  7
+/* GPIO_FUNC19_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC19_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC19_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC19_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC19_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC19_IN_INV_SEL_V  0x1
-#define GPIO_FUNC19_IN_INV_SEL_S  5
-/* GPIO_FUNC19_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC19_IN_INV_SEL_S  6
+/* GPIO_FUNC19_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC19_IN_SEL  0x0000001F
+#define GPIO_FUNC19_IN_SEL  0x0000003F
 #define GPIO_FUNC19_IN_SEL_M  ((GPIO_FUNC19_IN_SEL_V)<<(GPIO_FUNC19_IN_SEL_S))
-#define GPIO_FUNC19_IN_SEL_V  0x1F
+#define GPIO_FUNC19_IN_SEL_V  0x3F
 #define GPIO_FUNC19_IN_SEL_S  0
 
 #define GPIO_FUNC20_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x1A4)
-/* GPIO_SIG20_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG20_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG20_IN_SEL  (BIT(6))
-#define GPIO_SIG20_IN_SEL_M  (BIT(6))
+#define GPIO_SIG20_IN_SEL  (BIT(7))
+#define GPIO_SIG20_IN_SEL_M  (BIT(7))
 #define GPIO_SIG20_IN_SEL_V  0x1
-#define GPIO_SIG20_IN_SEL_S  6
-/* GPIO_FUNC20_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG20_IN_SEL_S  7
+/* GPIO_FUNC20_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC20_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC20_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC20_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC20_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC20_IN_INV_SEL_V  0x1
-#define GPIO_FUNC20_IN_INV_SEL_S  5
-/* GPIO_FUNC20_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC20_IN_INV_SEL_S  6
+/* GPIO_FUNC20_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC20_IN_SEL  0x0000001F
+#define GPIO_FUNC20_IN_SEL  0x0000003F
 #define GPIO_FUNC20_IN_SEL_M  ((GPIO_FUNC20_IN_SEL_V)<<(GPIO_FUNC20_IN_SEL_S))
-#define GPIO_FUNC20_IN_SEL_V  0x1F
+#define GPIO_FUNC20_IN_SEL_V  0x3F
 #define GPIO_FUNC20_IN_SEL_S  0
 
 #define GPIO_FUNC21_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x1A8)
-/* GPIO_SIG21_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG21_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG21_IN_SEL  (BIT(6))
-#define GPIO_SIG21_IN_SEL_M  (BIT(6))
+#define GPIO_SIG21_IN_SEL  (BIT(7))
+#define GPIO_SIG21_IN_SEL_M  (BIT(7))
 #define GPIO_SIG21_IN_SEL_V  0x1
-#define GPIO_SIG21_IN_SEL_S  6
-/* GPIO_FUNC21_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG21_IN_SEL_S  7
+/* GPIO_FUNC21_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC21_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC21_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC21_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC21_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC21_IN_INV_SEL_V  0x1
-#define GPIO_FUNC21_IN_INV_SEL_S  5
-/* GPIO_FUNC21_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC21_IN_INV_SEL_S  6
+/* GPIO_FUNC21_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC21_IN_SEL  0x0000001F
+#define GPIO_FUNC21_IN_SEL  0x0000003F
 #define GPIO_FUNC21_IN_SEL_M  ((GPIO_FUNC21_IN_SEL_V)<<(GPIO_FUNC21_IN_SEL_S))
-#define GPIO_FUNC21_IN_SEL_V  0x1F
+#define GPIO_FUNC21_IN_SEL_V  0x3F
 #define GPIO_FUNC21_IN_SEL_S  0
 
 #define GPIO_FUNC22_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x1AC)
-/* GPIO_SIG22_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG22_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG22_IN_SEL  (BIT(6))
-#define GPIO_SIG22_IN_SEL_M  (BIT(6))
+#define GPIO_SIG22_IN_SEL  (BIT(7))
+#define GPIO_SIG22_IN_SEL_M  (BIT(7))
 #define GPIO_SIG22_IN_SEL_V  0x1
-#define GPIO_SIG22_IN_SEL_S  6
-/* GPIO_FUNC22_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG22_IN_SEL_S  7
+/* GPIO_FUNC22_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC22_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC22_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC22_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC22_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC22_IN_INV_SEL_V  0x1
-#define GPIO_FUNC22_IN_INV_SEL_S  5
-/* GPIO_FUNC22_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC22_IN_INV_SEL_S  6
+/* GPIO_FUNC22_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC22_IN_SEL  0x0000001F
+#define GPIO_FUNC22_IN_SEL  0x0000003F
 #define GPIO_FUNC22_IN_SEL_M  ((GPIO_FUNC22_IN_SEL_V)<<(GPIO_FUNC22_IN_SEL_S))
-#define GPIO_FUNC22_IN_SEL_V  0x1F
+#define GPIO_FUNC22_IN_SEL_V  0x3F
 #define GPIO_FUNC22_IN_SEL_S  0
 
 #define GPIO_FUNC23_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x1B0)
-/* GPIO_SIG23_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG23_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG23_IN_SEL  (BIT(6))
-#define GPIO_SIG23_IN_SEL_M  (BIT(6))
+#define GPIO_SIG23_IN_SEL  (BIT(7))
+#define GPIO_SIG23_IN_SEL_M  (BIT(7))
 #define GPIO_SIG23_IN_SEL_V  0x1
-#define GPIO_SIG23_IN_SEL_S  6
-/* GPIO_FUNC23_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG23_IN_SEL_S  7
+/* GPIO_FUNC23_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC23_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC23_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC23_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC23_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC23_IN_INV_SEL_V  0x1
-#define GPIO_FUNC23_IN_INV_SEL_S  5
-/* GPIO_FUNC23_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC23_IN_INV_SEL_S  6
+/* GPIO_FUNC23_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC23_IN_SEL  0x0000001F
+#define GPIO_FUNC23_IN_SEL  0x0000003F
 #define GPIO_FUNC23_IN_SEL_M  ((GPIO_FUNC23_IN_SEL_V)<<(GPIO_FUNC23_IN_SEL_S))
-#define GPIO_FUNC23_IN_SEL_V  0x1F
+#define GPIO_FUNC23_IN_SEL_V  0x3F
 #define GPIO_FUNC23_IN_SEL_S  0
 
 #define GPIO_FUNC24_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x1B4)
-/* GPIO_SIG24_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG24_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG24_IN_SEL  (BIT(6))
-#define GPIO_SIG24_IN_SEL_M  (BIT(6))
+#define GPIO_SIG24_IN_SEL  (BIT(7))
+#define GPIO_SIG24_IN_SEL_M  (BIT(7))
 #define GPIO_SIG24_IN_SEL_V  0x1
-#define GPIO_SIG24_IN_SEL_S  6
-/* GPIO_FUNC24_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG24_IN_SEL_S  7
+/* GPIO_FUNC24_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC24_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC24_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC24_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC24_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC24_IN_INV_SEL_V  0x1
-#define GPIO_FUNC24_IN_INV_SEL_S  5
-/* GPIO_FUNC24_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC24_IN_INV_SEL_S  6
+/* GPIO_FUNC24_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC24_IN_SEL  0x0000001F
+#define GPIO_FUNC24_IN_SEL  0x0000003F
 #define GPIO_FUNC24_IN_SEL_M  ((GPIO_FUNC24_IN_SEL_V)<<(GPIO_FUNC24_IN_SEL_S))
-#define GPIO_FUNC24_IN_SEL_V  0x1F
+#define GPIO_FUNC24_IN_SEL_V  0x3F
 #define GPIO_FUNC24_IN_SEL_S  0
 
 #define GPIO_FUNC25_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x1B8)
-/* GPIO_SIG25_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG25_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG25_IN_SEL  (BIT(6))
-#define GPIO_SIG25_IN_SEL_M  (BIT(6))
+#define GPIO_SIG25_IN_SEL  (BIT(7))
+#define GPIO_SIG25_IN_SEL_M  (BIT(7))
 #define GPIO_SIG25_IN_SEL_V  0x1
-#define GPIO_SIG25_IN_SEL_S  6
-/* GPIO_FUNC25_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG25_IN_SEL_S  7
+/* GPIO_FUNC25_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC25_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC25_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC25_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC25_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC25_IN_INV_SEL_V  0x1
-#define GPIO_FUNC25_IN_INV_SEL_S  5
-/* GPIO_FUNC25_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC25_IN_INV_SEL_S  6
+/* GPIO_FUNC25_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC25_IN_SEL  0x0000001F
+#define GPIO_FUNC25_IN_SEL  0x0000003F
 #define GPIO_FUNC25_IN_SEL_M  ((GPIO_FUNC25_IN_SEL_V)<<(GPIO_FUNC25_IN_SEL_S))
-#define GPIO_FUNC25_IN_SEL_V  0x1F
+#define GPIO_FUNC25_IN_SEL_V  0x3F
 #define GPIO_FUNC25_IN_SEL_S  0
 
 #define GPIO_FUNC26_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x1BC)
-/* GPIO_SIG26_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG26_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG26_IN_SEL  (BIT(6))
-#define GPIO_SIG26_IN_SEL_M  (BIT(6))
+#define GPIO_SIG26_IN_SEL  (BIT(7))
+#define GPIO_SIG26_IN_SEL_M  (BIT(7))
 #define GPIO_SIG26_IN_SEL_V  0x1
-#define GPIO_SIG26_IN_SEL_S  6
-/* GPIO_FUNC26_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG26_IN_SEL_S  7
+/* GPIO_FUNC26_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC26_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC26_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC26_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC26_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC26_IN_INV_SEL_V  0x1
-#define GPIO_FUNC26_IN_INV_SEL_S  5
-/* GPIO_FUNC26_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC26_IN_INV_SEL_S  6
+/* GPIO_FUNC26_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC26_IN_SEL  0x0000001F
+#define GPIO_FUNC26_IN_SEL  0x0000003F
 #define GPIO_FUNC26_IN_SEL_M  ((GPIO_FUNC26_IN_SEL_V)<<(GPIO_FUNC26_IN_SEL_S))
-#define GPIO_FUNC26_IN_SEL_V  0x1F
+#define GPIO_FUNC26_IN_SEL_V  0x3F
 #define GPIO_FUNC26_IN_SEL_S  0
 
 #define GPIO_FUNC27_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x1C0)
-/* GPIO_SIG27_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG27_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG27_IN_SEL  (BIT(6))
-#define GPIO_SIG27_IN_SEL_M  (BIT(6))
+#define GPIO_SIG27_IN_SEL  (BIT(7))
+#define GPIO_SIG27_IN_SEL_M  (BIT(7))
 #define GPIO_SIG27_IN_SEL_V  0x1
-#define GPIO_SIG27_IN_SEL_S  6
-/* GPIO_FUNC27_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG27_IN_SEL_S  7
+/* GPIO_FUNC27_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC27_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC27_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC27_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC27_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC27_IN_INV_SEL_V  0x1
-#define GPIO_FUNC27_IN_INV_SEL_S  5
-/* GPIO_FUNC27_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC27_IN_INV_SEL_S  6
+/* GPIO_FUNC27_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC27_IN_SEL  0x0000001F
+#define GPIO_FUNC27_IN_SEL  0x0000003F
 #define GPIO_FUNC27_IN_SEL_M  ((GPIO_FUNC27_IN_SEL_V)<<(GPIO_FUNC27_IN_SEL_S))
-#define GPIO_FUNC27_IN_SEL_V  0x1F
+#define GPIO_FUNC27_IN_SEL_V  0x3F
 #define GPIO_FUNC27_IN_SEL_S  0
 
 #define GPIO_FUNC28_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x1C4)
-/* GPIO_SIG28_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG28_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG28_IN_SEL  (BIT(6))
-#define GPIO_SIG28_IN_SEL_M  (BIT(6))
+#define GPIO_SIG28_IN_SEL  (BIT(7))
+#define GPIO_SIG28_IN_SEL_M  (BIT(7))
 #define GPIO_SIG28_IN_SEL_V  0x1
-#define GPIO_SIG28_IN_SEL_S  6
-/* GPIO_FUNC28_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG28_IN_SEL_S  7
+/* GPIO_FUNC28_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC28_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC28_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC28_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC28_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC28_IN_INV_SEL_V  0x1
-#define GPIO_FUNC28_IN_INV_SEL_S  5
-/* GPIO_FUNC28_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC28_IN_INV_SEL_S  6
+/* GPIO_FUNC28_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC28_IN_SEL  0x0000001F
+#define GPIO_FUNC28_IN_SEL  0x0000003F
 #define GPIO_FUNC28_IN_SEL_M  ((GPIO_FUNC28_IN_SEL_V)<<(GPIO_FUNC28_IN_SEL_S))
-#define GPIO_FUNC28_IN_SEL_V  0x1F
+#define GPIO_FUNC28_IN_SEL_V  0x3F
 #define GPIO_FUNC28_IN_SEL_S  0
 
 #define GPIO_FUNC29_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x1C8)
-/* GPIO_SIG29_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG29_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG29_IN_SEL  (BIT(6))
-#define GPIO_SIG29_IN_SEL_M  (BIT(6))
+#define GPIO_SIG29_IN_SEL  (BIT(7))
+#define GPIO_SIG29_IN_SEL_M  (BIT(7))
 #define GPIO_SIG29_IN_SEL_V  0x1
-#define GPIO_SIG29_IN_SEL_S  6
-/* GPIO_FUNC29_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG29_IN_SEL_S  7
+/* GPIO_FUNC29_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC29_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC29_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC29_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC29_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC29_IN_INV_SEL_V  0x1
-#define GPIO_FUNC29_IN_INV_SEL_S  5
-/* GPIO_FUNC29_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC29_IN_INV_SEL_S  6
+/* GPIO_FUNC29_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC29_IN_SEL  0x0000001F
+#define GPIO_FUNC29_IN_SEL  0x0000003F
 #define GPIO_FUNC29_IN_SEL_M  ((GPIO_FUNC29_IN_SEL_V)<<(GPIO_FUNC29_IN_SEL_S))
-#define GPIO_FUNC29_IN_SEL_V  0x1F
+#define GPIO_FUNC29_IN_SEL_V  0x3F
 #define GPIO_FUNC29_IN_SEL_S  0
 
 #define GPIO_FUNC30_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x1CC)
-/* GPIO_SIG30_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG30_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG30_IN_SEL  (BIT(6))
-#define GPIO_SIG30_IN_SEL_M  (BIT(6))
+#define GPIO_SIG30_IN_SEL  (BIT(7))
+#define GPIO_SIG30_IN_SEL_M  (BIT(7))
 #define GPIO_SIG30_IN_SEL_V  0x1
-#define GPIO_SIG30_IN_SEL_S  6
-/* GPIO_FUNC30_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG30_IN_SEL_S  7
+/* GPIO_FUNC30_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC30_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC30_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC30_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC30_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC30_IN_INV_SEL_V  0x1
-#define GPIO_FUNC30_IN_INV_SEL_S  5
-/* GPIO_FUNC30_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC30_IN_INV_SEL_S  6
+/* GPIO_FUNC30_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC30_IN_SEL  0x0000001F
+#define GPIO_FUNC30_IN_SEL  0x0000003F
 #define GPIO_FUNC30_IN_SEL_M  ((GPIO_FUNC30_IN_SEL_V)<<(GPIO_FUNC30_IN_SEL_S))
-#define GPIO_FUNC30_IN_SEL_V  0x1F
+#define GPIO_FUNC30_IN_SEL_V  0x3F
 #define GPIO_FUNC30_IN_SEL_S  0
 
 #define GPIO_FUNC31_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x1D0)
-/* GPIO_SIG31_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG31_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG31_IN_SEL  (BIT(6))
-#define GPIO_SIG31_IN_SEL_M  (BIT(6))
+#define GPIO_SIG31_IN_SEL  (BIT(7))
+#define GPIO_SIG31_IN_SEL_M  (BIT(7))
 #define GPIO_SIG31_IN_SEL_V  0x1
-#define GPIO_SIG31_IN_SEL_S  6
-/* GPIO_FUNC31_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG31_IN_SEL_S  7
+/* GPIO_FUNC31_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC31_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC31_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC31_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC31_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC31_IN_INV_SEL_V  0x1
-#define GPIO_FUNC31_IN_INV_SEL_S  5
-/* GPIO_FUNC31_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC31_IN_INV_SEL_S  6
+/* GPIO_FUNC31_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC31_IN_SEL  0x0000001F
+#define GPIO_FUNC31_IN_SEL  0x0000003F
 #define GPIO_FUNC31_IN_SEL_M  ((GPIO_FUNC31_IN_SEL_V)<<(GPIO_FUNC31_IN_SEL_S))
-#define GPIO_FUNC31_IN_SEL_V  0x1F
+#define GPIO_FUNC31_IN_SEL_V  0x3F
 #define GPIO_FUNC31_IN_SEL_S  0
 
 #define GPIO_FUNC32_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x1D4)
-/* GPIO_SIG32_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG32_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG32_IN_SEL  (BIT(6))
-#define GPIO_SIG32_IN_SEL_M  (BIT(6))
+#define GPIO_SIG32_IN_SEL  (BIT(7))
+#define GPIO_SIG32_IN_SEL_M  (BIT(7))
 #define GPIO_SIG32_IN_SEL_V  0x1
-#define GPIO_SIG32_IN_SEL_S  6
-/* GPIO_FUNC32_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG32_IN_SEL_S  7
+/* GPIO_FUNC32_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC32_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC32_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC32_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC32_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC32_IN_INV_SEL_V  0x1
-#define GPIO_FUNC32_IN_INV_SEL_S  5
-/* GPIO_FUNC32_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC32_IN_INV_SEL_S  6
+/* GPIO_FUNC32_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC32_IN_SEL  0x0000001F
+#define GPIO_FUNC32_IN_SEL  0x0000003F
 #define GPIO_FUNC32_IN_SEL_M  ((GPIO_FUNC32_IN_SEL_V)<<(GPIO_FUNC32_IN_SEL_S))
-#define GPIO_FUNC32_IN_SEL_V  0x1F
+#define GPIO_FUNC32_IN_SEL_V  0x3F
 #define GPIO_FUNC32_IN_SEL_S  0
 
 #define GPIO_FUNC33_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x1D8)
-/* GPIO_SIG33_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG33_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG33_IN_SEL  (BIT(6))
-#define GPIO_SIG33_IN_SEL_M  (BIT(6))
+#define GPIO_SIG33_IN_SEL  (BIT(7))
+#define GPIO_SIG33_IN_SEL_M  (BIT(7))
 #define GPIO_SIG33_IN_SEL_V  0x1
-#define GPIO_SIG33_IN_SEL_S  6
-/* GPIO_FUNC33_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG33_IN_SEL_S  7
+/* GPIO_FUNC33_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC33_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC33_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC33_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC33_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC33_IN_INV_SEL_V  0x1
-#define GPIO_FUNC33_IN_INV_SEL_S  5
-/* GPIO_FUNC33_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC33_IN_INV_SEL_S  6
+/* GPIO_FUNC33_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC33_IN_SEL  0x0000001F
+#define GPIO_FUNC33_IN_SEL  0x0000003F
 #define GPIO_FUNC33_IN_SEL_M  ((GPIO_FUNC33_IN_SEL_V)<<(GPIO_FUNC33_IN_SEL_S))
-#define GPIO_FUNC33_IN_SEL_V  0x1F
+#define GPIO_FUNC33_IN_SEL_V  0x3F
 #define GPIO_FUNC33_IN_SEL_S  0
 
 #define GPIO_FUNC34_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x1DC)
-/* GPIO_SIG34_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG34_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG34_IN_SEL  (BIT(6))
-#define GPIO_SIG34_IN_SEL_M  (BIT(6))
+#define GPIO_SIG34_IN_SEL  (BIT(7))
+#define GPIO_SIG34_IN_SEL_M  (BIT(7))
 #define GPIO_SIG34_IN_SEL_V  0x1
-#define GPIO_SIG34_IN_SEL_S  6
-/* GPIO_FUNC34_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG34_IN_SEL_S  7
+/* GPIO_FUNC34_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC34_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC34_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC34_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC34_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC34_IN_INV_SEL_V  0x1
-#define GPIO_FUNC34_IN_INV_SEL_S  5
-/* GPIO_FUNC34_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC34_IN_INV_SEL_S  6
+/* GPIO_FUNC34_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC34_IN_SEL  0x0000001F
+#define GPIO_FUNC34_IN_SEL  0x0000003F
 #define GPIO_FUNC34_IN_SEL_M  ((GPIO_FUNC34_IN_SEL_V)<<(GPIO_FUNC34_IN_SEL_S))
-#define GPIO_FUNC34_IN_SEL_V  0x1F
+#define GPIO_FUNC34_IN_SEL_V  0x3F
 #define GPIO_FUNC34_IN_SEL_S  0
 
 #define GPIO_FUNC35_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x1E0)
-/* GPIO_SIG35_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG35_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG35_IN_SEL  (BIT(6))
-#define GPIO_SIG35_IN_SEL_M  (BIT(6))
+#define GPIO_SIG35_IN_SEL  (BIT(7))
+#define GPIO_SIG35_IN_SEL_M  (BIT(7))
 #define GPIO_SIG35_IN_SEL_V  0x1
-#define GPIO_SIG35_IN_SEL_S  6
-/* GPIO_FUNC35_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG35_IN_SEL_S  7
+/* GPIO_FUNC35_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC35_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC35_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC35_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC35_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC35_IN_INV_SEL_V  0x1
-#define GPIO_FUNC35_IN_INV_SEL_S  5
-/* GPIO_FUNC35_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC35_IN_INV_SEL_S  6
+/* GPIO_FUNC35_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC35_IN_SEL  0x0000001F
+#define GPIO_FUNC35_IN_SEL  0x0000003F
 #define GPIO_FUNC35_IN_SEL_M  ((GPIO_FUNC35_IN_SEL_V)<<(GPIO_FUNC35_IN_SEL_S))
-#define GPIO_FUNC35_IN_SEL_V  0x1F
+#define GPIO_FUNC35_IN_SEL_V  0x3F
 #define GPIO_FUNC35_IN_SEL_S  0
 
 #define GPIO_FUNC36_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x1E4)
-/* GPIO_SIG36_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG36_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG36_IN_SEL  (BIT(6))
-#define GPIO_SIG36_IN_SEL_M  (BIT(6))
+#define GPIO_SIG36_IN_SEL  (BIT(7))
+#define GPIO_SIG36_IN_SEL_M  (BIT(7))
 #define GPIO_SIG36_IN_SEL_V  0x1
-#define GPIO_SIG36_IN_SEL_S  6
-/* GPIO_FUNC36_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG36_IN_SEL_S  7
+/* GPIO_FUNC36_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC36_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC36_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC36_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC36_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC36_IN_INV_SEL_V  0x1
-#define GPIO_FUNC36_IN_INV_SEL_S  5
-/* GPIO_FUNC36_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC36_IN_INV_SEL_S  6
+/* GPIO_FUNC36_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC36_IN_SEL  0x0000001F
+#define GPIO_FUNC36_IN_SEL  0x0000003F
 #define GPIO_FUNC36_IN_SEL_M  ((GPIO_FUNC36_IN_SEL_V)<<(GPIO_FUNC36_IN_SEL_S))
-#define GPIO_FUNC36_IN_SEL_V  0x1F
+#define GPIO_FUNC36_IN_SEL_V  0x3F
 #define GPIO_FUNC36_IN_SEL_S  0
 
 #define GPIO_FUNC37_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x1E8)
-/* GPIO_SIG37_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG37_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG37_IN_SEL  (BIT(6))
-#define GPIO_SIG37_IN_SEL_M  (BIT(6))
+#define GPIO_SIG37_IN_SEL  (BIT(7))
+#define GPIO_SIG37_IN_SEL_M  (BIT(7))
 #define GPIO_SIG37_IN_SEL_V  0x1
-#define GPIO_SIG37_IN_SEL_S  6
-/* GPIO_FUNC37_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG37_IN_SEL_S  7
+/* GPIO_FUNC37_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC37_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC37_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC37_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC37_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC37_IN_INV_SEL_V  0x1
-#define GPIO_FUNC37_IN_INV_SEL_S  5
-/* GPIO_FUNC37_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC37_IN_INV_SEL_S  6
+/* GPIO_FUNC37_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC37_IN_SEL  0x0000001F
+#define GPIO_FUNC37_IN_SEL  0x0000003F
 #define GPIO_FUNC37_IN_SEL_M  ((GPIO_FUNC37_IN_SEL_V)<<(GPIO_FUNC37_IN_SEL_S))
-#define GPIO_FUNC37_IN_SEL_V  0x1F
+#define GPIO_FUNC37_IN_SEL_V  0x3F
 #define GPIO_FUNC37_IN_SEL_S  0
 
 #define GPIO_FUNC38_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x1EC)
-/* GPIO_SIG38_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG38_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG38_IN_SEL  (BIT(6))
-#define GPIO_SIG38_IN_SEL_M  (BIT(6))
+#define GPIO_SIG38_IN_SEL  (BIT(7))
+#define GPIO_SIG38_IN_SEL_M  (BIT(7))
 #define GPIO_SIG38_IN_SEL_V  0x1
-#define GPIO_SIG38_IN_SEL_S  6
-/* GPIO_FUNC38_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG38_IN_SEL_S  7
+/* GPIO_FUNC38_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC38_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC38_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC38_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC38_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC38_IN_INV_SEL_V  0x1
-#define GPIO_FUNC38_IN_INV_SEL_S  5
-/* GPIO_FUNC38_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC38_IN_INV_SEL_S  6
+/* GPIO_FUNC38_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC38_IN_SEL  0x0000001F
+#define GPIO_FUNC38_IN_SEL  0x0000003F
 #define GPIO_FUNC38_IN_SEL_M  ((GPIO_FUNC38_IN_SEL_V)<<(GPIO_FUNC38_IN_SEL_S))
-#define GPIO_FUNC38_IN_SEL_V  0x1F
+#define GPIO_FUNC38_IN_SEL_V  0x3F
 #define GPIO_FUNC38_IN_SEL_S  0
 
 #define GPIO_FUNC39_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x1F0)
-/* GPIO_SIG39_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG39_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG39_IN_SEL  (BIT(6))
-#define GPIO_SIG39_IN_SEL_M  (BIT(6))
+#define GPIO_SIG39_IN_SEL  (BIT(7))
+#define GPIO_SIG39_IN_SEL_M  (BIT(7))
 #define GPIO_SIG39_IN_SEL_V  0x1
-#define GPIO_SIG39_IN_SEL_S  6
-/* GPIO_FUNC39_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG39_IN_SEL_S  7
+/* GPIO_FUNC39_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC39_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC39_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC39_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC39_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC39_IN_INV_SEL_V  0x1
-#define GPIO_FUNC39_IN_INV_SEL_S  5
-/* GPIO_FUNC39_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC39_IN_INV_SEL_S  6
+/* GPIO_FUNC39_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC39_IN_SEL  0x0000001F
+#define GPIO_FUNC39_IN_SEL  0x0000003F
 #define GPIO_FUNC39_IN_SEL_M  ((GPIO_FUNC39_IN_SEL_V)<<(GPIO_FUNC39_IN_SEL_S))
-#define GPIO_FUNC39_IN_SEL_V  0x1F
+#define GPIO_FUNC39_IN_SEL_V  0x3F
 #define GPIO_FUNC39_IN_SEL_S  0
 
 #define GPIO_FUNC40_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x1F4)
-/* GPIO_SIG40_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG40_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG40_IN_SEL  (BIT(6))
-#define GPIO_SIG40_IN_SEL_M  (BIT(6))
+#define GPIO_SIG40_IN_SEL  (BIT(7))
+#define GPIO_SIG40_IN_SEL_M  (BIT(7))
 #define GPIO_SIG40_IN_SEL_V  0x1
-#define GPIO_SIG40_IN_SEL_S  6
-/* GPIO_FUNC40_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG40_IN_SEL_S  7
+/* GPIO_FUNC40_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC40_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC40_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC40_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC40_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC40_IN_INV_SEL_V  0x1
-#define GPIO_FUNC40_IN_INV_SEL_S  5
-/* GPIO_FUNC40_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC40_IN_INV_SEL_S  6
+/* GPIO_FUNC40_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC40_IN_SEL  0x0000001F
+#define GPIO_FUNC40_IN_SEL  0x0000003F
 #define GPIO_FUNC40_IN_SEL_M  ((GPIO_FUNC40_IN_SEL_V)<<(GPIO_FUNC40_IN_SEL_S))
-#define GPIO_FUNC40_IN_SEL_V  0x1F
+#define GPIO_FUNC40_IN_SEL_V  0x3F
 #define GPIO_FUNC40_IN_SEL_S  0
 
 #define GPIO_FUNC41_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x1F8)
-/* GPIO_SIG41_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG41_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG41_IN_SEL  (BIT(6))
-#define GPIO_SIG41_IN_SEL_M  (BIT(6))
+#define GPIO_SIG41_IN_SEL  (BIT(7))
+#define GPIO_SIG41_IN_SEL_M  (BIT(7))
 #define GPIO_SIG41_IN_SEL_V  0x1
-#define GPIO_SIG41_IN_SEL_S  6
-/* GPIO_FUNC41_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG41_IN_SEL_S  7
+/* GPIO_FUNC41_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC41_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC41_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC41_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC41_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC41_IN_INV_SEL_V  0x1
-#define GPIO_FUNC41_IN_INV_SEL_S  5
-/* GPIO_FUNC41_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC41_IN_INV_SEL_S  6
+/* GPIO_FUNC41_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC41_IN_SEL  0x0000001F
+#define GPIO_FUNC41_IN_SEL  0x0000003F
 #define GPIO_FUNC41_IN_SEL_M  ((GPIO_FUNC41_IN_SEL_V)<<(GPIO_FUNC41_IN_SEL_S))
-#define GPIO_FUNC41_IN_SEL_V  0x1F
+#define GPIO_FUNC41_IN_SEL_V  0x3F
 #define GPIO_FUNC41_IN_SEL_S  0
 
 #define GPIO_FUNC42_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x1FC)
-/* GPIO_SIG42_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG42_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG42_IN_SEL  (BIT(6))
-#define GPIO_SIG42_IN_SEL_M  (BIT(6))
+#define GPIO_SIG42_IN_SEL  (BIT(7))
+#define GPIO_SIG42_IN_SEL_M  (BIT(7))
 #define GPIO_SIG42_IN_SEL_V  0x1
-#define GPIO_SIG42_IN_SEL_S  6
-/* GPIO_FUNC42_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG42_IN_SEL_S  7
+/* GPIO_FUNC42_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC42_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC42_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC42_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC42_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC42_IN_INV_SEL_V  0x1
-#define GPIO_FUNC42_IN_INV_SEL_S  5
-/* GPIO_FUNC42_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC42_IN_INV_SEL_S  6
+/* GPIO_FUNC42_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC42_IN_SEL  0x0000001F
+#define GPIO_FUNC42_IN_SEL  0x0000003F
 #define GPIO_FUNC42_IN_SEL_M  ((GPIO_FUNC42_IN_SEL_V)<<(GPIO_FUNC42_IN_SEL_S))
-#define GPIO_FUNC42_IN_SEL_V  0x1F
+#define GPIO_FUNC42_IN_SEL_V  0x3F
 #define GPIO_FUNC42_IN_SEL_S  0
 
 #define GPIO_FUNC43_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x200)
-/* GPIO_SIG43_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG43_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG43_IN_SEL  (BIT(6))
-#define GPIO_SIG43_IN_SEL_M  (BIT(6))
+#define GPIO_SIG43_IN_SEL  (BIT(7))
+#define GPIO_SIG43_IN_SEL_M  (BIT(7))
 #define GPIO_SIG43_IN_SEL_V  0x1
-#define GPIO_SIG43_IN_SEL_S  6
-/* GPIO_FUNC43_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG43_IN_SEL_S  7
+/* GPIO_FUNC43_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC43_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC43_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC43_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC43_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC43_IN_INV_SEL_V  0x1
-#define GPIO_FUNC43_IN_INV_SEL_S  5
-/* GPIO_FUNC43_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC43_IN_INV_SEL_S  6
+/* GPIO_FUNC43_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC43_IN_SEL  0x0000001F
+#define GPIO_FUNC43_IN_SEL  0x0000003F
 #define GPIO_FUNC43_IN_SEL_M  ((GPIO_FUNC43_IN_SEL_V)<<(GPIO_FUNC43_IN_SEL_S))
-#define GPIO_FUNC43_IN_SEL_V  0x1F
+#define GPIO_FUNC43_IN_SEL_V  0x3F
 #define GPIO_FUNC43_IN_SEL_S  0
 
 #define GPIO_FUNC44_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x204)
-/* GPIO_SIG44_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG44_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG44_IN_SEL  (BIT(6))
-#define GPIO_SIG44_IN_SEL_M  (BIT(6))
+#define GPIO_SIG44_IN_SEL  (BIT(7))
+#define GPIO_SIG44_IN_SEL_M  (BIT(7))
 #define GPIO_SIG44_IN_SEL_V  0x1
-#define GPIO_SIG44_IN_SEL_S  6
-/* GPIO_FUNC44_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG44_IN_SEL_S  7
+/* GPIO_FUNC44_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC44_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC44_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC44_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC44_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC44_IN_INV_SEL_V  0x1
-#define GPIO_FUNC44_IN_INV_SEL_S  5
-/* GPIO_FUNC44_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC44_IN_INV_SEL_S  6
+/* GPIO_FUNC44_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC44_IN_SEL  0x0000001F
+#define GPIO_FUNC44_IN_SEL  0x0000003F
 #define GPIO_FUNC44_IN_SEL_M  ((GPIO_FUNC44_IN_SEL_V)<<(GPIO_FUNC44_IN_SEL_S))
-#define GPIO_FUNC44_IN_SEL_V  0x1F
+#define GPIO_FUNC44_IN_SEL_V  0x3F
 #define GPIO_FUNC44_IN_SEL_S  0
 
 #define GPIO_FUNC45_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x208)
-/* GPIO_SIG45_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG45_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG45_IN_SEL  (BIT(6))
-#define GPIO_SIG45_IN_SEL_M  (BIT(6))
+#define GPIO_SIG45_IN_SEL  (BIT(7))
+#define GPIO_SIG45_IN_SEL_M  (BIT(7))
 #define GPIO_SIG45_IN_SEL_V  0x1
-#define GPIO_SIG45_IN_SEL_S  6
-/* GPIO_FUNC45_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG45_IN_SEL_S  7
+/* GPIO_FUNC45_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC45_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC45_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC45_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC45_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC45_IN_INV_SEL_V  0x1
-#define GPIO_FUNC45_IN_INV_SEL_S  5
-/* GPIO_FUNC45_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC45_IN_INV_SEL_S  6
+/* GPIO_FUNC45_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC45_IN_SEL  0x0000001F
+#define GPIO_FUNC45_IN_SEL  0x0000003F
 #define GPIO_FUNC45_IN_SEL_M  ((GPIO_FUNC45_IN_SEL_V)<<(GPIO_FUNC45_IN_SEL_S))
-#define GPIO_FUNC45_IN_SEL_V  0x1F
+#define GPIO_FUNC45_IN_SEL_V  0x3F
 #define GPIO_FUNC45_IN_SEL_S  0
 
 #define GPIO_FUNC46_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x20C)
-/* GPIO_SIG46_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG46_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG46_IN_SEL  (BIT(6))
-#define GPIO_SIG46_IN_SEL_M  (BIT(6))
+#define GPIO_SIG46_IN_SEL  (BIT(7))
+#define GPIO_SIG46_IN_SEL_M  (BIT(7))
 #define GPIO_SIG46_IN_SEL_V  0x1
-#define GPIO_SIG46_IN_SEL_S  6
-/* GPIO_FUNC46_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG46_IN_SEL_S  7
+/* GPIO_FUNC46_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC46_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC46_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC46_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC46_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC46_IN_INV_SEL_V  0x1
-#define GPIO_FUNC46_IN_INV_SEL_S  5
-/* GPIO_FUNC46_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC46_IN_INV_SEL_S  6
+/* GPIO_FUNC46_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC46_IN_SEL  0x0000001F
+#define GPIO_FUNC46_IN_SEL  0x0000003F
 #define GPIO_FUNC46_IN_SEL_M  ((GPIO_FUNC46_IN_SEL_V)<<(GPIO_FUNC46_IN_SEL_S))
-#define GPIO_FUNC46_IN_SEL_V  0x1F
+#define GPIO_FUNC46_IN_SEL_V  0x3F
 #define GPIO_FUNC46_IN_SEL_S  0
 
 #define GPIO_FUNC47_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x210)
-/* GPIO_SIG47_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG47_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG47_IN_SEL  (BIT(6))
-#define GPIO_SIG47_IN_SEL_M  (BIT(6))
+#define GPIO_SIG47_IN_SEL  (BIT(7))
+#define GPIO_SIG47_IN_SEL_M  (BIT(7))
 #define GPIO_SIG47_IN_SEL_V  0x1
-#define GPIO_SIG47_IN_SEL_S  6
-/* GPIO_FUNC47_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG47_IN_SEL_S  7
+/* GPIO_FUNC47_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC47_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC47_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC47_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC47_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC47_IN_INV_SEL_V  0x1
-#define GPIO_FUNC47_IN_INV_SEL_S  5
-/* GPIO_FUNC47_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC47_IN_INV_SEL_S  6
+/* GPIO_FUNC47_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC47_IN_SEL  0x0000001F
+#define GPIO_FUNC47_IN_SEL  0x0000003F
 #define GPIO_FUNC47_IN_SEL_M  ((GPIO_FUNC47_IN_SEL_V)<<(GPIO_FUNC47_IN_SEL_S))
-#define GPIO_FUNC47_IN_SEL_V  0x1F
+#define GPIO_FUNC47_IN_SEL_V  0x3F
 #define GPIO_FUNC47_IN_SEL_S  0
 
 #define GPIO_FUNC48_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x214)
-/* GPIO_SIG48_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG48_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG48_IN_SEL  (BIT(6))
-#define GPIO_SIG48_IN_SEL_M  (BIT(6))
+#define GPIO_SIG48_IN_SEL  (BIT(7))
+#define GPIO_SIG48_IN_SEL_M  (BIT(7))
 #define GPIO_SIG48_IN_SEL_V  0x1
-#define GPIO_SIG48_IN_SEL_S  6
-/* GPIO_FUNC48_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG48_IN_SEL_S  7
+/* GPIO_FUNC48_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC48_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC48_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC48_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC48_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC48_IN_INV_SEL_V  0x1
-#define GPIO_FUNC48_IN_INV_SEL_S  5
-/* GPIO_FUNC48_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC48_IN_INV_SEL_S  6
+/* GPIO_FUNC48_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC48_IN_SEL  0x0000001F
+#define GPIO_FUNC48_IN_SEL  0x0000003F
 #define GPIO_FUNC48_IN_SEL_M  ((GPIO_FUNC48_IN_SEL_V)<<(GPIO_FUNC48_IN_SEL_S))
-#define GPIO_FUNC48_IN_SEL_V  0x1F
+#define GPIO_FUNC48_IN_SEL_V  0x3F
 #define GPIO_FUNC48_IN_SEL_S  0
 
 #define GPIO_FUNC49_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x218)
-/* GPIO_SIG49_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG49_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG49_IN_SEL  (BIT(6))
-#define GPIO_SIG49_IN_SEL_M  (BIT(6))
+#define GPIO_SIG49_IN_SEL  (BIT(7))
+#define GPIO_SIG49_IN_SEL_M  (BIT(7))
 #define GPIO_SIG49_IN_SEL_V  0x1
-#define GPIO_SIG49_IN_SEL_S  6
-/* GPIO_FUNC49_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG49_IN_SEL_S  7
+/* GPIO_FUNC49_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC49_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC49_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC49_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC49_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC49_IN_INV_SEL_V  0x1
-#define GPIO_FUNC49_IN_INV_SEL_S  5
-/* GPIO_FUNC49_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC49_IN_INV_SEL_S  6
+/* GPIO_FUNC49_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC49_IN_SEL  0x0000001F
+#define GPIO_FUNC49_IN_SEL  0x0000003F
 #define GPIO_FUNC49_IN_SEL_M  ((GPIO_FUNC49_IN_SEL_V)<<(GPIO_FUNC49_IN_SEL_S))
-#define GPIO_FUNC49_IN_SEL_V  0x1F
+#define GPIO_FUNC49_IN_SEL_V  0x3F
 #define GPIO_FUNC49_IN_SEL_S  0
 
 #define GPIO_FUNC50_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x21C)
-/* GPIO_SIG50_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG50_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG50_IN_SEL  (BIT(6))
-#define GPIO_SIG50_IN_SEL_M  (BIT(6))
+#define GPIO_SIG50_IN_SEL  (BIT(7))
+#define GPIO_SIG50_IN_SEL_M  (BIT(7))
 #define GPIO_SIG50_IN_SEL_V  0x1
-#define GPIO_SIG50_IN_SEL_S  6
-/* GPIO_FUNC50_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG50_IN_SEL_S  7
+/* GPIO_FUNC50_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC50_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC50_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC50_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC50_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC50_IN_INV_SEL_V  0x1
-#define GPIO_FUNC50_IN_INV_SEL_S  5
-/* GPIO_FUNC50_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC50_IN_INV_SEL_S  6
+/* GPIO_FUNC50_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC50_IN_SEL  0x0000001F
+#define GPIO_FUNC50_IN_SEL  0x0000003F
 #define GPIO_FUNC50_IN_SEL_M  ((GPIO_FUNC50_IN_SEL_V)<<(GPIO_FUNC50_IN_SEL_S))
-#define GPIO_FUNC50_IN_SEL_V  0x1F
+#define GPIO_FUNC50_IN_SEL_V  0x3F
 #define GPIO_FUNC50_IN_SEL_S  0
 
 #define GPIO_FUNC51_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x220)
-/* GPIO_SIG51_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG51_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG51_IN_SEL  (BIT(6))
-#define GPIO_SIG51_IN_SEL_M  (BIT(6))
+#define GPIO_SIG51_IN_SEL  (BIT(7))
+#define GPIO_SIG51_IN_SEL_M  (BIT(7))
 #define GPIO_SIG51_IN_SEL_V  0x1
-#define GPIO_SIG51_IN_SEL_S  6
-/* GPIO_FUNC51_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG51_IN_SEL_S  7
+/* GPIO_FUNC51_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC51_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC51_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC51_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC51_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC51_IN_INV_SEL_V  0x1
-#define GPIO_FUNC51_IN_INV_SEL_S  5
-/* GPIO_FUNC51_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC51_IN_INV_SEL_S  6
+/* GPIO_FUNC51_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC51_IN_SEL  0x0000001F
+#define GPIO_FUNC51_IN_SEL  0x0000003F
 #define GPIO_FUNC51_IN_SEL_M  ((GPIO_FUNC51_IN_SEL_V)<<(GPIO_FUNC51_IN_SEL_S))
-#define GPIO_FUNC51_IN_SEL_V  0x1F
+#define GPIO_FUNC51_IN_SEL_V  0x3F
 #define GPIO_FUNC51_IN_SEL_S  0
 
 #define GPIO_FUNC52_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x224)
-/* GPIO_SIG52_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG52_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG52_IN_SEL  (BIT(6))
-#define GPIO_SIG52_IN_SEL_M  (BIT(6))
+#define GPIO_SIG52_IN_SEL  (BIT(7))
+#define GPIO_SIG52_IN_SEL_M  (BIT(7))
 #define GPIO_SIG52_IN_SEL_V  0x1
-#define GPIO_SIG52_IN_SEL_S  6
-/* GPIO_FUNC52_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG52_IN_SEL_S  7
+/* GPIO_FUNC52_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC52_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC52_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC52_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC52_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC52_IN_INV_SEL_V  0x1
-#define GPIO_FUNC52_IN_INV_SEL_S  5
-/* GPIO_FUNC52_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC52_IN_INV_SEL_S  6
+/* GPIO_FUNC52_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC52_IN_SEL  0x0000001F
+#define GPIO_FUNC52_IN_SEL  0x0000003F
 #define GPIO_FUNC52_IN_SEL_M  ((GPIO_FUNC52_IN_SEL_V)<<(GPIO_FUNC52_IN_SEL_S))
-#define GPIO_FUNC52_IN_SEL_V  0x1F
+#define GPIO_FUNC52_IN_SEL_V  0x3F
 #define GPIO_FUNC52_IN_SEL_S  0
 
 #define GPIO_FUNC53_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x228)
-/* GPIO_SIG53_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG53_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG53_IN_SEL  (BIT(6))
-#define GPIO_SIG53_IN_SEL_M  (BIT(6))
+#define GPIO_SIG53_IN_SEL  (BIT(7))
+#define GPIO_SIG53_IN_SEL_M  (BIT(7))
 #define GPIO_SIG53_IN_SEL_V  0x1
-#define GPIO_SIG53_IN_SEL_S  6
-/* GPIO_FUNC53_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG53_IN_SEL_S  7
+/* GPIO_FUNC53_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC53_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC53_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC53_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC53_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC53_IN_INV_SEL_V  0x1
-#define GPIO_FUNC53_IN_INV_SEL_S  5
-/* GPIO_FUNC53_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC53_IN_INV_SEL_S  6
+/* GPIO_FUNC53_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC53_IN_SEL  0x0000001F
+#define GPIO_FUNC53_IN_SEL  0x0000003F
 #define GPIO_FUNC53_IN_SEL_M  ((GPIO_FUNC53_IN_SEL_V)<<(GPIO_FUNC53_IN_SEL_S))
-#define GPIO_FUNC53_IN_SEL_V  0x1F
+#define GPIO_FUNC53_IN_SEL_V  0x3F
 #define GPIO_FUNC53_IN_SEL_S  0
 
 #define GPIO_FUNC54_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x22C)
-/* GPIO_SIG54_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG54_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG54_IN_SEL  (BIT(6))
-#define GPIO_SIG54_IN_SEL_M  (BIT(6))
+#define GPIO_SIG54_IN_SEL  (BIT(7))
+#define GPIO_SIG54_IN_SEL_M  (BIT(7))
 #define GPIO_SIG54_IN_SEL_V  0x1
-#define GPIO_SIG54_IN_SEL_S  6
-/* GPIO_FUNC54_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG54_IN_SEL_S  7
+/* GPIO_FUNC54_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC54_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC54_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC54_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC54_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC54_IN_INV_SEL_V  0x1
-#define GPIO_FUNC54_IN_INV_SEL_S  5
-/* GPIO_FUNC54_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC54_IN_INV_SEL_S  6
+/* GPIO_FUNC54_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC54_IN_SEL  0x0000001F
+#define GPIO_FUNC54_IN_SEL  0x0000003F
 #define GPIO_FUNC54_IN_SEL_M  ((GPIO_FUNC54_IN_SEL_V)<<(GPIO_FUNC54_IN_SEL_S))
-#define GPIO_FUNC54_IN_SEL_V  0x1F
+#define GPIO_FUNC54_IN_SEL_V  0x3F
 #define GPIO_FUNC54_IN_SEL_S  0
 
 #define GPIO_FUNC55_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x230)
-/* GPIO_SIG55_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG55_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG55_IN_SEL  (BIT(6))
-#define GPIO_SIG55_IN_SEL_M  (BIT(6))
+#define GPIO_SIG55_IN_SEL  (BIT(7))
+#define GPIO_SIG55_IN_SEL_M  (BIT(7))
 #define GPIO_SIG55_IN_SEL_V  0x1
-#define GPIO_SIG55_IN_SEL_S  6
-/* GPIO_FUNC55_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG55_IN_SEL_S  7
+/* GPIO_FUNC55_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC55_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC55_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC55_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC55_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC55_IN_INV_SEL_V  0x1
-#define GPIO_FUNC55_IN_INV_SEL_S  5
-/* GPIO_FUNC55_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC55_IN_INV_SEL_S  6
+/* GPIO_FUNC55_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC55_IN_SEL  0x0000001F
+#define GPIO_FUNC55_IN_SEL  0x0000003F
 #define GPIO_FUNC55_IN_SEL_M  ((GPIO_FUNC55_IN_SEL_V)<<(GPIO_FUNC55_IN_SEL_S))
-#define GPIO_FUNC55_IN_SEL_V  0x1F
+#define GPIO_FUNC55_IN_SEL_V  0x3F
 #define GPIO_FUNC55_IN_SEL_S  0
 
 #define GPIO_FUNC56_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x234)
-/* GPIO_SIG56_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG56_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG56_IN_SEL  (BIT(6))
-#define GPIO_SIG56_IN_SEL_M  (BIT(6))
+#define GPIO_SIG56_IN_SEL  (BIT(7))
+#define GPIO_SIG56_IN_SEL_M  (BIT(7))
 #define GPIO_SIG56_IN_SEL_V  0x1
-#define GPIO_SIG56_IN_SEL_S  6
-/* GPIO_FUNC56_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG56_IN_SEL_S  7
+/* GPIO_FUNC56_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC56_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC56_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC56_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC56_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC56_IN_INV_SEL_V  0x1
-#define GPIO_FUNC56_IN_INV_SEL_S  5
-/* GPIO_FUNC56_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC56_IN_INV_SEL_S  6
+/* GPIO_FUNC56_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC56_IN_SEL  0x0000001F
+#define GPIO_FUNC56_IN_SEL  0x0000003F
 #define GPIO_FUNC56_IN_SEL_M  ((GPIO_FUNC56_IN_SEL_V)<<(GPIO_FUNC56_IN_SEL_S))
-#define GPIO_FUNC56_IN_SEL_V  0x1F
+#define GPIO_FUNC56_IN_SEL_V  0x3F
 #define GPIO_FUNC56_IN_SEL_S  0
 
 #define GPIO_FUNC57_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x238)
-/* GPIO_SIG57_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG57_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG57_IN_SEL  (BIT(6))
-#define GPIO_SIG57_IN_SEL_M  (BIT(6))
+#define GPIO_SIG57_IN_SEL  (BIT(7))
+#define GPIO_SIG57_IN_SEL_M  (BIT(7))
 #define GPIO_SIG57_IN_SEL_V  0x1
-#define GPIO_SIG57_IN_SEL_S  6
-/* GPIO_FUNC57_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG57_IN_SEL_S  7
+/* GPIO_FUNC57_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC57_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC57_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC57_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC57_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC57_IN_INV_SEL_V  0x1
-#define GPIO_FUNC57_IN_INV_SEL_S  5
-/* GPIO_FUNC57_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC57_IN_INV_SEL_S  6
+/* GPIO_FUNC57_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC57_IN_SEL  0x0000001F
+#define GPIO_FUNC57_IN_SEL  0x0000003F
 #define GPIO_FUNC57_IN_SEL_M  ((GPIO_FUNC57_IN_SEL_V)<<(GPIO_FUNC57_IN_SEL_S))
-#define GPIO_FUNC57_IN_SEL_V  0x1F
+#define GPIO_FUNC57_IN_SEL_V  0x3F
 #define GPIO_FUNC57_IN_SEL_S  0
 
 #define GPIO_FUNC58_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x23C)
-/* GPIO_SIG58_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG58_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG58_IN_SEL  (BIT(6))
-#define GPIO_SIG58_IN_SEL_M  (BIT(6))
+#define GPIO_SIG58_IN_SEL  (BIT(7))
+#define GPIO_SIG58_IN_SEL_M  (BIT(7))
 #define GPIO_SIG58_IN_SEL_V  0x1
-#define GPIO_SIG58_IN_SEL_S  6
-/* GPIO_FUNC58_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG58_IN_SEL_S  7
+/* GPIO_FUNC58_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC58_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC58_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC58_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC58_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC58_IN_INV_SEL_V  0x1
-#define GPIO_FUNC58_IN_INV_SEL_S  5
-/* GPIO_FUNC58_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC58_IN_INV_SEL_S  6
+/* GPIO_FUNC58_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC58_IN_SEL  0x0000001F
+#define GPIO_FUNC58_IN_SEL  0x0000003F
 #define GPIO_FUNC58_IN_SEL_M  ((GPIO_FUNC58_IN_SEL_V)<<(GPIO_FUNC58_IN_SEL_S))
-#define GPIO_FUNC58_IN_SEL_V  0x1F
+#define GPIO_FUNC58_IN_SEL_V  0x3F
 #define GPIO_FUNC58_IN_SEL_S  0
 
 #define GPIO_FUNC59_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x240)
-/* GPIO_SIG59_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG59_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG59_IN_SEL  (BIT(6))
-#define GPIO_SIG59_IN_SEL_M  (BIT(6))
+#define GPIO_SIG59_IN_SEL  (BIT(7))
+#define GPIO_SIG59_IN_SEL_M  (BIT(7))
 #define GPIO_SIG59_IN_SEL_V  0x1
-#define GPIO_SIG59_IN_SEL_S  6
-/* GPIO_FUNC59_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG59_IN_SEL_S  7
+/* GPIO_FUNC59_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC59_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC59_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC59_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC59_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC59_IN_INV_SEL_V  0x1
-#define GPIO_FUNC59_IN_INV_SEL_S  5
-/* GPIO_FUNC59_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC59_IN_INV_SEL_S  6
+/* GPIO_FUNC59_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC59_IN_SEL  0x0000001F
+#define GPIO_FUNC59_IN_SEL  0x0000003F
 #define GPIO_FUNC59_IN_SEL_M  ((GPIO_FUNC59_IN_SEL_V)<<(GPIO_FUNC59_IN_SEL_S))
-#define GPIO_FUNC59_IN_SEL_V  0x1F
+#define GPIO_FUNC59_IN_SEL_V  0x3F
 #define GPIO_FUNC59_IN_SEL_S  0
 
 #define GPIO_FUNC60_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x244)
-/* GPIO_SIG60_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG60_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG60_IN_SEL  (BIT(6))
-#define GPIO_SIG60_IN_SEL_M  (BIT(6))
+#define GPIO_SIG60_IN_SEL  (BIT(7))
+#define GPIO_SIG60_IN_SEL_M  (BIT(7))
 #define GPIO_SIG60_IN_SEL_V  0x1
-#define GPIO_SIG60_IN_SEL_S  6
-/* GPIO_FUNC60_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG60_IN_SEL_S  7
+/* GPIO_FUNC60_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC60_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC60_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC60_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC60_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC60_IN_INV_SEL_V  0x1
-#define GPIO_FUNC60_IN_INV_SEL_S  5
-/* GPIO_FUNC60_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC60_IN_INV_SEL_S  6
+/* GPIO_FUNC60_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC60_IN_SEL  0x0000001F
+#define GPIO_FUNC60_IN_SEL  0x0000003F
 #define GPIO_FUNC60_IN_SEL_M  ((GPIO_FUNC60_IN_SEL_V)<<(GPIO_FUNC60_IN_SEL_S))
-#define GPIO_FUNC60_IN_SEL_V  0x1F
+#define GPIO_FUNC60_IN_SEL_V  0x3F
 #define GPIO_FUNC60_IN_SEL_S  0
 
 #define GPIO_FUNC61_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x248)
-/* GPIO_SIG61_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG61_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG61_IN_SEL  (BIT(6))
-#define GPIO_SIG61_IN_SEL_M  (BIT(6))
+#define GPIO_SIG61_IN_SEL  (BIT(7))
+#define GPIO_SIG61_IN_SEL_M  (BIT(7))
 #define GPIO_SIG61_IN_SEL_V  0x1
-#define GPIO_SIG61_IN_SEL_S  6
-/* GPIO_FUNC61_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG61_IN_SEL_S  7
+/* GPIO_FUNC61_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC61_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC61_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC61_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC61_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC61_IN_INV_SEL_V  0x1
-#define GPIO_FUNC61_IN_INV_SEL_S  5
-/* GPIO_FUNC61_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC61_IN_INV_SEL_S  6
+/* GPIO_FUNC61_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC61_IN_SEL  0x0000001F
+#define GPIO_FUNC61_IN_SEL  0x0000003F
 #define GPIO_FUNC61_IN_SEL_M  ((GPIO_FUNC61_IN_SEL_V)<<(GPIO_FUNC61_IN_SEL_S))
-#define GPIO_FUNC61_IN_SEL_V  0x1F
+#define GPIO_FUNC61_IN_SEL_V  0x3F
 #define GPIO_FUNC61_IN_SEL_S  0
 
 #define GPIO_FUNC62_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x24C)
-/* GPIO_SIG62_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG62_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG62_IN_SEL  (BIT(6))
-#define GPIO_SIG62_IN_SEL_M  (BIT(6))
+#define GPIO_SIG62_IN_SEL  (BIT(7))
+#define GPIO_SIG62_IN_SEL_M  (BIT(7))
 #define GPIO_SIG62_IN_SEL_V  0x1
-#define GPIO_SIG62_IN_SEL_S  6
-/* GPIO_FUNC62_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG62_IN_SEL_S  7
+/* GPIO_FUNC62_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC62_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC62_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC62_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC62_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC62_IN_INV_SEL_V  0x1
-#define GPIO_FUNC62_IN_INV_SEL_S  5
-/* GPIO_FUNC62_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC62_IN_INV_SEL_S  6
+/* GPIO_FUNC62_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC62_IN_SEL  0x0000001F
+#define GPIO_FUNC62_IN_SEL  0x0000003F
 #define GPIO_FUNC62_IN_SEL_M  ((GPIO_FUNC62_IN_SEL_V)<<(GPIO_FUNC62_IN_SEL_S))
-#define GPIO_FUNC62_IN_SEL_V  0x1F
+#define GPIO_FUNC62_IN_SEL_V  0x3F
 #define GPIO_FUNC62_IN_SEL_S  0
 
 #define GPIO_FUNC63_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x250)
-/* GPIO_SIG63_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG63_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG63_IN_SEL  (BIT(6))
-#define GPIO_SIG63_IN_SEL_M  (BIT(6))
+#define GPIO_SIG63_IN_SEL  (BIT(7))
+#define GPIO_SIG63_IN_SEL_M  (BIT(7))
 #define GPIO_SIG63_IN_SEL_V  0x1
-#define GPIO_SIG63_IN_SEL_S  6
-/* GPIO_FUNC63_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG63_IN_SEL_S  7
+/* GPIO_FUNC63_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC63_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC63_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC63_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC63_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC63_IN_INV_SEL_V  0x1
-#define GPIO_FUNC63_IN_INV_SEL_S  5
-/* GPIO_FUNC63_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC63_IN_INV_SEL_S  6
+/* GPIO_FUNC63_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC63_IN_SEL  0x0000001F
+#define GPIO_FUNC63_IN_SEL  0x0000003F
 #define GPIO_FUNC63_IN_SEL_M  ((GPIO_FUNC63_IN_SEL_V)<<(GPIO_FUNC63_IN_SEL_S))
-#define GPIO_FUNC63_IN_SEL_V  0x1F
+#define GPIO_FUNC63_IN_SEL_V  0x3F
 #define GPIO_FUNC63_IN_SEL_S  0
 
 #define GPIO_FUNC64_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x254)
-/* GPIO_SIG64_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG64_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG64_IN_SEL  (BIT(6))
-#define GPIO_SIG64_IN_SEL_M  (BIT(6))
+#define GPIO_SIG64_IN_SEL  (BIT(7))
+#define GPIO_SIG64_IN_SEL_M  (BIT(7))
 #define GPIO_SIG64_IN_SEL_V  0x1
-#define GPIO_SIG64_IN_SEL_S  6
-/* GPIO_FUNC64_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG64_IN_SEL_S  7
+/* GPIO_FUNC64_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC64_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC64_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC64_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC64_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC64_IN_INV_SEL_V  0x1
-#define GPIO_FUNC64_IN_INV_SEL_S  5
-/* GPIO_FUNC64_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC64_IN_INV_SEL_S  6
+/* GPIO_FUNC64_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC64_IN_SEL  0x0000001F
+#define GPIO_FUNC64_IN_SEL  0x0000003F
 #define GPIO_FUNC64_IN_SEL_M  ((GPIO_FUNC64_IN_SEL_V)<<(GPIO_FUNC64_IN_SEL_S))
-#define GPIO_FUNC64_IN_SEL_V  0x1F
+#define GPIO_FUNC64_IN_SEL_V  0x3F
 #define GPIO_FUNC64_IN_SEL_S  0
 
 #define GPIO_FUNC65_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x258)
-/* GPIO_SIG65_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG65_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG65_IN_SEL  (BIT(6))
-#define GPIO_SIG65_IN_SEL_M  (BIT(6))
+#define GPIO_SIG65_IN_SEL  (BIT(7))
+#define GPIO_SIG65_IN_SEL_M  (BIT(7))
 #define GPIO_SIG65_IN_SEL_V  0x1
-#define GPIO_SIG65_IN_SEL_S  6
-/* GPIO_FUNC65_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG65_IN_SEL_S  7
+/* GPIO_FUNC65_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC65_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC65_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC65_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC65_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC65_IN_INV_SEL_V  0x1
-#define GPIO_FUNC65_IN_INV_SEL_S  5
-/* GPIO_FUNC65_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC65_IN_INV_SEL_S  6
+/* GPIO_FUNC65_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC65_IN_SEL  0x0000001F
+#define GPIO_FUNC65_IN_SEL  0x0000003F
 #define GPIO_FUNC65_IN_SEL_M  ((GPIO_FUNC65_IN_SEL_V)<<(GPIO_FUNC65_IN_SEL_S))
-#define GPIO_FUNC65_IN_SEL_V  0x1F
+#define GPIO_FUNC65_IN_SEL_V  0x3F
 #define GPIO_FUNC65_IN_SEL_S  0
 
 #define GPIO_FUNC66_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x25C)
-/* GPIO_SIG66_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG66_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG66_IN_SEL  (BIT(6))
-#define GPIO_SIG66_IN_SEL_M  (BIT(6))
+#define GPIO_SIG66_IN_SEL  (BIT(7))
+#define GPIO_SIG66_IN_SEL_M  (BIT(7))
 #define GPIO_SIG66_IN_SEL_V  0x1
-#define GPIO_SIG66_IN_SEL_S  6
-/* GPIO_FUNC66_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG66_IN_SEL_S  7
+/* GPIO_FUNC66_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC66_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC66_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC66_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC66_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC66_IN_INV_SEL_V  0x1
-#define GPIO_FUNC66_IN_INV_SEL_S  5
-/* GPIO_FUNC66_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC66_IN_INV_SEL_S  6
+/* GPIO_FUNC66_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC66_IN_SEL  0x0000001F
+#define GPIO_FUNC66_IN_SEL  0x0000003F
 #define GPIO_FUNC66_IN_SEL_M  ((GPIO_FUNC66_IN_SEL_V)<<(GPIO_FUNC66_IN_SEL_S))
-#define GPIO_FUNC66_IN_SEL_V  0x1F
+#define GPIO_FUNC66_IN_SEL_V  0x3F
 #define GPIO_FUNC66_IN_SEL_S  0
 
 #define GPIO_FUNC67_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x260)
-/* GPIO_SIG67_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG67_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG67_IN_SEL  (BIT(6))
-#define GPIO_SIG67_IN_SEL_M  (BIT(6))
+#define GPIO_SIG67_IN_SEL  (BIT(7))
+#define GPIO_SIG67_IN_SEL_M  (BIT(7))
 #define GPIO_SIG67_IN_SEL_V  0x1
-#define GPIO_SIG67_IN_SEL_S  6
-/* GPIO_FUNC67_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG67_IN_SEL_S  7
+/* GPIO_FUNC67_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC67_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC67_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC67_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC67_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC67_IN_INV_SEL_V  0x1
-#define GPIO_FUNC67_IN_INV_SEL_S  5
-/* GPIO_FUNC67_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC67_IN_INV_SEL_S  6
+/* GPIO_FUNC67_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC67_IN_SEL  0x0000001F
+#define GPIO_FUNC67_IN_SEL  0x0000003F
 #define GPIO_FUNC67_IN_SEL_M  ((GPIO_FUNC67_IN_SEL_V)<<(GPIO_FUNC67_IN_SEL_S))
-#define GPIO_FUNC67_IN_SEL_V  0x1F
+#define GPIO_FUNC67_IN_SEL_V  0x3F
 #define GPIO_FUNC67_IN_SEL_S  0
 
 #define GPIO_FUNC68_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x264)
-/* GPIO_SIG68_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG68_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG68_IN_SEL  (BIT(6))
-#define GPIO_SIG68_IN_SEL_M  (BIT(6))
+#define GPIO_SIG68_IN_SEL  (BIT(7))
+#define GPIO_SIG68_IN_SEL_M  (BIT(7))
 #define GPIO_SIG68_IN_SEL_V  0x1
-#define GPIO_SIG68_IN_SEL_S  6
-/* GPIO_FUNC68_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG68_IN_SEL_S  7
+/* GPIO_FUNC68_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC68_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC68_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC68_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC68_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC68_IN_INV_SEL_V  0x1
-#define GPIO_FUNC68_IN_INV_SEL_S  5
-/* GPIO_FUNC68_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC68_IN_INV_SEL_S  6
+/* GPIO_FUNC68_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC68_IN_SEL  0x0000001F
+#define GPIO_FUNC68_IN_SEL  0x0000003F
 #define GPIO_FUNC68_IN_SEL_M  ((GPIO_FUNC68_IN_SEL_V)<<(GPIO_FUNC68_IN_SEL_S))
-#define GPIO_FUNC68_IN_SEL_V  0x1F
+#define GPIO_FUNC68_IN_SEL_V  0x3F
 #define GPIO_FUNC68_IN_SEL_S  0
 
 #define GPIO_FUNC69_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x268)
-/* GPIO_SIG69_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG69_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG69_IN_SEL  (BIT(6))
-#define GPIO_SIG69_IN_SEL_M  (BIT(6))
+#define GPIO_SIG69_IN_SEL  (BIT(7))
+#define GPIO_SIG69_IN_SEL_M  (BIT(7))
 #define GPIO_SIG69_IN_SEL_V  0x1
-#define GPIO_SIG69_IN_SEL_S  6
-/* GPIO_FUNC69_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG69_IN_SEL_S  7
+/* GPIO_FUNC69_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC69_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC69_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC69_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC69_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC69_IN_INV_SEL_V  0x1
-#define GPIO_FUNC69_IN_INV_SEL_S  5
-/* GPIO_FUNC69_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC69_IN_INV_SEL_S  6
+/* GPIO_FUNC69_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC69_IN_SEL  0x0000001F
+#define GPIO_FUNC69_IN_SEL  0x0000003F
 #define GPIO_FUNC69_IN_SEL_M  ((GPIO_FUNC69_IN_SEL_V)<<(GPIO_FUNC69_IN_SEL_S))
-#define GPIO_FUNC69_IN_SEL_V  0x1F
+#define GPIO_FUNC69_IN_SEL_V  0x3F
 #define GPIO_FUNC69_IN_SEL_S  0
 
 #define GPIO_FUNC70_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x26C)
-/* GPIO_SIG70_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG70_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG70_IN_SEL  (BIT(6))
-#define GPIO_SIG70_IN_SEL_M  (BIT(6))
+#define GPIO_SIG70_IN_SEL  (BIT(7))
+#define GPIO_SIG70_IN_SEL_M  (BIT(7))
 #define GPIO_SIG70_IN_SEL_V  0x1
-#define GPIO_SIG70_IN_SEL_S  6
-/* GPIO_FUNC70_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG70_IN_SEL_S  7
+/* GPIO_FUNC70_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC70_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC70_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC70_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC70_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC70_IN_INV_SEL_V  0x1
-#define GPIO_FUNC70_IN_INV_SEL_S  5
-/* GPIO_FUNC70_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC70_IN_INV_SEL_S  6
+/* GPIO_FUNC70_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC70_IN_SEL  0x0000001F
+#define GPIO_FUNC70_IN_SEL  0x0000003F
 #define GPIO_FUNC70_IN_SEL_M  ((GPIO_FUNC70_IN_SEL_V)<<(GPIO_FUNC70_IN_SEL_S))
-#define GPIO_FUNC70_IN_SEL_V  0x1F
+#define GPIO_FUNC70_IN_SEL_V  0x3F
 #define GPIO_FUNC70_IN_SEL_S  0
 
 #define GPIO_FUNC71_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x270)
-/* GPIO_SIG71_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG71_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG71_IN_SEL  (BIT(6))
-#define GPIO_SIG71_IN_SEL_M  (BIT(6))
+#define GPIO_SIG71_IN_SEL  (BIT(7))
+#define GPIO_SIG71_IN_SEL_M  (BIT(7))
 #define GPIO_SIG71_IN_SEL_V  0x1
-#define GPIO_SIG71_IN_SEL_S  6
-/* GPIO_FUNC71_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG71_IN_SEL_S  7
+/* GPIO_FUNC71_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC71_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC71_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC71_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC71_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC71_IN_INV_SEL_V  0x1
-#define GPIO_FUNC71_IN_INV_SEL_S  5
-/* GPIO_FUNC71_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC71_IN_INV_SEL_S  6
+/* GPIO_FUNC71_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC71_IN_SEL  0x0000001F
+#define GPIO_FUNC71_IN_SEL  0x0000003F
 #define GPIO_FUNC71_IN_SEL_M  ((GPIO_FUNC71_IN_SEL_V)<<(GPIO_FUNC71_IN_SEL_S))
-#define GPIO_FUNC71_IN_SEL_V  0x1F
+#define GPIO_FUNC71_IN_SEL_V  0x3F
 #define GPIO_FUNC71_IN_SEL_S  0
 
 #define GPIO_FUNC72_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x274)
-/* GPIO_SIG72_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG72_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG72_IN_SEL  (BIT(6))
-#define GPIO_SIG72_IN_SEL_M  (BIT(6))
+#define GPIO_SIG72_IN_SEL  (BIT(7))
+#define GPIO_SIG72_IN_SEL_M  (BIT(7))
 #define GPIO_SIG72_IN_SEL_V  0x1
-#define GPIO_SIG72_IN_SEL_S  6
-/* GPIO_FUNC72_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG72_IN_SEL_S  7
+/* GPIO_FUNC72_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC72_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC72_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC72_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC72_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC72_IN_INV_SEL_V  0x1
-#define GPIO_FUNC72_IN_INV_SEL_S  5
-/* GPIO_FUNC72_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC72_IN_INV_SEL_S  6
+/* GPIO_FUNC72_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC72_IN_SEL  0x0000001F
+#define GPIO_FUNC72_IN_SEL  0x0000003F
 #define GPIO_FUNC72_IN_SEL_M  ((GPIO_FUNC72_IN_SEL_V)<<(GPIO_FUNC72_IN_SEL_S))
-#define GPIO_FUNC72_IN_SEL_V  0x1F
+#define GPIO_FUNC72_IN_SEL_V  0x3F
 #define GPIO_FUNC72_IN_SEL_S  0
 
 #define GPIO_FUNC73_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x278)
-/* GPIO_SIG73_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG73_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG73_IN_SEL  (BIT(6))
-#define GPIO_SIG73_IN_SEL_M  (BIT(6))
+#define GPIO_SIG73_IN_SEL  (BIT(7))
+#define GPIO_SIG73_IN_SEL_M  (BIT(7))
 #define GPIO_SIG73_IN_SEL_V  0x1
-#define GPIO_SIG73_IN_SEL_S  6
-/* GPIO_FUNC73_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG73_IN_SEL_S  7
+/* GPIO_FUNC73_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC73_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC73_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC73_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC73_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC73_IN_INV_SEL_V  0x1
-#define GPIO_FUNC73_IN_INV_SEL_S  5
-/* GPIO_FUNC73_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC73_IN_INV_SEL_S  6
+/* GPIO_FUNC73_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC73_IN_SEL  0x0000001F
+#define GPIO_FUNC73_IN_SEL  0x0000003F
 #define GPIO_FUNC73_IN_SEL_M  ((GPIO_FUNC73_IN_SEL_V)<<(GPIO_FUNC73_IN_SEL_S))
-#define GPIO_FUNC73_IN_SEL_V  0x1F
+#define GPIO_FUNC73_IN_SEL_V  0x3F
 #define GPIO_FUNC73_IN_SEL_S  0
 
 #define GPIO_FUNC74_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x27C)
-/* GPIO_SIG74_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG74_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG74_IN_SEL  (BIT(6))
-#define GPIO_SIG74_IN_SEL_M  (BIT(6))
+#define GPIO_SIG74_IN_SEL  (BIT(7))
+#define GPIO_SIG74_IN_SEL_M  (BIT(7))
 #define GPIO_SIG74_IN_SEL_V  0x1
-#define GPIO_SIG74_IN_SEL_S  6
-/* GPIO_FUNC74_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG74_IN_SEL_S  7
+/* GPIO_FUNC74_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC74_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC74_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC74_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC74_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC74_IN_INV_SEL_V  0x1
-#define GPIO_FUNC74_IN_INV_SEL_S  5
-/* GPIO_FUNC74_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC74_IN_INV_SEL_S  6
+/* GPIO_FUNC74_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC74_IN_SEL  0x0000001F
+#define GPIO_FUNC74_IN_SEL  0x0000003F
 #define GPIO_FUNC74_IN_SEL_M  ((GPIO_FUNC74_IN_SEL_V)<<(GPIO_FUNC74_IN_SEL_S))
-#define GPIO_FUNC74_IN_SEL_V  0x1F
+#define GPIO_FUNC74_IN_SEL_V  0x3F
 #define GPIO_FUNC74_IN_SEL_S  0
 
 #define GPIO_FUNC75_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x280)
-/* GPIO_SIG75_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG75_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG75_IN_SEL  (BIT(6))
-#define GPIO_SIG75_IN_SEL_M  (BIT(6))
+#define GPIO_SIG75_IN_SEL  (BIT(7))
+#define GPIO_SIG75_IN_SEL_M  (BIT(7))
 #define GPIO_SIG75_IN_SEL_V  0x1
-#define GPIO_SIG75_IN_SEL_S  6
-/* GPIO_FUNC75_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG75_IN_SEL_S  7
+/* GPIO_FUNC75_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC75_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC75_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC75_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC75_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC75_IN_INV_SEL_V  0x1
-#define GPIO_FUNC75_IN_INV_SEL_S  5
-/* GPIO_FUNC75_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC75_IN_INV_SEL_S  6
+/* GPIO_FUNC75_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC75_IN_SEL  0x0000001F
+#define GPIO_FUNC75_IN_SEL  0x0000003F
 #define GPIO_FUNC75_IN_SEL_M  ((GPIO_FUNC75_IN_SEL_V)<<(GPIO_FUNC75_IN_SEL_S))
-#define GPIO_FUNC75_IN_SEL_V  0x1F
+#define GPIO_FUNC75_IN_SEL_V  0x3F
 #define GPIO_FUNC75_IN_SEL_S  0
 
 #define GPIO_FUNC76_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x284)
-/* GPIO_SIG76_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG76_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG76_IN_SEL  (BIT(6))
-#define GPIO_SIG76_IN_SEL_M  (BIT(6))
+#define GPIO_SIG76_IN_SEL  (BIT(7))
+#define GPIO_SIG76_IN_SEL_M  (BIT(7))
 #define GPIO_SIG76_IN_SEL_V  0x1
-#define GPIO_SIG76_IN_SEL_S  6
-/* GPIO_FUNC76_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG76_IN_SEL_S  7
+/* GPIO_FUNC76_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC76_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC76_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC76_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC76_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC76_IN_INV_SEL_V  0x1
-#define GPIO_FUNC76_IN_INV_SEL_S  5
-/* GPIO_FUNC76_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC76_IN_INV_SEL_S  6
+/* GPIO_FUNC76_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC76_IN_SEL  0x0000001F
+#define GPIO_FUNC76_IN_SEL  0x0000003F
 #define GPIO_FUNC76_IN_SEL_M  ((GPIO_FUNC76_IN_SEL_V)<<(GPIO_FUNC76_IN_SEL_S))
-#define GPIO_FUNC76_IN_SEL_V  0x1F
+#define GPIO_FUNC76_IN_SEL_V  0x3F
 #define GPIO_FUNC76_IN_SEL_S  0
 
 #define GPIO_FUNC77_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x288)
-/* GPIO_SIG77_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG77_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG77_IN_SEL  (BIT(6))
-#define GPIO_SIG77_IN_SEL_M  (BIT(6))
+#define GPIO_SIG77_IN_SEL  (BIT(7))
+#define GPIO_SIG77_IN_SEL_M  (BIT(7))
 #define GPIO_SIG77_IN_SEL_V  0x1
-#define GPIO_SIG77_IN_SEL_S  6
-/* GPIO_FUNC77_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG77_IN_SEL_S  7
+/* GPIO_FUNC77_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC77_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC77_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC77_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC77_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC77_IN_INV_SEL_V  0x1
-#define GPIO_FUNC77_IN_INV_SEL_S  5
-/* GPIO_FUNC77_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC77_IN_INV_SEL_S  6
+/* GPIO_FUNC77_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC77_IN_SEL  0x0000001F
+#define GPIO_FUNC77_IN_SEL  0x0000003F
 #define GPIO_FUNC77_IN_SEL_M  ((GPIO_FUNC77_IN_SEL_V)<<(GPIO_FUNC77_IN_SEL_S))
-#define GPIO_FUNC77_IN_SEL_V  0x1F
+#define GPIO_FUNC77_IN_SEL_V  0x3F
 #define GPIO_FUNC77_IN_SEL_S  0
 
 #define GPIO_FUNC78_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x28C)
-/* GPIO_SIG78_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG78_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG78_IN_SEL  (BIT(6))
-#define GPIO_SIG78_IN_SEL_M  (BIT(6))
+#define GPIO_SIG78_IN_SEL  (BIT(7))
+#define GPIO_SIG78_IN_SEL_M  (BIT(7))
 #define GPIO_SIG78_IN_SEL_V  0x1
-#define GPIO_SIG78_IN_SEL_S  6
-/* GPIO_FUNC78_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG78_IN_SEL_S  7
+/* GPIO_FUNC78_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC78_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC78_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC78_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC78_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC78_IN_INV_SEL_V  0x1
-#define GPIO_FUNC78_IN_INV_SEL_S  5
-/* GPIO_FUNC78_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC78_IN_INV_SEL_S  6
+/* GPIO_FUNC78_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC78_IN_SEL  0x0000001F
+#define GPIO_FUNC78_IN_SEL  0x0000003F
 #define GPIO_FUNC78_IN_SEL_M  ((GPIO_FUNC78_IN_SEL_V)<<(GPIO_FUNC78_IN_SEL_S))
-#define GPIO_FUNC78_IN_SEL_V  0x1F
+#define GPIO_FUNC78_IN_SEL_V  0x3F
 #define GPIO_FUNC78_IN_SEL_S  0
 
 #define GPIO_FUNC79_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x290)
-/* GPIO_SIG79_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG79_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG79_IN_SEL  (BIT(6))
-#define GPIO_SIG79_IN_SEL_M  (BIT(6))
+#define GPIO_SIG79_IN_SEL  (BIT(7))
+#define GPIO_SIG79_IN_SEL_M  (BIT(7))
 #define GPIO_SIG79_IN_SEL_V  0x1
-#define GPIO_SIG79_IN_SEL_S  6
-/* GPIO_FUNC79_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG79_IN_SEL_S  7
+/* GPIO_FUNC79_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC79_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC79_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC79_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC79_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC79_IN_INV_SEL_V  0x1
-#define GPIO_FUNC79_IN_INV_SEL_S  5
-/* GPIO_FUNC79_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC79_IN_INV_SEL_S  6
+/* GPIO_FUNC79_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC79_IN_SEL  0x0000001F
+#define GPIO_FUNC79_IN_SEL  0x0000003F
 #define GPIO_FUNC79_IN_SEL_M  ((GPIO_FUNC79_IN_SEL_V)<<(GPIO_FUNC79_IN_SEL_S))
-#define GPIO_FUNC79_IN_SEL_V  0x1F
+#define GPIO_FUNC79_IN_SEL_V  0x3F
 #define GPIO_FUNC79_IN_SEL_S  0
 
 #define GPIO_FUNC80_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x294)
-/* GPIO_SIG80_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG80_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG80_IN_SEL  (BIT(6))
-#define GPIO_SIG80_IN_SEL_M  (BIT(6))
+#define GPIO_SIG80_IN_SEL  (BIT(7))
+#define GPIO_SIG80_IN_SEL_M  (BIT(7))
 #define GPIO_SIG80_IN_SEL_V  0x1
-#define GPIO_SIG80_IN_SEL_S  6
-/* GPIO_FUNC80_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG80_IN_SEL_S  7
+/* GPIO_FUNC80_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC80_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC80_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC80_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC80_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC80_IN_INV_SEL_V  0x1
-#define GPIO_FUNC80_IN_INV_SEL_S  5
-/* GPIO_FUNC80_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC80_IN_INV_SEL_S  6
+/* GPIO_FUNC80_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC80_IN_SEL  0x0000001F
+#define GPIO_FUNC80_IN_SEL  0x0000003F
 #define GPIO_FUNC80_IN_SEL_M  ((GPIO_FUNC80_IN_SEL_V)<<(GPIO_FUNC80_IN_SEL_S))
-#define GPIO_FUNC80_IN_SEL_V  0x1F
+#define GPIO_FUNC80_IN_SEL_V  0x3F
 #define GPIO_FUNC80_IN_SEL_S  0
 
 #define GPIO_FUNC81_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x298)
-/* GPIO_SIG81_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG81_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG81_IN_SEL  (BIT(6))
-#define GPIO_SIG81_IN_SEL_M  (BIT(6))
+#define GPIO_SIG81_IN_SEL  (BIT(7))
+#define GPIO_SIG81_IN_SEL_M  (BIT(7))
 #define GPIO_SIG81_IN_SEL_V  0x1
-#define GPIO_SIG81_IN_SEL_S  6
-/* GPIO_FUNC81_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG81_IN_SEL_S  7
+/* GPIO_FUNC81_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC81_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC81_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC81_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC81_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC81_IN_INV_SEL_V  0x1
-#define GPIO_FUNC81_IN_INV_SEL_S  5
-/* GPIO_FUNC81_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC81_IN_INV_SEL_S  6
+/* GPIO_FUNC81_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC81_IN_SEL  0x0000001F
+#define GPIO_FUNC81_IN_SEL  0x0000003F
 #define GPIO_FUNC81_IN_SEL_M  ((GPIO_FUNC81_IN_SEL_V)<<(GPIO_FUNC81_IN_SEL_S))
-#define GPIO_FUNC81_IN_SEL_V  0x1F
+#define GPIO_FUNC81_IN_SEL_V  0x3F
 #define GPIO_FUNC81_IN_SEL_S  0
 
 #define GPIO_FUNC82_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x29C)
-/* GPIO_SIG82_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG82_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG82_IN_SEL  (BIT(6))
-#define GPIO_SIG82_IN_SEL_M  (BIT(6))
+#define GPIO_SIG82_IN_SEL  (BIT(7))
+#define GPIO_SIG82_IN_SEL_M  (BIT(7))
 #define GPIO_SIG82_IN_SEL_V  0x1
-#define GPIO_SIG82_IN_SEL_S  6
-/* GPIO_FUNC82_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG82_IN_SEL_S  7
+/* GPIO_FUNC82_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC82_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC82_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC82_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC82_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC82_IN_INV_SEL_V  0x1
-#define GPIO_FUNC82_IN_INV_SEL_S  5
-/* GPIO_FUNC82_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC82_IN_INV_SEL_S  6
+/* GPIO_FUNC82_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC82_IN_SEL  0x0000001F
+#define GPIO_FUNC82_IN_SEL  0x0000003F
 #define GPIO_FUNC82_IN_SEL_M  ((GPIO_FUNC82_IN_SEL_V)<<(GPIO_FUNC82_IN_SEL_S))
-#define GPIO_FUNC82_IN_SEL_V  0x1F
+#define GPIO_FUNC82_IN_SEL_V  0x3F
 #define GPIO_FUNC82_IN_SEL_S  0
 
 #define GPIO_FUNC83_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x2A0)
-/* GPIO_SIG83_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG83_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG83_IN_SEL  (BIT(6))
-#define GPIO_SIG83_IN_SEL_M  (BIT(6))
+#define GPIO_SIG83_IN_SEL  (BIT(7))
+#define GPIO_SIG83_IN_SEL_M  (BIT(7))
 #define GPIO_SIG83_IN_SEL_V  0x1
-#define GPIO_SIG83_IN_SEL_S  6
-/* GPIO_FUNC83_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG83_IN_SEL_S  7
+/* GPIO_FUNC83_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC83_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC83_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC83_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC83_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC83_IN_INV_SEL_V  0x1
-#define GPIO_FUNC83_IN_INV_SEL_S  5
-/* GPIO_FUNC83_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC83_IN_INV_SEL_S  6
+/* GPIO_FUNC83_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC83_IN_SEL  0x0000001F
+#define GPIO_FUNC83_IN_SEL  0x0000003F
 #define GPIO_FUNC83_IN_SEL_M  ((GPIO_FUNC83_IN_SEL_V)<<(GPIO_FUNC83_IN_SEL_S))
-#define GPIO_FUNC83_IN_SEL_V  0x1F
+#define GPIO_FUNC83_IN_SEL_V  0x3F
 #define GPIO_FUNC83_IN_SEL_S  0
 
 #define GPIO_FUNC84_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x2A4)
-/* GPIO_SIG84_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG84_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG84_IN_SEL  (BIT(6))
-#define GPIO_SIG84_IN_SEL_M  (BIT(6))
+#define GPIO_SIG84_IN_SEL  (BIT(7))
+#define GPIO_SIG84_IN_SEL_M  (BIT(7))
 #define GPIO_SIG84_IN_SEL_V  0x1
-#define GPIO_SIG84_IN_SEL_S  6
-/* GPIO_FUNC84_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG84_IN_SEL_S  7
+/* GPIO_FUNC84_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC84_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC84_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC84_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC84_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC84_IN_INV_SEL_V  0x1
-#define GPIO_FUNC84_IN_INV_SEL_S  5
-/* GPIO_FUNC84_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC84_IN_INV_SEL_S  6
+/* GPIO_FUNC84_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC84_IN_SEL  0x0000001F
+#define GPIO_FUNC84_IN_SEL  0x0000003F
 #define GPIO_FUNC84_IN_SEL_M  ((GPIO_FUNC84_IN_SEL_V)<<(GPIO_FUNC84_IN_SEL_S))
-#define GPIO_FUNC84_IN_SEL_V  0x1F
+#define GPIO_FUNC84_IN_SEL_V  0x3F
 #define GPIO_FUNC84_IN_SEL_S  0
 
 #define GPIO_FUNC85_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x2A8)
-/* GPIO_SIG85_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG85_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG85_IN_SEL  (BIT(6))
-#define GPIO_SIG85_IN_SEL_M  (BIT(6))
+#define GPIO_SIG85_IN_SEL  (BIT(7))
+#define GPIO_SIG85_IN_SEL_M  (BIT(7))
 #define GPIO_SIG85_IN_SEL_V  0x1
-#define GPIO_SIG85_IN_SEL_S  6
-/* GPIO_FUNC85_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG85_IN_SEL_S  7
+/* GPIO_FUNC85_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC85_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC85_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC85_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC85_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC85_IN_INV_SEL_V  0x1
-#define GPIO_FUNC85_IN_INV_SEL_S  5
-/* GPIO_FUNC85_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC85_IN_INV_SEL_S  6
+/* GPIO_FUNC85_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC85_IN_SEL  0x0000001F
+#define GPIO_FUNC85_IN_SEL  0x0000003F
 #define GPIO_FUNC85_IN_SEL_M  ((GPIO_FUNC85_IN_SEL_V)<<(GPIO_FUNC85_IN_SEL_S))
-#define GPIO_FUNC85_IN_SEL_V  0x1F
+#define GPIO_FUNC85_IN_SEL_V  0x3F
 #define GPIO_FUNC85_IN_SEL_S  0
 
 #define GPIO_FUNC86_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x2AC)
-/* GPIO_SIG86_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG86_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG86_IN_SEL  (BIT(6))
-#define GPIO_SIG86_IN_SEL_M  (BIT(6))
+#define GPIO_SIG86_IN_SEL  (BIT(7))
+#define GPIO_SIG86_IN_SEL_M  (BIT(7))
 #define GPIO_SIG86_IN_SEL_V  0x1
-#define GPIO_SIG86_IN_SEL_S  6
-/* GPIO_FUNC86_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG86_IN_SEL_S  7
+/* GPIO_FUNC86_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC86_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC86_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC86_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC86_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC86_IN_INV_SEL_V  0x1
-#define GPIO_FUNC86_IN_INV_SEL_S  5
-/* GPIO_FUNC86_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC86_IN_INV_SEL_S  6
+/* GPIO_FUNC86_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC86_IN_SEL  0x0000001F
+#define GPIO_FUNC86_IN_SEL  0x0000003F
 #define GPIO_FUNC86_IN_SEL_M  ((GPIO_FUNC86_IN_SEL_V)<<(GPIO_FUNC86_IN_SEL_S))
-#define GPIO_FUNC86_IN_SEL_V  0x1F
+#define GPIO_FUNC86_IN_SEL_V  0x3F
 #define GPIO_FUNC86_IN_SEL_S  0
 
 #define GPIO_FUNC87_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x2B0)
-/* GPIO_SIG87_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG87_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG87_IN_SEL  (BIT(6))
-#define GPIO_SIG87_IN_SEL_M  (BIT(6))
+#define GPIO_SIG87_IN_SEL  (BIT(7))
+#define GPIO_SIG87_IN_SEL_M  (BIT(7))
 #define GPIO_SIG87_IN_SEL_V  0x1
-#define GPIO_SIG87_IN_SEL_S  6
-/* GPIO_FUNC87_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG87_IN_SEL_S  7
+/* GPIO_FUNC87_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC87_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC87_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC87_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC87_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC87_IN_INV_SEL_V  0x1
-#define GPIO_FUNC87_IN_INV_SEL_S  5
-/* GPIO_FUNC87_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC87_IN_INV_SEL_S  6
+/* GPIO_FUNC87_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC87_IN_SEL  0x0000001F
+#define GPIO_FUNC87_IN_SEL  0x0000003F
 #define GPIO_FUNC87_IN_SEL_M  ((GPIO_FUNC87_IN_SEL_V)<<(GPIO_FUNC87_IN_SEL_S))
-#define GPIO_FUNC87_IN_SEL_V  0x1F
+#define GPIO_FUNC87_IN_SEL_V  0x3F
 #define GPIO_FUNC87_IN_SEL_S  0
 
 #define GPIO_FUNC88_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x2B4)
-/* GPIO_SIG88_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG88_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG88_IN_SEL  (BIT(6))
-#define GPIO_SIG88_IN_SEL_M  (BIT(6))
+#define GPIO_SIG88_IN_SEL  (BIT(7))
+#define GPIO_SIG88_IN_SEL_M  (BIT(7))
 #define GPIO_SIG88_IN_SEL_V  0x1
-#define GPIO_SIG88_IN_SEL_S  6
-/* GPIO_FUNC88_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG88_IN_SEL_S  7
+/* GPIO_FUNC88_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC88_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC88_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC88_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC88_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC88_IN_INV_SEL_V  0x1
-#define GPIO_FUNC88_IN_INV_SEL_S  5
-/* GPIO_FUNC88_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC88_IN_INV_SEL_S  6
+/* GPIO_FUNC88_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC88_IN_SEL  0x0000001F
+#define GPIO_FUNC88_IN_SEL  0x0000003F
 #define GPIO_FUNC88_IN_SEL_M  ((GPIO_FUNC88_IN_SEL_V)<<(GPIO_FUNC88_IN_SEL_S))
-#define GPIO_FUNC88_IN_SEL_V  0x1F
+#define GPIO_FUNC88_IN_SEL_V  0x3F
 #define GPIO_FUNC88_IN_SEL_S  0
 
 #define GPIO_FUNC89_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x2B8)
-/* GPIO_SIG89_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG89_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG89_IN_SEL  (BIT(6))
-#define GPIO_SIG89_IN_SEL_M  (BIT(6))
+#define GPIO_SIG89_IN_SEL  (BIT(7))
+#define GPIO_SIG89_IN_SEL_M  (BIT(7))
 #define GPIO_SIG89_IN_SEL_V  0x1
-#define GPIO_SIG89_IN_SEL_S  6
-/* GPIO_FUNC89_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG89_IN_SEL_S  7
+/* GPIO_FUNC89_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC89_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC89_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC89_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC89_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC89_IN_INV_SEL_V  0x1
-#define GPIO_FUNC89_IN_INV_SEL_S  5
-/* GPIO_FUNC89_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC89_IN_INV_SEL_S  6
+/* GPIO_FUNC89_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC89_IN_SEL  0x0000001F
+#define GPIO_FUNC89_IN_SEL  0x0000003F
 #define GPIO_FUNC89_IN_SEL_M  ((GPIO_FUNC89_IN_SEL_V)<<(GPIO_FUNC89_IN_SEL_S))
-#define GPIO_FUNC89_IN_SEL_V  0x1F
+#define GPIO_FUNC89_IN_SEL_V  0x3F
 #define GPIO_FUNC89_IN_SEL_S  0
 
 #define GPIO_FUNC90_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x2BC)
-/* GPIO_SIG90_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG90_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG90_IN_SEL  (BIT(6))
-#define GPIO_SIG90_IN_SEL_M  (BIT(6))
+#define GPIO_SIG90_IN_SEL  (BIT(7))
+#define GPIO_SIG90_IN_SEL_M  (BIT(7))
 #define GPIO_SIG90_IN_SEL_V  0x1
-#define GPIO_SIG90_IN_SEL_S  6
-/* GPIO_FUNC90_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG90_IN_SEL_S  7
+/* GPIO_FUNC90_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC90_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC90_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC90_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC90_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC90_IN_INV_SEL_V  0x1
-#define GPIO_FUNC90_IN_INV_SEL_S  5
-/* GPIO_FUNC90_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC90_IN_INV_SEL_S  6
+/* GPIO_FUNC90_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC90_IN_SEL  0x0000001F
+#define GPIO_FUNC90_IN_SEL  0x0000003F
 #define GPIO_FUNC90_IN_SEL_M  ((GPIO_FUNC90_IN_SEL_V)<<(GPIO_FUNC90_IN_SEL_S))
-#define GPIO_FUNC90_IN_SEL_V  0x1F
+#define GPIO_FUNC90_IN_SEL_V  0x3F
 #define GPIO_FUNC90_IN_SEL_S  0
 
 #define GPIO_FUNC91_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x2C0)
-/* GPIO_SIG91_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG91_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG91_IN_SEL  (BIT(6))
-#define GPIO_SIG91_IN_SEL_M  (BIT(6))
+#define GPIO_SIG91_IN_SEL  (BIT(7))
+#define GPIO_SIG91_IN_SEL_M  (BIT(7))
 #define GPIO_SIG91_IN_SEL_V  0x1
-#define GPIO_SIG91_IN_SEL_S  6
-/* GPIO_FUNC91_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG91_IN_SEL_S  7
+/* GPIO_FUNC91_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC91_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC91_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC91_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC91_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC91_IN_INV_SEL_V  0x1
-#define GPIO_FUNC91_IN_INV_SEL_S  5
-/* GPIO_FUNC91_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC91_IN_INV_SEL_S  6
+/* GPIO_FUNC91_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC91_IN_SEL  0x0000001F
+#define GPIO_FUNC91_IN_SEL  0x0000003F
 #define GPIO_FUNC91_IN_SEL_M  ((GPIO_FUNC91_IN_SEL_V)<<(GPIO_FUNC91_IN_SEL_S))
-#define GPIO_FUNC91_IN_SEL_V  0x1F
+#define GPIO_FUNC91_IN_SEL_V  0x3F
 #define GPIO_FUNC91_IN_SEL_S  0
 
 #define GPIO_FUNC92_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x2C4)
-/* GPIO_SIG92_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG92_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG92_IN_SEL  (BIT(6))
-#define GPIO_SIG92_IN_SEL_M  (BIT(6))
+#define GPIO_SIG92_IN_SEL  (BIT(7))
+#define GPIO_SIG92_IN_SEL_M  (BIT(7))
 #define GPIO_SIG92_IN_SEL_V  0x1
-#define GPIO_SIG92_IN_SEL_S  6
-/* GPIO_FUNC92_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG92_IN_SEL_S  7
+/* GPIO_FUNC92_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC92_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC92_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC92_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC92_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC92_IN_INV_SEL_V  0x1
-#define GPIO_FUNC92_IN_INV_SEL_S  5
-/* GPIO_FUNC92_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC92_IN_INV_SEL_S  6
+/* GPIO_FUNC92_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC92_IN_SEL  0x0000001F
+#define GPIO_FUNC92_IN_SEL  0x0000003F
 #define GPIO_FUNC92_IN_SEL_M  ((GPIO_FUNC92_IN_SEL_V)<<(GPIO_FUNC92_IN_SEL_S))
-#define GPIO_FUNC92_IN_SEL_V  0x1F
+#define GPIO_FUNC92_IN_SEL_V  0x3F
 #define GPIO_FUNC92_IN_SEL_S  0
 
 #define GPIO_FUNC93_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x2C8)
-/* GPIO_SIG93_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG93_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG93_IN_SEL  (BIT(6))
-#define GPIO_SIG93_IN_SEL_M  (BIT(6))
+#define GPIO_SIG93_IN_SEL  (BIT(7))
+#define GPIO_SIG93_IN_SEL_M  (BIT(7))
 #define GPIO_SIG93_IN_SEL_V  0x1
-#define GPIO_SIG93_IN_SEL_S  6
-/* GPIO_FUNC93_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG93_IN_SEL_S  7
+/* GPIO_FUNC93_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC93_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC93_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC93_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC93_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC93_IN_INV_SEL_V  0x1
-#define GPIO_FUNC93_IN_INV_SEL_S  5
-/* GPIO_FUNC93_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC93_IN_INV_SEL_S  6
+/* GPIO_FUNC93_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC93_IN_SEL  0x0000001F
+#define GPIO_FUNC93_IN_SEL  0x0000003F
 #define GPIO_FUNC93_IN_SEL_M  ((GPIO_FUNC93_IN_SEL_V)<<(GPIO_FUNC93_IN_SEL_S))
-#define GPIO_FUNC93_IN_SEL_V  0x1F
+#define GPIO_FUNC93_IN_SEL_V  0x3F
 #define GPIO_FUNC93_IN_SEL_S  0
 
 #define GPIO_FUNC94_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x2CC)
-/* GPIO_SIG94_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG94_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG94_IN_SEL  (BIT(6))
-#define GPIO_SIG94_IN_SEL_M  (BIT(6))
+#define GPIO_SIG94_IN_SEL  (BIT(7))
+#define GPIO_SIG94_IN_SEL_M  (BIT(7))
 #define GPIO_SIG94_IN_SEL_V  0x1
-#define GPIO_SIG94_IN_SEL_S  6
-/* GPIO_FUNC94_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG94_IN_SEL_S  7
+/* GPIO_FUNC94_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC94_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC94_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC94_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC94_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC94_IN_INV_SEL_V  0x1
-#define GPIO_FUNC94_IN_INV_SEL_S  5
-/* GPIO_FUNC94_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC94_IN_INV_SEL_S  6
+/* GPIO_FUNC94_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC94_IN_SEL  0x0000001F
+#define GPIO_FUNC94_IN_SEL  0x0000003F
 #define GPIO_FUNC94_IN_SEL_M  ((GPIO_FUNC94_IN_SEL_V)<<(GPIO_FUNC94_IN_SEL_S))
-#define GPIO_FUNC94_IN_SEL_V  0x1F
+#define GPIO_FUNC94_IN_SEL_V  0x3F
 #define GPIO_FUNC94_IN_SEL_S  0
 
 #define GPIO_FUNC95_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x2D0)
-/* GPIO_SIG95_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG95_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG95_IN_SEL  (BIT(6))
-#define GPIO_SIG95_IN_SEL_M  (BIT(6))
+#define GPIO_SIG95_IN_SEL  (BIT(7))
+#define GPIO_SIG95_IN_SEL_M  (BIT(7))
 #define GPIO_SIG95_IN_SEL_V  0x1
-#define GPIO_SIG95_IN_SEL_S  6
-/* GPIO_FUNC95_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG95_IN_SEL_S  7
+/* GPIO_FUNC95_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC95_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC95_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC95_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC95_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC95_IN_INV_SEL_V  0x1
-#define GPIO_FUNC95_IN_INV_SEL_S  5
-/* GPIO_FUNC95_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC95_IN_INV_SEL_S  6
+/* GPIO_FUNC95_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC95_IN_SEL  0x0000001F
+#define GPIO_FUNC95_IN_SEL  0x0000003F
 #define GPIO_FUNC95_IN_SEL_M  ((GPIO_FUNC95_IN_SEL_V)<<(GPIO_FUNC95_IN_SEL_S))
-#define GPIO_FUNC95_IN_SEL_V  0x1F
+#define GPIO_FUNC95_IN_SEL_V  0x3F
 #define GPIO_FUNC95_IN_SEL_S  0
 
 #define GPIO_FUNC96_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x2D4)
-/* GPIO_SIG96_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG96_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG96_IN_SEL  (BIT(6))
-#define GPIO_SIG96_IN_SEL_M  (BIT(6))
+#define GPIO_SIG96_IN_SEL  (BIT(7))
+#define GPIO_SIG96_IN_SEL_M  (BIT(7))
 #define GPIO_SIG96_IN_SEL_V  0x1
-#define GPIO_SIG96_IN_SEL_S  6
-/* GPIO_FUNC96_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG96_IN_SEL_S  7
+/* GPIO_FUNC96_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC96_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC96_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC96_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC96_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC96_IN_INV_SEL_V  0x1
-#define GPIO_FUNC96_IN_INV_SEL_S  5
-/* GPIO_FUNC96_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC96_IN_INV_SEL_S  6
+/* GPIO_FUNC96_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC96_IN_SEL  0x0000001F
+#define GPIO_FUNC96_IN_SEL  0x0000003F
 #define GPIO_FUNC96_IN_SEL_M  ((GPIO_FUNC96_IN_SEL_V)<<(GPIO_FUNC96_IN_SEL_S))
-#define GPIO_FUNC96_IN_SEL_V  0x1F
+#define GPIO_FUNC96_IN_SEL_V  0x3F
 #define GPIO_FUNC96_IN_SEL_S  0
 
 #define GPIO_FUNC97_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x2D8)
-/* GPIO_SIG97_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG97_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG97_IN_SEL  (BIT(6))
-#define GPIO_SIG97_IN_SEL_M  (BIT(6))
+#define GPIO_SIG97_IN_SEL  (BIT(7))
+#define GPIO_SIG97_IN_SEL_M  (BIT(7))
 #define GPIO_SIG97_IN_SEL_V  0x1
-#define GPIO_SIG97_IN_SEL_S  6
-/* GPIO_FUNC97_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG97_IN_SEL_S  7
+/* GPIO_FUNC97_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC97_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC97_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC97_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC97_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC97_IN_INV_SEL_V  0x1
-#define GPIO_FUNC97_IN_INV_SEL_S  5
-/* GPIO_FUNC97_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC97_IN_INV_SEL_S  6
+/* GPIO_FUNC97_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC97_IN_SEL  0x0000001F
+#define GPIO_FUNC97_IN_SEL  0x0000003F
 #define GPIO_FUNC97_IN_SEL_M  ((GPIO_FUNC97_IN_SEL_V)<<(GPIO_FUNC97_IN_SEL_S))
-#define GPIO_FUNC97_IN_SEL_V  0x1F
+#define GPIO_FUNC97_IN_SEL_V  0x3F
 #define GPIO_FUNC97_IN_SEL_S  0
 
 #define GPIO_FUNC98_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x2DC)
-/* GPIO_SIG98_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG98_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG98_IN_SEL  (BIT(6))
-#define GPIO_SIG98_IN_SEL_M  (BIT(6))
+#define GPIO_SIG98_IN_SEL  (BIT(7))
+#define GPIO_SIG98_IN_SEL_M  (BIT(7))
 #define GPIO_SIG98_IN_SEL_V  0x1
-#define GPIO_SIG98_IN_SEL_S  6
-/* GPIO_FUNC98_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG98_IN_SEL_S  7
+/* GPIO_FUNC98_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC98_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC98_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC98_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC98_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC98_IN_INV_SEL_V  0x1
-#define GPIO_FUNC98_IN_INV_SEL_S  5
-/* GPIO_FUNC98_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC98_IN_INV_SEL_S  6
+/* GPIO_FUNC98_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC98_IN_SEL  0x0000001F
+#define GPIO_FUNC98_IN_SEL  0x0000003F
 #define GPIO_FUNC98_IN_SEL_M  ((GPIO_FUNC98_IN_SEL_V)<<(GPIO_FUNC98_IN_SEL_S))
-#define GPIO_FUNC98_IN_SEL_V  0x1F
+#define GPIO_FUNC98_IN_SEL_V  0x3F
 #define GPIO_FUNC98_IN_SEL_S  0
 
 #define GPIO_FUNC99_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x2E0)
-/* GPIO_SIG99_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG99_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG99_IN_SEL  (BIT(6))
-#define GPIO_SIG99_IN_SEL_M  (BIT(6))
+#define GPIO_SIG99_IN_SEL  (BIT(7))
+#define GPIO_SIG99_IN_SEL_M  (BIT(7))
 #define GPIO_SIG99_IN_SEL_V  0x1
-#define GPIO_SIG99_IN_SEL_S  6
-/* GPIO_FUNC99_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG99_IN_SEL_S  7
+/* GPIO_FUNC99_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC99_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC99_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC99_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC99_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC99_IN_INV_SEL_V  0x1
-#define GPIO_FUNC99_IN_INV_SEL_S  5
-/* GPIO_FUNC99_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC99_IN_INV_SEL_S  6
+/* GPIO_FUNC99_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC99_IN_SEL  0x0000001F
+#define GPIO_FUNC99_IN_SEL  0x0000003F
 #define GPIO_FUNC99_IN_SEL_M  ((GPIO_FUNC99_IN_SEL_V)<<(GPIO_FUNC99_IN_SEL_S))
-#define GPIO_FUNC99_IN_SEL_V  0x1F
+#define GPIO_FUNC99_IN_SEL_V  0x3F
 #define GPIO_FUNC99_IN_SEL_S  0
 
 #define GPIO_FUNC100_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x2E4)
-/* GPIO_SIG100_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG100_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG100_IN_SEL  (BIT(6))
-#define GPIO_SIG100_IN_SEL_M  (BIT(6))
+#define GPIO_SIG100_IN_SEL  (BIT(7))
+#define GPIO_SIG100_IN_SEL_M  (BIT(7))
 #define GPIO_SIG100_IN_SEL_V  0x1
-#define GPIO_SIG100_IN_SEL_S  6
-/* GPIO_FUNC100_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG100_IN_SEL_S  7
+/* GPIO_FUNC100_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC100_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC100_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC100_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC100_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC100_IN_INV_SEL_V  0x1
-#define GPIO_FUNC100_IN_INV_SEL_S  5
-/* GPIO_FUNC100_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC100_IN_INV_SEL_S  6
+/* GPIO_FUNC100_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC100_IN_SEL  0x0000001F
+#define GPIO_FUNC100_IN_SEL  0x0000003F
 #define GPIO_FUNC100_IN_SEL_M  ((GPIO_FUNC100_IN_SEL_V)<<(GPIO_FUNC100_IN_SEL_S))
-#define GPIO_FUNC100_IN_SEL_V  0x1F
+#define GPIO_FUNC100_IN_SEL_V  0x3F
 #define GPIO_FUNC100_IN_SEL_S  0
 
 #define GPIO_FUNC101_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x2E8)
-/* GPIO_SIG101_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG101_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG101_IN_SEL  (BIT(6))
-#define GPIO_SIG101_IN_SEL_M  (BIT(6))
+#define GPIO_SIG101_IN_SEL  (BIT(7))
+#define GPIO_SIG101_IN_SEL_M  (BIT(7))
 #define GPIO_SIG101_IN_SEL_V  0x1
-#define GPIO_SIG101_IN_SEL_S  6
-/* GPIO_FUNC101_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG101_IN_SEL_S  7
+/* GPIO_FUNC101_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC101_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC101_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC101_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC101_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC101_IN_INV_SEL_V  0x1
-#define GPIO_FUNC101_IN_INV_SEL_S  5
-/* GPIO_FUNC101_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC101_IN_INV_SEL_S  6
+/* GPIO_FUNC101_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC101_IN_SEL  0x0000001F
+#define GPIO_FUNC101_IN_SEL  0x0000003F
 #define GPIO_FUNC101_IN_SEL_M  ((GPIO_FUNC101_IN_SEL_V)<<(GPIO_FUNC101_IN_SEL_S))
-#define GPIO_FUNC101_IN_SEL_V  0x1F
+#define GPIO_FUNC101_IN_SEL_V  0x3F
 #define GPIO_FUNC101_IN_SEL_S  0
 
 #define GPIO_FUNC102_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x2EC)
-/* GPIO_SIG102_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG102_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG102_IN_SEL  (BIT(6))
-#define GPIO_SIG102_IN_SEL_M  (BIT(6))
+#define GPIO_SIG102_IN_SEL  (BIT(7))
+#define GPIO_SIG102_IN_SEL_M  (BIT(7))
 #define GPIO_SIG102_IN_SEL_V  0x1
-#define GPIO_SIG102_IN_SEL_S  6
-/* GPIO_FUNC102_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG102_IN_SEL_S  7
+/* GPIO_FUNC102_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC102_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC102_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC102_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC102_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC102_IN_INV_SEL_V  0x1
-#define GPIO_FUNC102_IN_INV_SEL_S  5
-/* GPIO_FUNC102_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC102_IN_INV_SEL_S  6
+/* GPIO_FUNC102_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC102_IN_SEL  0x0000001F
+#define GPIO_FUNC102_IN_SEL  0x0000003F
 #define GPIO_FUNC102_IN_SEL_M  ((GPIO_FUNC102_IN_SEL_V)<<(GPIO_FUNC102_IN_SEL_S))
-#define GPIO_FUNC102_IN_SEL_V  0x1F
+#define GPIO_FUNC102_IN_SEL_V  0x3F
 #define GPIO_FUNC102_IN_SEL_S  0
 
 #define GPIO_FUNC103_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x2F0)
-/* GPIO_SIG103_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG103_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG103_IN_SEL  (BIT(6))
-#define GPIO_SIG103_IN_SEL_M  (BIT(6))
+#define GPIO_SIG103_IN_SEL  (BIT(7))
+#define GPIO_SIG103_IN_SEL_M  (BIT(7))
 #define GPIO_SIG103_IN_SEL_V  0x1
-#define GPIO_SIG103_IN_SEL_S  6
-/* GPIO_FUNC103_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG103_IN_SEL_S  7
+/* GPIO_FUNC103_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC103_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC103_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC103_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC103_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC103_IN_INV_SEL_V  0x1
-#define GPIO_FUNC103_IN_INV_SEL_S  5
-/* GPIO_FUNC103_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC103_IN_INV_SEL_S  6
+/* GPIO_FUNC103_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC103_IN_SEL  0x0000001F
+#define GPIO_FUNC103_IN_SEL  0x0000003F
 #define GPIO_FUNC103_IN_SEL_M  ((GPIO_FUNC103_IN_SEL_V)<<(GPIO_FUNC103_IN_SEL_S))
-#define GPIO_FUNC103_IN_SEL_V  0x1F
+#define GPIO_FUNC103_IN_SEL_V  0x3F
 #define GPIO_FUNC103_IN_SEL_S  0
 
 #define GPIO_FUNC104_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x2F4)
-/* GPIO_SIG104_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG104_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG104_IN_SEL  (BIT(6))
-#define GPIO_SIG104_IN_SEL_M  (BIT(6))
+#define GPIO_SIG104_IN_SEL  (BIT(7))
+#define GPIO_SIG104_IN_SEL_M  (BIT(7))
 #define GPIO_SIG104_IN_SEL_V  0x1
-#define GPIO_SIG104_IN_SEL_S  6
-/* GPIO_FUNC104_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG104_IN_SEL_S  7
+/* GPIO_FUNC104_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC104_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC104_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC104_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC104_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC104_IN_INV_SEL_V  0x1
-#define GPIO_FUNC104_IN_INV_SEL_S  5
-/* GPIO_FUNC104_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC104_IN_INV_SEL_S  6
+/* GPIO_FUNC104_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC104_IN_SEL  0x0000001F
+#define GPIO_FUNC104_IN_SEL  0x0000003F
 #define GPIO_FUNC104_IN_SEL_M  ((GPIO_FUNC104_IN_SEL_V)<<(GPIO_FUNC104_IN_SEL_S))
-#define GPIO_FUNC104_IN_SEL_V  0x1F
+#define GPIO_FUNC104_IN_SEL_V  0x3F
 #define GPIO_FUNC104_IN_SEL_S  0
 
 #define GPIO_FUNC105_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x2F8)
-/* GPIO_SIG105_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG105_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG105_IN_SEL  (BIT(6))
-#define GPIO_SIG105_IN_SEL_M  (BIT(6))
+#define GPIO_SIG105_IN_SEL  (BIT(7))
+#define GPIO_SIG105_IN_SEL_M  (BIT(7))
 #define GPIO_SIG105_IN_SEL_V  0x1
-#define GPIO_SIG105_IN_SEL_S  6
-/* GPIO_FUNC105_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG105_IN_SEL_S  7
+/* GPIO_FUNC105_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC105_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC105_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC105_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC105_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC105_IN_INV_SEL_V  0x1
-#define GPIO_FUNC105_IN_INV_SEL_S  5
-/* GPIO_FUNC105_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC105_IN_INV_SEL_S  6
+/* GPIO_FUNC105_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC105_IN_SEL  0x0000001F
+#define GPIO_FUNC105_IN_SEL  0x0000003F
 #define GPIO_FUNC105_IN_SEL_M  ((GPIO_FUNC105_IN_SEL_V)<<(GPIO_FUNC105_IN_SEL_S))
-#define GPIO_FUNC105_IN_SEL_V  0x1F
+#define GPIO_FUNC105_IN_SEL_V  0x3F
 #define GPIO_FUNC105_IN_SEL_S  0
 
 #define GPIO_FUNC106_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x2FC)
-/* GPIO_SIG106_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG106_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG106_IN_SEL  (BIT(6))
-#define GPIO_SIG106_IN_SEL_M  (BIT(6))
+#define GPIO_SIG106_IN_SEL  (BIT(7))
+#define GPIO_SIG106_IN_SEL_M  (BIT(7))
 #define GPIO_SIG106_IN_SEL_V  0x1
-#define GPIO_SIG106_IN_SEL_S  6
-/* GPIO_FUNC106_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG106_IN_SEL_S  7
+/* GPIO_FUNC106_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC106_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC106_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC106_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC106_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC106_IN_INV_SEL_V  0x1
-#define GPIO_FUNC106_IN_INV_SEL_S  5
-/* GPIO_FUNC106_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC106_IN_INV_SEL_S  6
+/* GPIO_FUNC106_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC106_IN_SEL  0x0000001F
+#define GPIO_FUNC106_IN_SEL  0x0000003F
 #define GPIO_FUNC106_IN_SEL_M  ((GPIO_FUNC106_IN_SEL_V)<<(GPIO_FUNC106_IN_SEL_S))
-#define GPIO_FUNC106_IN_SEL_V  0x1F
+#define GPIO_FUNC106_IN_SEL_V  0x3F
 #define GPIO_FUNC106_IN_SEL_S  0
 
 #define GPIO_FUNC107_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x300)
-/* GPIO_SIG107_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG107_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG107_IN_SEL  (BIT(6))
-#define GPIO_SIG107_IN_SEL_M  (BIT(6))
+#define GPIO_SIG107_IN_SEL  (BIT(7))
+#define GPIO_SIG107_IN_SEL_M  (BIT(7))
 #define GPIO_SIG107_IN_SEL_V  0x1
-#define GPIO_SIG107_IN_SEL_S  6
-/* GPIO_FUNC107_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG107_IN_SEL_S  7
+/* GPIO_FUNC107_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC107_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC107_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC107_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC107_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC107_IN_INV_SEL_V  0x1
-#define GPIO_FUNC107_IN_INV_SEL_S  5
-/* GPIO_FUNC107_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC107_IN_INV_SEL_S  6
+/* GPIO_FUNC107_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC107_IN_SEL  0x0000001F
+#define GPIO_FUNC107_IN_SEL  0x0000003F
 #define GPIO_FUNC107_IN_SEL_M  ((GPIO_FUNC107_IN_SEL_V)<<(GPIO_FUNC107_IN_SEL_S))
-#define GPIO_FUNC107_IN_SEL_V  0x1F
+#define GPIO_FUNC107_IN_SEL_V  0x3F
 #define GPIO_FUNC107_IN_SEL_S  0
 
 #define GPIO_FUNC108_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x304)
-/* GPIO_SIG108_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG108_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG108_IN_SEL  (BIT(6))
-#define GPIO_SIG108_IN_SEL_M  (BIT(6))
+#define GPIO_SIG108_IN_SEL  (BIT(7))
+#define GPIO_SIG108_IN_SEL_M  (BIT(7))
 #define GPIO_SIG108_IN_SEL_V  0x1
-#define GPIO_SIG108_IN_SEL_S  6
-/* GPIO_FUNC108_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG108_IN_SEL_S  7
+/* GPIO_FUNC108_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC108_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC108_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC108_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC108_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC108_IN_INV_SEL_V  0x1
-#define GPIO_FUNC108_IN_INV_SEL_S  5
-/* GPIO_FUNC108_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC108_IN_INV_SEL_S  6
+/* GPIO_FUNC108_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC108_IN_SEL  0x0000001F
+#define GPIO_FUNC108_IN_SEL  0x0000003F
 #define GPIO_FUNC108_IN_SEL_M  ((GPIO_FUNC108_IN_SEL_V)<<(GPIO_FUNC108_IN_SEL_S))
-#define GPIO_FUNC108_IN_SEL_V  0x1F
+#define GPIO_FUNC108_IN_SEL_V  0x3F
 #define GPIO_FUNC108_IN_SEL_S  0
 
 #define GPIO_FUNC109_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x308)
-/* GPIO_SIG109_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG109_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG109_IN_SEL  (BIT(6))
-#define GPIO_SIG109_IN_SEL_M  (BIT(6))
+#define GPIO_SIG109_IN_SEL  (BIT(7))
+#define GPIO_SIG109_IN_SEL_M  (BIT(7))
 #define GPIO_SIG109_IN_SEL_V  0x1
-#define GPIO_SIG109_IN_SEL_S  6
-/* GPIO_FUNC109_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG109_IN_SEL_S  7
+/* GPIO_FUNC109_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC109_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC109_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC109_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC109_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC109_IN_INV_SEL_V  0x1
-#define GPIO_FUNC109_IN_INV_SEL_S  5
-/* GPIO_FUNC109_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC109_IN_INV_SEL_S  6
+/* GPIO_FUNC109_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC109_IN_SEL  0x0000001F
+#define GPIO_FUNC109_IN_SEL  0x0000003F
 #define GPIO_FUNC109_IN_SEL_M  ((GPIO_FUNC109_IN_SEL_V)<<(GPIO_FUNC109_IN_SEL_S))
-#define GPIO_FUNC109_IN_SEL_V  0x1F
+#define GPIO_FUNC109_IN_SEL_V  0x3F
 #define GPIO_FUNC109_IN_SEL_S  0
 
 #define GPIO_FUNC110_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x30C)
-/* GPIO_SIG110_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG110_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG110_IN_SEL  (BIT(6))
-#define GPIO_SIG110_IN_SEL_M  (BIT(6))
+#define GPIO_SIG110_IN_SEL  (BIT(7))
+#define GPIO_SIG110_IN_SEL_M  (BIT(7))
 #define GPIO_SIG110_IN_SEL_V  0x1
-#define GPIO_SIG110_IN_SEL_S  6
-/* GPIO_FUNC110_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG110_IN_SEL_S  7
+/* GPIO_FUNC110_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC110_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC110_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC110_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC110_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC110_IN_INV_SEL_V  0x1
-#define GPIO_FUNC110_IN_INV_SEL_S  5
-/* GPIO_FUNC110_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC110_IN_INV_SEL_S  6
+/* GPIO_FUNC110_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC110_IN_SEL  0x0000001F
+#define GPIO_FUNC110_IN_SEL  0x0000003F
 #define GPIO_FUNC110_IN_SEL_M  ((GPIO_FUNC110_IN_SEL_V)<<(GPIO_FUNC110_IN_SEL_S))
-#define GPIO_FUNC110_IN_SEL_V  0x1F
+#define GPIO_FUNC110_IN_SEL_V  0x3F
 #define GPIO_FUNC110_IN_SEL_S  0
 
 #define GPIO_FUNC111_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x310)
-/* GPIO_SIG111_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG111_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG111_IN_SEL  (BIT(6))
-#define GPIO_SIG111_IN_SEL_M  (BIT(6))
+#define GPIO_SIG111_IN_SEL  (BIT(7))
+#define GPIO_SIG111_IN_SEL_M  (BIT(7))
 #define GPIO_SIG111_IN_SEL_V  0x1
-#define GPIO_SIG111_IN_SEL_S  6
-/* GPIO_FUNC111_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG111_IN_SEL_S  7
+/* GPIO_FUNC111_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC111_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC111_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC111_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC111_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC111_IN_INV_SEL_V  0x1
-#define GPIO_FUNC111_IN_INV_SEL_S  5
-/* GPIO_FUNC111_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC111_IN_INV_SEL_S  6
+/* GPIO_FUNC111_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC111_IN_SEL  0x0000001F
+#define GPIO_FUNC111_IN_SEL  0x0000003F
 #define GPIO_FUNC111_IN_SEL_M  ((GPIO_FUNC111_IN_SEL_V)<<(GPIO_FUNC111_IN_SEL_S))
-#define GPIO_FUNC111_IN_SEL_V  0x1F
+#define GPIO_FUNC111_IN_SEL_V  0x3F
 #define GPIO_FUNC111_IN_SEL_S  0
 
 #define GPIO_FUNC112_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x314)
-/* GPIO_SIG112_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG112_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG112_IN_SEL  (BIT(6))
-#define GPIO_SIG112_IN_SEL_M  (BIT(6))
+#define GPIO_SIG112_IN_SEL  (BIT(7))
+#define GPIO_SIG112_IN_SEL_M  (BIT(7))
 #define GPIO_SIG112_IN_SEL_V  0x1
-#define GPIO_SIG112_IN_SEL_S  6
-/* GPIO_FUNC112_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG112_IN_SEL_S  7
+/* GPIO_FUNC112_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC112_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC112_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC112_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC112_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC112_IN_INV_SEL_V  0x1
-#define GPIO_FUNC112_IN_INV_SEL_S  5
-/* GPIO_FUNC112_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC112_IN_INV_SEL_S  6
+/* GPIO_FUNC112_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC112_IN_SEL  0x0000001F
+#define GPIO_FUNC112_IN_SEL  0x0000003F
 #define GPIO_FUNC112_IN_SEL_M  ((GPIO_FUNC112_IN_SEL_V)<<(GPIO_FUNC112_IN_SEL_S))
-#define GPIO_FUNC112_IN_SEL_V  0x1F
+#define GPIO_FUNC112_IN_SEL_V  0x3F
 #define GPIO_FUNC112_IN_SEL_S  0
 
 #define GPIO_FUNC113_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x318)
-/* GPIO_SIG113_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG113_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG113_IN_SEL  (BIT(6))
-#define GPIO_SIG113_IN_SEL_M  (BIT(6))
+#define GPIO_SIG113_IN_SEL  (BIT(7))
+#define GPIO_SIG113_IN_SEL_M  (BIT(7))
 #define GPIO_SIG113_IN_SEL_V  0x1
-#define GPIO_SIG113_IN_SEL_S  6
-/* GPIO_FUNC113_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG113_IN_SEL_S  7
+/* GPIO_FUNC113_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC113_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC113_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC113_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC113_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC113_IN_INV_SEL_V  0x1
-#define GPIO_FUNC113_IN_INV_SEL_S  5
-/* GPIO_FUNC113_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC113_IN_INV_SEL_S  6
+/* GPIO_FUNC113_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC113_IN_SEL  0x0000001F
+#define GPIO_FUNC113_IN_SEL  0x0000003F
 #define GPIO_FUNC113_IN_SEL_M  ((GPIO_FUNC113_IN_SEL_V)<<(GPIO_FUNC113_IN_SEL_S))
-#define GPIO_FUNC113_IN_SEL_V  0x1F
+#define GPIO_FUNC113_IN_SEL_V  0x3F
 #define GPIO_FUNC113_IN_SEL_S  0
 
 #define GPIO_FUNC114_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x31C)
-/* GPIO_SIG114_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG114_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG114_IN_SEL  (BIT(6))
-#define GPIO_SIG114_IN_SEL_M  (BIT(6))
+#define GPIO_SIG114_IN_SEL  (BIT(7))
+#define GPIO_SIG114_IN_SEL_M  (BIT(7))
 #define GPIO_SIG114_IN_SEL_V  0x1
-#define GPIO_SIG114_IN_SEL_S  6
-/* GPIO_FUNC114_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG114_IN_SEL_S  7
+/* GPIO_FUNC114_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC114_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC114_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC114_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC114_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC114_IN_INV_SEL_V  0x1
-#define GPIO_FUNC114_IN_INV_SEL_S  5
-/* GPIO_FUNC114_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC114_IN_INV_SEL_S  6
+/* GPIO_FUNC114_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC114_IN_SEL  0x0000001F
+#define GPIO_FUNC114_IN_SEL  0x0000003F
 #define GPIO_FUNC114_IN_SEL_M  ((GPIO_FUNC114_IN_SEL_V)<<(GPIO_FUNC114_IN_SEL_S))
-#define GPIO_FUNC114_IN_SEL_V  0x1F
+#define GPIO_FUNC114_IN_SEL_V  0x3F
 #define GPIO_FUNC114_IN_SEL_S  0
 
 #define GPIO_FUNC115_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x320)
-/* GPIO_SIG115_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG115_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG115_IN_SEL  (BIT(6))
-#define GPIO_SIG115_IN_SEL_M  (BIT(6))
+#define GPIO_SIG115_IN_SEL  (BIT(7))
+#define GPIO_SIG115_IN_SEL_M  (BIT(7))
 #define GPIO_SIG115_IN_SEL_V  0x1
-#define GPIO_SIG115_IN_SEL_S  6
-/* GPIO_FUNC115_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG115_IN_SEL_S  7
+/* GPIO_FUNC115_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC115_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC115_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC115_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC115_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC115_IN_INV_SEL_V  0x1
-#define GPIO_FUNC115_IN_INV_SEL_S  5
-/* GPIO_FUNC115_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC115_IN_INV_SEL_S  6
+/* GPIO_FUNC115_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC115_IN_SEL  0x0000001F
+#define GPIO_FUNC115_IN_SEL  0x0000003F
 #define GPIO_FUNC115_IN_SEL_M  ((GPIO_FUNC115_IN_SEL_V)<<(GPIO_FUNC115_IN_SEL_S))
-#define GPIO_FUNC115_IN_SEL_V  0x1F
+#define GPIO_FUNC115_IN_SEL_V  0x3F
 #define GPIO_FUNC115_IN_SEL_S  0
 
 #define GPIO_FUNC116_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x324)
-/* GPIO_SIG116_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG116_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG116_IN_SEL  (BIT(6))
-#define GPIO_SIG116_IN_SEL_M  (BIT(6))
+#define GPIO_SIG116_IN_SEL  (BIT(7))
+#define GPIO_SIG116_IN_SEL_M  (BIT(7))
 #define GPIO_SIG116_IN_SEL_V  0x1
-#define GPIO_SIG116_IN_SEL_S  6
-/* GPIO_FUNC116_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG116_IN_SEL_S  7
+/* GPIO_FUNC116_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC116_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC116_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC116_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC116_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC116_IN_INV_SEL_V  0x1
-#define GPIO_FUNC116_IN_INV_SEL_S  5
-/* GPIO_FUNC116_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC116_IN_INV_SEL_S  6
+/* GPIO_FUNC116_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC116_IN_SEL  0x0000001F
+#define GPIO_FUNC116_IN_SEL  0x0000003F
 #define GPIO_FUNC116_IN_SEL_M  ((GPIO_FUNC116_IN_SEL_V)<<(GPIO_FUNC116_IN_SEL_S))
-#define GPIO_FUNC116_IN_SEL_V  0x1F
+#define GPIO_FUNC116_IN_SEL_V  0x3F
 #define GPIO_FUNC116_IN_SEL_S  0
 
 #define GPIO_FUNC117_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x328)
-/* GPIO_SIG117_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG117_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG117_IN_SEL  (BIT(6))
-#define GPIO_SIG117_IN_SEL_M  (BIT(6))
+#define GPIO_SIG117_IN_SEL  (BIT(7))
+#define GPIO_SIG117_IN_SEL_M  (BIT(7))
 #define GPIO_SIG117_IN_SEL_V  0x1
-#define GPIO_SIG117_IN_SEL_S  6
-/* GPIO_FUNC117_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG117_IN_SEL_S  7
+/* GPIO_FUNC117_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC117_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC117_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC117_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC117_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC117_IN_INV_SEL_V  0x1
-#define GPIO_FUNC117_IN_INV_SEL_S  5
-/* GPIO_FUNC117_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC117_IN_INV_SEL_S  6
+/* GPIO_FUNC117_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC117_IN_SEL  0x0000001F
+#define GPIO_FUNC117_IN_SEL  0x0000003F
 #define GPIO_FUNC117_IN_SEL_M  ((GPIO_FUNC117_IN_SEL_V)<<(GPIO_FUNC117_IN_SEL_S))
-#define GPIO_FUNC117_IN_SEL_V  0x1F
+#define GPIO_FUNC117_IN_SEL_V  0x3F
 #define GPIO_FUNC117_IN_SEL_S  0
 
 #define GPIO_FUNC118_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x32C)
-/* GPIO_SIG118_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG118_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG118_IN_SEL  (BIT(6))
-#define GPIO_SIG118_IN_SEL_M  (BIT(6))
+#define GPIO_SIG118_IN_SEL  (BIT(7))
+#define GPIO_SIG118_IN_SEL_M  (BIT(7))
 #define GPIO_SIG118_IN_SEL_V  0x1
-#define GPIO_SIG118_IN_SEL_S  6
-/* GPIO_FUNC118_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG118_IN_SEL_S  7
+/* GPIO_FUNC118_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC118_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC118_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC118_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC118_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC118_IN_INV_SEL_V  0x1
-#define GPIO_FUNC118_IN_INV_SEL_S  5
-/* GPIO_FUNC118_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC118_IN_INV_SEL_S  6
+/* GPIO_FUNC118_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC118_IN_SEL  0x0000001F
+#define GPIO_FUNC118_IN_SEL  0x0000003F
 #define GPIO_FUNC118_IN_SEL_M  ((GPIO_FUNC118_IN_SEL_V)<<(GPIO_FUNC118_IN_SEL_S))
-#define GPIO_FUNC118_IN_SEL_V  0x1F
+#define GPIO_FUNC118_IN_SEL_V  0x3F
 #define GPIO_FUNC118_IN_SEL_S  0
 
 #define GPIO_FUNC119_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x330)
-/* GPIO_SIG119_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG119_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG119_IN_SEL  (BIT(6))
-#define GPIO_SIG119_IN_SEL_M  (BIT(6))
+#define GPIO_SIG119_IN_SEL  (BIT(7))
+#define GPIO_SIG119_IN_SEL_M  (BIT(7))
 #define GPIO_SIG119_IN_SEL_V  0x1
-#define GPIO_SIG119_IN_SEL_S  6
-/* GPIO_FUNC119_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG119_IN_SEL_S  7
+/* GPIO_FUNC119_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC119_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC119_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC119_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC119_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC119_IN_INV_SEL_V  0x1
-#define GPIO_FUNC119_IN_INV_SEL_S  5
-/* GPIO_FUNC119_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC119_IN_INV_SEL_S  6
+/* GPIO_FUNC119_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC119_IN_SEL  0x0000001F
+#define GPIO_FUNC119_IN_SEL  0x0000003F
 #define GPIO_FUNC119_IN_SEL_M  ((GPIO_FUNC119_IN_SEL_V)<<(GPIO_FUNC119_IN_SEL_S))
-#define GPIO_FUNC119_IN_SEL_V  0x1F
+#define GPIO_FUNC119_IN_SEL_V  0x3F
 #define GPIO_FUNC119_IN_SEL_S  0
 
 #define GPIO_FUNC120_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x334)
-/* GPIO_SIG120_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG120_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG120_IN_SEL  (BIT(6))
-#define GPIO_SIG120_IN_SEL_M  (BIT(6))
+#define GPIO_SIG120_IN_SEL  (BIT(7))
+#define GPIO_SIG120_IN_SEL_M  (BIT(7))
 #define GPIO_SIG120_IN_SEL_V  0x1
-#define GPIO_SIG120_IN_SEL_S  6
-/* GPIO_FUNC120_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG120_IN_SEL_S  7
+/* GPIO_FUNC120_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC120_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC120_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC120_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC120_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC120_IN_INV_SEL_V  0x1
-#define GPIO_FUNC120_IN_INV_SEL_S  5
-/* GPIO_FUNC120_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC120_IN_INV_SEL_S  6
+/* GPIO_FUNC120_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC120_IN_SEL  0x0000001F
+#define GPIO_FUNC120_IN_SEL  0x0000003F
 #define GPIO_FUNC120_IN_SEL_M  ((GPIO_FUNC120_IN_SEL_V)<<(GPIO_FUNC120_IN_SEL_S))
-#define GPIO_FUNC120_IN_SEL_V  0x1F
+#define GPIO_FUNC120_IN_SEL_V  0x3F
 #define GPIO_FUNC120_IN_SEL_S  0
 
 #define GPIO_FUNC121_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x338)
-/* GPIO_SIG121_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG121_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG121_IN_SEL  (BIT(6))
-#define GPIO_SIG121_IN_SEL_M  (BIT(6))
+#define GPIO_SIG121_IN_SEL  (BIT(7))
+#define GPIO_SIG121_IN_SEL_M  (BIT(7))
 #define GPIO_SIG121_IN_SEL_V  0x1
-#define GPIO_SIG121_IN_SEL_S  6
-/* GPIO_FUNC121_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG121_IN_SEL_S  7
+/* GPIO_FUNC121_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC121_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC121_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC121_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC121_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC121_IN_INV_SEL_V  0x1
-#define GPIO_FUNC121_IN_INV_SEL_S  5
-/* GPIO_FUNC121_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC121_IN_INV_SEL_S  6
+/* GPIO_FUNC121_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC121_IN_SEL  0x0000001F
+#define GPIO_FUNC121_IN_SEL  0x0000003F
 #define GPIO_FUNC121_IN_SEL_M  ((GPIO_FUNC121_IN_SEL_V)<<(GPIO_FUNC121_IN_SEL_S))
-#define GPIO_FUNC121_IN_SEL_V  0x1F
+#define GPIO_FUNC121_IN_SEL_V  0x3F
 #define GPIO_FUNC121_IN_SEL_S  0
 
 #define GPIO_FUNC122_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x33C)
-/* GPIO_SIG122_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG122_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG122_IN_SEL  (BIT(6))
-#define GPIO_SIG122_IN_SEL_M  (BIT(6))
+#define GPIO_SIG122_IN_SEL  (BIT(7))
+#define GPIO_SIG122_IN_SEL_M  (BIT(7))
 #define GPIO_SIG122_IN_SEL_V  0x1
-#define GPIO_SIG122_IN_SEL_S  6
-/* GPIO_FUNC122_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG122_IN_SEL_S  7
+/* GPIO_FUNC122_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC122_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC122_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC122_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC122_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC122_IN_INV_SEL_V  0x1
-#define GPIO_FUNC122_IN_INV_SEL_S  5
-/* GPIO_FUNC122_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC122_IN_INV_SEL_S  6
+/* GPIO_FUNC122_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC122_IN_SEL  0x0000001F
+#define GPIO_FUNC122_IN_SEL  0x0000003F
 #define GPIO_FUNC122_IN_SEL_M  ((GPIO_FUNC122_IN_SEL_V)<<(GPIO_FUNC122_IN_SEL_S))
-#define GPIO_FUNC122_IN_SEL_V  0x1F
+#define GPIO_FUNC122_IN_SEL_V  0x3F
 #define GPIO_FUNC122_IN_SEL_S  0
 
 #define GPIO_FUNC123_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x340)
-/* GPIO_SIG123_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG123_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG123_IN_SEL  (BIT(6))
-#define GPIO_SIG123_IN_SEL_M  (BIT(6))
+#define GPIO_SIG123_IN_SEL  (BIT(7))
+#define GPIO_SIG123_IN_SEL_M  (BIT(7))
 #define GPIO_SIG123_IN_SEL_V  0x1
-#define GPIO_SIG123_IN_SEL_S  6
-/* GPIO_FUNC123_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG123_IN_SEL_S  7
+/* GPIO_FUNC123_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC123_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC123_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC123_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC123_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC123_IN_INV_SEL_V  0x1
-#define GPIO_FUNC123_IN_INV_SEL_S  5
-/* GPIO_FUNC123_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC123_IN_INV_SEL_S  6
+/* GPIO_FUNC123_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC123_IN_SEL  0x0000001F
+#define GPIO_FUNC123_IN_SEL  0x0000003F
 #define GPIO_FUNC123_IN_SEL_M  ((GPIO_FUNC123_IN_SEL_V)<<(GPIO_FUNC123_IN_SEL_S))
-#define GPIO_FUNC123_IN_SEL_V  0x1F
+#define GPIO_FUNC123_IN_SEL_V  0x3F
 #define GPIO_FUNC123_IN_SEL_S  0
 
 #define GPIO_FUNC124_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x344)
-/* GPIO_SIG124_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG124_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG124_IN_SEL  (BIT(6))
-#define GPIO_SIG124_IN_SEL_M  (BIT(6))
+#define GPIO_SIG124_IN_SEL  (BIT(7))
+#define GPIO_SIG124_IN_SEL_M  (BIT(7))
 #define GPIO_SIG124_IN_SEL_V  0x1
-#define GPIO_SIG124_IN_SEL_S  6
-/* GPIO_FUNC124_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG124_IN_SEL_S  7
+/* GPIO_FUNC124_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC124_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC124_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC124_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC124_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC124_IN_INV_SEL_V  0x1
-#define GPIO_FUNC124_IN_INV_SEL_S  5
-/* GPIO_FUNC124_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC124_IN_INV_SEL_S  6
+/* GPIO_FUNC124_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC124_IN_SEL  0x0000001F
+#define GPIO_FUNC124_IN_SEL  0x0000003F
 #define GPIO_FUNC124_IN_SEL_M  ((GPIO_FUNC124_IN_SEL_V)<<(GPIO_FUNC124_IN_SEL_S))
-#define GPIO_FUNC124_IN_SEL_V  0x1F
+#define GPIO_FUNC124_IN_SEL_V  0x3F
 #define GPIO_FUNC124_IN_SEL_S  0
 
 #define GPIO_FUNC125_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x348)
-/* GPIO_SIG125_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG125_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG125_IN_SEL  (BIT(6))
-#define GPIO_SIG125_IN_SEL_M  (BIT(6))
+#define GPIO_SIG125_IN_SEL  (BIT(7))
+#define GPIO_SIG125_IN_SEL_M  (BIT(7))
 #define GPIO_SIG125_IN_SEL_V  0x1
-#define GPIO_SIG125_IN_SEL_S  6
-/* GPIO_FUNC125_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG125_IN_SEL_S  7
+/* GPIO_FUNC125_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC125_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC125_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC125_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC125_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC125_IN_INV_SEL_V  0x1
-#define GPIO_FUNC125_IN_INV_SEL_S  5
-/* GPIO_FUNC125_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC125_IN_INV_SEL_S  6
+/* GPIO_FUNC125_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC125_IN_SEL  0x0000001F
+#define GPIO_FUNC125_IN_SEL  0x0000003F
 #define GPIO_FUNC125_IN_SEL_M  ((GPIO_FUNC125_IN_SEL_V)<<(GPIO_FUNC125_IN_SEL_S))
-#define GPIO_FUNC125_IN_SEL_V  0x1F
+#define GPIO_FUNC125_IN_SEL_V  0x3F
 #define GPIO_FUNC125_IN_SEL_S  0
 
 #define GPIO_FUNC126_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x34C)
-/* GPIO_SIG126_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG126_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG126_IN_SEL  (BIT(6))
-#define GPIO_SIG126_IN_SEL_M  (BIT(6))
+#define GPIO_SIG126_IN_SEL  (BIT(7))
+#define GPIO_SIG126_IN_SEL_M  (BIT(7))
 #define GPIO_SIG126_IN_SEL_V  0x1
-#define GPIO_SIG126_IN_SEL_S  6
-/* GPIO_FUNC126_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG126_IN_SEL_S  7
+/* GPIO_FUNC126_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC126_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC126_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC126_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC126_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC126_IN_INV_SEL_V  0x1
-#define GPIO_FUNC126_IN_INV_SEL_S  5
-/* GPIO_FUNC126_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC126_IN_INV_SEL_S  6
+/* GPIO_FUNC126_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC126_IN_SEL  0x0000001F
+#define GPIO_FUNC126_IN_SEL  0x0000003F
 #define GPIO_FUNC126_IN_SEL_M  ((GPIO_FUNC126_IN_SEL_V)<<(GPIO_FUNC126_IN_SEL_S))
-#define GPIO_FUNC126_IN_SEL_V  0x1F
+#define GPIO_FUNC126_IN_SEL_V  0x3F
 #define GPIO_FUNC126_IN_SEL_S  0
 
 #define GPIO_FUNC127_IN_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x350)
-/* GPIO_SIG127_IN_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/* GPIO_SIG127_IN_SEL : R/W ;bitpos:[7] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_SIG127_IN_SEL  (BIT(6))
-#define GPIO_SIG127_IN_SEL_M  (BIT(6))
+#define GPIO_SIG127_IN_SEL  (BIT(7))
+#define GPIO_SIG127_IN_SEL_M  (BIT(7))
 #define GPIO_SIG127_IN_SEL_V  0x1
-#define GPIO_SIG127_IN_SEL_S  6
-/* GPIO_FUNC127_IN_INV_SEL : R/W ;bitpos:[5] ;default: 1'h0 ; */
+#define GPIO_SIG127_IN_SEL_S  7
+/* GPIO_FUNC127_IN_INV_SEL : R/W ;bitpos:[6] ;default: 1'h0 ; */
 /*description: */
-#define GPIO_FUNC127_IN_INV_SEL  (BIT(5))
-#define GPIO_FUNC127_IN_INV_SEL_M  (BIT(5))
+#define GPIO_FUNC127_IN_INV_SEL  (BIT(6))
+#define GPIO_FUNC127_IN_INV_SEL_M  (BIT(6))
 #define GPIO_FUNC127_IN_INV_SEL_V  0x1
-#define GPIO_FUNC127_IN_INV_SEL_S  5
-/* GPIO_FUNC127_IN_SEL : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
+#define GPIO_FUNC127_IN_INV_SEL_S  6
+/* GPIO_FUNC127_IN_SEL : R/W ;bitpos:[5:0] ;default: 6'h0 ; */
 /*description: */
-#define GPIO_FUNC127_IN_SEL  0x0000001F
+#define GPIO_FUNC127_IN_SEL  0x0000003F
 #define GPIO_FUNC127_IN_SEL_M  ((GPIO_FUNC127_IN_SEL_V)<<(GPIO_FUNC127_IN_SEL_S))
-#define GPIO_FUNC127_IN_SEL_V  0x1F
+#define GPIO_FUNC127_IN_SEL_V  0x3F
 #define GPIO_FUNC127_IN_SEL_S  0
 
 #define GPIO_FUNC0_OUT_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x554)
@@ -4563,6 +5511,500 @@ extern "C" {
 #define GPIO_FUNC25_OUT_SEL_V  0xFF
 #define GPIO_FUNC25_OUT_SEL_S  0
 
+#define GPIO_FUNC26_OUT_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x5BC)
+/* GPIO_FUNC26_OEN_INV_SEL : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC26_OEN_INV_SEL  (BIT(10))
+#define GPIO_FUNC26_OEN_INV_SEL_M  (BIT(10))
+#define GPIO_FUNC26_OEN_INV_SEL_V  0x1
+#define GPIO_FUNC26_OEN_INV_SEL_S  10
+/* GPIO_FUNC26_OEN_SEL : R/W ;bitpos:[9] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC26_OEN_SEL  (BIT(9))
+#define GPIO_FUNC26_OEN_SEL_M  (BIT(9))
+#define GPIO_FUNC26_OEN_SEL_V  0x1
+#define GPIO_FUNC26_OEN_SEL_S  9
+/* GPIO_FUNC26_OUT_INV_SEL : R/W ;bitpos:[8] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC26_OUT_INV_SEL  (BIT(8))
+#define GPIO_FUNC26_OUT_INV_SEL_M  (BIT(8))
+#define GPIO_FUNC26_OUT_INV_SEL_V  0x1
+#define GPIO_FUNC26_OUT_INV_SEL_S  8
+/* GPIO_FUNC26_OUT_SEL : R/W ;bitpos:[7:0] ;default: 8'h80 ; */
+/*description: */
+#define GPIO_FUNC26_OUT_SEL  0x000000FF
+#define GPIO_FUNC26_OUT_SEL_M  ((GPIO_FUNC26_OUT_SEL_V)<<(GPIO_FUNC26_OUT_SEL_S))
+#define GPIO_FUNC26_OUT_SEL_V  0xFF
+#define GPIO_FUNC26_OUT_SEL_S  0
+
+#define GPIO_FUNC27_OUT_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x5C0)
+/* GPIO_FUNC27_OEN_INV_SEL : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC27_OEN_INV_SEL  (BIT(10))
+#define GPIO_FUNC27_OEN_INV_SEL_M  (BIT(10))
+#define GPIO_FUNC27_OEN_INV_SEL_V  0x1
+#define GPIO_FUNC27_OEN_INV_SEL_S  10
+/* GPIO_FUNC27_OEN_SEL : R/W ;bitpos:[9] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC27_OEN_SEL  (BIT(9))
+#define GPIO_FUNC27_OEN_SEL_M  (BIT(9))
+#define GPIO_FUNC27_OEN_SEL_V  0x1
+#define GPIO_FUNC27_OEN_SEL_S  9
+/* GPIO_FUNC27_OUT_INV_SEL : R/W ;bitpos:[8] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC27_OUT_INV_SEL  (BIT(8))
+#define GPIO_FUNC27_OUT_INV_SEL_M  (BIT(8))
+#define GPIO_FUNC27_OUT_INV_SEL_V  0x1
+#define GPIO_FUNC27_OUT_INV_SEL_S  8
+/* GPIO_FUNC27_OUT_SEL : R/W ;bitpos:[7:0] ;default: 8'h80 ; */
+/*description: */
+#define GPIO_FUNC27_OUT_SEL  0x000000FF
+#define GPIO_FUNC27_OUT_SEL_M  ((GPIO_FUNC27_OUT_SEL_V)<<(GPIO_FUNC27_OUT_SEL_S))
+#define GPIO_FUNC27_OUT_SEL_V  0xFF
+#define GPIO_FUNC27_OUT_SEL_S  0
+
+#define GPIO_FUNC28_OUT_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x5C4)
+/* GPIO_FUNC28_OEN_INV_SEL : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC28_OEN_INV_SEL  (BIT(10))
+#define GPIO_FUNC28_OEN_INV_SEL_M  (BIT(10))
+#define GPIO_FUNC28_OEN_INV_SEL_V  0x1
+#define GPIO_FUNC28_OEN_INV_SEL_S  10
+/* GPIO_FUNC28_OEN_SEL : R/W ;bitpos:[9] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC28_OEN_SEL  (BIT(9))
+#define GPIO_FUNC28_OEN_SEL_M  (BIT(9))
+#define GPIO_FUNC28_OEN_SEL_V  0x1
+#define GPIO_FUNC28_OEN_SEL_S  9
+/* GPIO_FUNC28_OUT_INV_SEL : R/W ;bitpos:[8] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC28_OUT_INV_SEL  (BIT(8))
+#define GPIO_FUNC28_OUT_INV_SEL_M  (BIT(8))
+#define GPIO_FUNC28_OUT_INV_SEL_V  0x1
+#define GPIO_FUNC28_OUT_INV_SEL_S  8
+/* GPIO_FUNC28_OUT_SEL : R/W ;bitpos:[7:0] ;default: 8'h80 ; */
+/*description: */
+#define GPIO_FUNC28_OUT_SEL  0x000000FF
+#define GPIO_FUNC28_OUT_SEL_M  ((GPIO_FUNC28_OUT_SEL_V)<<(GPIO_FUNC28_OUT_SEL_S))
+#define GPIO_FUNC28_OUT_SEL_V  0xFF
+#define GPIO_FUNC28_OUT_SEL_S  0
+
+#define GPIO_FUNC29_OUT_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x5C8)
+/* GPIO_FUNC29_OEN_INV_SEL : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC29_OEN_INV_SEL  (BIT(10))
+#define GPIO_FUNC29_OEN_INV_SEL_M  (BIT(10))
+#define GPIO_FUNC29_OEN_INV_SEL_V  0x1
+#define GPIO_FUNC29_OEN_INV_SEL_S  10
+/* GPIO_FUNC29_OEN_SEL : R/W ;bitpos:[9] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC29_OEN_SEL  (BIT(9))
+#define GPIO_FUNC29_OEN_SEL_M  (BIT(9))
+#define GPIO_FUNC29_OEN_SEL_V  0x1
+#define GPIO_FUNC29_OEN_SEL_S  9
+/* GPIO_FUNC29_OUT_INV_SEL : R/W ;bitpos:[8] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC29_OUT_INV_SEL  (BIT(8))
+#define GPIO_FUNC29_OUT_INV_SEL_M  (BIT(8))
+#define GPIO_FUNC29_OUT_INV_SEL_V  0x1
+#define GPIO_FUNC29_OUT_INV_SEL_S  8
+/* GPIO_FUNC29_OUT_SEL : R/W ;bitpos:[7:0] ;default: 8'h80 ; */
+/*description: */
+#define GPIO_FUNC29_OUT_SEL  0x000000FF
+#define GPIO_FUNC29_OUT_SEL_M  ((GPIO_FUNC29_OUT_SEL_V)<<(GPIO_FUNC29_OUT_SEL_S))
+#define GPIO_FUNC29_OUT_SEL_V  0xFF
+#define GPIO_FUNC29_OUT_SEL_S  0
+
+#define GPIO_FUNC30_OUT_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x5CC)
+/* GPIO_FUNC30_OEN_INV_SEL : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC30_OEN_INV_SEL  (BIT(10))
+#define GPIO_FUNC30_OEN_INV_SEL_M  (BIT(10))
+#define GPIO_FUNC30_OEN_INV_SEL_V  0x1
+#define GPIO_FUNC30_OEN_INV_SEL_S  10
+/* GPIO_FUNC30_OEN_SEL : R/W ;bitpos:[9] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC30_OEN_SEL  (BIT(9))
+#define GPIO_FUNC30_OEN_SEL_M  (BIT(9))
+#define GPIO_FUNC30_OEN_SEL_V  0x1
+#define GPIO_FUNC30_OEN_SEL_S  9
+/* GPIO_FUNC30_OUT_INV_SEL : R/W ;bitpos:[8] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC30_OUT_INV_SEL  (BIT(8))
+#define GPIO_FUNC30_OUT_INV_SEL_M  (BIT(8))
+#define GPIO_FUNC30_OUT_INV_SEL_V  0x1
+#define GPIO_FUNC30_OUT_INV_SEL_S  8
+/* GPIO_FUNC30_OUT_SEL : R/W ;bitpos:[7:0] ;default: 8'h80 ; */
+/*description: */
+#define GPIO_FUNC30_OUT_SEL  0x000000FF
+#define GPIO_FUNC30_OUT_SEL_M  ((GPIO_FUNC30_OUT_SEL_V)<<(GPIO_FUNC30_OUT_SEL_S))
+#define GPIO_FUNC30_OUT_SEL_V  0xFF
+#define GPIO_FUNC30_OUT_SEL_S  0
+
+#define GPIO_FUNC31_OUT_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x5D0)
+/* GPIO_FUNC31_OEN_INV_SEL : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC31_OEN_INV_SEL  (BIT(10))
+#define GPIO_FUNC31_OEN_INV_SEL_M  (BIT(10))
+#define GPIO_FUNC31_OEN_INV_SEL_V  0x1
+#define GPIO_FUNC31_OEN_INV_SEL_S  10
+/* GPIO_FUNC31_OEN_SEL : R/W ;bitpos:[9] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC31_OEN_SEL  (BIT(9))
+#define GPIO_FUNC31_OEN_SEL_M  (BIT(9))
+#define GPIO_FUNC31_OEN_SEL_V  0x1
+#define GPIO_FUNC31_OEN_SEL_S  9
+/* GPIO_FUNC31_OUT_INV_SEL : R/W ;bitpos:[8] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC31_OUT_INV_SEL  (BIT(8))
+#define GPIO_FUNC31_OUT_INV_SEL_M  (BIT(8))
+#define GPIO_FUNC31_OUT_INV_SEL_V  0x1
+#define GPIO_FUNC31_OUT_INV_SEL_S  8
+/* GPIO_FUNC31_OUT_SEL : R/W ;bitpos:[7:0] ;default: 8'h80 ; */
+/*description: */
+#define GPIO_FUNC31_OUT_SEL  0x000000FF
+#define GPIO_FUNC31_OUT_SEL_M  ((GPIO_FUNC31_OUT_SEL_V)<<(GPIO_FUNC31_OUT_SEL_S))
+#define GPIO_FUNC31_OUT_SEL_V  0xFF
+#define GPIO_FUNC31_OUT_SEL_S  0
+
+#define GPIO_FUNC32_OUT_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x5D4)
+/* GPIO_FUNC32_OEN_INV_SEL : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC32_OEN_INV_SEL  (BIT(10))
+#define GPIO_FUNC32_OEN_INV_SEL_M  (BIT(10))
+#define GPIO_FUNC32_OEN_INV_SEL_V  0x1
+#define GPIO_FUNC32_OEN_INV_SEL_S  10
+/* GPIO_FUNC32_OEN_SEL : R/W ;bitpos:[9] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC32_OEN_SEL  (BIT(9))
+#define GPIO_FUNC32_OEN_SEL_M  (BIT(9))
+#define GPIO_FUNC32_OEN_SEL_V  0x1
+#define GPIO_FUNC32_OEN_SEL_S  9
+/* GPIO_FUNC32_OUT_INV_SEL : R/W ;bitpos:[8] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC32_OUT_INV_SEL  (BIT(8))
+#define GPIO_FUNC32_OUT_INV_SEL_M  (BIT(8))
+#define GPIO_FUNC32_OUT_INV_SEL_V  0x1
+#define GPIO_FUNC32_OUT_INV_SEL_S  8
+/* GPIO_FUNC32_OUT_SEL : R/W ;bitpos:[7:0] ;default: 8'h80 ; */
+/*description: */
+#define GPIO_FUNC32_OUT_SEL  0x000000FF
+#define GPIO_FUNC32_OUT_SEL_M  ((GPIO_FUNC32_OUT_SEL_V)<<(GPIO_FUNC32_OUT_SEL_S))
+#define GPIO_FUNC32_OUT_SEL_V  0xFF
+#define GPIO_FUNC32_OUT_SEL_S  0
+
+#define GPIO_FUNC33_OUT_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x5D8)
+/* GPIO_FUNC33_OEN_INV_SEL : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC33_OEN_INV_SEL  (BIT(10))
+#define GPIO_FUNC33_OEN_INV_SEL_M  (BIT(10))
+#define GPIO_FUNC33_OEN_INV_SEL_V  0x1
+#define GPIO_FUNC33_OEN_INV_SEL_S  10
+/* GPIO_FUNC33_OEN_SEL : R/W ;bitpos:[9] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC33_OEN_SEL  (BIT(9))
+#define GPIO_FUNC33_OEN_SEL_M  (BIT(9))
+#define GPIO_FUNC33_OEN_SEL_V  0x1
+#define GPIO_FUNC33_OEN_SEL_S  9
+/* GPIO_FUNC33_OUT_INV_SEL : R/W ;bitpos:[8] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC33_OUT_INV_SEL  (BIT(8))
+#define GPIO_FUNC33_OUT_INV_SEL_M  (BIT(8))
+#define GPIO_FUNC33_OUT_INV_SEL_V  0x1
+#define GPIO_FUNC33_OUT_INV_SEL_S  8
+/* GPIO_FUNC33_OUT_SEL : R/W ;bitpos:[7:0] ;default: 8'h80 ; */
+/*description: */
+#define GPIO_FUNC33_OUT_SEL  0x000000FF
+#define GPIO_FUNC33_OUT_SEL_M  ((GPIO_FUNC33_OUT_SEL_V)<<(GPIO_FUNC33_OUT_SEL_S))
+#define GPIO_FUNC33_OUT_SEL_V  0xFF
+#define GPIO_FUNC33_OUT_SEL_S  0
+
+#define GPIO_FUNC34_OUT_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x5DC)
+/* GPIO_FUNC34_OEN_INV_SEL : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC34_OEN_INV_SEL  (BIT(10))
+#define GPIO_FUNC34_OEN_INV_SEL_M  (BIT(10))
+#define GPIO_FUNC34_OEN_INV_SEL_V  0x1
+#define GPIO_FUNC34_OEN_INV_SEL_S  10
+/* GPIO_FUNC34_OEN_SEL : R/W ;bitpos:[9] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC34_OEN_SEL  (BIT(9))
+#define GPIO_FUNC34_OEN_SEL_M  (BIT(9))
+#define GPIO_FUNC34_OEN_SEL_V  0x1
+#define GPIO_FUNC34_OEN_SEL_S  9
+/* GPIO_FUNC34_OUT_INV_SEL : R/W ;bitpos:[8] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC34_OUT_INV_SEL  (BIT(8))
+#define GPIO_FUNC34_OUT_INV_SEL_M  (BIT(8))
+#define GPIO_FUNC34_OUT_INV_SEL_V  0x1
+#define GPIO_FUNC34_OUT_INV_SEL_S  8
+/* GPIO_FUNC34_OUT_SEL : R/W ;bitpos:[7:0] ;default: 8'h80 ; */
+/*description: */
+#define GPIO_FUNC34_OUT_SEL  0x000000FF
+#define GPIO_FUNC34_OUT_SEL_M  ((GPIO_FUNC34_OUT_SEL_V)<<(GPIO_FUNC34_OUT_SEL_S))
+#define GPIO_FUNC34_OUT_SEL_V  0xFF
+#define GPIO_FUNC34_OUT_SEL_S  0
+
+#define GPIO_FUNC35_OUT_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x5E0)
+/* GPIO_FUNC35_OEN_INV_SEL : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC35_OEN_INV_SEL  (BIT(10))
+#define GPIO_FUNC35_OEN_INV_SEL_M  (BIT(10))
+#define GPIO_FUNC35_OEN_INV_SEL_V  0x1
+#define GPIO_FUNC35_OEN_INV_SEL_S  10
+/* GPIO_FUNC35_OEN_SEL : R/W ;bitpos:[9] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC35_OEN_SEL  (BIT(9))
+#define GPIO_FUNC35_OEN_SEL_M  (BIT(9))
+#define GPIO_FUNC35_OEN_SEL_V  0x1
+#define GPIO_FUNC35_OEN_SEL_S  9
+/* GPIO_FUNC35_OUT_INV_SEL : R/W ;bitpos:[8] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC35_OUT_INV_SEL  (BIT(8))
+#define GPIO_FUNC35_OUT_INV_SEL_M  (BIT(8))
+#define GPIO_FUNC35_OUT_INV_SEL_V  0x1
+#define GPIO_FUNC35_OUT_INV_SEL_S  8
+/* GPIO_FUNC35_OUT_SEL : R/W ;bitpos:[7:0] ;default: 8'h80 ; */
+/*description: */
+#define GPIO_FUNC35_OUT_SEL  0x000000FF
+#define GPIO_FUNC35_OUT_SEL_M  ((GPIO_FUNC35_OUT_SEL_V)<<(GPIO_FUNC35_OUT_SEL_S))
+#define GPIO_FUNC35_OUT_SEL_V  0xFF
+#define GPIO_FUNC35_OUT_SEL_S  0
+
+#define GPIO_FUNC36_OUT_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x5E4)
+/* GPIO_FUNC36_OEN_INV_SEL : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC36_OEN_INV_SEL  (BIT(10))
+#define GPIO_FUNC36_OEN_INV_SEL_M  (BIT(10))
+#define GPIO_FUNC36_OEN_INV_SEL_V  0x1
+#define GPIO_FUNC36_OEN_INV_SEL_S  10
+/* GPIO_FUNC36_OEN_SEL : R/W ;bitpos:[9] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC36_OEN_SEL  (BIT(9))
+#define GPIO_FUNC36_OEN_SEL_M  (BIT(9))
+#define GPIO_FUNC36_OEN_SEL_V  0x1
+#define GPIO_FUNC36_OEN_SEL_S  9
+/* GPIO_FUNC36_OUT_INV_SEL : R/W ;bitpos:[8] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC36_OUT_INV_SEL  (BIT(8))
+#define GPIO_FUNC36_OUT_INV_SEL_M  (BIT(8))
+#define GPIO_FUNC36_OUT_INV_SEL_V  0x1
+#define GPIO_FUNC36_OUT_INV_SEL_S  8
+/* GPIO_FUNC36_OUT_SEL : R/W ;bitpos:[7:0] ;default: 8'h80 ; */
+/*description: */
+#define GPIO_FUNC36_OUT_SEL  0x000000FF
+#define GPIO_FUNC36_OUT_SEL_M  ((GPIO_FUNC36_OUT_SEL_V)<<(GPIO_FUNC36_OUT_SEL_S))
+#define GPIO_FUNC36_OUT_SEL_V  0xFF
+#define GPIO_FUNC36_OUT_SEL_S  0
+
+#define GPIO_FUNC37_OUT_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x5E8)
+/* GPIO_FUNC37_OEN_INV_SEL : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC37_OEN_INV_SEL  (BIT(10))
+#define GPIO_FUNC37_OEN_INV_SEL_M  (BIT(10))
+#define GPIO_FUNC37_OEN_INV_SEL_V  0x1
+#define GPIO_FUNC37_OEN_INV_SEL_S  10
+/* GPIO_FUNC37_OEN_SEL : R/W ;bitpos:[9] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC37_OEN_SEL  (BIT(9))
+#define GPIO_FUNC37_OEN_SEL_M  (BIT(9))
+#define GPIO_FUNC37_OEN_SEL_V  0x1
+#define GPIO_FUNC37_OEN_SEL_S  9
+/* GPIO_FUNC37_OUT_INV_SEL : R/W ;bitpos:[8] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC37_OUT_INV_SEL  (BIT(8))
+#define GPIO_FUNC37_OUT_INV_SEL_M  (BIT(8))
+#define GPIO_FUNC37_OUT_INV_SEL_V  0x1
+#define GPIO_FUNC37_OUT_INV_SEL_S  8
+/* GPIO_FUNC37_OUT_SEL : R/W ;bitpos:[7:0] ;default: 8'h80 ; */
+/*description: */
+#define GPIO_FUNC37_OUT_SEL  0x000000FF
+#define GPIO_FUNC37_OUT_SEL_M  ((GPIO_FUNC37_OUT_SEL_V)<<(GPIO_FUNC37_OUT_SEL_S))
+#define GPIO_FUNC37_OUT_SEL_V  0xFF
+#define GPIO_FUNC37_OUT_SEL_S  0
+
+#define GPIO_FUNC38_OUT_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x5EC)
+/* GPIO_FUNC38_OEN_INV_SEL : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC38_OEN_INV_SEL  (BIT(10))
+#define GPIO_FUNC38_OEN_INV_SEL_M  (BIT(10))
+#define GPIO_FUNC38_OEN_INV_SEL_V  0x1
+#define GPIO_FUNC38_OEN_INV_SEL_S  10
+/* GPIO_FUNC38_OEN_SEL : R/W ;bitpos:[9] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC38_OEN_SEL  (BIT(9))
+#define GPIO_FUNC38_OEN_SEL_M  (BIT(9))
+#define GPIO_FUNC38_OEN_SEL_V  0x1
+#define GPIO_FUNC38_OEN_SEL_S  9
+/* GPIO_FUNC38_OUT_INV_SEL : R/W ;bitpos:[8] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC38_OUT_INV_SEL  (BIT(8))
+#define GPIO_FUNC38_OUT_INV_SEL_M  (BIT(8))
+#define GPIO_FUNC38_OUT_INV_SEL_V  0x1
+#define GPIO_FUNC38_OUT_INV_SEL_S  8
+/* GPIO_FUNC38_OUT_SEL : R/W ;bitpos:[7:0] ;default: 8'h80 ; */
+/*description: */
+#define GPIO_FUNC38_OUT_SEL  0x000000FF
+#define GPIO_FUNC38_OUT_SEL_M  ((GPIO_FUNC38_OUT_SEL_V)<<(GPIO_FUNC38_OUT_SEL_S))
+#define GPIO_FUNC38_OUT_SEL_V  0xFF
+#define GPIO_FUNC38_OUT_SEL_S  0
+
+#define GPIO_FUNC39_OUT_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x5F0)
+/* GPIO_FUNC39_OEN_INV_SEL : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC39_OEN_INV_SEL  (BIT(10))
+#define GPIO_FUNC39_OEN_INV_SEL_M  (BIT(10))
+#define GPIO_FUNC39_OEN_INV_SEL_V  0x1
+#define GPIO_FUNC39_OEN_INV_SEL_S  10
+/* GPIO_FUNC39_OEN_SEL : R/W ;bitpos:[9] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC39_OEN_SEL  (BIT(9))
+#define GPIO_FUNC39_OEN_SEL_M  (BIT(9))
+#define GPIO_FUNC39_OEN_SEL_V  0x1
+#define GPIO_FUNC39_OEN_SEL_S  9
+/* GPIO_FUNC39_OUT_INV_SEL : R/W ;bitpos:[8] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC39_OUT_INV_SEL  (BIT(8))
+#define GPIO_FUNC39_OUT_INV_SEL_M  (BIT(8))
+#define GPIO_FUNC39_OUT_INV_SEL_V  0x1
+#define GPIO_FUNC39_OUT_INV_SEL_S  8
+/* GPIO_FUNC39_OUT_SEL : R/W ;bitpos:[7:0] ;default: 8'h80 ; */
+/*description: */
+#define GPIO_FUNC39_OUT_SEL  0x000000FF
+#define GPIO_FUNC39_OUT_SEL_M  ((GPIO_FUNC39_OUT_SEL_V)<<(GPIO_FUNC39_OUT_SEL_S))
+#define GPIO_FUNC39_OUT_SEL_V  0xFF
+#define GPIO_FUNC39_OUT_SEL_S  0
+
+#define GPIO_FUNC40_OUT_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x5F4)
+/* GPIO_FUNC40_OEN_INV_SEL : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC40_OEN_INV_SEL  (BIT(10))
+#define GPIO_FUNC40_OEN_INV_SEL_M  (BIT(10))
+#define GPIO_FUNC40_OEN_INV_SEL_V  0x1
+#define GPIO_FUNC40_OEN_INV_SEL_S  10
+/* GPIO_FUNC40_OEN_SEL : R/W ;bitpos:[9] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC40_OEN_SEL  (BIT(9))
+#define GPIO_FUNC40_OEN_SEL_M  (BIT(9))
+#define GPIO_FUNC40_OEN_SEL_V  0x1
+#define GPIO_FUNC40_OEN_SEL_S  9
+/* GPIO_FUNC40_OUT_INV_SEL : R/W ;bitpos:[8] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC40_OUT_INV_SEL  (BIT(8))
+#define GPIO_FUNC40_OUT_INV_SEL_M  (BIT(8))
+#define GPIO_FUNC40_OUT_INV_SEL_V  0x1
+#define GPIO_FUNC40_OUT_INV_SEL_S  8
+/* GPIO_FUNC40_OUT_SEL : R/W ;bitpos:[7:0] ;default: 8'h80 ; */
+/*description: */
+#define GPIO_FUNC40_OUT_SEL  0x000000FF
+#define GPIO_FUNC40_OUT_SEL_M  ((GPIO_FUNC40_OUT_SEL_V)<<(GPIO_FUNC40_OUT_SEL_S))
+#define GPIO_FUNC40_OUT_SEL_V  0xFF
+#define GPIO_FUNC40_OUT_SEL_S  0
+
+#define GPIO_FUNC41_OUT_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x5F8)
+/* GPIO_FUNC41_OEN_INV_SEL : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC41_OEN_INV_SEL  (BIT(10))
+#define GPIO_FUNC41_OEN_INV_SEL_M  (BIT(10))
+#define GPIO_FUNC41_OEN_INV_SEL_V  0x1
+#define GPIO_FUNC41_OEN_INV_SEL_S  10
+/* GPIO_FUNC41_OEN_SEL : R/W ;bitpos:[9] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC41_OEN_SEL  (BIT(9))
+#define GPIO_FUNC41_OEN_SEL_M  (BIT(9))
+#define GPIO_FUNC41_OEN_SEL_V  0x1
+#define GPIO_FUNC41_OEN_SEL_S  9
+/* GPIO_FUNC41_OUT_INV_SEL : R/W ;bitpos:[8] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC41_OUT_INV_SEL  (BIT(8))
+#define GPIO_FUNC41_OUT_INV_SEL_M  (BIT(8))
+#define GPIO_FUNC41_OUT_INV_SEL_V  0x1
+#define GPIO_FUNC41_OUT_INV_SEL_S  8
+/* GPIO_FUNC41_OUT_SEL : R/W ;bitpos:[7:0] ;default: 8'h80 ; */
+/*description: */
+#define GPIO_FUNC41_OUT_SEL  0x000000FF
+#define GPIO_FUNC41_OUT_SEL_M  ((GPIO_FUNC41_OUT_SEL_V)<<(GPIO_FUNC41_OUT_SEL_S))
+#define GPIO_FUNC41_OUT_SEL_V  0xFF
+#define GPIO_FUNC41_OUT_SEL_S  0
+
+#define GPIO_FUNC42_OUT_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x5FC)
+/* GPIO_FUNC42_OEN_INV_SEL : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC42_OEN_INV_SEL  (BIT(10))
+#define GPIO_FUNC42_OEN_INV_SEL_M  (BIT(10))
+#define GPIO_FUNC42_OEN_INV_SEL_V  0x1
+#define GPIO_FUNC42_OEN_INV_SEL_S  10
+/* GPIO_FUNC42_OEN_SEL : R/W ;bitpos:[9] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC42_OEN_SEL  (BIT(9))
+#define GPIO_FUNC42_OEN_SEL_M  (BIT(9))
+#define GPIO_FUNC42_OEN_SEL_V  0x1
+#define GPIO_FUNC42_OEN_SEL_S  9
+/* GPIO_FUNC42_OUT_INV_SEL : R/W ;bitpos:[8] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC42_OUT_INV_SEL  (BIT(8))
+#define GPIO_FUNC42_OUT_INV_SEL_M  (BIT(8))
+#define GPIO_FUNC42_OUT_INV_SEL_V  0x1
+#define GPIO_FUNC42_OUT_INV_SEL_S  8
+/* GPIO_FUNC42_OUT_SEL : R/W ;bitpos:[7:0] ;default: 8'h80 ; */
+/*description: */
+#define GPIO_FUNC42_OUT_SEL  0x000000FF
+#define GPIO_FUNC42_OUT_SEL_M  ((GPIO_FUNC42_OUT_SEL_V)<<(GPIO_FUNC42_OUT_SEL_S))
+#define GPIO_FUNC42_OUT_SEL_V  0xFF
+#define GPIO_FUNC42_OUT_SEL_S  0
+
+#define GPIO_FUNC43_OUT_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x600)
+/* GPIO_FUNC43_OEN_INV_SEL : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC43_OEN_INV_SEL  (BIT(10))
+#define GPIO_FUNC43_OEN_INV_SEL_M  (BIT(10))
+#define GPIO_FUNC43_OEN_INV_SEL_V  0x1
+#define GPIO_FUNC43_OEN_INV_SEL_S  10
+/* GPIO_FUNC43_OEN_SEL : R/W ;bitpos:[9] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC43_OEN_SEL  (BIT(9))
+#define GPIO_FUNC43_OEN_SEL_M  (BIT(9))
+#define GPIO_FUNC43_OEN_SEL_V  0x1
+#define GPIO_FUNC43_OEN_SEL_S  9
+/* GPIO_FUNC43_OUT_INV_SEL : R/W ;bitpos:[8] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC43_OUT_INV_SEL  (BIT(8))
+#define GPIO_FUNC43_OUT_INV_SEL_M  (BIT(8))
+#define GPIO_FUNC43_OUT_INV_SEL_V  0x1
+#define GPIO_FUNC43_OUT_INV_SEL_S  8
+/* GPIO_FUNC43_OUT_SEL : R/W ;bitpos:[7:0] ;default: 8'h80 ; */
+/*description: */
+#define GPIO_FUNC43_OUT_SEL  0x000000FF
+#define GPIO_FUNC43_OUT_SEL_M  ((GPIO_FUNC43_OUT_SEL_V)<<(GPIO_FUNC43_OUT_SEL_S))
+#define GPIO_FUNC43_OUT_SEL_V  0xFF
+#define GPIO_FUNC43_OUT_SEL_S  0
+
+#define GPIO_FUNC44_OUT_SEL_CFG_REG          (DR_REG_GPIO_BASE + 0x604)
+/* GPIO_FUNC44_OEN_INV_SEL : R/W ;bitpos:[10] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC44_OEN_INV_SEL  (BIT(10))
+#define GPIO_FUNC44_OEN_INV_SEL_M  (BIT(10))
+#define GPIO_FUNC44_OEN_INV_SEL_V  0x1
+#define GPIO_FUNC44_OEN_INV_SEL_S  10
+/* GPIO_FUNC44_OEN_SEL : R/W ;bitpos:[9] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC44_OEN_SEL  (BIT(9))
+#define GPIO_FUNC44_OEN_SEL_M  (BIT(9))
+#define GPIO_FUNC44_OEN_SEL_V  0x1
+#define GPIO_FUNC44_OEN_SEL_S  9
+/* GPIO_FUNC44_OUT_INV_SEL : R/W ;bitpos:[8] ;default: 1'h0 ; */
+/*description: */
+#define GPIO_FUNC44_OUT_INV_SEL  (BIT(8))
+#define GPIO_FUNC44_OUT_INV_SEL_M  (BIT(8))
+#define GPIO_FUNC44_OUT_INV_SEL_V  0x1
+#define GPIO_FUNC44_OUT_INV_SEL_S  8
+/* GPIO_FUNC44_OUT_SEL : R/W ;bitpos:[7:0] ;default: 8'h80 ; */
+/*description: */
+#define GPIO_FUNC44_OUT_SEL  0x000000FF
+#define GPIO_FUNC44_OUT_SEL_M  ((GPIO_FUNC44_OUT_SEL_V)<<(GPIO_FUNC44_OUT_SEL_S))
+#define GPIO_FUNC44_OUT_SEL_V  0xFF
+#define GPIO_FUNC44_OUT_SEL_S  0
+
 #define GPIO_CLOCK_GATE_REG          (DR_REG_GPIO_BASE + 0x62C)
 /* GPIO_CLK_EN : R/W ;bitpos:[0] ;default: 1'b1 ; */
 /*description: */
@@ -4572,7 +6014,7 @@ extern "C" {
 #define GPIO_CLK_EN_S  0
 
 #define GPIO_DATE_REG          (DR_REG_GPIO_BASE + 0x6FC)
-/* GPIO_DATE : R/W ;bitpos:[27:0] ;default: 28'h2006130 ; */
+/* GPIO_DATE : R/W ;bitpos:[27:0] ;default: 28'h2012310 ; */
 /*description: */
 #define GPIO_DATE  0x0FFFFFFF
 #define GPIO_DATE_M  ((GPIO_DATE_V)<<(GPIO_DATE_S))

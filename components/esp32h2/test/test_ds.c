@@ -13,9 +13,9 @@
 // limitations under the License.
 
 #include "unity.h"
-#include "esp32c3/rom/efuse.h"
-#include "esp32c3/rom/digital_signature.h"
-#include "esp32c3/rom/hmac.h"
+#include "esp32h2/rom/efuse.h"
+#include "esp32h2/rom/digital_signature.h"
+#include "esp32h2/rom/hmac.h"
 #include <string.h>
 
 #include "esp_ds.h"
@@ -256,7 +256,7 @@ TEST_CASE("Digital Signature wrong HMAC key purpose (FPGA only)", "[hw_crypto] [
     const char *message = "test";
 
     // HMAC fails in that case because it checks for the correct purpose
-    TEST_ASSERT_EQUAL(ESP32C3_ERR_HW_CRYPTO_DS_HMAC_FAIL, esp_ds_start_sign(message, &ds_data, HMAC_KEY0, &ctx));
+    TEST_ASSERT_EQUAL(ESP32H2_ERR_HW_CRYPTO_DS_HMAC_FAIL, esp_ds_start_sign(message, &ds_data, HMAC_KEY0, &ctx));
 }
 
 // This test uses the HMAC_KEY0 eFuse key which hasn't been burned by burn_hmac_keys().
@@ -269,7 +269,7 @@ TEST_CASE("Digital Signature Blocking wrong HMAC key purpose (FPGA only)", "[hw_
     uint8_t signature_data [128 * 4];
 
     // HMAC fails in that case because it checks for the correct purpose
-    TEST_ASSERT_EQUAL(ESP32C3_ERR_HW_CRYPTO_DS_HMAC_FAIL, esp_ds_sign(message, &ds_data, HMAC_KEY0, signature_data));
+    TEST_ASSERT_EQUAL(ESP32H2_ERR_HW_CRYPTO_DS_HMAC_FAIL, esp_ds_sign(message, &ds_data, HMAC_KEY0, signature_data));
 }
 
 TEST_CASE("Digital Signature Operation (FPGA only)", "[hw_crypto] [ds]")
@@ -356,7 +356,7 @@ TEST_CASE("Digital Signature Invalid Data (FPGA only)", "[hw_crypto] [ds]")
         esp_err_t ds_r = esp_ds_start_sign(test_messages[0], &ds_data, t->hmac_key_idx + 1, &esp_ds_ctx);
         TEST_ASSERT_EQUAL(ESP_OK, ds_r);
         ds_r = esp_ds_finish_sign(signature, esp_ds_ctx);
-        TEST_ASSERT_EQUAL(ESP32C3_ERR_HW_CRYPTO_DS_INVALID_DIGEST, ds_r);
+        TEST_ASSERT_EQUAL(ESP32H2_ERR_HW_CRYPTO_DS_INVALID_DIGEST, ds_r);
         TEST_ASSERT_EQUAL_HEX8_ARRAY(zero, signature, DS_MAX_BITS/8);
 
         ds_data.iv[bit / 8] ^= 1 << (bit % 8);
@@ -372,7 +372,7 @@ TEST_CASE("Digital Signature Invalid Data (FPGA only)", "[hw_crypto] [ds]")
         esp_err_t ds_r = esp_ds_start_sign(test_messages[0], &ds_data, t->hmac_key_idx + 1, &esp_ds_ctx);
         TEST_ASSERT_EQUAL(ESP_OK, ds_r);
         ds_r = esp_ds_finish_sign(signature, esp_ds_ctx);
-        TEST_ASSERT_EQUAL(ESP32C3_ERR_HW_CRYPTO_DS_INVALID_DIGEST, ds_r);
+        TEST_ASSERT_EQUAL(ESP32H2_ERR_HW_CRYPTO_DS_INVALID_DIGEST, ds_r);
         TEST_ASSERT_EQUAL_HEX8_ARRAY(zero, signature, DS_MAX_BITS/8);
 
         ds_data.c[bit / 8] ^= 1 << (bit % 8);

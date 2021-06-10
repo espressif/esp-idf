@@ -19,120 +19,6 @@
 extern "C" {
 #endif
 #include "soc.h"
-#define SYSCON_SYSCLK_CONF_REG          (DR_REG_SYSCON_BASE + 0x000)
-/* SYSCON_RST_TICK_CNT : R/W ;bitpos:[12] ;default: 1'b0 ; */
-/*description: */
-#define SYSCON_RST_TICK_CNT  (BIT(12))
-#define SYSCON_RST_TICK_CNT_M  (BIT(12))
-#define SYSCON_RST_TICK_CNT_V  0x1
-#define SYSCON_RST_TICK_CNT_S  12
-/* SYSCON_CLK_EN : R/W ;bitpos:[11] ;default: 1'b0 ; */
-/*description: */
-#define SYSCON_CLK_EN  (BIT(11))
-#define SYSCON_CLK_EN_M  (BIT(11))
-#define SYSCON_CLK_EN_V  0x1
-#define SYSCON_CLK_EN_S  11
-/* SYSCON_CLK_320M_EN : R/W ;bitpos:[10] ;default: 1'b0 ; */
-/*description: */
-#define SYSCON_CLK_320M_EN  (BIT(10))
-#define SYSCON_CLK_320M_EN_M  (BIT(10))
-#define SYSCON_CLK_320M_EN_V  0x1
-#define SYSCON_CLK_320M_EN_S  10
-/* SYSCON_PRE_DIV_CNT : R/W ;bitpos:[9:0] ;default: 10'h1 ; */
-/*description: */
-#define SYSCON_PRE_DIV_CNT  0x000003FF
-#define SYSCON_PRE_DIV_CNT_M  ((SYSCON_PRE_DIV_CNT_V)<<(SYSCON_PRE_DIV_CNT_S))
-#define SYSCON_PRE_DIV_CNT_V  0x3FF
-#define SYSCON_PRE_DIV_CNT_S  0
-
-#define SYSCON_TICK_CONF_REG          (DR_REG_SYSCON_BASE + 0x004)
-/* SYSCON_TICK_ENABLE : R/W ;bitpos:[16] ;default: 1'd1 ; */
-/*description: */
-#define SYSCON_TICK_ENABLE  (BIT(16))
-#define SYSCON_TICK_ENABLE_M  (BIT(16))
-#define SYSCON_TICK_ENABLE_V  0x1
-#define SYSCON_TICK_ENABLE_S  16
-/* SYSCON_CK8M_TICK_NUM : R/W ;bitpos:[15:8] ;default: 8'd7 ; */
-/*description: */
-#define SYSCON_CK8M_TICK_NUM  0x000000FF
-#define SYSCON_CK8M_TICK_NUM_M  ((SYSCON_CK8M_TICK_NUM_V)<<(SYSCON_CK8M_TICK_NUM_S))
-#define SYSCON_CK8M_TICK_NUM_V  0xFF
-#define SYSCON_CK8M_TICK_NUM_S  8
-/* SYSCON_XTAL_TICK_NUM : R/W ;bitpos:[7:0] ;default: 8'd39 ; */
-/*description: */
-#define SYSCON_XTAL_TICK_NUM  0x000000FF
-#define SYSCON_XTAL_TICK_NUM_M  ((SYSCON_XTAL_TICK_NUM_V)<<(SYSCON_XTAL_TICK_NUM_S))
-#define SYSCON_XTAL_TICK_NUM_V  0xFF
-#define SYSCON_XTAL_TICK_NUM_S  0
-
-#define SYSCON_CLK_OUT_EN_REG          (DR_REG_SYSCON_BASE + 0x008)
-/* SYSCON_CLK_XTAL_OEN : R/W ;bitpos:[10] ;default: 1'b1 ; */
-/*description: */
-#define SYSCON_CLK_XTAL_OEN  (BIT(10))
-#define SYSCON_CLK_XTAL_OEN_M  (BIT(10))
-#define SYSCON_CLK_XTAL_OEN_V  0x1
-#define SYSCON_CLK_XTAL_OEN_S  10
-/* SYSCON_CLK40X_BB_OEN : R/W ;bitpos:[9] ;default: 1'b1 ; */
-/*description: */
-#define SYSCON_CLK40X_BB_OEN  (BIT(9))
-#define SYSCON_CLK40X_BB_OEN_M  (BIT(9))
-#define SYSCON_CLK40X_BB_OEN_V  0x1
-#define SYSCON_CLK40X_BB_OEN_S  9
-/* SYSCON_CLK_DAC_CPU_OEN : R/W ;bitpos:[8] ;default: 1'b1 ; */
-/*description: */
-#define SYSCON_CLK_DAC_CPU_OEN  (BIT(8))
-#define SYSCON_CLK_DAC_CPU_OEN_M  (BIT(8))
-#define SYSCON_CLK_DAC_CPU_OEN_V  0x1
-#define SYSCON_CLK_DAC_CPU_OEN_S  8
-/* SYSCON_CLK_ADC_INF_OEN : R/W ;bitpos:[7] ;default: 1'b1 ; */
-/*description: */
-#define SYSCON_CLK_ADC_INF_OEN  (BIT(7))
-#define SYSCON_CLK_ADC_INF_OEN_M  (BIT(7))
-#define SYSCON_CLK_ADC_INF_OEN_V  0x1
-#define SYSCON_CLK_ADC_INF_OEN_S  7
-/* SYSCON_CLK_320M_OEN : R/W ;bitpos:[6] ;default: 1'b1 ; */
-/*description: */
-#define SYSCON_CLK_320M_OEN  (BIT(6))
-#define SYSCON_CLK_320M_OEN_M  (BIT(6))
-#define SYSCON_CLK_320M_OEN_V  0x1
-#define SYSCON_CLK_320M_OEN_S  6
-/* SYSCON_CLK160_OEN : R/W ;bitpos:[5] ;default: 1'b1 ; */
-/*description: */
-#define SYSCON_CLK160_OEN  (BIT(5))
-#define SYSCON_CLK160_OEN_M  (BIT(5))
-#define SYSCON_CLK160_OEN_V  0x1
-#define SYSCON_CLK160_OEN_S  5
-/* SYSCON_CLK80_OEN : R/W ;bitpos:[4] ;default: 1'b1 ; */
-/*description: */
-#define SYSCON_CLK80_OEN  (BIT(4))
-#define SYSCON_CLK80_OEN_M  (BIT(4))
-#define SYSCON_CLK80_OEN_V  0x1
-#define SYSCON_CLK80_OEN_S  4
-/* SYSCON_CLK_BB_OEN : R/W ;bitpos:[3] ;default: 1'b1 ; */
-/*description: */
-#define SYSCON_CLK_BB_OEN  (BIT(3))
-#define SYSCON_CLK_BB_OEN_M  (BIT(3))
-#define SYSCON_CLK_BB_OEN_V  0x1
-#define SYSCON_CLK_BB_OEN_S  3
-/* SYSCON_CLK44_OEN : R/W ;bitpos:[2] ;default: 1'b1 ; */
-/*description: */
-#define SYSCON_CLK44_OEN  (BIT(2))
-#define SYSCON_CLK44_OEN_M  (BIT(2))
-#define SYSCON_CLK44_OEN_V  0x1
-#define SYSCON_CLK44_OEN_S  2
-/* SYSCON_CLK22_OEN : R/W ;bitpos:[1] ;default: 1'b1 ; */
-/*description: */
-#define SYSCON_CLK22_OEN  (BIT(1))
-#define SYSCON_CLK22_OEN_M  (BIT(1))
-#define SYSCON_CLK22_OEN_V  0x1
-#define SYSCON_CLK22_OEN_S  1
-/* SYSCON_CLK20_OEN : R/W ;bitpos:[0] ;default: 1'b1 ; */
-/*description: */
-#define SYSCON_CLK20_OEN  (BIT(0))
-#define SYSCON_CLK20_OEN_M  (BIT(0))
-#define SYSCON_CLK20_OEN_V  0x1
-#define SYSCON_CLK20_OEN_S  0
-
 #define SYSCON_WIFI_BB_CFG_REG          (DR_REG_SYSCON_BASE + 0x00C)
 /* SYSCON_WIFI_BB_CFG : R/W ;bitpos:[31:0] ;default: 32'h0 ; */
 /*description: */
@@ -148,74 +34,6 @@ extern "C" {
 #define SYSCON_WIFI_BB_CFG_2_M  ((SYSCON_WIFI_BB_CFG_2_V)<<(SYSCON_WIFI_BB_CFG_2_S))
 #define SYSCON_WIFI_BB_CFG_2_V  0xFFFFFFFF
 #define SYSCON_WIFI_BB_CFG_2_S  0
-
-#define SYSCON_WIFI_CLK_EN_REG          (DR_REG_SYSCON_BASE + 0x014)
-/* SYSCON_WIFI_CLK_EN : R/W ;bitpos:[31:0] ;default: 32'hfffce030 ; */
-/*description: */
-#define SYSCON_WIFI_CLK_EN  0xFFFFFFFF
-#define SYSCON_WIFI_CLK_EN_M  ((SYSCON_WIFI_CLK_EN_V)<<(SYSCON_WIFI_CLK_EN_S))
-#define SYSCON_WIFI_CLK_EN_V  0xFFFFFFFF
-#define SYSCON_WIFI_CLK_EN_S  0
-
-#define SYSCON_WIFI_RST_EN_REG          (DR_REG_SYSCON_BASE + 0x018)
-/* SYSCON_WIFI_RST : R/W ;bitpos:[31:0] ;default: 32'h0 ; */
-/*description: */
-#define SYSCON_WIFI_RST  0xFFFFFFFF
-#define SYSCON_WIFI_RST_M  ((SYSCON_WIFI_RST_V)<<(SYSCON_WIFI_RST_S))
-#define SYSCON_WIFI_RST_V  0xFFFFFFFF
-#define SYSCON_WIFI_RST_S  0
-
-#define SYSTEM_WIFI_CLK_EN_REG          SYSCON_WIFI_CLK_EN_REG
-/* SYSTEM_WIFI_CLK_EN : R/W ;bitpos:[31:0] ;default: 32'hfffce030 ; */
-/*description: */
-#define SYSTEM_WIFI_CLK_EN  0x00FB9FCF
-#define SYSTEM_WIFI_CLK_EN_M  ((SYSTEM_WIFI_CLK_EN_V)<<(SYSTEM_WIFI_CLK_EN_S))
-#define SYSTEM_WIFI_CLK_EN_V  0x00FB9FCF
-#define SYSTEM_WIFI_CLK_EN_S  0
-
-/* Mask for all Wifi clock bits, 6 */
-#define SYSTEM_WIFI_CLK_WIFI_EN  0x0
-#define SYSTEM_WIFI_CLK_WIFI_EN_M  ((SYSTEM_WIFI_CLK_WIFI_EN_V)<<(SYSTEM_WIFI_CLK_WIFI_EN_S))
-#define SYSTEM_WIFI_CLK_WIFI_EN_V  0x0
-#define SYSTEM_WIFI_CLK_WIFI_EN_S  0
-/* Mask for all Bluetooth clock bits, 11, 12, 16, 17 */
-#define SYSTEM_WIFI_CLK_BT_EN  0x0
-#define SYSTEM_WIFI_CLK_BT_EN_M  ((SYSTEM_WIFI_CLK_BT_EN_V)<<(SYSTEM_WIFI_CLK_BT_EN_S))
-#define SYSTEM_WIFI_CLK_BT_EN_V  0x0
-#define SYSTEM_WIFI_CLK_BT_EN_S  0
-/* Mask for clock bits used by both WIFI and Bluetooth, 0, 1, 2, 3, 7, 8, 9, 10, 19, 20, 21, 22, 23 */
-#define SYSTEM_WIFI_CLK_WIFI_BT_COMMON_M 0x78078F
-
-/* Digital team to check */
-//bluetooth baseband bit11
-#define SYSTEM_BT_BASEBAND_EN  BIT(11)
-//bluetooth LC bit16 and bit17
-#define SYSTEM_BT_LC_EN  (BIT(16)|BIT(17))
-
-/* Remaining single bit clock masks */
-#define SYSTEM_WIFI_CLK_SDIOSLAVE_EN  BIT(4)
-#define SYSTEM_WIFI_CLK_UNUSED_BIT5  BIT(5)
-#define SYSTEM_WIFI_CLK_UNUSED_BIT12  BIT(12)
-#define SYSTEM_WIFI_CLK_EMAC_EN  BIT(14)
-#define SYSTEM_WIFI_CLK_RNG_EN  BIT(15)
-
-#define SYSTEM_CORE_RST_EN_REG        SYSTEM_WIFI_RST_EN_REG
-#define SYSTEM_WIFI_RST_EN_REG        SYSCON_WIFI_RST_EN_REG
-/* SYSTEM_WIFI_RST_EN : R/W ;bitpos:[31:0] ;default: 32'h0 ; */
-/*description: */
-#define SYSTEM_BB_RST           BIT(0)
-#define SYSTEM_FE_RST           BIT(1)
-#define SYSTEM_MAC_RST          BIT(2)
-#define SYSTEM_BT_RST           BIT(3)
-#define SYSTEM_BTMAC_RST        BIT(4)
-#define SYSTEM_SDIO_RST         BIT(5)
-#define SYSTEM_EMAC_RST         BIT(7)
-#define SYSTEM_MACPWR_RST       BIT(8)
-#define SYSTEM_RW_BTMAC_RST     BIT(9)
-#define SYSTEM_RW_BTLP_RST      BIT(10)
-#define BLE_REG_REST_BIT        BIT(11)
-#define BLE_PWR_REG_REST_BIT    BIT(12)
-#define BLE_BB_REG_REST_BIT     BIT(13)
 
 #define SYSCON_HOST_INF_SEL_REG          (DR_REG_SYSCON_BASE + 0x01C)
 /* SYSCON_PERI_IO_SWAP : R/W ;bitpos:[7:0] ;default: 8'h0 ; */
@@ -438,12 +256,6 @@ extern "C" {
 #define SYSCON_NOBYPASS_CPU_ISO_RST_M  (BIT(27))
 #define SYSCON_NOBYPASS_CPU_ISO_RST_V  0x1
 #define SYSCON_NOBYPASS_CPU_ISO_RST_S  27
-/* SYSCON_RETENTION_LINK_ADDR : R/W ;bitpos:[26:0] ;default: 27'd0 ; */
-/*description: */
-#define SYSCON_RETENTION_LINK_ADDR  0x07FFFFFF
-#define SYSCON_RETENTION_LINK_ADDR_M  ((SYSCON_RETENTION_LINK_ADDR_V)<<(SYSCON_RETENTION_LINK_ADDR_S))
-#define SYSCON_RETENTION_LINK_ADDR_V  0x7FFFFFF
-#define SYSCON_RETENTION_LINK_ADDR_S  0
 
 #define SYSCON_CLKGATE_FORCE_ON_REG          (DR_REG_SYSCON_BASE + 0x0A4)
 /* SYSCON_SRAM_CLKGATE_FORCE_ON : R/W ;bitpos:[5:2] ;default: ~4'b0 ; */
@@ -532,30 +344,68 @@ extern "C" {
 #define SYSCON_PERI_BACKUP_BURST_LIMIT_M  ((SYSCON_PERI_BACKUP_BURST_LIMIT_V)<<(SYSCON_PERI_BACKUP_BURST_LIMIT_S))
 #define SYSCON_PERI_BACKUP_BURST_LIMIT_V  0x1F
 #define SYSCON_PERI_BACKUP_BURST_LIMIT_S  4
-/* SYSCON_PERI_BACKUP_FLOW_ERR : RO ;bitpos:[2:1] ;default: 2'd0 ; */
+/* SYSCON_PERI_BACKUP_ADDR_MAP_MODE : R/W ;bitpos:[3] ;default: 1'b0 ; */
 /*description: */
-#define SYSCON_PERI_BACKUP_FLOW_ERR  0x00000003
+#define SYSCON_PERI_BACKUP_ADDR_MAP_MODE  (BIT(3))
+#define SYSCON_PERI_BACKUP_ADDR_MAP_MODE_M  (BIT(3))
+#define SYSCON_PERI_BACKUP_ADDR_MAP_MODE_V  0x1
+#define SYSCON_PERI_BACKUP_ADDR_MAP_MODE_S  3
+/* SYSCON_PERI_BACKUP_FLOW_ERR : RO ;bitpos:[2:0] ;default: 3'd0 ; */
+/*description: */
+#define SYSCON_PERI_BACKUP_FLOW_ERR  0x00000007
 #define SYSCON_PERI_BACKUP_FLOW_ERR_M  ((SYSCON_PERI_BACKUP_FLOW_ERR_V)<<(SYSCON_PERI_BACKUP_FLOW_ERR_S))
-#define SYSCON_PERI_BACKUP_FLOW_ERR_V  0x3
-#define SYSCON_PERI_BACKUP_FLOW_ERR_S  1
+#define SYSCON_PERI_BACKUP_FLOW_ERR_V  0x7
+#define SYSCON_PERI_BACKUP_FLOW_ERR_S  0
 
 #define SYSCON_PERI_BACKUP_APB_ADDR_REG          (DR_REG_SYSCON_BASE + 0x0B8)
-/* SYSCON_BACKUP_APB_START_ADDR : R/W ;bitpos:[31:0] ;default: 32'd0 ; */
+/* SYSCON_PERI_BACKUP_APB_START_ADDR : R/W ;bitpos:[31:0] ;default: 32'd0 ; */
 /*description: */
-#define SYSCON_BACKUP_APB_START_ADDR  0xFFFFFFFF
-#define SYSCON_BACKUP_APB_START_ADDR_M  ((SYSCON_BACKUP_APB_START_ADDR_V)<<(SYSCON_BACKUP_APB_START_ADDR_S))
-#define SYSCON_BACKUP_APB_START_ADDR_V  0xFFFFFFFF
-#define SYSCON_BACKUP_APB_START_ADDR_S  0
+#define SYSCON_PERI_BACKUP_APB_START_ADDR  0xFFFFFFFF
+#define SYSCON_PERI_BACKUP_APB_START_ADDR_M  ((SYSCON_PERI_BACKUP_APB_START_ADDR_V)<<(SYSCON_PERI_BACKUP_APB_START_ADDR_S))
+#define SYSCON_PERI_BACKUP_APB_START_ADDR_V  0xFFFFFFFF
+#define SYSCON_PERI_BACKUP_APB_START_ADDR_S  0
 
 #define SYSCON_PERI_BACKUP_MEM_ADDR_REG          (DR_REG_SYSCON_BASE + 0x0BC)
-/* SYSCON_BACKUP_MEM_START_ADDR : R/W ;bitpos:[31:0] ;default: 32'd0 ; */
+/* SYSCON_PERI_BACKUP_MEM_START_ADDR : R/W ;bitpos:[31:0] ;default: 32'd0 ; */
 /*description: */
-#define SYSCON_BACKUP_MEM_START_ADDR  0xFFFFFFFF
-#define SYSCON_BACKUP_MEM_START_ADDR_M  ((SYSCON_BACKUP_MEM_START_ADDR_V)<<(SYSCON_BACKUP_MEM_START_ADDR_S))
-#define SYSCON_BACKUP_MEM_START_ADDR_V  0xFFFFFFFF
-#define SYSCON_BACKUP_MEM_START_ADDR_S  0
+#define SYSCON_PERI_BACKUP_MEM_START_ADDR  0xFFFFFFFF
+#define SYSCON_PERI_BACKUP_MEM_START_ADDR_M  ((SYSCON_PERI_BACKUP_MEM_START_ADDR_V)<<(SYSCON_PERI_BACKUP_MEM_START_ADDR_S))
+#define SYSCON_PERI_BACKUP_MEM_START_ADDR_V  0xFFFFFFFF
+#define SYSCON_PERI_BACKUP_MEM_START_ADDR_S  0
 
-#define SYSCON_PERI_BACKUP_INT_RAW_REG          (DR_REG_SYSCON_BASE + 0x0C0)
+#define SYSCON_PERI_BACKUP_MAP0_REG          (DR_REG_SYSCON_BASE + 0x0C0)
+/* SYSCON_PERI_BACKUP_MAP0 : R/W ;bitpos:[31:0] ;default: 32'd0 ; */
+/*description: */
+#define SYSCON_PERI_BACKUP_MAP0  0xFFFFFFFF
+#define SYSCON_PERI_BACKUP_MAP0_M  ((SYSCON_PERI_BACKUP_MAP0_V)<<(SYSCON_PERI_BACKUP_MAP0_S))
+#define SYSCON_PERI_BACKUP_MAP0_V  0xFFFFFFFF
+#define SYSCON_PERI_BACKUP_MAP0_S  0
+
+#define SYSCON_PERI_BACKUP_MAP1_REG          (DR_REG_SYSCON_BASE + 0x0C4)
+/* SYSCON_PERI_BACKUP_MAP1 : R/W ;bitpos:[31:0] ;default: 32'd0 ; */
+/*description: */
+#define SYSCON_PERI_BACKUP_MAP1  0xFFFFFFFF
+#define SYSCON_PERI_BACKUP_MAP1_M  ((SYSCON_PERI_BACKUP_MAP1_V)<<(SYSCON_PERI_BACKUP_MAP1_S))
+#define SYSCON_PERI_BACKUP_MAP1_V  0xFFFFFFFF
+#define SYSCON_PERI_BACKUP_MAP1_S  0
+
+#define SYSCON_PERI_BACKUP_MAP2_REG          (DR_REG_SYSCON_BASE + 0x0C8)
+/* SYSCON_PERI_BACKUP_MAP2 : R/W ;bitpos:[31:0] ;default: 32'd0 ; */
+/*description: */
+#define SYSCON_PERI_BACKUP_MAP2  0xFFFFFFFF
+#define SYSCON_PERI_BACKUP_MAP2_M  ((SYSCON_PERI_BACKUP_MAP2_V)<<(SYSCON_PERI_BACKUP_MAP2_S))
+#define SYSCON_PERI_BACKUP_MAP2_V  0xFFFFFFFF
+#define SYSCON_PERI_BACKUP_MAP2_S  0
+
+#define SYSCON_PERI_BACKUP_MAP3_REG          (DR_REG_SYSCON_BASE + 0x0CC)
+/* SYSCON_PERI_BACKUP_MAP3 : R/W ;bitpos:[31:0] ;default: 32'd0 ; */
+/*description: */
+#define SYSCON_PERI_BACKUP_MAP3  0xFFFFFFFF
+#define SYSCON_PERI_BACKUP_MAP3_M  ((SYSCON_PERI_BACKUP_MAP3_V)<<(SYSCON_PERI_BACKUP_MAP3_S))
+#define SYSCON_PERI_BACKUP_MAP3_V  0xFFFFFFFF
+#define SYSCON_PERI_BACKUP_MAP3_S  0
+
+#define SYSCON_PERI_BACKUP_INT_RAW_REG          (DR_REG_SYSCON_BASE + 0x0D0)
 /* SYSCON_PERI_BACKUP_ERR_INT_RAW : RO ;bitpos:[1] ;default: 1'd0 ; */
 /*description: */
 #define SYSCON_PERI_BACKUP_ERR_INT_RAW  (BIT(1))
@@ -569,7 +419,7 @@ extern "C" {
 #define SYSCON_PERI_BACKUP_DONE_INT_RAW_V  0x1
 #define SYSCON_PERI_BACKUP_DONE_INT_RAW_S  0
 
-#define SYSCON_PERI_BACKUP_INT_ST_REG          (DR_REG_SYSCON_BASE + 0x0C4)
+#define SYSCON_PERI_BACKUP_INT_ST_REG          (DR_REG_SYSCON_BASE + 0x0D4)
 /* SYSCON_PERI_BACKUP_ERR_INT_ST : RO ;bitpos:[1] ;default: 1'd0 ; */
 /*description: */
 #define SYSCON_PERI_BACKUP_ERR_INT_ST  (BIT(1))
@@ -583,7 +433,7 @@ extern "C" {
 #define SYSCON_PERI_BACKUP_DONE_INT_ST_V  0x1
 #define SYSCON_PERI_BACKUP_DONE_INT_ST_S  0
 
-#define SYSCON_PERI_BACKUP_INT_ENA_REG          (DR_REG_SYSCON_BASE + 0x0C8)
+#define SYSCON_PERI_BACKUP_INT_ENA_REG          (DR_REG_SYSCON_BASE + 0x0D8)
 /* SYSCON_PERI_BACKUP_ERR_INT_ENA : R/W ;bitpos:[1] ;default: 1'd0 ; */
 /*description: */
 #define SYSCON_PERI_BACKUP_ERR_INT_ENA  (BIT(1))
@@ -597,7 +447,7 @@ extern "C" {
 #define SYSCON_PERI_BACKUP_DONE_INT_ENA_V  0x1
 #define SYSCON_PERI_BACKUP_DONE_INT_ENA_S  0
 
-#define SYSCON_PERI_BACKUP_INT_CLR_REG          (DR_REG_SYSCON_BASE + 0x0D0)
+#define SYSCON_PERI_BACKUP_INT_CLR_REG          (DR_REG_SYSCON_BASE + 0x0DC)
 /* SYSCON_PERI_BACKUP_ERR_INT_CLR : WO ;bitpos:[1] ;default: 1'd0 ; */
 /*description: */
 #define SYSCON_PERI_BACKUP_ERR_INT_CLR  (BIT(1))
@@ -611,8 +461,16 @@ extern "C" {
 #define SYSCON_PERI_BACKUP_DONE_INT_CLR_V  0x1
 #define SYSCON_PERI_BACKUP_DONE_INT_CLR_S  0
 
+#define SYSCON_CLK_CONF_REG          (DR_REG_SYSCON_BASE + 0x0E0)
+/* SYSCON_CLK_EN : R/W ;bitpos:[0] ;default: 1'b0 ; */
+/*description: */
+#define SYSCON_CLK_EN  (BIT(0))
+#define SYSCON_CLK_EN_M  (BIT(0))
+#define SYSCON_CLK_EN_V  0x1
+#define SYSCON_CLK_EN_S  0
+
 #define SYSCON_DATE_REG          (DR_REG_SYSCON_BASE + 0x3FC)
-/* SYSCON_DATE : R/W ;bitpos:[31:0] ;default: 32'h2007210 ; */
+/* SYSCON_DATE : R/W ;bitpos:[31:0] ;default: 32'h2101050 ; */
 /*description: Version control*/
 #define SYSCON_DATE  0xFFFFFFFF
 #define SYSCON_DATE_M  ((SYSCON_DATE_V)<<(SYSCON_DATE_S))

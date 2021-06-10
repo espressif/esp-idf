@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-/* This LL is currently unused for ESP32-C3 - cleanup is TODO ESP32-C3 IDF-2375 */
+/* This LL is currently unused for ESP32-H2 - IDF-2375 */
 
 static inline uint32_t mpu_ll_id_to_addr(unsigned id)
 {

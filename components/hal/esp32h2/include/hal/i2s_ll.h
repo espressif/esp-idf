@@ -47,7 +47,7 @@ extern "C" {
  */
 static inline void i2s_ll_reset_rx_fifo(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 
 }
@@ -59,7 +59,7 @@ static inline void i2s_ll_reset_rx_fifo(i2s_dev_t *hw)
  */
 static inline void i2s_ll_reset_tx_fifo(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 
 }
@@ -71,7 +71,7 @@ static inline void i2s_ll_reset_tx_fifo(i2s_dev_t *hw)
  */
 static inline void i2s_ll_enable_rx_intr(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 
 }
@@ -83,7 +83,7 @@ static inline void i2s_ll_enable_rx_intr(i2s_dev_t *hw)
  */
 static inline void i2s_ll_disable_rx_intr(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 
 }
@@ -95,7 +95,7 @@ static inline void i2s_ll_disable_rx_intr(i2s_dev_t *hw)
  */
 static inline void i2s_ll_disable_tx_intr(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 
 }
@@ -107,7 +107,7 @@ static inline void i2s_ll_disable_tx_intr(i2s_dev_t *hw)
  */
 static inline void i2s_ll_enable_tx_intr(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 
 }
@@ -119,7 +119,7 @@ static inline void i2s_ll_enable_tx_intr(i2s_dev_t *hw)
  */
 static inline void i2s_ll_reset_dma_in(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 
 }
@@ -131,7 +131,7 @@ static inline void i2s_ll_reset_dma_in(i2s_dev_t *hw)
  */
 static inline void i2s_ll_reset_dma_out(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 
 }
@@ -143,7 +143,7 @@ static inline void i2s_ll_reset_dma_out(i2s_dev_t *hw)
  */
 static inline void i2s_ll_reset_tx(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 
 }
@@ -155,7 +155,7 @@ static inline void i2s_ll_reset_tx(i2s_dev_t *hw)
  */
 static inline void i2s_ll_reset_rx(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 
 }
@@ -167,7 +167,7 @@ static inline void i2s_ll_reset_rx(i2s_dev_t *hw)
  */
 static inline void i2s_ll_start_out_link(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -178,7 +178,7 @@ static inline void i2s_ll_start_out_link(i2s_dev_t *hw)
  */
 static inline void i2s_ll_start_tx(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -189,7 +189,7 @@ static inline void i2s_ll_start_tx(i2s_dev_t *hw)
  */
 static inline void i2s_ll_start_in_link(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -200,7 +200,7 @@ static inline void i2s_ll_start_in_link(i2s_dev_t *hw)
  */
 static inline void i2s_ll_start_rx(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -211,7 +211,7 @@ static inline void i2s_ll_start_rx(i2s_dev_t *hw)
  */
 static inline void i2s_ll_stop_out_link(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -222,7 +222,7 @@ static inline void i2s_ll_stop_out_link(i2s_dev_t *hw)
  */
 static inline void i2s_ll_stop_tx(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -233,7 +233,7 @@ static inline void i2s_ll_stop_tx(i2s_dev_t *hw)
  */
 static inline void i2s_ll_stop_in_link(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -244,7 +244,7 @@ static inline void i2s_ll_stop_in_link(i2s_dev_t *hw)
  */
 static inline void i2s_ll_stop_rx(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -255,7 +255,7 @@ static inline void i2s_ll_stop_rx(i2s_dev_t *hw)
  */
 static inline void i2s_ll_enable_dma(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
     // //Enable and configure DMA
     // typeof(hw->lc_conf) lc_conf;
     // lc_conf.val = 0;
@@ -271,7 +271,7 @@ static inline void i2s_ll_enable_dma(i2s_dev_t *hw)
  */
 static inline void i2s_ll_get_intr_status(i2s_dev_t *hw, uint32_t *val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
     // *val = hw->int_st.val;
 }
 
@@ -283,7 +283,7 @@ static inline void i2s_ll_get_intr_status(i2s_dev_t *hw, uint32_t *val)
  */
 static inline void i2s_ll_clear_intr_status(i2s_dev_t *hw, uint32_t val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -295,7 +295,7 @@ static inline void i2s_ll_clear_intr_status(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_get_out_eof_des_addr(i2s_dev_t *hw, uint32_t *val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
     // *val = hw->out_eof_des_addr;
 }
 
@@ -307,7 +307,7 @@ static inline void i2s_ll_get_out_eof_des_addr(i2s_dev_t *hw, uint32_t *val)
  */
 static inline void i2s_ll_get_in_eof_des_addr(i2s_dev_t *hw, uint32_t *val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
     // *val = hw->in_eof_des_addr;
 }
 
@@ -319,7 +319,7 @@ static inline void i2s_ll_get_in_eof_des_addr(i2s_dev_t *hw, uint32_t *val)
  */
 static inline void i2s_ll_get_tx_fifo_mod(i2s_dev_t *hw, uint32_t *val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
     // *val = hw->fifo_conf.tx_fifo_mod;
 }
 
@@ -331,7 +331,7 @@ static inline void i2s_ll_get_tx_fifo_mod(i2s_dev_t *hw, uint32_t *val)
  */
 static inline void i2s_ll_set_tx_fifo_mod(i2s_dev_t *hw, uint32_t val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -343,7 +343,7 @@ static inline void i2s_ll_set_tx_fifo_mod(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_get_rx_fifo_mod(i2s_dev_t *hw, uint32_t *val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
     // *val = hw->fifo_conf.rx_fifo_mod;
 }
 
@@ -355,7 +355,7 @@ static inline void i2s_ll_get_rx_fifo_mod(i2s_dev_t *hw, uint32_t *val)
  */
 static inline void i2s_ll_set_rx_fifo_mod(i2s_dev_t *hw, uint32_t val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -367,7 +367,7 @@ static inline void i2s_ll_set_rx_fifo_mod(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_set_tx_chan_mod(i2s_dev_t *hw, uint32_t val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -379,7 +379,7 @@ static inline void i2s_ll_set_tx_chan_mod(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_set_rx_chan_mod(i2s_dev_t *hw, uint32_t val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -391,7 +391,7 @@ static inline void i2s_ll_set_rx_chan_mod(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_set_out_link_addr(i2s_dev_t *hw, uint32_t val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -403,7 +403,7 @@ static inline void i2s_ll_set_out_link_addr(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_set_in_link_addr(i2s_dev_t *hw, uint32_t val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -415,7 +415,7 @@ static inline void i2s_ll_set_in_link_addr(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_set_rx_eof_num(i2s_dev_t *hw, uint32_t val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -427,7 +427,7 @@ static inline void i2s_ll_set_rx_eof_num(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_get_tx_pdm_fp(i2s_dev_t *hw, uint32_t *val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
     // *val = hw->pdm_freq_conf.tx_pdm_fp;
 }
 
@@ -439,7 +439,7 @@ static inline void i2s_ll_get_tx_pdm_fp(i2s_dev_t *hw, uint32_t *val)
  */
 static inline void i2s_ll_get_tx_pdm_fs(i2s_dev_t *hw, uint32_t *val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
     // *val = hw->pdm_freq_conf.tx_pdm_fs;
 }
 
@@ -451,7 +451,7 @@ static inline void i2s_ll_get_tx_pdm_fs(i2s_dev_t *hw, uint32_t *val)
  */
 static inline void i2s_ll_set_tx_pdm_fp(i2s_dev_t *hw, uint32_t val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -463,7 +463,7 @@ static inline void i2s_ll_set_tx_pdm_fp(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_set_tx_pdm_fs(i2s_dev_t *hw, uint32_t val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -475,7 +475,7 @@ static inline void i2s_ll_set_tx_pdm_fs(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_get_rx_sinc_dsr_16_en(i2s_dev_t *hw, bool *val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
     // *val = hw->pdm_conf.rx_sinc_dsr_16_en;
 }
 
@@ -487,7 +487,7 @@ static inline void i2s_ll_get_rx_sinc_dsr_16_en(i2s_dev_t *hw, bool *val)
  */
 static inline void i2s_ll_set_clkm_div_num(i2s_dev_t *hw, uint32_t val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -499,7 +499,7 @@ static inline void i2s_ll_set_clkm_div_num(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_set_clkm_div_b(i2s_dev_t *hw, uint32_t val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -511,7 +511,7 @@ static inline void i2s_ll_set_clkm_div_b(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_set_clkm_div_a(i2s_dev_t *hw, uint32_t val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -523,7 +523,7 @@ static inline void i2s_ll_set_clkm_div_a(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_set_tx_bck_div_num(i2s_dev_t *hw, uint32_t val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -535,7 +535,7 @@ static inline void i2s_ll_set_tx_bck_div_num(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_set_rx_bck_div_num(i2s_dev_t *hw, uint32_t val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -547,7 +547,7 @@ static inline void i2s_ll_set_rx_bck_div_num(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_set_clk_sel(i2s_dev_t *hw, uint32_t val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -559,7 +559,7 @@ static inline void i2s_ll_set_clk_sel(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_set_tx_bits_mod(i2s_dev_t *hw, uint32_t val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -571,7 +571,7 @@ static inline void i2s_ll_set_tx_bits_mod(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_set_rx_bits_mod(i2s_dev_t *hw, uint32_t val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -583,7 +583,7 @@ static inline void i2s_ll_set_rx_bits_mod(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_set_rx_sinc_dsr_16_en(i2s_dev_t *hw, bool val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -595,7 +595,7 @@ static inline void i2s_ll_set_rx_sinc_dsr_16_en(i2s_dev_t *hw, bool val)
  */
 static inline void i2s_ll_set_dscr_en(i2s_dev_t *hw, bool val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -607,7 +607,7 @@ static inline void i2s_ll_set_dscr_en(i2s_dev_t *hw, bool val)
  */
 static inline void i2s_ll_set_lcd_en(i2s_dev_t *hw, bool val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -619,7 +619,7 @@ static inline void i2s_ll_set_lcd_en(i2s_dev_t *hw, bool val)
  */
 static inline void i2s_ll_set_camera_en(i2s_dev_t *hw, bool val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -631,7 +631,7 @@ static inline void i2s_ll_set_camera_en(i2s_dev_t *hw, bool val)
  */
 static inline void i2s_ll_set_pcm2pdm_conv_en(i2s_dev_t *hw, bool val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -711,7 +711,7 @@ static inline void i2s_ll_set_tx_format_philip(i2s_dev_t *hw)
  */
 static inline void i2s_ll_set_pdm2pcm_conv_en(i2s_dev_t *hw, bool val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -723,7 +723,7 @@ static inline void i2s_ll_set_pdm2pcm_conv_en(i2s_dev_t *hw, bool val)
  */
 static inline void i2s_ll_set_rx_pdm_en(i2s_dev_t *hw, bool val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -735,7 +735,7 @@ static inline void i2s_ll_set_rx_pdm_en(i2s_dev_t *hw, bool val)
  */
 static inline void i2s_ll_set_tx_pdm_en(i2s_dev_t *hw, bool val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -747,7 +747,7 @@ static inline void i2s_ll_set_tx_pdm_en(i2s_dev_t *hw, bool val)
  */
 static inline void i2s_ll_set_tx_fifo_mod_force_en(i2s_dev_t *hw, bool val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -759,7 +759,7 @@ static inline void i2s_ll_set_tx_fifo_mod_force_en(i2s_dev_t *hw, bool val)
  */
 static inline void i2s_ll_set_rx_fifo_mod_force_en(i2s_dev_t *hw, bool val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -771,7 +771,7 @@ static inline void i2s_ll_set_rx_fifo_mod_force_en(i2s_dev_t *hw, bool val)
  */
 static inline void i2s_ll_set_tx_right_first(i2s_dev_t *hw, uint32_t val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -783,7 +783,7 @@ static inline void i2s_ll_set_tx_right_first(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_set_rx_right_first(i2s_dev_t *hw, uint32_t val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -795,7 +795,7 @@ static inline void i2s_ll_set_rx_right_first(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_set_tx_slave_mod(i2s_dev_t *hw, uint32_t val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -807,7 +807,7 @@ static inline void i2s_ll_set_tx_slave_mod(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_set_rx_slave_mod(i2s_dev_t *hw, uint32_t val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -819,7 +819,7 @@ static inline void i2s_ll_set_rx_slave_mod(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_get_tx_msb_right(i2s_dev_t *hw, uint32_t *val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
     // *val = hw->conf.tx_msb_right;
 }
 
@@ -831,7 +831,7 @@ static inline void i2s_ll_get_tx_msb_right(i2s_dev_t *hw, uint32_t *val)
  */
 static inline void i2s_ll_get_rx_msb_right(i2s_dev_t *hw, uint32_t *val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
     // *val = hw->conf.rx_msb_right;
 }
 
@@ -843,7 +843,7 @@ static inline void i2s_ll_get_rx_msb_right(i2s_dev_t *hw, uint32_t *val)
  */
 static inline void i2s_ll_set_tx_msb_right(i2s_dev_t *hw, uint32_t val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -855,7 +855,7 @@ static inline void i2s_ll_set_tx_msb_right(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_set_rx_msb_right(i2s_dev_t *hw, uint32_t val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -867,7 +867,7 @@ static inline void i2s_ll_set_rx_msb_right(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_set_tx_mono(i2s_dev_t *hw, uint32_t val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -879,7 +879,7 @@ static inline void i2s_ll_set_tx_mono(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_set_rx_mono(i2s_dev_t *hw, uint32_t val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -891,7 +891,7 @@ static inline void i2s_ll_set_rx_mono(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_set_tx_sinc_osr2(i2s_dev_t *hw, uint32_t val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 
@@ -903,7 +903,7 @@ static inline void i2s_ll_set_tx_sinc_osr2(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_set_sig_loopback(i2s_dev_t *hw, uint32_t val)
 {
-    abort(); // TODO ESP32-C3 IDF-2098
+    abort(); // TODO ESP32-H2 IDF-2098
 
 }
 

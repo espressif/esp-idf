@@ -98,6 +98,19 @@ if(NOT BOOTLOADER_BUILD)
               "esp32c3/hmac_hal.c"
               "esp32c3/rtc_cntl_hal.c")
     endif()
+
+    if(${target} STREQUAL "esp32h2")
+        list(APPEND srcs
+              "ds_hal.c"
+              "gdma_hal.c"
+              "spi_flash_hal_gpspi.c"
+              "spi_slave_hd_hal.c"
+              "systimer_hal.c"
+              "esp32h2/adc_hal.c"
+              "esp32h2/brownout_hal.c"
+              "esp32h2/hmac_hal.c"
+              "esp32h2/rtc_cntl_hal.c")
+    endif()
 endif()
 
 idf_component_register(SRCS ${srcs}

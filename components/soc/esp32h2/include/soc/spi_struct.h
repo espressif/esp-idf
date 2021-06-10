@@ -18,6 +18,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#include "soc.h"
 
 typedef volatile struct {
     union {
@@ -30,30 +31,30 @@ typedef volatile struct {
         };
         uint32_t val;
     } cmd;
-    uint32_t addr;
+    uint32_t addr;                                             /*Address value register*/
     union {
         struct {
-            uint32_t reserved0                     :    3;  /*reserved*/
-            uint32_t dummy_out                     :    1;  /*In the dummy phase the signal level of spi is output by the spi controller. Can be configured in CONF state.*/
-            uint32_t reserved4                     :    1;  /*reserved*/
-            uint32_t faddr_dual                    :    1;  /*Apply 2 signals during addr phase 1:enable 0: disable. Can be configured in CONF state.*/
-            uint32_t faddr_quad                    :    1;  /*Apply 4 signals during addr phase 1:enable 0: disable. Can be configured in CONF state.*/
-            uint32_t reserved7                     :    1;  /*reserved*/
-            uint32_t fcmd_dual                     :    1;  /*Apply 2 signals during command phase 1:enable 0: disable. Can be configured in CONF state.*/
-            uint32_t fcmd_quad                     :    1;  /*Apply 4 signals during command phase 1:enable 0: disable. Can be configured in CONF state.*/
-            uint32_t reserved10                    :    4;  /*reserved*/
-            uint32_t fread_dual                    :    1;  /*In the read operations, read-data phase apply 2 signals. 1: enable 0: disable. Can be configured in CONF state.*/
-            uint32_t fread_quad                    :    1;  /*In the read operations read-data phase apply 4 signals. 1: enable 0: disable.  Can be configured in CONF state.*/
-            uint32_t reserved16                    :    1;  /*reserved*/
-            uint32_t reserved17                    :    1;  /*reserved*/
-            uint32_t q_pol                         :    1;  /*The bit is used to set MISO line polarity, 1: high 0, low. Can be configured in CONF state.*/
-            uint32_t d_pol                         :    1;  /*The bit is used to set MOSI line polarity, 1: high 0, low. Can be configured in CONF state.*/
-            uint32_t hold_pol                      :    1;  /*SPI_HOLD output value when SPI is idle. 1: output high, 0: output low. Can be configured in CONF state.*/
-            uint32_t wp_pol                        :    1;  /*Write protect signal output when SPI is idle.  1: output high, 0: output low.  Can be configured in CONF state.*/
-            uint32_t reserved22                    :    3;  /*reserved*/
-            uint32_t rd_bit_order                  :    1;  /*In read-data (MISO) phase 1: LSB first 0: MSB first. Can be configured in CONF state.*/
-            uint32_t wr_bit_order                  :    1;  /*In command address write-data (MOSI) phases 1: LSB firs 0: MSB first. Can be configured in CONF state.*/
-            uint32_t reserved27                    :    5;  /*reserved*/
+            uint32_t reserved0:    3;                          /*reserved*/
+            uint32_t dummy_out:    1;                          /*In the dummy phase the signal level of spi is output by the spi controller. Can be configured in CONF state.*/
+            uint32_t reserved4:    1;                          /*reserved*/
+            uint32_t faddr_dual:   1;                          /*Apply 2 signals during addr phase 1:enable 0: disable. Can be configured in CONF state.*/
+            uint32_t faddr_quad:   1;                          /*Apply 4 signals during addr phase 1:enable 0: disable. Can be configured in CONF state.*/
+            uint32_t reserved7:    1;                          /*reserved*/
+            uint32_t fcmd_dual:    1;                          /*Apply 2 signals during command phase 1:enable 0: disable. Can be configured in CONF state.*/
+            uint32_t fcmd_quad:    1;                          /*Apply 4 signals during command phase 1:enable 0: disable. Can be configured in CONF state.*/
+            uint32_t reserved10:   4;                          /*reserved*/
+            uint32_t fread_dual:   1;                          /*In the read operations  read-data phase apply 2 signals. 1: enable 0: disable. Can be configured in CONF state.*/
+            uint32_t fread_quad:   1;                          /*In the read operations read-data phase apply 4 signals. 1: enable 0: disable.  Can be configured in CONF state.*/
+            uint32_t reserved16:   1;                          /*reserved*/
+            uint32_t reserved17:   1;                          /*reserved*/
+            uint32_t q_pol:        1;                          /*The bit is used to set MISO line polarity  1: high 0  low. Can be configured in CONF state.*/
+            uint32_t d_pol:        1;                          /*The bit is used to set MOSI line polarity  1: high 0  low. Can be configured in CONF state.*/
+            uint32_t hold_pol:     1;                          /*SPI_HOLD output value when SPI is idle. 1: output high  0: output low. Can be configured in CONF state.*/
+            uint32_t wp_pol:       1;                          /*Write protect signal output when SPI is idle.  1: output high  0: output low.  Can be configured in CONF state.*/
+            uint32_t reserved22:   1;                          /*reserved*/
+            uint32_t rd_bit_order: 2;                          /*In read-data (MISO) phase 1: LSB first 0: MSB first. Can be configured in CONF state.*/
+            uint32_t wr_bit_order: 2;                          /*In command address write-data (MOSI) phases 1: LSB firs 0: MSB first. Can be configured in CONF state.*/
+            uint32_t reserved27:   5;                          /*reserved*/
         };
         uint32_t val;
     } ctrl;
@@ -178,17 +179,19 @@ typedef volatile struct {
     } dout_mode;
     union {
         struct {
-            uint32_t reserved0                     :    18;  /*reserved*/
-            uint32_t dma_seg_trans_en              :    1;  /*Enable dma segment transfer in spi dma half slave mode. 1: enable. 0: disable.*/
-            uint32_t rx_seg_trans_clr_en           :    1;  /*1: spi_dma_infifo_full_vld is cleared by spi slave cmd 5. 0: spi_dma_infifo_full_vld is cleared by spi_trans_done.*/
-            uint32_t tx_seg_trans_clr_en           :    1;  /*1: spi_dma_outfifo_empty_vld is cleared by spi slave cmd 6. 0: spi_dma_outfifo_empty_vld is cleared by spi_trans_done.*/
-            uint32_t rx_eof_en                     :    1;  /*1: spi_dma_inlink_eof is set when the number of dma pushed data bytes is equal to the value of spi_slv/mst_dma_rd_bytelen[19:0] in spi dma transition.  0: spi_dma_inlink_eof is set by spi_trans_done in non-seg-trans or spi_dma_seg_trans_done in seg-trans.*/
-            uint32_t reserved22                    :    5;  /*reserved*/
-            uint32_t dma_rx_ena                    :    1;  /*Set this bit to enable SPI DMA controlled receive data mode.*/
-            uint32_t dma_tx_ena                    :    1;  /*Set this bit to enable SPI DMA controlled send data mode.*/
-            uint32_t rx_afifo_rst                  :    1;  /*Set this bit to reset RX AFIFO, which is used to receive data in SPI master and slave mode transfer.*/
-            uint32_t buf_afifo_rst                 :    1;  /*Set this bit to reset BUF TX AFIFO, which is used send data out in SPI slave CPU controlled mode transfer and master mode transfer.*/
-            uint32_t dma_afifo_rst                 :    1;  /*Set this bit to reset DMA TX AFIFO, which is used to send data out in SPI slave DMA controlled mode transfer.*/
+            uint32_t outfifo_empty:           1;               /*Records the status of DMA TX FIFO. 1: DMA TX FIFO is not ready for sending data. 0: DMA TX FIFO is ready for sending data.*/
+            uint32_t infifo_full:             1;               /*Records the status of DMA RX FIFO. 1: DMA RX FIFO is not ready for receiving data. 0: DMA RX FIFO is ready for receiving data.*/
+            uint32_t reserved2:              16;               /*reserved*/
+            uint32_t dma_seg_trans_en:        1;               /*Enable dma segment transfer in spi dma half slave mode. 1: enable. 0: disable.*/
+            uint32_t rx_seg_trans_clr_en:     1;               /*1: spi_dma_infifo_full_vld is cleared by spi slave cmd 5. 0: spi_dma_infifo_full_vld is cleared by spi_trans_done.*/
+            uint32_t tx_seg_trans_clr_en:     1;               /*1: spi_dma_outfifo_empty_vld is cleared by spi slave cmd 6. 0: spi_dma_outfifo_empty_vld is cleared by spi_trans_done.*/
+            uint32_t rx_eof_en:               1;               /*1: spi_dma_inlink_eof is set when the number of dma pushed data bytes is equal to the value of spi_slv/mst_dma_rd_bytelen[19:0] in spi dma transition.  0: spi_dma_inlink_eof is set by spi_trans_done in non-seg-trans or spi_dma_seg_trans_done in seg-trans.*/
+            uint32_t reserved22:              5;               /*reserved*/
+            uint32_t dma_rx_ena:              1;               /*Set this bit to enable SPI DMA controlled receive data mode.*/
+            uint32_t dma_tx_ena:              1;               /*Set this bit to enable SPI DMA controlled send data mode.*/
+            uint32_t rx_afifo_rst:            1;               /*Set this bit to reset RX AFIFO  which is used to receive data in SPI master and slave mode transfer.*/
+            uint32_t buf_afifo_rst:           1;               /*Set this bit to reset BUF TX AFIFO  which is used send data out in SPI slave CPU controlled mode transfer and master mode transfer.*/
+            uint32_t dma_afifo_rst:           1;               /*Set this bit to reset DMA TX AFIFO  which is used to send data out in SPI slave DMA controlled mode transfer.*/
         };
         uint32_t val;
     } dma_conf;
@@ -300,7 +303,33 @@ typedef volatile struct {
         };
         uint32_t val;
     } dma_int_st;
-    uint32_t reserved_44;
+    union {
+        struct {
+            uint32_t infifo_full_err_int_set:         1;       /*The software set bit for SPI_DMA_INFIFO_FULL_ERR_INT interrupt.*/
+            uint32_t outfifo_empty_err_int_set:       1;       /*The software set bit for SPI_DMA_OUTFIFO_EMPTY_ERR_INT interrupt.*/
+            uint32_t ex_qpi_int_set:                  1;       /*The software set bit for SPI slave Ex_QPI interrupt.*/
+            uint32_t en_qpi_int_set:                  1;       /*The software set bit for SPI slave En_QPI interrupt.*/
+            uint32_t cmd7_int_set:                    1;       /*The software set bit for SPI slave CMD7 interrupt.*/
+            uint32_t cmd8_int_set:                    1;       /*The software set bit for SPI slave CMD8 interrupt.*/
+            uint32_t cmd9_int_set:                    1;       /*The software set bit for SPI slave CMD9 interrupt.*/
+            uint32_t cmda_int_set:                    1;       /*The software set bit for SPI slave CMDA interrupt.*/
+            uint32_t rd_dma_done_int_set:             1;       /*The software set bit for SPI_SLV_RD_DMA_DONE_INT interrupt.*/
+            uint32_t wr_dma_done_int_set:             1;       /*The software set bit for SPI_SLV_WR_DMA_DONE_INT interrupt.*/
+            uint32_t rd_buf_done_int_set:             1;       /*The software set bit for SPI_SLV_RD_BUF_DONE_INT interrupt.*/
+            uint32_t wr_buf_done_int_set:             1;       /*The software set bit for SPI_SLV_WR_BUF_DONE_INT interrupt.*/
+            uint32_t trans_done_int_set:              1;       /*The software set bit for SPI_TRANS_DONE_INT interrupt.*/
+            uint32_t dma_seg_trans_done_int_set:      1;       /*The software set bit for SPI_DMA_SEG_TRANS_DONE_INT interrupt.*/
+            uint32_t seg_magic_err_int_set:           1;       /*The software set bit for SPI_SEG_MAGIC_ERR_INT interrupt.*/
+            uint32_t buf_addr_err_int_set:            1;       /*The software set bit for SPI_SLV_BUF_ADDR_ERR_INT interrupt.*/
+            uint32_t cmd_err_int_set:                 1;       /*The software set bit for SPI_SLV_CMD_ERR_INT interrupt.*/
+            uint32_t mst_rx_afifo_wfull_err_int_set:  1;       /*The software set bit for SPI_MST_RX_AFIFO_WFULL_ERR_INT interrupt.*/
+            uint32_t mst_tx_afifo_rempty_err_int_set: 1;       /*The software set bit for SPI_MST_TX_AFIFO_REMPTY_ERR_INT interrupt.*/
+            uint32_t app2_int_set:                    1;       /*The software set bit for SPI_APP2_INT interrupt.*/
+            uint32_t app1_int_set:                    1;       /*The software set bit for SPI_APP1_INT interrupt.*/
+            uint32_t reserved21:                     11;       /*reserved*/
+        };
+        uint32_t val;
+    } dma_int_set;
     uint32_t reserved_48;
     uint32_t reserved_4c;
     uint32_t reserved_50;

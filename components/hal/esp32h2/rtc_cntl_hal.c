@@ -16,7 +16,7 @@
 
 #include "hal/rtc_hal.h"
 #include "soc/soc_caps.h"
-#include "esp32c3/rom/lldesc.h"
+#include "esp32h2/rom/lldesc.h"
 #include "esp_attr.h"
 
 #define RTC_CNTL_HAL_LINK_BUF_SIZE_MIN  (SOC_RTC_CNTL_CPU_PD_DMA_BLOCK_SIZE) /* The minimum size of dma link buffer */

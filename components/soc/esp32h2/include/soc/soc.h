@@ -29,52 +29,83 @@
 #define DR_REG_INTERRUPT_BASE                   0x600c2000
 #define DR_REG_EXTMEM_BASE                      0x600c4000
 #define DR_REG_MMU_TABLE                        0x600c5000
+
+#define DR_REG_ITAG_TABLE                       0x600c6000
+#define DR_REG_DTAG_TABLE                       0x600c8000
+#define DR_REG_ECC_MULT_BASE                    0x60039000
 #define DR_REG_AES_BASE                         0x6003a000
 #define DR_REG_SHA_BASE                         0x6003b000
 #define DR_REG_RSA_BASE                         0x6003c000
-#define DR_REG_HMAC_BASE                        0x6003e000
 #define DR_REG_DIGITAL_SIGNATURE_BASE           0x6003d000
+#define DR_REG_HMAC_BASE                        0x6003e000
 #define DR_REG_GDMA_BASE                        0x6003f000
+
 #define DR_REG_ASSIST_DEBUG_BASE                0x600ce000
 #define DR_REG_DEDICATED_GPIO_BASE              0x600cf000
 #define DR_REG_WORLD_CNTL_BASE                  0x600d0000
-#define DR_REG_DPORT_END                        0x600d3FFC
+// #define DR_REG_DPORT_END                        0x600d3FFC
 #define DR_REG_UART_BASE                        0x60000000
 #define DR_REG_SPI1_BASE                        0x60002000
 #define DR_REG_SPI0_BASE                        0x60003000
 #define DR_REG_GPIO_BASE                        0x60004000
+#define DR_REG_GPIO_SD_BASE                     0x60004f00
 #define DR_REG_FE2_BASE                         0x60005000
 #define DR_REG_FE_BASE                          0x60006000
+#define DR_REG_FRC_TIMER_BASE                   0x60007000
 #define DR_REG_RTCCNTL_BASE                     0x60008000
+#define DR_REG_RTCIO_BASE                       0x60008400
+#define DR_REG_SENS_BASE                        0x60008800
+#define DR_REG_RTC_I2C_BASE                     0x60008C00
 #define DR_REG_IO_MUX_BASE                      0x60009000
-#define DR_REG_RTC_I2C_BASE                     0x6000e000
+#define DR_REG_HINF_BASE                        0x6002B000
+#define DR_REG_UHCI1_BASE                       0x6000C000
+#define DR_REG_I2S_BASE                         0x6000F000
 #define DR_REG_UART1_BASE                       0x60010000
+#define DR_REG_BT_BASE                          0x60011000
 #define DR_REG_I2C_EXT_BASE                     0x60013000
 #define DR_REG_UHCI0_BASE                       0x60014000
+#define DR_REG_SLCHOST_BASE                     0x60019000
 #define DR_REG_RMT_BASE                         0x60016000
+#define DR_REG_PCNT_BASE                        0x60017000
+#define DR_REG_SLC_BASE                         0x6002D000
 #define DR_REG_LEDC_BASE                        0x60019000
-#define DR_REG_EFUSE_BASE                       0x60008800
+#define DR_REG_EFUSE_BASE                       0x6001A000
 #define DR_REG_NRX_BASE                         0x6001CC00
 #define DR_REG_BB_BASE                          0x6001D000
+#define DR_REG_PWM_BASE                         0x6001E000
 #define DR_REG_TIMERGROUP0_BASE                 0x6001F000
 #define DR_REG_TIMERGROUP1_BASE                 0x60020000
-#define DR_REG_SYSTIMER_BASE                    0x60023000
+#define DR_REG_RTC_SLOWMEM_BASE                 0x60021000
+#define DR_REG_SYS_TIMER_BASE                   0x60023000
 #define DR_REG_SPI2_BASE                        0x60024000
+#define DR_REG_SPI3_BASE                        0x60025000
 #define DR_REG_SYSCON_BASE                      0x60026000
 #define DR_REG_APB_CTRL_BASE                    0x60026000    /* Old name for SYSCON, to be removed */
-#define DR_REG_TWAI_BASE                        0x6002B000
-#define DR_REG_I2S0_BASE                        0x6002D000
+#define DR_REG_I2C1_EXT_BASE                    0x60027000
+#define DR_REG_SDMMC_BASE                       0x60028000
+#define DR_REG_CAN_BASE                         0x6002B000
+#define DR_REG_PWM1_BASE                        0x6002C000
+#define DR_REG_I2S1_BASE                        0x6002D000
+#define DR_REG_UART2_BASE                       0x6002E000
+#define DR_REG_PWM2_BASE                        0x6002F000
+#define DR_REG_PWM3_BASE                        0x60030000
+#define DR_REG_SPI4_BASE                        0x60037000
+#define DR_REG_USB_WRAP_BASE                    0x60039000
 #define DR_REG_APB_SARADC_BASE                  0x60040000
+#define DR_REG_LCD_CAM_BASE                     0x60041000
 #define DR_REG_AES_XTS_BASE                     0x600CC000
+#define DR_REG_USB_DEVICE_BASE                  0x60043000
+#define DR_REG_CLKRST_BASE                      0x6004B000
 
-#define REG_UHCI_BASE(i)                        (DR_REG_UHCI0_BASE - (i) * 0x8000)
-#define REG_UART_BASE(i)                        (DR_REG_UART_BASE + (i) * 0x10000)
-#define REG_UART_AHB_BASE(i)                    (0x60000000 + (i) * 0x10000)
-#define UART_FIFO_AHB_REG(i)                    (REG_UART_AHB_BASE(i) + 0x0)
-#define REG_I2S_BASE(i)                         (DR_REG_I2S_BASE + (i) * 0x1E000)
-#define REG_TIMG_BASE(i)                        (DR_REG_TIMERGROUP0_BASE + (i)*0x1000)
-#define REG_SPI_MEM_BASE(i)                     (DR_REG_SPI0_BASE - (i) * 0x1000)
-#define REG_I2C_BASE(i)                         (DR_REG_I2C_EXT_BASE + (i) * 0x14000 )
+
+#define REG_UHCI_BASE(i)         (DR_REG_UHCI0_BASE - (i) * 0x8000)
+#define REG_UART_BASE( i )  (DR_REG_UART_BASE + (i) * 0x10000 + ( (i) > 1 ? 0xe000 : 0 ) )
+#define REG_UART_AHB_BASE(i)  (0x60000000 + (i) * 0x10000 + ( (i) > 1 ? 0xe000 : 0 ) )
+#define UART_FIFO_AHB_REG(i)  (REG_UART_AHB_BASE(i) + 0x0)
+#define REG_I2S_BASE( i ) (DR_REG_I2S_BASE + (i) * 0x1E000)
+#define REG_TIMG_BASE(i)              (DR_REG_TIMERGROUP0_BASE + (i)*0x1000)
+#define REG_SPI_MEM_BASE(i)     (DR_REG_SPI0_BASE - (i) * 0x1000)
+#define REG_I2C_BASE(i)    (DR_REG_I2C_EXT_BASE + (i) * 0x14000 )
 
 //Registers Operation {{
 #define ETS_UNCACHED_ADDR(addr) (addr)
@@ -190,19 +221,19 @@
 //}}
 
 //Periheral Clock {{
-#define  APB_CLK_FREQ_ROM                            ( 40*1000000 )
+#define  APB_CLK_FREQ_ROM                            ( 32*1000000 )
 #define  CPU_CLK_FREQ_ROM                            APB_CLK_FREQ_ROM
-#define  UART_CLK_FREQ_ROM                           ( 40*1000000)
+#define  UART_CLK_FREQ_ROM                           ( 32*1000000)
 #define  EFUSE_CLK_FREQ_ROM                          ( 20*1000000)
 #define  CPU_CLK_FREQ                                APB_CLK_FREQ
 #if CONFIG_IDF_ENV_FPGA
-#define  APB_CLK_FREQ                                ( 40*1000000 )
+#define  APB_CLK_FREQ                                ( 32*1000000 )
 #else
 #define  APB_CLK_FREQ                                ( 80*1000000 )
 #endif
 #define  REF_CLK_FREQ                                ( 1000000 )
 #define  RTC_CLK_FREQ                                (20*1000000)
-#define  XTAL_CLK_FREQ                               (40*1000000)
+#define  XTAL_CLK_FREQ                               (32*1000000)
 #define  UART_CLK_FREQ                               APB_CLK_FREQ
 #define  WDT_CLK_FREQ                                APB_CLK_FREQ
 #define  TIMER_CLK_FREQ                              (80000000>>4) //80MHz divided by 16
@@ -224,7 +255,7 @@
 #define SOC_IRAM_HIGH   0x403E0000
 #define SOC_DRAM_LOW    0x3FC80000
 #define SOC_DRAM_HIGH   0x3FCE0000
-#define SOC_RTC_IRAM_LOW  0x50000000 // ESP32-C3 only has RTC slow memory
+#define SOC_RTC_IRAM_LOW  0x50000000 // ESP32-H2 only has RTC slow memory
 #define SOC_RTC_IRAM_HIGH 0x50002000
 #define SOC_RTC_DRAM_LOW  0x50000000
 #define SOC_RTC_DRAM_HIGH 0x50002000
@@ -315,7 +346,7 @@
 #define ETS_FRC1_INUM                           22
 #define ETS_T1_WDT_INUM                         24
 #define ETS_CACHEERR_INUM                       25
-#ifdef CONFIG_IDF_TARGET_ESP32C3
+#ifdef CONFIG_IDF_TARGET_ESP32H2
 #define ETS_MEMPROT_ERR_INUM                    26
 #endif
 #define ETS_DPORT_INUM                          28

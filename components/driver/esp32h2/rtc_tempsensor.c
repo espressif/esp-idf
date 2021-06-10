@@ -18,7 +18,7 @@
 #include "soc/system_reg.h"
 #include "driver/temp_sensor.h"
 #include "regi2c_ctrl.h"
-#include "esp32c3/rom/ets_sys.h"
+#include "esp32h2/rom/ets_sys.h"
 #include "esp_efuse_rtc_calib.h"
 
 static const char *TAG = "tsens";

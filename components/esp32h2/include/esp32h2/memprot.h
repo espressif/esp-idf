@@ -244,7 +244,7 @@ bool esp_memprot_get_monitor_en(mem_type_prot_t mem_type);
 /**
  * @brief Gets CPU ID for currently active PMS violation interrupt
  *
- * @return CPU ID (CPU_PRO for ESP32C3)
+ * @return CPU ID (CPU_PRO for ESP32H2)
  */
 int IRAM_ATTR esp_memprot_intr_get_cpuid(void);
 

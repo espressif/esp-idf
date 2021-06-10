@@ -159,7 +159,7 @@ static inline void hmac_ll_msg_padding(void)
  * @brief Signals that all blocks have been written and a padding block will automatically be applied by hardware.
  *
  * Only applies if the message length is a multiple of 512 bits.
- * See ESP32C3 TRM HMAC chapter for more details.
+ * See ESP32H2 TRM HMAC chapter for more details.
  */
 static inline void hmac_ll_msg_end(void)
 {

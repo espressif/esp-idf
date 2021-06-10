@@ -69,7 +69,7 @@ static inline void* cpu_ll_get_sp(void)
 
 static inline void cpu_ll_init_hwloop(void)
 {
-    // Nothing needed here for ESP32-C3
+    // Nothing needed here for ESP32-H2
 }
 
 static inline void cpu_ll_set_breakpoint(int id, uint32_t pc)

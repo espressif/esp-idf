@@ -1,5 +1,5 @@
 /**
- *                    ESP32-C3 Linker Script Memory Layout
+ *                    ESP32-H2 Linker Script Memory Layout
  * This file describes the memory layout (memory blocks) by virtual memory addresses.
  * This linker script is passed through the C preprocessor to include configuration options.
  * Please use preprocessor features sparingly!
@@ -27,12 +27,12 @@
 
 #define I_D_SRAM_SIZE       SRAM_DRAM_END - SRAM_DRAM_ORG
 
-#if CONFIG_ESP32C3_USE_FIXED_STATIC_RAM_SIZE
-ASSERT((CONFIG_ESP32C3_FIXED_STATIC_RAM_SIZE <= I_D_SRAM_SIZE), "Fixed static ram data does not fit.")
+#if CONFIG_ESP32H2_USE_FIXED_STATIC_RAM_SIZE
+ASSERT((CONFIG_ESP32H2_FIXED_STATIC_RAM_SIZE <= I_D_SRAM_SIZE), "Fixed static ram data does not fit.")
 #define DRAM0_0_SEG_LEN CONFIG_ESP3C3_FIXED_STATIC_RAM_SIZE
 #else
 #define DRAM0_0_SEG_LEN I_D_SRAM_SIZE
-#endif // CONFIG_ESP32C3_USE_FIXED_STATIC_RAM_SIZE
+#endif // CONFIG_ESP32H2_USE_FIXED_STATIC_RAM_SIZE
 MEMORY
 {
   /**
@@ -76,12 +76,12 @@ MEMORY
   rtc_iram_seg(RWX) :                org = 0x50000000, len = 0x2000 - ESP_BOOTLOADER_RESERVE_RTC
 }
 
-#if CONFIG_ESP32C3_USE_FIXED_STATIC_RAM_SIZE
+#if CONFIG_ESP32H2_USE_FIXED_STATIC_RAM_SIZE
 /* static data ends at defined address */
 _static_data_end = 0x3FCA0000 + DRAM0_0_SEG_LEN;
 #else
 _static_data_end = _bss_end;
-#endif // CONFIG_ESP32C3_USE_FIXED_STATIC_RAM_SIZE
+#endif // CONFIG_ESP32H2_USE_FIXED_STATIC_RAM_SIZE
 
 /* Heap ends at top of dram0_0_seg */
 _heap_end = 0x40000000;

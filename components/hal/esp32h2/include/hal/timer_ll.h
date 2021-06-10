@@ -362,7 +362,7 @@ static inline bool timer_ll_get_level_int_enable(timg_dev_t *hw, timer_idx_t tim
  */
 static inline void timer_ll_set_edge_int_enable(timg_dev_t *hw, timer_idx_t timer_num, bool edge_int_en)
 {
-    // edge interrupt is not supported on C3
+    // edge interrupt is not supported on H2
 }
 
 /**
@@ -377,7 +377,7 @@ static inline void timer_ll_set_edge_int_enable(timg_dev_t *hw, timer_idx_t time
  */
 static inline bool timer_ll_get_edge_int_enable(timg_dev_t *hw, timer_idx_t timer_num)
 {
-    // edge interrupt is not supported on C3
+    // edge interrupt is not supported on H2
     return false;
 }
 
