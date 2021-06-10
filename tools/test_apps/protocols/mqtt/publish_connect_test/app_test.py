@@ -352,7 +352,10 @@ def test_app_protocol_mqtt_publish_connect(env, extra_data):
                 raise Exception('Unexpected negotiated protocol {}'.format(s.get_negotiated_protocol()))
 
     #
-    # start publish tests
+    # start publish tests only if enabled in the environment (for weekend tests only)
+    if not os.getenv('MQTT_PUBLISH_TEST'):
+        return
+
     def start_publish_case(transport, qos, repeat, published, queue):
         print('Starting Publish test: transport:{}, qos:{}, nr_of_msgs:{}, msg_size:{}, enqueue:{}'
               .format(transport, qos, published, repeat * DEFAULT_MSG_SIZE, queue))
