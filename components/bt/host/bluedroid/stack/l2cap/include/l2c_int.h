@@ -381,7 +381,6 @@ typedef struct t_l2c_linkcb {
 
     TIMER_LIST_ENT      timer_entry;                /* Timer list entry for timeout evt */
     UINT16              handle;                     /* The handle used with LM          */
-    UINT16              completed_packets;          /* The number of conpleted packets  */
 
     tL2C_CCB_Q          ccb_queue;                  /* Queue of CCBs on this LCB        */
 
@@ -672,10 +671,6 @@ extern void l2cu_send_peer_ble_flow_control_credit(tL2C_CCB *p_ccb, UINT16 credi
 extern void l2cu_send_peer_ble_credit_based_disconn_req(tL2C_CCB *p_ccb);
 
 #endif
-
-#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
-extern UINT8 l2cu_find_completed_packets(UINT16 *handles, UINT16 *num_packets);
-#endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
 
 extern BOOLEAN l2cu_initialize_fixed_ccb (tL2C_LCB *p_lcb, UINT16 fixed_cid, tL2CAP_FCR_OPTS *p_fcr);
 extern void    l2cu_no_dynamic_ccbs (tL2C_LCB *p_lcb);
