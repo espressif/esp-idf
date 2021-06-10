@@ -16,40 +16,40 @@ extern "C" {
 
 /* Internal helpers only used by the sys_* APIs further below */
 #ifndef __bswap_16
-#define __bswap_16(x) ((u16_t) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
+#define __bswap_16(x) ((uint16_t) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
 #endif
 
 #ifndef __bswap_24
-#define __bswap_24(x) ((u32_t) ((((x) >> 16) & 0xff) | \
-                                (((x)) & 0xff00) | \
-                                (((x) & 0xff) << 16)))
+#define __bswap_24(x) ((uint32_t) ((((x) >> 16) & 0xff) | \
+                                   (((x)) & 0xff00) | \
+                                   (((x) & 0xff) << 16)))
 #endif
 
 #ifndef __bswap_32
-#define __bswap_32(x) ((u32_t) ((((x) >> 24) & 0xff) | \
-                                (((x) >> 8) & 0xff00) | \
-                                (((x) & 0xff00) << 8) | \
-                                (((x) & 0xff) << 24)))
+#define __bswap_32(x) ((uint32_t) ((((x) >> 24) & 0xff) | \
+                                   (((x) >> 8) & 0xff00) | \
+                                   (((x) & 0xff00) << 8) | \
+                                   (((x) & 0xff) << 24)))
 #endif
 
 #ifndef __bswap_48
-#define __bswap_48(x) ((u64_t) ((((x) >> 40) & 0xff) | \
-                                (((x) >> 24) & 0xff00) | \
-                                (((x) >> 8) & 0xff0000) | \
-                                (((x) & 0xff0000) << 8) | \
-                                (((x) & 0xff00) << 24) | \
-                                (((x) & 0xff) << 40)))
+#define __bswap_48(x) ((uint64_t) ((((x) >> 40) & 0xff) | \
+                                   (((x) >> 24) & 0xff00) | \
+                                   (((x) >> 8) & 0xff0000) | \
+                                   (((x) & 0xff0000) << 8) | \
+                                   (((x) & 0xff00) << 24) | \
+                                   (((x) & 0xff) << 40)))
 #endif
 
 #ifndef __bswap_64
-#define __bswap_64(x) ((u64_t) ((((x) >> 56) & 0xff) | \
-                                (((x) >> 40) & 0xff00) | \
-                                (((x) >> 24) & 0xff0000) | \
-                                (((x) >> 8) & 0xff000000) | \
-                                (((x) & 0xff000000) << 8) | \
-                                (((x) & 0xff0000) << 24) | \
-                                (((x) & 0xff00) << 40) | \
-                                (((x) & 0xff) << 56)))
+#define __bswap_64(x) ((uint64_t) ((((x) >> 56) & 0xff) | \
+                                   (((x) >> 40) & 0xff00) | \
+                                   (((x) >> 24) & 0xff0000) | \
+                                   (((x) >> 8) & 0xff000000) | \
+                                   (((x) & 0xff000000) << 8) | \
+                                   (((x) & 0xff0000) << 24) | \
+                                   (((x) & 0xff00) << 40) | \
+                                   (((x) & 0xff) << 56)))
 #endif
 
 /** @def sys_le16_to_cpu
@@ -250,7 +250,7 @@ extern "C" {
  *  @param val 16-bit integer in host endianness.
  *  @param dst Destination memory address to store the result.
  */
-static inline void sys_put_be16(u16_t val, u8_t dst[2])
+static inline void sys_put_be16(uint16_t val, uint8_t dst[2])
 {
     dst[0] = val >> 8;
     dst[1] = val;
@@ -265,7 +265,7 @@ static inline void sys_put_be16(u16_t val, u8_t dst[2])
  *  @param val 24-bit integer in host endianness.
  *  @param dst Destination memory address to store the result.
  */
-static inline void sys_put_be24(u32_t val, u8_t dst[3])
+static inline void sys_put_be24(uint32_t val, uint8_t dst[3])
 {
     dst[0] = val >> 16;
     sys_put_be16(val, &dst[1]);
@@ -280,7 +280,7 @@ static inline void sys_put_be24(u32_t val, u8_t dst[3])
  *  @param val 32-bit integer in host endianness.
  *  @param dst Destination memory address to store the result.
  */
-static inline void sys_put_be32(u32_t val, u8_t dst[4])
+static inline void sys_put_be32(uint32_t val, uint8_t dst[4])
 {
     sys_put_be16(val >> 16, dst);
     sys_put_be16(val, &dst[2]);
@@ -295,7 +295,7 @@ static inline void sys_put_be32(u32_t val, u8_t dst[4])
  *  @param val 48-bit integer in host endianness.
  *  @param dst Destination memory address to store the result.
  */
-static inline void sys_put_be48(u64_t val, u8_t dst[6])
+static inline void sys_put_be48(uint64_t val, uint8_t dst[6])
 {
     sys_put_be16(val >> 32, dst);
     sys_put_be32(val, &dst[2]);
@@ -310,7 +310,7 @@ static inline void sys_put_be48(u64_t val, u8_t dst[6])
  *  @param val 64-bit integer in host endianness.
  *  @param dst Destination memory address to store the result.
  */
-static inline void sys_put_be64(u64_t val, u8_t dst[8])
+static inline void sys_put_be64(uint64_t val, uint8_t dst[8])
 {
     sys_put_be32(val >> 32, dst);
     sys_put_be32(val, &dst[4]);
@@ -325,7 +325,7 @@ static inline void sys_put_be64(u64_t val, u8_t dst[8])
  *  @param val 16-bit integer in host endianness.
  *  @param dst Destination memory address to store the result.
  */
-static inline void sys_put_le16(u16_t val, u8_t dst[2])
+static inline void sys_put_le16(uint16_t val, uint8_t dst[2])
 {
     dst[0] = val;
     dst[1] = val >> 8;
@@ -340,7 +340,7 @@ static inline void sys_put_le16(u16_t val, u8_t dst[2])
  *  @param val 24-bit integer in host endianness.
  *  @param dst Destination memory address to store the result.
  */
-static inline void sys_put_le24(u32_t val, u8_t dst[3])
+static inline void sys_put_le24(uint32_t val, uint8_t dst[3])
 {
     sys_put_le16(val, dst);
     dst[2] = val >> 16;
@@ -355,7 +355,7 @@ static inline void sys_put_le24(u32_t val, u8_t dst[3])
  *  @param val 32-bit integer in host endianness.
  *  @param dst Destination memory address to store the result.
  */
-static inline void sys_put_le32(u32_t val, u8_t dst[4])
+static inline void sys_put_le32(uint32_t val, uint8_t dst[4])
 {
     sys_put_le16(val, dst);
     sys_put_le16(val >> 16, &dst[2]);
@@ -370,7 +370,7 @@ static inline void sys_put_le32(u32_t val, u8_t dst[4])
  *  @param val 48-bit integer in host endianness.
  *  @param dst Destination memory address to store the result.
  */
-static inline void sys_put_le48(u64_t val, u8_t dst[6])
+static inline void sys_put_le48(uint64_t val, uint8_t dst[6])
 {
     sys_put_le32(val, dst);
     sys_put_le16(val >> 32, &dst[4]);
@@ -385,7 +385,7 @@ static inline void sys_put_le48(u64_t val, u8_t dst[6])
  *  @param val 64-bit integer in host endianness.
  *  @param dst Destination memory address to store the result.
  */
-static inline void sys_put_le64(u64_t val, u8_t dst[8])
+static inline void sys_put_le64(uint64_t val, uint8_t dst[8])
 {
     sys_put_le32(val, dst);
     sys_put_le32(val >> 32, &dst[4]);
@@ -401,9 +401,9 @@ static inline void sys_put_le64(u64_t val, u8_t dst[8])
  *
  *  @return 16-bit integer in host endianness.
  */
-static inline u16_t sys_get_be16(const u8_t src[2])
+static inline uint16_t sys_get_be16(const uint8_t src[2])
 {
-    return ((u16_t)src[0] << 8) | src[1];
+    return ((uint16_t)src[0] << 8) | src[1];
 }
 
 /**
@@ -416,9 +416,9 @@ static inline u16_t sys_get_be16(const u8_t src[2])
  *
  *  @return 24-bit integer in host endianness.
  */
-static inline u32_t sys_get_be24(const u8_t src[3])
+static inline uint32_t sys_get_be24(const uint8_t src[3])
 {
-    return ((u32_t)src[0] << 16) | sys_get_be16(&src[1]);
+    return ((uint32_t)src[0] << 16) | sys_get_be16(&src[1]);
 }
 
 /**
@@ -431,9 +431,9 @@ static inline u32_t sys_get_be24(const u8_t src[3])
  *
  *  @return 32-bit integer in host endianness.
  */
-static inline u32_t sys_get_be32(const u8_t src[4])
+static inline uint32_t sys_get_be32(const uint8_t src[4])
 {
-    return ((u32_t)sys_get_be16(&src[0]) << 16) | sys_get_be16(&src[2]);
+    return ((uint32_t)sys_get_be16(&src[0]) << 16) | sys_get_be16(&src[2]);
 }
 
 /**
@@ -446,9 +446,9 @@ static inline u32_t sys_get_be32(const u8_t src[4])
  *
  *  @return 48-bit integer in host endianness.
  */
-static inline u64_t sys_get_be48(const u8_t src[6])
+static inline uint64_t sys_get_be48(const uint8_t src[6])
 {
-    return ((u64_t)sys_get_be32(&src[0]) << 32) | sys_get_be16(&src[4]);
+    return ((uint64_t)sys_get_be32(&src[0]) << 32) | sys_get_be16(&src[4]);
 }
 
 /**
@@ -461,9 +461,9 @@ static inline u64_t sys_get_be48(const u8_t src[6])
  *
  *  @return 64-bit integer in host endianness.
  */
-static inline u64_t sys_get_be64(const u8_t src[8])
+static inline uint64_t sys_get_be64(const uint8_t src[8])
 {
-    return ((u64_t)sys_get_be32(&src[0]) << 32) | sys_get_be32(&src[4]);
+    return ((uint64_t)sys_get_be32(&src[0]) << 32) | sys_get_be32(&src[4]);
 }
 
 /**
@@ -476,9 +476,9 @@ static inline u64_t sys_get_be64(const u8_t src[8])
  *
  *  @return 16-bit integer in host endianness.
  */
-static inline u16_t sys_get_le16(const u8_t src[2])
+static inline uint16_t sys_get_le16(const uint8_t src[2])
 {
-    return ((u16_t)src[1] << 8) | src[0];
+    return ((uint16_t)src[1] << 8) | src[0];
 }
 
 /**
@@ -491,9 +491,9 @@ static inline u16_t sys_get_le16(const u8_t src[2])
  *
  *  @return 24-bit integer in host endianness.
  */
-static inline u32_t sys_get_le24(const u8_t src[3])
+static inline uint32_t sys_get_le24(const uint8_t src[3])
 {
-    return ((u32_t)src[2] << 16) | sys_get_le16(&src[0]);
+    return ((uint32_t)src[2] << 16) | sys_get_le16(&src[0]);
 }
 
 /**
@@ -506,9 +506,9 @@ static inline u32_t sys_get_le24(const u8_t src[3])
  *
  *  @return 32-bit integer in host endianness.
  */
-static inline u32_t sys_get_le32(const u8_t src[4])
+static inline uint32_t sys_get_le32(const uint8_t src[4])
 {
-    return ((u32_t)sys_get_le16(&src[2]) << 16) | sys_get_le16(&src[0]);
+    return ((uint32_t)sys_get_le16(&src[2]) << 16) | sys_get_le16(&src[0]);
 }
 
 /**
@@ -521,9 +521,9 @@ static inline u32_t sys_get_le32(const u8_t src[4])
  *
  *  @return 48-bit integer in host endianness.
  */
-static inline u64_t sys_get_le48(const u8_t src[6])
+static inline uint64_t sys_get_le48(const uint8_t src[6])
 {
-    return ((u64_t)sys_get_le32(&src[2]) << 32) | sys_get_le16(&src[0]);
+    return ((uint64_t)sys_get_le32(&src[2]) << 32) | sys_get_le16(&src[0]);
 }
 
 /**
@@ -536,9 +536,9 @@ static inline u64_t sys_get_le48(const u8_t src[6])
  *
  *  @return 64-bit integer in host endianness.
  */
-static inline u64_t sys_get_le64(const u8_t src[8])
+static inline uint64_t sys_get_le64(const uint8_t src[8])
 {
-    return ((u64_t)sys_get_le32(&src[4]) << 32) | sys_get_le32(&src[0]);
+    return ((uint64_t)sys_get_le32(&src[4]) << 32) | sys_get_le32(&src[0]);
 }
 
 /**
@@ -556,8 +556,8 @@ static inline u64_t sys_get_le64(const u8_t src[8])
  */
 static inline void sys_memcpy_swap(void *dst, const void *src, size_t length)
 {
-    u8_t *pdst = (u8_t *)dst;
-    const u8_t *psrc = (const u8_t *)src;
+    uint8_t *pdst = (uint8_t *)dst;
+    const uint8_t *psrc = (const uint8_t *)src;
 
     __ASSERT(((psrc < pdst && (psrc + length) <= pdst) ||
             (psrc > pdst && (pdst + length) <= psrc)),
@@ -585,10 +585,10 @@ static inline void sys_mem_swap(void *buf, size_t length)
     size_t i;
 
     for (i = 0; i < (length / 2); i++) {
-        u8_t tmp = ((u8_t *)buf)[i];
+        uint8_t tmp = ((uint8_t *)buf)[i];
 
-        ((u8_t *)buf)[i] = ((u8_t *)buf)[length - 1 - i];
-        ((u8_t *)buf)[length - 1 - i] = tmp;
+        ((uint8_t *)buf)[i] = ((uint8_t *)buf)[length - 1 - i];
+        ((uint8_t *)buf)[length - 1 - i] = tmp;
     }
 }
 

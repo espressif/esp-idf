@@ -27,38 +27,38 @@ extern "C" {
 struct bt_mesh_cfg_srv {
     struct bt_mesh_model *model;
 
-    u8_t net_transmit;         /* Network Transmit state */
-    u8_t relay;                /* Relay Mode state */
-    u8_t relay_retransmit;     /* Relay Retransmit state */
-    u8_t beacon;               /* Secure Network Beacon state */
-    u8_t gatt_proxy;           /* GATT Proxy state */
-    u8_t frnd;                 /* Friend state */
-    u8_t default_ttl;          /* Default TTL */
+    uint8_t net_transmit;      /* Network Transmit state */
+    uint8_t relay;             /* Relay Mode state */
+    uint8_t relay_retransmit;  /* Relay Retransmit state */
+    uint8_t beacon;            /* Secure Network Beacon state */
+    uint8_t gatt_proxy;        /* GATT Proxy state */
+    uint8_t frnd;              /* Friend state */
+    uint8_t default_ttl;       /* Default TTL */
 
     /* Heartbeat Publication */
     struct bt_mesh_hb_pub {
         struct k_delayed_work timer;
 
-        u16_t dst;
-        u16_t count;
-        u8_t  period;
-        u8_t  ttl;
-        u16_t feat;
-        u16_t net_idx;
+        uint16_t dst;
+        uint16_t count;
+        uint8_t  period;
+        uint8_t  ttl;
+        uint16_t feat;
+        uint16_t net_idx;
     } hb_pub;
 
     /* Heartbeat Subscription */
     struct bt_mesh_hb_sub {
-        s64_t  expiry;
+        int64_t  expiry;
 
-        u16_t src;
-        u16_t dst;
-        u16_t count;
-        u8_t  min_hops;
-        u8_t  max_hops;
+        uint16_t src;
+        uint16_t dst;
+        uint16_t count;
+        uint8_t  min_hops;
+        uint8_t  max_hops;
 
         /* Optional subscription tracking function */
-        void (*func)(u8_t hops, u16_t feat);
+        void (*func)(uint8_t hops, uint16_t feat);
     } hb_sub;
 };
 
@@ -71,144 +71,144 @@ extern const struct bt_mesh_model_cb bt_mesh_cfg_srv_cb;
 
 typedef union {
     struct {
-        u8_t beacon;
+        uint8_t beacon;
     } cfg_beacon_set;
     struct {
-        u8_t ttl;
+        uint8_t ttl;
     } cfg_default_ttl_set;
     struct {
-        u8_t gatt_proxy;
+        uint8_t gatt_proxy;
     } cfg_gatt_proxy_set;
     struct {
-        u8_t relay;
-        u8_t retransmit;
+        uint8_t relay;
+        uint8_t retransmit;
     } cfg_relay_set;
     struct {
-        u16_t elem_addr;
-        u16_t pub_addr;
-        u16_t app_idx;
+        uint16_t elem_addr;
+        uint16_t pub_addr;
+        uint16_t app_idx;
         bool  cred_flag;
-        u8_t  ttl;
-        u8_t  period;
-        u8_t  transmit;
-        u16_t cid;
-        u16_t mod_id;
+        uint8_t  ttl;
+        uint8_t  period;
+        uint8_t  transmit;
+        uint16_t cid;
+        uint16_t mod_id;
     } cfg_mod_pub_set;
     struct {
-        u16_t elem_addr;
-        u8_t  pub_addr[16];
-        u16_t app_idx;
+        uint16_t elem_addr;
+        uint8_t  pub_addr[16];
+        uint16_t app_idx;
         bool  cred_flag;
-        u8_t  ttl;
-        u8_t  period;
-        u8_t  transmit;
-        u16_t cid;
-        u16_t mod_id;
+        uint8_t  ttl;
+        uint8_t  period;
+        uint8_t  transmit;
+        uint16_t cid;
+        uint16_t mod_id;
     } cfg_mod_pub_va_set;
     struct {
-        u16_t elem_addr;
-        u16_t sub_addr;
-        u16_t cid;
-        u16_t mod_id;
+        uint16_t elem_addr;
+        uint16_t sub_addr;
+        uint16_t cid;
+        uint16_t mod_id;
     } cfg_mod_sub_add;
     struct {
-        u16_t elem_addr;
-        u8_t  sub_addr[16];
-        u16_t cid;
-        u16_t mod_id;
+        uint16_t elem_addr;
+        uint8_t  sub_addr[16];
+        uint16_t cid;
+        uint16_t mod_id;
     } cfg_mod_sub_va_add;
     struct {
-        u16_t elem_addr;
-        u16_t sub_addr;
-        u16_t cid;
-        u16_t mod_id;
+        uint16_t elem_addr;
+        uint16_t sub_addr;
+        uint16_t cid;
+        uint16_t mod_id;
     } cfg_mod_sub_delete;
     struct {
-        u16_t elem_addr;
-        u8_t  sub_addr[16];
-        u16_t cid;
-        u16_t mod_id;
+        uint16_t elem_addr;
+        uint8_t  sub_addr[16];
+        uint16_t cid;
+        uint16_t mod_id;
     } cfg_mod_sub_va_delete;
     struct {
-        u16_t elem_addr;
-        u16_t sub_addr;
-        u16_t cid;
-        u16_t mod_id;
+        uint16_t elem_addr;
+        uint16_t sub_addr;
+        uint16_t cid;
+        uint16_t mod_id;
     } cfg_mod_sub_overwrite;
     struct {
-        u16_t elem_addr;
-        u8_t  sub_addr[16];
-        u16_t cid;
-        u16_t mod_id;
+        uint16_t elem_addr;
+        uint8_t  sub_addr[16];
+        uint16_t cid;
+        uint16_t mod_id;
     } cfg_mod_sub_va_overwrite;
     struct {
-        u16_t elem_addr;
-        u16_t cid;
-        u16_t mod_id;
+        uint16_t elem_addr;
+        uint16_t cid;
+        uint16_t mod_id;
     } cfg_mod_sub_delete_all;
     struct {
-        u16_t net_idx;
-        u8_t  net_key[16];
+        uint16_t net_idx;
+        uint8_t  net_key[16];
     } cfg_netkey_add;
     struct {
-        u16_t net_idx;
-        u8_t  net_key[16];
+        uint16_t net_idx;
+        uint8_t  net_key[16];
     } cfg_netkey_update;
     struct {
-        u16_t net_idx;
+        uint16_t net_idx;
     } cfg_netkey_delete;
     struct {
-        u16_t net_idx;
-        u16_t app_idx;
-        u8_t  app_key[16];
+        uint16_t net_idx;
+        uint16_t app_idx;
+        uint8_t  app_key[16];
     } cfg_appkey_add;
     struct {
-        u16_t net_idx;
-        u16_t app_idx;
-        u8_t  app_key[16];
+        uint16_t net_idx;
+        uint16_t app_idx;
+        uint8_t  app_key[16];
     } cfg_appkey_update;
     struct {
-        u16_t net_idx;
-        u16_t app_idx;
+        uint16_t net_idx;
+        uint16_t app_idx;
     } cfg_appkey_delete;
     struct {
-        u16_t net_idx;
-        u8_t  identity;
+        uint16_t net_idx;
+        uint8_t  identity;
     } cfg_node_identity_set;
     struct {
-        u16_t elem_addr;
-        u16_t app_idx;
-        u16_t cid;
-        u16_t mod_id;
+        uint16_t elem_addr;
+        uint16_t app_idx;
+        uint16_t cid;
+        uint16_t mod_id;
     } cfg_mod_app_bind;
     struct {
-        u16_t elem_addr;
-        u16_t app_idx;
-        u16_t cid;
-        u16_t mod_id;
+        uint16_t elem_addr;
+        uint16_t app_idx;
+        uint16_t cid;
+        uint16_t mod_id;
     } cfg_mod_app_unbind;
     struct {
-        u8_t frnd;
+        uint8_t frnd;
     } cfg_friend_set;
     struct {
-        u16_t net_idx;
-        u8_t  kr_phase;
+        uint16_t net_idx;
+        uint8_t  kr_phase;
     } cfg_kr_phase_set;
     struct {
-        u16_t dst;
-        u8_t  count;
-        u8_t  period;
-        u8_t  ttl;
-        u16_t feat;
-        u16_t net_idx;
+        uint16_t dst;
+        uint8_t  count;
+        uint8_t  period;
+        uint8_t  ttl;
+        uint16_t feat;
+        uint16_t net_idx;
     } cfg_hb_pub_set;
     struct {
-        u16_t src;
-        u16_t dst;
-        u8_t  period;
+        uint16_t src;
+        uint16_t dst;
+        uint8_t  period;
     } cfg_hb_sub_set;
     struct {
-        u8_t transmit;
+        uint8_t transmit;
     } cfg_net_transmit_set;
 } bt_mesh_cfg_server_state_change_t;
 

@@ -52,18 +52,18 @@ extern const struct bt_mesh_model_op bt_mesh_gen_onoff_cli_op[];
 typedef bt_mesh_client_user_data_t  bt_mesh_gen_onoff_client_t;
 
 struct bt_mesh_gen_onoff_status {
-    bool op_en;         /* Indicate whether optional parameters included  */
-    u8_t present_onoff; /* Present value of Generic OnOff state           */
-    u8_t target_onoff;  /* Target value of Generic OnOff state (optional) */
-    u8_t remain_time;   /* Time to complete state transition (C.1)        */
+    bool    op_en;         /* Indicate whether optional parameters included  */
+    uint8_t present_onoff; /* Present value of Generic OnOff state           */
+    uint8_t target_onoff;  /* Target value of Generic OnOff state (optional) */
+    uint8_t remain_time;   /* Time to complete state transition (C.1)        */
 };
 
 struct bt_mesh_gen_onoff_set {
-    bool op_en;      /* Indicate whether optional parameters included */
-    u8_t onoff;      /* Target value of Generic OnOff state           */
-    u8_t tid;        /* Transaction Identifier                        */
-    u8_t trans_time; /* Time to complete state transition (optional)  */
-    u8_t delay;      /* Indicate message execution delay (C.1)        */
+    bool    op_en;      /* Indicate whether optional parameters included */
+    uint8_t onoff;      /* Target value of Generic OnOff state           */
+    uint8_t tid;        /* Transaction Identifier                        */
+    uint8_t trans_time; /* Time to complete state transition (optional)  */
+    uint8_t delay;      /* Indicate message execution delay (C.1)        */
 };
 
 /* Generic Level Client Model Context */
@@ -86,34 +86,34 @@ extern const struct bt_mesh_model_op bt_mesh_gen_level_cli_op[];
 typedef bt_mesh_client_user_data_t  bt_mesh_gen_level_client_t;
 
 struct bt_mesh_gen_level_status {
-    bool  op_en;         /* Indicate whether optional parameters included      */
-    s16_t present_level; /* Present value of Generic Level state               */
-    s16_t target_level;  /* Target value of the Generic Level state (optional) */
-    u8_t  remain_time;   /* Time to complete state transition (C.1)            */
+    bool    op_en;         /* Indicate whether optional parameters included      */
+    int16_t present_level; /* Present value of Generic Level state               */
+    int16_t target_level;  /* Target value of the Generic Level state (optional) */
+    uint8_t remain_time;   /* Time to complete state transition (C.1)            */
 };
 
 struct bt_mesh_gen_level_set {
-    bool  op_en;      /* Indicate whether optional parameters included */
-    s16_t level;      /* Target value of Generic Level state           */
-    u8_t  tid;        /* Transaction Identifier                        */
-    u8_t  trans_time; /* Time to complete state transition (optional)  */
-    u8_t  delay;      /* Indicate message execution delay (C.1)        */
+    bool    op_en;      /* Indicate whether optional parameters included */
+    int16_t level;      /* Target value of Generic Level state           */
+    uint8_t tid;        /* Transaction Identifier                        */
+    uint8_t trans_time; /* Time to complete state transition (optional)  */
+    uint8_t delay;      /* Indicate message execution delay (C.1)        */
 };
 
 struct bt_mesh_gen_delta_set {
-    bool  op_en;        /* Indicate whether optional parameters included */
-    s32_t delta_level;  /* Delta change of Generic Level state           */
-    u8_t  tid;          /* Transaction Identifier                        */
-    u8_t  trans_time;   /* Time to complete state transition (optional)  */
-    u8_t  delay;        /* Indicate message execution delay (C.1)        */
+    bool    op_en;        /* Indicate whether optional parameters included */
+    int32_t delta_level;  /* Delta change of Generic Level state           */
+    uint8_t tid;          /* Transaction Identifier                        */
+    uint8_t trans_time;   /* Time to complete state transition (optional)  */
+    uint8_t delay;        /* Indicate message execution delay (C.1)        */
 };
 
 struct bt_mesh_gen_move_set {
-    bool  op_en;       /* Indicate whether optional parameters included                    */
-    s16_t delta_level; /* Delta Level step to calculate Move speed for Generic Level state */
-    u8_t  tid;         /* Transaction Identifier                                           */
-    u8_t  trans_time;  /* Time to complete state transition (optional)                     */
-    u8_t  delay;       /* Indicate message execution delay (C.1)                           */
+    bool    op_en;       /* Indicate whether optional parameters included                    */
+    int16_t delta_level; /* Delta Level step to calculate Move speed for Generic Level state */
+    uint8_t tid;         /* Transaction Identifier                                           */
+    uint8_t trans_time;  /* Time to complete state transition (optional)                     */
+    uint8_t delay;       /* Indicate message execution delay (C.1)                           */
 };
 
 /* Generic Default Transition Time Client Model Context */
@@ -137,11 +137,11 @@ extern const struct bt_mesh_model_op bt_mesh_gen_def_trans_time_cli_op[];
 typedef bt_mesh_client_user_data_t  bt_mesh_gen_def_trans_time_client_t;
 
 struct bt_mesh_gen_def_trans_time_set {
-    u8_t trans_time;  /* The value of the Generic Default Transition Time state */
+    uint8_t trans_time;  /* The value of the Generic Default Transition Time state */
 };
 
 struct bt_mesh_gen_def_trans_time_status {
-    u8_t trans_time;  /* The value of the Generic Default Transition Time state */
+    uint8_t trans_time;  /* The value of the Generic Default Transition Time state */
 };
 
 /* Generic Power OnOff Client Model Context */
@@ -164,11 +164,11 @@ extern const struct bt_mesh_model_op bt_mesh_gen_power_onoff_cli_op[];
 typedef bt_mesh_client_user_data_t  bt_mesh_gen_power_onoff_client_t;
 
 struct bt_mesh_gen_onpowerup_set {
-    u8_t onpowerup;  /* The value of the Generic OnPowerUp state */
+    uint8_t onpowerup;  /* The value of the Generic OnPowerUp state */
 };
 
 struct bt_mesh_gen_onpowerup_status {
-    u8_t onpowerup;  /* The value of the Generic OnPowerUp state */
+    uint8_t onpowerup;  /* The value of the Generic OnPowerUp state */
 };
 
 /* Generic Power Level Client Model Context */
@@ -191,41 +191,41 @@ extern const struct bt_mesh_model_op bt_mesh_gen_power_level_cli_op[];
 typedef bt_mesh_client_user_data_t  bt_mesh_gen_power_level_client_t;
 
 struct bt_mesh_gen_power_level_status {
-    bool  op_en;         /* Indicate whether optional parameters included         */
-    u16_t present_power; /* Present value of Generic Power Actual state           */
-    u16_t target_power;  /* Target value of Generic Power Actual state (optional) */
-    u8_t  remain_time;   /* Time to complete state transition (C.1)               */
+    bool     op_en;         /* Indicate whether optional parameters included         */
+    uint16_t present_power; /* Present value of Generic Power Actual state           */
+    uint16_t target_power;  /* Target value of Generic Power Actual state (optional) */
+    uint8_t  remain_time;   /* Time to complete state transition (C.1)               */
 };
 
 struct bt_mesh_gen_power_last_status {
-    u16_t power; /* The value of the Generic Power Last state */
+    uint16_t power; /* The value of the Generic Power Last state */
 };
 
 struct bt_mesh_gen_power_default_status {
-    u16_t power; /* The value of the Generic Default Last state */
+    uint16_t power; /* The value of the Generic Default Last state */
 };
 
 struct bt_mesh_gen_power_range_status {
-    u8_t  status_code; /* Status Code for the requesting message                */
-    u16_t range_min;   /* Value of Range Min field of Generic Power Range state */
-    u16_t range_max;   /* Value of Range Max field of Generic Power Range state */
+    uint8_t  status_code; /* Status Code for the requesting message                */
+    uint16_t range_min;   /* Value of Range Min field of Generic Power Range state */
+    uint16_t range_max;   /* Value of Range Max field of Generic Power Range state */
 };
 
 struct bt_mesh_gen_power_level_set {
-    bool  op_en;      /* Indicate whether optional parameters included */
-    u16_t power;      /* Target value of Generic Power Actual state    */
-    u8_t  tid;        /* Transaction Identifier                        */
-    u8_t  trans_time; /* Time to complete state transition (optional)  */
-    u8_t  delay;      /* Indicate message execution delay (C.1)        */
+    bool     op_en;      /* Indicate whether optional parameters included */
+    uint16_t power;      /* Target value of Generic Power Actual state    */
+    uint8_t  tid;        /* Transaction Identifier                        */
+    uint8_t  trans_time; /* Time to complete state transition (optional)  */
+    uint8_t  delay;      /* Indicate message execution delay (C.1)        */
 };
 
 struct bt_mesh_gen_power_default_set {
-    u16_t power;  /* The value of the Generic Power Default state */
+    uint16_t power;  /* The value of the Generic Power Default state */
 };
 
 struct bt_mesh_gen_power_range_set {
-    u16_t range_min; /* Value of Range Min field of Generic Power Range state */
-    u16_t range_max; /* Value of Range Max field of Generic Power Range state */
+    uint16_t range_min; /* Value of Range Min field of Generic Power Range state */
+    uint16_t range_max; /* Value of Range Max field of Generic Power Range state */
 };
 
 /* Generic Battery Client Model Context */
@@ -248,10 +248,10 @@ extern const struct bt_mesh_model_op bt_mesh_gen_battery_cli_op[];
 typedef bt_mesh_client_user_data_t  bt_mesh_gen_battery_client_t;
 
 struct bt_mesh_gen_battery_status {
-    u32_t battery_level     : 8;  /* Value of Generic Battery Level state             */
-    u32_t time_to_discharge : 24; /* Value of Generic Battery Time to Discharge state */
-    u32_t time_to_charge    : 24; /* Value of Generic Battery Time to Charge state    */
-    u32_t flags             : 8;  /* Value of Generic Battery Flags state             */
+    uint32_t battery_level     : 8;  /* Value of Generic Battery Level state             */
+    uint32_t time_to_discharge : 24; /* Value of Generic Battery Time to Discharge state */
+    uint32_t time_to_charge    : 24; /* Value of Generic Battery Time to Charge state    */
+    uint32_t flags             : 8;  /* Value of Generic Battery Flags state             */
 };
 
 /* Generic Location Client Model Context */
@@ -274,31 +274,31 @@ extern const struct bt_mesh_model_op bt_mesh_gen_location_cli_op[];
 typedef bt_mesh_client_user_data_t  bt_mesh_gen_location_client_t;
 
 struct bt_mesh_gen_loc_global_status {
-    s32_t global_latitude;  /* Global Coordinates (Latitude)  */
-    s32_t global_longitude; /* Global Coordinates (Longitude) */
-    s16_t global_altitude;  /* Global Altitude                */
+    int32_t global_latitude;  /* Global Coordinates (Latitude)  */
+    int32_t global_longitude; /* Global Coordinates (Longitude) */
+    int16_t global_altitude;  /* Global Altitude                */
 };
 
 struct bt_mesh_gen_loc_local_status {
-    s16_t local_north;    /* Local Coordinates (North) */
-    s16_t local_east;     /* Local Coordinates (East)  */
-    s16_t local_altitude; /* Local Altitude            */
-    u8_t  floor_number;   /* Floor Number              */
-    u16_t uncertainty;    /* Uncertainty               */
+    int16_t  local_north;    /* Local Coordinates (North) */
+    int16_t  local_east;     /* Local Coordinates (East)  */
+    int16_t  local_altitude; /* Local Altitude            */
+    uint8_t  floor_number;   /* Floor Number              */
+    uint16_t uncertainty;    /* Uncertainty               */
 };
 
 struct bt_mesh_gen_loc_global_set {
-    s32_t global_latitude;  /* Global Coordinates (Latitude)  */
-    s32_t global_longitude; /* Global Coordinates (Longitude) */
-    s16_t global_altitude;  /* Global Altitude                */
+    int32_t global_latitude;  /* Global Coordinates (Latitude)  */
+    int32_t global_longitude; /* Global Coordinates (Longitude) */
+    int16_t global_altitude;  /* Global Altitude                */
 };
 
 struct bt_mesh_gen_loc_local_set {
-    s16_t local_north;    /* Local Coordinates (North) */
-    s16_t local_east;     /* Local Coordinates (East)  */
-    s16_t local_altitude; /* Local Altitude            */
-    u8_t  floor_number;   /* Floor Number              */
-    u16_t uncertainty;    /* Uncertainty               */
+    int16_t  local_north;    /* Local Coordinates (North) */
+    int16_t  local_east;     /* Local Coordinates (East)  */
+    int16_t  local_altitude; /* Local Altitude            */
+    uint8_t  floor_number;   /* Floor Number              */
+    uint16_t uncertainty;    /* Uncertainty               */
 };
 
 /* Generic Property Client Model Context */
@@ -325,9 +325,9 @@ struct bt_mesh_gen_user_properties_status {
 };
 
 struct bt_mesh_gen_user_property_status {
-    bool  op_en;                   /* Indicate whether optional parameters included      */
-    u16_t user_property_id;        /* Property ID identifying a Generic User Property    */
-    u8_t  user_access;             /* Enumeration indicating user access (optional)      */
+    bool     op_en;                   /* Indicate whether optional parameters included      */
+    uint16_t user_property_id;        /* Property ID identifying a Generic User Property    */
+    uint8_t  user_access;             /* Enumeration indicating user access (optional)      */
     struct net_buf_simple *user_property_value; /* Raw value for the User Property (C.1) */
 };
 
@@ -336,9 +336,9 @@ struct bt_mesh_gen_admin_properties_status {
 };
 
 struct bt_mesh_gen_admin_property_status {
-    bool  op_en;                    /* Indicate whether optional parameters included       */
-    u16_t admin_property_id;        /* Property ID identifying a Generic Admin Property    */
-    u8_t  admin_user_access;        /* Enumeration indicating user access (optional)       */
+    bool     op_en;                    /* Indicate whether optional parameters included       */
+    uint16_t admin_property_id;        /* Property ID identifying a Generic Admin Property    */
+    uint8_t  admin_user_access;        /* Enumeration indicating user access (optional)       */
     struct net_buf_simple *admin_property_value; /* Raw value for the Admin Property (C.1) */
 };
 
@@ -347,9 +347,9 @@ struct bt_mesh_gen_manu_properties_status {
 };
 
 struct bt_mesh_gen_manu_property_status {
-    bool  op_en;                   /* Indicate whether optional parameters included              */
-    u16_t manu_property_id;        /* Property ID identifying a Generic Manufacturer Property    */
-    u8_t  manu_user_access;        /* Enumeration indicating user access (optional)              */
+    bool     op_en;                   /* Indicate whether optional parameters included              */
+    uint16_t manu_property_id;        /* Property ID identifying a Generic Manufacturer Property    */
+    uint8_t  manu_user_access;        /* Enumeration indicating user access (optional)              */
     struct net_buf_simple *manu_property_value; /* Raw value for the Manufacturer Property (C.1) */
 };
 
@@ -358,35 +358,35 @@ struct bt_mesh_gen_client_properties_status {
 };
 
 struct bt_mesh_gen_user_property_get {
-    u16_t user_property_id;        /* Property ID identifying a Generic User Property */
+    uint16_t user_property_id;        /* Property ID identifying a Generic User Property */
 };
 
 struct bt_mesh_gen_user_property_set {
-    u16_t user_property_id;        /* Property ID identifying a Generic User Property */
+    uint16_t user_property_id;        /* Property ID identifying a Generic User Property */
     struct net_buf_simple *user_property_value; /* Raw value for the User Property    */
 };
 
 struct bt_mesh_gen_admin_property_get {
-    u16_t admin_property_id;        /* Property ID identifying a Generic Admin Property */
+    uint16_t admin_property_id;        /* Property ID identifying a Generic Admin Property */
 };
 
 struct bt_mesh_gen_admin_property_set {
-    u16_t admin_property_id;        /* Property ID identifying a Generic Admin Property */
-    u8_t  admin_user_access;        /* Enumeration indicating user access               */
+    uint16_t admin_property_id;        /* Property ID identifying a Generic Admin Property */
+    uint8_t  admin_user_access;        /* Enumeration indicating user access               */
     struct net_buf_simple *admin_property_value; /* Raw value for the Admin Property    */
 };
 
 struct bt_mesh_gen_manu_property_get {
-    u16_t manu_property_id; /* Property ID identifying a Generic Manufacturer Property */
+    uint16_t manu_property_id; /* Property ID identifying a Generic Manufacturer Property */
 };
 
 struct bt_mesh_gen_manu_property_set {
-    u16_t manu_property_id; /* Property ID identifying a Generic Manufacturer Property */
-    u8_t  manu_user_access; /* Enumeration indicating user access                      */
+    uint16_t manu_property_id; /* Property ID identifying a Generic Manufacturer Property */
+    uint8_t  manu_user_access; /* Enumeration indicating user access                      */
 };
 
 struct bt_mesh_gen_client_properties_get {
-    u16_t client_property_id; /* A starting Client Property ID present within an element */
+    uint16_t client_property_id; /* A starting Client Property ID present within an element */
 };
 
 /**

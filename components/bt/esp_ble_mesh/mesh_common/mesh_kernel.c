@@ -8,7 +8,7 @@
 
 #include "mesh_kernel.h"
 
-void k_sleep(s32_t duration)
+void k_sleep(int32_t duration)
 {
     vTaskDelay(duration / portTICK_PERIOD_MS);
 }

@@ -52,54 +52,54 @@ extern const struct bt_mesh_model_op bt_mesh_time_cli_op[];
 typedef bt_mesh_client_user_data_t  bt_mesh_time_client_t;
 
 struct bt_mesh_time_status {
-    u8_t  tai_seconds[5];     /* The current TAI time in seconds */
-    u8_t  sub_second;         /* The sub-second time in units of 1/256 second */
-    u8_t  uncertainty;        /* The estimated uncertainty in 10-millisecond steps */
-    u16_t time_authority : 1; /* 0 = No Time Authority, 1 = Time Authority */
-    u16_t tai_utc_delta : 15; /* Current difference between TAI and UTC in seconds */
-    u8_t  time_zone_offset;   /* The local time zone offset in 15-minute increments */
+    uint8_t  tai_seconds[5];     /* The current TAI time in seconds */
+    uint8_t  sub_second;         /* The sub-second time in units of 1/256 second */
+    uint8_t  uncertainty;        /* The estimated uncertainty in 10-millisecond steps */
+    uint16_t time_authority : 1; /* 0 = No Time Authority, 1 = Time Authority */
+    uint16_t tai_utc_delta : 15; /* Current difference between TAI and UTC in seconds */
+    uint8_t  time_zone_offset;   /* The local time zone offset in 15-minute increments */
 };
 
 struct bt_mesh_time_zone_status {
-    u8_t time_zone_offset_curr; /* Current local time zone offset */
-    u8_t time_zone_offset_new;  /* Upcoming local time zone offset */
-    u8_t tai_zone_change[5];    /* TAI Seconds time of the upcoming Time Zone Offset change */
+    uint8_t time_zone_offset_curr; /* Current local time zone offset */
+    uint8_t time_zone_offset_new;  /* Upcoming local time zone offset */
+    uint8_t tai_zone_change[5];    /* TAI Seconds time of the upcoming Time Zone Offset change */
 };
 
 struct bt_mesh_tai_utc_delta_status {
-    u16_t tai_utc_delta_curr : 15; /* Current difference between TAI and UTC in seconds */
-    u16_t padding_1 : 1;           /* Always 0b0. Other values are Prohibited. */
-    u16_t tai_utc_delta_new : 15;  /* Upcoming difference between TAI and UTC in seconds */
-    u16_t padding_2 : 1;           /* Always 0b0. Other values are Prohibited. */
-    u8_t tai_delta_change[5];      /* TAI Seconds time of the upcoming TAI-UTC Delta change */
+    uint16_t tai_utc_delta_curr : 15; /* Current difference between TAI and UTC in seconds */
+    uint16_t padding_1 : 1;           /* Always 0b0. Other values are Prohibited. */
+    uint16_t tai_utc_delta_new : 15;  /* Upcoming difference between TAI and UTC in seconds */
+    uint16_t padding_2 : 1;           /* Always 0b0. Other values are Prohibited. */
+    uint8_t  tai_delta_change[5];     /* TAI Seconds time of the upcoming TAI-UTC Delta change */
 };
 
 struct bt_mesh_time_role_status {
-    u8_t time_role; /* The Time Role for the element */
+    uint8_t time_role; /* The Time Role for the element */
 };
 
 struct bt_mesh_time_set {
-    u8_t  tai_seconds[5];     /* The current TAI time in seconds */
-    u8_t  sub_second;         /* The sub-second time in units of 1/256 second */
-    u8_t  uncertainty;        /* The estimated uncertainty in 10-millisecond steps */
-    u16_t time_authority : 1; /* 0 = No Time Authority, 1 = Time Authority */
-    u16_t tai_utc_delta : 15; /* Current difference between TAI and UTC in seconds */
-    u8_t  time_zone_offset;   /* The local time zone offset in 15-minute increments */
+    uint8_t  tai_seconds[5];     /* The current TAI time in seconds */
+    uint8_t  sub_second;         /* The sub-second time in units of 1/256 second */
+    uint8_t  uncertainty;        /* The estimated uncertainty in 10-millisecond steps */
+    uint16_t time_authority : 1; /* 0 = No Time Authority, 1 = Time Authority */
+    uint16_t tai_utc_delta : 15; /* Current difference between TAI and UTC in seconds */
+    uint8_t  time_zone_offset;   /* The local time zone offset in 15-minute increments */
 };
 
 struct bt_mesh_time_zone_set {
-    u8_t time_zone_offset_new; /* Upcoming local time zone offset */
-    u8_t tai_zone_change[5];   /* TAI Seconds time of the upcoming Time Zone Offset change */
+    uint8_t time_zone_offset_new; /* Upcoming local time zone offset */
+    uint8_t tai_zone_change[5];   /* TAI Seconds time of the upcoming Time Zone Offset change */
 };
 
 struct bt_mesh_tai_utc_delta_set {
-    u16_t tai_utc_delta_new : 15; /* Upcoming difference between TAI and UTC in seconds */
-    u16_t padding : 1;            /* Always 0b0. Other values are Prohibited. */
-    u8_t tai_delta_change[5];     /* TAI Seconds time of the upcoming TAI-UTC Delta change */
+    uint16_t tai_utc_delta_new : 15; /* Upcoming difference between TAI and UTC in seconds */
+    uint16_t padding : 1;            /* Always 0b0. Other values are Prohibited. */
+    uint8_t  tai_delta_change[5];    /* TAI Seconds time of the upcoming TAI-UTC Delta change */
 };
 
 struct bt_mesh_time_role_set {
-    u8_t time_role; /* The Time Role for the element */
+    uint8_t time_role; /* The Time Role for the element */
 };
 
 /* Scene Client Model Context */
@@ -122,33 +122,33 @@ extern const struct bt_mesh_model_op bt_mesh_scene_cli_op[];
 typedef bt_mesh_client_user_data_t  bt_mesh_scene_client_t;
 
 struct bt_mesh_scene_status {
-    bool  op_en;         /* Indicate whether optional parameters included */
-    u8_t  status_code;   /* Status code for the last operation            */
-    u16_t current_scene; /* Scene Number of a current scene               */
-    u16_t target_scene;  /* Scene Number of a target scene (optional)     */
-    u8_t  remain_time;   /* Time to complete state transition (C.1)       */
+    bool     op_en;         /* Indicate whether optional parameters included */
+    uint8_t  status_code;   /* Status code for the last operation            */
+    uint16_t current_scene; /* Scene Number of a current scene               */
+    uint16_t target_scene;  /* Scene Number of a target scene (optional)     */
+    uint8_t  remain_time;   /* Time to complete state transition (C.1)       */
 };
 
 struct bt_mesh_scene_register_status {
-    u8_t  status_code;   /* Status code for the previous operation              */
-    u16_t current_scene; /* Scene Number of a current scene                     */
+    uint8_t  status_code;   /* Status code for the previous operation              */
+    uint16_t current_scene; /* Scene Number of a current scene                     */
     struct net_buf_simple *scenes; /* A list of scenes stored within an element */
 };
 
 struct bt_mesh_scene_store {
-    u16_t scene_number; /* The number of the scene to be stored */
+    uint16_t scene_number; /* The number of the scene to be stored */
 };
 
 struct bt_mesh_scene_recall {
-    bool  op_en;        /* Indicate whether optional parameters included */
-    u16_t scene_number; /* The number of the scene to be recalled        */
-    u8_t  tid;          /* Transaction Identifier                        */
-    u8_t  trans_time;   /* Time to complete state transition (optional)  */
-    u8_t  delay;        /* Indicate message execution delay (C.1)        */
+    bool     op_en;        /* Indicate whether optional parameters included */
+    uint16_t scene_number; /* The number of the scene to be recalled        */
+    uint8_t  tid;          /* Transaction Identifier                        */
+    uint8_t  trans_time;   /* Time to complete state transition (optional)  */
+    uint8_t  delay;        /* Indicate message execution delay (C.1)        */
 };
 
 struct bt_mesh_scene_delete {
-    u16_t scene_number; /* The number of the scene to be deleted */
+    uint16_t scene_number; /* The number of the scene to be deleted */
 };
 
 /* Scheduler Client Model Context */
@@ -171,39 +171,39 @@ extern const struct bt_mesh_model_op bt_mesh_scheduler_cli_op[];
 typedef bt_mesh_client_user_data_t  bt_mesh_scheduler_client_t;
 
 struct bt_mesh_scheduler_status {
-    u16_t schedules; /* Bit field indicating defined Actions in the Schedule Register */
+    uint16_t schedules; /* Bit field indicating defined Actions in the Schedule Register */
 };
 
 struct bt_mesh_scheduler_act_status {
-    u64_t index : 4;        /* Enumerates (selects) a Schedule Register entry */
-    u64_t year : 7;         /* Scheduled year for the action */
-    u64_t month : 12;       /* Scheduled month for the action */
-    u64_t day : 5;          /* Scheduled day of the month for the action */
-    u64_t hour : 5;         /* Scheduled hour for the action */
-    u64_t minute : 6;       /* Scheduled minute for the action */
-    u64_t second : 6;       /* Scheduled second for the action */
-    u64_t day_of_week : 7;  /* Schedule days of the week for the action */
-    u64_t action : 4;       /* Action to be performed at the scheduled time */
-    u64_t trans_time : 8;   /* Transition time for this action */
-    u16_t scene_number;     /* Transition time for this action */
+    uint64_t index : 4;        /* Enumerates (selects) a Schedule Register entry */
+    uint64_t year : 7;         /* Scheduled year for the action */
+    uint64_t month : 12;       /* Scheduled month for the action */
+    uint64_t day : 5;          /* Scheduled day of the month for the action */
+    uint64_t hour : 5;         /* Scheduled hour for the action */
+    uint64_t minute : 6;       /* Scheduled minute for the action */
+    uint64_t second : 6;       /* Scheduled second for the action */
+    uint64_t day_of_week : 7;  /* Schedule days of the week for the action */
+    uint64_t action : 4;       /* Action to be performed at the scheduled time */
+    uint64_t trans_time : 8;   /* Transition time for this action */
+    uint16_t scene_number;     /* Transition time for this action */
 };
 
 struct bt_mesh_scheduler_act_get {
-    u8_t index; /* Index of the Schedule Register entry to get */
+    uint8_t index; /* Index of the Schedule Register entry to get */
 };
 
 struct bt_mesh_scheduler_act_set {
-    u64_t index : 4;        /* Index of the Schedule Register entry to set */
-    u64_t year : 7;         /* Scheduled year for the action */
-    u64_t month : 12;       /* Scheduled month for the action */
-    u64_t day : 5;          /* Scheduled day of the month for the action */
-    u64_t hour : 5;         /* Scheduled hour for the action */
-    u64_t minute : 6;       /* Scheduled minute for the action */
-    u64_t second : 6;       /* Scheduled second for the action */
-    u64_t day_of_week : 7;  /* Schedule days of the week for the action */
-    u64_t action : 4;       /* Action to be performed at the scheduled time */
-    u64_t trans_time : 8;   /* Transition time for this action */
-    u16_t scene_number;     /* Transition time for this action */
+    uint64_t index : 4;        /* Index of the Schedule Register entry to set */
+    uint64_t year : 7;         /* Scheduled year for the action */
+    uint64_t month : 12;       /* Scheduled month for the action */
+    uint64_t day : 5;          /* Scheduled day of the month for the action */
+    uint64_t hour : 5;         /* Scheduled hour for the action */
+    uint64_t minute : 6;       /* Scheduled minute for the action */
+    uint64_t second : 6;       /* Scheduled second for the action */
+    uint64_t day_of_week : 7;  /* Schedule days of the week for the action */
+    uint64_t action : 4;       /* Action to be performed at the scheduled time */
+    uint64_t trans_time : 8;   /* Transition time for this action */
+    uint16_t scene_number;     /* Transition time for this action */
 };
 
 /**

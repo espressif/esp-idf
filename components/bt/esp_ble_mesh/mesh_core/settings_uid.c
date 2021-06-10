@@ -41,7 +41,7 @@ static struct settings_uid {
     bt_mesh_nvs_handle_t handle;            /* Core Settings nvs handle */
 } user_ids[CONFIG_BLE_MESH_MAX_NVS_NAMESPACE];
 
-static int settings_direct_erase(u8_t index);
+static int settings_direct_erase(uint8_t index);
 
 static inline bool settings_uid_empty(struct settings_uid *uid)
 {
@@ -95,11 +95,11 @@ int settings_uid_load(void)
     length = buf->len;
 
     for (i = 0; i < length / SETTINGS_ITEM_SIZE; i++) {
-        u16_t index = net_buf_simple_pull_le16(buf);
+        uint16_t index = net_buf_simple_pull_le16(buf);
 
         sprintf(name, "mesh/id/%04x", index);
 
-        err = bt_mesh_load_uid_settings(name, (u8_t *)user_ids[index].id,
+        err = bt_mesh_load_uid_settings(name, (uint8_t *)user_ids[index].id,
                                         SETTINGS_UID_SIZE, &exist);
         if (err) {
             continue;
@@ -159,7 +159,7 @@ int settings_uid_erase(void)
 }
 #endif /* CONFIG_BLE_MESH_DEINIT */
 
-static int settings_direct_erase(u8_t index)
+static int settings_direct_erase(uint8_t index)
 {
     bt_mesh_nvs_handle_t handle = 0;
     char name[16] = {'\0'};
@@ -193,9 +193,9 @@ static int settings_direct_erase(u8_t index)
     return 0;
 }
 
-static u8_t settings_index_get(const char *id, u8_t *index)
+static uint8_t settings_index_get(const char *id, uint8_t *index)
 {
-    u8_t idx = 0;
+    uint8_t idx = 0;
     int i;
 
     for (i = 0; i < ARRAY_SIZE(user_ids); i++) {
@@ -219,7 +219,7 @@ static u8_t settings_index_get(const char *id, u8_t *index)
     return idx;
 }
 
-static int settings_open(u8_t index)
+static int settings_open(uint8_t index)
 {
     struct settings_uid *uid = &user_ids[index];
     char name[16] = {'\0'};
@@ -261,7 +261,7 @@ static int settings_open(u8_t index)
     BT_INFO("Open settings, index %d, uid %s", index, uid->id);
 
     sprintf(name, "mesh/id/%04x", index);
-    err = bt_mesh_save_uid_settings(name, (const u8_t *)uid->id, SETTINGS_UID_SIZE);
+    err = bt_mesh_save_uid_settings(name, (const uint8_t *)uid->id, SETTINGS_UID_SIZE);
     if (err) {
         BT_ERR("Save uid failed, name %s", name);
         return err;
@@ -293,7 +293,7 @@ static int settings_open(u8_t index)
     return 0;
 }
 
-int bt_mesh_provisioner_open_settings_with_index(u8_t index)
+int bt_mesh_provisioner_open_settings_with_index(uint8_t index)
 {
     if (index >= ARRAY_SIZE(user_ids)) {
         BT_ERR("Invalid settings index %d", index);
@@ -303,9 +303,9 @@ int bt_mesh_provisioner_open_settings_with_index(u8_t index)
     return settings_open(index);
 }
 
-int bt_mesh_provisioner_open_settings_with_uid(const char *id, u8_t *index)
+int bt_mesh_provisioner_open_settings_with_uid(const char *id, uint8_t *index)
 {
-    u8_t idx = 0;
+    uint8_t idx = 0;
     int i;
 
     if (!id || strlen(id) > SETTINGS_UID_SIZE) {
@@ -338,7 +338,7 @@ int bt_mesh_provisioner_open_settings_with_uid(const char *id, u8_t *index)
     return settings_open(idx);
 }
 
-static int settings_close(u8_t index, bool erase)
+static int settings_close(uint8_t index, bool erase)
 {
     struct settings_uid *uid = &user_ids[index];
     char name[16] = {'\0'};
@@ -382,7 +382,7 @@ static int settings_close(u8_t index, bool erase)
     return 0;
 }
 
-int bt_mesh_provisioner_close_settings_with_index(u8_t index, bool erase)
+int bt_mesh_provisioner_close_settings_with_index(uint8_t index, bool erase)
 {
     if (index >= ARRAY_SIZE(user_ids)) {
         BT_ERR("Invalid settings index %d", index);
@@ -392,9 +392,9 @@ int bt_mesh_provisioner_close_settings_with_index(u8_t index, bool erase)
     return settings_close(index, erase);
 }
 
-int bt_mesh_provisioner_close_settings_with_uid(const char *id, bool erase, u8_t *index)
+int bt_mesh_provisioner_close_settings_with_uid(const char *id, bool erase, uint8_t *index)
 {
-    u8_t idx = 0;
+    uint8_t idx = 0;
 
     if (!id || strlen(id) > SETTINGS_UID_SIZE) {
         BT_ERR("Invalid settings uid");
@@ -410,7 +410,7 @@ int bt_mesh_provisioner_close_settings_with_uid(const char *id, bool erase, u8_t
     return settings_close(idx, erase);
 }
 
-static int settings_delete(u8_t index)
+static int settings_delete(uint8_t index)
 {
     /* The function is used to erase mesh information from
      * the nvs namespace when it is not open and restored,
@@ -433,7 +433,7 @@ static int settings_delete(u8_t index)
     return 0;
 }
 
-int bt_mesh_provisioner_delete_settings_with_index(u8_t index)
+int bt_mesh_provisioner_delete_settings_with_index(uint8_t index)
 {
     if (index >= ARRAY_SIZE(user_ids)) {
         BT_ERR("Invalid settings index %d", index);
@@ -443,9 +443,9 @@ int bt_mesh_provisioner_delete_settings_with_index(u8_t index)
     return settings_delete(index);
 }
 
-int bt_mesh_provisioner_delete_settings_with_uid(const char *id, u8_t *index)
+int bt_mesh_provisioner_delete_settings_with_uid(const char *id, uint8_t *index)
 {
-    u8_t idx = 0;
+    uint8_t idx = 0;
 
     if (!id || strlen(id) > SETTINGS_UID_SIZE) {
         BT_ERR("Invalid settings uid");
@@ -461,7 +461,7 @@ int bt_mesh_provisioner_delete_settings_with_uid(const char *id, u8_t *index)
     return settings_delete(idx);
 }
 
-const char *bt_mesh_provisioner_get_settings_uid(u8_t index)
+const char *bt_mesh_provisioner_get_settings_uid(uint8_t index)
 {
     if (index >= ARRAY_SIZE(user_ids)) {
         BT_ERR("Invalid settings index %d", index);
@@ -471,9 +471,9 @@ const char *bt_mesh_provisioner_get_settings_uid(u8_t index)
     return user_ids[index].id;
 }
 
-u8_t bt_mesh_provisioner_get_settings_index(const char *id)
+uint8_t bt_mesh_provisioner_get_settings_index(const char *id)
 {
-    u8_t idx = 0;
+    uint8_t idx = 0;
 
     if (!id || strlen(id) > SETTINGS_UID_SIZE) {
         BT_ERR("Invalid settings uid");
@@ -488,9 +488,9 @@ u8_t bt_mesh_provisioner_get_settings_index(const char *id)
     return idx;
 }
 
-u8_t bt_mesh_provisioner_get_free_settings_count(void)
+uint8_t bt_mesh_provisioner_get_free_settings_count(void)
 {
-    u8_t count = 0;
+    uint8_t count = 0;
     int i;
 
     for (i = 0; i < ARRAY_SIZE(user_ids); i++) {

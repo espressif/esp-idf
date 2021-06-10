@@ -70,7 +70,7 @@ typedef enum {
 struct bt_mesh_prov {
 #if CONFIG_BLE_MESH_NODE
     /** The UUID that's used when advertising as unprovisioned */
-    const u8_t *uuid;
+    const uint8_t *uuid;
 
     /** Optional URI. This will be advertised separately from the
      *  unprovisioned beacon, however the unprovisioned beacon will
@@ -93,19 +93,19 @@ struct bt_mesh_prov {
     void (*oob_pub_key_cb)(void);
 
     /** Static OOB value */
-    const u8_t *static_val;
+    const uint8_t *static_val;
     /** Static OOB value length */
-    u8_t        static_val_len;
+    uint8_t        static_val_len;
 
     /** Maximum size of Output OOB supported */
-    u8_t        output_size;
+    uint8_t        output_size;
     /** Supported Output OOB Actions */
-    u16_t       output_actions;
+    uint16_t       output_actions;
 
     /* Maximum size of Input OOB supported */
-    u8_t        input_size;
+    uint8_t        input_size;
     /** Supported Input OOB Actions */
-    u16_t       input_actions;
+    uint16_t       input_actions;
 
     /** @brief Output of a number is requested.
      *
@@ -117,7 +117,7 @@ struct bt_mesh_prov {
      *
      *  @return Zero on success or negative error code otherwise
      */
-    int         (*output_number)(bt_mesh_output_action_t act, u32_t num);
+    int         (*output_number)(bt_mesh_output_action_t act, uint32_t num);
 
     /** @brief Output of a string is requested.
      *
@@ -144,7 +144,7 @@ struct bt_mesh_prov {
      *
      *  @return Zero on success or negative error code otherwise
      */
-    int         (*input)(bt_mesh_input_action_t act, u8_t size);
+    int         (*input)(bt_mesh_input_action_t act, uint8_t size);
 
     /** @brief Provisioning link has been opened.
      *
@@ -176,7 +176,7 @@ struct bt_mesh_prov {
      *  @param flags    Key Refresh & IV Update flags
      *  @param iv_index IV Index.
      */
-    void        (*complete)(u16_t net_idx, const u8_t net_key[16], u16_t addr, u8_t flags, u32_t iv_index);
+    void        (*complete)(uint16_t net_idx, const uint8_t net_key[16], uint16_t addr, uint8_t flags, uint32_t iv_index);
 
     /** @brief Node has been reset.
      *
@@ -191,28 +191,28 @@ struct bt_mesh_prov {
 
 #if CONFIG_BLE_MESH_PROVISIONER
     /* Provisioner device uuid */
-    const u8_t *prov_uuid;
+    const uint8_t *prov_uuid;
 
     /*
      * Primary element address of the provisioner.
      * No need to initialize it for fast provisioning.
      */
-    const u16_t prov_unicast_addr;
+    const uint16_t prov_unicast_addr;
 
     /*
      * Starting unicast address going to assigned.
      * No need to initialize it for fast provisioning.
      */
-    u16_t prov_start_address;
+    uint16_t prov_start_address;
 
     /* Attention timer contained in Provisioning Invite */
-    u8_t  prov_attention;
+    uint8_t  prov_attention;
 
     /* Provisioner provisioning Algorithm */
-    u8_t  prov_algorithm;
+    uint8_t  prov_algorithm;
 
     /* Provisioner public key oob */
-    u8_t  prov_pub_key_oob;
+    uint8_t  prov_pub_key_oob;
 
     /** @brief Input is requested.
      *
@@ -223,13 +223,13 @@ struct bt_mesh_prov {
      *
      *  @return Zero on success or negative error code otherwise
      */
-    int  (*prov_pub_key_oob_cb)(u8_t link_idx);
+    int  (*prov_pub_key_oob_cb)(uint8_t link_idx);
 
     /* Provisioner static oob value */
-    u8_t *prov_static_oob_val;
+    uint8_t *prov_static_oob_val;
 
     /* Provisioner static oob value length */
-    u8_t  prov_static_oob_len;
+    uint8_t  prov_static_oob_len;
 
     /** @brief Provisioner input a number read from device output
      *
@@ -243,7 +243,7 @@ struct bt_mesh_prov {
      *
      *  @return Zero on success or negative error code otherwise
      */
-    int  (*prov_input_num)(u8_t method, bt_mesh_output_action_t act, u8_t size, u8_t link_idx);
+    int  (*prov_input_num)(uint8_t method, bt_mesh_output_action_t act, uint8_t size, uint8_t link_idx);
 
     /** @brief Provisioner output a number to the device
      *
@@ -258,18 +258,18 @@ struct bt_mesh_prov {
      *
      *  @return Zero on success or negative error code otherwise
      */
-    int  (*prov_output_num)(u8_t method, bt_mesh_input_action_t act, void *data, u8_t size, u8_t link_idx);
+    int  (*prov_output_num)(uint8_t method, bt_mesh_input_action_t act, void *data, uint8_t size, uint8_t link_idx);
 
     /*
      * Key refresh and IV update flag.
      * No need to initialize it for fast provisioning.
      */
-    u8_t  flags;
+    uint8_t  flags;
 
     /*
      * IV index. No need to initialize it for fast provisioning.
      */
-    u32_t iv_index;
+    uint32_t iv_index;
 
     /** @brief Provisioner has opened a provisioning link.
      *
@@ -288,7 +288,7 @@ struct bt_mesh_prov {
      *  @param bearer Provisioning bearer.
      *  @param reason Provisioning link close reason(disconnect reason)
      */
-    void (*prov_link_close)(bt_mesh_prov_bearer_t bearer, u8_t reason);
+    void (*prov_link_close)(bt_mesh_prov_bearer_t bearer, uint8_t reason);
 
     /** @brief Provision one device is complete.
      *
@@ -302,9 +302,9 @@ struct bt_mesh_prov {
      *  @param element_num  Provisioned device element number.
      *  @param netkey_idx   Provisioned device assigned netkey index.
      */
-    void (*prov_complete)(u16_t node_idx, const u8_t device_uuid[16],
-                          u16_t unicast_addr, u8_t element_num,
-                          u16_t netkey_idx);
+    void (*prov_complete)(uint16_t node_idx, const uint8_t device_uuid[16],
+                          uint16_t unicast_addr, uint8_t element_num,
+                          uint16_t netkey_idx);
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 };
 
@@ -337,7 +337,7 @@ int bt_mesh_input_string(const char *str);
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_mesh_input_number(u32_t num);
+int bt_mesh_input_number(uint32_t num);
 
 /** @brief Enable specific provisioning bearers
  *
@@ -381,7 +381,7 @@ int bt_mesh_prov_input_string(const char *str);
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_mesh_prov_input_number(u32_t num);
+int bt_mesh_prov_input_number(uint32_t num);
 
 /** @brief Enable specific provisioning bearers
  *
@@ -527,9 +527,9 @@ int bt_mesh_resume(void);
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
-                      u8_t flags, u32_t iv_index, u16_t addr,
-                      const u8_t dev_key[16]);
+int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
+                      uint8_t flags, uint32_t iv_index, uint16_t addr,
+                      const uint8_t dev_key[16]);
 
 /** @brief Check if the device is an unprovisioned device
  *         and will act as a node once provisioned.
@@ -613,7 +613,7 @@ int bt_mesh_lpn_poll(void);
  *
  *  @param cb Function to call when the Friendship status changes.
  */
-void bt_mesh_lpn_set_cb(void (*cb)(u16_t friend_addr, bool established));
+void bt_mesh_lpn_set_cb(void (*cb)(uint16_t friend_addr, bool established));
 
 /** @brief Register a callback for Friendship changes of friend node.
  *
@@ -622,7 +622,7 @@ void bt_mesh_lpn_set_cb(void (*cb)(u16_t friend_addr, bool established));
  *
  *  @param cb Function to call when the Friendship status of friend node changes.
  */
-void bt_mesh_friend_set_cb(void (*cb)(bool establish, u16_t lpn_addr, u8_t reason));
+void bt_mesh_friend_set_cb(void (*cb)(bool establish, uint16_t lpn_addr, uint8_t reason));
 
 #ifdef __cplusplus
 }

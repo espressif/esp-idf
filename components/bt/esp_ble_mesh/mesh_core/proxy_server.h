@@ -40,7 +40,7 @@ extern "C" {
 
 int bt_mesh_set_device_name(const char *name);
 
-int bt_mesh_proxy_server_send(struct bt_mesh_conn *conn, u8_t type,
+int bt_mesh_proxy_server_send(struct bt_mesh_conn *conn, uint8_t type,
                               struct net_buf_simple *msg);
 
 int bt_mesh_proxy_server_prov_enable(void);
@@ -55,14 +55,14 @@ void bt_mesh_proxy_server_beacon_send(struct bt_mesh_subnet *sub);
 
 struct net_buf_simple *bt_mesh_proxy_server_get_buf(void);
 
-s32_t bt_mesh_proxy_server_adv_start(void);
+int32_t bt_mesh_proxy_server_adv_start(void);
 void bt_mesh_proxy_server_adv_stop(void);
 
 void bt_mesh_proxy_server_identity_start(struct bt_mesh_subnet *sub);
 void bt_mesh_proxy_server_identity_stop(struct bt_mesh_subnet *sub);
 
-bool bt_mesh_proxy_server_relay(struct net_buf_simple *buf, u16_t dst);
-void bt_mesh_proxy_server_addr_add(struct net_buf_simple *buf, u16_t addr);
+bool bt_mesh_proxy_server_relay(struct net_buf_simple *buf, uint16_t dst);
+void bt_mesh_proxy_server_addr_add(struct net_buf_simple *buf, uint16_t addr);
 
 int bt_mesh_proxy_server_init(void);
 int bt_mesh_proxy_server_deinit(void);

@@ -10,8 +10,6 @@
 #include <string.h>
 #include <errno.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG)
-
 #include "adv.h"
 #include "prov.h"
 #include "beacon.h"
@@ -36,9 +34,9 @@ bool bt_mesh_is_initialized(void)
     return mesh_init;
 }
 
-int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
-                      u8_t flags, u32_t iv_index, u16_t addr,
-                      const u8_t dev_key[16])
+int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
+                      uint8_t flags, uint32_t iv_index, uint16_t addr,
+                      const uint8_t dev_key[16])
 {
     bool pb_gatt_enabled = false;
     int err = 0;
@@ -202,7 +200,7 @@ int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers)
      * the device as a node, which will cause the information
      * in NVS been handled incorrectly.
      */
-    u8_t role = bt_mesh_atomic_get(bt_mesh.flags) & BLE_MESH_SETTINGS_ROLE_BIT_MASK;
+    uint8_t role = bt_mesh_atomic_get(bt_mesh.flags) & BLE_MESH_SETTINGS_ROLE_BIT_MASK;
     if (role != BLE_MESH_SETTINGS_ROLE_NONE &&
         role != BLE_MESH_SETTINGS_ROLE_NODE) {
         BT_ERR("%s, Mismatch role %u", __func__, role);
@@ -310,7 +308,7 @@ static void model_resume(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
                          bool vnd, bool primary, void *user_data)
 {
     if (mod->pub && mod->pub->update) {
-        s32_t period_ms = bt_mesh_model_pub_period_get(mod);
+        int32_t period_ms = bt_mesh_model_pub_period_get(mod);
 
         if (period_ms) {
             k_delayed_work_submit(&mod->pub->timer, period_ms);
@@ -405,8 +403,8 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 
     /* Changed by Espressif, add a random delay (0 ~ 3s) */
     if (IS_ENABLED(CONFIG_BLE_MESH_FAST_PROV)) {
-        u32_t delay = 0;
-        bt_mesh_rand(&delay, sizeof(u32_t));
+        uint32_t delay = 0;
+        bt_mesh_rand(&delay, sizeof(uint32_t));
         vTaskDelay((delay % 3000) / portTICK_PERIOD_MS);
     }
 
@@ -564,7 +562,7 @@ int bt_mesh_provisioner_enable(bt_mesh_prov_bearer_t bearers)
      * device as a Provisioner, which will cause the information
      * in NVS been handled incorrectly.
      */
-    u8_t role = bt_mesh_atomic_get(bt_mesh.flags) & BLE_MESH_SETTINGS_ROLE_BIT_MASK;
+    uint8_t role = bt_mesh_atomic_get(bt_mesh.flags) & BLE_MESH_SETTINGS_ROLE_BIT_MASK;
     if (role != BLE_MESH_SETTINGS_ROLE_NONE &&
         role != BLE_MESH_SETTINGS_ROLE_PROV) {
         BT_ERR("%s, Mismatch role %u", __func__, role);

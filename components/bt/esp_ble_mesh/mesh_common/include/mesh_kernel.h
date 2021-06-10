@@ -50,7 +50,7 @@ extern "C" {
  *
  * @return N/A
  */
-void k_sleep(s32_t duration);
+void k_sleep(int32_t duration);
 
 #ifdef __cplusplus
 }

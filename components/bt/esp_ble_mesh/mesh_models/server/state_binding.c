@@ -38,9 +38,9 @@ static float bt_mesh_sqrt(float square)
     return root;
 }
 
-static s32_t bt_mesh_ceiling(float num)
+static int32_t bt_mesh_ceiling(float num)
 {
-    s32_t inum = (s32_t)num;
+    int32_t inum = (int32_t)num;
 
     if (num == (float)inum) {
         return inum;
@@ -49,49 +49,49 @@ static s32_t bt_mesh_ceiling(float num)
     return inum + 1;
 }
 
-u16_t bt_mesh_convert_lightness_actual_to_linear(u16_t actual)
+uint16_t bt_mesh_convert_lightness_actual_to_linear(uint16_t actual)
 {
     float tmp = ((float) actual / UINT16_MAX);
 
     return bt_mesh_ceiling(UINT16_MAX * tmp * tmp);
 }
 
-u16_t bt_mesh_convert_lightness_linear_to_actual(u16_t linear)
+uint16_t bt_mesh_convert_lightness_linear_to_actual(uint16_t linear)
 {
-    return (u16_t) (UINT16_MAX * bt_mesh_sqrt(((float) linear / UINT16_MAX)));
+    return (uint16_t) (UINT16_MAX * bt_mesh_sqrt(((float) linear / UINT16_MAX)));
 }
 
-s16_t bt_mesh_convert_temperature_to_gen_level(u16_t temp, u16_t min, u16_t max)
+int16_t bt_mesh_convert_temperature_to_gen_level(uint16_t temp, uint16_t min, uint16_t max)
 {
     float tmp = (temp - min) * UINT16_MAX / (max - min);
-    return (s16_t) (tmp + INT16_MIN);
+    return (int16_t) (tmp + INT16_MIN);
 }
 
-u16_t bt_mesh_covert_gen_level_to_temperature(s16_t level, u16_t min, u16_t max)
+uint16_t bt_mesh_covert_gen_level_to_temperature(int16_t level, uint16_t min, uint16_t max)
 {
     float diff = (float) (max - min) / UINT16_MAX;
-    u16_t tmp = (u16_t) ((level - INT16_MIN) * diff);
-    return (u16_t) (min + tmp);
+    uint16_t tmp = (uint16_t) ((level - INT16_MIN) * diff);
+    return (uint16_t) (min + tmp);
 }
 
-s16_t bt_mesh_convert_hue_to_level(u16_t hue)
+int16_t bt_mesh_convert_hue_to_level(uint16_t hue)
 {
-    return (s16_t) (hue + INT16_MIN);
+    return (int16_t) (hue + INT16_MIN);
 }
 
-u16_t bt_mesh_convert_level_to_hue(s16_t level)
+uint16_t bt_mesh_convert_level_to_hue(int16_t level)
 {
-    return (u16_t) (level - INT16_MIN);
+    return (uint16_t) (level - INT16_MIN);
 }
 
-s16_t bt_mesh_convert_saturation_to_level(u16_t saturation)
+int16_t bt_mesh_convert_saturation_to_level(uint16_t saturation)
 {
-    return (s16_t) (saturation + INT16_MIN);
+    return (int16_t) (saturation + INT16_MIN);
 }
 
-u16_t bt_mesh_convert_level_to_saturation(s16_t level)
+uint16_t bt_mesh_convert_level_to_saturation(int16_t level)
 {
-    return (u16_t) (level - INT16_MIN);
+    return (uint16_t) (level - INT16_MIN);
 }
 
 int bt_mesh_update_binding_state(struct bt_mesh_model *model,

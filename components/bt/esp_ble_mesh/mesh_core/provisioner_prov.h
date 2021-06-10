@@ -35,17 +35,17 @@ extern "C" {
 #define FLUSHABLE_DEV  BIT(2)
 
 struct bt_mesh_unprov_dev_add {
-    u8_t  addr[6];
-    u8_t  addr_type;
-    u8_t  uuid[16];
-    u16_t oob_info;
-    u8_t  bearer;
+    uint8_t  addr[6];
+    uint8_t  addr_type;
+    uint8_t  uuid[16];
+    uint16_t oob_info;
+    uint8_t  bearer;
 };
 
 struct bt_mesh_device_delete {
-    u8_t addr[6];
-    u8_t addr_type;
-    u8_t uuid[16];
+    uint8_t addr[6];
+    uint8_t addr_type;
+    uint8_t uuid[16];
 };
 
 #define NET_IDX_FLAG  BIT(0)
@@ -54,11 +54,11 @@ struct bt_mesh_device_delete {
 
 struct bt_mesh_prov_data_info {
     union {
-        u16_t net_idx;
-        u8_t  flags;
-        u32_t iv_index;
+        uint16_t net_idx;
+        uint8_t  flags;
+        uint32_t iv_index;
     };
-    u8_t flag;
+    uint8_t flag;
 };
 
 /* The following APIs are for primary provisioner internal use */
@@ -77,7 +77,7 @@ void bt_mesh_provisioner_pbg_count_dec(void);
  *
  * @return None
  */
-void bt_mesh_provisioner_clear_link_info(const u8_t addr[6]);
+void bt_mesh_provisioner_clear_link_info(const uint8_t addr[6]);
 
 /**
  * @brief This function handles the received PB-ADV PDUs.
@@ -97,7 +97,7 @@ void bt_mesh_provisioner_pb_adv_recv(struct net_buf_simple *buf);
  *
  * @return Zero - success, otherwise - fail
  */
-int bt_mesh_provisioner_set_prov_conn(const u8_t addr[6], struct bt_mesh_conn *conn);
+int bt_mesh_provisioner_set_prov_conn(const uint8_t addr[6], struct bt_mesh_conn *conn);
 
 /**
  * @brief This function sends provisioning invite to start
@@ -108,7 +108,7 @@ int bt_mesh_provisioner_set_prov_conn(const u8_t addr[6], struct bt_mesh_conn *c
  *
  * @return Zero - success, otherwise - fail
  */
-int bt_mesh_provisioner_pb_gatt_open(struct bt_mesh_conn *conn, u8_t *addr);
+int bt_mesh_provisioner_pb_gatt_open(struct bt_mesh_conn *conn, uint8_t *addr);
 
 /**
  * @brief This function resets the used information when
@@ -119,7 +119,7 @@ int bt_mesh_provisioner_pb_gatt_open(struct bt_mesh_conn *conn, u8_t *addr);
  *
  * @return Zero - success, otherwise - fail
  */
-int bt_mesh_provisioner_pb_gatt_close(struct bt_mesh_conn *conn, u8_t reason);
+int bt_mesh_provisioner_pb_gatt_close(struct bt_mesh_conn *conn, uint8_t reason);
 
 /**
  * @brief This function handles the received PB-GATT provision
@@ -164,10 +164,10 @@ int bt_mesh_provisioner_prov_deinit(bool erase);
  *
  * @return None
  */
-void bt_mesh_provisioner_unprov_beacon_recv(struct net_buf_simple *buf, s8_t rssi);
+void bt_mesh_provisioner_unprov_beacon_recv(struct net_buf_simple *buf, int8_t rssi);
 
 void bt_mesh_provisioner_prov_adv_recv(struct net_buf_simple *buf,
-                                       const bt_mesh_addr_t *addr, s8_t rssi);
+                                       const bt_mesh_addr_t *addr, int8_t rssi);
 
 /**
  * @brief This function gets the bt_mesh_prov pointer.
@@ -176,7 +176,7 @@ void bt_mesh_provisioner_prov_adv_recv(struct net_buf_simple *buf,
  */
 const struct bt_mesh_prov *bt_mesh_provisioner_get_prov_info(void);
 
-void bt_mesh_provisioner_restore_prov_info(u16_t primary_addr, u16_t alloc_addr);
+void bt_mesh_provisioner_restore_prov_info(uint16_t primary_addr, uint16_t alloc_addr);
 
 /* The following APIs are for primary provisioner application use */
 
@@ -196,7 +196,7 @@ void bt_mesh_provisioner_restore_prov_info(u16_t primary_addr, u16_t alloc_addr)
  *            will also be successful and it will update the provision bearer supported by
  *            the device.
  */
-int bt_mesh_provisioner_add_unprov_dev(struct bt_mesh_unprov_dev_add *add_dev, u8_t flags);
+int bt_mesh_provisioner_add_unprov_dev(struct bt_mesh_unprov_dev_add *add_dev, uint8_t flags);
 
 /** @brief Provision an unprovisioned device with fixed unicast address.
  *
@@ -212,9 +212,9 @@ int bt_mesh_provisioner_add_unprov_dev(struct bt_mesh_unprov_dev_add *add_dev, u
  *  @note  1. Currently address type only supports public address and static random address.
  *         2. Bearer must be equal to BLE_MESH_PROV_ADV or BLE_MESH_PROV_GATT
  */
-int bt_mesh_provisioner_prov_device_with_addr(const u8_t uuid[16], const u8_t addr[6],
-                                              u8_t addr_type, bt_mesh_prov_bearer_t bearer,
-                                              u16_t oob_info, u16_t unicast_addr);
+int bt_mesh_provisioner_prov_device_with_addr(const uint8_t uuid[16], const uint8_t addr[6],
+                                              uint8_t addr_type, bt_mesh_prov_bearer_t bearer,
+                                              uint16_t oob_info, uint16_t unicast_addr);
 
 /** @brief Delete device from queue, reset current provisioning link and reset the node
  *
@@ -236,8 +236,8 @@ int bt_mesh_provisioner_delete_device(struct bt_mesh_device_delete *del_dev);
  *
  * @return Zero - success, otherwise - fail
  */
-int bt_mesh_provisioner_set_dev_uuid_match(u8_t offset, u8_t length,
-                                           const u8_t *match, bool prov_flag);
+int bt_mesh_provisioner_set_dev_uuid_match(uint8_t offset, uint8_t length,
+                                           const uint8_t *match, bool prov_flag);
 
 /** @brief Callback for provisioner receiving advertising packet from unprovisioned devices which are
  *  not in the unprovisioned device queue.
@@ -254,9 +254,9 @@ int bt_mesh_provisioner_set_dev_uuid_match(u8_t offset, u8_t length,
  *  @param rssi      RSSI of the received advertising packet
  *
  */
-typedef void (*unprov_adv_pkt_cb_t)(const u8_t addr[6], const u8_t addr_type,
-                                    const u8_t adv_type, const u8_t dev_uuid[16],
-                                    u16_t oob_info, bt_mesh_prov_bearer_t bearer, s8_t rssi);
+typedef void (*unprov_adv_pkt_cb_t)(const uint8_t addr[6], const uint8_t addr_type,
+                                    const uint8_t adv_type, const uint8_t dev_uuid[16],
+                                    uint16_t oob_info, bt_mesh_prov_bearer_t bearer, int8_t rssi);
 
 /**
  * @brief This function registers the callback which notifies the application
@@ -311,14 +311,14 @@ bt_mesh_prov_bearer_t bt_mesh_provisioner_get_prov_bearer(void);
  *
  * @return Zero - success, otherwise - fail
  */
-int bt_mesh_provisioner_set_static_oob_value(const u8_t *value, u8_t length);
+int bt_mesh_provisioner_set_static_oob_value(const uint8_t *value, uint8_t length);
 
 /**
  * @brief This function gets the unicast address of primary element of Provisioner.
  *
  * @return Unicast address of primary element of Provisioner.
  */
-u16_t bt_mesh_provisioner_get_primary_elem_addr(void);
+uint16_t bt_mesh_provisioner_get_primary_elem_addr(void);
 
 /**
  * @brief This function sets the unicast address of primary element of Provisioner.
@@ -327,7 +327,7 @@ u16_t bt_mesh_provisioner_get_primary_elem_addr(void);
  *
  * @return Zero - success, otherwise - fail
  */
-int bt_mesh_provisioner_set_primary_elem_addr(u16_t addr);
+int bt_mesh_provisioner_set_primary_elem_addr(uint16_t addr);
 
 /**
  * @brief This function is used to update next allocated address by Provisioner.
@@ -339,7 +339,7 @@ int bt_mesh_provisioner_set_primary_elem_addr(u16_t addr);
  *
  * @return Zero - success, otherwise - fail
  */
-int bt_mesh_test_provisioner_update_alloc_addr(u16_t unicast_addr, u16_t element_num);
+int bt_mesh_test_provisioner_update_alloc_addr(uint16_t unicast_addr, uint16_t element_num);
 
 /**
  * @brief This function is called to input number/string out-put by unprovisioned device.
@@ -350,7 +350,7 @@ int bt_mesh_test_provisioner_update_alloc_addr(u16_t unicast_addr, u16_t element
  *
  * @return Zero - success, otherwise - fail
  */
-int bt_mesh_provisioner_set_oob_input_data(const u8_t idx, const u8_t *val, bool num_flag);
+int bt_mesh_provisioner_set_oob_input_data(const uint8_t idx, const uint8_t *val, bool num_flag);
 
 /**
  * @brief This function is called to output number/string which will be input by unprovisioned device.
@@ -362,8 +362,8 @@ int bt_mesh_provisioner_set_oob_input_data(const u8_t idx, const u8_t *val, bool
  *
  * @return Zero - success, otherwise - fail
  */
-int bt_mesh_provisioner_set_oob_output_data(const u8_t idx, const u8_t *num,
-                                            u8_t size, bool num_flag);
+int bt_mesh_provisioner_set_oob_output_data(const uint8_t idx, const uint8_t *num,
+                                            uint8_t size, bool num_flag);
 
 /**
  * @brief This function is called to read unprovisioned device's oob public key.
@@ -374,8 +374,8 @@ int bt_mesh_provisioner_set_oob_output_data(const u8_t idx, const u8_t *num,
  *
  * @return Zero - success, otherwise - fail
  */
-int bt_mesh_provisioner_read_oob_pub_key(const u8_t idx, const u8_t pub_key_x[32],
-                                         const u8_t pub_key_y[32]);
+int bt_mesh_provisioner_read_oob_pub_key(const uint8_t idx, const uint8_t pub_key_x[32],
+                                         const uint8_t pub_key_y[32]);
 
 /* The following APIs are for fast provisioning */
 
@@ -395,14 +395,14 @@ void bt_mesh_provisioner_fast_prov_enable(bool enable);
  *
  * @return None
  */
-void bt_mesh_provisioner_set_fast_prov_net_idx(u16_t net_idx);
+void bt_mesh_provisioner_set_fast_prov_net_idx(uint16_t net_idx);
 
 /**
  * @brief This function is called to get netkey index used for fast provisioning.
  *
  * @return net_idx of fast provisioning
  */
-u16_t bt_mesh_provisioner_get_fast_prov_net_idx(void);
+uint16_t bt_mesh_provisioner_get_fast_prov_net_idx(void);
 
 /**
  * @brief This function is called to set unicast address range used for fast provisioning.
@@ -412,7 +412,7 @@ u16_t bt_mesh_provisioner_get_fast_prov_net_idx(void);
  *
  * @return status for set unicast address range message
  */
-u8_t bt_mesh_set_fast_prov_unicast_addr_range(u16_t min, u16_t max);
+uint8_t bt_mesh_set_fast_prov_unicast_addr_range(uint16_t min, uint16_t max);
 
 /**
  * @brief This function is called to set flags & iv_index used for fast provisioning.
@@ -422,7 +422,7 @@ u8_t bt_mesh_set_fast_prov_unicast_addr_range(u16_t min, u16_t max);
  *
  * @return None
  */
-void bt_mesh_set_fast_prov_flags_iv_index(u8_t flags, u32_t iv_index);
+void bt_mesh_set_fast_prov_flags_iv_index(uint8_t flags, uint32_t iv_index);
 
 #ifdef __cplusplus
 }
