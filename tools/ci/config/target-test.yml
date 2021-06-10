@@ -146,15 +146,15 @@
 
 test_weekend_mqtt:
   extends:
-    - .example_test_template
+    - .test_app_template
     - .rules:labels:weekend_test-only
   tags:
     - ESP32
     - Example_WIFI
   variables:
-    ENV_FILE: "$CI_PROJECT_DIR/components/mqtt/weekend_test/env.yml"
-    TEST_CASE_PATH: "$CI_PROJECT_DIR/components/mqtt/weekend_test"
-    CONFIG_FILE_PATH: "$CI_PROJECT_DIR/components/mqtt/weekend_test"
+    ENV_FILE: "$CI_PROJECT_DIR/tools/test_apps/protocols/mqtt/publish_connect_test/env.yml"
+    TEST_CASE_PATH: "$CI_PROJECT_DIR/tools/test_apps/protocols/mqtt/publish_connect_test"
+    CONFIG_FILE_PATH: "$CI_PROJECT_DIR/tools/test_apps/protocols/mqtt/publish_connect_test"
 
 test_weekend_network:
   extends:
