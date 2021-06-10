@@ -1448,7 +1448,8 @@ static void _mdns_create_answer_from_parsed_packet(mdns_parsed_packet_t *parsed_
         }
 
 #ifdef MDNS_REPEAT_QUERY_IN_RESPONSE
-        if (q->type == MDNS_TYPE_ANY || q->type == MDNS_TYPE_A || q->type == MDNS_TYPE_AAAA) {
+        if (parsed_packet->src_port != MDNS_SERVICE_PORT &&  // Repeat the queries only for "One-Shot mDNS queries"
+           (q->type == MDNS_TYPE_ANY || q->type == MDNS_TYPE_A || q->type == MDNS_TYPE_AAAA)) {
             mdns_out_question_t * out_question = malloc(sizeof(mdns_out_question_t));
             if (out_question == NULL) {
                 HOOK_MALLOC_FAILED;
