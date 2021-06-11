@@ -92,4 +92,3 @@ PROVIDE( __swsetup_r = 0x40000484 );
 /* Data (.data, .bss, .rodata) */
 syscall_table_ptr = 0x3fcdffdc;
 _global_impure_ptr = 0x3fcdffd8;
-

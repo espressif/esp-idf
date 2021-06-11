@@ -63,7 +63,7 @@ extern "C" {
 #define SYSTEM_PRE_DIV_CNT_M  SYSTEM_CPU_DIV_NUM_M
 #define SYSTEM_PRE_DIV_CNT_V  SYSTEM_CPU_DIV_NUM_V
 #define SYSTEM_PRE_DIV_CNT_S  SYSTEM_CPU_DIV_NUM_S
-	
+
 #define SYSTEM_BUSCLK_CONF_REG          (DR_REG_CLKRST_BASE + 0x0008)
 /* SYSTEM_AHB_DIV_NUM : R/W ;bitpos:[15:8] ;default: 8'h0 ; */
 /*description: */
@@ -1048,9 +1048,4 @@ extern "C" {
 }
 #endif
 
-
-
 #endif /*_SOC_CLKRST_REG_H_ */
-
-
-

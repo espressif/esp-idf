@@ -714,4 +714,3 @@ rom_phy_dig_reg_backup = 0x40000b9c;
 chip726_phyrom_version_num = 0x40000ba0;
 /* Data (.data, .bss, .rodata) */
 phy_param_rom = 0x3fcdffc8;
-

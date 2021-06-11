@@ -1450,7 +1450,7 @@ the receive data.  0: Others.  .*/
 
 #define SPI_SLAVE_REG(i)          (REG_SPI_BASE(i) + 0x0E0)
 /* SPI_USR_CONF : R/W ;bitpos:[28] ;default: 1'b0 ; */
-/*description: 1: Enable the DMA CONF phase of current seg-trans operation 
+/*description: 1: Enable the DMA CONF phase of current seg-trans operation
  which means seg-trans will start. 0: This is not seg-trans mode.*/
 #define SPI_USR_CONF  (BIT(28))
 #define SPI_USR_CONF_M  (BIT(28))

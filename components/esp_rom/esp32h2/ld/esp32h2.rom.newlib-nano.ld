@@ -25,4 +25,3 @@ fprintf = 0x400004a8;
 printf = 0x400004ac;
 vfiprintf = 0x400004b0;
 vfprintf = 0x400004b4;
-

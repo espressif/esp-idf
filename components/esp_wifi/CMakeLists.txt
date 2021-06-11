@@ -1,4 +1,4 @@
-if(CONFIG_WIFI_ENABLED)
+if(CONFIG_ESP32_WIFI_ENABLED)
     idf_build_get_property(idf_target IDF_TARGET)
 
     if(CONFIG_ESP32_NO_BLOBS OR CONFIG_ESP32S2_NO_BLOBS)
@@ -35,7 +35,7 @@ idf_component_register(SRCS "${srcs}"
                                   wpa_supplicant hal ${extra_priv_requires}
                     LDFRAGMENTS "${ldfragments}")
 
-if(CONFIG_WIFI_ENABLED)
+if(CONFIG_ESP32_WIFI_ENABLED)
     idf_build_get_property(build_dir BUILD_DIR)
 
     set(target_name "${idf_target}")

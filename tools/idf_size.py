@@ -439,7 +439,7 @@ def main():
 
 class StructureForSummary(object):
     (dram_data_names, dram_bss_names, dram_other_names,
-     diram_data_names, diram_bss_names) = (frozenset(), ) * 5
+     diram_data_names, diram_bss_names) = (frozenset(), ) * 5  # type: ignore
 
     (total_iram, total_dram, total_dram, total_diram,
      used_dram_data, used_dram_bss, used_dram_other,

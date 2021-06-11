@@ -208,7 +208,7 @@ void rtc_clk_select_rtc_slow_clk(void)
  */
 __attribute__((weak)) void esp_perip_clk_init(void)
 {
-    uint32_t common_perip_clk, hwcrypto_perip_clk, wifi_bt_sdio_clk = 0;
+    uint32_t common_perip_clk, hwcrypto_perip_clk = 0;
     uint32_t common_perip_clk1 = 0;
 
 #if CONFIG_FREERTOS_UNICORE

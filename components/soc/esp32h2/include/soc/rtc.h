@@ -73,7 +73,7 @@ extern "C" {
 #define RTC_CNTL_DBIAS_1V05  4
 #define RTC_CNTL_DBIAS_1V10  5
 #define RTC_CNTL_DBIAS_1V15  6
-#define RTC_CNTL_DBIAS_1V20  7 
+#define RTC_CNTL_DBIAS_1V20  7
 /* The value of 1V00 can be adjusted between 0~3*/
 
 #define RTC_CNTL_DIG_DBIAS_0V85  0

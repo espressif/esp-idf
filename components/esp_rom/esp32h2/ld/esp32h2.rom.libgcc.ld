@@ -103,4 +103,3 @@ __umoddi3 = 0x400008c8;
 __umodsi3 = 0x400008cc;
 __unorddf2 = 0x400008d0;
 __unordsf2 = 0x400008d4;
-

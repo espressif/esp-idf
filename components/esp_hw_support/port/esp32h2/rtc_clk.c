@@ -282,11 +282,11 @@ void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
  */
 static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
 {
-    int per_conf = DPORT_CPUPERIOD_SEL_80;
+    // int per_conf = DPORT_CPUPERIOD_SEL_80;
     if (cpu_freq_mhz == 80) {
         /* nothing to do */
     } else if (cpu_freq_mhz == 160) {
-        per_conf = DPORT_CPUPERIOD_SEL_160;
+    //    per_conf = DPORT_CPUPERIOD_SEL_160;
     } else {
         SOC_LOGE(TAG, "invalid frequency");
         abort();
