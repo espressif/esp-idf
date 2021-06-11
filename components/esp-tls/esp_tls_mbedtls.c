@@ -45,7 +45,7 @@ static const char *TAG = "esp-tls-mbedtls";
 static mbedtls_x509_crt *global_cacert = NULL;
 
 
-/* This function shall return the error message when appropriate log level has been setotherwise this function will do nothing*/
+/* This function shall return the error message when appropriate log level has been set, otherwise this function shall do nothing */
 static void mbedtls_print_error_msg(int error)
 {
 #if (CONFIG_LOG_DEFAULT_LEVEL_DEBUG || CONFIG_LOG_DEFAULT_LEVEL_VERBOSE)
@@ -471,6 +471,7 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
         if ((ret = mbedtls_ssl_conf_alpn_protocols(&tls->conf, cfg->alpn_protos)) != 0) {
             ESP_LOGE(TAG, "mbedtls_ssl_conf_alpn_protocols returned -0x%04X", -ret);
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
+            mbedtls_print_error_msg(ret);
             return ESP_ERR_MBEDTLS_SSL_CONF_ALPN_PROTOCOLS_FAILED;
         }
 #else
@@ -759,6 +760,7 @@ static esp_err_t esp_set_atecc608a_pki_context(esp_tls_t *tls, esp_tls_cfg_t *cf
     if (ret != 0) {
         ESP_LOGE(TAG, "Failed to parse key from device");
         ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
+        mbedtls_print_error_msg(ret);
         return ESP_ERR_ESP_TLS_SE_FAILED;
     }
 
