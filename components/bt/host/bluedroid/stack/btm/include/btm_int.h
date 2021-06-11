@@ -126,6 +126,11 @@ UINT8           active_remote_addr_type;         /* local device address type fo
 BD_FEATURES     peer_le_features;       /* Peer LE Used features mask for the device */
 tBTM_SET_PKT_DATA_LENGTH_CBACK *p_set_pkt_data_cback;
 tBTM_LE_SET_PKT_DATA_LENGTH_PARAMS data_length_params;
+BOOLEAN   data_len_updating;
+// data len update cmd cache
+BOOLEAN   data_len_waiting;
+tBTM_SET_PKT_DATA_LENGTH_CBACK *p_set_data_len_cback_waiting;
+UINT16 tx_len_waiting;
 #endif
 
 } tACL_CONN;
