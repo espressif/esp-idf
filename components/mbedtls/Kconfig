@@ -231,6 +231,7 @@ menu "mbedTLS"
     config MBEDTLS_CMAC_C
         bool "Enable CMAC mode for block ciphers"
         default n
+        depends on MBEDTLS_AES_C || MBEDTLS_DES_C
         help
             Enable the CMAC (Cipher-based Message Authentication Code) mode for
             block ciphers.
