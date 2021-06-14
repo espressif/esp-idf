@@ -196,7 +196,7 @@ static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num);
 static esp_err_t IRAM_ATTR i2c_hw_fsm_reset(i2c_port_t i2c_num);
 static int i2c_cmd_alive_interval[I2C_NUM_MAX] = { I2C_CMD_ALIVE_INTERVAL_TICK, I2C_CMD_ALIVE_INTERVAL_TICK };
 
-static void i2c_set_alive_interval(i2c_port_t i2c_num, int interval)
+void i2c_set_alive_interval(i2c_port_t i2c_num, int interval)
 {
 	i2c_cmd_alive_interval[i2c_num] = interval;
 }
