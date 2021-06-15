@@ -19,7 +19,9 @@
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_netif.h"
+#include "esp_netif_types.h"
 #include "esp_openthread.h"
+#include "esp_openthread_defaults.h"
 #include "esp_openthread_lock.h"
 #include "esp_openthread_netif_glue.h"
 #include "esp_openthread_types.h"
@@ -41,115 +43,58 @@
 
 extern void otAppCliInit(otInstance *instance);
 
-static void ot_task_worker(void *aContext)
+static esp_netif_t *init_openthread_netif(void)
 {
-    esp_openthread_platform_config_t config = {
-        .radio_config =
-        {
-            .radio_mode = RADIO_MODE_UART_RCP,
-            .radio_uart_config =
-            {
-                .port = 1,
-                .uart_config =
-                {
-                    .baud_rate = 115200,
-                    .data_bits = UART_DATA_8_BITS,
-                    .parity = UART_PARITY_DISABLE,
-                    .stop_bits = UART_STOP_BITS_1,
-                    .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-                    .rx_flow_ctrl_thresh = 0,
-                    .source_clk = UART_SCLK_APB,
-                },
-                .rx_pin = 4,
-                .tx_pin = 5,
-            },
-        },
-        .host_config =
-        {
-            .host_connection_mode = HOST_CONNECTION_MODE_UART,
-            .host_uart_config =
-            {
-                .port = 0,
-                .uart_config =
-                {
-                    .baud_rate = 115200,
-                    .data_bits = UART_DATA_8_BITS,
-                    .parity = UART_PARITY_DISABLE,
-                    .stop_bits = UART_STOP_BITS_1,
-                    .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-                    .rx_flow_ctrl_thresh = 0,
-                    .source_clk = UART_SCLK_APB,
-                },
-                .rx_pin = UART_PIN_NO_CHANGE,
-                .tx_pin = UART_PIN_NO_CHANGE,
-            },
-        },
-    };
-    esp_vfs_eventfd_config_t eventfd_config = {
-        .max_fds = 2,
-    };
-
     esp_netif_config_t cfg = ESP_NETIF_DEFAULT_OPENTHREAD();
     esp_netif_t *netif = esp_netif_new(&cfg);
     assert(netif != NULL);
-
-    esp_openthread_mainloop_context_t mainloop;
-
-    ESP_ERROR_CHECK(esp_vfs_eventfd_register(&eventfd_config));
-    ESP_ERROR_CHECK(esp_openthread_platform_init(&config));
-    otInstance *instance = otInstanceInitSingle();
     ESP_ERROR_CHECK(esp_netif_attach(netif, esp_openthread_netif_glue_init()));
-    assert(instance != NULL);
 
-    esp_openthread_lock_acquire(portMAX_DELAY);
-    otAppCliInit(instance);
-    esp_openthread_lock_release();
+    return netif;
+}
+
+static void ot_task_worker(void *aContext)
+{
+    esp_openthread_platform_config_t config = {
+        .radio_config = ESP_OPENTHREAD_DEFAULT_RADIO_UART_RCP_CONFIG(4, 5),
+        .host_config = ESP_OPENTHREAD_DEFAULT_UART_HOST_CONFIG(),
+    };
+    esp_netif_t *openthread_netif;
+
+    // Initialize the OpenThread stack
+    ESP_ERROR_CHECK(esp_openthread_init(&config));
+
+    // Initialize the OpenThread cli
+    otAppCliInit(esp_openthread_get_instance());
+
+    // Initialize the esp_netif bindings
+    openthread_netif = init_openthread_netif();
+
 #if CONFIG_OPENTHREAD_CUSTOM_COMMAND
     esp_cli_custom_command_init();
 #endif // CONFIG_OPENTHREAD_CUSTOM_COMMAND
 
-    while (true) {
-        FD_ZERO(&mainloop.read_fds);
-        FD_ZERO(&mainloop.write_fds);
-        FD_ZERO(&mainloop.error_fds);
+    // Run the main loop
+    esp_openthread_launch_mainloop();
 
-        mainloop.max_fd = -1;
-        mainloop.timeout.tv_sec = 10;
-        mainloop.timeout.tv_usec = 0;
-
-        esp_openthread_lock_acquire(portMAX_DELAY);
-        esp_openthread_platform_update(&mainloop);
-        if (otTaskletsArePending(instance)) {
-            mainloop.timeout.tv_sec = 0;
-            mainloop.timeout.tv_usec = 0;
-        }
-        esp_openthread_lock_release();
-
-        if (select(mainloop.max_fd + 1, &mainloop.read_fds, &mainloop.write_fds, &mainloop.error_fds,
-                   &mainloop.timeout) >= 0) {
-            esp_openthread_lock_acquire(portMAX_DELAY);
-            otTaskletsProcess(instance);
-            if (esp_openthread_platform_process(instance, &mainloop)) {
-                ESP_LOGE(TAG, "esp_openthread_platform_process failed");
-            }
-            esp_openthread_lock_release();
-        } else {
-            ESP_LOGE(TAG, "OpenThread system polling failed");
-            break;
-        }
-    }
-
-    esp_netif_destroy(netif);
+    // Clean up
+    esp_netif_destroy(openthread_netif);
     esp_openthread_netif_glue_deinit();
-    otInstanceFinalize(instance);
-    esp_openthread_platform_deinit();
     esp_vfs_eventfd_unregister();
     vTaskDelete(NULL);
 }
 
 void app_main(void)
 {
+    // Used eventfds:
+    // * netif
+    // * radio driver
+    esp_vfs_eventfd_config_t eventfd_config = {
+        .max_fds = 2,
+    };
+
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     ESP_ERROR_CHECK(esp_netif_init());
+    ESP_ERROR_CHECK(esp_vfs_eventfd_register(&eventfd_config));
     xTaskCreate(ot_task_worker, "ot_cli_main", 10240, xTaskGetCurrentTaskHandle(), 5, NULL);
 }

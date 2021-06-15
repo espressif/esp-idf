@@ -24,6 +24,7 @@
 #include "esp_openthread.h"
 #include "esp_openthread_common_macro.h"
 #include "esp_openthread_lock.h"
+#include "esp_openthread_netif_glue_priv.h"
 #include "esp_vfs_eventfd.h"
 #include "sdkconfig.h"
 #include "common/code_utils.hpp"
@@ -151,12 +152,12 @@ static esp_err_t process_thread_transmit(otInstance *instance)
     return error;
 }
 
-static void process_thread_state(otChangedFlags changed_flags, void *context)
+void esp_openthread_netif_glue_state_callback(otChangedFlags changed_flags)
 {
-    otInstance *instance = (otInstance *)context;
+    otInstance *instance = esp_openthread_get_instance();
     esp_err_t err = ESP_OK;
 
-    if (OT_CHANGED_THREAD_NETIF_STATE & changed_flags) {
+    if (s_packet_queue != NULL && (OT_CHANGED_THREAD_NETIF_STATE & changed_flags)) {
         if (otLinkIsEnabled(instance)) {
             otLogInfoPlat("netif up");
             if (esp_event_post(OPENTHREAD_EVENT, OPENTHREAD_EVENT_IF_UP, NULL, 0, 0) != ESP_OK) {
@@ -274,7 +275,6 @@ static esp_err_t openthread_netif_post_attach(esp_netif_t *esp_netif, void *args
 void *esp_openthread_netif_glue_init(void)
 {
     otInstance *instance = esp_openthread_get_instance();
-    otError ot_err;
     esp_err_t error = ESP_OK;
 
     if (instance == NULL || s_packet_queue || s_openthread_netif_glue.event_fd >= 0) {
@@ -289,11 +289,6 @@ void *esp_openthread_netif_glue_init(void)
 
     otIp6SetAddressCallback(instance, process_thread_address, instance);
     otIp6SetReceiveCallback(instance, process_thread_receive, instance);
-    ot_err = otSetStateChangedCallback(instance, process_thread_state, instance);
-    if (ot_err != OT_ERROR_NONE) {
-        otLogCritPlat("Failed to register callback for OpenThread lwip interface: %s", otThreadErrorToString(ot_err));
-        ExitNow(error = ESP_FAIL);
-    }
     otIp6SetReceiveFilterEnabled(instance, true);
     otIcmp6SetEchoMode(instance, OT_ICMP6_ECHO_HANDLER_DISABLED);
 
@@ -315,7 +310,6 @@ exit:
 void esp_openthread_netif_glue_deinit(void)
 {
     otInstance *instance = esp_openthread_get_instance();
-    otRemoveStateChangeCallback(instance, process_thread_state, instance);
     otIp6SetAddressCallback(instance, NULL, NULL);
     otIp6SetReceiveCallback(instance, NULL, NULL);
     if (s_packet_queue) {
