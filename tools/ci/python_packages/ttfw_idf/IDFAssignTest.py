@@ -12,7 +12,7 @@ import yaml
 try:
     from yaml import CLoader as Loader
 except ImportError:
-    from yaml import Loader as Loader
+    from yaml import Loader as Loader  # type: ignore
 
 import gitlab_api
 from tiny_test_fw.Utility import CIAssignTest
@@ -79,30 +79,30 @@ class IDFAssignTest(CIAssignTest.AssignTest):
 class ExampleGroup(IDFCaseGroup):
     SORT_KEYS = CI_JOB_MATCH_KEYS = ['env_tag', 'target']
 
-    LOCAL_BUILD_DIR = 'build_examples'
+    LOCAL_BUILD_DIR = 'build_examples'  # type: ignore
     EXAMPLE_TARGETS = SUPPORTED_TARGETS + PREVIEW_TARGETS
-    BUILD_JOB_NAMES = ['build_examples_cmake_{}'.format(target) for target in EXAMPLE_TARGETS]
+    BUILD_JOB_NAMES = ['build_examples_cmake_{}'.format(target) for target in EXAMPLE_TARGETS]  # type: ignore
 
 
 class TestAppsGroup(ExampleGroup):
     LOCAL_BUILD_DIR = 'build_test_apps'
     TEST_APP_TARGETS = SUPPORTED_TARGETS + PREVIEW_TARGETS
-    BUILD_JOB_NAMES = ['build_test_apps_{}'.format(target) for target in TEST_APP_TARGETS]
+    BUILD_JOB_NAMES = ['build_test_apps_{}'.format(target) for target in TEST_APP_TARGETS]  # type: ignore
 
 
 class ComponentUTGroup(TestAppsGroup):
     LOCAL_BUILD_DIR = 'build_component_ut'
     UNIT_TEST_TARGETS = SUPPORTED_TARGETS + PREVIEW_TARGETS
-    BUILD_JOB_NAMES = ['build_component_ut_{}'.format(target) for target in UNIT_TEST_TARGETS]
+    BUILD_JOB_NAMES = ['build_component_ut_{}'.format(target) for target in UNIT_TEST_TARGETS]  # type: ignore
 
 
 class UnitTestGroup(IDFCaseGroup):
     SORT_KEYS = ['test environment', 'tags', 'chip_target']
     CI_JOB_MATCH_KEYS = ['test environment']
 
-    LOCAL_BUILD_DIR = 'tools/unit-test-app/builds'
+    LOCAL_BUILD_DIR = 'tools/unit-test-app/builds'  # type: ignore
     UNIT_TEST_TARGETS = SUPPORTED_TARGETS + PREVIEW_TARGETS
-    BUILD_JOB_NAMES = ['build_esp_idf_tests_cmake_{}'.format(target) for target in UNIT_TEST_TARGETS]
+    BUILD_JOB_NAMES = ['build_esp_idf_tests_cmake_{}'.format(target) for target in UNIT_TEST_TARGETS]  # type: ignore
 
     MAX_CASE = 50
     ATTR_CONVERT_TABLE = {
@@ -111,6 +111,7 @@ class UnitTestGroup(IDFCaseGroup):
     DUT_CLS_NAME = {
         'esp32': 'ESP32DUT',
         'esp32s2': 'ESP32S2DUT',
+        'esp32s3': 'ESP32S3DUT',
         'esp32c3': 'ESP32C3DUT',
         'esp8266': 'ESP8266DUT',
     }
@@ -322,7 +323,7 @@ if __name__ == '__main__':
 
     SUPPORTED_TARGETS.extend(PREVIEW_TARGETS)
 
-    test_case_paths = [os.path.join(IDF_PATH_FROM_ENV, path) if not os.path.isabs(path) else path for path in args.test_case_paths]
+    test_case_paths = [os.path.join(IDF_PATH_FROM_ENV, path) if not os.path.isabs(path) else path for path in args.test_case_paths]  # type: ignore
     args_list = [test_case_paths, args.config]
     if args.case_group == 'example_test':
         assigner = ExampleAssignTest(*args_list)

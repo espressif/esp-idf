@@ -53,6 +53,8 @@ class Parser(object):
     TOOLCHAIN_FOR_TARGET = {
         'esp32': 'xtensa-esp32-elf-',
         'esp32s2': 'xtensa-esp32s2-elf-',
+        'esp32s3': 'xtensa-esp32s3-elf-',
+        'esp32c3': 'riscv32-esp-elf-',
     }
 
     def __init__(self, binary_folder, node_index):

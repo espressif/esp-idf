@@ -97,13 +97,23 @@ esp_reset_reason_t esp_reset_reason(void)
 /* in IRAM, can be called from panic handler */
 void IRAM_ATTR esp_reset_reason_set_hint(esp_reset_reason_t hint)
 {
+    assert((hint & (~RST_REASON_MASK)) == 0);
+    uint32_t val = hint | (hint << RST_REASON_SHIFT) | RST_REASON_BIT;
+    REG_WRITE(RTC_RESET_CAUSE_REG, val);
 }
 
 /* in IRAM, can be called from panic handler */
 esp_reset_reason_t IRAM_ATTR esp_reset_reason_get_hint(void)
 {
-    return ESP_RST_UNKNOWN;
+    uint32_t reset_reason_hint = REG_READ(RTC_RESET_CAUSE_REG);
+    uint32_t high = (reset_reason_hint >> RST_REASON_SHIFT) & RST_REASON_MASK;
+    uint32_t low = reset_reason_hint & RST_REASON_MASK;
+    if ((reset_reason_hint & RST_REASON_BIT) == 0 || high != low) {
+        return ESP_RST_UNKNOWN;
+    }
+    return (esp_reset_reason_t) low;
 }
 static void esp_reset_reason_clear_hint(void)
 {
+    REG_WRITE(RTC_RESET_CAUSE_REG, 0);
 }

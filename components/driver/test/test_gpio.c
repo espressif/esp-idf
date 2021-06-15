@@ -5,7 +5,7 @@
  */
 /**
  * About test environment UT_T1_GPIO:
- * Please connect GPIO18 and GPIO19
+ * Please connect TEST_GPIO_EXT_OUT_IO and TEST_GPIO_EXT_IN_IO
  */
 #include <stdio.h>
 #include <string.h>
@@ -40,8 +40,9 @@
 #define TEST_GPIO_INPUT_ONLY_PIN    46
 #define TEST_GPIO_OUTPUT_MAX        GPIO_NUM_46
 #elif CONFIG_IDF_TARGET_ESP32S3
-#define TEST_GPIO_EXT_OUT_IO        19  // default output GPIO
-#define TEST_GPIO_EXT_IN_IO         20  // default input GPIO
+//  IO19 and IO20 are connected as USB functions and should be avoided for testing
+#define TEST_GPIO_EXT_OUT_IO        17  // default output GPIO
+#define TEST_GPIO_EXT_IN_IO         21  // default input GPIO
 #define TEST_GPIO_OUTPUT_PIN        12
 #define TEST_GPIO_INPUT_ONLY_PIN    46
 #define TEST_GPIO_OUTPUT_MAX        GPIO_NUM_MAX

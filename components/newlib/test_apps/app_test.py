@@ -7,7 +7,7 @@ except ImportError:
     pass
 
 
-@ttfw_idf.idf_component_unit_test(env_tag='COMPONENT_UT_GENERIC', target=['esp32', 'esp32s2', 'esp32c3'])
+@ttfw_idf.idf_component_unit_test(env_tag='COMPONENT_UT_GENERIC', target=['esp32', 'esp32s2', 'esp32s3', 'esp32c3'])
 def test_component_ut_newlib(env, _):  # type: (tiny_test_fw.Env, typing.Any) -> None
     dut = env.get_dut('newlib', 'components/newlib/test_apps')
     dut.start_app()

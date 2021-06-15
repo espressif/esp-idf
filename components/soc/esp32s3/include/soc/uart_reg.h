@@ -798,43 +798,43 @@ ware flow control..*/
 #define UART_PARITY_S  0
 
 #define UART_CONF1_REG(i)          (REG_UART_BASE(i) + 0x24)
-/* UART_RX_TOUT_EN : R/W ;bitpos:[21] ;default: 1'b0 ; */
+/* UART_RX_TOUT_EN : R/W ;bitpos:[23] ;default: 1'b0 ; */
 /*description: This is the enble bit for uart receiver's timeout function..*/
-#define UART_RX_TOUT_EN    (BIT(21))
-#define UART_RX_TOUT_EN_M  (BIT(21))
+#define UART_RX_TOUT_EN    (BIT(23))
+#define UART_RX_TOUT_EN_M  (BIT(23))
 #define UART_RX_TOUT_EN_V  0x1
-#define UART_RX_TOUT_EN_S  21
-/* UART_RX_FLOW_EN : R/W ;bitpos:[20] ;default: 1'b0 ; */
+#define UART_RX_TOUT_EN_S  23
+/* UART_RX_FLOW_EN : R/W ;bitpos:[22] ;default: 1'b0 ; */
 /*description: This is the flow enable bit for UART receiver..*/
-#define UART_RX_FLOW_EN    (BIT(20))
-#define UART_RX_FLOW_EN_M  (BIT(20))
+#define UART_RX_FLOW_EN    (BIT(22))
+#define UART_RX_FLOW_EN_M  (BIT(22))
 #define UART_RX_FLOW_EN_V  0x1
-#define UART_RX_FLOW_EN_S  20
-/* UART_RX_TOUT_FLOW_DIS : R/W ;bitpos:[19] ;default: 1'b0 ; */
+#define UART_RX_FLOW_EN_S  22
+/* UART_RX_TOUT_FLOW_DIS : R/W ;bitpos:[21] ;default: 1'b0 ; */
 /*description: Set this bit to stop accumulating idle_cnt when hardware flow control works..*/
-#define UART_RX_TOUT_FLOW_DIS    (BIT(19))
-#define UART_RX_TOUT_FLOW_DIS_M  (BIT(19))
+#define UART_RX_TOUT_FLOW_DIS    (BIT(21))
+#define UART_RX_TOUT_FLOW_DIS_M  (BIT(21))
 #define UART_RX_TOUT_FLOW_DIS_V  0x1
-#define UART_RX_TOUT_FLOW_DIS_S  19
-/* UART_DIS_RX_DAT_OVF : R/W ;bitpos:[18] ;default: 1'h0 ; */
+#define UART_RX_TOUT_FLOW_DIS_S  21
+/* UART_DIS_RX_DAT_OVF : R/W ;bitpos:[20] ;default: 1'h0 ; */
 /*description: Disable UART Rx data overflow detect. .*/
-#define UART_DIS_RX_DAT_OVF    (BIT(18))
-#define UART_DIS_RX_DAT_OVF_M  (BIT(18))
+#define UART_DIS_RX_DAT_OVF    (BIT(20))
+#define UART_DIS_RX_DAT_OVF_M  (BIT(20))
 #define UART_DIS_RX_DAT_OVF_V  0x1
-#define UART_DIS_RX_DAT_OVF_S  18
-/* UART_TXFIFO_EMPTY_THRHD : R/W ;bitpos:[17:9] ;default: 9'h60 ; */
+#define UART_DIS_RX_DAT_OVF_S  20
+/* UART_TXFIFO_EMPTY_THRHD : R/W ;bitpos:[19:10] ;default: 10'h60 ; */
 /*description: It will produce txfifo_empty_int interrupt when the data amount in Tx-FIFO is le
 ss than this register value..*/
-#define UART_TXFIFO_EMPTY_THRHD    0x000001FF
+#define UART_TXFIFO_EMPTY_THRHD    0x000003FF
 #define UART_TXFIFO_EMPTY_THRHD_M  ((UART_TXFIFO_EMPTY_THRHD_V)<<(UART_TXFIFO_EMPTY_THRHD_S))
-#define UART_TXFIFO_EMPTY_THRHD_V  0x1FF
-#define UART_TXFIFO_EMPTY_THRHD_S  9
-/* UART_RXFIFO_FULL_THRHD : R/W ;bitpos:[8:0] ;default: 9'h60 ; */
+#define UART_TXFIFO_EMPTY_THRHD_V  0x3FF
+#define UART_TXFIFO_EMPTY_THRHD_S  10
+/* UART_RXFIFO_FULL_THRHD : R/W ;bitpos:[9:0] ;default: 10'h60 ; */
 /*description: It will produce rxfifo_full_int interrupt when receiver receives more data than
 this register value..*/
-#define UART_RXFIFO_FULL_THRHD    0x000001FF
+#define UART_RXFIFO_FULL_THRHD    0x000003FF
 #define UART_RXFIFO_FULL_THRHD_M  ((UART_RXFIFO_FULL_THRHD_V)<<(UART_RXFIFO_FULL_THRHD_S))
-#define UART_RXFIFO_FULL_THRHD_V  0x1FF
+#define UART_RXFIFO_FULL_THRHD_V  0x3FF
 #define UART_RXFIFO_FULL_THRHD_S  0
 
 #define UART_LOWPULSE_REG(i)          (REG_UART_BASE(i) + 0x28)
@@ -913,33 +913,33 @@ ore times than this register value..*/
 #define UART_ACTIVE_THRESHOLD_S  0
 
 #define UART_SWFC_CONF0_REG(i)          (REG_UART_BASE(i) + 0x3C)
-/* UART_XOFF_CHAR : R/W ;bitpos:[16:9] ;default: 8'h13 ; */
+/* UART_XOFF_CHAR : R/W ;bitpos:[17:10] ;default: 8'h13 ; */
 /*description: This register stores the Xoff flow control char..*/
 #define UART_XOFF_CHAR    0x000000FF
 #define UART_XOFF_CHAR_M  ((UART_XOFF_CHAR_V)<<(UART_XOFF_CHAR_S))
 #define UART_XOFF_CHAR_V  0xFF
-#define UART_XOFF_CHAR_S  9
-/* UART_XOFF_THRESHOLD : R/W ;bitpos:[8:0] ;default: 9'he0 ; */
+#define UART_XOFF_CHAR_S  10
+/* UART_XOFF_THRESHOLD : R/W ;bitpos:[9:0] ;default: 10'he0 ; */
 /*description: When the data amount in Rx-FIFO is more than this register value with uart_sw_fl
 ow_con_en set to 1, it will send a Xoff char..*/
-#define UART_XOFF_THRESHOLD    0x000001FF
+#define UART_XOFF_THRESHOLD    0x000003FF
 #define UART_XOFF_THRESHOLD_M  ((UART_XOFF_THRESHOLD_V)<<(UART_XOFF_THRESHOLD_S))
-#define UART_XOFF_THRESHOLD_V  0x1FF
+#define UART_XOFF_THRESHOLD_V  0x3FF
 #define UART_XOFF_THRESHOLD_S  0
 
 #define UART_SWFC_CONF1_REG(i)          (REG_UART_BASE(i) + 0x40)
-/* UART_XON_CHAR : R/W ;bitpos:[16:9] ;default: 8'h11 ; */
+/* UART_XON_CHAR : R/W ;bitpos:[17:10] ;default: 8'h11 ; */
 /*description: This register stores the Xon flow control char..*/
 #define UART_XON_CHAR    0x000000FF
 #define UART_XON_CHAR_M  ((UART_XON_CHAR_V)<<(UART_XON_CHAR_S))
 #define UART_XON_CHAR_V  0xFF
-#define UART_XON_CHAR_S  9
-/* UART_XON_THRESHOLD : R/W ;bitpos:[8:0] ;default: 9'h0 ; */
+#define UART_XON_CHAR_S  10
+/* UART_XON_THRESHOLD : R/W ;bitpos:[9:0] ;default: 10'h0 ; */
 /*description: When the data amount in Rx-FIFO is less than this register value with uart_sw_fl
 ow_con_en set to 1, it will send a Xon char..*/
-#define UART_XON_THRESHOLD    0x000001FF
+#define UART_XON_THRESHOLD    0x000003FF
 #define UART_XON_THRESHOLD_M  ((UART_XON_THRESHOLD_V)<<(UART_XON_THRESHOLD_S))
-#define UART_XON_THRESHOLD_V  0x1FF
+#define UART_XON_THRESHOLD_V  0x3FF
 #define UART_XON_THRESHOLD_S  0
 
 #define UART_TXBRK_CONF_REG(i)          (REG_UART_BASE(i) + 0x44)
@@ -1053,32 +1053,32 @@ y receiver..*/
 #define UART_AT_CMD_CHAR_S  0
 
 #define UART_MEM_CONF_REG(i)          (REG_UART_BASE(i) + 0x60)
-/* UART_MEM_FORCE_PU : R/W ;bitpos:[27] ;default: 1'b0 ; */
+/* UART_MEM_FORCE_PU : R/W ;bitpos:[28] ;default: 1'b0 ; */
 /*description: Set this bit to force power up UART memory..*/
-#define UART_MEM_FORCE_PU    (BIT(27))
-#define UART_MEM_FORCE_PU_M  (BIT(27))
+#define UART_MEM_FORCE_PU    (BIT(28))
+#define UART_MEM_FORCE_PU_M  (BIT(28))
 #define UART_MEM_FORCE_PU_V  0x1
-#define UART_MEM_FORCE_PU_S  27
-/* UART_MEM_FORCE_PD : R/W ;bitpos:[26] ;default: 1'b0 ; */
+#define UART_MEM_FORCE_PU_S  28
+/* UART_MEM_FORCE_PD : R/W ;bitpos:[27] ;default: 1'b0 ; */
 /*description: Set this bit to force power down UART memory..*/
-#define UART_MEM_FORCE_PD    (BIT(26))
-#define UART_MEM_FORCE_PD_M  (BIT(26))
+#define UART_MEM_FORCE_PD    (BIT(27))
+#define UART_MEM_FORCE_PD_M  (BIT(27))
 #define UART_MEM_FORCE_PD_V  0x1
-#define UART_MEM_FORCE_PD_S  26
-/* UART_RX_TOUT_THRHD : R/W ;bitpos:[25:16] ;default: 10'ha ; */
+#define UART_MEM_FORCE_PD_S  27
+/* UART_RX_TOUT_THRHD : R/W ;bitpos:[26:17] ;default: 10'ha ; */
 /*description: This register is used to configure the threshold time that receiver takes to rec
 eive one byte. The rxfifo_tout_int interrupt will be trigger when the receiver t
 akes more time to receive one byte with rx_tout_en set to 1..*/
 #define UART_RX_TOUT_THRHD    0x000003FF
 #define UART_RX_TOUT_THRHD_M  ((UART_RX_TOUT_THRHD_V)<<(UART_RX_TOUT_THRHD_S))
 #define UART_RX_TOUT_THRHD_V  0x3FF
-#define UART_RX_TOUT_THRHD_S  16
-/* UART_RX_FLOW_THRHD : R/W ;bitpos:[15:7] ;default: 9'h0 ; */
+#define UART_RX_TOUT_THRHD_S  17
+/* UART_RX_FLOW_THRHD : R/W ;bitpos:[16:7] ;default: 10'h0 ; */
 /*description: This register is used to configure the maximum amount of data that can be receiv
 ed  when hardware flow control works..*/
-#define UART_RX_FLOW_THRHD    0x000001FF
+#define UART_RX_FLOW_THRHD    0x000003FF
 #define UART_RX_FLOW_THRHD_M  ((UART_RX_FLOW_THRHD_V)<<(UART_RX_FLOW_THRHD_S))
-#define UART_RX_FLOW_THRHD_V  0x1FF
+#define UART_RX_FLOW_THRHD_V  0x3FF
 #define UART_RX_FLOW_THRHD_S  7
 /* UART_TX_SIZE : R/W ;bitpos:[6:4] ;default: 3'h1 ; */
 /*description: This register is used to configure the amount of mem allocated for transmit-FIFO
@@ -1252,6 +1252,7 @@ e registers. .*/
 #define UART_ID_M  ((UART_ID_V)<<(UART_ID_S))
 #define UART_ID_V  0x3FFFFFFF
 #define UART_ID_S  0
+
 
 #ifdef __cplusplus
 }

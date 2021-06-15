@@ -4,7 +4,8 @@ set(sources "patches/esp_rom_crc.c"
             "patches/esp_rom_sys.c"
             "patches/esp_rom_uart.c")
 
-if(CONFIG_IDF_TARGET_ARCH_XTENSA)
+if(CONFIG_IDF_TARGET_ARCH_XTENSA AND NOT (target STREQUAL "esp32s3"))
+    # Temporarily disabled on S3 due to it breaking longjmp TODO ESP32S3 IDF-3391
     list(APPEND sources "patches/esp_rom_longjmp.S")
 endif()
 
@@ -102,7 +103,8 @@ else() # Regular app build
         endif()
     endif()
 
-    if(CONFIG_IDF_TARGET_ARCH_XTENSA)
+    if(CONFIG_IDF_TARGET_ARCH_XTENSA AND NOT (target STREQUAL "esp32s3"))
+        # Temporarily disabled on S3 due to it breaking longjmp TODO ESP32S3 IDF-3391
         target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=longjmp")
     endif()
 endif()

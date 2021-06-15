@@ -19,6 +19,8 @@
 
 #if !DISABLED_FOR_TARGETS(ESP32C3)
 //There is only one GPSPI controller on ESP32C3, so single-board test is disabled.
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+// TODO ESP32S3 IDF-3226
 
 #if SOC_SPI_SUPPORT_SLAVE_HD_VER2
 #include "driver/spi_slave_hd.h"
@@ -595,7 +597,7 @@ TEST_CASE("test spi slave hd segment mode, master too long", "[spi][spi_slv_hd]"
 }
 
 #endif //SOC_SPI_SUPPORT_SLAVE_HD_VER2
-
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 #endif //#if !DISABLED_FOR_TARGETS(ESP32C3)
 
 #if !DISABLED_FOR_TARGETS(ESP32, ESP32S2, ESP32S3)

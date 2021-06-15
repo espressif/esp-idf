@@ -382,6 +382,11 @@ test_app_test_esp32_generic:
     - .component_ut_template
     - .rules:test:component_ut-esp32s2
 
+.component_ut_esp32s3_template:
+  extends:
+    - .component_ut_template
+    - .rules:test:component_ut-esp32s3
+
 .component_ut_esp32c3_template:
   extends:
     - .component_ut_template
@@ -397,6 +402,12 @@ component_ut_test_esp32s2:
   extends: .component_ut_esp32s2_template
   tags:
     - ESP32S2
+    - COMPONENT_UT_GENERIC
+
+component_ut_test_esp32s3:
+  extends: .component_ut_esp32s3_template
+  tags:
+    - ESP32S3
     - COMPONENT_UT_GENERIC
 
 component_ut_test_esp32c3:
@@ -420,6 +431,11 @@ component_ut_test_esp32c3:
   extends:
     - .unit_test_template
     - .rules:test:unit_test-esp32s2
+
+.unit_test_esp32s3_template:
+  extends:
+    - .unit_test_template
+    - .rules:test:unit_test-esp32s3
 
 .unit_test_esp32c3_template:
   extends:
@@ -673,6 +689,13 @@ UT_C3_FLASH_SUSPEND:
   tags:
     - ESP32C3_IDF
     - UT_T1_Flash_Suspend
+
+UT_S3:
+  extends: .unit_test_esp32s3_template
+  parallel: 20
+  tags:
+    - ESP32S3_IDF
+    - UT_T1_1
 
 .integration_test_template:
   extends:

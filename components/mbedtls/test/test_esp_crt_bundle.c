@@ -82,6 +82,9 @@ typedef enum {
 
 int esp_crt_verify_callback(void *buf, mbedtls_x509_crt *crt, int data, uint32_t *flags);
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+// TODO ESP32-S3 IDF-1878
+
 static const char *TAG = "cert_bundle_test";
 
 static volatile bool exit_flag;
@@ -340,6 +343,8 @@ TEST_CASE("custom certificate bundle", "[mbedtls]")
 
    vSemaphoreDelete(exit_sema);
 }
+
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 
 TEST_CASE("custom certificate bundle - weak hash", "[mbedtls]")
 {

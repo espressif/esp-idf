@@ -137,8 +137,8 @@ typedef void (*flash_test_func_t)(const esp_partition_t *part);
 
    These tests run for all the flash chip configs shown in config_list, below (internal and external).
  */
-#if defined(CONFIG_SPIRAM)
-
+#if defined(CONFIG_SPIRAM) || TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+// No S3 runner
 #define FLASH_TEST_CASE_3(STR, FUNCT_TO_RUN)
 #define FLASH_TEST_CASE_3_IGNORE(STR, FUNCT_TO_RUN)
 #else //CONFIG_SPIRAM
@@ -900,12 +900,15 @@ TEST_CASE("SPI flash test reading with all speed/mode permutations", "[esp_flash
 }
 
 #ifndef CONFIG_SPIRAM
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+// No S3 runner
 TEST_CASE("SPI flash test reading with all speed/mode permutations, 3 chips", "[esp_flash_3][test_env=UT_T1_ESP_FLASH]")
 {
     for (int i = 0; i < TEST_CONFIG_NUM; i++) {
         test_permutations_chip(&config_list[i]);
     }
 }
+#endif// !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 #endif
 
 
@@ -975,6 +978,9 @@ static void test_write_large_buffer(const esp_partition_t* part, const uint8_t *
 }
 
 #if !CONFIG_SPIRAM
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+// No S3 runner
 
 typedef struct {
     uint32_t us_start;
@@ -1151,7 +1157,11 @@ static void test_flash_read_write_performance(const esp_partition_t *part)
     free(data_read);
 }
 
+
+
 TEST_CASE("Test esp_flash read/write performance", "[esp_flash][test_env=UT_T1_ESP_FLASH]") {flash_test_func(test_flash_read_write_performance, 1);}
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+
 #endif // !CONFIG_SPIRAM
 FLASH_TEST_CASE_3("Test esp_flash read/write performance"", 3 chips", test_flash_read_write_performance);
 

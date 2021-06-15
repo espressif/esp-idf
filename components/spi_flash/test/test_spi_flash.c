@@ -32,8 +32,6 @@ struct flash_test_ctx {
     SemaphoreHandle_t done;
 };
 
-static const char TAG[] = "test_spi_flash";
-
 /* Base offset in flash for tests. */
 static size_t start;
 
@@ -204,6 +202,11 @@ TEST_CASE("spi flash functions can run along with IRAM interrupts", "[spi_flash]
     free(read_arg.buf);
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+// TODO ESP32-S3 IDF-2021
+
+static const char TAG[] = "test_spi_flash";
+
 typedef struct {
     uint32_t us_start;
     size_t len;
@@ -332,6 +335,7 @@ TEST_CASE("Test spi_flash read/write performance", "[spi_flash]")
     free(data_read);
 }
 
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 
 
 #if portNUM_PROCESSORS > 1
