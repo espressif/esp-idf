@@ -40,6 +40,7 @@ esp_err_t spi_flash_hal_device_config(spi_flash_host_driver_t *host)
     spi_flash_ll_reset(dev);
     spi_flash_ll_set_cs_pin(dev, drv_data->cs_num);
     spi_flash_ll_set_clock(dev, &drv_data->clock_conf);
+    spi_flash_ll_set_cs_setup(dev, 1);
     return ESP_OK;
 }
 

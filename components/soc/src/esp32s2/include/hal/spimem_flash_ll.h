@@ -383,6 +383,12 @@ static inline void spimem_flash_ll_set_dummy_out(spi_mem_dev_t *dev, uint32_t ou
     dev->ctrl.d_pol = out_lev;
 }
 
+static inline void spimem_flash_ll_set_cs_setup(spi_mem_dev_t *dev, uint32_t cs_setup_time)
+{
+    dev->user.cs_setup = (cs_setup_time > 0 ? 1 : 0);
+    dev->ctrl2.cs_setup_time = cs_setup_time - 1;
+}
+
 #ifdef __cplusplus
 }
 #endif
