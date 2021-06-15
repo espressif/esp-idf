@@ -56,12 +56,10 @@ static void example_i2s_init(void)
 {
     int i2s_num = EXAMPLE_I2S_NUM;
     i2s_config_t i2s_config = {
-        .param_cfg = {
-            .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
-            .sample_rate =  EXAMPLE_I2S_SAMPLE_RATE,
-            .slot_bits_cfg = EXAMPLE_I2S_SAMPLE_BITS,
-            .channel_format = EXAMPLE_I2S_FORMAT,
-        },
+        .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
+        .sample_rate =  EXAMPLE_I2S_SAMPLE_RATE,
+        .bits_per_sample = EXAMPLE_I2S_SAMPLE_BITS,
+        .channel_format = EXAMPLE_I2S_FORMAT,
         .intr_alloc_flags = 0,
         .dma_buf_count = 2,
         .dma_buf_len = 1024,

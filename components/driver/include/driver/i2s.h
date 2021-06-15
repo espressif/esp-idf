@@ -28,42 +28,70 @@ extern "C" {
 
 #define I2S_PIN_NO_CHANGE (-1) /*!< Use in i2s_pin_config_t for pins which should not be changed */
 
+/**
+ * @brief I2S port number, the max port number is (I2S_NUM_MAX -1).
+ */
+typedef enum {
+    I2S_NUM_0 = 0,                 /*!< I2S port 0 */
+#if SOC_I2S_NUM > 1
+    I2S_NUM_1 = 1,                 /*!< I2S port 1 */
+#endif
+    I2S_NUM_MAX,                   /*!< I2S port max */
+} i2s_port_t;
+
+/**
+ * @brief I2S pin number for i2s_set_pin
+ *
+ */
+typedef struct {
+    int bck_io_num;     /*!< BCK in out pin*/
+    int ws_io_num;      /*!< WS in out pin*/
+    int data_out_num;   /*!< DATA out pin*/
+    int data_in_num;    /*!< DATA in pin*/
+} i2s_pin_config_t;
+
+#if SOC_I2S_SUPPORTS_TDM
+typedef i2s_hal_chan_cfg_t      tdm_chan_cfg_t;
+typedef i2s_hal_tdm_flags_t     tdm_flags_t;
+#endif
 
 /**
  * @brief I2S driver configuration parameters
  *
  */
 typedef struct {
-    union {
-        // Compatible with previous versions. For ESP32-S3, ESP32-C3 and the later chip, you should use `param_cfg` fields to initialize I2S.
-        struct {
-            i2s_mode_t              mode;                   /*!< I2S work mode*/
-            uint32_t                sample_rate;            /*!< I2S sample rate*/
-            uint32_t                bits_per_sample;        /*!< I2S bits per sample*/
-            i2s_channel_fmt_t       channel_format;         /*!< I2S channel format */
-            i2s_comm_format_t       communication_format;   /*!< I2S communication format */
-        };
-        i2s_config_param_t param_cfg;                       /*!< I2S config paramater */
-    };
-    int  intr_alloc_flags;       /*!< Flags used to allocate the interrupt. One or multiple (ORred) ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info */
-    int  dma_buf_count;          /*!< I2S DMA Buffer Count */
-    int  dma_buf_len;            /*!< I2S DMA Buffer Length */
-    bool use_apll;              /*!< I2S using APLL as main I2S clock, enable it to get accurate clock */
-    bool tx_desc_auto_clear;     /*!< I2S auto clear tx descriptor if there is underflow condition (helps in avoiding noise in case of data unavailability) */
-    int  fixed_mclk;             /*!< I2S using fixed MCLK output. If use_apll = true and fixed_mclk > 0, then the clock output for i2s is fixed and equal to the fixed_mclk value.*/
+
+    i2s_mode_t              mode;                       /*!< I2S work mode */
+    uint32_t                sample_rate;                /*!< I2S sample rate */
+    i2s_bits_per_sample_t   bits_per_sample;            /*!< I2S sample bits in one channel */
+    i2s_channel_fmt_t       channel_format;             /*!< I2S channel format.*/
+    i2s_comm_format_t       communication_format;       /*!< I2S communication format */
+    int                     intr_alloc_flags;           /*!< Flags used to allocate the interrupt. One or multiple (ORred) ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info */
+    int                     dma_buf_count;              /*!< I2S DMA Buffer Count */
+    int                     dma_buf_len;                /*!< I2S DMA Buffer Length */
+    bool                    use_apll;                   /*!< I2S using APLL as main I2S clock, enable it to get accurate clock */
+    bool                    tx_desc_auto_clear;         /*!< I2S auto clear tx descriptor if there is underflow condition (helps in avoiding noise in case of data unavailability) */
+    int                     fixed_mclk;                 /*!< I2S using fixed MCLK output. If use_apll = true and fixed_mclk > 0, then the clock output for i2s is fixed and equal to the fixed_mclk value.*/
+    i2s_bits_per_slot_t     bits_per_slot;              /*!< I2S total bits in one channel， Should not be smaller than 'bits_per_sample', default '0' means equal to 'bits_per_sample' */
+#if SOC_I2S_SUPPORTS_TDM
+    tdm_chan_cfg_t          tdm_chan_cfg;               /*!< I2S TDM channel configurations*/
+    tdm_flags_t             tdm_flags;                  /*!< I2S TDM flags*/
+#endif
 } i2s_driver_config_t;
 
 typedef i2s_driver_config_t i2s_config_t;
 typedef intr_handle_t i2s_isr_handle_t;
 
 /**
- * @brief I2S event types
+ * @brief I2S event queue types
  *
  */
 typedef enum {
     I2S_EVENT_DMA_ERROR,
     I2S_EVENT_TX_DONE,     /*!< I2S DMA finish sent 1 buffer*/
     I2S_EVENT_RX_DONE,     /*!< I2S DMA finish received 1 buffer*/
+    I2S_EVENT_TX_Q_OVF,    /*!< I2S DMA sent queue overflow*/
+    I2S_EVENT_RX_Q_OVF,    /*!< I2S DMA receive queue overflow*/
     I2S_EVENT_MAX,         /*!< I2S event max index*/
 } i2s_event_type_t;
 /**
@@ -123,7 +151,7 @@ esp_err_t i2s_set_pdm_rx_down_sample(i2s_port_t i2s_num, i2s_pdm_dsr_t dsr);
 #if SOC_I2S_SUPPORTS_PDM_TX
 /**
  * @brief Set TX PDM mode up-sample rate
- *        TX PDM have two type upsampling rate configurations:
+ *        TX PDM can only be set to the following two upsampling rate configurations:
  *        1: fp = 960, fs = sample_rate / 100, in this case, Fpdm = 128*48000
  *        2: fp = 960, fs = 480, in this case, Fpdm = 128*Fpcm = 128*sample_rate
  *        If the pdm receiver do not care the pdm serial clock, it's recommended set Fpdm = 128*48000
@@ -162,7 +190,7 @@ esp_err_t i2s_set_pdm_tx_up_sample(i2s_port_t i2s_num, int sample_rate, int fp, 
  *     - ESP_ERR_INVALID_ARG Parameter error
  *     - ESP_ERR_NO_MEM      Out of memory
  */
-esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config, int queue_size, void* i2s_queue);
+esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config, int queue_size, void *i2s_queue);
 
 /**
  * @brief Uninstall I2S driver.
@@ -326,7 +354,7 @@ esp_err_t i2s_zero_dma_buffer(i2s_port_t i2s_num);
  *     - ESP_OK              Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t i2s_pcm_config(i2s_port_t i2s_num, int mode, i2s_pcm_cfg_t pcm_cfg);
+esp_err_t i2s_pcm_config(i2s_port_t i2s_num, i2s_mode_t mode, i2s_pcm_mode_t pcm_cfg);
 #endif
 
 /**
@@ -334,20 +362,27 @@ esp_err_t i2s_pcm_config(i2s_port_t i2s_num, int mode, i2s_pcm_cfg_t pcm_cfg);
  *
  * Similar to i2s_set_sample_rates(), but also sets bit width.
  *
+ * 1. stop i2s;
+ * 2. calculate mclk, bck, bck_factor
+ * 3. malloc dma buffer;
+ * 4. start i2s
+ *
  * @param i2s_num  I2S_NUM_0, I2S_NUM_1
  *
  * @param rate I2S sample rate (ex: 8000, 44100...)
  *
- * @param slot_bits i2s slot bit configuration
+ * @param bits_cfg I2S bits configuation
+ *             the low 16 bits is for data bits per sample in one channel (see 'i2s_bits_per_sample_t')
+ *             the high 16 bits is for total bits in one channel (see 'i2s_bits_per_slot_t')
  *
- * @param sloct_ch I2S slot number configuration
+ * @param ch I2S channel, (I2S_CHANNEL_MONO, I2S_CHANNEL_STEREO)
  *
  * @return
  *     - ESP_OK              Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  *     - ESP_ERR_NO_MEM      Out of memory
  */
-esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_slot_bits_cfg_t slot_bits, i2s_slot_channel_cfg_t sloct_ch);
+esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_channel_t ch);
 
 /**
  * @brief get clock set on particular port number.
@@ -357,7 +392,7 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_slot_bits_cfg_t slo
  * @return
  *     - actual clock set by i2s driver
  */
-uint32_t i2s_get_clk(i2s_port_t i2s_num);
+float i2s_get_clk(i2s_port_t i2s_num);
 
 #if SOC_I2S_SUPPORTS_ADC_DAC
 /**

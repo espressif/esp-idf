@@ -75,13 +75,11 @@ Configuration example:
     static const int i2s_num = 0; // i2s port number
 
     static const i2s_config_t i2s_config = {
-        .param_cfg = {
-            .mode = I2S_MODE_MASTER | I2S_MODE_TX,
-            .sample_rate = 44100,
-            .slot_bits_cfg = 16,
-            .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-            .communication_format = I2S_COMM_FORMAT_STAND_I2S,
-        },
+        .mode = I2S_MODE_MASTER | I2S_MODE_TX,
+        .sample_rate = 44100,
+        .bits_per_sample = 16,
+        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+        .communication_format = I2S_COMM_FORMAT_STAND_I2S,
         .intr_alloc_flags = 0, // default interrupt priority
         .dma_buf_count = 8,
         .dma_buf_len = 64,

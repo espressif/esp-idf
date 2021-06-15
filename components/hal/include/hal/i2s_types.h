@@ -25,17 +25,6 @@ extern "C" {
 #endif
 
 /**
- * @brief I2S port number, the max port number is (I2S_NUM_MAX -1).
- */
-typedef enum {
-    I2S_NUM_0 = 0,                 /*!< I2S port 0 */
-#if SOC_I2S_NUM > 1
-    I2S_NUM_1 = 1,                 /*!< I2S port 1 */
-#endif
-    I2S_NUM_MAX,                   /*!< I2S port max */
-} i2s_port_t;
-
-/**
  * @brief I2S bit width per sample.
  *
  */
@@ -55,81 +44,67 @@ typedef enum {
     I2S_BITS_PER_SLOT_16BIT          = (16),     /*!< slot bit 16*/
     I2S_BITS_PER_SLOT_24BIT          = (24),     /*!< slot bit 24*/
     I2S_BITS_PER_SLOT_32BIT          = (32),     /*!< slot bit 32*/
-    I2S_BITS_PER_SLOT_SAMPLE_BIT_EQU = (0),      /*!< slot bit equals to data bit*/
+    I2S_BITS_PER_SLOT_EQU_SAMPLE = (0),      /*!< slot bit equals to data bit*/
 } i2s_bits_per_slot_t;
-
-#define SLOT_BIT_SHIFT   (16)  //slot bit shift
-#define SLOT_CH_SHIFT    (16)  //slot channel shift
-
-/**
- * @brief I2S slot bit configuration paramater. The low 16bit is the audio_data_bit_width and the high 16bit is the slot_bit_width.
- *       e.g.: If set to (I2S_BITS_PER_SLOT_24BIT << SLOT_BIT_SHIFT) | I2S_BITS_PER_SAMPLE_16BIT, the audio data bit is 16bit and the slot bit is 24bit.
- *
- *
- * @note: If the slot_bit_width is set to `I2S_BITS_PER_SLOT_SAMPLE_BIT_EQU`, then the slot_bit_width equals to audio_data_bit_width.
- *
- */
-typedef uint32_t i2s_slot_bits_cfg_t;      /*!< slot bit configuration*/
-
-/**
- * @brief I2S slot channel configuration paramater. The low 16bit is the active_slot_number and the high 16bit is the total_slot_num.
- *        The audio data only launch in active slot, otherwise, launch 0 or single data in inactive slot.
- *        e.g.: If set to (4 << SLOT_CH_SHIFT) | 2, the active_slot_number is 2 and the total_slot_num 4.
- *
- * @note: If the total_slot_num is set to 0, then the total_slot_num equals to active_slot_number.
- *
- */
-typedef uint32_t i2s_slot_channel_cfg_t;   /*!< slot channel configuration*/
 
 /**
  * @brief I2S channel.
  *
  */
 typedef enum {
-    I2S_CHANNEL_MONO        = 1,            /*!< I2S 1 channel (mono)*/
-    I2S_CHANNEL_STEREO      = 2             /*!< I2S 2 channel (stereo)*/
+    // I2S_CHANNEL_MONO and I2S_CHANNEL_STEREO values are changed to be compatible with TDM mode
+    // The lower 16 bits is for enabling specific channels
+    // The highest bit in I2S_CHANNEL_MONO is for differentiating I2S_CHANNEL_MONO and I2S_CHANNEL_STEREO because they both use two channels
+    // Two channels will transmit same data in I2S_CHANNEL_MONO mode, and different data in I2S_CHANNEL_STEREO mode
+    I2S_CHANNEL_MONO        = (0x01 << 31) | 0x03,  /*!< I2S channel (mono), two channel enabled */
+    I2S_CHANNEL_STEREO      = 0x03,                 /*!< I2S channel (stereo), two channel enabled */
+#if SOC_I2S_SUPPORTS_TDM
+    // Bit map of active chan.
+    // There are 16 channels in TDM mode.
+    // For TX module, only the active channel send the audio data, the inactive channel send a constant(configurable) or will be skiped if 'skip_msk_en' in 'i2s_hal_tdm_flags_t' is set.
+    // For RX module, only receive the audio data in active channels, the data in inactive channels will be ignored.
+    // the bit map of active channel can not exceed (0x1<<total_chan_num).
+    // e.g: active_chan_mask = (I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH3), here the active_chan_number is 2 and total_chan_num is not supposed to be smaller than 4.
+    I2S_TDM_ACTIVE_CH0  = (0x1 << 0),               /*!< I2S channel 0 enabled */
+    I2S_TDM_ACTIVE_CH1  = (0x1 << 1),               /*!< I2S channel 1 enabled */
+    I2S_TDM_ACTIVE_CH2  = (0x1 << 2),               /*!< I2S channel 2 enabled */
+    I2S_TDM_ACTIVE_CH3  = (0x1 << 3),               /*!< I2S channel 3 enabled */
+    I2S_TDM_ACTIVE_CH4  = (0x1 << 4),               /*!< I2S channel 4 enabled */
+    I2S_TDM_ACTIVE_CH5  = (0x1 << 5),               /*!< I2S channel 5 enabled */
+    I2S_TDM_ACTIVE_CH6  = (0x1 << 6),               /*!< I2S channel 6 enabled */
+    I2S_TDM_ACTIVE_CH7  = (0x1 << 7),               /*!< I2S channel 7 enabled */
+    I2S_TDM_ACTIVE_CH8  = (0x1 << 8),               /*!< I2S channel 8 enabled */
+    I2S_TDM_ACTIVE_CH9  = (0x1 << 9),               /*!< I2S channel 9 enabled */
+    I2S_TDM_ACTIVE_CH10 = (0x1 << 10),              /*!< I2S channel 10 enabled */
+    I2S_TDM_ACTIVE_CH11 = (0x1 << 11),              /*!< I2S channel 11 enabled */
+    I2S_TDM_ACTIVE_CH12 = (0x1 << 12),              /*!< I2S channel 12 enabled */
+    I2S_TDM_ACTIVE_CH13 = (0x1 << 13),              /*!< I2S channel 13 enabled */
+    I2S_TDM_ACTIVE_CH14 = (0x1 << 14),              /*!< I2S channel 14 enabled */
+    I2S_TDM_ACTIVE_CH15 = (0x1 << 15),              /*!< I2S channel 15 enabled */
+#endif
 } i2s_channel_t;
 
 
-#if SOC_I2S_SUPPORTS_TDM
-/**
- * @brief Bit map of active slot.
- *        For TX module, only the active slot send the audio data, the inactive slot send a constant(configurable).
- *        For RX module, only receive the audio data in active slot, the data in inactive slot will be ignored.
- *
- * @note the bit map of active slot can not exceed (0x1<<total_slot_num).
- *        e.g: active_slot_mask = (I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1), total_slot_num = 4, active_slot_number = 2.
- */
-typedef enum {
-    I2S_TDM_ACTIVE_CH0  = (0x1 << 0),
-    I2S_TDM_ACTIVE_CH1  = (0x1 << 1),
-    I2S_TDM_ACTIVE_CH2  = (0x1 << 2),
-    I2S_TDM_ACTIVE_CH3  = (0x1 << 3),
-    I2S_TDM_ACTIVE_CH4  = (0x1 << 4),
-    I2S_TDM_ACTIVE_CH5  = (0x1 << 5),
-    I2S_TDM_ACTIVE_CH6  = (0x1 << 6),
-    I2S_TDM_ACTIVE_CH7  = (0x1 << 7),
-    I2S_TDM_ACTIVE_CH8  = (0x1 << 8),
-    I2S_TDM_ACTIVE_CH9  = (0x1 << 9),
-    I2S_TDM_ACTIVE_CH10 = (0x1 << 10),
-    I2S_TDM_ACTIVE_CH11 = (0x1 << 11),
-    I2S_TDM_ACTIVE_CH12 = (0x1 << 12),
-    I2S_TDM_ACTIVE_CH13 = (0x1 << 13),
-    I2S_TDM_ACTIVE_CH14 = (0x1 << 14),
-    I2S_TDM_ACTIVE_CH15 = (0x1 << 15),
-} i2s_tdm_active_slot_t;
-#endif
+
 
 /**
  * @brief I2S communication standard format
  *
  */
 typedef enum {
-    I2S_COMM_FORMAT_STAND_I2S   = 0X01, /*!< I2S communication I2S Philips standard, data launch at second BCK*/
-    I2S_COMM_FORMAT_STAND_MSB   = 0X02, /*!< I2S communication MSB alignment standard, data launch at first BCK*/
+    I2S_COMM_FORMAT_STAND_I2S        = 0X01, /*!< I2S communication I2S Philips standard, data launch at second BCK*/
+    I2S_COMM_FORMAT_STAND_MSB        = 0X02, /*!< I2S communication MSB alignment standard, data launch at first BCK*/
     I2S_COMM_FORMAT_STAND_PCM_SHORT  = 0x04, /*!< PCM Short standard, also known as DSP mode. The period of synchronization signal (WS) is 1 bck cycle.*/
     I2S_COMM_FORMAT_STAND_PCM_LONG   = 0x0C, /*!< PCM Long standard. The period of synchronization signal (WS) is channel_bit*bck cycles.*/
     I2S_COMM_FORMAT_STAND_MAX, /*!< standard max*/
+
+    //old definition will be removed in the future.
+    I2S_COMM_FORMAT_I2S       __attribute__((deprecated)) = 0x01, /*!< I2S communication format I2S, correspond to `I2S_COMM_FORMAT_STAND_I2S`*/
+    I2S_COMM_FORMAT_I2S_MSB   __attribute__((deprecated)) = 0x01, /*!< I2S format MSB, (I2S_COMM_FORMAT_I2S |I2S_COMM_FORMAT_I2S_MSB) correspond to `I2S_COMM_FORMAT_STAND_I2S`*/
+    I2S_COMM_FORMAT_I2S_LSB   __attribute__((deprecated)) = 0x02, /*!< I2S format LSB, (I2S_COMM_FORMAT_I2S |I2S_COMM_FORMAT_I2S_LSB) correspond to `I2S_COMM_FORMAT_STAND_MSB`*/
+    I2S_COMM_FORMAT_PCM       __attribute__((deprecated)) = 0x04, /*!< I2S communication format PCM, correspond to `I2S_COMM_FORMAT_STAND_PCM_SHORT`*/
+    I2S_COMM_FORMAT_PCM_SHORT __attribute__((deprecated)) = 0x04, /*!< PCM Short, (I2S_COMM_FORMAT_PCM | I2S_COMM_FORMAT_PCM_SHORT) correspond to `I2S_COMM_FORMAT_STAND_PCM_SHORT`*/
+    I2S_COMM_FORMAT_PCM_LONG  __attribute__((deprecated)) = 0x08, /*!< PCM Long, (I2S_COMM_FORMAT_PCM | I2S_COMM_FORMAT_PCM_LONG) correspond to `I2S_COMM_FORMAT_STAND_PCM_LONG`*/
 } i2s_comm_format_t;
 
 /**
@@ -141,24 +116,27 @@ typedef enum {
     I2S_CHANNEL_FMT_ALL_LEFT,
     I2S_CHANNEL_FMT_ONLY_RIGHT,
     I2S_CHANNEL_FMT_ONLY_LEFT,
-} i2s_channel_fmt_t;
+#if SOC_I2S_SUPPORTS_TDM
+    I2S_CHANNEL_FMT_TDM,            // Up to 16 channels
+#endif
+}  i2s_channel_fmt_t;
 
 /**
  * @brief I2S Mode
  */
 typedef enum {
-    I2S_MODE_MASTER = 1,              /*!< Master mode*/
-    I2S_MODE_SLAVE = 2,               /*!< Slave mode*/
-    I2S_MODE_TX = 4,                  /*!< TX mode*/
-    I2S_MODE_RX = 8,                  /*!< RX mode*/
+    I2S_MODE_MASTER       = (0x1 << 0),       /*!< Master mode*/
+    I2S_MODE_SLAVE        = (0x1 << 1),       /*!< Slave mode*/
+    I2S_MODE_TX           = (0x1 << 2),       /*!< TX mode*/
+    I2S_MODE_RX           = (0x1 << 3),       /*!< RX mode*/
 #if SOC_I2S_SUPPORTS_ADC_DAC
     //built-in DAC functions are only supported on I2S0 for ESP32 chip.
-    I2S_MODE_DAC_BUILT_IN = 16,       /*!< Output I2S data to built-in DAC, no matter the data format is 16bit or 32 bit, the DAC module will only take the 8bits from MSB*/
-    I2S_MODE_ADC_BUILT_IN = 32,       /*!< Input I2S data from built-in ADC, each data can be 12-bit width at most*/
+    I2S_MODE_DAC_BUILT_IN = (0x1 << 4),       /*!< Output I2S data to built-in DAC, no matter the data format is 16bit or 32 bit, the DAC module will only take the 8bits from MSB*/
+    I2S_MODE_ADC_BUILT_IN = (0x1 << 5),       /*!< Input I2S data from built-in ADC, each data can be 12-bit width at most*/
 #endif
 #if SOC_I2S_SUPPORTS_PDM
-    //PDM functions are only supported on I2S0.
-    I2S_MODE_PDM = 64,               /*!< I2S PDM mode*/
+    // PDM functions are only supported on I2S0 (all chips).
+    I2S_MODE_PDM          = (0x1 << 6),       /*!< I2S PDM mode*/
 #endif
 } i2s_mode_t;
 
@@ -169,27 +147,6 @@ typedef enum {
     I2S_CLK_D2CLK = 0,               /*!< Clock from PLL_D2_CLK(160M)*/
     I2S_CLK_APLL,                    /*!< Clock from APLL*/
 } i2s_clock_src_t;
-
-/**
- * @brief I2S bit width per sample.
- *
- * @note: The chip of ESP32 and ESP32S2 only needs to initialize the fields out side the `SOC_I2S_SUPPORTS_TDM` macro.
- *        The chip of ESP32-S3, ESP32-C3 and the later chip, all this fields should be initialized.
- */
-typedef struct {
-    i2s_mode_t              mode;                   /*!< I2S work mode, using ored mask of `i2s_mode_t`*/
-    uint32_t                sample_rate;            /*!< I2S sample rate*/
-    i2s_slot_bits_cfg_t     slot_bits_cfg;          /*!< slot bit configuration, low 16bit is the audio data bit; high 16bit is the slot bit, if set to 0, total slot bit equals to audio data bit*/
-    i2s_channel_fmt_t       channel_format;         /*!< I2S channel format*/
-    i2s_comm_format_t       communication_format;   /*!< I2S communication format */
-#if SOC_I2S_SUPPORTS_TDM
-    i2s_slot_channel_cfg_t  slot_channel_cfg;       /*!< slot number configuration, low 16bit is the valid slot number; high 16bit is the total slot number, if set to 0, total slot number equals to valid slot number*/
-    uint32_t                active_slot_mask;       /*!< active slot bit mask, using the ored mask of `i2s_tdm_active_slot_t`*/
-    bool                    left_align_en;          /*!< Set to enable left aligment*/
-    bool                    big_edin_en;            /*!< Set to enable big edin*/
-    bool                    bit_order_msb_en;       /*!< Set to enable msb order*/
-#endif
-} i2s_config_param_t;
 
 #if SOC_I2S_SUPPORTS_ADC_DAC
 /**
@@ -206,17 +163,6 @@ typedef enum {
 } i2s_dac_mode_t;
 #endif //SOC_I2S_SUPPORTS_ADC_DAC
 
-/**
- * @brief I2S pin number for i2s_set_pin
- *
- */
-typedef struct {
-    int bck_io_num;     /*!< BCK in out pin*/
-    int ws_io_num;      /*!< WS in out pin*/
-    int data_out_num;   /*!< DATA out pin*/
-    int data_in_num;    /*!< DATA in pin*/
-} i2s_pin_config_t;
-
 #if SOC_I2S_SUPPORTS_PCM
 /**
  * @brief A/U-law decompress or compress configuration.
@@ -228,7 +174,7 @@ typedef enum {
     I2S_PCM_U_DECOMPRESS,     /*!< U-law decompress*/
     I2S_PCM_U_COMPRESS,       /*!< U-law compress*/
     I2S_PCM_DISABLE,          /*!< Disable A/U law decopress or compress*/
-} i2s_pcm_cfg_t;
+} i2s_pcm_mode_t;
 #endif
 
 #if SOC_I2S_SUPPORTS_PDM_RX

@@ -31,13 +31,12 @@ extern "C" {
 #endif
 
 // Get I2S hardware instance with giving i2s num
-#define I2S_LL_GET_HW(num) (((num) == 0) ? (&I2S0) : NULL)
+#define I2S_LL_GET_HW(num)             (((num) == 0) ? (&I2S0) : NULL)
 
-#define I2S_INTR_IN_SUC_EOF   BIT(9)
-#define I2S_INTR_OUT_EOF      BIT(12)
-#define I2S_INTR_IN_DSCR_ERR  BIT(13)
-#define I2S_INTR_OUT_DSCR_ERR BIT(14)
-#define I2S_INTR_MAX          (0xFFFFFFFF)
+#define I2S_LL_BASE_CLK                (2*APB_CLK_FREQ)
+
+#define I2S_LL_MCLK_DIVIDER_BIT_WIDTH  (6)
+#define I2S_LL_MCLK_DIVIDER_MAX        ((1 << I2S_LL_MCLK_DIVIDER_BIT_WIDTH) - 1)
 
 /* I2S clock configuration structure */
 typedef struct {
@@ -45,56 +44,14 @@ typedef struct {
     uint16_t a;
     uint16_t b;        // The decimal part of module clock devider, the decimal is: b/a
     uint16_t bck_div;  // The BCK devider, Fbck = Fmclk / bck_div
-} i2s_clk_cal_t;
-
-/**
- * @brief Calculate the closest sample rate clock configuration.
- *        clock relationship:
- *        Fmclk = bck_div*fbck = fsclk/(mclk_div+b/a)
- *
- * @param fsclk I2S source clock freq.
- * @param fbck BCK freuency.
- * @param bck_div The BCK devider of bck. Generally, set bck_div to 8.
- * @param cal Point to `i2s_clk_cal_t` structure.
- */
-static inline void i2s_ll_clk_cal(uint32_t fsclk, uint32_t fbck, int bck_div, i2s_clk_cal_t *cal)
-{
-    int ma = 0;
-    int mb = 0;
-    uint32_t mclk = fbck*bck_div;
-    cal->mclk_div = fsclk / mclk;
-    cal->bck_div = bck_div;
-    cal->a = 1;
-    cal->b = 0;
-    uint32_t freq_diff = fsclk - mclk * cal->mclk_div;
-    uint32_t min = ~0;
-    if (freq_diff == 0) {
-        return;
-    }
-    for (int a = 2; a <= 63; a++) {
-        for (int b = 1; b < a; b++) {
-            ma = freq_diff*a;
-            mb = mclk*b;
-            if (ma == mb) {
-                cal->a = a;
-                cal->b = b;
-                return;
-            }
-            if (abs((mb - ma)) < min) {
-                cal->a = a;
-                cal->b = b;
-                min = abs(mb - ma);
-            }
-        }
-    }
-}
+} i2s_ll_clk_cal_t;
 
 /**
  * @brief I2S module general init, enable I2S clock.
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_general_init(i2s_dev_t *hw)
+static inline void i2s_ll_enable_clock(i2s_dev_t *hw)
 {
     if (hw->clkm_conf.clk_en == 0) {
         hw->clkm_conf.clk_sel = 2;
@@ -104,35 +61,69 @@ static inline void i2s_ll_general_init(i2s_dev_t *hw)
 }
 
 /**
- * @brief I2S TX module general init.
+ * @brief I2S tx msb right enable
  *
  * @param hw Peripheral I2S hardware instance address.
+ * @param enable Set true to enable tx msb right
  */
-static inline void i2s_ll_tx_gen_init(i2s_dev_t *hw)
+static inline void i2s_ll_tx_msb_right_en(i2s_dev_t *hw, bool enable)
 {
-    hw->conf.tx_start = 0;
-    hw->conf.tx_reset = 1;
-    hw->conf.tx_reset = 0;
-    hw->conf.tx_msb_right = 0;
-    hw->conf.tx_right_first = 0;
-    hw->conf.tx_slave_mod = 0;
-    hw->fifo_conf.tx_fifo_mod_force_en = 1;
+    hw->conf.tx_msb_right = enable;
 }
 
 /**
- * @brief I2S RX module general init.
+ * @brief I2S rx msb right enable
  *
  * @param hw Peripheral I2S hardware instance address.
+ * @param enable Set true to enable rx msb right
  */
-static inline void i2s_ll_rx_gen_init(i2s_dev_t *hw)
+static inline void i2s_ll_rx_msb_right_en(i2s_dev_t *hw, bool enable)
 {
-    hw->conf.rx_start = 0;
-    hw->conf.rx_reset = 1;
-    hw->conf.rx_reset = 0;
-    hw->conf.rx_msb_right = 0;
-    hw->conf.rx_right_first = 0;
-    hw->conf.rx_slave_mod = 0;
-    hw->fifo_conf.rx_fifo_mod_force_en = 1;
+    hw->conf.rx_msb_right = enable;
+}
+
+/**
+ * @brief I2S tx right channel first
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param enable Set true to enable send right channel first
+ */
+static inline void i2s_ll_tx_right_first_en(i2s_dev_t *hw, bool enable)
+{
+    hw->conf.tx_right_first = enable;
+}
+
+/**
+ * @brief I2S rx right channel first
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param enable Set true to enable receive right channel first
+ */
+static inline void i2s_ll_rx_right_first_en(i2s_dev_t *hw, bool enable)
+{
+    hw->conf.rx_right_first = enable;
+}
+
+/**
+ * @brief I2S tx fifo module force enable
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param enable Set true to enable tx fifo module
+ */
+static inline void i2s_ll_tx_fifo_mod_force_en(i2s_dev_t *hw, bool enable)
+{
+    hw->fifo_conf.tx_fifo_mod_force_en = enable;
+}
+
+/**
+ * @brief I2S rx fifo module force enable
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param enable Set true to enable rx fifo module
+ */
+static inline void i2s_ll_rx_fifo_mod_force_en(i2s_dev_t *hw, bool enable)
+{
+    hw->fifo_conf.rx_fifo_mod_force_en = enable;
 }
 
 /**
@@ -229,7 +220,7 @@ static inline void i2s_ll_set_rx_clk_src(i2s_dev_t *hw, i2s_clock_src_t src)
  * @param hw Peripheral I2S hardware instance address.
  * @param set Pointer to I2S clock devider configuration paramater
  */
-static inline void i2s_ll_set_tx_clk(i2s_dev_t *hw, i2s_clk_cal_t *set)
+static inline void i2s_ll_set_tx_clk(i2s_dev_t *hw, i2s_ll_clk_cal_t *set)
 {
     hw->clkm_conf.clkm_div_num = set->mclk_div;
     hw->clkm_conf.clkm_div_b = set->b;
@@ -243,7 +234,7 @@ static inline void i2s_ll_set_tx_clk(i2s_dev_t *hw, i2s_clk_cal_t *set)
  * @param hw Peripheral I2S hardware instance address.
  * @param set Pointer to I2S clock devider configuration paramater
  */
-static inline void i2s_ll_set_rx_clk(i2s_dev_t *hw, i2s_clk_cal_t *set)
+static inline void i2s_ll_set_rx_clk(i2s_dev_t *hw, i2s_ll_clk_cal_t *set)
 {
     hw->clkm_conf.clkm_div_num = set->mclk_div;
     hw->clkm_conf.clkm_div_b = set->b;
@@ -490,11 +481,7 @@ static inline void i2s_ll_set_rx_sample_bit(i2s_dev_t *hw, uint8_t sample_bit, i
  */
 static inline void i2s_ll_dma_enable(i2s_dev_t *hw, bool ena)
 {
-    if (ena && !hw->fifo_conf.dscr_en) {
-        hw->fifo_conf.dscr_en = 1;
-    } else if (!ena && hw->fifo_conf.dscr_en) {
-        hw->fifo_conf.dscr_en = 0;
-    }
+    hw->fifo_conf.dscr_en = ena;
 }
 
 /**

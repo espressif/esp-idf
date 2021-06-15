@@ -318,8 +318,8 @@ typedef volatile struct {
             uint32_t reserved12                    :    20;  /* Reserved*/
         };
         uint32_t val;
-    } rxeof_num;
-    uint32_t conf_sigle_data;
+    } rx_eof_num;
+    uint32_t conf_signal_data;                             /*I2S signal data register*/
     union {
         struct {
             uint32_t tx_idle                       :    1;  /*1: i2s_tx is idle state. 0: i2s_tx is working.*/

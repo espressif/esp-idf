@@ -65,7 +65,7 @@
 /*-------------------------- I2S CAPS ----------------------------------------*/
 #define SOC_I2S_NUM                 (2)
 #define SOC_I2S_SUPPORTS_PCM        (1)
-#define SOC_I2S_SUPPORTS_PDM_TX     (0)
+#define SOC_I2S_SUPPORTS_PDM_TX     (1)
 #define SOC_I2S_SUPPORTS_PDM_RX     (1)
 #define SOC_I2S_SUPPORTS_PDM        (1) //(SOC_I2S_SUPPORTS_PDM_RX | SOC_I2S_SUPPORTS_PDM_TX)
 #define SOC_I2S_SUPPORTS_TDM        (1)
