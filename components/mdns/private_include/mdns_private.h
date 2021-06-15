@@ -277,7 +277,8 @@ typedef struct {
 
 typedef struct mdns_txt_linked_item_s {
     const char * key;                       /*!< item key name */
-    const char * value;                     /*!< item value string */
+    char * value;                           /*!< item value string */
+    uint8_t value_len;                      /*!< item value length */
     struct mdns_txt_linked_item_s * next;   /*!< next result, or NULL for the last result in the list */
 } mdns_txt_linked_item_t;
 
@@ -426,6 +427,7 @@ typedef struct {
             mdns_srv_item_t * service;
             char * key;
             char * value;
+            uint8_t value_len;
         } srv_txt_set;
         struct {
             mdns_srv_item_t * service;
