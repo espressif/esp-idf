@@ -22,7 +22,7 @@ extern "C" {
 
 /**
  * Mock function to replace ESP ROM function used in IDF with a Linux implementation.
- * Note: the name MUST have the prefix esp_rom_* since tools/ci/check_rom_apis.sh checks and complains otherwise.
+ * Note: the name MUST have the prefix esp_rom_* since tools/ci/check_api_violation.sh checks and complains otherwise.
  */
 uint32_t esp_rom_crc32_le(uint32_t crc, const uint8_t* buf, size_t len);
 
