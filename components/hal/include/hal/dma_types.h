@@ -14,11 +14,11 @@
 
 #pragma once
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdint.h>
 
 /**
  * @brief Type of DMA descriptor
@@ -43,3 +43,7 @@ _Static_assert(sizeof(dma_descriptor_t) == 12, "dma_descriptor_t should occupy 1
 #define DMA_DESCRIPTOR_BUFFER_OWNER_CPU (0)   /*!< DMA buffer is allowed to be accessed by CPU */
 #define DMA_DESCRIPTOR_BUFFER_OWNER_DMA (1)   /*!< DMA buffer is allowed to be accessed by DMA engine */
 #define DMA_DESCRIPTOR_BUFFER_MAX_SIZE (4095) /*!< Maximum size of the buffer that can be attached to descriptor */
+
+#ifdef __cplusplus
+}
+#endif

@@ -48,9 +48,12 @@ extern "C" {
 #define GDMA_LL_EVENT_RX_SUC_EOF     (1<<1)
 #define GDMA_LL_EVENT_RX_DONE        (1<<0)
 
-/* Memory block size value supported by TX channel */
-#define GDMA_LL_OUT_EXT_MEM_BK_SIZE_16B (0)
-#define GDMA_LL_OUT_EXT_MEM_BK_SIZE_32B (1)
+#define GDMA_LL_L2FIFO_BASE_SIZE (16) // Basic size of GDMA Level 2 FIFO
+
+/* Memory block size value supported by channel */
+#define GDMA_LL_EXT_MEM_BK_SIZE_16B (0)
+#define GDMA_LL_EXT_MEM_BK_SIZE_32B (1)
+#define GDMA_LL_EXT_MEM_BK_SIZE_64B (2)
 
 ///////////////////////////////////// Common /////////////////////////////////////////
 /**
@@ -146,7 +149,7 @@ static inline void gdma_ll_rx_reset_channel(gdma_dev_t *dev, uint32_t channel)
 
 /**
  * @brief Set DMA RX channel memory block size
- * @param size_index Supported value: GDMA_IN_EXT_MEM_BK_SIZE_16B, GDMA_IN_EXT_MEM_BK_SIZE_32B
+ * @param size_index Supported value: GDMA_LL_EXT_MEM_BK_SIZE_16B/32B/64B
  */
 static inline void gdma_ll_rx_set_block_size_psram(gdma_dev_t *dev, uint32_t channel, uint32_t size_index)
 {
@@ -300,19 +303,6 @@ static inline void gdma_ll_rx_connect_to_periph(gdma_dev_t *dev, uint32_t channe
     dev->channel[channel].in.peri_sel.sel = periph_id;
 }
 
-/**
- * @brief Extend the L2 FIFO size for RX channel
- * @note By default, the L2 FIFO size is SOC_GDMA_L2_FIFO_BASE_SIZE Bytes. Suggest to extend it to twice the block size when accessing PSRAM.
- * @note `size_in_bytes` should aligned to 8 and larger than SOC_GDMA_L2_FIFO_BASE_SIZE
- */
-static inline void gdma_ll_rx_extend_l2_fifo_size_to(gdma_dev_t *dev, uint32_t channel, uint32_t size_in_bytes)
-{
-    if (size_in_bytes > SOC_GDMA_L2_FIFO_BASE_SIZE) {
-        dev->sram_size[channel].in.in_size = (size_in_bytes - SOC_GDMA_L2_FIFO_BASE_SIZE) / 8;
-    }
-}
-
-
 ///////////////////////////////////// TX /////////////////////////////////////////
 /**
  * @brief Get DMA TX channel interrupt status word
@@ -401,7 +391,7 @@ static inline void gdma_ll_tx_reset_channel(gdma_dev_t *dev, uint32_t channel)
 
 /**
  * @brief Set DMA TX channel memory block size
- * @param size_index Supported value: GDMA_OUT_EXT_MEM_BK_SIZE_16B, GDMA_OUT_EXT_MEM_BK_SIZE_32B
+ * @param size_index Supported value: GDMA_LL_EXT_MEM_BK_SIZE_16B/32B/64B
  */
 static inline void gdma_ll_tx_set_block_size_psram(gdma_dev_t *dev, uint32_t channel, uint32_t size_index)
 {
@@ -529,18 +519,6 @@ static inline void gdma_ll_tx_set_priority(gdma_dev_t *dev, uint32_t channel, ui
 static inline void gdma_ll_tx_connect_to_periph(gdma_dev_t *dev, uint32_t channel, int periph_id)
 {
     dev->channel[channel].out.peri_sel.sel = periph_id;
-}
-
-/**
- * @brief Extend the L2 FIFO size for TX channel
- * @note By default, the L2 FIFO size is SOC_GDMA_L2_FIFO_BASE_SIZE Bytes. Suggest to extend it to twice the block size when accessing PSRAM.
- * @note `size_in_bytes` should aligned to 8 and larger than SOC_GDMA_L2_FIFO_BASE_SIZE
- */
-static inline void gdma_ll_tx_extend_fifo_size_to(gdma_dev_t *dev, uint32_t channel, uint32_t size_in_bytes)
-{
-    if (size_in_bytes > SOC_GDMA_L2_FIFO_BASE_SIZE) {
-        dev->sram_size[channel].out.out_size =  (size_in_bytes - SOC_GDMA_L2_FIFO_BASE_SIZE) / 8;
-    }
 }
 
 #ifdef __cplusplus
