@@ -7,3 +7,4 @@ build_system/cmake/
 mb_example_common/
 examples/cxx/experimental/blink_cxx
 examples/peripherals/lcd/lvgl
+examples/peripherals/i2s/i2s_es8311

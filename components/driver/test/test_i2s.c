@@ -1,8 +1,9 @@
 /*
  * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: CC0-1.0
  */
+
 /**
  * I2S test environment UT_T1_I2S:
  * We use internal signals instead of external wiring, but please keep the following IO connections, or connect nothing to prevent the signal from being disturbed.
@@ -14,6 +15,7 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/queue.h"
 #include "driver/i2s.h"
 #include "driver/gpio.h"
 #include "hal/gpio_hal.h"
@@ -157,12 +159,15 @@ TEST_CASE("I2S basic driver install, uninstall, set pin test", "[i2s]")
 
     // normal  i2s
     i2s_pin_config_t pin_config = {
+        .mck_io_num = -1,
         .bck_io_num = MASTER_BCK_IO,
         .ws_io_num = MASTER_WS_IO,
         .data_out_num = DATA_OUT_IO,
         .data_in_num = -1
     };
-    TEST_ESP_OK(i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL));
+    QueueHandle_t evt_que;
+    TEST_ESP_OK(i2s_driver_install(I2S_NUM_0, &i2s_config, 16, &evt_que));
+    TEST_ASSERT(evt_que);
     TEST_ESP_OK(i2s_set_pin(I2S_NUM_0, &pin_config));
     TEST_ESP_OK(i2s_driver_uninstall(I2S_NUM_0));
 
@@ -199,6 +204,7 @@ TEST_CASE("I2S Loopback test(master tx and rx)", "[i2s]")
 #endif
     };
     i2s_pin_config_t master_pin_config = {
+        .mck_io_num = -1,
         .bck_io_num = MASTER_BCK_IO,
         .ws_io_num = MASTER_WS_IO,
         .data_out_num = DATA_OUT_IO,
@@ -247,6 +253,74 @@ TEST_CASE("I2S Loopback test(master tx and rx)", "[i2s]")
     i2s_driver_uninstall(I2S_NUM_0);
 }
 
+#if SOC_I2S_SUPPORTS_TDM
+TEST_CASE("I2S TDM Loopback test(master tx and rx)", "[i2s]")
+{
+    // master driver installed and send data
+    i2s_config_t master_i2s_config = {
+        .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_RX,
+        .sample_rate = SAMPLE_RATE,
+        .bits_per_sample = SAMPLE_BITS,
+        .channel_format = I2S_CHANNEL_FMT_MULTIPLE,
+        .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+        .total_chan = 4,
+        .chan_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1 | I2S_TDM_ACTIVE_CH2 | I2S_TDM_ACTIVE_CH3,
+        .dma_buf_count = 6,
+        .dma_buf_len = 100,
+        .use_apll = 0,
+        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
+    };
+    i2s_pin_config_t master_pin_config = {
+        .mck_io_num = -1,
+        .bck_io_num = MASTER_BCK_IO,
+        .ws_io_num = MASTER_WS_IO,
+        .data_out_num = DATA_OUT_IO,
+        .data_in_num = DATA_IN_IO
+    };
+    TEST_ESP_OK(i2s_driver_install(I2S_NUM_0, &master_i2s_config, 0, NULL));
+    TEST_ESP_OK(i2s_set_pin(I2S_NUM_0, &master_pin_config));
+    i2s_test_io_config(I2S_TEST_MODE_LOOPBACK);
+    printf("\r\nheap size: %d\n", esp_get_free_heap_size());
+
+    uint8_t *data_wr = (uint8_t *)malloc(sizeof(uint8_t) * 400);
+    size_t i2s_bytes_write = 0;
+    size_t bytes_read = 0;
+    int length = 0;
+    uint8_t *i2s_read_buff = (uint8_t *)malloc(sizeof(uint8_t) * 10000);
+
+    for (int i = 0; i < 100; i++) {
+        data_wr[i] = i + 1;
+    }
+    int flag = 0; // break loop flag
+    int end_position = 0;
+    // write data to slave
+    i2s_write(I2S_NUM_0, data_wr, sizeof(uint8_t) * 400, &i2s_bytes_write, 1000 / portTICK_PERIOD_MS);
+    while (!flag) {
+        if (length >= 10000 - 500) {
+            break;
+        }
+        i2s_read(I2S_NUM_0, i2s_read_buff + length, sizeof(uint8_t) * 500, &bytes_read, 1000 / portMAX_DELAY);
+        if (bytes_read > 0) {
+            for (int i = length; i < length + bytes_read; i++) {
+                if (i2s_read_buff[i] == 100) {
+                    flag = 1;
+                    end_position = i;
+                    break;
+                }
+            }
+        }
+        length = length + bytes_read;
+    }
+    // test the read data right or not
+    for (int i = end_position - 99; i <= end_position; i++) {
+        TEST_ASSERT_EQUAL_UINT8((i - end_position + 100), *(i2s_read_buff + i));
+    }
+    free(data_wr);
+    free(i2s_read_buff);
+    i2s_driver_uninstall(I2S_NUM_0);
+}
+#endif
+
 #if SOC_I2S_NUM > 1
 /* ESP32S2 and ESP32C3 has only single I2S port and hence following test cases are not applicable */
 TEST_CASE("I2S write and read test(master tx and slave rx)", "[i2s]")
@@ -272,6 +346,7 @@ TEST_CASE("I2S write and read test(master tx and slave rx)", "[i2s]")
 #endif
     };
     i2s_pin_config_t master_pin_config = {
+        .mck_io_num = -1,
         .bck_io_num = MASTER_BCK_IO,
         .ws_io_num = MASTER_WS_IO,
         .data_out_num = DATA_OUT_IO,
@@ -302,6 +377,7 @@ TEST_CASE("I2S write and read test(master tx and slave rx)", "[i2s]")
 #endif
     };
     i2s_pin_config_t slave_pin_config = {
+        .mck_io_num = -1,
         .bck_io_num = SLAVE_BCK_IO,
         .ws_io_num = SLAVE_WS_IO,
         .data_out_num = -1,
@@ -374,6 +450,7 @@ TEST_CASE("I2S write and read test(master rx and slave tx)", "[i2s]")
 #endif
     };
     i2s_pin_config_t master_pin_config = {
+        .mck_io_num = -1,
         .bck_io_num = MASTER_BCK_IO,
         .ws_io_num = MASTER_WS_IO,
         .data_out_num = -1,
@@ -404,6 +481,7 @@ TEST_CASE("I2S write and read test(master rx and slave tx)", "[i2s]")
 #endif
     };
     i2s_pin_config_t slave_pin_config = {
+        .mck_io_num = -1,
         .bck_io_num = SLAVE_BCK_IO,
         .ws_io_num = SLAVE_WS_IO,
         .data_out_num = DATA_OUT_IO,
@@ -477,6 +555,7 @@ TEST_CASE("I2S memory leaking test", "[i2s]")
 #endif
     };
     i2s_pin_config_t master_pin_config = {
+        .mck_io_num = -1,
         .bck_io_num = MASTER_BCK_IO,
         .ws_io_num = MASTER_WS_IO,
         .data_out_num = -1,
@@ -507,6 +586,7 @@ TEST_CASE("I2S memory leaking test", "[i2s]")
 TEST_CASE("I2S APLL clock variation test", "[i2s]")
 {
     i2s_pin_config_t pin_config = {
+        .mck_io_num = -1,
         .bck_io_num = MASTER_BCK_IO,
         .ws_io_num = MASTER_WS_IO,
         .data_out_num = DATA_OUT_IO,
