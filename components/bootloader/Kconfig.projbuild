@@ -117,8 +117,8 @@ menu "Bootloader config"
             Allows to reset the device to factory settings:
             - clear one or more data partitions;
             - boot from "factory" partition.
-            The factory reset will occur if there is a GPIO input pulled low while device starts up.
-            See settings below.
+            The factory reset will occur if there is a GPIO input held at the configured level while
+            device starts up. See settings below.
 
     config BOOTLOADER_NUM_PIN_FACTORY_RESET
         int "Number of the GPIO input for factory reset"
@@ -127,17 +127,23 @@ menu "Bootloader config"
         range 0 44 if IDF_TARGET_ESP32S2
         default 4
         help
-            The selected GPIO will be configured as an input with internal pull-up enabled.
-            To trigger a factory reset, this GPIO must be pulled low on reset.
-            Note that GPIO34-39 do not have an internal pullup and an external one must be provided.
+            The selected GPIO will be configured as an input with internal pull-up enabled (note that on some SoCs.
+            not all pins have an internal pull-up, consult the hardware datasheet for details.) To trigger a factory
+            reset, this GPIO must be held high or low (as configured) on startup.
 
-    config BOOTLOADER_PIN_LEVEL_FACTORY_RESET
-        int "Level of the GPIO input for factory reset"
+    choice BOOTLOADER_FACTORY_RESET_PIN_LEVEL
+        bool "Factory reset GPIO level"
         depends on BOOTLOADER_FACTORY_RESET
-        range 0 1
-        default 0
+        default BOOTLOADER_FACTORY_RESET_PIN_LOW
         help
-            Pin level for factory reset. 0 for LOW and 1 for HIGH.
+            Pin level for factory reset, can be triggered on low or high.
+
+        config BOOTLOADER_FACTORY_RESET_PIN_LOW
+            bool "Reset on GPIO low"
+
+        config BOOTLOADER_FACTORY_RESET_PIN_HIGH
+            bool "Reset on GPIO high"
+    endchoice
 
     config BOOTLOADER_OTA_DATA_ERASE
         bool "Clear OTA data on factory reset (select factory partition)"
