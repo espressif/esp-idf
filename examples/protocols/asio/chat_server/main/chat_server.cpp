@@ -208,6 +208,8 @@ int asio_main()
       servers.emplace_back(io_context, endpoint);
     }
 
+    std::cout << "ASIO engine is up and running" << std::endl;
+
     io_context.run();
 
   return 0;

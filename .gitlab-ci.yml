@@ -890,6 +890,7 @@ assign_test:
     CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/examples/test_configs"
     LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
     ENV_FILE: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/EnvConfig.yml"
+    PYTHON_VER: 3
   script:
     - *define_config_file_name
     # first test if config file exists, if not exist, exit 0
