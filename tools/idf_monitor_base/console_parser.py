@@ -22,8 +22,8 @@ except ImportError:
 import serial.tools.miniterm as miniterm
 
 from .constants import (CMD_APP_FLASH, CMD_ENTER_BOOT, CMD_MAKE, CMD_OUTPUT_TOGGLE, CMD_RESET, CMD_STOP,
-                        CMD_TOGGLE_LOGGING, CTRL_A, CTRL_F, CTRL_H, CTRL_L, CTRL_P, CTRL_R, CTRL_RBRACKET, CTRL_T,
-                        CTRL_X, CTRL_Y, TAG_CMD, TAG_KEY, __version__)
+                        CMD_TOGGLE_LOGGING, CMD_TOGGLE_TIMESTAMPS, CTRL_A, CTRL_F, CTRL_H, CTRL_I, CTRL_L, CTRL_P,
+                        CTRL_R, CTRL_RBRACKET, CTRL_T, CTRL_X, CTRL_Y, TAG_CMD, TAG_KEY, __version__)
 from .output_helpers import red_print, yellow_print
 
 key_description = miniterm.key_description
@@ -72,6 +72,8 @@ class ConsoleParser(object):
             ret = (TAG_CMD, CMD_OUTPUT_TOGGLE)
         elif c == CTRL_L:  # Toggle saving output into file
             ret = (TAG_CMD, CMD_TOGGLE_LOGGING)
+        elif c in [CTRL_I, 'i', 'I']:  # Toggle printing timestamps
+            ret = (TAG_CMD, CMD_TOGGLE_TIMESTAMPS)
         elif c == CTRL_P:
             yellow_print('Pause app (enter bootloader mode), press Ctrl-T Ctrl-R to restart')
             # to fast trigger pause without press menu key
@@ -99,6 +101,7 @@ class ConsoleParser(object):
             ---    {appmake:14} Build & flash app only
             ---    {output:14} Toggle output display
             ---    {log:14} Toggle saving output into file
+            ---    {timestamps:14} Toggle printing timestamps
             ---    {pause:14} Reset target into bootloader to pause app via RTS line
             ---    {menuexit:14} Exit program
         """.format(version=__version__,
@@ -109,6 +112,7 @@ class ConsoleParser(object):
                    appmake=key_description(CTRL_A) + ' (or A)',
                    output=key_description(CTRL_Y),
                    log=key_description(CTRL_L),
+                   timestamps=key_description(CTRL_I) + ' (or I)',
                    pause=key_description(CTRL_P),
                    menuexit=key_description(CTRL_X) + ' (or X)')
         return textwrap.dedent(text)

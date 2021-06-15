@@ -41,7 +41,7 @@ import subprocess
 import threading
 import time
 from builtins import bytes, object
-from typing import BinaryIO, Callable, List, Optional, Union
+from typing import AnyStr, BinaryIO, Callable, List, Optional, Union
 
 import serial.tools.miniterm as miniterm
 from idf_monitor_base import (COREDUMP_DECODE_DISABLE, COREDUMP_DECODE_INFO, COREDUMP_DONE, COREDUMP_IDLE,
@@ -53,8 +53,8 @@ from idf_monitor_base.chip_specific_config import get_chip_config
 from idf_monitor_base.console_parser import ConsoleParser
 from idf_monitor_base.console_reader import ConsoleReader
 from idf_monitor_base.constants import (CMD_APP_FLASH, CMD_ENTER_BOOT, CMD_MAKE, CMD_OUTPUT_TOGGLE, CMD_RESET,
-                                        CMD_STOP, CMD_TOGGLE_LOGGING, CTRL_H, CTRL_T, TAG_CMD, TAG_KEY, TAG_SERIAL,
-                                        TAG_SERIAL_FLUSH)
+                                        CMD_STOP, CMD_TOGGLE_LOGGING, CMD_TOGGLE_TIMESTAMPS, CTRL_H, CTRL_T, TAG_CMD,
+                                        TAG_KEY, TAG_SERIAL, TAG_SERIAL_FLUSH)
 from idf_monitor_base.exceptions import SerialStopException
 from idf_monitor_base.line_matcher import LineMatcher
 from idf_monitor_base.output_helpers import normal_print, red_print, yellow_print
@@ -88,13 +88,23 @@ class Monitor(object):
     Main difference is that all event processing happens in the main thread, not the worker threads.
     """
 
-    def __init__(self, serial_instance, elf_file, print_filter, make='make', encrypted=False,
-                 toolchain_prefix=DEFAULT_TOOLCHAIN_PREFIX, eol='CRLF',
-                 decode_coredumps=COREDUMP_DECODE_INFO,
-                 decode_panic=PANIC_DECODE_DISABLE,
-                 target='esp32',
-                 websocket_client=None, enable_address_decoding=True):
-        # type: (serial.Serial, str, str, str, bool, str, str, str, str, str, WebSocketClient, bool) -> None
+    def __init__(
+            self,
+            serial_instance,                               # type: serial.Serial
+            elf_file,                                      # type: str
+            print_filter,                                  # type: str
+            make='make',                                   # type: str
+            encrypted=False,                               # type: bool
+            toolchain_prefix=DEFAULT_TOOLCHAIN_PREFIX,     # type: str
+            eol='CRLF',                                    # type: str
+            decode_coredumps=COREDUMP_DECODE_INFO,         # type: str
+            decode_panic=PANIC_DECODE_DISABLE,             # type: str
+            target='esp32',                                # type: str
+            websocket_client=None,                         # type: WebSocketClient
+            enable_address_decoding=True,                  # type: bool
+            timestamps=False,                              # type: bool
+            timestamp_format=''                            # type: str
+    ):
         super(Monitor, self).__init__()
         self.event_queue = queue.Queue()  # type: queue.Queue
         self.cmd_queue = queue.Queue()  # type: queue.Queue
@@ -142,6 +152,8 @@ class Monitor(object):
         self._panic_buffer = b''
         self.gdb_exit = False
         self.start_cmd_sent = False
+        self._timestamps = timestamps
+        self._timestamp_format = timestamp_format
 
     def invoke_processing_last_line(self):
         # type: () -> None
@@ -566,6 +578,9 @@ class Monitor(object):
         else:
             self.start_logging()
 
+    def toggle_timestamps(self):  # type: () -> None
+        self._timestamps = not self._timestamps
+
     def start_logging(self):  # type: () -> None
         if not self._log_file:
             name = 'log.{}.{}.txt'.format(os.path.splitext(os.path.basename(self.elf_file))[0],
@@ -587,15 +602,25 @@ class Monitor(object):
             finally:
                 self._log_file = None
 
-    def _print(self, string, console_printer=None):  # type: (Union[str, bytes], Optional[Callable]) -> None
+    def _print(self, string, console_printer=None):  # type: (AnyStr, Optional[Callable]) -> None
         if console_printer is None:
             console_printer = self.console.write_bytes
+        if self._timestamps and (self._output_enabled or self._log_file):
+            t = datetime.datetime.now().strftime(self._timestamp_format)
+            # "string" is not guaranteed to be a full line. Timestamps should be only at the beginning of lines.
+            if isinstance(string, type(u'')):
+                search_patt = '\n'
+                replacement = '\n' + t + ' '
+            else:
+                search_patt = b'\n'                             # type: ignore
+                replacement = b'\n' + t.encode('ascii') + b' '  # type: ignore
+            string = string.replace(search_patt, replacement)
         if self._output_enabled:
             console_printer(string)
         if self._log_file:
             try:
                 if isinstance(string, type(u'')):
-                    string = string.encode()
+                    string = string.encode()  # type: ignore
                 self._log_file.write(string)  # type: ignore
             except Exception as e:
                 red_print('\nCannot write to file: {}'.format(e))
@@ -629,6 +654,8 @@ class Monitor(object):
             self.output_toggle()
         elif cmd == CMD_TOGGLE_LOGGING:
             self.toggle_logging()
+        elif cmd == CMD_TOGGLE_TIMESTAMPS:
+            self.toggle_timestamps()
         elif cmd == CMD_ENTER_BOOT:
             self.serial.setDTR(high)  # IO0=HIGH
             self.serial.setRTS(low)  # EN=LOW, chip in reset
@@ -729,6 +756,18 @@ def main():  # type: () -> None
         help='WebSocket URL for communicating with IDE tools for debugging purposes'
     )
 
+    parser.add_argument(
+        '--timestamps',
+        help='Add timestamp for each line',
+        default=False,
+        action='store_true')
+
+    parser.add_argument(
+        '--timestamp-format',
+        default=os.environ.get('ESP_IDF_MONITOR_TIMESTAMP_FORMAT', '%Y-%m-%d %H:%M:%S'),
+        help='Set a strftime()-compatible timestamp format'
+    )
+
     args = parser.parse_args()
 
     # GDB uses CreateFile to open COM port, which requires the COM name to be r'\\.\COMx' if the COM
@@ -771,7 +810,8 @@ def main():  # type: () -> None
         monitor = Monitor(serial_instance, args.elf_file.name, args.print_filter, args.make, args.encrypted,
                           args.toolchain_prefix, args.eol,
                           args.decode_coredumps, args.decode_panic, args.target,
-                          ws, enable_address_decoding=not args.disable_address_decoding)
+                          ws, enable_address_decoding=not args.disable_address_decoding,
+                          timestamps=args.timestamps, timestamp_format=args.timestamp_format)
 
         yellow_print('--- idf_monitor on {p.name} {p.baudrate} ---'.format(p=serial_instance))
         yellow_print('--- Quit: {} | Menu: {} | Help: {} followed by {} ---'.format(
