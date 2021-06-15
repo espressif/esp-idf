@@ -182,7 +182,7 @@ class TestResult(object):
 
     @staticmethod
     def _convert_to_draw_format(data, label):
-        keys = data.keys()
+        keys = list(data.keys())
         keys.sort()
         return {
             "x-axis": keys,
@@ -216,8 +216,8 @@ class TestResult(object):
 
         LineChart.draw_line_chart(os.path.join(path, file_name),
                                   "Throughput Vs {} ({} {})".format(type_name, self.proto, self.direction),
-                                  "Throughput (Mbps)",
                                   "{} (dbm)".format(type_name),
+                                  "Throughput (Mbps)",
                                   data_list)
         return file_name
 
@@ -305,7 +305,7 @@ class IperfTestUtility(object):
         except subprocess.CalledProcessError:
             pass
         self.dut.write("restart")
-        self.dut.expect("esp32>")
+        self.dut.expect_any("iperf>", "esp32>")
         self.dut.write("scan {}".format(self.ap_ssid))
         for _ in range(SCAN_RETRY_COUNT):
             try:
@@ -358,6 +358,12 @@ class IperfTestUtility(object):
             with open(PC_IPERF_TEMP_LOG_FILE, "w") as f:
                 if proto == "tcp":
                     self.dut.write("iperf -s -i 1 -t {}".format(TEST_TIME))
+                    # wait until DUT TCP server created
+                    try:
+                        self.dut.expect("iperf tcp server create successfully", timeout=1)
+                    except DUT.ExpectTimeout:
+                        # compatible with old iperf example binary
+                        pass
                     process = subprocess.Popen(["iperf", "-c", dut_ip,
                                                 "-t", str(TEST_TIME), "-f", "m"],
                                                stdout=f, stderr=f)
@@ -431,7 +437,7 @@ class IperfTestUtility(object):
         :return: True or False
         """
         self.dut.write("restart")
-        self.dut.expect("esp32>")
+        self.dut.expect_any("iperf>", "esp32>")
         for _ in range(WAIT_AP_POWER_ON_TIMEOUT // SCAN_TIMEOUT):
             try:
                 self.dut.write("scan {}".format(self.ap_ssid))
@@ -477,7 +483,7 @@ def test_wifi_throughput_with_different_configs(env, extra_data):
         dut = env.get_dut("iperf", "examples/wifi/iperf", dut_class=ttfw_idf.ESP32DUT,
                           app_config_name=config_name)
         dut.start_app()
-        dut.expect("esp32>")
+        dut.expect_any("iperf>", "esp32>")
 
         # 3. run test for each required att value
         test_result[config_name] = {
@@ -533,7 +539,7 @@ def test_wifi_throughput_vs_rssi(env, extra_data):
     dut = env.get_dut("iperf", "examples/wifi/iperf", dut_class=ttfw_idf.ESP32DUT,
                       app_config_name=BEST_PERFORMANCE_CONFIG)
     dut.start_app()
-    dut.expect("esp32>")
+    dut.expect_any("iperf>", "esp32>")
 
     # 2. run test for each required att value
     for ap_info in ap_list:
@@ -580,7 +586,7 @@ def test_wifi_throughput_basic(env, extra_data):
     dut = env.get_dut("iperf", "examples/wifi/iperf", dut_class=ttfw_idf.ESP32DUT,
                       app_config_name=BEST_PERFORMANCE_CONFIG)
     dut.start_app()
-    dut.expect("esp32>")
+    dut.expect_any("iperf>", "esp32>")
 
     # 2. preparing
     test_result = {
