@@ -3,6 +3,6 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := ledc
+PROJECT_NAME := ledc_basic
 
 include $(IDF_PATH)/make/project.mk

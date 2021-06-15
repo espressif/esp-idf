@@ -192,8 +192,9 @@ The duty resolution is normally set using :cpp:type:`ledc_timer_bit_t`. This enu
 Application Example
 -------------------
 
-The LEDC change duty cycle and fading control example: :example:`peripherals/ledc`.
+The LEDC change duty cycle and fading control example: :example:`peripherals/ledc/ledc_fade`.
 
+The LEDC basic example: :example:`peripherals/ledc/ledc_basic`.
 
 API Reference
 -------------
