@@ -31,9 +31,11 @@
 #include "esp_err.h"
 #include "esp_attr.h"
 #include "esp_rom_gpio.h"
-#include "hal/usbh_ll.h"
-#include "usb.h"
+#include "soc/usb_wrap_struct.h"
 #include "hcd.h"
+#include "usb_private.h"
+#include "usb.h"
+#include "test_hcd_common.h"
 
 #define PORT_NUM                1
 #define EVENT_QUEUE_LEN         5
@@ -281,70 +283,66 @@ void test_hcd_pipe_free(hcd_pipe_handle_t pipe_hdl)
     vQueueDelete(pipe_evt_queue);
 }
 
-usb_irp_t *test_hcd_alloc_irp(int num_iso_packets, size_t data_buffer_size)
+urb_t *test_hcd_alloc_urb(int num_isoc_packets, size_t data_buffer_size)
 {
-    //Allocate list of IRPs
-    usb_irp_t *irp = heap_caps_calloc(1, sizeof(usb_irp_t) + (num_iso_packets * sizeof(usb_iso_packet_desc_t)), MALLOC_CAP_DEFAULT);
-    TEST_ASSERT_NOT_EQUAL(NULL, irp);
-    //Allocate data buffer for each IRP and assign them
+    //Allocate a URB and data buffer
+    urb_t *urb = heap_caps_calloc(1, sizeof(urb_t) + (num_isoc_packets * sizeof(usb_isoc_packet_desc_t)), MALLOC_CAP_DEFAULT);
     uint8_t *data_buffer = heap_caps_malloc(data_buffer_size, MALLOC_CAP_DMA);
+    TEST_ASSERT_NOT_EQUAL(NULL, urb);
     TEST_ASSERT_NOT_EQUAL(NULL, data_buffer);
-    irp->data_buffer = data_buffer;
-    irp->num_iso_packets = num_iso_packets;
-    return irp;
+    //Initialize URB and underlying transfer structure. Need to cast to dummy due to const fields
+    usb_transfer_dummy_t *transfer_dummy = (usb_transfer_dummy_t *)&urb->transfer;
+    transfer_dummy->data_buffer = data_buffer;
+    transfer_dummy->num_isoc_packets = num_isoc_packets;
+    return urb;
 }
 
-void test_hcd_free_irp(usb_irp_t *irp)
+void test_hcd_free_urb(urb_t *urb)
 {
-    //Free data buffers of each IRP
-    heap_caps_free(irp->data_buffer);
-    //Free the IRP list
-    heap_caps_free(irp);
+    //Free data buffer of the transfer
+    heap_caps_free(urb->transfer.data_buffer);
+    //Free the URB
+    heap_caps_free(urb);
 }
 
-uint8_t test_hcd_enum_devc(hcd_pipe_handle_t default_pipe)
+uint8_t test_hcd_enum_device(hcd_pipe_handle_t default_pipe)
 {
-    //We need to create an IRP for the enumeration control transfers
-    usb_irp_t *irp = heap_caps_calloc(1, sizeof(usb_irp_t), MALLOC_CAP_DEFAULT);
-    TEST_ASSERT_NOT_EQUAL(NULL, irp);
-    //We use a single data buffer for all control transfers during enumerations. 256 bytes should be large enough for most descriptors
-    irp->data_buffer = heap_caps_malloc(sizeof(usb_ctrl_req_t) + 256, MALLOC_CAP_DMA);
-    TEST_ASSERT_NOT_EQUAL(NULL, irp->data_buffer);
-    usb_ctrl_req_t *ctrl_req = (usb_ctrl_req_t *)irp->data_buffer;
+    //We need to create a URB for the enumeration control transfers
+    urb_t *urb = test_hcd_alloc_urb(0, sizeof(usb_ctrl_req_t) + 256);
+    usb_ctrl_req_t *ctrl_req = (usb_ctrl_req_t *)urb->transfer.data_buffer;
 
     //Get the device descriptor (note that device might only return 8 bytes)
-    USB_CTRL_REQ_INIT_GET_DEVC_DESC(ctrl_req);
-    irp->num_bytes = sizeof(usb_desc_devc_t);
-    TEST_ASSERT_EQUAL(ESP_OK, hcd_irp_enqueue(default_pipe, irp));
-    test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_IRP_DONE);
-    TEST_ASSERT_EQUAL(irp, hcd_irp_dequeue(default_pipe));
-    TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, irp->status);
+    USB_CTRL_REQ_INIT_GET_DEVICE_DESC(ctrl_req);
+    urb->transfer.num_bytes = sizeof(usb_desc_device_t);
+    TEST_ASSERT_EQUAL(ESP_OK, hcd_urb_enqueue(default_pipe, urb));
+    test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_URB_DONE);
+    TEST_ASSERT_EQUAL(urb, hcd_urb_dequeue(default_pipe));
+    TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.status);
 
     //Update the MPS of the default pipe
-    usb_desc_devc_t *devc_desc = (usb_desc_devc_t *)(irp->data_buffer + sizeof(usb_ctrl_req_t));
-    TEST_ASSERT_EQUAL(ESP_OK, hcd_pipe_update_mps(default_pipe, devc_desc->bMaxPacketSize0));
+    usb_desc_device_t *device_desc = (usb_desc_device_t *)(urb->transfer.data_buffer + sizeof(usb_ctrl_req_t));
+    TEST_ASSERT_EQUAL(ESP_OK, hcd_pipe_update_mps(default_pipe, device_desc->bMaxPacketSize0));
 
     //Send a set address request
     USB_CTRL_REQ_INIT_SET_ADDR(ctrl_req, ENUM_ADDR);    //We only support one device for now so use address 1
-    irp->num_bytes = 0;
-    TEST_ASSERT_EQUAL(ESP_OK, hcd_irp_enqueue(default_pipe, irp));
-    test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_IRP_DONE);
-    TEST_ASSERT_EQUAL(irp, hcd_irp_dequeue(default_pipe));
-    TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, irp->status);
+    urb->transfer.num_bytes = 0;
+    TEST_ASSERT_EQUAL(ESP_OK, hcd_urb_enqueue(default_pipe, urb));
+    test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_URB_DONE);
+    TEST_ASSERT_EQUAL(urb, hcd_urb_dequeue(default_pipe));
+    TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.status);
 
     //Update address of default pipe
     TEST_ASSERT_EQUAL(ESP_OK, hcd_pipe_update_dev_addr(default_pipe, ENUM_ADDR));
 
     //Send a set configuration request
     USB_CTRL_REQ_INIT_SET_CONFIG(ctrl_req, ENUM_CONFIG);
-    irp->num_bytes = 0;
-    TEST_ASSERT_EQUAL(ESP_OK, hcd_irp_enqueue(default_pipe, irp));
-    test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_IRP_DONE);
-    TEST_ASSERT_EQUAL(irp, hcd_irp_dequeue(default_pipe));
-    TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, irp->status);
+    urb->transfer.num_bytes = 0;
+    TEST_ASSERT_EQUAL(ESP_OK, hcd_urb_enqueue(default_pipe, urb));
+    test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_URB_DONE);
+    TEST_ASSERT_EQUAL(urb, hcd_urb_dequeue(default_pipe));
+    TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.status);
 
-    //Free IRP
-    heap_caps_free(irp->data_buffer);
-    heap_caps_free(irp);
+    //Free URB
+    test_hcd_free_urb(urb);
     return ENUM_ADDR;
 }

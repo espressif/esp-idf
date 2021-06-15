@@ -14,10 +14,11 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
-#include "usb.h"
 #include "hcd.h"
+#include "usb_private.h"
+#include "usb.h"
 
-#define IRP_CONTEXT_VAL ((void *)0xDEADBEEF)
+#define URB_CONTEXT_VAL ((void *)0xDEADBEEF)
 
 // ------------------------------------------------- HCD Event Test ----------------------------------------------------
 
@@ -118,20 +119,20 @@ hcd_pipe_handle_t test_hcd_pipe_alloc(hcd_port_handle_t port_hdl, const usb_desc
 void test_hcd_pipe_free(hcd_pipe_handle_t pipe_hdl);
 
 /**
- * @brief Allocate an IRP
+ * @brief Allocate a URB
  *
- * @param num_iso_packets Number of isochronous packets
- * @param data_buffer_size Size of the data buffer of the IRP
- * @return usb_irp_t* IRP
+ * @param num_isoc_packets Number of isochronous packets
+ * @param data_buffer_size Size of the data buffer of the URB
+ * @return urb_t* URB
  */
-usb_irp_t *test_hcd_alloc_irp(int num_iso_packets, size_t data_buffer_size);
+urb_t *test_hcd_alloc_urb(int num_isoc_packets, size_t data_buffer_size);
 
 /**
- * @brief Free an IRP
+ * @brief Free a URB
  *
- * @param irp IRP
+ * @param urb URB
  */
-void test_hcd_free_irp(usb_irp_t *irp);
+void test_hcd_free_urb(urb_t *urb);
 
 // --------------------------------------------------- Enumeration -----------------------------------------------------
 
@@ -148,4 +149,4 @@ void test_hcd_free_irp(usb_irp_t *irp);
  * @param default_pipe The connected device's default pipe
  * @return uint8_t The address of the device after enumeration
  */
-uint8_t test_hcd_enum_devc(hcd_pipe_handle_t default_pipe);
+uint8_t test_hcd_enum_device(hcd_pipe_handle_t default_pipe);

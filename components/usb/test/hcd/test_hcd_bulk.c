@@ -72,7 +72,7 @@ static const usb_desc_ep_t bulk_in_ep_desc = {
 
 #define MOCK_MSC_SCSI_SECTOR_SIZE       512
 #define MOCK_MSC_SCSI_LUN               0
-#define MSC_SCSI_INTR_NUMBER            0
+#define MOCK_MSC_SCSI_INTF_NUMBER       0
 
 #define MOCK_MSC_SCSI_REQ_INIT_RESET(ctrl_req_ptr, intf_num) ({  \
     (ctrl_req_ptr)->bRequestType = USB_B_REQUEST_TYPE_DIR_OUT | USB_B_REQUEST_TYPE_TYPE_CLASS | USB_B_REQUEST_TYPE_RECIP_INTERFACE; \
@@ -116,22 +116,18 @@ typedef struct __attribute__((packed)) {
 
 static void mock_msc_reset_req(hcd_pipe_handle_t default_pipe)
 {
-    //Create IRP
-    usb_irp_t *irp = heap_caps_calloc(1, sizeof(usb_irp_t), MALLOC_CAP_DEFAULT);
-    TEST_ASSERT_NOT_EQUAL(NULL, irp);
-    irp->data_buffer = heap_caps_malloc(sizeof(usb_ctrl_req_t), MALLOC_CAP_DMA);
-    TEST_ASSERT_NOT_EQUAL(NULL, irp->data_buffer);
-    usb_ctrl_req_t *ctrl_req = (usb_ctrl_req_t *)irp->data_buffer;
-    MOCK_MSC_SCSI_REQ_INIT_RESET(ctrl_req, MSC_SCSI_INTR_NUMBER);
-    irp->num_bytes = 0;
-    //Enqueue, wait, dequeue, and check IRP
-    TEST_ASSERT_EQUAL(ESP_OK, hcd_irp_enqueue(default_pipe, irp));
-    test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_IRP_DONE);
-    TEST_ASSERT_EQUAL(irp, hcd_irp_dequeue(default_pipe));
-    TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, irp->status);
-    //Free IRP
-    heap_caps_free(irp->data_buffer);
-    heap_caps_free(irp);
+    //Create URB
+    urb_t *urb = test_hcd_alloc_urb(0, sizeof(usb_ctrl_req_t));
+    usb_ctrl_req_t *ctrl_req = (usb_ctrl_req_t *)urb->transfer.data_buffer;
+    MOCK_MSC_SCSI_REQ_INIT_RESET(ctrl_req, MOCK_MSC_SCSI_INTF_NUMBER);
+    urb->transfer.num_bytes = 0;
+    //Enqueue, wait, dequeue, and check URB
+    TEST_ASSERT_EQUAL(ESP_OK, hcd_urb_enqueue(default_pipe, urb));
+    test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_URB_DONE);
+    TEST_ASSERT_EQUAL(urb, hcd_urb_dequeue(default_pipe));
+    TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.status);
+    //Free URB
+    test_hcd_free_urb(urb);
 }
 
 static void mock_msc_scsi_init_cbw(mock_msc_bulk_cbw_t *cbw, bool is_read, int offset, int num_sectors, uint32_t tag)
@@ -180,28 +176,28 @@ static bool mock_msc_scsi_check_csw(mock_msc_bulk_csw_t *csw, uint32_t tag_expec
 // --------------------------------------------------- Test Cases ------------------------------------------------------
 
 /*
-Test HCD bulk pipe IRPs
+Test HCD bulk pipe URBs
 
 Purpose:
     - Test that a bulk pipe can be created
-    - IRPs can be created and enqueued to the bulk pipe pipe
-    - Bulk pipe returns HCD_PIPE_EVENT_IRP_DONE for completed IRPs
+    - URBs can be created and enqueued to the bulk pipe pipe
+    - Bulk pipe returns HCD_PIPE_EVENT_URB_DONE for completed URBs
     - Test utilizes a bare bones (i.e., mock) MSC class using SCSI commands
 
 Procedure:
     - Setup HCD and wait for connection
     - Allocate default pipe and enumerate the device
-    - Allocate separate IRPS for CBW, Data, and CSW transfers of the MSC class
-    - Read TEST_NUM_SECTORS number of sectors for the mass storage device
-    - Expect HCD_PIPE_EVENT_IRP_DONE for each IRP
-    - Deallocate IRPs
+    - Allocate separate URBS for CBW, Data, and CSW transfers of the MSC class
+    - Read TEST_NUM_SECTORS_TOTAL number of sectors for the mass storage device
+    - Expect HCD_PIPE_EVENT_URB_DONE for each URB
+    - Deallocate URBs
     - Teardown
 */
 
-#define TEST_NUM_SECTORS                10
-#define TEST_NUM_SECTORS_PER_ITER       2
+#define TEST_NUM_SECTORS_TOTAL          10
+#define TEST_NUM_SECTORS_PER_XFER       2
 
-TEST_CASE("Test HCD bulk pipe IRPs", "[hcd][ignore]")
+TEST_CASE("Test HCD bulk pipe URBs", "[hcd][ignore]")
 {
     hcd_port_handle_t port_hdl = test_hcd_setup();  //Setup the HCD and port
     usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl);  //Trigger a connection
@@ -209,50 +205,50 @@ TEST_CASE("Test HCD bulk pipe IRPs", "[hcd][ignore]")
 
     //Enumerate and reset MSC SCSI device
     hcd_pipe_handle_t default_pipe = test_hcd_pipe_alloc(port_hdl, NULL, 0, port_speed); //Create a default pipe (using a NULL EP descriptor)
-    uint8_t dev_addr = test_hcd_enum_devc(default_pipe);
+    uint8_t dev_addr = test_hcd_enum_device(default_pipe);
     mock_msc_reset_req(default_pipe);
 
     //Create BULK IN and BULK OUT pipes for SCSI
     hcd_pipe_handle_t bulk_out_pipe = test_hcd_pipe_alloc(port_hdl, &bulk_out_ep_desc, dev_addr, port_speed);
     hcd_pipe_handle_t bulk_in_pipe = test_hcd_pipe_alloc(port_hdl, &bulk_in_ep_desc, dev_addr, port_speed);
-    //Create IRPs for CBW, Data, and CSW transport. IN Buffer sizes are rounded up to nearest MPS
-    usb_irp_t *irp_cbw = test_hcd_alloc_irp(0, sizeof(mock_msc_bulk_cbw_t));
-    usb_irp_t *irp_data = test_hcd_alloc_irp(0, TEST_NUM_SECTORS_PER_ITER * MOCK_MSC_SCSI_SECTOR_SIZE);
-    usb_irp_t *irp_csw = test_hcd_alloc_irp(0, sizeof(mock_msc_bulk_csw_t) + (bulk_in_ep_desc.wMaxPacketSize - (sizeof(mock_msc_bulk_csw_t) % bulk_in_ep_desc.wMaxPacketSize)));
-    irp_cbw->num_bytes = sizeof(mock_msc_bulk_cbw_t);
-    irp_data->num_bytes = TEST_NUM_SECTORS_PER_ITER * MOCK_MSC_SCSI_SECTOR_SIZE;
-    irp_csw->num_bytes = sizeof(mock_msc_bulk_csw_t) + (bulk_in_ep_desc.wMaxPacketSize - (sizeof(mock_msc_bulk_csw_t) % bulk_in_ep_desc.wMaxPacketSize));
+    //Create URBs for CBW, Data, and CSW transport. IN Buffer sizes are rounded up to nearest MPS
+    urb_t *urb_cbw = test_hcd_alloc_urb(0, sizeof(mock_msc_bulk_cbw_t));
+    urb_t *urb_data = test_hcd_alloc_urb(0, TEST_NUM_SECTORS_PER_XFER * MOCK_MSC_SCSI_SECTOR_SIZE);
+    urb_t *urb_csw = test_hcd_alloc_urb(0, sizeof(mock_msc_bulk_csw_t) + (bulk_in_ep_desc.wMaxPacketSize - (sizeof(mock_msc_bulk_csw_t) % bulk_in_ep_desc.wMaxPacketSize)));
+    urb_cbw->transfer.num_bytes = sizeof(mock_msc_bulk_cbw_t);
+    urb_data->transfer.num_bytes = TEST_NUM_SECTORS_PER_XFER * MOCK_MSC_SCSI_SECTOR_SIZE;
+    urb_csw->transfer.num_bytes = sizeof(mock_msc_bulk_csw_t) + (bulk_in_ep_desc.wMaxPacketSize - (sizeof(mock_msc_bulk_csw_t) % bulk_in_ep_desc.wMaxPacketSize));
 
-    for (int block_num = 0; block_num < TEST_NUM_SECTORS; block_num += TEST_NUM_SECTORS_PER_ITER) {
-        //Initialize CBW IRP, then send it on the BULK OUT pipe
-        mock_msc_scsi_init_cbw((mock_msc_bulk_cbw_t *)irp_cbw->data_buffer, true, block_num, TEST_NUM_SECTORS_PER_ITER, 0xAAAAAAAA);
-        TEST_ASSERT_EQUAL(ESP_OK, hcd_irp_enqueue(bulk_out_pipe, irp_cbw));
-        test_hcd_expect_pipe_event(bulk_out_pipe, HCD_PIPE_EVENT_IRP_DONE);
-        TEST_ASSERT_EQUAL(irp_cbw, hcd_irp_dequeue(bulk_out_pipe));
-        TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, irp_cbw->status);
+    for (int block_num = 0; block_num < TEST_NUM_SECTORS_TOTAL; block_num += TEST_NUM_SECTORS_PER_XFER) {
+        //Initialize CBW URB, then send it on the BULK OUT pipe
+        mock_msc_scsi_init_cbw((mock_msc_bulk_cbw_t *)urb_cbw->transfer.data_buffer, true, block_num, TEST_NUM_SECTORS_PER_XFER, 0xAAAAAAAA);
+        TEST_ASSERT_EQUAL(ESP_OK, hcd_urb_enqueue(bulk_out_pipe, urb_cbw));
+        test_hcd_expect_pipe_event(bulk_out_pipe, HCD_PIPE_EVENT_URB_DONE);
+        TEST_ASSERT_EQUAL(urb_cbw, hcd_urb_dequeue(bulk_out_pipe));
+        TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, urb_cbw->transfer.status);
         //Read data through BULK IN pipe
-        TEST_ASSERT_EQUAL(ESP_OK, hcd_irp_enqueue(bulk_in_pipe, irp_data));
-        test_hcd_expect_pipe_event(bulk_in_pipe, HCD_PIPE_EVENT_IRP_DONE);
-        TEST_ASSERT_EQUAL(irp_data, hcd_irp_dequeue(bulk_in_pipe));
-        TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, irp_data->status);
+        TEST_ASSERT_EQUAL(ESP_OK, hcd_urb_enqueue(bulk_in_pipe, urb_data));
+        test_hcd_expect_pipe_event(bulk_in_pipe, HCD_PIPE_EVENT_URB_DONE);
+        TEST_ASSERT_EQUAL(urb_data, hcd_urb_dequeue(bulk_in_pipe));
+        TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, urb_data->transfer.status);
         //Read the CSW through BULK IN pipe
-        TEST_ASSERT_EQUAL(ESP_OK, hcd_irp_enqueue(bulk_in_pipe, irp_csw));
-        test_hcd_expect_pipe_event(bulk_in_pipe, HCD_PIPE_EVENT_IRP_DONE);
-        TEST_ASSERT_EQUAL(irp_csw, hcd_irp_dequeue(bulk_in_pipe));
-        TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, irp_data->status);
-        TEST_ASSERT_EQUAL(sizeof(mock_msc_bulk_csw_t), irp_csw->actual_num_bytes);
-        TEST_ASSERT_EQUAL(true, mock_msc_scsi_check_csw((mock_msc_bulk_csw_t *)irp_csw->data_buffer, 0xAAAAAAAA));
+        TEST_ASSERT_EQUAL(ESP_OK, hcd_urb_enqueue(bulk_in_pipe, urb_csw));
+        test_hcd_expect_pipe_event(bulk_in_pipe, HCD_PIPE_EVENT_URB_DONE);
+        TEST_ASSERT_EQUAL(urb_csw, hcd_urb_dequeue(bulk_in_pipe));
+        TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, urb_data->transfer.status);
+        TEST_ASSERT_EQUAL(sizeof(mock_msc_bulk_csw_t), urb_csw->transfer.actual_num_bytes);
+        TEST_ASSERT_EQUAL(true, mock_msc_scsi_check_csw((mock_msc_bulk_csw_t *)urb_csw->transfer.data_buffer, 0xAAAAAAAA));
         //Print the read data
-        printf("Block %d to %d:\n", block_num, block_num + TEST_NUM_SECTORS_PER_ITER);
-        for (int i = 0; i < irp_data->actual_num_bytes; i++) {
-            printf("0x%02x,", ((char *)irp_data->data_buffer)[i]);
+        printf("Block %d to %d:\n", block_num, block_num + TEST_NUM_SECTORS_PER_XFER);
+        for (int i = 0; i < urb_data->transfer.actual_num_bytes; i++) {
+            printf("0x%02x,", ((char *)urb_data->transfer.data_buffer)[i]);
         }
         printf("\n\n");
     }
 
-    test_hcd_free_irp(irp_cbw);
-    test_hcd_free_irp(irp_data);
-    test_hcd_free_irp(irp_csw);
+    test_hcd_free_urb(urb_cbw);
+    test_hcd_free_urb(urb_data);
+    test_hcd_free_urb(urb_csw);
     test_hcd_pipe_free(bulk_out_pipe);
     test_hcd_pipe_free(bulk_in_pipe);
     test_hcd_pipe_free(default_pipe);

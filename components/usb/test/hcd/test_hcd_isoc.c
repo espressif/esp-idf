@@ -24,10 +24,10 @@
 #define MOCK_ISOC_EP_NUM        2
 #define MOCK_ISOC_EP_MPS        512
 
-#define NUM_IRPS                3
-#define NUM_PACKETS_PER_IRP     3
+#define NUM_URBS                3
+#define NUM_PACKETS_PER_URB     3
 #define ISOC_PACKET_SIZE        MOCK_ISOC_EP_MPS
-#define IRP_DATA_BUFF_SIZE      (NUM_PACKETS_PER_IRP * ISOC_PACKET_SIZE)
+#define URB_DATA_BUFF_SIZE      (NUM_PACKETS_PER_URB * ISOC_PACKET_SIZE)
 
 static const usb_desc_ep_t isoc_out_ep_desc = {
     .bLength = sizeof(usb_desc_ep_t),
@@ -39,26 +39,26 @@ static const usb_desc_ep_t isoc_out_ep_desc = {
 };
 
 /*
-Test HCD ISOC pipe IRPs
+Test HCD ISOC pipe URBs
 
 Purpose:
     - Test that an isochronous pipe can be created
-    - IRPs can be created and enqueued to the isoc pipe pipe
-    - isoc pipe returns HCD_PIPE_EVENT_IRP_DONE for completed IRPs
+    - URBs can be created and enqueued to the isoc pipe pipe
+    - isoc pipe returns HCD_PIPE_EVENT_URB_DONE for completed URBs
     - Test utilizes ISOC OUT transfers and do not require ACKs. So the isoc pipe will target a non existing endpoint
 
 Procedure:
     - Setup HCD and wait for connection
     - Allocate default pipe and enumerate the device
-    - Allocate an isochronous pipe and multiple IRPs. Each IRP should contain multiple packets to test HCD's ability to
-      schedule an IRP across multiple intervals.
-    - Enqueue those IRPs
-    - Expect HCD_PIPE_EVENT_IRP_DONE for each IRP. Verify that data is correct using logic analyzer
-    - Deallocate IRPs
+    - Allocate an isochronous pipe and multiple URBs. Each URB should contain multiple packets to test HCD's ability to
+      schedule an URB across multiple intervals.
+    - Enqueue those URBs
+    - Expect HCD_PIPE_EVENT_URB_DONE for each URB. Verify that data is correct using logic analyzer
+    - Deallocate URBs
     - Teardown
 */
 
-TEST_CASE("Test HCD isochronous pipe IRPs", "[hcd][ignore]")
+TEST_CASE("Test HCD isochronous pipe URBs", "[hcd][ignore]")
 {
     hcd_port_handle_t port_hdl = test_hcd_setup();  //Setup the HCD and port
     usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl);  //Trigger a connection
@@ -68,43 +68,43 @@ TEST_CASE("Test HCD isochronous pipe IRPs", "[hcd][ignore]")
 
     //Enumerate and reset device
     hcd_pipe_handle_t default_pipe = test_hcd_pipe_alloc(port_hdl, NULL, 0, port_speed); //Create a default pipe (using a NULL EP descriptor)
-    uint8_t dev_addr = test_hcd_enum_devc(default_pipe);
+    uint8_t dev_addr = test_hcd_enum_device(default_pipe);
 
     //Create ISOC OUT pipe to non-existent device
     hcd_pipe_handle_t isoc_out_pipe = test_hcd_pipe_alloc(port_hdl, &isoc_out_ep_desc, dev_addr + 1, port_speed);
-    //Create IRPs
-    usb_irp_t *irp_list[NUM_IRPS];
-    //Initialize IRPs
-    for (int irp_idx = 0; irp_idx < NUM_IRPS; irp_idx++) {
-        irp_list[irp_idx] = test_hcd_alloc_irp(NUM_PACKETS_PER_IRP, IRP_DATA_BUFF_SIZE);
-        irp_list[irp_idx]->num_bytes = 0;  //num_bytes is not used for ISOC
-        irp_list[irp_idx]->context = IRP_CONTEXT_VAL;
-        for (int pkt_idx = 0; pkt_idx < NUM_PACKETS_PER_IRP; pkt_idx++) {
-            irp_list[irp_idx]->iso_packet_desc[pkt_idx].length = ISOC_PACKET_SIZE;
+    //Create URBs
+    urb_t *urb_list[NUM_URBS];
+    //Initialize URBs
+    for (int urb_idx = 0; urb_idx < NUM_URBS; urb_idx++) {
+        urb_list[urb_idx] = test_hcd_alloc_urb(NUM_PACKETS_PER_URB, URB_DATA_BUFF_SIZE);
+        urb_list[urb_idx]->transfer.num_bytes = 0;  //num_bytes is not used for ISOC
+        urb_list[urb_idx]->transfer.context = URB_CONTEXT_VAL;
+        for (int pkt_idx = 0; pkt_idx < NUM_PACKETS_PER_URB; pkt_idx++) {
+            urb_list[urb_idx]->transfer.isoc_packet_desc[pkt_idx].num_bytes = ISOC_PACKET_SIZE;
             //Each packet will consist of the same byte, but each subsequent packet's byte will increment (i.e., packet 0 transmits all 0x0, packet 1 transmits all 0x1)
-            memset(&irp_list[irp_idx]->data_buffer[pkt_idx * ISOC_PACKET_SIZE], (irp_idx * NUM_IRPS) + pkt_idx, ISOC_PACKET_SIZE);
+            memset(&urb_list[urb_idx]->transfer.data_buffer[pkt_idx * ISOC_PACKET_SIZE], (urb_idx * NUM_URBS) + pkt_idx, ISOC_PACKET_SIZE);
         }
     }
-    //Enqueue IRPs
-    for (int i = 0; i < NUM_IRPS; i++) {
-        TEST_ASSERT_EQUAL(ESP_OK, hcd_irp_enqueue(isoc_out_pipe, irp_list[i]));
+    //Enqueue URBs
+    for (int i = 0; i < NUM_URBS; i++) {
+        TEST_ASSERT_EQUAL(ESP_OK, hcd_urb_enqueue(isoc_out_pipe, urb_list[i]));
     }
-    //Wait for each done event from each IRP
-    for (int i = 0; i < NUM_IRPS; i++) {
-        test_hcd_expect_pipe_event(isoc_out_pipe, HCD_PIPE_EVENT_IRP_DONE);
+    //Wait for each done event from each URB
+    for (int i = 0; i < NUM_URBS; i++) {
+        test_hcd_expect_pipe_event(isoc_out_pipe, HCD_PIPE_EVENT_URB_DONE);
     }
-    //Dequeue IRPs
-    for (int irp_idx = 0; irp_idx < NUM_IRPS; irp_idx++) {
-        usb_irp_t *irp = hcd_irp_dequeue(isoc_out_pipe);
-        TEST_ASSERT_EQUAL(irp_list[irp_idx], irp);
-        TEST_ASSERT_EQUAL(IRP_CONTEXT_VAL, irp->context);
-        for (int pkt_idx = 0; pkt_idx < NUM_PACKETS_PER_IRP; pkt_idx++) {
-            TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, irp->iso_packet_desc[pkt_idx].status);
+    //Dequeue URBs
+    for (int urb_idx = 0; urb_idx < NUM_URBS; urb_idx++) {
+        urb_t *urb = hcd_urb_dequeue(isoc_out_pipe);
+        TEST_ASSERT_EQUAL(urb_list[urb_idx], urb);
+        TEST_ASSERT_EQUAL(URB_CONTEXT_VAL, urb->transfer.context);
+        for (int pkt_idx = 0; pkt_idx < NUM_PACKETS_PER_URB; pkt_idx++) {
+            TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.isoc_packet_desc[pkt_idx].status);
         }
     }
-    //Free IRP list and pipe
-    for (int i = 0; i < NUM_IRPS; i++) {
-        test_hcd_free_irp(irp_list[i]);
+    //Free URB list and pipe
+    for (int i = 0; i < NUM_URBS; i++) {
+        test_hcd_free_urb(urb_list[i]);
     }
     test_hcd_pipe_free(isoc_out_pipe);
     test_hcd_pipe_free(default_pipe);
