@@ -3,36 +3,36 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <string.h>
 
+#include <string.h>
+#include "sdkconfig.h"
 #include "esp_log.h"
 #include "esp_secure_boot.h"
-#include "soc/efuse_reg.h"
-
 #include "bootloader_flash_priv.h"
 #include "bootloader_sha.h"
 #include "bootloader_utility.h"
-
-#include "esp_rom_crc.h"
+#include "esp_image_format.h"
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 
-#include "esp32c3/rom/efuse.h"
-#include "esp32c3/rom/secure_boot.h"
+/* The following API implementations are used only when called
+ * from the bootloader code.
+ */
 
-static const char *TAG = "secure_boot_v2";
+#ifdef CONFIG_SECURE_BOOT_V2_ENABLED
+
 #define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
+static const char *TAG = "secure_boot_v2";
 
 /* A signature block is valid when it has correct magic byte, crc and image digest. */
 static esp_err_t validate_signature_block(const ets_secure_boot_sig_block_t *block, int block_num, const uint8_t *image_digest)
 {
-    uint32_t crc = esp_rom_crc32_le(0, (uint8_t *)block, CRC_SIGN_BLOCK_LEN);
     if (block->magic_byte != ETS_SECURE_BOOT_V2_SIGNATURE_MAGIC) {
         // All signature blocks have been parsed, no new signature block present.
         ESP_LOGD(TAG, "Signature block(%d) invalid/absent.", block_num);
         return ESP_FAIL;
     }
-    if (block->block_crc != crc) {
+    if (block->block_crc != esp_rom_crc32_le(0, (uint8_t *)block, CRC_SIGN_BLOCK_LEN)) {
         ESP_LOGE(TAG, "Magic byte correct but incorrect crc.");
         return ESP_FAIL;
     }
@@ -43,7 +43,6 @@ static esp_err_t validate_signature_block(const ets_secure_boot_sig_block_t *blo
         ESP_LOGD(TAG, "valid signature block(%d) found", block_num);
         return ESP_OK;
     }
-
     return ESP_FAIL;
 }
 
@@ -79,14 +78,15 @@ static esp_err_t s_calculate_image_public_key_digests(uint32_t flash_offset, uin
         return ret;
     }
 
-    ESP_LOGD(TAG, "reading signatures");
+    ESP_LOGD(TAG, "reading signature(s)");
     const ets_secure_boot_signature_t *signatures = bootloader_mmap(sig_block_addr, sizeof(ets_secure_boot_signature_t));
     if (signatures == NULL) {
         ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", sig_block_addr, sizeof(ets_secure_boot_signature_t));
         return ESP_FAIL;
     }
 
-    for (int i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
+    /* Validating Signature block */
+    for (unsigned i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
         const ets_secure_boot_sig_block_t *block = &signatures->block[i];
 
         ret = validate_signature_block(block, i, image_digest);
@@ -131,6 +131,23 @@ static esp_err_t s_calculate_image_public_key_digests(uint32_t flash_offset, uin
 static esp_err_t check_and_generate_secure_boot_keys(const esp_image_metadata_t *image_data)
 {
     esp_err_t ret;
+#ifdef CONFIG_IDF_TARGET_ESP32
+    esp_efuse_purpose_t secure_boot_key_purpose[SECURE_BOOT_NUM_BLOCKS] = {
+        ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_V2,
+    };
+    esp_efuse_coding_scheme_t coding_scheme = esp_efuse_get_coding_scheme(EFUSE_BLK_SECURE_BOOT);
+    if (coding_scheme != EFUSE_CODING_SCHEME_NONE) {
+        ESP_LOGE(TAG, "No coding schemes are supported in secure boot v2.(Detected scheme: 0x%x)", coding_scheme);
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+#else
+    esp_efuse_purpose_t secure_boot_key_purpose[SECURE_BOOT_NUM_BLOCKS] = {
+        ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST0,
+        ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST1,
+        ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST2,
+    };
+#endif // CONFIG_IDF_TARGET_ESP32
+
     /* Verify the bootloader */
     esp_image_metadata_t bootloader_data = { 0 };
     ret = esp_image_verify_bootloader_data(&bootloader_data);
@@ -140,15 +157,22 @@ static esp_err_t check_and_generate_secure_boot_keys(const esp_image_metadata_t 
     }
 
     /* Check if secure boot digests are present */
-    bool has_secure_boot_digest = esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST0, NULL);
-    has_secure_boot_digest |= esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST1, NULL);
-    has_secure_boot_digest |= esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST2, NULL);
+    esp_efuse_block_t blocks[SECURE_BOOT_NUM_BLOCKS];
+    bool has_secure_boot_digest = false;
+    for (unsigned i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
+        blocks[i] = EFUSE_BLK_KEY_MAX;
+        bool tmp_has_key = esp_efuse_find_purpose(secure_boot_key_purpose[i], &blocks[i]);
+        if (tmp_has_key) { // For ESP32: esp_efuse_find_purpose() always returns True, need to check whether the key block is used or not.
+            tmp_has_key &= !esp_efuse_key_block_unused(blocks[i]);
+        }
+        has_secure_boot_digest |= tmp_has_key;
+    }
+
+    esp_image_sig_public_key_digests_t boot_key_digests = {0};
+    esp_image_sig_public_key_digests_t app_key_digests = {0};
     ESP_LOGI(TAG, "Secure boot digests %s", has_secure_boot_digest ? "already present":"absent, generating..");
 
     if (!has_secure_boot_digest) {
-        esp_image_sig_public_key_digests_t boot_key_digests = {0};
-        esp_image_sig_public_key_digests_t app_key_digests = {0};
-
         /* Generate the bootloader public key digests */
         ret = s_calculate_image_public_key_digests(bootloader_data.start_addr, bootloader_data.image_len - SIG_BLOCK_PADDING, &boot_key_digests);
         if (ret != ESP_OK) {
@@ -162,14 +186,9 @@ static esp_err_t check_and_generate_secure_boot_keys(const esp_image_metadata_t 
         }
         ESP_LOGI(TAG, "%d signature block(s) found appended to the bootloader.", boot_key_digests.num_digests);
 
-        esp_efuse_purpose_t secure_boot_key_purpose[SECURE_BOOT_NUM_BLOCKS] = {
-            ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST0,
-            ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST1,
-            ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST2,
-        };
-
+        ESP_LOGI(TAG, "Burning public key hash to eFuse");
         ret = esp_efuse_write_keys(secure_boot_key_purpose, boot_key_digests.key_digests, boot_key_digests.num_digests);
-        if (ret) {
+        if (ret != ESP_OK) {
             if (ret == ESP_ERR_NOT_ENOUGH_UNUSED_KEY_BLOCKS) {
                 ESP_LOGE(TAG, "Bootloader signatures(%d) more than available key slots.", boot_key_digests.num_digests);
             } else {
@@ -177,57 +196,88 @@ static esp_err_t check_and_generate_secure_boot_keys(const esp_image_metadata_t 
             }
             return ret;
         }
-
-        /* Generate the application public key digests */
-        ret = s_calculate_image_public_key_digests(image_data->start_addr, image_data->image_len - SIG_BLOCK_PADDING, &app_key_digests);
-        if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "App signature block is invalid.");
-            return ret;
-        }
-
-        if (app_key_digests.num_digests == 0) {
-            ESP_LOGE(TAG, "No valid applications signature blocks found.");
-            return ESP_FAIL;
-        }
-
-        ESP_LOGI(TAG, "%d signature block(s) found appended to the app.", app_key_digests.num_digests);
-        if (app_key_digests.num_digests > boot_key_digests.num_digests) {
-            ESP_LOGW(TAG, "App has %d signature blocks but bootloader only has %d. Some keys missing from bootloader?");
-        }
-
-        /* Confirm if at least one public key from the application matches a public key in the bootloader
-           (Also, ensure if that public revoke bit is not set for the matched key) */
-        bool match = false;
-
-        for (int i = 0; i < boot_key_digests.num_digests; i++) {
-
+    } else {
+        for (unsigned i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
+#if SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
             if (esp_efuse_get_digest_revoke(i)) {
-                ESP_LOGI(TAG, "Key block(%d) has been revoked.", i);
-                continue; // skip if the key block is revoked
+                continue;
             }
-
-            for (int j = 0; j < app_key_digests.num_digests; j++) {
-                if (!memcmp(boot_key_digests.key_digests[i], app_key_digests.key_digests[j], ESP_SECURE_BOOT_DIGEST_LEN)) {
-                    ESP_LOGI(TAG, "Application key(%d) matches with bootloader key(%d).", j, i);
-                    match = true;
-                }
+#endif
+            if (esp_efuse_get_key_dis_read(blocks[i])) {
+                ESP_LOGE(TAG, "Key digest (BLK%d) read protected, aborting...", blocks[i]);
+                return ESP_FAIL;
             }
+            if (esp_efuse_block_is_empty(blocks[i])) {
+                ESP_LOGE(TAG, "%d eFuse block is empty, aborting...", blocks[i]);
+                return ESP_FAIL;
+            }
+            esp_efuse_set_key_dis_write(blocks[i]);
+            ret = esp_efuse_read_block(blocks[i], boot_key_digests.key_digests[boot_key_digests.num_digests], 0,
+                                            sizeof(boot_key_digests.key_digests[0]) * 8);
+            if (ret) {
+                ESP_LOGE(TAG, "Error during reading %d eFuse block (err=0x%x)", blocks[i], ret);
+                return ret;
+            }
+            boot_key_digests.num_digests++;
         }
-
-        if (match == false) {
-            ESP_LOGE(TAG, "No application key digest matches the bootloader key digest.");
+        if (boot_key_digests.num_digests == 0) {
+            ESP_LOGE(TAG, "No valid pre-loaded public key digest in eFuse");
             return ESP_FAIL;
         }
+        ESP_LOGW(TAG, "Using pre-loaded public key digest in eFuse");
+    }
 
-        /* Revoke the empty signature blocks */
-        if (boot_key_digests.num_digests < SECURE_BOOT_NUM_BLOCKS) {
-            /* The revocation index can be 0, 1, 2. Bootloader count can be 1,2,3. */
-            for (uint8_t i = boot_key_digests.num_digests; i < SECURE_BOOT_NUM_BLOCKS; i++) {
-                ESP_LOGI(TAG, "Revoking empty key digest slot (%d)...", i);
-                esp_efuse_set_digest_revoke(i);
+    /* Generate the application public key digests */
+    ret = s_calculate_image_public_key_digests(image_data->start_addr, image_data->image_len - SIG_BLOCK_PADDING, &app_key_digests);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Application signature block is invalid.");
+        return ret;
+    }
+
+    if (app_key_digests.num_digests == 0) {
+        ESP_LOGE(TAG, "No valid applications signature blocks found.");
+        return ESP_FAIL;
+    }
+
+    ESP_LOGI(TAG, "%d signature block(s) found appended to the app.", app_key_digests.num_digests);
+    if (app_key_digests.num_digests > boot_key_digests.num_digests) {
+        ESP_LOGW(TAG, "App has %d signature blocks but bootloader only has %d. Some keys missing from bootloader?");
+    }
+
+    /* Confirm if at least one public key from the application matches a public key in the bootloader
+        (Also, ensure if that public revoke bit is not set for the matched key) */
+    bool match = false;
+
+    for (unsigned i = 0; i < boot_key_digests.num_digests; i++) {
+#if SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
+        if (esp_efuse_get_digest_revoke(i)) {
+            ESP_LOGI(TAG, "Key block(%d) has been revoked.", i);
+            continue; // skip if the key block is revoked
+        }
+#endif // SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
+        for (unsigned j = 0; j < app_key_digests.num_digests; j++) {
+            if (!memcmp(boot_key_digests.key_digests[i], app_key_digests.key_digests[j], ESP_SECURE_BOOT_DIGEST_LEN)) {
+                ESP_LOGI(TAG, "Application key(%d) matches with bootloader key(%d).", j, i);
+                match = true;
             }
         }
     }
+
+    if (match == false) {
+        ESP_LOGE(TAG, "No application key digest matches the bootloader key digest.");
+        return ESP_FAIL;
+    }
+
+#if SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
+    /* Revoke the empty signature blocks */
+    if (boot_key_digests.num_digests < SECURE_BOOT_NUM_BLOCKS) {
+        /* The revocation index can be 0, 1, 2. Bootloader count can be 1,2,3. */
+        for (unsigned i = boot_key_digests.num_digests; i < SECURE_BOOT_NUM_BLOCKS; i++) {
+            ESP_LOGI(TAG, "Revoking empty key digest slot (%d)...", i);
+            esp_efuse_set_digest_revoke(i);
+        }
+    }
+#endif // SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
     return ESP_OK;
 }
 
@@ -242,48 +292,34 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
 
     esp_efuse_batch_write_begin(); /* Batch all efuse writes at the end of this function */
 
-    esp_err_t key_state = check_and_generate_secure_boot_keys(image_data);
-    if (key_state != ESP_OK) {
+    esp_err_t err;
+    err = check_and_generate_secure_boot_keys(image_data);
+    if (err != ESP_OK) {
         esp_efuse_batch_write_cancel();
-        return key_state;
+        return err;
     }
 
-    esp_efuse_write_field_bit(ESP_EFUSE_DIS_LEGACY_SPI_BOOT);
+    ESP_LOGI(TAG, "blowing secure boot efuse...");
+    err = esp_secure_boot_enable_secure_features();
+    if (err != ESP_OK) {
+        esp_efuse_batch_write_cancel();
+        return err;
+    }
 
-#ifdef CONFIG_SECURE_ENABLE_SECURE_ROM_DL_MODE
-    ESP_LOGI(TAG, "Enabling Security download mode...");
-    esp_efuse_write_field_bit(ESP_EFUSE_ENABLE_SECURITY_DOWNLOAD);
-#else
-    ESP_LOGW(TAG, "Not enabling Security download mode - SECURITY COMPROMISED");
-#endif
-
-#ifndef CONFIG_SECURE_BOOT_ALLOW_JTAG
-    ESP_LOGI(TAG, "Disable hardware & software JTAG...");
-    esp_efuse_write_field_bit(ESP_EFUSE_DIS_PAD_JTAG);
-    esp_efuse_write_field_bit(ESP_EFUSE_DIS_USB_JTAG);
-    esp_efuse_write_field_bit(ESP_EFUSE_SOFT_DIS_JTAG);
-#else
-    ESP_LOGW(TAG, "Not disabling JTAG - SECURITY COMPROMISED");
-#endif
-
-#ifdef CONFIG_SECURE_BOOT_ENABLE_AGGRESSIVE_KEY_REVOKE
-    esp_efuse_write_field_bit(ESP_EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE);
-#endif
-
-    esp_efuse_write_field_bit(ESP_EFUSE_SECURE_BOOT_EN);
-
-    esp_err_t err = esp_efuse_batch_write_commit();
+    err = esp_efuse_batch_write_commit();
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Error programming security eFuses (err=0x%x).", err);
         return err;
     }
 
 #ifdef CONFIG_SECURE_BOOT_ENABLE_AGGRESSIVE_KEY_REVOKE
-    assert(ets_efuse_secure_boot_aggressive_revoke_enabled());
+    assert(esp_efuse_read_field_bit(ESP_EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE));
 #endif
 
-    assert(esp_rom_efuse_is_secure_boot_enabled());
+    assert(esp_secure_boot_enabled());
     ESP_LOGI(TAG, "Secure boot permanently enabled");
 
     return ESP_OK;
 }
+
+#endif // CONFIG_SECURE_BOOT_V2_ENABLED

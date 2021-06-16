@@ -6,6 +6,11 @@ import sys
 
 from .common import BuildError, BuildItem, BuildSystem
 
+try:
+    from typing import Any, Optional
+except ImportError:
+    pass
+
 BUILD_SYSTEM_CMAKE = 'cmake'
 IDF_PY = os.path.join(os.environ['IDF_PATH'], 'tools', 'idf.py')
 
@@ -38,6 +43,9 @@ class CMakeBuildSystem(BuildSystem):
                 args.append('-DTESTS_ALL=1')
         if build_item.verbose:
             args.append('-v')
+        if 'CONFIG_APP_BUILD_BOOTLOADER' in extra_cmakecache_items:
+            # In case if secure_boot is enabled then for bootloader build need to add `bootloader` cmd
+            args.append('bootloader')
         args.append('build')
         cmdline = format(' '.join(args))
         logging.info('Running {}'.format(cmdline))
@@ -70,7 +78,7 @@ class CMakeBuildSystem(BuildSystem):
                 log_file.close()
 
     @staticmethod
-    def _read_cmakelists(app_path):
+    def _read_cmakelists(app_path):  # type: (str) -> Optional[str]
         cmakelists_path = os.path.join(app_path, 'CMakeLists.txt')
         if not os.path.exists(cmakelists_path):
             return None
@@ -78,7 +86,7 @@ class CMakeBuildSystem(BuildSystem):
             return cmakelists_file.read()
 
     @staticmethod
-    def is_app(path):
+    def is_app(path):  # type: (str) -> bool
         cmakelists_file_content = CMakeBuildSystem._read_cmakelists(path)
         if not cmakelists_file_content:
             return False
@@ -87,5 +95,5 @@ class CMakeBuildSystem(BuildSystem):
         return True
 
     @classmethod
-    def supported_targets(cls, app_path):
+    def supported_targets(cls, app_path):  # type: (str) -> Any
         return cls._supported_targets(app_path)

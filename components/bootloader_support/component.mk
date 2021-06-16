@@ -15,6 +15,9 @@ ifndef IS_BOOTLOADER_BUILD
 COMPONENT_SRCDIRS += src/idf  # idf sub-directory contains platform agnostic IDF versions
 else
 COMPONENT_SRCDIRS += src/$(IDF_TARGET)  # one sub-dir per chip
+ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
+COMPONENT_SRCDIRS += src/flash_encryption
+endif
 endif
 
 ifndef IS_BOOTLOADER_BUILD
@@ -43,6 +46,23 @@ ifdef IS_BOOTLOADER_BUILD
 	ifndef CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
 		COMPONENT_OBJEXCLUDE += src/secure_boot_v2/secure_boot_signatures_bootloader.o
 	endif
+
+	ifndef CONFIG_SECURE_BOOT_V1_ENABLED
+		COMPONENT_OBJEXCLUDE += src/secure_boot_v1/secure_boot.o
+	endif
+
+	ifndef CONFIG_SECURE_BOOT_V2_ENABLED
+		COMPONENT_OBJEXCLUDE += src/secure_boot_v2/secure_boot.o
+	endif
+
+	ifndef CONFIG_SECURE_BOOT
+		COMPONENT_OBJEXCLUDE += src/${IDF_TARGET}/secure_boot_secure_features.o
+	endif
+
+	ifndef CONFIG_SECURE_FLASH_ENC_ENABLED
+		COMPONENT_OBJEXCLUDE += src/${IDF_TARGET}/flash_encryption_secure_features.o
+	endif
+
 	COMPONENT_OBJEXCLUDE += src/secure_boot_v1/secure_boot_signatures_app.o \
 				src/secure_boot_v2/secure_boot_signatures_app.o
 else
@@ -53,13 +73,12 @@ else
 	ifndef CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
 		COMPONENT_OBJEXCLUDE += src/secure_boot_v2/secure_boot_signatures_app.o
 	endif
-	COMPONENT_OBJEXCLUDE += src/secure_boot_v1/secure_boot_signatures_bootloader.o \
-				src/secure_boot_v2/secure_boot_signatures_bootloader.o
-endif # IS_BOOTLOADER_BUILD
 
-ifndef CONFIG_SECURE_BOOT
-COMPONENT_OBJEXCLUDE += src/$(IDF_TARGET)/secure_boot.o
-endif
+	COMPONENT_OBJEXCLUDE += src/secure_boot_v1/secure_boot_signatures_bootloader.o \
+				src/secure_boot_v1/secure_boot.o \
+				src/secure_boot_v2/secure_boot_signatures_bootloader.o \
+				src/secure_boot_v2/secure_boot.o
+endif # IS_BOOTLOADER_BUILD
 
 #
 # Secure boot signing key support

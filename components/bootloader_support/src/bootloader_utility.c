@@ -186,8 +186,8 @@ bool bootloader_utility_load_partition_table(bootloader_state_t *bs)
                 break;
             case PART_SUBTYPE_DATA_EFUSE_EM:
                 partition_usage = "efuse";
-#ifdef CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
-                esp_efuse_init(partition->pos.offset, partition->pos.size);
+#ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+                esp_efuse_init_virtual_mode_in_flash(partition->pos.offset, partition->pos.size);
 #endif
                 break;
             default:

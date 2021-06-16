@@ -34,6 +34,7 @@
 #include "bootloader_mem.h"
 #include "bootloader_console.h"
 #include "bootloader_flash_priv.h"
+#include "esp_efuse.h"
 
 
 static const char *TAG = "boot.esp32s3";
@@ -302,6 +303,13 @@ esp_err_t bootloader_init(void)
 #endif
     // clear bss section
     bootloader_clear_bss_section();
+    // init eFuse virtual mode (read eFuses to RAM)
+#ifdef CONFIG_EFUSE_VIRTUAL
+    ESP_LOGW(TAG, "eFuse virtual mode is enabled. If Secure boot or Flash encryption is enabled then it does not provide any security. FOR TESTING ONLY!");
+#ifndef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+    esp_efuse_init_virtual_mode_in_ram();
+#endif
+#endif
     // reset MMU
     bootloader_reset_mmu();
     // config clock

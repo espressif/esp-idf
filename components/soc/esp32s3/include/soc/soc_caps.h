@@ -22,6 +22,7 @@
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS 3
 #define SOC_SDMMC_HOST_SUPPORTED        1
+#define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS 1
 
 
 /*-------------------------- ADC CAPS ----------------------------------------*/

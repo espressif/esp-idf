@@ -14,6 +14,11 @@
 #include "soc/efuse_periph.h"
 #include "sdkconfig.h"
 
+#ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+#include "esp_efuse.h"
+#include "esp_efuse_table.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -43,9 +48,17 @@ static inline /** @cond */ IRAM_ATTR /** @endcond */ bool esp_flash_encryption_e
 {
     uint32_t flash_crypt_cnt = 0;
 #if CONFIG_IDF_TARGET_ESP32
-    flash_crypt_cnt = REG_GET_FIELD(EFUSE_BLK0_RDATA0_REG, EFUSE_RD_FLASH_CRYPT_CNT);
+    #ifndef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+        flash_crypt_cnt = REG_GET_FIELD(EFUSE_BLK0_RDATA0_REG, EFUSE_RD_FLASH_CRYPT_CNT);
+    #else
+        esp_efuse_read_field_blob(ESP_EFUSE_FLASH_CRYPT_CNT, &flash_crypt_cnt, ESP_EFUSE_FLASH_CRYPT_CNT[0]->bit_count);
+    #endif
 #else
-    flash_crypt_cnt = REG_GET_FIELD(EFUSE_RD_REPEAT_DATA1_REG, EFUSE_SPI_BOOT_CRYPT_CNT);
+    #ifndef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+        flash_crypt_cnt = REG_GET_FIELD(EFUSE_RD_REPEAT_DATA1_REG, EFUSE_SPI_BOOT_CRYPT_CNT);
+    #else
+        esp_efuse_read_field_blob(ESP_EFUSE_SPI_BOOT_CRYPT_CNT, &flash_crypt_cnt, ESP_EFUSE_SPI_BOOT_CRYPT_CNT[0]->bit_count);
+    #endif
 #endif
     /* __builtin_parity is in flash, so we calculate parity inline */
     bool enabled = false;
@@ -150,6 +163,13 @@ esp_flash_enc_mode_t esp_get_flash_encryption_mode(void);
  *  config in any way
  */
 void esp_flash_encryption_init_checks(void);
+
+/** @brief Set all secure eFuse features related to flash encryption
+ *
+ * @return
+ *  - ESP_OK - Successfully
+ */
+esp_err_t esp_flash_encryption_enable_secure_features(void);
 
 #ifdef __cplusplus
 }

@@ -31,6 +31,12 @@
 #include "esp32c3/rom/spi_flash.h"
 #endif
 
+#ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+#define ENCRYPTION_IS_VIRTUAL 1
+#else
+#define ENCRYPTION_IS_VIRTUAL 0
+#endif
+
 
 #ifndef BOOTLOADER_BUILD
 /* Normal app version maps to esp_spi_flash.h operations...
@@ -80,7 +86,7 @@ esp_err_t bootloader_flash_read(size_t src, void *dest, size_t size, bool allow_
 
 esp_err_t bootloader_flash_write(size_t dest_addr, void *src, size_t size, bool write_encrypted)
 {
-    if (write_encrypted) {
+    if (write_encrypted && !ENCRYPTION_IS_VIRTUAL) {
 #if CONFIG_IDF_TARGET_ESP32
         return spi_flash_write_encrypted(dest_addr, src, size);
 #else
@@ -395,7 +401,7 @@ esp_err_t bootloader_flash_write(size_t dest_addr, void *src, size_t size, bool 
         return err;
     }
 
-    if (write_encrypted) {
+    if (write_encrypted && !ENCRYPTION_IS_VIRTUAL) {
         return spi_to_esp_err(esp_rom_spiflash_write_encrypted(dest_addr, src, size));
     } else {
         return spi_to_esp_err(esp_rom_spiflash_write(dest_addr, src, size));

@@ -15,8 +15,9 @@
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
-#define SOC_SUPPORTS_SECURE_DL_MODE         1
-#define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   3
+#define SOC_SUPPORTS_SECURE_DL_MODE     1
+#define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS 3
+#define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS 1
 
 
 /*-------------------------- AES CAPS -----------------------------------------*/

@@ -44,6 +44,11 @@ extern "C" {
 
 #define ESP_SECURE_BOOT_DIGEST_LEN 32
 
+#ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+#include "esp_efuse.h"
+#include "esp_efuse_table.h"
+#endif
+
 /** @brief Is secure boot currently enabled in hardware?
  *
  * This means that the ROM bootloader code will only boot
@@ -55,12 +60,24 @@ static inline bool esp_secure_boot_enabled(void)
 {
 #if CONFIG_IDF_TARGET_ESP32
     #ifdef CONFIG_SECURE_BOOT_V1_ENABLED
-        return REG_READ(EFUSE_BLK0_RDATA6_REG) & EFUSE_RD_ABS_DONE_0;
+        #ifndef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+            return REG_READ(EFUSE_BLK0_RDATA6_REG) & EFUSE_RD_ABS_DONE_0;
+        #else
+            return esp_efuse_read_field_bit(ESP_EFUSE_ABS_DONE_0);
+        #endif
     #elif CONFIG_SECURE_BOOT_V2_ENABLED
-        return ets_use_secure_boot_v2();
+        #ifndef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+            return ets_use_secure_boot_v2();
+        #else
+            return esp_efuse_read_field_bit(ESP_EFUSE_ABS_DONE_1);
+        #endif
     #endif
 #else
-    return esp_rom_efuse_is_secure_boot_enabled();
+    #ifndef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+        return esp_rom_efuse_is_secure_boot_enabled();
+    #else
+        return esp_efuse_read_field_bit(ESP_EFUSE_SECURE_BOOT_EN);
+    #endif
 #endif
     return false; /* Secure Boot not enabled in menuconfig */
 }
@@ -262,6 +279,13 @@ void esp_secure_boot_init_checks(void);
 esp_err_t esp_secure_boot_get_signature_blocks_for_running_app(bool digest_public_keys, esp_image_sig_public_key_digests_t *public_key_digests);
 
 #endif // !BOOTLOADER_BUILD && CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
+
+/** @brief Set all secure eFuse features related to secure_boot
+ *
+ * @return
+ *  - ESP_OK - Successfully
+ */
+esp_err_t esp_secure_boot_enable_secure_features(void);
 
 #ifdef __cplusplus
 }

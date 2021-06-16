@@ -7,7 +7,7 @@ This example shows how to use the eFuse API. It demonstrates read and write oper
 The eFuse is a single bit of non-volatile memory with the restriction that once an eFuse bit is programmed to 1, it can not be reverted to 0.
 The eFuse fields can be useful to store: device types, serial numbers, some system variables, etc. 
 
-Note that the bits already written cannot be reset to the original state. For debugging purposes, the `CONFIG_EFUSE_VIRTUAL` option is provided. This option will block physical burning. All work happens with an array in RAM. 
+Note that the bits already written cannot be reset to the original state. For debugging purposes, the `CONFIG_EFUSE_VIRTUAL` option is provided. This option will block physical burning. All work happens with an array in RAM. Use `CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH` to keep eFuse changes after reboots.
 In this example, all write operations are wrapped in `#ifdef CONFIG_EFUSE_VIRTUAL ... # endif` to prevent accidental burn while testing the features. 
 
 ## How to use example

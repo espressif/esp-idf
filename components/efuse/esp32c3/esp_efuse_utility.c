@@ -85,6 +85,9 @@ void esp_efuse_utility_burn_efuses(void)
             virt_blocks[num_block][subblock++] |= REG_READ(addr_wr_block);
         }
     }
+#ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+    esp_efuse_utility_write_efuses_to_flash();
+#endif
 #else
     if (esp_efuse_set_timing() != ESP_OK) {
         ESP_LOGE(TAG, "Efuse fields are not burnt");
