@@ -48,7 +48,7 @@ typedef enum {
     PHY_RF_CAL_FULL    = 0x00000002         /*!< Do full RF calibration. Produces best results, but also consumes a lot of time and current. Suggested to be used once. */
 } esp_phy_calibration_mode_t;
 
-#if CONFIG_ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN
+#if CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN
 /**
  * @brief PHY init data type
  */
@@ -220,7 +220,7 @@ int64_t esp_phy_rf_get_on_ts(void);
 esp_err_t esp_phy_update_country_info(const char *country);
 
 
-#if CONFIG_ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN
+#if CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN
 /**
  * @brief Apply PHY init bin to PHY
  * @return ESP_OK on success.

@@ -27,11 +27,11 @@ extern "C" {
 #define PHY_INIT_MAGIC "PHYINIT"
 
 // define the lowest tx power as LOWEST_PHY_TX_POWER
-#define PHY_TX_POWER_LOWEST LIMIT(CONFIG_ESP32_PHY_MAX_TX_POWER * 4, 0, 52)
+#define PHY_TX_POWER_LOWEST LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 52)
 #define PHY_TX_POWER_OFFSET 44
 #define PHY_TX_POWER_NUM    5
 
-#if CONFIG_ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN
+#if CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN
 #define PHY_CRC_ALGORITHM 1
 #define PHY_COUNTRY_CODE_LEN 2
 #define PHY_INIT_DATA_TYPE_OFFSET 126
@@ -88,12 +88,12 @@ static const esp_phy_init_data_t phy_init_data= { {
         0x18,
         0x18,
         0x18,
-        LIMIT(CONFIG_ESP32_PHY_MAX_TX_POWER * 4, 0, 84),
-        LIMIT(CONFIG_ESP32_PHY_MAX_TX_POWER * 4, 0, 72),
-        LIMIT(CONFIG_ESP32_PHY_MAX_TX_POWER * 4, 0, 66),
-        LIMIT(CONFIG_ESP32_PHY_MAX_TX_POWER * 4, 0, 60),
-        LIMIT(CONFIG_ESP32_PHY_MAX_TX_POWER * 4, 0, 56),
-        LIMIT(CONFIG_ESP32_PHY_MAX_TX_POWER * 4, 0, 52),
+        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 84),
+        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 72),
+        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 66),
+        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 60),
+        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 56),
+        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 52),
         0,
         1,
         1,
@@ -155,7 +155,7 @@ static const esp_phy_init_data_t phy_init_data= { {
 
 static const char phy_init_magic_post[] = PHY_INIT_MAGIC;
 
-#if CONFIG_ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN
+#if CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN
 /**
  * @brief PHY init data control infomation structure
  */
