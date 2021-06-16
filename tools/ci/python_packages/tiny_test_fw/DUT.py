@@ -50,7 +50,13 @@ import time
 try:
     import Queue as _queue
 except ImportError:
-    import queue as _queue
+    import queue as _queue  # type: ignore
+
+try:
+    from typing import Callable, List
+except ImportError:
+    # Only used for type annotations
+    pass
 
 import serial
 from serial.tools import list_ports
@@ -206,7 +212,7 @@ class _LogThread(threading.Thread, _queue.Queue):
 
 class RecvThread(threading.Thread):
 
-    CHECK_FUNCTIONS = []
+    CHECK_FUNCTIONS = []  # type: List[Callable]
     """ DUT subclass can define a few check functions to process received data. """
 
     def __init__(self, read, dut):
@@ -251,15 +257,17 @@ class RecvThread(threading.Thread):
         while not self.exit_event.isSet():
             raw_data = self.read(1000)
             if raw_data:
+                # we need to do line completion before call check functions
+                # need to call check functions first
+                # otherwise check functions could be called after cases finished
+                comp_data = self._line_completion(raw_data)
+                for check_function in self.CHECK_FUNCTIONS:
+                    check_function(self, comp_data)
+
                 with self.record_data_lock:
                     self.data_cache.put(raw_data)
                     for capture_id in self.recorded_data:
                         self.recorded_data[capture_id].put(raw_data)
-
-                # we need to do line completion before call check functions
-                comp_data = self._line_completion(raw_data)
-                for check_function in self.CHECK_FUNCTIONS:
-                    check_function(self, comp_data)
 
     def exit(self):
         self.exit_event.set()
