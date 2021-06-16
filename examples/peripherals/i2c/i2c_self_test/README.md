@@ -19,7 +19,7 @@ To run this example, you should have one ESP development board (e.g. ESP32-WROVE
 
 #### Pin Assignment(esp32, esp32s2):
 
-**Note:** The following pin assignments are used by default, yout can change these  in the `menuconfig` .
+**Note:** The following pin assignments are used by default, you can change these  in the `menuconfig` .
 
 |                           | SDA    | SCL    |
 | ------------------------- | ------ | ------ |
@@ -37,6 +37,30 @@ To run this example, you should have one ESP development board (e.g. ESP32-WROVE
 - Connection:
   - connect GPIO18 with GPIO4
   - connect GPIO19 with GPIO5
+  - connect SDA/SCL of BH1750 sensor with GPIO18/GPIO19
+
+**Note:** It is recommended to add external pull-up resistors for SDA/SCL pins to make the communication more stable, though the driver will enable internal pull-up resistors.
+
+#### Pin Assignment(esp32s3):
+
+**Note:** The following pin assignments are used by default, you can change these  in the `menuconfig` .
+
+|                           | SDA    | SCL    |
+| ------------------------- | ------ | ------ |
+| ESP32-S3 I2C Master       | GPIO1  | GPIO2  |
+| ESP32-S3 I2C Slave        | GPIO4  | GPIO5  |
+| BH1750 Sensor             | SDA    | SCL    |
+
+- slave:
+  - GPIO4 is assigned as the data signal of I2C slave port
+  - GPIO5 is assigned as the clock signal of I2C slave port
+- master:
+  - GPIO1 is assigned as the data signal of I2C master port
+  - GPIO2 is assigned as the clock signal of I2C master port
+
+- Connection:
+  - connect GPIO1 with GPIO4
+  - connect GPIO2 with GPIO5
   - connect SDA/SCL of BH1750 sensor with GPIO18/GPIO19
 
 **Note:** It is recommended to add external pull-up resistors for SDA/SCL pins to make the communication more stable, though the driver will enable internal pull-up resistors.
