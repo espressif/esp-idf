@@ -18,9 +18,14 @@ static const char *TAG = "efuse";
 #ifdef CONFIG_EFUSE_VIRTUAL
 uint32_t virt_blocks[EFUSE_BLK_MAX][COUNT_EFUSE_REG_PER_BLOCK];
 
+#ifndef BOOTLOADER_BUILD
+#ifndef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
 /* Call the update function to seed virtual efuses during initialization */
 __attribute__((constructor)) void esp_efuse_utility_update_virt_blocks(void);
-#endif
+#endif // CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+#endif // NOT BOOTLOADER_BUILD
+
+#endif // CONFIG_EFUSE_VIRTUAL
 
 extern const esp_efuse_range_addr_t range_read_addr_blocks[];
 extern const esp_efuse_range_addr_t range_write_addr_blocks[];
@@ -149,20 +154,32 @@ void esp_efuse_utility_erase_virt_blocks(void)
 {
 #ifdef CONFIG_EFUSE_VIRTUAL
     memset(virt_blocks, 0, sizeof(virt_blocks));
+#ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+    esp_efuse_utility_write_efuses_to_flash();
 #endif
+#endif // CONFIG_EFUSE_VIRTUAL
 }
 
 // Fills the virt_blocks array by values from efuse_Rdata.
 void esp_efuse_utility_update_virt_blocks(void)
 {
 #ifdef CONFIG_EFUSE_VIRTUAL
-    ESP_EARLY_LOGI(TAG, "Loading virtual efuse blocks from real efuses");
-    for (int num_block = EFUSE_BLK0; num_block < EFUSE_BLK_MAX; num_block++) {
-        int subblock = 0;
-        for (uint32_t addr_rd_block = range_read_addr_blocks[num_block].start; addr_rd_block <= range_read_addr_blocks[num_block].end; addr_rd_block += 4) {
-            virt_blocks[num_block][subblock++] = REG_READ(addr_rd_block);
+#ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+    if (!esp_efuse_utility_load_efuses_from_flash()) {
+#else
+    if (1) {
+#endif
+        ESP_EARLY_LOGW(TAG, "Loading virtual efuse blocks from real efuses");
+        for (int num_block = EFUSE_BLK0; num_block < EFUSE_BLK_MAX; num_block++) {
+            int subblock = 0;
+            for (uint32_t addr_rd_block = range_read_addr_blocks[num_block].start; addr_rd_block <= range_read_addr_blocks[num_block].end; addr_rd_block += 4) {
+                virt_blocks[num_block][subblock++] = REG_READ(addr_rd_block);
+            }
+            ESP_EARLY_LOGD(TAG, "virt_blocks[%d] is filled by EFUSE_BLOCK%d", num_block, num_block);
         }
-        ESP_EARLY_LOGD(TAG, "virt_blocks[%d] is filled by EFUSE_BLOCK%d", num_block, num_block);
+#ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+        esp_efuse_utility_write_efuses_to_flash();
+#endif
     }
 #else
     ESP_EARLY_LOGI(TAG, "Emulate efuse is disabled");
@@ -170,31 +187,29 @@ void esp_efuse_utility_update_virt_blocks(void)
 }
 
 // Prints efuse values for all registers.
-#ifndef BOOTLOADER_BUILD
 void esp_efuse_utility_debug_dump_blocks(void)
 {
-    printf("EFUSE_BLKx:\n");
+    esp_rom_printf("EFUSE_BLKx:\n");
 #ifdef CONFIG_EFUSE_VIRTUAL
     for (int num_block = EFUSE_BLK0; num_block < EFUSE_BLK_MAX; num_block++) {
         int num_reg = 0;
-        printf("%d) ", num_block);
+        esp_rom_printf("%d) ", num_block);
         for (uint32_t addr_rd_block = range_read_addr_blocks[num_block].start; addr_rd_block <= range_read_addr_blocks[num_block].end; addr_rd_block += 4, num_reg++) {
-            printf("0x%08x ", virt_blocks[num_block][num_reg]);
+            esp_rom_printf("0x%08x ", virt_blocks[num_block][num_reg]);
         }
-        printf("\n");
+        esp_rom_printf("\n");
     }
 #else
     for (int num_block = EFUSE_BLK0; num_block < EFUSE_BLK_MAX; num_block++) {
-        printf("%d) ", num_block);
+        esp_rom_printf("%d) ", num_block);
         for (uint32_t addr_rd_block = range_read_addr_blocks[num_block].start; addr_rd_block <= range_read_addr_blocks[num_block].end; addr_rd_block += 4) {
-            printf("0x%08x ", REG_READ(addr_rd_block));
+            esp_rom_printf("0x%08x ", REG_READ(addr_rd_block));
         }
-        printf("\n");
+        esp_rom_printf("\n");
     }
 #endif
-    printf("\n");
+    esp_rom_printf("\n");
 }
-#endif // BOOTLOADER_BUILD
 
 // returns the number of array elements for placing these bits in an array with the length of each element equal to size_of_base.
 int esp_efuse_utility_get_number_of_items(int bits, int size_of_base)
@@ -345,3 +360,94 @@ static bool check_range_of_bits(esp_efuse_block_t blk, int offset_in_bits, int s
     }
     return true;
 }
+
+uint32_t esp_efuse_utility_get_read_register_address(esp_efuse_block_t block)
+{
+    assert(block < EFUSE_BLK_MAX);
+#ifdef CONFIG_EFUSE_VIRTUAL
+    return (uint32_t)&virt_blocks[block][0];
+#else
+    return range_read_addr_blocks[block].start;
+#endif
+
+}
+
+#if defined(BOOTLOADER_BUILD) && defined(CONFIG_EFUSE_VIRTUAL) && !defined(CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH)
+void esp_efuse_init_virtual_mode_in_ram(void)
+{
+    esp_efuse_utility_update_virt_blocks();
+}
+#endif
+
+#ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+
+#include "../include_bootloader/bootloader_flash_priv.h"
+
+static uint32_t esp_efuse_flash_offset = 0;
+static uint32_t esp_efuse_flash_size = 0;
+
+void esp_efuse_init_virtual_mode_in_flash(uint32_t offset, uint32_t size)
+{
+    esp_efuse_flash_offset = offset;
+    esp_efuse_flash_size = size;
+    esp_efuse_utility_update_virt_blocks();
+    esp_efuse_utility_debug_dump_blocks();
+}
+
+void esp_efuse_utility_erase_efuses_in_flash(void)
+{
+    if (esp_efuse_flash_offset == 0) {
+        ESP_EARLY_LOGE(TAG, "no efuse partition in partition_table? (Flash is not updated)");
+        abort();
+    }
+    esp_err_t err = bootloader_flash_erase_range(esp_efuse_flash_offset, esp_efuse_flash_size);
+    if (err != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "Failed to erase flash. err = 0x%x", err);
+        abort();
+    }
+}
+
+bool esp_efuse_utility_load_efuses_from_flash(void)
+{
+    if (esp_efuse_flash_offset == 0) {
+        ESP_EARLY_LOGE(TAG, "no efuse partition in partition_table? (Flash is not updated)");
+        abort();
+    }
+    uint32_t efuses_in_flash[sizeof(virt_blocks)];
+
+    esp_err_t err = bootloader_flash_read(esp_efuse_flash_offset, &efuses_in_flash, sizeof(efuses_in_flash), true);
+    if (err != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "Can not read eFuse partition from flash (err=0x%x)", err);
+        abort();
+    }
+
+    for (unsigned i = 0; i < sizeof(virt_blocks); ++i) {
+        if (efuses_in_flash[i] != 0xFFFFFFFF) {
+            ESP_EARLY_LOGW(TAG, "Loading virtual efuse blocks from flash");
+            memcpy(virt_blocks, efuses_in_flash, sizeof(virt_blocks));
+            return true;
+        }
+    }
+    return false;
+}
+
+void esp_efuse_utility_write_efuses_to_flash(void)
+{
+    if (esp_efuse_flash_offset == 0) {
+        ESP_EARLY_LOGE(TAG, "no efuse partition in partition_table? (Flash is not updated)");
+        abort();
+    }
+
+    esp_err_t err = bootloader_flash_erase_range(esp_efuse_flash_offset, esp_efuse_flash_size);
+    if (err != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "Failed to erase flash. err = 0x%x", err);
+        abort();
+    }
+
+    err = bootloader_flash_write(esp_efuse_flash_offset, &virt_blocks, sizeof(virt_blocks), false);
+    if (err != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "secure_version can not be written to flash. err = 0x%x", err);
+        abort();
+    }
+}
+#endif // CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH

@@ -207,12 +207,11 @@ class IDFDUT(DUT.SerialDUT):
             if inst is not None:
                 inst._port.close()
 
-    @_uses_esptool
-    def _try_flash(self, esp, erase_nvs, baud_rate):
+    def _try_flash(self, erase_nvs):
         """
-        Called by start_app() to try flashing at a particular baud rate.
+        Called by start_app()
 
-        Structured this way so @_uses_esptool will reconnect each time
+        :return: None
         """
         flash_files = []
         encrypt_files = []
@@ -259,49 +258,51 @@ class IDFDUT(DUT.SerialDUT):
                 else:
                     encrypt_files.append((address, nvs_file))
 
-            # fake flasher args object, this is a hack until
-            # esptool Python API is improved
-            class FlashArgs(object):
-                def __init__(self, attributes):
-                    for key, value in attributes.items():
-                        self.__setattr__(key, value)
-
-            # write_flash expects the parameter encrypt_files to be None and not
-            # an empty list, so perform the check here
-            flash_args = FlashArgs({
-                'flash_size': self.app.flash_settings['flash_size'],
-                'flash_mode': self.app.flash_settings['flash_mode'],
-                'flash_freq': self.app.flash_settings['flash_freq'],
-                'addr_filename': flash_files,
-                'encrypt_files': encrypt_files or None,
-                'no_stub': False,
-                'compress': True,
-                'verify': False,
-                'encrypt': encrypt,
-                'ignore_flash_encryption_efuse_setting': False,
-                'erase_all': False,
-            })
-
-            esp.change_baud(baud_rate)
-            esptool.detect_flash_size(esp, flash_args)
-            esptool.write_flash(esp, flash_args)
+            self._write_flash(flash_files, encrypt_files, False, encrypt)
         finally:
             for (_, f) in flash_files:
                 f.close()
             for (_, f) in encrypt_files:
                 f.close()
 
-    def start_app(self, erase_nvs=ERASE_NVS):
+    @_uses_esptool
+    def _write_flash(self, esp, flash_files=None, encrypt_files=None, ignore_flash_encryption_efuse_setting=True, encrypt=False):
         """
-        download and start app.
+        Try flashing at a particular baud rate.
 
-        :param: erase_nvs: whether erase NVS partition during flash
+        Structured this way so @_uses_esptool will reconnect each time
         :return: None
         """
         last_error = None
         for baud_rate in [921600, 115200]:
             try:
-                self._try_flash(erase_nvs, baud_rate)
+                # fake flasher args object, this is a hack until
+                # esptool Python API is improved
+                class FlashArgs(object):
+                    def __init__(self, attributes):
+                        for key, value in attributes.items():
+                            self.__setattr__(key, value)
+
+                # write_flash expects the parameter encrypt_files to be None and not
+                # an empty list, so perform the check here
+                flash_args = FlashArgs({
+                    'flash_size': self.app.flash_settings['flash_size'],
+                    'flash_mode': self.app.flash_settings['flash_mode'],
+                    'flash_freq': self.app.flash_settings['flash_freq'],
+                    'addr_filename': flash_files or None,
+                    'encrypt_files': encrypt_files or None,
+                    'no_stub': False,
+                    'compress': True,
+                    'verify': False,
+                    'encrypt': encrypt,
+                    'ignore_flash_encryption_efuse_setting': ignore_flash_encryption_efuse_setting,
+                    'erase_all': False,
+                    'after': 'no_reset',
+                })
+
+                esp.change_baud(baud_rate)
+                esptool.detect_flash_size(esp, flash_args)
+                esptool.write_flash(esp, flash_args)
                 break
             except RuntimeError as e:
                 last_error = e
@@ -334,6 +335,58 @@ class IDFDUT(DUT.SerialDUT):
         sys.stdout = old_stdout
         return output
 
+    def start_app(self, erase_nvs=ERASE_NVS):
+        """
+        download and start app.
+
+        :param: erase_nvs: whether erase NVS partition during flash
+        :return: None
+        """
+        self._try_flash(erase_nvs)
+
+    def start_app_no_enc(self):
+        """
+        download and start app.
+
+        :param: erase_nvs: whether erase NVS partition during flash
+        :return: None
+        """
+        flash_files = self.app.flash_files + self.app.encrypt_files
+        self.write_flash(flash_files)
+
+    def write_flash(self, flash_files=None, encrypt_files=None, ignore_flash_encryption_efuse_setting=True, encrypt=False):
+        """
+        Flash files
+
+        :return: None
+        """
+        flash_offs_files = []
+        encrypt_offs_files = []
+        try:
+            if flash_files:
+                flash_offs_files = [(offs, open(path, 'rb')) for (offs, path) in flash_files]
+
+            if encrypt_files:
+                encrypt_offs_files = [(offs, open(path, 'rb')) for (offs, path) in encrypt_files]
+
+            self._write_flash(flash_offs_files, encrypt_offs_files, ignore_flash_encryption_efuse_setting, encrypt)
+        finally:
+            for (_, f) in flash_offs_files:
+                f.close()
+            for (_, f) in encrypt_offs_files:
+                f.close()
+
+    def bootloader_flash(self):
+        """
+        download bootloader.
+
+        :return: None
+        """
+        bootloader_path = os.path.join(self.app.binary_path, 'bootloader', 'bootloader.bin')
+        offs = int(self.app.get_sdkconfig()['CONFIG_BOOTLOADER_OFFSET_IN_FLASH'], 0)
+        flash_files = [(offs, bootloader_path)]
+        self.write_flash(flash_files)
+
     @_uses_esptool
     def reset(self, esp):
         """
@@ -351,12 +404,9 @@ class IDFDUT(DUT.SerialDUT):
         :param partition: partition name to erase
         :return: None
         """
-        raise NotImplementedError()  # TODO: implement this
-        # address = self.app.partition_table[partition]["offset"]
+        address = self.app.partition_table[partition]['offset']
         size = self.app.partition_table[partition]['size']
-        # TODO can use esp.erase_region() instead of this, I think
-        with open('.erase_partition.tmp', 'wb') as f:
-            f.write(chr(0xFF) * size)
+        esp.erase_region(address, size)
 
     @_uses_esptool
     def erase_flash(self, esp):
@@ -515,9 +565,6 @@ class ESP32DUT(IDFDUT):
     def _get_rom(cls):
         return esptool.ESP32ROM
 
-    def erase_partition(self, esp, partition):
-        raise NotImplementedError()
-
 
 class ESP32S2DUT(IDFDUT):
     TARGET = 'esp32s2'
@@ -526,9 +573,6 @@ class ESP32S2DUT(IDFDUT):
     @classmethod
     def _get_rom(cls):
         return esptool.ESP32S2ROM
-
-    def erase_partition(self, esp, partition):
-        raise NotImplementedError()
 
 
 class ESP32S3DUT(IDFDUT):
@@ -551,9 +595,6 @@ class ESP32C3DUT(IDFDUT):
     def _get_rom(cls):
         return esptool.ESP32C3ROM
 
-    def erase_partition(self, esp, partition):
-        raise NotImplementedError()
-
 
 class ESP8266DUT(IDFDUT):
     TARGET = 'esp8266'
@@ -562,9 +603,6 @@ class ESP8266DUT(IDFDUT):
     @classmethod
     def _get_rom(cls):
         return esptool.ESP8266ROM
-
-    def erase_partition(self, esp, partition):
-        raise NotImplementedError()
 
 
 def get_target_by_rom_class(cls):

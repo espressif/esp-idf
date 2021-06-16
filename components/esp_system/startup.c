@@ -282,20 +282,6 @@ static void do_core_init(void)
 
     esp_err_t err __attribute__((unused));
 
-#if CONFIG_SECURE_DISABLE_ROM_DL_MODE
-    err = esp_efuse_disable_rom_download_mode();
-    assert(err == ESP_OK && "Failed to disable ROM download mode");
-#endif
-
-#if CONFIG_SECURE_ENABLE_SECURE_ROM_DL_MODE
-    err = esp_efuse_enable_rom_secure_download_mode();
-    assert(err == ESP_OK && "Failed to enable Secure Download mode");
-#endif
-
-#if CONFIG_ESP32_DISABLE_BASIC_ROM_CONSOLE
-    esp_efuse_disable_basic_rom_console();
-#endif
-
     // [refactor-todo] move this to secondary init
 #if CONFIG_APPTRACE_ENABLE
     err = esp_apptrace_init();
@@ -320,6 +306,30 @@ static void do_core_init(void)
     esp_err_t flash_ret = esp_flash_init_default_chip();
     assert(flash_ret == ESP_OK);
     (void)flash_ret;
+
+#ifdef CONFIG_EFUSE_VIRTUAL
+    ESP_LOGW(TAG, "eFuse virtual mode is enabled. If Secure boot or Flash encryption is enabled then it does not provide any security. FOR TESTING ONLY!");
+#ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+    const esp_partition_t *efuse_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_EFUSE_EM, NULL);
+    if (efuse_partition) {
+        esp_efuse_init_virtual_mode_in_flash(efuse_partition->address, efuse_partition->size);
+    }
+#endif
+#endif
+
+#if CONFIG_SECURE_DISABLE_ROM_DL_MODE
+    err = esp_efuse_disable_rom_download_mode();
+    assert(err == ESP_OK && "Failed to disable ROM download mode");
+#endif
+
+#if CONFIG_SECURE_ENABLE_SECURE_ROM_DL_MODE
+    err = esp_efuse_enable_rom_secure_download_mode();
+    assert(err == ESP_OK && "Failed to enable Secure Download mode");
+#endif
+
+#if CONFIG_ESP32_DISABLE_BASIC_ROM_CONSOLE
+    esp_efuse_disable_basic_rom_console();
+#endif
 
 #ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
     esp_flash_encryption_init_checks();
@@ -440,13 +450,6 @@ IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components0, BIT(0))
 #if CONFIG_SW_COEXIST_ENABLE
     esp_coex_adapter_register(&g_coex_adapter_funcs);
     coex_pre_init();
-#endif
-
-#ifdef CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
-    const esp_partition_t *efuse_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_EFUSE_EM, NULL);
-    if (efuse_partition) {
-        esp_efuse_init(efuse_partition->address, efuse_partition->size);
-    }
 #endif
 
 #ifdef CONFIG_COMPILER_CXX_EXCEPTIONS

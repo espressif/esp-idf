@@ -57,6 +57,23 @@ typedef enum {
     EFUSE_CODING_SCHEME_RS      = 3,    /**< Reed-Solomon coding */
 } esp_efuse_coding_scheme_t;
 
+/**
+ * @brief Type of key purpose
+ */
+typedef enum {
+    ESP_EFUSE_KEY_PURPOSE_USER = 0,                         /**< User purposes (software-only use) */
+    ESP_EFUSE_KEY_PURPOSE_RESERVED = 1,                     /**< Reserved */
+    ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY = 4,              /**< XTS_AES_128_KEY (flash/PSRAM encryption) */
+    ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_ALL = 5,                /**< HMAC Downstream mode */
+    ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG = 6,               /**< JTAG soft enable key (uses HMAC Downstream mode) */
+    ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_DIGITAL_SIGNATURE = 7,  /**< Digital Signature peripheral key (uses HMAC Downstream mode) */
+    ESP_EFUSE_KEY_PURPOSE_HMAC_UP = 8,                      /**< HMAC Upstream mode */
+    ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST0 = 9,          /**< SECURE_BOOT_DIGEST0 (Secure Boot key digest) */
+    ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST1 = 10,         /**< SECURE_BOOT_DIGEST1 (Secure Boot key digest) */
+    ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST2 = 11,         /**< SECURE_BOOT_DIGEST2 (Secure Boot key digest) */
+    ESP_EFUSE_KEY_PURPOSE_MAX,                              /**< MAX PURPOSE */
+} esp_efuse_purpose_t;
+
 #ifdef __cplusplus
 }
 #endif

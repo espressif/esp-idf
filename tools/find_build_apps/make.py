@@ -12,7 +12,7 @@ MAKE_PROJECT_LINE = r'include $(IDF_PATH)/make/project.mk'
 BUILD_SYSTEM_MAKE = 'make'
 
 try:
-    string_type = basestring
+    string_type = basestring  # type: ignore
 except NameError:
     string_type = str
 
@@ -27,6 +27,8 @@ class MakeBuildSystem(BuildSystem):
             'make clean',
             'make defconfig',
             'make all',
+            # In case if secure_boot is enabled then for bootloader build need to add `bootloader` cmd
+            'make bootloader',
             'make print_flash_cmd',
         ]
 

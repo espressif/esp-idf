@@ -1,5 +1,10 @@
 idf_build_get_property(target IDF_TARGET)
 
+if(CONFIG_EFUSE_VIRTUAL)
+    message(STATUS "Efuse virtual mode is enabled. If Secure boot or Flash encryption is on"
+        " it does not provide any security. FOR TESTING ONLY!")
+endif()
+
 if(EXISTS "${COMPONENT_DIR}/${target}")
     include(${COMPONENT_DIR}/${target}/sources.cmake)
     spaces2list(EFUSE_SOC_SRCS)

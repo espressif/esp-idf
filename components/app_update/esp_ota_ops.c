@@ -893,7 +893,7 @@ esp_err_t esp_ota_revoke_secure_boot_public_key(esp_ota_secure_boot_public_key_i
         return ESP_ERR_INVALID_ARG;
     }
 
-    ets_secure_boot_revoke_public_key_digest(index);
+    esp_efuse_set_digest_revoke(index);
     ESP_LOGI(TAG, "Revoked signature block %d.", index);
     return ESP_OK;
 }

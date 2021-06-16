@@ -115,3 +115,9 @@ void esp_efuse_write_random_key(uint32_t blk_wdata0_reg)
     bzero(buf, sizeof(buf));
     bzero(raw, sizeof(raw));
 }
+
+// Permanently update values written to the efuse write registers
+void esp_efuse_burn_new_values(void)
+{
+    esp_efuse_utility_burn_efuses();
+}

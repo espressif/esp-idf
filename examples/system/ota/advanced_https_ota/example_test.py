@@ -461,6 +461,9 @@ def test_examples_protocol_advanced_https_ota_example_anti_rollback(env, extra_d
       4. Check working of anti_rollback feature
     """
     dut1 = env.get_dut('advanced_https_ota_example', 'examples/system/ota/advanced_https_ota', dut_class=ttfw_idf.ESP32DUT, app_config_name='anti_rollback')
+    Utility.console_log('Erasing the flash on the chip')
+    # erase the flash
+    dut1.erase_flash()
     server_port = 8001
     # Original binary file generated after compilation
     bin_name = 'advanced_https_ota.bin'

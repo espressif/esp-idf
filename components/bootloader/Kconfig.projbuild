@@ -267,10 +267,14 @@ menu "Bootloader config"
         bool "Emulate operations with efuse secure version(only test)"
         default n
         depends on BOOTLOADER_APP_ANTI_ROLLBACK
+        select EFUSE_VIRTUAL
+        select EFUSE_VIRTUAL_KEEP_IN_FLASH
         help
-            This option allow emulate read/write operations with efuse secure version.
-            It allow to test anti-rollback implemention without permanent write eFuse bits.
-            In partition table should be exist this partition `emul_efuse, data, 5, , 0x2000`.
+            This option allows to emulate read/write operations with all eFuses and efuse secure version.
+            It allows to test anti-rollback implemention without permanent write eFuse bits.
+            There should be an entry in partition table with following details: `emul_efuse, data, efuse, , 0x2000`.
+
+            This option enables: EFUSE_VIRTUAL and EFUSE_VIRTUAL_KEEP_IN_FLASH.
 
     config BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP
         bool "Skip image validation when exiting deep sleep"

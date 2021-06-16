@@ -125,7 +125,6 @@ examples/system/app_trace_to_host/example_test.py
 examples/system/base_mac_address/example_test.py
 examples/system/console/example_test.py
 examples/system/deep_sleep/example_test.py
-examples/system/efuse/example_test.py
 examples/system/esp_event/default_event_loop/example_test.py
 examples/system/esp_event/user_event_loops/example_test.py
 examples/system/esp_timer/example_test.py
@@ -192,7 +191,6 @@ tools/ci/python_packages/tiny_test_fw/bin/Runner.py
 tools/ci/python_packages/tiny_test_fw/bin/example.py
 tools/ci/python_packages/tiny_test_fw/docs/conf.py
 tools/ci/python_packages/ttfw_idf/DebugUtils.py
-tools/ci/python_packages/ttfw_idf/IDFApp.py
 tools/ci/python_packages/ttfw_idf/IDFAssignTest.py
 tools/ci/python_packages/ttfw_idf/IDFDUT.py
 tools/ci/python_packages/ttfw_idf/__init__.py
@@ -219,7 +217,6 @@ tools/esp_prov/transport/transport_console.py
 tools/esp_prov/transport/transport_http.py
 tools/esp_prov/utils/convenience.py
 tools/find_apps.py
-tools/find_build_apps/cmake.py
 tools/find_build_apps/common.py
 tools/find_build_apps/make.py
 tools/gdb_panic_server.py
