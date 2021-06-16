@@ -1015,7 +1015,13 @@ example_test_002:
     - ESP32
     - Example_ShieldBox_Basic
   variables:
-    SUBMODULES_TO_FETCH: "components/esptool_py/esptool;components/micro-ecc/micro-ecc"
+    SUBMODULES_TO_FETCH: "all"
+    TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
+    TEST_CASE_PATH: "$CI_PROJECT_DIR/examples"
+    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/examples/test_configs"
+    LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
+    ENV_FILE: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/EnvConfig.yml"
+    PYTHON_VER: 3
 
 .example_test_003:
   <<: *example_test_template
