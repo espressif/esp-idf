@@ -352,15 +352,16 @@ esp_err_t uart_disable_intr_mask(uart_port_t uart_num, uint32_t disable_mask)
 
 static esp_err_t uart_pattern_link_free(uart_port_t uart_num)
 {
+    int* pdata = NULL;
+    UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     if (p_uart_obj[uart_num]->rx_pattern_pos.data != NULL) {
-        int* pdata = p_uart_obj[uart_num]->rx_pattern_pos.data;
-        UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
+        pdata = p_uart_obj[uart_num]->rx_pattern_pos.data;
         p_uart_obj[uart_num]->rx_pattern_pos.data = NULL;
         p_uart_obj[uart_num]->rx_pattern_pos.wr = 0;
         p_uart_obj[uart_num]->rx_pattern_pos.rd = 0;
-        UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
-        free(pdata);
     }
+    UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
+    free(pdata);
     return ESP_OK;
 }
 
@@ -1250,6 +1251,16 @@ esp_err_t uart_get_buffered_data_len(uart_port_t uart_num, size_t* size)
 
 esp_err_t uart_flush(uart_port_t uart_num) __attribute__((alias("uart_flush_input")));
 
+static esp_err_t uart_disable_intr_mask_and_return_prev(uart_port_t uart_num, uint32_t disable_mask, uint32_t* prev_mask)
+{
+    UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
+    UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
+    *prev_mask = uart_hal_get_intr_ena_status(&uart_context[uart_num].hal) & disable_mask;
+    uart_hal_disable_intr_mask(&(uart_context[uart_num].hal), disable_mask);
+    UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
+    return ESP_OK;
+}
+
 esp_err_t uart_flush_input(uart_port_t uart_num)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
@@ -1257,10 +1268,11 @@ esp_err_t uart_flush_input(uart_port_t uart_num)
     uart_obj_t* p_uart = p_uart_obj[uart_num];
     uint8_t* data;
     size_t size;
+    uint32_t prev_mask;
 
     //rx sem protect the ring buffer read related functions
     xSemaphoreTake(p_uart->rx_mux, (portTickType)portMAX_DELAY);
-    uart_disable_rx_intr(p_uart_obj[uart_num]->uart_num);
+    uart_disable_intr_mask_and_return_prev(uart_num, UART_INTR_RXFIFO_FULL|UART_INTR_RXFIFO_TOUT, &prev_mask);
     while(true) {
         if(p_uart->rx_head_ptr) {
             vRingbufferReturnItem(p_uart->rx_ring_buf, p_uart->rx_head_ptr);
@@ -1303,7 +1315,7 @@ esp_err_t uart_flush_input(uart_port_t uart_num)
     p_uart->rx_cur_remain = 0;
     p_uart->rx_head_ptr = NULL;
     uart_hal_rxfifo_rst(&(uart_context[uart_num].hal));
-    uart_enable_rx_intr(p_uart_obj[uart_num]->uart_num);
+    uart_enable_intr_mask(uart_num, prev_mask);
     xSemaphoreGive(p_uart->rx_mux);
     return ESP_OK;
 }
