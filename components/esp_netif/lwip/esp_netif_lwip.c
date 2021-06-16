@@ -643,7 +643,7 @@ static esp_err_t esp_netif_start_api(esp_netif_api_msg_t *msg)
         netif_set_up(p_netif);
     }
     if (esp_netif->flags & ESP_NETIF_DHCP_SERVER) {
-        if (esp_netif->dhcps_status != ESP_NETIF_DHCP_STARTED) {
+        if (esp_netif->dhcps_status == ESP_NETIF_DHCP_INIT) {
             if (p_netif != NULL && netif_is_up(p_netif)) {
                 esp_netif_ip_info_t *default_ip = esp_netif->ip_info;
                 ip4_addr_t lwip_ip;
@@ -662,9 +662,11 @@ static esp_err_t esp_netif_start_api(esp_netif_api_msg_t *msg)
                 esp_netif->dhcps_status = ESP_NETIF_DHCP_INIT;
                 return ESP_OK;
             }
+        } else if (esp_netif->dhcps_status == ESP_NETIF_DHCP_STARTED) {
+            ESP_LOGD(TAG, "DHCP server already started");
+            return ESP_ERR_ESP_NETIF_DHCP_ALREADY_STARTED;
         }
-        ESP_LOGD(TAG, "DHCP server already started");
-        return ESP_ERR_ESP_NETIF_DHCP_ALREADY_STARTED;
+        return ESP_OK;
     } else if (esp_netif->flags & ESP_NETIF_DHCP_CLIENT) {
         if (esp_netif->dhcpc_status != ESP_NETIF_DHCP_STARTED) {
             if (p_netif != NULL) {
