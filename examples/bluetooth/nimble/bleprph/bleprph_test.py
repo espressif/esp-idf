@@ -37,73 +37,57 @@ from tiny_test_fw import Utility
 # > export TEST_FW_PATH=~/esp/esp-idf/tools/tiny-test-fw
 
 
-def bleprph_client_task(prph_obj, dut, dut_addr):
+def bleprph_client_task(dut, dut_addr):
     interface = 'hci0'
     ble_devname = 'nimble-bleprph'
     srv_uuid = '2f12'
+    write_value = b'A'
 
     # Get BLE client module
-    ble_client_obj = lib_ble_client.BLE_Bluez_Client(interface, devname=ble_devname, devaddr=dut_addr)
-    if not ble_client_obj:
-        raise RuntimeError('Failed to get DBus-Bluez object')
+    ble_client_obj = lib_ble_client.BLE_Bluez_Client(iface=interface)
 
     # Discover Bluetooth Adapter and power on
     is_adapter_set = ble_client_obj.set_adapter()
     if not is_adapter_set:
-        raise RuntimeError('Adapter Power On failed !!')
+        return
 
     # Connect BLE Device
-    is_connected = ble_client_obj.connect()
+    is_connected = ble_client_obj.connect(
+        devname=ble_devname,
+        devaddr=dut_addr)
     if not is_connected:
-        # Call disconnect to perform cleanup operations before exiting application
+        return
+
+    # Get services of the connected device
+    services = ble_client_obj.get_services()
+    if not services:
         ble_client_obj.disconnect()
-        raise RuntimeError('Connection to device ' + ble_devname + ' failed !!')
+        return
+    # Verify service uuid exists
+    service_exists = ble_client_obj.get_service_if_exists(srv_uuid)
+    if not service_exists:
+        ble_client_obj.disconnect()
+        return
+
+    # Get characteristics of the connected device
+    ble_client_obj.get_chars()
+
+    # Read properties of characteristics (uuid, value and permissions)
+    ble_client_obj.read_chars()
+
+    # Write new value to characteristic having read and write permission
+    # and display updated value
+    write_char = ble_client_obj.write_chars(write_value)
+    if not write_char:
+        ble_client_obj.disconnect()
+        return
+
+    # Disconnect device
+    ble_client_obj.disconnect()
 
     # Check dut responses
-    dut.expect('GAP procedure initiated: advertise;', timeout=30)
-
-    # Read Services
-    services_ret = ble_client_obj.get_services(srv_uuid)
-    if services_ret:
-        Utility.console_log('\nServices\n')
-        Utility.console_log(str(services_ret))
-    else:
-        ble_client_obj.disconnect()
-        raise RuntimeError('Failure: Read Services failed')
-
-    # Read Characteristics
-    chars_ret = {}
-    chars_ret = ble_client_obj.read_chars()
-    if chars_ret:
-        Utility.console_log('\nCharacteristics retrieved')
-        for path, props in chars_ret.items():
-            Utility.console_log('\n\tCharacteristic: ' + str(path))
-            Utility.console_log('\tCharacteristic UUID: ' + str(props[2]))
-            Utility.console_log('\tValue: ' + str(props[0]))
-            Utility.console_log('\tProperties: : ' + str(props[1]))
-    else:
-        ble_client_obj.disconnect()
-        raise RuntimeError('Failure: Read Characteristics failed')
-
-    '''
-    Write Characteristics
-    - write 'A' to characteristic with write permission
-    '''
-    chars_ret_on_write = {}
-    chars_ret_on_write = ble_client_obj.write_chars(b'A')
-    if chars_ret_on_write:
-        Utility.console_log('\nCharacteristics after write operation')
-        for path, props in chars_ret_on_write.items():
-            Utility.console_log('\n\tCharacteristic:' + str(path))
-            Utility.console_log('\tCharacteristic UUID: ' + str(props[2]))
-            Utility.console_log('\tValue:' + str(props[0]))
-            Utility.console_log('\tProperties: : ' + str(props[1]))
-    else:
-        ble_client_obj.disconnect()
-        raise RuntimeError('Failure: Write Characteristics failed')
-
-    # Call disconnect to perform cleanup operations before exiting application
-    ble_client_obj.disconnect()
+    dut.expect('connection established; status=0', timeout=30)
+    dut.expect('disconnect;', timeout=30)
 
 
 class BlePrphThread(threading.Thread):
@@ -115,8 +99,8 @@ class BlePrphThread(threading.Thread):
 
     def run(self):
         try:
-            bleprph_client_task(self, self.dut, self.dut_addr)
-        except Exception:
+            bleprph_client_task(self.dut, self.dut_addr)
+        except RuntimeError:
             self.exceptions_queue.put(traceback.format_exc(), block=False)
 
 
@@ -130,8 +114,9 @@ def test_example_app_ble_peripheral(env, extra_data):
             4. Read Characteristics
             5. Write Characteristics
     """
-    subprocess.check_output(['rm','-rf','/var/lib/bluetooth/*'])
-    subprocess.check_output(['hciconfig','hci0','reset'])
+    # Remove cached bluetooth devices of any previous connections
+    subprocess.check_output(['rm', '-rf', '/var/lib/bluetooth/*'])
+    subprocess.check_output(['hciconfig', 'hci0', 'reset'])
 
     # Acquire DUT
     dut = env.get_dut('bleprph', 'examples/bluetooth/nimble/bleprph', dut_class=ttfw_idf.ESP32DUT)
@@ -149,8 +134,11 @@ def test_example_app_ble_peripheral(env, extra_data):
     # Get device address from dut
     dut_addr = dut.expect(re.compile(r'Device Address: ([a-fA-F0-9:]+)'), timeout=30)[0]
 
-    exceptions_queue = Queue.Queue()
+    # Check dut responses
+    dut.expect('GAP procedure initiated: advertise;', timeout=30)
+
     # Starting a py-client in a separate thread
+    exceptions_queue = Queue.Queue()
     bleprph_thread_obj = BlePrphThread(dut, dut_addr, exceptions_queue)
     bleprph_thread_obj.start()
     bleprph_thread_obj.join()
@@ -165,11 +153,7 @@ def test_example_app_ble_peripheral(env, extra_data):
             Utility.console_log('\n' + exception_msg)
 
     if exception_msg:
-        raise Exception('Thread did not run successfully')
-
-    # Check dut responses
-    dut.expect('connection established; status=0', timeout=30)
-    dut.expect('disconnect;', timeout=30)
+        raise Exception('BlePrph thread did not run successfully')
 
 
 if __name__ == '__main__':
