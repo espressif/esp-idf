@@ -255,6 +255,8 @@ esp_err_t esp_eth_start(esp_eth_handle_t hdl)
     esp_err_t ret = ESP_OK;
     esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
     ETH_CHECK(eth_driver, "ethernet driver handle can't be null", err, ESP_ERR_INVALID_ARG);
+    esp_eth_phy_t *phy = eth_driver->phy;
+    esp_eth_mac_t *mac = eth_driver->mac;
     // check if driver has started
     esp_eth_fsm_t expected_fsm = ESP_ETH_FSM_STOP;
     if (!atomic_compare_exchange_strong(&eth_driver->fsm, &expected_fsm, ESP_ETH_FSM_START)) {
@@ -262,14 +264,13 @@ esp_err_t esp_eth_start(esp_eth_handle_t hdl)
         ret = ESP_ERR_INVALID_STATE;
         goto err;
     }
-    ETH_CHECK(eth_driver->phy->reset(eth_driver->phy) == ESP_OK, "reset phy failed", err, ESP_FAIL);
+    ETH_CHECK(phy->negotiate(phy) == ESP_OK, "phy negotiation failed", err, ESP_FAIL);
+    ETH_CHECK(mac->start(mac) == ESP_OK, "start mac failed", err, ESP_FAIL);
+    ETH_CHECK(esp_event_post(ETH_EVENT, ETHERNET_EVENT_START, &eth_driver, sizeof(eth_driver), 0) == ESP_OK,
+              "send ETHERNET_EVENT_START event failed", err, ESP_FAIL);
+    ETH_CHECK(phy->get_link(phy) == ESP_OK, "phy get link status failed", err, ESP_FAIL);
     ETH_CHECK(xTimerStart(eth_driver->check_link_timer, 0) == pdPASS,
               "start eth_link_timer failed", err, ESP_FAIL);
-    ETH_CHECK(esp_event_post(ETH_EVENT, ETHERNET_EVENT_START, &eth_driver, sizeof(eth_driver), 0) == ESP_OK,
-              "send ETHERNET_EVENT_START event failed", err_event, ESP_FAIL);
-    return ESP_OK;
-err_event:
-    xTimerStop(eth_driver->check_link_timer, 0);
 err:
     return ret;
 }
