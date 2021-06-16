@@ -80,14 +80,16 @@ TEST_CASE("pthread C++", "[pthread]")
 
     std::thread t3(thread_main);
     std::thread t4(thread_main);
-    if (t3.joinable()) {
-        std::cout << "Join thread " << std::hex << t3.get_id() << std::endl;
-        t3.join();
-    }
-    if (t4.joinable()) {
-        std::cout << "Join thread " << std::hex << t4.get_id() << std::endl;
-        t4.join();
-    }
+    TEST_ASSERT(t3.joinable());
+    TEST_ASSERT(t4.joinable());
+    std::cout << "Join thread " << std::hex << t3.get_id() << std::endl;
+    t3.join();
+    std::cout << "Join thread " << std::hex << t4.get_id() << std::endl;
+    t4.join();
+
+    // we don't know if/when t2 has finished, so delay another 2s before
+    // deleting the common mutexes
+    std::this_thread::sleep_for(std::chrono::seconds(2));
 
     global_sp_mtx.reset(); // avoid reported leak
     global_sp_recur_mtx.reset();
