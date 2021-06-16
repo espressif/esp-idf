@@ -12,6 +12,7 @@
   artifacts:
     when: always
     paths:
+      - "**/*.log"
       - $LOG_PATH
     expire_in: 1 week
     reports:
@@ -263,9 +264,6 @@ example_test_009:
   tags:
     - ESP32
     - test_jtag_arm
-  artifacts:
-    paths:
-      - $CI_PROJECT_DIR/examples/*/*/*.log
   variables:
     SETUP_TOOLS: "1"
     PYTHON_VER: 3
@@ -281,10 +279,6 @@ example_test_011:
   tags:
     - ESP32
     - Example_T2_RS485
-  artifacts:
-    paths:
-      - $CI_PROJECT_DIR/examples/protocols/modbus/serial/*.log
-      - $LOG_PATH
   variables:
     SETUP_TOOLS: "1"
 
@@ -311,20 +305,12 @@ example_test_015:
   tags:
     - ESP32
     - Example_PPP
-  artifacts:
-    paths:
-      - $CI_PROJECT_DIR/examples/*/*/*.log
-      - $LOG_PATH
 
 example_test_016:
   extends: .example_test_template
   tags:
     - ESP32
     - Example_Modbus_TCP
-  artifacts:
-    paths:
-      - $CI_PROJECT_DIR/examples/*/*/*.log
-      - $LOG_PATH
 
 example_test_C3_GENERIC:
   extends: .example_test_template
@@ -338,9 +324,6 @@ test_app_test_001:
   tags:
     - ESP32
     - test_jtag_arm
-  artifacts:
-    paths:
-      - $CI_PROJECT_DIR/tools/test_apps/system/*/*.log
   variables:
     SETUP_TOOLS: "1"
 
