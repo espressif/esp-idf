@@ -1,4 +1,4 @@
-// Copyright 2017-2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,12 +11,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#pragma once
+#ifndef _SOC_MCPWM_REG_H_
+#define _SOC_MCPWM_REG_H_
 
+
+#include "soc.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "soc.h"
+
+#define REG_MCPWM_BASE(i)             (DR_REG_PWM0_BASE + i * (0xE000))
 
 #define MCPWM_CLK_CFG_REG(i)          (REG_MCPWM_BASE(i) + 0x0)
 /* MCPWM_CLK_PRESCALE : R/W ;bitpos:[7:0] ;default: 8'h0 ; */
@@ -2896,6 +2900,11 @@ ze.*/
 #define MCPWM_DATE_V  0xFFFFFFF
 #define MCPWM_DATE_S  0
 
+
 #ifdef __cplusplus
 }
 #endif
+
+
+
+#endif /*_SOC_MCPWM_REG_H_ */

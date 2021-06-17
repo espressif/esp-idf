@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
 #define _SOC_EFUSE_REG_H_
 
 
+#include "soc.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "soc.h"
 
 #define EFUSE_PGM_DATA0_REG          (DR_REG_EFUSE_BASE + 0x0)
 /* EFUSE_PGM_DATA_0 : R/W ;bitpos:[31:0] ;default: 32'h0 ; */

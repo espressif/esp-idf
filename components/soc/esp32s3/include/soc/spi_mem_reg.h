@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
 #define _SOC_SPI_MEM_REG_H_
 
 
+#include "soc.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "soc.h"
 
 #define SPI_MEM_CMD_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0)
 /* SPI_MEM_FLASH_READ : R/W/SC ;bitpos:[31] ;default: 1'b0 ; */
@@ -274,8 +274,8 @@ e low..*/
 #define SPI_MEM_RXFIFO_RST_V  0x1
 #define SPI_MEM_RXFIFO_RST_S  30
 /* SPI_MEM_CS_HOLD_DLY_RES : R/W ;bitpos:[11:2] ;default: 10'h3ff ; */
-/*description: Delay cycles of resume Flash when resume Flash from standby mode is enable by SP
-I_CLK..*/
+/*description: After RES/DP/HPM/PES/PER command is sent, SPI1 may waits (SPI_MEM_CS_HOLD_DELAY_
+RES[9:0] * 4 or * 256) SPI_CLK cycles..*/
 #define SPI_MEM_CS_HOLD_DLY_RES    0x000003FF
 #define SPI_MEM_CS_HOLD_DLY_RES_M  ((SPI_MEM_CS_HOLD_DLY_RES_V)<<(SPI_MEM_CS_HOLD_DLY_RES_S))
 #define SPI_MEM_CS_HOLD_DLY_RES_V  0x3FF
@@ -371,31 +371,31 @@ CNT_N+1).*/
 
 #define SPI_MEM_USER_REG(i)          (REG_SPI_MEM_BASE(i) + 0x18)
 /* SPI_MEM_USR_COMMAND : R/W ;bitpos:[31] ;default: 1'b1 ; */
-/*description: This bit enable the CMD phase of an operation..*/
+/*description: Set this bit to enable enable the CMD phase of an operation..*/
 #define SPI_MEM_USR_COMMAND    (BIT(31))
 #define SPI_MEM_USR_COMMAND_M  (BIT(31))
 #define SPI_MEM_USR_COMMAND_V  0x1
 #define SPI_MEM_USR_COMMAND_S  31
 /* SPI_MEM_USR_ADDR : R/W ;bitpos:[30] ;default: 1'b0 ; */
-/*description: This bit enable the ADDR phase of an operation..*/
+/*description: Set this bit to enable enable the ADDR phase of an operation..*/
 #define SPI_MEM_USR_ADDR    (BIT(30))
 #define SPI_MEM_USR_ADDR_M  (BIT(30))
 #define SPI_MEM_USR_ADDR_V  0x1
 #define SPI_MEM_USR_ADDR_S  30
 /* SPI_MEM_USR_DUMMY : R/W ;bitpos:[29] ;default: 1'b0 ; */
-/*description: This bit enable the DUMMY phase of an operation..*/
+/*description: Set this bit to enable enable the DUMMY phase of an operation..*/
 #define SPI_MEM_USR_DUMMY    (BIT(29))
 #define SPI_MEM_USR_DUMMY_M  (BIT(29))
 #define SPI_MEM_USR_DUMMY_V  0x1
 #define SPI_MEM_USR_DUMMY_S  29
 /* SPI_MEM_USR_MISO : R/W ;bitpos:[28] ;default: 1'b0 ; */
-/*description: This bit enable the DIN phase of a read-data operation..*/
+/*description: Set this bit to enable enable the DIN phase of a read-data operation..*/
 #define SPI_MEM_USR_MISO    (BIT(28))
 #define SPI_MEM_USR_MISO_M  (BIT(28))
 #define SPI_MEM_USR_MISO_V  0x1
 #define SPI_MEM_USR_MISO_S  28
 /* SPI_MEM_USR_MOSI : R/W ;bitpos:[27] ;default: 1'b0 ; */
-/*description: This bit enable the DOUT phase of an write-data operation..*/
+/*description: Set this bit to enable the DOUT phase of an write-data operation..*/
 #define SPI_MEM_USR_MOSI    (BIT(27))
 #define SPI_MEM_USR_MOSI_M  (BIT(27))
 #define SPI_MEM_USR_MOSI_V  0x1
@@ -565,28 +565,16 @@ dle..*/
 #define SPI_MEM_FSUB_PIN_M  (BIT(7))
 #define SPI_MEM_FSUB_PIN_V  0x1
 #define SPI_MEM_FSUB_PIN_S  7
-/* SPI_MEM_TRANS_END_INT_ENA : R/W ;bitpos:[4] ;default: 1'b0 ; */
-/*description: The bit is used to enable the interrupt of SPI transmitting done..*/
-#define SPI_MEM_TRANS_END_INT_ENA    (BIT(4))
-#define SPI_MEM_TRANS_END_INT_ENA_M  (BIT(4))
-#define SPI_MEM_TRANS_END_INT_ENA_V  0x1
-#define SPI_MEM_TRANS_END_INT_ENA_S  4
-/* SPI_MEM_TRANS_END : R/W/SS ;bitpos:[3] ;default: 1'b0 ; */
-/*description: The bit is used to indicate the transmitting is done..*/
-#define SPI_MEM_TRANS_END    (BIT(3))
-#define SPI_MEM_TRANS_END_M  (BIT(3))
-#define SPI_MEM_TRANS_END_V  0x1
-#define SPI_MEM_TRANS_END_S  3
 /* SPI_MEM_CS1_DIS : R/W ;bitpos:[1] ;default: 1'b1 ; */
 /*description: Set this bit to raise high SPI_CS1 pin, which means that the SPI device(Ext_RAM)
- connected to SPI_CS1 is inactive when SPI1 transfer starts..*/
+ connected to SPI_CS1 is in low level when SPI1 transfer starts..*/
 #define SPI_MEM_CS1_DIS    (BIT(1))
 #define SPI_MEM_CS1_DIS_M  (BIT(1))
 #define SPI_MEM_CS1_DIS_V  0x1
 #define SPI_MEM_CS1_DIS_S  1
 /* SPI_MEM_CS0_DIS : R/W ;bitpos:[0] ;default: 1'b0 ; */
 /*description: Set this bit to raise high SPI_CS pin, which means that the SPI device(flash) co
-nnected to SPI_CS is inactive when SPI1 transfer starts..*/
+nnected to SPI_CS is in low level when SPI1 transfer starts..*/
 #define SPI_MEM_CS0_DIS    (BIT(0))
 #define SPI_MEM_CS0_DIS_M  (BIT(0))
 #define SPI_MEM_CS0_DIS_V  0x1
@@ -1033,19 +1021,19 @@ N), 5:write data state(DOUT), 6: wait state(DUMMY), 7: done state(DONE)..*/
 
 #define SPI_MEM_FLASH_WAITI_CTRL_REG(i)          (REG_SPI_MEM_BASE(i) + 0x98)
 /* SPI_MEM_WAITI_DUMMY_CYCLELEN : R/W ;bitpos:[15:10] ;default: 6'h0 ; */
-/*description: The dummy cycle length when auto wait flash idle .*/
+/*description: The dummy cycle length when wait flash idle(RDSR)..*/
 #define SPI_MEM_WAITI_DUMMY_CYCLELEN    0x0000003F
 #define SPI_MEM_WAITI_DUMMY_CYCLELEN_M  ((SPI_MEM_WAITI_DUMMY_CYCLELEN_V)<<(SPI_MEM_WAITI_DUMMY_CYCLELEN_S))
 #define SPI_MEM_WAITI_DUMMY_CYCLELEN_V  0x3F
 #define SPI_MEM_WAITI_DUMMY_CYCLELEN_S  10
 /* SPI_MEM_WAITI_CMD : R/W ;bitpos:[9:2] ;default: 8'h05 ; */
-/*description: The command to auto wait idle.*/
+/*description: The command value of auto wait flash idle transfer(RDSR)..*/
 #define SPI_MEM_WAITI_CMD    0x000000FF
 #define SPI_MEM_WAITI_CMD_M  ((SPI_MEM_WAITI_CMD_V)<<(SPI_MEM_WAITI_CMD_S))
 #define SPI_MEM_WAITI_CMD_V  0xFF
 #define SPI_MEM_WAITI_CMD_S  2
 /* SPI_MEM_WAITI_DUMMY : R/W ;bitpos:[1] ;default: 1'b0 ; */
-/*description: The dummy phase enable when auto wait flash idle.*/
+/*description: Set this bit to enable DUMMY phase in auto wait flash idle transfer(RDSR)..*/
 #define SPI_MEM_WAITI_DUMMY    (BIT(1))
 #define SPI_MEM_WAITI_DUMMY_M  (BIT(1))
 #define SPI_MEM_WAITI_DUMMY_V  0x1
@@ -1171,8 +1159,8 @@ ed when PER is sent. Only used in SPI1..*/
 
 #define SPI_MEM_TIMING_CALI_REG(i)          (REG_SPI_MEM_BASE(i) + 0xA8)
 /* SPI_MEM_EXTRA_DUMMY_CYCLELEN : R/W ;bitpos:[4:2] ;default: 3'd0 ; */
-/*description: Extra SPI_CLK cycles added in DUMMY phase for timing compensation, when SPI0 acc
-esses to flash. Active when SPI_MEM_TIMING_CALI bit is set..*/
+/*description: Extra SPI_CLK cycles added in DUMMY phase for timing compensation. Active when S
+PI_MEM_TIMING_CALI bit is set..*/
 #define SPI_MEM_EXTRA_DUMMY_CYCLELEN    0x00000007
 #define SPI_MEM_EXTRA_DUMMY_CYCLELEN_M  ((SPI_MEM_EXTRA_DUMMY_CYCLELEN_V)<<(SPI_MEM_EXTRA_DUMMY_CYCLELEN_S))
 #define SPI_MEM_EXTRA_DUMMY_CYCLELEN_V  0x7
@@ -1184,7 +1172,7 @@ ns..*/
 #define SPI_MEM_TIMING_CALI_M  (BIT(1))
 #define SPI_MEM_TIMING_CALI_V  0x1
 #define SPI_MEM_TIMING_CALI_S  1
-/* SPI_MEM_TIMING_CLK_ENA : R/W ;bitpos:[0] ;default: 1'b1 ; */
+/* SPI_MEM_TIMING_CLK_ENA : R/W ;bitpos:[0] ;default: 1'b0 ; */
 /*description: Set this bit to power on HCLK. When PLL is powered on, the frequency of HCLK equ
 als to that of PLL. Otherwise, the frequency equals to that of XTAL..*/
 #define SPI_MEM_TIMING_CLK_ENA    (BIT(0))
@@ -1438,7 +1426,7 @@ ns..*/
 #define SPI_MEM_SPI_SMEM_TIMING_CALI_M  (BIT(1))
 #define SPI_MEM_SPI_SMEM_TIMING_CALI_V  0x1
 #define SPI_MEM_SPI_SMEM_TIMING_CALI_S  1
-/* SPI_MEM_SPI_SMEM_TIMING_CLK_ENA : R/W ;bitpos:[0] ;default: 1'b1 ; */
+/* SPI_MEM_SPI_SMEM_TIMING_CLK_ENA : R/W ;bitpos:[0] ;default: 1'b0 ; */
 /*description: Set this bit to power on HCLK. When PLL is powered on, the frequency of HCLK equ
 als to that of PLL. Otherwise, the frequency equals to that of XTAL..*/
 #define SPI_MEM_SPI_SMEM_TIMING_CLK_ENA    (BIT(0))
@@ -1737,7 +1725,7 @@ M_ECC_ERR_INT_CLR bit..*/
 #define SPI_MEM_ECC_DATA_ERR_BIT_S  6
 
 #define SPI_MEM_SPI_SMEM_AC_REG(i)          (REG_SPI_MEM_BASE(i) + 0xDC)
-/* SPI_MEM_SMEM_CS_HOLD_DELAY : R/W ;bitpos:[30:25] ;default: 6'd0 ; */
+/* SPI_MEM_SPI_SMEM_CS_HOLD_DELAY : R/W ;bitpos:[30:25] ;default: 6'd0 ; */
 /*description: These bits are used to set the minimum CS high time tSHSL between SPI burst tran
 sfer when accesses to external RAM. tSHSL is (SPI_SMEM_CS_HOLD_DELAY[5:0] + 1) M
 SPI core clock cycles..*/
@@ -1825,7 +1813,7 @@ ADDR_OUT[31:0] = {spi_usr_addr_value[25:4], 6'd0, spi_usr_addr_value[3:1], 1'b0}
 #define SPI_MEM_SPI_FMEM_CLK_DIFF_INV_S  28
 /* SPI_MEM_SPI_FMEM_HYPERBUS_DUMMY_2X : R/W ;bitpos:[27] ;default: 1'b0 ; */
 /*description: Set this bit to enable the vary dummy function in SPI HyperBus mode, when SPI0 a
-ccesses to flash or SPI1 accesses flash or sram..*/
+ccesses flash or SPI1 accesses flash or sram..*/
 #define SPI_MEM_SPI_FMEM_HYPERBUS_DUMMY_2X    (BIT(27))
 #define SPI_MEM_SPI_FMEM_HYPERBUS_DUMMY_2X_M  (BIT(27))
 #define SPI_MEM_SPI_FMEM_HYPERBUS_DUMMY_2X_V  0x1
@@ -1892,13 +1880,13 @@ accesses to flash..*/
 #define SPI_MEM_SPI_FMEM_OUTMINBYTELEN_V  0x7F
 #define SPI_MEM_SPI_FMEM_OUTMINBYTELEN_S  5
 /* SPI_MEM_SPI_FMEM_DDR_CMD_DIS : R/W ;bitpos:[4] ;default: 1'b0 ; */
-/*description: the bit is used to disable dual edge in CMD phase when ddr mode..*/
+/*description: the bit is used to disable dual edge in command phase when DDR mode..*/
 #define SPI_MEM_SPI_FMEM_DDR_CMD_DIS    (BIT(4))
 #define SPI_MEM_SPI_FMEM_DDR_CMD_DIS_M  (BIT(4))
 #define SPI_MEM_SPI_FMEM_DDR_CMD_DIS_V  0x1
 #define SPI_MEM_SPI_FMEM_DDR_CMD_DIS_S  4
 /* SPI_MEM_SPI_FMEM_DDR_WDAT_SWP : R/W ;bitpos:[3] ;default: 1'b0 ; */
-/*description: Set the bit to swap TX data of a word in DDR mode..*/
+/*description: Set the bit to reorder TX data of the word in DDR mode..*/
 #define SPI_MEM_SPI_FMEM_DDR_WDAT_SWP    (BIT(3))
 #define SPI_MEM_SPI_FMEM_DDR_WDAT_SWP_M  (BIT(3))
 #define SPI_MEM_SPI_FMEM_DDR_WDAT_SWP_V  0x1
@@ -1910,13 +1898,13 @@ accesses to flash..*/
 #define SPI_MEM_SPI_FMEM_DDR_RDAT_SWP_V  0x1
 #define SPI_MEM_SPI_FMEM_DDR_RDAT_SWP_S  2
 /* SPI_MEM_SPI_FMEM_VAR_DUMMY : R/W ;bitpos:[1] ;default: 1'b0 ; */
-/*description: Set the bit to enable variable dummy cycle in DDR mode..*/
+/*description: Set the bit to enable variable dummy cycle in DDRmode..*/
 #define SPI_MEM_SPI_FMEM_VAR_DUMMY    (BIT(1))
 #define SPI_MEM_SPI_FMEM_VAR_DUMMY_M  (BIT(1))
 #define SPI_MEM_SPI_FMEM_VAR_DUMMY_V  0x1
 #define SPI_MEM_SPI_FMEM_VAR_DUMMY_S  1
 /* SPI_MEM_SPI_FMEM_DDR_EN : R/W ;bitpos:[0] ;default: 1'b0 ; */
-/*description: 1: in ddr mode,  0 in sdr mode.*/
+/*description: 1: in DDR mode,  0: in SDR mode..*/
 #define SPI_MEM_SPI_FMEM_DDR_EN    (BIT(0))
 #define SPI_MEM_SPI_FMEM_DDR_EN_M  (BIT(0))
 #define SPI_MEM_SPI_FMEM_DDR_EN_V  0x1
@@ -2212,12 +2200,36 @@ mand (0x7A) is sent and flash is resumed successfully. 0: Others..*/
 #define SPI_MEM_PER_END_INT_ST_S  0
 
 #define SPI_MEM_DATE_REG(i)          (REG_SPI_MEM_BASE(i) + 0x3FC)
-/* SPI_MEM_DATE : R/W ;bitpos:[27:0] ;default: 28'h2101040 ; */
+/* SPI_MEM_DATE : R/W ;bitpos:[27:5] ;default: 23'h108082 ; */
 /*description: SPI register version..*/
-#define SPI_MEM_DATE    0x0FFFFFFF
+#define SPI_MEM_DATE    0x007FFFFF
 #define SPI_MEM_DATE_M  ((SPI_MEM_DATE_V)<<(SPI_MEM_DATE_S))
-#define SPI_MEM_DATE_V  0xFFFFFFF
-#define SPI_MEM_DATE_S  0
+#define SPI_MEM_DATE_V  0x7FFFFF
+#define SPI_MEM_DATE_S  5
+/* SPI_MEM_SPICLK_PAD_DRV_CTL_EN : R/W ;bitpos:[4] ;default: 1'b0 ; */
+/*description: SPI_CLK PAD driver control signal. 1: The driver of SPI_CLK PAD  is controlled b
+y the bits SPI_FMEM_SPICLK_FUN_DRV[1:0] and SPI_SMEM_SPICLK_FUN_DRV[1:0]. 0: The
+ driver of SPI_CLK PAD  is controlled by the bits IO_MUX_FUNC_DRV[1:0] of SPICLK
+ PAD..*/
+#define SPI_MEM_SPICLK_PAD_DRV_CTL_EN    (BIT(4))
+#define SPI_MEM_SPICLK_PAD_DRV_CTL_EN_M  (BIT(4))
+#define SPI_MEM_SPICLK_PAD_DRV_CTL_EN_V  0x1
+#define SPI_MEM_SPICLK_PAD_DRV_CTL_EN_S  4
+/* SPI_MEM_SPI_FMEM_SPICLK_FUN_DRV : R/W ;bitpos:[3:2] ;default: 2'b0 ; */
+/*description: The driver of SPI_CLK PAD  is controlled by the bits SPI_FMEM_SPICLK_FUN_DRV[1:0
+] when the bit SPI_SPICLK_PAD_DRV_CTL_EN is set and MSPI accesses to flash..*/
+#define SPI_MEM_SPI_FMEM_SPICLK_FUN_DRV    0x00000003
+#define SPI_MEM_SPI_FMEM_SPICLK_FUN_DRV_M  ((SPI_MEM_SPI_FMEM_SPICLK_FUN_DRV_V)<<(SPI_MEM_SPI_FMEM_SPICLK_FUN_DRV_S))
+#define SPI_MEM_SPI_FMEM_SPICLK_FUN_DRV_V  0x3
+#define SPI_MEM_SPI_FMEM_SPICLK_FUN_DRV_S  2
+/* SPI_MEM_SPI_SMEM_SPICLK_FUN_DRV : R/W ;bitpos:[1:0] ;default: 2'b0 ; */
+/*description: The driver of SPI_CLK PAD  is controlled by the bits SPI_SMEM_SPICLK_FUN_DRV[1:0
+] when the bit SPI_SPICLK_PAD_DRV_CTL_EN is set and MSPI accesses to external RA
+M..*/
+#define SPI_MEM_SPI_SMEM_SPICLK_FUN_DRV    0x00000003
+#define SPI_MEM_SPI_SMEM_SPICLK_FUN_DRV_M  ((SPI_MEM_SPI_SMEM_SPICLK_FUN_DRV_V)<<(SPI_MEM_SPI_SMEM_SPICLK_FUN_DRV_S))
+#define SPI_MEM_SPI_SMEM_SPICLK_FUN_DRV_V  0x3
+#define SPI_MEM_SPI_SMEM_SPICLK_FUN_DRV_S  0
 
 
 #ifdef __cplusplus

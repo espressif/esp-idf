@@ -15,10 +15,10 @@
 #define _SOC_EFUSE_STRUCT_H_
 
 
+#include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "soc.h"
 
 typedef volatile struct {
     uint32_t pgm_data0;

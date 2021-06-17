@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,6 +13,9 @@
 // limitations under the License.
 #ifndef _SOC_SPI_MEM_STRUCT_H_
 #define _SOC_SPI_MEM_STRUCT_H_
+
+
+#include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -71,22 +74,22 @@ typedef volatile struct {
     union {
         struct {
             uint32_t clk_mode                      :    2;  /*SPI Bus clock (SPI_CLK) mode bits. 0: SPI Bus clock (SPI_CLK) is off when CS inactive 1: SPI_CLK is delayed one cycle after SPI_CS inactive 2: SPI_CLK is delayed two cycles after SPI_CS inactive 3: SPI_CLK is always on.*/
-            uint32_t cs_hold_dly_res               :    10;  /*Delay cycles of resume Flash when resume Flash from standby mode is enable by SPI_CLK.*/
-            uint32_t reserved12                    :    18;  /*reserved*/
-			uint32_t rxfifo_rst                    :    1;  /*SPI0 RX FIFO reset signal. Set this bit and clear it before SPI0 transfer starts.*/
+            uint32_t cs_hold_dly_res               :    10;  /*After RES/DP/HPM/PES/PER command is sent, SPI1 may waits (SPI_MEM_CS_HOLD_DELAY_RES[9:0] * 4 or * 256) SPI_CLK cycles.*/
+            uint32_t reserved2                     :    18;  /*reserved*/
+            uint32_t rxfifo_rst                    :    1;  /*SPI0 RX FIFO reset signal. Set this bit and clear it before SPI0 transfer starts.*/
             uint32_t reserved31                    :    1;  /*reserved*/
         };
         uint32_t val;
     } ctrl1;
     union {
         struct {
-            uint32_t cs_setup_time:        5;                   /*(cycles-1) of prepare phase by spi clock this bits are combined with spi_mem_cs_setup bit.*/
-            uint32_t cs_hold_time:         5;                   /*Spi cs signal is delayed to inactive by spi clock this bits are combined with spi_mem_cs_hold bit.*/
-            uint32_t ecc_cs_hold_time:     3;                   /*SPI_MEM_CS_HOLD_TIME + SPI_MEM_ECC_CS_HOLD_TIME is the MSPI CS hold cycle in ECC mode when accessed flash.*/
-            uint32_t ecc_skip_page_corner: 1;                   /*1: MSPI skips page corner when accesses flash. 0: Not skip page corner when accesses flash.*/
-            uint32_t ecc_16to18_byte_en:   1;                   /*Set this bit to enable MSPI ECC 16 bytes data with 2 ECC bytes mode when accesses flash.*/
-            uint32_t reserved15:          10;                   /*reserved*/
-            uint32_t cs_hold_delay:        6;                   /*These bits are used to set the minimum CS high time tSHSL between SPI burst transfer when accesses to flash. tSHSL is (SPI_MEM_CS_HOLD_DELAY[5:0] + 1) MSPI core clock cycles.*/
+            uint32_t cs_setup_time                 :    5;  /*(cycles-1) of PREP phase by SPI_CLK, which is the SPI_CS setup time. These bits are combined with SPI_MEM_CS_SETUP bit.*/
+            uint32_t cs_hold_time                  :    5;  /*SPI Bus CS (SPI_CS) signal is delayed to inactive by SPI Bus clock (SPI_CLK), which is the SPI_CS hold time in non-ECC mode. These bits are combined with SPI_MEM_CS_HOLD bit.*/
+            uint32_t ecc_cs_hold_time              :    3;  /*SPI_MEM_CS_HOLD_TIME + SPI_MEM_ECC_CS_HOLD_TIME is the SPI_CS hold cycle in ECC mode when accessed flash.*/
+            uint32_t ecc_skip_page_corner          :    1;  /*1: MSPI skips page corner when accesses flash. 0: Not skip page corner when accesses flash.*/
+            uint32_t ecc_16to18_byte_en            :    1;  /*Set this bit to enable MSPI ECC 16 bytes data with 2 ECC bytes mode when accesses flash.*/
+            uint32_t reserved15                    :    10;  /*reserved*/
+            uint32_t cs_hold_delay                 :    6;  /*These bits are used to set the minimum CS high time tSHSL between SPI burst transfer when accesses to flash. tSHSL is (SPI_MEM_CS_HOLD_DELAY[5:0] + 1) MSPI core clock cycles.*/
             uint32_t sync_reset                    :    1;  /*The FSM will be reset.*/
         };
         uint32_t val;
@@ -95,18 +98,18 @@ typedef volatile struct {
         struct {
             uint32_t clkcnt_l                      :    8;  /*It must equal to the value of SPI_MEM_CLKCNT_N. */
             uint32_t clkcnt_h                      :    8;  /*It must be a floor value of ((SPI_MEM_CLKCNT_N+1)/2-1).*/
-            uint32_t clkcnt_n                      :    8;  /*When SPI1 accesses to flash or Ext_RAM, f_SPI_CLK = f_MSPI_CORE_CLK/(SPI_MEM_CLKCNT_N+1)*/
+            uint32_t clkcnt_n                      :    8;  /*When SPI0 accesses flash, f_SPI_CLK = f_MSPI_CORE_CLK/(SPI_MEM_CLKCNT_N+1)*/
             uint32_t reserved24                    :    7;  /*reserved*/
-            uint32_t clk_equ_sysclk                :    1;  /*When SPI1 access to flash or Ext_RAM, set this bit in 1-division mode, f_SPI_CLK = f_MSPI_CORE_CLK.*/
+            uint32_t clk_equ_sysclk                :    1;  /*When SPI0 accesses flash, set this bit in 1-division mode, f_SPI_CLK = f_MSPI_CORE_CLK.*/
         };
         uint32_t val;
     } clock;
     union {
         struct {
-            uint32_t reserved0:      6;                         /*reserved*/
-            uint32_t cs_hold:        1;                         /*spi cs keep low when spi is in  done  phase. 1: enable 0: disable.*/
-            uint32_t cs_setup:       1;                         /*spi cs is enable when spi is in  prepare  phase. 1: enable 0: disable.*/
-            uint32_t reserved8:      1;                         /*reserved*/
+            uint32_t reserved0                     :    6;  /*reserved*/
+            uint32_t cs_hold                       :    1;  /*Set this bit to keep SPI_CS low when MSPI is in DONE state.*/
+            uint32_t cs_setup                      :    1;  /*Set this bit to keep SPI_CS low when MSPI is in PREP state.*/
+            uint32_t reserved8                     :    1;  /*reserved*/
             uint32_t ck_out_edge                   :    1;  /*This bit, combined with SPI_MEM_CK_IDLE_EDGE bit, is used to change the clock mode 0~3 of SPI_CLK. */
             uint32_t reserved10                    :    2;  /*reserved*/
             uint32_t fwrite_dual                   :    1;  /*Set this bit to enable 2-bm in DOUT phase in SPI1 write operation.*/
@@ -117,11 +120,11 @@ typedef volatile struct {
             uint32_t usr_miso_highpart             :    1;  /*DIN phase only access to high-part of the buffer SPI_MEM_W8_REG~SPI_MEM_W15_REG. 1: enable 0: disable. */
             uint32_t usr_mosi_highpart             :    1;  /*DOUT phase only access to high-part of the buffer SPI_MEM_W8_REG~SPI_MEM_W15_REG. 1: enable 0: disable. */
             uint32_t usr_dummy_idle                :    1;  /*SPI_CLK is disabled(No clock edges) in DUMMY phase when the bit is enable.*/
-            uint32_t usr_mosi                      :    1;  /*This bit enable the DOUT phase of an write-data operation.*/
-            uint32_t usr_miso                      :    1;  /*This bit enable the DIN phase of a read-data operation.*/
-            uint32_t usr_dummy                     :    1;  /*This bit enable the DUMMY phase of an operation.*/
-            uint32_t usr_addr                      :    1;  /*This bit enable the ADDR phase of an operation.*/
-            uint32_t usr_command                   :    1;  /*This bit enable the CMD phase of an operation.*/
+            uint32_t usr_mosi                      :    1;  /*Set this bit to enable the DOUT phase of an write-data operation.*/
+            uint32_t usr_miso                      :    1;  /*Set this bit to enable enable the DIN phase of a read-data operation.*/
+            uint32_t usr_dummy                     :    1;  /*Set this bit to enable enable the DUMMY phase of an operation.*/
+            uint32_t usr_addr                      :    1;  /*Set this bit to enable enable the ADDR phase of an operation.*/
+            uint32_t usr_command                   :    1;  /*Set this bit to enable enable the CMD phase of an operation.*/
         };
         uint32_t val;
     } user;
@@ -143,45 +146,42 @@ typedef volatile struct {
     } user2;
     union {
         struct {
-            uint32_t usr_mosi_bit_len:10;                       /*The length in bits of write-data. The register value shall be (bit_num-1).*/
-            uint32_t reserved10:      22;                       /*reserved*/
+            uint32_t usr_mosi_bit_len              :    10;  /*The length in bits of DOUT phase. The register value shall be (bit_num-1).*/
+            uint32_t reserved10                    :    22;  /*reserved*/
         };
         uint32_t val;
     } mosi_dlen;
     union {
         struct {
-            uint32_t usr_miso_bit_len:10;                       /*The length in bits of  read-data. The register value shall be (bit_num-1).*/
-            uint32_t reserved10:      22;                       /*reserved*/
+            uint32_t usr_miso_bit_len              :    10;  /*The length in bits of DIN phase. The register value shall be (bit_num-1).*/
+            uint32_t reserved10                    :    22;  /*reserved*/
         };
         uint32_t val;
     } miso_dlen;
     union {
         struct {
-            uint32_t status:    16;                             /*The value is stored when set spi_mem_flash_rdsr bit and spi_mem_flash_res bit.*/
-            uint32_t wb_mode:    8;                             /*Mode bits in the flash fast read mode  it is combined with spi_mem_fastrd_mode bit.*/
-            uint32_t reserved24: 8;                             /*reserved*/
+            uint32_t status                        :    16;  /*The value is stored when set SPI_MEM_FLASH_RDSR bit and SPI_MEM_FLASH_RES bit.*/
+            uint32_t wb_mode                       :    8;  /*Mode bits in the flash fast read mode  it is combined with SPI_MEM_FASTRD_MODE bit.*/
+            uint32_t reserved24                    :    8;  /*reserved*/
         };
         uint32_t val;
     } rd_status;
-    uint32_t ext_addr;                                          /*The register are the higher 32bits in the 64 bits address mode.*/
+    uint32_t ext_addr;
     union {
         struct {
-            uint32_t cs0_dis:           1;                      /*SPI CS0 pin enable  1: disable CS0  0: spi_mem_cs0 signal is from/to CS0 pin*/
-            uint32_t cs1_dis:           1;                      /*SPI CS1 pin enable  1: disable CS1  0: spi_mem_cs1 signal is from/to CS1 pin*/
-            uint32_t reserved2:         1;                      /*reserved*/
-            uint32_t trans_end:         1;                      /*The bit is used to indicate the transimitting is done.*/
-            uint32_t trans_end_en:      1;                      /*The bit is used to enable the intterrupt of SPI transmitting done.*/
-            uint32_t reserved5:         2;                      /*reserved*/
-            uint32_t fsub_pin:          1;                      /*For SPI0   flash is connected to SUBPINs.*/
-            uint32_t ssub_pin:          1;                      /*For SPI0   sram is connected to SUBPINs.*/
-            uint32_t ck_idle_edge:      1;                      /*1: spi clk line is high when idle     0: spi clk line is low when idle*/
-            uint32_t cs_keep_active:    1;                      /*spi cs line keep low when the bit is set.*/
-            uint32_t auto_per:          1;                      /*reserved*/
-            uint32_t reserved12:       20;                      /*reserved*/
+            uint32_t cs0_dis                       :    1;  /*Set this bit to raise high SPI_CS pin, which means that the SPI device(flash) connected to SPI_CS is in low level when SPI1 transfer starts.*/
+            uint32_t cs1_dis                       :    1;  /*Set this bit to raise high SPI_CS1 pin, which means that the SPI device(Ext_RAM) connected to SPI_CS1 is in low level when SPI1 transfer starts.*/
+            uint32_t reserved0                     :    5;  /*reserved*/
+            uint32_t fsub_pin                      :    1;  /*Flash is connected to SPI SUBPIN bus.*/
+            uint32_t ssub_pin                      :    1;  /*Ext_RAM is connected to SPI SUBPIN bus.*/
+            uint32_t ck_idle_edge                  :    1;  /*1: SPI_CLK line is high when idle. 0: SPI_CLK line is low when idle */
+            uint32_t cs_keep_active                :    1;  /*SPI_CS line keep low when the bit is set.*/
+            uint32_t auto_per                      :    1;  /*Set this bit to enable auto PER function. Hardware will sent out PER command if PES command is sent.*/
+            uint32_t reserved12                    :    20;  /*reserved*/
         };
         uint32_t val;
     } misc;
-    uint32_t tx_crc;                                            /*For SPI1  the value of crc32.*/
+    uint32_t tx_crc;
     union {
         struct {
             uint32_t req_en                        :    1;  /*Set this bit to enable Cache's access and SPI0's transfer.*/
@@ -264,7 +264,7 @@ typedef volatile struct {
     } sram_clk;
     union {
         struct {
-            uint32_t st                            :    3;  /*The status of SPI1 state machine. 0: idle state(IDLE), 1: preparation state(PREP), 2: send command state(CMD), 3: send address state(ADDR), 4: red data state(DIN), 5:write data state(DOUT), 6: wait state(DUMMY), 7: done state(DONE).*/
+            uint32_t st                            :    3;  /*The status of SPI0 state machine. 0: idle state(IDLE), 1: preparation state(PREP), 2: send command state(CMD), 3: send address state(ADDR), 4: red data state(DIN), 5:write data state(DOUT), 6: wait state(DUMMY), 7: done state(DONE).*/
             uint32_t reserved3                     :    29;  /*reserved*/
         };
         uint32_t val;
@@ -273,9 +273,9 @@ typedef volatile struct {
     union {
         struct {
             uint32_t waiti_en                      :    1;  /*Set this bit to enable auto-waiting flash idle operation when PP/SE/BE/CE/WRSR/PES command is sent.*/
-            uint32_t waiti_dummy                   :    1;  /*The dummy phase enable when auto wait flash idle*/
-            uint32_t waiti_cmd                     :    8;  /*The command to auto wait idle*/
-            uint32_t waiti_dummy_cyclelen          :    6;  /*The dummy cycle length when auto wait flash idle */
+            uint32_t waiti_dummy                   :    1;  /*Set this bit to enable DUMMY phase in auto wait flash idle transfer(RDSR).*/
+            uint32_t waiti_cmd                     :    8;  /*The command value of auto wait flash idle transfer(RDSR).*/
+            uint32_t waiti_dummy_cyclelen          :    6;  /*The dummy cycle length when wait flash idle(RDSR).*/
             uint32_t reserved16                    :    16;  /*reserved*/
         };
         uint32_t val;
@@ -316,10 +316,10 @@ typedef volatile struct {
     } sus_status;
     union {
         struct {
-            uint32_t timing_clk_ena:       1;                   /*The bit is used to enable timing adjust clock for all reading operations.*/
-            uint32_t timing_cali:          1;                   /*The bit is used to enable timing auto-calibration for all reading operations.*/
-            uint32_t extra_dummy_cyclelen: 3;                   /*add extra dummy spi clock cycle length for spi clock calibration.*/
-            uint32_t reserved5:           27;
+            uint32_t timing_clk_ena                :    1;  /*Set this bit to power on HCLK. When PLL is powered on, the frequency of HCLK equals to that of PLL. Otherwise, the frequency equals to that of XTAL.*/
+            uint32_t timing_cali                   :    1;  /*Set this bit to add extra SPI_CLK cycles in DUMMY phase for all reading operations.*/
+            uint32_t extra_dummy_cyclelen          :    3;  /*Extra SPI_CLK cycles added in DUMMY phase for timing compensation, when SPI0 accesses to flash. Active when SPI_MEM_TIMING_CALI bit is set.*/
+            uint32_t reserved5                     :    27;  /*reserved*/
         };
         uint32_t val;
     } timing_cali;
@@ -512,15 +512,15 @@ typedef volatile struct {
     } spi_smem_ddr;
     union {
         struct {
-            uint32_t clk_en:     1;                             /*Register clock gate enable signal. 1: Enable. 0: Disable.*/
-            uint32_t reserved1: 31;                             /*reserved*/
+            uint32_t clk_en                        :    1;  /*Register clock gate enable signal. 1: Enable. 0: Disable.*/
+            uint32_t reserved1                     :    31;  /*reserved*/
         };
         uint32_t val;
     } clock_gate;
     union {
         struct {
-            uint32_t spi01_clk_sel: 2;                          /*When the digital system clock selects PLL clock and the frequency of PLL clock is 480MHz  the value of reg_spi01_clk_sel:  0: SPI0/1 module clock (clk) is 80MHz. 1: SPI0/1 module clock (clk) is 120MHz.  2: SPI0/1 module clock (clk) 160MHz. 3: Not used. When the digital system clock selects PLL clock and the frequency of PLL clock is 320MHz  the value of reg_spi01_clk_sel:  0: SPI0/1 module clock (clk) is 80MHz. 1: SPI0/1 module clock (clk) is 80MHz.  2: SPI0/1 module clock (clk) 160MHz. 3: Not used.*/
-            uint32_t reserved2:    30;                          /*reserved*/
+            uint32_t core_clk_sel                  :    2;  /*When the digital system clock selects PLL clock and the frequency of PLL clock is 480MHz, the value of SPI_MEM_CORE_CLK_SEL:  0: SPI0/1 module clock (MSPI_CORE_CLK) is 80MHz. 1: MSPI_CORE_CLK is 120MHz.  2: MSPI_CORE_CLK is 160MHz. 3: MSPI_CORE_CLK is 240MHz. When the digital system clock selects PLL clock and the frequency of PLL clock is 320MHz, the value of SPI_MEM_CORE_CLK_SEL:  0: MSPI_CORE_CLK is 80MHz. 1: MSPI_CORE_CLK is 80MHz.  2: MSPI_CORE_CLK 160MHz. 3: Not used. */
+            uint32_t reserved2                     :    30;  /*reserved*/
         };
         uint32_t val;
     } core_clk_sel;
@@ -761,7 +761,10 @@ typedef volatile struct {
     uint32_t reserved_3f8;
     union {
         struct {
-            uint32_t date                          :    28;  /*SPI register version.*/
+            uint32_t reg_smem_spiclk_fun_drv       :    2;  /*The driver of SPI_CLK PAD  is controlled by the bits SPI_SMEM_SPICLK_FUN_DRV[1:0] when the bit SPI_SPICLK_PAD_DRV_CTL_EN is set and MSPI accesses to external RAM.*/
+            uint32_t fmem_spiclk_fun_drv           :    2;  /*The driver of SPI_CLK PAD  is controlled by the bits SPI_FMEM_SPICLK_FUN_DRV[1:0] when the bit SPI_SPICLK_PAD_DRV_CTL_EN is set and MSPI accesses to flash.*/
+            uint32_t reg_spiclk_pad_drv_ctl_en     :    1;  /*SPI_CLK PAD driver control signal. 1: The driver of SPI_CLK PAD  is controlled by the bits SPI_FMEM_SPICLK_FUN_DRV[1:0] and SPI_SMEM_SPICLK_FUN_DRV[1:0]. 0: The driver of SPI_CLK PAD  is controlled by the bits IO_MUX_FUNC_DRV[1:0] of SPICLK PAD.*/
+            uint32_t date                          :    23;  /*SPI register version.*/
             uint32_t reserved28                    :    4;  /*reserved*/
         };
         uint32_t val;
@@ -769,11 +772,10 @@ typedef volatile struct {
 } spi_mem_dev_t;
 extern spi_mem_dev_t SPIMEM0;
 extern spi_mem_dev_t SPIMEM1;
-
-_Static_assert(sizeof(spi_mem_dev_t) == 0x400, "spi_mem_dev_t size error!");
-
 #ifdef __cplusplus
 }
 #endif
 
-#endif  /* _SOC_SPI_MEM_STRUCT_H_ */
+
+
+#endif /*_SOC_SPI_MEM_STRUCT_H_ */

@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
 #define _SOC_WORLD_CONTROLLER_REG_H_
 
 
+#include "soc.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "soc.h"
 
 #define WORLD_CONTROLLER_WCL_CORE_0_ENTRY_1_ADDR_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x0)
 /* WORLD_CONTROLLER_CORE_0_ENTRY_1_ADDR : R/W ;bitpos:[31:0] ;default: 31'b0 ; */
@@ -411,8 +411,7 @@ extern "C" {
 #define WORLD_CONTROLLER_WCL_CORE_0_STATUSTABLE_CURRENT_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0xFC)
 /* WORLD_CONTROLLER_CORE_0_STATUSTABLE_CURRENT : R/W ;bitpos:[13:1] ;default: 13'b0 ; */
 /*description: This field is used to quickly read and rewrite the current field of all STATUSTA
-BLE registers.For example,bit 1 represents the current field of STATUSTABLE1, bi
-t2 represents the current field of STATUSTABLE2, and so on..*/
+BLE registers.For example.*/
 #define WORLD_CONTROLLER_CORE_0_STATUSTABLE_CURRENT    0x00001FFF
 #define WORLD_CONTROLLER_CORE_0_STATUSTABLE_CURRENT_M  ((WORLD_CONTROLLER_CORE_0_STATUSTABLE_CURRENT_V)<<(WORLD_CONTROLLER_CORE_0_STATUSTABLE_CURRENT_S))
 #define WORLD_CONTROLLER_CORE_0_STATUSTABLE_CURRENT_V  0x1FFF
@@ -420,15 +419,13 @@ t2 represents the current field of STATUSTABLE2, and so on..*/
 
 #define WORLD_CONTROLLER_WCL_CORE_0_MESSAGE_PHASE_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x108)
 /* WORLD_CONTROLLER_CORE_0_MESSAGE_ADDRESSPHASE : RO ;bitpos:[6] ;default: 1'b0 ; */
-/*description: If this bit is 1, it means that is checking clear write_buffer operation, and is
- checking address..*/
+/*description: If this bit is 1.*/
 #define WORLD_CONTROLLER_CORE_0_MESSAGE_ADDRESSPHASE    (BIT(6))
 #define WORLD_CONTROLLER_CORE_0_MESSAGE_ADDRESSPHASE_M  (BIT(6))
 #define WORLD_CONTROLLER_CORE_0_MESSAGE_ADDRESSPHASE_V  0x1
 #define WORLD_CONTROLLER_CORE_0_MESSAGE_ADDRESSPHASE_S  6
 /* WORLD_CONTROLLER_CORE_0_MESSAGE_DATAPHASE : RO ;bitpos:[5] ;default: 1'b0 ; */
-/*description: If this bit is 1, it means that is checking clear write_buffer operation, and is
- checking data..*/
+/*description: If this bit is 1.*/
 #define WORLD_CONTROLLER_CORE_0_MESSAGE_DATAPHASE    (BIT(5))
 #define WORLD_CONTROLLER_CORE_0_MESSAGE_DATAPHASE_M  (BIT(5))
 #define WORLD_CONTROLLER_CORE_0_MESSAGE_DATAPHASE_V  0x1
@@ -448,8 +445,7 @@ t2 represents the current field of STATUSTABLE2, and so on..*/
 
 #define WORLD_CONTROLLER_WCL_CORE_0_WORLD_TRIGGER_ADDR_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x140)
 /* WORLD_CONTROLLER_CORE_0_WORLD_TRIGGER_ADDR : RW ;bitpos:[31:0] ;default: 32'b0 ; */
-/*description: This field is used to configure the entry address from WORLD0 to WORLD1, when th
-e CPU executes to this address, switch to WORLD1.*/
+/*description: This field is used to configure the entry address from WORLD0 to WORLD1.*/
 #define WORLD_CONTROLLER_CORE_0_WORLD_TRIGGER_ADDR    0xFFFFFFFF
 #define WORLD_CONTROLLER_CORE_0_WORLD_TRIGGER_ADDR_M  ((WORLD_CONTROLLER_CORE_0_WORLD_TRIGGER_ADDR_V)<<(WORLD_CONTROLLER_CORE_0_WORLD_TRIGGER_ADDR_S))
 #define WORLD_CONTROLLER_CORE_0_WORLD_TRIGGER_ADDR_V  0xFFFFFFFF
@@ -457,7 +453,7 @@ e CPU executes to this address, switch to WORLD1.*/
 
 #define WORLD_CONTROLLER_WCL_CORE_0_WORLD_PREPARE_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x144)
 /* WORLD_CONTROLLER_CORE_0_WORLD_PREPARE : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
-/*description: This field to used to set world to enter, 2'b01 means WORLD0, 2'b10 means WORLD1.*/
+/*description: This field to used to set world to enter.*/
 #define WORLD_CONTROLLER_CORE_0_WORLD_PREPARE    0x00000003
 #define WORLD_CONTROLLER_CORE_0_WORLD_PREPARE_M  ((WORLD_CONTROLLER_CORE_0_WORLD_PREPARE_V)<<(WORLD_CONTROLLER_CORE_0_WORLD_PREPARE_S))
 #define WORLD_CONTROLLER_CORE_0_WORLD_PREPARE_V  0x3
@@ -465,9 +461,7 @@ e CPU executes to this address, switch to WORLD1.*/
 
 #define WORLD_CONTROLLER_WCL_CORE_0_WORLD_UPDATE_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x148)
 /* WORLD_CONTROLLER_CORE_0_UPDATE : WO ;bitpos:[31:0] ;default: 32'b0 ; */
-/*description: This field is used to update configuration completed, can write any value, the h
-ardware only checks the write operation of this register and does not case about
- its value.*/
+/*description: This field is used to update configuration completed.*/
 #define WORLD_CONTROLLER_CORE_0_UPDATE    0xFFFFFFFF
 #define WORLD_CONTROLLER_CORE_0_UPDATE_M  ((WORLD_CONTROLLER_CORE_0_UPDATE_V)<<(WORLD_CONTROLLER_CORE_0_UPDATE_S))
 #define WORLD_CONTROLLER_CORE_0_UPDATE_V  0xFFFFFFFF
@@ -475,10 +469,7 @@ ardware only checks the write operation of this register and does not case about
 
 #define WORLD_CONTROLLER_WCL_CORE_0_WORLD_CANCEL_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x14C)
 /* WORLD_CONTROLLER_CORE_0_WORLD_CANCEL : WO ;bitpos:[31:0] ;default: 32'b0 ; */
-/*description: This field is used to cancel switch world configuration, if the trigger address
-and update configuration complete, can use this register to cancel world switch.
- can write any value, the hardware only checks the write operation of this regis
-ter and does not case about its value.*/
+/*description: This field is used to cancel switch world configuration.*/
 #define WORLD_CONTROLLER_CORE_0_WORLD_CANCEL    0xFFFFFFFF
 #define WORLD_CONTROLLER_CORE_0_WORLD_CANCEL_M  ((WORLD_CONTROLLER_CORE_0_WORLD_CANCEL_V)<<(WORLD_CONTROLLER_CORE_0_WORLD_CANCEL_S))
 #define WORLD_CONTROLLER_CORE_0_WORLD_CANCEL_V  0xFFFFFFFF
@@ -502,7 +493,7 @@ ter and does not case about its value.*/
 
 #define WORLD_CONTROLLER_WCL_CORE_0_WORLD_PHASE_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x158)
 /* WORLD_CONTROLLER_CORE_0_WORLD_PHASE : RO ;bitpos:[0] ;default: 1'b0 ; */
-/*description: This bit indicates whether is preparing to switch to WORLD1, 1 means value..*/
+/*description: This bit indicates whether is preparing to switch to WORLD1.*/
 #define WORLD_CONTROLLER_CORE_0_WORLD_PHASE    (BIT(0))
 #define WORLD_CONTROLLER_CORE_0_WORLD_PHASE_M  (BIT(0))
 #define WORLD_CONTROLLER_CORE_0_WORLD_PHASE_V  0x1
@@ -510,8 +501,7 @@ ter and does not case about its value.*/
 
 #define WORLD_CONTROLLER_WCL_CORE_0_NMI_MASK_ENABLE_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x180)
 /* WORLD_CONTROLLER_CORE_0_NMI_MASK_ENABLE : WO ;bitpos:[31:0] ;default: 32'b0 ; */
-/*description: this field is used to set NMI mask, it can write any value, when write this regi
-ster, the hardware start masking NMI interrupt.*/
+/*description: this field is used to set NMI mask.*/
 #define WORLD_CONTROLLER_CORE_0_NMI_MASK_ENABLE    0xFFFFFFFF
 #define WORLD_CONTROLLER_CORE_0_NMI_MASK_ENABLE_M  ((WORLD_CONTROLLER_CORE_0_NMI_MASK_ENABLE_V)<<(WORLD_CONTROLLER_CORE_0_NMI_MASK_ENABLE_S))
 #define WORLD_CONTROLLER_CORE_0_NMI_MASK_ENABLE_V  0xFFFFFFFF
@@ -519,8 +509,7 @@ ster, the hardware start masking NMI interrupt.*/
 
 #define WORLD_CONTROLLER_WCL_CORE_0_NMI_MASK_TRIGGER_ADDR_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x184)
 /* WORLD_CONTROLLER_CORE_0_NMI_MASK_TRIGGER_ADDR : R/W ;bitpos:[31:0] ;default: 32'b0 ; */
-/*description: this field to used to set trigger address, when CPU executes to this address, NM
-I mask automatically fails.*/
+/*description: this field to used to set trigger address.*/
 #define WORLD_CONTROLLER_CORE_0_NMI_MASK_TRIGGER_ADDR    0xFFFFFFFF
 #define WORLD_CONTROLLER_CORE_0_NMI_MASK_TRIGGER_ADDR_M  ((WORLD_CONTROLLER_CORE_0_NMI_MASK_TRIGGER_ADDR_V)<<(WORLD_CONTROLLER_CORE_0_NMI_MASK_TRIGGER_ADDR_S))
 #define WORLD_CONTROLLER_CORE_0_NMI_MASK_TRIGGER_ADDR_V  0xFFFFFFFF
@@ -528,8 +517,7 @@ I mask automatically fails.*/
 
 #define WORLD_CONTROLLER_WCL_CORE_0_NMI_MASK_DISABLE_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x188)
 /* WORLD_CONTROLLER_CORE_0_NMI_MASK_DISABLE : WO ;bitpos:[31:0] ;default: 32'b0 ; */
-/*description: this field is used to disable NMI mask, it will not take effect immediately, onl
-y when the CPU executes to the trigger address will it start to cancel NMI mask.*/
+/*description: this field is used to disable NMI mask.*/
 #define WORLD_CONTROLLER_CORE_0_NMI_MASK_DISABLE    0xFFFFFFFF
 #define WORLD_CONTROLLER_CORE_0_NMI_MASK_DISABLE_M  ((WORLD_CONTROLLER_CORE_0_NMI_MASK_DISABLE_V)<<(WORLD_CONTROLLER_CORE_0_NMI_MASK_DISABLE_S))
 #define WORLD_CONTROLLER_CORE_0_NMI_MASK_DISABLE_V  0xFFFFFFFF
@@ -545,7 +533,7 @@ y when the CPU executes to the trigger address will it start to cancel NMI mask.
 
 #define WORLD_CONTROLLER_WCL_CORE_0_NMI_MASK_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x190)
 /* WORLD_CONTROLLER_CORE_0_NMI_MASK : R/W ;bitpos:[0] ;default: 1'b0 ; */
-/*description: this bit is used to mask NMI interrupt, it can directly mask NMI interrupt.*/
+/*description: this bit is used to mask NMI interrupt.*/
 #define WORLD_CONTROLLER_CORE_0_NMI_MASK    (BIT(0))
 #define WORLD_CONTROLLER_CORE_0_NMI_MASK_M  (BIT(0))
 #define WORLD_CONTROLLER_CORE_0_NMI_MASK_V  0x1
@@ -553,8 +541,7 @@ y when the CPU executes to the trigger address will it start to cancel NMI mask.
 
 #define WORLD_CONTROLLER_WCL_CORE_0_NMI_MASK_PHASE_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x194)
 /* WORLD_CONTROLLER_CORE_0_NMI_MASK_PHASE : RO ;bitpos:[0] ;default: 1'b0 ; */
-/*description: this bit is used to indicates whether the NMI interrupt is being masked, 1 means
- NMI interrupt is being masked,.*/
+/*description: this bit is used to indicates whether the NMI interrupt is being masked.*/
 #define WORLD_CONTROLLER_CORE_0_NMI_MASK_PHASE    (BIT(0))
 #define WORLD_CONTROLLER_CORE_0_NMI_MASK_PHASE_M  (BIT(0))
 #define WORLD_CONTROLLER_CORE_0_NMI_MASK_PHASE_V  0x1
@@ -951,8 +938,7 @@ y when the CPU executes to the trigger address will it start to cancel NMI mask.
 #define WORLD_CONTROLLER_WCL_CORE_1_STATUSTABLE_CURRENT_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x4FC)
 /* WORLD_CONTROLLER_CORE_1_STATUSTABLE_CURRENT : R/W ;bitpos:[13:1] ;default: 13'b0 ; */
 /*description: This field is used to quickly read and rewrite the current field of all STATUSTA
-BLE registers.For example,bit 1 represents the current field of STATUSTABLE1, bi
-t2 represents the current field of STATUSTABLE2, and so on..*/
+BLE registers.For example.*/
 #define WORLD_CONTROLLER_CORE_1_STATUSTABLE_CURRENT    0x00001FFF
 #define WORLD_CONTROLLER_CORE_1_STATUSTABLE_CURRENT_M  ((WORLD_CONTROLLER_CORE_1_STATUSTABLE_CURRENT_V)<<(WORLD_CONTROLLER_CORE_1_STATUSTABLE_CURRENT_S))
 #define WORLD_CONTROLLER_CORE_1_STATUSTABLE_CURRENT_V  0x1FFF
@@ -960,15 +946,13 @@ t2 represents the current field of STATUSTABLE2, and so on..*/
 
 #define WORLD_CONTROLLER_WCL_CORE_1_MESSAGE_PHASE_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x508)
 /* WORLD_CONTROLLER_CORE_1_MESSAGE_ADDRESSPHASE : RO ;bitpos:[6] ;default: 1'b0 ; */
-/*description: If this bit is 1, it means that is checking clear write_buffer operation, and is
- checking address..*/
+/*description: If this bit is 1.*/
 #define WORLD_CONTROLLER_CORE_1_MESSAGE_ADDRESSPHASE    (BIT(6))
 #define WORLD_CONTROLLER_CORE_1_MESSAGE_ADDRESSPHASE_M  (BIT(6))
 #define WORLD_CONTROLLER_CORE_1_MESSAGE_ADDRESSPHASE_V  0x1
 #define WORLD_CONTROLLER_CORE_1_MESSAGE_ADDRESSPHASE_S  6
 /* WORLD_CONTROLLER_CORE_1_MESSAGE_DATAPHASE : RO ;bitpos:[5] ;default: 1'b0 ; */
-/*description: If this bit is 1, it means that is checking clear write_buffer operation, and is
- checking data..*/
+/*description: If this bit is 1.*/
 #define WORLD_CONTROLLER_CORE_1_MESSAGE_DATAPHASE    (BIT(5))
 #define WORLD_CONTROLLER_CORE_1_MESSAGE_DATAPHASE_M  (BIT(5))
 #define WORLD_CONTROLLER_CORE_1_MESSAGE_DATAPHASE_V  0x1
@@ -988,8 +972,7 @@ t2 represents the current field of STATUSTABLE2, and so on..*/
 
 #define WORLD_CONTROLLER_WCL_CORE_1_WORLD_TRIGGER_ADDR_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x540)
 /* WORLD_CONTROLLER_CORE_1_WORLD_TRIGGER_ADDR : RW ;bitpos:[31:0] ;default: 32'b0 ; */
-/*description: This field is used to configure the entry address from WORLD0 to WORLD1, when th
-e CPU executes to this address, switch to WORLD1.*/
+/*description: This field is used to configure the entry address from WORLD0 to WORLD1.*/
 #define WORLD_CONTROLLER_CORE_1_WORLD_TRIGGER_ADDR    0xFFFFFFFF
 #define WORLD_CONTROLLER_CORE_1_WORLD_TRIGGER_ADDR_M  ((WORLD_CONTROLLER_CORE_1_WORLD_TRIGGER_ADDR_V)<<(WORLD_CONTROLLER_CORE_1_WORLD_TRIGGER_ADDR_S))
 #define WORLD_CONTROLLER_CORE_1_WORLD_TRIGGER_ADDR_V  0xFFFFFFFF
@@ -997,7 +980,7 @@ e CPU executes to this address, switch to WORLD1.*/
 
 #define WORLD_CONTROLLER_WCL_CORE_1_WORLD_PREPARE_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x544)
 /* WORLD_CONTROLLER_CORE_1_WORLD_PREPARE : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
-/*description: This field to used to set world to enter, 2'b01 means WORLD0, 2'b10 means WORLD1.*/
+/*description: This field to used to set world to enter.*/
 #define WORLD_CONTROLLER_CORE_1_WORLD_PREPARE    0x00000003
 #define WORLD_CONTROLLER_CORE_1_WORLD_PREPARE_M  ((WORLD_CONTROLLER_CORE_1_WORLD_PREPARE_V)<<(WORLD_CONTROLLER_CORE_1_WORLD_PREPARE_S))
 #define WORLD_CONTROLLER_CORE_1_WORLD_PREPARE_V  0x3
@@ -1005,9 +988,7 @@ e CPU executes to this address, switch to WORLD1.*/
 
 #define WORLD_CONTROLLER_WCL_CORE_1_WORLD_UPDATE_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x548)
 /* WORLD_CONTROLLER_CORE_1_UPDATE : WO ;bitpos:[31:0] ;default: 32'b0 ; */
-/*description: This field is used to update configuration completed, can write any value, the h
-ardware only checks the write operation of this register and does not case about
- its value.*/
+/*description: This field is used to update configuration completed.*/
 #define WORLD_CONTROLLER_CORE_1_UPDATE    0xFFFFFFFF
 #define WORLD_CONTROLLER_CORE_1_UPDATE_M  ((WORLD_CONTROLLER_CORE_1_UPDATE_V)<<(WORLD_CONTROLLER_CORE_1_UPDATE_S))
 #define WORLD_CONTROLLER_CORE_1_UPDATE_V  0xFFFFFFFF
@@ -1015,10 +996,7 @@ ardware only checks the write operation of this register and does not case about
 
 #define WORLD_CONTROLLER_WCL_CORE_1_WORLD_CANCEL_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x54C)
 /* WORLD_CONTROLLER_CORE_1_WORLD_CANCEL : WO ;bitpos:[31:0] ;default: 32'b0 ; */
-/*description: This field is used to cancel switch world configuration, if the trigger address
-and update configuration complete, can use this register to cancel world switch.
- can write any value, the hardware only checks the write operation of this regis
-ter and does not case about its value.*/
+/*description: This field is used to cancel switch world configuration.*/
 #define WORLD_CONTROLLER_CORE_1_WORLD_CANCEL    0xFFFFFFFF
 #define WORLD_CONTROLLER_CORE_1_WORLD_CANCEL_M  ((WORLD_CONTROLLER_CORE_1_WORLD_CANCEL_V)<<(WORLD_CONTROLLER_CORE_1_WORLD_CANCEL_S))
 #define WORLD_CONTROLLER_CORE_1_WORLD_CANCEL_V  0xFFFFFFFF
@@ -1042,7 +1020,7 @@ ter and does not case about its value.*/
 
 #define WORLD_CONTROLLER_WCL_CORE_1_WORLD_PHASE_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x558)
 /* WORLD_CONTROLLER_CORE_1_WORLD_PHASE : RO ;bitpos:[0] ;default: 1'b0 ; */
-/*description: This bit indicates whether is preparing to switch to WORLD1, 1 means value..*/
+/*description: This bit indicates whether is preparing to switch to WORLD1.*/
 #define WORLD_CONTROLLER_CORE_1_WORLD_PHASE    (BIT(0))
 #define WORLD_CONTROLLER_CORE_1_WORLD_PHASE_M  (BIT(0))
 #define WORLD_CONTROLLER_CORE_1_WORLD_PHASE_V  0x1
@@ -1050,8 +1028,7 @@ ter and does not case about its value.*/
 
 #define WORLD_CONTROLLER_WCL_CORE_1_NMI_MASK_ENABLE_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x580)
 /* WORLD_CONTROLLER_CORE_1_NMI_MASK_ENABLE : WO ;bitpos:[31:0] ;default: 32'b0 ; */
-/*description: this field is used to set NMI mask, it can write any value, when write this regi
-ster, the hardware start masking NMI interrupt.*/
+/*description: this field is used to set NMI mask.*/
 #define WORLD_CONTROLLER_CORE_1_NMI_MASK_ENABLE    0xFFFFFFFF
 #define WORLD_CONTROLLER_CORE_1_NMI_MASK_ENABLE_M  ((WORLD_CONTROLLER_CORE_1_NMI_MASK_ENABLE_V)<<(WORLD_CONTROLLER_CORE_1_NMI_MASK_ENABLE_S))
 #define WORLD_CONTROLLER_CORE_1_NMI_MASK_ENABLE_V  0xFFFFFFFF
@@ -1059,8 +1036,7 @@ ster, the hardware start masking NMI interrupt.*/
 
 #define WORLD_CONTROLLER_WCL_CORE_1_NMI_MASK_TRIGGER_ADDR_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x584)
 /* WORLD_CONTROLLER_CORE_1_NMI_MASK_TRIGGER_ADDR : R/W ;bitpos:[31:0] ;default: 32'b0 ; */
-/*description: this field to used to set trigger address, when CPU executes to this address, NM
-I mask automatically fails.*/
+/*description: this field to used to set trigger address.*/
 #define WORLD_CONTROLLER_CORE_1_NMI_MASK_TRIGGER_ADDR    0xFFFFFFFF
 #define WORLD_CONTROLLER_CORE_1_NMI_MASK_TRIGGER_ADDR_M  ((WORLD_CONTROLLER_CORE_1_NMI_MASK_TRIGGER_ADDR_V)<<(WORLD_CONTROLLER_CORE_1_NMI_MASK_TRIGGER_ADDR_S))
 #define WORLD_CONTROLLER_CORE_1_NMI_MASK_TRIGGER_ADDR_V  0xFFFFFFFF
@@ -1068,8 +1044,7 @@ I mask automatically fails.*/
 
 #define WORLD_CONTROLLER_WCL_CORE_1_NMI_MASK_DISABLE_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x588)
 /* WORLD_CONTROLLER_CORE_1_NMI_MASK_DISABLE : WO ;bitpos:[31:0] ;default: 32'b0 ; */
-/*description: this field is used to disable NMI mask, it will not take effect immediately, onl
-y when the CPU executes to the trigger address will it start to cancel NMI mask.*/
+/*description: this field is used to disable NMI mask.*/
 #define WORLD_CONTROLLER_CORE_1_NMI_MASK_DISABLE    0xFFFFFFFF
 #define WORLD_CONTROLLER_CORE_1_NMI_MASK_DISABLE_M  ((WORLD_CONTROLLER_CORE_1_NMI_MASK_DISABLE_V)<<(WORLD_CONTROLLER_CORE_1_NMI_MASK_DISABLE_S))
 #define WORLD_CONTROLLER_CORE_1_NMI_MASK_DISABLE_V  0xFFFFFFFF
@@ -1085,7 +1060,7 @@ y when the CPU executes to the trigger address will it start to cancel NMI mask.
 
 #define WORLD_CONTROLLER_WCL_CORE_1_NMI_MASK_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x590)
 /* WORLD_CONTROLLER_CORE_1_NMI_MASK : R/W ;bitpos:[0] ;default: 1'b0 ; */
-/*description: this bit is used to mask NMI interrupt, it can directly mask NMI interrupt.*/
+/*description: this bit is used to mask NMI interrupt.*/
 #define WORLD_CONTROLLER_CORE_1_NMI_MASK    (BIT(0))
 #define WORLD_CONTROLLER_CORE_1_NMI_MASK_M  (BIT(0))
 #define WORLD_CONTROLLER_CORE_1_NMI_MASK_V  0x1
@@ -1093,219 +1068,11 @@ y when the CPU executes to the trigger address will it start to cancel NMI mask.
 
 #define WORLD_CONTROLLER_WCL_CORE_1_NMI_MASK_PHASE_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x594)
 /* WORLD_CONTROLLER_CORE_1_NMI_MASK_PHASE : RO ;bitpos:[0] ;default: 1'b0 ; */
-/*description: this bit is used to indicates whether the NMI interrupt is being masked, 1 means
- NMI interrupt is being masked,.*/
+/*description: this bit is used to indicates whether the NMI interrupt is being masked.*/
 #define WORLD_CONTROLLER_CORE_1_NMI_MASK_PHASE    (BIT(0))
 #define WORLD_CONTROLLER_CORE_1_NMI_MASK_PHASE_M  (BIT(0))
 #define WORLD_CONTROLLER_CORE_1_NMI_MASK_PHASE_V  0x1
 #define WORLD_CONTROLLER_CORE_1_NMI_MASK_PHASE_S  0
-
-#define WORLD_CONTROLLER_WCL_DMA_APBPERI_SPI2_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x800)
-/* WORLD_CONTROLLER_WORLD_DMA_APBPERI_SPI2 : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
-/*description: This field is used to set world of DMA_SPI2, 2'b01 means WORLD0, 2'b10 means WOR
-LD1 .*/
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_SPI2    0x00000003
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_SPI2_M  ((WORLD_CONTROLLER_WORLD_DMA_APBPERI_SPI2_V)<<(WORLD_CONTROLLER_WORLD_DMA_APBPERI_SPI2_S))
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_SPI2_V  0x3
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_SPI2_S  0
-
-#define WORLD_CONTROLLER_WCL_DMA_APBPERI_SPI3_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x804)
-/* WORLD_CONTROLLER_WORLD_DMA_APBPERI_SPI3 : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
-/*description: This field is used to set world of DMA_SPI3, 2'b01 means WORLD0, 2'b10 means WOR
-LD1 .*/
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_SPI3    0x00000003
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_SPI3_M  ((WORLD_CONTROLLER_WORLD_DMA_APBPERI_SPI3_V)<<(WORLD_CONTROLLER_WORLD_DMA_APBPERI_SPI3_S))
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_SPI3_V  0x3
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_SPI3_S  0
-
-#define WORLD_CONTROLLER_WCL_DMA_APBPERI_UCHI0_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x808)
-/* WORLD_CONTROLLER_WORLD_DMA_APBPERI_UCHI0 : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
-/*description: This field is used to set world of DMA_UCHI0, 2'b01 means WORLD0, 2'b10 means WO
-RLD1 .*/
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_UCHI0    0x00000003
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_UCHI0_M  ((WORLD_CONTROLLER_WORLD_DMA_APBPERI_UCHI0_V)<<(WORLD_CONTROLLER_WORLD_DMA_APBPERI_UCHI0_S))
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_UCHI0_V  0x3
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_UCHI0_S  0
-
-#define WORLD_CONTROLLER_WCL_DMA_APBPERI_I2S0_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x80C)
-/* WORLD_CONTROLLER_WORLD_DMA_APBPERI_I2S0 : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
-/*description: This field is used to set world of DMA_I2S0, 2'b01 means WORLD0, 2'b10 means WOR
-LD1 .*/
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_I2S0    0x00000003
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_I2S0_M  ((WORLD_CONTROLLER_WORLD_DMA_APBPERI_I2S0_V)<<(WORLD_CONTROLLER_WORLD_DMA_APBPERI_I2S0_S))
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_I2S0_V  0x3
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_I2S0_S  0
-
-#define WORLD_CONTROLLER_WCL_DMA_APBPERI_I2S1_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x810)
-/* WORLD_CONTROLLER_WORLD_DMA_APBPERI_I2S1 : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
-/*description: This field is used to set world of DMA_I2S1, 2'b01 means WORLD0, 2'b10 means WOR
-LD1 .*/
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_I2S1    0x00000003
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_I2S1_M  ((WORLD_CONTROLLER_WORLD_DMA_APBPERI_I2S1_V)<<(WORLD_CONTROLLER_WORLD_DMA_APBPERI_I2S1_S))
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_I2S1_V  0x3
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_I2S1_S  0
-
-#define WORLD_CONTROLLER_WCL_DMA_APBPERI_LCD_CAM_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x814)
-/* WORLD_CONTROLLER_WORLD_DMA_APBPERI_LCD_CAM : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
-/*description: This field is used to set world of DMA_LCD_CAM, 2'b01 means WORLD0, 2'b10 means
-WORLD1 .*/
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_LCD_CAM    0x00000003
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_LCD_CAM_M  ((WORLD_CONTROLLER_WORLD_DMA_APBPERI_LCD_CAM_V)<<(WORLD_CONTROLLER_WORLD_DMA_APBPERI_LCD_CAM_S))
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_LCD_CAM_V  0x3
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_LCD_CAM_S  0
-
-#define WORLD_CONTROLLER_WCL_DMA_APBPERI_AES_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x818)
-/* WORLD_CONTROLLER_WORLD_DMA_APBPERI_AES : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
-/*description: This field is used to set world of DMA_AES, 2'b01 means WORLD0, 2'b10 means WORL
-D1 .*/
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_AES    0x00000003
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_AES_M  ((WORLD_CONTROLLER_WORLD_DMA_APBPERI_AES_V)<<(WORLD_CONTROLLER_WORLD_DMA_APBPERI_AES_S))
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_AES_V  0x3
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_AES_S  0
-
-#define WORLD_CONTROLLER_WCL_DMA_APBPERI_SHA_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x81C)
-/* WORLD_CONTROLLER_WORLD_DMA_APBPERI_SHA : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
-/*description: This field is used to set world of DMA_SHA, 2'b01 means WORLD0, 2'b10 means WORL
-D1 .*/
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_SHA    0x00000003
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_SHA_M  ((WORLD_CONTROLLER_WORLD_DMA_APBPERI_SHA_V)<<(WORLD_CONTROLLER_WORLD_DMA_APBPERI_SHA_S))
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_SHA_V  0x3
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_SHA_S  0
-
-#define WORLD_CONTROLLER_WCL_DMA_APBPERI_ADC_DAC_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x820)
-/* WORLD_CONTROLLER_WORLD_DMA_APBPERI_ADC_DAC : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
-/*description: This field is used to set world of DMA_ADC_DAC, 2'b01 means WORLD0, 2'b10 means
-WORLD1 .*/
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_ADC_DAC    0x00000003
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_ADC_DAC_M  ((WORLD_CONTROLLER_WORLD_DMA_APBPERI_ADC_DAC_V)<<(WORLD_CONTROLLER_WORLD_DMA_APBPERI_ADC_DAC_S))
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_ADC_DAC_V  0x3
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_ADC_DAC_S  0
-
-#define WORLD_CONTROLLER_WCL_DMA_APBPERI_USB_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x824)
-/* WORLD_CONTROLLER_WORLD_DMA_APBPERI_USB : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
-/*description: This field is used to set world of DMA_USB, 2'b01 means WORLD0, 2'b10 means WORL
-D1 .*/
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_USB    0x00000003
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_USB_M  ((WORLD_CONTROLLER_WORLD_DMA_APBPERI_USB_V)<<(WORLD_CONTROLLER_WORLD_DMA_APBPERI_USB_S))
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_USB_V  0x3
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_USB_S  0
-
-#define WORLD_CONTROLLER_WCL_DMA_APBPERI_SDIO_HOST_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x828)
-/* WORLD_CONTROLLER_WORLD_DMA_APBPERI_SDIO_HOST : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
-/*description: This field is used to set world of DMA_SDIO_HOST, 2'b01 means WORLD0, 2'b10 mean
-s WORLD1 .*/
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_SDIO_HOST    0x00000003
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_SDIO_HOST_M  ((WORLD_CONTROLLER_WORLD_DMA_APBPERI_SDIO_HOST_V)<<(WORLD_CONTROLLER_WORLD_DMA_APBPERI_SDIO_HOST_S))
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_SDIO_HOST_V  0x3
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_SDIO_HOST_S  0
-
-#define WORLD_CONTROLLER_WCL_DMA_APBPERI_MAC_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x82C)
-/* WORLD_CONTROLLER_WORLD_DMA_APBPERI_MAC : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
-/*description: This field is used to set world of DMA_MAC, 2'b01 means WORLD0, 2'b10 means WORL
-D1 .*/
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_MAC    0x00000003
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_MAC_M  ((WORLD_CONTROLLER_WORLD_DMA_APBPERI_MAC_V)<<(WORLD_CONTROLLER_WORLD_DMA_APBPERI_MAC_S))
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_MAC_V  0x3
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_MAC_S  0
-
-#define WORLD_CONTROLLER_WCL_DMA_APBPERI_SLC_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x830)
-/* WORLD_CONTROLLER_WORLD_DMA_APBPERI_SLC : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
-/*description: This field is used to set world of DMA_SLC, 2'b01 means WORLD0, 2'b10 means WORL
-D1 .*/
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_SLC    0x00000003
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_SLC_M  ((WORLD_CONTROLLER_WORLD_DMA_APBPERI_SLC_V)<<(WORLD_CONTROLLER_WORLD_DMA_APBPERI_SLC_S))
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_SLC_V  0x3
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_SLC_S  0
-
-#define WORLD_CONTROLLER_WCL_DMA_APBPERI_LC_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x834)
-/* WORLD_CONTROLLER_WORLD_DMA_APBPERI_LC : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
-/*description: This field is used to set world of DMA_LC, 2'b01 means WORLD0, 2'b10 means WORLD
-1 .*/
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_LC    0x00000003
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_LC_M  ((WORLD_CONTROLLER_WORLD_DMA_APBPERI_LC_V)<<(WORLD_CONTROLLER_WORLD_DMA_APBPERI_LC_S))
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_LC_V  0x3
-#define WORLD_CONTROLLER_WORLD_DMA_APBPERI_LC_S  0
-
-#define WORLD_CONTROLLER_WCL_EDMA_SPI2_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x900)
-/* WORLD_CONTROLLER_WORLD_EDMA_SPI2 : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
-/*description: This field is used to set world of EDMA_SPI2, 2'b01 means WORLD0, 2'b10 means WO
-RLD1 .*/
-#define WORLD_CONTROLLER_WORLD_EDMA_SPI2    0x00000003
-#define WORLD_CONTROLLER_WORLD_EDMA_SPI2_M  ((WORLD_CONTROLLER_WORLD_EDMA_SPI2_V)<<(WORLD_CONTROLLER_WORLD_EDMA_SPI2_S))
-#define WORLD_CONTROLLER_WORLD_EDMA_SPI2_V  0x3
-#define WORLD_CONTROLLER_WORLD_EDMA_SPI2_S  0
-
-#define WORLD_CONTROLLER_WCL_EDMA_SPI3_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x904)
-/* WORLD_CONTROLLER_WORLD_EDMA_SPI3 : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
-/*description: This field is used to set world of EDMA_SPI3, 2'b01 means WORLD0, 2'b10 means WO
-RLD1 .*/
-#define WORLD_CONTROLLER_WORLD_EDMA_SPI3    0x00000003
-#define WORLD_CONTROLLER_WORLD_EDMA_SPI3_M  ((WORLD_CONTROLLER_WORLD_EDMA_SPI3_V)<<(WORLD_CONTROLLER_WORLD_EDMA_SPI3_S))
-#define WORLD_CONTROLLER_WORLD_EDMA_SPI3_V  0x3
-#define WORLD_CONTROLLER_WORLD_EDMA_SPI3_S  0
-
-#define WORLD_CONTROLLER_WCL_EDMA_UCHI0_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x908)
-/* WORLD_CONTROLLER_WORLD_EDMA_UCHI0 : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
-/*description: This field is used to set world of EDMA_UCHI0, 2'b01 means WORLD0, 2'b10 means W
-ORLD1 .*/
-#define WORLD_CONTROLLER_WORLD_EDMA_UCHI0    0x00000003
-#define WORLD_CONTROLLER_WORLD_EDMA_UCHI0_M  ((WORLD_CONTROLLER_WORLD_EDMA_UCHI0_V)<<(WORLD_CONTROLLER_WORLD_EDMA_UCHI0_S))
-#define WORLD_CONTROLLER_WORLD_EDMA_UCHI0_V  0x3
-#define WORLD_CONTROLLER_WORLD_EDMA_UCHI0_S  0
-
-#define WORLD_CONTROLLER_WCL_EDMA_I2S0_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x90C)
-/* WORLD_CONTROLLER_WORLD_EDMA_I2S0 : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
-/*description: This field is used to set world of EDMA_I2S0, 2'b01 means WORLD0, 2'b10 means WO
-RLD1 .*/
-#define WORLD_CONTROLLER_WORLD_EDMA_I2S0    0x00000003
-#define WORLD_CONTROLLER_WORLD_EDMA_I2S0_M  ((WORLD_CONTROLLER_WORLD_EDMA_I2S0_V)<<(WORLD_CONTROLLER_WORLD_EDMA_I2S0_S))
-#define WORLD_CONTROLLER_WORLD_EDMA_I2S0_V  0x3
-#define WORLD_CONTROLLER_WORLD_EDMA_I2S0_S  0
-
-#define WORLD_CONTROLLER_WCL_EDMA_I2S1_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x910)
-/* WORLD_CONTROLLER_WORLD_EDMA_I2S1 : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
-/*description: This field is used to set world of EDMA_I2S1, 2'b01 means WORLD0, 2'b10 means WO
-RLD1 .*/
-#define WORLD_CONTROLLER_WORLD_EDMA_I2S1    0x00000003
-#define WORLD_CONTROLLER_WORLD_EDMA_I2S1_M  ((WORLD_CONTROLLER_WORLD_EDMA_I2S1_V)<<(WORLD_CONTROLLER_WORLD_EDMA_I2S1_S))
-#define WORLD_CONTROLLER_WORLD_EDMA_I2S1_V  0x3
-#define WORLD_CONTROLLER_WORLD_EDMA_I2S1_S  0
-
-#define WORLD_CONTROLLER_WCL_EDMA_LCD_CAM_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x914)
-/* WORLD_CONTROLLER_WORLD_EDMA_LCD_CAM : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
-/*description: This field is used to set world of EDMA_LCD_CAM, 2'b01 means WORLD0, 2'b10 means
- WORLD1 .*/
-#define WORLD_CONTROLLER_WORLD_EDMA_LCD_CAM    0x00000003
-#define WORLD_CONTROLLER_WORLD_EDMA_LCD_CAM_M  ((WORLD_CONTROLLER_WORLD_EDMA_LCD_CAM_V)<<(WORLD_CONTROLLER_WORLD_EDMA_LCD_CAM_S))
-#define WORLD_CONTROLLER_WORLD_EDMA_LCD_CAM_V  0x3
-#define WORLD_CONTROLLER_WORLD_EDMA_LCD_CAM_S  0
-
-#define WORLD_CONTROLLER_WCL_EDMA_AES_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x918)
-/* WORLD_CONTROLLER_WORLD_EDMA_AES : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
-/*description: This field is used to set world of EDMA_AES, 2'b01 means WORLD0, 2'b10 means WOR
-LD1 .*/
-#define WORLD_CONTROLLER_WORLD_EDMA_AES    0x00000003
-#define WORLD_CONTROLLER_WORLD_EDMA_AES_M  ((WORLD_CONTROLLER_WORLD_EDMA_AES_V)<<(WORLD_CONTROLLER_WORLD_EDMA_AES_S))
-#define WORLD_CONTROLLER_WORLD_EDMA_AES_V  0x3
-#define WORLD_CONTROLLER_WORLD_EDMA_AES_S  0
-
-#define WORLD_CONTROLLER_WCL_EDMA_SHA_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x91C)
-/* WORLD_CONTROLLER_WORLD_EDMA_SHA : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
-/*description: This field is used to set world of EDMA_SHA, 2'b01 means WORLD0, 2'b10 means WOR
-LD1 .*/
-#define WORLD_CONTROLLER_WORLD_EDMA_SHA    0x00000003
-#define WORLD_CONTROLLER_WORLD_EDMA_SHA_M  ((WORLD_CONTROLLER_WORLD_EDMA_SHA_V)<<(WORLD_CONTROLLER_WORLD_EDMA_SHA_S))
-#define WORLD_CONTROLLER_WORLD_EDMA_SHA_V  0x3
-#define WORLD_CONTROLLER_WORLD_EDMA_SHA_S  0
-
-#define WORLD_CONTROLLER_WCL_EDMA_ADC_DAC_REG          (DR_REG_WORLD_CONTROLLER_BASE + 0x920)
-/* WORLD_CONTROLLER_WORLD_EDMA_ADC_DAC : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
-/*description: This field is used to set world of EDMA_ADC_DAC, 2'b01 means WORLD0, 2'b10 means
- WORLD1 .*/
-#define WORLD_CONTROLLER_WORLD_EDMA_ADC_DAC    0x00000003
-#define WORLD_CONTROLLER_WORLD_EDMA_ADC_DAC_M  ((WORLD_CONTROLLER_WORLD_EDMA_ADC_DAC_V)<<(WORLD_CONTROLLER_WORLD_EDMA_ADC_DAC_S))
-#define WORLD_CONTROLLER_WORLD_EDMA_ADC_DAC_V  0x3
-#define WORLD_CONTROLLER_WORLD_EDMA_ADC_DAC_S  0
 
 
 #ifdef __cplusplus

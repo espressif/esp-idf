@@ -11,21 +11,22 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef _SOC_INTERRUPT_REG_H_
-#define _SOC_INTERRUPT_REG_H_
+#ifndef _SOC_INTERRUPT_STRUCT_H_
+#define _SOC_INTERRUPT_STRUCT_H_
 
-#include "interrupt_core0_reg.h"
-#include "interrupt_core1_reg.h"
-#include "soc.h"
+
+#include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-
+typedef volatile struct {
+} interrupt_dev_t;
+extern interrupt_dev_t INTERRUPT;
 #ifdef __cplusplus
 }
 #endif
 
 
 
-#endif /*_SOC_INTERRUPT_REG_H_ */
+#endif /*_SOC_INTERRUPT_STRUCT_H_ */

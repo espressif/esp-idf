@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
 #define _SOC_GDMA_REG_H_
 
 
+#include "soc.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "soc.h"
 
 #define GDMA_IN_CONF0_CH0_REG          (DR_REG_GDMA_BASE + 0x0)
 /* GDMA_MEM_TRANS_EN_CH0 : R/W ;bitpos:[4] ;default: 1'b0 ; */
