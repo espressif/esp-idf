@@ -146,3 +146,80 @@ I(552749) OPENTHREAD:[INFO]-UTIL----: Starting Child Supervision
 ```
 
 The device has now joined the same Thread network based on the key set by the commissioner.
+
+## Bidirectional IPv6 connectivity
+
+The border router will automatically publish the prefix and the route table rule to the WiFi network via ICMPv6 router advertisment packages.
+
+### Host configuration
+
+The automatically configure your host's route table rules you need to set these sysctl options:
+
+Please relace `wlan0` with the real name of your WiFi network interface.
+```
+sudo sysctl -w net/ipv6/conf/wlan0/accept_ra=2
+sudo sysctl -w net/ipv6/conf/wlan0/accept_ra_rt_info_max_plen=128
+```
+
+For mobile devices, the route table rules will be automatically configured after iOS 14 and Android 8.1.
+
+
+### Testing IPv6 connecitivity 
+
+Now in the joining device, check the IP addresses:
+
+```
+> ipaddr                                                              
+fde6:75ff:def4:3bc3:9e9e:3ef:4245:28b5
+fdde:ad00:beef:0:0:ff:fe00:c402                                       
+fdde:ad00:beef:0:ad4a:9a9a:3cd6:e423
+fe80:0:0:0:f011:2951:569e:9c4a                                        
+```
+
+You'll notice an IPv6 global prefix with only on address assigned under it. This is the routable address of this Thread node.
+You can ping this address on your host:
+
+``` bash
+$ ping fde6:75ff:def4:3bc3:9e9e:3ef:4245:28b5
+PING fde6:75ff:def4:3bc3:9e9e:3ef:4245:28b5(fde6:75ff:def4:3bc3:9e9e:3ef:4245:28b5) 56 data bytes
+64 bytes from fde6:75ff:def4:3bc3:9e9e:3ef:4245:28b5: icmp_seq=1 ttl=63 time=459 ms
+64 bytes from fde6:75ff:def4:3bc3:9e9e:3ef:4245:28b5: icmp_seq=2 ttl=63 time=109 ms
+64 bytes from fde6:75ff:def4:3bc3:9e9e:3ef:4245:28b5: icmp_seq=3 ttl=63 time=119 ms
+64 bytes from fde6:75ff:def4:3bc3:9e9e:3ef:4245:28b5: icmp_seq=4 ttl=63 time=117 ms
+```
+
+## Service discovery
+
+The newly introduced service registration protocol([SRP](https://datatracker.ietf.org/doc/html/draft-ietf-dnssd-srp-10)) allows devices in the Thread network to register a service. The border router will forward the service to the WiFi network via mDNS.
+
+Now we'll publish the service `my-service._test._udp` with hostname `test0` and port 12345
+
+```
+> srp client host name test0
+Done
+> srp client host address fde6:75ff:def4:3bc3:9e9e:3ef:4245:28b5
+Done
+> srp client service add my-service _test._udp 12345
+Done
+> srp client autostart enable
+Done
+```
+
+This service will also become visible on the WiFi network:
+
+```bash
+$ avahi-browse -r _test._udp -t   
+
++ enp1s0 IPv6 my-service                                    _test._udp           local
+= enp1s0 IPv6 my-service                                    _test._udp           local
+   hostname = [test0.local]
+   address = [fde6:75ff:def4:3bc3:9e9e:3ef:4245:28b5]
+   port = [12345]
+   txt = []
++ enp1s0 IPv4 my-service                                    _test._udp           local
+= enp1s0 IPv4 my-service                                    _test._udp           local
+   hostname = [test0.local]
+   address = [fde6:75ff:def4:3bc3:9e9e:3ef:4245:28b5]
+   port = [12345]
+   txt = []
+```

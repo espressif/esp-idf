@@ -17,6 +17,7 @@
 #include "esp_netif.h"
 #include "esp_netif_types.h"
 #include "esp_openthread.h"
+#include "openthread/instance.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,9 +34,22 @@ extern "C" {
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_NOT_SUPPORTED if feature not supported
+ *      - ESP_ERR_INVALID_STATE if already initialized
+ *      - ESP_FIAL on other failures
  *
  */
 esp_err_t esp_openthread_border_router_init(esp_netif_t *backbone_netif);
+
+/**
+ * @brief   Deinitializes the border router features of OpenThread.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_STATE if not initialized
+ *      - ESP_FIAL on other failures
+ *
+ */
+esp_err_t esp_openthread_border_router_deinit(void);
 
 /**
  * @brief   Gets the backbone interface of OpenThread border router.
