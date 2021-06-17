@@ -171,6 +171,16 @@ void esp_flash_encryption_init_checks(void);
  */
 esp_err_t esp_flash_encryption_enable_secure_features(void);
 
+/** @brief Switches Flash Encryption from "Development" to "Release"
+ *
+ * If already in "Release" mode, the function will do nothing.
+ * If flash encryption efuse is not enabled yet then abort.
+ * It burns:
+ *  - "disable encrypt in dl mode"
+ *  - set FLASH_CRYPT_CNT efuse to max
+ */
+void esp_flash_encryption_set_release_mode(void);
+
 #ifdef __cplusplus
 }
 #endif

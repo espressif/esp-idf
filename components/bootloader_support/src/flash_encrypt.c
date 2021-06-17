@@ -20,8 +20,8 @@
 #define WR_DIS_CRYPT_CNT ESP_EFUSE_WR_DIS_SPI_BOOT_CRYPT_CNT
 #endif
 
-#ifndef BOOTLOADER_BUILD
 static const char *TAG = "flash_encrypt";
+#ifndef BOOTLOADER_BUILD
 
 void esp_flash_encryption_init_checks()
 {
@@ -137,4 +137,49 @@ esp_flash_enc_mode_t esp_get_flash_encryption_mode(void)
     }
 
     return mode;
+}
+
+void esp_flash_encryption_set_release_mode(void)
+{
+    esp_flash_enc_mode_t mode = esp_get_flash_encryption_mode();
+    if (mode == ESP_FLASH_ENC_MODE_RELEASE) {
+        return;
+    }
+    if (mode == ESP_FLASH_ENC_MODE_DISABLED) {
+        ESP_LOGE(TAG, "Flash encryption eFuse is not enabled, abort..");
+        abort();
+        return;
+    }
+    // ESP_FLASH_ENC_MODE_DEVELOPMENT -> ESP_FLASH_ENC_MODE_RELEASE
+    esp_efuse_batch_write_begin();
+    if (!esp_efuse_read_field_bit(WR_DIS_CRYPT_CNT)) {
+        size_t flash_crypt_cnt = 0;
+        esp_efuse_read_field_cnt(CRYPT_CNT, &flash_crypt_cnt);
+        if (flash_crypt_cnt != CRYPT_CNT[0]->bit_count) {
+            esp_efuse_write_field_cnt(CRYPT_CNT, CRYPT_CNT[0]->bit_count - flash_crypt_cnt);
+        }
+    }
+#if CONFIG_IDF_TARGET_ESP32
+    esp_efuse_write_field_bit(ESP_EFUSE_DISABLE_DL_CACHE);
+    esp_efuse_write_field_bit(ESP_EFUSE_DISABLE_DL_ENCRYPT);
+    esp_efuse_write_field_bit(ESP_EFUSE_DISABLE_DL_DECRYPT);
+#elif CONFIG_IDF_TARGET_ESP32S2
+    esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT);
+    esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE);
+    esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_DCACHE);
+#elif CONFIG_IDF_TARGET_ESP32C3
+    esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT);
+    esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE);
+#else
+    ESP_LOGE(TAG, "Flash Encryption support not added, abort..");
+    abort();
+#endif
+    esp_efuse_disable_rom_download_mode();
+    esp_efuse_batch_write_commit();
+
+    if (esp_get_flash_encryption_mode() != ESP_FLASH_ENC_MODE_RELEASE) {
+        ESP_LOGE(TAG, "Flash encryption mode is DEVELOPMENT, abort..");
+        abort();
+    }
+    ESP_LOGI(TAG, "Flash encryption mode is RELEASE");
 }
