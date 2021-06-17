@@ -36,7 +36,7 @@ add an entry to it from the component, set the variable ``COMPONENT_ADD_LDFRAGME
 .. code-block:: make
 
     # file paths relative to component Makefile 
-    COMPONENT_ADD_LDFRAGMENTS += "path/to/linker_fragment_file.lf" "path/to/another_linker_fragment_file.lf"
+    COMPONENT_ADD_LDFRAGMENTS += path/to/linker_fragment_file.lf
 
 CMake
 """""
