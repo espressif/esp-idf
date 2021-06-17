@@ -2751,7 +2751,7 @@ static bool _mdns_question_matches(mdns_parsed_question_t * question, uint16_t t
             && !strcasecmp(MDNS_DEFAULT_DOMAIN, question->domain)) {
             return true;
         }
-    } else if (type == MDNS_TYPE_SRV || type == MDNS_TYPE_TXT) {
+    } else if (service && (type == MDNS_TYPE_SRV || type == MDNS_TYPE_TXT)) {
         const char * name = _mdns_get_service_instance_name(service->service);
         if (name && question->host && !strcasecmp(name, question->host)
             && !strcasecmp(service->service->service, question->service)
@@ -3292,7 +3292,7 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
                     } else if (service) { // only detect txt collision if service existed
                         col = _mdns_check_txt_collision(service->service, data_ptr, data_len);
                     }
-                    if (col && !_mdns_server->interfaces[packet->tcpip_if].pcbs[packet->ip_protocol].probe_running) {
+                    if (col && !_mdns_server->interfaces[packet->tcpip_if].pcbs[packet->ip_protocol].probe_running && service) {
                         do_not_reply = true;
                         _mdns_init_pcb_probe(packet->tcpip_if, packet->ip_protocol, &service, 1, true);
                     } else if (ttl > 2250 && !col && !parsed_packet->authoritative && !parsed_packet->probe && !parsed_packet->questions && !_mdns_server->interfaces[packet->tcpip_if].pcbs[packet->ip_protocol].probe_running) {

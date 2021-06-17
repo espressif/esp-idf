@@ -247,7 +247,7 @@ def test_app_protocol_mqtt_publish_connect(env, extra_data):
       2. connect to uri specified in the config
       3. send and receive data
     """
-    dut1 = env.get_dut('mqtt_publish_connect_test', 'tools/test_apps/protocols/mqtt/publish_connect_test', dut_class=ttfw_idf.ESP32DUT)
+    dut1 = env.get_dut('mqtt_publish_connect_test', 'tools/test_apps/protocols/mqtt/publish_connect_test')
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, 'mqtt_publish_connect_test.bin')
     bin_size = os.path.getsize(binary_file)
@@ -352,7 +352,10 @@ def test_app_protocol_mqtt_publish_connect(env, extra_data):
                 raise Exception('Unexpected negotiated protocol {}'.format(s.get_negotiated_protocol()))
 
     #
-    # start publish tests
+    # start publish tests only if enabled in the environment (for weekend tests only)
+    if not os.getenv('MQTT_PUBLISH_TEST'):
+        return
+
     def start_publish_case(transport, qos, repeat, published, queue):
         print('Starting Publish test: transport:{}, qos:{}, nr_of_msgs:{}, msg_size:{}, enqueue:{}'
               .format(transport, qos, published, repeat * DEFAULT_MSG_SIZE, queue))
