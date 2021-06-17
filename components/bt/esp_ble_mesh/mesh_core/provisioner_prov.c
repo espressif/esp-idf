@@ -154,6 +154,7 @@ struct prov_link {
 
     uint8_t *rand;              /* Local Random */
     uint8_t *conf;              /* Remote Confirmation */
+    uint8_t *local_conf;        /* Local Confirmation */
 
     uint8_t *prov_salt;         /* Provisioning Salt */
 
@@ -1256,6 +1257,7 @@ static void prov_memory_free(const uint8_t idx)
     PROV_FREE_MEM(idx, dhkey);
     PROV_FREE_MEM(idx, auth);
     PROV_FREE_MEM(idx, conf);
+    PROV_FREE_MEM(idx, local_conf);
     PROV_FREE_MEM(idx, conf_salt);
     PROV_FREE_MEM(idx, conf_key);
     PROV_FREE_MEM(idx, conf_inputs);
@@ -1983,6 +1985,7 @@ static int prov_auth(const uint8_t idx, uint8_t method, uint8_t action, uint8_t 
 static void send_confirm(const uint8_t idx)
 {
     PROV_BUF(buf, 17);
+    uint8_t *conf = NULL;
 
     BT_DBG("ConfInputs[0]   %s", bt_hex(link[idx].conf_inputs, 64));
     BT_DBG("ConfInputs[64]  %s", bt_hex(link[idx].conf_inputs + 64, 64));
@@ -2034,11 +2037,21 @@ static void send_confirm(const uint8_t idx)
 
     prov_buf_init(&buf, PROV_CONFIRM);
 
-    if (bt_mesh_prov_conf(link[idx].conf_key, link[idx].rand, link[idx].auth,
-                          net_buf_simple_add(&buf, 16))) {
+    conf = net_buf_simple_add(&buf, 16);
+
+    if (bt_mesh_prov_conf(link[idx].conf_key, link[idx].rand,
+                          link[idx].auth, conf)) {
         BT_ERR("Failed to generate confirmation value");
         goto fail;
     }
+
+    link[idx].local_conf = bt_mesh_calloc(PROV_CONFIRM_SIZE);
+    if (!link[idx].local_conf) {
+        BT_ERR("%s, Out of memory", __func__);
+        goto fail;
+    }
+
+    memcpy(link[idx].local_conf, conf, PROV_CONFIRM_SIZE);
 
     if (prov_send(idx, &buf)) {
         BT_ERR("Failed to send Provisioning Confirm");
@@ -2307,6 +2320,12 @@ static void prov_confirm(const uint8_t idx, const uint8_t *data)
 
     BT_DBG("Remote Confirm: %s", bt_hex(data, 16));
 
+    if (!memcmp(data, link[idx].local_conf, 16)) {
+        BT_ERR("Confirmation value is identical to ours, rejecting.");
+        close_link(idx, CLOSE_REASON_FAILED);
+        return;
+    }
+
     /* Make sure received pdu is ok and cancel the timeout timer */
     if (bt_mesh_atomic_test_and_clear_bit(link[idx].flags, TIMEOUT_START)) {
         k_delayed_work_cancel(&link[idx].timeout);
@@ -2516,6 +2535,11 @@ static void prov_random(const uint8_t idx, const uint8_t *data)
     uint8_t conf_verify[16] = {0};
 
     BT_DBG("Remote Random: %s", bt_hex(data, 16));
+
+    if (!memcmp(data, link[idx].rand, 16)) {
+        BT_ERR("Random value is identical to ours, rejecting.");
+        goto fail;
+    }
 
     if (bt_mesh_prov_conf(link[idx].conf_key, data, link[idx].auth, conf_verify)) {
         BT_ERR("Failed to calculate confirmation verification");
