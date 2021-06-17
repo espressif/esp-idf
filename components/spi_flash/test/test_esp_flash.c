@@ -157,14 +157,9 @@ typedef void (*flash_test_func_t)(const esp_partition_t *part);
 #endif // !CONFIG_IDF_TARGET_ESP32C3
 #endif //CONFIG_SPIRAM
 
-#if SOC_CCOMP_TIMER_SUPPORTED
 #define TEST_FLASH_PERFORMANCE_CCOMP_GREATER_THAN(name, value, chip) \
     printf("[Performance][" PERFORMANCE_STR(name) "]: %d, flash_chip: %s\n", value, chip);\
     _TEST_PERFORMANCE_ASSERT(value > PERFORMANCE_CON(IDF_PERFORMANCE_MIN_, name));
-#else
-#define TEST_FLASH_PERFORMANCE_CCOMP_GREATER_THAN(name, value, chip) \
-    printf("[Performance][" PERFORMANCE_STR(name) "]: %d, flash_chip: %s\n", value, chip);
-#endif //SOC_CCOMP_TIMER_SUPPORTED
 
 //currently all the configs are the same with esp_flash_spi_device_config_t, no more information required
 typedef esp_flash_spi_device_config_t flashtest_config_t;
