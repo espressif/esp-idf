@@ -230,6 +230,11 @@ static esp_err_t ip101_reset_hw(esp_eth_phy_t *phy)
     return ESP_OK;
 }
 
+/**
+ * @note This function is responsible for restarting a new auto-negotiation,
+ *       the result of negotiation won't be relected to uppler layers.
+ *       Instead, the negotiation result is fetched by linker timer, see `ip101_get_link()`
+ */
 static esp_err_t ip101_negotiate(esp_eth_phy_t *phy)
 {
     esp_err_t ret = ESP_OK;
@@ -255,8 +260,7 @@ static esp_err_t ip101_negotiate(esp_eth_phy_t *phy)
             break;
         }
     }
-    /* Auto negotiation failed, maybe no network cable plugged in, so output a warning */
-    if (to >= ip101->autonego_timeout_ms / 100) {
+    if ((to >= ip101->autonego_timeout_ms / 100) && (ip101->link_status == ETH_LINK_UP)) {
         ESP_LOGW(TAG, "auto negotiation timeout");
     }
     return ESP_OK;
