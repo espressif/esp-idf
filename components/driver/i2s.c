@@ -14,12 +14,13 @@
 #include "freertos/semphr.h"
 
 #include "soc/lldesc.h"
+#include "driver/periph_ctrl.h"
 #include "driver/gpio.h"
 #include "driver/i2s.h"
 #include "hal/gpio_hal.h"
+#include "hal/i2s_hal.h"
 #if SOC_I2S_SUPPORTS_ADC_DAC
 #include "driver/dac.h"
-#include "hal/i2s_hal.h"
 #include "adc1_private.h"
 #endif
 
@@ -137,22 +138,6 @@ static void gpio_matrix_in_check_and_set(int gpio, uint32_t signal_idx, bool inv
         esp_rom_gpio_connect_in_signal(gpio, signal_idx, inv);
     }
 }
-
-#if SOC_I2S_SUPPORTS_PCM
-esp_err_t i2s_pcm_config(i2s_port_t i2s_num, i2s_mode_t mode, i2s_pcm_mode_t pcm_cfg)
-{
-    ESP_RETURN_ON_FALSE((i2s_num < I2S_NUM_MAX), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
-
-    if (mode & I2S_MODE_TX) {
-        i2s_hal_tx_pcm_cfg(&(p_i2s[i2s_num]->hal), pcm_cfg);
-    } else if (mode & I2S_MODE_RX) {
-        i2s_hal_rx_pcm_cfg(&(p_i2s[i2s_num]->hal), pcm_cfg);
-    } else {
-        return ESP_ERR_INVALID_ARG;
-    }
-    return ESP_OK;
-}
-#endif
 
 float i2s_get_clk(i2s_port_t i2s_num)
 {
@@ -428,7 +413,6 @@ static esp_err_t i2s_fbclk_cal(int i2s_num, uint32_t rate, int channel, int chan
     }
 #endif // SOC_I2S_SUPPORTS_ADC_DAC
 
-#if SOC_I2S_SUPPORTS_PDM
     if ( p_i2s[i2s_num]->mode & I2S_MODE_PDM) {
 #if SOC_I2S_SUPPORTS_PDM_TX
         if ( p_i2s[i2s_num]->mode & I2S_MODE_TX) {
@@ -447,7 +431,6 @@ static esp_err_t i2s_fbclk_cal(int i2s_num, uint32_t rate, int channel, int chan
 #endif // SOC_I2S_SUPPORTS_PDM_RX
         _bck_div = 8;
     }
-#endif // SOC_I2S_SUPPORTS_PDM
 
 #if SOC_I2S_SUPPORTS_APLL
     int sdm0 = 0;
@@ -487,7 +470,7 @@ static uint32_t i2s_get_active_chan_num(i2s_hal_config_t *hal_cfg)
     case I2S_CHANNEL_FMT_TDM: {
         uint32_t num = 0;
         uint32_t max_chan = 0;
-        uint32_t chan_mask = hal_cfg->chan_cfg.chan_mask;
+        uint32_t chan_mask = hal_cfg->chan_mask;
 
         for (int i = 0; chan_mask && i < 16; i++, chan_mask >>= 1) {
             if ((chan_mask & 0x01) == 1) {
@@ -495,10 +478,9 @@ static uint32_t i2s_get_active_chan_num(i2s_hal_config_t *hal_cfg)
                 max_chan = i + 1;
             }
         }
-        if (max_chan > hal_cfg->chan_cfg.total_chan) {
-            hal_cfg->chan_cfg.total_chan = max_chan;
+        if (max_chan > hal_cfg->total_chan) {
+            hal_cfg->total_chan = max_chan;
         }
-        hal_cfg->chan_cfg.active_chan = num;
         return num;
     }
 #endif
@@ -514,9 +496,9 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
 
     i2s_hal_config_t *cfg = &p_i2s[i2s_num]->hal_cfg;
     int data_bits = 0;
-    int slot_bits = 0;
-    int active_slot_num = 0;
-    int slot_num = 0;
+    int chan_bits = 0;
+    int active_chan_num = 0;
+    int chan_num = 0;
 
     cfg->ch = ch;
     cfg->sample_rate = rate;
@@ -524,16 +506,16 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
 
     cfg->bits_cfg.chan_bits = cfg->bits_cfg.chan_bits < cfg->bits_cfg.sample_bits ?
                               cfg->bits_cfg.sample_bits : cfg->bits_cfg.chan_bits;
-    slot_bits = cfg->bits_cfg.chan_bits;
+    chan_bits = cfg->bits_cfg.chan_bits;
     data_bits = cfg->bits_cfg.sample_bits;
 
 #if SOC_I2S_SUPPORTS_TDM
-    cfg->chan_cfg.chan_mask = ch & 0xFFFF;
-    active_slot_num = i2s_get_active_chan_num(cfg);
-    slot_num = cfg->chan_cfg.total_chan;
+    cfg->chan_mask = ch & 0xFFFF;
+    active_chan_num = i2s_get_active_chan_num(cfg);
+    chan_num = cfg->total_chan;
 #else
-    active_slot_num = i2s_get_active_chan_num(cfg);
-    slot_num = ch == I2S_CHANNEL_MONO ? 2 : active_slot_num;
+    active_chan_num = i2s_get_active_chan_num(cfg);
+    chan_num = ch == I2S_CHANNEL_MONO ? 2 : active_chan_num;
 #endif
     ESP_RETURN_ON_FALSE((i2s_num < I2S_NUM_MAX), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
 
@@ -551,7 +533,7 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
         xSemaphoreTake(p_i2s[i2s_num]->rx->mux, (portTickType)portMAX_DELAY);
     }
     //malloc DMA buffer
-    if (i2s_alloc_dma_buffer(i2s_num, data_bits, active_slot_num) != ESP_OK ) {
+    if (i2s_alloc_dma_buffer(i2s_num, data_bits, active_chan_num) != ESP_OK ) {
         return ESP_ERR_NO_MEM;
     }
 
@@ -559,13 +541,13 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
     uint32_t i2s_bck = 0; // I2S back clock
     uint32_t bck_div = 0; // I2S bck div
     //calculate bck_div, f_bck and select source clock
-    if (i2s_fbclk_cal(i2s_num, rate, slot_num, slot_bits, &i2s_clk, &i2s_bck, &bck_div) != ESP_OK) {
+    if (i2s_fbclk_cal(i2s_num, rate, chan_num, chan_bits, &i2s_clk, &i2s_bck, &bck_div) != ESP_OK) {
         return ESP_FAIL;
     }
     //configure i2s clock
     if (p_i2s[i2s_num]->mode & I2S_MODE_TX) {
         i2s_hal_tx_clock_config(&(p_i2s[i2s_num]->hal), i2s_clk, i2s_bck, bck_div);
-        i2s_hal_set_tx_sample_bit(&(p_i2s[i2s_num]->hal), slot_bits, data_bits);
+        i2s_hal_set_tx_sample_bit(&(p_i2s[i2s_num]->hal), chan_bits, data_bits);
         // wait all writing on-going finish
         if (p_i2s[i2s_num]->tx) {
             xSemaphoreGive(p_i2s[i2s_num]->tx->mux);
@@ -573,7 +555,7 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
     }
     if (p_i2s[i2s_num]->mode & I2S_MODE_RX) {
         i2s_hal_rx_clock_config(&(p_i2s[i2s_num]->hal), i2s_clk, i2s_bck, bck_div);
-        i2s_hal_set_rx_sample_bit(&(p_i2s[i2s_num]->hal), slot_bits, data_bits);
+        i2s_hal_set_rx_sample_bit(&(p_i2s[i2s_num]->hal), chan_bits, data_bits);
         // wait all writing on-going finish
         if (p_i2s[i2s_num]->rx) {
             xSemaphoreGive(p_i2s[i2s_num]->rx->mux);
@@ -1002,11 +984,9 @@ static esp_err_t i2s_check_cfg_static(i2s_port_t i2s_num)
     ESP_RETURN_ON_FALSE(!((cfg->mode & I2S_MODE_DAC_BUILT_IN) && (i2s_num != I2S_NUM_0)), ESP_ERR_INVALID_ARG, TAG, "I2S DAC built-in only support on I2S0");
     return ESP_OK;
 #endif
-#if SOC_I2S_SUPPORTS_PDM
     //We only check if the I2S number is invalid when set to PDM mode.
     ESP_RETURN_ON_FALSE(!((cfg->mode & I2S_MODE_PDM) && (i2s_num != I2S_NUM_0)), ESP_ERR_INVALID_ARG, TAG, "I2S DAC PDM only support on I2S0");
     return ESP_OK;
-#endif
 
     ESP_RETURN_ON_FALSE(cfg->comm_fmt && (cfg->comm_fmt < I2S_COMM_FORMAT_STAND_MAX), ESP_ERR_INVALID_ARG, TAG, "invalid communication formats");
     ESP_RETURN_ON_FALSE(!((cfg->comm_fmt & I2S_COMM_FORMAT_STAND_MSB) && (cfg->comm_fmt & I2S_COMM_FORMAT_STAND_PCM_LONG)), ESP_ERR_INVALID_ARG, TAG, "multiple communication formats specified");
@@ -1096,29 +1076,30 @@ esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config,
     p_i2s[i2s_num]->hal_cfg.comm_fmt = i2s_config->communication_format;
     p_i2s[i2s_num]->hal_cfg.chan_fmt = i2s_config->channel_format;
     p_i2s[i2s_num]->hal_cfg.bits_cfg.sample_bits = i2s_config->bits_per_sample;
-    p_i2s[i2s_num]->hal_cfg.bits_cfg.chan_bits = i2s_config->bits_per_slot;
+    p_i2s[i2s_num]->hal_cfg.bits_cfg.chan_bits = i2s_config->bits_per_chan;
 #if SOC_I2S_SUPPORTS_TDM
+    int active_chan = 0;
     switch (i2s_config->channel_format) {
     case I2S_CHANNEL_FMT_RIGHT_LEFT:
     case I2S_CHANNEL_FMT_ALL_RIGHT:
     case I2S_CHANNEL_FMT_ALL_LEFT:
-        p_i2s[i2s_num]->hal_cfg.chan_cfg.chan_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1;
-        p_i2s[i2s_num]->hal_cfg.chan_cfg.active_chan = 2;
-        p_i2s[i2s_num]->hal_cfg.chan_cfg.total_chan = 2;
+        p_i2s[i2s_num]->hal_cfg.chan_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1;
+        p_i2s[i2s_num]->hal_cfg.total_chan = 2;
+        active_chan = 2;
         break;
     case I2S_CHANNEL_FMT_ONLY_RIGHT:
-        p_i2s[i2s_num]->hal_cfg.chan_cfg.chan_mask = i2s_config->tdm_flags.left_align_en ? I2S_TDM_ACTIVE_CH1 : I2S_TDM_ACTIVE_CH0;
-        p_i2s[i2s_num]->hal_cfg.chan_cfg.active_chan = 1;
-        p_i2s[i2s_num]->hal_cfg.chan_cfg.total_chan = 1;
+        p_i2s[i2s_num]->hal_cfg.chan_mask = i2s_config->tdm_flags.left_align_en ? I2S_TDM_ACTIVE_CH1 : I2S_TDM_ACTIVE_CH0;
+        p_i2s[i2s_num]->hal_cfg.total_chan = 1;
+        active_chan = 1;
         break;
     case I2S_CHANNEL_FMT_ONLY_LEFT:
-        p_i2s[i2s_num]->hal_cfg.chan_cfg.chan_mask = i2s_config->tdm_flags.left_align_en ? I2S_TDM_ACTIVE_CH0 : I2S_TDM_ACTIVE_CH1;
-        p_i2s[i2s_num]->hal_cfg.chan_cfg.active_chan = 1;
-        p_i2s[i2s_num]->hal_cfg.chan_cfg.total_chan = 1;
+        p_i2s[i2s_num]->hal_cfg.chan_mask = i2s_config->tdm_flags.left_align_en ? I2S_TDM_ACTIVE_CH0 : I2S_TDM_ACTIVE_CH1;
+        p_i2s[i2s_num]->hal_cfg.total_chan = 1;
+        active_chan = 1;
         break;
     case I2S_CHANNEL_FMT_TDM:
-        ESP_RETURN_ON_FALSE((i2s_config->tdm_chan_cfg.chan_mask != 0), ESP_ERR_INVALID_ARG, TAG, "i2s all channel are disabled");
-        p_i2s[i2s_num]->hal_cfg.chan_cfg.chan_mask = i2s_config->tdm_chan_cfg.chan_mask;
+        ESP_RETURN_ON_FALSE((i2s_config->chan_mask != 0), ESP_ERR_INVALID_ARG, TAG, "i2s all channel are disabled");
+        p_i2s[i2s_num]->hal_cfg.chan_mask = i2s_config->chan_mask;
         i2s_get_active_chan_num(&p_i2s[i2s_num]->hal_cfg);
         break;
     default:
@@ -1137,6 +1118,18 @@ esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config,
     p_i2s[i2s_num]->bytes_per_sample = 0; // Not initialized yet
     p_i2s[i2s_num]->dma_buf_count = i2s_config->dma_buf_count;
     p_i2s[i2s_num]->dma_buf_len = i2s_config->dma_buf_len;
+
+#if SOC_I2S_SUPPORTS_PCM
+    // Set PCM compress type for PCM communication mode
+    if (p_i2s[i2s_num]->communication_format & I2S_COMM_FORMAT_STAND_PCM_SHORT) {
+        if (p_i2s[i2s_num]->mode & I2S_MODE_TX) {
+            i2s_hal_tx_pcm_cfg(&(p_i2s[i2s_num]->hal), i2s_config->pcm_compress_type);
+        }
+        if (p_i2s[i2s_num]->mode & I2S_MODE_RX) {
+            i2s_hal_rx_pcm_cfg(&(p_i2s[i2s_num]->hal), i2s_config->pcm_compress_type);
+        }
+    }
+#endif // SOC_I2S_SUPPORTS_PCM
 
 #ifdef CONFIG_PM_ENABLE
     if (i2s_config->use_apll) {
@@ -1198,7 +1191,7 @@ esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config,
 #if SOC_I2S_SUPPORTS_TDM
     ret = i2s_set_clk(i2s_num, i2s_config->sample_rate,
                       p_i2s[i2s_num]->hal_cfg.bits_cfg.val,
-                      (i2s_channel_t)p_i2s[i2s_num]->hal_cfg.chan_cfg.active_chan);
+                      (i2s_channel_t)active_chan);
 #else
     ret = i2s_set_clk(i2s_num, i2s_config->sample_rate,
                       p_i2s[i2s_num]->hal_cfg.bits_cfg.val,

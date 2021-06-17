@@ -453,10 +453,10 @@ static inline void i2s_ll_set_rx_eof_num(i2s_dev_t *hw, int eof_num)
 }
 
 /**
- * @brief Congfigure TX slot bit and audio data bit, on ESP32, sample_bit should equals to data_bit
+ * @brief Congfigure TX chan bit and audio data bit, on ESP32, sample_bit should equals to data_bit
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param sample_bit The slot bit width
+ * @param sample_bit The chan bit width
  * @param data_bit The audio data bit width
  */
 static inline void i2s_ll_set_tx_sample_bit(i2s_dev_t *hw, uint8_t sample_bit, int data_bit)
@@ -466,10 +466,10 @@ static inline void i2s_ll_set_tx_sample_bit(i2s_dev_t *hw, uint8_t sample_bit, i
 }
 
 /**
- * @brief Congfigure RX slot bit and audio data bit, on ESP32, sample_bit should equals to data_bit
+ * @brief Congfigure RX chan bit and audio data bit, on ESP32, sample_bit should equals to data_bit
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param sample_bit The slot bit width
+ * @param sample_bit The chan bit width
  * @param data_bit The audio data bit width
  */
 static inline void i2s_ll_set_rx_sample_bit(i2s_dev_t *hw, uint8_t sample_bit, int data_bit)

@@ -44,35 +44,6 @@ typedef union {
     uint32_t val;                   /*!< I2S cannel bits configiration value */
 } i2s_hal_bits_cfg_t;
 
-#if SOC_I2S_SUPPORTS_TDM
-/**
- * @brief I2S channel configurations
- *
- */
-typedef union {
-    struct {
-        uint32_t total_chan  : 8;    /*!< Total number of I2S channels */
-        uint32_t active_chan : 8;    /*!< Active channel number， it will be set automatically if chan_mask is set */
-        uint32_t chan_mask   : 16;    /*!< Active channel bit mask, set value in `i2s_channel_t` to enable specific channel, the bit map of active channel can not exceed (0x1<<total_slot_num). */
-    };
-    uint32_t val;                     /*!< Slot data bits value*/
-} i2s_hal_chan_cfg_t;
-
-/**
- * @brief I2S TDM flags
- *
- */
-typedef union {
-    struct {
-        uint32_t left_align_en    : 1;              /*!< Set to enable left aligment */
-        uint32_t big_edin_en      : 1;              /*!< Set to enable big edin */
-        uint32_t bit_order_msb_en : 1;              /*!< Set to enable msb order */
-        uint32_t skip_msk_en      : 1;              /*!< Set to enable skip mask. If it is enabled, only the data of the enabled channels will be sent, otherwise all data stored in DMA TX buffer will be sent */
-    };
-    uint32_t val;
-} i2s_hal_tdm_flags_t;
-#endif
-
 /**
  * @brief I2S HAL configurations
  */
@@ -84,8 +55,17 @@ typedef struct {
     i2s_channel_fmt_t       chan_fmt;               /*!< I2S channel format, there are total 16 channels in TDM mode.*/
     i2s_hal_bits_cfg_t      bits_cfg;               /*!< Channel bits configuration*/
 #if SOC_I2S_SUPPORTS_TDM
-    i2s_hal_chan_cfg_t      chan_cfg;               /*!< active slot bit mask, using the ored mask of `i2s_channel_t`*/
-    i2s_hal_tdm_flags_t     flags;                  /*!< Set TDM flags*/
+    uint32_t                total_chan;             /*!< Total number of I2S channels */
+    uint32_t                chan_mask;              /*!< Active channel bit mask, set value in `i2s_channel_t` to enable specific channel, the bit map of active channel can not exceed (0x1<<total_chan_num). */
+    union {
+        struct {
+            uint32_t        left_align_en    : 1;   /*!< Set to enable left aligment */
+            uint32_t        big_edin_en      : 1;   /*!< Set to enable big edin */
+            uint32_t        bit_order_msb_en : 1;   /*!< Set to enable msb order */
+            uint32_t        skip_msk_en      : 1;   /*!< Set to enable skip mask. If it is enabled, only the data of the enabled channels will be sent, otherwise all data stored in DMA TX buffer will be sent */
+        };
+        uint32_t val;                               /*!< TDM flags value */
+    } flags;                                        /*!< Set TDM flags */
 #endif
 } i2s_hal_config_t;
 
@@ -211,19 +191,19 @@ void i2s_hal_enable_slave_fd_mode(i2s_hal_context_t *hal);
  * @brief Set I2S TX sample bit
  *
  * @param hal Context of the HAL layer
- * @param slot_bit I2S TX slot bit
+ * @param chan_bit I2S TX chan bit
  * @param data_bit The sample data bit length.
  */
-#define i2s_hal_set_tx_sample_bit(hal, slot_bit, data_bit)  i2s_ll_set_tx_sample_bit((hal)->dev, slot_bit, data_bit)
+#define i2s_hal_set_tx_sample_bit(hal, chan_bit, data_bit)  i2s_ll_set_tx_sample_bit((hal)->dev, chan_bit, data_bit)
 
 /**
  * @brief Set I2S RX sample bit
  *
  * @param hal Context of the HAL layer
- * @param slot_bit I2S RX slot bit
+ * @param chan_bit I2S RX chan bit
  * @param data_bit The sample data bit length.
  */
-#define i2s_hal_set_rx_sample_bit(hal, slot_bit, data_bit)  i2s_ll_set_rx_sample_bit((hal)->dev, slot_bit, data_bit)
+#define i2s_hal_set_rx_sample_bit(hal, chan_bit, data_bit)  i2s_ll_set_rx_sample_bit((hal)->dev, chan_bit, data_bit)
 
 /**
  * @brief Configure I2S TX module clock devider
@@ -250,7 +230,7 @@ void i2s_hal_rx_clock_config(i2s_hal_context_t *hal, uint32_t sclk, uint32_t fbc
  * @brief Configure I2S TX PCM encoder or decoder.
  *
  * @param hal Context of the HAL layer
- * @param cfg PCM configure paramater, refer to `i2s_pcm_mode_t`
+ * @param cfg PCM configure paramater, refer to `i2s_pcm_compress_t`
  */
 #define i2s_hal_tx_pcm_cfg(hal, cfg)        i2s_ll_tx_pcm_cfg((hal)->dev, cfg)
 
@@ -258,7 +238,7 @@ void i2s_hal_rx_clock_config(i2s_hal_context_t *hal, uint32_t sclk, uint32_t fbc
  * @brief Configure I2S RX PCM encoder or decoder.
  *
  * @param hal Context of the HAL layer
- * @param cfg PCM configure paramater, refer to `i2s_pcm_mode_t`
+ * @param cfg PCM configure paramater, refer to `i2s_pcm_compress_t`
  */
 #define i2s_hal_rx_pcm_cfg(hal, cfg)        i2s_ll_rx_pcm_cfg((hal)->dev, cfg)
 #endif

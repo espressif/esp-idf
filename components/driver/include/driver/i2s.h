@@ -13,9 +13,7 @@
 #include "soc/i2s_periph.h"
 #include "soc/rtc_periph.h"
 #include "soc/soc_caps.h"
-#include "hal/i2s_hal.h"
 #include "hal/i2s_types.h"
-#include "driver/periph_ctrl.h"
 #include "esp_intr_alloc.h"
 
 #if SOC_I2S_SUPPORTS_ADC_DAC
@@ -50,9 +48,15 @@ typedef struct {
     int data_in_num;    /*!< DATA in pin*/
 } i2s_pin_config_t;
 
-#if SOC_I2S_SUPPORTS_TDM
-typedef i2s_hal_chan_cfg_t      tdm_chan_cfg_t;
-typedef i2s_hal_tdm_flags_t     tdm_flags_t;
+#if SOC_I2S_SUPPORTS_PCM
+/**
+ * @brief I2S PCM configuration
+ *
+ */
+typedef struct {
+    i2s_pcm_compress_t  pcm_mode;     /*!< I2S PCM a/u-law decompress or compress mode */
+} i2s_pcm_cfg_t;
+
 #endif
 
 /**
@@ -72,15 +76,30 @@ typedef struct {
     bool                    use_apll;                   /*!< I2S using APLL as main I2S clock, enable it to get accurate clock */
     bool                    tx_desc_auto_clear;         /*!< I2S auto clear tx descriptor if there is underflow condition (helps in avoiding noise in case of data unavailability) */
     int                     fixed_mclk;                 /*!< I2S using fixed MCLK output. If use_apll = true and fixed_mclk > 0, then the clock output for i2s is fixed and equal to the fixed_mclk value.*/
-    i2s_bits_per_slot_t     bits_per_slot;              /*!< I2S total bits in one channel， Should not be smaller than 'bits_per_sample', default '0' means equal to 'bits_per_sample' */
+    i2s_bits_per_chan_t     bits_per_chan;              /*!< I2S total bits in one channel， Should not be smaller than 'bits_per_sample', default '0' means equal to 'bits_per_sample' */
+
+#if SOC_I2S_SUPPORTS_PCM
+    i2s_pcm_compress_t      pcm_compress_type;          /*!< I2S PCM a/u-law decompress or compress mode. Set this field if `communication_format` is set to `I2S_COMM_FORMAT_STAND_PCM_SHORT` or `I2S_COMM_FORMAT_STAND_PCM_LONG` */
+#endif // SOC_I2S_SUPPORTS_PCM
+
 #if SOC_I2S_SUPPORTS_TDM
-    tdm_chan_cfg_t          tdm_chan_cfg;               /*!< I2S TDM channel configurations*/
-    tdm_flags_t             tdm_flags;                  /*!< I2S TDM flags*/
-#endif
+    i2s_channel_t           chan_mask;                  /*!< I2S active channel bit mask, set value in `i2s_channel_t` to enable specific channel, the bit map of active channel can not exceed (0x1<<total_chan). */
+    uint32_t                total_chan;                 /*!< I2S Total number of channels. If it is smaller than the biggest active channel number, it will be set to this number automatically. */
+    union {
+        struct {
+            uint32_t        left_align_en    : 1;       /*!< Set to enable left aligment */
+            uint32_t        big_edin_en      : 1;       /*!< Set to enable big edin */
+            uint32_t        bit_order_msb_en : 1;       /*!< Set to enable msb order */
+            uint32_t        skip_msk_en      : 1;       /*!< Set to enable skip mask. If it is enabled, only the data of the enabled channels will be sent, otherwise all data stored in DMA TX buffer will be sent */
+        };
+        uint32_t val;                                   /*!< TDM flag value*/
+    } tdm_flags;                                        /*!< I2S TDM flags*/
+#endif // SOC_I2S_SUPPORTS_TDM
+
 } i2s_driver_config_t;
 
-typedef i2s_driver_config_t i2s_config_t;
-typedef intr_handle_t i2s_isr_handle_t;
+typedef i2s_driver_config_t i2s_config_t;       // for backward compatible
+typedef intr_handle_t i2s_isr_handle_t;         // for backward compatible
 
 /**
  * @brief I2S event queue types
@@ -340,23 +359,6 @@ esp_err_t i2s_start(i2s_port_t i2s_num);
  */
 esp_err_t i2s_zero_dma_buffer(i2s_port_t i2s_num);
 
-#if SOC_I2S_SUPPORTS_PCM
-/**
- * @brief Configure I2S a/u-law decompress or compress
- *
- * @param i2s_num  I2S_NUM_0
- *
- * @param mode  I2S mode. I2S_MODE_TX, I2S_MODE_RX
- *
- * @param pcm_cfg  a/u-law decompress or compress configuration paramater
- *
- * @return
- *     - ESP_OK              Success
- *     - ESP_ERR_INVALID_ARG Parameter error
- */
-esp_err_t i2s_pcm_config(i2s_port_t i2s_num, i2s_mode_t mode, i2s_pcm_mode_t pcm_cfg);
-#endif
-
 /**
  * @brief Set clock & bit width used for I2S RX and TX.
  *
@@ -373,7 +375,7 @@ esp_err_t i2s_pcm_config(i2s_port_t i2s_num, i2s_mode_t mode, i2s_pcm_mode_t pcm
  *
  * @param bits_cfg I2S bits configuation
  *             the low 16 bits is for data bits per sample in one channel (see 'i2s_bits_per_sample_t')
- *             the high 16 bits is for total bits in one channel (see 'i2s_bits_per_slot_t')
+ *             the high 16 bits is for total bits in one channel (see 'i2s_bits_per_chan_t')
  *
  * @param ch I2S channel, (I2S_CHANNEL_MONO, I2S_CHANNEL_STEREO)
  *

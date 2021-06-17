@@ -36,16 +36,16 @@ typedef enum {
 } i2s_bits_per_sample_t;
 
 /**
- * @brief I2S bit width per slot.
+ * @brief I2S bit width per chan.
  *
  */
 typedef enum {
-    I2S_BITS_PER_SLOT_8BIT           = (8),      /*!< slot bit 8*/
-    I2S_BITS_PER_SLOT_16BIT          = (16),     /*!< slot bit 16*/
-    I2S_BITS_PER_SLOT_24BIT          = (24),     /*!< slot bit 24*/
-    I2S_BITS_PER_SLOT_32BIT          = (32),     /*!< slot bit 32*/
-    I2S_BITS_PER_SLOT_EQU_SAMPLE = (0),      /*!< slot bit equals to data bit*/
-} i2s_bits_per_slot_t;
+    I2S_BITS_PER_CHAN_DEFAULT        = (0),      /*!< chan bit equals to data bit*/
+    I2S_BITS_PER_CHAN_8BIT           = (8),      /*!< chan bit 8*/
+    I2S_BITS_PER_CHAN_16BIT          = (16),     /*!< chan bit 16*/
+    I2S_BITS_PER_CHAN_24BIT          = (24),     /*!< chan bit 24*/
+    I2S_BITS_PER_CHAN_32BIT          = (32),     /*!< chan bit 32*/
+} i2s_bits_per_chan_t;
 
 /**
  * @brief I2S channel.
@@ -83,9 +83,6 @@ typedef enum {
     I2S_TDM_ACTIVE_CH15 = (0x1 << 15),              /*!< I2S channel 15 enabled */
 #endif
 } i2s_channel_t;
-
-
-
 
 /**
  * @brief I2S communication standard format
@@ -134,10 +131,8 @@ typedef enum {
     I2S_MODE_DAC_BUILT_IN = (0x1 << 4),       /*!< Output I2S data to built-in DAC, no matter the data format is 16bit or 32 bit, the DAC module will only take the 8bits from MSB*/
     I2S_MODE_ADC_BUILT_IN = (0x1 << 5),       /*!< Input I2S data from built-in ADC, each data can be 12-bit width at most*/
 #endif
-#if SOC_I2S_SUPPORTS_PDM
     // PDM functions are only supported on I2S0 (all chips).
     I2S_MODE_PDM          = (0x1 << 6),       /*!< I2S PDM mode*/
-#endif
 } i2s_mode_t;
 
 /**
@@ -169,12 +164,12 @@ typedef enum {
  *
  */
 typedef enum {
-    I2S_PCM_A_DECOMPRESS=0,   /*!< A-law decompress*/
+    I2S_PCM_DISABLE = 0,      /*!< Disable A/U law decopress or compress*/
+    I2S_PCM_A_DECOMPRESS,     /*!< A-law decompress*/
     I2S_PCM_A_COMPRESS,       /*!< A-law compress*/
     I2S_PCM_U_DECOMPRESS,     /*!< U-law decompress*/
     I2S_PCM_U_COMPRESS,       /*!< U-law compress*/
-    I2S_PCM_DISABLE,          /*!< Disable A/U law decopress or compress*/
-} i2s_pcm_mode_t;
+} i2s_pcm_compress_t;
 #endif
 
 #if SOC_I2S_SUPPORTS_PDM_RX
@@ -188,7 +183,6 @@ typedef enum {
 } i2s_pdm_dsr_t;
 #endif
 
-#if SOC_I2S_SUPPORTS_PDM
 /**
  * @brief PDM PCM convter enable/disable.
  *
@@ -197,7 +191,6 @@ typedef enum {
     PDM_PCM_CONV_ENABLE,     /*!< Enable PDM PCM convert*/
     PDM_PCM_CONV_DISABLE,    /*!< Disable PDM PCM convert*/
 } pdm_pcm_conv_t;
-#endif
 
 
 #ifdef __cplusplus

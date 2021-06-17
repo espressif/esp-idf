@@ -232,7 +232,7 @@ TEST_CASE("I2S Loopback test(master tx and rx)", "[i2s]")
     i2s_driver_uninstall(I2S_NUM_0);
 }
 
-#if !DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
+#if SOC_I2S_NUM > 1
 /* ESP32S2 and ESP32C3 has only single I2S port and hence following test cases are not applicable */
 TEST_CASE("I2S write and read test(master tx and slave rx)", "[i2s]")
 {
@@ -492,7 +492,7 @@ TEST_CASE("I2S APLL clock variation test", "[i2s]")
     TEST_ASSERT(initial_size == esp_get_free_heap_size());
 }
 
-#if DISABLED_FOR_TARGETS(ESP32)
+#if SOC_I2S_SUPPORTS_ADC_DAC
 /* Only ESP32 need I2S adc/dac test */
 TEST_CASE("I2S adc test", "[i2s]")
 {

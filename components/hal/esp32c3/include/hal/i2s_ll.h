@@ -28,7 +28,6 @@
 extern "C" {
 #endif
 
-
 #define I2S_LL_GET_HW(num)             (&I2S0)
 
 #define I2S_LL_TDM_CH_MASK             (0xffff)
@@ -320,10 +319,10 @@ static inline void i2s_ll_set_rx_eof_num(i2s_dev_t *hw, int eof_num)
 }
 
 /**
- * @brief Congfigure TX slot bit and audio data bit
+ * @brief Congfigure TX chan bit and audio data bit
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param sample_bit The slot bit width
+ * @param sample_bit The chan bit width
  * @param data_bit The audio data bit width
  */
 static inline void i2s_ll_set_tx_sample_bit(i2s_dev_t *hw, uint8_t sample_bit, int data_bit)
@@ -333,10 +332,10 @@ static inline void i2s_ll_set_tx_sample_bit(i2s_dev_t *hw, uint8_t sample_bit, i
 }
 
 /**
- * @brief Congfigure RX slot bit and audio data bit
+ * @brief Congfigure RX chan bit and audio data bit
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param sample_bit The slot bit width
+ * @param sample_bit The chan bit width
  * @param data_bit The audio data bit width
  */
 static inline void i2s_ll_set_rx_sample_bit(i2s_dev_t *hw, uint8_t sample_bit, int data_bit)
@@ -390,52 +389,52 @@ static inline void i2s_ll_rx_msb_shift_enable(i2s_dev_t *hw, bool msb_shift_enab
 }
 
 /**
- * @brief Configure TX total slot number
+ * @brief Configure TX total chan number
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param total_num Total slot number
+ * @param total_num Total chan number
  */
-static inline void i2s_ll_set_tx_slot_num(i2s_dev_t *hw, int total_num)
+static inline void i2s_ll_set_tx_chan_num(i2s_dev_t *hw, int total_num)
 {
     hw->tx_tdm_ctrl.tx_tdm_tot_chan_num = total_num - 1;
 }
 
 /**
- * @brief Configure RX total slot number
+ * @brief Configure RX total chan number
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param total_num Total slot number
+ * @param total_num Total chan number
  */
-static inline void i2s_ll_set_rx_slot_num(i2s_dev_t *hw, int total_num)
+static inline void i2s_ll_set_rx_chan_num(i2s_dev_t *hw, int total_num)
 {
     hw->rx_tdm_ctrl.rx_tdm_tot_chan_num = total_num - 1;
 }
 
 /**
- * @brief Set the bimap of the active TX slot, only the active slot can launch audio data.
+ * @brief Set the bimap of the active TX chan, only the active chan can launch audio data.
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param slot_mask mask of tx active slot
+ * @param chan_mask mask of tx active chan
  */
-static inline void i2s_ll_set_tx_active_slot_mask(i2s_dev_t *hw, uint32_t slot_mask)
+static inline void i2s_ll_set_tx_active_chan_mask(i2s_dev_t *hw, uint32_t chan_mask)
 {
     typeof(hw->tx_tdm_ctrl) tdm_ctrl_reg = hw->tx_tdm_ctrl;
     tdm_ctrl_reg.val &= ~I2S_LL_TDM_CH_MASK;
-    tdm_ctrl_reg.val |= slot_mask & I2S_LL_TDM_CH_MASK;
+    tdm_ctrl_reg.val |= chan_mask & I2S_LL_TDM_CH_MASK;
     hw->tx_tdm_ctrl.val = tdm_ctrl_reg.val;
 }
 
 /**
- * @brief Set the bimap of the active RX slot, only the active slot can receive audio data.
+ * @brief Set the bimap of the active RX chan, only the active chan can receive audio data.
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param slot_mask mask of rx active slot
+ * @param chan_mask mask of rx active chan
  */
-static inline void i2s_ll_set_rx_active_slot_mask(i2s_dev_t *hw, uint32_t slot_mask)
+static inline void i2s_ll_set_rx_active_chan_mask(i2s_dev_t *hw, uint32_t chan_mask)
 {
     typeof(hw->rx_tdm_ctrl) tdm_ctrl_reg = hw->rx_tdm_ctrl;
     tdm_ctrl_reg.val &= ~I2S_LL_TDM_CH_MASK;
-    tdm_ctrl_reg.val |= slot_mask & I2S_LL_TDM_CH_MASK;
+    tdm_ctrl_reg.val |= chan_mask & I2S_LL_TDM_CH_MASK;
     hw->rx_tdm_ctrl.val = tdm_ctrl_reg.val;
 }
 
@@ -556,7 +555,7 @@ static inline void i2s_ll_set_rx_pdm_en(i2s_dev_t *hw, bool pdm_enable)
  * @param hw Peripheral I2S hardware instance address.
  * @param pcm_cfg PCM configuration paramater
  */
-static inline void i2s_ll_tx_pcm_cfg(i2s_dev_t *hw, i2s_pcm_mode_t pcm_cfg)
+static inline void i2s_ll_tx_pcm_cfg(i2s_dev_t *hw, i2s_pcm_compress_t pcm_cfg)
 {
     if (pcm_cfg == I2S_PCM_DISABLE) {
         hw->tx_conf.tx_pcm_bypass = 1;
@@ -572,7 +571,7 @@ static inline void i2s_ll_tx_pcm_cfg(i2s_dev_t *hw, i2s_pcm_mode_t pcm_cfg)
  * @param hw Peripheral I2S hardware instance address.
  * @param pcm_cfg PCM configuration paramater
  */
-static inline void i2s_ll_rx_pcm_cfg(i2s_dev_t *hw, i2s_pcm_mode_t pcm_cfg)
+static inline void i2s_ll_rx_pcm_cfg(i2s_dev_t *hw, i2s_pcm_compress_t pcm_cfg)
 {
     if (pcm_cfg == I2S_PCM_DISABLE) {
         hw->rx_conf.rx_pcm_bypass = 1;

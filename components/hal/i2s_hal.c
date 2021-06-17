@@ -148,14 +148,14 @@ static void i2s_hal_format_config(i2s_hal_context_t *hal, const i2s_hal_config_t
         }
     }
 #else
-    int slot_bits = hal_cfg->bits_cfg.chan_bits;
-    int slot_num = hal_cfg->chan_cfg.total_chan;
+    int chan_bits = hal_cfg->bits_cfg.chan_bits;
+    int chan_num = hal_cfg->total_chan;
     bool msb_shift_en = false;
     int tdm_ws_width = 0;
     switch (hal_cfg->comm_fmt) {
     case I2S_COMM_FORMAT_STAND_MSB:
         msb_shift_en = false;
-        tdm_ws_width = slot_num * slot_bits / 2;
+        tdm_ws_width = chan_num * chan_bits / 2;
         break;
     case I2S_COMM_FORMAT_STAND_PCM_SHORT:
         msb_shift_en = false;
@@ -163,22 +163,22 @@ static void i2s_hal_format_config(i2s_hal_context_t *hal, const i2s_hal_config_t
         break;
     case I2S_COMM_FORMAT_STAND_PCM_LONG:
         msb_shift_en = false;
-        tdm_ws_width = slot_bits;
+        tdm_ws_width = chan_bits;
         break;
     default: //I2S_COMM_FORMAT_STAND_I2S
         msb_shift_en = true;
-        tdm_ws_width = slot_num * slot_bits / 2;
+        tdm_ws_width = chan_num * chan_bits / 2;
         break;
     }
     if (hal_cfg->mode & I2S_MODE_TX) {
         i2s_ll_tx_msb_shift_enable(hal->dev, msb_shift_en);
         i2s_ll_set_tx_tdm_ws_width(hal->dev, tdm_ws_width);
-        i2s_ll_set_tx_half_sample_bit(hal->dev, slot_num * slot_bits / 2);
+        i2s_ll_set_tx_half_sample_bit(hal->dev, chan_num * chan_bits / 2);
     }
     if (hal_cfg->mode & I2S_MODE_RX) {
         i2s_ll_rx_msb_shift_enable(hal->dev, msb_shift_en);
         i2s_ll_set_rx_tdm_ws_width(hal->dev, tdm_ws_width);
-        i2s_ll_set_rx_half_sample_bit(hal->dev, slot_num * slot_bits / 2);
+        i2s_ll_set_rx_half_sample_bit(hal->dev, chan_num * chan_bits / 2);
     }
 #endif
 }
@@ -186,23 +186,23 @@ static void i2s_hal_format_config(i2s_hal_context_t *hal, const i2s_hal_config_t
 void i2s_hal_samples_config(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cfg)
 {
     int data_bits = hal_cfg->bits_cfg.sample_bits;
-    int slot_bits = hal_cfg->bits_cfg.chan_bits;
+    int chan_bits = hal_cfg->bits_cfg.chan_bits;
 #if SOC_I2S_SUPPORTS_TDM
-    int slot_num = hal_cfg->chan_cfg.total_chan;
+    int chan_num = hal_cfg->total_chan;
     if (hal_cfg->mode & I2S_MODE_TX) {
-        i2s_ll_set_tx_slot_num(hal->dev, slot_num);
-        i2s_ll_set_tx_sample_bit(hal->dev, slot_bits, data_bits);
+        i2s_ll_set_tx_chan_num(hal->dev, chan_num);
+        i2s_ll_set_tx_sample_bit(hal->dev, chan_bits, data_bits);
     }
     if (hal_cfg->mode & I2S_MODE_RX) {
-        i2s_ll_set_rx_slot_num(hal->dev, slot_num);
-        i2s_ll_set_rx_sample_bit(hal->dev, slot_bits, data_bits);
+        i2s_ll_set_rx_chan_num(hal->dev, chan_num);
+        i2s_ll_set_rx_sample_bit(hal->dev, chan_bits, data_bits);
     }
 #else
     if (hal_cfg->mode & I2S_MODE_TX) {
-        i2s_ll_set_tx_sample_bit(hal->dev, slot_bits, data_bits);
+        i2s_ll_set_tx_sample_bit(hal->dev, chan_bits, data_bits);
     }
     if (hal_cfg->mode & I2S_MODE_RX) {
-        i2s_ll_set_rx_sample_bit(hal->dev, slot_bits, data_bits);
+        i2s_ll_set_rx_sample_bit(hal->dev, chan_bits, data_bits);
     }
 #endif
     //I2S standards config: Philip, MSB or PCM, Only I2S mode should do this configuration.
@@ -224,7 +224,7 @@ void i2s_hal_config_param(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cf
         i2s_ll_set_tx_clk_src(hal->dev, I2S_CLK_D2CLK); // Set I2S_CLK_D2CLK as default
         i2s_ll_mclk_use_tx_clk(hal->dev);
 
-        i2s_ll_set_tx_active_slot_mask(hal->dev, hal_cfg->chan_cfg.chan_mask);
+        i2s_ll_set_tx_active_chan_mask(hal->dev, hal_cfg->chan_mask);
         i2s_ll_tx_left_align_enable(hal->dev, hal_cfg->flags.left_align_en);
         i2s_ll_tx_big_endian_enable(hal->dev, hal_cfg->flags.big_edin_en);
         i2s_ll_tx_set_bit_order(hal->dev, hal_cfg->flags.bit_order_msb_en);
@@ -247,7 +247,7 @@ void i2s_hal_config_param(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cf
         i2s_ll_set_rx_clk_src(hal->dev, I2S_CLK_D2CLK); // Set I2S_CLK_D2CLK as default
         i2s_ll_mclk_use_rx_clk(hal->dev);
 
-        i2s_ll_set_rx_active_slot_mask(hal->dev, hal_cfg->chan_cfg.chan_mask);
+        i2s_ll_set_rx_active_chan_mask(hal->dev, hal_cfg->chan_mask);
         i2s_ll_rx_left_align_enable(hal->dev, hal_cfg->flags.left_align_en);
         i2s_ll_rx_big_endian_enable(hal->dev, hal_cfg->flags.big_edin_en);
         i2s_ll_rx_set_bit_order(hal->dev, hal_cfg->flags.bit_order_msb_en);
@@ -271,11 +271,9 @@ void i2s_hal_config_param(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cf
     }
 #endif
 
-#if SOC_I2S_SUPPORTS_PDM
-    bool is_pdm = ((hal_cfg->mode & I2S_MODE_PDM) > 0);
 #if SOC_I2S_SUPPORTS_PDM_TX
     if (hal_cfg->mode & I2S_MODE_TX) {
-        if (is_pdm) {
+        if (hal_cfg->mode & I2S_MODE_PDM) {
             i2s_ll_tx_pdm_cfg(hal->dev, hal_cfg->sample_rate);
         } else {
             i2s_ll_set_tx_pdm_en(hal->dev, false);
@@ -284,15 +282,13 @@ void i2s_hal_config_param(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cf
 #endif // SOC_I2S_SUPPORTS_PDM_TX
 #if SOC_I2S_SUPPORTS_PDM_RX
     if (hal_cfg->mode & I2S_MODE_RX) {
-        if (is_pdm) {
+        if (hal_cfg->mode & I2S_MODE_PDM) {
             i2s_ll_rx_pdm_cfg(hal->dev);
         } else {
             i2s_ll_set_rx_pdm_en(hal->dev, false);
         }
     }
 #endif // SOC_I2S_SUPPORTS_PDM_RX
-#endif // SOC_I2S_SUPPORTS_PDM
-    //Configure I2S slot number,sample bit.
+    //Configure I2S chan number,sample bit.
     i2s_hal_samples_config(hal, hal_cfg);
-
 }
