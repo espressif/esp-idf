@@ -11,4 +11,6 @@ else
 COMPONENT_OBJEXCLUDE := log_freertos.o
 endif
 
+COMPONENT_OBJEXCLUDE += log_linux.o
+
 COMPONENT_ADD_LDFRAGMENTS += linker.lf
