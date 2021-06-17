@@ -195,6 +195,11 @@ static esp_err_t rtl8201_reset_hw(esp_eth_phy_t *phy)
     return ESP_OK;
 }
 
+/**
+ * @note This function is responsible for restarting a new auto-negotiation,
+ *       the result of negotiation won't be relected to uppler layers.
+ *       Instead, the negotiation result is fetched by linker timer, see `rtl8201_get_link()`
+ */
 static esp_err_t rtl8201_negotiate(esp_eth_phy_t *phy)
 {
     phy_rtl8201_t *rtl8201 = __containerof(phy, phy_rtl8201_t, parent);
@@ -221,8 +226,7 @@ static esp_err_t rtl8201_negotiate(esp_eth_phy_t *phy)
             break;
         }
     }
-    /* Auto negotiation failed, maybe no network cable plugged in, so output a warning */
-    if (to >= rtl8201->autonego_timeout_ms / 100) {
+    if ((to >= rtl8201->autonego_timeout_ms / 100) && (rtl8201->link_status == ETH_LINK_UP)) {
         ESP_LOGW(TAG, "auto negotiation timeout");
     }
     return ESP_OK;
