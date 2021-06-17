@@ -37,7 +37,7 @@ TEST_CASE("test sprintf function", "[newlib]")
     char *res = NULL;
     asprintf(&res, "%d %011i %lu %p %x %c %.4f\n", 42, 2147483647, 2147483648UL, (void *) 0x40010000, 0x40020000, 'Q', 1.0f / 137.0f);
     TEST_ASSERT_NOT_NULL(res);
-    TEST_ASSERT_EQUAL_STRING(res, "42 02147483647 2147483648 0x40010000 40020000 Q 0.0073\n");
+    TEST_ASSERT_EQUAL_STRING("42 02147483647 2147483648 0x40010000 40020000 Q 0.0073\n", res);
     free(res);
 }
 
