@@ -198,6 +198,11 @@ static esp_err_t dm9051_reset_hw(esp_eth_phy_t *phy)
     return ESP_OK;
 }
 
+/**
+ * @note This function is responsible for restarting a new auto-negotiation,
+ *       the result of negotiation won't be relected to uppler layers.
+ *       Instead, the negotiation result is fetched by linker timer, see `dm9051_get_link()`
+ */
 static esp_err_t dm9051_negotiate(esp_eth_phy_t *phy)
 {
     phy_dm9051_t *dm9051 = __containerof(phy, phy_dm9051_t, parent);
@@ -227,7 +232,7 @@ static esp_err_t dm9051_negotiate(esp_eth_phy_t *phy)
             break;
         }
     }
-    if (to >= dm9051->autonego_timeout_ms / 100) {
+    if ((to >= dm9051->autonego_timeout_ms / 100) && (dm9051->link_status == ETH_LINK_UP)) {
         ESP_LOGW(TAG, "Ethernet PHY auto negotiation timeout");
     }
     return ESP_OK;
