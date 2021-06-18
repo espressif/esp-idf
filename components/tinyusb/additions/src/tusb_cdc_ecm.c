@@ -49,14 +49,14 @@ struct frame_buffer_t {
 /* lwip context */
 static struct netif netif_data;
 /* shared between tud_network_recv_cb() and service_traffic() */
-struct frame_buffer_t rx_frame_buffer = 
+static struct frame_buffer_t rx_frame_buffer = 
 {
   .read_idx = 0,
   .write_idx = 0,
   .frame = {}
 };
 /* semaphore as receive event, is intended to notify service_traffic thread in case a new frame was received */
-SemaphoreHandle_t rx_event = NULL;
+static SemaphoreHandle_t rx_event = NULL;
 /* Dummy, not really used. Only required for the usage of RNDIS protocol, but we are using CDC-ECM. Is only declared, that there will be no compile error. */
 const uint8_t tud_network_mac_address[6];
 
@@ -72,7 +72,6 @@ static void service_traffic(void)
     if(rx_frame_buffer.read_idx >= FRAME_BUFFER_SIZE) {
       rx_frame_buffer.read_idx = 0;
     }
-    tud_network_recv_renew();
   }
 }
 
@@ -104,7 +103,7 @@ static err_t linkoutput_fn(struct netif *netif, struct pbuf *p)
     }
 
     /* transfer execution to TinyUSB in the hopes that it will finish transmitting the prior packet */
-    tud_task();
+    vTaskDelay(pdMS_TO_TICKS(1));
   }
 }
 
@@ -196,6 +195,8 @@ bool tud_network_recv_cb(const uint8_t *src, uint16_t size)
       if(rx_frame_buffer.write_idx >= FRAME_BUFFER_SIZE) {
         rx_frame_buffer.write_idx = 0;
       }
+
+      tud_network_recv_renew();
 
       /* new frame received -> set rx event */
       xSemaphoreGive(rx_event);
