@@ -821,13 +821,14 @@ static hcd_port_event_t _intr_hdlr_hprt(port_t *port, usbh_hal_port_event_t hal_
             port->flags.conn_dev_ena = 0;
             //Disabled could be due to a disable request or reset request, or due to a port error
             if (port->state != HCD_PORT_STATE_RESETTING) {  //Ignore the disable event if it's due to a reset request
-                port->state = HCD_PORT_STATE_DISABLED;
                 if (port->flags.disable_requested) {
                     //Disabled by request (i.e. by port command). Generate an internal event
+                    port->state = HCD_PORT_STATE_DISABLED;
                     port->flags.disable_requested = 0;
                     *yield |= _internal_port_event_notify_from_isr(port);
                 } else {
                     //Disabled due to a port error
+                    port->state = HCD_PORT_STATE_RECOVERY;
                     port_event = HCD_PORT_EVENT_ERROR;
                 }
             }
@@ -838,7 +839,7 @@ static hcd_port_event_t _intr_hdlr_hprt(port_t *port, usbh_hal_port_event_t hal_
             if (port->state != HCD_PORT_STATE_NOT_POWERED) {
                 //We need to power OFF the port to protect it
                 usbh_hal_port_toggle_power(port->hal, false);
-                port->state = HCD_PORT_STATE_NOT_POWERED;
+                port->state = HCD_PORT_STATE_RECOVERY;
                 port_event = HCD_PORT_EVENT_OVERCURRENT;
             }
             port->flags.conn_dev_ena = 0;
@@ -1347,6 +1348,8 @@ esp_err_t hcd_port_init(int port_number, const hcd_port_config_t *port_config, h
     port_obj->context = port_config->context;
     usbh_hal_init(port_obj->hal);
     port_obj->initialized = true;
+    //Clear the frame list. We set the frame list register and enable periodic scheduling after a successful reset
+    memset(port_obj->frame_list, 0, FRAME_LIST_LEN * sizeof(uint32_t));
     esp_intr_enable(s_hcd_obj->isr_hdl);
     *port_hdl = (hcd_port_handle_t)port_obj;
     HCD_EXIT_CRITICAL();
@@ -1410,8 +1413,7 @@ esp_err_t hcd_port_command(hcd_port_handle_t port_hdl, hcd_port_cmd_t command)
                         //Set FIFO sizes to default
                         usbh_hal_set_fifo_size(port->hal, &fifo_config_default);
                         port->fifo_bias = HCD_PORT_FIFO_BIAS_BALANCED;
-                        //Reset frame list and enable periodic scheduling
-                        memset(port->frame_list, 0, FRAME_LIST_LEN * sizeof(uint32_t));
+                        //We start periodic scheduling only after a RESET command since SOFs only start after a reset
                         usbh_hal_port_set_frame_list(port->hal, port->frame_list, FRAME_LIST_LEN);
                         usbh_hal_port_periodic_enable(port->hal);
                         ret = ESP_OK;
@@ -1501,7 +1503,9 @@ hcd_port_event_t hcd_port_handle_event(hcd_port_handle_t port_hdl)
                     ret = HCD_PORT_EVENT_NONE;
                 } else {
                     //No device connected after debounce delay. This is an actual disconnection
-                    port->state = HCD_PORT_STATE_DISCONNECTED;
+                    if (port->state != HCD_PORT_STATE_NOT_POWERED) {    //Don't update state if disconnect was due to power-off
+                        port->state = HCD_PORT_STATE_DISCONNECTED;
+                    }
                     ret = HCD_PORT_EVENT_DISCONNECTION;
                 }
                 break;
@@ -1538,6 +1542,10 @@ esp_err_t hcd_port_recover(hcd_port_handle_t port_hdl)
     port->state = HCD_PORT_STATE_NOT_POWERED;
     port->last_event = HCD_PORT_EVENT_NONE;
     port->flags.val = 0;
+    //Soft reset wipes all registers so we need to reinitialize the HAL
+    usbh_hal_init(port->hal);
+    //Clear the frame list. We set the frame list register and enable periodic scheduling after a successful reset
+    memset(port->frame_list, 0, FRAME_LIST_LEN * sizeof(uint32_t));
     esp_intr_enable(s_hcd_obj->isr_hdl);
     HCD_EXIT_CRITICAL();
     return ESP_OK;
@@ -1982,7 +1990,7 @@ hcd_pipe_state_t hcd_pipe_get_state(hcd_pipe_handle_t pipe_hdl)
 esp_err_t hcd_pipe_command(hcd_pipe_handle_t pipe_hdl, hcd_pipe_cmd_t command)
 {
     pipe_t *pipe = (pipe_t *)pipe_hdl;
-    bool ret = ESP_OK;
+    esp_err_t ret = ESP_OK;
 
     HCD_ENTER_CRITICAL();
     //Cannot execute pipe commands the pipe is already executing a command, or if the pipe or its port are no longer valid

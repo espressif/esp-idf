@@ -239,6 +239,8 @@ void usbh_hal_chan_free(usbh_hal_context_t *hal, usbh_hal_chan_t *chan_obj)
     }
     //Can only free a channel when in the disabled state and descriptor list released
     assert(!chan_obj->flags.active && !chan_obj->flags.error_pending);
+    //Disable channel's interrupt
+    usbh_ll_haintmsk_dis_chan_intr(hal->dev, 1 << chan_obj->flags.chan_idx);
     //Deallocate channel
     hal->channels.hdls[chan_obj->flags.chan_idx] = NULL;
     hal->channels.num_allocd--;
