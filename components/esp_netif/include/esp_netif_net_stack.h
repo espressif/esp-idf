@@ -46,7 +46,7 @@ esp_netif_t* esp_netif_get_handle_from_netif_impl(void *dev);
  *
  * @return    handle to related network stack netif handle
  */
-void* esp_netif_get_netif_impl(esp_netif_t *esp_netif);
+struct netif *esp_netif_get_netif_impl(esp_netif_t *esp_netif);
 
 /**
  * @}

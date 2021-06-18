@@ -308,7 +308,7 @@ esp_err_t _mdns_pcb_deinit(mdns_if_t tcpip_if, mdns_ip_protocol_t ip_protocol)
 
 static err_t _mdns_udp_pcb_write_api(struct tcpip_api_call_data *api_call_msg)
 {
-    void * nif = NULL;
+    struct netif * nif = NULL;
     mdns_api_call_t * msg = (mdns_api_call_t *)api_call_msg;
     mdns_pcb_t * _pcb = &_mdns_server->interfaces[msg->tcpip_if].pcbs[msg->ip_protocol];
     nif = esp_netif_get_netif_impl(_mdns_get_esp_netif(msg->tcpip_if));
@@ -317,7 +317,7 @@ static err_t _mdns_udp_pcb_write_api(struct tcpip_api_call_data *api_call_msg)
         msg->err = ERR_IF;
         return ERR_IF;
     }
-    esp_err_t err = udp_sendto_if (_pcb->pcb, msg->pbt, msg->ip, msg->port, (struct netif *)nif);
+    esp_err_t err = udp_sendto_if (_pcb->pcb, msg->pbt, msg->ip, msg->port, nif);
     pbuf_free(msg->pbt);
     msg->err = err;
     return err;

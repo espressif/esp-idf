@@ -222,11 +222,11 @@ bool tcpip_adapter_is_netif_up(tcpip_adapter_if_t tcpip_if)
     return esp_netif_is_netif_up(netif_from_if(tcpip_if));
 }
 
-esp_err_t tcpip_adapter_get_netif(tcpip_adapter_if_t tcpip_if, void ** netif)
+esp_err_t tcpip_adapter_get_netif(tcpip_adapter_if_t tcpip_if, struct netif ** netif)
 {
     esp_netif_t *esp_netif = netif_from_if(tcpip_if);
     if (esp_netif) {
-        void* net_stack_netif = esp_netif_get_netif_impl(esp_netif);
+        struct netif *net_stack_netif = esp_netif_get_netif_impl(esp_netif);
         *netif = net_stack_netif;
         return ESP_OK;
     }
