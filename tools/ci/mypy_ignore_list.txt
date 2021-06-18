@@ -219,7 +219,6 @@ tools/esp_prov/utils/convenience.py
 tools/find_apps.py
 tools/find_build_apps/common.py
 tools/find_build_apps/make.py
-tools/gdb_panic_server.py
 tools/gen_esp_err_to_name.py
 tools/idf.py
 tools/idf_py_actions/core_ext.py

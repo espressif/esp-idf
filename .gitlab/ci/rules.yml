@@ -96,7 +96,7 @@
   - "tools/esp_app_trace/**/*"
   - "tools/ldgen/**/*"
 
-  - "tools/gdb_panic_server.py"
+  - "tools/idf_monitor_base/*"
   - "tools/idf_monitor.py"
   - "tools/test_idf_monitor/**/*"
 
