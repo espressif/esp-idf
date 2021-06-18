@@ -20,6 +20,8 @@
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/ets_sys.h"
 #include "esp32c3/rom/uart.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/uart.h"
 #endif
 #include "esp_rom_gpio.h"
 #include "esp_rom_uart.h"
