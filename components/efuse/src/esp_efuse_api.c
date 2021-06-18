@@ -17,6 +17,8 @@ const static char *TAG = "efuse";
 #define EFUSE_LOCK_ACQUIRE_RECURSIVE()
 #define EFUSE_LOCK_RELEASE_RECURSIVE()
 #else
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include <sys/lock.h>
 static _lock_t s_efuse_lock;
 #define EFUSE_LOCK_ACQUIRE_RECURSIVE() _lock_acquire_recursive(&s_efuse_lock)
@@ -30,15 +32,20 @@ static int s_batch_writing_mode = 0;
 // read value from EFUSE, writing it into an array
 esp_err_t esp_efuse_read_field_blob(const esp_efuse_desc_t* field[], void* dst, size_t dst_size_bits)
 {
-    EFUSE_LOCK_ACQUIRE_RECURSIVE();
     esp_err_t err = ESP_OK;
     if (field == NULL || dst == NULL || dst_size_bits == 0) {
         err = ESP_ERR_INVALID_ARG;
     } else {
-        memset((uint8_t *)dst, 0, esp_efuse_utility_get_number_of_items(dst_size_bits, 8));
-        err = esp_efuse_utility_process(field, dst, dst_size_bits, esp_efuse_utility_fill_buff);
+        do {
+            memset((uint8_t *)dst, 0, esp_efuse_utility_get_number_of_items(dst_size_bits, 8));
+            err = esp_efuse_utility_process(field, dst, dst_size_bits, esp_efuse_utility_fill_buff);
+#ifndef BOOTLOADER_BUILD
+            if (err == ESP_ERR_DAMAGED_READING) {
+                vTaskDelay(1);
+            }
+#endif // BOOTLOADER_BUILD
+        } while (err == ESP_ERR_DAMAGED_READING);
     }
-    EFUSE_LOCK_RELEASE_RECURSIVE();
     return err;
 }
 
@@ -53,15 +60,20 @@ bool esp_efuse_read_field_bit(const esp_efuse_desc_t *field[])
 // read number of bits programmed as "1" in the particular field
 esp_err_t esp_efuse_read_field_cnt(const esp_efuse_desc_t* field[], size_t* out_cnt)
 {
-    EFUSE_LOCK_ACQUIRE_RECURSIVE();
     esp_err_t err = ESP_OK;
     if (field == NULL || out_cnt == NULL) {
         err = ESP_ERR_INVALID_ARG;
     } else {
-        *out_cnt = 0;
-        err = esp_efuse_utility_process(field, out_cnt, 0, esp_efuse_utility_count_once);
+        do {
+            *out_cnt = 0;
+            err = esp_efuse_utility_process(field, out_cnt, 0, esp_efuse_utility_count_once);
+#ifndef BOOTLOADER_BUILD
+            if (err == ESP_ERR_DAMAGED_READING) {
+                vTaskDelay(1);
+            }
+#endif // BOOTLOADER_BUILD
+        } while (err == ESP_ERR_DAMAGED_READING);
     }
-    EFUSE_LOCK_RELEASE_RECURSIVE();
     return err;
 }
 
@@ -163,9 +175,10 @@ int esp_efuse_get_field_size(const esp_efuse_desc_t* field[])
 // reading efuse register.
 uint32_t esp_efuse_read_reg(esp_efuse_block_t blk, unsigned int num_reg)
 {
-    EFUSE_LOCK_ACQUIRE_RECURSIVE();
-    uint32_t ret_val = esp_efuse_utility_read_reg(blk, num_reg);
-    EFUSE_LOCK_RELEASE_RECURSIVE();
+    uint32_t ret_val = 0;
+    esp_err_t err = esp_efuse_read_block(blk, &ret_val, num_reg * 32, 32);
+    assert(err == ESP_OK);
+    (void)err;
     return ret_val;
 }
 

@@ -14,6 +14,11 @@
 
 static const char *TAG = "efuse";
 
+// This counter is used to implement independent read access for efuses.
+// During the read operation, the counter should be unchanged and even.
+// If it is not so, we must repeat the read to make sure that the burn operation does not affect the read data.
+static volatile unsigned s_burn_counter = 0;
+
 // Array for emulate efuse registers.
 #ifdef CONFIG_EFUSE_VIRTUAL
 uint32_t virt_blocks[EFUSE_BLK_MAX][COUNT_EFUSE_REG_PER_BLOCK];
@@ -50,6 +55,7 @@ esp_err_t esp_efuse_utility_process(const esp_efuse_desc_t* field[], void* ptr, 
     int req_size = (ptr_size_bits == 0) ? field_len : MIN(ptr_size_bits, field_len);
 
     int i = 0;
+    unsigned count_before = s_burn_counter;
     while (err == ESP_OK && req_size > bits_counter && field[i] != NULL) {
         if (check_range_of_bits(field[i]->efuse_block, field[i]->bit_start, field[i]->bit_count) == false) {
             ESP_EARLY_LOGE(TAG, "Range of data does not match the coding scheme");
@@ -71,6 +77,12 @@ esp_err_t esp_efuse_utility_process(const esp_efuse_desc_t* field[], void* ptr, 
             ++i_reg;
         }
         i++;
+    }
+    unsigned count_after = s_burn_counter;
+    if (err == ESP_OK &&
+        (func_proc == esp_efuse_utility_fill_buff || func_proc == esp_efuse_utility_count_once) && // these functions are used for read APIs: read_field_blob and read_field_cnt
+        (count_before != count_after || (count_after & 1) == 1)) {
+        err = ESP_ERR_DAMAGED_READING;
     }
     assert(bits_counter <= req_size);
     return err;
@@ -141,12 +153,22 @@ esp_err_t esp_efuse_utility_write_cnt(unsigned int num_reg, esp_efuse_block_t ef
 // Reset efuse write registers
 void esp_efuse_utility_reset(void)
 {
+    ++s_burn_counter;
     esp_efuse_utility_clear_program_registers();
+    ++s_burn_counter;
     for (int num_block = EFUSE_BLK0; num_block < EFUSE_BLK_MAX; num_block++) {
         for (uint32_t addr_wr_block = range_write_addr_blocks[num_block].start; addr_wr_block <= range_write_addr_blocks[num_block].end; addr_wr_block += 4) {
             REG_WRITE(addr_wr_block, 0);
         }
     }
+}
+
+// Burn values written to the efuse write registers
+void esp_efuse_utility_burn_efuses(void)
+{
+    ++s_burn_counter;
+    esp_efuse_utility_burn_chip();
+    ++s_burn_counter;
 }
 
 // Erase the virt_blocks array.

@@ -297,6 +297,13 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_NOT_ENOUGH_UNUSED_KEY_BLOCKS
     ERR_TBL_IT(ESP_ERR_NOT_ENOUGH_UNUSED_KEY_BLOCKS),           /*  5637 0x1605 Error not enough unused key blocks available */
 #   endif
+#   ifdef      ESP_ERR_DAMAGED_READING
+    ERR_TBL_IT(ESP_ERR_DAMAGED_READING),                        /*  5638 0x1606 Error. Burn or reset was done during a
+                                                                                reading operation leads to damage read
+                                                                                data. This error is internal to the
+                                                                                efuse component and not returned by any
+                                                                                public API. */
+#   endif
     // components/bootloader_support/include/esp_image_format.h
 #   ifdef      ESP_ERR_IMAGE_BASE
     ERR_TBL_IT(ESP_ERR_IMAGE_BASE),                             /*  8192 0x2000 */

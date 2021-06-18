@@ -72,7 +72,7 @@ void esp_efuse_utility_clear_program_registers(void)
 }
 
 // Burn values written to the efuse write registers
-void esp_efuse_utility_burn_efuses(void)
+void esp_efuse_utility_burn_chip(void)
 {
 #ifdef CONFIG_EFUSE_VIRTUAL
     ESP_LOGW(TAG, "Virtual efuses enabled: Not really burning eFuses");
