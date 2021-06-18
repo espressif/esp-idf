@@ -76,8 +76,11 @@ void example_i2s_init(void)
      i2s_driver_install(i2s_num, &i2s_config, 0, NULL);
      //init DAC pad
      i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
-     //init ADC pad
-     i2s_set_adc_mode(I2S_ADC_UNIT, I2S_ADC_CHANNEL);
+     //init ADC pad(s)
+     adc_digi_pattern_table_t patterns[] = {
+         {.atten = ADC_ATTEN_DB_11, .bit_width = ADC_WIDTH_BIT_12, .channel = I2S_ADC_CHANNEL},
+     };
+     i2s_set_adc_mode(I2S_ADC_UNIT, 1, patterns);
 }
 
 /*
