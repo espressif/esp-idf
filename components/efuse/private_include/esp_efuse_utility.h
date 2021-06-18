@@ -97,6 +97,16 @@ esp_err_t esp_efuse_utility_fill_buff(unsigned int num_reg, esp_efuse_block_t ef
 void esp_efuse_utility_burn_efuses(void);
 
 /**
+ * @brief Chip specific operations to perform the burn of values written to the efuse write registers.
+ *
+ * @note Use esp_efuse_utility_burn_efuses() to burn efuses.
+ *
+ * If CONFIG_EFUSE_VIRTUAL is set, writing will not be performed.
+ * After the function is completed, the writing registers are cleared.
+ */
+void esp_efuse_utility_burn_chip(void);
+
+/**
  * @brief Returns the number of array elements for placing these "bits" in an array with the length of each element equal to "size_of_base".
  */
 int esp_efuse_utility_get_number_of_items(int bits, int size_of_base);

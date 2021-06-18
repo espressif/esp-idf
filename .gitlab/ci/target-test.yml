@@ -474,6 +474,13 @@ UT_006:
     - UT_T1_SPIMODE
     - psram
 
+UT_007:
+  extends: .unit_test_esp32_template
+  parallel: 2
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
 UT_008:
   extends: .unit_test_esp32_template
   tags:
