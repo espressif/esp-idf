@@ -99,7 +99,9 @@ typedef union {
 } esp_hidh_event_data_t;
 
 typedef struct {
+    void* event_handler_args;
     esp_event_handler_t callback;
+    uint16_t event_stack_size;
 } esp_hidh_config_t;
 
 /**

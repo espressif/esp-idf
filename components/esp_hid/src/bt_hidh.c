@@ -241,33 +241,28 @@ static esp_err_t esp_bt_hidh_dev_report_write(esp_hidh_dev_t *dev, size_t map_in
         return ESP_FAIL;
     }
 
-#define BT_HDR_HID_DATA_OFFSET 14 //this equals to L2CAP_MIN_OFFSET + 1 (1 byte to hold the HID transaction header)
-
     uint8_t *pbuf_data;
-    BT_HDR *p_buf = (BT_HDR *)malloc((uint16_t) (len + 1 + BT_HDR_HID_DATA_OFFSET + sizeof(BT_HDR)));
+    BT_HDR *p_buf = (BT_HDR *)malloc((uint16_t) (len + 14 + sizeof(BT_HDR)));
 
-    if (p_buf == NULL) {
-        ESP_LOGE(TAG, "Could not allocate BT_HDR buffer");
-        return ESP_ERR_NO_MEM;
-    }
+    if (p_buf != NULL) {
+        p_buf->len = len + 1;
+        p_buf->offset = 14;
 
-    p_buf->len = len + 1;
-    p_buf->offset = BT_HDR_HID_DATA_OFFSET;
+        pbuf_data = (uint8_t *) (p_buf + 1) + p_buf->offset;
+        pbuf_data[0] = report_id;
+        memcpy(pbuf_data + 1, data, len);
 
-    pbuf_data = (uint8_t *) (p_buf + 1) + p_buf->offset;
-    pbuf_data[0] = report_id;
-    memcpy(pbuf_data + 1, data, len);
-
-    if (report_type == ESP_HID_REPORT_TYPE_OUTPUT) {
-        p_buf->layer_specific = BTA_HH_RPTT_OUTPUT;
-        BTA_HhSendData(dev->bt.handle, dev->bda, p_buf);
-    } else {
-        BTA_HhSetReport(dev->bt.handle, report_type, p_buf);
-        WAIT_DEV(dev);
-    }
-    if (dev->status) {
-        ESP_LOGE(TAG, "Write %s: %s", esp_hid_report_type_str(report_type), s_bta_hh_status_names[dev->status]);
-        return ESP_FAIL;
+        if (report_type == ESP_HID_REPORT_TYPE_OUTPUT) {
+            p_buf->layer_specific = BTA_HH_RPTT_OUTPUT;
+            BTA_HhSendData(dev->bt.handle, dev->bda, p_buf);
+        } else {
+            BTA_HhSetReport(dev->bt.handle, report_type, p_buf);
+            WAIT_DEV(dev);
+        }
+        if (dev->status) {
+            ESP_LOGE(TAG, "Write %s: %s", esp_hid_report_type_str(report_type), s_bta_hh_status_names[dev->status]);
+            return ESP_FAIL;
+        }
     }
     return ESP_OK;
 }
@@ -325,7 +320,8 @@ esp_err_t esp_bt_hidh_init(const esp_hidh_config_t *config)
         .queue_size = 5,
         .task_name = "esp_bt_hidh_events",
         .task_priority = uxTaskPriorityGet(NULL),
-        .task_stack_size = 2048,
+        // .task_stack_size = 2048,
+        .task_stack_size = config->event_stack_size > 0 ? config->event_stack_size : 2048,
         .task_core_id = tskNO_AFFINITY
     };
     esp_err_t ret = esp_event_loop_create(&event_task_args, &event_loop_handle);
@@ -333,7 +329,7 @@ esp_err_t esp_bt_hidh_init(const esp_hidh_config_t *config)
         ESP_LOGE(TAG, "esp_event_loop_create failed!");
         return ret;
     }
-    esp_event_handler_register_with(event_loop_handle, ESP_HIDH_EVENTS, ESP_EVENT_ANY_ID, config->callback, NULL);
+    esp_event_handler_register_with(event_loop_handle, ESP_HIDH_EVENTS, ESP_EVENT_ANY_ID, config->callback, config->event_handler_args);
     BTA_HhEnable(0, bta_hh_cb);
     return ESP_OK;
 }
