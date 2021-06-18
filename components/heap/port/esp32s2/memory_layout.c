@@ -18,7 +18,7 @@
 
 #include "sdkconfig.h"
 #include "soc/soc.h"
-#include "soc/soc_memory_layout.h"
+#include "heap_memory_layout.h"
 #include "esp_heap_caps.h"
 
 /* Memory layout for ESP32 SoC */

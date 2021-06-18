@@ -11,7 +11,6 @@ set(srcs
     "rmt_periph.c"
     "rtc_io_periph.c"
     "sigmadelta_periph.c"
-    "soc_memory_layout.c"
     "spi_periph.c"
     "timer_periph.c"
     "touch_sensor_periph.c"

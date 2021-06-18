@@ -1,4 +1,4 @@
-// Copyright 2010-2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-#include "sdkconfig.h"
 #include "esp_attr.h"
+#include "sdkconfig.h"
 #include "soc/soc.h"
-#include "soc/soc_memory_layout.h"
+#include "heap_memory_layout.h"
 #include "esp_heap_caps.h"
 
 /**
@@ -37,14 +37,20 @@ const soc_memory_type_desc_t soc_memory_types[] = {
     // Type 0: DRAM
     { "DRAM", { MALLOC_CAP_8BIT | MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_32BIT, 0 }, false, false},
     // Type 1: DRAM used for startup stacks
-    { "STACK/DRAM", { MALLOC_CAP_8BIT | MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_32BIT, 0 }, false, true},
+    { "STACK/DRAM", { MALLOC_CAP_8BIT | MALLOC_CAP_DEFAULT,  MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_32BIT, MALLOC_CAP_RETENTION }, false, true},
     // Type 2: DRAM which has an alias on the I-port
     { "D/IRAM", { 0, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DEFAULT, MALLOC_CAP_32BIT | MALLOC_CAP_EXEC }, true, false},
     // Type 3: IRAM
     { "IRAM", { MALLOC_CAP_EXEC | MALLOC_CAP_32BIT | MALLOC_CAP_INTERNAL, 0, 0 }, false, false},
-    // Type 4: SPI SRAM data
-    { "SPIRAM", { MALLOC_CAP_SPIRAM | MALLOC_CAP_DEFAULT, 0, MALLOC_CAP_8BIT | MALLOC_CAP_32BIT}, false, false},
+    // Type 4: RTCRAM
+    { "RTCRAM", { MALLOC_CAP_8BIT|MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL|MALLOC_CAP_32BIT, 0 }, false, false},
 };
+
+#ifdef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#define SOC_MEMORY_TYPE_DEFAULT 0
+#else
+#define SOC_MEMORY_TYPE_DEFAULT 2
+#endif
 
 const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memory_type_desc_t);
 
@@ -56,22 +62,9 @@ const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memor
  *
  */
 const soc_memory_region_t soc_memory_regions[] = {
-#ifdef CONFIG_SPIRAM
-    { SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_SIZE, 4, 0}, //SPI SRAM, if available
-#endif
-#if CONFIG_ESP32S3_INSTRUCTION_CACHE_16KB
-    { 0x40374000, 0x4000,  3, 0},          //Level 1, IRAM
-#endif
-    { 0x3FC88000, 0x8000,  2, 0x40378000}, //Level 2, IDRAM, can be used as trace memroy
-    { 0x3FC90000, 0x10000, 2, 0x40380000}, //Level 3, IDRAM, can be used as trace memroy
-    { 0x3FCA0000, 0x10000, 2, 0x40390000}, //Level 4, IDRAM, can be used as trace memroy
-    { 0x3FCB0000, 0x10000, 2, 0x403A0000}, //Level 5, IDRAM, can be used as trace memroy
-    { 0x3FCC0000, 0x10000, 2, 0x403B0000}, //Level 6, IDRAM, can be used as trace memroy
-    { 0x3FCD0000, 0x10000, 2, 0x403C0000}, //Level 7, IDRAM, can be used as trace memroy
-    { 0x3FCE0000, 0x10000, 1, 0},          //Level 8, IDRAM, can be used as trace memroy, contains stacks used by startup flow, recycled by heap allocator in app_main task
-#if CONFIG_ESP32S3_DATA_CACHE_32KB
-    { 0x3FCF0000, 0x8000,  0, 0},          //Level 9, DRAM
-#endif
+    { 0x3FC80000, 0x20000, SOC_MEMORY_TYPE_DEFAULT, 0x40380000}, //Block 4,  can be remapped to ROM, can be used as trace memory
+    { 0x3FCA0000, 0x20000, SOC_MEMORY_TYPE_DEFAULT, 0x403A0000}, //Block 5,  can be remapped to ROM, can be used as trace memory
+    { 0x3FCC0000, 0x20000, 1, 0x403C0000}, //Block 9,  can be used as trace memory
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
     { 0x50000000, 0x2000,  4, 0}, //Fast RTC memory
 #endif
@@ -79,7 +72,8 @@ const soc_memory_region_t soc_memory_regions[] = {
 
 const size_t soc_memory_region_count = sizeof(soc_memory_regions) / sizeof(soc_memory_region_t);
 
-extern int _data_start, _heap_start, _iram_start, _iram_end; // defined in esp32s3.project.ld.in
+
+extern int _data_start, _heap_start, _iram_start, _iram_end, _rtc_force_slow_end;
 
 /**
  * Reserved memory regions.
@@ -90,24 +84,16 @@ extern int _data_start, _heap_start, _iram_start, _iram_end; // defined in esp32
 // Static data region. DRAM used by data+bss and possibly rodata
 SOC_RESERVE_MEMORY_REGION((intptr_t)&_data_start, (intptr_t)&_heap_start, dram_data);
 
-// ESP32S3 has a big D/IRAM region, the part used by code is reserved
+// Target has a big D/IRAM region, the part used by code is reserved
 // The address of the D/I bus are in the same order, directly shift IRAM address to get reserved DRAM address
 #define I_D_OFFSET (SOC_DIRAM_IRAM_LOW - SOC_DIRAM_DRAM_LOW)
-#if CONFIG_ESP32S3_INSTRUCTION_CACHE_16KB
-SOC_RESERVE_MEMORY_REGION((intptr_t)&_iram_start, (intptr_t)&_iram_start + 0x4000, iram_code_1);
-SOC_RESERVE_MEMORY_REGION((intptr_t)&_iram_start + 0x4000 - I_D_OFFSET, (intptr_t)&_iram_end - I_D_OFFSET, iram_code_2);
-#else
 SOC_RESERVE_MEMORY_REGION((intptr_t)&_iram_start - I_D_OFFSET, (intptr_t)&_iram_end - I_D_OFFSET, iram_code);
-#endif
 
-#ifdef CONFIG_SPIRAM
-/* Reserve the whole possible SPIRAM region here, spiram.c will add some or all of this
- * memory to heap depending on the actual SPIRAM chip size. */
-SOC_RESERVE_MEMORY_REGION( SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_HIGH, extram_data_region);
-#endif
-
-#if CONFIG_ESP32S3_TRACEMEM_RESERVE_DRAM > 0
-SOC_RESERVE_MEMORY_REGION(0x3fffc000 - CONFIG_ESP32S3_TRACEMEM_RESERVE_DRAM, 0x3fffc000, trace_mem);
+#ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
+/* We use _rtc_force_slow_end not _rtc_noinit_end here, as rtc "fast" memory ends up in RTC SLOW
+   region on H2, no differentiation. And _rtc_force_slow_end is the end of all the static RTC sections.
+*/
+SOC_RESERVE_MEMORY_REGION(SOC_RTC_DRAM_LOW, (intptr_t)&_rtc_force_slow_end, rtcram_data);
 #endif
 
 #endif // BOOTLOADER_BUILD
