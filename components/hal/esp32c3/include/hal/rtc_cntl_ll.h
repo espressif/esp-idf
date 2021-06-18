@@ -47,12 +47,18 @@ static inline void rtc_cntl_ll_gpio_clear_wakeup_pins(void)
     REG_SET_BIT(RTC_CNTL_GPIO_WAKEUP_REG, RTC_CNTL_GPIO_WAKEUP_STATUS_CLR);
 }
 
-static inline void rtc_cntl_ll_enable_cpu_retention(uint32_t addr)
+static inline void rtc_cntl_ll_set_cpu_retention_link_addr(uint32_t addr)
 {
-    /* write memory address to register */
     REG_SET_FIELD(APB_CTRL_RETENTION_CTRL_REG, APB_CTRL_RETENTION_LINK_ADDR, (uint32_t)addr);
-    /* Enable clock */
+}
+
+static inline void rtc_cntl_ll_enable_cpu_retention_clock(void)
+{
     REG_SET_BIT(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN);
+}
+
+static inline void rtc_cntl_ll_enable_cpu_retention(void)
+{
     /* Enable retention when cpu sleep enable */
     REG_SET_BIT(RTC_CNTL_RETENTION_CTRL_REG, RTC_CNTL_RETENTION_EN);
 }

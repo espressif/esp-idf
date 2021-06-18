@@ -1,23 +1,16 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // The HAL layer for RTC CNTL (common part)
 
-#include "soc/soc_caps.h"
-#include "soc/lldesc.h"
-#include "hal/dma_types.h"
 #include "hal/rtc_hal.h"
+#include "soc/soc_caps.h"
+#include "esp32s3/rom/lldesc.h"
+#include "esp32s3/rom/cache.h"
+#include "hal/dma_types.h"
 #include "hal/assert.h"
 #include "esp_attr.h"
 
@@ -61,7 +54,7 @@ void rtc_cntl_hal_enable_cpu_retention(void *addr)
             pbuf->cfg[0] = 0;
             pbuf->cfg[1] = 0;
             pbuf->cfg[2] = 0;
-            pbuf->cfg[3] = (uint32_t)-1;
+            pbuf->cfg[3] = 0xfffe0000;
 
             rtc_cntl_ll_set_cpu_retention_link_addr((uint32_t)plink);
             rtc_cntl_ll_enable_cpu_retention_clock();
@@ -76,6 +69,11 @@ void IRAM_ATTR rtc_cntl_hal_disable_cpu_retention(void *addr)
 
     if (addr) {
         if (retent->cpu_pd_mem) {
+            /* TODO: I/d-cache tagmem retention has not been implemented yet,
+             * so after the system wakes up, all the contents of i/d-cache need
+             * to be invalidated. */
+            Cache_Invalidate_ICache_All();
+            Cache_Invalidate_DCache_All();
             rtc_cntl_ll_disable_cpu_retention();
         }
     }

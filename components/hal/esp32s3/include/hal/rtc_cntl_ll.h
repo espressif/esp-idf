@@ -17,6 +17,7 @@
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
+#include "soc/apb_ctrl_reg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,6 +52,35 @@ static inline void rtc_cntl_ll_ext1_clear_wakeup_pins(void)
 static inline void rtc_cntl_ll_ulp_wakeup_enable(void)
 {
     SET_PERI_REG_BITS(RTC_CNTL_STATE0_REG, RTC_CNTL_WAKEUP_ENA_V, 0x800, RTC_CNTL_WAKEUP_ENA_S);
+}
+
+static inline void rtc_cntl_ll_set_cpu_retention_link_addr(uint32_t link_addr)
+{
+    REG_SET_FIELD(APB_CTRL_RETENTION_CTRL_REG, APB_CTRL_RETENTION_CPU_LINK_ADDR, link_addr);
+}
+
+static inline void rtc_cntl_ll_enable_cpu_retention_clock(void)
+{
+    REG_SET_BIT(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN); /* Enable internal 20 MHz clock */
+}
+
+static inline void rtc_cntl_ll_enable_cpu_retention(void)
+{
+    uint32_t target = REG_GET_FIELD(RTC_CNTL_RETENTION_CTRL_REG, RTC_CNTL_RETENTION_TARGET);
+
+    /* TODO: I/d-Cache tagmem retention has not been implementted yet,
+     * so i/d-cache tagmem retention is explicitly disabled */
+    REG_CLR_BIT(APB_CTRL_RETENTION_CTRL2_REG, APB_CTRL_RET_ICACHE_ENABLE);
+    REG_CLR_BIT(APB_CTRL_RETENTION_CTRL3_REG, APB_CTRL_RET_DCACHE_ENABLE);
+
+    REG_SET_FIELD(RTC_CNTL_RETENTION_CTRL_REG, RTC_CNTL_RETENTION_TARGET, (target | 0x1));
+    /* Enable retention when cpu sleep enable */
+    REG_SET_BIT(RTC_CNTL_RETENTION_CTRL_REG, RTC_CNTL_RETENTION_EN);
+}
+
+static inline void rtc_cntl_ll_disable_cpu_retention(void)
+{
+    REG_CLR_BIT(RTC_CNTL_RETENTION_CTRL_REG, RTC_CNTL_RETENTION_EN);
 }
 
 #ifdef __cplusplus

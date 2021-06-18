@@ -118,6 +118,14 @@
 #define SOC_LCD_I80_BUS_WIDTH           (16) /*!< Intel 8080 bus width */
 #define SOC_LCD_RGB_DATA_WIDTH          (16) /*!< Number of LCD data lines */
 
+/*-------------------------- RTC CAPS --------------------------------------*/
+#define SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH       (128)
+#define SOC_RTC_CNTL_CPU_PD_REG_FILE_NUM        (549)
+#define SOC_RTC_CNTL_CPU_PD_DMA_ADDR_ALIGN      (SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH >> 3)
+#define SOC_RTC_CNTL_CPU_PD_DMA_BLOCK_SIZE      (SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH >> 3)
+
+#define SOC_RTC_CNTL_CPU_PD_RETENTION_MEM_SIZE  (SOC_RTC_CNTL_CPU_PD_REG_FILE_NUM * (SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH >> 3))
+
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 #include "rtc_io_caps.h"
 
@@ -209,6 +217,8 @@
 #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
 
 #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
+
+#define SOC_PM_SUPPORT_CPU_PD           (1)
 
 
 /*-------------------------- Flash Encryption CAPS----------------------------*/

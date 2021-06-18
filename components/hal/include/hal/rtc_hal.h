@@ -14,11 +14,18 @@
 
 #pragma once
 
+#include "soc/soc_caps.h"
 #include "hal/gpio_types.h"
 #include "hal/rtc_cntl_ll.h"
 #if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2
 #include "hal/rtc_io_ll.h"
 #endif
+
+typedef struct rtc_cntl_sleep_retent {
+#if SOC_PM_SUPPORT_CPU_PD
+    void     *cpu_pd_mem;   /* Internal ram address for cpu retention */
+#endif // SOC_PM_SUPPORT_CPU_PD
+} rtc_cntl_sleep_retent_t;
 
 #define RTC_HAL_DMA_LINK_NODE_SIZE      (16)
 
@@ -48,7 +55,7 @@ void * rtc_cntl_hal_dma_link_init(void *elem, void *buff, int size, void *next);
 
 void rtc_cntl_hal_enable_cpu_retention(void *addr);
 
-#define rtc_cntl_hal_disable_cpu_retention()              rtc_cntl_ll_disable_cpu_retention()
+void rtc_cntl_hal_disable_cpu_retention(void *addr);
 
 /*
  * Enable wakeup from ULP coprocessor.

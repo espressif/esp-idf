@@ -29,7 +29,11 @@ static DRAM_ATTR sleep_retention_t s_retention;
 
 #if SOC_PM_SUPPORT_CPU_PD
 
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
 #define CPU_PD_MEM_TYPE_CAPS        (MALLOC_CAP_RETENTION | MALLOC_CAP_DEFAULT)
+#else
+#define CPU_PD_MEM_TYPE_CAPS        (MALLOC_CAP_DMA | MALLOC_CAP_DEFAULT)
+#endif
 
 esp_err_t esp_sleep_cpu_pd_low_init(bool enable)
 {
