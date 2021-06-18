@@ -90,7 +90,7 @@ bool tcpip_adapter_is_netif_up(tcpip_adapter_if_t tcpip_if);
  * @param netif
  * @return see esp_netif_get_netif
  */
-esp_err_t tcpip_adapter_get_netif(tcpip_adapter_if_t tcpip_if, void ** netif);
+esp_err_t tcpip_adapter_get_netif(tcpip_adapter_if_t tcpip_if, struct netif ** netif);
 
 /**
  * @brief Translates to esp_netif_create_ip6_linklocal
