@@ -83,9 +83,9 @@ Multiple ``idf.py`` commands can be combined into one. For example, ``idf.py -p 
 
 For commands that are not known to ``idf.py`` an attempt to execute them as a build system target will be made.
 
-The command ``idf.py`` supports `shell autocompletion <https://click.palletsprojects.com/bashcomplete/>`_ for bash, zsh and fish shells.
+The command ``idf.py`` supports `shell autocompletion <https://click.palletsprojects.com/shell-completion/>`_ for bash, zsh and fish shells.
 
-In order to make `shell autocompletion <https://click.palletsprojects.com/bashcomplete/>`_ supported, please make sure you have at least Python 3.5 and `click <https://click.palletsprojects.com/>`_ 7.1 or newer (:ref:`see also <get-started-get-prerequisites>`).
+In order to make `shell autocompletion <https://click.palletsprojects.com/shell-completion/>`_ supported, please make sure you have at least Python 3.5 and `click <https://click.palletsprojects.com/>`_ 7.1 or newer (:ref:`see also <get-started-get-prerequisites>`).
 
 To enable autocompletion for ``idf.py`` use the ``export`` command (:ref:`see this <get-started-export>`). Autocompletion is initiated by pressing the TAB key. Type "idf.py -" and press the TAB key to autocomplete options. 
 
