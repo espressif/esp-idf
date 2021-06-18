@@ -54,7 +54,7 @@ Please note that the namespaces with the same name in different NVS partitions a
 Security, tampering, and robustness
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-NVS is not directly compatible with the ESP32 flash encryption system. However, data can still be stored in encrypted form if NVS encryption is used together with ESP32 flash encryption. Please refer to :ref:`nvs_encryption` for more details.
+NVS is not directly compatible with the {IDF_TARGET_NAME} flash encryption system. However, data can still be stored in encrypted form if NVS encryption is used together with {IDF_TARGET_NAME} flash encryption. Please refer to :ref:`nvs_encryption` for more details.
 
 If NVS encryption is not used, it is possible for anyone with physical access to the flash chip to alter, erase, or add key-value pairs. With NVS encryption enabled, it is not possible to alter or add a key-value pair and get recognized as a valid pair without knowing corresponding NVS encryption keys. However, there is no tamper-resistance against the erase operation.
 
@@ -109,9 +109,9 @@ Mapping from flash sectors to logical pages does not have any particular order. 
 Structure of a page
 ^^^^^^^^^^^^^^^^^^^
 
-For now, we assume that flash sector size is 4096 bytes and that ESP32 flash encryption hardware operates on 32-byte blocks. It is possible to introduce some settings configurable at compile-time (e.g., via menuconfig) to accommodate flash chips with different sector sizes (although it is not clear if other components in the system, e.g., SPI flash driver and SPI flash cache can support these other sizes).
+For now, we assume that flash sector size is 4096 bytes and that {IDF_TARGET_NAME} flash encryption hardware operates on 32-byte blocks. It is possible to introduce some settings configurable at compile-time (e.g., via menuconfig) to accommodate flash chips with different sector sizes (although it is not clear if other components in the system, e.g., SPI flash driver and SPI flash cache can support these other sizes).
 
-Page consists of three parts: header, entry state bitmap, and entries themselves. To be compatible with ESP32 flash encryption, entry size is 32 bytes. For integer types, entry holds one key-value pair. For strings and blobs, an entry holds part of key-value pair (more on that in the entry structure description).
+Page consists of three parts: header, entry state bitmap, and entries themselves. To be compatible with {IDF_TARGET_NAME} flash encryption, entry size is 32 bytes. For integer types, entry holds one key-value pair. For strings and blobs, an entry holds part of key-value pair (more on that in the entry structure description).
 
 The following diagram illustrates the page structure. Numbers in parentheses indicate the size of each part in bytes. ::
 
@@ -130,7 +130,7 @@ The following diagram illustrates the page structure. Numbers in parentheses ind
     |                       Entry 125 (32)                             |
     +------------------------------------------------------------------+
 
-Page header and entry state bitmap are always written to flash unencrypted. Entries are encrypted if flash encryption feature of ESP32 is used.
+Page header and entry state bitmap are always written to flash unencrypted. Entries are encrypted if flash encryption feature of {IDF_TARGET_NAME} is used.
 
 Page state values are defined in such a way that changing state is possible by writing 0 into some of the bits. Therefore it is not necessary to erase the page to change its state unless that is a change to the *erased* state.
 
@@ -187,7 +187,7 @@ NS
     Namespace index for this entry. For more information on this value, see the section on namespaces implementation.
 
 Type
-    One byte indicating the value data type. See the ``ItemType`` enumeration in ``nvs_types.h`` for possible values.
+    One byte indicating the value data type. See the ``ItemType`` enumeration in :component_file:`nvs_flash/include/nvs_handle.hpp` for possible values.
 
 Span
     Number of entries used by this key-value pair. For integer types, this is equal to 1. For strings and blobs, this depends on value length.
