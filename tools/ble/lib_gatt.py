@@ -18,6 +18,7 @@
 # Creating GATT Application which then becomes available to remote devices.
 
 from __future__ import print_function
+
 import sys
 
 try:
@@ -27,16 +28,9 @@ except ImportError as e:
     if 'linux' not in sys.platform:
         raise e
     print(e)
-    print("Install packages `libgirepository1.0-dev gir1.2-gtk-3.0 libcairo2-dev libdbus-1-dev libdbus-glib-1-dev` for resolving the issue")
-    print("Run `pip install -r $IDF_PATH/tools/ble/requirements.txt` for resolving the issue")
+    print('Install packages `libgirepository1.0-dev gir1.2-gtk-3.0 libcairo2-dev libdbus-1-dev libdbus-glib-1-dev` for resolving the issue')
+    print('Run `pip install -r $IDF_PATH/tools/ble/requirements.txt` for resolving the issue')
     raise
-
-alert_status_char_obj = None
-
-GATT_APP_OBJ = False
-CHAR_READ = False
-CHAR_WRITE = False
-CHAR_SUBSCRIBE = False
 
 DBUS_OM_IFACE = 'org.freedesktop.DBus.ObjectManager'
 DBUS_PROP_IFACE = 'org.freedesktop.DBus.Properties'
@@ -44,6 +38,21 @@ GATT_MANAGER_IFACE = 'org.bluez.GattManager1'
 GATT_SERVICE_IFACE = 'org.bluez.GattService1'
 GATT_CHRC_IFACE = 'org.bluez.GattCharacteristic1'
 GATT_DESC_IFACE = 'org.bluez.GattDescriptor1'
+
+
+SERVICE_UUIDS = {
+    'ALERT_NOTIF_SVC_UUID': '00001811-0000-1000-8000-00805f9b34fb'
+}
+
+CHAR_UUIDS = {
+    'SUPPORT_NEW_ALERT_UUID': '00002A47-0000-1000-8000-00805f9b34fb',
+    'ALERT_NOTIF_UUID': '00002A44-0000-1000-8000-00805f9b34fb',
+    'UNREAD_ALERT_STATUS_UUID': '00002A45-0000-1000-8000-00805f9b34fb'
+}
+
+DESCR_UUIDS = {
+    'CCCD_UUID': '00002902-0000-1000-8000-00805f9b34fb'
+}
 
 
 class InvalidArgsException(dbus.exceptions.DBusException):
@@ -62,22 +71,16 @@ class Application(dbus.service.Object):
     def __init__(self, bus, path):
         self.path = path
         self.services = []
-        srv_obj = AlertNotificationService(bus, '0001')
-        self.add_service(srv_obj)
         dbus.service.Object.__init__(self, bus, self.path)
 
     def __del__(self):
         pass
-
-    def get_path(self):
-        return dbus.ObjectPath(self.path)
 
     def add_service(self, service):
         self.services.append(service)
 
     @dbus.service.method(DBUS_OM_IFACE, out_signature='a{oa{sa{sv}}}')
     def GetManagedObjects(self):
-        global GATT_APP_OBJ
         response = {}
 
         for service in self.services:
@@ -89,11 +92,23 @@ class Application(dbus.service.Object):
                 for desc in descs:
                     response[desc.get_path()] = desc.get_properties()
 
-        GATT_APP_OBJ = True
         return response
+
+    def get_path(self):
+        return dbus.ObjectPath(self.path)
 
     def Release(self):
         pass
+
+
+class AlertNotificationApp(Application):
+    '''
+        Alert Notification Application
+    '''
+    def __init__(self, bus, path):
+        Application.__init__(self, bus, path)
+        self.service = AlertNotificationService(bus, '0001')
+        self.add_service(self.service)
 
 
 class Service(dbus.service.Object):
@@ -190,7 +205,6 @@ class Characteristic(dbus.service.Object):
     def GetAll(self, interface):
         if interface != GATT_CHRC_IFACE:
             raise InvalidArgsException()
-
         return self.get_properties()[GATT_CHRC_IFACE]
 
     @dbus.service.method(GATT_CHRC_IFACE, in_signature='a{sv}', out_signature='ay')
@@ -216,7 +230,8 @@ class Characteristic(dbus.service.Object):
     @dbus.service.signal(DBUS_PROP_IFACE,
                          signature='sa{sv}as')
     def PropertiesChanged(self, interface, changed, invalidated):
-        print("\nProperties Changed")
+        pass
+        # print('\nProperties Changed')
 
 
 class Descriptor(dbus.service.Object):
@@ -249,7 +264,6 @@ class Descriptor(dbus.service.Object):
     def GetAll(self, interface):
         if interface != GATT_DESC_IFACE:
             raise InvalidArgsException()
-
         return self.get_properties()[GATT_DESC_IFACE]
 
     @dbus.service.method(GATT_DESC_IFACE, in_signature='a{sv}', out_signature='ay')
@@ -262,151 +276,155 @@ class Descriptor(dbus.service.Object):
         print('Default WriteValue called, returning error')
         raise NotSupportedException()
 
+    @dbus.service.signal(DBUS_PROP_IFACE,
+                         signature='sa{sv}as')
+    def PropertiesChanged(self, interface, changed, invalidated):
+        pass
+        # print('\nProperties Changed')
+
 
 class AlertNotificationService(Service):
-    TEST_SVC_UUID = '00001811-0000-1000-8000-00805f9b34fb'
-
     def __init__(self, bus, index):
-        global alert_status_char_obj
-        Service.__init__(self, bus, index, self.TEST_SVC_UUID, primary=True)
+        Service.__init__(self, bus, index, SERVICE_UUIDS['ALERT_NOTIF_SVC_UUID'], primary=True)
         self.add_characteristic(SupportedNewAlertCategoryCharacteristic(bus, '0001', self))
         self.add_characteristic(AlertNotificationControlPointCharacteristic(bus, '0002', self))
-        alert_status_char_obj = UnreadAlertStatusCharacteristic(bus, '0003', self)
-        self.add_characteristic(alert_status_char_obj)
+        self.add_characteristic(UnreadAlertStatusCharacteristic(bus, '0003', self))
+
+    def get_char_status(self, uuid, status):
+        for char in self.characteristics:
+            if char.uuid == uuid:
+                if status in char.status:
+                    return True
+        return False
 
 
 class SupportedNewAlertCategoryCharacteristic(Characteristic):
-    SUPPORT_NEW_ALERT_UUID = '00002A47-0000-1000-8000-00805f9b34fb'
-
     def __init__(self, bus, index, service):
         Characteristic.__init__(
             self, bus, index,
-            self.SUPPORT_NEW_ALERT_UUID,
+            CHAR_UUIDS['SUPPORT_NEW_ALERT_UUID'],
             ['read'],
             service)
-
         self.value = [dbus.Byte(2)]
+        self.status = []
 
     def ReadValue(self, options):
-        global CHAR_READ
-        CHAR_READ = True
         val_list = []
         for val in self.value:
             val_list.append(dbus.Byte(val))
-        print("Read Request received\n", "\tSupportedNewAlertCategoryCharacteristic")
-        print("\tValue:", "\t", val_list)
+        print('Read Request received\n', '\tSupportedNewAlertCategoryCharacteristic')
+        print('\tValue:', '\t', val_list)
+        self.status.append('read')
         return val_list
 
 
 class AlertNotificationControlPointCharacteristic(Characteristic):
-    ALERT_NOTIF_UUID = '00002A44-0000-1000-8000-00805f9b34fb'
-
     def __init__(self, bus, index, service):
         Characteristic.__init__(
             self, bus, index,
-            self.ALERT_NOTIF_UUID,
-            ['read','write'],
+            CHAR_UUIDS['ALERT_NOTIF_UUID'],
+            ['read', 'write'],
             service)
-
         self.value = [dbus.Byte(0)]
+        self.status = []
 
     def ReadValue(self, options):
         val_list = []
         for val in self.value:
             val_list.append(dbus.Byte(val))
-        print("Read Request received\n", "\tAlertNotificationControlPointCharacteristic")
-        print("\tValue:", "\t", val_list)
+        print('Read Request received\n', '\tAlertNotificationControlPointCharacteristic')
+        print('\tValue:', '\t', val_list)
+        self.status.append('read')
         return val_list
 
     def WriteValue(self, value, options):
-        global CHAR_WRITE
-        CHAR_WRITE = True
-        print("Write Request received\n", "\tAlertNotificationControlPointCharacteristic")
-        print("\tCurrent value:", "\t", self.value)
+        print('Write Request received\n', '\tAlertNotificationControlPointCharacteristic')
+        print('\tCurrent value:', '\t', self.value)
         val_list = []
         for val in value:
             val_list.append(val)
         self.value = val_list
+        self.PropertiesChanged(GATT_CHRC_IFACE, {'Value': self.value}, [])
         # Check if new value is written
-        print("\tNew value:", "\t", self.value)
+        print('\tNew value:', '\t', self.value)
         if not self.value == value:
-            print("Failed: Write Request\n\tNew value not written\tCurrent value:", self.value)
+            print('Failed: Write Request\n\tNew value not written\tCurrent value:', self.value)
+        self.status.append('write')
 
 
 class UnreadAlertStatusCharacteristic(Characteristic):
-    UNREAD_ALERT_STATUS_UUID = '00002A45-0000-1000-8000-00805f9b34fb'
-
     def __init__(self, bus, index, service):
         Characteristic.__init__(
             self, bus, index,
-            self.UNREAD_ALERT_STATUS_UUID,
+            CHAR_UUIDS['UNREAD_ALERT_STATUS_UUID'],
             ['read', 'write', 'notify'],
             service)
         self.value = [dbus.Byte(0)]
         self.cccd_obj = ClientCharacteristicConfigurationDescriptor(bus, '0001', self)
         self.add_descriptor(self.cccd_obj)
         self.notifying = False
+        self.status = []
 
     def StartNotify(self):
-        global CHAR_SUBSCRIBE
-        CHAR_SUBSCRIBE = True
+        try:
+            if self.notifying:
+                print('\nAlready notifying, nothing to do')
+                return
+            print('Notify Started')
+            self.notifying = True
+            self.ReadValue()
+            self.WriteValue([dbus.Byte(1), dbus.Byte(0)])
+            self.status.append('notify')
 
-        if self.notifying:
-            print('\nAlready notifying, nothing to do')
-            return
-        self.notifying = True
-        print("\nNotify Started")
-        self.cccd_obj.WriteValue([dbus.Byte(1), dbus.Byte(0)])
-        self.cccd_obj.ReadValue()
+        except Exception as e:
+            print(e)
 
     def StopNotify(self):
         if not self.notifying:
             print('\nNot notifying, nothing to do')
             return
         self.notifying = False
-        print("\nNotify Stopped")
+        print('\nNotify Stopped')
 
-    def ReadValue(self, options):
-        print("Read Request received\n", "\tUnreadAlertStatusCharacteristic")
+    def ReadValue(self, options=None):
         val_list = []
         for val in self.value:
             val_list.append(dbus.Byte(val))
-        print("\tValue:", "\t", val_list)
+        self.status.append('read')
+        print('\tValue:', '\t', val_list)
         return val_list
 
-    def WriteValue(self, value, options):
-        print("Write Request received\n", "\tUnreadAlertStatusCharacteristic")
+    def WriteValue(self, value, options=None):
         val_list = []
         for val in value:
             val_list.append(val)
         self.value = val_list
+        self.PropertiesChanged(GATT_CHRC_IFACE, {'Value': self.value}, [])
         # Check if new value is written
-        print("\tNew value:", "\t", self.value)
         if not self.value == value:
-            print("Failed: Write Request\n\tNew value not written\tCurrent value:", self.value)
+            print('Failed: Write Request\n\tNew value not written\tCurrent value:', self.value)
+        print('New value:', '\t', self.value)
+        self.status.append('write')
 
 
 class ClientCharacteristicConfigurationDescriptor(Descriptor):
-    CCCD_UUID = '00002902-0000-1000-8000-00805f9b34fb'
-
     def __init__(self, bus, index, characteristic):
-        self.value = [dbus.Byte(0)]
+        self.value = [dbus.Byte(1)]
         Descriptor.__init__(
             self, bus, index,
-            self.CCCD_UUID,
+            DESCR_UUIDS['CCCD_UUID'],
             ['read', 'write'],
             characteristic)
 
-    def ReadValue(self):
-        print("\tValue on read:", "\t", self.value)
+    def ReadValue(self, options=None):
         return self.value
 
-    def WriteValue(self, value):
+    def WriteValue(self, value, options=None):
         val_list = []
         for val in value:
             val_list.append(val)
         self.value = val_list
+        self.PropertiesChanged(GATT_DESC_IFACE, {'Value': self.value}, [])
         # Check if new value is written
-        print("New value on write:", "\t", self.value)
         if not self.value == value:
-            print("Failed: Write Request\n\tNew value not written\tCurrent value:", self.value)
+            print('Failed: Write Request\n\tNew value not written\tCurrent value:', self.value)
