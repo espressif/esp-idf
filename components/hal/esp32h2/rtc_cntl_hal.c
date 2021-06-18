@@ -14,10 +14,10 @@
 
 // The HAL layer for RTC CNTL (common part)
 
-#include "hal/rtc_hal.h"
 #include "soc/soc_caps.h"
-#include "esp32h2/rom/lldesc.h"
-#include "esp_attr.h"
+#include "soc/lldesc.h"
+#include "hal/rtc_hal.h"
+#include "hal/assert.h"
 
 #define RTC_CNTL_HAL_LINK_BUF_SIZE_MIN  (SOC_RTC_CNTL_CPU_PD_DMA_BLOCK_SIZE) /* The minimum size of dma link buffer */
 
@@ -27,9 +27,9 @@ typedef struct rtc_cntl_link_buf_conf {
 
 void * rtc_cntl_hal_dma_link_init(void *elem, void *buff, int size, void *next)
 {
-    assert(elem != NULL);
-    assert(buff != NULL);
-    assert(size >= RTC_CNTL_HAL_LINK_BUF_SIZE_MIN);
+    HAL_ASSERT(elem != NULL);
+    HAL_ASSERT(buff != NULL);
+    HAL_ASSERT(size >= RTC_CNTL_HAL_LINK_BUF_SIZE_MIN);
 
     lldesc_t *plink = (lldesc_t *)elem;
 

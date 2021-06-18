@@ -170,7 +170,7 @@ SECTIONS
 
 }
 
-
+/* ESP32H2-TODO: IDF-3466 */
 /**
  *  Appendix: Memory Usage of ROM bootloader
  *

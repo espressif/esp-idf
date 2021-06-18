@@ -16,6 +16,7 @@
 
 #include "soc/sensitive_reg.h"
 #include "soc/cache_memory.h"
+#include "hal/assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -96,7 +97,7 @@ static inline uint32_t memprot_ll_iram0_get_intr_source_num(void)
 static inline void memprot_ll_set_iram0_split_line(const void *line_addr, uint32_t sensitive_reg)
 {
     uint32_t addr = (uint32_t)line_addr;
-    assert( addr >= IRAM0_SRAM_LEVEL_1_LOW && addr <= IRAM0_SRAM_LEVEL_3_HIGH );
+    HAL_ASSERT( addr >= IRAM0_SRAM_LEVEL_1_LOW && addr <= IRAM0_SRAM_LEVEL_3_HIGH );
 
     uint32_t category[3] = {0};
     if (addr <= IRAM0_SRAM_LEVEL_1_HIGH) {
@@ -353,7 +354,7 @@ static inline uint32_t memprot_ll_dram0_get_intr_source_num(void)
 static inline void memprot_ll_set_dram0_split_line(const void *line_addr, uint32_t sensitive_reg)
 {
     uint32_t addr = (uint32_t)line_addr;
-    assert( addr >= DRAM0_SRAM_LEVEL_1_LOW && addr <= DRAM0_SRAM_LEVEL_3_HIGH );
+    HAL_ASSERT( addr >= DRAM0_SRAM_LEVEL_1_LOW && addr <= DRAM0_SRAM_LEVEL_3_HIGH );
 
     uint32_t category[3] = {0};
     if (addr <= DRAM0_SRAM_LEVEL_1_HIGH) {

@@ -22,8 +22,9 @@ extern "C" {
 #endif
 
 #include <stdlib.h>
-#include "hal/timer_types.h"
 #include "soc/timer_periph.h"
+#include "hal/timer_types.h"
+#include "hal/assert.h"
 
 _Static_assert(TIMER_INTR_T0 == TIMG_T0_INT_CLR, "Add mapping to LL interrupt handling, since it's no longer naturally compatible with the timer_intr_t");
 _Static_assert(TIMER_INTR_WDT == TIMG_WDT_INT_CLR, "Add mapping to LL interrupt handling, since it's no longer naturally compatible with the timer_intr_t");
@@ -47,7 +48,7 @@ typedef struct {
  */
 static inline void timer_ll_set_divider(timg_dev_t *hw, timer_idx_t timer_num, uint32_t divider)
 {
-    assert(divider >= 2 && divider <= 65536);
+    HAL_ASSERT(divider >= 2 && divider <= 65536);
     if (divider >= 65536) {
         divider = 0;
     }
