@@ -27,6 +27,7 @@ def test_examples_protocol_asio_udp_server(env, extra_data):
     # 2. get the server IP address
     data = dut1.expect(re.compile(r" IPv4 address: ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)"), timeout=30)
     # 3. create tcp client and connect to server
+    dut1.expect('ASIO engine is up and running', timeout=1)
     cli = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     cli.settimeout(30)
     cli.connect((data[0], 2222))
