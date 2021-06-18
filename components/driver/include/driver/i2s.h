@@ -301,6 +301,19 @@ float i2s_get_clk(i2s_port_t i2s_num);
  *        and set ADC parameters.
  * @note  In this mode, the ADC maximum sampling rate is 150KHz. Set the sampling rate through ``i2s_config_t``.
  * @param adc_unit    SAR ADC unit index
+ * @param pattern_count count of ADC channels to sample
+ * @param patterns pointer to an array of `pattern_count` channel patterns
+ * @return
+ *     - ESP_OK              Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t i2s_set_adc_mode_multi(adc_unit_t adc_unit, size_t pattern_count, adc_digi_pattern_table_t *patterns);
+
+/**
+ * @brief Set built-in ADC mode for I2S DMA, this function will initialize ADC pad,
+ *        and set ADC parameters, for a single channel.
+ * @sa  i2s_set_adc_mode_multi
+ * @param adc_unit    SAR ADC unit index
  * @param adc_channel ADC channel index
  * @return
  *     - ESP_OK              Success
