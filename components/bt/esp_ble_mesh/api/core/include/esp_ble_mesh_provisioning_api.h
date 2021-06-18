@@ -324,6 +324,11 @@ esp_err_t esp_ble_mesh_provisioner_set_prov_data_info(esp_ble_mesh_prov_data_inf
 /**
  * @brief         This function is called by Provisioner to set static oob value used for provisioning.
  *
+ * @note          The Bluetooth SIG recommends that mesh implementations enforce a randomly selected
+ *                AuthValue using all of the available bits, where permitted by the implementation.
+ *                A large entropy helps ensure that a brute-force of the AuthValue, even a static
+ *                AuthValue, cannot normally be completed in a reasonable time (CVE-2020-26557).
+ *
  * @param[in]     value:  Pointer to the static oob value.
  * @param[in]     length: Length of the static oob value.
  *
