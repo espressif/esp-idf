@@ -2,20 +2,15 @@
 
 * [中文版](./README_CN.md)
 
-ESP-IDF is the official development framework for the **ESP32** and **ESP32-S** Series SoCs provided for Windows, Linux and macOS.
+ESP-IDF is the development framework for Espressif SoCs (released after 2016<sup>[1](#fn1)</sup>) provided for Windows, Linux and macOS.
 
 # Developing With ESP-IDF
 
 ## Setting Up ESP-IDF
 
-See setup guides for detailed instructions to set up the ESP-IDF:
+See https://idf.espressif.com/ for links to detailed instructions on how to set up the ESP-IDF depending on chip you use.
 
-| Chip | Getting Started Guides for ESP-IDF |
-|:----:|:----|
-| <img src="docs/_static/chip-esp32.svg" height="85" alt="ESP32"> |  <ul><li>[stable](https://docs.espressif.com/projects/esp-idf/en/stable/get-started/) version</li><li>[latest (master branch)](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/) version</li></ul> |
-| <img src="docs/_static/chip-esp32-s2.svg" height="100" alt="ESP32-S2"> | <ul><li>[latest (master branch)](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/get-started/) version</li></ul> |
-
-**Note:** Each ESP-IDF release has its own documentation. Please see Section [Versions](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/versions.html) how to find documentation and how to checkout specific release of ESP-IDF.
+**Note:** Each SoC series and each ESP-IDF release has its own documentation. Please see Section [Versions](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/versions.html) on how to find documentation and how to checkout specific release of ESP-IDF.
 
 ### Non-GitHub forks
 
@@ -70,7 +65,7 @@ You don't need to run `idf.py build` before running `idf.py flash`, `idf.py flas
 
 ## Viewing Serial Output
 
-The `idf.py monitor` target uses the [idf_monitor tool](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/idf-monitor.html) to display serial output from ESP32 or ESP32-S Series SoCs. idf_monitor also has a range of features to decode crash output and interact with the device. [Check the documentation page for details](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/idf-monitor.html).
+The `idf.py monitor` target uses the [idf_monitor tool](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/idf-monitor.html) to display serial output from Espressif SoCs. idf_monitor also has a range of features to decode crash output and interact with the device. [Check the documentation page for details](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/idf-monitor.html).
 
 Exit the monitor by typing Ctrl-].
 
@@ -106,3 +101,6 @@ This can be combined with other targets, ie `idf.py -p PORT erase_flash flash` w
 * If you're interested in contributing to ESP-IDF, please check the [Contributions Guide](https://docs.espressif.com/projects/esp-idf/en/latest/contribute/index.html).
 
 
+________
+
+<a name="fn1">1</a>: ESP8266 and ESP8285 are not supported in ESP-IDF. See [RTOS SDK](https://github.com/espressif/ESP8266_RTOS_SDK) instead.
