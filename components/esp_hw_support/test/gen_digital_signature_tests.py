@@ -8,11 +8,12 @@ import struct
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric.rsa import _modinv as modinv  # type: ignore
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.utils import int_to_bytes
 
 
-def number_as_bignum_words(number):
+def number_as_bignum_words(number):  # type: (int) -> str
     """
     Given a number, format result as a C array of words
     (little-endian, same as ESP32 RSA peripheral or mbedTLS)
@@ -24,17 +25,17 @@ def number_as_bignum_words(number):
     return '{ ' + ', '.join(result) + ' }'
 
 
-def number_as_bytes(number, pad_bits=None):
+def number_as_bytes(number, pad_bits=None):  # type: (int, int) -> bytes
     """
     Given a number, format as a little endian array of bytes
     """
-    result = int_to_bytes(number)[::-1]
+    result = int_to_bytes(number)[::-1]  # type: bytes
     while pad_bits is not None and len(result) < (pad_bits // 8):
         result += b'\x00'
     return result
 
 
-def bytes_as_char_array(b):
+def bytes_as_char_array(b):  # type: (bytes) -> str
     """
     Given a sequence of bytes, format as a char array
     """
@@ -96,7 +97,7 @@ with open('digital_signature_test_cases.h', 'w') as f:
 
         rr = 1 << (key_size * 2)
         rinv = rr % pub_numbers.n
-        mprime = - rsa._modinv(M, 1 << 32)
+        mprime = - modinv(M, 1 << 32)
         mprime &= 0xFFFFFFFF
         length = key_size // 32 - 1
 
