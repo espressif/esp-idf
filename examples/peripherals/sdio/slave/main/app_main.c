@@ -186,9 +186,8 @@ void app_main(void)
 
     sdio_slave_write_reg(0, JOB_IDLE);
 
-    sdio_slave_buf_handle_t handle;
     for(int i = 0; i < BUFFER_NUM; i++) {
-        handle = sdio_slave_recv_register_buf(buffer[i]);
+        sdio_slave_buf_handle_t handle = sdio_slave_recv_register_buf(buffer[i]);
         assert(handle != NULL);
 
         ret = sdio_slave_recv_load_buf(handle);
@@ -211,35 +210,72 @@ void app_main(void)
     ESP_LOGI(TAG, EV_STR("slave ready"));
 
     for(;;) {
-        //receive data and send back to host.
-        size_t length;
-        uint8_t *ptr;
+        const TickType_t non_blocking = 0, blocking = portMAX_DELAY;
+        sdio_slave_buf_handle_t recv_queue[BUFFER_NUM];
+        int packet_size = 0;
 
-        const TickType_t non_blocking = 0;
-        ret = sdio_slave_recv(&handle, &ptr, &length, non_blocking);
-        if (ret == ESP_OK) {
-            ESP_LOGI(TAG, "handle: %p, recv len: %d, data:", handle, length);
-            ESP_LOG_BUFFER_HEXDUMP(TAG, ptr, length, ESP_LOG_INFO);
-            /* If buffer is no longer used, call sdio_slave_recv_load_buf to return it here.  Since we wants to show how
-             * to share large buffers between drivers here (we share between sending and receiving), keep the buffer
-             * until the buffer is sent by sending driver.
-             */
+        sdio_slave_buf_handle_t handle;
+        ret = sdio_slave_recv_packet(&handle, non_blocking);
+        if (ret != ESP_ERR_TIMEOUT) {
+            recv_queue[packet_size++] = handle;
 
-            //send the received buffer to host, with the handle as the argument
-            ret = sdio_slave_send_queue(ptr, length, handle, non_blocking);
-            if (ret == ESP_ERR_TIMEOUT) {
-                // send failed, direct return the buffer to rx
-                ESP_LOGE(TAG, "send_queue full, discard received.");
-                ret = sdio_slave_recv_load_buf(handle);
+            //Receive following buffers in the same packet in blocking mode.
+            //You can also skip this step and handle the data buffer by buffer, if the data is a stream or you don't care about the packet boundary.
+            while (ret == ESP_ERR_NOT_FINISHED) {
+                //The return value must be ESP_OK or ESP_ERR_NOT_FINISHED.
+                ret = sdio_slave_recv_packet(&handle, blocking);
+                recv_queue[packet_size++] = handle;
             }
             ESP_ERROR_CHECK(ret);
+
+            int packet_len = 0;
+            for (int i = 0; i < packet_size; i++) {
+                size_t buf_len;
+                sdio_slave_recv_get_buf(recv_queue[i], &buf_len);
+                packet_len += buf_len;
+            }
+
+            ESP_LOGI(TAG, "Packet received, len: %d", packet_len);
+
+            for (int i = 0; i < packet_size; i++) {
+                handle = recv_queue[i];
+                //handle data in the buffer, here we print them and send the same buffer back to the host
+                //receive data and send back to host.
+                size_t length;
+                uint8_t *ptr = sdio_slave_recv_get_buf(handle, &length);
+
+                ESP_LOGI(TAG, "Buffer %d, len: %d", i, length);
+                ESP_LOG_BUFFER_HEXDUMP(TAG, ptr, length, ESP_LOG_INFO);
+
+                /* If buffer is no longer used, we can call sdio_slave_recv_load_buf to use it to receive data again.
+                * But here we wants to show how to share large buffers between drivers here (we share the buffer
+                * between sending and receiving), the buffer is kept until the buffer is sent by sending driver.
+                */
+
+                //the recv_buf_handle is used as the argument, so that we can easily load the same buffer to recv driver,
+                // after it's sent
+
+                void* send_args = handle;
+                ret = sdio_slave_send_queue(ptr, length, send_args, non_blocking);
+                if (ret == ESP_ERR_TIMEOUT) {
+                    // send failed, direct return the buffer to rx
+                    ESP_LOGE(TAG, "send_queue full, discard received.");
+                    ret = sdio_slave_recv_load_buf(handle);
+                }
+                ESP_ERROR_CHECK(ret);
+            }
         }
 
         // if there's finished sending desc, return the buffer to receiving driver
         for(;;){
-            sdio_slave_buf_handle_t handle;
-            ret = sdio_slave_send_get_finished(&handle, 0);
-            if (ret == ESP_ERR_TIMEOUT) break;
+            void* send_args = NULL;
+            ret = sdio_slave_send_get_finished(&send_args, 0);
+
+            //extract the buffer handle from the sending args
+            sdio_slave_buf_handle_t handle = (sdio_slave_buf_handle_t)send_args;
+            if (ret == ESP_ERR_TIMEOUT) {
+                break;
+            }
             ESP_ERROR_CHECK(ret);
             ret = sdio_slave_recv_load_buf(handle);
             ESP_ERROR_CHECK(ret);
