@@ -282,6 +282,7 @@ static int base_close(esp_transport_handle_t t)
     transport_esp_tls_t *ssl = ssl_get_context_data(t);
     if (ssl && ssl->ssl_initialized) {
         ret = esp_tls_conn_destroy(ssl->tls);
+        ssl->tls = NULL;
         ssl->conn_state = TRANS_SSL_INIT;
         ssl->ssl_initialized = false;
         ssl->sockfd = INVALID_SOCKET;
