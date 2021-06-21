@@ -149,7 +149,7 @@ class PanicTestMixin(object):
         Wrapper to write to gdb with a longer timeout, as test runner
         host can be slow sometimes
         """
-        return self.gdb.write(command, timeout_sec=3)
+        return self.gdb.write(command, timeout_sec=10)
 
     def start_gdb(self):
         """
