@@ -9,13 +9,13 @@
     ADC <adc>
     :SOC_DAC_SUPPORTED: DAC <dac>
     通用定时器 <timer>
-    GPIO (包括 RTC 低功耗 I/O) <gpio>
-    :SOC_DEDICATED_GPIO_SUPPORTED: 专用 GPIO <dedic_gpio>
+    GPIO (including RTC low power I/O) <gpio>
+    :SOC_DEDICATED_GPIO_SUPPORTED: Dedicated GPIO <dedic_gpio>
     :SOC_HMAC_SUPPORTED: HMAC <hmac>
     :SOC_DIG_SIGN_SUPPORTED: Digital Signature <ds>
     I2C <i2c>
     I2S <i2s>
-    LED Control <ledc>
+    LED 控制器 <ledc>
     :SOC_MCPWM_SUPPORTED: MCPWM <mcpwm>
     :SOC_PCNT_SUPPORTED: Pulse Counter <pcnt>
     Remote Control <rmt>
@@ -27,9 +27,9 @@
     SPI Master <spi_master>
     SPI Slave <spi_slave>
     :esp32: Secure Element <secure_element>
-    :esp32s2: SPI Slave 半双工 (half duplex) <spi_slave_hd>
+    :esp32s2: SPI Slave Half Duplex <spi_slave_hd>
     :esp32s2: Temp sensor <temp_sensor>
-    :SOC_TOUCH_SENSOR_NUM: Touch Sensor <touch_pad>
+    :SOC_TOUCH_SENSOR_NUM: 触摸传感器 <touch_pad>
     :esp32s2: Touch Element <touch_element>
     TWAI <twai>
     UART <uart>

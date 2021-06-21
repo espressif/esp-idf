@@ -2,6 +2,8 @@ Fatal Errors
 ============
 :link_to_translation:`zh_CN:[中文]`
 
+.. _Overview:
+
 Overview
 --------
 
@@ -207,6 +209,8 @@ If :doc:`IDF Monitor <tools/idf-monitor>` is used, Program Counter values will b
 
 To find the location where a fatal error has happened, look at the lines which follow the "Backtrace" line. Fatal error location is the top line, and subsequent lines show the call stack.
 
+.. _GDB-Stub:
+
 GDB Stub
 --------
 
@@ -238,6 +242,8 @@ If :doc:`IDF Monitor <tools/idf-monitor>` is used, GDB is started automatically 
 
 GDB prompt can be used to inspect CPU registers, local and static variables, and arbitrary locations in memory. It is not possible to set breakpoints, change PC, or continue execution. To reset the program, exit GDB and perform external reset: Ctrl-T Ctrl-R in IDF Monitor, or using external reset button on the development board.
 
+.. _Guru-Meditation-Errors:
+
 Guru Meditation Errors
 ----------------------
 
@@ -253,8 +259,7 @@ This section explains the meaning of different error causes, printed in parens a
 |ILLEGAL_INSTR_MSG|
 ^^^^^^^^^^^^^^^^^^^
 
-This CPU exception indicates that the instruction which was executed was not a valid instruction.
-Most common reasons for this error include:
+This CPU exception indicates that the instruction which was executed was not a valid instruction. Most common reasons for this error include:
 
 - FreeRTOS task function has returned. In FreeRTOS, if task function needs to terminate, it should call :cpp:func:`vTaskDelete` function and delete itself, instead of returning.
 
