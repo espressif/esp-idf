@@ -22,6 +22,7 @@
 #include "esp_openthread_netif_glue.h"
 #include "esp_openthread_netif_glue_priv.h"
 #include "esp_openthread_radio_uart.h"
+#include "esp_openthread_task_queue.h"
 #include "esp_openthread_types.h"
 #include "esp_openthread_uart.h"
 #include "common/code_utils.hpp"
@@ -53,6 +54,7 @@ esp_err_t esp_openthread_platform_init(const esp_openthread_platform_config_t *c
     if (config->host_config.host_connection_mode == HOST_CONNECTION_MODE_UART) {
         ESP_GOTO_ON_ERROR(esp_openthread_uart_init(config), exit, OT_PLAT_LOG_TAG, "esp_openthread_uart_init failed");
     }
+    ESP_GOTO_ON_ERROR(esp_openthread_task_queue_init(), exit, OT_PLAT_LOG_TAG, "esp_openthread_task_queue_init failed");
     ESP_GOTO_ON_ERROR(esp_openthread_radio_init(config), exit, OT_PLAT_LOG_TAG, "esp_openthread_radio_init failed");
 
 exit:
@@ -73,6 +75,7 @@ esp_err_t esp_openthread_platform_deinit(void)
     ESP_RETURN_ON_FALSE(s_openthread_platform_initialized, ESP_ERR_INVALID_STATE, OT_PLAT_LOG_TAG,
                         "OpenThread platform not initialized");
 
+    esp_openthread_task_queue_deinit();
     esp_openthread_radio_deinit();
     if (s_platform_config.host_config.host_connection_mode == HOST_CONNECTION_MODE_UART) {
         esp_openthread_uart_deinit();
@@ -90,6 +93,7 @@ void esp_openthread_platform_update(esp_openthread_mainloop_context_t *mainloop)
     }
     esp_openthread_radio_update(mainloop);
     esp_openthread_netif_glue_update(mainloop);
+    esp_openthread_task_queue_update(mainloop);
 }
 
 esp_err_t esp_openthread_platform_process(otInstance *instance, const esp_openthread_mainloop_context_t *mainloop)
@@ -99,5 +103,6 @@ esp_err_t esp_openthread_platform_process(otInstance *instance, const esp_openth
     }
     esp_openthread_radio_process(instance, mainloop);
     esp_openthread_alarm_process(instance);
+    esp_openthread_task_queue_process(instance, mainloop);
     return esp_openthread_netif_glue_process(instance, mainloop);
 }

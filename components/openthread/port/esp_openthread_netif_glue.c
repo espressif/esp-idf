@@ -51,6 +51,7 @@ static esp_openthread_netif_glue_t s_openthread_netif_glue = {
 ESP_EVENT_DEFINE_BASE(OPENTHREAD_EVENT);
 
 static QueueHandle_t s_packet_queue;
+static esp_netif_t *s_openthread_netif;
 
 #define NETIF_OUTPUT_SIGNAL 1
 
@@ -265,6 +266,7 @@ static esp_err_t openthread_netif_post_attach(esp_netif_t *esp_netif, void *args
 
     otLogInfoPlat("OpenThread attached to netif");
     esp_err_t error = register_openthread_event_handlers(esp_netif);
+    s_openthread_netif = esp_netif;
     if (error == ESP_OK) {
         error = esp_event_post(OPENTHREAD_EVENT, OPENTHREAD_EVENT_START, NULL, 0, 0);
     }
@@ -323,6 +325,7 @@ void esp_openthread_netif_glue_deinit(void)
     if (esp_event_post(OPENTHREAD_EVENT, OPENTHREAD_EVENT_STOP, NULL, 0, 0) != ESP_OK) {
         otLogCritPlat("Failed to stop OpenThread netif");
     }
+    s_openthread_netif = NULL;
     unregister_openthread_event_handlers();
 }
 
@@ -342,4 +345,9 @@ esp_err_t esp_openthread_netif_glue_process(otInstance *instance, const esp_open
         return process_thread_transmit(instance);
     }
     return ESP_OK;
+}
+
+esp_netif_t *esp_openthread_get_netif(void)
+{
+    return s_openthread_netif;
 }

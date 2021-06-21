@@ -58,6 +58,13 @@ menu "OpenThread"
             Select this option to enable Joiner in OpenThread. This allows a device to join the Thread network with a
             pre-shared key using the Thread commissioning protocol.
 
+    config OPENTHREAD_BORDER_ROUTER
+        bool "Enable Border Router"
+        depends on OPENTHREAD_ENABLED
+        default n
+        help
+            Select this option to enable border router features in OpenThread.
+
     config OPENTHREAD_PARTITION_NAME
         string "The partition for OpenThread to store its network data"
         depends on OPENTHREAD_ENABLED
@@ -71,5 +78,12 @@ menu "OpenThread"
         default 10
         help
             The size of the packet queue for OpenThread lwIP network interface.
+
+    config OPENTHREAD_TASK_QUEUE_SIZE
+        int "The size of the OpenThread task queue"
+        depends on OPENTHREAD_ENABLED
+        default 10
+        help
+            The size of the OpenThread task queue.
 
 endmenu
