@@ -5,7 +5,7 @@ target remote 127.0.0.1:3333
 mon reset halt
 # Run to a specific point in ROM code,
 #  where most of initialization is complete.
-thb *0x40007901
+thb *0x40007d54
 c
 # Load the application into RAM
 load
