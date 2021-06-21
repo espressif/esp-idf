@@ -109,6 +109,24 @@ check_public_headers:
   script:
     - python tools/ci/check_public_headers.py --jobs 4 --prefix xtensa-esp32-elf-
 
+check_esp_err_to_name:
+  extends:
+    - .pre_check_base_template
+    - .rules:build
+  tags:
+    - build
+  artifacts:
+    when: on_failure
+    paths:
+      - components/esp_common/esp_err_to_name.c
+    expire_in: 1 week
+  script:
+    - cd ${IDF_PATH}/tools/
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 2.7.15 ./gen_esp_err_to_name.py
+    - git diff --exit-code -- ../components/esp_common/src/esp_err_to_name.c || { echo 'Differences found. Please run gen_esp_err_to_name.py and commit the changes.'; exit 1; }
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.4.8 ./gen_esp_err_to_name.py
+    - git diff --exit-code -- ../components/esp_common/src/esp_err_to_name.c || { echo 'Differences found between running under Python 2 and 3.'; exit 1; }
+
 scan_tests:
   extends:
     - .pre_check_base_template
