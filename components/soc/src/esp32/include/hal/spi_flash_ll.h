@@ -388,6 +388,12 @@ static inline void spi_flash_ll_set_dummy(spi_dev_t *dev, uint32_t dummy_n)
     dev->user1.usr_dummy_cyclelen = dummy_n - 1;
 }
 
+static inline void spi_flash_ll_set_cs_setup(spi_dev_t *dev, uint32_t cs_setup_time)
+{
+    dev->user.cs_setup = (cs_setup_time > 0 ? 1 : 0);
+    dev->ctrl2.setup_time = cs_setup_time - 1;
+}
+
 #ifdef __cplusplus
 }
 #endif
