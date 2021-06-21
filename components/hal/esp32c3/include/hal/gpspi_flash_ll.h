@@ -148,10 +148,19 @@ static inline void gpspi_flash_ll_set_buffer_data(spi_dev_t *dev, const void *bu
  */
 static inline void gpspi_flash_ll_user_start(spi_dev_t *dev)
 {
-    dev->ctrl.hold_pol = 1;
     dev->cmd.update = 1;
     while (dev->cmd.update);
     dev->cmd.usr = 1;
+}
+
+/**
+ * Set HD pin high when flash work at spi mode.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ */
+static inline void gpspi_flash_ll_set_hold_pol(spi_dev_t *dev, uint32_t pol_val)
+{
+    dev->ctrl.hold_pol = pol_val;
 }
 
 /**

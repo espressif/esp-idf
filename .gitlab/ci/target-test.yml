@@ -699,7 +699,7 @@ UT_C3_FLASH_SUSPEND:
 
 UT_S3:
   extends: .unit_test_esp32s3_template
-  parallel: 26
+  parallel: 27
   tags:
     - ESP32S3_IDF
     - UT_T1_1
@@ -709,6 +709,13 @@ UT_S3_SPI_DUAL:
   tags:
     - ESP32S3_IDF
     - Example_SPI_Multi_device
+
+UT_S3_FLASH:
+  extends: .unit_test_esp32s3_template
+  parallel: 2
+  tags:
+    - ESP32S3_IDF
+    - UT_T1_ESP_FLASH
 
 .integration_test_template:
   extends:

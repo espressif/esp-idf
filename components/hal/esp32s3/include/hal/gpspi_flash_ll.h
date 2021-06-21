@@ -85,7 +85,7 @@ static inline void gpspi_flash_ll_reset(spi_dev_t *dev)
  */
 static inline bool gpspi_flash_ll_cmd_is_done(const spi_dev_t *dev)
 {
-    return (dev->cmd.val == 0);
+    return (dev->cmd.usr == 0);
 }
 
 /**
@@ -156,6 +156,16 @@ static inline void gpspi_flash_ll_user_start(spi_dev_t *dev)
     dev->cmd.update = 1;
     while (dev->cmd.update);
     dev->cmd.usr = 1;
+}
+
+/**
+ * Set HD pin high when flash work at spi mode.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ */
+static inline void gpspi_flash_ll_set_hold_pol(spi_dev_t *dev, uint32_t pol_val)
+{
+    dev->ctrl.hold_pol = pol_val;
 }
 
 /**
@@ -376,6 +386,12 @@ static inline void gpspi_flash_ll_set_dummy_out(spi_dev_t *dev, uint32_t out_en,
     dev->ctrl.d_pol = out_lev;
 }
 
+/**
+ * Set extra hold time of CS after the clocks.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param hold_n Cycles of clocks before CS is inactive
+ */
 static inline void gpspi_flash_ll_set_hold(spi_dev_t *dev, uint32_t hold_n)
 {
     dev->user1.cs_hold_time = hold_n - 1;

@@ -148,6 +148,16 @@ static inline void gpspi_flash_ll_user_start(spi_dev_t *dev)
 }
 
 /**
+ * Set HD pin high when flash work at spi mode.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ */
+static inline void gpspi_flash_ll_set_hold_pol(spi_dev_t *dev, uint32_t pol_val)
+{
+    // Not support on esp32s2
+}
+
+/**
  * Check whether the host is idle to perform new commands.
  *
  * @param dev Beginning address of the peripheral registers.

@@ -28,7 +28,7 @@
 
 // Peripheral supports DIO, DOUT, QIO, or QOUT
 // VSPI (SPI3) only support 1-bit mode
-#define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(host_id)          ((host_id) != 2)
+#define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(host_id)          ({(void)host_id; 1;})
 
 // Peripheral supports output given level during its "dummy phase"
 #define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT         1
