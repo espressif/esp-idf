@@ -59,6 +59,7 @@ build_ssc_esp32s2:
   variables:
     LOG_PATH: "$CI_PROJECT_DIR/log_ut_cmake"
     PYTHON_VER: 3
+    LDGEN_CHECK_MAPPING: 1
   script:
     - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
     - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
@@ -81,6 +82,7 @@ build_esp_idf_tests_cmake_esp32s2:
   extends: .build_template
   variables:
       PYTHON_VER: 3
+      LDGEN_CHECK_MAPPING: 1
   parallel: 10
   artifacts:
     when: always

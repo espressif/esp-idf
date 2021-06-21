@@ -7,7 +7,6 @@ entries:
     rtc_clk (noflash)
     rtc_clk_init (noflash_text)
     rtc_init (noflash_text)
-    rtc_periph (noflash_text)
     rtc_pm (noflash_text)
     rtc_sleep (noflash_text)
     rtc_time (noflash_text)
@@ -21,13 +20,14 @@ entries:
     spi_flash_hal_iram (noflash)
     ledc_hal_iram (noflash)
     i2c_hal_iram (noflash)
-    spi_flash_hal_gpspi (noflash)
     lldesc (noflash)
     cpu_hal (noflash)
     soc_hal (noflash)
     wdt_hal_iram (noflash)
-    systimer_hal (noflash)
     if TWAI_ISR_IN_IRAM = y:
         twai_hal_iram (noflash)
     else:
         twai_hal_iram (default)
+    if IDF_TARGET_ESP32 = n:
+        spi_flash_hal_gpspi (noflash)
+        systimer_hal (noflash)

@@ -62,7 +62,6 @@ entries:
     pbuf:pbuf_header_impl (noflash_text)
     pbuf:pbuf_header (noflash_text)
     pbuf:pbuf_free (noflash_text)
-    timeouts:sys_timeouts_mbox_fetch (noflash_text)
     udp:udp_input_local_match (noflash_text)
     udp:udp_input (noflash_text)
     udp:udp_send (noflash_text)
