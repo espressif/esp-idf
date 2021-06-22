@@ -3,6 +3,11 @@ menu "Supplicant"
     config WPA_MBEDTLS_CRYPTO
         bool "Use MbedTLS crypto APIs"
         default y
+        select MBEDTLS_AES_C
+        select MBEDTLS_ECP_C
+        select MBEDTLS_ECDH_C
+        select MBEDTLS_ECDSA_C
+        select MBEDTLS_TLS_ENABLED
         help
             Select this option to use MbedTLS crypto APIs which utilize hardware acceleration.
 
