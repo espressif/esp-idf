@@ -3,7 +3,7 @@ clang_tidy_check:
   extends:
     - .pre_check_base_template
     - .rules:patterns:clang_tidy
-  image: ${CI_DOCKER_REGISTRY}/clang-static-analysis
+  image: ${CLANG_STATIC_ANALYSIS_IMAGE}
   artifacts:
     reports:
       junit: $IDF_PATH/output.xml
