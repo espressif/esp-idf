@@ -139,6 +139,21 @@ static IRAM_ATTR void _Unwind_SetNoFunctionContextInstall_Default(unsigned char 
 static const char* TAG = "cpu_start";
 
 /**
+ * This function overwrites a the same function of libsupc++ (part of libstdc++).
+ * Consequently, libsupc++ will then follow our configured exception emergency pool size.
+ *
+ * It will be called even with -fno-exception for user code since the stdlib still uses exceptions.
+ */
+size_t __cxx_eh_arena_size_get(void)
+{
+#ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
+    return CONFIG_COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE;
+#else
+    return 0;
+#endif
+}
+
+/**
  * Xtensa gcc is configured to emit a .ctors section, RISC-V gcc is configured with --enable-initfini-array
  * so it emits an .init_array section instead.
  * But the init_priority sections will be sorted for iteration in ascending order during startup.
