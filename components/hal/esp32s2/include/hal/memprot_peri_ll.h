@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include "hal/assert.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -140,7 +142,7 @@ static inline bool esp_memprot_peri1_rtcslow_is_intr_mine(void)
 static inline void esp_memprot_peri1_rtcslow_set_prot(uint32_t *split_addr, bool lw, bool lr, bool hw, bool hr)
 {
     uint32_t addr = (uint32_t)split_addr;
-    assert( addr % 0x4 == 0 );
+    HAL_ASSERT(addr % 0x4 == 0);
 
     uint32_t reg_split_addr = PERI1_RTCSLOW_ADDR_TO_CONF_REG(addr);
 
@@ -302,7 +304,7 @@ static inline bool esp_memprot_peri2_rtcslow_0_is_intr_mine(void)
 static inline void esp_memprot_peri2_rtcslow_0_set_prot(uint32_t *split_addr, bool lw, bool lr, bool lx, bool hw, bool hr, bool hx)
 {
     uint32_t addr = (uint32_t)split_addr;
-    assert( addr % 0x4 == 0 );
+    HAL_ASSERT(addr % 0x4 == 0);
 
     uint32_t reg_split_addr = PERI2_RTCSLOW_0_ADDR_TO_CONF_REG(addr);
 
@@ -387,7 +389,7 @@ static inline bool esp_memprot_peri2_rtcslow_1_is_intr_mine(void)
 static inline void esp_memprot_peri2_rtcslow_1_set_prot(uint32_t *split_addr, bool lw, bool lr, bool lx, bool hw, bool hr, bool hx)
 {
     uint32_t addr = (uint32_t)split_addr;
-    assert( addr % 0x4 == 0 );
+    HAL_ASSERT(addr % 0x4 == 0);
 
     uint32_t reg_split_addr = PERI2_RTCSLOW_1_ADDR_TO_CONF_REG(addr);
 

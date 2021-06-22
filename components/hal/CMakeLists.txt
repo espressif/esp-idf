@@ -2,7 +2,7 @@ idf_build_get_property(target IDF_TARGET)
 
 set(srcs    "wdt_hal_iram.c"
             "mpu_hal.c")
-set(includes "${target}/include" "include")
+set(includes "${target}/include" "include" "platform_port/include")
 
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs
@@ -105,3 +105,9 @@ idf_component_register(SRCS ${srcs}
                        PRIV_INCLUDE_DIRS ${priv_include}
                        REQUIRES soc
                        LDFRAGMENTS linker.lf)
+
+if(CONFIG_HAL_DEFAULT_ASSERTION_LEVEL EQUAL 1)
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u abort")
+elseif(CONFIG_HAL_DEFAULT_ASSERTION_LEVEL EQUAL 2)
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u __assert_func")
+endif()

@@ -22,12 +22,12 @@
 
 #pragma once
 
-#include "hal/hal_defs.h"
-#include "soc/spi_periph.h"
-#include "esp32/rom/lldesc.h"
 #include <string.h>
-#include <esp_types.h>
 #include <stdlib.h> //for abs()
+#include "esp_types.h"
+#include "esp32/rom/lldesc.h"
+#include "soc/spi_periph.h"
+#include "hal/misc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,7 +38,7 @@ extern "C" {
 /// Interrupt not used. Don't use in app.
 #define SPI_LL_UNUSED_INT_MASK  (SPI_INT_EN | SPI_SLV_WR_STA_DONE | SPI_SLV_RD_STA_DONE | SPI_SLV_WR_BUF_DONE | SPI_SLV_RD_BUF_DONE)
 /// Swap the bit order to its correct place to send
-#define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)data<<(32-len))
+#define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)(data) << (32 - len))
 /// This is the expected clock frequency
 #define SPI_LL_PERIPH_CLK_FREQ (80 * 1000000)
 #define SPI_LL_GET_HW(ID) ((ID)==0? &SPI1:((ID)==1? &SPI2 : &SPI3))

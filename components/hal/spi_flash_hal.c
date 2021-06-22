@@ -16,10 +16,10 @@
 // The IRAM part is in spi_flash_hal_iram.c, spi_flash_hal_gpspi.c, spi_flash_hal_common.inc.
 
 #include <stdlib.h>
-#include "hal/spi_flash_hal.h"
-#include "string.h"
+#include <string.h>
 #include "soc/soc_caps.h"
-#include "hal/hal_defs.h"
+#include "hal/spi_flash_hal.h"
+#include "hal/log.h"
 
 #define APB_CYCLE_NS   (1000*1000*1000LL/APB_CLK_FREQ)
 
@@ -97,7 +97,7 @@ esp_err_t spi_flash_hal_init(spi_flash_hal_context_t *data_out, const spi_flash_
         data_out->flags |= SPI_FLASH_HOST_CONTEXT_FLAG_AUTO_RESUME;
     }
 
-    ESP_EARLY_LOGD(TAG, "extra_dummy: %d", data_out->extra_dummy);
+    HAL_LOGD(TAG, "extra_dummy: %d", data_out->extra_dummy);
     return ESP_OK;
 }
 

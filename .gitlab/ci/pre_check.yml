@@ -50,7 +50,7 @@ check_rom_api_header:
   extends: .pre_check_job_template
   script:
     - tools/ci/check_examples_rom_header.sh
-    - tools/ci/check_rom_apis.sh
+    - tools/ci/check_api_violation.sh
 
 check_python_style:
   extends:

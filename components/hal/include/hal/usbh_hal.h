@@ -29,6 +29,7 @@ NOTE: Thread safety is the responsibility fo the HAL user. All USB Host HAL
 #include "soc/usb_wrap_struct.h"
 #include "hal/usbh_ll.h"
 #include "hal/usb_types_private.h"
+#include "hal/assert.h"
 
 // ------------------------------------------------ Macros and Types ---------------------------------------------------
 
@@ -322,7 +323,7 @@ static inline void usbh_hal_port_toggle_power(usbh_hal_context_t *hal, bool powe
  */
 static inline void usbh_hal_port_toggle_reset(usbh_hal_context_t *hal, bool enable)
 {
-    assert(hal->channels.num_allocd == 0);  //Cannot reset if there are still allocated channels
+    HAL_ASSERT(hal->channels.num_allocd == 0);  //Cannot reset if there are still allocated channels
     usbh_ll_hprt_set_port_reset(hal->dev, enable);
 }
 
@@ -410,7 +411,7 @@ static inline bool usbh_hal_port_check_resume(usbh_hal_context_t *hal)
  */
 static inline void usbh_hal_port_set_frame_list(usbh_hal_context_t *hal, uint32_t *frame_list, usb_hal_frame_list_len_t len)
 {
-    assert(!hal->flags.periodic_sched_enabled);
+    HAL_ASSERT(!hal->flags.periodic_sched_enabled);
     //Clear and save frame list
     hal->periodic_frame_list = frame_list;
     hal->frame_list_len = len;
@@ -438,7 +439,7 @@ static inline uint32_t *usbh_hal_port_get_frame_list(usbh_hal_context_t *hal)
  */
 static inline void usbh_hal_port_periodic_enable(usbh_hal_context_t *hal)
 {
-    assert(hal->periodic_frame_list != NULL);
+    HAL_ASSERT(hal->periodic_frame_list != NULL);
     usbh_ll_set_frame_list_base_addr(hal->dev, (uint32_t)hal->periodic_frame_list);
     usbh_ll_hcfg_set_num_frame_list_entries(hal->dev, hal->frame_list_len);
     usbh_ll_hcfg_en_perio_sched(hal->dev);
@@ -458,7 +459,7 @@ static inline void usbh_hal_port_periodic_enable(usbh_hal_context_t *hal)
  */
 static inline void usbh_hal_port_periodic_disable(usbh_hal_context_t *hal)
 {
-    assert(hal->flags.periodic_sched_enabled);
+    HAL_ASSERT(hal->flags.periodic_sched_enabled);
     usbh_ll_hcfg_dis_perio_sched(hal->dev);
     hal->flags.periodic_sched_enabled = 0;
 }
@@ -602,7 +603,7 @@ void usbh_hal_chan_set_ep_char(usbh_hal_context_t *hal, usbh_hal_chan_t *chan_ob
 static inline void usbh_hal_chan_set_dir(usbh_hal_chan_t *chan_obj, bool is_in)
 {
     //Cannot change direction whilst channel is still active or in error
-    assert(!chan_obj->flags.active && !chan_obj->flags.error_pending);
+    HAL_ASSERT(!chan_obj->flags.active && !chan_obj->flags.error_pending);
     usbh_ll_chan_set_dir(chan_obj->regs, is_in);
 }
 
@@ -621,7 +622,7 @@ static inline void usbh_hal_chan_set_dir(usbh_hal_chan_t *chan_obj, bool is_in)
 static inline void usbh_hal_chan_set_pid(usbh_hal_chan_t *chan_obj, int pid)
 {
     //Cannot change pid whilst channel is still active or in error
-    assert(!chan_obj->flags.active && !chan_obj->flags.error_pending);
+    HAL_ASSERT(!chan_obj->flags.active && !chan_obj->flags.error_pending);
     //Update channel object and set the register
     usbh_ll_chan_set_pid(chan_obj->regs, pid);
 }
@@ -638,7 +639,7 @@ static inline void usbh_hal_chan_set_pid(usbh_hal_chan_t *chan_obj, int pid)
  */
 static inline uint32_t usbh_hal_chan_get_pid(usbh_hal_chan_t *chan_obj)
 {
-    assert(!chan_obj->flags.active && !chan_obj->flags.error_pending);
+    HAL_ASSERT(!chan_obj->flags.active && !chan_obj->flags.error_pending);
     return usbh_ll_chan_get_pid(chan_obj->regs);
 }
 
@@ -695,7 +696,7 @@ bool usbh_hal_chan_request_halt(usbh_hal_chan_t *chan_obj);
  */
 static inline usbh_hal_chan_error_t usbh_hal_chan_get_error(usbh_hal_chan_t *chan_obj)
 {
-    assert(chan_obj->flags.error_pending);
+    HAL_ASSERT(chan_obj->flags.error_pending);
     return chan_obj->error;
 }
 
@@ -707,7 +708,7 @@ static inline usbh_hal_chan_error_t usbh_hal_chan_get_error(usbh_hal_chan_t *cha
 static inline void usbh_hal_chan_clear_error(usbh_hal_chan_t *chan_obj)
 {
     //Can only clear error when an error has occurred
-    assert(chan_obj->flags.error_pending);
+    HAL_ASSERT(chan_obj->flags.error_pending);
     chan_obj->flags.error_pending = 0;
 }
 

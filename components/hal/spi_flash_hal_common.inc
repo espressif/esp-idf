@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <string.h>
 #include <stdlib.h>
 #include "hal/spi_flash_hal.h"
-#include "string.h"
-#include "hal/hal_defs.h"
+#include "hal/assert.h"
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
 
@@ -106,7 +106,7 @@ esp_err_t spi_flash_hal_configure_host_io_mode(
      */
     int m70_bits = addr_bitlen - 24;
     if (m70_bits) {
-        assert(io_mode == SPI_FLASH_DIO || io_mode == SPI_FLASH_QIO);
+        HAL_ASSERT(io_mode == SPI_FLASH_DIO || io_mode == SPI_FLASH_QIO);
         conf_required = true;
         addr_bitlen -= m70_bits;
         int line_width = (io_mode == SPI_FLASH_DIO? 2: 4);

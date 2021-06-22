@@ -38,6 +38,7 @@ install.sh
 tools/build_apps.py
 tools/check_python_dependencies.py
 tools/ci/build_template_app.sh
+tools/ci/check_api_violation.sh
 tools/ci/check_build_warnings.py
 tools/ci/check_callgraph.py
 tools/ci/check_codeowners.py
@@ -48,7 +49,6 @@ tools/ci/check_executables.py
 tools/ci/check_idf_version.sh
 tools/ci/check_kconfigs.py
 tools/ci/check_readme_links.py
-tools/ci/check_rom_apis.sh
 tools/ci/check_rules_yml.py
 tools/ci/check_tools_files_patterns.py
 tools/ci/check_type_comments.py

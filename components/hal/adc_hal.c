@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <sys/param.h>
 #include "soc/soc_caps.h"
 #include "hal/adc_hal.h"
 #include "hal/adc_hal_conf.h"
+#include "hal/assert.h"
 #include "sdkconfig.h"
-#include <sys/param.h>
 
 
 #if CONFIG_IDF_TARGET_ESP32C3
@@ -217,8 +218,8 @@ void adc_hal_fifo_reset(adc_hal_context_t *hal)
 
 static void adc_hal_digi_dma_link_descriptors(dma_descriptor_t *desc, uint8_t *data_buf, uint32_t size, uint32_t num)
 {
-    assert(((uint32_t)data_buf % 4) == 0);
-    assert((size % 4) == 0);
+    HAL_ASSERT(((uint32_t)data_buf % 4) == 0);
+    HAL_ASSERT((size % 4) == 0);
     uint32_t n = 0;
 
     while (num--) {
@@ -252,7 +253,7 @@ void adc_hal_digi_start(adc_hal_context_t *hal)
 
 adc_hal_dma_desc_status_t adc_hal_get_reading_result(adc_hal_context_t *hal, const intptr_t eof_desc_addr, dma_descriptor_t **cur_desc)
 {
-    assert(hal->cur_desc_ptr);
+    HAL_ASSERT(hal->cur_desc_ptr);
     if (!hal->cur_desc_ptr->next) {
         return ADC_HAL_DMA_DESC_NULL;
     }

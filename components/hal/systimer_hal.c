@@ -18,6 +18,7 @@
 #include "hal/systimer_ll.h"
 #include "hal/systimer_types.h"
 #include "hal/clk_gate_ll.h"
+#include "hal/assert.h"
 
 void systimer_hal_init(systimer_hal_context_t *hal)
 {
@@ -174,7 +175,7 @@ void systimer_hal_on_apb_freq_update(systimer_hal_context_t *hal, uint32_t apb_t
     * XTAL_STEP value accordingly.
     */
     if (apb_ticks_per_us != SYSTIMER_LL_TICKS_PER_US) {
-        assert((SYSTIMER_LL_TICKS_PER_US % apb_ticks_per_us) == 0 && "TICK_PER_US should be divisible by APB frequency (in MHz)");
+        HAL_ASSERT((SYSTIMER_LL_TICKS_PER_US % apb_ticks_per_us) == 0 && "TICK_PER_US should be divisible by APB frequency (in MHz)");
         systimer_ll_set_step_for_xtal(hal->dev, SYSTIMER_LL_TICKS_PER_US / apb_ticks_per_us);
     }
 }
