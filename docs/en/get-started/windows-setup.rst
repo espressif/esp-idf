@@ -39,7 +39,7 @@ What is the usecase for Online and Offline Installer
 
 Online Installer is very small and allows the installation of all available releases of ESP-IDF. The installer will download only necessary dependencies including `Git For Windows`_  during the installation process. The installer stores downloaded files in the cache directory ``%userprofile%\.espressif``
 
-Offline Installer does not require any network connection. The installer contains all required dependencies including `Git For Windows`_ . The installer allows the installation of ESP-IDF with the following tags: v4.2, v4.1.1.
+Offline Installer does not require any network connection. The installer contains all required dependencies including `Git For Windows`_ .
 
 Components of the installation
 ------------------------------
