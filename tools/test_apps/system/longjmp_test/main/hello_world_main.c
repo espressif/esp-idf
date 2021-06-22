@@ -110,7 +110,7 @@ void app_main(void)
     }
 
     vTaskDelay(10000);
-    printf("stopping timers...\n");
+    printf("stopping timer...\n");
     esp_timer_stop(crash_timer);
     esp_timer_delete(crash_timer);
 

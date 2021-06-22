@@ -1,6 +1,10 @@
 COMPONENT_ADD_INCLUDEDIRS := include esp32 include/esp32
 COMPONENT_SRCDIRS := patches .
 
+ifdef IS_BOOTLOADER_BUILD
+COMPONENT_OBJEXCLUDE := patches/esp_rom_longjmp.o
+endif
+
 #Linker scripts used to link the final application.
 #Warning: These linker scripts are only used when the normal app is compiled; the bootloader
 #specifies its own scripts.
@@ -38,7 +42,9 @@ LINKER_SCRIPTS += esp32.rom.newlib-time.ld
 endif
 
 COMPONENT_ADD_LDFLAGS += -L $(COMPONENT_PATH)/esp32/ld \
-                         $(addprefix -T ,$(LINKER_SCRIPTS)) \
-                         -l$(COMPONENT_NAME) -Wl,--wrap=longjmp \
+                         $(addprefix -T ,$(LINKER_SCRIPTS))
+ifndef IS_BOOTLOADER_BUILD
+COMPONENT_ADD_LDFLAGS += -l$(COMPONENT_NAME) -Wl,--wrap=longjmp
+endif
 
 COMPONENT_ADD_LINKER_DEPS += $(addprefix esp32/ld/, $(LINKER_SCRIPTS))
