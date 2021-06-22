@@ -8,7 +8,7 @@
  Tests for the touch sensor device driver for ESP32-S2 only
 */
 #include "sdkconfig.h"
-#if CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 
 #include <string.h>
 #include "esp_system.h"
@@ -64,9 +64,9 @@ void test_pxp_deinit_io(void)
 #define TOUCH_EXCEED_TIME_MS            (1000)
 
 #define TOUCH_REG_BASE_TEST() ({    \
-   TEST_ASSERT_EQUAL_UINT32(REG_GET_FIELD(RTC_CNTL_DATE_REG, RTC_CNTL_CNTL_DATE), RTCCNTL.date.date);   \
-   TEST_ASSERT_EQUAL_UINT32(REG_GET_FIELD(SENS_SARDATE_REG, SENS_SAR_DATE), SENS.sardate.sar_date);     \
-   TEST_ASSERT_EQUAL_UINT32(REG_GET_FIELD(RTC_IO_DATE_REG, RTC_IO_IO_DATE), RTCIO.date.date);           \
+   TEST_ASSERT_EQUAL_UINT32(REG_READ(RTC_CNTL_DATE_REG), RTCCNTL.date.date);   \
+   TEST_ASSERT_EQUAL_UINT32(REG_READ(SENS_SARDATE_REG), SENS.sardate.sar_date);     \
+   TEST_ASSERT_EQUAL_UINT32(REG_READ(RTC_IO_DATE_REG), RTCIO.date.date);           \
 })
 
 #define TEST_TOUCH_COUNT_NUM    (5)
@@ -1157,16 +1157,28 @@ esp_err_t test_touch_filter_parameter_reset(int reset_cnt)
     }
     printf_touch_hw_read("[raw ] cnt:");
     printf_touch_benchmark_read("[base] cnt:");
-
-    test_touch_measure_step(1);
-    /* ESP32S2 reset benchmark to raw data */
+#if CONFIG_IDF_TARGET_ESP32S3
+    uint32_t smooth_data[TEST_TOUCH_CHANNEL] = {0};
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_read_raw_data(touch_list[i], &touch_value) );
-        TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &base_value) );
-        TEST_ASSERT_EQUAL_UINT32(base_value, touch_value);
+        TEST_ESP_OK( touch_pad_filter_read_smooth(touch_list[i], &(smooth_data[i])) );
     }
+#endif
+    test_touch_measure_step(1);
     printf_touch_hw_read("[raw ] cnt+1:");
+    printf_touch_smooth_read("[smooth]cnt+1:");
     printf_touch_benchmark_read("[base] cnt+1:");
+    /* ESP32S2 reset benchmark to smooth data */
+    for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
+        TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &base_value) );
+#if CONFIG_IDF_TARGET_ESP32S2
+        /* In ESP32S3, reset to raw data. */
+        TEST_ESP_OK( touch_pad_read_raw_data(touch_list[i], &touch_value) );
+        TEST_ASSERT_EQUAL_UINT32(base_value, touch_value);
+#elif CONFIG_IDF_TARGET_ESP32S3
+        /* In ESP32S3, reset to smooth data, smooth data filtered from raw data by IIR. */
+        TEST_ASSERT_EQUAL_UINT32(base_value, smooth_data[i]);
+#endif
+    }
 
     int test_cnt = 2;
     while (test_cnt--) {
@@ -2115,4 +2127,4 @@ void test_touch_slope_debug(int pad_num)
     TEST_ESP_OK( touch_pad_deinit() );
 }
 
-#endif // CONFIG_IDF_TARGET_ESP32S2
+#endif // CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3

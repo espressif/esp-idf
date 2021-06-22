@@ -1,4 +1,4 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 #include "soc/touch_sensor_periph.h"
 
 /* Store IO number corresponding to the Touch Sensor channel number. */
+/* Note: T0 is an internal channel that does not have a corresponding external GPIO. */
 const int touch_sensor_channel_io_map[SOC_TOUCH_SENSOR_NUM] = {
     -1,
     TOUCH_PAD_NUM1_GPIO_NUM,
@@ -26,4 +27,9 @@ const int touch_sensor_channel_io_map[SOC_TOUCH_SENSOR_NUM] = {
     TOUCH_PAD_NUM7_GPIO_NUM,
     TOUCH_PAD_NUM8_GPIO_NUM,
     TOUCH_PAD_NUM9_GPIO_NUM,
+    TOUCH_PAD_NUM10_GPIO_NUM,
+    TOUCH_PAD_NUM11_GPIO_NUM,
+    TOUCH_PAD_NUM12_GPIO_NUM,
+    TOUCH_PAD_NUM13_GPIO_NUM,
+    TOUCH_PAD_NUM14_GPIO_NUM
 };

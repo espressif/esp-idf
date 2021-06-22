@@ -25,3 +25,4 @@
 #include "soc/spi_pins.h"
 #include "soc/sdio_slave_pins.h"
 #include "soc/sdmmc_pins.h"
+#include "soc/touch_sensor_pins.h"

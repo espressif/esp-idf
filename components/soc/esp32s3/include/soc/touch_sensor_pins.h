@@ -1,4 +1,4 @@
-// Copyright 2019-2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,15 +18,10 @@
 extern "C" {
 #endif
 
-#define SOC_TOUCH_SENSOR_NUM                (15)
-
-#define SOC_TOUCH_PAD_MEASURE_WAIT_MAX          (0xFF)
-#define SOC_TOUCH_PAD_THRESHOLD_MAX         (0x1FFFFF)
-
-#define SOC_TOUCH_SHIELD_CHANNEL            (14)
-#define SOC_TOUCH_DENOISE_CHANNEL           (0)
-#define SOC_TOUCH_PROXIMITY_CHANNEL_NUM     (3)
-#define SOC_TOUCH_PAD_WAKE_SUPPORTED        (1)     /*!<Supports waking up from touch pad trigger */
+#define SOC_TOUCH_SHIELD_CHANNEL            (14) /*!< The waterproof function includes a shielded channel (TOUCH_PAD_NUM14) */
+#define SOC_TOUCH_DENOISE_CHANNEL           (0)  /*!< T0 is an internal channel that does not have a corresponding external GPIO.
+                                                    T0 will work simultaneously with the measured channel Tn. Finally, the actual
+                                                    measured value of Tn is the value after subtracting lower bits of T0. */
 
 #ifdef __cplusplus
 }

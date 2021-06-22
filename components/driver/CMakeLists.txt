@@ -60,7 +60,9 @@ if(${target} STREQUAL "esp32s3")
                      "mcpwm.c"
                      "usb_serial_jtag.c"
                      "spi_slave_hd.c"
-                     "touch_sensor_common.c")
+                     "touch_sensor_common.c"
+                     "esp32s2/touch_sensor.c" # The touch sensor function is the same as the esp32s2 platform.
+                    )
 endif()
 
 if(IDF_TARGET STREQUAL "esp32c3")

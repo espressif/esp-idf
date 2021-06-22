@@ -58,7 +58,7 @@ This wakeup mode doesn't require RTC peripherals or RTC memories to be powered o
 
 :cpp:func:`esp_sleep_enable_timer_wakeup` function can be used to enable deep sleep wakeup using a timer.
 
-.. only:: SOC_TOUCH_PAD_WAKE_SUPPORTED
+.. only:: SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP
 
     Touch pad
     ^^^^^^^^^

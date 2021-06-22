@@ -1,4 +1,4 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 
 // The HAL layer for Touch Sensor (common part)
 
+#include "soc/soc_pins.h"
 #include "hal/touch_sensor_hal.h"
 #include "hal/touch_sensor_types.h"
 #include "soc/soc_caps.h"

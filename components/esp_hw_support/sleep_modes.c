@@ -364,10 +364,12 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     if (deep_sleep) {
         if (s_config.wakeup_triggers & RTC_TOUCH_TRIG_EN) {
             touch_wakeup_prepare();
+#if CONFIG_IDF_TARGET_ESP32S2
             /* Workaround: In deep sleep, for ESP32S2, Power down the RTC_PERIPH will change the slope configuration of Touch sensor sleep pad.
              * The configuration change will change the reading of the sleep pad, which will cause the touch wake-up sensor to trigger falsely.
              */
             pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
+#endif
         }
     } else {
         /* In light sleep, the RTC_PERIPH power domain should be in the power-on state (Power on the touch circuit in light sleep),
@@ -702,7 +704,7 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
         s_config.ext1_trigger_mode = 0;
         s_config.wakeup_triggers &= ~RTC_EXT1_TRIG_EN;
 #endif
-#if SOC_TOUCH_PAD_WAKE_SUPPORTED
+#if SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP
     } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_TOUCHPAD, RTC_TOUCH_TRIG_EN)) {
         s_config.wakeup_triggers &= ~RTC_TOUCH_TRIG_EN;
 #endif
@@ -1065,7 +1067,7 @@ esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
     } else if (wakeup_cause & RTC_EXT1_TRIG_EN) {
         return ESP_SLEEP_WAKEUP_EXT1;
 #endif
-#if SOC_TOUCH_PAD_WAKE_SUPPORTED
+#if SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP
     } else if (wakeup_cause & RTC_TOUCH_TRIG_EN) {
         return ESP_SLEEP_WAKEUP_TOUCHPAD;
 #endif
@@ -1137,7 +1139,7 @@ static uint32_t get_power_down_flags(void)
     // RTC_PERIPH is needed for EXT0 wakeup and GPIO wakeup.
     // If RTC_PERIPH is auto, and EXT0/GPIO aren't enabled, power down RTC_PERIPH.
     if (s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] == ESP_PD_OPTION_AUTO) {
-#if SOC_TOUCH_PAD_WAKE_SUPPORTED
+#if SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP
         uint32_t wakeup_source = RTC_TOUCH_TRIG_EN;
 #if SOC_ULP_SUPPORTED
         wakeup_source |= RTC_ULP_TRIG_EN;
@@ -1155,7 +1157,7 @@ static uint32_t get_power_down_flags(void)
         } else {
             s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] = ESP_PD_OPTION_OFF;
         }
-#endif // SOC_TOUCH_PAD_WAKE_SUPPORTED
+#endif // SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP
     }
 
 #if SOC_PM_SUPPORT_CPU_PD

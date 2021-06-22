@@ -213,7 +213,12 @@
 #define SOC_TIMER_GROUP_TOTAL_TIMERS (SOC_TIMER_GROUPS * SOC_TIMER_GROUP_TIMERS_PER_GROUP)
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
-#include "touch_sensor_caps.h"
+#define SOC_TOUCH_SENSOR_NUM                (15) /*! 15 Touch channels */
+#define SOC_TOUCH_PROXIMITY_CHANNEL_NUM     (3)  /* Sopport touch proximity channel number. */
+#define SOC_TOUCH_PROXIMITY_MEAS_DONE_SUPPORTED (1) /*Sopport touch proximity channel measure done interrupt type. */
+
+#define SOC_TOUCH_PAD_THRESHOLD_MAX         (0x1FFFFF)  /*!<If set touch threshold max value, The touch sensor can't be in touched status */
+#define SOC_TOUCH_PAD_MEASURE_WAIT_MAX      (0xFF)  /*!<The timer frequency is 8Mhz, the max value is 0xff */
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #include "twai_caps.h"
@@ -279,6 +284,7 @@
 
 #define SOC_PM_SUPPORT_TAGMEM_PD        (1)
 
+#define SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP    (1)     /*!<Supports waking up from touch pad trigger */
 
 /*-------------------------- Flash Encryption CAPS----------------------------*/
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (64)

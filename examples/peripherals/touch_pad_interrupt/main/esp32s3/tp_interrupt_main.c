@@ -14,15 +14,15 @@
 #include "driver/touch_pad.h"
 #include "soc/rtc_periph.h"
 #include "soc/sens_periph.h"
+#include "esp_sleep.h"
 
 static const char *TAG = "Touch pad";
 
 static QueueHandle_t que_touch = NULL;
 typedef struct touch_msg {
     touch_pad_intr_mask_t intr_mask;
-    uint32_t pad_num;
-    uint32_t pad_status;
-    uint32_t pad_val;
+    uint32_t pad_status_msk;
+    uint32_t curr_pad;
 } touch_event_t;
 
 #define TOUCH_BUTTON_NUM    4
@@ -61,8 +61,12 @@ static void touchsensor_interrupt_cb(void *arg)
     touch_event_t evt;
 
     evt.intr_mask = touch_pad_read_intr_status_mask();
-    evt.pad_status = touch_pad_get_status();
-    evt.pad_num = touch_pad_get_current_meas_channel();
+    evt.pad_status_msk = touch_pad_get_status();
+    /* Note: Obtaining channel information in the interrupt callback function as the channel that triggers the interrupt is risky.
+       If the execution of the interrupt callback function is delayed by a channel measurement time,
+       the channel information obtained is wrong. Both light sleep and SPI FLASH reading and
+       writing may delay the response of the interrupt function. */
+    evt.curr_pad = touch_pad_get_current_meas_channel();
 
     xQueueSendFromISR(que_touch, &evt, &task_awoken);
     if (task_awoken == pdTRUE) {
@@ -100,10 +104,13 @@ static void touchsensor_filter_set(touch_filter_mode_t mode)
 
 static void tp_example_read_task(void *pvParameter)
 {
+    uint8_t pad_num = 0;
+    uint32_t touch_trig_diff = 0;
     touch_event_t evt = {0};
     static uint8_t guard_mode_flag = 0;
     /* Wait touch sensor init done */
     vTaskDelay(50 / portTICK_RATE_MS);
+    uint32_t last_pad_status_msk = touch_pad_get_status();
     tp_example_set_thresholds();
 
     while (1) {
@@ -111,36 +118,53 @@ static void tp_example_read_task(void *pvParameter)
         if (ret != pdTRUE) {
             continue;
         }
-        if (evt.intr_mask & TOUCH_PAD_INTR_MASK_ACTIVE) {
-            /* if guard pad be touched, other pads no response. */
-            if (evt.pad_num == button[3]) {
-                guard_mode_flag = 1;
-                ESP_LOGW(TAG, "TouchSensor [%d] be activated, enter guard mode", evt.pad_num);
-            } else {
-                if (guard_mode_flag == 0) {
-                    ESP_LOGI(TAG, "TouchSensor [%d] be activated, status mask 0x%x", evt.pad_num, evt.pad_status);
-                } else {
-                    ESP_LOGW(TAG, "In guard mode. No response");
+        if (evt.intr_mask & (TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE)) {
+            if (last_pad_status_msk == evt.pad_status_msk) {
+                ESP_LOGW(TAG, "TouchSensor status no changes, pad mask 0x%x", evt.pad_status_msk);
+                continue;
+            }
+            pad_num = 0;
+            touch_trig_diff = evt.pad_status_msk ^ last_pad_status_msk; // Record changes in channel status. Each bit represents a channel
+            last_pad_status_msk = evt.pad_status_msk; // Update the pad active status
+
+            /* Traverse all channels and find out the channel where the state changes, and determine the state type */
+            while (touch_trig_diff) {
+                if (touch_trig_diff & BIT(pad_num)) {
+                    if (evt.pad_status_msk & BIT(pad_num)) {    // Touch channel active
+                        /* if guard pad be touched, other pads no response. */
+                        if (pad_num == button[3]) {
+                            guard_mode_flag = 1;
+                            ESP_LOGW(TAG, "TouchSensor [%d] be activated, enter guard mode", pad_num);
+                        } else {
+                            if (guard_mode_flag == 0) {
+                                ESP_LOGI(TAG, "TouchSensor [%d] be activated, status mask 0x%x", pad_num, evt.pad_status_msk);
+                            } else {
+                                ESP_LOGW(TAG, "In guard mode. No response");
+                            }
+                        }
+                    } else {    // Touch channel inactive
+                        /* if guard pad be touched, other pads no response. */
+                        if (pad_num == button[3]) {
+                            guard_mode_flag = 0;
+                            ESP_LOGW(TAG, "TouchSensor [%d] be inactivated, exit guard mode", pad_num);
+                        } else {
+                            if (guard_mode_flag == 0) {
+                                ESP_LOGI(TAG, "TouchSensor [%d] be inactivated, status mask 0x%x", pad_num, evt.pad_status_msk);
+                            }
+                        }
+                    }
+                    touch_trig_diff &= (~(BIT(pad_num))); // Clear the channels that have been checked
                 }
+                pad_num ++;
             }
         }
-        if (evt.intr_mask & TOUCH_PAD_INTR_MASK_INACTIVE) {
-            /* if guard pad be touched, other pads no response. */
-            if (evt.pad_num == button[3]) {
-                guard_mode_flag = 0;
-                ESP_LOGW(TAG, "TouchSensor [%d] be inactivated, exit guard mode", evt.pad_num);
-            } else {
-                if (guard_mode_flag == 0) {
-                    ESP_LOGI(TAG, "TouchSensor [%d] be inactivated, status mask 0x%x", evt.pad_num, evt.pad_status);
-                }
-            }
-        }
+
         if (evt.intr_mask & TOUCH_PAD_INTR_MASK_SCAN_DONE) {
-            ESP_LOGI(TAG, "The touch sensor group measurement is done [%d].", evt.pad_num);
+            ESP_LOGI(TAG, "The touch sensor group measurement is done [%d].", evt.curr_pad);
         }
         if (evt.intr_mask & TOUCH_PAD_INTR_MASK_TIMEOUT) {
             /* Add your exception handling in here. */
-            ESP_LOGI(TAG, "Touch sensor channel %d measure timeout. Skip this exception channel!!", evt.pad_num);
+            ESP_LOGI(TAG, "Touch sensor channel %d measure timeout. Skip this exception channel!!", evt.curr_pad);
             touch_pad_timeout_resume(); // Point on the next channel to measure.
         }
     }
@@ -161,7 +185,7 @@ void app_main(void)
 
 #if TOUCH_CHANGE_CONFIG
     /* If you want change the touch sensor default setting, please write here(after initialize). There are examples: */
-    touch_pad_set_meas_time(TOUCH_PAD_SLEEP_CYCLE_DEFAULT, TOUCH_PAD_SLEEP_CYCLE_DEFAULT);
+    touch_pad_set_meas_time(TOUCH_PAD_SLEEP_CYCLE_DEFAULT, TOUCH_PAD_MEASURE_CYCLE_DEFAULT);
     touch_pad_set_voltage(TOUCH_PAD_HIGH_VOLTAGE_THRESHOLD, TOUCH_PAD_LOW_VOLTAGE_THRESHOLD, TOUCH_PAD_ATTEN_VOLTAGE_THRESHOLD);
     touch_pad_set_idle_channel_connect(TOUCH_PAD_IDLE_CH_CONNECT_DEFAULT);
     for (int i = 0; i < TOUCH_BUTTON_NUM; i++) {
@@ -203,6 +227,9 @@ void app_main(void)
     touch_pad_isr_register(touchsensor_interrupt_cb, NULL, TOUCH_PAD_INTR_MASK_ALL);
     /* If you have other touch algorithm, you can get the measured value after the `TOUCH_PAD_INTR_MASK_SCAN_DONE` interrupt is generated. */
     touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE | TOUCH_PAD_INTR_MASK_TIMEOUT);
+
+    /* In ESP32-S3 If the touch wakeup not enable, the touch action of the touch sensor during light sleep may be lost. */
+    esp_sleep_enable_touchpad_wakeup();
 
     /* Enable touch sensor clock. Work mode is "timer trigger". */
     touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER);

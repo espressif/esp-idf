@@ -266,7 +266,7 @@ typedef volatile struct sens_dev_s {
     } sar_touch_status0;
     union {
         struct {
-            uint32_t touch_pad1_data               :    22;
+            uint32_t touch_pad_data               :    22;
             uint32_t reserved22                    :    7;
             uint32_t touch_pad_debounce            :    3;
         };
