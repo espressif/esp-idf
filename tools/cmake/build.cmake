@@ -129,9 +129,11 @@ function(__build_init idf_path)
     # Create the build target, to which the ESP-IDF build properties, dependencies are attached to
     add_library(__idf_build_target STATIC IMPORTED)
 
-    set_default(python "python")
+    # Set the Python path (which may be passed in via -DPYTHON=) and store in a build property
+    set_default(PYTHON "python")
+    file(TO_CMAKE_PATH ${PYTHON} PYTHON)
+    idf_build_set_property(PYTHON ${PYTHON})
 
-    idf_build_set_property(PYTHON ${python})
     idf_build_set_property(IDF_PATH ${idf_path})
 
     idf_build_set_property(__PREFIX idf)
@@ -267,8 +269,12 @@ function(__build_check_python)
         message(STATUS "Checking Python dependencies...")
         execute_process(COMMAND "${python}" "${idf_path}/tools/check_python_dependencies.py"
             RESULT_VARIABLE result)
-        if(NOT result EQUAL 0)
+        if(result EQUAL 1)
+            # check_python_dependencies returns error code 1 on failure
             message(FATAL_ERROR "Some Python dependencies must be installed. Check above message for details.")
+        elseif(NOT result EQUAL 0)
+            # means check_python_dependencies.py failed to run at all, result should be an error message
+            message(FATAL_ERROR "Failed to run Python dependency check. Python: ${python}, Error: ${result}")
         endif()
     endif()
 endfunction()
