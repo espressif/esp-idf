@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # coding=utf-8
 #
+# SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 # This script helps installing tools required to use the ESP-IDF, and updating PATH
 # to use the installed tools. It can also create a Python virtual environment,
 # and install Python requirements into it.
@@ -23,22 +27,6 @@
 # * To start using the tools, run `eval "$(idf_tools.py export)"` — this will update
 #   the PATH to point to the installed tools and set up other environment variables
 #   needed by the tools.
-#
-###
-#
-# Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
 import argparse
 import contextlib
@@ -60,19 +48,22 @@ from ssl import SSLContext  # noqa: F401
 from tarfile import TarFile  # noqa: F401
 from zipfile import ZipFile
 
+# Important notice: Please keep the lines above compatible with old Pythons so it won't fail with ImportError but with
+# a nice message printed by python_version_checker.check()
 try:
-    from typing import IO, Callable, Optional, Tuple, Union  # noqa: F401
-except ImportError:
-    pass
+    import python_version_checker
 
-try:
-    from urllib.error import ContentTooShortError
-    from urllib.request import urlopen
-    # the following is only for typing annotation
-    from urllib.response import addinfourl  # noqa: F401
-except ImportError:
-    # Python 2
-    from urllib import ContentTooShortError, urlopen  # type: ignore
+    # check the Python version before it will fail with an exception on syntax or package incompatibility.
+    python_version_checker.check()
+except RuntimeError as e:
+    print(e)
+    raise SystemExit(1)
+
+from typing import IO, Callable, Optional, Tuple, Union  # noqa: F401
+from urllib.error import ContentTooShortError
+from urllib.request import urlopen
+# the following is only for typing annotation
+from urllib.response import addinfourl  # noqa: F401
 
 try:
     from exceptions import WindowsError

@@ -76,24 +76,24 @@ class FuseTable(list):
 
         # fix up missing bit_start
         last_efuse_block = None
-        for e in res:
-            if last_efuse_block != e.efuse_block:
+        for i in res:
+            if last_efuse_block != i.efuse_block:
                 last_end = 0
-            if e.bit_start is None:
-                e.bit_start = last_end
-            last_end = e.bit_start + e.bit_count
-            last_efuse_block = e.efuse_block
+            if i.bit_start is None:
+                i.bit_start = last_end
+            last_end = i.bit_start + i.bit_count
+            last_efuse_block = i.efuse_block
 
         res.verify_duplicate_name()
 
         # fix up missing field_name
         last_field = None
-        for e in res:
-            if e.field_name == '' and last_field is None:
-                raise InputError('Error at line %d: %s missing field name' % (line_no + 1, e))
-            elif e.field_name == '' and last_field is not None:
-                e.field_name = last_field.field_name
-            last_field = e
+        for i in res:
+            if i.field_name == '' and last_field is None:
+                raise InputError('Error at line %d: %s missing field name' % (line_no + 1, i))
+            elif i.field_name == '' and last_field is not None:
+                i.field_name = last_field.field_name
+            last_field = i
 
         # fill group
         names = [p.field_name for p in res]
@@ -479,10 +479,6 @@ def create_output_files(name, output_table, debug):
 
 
 def main():
-    if sys.version_info[0] < 3:
-        print('WARNING: Support for Python 2 is deprecated and will be removed in future versions.', file=sys.stderr)
-    elif sys.version_info[0] == 3 and sys.version_info[1] < 6:
-        print('WARNING: Python 3 versions older than 3.6 are not supported.', file=sys.stderr)
     global quiet
     global max_blk_len
     global idf_target

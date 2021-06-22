@@ -1,26 +1,13 @@
 #!/usr/bin/env python
 #
+# SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 # 'idf.py' is a top-level config/build command line tool for ESP-IDF
 #
 # You don't have to use idf.py, you can use cmake directly
 # (or use cmake in an IDE)
-#
-#
-#
-# Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
 
 # WARNING: we don't check for Python build-time dependencies until
 # check_environment() function below. If possible, avoid importing
@@ -44,6 +31,7 @@ from pkgutil import iter_modules
 # idf.py extensions. Therefore, pyc file generation is turned off:
 sys.dont_write_bytecode = True
 
+import python_version_checker  # noqa: E402
 from idf_py_actions.errors import FatalError  # noqa: E402
 from idf_py_actions.tools import executable_exists, idf_version, merge_action_lists, realpath  # noqa: E402
 
@@ -93,11 +81,13 @@ def check_environment():
         print_warning('Setting IDF_PATH environment variable: %s' % detected_idf_path)
         os.environ['IDF_PATH'] = detected_idf_path
 
-    # check Python version
-    if sys.version_info[0] < 3:
-        print_warning('WARNING: Support for Python 2 is deprecated and will be removed in future versions.')
-    elif sys.version_info[0] == 3 and sys.version_info[1] < 6:
-        print_warning('WARNING: Python 3 versions older than 3.6 are not supported.')
+    try:
+        # The Python compatibility check could have been done earlier (tools/detect_python.{sh,fish}) but PATH is
+        # not set for import at that time. Even if the check would be done before, the same check needs to be done
+        # here as well (for example one can call idf.py from a not properly set-up environment).
+        python_version_checker.check()
+    except RuntimeError as e:
+        raise FatalError(e)
 
     # check Python dependencies
     checks_output.append('Checking Python dependencies...')
