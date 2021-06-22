@@ -84,6 +84,18 @@ def main():
         help="IDF Kconfig file")
 
     argparser.add_argument(
+        "--check-mapping",
+        help="Perform a check if a mapping (archive, obj, symbol) exists",
+        action='store_true'
+    )
+
+    argparser.add_argument(
+        "--check-mapping-exceptions",
+        help="Mappings exempted from check",
+        type=argparse.FileType("r")
+    )
+
+    argparser.add_argument(
         "--env", "-e",
         action='append', default=[],
         help='Environment to set when evaluating the config file', metavar='NAME=VAL')
@@ -106,6 +118,12 @@ def main():
     kconfig_file = args.kconfig
     objdump = args.objdump
 
+    check_mapping = args.check_mapping
+    if args.check_mapping_exceptions:
+        check_mapping_exceptions = [line.strip() for line in args.check_mapping_exceptions]
+    else:
+        check_mapping_exceptions = None
+
     try:
         sections_infos = SectionsInfo()
         for library in libraries_file:
@@ -115,7 +133,7 @@ def main():
                 dump.name = library
                 sections_infos.add_sections_info(dump)
 
-        generation_model = GenerationModel()
+        generation_model = GenerationModel(check_mapping, check_mapping_exceptions)
 
         _update_environment(args)  # assign args.env and args.env_file to os.environ
 

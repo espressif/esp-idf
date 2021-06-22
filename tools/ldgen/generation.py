@@ -21,7 +21,7 @@ import fnmatch
 
 from fragments import Sections, Scheme, Mapping, Fragment
 from pyparsing import Suppress, White, ParseException, Literal, Group, ZeroOrMore
-from pyparsing import Word, OneOrMore, nums, alphanums, alphas, Optional, restOfLine
+from pyparsing import Word, OneOrMore, nums, alphas, restOfLine, SkipTo
 from ldgen_common import LdGenFailure
 
 
@@ -80,7 +80,6 @@ class PlacementRule():
         def do_section_expansion(rule, section):
             if section in rule.get_section_names():
                 sections_in_obj = sections_infos.get_obj_sections(rule.archive, rule.obj)
-
                 expansions = fnmatch.filter(sections_in_obj, section)
                 return expansions
 
@@ -254,10 +253,17 @@ class GenerationModel:
 
     DEFAULT_SCHEME = "default"
 
-    def __init__(self):
+    def __init__(self, check_mappings=False, check_mapping_exceptions=None):
         self.schemes = {}
         self.sections = {}
         self.mappings = {}
+
+        self.check_mappings = check_mappings
+
+        if check_mapping_exceptions:
+            self.check_mapping_exceptions = check_mapping_exceptions
+        else:
+            self.check_mapping_exceptions = []
 
     def _add_mapping_rules(self, archive, obj, symbol, scheme_name, scheme_dict, rules):
         # Use an ordinary dictionary to raise exception on non-existing keys
@@ -338,6 +344,19 @@ class GenerationModel:
                 try:
                     if not (obj == Mapping.MAPPING_ALL_OBJECTS and symbol is None and
                             scheme_name == GenerationModel.DEFAULT_SCHEME):
+                        if self.check_mappings and mapping.name not in self.check_mapping_exceptions:
+                            if not obj == Mapping.MAPPING_ALL_OBJECTS:
+                                obj_sections = sections_infos.get_obj_sections(archive, obj)
+                                if not obj_sections:
+                                    message = "'%s:%s' not found" % (archive, obj)
+                                    raise GenerationException(message, mapping)
+
+                                if symbol:
+                                    obj_sym = fnmatch.filter(obj_sections, "*%s" % symbol)
+                                    if not obj_sym:
+                                        message = "'%s:%s %s' not found" % (archive, obj, symbol)
+                                        raise GenerationException(message, mapping)
+
                         self._add_mapping_rules(archive, obj, symbol, scheme_name, scheme_dictionary, mapping_rules)
                 except KeyError:
                     message = GenerationException.UNDEFINED_REFERENCE + " to scheme '" + scheme_name + "'."
@@ -589,7 +608,7 @@ class SectionsInfo(dict):
         results = None
 
         try:
-            results = parser.parseString(first_line)
+            results = parser.parseString(first_line, parseAll=True)
         except ParseException as p:
             raise ParseException("Parsing sections info for library " + sections_info_dump.name + " failed. " + p.message)
 
@@ -597,43 +616,57 @@ class SectionsInfo(dict):
         self.sections[archive] = SectionsInfo.__info(sections_info_dump.name, sections_info_dump.read())
 
     def _get_infos_from_file(self, info):
-        # Object file line: '{object}:  file format elf32-xtensa-le'
-        object = Fragment.ENTITY.setResultsName("object") + Literal(":").suppress() + Literal("file format elf32-xtensa-le").suppress()
+        # {object}:  file format elf32-xtensa-le
+        object_line = SkipTo(":").setResultsName("object") + Suppress(restOfLine)
 
-        # Sections table
-        header = Suppress(Literal("Sections:") + Literal("Idx") + Literal("Name") + Literal("Size") + Literal("VMA") +
-                          Literal("LMA") + Literal("File off") + Literal("Algn"))
-        entry = Word(nums).suppress() + Fragment.ENTITY + Suppress(OneOrMore(Word(alphanums, exact=8)) +
-                                                                   Word(nums + "*") + ZeroOrMore(Word(alphas.upper()) +
-                                                                   Optional(Literal(","))))
+        # Sections:
+        # Idx Name ...
+        section_start = Suppress(Literal("Sections:"))
+        section_header = Suppress(OneOrMore(Word(alphas)))
 
-        # Content is object file line + sections table
-        content = Group(object + header + Group(ZeroOrMore(entry)).setResultsName("sections"))
+        # 00 {section} 0000000 ...
+        #              CONTENTS, ALLOC, ....
+        section_entry = Suppress(Word(nums)) + SkipTo(' ') + Suppress(restOfLine) + \
+            Suppress(ZeroOrMore(Word(alphas) + Literal(",")) + Word(alphas))
 
+        content = Group(object_line + section_start + section_header + Group(OneOrMore(section_entry)).setResultsName("sections"))
         parser = Group(ZeroOrMore(content)).setResultsName("contents")
 
-        sections_info_text = info.content
         results = None
 
         try:
-            results = parser.parseString(sections_info_text)
+            results = parser.parseString(info.content, parseAll=True)
         except ParseException as p:
             raise ParseException("Unable to parse section info file " + info.filename + ". " + p.message)
 
         return results
 
     def get_obj_sections(self, archive, obj):
-        stored = self.sections[archive]
+        res = []
+        try:
+            stored = self.sections[archive]
 
-        # Parse the contents of the sections file
-        if not isinstance(stored, dict):
-            parsed = self._get_infos_from_file(stored)
-            stored = dict()
-            for content in parsed.contents:
-                sections = list(map(lambda s: s, content.sections))
-                stored[content.object] = sections
-            self.sections[archive] = stored
+            # Parse the contents of the sections file on-demand,
+            # save the result for later
+            if not isinstance(stored, dict):
+                parsed = self._get_infos_from_file(stored)
+                stored = dict()
+                for content in parsed.contents:
+                    sections = list(map(lambda s: s, content.sections))
+                    stored[content.object] = sections
+                self.sections[archive] = stored
 
-        for obj_key in stored.keys():
-            if obj_key == obj + ".o" or obj_key == obj + ".c.obj":
-                return stored[obj_key]
+            try:
+                res = stored[obj + ".o"]
+            except KeyError:
+                try:
+                    res = stored[obj + ".c.obj"]
+                except KeyError:
+                    try:
+                        res = stored[obj + ".cpp.obj"]
+                    except KeyError:
+                        res = stored[obj + ".S.obj"]
+        except KeyError:
+            pass
+
+        return res
