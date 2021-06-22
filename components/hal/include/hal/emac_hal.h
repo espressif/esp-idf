@@ -1,4 +1,4 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,168 +21,10 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_err.h"
+#include "hal/eth_types.h"
 #include "soc/emac_dma_struct.h"
 #include "soc/emac_mac_struct.h"
 #include "soc/emac_ext_struct.h"
-
-#define EMAC_MEDIA_INTERFACE_MII (0)
-#define EMAC_MEDIA_INTERFACE_RMII (1)
-
-#define EMAC_WATCHDOG_ENABLE (0)
-#define EMAC_WATCHDOG_DISABLE (1)
-
-#define EMAC_JABBER_ENABLE (0)
-#define EMAC_JABBER_DISABLE (1)
-
-#define EMAC_INTERFRAME_GAP_96BIT (0)
-#define EMAC_INTERFRAME_GAP_88BIT (1)
-#define EMAC_INTERFRAME_GAP_80BIT (2)
-#define EMAC_INTERFRAME_GAP_72BIT (3)
-#define EMAC_INTERFRAME_GAP_64BIT (4)
-#define EMAC_INTERFRAME_GAP_56BIT (5)
-#define EMAC_INTERFRAME_GAP_48BIT (6)
-#define EMAC_INTERFRAME_GAP_40BIT (7)
-
-#define EMAC_CARRIERSENSE_ENABLE (0)
-#define EMAC_CARRIERSENSE_DISABLE (1)
-
-#define EMAC_PORT_1000MBPS (0)
-#define EMAC_PORT_10_100MBPS (1)
-
-#define EMAC_SPEED_10M (0)
-#define EMAC_SPEED_100M (1)
-
-#define EMAC_RECEIVE_OWN_ENABLE (0)
-#define EMAC_RECEIVE_OWN_DISABLE (1)
-
-#define EMAC_LOOPBACK_DISABLE (0)
-#define EMAC_LOOPBACK_ENABLE (1)
-
-#define EMAC_DUPLEX_HALF (0)
-#define EMAC_DUPLEX_FULL (1)
-
-#define EMAC_CHECKSUM_SW (0)
-#define EMAC_CHECKSUM_HW (1)
-
-#define EMAC_RETRY_TRANSMISSION_ENABLE (0)
-#define EMAC_RETRY_TRANSMISSION_DISABLE (1)
-
-#define EMAC_AUTO_PAD_CRC_STRIP_DISABLE (0)
-#define EMAC_AUTO_PAD_CRC_STRIP_ENABLE (1)
-
-#define EMAC_BACKOFF_LIMIT_10 (0)
-#define EMAC_BACKOFF_LIMIT_8 (1)
-#define EMAC_BACKOFF_LIMIT_4 (2)
-#define EMAC_BACKOFF_LIMIT_1 (3)
-
-#define EMAC_DEFERRAL_CHECK_DISABLE (0)
-#define EMAC_DEFERRAL_CHECK_ENABLE (1)
-
-#define EMAC_PREAMBLE_LENGTH_7 (0)
-#define EMAC_PREAMBLE_LENGTH_5 (1)
-#define EMAC_PREAMBLE_LENGTH_3 (2)
-
-#define EMAC_RECEIVE_ALL_DISABLE (0)
-#define EMAC_RECEIVE_ALL_ENABLE (1)
-
-#define EMAC_SOURCE_ADDR_FILTER_DISABLE (0)
-#define EMAC_SOURCE_ADDR_FILTER_NORMAL (2)
-#define EMAC_SOURCE_ADDR_FILTER_INVERSE (3)
-
-#define EMAC_CONTROL_FRAME_BLOCKALL (0)
-#define EMAC_CONTROL_FRAME_FORWARDALL_PAUSE (1)
-#define EMAC_CONTROL_FRAME_FORWARDALL (2)
-#define EMAC_CONTROL_FRAME_FORWARDFILT (3)
-
-#define EMAC_RECEPT_BROADCAST_ENABLE (0)
-#define EMAC_RECEPT_BROADCAST_DISABLE (1)
-
-#define EMAC_DEST_ADDR_FILTER_NORMAL (0)
-#define EMAC_DEST_ADDR_FILTER_INVERSE (1)
-
-#define EMAC_PROMISCUOUS_DISABLE (0)
-#define EMAC_PROMISCUOUS_ENABLE (1)
-
-#define EMAC_PAUSE_TIME 0x1648
-
-#define EMAC_ZERO_QUANTA_PAUSE_ENABLE (0)
-#define EMAC_ZERO_QUANTA_PAUSE_DISABLE (1)
-
-#define EMAC_PAUSE_LOW_THRESHOLD_MINUS_4 (0)
-#define EMAC_PAUSE_LOW_THRESHOLD_MINUS_28 (1)
-#define EMAC_PAUSE_LOW_THRESHOLD_MINUS_144 (2)
-#define EMAC_PAUSE_LOW_THRESHOLD_MINUS_256
-
-#define EMAC_UNICAST_PAUSE_DETECT_DISABLE (0)
-#define EMAC_UNICAST_PAUSE_DETECT_ENABLE (1)
-
-#define EMAC_RECEIVE_FLOW_CONTROL_DISABLE (0)
-#define EMAC_RECEIVE_FLOW_CONTROL_ENABLE (1)
-
-#define EMAC_TRANSMIT_FLOW_CONTROL_DISABLE (0)
-#define EMAC_TRANSMIT_FLOW_CONTROL_ENABLE (1)
-
-#define EMAC_DROP_TCPIP_CHECKSUM_ERROR_ENABLE (0)
-#define EMAC_DROP_TCPIP_CHECKSUM_ERROR_DISABLE (1)
-
-#define EMAC_RECEIVE_STORE_FORWARD_DISABLE (0)
-#define EMAC_RECEIVE_STORE_FORWARD_ENABLE (1)
-
-#define EMAC_FLUSH_RECEIVED_FRAME_ENABLE (0)
-#define EMAC_FLUSH_RECEIVED_FRAME_DISABLE (1)
-
-#define EMAC_TRANSMIT_STORE_FORWARD_DISABLE (0)
-#define EMAC_TRANSMIT_STORE_FORWARD_ENABLE (1)
-
-#define EMAC_TRANSMIT_THRESHOLD_CONTROL_64 (0)
-#define EMAC_TRANSMIT_THRESHOLD_CONTROL_128 (1)
-#define EMAC_TRANSMIT_THRESHOLD_CONTROL_192 (2)
-#define EMAC_TRANSMIT_THRESHOLD_CONTROL_256 (3)
-#define EMAC_TRANSMIT_THRESHOLD_CONTROL_40 (4)
-#define EMAC_TRANSMIT_THRESHOLD_CONTROL_32 (5)
-#define EMAC_TRANSMIT_THRESHOLD_CONTROL_24 (6)
-#define EMAC_TRANSMIT_THRESHOLD_CONTROL_16 (7)
-
-#define EMAC_FORWARD_ERROR_FRAME_DISABLE (0)
-#define EMAC_FORWARD_ERROR_FRAME_ENABLE (1)
-
-#define EMAC_FORWARD_UNDERSIZED_GOOD_FRAME_DISABLE (0)
-#define EMAC_FORWARD_UNDERSIZED_GOOD_FRAME_ENABLE (1)
-
-#define EMAC_RECEIVE_THRESHOLD_CONTROL_64 (0)
-#define EMAC_RECEIVE_THRESHOLD_CONTROL_32 (1)
-#define EMAC_RECEIVE_THRESHOLD_CONTROL_96 (2)
-#define EMAC_RECEIVE_THRESHOLD_CONTROL_128 (3)
-
-#define EMAC_OPERATE_SECOND_FRAME_DISABLE (0)
-#define EMAC_OPERATE_SECOND_FRAME_ENABLE (1)
-
-#define EMAC_MIXED_BURST_DISABLE (0)
-#define EMAC_MIXED_BURST_ENABLE (1)
-
-#define EMAC_ADDR_ALIGN_BEATS_DISABLE (0)
-#define EMAC_ADDR_ALIGN_BEATS_ENABLE  (1)
-
-#define EMAC_UNUSE_SEPARATE_PBL (0)
-#define EMAC_USE_SEPARATE_PBL   (1)
-
-#define EMAC_DMA_BURST_LENGTH_1BEAT (1)
-#define EMAC_DMA_BURST_LENGTH_2BEAT (2)
-#define EMAC_DMA_BURST_LENGTH_4BEAT (4)
-#define EMAC_DMA_BURST_LENGTH_8BEAT (8)
-#define EMAC_DMA_BURST_LENGTH_16BEAT (16)
-#define EMAC_DMA_BURST_LENGTH_32BEAT (32)
-
-#define EMAC_ENHANCED_DESCRIPTOR_DISABLE (0)
-#define EMAC_ENHANCED_DESCRIPTOR_ENABLE  (1)
-
-#define EMAC_DMA_ARBITRATION_SCHEME_ROUNDROBIN (0)
-#define EMAC_DMA_ARBITRATION_SCHEME_FIXEDPRIO  (1)
-
-#define EMAC_DMA_ARBITRATION_ROUNDROBIN_RXTX_1_1 (0)
-#define EMAC_DMA_ARBITRATION_ROUNDROBIN_RXTX_2_1 (1)
-#define EMAC_DMA_ARBITRATION_ROUNDROBIN_RXTX_3_1 (2)
-#define EMAC_DMA_ARBITRATION_ROUNDROBIN_RXTX_4_1 (3)
 
 /**
 * @brief Ethernet DMA TX Descriptor
@@ -315,20 +157,6 @@ typedef struct {
     uint32_t TimeStampLow;  /*!< Receive frame timestamp low */
     uint32_t TimeStampHigh; /*!< Receive frame timestamp high */
 } eth_dma_rx_descriptor_t;
-#define EMAC_DMAPTPRXDESC_PTPMT_SYNC 0x00000100U                      /* SYNC message (all clock types) */
-#define EMAC_DMAPTPRXDESC_PTPMT_FOLLOWUP 0x00000200U                  /* FollowUp message (all clock types) */
-#define EMAC_DMAPTPRXDESC_PTPMT_DELAYREQ 0x00000300U                  /* DelayReq message (all clock types) */
-#define EMAC_DMAPTPRXDESC_PTPMT_DELAYRESP 0x00000400U                 /* DelayResp message (all clock types) */
-#define EMAC_DMAPTPRXDESC_PTPMT_PDELAYREQ_ANNOUNCE 0x00000500U        /* PdelayReq message (peer-to-peer transparent clock) or Announce message (Ordinary or Boundary clock) */
-#define EMAC_DMAPTPRXDESC_PTPMT_PDELAYRESP_MANAG 0x00000600U          /* PdelayResp message (peer-to-peer transparent clock) or Management message (Ordinary or Boundary clock)  */
-#define EMAC_DMAPTPRXDESC_PTPMT_PDELAYRESPFOLLOWUP_SIGNAL 0x00000700U /* PdelayRespFollowUp message (peer-to-peer transparent clock) or Signaling message (Ordinary or Boundary clock) */
-
-#define EMAC_DMAPTPRXDESC_IPPT_UDP 0x00000001U  /* UDP payload encapsulated in the IP datagram */
-#define EMAC_DMAPTPRXDESC_IPPT_TCP 0x00000002U  /* TCP payload encapsulated in the IP datagram */
-#define EMAC_DMAPTPRXDESC_IPPT_ICMP 0x00000003U /* ICMP payload encapsulated in the IP datagram */
-
-#define EMAC_DMADESC_OWNER_CPU  (0)
-#define EMAC_DMADESC_OWNER_DMA  (1)
 
 _Static_assert(sizeof(eth_dma_rx_descriptor_t) == 32, "eth_dma_rx_descriptor_t should occupy 32 bytes in memory");
 
@@ -341,20 +169,31 @@ typedef struct {
     void *descriptors;
     eth_dma_rx_descriptor_t *rx_desc;
     eth_dma_tx_descriptor_t *tx_desc;
+
 } emac_hal_context_t;
 
 void emac_hal_init(emac_hal_context_t *hal, void *descriptors,
                    uint8_t **rx_buf, uint8_t **tx_buf);
 
-void emac_hal_reset_desc_chain(emac_hal_context_t *hal);
+void emac_hal_iomux_init_mii(void);
 
-void emac_hal_lowlevel_init(emac_hal_context_t *hal);
+void emac_hal_iomux_init_rmii(void);
+
+void emac_hal_iomux_rmii_clk_input(void);
+
+void emac_hal_iomux_rmii_clk_ouput(int num);
+
+void emac_hal_iomux_init_tx_er(void);
+
+void emac_hal_iomux_init_rx_er(void);
+
+void emac_hal_reset_desc_chain(emac_hal_context_t *hal);
 
 void emac_hal_reset(emac_hal_context_t *hal);
 
 bool emac_hal_is_reset_done(emac_hal_context_t *hal);
 
-void emac_hal_set_csr_clock_range(emac_hal_context_t *hal);
+void emac_hal_set_csr_clock_range(emac_hal_context_t *hal, int freq);
 
 void emac_hal_init_mac_default(emac_hal_context_t *hal);
 
@@ -362,7 +201,7 @@ void emac_hal_init_dma_default(emac_hal_context_t *hal);
 
 void emac_hal_set_speed(emac_hal_context_t *hal, uint32_t speed);
 
-void emac_hal_set_duplex(emac_hal_context_t *hal, uint32_t duplex);
+void emac_hal_set_duplex(emac_hal_context_t *hal, eth_duplex_t duplex);
 
 void emac_hal_set_promiscuous(emac_hal_context_t *hal, bool enable);
 
@@ -393,17 +232,13 @@ uint32_t emac_hal_receive_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t 
 
 void emac_hal_enable_flow_ctrl(emac_hal_context_t *hal, bool enable);
 
-void emac_hal_isr(void *arg);
+uint32_t emac_hal_get_intr_enable_status(emac_hal_context_t *hal);
 
-void emac_hal_tx_complete_cb(void *arg);
+uint32_t emac_hal_get_intr_status(emac_hal_context_t *hal);
 
-void emac_hal_tx_unavail_cb (void *arg);
+void emac_hal_clear_corresponding_intr(emac_hal_context_t *hal, uint32_t bits);
 
-void emac_hal_rx_complete_cb (void *arg);
-
-void emac_hal_rx_early_cb(void *arg);
-
-void emac_hal_rx_unavail_cb(void *arg);
+void emac_hal_clear_all_intr(emac_hal_context_t *hal);
 
 #ifdef __cplusplus
 }

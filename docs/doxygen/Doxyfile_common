@@ -67,6 +67,7 @@ INPUT = \
     $(IDF_PATH)/components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_sensor_model_api.h \
     $(IDF_PATH)/components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_time_scene_model_api.h \
     $(IDF_PATH)/components/bt/esp_ble_mesh/api/esp_ble_mesh_defs.h \
+    $(IDF_PATH)/components/hal/include/hal/eth_types.h \
     $(IDF_PATH)/components/esp_eth/include/esp_eth.h \
     $(IDF_PATH)/components/esp_eth/include/esp_eth_com.h \
     $(IDF_PATH)/components/esp_eth/include/esp_eth_mac.h \
