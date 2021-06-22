@@ -133,6 +133,14 @@
         ESP32-C3-DevKitC-02 <../hw-reference/esp32c3/user-guide-devkitc-02>
 
 
+.. only:: esp32s3
+
+    .. toctree::
+        :maxdepth: 1
+
+        ESP32-S3-DevKitC-1 <../hw-reference/esp32s3/user-guide-devkitc-1>
+
+
 .. _get-started-step-by-step:
 
 详细安装步骤
