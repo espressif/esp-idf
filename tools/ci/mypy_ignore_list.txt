@@ -281,6 +281,3 @@ tools/unit-test-app/tools/CreateSectionTable.py
 tools/unit-test-app/tools/UnitTestParser.py
 tools/unit-test-app/unit_test.py
 tools/windows/eclipse_make.py
-tools/windows/tool_setup/system_check/system_check_download.py
-tools/windows/tool_setup/system_check/system_check_subprocess.py
-tools/windows/tool_setup/system_check/system_check_virtualenv.py
