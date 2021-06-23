@@ -857,12 +857,15 @@ def get_python_env_path():
         with open(version_file_path, "r") as version_file:
             idf_version_str = version_file.read()
     else:
+        idf_version_str = ''
         try:
             idf_version_str = subprocess.check_output(['git', 'describe'],
                                                       cwd=global_idf_path, env=os.environ).decode()
+        except OSError:
+            # OSError should cover FileNotFoundError and WindowsError
+            warn('Git was not found')
         except subprocess.CalledProcessError as e:
-            warn('Git describe was unsuccessul: {}'.format(e))
-            idf_version_str = ''
+            warn('Git describe was unsuccessul: {}'.format(e.output))
     match = re.match(r'^v([0-9]+\.[0-9]+).*', idf_version_str)
     if match:
         idf_version = match.group(1)
