@@ -21,6 +21,7 @@
 #include "mqtt_client.h"
 #include "esp_tls.h"
 #include "esp_ota_ops.h"
+#include <sys/param.h>
 
 static const char *TAG = "MQTTS_EXAMPLE";
 
@@ -33,7 +34,7 @@ extern const uint8_t mqtt_eclipse_org_pem_start[]   asm("_binary_mqtt_eclipse_or
 extern const uint8_t mqtt_eclipse_org_pem_end[]   asm("_binary_mqtt_eclipse_org_pem_end");
 
 //
-// Note: this function is for testing purposes only publishing the entire active partition
+// Note: this function is for testing purposes only publishing part of the active partition
 //       (to be checked against the original binary)
 //
 static void send_binary(esp_mqtt_client_handle_t client)
@@ -42,7 +43,9 @@ static void send_binary(esp_mqtt_client_handle_t client)
     const void *binary_address;
     const esp_partition_t* partition = esp_ota_get_running_partition();
     esp_partition_mmap(partition, 0, partition->size, SPI_FLASH_MMAP_DATA, &binary_address, &out_handle);
-    int msg_id = esp_mqtt_client_publish(client, "/topic/binary", binary_address, partition->size, 0, 0);
+    // sending only the configured portion of the partition (if it's less than the partition size)
+    int binary_size = MIN(CONFIG_BROKER_BIN_SIZE_TO_SEND,partition->size);
+    int msg_id = esp_mqtt_client_publish(client, "/topic/binary", binary_address, binary_size, 0, 0);
     ESP_LOGI(TAG, "binary sent with msg_id=%d", msg_id);
 }
 
