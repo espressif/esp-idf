@@ -145,6 +145,7 @@ before_script:
   dependencies: []
   before_script:
     - *apply_bot_filter
+    - export IDF_TOOLS_PATH="${HOME}/.espressif_runner_${CI_RUNNER_ID}_${CI_CONCURRENT_ID}"
     - $IDF_PATH/tools/idf_tools.py install-python-env
     # On macOS, these tools need to be installed
     - $IDF_PATH/tools/idf_tools.py --non-interactive install cmake ninja
