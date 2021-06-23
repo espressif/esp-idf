@@ -6,58 +6,178 @@
 
 #ifndef CONFIG_COMPILER_CXX_EXCEPTIONS
 
-const char *FATAL_EXCEPTION = "Fatal C++ exception: ";
-
-extern "C" void __cxx_fatal_exception(void)
+extern "C" void abort_expect_void(const void *context)
 {
     abort();
 }
 
-extern "C" bool __cxx_fatal_exception_bool(void)
+extern "C" void *abort_expect_void_and_return(const void *context)
 {
-    __cxx_fatal_exception();
-    return false;
+    abort();
+    return nullptr;
 }
 
-extern "C" void __cxx_fatal_exception_message(const char *msg)
+extern "C" void *forward_abort_uw_ctx(struct _Unwind_Context *context)
 {
-    printf("%s%s\n", FATAL_EXCEPTION, msg);
+    return abort_expect_void_and_return((void*) context);
+}
+
+template<typename T>
+static T abort_return()
+{
+    abort();
+    return static_cast<T>(0);
+}
+
+// unwind-dw2-fde.o
+extern "C" void __wrap__Unwind_SetEnableExceptionFdeSorting(unsigned char enable)
+{
     abort();
 }
 
-extern "C" void __cxx_fatal_exception_message_va(const char *msg, ...)
+extern "C" void __wrap___register_frame_info_bases (const void *begin, struct object *ob, void *tbase, void *dbase)
 {
-    __cxx_fatal_exception_message(msg);
-}
-
-extern "C" void __cxx_fatal_exception_int(int i)
-{
-    printf("%s (%d)\n", FATAL_EXCEPTION, i);
     abort();
 }
 
-/* The following definitions are needed because libstdc++ is also compiled with
-   __throw_exception_again defined to throw, and some other exception code in a few places.
+extern "C" void __wrap___register_frame_info (const void *begin, struct object *ob)
+{
+    abort();
+}
 
-   This cause exception handler code to be emitted in the library even though it's mostly
-   unreachable (as any libstdc++ "throw" will first call one of the above stubs, which will abort).
+extern "C" void __wrap___register_frame_info_table_bases (void *begin, struct object *ob, void *tbase, void *dbase)
+{
+    abort();
+}
 
-   If these are left out, a bunch of unwanted exception handler code is linked.
+extern "C" void __wrap___register_frame_info_table (void *begin, struct object *ob)
+{
+    abort();
+}
 
-   Note: these function prototypes are not correct.
-*/
 
-extern "C" void __cxa_allocate_exception(void) __attribute__((alias("__cxx_fatal_exception")));
-extern "C" void __cxa_allocate_dependent_exception(void) __attribute__((alias("__cxx_fatal_exception")));
-extern "C" void __cxa_begin_catch(void) __attribute__((alias("__cxx_fatal_exception")));
-extern "C" void __cxa_end_catch(void) __attribute__((alias("__cxx_fatal_exception")));
-extern "C" void __cxa_get_exception_ptr(void) __attribute__((alias("__cxx_fatal_exception")));
-extern "C" void __cxa_free_exception(void) __attribute__((alias("__cxx_fatal_exception")));
-extern "C" void __cxa_free_dependent_exception(void) __attribute__((alias("__cxx_fatal_exception")));
-extern "C" void __cxa_rethrow(void) __attribute__((alias("__cxx_fatal_exception")));
-extern "C" void __cxa_throw(void) __attribute__((alias("__cxx_fatal_exception")));
-extern "C" void __cxa_call_terminate(void) __attribute__((alias("__cxx_fatal_exception")));
+extern "C" void __wrap___register_frame (void *begin)
+        __attribute__((alias("abort_expect_void")));
 
-bool std::uncaught_exception() __attribute__((alias("__cxx_fatal_exception_bool")));
+extern "C" void __wrap___register_frame_table (void *begin)
+        __attribute__((alias("abort_expect_void")));
+
+extern "C" void *__wrap___deregister_frame_info_bases (const void *begin)
+        __attribute__((alias("abort_expect_void_and_return")));
+
+extern "C" void *__wrap___deregister_frame_info (const void *begin)
+        __attribute__((alias("abort_expect_void_and_return")));
+
+extern "C" void __wrap___deregister_frame (void *begin)
+        __attribute__((alias("abort_expect_void")));
+
+typedef void* fde;
+
+extern "C" const fde * __wrap__Unwind_Find_FDE (void *pc, struct dwarf_eh_bases *bases)
+{
+    return abort_return<fde*>();
+}
+
+// unwind-dw2.o (riscv), unwind-dw2-xtensa.o (xtensa)
+typedef void* _Unwind_Ptr;
+typedef int _Unwind_Word;
+
+extern "C" _Unwind_Word __wrap__Unwind_GetGR (struct _Unwind_Context *context, int index)
+{
+    return abort_return<_Unwind_Word>();
+}
+
+extern "C" _Unwind_Word __wrap__Unwind_GetCFA (struct _Unwind_Context *context)
+{
+    return abort_return<_Unwind_Word>();
+}
+
+extern "C" void __wrap__Unwind_SetIP (struct _Unwind_Context *context, _Unwind_Ptr val)
+{
+    abort();
+}
+
+extern "C" void __wrap__Unwind_SetGR (struct _Unwind_Context *context, int index, _Unwind_Word val)
+{
+    abort();
+}
+
+extern "C" _Unwind_Ptr __wrap__Unwind_GetIPInfo (struct _Unwind_Context *context, int *ip_before_insn)
+{
+    return abort_return<_Unwind_Ptr>();
+}
+
+extern "C" _Unwind_Ptr __wrap__Unwind_GetIP (struct _Unwind_Context *context)
+        __attribute__((alias("forward_abort_uw_ctx")));
+
+extern "C" _Unwind_Ptr __wrap__Unwind_GetRegionStart (struct _Unwind_Context *context)
+        __attribute__((alias("forward_abort_uw_ctx")));
+
+extern "C" _Unwind_Ptr __wrap__Unwind_GetDataRelBase (struct _Unwind_Context *context)
+        __attribute__((alias("forward_abort_uw_ctx")));
+
+extern "C" _Unwind_Ptr __wrap__Unwind_GetTextRelBase (struct _Unwind_Context *context)
+        __attribute__((alias("forward_abort_uw_ctx")));
+
+extern "C" void *__wrap__Unwind_GetLanguageSpecificData (struct _Unwind_Context *context)
+        __attribute__((alias("forward_abort_uw_ctx")));
+
+extern "C" void *__wrap__Unwind_FindEnclosingFunction (void *pc)
+        __attribute__((alias("abort_expect_void_and_return")));
+
+struct frame_state *__frame_state_for (void *pc_target, struct frame_state *state_in)
+{
+    return abort_return<struct frame_state *>();
+}
+
+// unwind.inc
+typedef int _Unwind_Reason_Code;
+typedef int _Unwind_Action;
+typedef int _Unwind_Exception_Class;
+typedef int* _Unwind_Trace_Fn;
+typedef int* _Unwind_Stop_Fn;
+
+extern "C" void __wrap__Unwind_Resume (struct _Unwind_Exception *exc)
+{
+    abort();
+}
+
+extern "C" void __wrap__Unwind_DeleteException (struct _Unwind_Exception *exc)
+{
+    abort();
+}
+
+
+extern "C" _Unwind_Reason_Code __wrap__Unwind_RaiseException(struct _Unwind_Exception *exc)
+{
+    return abort_return<_Unwind_Reason_Code>();
+}
+
+extern "C" _Unwind_Reason_Code __wrap__Unwind_Resume_or_Rethrow (struct _Unwind_Exception *exc)
+        __attribute__((alias("__wrap__Unwind_RaiseException")));
+
+extern "C" _Unwind_Reason_Code __wrap__Unwind_ForcedUnwind (struct _Unwind_Exception *exc,
+        _Unwind_Stop_Fn stop, void * stop_argument)
+{
+    return abort_return<_Unwind_Reason_Code>();
+}
+
+extern "C" _Unwind_Reason_Code __wrap__Unwind_Backtrace(_Unwind_Trace_Fn trace, void * trace_argument)
+{
+    return abort_return<_Unwind_Reason_Code>();
+}
+
+// eh_personality.o
+extern "C" void __wrap___cxa_call_unexpected (void *exc_obj_in)
+        __attribute__((alias("abort_expect_void")));
+
+extern "C" _Unwind_Reason_Code __wrap___gxx_personality_v0 (int version,
+        _Unwind_Action actions,
+        _Unwind_Exception_Class exception_class,
+        struct _Unwind_Exception *ue_header,
+        struct _Unwind_Context *context)
+{
+    return abort_return<_Unwind_Reason_Code>();
+}
 
 #endif // CONFIG_COMPILER_CXX_EXCEPTIONS
