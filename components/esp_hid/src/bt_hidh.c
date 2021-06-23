@@ -397,21 +397,36 @@ void bta_hh_co_data(uint8_t handle, uint8_t *p_rpt, uint16_t len, tBTA_HH_PROTO_
     }
 
     if (event_loop_handle) {
-        esp_hidh_event_data_t p = {0};
+        esp_hidh_event_data_t *p = NULL;
         if (report->report_type == ESP_HID_REPORT_TYPE_FEATURE) {
-            p.feature.dev = dev;
-            p.feature.report_id = report->report_id;
-            p.feature.usage = report->usage;
-            p.feature.data = p_rpt + 1;
-            p.feature.length = len - 1;
-            esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_FEATURE_EVENT, &p, sizeof(esp_hidh_event_data_t), portMAX_DELAY);
+            p = (esp_hidh_event_data_t *)malloc(offsetof(esp_hidh_event_data_t, feature.data) + len - 1);
+            if (!p) {
+                ESP_LOGE(TAG, "malloc esp_hidh_event_data_t failed");
+                return;
+            }
+            p->feature.dev = dev;
+            p->feature.report_id = report->report_id;
+            p->feature.usage = report->usage;
+            memcpy(p->feature.data, p_rpt + 1, len - 1);
+            p->feature.length = len - 1;
+            esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_FEATURE_EVENT, p, sizeof(esp_hidh_event_data_t), portMAX_DELAY);
         } else {
-            p.input.dev = dev;
-            p.input.report_id = report->report_id;
-            p.input.usage = report->usage;
-            p.input.data = p_rpt + 1;
-            p.input.length = len - 1;
-            esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_INPUT_EVENT, &p, sizeof(esp_hidh_event_data_t), portMAX_DELAY);
+            p = (esp_hidh_event_data_t *)malloc(offsetof(esp_hidh_event_data_t, input.data) + len - 1);
+            if (!p) {
+                ESP_LOGE(TAG, "malloc esp_hidh_event_data_t failed");
+                return;
+            }
+            p->input.dev = dev;
+            p->input.report_id = report->report_id;
+            p->input.usage = report->usage;
+            memcpy(p->input.data, p_rpt + 1, len - 1);
+            p->input.length = len - 1;
+            esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_INPUT_EVENT, p, sizeof(esp_hidh_event_data_t), portMAX_DELAY);
+        }
+
+        if (p) {
+            free(p);
+            p = NULL;
         }
     }
 }

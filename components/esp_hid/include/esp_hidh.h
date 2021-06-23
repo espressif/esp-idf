@@ -80,8 +80,8 @@ typedef union {
         esp_hid_usage_t usage;                      /*!< HID report usage */
         uint16_t report_id;                         /*!< HID report index */
         uint16_t length;                            /*!< HID data length */
-        uint8_t  *data;                             /*!< The pointer to the HID data */
         uint8_t map_index;                          /*!< HID report map index */
+        uint8_t data[];                             /*!< The pointer to the HID data */
     } input;                                        /*!< HID callback param of ESP_HIDH_INPUT_EVENT */
 
     /**
@@ -92,8 +92,8 @@ typedef union {
         esp_hid_usage_t usage;                      /*!< HID report usage */
         uint16_t report_id;                         /*!< HID report index */
         uint16_t length;                            /*!< HID data length */
-        uint8_t  *data;                             /*!< The pointer to the HID data */
         uint8_t map_index;                          /*!< HID report map index */
+        uint8_t data[];                             /*!< The pointer to the HID data */
     } feature;                                      /*!< HID callback param of ESP_HIDH_FEATURE_EVENT */
 
 } esp_hidh_event_data_t;

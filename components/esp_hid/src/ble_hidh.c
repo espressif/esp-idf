@@ -475,22 +475,40 @@ void esp_hidh_gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gatt
             } else {
                 report = esp_hidh_dev_get_report_by_handle(dev, p_data->notify.handle);
                 if (report) {
+                    esp_hidh_event_data_t *p_param = NULL;
                     if (report->report_type == ESP_HID_REPORT_TYPE_FEATURE) {
-                        p.feature.dev = dev;
-                        p.feature.map_index = report->map_index;
-                        p.feature.report_id = report->report_id;
-                        p.feature.usage = report->usage;
-                        p.feature.data = p_data->notify.value;
-                        p.feature.length = p_data->notify.value_len;
-                        esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_INPUT_EVENT, &p, sizeof(esp_hidh_event_data_t), portMAX_DELAY);
+                        p_param = (esp_hidh_event_data_t *)malloc(offsetof(esp_hidh_event_data_t, feature.data) +
+                                                                  p_data->notify.value_len - 1);
+                        if (!p_param) {
+                            ESP_LOGE(TAG, "malloc esp_hidh_event_data_t failed");
+                            return;
+                        }
+                        p_param->feature.dev = dev;
+                        p_param->feature.map_index = report->map_index;
+                        p_param->feature.report_id = report->report_id;
+                        p_param->feature.usage = report->usage;
+                        memcpy(p_param->feature.data, p_data->notify.value, p_data->notify.value_len);
+                        p_param->feature.length = p_data->notify.value_len;
+                        esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_FEATURE_EVENT, p_param, sizeof(esp_hidh_event_data_t), portMAX_DELAY);
                     } else {
-                        p.input.dev = dev;
-                        p.input.map_index = report->map_index;
-                        p.input.report_id = report->report_id;
-                        p.input.usage = report->usage;
-                        p.input.data = p_data->notify.value;
-                        p.input.length = p_data->notify.value_len;
-                        esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_INPUT_EVENT, &p, sizeof(esp_hidh_event_data_t), portMAX_DELAY);
+                        p_param = (esp_hidh_event_data_t *)malloc(offsetof(esp_hidh_event_data_t, input.data) +
+                                                                  p_data->notify.value_len - 1);
+                        if (!p_param) {
+                            ESP_LOGE(TAG, "malloc esp_hidh_event_data_t failed");
+                            return;
+                        }
+                        p_param->input.dev = dev;
+                        p_param->input.map_index = report->map_index;
+                        p_param->input.report_id = report->report_id;
+                        p_param->input.usage = report->usage;
+                        memcpy(p_param->input.data, p_data->notify.value, p_data->notify.value_len);
+                        p_param->input.length = p_data->notify.value_len;
+                        esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_INPUT_EVENT, p_param, sizeof(esp_hidh_event_data_t), portMAX_DELAY);
+                    }
+
+                    if (p_param) {
+                        free(p_param);
+                        p_param = NULL;
                     }
                 }
             }
