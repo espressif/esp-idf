@@ -62,8 +62,11 @@
 /**
  * @brief macros to check netif related data to evaluate interface type
  */
+#if CONFIG_PPP_SUPPORT || CONFIG_LWIP_SLIP_SUPPORT
 #define _IS_NETIF_ANY_POINT2POINT_TYPE(netif) (netif->related_data && netif->related_data->is_point2point)
-
+#else
+#define _IS_NETIF_ANY_POINT2POINT_TYPE(netif) false
+#endif
 #define _RUN_IN_LWIP_TASK_IF_SUPPORTED(function, netif, param) \
 {                                                              \
     if (_IS_NETIF_ANY_POINT2POINT_TYPE(netif)) {               \
@@ -171,7 +174,9 @@ static esp_netif_t* esp_netif_is_active(esp_netif_t *arg)
 static void esp_netif_set_default_netif(esp_netif_t *esp_netif)
 {
     if (_IS_NETIF_POINT2POINT_TYPE(esp_netif, PPP_LWIP_NETIF)) {
+#if CONFIG_PPP_SUPPORT
         esp_netif_ppp_set_default_netif(esp_netif->netif_handle);
+#endif
     } else {
         netif_set_default(esp_netif->netif_handle);
     }
@@ -390,6 +395,7 @@ static esp_err_t esp_netif_init_configuration(esp_netif_t *esp_netif, const esp_
     // Install network stack functions -- connects netif and L3 stack
     const esp_netif_netstack_config_t *esp_netif_stack_config = cfg->stack;
     if (cfg->base->flags & ESP_NETIF_FLAG_IS_PPP) {
+#if CONFIG_PPP_SUPPORT
         esp_netif->related_data = esp_netif_new_ppp(esp_netif, esp_netif_stack_config);
         if (esp_netif->related_data == NULL) {
             return ESP_ERR_ESP_NETIF_INIT_FAILED;
@@ -397,8 +403,11 @@ static esp_err_t esp_netif_init_configuration(esp_netif_t *esp_netif, const esp_
         esp_netif->lwip_input_fn = esp_netif_stack_config->lwip_ppp.input_fn;
         // Make the netif handle (used for tcpip input function) the ppp_netif
         esp_netif->netif_handle = esp_netif->related_data;
-
+#else
+        LOG_NETIF_DISABLED_AND_DO("PPP", return ESP_ERR_NOT_SUPPORTED);
+#endif
     } else if (cfg->base->flags & ESP_NETIF_FLAG_IS_SLIP) {
+#if CONFIG_LWIP_SLIP_SUPPORT
         esp_netif->related_data = esp_netif_new_slip(esp_netif, esp_netif_stack_config);
         if (esp_netif->related_data == NULL) {
             return ESP_ERR_ESP_NETIF_INIT_FAILED;
@@ -411,7 +420,9 @@ static esp_err_t esp_netif_init_configuration(esp_netif_t *esp_netif, const esp_
         }
         // Make the netif handle (used for tcpip input function) the esp_netif itself
         esp_netif->netif_handle = esp_netif;
-
+#else
+        LOG_NETIF_DISABLED_AND_DO("SLIP", return ESP_ERR_NOT_SUPPORTED);
+#endif
     } else {
         if (esp_netif_stack_config-> lwip.init_fn) {
             esp_netif->lwip_init_fn = esp_netif_stack_config->lwip.init_fn;
@@ -530,11 +541,15 @@ static esp_err_t esp_netif_lwip_add(esp_netif_t *esp_netif)
         }
     }
     if (esp_netif->flags & ESP_NETIF_FLAG_IS_PPP) {
+#if CONFIG_PPP_SUPPORT
         err_t err = esp_netif->lwip_init_fn(NULL);
         if (err != ERR_OK) {
             ESP_LOGE(TAG, "Init netif failed with  %d", err);
             return ESP_ERR_ESP_NETIF_INIT_FAILED;
         }
+#else
+        LOG_NETIF_DISABLED_AND_DO("PPP", return ESP_ERR_NOT_SUPPORTED);
+#endif
     }
 
     if (NULL == netif_add(esp_netif->lwip_netif, (struct ip4_addr*)&esp_netif->ip_info->ip,
@@ -549,9 +564,13 @@ static esp_err_t esp_netif_lwip_add(esp_netif_t *esp_netif)
 static void esp_netif_destroy_related(esp_netif_t *esp_netif)
 {
     if (_IS_NETIF_POINT2POINT_TYPE(esp_netif, PPP_LWIP_NETIF)) {
+#if CONFIG_PPP_SUPPORT
         esp_netif_destroy_ppp(esp_netif->related_data);
+#endif
     } else if (_IS_NETIF_POINT2POINT_TYPE(esp_netif, SLIP_LWIP_NETIF)) {
+#if CONFIG_LWIP_SLIP_SUPPORT
         esp_netif_destroy_slip(esp_netif->related_data);
+#endif
     }
 }
 
@@ -697,7 +716,9 @@ static esp_err_t esp_netif_start_api(esp_netif_api_msg_t *msg)
     }
     struct netif *p_netif = esp_netif->lwip_netif;
     if (_IS_NETIF_POINT2POINT_TYPE(esp_netif, SLIP_LWIP_NETIF)) {
+#if CONFIG_LWIP_SLIP_SUPPORT
         esp_netif_start_slip(esp_netif);
+#endif
     }
     if (esp_netif->flags&ESP_NETIF_FLAG_AUTOUP) {
         ESP_LOGD(TAG, "%s Setting the lwip netif%p UP", __func__, p_netif);
@@ -754,12 +775,14 @@ static esp_err_t esp_netif_start_api(esp_netif_api_msg_t *msg)
 esp_err_t esp_netif_start(esp_netif_t *esp_netif)
 {
     if (_IS_NETIF_POINT2POINT_TYPE(esp_netif, PPP_LWIP_NETIF)) {
+#if CONFIG_PPP_SUPPORT
         // No need to start PPP interface in lwip thread
         esp_err_t ret = esp_netif_start_ppp(esp_netif->related_data);
         if (ret == ESP_OK) {
             esp_netif_update_default_netif(esp_netif, ESP_NETIF_STARTED);
         }
         return ret;
+#endif
     }
     return esp_netif_lwip_ipc_call(esp_netif_start_api, esp_netif, NULL);
 }
@@ -807,19 +830,23 @@ static esp_err_t esp_netif_stop_api(esp_netif_api_msg_t *msg)
 esp_err_t esp_netif_stop(esp_netif_t *esp_netif)
 {
     if (_IS_NETIF_POINT2POINT_TYPE(esp_netif, PPP_LWIP_NETIF)) {
+#if CONFIG_PPP_SUPPORT
         // No need to stop PPP interface in lwip thread
         esp_err_t ret = esp_netif_stop_ppp(esp_netif->related_data);
         if (ret == ESP_OK) {
             esp_netif_update_default_netif(esp_netif, ESP_NETIF_STOPPED);;
         }
         return ret;
+#endif
     } else if (_IS_NETIF_POINT2POINT_TYPE(esp_netif, SLIP_LWIP_NETIF)) {
+#if CONFIG_LWIP_SLIP_SUPPORT
         // No need to stop PPP interface in lwip thread
         esp_err_t ret = esp_netif_stop_slip(esp_netif);
         if (ret == ESP_OK) {
             esp_netif_update_default_netif(esp_netif, ESP_NETIF_STOPPED);;
         }
         return ret;
+#endif
     }
     return esp_netif_lwip_ipc_call(esp_netif_stop_api, esp_netif, NULL);
 }

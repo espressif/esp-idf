@@ -32,8 +32,6 @@ ESP_EVENT_DEFINE_BASE(NETIF_PPP_STATUS);
 
 static const char *TAG = "esp-netif_lwip-ppp";
 
-#if PPPOS_SUPPORT
-
 /**
  * @brief internal lwip_ppp context struct extends the netif related data
  *        used to hold PPP netif related parameters
@@ -350,43 +348,5 @@ esp_err_t esp_netif_ppp_set_params(esp_netif_t *netif, const esp_netif_ppp_confi
     obj->ppp_error_event_enabled = config->ppp_error_event_enabled;
     return ESP_OK;
 }
-#else  /* PPPOS_SUPPORT */
-
-typedef struct lwip_peer2peer_ctx lwip_peer2peer_ctx_t;
-
-/**
- * @brief If PPP not enabled in menuconfig, log the error and return appropriate code indicating failure
-*/
-#define LOG_PPP_DISABLED_AND_DO(action) \
-    {   \
-    ESP_LOGE(TAG, "%s not supported, please enable PPP in lwIP component configuration", __func__); \
-    action; \
-    }
-
-esp_err_t esp_netif_ppp_set_auth(esp_netif_t *netif, esp_netif_auth_type_t authtype, const char *user, const char *passwd)
-    LOG_PPP_DISABLED_AND_DO(return ESP_ERR_NOT_SUPPORTED)
-
-void esp_netif_ppp_set_default_netif(lwip_peer2peer_ctx_t* ppp_ctx)
-    LOG_PPP_DISABLED_AND_DO()
-
-lwip_peer2peer_ctx_t* esp_netif_new_ppp(esp_netif_t *esp_netif, const esp_netif_netstack_config_t *esp_netif_stack_config)
-    LOG_PPP_DISABLED_AND_DO(return NULL)
-
-esp_err_t esp_netif_start_ppp(lwip_peer2peer_ctx_t *ppp_ctx)
-    LOG_PPP_DISABLED_AND_DO(return ESP_ERR_NOT_SUPPORTED)
-
-void esp_netif_lwip_ppp_input(void *ppp_ctx, void *buffer, size_t len, void *eb)
-    LOG_PPP_DISABLED_AND_DO()
-
-esp_err_t esp_netif_stop_ppp(lwip_peer2peer_ctx_t *ppp_ctx)
-    LOG_PPP_DISABLED_AND_DO(return ESP_ERR_NOT_SUPPORTED)
-
-void esp_netif_destroy_ppp(lwip_peer2peer_ctx_t *ppp_ctx)
-    LOG_PPP_DISABLED_AND_DO()
-
-esp_err_t esp_netif_ppp_set_params(esp_netif_t *netif, const esp_netif_ppp_config_t *config)
-    LOG_PPP_DISABLED_AND_DO(return ESP_ERR_NOT_SUPPORTED)
-
-#endif /* PPPOS_SUPPORT */
 
 #endif /* CONFIG_ESP_NETIF_TCPIP_LWIP */
