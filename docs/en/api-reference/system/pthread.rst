@@ -94,6 +94,8 @@ Condition Variables
 
 Static initializer constant ``PTHREAD_COND_INITIALIZER`` is supported.
 
+* The resolution of ``pthread_cond_timedwait()`` timeouts is the RTOS tick period (see :ref:`CONFIG_FREERTOS_HZ`). Timeouts may be delayed up to one tick period after the requested timeout.
+
 .. note:: These functions can be called from tasks created using either pthread or FreeRTOS APIs
 
 Thread-Specific Data
