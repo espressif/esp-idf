@@ -14,24 +14,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "hal/dma_types.h"
-#include "esp_compiler.h"
+#include "esp_check.h"
 #include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "esp_async_memcpy.h"
 #include "esp_async_memcpy_impl.h"
 
 static const char *TAG = "async_memcpy";
-
-#define ASMCP_CHECK(a, msg, tag, ret, ...)                                        \
-    do                                                                            \
-    {                                                                             \
-        if (unlikely(!(a)))                                                       \
-        {                                                                         \
-            ESP_LOGE(TAG, "%s(%d): " msg, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
-            ret_code = ret;                                                       \
-            goto tag;                                                             \
-        }                                                                         \
-    } while (0)
 
 /**
  * @brief Type of async mcp stream
@@ -62,17 +51,17 @@ typedef struct async_memcpy_context_t {
 
 esp_err_t esp_async_memcpy_install(const async_memcpy_config_t *config, async_memcpy_t *asmcp)
 {
-    esp_err_t ret_code = ESP_OK;
+    esp_err_t ret = ESP_OK;
     async_memcpy_context_t *mcp_hdl = NULL;
 
-    ASMCP_CHECK(config, "configuration can't be null", err, ESP_ERR_INVALID_ARG);
-    ASMCP_CHECK(asmcp, "can't assign mcp handle to null", err, ESP_ERR_INVALID_ARG);
+    ESP_GOTO_ON_FALSE(config, ESP_ERR_INVALID_ARG, err, TAG, "configuration can't be null");
+    ESP_GOTO_ON_FALSE(asmcp, ESP_ERR_INVALID_ARG, err, TAG, "can't assign mcp handle to null");
 
     // context memory size + stream pool size
     size_t total_malloc_size = sizeof(async_memcpy_context_t) + sizeof(async_memcpy_stream_t) * config->backlog * 2;
     // to work when cache is disabled, the driver handle should located in SRAM
     mcp_hdl = heap_caps_calloc(1, total_malloc_size, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-    ASMCP_CHECK(mcp_hdl, "allocate context memory failed", err, ESP_ERR_NO_MEM);
+    ESP_GOTO_ON_FALSE(mcp_hdl, ESP_ERR_NO_MEM, err, TAG, "allocate context memory failed");
 
     mcp_hdl->flags = config->flags;
     mcp_hdl->out_streams = mcp_hdl->streams_pool;
@@ -109,20 +98,19 @@ err:
     if (asmcp) {
         *asmcp = NULL;
     }
-    return ret_code;
+    return ret;
 }
 
 esp_err_t esp_async_memcpy_uninstall(async_memcpy_t asmcp)
 {
-    esp_err_t ret_code = ESP_OK;
-    ASMCP_CHECK(asmcp, "mcp handle can't be null", err, ESP_ERR_INVALID_ARG);
+    esp_err_t ret = ESP_OK;
+    ESP_GOTO_ON_FALSE(asmcp, ESP_ERR_INVALID_ARG, err, TAG, "mcp handle can't be null");
 
     async_memcpy_impl_stop(&asmcp->mcp_impl);
     async_memcpy_impl_deinit(&asmcp->mcp_impl);
     free(asmcp);
-    return ESP_OK;
 err:
-    return ret_code;
+    return ret;
 }
 
 static int async_memcpy_prepare_receive(async_memcpy_t asmcp, void *buffer, size_t size, dma_descriptor_t **start_desc, dma_descriptor_t **end_desc)
@@ -226,16 +214,16 @@ static bool async_memcpy_get_next_rx_descriptor(async_memcpy_t asmcp, dma_descri
 
 esp_err_t esp_async_memcpy(async_memcpy_t asmcp, void *dst, void *src, size_t n, async_memcpy_isr_cb_t cb_isr, void *cb_args)
 {
-    esp_err_t ret_code = ESP_OK;
+    esp_err_t ret = ESP_OK;
     dma_descriptor_t *rx_start_desc = NULL;
     dma_descriptor_t *rx_end_desc = NULL;
     dma_descriptor_t *tx_start_desc = NULL;
     dma_descriptor_t *tx_end_desc = NULL;
     size_t rx_prepared_size = 0;
     size_t tx_prepared_size = 0;
-    ASMCP_CHECK(asmcp, "mcp handle can't be null", err, ESP_ERR_INVALID_ARG);
-    ASMCP_CHECK(async_memcpy_impl_is_buffer_address_valid(&asmcp->mcp_impl, src, dst), "buffer address not valid", err, ESP_ERR_INVALID_ARG);
-    ASMCP_CHECK(n <= DMA_DESCRIPTOR_BUFFER_MAX_SIZE * asmcp->max_stream_num, "buffer size too large", err, ESP_ERR_INVALID_ARG);
+    ESP_GOTO_ON_FALSE(asmcp, ESP_ERR_INVALID_ARG, err, TAG, "mcp handle can't be null");
+    ESP_GOTO_ON_FALSE(async_memcpy_impl_is_buffer_address_valid(&asmcp->mcp_impl, src, dst), ESP_ERR_INVALID_ARG, err, TAG, "buffer address not valid");
+    ESP_GOTO_ON_FALSE(n <= DMA_DESCRIPTOR_BUFFER_MAX_SIZE * asmcp->max_stream_num, ESP_ERR_INVALID_ARG, err, TAG, "buffer size too large");
 
     // Prepare TX and RX descriptor
     portENTER_CRITICAL_SAFE(&asmcp->spinlock);
@@ -268,12 +256,11 @@ esp_err_t esp_async_memcpy(async_memcpy_t asmcp, void *dst, void *src, size_t n,
 
     // It's unlikely that we have space for rx descriptor but no space for tx descriptor
     // Both tx and rx descriptor should move in the same pace
-    ASMCP_CHECK(rx_prepared_size == n, "out of rx descriptor", err, ESP_FAIL);
-    ASMCP_CHECK(tx_prepared_size == n, "out of tx descriptor", err, ESP_FAIL);
+    ESP_GOTO_ON_FALSE(rx_prepared_size == n, ESP_FAIL, err, TAG, "out of rx descriptor");
+    ESP_GOTO_ON_FALSE(tx_prepared_size == n, ESP_FAIL, err, TAG, "out of tx descriptor");
 
-    return ESP_OK;
 err:
-    return ret_code;
+    return ret;
 }
 
 IRAM_ATTR void async_memcpy_isr_on_rx_done_event(async_memcpy_impl_t *impl)
