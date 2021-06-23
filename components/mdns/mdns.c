@@ -4181,6 +4181,13 @@ static void _mdns_free_action(mdns_action_t * action)
         pbuf_free(action->data.rx_handle.packet->pb);
         free(action->data.rx_handle.packet);
         break;
+    case ACTION_DELEGATE_HOSTNAME_ADD:
+        free((char *)action->data.delegate_hostname.hostname);
+        free_address_list(action->data.delegate_hostname.address_list);
+        break;
+    case ACTION_DELEGATE_HOSTNAME_REMOVE:
+        free((char *)action->data.delegate_hostname.hostname);
+        break;
     default:
         break;
     }
