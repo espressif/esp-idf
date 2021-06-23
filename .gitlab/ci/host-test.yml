@@ -306,7 +306,7 @@ test_docs:
   extends: .host_test_template
   image: $ESP_IDF_DOC_ENV_IMAGE
   variables:
-    PYTHON_VER: 3.6.10
+    PYTHON_VER: 3.6.13
   artifacts:
     when: on_failure
     paths:

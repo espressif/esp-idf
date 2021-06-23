@@ -56,14 +56,14 @@ check_docs_lang_sync:
 .build_docs_template:
   image: $ESP_IDF_DOC_ENV_IMAGE
   variables:
-    PYTHON_VER: 3.6.10
+    PYTHON_VER: 3.6.13
   tags:
     - build_docs
   dependencies: []
   script:
     - cd docs
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r requirements.txt
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py -bs $DOC_BUILDERS -l $DOCLANG -t $DOCTGT build
+    - python -m pip install -r requirements.txt
+    - python ./build_docs.py -bs $DOC_BUILDERS -l $DOCLANG -t $DOCTGT build
   parallel:
     matrix:
       - DOCLANG: ["en", "zh_CN"]
@@ -76,8 +76,8 @@ check_docs_gh_links:
     - .doc-rules:build:docs
   script:
     - cd docs
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r requirements.txt
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py gh-linkcheck
+    - python -m pip install -r requirements.txt
+    - python ./build_docs.py gh-linkcheck
 
 # stage: build_doc
 # Add this stage to let the build_docs job run in parallel with build
@@ -154,7 +154,7 @@ build_docs_pdf:
     - .before_script_no_sync_submodule
   image: $ESP_IDF_DOC_ENV_IMAGE
   variables:
-    PYTHON_VER: 3.6.10
+    PYTHON_VER: 3.6.13
   stage: test_deploy
   tags:
     - deploy
@@ -166,7 +166,7 @@ build_docs_pdf:
   script:
     - add_doc_server_ssh_keys $DOCS_DEPLOY_PRIVATEKEY $DOCS_DEPLOY_SERVER $DOCS_DEPLOY_SERVER_USER
     - export GIT_VER=$(git describe --always)
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ${IDF_PATH}/tools/ci/deploy_docs.py
+    - python ${IDF_PATH}/tools/ci/deploy_docs.py
 
 # stage: test_deploy
 deploy_docs_preview:
@@ -225,6 +225,6 @@ check_doc_links:
   allow_failure: true
   script:
     - cd docs
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r requirements.txt
+    - python -m pip install -r requirements.txt
     # At the moment this check will always fail due to multiple known limitations, ignore result
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py -l $DOCLANG -t $DOCTGT linkcheck || { echo "THERE ARE ISSUES DUE TO KNOWN LIMITATIONS, PLEASE FIX THEM. Nowadays we're ignored them to pass pipeline."; true; }
+    - python ./build_docs.py -l $DOCLANG -t $DOCTGT linkcheck || { echo "THERE ARE ISSUES DUE TO KNOWN LIMITATIONS, PLEASE FIX THEM. Nowadays we're ignored them to pass pipeline."; true; }
