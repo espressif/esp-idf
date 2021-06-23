@@ -14,7 +14,7 @@
 #include <stdbool.h>
 #include "ulp_riscv/ulp_riscv.h"
 #include "ulp_riscv/ulp_riscv_utils.h"
-#include "example_ulp_gpio.h"
+#include "ulp_riscv/ulp_riscv_gpio.h"
 
 static bool gpio_level = false;
 
@@ -23,11 +23,11 @@ bool gpio_level_previous = false;
 
 int main (void)
 {
-    gpio_level = (bool)example_ulp_gpio_get_level(GPIO_NUM_0);
+    gpio_level = (bool)ulp_riscv_gpio_get_level(GPIO_NUM_0);
     gpio_level_previous = gpio_level;
 
     while(1) {
-        gpio_level = (bool)example_ulp_gpio_get_level(GPIO_NUM_0);
+        gpio_level = (bool)ulp_riscv_gpio_get_level(GPIO_NUM_0);
 
         /* Wakes up the main CPU if pin changed its state */
         if(gpio_level != gpio_level_previous) {
@@ -35,7 +35,6 @@ int main (void)
             ulp_riscv_wakeup_main_processor();
             break;
         }
-
     }
     /* ulp_riscv_shutdown() is called automatically when main exits */
     return 0;

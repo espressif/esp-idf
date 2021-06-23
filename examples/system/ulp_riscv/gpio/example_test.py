@@ -9,7 +9,7 @@ from tiny_test_fw import DUT
 
 @ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32s2'])
 def test_examples_ulp_riscv(env, extra_data):  # type: (tiny_test_fw.Env.Env, None) -> None # pylint: disable=unused-argument
-    dut = env.get_dut('ulp_riscv', 'examples/system/ulp_riscv')
+    dut = env.get_dut('ulp_riscv', 'examples/system/ulp_riscv/gpio')
     dut.start_app()
 
     dut.expect_all('Not a ULP-RISC-V wakeup, initializing it!',

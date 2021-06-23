@@ -58,6 +58,24 @@ void ulp_riscv_rescue_from_monitor(void);
  */
 void __attribute__((noreturn)) ulp_riscv_shutdown(void);
 
+#define ULP_RISCV_GET_CCOUNT()	({ int __ccount; \
+				asm volatile("rdcycle %0;" : "=r"(__ccount)); \
+				__ccount; })
+
+
+/* These are only approximate default numbers, the default frequency
+   of the 8M oscillator is 8.5MHz +/- 5%, at the default DCAP setting
+*/
+#define ULP_RISCV_CYCLES_PER_US 8.5
+#define ULP_RISCV_CYCLES_PER_MS ULP_RISCV_CYCLES_PER_US*1000
+
+/**
+ * @brief Makes the co-processor busy wait for a certain number of cycles
+ *
+ * @param cycles Number of cycles to busy wait
+ */
+void ulp_riscv_delay_cycles(uint32_t cycles);
+
 #ifdef __cplusplus
 }
 #endif

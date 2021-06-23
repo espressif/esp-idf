@@ -39,3 +39,12 @@ void ulp_riscv_shutdown(void)
 
     while(1);
 }
+
+void ulp_riscv_delay_cycles(uint32_t cycles)
+{
+    uint32_t start = ULP_RISCV_GET_CCOUNT();
+
+    while ((ULP_RISCV_GET_CCOUNT() - start) < cycles) {
+        /* Wait */
+    }
+}
