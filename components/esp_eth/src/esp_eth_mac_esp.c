@@ -57,6 +57,8 @@ typedef struct {
     uint32_t flow_control_low_water_mark;
     int smi_mdc_gpio_num;
     int smi_mdio_gpio_num;
+    eth_data_interface_t interface;
+    eth_mac_clock_config_t clock_config;
     uint8_t addr[6];
     uint8_t *rx_buf[CONFIG_ETH_DMA_RX_BUFFER_NUM];
     uint8_t *tx_buf[CONFIG_ETH_DMA_TX_BUFFER_NUM];
@@ -303,7 +305,6 @@ static void emac_esp32_init_smi_gpio(emac_esp32_t *emac)
     }
 }
 
-#if CONFIG_ETH_RMII_CLK_OUTPUT
 static void emac_config_apll_clock(void)
 {
     /* apll_freq = xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536)/((o_div + 2) * 2) */
@@ -329,7 +330,6 @@ static void emac_config_apll_clock(void)
         break;
     }
 }
-#endif
 
 static esp_err_t emac_esp32_init(esp_eth_mac_t *mac)
 {
@@ -340,40 +340,38 @@ static esp_err_t emac_esp32_init(esp_eth_mac_t *mac)
     periph_module_enable(PERIPH_EMAC_MODULE);
 
     /* init clock, config gpio, etc */
-#if CONFIG_ETH_PHY_INTERFACE_MII
-    /* MII interface GPIO initialization */
-    emac_hal_iomux_init_mii();
-    /* Enable MII clock */
-    emac_ll_clock_enable_mii(emac->hal.ext_regs);
-#elif CONFIG_ETH_PHY_INTERFACE_RMII
-    /* RMII interface GPIO initialization */
-    emac_hal_iomux_init_rmii();
-    /* If ref_clk is configured as input */
-#if CONFIG_ETH_RMII_CLK_INPUT
-#if CONFIG_ETH_RMII_CLK_IN_GPIO == 0
-    emac_hal_iomux_rmii_clk_input();
-#else
-#error "ESP32 EMAC only support input RMII clock to GPIO0"
-#endif // CONFIG_ETH_RMII_CLK_IN_GPIO == 0
-    emac_ll_clock_enable_rmii_input(emac->hal.ext_regs);
-#endif // CONFIG_ETH_RMII_CLK_INPUT
-
-    /* If ref_clk is configured as output */
-#if CONFIG_ETH_RMII_CLK_OUTPUT
-#if CONFIG_ETH_RMII_CLK_OUTPUT_GPIO0
-    emac_hal_iomux_rmii_clk_ouput(0);
-    /* Choose the APLL clock1 to output on specific GPIO */
-    REG_SET_FIELD(PIN_CTRL, CLK_OUT1, 6);
-#elif CONFIG_ETH_RMII_CLK_OUT_GPIO == 16
-    emac_hal_iomux_rmii_clk_ouput(16);
-#elif CONFIG_ETH_RMII_CLK_OUT_GPIO == 17
-    emac_hal_iomux_rmii_clk_ouput(17);
-#endif // CONFIG_ETH_RMII_CLK_OUTPUT_GPIO0
-    /* Enable RMII clock */
-    emac_ll_clock_enable_rmii_output(emac->hal.ext_regs);
-    emac_config_apll_clock();
-#endif // CONFIG_ETH_RMII_CLK_OUTPUT
-#endif // CONFIG_ETH_PHY_INTERFACE_MII
+    if (emac->interface == EMAC_DATA_INTERFACE_MII) {
+        /* MII interface GPIO initialization */
+        emac_hal_iomux_init_mii();
+        /* Enable MII clock */
+        emac_ll_clock_enable_mii(emac->hal.ext_regs);
+    } else if (emac->interface == EMAC_DATA_INTERFACE_RMII) {
+        /* RMII interface GPIO initialization */
+        emac_hal_iomux_init_rmii();
+        /* If ref_clk is configured as input */
+        if (emac->clock_config.rmii.clock_mode == EMAC_CLK_EXT_IN) {
+            ESP_GOTO_ON_FALSE(emac->clock_config.rmii.clock_gpio == EMAC_CLK_IN_GPIO,
+                                ESP_ERR_INVALID_ARG, err, TAG, "ESP32 EMAC only support input RMII clock to GPIO0");
+            emac_hal_iomux_rmii_clk_input();
+            emac_ll_clock_enable_rmii_input(emac->hal.ext_regs);
+        } else if (emac->clock_config.rmii.clock_mode == EMAC_CLK_OUT) {
+            ESP_GOTO_ON_FALSE(emac->clock_config.rmii.clock_gpio == EMAC_APPL_CLK_OUT_GPIO ||
+                                emac->clock_config.rmii.clock_gpio == EMAC_CLK_OUT_GPIO ||
+                                emac->clock_config.rmii.clock_gpio == EMAC_CLK_OUT_180_GPIO,
+                                ESP_ERR_INVALID_ARG, err, TAG, "invalid EMAC clock output GPIO");
+            emac_hal_iomux_rmii_clk_ouput(emac->clock_config.rmii.clock_gpio);
+            if (emac->clock_config.rmii.clock_gpio == EMAC_APPL_CLK_OUT_GPIO) {
+                REG_SET_FIELD(PIN_CTRL, CLK_OUT1, 6);
+            }
+            /* Enable RMII clock */
+            emac_ll_clock_enable_rmii_output(emac->hal.ext_regs);
+            emac_config_apll_clock();
+        } else {
+            ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "invalid EMAC clock mode");
+        }
+    } else {
+        ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "invalid EMAC interface");
+    }
 
     /* init gpio used by smi interface */
     emac_esp32_init_smi_gpio(emac);
@@ -516,6 +514,34 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config)
     emac->sw_reset_timeout_ms = config->sw_reset_timeout_ms;
     emac->smi_mdc_gpio_num = config->smi_mdc_gpio_num;
     emac->smi_mdio_gpio_num = config->smi_mdio_gpio_num;
+    ESP_GOTO_ON_FALSE(config->interface == EMAC_DATA_INTERFACE_MII || config->interface == EMAC_DATA_INTERFACE_RMII,
+                        NULL, err, TAG, "invalid EMAC Data Interface");
+    emac->interface = config->interface;
+
+    if (emac->interface == EMAC_DATA_INTERFACE_RMII) {
+        if (config->clock_config.rmii.clock_mode == EMAC_CLK_DEFAULT) {
+#if CONFIG_ETH_RMII_CLK_INPUT && CONFIG_ETH_RMII_CLK_IN_GPIO == 0
+            emac->clock_config.rmii.clock_mode = EMAC_CLK_EXT_IN;
+            emac->clock_config.rmii.clock_gpio = CONFIG_ETH_RMII_CLK_IN_GPIO;
+#else
+#error "ESP32 EMAC only support input RMII clock to GPIO0"
+#endif // CONFIG_ETH_RMII_CLK_INPUT && CONFIG_ETH_RMII_CLK_IN_GPIO == 0
+
+            /* If ref_clk is configured as output */
+#if CONFIG_ETH_RMII_CLK_OUTPUT
+            emac->clock_config.rmii.clock_mode = EMAC_CLK_OUT;
+#if CONFIG_ETH_RMII_CLK_OUTPUT_GPIO0
+            emac->clock_config.rmii.clock_gpio = 0;
+#elif CONFIG_ETH_RMII_CLK_OUT_GPIO
+            emac->clock_config.rmii.clock_gpio = CONFIG_ETH_RMII_CLK_OUT_GPIO;
+#endif // CONFIG_ETH_RMII_CLK_OUTPUT_GPIO0
+#endif // CONFIG_ETH_RMII_CLK_OUTPUT
+        } else {
+            emac->clock_config = config->clock_config;
+        }
+    } else if (emac->interface == EMAC_DATA_INTERFACE_MII) {
+        emac->clock_config = config->clock_config;
+    }
     emac->flow_control_high_water_mark = FLOW_CONTROL_HIGH_WATER_MARK;
     emac->flow_control_low_water_mark = FLOW_CONTROL_LOW_WATER_MARK;
     emac->parent.set_mediator = emac_esp32_set_mediator;

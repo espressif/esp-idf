@@ -21,9 +21,6 @@ menu "Ethernet"
 
             config ETH_PHY_INTERFACE_RMII
                 bool "Reduced Media Independent Interface (RMII)"
-
-            config ETH_PHY_INTERFACE_MII
-                bool "Media Independent Interface (MII)"
         endchoice
 
         if ETH_PHY_INTERFACE_RMII
