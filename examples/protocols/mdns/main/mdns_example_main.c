@@ -75,7 +75,7 @@ static void initialise_mdns(void)
     //add another TXT item
     ESP_ERROR_CHECK( mdns_service_txt_item_set("_http", "_tcp", "path", "/foobar") );
     //change TXT item value
-    ESP_ERROR_CHECK( mdns_service_txt_item_set("_http", "_tcp", "u", "admin") );
+    ESP_ERROR_CHECK( mdns_service_txt_item_set_with_explicit_value_len("_http", "_tcp", "u", "admin", strlen("admin")) );
     free(hostname);
 }
 
@@ -98,9 +98,10 @@ static void mdns_print_results(mdns_result_t * results){
             printf("  SRV : %s.local:%u\n", r->hostname, r->port);
         }
         if(r->txt_count){
-            printf("  TXT : [%u] ", r->txt_count);
+            printf("  TXT : [%zu] ", r->txt_count);
             for(t=0; t<r->txt_count; t++){
-                printf("%s=%s; ", r->txt[t].key, r->txt[t].value?r->txt[t].value:"NULL");
+                printf("%s=%s(%d); ", r->txt[t].key, r->txt[t].value?r->txt[t].value:"NULL",
+                       r->txt_value_len[t]);
             }
             printf("\n");
         }

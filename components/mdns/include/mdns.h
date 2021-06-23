@@ -79,6 +79,7 @@ typedef struct mdns_result_s {
     uint16_t port;                          /*!< service port */
     // TXT
     mdns_txt_item_t * txt;                  /*!< txt record */
+    uint8_t *txt_value_len;                 /*!< array of txt value len of each record */
     size_t txt_count;                       /*!< number of txt items */
     // A and AAAA
     mdns_ip_addr_t * addr;                  /*!< linked list of IP addresses found */
@@ -173,6 +174,8 @@ esp_err_t mdns_instance_name_set(const char * instance_name);
 /**
  * @brief  Add service to mDNS server
  *
+ * @note The value length of txt items will be automatically decided by strlen
+ *
  * @param  instance_name    instance name to set. If NULL,
  *                          global instance name or hostname will be used
  * @param  service_type     service type (_http, _ftp, etc)
@@ -189,9 +192,10 @@ esp_err_t mdns_instance_name_set(const char * instance_name);
  */
 esp_err_t mdns_service_add(const char * instance_name, const char * service_type, const char * proto, uint16_t port, mdns_txt_item_t txt[], size_t num_items);
 
-
 /**
  * @brief  Add service to mDNS server with a delegated hostname
+ *
+ * @note The value length of txt items will be automatically decided by strlen
  *
  * @param  instance_name    instance name to set. If NULL,
  *                          global instance name or hostname will be used
@@ -321,6 +325,8 @@ esp_err_t mdns_service_port_set_for_host(const char * service_type, const char *
 /**
  * @brief  Replace all TXT items for service
  *
+ * @note The value length of txt items will be automatically decided by strlen
+ *
  * @param  service_type service type (_http, _ftp, etc)
  * @param  proto        service protocol (_tcp, _udp)
  * @param  txt          array of TXT data (eg. {{"var","val"},{"other","2"}})
@@ -336,6 +342,8 @@ esp_err_t mdns_service_txt_set(const char * service_type, const char * proto, md
 
 /**
  * @brief  Replace all TXT items for service with hostname
+ *
+ * @note The value length of txt items will be automatically decided by strlen
  *
  * @param  service_type service type (_http, _ftp, etc)
  * @param  proto        service protocol (_tcp, _udp)
@@ -355,6 +363,8 @@ esp_err_t mdns_service_txt_set_for_host(const char * service_type, const char * 
 /**
  * @brief  Set/Add TXT item for service TXT record
  *
+ * @note The value length will be automatically decided by strlen
+ *
  * @param  service_type service type (_http, _ftp, etc)
  * @param  proto        service protocol (_tcp, _udp)
  * @param  key          the key that you want to add/update
@@ -368,9 +378,28 @@ esp_err_t mdns_service_txt_set_for_host(const char * service_type, const char * 
  */
 esp_err_t mdns_service_txt_item_set(const char * service_type, const char * proto, const char * key, const char * value);
 
+/**
+ * @brief  Set/Add TXT item for service TXT record
+ *
+ * @param  service_type service type (_http, _ftp, etc)
+ * @param  proto        service protocol (_tcp, _udp)
+ * @param  key          the key that you want to add/update
+ * @param  value        the new value of the key
+ * @param  value_len    the length of the value
+ *
+ * @return
+ *     - ESP_OK success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ *     - ESP_ERR_NOT_FOUND Service not found
+ *     - ESP_ERR_NO_MEM memory error
+ */
+esp_err_t mdns_service_txt_item_set_with_explicit_value_len(const char *service_type, const char *proto,
+                                                            const char *key, const char *value, uint8_t value_len);
 
 /**
  * @brief  Set/Add TXT item for service TXT record with hostname
+ *
+ * @note The value length will be automatically decided by strlen
  *
  * @param  service_type service type (_http, _ftp, etc)
  * @param  proto        service protocol (_tcp, _udp)
@@ -386,6 +415,26 @@ esp_err_t mdns_service_txt_item_set(const char * service_type, const char * prot
  */
 esp_err_t mdns_service_txt_item_set_for_host(const char * service_type, const char * proto, const char * hostname,
                                              const char * key, const char * value);
+
+/**
+ * @brief  Set/Add TXT item for service TXT record with hostname and txt value length
+ *
+ * @param  service_type service type (_http, _ftp, etc)
+ * @param  proto        service protocol (_tcp, _udp)
+ * @param  hostname     service hostname. If NULL, local hostname will be used.
+ * @param  key          the key that you want to add/update
+ * @param  value        the new value of the key
+ * @param  value_len    the length of the value
+ *
+ * @return
+ *     - ESP_OK success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ *     - ESP_ERR_NOT_FOUND Service not found
+ *     - ESP_ERR_NO_MEM memory error
+ */
+esp_err_t mdns_service_txt_item_set_for_host_with_explicit_value_len(const char *service_type, const char *proto,
+                                                                     const char *hostname, const char *key,
+                                                                     const char *value, uint8_t value_len);
 
 /**
  * @brief  Remove TXT item for service TXT record
