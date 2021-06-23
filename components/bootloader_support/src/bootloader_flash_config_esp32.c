@@ -178,9 +178,9 @@ int bootloader_flash_get_wp_pin(void)
     uint8_t chip_ver;
     uint32_t pkg_ver = REG_GET_FIELD(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_PKG);
     switch(pkg_ver) {
+    case EFUSE_RD_CHIP_VER_PKG_ESP32U4WDH:
     case EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5:
         return ESP32_D2WD_WP_GPIO;
-    case EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2:
     case EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4:
         /* Same package IDs are used for ESP32-PICO-V3 and ESP32-PICO-D4, silicon version differentiates */
         chip_ver = bootloader_common_get_chip_revision();
