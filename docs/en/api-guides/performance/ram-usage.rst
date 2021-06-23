@@ -136,6 +136,27 @@ The following options will reduce IRAM usage of some ESP-IDF features:
     - Disabling :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` prevents spi_master interrupts from being serviced while writing to flash, and may otherwise reduce spi_master performance, but will save some IRAM.
     - Setting :ref:`CONFIG_HAL_DEFAULT_ASSERTION_LEVEL` to disable assertion for HAL component will save some IRAM especially for HAL code who calls `HAL_ASSERT` a lot and resides in IRAM.
 
+.. only:: esp32
+
+   When compiling for ESP32 revisions older than ECO3 (:ref:`CONFIG_ESP32_REV_MIN`), PSRAM cache bug workaround (:ref:`CONFIG_SPIRAM_CACHE_WORKAROUND`) option is enabled, and the C library functions normally located in ROM are recompiled with the workaround and placed into IRAM instead. For most applications, it is safe to move many of the C library functions into Flash, reclaiming some IRAM. Corresponding options include:
+
+   .. list::
+
+       - :ref:`CONFIG_SPIRAM_CACHE_LIBJMP_IN_IRAM`: affects the functions ``longjmp`` and ``setjump``.
+       - :ref:`CONFIG_SPIRAM_CACHE_LIBMATH_IN_IRAM`: affects the functions ``abs``, ``div``, ``labs``, ``ldiv``, ``quorem``, ``fpclassify`` and ``nan``.
+       - :ref:`CONFIG_SPIRAM_CACHE_LIBNUMPARSER_IN_IRAM`: affects the functions ``utoa``, ``itoa``, ``atoi``, ``atol``, ``strtol``, and ``strtoul``.
+       - :ref:`CONFIG_SPIRAM_CACHE_LIBIO_IN_IRAM`: affects the functions ``wcrtomb``, ``fvwrite``, ``wbuf``, ``wsetup``, ``fputwc``, ``wctomb_r``, ``ungetc``, ``makebuf``, ``fflush``, ``refill``, and ``sccl``.
+       - :ref:`CONFIG_SPIRAM_CACHE_LIBTIME_IN_IRAM`: affects the functions ``asctime``, ``asctime_r``, ``ctime``, ``ctime_r``, ``lcltime``, ``lcltime_r``, ``gmtime``, ``gmtime_r``, ``strftime``, ``mktime``, ``tzset_r``, ``tzset``, ``time``, ``gettzinfo``, ``systimes``, ``month_lengths``, ``timelocal``, ``tzvars``, ``tzlock``, ``tzcalc_limits``, and ``strptime``.
+       - :ref:`CONFIG_SPIRAM_CACHE_LIBCHAR_IN_IRAM`: affects the functions ``ctype_``, ``toupper``, ``tolower``, ``toascii``, ``strupr``, ``bzero``, ``isalnum``, ``isalpha``, ``isascii``, ``isblank``, ``iscntrl``, ``isdigit``, ``isgraph``, ``islower``, ``isprint``, ``ispunct``, ``isspace``, and ``isupper``.
+       - :ref:`CONFIG_SPIRAM_CACHE_LIBMEM_IN_IRAM`: affects the functions ``memccpy``, ``memchr``, ``memmove``, and ``memrchr``.
+       - :ref:`CONFIG_SPIRAM_CACHE_LIBSTR_IN_IRAM`: affects the functions ``strcasecmp``, ``strcasestr``, ``strchr``, ``strcoll``, ``strcpy``, ``strcspn``, ``strdup``, ``strdup_r``, ``strlcat``, ``strlcpy``, ``strlen``, ``strlwr``, ``strncasecmp``, ``strncat``, ``strncmp``, ``strncpy``, ``strndup``, ``strndup_r``, ``strrchr``, ``strsep``, ``strspn``, ``strstr``, ``strtok_r, and ``strupr``.
+       - :ref:`CONFIG_SPIRAM_CACHE_LIBRAND_IN_IRAM`: affects the functions ``srand``, ``rand``, and ``rand_r``.
+       - :ref:`CONFIG_SPIRAM_CACHE_LIBENV_IN_IRAM`: affects the functions ``environ``, ``envlock``, and ``getenv_r``.
+       - :ref:`CONFIG_SPIRAM_CACHE_LIBFILE_IN_IRAM`: affects the functions lock``, ``isatty``, ``fclose``, ``open``, ``close``, ``creat``, ``read``, ``rshift``, ``sbrk``, ``stdio``, ``syssbrk``, ``sysclose``, ``sysopen``, ``creat``, ``sysread``, ``syswrite``, ``impure``, ``fwalk``, and ``findfp``.
+       - :ref:`CONFIG_SPIRAM_CACHE_LIBMISC_IN_IRAM`: affects the functions ``raise`` and ``system``.
+
+   The exact amount of IRAM saved will depend on how much C library code is actually used by the application. In addition to these, the following options may be used to move more of the C library code into Flash, however note that this may result in reduced performance. Also take care to not use corresponding C library functions from interrupts which may be called while cache is disabled (allocated with :c:macro:`ESP_INTR_FLAG_IRAM` flag), refer to :ref:`iram-safe-interrupt-handlers` for more details. For these reasons, the functions ``itoa``, ``memcmp``, ``memcpy``, ``memset``, ``strcat``, ``strcmp``, and ``strlen`` are always put in IRAM.
+
 .. note::
 
     Moving frequently-called functions from IRAM to flash may increase their execution time.
