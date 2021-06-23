@@ -23,7 +23,7 @@ menu "Example Connection Configuration"
 
         choice EXAMPLE_WIFI_SCAN_METHOD
             prompt "WiFi Scan Method"
-            default EXAMPLE_WIFI_SCAN_METHOD_FAST
+            default EXAMPLE_WIFI_SCAN_METHOD_ALL_CHANNEL
             help
                 WiFi scan method:
 
