@@ -46,6 +46,8 @@ typedef struct {
     gdma_channel_handle_t rx_channel;
 #endif
     intptr_t rx_eof_addr;
+    size_t sram_trans_align;
+    size_t psram_trans_align;
     bool isr_need_yield;      // if current isr needs a yield for higher priority task
 } async_memcpy_impl_t;
 

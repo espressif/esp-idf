@@ -22,6 +22,8 @@ Configure and Install driver
 
 Driver configuration is described in :cpp:type:`async_memcpy_config_t`:
 :cpp:member:`backlog`: This is used to configured the maximum number of DMA operation that can be working at the background at the same time.
+:cpp:member:`sram_trans_align`: Declare SRAM alignment for both data address and copy size, set to zero if the data has no restriction in alignment. If set to a quadruple value (i.e. 4X), the driver will enable the burst mode internally, which is helpful for some performance related application.
+:cpp:member:`psram_trans_align`: Declare PSRAM alignment for both data address and copy size. User has to give it a valid value (only 16, 32, 64 are supported) if the destination of memcpy is located in PSRAM. The default alignment (i.e. 16) will be applied if it's set to zero. Internally, the driver configures the size of block used by DMA to access PSRAM, according to the alignment.
 :cpp:member:`flags`: This is used to enable some special driver features.
 
 :c:macro:`ASYNC_MEMCPY_DEFAULT_CONFIG` provides a default configuration, which specifies the backlog to 8.

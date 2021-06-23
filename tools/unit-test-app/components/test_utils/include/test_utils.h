@@ -73,7 +73,7 @@ extern "C" {
 
 
 /* @brief macro to print IDF performance
- * @param mode :        performance item name. a string pointer.
+ * @param item :        performance item name. a string pointer.
  * @param value_fmt:    print format and unit of the value, for example: "%02fms", "%dKB"
  * @param value :       the performance value.
 */

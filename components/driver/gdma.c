@@ -74,6 +74,8 @@ struct gdma_channel_t {
     intr_handle_t intr; // per-channel interrupt handle
     gdma_channel_direction_t direction; // channel direction
     int periph_id; // Peripheral instance ID, indicates which peripheral is connected to this GDMA channel
+    size_t sram_alignment;  // alignment for memory in SRAM
+    size_t psram_alignment; // alignment for memory in PSRAM
     esp_err_t (*del)(gdma_channel_t *channel); // channel deletion function, it's polymorphic, see `gdma_del_tx_channel` or `gdma_del_rx_channel`
 };
 
@@ -267,6 +269,67 @@ esp_err_t gdma_disconnect(gdma_channel_handle_t dma_chan)
         gdma_ll_rx_connect_to_periph(group->hal.dev, pair->pair_id, GDMA_INVALID_PERIPH_TRIG);
     }
 
+err:
+    return ret;
+}
+
+esp_err_t gdma_set_transfer_ability(gdma_channel_handle_t dma_chan, const gdma_transfer_ability_t *ability)
+{
+    esp_err_t ret = ESP_OK;
+    gdma_pair_t *pair = NULL;
+    gdma_group_t *group = NULL;
+    bool en_burst = true;
+    ESP_GOTO_ON_FALSE(dma_chan, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    pair = dma_chan->pair;
+    group = pair->group;
+    size_t sram_alignment = ability->sram_trans_align;
+    size_t psram_alignment = ability->psram_trans_align;
+    // alignment should be 2^n
+    ESP_GOTO_ON_FALSE((sram_alignment & (sram_alignment - 1)) == 0, ESP_ERR_INVALID_ARG, err, TAG, "invalid sram alignment: %zu", sram_alignment);
+
+#if SOC_GDMA_SUPPORT_PSRAM
+    int block_size_index = 0;
+    switch (psram_alignment) {
+    case 64: // 64 Bytes alignment
+        block_size_index = GDMA_LL_EXT_MEM_BK_SIZE_64B;
+        break;
+    case 32: // 32 Bytes alignment
+        block_size_index = GDMA_LL_EXT_MEM_BK_SIZE_32B;
+        break;
+    case 16: // 16 Bytes alignment
+        block_size_index = GDMA_LL_EXT_MEM_BK_SIZE_16B;
+        break;
+    case 0: // no alignment is requirement
+        block_size_index = GDMA_LL_EXT_MEM_BK_SIZE_16B;
+        psram_alignment = SOC_GDMA_PSRAM_MIN_ALIGN; // fall back to minimal alignment
+        break;
+    default:
+        ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "invalid psram alignment: %zu", psram_alignment);
+        break;
+    }
+#endif // #if SOC_GDMA_SUPPORT_PSRAM
+
+    if (dma_chan->direction == GDMA_CHANNEL_DIRECTION_TX) {
+        // TX channel can always enable burst mode, no matter data alignment
+        gdma_ll_tx_enable_data_burst(group->hal.dev, pair->pair_id, true);
+        gdma_ll_tx_enable_descriptor_burst(group->hal.dev, pair->pair_id, true);
+#if SOC_GDMA_SUPPORT_PSRAM
+        gdma_ll_tx_set_block_size_psram(group->hal.dev, pair->pair_id, block_size_index);
+#endif // #if SOC_GDMA_SUPPORT_PSRAM
+    } else {
+        // RX channel burst mode depends on specific data alignment
+        en_burst = sram_alignment >= 4;
+        gdma_ll_rx_enable_data_burst(group->hal.dev, pair->pair_id, en_burst);
+        gdma_ll_rx_enable_descriptor_burst(group->hal.dev, pair->pair_id, en_burst);
+#if SOC_GDMA_SUPPORT_PSRAM
+        gdma_ll_rx_set_block_size_psram(group->hal.dev, pair->pair_id, block_size_index);
+#endif // #if SOC_GDMA_SUPPORT_PSRAM
+    }
+
+    dma_chan->sram_alignment = sram_alignment;
+    dma_chan->psram_alignment = psram_alignment;
+    ESP_LOGD(TAG, "%s channel (%d,%d), (%zu:%zu) bytes aligned, burst %s", dma_chan->direction == GDMA_CHANNEL_DIRECTION_TX ? "tx" : "rx",
+             group->group_id, pair->pair_id, sram_alignment, psram_alignment, en_burst ? "enabled" : "disabled");
 err:
     return ret;
 }
