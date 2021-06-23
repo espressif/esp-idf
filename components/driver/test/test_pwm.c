@@ -169,9 +169,9 @@ static void mcpwm_start_stop_test(mcpwm_unit_t unit, mcpwm_timer_t timer)
     TEST_ESP_OK(mcpwm_stop(unit, timer));
     usleep(10000); // wait until timer stopped
     pulse_number = mcpwm_pcnt_get_pulse_number(TEST_PWMA_PCNT_UNIT, 100);
-    TEST_ASSERT_INT_WITHIN(0, 0, pulse_number);
+    TEST_ASSERT_INT_WITHIN(2, 0, pulse_number);
     pulse_number = mcpwm_pcnt_get_pulse_number(TEST_PWMB_PCNT_UNIT, 100);
-    TEST_ASSERT_INT_WITHIN(0, 0, pulse_number);
+    TEST_ASSERT_INT_WITHIN(2, 0, pulse_number);
 }
 
 TEST_CASE("MCPWM start and stop test", "[mcpwm]")
