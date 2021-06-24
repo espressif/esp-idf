@@ -81,6 +81,9 @@ static struct ble_gap_adv_params adv_params;
 static char *protocomm_ble_device_name;
 static struct ble_hs_adv_fields adv_data, resp_data;
 
+static uint8_t *protocomm_ble_mfg_data;
+static size_t protocomm_ble_mfg_data_len;
+
 /**********************************************************************
 * Maintain database of uuid_name addresses to free memory afterwards  *
 **********************************************************************/
@@ -314,7 +317,7 @@ gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
 
     switch (ctxt->op) {
     case BLE_GATT_ACCESS_OP_READ_CHR:
-        ESP_LOGD(TAG, "Read attempeted for Characterstic UUID = %s, attr_handle = %d",
+        ESP_LOGD(TAG, "Read attempted for characteristic UUID = %s, attr_handle = %d",
                  ble_uuid_to_str(ctxt->chr->uuid, buf), attr_handle);
 
         rc = simple_ble_gatts_get_attr_value(attr_handle, &temp_outlen,
@@ -480,7 +483,7 @@ static int simple_ble_start(const simple_ble_cfg_t *cfg)
 {
     ble_cfg_p = (void *)cfg;
     int rc;
-    ESP_LOGD(TAG, "Free mem at start of simple_ble_init %d", esp_get_free_heap_size());
+    ESP_LOGD(TAG, "Free memory at start of simple_ble_init %d", esp_get_free_heap_size());
 
     ESP_ERROR_CHECK(esp_nimble_hci_and_controller_init());
     nimble_port_init();
@@ -507,6 +510,13 @@ static int simple_ble_start(const simple_ble_cfg_t *cfg)
     if (resp_data.name != NULL) {
         resp_data.name_len = strlen(ble_svc_gap_device_name());
         resp_data.name_is_complete = 1;
+    }
+
+    /* Set manufacturer data if protocomm_ble_mfg_data points to valid data */
+    if (protocomm_ble_mfg_data != NULL) {
+        resp_data.mfg_data = protocomm_ble_mfg_data;
+        resp_data.mfg_data_len = protocomm_ble_mfg_data_len;
+        ESP_LOGD(TAG, "Custom manufacturer data length = %d", protocomm_ble_mfg_data_len);
     }
 
     /* XXX Need to have template for store */
@@ -726,9 +736,16 @@ static void protocomm_ble_cleanup(void)
         free(protoble_internal);
         protoble_internal = NULL;
     }
+
     if (protocomm_ble_device_name) {
         free(protocomm_ble_device_name);
         protocomm_ble_device_name = NULL;
+    }
+
+    if (protocomm_ble_mfg_data) {
+        free(protocomm_ble_mfg_data);
+        protocomm_ble_mfg_data = NULL;
+        protocomm_ble_mfg_data_len = 0;
     }
 }
 
@@ -781,7 +798,9 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
 {
     /* copy the 128 bit service UUID into local buffer to use as base 128 bit
      * UUID. */
-    memcpy(ble_uuid_base, config->service_uuid, BLE_UUID128_VAL_LENGTH);
+    if (config->service_uuid != NULL) {
+        memcpy(ble_uuid_base, config->service_uuid, BLE_UUID128_VAL_LENGTH);
+    }
 
     if (!pc || !config || !config->device_name || !config->nu_lookup) {
         return ESP_ERR_INVALID_ARG;
@@ -822,11 +841,16 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
 
     /* Store BLE device name internally */
     protocomm_ble_device_name = strdup(config->device_name);
-
     if (protocomm_ble_device_name == NULL) {
         ESP_LOGE(TAG, "Error allocating memory for storing BLE device name");
         protocomm_ble_cleanup();
         return ESP_ERR_NO_MEM;
+    }
+
+    /* Store BLE manufacturer data pointer */
+    if (config->manufacturer_data != NULL) {
+        protocomm_ble_mfg_data = config->manufacturer_data;
+        protocomm_ble_mfg_data_len = config->manufacturer_data_len;
     }
 
     protoble_internal = (_protocomm_ble_internal_t *) calloc(1, sizeof(_protocomm_ble_internal_t));
