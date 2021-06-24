@@ -249,10 +249,18 @@ menu "LWIP"
 
     menu "DHCP server"
 
+        config LWIP_DHCPS
+            bool "DHCPS: Enable IPv4 Dynamic Host Configuration Protocol Server (DHCPS)"
+            default y
+            help
+                Enabling this option allows the device to run the DHCP server
+                (to dynamically assign IPv4 addresses to clients).
+
         config LWIP_DHCPS_LEASE_UNIT
             int "Multiplier for lease time, in seconds"
             range 1 3600
             default 60
+            depends on LWIP_DHCPS
             help
                 The DHCP server is calculating lease time multiplying the sent
                 and received times by this number of seconds per unit.
@@ -262,6 +270,7 @@ menu "LWIP"
             int "Maximum number of stations"
             range 1 64
             default 8
+            depends on LWIP_DHCPS
             help
                 The maximum number of DHCP clients that are connected to the server.
                 After this number is exceeded, DHCP server removes of the oldest device
