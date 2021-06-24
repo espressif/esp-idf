@@ -710,10 +710,6 @@ static void btdm_sleep_exit_phase3_wrapper(void)
     }
 #endif
 
-    if(btdm_sleep_clock_sync()) {
-        ESP_LOGE(BT_LOG_TAG, "sleep eco state err\n");
-        assert(0);
-    }
     if (btdm_controller_get_sleep_mode() == ESP_BT_SLEEP_MODE_1) {
         if (s_lp_stat.phy_enabled == 0) {
             esp_phy_enable();
@@ -727,6 +723,12 @@ static void btdm_sleep_exit_phase3_wrapper(void)
     if (s_lp_cntl.wakeup_timer_required && s_lp_stat.wakeup_timer_started) {
         esp_timer_stop(s_btdm_slp_tmr);
         s_lp_stat.wakeup_timer_started = 0;
+    }
+
+    // wait for the sleep state to change
+    // the procedure duration is at micro-second level or less
+    while (btdm_sleep_clock_sync()) {
+        ;
     }
 }
 
