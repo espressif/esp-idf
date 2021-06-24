@@ -426,7 +426,7 @@ static void IRAM_ATTR on_freq_update(uint32_t old_ticks_per_us, uint32_t ticks_p
     }
 
 #if __XTENSA__
-#if XT_RTOS_TIMER_INT
+#ifdef XT_RTOS_TIMER_INT
     /* Calculate new tick divisor */
     _xt_tick_divisor = ticks_per_us * MHZ / XT_TICK_PER_SEC;
 #endif
