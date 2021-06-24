@@ -968,6 +968,8 @@
 
 #define LWIP_IPV6_NUM_ADDRESSES         CONFIG_LWIP_IPV6_NUM_ADDRESSES
 
+#define LWIP_ND6_RDNSS_MAX_DNS_SERVERS  CONFIG_LWIP_IPV6_RDNSS_MAX_DNS_SERVERS
+
 /* Enable all Espressif-only options */
 
 #define ESP_LWIP                        1
