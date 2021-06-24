@@ -39,5 +39,6 @@ _xt_gdbstub_int:
     s32i    a0, sp, XT_STK_A0
 
     mov     a6,sp
-    call0   gdbstub_handle_uart_int
+    movi    a3, gdbstub_handle_uart_int
+    callx0  a3
     ret
