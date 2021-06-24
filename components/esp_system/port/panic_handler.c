@@ -53,7 +53,9 @@
 
 extern int _invalid_pc_placeholder;
 
-extern void esp_panic_handler(panic_info_t*);
+extern void esp_panic_handler_reconfigure_wdts(void);
+
+extern void esp_panic_handler(panic_info_t *);
 
 static wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
 
@@ -498,6 +500,9 @@ static void panic_handler(XtExcFrame *frame, bool pseudo_excause)
             }
         }
     }
+
+    // Need to reconfigure WDTs before we stall any other CPU
+    esp_panic_handler_reconfigure_wdts();
 
     ets_delay_us(1);
     SOC_HAL_STALL_OTHER_CORES();
