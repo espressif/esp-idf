@@ -166,7 +166,6 @@ void IRAM_ATTR call_start_cpu0(void)
     }
 
 #if CONFIG_SPIRAM_BOOT_INIT
-    esp_spiram_init_cache();
     if (esp_spiram_init() != ESP_OK) {
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
         ESP_EARLY_LOGE(TAG, "Failed to init external RAM, needed for external .bss segment");
@@ -181,6 +180,7 @@ void IRAM_ATTR call_start_cpu0(void)
         abort();
 #endif
     }
+    esp_spiram_init_cache();
 #endif
 
     ESP_EARLY_LOGI(TAG, "Pro cpu up.");
