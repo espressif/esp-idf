@@ -840,7 +840,7 @@ esp_err_t esp_netif_stop(esp_netif_t *esp_netif)
 #endif
     } else if (_IS_NETIF_POINT2POINT_TYPE(esp_netif, SLIP_LWIP_NETIF)) {
 #if CONFIG_LWIP_SLIP_SUPPORT
-        // No need to stop PPP interface in lwip thread
+        // No need to stop SLIP interface in lwip thread
         esp_err_t ret = esp_netif_stop_slip(esp_netif);
         if (ret == ESP_OK) {
             esp_netif_update_default_netif(esp_netif, ESP_NETIF_STOPPED);;
