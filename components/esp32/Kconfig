@@ -112,6 +112,9 @@ menu "ESP32-specific"
             config SPIRAM_TYPE_AUTO
                 bool "Auto-detect"
 
+            config SPIRAM_TYPE_ESPPSRAM16
+                bool "ESP-PSRAM16 or APS1604"
+
             config SPIRAM_TYPE_ESPPSRAM32
                 bool "ESP-PSRAM32 or IS25WP032"
 
@@ -123,6 +126,7 @@ menu "ESP32-specific"
         config SPIRAM_SIZE
             int
             default -1 if SPIRAM_TYPE_AUTO
+            default 2097152 if SPIRAM_TYPE_ESPPSRAM16
             default 4194304 if SPIRAM_TYPE_ESPPSRAM32
             default 8388608 if SPIRAM_TYPE_ESPPSRAM64
             default 0
@@ -340,23 +344,37 @@ menu "ESP32-specific"
 
         endmenu
 
-        config SPIRAM_SPIWP_SD3_PIN
-            int "SPI PSRAM WP(SD3) Pin when customising pins via eFuse (read help)"
+        config SPIRAM_CUSTOM_SPIWP_SD3_PIN
+            bool "Use custom SPI PSRAM WP(SD3) Pin when flash pins set in eFuse (read help)"
             depends on FLASHMODE_DIO || FLASHMODE_DOUT
+            default y if SPIRAM_SPIWP_SD3_PIN != 7  # backwards compatibility, can remove in IDF 5
+            default n
+            help
+                This setting is only used if the SPI flash pins have been overridden by setting the eFuses
+                SPI_PAD_CONFIG_xxx, and the SPI flash mode is DIO or DOUT.
+
+                When this is the case, the eFuse config only defines 3 of the 4 Quad I/O data pins. The WP pin (aka
+                ESP32 pin "SD_DATA_3" or SPI flash pin "IO2") is not specified in eFuse. The psram only has QPI
+                mode, so a WP pin setting is necessary.
+
+                If this config item is set to N (default), the correct WP pin will be automatically used for any
+                Espressif chip or module with integrated flash. If a custom setting is needed, set this config item
+                to Y and specify the GPIO number connected to the WP pin.
+
+                When flash mode is set to QIO or QOUT, the PSRAM WP pin will be set the same as the SPI Flash WP pin
+                configured in the bootloader.
+
+        config SPIRAM_SPIWP_SD3_PIN
+            int "Custom SPI PSRAM WP(SD3) Pin"
+            depends on FLASHMODE_DIO || FLASHMODE_DOUT
+            #depends on SPIRAM_CUSTOM_SPIWP_SD3_PIN  # backwards compatibility, can uncomment in IDF 5
             range 0 33
             default 7
             help
-                This value is ignored unless flash mode is set to DIO or DOUT and the SPI flash pins have been
-                overriden by setting the eFuses SPI_PAD_CONFIG_xxx.
+                The option "Use custom SPI PSRAM WP(SD3) pin" must be set or this value is ignored
 
-                When this is the case, the eFuse config only defines 3 of the 4 Quad I/O data pins. The WP pin (aka
-                ESP32 pin "SD_DATA_3" or SPI flash pin "IO2") is not specified in eFuse. And the psram only has QPI
-                mode, the WP pin is necessary, so we need to configure this value here.
-
-                When flash mode is set to QIO or QOUT, the PSRAM WP pin will be set as the value configured in
-                bootloader.
-
-                For ESP32-PICO chip, the default value of this config should be 7.
+                If burning a customized set of SPI flash pins in eFuse and using DIO or DOUT mode for flash, set this
+                value to the GPIO number of the SPIRAM WP pin.
 
         config SPIRAM_2T_MODE
             bool "Enable SPI PSRAM 2T mode"
