@@ -17,10 +17,6 @@ case $IDF_TARGET in
         PREFIX=xtensa-esp32-elf-
         LIB_DIR=esp32
         ;;
-    esp32s2beta)
-        PREFIX=xtensa-esp32s2-elf-
-        LIB_DIR=esp32s2beta
-        ;;
     *)
         echo "Invalid IDF_TARGET value: \"${IDF_TARGET}\""
         exit 1
