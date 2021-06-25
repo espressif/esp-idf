@@ -217,6 +217,7 @@
    ---------- ICMP options ----------
    ----------------------------------
 */
+#define LWIP_ICMP  CONFIG_LWIP_ICMP
 
 #define LWIP_BROADCAST_PING CONFIG_LWIP_BROADCAST_PING
 
