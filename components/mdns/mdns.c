@@ -3171,9 +3171,9 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
                     if (discovery) {
                         service = _mdns_get_service_item(name->service, name->proto, NULL);
                         _mdns_remove_parsed_question(parsed_packet, MDNS_TYPE_SDPTR, service);
-                    } else if (parsed_packet->questions && !parsed_packet->probe) {
+                    } else if (service && parsed_packet->questions && !parsed_packet->probe) {
                         _mdns_remove_parsed_question(parsed_packet, type, service);
-                    } else {
+                    } else if (service) {
                         //check if TTL is more than half of the full TTL value (4500)
                         if (ttl > 2250) {
                             _mdns_remove_scheduled_answer(packet->tcpip_if, packet->ip_protocol, type, service);
@@ -3262,7 +3262,7 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
                                     }
                                     _mdns_restart_all_pcbs();
                                 }
-                            } else {
+                            } else if (service) {
                                 _mdns_pcb_send_bye(packet->tcpip_if, packet->ip_protocol, &service, 1, false);
                                 _mdns_init_pcb_probe(packet->tcpip_if, packet->ip_protocol, &service, 1, false);
                             }
