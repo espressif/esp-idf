@@ -368,7 +368,12 @@ void app_main(void)
     }
     ESP_ERROR_CHECK( ret );
 
+#if CONFIG_BT_CLASSIC_ENABLED
     ret = esp_hid_gap_init(ESP_BT_MODE_BTDM);
+#else
+    ret = esp_hid_gap_init(ESP_BT_MODE_BLE);
+#endif
+
     ESP_ERROR_CHECK( ret );
 
     ret = esp_hid_ble_gap_adv_init(ESP_HID_APPEARANCE_GENERIC, hid_config.device_name);

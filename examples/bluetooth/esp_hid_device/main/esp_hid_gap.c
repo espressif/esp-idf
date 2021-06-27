@@ -135,6 +135,7 @@ static esp_hid_scan_result_t *find_scan_result(esp_bd_addr_t bda, esp_hid_scan_r
     return NULL;
 }
 
+#if CONFIG_BT_CLASSIC_ENABLED
 static void add_bt_scan_result(esp_bd_addr_t bda, esp_bt_cod_t *cod, esp_bt_uuid_t *uuid, uint8_t *name, uint8_t name_len, int rssi)
 {
     esp_hid_scan_result_t *r = find_scan_result(bda, bt_scan_results);
@@ -186,6 +187,7 @@ static void add_bt_scan_result(esp_bd_addr_t bda, esp_bt_cod_t *cod, esp_bt_uuid
     bt_scan_results = r;
     num_bt_scan_results++;
 }
+#endif
 
 static void add_ble_scan_result(esp_bd_addr_t bda, esp_ble_addr_type_t addr_type, uint16_t appearance, uint8_t *name, uint8_t name_len, int rssi)
 {
@@ -237,6 +239,7 @@ void print_uuid(esp_bt_uuid_t *uuid)
     }
 }
 
+#if CONFIG_BT_CLASSIC_ENABLED
 static void handle_bt_device_result(struct disc_res_param *disc_res)
 {
     GAP_DBG_PRINTF("BT : " ESP_BD_ADDR_STR, ESP_BD_ADDR_HEX(disc_res->bda));
@@ -325,6 +328,7 @@ static void handle_bt_device_result(struct disc_res_param *disc_res)
         add_bt_scan_result(disc_res->bda, cod, &uuid, name, name_len, rssi);
     }
 }
+#endif
 
 static void handle_ble_device_result(struct ble_scan_result_evt_param *scan_rst)
 {
@@ -372,7 +376,7 @@ static void handle_ble_device_result(struct ble_scan_result_evt_param *scan_rst)
     }
 }
 
-
+#if CONFIG_BT_CLASSIC_ENABLED
 /*
  * BT GAP
  * */
@@ -440,6 +444,7 @@ static esp_err_t start_bt_scan(uint32_t seconds)
     }
     return ret;
 }
+#endif
 
 /*
  * BLE GAP
@@ -671,11 +676,15 @@ static esp_err_t init_low_level(uint8_t mode)
 {
     esp_err_t ret;
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
+#if CONFIG_BT_CLASSIC_ENABLED
     if (mode & ESP_BT_MODE_CLASSIC_BT) {
         bt_cfg.mode = mode;
         bt_cfg.bt_max_acl_conn = 3;
         bt_cfg.bt_max_sync_conn = 3;
-    } else {
+    } else
+#endif
+    {
+
         ret = esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
         if (ret) {
             ESP_LOGE(TAG, "esp_bt_controller_mem_release failed: %d", ret);
@@ -705,13 +714,14 @@ static esp_err_t init_low_level(uint8_t mode)
         ESP_LOGE(TAG, "esp_bluedroid_enable failed: %d", ret);
         return ret;
     }
-
+#if CONFIG_BT_CLASSIC_ENABLED
     if (mode & ESP_BT_MODE_CLASSIC_BT) {
         ret = init_bt_gap();
         if (ret) {
             return ret;
         }
     }
+#endif
 
     if (mode & ESP_BT_MODE_BLE) {
         ret = init_ble_gap();
@@ -772,9 +782,11 @@ esp_err_t esp_hid_scan(uint32_t seconds, size_t *num_results, esp_hid_scan_resul
     }
 
     if (start_ble_scan(seconds) == ESP_OK) {
+#if CONFIG_BT_CLASSIC_ENABLED
         if (start_bt_scan(seconds) == ESP_OK) {
             WAIT_BT_CB();
         }
+#endif
         WAIT_BLE_CB();
     } else {
         return ESP_FAIL;
