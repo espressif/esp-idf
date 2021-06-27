@@ -20,6 +20,8 @@ extern "C" {
 
 #include "ulp_riscv/ulp_riscv.h"
 #include "soc/rtc_io_reg.h"
+#include "soc/sens_reg.h"
+
 
 typedef enum {
     GPIO_NUM_0 = 0,     /*!< GPIO0, input and output */
@@ -51,38 +53,39 @@ typedef enum {
     RTCIO_MODE_OUTPUT_OD = 1,
 } rtc_io_out_mode_t;
 
-static inline void example_ulp_gpio_init(gpio_num_t gpio_num)
+static inline void ulp_riscv_gpio_init(gpio_num_t gpio_num)
 {
+    SET_PERI_REG_MASK(SENS_SAR_IO_MUX_CONF_REG, SENS_IOMUX_CLK_GATE_EN_M);
     SET_PERI_REG_MASK(RTC_IO_TOUCH_PAD0_REG + gpio_num*4, RTC_IO_TOUCH_PAD0_MUX_SEL);
     REG_SET_FIELD(RTC_IO_TOUCH_PAD0_REG + gpio_num*4, RTC_IO_TOUCH_PAD0_FUN_SEL, 0);
 }
 
-static inline void example_ulp_gpio_deinit(gpio_num_t gpio_num)
+static inline void ulp_riscv_gpio_deinit(gpio_num_t gpio_num)
 {
     CLEAR_PERI_REG_MASK(RTC_IO_TOUCH_PAD0_REG + gpio_num*4, RTC_IO_TOUCH_PAD0_MUX_SEL);
 }
 
-static inline void example_ulp_gpio_output_enable(gpio_num_t gpio_num)
+static inline void ulp_riscv_gpio_output_enable(gpio_num_t gpio_num)
 {
     REG_SET_FIELD(RTC_GPIO_ENABLE_W1TS_REG, RTC_GPIO_ENABLE_W1TS, BIT(gpio_num));
 }
 
-static inline void example_ulp_gpio_output_disable(gpio_num_t gpio_num)
+static inline void ulp_riscv_gpio_output_disable(gpio_num_t gpio_num)
 {
     REG_SET_FIELD(RTC_GPIO_ENABLE_W1TC_REG, RTC_GPIO_ENABLE_W1TC, BIT(gpio_num));
 }
 
-static inline void example_ulp_gpio_input_enable(gpio_num_t gpio_num)
+static inline void ulp_riscv_gpio_input_enable(gpio_num_t gpio_num)
 {
     SET_PERI_REG_MASK(RTC_IO_TOUCH_PAD0_REG + gpio_num*4, RTC_IO_TOUCH_PAD0_FUN_IE);
 }
 
-static inline void example_ulp_gpio_input_disable(gpio_num_t gpio_num)
+static inline void ulp_riscv_gpio_input_disable(gpio_num_t gpio_num)
 {
     CLEAR_PERI_REG_MASK(RTC_IO_TOUCH_PAD0_REG + gpio_num*4, RTC_IO_TOUCH_PAD0_FUN_IE);
 }
 
-static inline void example_ulp_gpio_output_level(gpio_num_t gpio_num, uint8_t level)
+static inline void ulp_riscv_gpio_output_level(gpio_num_t gpio_num, uint8_t level)
 {
     if (level) {
         REG_SET_FIELD(RTC_GPIO_OUT_W1TS_REG, RTC_GPIO_OUT_DATA_W1TS, BIT(gpio_num));
@@ -91,32 +94,32 @@ static inline void example_ulp_gpio_output_level(gpio_num_t gpio_num, uint8_t le
     }
 }
 
-static inline uint8_t example_ulp_gpio_get_level(gpio_num_t gpio_num)
+static inline uint8_t ulp_riscv_gpio_get_level(gpio_num_t gpio_num)
 {
     return (uint8_t)((REG_GET_FIELD(RTC_GPIO_IN_REG, RTC_GPIO_IN_NEXT) & BIT(gpio_num)) ? 1 : 0);
 }
 
-static inline void example_ulp_gpio_set_output_mode(gpio_num_t gpio_num, rtc_io_out_mode_t mode)
+static inline void ulp_riscv_gpio_set_output_mode(gpio_num_t gpio_num, rtc_io_out_mode_t mode)
 {
     REG_SET_FIELD(RTC_IO_TOUCH_PAD0_REG + gpio_num*4, RTC_IO_TOUCH_PAD0_DRV, mode);
 }
 
-static inline void example_ulp_gpio_pullup(gpio_num_t gpio_num)
+static inline void ulp_riscv_gpio_pullup(gpio_num_t gpio_num)
 {
     SET_PERI_REG_MASK(RTC_IO_TOUCH_PAD0_REG + gpio_num*4, RTC_IO_TOUCH_PAD0_RUE);
 }
 
-static inline void example_ulp_gpio_pullup_disable(gpio_num_t gpio_num)
+static inline void ulp_riscv_gpio_pullup_disable(gpio_num_t gpio_num)
 {
     CLEAR_PERI_REG_MASK(RTC_IO_TOUCH_PAD0_REG + gpio_num*4, RTC_IO_TOUCH_PAD0_RUE);
 }
 
-static inline void example_ulp_gpio_pulldown(gpio_num_t gpio_num)
+static inline void ulp_riscv_gpio_pulldown(gpio_num_t gpio_num)
 {
     SET_PERI_REG_MASK(RTC_IO_TOUCH_PAD0_REG + gpio_num*4, RTC_IO_TOUCH_PAD0_RDE);
 }
 
-static inline void example_ulp_gpio_pulldown_disable(gpio_num_t gpio_num)
+static inline void ulp_riscv_gpio_pulldown_disable(gpio_num_t gpio_num)
 {
     CLEAR_PERI_REG_MASK(RTC_IO_TOUCH_PAD0_REG + gpio_num*4, RTC_IO_TOUCH_PAD0_RDE);
 }

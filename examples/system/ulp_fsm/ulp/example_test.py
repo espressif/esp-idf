@@ -10,7 +10,7 @@ from tiny_test_fw import Utility
 @ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32'])
 def test_examples_ulp(env, extra_data):
 
-    dut = env.get_dut('ulp', 'examples/system/ulp')
+    dut = env.get_dut('ulp', 'examples/system/ulp_fsm/ulp')
     dut.start_app()
 
     dut.expect_all('Not ULP wakeup, initializing ULP',
