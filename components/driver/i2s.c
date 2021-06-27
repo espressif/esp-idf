@@ -821,7 +821,6 @@ static esp_err_t i2s_param_config(i2s_port_t i2s_num, const i2s_config_t *i2s_co
 #if SOC_I2S_SUPPORT_PDM
     I2S_CHECK(!((i2s_config->mode & I2S_MODE_PDM) && (i2s_num != I2S_NUM_0)), "I2S DAC PDM only support on I2S0", ESP_ERR_INVALID_ARG);
 #endif
-    periph_module_enable(i2s_periph_signal[i2s_num].module);
 
     if(i2s_config->mode & I2S_MODE_ADC_BUILT_IN) {
         //in ADC built-in mode, we need to call i2s_set_adc_mode to
@@ -977,6 +976,8 @@ esp_err_t i2s_driver_uninstall(i2s_port_t i2s_num)
     }
 
     if(p_i2s_obj[i2s_num]->use_apll) {
+        // switch back to PLL clock source
+        i2s_hal_set_clock_sel(&(p_i2s_obj[i2s_num]->hal), I2S_CLK_D2CLK);
         rtc_clk_apll_enable(0, 0, 0, 0, 0);
     }
 #ifdef CONFIG_PM_ENABLE
