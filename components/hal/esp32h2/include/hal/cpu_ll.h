@@ -140,7 +140,7 @@ static inline void cpu_ll_clear_watchpoint(int id)
 
 FORCE_INLINE_ATTR bool cpu_ll_is_debugger_attached(void)
 {
-    return REG_GET_BIT(ASSIST_DEBUG_C0RE_0_DEBUG_MODE_REG, ASSIST_DEBUG_CORE_0_DEBUG_MODULE_ACTIVE);
+    return REG_GET_BIT(ASSIST_DEBUG_CORE_0_DEBUG_MODE_REG, ASSIST_DEBUG_CORE_0_DEBUG_MODULE_ACTIVE);
 }
 
 static inline void cpu_ll_break(void)
