@@ -143,7 +143,7 @@ typedef volatile struct twai_dev_s {
             uint32_t reserved24: 24;            /* Internal Reserved */
         };
         uint32_t val;
-    } rx_error_counter_reg;                     /* Address 12 */
+    } rx_error_counter_reg;                     /* Address 14 */
     union {
         struct {
             uint32_t txerr: 8;                  /* TXERR[7:0] Receive Error Counter */
