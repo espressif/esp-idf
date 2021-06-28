@@ -70,7 +70,11 @@ typedef struct esp_netif_ip_lost_timer_s {
 /**
  * @brief Check the netif if of a specific P2P type
  */
+#if CONFIG_PPP_SUPPORT || CONFIG_LWIP_SLIP_SUPPORT
 #define _IS_NETIF_POINT2POINT_TYPE(netif, type) (netif->related_data && netif->related_data->is_point2point && netif->related_data->netif_type == type)
+#else
+#define _IS_NETIF_POINT2POINT_TYPE(netif, type) false
+#endif
 
 /**
  * @brief Additional netif types when related data are needed
