@@ -121,7 +121,12 @@ typedef enum {
     ESP_ROM_SPIFLASH_DIO_MODE,
     ESP_ROM_SPIFLASH_DOUT_MODE,
     ESP_ROM_SPIFLASH_FASTRD_MODE,
-    ESP_ROM_SPIFLASH_SLOWRD_MODE
+    ESP_ROM_SPIFLASH_SLOWRD_MODE,
+    ESP_ROM_SPIFLASH_OPI_STR_MODE,
+    ESP_ROM_SPIFLASH_OPI_DTR_MODE,
+    ESP_ROM_SPIFLASH_OOUT_MODE,
+    ESP_ROM_SPIFLASH_OIO_STR_MODE,
+    ESP_ROM_SPIFLASH_OIO_DTR_MODE,
 } esp_rom_spiflash_read_mode_t;
 
 typedef enum {
@@ -147,6 +152,34 @@ typedef struct {
     uint16_t data_mask;
     uint16_t data;
 } esp_rom_spiflash_common_cmd_t;
+
+typedef void (*spi_flash_func_t)(void);
+typedef esp_rom_spiflash_result_t (*spi_flash_op_t)(void);
+typedef esp_rom_spiflash_result_t (*spi_flash_erase_t)(uint32_t);
+typedef esp_rom_spiflash_result_t (*spi_flash_rd_t)(uint32_t, void*, int);
+typedef esp_rom_spiflash_result_t (*spi_flash_wr_t)(uint32_t, const uint32_t*, int);
+typedef esp_rom_spiflash_result_t (*spi_flash_ewr_t)(uint32_t, const void*, uint32_t);
+typedef esp_rom_spiflash_result_t (*spi_flash_wren_t)(void*);
+typedef esp_rom_spiflash_result_t (* spi_flash_erase_area_t)(uint32_t, uint32_t);
+
+typedef struct {
+    uint8_t pp_addr_bit_len;
+    uint8_t se_addr_bit_len;
+    uint8_t be_addr_bit_len;
+    uint8_t rd_addr_bit_len;
+    uint32_t read_sub_len;
+    uint32_t write_sub_len;
+    spi_flash_op_t unlock;
+    spi_flash_erase_t erase_sector;
+    spi_flash_erase_t erase_block;
+    spi_flash_rd_t read;
+    spi_flash_wr_t write;
+    spi_flash_ewr_t encrypt_write;
+    spi_flash_func_t check_sus;
+    spi_flash_wren_t wren;
+    spi_flash_op_t wait_idle;
+    spi_flash_erase_area_t erase_area;
+} spiflash_legacy_funcs_t;
 
 
 /**
@@ -548,33 +581,6 @@ void esp_rom_spiflash_select_qio_pins(uint8_t wp_gpio_num, uint32_t spiconfig);
  * @return always ESP_ROM_SPIFLASH_RESULT_OK
  */
 esp_rom_spiflash_result_t esp_rom_spiflash_write_disable(void);
-
-typedef void (* spi_flash_func_t)(void);
-typedef SpiFlashOpResult (* spi_flash_op_t)(void);
-typedef SpiFlashOpResult (* spi_flash_erase_t)(uint32_t);
-typedef SpiFlashOpResult (* spi_flash_rd_t)(uint32_t, uint32_t*, int);
-typedef SpiFlashOpResult (* spi_flash_wr_t)(uint32_t, const uint32_t*, int);
-typedef SpiFlashOpResult (* spi_flash_ewr_t)(uint32_t, const void*, uint32_t);
-typedef SpiFlashOpResult (* spi_flash_wren_t)(void*);
-
-
-typedef struct {
-    uint32_t read_sub_len;
-    uint32_t write_sub_len;
-    spi_flash_op_t unlock;
-    spi_flash_erase_t erase_sector;
-    spi_flash_erase_t erase_block;
-    spi_flash_rd_t read;
-    spi_flash_wr_t write;
-    spi_flash_ewr_t encrypt_write;
-    spi_flash_func_t check_sus;
-    spi_flash_wren_t wren;
-    spi_flash_op_t wait_idle;
-} spiflash_legacy_funcs_t;
-
-/* Defined in the interfaces file, default value is rom_default_spiflash_legacy_flash_func */
-extern const spiflash_legacy_funcs_t *rom_spiflash_legacy_funcs;
-
 typedef struct {
     esp_rom_spiflash_chip_t chip;
     uint8_t dummy_len_plus[3];

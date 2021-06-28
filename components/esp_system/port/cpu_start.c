@@ -54,6 +54,7 @@
 #include "soc/assist_debug_reg.h"
 #include "soc/cache_memory.h"
 #include "soc/system_reg.h"
+#include "esp32s3/rom/opi_flash.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rtc.h"
 #include "esp32c3/rom/cache.h"
@@ -62,6 +63,7 @@
 #include "esp32c3/memprot.h"
 #endif
 
+#include "spi_flash_private.h"
 #include "bootloader_flash_config.h"
 #include "esp_private/crosscore_int.h"
 #include "esp_flash_encrypt.h"
@@ -352,6 +354,16 @@ void IRAM_ATTR call_start_cpu0(void)
     uint32_t cache_mmu_irom_size = ((rodata_reserved_start_align - SOC_DROM_LOW) / MMU_PAGE_SIZE) * sizeof(uint32_t);
     Cache_Set_IDROM_MMU_Size(cache_mmu_irom_size, CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
 #endif // CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+
+#if CONFIG_ESPTOOLPY_OCT_FLASH
+    bool efuse_opflash_en = REG_GET_FIELD(EFUSE_RD_REPEAT_DATA3_REG, EFUSE_FLASH_TYPE);
+    if (!efuse_opflash_en) {
+        ESP_EARLY_LOGE(TAG, "Octal Flash option selected, but EFUSE not configured!");
+        abort();
+    }
+    esp_opiflash_init();
+    spi_timing_flash_tuning();
+#endif
 
     bootloader_init_mem();
 #if CONFIG_SPIRAM_BOOT_INIT

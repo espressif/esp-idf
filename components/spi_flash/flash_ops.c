@@ -37,6 +37,7 @@
 #include "esp32s2/rom/spi_flash.h"
 #include "esp32s2/clk.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
+#include "soc/spi_mem_reg.h"
 #include "esp32s3/rom/spi_flash.h"
 #include "esp32s3/rom/cache.h"
 #include "esp32s3/clk.h"
@@ -50,6 +51,7 @@
 #include "cache_utils.h"
 #include "esp_flash.h"
 #include "esp_attr.h"
+#include "spi_flash_private.h"
 
 esp_rom_spiflash_result_t IRAM_ATTR spi_flash_write_encrypted_chip(size_t dest_addr, const void *src, size_t size);
 
@@ -876,3 +878,16 @@ void spi_flash_dump_counters(void)
 // TODO esp32s2: Remove once ESP32-S2 & later chips has new SPI Flash API support
 esp_flash_t *esp_flash_default_chip = NULL;
 #endif
+
+void IRAM_ATTR spi_flash_set_rom_required_regs(void)
+{
+#if CONFIG_ESPTOOLPY_OCT_FLASH
+    //Disable the variable dummy mode when doing timing tuning
+    CLEAR_PERI_REG_MASK(SPI_MEM_DDR_REG(1), SPI_MEM_SPI_FMEM_VAR_DUMMY);
+    /**
+     * STR /DTR mode setting is done every time when `esp_rom_opiflash_exec_cmd` is called
+     *
+     * Add any registers that are not set in ROM SPI flash functions here in the future
+     */
+#endif
+}

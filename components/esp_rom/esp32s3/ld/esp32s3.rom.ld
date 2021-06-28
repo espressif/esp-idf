@@ -128,6 +128,7 @@ PROVIDE( esp_rom_opiflash_write = 0x40000930 );
 PROVIDE( esp_rom_spi_set_dtr_swap_mode = 0x4000093c );
 PROVIDE( esp_rom_opiflash_exit_continuous_read_mode = 0x40000948 );
 PROVIDE( esp_rom_opiflash_legacy_driver_init = 0x40000954 );
+PROVIDE( esp_rom_opiflash_read_raw = 0x4004d9d4);
 /* Data (.data, .bss, .rodata) */
 PROVIDE( rom_opiflash_cmd_def = 0x3fcefff4 );
 PROVIDE( rom_spi_usr_cmd_legacy_funcs = 0x3fcefff0 );

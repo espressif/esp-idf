@@ -148,3 +148,4 @@ components/ulp/include/esp32s2/ulp_riscv.h
 components/lwip/include/apps/sntp/sntp.h
 components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h
+components/spi_flash/include/spi_flash_private.h

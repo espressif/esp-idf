@@ -77,6 +77,14 @@ else()
             "${target}/spi_flash_rom_patch.c"
         )
 
+        if(CONFIG_ESPTOOLPY_OCT_FLASH)
+            list(APPEND srcs "${target}/spi_flash_oct_flash_init.c")
+        endif()
+
+        if(CONFIG_IDF_TARGET_ESP32S3)
+            list(APPEND srcs "spi_flash_timing_tuning.c")
+        endif()
+
         # New implementation after IDF v4.0
         list(APPEND srcs
             "spi_flash_chip_drivers.c"

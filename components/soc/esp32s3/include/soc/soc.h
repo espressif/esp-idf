@@ -70,7 +70,7 @@
 #define DR_REG_PCNT_BASE                        0x60017000
 #define DR_REG_SLC_BASE                         0x60018000
 #define DR_REG_LEDC_BASE                        0x60019000
-#define DR_REG_EFUSE_BASE                       0x6001A000
+#define DR_REG_EFUSE_BASE                       0x60007000
 #define DR_REG_NRX_BASE                         0x6001CC00
 #define DR_REG_BB_BASE                          0x6001D000
 #define DR_REG_PWM0_BASE                        0x6001E000
