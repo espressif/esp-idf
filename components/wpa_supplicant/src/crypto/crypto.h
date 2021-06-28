@@ -1066,7 +1066,7 @@ void crypto_free_buffer(unsigned char *buf);
  * @crypto_ec_get_priv_key_der: get private key in der format
  * @key: key structure
  * @key_data: key data in charater buffer
- * @key_len = key lenght of charater buffer
+ * @key_len = key length of charater buffer
  * Return : 0 if success
  */
 int crypto_ec_get_priv_key_der(struct crypto_key *key, unsigned char **key_data, int *key_len);

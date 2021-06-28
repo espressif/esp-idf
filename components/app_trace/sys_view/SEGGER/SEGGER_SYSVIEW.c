@@ -69,7 +69,7 @@ Additional information:
 
     Packets with IDs 24..31 are standard packets with extendible
     structure and contain a length field.
-    <ID><Lenght><Data><TimeStampDelta>
+    <ID><Length><Data><TimeStampDelta>
 
     Packets with IDs >= 32 always contain a length field.
     <ID><Length><Data><TimeStampDelta>
