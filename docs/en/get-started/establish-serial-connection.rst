@@ -62,7 +62,7 @@ Display the port of your board / dongle ::
 And then finally remove the two files ::
 
     rm ~/before_plugging.txt ~/after_plugging.txt
-    
+
 macOS ::
 
     ls /dev/cu.*
