@@ -120,7 +120,7 @@ static void modem_event_handler(void *event_handler_arg, esp_event_base_t event_
         xEventGroupSetBits(event_group, STOP_BIT);
         break;
     case ESP_MODEM_EVENT_UNKNOWN:
-        ESP_LOGW(TAG, "Unknow line received: %s", (char *)event_data);
+        ESP_LOGW(TAG, "Unknown line received: %s", (char *)event_data);
         break;
     default:
         break;
