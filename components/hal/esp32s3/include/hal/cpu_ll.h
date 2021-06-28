@@ -185,7 +185,7 @@ static inline void cpu_ll_waiti(void)
 static inline uint32_t cpu_ll_read_dedic_gpio_in(void)
 {
     uint32_t value = 0;
-    asm volatile("get_gpio_in %0" : "=r"(value) : :);
+    asm volatile("ee.get_gpio_in %0" : "=r"(value) : :);
     return value;
 }
 
