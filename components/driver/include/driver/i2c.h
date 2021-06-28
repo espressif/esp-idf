@@ -502,6 +502,14 @@ esp_err_t i2c_get_data_timing(i2c_port_t i2c_num, int *sample_time, int *hold_ti
 esp_err_t i2c_set_timeout(i2c_port_t i2c_num, int timeout);
 
 /**
+ * @brief set I2C alive interval timeout value
+ * @param i2c_num I2C port number
+ * @param timeout alive interval timeout value for I2C bus
+ *
+ */
+ void i2c_set_alive_interval(i2c_port_t i2c_num, int interval);
+ 
+/**
  * @brief get I2C timeout value
  * @param i2c_num I2C port number
  * @param timeout pointer to get timeout value
