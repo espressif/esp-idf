@@ -51,7 +51,7 @@ def on_except(err):
         print(err)
 
 
-def get_security(secver, pop=None, verbose=False):
+def get_security(secver, pop='', verbose=False):
     if secver == 1:
         return security.Security1(pop, verbose)
     elif secver == 0:
