@@ -398,8 +398,10 @@ void bta_hh_co_data(uint8_t handle, uint8_t *p_rpt, uint16_t len, tBTA_HH_PROTO_
 
     if (event_loop_handle) {
         esp_hidh_event_data_t *p = NULL;
+        size_t event_data_size = 0;
         if (report->report_type == ESP_HID_REPORT_TYPE_FEATURE) {
-            p = (esp_hidh_event_data_t *)malloc(offsetof(esp_hidh_event_data_t, feature.data) + len - 1);
+            event_data_size = offsetof(esp_hidh_event_data_t, feature.data) + len - 1;
+            p = (esp_hidh_event_data_t *)malloc(event_data_size);
             if (!p) {
                 ESP_LOGE(TAG, "malloc esp_hidh_event_data_t failed");
                 return;
@@ -409,9 +411,10 @@ void bta_hh_co_data(uint8_t handle, uint8_t *p_rpt, uint16_t len, tBTA_HH_PROTO_
             p->feature.usage = report->usage;
             memcpy(p->feature.data, p_rpt + 1, len - 1);
             p->feature.length = len - 1;
-            esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_FEATURE_EVENT, p, sizeof(esp_hidh_event_data_t), portMAX_DELAY);
+            esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_FEATURE_EVENT, p, event_data_size, portMAX_DELAY);        
         } else {
-            p = (esp_hidh_event_data_t *)malloc(offsetof(esp_hidh_event_data_t, input.data) + len - 1);
+            event_data_size = offsetof(esp_hidh_event_data_t, input.data) + len - 1;
+            p = (esp_hidh_event_data_t *)malloc(event_data_size);
             if (!p) {
                 ESP_LOGE(TAG, "malloc esp_hidh_event_data_t failed");
                 return;
@@ -421,7 +424,7 @@ void bta_hh_co_data(uint8_t handle, uint8_t *p_rpt, uint16_t len, tBTA_HH_PROTO_
             p->input.usage = report->usage;
             memcpy(p->input.data, p_rpt + 1, len - 1);
             p->input.length = len - 1;
-            esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_INPUT_EVENT, p, sizeof(esp_hidh_event_data_t), portMAX_DELAY);
+            esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_INPUT_EVENT, p, event_data_size, portMAX_DELAY);
         }
 
         if (p) {

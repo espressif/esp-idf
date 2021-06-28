@@ -476,9 +476,10 @@ void esp_hidh_gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gatt
                 report = esp_hidh_dev_get_report_by_handle(dev, p_data->notify.handle);
                 if (report) {
                     esp_hidh_event_data_t *p_param = NULL;
+                    size_t event_data_size = 0;
                     if (report->report_type == ESP_HID_REPORT_TYPE_FEATURE) {
-                        p_param = (esp_hidh_event_data_t *)malloc(offsetof(esp_hidh_event_data_t, feature.data) +
-                                                                  p_data->notify.value_len - 1);
+                        event_data_size = offsetof(esp_hidh_event_data_t, feature.data) + p_data->notify.value_len;
+                        p_param = (esp_hidh_event_data_t *)malloc(event_data_size);
                         if (!p_param) {
                             ESP_LOGE(TAG, "malloc esp_hidh_event_data_t failed");
                             return;
@@ -489,10 +490,10 @@ void esp_hidh_gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gatt
                         p_param->feature.usage = report->usage;
                         memcpy(p_param->feature.data, p_data->notify.value, p_data->notify.value_len);
                         p_param->feature.length = p_data->notify.value_len;
-                        esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_FEATURE_EVENT, p_param, sizeof(esp_hidh_event_data_t), portMAX_DELAY);
+                        esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_FEATURE_EVENT, p_param, event_data_size, portMAX_DELAY);
                     } else {
-                        p_param = (esp_hidh_event_data_t *)malloc(offsetof(esp_hidh_event_data_t, input.data) +
-                                                                  p_data->notify.value_len - 1);
+                        event_data_size = offsetof(esp_hidh_event_data_t, input.data) + p_data->notify.value_len;
+                        p_param = (esp_hidh_event_data_t *)malloc(event_data_size);
                         if (!p_param) {
                             ESP_LOGE(TAG, "malloc esp_hidh_event_data_t failed");
                             return;
@@ -503,7 +504,7 @@ void esp_hidh_gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gatt
                         p_param->input.usage = report->usage;
                         memcpy(p_param->input.data, p_data->notify.value, p_data->notify.value_len);
                         p_param->input.length = p_data->notify.value_len;
-                        esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_INPUT_EVENT, p_param, sizeof(esp_hidh_event_data_t), portMAX_DELAY);
+                        esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_INPUT_EVENT, p_param, event_data_size, portMAX_DELAY);
                     }
 
                     if (p_param) {
