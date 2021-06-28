@@ -25,8 +25,6 @@ extern int wps_testing_dummy_cred;
 
 #endif /* CONFIG_WPS_TESTING */
 
-#define CONFIG_WPS_STRICT
-
 /* Diffie-Hellman 1536-bit MODP Group; RFC 3526, Group 5 */
 #define WPS_DH_GROUP 5
 
@@ -310,7 +308,8 @@ enum wps_dev_subcateg {
 	WPS_DEV_GAMING_XBOX = 1,
 	WPS_DEV_GAMING_XBOX360 = 2,
 	WPS_DEV_GAMING_PLAYSTATION = 3,
-	WPS_DEV_PHONE_WINDOWS_MOBILE = 1
+	WPS_DEV_PHONE_WINDOWS_MOBILE = 1,
+	WPS_DEV_PHONE_SINGLE_MODE = 2,
 };
 
 
