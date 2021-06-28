@@ -593,6 +593,12 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     //avoid collision with other tasks
     adc2_init();   // in critical section with whole rtc module. because the PWDET use the same registers, place it here.
     SARADC2_ENTER();
+
+#if SOC_ADC_ARBITER_SUPPORTED
+    adc_arbiter_t config = ADC_ARBITER_CONFIG_DEFAULT();
+    adc_hal_arbiter_config(&config);
+#endif
+
 #ifdef CONFIG_ADC_DISABLE_DAC
     adc2_dac_disable(channel);      //disable other peripherals
 #endif

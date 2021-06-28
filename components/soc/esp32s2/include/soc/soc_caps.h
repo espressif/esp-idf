@@ -77,6 +77,7 @@
  */
 #define SOC_ADC_SUPPORT_DMA_MODE(PERIPH_NUM) ((PERIPH_NUM==0)? 1: 1)
 #define SOC_ADC_SUPPORT_RTC_CTRL        1
+#define SOC_ADC_ARBITER_SUPPORTED       1
 
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 #define SOC_BROWNOUT_RESET_SUPPORTED 1

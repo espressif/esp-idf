@@ -44,6 +44,14 @@ void adc_hal_init(void)
     adc_ll_digi_set_clk_div(SOC_ADC_DIGI_SAR_CLK_DIV_DEFAULT);
 }
 
+#if SOC_ADC_ARBITER_SUPPORTED
+void adc_hal_arbiter_config(adc_arbiter_t *config)
+{
+    adc_ll_set_arbiter_work_mode(config->mode);
+    adc_ll_set_arbiter_priority(config->rtc_pri, config->dig_pri, config->pwdet_pri);
+}
+#endif
+
 /*---------------------------------------------------------------
                     ADC calibration setting
 ---------------------------------------------------------------*/
@@ -339,6 +347,7 @@ static void adc_hal_onetime_start(void)
     adc_ll_onetime_start(false);
     esp_rom_delay_us(delay);
     adc_ll_onetime_start(true);
+
     //No need to delay here. Becuase if the start signal is not seen, there won't be a done intr.
 }
 
