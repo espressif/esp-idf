@@ -517,6 +517,53 @@ function(idf_component_register)
     __component_set_properties()
 endfunction()
 
+# idf_component_mock
+#
+# @brief Create mock component with CMock and register it to IDF build system.
+#
+# @param[in, optional] INCLUDE_DIRS (multivalue) list include directories which belong to the header files
+#                           provided in MOCK_HEADER_FILES. If any other include directories are necessary, they need
+#                           to be passed here, too.
+# @param[in, optional] MOCK_HEADER_FILES (multivalue) list of header files from which the mocks shall be generated.
+# @param[in, optional] REQUIRES (multivalue) any other components required by the mock component.
+#
+function(idf_component_mock)
+    set(options)
+    set(single_value)
+    set(multi_value MOCK_HEADER_FILES INCLUDE_DIRS)
+    cmake_parse_arguments(_ "${options}" "${single_value}" "${multi_value}" ${ARGN})
+
+    list(APPEND __REQUIRES "cmock")
+
+    set(MOCK_GENERATED_HEADERS "")
+    set(MOCK_GENERATED_SRCS "")
+    set(MOCK_FILES "")
+    set(IDF_PATH $ENV{IDF_PATH})
+    set(CMOCK_DIR "${IDF_PATH}/components/cmock/CMock")
+    set(MOCK_GEN_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+    list(APPEND __INCLUDE_DIRS "${MOCK_GEN_DIR}/mocks")
+
+    foreach(header_file ${__MOCK_HEADER_FILES})
+        get_filename_component(file_without_dir ${header_file} NAME_WE)
+        list(APPEND MOCK_GENERATED_HEADERS "${MOCK_GEN_DIR}/mocks/Mock${file_without_dir}.h")
+        list(APPEND MOCK_GENERATED_SRCS "${MOCK_GEN_DIR}/mocks/Mock${file_without_dir}.c")
+    endforeach()
+
+    file(MAKE_DIRECTORY "${MOCK_GEN_DIR}/mocks")
+
+    idf_component_register(SRCS "${MOCK_GENERATED_SRCS}"
+                        INCLUDE_DIRS ${__INCLUDE_DIRS}
+                        REQUIRES ${__REQUIRES})
+
+    execute_process(COMMAND ${CMAKE_COMMAND} -E env "UNITY_DIR=${IDF_PATH}/components/unity/unity"
+            ruby
+            ${CMOCK_DIR}/lib/cmock.rb
+            -o${CMAKE_CURRENT_SOURCE_DIR}/mock/mock_config.yaml
+            ${__MOCK_HEADER_FILES}
+            WORKING_DIRECTORY ${MOCK_GEN_DIR}
+            RESULT_VARIABLE cmock_result)
+endfunction()
+
 #
 # Deprecated functions
 #

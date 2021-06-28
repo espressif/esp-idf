@@ -56,6 +56,11 @@ endfunction()
 macro(require_idf_targets)
 endmacro()
 
+macro(idf_component_mock)
+    idf_component_register(REQUIRES cmock)
+    return()
+endmacro()
+
 macro(idf_component_register)
     set(options)
     set(single_value KCONFIG KCONFIG_PROJBUILD)
