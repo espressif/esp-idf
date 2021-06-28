@@ -55,3 +55,10 @@
             .tx_pin = UART_PIN_NO_CHANGE,                  \
         },                                                 \
     }
+
+#define ESP_OPENTHREAD_DEFAULT_PORT_CONFIG()    \
+    {                                           \
+        .storage_partition_name = "ot_storage", \
+        .netif_queue_size = 10,                 \
+        .task_queue_size = 10,                  \
+    }

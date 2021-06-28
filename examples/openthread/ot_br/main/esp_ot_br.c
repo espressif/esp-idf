@@ -145,6 +145,7 @@ static void ot_task_worker(void *aContext)
     esp_openthread_platform_config_t config = {
         .radio_config = ESP_OPENTHREAD_DEFAULT_RADIO_UART_RCP_CONFIG(4, 5),
         .host_config = ESP_OPENTHREAD_DEFAULT_UART_HOST_CONFIG(),
+        .port_config = ESP_OPENTHREAD_DEFAULT_PORT_CONFIG(),
     };
 
     esp_netif_config_t cfg = ESP_NETIF_DEFAULT_OPENTHREAD();
@@ -155,7 +156,7 @@ static void ot_task_worker(void *aContext)
     ESP_ERROR_CHECK(esp_openthread_init(&config));
 
     // Initialize border routing features
-    ESP_ERROR_CHECK(esp_netif_attach(openthread_netif, esp_openthread_netif_glue_init()));
+    ESP_ERROR_CHECK(esp_netif_attach(openthread_netif, esp_openthread_netif_glue_init(&config)));
     ESP_ERROR_CHECK(esp_openthread_border_router_init(get_example_netif()));
 
     esp_openthread_lock_acquire(portMAX_DELAY);

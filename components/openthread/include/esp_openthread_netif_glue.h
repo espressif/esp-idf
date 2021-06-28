@@ -26,12 +26,14 @@ extern "C" {
 /**
  * @brief This function initializes the OpenThread network interface glue.
  *
+ * @param[in] config    The platform configuration.
+ *
  * @return
  *      - glue pointer on success
  *      - NULL on failure
  *
  */
-void *esp_openthread_netif_glue_init(void);
+void *esp_openthread_netif_glue_init(const esp_openthread_platform_config_t *config);
 
 /**
  * @brief This function deinitializes the OpenThread network interface glue.

@@ -106,26 +106,6 @@
 #define OPENTHREAD_CONFIG_COAP_API_ENABLE 1
 
 /**
- * @def OPENTHREAD_CONFIG_BORDER_ROUTER_ENABLE
- *
- * Define to 1 to enable Border Router support.
- *
- */
-#ifndef OPENTHREAD_CONFIG_BORDER_ROUTER_ENABLE
-#define OPENTHREAD_CONFIG_BORDER_ROUTER_ENABLE 1
-#endif
-
-/**
- * @def OPENTHREAD_CONFIG_PLATFORM_UDP_ENABLE
- *
- * Define to 1 to enable platform UDP support.
- *
- */
-#ifndef OPENTHREAD_CONFIG_PLATFORM_UDP_ENABLE
-#define OPENTHREAD_CONFIG_PLATFORM_UDP_ENABLE 1
-#endif
-
-/**
  * @def OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE
  *
  * Define to 1 to enable platform NETIF support.
@@ -145,6 +125,26 @@
  */
 #ifndef OPENTHREAD_CONFIG_BORDER_AGENT_ENABLE
 #define OPENTHREAD_CONFIG_BORDER_AGENT_ENABLE 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_BORDER_ROUTER_ENABLE
+ *
+ * Define to 1 to enable Border Router support.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_BORDER_ROUTER_ENABLE
+#define OPENTHREAD_CONFIG_BORDER_ROUTER_ENABLE 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_PLATFORM_UDP_ENABLE
+ *
+ * Define to 1 to enable platform UDP support.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_PLATFORM_UDP_ENABLE
+#define OPENTHREAD_CONFIG_PLATFORM_UDP_ENABLE 1
 #endif
 
 #endif // CONFIG_OPENTHREAD_BORDER_ROUTER

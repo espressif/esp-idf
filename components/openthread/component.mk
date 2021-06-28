@@ -38,6 +38,16 @@ COMPONENT_OBJEXCLUDE :=                              \
     openthread/examples/apps/cli/main.o              \
     openthread/src/core/common/extension_example.o   \
 
+
+COMPONENT_SUBMODULES += lib
+
+ALL_LIB_FILES := $(COMPONENT_PATH)/lib/$(IDF_TARGET)/libopenthread_port.a
+
+ifdef CONFIG_OPENTHREAD_BORDER_ROUTER
+    ALL_LIB_FILES += $(COMPONENT_PATH)/lib/$(IDF_TARGET)/libopenthread_br.a
+endif
+COMPONENT_ADD_LDFLAGS += $(ALL_LIB_FILES)
+
 IDF_VERSION_FOR_OPENTHREAD_PACKAGE := $(shell git -C $(COMPONENT_PATH) rev-parse --short HEAD)
 OPENTHREAD_VERSION := $(shell git -C $(COMPONENT_PATH)/openthread rev-parse --short HEAD)
 OPENTHREAD_PACKAGE_VERSION := $(IDF_VERSION_FOR_OPENTHREAD_PACKAGE)-$(OPENTHREAD_VERSION)
