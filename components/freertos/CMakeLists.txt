@@ -42,7 +42,7 @@ else()  # RISC-V
         port/riscv
         .)
 
-    set(required_components esp_timer)
+    set(required_components app_trace esp_timer)
 endif()
 
 list(APPEND srcs
@@ -61,7 +61,7 @@ if(CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
     list(APPEND srcs "port/xtensa/xtensa_loadstore_handler.S")
 endif()
 
-# app_trace is required by FreeRTOS headers only when CONFIG_SYSVIEW_ENABLE=y,
+# app_trace is required by FreeRTOS headers only when CONFIG_APPTRACE_SV_ENABLE=y,
 # but requirements can't depend on config options, so always require it.
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS ${include_dirs}

@@ -26,7 +26,7 @@ typedef struct {
 } example_event_data_t;
 
 
-#if CONFIG_SYSVIEW_ENABLE
+#if CONFIG_APPTRACE_SV_ENABLE
 #if !CONFIG_USE_CUSTOM_EVENT_ID
 
 #define SYSVIEW_EXAMPLE_SEND_EVENT_ID     0
@@ -165,13 +165,13 @@ void app_main(void)
         },
 #if CONFIG_FREERTOS_UNICORE == 0
         {
-            .group = TIMER_GROUP_1,
-            .timer = TIMER_1,
+            .group = TIMER_GROUP_0,
+            .timer = TIMER_0,
         },
 #endif
     };
 
-#if CONFIG_SYSVIEW_ENABLE && CONFIG_USE_CUSTOM_EVENT_ID
+#if CONFIG_APPTRACE_SV_ENABLE && CONFIG_USE_CUSTOM_EVENT_ID
     // Currently OpenOCD does not support requesting module info from target. So do the following...
     // Wait untill SystemView module receives START command from host,
     // after that data can be sent to the host using onboard API,
@@ -183,7 +183,7 @@ void app_main(void)
 #endif
 
     example_timer_init(TIMER_GROUP_1, TIMER_0, 2000);
-    example_timer_init(TIMER_GROUP_1, TIMER_1, 4000);
+    example_timer_init(TIMER_GROUP_0, TIMER_0, 4000);
 
     xTaskCreatePinnedToCore(example_task, "svtrace0", 2048, &event_data[0], 3, &event_data[0].thnd, 0);
     ESP_LOGI(TAG, "Created task %p", event_data[0].thnd);
