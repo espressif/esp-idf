@@ -15,8 +15,6 @@
 #ifndef __ESP_BLUFI_API_H__
 #define __ESP_BLUFI_API_H__
 
-#include "esp_bt_defs.h"
-#include "esp_gatt_defs.h"
 #include "esp_err.h"
 #include "esp_wifi_types.h"
 
@@ -114,6 +112,11 @@ typedef struct {
     uint8_t ssid[33];                     /**< SSID of AP */
     int8_t  rssi;                         /**< signal strength of AP */
 } esp_blufi_ap_record_t;
+
+/// Bluetooth address length
+#define ESP_BD_ADDR_LEN     6
+/// Bluetooth device address
+typedef uint8_t esp_bd_addr_t[ESP_BD_ADDR_LEN];
 
 /**
  * @brief BLUFI callback parameters union
@@ -403,19 +406,6 @@ esp_err_t esp_blufi_send_wifi_list(uint16_t apCount, esp_blufi_ap_record_t *list
  *
  */
 uint16_t esp_blufi_get_version(void);
-
-/**
- * @brief           Close a connection  a remote device.
- *
- * @param[in]       gatts_if: GATT server access interface
- * @param[in]       conn_id: connection ID to be closed.
- *
- * @return
- *                  - ESP_OK : success
- *                  - other  : failed
- *
- */
-esp_err_t esp_blufi_close(esp_gatt_if_t gatts_if, uint16_t conn_id);
 
 /**
  *

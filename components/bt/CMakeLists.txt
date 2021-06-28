@@ -20,10 +20,17 @@ if(CONFIG_BT_ENABLED)
     list(APPEND priv_include_dirs
             common/btc/include
             common/include)
+    list(APPEND include_dirs
+         common/api/include/api
+         common/btc/profile/esp/blufi/include
+         common/btc/profile/esp/include)
 
     list(APPEND srcs "common/btc/core/btc_alarm.c"
+         "common/api/esp_blufi_api.c"
          "common/btc/core/btc_manage.c"
          "common/btc/core/btc_task.c"
+         "common/btc/profile/esp/blufi/blufi_prf.c"
+         "common/btc/profile/esp/blufi/blufi_protocol.c"
          "common/osi/alarm.c"
          "common/osi/allocator.c"
          "common/osi/buffer.c"
@@ -57,7 +64,6 @@ if(CONFIG_BT_ENABLED)
             host/bluedroid/external/sbc/decoder/include
             host/bluedroid/external/sbc/encoder/include
             host/bluedroid/external/sbc/plc/include
-            host/bluedroid/btc/profile/esp/blufi/include
             host/bluedroid/btc/profile/esp/include
             host/bluedroid/btc/profile/std/a2dp/include
             host/bluedroid/btc/profile/std/hid/include
@@ -81,7 +87,6 @@ if(CONFIG_BT_ENABLED)
 
         list(APPEND srcs "host/bluedroid/api/esp_a2dp_api.c"
                    "host/bluedroid/api/esp_avrc_api.c"
-                   "host/bluedroid/api/esp_blufi_api.c"
                    "host/bluedroid/api/esp_bt_device.c"
                    "host/bluedroid/api/esp_bt_main.c"
                    "host/bluedroid/api/esp_gap_ble_api.c"
@@ -167,8 +172,6 @@ if(CONFIG_BT_ENABLED)
                    "host/bluedroid/btc/core/btc_sm.c"
                    "host/bluedroid/btc/core/btc_storage.c"
                    "host/bluedroid/btc/core/btc_util.c"
-                   "host/bluedroid/btc/profile/esp/blufi/blufi_prf.c"
-                   "host/bluedroid/btc/profile/esp/blufi/blufi_protocol.c"
                    "host/bluedroid/btc/profile/std/a2dp/bta_av_co.c"
                    "host/bluedroid/btc/profile/std/a2dp/btc_a2dp.c"
                    "host/bluedroid/btc/profile/std/a2dp/btc_a2dp_control.c"
@@ -321,6 +324,7 @@ if(CONFIG_BT_ENABLED)
                    "host/bluedroid/stack/smp/smp_main.c"
                    "host/bluedroid/stack/smp/smp_utils.c")
 
+            list(APPEND srcs "common/btc/profile/esp/blufi/bluedroid_host/esp_blufi.c")
         if(CONFIG_BLE_MESH)
             list(APPEND srcs "esp_ble_mesh/mesh_core/bluedroid_host/mesh_bearer_adapt.c")
         endif()
@@ -540,6 +544,8 @@ if(CONFIG_BT_ENABLED)
                     "host/nimble/esp-hci/src/esp_nimble_hci.c"
                     "host/nimble/port/src/esp_nimble_mem.c")
 
+            list(APPEND srcs
+                    "common/btc/profile/esp/blufi/nimble_host/esp_blufi.c")
         if(CONFIG_BLE_MESH)
             list(APPEND srcs "esp_ble_mesh/mesh_core/nimble_host/mesh_bearer_adapt.c")
         endif()

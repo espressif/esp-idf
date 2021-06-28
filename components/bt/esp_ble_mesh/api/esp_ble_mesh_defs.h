@@ -22,16 +22,6 @@
 #include "proxy_server.h"
 #include "provisioner_main.h"
 
-#ifdef CONFIG_BT_BLUEDROID_ENABLED
-#include "esp_bt_defs.h"
-#include "esp_bt_main.h"
-#define ESP_BLE_HOST_STATUS_ENABLED ESP_BLUEDROID_STATUS_ENABLED
-#define ESP_BLE_HOST_STATUS_CHECK(status) ESP_BLUEDROID_STATUS_CHECK(status)
-#else
-#define ESP_BLE_HOST_STATUS_ENABLED 0
-#define ESP_BLE_HOST_STATUS_CHECK(status)  do {} while (0)
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif

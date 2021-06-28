@@ -19,42 +19,19 @@
 #include <stdio.h>
 
 
-#include "common/bt_target.h"
-#include "common/bt_trace.h"
 #include "osi/allocator.h"
-#include "stack/bt_types.h"
-#include "stack/gatt_api.h"
-#include "bta/bta_api.h"
-#include "bta/bta_gatt_api.h"
-#include "bta_gatts_int.h"
 
 #include "btc_blufi_prf.h"
 #include "btc/btc_task.h"
 #include "btc/btc_manage.h"
-#include "btc_gatt_util.h"
 
 #include "blufi_int.h"
 
+#include "esp_log.h"
 #include "esp_blufi_api.h"
-#include "esp_gatt_common_api.h"
+#include "esp_blufi.h"
 
 #if (BLUFI_INCLUDED == TRUE)
-
-#define BT_BD_ADDR_STR         "%02x:%02x:%02x:%02x:%02x:%02x"
-#define BT_BD_ADDR_HEX(addr)   addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]
-
-//define the blufi serivce uuid
-#define BLUFI_SERVICE_UUID  0xFFFF
-//define the blufi Char uuid (PHONE to ESP32)
-#define BLUFI_CHAR_P2E_UUID 0xFF01
-//define the blufi Char uuid (ESP32 to PHONE)
-#define BLUFI_CHAR_E2P_UUID 0xFF02
-//define the blufi Descriptor uuid (ESP32 to PHONE)
-#define BLUFI_DESCR_E2P_UUID GATT_UUID_CHAR_CLIENT_CONFIG
-//define the blufi APP ID
-#define BLUFI_APP_UUID      0xFFFF
-
-#define BLUFI_HDL_NUM   6
 
 #if GATT_DYNAMIC_MEMORY == FALSE
 tBLUFI_ENV blufi_env;
@@ -62,18 +39,10 @@ tBLUFI_ENV blufi_env;
 tBLUFI_ENV *blufi_env_ptr;
 #endif
 
-static  const  tBT_UUID blufi_srvc_uuid = {LEN_UUID_16, {BLUFI_SERVICE_UUID}};
-static  const  tBT_UUID blufi_char_uuid_p2e = {LEN_UUID_16, {BLUFI_CHAR_P2E_UUID}};
-static  const  tBT_UUID blufi_char_uuid_e2p = {LEN_UUID_16, {BLUFI_CHAR_E2P_UUID}};
-static  const  tBT_UUID blufi_descr_uuid_e2p = {LEN_UUID_16, {BLUFI_DESCR_E2P_UUID}};
-static  const  tBT_UUID blufi_app_uuid = {LEN_UUID_16, {BLUFI_APP_UUID}};
-
 // static functions declare
-static void blufi_profile_cb(tBTA_GATTS_EVT event,  tBTA_GATTS *p_data);
-static void btc_blufi_recv_handler(uint8_t *data, int len);
 static void btc_blufi_send_ack(uint8_t seq);
 
-static inline void btc_blufi_cb_to_app(esp_blufi_cb_event_t event, esp_blufi_cb_param_t *param)
+inline void btc_blufi_cb_to_app(esp_blufi_cb_event_t event, esp_blufi_cb_param_t *param)
 {
     esp_blufi_event_cb_t btc_blufi_cb = (esp_blufi_event_cb_t)btc_profile_cb_get(BTC_PID_BLUFI);
     if (btc_blufi_cb) {
@@ -81,299 +50,44 @@ static inline void btc_blufi_cb_to_app(esp_blufi_cb_event_t event, esp_blufi_cb_
     }
 }
 
-static void blufi_create_service(void)
-{
-    if (!blufi_env.enabled) {
-        BTC_TRACE_ERROR("blufi service added error.");
-        return;
-    }
-
-    blufi_env.srvc_inst = 0x00;
-    BTA_GATTS_CreateService(blufi_env.gatt_if, &blufi_srvc_uuid, blufi_env.srvc_inst, BLUFI_HDL_NUM, true);
-}
-
-static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
-{
-    tBTA_GATTS_RSP rsp;
-
-    BLUFI_TRACE_DEBUG("blufi profile cb event = %x\n", event);
-
-    switch (event) {
-    case BTA_GATTS_REG_EVT:
-        BLUFI_TRACE_DEBUG("REG: status %d, app_uuid %04x, gatt_if %d\n", p_data->reg_oper.status, p_data->reg_oper.uuid.uu.uuid16, p_data->reg_oper.server_if);
-
-        if (p_data->reg_oper.status != BTA_GATT_OK) {
-            BLUFI_TRACE_ERROR("BLUFI profile register failed\n");
-            return;
-        }
-
-        blufi_env.gatt_if = p_data->reg_oper.server_if;
-        blufi_env.enabled = true;
-
-        //create the blufi service to the service data base.
-        if (p_data->reg_oper.uuid.uu.uuid16 == BLUFI_APP_UUID) {
-            BLUFI_TRACE_DEBUG("%s %d\n", __func__, __LINE__);
-            blufi_create_service();
-        }
-        break;
-    case BTA_GATTS_DEREG_EVT: {
-        esp_blufi_cb_param_t param;
-        btc_msg_t msg;
-
-        BLUFI_TRACE_DEBUG("DEREG: status %d, gatt_if %d\n", p_data->reg_oper.status, p_data->reg_oper.server_if);
-
-        if (p_data->reg_oper.status != BTA_GATT_OK) {
-            BLUFI_TRACE_ERROR("BLUFI profile unregister failed\n");
-            return;
-        }
-
-        blufi_env.enabled = false;
-
-        msg.sig = BTC_SIG_API_CB;
-        msg.pid = BTC_PID_BLUFI;
-        msg.act = ESP_BLUFI_EVENT_DEINIT_FINISH;
-        param.deinit_finish.state = ESP_BLUFI_DEINIT_OK;
-
-        btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL);
-
-        break;
-    }
-    case BTA_GATTS_READ_EVT:
-        memset(&rsp, 0, sizeof(tBTA_GATTS_API_RSP));
-        rsp.attr_value.handle = p_data->req_data.p_data->read_req.handle;
-        rsp.attr_value.len = 1;
-        rsp.attr_value.value[0] = 0x00;
-        BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
-                          p_data->req_data.status, &rsp);
-        break;
-    case BTA_GATTS_WRITE_EVT: {
-        if(p_data->req_data.p_data->write_req.is_prep) {
-            tBTA_GATT_STATUS status = GATT_SUCCESS;
-
-            if (blufi_env.prepare_buf == NULL) {
-                blufi_env.prepare_buf = osi_malloc(BLUFI_PREPAIR_BUF_MAX_SIZE);
-                blufi_env.prepare_len = 0;
-                if (blufi_env.prepare_buf == NULL) {
-                    BLUFI_TRACE_ERROR("Blufi prep no mem\n");
-                    status = GATT_NO_RESOURCES;
-                }
-            } else {
-                if(p_data->req_data.p_data->write_req.offset > BLUFI_PREPAIR_BUF_MAX_SIZE) {
-                    status = GATT_INVALID_OFFSET;
-                } else if ((p_data->req_data.p_data->write_req.offset + p_data->req_data.p_data->write_req.len) > BLUFI_PREPAIR_BUF_MAX_SIZE) {
-                    status = GATT_INVALID_ATTR_LEN;
-                }
-            }
-
-            memset(&rsp, 0, sizeof(tGATTS_RSP));
-            rsp.attr_value.handle = p_data->req_data.p_data->write_req.handle;
-            rsp.attr_value.len = p_data->req_data.p_data->write_req.len;
-            rsp.attr_value.offset = p_data->req_data.p_data->write_req.offset;
-            memcpy(rsp.attr_value.value, p_data->req_data.p_data->write_req.value, p_data->req_data.p_data->write_req.len);
-
-            BLUFI_TRACE_DEBUG("prep write, len=%d, offset=%d\n", p_data->req_data.p_data->write_req.len, p_data->req_data.p_data->write_req.offset);
-
-            BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
-                          status, &rsp);
-
-            if(status != GATT_SUCCESS) {
-                if (blufi_env.prepare_buf) {
-                    osi_free(blufi_env.prepare_buf);
-                    blufi_env.prepare_buf = NULL;
-                    blufi_env.prepare_len = 0;
-                }
-                BLUFI_TRACE_ERROR("write data error , error code 0x%x\n", status);
-                return;
-            }
-            memcpy(blufi_env.prepare_buf + p_data->req_data.p_data->write_req.offset,
-                   p_data->req_data.p_data->write_req.value,
-                   p_data->req_data.p_data->write_req.len);
-            blufi_env.prepare_len += p_data->req_data.p_data->write_req.len;
-
-            return;
-        } else {
-            BLUFI_TRACE_DEBUG("norm write, len=%d, offset=%d\n", p_data->req_data.p_data->write_req.len, p_data->req_data.p_data->write_req.offset);
-            BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
-                          p_data->req_data.status, NULL);
-        }
-
-        if (p_data->req_data.p_data->write_req.handle == blufi_env.handle_char_p2e) {
-            btc_blufi_recv_handler(&p_data->req_data.p_data->write_req.value[0],
-                                    p_data->req_data.p_data->write_req.len);
-        }
-        break;
-    }
-    case BTA_GATTS_EXEC_WRITE_EVT:
-        BLUFI_TRACE_DEBUG("exec write exec %d\n", p_data->req_data.p_data->exec_write);
-
-        BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
-                    GATT_SUCCESS, NULL);
-
-        if (blufi_env.prepare_buf && p_data->req_data.p_data->exec_write == GATT_PREP_WRITE_EXEC) {
-            btc_blufi_recv_handler(blufi_env.prepare_buf, blufi_env.prepare_len);
-        }
-
-        if (blufi_env.prepare_buf) {
-            osi_free(blufi_env.prepare_buf);
-            blufi_env.prepare_buf = NULL;
-            blufi_env.prepare_len = 0;
-        }
-
-        break;
-    case BTA_GATTS_MTU_EVT:
-        BLUFI_TRACE_DEBUG("MTU size %d\n", p_data->req_data.p_data->mtu);
-        blufi_env.frag_size = (p_data->req_data.p_data->mtu < BLUFI_MAX_DATA_LEN ? p_data->req_data.p_data->mtu : BLUFI_MAX_DATA_LEN) - BLUFI_MTU_RESERVED_SIZE;
-        break;
-    case BTA_GATTS_CONF_EVT:
-        BLUFI_TRACE_DEBUG("CONFIRM EVT\n");
-        /* Nothing */
-        break;
-    case BTA_GATTS_CREATE_EVT:
-        blufi_env.handle_srvc = p_data->create.service_id;
-
-        //add the frist blufi characteristic --> write characteristic
-        BTA_GATTS_AddCharacteristic(blufi_env.handle_srvc, &blufi_char_uuid_p2e,
-                                    (GATT_PERM_WRITE),
-                                    (GATT_CHAR_PROP_BIT_WRITE),
-                                    NULL, NULL);
-        break;
-    case BTA_GATTS_ADD_CHAR_EVT:
-        switch (p_data->add_result.char_uuid.uu.uuid16) {
-         case BLUFI_CHAR_P2E_UUID:  /* Phone to ESP32 */
-            blufi_env.handle_char_p2e = p_data->add_result.attr_id;
-
-            BTA_GATTS_AddCharacteristic(blufi_env.handle_srvc, &blufi_char_uuid_e2p,
-                                        (GATT_PERM_READ),
-                                        (GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY),
-                                        NULL, NULL);
-            break;
-         case BLUFI_CHAR_E2P_UUID:  /* ESP32 to Phone */
-            blufi_env.handle_char_e2p = p_data->add_result.attr_id;
-
-            BTA_GATTS_AddCharDescriptor (blufi_env.handle_srvc,
-                                         (GATT_PERM_READ | GATT_PERM_WRITE),
-                                         &blufi_descr_uuid_e2p,
-                                         NULL, NULL);
-            break;
-         default:
-            break;
-        }
-        break;
-    case BTA_GATTS_ADD_CHAR_DESCR_EVT: {
-        /* call init finish */
-        esp_blufi_cb_param_t param;
-        btc_msg_t msg;
-
-        blufi_env.handle_descr_e2p = p_data->add_result.attr_id;
-        //start the blufi service after created
-        BTA_GATTS_StartService(blufi_env.handle_srvc, BTA_GATT_TRANSPORT_LE);
-
-        msg.sig = BTC_SIG_API_CB;
-        msg.pid = BTC_PID_BLUFI;
-        msg.act = ESP_BLUFI_EVENT_INIT_FINISH;
-        param.init_finish.state = ESP_BLUFI_INIT_OK;
-
-        btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL);
-        break;
-    }
-    case BTA_GATTS_CONNECT_EVT: {
-        btc_msg_t msg;
-        esp_blufi_cb_param_t param;
-
-        //set the connection flag to true
-        BLUFI_TRACE_API("\ndevice is connected "BT_BD_ADDR_STR", server_if=%d,reason=0x%x,connect_id=%d\n",
-                  BT_BD_ADDR_HEX(p_data->conn.remote_bda), p_data->conn.server_if,
-                  p_data->conn.reason, p_data->conn.conn_id);
-
-        memcpy(blufi_env.remote_bda, p_data->conn.remote_bda, sizeof(esp_bd_addr_t));
-        blufi_env.conn_id = p_data->conn.conn_id;
-        blufi_env.is_connected = true;
-        blufi_env.recv_seq = blufi_env.send_seq = 0;
-
-        msg.sig = BTC_SIG_API_CB;
-        msg.pid = BTC_PID_BLUFI;
-        msg.act = ESP_BLUFI_EVENT_BLE_CONNECT;
-        memcpy(param.connect.remote_bda, p_data->conn.remote_bda, sizeof(esp_bd_addr_t));
-        param.connect.conn_id=BTC_GATT_GET_CONN_ID(p_data->conn.conn_id);
-        param.connect.server_if=p_data->conn.server_if;
-        btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL);
-        break;
-    }
-    case BTA_GATTS_DISCONNECT_EVT: {
-        btc_msg_t msg;
-        esp_blufi_cb_param_t param;
-
-        blufi_env.is_connected = false;
-        //set the connection flag to true
-        BLUFI_TRACE_API("\ndevice is disconnected "BT_BD_ADDR_STR", server_if=%d,reason=0x%x,connect_id=%d\n",
-                  BT_BD_ADDR_HEX(p_data->conn.remote_bda), p_data->conn.server_if,
-                  p_data->conn.reason, p_data->conn.conn_id);
-
-        memcpy(blufi_env.remote_bda, p_data->conn.remote_bda, sizeof(esp_bd_addr_t));
-        blufi_env.conn_id = p_data->conn.conn_id;
-        blufi_env.recv_seq = blufi_env.send_seq = 0;
-        blufi_env.sec_mode = 0x0;
-
-        msg.sig = BTC_SIG_API_CB;
-        msg.pid = BTC_PID_BLUFI;
-        msg.act = ESP_BLUFI_EVENT_BLE_DISCONNECT;
-        memcpy(param.disconnect.remote_bda, p_data->conn.remote_bda, sizeof(esp_bd_addr_t));
-        btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL);
-        break;
-    }
-    case BTA_GATTS_OPEN_EVT:
-        break;
-    case BTA_GATTS_CLOSE_EVT:
-        break;
-    case BTA_GATTS_CONGEST_EVT:
-        break;
-    default:
-        break;
-    }
-}
-
-static tGATT_STATUS btc_blufi_profile_init(void)
+static uint8_t btc_blufi_profile_init(void)
 {
     esp_blufi_callbacks_t *store_p = blufi_env.cbs;
 
+    uint8_t rc;
     if (blufi_env.enabled) {
         BLUFI_TRACE_ERROR("BLUFI already initialized");
-        return GATT_ERROR;
+        return ESP_BLUFI_ERROR;
     }
 
     memset(&blufi_env, 0x0, sizeof(blufi_env));
     blufi_env.cbs = store_p;        /* if set callback prior, restore the point */
     blufi_env.frag_size = BLUFI_FRAG_DATA_DEFAULT_LEN;
+    rc = esp_blufi_init();
+    if(rc != 0 ){
+       return rc;
+    }
 
-    /* register the BLUFI profile to the BTA_GATTS module*/
-    BTA_GATTS_AppRegister(&blufi_app_uuid, blufi_profile_cb);
-
-    return GATT_SUCCESS;
+    return ESP_BLUFI_SUCCESS;
 }
 
-static tGATT_STATUS btc_blufi_profile_deinit(void)
+static uint8_t btc_blufi_profile_deinit(void)
 {
     if (!blufi_env.enabled) {
         BTC_TRACE_ERROR("BLUFI already de-initialized");
-        return GATT_ERROR;
+        return ESP_BLUFI_ERROR;
     }
 
-    BTA_GATTS_StopService(blufi_env.handle_srvc);
-    BTA_GATTS_DeleteService(blufi_env.handle_srvc);
-    /* register the BLUFI profile to the BTA_GATTS module*/
-    BTA_GATTS_AppDeregister(blufi_env.gatt_if);
-
-    return GATT_SUCCESS;
+    esp_blufi_deinit();
+    return ESP_BLUFI_SUCCESS;
 }
 
-static void btc_blufi_send_notify(uint8_t *pkt, int pkt_len)
+void btc_blufi_send_notify(uint8_t *pkt, int pkt_len)
 {
-    UINT16 conn_id = blufi_env.conn_id;
-    UINT16 attr_id = blufi_env.handle_char_e2p;
-    bool rsp = false;
-
-    BTA_GATTS_HandleValueIndication(conn_id, attr_id, pkt_len,
-                                     pkt, rsp);
+   struct pkt_info pkts;
+   pkts.pkt = pkt;
+   pkts.pkt_len = pkt_len;
+   esp_blufi_send_notify(&pkts);
 }
 
 void btc_blufi_report_error(esp_blufi_error_state_t state)
@@ -387,7 +101,7 @@ void btc_blufi_report_error(esp_blufi_error_state_t state)
     btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL);
 }
 
-static void btc_blufi_recv_handler(uint8_t *data, int len)
+void btc_blufi_recv_handler(uint8_t *data, int len)
 {
     struct blufi_hdr *hdr = (struct blufi_hdr *)data;
     uint16_t checksum, checksum_pkt;
@@ -536,24 +250,7 @@ void btc_blufi_send_encap(uint8_t type, uint8_t *data, int total_data_len)
             remain_len -= hdr->data_len;
         }
 
-retry:
-        if (blufi_env.is_connected == false) {
-            BTC_TRACE_WARNING("%s ble connection is broken\n", __func__);
-            osi_free(hdr);
-            hdr =  NULL;
-            return;
-        }
-
-        if (esp_ble_get_cur_sendable_packets_num(BTC_GATT_GET_CONN_ID(blufi_env.conn_id)) > 0) {
-            btc_blufi_send_notify((uint8_t *)hdr,
-                ((hdr->fc & BLUFI_FC_CHECK) ?
-                 hdr->data_len + sizeof(struct blufi_hdr) + 2 :
-                 hdr->data_len + sizeof(struct blufi_hdr)));
-        } else {
-            BTC_TRACE_WARNING("%s wait to send blufi custom data\n", __func__);
-            vTaskDelay(pdMS_TO_TICKS(10));
-            goto retry;
-        }
+       esp_blufi_send_encap(hdr);
 
         osi_free(hdr);
         hdr =  NULL;

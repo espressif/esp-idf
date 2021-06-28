@@ -15,11 +15,15 @@
 #ifndef __BLUFI_INT_H__
 #define __BLUFI_INT_H__
 
+#include "btc/btc_task.h"
+#include "esp_blufi_api.h"
 #if (BLUFI_INCLUDED == TRUE)
+
 #define BTC_BLUFI_GREAT_VER   0x01  //Version + Subversion
 #define BTC_BLUFI_SUB_VER     0x02  //Version + Subversion
 #define BTC_BLUFI_VERSION     ((BTC_BLUFI_GREAT_VER<<8)|BTC_BLUFI_SUB_VER)  //Version + Subversion
 
+typedef UINT8 tGATT_IF;
 /* service engine control block */
 typedef struct {
     /* Protocol reference */
@@ -176,6 +180,9 @@ extern tBLUFI_ENV *blufi_env_ptr;
 #define BLUFI_FC_IS_REQ_ACK(fc)   ((fc) & BLUFI_FC_REQ_ACK_MASK)
 #define BLUFI_FC_IS_FRAG(fc)      ((fc) & BLUFI_FC_FRAG_MASK)
 
+/* default GATT MTU size over LE link
+*/
+#define GATT_DEF_BLE_MTU_SIZE               23
 /* BLUFI HEADER + TOTAL(REMAIN) LENGTH + CRC + L2CAP RESERVED */
 #define BLUFI_MTU_RESERVED_SIZE     (sizeof(struct blufi_hdr) + 2 + 2 + 3)
 #define BLUFI_FRAG_DATA_DEFAULT_LEN (GATT_DEF_BLE_MTU_SIZE - BLUFI_MTU_RESERVED_SIZE)

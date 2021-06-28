@@ -10,7 +10,7 @@ To test this demo, you need to prepare a mobile phone with blufi application ins
 
 Blufi is completely open source, here is the download link:
 
-* [blufi source code](https://github.com/espressif/esp-idf/tree/master/examples/bluetooth/bluedroid/ble/blufi)
+* [blufi source code](https://github.com/espressif/esp-idf/tree/master/examples/bluetooth/blufi)
 
 * [BluFi protocol](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/blufi.html?highlight=blufi#the-frame-formats-defined-in-blufi)
 

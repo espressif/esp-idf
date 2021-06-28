@@ -18,15 +18,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-
-#include "common/bt_target.h"
-#include "common/bt_trace.h"
-#include "stack/bt_types.h"
-#include "stack/gatt_api.h"
-#include "bta/bta_api.h"
-#include "bta/bta_gatt_api.h"
-#include "bta_gatts_int.h"
-
 #include "btc_blufi_prf.h"
 #include "btc/btc_task.h"
 #include "btc/btc_manage.h"
