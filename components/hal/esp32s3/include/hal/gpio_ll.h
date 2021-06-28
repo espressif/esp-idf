@@ -26,6 +26,7 @@
 #include "soc/gpio_periph.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc_io_reg.h"
+#include "soc/usb_serial_jtag_reg.h"
 #include "hal/gpio_types.h"
 
 #ifdef __cplusplus
@@ -399,6 +400,9 @@ static inline void gpio_ll_iomux_in(gpio_dev_t *hw, uint32_t gpio, uint32_t sign
  */
 static inline void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
 {
+    if (pin_name == IO_MUX_GPIO19_REG || pin_name == IO_MUX_GPIO20_REG) {
+        CLEAR_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_USB_PAD_ENABLE);
+    }
     PIN_FUNC_SELECT(pin_name, func);
 }
 

@@ -41,7 +41,7 @@ TEST_CASE("SigmaDelta pin, duty, prescale set", "[sigma_delta][ignore]")
     int8_t duty = 0;
     int inc = 1;
     for (int i = 0; i < 1000; i++) {
-        sigmadelta_set_duty(0, duty);
+        sigmadelta_set_duty(sigmadelta_cfg.channel, duty);
         vTaskDelay(10 / portTICK_PERIOD_MS);
 
         duty += inc;
@@ -52,7 +52,7 @@ TEST_CASE("SigmaDelta pin, duty, prescale set", "[sigma_delta][ignore]")
 
     TEST_ESP_OK(sigmadelta_set_prescale(0, 200));
     for (int i = 0; i < 1000; i++) {
-        sigmadelta_set_duty(0, duty);
+        sigmadelta_set_duty(sigmadelta_cfg.channel, duty);
         vTaskDelay(10 / portTICK_PERIOD_MS);
 
         duty += inc;
@@ -61,6 +61,6 @@ TEST_CASE("SigmaDelta pin, duty, prescale set", "[sigma_delta][ignore]")
         }
     }
 
-    TEST_ESP_OK(sigmadelta_set_pin(0, 5));
+    TEST_ESP_OK(sigmadelta_set_pin(sigmadelta_cfg.channel, 5));
     vTaskDelay(3000 / portTICK_PERIOD_MS);
 }

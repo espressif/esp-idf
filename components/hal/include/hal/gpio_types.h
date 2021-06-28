@@ -78,6 +78,7 @@ typedef enum {
 #define GPIO_SEL_46             ((uint64_t)(((uint64_t)1)<<46))  /*!< Pin 46 selected */
 #if CONFIG_IDF_TARGET_ESP32S3
 #define GPIO_SEL_47             ((uint64_t)(((uint64_t)1)<<47))  /*!< Pin 47 selected */
+#define GPIO_SEL_48             ((uint64_t)(((uint64_t)1)<<48))  /*!< Pin 48 selected */
 #endif
 #endif
 
@@ -129,6 +130,7 @@ typedef enum {
 #define GPIO_PIN_REG_45          IO_MUX_GPIO45_REG
 #define GPIO_PIN_REG_46          IO_MUX_GPIO46_REG
 #define GPIO_PIN_REG_47          IO_MUX_GPIO47_REG
+#define GPIO_PIN_REG_48          IO_MUX_GPIO48_REG
 
 #if CONFIG_IDF_TARGET_ESP32
 typedef enum {
@@ -269,8 +271,9 @@ typedef enum {
     GPIO_NUM_43 = 43,   /*!< GPIO43, input and output */
     GPIO_NUM_44 = 44,   /*!< GPIO44, input and output */
     GPIO_NUM_45 = 45,   /*!< GPIO45, input and output */
-    GPIO_NUM_46 = 46,   /*!< GPIO46, input mode only */
+    GPIO_NUM_46 = 46,   /*!< GPIO46, input and output */
     GPIO_NUM_47 = 47,   /*!< GPIO47, input and output */
+    GPIO_NUM_48 = 48,   /*!< GPIO48, input and output */
     GPIO_NUM_MAX,
 /** @endcond */
 } gpio_num_t;
