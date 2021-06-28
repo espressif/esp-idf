@@ -39,4 +39,9 @@ menu "A2DP Example Configuration"
         help
             GPIO number to use for I2S Data Driver.
 
+    config EXAMPLE_A2DP_ENABLE_VOLUME_SIMULATION_TASK
+        bool "Enable volume simulation task"
+        default n
+        help
+            The task increases the volume by 5 every 10 seconds
 endmenu
