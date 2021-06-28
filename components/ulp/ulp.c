@@ -82,7 +82,7 @@ esp_err_t ulp_run(uint32_t entry_point)
     // ULP FSM sends the DONE signal.
     CLEAR_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_DONE_FORCE);
     /* Set the number of cycles of ULP_TIMER sleep, the wait time required to start ULP */
-    REG_SET_FIELD(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_TIMER_SLP_CYCLE, 100);
+    REG_SET_FIELD(RTC_CNTL_ULP_CP_TIMER_1_REG, RTC_CNTL_ULP_CP_TIMER_SLP_CYCLE, 100);
     /* Clear interrupt COCPU status */
     REG_WRITE(RTC_CNTL_INT_CLR_REG, RTC_CNTL_COCPU_INT_CLR | RTC_CNTL_COCPU_TRAP_INT_CLR | RTC_CNTL_ULP_CP_INT_CLR);
     // 1: start with timer. wait ULP_TIMER cnt timer.
