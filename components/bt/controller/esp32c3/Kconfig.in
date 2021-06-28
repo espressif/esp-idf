@@ -383,3 +383,16 @@ config BT_CTRL_HCI_TL_EFF
     default 0 if BT_CTRL_HCI_MODE_UART_H4
     default 1 if BT_CTRL_HCI_M0DE_VHCI
     default 1
+
+config BT_CTRL_AGC_RECORRECT_EN
+    bool "Enable HW AGC recorrect"
+    default n
+    help
+        Enable uncoded phy AGC recorrect
+
+config BT_CTRL_CODED_AGC_RECORRECT_EN
+    bool "Enable coded phy AGC recorrect"
+    depends on BT_CTRL_AGC_RECORRECT_EN
+    default n
+    help
+        Enable coded phy AGC recorrect

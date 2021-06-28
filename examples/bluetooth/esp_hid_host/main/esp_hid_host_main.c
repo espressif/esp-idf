@@ -123,7 +123,11 @@ void app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK( ret );
+#if CONFIG_BT_CLASSIC_ENABLED
     ESP_ERROR_CHECK( esp_hid_gap_init(ESP_BT_MODE_BTDM) );
+#else
+    ESP_ERROR_CHECK( esp_hid_gap_init(ESP_BT_MODE_BLE) );
+#endif
     ESP_ERROR_CHECK( esp_ble_gattc_register_callback(esp_hidh_gattc_event_handler) );
     esp_hidh_config_t config = {
         .callback = hidh_callback,
