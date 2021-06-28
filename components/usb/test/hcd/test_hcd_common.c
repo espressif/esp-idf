@@ -12,14 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-
-
-//Todo: Move all the port and PHY to here
-//Have a separate test file for INTR (HID), ISOC (UVC), and BULK (SCSI)
-//Each test case has a fixed HW device
-//Implements bare minimum for a MOCK protocol
-
 #include <stdio.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"

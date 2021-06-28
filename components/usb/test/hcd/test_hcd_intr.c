@@ -17,69 +17,8 @@
 #include "freertos/semphr.h"
 #include "unity.h"
 #include "test_utils.h"
+#include "test_usb_mock_classes.h"
 #include "test_hcd_common.h"
-
-// ------------------------------------------------- Mock HID Mice -----------------------------------------------------
-
-/*
-Note: The following test requires that USB low speed mouse be connected. The mouse should...
-
-- Be implement the HID with standard report format used by mice
-- It's configuration 1 should have the following endpoint
-
-Endpoint Descriptor:
-    bLength             7
-    bDescriptorType     5
-    bEndpointAddress    0x81  EP 1 IN
-    bmAttributes        3
-        Transfer Type   Interrupt
-        Synch Type      None
-        Usage Type      Data
-    wMaxPacketSize      0x0004  1x 4 bytes
-    bInterval           10
-
-If you're using another mice with different endpoints, modify the endpoint descriptor below
-*/
-static const usb_desc_ep_t in_ep_desc = {
-    .bLength = sizeof(usb_desc_ep_t),
-    .bDescriptorType = USB_B_DESCRIPTOR_TYPE_ENDPOINT,
-    .bEndpointAddress = 0x81,       //EP 1 IN
-    .bmAttributes = USB_BM_ATTRIBUTES_XFER_INT,
-    .wMaxPacketSize = 4,            //MPS of 4 bytes
-    .bInterval = 10,                //Interval of 10ms
-};
-
-typedef union {
-    struct {
-        uint32_t left_button: 1;
-        uint32_t right_button: 1;
-        uint32_t middle_button: 1;
-        uint32_t reserved5: 5;
-        uint8_t x_movement;
-        uint8_t y_movement;
-    } __attribute__((packed));
-    uint8_t val[3];
-} mock_hid_mouse_report_t;
-_Static_assert(sizeof(mock_hid_mouse_report_t) == 3, "Size of HID mouse report incorrect");
-
-static void mock_hid_process_report(mock_hid_mouse_report_t *report, int iter)
-{
-    static int x_pos = 0;
-    static int y_pos = 0;
-    //Update X position
-    if (report->x_movement & 0x80) {    //Positive movement
-        x_pos += report->x_movement & 0x7F;
-    } else {    //Negative movement
-        x_pos -= report->x_movement & 0x7F;
-    }
-    //Update Y position
-    if (report->y_movement & 0x80) {    //Positive movement
-        y_pos += report->y_movement & 0x7F;
-    } else {    //Negative movement
-        y_pos -= report->y_movement & 0x7F;
-    }
-    printf("\rX:%d\tY:%d\tIter: %d\n", x_pos, y_pos, iter);
-}
 
 // --------------------------------------------------- Test Cases ------------------------------------------------------
 
@@ -119,7 +58,7 @@ TEST_CASE("Test HCD interrupt pipe URBs", "[hcd][ignore]")
     uint8_t dev_addr = test_hcd_enum_device(default_pipe);
 
     //Allocate interrupt pipe and URBS
-    hcd_pipe_handle_t intr_pipe = test_hcd_pipe_alloc(port_hdl, &in_ep_desc, dev_addr, port_speed);
+    hcd_pipe_handle_t intr_pipe = test_hcd_pipe_alloc(port_hdl, &mock_hid_mouse_in_ep_desc, dev_addr, port_speed);
     urb_t *urb_list[NUM_URBS];
     for (int i = 0; i < NUM_URBS; i++) {
         urb_list[i] = test_hcd_alloc_urb(0, URB_DATA_BUFF_SIZE);
