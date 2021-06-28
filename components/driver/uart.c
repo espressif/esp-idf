@@ -258,7 +258,9 @@ esp_err_t uart_set_stop_bits(uart_port_t uart_num, uart_stop_bits_t stop_bit)
 esp_err_t uart_get_stop_bits(uart_port_t uart_num, uart_stop_bits_t *stop_bit)
 {
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
+    UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_get_stop_bits(&(uart_context[uart_num].hal), stop_bit);
+    UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     return ESP_OK;
 }
 
@@ -274,7 +276,9 @@ esp_err_t uart_set_parity(uart_port_t uart_num, uart_parity_t parity_mode)
 esp_err_t uart_get_parity(uart_port_t uart_num, uart_parity_t *parity_mode)
 {
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
+    UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_get_parity(&(uart_context[uart_num].hal), parity_mode);
+    UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     return ESP_OK;
 }
 
@@ -1338,17 +1342,19 @@ esp_err_t uart_flush_input(uart_port_t uart_num)
         }
         data = (uint8_t*) xRingbufferReceive(p_uart->rx_ring_buf, &size, (portTickType) 0);
         if(data == NULL) {
+            bool error = false;
             UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
             if( p_uart_obj[uart_num]->rx_buffered_len != 0 ) {
                 p_uart_obj[uart_num]->rx_buffered_len = 0;
-                UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
-                // this must be called outside the critical section
-                ESP_LOGE(UART_TAG, "rx_buffered_len error");
-                UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
+                error = true;
             }
             //We also need to clear the `rx_buffer_full_flg` here.
             p_uart_obj[uart_num]->rx_buffer_full_flg = false;
             UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
+            if (error) {
+                // this must be called outside the critical section
+                ESP_LOGE(UART_TAG, "rx_buffered_len error");
+            }
             break;
         }
         UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
