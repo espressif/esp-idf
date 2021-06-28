@@ -110,7 +110,7 @@ function(__build_set_default_build_specifications)
     list(APPEND c_compile_options   "-std=gnu99"
                                     "-Wno-old-style-declaration")
 
-    list(APPEND cxx_compile_options "-std=gnu++11")
+    list(APPEND cxx_compile_options "-std=gnu++17")
 
     list(APPEND link_options "-Wl,--gc-sections")
 
