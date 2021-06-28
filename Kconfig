@@ -68,7 +68,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
         default 0x0002 if IDF_TARGET_ESP32S2
         default 0x0005 if IDF_TARGET_ESP32C3
         default 0x0009 if IDF_TARGET_ESP32S3
-        default 0x000A if IDF_TARGET_ESP32H2
+        default 0x000A if IDF_TARGET_ESP32H2 # ESP32H2-TODO: IDF-3475
         default 0xFFFF
 
     menu "SDK tool configuration"

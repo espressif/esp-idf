@@ -8,7 +8,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_SW_COEXIST_ENABLE
         bool "Software controls WiFi/Bluetooth coexistence"
-        depends on BT_ENABLED
+        depends on ESP32_WIFI_ENABLED && BT_ENABLED
         default y
         help
             If enabled, WiFi & Bluetooth coexistence is controlled by software rather than hardware.

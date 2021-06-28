@@ -444,7 +444,8 @@ static inline void adc_ll_digi_reset(void)
 static inline void adc_ll_pwdet_set_cct(uint32_t cct)
 {
     /* Capacitor tuning of the PA power monitor. cct set to the same value with PHY. */
-    // RTCCNTL.sensor_ctrl.sar2_pwdet_cct = cct; // ESP32H2-TODO: IDF-3389
+    // RTCCNTL.sensor_ctrl.sar2_pwdet_cct = cct;
+    abort();  // ESP32H2-TODO: IDF-3389
 }
 
 /**
@@ -457,7 +458,8 @@ static inline uint32_t adc_ll_pwdet_get_cct(void)
 {
     /* Capacitor tuning of the PA power monitor. cct set to the same value with PHY. */
     // return RTCCNTL.sensor_ctrl.sar2_pwdet_cct;
-    return 0; // ESP32H2-TODO: IDF-3389
+    abort();  // ESP32H2-TODO: IDF-3389
+    return 0;
 }
 
 /**

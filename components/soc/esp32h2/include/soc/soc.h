@@ -346,9 +346,7 @@
 #define ETS_FRC1_INUM                           22
 #define ETS_T1_WDT_INUM                         24
 #define ETS_CACHEERR_INUM                       25
-#ifdef CONFIG_IDF_TARGET_ESP32H2
 #define ETS_MEMPROT_ERR_INUM                    26
-#endif
 #define ETS_DPORT_INUM                          28
 
 //CPU0 Max valid interrupt number
