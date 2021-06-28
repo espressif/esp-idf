@@ -48,6 +48,14 @@ menu "Core dump"
             depends on ESP_COREDUMP_DATA_FORMAT_ELF && IDF_TARGET_ESP32
     endchoice
 
+    config ESP_COREDUMP_CHECK_BOOT
+        bool "Check core dump data integrity on boot"
+        default y
+        depends on ESP_COREDUMP_ENABLE_TO_FLASH
+        help
+            When enabled, if any data are found on the flash core dump partition,
+            they will be checked by calculating their checksum.
+
     config ESP_COREDUMP_ENABLE
         bool
         default F
