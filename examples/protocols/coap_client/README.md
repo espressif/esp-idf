@@ -43,6 +43,8 @@ Component config  --->
   CoAP Configuration  --->
     * Set encryption method definition, PSK (default) or PKI
     * Enable CoAP debugging if required
+  High resolution timer (esp_timer)  --->
+    * Hardware timer to use for esp_timer - change if required (FRC2 for QEMU)
 
 ### Build and Flash
 
@@ -59,7 +61,7 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 ## Example Output
 Prerequisite: we startup a CoAP server on coap server example,
-or use the default of coap://californium.eclipse.org.  
+or use the default of coap://californium.eclipseprojects.io.  
 
 and you could receive data from CoAP server if succeed,  
 such as the following log:
@@ -76,26 +78,30 @@ I (1692) wifi: pm start, type: 1
 
 I (2582) event: sta ip: 192.168.3.89, mask: 255.255.255.0, gw: 192.168.3.1
 I (2582) CoAP_client: Connected to AP
-I (2582) CoAP_client: DNS lookup succeeded. IP=104.196.15.150
+I (2582) CoAP_client: DNS lookup succeeded. IP=35.185.40.182
 Received:
-************************************************************
-CoAP RFC 7252                              Cf 2.0.0-SNAPSHOT
-************************************************************
+****************************************************************
+CoAP RFC 7252                                  Cf 3.0.0-SNAPSHOT
+****************************************************************
 This server is using the Eclipse Californium (Cf) CoAP framework
 published under EPL+EDL: http://www.eclipse.org/californium/
 
-(c) 2014, 2015, 2016 Institute for Pervasive Computing, ETH Zurich and others
-************************************************************
+(c) 2014-2020 Institute for Pervasive Computing, ETH Zurich and others
+****************************************************************
 ...
 ```
 
 ## libcoap Documentation
-This can be found at https://libcoap.net/doc/reference/4.2.0/
+This can be found at [libcoap Documentation](https://libcoap.net/documentation.html).
+The current API is 4.3.0.
+
+## libcoap Specific Issues
+These can be raised at [libcoap Issues](https://github.com/obgm/libcoap/issues).
 
 ## Troubleshooting
 * Please make sure Target Url includes valid `host`, optional `port`,
 optional `path`, and begins with `coap://`, `coaps://` or `coap+tcp://`
 for a coap server that supports TCP
-(not all do including coap+tcp://californium.eclipse.org).
+(not all do including coap+tcp://californium.eclipseprojects.io).
 
 * CoAP logging can be enabled by running 'idf.py menuconfig -> Component config -> CoAP Configuration' and setting appropriate log level
