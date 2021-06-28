@@ -49,11 +49,11 @@ To check the device name for the serial port of your {IDF_TARGET_NAME} board (or
 
 Linux ::
 
-    ls /dev/tty* >> ~/before_plugging.txt
+    ls /dev/tty* > ~/before_plugging.txt
 
 Plug the board / dongle, then type the following command ::
 
-    ls /dev/tty* >> ~/after_plugging.txt
+    ls /dev/tty* > ~/after_plugging.txt
 
 Display the port of your board / dongle ::
 
