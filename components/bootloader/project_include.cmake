@@ -117,6 +117,9 @@ externalproject_add(bootloader
     CMAKE_ARGS  -DSDKCONFIG=${sdkconfig} -DIDF_PATH=${idf_path} -DIDF_TARGET=${idf_target}
                 -DPYTHON_DEPS_CHECKED=1 -DPYTHON=${python}
                 -DEXTRA_COMPONENT_DIRS=${CMAKE_CURRENT_LIST_DIR}
+                -DCMAKE_ASM_COMPILER=${CMAKE_ASM_COMPILER}
+                -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+                -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
                 ${sign_key_arg} ${ver_key_arg}
                 # LEGACY_INCLUDE_COMMON_HEADERS has to be passed in via cache variable since
                 # the bootloader common component requirements depends on this and
