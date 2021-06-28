@@ -1,0 +1,414 @@
+# Copyright © 2018 Riccardo Bertini <m_bertini@hotmail.com>
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and limitations under the License.
+
+menu "Wi-Fi Basics Configuration"
+  
+  menu "Wi-Fi Interface Configuration"
+
+    menu "Station Interface Configuration"
+
+      config WIFI_STATION_ENABLE
+       bool "Enable Station Interface"
+       default y
+       help 
+        Whether to enable the Station interface or not
+
+      menu "Station Base Configuration"
+      depends on WIFI_STATION_ENABLE
+
+        config WIFI_STATION_AP_SSID
+         string "Target AP SSID"
+         default "mySSID"
+         help 
+          The SSID of the AP the Station interface must attempt to connect to
+
+        config WIFI_STATION_SSID_HIDDEN
+         bool "SSID supposedly hidden?"
+         default n
+         help 
+          Whether the target AP the Station interface must attempt to connect to supposedly hides its SSID in its Wi-Fi beacon frames
+          Note that this information is used exclusively to prevent a preliminary Wi-Fi scan to be performed in order for the Station 
+          interface to attempt to connect directly to its target AP
+      
+        config WIFI_STATION_AP_PASSWORD
+         string "Target AP Password"
+         default "myPassword"
+         help 
+          The password of the AP the Station interface must attempt to connect to
+
+        config WIFI_STATION_USE_SPECIFIC_BSSID
+         bool "Use Target AP specific BSSID?"
+         default n
+         help
+          Whether the Station interface must attempt to connect to an AP with a specific BSSID
+
+        config WIFI_STATION_SPECIFIC_BSSID
+         string "Target AP specific BSSID"
+         default "52:69:63:63:61:72"
+         depends on WIFI_STATION_USE_SPECIFIC_BSSID
+         help
+          The specific BSSID of the target AP the Station interface must attempt to connect to
+
+        menu "Preliminary Wi-Fi Scan"
+        depends on WIFI_STATION_ENABLE&&(!WIFI_STATION_SSID_HIDDEN)
+
+          config WIFI_STATION_SCAN_PRELIMINARY
+           bool "Perform a preliminary Wi-Fi Scan"
+           default y
+           help 
+            Whether to perform a preliminary Wi-Fi scan before attempting to connect the Station interface to its target AP
+            Note that this must be avoided if the target AP's SSID is supposedly hidden in its Wi-Fi beacon frames 
+
+          config WIFI_STATION_SCAN_HIDDEN
+           bool "Include APs with hidden SSIDs in the scan results"
+           default y
+           depends on WIFI_STATION_SCAN_PRELIMINARY
+           help 
+            Whether to include APs whose SSID is hidden in their Wi-Fi beacon frames in the scan results
+
+          config WIFI_STATION_SCAN_ALLOW_FALLBACK
+           bool "Allow fallback on an open AP"
+           default y
+           depends on WIFI_STATION_SCAN_PRELIMINARY
+           help 
+            Whether to allow the Station interface to fall back on an open AP should its target AP not be found in the preliminary Wi-Fi scan
+
+          config WIFI_STATION_SCAN_RETRY_INTERVAL
+           int "Wi-Fi Scan Retry Interval (s)"
+           default 5
+           range 1 1000
+           depends on WIFI_STATION_SCAN_PRELIMINARY
+           help
+            The interval after which perform a new Wi-Fi scan if there was an error in the last 
+            one or no suitable AP to attempt to connect the Station interface to were found
+
+        endmenu
+
+      endmenu
+ 
+      menu "Other Station Settings"
+      depends on WIFI_STATION_ENABLE
+
+        config WIFI_STATION_USE_CUSTOM_MAC
+         bool "Use custom MAC Address*"
+         default n
+         help 
+          Whether to use a custom MAC address for the Station interface
+          BUG: Currently setting a custom MAC address to the station interface causes the Wi-Fi 
+               stack  to raise a  SYSTEM_EVENT_STA_STOP event even if the interface was not 
+               enabled in the first place, and a workround to prevent its specific handler from 
+               being called in such circumstance has been added in the Wi-Fi Events General Handler
+
+        config WIFI_STATION_CUSTOM_MAC
+         string "Station MAC Address"
+         default "52:69:63:6B:6B:95"
+         depends on WIFI_STATION_USE_CUSTOM_MAC
+         help 
+          The custom MAC address to use for the Station interface (Note that in the most significant byte the first bit cannot be "1")
+
+        choice CHOICE_WIFI_STATION_POWERSAVE_MODE
+         prompt "Station Power Saving Mode"
+         default WIFI_STATION_PS_MIN
+         help
+          The power saving mode to use for the Station interface
+         config WIFI_STATION_PS_NONE
+          bool "None"
+         config WIFI_STATION_PS_MIN
+          bool "Minimum"
+         config WIFI_STATION_PS_MAX
+          bool "Maximum"
+        endchoice
+
+        config WIFI_STATION_LISTEN_INTERVAL
+         int "Maximum Power Saving listen_interval"
+         default 3
+         range 1 100
+         depends on WIFI_STATION_PS_MAX
+         help 
+          The number of DTIM periods the station interface remains in the sleep state before checking whether it has frames pending to be received from its AP
+
+      endmenu
+
+      menu "Station IP Configuration"
+      depends on WIFI_STATION_ENABLE
+
+        choice CHOICE_WIFI_STATION_IPCONFIG
+         prompt "IP Configuration Type"
+         default WIFI_STATION_IPDYNAMIC
+         help
+          Whether to use a dynamic or static IP configuration for the Station Interface
+         config WIFI_STATION_IPDYNAMIC
+          bool "Dynamic"
+         config WIFI_STATION_IPSTATIC
+          bool "Static"
+         endchoice
+
+        config WIFI_STATION_STATIC_IP
+         string "IP Address"
+         default "192.168.5.10"
+         depends on WIFI_STATION_IPSTATIC
+         help 
+          The static IP address of the Station interface
+
+        config WIFI_STATION_STATIC_NETMASK
+         string "NetMask"
+         default "255.255.255.0"
+         depends on WIFI_STATION_IPSTATIC
+         help 
+          The static NetMask of the Station interface
+
+        config WIFI_STATION_STATIC_GATEWAY
+         string "Gateway"
+         default "192.168.5.1"
+         depends on WIFI_STATION_IPSTATIC
+         help 
+          The static Gateway of the Station interface
+
+        config WIFI_STATION_STATIC_DNS_PRIMARY
+         string "Primary DNS Server"
+         default "8.8.8.8"
+         depends on WIFI_STATION_IPSTATIC
+         help 
+          The address of the Station interface's primary DNS server
+
+        config WIFI_STATION_STATIC_DNS_SECONDARY
+         string "Secondary DNS Server"
+         default "8.8.4.4"
+         depends on WIFI_STATION_IPSTATIC
+         help 
+          The address of the Station interface's secondary DNS server
+
+      endmenu
+
+    endmenu
+    
+    menu "SoftAP Interface Configuration"
+ 
+      config WIFI_SOFTAP_ENABLE
+       bool "Enable SoftAP Interface"
+       default y
+       help 
+        Whether to enable the SoftAP interface or not
+
+      menu "SoftAP Base Configuration"
+      depends on WIFI_SOFTAP_ENABLE
+
+        config WIFI_SOFTAP_SSID
+         string "SoftAP SSID"
+         default "ESP32 Wi-Fi"
+         help 
+          The SSID of the SoftAP interface
+
+        config WIFI_SOFTAP_SSID_HIDDEN
+         bool "Hide SSID in Wi-Fi Beacons"
+         default n
+         help 
+          Whether to hide the SoftAP SSID from its Wi-Fi beacon frames
+   
+        choice CHOICE_WIFI_SOFTAP_AUTHMODE
+         prompt "SoftAP Authmode"
+         default WIFI_SOFTAP_AUTH_OPEN
+         help
+          The authentication protocol used on the SoftAP interface
+         config WIFI_SOFTAP_AUTH_OPEN
+          bool "None"
+         config WIFI_SOFTAP_AUTH_WPA_PSK
+          bool "WPA-PSK"
+         config WIFI_SOFTAP_AUTH_WPA2_PSK
+          bool "WPA2-PSK"
+         config WIFI_SOFTAP_AUTH_WPA_WPA2_PSK
+          bool "WPA/WPA2-PSK"
+        endchoice
+
+        config WIFI_SOFTAP_PASSWORD
+         string "SoftAP Password"
+         default "mypassword"
+         depends on !(WIFI_SOFTAP_AUTH_OPEN)
+         help 
+          The password required from clients to connect to the SoftAP interface
+
+        choice CHOICE_WIFI_CHANNEL_SELECT
+         prompt "SoftAP Wi-Fi Channel Selection"
+         default WIFI_SOFTAP_CHANNEL_AUTO
+         help
+          Whether to set the SoftAP interface onto a specific Wi-Fi channel or let the Wi-Fi stack choose its Wi-Fi channel
+          (also note that, due to the ESP32 current limitation that the Station and SoftAP Wi-Fi channels must coincide, 
+           if the Station interface is also enabled the Wi-Fi stack will switch the SoftAP channel onto the Station channel)
+         config WIFI_SOFTAP_CHANNEL_AUTO
+          bool auto
+         config WIFI_SOFTAP_CHANNEL_MANUAL
+          bool manual
+        endchoice
+
+        config WIFI_SOFTAP_CHANNEL
+         int "SoftAP Wi-Fi Channel"
+         default 7
+         range 1 13
+         depends on WIFI_SOFTAP_CHANNEL_MANUAL
+         help
+          The Wi-Fi channel used by the SoftAP Interface
+
+        config WIFI_SOFTAP_MAXCONNECTIONS
+         int "Maximum Connected Clients"
+         default 4
+         range 1 4
+         help 
+          The maximum number of clients allowed to be connected simultaneously to the SoftAP interface
+
+        config WIFI_SOFTAP_BEACON_INTERVAL
+         int "Wi-Fi Beacon Sending Interval (ms)"
+         default 100
+         range 100 60000
+         help 
+          The sending interval in milliseconds of the SoftAP Wi-Fi beacon frame
+
+      endmenu
+
+      menu "Other SoftAP Settings"
+      depends on WIFI_SOFTAP_ENABLE
+
+        config WIFI_SOFTAP_USE_CUSTOM_MAC
+         bool "Use custom MAC Address"
+         default n
+         depends on WIFI_SOFTAP_ENABLE
+         help 
+          Whether to use a custom MAC address for the SoftAP interface (which will represent its BSSID)
+
+        config WIFI_SOFTAP_CUSTOM_MAC
+         string "SoftAP MAC Address"
+         default "20:A5:F2:23:9B:A7"
+         depends on WIFI_SOFTAP_USE_CUSTOM_MAC
+         help 
+          The custom MAC address (and BSSID) of the SoftAP interface (Note that in the most significant byte the first bit cannot be "1")
+
+      endmenu
+
+      menu "SoftAP IP Configuration"
+      depends on WIFI_SOFTAP_ENABLE
+
+        config WIFI_SOFTAP_USE_CUSTOM_STATIC_IP
+         bool "Use Custom Static IP Configuration"
+         default n
+         help
+          Whether to use a custom or the predefined static IP configuration for the SoftAP interface
+          (where the predefined static IP configuration is the following:
+           IP = 192.168.4.1, Netmask = 255.255.255.0 Gateway 192.168.4.1)
+
+        config WIFI_SOFTAP_CUSTOM_STATIC_IP
+         string "IP Address"
+         default "192.168.10.1"
+         depends on WIFI_SOFTAP_USE_CUSTOM_STATIC_IP
+         help 
+          The custom static IP address of the SoftAP interface
+
+        config WIFI_SOFTAP_CUSTOM_STATIC_NETMASK
+         string "NetMask"
+         default "255.255.255.0"
+         depends on WIFI_SOFTAP_USE_CUSTOM_STATIC_IP
+         help 
+          The custom static NetMask of the SoftAP interface
+
+        config WIFI_SOFTAP_CUSTOM_STATIC_GATEWAY
+         string "Gateway"
+         default "192.168.10.1"
+         depends on WIFI_SOFTAP_USE_CUSTOM_STATIC_IP
+         help 
+          The custom static Gateway of the SoftAP interface
+
+        config WIFI_SOFTAP_CUSTOM_STATIC_DNS_PRIMARY
+         string "Primary DNS Server"
+         default "8.8.8.8"
+         depends on WIFI_SOFTAP_USE_CUSTOM_STATIC_IP
+         help 
+          The address of the SoftAP interface's primary DNS server
+          (Also note that as of the current ESP-IDF version SoftAP interfaces don't support a secondary DNS server)
+
+      endmenu
+
+    endmenu
+
+  endmenu
+  
+  menu "Driver Components Settings"
+
+    menu "StationNOIP Driver Components"
+
+      menu "StationNOIP Logging Driver"
+
+        config WIFI_DRIVER_STATION_NOIP_LOGGING_ENABLE
+         bool "Enable StationNOIP Logging Driver"
+         default y
+         help
+          Whether to enable a periodic logging of the Station interface's settings
+          (its IP configuration excluded)
+
+        config WIFI_DRIVER_STATION_NOIP_LOGGING_INTERVAL
+         int "Logging Interval (s)"
+         range 1 5000
+         default 10
+         depends on WIFI_DRIVER_STATION_NOIP_LOGGING_ENABLE
+         help
+          The logging interval in seconds
+ 
+       endmenu
+
+    endmenu
+
+    menu "StationIP Driver Components"
+
+      menu "StationIP Logging Driver"
+
+        config WIFI_DRIVER_STATION_IP_LOGGING_ENABLE
+         bool "Enable StationIP Logging Driver"
+         default y
+         help
+          Whether to enable a periodic logging of the Station Interface's IP configuration
+
+        config WIFI_DRIVER_STATION_IP_LOGGING_INTERVAL
+         int "Logging Interval (s)"
+         range 1 5000
+         default 10
+         depends on WIFI_DRIVER_STATION_IP_LOGGING_ENABLE
+         help
+          The logging interval in seconds
+ 
+       endmenu
+
+    endmenu
+
+    menu "SoftAP Driver Components"
+
+      menu "SoftAP Logging Driver"
+
+        config WIFI_DRIVER_SOFTAP_LOGGING_ENABLE
+         bool "Enable SoftAP Logging Driver"
+         default y
+         help
+          Whether to enable a periodic logging of the SoftAP interface's settings
+
+        config WIFI_DRIVER_SOFTAP_LOGGING_CLIENTS
+         bool "Print Connected Clients"
+         default y
+         depends on WIFI_DRIVER_SOFTAP_LOGGING_ENABLE
+         help
+          Whether to add information on the clients connected to the SoftAP interface in the logging
+
+        config WIFI_DRIVER_SOFTAP_LOGGING_INTERVAL
+         int "Logging Interval (s)"
+         range 1 5000
+         default 10
+         depends on WIFI_DRIVER_SOFTAP_LOGGING_ENABLE
+         help
+          The logging interval in seconds
+ 
+       endmenu
+
+    endmenu
+
+  endmenu
+
+endmenu
