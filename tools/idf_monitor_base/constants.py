@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+import re
+
 # Control-key characters
 CTRL_A = '\x01'
 CTRL_B = '\x02'
@@ -43,3 +46,28 @@ TAG_SERIAL_FLUSH = 2
 TAG_CMD = 3
 
 __version__ = '1.1'
+
+
+# paths to scripts
+PANIC_OUTPUT_DECODE_SCRIPT = os.path.join(os.path.dirname(__file__), '..', 'gdb_panic_server.py')
+COREDUMP_SCRIPT = os.path.join(os.path.dirname(__file__), '..', '..', 'components', 'espcoredump', 'espcoredump.py')
+
+# regex matches an potential PC value (0x4xxxxxxx)
+MATCH_PCADDR = re.compile(r'0x4[0-9a-f]{7}', re.IGNORECASE)
+
+DEFAULT_TOOLCHAIN_PREFIX = 'xtensa-esp32-elf-'
+
+DEFAULT_PRINT_FILTER = ''
+
+# panic handler related messages
+PANIC_START = r'Core \s*\d+ register dump:'
+PANIC_END = b'ELF file SHA256:'
+PANIC_STACK_DUMP = b'Stack memory:'
+
+# panic handler decoding states
+PANIC_IDLE = 0
+PANIC_READING = 1
+
+# panic handler decoding options
+PANIC_DECODE_DISABLE = 'disable'
+PANIC_DECODE_BACKTRACE = 'backtrace'

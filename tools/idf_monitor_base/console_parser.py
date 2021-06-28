@@ -19,6 +19,9 @@ try:
 except ImportError:
     pass
 
+
+import queue
+
 from serial.tools import miniterm
 
 from .constants import (CMD_APP_FLASH, CMD_ENTER_BOOT, CMD_MAKE, CMD_OUTPUT_TOGGLE, CMD_RESET, CMD_STOP,
@@ -27,6 +30,28 @@ from .constants import (CMD_APP_FLASH, CMD_ENTER_BOOT, CMD_MAKE, CMD_OUTPUT_TOGG
 from .output_helpers import red_print, yellow_print
 
 key_description = miniterm.key_description
+
+
+def prompt_next_action(reason, console, console_parser, event_queue, cmd_queue):
+    # type: (str, miniterm.Console, ConsoleParser, queue.Queue, queue.Queue) -> None
+    console.setup()  # set up console to trap input characters
+    try:
+        red_print('--- {}'.format(reason))
+        red_print(console_parser.get_next_action_text())
+
+        k = CTRL_T  # ignore CTRL-T here, so people can muscle-memory Ctrl-T Ctrl-F, etc.
+        while k == CTRL_T:
+            k = console.getkey()
+    finally:
+        console.cleanup()
+    ret = console_parser.parse_next_action_key(k)
+    if ret is not None:
+        cmd = ret[1]
+        if cmd == CMD_STOP:
+            # the stop command should be handled last
+            event_queue.put(ret)
+        else:
+            cmd_queue.put(ret)
 
 
 class ConsoleParser(object):

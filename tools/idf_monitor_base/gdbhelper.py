@@ -4,6 +4,7 @@ import subprocess
 import sys
 import tempfile
 
+from .constants import PANIC_OUTPUT_DECODE_SCRIPT
 from .output_helpers import Logger, normal_print, red_print, yellow_print
 from .web_socket_client import WebSocketClient
 
@@ -100,7 +101,6 @@ class GDBHelper:
         return False
 
     def process_panic_output(self, panic_output, logger, target):  # type: (bytes, Logger, str) -> None
-        panic_output_decode_script = os.path.join(os.path.dirname(__file__), '..', 'gdb_panic_server.py')
         panic_output_file = None
         try:
             # On Windows, the temporary file can't be read unless it is closed.
@@ -113,7 +113,7 @@ class GDBHelper:
                    self.elf_file,
                    '-ex', "target remote | \"{python}\" \"{script}\" --target {target} \"{output_file}\""
                        .format(python=sys.executable,
-                               script=panic_output_decode_script,
+                               script=PANIC_OUTPUT_DECODE_SCRIPT,
                                target=target,
                                output_file=panic_output_file.name),
                    '-ex', 'bt']
