@@ -20,7 +20,7 @@
 
 int wps_build_public_key(struct wps_data *wps, struct wpabuf *msg, wps_key_mode_t mode)
 {
-	struct wpabuf *pubkey;
+	struct wpabuf *pubkey = NULL;
 
 	if (mode != WPS_CALC_KEY_NO_CALC) {
 
