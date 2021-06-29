@@ -4801,7 +4801,7 @@ esp_err_t mdns_hostname_set(const char * hostname)
         return ESP_ERR_NO_MEM;
     }
     xTaskNotifyWait(0, 0, NULL, portMAX_DELAY);
-    return ERR_OK;
+    return ESP_OK;
 }
 
 esp_err_t mdns_delegate_hostname_add(const char * hostname, const mdns_ip_addr_t * address_list)
@@ -4831,7 +4831,7 @@ esp_err_t mdns_delegate_hostname_add(const char * hostname, const mdns_ip_addr_t
         free(action);
         return ESP_ERR_NO_MEM;
     }
-    return ERR_OK;
+    return ESP_OK;
 }
 
 esp_err_t mdns_delegate_hostname_remove(const char * hostname)
@@ -4860,7 +4860,7 @@ esp_err_t mdns_delegate_hostname_remove(const char * hostname)
         free(action);
         return ESP_ERR_NO_MEM;
     }
-    return ERR_OK;
+    return ESP_OK;
 }
 
 bool mdns_hostname_exists(const char * hostname)
@@ -4894,7 +4894,7 @@ esp_err_t mdns_instance_name_set(const char * instance)
         free(action);
         return ESP_ERR_NO_MEM;
     }
-    return ERR_OK;
+    return ESP_OK;
 }
 
 /*
