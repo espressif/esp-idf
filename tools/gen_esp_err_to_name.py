@@ -39,7 +39,7 @@ import textwrap
 from io import open
 
 # list files here which should not be parsed
-ignore_files = [os.path.join('components', 'mdns', 'test_afl_fuzz_host', 'esp32_compat.h'),
+ignore_files = [os.path.join('components', 'mdns', 'test_afl_fuzz_host', 'esp32_mock.h'),
                 # tcpip_adapter in compatibility mode from 4.1 (errors reused in esp-netif)
                 os.path.join('components', 'tcpip_adapter', 'include', 'tcpip_adapter_types.h')
                 ]
