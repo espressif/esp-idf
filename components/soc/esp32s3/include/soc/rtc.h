@@ -480,14 +480,13 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config);
 void rtc_clk_cpu_freq_set_xtal(void);
 
 /**
- * @brief Store new APB frequency value into RTC_APB_FREQ_REG
+ * @brief Store new APB frequency value in RAM
  *
  * This function doesn't change any hardware clocks.
  *
  * Functions which perform frequency switching and change APB frequency call
- * this function to update the value of APB frequency stored in RTC_APB_FREQ_REG
- * (one of RTC general purpose retention registers). This should not normally
- * be called from application code.
+ * this function to update the value of APB frequency stored in RAM.
+ * (This should not normally be called from application code.)
  *
  * @param apb_freq  new APB frequency, in Hz
  */
