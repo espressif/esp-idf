@@ -18,25 +18,13 @@
 #include "freertos/semphr.h"
 #include "unity.h"
 #include "test_utils.h"
+#include "test_usb_mock_classes.h"
 #include "test_hcd_common.h"
-
-//We talk to a non-existent device. Since ISOC out requires no ACK, there should be no errors.
-#define MOCK_ISOC_EP_NUM        2
-#define MOCK_ISOC_EP_MPS        512
 
 #define NUM_URBS                3
 #define NUM_PACKETS_PER_URB     3
 #define ISOC_PACKET_SIZE        MOCK_ISOC_EP_MPS
 #define URB_DATA_BUFF_SIZE      (NUM_PACKETS_PER_URB * ISOC_PACKET_SIZE)
-
-static const usb_desc_ep_t isoc_out_ep_desc = {
-    .bLength = sizeof(usb_desc_ep_t),
-    .bDescriptorType = USB_B_DESCRIPTOR_TYPE_ENDPOINT,
-    .bEndpointAddress = MOCK_ISOC_EP_NUM,
-    .bmAttributes = USB_BM_ATTRIBUTES_XFER_ISOC,
-    .wMaxPacketSize = MOCK_ISOC_EP_MPS,     //MPS of 512 bytes
-    .bInterval = 1,     //Isoc interval is (2 ^ (bInterval - 1)) which means an interval of 1ms
-};
 
 /*
 Test HCD ISOC pipe URBs
@@ -71,7 +59,7 @@ TEST_CASE("Test HCD isochronous pipe URBs", "[hcd][ignore]")
     uint8_t dev_addr = test_hcd_enum_device(default_pipe);
 
     //Create ISOC OUT pipe to non-existent device
-    hcd_pipe_handle_t isoc_out_pipe = test_hcd_pipe_alloc(port_hdl, &isoc_out_ep_desc, dev_addr + 1, port_speed);
+    hcd_pipe_handle_t isoc_out_pipe = test_hcd_pipe_alloc(port_hdl, &mock_isoc_out_ep_desc, dev_addr + 1, port_speed);
     //Create URBs
     urb_t *urb_list[NUM_URBS];
     //Initialize URBs

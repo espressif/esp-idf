@@ -18,101 +18,10 @@
 #include "freertos/semphr.h"
 #include "unity.h"
 #include "test_utils.h"
+#include "test_usb_mock_classes.h"
 #include "test_hcd_common.h"
 
-// ------------------------------------------------- Mock MSC SCSI -----------------------------------------------------
-
-/*
-Note: The following test requires that USB flash drive be connected. The flash drive should...
-
-- Be implement the Mass Storage class supporting BULK only transfers using SCSI commands
-- It's configuration 1 should have the following endpoints
-
-Endpoint Descriptor:
-    bLength             7
-    bDescriptorType     5
-    bEndpointAddress    0x01  EP 1 OUT
-    bmAttributes        2
-        Transfer Type   Bulk
-        Synch Type      None
-        Usage Type      Data
-    wMaxPacketSize      0x0040  1x 64 bytes
-    bInterval           1
-Endpoint Descriptor:
-    bLength             7
-    bDescriptorType     5
-    bEndpointAddress    0x82  EP 2 IN
-    bmAttributes        2
-        Transfer Type   Bulk
-        Synch Type      None
-        Usage Type      Data
-    wMaxPacketSize      0x0040  1x 64 bytes
-    bInterval           1
-
-If you're using a flash driver with different endpoints, modify the endpoint descriptors below.
-*/
-
-static const usb_desc_ep_t bulk_out_ep_desc = {
-    .bLength = sizeof(usb_desc_ep_t),
-    .bDescriptorType = USB_B_DESCRIPTOR_TYPE_ENDPOINT,
-    .bEndpointAddress = 0x01,       //EP 1 OUT
-    .bmAttributes = USB_BM_ATTRIBUTES_XFER_BULK,
-    .wMaxPacketSize = 64,           //MPS of 64 bytes
-    .bInterval = 1,
-};
-
-static const usb_desc_ep_t bulk_in_ep_desc = {
-    .bLength = sizeof(usb_desc_ep_t),
-    .bDescriptorType = USB_B_DESCRIPTOR_TYPE_ENDPOINT,
-    .bEndpointAddress = 0x82,       //EP 2 IN
-    .bmAttributes = USB_BM_ATTRIBUTES_XFER_BULK,
-    .wMaxPacketSize = 64,           //MPS of 64 bytes
-    .bInterval = 1,
-};
-
-#define MOCK_MSC_SCSI_SECTOR_SIZE       512
-#define MOCK_MSC_SCSI_LUN               0
-#define MOCK_MSC_SCSI_INTF_NUMBER       0
-
-#define MOCK_MSC_SCSI_REQ_INIT_RESET(ctrl_req_ptr, intf_num) ({  \
-    (ctrl_req_ptr)->bRequestType = USB_B_REQUEST_TYPE_DIR_OUT | USB_B_REQUEST_TYPE_TYPE_CLASS | USB_B_REQUEST_TYPE_RECIP_INTERFACE; \
-    (ctrl_req_ptr)->bRequest = 0xFF;    \
-    (ctrl_req_ptr)->wValue = 0; \
-    (ctrl_req_ptr)->wIndex = (intf_num);    \
-    (ctrl_req_ptr)->wLength = 0;    \
-})
-
-typedef struct __attribute__((packed)) {
-    uint8_t opcode; //0x28 = read(10), 0x2A=write(10)
-    uint8_t flags;
-    uint8_t lba_3;
-    uint8_t lba_2;
-    uint8_t lba_1;
-    uint8_t lba_0;
-    uint8_t group;
-    uint8_t len_1;
-    uint8_t len_0;
-    uint8_t control;
-} mock_scsi_cmd10_t;
-
-typedef struct __attribute__((packed)) {
-    uint32_t dCBWSignature;
-    uint32_t dCBWTag;
-    uint32_t dCBWDataTransferLength;
-    uint8_t bmCBWFlags;
-    uint8_t bCBWLUN;
-    uint8_t bCBWCBLength;
-    mock_scsi_cmd10_t CBWCB;
-    uint8_t padding[6];
-} mock_msc_bulk_cbw_t;
-
-// USB Bulk Transfer Command Status Wrapper data
-typedef struct __attribute__((packed)) {
-    uint32_t dCSWSignature;
-    uint32_t dCSWTag;
-    uint32_t dCSWDataResidue;
-    uint8_t bCSWStatus;
-} mock_msc_bulk_csw_t;
+// --------------------------------------------------- Test Cases ------------------------------------------------------
 
 static void mock_msc_reset_req(hcd_pipe_handle_t default_pipe)
 {
@@ -129,51 +38,6 @@ static void mock_msc_reset_req(hcd_pipe_handle_t default_pipe)
     //Free URB
     test_hcd_free_urb(urb);
 }
-
-static void mock_msc_scsi_init_cbw(mock_msc_bulk_cbw_t *cbw, bool is_read, int offset, int num_sectors, uint32_t tag)
-{
-    cbw->dCBWSignature = 0x43425355;    //Fixed value
-    cbw->dCBWTag = tag; //Random value that is echoed back
-    cbw->dCBWDataTransferLength = num_sectors * MOCK_MSC_SCSI_SECTOR_SIZE;
-    cbw->bmCBWFlags = (is_read) ? (1 << 7) : 0; //If this is a read, set the direction flag
-    cbw->bCBWLUN = MOCK_MSC_SCSI_LUN;
-    cbw->bCBWCBLength = 10;     //The length of the SCSI command
-    //Initialize SCSI CMD as READ10 or WRITE 10
-    cbw->CBWCB.opcode = (is_read) ? 0x28 : 0x2A;  //SCSI CMD READ10 or WRITE10
-    cbw->CBWCB.flags = 0;
-    cbw->CBWCB.lba_3 = (offset >> 24);
-    cbw->CBWCB.lba_2 = (offset >> 16);
-    cbw->CBWCB.lba_1 = (offset >> 8);
-    cbw->CBWCB.lba_0 = (offset >> 0);
-    cbw->CBWCB.group = 0;
-    cbw->CBWCB.len_1 = (num_sectors >> 8);
-    cbw->CBWCB.len_0 = (num_sectors >> 0);
-    cbw->CBWCB.control = 0;
-}
-
-static bool mock_msc_scsi_check_csw(mock_msc_bulk_csw_t *csw, uint32_t tag_expect)
-{
-    bool no_issues = true;
-    if (csw->dCSWSignature != 0x53425355) {
-        no_issues = false;
-        printf("Warning: csw signature corrupt (0x%X)\n", csw->dCSWSignature);
-    }
-    if (csw->dCSWTag != tag_expect) {
-        no_issues = false;
-        printf("Warning: csw tag unexpected! Expected %d got %d\n", tag_expect, csw->dCSWTag);
-    }
-    if (csw->dCSWDataResidue) {
-        no_issues = false;
-        printf("Warning: csw indicates data residue of %d bytes!\n", csw->dCSWDataResidue);
-    }
-    if (csw->bCSWStatus) {
-        no_issues = false;
-        printf("Warning: csw indicates non-good status %d!\n", csw->bCSWStatus);
-    }
-    return no_issues;
-}
-
-// --------------------------------------------------- Test Cases ------------------------------------------------------
 
 /*
 Test HCD bulk pipe URBs
@@ -209,15 +73,15 @@ TEST_CASE("Test HCD bulk pipe URBs", "[hcd][ignore]")
     mock_msc_reset_req(default_pipe);
 
     //Create BULK IN and BULK OUT pipes for SCSI
-    hcd_pipe_handle_t bulk_out_pipe = test_hcd_pipe_alloc(port_hdl, &bulk_out_ep_desc, dev_addr, port_speed);
-    hcd_pipe_handle_t bulk_in_pipe = test_hcd_pipe_alloc(port_hdl, &bulk_in_ep_desc, dev_addr, port_speed);
+    hcd_pipe_handle_t bulk_out_pipe = test_hcd_pipe_alloc(port_hdl, &mock_msc_scsi_bulk_out_ep_desc, dev_addr, port_speed);
+    hcd_pipe_handle_t bulk_in_pipe = test_hcd_pipe_alloc(port_hdl, &mock_msc_scsi_bulk_in_ep_desc, dev_addr, port_speed);
     //Create URBs for CBW, Data, and CSW transport. IN Buffer sizes are rounded up to nearest MPS
     urb_t *urb_cbw = test_hcd_alloc_urb(0, sizeof(mock_msc_bulk_cbw_t));
     urb_t *urb_data = test_hcd_alloc_urb(0, TEST_NUM_SECTORS_PER_XFER * MOCK_MSC_SCSI_SECTOR_SIZE);
-    urb_t *urb_csw = test_hcd_alloc_urb(0, sizeof(mock_msc_bulk_csw_t) + (bulk_in_ep_desc.wMaxPacketSize - (sizeof(mock_msc_bulk_csw_t) % bulk_in_ep_desc.wMaxPacketSize)));
+    urb_t *urb_csw = test_hcd_alloc_urb(0, sizeof(mock_msc_bulk_csw_t) + (mock_msc_scsi_bulk_in_ep_desc.wMaxPacketSize - (sizeof(mock_msc_bulk_csw_t) % mock_msc_scsi_bulk_in_ep_desc.wMaxPacketSize)));
     urb_cbw->transfer.num_bytes = sizeof(mock_msc_bulk_cbw_t);
     urb_data->transfer.num_bytes = TEST_NUM_SECTORS_PER_XFER * MOCK_MSC_SCSI_SECTOR_SIZE;
-    urb_csw->transfer.num_bytes = sizeof(mock_msc_bulk_csw_t) + (bulk_in_ep_desc.wMaxPacketSize - (sizeof(mock_msc_bulk_csw_t) % bulk_in_ep_desc.wMaxPacketSize));
+    urb_csw->transfer.num_bytes = sizeof(mock_msc_bulk_csw_t) + (mock_msc_scsi_bulk_in_ep_desc.wMaxPacketSize - (sizeof(mock_msc_bulk_csw_t) % mock_msc_scsi_bulk_in_ep_desc.wMaxPacketSize));
 
     for (int block_num = 0; block_num < TEST_NUM_SECTORS_TOTAL; block_num += TEST_NUM_SECTORS_PER_XFER) {
         //Initialize CBW URB, then send it on the BULK OUT pipe
