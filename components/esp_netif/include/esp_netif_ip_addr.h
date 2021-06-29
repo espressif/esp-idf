@@ -85,6 +85,9 @@ extern "C" {
 
 #define ESP_IP4TOADDR(a,b,c,d) esp_netif_htonl(ESP_IP4TOUINT32(a, b, c, d))
 
+#define ESP_IP4ADDR_INIT(a, b, c, d)  { .type = ESP_IPADDR_TYPE_V4, .u_addr = { .ip4 = { .addr = ESP_IP4TOADDR(a, b, c, d) }}};
+#define ESP_IP6ADDR_INIT(a, b, c, d)  { .type = ESP_IPADDR_TYPE_V6, .u_addr = { .ip6 = { .addr = { a, b, c, d }, .zone = 0 }}};
+
 struct esp_ip6_addr {
     uint32_t addr[4];
     uint8_t zone;
@@ -123,6 +126,30 @@ typedef enum {
  * @return IPv6 type in form of enum esp_ip6_addr_type_t
  */
 esp_ip6_addr_type_t esp_netif_ip6_get_addr_type(esp_ip6_addr_t* ip6_addr);
+
+/**
+ * @brief  Copy IP addresses
+ *
+ * @param[out] dest destination IP
+ * @param[in]  src source IP
+ */
+static inline void esp_netif_ip_addr_copy(esp_ip_addr_t *dest, const esp_ip_addr_t *src)
+{
+    dest->type = src->type;
+    if (src->type == ESP_IPADDR_TYPE_V6) {
+        dest->u_addr.ip6.addr[0] = src->u_addr.ip6.addr[0];
+        dest->u_addr.ip6.addr[1] = src->u_addr.ip6.addr[1];
+        dest->u_addr.ip6.addr[2] = src->u_addr.ip6.addr[2];
+        dest->u_addr.ip6.addr[3] = src->u_addr.ip6.addr[3];
+        dest->u_addr.ip6.zone = src->u_addr.ip6.zone;
+    } else {
+        dest->u_addr.ip4.addr = src->u_addr.ip4.addr;
+        dest->u_addr.ip6.addr[1] = 0;
+        dest->u_addr.ip6.addr[2] = 0;
+        dest->u_addr.ip6.addr[3] = 0;
+        dest->u_addr.ip6.zone = 0;
+    }
+}
 
 #ifdef __cplusplus
 }
