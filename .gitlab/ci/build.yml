@@ -167,6 +167,7 @@ build_examples_make:
   extends:
     - .build_examples_template
     - .rules:build:example_test-esp32
+  stage: host_test
   # This is a workaround for a rarely encountered issue with building examples in CI.
   # Probably related to building of Kconfig in 'make clean' stage
   retry: 1
@@ -304,6 +305,7 @@ build_component_ut_esp32c3:
     IDF_TARGET: esp32c3
 
 .test_build_system_template:
+  stage: host_test
   extends:
     - .build_template
     - .rules:build
@@ -341,7 +343,7 @@ build_docker:
   extends:
     - .before_script_minimal
     - .rules:build:docker
-  stage: build
+  stage: host_test
   image: espressif/docker-builder:1
   tags:
     - build_docker_amd64_brno
@@ -363,7 +365,7 @@ build_docker:
   extends:
     - .before_script_minimal
     - .rules:build:windows
-  stage: build
+  stage: host_test
   image: $CI_DOCKER_REGISTRY/esp32-toolchain-win-cross
   tags:
     - build
@@ -385,6 +387,7 @@ build_idf_exe:
 
 build_cmdlinerunner:
   extends: .test-on-windows
+  stage: host_test
   artifacts:
     paths:
       - tools/windows/tool_setup/cmdlinerunner/build/cmdlinerunner.dll
@@ -395,7 +398,7 @@ build_cmdlinerunner:
 build_installer:
   extends: .test-on-windows
   # using a different stage here to be able to use artifacts from build_cmdlinerunner job
-  stage: host_test
+  stage: test_deploy  # need to be after host_test since depends on `build_cmdlinerunner`
   image: $CI_DOCKER_REGISTRY/wine-innosetup:2
   dependencies:  # set dependencies to null to avoid missing artifacts issue
   needs:
@@ -409,6 +412,7 @@ build_template_app:
   extends:
     - .build_template_app_template
     - .rules:build
+  stage: host_test
   needs:
     - job: fast_template_app
       artifacts: false

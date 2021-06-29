@@ -3,8 +3,8 @@ stages:
   - build
   - assign_test
   - build_doc
-  - host_test
   - target_test
+  - host_test
   - test_deploy
   - deploy
   - post_deploy
