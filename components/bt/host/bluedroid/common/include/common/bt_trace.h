@@ -203,7 +203,6 @@ static inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t l
 #define GATT_INITIAL_TRACE_LEVEL            UC_BT_LOG_GATT_TRACE_LEVEL
 #define SMP_INITIAL_TRACE_LEVEL             UC_BT_LOG_SMP_TRACE_LEVEL
 #define BTIF_INITIAL_TRACE_LEVEL            UC_BT_LOG_BTIF_TRACE_LEVEL
-#define BLUFI_INITIAL_TRACE_LEVEL           UC_BT_LOG_BLUFI_TRACE_LEVEL
 
 // btla-specific --
 
@@ -360,14 +359,6 @@ extern UINT8 btif_trace_level;
 #define HCI_TRACE_EVENT(fmt, args...)       {if (HCI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(HCI,EVENT)) BT_PRINT_D("BT_HCI", fmt,## args);}
 #define HCI_TRACE_DEBUG(fmt, args...)       {if (HCI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(HCI,DEBUG)) BT_PRINT_D("BT_HCI", fmt,## args);}
 
-/* define traces for BLUFI */
-#define BLUFI_TRACE_ERROR(fmt, args...)      {if (BLUFI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(BLUFI, ERROR)) BT_PRINT_E("BT_BLUFI", fmt, ## args);}
-#define BLUFI_TRACE_WARNING(fmt, args...)    {if (BLUFI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(BLUFI, WARNING)) BT_PRINT_W("BT_BLUFI", fmt, ## args);}
-#define BLUFI_TRACE_API(fmt, args...)        {if (BLUFI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(BLUFI,API)) BT_PRINT_I("BT_BLUFI", fmt, ## args);}
-#define BLUFI_TRACE_EVENT(fmt, args...)      {if (BLUFI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(BLUFI,EVENT)) BT_PRINT_D("BT_BLUFI", fmt, ## args);}
-#define BLUFI_TRACE_DEBUG(fmt, args...)      {if (BLUFI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(BLUFI,DEBUG)) BT_PRINT_D("BT_BLUFI", fmt, ## args);}
-#define BLUFI_TRACE_VERBOSE(fmt, args...)    {if (BLUFI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_VERBOSE && BT_LOG_LEVEL_CHECK(BLUFI,VERBOSE)) BT_PRINT_V("BT_BLUFI", fmt, ## args);}
-
 #else
 #define LOG_ERROR(fmt, args...)
 #define LOG_WARN(fmt, args...)
@@ -518,13 +509,6 @@ extern UINT8 btif_trace_level;
 #define APPL_TRACE_DEBUG(fmt, args...)
 #define APPL_TRACE_VERBOSE(fmt, args...)
 
-/* define traces for BLUFI */
-#define BLUFI_TRACE_ERROR(fmt, args...)
-#define BLUFI_TRACE_WARNING(fmt, args...)
-#define BLUFI_TRACE_API(fmt, args...)
-#define BLUFI_TRACE_EVENT(fmt, args...)
-#define BLUFI_TRACE_DEBUG(fmt, args...)
-#define BLUFI_TRACE_VERBOSE(fmt, args...)
 #endif  ///!UC_BT_STACK_NO_LOG
 
 

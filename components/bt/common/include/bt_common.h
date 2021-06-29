@@ -28,12 +28,31 @@
 #define TRUE   true
 #endif
 
+
+#if (UC_BT_BLUFI_ENABLE)
+#define BLUFI_INCLUDED              TRUE
+#else
+#define BLUFI_INCLUDED              FALSE
+#endif
+
+#ifdef CONFIG_BT_BLUEDROID_ENABLED
+#include "esp_bt_defs.h"
+#include "esp_bt_main.h"
+#include "esp_gatt_defs.h"
+#define ESP_BLE_HOST_STATUS_ENABLED ESP_BLUEDROID_STATUS_ENABLED
+#define ESP_BLE_HOST_STATUS_CHECK(status) ESP_BLUEDROID_STATUS_CHECK(status)
+#else
+#define ESP_BLE_HOST_STATUS_ENABLED 0
+#define ESP_BLE_HOST_STATUS_CHECK(status)  do {} while (0)
+#endif
+
 #ifndef BT_QUEUE_CONGEST_SIZE
 #define BT_QUEUE_CONGEST_SIZE    40
 #endif
 
 #define BTC_INITIAL_TRACE_LEVEL             UC_BT_LOG_BTC_TRACE_LEVEL
 #define OSI_INITIAL_TRACE_LEVEL             UC_BT_LOG_OSI_TRACE_LEVEL
+#define BLUFI_INITIAL_TRACE_LEVEL           UC_BT_LOG_BLUFI_TRACE_LEVEL
 
 #if UC_BT_BLE_DYNAMIC_ENV_MEMORY
 #define BT_BLE_DYNAMIC_ENV_MEMORY  TRUE
@@ -106,6 +125,14 @@
 #define OSI_TRACE_DEBUG(fmt, args...)      {if (OSI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(OSI,DEBUG)) BT_PRINT_D("BT_OSI", fmt, ## args);}
 #define OSI_TRACE_VERBOSE(fmt, args...)    {if (OSI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_VERBOSE && BT_LOG_LEVEL_CHECK(OSI,VERBOSE)) BT_PRINT_V("BT_OSI", fmt, ## args);}
 
+/* define traces for BLUFI */
+#define BLUFI_TRACE_ERROR(fmt, args...)      {if (BLUFI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(BLUFI, ERROR)) BT_PRINT_E("BT_BLUFI", fmt, ## args);}
+#define BLUFI_TRACE_WARNING(fmt, args...)    {if (BLUFI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(BLUFI, WARNING)) BT_PRINT_W("BT_BLUFI", fmt, ## args);}
+#define BLUFI_TRACE_API(fmt, args...)        {if (BLUFI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(BLUFI,API)) BT_PRINT_I("BT_BLUFI", fmt, ## args);}
+#define BLUFI_TRACE_EVENT(fmt, args...)      {if (BLUFI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(BLUFI,EVENT)) BT_PRINT_D("BT_BLUFI", fmt, ## args);}
+#define BLUFI_TRACE_DEBUG(fmt, args...)      {if (BLUFI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(BLUFI,DEBUG)) BT_PRINT_D("BT_BLUFI", fmt, ## args);}
+#define BLUFI_TRACE_VERBOSE(fmt, args...)    {if (BLUFI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_VERBOSE && BT_LOG_LEVEL_CHECK(BLUFI,VERBOSE)) BT_PRINT_V("BT_BLUFI", fmt, ## args);}
+
 #else
 
 /* define traces for BTC */
@@ -123,6 +150,14 @@
 #define OSI_TRACE_EVENT(fmt, args...)
 #define OSI_TRACE_DEBUG(fmt, args...)
 #define OSI_TRACE_VERBOSE(fmt, args...)
+
+/* define traces for BLUFI */
+#define BLUFI_TRACE_ERROR(fmt, args...)
+#define BLUFI_TRACE_WARNING(fmt, args...)
+#define BLUFI_TRACE_API(fmt, args...)
+#define BLUFI_TRACE_EVENT(fmt, args...)
+#define BLUFI_TRACE_DEBUG(fmt, args...)
+#define BLUFI_TRACE_VERBOSE(fmt, args...)
 
 #endif
 
@@ -151,5 +186,32 @@ typedef enum {
     BT_STATUS_MEMORY_FULL,
     BT_STATUS_EIR_TOO_LARGE,
 } bt_status_t;
+
+typedef uint8_t UINT8;
+typedef uint16_t UINT16;
+typedef uint32_t UINT32;
+typedef uint64_t UINT64;
+typedef bool BOOLEAN;
+/* Maximum UUID size - 16 bytes, and structure to hold any type of UUID. */
+#define MAX_UUID_SIZE              16
+
+typedef struct {
+#define LEN_UUID_16     2
+#define LEN_UUID_32     4
+#define LEN_UUID_128    16
+
+    UINT16          len;
+
+    union {
+        UINT16      uuid16;
+        UINT32      uuid32;
+        UINT8       uuid128[MAX_UUID_SIZE];
+    } uu;
+
+} tBT_UUID;
+
+/* Common Bluetooth field definitions */
+#define BD_ADDR_LEN     6                   /* Device address length */
+typedef UINT8 BD_ADDR[BD_ADDR_LEN];         /* Device address */
 
 #endif /* _BT_COMMON_H_ */
