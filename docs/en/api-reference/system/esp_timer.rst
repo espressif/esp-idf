@@ -82,6 +82,8 @@ you can use the `skip_unhandled_events` option during :cpp:func:`esp_timer_creat
 When the `skip_unhandled_events` is true, if a periodic timer expires one or more times during light sleep
 then only one callback is called on wake.
 
+Using the `skip_unhandled_events` option with `automatic light sleep` (see :doc:`Power Management APIs <power_management>`) helps to reduce the consumption of the system when it is in light sleep. The duration of light sleep is also determined by esp_timers. Timers with `skip_unhandled_events` option will not wake up the system.
+
 Handling callbacks
 ------------------
 

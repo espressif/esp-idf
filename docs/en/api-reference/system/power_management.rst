@@ -87,6 +87,8 @@ If none of the locks are acquired, and light sleep is enabled in a call to :cpp:
 
 Light sleep duration will be chosen to wake up the chip before the nearest event (task being unblocked, or timer elapses).
 
+To skip unnecessary wake-up you can consider initializing an esp_timer with the `skip_unhandled_events` option as true. Timers with this flag will not wake up the system and it helps to reduce consumption.
+
 
 Dynamic Frequency Scaling and Peripheral Drivers
 ------------------------------------------------
