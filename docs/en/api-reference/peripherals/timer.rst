@@ -3,12 +3,21 @@ General Purpose Timer
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_TIMER_COUNTER_BIT_WIDTH:default="54", esp32="64", esp32s2="64"}
+{IDF_TARGET_TIMER_COUNTER_BIT_WIDTH:default="54", esp32="64", esp32s2="64", esp32c3="54"}
 
 Introduction
 ------------
 
-The {IDF_TARGET_NAME} chip contains two hardware timer groups. Each group has two general-purpose hardware timers. They are all {IDF_TARGET_TIMER_COUNTER_BIT_WIDTH}-bit generic timers based on 16-bit pre-scalers and {IDF_TARGET_TIMER_COUNTER_BIT_WIDTH}-bit up / down counters which are capable of being auto-reloaded.
+.. only:: not esp32c3
+
+    The {IDF_TARGET_NAME} chip contains two hardware timer groups. Each group has two general-purpose hardware timers. 
+
+
+.. only:: esp32c3
+
+    The {IDF_TARGET_NAME} chip contains two hardware timer groups. Each group has one general-purpose hardware timer and one main system watchdog timer.
+
+All general purpose timers are based on 16-bit pre-scalers and {IDF_TARGET_TIMER_COUNTER_BIT_WIDTH}-bit auto-reload-capable up-down counters.
 
 
 Functional Overview
