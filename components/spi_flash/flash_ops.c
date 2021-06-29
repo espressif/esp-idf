@@ -518,6 +518,7 @@ out:
 #endif // CONFIG_SPI_FLASH_USE_LEGACY_IMPL
 
 #if !CONFIG_SPI_FLASH_USE_LEGACY_IMPL
+#if !CONFIG_ESPTOOLPY_OCT_FLASH
 extern void spi_common_set_dummy_output(esp_rom_spiflash_read_mode_t mode);
 extern void spi_dummy_len_fix(uint8_t spi, uint8_t freqdiv);
 void IRAM_ATTR flash_rom_init(void)
@@ -557,6 +558,10 @@ void IRAM_ATTR flash_rom_init(void)
     read_mode = ESP_ROM_SPIFLASH_DIO_MODE;
 #elif CONFIG_ESPTOOLPY_FLASHMODE_DOUT
     read_mode = ESP_ROM_SPIFLASH_DOUT_MODE;
+#elif CONFIG_ESPTOOLPY_FLASHMODE_FASTRD
+    read_mode = ESP_ROM_SPIFLASH_FASTRD_MODE;
+#elif CONFIG_ESPTOOLPY_FLASHMODE_SLOWRD
+    read_mode = ESP_ROM_SPIFLASH_SLOWRD_MODE;
 #endif
 #endif //!CONFIG_IDF_TARGET_ESP32S2 && !CONFIG_IDF_TARGET_ESP32
 
@@ -571,6 +576,7 @@ void IRAM_ATTR flash_rom_init(void)
 #endif //!CONFIG_IDF_TARGET_ESP32S2
     esp_rom_spiflash_config_clk(freqdiv, 1);
 }
+#endif //CONFIG_ESPTOOLPY_OCT_FLASH
 #else
 void IRAM_ATTR flash_rom_init(void)
 {

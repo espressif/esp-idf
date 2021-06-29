@@ -16,8 +16,12 @@
 #include "spi_flash_chip_generic.h"
 #include "spi_flash_defs.h"
 #include "esp_log.h"
+#include "string.h"
+#include <sys/param.h> // For MIN/MAX
 
 /* Driver for MXIC flash chip */
+
+extern flash_chip_dummy_t *rom_flash_chip_dummy;
 
 esp_err_t spi_flash_chip_mxic_probe(esp_flash_t *chip, uint32_t flash_id)
 {
@@ -45,6 +49,43 @@ esp_err_t spi_flash_chip_mxic_read_unique_id(esp_flash_t *chip, uint64_t* flash_
     //MXIC not support read unique id.
     ESP_LOGE(chip_name, "chip %s doesn't support reading unique id", chip->chip_drv->name);
     return ESP_ERR_NOT_SUPPORTED;
+}
+
+esp_err_t spi_flash_chip_mxic_read(esp_flash_t *chip, void *buffer, uint32_t address, uint32_t length)
+{
+    esp_err_t err = ESP_OK;
+    const uint32_t page_size = chip->chip_drv->page_size;
+    uint32_t align_address;
+    uint8_t temp_buffer[64]; //spiflash hal max length of read no longer than 64byte
+
+    // Configure the host, and return
+    uint32_t addr_bitlen = SPI_FLASH_FASTRD_ADDR_BITLEN;
+    uint32_t dummy_cyclelen_base = rom_flash_chip_dummy->fastrd_dummy_bitlen;;
+    uint32_t read_command = CMD_FASTRD;
+    uint32_t read_mode = SPI_FLASH_FASTRD;
+
+    err = chip->host->driver->configure_host_io_mode(chip->host, read_command, addr_bitlen, dummy_cyclelen_base, read_mode);
+
+    if (err == ESP_ERR_NOT_SUPPORTED) {
+        ESP_LOGE(chip_name, "configure host io mode failed - unsupported");
+        return err;
+    }
+
+    while (err == ESP_OK && length > 0) {
+        memset(temp_buffer, 0xFF, sizeof(temp_buffer));
+        uint32_t read_len = chip->host->driver->read_data_slicer(chip->host, address, length, &align_address, page_size);
+        uint32_t left_off = address - align_address;
+        uint32_t data_len = MIN(align_address + read_len, address + length) - address;
+        err = chip->host->driver->read(chip->host, temp_buffer, align_address, read_len);
+
+        memcpy(buffer, temp_buffer + left_off, data_len);
+
+        address += data_len;
+        buffer = (void *)((intptr_t)buffer + data_len);
+        length = length - data_len;
+    }
+
+    return err;
 }
 
 spi_flash_caps_t spi_flash_chip_mxic_get_caps(esp_flash_t *chip)

@@ -23,15 +23,25 @@
 #include <unity.h>
 #include <test_utils.h>
 #include <esp_spi_flash.h>
-#include <esp32/rom/spi_flash.h>
 #include "../cache_utils.h"
 #include "soc/timer_periph.h"
 #include "esp_heap_caps.h"
+
+#if CONFIG_IDF_TARGET_ESP32
+#include <esp32/rom/spi_flash.h>
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include <esp32s2/rom/spi_flash.h>
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include <esp32s3/rom/spi_flash.h>
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include <esp32c3/rom/spi_flash.h>
+#endif
 
 #define MIN_BLOCK_SIZE  12
 /* Base offset in flash for tests. */
 
 static size_t start;
+extern spiflash_legacy_data_t *rom_spiflash_legacy_data;
 
 static void setup_tests(void)
 {
@@ -141,11 +151,13 @@ TEST_CASE("Test spi_flash_read", "[spi_flash][esp_flash]")
 #endif
 }
 
+#if !CONFIG_ESPTOOLPY_OCT_FLASH
 extern void spi_common_set_dummy_output(esp_rom_spiflash_read_mode_t mode);
 extern void spi_dummy_len_fix(uint8_t spi, uint8_t freqdiv);
 static void IRAM_ATTR fix_rom_func(void)
 {
     uint32_t freqdiv = 0;
+    uint32_t vendor_id = (rom_spiflash_legacy_data->chip.device_id >> 16);
 
 #if CONFIG_ESPTOOLPY_FLASHFREQ_80M
     freqdiv = 1;
@@ -182,14 +194,24 @@ static void IRAM_ATTR fix_rom_func(void)
     read_mode = ESP_ROM_SPIFLASH_DIO_MODE;
 #elif CONFIG_ESPTOOLPY_FLASHMODE_DOUT
     read_mode = ESP_ROM_SPIFLASH_DOUT_MODE;
+#elif CONFIG_ESPTOOLPY_FLASHMODE_FASTRD
+    read_mode = ESP_ROM_SPIFLASH_FASTRD_MODE;
+#elif CONFIG_ESPTOOLPY_FLASHMODE_SLOWRD
+    read_mode = ESP_ROM_SPIFLASH_SLOWRD_MODE;
 #endif
 
 #if !CONFIG_IDF_TARGET_ESP32S2 && !CONFIG_IDF_TARGET_ESP32
     spi_common_set_dummy_output(read_mode);
 #endif //!CONFIG_IDF_TARGET_ESP32S2
     esp_rom_spiflash_config_clk(freqdiv, 1);
-    esp_rom_spiflash_config_readmode(read_mode);
+    if (vendor_id == 0xc2) {
+        // If the flash vendor is mxic, it dones't support the read mode mentioned above.
+        // So, do nothing
+    } else {
+        esp_rom_spiflash_config_readmode(read_mode);
+    }
 }
+#endif
 
 static void IRAM_ATTR test_write(int dst_off, int src_off, int len)
 {
@@ -211,8 +233,9 @@ static void IRAM_ATTR test_write(int dst_off, int src_off, int len)
         fill(dst_gold + dst_off, src_off, len);
     }
     ESP_ERROR_CHECK(spi_flash_write(start + dst_off, src_buf + src_off, len));
-
+#if !CONFIG_ESPTOOLPY_OCT_FLASH
     fix_rom_func();
+#endif
 
     spi_flash_disable_interrupts_caches_and_other_cpu();
     esp_rom_spiflash_result_t rc = esp_rom_spiflash_read(start, dst_buf, sizeof(dst_buf));

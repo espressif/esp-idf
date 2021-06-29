@@ -21,15 +21,6 @@
 #include "esp_log.h"
 #include "esp_attr.h"
 
-typedef struct flash_chip_dummy {
-    uint8_t dio_dummy_bitlen;
-    uint8_t qio_dummy_bitlen;
-    uint8_t qout_dummy_bitlen;
-    uint8_t dout_dummy_bitlen;
-    uint8_t fastrd_dummy_bitlen;
-    uint8_t slowrd_dummy_bitlen;
-} flash_chip_dummy_t;
-
 // These parameters can be placed in the ROM. For now we use the code in IDF.
 DRAM_ATTR const static flash_chip_dummy_t default_flash_chip_dummy = {
     .dio_dummy_bitlen = SPI_FLASH_DIO_DUMMY_BITLEN,

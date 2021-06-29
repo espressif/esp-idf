@@ -91,6 +91,7 @@ menu "Serial flasher config"
     choice ESPTOOLPY_FLASHMODE
         prompt "Flash SPI mode"
         default ESPTOOLPY_FLASHMODE_DIO
+        depends on !ESPTOOLPY_OCT_FLASH
         help
             Mode the flash chip is flashed in, as well as the default mode for the
             binary to run in.
@@ -103,6 +104,10 @@ menu "Serial flasher config"
             bool "DIO"
         config ESPTOOLPY_FLASHMODE_DOUT
             bool "DOUT"
+        config ESPTOOLPY_FLASHMODE_FASTRD
+            bool "FASTRD"
+        config ESPTOOLPY_FLASHMODE_SLOWRD
+            bool "SLOWRD"
     endchoice
 
     # Note: we use esptool.py to flash bootloader in
@@ -114,6 +119,10 @@ menu "Serial flasher config"
         default "dio" if ESPTOOLPY_FLASHMODE_QOUT
         default "dio" if ESPTOOLPY_FLASHMODE_DIO
         default "dout" if ESPTOOLPY_FLASHMODE_DOUT
+        default "dout" if ESPTOOLPY_FLASHMODE_FASTRD
+        default "dout" if ESPTOOLPY_FLASHMODE_SLOWRD
+        default "dout" if ESPTOOLPY_FLASHMODE_OPI_STR
+        default "dout" if ESPTOOLPY_FLASHMODE_OPI_DTR
 
     choice ESPTOOLPY_FLASHFREQ
         prompt "Flash SPI speed"
