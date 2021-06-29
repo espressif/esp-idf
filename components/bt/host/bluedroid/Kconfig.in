@@ -143,7 +143,7 @@ config BT_BLE_BLUFI_ENABLE
     help
         This option can be close when the app does not require blufi function.
 
-config BT_GATT_SR_PROFILES
+config BT_GATT_MAX_SR_PROFILES
     int "Max GATT Server Profiles"
     depends on BT_GATTS_ENABLE && BT_BLUEDROID_ENABLED
     range 1 32
