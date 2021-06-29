@@ -82,6 +82,7 @@ void esp_dbg_stubs_init(void)
     ESP_LOGV(TAG, "%s stubs %x", __func__, eri_read(ESP_DBG_STUBS_TRAX_REG));
 }
 
+// TODO: add lock mechanism. Not now but in the future ESP_DBG_STUB_CAPABILITIES can be set from different places.
 esp_err_t esp_dbg_stub_entry_set(esp_dbg_stub_id_t id, uint32_t entry)
 {
     if (id < ESP_DBG_STUB_ENTRY_FIRST || id >= ESP_DBG_STUB_ENTRY_MAX) {

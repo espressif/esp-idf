@@ -24,7 +24,8 @@
 #include "esp_app_trace.h"
 #include "esp_freertos_hooks.h"
 #include "esp_private/dbg_stubs.h"
-#include "hal/timer_ll.h"
+#include "esp_ipc.h"
+#include "hal/wdt_hal.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/libc_stubs.h"
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
@@ -48,6 +49,8 @@ void gcov_dump_task(void *pvParameter)
 {
     int dump_result = 0;
     bool *running = (bool *)pvParameter;
+
+    ESP_EARLY_LOGV(TAG, "%s stack use in %d", __FUNCTION__, uxTaskGetStackHighWaterMark(NULL));
 
     ESP_EARLY_LOGV(TAG, "Alloc apptrace down buf %d bytes", ESP_GCOV_DOWN_BUF_SIZE);
     void *down_buf = malloc(ESP_GCOV_DOWN_BUF_SIZE);
@@ -81,14 +84,25 @@ gcov_exit:
     if (running) {
         *running = false;
     }
+
+    ESP_EARLY_LOGV(TAG, "%s stack use out %d", __FUNCTION__, uxTaskGetStackHighWaterMark(NULL));
+
     vTaskDelete(NULL);
 }
 
-static void gcov_create_task_hook(void)
+void gcov_create_task(void *arg)
 {
+    ESP_EARLY_LOGV(TAG, "%s", __FUNCTION__);
+    xTaskCreatePinnedToCore(&gcov_dump_task, "gcov_dump_task", 2048, (void *)&s_gcov_task_running, configMAX_PRIORITIES - 1, NULL, 0);
+}
+
+void gcov_create_task_tick_hook(void)
+{
+    extern esp_err_t esp_ipc_start_gcov_from_isr(uint32_t cpu_id, esp_ipc_func_t func, void* arg);
     if (s_create_gcov_task) {
-        xTaskCreatePinnedToCore(&gcov_dump_task, "gcov_dump_task", 2048, &s_gcov_task_running, configMAX_PRIORITIES - 1, NULL, 0);
-        s_create_gcov_task = false;
+        if (esp_ipc_start_gcov_from_isr(xPortGetCoreID(), &gcov_create_task, NULL) == ESP_OK) {
+            s_create_gcov_task = false;
+        }
     }
 }
 
@@ -114,19 +128,21 @@ int gcov_rtio_atexit(void (*function)(void) __attribute__ ((unused)))
     if (esp_dbg_stub_entry_get(ESP_DBG_STUB_CAPABILITIES, &capabilities) == ESP_OK) {
         esp_dbg_stub_entry_set(ESP_DBG_STUB_CAPABILITIES, capabilities | ESP_DBG_STUB_CAP_GCOV_TASK);
     }
-    esp_register_freertos_tick_hook(gcov_create_task_hook);
+    esp_register_freertos_tick_hook(gcov_create_task_tick_hook);
     return ESP_OK;
 }
 
 void esp_gcov_dump(void)
 {
+    ESP_EARLY_LOGV(TAG, "%s", __FUNCTION__);
+
     while (!esp_apptrace_host_is_connected(ESP_APPTRACE_DEST_TRAX)) {
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 
     /* We are not in isr context here. Waiting for the completion is safe */
-    s_create_gcov_task = true;
     s_gcov_task_running = true;
+    s_create_gcov_task = true;
     while (s_gcov_task_running) {
         vTaskDelay(pdMS_TO_TICKS(10));
     }
