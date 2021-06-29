@@ -17,6 +17,8 @@ Users should note the following when customizing chip drivers:
 Steps For Creating Custom Chip Drivers and Overriding the IDF Default Driver List
 ---------------------------------------------------------------------------------
 
+.. highlight: cmake
+
 1. Enable the :ref:`CONFIG_SPI_FLASH_OVERRIDE_CHIP_DRIVER_LIST` config option. This will prevent compilation and linking of the Default Chip Driver List (`default_registered_chips`) provided by IDF. Instead, the linker will search for the structure of the same name (`default_registered_chips`) that must be provided by the user.
 2. Add a new component in your project, e.g. `custom_chip_driver`.
 3. Copy the necessary chip driver files from the `spi_flash` component in IDF. This may include:
@@ -25,7 +27,11 @@ Steps For Creating Custom Chip Drivers and Overriding the IDF Default Driver Lis
     - Any of the `spi_flash_chip_*.c` files that matches your own flash model best
     - `CMakeLists.txt` and `linker.lf` files
 
-   Modify the files above properly.
+   Modify the files above properly. Including:
+
+   - Change the ``default_registered_chips`` variable to non-static and remove the #ifdef logic around it.
+   - Update `linker.lf` file to rename the fragment header and the library name to match the new component.
+   - If reusing other drivers, some header names need prefixing with ``spi_flash/`` when included from outside spi_flash component.
 
 .. note::
    - When writing your own flash chip driver, you can set your flash chip capabilities through `spi_flash_chip_***(vendor)_get_caps` and points the function pointer `get_chip_caps` for protection to the `spi_flash_chip_***_get_caps` function. The steps are as follows.
@@ -56,10 +62,16 @@ Steps For Creating Custom Chip Drivers and Overriding the IDF Default Driver Lis
 
    - You also can see how to implement this in the example :example:`storage/custom_flash_driver`.
 
-4. Add linking dependency from `spi_flash` component to the new `custom_chip_driver` component, by adding the following lines after the `idf_component_register`, in the `CMakeLists.txt` file of the `custom_chip_driver` component:
+4. Write a new `CMakeLists.txt` file for the `custom_chip_driver` component, including an additional line to add a linker dependency from `spi_flash` to `custom_chip_driver`::
 
-      idf_component_get_property(spi_flash_lib spi_flash COMPONENT_LIB)
-      set_property(TARGET ${spi_flash_lib} APPEND PROPERTY INTERFACE_LINK_LIBRARIES $<LINK_ONLY:${COMPONENT_LIB}>)
+        idf_component_register(SRCS "spi_flash_chip_drivers.c"
+                               "spi_flash_chip_mychip.c"  # modify as needed
+                               REQUIRES hal
+                               PRIV_REQUIRES spi_flash
+                               LDFRAGMENTS linker.lf)
+        idf_component_add_link_dependency(FROM spi_flash)
+
+   - An example of this component CMakeLists.txt can be found in :example_file:`storage/custom_flash_driver/components/custom_chip_driver/CMakeLists.txt`
 
 5. The `linker.lf` is used to put every chip driver that you are going to use whilst cache is disabled into internal RAM. See :doc:`/api-guides/linker-script-generation` for more details. Make sure this file covers all the source files that you add.
 

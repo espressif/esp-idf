@@ -609,6 +609,33 @@ function(idf_component_optional_requires req_type)
     endforeach()
 endfunction()
 
+# idf_component_add_link_dependency
+#
+# @brief Specify than an ESP-IDF component library depends on another component
+# library at link time only.
+#
+# @note Almost always it's better to use idf_component_register() REQUIRES or
+# PRIV_REQUIRES for this. However using this function allows adding a dependency
+# from inside a different component, as a last resort.
+#
+# @param[in, required] FROM Component the dependency is from (this component depends on the other component)
+# @param[in, optional] TO Component the dependency is to (this component is depended on by FROM). If omitted
+# then the current component is assumed. For this default value to work, this function must be called after
+# idf_component_register() in the component CMakeLists.txt file.
+function(idf_component_add_link_dependency)
+    set(single_value FROM TO)
+    cmake_parse_arguments(_ "" "${single_value}" "" ${ARGN})
+
+    idf_component_get_property(from_lib ${__FROM} COMPONENT_LIB)
+    if(__TO)
+        idf_component_get_property(to_lib ${__TO} COMPONENT_LIB)
+    else()
+        set(to_lib ${COMPONENT_LIB})
+    endif()
+    set_property(TARGET ${from_lib} APPEND PROPERTY INTERFACE_LINK_LIBRARIES $<LINK_ONLY:${to_lib}>)
+endfunction()
+
+
 #
 # Deprecated functions
 #
