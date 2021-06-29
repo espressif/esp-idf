@@ -49,7 +49,7 @@ The flash encryption operation is controlled by various eFuses available on {IDF
 
 .. Comment: As text in cells of list-table header rows does not wrap, it is necessary to make 0 header rows and apply bold typeface to the first row. Otherwise, the table goes beyond the html page limits on the right.
 
-.. only:: esp32
+.. only:: not SOC_FLASH_ENCRYPTION_XTS_AES
 
     .. list-table:: eFuses Used in Flash Encryption
        :widths: 25 40 10
@@ -78,7 +78,7 @@ The flash encryption operation is controlled by various eFuses available on {IDF
          - 7
 
 
-.. only:: esp32s2
+.. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
 
     .. list-table:: eFuses Used in Flash Encryption
        :widths: 25 40 10
@@ -100,7 +100,7 @@ The flash encryption operation is controlled by various eFuses available on {IDF
          - Enables encryption and decryption, when an SPI boot mode is set. Feature is enabled if 1 or 3 bits are set in the eFuse, disabled otherwise.
          - 3
 
-.. only:: esp32c3
+.. only:: SOC_FLASH_ENCRYPTION_XTS_AES and not SOC_FLASH_ENCRYPTION_XTS_AES_256
 
     .. list-table:: eFuses Used in Flash Encryption
        :widths: 25 40 10
@@ -134,7 +134,7 @@ Flash Encryption Process
 
 Assuming that the eFuse values are in their default states and the firmware bootloader is compiled to support flash encryption, the flash encryption process executes as shown below:
 
-.. only:: esp32
+.. only:: not SOC_FLASH_ENCRYPTION_XTS_AES
 
   1. On the first power-on reset, all data in flash is un-encrypted (plaintext). The ROM bootloader loads the firmware bootloader.
 
@@ -152,7 +152,7 @@ Assuming that the eFuse values are in their default states and the firmware boot
 
   8. The device is then rebooted to start executing the encrypted image. The firmware bootloader calls the flash decryption block to decrypt the flash contents and then loads the decrypted contents into IRAM.
 
-.. only:: esp32s2
+.. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
 
   1. On the first power-on reset, all data in flash is un-encrypted (plaintext). The ROM bootloader loads the firmware bootloader.
 
@@ -170,7 +170,7 @@ Assuming that the eFuse values are in their default states and the firmware boot
 
   8. The device is then rebooted to start executing the encrypted image. The firmware bootloader calls the flash decryption block to decrypt the flash contents and then loads the decrypted contents into IRAM.
 
-.. only:: esp32c3
+.. only:: SOC_FLASH_ENCRYPTION_XTS_AES and not SOC_FLASH_ENCRYPTION_XTS_AES_256
 
   1. On the first power-on reset, all data in flash is un-encrypted (plaintext). The ROM bootloader loads the firmware bootloader.
 
@@ -285,7 +285,7 @@ To use a host generated key, take the following steps:
 
 2. Generate a random key by running:
 
-.. only:: esp32s2
+.. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
 
     If :ref:`Size of generated AES-XTS key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-256 (512-bit key) need to use the `XTS_AES_256_KEY_1` and `XTS_AES_256_KEY_2` purposes. The espsecure does not support 512-bit key, but it is possible to workaround:
 
@@ -305,7 +305,7 @@ To use a host generated key, take the following steps:
         espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin
 
 
-.. only:: not esp32s2
+.. only:: not SOC_FLASH_ENCRYPTION_XTS_AES_256
 
     .. code-block:: bash
 
@@ -314,13 +314,13 @@ To use a host generated key, take the following steps:
 
 3. **Before the first encrypted boot**, burn the key into your device's eFuse using the command below. This action can be done **only once**.
 
-.. only:: esp32
+.. only:: not SOC_FLASH_ENCRYPTION_XTS_AES
 
   .. code-block:: bash
 
       espefuse.py --port PORT burn_key flash_encryption my_flash_encryption_key.bin
 
-.. only:: esp32s2
+.. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
 
   .. code-block:: bash
 
@@ -342,7 +342,7 @@ To use a host generated key, take the following steps:
 
       espefuse.py  --port PORT  burn_key BLOCK+1 my_flash_encryption_key2.bin XTS_AES_256_KEY_2
 
-.. only:: esp32c3
+.. only:: SOC_FLASH_ENCRYPTION_XTS_AES and not SOC_FLASH_ENCRYPTION_XTS_AES_256
 
   .. code-block:: bash
 
@@ -672,7 +672,7 @@ If flash encryption was enabled accidentally, flashing of plaintext data will so
 
   For flash encryption in Development mode, encryption can be disabled by burning the ``{IDF_TARGET_CRYPT_CNT}`` eFuse. It can only be done three times per chip by taking the following steps:
 
-.. only:: esp32s2 or esp32c3
+.. only:: not esp32
 
   For flash encryption in Development mode, encryption can be disabled by burning the ``{IDF_TARGET_CRYPT_CNT}`` eFuse. It can only be done one time per chip by taking the following steps:
 
@@ -791,7 +791,7 @@ On the first boot, the flash encryption process burns by default the following e
   - ``DISABLE_DL_DECRYPT`` which disables transparent flash decryption when running in UART bootloader mode, even if the eFuse ``{IDF_TARGET_CRYPT_CNT}`` is set to enable it in normal operation.
   - ``DISABLE_DL_CACHE`` which disables the entire MMU flash cache when running in UART bootloader mode.
 
-.. only:: esp32s2 or esp32c3
+.. only:: not esp32
 
   .. list::
 
@@ -811,7 +811,7 @@ However, before the first boot you can choose to keep any of these features enab
     espefuse.py --port PORT burn_efuse DISABLE_DL_DECRYPT
     espefuse.py --port PORT write_protect_efuse DISABLE_DL_ENCRYPT
 
-.. only:: esp32s2 or esp32c3
+.. only:: not esp32
 
   .. code-block:: bash
 
@@ -862,7 +862,7 @@ Technical Details
 
 The following sections provide some reference information about the operation of flash encryption.
 
-.. only:: esp32
+.. only:: not SOC_FLASH_ENCRYPTION_XTS_AES
 
   .. _flash-encryption-algorithm:
 
@@ -897,13 +897,13 @@ The following sections provide some reference information about the operation of
 
   - To see the full flash encryption algorithm implemented in Python, refer to the `_flash_encryption_operation()` function in the ``espsecure.py`` source code.
 
-.. only:: esp32s2
+.. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
 
   .. _flash-encryption-algorithm:
 
   Flash Encryption Algorithm
   ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  - {IDF_TARGET_NAME} use the XTS-AES block chiper mode with 256 bit or 512 bit key size for flash encryption.
+  - {IDF_TARGET_NAME} use the XTS-AES block cipher mode with 256 bit or 512 bit key size for flash encryption.
 
   - XTS-AES is a block chiper mode specifically designed for disc encryption and addresses the weaknesses other potential modes (e.g. AES-CTR) have for this use case. A detailed description of the XTS-AES algorithm can be found in `IEEE Std 1619-2007 <https://ieeexplore.ieee.org/document/4493450>`_.
 
@@ -911,7 +911,7 @@ The following sections provide some reference information about the operation of
 
   - To see the full flash encryption algorithm implemented in Python, refer to the `_flash_encryption_operation()` function in the ``espsecure.py`` source code.
 
-.. only:: esp32c3
+.. only:: SOC_FLASH_ENCRYPTION_XTS_AES and not SOC_FLASH_ENCRYPTION_XTS_AES_256
 
   .. _flash-encryption-algorithm:
 
