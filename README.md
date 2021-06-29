@@ -1,3 +1,25 @@
+# How to change existing esp-idf to this repo.
+  ```bash
+  git remote set-url origin https://github.com/appliedinnovation/esp-idf.git
+  ```
+  ```bash
+  git remote -v
+  ```
+  you should see output like this:
+  ```bash
+  origin  https://github.com/appliedinnovation/esp-idf.git (fetch)
+  origin  https://github.com/appliedinnovation/esp-idf.git (push)
+  ```
+  Then pull and switch to the release/v4.3 branch.
+  ```bash
+  git pull
+  git checkout release/v4.3
+  ```
+  Then re-install the idf tools by:
+  ```bash 
+  ./install.sh
+  ```
+
 # Espressif IoT Development Framework
 
 * [中文版](./README_CN.md)
