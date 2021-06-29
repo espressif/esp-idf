@@ -4181,6 +4181,13 @@ static void _mdns_free_action(mdns_action_t * action)
         pbuf_free(action->data.rx_handle.packet->pb);
         free(action->data.rx_handle.packet);
         break;
+    case ACTION_DELEGATE_HOSTNAME_ADD:
+        free((char *)action->data.delegate_hostname.hostname);
+        free_address_list(action->data.delegate_hostname.address_list);
+        break;
+    case ACTION_DELEGATE_HOSTNAME_REMOVE:
+        free((char *)action->data.delegate_hostname.hostname);
+        break;
     default:
         break;
     }
@@ -4794,7 +4801,7 @@ esp_err_t mdns_hostname_set(const char * hostname)
         return ESP_ERR_NO_MEM;
     }
     xTaskNotifyWait(0, 0, NULL, portMAX_DELAY);
-    return ERR_OK;
+    return ESP_OK;
 }
 
 esp_err_t mdns_delegate_hostname_add(const char * hostname, const mdns_ip_addr_t * address_list)
@@ -4824,7 +4831,7 @@ esp_err_t mdns_delegate_hostname_add(const char * hostname, const mdns_ip_addr_t
         free(action);
         return ESP_ERR_NO_MEM;
     }
-    return ERR_OK;
+    return ESP_OK;
 }
 
 esp_err_t mdns_delegate_hostname_remove(const char * hostname)
@@ -4853,7 +4860,7 @@ esp_err_t mdns_delegate_hostname_remove(const char * hostname)
         free(action);
         return ESP_ERR_NO_MEM;
     }
-    return ERR_OK;
+    return ESP_OK;
 }
 
 bool mdns_hostname_exists(const char * hostname)
@@ -4887,7 +4894,7 @@ esp_err_t mdns_instance_name_set(const char * instance)
         free(action);
         return ESP_ERR_NO_MEM;
     }
-    return ERR_OK;
+    return ESP_OK;
 }
 
 /*
