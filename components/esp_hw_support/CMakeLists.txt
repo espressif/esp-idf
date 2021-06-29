@@ -18,11 +18,6 @@ if(NOT BOOTLOADER_BUILD)
                      "sleep_modes.c"
                      "regi2c_ctrl.c")
      list(APPEND priv_requires esp_ipc)
-
-     if(NOT CMAKE_BUILD_EARLY_EXPANSION)
-          set_source_files_properties("${CMAKE_CURRENT_LIST_DIR}/sleep_modes.c" PROPERTIES
-                                      COMPILE_FLAGS "-fno-jump-tables -fno-tree-switch-conversion")
-     endif()
 endif()
 
 idf_component_register(SRCS ${srcs}

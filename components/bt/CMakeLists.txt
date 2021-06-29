@@ -611,3 +611,9 @@ if(CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE AND CONFIG_BT_NIMBLE_ENABLED)
     # some variables in NimBLE are only used by asserts
     target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-unused-but-set-variable -Wno-unused-variable)
 endif()
+
+if(NOT CMAKE_BUILD_EARLY_EXPANSION)
+    set_source_files_properties("${CMAKE_CURRENT_LIST_DIR}/host/bluedroid/bta/hf_ag/bta_ag_cmd.c"
+                                "${CMAKE_CURRENT_LIST_DIR}/host/bluedroid/btc/profile/std/gap/btc_gap_ble.c"
+                                 PROPERTIES COMPILE_FLAGS "-fjump-tables -ftree-switch-conversion")
+endif()

@@ -110,6 +110,11 @@ endif()
 
 list(APPEND link_options "-fno-lto")
 
+# Placing jump tables in flash would cause issues with code that required
+# to be placed in IRAM
+list(APPEND compile_options "-fno-jump-tables")
+list(APPEND compile_options "-fno-tree-switch-conversion")
+
 idf_build_set_property(COMPILE_OPTIONS "${compile_options}" APPEND)
 idf_build_set_property(C_COMPILE_OPTIONS "${c_compile_options}" APPEND)
 idf_build_set_property(CXX_COMPILE_OPTIONS "${cxx_compile_options}" APPEND)

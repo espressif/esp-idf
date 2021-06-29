@@ -93,15 +93,11 @@ There are some possible issues with placement in IRAM, that may cause problems w
 
   Note that knowing which data should be marked with ``DRAM_ATTR`` can be hard, the compiler will sometimes recognize that a variable or expression is constant (even if it is not marked ``const``) and optimize it into flash, unless it is marked with ``DRAM_ATTR``.
 
-* GCC optimizations that automatically generate jump tables or switch/case lookup tables place these tables in flash. There are two possible ways to resolve this issue:
 
-  - Use a :doc:`linker script fragment <linker-script-generation>` to mark the entire source file as ``noflash``
-  - Pass specific flags to the compiler to disable these optimizations in the relevant source files. For CMake, place the following in the component CMakeLists.txt file:
+* GCC optimizations that automatically generate jump tables or switch/case lookup tables place these tables in flash. IDF by default builds all files with `-fno-jump-tables -fno-tree-switch-conversion` flags to avoid this.
 
-    .. code-block:: cmake
+ Jump table optimizations can be re-enabled for individual source files that don't need to be placed in IRAM. For instructions on how to add the -fjump-tables -ftree-switch-conversion options when compiling individual source files, see :ref:`component_build_control`
 
-        set_source_files_properties("${CMAKE_CURRENT_LIST_DIR}/relative/path/to/file" PROPERTIES
-                                    COMPILE_FLAGS "-fno-jump-tables -fno-tree-switch-conversion")
 
 .. _irom:
 

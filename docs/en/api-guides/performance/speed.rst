@@ -116,6 +116,8 @@ The following changes will increase the speed of a chosen part of the firmware a
 
       IRAM is a limited resource, and using more IRAM may reduce available DRAM, so a strategic approach is needed when moving code to IRAM. See :ref:`iram` for more information.
 
+    -  Jump table optimizations can be re-enabled for individual source files that don't need to be placed in IRAM. For hot paths in large switch cases this will improve performance. For instructions on how to add the -fjump-tables -ftree-switch-conversion options when compiling individual source files, see :ref:`component_build_control`
+
 Improving Startup Time
 ----------------------
 
