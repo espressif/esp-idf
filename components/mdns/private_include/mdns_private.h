@@ -14,12 +14,8 @@
 #ifndef MDNS_PRIVATE_H_
 #define MDNS_PRIVATE_H_
 
-#include "esp_event_base.h"
-#include "esp_task.h"
-#include "esp_timer.h"
-#include "esp_netif_ip_addr.h"
-#include "freertos/FreeRTOS.h"
 #include "mdns.h"
+#include "esp_task.h"
 
 //#define MDNS_ENABLE_DEBUG
 

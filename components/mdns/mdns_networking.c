@@ -4,10 +4,17 @@
  *
  */
 #include <string.h>
-#include "mdns_networking.h"
 #include "esp_log.h"
+#include "lwip/ip_addr.h"
+#include "lwip/pbuf.h"
+#include "lwip/igmp.h"
+#include "lwip/udp.h"
+#include "lwip/mld6.h"
+#include "lwip/priv/tcpip_priv.h"
+#include "esp_system.h"
+#include "esp_event.h"
+#include "mdns_networking.h"
 #include "esp_netif_net_stack.h"
-
 
 extern mdns_server_t * _mdns_server;
 
@@ -344,4 +351,20 @@ size_t _mdns_udp_pcb_write(mdns_if_t tcpip_if, mdns_ip_protocol_t ip_protocol, c
         return 0;
     }
     return len;
+}
+
+void* _mdns_get_packet_data(mdns_rx_packet_t *packet)
+{
+    return packet->pb->payload;
+}
+
+size_t _mdns_get_packet_len(mdns_rx_packet_t *packet)
+{
+    return packet->pb->len;
+}
+
+void _mdns_packet_free(mdns_rx_packet_t *packet)
+{
+    pbuf_free(packet->pb);
+    free(packet);
 }
