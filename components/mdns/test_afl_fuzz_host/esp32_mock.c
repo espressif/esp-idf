@@ -3,7 +3,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "esp32_compat.h"
+#include "esp32_mock.h"
 
 void*     g_queue;
 int       g_queue_send_shall_fail = 0;
