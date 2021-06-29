@@ -1,69 +1,110 @@
-***************************************
+***********************************************
 Windows 平台工具链的标准设置
-***************************************
+***********************************************
+
 :link_to_translation:`en:[English]`
 
-.. important:: 对不起，CMake-based Build System Preview 还没有中文翻译。
-
-引言
+概述
 ============
 
-Windows 没有内置的 "make" 环境，因此如果要安装工具链，你需要一个 GNU 兼容环境。我们这里使用 MSYS2_ 来提供该环境。你不需要一直使用这个环境（你可以使用 :doc:`Eclipse <eclipse-setup>` 或其它前端工具），但是它是在后台运行的。
+ESP-IDF 需要安装一些必备工具，才能围绕 {IDF_TARGET_NAME} 构建固件，包括 Python、Git、交叉编译器、CMake 和 Ninja 编译工具等。
 
-工具链的设置
-===============
+在本入门指南中，我们通过 **命令提示符** 进行有关操作。不过，您在安装 ESP-IDF 后还可以使用 :doc:`Eclipse <eclipse-setup>` 或其他支持 CMake 的图形化工具 IDE。
 
-快速设置的方法是从 dl.espressif.com 下载集成在一起的工具链和 MSYS2 压缩文件：
+.. 注解::
+    限定条件：Python 或 ESP-IDF 的安装路径中一定不能包含空格或括号。与此同时，除非操作系统配置为支持 Unicode UTF-8，否则 Python 或 ESP-IDF 的安装路径中也不能包括特殊字符（非 ASCII 码字符）
 
-https://dl.espressif.com/dl/esp32_win32_msys2_environment_and_toolchain_idf3-20201104.zip
+    系统管理员可以通过如下方式将操作系统配置为支持 Unicode UTF-8：控制面板-更改日期、时间或数字格式-管理选项卡-更改系统地域-勾选选项 “Beta：使用 Unicode UTF-8 支持全球语言”-点击确定-重启电脑。
 
-将 zip 压缩文件解压到 ``C:\`` (或其它路径，这里假设是 ``C:\``)，它会使用预先准备的环境创建一个 ``msys32`` 目录。
-
-检出
-============
-
-运行 ``C:\msys32\mingw32.exe`` 打开一个 MSYS2 的终端窗口。该窗口的环境是一个 bash shell。创建一个 ``esp`` 目录作为开发 ESP32 应用的默认地址。运行指令 ::
-
-    mkdir -p ~/esp  
-    
-输入 ``cd ~/esp`` 就进入到新创建的目录。如果没有错误信息出现则表明此步骤已完成。
+.. _get-started-windows-tools-installer:
 
 
-.. figure:: ../../_static/msys2-terminal-window.png
+ESP-IDF 工具安装器
+=======================
+
+安装 ESP-IDF 必备工具最简易的方式是从 https://dl.espressif.com/dl/esp-idf/?idf=3.3 中下载 ESP-IDF 工具安装器。
+
+在线安装与离线安装的区别
+-----------------------------------------
+
+在线安装程序非常小，可以安装 ESP-IDF 的所有版本。在安装过程中，安装程序只下载必要的依赖文件，包括 `Git For Windows`_ 安装器。在线安装程序会将下载的文件存储在缓存目录 ``%userprofile%/espressif`` 中。
+
+离线安装程序不需要任何网络连接。安装程序中包含了所有需要的依赖文件，包括 `Git For Windows`_ 安装器。
+
+安装内容
+------------
+
+安装程序会安装以下组件：
+
+- 内置的 Python
+- 交叉编译器
+- OpenOCD
+- CMake_ 和 Ninja_ 编译工具
+- ESP-IDF
+
+安装程序允许将程序下载到现有的 ESP-IDF 目录。推荐将 ESP-IDF 下载到 ``%userprofile%\Desktop\esp-idf`` 目录下，其中 ``%userprofile%`` 代表家目录。
+
+启动 ESP-IDF 环境
+------------------
+
+安装结束时，如果勾选了 ``Run ESP-IDF PowerShell Environment`` 或 ``Run ESP-IDF Command Prompt (cmd.exe)``，安装程序会在选定的提示符窗口启动 ESP-IDF。
+
+``Run ESP-IDF PowerShell Environment``:
+
+.. figure:: ../../_static/esp-idf-installer-screenshot-powershell.png
     :align: center
-    :alt: MSYS2 MINGW32 shell window
+    :alt: 完成 ESP-IDF 工具安装向导时运行 Run ESP-IDF PowerShell Environment
     :figclass: align-center
 
-    MSYS2 终端窗口
+    完成 ESP-IDF 工具安装向导时运行 Run ESP-IDF PowerShell Environment
 
-后续步骤将会使用这个窗口来为 ESP32 设置开发环境。
+.. figure:: ../../_static/esp-idf-installer-powershell.png
+    :align: center
+    :alt: ESP-IDF PowerShell
+    :figclass: align-center
 
-后续步骤
-==========
+    ESP-IDF PowerShell
 
-要继续设置开发环境，请参考 :ref:`get-started-get-esp-idf` 一节。
+``Run ESP-IDF Command Prompt (cmd.exe)``:
 
-更新环境
+.. figure:: ../../_static/esp-idf-installer-screenshot.png
+    :align: center
+    :alt: 完成 ESP-IDF 工具安装向导时运行 Run ESP-IDF Command Prompt (cmd.exe)
+    :figclass: align-center
+
+    完成 ESP-IDF 工具安装向导时运行 Run ESP-IDF Command Prompt (cmd.exe)
+
+.. figure:: ../../_static/esp-idf-installer-command-prompt.png
+    :align: center
+    :alt: ESP-IDF 命令提示符窗口
+    :figclass: align-center
+
+    ESP-IDF 命令提示符窗口
+
+使用命令提示符
 ========================
 
-当 IDF 更新时，有时需要新的工具链，或者将新的需求添加到 Windows MSYS2 环境中。要将旧版本的预编译环境中的数据移动到新版本：
+在后续步骤中，我们将使用 Windows 的命令提示符进行操作。
 
-- 把旧的 MSYS2 环境（即 ``C:\msys32``）移动/重命名为不同的目录（即 ``C:\msys32_old``）。
-- 按照前文所述步骤下载新的预编译环境。
-- 将新的 MSYS2 环境解压缩到 ``C:\msys32`` （或其他位置）。
-- 找到旧的 ``C:\msys32_old\home`` 目录并把它移到 ``C:\msys32``。
-- 如果你不再需要 ``C:\msys32_old`` 可以将它删除。
+ESP-IDF 工具安装器可在“开始”菜单中，创建一个打开 ESP-IDF 命令提示符窗口的快捷方式。本快捷方式可以打开 Windows 命令提示符（即 cmd.exe），并运行 ``export.bat`` 脚本以设置各环境变量（比如 ``PATH``，``IDF_PATH`` 等）。此外，您可还以通过 Windows 命令提示符使用各种已经安装的工具。
 
-你可以在系统上拥有独立的不同的 MSYS2 环境，前提是在不同的目录中。
+注意，本快捷方式仅适用 ESP-IDF 工具安装器中指定的 ESP-IDF 路径。如果您的电脑上存在多个 ESP-IDF 路径（比如您需要不同版本的 ESP-IDF），您有以下两种解决方法：
+
+1. 为 ESP-IDF 工具安装器创建的快捷方式创建一个副本，并将新快捷方式的 ESP-IDF 工作路径指定为您希望使用的 ESP-IDF 路径。
+
+2. 或者，您可以运行 ``cmd.exe``，并切换至您希望使用的 ESP-IDF 目录，然后运行 ``export.bat``。注意，这种方法要求 ``PATH`` 中存在 Python 和 Git。如果您在使用时遇到有关“找不到 Python 或 Git”的错误信息，请使用第一种方法。
+
+后续步骤
+============
+
+当 ESP-IDF 工具安装器安装成功后，开发环境设置也到此结束。后续开发步骤，请前往 :ref:`get-started-start-project` 查看。
 
 相关文档
 =================
 
-.. toctree::
-    :maxdepth: 1
-
-    windows-setup-scratch
-
-
-.. _MSYS2: https://msys2.github.io/
-
+.. _MSYS2: https://www.msys2.org/
+.. _CMake: https://cmake.org/download/
+.. _Ninja: https://ninja-build.org/
+.. _Python: https://www.python.org/downloads/windows/
+.. _Git for Windows: https://gitforwindows.org/
+.. _Github Desktop: https://desktop.github.com/
