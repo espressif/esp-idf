@@ -64,7 +64,7 @@ struct dedic_gpio_bundle_t {
     uint32_t out_offset; // offset in the bank (seen from output channel)
     uint32_t in_offset;  // offset in the bank (seen from input channel)
     size_t nr_gpio;    // number of GPIOs in the gpio_array
-    int gpio_array[0];   // array of GPIO numbers (configured by user)
+    int gpio_array[];   // array of GPIO numbers (configured by user)
 };
 
 static esp_err_t dedic_gpio_build_platform(uint32_t core_id)

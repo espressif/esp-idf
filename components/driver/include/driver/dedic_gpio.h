@@ -30,10 +30,10 @@ typedef struct {
     const int *gpio_array; /*!< Array of GPIO numbers, gpio_array[0] ~ gpio_array[size-1] <=> low_dedic_channel_num ~ high_dedic_channel_num */
     size_t array_size;     /*!< Number of GPIOs in gpio_array */
     struct {
-        int in_en: 1;      /*!< Enable input */
-        int in_invert: 1;  /*!< Invert input signal */
-        int out_en: 1;     /*!< Enable output */
-        int out_invert: 1; /*!< Invert output signal */
+        unsigned int in_en: 1;      /*!< Enable input */
+        unsigned int in_invert: 1;  /*!< Invert input signal */
+        unsigned int out_en: 1;     /*!< Enable output */
+        unsigned int out_invert: 1; /*!< Invert output signal */
     } flags; /*!< Flags to control specific behaviour of GPIO bundle */
 } dedic_gpio_bundle_config_t;
 

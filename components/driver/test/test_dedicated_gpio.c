@@ -58,8 +58,6 @@ TEST_CASE("Dedicated GPIO bundle install/uninstall", "[dedic_gpio]")
 
 #define TEST_GPIO_GROUP_SIZE (4)
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
-// TODO ESP32-S3 IDF-3387
 typedef struct {
     SemaphoreHandle_t sem;
     const int gpios[TEST_GPIO_GROUP_SIZE];
@@ -160,8 +158,6 @@ TEST_CASE("Dedicated GPIO run on multiple CPU core", "[dedic_gpio]")
     }
     vSemaphoreDelete(sem);
 }
-
-#endif //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 
 IRAM_ATTR static void test_dedic_gpio_isr_callback(void *args)
 {
