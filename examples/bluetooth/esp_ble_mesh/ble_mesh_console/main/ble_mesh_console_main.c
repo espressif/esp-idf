@@ -127,7 +127,7 @@ esp_err_t bluetooth_init(void)
     }
 
     esp_log_level_set("*", ESP_LOG_ERROR);
-    esp_log_level_set("ble_mesh_node_console", ESP_LOG_INFO);
+    esp_log_level_set("ble_mesh_console", ESP_LOG_INFO);
     return ret;
 }
 
@@ -154,9 +154,13 @@ void app_main(void)
     register_system();
     register_bluetooth();
     ble_mesh_register_mesh_node();
+    ble_mesh_register_mesh_test_performance_client();
     ble_mesh_register_server();
 #if (CONFIG_BLE_MESH_GENERIC_ONOFF_CLI)
     ble_mesh_register_gen_onoff_client();
+#endif
+#if (CONFIG_BLE_MESH_CFG_CLI)
+    ble_mesh_register_configuration_client_model();
 #endif
 
     /* Prompt to be printed before each line.

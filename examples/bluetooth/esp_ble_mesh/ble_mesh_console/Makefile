@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := ble_mesh_console_node
+PROJECT_NAME := ble_mesh_console
 
 COMPONENT_ADD_INCLUDEDIRS := components/include
 
