@@ -400,7 +400,9 @@ esp_err_t i2c_driver_delete(i2c_port_t i2c_num)
     p_i2c->intr_handle = NULL;
 
     if (p_i2c->cmd_mux) {
+        // Let any command in progress finish.
         xSemaphoreTake(p_i2c->cmd_mux, portMAX_DELAY);
+        xSemaphoreGive(p_i2c->cmd_mux);
         vSemaphoreDelete(p_i2c->cmd_mux);
     }
     if (p_i2c_obj[i2c_num]->cmd_evt_queue) {
