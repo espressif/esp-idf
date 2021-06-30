@@ -33,6 +33,6 @@ Peripherals API
     :esp32s2: Touch Element <touch_element>
     TWAI <twai>
     UART <uart>
-    :SOC_USB_SUPPORTED: USB <usb>
+    :SOC_USB_OTG_SUPPORTED: USB Device <usb_device>
 
 Code examples for this API section are provided in the :example:`peripherals` directory of ESP-IDF examples.
