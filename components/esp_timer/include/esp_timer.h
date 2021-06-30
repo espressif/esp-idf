@@ -242,6 +242,18 @@ esp_err_t esp_timer_dump(FILE* stream);
 void esp_timer_isr_dispatch_need_yield(void);
 #endif // CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
 
+/**
+ * @brief Returns status of a timer, active or not
+ *
+ * This function is used to identify if the timer is still active or not.
+ *
+ * @param timer timer handle created using esp_timer_create
+ * @return
+ *      - 1 if timer is still active
+ *      - 0 if timer is not active.
+ */
+bool esp_timer_is_active(esp_timer_handle_t timer);
+
 #ifdef __cplusplus
 }
 #endif

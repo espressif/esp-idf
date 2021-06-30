@@ -621,3 +621,8 @@ int64_t IRAM_ATTR esp_timer_get_next_alarm_for_wake_up(void)
     }
     return next_alarm;
 }
+
+bool esp_timer_is_active(esp_timer_handle_t timer)
+{
+    return timer_armed(timer);
+}
