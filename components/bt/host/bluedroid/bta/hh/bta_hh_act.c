@@ -494,8 +494,7 @@ void bta_hh_api_disc_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
         disc_dat.status = BTA_HH_ERR;
 
         status = HID_HostCloseDev(disc_dat.handle);
-
-        if (status) {
+        if (status == HID_SUCCESS) {
             (* bta_hh_cb.p_cback)(BTA_HH_CLOSE_EVT, (tBTA_HH *)&disc_dat);
         }
     }
