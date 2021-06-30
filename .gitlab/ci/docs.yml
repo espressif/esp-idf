@@ -70,9 +70,11 @@ check_docs_lang_sync:
         DOCTGT: ["esp32", "esp32s2", "esp32c3"]
 
 check_docs_gh_links:
+  image: $ESP_IDF_DOC_ENV_IMAGE
+  variables:
+    PYTHON_VER: 3.6.13
   extends:
     - .pre_check_job_template
-    - .build_docs_template
     - .doc-rules:build:docs
   script:
     - cd docs
