@@ -63,7 +63,7 @@ The flash encryption operation is controlled by various eFuses available on {IDF
          - 2
        * - ``flash_encryption`` (block1)
          - AES key storage.
-         - 256
+         - 256 bit key block
        * - ``FLASH_CRYPT_CONFIG``
          - Controls the AES encryption process.
          - 4
@@ -89,7 +89,7 @@ The flash encryption operation is controlled by various eFuses available on {IDF
          - **Bit Depth**
        * - ``BLOCK_KEYN``
          - AES key storage. N is between 0 and 5.
-         - 256
+         - One 256 bit key block for XTS_AES_128, Two 256 bit key blocks for XTS_AES_256 (512 bit total)
        * - ``KEY_PURPOSE_N``
          - Controls the purpose of eFuse block ``BLOCK_KEYN``, where N is between 0 and 5. Possible values: ``2`` for ``XTS_AES_256_KEY_1`` , ``3`` for ``XTS_AES_256_KEY_2``, and ``4`` for ``XTS_AES_128_KEY``. Final AES key is derived based on the value of one or two of these purpose eFuses. For a detailed description of the possible combinations, see *{IDF_TARGET_NAME} Technical Reference Manual* > *External Memory Encryption and Decryption (XTS_AES)* [`PDF <{IDF_TARGET_TRM_EN_URL}#extmemencr>`__].
          - 4
@@ -111,7 +111,7 @@ The flash encryption operation is controlled by various eFuses available on {IDF
          - **Bit Depth**
        * - ``BLOCK_KEYN``
          - AES key storage. N is between 0 and 5.
-         - 256
+         - 256 bit key block
        * - ``KEY_PURPOSE_N``
          - Controls the purpose of eFuse block ``BLOCK_KEYN``, where N is between 0 and 5. For flash encryption the only valid value is ``4`` for ``XTS_AES_128_KEY``.
          - 4
@@ -872,7 +872,7 @@ See :ref:`jtag-debugging-security-features` for more information about using JTA
 Manually Encrypting Files
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Manually encrypting or decrypting files requires the flash encryption key to be pre-burned in efuse (see :ref:`pregenerated-flash-encryption-key`) and a copy to be kept on the host. If the flash encryption is configured in Development Mode then it's not necessary to keep a copy of the key or follow these steps, the simpler :ref:`encrypt-partitions` steps can be used.
+Manually encrypting or decrypting files requires the flash encryption key to be pre-burned in eFuse (see :ref:`pregenerated-flash-encryption-key`) and a copy to be kept on the host. If the flash encryption is configured in Development Mode then it's not necessary to keep a copy of the key or follow these steps, the simpler :ref:`encrypt-partitions` steps can be used.
 
 The key file should be a single raw binary file (example: ``key.bin``).
 
@@ -904,7 +904,7 @@ The file ``my-app-ciphertext.bin`` can then be flashed to offset 0x10000 using `
 
    .. only:: esp32
 
-       If your ESP32 uses non-default :ref:`FLASH_CRYPT_CONFIG value in efuse <setting-flash-crypt-config>` then you will need to pass the ``--flash_crypt_conf`` argument to ``espsecure.py`` to set the matching value. This will not happen if the device configured flash encryption by itself, but may happen if burning efuses manually to enable flash encryption.
+       If your ESP32 uses non-default :ref:`FLASH_CRYPT_CONFIG value in eFuse <setting-flash-crypt-config>` then you will need to pass the ``--flash_crypt_conf`` argument to ``espsecure.py`` to set the matching value. This will not happen if the device configured flash encryption by itself, but may happen if burning eFuses manually to enable flash encryption.
 
 The command ``espsecure.py decrypt_flash_data`` can be used with the same options (and different input/output files), to decrypt ciphertext flash contents or a previously encrypted file.
 
