@@ -228,6 +228,18 @@ int64_t esp_timer_get_next_alarm(void);
  */
 esp_err_t esp_timer_dump(FILE* stream);
 
+/**
+ * @brief Returns status of a timer, active or not
+ *
+ * This function is used to identify if the timer is still active or not.
+ *
+ * @param timer timer handle created using esp_timer_create
+ * @return
+ *      - 1 if timer is still active
+ *      - 0 if timer is not active.
+ */
+bool esp_timer_is_active(esp_timer_handle_t timer);
+
 #ifdef __cplusplus
 }
 #endif
