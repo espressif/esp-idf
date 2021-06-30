@@ -75,4 +75,13 @@ menu "mDNS"
             Configures period of mDNS timer, which periodically transmits packets
             and schedules mDNS searches.
 
+    config MDNS_NETWORKING_SOCKET
+        bool "Use BSD sockets for mdns networking"
+        default n
+        help
+            Enables optional mdns networking implementation using BSD sockets
+            in UDP multicast mode.
+            This option creates a new thread to serve receiving packets (TODO).
+            This option uses additional N sockets, where N is number of interfaces.
+
 endmenu

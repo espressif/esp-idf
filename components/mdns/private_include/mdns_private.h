@@ -14,8 +14,10 @@
 #ifndef MDNS_PRIVATE_H_
 #define MDNS_PRIVATE_H_
 
+#include "sdkconfig.h"
 #include "mdns.h"
 #include "esp_task.h"
+#include "esp_timer.h"
 
 //#define MDNS_ENABLE_DEBUG
 
