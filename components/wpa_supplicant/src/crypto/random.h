@@ -2,20 +2,12 @@
  * Random number generator
  * Copyright (c) 2010-2011, Jouni Malinen <j@w1.fi>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * Alternatively, this software may be distributed under the terms of BSD
- * license.
- *
- * See README and COPYING for more details.
+ * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
  */
 
 #ifndef RANDOM_H
 #define RANDOM_H
-
-#define CONFIG_NO_RANDOM_POOL
 
 #ifdef CONFIG_NO_RANDOM_POOL
 #define random_init(e) do { } while (0)
@@ -29,6 +21,8 @@ void random_init(const char *entropy_file);
 void random_deinit(void);
 void random_add_randomness(const void *buf, size_t len);
 int random_get_bytes(void *buf, size_t len);
+int random_pool_ready(void);
+void random_mark_pool_ready(void);
 #endif /* CONFIG_NO_RANDOM_POOL */
 
 #endif /* RANDOM_H */
