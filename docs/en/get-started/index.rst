@@ -46,7 +46,7 @@ Introduction
 
     * Wi-Fi (2.4 GHz band)
     * Bluetooth Low Energy
-    * Dual high performance core Xtensa® 32-bit LX7 CPU cores
+    * Dual high performance Xtensa® 32-bit LX7 CPU cores
     * Ultra Low Power co-processor running either RISC-V or FSM core
     * Multiple peripherals
     * Built-in security hardware
@@ -64,6 +64,7 @@ Introduction
 Powered by 40 nm technology, {IDF_TARGET_NAME} provides a robust, highly integrated platform, which helps meet the continuous demands for efficient power usage, compact design, security, high performance, and reliability.
 
 Espressif provides basic hardware and software resources to help application developers realize their ideas using the {IDF_TARGET_NAME} series hardware. The software development framework by Espressif is intended for development of Internet-of-Things (IoT) applications with Wi-Fi, Bluetooth, power management and several other system features.
+
 
 What You Need
 =============
