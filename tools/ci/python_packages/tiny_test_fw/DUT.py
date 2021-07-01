@@ -604,6 +604,7 @@ class BaseDUT(object):
         while True:
             ret, index = method(data, pattern)
             if ret is not None:
+                stdout = data[:index]
                 self.data_cache.flush(index)
                 break
             time_remaining = start_time + timeout - time.time()
@@ -611,7 +612,6 @@ class BaseDUT(object):
                 break
             # wait for new data from cache
             data = self.data_cache.get_data(time_remaining)
-            stdout = data
 
         if ret is None:
             pattern = _pattern_to_string(pattern)
