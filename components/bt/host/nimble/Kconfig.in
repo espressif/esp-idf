@@ -493,3 +493,9 @@ config BT_NIMBLE_MAX_PERIODIC_SYNCS
         Set this option to set the upper limit for number of periodic sync
         connections. This should be less than maximum connections allowed by
         controller.
+
+config BT_NIMBLE_USE_ESP_TIMER
+    bool "Enable Esp Timer for Nimble"
+    default y
+    help
+        Set this option to use Esp Timer which has higher priority timer instead of FreeRTOS timer
