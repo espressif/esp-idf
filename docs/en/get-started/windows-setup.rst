@@ -21,33 +21,82 @@ For this Getting Started we're going to use the Command Prompt, but after ESP-ID
     .. note::
         Previous versions of ESP-IDF used the :doc:`Legacy GNU Make Build System<../get-started-legacy/windows-setup>` and MSYS2_ Unix compatibility environment. This is no longer required, ESP-IDF can be used from the Windows Command Prompt.
 
+.. note::
+    Limitation: the installation path of Python or ESP-IDF must not contain white spaces or parentheses.
+
+    Limitation: the installation path of Python or ESP-IDF should not contain special characters (non-ASCII) unless the operating system is configured with "Unicode UTF-8" support.
+    System Administrator can enable the support via Control Panel - Change date, time, or number formats - Administrative tab - Change system locale - check the option "Beta: Use Unicode UTF-8 for worldwide language support" - Ok and reboot the computer.
+
 .. _get-started-windows-tools-installer:
 
 ESP-IDF Tools Installer
 =======================
 
-The easiest way to install ESP-IDF's prerequisites is to download the ESP-IDF Tools installer from this URL:
+The easiest way to install ESP-IDF's prerequisites is to download one of ESP-IDF Tools Installers from this URL: https://dl.espressif.com/dl/esp-idf/?idf=4.2
 
-https://dl.espressif.com/dl/esp-idf-tools-setup-2.3.exe
+What is the usecase for Online and Offline Installer
+----------------------------------------------------
 
-.. IMPORTANT: Next time this link is updated, please go to get-started/index.rst and rewrite the section under "Alternative File Downloads ... Windows". Then delete this comment.
+Online Installer is very small and allows the installation of all available releases of ESP-IDF. The installer will download only necessary dependencies including `Git For Windows`_  during the installation process. The installer stores downloaded files in the cache directory ``%userprofile%\.espressif``
 
-The installer includes the cross-compilers, OpenOCD, CMake_ and Ninja_ build tool. The installer can also download and run installers for Python_ 3.7 and `Git For Windows`_ if they are not already installed on the computer.
+Offline Installer does not require any network connection. The installer contains all required dependencies including `Git For Windows`_ .
 
-The installer also offers to download one of the ESP-IDF release versions. Please choose a directory for downloading ESP-IDF. The recommended directory is ``%userprofile%\esp`` where ``%userprofile%`` is your home directory. If you do not have it yet, please run the following command to create a new one:
+Components of the installation
+------------------------------
 
-.. code-block:: batch
+The installer deploys the following components:
 
-    mkdir %userprofile%\esp
+- Embedded Python
+- Cross-compilers
+- OpenOCD
+- CMake_ and Ninja_ build tools
+- ESP-IDF
 
-The installer also offers to download one of the ESP-IDF release versions.
+The installer also allows reusing the existing directory with ESP-IDF. The recommended directory is ``%userprofile%\Desktop\esp-idf`` where ``%userprofile%`` is your home directory.
+
+Launching ESP-IDF Environment
+-----------------------------
+
+At the end of the installation process you can check out option ``Run ESP-IDF PowerShell Environment`` or ``Run ESP-IDF Command Prompt (cmd.exe)``. The installer will launch ESP-IDF environment in selected prompt.
+
+``Run ESP-IDF PowerShell Environment``:
+
+.. figure:: ../../_static/esp-idf-installer-screenshot-powershell.png
+    :align: center
+    :alt: Completing the ESP-IDF Tools Setup Wizard with Run ESP-IDF PowerShell Environment
+    :figclass: align-center
+
+    Completing the ESP-IDF Tools Setup Wizard with Run ESP-IDF PowerShell Environment
+
+.. figure:: ../../_static/esp-idf-installer-powershell.png
+    :align: center
+    :alt: ESP-IDF PowerShell
+    :figclass: align-center
+
+    ESP-IDF PowerShell
+
+``Run ESP-IDF Command Prompt (cmd.exe)``:
+
+.. figure:: ../../_static/esp-idf-installer-screenshot.png
+    :align: center
+    :alt: Completing the ESP-IDF Tools Setup Wizard with Run ESP-IDF Command Prompt (cmd.exe)
+    :figclass: align-center
+
+    Completing the ESP-IDF Tools Setup Wizard with Run ESP-IDF Command Prompt (cmd.exe)
+
+.. figure:: ../../_static/esp-idf-installer-command-prompt.png
+    :align: center
+    :alt: ESP-IDF Command Prompt
+    :figclass: align-center
+
+    ESP-IDF Command Prompt
 
 Using the Command Prompt
 ========================
 
 For the remaining Getting Started steps, we're going to use the Windows Command Prompt.
 
-ESP-IDF Tools Installer creates a shortcut in the Start menu to launch the ESP-IDF Command Prompt. This shortcut launches the Command Prompt (cmd.exe) and runs ``export.bat`` script to set up the environment variables (``PATH``, ``IDF_PATH`` and others). Inside this command prompt, all the installed tools are available.
+ESP-IDF Tools Installer also creates a shortcut in the Start menu to launch the ESP-IDF Command Prompt. This shortcut launches the Command Prompt (cmd.exe) and runs ``export.bat`` script to set up the environment variables (``PATH``, ``IDF_PATH`` and others). Inside this command prompt, all the installed tools are available.
 
 Note that this shortcut is specific to the ESP-IDF directory selected in the ESP-IDF Tools Installer. If you have multiple ESP-IDF directories on the computer (for example, to work with different versions of ESP-IDF), you have two options to use them:
 
@@ -73,7 +122,7 @@ For advanced users who want to customize the install process:
 
 .. _MSYS2: https://www.msys2.org/
 .. _CMake: https://cmake.org/download/
-.. _ninja: https://ninja-build.org/
+.. _Ninja: https://ninja-build.org/
 .. _Python: https://www.python.org/downloads/windows/
 .. _Git for Windows: https://gitforwindows.org/
 .. _Github Desktop: https://desktop.github.com/
