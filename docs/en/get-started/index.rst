@@ -2,11 +2,11 @@
 Get Started
 ***********
 
-{IDF_TARGET_CORE_NUM:default="2", esp32="2", esp32s2="1", esp32c3="1"}
+{IDF_TARGET_CORE_NUM:default="2", esp32s2="1", esp32c3="1"}
 
-{IDF_TARGET_FEATURES:default="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32s2="WiFi, silicon revision 0, 2MB external flash", esp32c3="WiFi/BLE, silicon revision 0, 2MB external flash"}
+{IDF_TARGET_FEATURES:default="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32s2="WiFi, silicon revision 0, 2MB external flash", esp32s3="This is esp32s3 chip with 2 CPU core(s), WiFi/BLE, silicon revision 0, 2MB external flash", esp32c3="WiFi/BLE, silicon revision 0, 2MB external flash"}
 
-{IDF_TARGET_HEAP_SIZE:default="298968", esp32="298968", esp32s2="253900", esp32c3="337332"}
+{IDF_TARGET_HEAP_SIZE:default="298968", esp32="298968", esp32s2="253900", esp32s3="390684", esp32c3="337332"}
 
 
 :link_to_translation:`zh_CN:[中文]`
@@ -42,6 +42,17 @@ Introduction
     * Built-in security hardware
     * USB OTG interface
 
+.. only:: esp32s3
+
+    * Wi-Fi (2.4 GHz band)
+    * Bluetooth Low Energy
+    * Dual high performance Xtensa® 32-bit LX7 CPU cores
+    * Ultra Low Power co-processor running either RISC-V or FSM core
+    * Multiple peripherals
+    * Built-in security hardware
+    * USB OTG interface
+    * USB Serial/JTAG Controller
+
 .. only:: esp32c3
 
     * Wi-Fi (2.4 GHz band)
@@ -53,6 +64,7 @@ Introduction
 Powered by 40 nm technology, {IDF_TARGET_NAME} provides a robust, highly integrated platform, which helps meet the continuous demands for efficient power usage, compact design, security, high performance, and reliability.
 
 Espressif provides basic hardware and software resources to help application developers realize their ideas using the {IDF_TARGET_NAME} series hardware. The software development framework by Espressif is intended for development of Internet-of-Things (IoT) applications with Wi-Fi, Bluetooth, power management and several other system features.
+
 
 What You Need
 =============
@@ -119,7 +131,8 @@ If you have one of {IDF_TARGET_NAME} development boards listed below, you can cl
 
         ESP32-C3-DevKitM-1 <../hw-reference/esp32c3/user-guide-devkitm-1>
         ESP32-C3-DevKitC-02 <../hw-reference/esp32c3/user-guide-devkitc-02>
-        
+
+
 .. _get-started-step-by-step:
 
 Installation Step by Step
@@ -503,7 +516,7 @@ For more information on idf.py arguments, see :ref:`idf.py`.
 
 Encountered Issues While Flashing?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-{IDF_TARGET_STRAP_GPIO:default="GPIO0", esp32="GPIO0", esp32s2="GPIO0", esp32c3="GPIO9"}
+{IDF_TARGET_STRAP_GPIO:default="GPIO0", esp32="GPIO0", esp32s2="GPIO0", esp32s3="GPIO0", esp32c3="GPIO9"}
 
 If you run the given command and see errors such as "Failed to connect", there might be several reasons for this. One of the reasons might be issues encountered by ``esptool.py``, the utility that is called by the build system to reset the chip, interact with the ROM bootloader, and flash firmware. One simple solution to try is manual reset described below, and if it does not help you can find more details about possible issues in `Troubleshooting <https://github.com/espressif/esptool#bootloader-wont-respond>`_.
 
@@ -605,6 +618,51 @@ When flashing, you will see the output log similar to the following:
         Leaving...
         Hard resetting via RTS pin...
         Done
+
+.. only:: esp32s3
+
+    .. code-block:: none
+
+        ...
+        esptool.py esp32s3 -p /dev/ttyUSB0 -b 460800 --before=default_reset --after=hard_reset write_flash --flash_mode dio --flash_freq 80m --flash_size 2MB 0x0 bootloader/bootloader.bin 0x10000 hello-world.bin 0x8000 partition_table/partition-table.bin
+        esptool.py v3.2-dev
+        Serial port /dev/ttyUSB0
+        Connecting....
+        Chip is ESP32-S3
+        Features: WiFi, BLE
+        Crystal is 40MHz
+        MAC: 7c:df:a1:e0:00:64
+        Uploading stub...
+        Running stub...
+        Stub running...
+        Changing baud rate to 460800
+        Changed.
+        Configuring flash size...
+        Flash will be erased from 0x00000000 to 0x00004fff...
+        Flash will be erased from 0x00010000 to 0x00039fff...
+        Flash will be erased from 0x00008000 to 0x00008fff...
+        Compressed 18896 bytes to 11758...
+        Writing at 0x00000000... (100 %)
+        Wrote 18896 bytes (11758 compressed) at 0x00000000 in 0.5 seconds (effective 279.9 kbit/s)...
+        Hash of data verified.
+        Compressed 168208 bytes to 88178...
+        Writing at 0x00010000... (16 %)
+        Writing at 0x0001a80f... (33 %)
+        Writing at 0x000201f1... (50 %)
+        Writing at 0x00025dcf... (66 %)
+        Writing at 0x0002d0be... (83 %)
+        Writing at 0x00036c07... (100 %)
+        Wrote 168208 bytes (88178 compressed) at 0x00010000 in 2.4 seconds (effective 569.2 kbit/s)...
+        Hash of data verified.
+        Compressed 3072 bytes to 103...
+        Writing at 0x00008000... (100 %)
+        Wrote 3072 bytes (103 compressed) at 0x00008000 in 0.1 seconds (effective 478.9 kbit/s)...
+        Hash of data verified.
+
+        Leaving...
+        Hard resetting via RTS pin...
+        Done
+
 
 .. only:: esp32c3
 
