@@ -28,6 +28,8 @@
 #include "esp32s3/ulp.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/clk.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/clk.h"
 #endif
 
 TEST_CASE("Can dump power management lock stats", "[pm]")
@@ -48,6 +50,8 @@ static void switch_freq(int mhz)
     esp_pm_config_esp32s3_t pm_config = {
 #elif CONFIG_IDF_TARGET_ESP32C3
     esp_pm_config_esp32c3_t pm_config = {
+#elif CONFIG_IDF_TARGET_ESP32H2
+    esp_pm_config_esp32h2_t pm_config = {
 #endif
         .max_freq_mhz = mhz,
         .min_freq_mhz = MIN(mhz, xtal_freq),
@@ -60,7 +64,7 @@ static void switch_freq(int mhz)
     }
 }
 
-#if CONFIG_IDF_TARGET_ESP32C3
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
 static const int test_freqs[] = {40, 160, 80, 40, 80, 10, 80, 20, 40};
 #else
 static const int test_freqs[] = {240, 40, 160, 240, 80, 40, 240, 40, 80, 10, 80, 20, 40};
@@ -93,6 +97,8 @@ static void light_sleep_enable(void)
     esp_pm_config_esp32s3_t pm_config = {
 #elif CONFIG_IDF_TARGET_ESP32C3
     esp_pm_config_esp32c3_t pm_config = {
+#elif CONFIG_IDF_TARGET_ESP32H2
+    esp_pm_config_esp32h2_t pm_config = {
 #endif
         .max_freq_mhz = cur_freq_mhz,
         .min_freq_mhz = xtal_freq,
@@ -113,6 +119,8 @@ static void light_sleep_disable(void)
     esp_pm_config_esp32s3_t pm_config = {
 #elif CONFIG_IDF_TARGET_ESP32C3
     esp_pm_config_esp32c3_t pm_config = {
+#elif CONFIG_IDF_TARGET_ESP32H2
+    esp_pm_config_esp32h2_t pm_config = {
 #endif
         .max_freq_mhz = cur_freq_mhz,
         .min_freq_mhz = cur_freq_mhz,

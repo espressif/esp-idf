@@ -72,6 +72,12 @@
 #include "esp32c3/rom/rtc.h"
 #include "soc/extmem_reg.h"
 #include "esp_heap_caps.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/clk.h"
+#include "esp32h2/rom/cache.h"
+#include "esp32h2/rom/rtc.h"
+#include "soc/extmem_reg.h"
+#include "esp_heap_caps.h"
 #endif
 
 // If light sleep time is less than that, don't power down flash
@@ -99,12 +105,17 @@
 #define DEFAULT_CPU_FREQ_MHZ                CONFIG_ESP32C3_DEFAULT_CPU_FREQ_MHZ
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (105)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (37)
+#elif CONFIG_IDF_TARGET_ESP32H2
+#define DEFAULT_CPU_FREQ_MHZ                CONFIG_ESP32H2_DEFAULT_CPU_FREQ_MHZ
+#define DEFAULT_SLEEP_OUT_OVERHEAD_US       (105)
+#define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (37)
 #endif
 
 #define LIGHT_SLEEP_TIME_OVERHEAD_US        DEFAULT_HARDWARE_OUT_OVERHEAD_US
 #if defined(CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS)   || \
     defined(CONFIG_ESP32S2_RTC_CLK_SRC_EXT_CRYS) || \
     defined(CONFIG_ESP32C3_RTC_CLK_SRC_EXT_CRYS) || \
+    defined(CONFIG_ESP32H2_RTC_CLK_SRC_EXT_CRYS) || \
     defined(CONFIG_ESP32S3_RTC_CLK_SRC_EXT_CRYS)
 #define DEEP_SLEEP_TIME_OVERHEAD_US         (650 + 100 * 240 / DEFAULT_CPU_FREQ_MHZ)
 #else

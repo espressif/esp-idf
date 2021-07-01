@@ -33,7 +33,7 @@
 #include "esp32s2/spiram.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/spiram.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
 // SPIRAM is not supported on ESP32-C3
 #endif
 

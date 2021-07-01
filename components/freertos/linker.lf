@@ -9,7 +9,7 @@ entries:
             tasks: uxTaskGetSnapshotAll (default)
             tasks: prvTaskGetSnapshot (default)
             tasks: prvTaskGetSnapshotsFromList (default)
-        if IDF_TARGET_ESP32S2 =n && IDF_TARGET_ESP32C3 = n :
+        if IDF_TARGET_ESP32S2 = n && IDF_TARGET_ESP32C3 = n && IDF_TARGET_ESP32H2 = n :
             port: vPortReleaseTaskMPUSettings (default)
             tasks: xTaskCreateRestricted (default)
             port: vPortStoreTaskMPUSettings (default)

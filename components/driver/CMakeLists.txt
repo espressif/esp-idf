@@ -74,6 +74,15 @@ if(IDF_TARGET STREQUAL "esp32c3")
                      "esp32c3/rtc_tempsensor.c")
 endif()
 
+if(IDF_TARGET STREQUAL "esp32h2")
+    list(APPEND srcs "gdma.c"
+                     "spi_slave_hd.c"
+                     "adc_common.c"
+                     "esp32h2/adc.c"
+                     "esp32h2/adc2_init_cal.c"
+                     "esp32h2/rtc_tempsensor.c")
+endif()
+
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS ${includes}
                     PRIV_INCLUDE_DIRS "include/driver"

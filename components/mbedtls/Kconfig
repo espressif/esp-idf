@@ -859,7 +859,7 @@ menu "mbedTLS"
     config MBEDTLS_LARGE_KEY_SOFTWARE_MPI
         bool "Fallback to software implementation for larger MPI values"
         depends on MBEDTLS_HARDWARE_MPI
-        default y if IDF_TARGET_ESP32C3  # HW max 3072 bits
+        default y if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32H2  # HW max 3072 bits
         default n
         help
             Fallback to software implementation for RSA key lengths

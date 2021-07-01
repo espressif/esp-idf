@@ -8,7 +8,13 @@ else()
     set(ldfragments "linker.lf")
 endif()
 
-idf_component_register(SRCS "src/phy_init.c"
+if(IDF_TARGET STREQUAL "esp32h2")
+    set(srcs "src/esp32h2/phy_init.c")
+else()
+    set(srcs "src/phy_init.c")
+endif()
+
+idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "include" "${idf_target}/include"
                     PRIV_REQUIRES nvs_flash
                     LDFRAGMENTS "${ldfragments}")

@@ -139,6 +139,17 @@ class MemRegions(object):
                 # Used by cache
                 MemRegDef(0x4037C000, 0x4000, MemRegions.IRAM_ID, 0),
             ])
+        elif target == 'esp32h2':
+            return sorted([
+                MemRegDef(0x3FC80000, 0x60000, MemRegions.DIRAM_ID, 0x40380000),
+
+                # MemRegDef(0x3FC80000, 0x20000, MemRegions.DIRAM_ID, 0x40380000),
+                # MemRegDef(0x3FCA0000, 0x20000, MemRegions.DIRAM_ID, 0x403A0000),
+                # MemRegDef(0x3FCC0000, 0x20000, MemRegions.DIRAM_ID, 0x403C0000),
+
+                # Used by cache
+                MemRegDef(0x4037C000, 0x4000, MemRegions.IRAM_ID, 0),
+            ])
         else:
             return None
 
@@ -428,7 +439,7 @@ def main():
 
 class StructureForSummary(object):
     (dram_data_names, dram_bss_names, dram_other_names,
-     diram_data_names, diram_bss_names) = (frozenset(), ) * 5
+     diram_data_names, diram_bss_names) = (frozenset(), ) * 5  # type: ignore
 
     (total_iram, total_dram, total_dram, total_diram,
      used_dram_data, used_dram_bss, used_dram_other,

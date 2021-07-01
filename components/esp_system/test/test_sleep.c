@@ -34,6 +34,9 @@
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/clk.h"
 #include "esp32c3/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/clk.h"
+#include "esp32h2/rom/rtc.h"
 #endif
 
 #define ESP_EXT0_WAKEUP_LEVEL_LOW 0

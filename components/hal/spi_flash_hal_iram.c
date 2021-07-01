@@ -27,7 +27,7 @@ void spi_flash_hal_setup_auto_resume_mode(spi_flash_host_inst_t *host);
 
 // HAL for
 //  - MEMSPI
-//  - SPI1~3 on ESP32/S2/S3/C3
+//  - SPI1~3 on ESP32/S2/S3/C3/H2
 // The common part is in spi_flash_hal_common.inc
 
 void spi_flash_hal_erase_chip(spi_flash_host_inst_t *host)

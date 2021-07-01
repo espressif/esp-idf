@@ -1,9 +1,14 @@
 
 menu "Wi-Fi"
+    visible if !IDF_TARGET_ESP32H2
+
+    config ESP32_WIFI_ENABLED
+        bool
+        default "y" if !IDF_TARGET_ESP32H2 # TODO: replace with SOC_CAPS_SUPPORT_WIFI after IDF-2223 is done
 
     config ESP32_WIFI_SW_COEXIST_ENABLE
         bool "Software controls WiFi/Bluetooth coexistence"
-        depends on BT_ENABLED
+        depends on ESP32_WIFI_ENABLED && BT_ENABLED
         default y
         help
             If enabled, WiFi & Bluetooth coexistence is controlled by software rather than hardware.
