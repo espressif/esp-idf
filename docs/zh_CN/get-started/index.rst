@@ -2,11 +2,12 @@
 快速入门
 ***********
 
-{IDF_TARGET_CORE_NUM:default="2", esp32="2", esp32s2="1", esp32c3="1"}
+{IDF_TARGET_CORE_NUM:default="2", esp32s2="1", esp32c3="1"}
 
-{IDF_TARGET_FEATURES:default="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32s2="WiFi, silicon revision 0, 2MB external flash", esp32c3="WiFi/BLE, silicon revision 0, 2MB external flash"}
+{IDF_TARGET_FEATURES:default="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32s2="WiFi, silicon revision 0, 2MB external flash", esp32s3="This is esp32s3 chip with 2 CPU core(s), WiFi/BLE, silicon revision 0, 2MB external flash", esp32c3="WiFi/BLE, silicon revision 0, 2MB external flash"}
 
-{IDF_TARGET_HEAP_SIZE:default="298968", esp32="298968", esp32s2="253900", esp32c3="337332"}
+{IDF_TARGET_HEAP_SIZE:default="298968", esp32="298968", esp32s2="253900", esp32s3="390684", esp32c3="337332"}
+
 
 :link_to_translation:`en:[English]`
 
@@ -40,19 +41,30 @@
     * 内置安全硬件
     * USB OTG 接口
 
+.. only:: esp32s3
+
+    ESP32-S3 SoC 芯片支持以下功能：
+
+    * 2.4 GHz Wi-Fi
+    * 低功耗蓝牙
+    * 高性能 Xtensa® 32 位 LX7 双核处理器
+    * 运行 RISC-V 或 FSM 内核的超低功耗协处理器
+    * 多种外设
+    * 内置安全硬件
+    * USB OTG 接口
+    * USB 串口/JTAG 控制器
+
 .. only:: esp32c3
 
     ESP32-C3 SoC 芯片支持以下功能：
 
     * 2.4 GHz Wi-Fi
-    * 低能耗蓝牙
+    * 低功耗蓝牙
     * 高性能 32 位 RISC-V 单核处理器
     * 多种外设
     * 内置安全硬件
 
-{IDF_TARGET_NAME} 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、稳定性、通用性和可靠性，适用于各种应用场景和不同功耗需求。
-
-乐鑫为用户提供完整的软、硬件资源，进行 {IDF_TARGET_NAME} 硬件设备的开发。其中，乐鑫的软件开发环境 ESP-IDF 旨在协助用户快速开发物联网 (IoT) 应用，可满足用户对 Wi-Fi、蓝牙、低功耗等方面的要求。
+{IDF_TARGET_NAME} 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、稳定性、通用性和可靠性，适用于各种应用场景和不同功耗需求。乐鑫为用户提供完整的软、硬件资源，进行 {IDF_TARGET_NAME} 硬件设备的开发。其中，乐鑫的软件开发环境 ESP-IDF 旨在协助用户快速开发物联网 (IoT) 应用，可满足用户对 Wi-Fi、蓝牙、低功耗等方面的要求。
 
 准备工作
 =============
@@ -119,6 +131,7 @@
 
         ESP32-C3-DevKitM-1 <../hw-reference/esp32c3/user-guide-devkitm-1>
         ESP32-C3-DevKitC-02 <../hw-reference/esp32c3/user-guide-devkitc-02>
+
 
 .. _get-started-step-by-step:
 
@@ -503,7 +516,7 @@ Windows 操作系统
 
 烧录过程中可能遇到的问题
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-{IDF_TARGET_STRAP_GPIO:default="GPIO0", esp32="GPIO0", esp32s2="GPIO0", esp32c3="GPIO9"}
+{IDF_TARGET_STRAP_GPIO:default="GPIO0", esp32="GPIO0", esp32s2="GPIO0", esp32s3="GPIO0", esp32c3="GPIO9"}
 
 如果在运行给定命令时出现如“连接失败”这样的错误，原因之一则可能是运行 ``esptool.py`` 出现错误。``esptool.py`` 是构建系统调用的程序，用于重置芯片、与 ROM 引导加载器交互以及烧录固件的工具。解决该问题的一个简单的方法就是按照以下步骤进行手动复位。如果问题仍未解决，请参考 `Troubleshooting <https://github.com/espressif/esptool#bootloader-wont-respond>`_ 获取更多信息。
 
@@ -605,6 +618,51 @@ Windows 操作系统
         Leaving...
         Hard resetting via RTS pin...
         Done
+
+.. only:: esp32s3
+
+    .. code-block:: none
+
+        ...
+        esptool.py esp32s3 -p /dev/ttyUSB0 -b 460800 --before=default_reset --after=hard_reset write_flash --flash_mode dio --flash_freq 80m --flash_size 2MB 0x0 bootloader/bootloader.bin 0x10000 hello-world.bin 0x8000 partition_table/partition-table.bin
+        esptool.py v3.2-dev
+        Serial port /dev/ttyUSB0
+        Connecting....
+        Chip is ESP32-S3
+        Features: WiFi, BLE
+        Crystal is 40MHz
+        MAC: 7c:df:a1:e0:00:64
+        Uploading stub...
+        Running stub...
+        Stub running...
+        Changing baud rate to 460800
+        Changed.
+        Configuring flash size...
+        Flash will be erased from 0x00000000 to 0x00004fff...
+        Flash will be erased from 0x00010000 to 0x00039fff...
+        Flash will be erased from 0x00008000 to 0x00008fff...
+        Compressed 18896 bytes to 11758...
+        Writing at 0x00000000... (100 %)
+        Wrote 18896 bytes (11758 compressed) at 0x00000000 in 0.5 seconds (effective 279.9 kbit/s)...
+        Hash of data verified.
+        Compressed 168208 bytes to 88178...
+        Writing at 0x00010000... (16 %)
+        Writing at 0x0001a80f... (33 %)
+        Writing at 0x000201f1... (50 %)
+        Writing at 0x00025dcf... (66 %)
+        Writing at 0x0002d0be... (83 %)
+        Writing at 0x00036c07... (100 %)
+        Wrote 168208 bytes (88178 compressed) at 0x00010000 in 2.4 seconds (effective 569.2 kbit/s)...
+        Hash of data verified.
+        Compressed 3072 bytes to 103...
+        Writing at 0x00008000... (100 %)
+        Wrote 3072 bytes (103 compressed) at 0x00008000 in 0.1 seconds (effective 478.9 kbit/s)...
+        Hash of data verified.
+
+        Leaving...
+        Hard resetting via RTS pin...
+        Done
+
 
 .. only:: esp32c3
 
