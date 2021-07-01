@@ -1,10 +1,10 @@
 menu "Supplicant"
 
     config WPA_MBEDTLS_CRYPTO
-        bool "Use MbedTLS crypto API's"
+        bool "Use MbedTLS crypto APIs"
         default y
         help
-            Select this option to use MbedTLS crypto API's which utilize hardware acceleration.
+            Select this option to use MbedTLS crypto APIs which utilize hardware acceleration.
 
     config WPA_WAPI_PSK
         bool "Enable WAPI PSK support"

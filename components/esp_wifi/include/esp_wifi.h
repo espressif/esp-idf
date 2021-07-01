@@ -1178,6 +1178,31 @@ esp_err_t esp_wifi_set_rssi_threshold(int32_t rssi);
 esp_err_t esp_wifi_ftm_initiate_session(wifi_ftm_initiator_cfg_t *cfg);
 
 /**
+  * @brief      End the ongoing FTM Initiator session
+  *
+  * @attention  This API works only on FTM Initiator
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_wifi_ftm_end_session(void);
+
+/**
+  * @brief      Set offset in cm for FTM Responder. An equivalent offset is calculated in picoseconds
+  *             and added in TOD of FTM Measurement frame (T1).
+  *
+  * @attention  Use this API only in AP mode before performing FTM as responder
+  *
+  * @param      offset_cm  T1 Offset to be added in centimeters
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_wifi_ftm_resp_set_offset(int16_t offset_cm);
+
+/**
   * @brief      Enable or disable 11b rate of specified interface
   *
   * @attention  1. This API should be called after esp_wifi_init() and before esp_wifi_start().

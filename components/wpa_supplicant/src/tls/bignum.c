@@ -2,25 +2,17 @@
  * Big number math
  * Copyright (c) 2006, Jouni Malinen <j@w1.fi>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * Alternatively, this software may be distributed under the terms of BSD
- * license.
- *
- * See README and COPYING for more details.
+ * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
  */
 
-#include "utils/includes.h"
-#include "utils/common.h"
-#include "utils/wpabuf.h"
-#include "utils/wpa_debug.h"
-#include "tls/bignum.h"
+#include "includes.h"
 
-#define CONFIG_INTERNAL_LIBTOMMATH
+#include "common.h"
+#include "bignum.h"
+
 #ifdef CONFIG_INTERNAL_LIBTOMMATH
-#include "tls/libtommath.h"
+#include "libtommath.h"
 #else /* CONFIG_INTERNAL_LIBTOMMATH */
 #include <tommath.h>
 #endif /* CONFIG_INTERNAL_LIBTOMMATH */
@@ -35,10 +27,9 @@
  * bignum_init - Allocate memory for bignum
  * Returns: Pointer to allocated bignum or %NULL on failure
  */
-struct bignum *
-bignum_init(void)
+struct bignum * bignum_init(void)
 {
-	struct bignum *n = (struct bignum *)os_zalloc(sizeof(mp_int));
+	struct bignum *n = os_zalloc(sizeof(mp_int));
 	if (n == NULL)
 		return NULL;
 	if (mp_init((mp_int *) n) != MP_OKAY) {
@@ -53,8 +44,7 @@ bignum_init(void)
  * bignum_deinit - Free bignum
  * @n: Bignum from bignum_init()
  */
-void
-bignum_deinit(struct bignum *n)
+void bignum_deinit(struct bignum *n)
 {
 	if (n) {
 		mp_clear((mp_int *) n);
@@ -68,8 +58,7 @@ bignum_deinit(struct bignum *n)
  * @n: Bignum from bignum_init()
  * Returns: Length of n if written to a binary buffer
  */
-size_t
-bignum_get_unsigned_bin_len(struct bignum *n)
+size_t bignum_get_unsigned_bin_len(struct bignum *n)
 {
 	return mp_unsigned_bin_size((mp_int *) n);
 }
@@ -83,8 +72,7 @@ bignum_get_unsigned_bin_len(struct bignum *n)
  * enough. Set to used buffer length on success if not %NULL.
  * Returns: 0 on success, -1 on failure
  */
-int
-bignum_get_unsigned_bin(const struct bignum *n, u8 *buf, size_t *len)
+int bignum_get_unsigned_bin(const struct bignum *n, u8 *buf, size_t *len)
 {
 	size_t need = mp_unsigned_bin_size((mp_int *) n);
 	if (len && need > *len) {
@@ -108,8 +96,7 @@ bignum_get_unsigned_bin(const struct bignum *n, u8 *buf, size_t *len)
  * @len: Length of buf in octets
  * Returns: 0 on success, -1 on failure
  */
-int
-bignum_set_unsigned_bin(struct bignum *n, const u8 *buf, size_t len)
+int bignum_set_unsigned_bin(struct bignum *n, const u8 *buf, size_t len)
 {
 	if (mp_read_unsigned_bin((mp_int *) n, (u8 *) buf, len) != MP_OKAY) {
 		wpa_printf(MSG_DEBUG, "BIGNUM: %s failed", __func__);
@@ -125,21 +112,19 @@ bignum_set_unsigned_bin(struct bignum *n, const u8 *buf, size_t len)
  * @b: Bignum from bignum_init()
  * Returns: 0 on success, -1 on failure
  */
-int
-bignum_cmp(const struct bignum *a, const struct bignum *b)
+int bignum_cmp(const struct bignum *a, const struct bignum *b)
 {
 	return mp_cmp((mp_int *) a, (mp_int *) b);
 }
 
 
 /**
- * bignum_cmd_d - Compare bignum to standard integer
+ * bignum_cmp_d - Compare bignum to standard integer
  * @a: Bignum from bignum_init()
  * @b: Small integer
- * Returns: 0 on success, -1 on failure
+ * Returns: -1 if a < b, 0 if a == b, 1 if a > b
  */
-int
-bignum_cmp_d(const struct bignum *a, unsigned long b)
+int bignum_cmp_d(const struct bignum *a, unsigned long b)
 {
 	return mp_cmp_d((mp_int *) a, b);
 }
@@ -152,8 +137,7 @@ bignum_cmp_d(const struct bignum *a, unsigned long b)
  * @c: Bignum from bignum_init(); used to store the result of a + b
  * Returns: 0 on success, -1 on failure
  */
-int
-bignum_add(const struct bignum *a, const struct bignum *b,
+int bignum_add(const struct bignum *a, const struct bignum *b,
 	       struct bignum *c)
 {
 	if (mp_add((mp_int *) a, (mp_int *) b, (mp_int *) c) != MP_OKAY) {
@@ -171,8 +155,7 @@ bignum_add(const struct bignum *a, const struct bignum *b,
  * @c: Bignum from bignum_init(); used to store the result of a - b
  * Returns: 0 on success, -1 on failure
  */
-int
-bignum_sub(const struct bignum *a, const struct bignum *b,
+int bignum_sub(const struct bignum *a, const struct bignum *b,
 	       struct bignum *c)
 {
 	if (mp_sub((mp_int *) a, (mp_int *) b, (mp_int *) c) != MP_OKAY) {
@@ -190,8 +173,7 @@ bignum_sub(const struct bignum *a, const struct bignum *b,
  * @c: Bignum from bignum_init(); used to store the result of a * b
  * Returns: 0 on success, -1 on failure
  */
-int
-bignum_mul(const struct bignum *a, const struct bignum *b,
+int bignum_mul(const struct bignum *a, const struct bignum *b,
 	       struct bignum *c)
 {
 	if (mp_mul((mp_int *) a, (mp_int *) b, (mp_int *) c) != MP_OKAY) {
@@ -210,8 +192,7 @@ bignum_mul(const struct bignum *a, const struct bignum *b,
  * @d: Bignum from bignum_init(); used to store the result of a * b (mod c)
  * Returns: 0 on success, -1 on failure
  */
-int
-bignum_mulmod(const struct bignum *a, const struct bignum *b,
+int bignum_mulmod(const struct bignum *a, const struct bignum *b,
 		  const struct bignum *c, struct bignum *d)
 {
 	if (mp_mulmod((mp_int *) a, (mp_int *) b, (mp_int *) c, (mp_int *) d)
@@ -231,8 +212,7 @@ bignum_mulmod(const struct bignum *a, const struct bignum *b,
  * @d: Bignum from bignum_init(); used to store the result of a^b (mod c)
  * Returns: 0 on success, -1 on failure
  */
-int
-bignum_exptmod(const struct bignum *a, const struct bignum *b,
+int bignum_exptmod(const struct bignum *a, const struct bignum *b,
 		   const struct bignum *c, struct bignum *d)
 {
 	if (mp_exptmod((mp_int *) a, (mp_int *) b, (mp_int *) c, (mp_int *) d)

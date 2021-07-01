@@ -32,18 +32,17 @@ Build and flash the example on a supported device to see below output -
  ==========================================================
  |                      Steps to test FTM                 |
  |                                                        |
- |  1. Use 'help' to gain overview of commands            |
- |  2. Use 'scan' command to search for external AP's     |
+ |  1. Use 'help' for detailed information on parameters  |
+ |  2. Start SoftAP with command 'ap <SSID> <password>'   |
  |                          OR                            |
- |  2. Start SoftAP on another device using 'ap' command  |
- |  3. Start FTM with command 'ftm -I -s <SSID>'          |
- |                                                        |
+ |  2. Use 'scan' command to search for external AP's     |
+ |  3. On second device initiate FTM with an AP using     |
+ |     command 'ftm -I -s <SSID>'                         |
  ==========================================================
 ftm>
 ```
 
-Use `help` to get a list of available commands and options. Use `scan` command to scan for AP's that support FTM Responder mode.
-Before initiating FTM with an external AP, make sure that `FTM Responder` is visible in the respective scan result entry.
+Use `help` to get a list of available commands and options. Use `scan` command to scan for AP's that support FTM Responder mode. Before initiating FTM with an external AP, make sure that `FTM Responder` tag is visible in the respective scan result entry. Alternatively, start SoftAP on another device using `ap` command, it supports FTM Responder by default. If external FTM Initiators get a large error in distance readings with the SoftAP, note down the reading at zero distance in centimeters, say `cm0`. This distance can be offset using command `ftm -R -o <cm0>` to give accurate readings with the Initiator.
 
 ```bash
 ftm> scan
@@ -65,17 +64,17 @@ ftm>
 ```
 
 Issue `ftm -I` to initiate a session with default configuration of 32 FTM frames. For more configurations below options are available -
-`ftm  [-I] [-c <0/16/24/32/64>] [-p <2-255 (x 100 mSec)>] [-s SSID]`
+`ftm  [-I] [-c <0/8/16/24/32/64>] [-p <2-255 (x 100 mSec)>] [-s SSID]`
 Where -
 * `-I` OR `--ftm_initiator`:  FTM Initiator mode
-* `-c` OR `--frm_count`: FTM frames to be exchanged (Valid values: 0=No preference, 16, 24, 32, 64, default: 32)
+* `-c` OR `--frm_count`: FTM frames to be exchanged (Valid values: 0=No preference, 8, 16, 24, 32, 64, default: 32)
 * `-p` OR `--burst_period`: Periodicity of FTM bursts in 100's of miliseconds (0: No preference, default: 2)
 * `-s` OR `--ssid=SSID`: SSID of AP that supports FTM Responder mode
 
 Currently FTM is only supported in below configuration -
 1. Station as Initiator and SoftAP as Responder on supported ESP devices
 2. Station as Initiator and an external AP that supports FTM in Responder mode
-The first option should be preferred since ESP devices are self calibrated for high resolution measurement. FTM Responder support for external Stations and ASAP mode will follow in future updates.
+The first option should be preferred since ESP devices are self calibrated for high resolution measurement.
 
 ## Example Output
 Example output of an FTM Procedure -

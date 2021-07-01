@@ -21,6 +21,8 @@
 #include <time.h>
 #include "unity.h"
 #include <string.h>
+#include "utils/common.h"
+#include "utils/includes.h"
 #include "crypto/crypto.h"
 #include "../src/common/sae.h"
 #include "utils/wpabuf.h"

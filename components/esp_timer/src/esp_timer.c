@@ -530,3 +530,8 @@ uint32_t IRAM_ATTR esp_system_get_time_resolution(void)
     return 1000;
 }
 #endif
+
+bool esp_timer_is_active(esp_timer_handle_t timer)
+{
+    return timer_armed(timer);
+}

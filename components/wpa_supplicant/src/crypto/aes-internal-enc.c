@@ -2,33 +2,25 @@
  * AES (Rijndael) cipher - encrypt
  *
  * Modifications to public domain implementation:
- * - support only 128-bit keys
  * - cleanup
  * - use C pre-processor to make it easier to change S table access
  * - added option (AES_SMALL_TABLES) for reducing code size by about 8 kB at
  *   cost of reduced throughput (quite small difference on Pentium 4,
  *   10-25% when using -O1 or -O2 optimization)
  *
- * Copyright (c) 2003-2005, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2003-2012, Jouni Malinen <j@w1.fi>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * Alternatively, this software may be distributed under the terms of BSD
- * license.
- *
- * See README and COPYING for more details.
+ * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
  */
 
-#include "utils/includes.h"
-#include "utils/common.h"
+#include "includes.h"
+
+#include "common.h"
 #include "crypto.h"
 #include "aes_i.h"
 
-#include "os.h"
-
-void  rijndaelEncrypt(const u32 rk[], int Nr, const u8 pt[16], u8 ct[16])
+static void rijndaelEncrypt(const u32 rk[], int Nr, const u8 pt[16], u8 ct[16])
 {
 	u32 s0, s1, s2, s3, t0, t1, t2, t3;
 #ifndef FULL_UNROLL
@@ -103,10 +95,14 @@ d##3 = TE0(s##3) ^ TE1(s##0) ^ TE2(s##1) ^ TE3(s##2) ^ rk[4 * i + 3]
 }
 
 
-void *  aes_encrypt_init(const u8 *key, size_t len)
+void * aes_encrypt_init(const u8 *key, size_t len)
 {
 	u32 *rk;
 	int res;
+
+	if (TEST_FAIL())
+		return NULL;
+
 	rk = os_malloc(AES_PRIV_SIZE);
 	if (rk == NULL)
 		return NULL;
@@ -120,14 +116,15 @@ void *  aes_encrypt_init(const u8 *key, size_t len)
 }
 
 
-void  aes_encrypt(void *ctx, const u8 *plain, u8 *crypt)
+int aes_encrypt(void *ctx, const u8 *plain, u8 *crypt)
 {
 	u32 *rk = ctx;
 	rijndaelEncrypt(ctx, rk[AES_PRIV_NR_POS], plain, crypt);
+	return 0;
 }
 
 
-void  aes_encrypt_deinit(void *ctx)
+void aes_encrypt_deinit(void *ctx)
 {
 	os_memset(ctx, 0, AES_PRIV_SIZE);
 	os_free(ctx);
