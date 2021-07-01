@@ -616,15 +616,6 @@ TEST_CASE("test spi slave hd segment mode, master too long", "[spi][spi_slv_hd]"
 #include "unity.h"
 #include "test/test_common_spi.h"
 
-static void get_tx_buffer(uint32_t seed, uint8_t *master_send_buf, uint8_t *slave_send_buf, int send_buf_size)
-{
-    srand(199);
-    for (int i = 0; i < send_buf_size * 2; i++) {
-        slave_send_buf[i] = rand();
-        master_send_buf[i] = rand();
-    }
-}
-
 static void hd_master(void)
 {
     spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();

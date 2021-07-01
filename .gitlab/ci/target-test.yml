@@ -652,6 +652,12 @@ UT_047:
     - ESP32S2_IDF
     - UT_T1_1
 
+UT_S2_SPI_DUAL:
+  extends: .unit_test_esp32s2_template
+  tags:
+    - ESP32S2_IDF
+    - Example_SPI_Multi_device
+
 UT_C3:
   extends: .unit_test_esp32c3_template
   parallel: 33
@@ -697,6 +703,12 @@ UT_S3:
   tags:
     - ESP32S3_IDF
     - UT_T1_1
+
+UT_S3_SPI_DUAL:
+  extends: .unit_test_esp32s3_template
+  tags:
+    - ESP32S3_IDF
+    - Example_SPI_Multi_device
 
 .integration_test_template:
   extends:
