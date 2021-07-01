@@ -43,6 +43,26 @@ entries:
 entries:
     wifi_slp_rx_iram -> iram0_text
 
+[sections:wifi_log_error]
+entries:
+    .rodata_wlog_error+
+
+[sections:wifi_log_warning]
+entries:
+    .rodata_wlog_warning+
+
+[sections:wifi_log_info]
+entries:
+    .rodata_wlog_info+
+
+[sections:wifi_log_debug]
+entries:
+    .rodata_wlog_debug+
+
+[sections:wifi_log_verbose]
+entries:
+    .rodata_wlog_verbose+
+
 [scheme:wifi_default]
 entries:
     wifi_slp_iram -> flash_text
@@ -50,6 +70,26 @@ entries:
     wifi_slp_rx_iram -> flash_text
     wifi_iram -> flash_text
     wifi_rx_iram -> flash_text
+    if LOG_MAXIMUM_LEVEL <= 0:
+        wifi_log_error -> rodata_noload
+    else:
+        wifi_log_error -> flash_rodata
+    if LOG_MAXIMUM_LEVEL <= 1:
+        wifi_log_warning -> rodata_noload
+    else:
+        wifi_log_warning -> flash_rodata
+    if LOG_MAXIMUM_LEVEL <= 2:
+        wifi_log_info -> rodata_noload
+    else:
+        wifi_log_info -> flash_rodata
+    if LOG_MAXIMUM_LEVEL <= 3:
+        wifi_log_debug -> rodata_noload
+    else:
+        wifi_log_debug -> flash_rodata
+    if LOG_MAXIMUM_LEVEL <= 4:
+        wifi_log_verbose -> rodata_noload
+    else:
+        wifi_log_verbose -> flash_rodata
 
 [mapping:wifi_default]
 archive: *

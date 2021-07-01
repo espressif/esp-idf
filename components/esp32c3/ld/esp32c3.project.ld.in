@@ -345,6 +345,12 @@ SECTIONS
     . = ALIGN(4);
   } > default_rodata_seg
 
+  .flash.rodata_noload (NOLOAD) :
+  {
+    . = ALIGN (4);
+    mapping[rodata_noload]
+  } > default_rodata_seg
+
   /* Marks the end of IRAM code segment */
   .iram0.text_end (NOLOAD) :
   {
