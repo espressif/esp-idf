@@ -29,6 +29,7 @@
 #include "soc/gpio_struct.h"
 #include "hal/cpu_hal.h"
 #include "hal/gpio_ll.h"
+#include "esp_rom_sys.h"
 #include "regi2c_ctrl.h"
 #include "soc_log.h"
 #include "sdkconfig.h"
