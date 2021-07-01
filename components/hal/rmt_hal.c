@@ -24,6 +24,7 @@ void rmt_hal_init(rmt_hal_context_t *hal)
 void rmt_hal_tx_channel_reset(rmt_hal_context_t *hal, uint32_t channel)
 {
     rmt_ll_tx_reset_pointer(hal->regs, channel);
+    rmt_ll_tx_reset_loop(hal->regs, channel);
     rmt_ll_enable_tx_err_interrupt(hal->regs, channel, false);
     rmt_ll_enable_tx_end_interrupt(hal->regs, channel, false);
     rmt_ll_enable_tx_thres_interrupt(hal->regs, channel, false);

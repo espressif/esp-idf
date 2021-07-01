@@ -14,11 +14,11 @@
 
 #pragma once
 
+#include "soc/soc_caps.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "soc/soc_caps.h"
 
 /**
 * @brief RMT channel ID

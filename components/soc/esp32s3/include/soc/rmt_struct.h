@@ -1,329 +1,1093 @@
-// Copyright 2017-2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-#ifndef _SOC_RMT_STRUCT_H_
-#define _SOC_RMT_STRUCT_H_
-
+/** Copyright 2021 Espressif Systems (Shanghai) PTE LTD
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+#pragma once
 
 #include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef volatile struct {
-    uint32_t data_ch[8];
-    union {
-        struct {
-            uint32_t tx_start                      :    1;  /*Set this bit to start sending data on CHANNEL$n.*/
-            uint32_t mem_rd_rst                    :    1;  /*Set this bit to reset read ram address for CHANNEL$n by accessing transmitter.*/
-            uint32_t mem_rst                       :    1;  /*Set this bit to reset W/R ram address for CHANNEL$n by accessing apb fifo.*/
-            uint32_t tx_conti_mode                 :    1;  /*Set this bit to restart transmission  from the first data to the last data in CHANNEL$n.*/
-            uint32_t mem_tx_wrap_en                :    1;  /*This is the channel $n enable bit for wraparound mode: it will resume sending at the start when the data to be sent is more than its memory size.*/
-            uint32_t idle_out_lv                   :    1;  /*This bit configures the level of output signal in CHANNEL$n when the latter is in IDLE state.*/
-            uint32_t idle_out_en                   :    1;  /*This is the output enable-control bit for CHANNEL$n in IDLE state.*/
-            uint32_t tx_stop                       :    1;  /*Set this bit to stop the transmitter of CHANNEL$n sending data out.*/
-            uint32_t div_cnt                       :    8;  /*This register is used to configure the divider for clock of CHANNEL$n.*/
-            uint32_t mem_size                      :    4;  /*This register is used to configure the maximum size of memory allocated to CHANNEL$n.*/
-            uint32_t carrier_eff_en                :    1;  /*1: Add carrier modulation on the output signal only at the send data state for CHANNEL$n. 0: Add carrier modulation on the output signal at all state for CHANNEL$n. Only valid when RMT_CARRIER_EN_CH$n is 1.*/
-            uint32_t carrier_en                    :    1;  /*This is the carrier modulation enable-control bit for CHANNEL$n. 1: Add carrier modulation in the output signal. 0: No carrier modulation in sig_out.*/
-            uint32_t carrier_out_lv                :    1;  /*This bit is used to configure the position of carrier wave for CHANNEL$n.; ; 1'h0: add carrier wave on low level.; ; 1'h1: add carrier wave on high level.*/
-            uint32_t afifo_rst                     :    1;  /*Reserved*/
-            uint32_t conf_update                   :    1;  /*synchronization bit for CHANNEL$n*/
-            uint32_t reserved25                    :    7;  /*Reserved*/
-        };
-        uint32_t val;
-    } tx_conf[4];
+/** Group: FIFO R/W registers */
+/** Type of chndata register
+ *  The read and write  data register for CHANNELn by apb fifo access.
+ */
+typedef union {
     struct {
-        union {
-            struct {
-                uint32_t div_cnt                       :    8;  /*This register is used to configure the divider for clock of CHANNEL$m.*/
-                uint32_t idle_thres                    :    15;  /*When no edge is detected on the input signal and continuous clock cycles is longer than this register value, received process is finished.*/
-                uint32_t reserved23                    :    1;  /*Reserved*/
-                uint32_t mem_size                      :    4;  /*This register is used to configure the maximum size of memory allocated to CHANNEL$m.*/
-                uint32_t carrier_en                    :    1;  /*This is the carrier modulation enable-control bit for CHANNEL$m. 1: Add carrier modulation in the output signal. 0: No carrier modulation in sig_out.*/
-                uint32_t carrier_out_lv                :    1;  /*This bit is used to configure the position of carrier wave for CHANNEL$m.; ; 1'h0: add carrier wave on low level.; ; 1'h1: add carrier wave on high level.*/
-                uint32_t reserved30                    :    2;  /*Reserved*/
-            };
-            uint32_t val;
-        } conf0;
-        union {
-            struct {
-                uint32_t rx_en                         :    1;  /*Set this bit to enable receiver to receive data on CHANNEL$m.*/
-                uint32_t mem_wr_rst                    :    1;  /*Set this bit to reset write ram address for CHANNEL$m by accessing receiver.*/
-                uint32_t mem_rst                       :    1;  /*Set this bit to reset W/R ram address for CHANNEL$m by accessing apb fifo.*/
-                uint32_t mem_owner                     :    1;  /*This register marks the ownership of CHANNEL$m's ram block.; ; 1'h1: Receiver is using the ram. ; ; 1'h0: APB bus is using the ram.*/
-                uint32_t rx_filter_en                  :    1;  /*This is the receive filter's enable bit for CHANNEL$m.*/
-                uint32_t rx_filter_thres               :    8;  /*Ignores the input pulse when its width is smaller than this register value in APB clock periods (in receive mode).*/
-                uint32_t mem_rx_wrap_en                :    1;  /*This is the channel $m enable bit for wraparound mode: it will resume receiving at the start when the data to be received is more than its memory size.*/
-                uint32_t afifo_rst                     :    1;  /*Reserved*/
-                uint32_t conf_update                   :    1;  /*synchronization bit for CHANNEL$m*/
-                uint32_t reserved16                    :    16;  /*Reserved*/
-            };
-            uint32_t val;
-        } conf1;
-    } rx_conf[4];
+        /** chndata : RO; bitpos: [31:0]; default: 0;
+         *  Read and write data for channel n via APB FIFO.
+         */
+        uint32_t chndata: 32;
+    };
+    uint32_t val;
+} rmt_chndata_reg_t;
+
+/** Type of chmdata register
+ *  The read and write  data register for CHANNEL$n by apb fifo access.
+ */
+typedef union {
+    struct {
+        /** chmdata : RO; bitpos: [31:0]; default: 0;
+         *  Read and write data for channel $n via APB FIFO.
+         */
+        uint32_t chmdata: 32;
+    };
+    uint32_t val;
+} rmt_chmdata_reg_t;
+
+
+/** Group: Configuration registers */
+/** Type of chnconf0 register
+ *  Channel n configure register 0
+ */
+typedef union {
+    struct {
+        /** tx_start_n : WT; bitpos: [0]; default: 0;
+         *  Set this bit to start sending data on CHANNELn.
+         */
+        uint32_t tx_start_n: 1;
+        /** mem_rd_rst_n : WT; bitpos: [1]; default: 0;
+         *  Set this bit to reset read ram address for CHANNELn by accessing transmitter.
+         */
+        uint32_t mem_rd_rst_n: 1;
+        /** apb_mem_rst_n : WT; bitpos: [2]; default: 0;
+         *  Set this bit to reset W/R ram address for CHANNELn by accessing apb fifo.
+         */
+        uint32_t apb_mem_rst_n: 1;
+        /** tx_conti_mode_n : R/W; bitpos: [3]; default: 0;
+         *  Set this bit to restart transmission  from the first data to the last data in
+         *  CHANNELn.
+         */
+        uint32_t tx_conti_mode_n: 1;
+        /** mem_tx_wrap_en_n : R/W; bitpos: [4]; default: 0;
+         *  This is the channel n enable bit for wraparound mode: it will resume sending at the
+         *  start when the data to be sent is more than its memory size.
+         */
+        uint32_t mem_tx_wrap_en_n: 1;
+        /** idle_out_lv_n : R/W; bitpos: [5]; default: 0;
+         *  This bit configures the level of output signal in CHANNELn when the latter is in
+         *  IDLE state.
+         */
+        uint32_t idle_out_lv_n: 1;
+        /** idle_out_en_n : R/W; bitpos: [6]; default: 0;
+         *  This is the output enable-control bit for CHANNELn in IDLE state.
+         */
+        uint32_t idle_out_en_n: 1;
+        /** tx_stop_n : R/W/SC; bitpos: [7]; default: 0;
+         *  Set this bit to stop the transmitter of CHANNELn sending data out.
+         */
+        uint32_t tx_stop_n: 1;
+        /** div_cnt_n : R/W; bitpos: [15:8]; default: 2;
+         *  This register is used to configure the divider for clock of CHANNELn.
+         */
+        uint32_t div_cnt_n: 8;
+        /** mem_size_n : R/W; bitpos: [19:16]; default: 1;
+         *  This register is used to configure the maximum size of memory allocated to CHANNELn.
+         */
+        uint32_t mem_size_n: 4;
+        /** carrier_eff_en_n : R/W; bitpos: [20]; default: 1;
+         *  1: Add carrier modulation on the output signal only at the send data state for
+         *  CHANNELn. 0: Add carrier modulation on the output signal at all state for CHANNELn.
+         *  Only valid when RMT_CARRIER_EN_CHn is 1.
+         */
+        uint32_t carrier_eff_en_n: 1;
+        /** carrier_en_n : R/W; bitpos: [21]; default: 1;
+         *  This is the carrier modulation enable-control bit for CHANNELn. 1: Add carrier
+         *  modulation in the output signal. 0: No carrier modulation in sig_out.
+         */
+        uint32_t carrier_en_n: 1;
+        /** carrier_out_lv_n : R/W; bitpos: [22]; default: 1;
+         *  This bit is used to configure the position of carrier wave for CHANNELn.
+         *
+         *  1'h0: add carrier wave on low level.
+         *
+         *  1'h1: add carrier wave on high level.
+         */
+        uint32_t carrier_out_lv_n: 1;
+        /** afifo_rst_n : WT; bitpos: [23]; default: 0;
+         *  Reserved
+         */
+        uint32_t afifo_rst_n: 1;
+        /** conf_update_n : WT; bitpos: [24]; default: 0;
+         *  synchronization bit for CHANNELn
+         */
+        uint32_t conf_update_n: 1;
+        uint32_t reserved_25: 7;
+    };
+    uint32_t val;
+} rmt_chnconf0_reg_t;
+
+typedef struct {
+    /** Type of chmconf0 register
+    *  Channel m configure register 0
+    */
     union {
         struct {
-            uint32_t mem_raddr_ex                  :    10;  /*This register records the memory address offset when transmitter of CHANNEL$n is using the RAM.*/
-            uint32_t reserved10                    :    1;  /*Reserved*/
-            uint32_t mem_waddr                     :    10;  /*This register records the memory address offset when writes RAM over APB bus.*/
-            uint32_t reserved21                    :    1;  /*Reserved*/
-            uint32_t state                         :    3;  /*This register records the FSM status of CHANNEL$n.*/
-            uint32_t mem_empty                     :    1;  /*This status bit will be set when the data to be set is more than memory size and the wraparound mode is disabled.*/
-            uint32_t mem_wr_err                    :    1;  /*This status bit will be set if the offset address out of memory size when writes via APB bus.*/
-            uint32_t reserved27                    :    5;  /*Reserved*/
+            /** div_cnt_m : R/W; bitpos: [7:0]; default: 2;
+             *  This register is used to configure the divider for clock of CHANNELm.
+             */
+            uint32_t div_cnt_m: 8;
+            /** idle_thres_m : R/W; bitpos: [22:8]; default: 32767;
+             *  When no edge is detected on the input signal and continuous clock cycles is longer
+             *  than this register value, received process is finished.
+             */
+            uint32_t idle_thres_m: 15;
+            uint32_t reserved_23: 1;
+            /** mem_size_m : R/W; bitpos: [27:24]; default: 1;
+             *  This register is used to configure the maximum size of memory allocated to CHANNELm.
+             */
+            uint32_t mem_size_m: 4;
+            /** carrier_en_m : R/W; bitpos: [28]; default: 1;
+             *  This is the carrier modulation enable-control bit for CHANNELm. 1: Add carrier
+             *  modulation in the output signal. 0: No carrier modulation in sig_out.
+             */
+            uint32_t carrier_en_m: 1;
+            /** carrier_out_lv_m : R/W; bitpos: [29]; default: 1;
+             *  This bit is used to configure the position of carrier wave for CHANNELm.
+             *
+             *  1'h0: add carrier wave on low level.
+             *
+             *  1'h1: add carrier wave on high level.
+             */
+            uint32_t carrier_out_lv_m: 1;
+            uint32_t reserved_30: 2;
         };
         uint32_t val;
-    } tx_status[4];
+    } conf0;
+
+    /** Type of chmconf1 register
+     *  Channel m configure register 1
+     */
     union {
         struct {
-            uint32_t mem_waddr_ex                  :    10;  /*This register records the memory address offset when receiver of CHANNEL$m is using the RAM.*/
-            uint32_t reserved10                    :    1;  /*Reserved*/
-            uint32_t mem_raddr                     :    10;  /*This register records the memory address offset when reads RAM over APB bus.*/
-            uint32_t reserved21                    :    1;  /*Reserved*/
-            uint32_t state                         :    3;  /*This register records the FSM status of CHANNEL$m.*/
-            uint32_t mem_owner_err                 :    1;  /*This status bit will be set when the ownership of memory block is wrong.*/
-            uint32_t mem_full                      :    1;  /*This status bit will be set if the receiver receives more data than the memory size.*/
-            uint32_t mem_rd_err                    :    1;  /*This status bit will be set if the offset address out of memory size when reads via APB bus.*/
-            uint32_t reserved28                    :    4;  /*Reserved*/
+            /** rx_en_m : R/W; bitpos: [0]; default: 0;
+             *  Set this bit to enable receiver to receive data on CHANNELm.
+             */
+            uint32_t rx_en_m: 1;
+            /** mem_wr_rst_m : WT; bitpos: [1]; default: 0;
+             *  Set this bit to reset write ram address for CHANNELm by accessing receiver.
+             */
+            uint32_t mem_wr_rst_m: 1;
+            /** apb_mem_rst_m : WT; bitpos: [2]; default: 0;
+             *  Set this bit to reset W/R ram address for CHANNELm by accessing apb fifo.
+             */
+            uint32_t apb_mem_rst_m: 1;
+            /** mem_owner_m : R/W/SC; bitpos: [3]; default: 1;
+             *  This register marks the ownership of CHANNELm's ram block.
+             *
+             *  1'h1: Receiver is using the ram.
+             *
+             *  1'h0: APB bus is using the ram.
+             */
+            uint32_t mem_owner_m: 1;
+            /** rx_filter_en_m : R/W; bitpos: [4]; default: 0;
+             *  This is the receive filter's enable bit for CHANNELm.
+             */
+            uint32_t rx_filter_en_m: 1;
+            /** rx_filter_thres_m : R/W; bitpos: [12:5]; default: 15;
+             *  Ignores the input pulse when its width is smaller than this register value in APB
+             *  clock periods (in receive mode).
+             */
+            uint32_t rx_filter_thres_m: 8;
+            /** mem_rx_wrap_en_m : R/W; bitpos: [13]; default: 0;
+             *  This is the channel m enable bit for wraparound mode: it will resume receiving at
+             *  the start when the data to be received is more than its memory size.
+             */
+            uint32_t mem_rx_wrap_en_m: 1;
+            /** afifo_rst_m : WT; bitpos: [14]; default: 0;
+             *  Reserved
+             */
+            uint32_t afifo_rst_m: 1;
+            /** conf_update_m : WT; bitpos: [15]; default: 0;
+             *  synchronization bit for CHANNELm
+             */
+            uint32_t conf_update_m: 1;
+            uint32_t reserved_16: 16;
         };
         uint32_t val;
-    } rx_status[4];
-    union {
-        struct {
-            uint32_t ch0_tx_end                    :    1;  /*The interrupt raw bit for CHANNEL$n. Triggered when transmission done.*/
-            uint32_t ch1_tx_end                    :    1;  /*The interrupt raw bit for CHANNEL$n. Triggered when transmission done.*/
-            uint32_t ch2_tx_end                    :    1;  /*The interrupt raw bit for CHANNEL$n. Triggered when transmission done.*/
-            uint32_t ch3_tx_end                    :    1;  /*The interrupt raw bit for CHANNEL$n. Triggered when transmission done.*/
-            uint32_t ch0_err                       :    1;  /*The interrupt raw bit for CHANNEL$n. Triggered when error occurs.*/
-            uint32_t ch1_err                       :    1;  /*The interrupt raw bit for CHANNEL$n. Triggered when error occurs.*/
-            uint32_t ch2_err                       :    1;  /*The interrupt raw bit for CHANNEL$n. Triggered when error occurs.*/
-            uint32_t ch3_err                       :    1;  /*The interrupt raw bit for CHANNEL$n. Triggered when error occurs.*/
-            uint32_t ch0_tx_thr_event              :    1;  /*The interrupt raw bit for CHANNEL$n. Triggered when transmitter sent more data than configured value.*/
-            uint32_t ch1_tx_thr_event              :    1;  /*The interrupt raw bit for CHANNEL$n. Triggered when transmitter sent more data than configured value.*/
-            uint32_t ch2_tx_thr_event              :    1;  /*The interrupt raw bit for CHANNEL$n. Triggered when transmitter sent more data than configured value.*/
-            uint32_t ch3_tx_thr_event              :    1;  /*The interrupt raw bit for CHANNEL$n. Triggered when transmitter sent more data than configured value.*/
-            uint32_t ch0_tx_loop                   :    1;  /*The interrupt raw bit for CHANNEL$n. Triggered when the loop count reaches the configured threshold value.*/
-            uint32_t ch1_tx_loop                   :    1;  /*The interrupt raw bit for CHANNEL$n. Triggered when the loop count reaches the configured threshold value.*/
-            uint32_t ch2_tx_loop                   :    1;  /*The interrupt raw bit for CHANNEL$n. Triggered when the loop count reaches the configured threshold value.*/
-            uint32_t ch3_tx_loop                   :    1;  /*The interrupt raw bit for CHANNEL$n. Triggered when the loop count reaches the configured threshold value.*/
-            uint32_t ch4_rx_end                    :    1;  /*The interrupt raw bit for CHANNEL$m. Triggered when reception done.*/
-            uint32_t ch5_rx_end                    :    1;  /*The interrupt raw bit for CHANNEL$m. Triggered when reception done.*/
-            uint32_t ch6_rx_end                    :    1;  /*The interrupt raw bit for CHANNEL$m. Triggered when reception done.*/
-            uint32_t ch7_rx_end                    :    1;  /*The interrupt raw bit for CHANNEL$m. Triggered when reception done.*/
-            uint32_t ch4_err                       :    1;  /*The interrupt raw bit for CHANNEL$m. Triggered when error occurs.*/
-            uint32_t ch5_err                       :    1;  /*The interrupt raw bit for CHANNEL$m. Triggered when error occurs.*/
-            uint32_t ch6_err                       :    1;  /*The interrupt raw bit for CHANNEL$m. Triggered when error occurs.*/
-            uint32_t ch7_err                       :    1;  /*The interrupt raw bit for CHANNEL$m. Triggered when error occurs.*/
-            uint32_t ch4_rx_thr_event              :    1;  /*The interrupt raw bit for CHANNEL$m. Triggered when receiver receive more data than configured value.*/
-            uint32_t ch5_rx_thr_event              :    1;  /*The interrupt raw bit for CHANNEL$m. Triggered when receiver receive more data than configured value.*/
-            uint32_t ch6_rx_thr_event              :    1;  /*The interrupt raw bit for CHANNEL$m. Triggered when receiver receive more data than configured value.*/
-            uint32_t ch7_rx_thr_event              :    1;  /*The interrupt raw bit for CHANNEL$m. Triggered when receiver receive more data than configured value.*/
-            uint32_t ch3_dma_access_fail           :    1;  /*The interrupt raw bit for CHANNEL$n. Triggered when dma accessing CHANNEL$n fails.*/
-            uint32_t ch7_dma_access_fail           :    1;  /*The interrupt raw bit for CHANNEL$m. Triggered when dma accessing CHANNEL$m fails.*/
-            uint32_t reserved30                    :    2;  /*Reserved*/
-        };
-        uint32_t val;
-    } int_raw;
-    union {
-        struct {
-            uint32_t ch0_tx_end                    :    1;  /*The masked interrupt status bit for CH$n_TX_END_INT.*/
-            uint32_t ch1_tx_end                    :    1;  /*The masked interrupt status bit for CH$n_TX_END_INT.*/
-            uint32_t ch2_tx_end                    :    1;  /*The masked interrupt status bit for CH$n_TX_END_INT.*/
-            uint32_t ch3_tx_end                    :    1;  /*The masked interrupt status bit for CH$n_TX_END_INT.*/
-            uint32_t ch0_err                       :    1;  /*The masked interrupt status bit for CH$n_ERR_INT.*/
-            uint32_t ch1_err                       :    1;  /*The masked interrupt status bit for CH$n_ERR_INT.*/
-            uint32_t ch2_err                       :    1;  /*The masked interrupt status bit for CH$n_ERR_INT.*/
-            uint32_t ch3_err                       :    1;  /*The masked interrupt status bit for CH$n_ERR_INT.*/
-            uint32_t ch0_tx_thr_event              :    1;  /*The masked interrupt status bit for CH$n_TX_THR_EVENT_INT.*/
-            uint32_t ch1_tx_thr_event              :    1;  /*The masked interrupt status bit for CH$n_TX_THR_EVENT_INT.*/
-            uint32_t ch2_tx_thr_event              :    1;  /*The masked interrupt status bit for CH$n_TX_THR_EVENT_INT.*/
-            uint32_t ch3_tx_thr_event              :    1;  /*The masked interrupt status bit for CH$n_TX_THR_EVENT_INT.*/
-            uint32_t ch0_tx_loop                   :    1;  /*The masked interrupt status bit for CH$n_TX_LOOP_INT.*/
-            uint32_t ch1_tx_loop                   :    1;  /*The masked interrupt status bit for CH$n_TX_LOOP_INT.*/
-            uint32_t ch2_tx_loop                   :    1;  /*The masked interrupt status bit for CH$n_TX_LOOP_INT.*/
-            uint32_t ch3_tx_loop                   :    1;  /*The masked interrupt status bit for CH$n_TX_LOOP_INT.*/
-            uint32_t ch4_rx_end                    :    1;  /*The masked interrupt status bit for CH$m_RX_END_INT.*/
-            uint32_t ch5_rx_end                    :    1;  /*The masked interrupt status bit for CH$m_RX_END_INT.*/
-            uint32_t ch6_rx_end                    :    1;  /*The masked interrupt status bit for CH$m_RX_END_INT.*/
-            uint32_t ch7_rx_end                    :    1;  /*The masked interrupt status bit for CH$m_RX_END_INT.*/
-            uint32_t ch4_err                       :    1;  /*The masked interrupt status bit for CH$m_ERR_INT.*/
-            uint32_t ch5_err                       :    1;  /*The masked interrupt status bit for CH$m_ERR_INT.*/
-            uint32_t ch6_err                       :    1;  /*The masked interrupt status bit for CH$m_ERR_INT.*/
-            uint32_t ch7_err                       :    1;  /*The masked interrupt status bit for CH$m_ERR_INT.*/
-            uint32_t ch4_rx_thr_event              :    1;  /*The masked interrupt status bit for CH$m_RX_THR_EVENT_INT.*/
-            uint32_t ch5_rx_thr_event              :    1;  /*The masked interrupt status bit for CH$m_RX_THR_EVENT_INT.*/
-            uint32_t ch6_rx_thr_event              :    1;  /*The masked interrupt status bit for CH$m_RX_THR_EVENT_INT.*/
-            uint32_t ch7_rx_thr_event              :    1;  /*The masked interrupt status bit for CH$m_RX_THR_EVENT_INT.*/
-            uint32_t ch3_dma_access_fail           :    1;  /*The masked interrupt status bit for  CH$n_DMA_ACCESS_FAIL_INT.*/
-            uint32_t ch7_dma_access_fail           :    1;  /*The masked interrupt status bit for  CH$m_DMA_ACCESS_FAIL_INT.*/
-            uint32_t reserved30                    :    2;  /*Reserved*/
-        };
-        uint32_t val;
-    } int_st;
-    union {
-        struct {
-            uint32_t ch0_tx_end                    :    1;  /*The interrupt enable bit for CH$n_TX_END_INT.*/
-            uint32_t ch1_tx_end                    :    1;  /*The interrupt enable bit for CH$n_TX_END_INT.*/
-            uint32_t ch2_tx_end                    :    1;  /*The interrupt enable bit for CH$n_TX_END_INT.*/
-            uint32_t ch3_tx_end                    :    1;  /*The interrupt enable bit for CH$n_TX_END_INT.*/
-            uint32_t ch0_err                       :    1;  /*The interrupt enable bit for CH$n_ERR_INT.*/
-            uint32_t ch1_err                       :    1;  /*The interrupt enable bit for CH$n_ERR_INT.*/
-            uint32_t ch2_err                       :    1;  /*The interrupt enable bit for CH$n_ERR_INT.*/
-            uint32_t ch3_err                       :    1;  /*The interrupt enable bit for CH$n_ERR_INT.*/
-            uint32_t ch0_tx_thr_event              :    1;  /*The interrupt enable bit for CH$n_TX_THR_EVENT_INT.*/
-            uint32_t ch1_tx_thr_event              :    1;  /*The interrupt enable bit for CH$n_TX_THR_EVENT_INT.*/
-            uint32_t ch2_tx_thr_event              :    1;  /*The interrupt enable bit for CH$n_TX_THR_EVENT_INT.*/
-            uint32_t ch3_tx_thr_event              :    1;  /*The interrupt enable bit for CH$n_TX_THR_EVENT_INT.*/
-            uint32_t ch0_tx_loop                   :    1;  /*The interrupt enable bit for CH$n_TX_LOOP_INT.*/
-            uint32_t ch1_tx_loop                   :    1;  /*The interrupt enable bit for CH$n_TX_LOOP_INT.*/
-            uint32_t ch2_tx_loop                   :    1;  /*The interrupt enable bit for CH$n_TX_LOOP_INT.*/
-            uint32_t ch3_tx_loop                   :    1;  /*The interrupt enable bit for CH$n_TX_LOOP_INT.*/
-            uint32_t ch4_rx_end                    :    1;  /*The interrupt enable bit for CH$m_RX_END_INT.*/
-            uint32_t ch5_rx_end                    :    1;  /*The interrupt enable bit for CH$m_RX_END_INT.*/
-            uint32_t ch6_rx_end                    :    1;  /*The interrupt enable bit for CH$m_RX_END_INT.*/
-            uint32_t ch7_rx_end                    :    1;  /*The interrupt enable bit for CH$m_RX_END_INT.*/
-            uint32_t ch4_err                       :    1;  /*The interrupt enable bit for CH$m_ERR_INT.*/
-            uint32_t ch5_err                       :    1;  /*The interrupt enable bit for CH$m_ERR_INT.*/
-            uint32_t ch6_err                       :    1;  /*The interrupt enable bit for CH$m_ERR_INT.*/
-            uint32_t ch7_err                       :    1;  /*The interrupt enable bit for CH$m_ERR_INT.*/
-            uint32_t ch4_rx_thr_event              :    1;  /*The interrupt enable bit for CH$m_RX_THR_EVENT_INT.*/
-            uint32_t ch5_rx_thr_event              :    1;  /*The interrupt enable bit for CH$m_RX_THR_EVENT_INT.*/
-            uint32_t ch6_rx_thr_event              :    1;  /*The interrupt enable bit for CH$m_RX_THR_EVENT_INT.*/
-            uint32_t ch7_rx_thr_event              :    1;  /*The interrupt enable bit for CH$m_RX_THR_EVENT_INT.*/
-            uint32_t ch3_dma_access_fail           :    1;  /*The interrupt enable bit for CH$n_DMA_ACCESS_FAIL_INT.*/
-            uint32_t ch7_dma_access_fail           :    1;  /*The interrupt enable bit for CH$m_DMA_ACCESS_FAIL_INT.*/
-            uint32_t reserved30                    :    2;  /*Reserved*/
-        };
-        uint32_t val;
-    } int_ena;
-    union {
-        struct {
-            uint32_t ch0_tx_end                    :    1;  /*Set this bit to clear theCH$n_TX_END_INT interrupt.*/
-            uint32_t ch1_tx_end                    :    1;  /*Set this bit to clear theCH$n_TX_END_INT interrupt.*/
-            uint32_t ch2_tx_end                    :    1;  /*Set this bit to clear theCH$n_TX_END_INT interrupt.*/
-            uint32_t ch3_tx_end                    :    1;  /*Set this bit to clear theCH$n_TX_END_INT interrupt.*/
-            uint32_t ch0_err                       :    1;  /*Set this bit to clear theCH$n_ERR_INT interrupt.*/
-            uint32_t ch1_err                       :    1;  /*Set this bit to clear theCH$n_ERR_INT interrupt.*/
-            uint32_t ch2_err                       :    1;  /*Set this bit to clear theCH$n_ERR_INT interrupt.*/
-            uint32_t ch3_err                       :    1;  /*Set this bit to clear theCH$n_ERR_INT interrupt.*/
-            uint32_t ch0_tx_thr_event              :    1;  /*Set this bit to clear theCH$n_TX_THR_EVENT_INT interrupt.*/
-            uint32_t ch1_tx_thr_event              :    1;  /*Set this bit to clear theCH$n_TX_THR_EVENT_INT interrupt.*/
-            uint32_t ch2_tx_thr_event              :    1;  /*Set this bit to clear theCH$n_TX_THR_EVENT_INT interrupt.*/
-            uint32_t ch3_tx_thr_event              :    1;  /*Set this bit to clear theCH$n_TX_THR_EVENT_INT interrupt.*/
-            uint32_t ch0_tx_loop                   :    1;  /*Set this bit to clear theCH$n_TX_LOOP_INT interrupt.*/
-            uint32_t ch1_tx_loop                   :    1;  /*Set this bit to clear theCH$n_TX_LOOP_INT interrupt.*/
-            uint32_t ch2_tx_loop                   :    1;  /*Set this bit to clear theCH$n_TX_LOOP_INT interrupt.*/
-            uint32_t ch3_tx_loop                   :    1;  /*Set this bit to clear theCH$n_TX_LOOP_INT interrupt.*/
-            uint32_t ch4_rx_end                    :    1;  /*Set this bit to clear theCH$m_RX_END_INT interrupt.*/
-            uint32_t ch5_rx_end                    :    1;  /*Set this bit to clear theCH$m_RX_END_INT interrupt.*/
-            uint32_t ch6_rx_end                    :    1;  /*Set this bit to clear theCH$m_RX_END_INT interrupt.*/
-            uint32_t ch7_rx_end                    :    1;  /*Set this bit to clear theCH$m_RX_END_INT interrupt.*/
-            uint32_t ch4_err                       :    1;  /*Set this bit to clear theCH$m_ERR_INT interrupt.*/
-            uint32_t ch5_err                       :    1;  /*Set this bit to clear theCH$m_ERR_INT interrupt.*/
-            uint32_t ch6_err                       :    1;  /*Set this bit to clear theCH$m_ERR_INT interrupt.*/
-            uint32_t ch7_err                       :    1;  /*Set this bit to clear theCH$m_ERR_INT interrupt.*/
-            uint32_t ch4_rx_thr_event              :    1;  /*Set this bit to clear theCH$m_RX_THR_EVENT_INT interrupt.*/
-            uint32_t ch5_rx_thr_event              :    1;  /*Set this bit to clear theCH$m_RX_THR_EVENT_INT interrupt.*/
-            uint32_t ch6_rx_thr_event              :    1;  /*Set this bit to clear theCH$m_RX_THR_EVENT_INT interrupt.*/
-            uint32_t ch7_rx_thr_event              :    1;  /*Set this bit to clear theCH$m_RX_THR_EVENT_INT interrupt.*/
-            uint32_t ch3_dma_access_fail           :    1;  /*Set this bit to clear the CH$n_DMA_ACCESS_FAIL_INT interrupt.*/
-            uint32_t ch7_dma_access_fail           :    1;  /*Set this bit to clear the CH$m_DMA_ACCESS_FAIL_INT interrupt.*/
-            uint32_t reserved30                    :    2;  /*Reserved*/
-        };
-        uint32_t val;
-    } int_clr;
-    union {
-        struct {
-            uint32_t low                           :    16;  /*This register is used to configure carrier wave 's low level clock period for CHANNEL$n.*/
-            uint32_t high                          :    16;  /*This register is used to configure carrier wave 's high level clock period for CHANNEL$n.*/
-        };
-        uint32_t val;
-    } tx_carrier[4];
-    union {
-        struct {
-            uint32_t low_thres                     :    16;  /*The low level period in a carrier modulation mode is (REG_RMT_REG_CARRIER_LOW_THRES_CH$m + 1) for channel $m.*/
-            uint32_t high_thres                    :    16;  /*The high level period in a carrier modulation mode is (REG_RMT_REG_CARRIER_HIGH_THRES_CH$m + 1) for channel $m.*/
-        };
-        uint32_t val;
-    } rx_carrier[4];
-    union {
-        struct {
-            uint32_t limit                         :    9;  /*This register is used to configure the maximum entries that CHANNEL$n can send out.*/
-            uint32_t tx_loop_num                   :    10;  /*This register is used to configure the maximum loop count when tx_conti_mode is valid.*/
-            uint32_t tx_loop_cnt_en                :    1;  /*This register is the enabled bit for loop count.*/
-            uint32_t loop_count_reset              :    1;  /*This register is used to reset the loop count when tx_conti_mode is valid.*/
-            uint32_t loop_stop_en                  :    1;  /*This bit is used to enable the loop send stop function after the loop counter counts to  loop number for CHANNEL$n.*/
-            uint32_t reserved22                    :    10;  /*Reserved*/
-        };
-        uint32_t val;
-    } tx_lim[4];
-    union {
-        struct {
-            uint32_t rx_lim                        :    9;  /*This register is used to configure the maximum entries that CHANNEL$m can receive.*/
-            uint32_t reserved9                     :    23;  /*Reserved*/
-        };
-        uint32_t val;
-    } rx_lim[4];
-    union {
-        struct {
-            uint32_t fifo_mask                     :    1;  /*1'h1: access memory directly.   1'h0: access memory by FIFO.*/
-            uint32_t mem_clk_force_on              :    1;  /*Set this bit to enable the clock for RMT memory.*/
-            uint32_t mem_force_pd                  :    1;  /*Set this bit to power down RMT memory.*/
-            uint32_t mem_force_pu                  :    1;  /*1: Disable RMT memory light sleep power down function. 0: Power down RMT memory when RMT is in light sleep mode.*/
-            uint32_t sclk_div_num                  :    8;  /*the integral part of the fractional divisor*/
-            uint32_t sclk_div_a                    :    6;  /*the numerator of the fractional part of the fractional divisor*/
-            uint32_t sclk_div_b                    :    6;  /*the denominator of the fractional part of the fractional divisor*/
-            uint32_t sclk_sel                      :    2;  /*choose the clock source of rmt_sclk. 1:CLK_80Mhz;2:CLK_8MHz; 2:XTAL */
-            uint32_t sclk_active                   :    1;  /*rmt_sclk switch*/
-            uint32_t reserved27                    :    4;  /*Reserved*/
-            uint32_t clk_en                        :    1;  /*RMT register clock gate enable signal. 1: Power up the drive clock of registers. 0: Power down the drive clock of registers*/
-        };
-        uint32_t val;
-    } sys_conf;
-    union {
-        struct {
-            uint32_t ch0                           :    1;  /*Set this bit to enable CHANNEL$n to start sending data synchronously with other enabled channels.*/
-            uint32_t ch1                           :    1;  /*Set this bit to enable CHANNEL$n to start sending data synchronously with other enabled channels.*/
-            uint32_t ch2                           :    1;  /*Set this bit to enable CHANNEL$n to start sending data synchronously with other enabled channels.*/
-            uint32_t ch3                           :    1;  /*Set this bit to enable CHANNEL$n to start sending data synchronously with other enabled channels.*/
-            uint32_t en                            :    1;  /*This register is used to enable multiple of channels to start sending data synchronously.*/
-            uint32_t reserved5                     :    27;  /*Reserved*/
-        };
-        uint32_t val;
-    } tx_sim;
-    union {
-        struct {
-            uint32_t ch0                           :    1;  /*This register is used to reset the clock divider of CHANNEL$n.*/
-            uint32_t ch1                           :    1;  /*This register is used to reset the clock divider of CHANNEL$n.*/
-            uint32_t ch2                           :    1;  /*This register is used to reset the clock divider of CHANNEL$n.*/
-            uint32_t ch3                           :    1;  /*This register is used to reset the clock divider of CHANNEL$n.*/
-            uint32_t ch4                           :    1;  /*This register is used to reset the clock divider of CHANNEL$m.*/
-            uint32_t ch5                           :    1;  /*This register is used to reset the clock divider of CHANNEL$m.*/
-            uint32_t ch6                           :    1;  /*This register is used to reset the clock divider of CHANNEL$m.*/
-            uint32_t ch7                           :    1;  /*This register is used to reset the clock divider of CHANNEL$m.*/
-            uint32_t reserved8                     :    24;  /*Reserved*/
-        };
-        uint32_t val;
-    } ref_cnt_rst;
-    union {
-        struct {
-            uint32_t date                          :    28;  /*This is the version register.*/
-            uint32_t reserved28                    :    4;  /*Reserved*/
-        };
-        uint32_t val;
-    } date;
+    } conf1;
+} rmt_chmconf_reg_t;
+
+/** Type of chm_rx_carrier_rm register
+ *  Channel m carrier remove register
+ */
+typedef union {
+    struct {
+        /** carrier_low_thres_chm : R/W; bitpos: [15:0]; default: 0;
+         *  The low level period in a carrier modulation mode is
+         *  (REG_RMT_REG_CARRIER_LOW_THRES_CHm + 1) for channel m.
+         */
+        uint32_t carrier_low_thres_chm: 16;
+        /** carrier_high_thres_chm : R/W; bitpos: [31:16]; default: 0;
+         *  The high level period in a carrier modulation mode is
+         *  (REG_RMT_REG_CARRIER_HIGH_THRES_CHm + 1) for channel m.
+         */
+        uint32_t carrier_high_thres_chm: 16;
+    };
+    uint32_t val;
+} rmt_chm_rx_carrier_rm_reg_t;
+
+/** Type of sys_conf register
+ *  RMT apb configuration register
+ */
+typedef union {
+    struct {
+        /** apb_fifo_mask : R/W; bitpos: [0]; default: 0;
+         *  1'h1: access memory directly.   1'h0: access memory by FIFO.
+         */
+        uint32_t apb_fifo_mask: 1;
+        /** mem_clk_force_on : R/W; bitpos: [1]; default: 0;
+         *  Set this bit to enable the clock for RMT memory.
+         */
+        uint32_t mem_clk_force_on: 1;
+        /** mem_force_pd : R/W; bitpos: [2]; default: 0;
+         *  Set this bit to power down RMT memory.
+         */
+        uint32_t mem_force_pd: 1;
+        /** mem_force_pu : R/W; bitpos: [3]; default: 0;
+         *  1: Disable RMT memory light sleep power down function. 0: Power down RMT memory
+         *  when RMT is in light sleep mode.
+         */
+        uint32_t mem_force_pu: 1;
+        /** sclk_div_num : R/W; bitpos: [11:4]; default: 1;
+         *  the integral part of the fractional divisor
+         */
+        uint32_t sclk_div_num: 8;
+        /** sclk_div_a : R/W; bitpos: [17:12]; default: 0;
+         *  the numerator of the fractional part of the fractional divisor
+         */
+        uint32_t sclk_div_a: 6;
+        /** sclk_div_b : R/W; bitpos: [23:18]; default: 0;
+         *  the denominator of the fractional part of the fractional divisor
+         */
+        uint32_t sclk_div_b: 6;
+        /** sclk_sel : R/W; bitpos: [25:24]; default: 1;
+         *  choose the clock source of rmt_sclk. 1:CLK_80Mhz;2:CLK_8MHz; 2:XTAL
+         */
+        uint32_t sclk_sel: 2;
+        /** sclk_active : R/W; bitpos: [26]; default: 1;
+         *  rmt_sclk switch
+         */
+        uint32_t sclk_active: 1;
+        uint32_t reserved_27: 4;
+        /** clk_en : R/W; bitpos: [31]; default: 0;
+         *  RMT register clock gate enable signal. 1: Power up the drive clock of registers. 0:
+         *  Power down the drive clock of registers
+         */
+        uint32_t clk_en: 1;
+    };
+    uint32_t val;
+} rmt_sys_conf_reg_t;
+
+/** Type of ref_cnt_rst register
+ *  RMT clock divider reset register
+ */
+typedef union {
+    struct {
+        /** ref_cnt_rst_ch0 : WT; bitpos: [0]; default: 0;
+         *  This register is used to reset the clock divider of CHANNEL0.
+         */
+        uint32_t ref_cnt_rst_ch0: 1;
+        /** ref_cnt_rst_ch1 : WT; bitpos: [1]; default: 0;
+         *  This register is used to reset the clock divider of CHANNEL1.
+         */
+        uint32_t ref_cnt_rst_ch1: 1;
+        /** ref_cnt_rst_ch2 : WT; bitpos: [2]; default: 0;
+         *  This register is used to reset the clock divider of CHANNEL2.
+         */
+        uint32_t ref_cnt_rst_ch2: 1;
+        /** ref_cnt_rst_ch3 : WT; bitpos: [3]; default: 0;
+         *  This register is used to reset the clock divider of CHANNEL3.
+         */
+        uint32_t ref_cnt_rst_ch3: 1;
+        /** ref_cnt_rst_ch4 : WT; bitpos: [4]; default: 0;
+         *  This register is used to reset the clock divider of CHANNEL4.
+         */
+        uint32_t ref_cnt_rst_ch4: 1;
+        /** ref_cnt_rst_ch5 : WT; bitpos: [5]; default: 0;
+         *  This register is used to reset the clock divider of CHANNEL5.
+         */
+        uint32_t ref_cnt_rst_ch5: 1;
+        /** ref_cnt_rst_ch6 : WT; bitpos: [6]; default: 0;
+         *  This register is used to reset the clock divider of CHANNEL6.
+         */
+        uint32_t ref_cnt_rst_ch6: 1;
+        /** ref_cnt_rst_ch7 : WT; bitpos: [7]; default: 0;
+         *  This register is used to reset the clock divider of CHANNEL7.
+         */
+        uint32_t ref_cnt_rst_ch7: 1;
+        uint32_t reserved_8: 24;
+    };
+    uint32_t val;
+} rmt_ref_cnt_rst_reg_t;
+
+
+/** Group: Status registers */
+/** Type of chnstatus register
+ *  Channel n status register
+ */
+typedef union {
+    struct {
+        /** mem_raddr_ex_n : RO; bitpos: [9:0]; default: 0;
+         *  This register records the memory address offset when transmitter of CHANNELn is
+         *  using the RAM.
+         */
+        uint32_t mem_raddr_ex_n: 10;
+        uint32_t reserved_10: 1;
+        /** apb_mem_waddr_n : RO; bitpos: [20:11]; default: 0;
+         *  This register records the memory address offset when writes RAM over APB bus.
+         */
+        uint32_t apb_mem_waddr_n: 10;
+        uint32_t reserved_21: 1;
+        /** state_n : RO; bitpos: [24:22]; default: 0;
+         *  This register records the FSM status of CHANNELn.
+         */
+        uint32_t state_n: 3;
+        /** mem_empty_n : RO; bitpos: [25]; default: 0;
+         *  This status bit will be set when the data to be set is more than memory size and
+         *  the wraparound mode is disabled.
+         */
+        uint32_t mem_empty_n: 1;
+        /** apb_mem_wr_err_n : RO; bitpos: [26]; default: 0;
+         *  This status bit will be set if the offset address out of memory size when writes
+         *  via APB bus.
+         */
+        uint32_t apb_mem_wr_err_n: 1;
+        uint32_t reserved_27: 5;
+    };
+    uint32_t val;
+} rmt_chnstatus_reg_t;
+
+/** Type of chmstatus register
+ *  Channel m status register
+ */
+typedef union {
+    struct {
+        /** mem_waddr_ex_m : RO; bitpos: [9:0]; default: 192;
+         *  This register records the memory address offset when receiver of CHANNELm is using
+         *  the RAM.
+         */
+        uint32_t mem_waddr_ex_m: 10;
+        uint32_t reserved_10: 1;
+        /** apb_mem_raddr_m : RO; bitpos: [20:11]; default: 192;
+         *  This register records the memory address offset when reads RAM over APB bus.
+         */
+        uint32_t apb_mem_raddr_m: 10;
+        uint32_t reserved_21: 1;
+        /** state_m : RO; bitpos: [24:22]; default: 0;
+         *  This register records the FSM status of CHANNELm.
+         */
+        uint32_t state_m: 3;
+        /** mem_owner_err_m : RO; bitpos: [25]; default: 0;
+         *  This status bit will be set when the ownership of memory block is wrong.
+         */
+        uint32_t mem_owner_err_m: 1;
+        /** mem_full_m : RO; bitpos: [26]; default: 0;
+         *  This status bit will be set if the receiver receives more data than the memory size.
+         */
+        uint32_t mem_full_m: 1;
+        /** apb_mem_rd_err_m : RO; bitpos: [27]; default: 0;
+         *  This status bit will be set if the offset address out of memory size when reads via
+         *  APB bus.
+         */
+        uint32_t apb_mem_rd_err_m: 1;
+        uint32_t reserved_28: 4;
+    };
+    uint32_t val;
+} rmt_chmstatus_reg_t;
+
+
+/** Group: Interrupt registers */
+/** Type of int_raw register
+ *  Raw interrupt status
+ */
+typedef union {
+    struct {
+        /** ch0_tx_end_int_raw : R/WTC/SS; bitpos: [0]; default: 0;
+         *  The interrupt raw bit for CHANNEL0. Triggered when transmission done.
+         */
+        uint32_t ch0_tx_end_int_raw: 1;
+        /** ch1_tx_end_int_raw : R/WTC/SS; bitpos: [1]; default: 0;
+         *  The interrupt raw bit for CHANNEL1. Triggered when transmission done.
+         */
+        uint32_t ch1_tx_end_int_raw: 1;
+        /** ch2_tx_end_int_raw : R/WTC/SS; bitpos: [2]; default: 0;
+         *  The interrupt raw bit for CHANNEL2. Triggered when transmission done.
+         */
+        uint32_t ch2_tx_end_int_raw: 1;
+        /** ch3_tx_end_int_raw : R/WTC/SS; bitpos: [3]; default: 0;
+         *  The interrupt raw bit for CHANNEL3. Triggered when transmission done.
+         */
+        uint32_t ch3_tx_end_int_raw: 1;
+        /** ch0_err_int_raw : R/WTC/SS; bitpos: [4]; default: 0;
+         *  The interrupt raw bit for CHANNEL0. Triggered when error occurs.
+         */
+        uint32_t ch0_err_int_raw: 1;
+        /** ch1_err_int_raw : R/WTC/SS; bitpos: [5]; default: 0;
+         *  The interrupt raw bit for CHANNEL1. Triggered when error occurs.
+         */
+        uint32_t ch1_err_int_raw: 1;
+        /** ch2_err_int_raw : R/WTC/SS; bitpos: [6]; default: 0;
+         *  The interrupt raw bit for CHANNEL2. Triggered when error occurs.
+         */
+        uint32_t ch2_err_int_raw: 1;
+        /** ch3_err_int_raw : R/WTC/SS; bitpos: [7]; default: 0;
+         *  The interrupt raw bit for CHANNEL3. Triggered when error occurs.
+         */
+        uint32_t ch3_err_int_raw: 1;
+        /** ch0_tx_thr_event_int_raw : R/WTC/SS; bitpos: [8]; default: 0;
+         *  The interrupt raw bit for CHANNEL0. Triggered when transmitter sent more data than
+         *  configured value.
+         */
+        uint32_t ch0_tx_thr_event_int_raw: 1;
+        /** ch1_tx_thr_event_int_raw : R/WTC/SS; bitpos: [9]; default: 0;
+         *  The interrupt raw bit for CHANNEL1. Triggered when transmitter sent more data than
+         *  configured value.
+         */
+        uint32_t ch1_tx_thr_event_int_raw: 1;
+        /** ch2_tx_thr_event_int_raw : R/WTC/SS; bitpos: [10]; default: 0;
+         *  The interrupt raw bit for CHANNEL2. Triggered when transmitter sent more data than
+         *  configured value.
+         */
+        uint32_t ch2_tx_thr_event_int_raw: 1;
+        /** ch3_tx_thr_event_int_raw : R/WTC/SS; bitpos: [11]; default: 0;
+         *  The interrupt raw bit for CHANNEL3. Triggered when transmitter sent more data than
+         *  configured value.
+         */
+        uint32_t ch3_tx_thr_event_int_raw: 1;
+        /** ch0_tx_loop_int_raw : R/WTC/SS; bitpos: [12]; default: 0;
+         *  The interrupt raw bit for CHANNEL0. Triggered when the loop count reaches the
+         *  configured threshold value.
+         */
+        uint32_t ch0_tx_loop_int_raw: 1;
+        /** ch1_tx_loop_int_raw : R/WTC/SS; bitpos: [13]; default: 0;
+         *  The interrupt raw bit for CHANNEL1. Triggered when the loop count reaches the
+         *  configured threshold value.
+         */
+        uint32_t ch1_tx_loop_int_raw: 1;
+        /** ch2_tx_loop_int_raw : R/WTC/SS; bitpos: [14]; default: 0;
+         *  The interrupt raw bit for CHANNEL2. Triggered when the loop count reaches the
+         *  configured threshold value.
+         */
+        uint32_t ch2_tx_loop_int_raw: 1;
+        /** ch3_tx_loop_int_raw : R/WTC/SS; bitpos: [15]; default: 0;
+         *  The interrupt raw bit for CHANNEL3. Triggered when the loop count reaches the
+         *  configured threshold value.
+         */
+        uint32_t ch3_tx_loop_int_raw: 1;
+        /** ch4_rx_end_int_raw : R/WTC/SS; bitpos: [16]; default: 0;
+         *  The interrupt raw bit for CHANNEL4. Triggered when reception done.
+         */
+        uint32_t ch4_rx_end_int_raw: 1;
+        /** ch5_rx_end_int_raw : R/WTC/SS; bitpos: [17]; default: 0;
+         *  The interrupt raw bit for CHANNEL5. Triggered when reception done.
+         */
+        uint32_t ch5_rx_end_int_raw: 1;
+        /** ch6_rx_end_int_raw : R/WTC/SS; bitpos: [18]; default: 0;
+         *  The interrupt raw bit for CHANNEL6. Triggered when reception done.
+         */
+        uint32_t ch6_rx_end_int_raw: 1;
+        /** ch7_rx_end_int_raw : R/WTC/SS; bitpos: [19]; default: 0;
+         *  The interrupt raw bit for CHANNEL7. Triggered when reception done.
+         */
+        uint32_t ch7_rx_end_int_raw: 1;
+        /** ch4_err_int_raw : R/WTC/SS; bitpos: [20]; default: 0;
+         *  The interrupt raw bit for CHANNEL4. Triggered when error occurs.
+         */
+        uint32_t ch4_err_int_raw: 1;
+        /** ch5_err_int_raw : R/WTC/SS; bitpos: [21]; default: 0;
+         *  The interrupt raw bit for CHANNEL5. Triggered when error occurs.
+         */
+        uint32_t ch5_err_int_raw: 1;
+        /** ch6_err_int_raw : R/WTC/SS; bitpos: [22]; default: 0;
+         *  The interrupt raw bit for CHANNEL6. Triggered when error occurs.
+         */
+        uint32_t ch6_err_int_raw: 1;
+        /** ch7_err_int_raw : R/WTC/SS; bitpos: [23]; default: 0;
+         *  The interrupt raw bit for CHANNEL7. Triggered when error occurs.
+         */
+        uint32_t ch7_err_int_raw: 1;
+        /** ch4_rx_thr_event_int_raw : R/WTC/SS; bitpos: [24]; default: 0;
+         *  The interrupt raw bit for CHANNEL4. Triggered when receiver receive more data than
+         *  configured value.
+         */
+        uint32_t ch4_rx_thr_event_int_raw: 1;
+        /** ch5_rx_thr_event_int_raw : R/WTC/SS; bitpos: [25]; default: 0;
+         *  The interrupt raw bit for CHANNEL5. Triggered when receiver receive more data than
+         *  configured value.
+         */
+        uint32_t ch5_rx_thr_event_int_raw: 1;
+        /** ch6_rx_thr_event_int_raw : R/WTC/SS; bitpos: [26]; default: 0;
+         *  The interrupt raw bit for CHANNEL6. Triggered when receiver receive more data than
+         *  configured value.
+         */
+        uint32_t ch6_rx_thr_event_int_raw: 1;
+        /** ch7_rx_thr_event_int_raw : R/WTC/SS; bitpos: [27]; default: 0;
+         *  The interrupt raw bit for CHANNEL7. Triggered when receiver receive more data than
+         *  configured value.
+         */
+        uint32_t ch7_rx_thr_event_int_raw: 1;
+        /** ch3_dma_access_fail_int_raw : R/WTC/SS; bitpos: [28]; default: 0;
+         *  The interrupt raw bit for CHANNEL3. Triggered when dma accessing CHANNEL3 fails.
+         */
+        uint32_t ch3_dma_access_fail_int_raw: 1;
+        /** ch7_dma_access_fail_int_raw : R/WTC/SS; bitpos: [29]; default: 0;
+         *  The interrupt raw bit for CHANNEL7. Triggered when dma accessing CHANNEL7 fails.
+         */
+        uint32_t ch7_dma_access_fail_int_raw: 1;
+        uint32_t reserved_30: 2;
+    };
+    uint32_t val;
+} rmt_int_raw_reg_t;
+
+/** Type of int_st register
+ *  Masked interrupt status
+ */
+typedef union {
+    struct {
+        /** ch0_tx_end_int_st : RO; bitpos: [0]; default: 0;
+         *  The masked interrupt status bit for CH0_TX_END_INT.
+         */
+        uint32_t ch0_tx_end_int_st: 1;
+        /** ch1_tx_end_int_st : RO; bitpos: [1]; default: 0;
+         *  The masked interrupt status bit for CH1_TX_END_INT.
+         */
+        uint32_t ch1_tx_end_int_st: 1;
+        /** ch2_tx_end_int_st : RO; bitpos: [2]; default: 0;
+         *  The masked interrupt status bit for CH2_TX_END_INT.
+         */
+        uint32_t ch2_tx_end_int_st: 1;
+        /** ch3_tx_end_int_st : RO; bitpos: [3]; default: 0;
+         *  The masked interrupt status bit for CH3_TX_END_INT.
+         */
+        uint32_t ch3_tx_end_int_st: 1;
+        /** ch0_err_int_st : RO; bitpos: [4]; default: 0;
+         *  The masked interrupt status bit for CH0_ERR_INT.
+         */
+        uint32_t ch0_err_int_st: 1;
+        /** ch1_err_int_st : RO; bitpos: [5]; default: 0;
+         *  The masked interrupt status bit for CH1_ERR_INT.
+         */
+        uint32_t ch1_err_int_st: 1;
+        /** ch2_err_int_st : RO; bitpos: [6]; default: 0;
+         *  The masked interrupt status bit for CH2_ERR_INT.
+         */
+        uint32_t ch2_err_int_st: 1;
+        /** ch3_err_int_st : RO; bitpos: [7]; default: 0;
+         *  The masked interrupt status bit for CH3_ERR_INT.
+         */
+        uint32_t ch3_err_int_st: 1;
+        /** ch0_tx_thr_event_int_st : RO; bitpos: [8]; default: 0;
+         *  The masked interrupt status bit for CH0_TX_THR_EVENT_INT.
+         */
+        uint32_t ch0_tx_thr_event_int_st: 1;
+        /** ch1_tx_thr_event_int_st : RO; bitpos: [9]; default: 0;
+         *  The masked interrupt status bit for CH1_TX_THR_EVENT_INT.
+         */
+        uint32_t ch1_tx_thr_event_int_st: 1;
+        /** ch2_tx_thr_event_int_st : RO; bitpos: [10]; default: 0;
+         *  The masked interrupt status bit for CH2_TX_THR_EVENT_INT.
+         */
+        uint32_t ch2_tx_thr_event_int_st: 1;
+        /** ch3_tx_thr_event_int_st : RO; bitpos: [11]; default: 0;
+         *  The masked interrupt status bit for CH3_TX_THR_EVENT_INT.
+         */
+        uint32_t ch3_tx_thr_event_int_st: 1;
+        /** ch0_tx_loop_int_st : RO; bitpos: [12]; default: 0;
+         *  The masked interrupt status bit for CH0_TX_LOOP_INT.
+         */
+        uint32_t ch0_tx_loop_int_st: 1;
+        /** ch1_tx_loop_int_st : RO; bitpos: [13]; default: 0;
+         *  The masked interrupt status bit for CH1_TX_LOOP_INT.
+         */
+        uint32_t ch1_tx_loop_int_st: 1;
+        /** ch2_tx_loop_int_st : RO; bitpos: [14]; default: 0;
+         *  The masked interrupt status bit for CH2_TX_LOOP_INT.
+         */
+        uint32_t ch2_tx_loop_int_st: 1;
+        /** ch3_tx_loop_int_st : RO; bitpos: [15]; default: 0;
+         *  The masked interrupt status bit for CH3_TX_LOOP_INT.
+         */
+        uint32_t ch3_tx_loop_int_st: 1;
+        /** ch4_rx_end_int_st : RO; bitpos: [16]; default: 0;
+         *  The masked interrupt status bit for CH4_RX_END_INT.
+         */
+        uint32_t ch4_rx_end_int_st: 1;
+        /** ch5_rx_end_int_st : RO; bitpos: [17]; default: 0;
+         *  The masked interrupt status bit for CH5_RX_END_INT.
+         */
+        uint32_t ch5_rx_end_int_st: 1;
+        /** ch6_rx_end_int_st : RO; bitpos: [18]; default: 0;
+         *  The masked interrupt status bit for CH6_RX_END_INT.
+         */
+        uint32_t ch6_rx_end_int_st: 1;
+        /** ch7_rx_end_int_st : RO; bitpos: [19]; default: 0;
+         *  The masked interrupt status bit for CH7_RX_END_INT.
+         */
+        uint32_t ch7_rx_end_int_st: 1;
+        /** ch4_err_int_st : RO; bitpos: [20]; default: 0;
+         *  The masked interrupt status bit for CH4_ERR_INT.
+         */
+        uint32_t ch4_err_int_st: 1;
+        /** ch5_err_int_st : RO; bitpos: [21]; default: 0;
+         *  The masked interrupt status bit for CH5_ERR_INT.
+         */
+        uint32_t ch5_err_int_st: 1;
+        /** ch6_err_int_st : RO; bitpos: [22]; default: 0;
+         *  The masked interrupt status bit for CH6_ERR_INT.
+         */
+        uint32_t ch6_err_int_st: 1;
+        /** ch7_err_int_st : RO; bitpos: [23]; default: 0;
+         *  The masked interrupt status bit for CH7_ERR_INT.
+         */
+        uint32_t ch7_err_int_st: 1;
+        /** ch4_rx_thr_event_int_st : RO; bitpos: [24]; default: 0;
+         *  The masked interrupt status bit for CH4_RX_THR_EVENT_INT.
+         */
+        uint32_t ch4_rx_thr_event_int_st: 1;
+        /** ch5_rx_thr_event_int_st : RO; bitpos: [25]; default: 0;
+         *  The masked interrupt status bit for CH5_RX_THR_EVENT_INT.
+         */
+        uint32_t ch5_rx_thr_event_int_st: 1;
+        /** ch6_rx_thr_event_int_st : RO; bitpos: [26]; default: 0;
+         *  The masked interrupt status bit for CH6_RX_THR_EVENT_INT.
+         */
+        uint32_t ch6_rx_thr_event_int_st: 1;
+        /** ch7_rx_thr_event_int_st : RO; bitpos: [27]; default: 0;
+         *  The masked interrupt status bit for CH7_RX_THR_EVENT_INT.
+         */
+        uint32_t ch7_rx_thr_event_int_st: 1;
+        /** ch3_dma_access_fail_int_st : RO; bitpos: [28]; default: 0;
+         *  The masked interrupt status bit for  CH3_DMA_ACCESS_FAIL_INT.
+         */
+        uint32_t ch3_dma_access_fail_int_st: 1;
+        /** ch7_dma_access_fail_int_st : RO; bitpos: [29]; default: 0;
+         *  The masked interrupt status bit for  CH7_DMA_ACCESS_FAIL_INT.
+         */
+        uint32_t ch7_dma_access_fail_int_st: 1;
+        uint32_t reserved_30: 2;
+    };
+    uint32_t val;
+} rmt_int_st_reg_t;
+
+/** Type of int_ena register
+ *  Interrupt enable bits
+ */
+typedef union {
+    struct {
+        /** ch0_tx_end_int_ena : R/W; bitpos: [0]; default: 0;
+         *  The interrupt enable bit for CH0_TX_END_INT.
+         */
+        uint32_t ch0_tx_end_int_ena: 1;
+        /** ch1_tx_end_int_ena : R/W; bitpos: [1]; default: 0;
+         *  The interrupt enable bit for CH1_TX_END_INT.
+         */
+        uint32_t ch1_tx_end_int_ena: 1;
+        /** ch2_tx_end_int_ena : R/W; bitpos: [2]; default: 0;
+         *  The interrupt enable bit for CH2_TX_END_INT.
+         */
+        uint32_t ch2_tx_end_int_ena: 1;
+        /** ch3_tx_end_int_ena : R/W; bitpos: [3]; default: 0;
+         *  The interrupt enable bit for CH3_TX_END_INT.
+         */
+        uint32_t ch3_tx_end_int_ena: 1;
+        /** ch0_err_int_ena : R/W; bitpos: [4]; default: 0;
+         *  The interrupt enable bit for CH0_ERR_INT.
+         */
+        uint32_t ch0_err_int_ena: 1;
+        /** ch1_err_int_ena : R/W; bitpos: [5]; default: 0;
+         *  The interrupt enable bit for CH1_ERR_INT.
+         */
+        uint32_t ch1_err_int_ena: 1;
+        /** ch2_err_int_ena : R/W; bitpos: [6]; default: 0;
+         *  The interrupt enable bit for CH2_ERR_INT.
+         */
+        uint32_t ch2_err_int_ena: 1;
+        /** ch3_err_int_ena : R/W; bitpos: [7]; default: 0;
+         *  The interrupt enable bit for CH3_ERR_INT.
+         */
+        uint32_t ch3_err_int_ena: 1;
+        /** ch0_tx_thr_event_int_ena : R/W; bitpos: [8]; default: 0;
+         *  The interrupt enable bit for CH0_TX_THR_EVENT_INT.
+         */
+        uint32_t ch0_tx_thr_event_int_ena: 1;
+        /** ch1_tx_thr_event_int_ena : R/W; bitpos: [9]; default: 0;
+         *  The interrupt enable bit for CH1_TX_THR_EVENT_INT.
+         */
+        uint32_t ch1_tx_thr_event_int_ena: 1;
+        /** ch2_tx_thr_event_int_ena : R/W; bitpos: [10]; default: 0;
+         *  The interrupt enable bit for CH2_TX_THR_EVENT_INT.
+         */
+        uint32_t ch2_tx_thr_event_int_ena: 1;
+        /** ch3_tx_thr_event_int_ena : R/W; bitpos: [11]; default: 0;
+         *  The interrupt enable bit for CH3_TX_THR_EVENT_INT.
+         */
+        uint32_t ch3_tx_thr_event_int_ena: 1;
+        /** ch0_tx_loop_int_ena : R/W; bitpos: [12]; default: 0;
+         *  The interrupt enable bit for CH0_TX_LOOP_INT.
+         */
+        uint32_t ch0_tx_loop_int_ena: 1;
+        /** ch1_tx_loop_int_ena : R/W; bitpos: [13]; default: 0;
+         *  The interrupt enable bit for CH1_TX_LOOP_INT.
+         */
+        uint32_t ch1_tx_loop_int_ena: 1;
+        /** ch2_tx_loop_int_ena : R/W; bitpos: [14]; default: 0;
+         *  The interrupt enable bit for CH2_TX_LOOP_INT.
+         */
+        uint32_t ch2_tx_loop_int_ena: 1;
+        /** ch3_tx_loop_int_ena : R/W; bitpos: [15]; default: 0;
+         *  The interrupt enable bit for CH3_TX_LOOP_INT.
+         */
+        uint32_t ch3_tx_loop_int_ena: 1;
+        /** ch4_rx_end_int_ena : R/W; bitpos: [16]; default: 0;
+         *  The interrupt enable bit for CH4_RX_END_INT.
+         */
+        uint32_t ch4_rx_end_int_ena: 1;
+        /** ch5_rx_end_int_ena : R/W; bitpos: [17]; default: 0;
+         *  The interrupt enable bit for CH5_RX_END_INT.
+         */
+        uint32_t ch5_rx_end_int_ena: 1;
+        /** ch6_rx_end_int_ena : R/W; bitpos: [18]; default: 0;
+         *  The interrupt enable bit for CH6_RX_END_INT.
+         */
+        uint32_t ch6_rx_end_int_ena: 1;
+        /** ch7_rx_end_int_ena : R/W; bitpos: [19]; default: 0;
+         *  The interrupt enable bit for CH7_RX_END_INT.
+         */
+        uint32_t ch7_rx_end_int_ena: 1;
+        /** ch4_err_int_ena : R/W; bitpos: [20]; default: 0;
+         *  The interrupt enable bit for CH4_ERR_INT.
+         */
+        uint32_t ch4_err_int_ena: 1;
+        /** ch5_err_int_ena : R/W; bitpos: [21]; default: 0;
+         *  The interrupt enable bit for CH5_ERR_INT.
+         */
+        uint32_t ch5_err_int_ena: 1;
+        /** ch6_err_int_ena : R/W; bitpos: [22]; default: 0;
+         *  The interrupt enable bit for CH6_ERR_INT.
+         */
+        uint32_t ch6_err_int_ena: 1;
+        /** ch7_err_int_ena : R/W; bitpos: [23]; default: 0;
+         *  The interrupt enable bit for CH7_ERR_INT.
+         */
+        uint32_t ch7_err_int_ena: 1;
+        /** ch4_rx_thr_event_int_ena : R/W; bitpos: [24]; default: 0;
+         *  The interrupt enable bit for CH4_RX_THR_EVENT_INT.
+         */
+        uint32_t ch4_rx_thr_event_int_ena: 1;
+        /** ch5_rx_thr_event_int_ena : R/W; bitpos: [25]; default: 0;
+         *  The interrupt enable bit for CH5_RX_THR_EVENT_INT.
+         */
+        uint32_t ch5_rx_thr_event_int_ena: 1;
+        /** ch6_rx_thr_event_int_ena : R/W; bitpos: [26]; default: 0;
+         *  The interrupt enable bit for CH6_RX_THR_EVENT_INT.
+         */
+        uint32_t ch6_rx_thr_event_int_ena: 1;
+        /** ch7_rx_thr_event_int_ena : R/W; bitpos: [27]; default: 0;
+         *  The interrupt enable bit for CH7_RX_THR_EVENT_INT.
+         */
+        uint32_t ch7_rx_thr_event_int_ena: 1;
+        /** ch3_dma_access_fail_int_ena : R/W; bitpos: [28]; default: 0;
+         *  The interrupt enable bit for CH3_DMA_ACCESS_FAIL_INT.
+         */
+        uint32_t ch3_dma_access_fail_int_ena: 1;
+        /** ch7_dma_access_fail_int_ena : R/W; bitpos: [29]; default: 0;
+         *  The interrupt enable bit for CH7_DMA_ACCESS_FAIL_INT.
+         */
+        uint32_t ch7_dma_access_fail_int_ena: 1;
+        uint32_t reserved_30: 2;
+    };
+    uint32_t val;
+} rmt_int_ena_reg_t;
+
+/** Type of int_clr register
+ *  Interrupt clear bits
+ */
+typedef union {
+    struct {
+        /** ch0_tx_end_int_clr : WT; bitpos: [0]; default: 0;
+         *  Set this bit to clear theCH0_TX_END_INT interrupt.
+         */
+        uint32_t ch0_tx_end_int_clr: 1;
+        /** ch1_tx_end_int_clr : WT; bitpos: [1]; default: 0;
+         *  Set this bit to clear theCH1_TX_END_INT interrupt.
+         */
+        uint32_t ch1_tx_end_int_clr: 1;
+        /** ch2_tx_end_int_clr : WT; bitpos: [2]; default: 0;
+         *  Set this bit to clear theCH2_TX_END_INT interrupt.
+         */
+        uint32_t ch2_tx_end_int_clr: 1;
+        /** ch3_tx_end_int_clr : WT; bitpos: [3]; default: 0;
+         *  Set this bit to clear theCH3_TX_END_INT interrupt.
+         */
+        uint32_t ch3_tx_end_int_clr: 1;
+        /** ch0_err_int_clr : WT; bitpos: [4]; default: 0;
+         *  Set this bit to clear theCH0_ERR_INT interrupt.
+         */
+        uint32_t ch0_err_int_clr: 1;
+        /** ch1_err_int_clr : WT; bitpos: [5]; default: 0;
+         *  Set this bit to clear theCH1_ERR_INT interrupt.
+         */
+        uint32_t ch1_err_int_clr: 1;
+        /** ch2_err_int_clr : WT; bitpos: [6]; default: 0;
+         *  Set this bit to clear theCH2_ERR_INT interrupt.
+         */
+        uint32_t ch2_err_int_clr: 1;
+        /** ch3_err_int_clr : WT; bitpos: [7]; default: 0;
+         *  Set this bit to clear theCH3_ERR_INT interrupt.
+         */
+        uint32_t ch3_err_int_clr: 1;
+        /** ch0_tx_thr_event_int_clr : WT; bitpos: [8]; default: 0;
+         *  Set this bit to clear theCH0_TX_THR_EVENT_INT interrupt.
+         */
+        uint32_t ch0_tx_thr_event_int_clr: 1;
+        /** ch1_tx_thr_event_int_clr : WT; bitpos: [9]; default: 0;
+         *  Set this bit to clear theCH1_TX_THR_EVENT_INT interrupt.
+         */
+        uint32_t ch1_tx_thr_event_int_clr: 1;
+        /** ch2_tx_thr_event_int_clr : WT; bitpos: [10]; default: 0;
+         *  Set this bit to clear theCH2_TX_THR_EVENT_INT interrupt.
+         */
+        uint32_t ch2_tx_thr_event_int_clr: 1;
+        /** ch3_tx_thr_event_int_clr : WT; bitpos: [11]; default: 0;
+         *  Set this bit to clear theCH3_TX_THR_EVENT_INT interrupt.
+         */
+        uint32_t ch3_tx_thr_event_int_clr: 1;
+        /** ch0_tx_loop_int_clr : WT; bitpos: [12]; default: 0;
+         *  Set this bit to clear theCH0_TX_LOOP_INT interrupt.
+         */
+        uint32_t ch0_tx_loop_int_clr: 1;
+        /** ch1_tx_loop_int_clr : WT; bitpos: [13]; default: 0;
+         *  Set this bit to clear theCH1_TX_LOOP_INT interrupt.
+         */
+        uint32_t ch1_tx_loop_int_clr: 1;
+        /** ch2_tx_loop_int_clr : WT; bitpos: [14]; default: 0;
+         *  Set this bit to clear theCH2_TX_LOOP_INT interrupt.
+         */
+        uint32_t ch2_tx_loop_int_clr: 1;
+        /** ch3_tx_loop_int_clr : WT; bitpos: [15]; default: 0;
+         *  Set this bit to clear theCH3_TX_LOOP_INT interrupt.
+         */
+        uint32_t ch3_tx_loop_int_clr: 1;
+        /** ch4_rx_end_int_clr : WT; bitpos: [16]; default: 0;
+         *  Set this bit to clear theCH4_RX_END_INT interrupt.
+         */
+        uint32_t ch4_rx_end_int_clr: 1;
+        /** ch5_rx_end_int_clr : WT; bitpos: [17]; default: 0;
+         *  Set this bit to clear theCH5_RX_END_INT interrupt.
+         */
+        uint32_t ch5_rx_end_int_clr: 1;
+        /** ch6_rx_end_int_clr : WT; bitpos: [18]; default: 0;
+         *  Set this bit to clear theCH6_RX_END_INT interrupt.
+         */
+        uint32_t ch6_rx_end_int_clr: 1;
+        /** ch7_rx_end_int_clr : WT; bitpos: [19]; default: 0;
+         *  Set this bit to clear theCH7_RX_END_INT interrupt.
+         */
+        uint32_t ch7_rx_end_int_clr: 1;
+        /** ch4_err_int_clr : WT; bitpos: [20]; default: 0;
+         *  Set this bit to clear theCH4_ERR_INT interrupt.
+         */
+        uint32_t ch4_err_int_clr: 1;
+        /** ch5_err_int_clr : WT; bitpos: [21]; default: 0;
+         *  Set this bit to clear theCH5_ERR_INT interrupt.
+         */
+        uint32_t ch5_err_int_clr: 1;
+        /** ch6_err_int_clr : WT; bitpos: [22]; default: 0;
+         *  Set this bit to clear theCH6_ERR_INT interrupt.
+         */
+        uint32_t ch6_err_int_clr: 1;
+        /** ch7_err_int_clr : WT; bitpos: [23]; default: 0;
+         *  Set this bit to clear theCH7_ERR_INT interrupt.
+         */
+        uint32_t ch7_err_int_clr: 1;
+        /** ch4_rx_thr_event_int_clr : WT; bitpos: [24]; default: 0;
+         *  Set this bit to clear theCH4_RX_THR_EVENT_INT interrupt.
+         */
+        uint32_t ch4_rx_thr_event_int_clr: 1;
+        /** ch5_rx_thr_event_int_clr : WT; bitpos: [25]; default: 0;
+         *  Set this bit to clear theCH5_RX_THR_EVENT_INT interrupt.
+         */
+        uint32_t ch5_rx_thr_event_int_clr: 1;
+        /** ch6_rx_thr_event_int_clr : WT; bitpos: [26]; default: 0;
+         *  Set this bit to clear theCH6_RX_THR_EVENT_INT interrupt.
+         */
+        uint32_t ch6_rx_thr_event_int_clr: 1;
+        /** ch7_rx_thr_event_int_clr : WT; bitpos: [27]; default: 0;
+         *  Set this bit to clear theCH7_RX_THR_EVENT_INT interrupt.
+         */
+        uint32_t ch7_rx_thr_event_int_clr: 1;
+        /** ch3_dma_access_fail_int_clr : WT; bitpos: [28]; default: 0;
+         *  Set this bit to clear the CH3_DMA_ACCESS_FAIL_INT interrupt.
+         */
+        uint32_t ch3_dma_access_fail_int_clr: 1;
+        /** ch7_dma_access_fail_int_clr : WT; bitpos: [29]; default: 0;
+         *  Set this bit to clear the CH7_DMA_ACCESS_FAIL_INT interrupt.
+         */
+        uint32_t ch7_dma_access_fail_int_clr: 1;
+        uint32_t reserved_30: 2;
+    };
+    uint32_t val;
+} rmt_int_clr_reg_t;
+
+
+/** Group: Carrier wave duty cycle registers */
+/** Type of chncarrier_duty register
+ *  Channel n duty cycle configuration register
+ */
+typedef union {
+    struct {
+        /** carrier_low_chn : R/W; bitpos: [15:0]; default: 64;
+         *  This register is used to configure carrier wave 's low level clock period for
+         *  CHANNELn.
+         */
+        uint32_t carrier_low_chn: 16;
+        /** carrier_high_chn : R/W; bitpos: [31:16]; default: 64;
+         *  This register is used to configure carrier wave 's high level clock period for
+         *  CHANNELn.
+         */
+        uint32_t carrier_high_chn: 16;
+    };
+    uint32_t val;
+} rmt_chncarrier_duty_reg_t;
+
+
+/** Group: Tx event configuration registers */
+/** Type of chn_tx_lim register
+ *  Channel n Tx event configuration register
+ */
+typedef union {
+    struct {
+        /** tx_lim_chn : R/W; bitpos: [8:0]; default: 128;
+         *  This register is used to configure the maximum entries that CHANNELn can send out.
+         */
+        uint32_t tx_lim_chn: 9;
+        /** tx_loop_num_chn : R/W; bitpos: [18:9]; default: 0;
+         *  This register is used to configure the maximum loop count when tx_conti_mode is
+         *  valid.
+         */
+        uint32_t tx_loop_num_chn: 10;
+        /** tx_loop_cnt_en_chn : R/W; bitpos: [19]; default: 0;
+         *  This register is the enabled bit for loop count.
+         */
+        uint32_t tx_loop_cnt_en_chn: 1;
+        /** loop_count_reset_chn : WT; bitpos: [20]; default: 0;
+         *  This register is used to reset the loop count when tx_conti_mode is valid.
+         */
+        uint32_t loop_count_reset_chn: 1;
+        /** loop_stop_en_chn : R/W; bitpos: [21]; default: 0;
+         *  This bit is used to enable the loop send stop function after the loop counter
+         *  counts to  loop number for CHANNELn.
+         */
+        uint32_t loop_stop_en_chn: 1;
+        uint32_t reserved_22: 10;
+    };
+    uint32_t val;
+} rmt_chn_tx_lim_reg_t;
+
+/** Type of tx_sim register
+ *  RMT TX synchronous register
+ */
+typedef union {
+    struct {
+        /** tx_sim_ch0 : R/W; bitpos: [0]; default: 0;
+         *  Set this bit to enable CHANNEL0 to start sending data synchronously with other
+         *  enabled channels.
+         */
+        uint32_t tx_sim_ch0: 1;
+        /** tx_sim_ch1 : R/W; bitpos: [1]; default: 0;
+         *  Set this bit to enable CHANNEL1 to start sending data synchronously with other
+         *  enabled channels.
+         */
+        uint32_t tx_sim_ch1: 1;
+        /** tx_sim_ch2 : R/W; bitpos: [2]; default: 0;
+         *  Set this bit to enable CHANNEL2 to start sending data synchronously with other
+         *  enabled channels.
+         */
+        uint32_t tx_sim_ch2: 1;
+        /** tx_sim_ch3 : R/W; bitpos: [3]; default: 0;
+         *  Set this bit to enable CHANNEL3 to start sending data synchronously with other
+         *  enabled channels.
+         */
+        uint32_t tx_sim_ch3: 1;
+        /** tx_sim_en : R/W; bitpos: [4]; default: 0;
+         *  This register is used to enable multiple of channels to start sending data
+         *  synchronously.
+         */
+        uint32_t tx_sim_en: 1;
+        uint32_t reserved_5: 27;
+    };
+    uint32_t val;
+} rmt_tx_sim_reg_t;
+
+
+/** Group: Rx event configuration registers */
+/** Type of chm_rx_lim register
+ *  Channel m Rx event configuration register
+ */
+typedef union {
+    struct {
+        /** chm_rx_lim_reg : R/W; bitpos: [8:0]; default: 128;
+         *  This register is used to configure the maximum entries that CHANNELm can receive.
+         */
+        uint32_t chm_rx_lim_reg: 9;
+        uint32_t reserved_9: 23;
+    };
+    uint32_t val;
+} rmt_chm_rx_lim_reg_t;
+
+
+/** Group: Version register */
+/** Type of date register
+ *  RMT version register
+ */
+typedef union {
+    struct {
+        /** date : R/W; bitpos: [27:0]; default: 34607489;
+         *  This is the version register.
+         */
+        uint32_t date: 28;
+        uint32_t reserved_28: 4;
+    };
+    uint32_t val;
+} rmt_date_reg_t;
+
+
+typedef struct {
+    volatile rmt_chndata_reg_t chndata[4];
+    volatile rmt_chmdata_reg_t chmdata[4];
+    volatile rmt_chnconf0_reg_t chnconf0[4];
+    volatile rmt_chmconf_reg_t chmconf[4];
+    volatile rmt_chnstatus_reg_t chnstatus[4];
+    volatile rmt_chmstatus_reg_t chmstatus[4];
+    volatile rmt_int_raw_reg_t int_raw;
+    volatile rmt_int_st_reg_t int_st;
+    volatile rmt_int_ena_reg_t int_ena;
+    volatile rmt_int_clr_reg_t int_clr;
+    volatile rmt_chncarrier_duty_reg_t chncarrier_duty[4];
+    volatile rmt_chm_rx_carrier_rm_reg_t chm_rx_carrier_rm[4];
+    volatile rmt_chn_tx_lim_reg_t chn_tx_lim[4];
+    volatile rmt_chm_rx_lim_reg_t chm_rx_lim[4];
+    volatile rmt_sys_conf_reg_t sys_conf;
+    volatile rmt_tx_sim_reg_t tx_sim;
+    volatile rmt_ref_cnt_rst_reg_t ref_cnt_rst;
+    volatile rmt_date_reg_t date;
 } rmt_dev_t;
+
+#ifndef __cplusplus
+_Static_assert(sizeof(rmt_dev_t) == 0xd0, "Invalid size of rmt_dev_t structure");
+#endif
 
 typedef struct {
     union {
@@ -337,22 +1101,22 @@ typedef struct {
     };
 } rmt_item32_t;
 
-extern rmt_dev_t RMT;
-
-typedef volatile struct {
+typedef struct {
     struct {
         union {
-            rmt_item32_t data32[48];
+            volatile rmt_item32_t data32[48];
         };
     } chan[8];
 } rmt_mem_t;
 
+#ifndef __cplusplus
+_Static_assert(sizeof(rmt_item32_t) == 0x04, "Invalid size of rmt_item32_t structure");
+_Static_assert(sizeof(rmt_mem_t) == 0x04 * 8 * 48, "Invalid size of rmt_mem_t structure");
+#endif
+
+extern rmt_dev_t RMT;
 extern rmt_mem_t RMTMEM;
 
 #ifdef __cplusplus
 }
 #endif
-
-
-
-#endif /*_SOC_RMT_STRUCT_H_ */
