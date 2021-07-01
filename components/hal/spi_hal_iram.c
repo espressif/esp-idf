@@ -146,7 +146,8 @@ void spi_hal_prepare_data(spi_hal_context_t *hal, const spi_hal_dev_config_t *de
             lldesc_setup_link(hal->dmadesc_rx, trans->rcv_buffer, ((trans->rx_bitlen + 7) / 8), true);
 
             spi_dma_ll_rx_reset(hal->dma_in, hal->rx_dma_chan);
-            spi_ll_dma_rx_fifo_reset(hal->dma_in);
+            spi_ll_dma_rx_fifo_reset(hal->hw);
+            spi_ll_infifo_full_clr(hal->hw);
             spi_ll_dma_rx_enable(hal->hw, 1);
             spi_dma_ll_rx_start(hal->dma_in, hal->rx_dma_chan, hal->dmadesc_rx);
         }
@@ -170,7 +171,8 @@ void spi_hal_prepare_data(spi_hal_context_t *hal, const spi_hal_dev_config_t *de
             lldesc_setup_link(hal->dmadesc_tx, trans->send_buffer, (trans->tx_bitlen + 7) / 8, false);
 
             spi_dma_ll_tx_reset(hal->dma_out, hal->tx_dma_chan);
-            spi_ll_dma_tx_fifo_reset(hal->dma_in);
+            spi_ll_dma_tx_fifo_reset(hal->hw);
+            spi_ll_outfifo_empty_clr(hal->hw);
             spi_ll_dma_tx_enable(hal->hw, 1);
             spi_dma_ll_tx_start(hal->dma_out, hal->tx_dma_chan, hal->dmadesc_tx);
         }
