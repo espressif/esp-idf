@@ -22,6 +22,8 @@ For this Getting Started we're going to use the Command Prompt, but after ESP-ID
         Previous versions of ESP-IDF used the :doc:`Legacy GNU Make Build System<../get-started-legacy/windows-setup>` and MSYS2_ Unix compatibility environment. This is no longer required, ESP-IDF can be used from the Windows Command Prompt.
 
 .. note::
+    Limitation: the installation path of ESP-IDF and ESP-IDF Tools must not be longer than 90 characters. Too long installation paths might result in a failed build.
+
     Limitation: the installation path of Python or ESP-IDF must not contain white spaces or parentheses.
 
     Limitation: the installation path of Python or ESP-IDF should not contain special characters (non-ASCII) unless the operating system is configured with "Unicode UTF-8" support.
