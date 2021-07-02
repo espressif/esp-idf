@@ -1052,6 +1052,11 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
                     if (client->is_async && errno == EAGAIN) {
                         return ESP_ERR_HTTP_EAGAIN;
                     }
+                    if (esp_tls_get_and_clear_last_error(esp_transport_get_error_handle(client->transport), NULL, NULL) == ESP_ERR_ESP_TLS_TCP_CLOSED_FIN) {
+                        ESP_LOGW(TAG, "Close connection due to FIN received");
+                        esp_http_client_close(client);
+                        return ESP_ERR_HTTP_CONNECTION_CLOSED;
+                    }
                     return ESP_ERR_HTTP_FETCH_HEADER;
                 }
                 /* falls through */
