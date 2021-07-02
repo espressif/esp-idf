@@ -231,6 +231,8 @@ static esp_err_t ip101_negotiate(esp_eth_phy_t *phy)
 {
     phy_ip101_t *ip101 = __containerof(phy, phy_ip101_t, parent);
     esp_eth_mediator_t *eth = ip101->eth;
+    /* in case any link status has changed, let's assume we're in link down status */
+    ip101->link_status = ETH_LINK_DOWN;
     /* Restart auto negotiation */
     bmcr_reg_t bmcr = {
         .speed_select = 1,     /* 100Mbps */
@@ -243,8 +245,8 @@ static esp_err_t ip101_negotiate(esp_eth_phy_t *phy)
     /* Wait for auto negotiation complete */
     bmsr_reg_t bmsr;
     uint32_t to = 0;
-    for (to = 0; to < ip101->autonego_timeout_ms / 10; to++) {
-        vTaskDelay(pdMS_TO_TICKS(10));
+    for (to = 0; to < ip101->autonego_timeout_ms / 100; to++) {
+        vTaskDelay(pdMS_TO_TICKS(100));
         PHY_CHECK(eth->phy_reg_read(eth, ip101->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)) == ESP_OK,
                   "read BMSR failed", err);
         if (bmsr.auto_nego_complete) {
@@ -252,11 +254,9 @@ static esp_err_t ip101_negotiate(esp_eth_phy_t *phy)
         }
     }
     /* Auto negotiation failed, maybe no network cable plugged in, so output a warning */
-    if (to >= ip101->autonego_timeout_ms / 10) {
+    if (to >= ip101->autonego_timeout_ms / 100) {
         ESP_LOGW(TAG, "auto negotiation timeout");
     }
-    /* Updata information about link, speed, duplex */
-    PHY_CHECK(ip101_update_link_duplex_speed(ip101) == ESP_OK, "update link duplex speed failed", err);
     return ESP_OK;
 err:
     return ESP_FAIL;
