@@ -370,7 +370,7 @@ esp_err_t spi_flash_common_set_io_mode(esp_flash_t *chip, esp_flash_wrsr_func_t 
  * transactions. Also prepare the command to be sent in read functions.
  *
  * @param chip Pointer to SPI flash chip to use. If NULL, esp_flash_default_chip is substituted.
- * @param addr_32bit Whether 32 bit commands will be used (Currently only W25Q256 is supported)
+ * @param addr_32bit Whether 32 bit commands will be used (Currently only W25Q256 and GD25Q256 are supported)
  *
  * @return
  *      - ESP_OK if success

@@ -140,6 +140,19 @@ esp_err_t spi_flash_chip_winbond_erase_block(esp_flash_t *chip, uint32_t start_a
     return err;
 }
 
+spi_flash_caps_t spi_flash_chip_winbond_get_caps(esp_flash_t *chip)
+{
+    spi_flash_caps_t caps_flags = 0;
+    // 32M-bits address support
+    if ((chip->chip_id & 0xFF) >= 0x19) {
+        caps_flags |= SPI_FLASH_CHIP_CAP_32MB_SUPPORT;
+    }
+    // flash-suspend is not supported
+    // flash read unique id.
+    caps_flags |= SPI_FLASH_CHIP_CAP_UNIQUE_ID;
+    return caps_flags;
+}
+
 static const char chip_name[] = "winbond";
 
 // The issi chip can use the functions for generic chips except from set read mode and probe,
@@ -178,6 +191,7 @@ const spi_flash_chip_t esp_flash_chip_winbond = {
     .yield = spi_flash_chip_generic_yield,
     .sus_setup = spi_flash_chip_generic_suspend_cmd_conf,
     .read_unique_id = spi_flash_chip_generic_read_unique_id,
+    .get_chip_caps = spi_flash_chip_winbond_get_caps,
 };
 
 
