@@ -616,7 +616,10 @@ esp_err_t esp_modem_exit_ppp(modem_dte_t *dte)
     MODEM_CHECK(dce, "DTE has not yet bind with DCE", err);
     esp_modem_dte_t *esp_dte = __containerof(dte, esp_modem_dte_t, parent);
     /* Shutdown of PPP protocols */
-    MODEM_CHECK(pppapi_close(esp_dte->ppp, 0) == ERR_OK, "close ppp connection failed", err);
+    if (esp_dte->ppp->phase != PPP_PHASE_DEAD) {
+        MODEM_CHECK(pppapi_close(esp_dte->ppp, 0) == ERR_OK, "close ppp connection failed", err);
+    }
+    MODEM_CHECK(pppapi_free(esp_dte->ppp) == ERR_OK, "free ppp connection failed", err);
     /* Enter command mode */
     MODEM_CHECK(dte->change_mode(dte, MODEM_COMMAND_MODE) == ESP_OK, "enter command mode failed", err);
     /* Hang up */
