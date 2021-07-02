@@ -371,7 +371,7 @@ static void IRAM_ATTR resume_uarts(void)
     }
 }
 
-inline static uint32_t IRAM_ATTR call_rtc_sleep_start(uint32_t reject_triggers);
+inline static uint32_t IRAM_ATTR call_rtc_sleep_start(uint32_t reject_triggers, uint32_t lslp_mem_inf_fpu);
 
 #if SOC_PM_SUPPORT_CPU_PD
 esp_err_t esp_sleep_cpu_pd_low_init(bool enable)
@@ -565,7 +565,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
         result = 0;
 #else
         set_rtc_memory_crc();
-        result = call_rtc_sleep_start(reject_triggers);
+        result = call_rtc_sleep_start(reject_triggers, config.lslp_mem_inf_fpu);
 #endif
 #else
         /* Otherwise, need to call the dedicated soc function for this */
@@ -574,7 +574,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 
         portEXIT_CRITICAL(&spinlock_rtc_deep_sleep);
     } else {
-        result = call_rtc_sleep_start(reject_triggers);
+        result = call_rtc_sleep_start(reject_triggers, config.lslp_mem_inf_fpu);
     }
 
     // Restore CPU frequency
@@ -601,12 +601,12 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     return result;
 }
 
-inline static uint32_t IRAM_ATTR call_rtc_sleep_start(uint32_t reject_triggers)
+inline static uint32_t IRAM_ATTR call_rtc_sleep_start(uint32_t reject_triggers, uint32_t lslp_mem_inf_fpu)
 {
 #ifdef CONFIG_IDF_TARGET_ESP32
     return rtc_sleep_start(s_config.wakeup_triggers, reject_triggers);
 #else
-    return rtc_sleep_start(s_config.wakeup_triggers, reject_triggers, 1);
+    return rtc_sleep_start(s_config.wakeup_triggers, reject_triggers, lslp_mem_inf_fpu);
 #endif
 }
 
