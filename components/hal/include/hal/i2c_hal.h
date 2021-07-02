@@ -66,7 +66,7 @@ typedef struct {
 #define i2c_hal_write_cmd_reg(hal,cmd, cmd_idx)    i2c_ll_write_cmd_reg((hal)->dev,cmd,cmd_idx)
 
 /**
- * @brief  Configure the I2C to triger a trasaction
+ * @brief  Configure the I2C to triger a transaction
  *
  * @param  hal Context of the HAL layer
  *
