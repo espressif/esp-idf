@@ -377,6 +377,11 @@ bool esp_spiram_is_initialized(void)
     return spiram_inited;
 }
 
+uint8_t esp_spiram_get_cs_io(void)
+{
+    return psram_get_cs_io();
+}
+
 /*
  Simple RAM test. Writes a word every 32 bytes. Takes about a second to complete for 4MiB. Returns
  true when RAM seems OK, false when test fails. WARNING: Do not run this before the 2nd cpu has been
@@ -415,4 +420,5 @@ bool esp_spiram_test(void)
         return true;
     }
 }
+
 #endif

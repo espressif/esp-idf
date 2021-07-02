@@ -68,5 +68,11 @@ typedef enum {
 
 esp_err_t esp_spiram_wrap_set(spiram_wrap_mode_t mode);
 
+/**
+ * @brief get psram CS IO
+ *
+ * @return psram CS IO
+ */
+uint8_t psram_get_cs_io(void);
 
 #endif

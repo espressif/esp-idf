@@ -121,6 +121,13 @@ static uint32_t s_psram_id = 0;
 static void IRAM_ATTR config_psram_spi_phases(void);
 extern void esp_rom_spi_set_op_mode(int spi_num, esp_rom_spiflash_read_mode_t mode);
 
+static uint8_t s_psram_cs_io = (uint8_t)-1;
+
+uint8_t psram_get_cs_io(void)
+{
+    return s_psram_cs_io;
+}
+
 static void psram_set_op_mode(int spi_num, psram_cmd_mode_t mode)
 {
     if (mode == PSRAM_CMD_QPI) {
@@ -301,6 +308,7 @@ static void IRAM_ATTR psram_gpio_config(void)
         esp_rom_gpio_connect_out_signal(cs1_io, SPICS1_OUT_IDX, 0, 0);
         gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[cs1_io],  PIN_FUNC_GPIO);
     }
+    s_psram_cs_io = cs1_io;
 
     //WP HD
     uint8_t wp_io = PSRAM_SPIWP_SD3_IO;
