@@ -200,7 +200,8 @@ ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-reference/peripherals/touch_element.rst',
                 'api-reference/peripherals/dac.rst'] + FTDI_JTAG_DOCS
 
-ESP32S3_DOCS = ['api-reference/system/ipc.rst']
+ESP32S3_DOCS = ['hw-reference/esp32s3/**',
+                'api-reference/system/ipc.rst']
 
 # No JTAG docs for this one as it gets gated on SOC_USB_SERIAL_JTAG_SUPPORTED down below.
 ESP32C3_DOCS = ['hw-reference/esp32c3/**']
