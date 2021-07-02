@@ -1124,12 +1124,32 @@ void l2cble_process_data_length_change_event(UINT16 handle, UINT16 tx_data_len, 
     }
 
     tACL_CONN *p_acl = btm_handle_to_acl(handle);
+    tBTM_LE_SET_PKT_DATA_LENGTH_PARAMS data_length_params;
+    data_length_params.rx_len = rx_data_len;
+    data_length_params.tx_len = tx_data_len;
+    p_acl->data_length_params = data_length_params;
     if (p_acl != NULL && p_acl->p_set_pkt_data_cback){
-       tBTM_LE_SET_PKT_DATA_LENGTH_PARAMS data_length_params;
-       data_length_params.rx_len = tx_data_len;
-       data_length_params.tx_len = rx_data_len;
-       p_acl->data_length_params = data_length_params;
        (*p_acl->p_set_pkt_data_cback)(BTM_SUCCESS, &data_length_params);
+    }
+
+    if(p_acl) {
+        p_acl->data_len_updating = false;
+        if(p_acl->data_len_waiting) {
+            p_acl->data_len_waiting = false;
+            p_acl->p_set_pkt_data_cback = p_acl->p_set_data_len_cback_waiting;
+            p_acl->p_set_data_len_cback_waiting = NULL;
+            // if value is same, triger callback directly
+            if(p_acl->tx_len_waiting == p_acl->data_length_params.tx_len) {
+                if(p_acl->p_set_pkt_data_cback) {
+                    (*p_acl->p_set_pkt_data_cback)(BTM_SUCCESS, &p_acl->data_length_params);
+                }
+                return;
+            }
+            p_acl->data_len_updating = true;
+            /* always set the TxTime to be max, as controller does not care for now */
+            btsnd_hcic_ble_set_data_length(handle, p_acl->tx_len_waiting,
+                                            BTM_BLE_DATA_TX_TIME_MAX);
+        }
     }
 }
 
