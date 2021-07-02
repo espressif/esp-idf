@@ -19,7 +19,7 @@
 static int wps_set_vendor_ext_wfa_subelem(struct wps_parse_attr *attr,
 					  u8 id, u8 len, const u8 *pos)
 {
-	wpa_printf(MSG_DEBUG, "WPS: WFA subelement id=%u len=%u",
+	wpa_printf(MSG_MSGDUMP, "WPS: WFA subelement id=%u len=%u",
 		   id, len);
 	switch (id) {
 	case WFA_ELEM_VERSION2:
@@ -128,44 +128,9 @@ static int wps_parse_vendor_ext(struct wps_parse_attr *attr, const u8 *pos,
 	return 0;
 }
 
-static u16 wps_ignore_null_padding_in_attr(const u8 *pos, u16 type, u16 attr_data_len)
-{
-	u16 len = attr_data_len;
-
-	if (len == 0)
-		return 0;
-#ifdef CONFIG_WPA_WPS_WARS
-	/*
-	 * Some AP's keep NULL-padding at the end of some variable length WPS Attributes.
-	 * This is not as par the WPS2.0 specs, but to avoid interop issues, ignore the
-	 * padding by reducing the attribute length by 1.
-	 */
-	switch (type) {
-		case ATTR_MANUFACTURER:
-		case ATTR_MODEL_NAME:
-		case ATTR_MODEL_NUMBER:
-		case ATTR_SERIAL_NUMBER:
-		case ATTR_DEV_NAME:
-		case ATTR_SSID:
-		case ATTR_NETWORK_KEY:
-			if (pos[len - 1] == 0)
-				len--;
-			break;
-		default:
-			break;
-	}
-#endif
-
-	return len;
-}
-
 static int wps_set_attr(struct wps_parse_attr *attr, u16 type,
-			const u8 *pos, u16 attr_data_len)
+			const u8 *pos, u16 len)
 {
-	u16 len;
-
-	len = wps_ignore_null_padding_in_attr(pos, type, attr_data_len);
-
 	switch (type) {
 	case ATTR_VERSION:
 		if (len != 1) {
@@ -617,7 +582,7 @@ int wps_parse_msg(const struct wpabuf *msg, struct wps_parse_attr *attr)
 		pos += 2;
 		len = WPA_GET_BE16(pos);
 		pos += 2;
-		wpa_printf(MSG_DEBUG, "WPS: attr type=0x%x len=%u",
+		wpa_printf(MSG_MSGDUMP, "WPS: attr type=0x%x len=%u",
 			   type, len);
 		if (len > end - pos) {
 			wpa_printf(MSG_DEBUG,  "WPS: Attribute overflow");
