@@ -1,0 +1,17 @@
+name: Create zip file with recursive source clone for release
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  release_zips:
+    name: Create release zip file
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Create a recursive clone source zip
+        uses: espressif/github-actions/release_zips@master
+        env:
+            RELEASE_PROJECT_NAME: ESP-IDF
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
