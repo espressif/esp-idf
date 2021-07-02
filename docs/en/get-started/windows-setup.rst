@@ -1,74 +1,110 @@
-***************************************
+***********************************************
 Standard Setup of Toolchain for Windows
-***************************************
+***********************************************
+
 :link_to_translation:`zh_CN:[中文]`
 
 Introduction
 ============
 
-Windows doesn't have a built-in "make" environment, so as well as installing the toolchain you will need a GNU-compatible environment. We use the MSYS2_ environment to provide this. You don't need to use this environment all the time (you can use :doc:`Eclipse <eclipse-setup>` or some other front-end), but it runs behind the scenes.
+ESP-IDF requires some prerequisite tools to be installed so you can build firmware for supported chips. The prerequisite tools include Python, Git, cross-compilers, CMake and Ninja build tools.
 
+For this Getting Started we're going to use the Command Prompt, but after ESP-IDF is installed you can use :doc:`Eclipse <eclipse-setup>` or another graphical IDE with CMake support instead.
 
-Toolchain Setup 
-===============
+.. note::
+    Limitation: the installation path of Python or ESP-IDF must not contain white spaces or parentheses.
 
-The quick setup is to download the Windows all-in-one toolchain & MSYS2 zip file from dl.espressif.com:
+    Limitation: the installation path of Python or ESP-IDF should not contain special characters (non-ASCII) unless the operating system is configured with "Unicode UTF-8" support.
+    System Administrator can enable the support via Control Panel - Change date, time, or number formats - Administrative tab - Change system locale - check the option "Beta: Use Unicode UTF-8 for worldwide language support" - Ok and reboot the computer.
 
-https://dl.espressif.com/dl/esp32_win32_msys2_environment_and_toolchain_idf3-20201104.zip
+.. _get-started-windows-tools-installer:
 
-Unzip the zip file to ``C:\`` (or some other location, but this guide assumes ``C:\``) and it will create an ``msys32`` directory with a pre-prepared environment.
+ESP-IDF Tools Installer
+=======================
 
-.. important::
+The easiest way to install ESP-IDF's prerequisites is to download one of ESP-IDF Tools Installers from this URL: https://dl.espressif.com/dl/esp-idf/?idf=3.3
 
-    If another toolchain location is used (different than the default ``C:\msys32``), please ensure that the path where the all-in-one toolchain gets unzipped is a plain ASCII, contains no spaces, symlinks or accents.
+What is the usecase for Online and Offline Installer
+----------------------------------------------------
 
+Online Installer is very small and allows the installation of all available releases of ESP-IDF. The installer will download only necessary dependencies including `Git For Windows`_  during the installation process. The installer stores downloaded files in the cache directory ``%userprofile%\.espressif``
 
-Check it Out
-============
+Offline Installer does not require any network connection. The installer contains all required dependencies including `Git For Windows`_ .
 
-Open a MSYS2 MINGW32 terminal window by running ``C:\msys32\mingw32.exe``. The environment in this window is a bash shell. Create a directory named ``esp`` that is a default location to develop ESP32 applications. To do so, run the following shell command::
+Components of the installation
+------------------------------
 
-    mkdir -p ~/esp
+The installer deploys the following components:
 
-By typing ``cd ~/esp`` you can then move to the newly created directory. If there are no error messages you are done with this step.
+- Embedded Python
+- Cross-compilers
+- OpenOCD
+- CMake_ and Ninja_ build tools
+- ESP-IDF
 
-.. figure:: ../../_static/msys2-terminal-window.png
+The installer also allows reusing the existing directory with ESP-IDF. The recommended directory is ``%userprofile%\Desktop\esp-idf`` where ``%userprofile%`` is your home directory.
+
+Launching ESP-IDF Environment
+-----------------------------
+
+At the end of the installation process you can check out option ``Run ESP-IDF PowerShell Environment`` or ``Run ESP-IDF Command Prompt (cmd.exe)``. The installer will launch ESP-IDF environment in selected prompt.
+
+``Run ESP-IDF PowerShell Environment``:
+
+.. figure:: ../../_static/esp-idf-installer-screenshot-powershell.png
     :align: center
-    :alt: MSYS2 MINGW32 shell window
+    :alt: Completing the ESP-IDF Tools Setup Wizard with Run ESP-IDF PowerShell Environment
     :figclass: align-center
 
-    MSYS2 MINGW32 shell window
+    Completing the ESP-IDF Tools Setup Wizard with Run ESP-IDF PowerShell Environment
 
-Use this window in the following steps setting up development environment for ESP32.
+.. figure:: ../../_static/esp-idf-installer-powershell.png
+    :align: center
+    :alt: ESP-IDF PowerShell
+    :figclass: align-center
 
+    ESP-IDF PowerShell
+
+``Run ESP-IDF Command Prompt (cmd.exe)``:
+
+.. figure:: ../../_static/esp-idf-installer-screenshot.png
+    :align: center
+    :alt: Completing the ESP-IDF Tools Setup Wizard with Run ESP-IDF Command Prompt (cmd.exe)
+    :figclass: align-center
+
+    Completing the ESP-IDF Tools Setup Wizard with Run ESP-IDF Command Prompt (cmd.exe)
+
+.. figure:: ../../_static/esp-idf-installer-command-prompt.png
+    :align: center
+    :alt: ESP-IDF Command Prompt
+    :figclass: align-center
+
+    ESP-IDF Command Prompt
+
+Using the Command Prompt
+========================
+
+For the remaining Getting Started steps, we're going to use the Windows Command Prompt.
+
+ESP-IDF Tools Installer also creates a shortcut in the Start menu to launch the ESP-IDF Command Prompt. This shortcut launches the Command Prompt (cmd.exe) and runs ``export.bat`` script to set up the environment variables (``PATH``, ``IDF_PATH`` and others). Inside this command prompt, all the installed tools are available.
+
+Note that this shortcut is specific to the ESP-IDF directory selected in the ESP-IDF Tools Installer. If you have multiple ESP-IDF directories on the computer (for example, to work with different versions of ESP-IDF), you have two options to use them:
+
+1. Create a copy of the shortcut created by the ESP-IDF Tools Installer, and change the working directory of the new shortcut to the ESP-IDF directory you wish to use.
+
+2. Alternatively, run ``cmd.exe``, then change to the ESP-IDF directory you wish to use, and run ``export.bat``. Note that unlike the previous option, this way requires Python and Git to be present in ``PATH``. If you get errors related to Python or Git not being found, use the first option.
 
 Next Steps
 ==========
 
-To carry on with development environment setup, proceed to section :ref:`get-started-get-esp-idf`.
-
-Updating The Environment
-========================
-
-When IDF is updated, sometimes new toolchains are required or new requirements are added to the Windows MSYS2 environment. To move any data from an old version of the precompiled environment to a new one:
-
-- Take the old MSYS2 environment (ie ``C:\msys32``) and move/rename it to a different directory (ie ``C:\msys32_old``).
-- Download the new precompiled environment using the steps above.
-- Unzip the new MSYS2 environment to ``C:\msys32`` (or another location).
-- Find the old ``C:\msys32_old\home`` directory and move this into ``C:\msys32``.
-- You can now delete the ``C:\msys32_old`` directory if you no longer need it.
-
-You can have independent different MSYS2 environments on your system, as long as they are in different directories.
-
-There are :ref:`also steps to update the existing environment without downloading a new one <updating-existing-windows-environment>`, although this is more complex.
+If the ESP-IDF Tools Installer has finished successfully, then the development environment setup is complete. Proceed directly to :ref:`get-started-start-project`.
 
 Related Documents
 =================
 
-.. toctree::
-    :maxdepth: 1
-
-    windows-setup-scratch
-
-
-.. _MSYS2: https://msys2.github.io/
+.. _MSYS2: https://www.msys2.org/
+.. _CMake: https://cmake.org/download/
+.. _Ninja: https://ninja-build.org/
+.. _Python: https://www.python.org/downloads/windows/
+.. _Git for Windows: https://gitforwindows.org/
+.. _Github Desktop: https://desktop.github.com/
