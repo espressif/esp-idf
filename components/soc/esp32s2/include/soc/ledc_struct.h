@@ -30,8 +30,7 @@ typedef volatile struct {
                     uint32_t ovf_cnt_en: 1;
                     uint32_t ovf_cnt_rst: 1;
                     uint32_t ovf_cnt_rst_st: 1;
-                    uint32_t reserved18: 13;
-                    uint32_t clk_en:     1;              /*This bit is clock gating control signal. when software configure LED_PWM internal registers  it controls the register clock.*/
+                    uint32_t reserved18: 14;
                 };
                 uint32_t val;
             } conf0;
@@ -198,7 +197,8 @@ typedef volatile struct {
     union {
         struct {
             uint32_t apb_clk_sel: 2; // 0:invalid; 1:80MHz APB clock; 2:8MHz RTC clock; 3:XTAL clock
-            uint32_t reserved2:  30;
+            uint32_t reserved2:  29;
+            uint32_t clk_en:      1; /*This bit is clock gating control signal. when software configure LED_PWM internal registers  it controls the register clock.*/
         };
         uint32_t val;
     } conf;
