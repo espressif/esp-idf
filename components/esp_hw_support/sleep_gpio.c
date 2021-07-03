@@ -20,6 +20,14 @@
 #include "esp_private/gpio.h"
 #include "esp_private/sleep_gpio.h"
 
+#ifdef CONFIG_IDF_TARGET_ESP32
+#include "esp32/spiram.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/spiram.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/spiram.h"
+#endif
+
 static const char *TAG = "sleep";
 
 #if SOC_GPIO_SUPPORT_SLP_SWITCH
@@ -53,6 +61,9 @@ void esp_sleep_config_gpio_isolate(void)
             gpio_sleep_set_pull_mode(gpio_num, GPIO_FLOATING);
         }
     }
+#if CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND && CONFIG_SPIRAM
+    gpio_sleep_set_pull_mode(esp_spiram_get_cs_io(), GPIO_PULLUP_ONLY);
+#endif
 }
 
 void esp_sleep_enable_gpio_switch(bool enable)
