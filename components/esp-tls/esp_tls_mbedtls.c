@@ -374,7 +374,7 @@ int esp_tls_session_ticket_write(void *p_ticket, const mbedtls_ssl_session *sess
     int ret = mbedtls_ssl_ticket_write(p_ticket, session, start, end, tlen, lifetime);
 #ifndef NDEBUG
     if (ret != 0) {
-        ESP_LOGD(TAG, "Writing session ticket resulted in error code %d", ret);
+        ESP_LOGE(TAG, "Writing session ticket resulted in error code %d", ret);
     }
 #endif
     return ret;
