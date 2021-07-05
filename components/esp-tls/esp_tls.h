@@ -21,7 +21,7 @@
 #include "mbedtls/error.h"
 #include "mbedtls/certs.h"
 #ifdef CONFIG_ESP_TLS_SERVER_SESSION_TICKETS
-    #include "mbedtls/ssl_ticket.h"
+#include "mbedtls/ssl_ticket.h"
 #endif
 #elif CONFIG_ESP_TLS_USING_WOLFSSL
 #include "wolfssl/wolfcrypt/settings.h"
