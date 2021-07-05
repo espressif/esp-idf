@@ -145,7 +145,7 @@ static void free_secure_context(void *ctx)
     if (cfg->serverkey_buf) {
         free((void *)cfg->serverkey_buf);
     }
-    esp_tls_cfg_server_free(cfg);
+    esp_tls_cfg_server_session_tickets_free(cfg);
     free(cfg);
     free(ssl_ctx);
 }
@@ -162,10 +162,13 @@ static httpd_ssl_ctx_t *create_secure_context(const struct httpd_ssl_config *con
         return NULL;
     }
 
-    if (esp_tls_cfg_server_init(cfg) != ESP_OK) {
-        free(ssl_ctx);
-        free(cfg);
-        return NULL;
+    if (config->session_tickets) {
+        if ( esp_tls_cfg_server_session_tickets_init(cfg) != ESP_OK ) {
+            ESP_LOGE(TAG, "Failed to init session ticket support");
+            free(ssl_ctx);
+            free(cfg);
+            return NULL;
+        }
     }
 
     ssl_ctx->tls_cfg = cfg;

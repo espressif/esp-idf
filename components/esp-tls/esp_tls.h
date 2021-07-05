@@ -175,6 +175,9 @@ typedef struct esp_tls_cfg {
 
 #ifdef CONFIG_ESP_TLS_SERVER
 #if defined(CONFIG_ESP_TLS_USING_MBEDTLS) && defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
+/**
+ * @brief Data structures necessary to support TLS session tickets according to RFC5077
+ */
 typedef struct esp_tls_session_ticket_ctx {
     mbedtls_entropy_context entropy;                                            /*!< mbedTLS entropy context structure */
 
@@ -183,8 +186,6 @@ typedef struct esp_tls_session_ticket_ctx {
                                                                                      bit generation based on AES-256 */
     mbedtls_ssl_ticket_context ticket_ctx;                                     /*!< Session ticket generation context */
 } esp_tls_session_ticket_ctx_t;
-int esp_tls_session_ticket_ctx_init(esp_tls_session_ticket_ctx_t * cfg);
-void esp_tls_session_ticket_ctx_free(esp_tls_session_ticket_ctx_t * cfg);
 #endif
 
 typedef struct esp_tls_cfg_server {
@@ -239,12 +240,36 @@ typedef struct esp_tls_cfg_server {
                                                      serverkey_password */
 
 #if defined(CONFIG_ESP_TLS_USING_MBEDTLS) && defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
-    esp_tls_session_ticket_ctx_t ticket_ctx;                          /*!< Session ticket generation context */
+    esp_tls_session_ticket_ctx_t * ticket_ctx; /*!< Session ticket generation context.
+                                                    You have to call esp_tls_cfg_server_session_tickets_init
+                                                    to use it.
+                                                    Call esp_tls_cfg_server_session_tickets_free
+                                                    to free the data associated with this context. */
 #endif
 } esp_tls_cfg_server_t;
 
-int esp_tls_cfg_server_init(esp_tls_cfg_server_t * cfg);
-void esp_tls_cfg_server_free(esp_tls_cfg_server_t * cfg);
+/**
+ * @brief Initialize the server side TLS session ticket context
+ *
+ * This function initializes the server side tls session ticket context
+ * which holds all necessary data structures to enable tls session tickets
+ * according to RFC5077.
+ * Use esp_tls_cfg_server_session_tickets_free to free the data.
+ *
+ * @param[in]  cfg server configuration as esp_tls_cfg_server_t
+ * @return
+ *             ESP_OK if setup succeeded
+ *             ESP_ERR_INVALID_ARG if context is already initialized
+ *             ESP_ERR_NO_MEM if memory allocation failed
+ *             ESP_ERR_NOT_SUPPORTED if session tickets are not available due to build configuration
+ *             ESP_FAIL if setup failed
+ */
+int esp_tls_cfg_server_session_tickets_init(esp_tls_cfg_server_t * cfg);
+
+/**
+ * @brief Free the server side TLS session ticket context
+ */
+void esp_tls_cfg_server_session_tickets_free(esp_tls_cfg_server_t * cfg);
 #endif /* ! CONFIG_ESP_TLS_SERVER */
 
 /**

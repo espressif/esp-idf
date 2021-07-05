@@ -63,6 +63,9 @@ struct httpd_ssl_config {
 
     /** Port used when transport mode is insecure (default 80) */
     uint16_t port_insecure;
+
+    /** Enable tls session tickets */
+    bool session_tickets;
 };
 
 typedef struct httpd_ssl_config httpd_ssl_config_t;
@@ -109,6 +112,7 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
     .transport_mode = HTTPD_SSL_TRANSPORT_SECURE, \
     .port_secure = 443,                           \
     .port_insecure = 80,                          \
+    .session_tickets = false,                     \
 }
 
 /**
