@@ -338,7 +338,7 @@ TEST_CASE("Test spi_flash read/write performance", "[spi_flash]")
 #endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 
 //  TODO: This test is disabled on S3 with legacy impl - IDF-3505
-#if !CONFIG_SPI_FLASH_USE_LEGACY_IMPL && CONFIG_IDF_TARGET_ESP32S3
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32, ESP32S2, ESP32S3, ESP32C3)
 
 #if portNUM_PROCESSORS > 1
 TEST_CASE("spi_flash deadlock with high priority busy-waiting task", "[spi_flash][esp_flash]")
@@ -398,7 +398,7 @@ TEST_CASE("spi_flash deadlock with high priority busy-waiting task", "[spi_flash
 }
 #endif // portNUM_PROCESSORS > 1
 
-#endif // !CONFIG_SPI_FLASH_USE_LEGACY_IMPL && CONFIG_IDF_TARGET_ESP32S3
+#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32, ESP32S2, ESP32S3, ESP32C3)
 
 TEST_CASE("WEL is cleared after boot", "[spi_flash]")
 {
