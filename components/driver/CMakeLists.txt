@@ -69,6 +69,7 @@ if(IDF_TARGET STREQUAL "esp32c3")
     list(APPEND srcs "gdma.c"
                      "spi_slave_hd.c"
                      "adc_common.c"
+                     "usb_serial_jtag.c"
                      "esp32c3/adc.c"
                      "esp32c3/adc2_init_cal.c"
                      "esp32c3/rtc_tempsensor.c")
