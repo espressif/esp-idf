@@ -388,6 +388,35 @@ int esp_tls_session_ticket_parse(void *p_ticket, mbedtls_ssl_session *session, u
 #endif
     return ret;
 }
+
+int esp_tls_session_ticket_ctx_init(esp_tls_session_ticket_ctx_t * ctx) {
+
+    mbedtls_ctr_drbg_init(&ctx->ctr_drbg);
+    mbedtls_entropy_init(&ctx->entropy);
+    mbedtls_ssl_ticket_init(&ctx->ticket_ctx);
+    int ret;
+    if ((ret = mbedtls_ctr_drbg_seed(&ctx->ctr_drbg,
+                                     mbedtls_entropy_func, &ctx->entropy, NULL, 0)) != 0) {
+        ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned -0x%x", -ret);
+        return ESP_ERR_MBEDTLS_CTR_DRBG_SEED_FAILED;
+    }
+
+    if( ( ret = mbedtls_ssl_ticket_setup( &ctx->ticket_ctx,
+                    mbedtls_ctr_drbg_random, &ctx->ctr_drbg,
+                    MBEDTLS_CIPHER_AES_256_GCM,
+                    CONFIG_ESP_TLS_SERVER_SESSION_TICKET_TIMEOUT ) ) != 0 )
+        {
+            ESP_LOGE(TAG, "Failed mbedtls_ssl_ticket_setup with error code %d", ret);
+            return ESP_ERR_MBEDTLS_SSL_SESSION_TICKET_SETUP_FAILED;
+        }
+    return ESP_OK;
+}
+
+void esp_tls_session_ticket_ctx_free(esp_tls_session_ticket_ctx_t * ctx) {
+    mbedtls_ssl_ticket_free(&ctx->ticket_ctx);
+    mbedtls_ctr_drbg_init(&ctx->ctr_drbg);
+    mbedtls_entropy_free(&ctx->entropy);
+}
 #endif
 
 esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
@@ -443,12 +472,14 @@ esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
     }
 
 #ifdef CONFIG_ESP_TLS_SERVER_SESSION_TICKETS
-    ESP_LOGD(TAG, "Enabling server-side tls session ticket support");
+    if (cfg->ticket_ctx) {
+        ESP_LOGD(TAG, "Enabling server-side tls session ticket support");
 
-    mbedtls_ssl_conf_session_tickets_cb( &tls->conf,
-            esp_tls_session_ticket_write,
-            esp_tls_session_ticket_parse,
-            &cfg->ticket_ctx.ticket_ctx );
+        mbedtls_ssl_conf_session_tickets_cb( &tls->conf,
+                esp_tls_session_ticket_write,
+                esp_tls_session_ticket_parse,
+                &cfg->ticket_ctx->ticket_ctx );
+    }
 #endif
 
     return ESP_OK;
