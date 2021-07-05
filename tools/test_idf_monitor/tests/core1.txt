@@ -3,7 +3,7 @@ I (195) boot: Loaded app from partition at offset 0x10000
 I (195) boot: Disabling RNG early entropy source...
 I (196) cpu_start: Pro cpu up.
 I (200) cpu_start: Application information:
-I (205) cpu_start: Project name:     hello-world
+I (205) cpu_start: Project name:     hello_world
 I (210) cpu_start: App version:      v4.2-dev-172-gc9cc694dbb-dirty
 I (217) cpu_start: Compile time:     Feb  6 2020 17:57:45
 I (223) cpu_start: ELF file SHA256:  83cfeb53c9c00c61...
@@ -25,12 +25,12 @@ I (319) cpu_start: Starting scheduler on PRO CPU.
 I (0) cpu_start: Starting scheduler on APP CPU.
 Guru Meditation Error: Core  0 panic'ed (StoreProhibited). Exception was unhandled.
 Core 0 register dump:
-PC      : 0x400e37f7  PS      : 0x00060430  A0      : 0x800d0c31  A1      : 0x3ffb5db0  
-A2      : 0x00000001  A3      : 0x00000001  A4      : 0x00000001  A5      : 0x00060023  
-A6      : 0x00000001  A7      : 0x00060023  A8      : 0x00000001  A9      : 0x00000000  
-A10     : 0x7fffffff  A11     : 0x8001f880  A12     : 0x06ff1ff8  A13     : 0x00000000  
-A14     : 0x3ffb7d80  A15     : 0x00000000  SAR     : 0x00000014  EXCCAUSE: 0x0000001d  
-EXCVADDR: 0x00000001  LBEG    : 0x00000000  LEND    : 0x00000000  LCOUNT  : 0x00000000  
+PC      : 0x400e37f7  PS      : 0x00060430  A0      : 0x800d0c31  A1      : 0x3ffb5db0
+A2      : 0x00000001  A3      : 0x00000001  A4      : 0x00000001  A5      : 0x00060023
+A6      : 0x00000001  A7      : 0x00060023  A8      : 0x00000001  A9      : 0x00000000
+A10     : 0x7fffffff  A11     : 0x8001f880  A12     : 0x06ff1ff8  A13     : 0x00000000
+A14     : 0x3ffb7d80  A15     : 0x00000000  SAR     : 0x00000014  EXCCAUSE: 0x0000001d
+EXCVADDR: 0x00000001  LBEG    : 0x00000000  LEND    : 0x00000000  LCOUNT  : 0x00000000
 
 ELF file SHA256: 83cfeb53c9c00c61c4e52674e43654e4b452b7592075920977e491e06a4488d8
 

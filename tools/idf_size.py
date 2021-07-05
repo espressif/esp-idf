@@ -312,7 +312,7 @@ def load_sections(map_file: TextIO) -> Dict:
     # source file line, ie
     # 0x0000000040080400       0xa4 /home/gus/esp/32/idf/examples/get-started/hello_world/build/esp32/libesp32.a(cpu_start.o)
     # cmake build system links some object files directly, not part of any archive, so make that part optional
-    #  .xtensa.info   0x0000000000000000       0x38 CMakeFiles/hello-world.elf.dir/project_elf_src.c.obj
+    #  .xtensa.info   0x0000000000000000       0x38 CMakeFiles/hello_world.elf.dir/project_elf_src.c.obj
     #  *fill*         0x00000000400e2967        0x1
     RE_FULL_LINE = re.compile(r'\s*(?P<sym_name>\S*) +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+)\s*(?P<file>.*)$')
 

@@ -3,6 +3,6 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := ulp-adc-example
+PROJECT_NAME := ulp_adc_example
 
 include $(IDF_PATH)/make/project.mk

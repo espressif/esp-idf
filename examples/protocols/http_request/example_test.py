@@ -20,7 +20,7 @@ def test_examples_protocol_http_request(env, extra_data):  # type: (tiny_test_fw
     """
     dut1 = env.get_dut('http_request', 'examples/protocols/http_request', dut_class=ttfw_idf.ESP32DUT)
     # check and log bin size
-    binary_file = os.path.join(dut1.app.binary_path, 'http-request.bin')
+    binary_file = os.path.join(dut1.app.binary_path, 'http_request.bin')
     bin_size = os.path.getsize(binary_file)
     ttfw_idf.log_performance('http_request_bin_size', '{}KB'.format(bin_size // 1024))
     # start test

@@ -22,7 +22,7 @@ def test_examples_protocol_https_mbedtls(env, extra_data):  # type: (tiny_test_f
     app_name = 'https_mbedtls'
     dut1 = env.get_dut(app_name, 'examples/protocols/https_mbedtls', dut_class=ttfw_idf.ESP32DUT)
     # check and log bin size
-    binary_file = os.path.join(dut1.app.binary_path, 'https-mbedtls.bin')
+    binary_file = os.path.join(dut1.app.binary_path, 'https_mbedtls.bin')
     bin_size = os.path.getsize(binary_file)
     ttfw_idf.log_performance('https_mbedtls_bin_size', '{}KB'.format(bin_size // 1024))
     # start test

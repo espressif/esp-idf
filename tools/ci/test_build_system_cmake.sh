@@ -150,7 +150,7 @@ function run_tests()
     pushd ${IDF_PATH}/examples/get-started/hello_world
     GIT_COMMITTER_NAME="No One" GIT_COMMITTER_EMAIL="noone@espressif.com" git tag mytag -a -m "mytag" || failure "Git cannot create tag"
     idf.py reconfigure &> log.log || failure "Failed to build"
-    str="App \"hello-world\" version: mytag"
+    str="App \"hello_world\" version: mytag"
     grep "${str}" log.log || { cat log.log ; failure "Project version should be the custom tag"; }
     idf_version=$(idf.py --version)
     if [[ "$idf_version" == *"mytag"* ]]; then

@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := https-mbedtls
+PROJECT_NAME := https_mbedtls
 
 EXTRA_COMPONENT_DIRS = $(IDF_PATH)/examples/common_components/protocol_examples_common
 
