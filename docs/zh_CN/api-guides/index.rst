@@ -15,7 +15,7 @@ API 指南
    :esp32s2: 通过 USB 升级设备固件 <dfu>
    错误处理 <error-handling>
    :SOC_BT_SUPPORTED: ESP-BLE-MESH <esp-ble-mesh/ble-mesh-index>
-   ESP-MESH (Wi-Fi) <mesh>
+   ESP-WIFI-MESH <esp-wifi-mesh>
    核心转储 <core_dump>
    事件处理 <event-handling>
    :SOC_SPIRAM_SUPPORTED: 片外 SPI RAM <external-ram>

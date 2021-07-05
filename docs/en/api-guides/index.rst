@@ -15,7 +15,7 @@ API Guides
     :SOC_USB_SUPPORTED: Device Firmware Upgrade through USB <dfu>
     Error Handling <error-handling>
     :SOC_BT_SUPPORTED: ESP-BLE-MESH <esp-ble-mesh/ble-mesh-index>
-    ESP-MESH (Wi-Fi) <mesh>
+    ESP-WIFI-MESH <esp-wifi-mesh>
     Core Dump <core_dump>
     Event Handling <event-handling>
     :SOC_SPIRAM_SUPPORTED: External SPI-connected RAM <external-ram>
