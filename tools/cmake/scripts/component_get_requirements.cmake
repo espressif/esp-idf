@@ -12,6 +12,7 @@ endfunction()
 
 idf_build_get_property(idf_path IDF_PATH)
 include(${idf_path}/tools/cmake/utilities.cmake)
+include(${idf_path}/tools/cmake/version.cmake)
 
 function(__component_get_property var component_target property)
     set(_property __component_${component_target}_${property})
