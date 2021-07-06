@@ -30,14 +30,14 @@ static const char* TAG = "test_event";
 
 #define TEST_CONFIG_WAIT_MULTIPLIER          5
 
-// The initial logging "initializing test" is to ensure mutex allocation is not counted against memory not being freed 
-// during teardown. 
+// The initial logging "initializing test" is to ensure mutex allocation is not counted against memory not being freed
+// during teardown.
 #define TEST_SETUP() \
         ESP_LOGI(TAG, "initializing test"); \
         size_t free_mem_before = heap_caps_get_free_size(MALLOC_CAP_DEFAULT); \
         test_setup(); \
         s_test_core_id = xPortGetCoreID(); \
-        s_test_priority = uxTaskPriorityGet(NULL); 
+        s_test_priority = uxTaskPriorityGet(NULL);
 
 #define TEST_TEARDOWN() \
         test_teardown(); \
@@ -328,6 +328,14 @@ void IRAM_ATTR test_event_on_timer_alarm(void* para)
 }
 #endif //CONFIG_ESP_EVENT_POST_FROM_ISR
 
+TEST_CASE("create and event loop with any NULL argument fails", "[event]")
+{
+    esp_event_loop_handle_t loop; // with dedicated task
+    esp_event_loop_args_t loop_args = test_event_get_default_loop_args();
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_event_loop_create(NULL, &loop));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_event_loop_create(&loop_args, NULL));
+}
+
 TEST_CASE("can create and delete event loops", "[event]")
 {
     /* this test aims to verify that:
@@ -499,8 +507,8 @@ TEST_CASE("handler can unregister itself", "[event]")
 
     /*
      * s_test_base1, ev1 = 1
-     * s_test_base1, ev2 = 2 
-     * s_test_base2, ev1 = 11 
+     * s_test_base1, ev2 = 2
+     * s_test_base2, ev1 = 11
      * s_test_base2, ev2 = 12
      */
     int expected_unregistered = 0;
