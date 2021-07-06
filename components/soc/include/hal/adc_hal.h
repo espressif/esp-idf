@@ -12,11 +12,6 @@
 void adc_hal_init(void);
 
 /**
- * ADC module deinitialization.
- */
-void adc_hal_deinit(void);
-
-/**
  * Set adc sample cycle.
  *
  * @note Normally, please use default value.

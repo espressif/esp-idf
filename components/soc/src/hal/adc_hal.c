@@ -25,11 +25,6 @@ void adc_hal_init(void)
     adc_ll_digi_output_invert(ADC_NUM_2, SOC_ADC_DIGI_DATA_INVERT_DEFAULT(ADC_NUM_2));
 }
 
-void adc_hal_deinit(void)
-{
-    adc_ll_set_power_manage(ADC_POWER_SW_OFF);
-}
-
 int adc_hal_convert(adc_ll_num_t adc_n, int channel, int *value)
 {
     adc_ll_rtc_enable_channel(adc_n, channel);

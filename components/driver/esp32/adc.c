@@ -137,6 +137,7 @@ esp_err_t adc_digi_init(void)
 
 esp_err_t adc_digi_deinit(void)
 {
+    adc_power_release();
     ADC_ENTER_CRITICAL();
     adc_hal_digi_deinit();
     ADC_EXIT_CRITICAL();
@@ -145,6 +146,8 @@ esp_err_t adc_digi_deinit(void)
 
 esp_err_t adc_digi_controller_config(const adc_digi_config_t *config)
 {
+    /* If enable digital controller, adc xpd should always on. */
+    adc_power_acquire();
     ADC_ENTER_CRITICAL();
     adc_hal_digi_controller_config(config);
     ADC_EXIT_CRITICAL();

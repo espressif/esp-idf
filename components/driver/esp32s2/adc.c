@@ -83,6 +83,7 @@ esp_err_t adc_digi_deinit(void)
         s_adc_digi_arbiter_lock = NULL;
     }
 #endif
+    adc_power_release();
     ADC_ENTER_CRITICAL();
     adc_hal_digi_deinit();
     ADC_EXIT_CRITICAL();
@@ -107,6 +108,8 @@ esp_err_t adc_digi_controller_config(const adc_digi_config_t *config)
     }
 #endif //CONFIG_PM_ENABLE
 
+    /* If enable digtal controller, adc xpd should always on. */
+    adc_power_acquire();
     ADC_ENTER_CRITICAL();
     adc_hal_digi_controller_config(config);
     ADC_EXIT_CRITICAL();

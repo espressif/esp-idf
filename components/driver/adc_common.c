@@ -156,9 +156,11 @@ void adc_power_on(void) __attribute__((alias("adc_power_on_internal")));
 
 static void adc_power_off_internal(void)
 {
-    ADC_ENTER_CRITICAL();
+#if CONFIG_IDF_TARGET_ESP32
     adc_hal_set_power_manage(ADC_POWER_SW_OFF);
-    ADC_EXIT_CRITICAL();
+#else
+    adc_hal_set_power_manage(ADC_POWER_BY_FSM);
+#endif
 }
 
 void adc_power_off(void) __attribute__((alias("adc_power_off_internal")));
