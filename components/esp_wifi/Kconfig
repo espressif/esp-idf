@@ -280,7 +280,7 @@ menu "Wi-Fi"
     config ESP_WIFI_FTM_ENABLE
         bool "WiFi FTM"
         default n
-        depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3)
+        depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
         help
             Enable feature Fine Timing Measurement for calculating WiFi Round-Trip-Time (RTT).
 
