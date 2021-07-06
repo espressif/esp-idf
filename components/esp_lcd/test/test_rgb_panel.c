@@ -31,6 +31,10 @@
 #define TEST_LCD_DISP_EN_GPIO  (-1)
 
 #if SOC_LCD_RGB_SUPPORTED
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+/* Not enough memory for framebuffer when running in default_2 config */
+
 TEST_CASE("lcd rgb lcd panel", "[lcd]")
 {
 #define TEST_IMG_SIZE (100 * 100 * sizeof(uint16_t))
@@ -161,4 +165,7 @@ TEST_CASE("lvgl gui with rgb interface", "[lcd][lvgl][ignore]")
     test_lvgl_task_loop(panel_handle, TEST_LCD_H_RES, TEST_LCD_V_RES, &disp);
 }
 #endif // CONFIG_LV_USE_USER_DATA
+
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+
 #endif // SOC_LCD_RGB_SUPPORTED

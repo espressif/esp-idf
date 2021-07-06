@@ -32,7 +32,8 @@
 
 #define TEST_LISTEN_CHANNEL     6
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
+/* No runners */
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
 
 static const char *TAG = "test_offchan";
 esp_netif_t *wifi_netif;
