@@ -447,7 +447,15 @@ static void inline __attribute__((always_inline)) post_instance_delete(esp_event
 
 esp_err_t esp_event_loop_create(const esp_event_loop_args_t* event_loop_args, esp_event_loop_handle_t* event_loop)
 {
-    assert(event_loop_args);
+    if (event_loop_args == NULL) {
+        ESP_LOGE(TAG, "event_loop_args was NULL");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (event_loop == NULL) {
+        ESP_LOGE(TAG, "event_loop was NULL");
+        return ESP_ERR_INVALID_ARG;
+    }
 
     esp_event_loop_instance_t* loop;
     esp_err_t err = ESP_ERR_NO_MEM; // most likely error

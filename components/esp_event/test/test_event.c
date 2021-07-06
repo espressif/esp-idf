@@ -305,6 +305,14 @@ static void test_teardown(void)
 #define TIMER_SCALE           (TIMER_BASE_CLK / TIMER_DIVIDER)  // convert counter value to seconds
 #define TIMER_INTERVAL0_SEC   (2.0) // sample test interval for the first timer
 
+TEST_CASE("create and event loop with any NULL argument fails", "[event]")
+{
+    esp_event_loop_handle_t loop; // with dedicated task
+    esp_event_loop_args_t loop_args = test_event_get_default_loop_args();
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_event_loop_create(NULL, &loop));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_event_loop_create(&loop_args, NULL));
+}
+
 TEST_CASE("can create and delete event loops", "[event]")
 {
     /* this test aims to verify that:
