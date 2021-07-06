@@ -6,3 +6,4 @@ Libraries and Frameworks
    :maxdepth: 1
 
    Cloud Frameworks <cloud-frameworks>
+   Espressif's Libraries and Frameworks <libs-frameworks>
