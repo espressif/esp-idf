@@ -139,7 +139,15 @@
 /components/wpa_supplicant/           @esp-idf-codeowners/wifi
 /components/xtensa/                   @esp-idf-codeowners/system
 
-/docs/    @esp-idf-codeowners/docs
+/docs/                                  @esp-idf-codeowners/docs
+/docs/**/api-reference/bluetooth/       @esp-idf-codeowners/bluetooth
+/docs/**/api-reference/network/         @esp-idf-codeowners/network
+/docs/**/api-reference/peripherals/     @esp-idf-codeowners/peripherals
+/docs/**/api-reference/protocols/       @esp-idf-codeowners/network @esp-idf-codeowners/app-utilities
+/docs/**/api-reference/provisioning/    @esp-idf-codeowners/app-utilities
+/docs/**/api-reference/storage/         @esp-idf-codeowners/storage
+/docs/**/api-reference/system/          @esp-idf-codeowners/system
+/docs/**/security/                      @esp-idf-codeowners/security
 
 /examples/**/*.py             @esp-idf-codeowners/ci @esp-idf-codeowners/tools
 
