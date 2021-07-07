@@ -375,7 +375,8 @@ int esp_mbedtls_session_ticket_write(void *p_ticket, const mbedtls_ssl_session *
     int ret = mbedtls_ssl_ticket_write(p_ticket, session, start, end, tlen, lifetime);
 #ifndef NDEBUG
     if (ret != 0) {
-        ESP_LOGE(TAG, "Writing session ticket resulted in error code %d", ret);
+        ESP_LOGE(TAG, "Writing session ticket resulted in error code -0x%04X", -ret);
+        mbedtls_print_error_msg(ret);
     }
 #endif
     return ret;
@@ -386,7 +387,8 @@ int esp_mbedtls_session_ticket_parse(void *p_ticket, mbedtls_ssl_session *sessio
     int ret = mbedtls_ssl_ticket_parse(p_ticket, session, buf, len);
 #ifndef NDEBUG
     if (ret != 0) {
-        ESP_LOGD(TAG, "Parsing session ticket resulted in error code %d", ret);
+        ESP_LOGD(TAG, "Parsing session ticket resulted in error code -0x%04X", -ret);
+        mbedtls_print_error_msg(ret);
     }
 #endif
     return ret;
@@ -400,7 +402,8 @@ int esp_mbedtls_session_ticket_ctx_init(esp_tls_session_ticket_ctx_t *ctx)
     int ret;
     if ((ret = mbedtls_ctr_drbg_seed(&ctx->ctr_drbg,
                                      mbedtls_entropy_func, &ctx->entropy, NULL, 0)) != 0) {
-        ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned -0x%x", -ret);
+        ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned -0x%04X", -ret);
+        mbedtls_print_error_msg(ret);
         return ESP_ERR_MBEDTLS_CTR_DRBG_SEED_FAILED;
     }
 
@@ -409,7 +412,8 @@ int esp_mbedtls_session_ticket_ctx_init(esp_tls_session_ticket_ctx_t *ctx)
                     MBEDTLS_CIPHER_AES_256_GCM,
                     CONFIG_ESP_TLS_SERVER_SESSION_TICKET_TIMEOUT ) ) != 0 )
         {
-            ESP_LOGE(TAG, "Failed mbedtls_ssl_ticket_setup with error code %d", ret);
+            ESP_LOGE(TAG, "mbedtls_ssl_ticket_setup returned -0x%04X", -ret);
+            mbedtls_print_error_msg(ret);
             return ESP_ERR_MBEDTLS_SSL_SESSION_TICKET_SETUP_FAILED;
         }
     return ESP_OK;
