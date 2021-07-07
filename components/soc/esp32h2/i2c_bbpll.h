@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -24,7 +16,8 @@
  */
 
 #define I2C_BBPLL           0x66
-#define I2C_BBPLL_HOSTID    1
+#define I2C_BBPLL_HOSTID    0
+
 
 #define I2C_BBPLL_IR_CAL_DELAY        0
 #define I2C_BBPLL_IR_CAL_DELAY_MSB    3
@@ -58,71 +51,39 @@
 #define I2C_BBPLL_OC_REF_DIV_MSB    3
 #define I2C_BBPLL_OC_REF_DIV_LSB    0
 
-#define I2C_BBPLL_OC_DCHGP        2
-#define I2C_BBPLL_OC_DCHGP_MSB    6
-#define I2C_BBPLL_OC_DCHGP_LSB    4
+#define I2C_BBPLL_OC_DIV        3
+#define I2C_BBPLL_OC_DIV_MSB    5
+#define I2C_BBPLL_OC_DIV_LSB    0
 
-#define I2C_BBPLL_OC_ENB_FCAL        2
+#define I2C_BBPLL_OC_CHGP_DCUR        4
+#define I2C_BBPLL_OC_CHGP_DCUR_MSB    2
+#define I2C_BBPLL_OC_CHGP_DCUR_LSB    0
+
+#define I2C_BBPLL_OC_BUFF_DCUR        4
+#define I2C_BBPLL_OC_BUFF_DCUR_MSB    5
+#define I2C_BBPLL_OC_BUFF_DCUR_LSB    3
+
+#define I2C_BBPLL_OC_TSCHGP        4
+#define I2C_BBPLL_OC_TSCHGP_MSB    6
+#define I2C_BBPLL_OC_TSCHGP_LSB    6
+
+#define I2C_BBPLL_OC_ENB_FCAL        4
 #define I2C_BBPLL_OC_ENB_FCAL_MSB    7
 #define I2C_BBPLL_OC_ENB_FCAL_LSB    7
 
-#define I2C_BBPLL_OC_DIV_7_0        3
-#define I2C_BBPLL_OC_DIV_7_0_MSB    7
-#define I2C_BBPLL_OC_DIV_7_0_LSB    0
+#define I2C_BBPLL_OC_LPF_DR        5
+#define I2C_BBPLL_OC_LPF_DR_MSB    1
+#define I2C_BBPLL_OC_LPF_DR_LSB    0
 
-#define I2C_BBPLL_RSTB_DIV_ADC        4
-#define I2C_BBPLL_RSTB_DIV_ADC_MSB    0
-#define I2C_BBPLL_RSTB_DIV_ADC_LSB    0
+#define I2C_BBPLL_OC_VCO_DCUR        5
+#define I2C_BBPLL_OC_VCO_DCUR_MSB    3
+#define I2C_BBPLL_OC_VCO_DCUR_LSB    2
 
-#define I2C_BBPLL_MODE_HF        4
-#define I2C_BBPLL_MODE_HF_MSB    1
-#define I2C_BBPLL_MODE_HF_LSB    1
-
-#define I2C_BBPLL_DIV_ADC        4
-#define I2C_BBPLL_DIV_ADC_MSB    3
-#define I2C_BBPLL_DIV_ADC_LSB    2
-
-#define I2C_BBPLL_DIV_DAC        4
-#define I2C_BBPLL_DIV_DAC_MSB    4
-#define I2C_BBPLL_DIV_DAC_LSB    4
-
-#define I2C_BBPLL_DIV_CPU        4
-#define I2C_BBPLL_DIV_CPU_MSB    5
-#define I2C_BBPLL_DIV_CPU_LSB    5
-
-#define I2C_BBPLL_OC_ENB_VCON        4
-#define I2C_BBPLL_OC_ENB_VCON_MSB    6
-#define I2C_BBPLL_OC_ENB_VCON_LSB    6
-
-#define I2C_BBPLL_OC_TSCHGP        4
-#define I2C_BBPLL_OC_TSCHGP_MSB    7
-#define I2C_BBPLL_OC_TSCHGP_LSB    7
-
-#define I2C_BBPLL_OC_DR1        5
-#define I2C_BBPLL_OC_DR1_MSB    2
-#define I2C_BBPLL_OC_DR1_LSB    0
-
-#define I2C_BBPLL_OC_DR3        5
-#define I2C_BBPLL_OC_DR3_MSB    6
-#define I2C_BBPLL_OC_DR3_LSB    4
-
-#define I2C_BBPLL_EN_USB        5
-#define I2C_BBPLL_EN_USB_MSB    7
-#define I2C_BBPLL_EN_USB_LSB    7
-
-#define I2C_BBPLL_OC_DCUR        6
-#define I2C_BBPLL_OC_DCUR_MSB    2
-#define I2C_BBPLL_OC_DCUR_LSB    0
-
-#define I2C_BBPLL_INC_CUR        6
-#define I2C_BBPLL_INC_CUR_MSB    3
-#define I2C_BBPLL_INC_CUR_LSB    3
-
-#define I2C_BBPLL_OC_DHREF_SEL        6
+#define I2C_BBPLL_OC_DHREF_SEL        5
 #define I2C_BBPLL_OC_DHREF_SEL_MSB    5
 #define I2C_BBPLL_OC_DHREF_SEL_LSB    4
 
-#define I2C_BBPLL_OC_DLREF_SEL        6
+#define I2C_BBPLL_OC_DLREF_SEL        5
 #define I2C_BBPLL_OC_DLREF_SEL_MSB    7
 #define I2C_BBPLL_OC_DLREF_SEL_LSB    6
 
@@ -146,38 +107,14 @@
 #define I2C_BBPLL_OR_LOCK_MSB    7
 #define I2C_BBPLL_OR_LOCK_LSB    7
 
-#define I2C_BBPLL_BBADC_DELAY1        9
-#define I2C_BBPLL_BBADC_DELAY1_MSB    1
-#define I2C_BBPLL_BBADC_DELAY1_LSB    0
-
-#define I2C_BBPLL_BBADC_DELAY2        9
-#define I2C_BBPLL_BBADC_DELAY2_MSB    3
-#define I2C_BBPLL_BBADC_DELAY2_LSB    2
-
-#define I2C_BBPLL_BBADC_DVDD        9
-#define I2C_BBPLL_BBADC_DVDD_MSB    5
-#define I2C_BBPLL_BBADC_DVDD_LSB    4
-
-#define I2C_BBPLL_BBADC_DREF        9
-#define I2C_BBPLL_BBADC_DREF_MSB    7
-#define I2C_BBPLL_BBADC_DREF_LSB    6
-
-#define I2C_BBPLL_BBADC_DCUR        10
-#define I2C_BBPLL_BBADC_DCUR_MSB    1
-#define I2C_BBPLL_BBADC_DCUR_LSB    0
-
-#define I2C_BBPLL_BBADC_INPUT_SHORT        10
-#define I2C_BBPLL_BBADC_INPUT_SHORT_MSB    2
-#define I2C_BBPLL_BBADC_INPUT_SHORT_LSB    2
+#define I2C_BBPLL_DTEST        10
+#define I2C_BBPLL_DTEST_MSB    1
+#define I2C_BBPLL_DTEST_LSB    0
 
 #define I2C_BBPLL_ENT_PLL        10
-#define I2C_BBPLL_ENT_PLL_MSB    3
-#define I2C_BBPLL_ENT_PLL_LSB    3
+#define I2C_BBPLL_ENT_PLL_MSB    2
+#define I2C_BBPLL_ENT_PLL_LSB    2
 
-#define I2C_BBPLL_DTEST        10
-#define I2C_BBPLL_DTEST_MSB    5
-#define I2C_BBPLL_DTEST_LSB    4
-
-#define I2C_BBPLL_ENT_ADC        10
-#define I2C_BBPLL_ENT_ADC_MSB    7
-#define I2C_BBPLL_ENT_ADC_LSB    6
+#define I2C_BBPLL_DIV_CPU        10
+#define I2C_BBPLL_DIV_CPU_MSB    3
+#define I2C_BBPLL_DIV_CPU_LSB    3

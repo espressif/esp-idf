@@ -40,18 +40,19 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
         rtc_slow_freq_t slow_freq = rtc_clk_slow_freq_get();
         if (slow_freq == RTC_SLOW_FREQ_32K_XTAL) {
             cal_clk = RTC_CAL_32K_XTAL;
-        } else if (slow_freq == RTC_SLOW_FREQ_8MD256) {
-            cal_clk = RTC_CAL_8MD256;
+        } else if (slow_freq == RTC_SLOW_FREQ_RC32K) {
+            cal_clk = RTC_CAL_RC32K;
         }
     }
     /* Enable requested clock (150k clock is always on) */
-    int dig_32k_xtal_state = REG_GET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_XTAL32K_EN);
+    bool dig_32k_xtal_state = REG_GET_BIT(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_XTAL32K_EN);
     if (cal_clk == RTC_CAL_32K_XTAL && !dig_32k_xtal_state) {
         REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_XTAL32K_EN, 1);
-    }
 
-    if (cal_clk == RTC_CAL_8MD256) {
-        // SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_D256_EN); // ESP32H2-TODO: IDF-3396
+    }
+    bool dig_rc32k_state = REG_GET_BIT(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_RC32K_EN);
+    if (cal_clk == RTC_CAL_RC32K && !dig_rc32k_state) {
+        REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_RC32K_EN, 1);
     }
     /* Prepare calibration */
     REG_SET_FIELD(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_CLK_SEL, cal_clk);
@@ -72,9 +73,9 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
     if (cal_clk == RTC_CAL_32K_XTAL) {
         REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, RTC_SLOW_CLK_X32K_CAL_TIMEOUT_THRES(slowclk_cycles));
         expected_freq = RTC_SLOW_CLK_FREQ_32K;
-    } else if (cal_clk == RTC_CAL_8MD256) {
-        REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, RTC_SLOW_CLK_8MD256_CAL_TIMEOUT_THRES(slowclk_cycles));
-        expected_freq = RTC_SLOW_CLK_FREQ_8MD256;
+    } else if (cal_clk == RTC_CAL_RC32K) {
+        REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, RTC_SLOW_CLK_RC32K_CAL_TIMEOUT_THRES(slowclk_cycles));
+        expected_freq = RTC_SLOW_CLK_FREQ_RC32;
     } else {
         REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, RTC_SLOW_CLK_150K_CAL_TIMEOUT_THRES(slowclk_cycles));
         expected_freq = RTC_SLOW_CLK_FREQ_150K;
@@ -85,7 +86,7 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
     SET_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START);
 
     /* Wait for calibration to finish up to another us_time_estimate */
-    esp_rom_delay_us(us_time_estimate);
+    esp_rom_delay_us(us_time_estimate * 3);
     uint32_t cal_val;
     while (true) {
         if (GET_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_RDY)) {
@@ -98,12 +99,8 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
         }
     }
     CLEAR_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START);
-
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_XTAL32K_EN, dig_32k_xtal_state);
-
-    if (cal_clk == RTC_CAL_8MD256) {
-        // CLEAR_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_D256_EN); // ESP32H2-TODO: IDF-3396
-    }
+    REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_RC32K_EN, dig_rc32k_state);
 
     return cal_val;
 }

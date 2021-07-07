@@ -23,6 +23,7 @@
 #include "esp_clk_internal.h"
 #include "esp32h2/rom/ets_sys.h"
 #include "esp32h2/rom/uart.h"
+#include "esp32h2/rom/rtc.h"
 #include "soc/system_reg.h"
 #include "soc/dport_access.h"
 #include "soc/soc.h"
@@ -35,7 +36,6 @@
 #include "bootloader_clock.h"
 #include "soc/syscon_reg.h"
 #include "esp_rom_uart.h"
-#include "esp_rom_sys.h"
 
 /* Number of cycles to wait from the 32k XTAL oscillator to consider it running.
  * Larger values increase startup delay. Smaller values may cause false positive
@@ -62,7 +62,7 @@
 typedef enum {
     SLOW_CLK_RTC = RTC_SLOW_FREQ_RTC,           //!< Internal 150 kHz RC oscillator
     SLOW_CLK_32K_XTAL = RTC_SLOW_FREQ_32K_XTAL, //!< External 32 kHz XTAL
-    SLOW_CLK_8MD256 = RTC_SLOW_FREQ_8MD256,     //!< Internal 8 MHz RC oscillator, divided by 256
+    SLOW_CLK_RC32K = RTC_SLOW_FREQ_RC32K,     //!< Internal 32 KHz RC oscillator
     SLOW_CLK_32K_EXT_OSC = RTC_SLOW_FREQ_32K_XTAL | EXT_OSC_FLAG //!< External 32k oscillator connected to 32K_XP pin
 } slow_clk_sel_t;
 
@@ -73,7 +73,6 @@ static const char *TAG = "clk";
 
  __attribute__((weak)) void esp_clk_init(void)
 {
-#if !CONFIG_IDF_ENV_FPGA
     rtc_config_t cfg = RTC_CONFIG_DEFAULT();
     soc_reset_reason_t rst_reas;
     rst_reas = esp_rom_get_reset_reason(0);
@@ -85,7 +84,6 @@ static const char *TAG = "clk";
     assert(rtc_clk_xtal_freq_get() == RTC_XTAL_FREQ_32M);
 
     rtc_clk_fast_freq_set(RTC_FAST_FREQ_8M);
-#endif
 
 #ifdef CONFIG_BOOTLOADER_WDT_ENABLE
     // WDT uses a SLOW_CLK clock source. After a function select_rtc_slow_clk a frequency of this source can changed.
@@ -176,8 +174,7 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
                     rtc_slow_freq = RTC_SLOW_FREQ_RTC;
                 }
             }
-        } else if (rtc_slow_freq == RTC_SLOW_FREQ_8MD256) {
-            // rtc_clk_8m_enable(true, true);
+
         }
         rtc_clk_slow_freq_set(rtc_slow_freq);
 
@@ -211,7 +208,8 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     uint32_t common_perip_clk, hwcrypto_perip_clk = 0;
     uint32_t common_perip_clk1 = 0;
 
-soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
+    soc_reset_reason_t rst_reas[1];
+    rst_reas[0] = esp_rom_get_reset_reason(0);
 
     /* For reason that only reset CPU, do not disable the clocks
      * that have been enabled before reset.
@@ -219,7 +217,7 @@ soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
     /* For reason that only reset CPU, do not disable the clocks
      * that have been enabled before reset.
      */
-if (rst_reason >= RESET_REASON_CPU0_MWDT0 && rst_reason <= RESET_REASON_CPU0_RTC_WDT && rst_reason != RESET_REASON_SYS_BROWN_OUT) {
+    if ((rst_reas[0] >= RESET_REASON_CPU0_MWDT0 && rst_reas[0] <= RESET_REASON_CPU0_RTC_WDT && rst_reas[0] != RESET_REASON_SYS_BROWN_OUT)) {
         common_perip_clk = ~READ_PERI_REG(SYSTEM_PERIP_CLK_EN0_REG);
         hwcrypto_perip_clk = ~READ_PERI_REG(SYSTEM_PERIP_CLK_EN1_REG);
     } else {
