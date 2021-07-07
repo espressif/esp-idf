@@ -49,7 +49,7 @@
 #define GPIO_SYNC1_IN   4   //Set GPIO 04 as SYNC1
 #define GPIO_SYNC2_IN   5   //Set GPIO 05 as SYNC2
 #define GPIO_FAULT0_IN 32   //Set GPIO 32 as FAULT0
-#define GPIO_FAULT1_IN 34   //Set GPIO 34 as FAULT1
+#define GPIO_FAULT1_IN 33   //Set GPIO 33 as FAULT1
 #define GPIO_FAULT2_IN 34   //Set GPIO 34 as FAULT2
 
 typedef struct {
@@ -159,7 +159,7 @@ static void disp_captured_signal(void *arg)
 /**
  * @brief this is ISR handler function, here we check for interrupt that triggers rising edge on CAP0 signal and according take action
  */
-static void IRAM_ATTR isr_handler(void)
+static void IRAM_ATTR isr_handler(void* arg)
 {
     uint32_t mcpwm_intr_status;
     capture evt;
