@@ -3,7 +3,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 set(EXTRA_COMPONENT_DIRS $ENV{IDF_PATH}/examples/system/console/advanced/components
-                         $ENV{IDF_PATH}/examples/wifi/iperf/components)
+                         $ENV{IDF_PATH}/examples/common_components/iperf)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(ethernet_iperf)
