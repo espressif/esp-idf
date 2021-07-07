@@ -1115,7 +1115,7 @@ static void _mdns_dispatch_tx_packet(mdns_tx_packet_t * p)
 
 #ifdef MDNS_ENABLE_DEBUG
     _mdns_dbg_printf("\nTX[%u][%u]: ", p->tcpip_if, p->ip_protocol);
-    if (p->dst.type == IPADDR_TYPE_V4) {
+    if (p->dst.type == ESP_IPADDR_TYPE_V4) {
         _mdns_dbg_printf("To: " IPSTR ":%u, ", IP2STR(&p->dst.u_addr.ip4), p->port);
     } else {
         _mdns_dbg_printf("To: " IPV6STR ":%u, ", IPV62STR(p->dst.u_addr.ip6), p->port);
@@ -1345,11 +1345,12 @@ static mdns_tx_packet_t * _mdns_alloc_packet_default(mdns_if_t tcpip_if, mdns_ip
     packet->ip_protocol = ip_protocol;
     packet->port = MDNS_SERVICE_PORT;
     if (ip_protocol == MDNS_IP_PROTOCOL_V4) {
-        IP4_ADDR(&packet->dst.u_addr.ip4, 224, 0, 0, 251);
+        esp_ip_addr_t addr = ESP_IP4ADDR_INIT(224, 0, 0, 251);
+        memcpy(&packet->dst, &addr, sizeof(esp_ip_addr_t));
     }
 #if CONFIG_LWIP_IPV6
     else {
-        esp_ip_addr_t addr = IPADDR6_INIT(0x000002ff, 0, 0, 0xfb000000);
+        esp_ip_addr_t addr = ESP_IP6ADDR_INIT(0x000002ff, 0, 0, 0xfb000000);
         memcpy(&packet->dst, &addr, sizeof(esp_ip_addr_t));
     }
 #endif
@@ -2973,15 +2974,15 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
 {
     static mdns_name_t n;
     mdns_header_t header;
-    const uint8_t * data = (const uint8_t*)packet->pb->payload;
-    size_t len = packet->pb->len;
+    const uint8_t * data = _mdns_get_packet_data(packet);
+    size_t len = _mdns_get_packet_len(packet);
     const uint8_t * content = data + MDNS_HEAD_LEN;
     bool do_not_reply = false;
     mdns_search_once_t * search_result = NULL;
 
 #ifdef MDNS_ENABLE_DEBUG
     _mdns_dbg_printf("\nRX[%u][%u]: ", packet->tcpip_if, (uint32_t)packet->ip_protocol);
-    if (packet->src.type == IPADDR_TYPE_V4) {
+    if (packet->src.type == ESP_IPADDR_TYPE_V4) {
         _mdns_dbg_printf("From: " IPSTR ":%u, To: " IPSTR ", ", IP2STR(&packet->src.u_addr.ip4), packet->src_port, IP2STR(&packet->dest.u_addr.ip4));
     } else {
         _mdns_dbg_printf("From: " IPV6STR ":%u, To: " IPV6STR ", ", IPV62STR(packet->src.u_addr.ip6), packet->src_port, IPV62STR(packet->dest.u_addr.ip6));
@@ -3023,12 +3024,7 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
     parsed_packet->authoritative = header.flags.value == MDNS_FLAGS_AUTHORITATIVE;
     parsed_packet->distributed = header.flags.value == MDNS_FLAGS_DISTRIBUTED;
     parsed_packet->id = header.id;
-#if CONFIG_LWIP_IPV6
-    ip_addr_copy(parsed_packet->src, packet->src);
-#else
-    ip4_addr_copy(parsed_packet->src.u_addr.ip4, packet->src.u_addr.ip4);
-#endif
-
+    esp_netif_ip_addr_copy(&parsed_packet->src, &packet->src);
     parsed_packet->src_port = packet->src_port;
 
     if (header.questions) {
@@ -3334,7 +3330,7 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
 #if CONFIG_LWIP_IPV6
             else if (type == MDNS_TYPE_AAAA) {//ipv6
                 esp_ip_addr_t ip6;
-                ip6.type = IPADDR_TYPE_V6;
+                ip6.type = ESP_IPADDR_TYPE_V6;
                 memcpy(ip6.u_addr.ip6.addr, data_ptr, MDNS_ANSWER_AAAA_SIZE);
                 if (search_result) {
                     //check for more applicable searches (PTR & A/AAAA at the same time)
@@ -3384,7 +3380,7 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
 #endif
             else if (type == MDNS_TYPE_A) {
                 esp_ip_addr_t ip;
-                ip.type = IPADDR_TYPE_V4;
+                ip.type = ESP_IPADDR_TYPE_V4;
                 memcpy(&(ip.u_addr.ip4.addr), data_ptr, 4);
                 if (search_result) {
                     //check for more applicable searches (PTR & A/AAAA at the same time)
@@ -3695,7 +3691,7 @@ static mdns_ip_addr_t * _mdns_result_addr_create_ip(esp_ip_addr_t * ip)
     }
     memset(a, 0 , sizeof(mdns_ip_addr_t));
     a->addr.type = ip->type;
-    if (ip->type == IPADDR_TYPE_V6) {
+    if (ip->type == ESP_IPADDR_TYPE_V6) {
         memcpy(a->addr.u_addr.ip6.addr, ip->u_addr.ip6.addr, 16);
     } else {
         a->addr.u_addr.ip4.addr = ip->u_addr.ip4.addr;
@@ -3711,10 +3707,10 @@ static void _mdns_result_add_ip(mdns_result_t * r, esp_ip_addr_t * ip)
     mdns_ip_addr_t * a = r->addr;
     while (a) {
         if (a->addr.type == ip->type) {
-            if (a->addr.type == IPADDR_TYPE_V4 && a->addr.u_addr.ip4.addr == ip->u_addr.ip4.addr) {
+            if (a->addr.type == ESP_IPADDR_TYPE_V4 && a->addr.u_addr.ip4.addr == ip->u_addr.ip4.addr) {
                 return;
             }
-            if (a->addr.type == IPADDR_TYPE_V6 && !memcmp(a->addr.u_addr.ip6.addr, ip->u_addr.ip6.addr, 16)) {
+            if (a->addr.type == ESP_IPADDR_TYPE_V6 && !memcmp(a->addr.u_addr.ip6.addr, ip->u_addr.ip6.addr, 16)) {
                 return;
             }
         }
@@ -3736,8 +3732,8 @@ static void _mdns_search_result_add_ip(mdns_search_once_t * search, const char *
     mdns_result_t * r = NULL;
     mdns_ip_addr_t * a = NULL;
 
-    if ((search->type == MDNS_TYPE_A && ip->type == IPADDR_TYPE_V4)
-      || (search->type == MDNS_TYPE_AAAA && ip->type == IPADDR_TYPE_V6)
+    if ((search->type == MDNS_TYPE_A && ip->type == ESP_IPADDR_TYPE_V4)
+      || (search->type == MDNS_TYPE_AAAA && ip->type == ESP_IPADDR_TYPE_V6)
       || search->type == MDNS_TYPE_ANY) {
         r = search->result;
         while (r) {
@@ -4178,8 +4174,7 @@ static void _mdns_free_action(mdns_action_t * action)
         _mdns_free_tx_packet(action->data.tx_handle.packet);
         break;
     case ACTION_RX_HANDLE:
-        pbuf_free(action->data.rx_handle.packet->pb);
-        free(action->data.rx_handle.packet);
+        _mdns_packet_free(action->data.rx_handle.packet);
         break;
     case ACTION_DELEGATE_HOSTNAME_ADD:
         free((char *)action->data.delegate_hostname.hostname);
@@ -4379,8 +4374,7 @@ static void _mdns_execute_action(mdns_action_t * action)
         break;
     case ACTION_RX_HANDLE:
         mdns_parse_packet(action->data.rx_handle.packet);
-        pbuf_free(action->data.rx_handle.packet->pb);
-        free(action->data.rx_handle.packet);
+        _mdns_packet_free(action->data.rx_handle.packet);
         break;
     case ACTION_DELEGATE_HOSTNAME_ADD:
         _mdns_delegate_hostname_add(action->data.delegate_hostname.hostname,
@@ -5421,7 +5415,7 @@ esp_err_t mdns_query_a(const char * name, uint32_t timeout, esp_ip4_addr_t * add
 
     mdns_ip_addr_t * a = result->addr;
     while (a) {
-        if (a->addr.type == IPADDR_TYPE_V4) {
+        if (a->addr.type == ESP_IPADDR_TYPE_V4) {
             addr->addr = a->addr.u_addr.ip4.addr;
             mdns_query_results_free(result);
             return ESP_OK;
@@ -5459,7 +5453,7 @@ esp_err_t mdns_query_aaaa(const char * name, uint32_t timeout, esp_ip6_addr_t * 
 
     mdns_ip_addr_t * a = result->addr;
     while (a) {
-        if (a->addr.type == IPADDR_TYPE_V6) {
+        if (a->addr.type == ESP_IPADDR_TYPE_V6) {
             memcpy(addr->addr, a->addr.u_addr.ip6.addr, 16);
             mdns_query_results_free(result);
             return ESP_OK;

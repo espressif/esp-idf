@@ -71,10 +71,12 @@ def mdns_server(esp_host):
     while not stop_mdns_server.is_set():
         try:
             current_time = time.time()
-            if not esp_answered.is_set() and current_time - last_query_timepoint > QUERY_TIMEOUT:
-                sock.sendto(get_dns_query_for_esp(esp_host), (MCAST_GRP,UDP_PORT))
-                sock.sendto(get_dns_query_for_esp(esp_host + '-delegated'), (MCAST_GRP,UDP_PORT))
+            if current_time - last_query_timepoint > QUERY_TIMEOUT:
                 last_query_timepoint = current_time
+                if not esp_answered.is_set():
+                    sock.sendto(get_dns_query_for_esp(esp_host), (MCAST_GRP,UDP_PORT))
+                if not esp_delegated_answered.is_set():
+                    sock.sendto(get_dns_query_for_esp(esp_host + '-delegated'), (MCAST_GRP,UDP_PORT))
             timeout = max(0, QUERY_TIMEOUT - (current_time - last_query_timepoint))
             read_socks, _, _ = select.select([sock], [], [], timeout)
             if not read_socks:
@@ -119,19 +121,16 @@ def test_examples_protocol_mdns(env, extra_data):
     # 1. start mdns application
     dut1.start_app()
     # 2. get the dut host name (and IP address)
-    specific_host = dut1.expect(re.compile(r'mdns hostname set to: \[([^\]]+)\]'), timeout=30)
-    specific_host = str(specific_host[0])
-    thread1 = Thread(target=mdns_server, args=(specific_host,))
-    thread1.start()
+    specific_host = dut1.expect(re.compile(r'mdns hostname set to: \[([^\]]+)\]'), timeout=30)[0]
+    mdns_responder = Thread(target=mdns_server, args=(str(specific_host),))
     try:
         ip_address = dut1.expect(re.compile(r' sta ip: ([^,]+),'), timeout=30)[0]
         console_log('Connected to AP with IP: {}'.format(ip_address))
     except DUT.ExpectTimeout:
-        stop_mdns_server.set()
-        thread1.join()
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
     try:
         # 3. check the mdns name is accessible
+        mdns_responder.start()
         if not esp_answered.wait(timeout=30):
             raise ValueError('Test has failed: did not receive mdns answer within timeout')
         if not esp_delegated_answered.wait(timeout=30):
@@ -149,7 +148,7 @@ def test_examples_protocol_mdns(env, extra_data):
                              "Output should've contained DUT's IP address:{}".format(ip_address))
     finally:
         stop_mdns_server.set()
-        thread1.join()
+        mdns_responder.join()
 
 
 if __name__ == '__main__':

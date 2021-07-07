@@ -12,45 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "esp_netif.h"
-#include "sys/queue.h"
-#include "esp_log.h"
-#include "esp_netif_private.h"
+#include <stdio.h>
 #include <string.h>
+#include <pthread.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include "esp32_mock.h"
 
-//
-// Purpose of this module is to provide list of esp-netif structures
-//  - this module has no dependency on a specific network stack (lwip)
-//
+typedef struct esp_netif_s esp_netif_t;
+typedef struct esp_netif_ip_info esp_netif_ip_info_t;
+typedef struct esp_netif_dhcp_status esp_netif_dhcp_status_t;
 
-struct slist_netifs_s {
-    esp_netif_t *netif;
-    SLIST_ENTRY(slist_netifs_s) next;
-};
 
-SLIST_HEAD(slisthead, slist_netifs_s) s_head = { .slh_first = NULL, };
+const char * IP_EVENT = "IP_EVENT";
 
-static size_t s_esp_netif_counter = 0;
 
-ESP_EVENT_DEFINE_BASE(IP_EVENT);
-
-//
-// List manipulation functions
-//
 esp_err_t esp_netif_add_to_list(esp_netif_t *netif)
 {
     return ESP_OK;
 }
 
-
 esp_err_t esp_netif_remove_from_list(esp_netif_t *netif)
 {
     return ESP_ERR_NOT_FOUND;
-}
-
-size_t esp_netif_get_nr_of_ifs(void)
-{
-    return s_esp_netif_counter;
 }
 
 esp_netif_t* esp_netif_next(esp_netif_t* netif)
@@ -66,4 +50,14 @@ esp_netif_t* esp_netif_next_unsafe(esp_netif_t* netif)
 esp_netif_t *esp_netif_get_handle_from_ifkey(const char *if_key)
 {
     return NULL;
+}
+
+esp_err_t esp_netif_get_ip_info(esp_netif_t *esp_netif, esp_netif_ip_info_t *ip_info)
+{
+    return ESP_ERR_NOT_SUPPORTED;
+}
+
+esp_err_t esp_netif_dhcpc_get_status(esp_netif_t *esp_netif, esp_netif_dhcp_status_t *status)
+{
+    return ESP_ERR_NOT_SUPPORTED;
 }

@@ -18,6 +18,7 @@
 #include <signal.h>
 #include <string.h>
 
+#include "esp32_mock.h"
 #include "mdns.h"
 #include "mdns_private.h"
 
