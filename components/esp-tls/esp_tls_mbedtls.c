@@ -370,7 +370,8 @@ static esp_err_t set_global_ca_store(esp_tls_t *tls)
 
 #ifdef CONFIG_ESP_TLS_SERVER
 #ifdef CONFIG_ESP_TLS_SERVER_SESSION_TICKETS
-int esp_tls_session_ticket_write(void *p_ticket, const mbedtls_ssl_session *session, unsigned char *start, const unsigned char *end, size_t *tlen, uint32_t *lifetime) {
+int esp_mbedtls_session_ticket_write(void *p_ticket, const mbedtls_ssl_session *session, unsigned char *start, const unsigned char *end, size_t *tlen, uint32_t *lifetime)
+{
     int ret = mbedtls_ssl_ticket_write(p_ticket, session, start, end, tlen, lifetime);
 #ifndef NDEBUG
     if (ret != 0) {
@@ -379,7 +380,9 @@ int esp_tls_session_ticket_write(void *p_ticket, const mbedtls_ssl_session *sess
 #endif
     return ret;
 }
-int esp_tls_session_ticket_parse(void *p_ticket, mbedtls_ssl_session *session, unsigned char *buf, size_t len) {
+
+int esp_mbedtls_session_ticket_parse(void *p_ticket, mbedtls_ssl_session *session, unsigned char *buf, size_t len)
+{
     int ret = mbedtls_ssl_ticket_parse(p_ticket, session, buf, len);
 #ifndef NDEBUG
     if (ret != 0) {
@@ -389,8 +392,8 @@ int esp_tls_session_ticket_parse(void *p_ticket, mbedtls_ssl_session *session, u
     return ret;
 }
 
-int esp_tls_session_ticket_ctx_init(esp_tls_session_ticket_ctx_t * ctx) {
-
+int esp_mbedtls_session_ticket_ctx_init(esp_tls_session_ticket_ctx_t *ctx)
+{
     mbedtls_ctr_drbg_init(&ctx->ctr_drbg);
     mbedtls_entropy_init(&ctx->entropy);
     mbedtls_ssl_ticket_init(&ctx->ticket_ctx);
@@ -412,7 +415,8 @@ int esp_tls_session_ticket_ctx_init(esp_tls_session_ticket_ctx_t * ctx) {
     return ESP_OK;
 }
 
-void esp_tls_session_ticket_ctx_free(esp_tls_session_ticket_ctx_t * ctx) {
+void esp_mbedtls_session_ticket_ctx_free(esp_tls_session_ticket_ctx_t *ctx)
+{
     mbedtls_ssl_ticket_free(&ctx->ticket_ctx);
     mbedtls_ctr_drbg_init(&ctx->ctr_drbg);
     mbedtls_entropy_free(&ctx->entropy);
@@ -476,8 +480,8 @@ esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
         ESP_LOGD(TAG, "Enabling server-side tls session ticket support");
 
         mbedtls_ssl_conf_session_tickets_cb( &tls->conf,
-                esp_tls_session_ticket_write,
-                esp_tls_session_ticket_parse,
+                esp_mbedtls_session_ticket_write,
+                esp_mbedtls_session_ticket_parse,
                 &cfg->ticket_ctx->ticket_ctx );
     }
 #endif

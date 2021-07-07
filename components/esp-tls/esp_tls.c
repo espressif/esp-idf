@@ -41,6 +41,8 @@ static const char *TAG = "esp-tls";
 #ifdef CONFIG_ESP_TLS_SERVER
 #define _esp_tls_server_session_create      esp_mbedtls_server_session_create
 #define _esp_tls_server_session_delete      esp_mbedtls_server_session_delete
+#define _esp_tls_session_ticket_ctx_init    esp_mbedtls_session_ticket_ctx_init
+#define _esp_tls_session_ticket_ctx_free    esp_mbedtls_session_ticket_ctx_free
 #endif  /* CONFIG_ESP_TLS_SERVER */
 #define _esp_tls_get_bytes_avail            esp_mbedtls_get_bytes_avail
 #define _esp_tls_init_global_ca_store       esp_mbedtls_init_global_ca_store
@@ -570,7 +572,8 @@ mbedtls_x509_crt *esp_tls_get_global_ca_store(void)
 #endif /* CONFIG_ESP_TLS_USING_MBEDTLS */
 #ifdef CONFIG_ESP_TLS_SERVER
 
-int esp_tls_cfg_server_session_tickets_init(esp_tls_cfg_server_t * cfg) {
+int esp_tls_cfg_server_session_tickets_init(esp_tls_cfg_server_t *cfg)
+{
 #if defined(CONFIG_ESP_TLS_USING_MBEDTLS) && defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
     if (cfg->ticket_ctx) {
         return ESP_ERR_INVALID_ARG;
@@ -579,7 +582,7 @@ int esp_tls_cfg_server_session_tickets_init(esp_tls_cfg_server_t * cfg) {
     if (!cfg->ticket_ctx) {
         return ESP_ERR_NO_MEM;
     }
-    if (esp_tls_session_ticket_ctx_init(cfg->ticket_ctx) != ESP_OK) {
+    if (_esp_tls_session_ticket_ctx_init(cfg->ticket_ctx) != ESP_OK) {
         return ESP_FAIL;
     }
     return ESP_OK;
@@ -588,9 +591,10 @@ int esp_tls_cfg_server_session_tickets_init(esp_tls_cfg_server_t * cfg) {
 #endif
 }
 
-void esp_tls_cfg_server_session_tickets_free(esp_tls_cfg_server_t * cfg) {
+void esp_tls_cfg_server_session_tickets_free(esp_tls_cfg_server_t *cfg)
+{
 #if defined(CONFIG_ESP_TLS_USING_MBEDTLS) && defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
-    esp_tls_session_ticket_ctx_free(cfg->ticket_ctx);
+    _esp_tls_session_ticket_ctx_free(cfg->ticket_ctx);
 #endif
 }
 
