@@ -162,7 +162,7 @@ size_t __cxx_eh_arena_size_get(void)
  * The rest of the init_array sections is sorted for iteration in descending order during startup, however.
  * Hence a different section is generated for the init_priority functions which is looped
  * over in ascending direction instead of descending direction.
- * The RISC-V-specific behavior is dependent on the linker script esp32c3.project.ld.in.
+ * The RISC-V-specific behavior is dependent on the linker script ld/esp32c3/sections.ld.in.
  */
 static void do_global_ctors(void)
 {

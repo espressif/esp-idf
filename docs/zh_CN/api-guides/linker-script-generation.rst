@@ -619,4 +619,4 @@ ESP-IDF v4.0 变更了链接器脚本片段文件使用的一些语法：
 
     这是根据默认协议条目 ``iram -> iram0_text`` 生成的规则。默认协议指定了 ``iram -> iram0_text`` 条目，因此生成的规则同样也放在被 ``iram0_text`` 标记的地方。由于该规则是根据默认协议生成的，因此在同一目标下收集的所有规则下排在第一位。
 
-    目前使用的链接器脚本模板是 :component_file:`{IDF_TARGET_PATH_NAME}/ld/{IDF_TARGET_PATH_NAME}.project.ld.in`，由 ``{IDF_TARGET_PATH_NAME}`` 组件指定，生成的脚本存放在构建目录下。
+    目前使用的链接器脚本模板是 :component_file:`esp_system/ld/{IDF_TARGET_PATH_NAME}/sections.ld.in`，生成的脚本存放在构建目录下。
