@@ -83,14 +83,14 @@ void esp_mbedtls_server_session_delete(esp_tls_t *tls);
  *
  * /note :- The function can only be used with mbedtls ssl library
  */
-int esp_tls_session_ticket_ctx_init(esp_tls_session_ticket_ctx_t * cfg);
+int esp_mbedtls_session_ticket_ctx_init(esp_tls_session_ticket_ctx_t * cfg);
 
 /**
  * Internal function to free server side session ticket context
  *
  * /note :- The function can only be used with mbedtls ssl library
  */
-void esp_tls_session_ticket_ctx_free(esp_tls_session_ticket_ctx_t * cfg);
+void esp_mbedtls_session_ticket_ctx_free(esp_tls_session_ticket_ctx_t * cfg);
 #endif
 #endif
 
