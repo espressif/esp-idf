@@ -199,7 +199,8 @@ static int esp_issue_scan(struct wpa_supplicant *wpa_s,
 			params->ssid = os_zalloc(scan_params->ssids[0].ssid_len + 1);
 			if (!params->ssid) {
 				wpa_printf(MSG_ERROR, "failed to allocate memory");
-				return -1;
+				ret = -1;
+				goto cleanup;
 			}
 			os_memcpy(params->ssid, scan_params->ssids[0].ssid, scan_params->ssids[0].ssid_len);
 			params->scan_type = WIFI_SCAN_TYPE_ACTIVE;
@@ -210,7 +211,8 @@ static int esp_issue_scan(struct wpa_supplicant *wpa_s,
 			params->bssid = os_zalloc(ETH_ALEN);
 			if (!params->bssid) {
 				wpa_printf(MSG_ERROR, "failed to allocate memory");
-				return -1;
+				ret = -1;
+				goto cleanup;
 			}
 			os_memcpy(params->bssid, scan_params->bssid, ETH_ALEN);
 		}
