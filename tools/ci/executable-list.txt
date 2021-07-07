@@ -5,6 +5,7 @@ components/esp_wifi/test_md5/test_md5.sh
 components/espcoredump/espcoredump.py
 components/espcoredump/test/test_espcoredump.py
 components/espcoredump/test/test_espcoredump.sh
+components/espcoredump/test_apps/build_espcoredump.sh
 components/heap/test_multi_heap_host/test_all_configs.sh
 components/mbedtls/esp_crt_bundle/gen_crt_bundle.py
 components/mbedtls/esp_crt_bundle/test_gen_crt_bundle/test_gen_crt_bundle.py

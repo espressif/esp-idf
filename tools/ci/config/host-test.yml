@@ -252,15 +252,17 @@ test_espcoredump:
   artifacts:
     when: always
     paths:
-      - components/espcoredump/test/.coverage
-      - components/espcoredump/test/output
+      - components/espcoredump/test/**/.coverage
+      - components/espcoredump/test/**/output
     expire_in: 1 week
   variables:
+    IDF_COREDUMP_ELF_REPO: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/idf/idf-coredump-elf.git"
     # install CMake version specified in tools.json
     SETUP_TOOLS_LIST: "all"
   script:
+    - retry_failed git clone ${IDF_COREDUMP_ELF_REPO} -b master
     - cd components/espcoredump/test/
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_espcoredump.sh
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_espcoredump.sh ${CI_PROJECT_DIR}/idf-coredump-elf
 
 test_logtrace_proc:
   extends: .host_test_template
