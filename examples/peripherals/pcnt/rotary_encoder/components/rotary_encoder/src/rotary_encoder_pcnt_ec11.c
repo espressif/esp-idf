@@ -17,6 +17,7 @@
 #include "esp_compiler.h"
 #include "esp_log.h"
 #include "driver/pcnt.h"
+#include "sys/lock.h"
 #include "hal/pcnt_hal.h"
 #include "rotary_encoder.h"
 
@@ -33,6 +34,13 @@ static const char *TAG = "rotary_encoder";
 
 #define EC11_PCNT_DEFAULT_HIGH_LIMIT (100)
 #define EC11_PCNT_DEFAULT_LOW_LIMIT  (-100)
+
+// A flag to identify if pcnt isr service has been installed.
+static bool is_pcnt_isr_service_installed = false;
+// A lock to avoid pcnt isr service being installed twice in multiple threads.
+static _lock_t isr_service_install_lock;
+#define LOCK_ACQUIRE() _lock_acquire(&isr_service_install_lock)
+#define LOCK_RELEASE() _lock_release(&isr_service_install_lock)
 
 typedef struct {
     int accumu_count;
@@ -141,8 +149,16 @@ esp_err_t rotary_encoder_new_ec11(const rotary_encoder_config_t *config, rotary_
     pcnt_counter_pause(ec11->pcnt_unit);
     pcnt_counter_clear(ec11->pcnt_unit);
 
-    // register interrupt handler
-    ROTARY_CHECK(pcnt_isr_service_install(0) == ESP_OK, "install isr service failed", err, ESP_FAIL);
+
+    // register interrupt handler in a thread-safe way
+    LOCK_ACQUIRE();
+    if (!is_pcnt_isr_service_installed) {
+        ROTARY_CHECK(pcnt_isr_service_install(0) == ESP_OK, "install isr service failed", err, ESP_FAIL);
+        // make sure pcnt isr service won't be installed more than one time
+        is_pcnt_isr_service_installed = true;
+    }
+    LOCK_RELEASE();
+
     pcnt_isr_handler_add(ec11->pcnt_unit, ec11_pcnt_overflow_handler, ec11);
 
     pcnt_event_enable(ec11->pcnt_unit, PCNT_EVT_H_LIM);
