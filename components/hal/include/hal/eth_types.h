@@ -24,8 +24,8 @@
 *
 */
 typedef enum {
-    EMAC_INTERFACE_MII,     /*!< Media Independent Interface */
-    EMAC_INTERFACE_RMII     /*!< Reduced Media Independent Interface */
+    EMAC_DATA_INTERFACE_RMII,    /*!< Reduced Media Independent Interface */
+    EMAC_DATA_INTERFACE_MII,     /*!< Media Independent Interface */
 } eth_data_interface_t;
 
 /**

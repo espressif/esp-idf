@@ -130,6 +130,9 @@ Ethernet driver is composed of two parts: MAC and PHY. The communication between
     * Some PHY chip uses an external connected 50MHz crystal oscillator or other clock source, which can also be used as the ``REF_CLK`` for MAC side (as seen the option *b* in the picture). In this case, you still need to select ``CONFIG_ETH_RMII_CLK_INPUT`` in :ref:`CONFIG_ETH_RMII_CLK_MODE`.
     * Some EMAC controller can generate the ``REF_CLK`` using its internal high precision PLL (as seen the option *c* in the picture). In this case, you should select ``CONFIG_ETH_RMII_CLK_OUTPUT`` in :ref:`CONFIG_ETH_RMII_CLK_MODE`.
 
+    .. note::
+        ``REF_CLK`` is configured via Project Configuration as described above by default. However, it can be overwritten from user application code by appropriately setting :cpp:member:`interface` and :cpp:member:`clock_config` members of :cpp:class:`eth_mac_config_t` structure. See :cpp:enum:`emac_rmii_clock_mode_t` and :cpp:enum:`emac_rmii_clock_gpio_t` for more details.
+
     .. warning::
         If the RMII clock mode is selected to ``CONFIG_ETH_RMII_CLK_OUTPUT``, then ``GPIO0`` can be used to output the ``REF_CLK`` signal. See :ref:`CONFIG_ETH_RMII_CLK_OUTPUT_GPIO0` for more information.
         What's more, if you're not using PSRAM in your design, GPIO16 and GPIO17 are also available to output the reference clock. See :ref:`CONFIG_ETH_RMII_CLK_OUT_GPIO` for more information.
@@ -160,6 +163,8 @@ Configuration for MAC is described in :cpp:class:`eth_mac_config_t`, including:
 * :cpp:member:`sw_reset_timeout_ms`: software reset timeout value, in milliseconds, typically MAC reset should be finished within 100ms.
 * :cpp:member:`rx_task_stack_size` and :cpp:member:`rx_task_prio`: the MAC driver creates a dedicated task to process incoming packets, these two parameters are used to set the stack size and priority of the task.
 * :cpp:member:`smi_mdc_gpio_num` and :cpp:member:`smi_mdio_gpio_num`: the GPIO number used to connect the SMI signals.
+* :cpp:member:`interface`: configuration of MAC Data interface to PHY (MII/RMII).
+* :cpp:member:`clock_config`: configuration of EMAC Interface clock (``REF_CLK`` mode and GPIO number in case of RMII).
 * :cpp:member:`flags`: specifying extra features that the MAC driver should have, it could be useful in some special situations. The value of this field can be OR'd with macros prefixed with ``ETH_MAC_FLAG_``. For example, if the MAC driver should work when cache is disabled, then you should configure this field with :c:macro:`ETH_MAC_FLAG_WORK_WITH_CACHE_DISABLE`.
 
 Configuration for PHY is described in :cpp:class:`eth_phy_config_t`, including:
@@ -198,6 +203,24 @@ Ethernet driver is implemented in an Object-Oriented style. Any operation on MAC
 .. note::
     Care should be taken, when creating MAC and PHY instance for SPI-Ethernet modules (e.g. DM9051), the constructor function must have the same suffix (e.g. `esp_eth_mac_new_dm9051` and `esp_eth_phy_new_dm9051`). This is because we don't have other choices but the integrated PHY.
     Besides that, we have to create an SPI device handle firstly and then pass it to the MAC constructor function. More instructions on creating SPI device handle, please refer to :doc:`SPI Master <../peripherals/spi_master>`.
+
+Optional Runtime MAC Clock Configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+EMAC ``REF_CLK`` can be optionally configured from user application code.
+
+.. highlight:: c
+
+::
+
+    eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG(); // apply default MAC configuration
+
+    // ...
+
+    mac_config.interface = EMAC_DATA_INTERFACE_RMII; // alter EMAC Data Interface
+    mac_config.clock_config.rmii.clock_mode = EMAC_CLK_OUT; // select EMAC REF_CLK mode
+    mac_config.clock_config.rmii.clock_gpio = EMAC_CLK_OUT_GPIO; // select GPIO number used to input/output EMAC REF_CLK
+    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config); // create MAC instance
 
 Install Driver
 --------------
