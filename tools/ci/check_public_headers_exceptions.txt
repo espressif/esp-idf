@@ -30,8 +30,6 @@ components/lwip/include/apps/dhcpserver/dhcpserver.h
 
 components/lwip/lwip/src/include/lwip/priv/memp_std.h
 
-components/vfs/include/sys/dirent.h
-
 components/esp_phy/esp32/include/phy_init_data.h
 
 components/spi_flash/include/spi_flash_chip_issi.h
