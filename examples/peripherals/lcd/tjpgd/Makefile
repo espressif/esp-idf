@@ -3,6 +3,6 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := spi_master
+PROJECT_NAME := lcd_tjpgd
 
 include $(IDF_PATH)/make/project.mk
