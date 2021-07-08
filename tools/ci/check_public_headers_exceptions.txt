@@ -34,8 +34,6 @@ components/lwip/port/esp32/include/arch/cc.h
 components/lwip/port/esp32/include/debug/lwip_debug.h
 components/lwip/port/esp32/include/arch/cc.h
 
-components/vfs/include/sys/dirent.h
-
 components/esp_wifi/esp32/include/phy_init_data.h
 
 components/spi_flash/include/spi_flash_chip_issi.h
