@@ -275,6 +275,7 @@ macro(__component_add_sources sources)
                 endif()
 
                 file(GLOB dir_sources "${abs_dir}/*.c" "${abs_dir}/*.cpp" "${abs_dir}/*.S")
+                list(SORT dir_sources)
 
                 if(dir_sources)
                     foreach(src ${dir_sources})
