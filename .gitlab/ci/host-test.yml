@@ -260,6 +260,9 @@ test_espcoredump:
       - components/espcoredump/test/.coverage
       - components/espcoredump/test/output
     expire_in: 1 week
+  variables:
+    # install CMake version specified in tools.json
+    SETUP_TOOLS_LIST: "all"
   script:
     - cd components/espcoredump/test/
     - ./test_espcoredump.sh

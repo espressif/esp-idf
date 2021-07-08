@@ -66,7 +66,7 @@ variables:
   export IDF_MIRROR_PREFIX_MAP=
   fi
   if [[ "$SETUP_TOOLS" == "1" || "$CI_JOB_STAGE" != "target_test" ]]; then
-  tools/idf_tools.py --non-interactive install && eval "$(tools/idf_tools.py --non-interactive export)" || exit 1
+  tools/idf_tools.py --non-interactive install ${SETUP_TOOLS_LIST:-} && eval "$(tools/idf_tools.py --non-interactive export)" || exit 1
     if [[ ! -z "$OOCD_DISTRO_URL" && "$CI_JOB_STAGE" == "target_test" ]]; then
     echo "Using custom OpenOCD from ${OOCD_DISTRO_URL}"
     wget $OOCD_DISTRO_URL
