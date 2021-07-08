@@ -343,4 +343,4 @@ static void test_wifi_connection_softap(void)
 
 TEST_CASE_MULTIPLE_DEVICES("test wifi retain connection for 60s", "[wifi][test_env=UT_T2_1][timeout=90]", test_wifi_connection_sta, test_wifi_connection_softap);
 
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)

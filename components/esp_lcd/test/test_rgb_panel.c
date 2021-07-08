@@ -33,7 +33,7 @@
 #if SOC_LCD_RGB_SUPPORTED
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
-/* Not enough memory for framebuffer when running in default_2 config */
+/* Not enough memory for framebuffer when running in default_2 config TODO IDF-3565 */
 
 TEST_CASE("lcd rgb lcd panel", "[lcd]")
 {
