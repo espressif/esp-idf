@@ -27,6 +27,7 @@
 #include "soc/dport_reg.h"
 #include "soc/efuse_reg.h"
 #include "soc/syscon_reg.h"
+#include "esp_rom_sys.h"
 #include "regi2c_ctrl.h"
 #include "soc_log.h"
 #include "rtc_clk_common.h"
