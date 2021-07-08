@@ -37,6 +37,8 @@ typedef struct {
 #if CONFIG_SPIRAM_USE_MALLOC
     StaticQueue_t ledc_fade_sem_storage;
 #endif
+    ledc_cb_t ledc_fade_callback;
+    void *cb_user_arg;
 } ledc_fade_t;
 
 typedef struct {
@@ -551,6 +553,7 @@ static inline void ledc_calc_fade_end_channel(uint32_t *fade_end_status, uint32_
 
 void IRAM_ATTR ledc_fade_isr(void* arg)
 {
+    bool cb_yield = false;
     portBASE_TYPE HPTaskAwoken = pdFALSE;
     uint32_t speed_mode = 0;
     uint32_t channel = 0;
@@ -576,17 +579,21 @@ void IRAM_ATTR ledc_fade_isr(void* arg)
 
             uint32_t duty_cur = 0;
             ledc_hal_get_duty(&(p_ledc_obj[speed_mode]->ledc_hal), channel, &duty_cur);
-            if (duty_cur == s_ledc_fade_rec[speed_mode][channel]->target_duty) {
-                xSemaphoreGiveFromISR(s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem, &HPTaskAwoken);
-                if (HPTaskAwoken == pdTRUE) {
-                    portYIELD_FROM_ISR();
-                }
-                continue;
-            }
             uint32_t duty_tar = s_ledc_fade_rec[speed_mode][channel]->target_duty;
             int scale = s_ledc_fade_rec[speed_mode][channel]->scale;
-            if (scale == 0) {
+            if (duty_cur == duty_tar || scale == 0) {
                 xSemaphoreGiveFromISR(s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem, &HPTaskAwoken);
+
+                ledc_cb_param_t param = {
+                    .event = LEDC_FADE_END_EVT,
+                    .speed_mode = speed_mode,
+                    .channel = channel,
+                    .duty = duty_cur
+                };
+                ledc_cb_t fade_cb = s_ledc_fade_rec[speed_mode][channel]->ledc_fade_callback;
+                if (fade_cb) {
+                    cb_yield |= fade_cb(&param, s_ledc_fade_rec[speed_mode][channel]->cb_user_arg);
+                }
                 continue;
             }
             int cycle = s_ledc_fade_rec[speed_mode][channel]->cycle_num;
@@ -617,6 +624,9 @@ void IRAM_ATTR ledc_fade_isr(void* arg)
             ledc_hal_set_duty_start(&(p_ledc_obj[speed_mode]->ledc_hal), channel, true);
             portEXIT_CRITICAL(&ledc_spinlock);
         }
+    }
+    if (HPTaskAwoken == pdTRUE || cb_yield) {
+        portYIELD_FROM_ISR();
     }
 }
 
@@ -823,6 +833,17 @@ void ledc_fade_func_uninstall(void)
         }
     }
     return;
+}
+
+esp_err_t ledc_cb_register(ledc_mode_t speed_mode, ledc_channel_t channel, ledc_cbs_t *cbs, void *user_arg)
+{
+    LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
+    LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
+    LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
+    LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK , LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
+    s_ledc_fade_rec[speed_mode][channel]->ledc_fade_callback = cbs->fade_cb;
+    s_ledc_fade_rec[speed_mode][channel]->cb_user_arg = user_arg;
+    return ESP_OK;
 }
 
 /*
