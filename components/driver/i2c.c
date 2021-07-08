@@ -1147,6 +1147,12 @@ esp_err_t i2c_master_write(i2c_cmd_handle_t cmd_handle, const uint8_t *data, siz
     I2C_CHECK((data != NULL), I2C_ADDR_ERROR_STR, ESP_ERR_INVALID_ARG);
     I2C_CHECK(cmd_handle != NULL, I2C_CMD_LINK_INIT_ERR_STR, ESP_ERR_INVALID_ARG);
 
+    if (data_len == 1) {
+        /* If data_len if 1, i2c_master_write_byte should have been called,
+         * correct this here. */
+        return i2c_master_write_byte(cmd_handle, *data, ack_en);
+    }
+
     i2c_cmd_t cmd = {
         .hw_cmd = {
             .ack_en = ack_en,
