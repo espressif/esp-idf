@@ -101,8 +101,8 @@ static void wps_remove_pin(struct wps_uuid_pin *pin)
 static void wps_free_pins(struct dl_list *pins)
 {
 	struct wps_uuid_pin *pin, *prev;
-	dl_list_for_each_safe(pin, prev, pins, struct wps_uuid_pin, list);
-	wps_remove_pin(pin);
+	dl_list_for_each_safe(pin, prev, pins, struct wps_uuid_pin, list)
+		wps_remove_pin(pin);
 }
 
 #endif
