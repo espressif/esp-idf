@@ -102,3 +102,7 @@
 [submodule "components/esp_phy/lib"]
 	path = components/esp_phy/lib
 	url = ../../espressif/esp-phy-lib.git
+
+[submodule "components/openthread/lib"]
+	path = components/openthread/lib
+	url = ../../espressif/esp-thread-lib.git

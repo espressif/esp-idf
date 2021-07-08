@@ -65,25 +65,11 @@ menu "OpenThread"
         help
             Select this option to enable border router features in OpenThread.
 
-    config OPENTHREAD_PARTITION_NAME
-        string "The partition for OpenThread to store its network data"
+    config OPENTHREAD_ESP_LIB_FROM_INTERNAL_SRC
+        bool "Build esp_openthread libraries from source"
         depends on OPENTHREAD_ENABLED
-        default "ot_storage"
+        default n
         help
-            The storage size should be at least 8192 bytes.
-
-    config OPENTHREAD_NETIF_QUEUE_SIZE
-        int "The size of the packet queue for OpenThread lwIP network interface"
-        depends on OPENTHREAD_ENABLED
-        default 10
-        help
-            The size of the packet queue for OpenThread lwIP network interface.
-
-    config OPENTHREAD_TASK_QUEUE_SIZE
-        int "The size of the OpenThread task queue"
-        depends on OPENTHREAD_ENABLED
-        default 10
-        help
-            The size of the OpenThread task queue.
+            Override the shipped libopenthread_br.a and libopenthread_port.a, for internal builds.
 
 endmenu

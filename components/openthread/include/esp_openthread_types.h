@@ -15,6 +15,7 @@
 #pragma once
 
 #include "hal/uart_types.h"
+#include "sys/_stdint.h"
 #include "sys/select.h"
 #include "esp_event_base.h"
 
@@ -102,12 +103,23 @@ typedef struct {
 } esp_openthread_host_connection_config_t;
 
 /**
+ * @brief The OpenThread port specific configuration
+ *
+ */
+typedef struct {
+    const char *storage_partition_name; /*!< The partition for storing OpenThread dataset*/
+    uint8_t     netif_queue_size;       /*!< The packet queue size for the network interface*/
+    uint8_t     task_queue_size;        /*!< The task queue size*/
+} esp_openthread_port_config_t;
+
+/**
  * @brief The OpenThread platform configuration
  *
  */
 typedef struct {
     esp_openthread_radio_config_t               radio_config;   /*!< The radio configuration*/
     esp_openthread_host_connection_config_t     host_config;    /*!< The host connection configuration*/
+    esp_openthread_port_config_t                port_config;    /*!< The port configuration*/
 } esp_openthread_platform_config_t;
 
 #ifdef __cplusplus

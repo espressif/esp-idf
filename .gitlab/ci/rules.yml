@@ -149,6 +149,7 @@
   - "components/nghttp/nghttp2"
   - "components/nghttp/nghttp2/third-party/mruby"
   - "components/nghttp/nghttp2/third-party/neverbleed"
+  - "components/openthread/lib"
   - "components/protobuf-c/protobuf-c"
   - "components/spiffs/spiffs"
   - "components/tinyusb/tinyusb"

@@ -43,12 +43,12 @@
 
 extern void otAppCliInit(otInstance *instance);
 
-static esp_netif_t *init_openthread_netif(void)
+static esp_netif_t *init_openthread_netif(const esp_openthread_platform_config_t *config)
 {
     esp_netif_config_t cfg = ESP_NETIF_DEFAULT_OPENTHREAD();
     esp_netif_t *netif = esp_netif_new(&cfg);
     assert(netif != NULL);
-    ESP_ERROR_CHECK(esp_netif_attach(netif, esp_openthread_netif_glue_init()));
+    ESP_ERROR_CHECK(esp_netif_attach(netif, esp_openthread_netif_glue_init(config)));
 
     return netif;
 }
@@ -58,6 +58,7 @@ static void ot_task_worker(void *aContext)
     esp_openthread_platform_config_t config = {
         .radio_config = ESP_OPENTHREAD_DEFAULT_RADIO_UART_RCP_CONFIG(4, 5),
         .host_config = ESP_OPENTHREAD_DEFAULT_UART_HOST_CONFIG(),
+        .port_config = ESP_OPENTHREAD_DEFAULT_PORT_CONFIG(),
     };
     esp_netif_t *openthread_netif;
 
@@ -68,7 +69,7 @@ static void ot_task_worker(void *aContext)
     otAppCliInit(esp_openthread_get_instance());
 
     // Initialize the esp_netif bindings
-    openthread_netif = init_openthread_netif();
+    openthread_netif = init_openthread_netif(&config);
 
 #if CONFIG_OPENTHREAD_CUSTOM_COMMAND
     esp_cli_custom_command_init();
