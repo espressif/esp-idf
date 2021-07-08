@@ -82,7 +82,7 @@ static const char *TAG = "clk";
     }
     rtc_init(cfg);
 
-    assert(rtc_clk_xtal_freq_get() == RTC_XTAL_FREQ_40M);
+    assert(rtc_clk_xtal_freq_get() == RTC_XTAL_FREQ_32M);
 
     rtc_clk_fast_freq_set(RTC_FAST_FREQ_8M);
 #endif
@@ -177,7 +177,7 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
                 }
             }
         } else if (rtc_slow_freq == RTC_SLOW_FREQ_8MD256) {
-            rtc_clk_8m_enable(true, true);
+            // rtc_clk_8m_enable(true, true);
         }
         rtc_clk_slow_freq_set(rtc_slow_freq);
 

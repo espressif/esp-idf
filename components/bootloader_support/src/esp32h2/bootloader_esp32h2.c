@@ -254,12 +254,7 @@ static void bootloader_super_wdt_auto_feed(void)
 
 static inline void bootloader_hardware_init(void)
 {
-    // This check is always included in the bootloader so it can
-    // print the minimum revision error message later in the boot
-    if (bootloader_common_get_chip_revision() < 3) {
-        REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_FORCE_XPD_IPH, 1);
-        REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1_PVT, 12);
-    }
+
 }
 
 static inline void bootloader_glitch_reset_disable(void)

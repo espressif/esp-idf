@@ -14,8 +14,8 @@
  * bootloader_hardware_init function in bootloader_esp32c3.c.
  */
 
-#define I2C_BIAS            0X6A
-#define I2C_BIAS_HOSTID     0
+#define I2C_BIAS           0x6a
+#define I2C_BIAS_HOSTID    0
 
 #define I2C_BIAS_DREG_1P1_PVT 1
 #define I2C_BIAS_DREG_1P1_PVT_MSB 3

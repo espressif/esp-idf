@@ -228,10 +228,10 @@
 #if CONFIG_IDF_ENV_FPGA
 #define  APB_CLK_FREQ                                ( 32*1000000 )
 #else
-#define  APB_CLK_FREQ                                ( 80*1000000 )
+#define  APB_CLK_FREQ                                ( 96*1000000 )
 #endif
 #define  REF_CLK_FREQ                                ( 1000000 )
-#define  RTC_CLK_FREQ                                (20*1000000)
+#define  RTC_CLK_FREQ                                (17.5*1000000)
 #define  XTAL_CLK_FREQ                               (32*1000000)
 #define  UART_CLK_FREQ                               APB_CLK_FREQ
 #define  WDT_CLK_FREQ                                APB_CLK_FREQ
