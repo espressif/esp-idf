@@ -248,7 +248,6 @@ typedef struct mdns_parsed_record_s {
 typedef struct {
     mdns_if_t tcpip_if;
     mdns_ip_protocol_t ip_protocol;
-    //struct udp_pcb *pcb;
     esp_ip_addr_t src;
     uint16_t src_port;
     uint8_t multicast;
