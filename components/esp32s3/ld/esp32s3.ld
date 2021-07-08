@@ -101,9 +101,9 @@ _heap_end = 0x40000000;
 _data_seg_org = ORIGIN(rtc_data_seg);
 
 #if CONFIG_ESP32S3_RTCDATA_IN_FAST_MEM
-REGION_ALIAS("rtc_data_location", rtc_slow_seg );
-#else
 REGION_ALIAS("rtc_data_location", rtc_data_seg );
+#else
+REGION_ALIAS("rtc_data_location", rtc_slow_seg );
 #endif // CONFIG_ESP32S3_RTCDATA_IN_FAST_MEM
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
