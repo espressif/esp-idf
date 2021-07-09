@@ -105,10 +105,14 @@ The bootloader has the :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` opti
 Custom bootloader
 -----------------
 
-The current bootloader implementation allows a project to override it. To do this, you must copy the directory ``/esp-idf/components/bootloader`` to your project components directory and then edit ``/your_project/components/bootloader/subproject/main/bootloader_start.c``.
+The current bootloader implementation allows a project to extend it or modify it. There are two ways of doing it: by implementing hooks or by overriding it.
+Both ways are presented in :example:`custom_bootloader` folder in ESP-IDF examples:
 
-In the bootloader space, you cannot use the drivers and functions from other components. If necessary, then the required functionality should be placed in the project's ``bootloader`` directory (note that this will increase its size).
+* `bootloader_hooks` which presents how to connect some hooks to the bootloader initialization
+* `bootloader_override` which presents how to override the bootloader implementation
+
+In the bootloader space, you cannot use the drivers and functions from other components. If necessary, then the required functionality should be placed in the project's `bootloader_components` directory (note that this will increase its size).
 
 If the bootloader grows too large then it can collide with the partition table, which is flashed at offset 0x8000 by default. Increase the :ref:`partition table offset <CONFIG_PARTITION_TABLE_OFFSET>` value to place the partition table later in the flash. This increases the space available for the bootloader.
 
-.. note:: The first time you copy the bootloader into an existing project, the project may fail to build as paths have changed unexpectedly. If this happens, run ``idf.py fullclean`` (or delete the project build directory) and then build again.
+.. note:: Customize the bootloader by using either method is only supported with CMake build system (i.e. not supported with legacy Make build system).
