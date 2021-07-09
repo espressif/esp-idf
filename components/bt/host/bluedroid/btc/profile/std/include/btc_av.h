@@ -40,6 +40,11 @@ extern bool g_av_with_rc;
 extern bool g_a2dp_on_init;
 // global variable to indicate a2dp is deinitialized
 extern bool g_a2dp_on_deinit;
+// global variable to indicate a2dp source deinitialization is ongoing
+extern bool g_a2dp_source_ongoing_deinit;
+// global variable to indicate a2dp sink deinitialization is ongoing
+extern bool g_a2dp_sink_ongoing_deinit;
+
 /*******************************************************************************
 **  Type definitions for callback functions
 ********************************************************************************/
