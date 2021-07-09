@@ -5,11 +5,11 @@ if(EXISTS "${COMPONENT_DIR}/${soc_name}")
 
     spaces2list(SOC_SRCS)
     add_prefix(srcs "${soc_name}/" ${SOC_SRCS})
-    set(include_dirs ${soc_name}/include)
+    set(include_dirs ${soc_name} ${soc_name}/include)
 endif()
 
 list(APPEND include_dirs include)
-list(APPEND srcs 
+list(APPEND srcs
     "src/memory_layout_utils.c"
     "src/lldesc.c"
     "src/hal/spi_hal.c"
@@ -20,6 +20,10 @@ list(APPEND srcs
     "src/hal/spi_flash_hal.c"
     "src/hal/spi_flash_hal_iram.c"
     )
+
+if (NOT(BOOTLOADER_BUILD))
+    list(APPEND srcs "src/regi2c_ctrl.c")
+endif()
 
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "${include_dirs}"
