@@ -119,13 +119,15 @@
 #include "linenoise.h"
 
 #define LINENOISE_DEFAULT_HISTORY_MAX_LEN 100
-#define LINENOISE_MAX_LINE 4096
+#define LINENOISE_DEFAULT_MAX_LINE 4096
+#define LINENOISE_MINIMAL_MAX_LINE 64
 #define LINENOISE_COMMAND_MAX_LEN 32
 
 static linenoiseCompletionCallback *completionCallback = NULL;
 static linenoiseHintsCallback *hintsCallback = NULL;
 static linenoiseFreeHintsCallback *freeHintsCallback = NULL;
 
+static int max_line_len = LINENOISE_DEFAULT_MAX_LINE;
 static int mlmode = 0;  /* Multi line mode. Default is single line. */
 static int dumbmode = 0; /* Dumb mode where line editing is disabled. Off by default */
 static int history_max_len = LINENOISE_DEFAULT_HISTORY_MAX_LEN;
@@ -1079,15 +1081,15 @@ static void sanitize(char* src) {
 
 /* The high level function that is the main API of the linenoise library. */
 char *linenoise(const char *prompt) {
-    char *buf = calloc(1, LINENOISE_MAX_LINE);
+    char *buf = calloc(1, max_line_len);
     int count = 0;
     if (buf == NULL) {
         return NULL;
     }
     if (!dumbmode) {
-        count = linenoiseRaw(buf, LINENOISE_MAX_LINE, prompt);
+        count = linenoiseRaw(buf, max_line_len, prompt);
     } else {
-        count = linenoiseDumb(buf, LINENOISE_MAX_LINE, prompt);
+        count = linenoiseDumb(buf, max_line_len, prompt);
     }
     if (count > 0) {
         sanitize(buf);
@@ -1214,13 +1216,13 @@ int linenoiseHistoryLoad(const char *filename) {
         return -1;
     }
 
-    char *buf = calloc(1, LINENOISE_MAX_LINE);
+    char *buf = calloc(1, max_line_len);
     if (buf == NULL) {
         fclose(fp);
         return -1;
     }
 
-    while (fgets(buf,LINENOISE_MAX_LINE,fp) != NULL) {
+    while (fgets(buf,max_line_len,fp) != NULL) {
         char *p;
 
         p = strchr(buf,'\r');
@@ -1232,5 +1234,16 @@ int linenoiseHistoryLoad(const char *filename) {
     free(buf);
     fclose(fp);
 
+    return 0;
+}
+
+/* Set line maximum length. If len parameter is smaller than
+ * LINENOISE_MINIMAL_MAX_LINE, -1 is returned
+ * otherwise 0 is returned. */
+int linenoiseSetMaxLineLen(int len) {
+    if (len < LINENOISE_MINIMAL_MAX_LINE) {
+        return -1;
+    }
+    max_line_len = len;
     return 0;
 }
