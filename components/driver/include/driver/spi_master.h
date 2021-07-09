@@ -104,8 +104,13 @@ typedef struct {
 #define SPI_TRANS_VARIABLE_CMD        (1<<5)  ///< Use the ``command_bits`` in ``spi_transaction_ext_t`` rather than default value in ``spi_device_interface_config_t``.
 #define SPI_TRANS_VARIABLE_ADDR       (1<<6)  ///< Use the ``address_bits`` in ``spi_transaction_ext_t`` rather than default value in ``spi_device_interface_config_t``.
 #define SPI_TRANS_VARIABLE_DUMMY      (1<<7)  ///< Use the ``dummy_bits`` in ``spi_transaction_ext_t`` rather than default value in ``spi_device_interface_config_t``.
-#define SPI_TRANS_SET_CD              (1<<7)  ///< Set the CD pin
 #define SPI_TRANS_CS_KEEP_ACTIVE      (1<<8)  ///< Keep CS active after data transfer
+#define MULTILINE_CMD                 (1<<9)  ///< The number of lines transmitting command is the same as that transmitting data
+#define MULTILINE_ADDR                (1<<10) ///< the number of lines transmitting address is the same as that transmitting data (in dual and quad mode the same as ``SPI_TRANS_MODE_DIOQIO_ADDR``)
+#if SOC_SPI_SUPPORT_OCT
+#define SPI_TRANS_MODE_OCT            (1<<11) ///< Transmit/receive data in 8-bit mode
+#endif
+
 /**
  * This structure describes one SPI transaction. The descriptor should not be modified until the transaction finishes.
  */

@@ -30,6 +30,7 @@
 #include "soc/lldesc.h"
 #include "hal/assert.h"
 #include "hal/misc.h"
+#include "hal/spi_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,6 +40,10 @@ extern "C" {
 #define SPI_LL_DMA_FIFO_RST_MASK (SPI_AHBM_RST | SPI_AHBM_FIFO_RST)
 /// Interrupt not used. Don't use in app.
 #define SPI_LL_UNUSED_INT_MASK  (SPI_INT_TRANS_DONE_EN | SPI_INT_WR_DMA_DONE_EN | SPI_INT_RD_DMA_DONE_EN | SPI_INT_WR_BUF_DONE_EN | SPI_INT_RD_BUF_DONE_EN)
+/// These 2 masks together will set SPI transaction to one line mode
+#define SPI_LL_ONE_LINE_CTRL_MASK (SPI_FREAD_OCT | SPI_FREAD_QUAD | SPI_FREAD_DUAL | SPI_FCMD_OCT | \
+        SPI_FCMD_QUAD | SPI_FCMD_DUAL | SPI_FADDR_OCT | SPI_FADDR_QUAD | SPI_FADDR_DUAL)
+#define SPI_LL_ONE_LINE_USER_MASK (SPI_FWRITE_OCT | SPI_FWRITE_QUAD | SPI_FWRITE_DUAL)
 /// Swap the bit order to its correct place to send
 #define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)(data) << (32 - len))
 /// This is the expected clock frequency
@@ -54,15 +59,6 @@ typedef uint32_t spi_ll_clock_val_t;
 
 //On ESP32-S2 and earlier chips, DMA registers are part of SPI registers. So set the registers of SPI peripheral to control DMA.
 typedef spi_dev_t spi_dma_dev_t;
-
-/** IO modes supported by the master. */
-typedef enum {
-    SPI_LL_IO_MODE_NORMAL = 0,  ///< 1-bit mode for all phases
-    SPI_LL_IO_MODE_DIO,         ///< 2-bit mode for address and data phases, 1-bit mode for command phase
-    SPI_LL_IO_MODE_DUAL,        ///< 2-bit mode for data phases only, 1-bit mode for command and address phases
-    SPI_LL_IO_MODE_QIO,         ///< 4-bit mode for address and data phases, 1-bit mode for command phase
-    SPI_LL_IO_MODE_QUAD,        ///< 4-bit mode for data phases only, 1-bit mode for command and address phases
-} spi_ll_io_mode_t;
 
 /// Type definition of all supported interrupts
 typedef enum {
@@ -508,41 +504,27 @@ static inline void spi_ll_set_sio_mode(spi_dev_t *hw, int sio_mode)
 }
 
 /**
- * Configure the io mode for the master to work at.
+ * Configure the SPI transaction line mode for the master to use.
  *
- * @param hw Beginning address of the peripheral registers.
- * @param io_mode IO mode to work at, see ``spi_ll_io_mode_t``.
+ * @param hw        Beginning address of the peripheral registers.
+ * @param line_mode SPI transaction line mode to use, see ``spi_line_mode_t``.
  */
-static inline void spi_ll_master_set_io_mode(spi_dev_t *hw, spi_ll_io_mode_t io_mode)
+static inline void spi_ll_master_set_line_mode(spi_dev_t *hw, spi_line_mode_t line_mode)
 {
-    if (io_mode == SPI_LL_IO_MODE_DIO || io_mode == SPI_LL_IO_MODE_DUAL) {
-        hw->ctrl.fcmd_dual= (io_mode == SPI_LL_IO_MODE_DIO) ? 1 : 0;
-        hw->ctrl.faddr_dual= (io_mode == SPI_LL_IO_MODE_DIO) ? 1 : 0;
-        hw->ctrl.fread_dual=1;
-        hw->user.fwrite_dual=1;
-        hw->ctrl.fcmd_quad = 0;
-        hw->ctrl.faddr_quad = 0;
-        hw->ctrl.fread_quad = 0;
-        hw->user.fwrite_quad = 0;
-    } else if (io_mode == SPI_LL_IO_MODE_QIO || io_mode == SPI_LL_IO_MODE_QUAD) {
-        hw->ctrl.fcmd_quad = (io_mode == SPI_LL_IO_MODE_QIO) ? 1 : 0;
-        hw->ctrl.faddr_quad = (io_mode == SPI_LL_IO_MODE_QIO) ? 1 : 0;
-        hw->ctrl.fread_quad=1;
-        hw->user.fwrite_quad=1;
-        hw->ctrl.fcmd_dual = 0;
-        hw->ctrl.faddr_dual = 0;
-        hw->ctrl.fread_dual = 0;
-        hw->user.fwrite_dual = 0;
-    } else {
-        hw->ctrl.fcmd_dual = 0;
-        hw->ctrl.faddr_dual = 0;
-        hw->ctrl.fread_dual = 0;
-        hw->user.fwrite_dual = 0;
-        hw->ctrl.fcmd_quad = 0;
-        hw->ctrl.faddr_quad = 0;
-        hw->ctrl.fread_quad = 0;
-        hw->user.fwrite_quad = 0;
-    }
+    hw->ctrl.val &= ~SPI_LL_ONE_LINE_CTRL_MASK;
+    hw->user.val &= ~SPI_LL_ONE_LINE_USER_MASK;
+    hw->ctrl.fcmd_dual = (line_mode.cmd_lines == 2);
+    hw->ctrl.fcmd_quad = (line_mode.cmd_lines == 4);
+    hw->ctrl.fcmd_oct = (line_mode.cmd_lines == 8);
+    hw->ctrl.faddr_dual = (line_mode.addr_lines == 2);
+    hw->ctrl.faddr_quad = (line_mode.addr_lines == 4);
+    hw->ctrl.faddr_oct = (line_mode.addr_lines == 8);
+    hw->ctrl.fread_dual = (line_mode.data_lines == 2);
+    hw->user.fwrite_dual = (line_mode.data_lines == 2);
+    hw->ctrl.fread_quad = (line_mode.data_lines == 4);
+    hw->user.fwrite_quad = (line_mode.data_lines == 4);
+    hw->ctrl.fread_oct = (line_mode.data_lines == 8);
+    hw->user.fwrite_oct = (line_mode.data_lines == 8);
 }
 
 static inline void spi_ll_slave_set_seg_mode(spi_dev_t *hw, bool seg_trans)

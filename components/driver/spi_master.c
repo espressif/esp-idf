@@ -530,13 +530,18 @@ static void SPI_MASTER_ISR_ATTR spi_new_trans(spi_device_t *dev, spi_trans_priv_
     hal_trans.cmd = trans->cmd;
     hal_trans.addr = trans->addr;
     hal_trans.cs_keep_active = (trans->flags & SPI_TRANS_CS_KEEP_ACTIVE) ? 1 : 0;
-    //Set up QIO/DIO if needed
-    hal_trans.io_mode = (trans->flags & SPI_TRANS_MODE_DIO ?
-                        (trans->flags & SPI_TRANS_MODE_DIOQIO_ADDR ? SPI_LL_IO_MODE_DIO : SPI_LL_IO_MODE_DUAL) :
-                    (trans->flags & SPI_TRANS_MODE_QIO ?
-                        (trans->flags & SPI_TRANS_MODE_DIOQIO_ADDR ? SPI_LL_IO_MODE_QIO : SPI_LL_IO_MODE_QUAD) :
-                    SPI_LL_IO_MODE_NORMAL
-                    ));
+
+    //Set up OIO/QIO/DIO if needed
+#if SOC_SPI_SUPPORT_OCT
+    hal_trans.line_mode.data_lines = (trans->flags & SPI_TRANS_MODE_DIO) ? 2 :
+        (trans->flags & SPI_TRANS_MODE_QIO) ? 4 :
+        (trans->flags & SPI_TRANS_MODE_OCT) ? 8 : 1;
+#else
+    hal_trans.line_mode.data_lines = (trans->flags & SPI_TRANS_MODE_DIO) ? 2 :
+        (trans->flags & SPI_TRANS_MODE_QIO) ? 4 : 1;
+#endif
+    hal_trans.line_mode.addr_lines = (trans->flags & (SPI_TRANS_MODE_DIOQIO_ADDR | MULTILINE_ADDR)) ? hal_trans.line_mode.data_lines : 1;
+    hal_trans.line_mode.cmd_lines = (trans->flags & MULTILINE_CMD) ? hal_trans.line_mode.data_lines : 1;
 
     if (trans->flags & SPI_TRANS_VARIABLE_CMD) {
         hal_trans.cmd_bits = ((spi_transaction_ext_t *)trans)->command_bits;
@@ -686,8 +691,13 @@ static SPI_MASTER_ISR_ATTR esp_err_t check_trans_valid(spi_device_handle_t handl
     SPI_CHECK(trans_desc->rxlength <= bus_attr->max_transfer_sz*8, "rxdata transfer > host maximum", ESP_ERR_INVALID_ARG);
     SPI_CHECK(is_half_duplex || trans_desc->rxlength <= trans_desc->length, "rx length > tx length in full duplex mode", ESP_ERR_INVALID_ARG);
     //check working mode
-    SPI_CHECK(!((trans_desc->flags & (SPI_TRANS_MODE_DIO|SPI_TRANS_MODE_QIO)) && (handle->cfg.flags & SPI_DEVICE_3WIRE)), "incompatible iface params", ESP_ERR_INVALID_ARG);
-    SPI_CHECK(!((trans_desc->flags & (SPI_TRANS_MODE_DIO|SPI_TRANS_MODE_QIO)) && !is_half_duplex), "incompatible iface params", ESP_ERR_INVALID_ARG);
+#if SOC_SPI_SUPPORT_OCT
+    SPI_CHECK(!(host->id == SPI3_HOST && trans_desc->flags & SPI_TRANS_MODE_OCT), "SPI3 does not support octal mode", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(!((trans_desc->flags & SPI_TRANS_MODE_OCT) && (handle->cfg.flags & SPI_DEVICE_3WIRE)), "incompatible interface parameters", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(!((trans_desc->flags & SPI_TRANS_MODE_OCT) && !is_half_duplex), "incompatible interface parameters", ESP_ERR_INVALID_ARG);
+#endif
+    SPI_CHECK(!((trans_desc->flags & (SPI_TRANS_MODE_DIO|SPI_TRANS_MODE_QIO)) && (handle->cfg.flags & SPI_DEVICE_3WIRE)), "incompatible interface parameters", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(!((trans_desc->flags & (SPI_TRANS_MODE_DIO|SPI_TRANS_MODE_QIO)) && !is_half_duplex), "incompatible interface parameters", ESP_ERR_INVALID_ARG);
 #ifdef CONFIG_IDF_TARGET_ESP32
     SPI_CHECK(!is_half_duplex || !bus_attr->dma_enabled || !rx_enabled || !tx_enabled, "SPI half duplex mode does not support using DMA with both MOSI and MISO phases.", ESP_ERR_INVALID_ARG );
 #elif CONFIG_IDF_TARGET_ESP32S3

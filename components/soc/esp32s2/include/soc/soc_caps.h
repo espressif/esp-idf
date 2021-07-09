@@ -218,6 +218,7 @@
 #define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT             1
 
 #define SOC_MEMSPI_IS_INDEPENDENT 1
+#define SOC_SPI_SUPPORT_OCT 1
 
 /*-------------------------- SYSTIMER CAPS ----------------------------------*/
 #define SOC_SYSTIMER_COUNTER_NUM  (1)  // Number of counter units

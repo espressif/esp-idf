@@ -14,25 +14,36 @@
 #include "esp_lcd_panel_ops.h"
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
-
 #include "pretty_effect.h"
+
+#define LCD_HOST    SPI2_HOST   /*!< spi peripheral for LCD */
 
 /**
  * If not using the default settings, the SPI peripheral on LCD and the GPIO numbers can be
  * changed below.
 */
-#define LCD_HOST    SPI2_HOST   /*!< spi peripheral for LCD */
-
-#define PIN_NUM_MOSI 23     /*!< gpio number for LCD MOSI */
+#define PIN_NUM_MOSI 23     /*!< gpio number for LCD MOSI, also the gpio number for LCD DATA0 at 8-line mode */
 #define PIN_NUM_CLK  19     /*!< gpio number for LCD clock */
 #define PIN_NUM_CS   22     /*!< gpio number for LCD CS */
 #define PIN_NUM_DC   21     /*!< gpio number for LCD DC */
 #define PIN_NUM_RST  18     /*!< gpio number for LCD RST */
 #define PIN_NUM_BCKL 5      /*!< gpio number for LCD Back Light */
+#ifdef CONFIG_LCD_SPI_8_LINE_MODE  // If using 8-line LCD
+#define PIN_NUM_DATA1 6     /*!< gpio number for LCD DATA1 */
+#define PIN_NUM_DATA2 7     /*!< gpio number for LCD DATA2 */
+#define PIN_NUM_DATA3 8     /*!< gpio number for LCD DATA3 */
+#define PIN_NUM_DATA4 9     /*!< gpio number for LCD DATA4 */
+#define PIN_NUM_DATA5 10    /*!< gpio number for LCD DATA5 */
+#define PIN_NUM_DATA6 11    /*!< gpio number for LCD DATA6 */
+#define PIN_NUM_DATA7 12    /*!< gpio number for LCD DATA7 */
+#endif
 
 // The pixel number in horizontal and vertical
 #define EXAMPLE_LCD_H_RES (320)
 #define EXAMPLE_LCD_V_RES (240)
+
+// The SPI mode supported by the LCD
+#define LCD_SPI_MODE 0
 
 // To speed up transfers, every SPI transfer sends a bunch of lines. This define specifies how many.
 // More means more memory use, but less overhead for setting up / finishing transfers. Make sure 240
@@ -78,11 +89,22 @@ void app_main(void)
     ESP_ERROR_CHECK(gpio_config(&bk_gpio_config));
 
     spi_bus_config_t buscfg = {
-        .miso_io_num = -1,
         .mosi_io_num = PIN_NUM_MOSI,
         .sclk_io_num = PIN_NUM_CLK,
+#ifdef CONFIG_LCD_SPI_8_LINE_MODE
+        .data1_io_num = PIN_NUM_DATA1,
+        .data2_io_num = PIN_NUM_DATA2,
+        .data3_io_num = PIN_NUM_DATA3,
+        .data4_io_num = PIN_NUM_DATA4,
+        .data5_io_num = PIN_NUM_DATA5,
+        .data6_io_num = PIN_NUM_DATA6,
+        .data7_io_num = PIN_NUM_DATA7,
+        .flags = SPICOMMON_BUSFLAG_OCTAL,
+#else
+        .miso_io_num = -1,
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
+#endif
         .max_transfer_sz = PARALLEL_LINES * EXAMPLE_LCD_H_RES * 2 + 8
     };
     esp_lcd_panel_io_handle_t io_handle = NULL;
@@ -94,8 +116,11 @@ void app_main(void)
 #else
         .pclk_hz = 10 * 1000 * 1000,     // Clock out at 10 MHz
 #endif
-        .spi_mode = 0,
+        .spi_mode = LCD_SPI_MODE,
         .trans_queue_depth = 7,
+#ifdef CONFIG_LCD_SPI_8_LINE_MODE
+        .flags.octal_mode = 1,
+#endif
     };
     // Initialize the SPI bus
     ESP_ERROR_CHECK(spi_bus_initialize(LCD_HOST, &buscfg, SPI_DMA_CH_AUTO));

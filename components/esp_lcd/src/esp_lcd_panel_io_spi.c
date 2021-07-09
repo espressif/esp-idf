@@ -45,6 +45,7 @@ typedef struct {
     struct {
         unsigned int dc_as_cmd_phase: 1; // D/C line value is encoded into SPI transaction command phase
         unsigned int dc_data_level: 1;   // Indicates the level of DC line when tranfering data
+        unsigned int octal_mode: 1;      // Indicates whether the transmitting is enabled with octal mode (8 data lines)
     } flags;
     lcd_spi_trans_descriptor_t trans_pool[]; // Transaction pool
 } esp_lcd_panel_io_spi_t;
@@ -60,6 +61,9 @@ esp_err_t esp_lcd_new_panel_io_spi(esp_lcd_spi_bus_handle_t bus, const esp_lcd_p
     ESP_GOTO_ON_FALSE(spi_panel_io, ESP_ERR_NO_MEM, err, TAG, "no mem for spi panel io");
 
     spi_device_interface_config_t devcfg = {
+#if SOC_SPI_SUPPORT_OCT
+        .flags = SPI_DEVICE_HALFDUPLEX, // lcd driver only use one transfer direction, so half duplex is enough.
+#endif
         .clock_speed_hz = io_config->pclk_hz,
         .mode = io_config->spi_mode,
         .spics_io_num = io_config->cs_gpio_num,
@@ -82,6 +86,7 @@ esp_err_t esp_lcd_new_panel_io_spi(esp_lcd_spi_bus_handle_t bus, const esp_lcd_p
 
     spi_panel_io->flags.dc_as_cmd_phase = io_config->flags.dc_as_cmd_phase;
     spi_panel_io->flags.dc_data_level = !io_config->flags.dc_low_on_data;
+    spi_panel_io->flags.octal_mode = io_config->flags.octal_mode;
     spi_panel_io->on_color_trans_done = io_config->on_color_trans_done;
     spi_panel_io->lcd_cmd_bits = io_config->lcd_cmd_bits;
     spi_panel_io->lcd_param_bits = io_config->lcd_param_bits;
@@ -147,6 +152,11 @@ static esp_err_t panel_io_spi_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     lcd_trans->flags.dc_gpio_level = !spi_panel_io->flags.dc_data_level; // set D/C line to command mode
     lcd_trans->base.length = spi_panel_io->lcd_cmd_bits;
     lcd_trans->base.tx_buffer = &lcd_cmd;
+#if SOC_SPI_SUPPORT_OCT
+    if (spi_panel_io->flags.octal_mode) {
+        lcd_trans->base.flags |= (MULTILINE_CMD | MULTILINE_ADDR | SPI_TRANS_MODE_OCT);
+    }
+#endif
     if (spi_panel_io->flags.dc_as_cmd_phase) { // encoding DC value to SPI command phase when necessary
         lcd_trans->base.cmd = !spi_panel_io->flags.dc_data_level;
     }
@@ -192,6 +202,11 @@ static esp_err_t panel_io_spi_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     if (spi_panel_io->flags.dc_as_cmd_phase) { // encoding DC value to SPI command phase when necessary
         lcd_trans->base.cmd = !spi_panel_io->flags.dc_data_level;
     }
+#if SOC_SPI_SUPPORT_OCT
+    if (spi_panel_io->flags.octal_mode) {
+        lcd_trans->base.flags |= (MULTILINE_CMD | MULTILINE_ADDR | SPI_TRANS_MODE_OCT);
+    }
+#endif
     // command is short, using polling mode
     ret = spi_device_polling_transmit(spi_panel_io->spi_dev, &lcd_trans->base);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "spi transmit (polling) command failed");

@@ -47,13 +47,37 @@ If using default settings, the hardware connection can be as below:
 
 If not using default settings, the interface GPIOs should be set by macros in [lcd_tjpgd_example_main.c](main/lcd_tjpgd_example_main.c), where:
 
-    PIN_NUM_MOSI stands for the GPIO number connected to 'MOSI' pin at LCD screen;
-    PIN_NUM_CLK stands for the GPIO number connected to 'SCK' pin at LCD screen;
-    PIN_NUM_MOSI stands for the GPIO number connected to 'MOSI' pin at LCD screen;
-    PIN_NUM_CS stands for the GPIO number connected to 'CS' pin at LCD screen;
-    PIN_NUM_DC stands for the GPIO number connected to 'DC' pin at LCD screen;
-    PIN_NUM_RST stands for the GPIO number connected to 'RST' pin at LCD screen;
-    PIN_NUM_BCKL stands for the GPIO number connected to 'LED' pin at LCD screen;
+| GPIO number   | LCD pin |
+| :-----------: | :--: |
+| PIN_NUM_CLK   | SCK  |
+| PIN_NUM_CS    | CS   |
+| PIN_NUM_DC    | DC   |
+| PIN_NUM_RST   | RST  |
+| PIN_NUM_BCKL  | LED  |
+| PIN_NUM_MOSI  | MOSI |
+
+
+### 8-line LCD Usage
+
+Firstly, please run `idf.py menuconfig` and set the `Drive a LCD with 8 data lines` option at `Example Configuration`.
+
+Check if the pins below are correctly connected as the settings by macros in [lcd_tjpgd_example_main.c](main/lcd_tjpgd_example_main.c), where:
+
+| GPIO number   | LCD pin |
+| :-----------: | :--: |
+| PIN_NUM_CLK   | SCK  |
+| PIN_NUM_CS    | CS   |
+| PIN_NUM_DC    | DC   |
+| PIN_NUM_RST   | RST  |
+| PIN_NUM_BCKL  | LED  |
+| PIN_NUM_MOSI  | D0   |
+| PIN_NUM_DATA1 | D1   |
+| PIN_NUM_DATA2 | D2   |
+| PIN_NUM_DATA3 | D3   |
+| PIN_NUM_DATA4 | D4   |
+| PIN_NUM_DATA5 | D5   |
+| PIN_NUM_DATA6 | D6   |
+| PIN_NUM_DATA7 | D7   |
 
 
 ### Build and Flash

@@ -126,7 +126,24 @@
 #define SOC_SIGMADELTA_CHANNEL_NUM (8) // 8 channels
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
-#include "spi_caps.h"
+#define SOC_SPI_PERIPH_NUM                  3
+#define SOC_SPI_DMA_CHAN_NUM                3
+#define SOC_SPI_PERIPH_CS_NUM(i)            3
+#define SOC_SPI_MAXIMUM_BUFFER_SIZE         64
+#define SOC_SPI_SUPPORT_DDRCLK              1
+#define SOC_SPI_SLAVE_SUPPORT_SEG_TRANS     1
+#define SOC_SPI_SUPPORT_CD_SIG              1
+#define SOC_SPI_SUPPORT_CONTINUOUS_TRANS    1
+#define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1
+
+// Peripheral supports DIO, DOUT, QIO, or QOUT
+#define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(host_id)  ({(void)host_id; 1;})
+
+// Peripheral supports output given level during its "dummy phase"
+#define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT 1
+#define SOC_MEMSPI_IS_INDEPENDENT                   1
+#define SOC_SPI_MAX_PRE_DIVIDER                     16
+#define SOC_SPI_SUPPORT_OCT                         1
 
 /*-------------------------- SPIRAM CAPS ----------------------------------------*/
 #define SOC_SPIRAM_SUPPORTED            1

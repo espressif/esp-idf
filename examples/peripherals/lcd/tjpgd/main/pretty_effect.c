@@ -26,8 +26,9 @@ static inline uint16_t get_bgnd_pixel(int x, int y)
     y+=8;
     return pixels[y][x];
 }
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3
+#else
 //esp32s2/c3 doesn't have enough memory to hold the decoded image, calculate instead
+//TODO: add support for esp32s3 (IDF-3615)
 static inline uint16_t get_bgnd_pixel(int x, int y)
 {
     return ((x<<3)^(y<<3)^(x*y));
@@ -69,8 +70,9 @@ esp_err_t pretty_effect_init(void)
 {
 #ifdef CONFIG_IDF_TARGET_ESP32
     return decode_image(&pixels);
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3
+#else
     //esp32s2/c3 doesn't have enough memory to hold the decoded image, calculate instead
+    //TODO: add support for esp32s3 (IDF-3615)
     return ESP_OK;
 #endif
 }

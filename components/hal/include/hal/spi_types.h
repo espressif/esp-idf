@@ -45,6 +45,15 @@ typedef enum {
 } spi_event_t;
 FLAG_ATTR(spi_event_t)
 
+/**
+ * @brief Line mode of SPI transaction phases: CMD, ADDR, DOUT/DIN.
+ */
+typedef struct {
+    unsigned char cmd_lines;    ///< The line width of command phase, e.g. 2-line-cmd-phase.
+    unsigned char addr_lines;   ///< The line width of address phase, e.g. 1-line-addr-phase.
+    unsigned char data_lines;   ///< The line width of data phase, e.g. 4-line-data-phase.
+} spi_line_mode_t;
+
 
 /** @cond */    //Doxy command to hide preprocessor definitions from docs */
 
