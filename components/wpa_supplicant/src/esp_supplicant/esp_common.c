@@ -177,7 +177,7 @@ static void esp_clear_bssid_flag(struct wpa_supplicant *wpa_s)
 
 static void esp_register_action_frame(struct wpa_supplicant *wpa_s)
 {
-	wpa_s->type &= ~WLAN_FC_STYPE_ACTION;
+	wpa_s->type &= ~(1 << WLAN_FC_STYPE_ACTION);
 	/* subtype is defined only for action frame */
 	wpa_s->subtype = 0;
 
