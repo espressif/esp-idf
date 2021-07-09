@@ -1,0 +1,15 @@
+menu "IEEE 802.15.4"
+    visible if IDF_TARGET_ESP32H2
+
+    config IEEE802154_ENABLED
+        bool
+        default "y" if IDF_TARGET_ESP32H2
+
+    config IEEE802154_LIB_FROM_INTERNAL_SRC
+        bool "Build IEEE 802.15.4 libraries from source"
+        depends on IEEE802154_ENABLED
+        default n
+        help
+            Override the shipped lib802154.a for internal builds.
+
+endmenu  # IEEE 802.15.4

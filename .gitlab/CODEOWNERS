@@ -106,6 +106,7 @@
 /components/hal/                      @esp-idf-codeowners/peripherals
 /components/heap/                     @esp-idf-codeowners/system
 /components/idf_test/                 @esp-idf-codeowners/ci
+/components/ieee802154/               @esp-idf-codeowners/ieee802154
 /components/jsmn/                     @esp-idf-codeowners/app-utilities
 /components/json/                     @esp-idf-codeowners/app-utilities
 /components/libsodium/                @esp-idf-codeowners/security
