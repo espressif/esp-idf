@@ -103,7 +103,7 @@ void tud_cdc_rx_cb(uint8_t itf)
     while (tud_cdc_n_available(itf)) {
         int read_res = tud_cdc_n_read(  itf,
                                         acm->rx_tfbuf,
-                                        CONFIG_USB_CDC_RX_BUFSIZE );
+                                        CONFIG_TINYUSB_CDC_RX_BUFSIZE );
         int res = xRingbufferSend(acm->rx_unread_buf,
                                   acm->rx_tfbuf,
                                   read_res, 0);
@@ -312,7 +312,7 @@ esp_err_t tinyusb_cdcacm_write_flush(tinyusb_cdcacm_itf_t itf, uint32_t timeout_
     if (!timeout_ticks) { // if no timeout - nonblocking mode
         int res = tud_cdc_n_write_flush(itf);
         if (!res) {
-            ESP_LOGW(TAG, "flush fauled (res: %d)", res);
+            ESP_LOGW(TAG, "flush failed (res: %d)", res);
             return ESP_FAIL;
         } else {
             if (tud_cdc_n_write_occupied(itf)) {
@@ -396,7 +396,7 @@ esp_err_t tusb_cdc_acm_init(const tinyusb_config_cdcacm_t *cfg)
         return ESP_ERR_NO_MEM;
     }
 
-    acm->rx_tfbuf = malloc(CONFIG_USB_CDC_RX_BUFSIZE);
+    acm->rx_tfbuf = malloc(CONFIG_TINYUSB_CDC_RX_BUFSIZE);
     if (!acm->rx_tfbuf) {
         ESP_LOGE(TAG, "Creation buffer error");
         free_obj(itf);

@@ -25,7 +25,7 @@ typedef enum{
     TINYUSB_USBDEV_0,
 } tinyusb_usbdev_t;
 
-typedef char *tusb_desc_strarray_device_t[USB_STRING_DESCRIPTOR_ARRAY_SIZE];
+typedef const char *tusb_desc_strarray_device_t[USB_STRING_DESCRIPTOR_ARRAY_SIZE];
 
 #ifdef __cplusplus
 }

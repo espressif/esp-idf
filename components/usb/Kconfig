@@ -1,0 +1,9 @@
+menu "USB-OTG"
+    visible if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+
+    # Invisible item, enabled when USB_OTG peripheral does exist
+    config USB_OTG_SUPPORTED
+        bool
+        default y if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+
+endmenu
