@@ -20,20 +20,9 @@
 extern "C" {
 #endif
 
-/* The value that needs to be written to RTC_CNTL_WDT_WKEY to write-enable the wdt registers */
-#define RTC_CNTL_WDT_WKEY_VALUE 0x50D83AA1
 /* The value that needs to be written to RTC_CNTL_SWD_WPROTECT_REG to write-enable the wdt registers */
 #define RTC_CNTL_SWD_WKEY_VALUE 0x8F1D312A
 
-/* Possible values for RTC_CNTL_WDT_CPU_RESET_LENGTH and RTC_CNTL_WDT_SYS_RESET_LENGTH */
-#define RTC_WDT_RESET_LENGTH_100_NS    0
-#define RTC_WDT_RESET_LENGTH_200_NS    1
-#define RTC_WDT_RESET_LENGTH_300_NS    2
-#define RTC_WDT_RESET_LENGTH_400_NS    3
-#define RTC_WDT_RESET_LENGTH_500_NS    4
-#define RTC_WDT_RESET_LENGTH_800_NS    5
-#define RTC_WDT_RESET_LENGTH_1600_NS   6
-#define RTC_WDT_RESET_LENGTH_3200_NS   7
 #define RTC_CNTL_TIME0_REG		RTC_CNTL_TIME_LOW0_REG
 #define RTC_CNTL_TIME1_REG		RTC_CNTL_TIME_HIGH0_REG
 
@@ -2041,13 +2030,6 @@ ork.*/
 #define RTC_CNTL_WDT_STG3_M  ((RTC_CNTL_WDT_STG3_V)<<(RTC_CNTL_WDT_STG3_S))
 #define RTC_CNTL_WDT_STG3_V  0x7
 #define RTC_CNTL_WDT_STG3_S  19
-/* RTC_CNTL_WDT_STGX : */
-/*description: stage action selection values */
-#define RTC_WDT_STG_SEL_OFF             0
-#define RTC_WDT_STG_SEL_INT             1
-#define RTC_WDT_STG_SEL_RESET_CPU       2
-#define RTC_WDT_STG_SEL_RESET_SYSTEM    3
-#define RTC_WDT_STG_SEL_RESET_RTC       4
 
 /* RTC_CNTL_WDT_CPU_RESET_LENGTH : R/W ;bitpos:[18:16] ;default: 3'h1 ; */
 /*description: CPU reset counter length.*/

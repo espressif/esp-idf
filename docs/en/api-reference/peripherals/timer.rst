@@ -3,21 +3,14 @@ General Purpose Timer
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_TIMER_COUNTER_BIT_WIDTH:default="54", esp32="64", esp32s2="64", esp32c3="54"}
+{IDF_TARGET_TIMER_COUNTER_BIT_WIDTH:default="54", esp32="64", esp32s2="64"}
+{IDF_TARGET_TIMERS_PER_GROUP:default="two", esp32c3="one"}
+{IDF_TARGET_TIMERS_TOTAL:default="four", esp32c3="two"}
 
 Introduction
 ------------
 
-.. only:: not esp32c3
-
-    The {IDF_TARGET_NAME} chip contains two hardware timer groups. Each group has two general-purpose hardware timers. 
-
-
-.. only:: esp32c3
-
-    The {IDF_TARGET_NAME} chip contains two hardware timer groups. Each group has one general-purpose hardware timer and one main system watchdog timer.
-
-All general purpose timers are based on 16-bit pre-scalers and {IDF_TARGET_TIMER_COUNTER_BIT_WIDTH}-bit auto-reload-capable up-down counters.
+The {IDF_TARGET_NAME} chip contains two hardware timer groups. Each group has {IDF_TARGET_TIMERS_PER_GROUP} general-purpose hardware timer(s). They are all {IDF_TARGET_TIMER_COUNTER_BIT_WIDTH}-bit generic timers based on 16-bit pre-scalers and {IDF_TARGET_TIMER_COUNTER_BIT_WIDTH}-bit up / down counters which are capable of being auto-reloaded.
 
 
 Functional Overview
@@ -36,13 +29,13 @@ The following sections of this document cover the typical steps to configure and
 Timer Initialization
 ^^^^^^^^^^^^^^^^^^^^
 
-The two {IDF_TARGET_NAME} timer groups, with two timers in each, provide the total of four individual timers for use. An {IDF_TARGET_NAME} timer group should be identified using :cpp:type:`timer_group_t`. An individual timer in a group should be identified with :cpp:type:`timer_idx_t`.
+The two {IDF_TARGET_NAME} timer groups, with {IDF_TARGET_TIMERS_PER_GROUP} timer(s) in each, provide the total of {IDF_TARGET_TIMERS_TOTAL} individual timers for use. An {IDF_TARGET_NAME} timer group should be identified using :cpp:type:`timer_group_t`. An individual timer in a group should be identified with :cpp:type:`timer_idx_t`.
 
 First of all, the timer should be initialized by calling the function :cpp:func:`timer_init` and passing a structure :cpp:type:`timer_config_t` to it to define how the timer should operate. In particular, the following timer parameters can be set:
 
 .. list::
 
-    :not esp32: - **Clock Source**: Select the clock source, which together with the **Divider** define the resolution of the working timer. By default the clock source is APB_CLK (typically 80 MHz).    
+    :not esp32: - **Clock Source**: Select the clock source, which together with the **Divider** define the resolution of the working timer. By default the clock source is APB_CLK (typically 80 MHz).
     - **Divider**: Sets how quickly the timer's counter is "ticking". The setting :cpp:member:`divider` is used as a divisor of the clock source.
     - **Mode**: Sets if the counter should be incrementing or decrementing. It can be defined using :cpp:member:`counter_dir` by selecting one of the values from :cpp:type:`timer_count_dir_t`.
     - **Counter Enable**: If the counter is enabled, it will start incrementing / decrementing immediately after calling :cpp:func:`timer_init`. You can change the behavior with :cpp:member:`counter_en` by selecting one of the values from :cpp:type:`timer_start_t`.

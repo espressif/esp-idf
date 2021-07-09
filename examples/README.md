@@ -28,17 +28,12 @@ In addition to these examples, `commmon_components` directory contains code shar
 
 # Using Examples
 
-Before building an example, be sure to follow the Getting Started guide to ensure you have the required development environment.
-
-* [ESP-IDF Getting Started Guide on ESP32](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html)
-* [ESP-IDF Getting Started Guide on ESP32-S2](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/get-started/index.html)
-* [ESP-IDF Getting Started Guide on ESP32-C3](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/get-started/index.html)
-
+Before building an example, be sure to follow the [ESP-IDF Getting Started Guide](https://idf.espressif.com/) to ensure you have the required development environment.
 
 Building an example is the same as building any other project:
 
 * Change into the directory of the new example you'd like to build.
-* Run `idf.py set-target TARGET` to select the correct chip target to build before opening the project configuration menu. By default the target is `esp32` and the options are `esp32`, `esp32s2` and `esp32c3`.
+* Run `idf.py set-target TARGET` to select the correct chip target to build before opening the project configuration menu. By default the target is `esp32`. For all options see `idf.py set-target --help`
 * Run `idf.py menuconfig` to open the project configuration menu. Most examples have a project-specific "Example Configuration" section here (for example, to set the WiFi SSID & password to use).
 * `idf.py build` to build the example.
 * Follow the printed instructions to flash, or run `idf.py -p PORT flash`.
