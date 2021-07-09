@@ -1421,7 +1421,7 @@ static void btc_a2dp_source_handle_timer(UNUSED_ATTR void *context)
     log_tstamps_us("media task tx timer");
 
 #if (BTA_AV_INCLUDED == TRUE)
-    if (btc_a2dp_source_state != BTC_A2DP_SOURCE_STATE_ON){
+    if (btc_a2dp_source_state != BTC_A2DP_SOURCE_STATE_ON || g_a2dp_source_ongoing_deinit){
         return;
     }
 
