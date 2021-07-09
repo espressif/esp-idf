@@ -130,9 +130,10 @@
 /components/spiffs/                   @esp-idf-codeowners/storage
 /components/tcp_transport/            @esp-idf-codeowners/network
 /components/tcpip_adapter/            @esp-idf-codeowners/network
-/components/tinyusb/                  @esp-idf-codeowners/peripherals
+/components/tinyusb/                  @esp-idf-codeowners/peripherals/usb
 /components/ulp/                      @esp-idf-codeowners/system
 /components/unity/                    @esp-idf-codeowners/ci
+/components/usb/                      @esp-idf-codeowners/peripherals/usb
 /components/vfs/                      @esp-idf-codeowners/storage
 /components/wear_levelling/           @esp-idf-codeowners/storage
 /components/wifi_provisioning/        @esp-idf-codeowners/app-utilities
