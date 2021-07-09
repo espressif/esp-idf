@@ -69,7 +69,7 @@ idf_component_register(SRC_DIRS "${src_dirs}"
                        EXCLUDE_SRCS "${exclude_srcs}"
                        INCLUDE_DIRS "${public_include_dirs}"
                        PRIV_INCLUDE_DIRS "${private_include_dirs}"
-                       REQUIRES mbedtls)
+                       REQUIRES mbedtls ieee802154)
 
 if(CONFIG_OPENTHREAD_ENABLED)
     target_compile_definitions(

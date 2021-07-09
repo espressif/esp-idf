@@ -6,6 +6,25 @@ menu "OpenThread"
         help
             Select this option to enable OpenThread and show the submenu with OpenThread configuration choices.
 
+    choice OPENTHREAD_RADIO_TYPE
+        prompt "Config the Thread radio type"
+        depends on OPENTHREAD_ENABLED
+        default OPENTHREAD_RADIO_NATIVE if IDF_TARGET_ESP32H2
+        default OPENTHREAD_RADIO_SPINEL_UART
+        help
+            Configure how OpenThread connects to the 15.4 radio
+
+        config OPENTHREAD_RADIO_NATIVE
+            bool "Native 15.4 radio"
+            help
+                Select this to use the native 15.4 radio.
+
+        config OPENTHREAD_RADIO_SPINEL_UART
+            bool "Connect via UART"
+            help
+                Select this to connect to a Radio Co-Processor via UART.
+    endchoice
+
     choice OPENTHREAD_DEVICE_TYPE
         prompt "Config the Thread device type"
         depends on OPENTHREAD_ENABLED
