@@ -39,6 +39,9 @@ Linenoise library does not need explicit initialization. However, some configura
 :cpp:func:`linenoiseAllowEmpty`
   Set whether linenoise library will return a zero-length string (if ``true``) or ``NULL`` (if ``false``) for empty lines. By default, zero-length strings are returned.
 
+:cpp:func:`linenoiseSetMaxLineLen`
+  Set maximum length of the line for linenoise library. Default length is 4096. If you need optimize RAM memory usage, you can do it by this function by setting a value less than default 4kB.
+
 
 Main loop
 ^^^^^^^^^
