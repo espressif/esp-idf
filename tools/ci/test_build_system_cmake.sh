@@ -863,6 +863,17 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     expected_failure $EXPECTED_EXIT_VALUE idf.py create-project --path "$IDF_PATH/example_proj" temp_test_project || failure "Command exit value is wrong."
     rm -rf "$IDF_PATH/example_proj"
 
+    print_status "Check docs command"
+    clean_build_dir
+    idf.py build
+    idf.py set-target esp32s2
+    idf.py docs || failure "'idf.py docs' failed"
+    idf.py docs --no-browser | grep "https://docs.espressif.com/projects/esp-idf/en" || failure "'idf.py docs --no-browser' failed"
+    idf.py docs --no-browser --language en | grep "https://docs.espressif.com/projects/esp-idf/en" || failure "'idf.py docs --no-browser --language en' failed"
+    idf.py docs --no-browser --language en --version v4.2.1 | grep "https://docs.espressif.com/projects/esp-idf/en/v4.2.1" || failure "'idf.py docs --no-browser --language en --version v4.2.1' failed"
+    idf.py docs --no-browser --language en --version v4.2.1 --target esp32 | grep "https://docs.espressif.com/projects/esp-idf/en/v4.2.1/esp32" || failure "'idf.py docs --no-browser --language en --version v4.2.1 --target esp32' failed"
+    idf.py docs --no-browser --language en --version v4.2.1 --target esp32 --starting-page get-started | grep "https://docs.espressif.com/projects/esp-idf/en/v4.2.1/esp32/get-started" || failure "'idf.py docs --no-browser --language en --version v4.2.1 --target esp32 --starting-page get-started' failed"
+
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
         echo "Some failures were detected:"

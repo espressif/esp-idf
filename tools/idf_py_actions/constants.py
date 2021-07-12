@@ -36,6 +36,7 @@ GENERATORS = collections.OrderedDict([
     })
 ])
 
-SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3']
+URL_TO_DOC = 'https://docs.espressif.com/projects/esp-idf'
 
+SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3']
 PREVIEW_TARGETS = ['linux', 'esp32h2']
