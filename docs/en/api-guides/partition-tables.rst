@@ -176,7 +176,7 @@ The ESP-IDF build system will automatically check if generated binaries fit in t
 
 Currently these checks are performed for the following binaries:
 
-* Bootloader binary must fit in space before partition table (see :ref:`secure-boot-bootloader-size`)
+* Bootloader binary must fit in space before partition table (see :ref:`bootloader-size`)
 * App binary should fit in at least one partition of type "app". If the app binary doesn't fit in any app partition, the build will fail. If it only fits in some of the app partitions, a warning is printed about this.
 
 .. note::

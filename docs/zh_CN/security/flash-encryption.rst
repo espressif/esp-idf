@@ -120,7 +120,7 @@ Flash 的加密过程
 
 .. only:: esp32
 
-    - 启用 Flash 加密将增大引导加载程序，因而可能需更新分区表偏移。请参见 :ref:`secure-boot-bootloader-size`。
+    - 启用 Flash 加密将增大引导加载程序，因而可能需更新分区表偏移。请参见 :ref:`bootloader-size`。
 
 - 保存配置并退出。
 
@@ -316,7 +316,7 @@ Flash 的加密过程
 
 .. only:: esp32
 
-    - 启用 Flash 加密将增大引导加载程序，因而可能需要更新分区表偏移。可参见 See :ref:`secure-boot-bootloader-size`。
+    - 启用 Flash 加密将增大引导加载程序，因而可能需要更新分区表偏移。可参见 See :ref:`bootloader-size`。
 
 - 保存配置并退出。
 
@@ -355,7 +355,7 @@ Flash 的加密过程
 
 .. only:: esp32
 
-    - 启用 Flash 加密将增大引导加载程序，因而可能需要更新分区表偏移。可参见 See :ref:`secure-boot-bootloader-size`。
+    - 启用 Flash 加密将增大引导加载程序，因而可能需要更新分区表偏移。可参见 See :ref:`bootloader-size`。
 
 - 保存配置并退出。
 
@@ -477,7 +477,7 @@ Flash 加密的要点
 
 .. only:: esp32
 
-    .. note:: 同时启用安全启动和 Flash 加密后，引导加载程序 app 二进制文件 ``bootloader.bin`` 可能会过大。参见 :ref:`secure-boot-bootloader-size`。
+    .. note:: 同时启用安全启动和 Flash 加密后，引导加载程序 app 二进制文件 ``bootloader.bin`` 可能会过大。参见 :ref:`bootloader-size`。
 
 .. important::
    在首次启动加密过程中，请勿中断 {IDF_TARGET_NAME} 的电源。如果电源中断，Flash 的内容将受到破坏，并需要重新烧录未加密数据。而这类重新烧录将不计入烧录限制次数。

@@ -236,7 +236,7 @@ To test flash encryption process, take the following steps:
     - :ref:`Select the appropriate bootloader log verbosity <CONFIG_BOOTLOADER_LOG_LEVEL>`
     - Save the configuration and exit.
 
-Enabling flash encryption will increase the size of bootloader, which might require updating partition table offset. See :ref:`secure-boot-bootloader-size`.
+Enabling flash encryption will increase the size of bootloader, which might require updating partition table offset. See :ref:`bootloader-size`.
 
 3. Run the command given below to build and flash the complete images.
 
@@ -359,7 +359,7 @@ If the key is not burned and the device is started after enabling flash encrypti
     - :ref:`Select the appropriate bootloader log verbosity <CONFIG_BOOTLOADER_LOG_LEVEL>`
     - Save the configuration and exit.
 
-Enabling flash encryption will increase the size of bootloader, which might require updating partition table offset. See :ref:`secure-boot-bootloader-size`.
+Enabling flash encryption will increase the size of bootloader, which might require updating partition table offset. See :ref:`bootloader-size`.
 
 5. Run the command given below to build and flash the complete images.
 
@@ -419,7 +419,7 @@ To use this mode, take the following steps:
     - :ref:`Select the appropriate bootloader log verbosity <CONFIG_BOOTLOADER_LOG_LEVEL>`
     - Save the configuration and exit.
 
-Enabling flash encryption will increase the size of bootloader, which might require updating partition table offset. See :ref:`secure-boot-bootloader-size`.
+Enabling flash encryption will increase the size of bootloader, which might require updating partition table offset. See :ref:`bootloader-size`.
 
 3. Run the command given below to build and flash the complete images.
 
@@ -709,7 +709,7 @@ Key Points About Flash Encryption
 
   - If secure boot is enabled, re-flashing the bootloader of an encrypted device requires a "Re-flashable" secure boot digest (see :ref:`flash-encryption-and-secure-boot`).
 
-Enabling flash encryption will increase the size of bootloader, which might require updating partition table offset. See :ref:`secure-boot-bootloader-size`.
+Enabling flash encryption will increase the size of bootloader, which might require updating partition table offset. See :ref:`bootloader-size`.
 
     .. important::
 

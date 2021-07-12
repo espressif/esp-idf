@@ -409,7 +409,7 @@ Bootloader Size
 
 This document deals with the size of an ESP-IDF app binary only, and not the ESP-IDF :ref:`second-stage-bootloader`.
 
-For a discussion of ESP-IDF bootloader binary size, see :doc:`/security/secure-boot-bootloader-size`.
+For a discussion of ESP-IDF bootloader binary size, see :ref:`bootloader-size`.
 
 IRAM Binary Size
 ----------------
