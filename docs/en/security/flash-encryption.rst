@@ -895,7 +895,7 @@ For example, these are the steps to encrypt the file ``build/my-app.bin`` to fla
 
     .. code-block:: bash
 
-       espsecure.py encrypt_flash_data --aes-xts --keyfile /path/to/key.bin --address 0x10000 --output my-app-ciphertext.bin build/my-app.bin
+       espsecure.py encrypt_flash_data --aes_xts --keyfile /path/to/key.bin --address 0x10000 --output my-app-ciphertext.bin build/my-app.bin
 
 The file ``my-app-ciphertext.bin`` can then be flashed to offset 0x10000 using ``esptool.py``. To see all of the command line options recommended for ``esptool.py``, see the output printed when ``idf.py build`` succeeds.
 
