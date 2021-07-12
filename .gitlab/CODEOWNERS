@@ -47,8 +47,8 @@
 * @esp-idf-codeowners/other
 
 /.*                                   @esp-idf-codeowners/tools
-/.gitlab/ci/                          @esp-idf-codeowners/ci
 /.gitlab-ci.yml                       @esp-idf-codeowners/ci
+/.gitlab/ci/                          @esp-idf-codeowners/ci
 /.pre-commit-config.yaml              @esp-idf-codeowners/ci
 /.readthedocs.yml                     @esp-idf-codeowners/docs
 /CMakeLists.txt                       @esp-idf-codeowners/build-config
@@ -141,8 +141,6 @@
 
 /docs/    @esp-idf-codeowners/docs
 
-/examples/**/*.py             @esp-idf-codeowners/ci @esp-idf-codeowners/tools
-
 /examples/bluetooth/          @esp-idf-codeowners/bluetooth
 /examples/build_system/       @esp-idf-codeowners/build-config
 /examples/common_components/  @esp-idf-codeowners/system
@@ -158,6 +156,8 @@
 /examples/storage/            @esp-idf-codeowners/storage
 /examples/system/             @esp-idf-codeowners/system
 /examples/wifi/               @esp-idf-codeowners/wifi
+
+/examples/**/*.py             @esp-idf-codeowners/ci @esp-idf-codeowners/tools
 
 /make/    @esp-idf-codeowners/build-config
 
@@ -178,5 +178,7 @@
 /tools/test_apps/protocols/          @esp-idf-codeowners/network @esp-idf-codeowners/app-utilities
 /tools/test_apps/security/           @esp-idf-codeowners/security
 /tools/test_apps/system/             @esp-idf-codeowners/system
+
+/tools/test_apps/**/*.py             @esp-idf-codeowners/ci @esp-idf-codeowners/tools
 
 requirements.txt              @esp-idf-codeowners/tools
