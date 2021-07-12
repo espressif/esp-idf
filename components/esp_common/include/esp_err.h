@@ -132,7 +132,7 @@ void _esp_error_check_failed_without_abort(esp_err_t rc, const char *file, int l
  * serial output.
  * In comparison with ESP_ERROR_CHECK(), this prints the same error message but isn't terminating the program.
  */
-#ifdef NDEBUG
+#if defined NDEBUG || defined CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT
 #define ESP_ERROR_CHECK_WITHOUT_ABORT(x) ({                                         \
         esp_err_t err_rc_ = (x);                                                    \
         err_rc_;                                                                    \
