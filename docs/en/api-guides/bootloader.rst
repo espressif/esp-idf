@@ -64,7 +64,7 @@ Factory reset
 
 Sometimes it is desirable to have a way for the device to fall back to a known-good state, in case of some problem with an update.
 
-To roll back to the original factory firmware and clear any user settings, configure the config item :ref:`CONFIG_BOOTLOADER_FACTORY_RESET` in the bootloader.
+To roll back to the original "factory" device configuration and clear any user settings, configure the config item :ref:`CONFIG_BOOTLOADER_FACTORY_RESET` in the bootloader.
 
 The factory reset mechanism allows to reset the device to factory settings in two ways:
 
@@ -90,9 +90,11 @@ In addition, the following configuration options control the reset condition:
 
 Boot from Test Firmware
 ------------------------
-The user can write a special firmware for testing in production, and boot this firmware when needed. The partition table will need a dedicated app partition entry for this testing firmware (see `partition table`).
+It's possible to write a special firmware app for testing in production, and boot this firmware when needed. The project partition table will need a dedicated app partition entry for this testing app, type ``app`` and subtype ``test`` (see :doc:`/api-guides/partition-tables`).
 
-To support this functionality in the bootloader, set the configuration item :ref:`CONFIG_BOOTLOADER_APP_TEST` and configure the following two items:
+Implementing a dedicated test app firmware requires creating a totally separate ESP-IDF project for the test app (each project in ESP-IDF only builds one app). The test app can be developed and tested independently of the main project, and then integrated at production testing time as a pre-compiled .bin file which is flashed to the address of the main project's test app partition.
+
+To support this functionality in the main project's bootloader, set the configuration item :ref:`CONFIG_BOOTLOADER_APP_TEST` and configure the following two items:
 
 - :ref:`CONFIG_BOOTLOADER_NUM_PIN_APP_TEST` - GPIO number to boot TEST partition. The selected GPIO will be configured as an input with internal pull-up enabled. To trigger a test app, this GPIO must be pulled low on reset.
 
