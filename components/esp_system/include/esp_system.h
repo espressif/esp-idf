@@ -196,6 +196,30 @@ esp_err_t esp_base_mac_addr_set(const uint8_t *mac);
 esp_err_t esp_base_mac_addr_get(uint8_t *mac);
 
 /**
+  * @brief  Set custom MAC address of the interface. This function allows you to overwrite the MAC addresses
+  *         of the interfaces set by the base MAC address.
+  *
+  *
+  * @param  mac  base MAC address, length: 6 bytes.
+  * @param  type  type of MAC address, 0:wifi station, 1:wifi softap, 2:bluetooth, 3:ethernet.
+  *
+  * @return ESP_OK on success
+  */
+esp_err_t esp_iface_mac_addr_set(uint8_t *mac, esp_mac_type_t type);
+
+
+/**
+  * @brief  Return MAC address of the interface which is set using esp_iface_mac_addr_set.
+  *
+  * @param  mac  base MAC address, length: 6 bytes.
+  * @param  type  type of MAC address, 0:wifi station, 1:wifi softap, 2:bluetooth, 3:ethernet.
+  *
+  * @return ESP_OK on success
+  *         ESP_ERR_INVALID_MAC base MAC address has not been set
+  */
+esp_err_t esp_iface_mac_addr_get(uint8_t *mac, esp_mac_type_t type);
+
+/**
   * @brief  Return base MAC address which was previously written to BLK3 of EFUSE.
   *
   * Base MAC address is used to generate the MAC addresses used by the networking interfaces.
@@ -223,7 +247,7 @@ esp_err_t esp_efuse_mac_get_default(uint8_t *mac);
 /**
   * @brief  Read base MAC address and set MAC address of the interface.
   *
-  * This function first get base MAC address using esp_base_mac_addr_get or reads base MAC address
+  * This function first get base MAC address using esp_iface_mac_addr_get or esp_base_mac_addr_get or reads base MAC address
   * from BLK0 of EFUSE. Then set the MAC address of the interface including wifi station, wifi softap,
   * bluetooth and ethernet.
   *

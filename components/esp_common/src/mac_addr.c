@@ -24,6 +24,8 @@ static const char* TAG = "system_api";
 
 static uint8_t base_mac_addr[6] = { 0 };
 
+static uint8_t iface_mac_addr[FOUR_UNIVERSAL_MAC_ADDR][6] = { 0 };
+
 esp_err_t esp_base_mac_addr_set(const uint8_t *mac)
 {
     if (mac == NULL) {
@@ -50,6 +52,42 @@ esp_err_t esp_base_mac_addr_get(uint8_t *mac)
     }
 
     memcpy(mac, base_mac_addr, 6);
+
+    return ESP_OK;
+}
+
+esp_err_t esp_iface_mac_addr_set(uint8_t *mac, esp_mac_type_t type)
+{
+    if (mac == NULL) {
+        ESP_LOGE(TAG, "MAC address is NULL");
+        abort();
+    }
+
+    if (type < ESP_MAC_WIFI_STA || type > ESP_MAC_ETH) {
+        ESP_LOGE(TAG, "mac type is incorrect");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+	memcpy(iface_mac_addr[type], mac, 6);
+
+    return ESP_OK;
+}
+
+esp_err_t esp_iface_mac_addr_get(uint8_t *mac, esp_mac_type_t type)
+{
+    uint8_t null_mac[6] = {0};
+
+    if (type < ESP_MAC_WIFI_STA || type > ESP_MAC_ETH) {
+        ESP_LOGE(TAG, "mac type is incorrect");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (memcmp(iface_mac_addr[type], null_mac, 6) == 0) {
+        ESP_LOGI(TAG, "Type MAC address is not set, read default base MAC address from BLK0 of EFUSE");
+        return ESP_ERR_INVALID_MAC;
+    }
+
+    memcpy(mac, iface_mac_addr[type], 6);
 
     return ESP_OK;
 }
@@ -143,11 +181,16 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type)
         return ESP_ERR_INVALID_ARG;
     }
 
-    // if base mac address is not set, read one from EFUSE and then write back
-    if (esp_base_mac_addr_get(efuse_mac) != ESP_OK) {
-        ESP_LOGI(TAG, "read default base MAC address from EFUSE");
-        esp_efuse_mac_get_default(efuse_mac);
-        esp_base_mac_addr_set(efuse_mac);
+    if (esp_iface_mac_addr_get(mac, type) != ESP_OK) {
+        // if base mac address is not set, read one from EFUSE and then write back
+        if (esp_base_mac_addr_get(efuse_mac) != ESP_OK) {
+            ESP_LOGI(TAG, "read default base MAC address from EFUSE");
+            esp_efuse_mac_get_default(efuse_mac);
+            esp_base_mac_addr_set(efuse_mac);
+        }
+    }
+    else {
+    	return ESP_OK;
     }
 
     switch (type) {
