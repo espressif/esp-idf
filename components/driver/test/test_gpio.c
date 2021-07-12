@@ -821,17 +821,21 @@ TEST_CASE("GPIO input and output of USB pins test", "[gpio]")
         // test pin
         gpio_set_level(pin, 0);
         // tested voltage is around 0v
+        esp_rom_delay_us(10);
         TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(pin), 0, "get level error! the level should be low!");
         vTaskDelay(1000 / portTICK_RATE_MS);
         gpio_set_level(pin, 1);
+        esp_rom_delay_us(10);
         // tested voltage is around 3.3v
         TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(pin), 1, "get level error! the level should be high!");
         vTaskDelay(1000 / portTICK_RATE_MS);
         gpio_set_level(pin, 0);
+        esp_rom_delay_us(10);
         // tested voltage is around 0v
         TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(pin), 0, "get level error! the level should be low!");
         vTaskDelay(1000 / portTICK_RATE_MS);
         gpio_set_level(pin, 1);
+        esp_rom_delay_us(10);
         // tested voltage is around 3.3v
         TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(pin), 1, "get level error! the level should be high!");
     }
