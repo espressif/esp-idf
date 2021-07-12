@@ -942,6 +942,43 @@ esp_err_t httpd_req_get_url_query_str(httpd_req_t *r, char *buf, size_t buf_len)
 esp_err_t httpd_query_key_value(const char *qry, const char *key, char *val, size_t val_size);
 
 /**
+ * @brief   Helper function to get a cookie value from a cookie
+ *          string of the type "cookie1=val1; cookie2=val2"
+ *
+ * @note
+ *  - If actual value size is greater than val_size, then the value is truncated,
+ *    accompanied by truncation error as return value.
+ *
+ * @param[in]  cookie_str Pointer to cookie string
+ * @param[in]  key        The key to be searched in the cookie string
+ * @param[out] val        Pointer to the buffer into which the value will be copied if the key is found
+ * @param[in]  val_size   Size of the user buffer "val"
+ *
+ * @return
+ *  - ESP_OK : Key is found in the cookie string and copied to buffer
+ *  - ESP_ERR_NOT_FOUND          : Key not found
+ *  - ESP_ERR_INVALID_ARG        : Null arguments
+ *  - ESP_ERR_HTTPD_RESULT_TRUNC : Value string truncated
+ */
+esp_err_t httpd_cookie_key_value(const char *cookie_str, const char *key, char *val, size_t val_size);
+
+/**
+ * @brief   Get the value string of a cookie value from the "Cookie" request headers by cookie name.
+ *
+ * @param[in]  req         Pointer to the HTTP request
+ * @param[in]  cookie_name The cookie name to be searched in the request
+ * @param[out] val         Pointer to the buffer into which the value of cookie will be copied if the cookie is found
+ * @param[in]  val_size    Size of the user buffer "val"
+ *
+ * @return
+ *  - ESP_OK : Key is found in the cookie string and copied to buffer
+ *  - ESP_ERR_NOT_FOUND          : Key not found
+ *  - ESP_ERR_INVALID_ARG        : Null arguments
+ *  - ESP_ERR_HTTPD_RESULT_TRUNC : Value string truncated
+ */
+esp_err_t httpd_req_get_cookie_val(httpd_req_t *req, const char *cookie_name, char *val, size_t val_size);
+
+/**
  * @brief Test if a URI matches the given wildcard template.
  *
  * Template may end with "?" to make the previous character optional (typically a slash),
