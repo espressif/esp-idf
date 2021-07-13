@@ -63,6 +63,38 @@ typedef union {
 #define ETH_PHY_SMR_REG_ADDR (0x12)
 
 /**
+ * @brief Time Domain Reflectometry Patterns/Delay Control Register
+ * Only available in LAN8740A/LAN8742A
+ */
+typedef union {
+    struct {
+        uint32_t tdr_pattern_low : 6;        /* Data pattern sent in TDR mode for the low cycle */
+        uint32_t tdr_pattern_high : 6;       /* Data pattern sent in TDR mode for the high cycle */
+        uint32_t tdr_line_break_counter : 3; /* Increments of 256ms of break time */
+        uint32_t tdr_delay_in : 1;           /* Line break counter used */
+    };
+    uint32_t val;
+} tdr_pattern_reg_t;
+#define EHT_PHY_TDRPD_REG_ADDR (0x18)
+
+/**
+ * @brief Time Domain Reflectometry Control/Status Register)
+ * Only available in LAN8740A/LAN8742A
+ */
+typedef union {
+    struct {
+        uint32_t tdr_channel_length : 8;     /* TDR channel length */
+        uint32_t tdr_channel_status : 1;     /* TDR channel status */
+        uint32_t tdr_channel_cable_type : 2; /* TDR channel cable type */
+        uint32_t reserved : 3;               /* Reserved */
+        uint32_t tdr_a2d_filter_enable: 1;   /* Analog to Digital Filter Enabled */
+        uint32_t tdr_enable : 1;             /* Enable TDR */
+    };
+    uint32_t val;
+} tdr_control_reg_t;
+#define EHT_PHY_TDRC_REG_ADDR (0x19)
+
+/**
  * @brief SECR(Symbol Error Counter Register)
  *
  */
@@ -94,6 +126,19 @@ typedef union {
 #define ETH_PHY_CSIR_REG_ADDR (0x1B)
 
 /**
+ * @brief Cable Length Register
+ * Only available in LAN8740A/LAN8742A
+ */
+typedef union {
+    struct {
+        uint32_t reserved : 12;              /* Reserved */
+        uint32_t cable_length : 4;           /* Cable length */
+    };
+    uint32_t val;
+} cbln_reg_t;
+#define EHT_PHY_CBLN_REG_ADDR (0x1C)
+
+/**
  * @brief ISR(Interrupt Source Register)
  *
  */
@@ -106,8 +151,9 @@ typedef union {
         uint32_t link_down : 1;                /* Link Down */
         uint32_t remote_fault_detect : 1;      /* Remote Fault Detect */
         uint32_t auto_nego_complete : 1;       /* Auto-Negotiation Complete */
-        uint32_t energy_on_generate : 1;       /* ENERYON generated */
-        uint32_t reserved2 : 8;                /* Reserved */
+        uint32_t energy_on_generate : 1;       /* ENERGY ON generated */
+        uint32_t wake_on_lan : 1;              /* Wake on Lan (WOL) event detected (only LAN8740A/LAN8742A) */
+        uint32_t reserved2 : 7;                /* Reserved */
     };
     uint32_t val;
 } isfr_reg_t;
@@ -127,7 +173,8 @@ typedef union {
         uint32_t remote_fault_detect : 1;      /* Remote Fault Detect */
         uint32_t auto_nego_complete : 1;       /* Auto-Negotiation Complete */
         uint32_t energy_on_generate : 1;       /* ENERGY ON generated */
-        uint32_t reserved2 : 8;                /* Reserved */
+        uint32_t wake_on_lan : 1;              /* Wake on Lan (WOL) event detected (only LAN8740A/LAN8742A) */
+        uint32_t reserved2 : 7;                /* Reserved */
     };
     uint32_t val;
 } imr_reg_t;
@@ -141,9 +188,11 @@ typedef union {
     struct {
         uint32_t reserved1 : 2;        /* Reserved */
         uint32_t speed_indication : 3; /* Speed Indication */
-        uint32_t reserved2 : 7;        /* Reserved */
+        uint32_t reserved2 : 1;        /* Reserved */
+        uint32_t enable_4b5b : 1;      /* Enable 4B5B encoder (only LAN8740A/LAN8741A) */
+        uint32_t reserved3 : 5;        /* Reserved */
         uint32_t auto_nego_done : 1;   /* Auto Negotiation Done */
-        uint32_t reserved3 : 3;        /* Reserved */
+        uint32_t reserved4 : 3;        /* Reserved */
     };
     uint32_t val;
 } pscsr_reg_t;
@@ -408,7 +457,32 @@ static esp_err_t lan8720_init(esp_eth_phy_t *phy)
     phyidr2_reg_t id2;
     ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, lan8720->addr, ETH_PHY_IDR1_REG_ADDR, &(id1.val)), err, TAG, "read ID1 failed");
     ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, lan8720->addr, ETH_PHY_IDR2_REG_ADDR, &(id2.val)), err, TAG, "read ID2 failed");
-    ESP_GOTO_ON_FALSE(id1.oui_msb == 0x7 && id2.oui_lsb == 0x30 && id2.vendor_model == 0xF, ESP_FAIL, err, TAG, "wrong chip ID");
+
+    // OUI (maybe somehow bit-reversed) of SMSC/MicroChip 00:01:F0 => msb = 0x0007, lsb = 0x30
+    // Model 0x0F = LAN8710A/LAN8720A
+    // Model 0x11 = LAN8740A
+    // Model 0x12 = LAN8741A
+    // Model 0x13 = LAN8742A
+    PHY_CHECK(id1.oui_msb == 0x0007 && id2.oui_lsb == 0x30 &&
+              (id2.vendor_model == 0x0F || id2.vendor_model == 0x11 ||
+               id2.vendor_model == 0x12 || id2.vendor_model == 0x13), "wrong chip ID", err);
+
+    switch (id2.vendor_model) {
+        case 0x0F:
+          ESP_LOGI(TAG, "found LAN8710A/LAN8720A PHY, revision %d", id2.model_revision);
+          break;
+        case 0x11:
+          ESP_LOGI(TAG, "found LAN8740A PHY, revision %d", id2.model_revision);
+          break;
+        case 0x12:
+          ESP_LOGI(TAG, "found LAN8741A PHY, revision %d", id2.model_revision);
+          break;
+        case 0x13:
+          ESP_LOGI(TAG, "found LAN8742A PHY, revision %d", id2.model_revision);
+          break;
+        default:
+          goto err;
+    }
     return ESP_OK;
 err:
     return ret;
