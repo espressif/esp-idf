@@ -42,7 +42,11 @@ esp_err_t esp_modem_dce_handle_response_default(modem_dce_t *dce, const char *li
     return err;
 }
 
-esp_err_t esp_modem_dce_handle_csq(modem_dce_t *dce, const char *line)
+/**
+ * @brief Handle response from AT+CSQ (Get signal quality)
+ *
+ */
+static esp_err_t esp_modem_dce_handle_csq(modem_dce_t *dce, const char *line)
 {
     esp_err_t err = ESP_FAIL;
     esp_modem_dce_t *esp_dce = __containerof(dce, esp_modem_dce_t, parent);
@@ -60,7 +64,11 @@ esp_err_t esp_modem_dce_handle_csq(modem_dce_t *dce, const char *line)
     return err;
 }
 
-esp_err_t esp_modem_dce_handle_cbc(modem_dce_t *dce, const char *line)
+/**
+ * @brief Handle response from AT+CBC (Get battery status)
+ *
+ */
+static esp_err_t esp_modem_dce_handle_cbc(modem_dce_t *dce, const char *line)
 {
     esp_err_t err = ESP_FAIL;
     esp_modem_dce_t *esp_dce = __containerof(dce, esp_modem_dce_t, parent);
@@ -102,7 +110,11 @@ esp_err_t esp_modem_dce_handle_atd_ppp(modem_dce_t *dce, const char *line)
     return err;
 }
 
-esp_err_t esp_modem_dce_handle_cgmm(modem_dce_t *dce, const char *line)
+/**
+ * @brief Handle response from AT+CGMM (Get DCE module name)
+ *
+ */
+static esp_err_t esp_modem_dce_handle_cgmm(modem_dce_t *dce, const char *line)
 {
     esp_err_t err = ESP_FAIL;
     if (strstr(line, MODEM_RESULT_CODE_SUCCESS)) {
@@ -120,7 +132,11 @@ esp_err_t esp_modem_dce_handle_cgmm(modem_dce_t *dce, const char *line)
     return err;
 }
 
-esp_err_t esp_modem_dce_handle_cgsn(modem_dce_t *dce, const char *line)
+/**
+ * @brief Handle response from AT+CGSN (Get DCE module IMEI number)
+ *
+ */
+static esp_err_t esp_modem_dce_handle_cgsn(modem_dce_t *dce, const char *line)
 {
     esp_err_t err = ESP_FAIL;
     if (strstr(line, MODEM_RESULT_CODE_SUCCESS)) {
@@ -138,7 +154,11 @@ esp_err_t esp_modem_dce_handle_cgsn(modem_dce_t *dce, const char *line)
     return err;
 }
 
-esp_err_t esp_modem_dce_handle_cimi(modem_dce_t *dce, const char *line)
+/**
+ * @brief Handle response from AT+CIMI (Get DCE module IMSI number)
+ *
+ */
+static esp_err_t esp_modem_dce_handle_cimi(modem_dce_t *dce, const char *line)
 {
     esp_err_t err = ESP_FAIL;
     if (strstr(line, MODEM_RESULT_CODE_SUCCESS)) {
@@ -156,7 +176,11 @@ esp_err_t esp_modem_dce_handle_cimi(modem_dce_t *dce, const char *line)
     return err;
 }
 
-esp_err_t esp_modem_dce_handle_cops(modem_dce_t *dce, const char *line)
+/**
+ * @brief Handle response from AT+COPS? (Get Operator's name)
+ *
+ */
+static esp_err_t esp_modem_dce_handle_cops(modem_dce_t *dce, const char *line)
 {
     esp_err_t err = ESP_FAIL;
     if (strstr(line, MODEM_RESULT_CODE_SUCCESS)) {
