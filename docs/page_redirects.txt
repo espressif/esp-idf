@@ -77,3 +77,7 @@ hw-reference/esp32s2/user-guide-kaluga-1-v1.2   hw-reference/esp32s2/user-guide-
 api-guides/jtag-debugging/configure-wrover  api-guides/jtag-debugging/configure-ft2232h-jtag
 hw-reference/modules-and-boards             "https://www.espressif.com/en/products/modules"
 hw-reference/modules-and-boards-previous    "https://www.espressif.com/en/products/modules"
+
+# rename ESP-MESH to ESP-WIFI-MESH
+api-guides/mesh                                 api-guides/esp-wifi-mesh
+api-reference/network/esp_mesh                  api-reference/network/esp-wifi-mesh

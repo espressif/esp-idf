@@ -130,7 +130,7 @@ Event IDs and Corresponding Data Structures
 Mesh Events
 -----------
 
-ESP-MESH uses a system similar to the :ref:`legacy-event-loop` to deliver events to the application. See :ref:`mesh-events` for details.
+ESP-WIFI-MESH uses a system similar to the :ref:`legacy-event-loop` to deliver events to the application. See :ref:`mesh-events` for details.
 
 Bluetooth Events
 ----------------

@@ -12,11 +12,11 @@ Wi-Fi
     Wi-Fi <esp_wifi>
     SmartConfig <esp_smartconfig>
     ESP-NOW <esp_now>
-    ESP Mesh <esp_mesh>
+    ESP-WIFI-MESH <esp-wifi-mesh>
 
 Code examples for the Wi-Fi API are provided in the :example:`wifi` directory of ESP-IDF examples.
 
-Code examples for ESP-MESH are provided in the :example:`mesh` directory of ESP-IDF examples.
+Code examples for ESP-WIFI-MESH are provided in the :example:`mesh` directory of ESP-IDF examples.
 
 
 Ethernet

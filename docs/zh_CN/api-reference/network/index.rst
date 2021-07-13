@@ -12,11 +12,11 @@ Wi-Fi
    Wi-Fi <esp_wifi>
    Smart Config <esp_smartconfig>
    ESP-NOW <esp_now>
-   ESP Mesh <esp_mesh>
+   ESP-WIFI-MESH <esp-wifi-mesh>
 
 本部分的 Wi-Fi API 示例代码存放在 ESP-IDF 示例项目的 :example:`wifi` 目录下。
 
-ESP-MESH 的示例代码存放在 ESP-IDF 示例项目的 :example:`mesh` 目录下。
+ESP-WIFI-MESH 的示例代码存放在 ESP-IDF 示例项目的 :example:`mesh` 目录下。
 
 
 以太网
