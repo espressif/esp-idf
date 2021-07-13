@@ -71,7 +71,7 @@ The following keys are used by the secure boot process:
 Bootloader Size
 ---------------
 
-Enabling Secure boot and/or flash encryption will increase the size of bootloader, which might require updating partition table offset. See :ref:`secure-boot-bootloader-size`.
+Enabling Secure boot and/or flash encryption will increase the size of bootloader, which might require updating partition table offset. See :ref:`bootloader-size`.
 
 .. _secure-boot-howto:
 
