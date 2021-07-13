@@ -893,8 +893,71 @@ esp_err_t esp_ota_revoke_secure_boot_public_key(esp_ota_secure_boot_public_key_i
         return ESP_ERR_INVALID_ARG;
     }
 
-    esp_efuse_set_digest_revoke(index);
-    ESP_LOGI(TAG, "Revoked signature block %d.", index);
+    esp_image_sig_public_key_digests_t app_digests = { 0 };
+    esp_err_t err = esp_secure_boot_get_signature_blocks_for_running_app(true, &app_digests);
+    if (err != ESP_OK || app_digests.num_digests == 0) {
+        ESP_LOGE(TAG, "This app is not signed, but check signature on update is enabled in config. It won't be possible to verify any update.");
+        return ESP_FAIL;
+    }
+
+    esp_err_t ret;
+    ets_secure_boot_key_digests_t trusted_keys;
+    ret = esp_secure_boot_read_key_digests(&trusted_keys);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Could not read the secure boot key digests from efuse. Aborting..");
+        return ESP_FAIL;
+    }
+
+    if (trusted_keys.key_digests[index] == NULL) {
+        ESP_LOGI(TAG, "Trusted Key block(%d) already revoked.", index);
+        return ESP_OK;
+    }
+
+    esp_image_sig_public_key_digests_t trusted_digests = { 0 };
+    for (unsigned i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
+        if (i == index) {
+            continue; // omitting - to find if there is a valid key after revoking this digest
+        }
+
+        if (trusted_keys.key_digests[i] != NULL) {
+            bool all_zeroes = true;
+            for (unsigned j = 0; j < ESP_SECURE_BOOT_DIGEST_LEN; j++) {
+                all_zeroes = all_zeroes && (*(uint8_t *)(trusted_keys.key_digests[i] + j) == 0);
+            }
+            if (!all_zeroes) {
+                memcpy(trusted_digests.key_digests[trusted_digests.num_digests++], (uint8_t *)trusted_keys.key_digests[i], ESP_SECURE_BOOT_DIGEST_LEN);
+            } else {
+                ESP_LOGD(TAG, "Empty trusted key block (%d).", i);
+            }
+        }
+    }
+
+    bool match = false;
+    for (unsigned i = 0; i < trusted_digests.num_digests; i++) {
+        if (match == true) {
+            break;
+        }
+
+        for (unsigned j = 0; j < app_digests.num_digests; j++) {
+            if (memcmp(trusted_digests.key_digests[i], app_digests.key_digests[j], ESP_SECURE_BOOT_DIGEST_LEN) == 0) {
+                ESP_LOGI(TAG, "App key block(%d) matches Trusted key block(%d)[%d -> Next active trusted key block].", j, i, i);
+                esp_err_t err = esp_efuse_set_digest_revoke(index);
+                if (err != ESP_OK) {
+                    ESP_LOGE(TAG, "Failed to revoke digest (0x%x).", err);
+                    return ESP_FAIL;
+                }
+                ESP_LOGI(TAG, "Revoked signature block %d.", index);
+                match = true;
+                break;
+            }
+        }
+    }
+
+    if (match == false) {
+        ESP_LOGE(TAG, "Running app doesn't have another valid secure boot key. Cannot revoke current key(%d).", index);
+        return ESP_FAIL;
+    }
+
     return ESP_OK;
 }
 #endif
