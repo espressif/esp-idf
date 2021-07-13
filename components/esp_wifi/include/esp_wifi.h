@@ -1224,7 +1224,7 @@ esp_err_t esp_wifi_config_11b_rate(wifi_interface_t ifx, bool disable);
   * @attention  1. This API should be called after esp_wifi_init() and before esp_wifi_start().
   *
   * @param      ifx  Interface to be configured.
-  * @param      rate Only support 1M, 6M and MCS0_LGI
+  * @param      rate Phy rate to be configured.
   *
   * @return
   *    - ESP_OK: succeed
@@ -1288,6 +1288,20 @@ esp_err_t esp_wifi_set_country_code(const char *country, bool ieee80211d_enabled
   *    - ESP_ERR_INVALID_ARG: invalid argument
   */
 esp_err_t esp_wifi_get_country_code(char *country);
+
+/**
+  * @brief      Config 80211 tx rate of specified interface
+  *
+  * @attention  1. This API should be called after esp_wifi_init() and before esp_wifi_start().
+  *
+  * @param      ifx  Interface to be configured.
+  * @param      rate Phy rate to be configured.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_wifi_config_80211_tx_rate(wifi_interface_t ifx, wifi_phy_rate_t rate);
 
 #ifdef __cplusplus
 }
