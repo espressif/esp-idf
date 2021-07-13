@@ -90,7 +90,11 @@ static int selected_boot_partition(const bootloader_state_t *bs)
     if (bootloader_common_get_reset_reason(0) != DEEPSLEEP_RESET) {
         // Factory firmware.
 #ifdef CONFIG_BOOTLOADER_FACTORY_RESET
-        if (bootloader_common_check_long_hold_gpio(CONFIG_BOOTLOADER_NUM_PIN_FACTORY_RESET, CONFIG_BOOTLOADER_HOLD_TIME_GPIO) == 1) {
+        bool reset_level = false;
+#if CONFIG_BOOTLOADER_FACTORY_RESET_PIN_HIGH
+        reset_level = true;
+#endif
+        if (bootloader_common_check_long_hold_gpio_level(CONFIG_BOOTLOADER_NUM_PIN_FACTORY_RESET, CONFIG_BOOTLOADER_HOLD_TIME_GPIO, reset_level) == GPIO_LONG_HOLD) {
             ESP_LOGI(TAG, "Detect a condition of the factory reset");
             bool ota_data_erase = false;
 #ifdef CONFIG_BOOTLOADER_OTA_DATA_ERASE

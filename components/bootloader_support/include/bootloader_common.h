@@ -62,17 +62,36 @@ bool bootloader_common_ota_select_valid(const esp_ota_select_entry_t *s);
 bool bootloader_common_ota_select_invalid(const esp_ota_select_entry_t *s);
 
 /**
- * @brief Check if the GPIO input is a long hold or a short hold.
+ * @brief Check if a GPIO input is held low for a long period, short period, or not
+ * at all.
  *
- * Number of the GPIO input will be configured as an input with internal pull-up enabled.
+ * This function will configure the specified GPIO as an input with internal pull-up enabled.
+ *
  * If the GPIO input is held low continuously for delay_sec period then it is a long hold.
  * If the GPIO input is held low for less period then it is a short hold.
  *
  * @param[in] num_pin Number of the GPIO input.
  * @param[in] delay_sec Input must be driven low for at least this long, continuously.
- * @return esp_comm_gpio_hold_t Defines type of hold a GPIO in low state.
+ * @return esp_comm_gpio_hold_t Type of low level hold detected, if any.
  */
 esp_comm_gpio_hold_t bootloader_common_check_long_hold_gpio(uint32_t num_pin, uint32_t delay_sec);
+
+/**
+ * @brief Check if a GPIO input is held low or high for a long period, short period, or not
+ * at all.
+ *
+ * This function will configure the specified GPIO as an input with internal pull-up enabled.
+ *
+ * If the GPIO input is held at 'level' continuously for delay_sec period then it is a long hold.
+ * If the GPIO input is held at 'level' for less period then it is a short hold.
+ *
+ * @param[in] num_pin Number of the GPIO input.
+ * @param[in] delay_sec Input must be driven to 'level' for at least this long, continuously.
+ * @param[in] level Input pin level to trigger on hold
+ * @return esp_comm_gpio_hold_t Type of hold detected, if any.
+ */
+esp_comm_gpio_hold_t bootloader_common_check_long_hold_gpio_level(uint32_t num_pin, uint32_t delay_sec, bool level);
+
 
 /**
  * @brief Erase the partition data that is specified in the transferred list.

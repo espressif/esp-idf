@@ -70,9 +70,11 @@ Partitions of type "app" cannot be specified here.
 
 :ref:`CONFIG_BOOTLOADER_OTA_DATA_ERASE` - the device will boot from "factory" partition after a factory reset. The OTA data partition will be cleared.
 
-:ref:`CONFIG_BOOTLOADER_NUM_PIN_FACTORY_RESET`- number of the GPIO input for factory reset uses to trigger a factory reset, this GPIO must be pulled low on reset to trigger this. 
+:ref:`CONFIG_BOOTLOADER_NUM_PIN_FACTORY_RESET`- number of the GPIO input for factory reset uses to trigger a factory reset, this GPIO must be pulled low or high (configurable) on reset to trigger this.
 
-:ref:`CONFIG_BOOTLOADER_HOLD_TIME_GPIO`- this is hold time of GPIO for reset/test mode (by default 5 seconds). The GPIO must be held low continuously for this period of time after reset before a factory reset or test partition boot (as applicable) is performed.
+:ref:`CONFIG_BOOTLOADER_HOLD_TIME_GPIO`- this is hold time of GPIO for reset/test mode (by default 5 seconds). The GPIO must be held continuously for this period of time after reset before a factory reset or test partition boot (as applicable) is performed.
+
+:ref:`CONFIG_BOOTLOADER_FACTORY_RESET_PIN_LEVEL` - configure whether a factory reset should trigger on a high or low level of the GPIO. If the GPIO has an internal pullup then this is enabled before the pin is sampled, consult the {IDF_TARGET_NAME} datasheet for details on pin internal pullups.
 
 Partition table.::
 

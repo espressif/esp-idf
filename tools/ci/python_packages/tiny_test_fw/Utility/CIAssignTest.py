@@ -46,9 +46,12 @@ import re
 import yaml
 
 try:
-    from yaml import CLoader as Loader
+    from yaml import CLoader
+    has_cloader = True
 except ImportError:
-    from yaml import Loader as Loader
+    has_cloader = False
+
+from yaml import Loader
 
 from . import CaseConfig, GitlabCIJob, SearchCases, console_log
 
@@ -180,7 +183,7 @@ class AssignTest(object):
     def _parse_gitlab_ci_config(self, ci_config_file):
 
         with open(ci_config_file, 'r') as f:
-            ci_config = yaml.load(f, Loader=Loader)
+            ci_config = yaml.load(f, Loader=CLoader if has_cloader else Loader)
 
         job_list = list()
         for job_name in ci_config:
@@ -319,7 +322,7 @@ class AssignTest(object):
         # failures
         if failed_to_assign:
             console_log('Too many test cases vs jobs to run. '
-                        'Please increase parallel count in tools/ci/config/target-test.yml '
+                        'Please increase parallel count in .gitlab/ci/target-test.yml '
                         'for jobs with specific tags:', 'R')
             failed_group_count = self._count_groups_by_keys(failed_to_assign)
             for tags in failed_group_count:
