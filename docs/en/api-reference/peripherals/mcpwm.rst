@@ -23,7 +23,7 @@ More detailed block diagram of the MCPWM unit is shown below. Each A/B pair may 
 
     MCPWM Block Diagram
 
-Description of this API starts with configuration of MCPWM's **Timer** and **Generator** submodules to provide the basic motor control functionality. Then it discusses more advanced submodules and functionalities of a **Fault Handler**, signal **Capture**, **Carrier** and **Interrupts**.
+Description of this API starts with configuration of MCPWM's **Timer** and **Generator** submodules to provide the basic motor control functionality. Then it discusses more advanced submodules and functionalities of a **Fault Handler**, signal **Capture** and **Carrier**.
 
 Contents
 --------
@@ -34,7 +34,6 @@ Contents
 * `Capture`_ external signals to provide additional control over the outputs
 * Use `Fault Handler`_ to detect and manage faults
 * Add a higher frequency `Carrier`_, if output signals are passed through an isolation transformer
-* Configuration and handling of `Interrupts`_.
 * Extra configuration of `Resolution`_.
 
 
@@ -109,11 +108,13 @@ One of requirements of BLDC (Brushless DC, see figure below) motor control is se
 The capture functionality may be used for other types of motors or tasks. The functionality is enabled in two steps:
 
 1. Configuration of GPIOs to act as the capture signal inputs by calling functions :cpp:func:`mcpwm_gpio_init` or :cpp:func:`mcpwm_set_pin`, that were described in section `Configure`_.
-2. Enabling of the functionality itself by invoking :cpp:func:`mcpwm_capture_enable`, selecting desired signal input from :cpp:type:`mcpwm_capture_signal_t`, setting the signal edge with :cpp:type:`mcpwm_capture_on_edge_t` and the signal count prescaler.
+2. Enabling of the functionality itself by invoking :cpp:func:`mcpwm_capture_enable_channel`, selecting desired signal input from :cpp:type:`mcpwm_capture_channel_id_t`, setting the signal edge, signal count prescaler and user callback within :cpp:type:`mcpwm_capture_config_t`
 
-Within the second step above a 32-bit capture timer is enabled. The timer runs continuously driven by the APB clock. The clock frequency is typically 80 MHz. On each capture event the capture timer’s value is stored in time-stamp register that may be then checked by calling :cpp:func:`mcpwm_capture_signal_get_value`. The edge of the last signal may be checked with :cpp:func:`mcpwm_capture_signal_get_edge`.
+Within the second step above a 32-bit capture timer is enabled. The timer runs continuously driven by the APB clock. The clock frequency is typically 80 MHz. On each capture event the capture timer’s value is stored in time-stamp register that may be then checked by calling :cpp:func:`mcpwm_capture_signal_get_value`. The edge of the last signal may be checked with :cpp:func:`mcpwm_capture_signal_get_edge`. Those data are also provided inside callback function as event data :cpp:type:`cap_event_data_t`
 
-If not required anymore, the capture functionality may be disabled with :cpp:func:`mcpwm_capture_disable`.
+If not required anymore, the capture functionality may be disabled with :cpp:func:`mcpwm_capture_disable_channel`.
+
+Capture prescale is different from other modules as it is applied to the input signal, not the timer source. Prescaler has maintained its own level state with the initial value set to low and is detecting the positive edge of the input signal to change its internal state. That means if two pairs of positive and negative edges are passed to input, the prescaler's internal state will change twice. ISR will report on this internal state change, not the input signal. For example, setting prescale to 2 will generate ISR callback on each positive edge of input if both edge is selected via :cpp:type:`mcpwm_capture_config_t`. Or each 2 positive edges of input if only one edge is selected though :cpp:type:`mcpwm_capture_config_t`.
 
 
 Fault Handler
@@ -158,7 +159,7 @@ To disable carrier functionality call :cpp:func:`mcpwm_carrier_disable`.
 Interrupts
 ----------
 
-Registering of the MCPWM interrupt handler is possible by calling :cpp:func:`mcpwm_isr_register`.
+Registering of the MCPWM interrupt handler is possible by calling :cpp:func:`mcpwm_isr_register`. Note if :cpp:func:`mcpwm_capture_enable_channel` is used then a default ISR routine will be installed hence please do not call this function to register any more.
 
 
 Resolution
@@ -171,15 +172,17 @@ Note that, these two APIs won't update the frequency and duty automatically, to 
 
 To get PWM pulse that is below 15Hz, please set the resolution to a lower value. For high frequency PWM with limited step range, please set them with higher value.
 
+
 Application Example
 -------------------
 
-Examples of using MCPWM for motor control: :example:`peripherals/mcpwm`:
+MCPWM example are located under: :example:`peripherals/mcpwm`:
 
 * Demonstration how to use each submodule of the MCPWM - :example:`peripherals/mcpwm/mcpwm_basic_config`
 * Control of BLDC (brushless DC) motor with hall sensor feedback - :example:`peripherals/mcpwm/mcpwm_bldc_control`
 * Brushed DC motor control - :example:`peripherals/mcpwm/mcpwm_brushed_dc_control`
 * Servo motor control - :example:`peripherals/mcpwm/mcpwm_servo_control`
+* HC-SR04 sensor with capture - :example:`peripherals/mcpwm/mcpwm_capture_hc_sr04`
 
 
 API Reference
