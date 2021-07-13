@@ -8,23 +8,10 @@
 #include "soc/rtc.h"
 #include "soc/efuse_periph.h"
 #include "soc/rtc_cntl_reg.h"
-
-#define CPU_RESET_REASON RTC_SW_CPU_RESET
-
-#ifdef CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
-#include "esp32/rom/rtc.h"
-#undef CPU_RESET_REASON
-#define CPU_RESET_REASON SW_CPU_RESET
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/rtc.h"
 #endif
+#include "esp_rom_sys.h"
 #include "esp_rom_uart.h"
 
 __attribute__((weak)) void bootloader_clock_configure(void)
@@ -52,7 +39,7 @@ __attribute__((weak)) void bootloader_clock_configure(void)
     }
 #endif
 
-    if (rtc_clk_apb_freq_get() < APB_CLK_FREQ || rtc_get_reset_reason(0) != CPU_RESET_REASON) {
+    if (rtc_clk_apb_freq_get() < APB_CLK_FREQ || esp_rom_get_reset_reason(0) != RESET_REASON_CPU0_SW) {
         rtc_clk_config_t clk_cfg = RTC_CLK_CONFIG_DEFAULT();
 #if CONFIG_IDF_TARGET_ESP32
         clk_cfg.xtal_freq = CONFIG_ESP32_XTAL_FREQ;

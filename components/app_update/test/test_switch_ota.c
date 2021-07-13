@@ -14,10 +14,8 @@
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/spi_flash.h"
-#include "esp32/rom/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/spi_flash.h"
-#include "esp32s2/rom/rtc.h"
 #endif
 
 #include "freertos/FreeRTOS.h"

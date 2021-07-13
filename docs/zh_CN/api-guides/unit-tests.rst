@@ -105,8 +105,8 @@ DUT2（slave）终端::
 
    void check_deepsleep_reset_reason()
    {
-       RESET_REASON reason = rtc_get_reset_reason(0);
-       TEST_ASSERT(reason == DEEPSLEEP_RESET);
+       soc_reset_reason_t reason = esp_rom_get_reset_reason(0);
+       TEST_ASSERT(reason == RESET_REASON_CORE_DEEP_SLEEP);
    }
 
    TEST_CASE_MULTIPLE_STAGES("reset reason check for deepsleep", "[{IDF_TARGET_PATH_NAME}]", trigger_deepsleep, check_deepsleep_reset_reason);
@@ -120,7 +120,7 @@ DUT2（slave）终端::
 
 1. 使用宏 ``!(TEMPORARY_)DISABLED_FOR_TARGETS()`` 包装你的测试代码，并将其放于原始的测试文件中，或将代码分成按功能分组的文件。但请确保所有这些文件都会由编译器处理。例::
 
-      #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32, ESP8266) 
+      #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32, ESP8266)
       TEST_CASE("a test that is not ready for esp32 and esp8266 yet", "[]")
       {
       }
@@ -170,7 +170,7 @@ DUT2（slave）终端::
 .. note::
 
     由于 Windows 命令提示符固有限制，需使用以下语法来编译多个组件的单元测试程序：``idf.py -T xxx -T yyy build`` 或者在 PowerShell 中使用 ``idf.py -T \`"xxx yyy\`" build``，在 Windows 命令提示符中使用 ``idf.py -T \^"ssd1306 hts221\^" build``。
-  
+
 当编译完成时，它会打印出烧写芯片的指令。您只需要运行 ``idf.py flash`` 即可烧写所有编译输出的文件。
 
 您还可以运行 ``idf.py -T all flash`` 或者 ``idf.py -T xxx flash`` 来编译并烧写，所有需要的文件都会在烧写之前自动重新编译。
@@ -279,7 +279,7 @@ ESP-IDF 有一个集成 CMock mocking 框架的组件。CMock 通常使用 Unity
 要使用 IDF 提供的 Unity 组件（不是子模块)，构建系统需要传递一个环境变量 ``UNITY_IDR`` 给 CMock。该变量仅包含 IDF 中 Unity 目录的路径，如 ``export "UNITY_DIR=${IDF_PATH}/components/unity/unity"``。
 
 关于 CMock 中 Unity 目录是如何确定的，请参考 :component_file:`cmock/CMock/lib/cmock_generator.rb`。
- 
+
 在组件的 CMakeLists.txt 中创建组件的 mock 的 cmake 编译命令可能如下所示：
 
 .. code-block:: cmake

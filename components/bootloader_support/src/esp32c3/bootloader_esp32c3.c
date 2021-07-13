@@ -28,7 +28,6 @@
 #include "esp32c3/rom/cache.h"
 #include "esp32c3/rom/ets_sys.h"
 #include "esp32c3/rom/spi_flash.h"
-#include "esp32c3/rom/rtc.h"
 #include "bootloader_common.h"
 #include "bootloader_init.h"
 #include "bootloader_clock.h"
@@ -234,11 +233,9 @@ static void wdt_reset_info_dump(int cpu)
 static void bootloader_check_wdt_reset(void)
 {
     int wdt_rst = 0;
-    RESET_REASON rst_reas[2];
-
-    rst_reas[0] = rtc_get_reset_reason(0);
-    if (rst_reas[0] == RTCWDT_SYS_RESET || rst_reas[0] == TG0WDT_SYS_RESET || rst_reas[0] == TG1WDT_SYS_RESET ||
-            rst_reas[0] == TG0WDT_CPU_RESET || rst_reas[0] == TG1WDT_CPU_RESET || rst_reas[0] == RTCWDT_CPU_RESET) {
+    soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
+    if (rst_reason == RESET_REASON_CORE_RTC_WDT || rst_reason == RESET_REASON_CORE_MWDT0 || rst_reason == RESET_REASON_CORE_MWDT1 ||
+        rst_reason == RESET_REASON_CPU0_MWDT0 || rst_reason == RESET_REASON_CPU0_MWDT1 || rst_reason == RESET_REASON_CPU0_RTC_WDT) {
         ESP_LOGW(TAG, "PRO CPU has been reset by WDT.");
         wdt_rst = 1;
     }

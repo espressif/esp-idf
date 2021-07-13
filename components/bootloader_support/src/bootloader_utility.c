@@ -13,23 +13,21 @@
 
 #include "esp_rom_sys.h"
 #include "esp_rom_uart.h"
+#include "sdkconfig.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
 #include "esp32/rom/cache.h"
 #include "esp32/rom/spi_flash.h"
-#include "esp32/rom/rtc.h"
 #include "esp32/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/cache.h"
 #include "esp32s2/rom/spi_flash.h"
-#include "esp32s2/rom/rtc.h"
 #include "esp32s2/rom/secure_boot.h"
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/cache.h"
 #include "esp32s3/rom/spi_flash.h"
-#include "esp32s3/rom/rtc.h"
 #include "esp32s3/rom/secure_boot.h"
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"
@@ -39,7 +37,6 @@
 #include "esp32c3/rom/ets_sys.h"
 #include "esp32c3/rom/spi_flash.h"
 #include "esp32c3/rom/crc.h"
-#include "esp32c3/rom/rtc.h"
 #include "esp32c3/rom/uart.h"
 #include "esp32c3/rom/gpio.h"
 #include "esp32c3/rom/secure_boot.h"
@@ -51,7 +48,6 @@
 #include "esp32h2/rom/ets_sys.h"
 #include "esp32h2/rom/spi_flash.h"
 #include "esp32h2/rom/crc.h"
-#include "esp32h2/rom/rtc.h"
 #include "esp32h2/rom/uart.h"
 #include "esp32h2/rom/gpio.h"
 #include "esp32h2/rom/secure_boot.h"
@@ -69,7 +65,6 @@
 #include "soc/rtc_periph.h"
 #include "soc/timer_periph.h"
 
-#include "sdkconfig.h"
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"
 #include "esp_flash_encrypt.h"
@@ -456,7 +451,7 @@ static void set_actual_ota_seq(const bootloader_state_t *bs, int index)
 #ifdef CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP
 void bootloader_utility_load_boot_image_from_deep_sleep(void)
 {
-    if (rtc_get_reset_reason(0) == DEEPSLEEP_RESET) {
+    if (esp_rom_get_reset_reason(0) == RESET_REASON_CORE_DEEP_SLEEP) {
         esp_partition_pos_t *partition = bootloader_common_get_rtc_retain_mem_partition();
         if (partition != NULL) {
             esp_image_metadata_t image_data;

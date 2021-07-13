@@ -48,12 +48,13 @@
 
 #include "sdkconfig.h"
 #include "esp_rom_uart.h"
+#include "esp_rom_sys.h"
 #include "brownout.h"
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/cache.h"
-#include "esp32/clk.h"
 #include "esp32/rom/rtc.h"
+#include "esp32/clk.h"
 #include "esp_private/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/clk.h"
@@ -1199,7 +1200,7 @@ esp_err_t esp_sleep_disable_wifi_wakeup(void)
 
 esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
 {
-    if (rtc_get_reset_reason(0) != DEEPSLEEP_RESET && !s_light_sleep_wakeup) {
+    if (esp_rom_get_reset_reason(0) != RESET_REASON_CORE_DEEP_SLEEP && !s_light_sleep_wakeup) {
         return ESP_SLEEP_WAKEUP_UNDEFINED;
     }
 

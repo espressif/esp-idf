@@ -365,8 +365,8 @@ static void trigger_deepsleep(void)
 
 static void check_time_deepsleep_1(void)
 {
-    RESET_REASON reason = rtc_get_reset_reason(0);
-    TEST_ASSERT(reason == DEEPSLEEP_RESET);
+    soc_reset_reason_t reason = esp_rom_get_reset_reason(0);
+    TEST_ASSERT(reason == RESET_REASON_CORE_DEEP_SLEEP);
     int64_t end = esp_rtc_get_time_us();
     TEST_ASSERT_GREATER_THAN(start, end);
 
@@ -385,8 +385,8 @@ static void check_time_deepsleep_1(void)
 
 static void check_time_deepsleep_2(void)
 {
-    RESET_REASON reason = rtc_get_reset_reason(0);
-    TEST_ASSERT(reason == DEEPSLEEP_RESET);
+    soc_reset_reason_t reason = esp_rom_get_reset_reason(0);
+    TEST_ASSERT(reason == RESET_REASON_CORE_DEEP_SLEEP);
     int64_t end = esp_rtc_get_time_us();
     TEST_ASSERT_GREATER_THAN(start, end);
 }

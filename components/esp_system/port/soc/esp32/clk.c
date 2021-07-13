@@ -27,8 +27,8 @@
 #include "esp_log.h"
 
 #include "esp32/clk.h"
-#include "esp32/rom/rtc.h"
 #include "esp_rom_uart.h"
+#include "esp_rom_sys.h"
 
 #include "sdkconfig.h"
 
@@ -213,23 +213,22 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     uint32_t wifi_bt_sdio_clk;
 
 #if CONFIG_FREERTOS_UNICORE
-    RESET_REASON rst_reas[1];
+    soc_reset_reason_t rst_reas[1];
 #else
-    RESET_REASON rst_reas[2];
+    soc_reset_reason_t rst_reas[2];
 #endif
 
-    rst_reas[0] = rtc_get_reset_reason(0);
-
+    rst_reas[0] = esp_rom_get_reset_reason(0);
 #if !CONFIG_FREERTOS_UNICORE
-    rst_reas[1] = rtc_get_reset_reason(1);
+    rst_reas[1] = esp_rom_get_reset_reason(1);
 #endif
 
     /* For reason that only reset CPU, do not disable the clocks
      * that have been enabled before reset.
      */
-    if ((rst_reas[0] >= TGWDT_CPU_RESET && rst_reas[0] <= RTCWDT_CPU_RESET)
+    if ((rst_reas[0] >= RESET_REASON_CPU0_MWDT0 && rst_reas[0] <= RESET_REASON_CPU0_RTC_WDT)
 #if !CONFIG_FREERTOS_UNICORE
-        || (rst_reas[1] >= TGWDT_CPU_RESET && rst_reas[1] <= RTCWDT_CPU_RESET)
+        || (rst_reas[1] >= RESET_REASON_CPU1_MWDT1 && rst_reas[1] <= RESET_REASON_CPU1_RTC_WDT)
 #endif
     ) {
         common_perip_clk = ~DPORT_READ_PERI_REG(DPORT_PERIP_CLK_EN_REG);
