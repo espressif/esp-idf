@@ -408,7 +408,32 @@ static esp_err_t lan8720_init(esp_eth_phy_t *phy)
     phyidr2_reg_t id2;
     ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, lan8720->addr, ETH_PHY_IDR1_REG_ADDR, &(id1.val)), err, TAG, "read ID1 failed");
     ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, lan8720->addr, ETH_PHY_IDR2_REG_ADDR, &(id2.val)), err, TAG, "read ID2 failed");
-    ESP_GOTO_ON_FALSE(id1.oui_msb == 0x7 && id2.oui_lsb == 0x30 && id2.vendor_model == 0xF, ESP_FAIL, err, TAG, "wrong chip ID");
+
+    // OUI (maybe somehow bit-reversed) of SMSC/MicroChip 00:01:F0 => msb = 0x0007, lsb = 0x30
+    // Model 0x0F = LAN8710A/LAN8720A
+    // Model 0x11 = LAN8740A
+    // Model 0x12 = LAN8741A
+    // Model 0x13 = LAN8742A
+    PHY_CHECK(id1.oui_msb == 0x0007 && id2.oui_lsb == 0x30 &&
+              (id2.vendor_model == 0x0F || id2.vendor_model == 0x11 ||
+               id2.vendor_model == 0x12 || id2.vendor_model == 0x13), "wrong chip ID", err);
+
+    switch (id2.vendor_model) {
+        case 0x0F:
+          ESP_LOGI(TAG, "found LAN8710A/LAN8720A PHY, revision %d", id2.model_revision);
+          break;
+        case 0x11:
+          ESP_LOGI(TAG, "found LAN8740A PHY, revision %d", id2.model_revision);
+          break;
+        case 0x12:
+          ESP_LOGI(TAG, "found LAN8741A PHY, revision %d", id2.model_revision);
+          break;
+        case 0x13:
+          ESP_LOGI(TAG, "found LAN8742A PHY, revision %d", id2.model_revision);
+          break;
+        default:
+          goto err;
+    }
     return ESP_OK;
 err:
     return ret;
