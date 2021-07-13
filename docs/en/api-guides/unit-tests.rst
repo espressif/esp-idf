@@ -108,8 +108,8 @@ The normal test cases are expected to finish without reset (or only need to chec
 
     void check_deepsleep_reset_reason()
     {
-        RESET_REASON reason = rtc_get_reset_reason(0);
-        TEST_ASSERT(reason == DEEPSLEEP_RESET);
+        soc_reset_reason_t reason = esp_rom_get_reset_reason(0);
+        TEST_ASSERT(reason == RESET_REASON_CORE_DEEP_SLEEP);
     }
 
     TEST_CASE_MULTIPLE_STAGES("reset reason check for deepsleep", "[{IDF_TARGET_PATH_NAME}]", trigger_deepsleep, check_deepsleep_reset_reason);
@@ -173,7 +173,7 @@ Change into ``tools/unit-test-app`` directory to configure and build it:
 .. note::
 
     Due to inherent limitations of Windows command prompt, following syntax has to be used in order to build unit-test-app with multiple components: ``idf.py -T xxx -T yyy build`` or with escaped quoates: ``idf.py -T \`"xxx yyy\`" build`` in PowerShell or ``idf.py -T \^"ssd1306 hts221\^" build`` in Windows command prompt.
-    
+
 When the build finishes, it will print instructions for flashing the chip. You can simply run ``idf.py flash`` to flash all build output.
 
 You can also run ``idf.py -T all flash`` or ``idf.py -T xxx flash`` to build and flash. Everything needed will be rebuilt automatically before flashing.
@@ -285,7 +285,7 @@ Besides the usual IDF requirements, ``ruby`` is necessary to generate the mocks.
 
 In IDF, adjustments are necessary inside the component(s) that should be mocked as well as inside the unit test, compared to writing normal components or unit tests without mocking.
 
-Adjustments in Mock Component 
+Adjustments in Mock Component
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The component that should be mocked requires a separate ``mock`` directory containing all additional files needed specifically for the mocking. Most importantly, it contains ``mock_config.yaml`` which configures CMock. For more details on what the options inside that configuration file mean and how to write your own, please take a look at the :component_file:`CMock documentation <cmock/CMock/docs/CMock_Summary.md>`. It may be necessary to have some more files related to mocking which should also be placed inside the `mock` directory.

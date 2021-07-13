@@ -8,7 +8,8 @@
 #include "esp_flash_partitions.h"
 #include "esp_image_format.h"
 #include "esp_app_format.h"
-// RESET_REASON is declared in rom/rtc.h
+// [refactor-todo]: we shouldn't expose ROM header files in a public API header, remove them in v5.0
+// Tracked in IDF-1968
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32S2

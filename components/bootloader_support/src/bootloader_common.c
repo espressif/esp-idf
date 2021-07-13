@@ -194,5 +194,5 @@ void bootloader_common_vddsdio_configure(void)
 
 RESET_REASON bootloader_common_get_reset_reason(int cpu_no)
 {
-    return rtc_get_reset_reason(cpu_no);
+    return (RESET_REASON)esp_rom_get_reset_reason(cpu_no);
 }

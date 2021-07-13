@@ -17,21 +17,17 @@
 #include <bootloader_sha.h>
 #include "bootloader_util.h"
 #include "bootloader_common.h"
+#include "esp_rom_sys.h"
 #include "soc/soc_memory_layout.h"
 #if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/rtc.h"
 #include "esp32/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/rtc.h"
 #include "esp32s2/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/rtc.h"
 #include "esp32s3/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/rtc.h"
 #include "esp32c3/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/rtc.h"
 #include "esp32h2/rom/secure_boot.h"
 #endif
 
@@ -254,7 +250,7 @@ esp_err_t bootloader_load_image(const esp_partition_pos_t *part, esp_image_metad
 #if CONFIG_BOOTLOADER_SKIP_VALIDATE_ALWAYS
     mode = ESP_IMAGE_LOAD_NO_VALIDATE;
 #elif CONFIG_BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON
-    if (rtc_get_reset_reason(0) == POWERON_RESET) {
+    if (esp_rom_get_reset_reason(0) == RESET_REASON_CHIP_POWER_ON) {
         mode = ESP_IMAGE_LOAD_NO_VALIDATE;
     }
 #endif // CONFIG_BOOTLOADER_SKIP_...
@@ -685,7 +681,7 @@ static bool should_load(uint32_t load_addr)
 {
     /* Reload the RTC memory segments whenever a non-deepsleep reset
        is occurring */
-    bool load_rtc_memory = rtc_get_reset_reason(0) != DEEPSLEEP_RESET;
+    bool load_rtc_memory = esp_rom_get_reset_reason(0) != RESET_REASON_CORE_DEEP_SLEEP;
 
     if (should_map(load_addr)) {
         return false;

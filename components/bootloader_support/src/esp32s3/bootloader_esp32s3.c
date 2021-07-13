@@ -265,12 +265,18 @@ static void wdt_reset_info_dump(int cpu)
 static void bootloader_check_wdt_reset(void)
 {
     int wdt_rst = 0;
-    RESET_REASON rst_reas[2];
+    soc_reset_reason_t rst_reas[2];
 
-    rst_reas[0] = rtc_get_reset_reason(0);
-    if (rst_reas[0] == RTCWDT_SYS_RESET || rst_reas[0] == TG0WDT_SYS_RESET || rst_reas[0] == TG1WDT_SYS_RESET ||
-            rst_reas[0] == TG0WDT_CPU_RESET || rst_reas[0] == TG1WDT_CPU_RESET || rst_reas[0] == RTCWDT_CPU_RESET) {
+    rst_reas[0] = esp_rom_get_reset_reason(0);
+    rst_reas[1] = esp_rom_get_reset_reason(1);
+    if (rst_reas[0] == RESET_REASON_CORE_RTC_WDT || rst_reas[0] == RESET_REASON_CORE_MWDT0 || rst_reas[0] == RESET_REASON_CORE_MWDT1 ||
+        rst_reas[0] == RESET_REASON_CPU0_MWDT0 || rst_reas[0] == RESET_REASON_CPU0_RTC_WDT) {
         ESP_LOGW(TAG, "PRO CPU has been reset by WDT.");
+        wdt_rst = 1;
+    }
+    if (rst_reas[1] == RESET_REASON_CORE_RTC_WDT || rst_reas[1] == RESET_REASON_CORE_MWDT0 || rst_reas[1] == RESET_REASON_CORE_MWDT1 ||
+        rst_reas[1] == RESET_REASON_CPU1_MWDT1 || rst_reas[1] == RESET_REASON_CPU1_RTC_WDT) {
+        ESP_LOGW(TAG, "APP CPU has been reset by WDT.");
         wdt_rst = 1;
     }
     if (wdt_rst) {

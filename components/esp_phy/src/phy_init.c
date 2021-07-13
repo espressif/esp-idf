@@ -34,17 +34,12 @@
 #include "driver/periph_ctrl.h"
 #include "esp_private/wifi.h"
 #include "esp_rom_crc.h"
+#include "esp_rom_sys.h"
 
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/rtc.h"
+#if CONFIG_IDF_TARGET_ESP32C3
 #include "soc/rtc_cntl_reg.h"
 #include "soc/syscon_reg.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/syscon_reg.h"
 #endif
@@ -605,12 +600,9 @@ void esp_phy_load_cal_and_init(void)
     }
 
     memcpy(init_data, phy_init_data, sizeof(esp_phy_init_data_t));
-#if CONFIG_IDF_TARGET_ESP32
-    // ToDo: remove once esp_reset_reason is supported on esp32s2
     if (esp_reset_reason() == ESP_RST_BROWNOUT) {
         esp_phy_reduce_tx_power(init_data);
     }
-#endif
 #else
     const esp_phy_init_data_t* init_data = esp_phy_get_init_data();
     if (init_data == NULL) {
@@ -622,7 +614,7 @@ void esp_phy_load_cal_and_init(void)
 #ifdef CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
     esp_phy_calibration_mode_t calibration_mode = PHY_RF_CAL_PARTIAL;
     uint8_t sta_mac[6];
-    if (rtc_get_reset_reason(0) == DEEPSLEEP_RESET) {
+    if (esp_rom_get_reset_reason(0) == RESET_REASON_CORE_DEEP_SLEEP) {
         calibration_mode = PHY_RF_CAL_NONE;
     }
     esp_err_t err = esp_phy_load_cal_data_from_nvs(cal_data);
