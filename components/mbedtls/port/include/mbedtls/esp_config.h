@@ -1193,7 +1193,11 @@
  *
  * Comment to skip keyUsage checking for both CA and leaf certificates.
  */
+#ifdef CONFIG_MBEDTLS_X509_CHECK_KEY_USAGE
 #define MBEDTLS_X509_CHECK_KEY_USAGE
+#else
+#undef MBEDTLS_X509_CHECK_KEY_USAGE
+#endif
 
 /**
  * \def MBEDTLS_X509_CHECK_EXTENDED_KEY_USAGE
@@ -1206,7 +1210,11 @@
  *
  * Comment to skip extendedKeyUsage checking for certificates.
  */
+#ifdef CONFIG_MBEDTLS_X509_CHECK_EXTENDED_KEY_USAGE
 #define MBEDTLS_X509_CHECK_EXTENDED_KEY_USAGE
+#else
+#undef MBEDTLS_X509_CHECK_EXTENDED_KEY_USAGE
+#endif
 
 /**
  * \def MBEDTLS_X509_RSASSA_PSS_SUPPORT
