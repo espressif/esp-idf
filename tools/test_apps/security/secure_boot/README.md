@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 |
-| ----------------- | ----- |
+| Supported Targets | ESP32 | ESP32-S2 |
+| ----------------- | ----- | -------- |
 
 # Secure Boot
 

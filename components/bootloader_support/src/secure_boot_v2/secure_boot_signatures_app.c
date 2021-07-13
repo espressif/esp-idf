@@ -182,7 +182,7 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
     ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0);
     if (ret != 0) {
         ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned -0x%04x\n", ret);
-        goto exit;
+        goto exit_outer;
     }
 
 #ifdef CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
@@ -234,19 +234,19 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
         ret = mbedtls_rsa_import(&pk, &N, NULL, NULL, NULL, &e);
         if (ret != 0) {
             ESP_LOGE(TAG, "Failed mbedtls_rsa_import, err: %d", ret);
-            goto exit;
+            goto exit_inner;
         }
 
         ret = mbedtls_rsa_complete(&pk);
         if (ret != 0) {
             ESP_LOGE(TAG, "Failed mbedtls_rsa_complete, err: %d", ret);
-            goto exit;
+            goto exit_inner;
         }
 
         ret = mbedtls_rsa_check_pubkey(&pk);
         if (ret != 0) {
             ESP_LOGI(TAG, "Key is not an RSA key -%0x", -ret);
-            goto exit;
+            goto exit_inner;
         }
 
         /* Signature needs to be byte swapped into BE representation */
@@ -257,7 +257,7 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
         ret = mbedtls_rsa_public( &pk, sig_be, buf);
         if (ret != 0) {
             ESP_LOGE(TAG, "mbedtls_rsa_public failed, err: %d", ret);
-            goto exit;
+            goto exit_inner;
         }
 
         ret = mbedtls_rsa_rsassa_pss_verify( &pk, mbedtls_ctr_drbg_random, &ctr_drbg, MBEDTLS_RSA_PUBLIC, MBEDTLS_MD_SHA256, ESP_SECURE_BOOT_DIGEST_LEN,
@@ -267,13 +267,14 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
         } else {
             ESP_LOGI(TAG, "Signature verified successfully!");
         }
-exit:
+exit_inner:
         mbedtls_rsa_free(&pk);
         if (ret == 0) {
             break;
         }
     }
 
+ exit_outer:
     free(sig_be);
     free(buf);
     return (ret != 0 || any_trusted_key == false) ? ESP_ERR_IMAGE_INVALID: ESP_OK;
