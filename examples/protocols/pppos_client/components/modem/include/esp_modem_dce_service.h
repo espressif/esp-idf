@@ -62,28 +62,6 @@ static inline void strip_cr_lf_tail(char *str, uint32_t len)
 esp_err_t esp_modem_dce_handle_response_default(modem_dce_t *dce, const char *line);
 
 /**
- * @brief Handle response from AT+CSQ (Get signal quality)
- *
- * @param dce Modem DCE object
- * @param line line string
- * @return esp_err_t
- *      - ESP_OK on success
- *      - ESP_FAIL on error
- */
-esp_err_t esp_modem_dce_handle_csq(modem_dce_t *dce, const char *line);
-
-/**
- * @brief Handle response from AT+CBC (Get battery status)
- *
- * @param dce Modem DCE object
- * @param line line string
- * @return esp_err_t
- *      - ESP_OK on success
- *      - ESP_FAIL on error
- */
-esp_err_t esp_modem_dce_handle_cbc(modem_dce_t *dce, const char *line);
-
-/**
  * @brief Handle response from +++ (Set Working Mode)
  *
  * @param dce Modem DCE object
@@ -104,50 +82,6 @@ esp_err_t esp_modem_dce_handle_exit_data_mode(modem_dce_t *dce, const char *line
  *      - ESP_FAIL on error
  */
 esp_err_t esp_modem_dce_handle_atd_ppp(modem_dce_t *dce, const char *line);
-
-/**
- * @brief Handle response from AT+CGMM (Get DCE module name)
- *
- * @param dce Modem DCE object
- * @param line line string
- * @return esp_err_t
- *      - ESP_OK on success
- *      - ESP_FAIL on error
- */
-esp_err_t esp_modem_dce_handle_cgmm(modem_dce_t *dce, const char *line);
-
-/**
- * @brief Handle response from AT+CGSN (Get DCE module IMEI number)
- *
- * @param dce Modem DCE object
- * @param line line string
- * @return esp_err_t
- *      - ESP_OK on success
- *      - ESP_FAIL on error
- */
-esp_err_t esp_modem_dce_handle_cgsn(modem_dce_t *dce, const char *line);
-
-/**
- * @brief Handle response from AT+CIMI (Get DCE module IMSI number)
- *
- * @param dce Modem DCE object
- * @param line line string
- * @return esp_err_t
- *      - ESP_OK on success
- *      - ESP_FAIL on error
- */
-esp_err_t esp_modem_dce_handle_cimi(modem_dce_t *dce, const char *line);
-
-/**
- * @brief Handle response from AT+COPS? (Get Operator's name)
- *
- * @param dce Modem DCE object
- * @param line line string
- * @return esp_err_t
- *      - ESP_OK on success
- *      - ESP_FAIL on error
- */
-esp_err_t esp_modem_dce_handle_cops(modem_dce_t *dce, const char *line);
 
 /**
  * @brief Syncronization
