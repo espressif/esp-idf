@@ -5,3 +5,5 @@ entries:
     tasks:vTaskStartScheduler (default)
     port:xPortStartScheduler (default)
     port:pxPortInitialiseStack (default)
+    if FREERTOS_SUPPORT_STATIC_ALLOCATION = y:
+        queue:xQueueGenericCreateStatic (default)
