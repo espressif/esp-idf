@@ -82,7 +82,7 @@ static void example_timer_init(int timer_idx, bool auto_reload)
     ret = timer_enable_intr(TIMER_GROUP_0, TIMER_0);
     ESP_ERROR_CHECK(ret);
     /* Register an ISR handler */
-    timer_isr_register(TIMER_GROUP_0, timer_idx, timer0_ISR, (void *)raw_val, ESP_INTR_FLAG_IRAM, NULL);
+    timer_isr_register(TIMER_GROUP_0, timer_idx, timer0_ISR, (void *)raw_val, 0, NULL);
 }
 
  static void prepare_data(int pnt_num)
