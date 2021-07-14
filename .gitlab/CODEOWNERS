@@ -125,7 +125,7 @@
 /components/protocomm/                @esp-idf-codeowners/app-utilities
 /components/pthread/                  @esp-idf-codeowners/system
 /components/sdmmc/                    @esp-idf-codeowners/storage
-/components/soc/                      @esp-idf-codeowners/peripherals
+/components/soc/                      @esp-idf-codeowners/peripherals @esp-idf-codeowners/system
 /components/spi_flash/                @esp-idf-codeowners/peripherals
 /components/spiffs/                   @esp-idf-codeowners/storage
 /components/tcp_transport/            @esp-idf-codeowners/network
