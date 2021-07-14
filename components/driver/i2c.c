@@ -10,6 +10,7 @@
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
+#include "esp_check.h"
 #include "malloc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -27,10 +28,6 @@
 #include <sys/param.h>
 
 static const char *I2C_TAG = "i2c";
-#define I2C_CHECK(a, str, ret)  if(!(a)) {                                             \
-        ESP_LOGE(I2C_TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str);                   \
-        return (ret);                                                                  \
-        }
 
 /* DRAM_ATTR is required to avoid I2C array placed in flash, due to accessed from ISR */
 
@@ -243,9 +240,9 @@ has only 32 bytes.
 esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_buf_len, size_t slv_tx_buf_len,
                              int intr_alloc_flags)
 {
-    I2C_CHECK(i2c_num < I2C_NUM_MAX, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK(mode == I2C_MODE_MASTER || ( slv_rx_buf_len > 100 || slv_tx_buf_len > 100 ), I2C_SLAVE_BUFFER_LEN_ERR_STR,
-              ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(i2c_num < I2C_NUM_MAX, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
+    ESP_RETURN_ON_FALSE(mode == I2C_MODE_MASTER || ( slv_rx_buf_len > 100 || slv_tx_buf_len > 100 ),
+              ESP_ERR_INVALID_ARG, I2C_TAG, I2C_SLAVE_BUFFER_LEN_ERR_STR);
     if (p_i2c_obj[i2c_num] == NULL) {
 
 #if !CONFIG_SPIRAM_USE_MALLOC
@@ -402,8 +399,8 @@ err:
 
 esp_err_t i2c_driver_delete(i2c_port_t i2c_num)
 {
-    I2C_CHECK(i2c_num < I2C_NUM_MAX, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK(p_i2c_obj[i2c_num] != NULL, I2C_DRIVER_ERR_STR, ESP_FAIL);
+    ESP_RETURN_ON_FALSE(i2c_num < I2C_NUM_MAX, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
+    ESP_RETURN_ON_FALSE(p_i2c_obj[i2c_num] != NULL, ESP_FAIL, I2C_TAG, I2C_DRIVER_ERR_STR);
 
     i2c_obj_t *p_i2c = p_i2c_obj[i2c_num];
     i2c_hal_disable_intr_mask(&(i2c_context[i2c_num].hal), I2C_LL_INTR_MASK);
@@ -459,7 +456,7 @@ esp_err_t i2c_driver_delete(i2c_port_t i2c_num)
 
 esp_err_t i2c_reset_tx_fifo(i2c_port_t i2c_num)
 {
-    I2C_CHECK(i2c_num < I2C_NUM_MAX, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(i2c_num < I2C_NUM_MAX, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
     I2C_ENTER_CRITICAL(&(i2c_context[i2c_num].spinlock));
     i2c_hal_txfifo_rst(&(i2c_context[i2c_num].hal));
     I2C_EXIT_CRITICAL(&(i2c_context[i2c_num].spinlock));
@@ -468,7 +465,7 @@ esp_err_t i2c_reset_tx_fifo(i2c_port_t i2c_num)
 
 esp_err_t i2c_reset_rx_fifo(i2c_port_t i2c_num)
 {
-    I2C_CHECK(i2c_num < I2C_NUM_MAX, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(i2c_num < I2C_NUM_MAX, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
     I2C_ENTER_CRITICAL(&(i2c_context[i2c_num].spinlock));
     i2c_hal_rxfifo_rst(&(i2c_context[i2c_num].hal));
     I2C_EXIT_CRITICAL(&(i2c_context[i2c_num].spinlock));
@@ -537,9 +534,9 @@ static void IRAM_ATTR i2c_isr_handler_default(void *arg)
 
 esp_err_t i2c_set_data_mode(i2c_port_t i2c_num, i2c_trans_mode_t tx_trans_mode, i2c_trans_mode_t rx_trans_mode)
 {
-    I2C_CHECK(i2c_num < I2C_NUM_MAX, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK(tx_trans_mode < I2C_DATA_MODE_MAX, I2C_TRANS_MODE_ERR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK(rx_trans_mode < I2C_DATA_MODE_MAX, I2C_TRANS_MODE_ERR_STR, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(i2c_num < I2C_NUM_MAX, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
+    ESP_RETURN_ON_FALSE(tx_trans_mode < I2C_DATA_MODE_MAX, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_TRANS_MODE_ERR_STR);
+    ESP_RETURN_ON_FALSE(rx_trans_mode < I2C_DATA_MODE_MAX, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_TRANS_MODE_ERR_STR);
     I2C_ENTER_CRITICAL(&(i2c_context[i2c_num].spinlock));
     i2c_hal_set_data_mode(&(i2c_context[i2c_num].hal), tx_trans_mode, rx_trans_mode);
     I2C_EXIT_CRITICAL(&(i2c_context[i2c_num].spinlock));
@@ -548,7 +545,7 @@ esp_err_t i2c_set_data_mode(i2c_port_t i2c_num, i2c_trans_mode_t tx_trans_mode, 
 
 esp_err_t i2c_get_data_mode(i2c_port_t i2c_num, i2c_trans_mode_t *tx_trans_mode, i2c_trans_mode_t *rx_trans_mode)
 {
-    I2C_CHECK(i2c_num < I2C_NUM_MAX, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(i2c_num < I2C_NUM_MAX, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
     i2c_hal_get_data_mode(&(i2c_context[i2c_num].hal), tx_trans_mode, rx_trans_mode);
     return ESP_OK;
 }
@@ -651,11 +648,11 @@ static i2c_sclk_t i2c_get_clk_src(const i2c_config_t *i2c_conf)
 
 esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t *i2c_conf)
 {
-    I2C_CHECK(i2c_num < I2C_NUM_MAX, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK(i2c_conf != NULL, I2C_ADDR_ERROR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK(i2c_conf->mode < I2C_MODE_MAX, I2C_MODE_ERR_STR, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(i2c_num < I2C_NUM_MAX, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
+    ESP_RETURN_ON_FALSE(i2c_conf != NULL, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_ADDR_ERROR_STR);
+    ESP_RETURN_ON_FALSE(i2c_conf->mode < I2C_MODE_MAX, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_MODE_ERR_STR);
     if (i2c_conf->mode == I2C_MODE_MASTER) {
-        I2C_CHECK(i2c_get_clk_src(i2c_conf) != I2C_SCLK_MAX, I2C_CLK_FLAG_ERR_STR, ESP_ERR_INVALID_ARG);
+        ESP_RETURN_ON_FALSE(i2c_get_clk_src(i2c_conf) != I2C_SCLK_MAX, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_CLK_FLAG_ERR_STR);
     }
 
     esp_err_t ret = i2c_set_pin(i2c_num, i2c_conf->sda_io_num, i2c_conf->scl_io_num,
@@ -689,9 +686,9 @@ esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t *i2c_conf)
 
 esp_err_t i2c_set_period(i2c_port_t i2c_num, int high_period, int low_period)
 {
-    I2C_CHECK(i2c_num < I2C_NUM_MAX, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK((high_period <= I2C_SCL_HIGH_PERIOD_V) && (high_period > 0), I2C_TIMEING_VAL_ERR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK((low_period <= I2C_SCL_LOW_PERIOD_V) && (low_period > 0), I2C_TIMEING_VAL_ERR_STR, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(i2c_num < I2C_NUM_MAX, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
+    ESP_RETURN_ON_FALSE((high_period <= I2C_SCL_HIGH_PERIOD_V) && (high_period > 0), ESP_ERR_INVALID_ARG, I2C_TAG, I2C_TIMEING_VAL_ERR_STR);
+    ESP_RETURN_ON_FALSE((low_period <= I2C_SCL_LOW_PERIOD_V) && (low_period > 0), ESP_ERR_INVALID_ARG, I2C_TAG, I2C_TIMEING_VAL_ERR_STR);
 
     I2C_ENTER_CRITICAL(&(i2c_context[i2c_num].spinlock));
     i2c_hal_set_scl_timing(&(i2c_context[i2c_num].hal), high_period, low_period);
@@ -701,7 +698,7 @@ esp_err_t i2c_set_period(i2c_port_t i2c_num, int high_period, int low_period)
 
 esp_err_t i2c_get_period(i2c_port_t i2c_num, int *high_period, int *low_period)
 {
-    I2C_CHECK(i2c_num < I2C_NUM_MAX && high_period != NULL && low_period != NULL, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(i2c_num < I2C_NUM_MAX && high_period != NULL && low_period != NULL, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
     I2C_ENTER_CRITICAL(&(i2c_context[i2c_num].spinlock));
     i2c_hal_get_scl_timing(&(i2c_context[i2c_num].hal), high_period, low_period);
     I2C_EXIT_CRITICAL(&(i2c_context[i2c_num].spinlock));
@@ -710,8 +707,8 @@ esp_err_t i2c_get_period(i2c_port_t i2c_num, int *high_period, int *low_period)
 
 esp_err_t i2c_filter_enable(i2c_port_t i2c_num, uint8_t cyc_num)
 {
-    I2C_CHECK(i2c_num < I2C_NUM_MAX, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK(p_i2c_obj[i2c_num] != NULL, I2C_DRIVER_ERR_STR, ESP_FAIL);
+    ESP_RETURN_ON_FALSE(i2c_num < I2C_NUM_MAX, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
+    ESP_RETURN_ON_FALSE(p_i2c_obj[i2c_num] != NULL, ESP_FAIL, I2C_TAG, I2C_DRIVER_ERR_STR);
     I2C_ENTER_CRITICAL(&(i2c_context[i2c_num].spinlock));
     i2c_hal_set_filter(&(i2c_context[i2c_num].hal), cyc_num);
     I2C_EXIT_CRITICAL(&(i2c_context[i2c_num].spinlock));
@@ -720,7 +717,7 @@ esp_err_t i2c_filter_enable(i2c_port_t i2c_num, uint8_t cyc_num)
 
 esp_err_t i2c_filter_disable(i2c_port_t i2c_num)
 {
-    I2C_CHECK(i2c_num < I2C_NUM_MAX, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(i2c_num < I2C_NUM_MAX, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
     I2C_ENTER_CRITICAL(&(i2c_context[i2c_num].spinlock));
     i2c_hal_set_filter(&(i2c_context[i2c_num].hal), 0);
     I2C_EXIT_CRITICAL(&(i2c_context[i2c_num].spinlock));
@@ -729,9 +726,9 @@ esp_err_t i2c_filter_disable(i2c_port_t i2c_num)
 
 esp_err_t i2c_set_start_timing(i2c_port_t i2c_num, int setup_time, int hold_time)
 {
-    I2C_CHECK(i2c_num < I2C_NUM_MAX, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK((hold_time <= I2C_SCL_START_HOLD_TIME_V) && (hold_time > 0), I2C_TIMEING_VAL_ERR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK((setup_time <= I2C_SCL_RSTART_SETUP_TIME_V) && (setup_time > 0), I2C_TIMEING_VAL_ERR_STR, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(i2c_num < I2C_NUM_MAX, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
+    ESP_RETURN_ON_FALSE((hold_time <= I2C_SCL_START_HOLD_TIME_V) && (hold_time > 0), ESP_ERR_INVALID_ARG, I2C_TAG, I2C_TIMEING_VAL_ERR_STR);
+    ESP_RETURN_ON_FALSE((setup_time <= I2C_SCL_RSTART_SETUP_TIME_V) && (setup_time > 0), ESP_ERR_INVALID_ARG, I2C_TAG, I2C_TIMEING_VAL_ERR_STR);
 
     I2C_ENTER_CRITICAL(&(i2c_context[i2c_num].spinlock));
     i2c_hal_set_start_timing(&(i2c_context[i2c_num].hal), setup_time, hold_time);
@@ -741,7 +738,7 @@ esp_err_t i2c_set_start_timing(i2c_port_t i2c_num, int setup_time, int hold_time
 
 esp_err_t i2c_get_start_timing(i2c_port_t i2c_num, int *setup_time, int *hold_time)
 {
-    I2C_CHECK(i2c_num < I2C_NUM_MAX && setup_time != NULL && hold_time != NULL, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(i2c_num < I2C_NUM_MAX && setup_time != NULL && hold_time != NULL, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
     I2C_ENTER_CRITICAL(&(i2c_context[i2c_num].spinlock));
     i2c_hal_get_start_timing(&(i2c_context[i2c_num].hal), setup_time, hold_time);
     I2C_EXIT_CRITICAL(&(i2c_context[i2c_num].spinlock));
@@ -750,9 +747,9 @@ esp_err_t i2c_get_start_timing(i2c_port_t i2c_num, int *setup_time, int *hold_ti
 
 esp_err_t i2c_set_stop_timing(i2c_port_t i2c_num, int setup_time, int hold_time)
 {
-    I2C_CHECK(i2c_num < I2C_NUM_MAX, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK((setup_time <= I2C_SCL_STOP_SETUP_TIME_V) && (setup_time > 0), I2C_TIMEING_VAL_ERR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK((hold_time <= I2C_SCL_STOP_HOLD_TIME_V) && (hold_time > 0), I2C_TIMEING_VAL_ERR_STR, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(i2c_num < I2C_NUM_MAX, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
+    ESP_RETURN_ON_FALSE((setup_time <= I2C_SCL_STOP_SETUP_TIME_V) && (setup_time > 0), ESP_ERR_INVALID_ARG, I2C_TAG, I2C_TIMEING_VAL_ERR_STR);
+    ESP_RETURN_ON_FALSE((hold_time <= I2C_SCL_STOP_HOLD_TIME_V) && (hold_time > 0), ESP_ERR_INVALID_ARG, I2C_TAG, I2C_TIMEING_VAL_ERR_STR);
 
     I2C_ENTER_CRITICAL(&(i2c_context[i2c_num].spinlock));
     i2c_hal_set_stop_timing(&(i2c_context[i2c_num].hal), setup_time, hold_time);
@@ -762,7 +759,7 @@ esp_err_t i2c_set_stop_timing(i2c_port_t i2c_num, int setup_time, int hold_time)
 
 esp_err_t i2c_get_stop_timing(i2c_port_t i2c_num, int *setup_time, int *hold_time)
 {
-    I2C_CHECK(i2c_num < I2C_NUM_MAX && setup_time != NULL && hold_time != NULL, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(i2c_num < I2C_NUM_MAX && setup_time != NULL && hold_time != NULL, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
     I2C_ENTER_CRITICAL(&(i2c_context[i2c_num].spinlock));
     i2c_hal_get_stop_timing(&(i2c_context[i2c_num].hal), setup_time, hold_time);
     I2C_EXIT_CRITICAL(&(i2c_context[i2c_num].spinlock));
@@ -771,9 +768,9 @@ esp_err_t i2c_get_stop_timing(i2c_port_t i2c_num, int *setup_time, int *hold_tim
 
 esp_err_t i2c_set_data_timing(i2c_port_t i2c_num, int sample_time, int hold_time)
 {
-    I2C_CHECK(i2c_num < I2C_NUM_MAX, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK((sample_time <= I2C_SDA_SAMPLE_TIME_V) && (sample_time > 0), I2C_TIMEING_VAL_ERR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK((hold_time <= I2C_SDA_HOLD_TIME_V) && (hold_time > 0), I2C_TIMEING_VAL_ERR_STR, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(i2c_num < I2C_NUM_MAX, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
+    ESP_RETURN_ON_FALSE((sample_time <= I2C_SDA_SAMPLE_TIME_V) && (sample_time > 0), ESP_ERR_INVALID_ARG, I2C_TAG, I2C_TIMEING_VAL_ERR_STR);
+    ESP_RETURN_ON_FALSE((hold_time <= I2C_SDA_HOLD_TIME_V) && (hold_time > 0), ESP_ERR_INVALID_ARG, I2C_TAG, I2C_TIMEING_VAL_ERR_STR);
 
     I2C_ENTER_CRITICAL(&(i2c_context[i2c_num].spinlock));
     i2c_hal_set_sda_timing(&(i2c_context[i2c_num].hal), sample_time, hold_time);
@@ -783,7 +780,7 @@ esp_err_t i2c_set_data_timing(i2c_port_t i2c_num, int sample_time, int hold_time
 
 esp_err_t i2c_get_data_timing(i2c_port_t i2c_num, int *sample_time, int *hold_time)
 {
-    I2C_CHECK(i2c_num < I2C_NUM_MAX && sample_time != NULL && hold_time != NULL, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(i2c_num < I2C_NUM_MAX && sample_time != NULL && hold_time != NULL, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
     I2C_ENTER_CRITICAL(&(i2c_context[i2c_num].spinlock));
     i2c_hal_get_sda_timing(&(i2c_context[i2c_num].hal), sample_time, hold_time);
     I2C_EXIT_CRITICAL(&(i2c_context[i2c_num].spinlock));
@@ -792,8 +789,8 @@ esp_err_t i2c_get_data_timing(i2c_port_t i2c_num, int *sample_time, int *hold_ti
 
 esp_err_t i2c_set_timeout(i2c_port_t i2c_num, int timeout)
 {
-    I2C_CHECK(i2c_num < I2C_NUM_MAX, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK((timeout <= I2C_LL_MAX_TIMEOUT) && (timeout > 0), I2C_TIMEING_VAL_ERR_STR, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(i2c_num < I2C_NUM_MAX, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
+    ESP_RETURN_ON_FALSE((timeout <= I2C_LL_MAX_TIMEOUT) && (timeout > 0), ESP_ERR_INVALID_ARG, I2C_TAG, I2C_TIMEING_VAL_ERR_STR);
 
     I2C_ENTER_CRITICAL(&(i2c_context[i2c_num].spinlock));
     i2c_hal_set_tout(&(i2c_context[i2c_num].hal), timeout);
@@ -803,15 +800,15 @@ esp_err_t i2c_set_timeout(i2c_port_t i2c_num, int timeout)
 
 esp_err_t i2c_get_timeout(i2c_port_t i2c_num, int *timeout)
 {
-    I2C_CHECK(i2c_num < I2C_NUM_MAX && timeout != NULL, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(i2c_num < I2C_NUM_MAX && timeout != NULL, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
     i2c_hal_get_tout(&(i2c_context[i2c_num].hal), timeout);
     return ESP_OK;
 }
 
 esp_err_t i2c_isr_register(i2c_port_t i2c_num, void (*fn)(void *), void *arg, int intr_alloc_flags, intr_handle_t *handle)
 {
-    I2C_CHECK(i2c_num < I2C_NUM_MAX, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK(fn != NULL, I2C_ADDR_ERROR_STR, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(i2c_num < I2C_NUM_MAX, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
+    ESP_RETURN_ON_FALSE(fn != NULL, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_ADDR_ERROR_STR);
     esp_err_t ret = esp_intr_alloc(i2c_periph_signal[i2c_num].irq, intr_alloc_flags, fn, arg, handle);
     return ret;
 }
@@ -823,20 +820,20 @@ esp_err_t i2c_isr_free(intr_handle_t handle)
 
 esp_err_t i2c_set_pin(i2c_port_t i2c_num, int sda_io_num, int scl_io_num, bool sda_pullup_en, bool scl_pullup_en, i2c_mode_t mode)
 {
-    I2C_CHECK(( i2c_num < I2C_NUM_MAX ), I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK(((sda_io_num < 0) || ((GPIO_IS_VALID_OUTPUT_GPIO(sda_io_num)))), I2C_SDA_IO_ERR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK(scl_io_num < 0 ||
+    ESP_RETURN_ON_FALSE(( i2c_num < I2C_NUM_MAX ), ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
+    ESP_RETURN_ON_FALSE(((sda_io_num < 0) || ((GPIO_IS_VALID_OUTPUT_GPIO(sda_io_num)))), ESP_ERR_INVALID_ARG, I2C_TAG, I2C_SDA_IO_ERR_STR);
+    ESP_RETURN_ON_FALSE(scl_io_num < 0 ||
               (GPIO_IS_VALID_OUTPUT_GPIO(scl_io_num)) ||
               (GPIO_IS_VALID_GPIO(scl_io_num) && mode == I2C_MODE_SLAVE),
-              I2C_SCL_IO_ERR_STR,
-              ESP_ERR_INVALID_ARG);
-    I2C_CHECK(sda_io_num < 0 ||
+              ESP_ERR_INVALID_ARG, I2C_TAG,
+              I2C_SCL_IO_ERR_STR);
+    ESP_RETURN_ON_FALSE(sda_io_num < 0 ||
               (sda_pullup_en == GPIO_PULLUP_ENABLE && GPIO_IS_VALID_OUTPUT_GPIO(sda_io_num)) ||
-              sda_pullup_en == GPIO_PULLUP_DISABLE, I2C_GPIO_PULLUP_ERR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK(scl_io_num < 0 ||
+              sda_pullup_en == GPIO_PULLUP_DISABLE, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_GPIO_PULLUP_ERR_STR);
+    ESP_RETURN_ON_FALSE(scl_io_num < 0 ||
               (scl_pullup_en == GPIO_PULLUP_ENABLE && GPIO_IS_VALID_OUTPUT_GPIO(scl_io_num)) ||
-              scl_pullup_en == GPIO_PULLUP_DISABLE, I2C_GPIO_PULLUP_ERR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK((sda_io_num != scl_io_num), I2C_SCL_SDA_EQUAL_ERR_STR, ESP_ERR_INVALID_ARG);
+              scl_pullup_en == GPIO_PULLUP_DISABLE, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_GPIO_PULLUP_ERR_STR);
+    ESP_RETURN_ON_FALSE((sda_io_num != scl_io_num), ESP_ERR_INVALID_ARG, I2C_TAG, I2C_SCL_SDA_EQUAL_ERR_STR);
 
     int sda_in_sig, sda_out_sig, scl_in_sig, scl_out_sig;
     sda_out_sig = i2c_periph_signal[i2c_num].sda_out_sig;
@@ -1128,7 +1125,7 @@ static esp_err_t i2c_cmd_link_append(i2c_cmd_handle_t cmd_handle, i2c_cmd_t *cmd
 
 esp_err_t i2c_master_start(i2c_cmd_handle_t cmd_handle)
 {
-    I2C_CHECK(cmd_handle != NULL, I2C_CMD_LINK_INIT_ERR_STR, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(cmd_handle != NULL, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_CMD_LINK_INIT_ERR_STR);
     i2c_cmd_t cmd = { 0 };
     cmd.hw_cmd.op_code = I2C_LL_CMD_RESTART;
     return i2c_cmd_link_append(cmd_handle, &cmd);
@@ -1136,7 +1133,7 @@ esp_err_t i2c_master_start(i2c_cmd_handle_t cmd_handle)
 
 esp_err_t i2c_master_stop(i2c_cmd_handle_t cmd_handle)
 {
-    I2C_CHECK(cmd_handle != NULL, I2C_CMD_LINK_INIT_ERR_STR, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(cmd_handle != NULL, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_CMD_LINK_INIT_ERR_STR);
     i2c_cmd_t cmd = { 0 };
     cmd.hw_cmd.op_code = I2C_LL_CMD_STOP;
     return i2c_cmd_link_append(cmd_handle, &cmd);
@@ -1144,8 +1141,8 @@ esp_err_t i2c_master_stop(i2c_cmd_handle_t cmd_handle)
 
 esp_err_t i2c_master_write(i2c_cmd_handle_t cmd_handle, const uint8_t *data, size_t data_len, bool ack_en)
 {
-    I2C_CHECK((data != NULL), I2C_ADDR_ERROR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK(cmd_handle != NULL, I2C_CMD_LINK_INIT_ERR_STR, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE((data != NULL), ESP_ERR_INVALID_ARG, I2C_TAG, I2C_ADDR_ERROR_STR);
+    ESP_RETURN_ON_FALSE(cmd_handle != NULL, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_CMD_LINK_INIT_ERR_STR);
 
     if (data_len == 1) {
         /* If data_len if 1, i2c_master_write_byte should have been called,
@@ -1167,7 +1164,7 @@ esp_err_t i2c_master_write(i2c_cmd_handle_t cmd_handle, const uint8_t *data, siz
 
 esp_err_t i2c_master_write_byte(i2c_cmd_handle_t cmd_handle, uint8_t data, bool ack_en)
 {
-    I2C_CHECK(cmd_handle != NULL, I2C_CMD_LINK_INIT_ERR_STR, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(cmd_handle != NULL, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_CMD_LINK_INIT_ERR_STR);
 
     i2c_cmd_t cmd = {
         .hw_cmd = {
@@ -1197,9 +1194,9 @@ static esp_err_t i2c_master_read_static(i2c_cmd_handle_t cmd_handle, uint8_t *da
 
 esp_err_t i2c_master_read_byte(i2c_cmd_handle_t cmd_handle, uint8_t *data, i2c_ack_type_t ack)
 {
-    I2C_CHECK((data != NULL), I2C_ADDR_ERROR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK(cmd_handle != NULL, I2C_CMD_LINK_INIT_ERR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK(ack < I2C_MASTER_ACK_MAX, I2C_ACK_TYPE_ERR_STR, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE((data != NULL), ESP_ERR_INVALID_ARG, I2C_TAG, I2C_ADDR_ERROR_STR);
+    ESP_RETURN_ON_FALSE(cmd_handle != NULL, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_CMD_LINK_INIT_ERR_STR);
+    ESP_RETURN_ON_FALSE(ack < I2C_MASTER_ACK_MAX, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_ACK_TYPE_ERR_STR);
 
     i2c_cmd_t cmd = {
         .hw_cmd = {
@@ -1215,10 +1212,10 @@ esp_err_t i2c_master_read_byte(i2c_cmd_handle_t cmd_handle, uint8_t *data, i2c_a
 
 esp_err_t i2c_master_read(i2c_cmd_handle_t cmd_handle, uint8_t *data, size_t data_len, i2c_ack_type_t ack)
 {
-    I2C_CHECK((data != NULL), I2C_ADDR_ERROR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK(cmd_handle != NULL, I2C_CMD_LINK_INIT_ERR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK(ack < I2C_MASTER_ACK_MAX, I2C_ACK_TYPE_ERR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK(data_len > 0, I2C_DATA_LEN_ERR_STR, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE((data != NULL), ESP_ERR_INVALID_ARG, I2C_TAG, I2C_ADDR_ERROR_STR);
+    ESP_RETURN_ON_FALSE(cmd_handle != NULL, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_CMD_LINK_INIT_ERR_STR);
+    ESP_RETURN_ON_FALSE(ack < I2C_MASTER_ACK_MAX, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_ACK_TYPE_ERR_STR);
+    ESP_RETURN_ON_FALSE(data_len > 0, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_DATA_LEN_ERR_STR);
 
     esp_err_t ret = ESP_OK;
 
@@ -1369,10 +1366,10 @@ static bool is_cmd_link_buffer_internal(const i2c_cmd_link_t *link)
 
 esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, TickType_t ticks_to_wait)
 {
-    I2C_CHECK(( i2c_num < I2C_NUM_MAX ), I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK(p_i2c_obj[i2c_num] != NULL, I2C_DRIVER_NOT_INSTALL_ERR_STR, ESP_ERR_INVALID_STATE);
-    I2C_CHECK(p_i2c_obj[i2c_num]->mode == I2C_MODE_MASTER, I2C_MASTER_MODE_ERR_STR, ESP_ERR_INVALID_STATE);
-    I2C_CHECK(cmd_handle != NULL, I2C_CMD_LINK_INIT_ERR_STR, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(( i2c_num < I2C_NUM_MAX ), ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
+    ESP_RETURN_ON_FALSE(p_i2c_obj[i2c_num] != NULL, ESP_ERR_INVALID_STATE, I2C_TAG, I2C_DRIVER_NOT_INSTALL_ERR_STR);
+    ESP_RETURN_ON_FALSE(p_i2c_obj[i2c_num]->mode == I2C_MODE_MASTER, ESP_ERR_INVALID_STATE, I2C_TAG, I2C_MASTER_MODE_ERR_STR);
+    ESP_RETURN_ON_FALSE(cmd_handle != NULL, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_CMD_LINK_INIT_ERR_STR);
 
 #if CONFIG_SPIRAM_USE_MALLOC
     //If the i2c read or write buffer is not in internal RAM, we will return ESP_FAIL
@@ -1480,10 +1477,10 @@ esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, 
 
 int i2c_slave_write_buffer(i2c_port_t i2c_num, const uint8_t *data, int size, TickType_t ticks_to_wait)
 {
-    I2C_CHECK(( i2c_num < I2C_NUM_MAX ), I2C_NUM_ERROR_STR, ESP_FAIL);
-    I2C_CHECK(p_i2c_obj[i2c_num] != NULL, I2C_DRIVER_ERR_STR, ESP_FAIL);
-    I2C_CHECK((data != NULL), I2C_ADDR_ERROR_STR, ESP_FAIL);
-    I2C_CHECK(p_i2c_obj[i2c_num]->mode == I2C_MODE_SLAVE, I2C_MODE_SLAVE_ERR_STR, ESP_FAIL);
+    ESP_RETURN_ON_FALSE(( i2c_num < I2C_NUM_MAX ), ESP_FAIL, I2C_TAG, I2C_NUM_ERROR_STR);
+    ESP_RETURN_ON_FALSE(p_i2c_obj[i2c_num] != NULL, ESP_FAIL, I2C_TAG, I2C_DRIVER_ERR_STR);
+    ESP_RETURN_ON_FALSE((data != NULL), ESP_FAIL, I2C_TAG, I2C_ADDR_ERROR_STR);
+    ESP_RETURN_ON_FALSE(p_i2c_obj[i2c_num]->mode == I2C_MODE_SLAVE, ESP_FAIL, I2C_TAG, I2C_MODE_SLAVE_ERR_STR);
     i2c_obj_t *p_i2c = p_i2c_obj[i2c_num];
 
     portBASE_TYPE res;
@@ -1510,10 +1507,10 @@ int i2c_slave_write_buffer(i2c_port_t i2c_num, const uint8_t *data, int size, Ti
 
 int i2c_slave_read_buffer(i2c_port_t i2c_num, uint8_t *data, size_t max_size, TickType_t ticks_to_wait)
 {
-    I2C_CHECK(( i2c_num < I2C_NUM_MAX ), I2C_NUM_ERROR_STR, ESP_FAIL);
-    I2C_CHECK(p_i2c_obj[i2c_num] != NULL, I2C_DRIVER_ERR_STR, ESP_FAIL);
-    I2C_CHECK((data != NULL), I2C_ADDR_ERROR_STR, ESP_FAIL);
-    I2C_CHECK(p_i2c_obj[i2c_num]->mode == I2C_MODE_SLAVE, I2C_MODE_SLAVE_ERR_STR, ESP_FAIL);
+    ESP_RETURN_ON_FALSE(( i2c_num < I2C_NUM_MAX ), ESP_FAIL, I2C_TAG, I2C_NUM_ERROR_STR);
+    ESP_RETURN_ON_FALSE(p_i2c_obj[i2c_num] != NULL, ESP_FAIL, I2C_TAG, I2C_DRIVER_ERR_STR);
+    ESP_RETURN_ON_FALSE((data != NULL), ESP_FAIL, I2C_TAG, I2C_ADDR_ERROR_STR);
+    ESP_RETURN_ON_FALSE(p_i2c_obj[i2c_num]->mode == I2C_MODE_SLAVE, ESP_FAIL, I2C_TAG, I2C_MODE_SLAVE_ERR_STR);
 
     size_t size = 0;
     size_t size_rem = max_size;
