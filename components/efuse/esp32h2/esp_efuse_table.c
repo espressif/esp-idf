@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 9e42b2f9dd879191ca75ad0cf50841a1
+// md5_digest_table aa238a3a131bf64a9386d3d4ce86a237
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -339,6 +339,10 @@ static const esp_efuse_desc_t SECURE_VERSION[] = {
     {EFUSE_BLK0, 142, 16}, 	 // Secure version for anti-rollback,
 };
 
+static const esp_efuse_desc_t BOOT_DISABLE_FAST_WAKE[] = {
+    {EFUSE_BLK0, 158, 1}, 	 // Fast verify on wake option in ROM for Secure Boot,
+};
+
 static const esp_efuse_desc_t MAC_FACTORY[] = {
     {EFUSE_BLK1, 40, 8}, 	 // Factory MAC addr [0],
     {EFUSE_BLK1, 32, 8}, 	 // Factory MAC addr [1],
@@ -346,6 +350,8 @@ static const esp_efuse_desc_t MAC_FACTORY[] = {
     {EFUSE_BLK1, 16, 8}, 	 // Factory MAC addr [3],
     {EFUSE_BLK1, 8, 8}, 	 // Factory MAC addr [4],
     {EFUSE_BLK1, 0, 8}, 	 // Factory MAC addr [5],
+    {EFUSE_BLK1, 123, 8}, 	 // Factory MAC addr [6],
+    {EFUSE_BLK1, 131, 8}, 	 // Factory MAC addr [7],
 };
 
 static const esp_efuse_desc_t SPI_PAD_CONFIG_CLK[] = {
@@ -482,30 +488,6 @@ static const esp_efuse_desc_t KEY5[] = {
 
 static const esp_efuse_desc_t SYS_DATA_PART2[] = {
     {EFUSE_BLK10, 0, 256}, 	 // System configuration,
-};
-
-static const esp_efuse_desc_t K_RTC_LDO[] = {
-    {EFUSE_BLK1, 135, 7}, 	 // BLOCK1 K_RTC_LDO,
-};
-
-static const esp_efuse_desc_t K_DIG_LDO[] = {
-    {EFUSE_BLK1, 142, 7}, 	 // BLOCK1 K_DIG_LDO,
-};
-
-static const esp_efuse_desc_t V_RTC_DBIAS20[] = {
-    {EFUSE_BLK1, 149, 8}, 	 // BLOCK1 voltage of rtc dbias20,
-};
-
-static const esp_efuse_desc_t V_DIG_DBIAS20[] = {
-    {EFUSE_BLK1, 157, 8}, 	 // BLOCK1 voltage of digital dbias20,
-};
-
-static const esp_efuse_desc_t DIG_DBIAS_HVT[] = {
-    {EFUSE_BLK1, 165, 5}, 	 // BLOCK1 digital dbias when hvt,
-};
-
-static const esp_efuse_desc_t THRES_HVT[] = {
-    {EFUSE_BLK1, 170, 10}, 	 // BLOCK1 pvt threshold when hvt,
 };
 
 
@@ -917,6 +899,11 @@ const esp_efuse_desc_t* ESP_EFUSE_SECURE_VERSION[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_BOOT_DISABLE_FAST_WAKE[] = {
+    &BOOT_DISABLE_FAST_WAKE[0],    		// Fast verify on wake option in ROM for Secure Boot
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_MAC_FACTORY[] = {
     &MAC_FACTORY[0],    		// Factory MAC addr [0]
     &MAC_FACTORY[1],    		// Factory MAC addr [1]
@@ -924,6 +911,8 @@ const esp_efuse_desc_t* ESP_EFUSE_MAC_FACTORY[] = {
     &MAC_FACTORY[3],    		// Factory MAC addr [3]
     &MAC_FACTORY[4],    		// Factory MAC addr [4]
     &MAC_FACTORY[5],    		// Factory MAC addr [5]
+    &MAC_FACTORY[6],    		// Factory MAC addr [6]
+    &MAC_FACTORY[7],    		// Factory MAC addr [7]
     NULL
 };
 
@@ -988,7 +977,7 @@ const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[] = {
-    &PKG_VERSION[0],    		// Package version 0:ESP32C3
+    &PKG_VERSION[0],    		// Package version 0:ESP32H2
     NULL
 };
 
@@ -1094,35 +1083,5 @@ const esp_efuse_desc_t* ESP_EFUSE_KEY5[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_SYS_DATA_PART2[] = {
     &SYS_DATA_PART2[0],    		// System configuration
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_K_RTC_LDO[] = {
-    &K_RTC_LDO[0],    		// BLOCK1 K_RTC_LDO
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_K_DIG_LDO[] = {
-    &K_DIG_LDO[0],    		// BLOCK1 K_DIG_LDO
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_V_RTC_DBIAS20[] = {
-    &V_RTC_DBIAS20[0],    		// BLOCK1 voltage of rtc dbias20
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_V_DIG_DBIAS20[] = {
-    &V_DIG_DBIAS20[0],    		// BLOCK1 voltage of digital dbias20
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_DIG_DBIAS_HVT[] = {
-    &DIG_DBIAS_HVT[0],    		// BLOCK1 digital dbias when hvt
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_THRES_HVT[] = {
-    &THRES_HVT[0],    		// BLOCK1 pvt threshold when hvt
     NULL
 };
