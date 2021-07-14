@@ -137,7 +137,7 @@ extern "C" {
 #define EMAC_LL_INTR_OVERFLOW_ENABLE                    0x00000010U
 #define EMAC_LL_INTR_UNDERFLOW_ENABLE                   0x00000020U
 #define EMAC_LL_INTR_RECEIVE_ENABLE                     0x00000040U
-#define EMAC_LL_INTR_REVEIVE_BUFF_UNAVAILABLE_ENABLE    0x00000080U
+#define EMAC_LL_INTR_RECEIVE_BUFF_UNAVAILABLE_ENABLE    0x00000080U
 #define EMAC_LL_INTR_RECEIVE_STOP_ENABLE                0x00000100U
 #define EMAC_LL_INTR_RECEIVE_TIMEOUT_ENABLE             0x00000200U
 #define EMAC_LL_INTR_TRANSMIT_FIRST_BYTE_ENABLE         0x00000400U
@@ -406,7 +406,7 @@ static inline void emac_ll_flush_recv_frame_enable(emac_dma_dev_t *dma_regs, boo
 
 static inline void emac_ll_trans_store_forward_enable(emac_dma_dev_t *dma_regs, bool enable)
 {
-    dma_regs->dmaoperation_mode.tx_str_fwd = !enable;
+    dma_regs->dmaoperation_mode.tx_str_fwd = enable;
 }
 
 static inline void emac_ll_flush_trans_fifo_enable(emac_dma_dev_t *dma_regs, bool enable)
