@@ -909,6 +909,15 @@ The file ``my-app-ciphertext.bin`` can then be flashed to offset 0x10000 using `
 
 The command ``espsecure.py decrypt_flash_data`` can be used with the same options (and different input/output files), to decrypt ciphertext flash contents or a previously encrypted file.
 
+
+.. only:: SOC_SPIRAM_SUPPORTED and not esp32
+
+  External RAM
+  ------------
+
+  When Flash Encryption is enabled any data read from and written to external SPI RAM through the cache will also be encrypted/decrypted. This happens the same way and with the same key as for Flash Encryption. If Flash Encryption is enabled then encryption for external SPI RAM is also always enabled, it is not possible to separately control this functionality.
+
+
 Technical Details
 -----------------
 
