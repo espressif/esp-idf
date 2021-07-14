@@ -57,8 +57,6 @@ bool g_panic_abort = false;
 static char *s_panic_abort_details = NULL;
 
 static wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
-static wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
-static wdt_hal_context_t wdt1_context = {.inst = WDT_MWDT1, .mwdt_dev = &TIMERG1};
 
 #if !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
 
@@ -115,9 +113,16 @@ void panic_print_dec(int d)
   the risk of somehow halting in the panic handler and not resetting. That is why this routine kills
   all watchdogs except the timer group 0 watchdog, and it reconfigures that to reset the chip after
   one second.
+
+  We have to do this before we do anything that might cause issues in the WDT interrupt handlers,
+  for example stalling the other core on ESP32 may cause the ESP32_ECO3_CACHE_LOCK_FIX
+  handler to get stuck.
 */
-static void reconfigure_all_wdts(void)
+void esp_panic_handler_reconfigure_wdts(void)
 {
+    wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
+    wdt_hal_context_t wdt1_context = {.inst = WDT_MWDT1, .mwdt_dev = &TIMERG1};
+
     //Todo: Refactor to use Interrupt or Task Watchdog API, and a system level WDT context
     //Reconfigure TWDT (Timer Group 0)
     wdt_hal_init(&wdt0_context, WDT_MWDT0, MWDT0_TICK_PRESCALER, false); //Prescaler: wdt counts in ticks of TG0_WDT_TICK_US
@@ -137,6 +142,9 @@ static void reconfigure_all_wdts(void)
 */
 static inline void disable_all_wdts(void)
 {
+    wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
+    wdt_hal_context_t wdt1_context = {.inst = WDT_MWDT1, .mwdt_dev = &TIMERG1};
+
     //Todo: Refactor to use Interrupt or Task Watchdog API, and a system level WDT context
     //Task WDT is the Main Watchdog Timer of Timer Group 0
     wdt_hal_write_protect_disable(&wdt0_context);
@@ -159,6 +167,10 @@ static void print_abort_details(const void *f)
 // already been done, and panic_info_t has been filled.
 void esp_panic_handler(panic_info_t *info)
 {
+    // The port-level panic handler has already called this, but call it again
+    // to reset the TG0WDT period
+    esp_panic_handler_reconfigure_wdts();
+
     // If the exception was due to an abort, override some of the panic info
     if (g_panic_abort) {
         info->description = NULL;
@@ -242,8 +254,7 @@ void esp_panic_handler(panic_info_t *info)
 
     }
 
-    //Feed the watchdogs, so they will give us time to print out debug info
-    reconfigure_all_wdts();
+    esp_panic_handler_reconfigure_wdts(); // Restart WDT again
 
     PANIC_INFO_DUMP(info, state);
     panic_print_str("\r\n");
@@ -264,8 +275,8 @@ void esp_panic_handler(panic_info_t *info)
     esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH,
                               APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #endif
-    reconfigure_all_wdts();
-#endif
+    esp_panic_handler_reconfigure_wdts(); // restore WDT config
+#endif // CONFIG_APPTRACE_ENABLE
 
 #if CONFIG_ESP_SYSTEM_PANIC_GDBSTUB
     disable_all_wdts();
@@ -289,7 +300,8 @@ void esp_panic_handler(panic_info_t *info)
         esp_core_dump_to_uart((XtExcFrame*) info->frame);
 #endif
         s_dumping_core = false;
-        reconfigure_all_wdts();
+
+        esp_panic_handler_reconfigure_wdts();
     }
 #endif /* CONFIG_ESP32_ENABLE_COREDUMP */
     wdt_hal_write_protect_disable(&rtc_wdt_ctx);
