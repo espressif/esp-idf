@@ -302,7 +302,7 @@ esp_err_t esp_efuse_write_key(esp_efuse_block_t block, esp_efuse_purpose_t purpo
         ESP_EFUSE_CHK(esp_efuse_write_field_blob(s_table[idx].key, key, key_size_bytes * 8));
         ESP_EFUSE_CHK(esp_efuse_set_key_dis_write(block));
         if (purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY ||
-#ifdef SOC_EFUSE_SUPPORT_XTS_AES_256_KEYS
+#ifdef SOC_FLASH_ENCRYPTION_XTS_AES_256
             purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1 ||
             purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2 ||
 #endif
