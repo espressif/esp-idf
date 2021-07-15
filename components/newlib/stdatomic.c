@@ -75,6 +75,24 @@ static portMUX_TYPE s_atomic_lock = portMUX_INITIALIZER_UNLOCKED;
 
 #endif // SOC_CPU_CORES_NUM
 
+#ifdef __clang__
+// Clang doesn't allow to define "__sync_*" atomics. The workaround is to define function with name "__sync_*_builtin",
+// which implements "__sync_*" atomic functionality and use asm directive to set the value of symbol "__sync_*" to the name
+// of defined function.
+
+#define CLANG_ATOMIC_SUFFIX(name_) name_ ## _builtin
+#define CLANG_DECLARE_ALIAS(name_) \
+__asm__(".type " # name_ ", @function\n"        \
+        ".global " #name_ "\n"                  \
+        ".equ " #name_ ", " #name_ "_builtin");
+
+#else // __clang__
+
+#define CLANG_ATOMIC_SUFFIX(name_) name_
+#define CLANG_DECLARE_ALIAS(name_)
+
+#endif // __clang__
+
 #define ATOMIC_LOAD(n, type) type __atomic_load_ ## n (const type* mem, int memorder) \
 {                                                   \
     unsigned state = _ATOMIC_ENTER_CRITICAL();      \
@@ -158,12 +176,14 @@ static portMUX_TYPE s_atomic_lock = portMUX_INITIALIZER_UNLOCKED;
     return ret; \
 }
 
-#define SYNC_FETCH_OP(op, n, type) type __sync_fetch_and_ ## op ##_ ## n (type* ptr, type value) \
-{                                                                               \
-    return __atomic_fetch_ ## op ##_ ## n (ptr, value, __ATOMIC_SEQ_CST);       \
-}
 
-#define SYNC_BOOL_CMP_EXCHANGE(n, type) bool  __sync_bool_compare_and_swap_ ## n  (type *ptr, type oldval, type newval) \
+#define SYNC_FETCH_OP(op, n, type) type CLANG_ATOMIC_SUFFIX(__sync_fetch_and_ ## op ##_ ## n) (type* ptr, type value) \
+{                                                                                \
+    return __atomic_fetch_ ## op ##_ ## n (ptr, value, __ATOMIC_SEQ_CST);        \
+}                                                                                \
+CLANG_DECLARE_ALIAS( __sync_fetch_and_ ## op ##_ ## n )
+
+#define SYNC_BOOL_CMP_EXCHANGE(n, type) bool  CLANG_ATOMIC_SUFFIX(__sync_bool_compare_and_swap_ ## n)  (type *ptr, type oldval, type newval) \
 {                                                                                \
     bool ret = false;                                                            \
     unsigned state = _ATOMIC_ENTER_CRITICAL();                                   \
@@ -173,9 +193,10 @@ static portMUX_TYPE s_atomic_lock = portMUX_INITIALIZER_UNLOCKED;
     }                                                                            \
     _ATOMIC_EXIT_CRITICAL(state);                                                \
     return ret;                                                                  \
-}
+}                                                                                \
+CLANG_DECLARE_ALIAS( __sync_bool_compare_and_swap_ ## n )
 
-#define SYNC_VAL_CMP_EXCHANGE(n, type) type  __sync_val_compare_and_swap_ ## n  (type *ptr, type oldval, type newval) \
+#define SYNC_VAL_CMP_EXCHANGE(n, type) type  CLANG_ATOMIC_SUFFIX(__sync_val_compare_and_swap_ ## n)  (type *ptr, type oldval, type newval) \
 {                                                                                \
     unsigned state = _ATOMIC_ENTER_CRITICAL();                                   \
     type ret = *ptr;                                                             \
@@ -184,7 +205,9 @@ static portMUX_TYPE s_atomic_lock = portMUX_INITIALIZER_UNLOCKED;
     }                                                                            \
     _ATOMIC_EXIT_CRITICAL(state);                                                \
     return ret;                                                                  \
-}
+}                                                                                \
+CLANG_DECLARE_ALIAS( __sync_val_compare_and_swap_ ## n )
+
 
 #if !HAS_ATOMICS_32
 
