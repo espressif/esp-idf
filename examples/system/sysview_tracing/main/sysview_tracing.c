@@ -67,7 +67,7 @@ static void example_sysview_event_send(uint32_t id, uint32_t val)
 {
     U8  aPacket[SEGGER_SYSVIEW_INFO_SIZE + SEGGER_SYSVIEW_QUANTA_U32];
 
-    U8* pPayload = SEGGER_SYSVIEW_PREPARE_PACKET(aPacket);
+    U8 *pPayload = SEGGER_SYSVIEW_PREPARE_PACKET(aPacket);
     pPayload = SEGGER_SYSVIEW_EncodeU32(pPayload, val);   // Add the parameter to the packet
     SEGGER_SYSVIEW_SendPacket(&aPacket[0], pPayload, s_example_sysview_module.EventOffset + id);
 }
@@ -176,14 +176,23 @@ void app_main(void)
     // Wait untill SystemView module receives START command from host,
     // after that data can be sent to the host using onboard API,
     // so user module description does not need to be requested by OpenOCD itself.
-    while(!SEGGER_SYSVIEW_Started()) {
+    while (!SEGGER_SYSVIEW_Started()) {
         vTaskDelay(1);
     }
     SEGGER_SYSVIEW_RegisterModule(&s_example_sysview_module);
 #endif
 
+#if !CONFIG_APPTRACE_SV_TS_SOURCE_TIMER_10
     example_timer_init(TIMER_GROUP_1, TIMER_0, 2000);
+#else
+#warning "Timer (Group 1, Timer 0) is used by sysview module itself!"
+#endif
+
+#if !CONFIG_APPTRACE_SV_TS_SOURCE_TIMER_00
     example_timer_init(TIMER_GROUP_0, TIMER_0, 4000);
+#else
+#warning "Timer (Group 0, Timer 0) is used by sysview module itself!"
+#endif
 
     xTaskCreatePinnedToCore(example_task, "svtrace0", 2048, &event_data[0], 3, &event_data[0].thnd, 0);
     ESP_LOGI(TAG, "Created task %p", event_data[0].thnd);
