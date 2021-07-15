@@ -33,11 +33,12 @@
 #include "esp_rom_gpio.h"
 #include "test_utils.h"
 
-#define WITH_SD_TEST    (SOC_SDMMC_HOST_SUPPORTED)
-//Currently no runners for S2 and C3
-#define WITH_SDSPI_TEST (!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3))
+// Currently no runners for S3
+#define WITH_SD_TEST    (SOC_SDMMC_HOST_SUPPORTED && !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3))
+//Currently no runners for S2, S3 and C3
+#define WITH_SDSPI_TEST (!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3))
 // Can't test eMMC (slot 0) and PSRAM together
-#define WITH_EMMC_TEST  (SOC_SDMMC_HOST_SUPPORTED && !CONFIG_SPIRAM)
+#define WITH_EMMC_TEST  (SOC_SDMMC_HOST_SUPPORTED && !CONFIG_SPIRAM && !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3))
 
 /* power supply enable pin */
 #define SD_TEST_BOARD_VSEL_EN_GPIO  27

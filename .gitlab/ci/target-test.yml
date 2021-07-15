@@ -687,7 +687,7 @@ UT_C3_FLASH_SUSPEND:
 
 UT_S3:
   extends: .unit_test_esp32s3_template
-  parallel: 20
+  parallel: 25
   tags:
     - ESP32S3_IDF
     - UT_T1_1

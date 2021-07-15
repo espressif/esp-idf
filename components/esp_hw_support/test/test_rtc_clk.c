@@ -315,8 +315,6 @@ TEST_CASE("Test starting 'External 32kHz XTAL' on the board without it.", "[rtc_
 
 #endif
 
-static RTC_NOINIT_ATTR int64_t start = 0;
-
 TEST_CASE("Test rtc clk calibration compensation", "[rtc_clk]")
 {
     int64_t t1 = esp_rtc_get_time_us();
@@ -343,6 +341,11 @@ TEST_CASE("Test rtc clk calibration compensation", "[rtc_clk]")
 
     TEST_ASSERT_GREATER_THAN(t1, t2);
 }
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+/* Disabled until deep sleep is brought up TODO ESP32-S3 IDF-2691 */
+
+static RTC_NOINIT_ATTR int64_t start = 0;
 
 static void trigger_deepsleep(void)
 {
@@ -392,3 +395,5 @@ static void check_time_deepsleep_2(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("Test rtc clk calibration compensation across deep sleep", "[rtc_clk][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET]", trigger_deepsleep, check_time_deepsleep_1, check_time_deepsleep_2);
+
+#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
