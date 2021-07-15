@@ -9,8 +9,7 @@ if(NOT BOOTLOADER_BUILD)
     set(legacy_reqs driver efuse soc)
 endif()
 
-idf_component_register(INCLUDE_DIRS include
-                       REQUIRES riscv "${legacy_reqs}"
+idf_component_register(REQUIRES riscv "${legacy_reqs}"
                        REQUIRED_IDF_TARGETS esp32c3)
 
 target_linker_script(${COMPONENT_LIB} INTERFACE "ld/esp32c3.peripherals.ld")
