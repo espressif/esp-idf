@@ -215,8 +215,9 @@ INPUT = \
     $(IDF_PATH)/components/freemodbus/common/include/esp_modbus_master.h \
     $(IDF_PATH)/components/perfmon/include/xtensa_perfmon_access.h \
     $(IDF_PATH)/components/perfmon/include/xtensa_perfmon_apis.h \
-    $(IDF_PATH)/components/perfmon/include/xtensa_perfmon_masks.h
-
+    $(IDF_PATH)/components/perfmon/include/xtensa_perfmon_masks.h \
+    $(IDF_PATH)/components/ieee802154/include/esp_ieee802154.h \
+    $(IDF_PATH)/components/ieee802154/include/esp_ieee802154_types.h
 
 ## Target specific headers are in seperate Doxyfile files
 @INCLUDE = $(IDF_PATH)/docs/doxygen/Doxyfile_$(IDF_TARGET)

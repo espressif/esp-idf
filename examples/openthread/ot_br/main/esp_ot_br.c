@@ -24,10 +24,10 @@
 #include "esp_netif_net_stack.h"
 #include "esp_openthread.h"
 #include "esp_openthread_border_router.h"
-#include "esp_openthread_defaults.h"
 #include "esp_openthread_lock.h"
 #include "esp_openthread_netif_glue.h"
 #include "esp_openthread_types.h"
+#include "esp_ot_config.h"
 #include "esp_vfs_eventfd.h"
 #include "esp_wifi.h"
 #include "nvs_flash.h"
@@ -143,8 +143,8 @@ static void create_config_network(otInstance *instance)
 static void ot_task_worker(void *aContext)
 {
     esp_openthread_platform_config_t config = {
-        .radio_config = ESP_OPENTHREAD_DEFAULT_RADIO_UART_RCP_CONFIG(4, 5),
-        .host_config = ESP_OPENTHREAD_DEFAULT_UART_HOST_CONFIG(),
+        .radio_config = ESP_OPENTHREAD_DEFAULT_RADIO_CONFIG(),
+        .host_config = ESP_OPENTHREAD_DEFAULT_HOST_CONFIG(),
         .port_config = ESP_OPENTHREAD_DEFAULT_PORT_CONFIG(),
     };
 

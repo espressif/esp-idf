@@ -72,7 +72,9 @@ typedef struct {
  *
  */
 typedef enum {
-    RADIO_MODE_UART_RCP = 0x0,      /*!< UART connection to a 15.4 capable radio co-processor(RCP)*/
+    RADIO_MODE_NATIVE   = 0x0,      /*!< Use the native 15.4 radio*/
+    RADIO_MODE_UART_RCP = 0x1,      /*!< UART connection to a 15.4 capable radio co-processor (RCP)*/
+    RADIO_MODE_SPI_RCP  = 0x2,      /*!< SPI connection to a 15.4 capable radio co-processor (RCP)*/
 } esp_openthread_radio_mode_t;
 
 /**
