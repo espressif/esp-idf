@@ -5,7 +5,7 @@
 
 PROJECT_NAME := ethernet_iperf
 
-EXTRA_COMPONENT_DIRS = $(IDF_PATH)/examples/system/console/components
+EXTRA_COMPONENT_DIRS = $(IDF_PATH)/examples/system/console/advanced/components
 EXTRA_COMPONENT_DIRS += $(IDF_PATH)/examples/wifi/iperf/components
 
 
