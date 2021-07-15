@@ -60,7 +60,7 @@
         DIS_USB,                          EFUSE_BLK0,   45,    1,     Disable USB function
         DIS_CAN,                          EFUSE_BLK0,   46,    1,     Disable CAN function
         JTAG_SEL_ENABLE,                  EFUSE_BLK0,   47,    1,     Set this bit to enable selection between usb_to_jtag and pad_to_jtag through strapping gpio10 when both reg_dis_usb_jtag and reg_dis_pad_jtag are equal to 0.
-        SOFT_DIS_JTAG,                    EFUSE_BLK0,   48,    2,     Set these bits to disable JTAG in the soft way (odd number 1 means disable). JTAG can be enabled in HMAC module.
+        SOFT_DIS_JTAG,                    EFUSE_BLK0,   48,    3,     Set these bits to disable JTAG in the soft way (odd number 1 means disable). JTAG can be enabled in HMAC module.
         DIS_PAD_JTAG,                     EFUSE_BLK0,   51,    1,     Disable JTAG in the hard way. JTAG is disabled permanently.
         DIS_DOWNLOAD_MANUAL_ENCRYPT,      EFUSE_BLK0,   52,    1,     Disable flash encryption when in download boot modes.
         USB_DREFH,                        EFUSE_BLK0,   53,    2,     Controls single-end input threshold vrefh 1.76 V to 2 V with step of 80 mV stored in eFuse.
