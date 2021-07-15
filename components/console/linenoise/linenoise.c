@@ -119,13 +119,16 @@
 #include "linenoise.h"
 
 #define LINENOISE_DEFAULT_HISTORY_MAX_LEN 100
-#define LINENOISE_MAX_LINE 4096
+#define LINENOISE_DEFAULT_MAX_LINE 4096
+#define LINENOISE_MINIMAL_MAX_LINE 64
 #define LINENOISE_COMMAND_MAX_LEN 32
+#define LINENOISE_PASTE_KEY_DELAY 30 /* Delay, in milliseconds, between two characters being pasted from clipboard */
 
 static linenoiseCompletionCallback *completionCallback = NULL;
 static linenoiseHintsCallback *hintsCallback = NULL;
 static linenoiseFreeHintsCallback *freeHintsCallback = NULL;
 
+static size_t max_cmdline_length = LINENOISE_DEFAULT_MAX_LINE;
 static int mlmode = 0;  /* Multi line mode. Default is single line. */
 static int dumbmode = 0; /* Dumb mode where line editing is disabled. Off by default */
 static int history_max_len = LINENOISE_DEFAULT_HISTORY_MAX_LEN;
@@ -683,6 +686,21 @@ int linenoiseEditInsert(struct linenoiseState *l, char c) {
     return 0;
 }
 
+int linenoiseInsertPastedChar(struct linenoiseState *l, char c) {
+    int fd = fileno(stdout);
+    if (l->len < l->buflen && l->len == l->pos) {
+        l->buf[l->pos] = c;
+        l->pos++;
+        l->len++;
+        l->buf[l->len] = '\0';
+        if (write(fd, &c,1) == -1) {
+            return -1;
+        }
+        flushWrite();
+    }
+    return 0;
+}
+
 /* Move cursor on the left. */
 void linenoiseEditMoveLeft(struct linenoiseState *l) {
     if (l->pos > 0) {
@@ -779,6 +797,12 @@ void linenoiseEditDeletePrevWord(struct linenoiseState *l) {
     refreshLine(l);
 }
 
+uint32_t getMillis(void) {
+    struct timeval tv = { 0 };
+    gettimeofday(&tv, NULL);
+    return tv.tv_sec * 1000 + tv.tv_usec / 1000;
+}
+
 /* This function is the core of the line editing capability of linenoise.
  * It expects 'fd' to be already in "raw mode" so that every key pressed
  * will be returned ASAP to read().
@@ -789,6 +813,7 @@ void linenoiseEditDeletePrevWord(struct linenoiseState *l) {
  * The function returns the length of the current buffer. */
 static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
 {
+    uint32_t t1 = 0;
     struct linenoiseState l;
     int out_fd = fileno(stdout);
     int in_fd = fileno(stdin);
@@ -827,8 +852,28 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
         int nread;
         char seq[3];
 
+        /**
+         * To determine whether the user is pasting data or typing itself, we
+         * need to calculate how many milliseconds elapsed between two key
+         * presses. Indeed, if there is less than LINENOISE_PASTE_KEY_DELAY
+         * (typically 30-40ms), then a paste is being performed, else, the
+         * user is typing.
+         * NOTE: pressing a key down without releasing it will also spend
+         * about 40ms (or even more)
+         */
+        t1 = getMillis();
         nread = read(in_fd, &c, 1);
         if (nread <= 0) return l.len;
+
+        if ( (getMillis() - t1) < LINENOISE_PASTE_KEY_DELAY ) {
+            /* Pasting data, insert characters without formatting.
+             * This can only be performed when the cursor is at the end of the
+             * line. */
+            if (linenoiseInsertPastedChar(&l,c)) {
+                return -1;
+            }
+            continue;
+        }
 
         /* Only autocomplete when the callback is set. It returns < 0 when
          * there was an error reading from fd. Otherwise it will return the
@@ -1079,15 +1124,15 @@ static void sanitize(char* src) {
 
 /* The high level function that is the main API of the linenoise library. */
 char *linenoise(const char *prompt) {
-    char *buf = calloc(1, LINENOISE_MAX_LINE);
+    char *buf = calloc(1, max_cmdline_length);
     int count = 0;
     if (buf == NULL) {
         return NULL;
     }
     if (!dumbmode) {
-        count = linenoiseRaw(buf, LINENOISE_MAX_LINE, prompt);
+        count = linenoiseRaw(buf, max_cmdline_length, prompt);
     } else {
-        count = linenoiseDumb(buf, LINENOISE_MAX_LINE, prompt);
+        count = linenoiseDumb(buf, max_cmdline_length, prompt);
     }
     if (count > 0) {
         sanitize(buf);
@@ -1209,18 +1254,18 @@ int linenoiseHistorySave(const char *filename) {
  * If the file exists and the operation succeeded 0 is returned, otherwise
  * on error -1 is returned. */
 int linenoiseHistoryLoad(const char *filename) {
-    FILE *fp = fopen(filename,"r");
+    FILE *fp = fopen(filename, "r");
     if (fp == NULL) {
         return -1;
     }
 
-    char *buf = calloc(1, LINENOISE_MAX_LINE);
+    char *buf = calloc(1, max_cmdline_length);
     if (buf == NULL) {
         fclose(fp);
         return -1;
     }
 
-    while (fgets(buf,LINENOISE_MAX_LINE,fp) != NULL) {
+    while (fgets(buf, max_cmdline_length, fp) != NULL) {
         char *p;
 
         p = strchr(buf,'\r');
@@ -1232,5 +1277,16 @@ int linenoiseHistoryLoad(const char *filename) {
     free(buf);
     fclose(fp);
 
+    return 0;
+}
+
+/* Set line maximum length. If len parameter is smaller than
+ * LINENOISE_MINIMAL_MAX_LINE, -1 is returned
+ * otherwise 0 is returned. */
+int linenoiseSetMaxLineLen(size_t len) {
+    if (len < LINENOISE_MINIMAL_MAX_LINE) {
+        return -1;
+    }
+    max_cmdline_length = len;
     return 0;
 }

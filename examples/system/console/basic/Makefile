@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := iperf
+PROJECT_NAME := console
 
 EXTRA_COMPONENT_DIRS := $(IDF_PATH)/examples/system/console/advanced/components
 

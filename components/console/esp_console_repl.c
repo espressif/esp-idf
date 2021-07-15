@@ -37,7 +37,8 @@ typedef struct {
     char prompt[CONSOLE_PROMPT_MAX_LEN]; // Prompt to be printed before each line
     repl_state_t state;
     const char *history_save_path;
-    TaskHandle_t task_hdl; // REPL task handle
+    TaskHandle_t task_hdl;              // REPL task handle
+    size_t max_cmdline_length;          // Maximum length of a command line. If 0, default value will be used.
 } esp_console_repl_com_t;
 
 typedef struct {
@@ -51,7 +52,7 @@ static esp_err_t esp_console_repl_usb_cdc_delete(esp_console_repl_t *repl);
 #if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
 static esp_err_t esp_console_repl_usb_serial_jtag_delete(esp_console_repl_t *repl);
 #endif //CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
-static esp_err_t esp_console_common_init(esp_console_repl_com_t *repl_com);
+static esp_err_t esp_console_common_init(size_t max_cmdline_length, esp_console_repl_com_t *repl_com);
 static esp_err_t esp_console_setup_prompt(const char *prompt, esp_console_repl_com_t *repl_com);
 static esp_err_t esp_console_setup_history(const char *history_path, uint32_t max_history_len, esp_console_repl_com_t *repl_com);
 
@@ -80,7 +81,7 @@ esp_err_t esp_console_new_repl_usb_cdc(const esp_console_dev_usb_cdc_config_t *d
     fcntl(fileno(stdin), F_SETFL, 0);
 
     // initialize console, common part
-    ret = esp_console_common_init(&cdc_repl->repl_com);
+    ret = esp_console_common_init(repl_config->max_cmdline_length, &cdc_repl->repl_com);
     if (ret != ESP_OK) {
         goto _exit;
     }
@@ -156,7 +157,7 @@ esp_err_t esp_console_new_repl_usb_serial_jtag(const esp_console_dev_usb_serial_
     }
 
     // initialize console, common part
-    ret = esp_console_common_init(&usb_serial_jtag_repl->repl_com);
+    ret = esp_console_common_init(repl_config->max_cmdline_length, &usb_serial_jtag_repl->repl_com);
     if (ret != ESP_OK) {
         goto _exit;
     }
@@ -249,7 +250,7 @@ esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_con
     esp_vfs_dev_uart_use_driver(dev_config->channel);
 
     // initialize console, common part
-    ret = esp_console_common_init(&uart_repl->repl_com);
+    ret = esp_console_common_init(repl_config->max_cmdline_length, &uart_repl->repl_com);
     if (ret != ESP_OK) {
         goto _exit;
     }
@@ -353,11 +354,18 @@ _exit:
     return ret;
 }
 
-static esp_err_t esp_console_common_init(esp_console_repl_com_t *repl_com)
+static esp_err_t esp_console_common_init(size_t max_cmdline_length, esp_console_repl_com_t *repl_com)
 {
     esp_err_t ret = ESP_OK;
     /* Initialize the console */
     esp_console_config_t console_config = ESP_CONSOLE_CONFIG_DEFAULT();
+    repl_com->max_cmdline_length = console_config.max_cmdline_length;
+    /* Replace the default command line length if passed as a parameter */
+    if (max_cmdline_length != 0) {
+        console_config.max_cmdline_length = max_cmdline_length;
+        repl_com->max_cmdline_length = max_cmdline_length;
+    }
+
 #if CONFIG_LOG_COLORS
     console_config.hint_color = atoi(LOG_COLOR_CYAN);
 #endif
@@ -485,6 +493,7 @@ static void esp_console_repl_task(void *args)
                "On Windows, try using Putty instead.\r\n");
     }
 
+    linenoiseSetMaxLineLen(repl_com->max_cmdline_length);
     while (repl_com->state == CONSOLE_REPL_STATE_START) {
         char *line = linenoise(repl_com->prompt);
         if (line == NULL) {

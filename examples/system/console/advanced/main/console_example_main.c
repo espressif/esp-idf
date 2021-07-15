@@ -121,6 +121,9 @@ static void initialize_console(void)
     /* Set command history size */
     linenoiseHistorySetMaxLen(100);
 
+    /* Set command maximum length */
+    linenoiseSetMaxLineLen(console_config.max_cmdline_length);
+
     /* Don't return empty lines */
     linenoiseAllowEmpty(false);
 

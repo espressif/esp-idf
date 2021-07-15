@@ -48,6 +48,7 @@ typedef struct {
     uint32_t task_stack_size;      //!< repl task stack size
     uint32_t task_priority;        //!< repl task priority
     const char *prompt;            //!< prompt (NULL represents default: "esp> ")
+    size_t max_cmdline_length;     //!< maximum length of a command line. If 0, default value will be used
 } esp_console_repl_config_t;
 
 /**
@@ -61,6 +62,7 @@ typedef struct {
         .task_stack_size = 4096,          \
         .task_priority = 2,               \
         .prompt = NULL,                   \
+        .max_cmdline_length = 0,          \
 }
 
 /**
