@@ -11,6 +11,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "esp_log.h"
+#include "esp_check.h"
 #include "hal/adc_ll.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/apb_saradc_struct.h"
@@ -23,12 +24,6 @@
 
 static const char *TAG = "tsens";
 
-#define TSENS_CHECK(res, ret_val) ({                                    \
-    if (!(res)) {                                                       \
-        ESP_LOGE(TAG, "%s(%d)", __FUNCTION__, __LINE__);                \
-        return (ret_val);                                               \
-    }                                                                   \
-})
 #define TSENS_XPD_WAIT_DEFAULT 0xFF   /* Set wait cycle time(8MHz) from power up to reset enable. */
 #define TSENS_ADC_FACTOR  (0.4386)
 #define TSENS_DAC_FACTOR  (27.88)
@@ -72,7 +67,7 @@ esp_err_t temp_sensor_set_config(temp_sensor_config_t tsens)
 
 esp_err_t temp_sensor_get_config(temp_sensor_config_t *tsens)
 {
-    TSENS_CHECK(tsens != NULL, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(tsens != NULL, ESP_ERR_INVALID_ARG, TAG, "no tsens specified");
     CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, ANA_I2C_SAR_FORCE_PD);
     SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_I2C_SAR_FORCE_PU);
     tsens->dac_offset = REGI2C_READ_MASK(I2C_SAR_ADC, I2C_SARADC_TSENS_DAC);
@@ -103,7 +98,7 @@ esp_err_t temp_sensor_stop(void)
 
 esp_err_t temp_sensor_read_raw(uint32_t *tsens_out)
 {
-    TSENS_CHECK(tsens_out != NULL, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(tsens_out != NULL, ESP_ERR_INVALID_ARG, TAG, "no tsens_out specified");
     *tsens_out = APB_SARADC.apb_tsens_ctrl.tsens_out;
     return ESP_OK;
 }
@@ -132,14 +127,14 @@ static float parse_temp_sensor_raw_value(uint32_t tsens_raw, const int dac_offse
 
 esp_err_t temp_sensor_read_celsius(float *celsius)
 {
-    TSENS_CHECK(celsius != NULL, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(celsius != NULL, ESP_ERR_INVALID_ARG, TAG, "celsius points to nothing");
     temp_sensor_config_t tsens;
     uint32_t tsens_out = 0;
     esp_err_t ret = temp_sensor_get_config(&tsens);
     if (ret == ESP_OK) {
         ret = temp_sensor_read_raw(&tsens_out);
-        printf("tsens_out %d\r\n", tsens_out);
-        TSENS_CHECK(ret == ESP_OK, ret);
+        ESP_LOGV(TAG, "tsens_out %d", tsens_out);
+        ESP_RETURN_ON_FALSE(ret == ESP_OK, ret, TAG, "failed to read raw data");
         const tsens_dac_offset_t *dac = &dac_offset[tsens.dac_offset];
         *celsius = parse_temp_sensor_raw_value(tsens_out, dac->offset);
         if (*celsius < dac->range_min || *celsius > dac->range_max) {
