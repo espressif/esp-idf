@@ -831,6 +831,10 @@ esp_err_t esp_light_sleep_start(void)
     // Decide which power domains can be powered down
     uint32_t pd_flags = get_power_down_flags();
 
+#ifdef CONFIG_ESP_SYSTEM_SLEEP_RTC_BUS_ISO_WORKAROUND
+    pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
+#endif
+
     // Re-calibrate the RTC Timer clock
 #if defined(CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS) || defined(CONFIG_ESP32S2_RTC_CLK_SRC_EXT_CRYS) || defined(CONFIG_ESP32C3_RTC_CLK_SRC_EXT_CRYS)
     if (rtc_clk_slow_freq_get() == RTC_SLOW_FREQ_32K_XTAL) {
