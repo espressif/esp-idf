@@ -50,21 +50,16 @@ class SerialReader(StoppableThread):
             self.serial.baudrate = self.baud
             # We can come to this thread at startup or from external application line GDB.
             # If we come from GDB we would like to continue to run without reset.
-            if self.gdb_exit:
-                self.serial.rts = False
-                self.serial.dtr = True
-            else:                           # if we exit from GDB, we don't need to reset the target
-                # This sequence of DTR/RTS and open/close set the serial port to
-                # condition when GDB not make reset of the target by switching DTR/RTS.
-                self.serial.rts = True  # IO0=LOW
-                self.serial.dtr = self.serial.dtr   # usbser.sys workaround
-                self.serial.rts = False     # IO0=HIGH
-                self.serial.dtr = False
 
+            self.serial.dtr = True      # Non reset state
+            self.serial.rts = False     # IO0=HIGH
             # Current state not reset the target!
-            self.gdb_exit = False
             self.serial.open()
-            time.sleep(0.005)  # Add a delay to meet the requirements of minimal EN low time (2ms for ESP32-C3)
+            if self.gdb_exit == False:
+                self.serial.dtr = False     # Set dtr to reset state (affected by rts)
+                self.serial.rts = True      # Set rts/dtr to the reset state
+                time.sleep(0.005)  # Add a delay to meet the requirements of minimal EN low time (2ms for ESP32-C3)
+            self.gdb_exit = False
             self.serial.rts = False             # Set rts/dtr to the working state
             self.serial.dtr = self.serial.dtr   # usbser.sys workaround
         try:
