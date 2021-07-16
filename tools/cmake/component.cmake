@@ -530,7 +530,7 @@ endfunction()
 function(idf_component_mock)
     set(options)
     set(single_value)
-    set(multi_value MOCK_HEADER_FILES INCLUDE_DIRS)
+    set(multi_value MOCK_HEADER_FILES INCLUDE_DIRS REQUIRES)
     cmake_parse_arguments(_ "${options}" "${single_value}" "${multi_value}" ${ARGN})
 
     list(APPEND __REQUIRES "cmock")
