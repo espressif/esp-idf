@@ -125,8 +125,8 @@ int gcov_rtio_atexit(void (*function)(void) __attribute__ ((unused)))
     uint32_t capabilities = 0;
     ESP_EARLY_LOGV(TAG, "%s", __FUNCTION__);
     esp_dbg_stub_entry_set(ESP_DBG_STUB_ENTRY_GCOV, (uint32_t)&esp_dbg_stub_gcov_entry);
-    if (esp_dbg_stub_entry_get(ESP_DBG_STUB_CAPABILITIES, &capabilities) == ESP_OK) {
-        esp_dbg_stub_entry_set(ESP_DBG_STUB_CAPABILITIES, capabilities | ESP_DBG_STUB_CAP_GCOV_TASK);
+    if (esp_dbg_stub_entry_get(ESP_DBG_STUB_ENTRY_CAPABILITIES, &capabilities) == ESP_OK) {
+        esp_dbg_stub_entry_set(ESP_DBG_STUB_ENTRY_CAPABILITIES, capabilities | ESP_DBG_STUB_CAP_GCOV_TASK);
     }
     esp_register_freertos_tick_hook(gcov_create_task_tick_hook);
     return ESP_OK;
