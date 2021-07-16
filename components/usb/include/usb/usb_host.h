@@ -413,6 +413,7 @@ esp_err_t usb_host_transfer_alloc(size_t data_buffer_size, int num_isoc_packets,
  *
  * - Free a transfer object previously allocated using usb_host_transfer_alloc()
  * - The transfer must not be in-flight when attempting to free it
+ * - If a NULL pointer is passed, this function will simply return ESP_OK
  *
  * @param[in] transfer Transfer object
  * @return esp_err_t
