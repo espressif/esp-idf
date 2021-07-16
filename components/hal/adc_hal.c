@@ -48,8 +48,6 @@ void adc_hal_init(void)
                     ADC calibration setting
 ---------------------------------------------------------------*/
 #if SOC_ADC_HW_CALIBRATION_V1
-// ESP32-S2 and C3 support HW offset calibration.
-
 void adc_hal_calibration_init(adc_ll_num_t adc_n)
 {
     adc_ll_calibration_init(adc_n);
@@ -94,7 +92,7 @@ static void cal_setup(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t att
     adc_ll_onetime_sample_enable(ADC_NUM_2, false);
     /* Enable/disable internal connect GND (for calibration). */
     if (internal_gnd) {
-        const int esp32c3_invalid_chan = (adc_n == ADC_NUM_1)? 0xF: 0x1;
+        const int esp32c3_invalid_chan = (adc_n == ADC_NUM_1) ? 0xF : 0x1;
         adc_ll_onetime_set_channel(adc_n, esp32c3_invalid_chan);
     } else {
         adc_ll_onetime_set_channel(adc_n, channel);
@@ -110,7 +108,7 @@ static uint32_t read_cal_channel(adc_ll_num_t adc_n, int channel)
     esp_rom_delay_us(5);
     adc_ll_onetime_start(true);
 
-    while(!adc_ll_intr_get_raw(ADC_LL_INTR_ADC1_DONE | ADC_LL_INTR_ADC2_DONE));
+    while (!adc_ll_intr_get_raw(ADC_LL_INTR_ADC1_DONE | ADC_LL_INTR_ADC2_DONE));
 
     uint32_t read_val = -1;
     if (adc_n == ADC_NUM_1) {
@@ -179,8 +177,8 @@ uint32_t adc_hal_self_calibration(adc_ll_num_t adc_n, adc_channel_t channel, adc
 
     chk_code = code_h + code_l;
     uint32_t ret = ((code_sum - chk_code) % (ADC_HAL_CAL_TIMES - 2) < 4)
-           ? (code_sum - chk_code) / (ADC_HAL_CAL_TIMES - 2)
-           : (code_sum - chk_code) / (ADC_HAL_CAL_TIMES - 2) + 1;
+                   ? (code_sum - chk_code) / (ADC_HAL_CAL_TIMES - 2)
+                   : (code_sum - chk_code) / (ADC_HAL_CAL_TIMES - 2) + 1;
 
     adc_ll_calibration_finish(adc_n);
     return ret;
@@ -227,11 +225,11 @@ static void adc_hal_digi_dma_link_descriptors(dma_descriptor_t *desc, uint8_t *d
         desc[n].dw0.suc_eof = 0;
         desc[n].dw0.owner = 1;
         desc[n].buffer = data_buf;
-        desc[n].next = &desc[n+1];
+        desc[n].next = &desc[n + 1];
         data_buf += size;
         n++;
     }
-    desc[n-1].next = NULL;
+    desc[n - 1].next = NULL;
 }
 
 void adc_hal_digi_rxdma_start(adc_hal_context_t *hal, uint8_t *data_buf)
@@ -334,7 +332,7 @@ static void adc_hal_onetime_start(void)
     //3 ADC digital controller clock cycle
     delay = delay * 3;
     //This coefficient (8) is got from test. When digi_clk is not smaller than ``APB_CLK_FREQ/8``, no delay is needed.
-    if (digi_clk >= APB_CLK_FREQ/8) {
+    if (digi_clk >= APB_CLK_FREQ / 8) {
         delay = 0;
     }
 
@@ -352,7 +350,7 @@ static esp_err_t adc_hal_single_read(adc_ll_num_t adc_n, int *out_raw)
         *out_raw = adc_ll_adc2_read();
         if (adc_ll_analysis_raw_data(adc_n, *out_raw)) {
             return ESP_ERR_INVALID_STATE;
-        }
+       }
     }
     return ESP_OK;
 }
