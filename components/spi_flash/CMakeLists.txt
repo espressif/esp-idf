@@ -82,7 +82,9 @@ else()
         endif()
 
         if(CONFIG_IDF_TARGET_ESP32S3)
-            list(APPEND srcs "spi_flash_timing_tuning.c")
+            list(APPEND srcs
+                "esp32s3/spi_timing_config.c"
+                "spi_flash_timing_tuning.c")
         endif()
 
         # New implementation after IDF v4.0
@@ -103,7 +105,7 @@ else()
             "spi_flash_os_func_noos.c")
 
         list(APPEND srcs ${cache_srcs})
-        set(priv_requires bootloader_support app_update soc esp_ipc)
+        set(priv_requires bootloader_support app_update soc esp_ipc driver)
     endif()
 
     idf_component_register(SRCS "${srcs}"

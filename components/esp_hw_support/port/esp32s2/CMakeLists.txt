@@ -14,7 +14,14 @@ set(srcs
     )
 
 if(NOT BOOTLOADER_BUILD)
-    list(APPEND srcs "async_memcpy_impl_cp_dma.c")
+    list(APPEND srcs "async_memcpy_impl_cp_dma.c"
+                     "memprot.c"
+                     "esp_hmac.c"
+                     "esp_crypto_lock.c"
+                     "esp_ds.c"
+                     "dport_access.c"
+                     "spiram.c"
+                     "spiram_psram.c")
 endif()
 
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")

@@ -13,7 +13,18 @@ set(srcs
     )
 
 if(NOT BOOTLOADER_BUILD)
-    list(APPEND srcs "../async_memcpy_impl_gdma.c")
+    list(APPEND srcs "../async_memcpy_impl_gdma.c"
+                     "dport_access.c"
+                     "esp_crypto_lock.c"
+                     "memprot.c"
+                     "spiram.c")
+
+    if(CONFIG_SPIRAM_MODE_QUAD)
+        list(APPEND srcs "spiram_psram.c")
+    elseif(CONFIG_SPIRAM_MODE_OCT)
+        list(APPEND srcs "opiram_psram.c")
+    endif()
+
 endif()
 
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")

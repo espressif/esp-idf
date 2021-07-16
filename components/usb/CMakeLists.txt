@@ -7,4 +7,5 @@ endif()
 
 idf_component_register(SRCS "hcd.c"
                     INCLUDE_DIRS ""
-                    PRIV_INCLUDE_DIRS "private_include")
+                    PRIV_INCLUDE_DIRS "private_include"
+                    PRIV_REQUIRES hal driver)

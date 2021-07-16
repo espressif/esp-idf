@@ -79,7 +79,7 @@ const soc_memory_region_t soc_memory_regions[] = {
 
 const size_t soc_memory_region_count = sizeof(soc_memory_regions) / sizeof(soc_memory_region_t);
 
-extern int _data_start, _heap_start, _iram_start, _iram_end; // defined in esp32s3.project.ld.in
+extern int _data_start, _heap_start, _iram_start, _iram_end; // defined in sections.ld.in
 
 /**
  * Reserved memory regions.

@@ -1,10 +1,16 @@
 idf_build_get_property(idf_target IDF_TARGET)
 idf_build_get_property(python PYTHON)
 
+set(priv_requires soc esp_hw_support)
+
+if(NOT BOOTLOADER_BUILD)
+    list(APPEND priv_requires esp_pm)
+endif()
+
 idf_component_register(SRCS "esp_crt_bundle/esp_crt_bundle.c"
     INCLUDE_DIRS "port/include" "mbedtls/include" "esp_crt_bundle/include"
     REQUIRES lwip
-    PRIV_REQUIRES esp_pm soc
+    PRIV_REQUIRES "${priv_requires}"
     )
 
 if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
@@ -183,6 +189,8 @@ if(CONFIG_MBEDTLS_HARDWARE_MPI)
 endif()
 
 set_property(TARGET mbedcrypto APPEND PROPERTY LINK_INTERFACE_LIBRARIES mbedtls)
+set_property(TARGET mbedcrypto APPEND PROPERTY LINK_LIBRARIES idf::driver idf::${target})
+set_property(TARGET mbedcrypto APPEND PROPERTY INTERFACE_LINK_LIBRARIES idf::driver idf::${target})
 
 # Link mbedtls libraries to component library
 target_link_libraries(${COMPONENT_LIB} PUBLIC ${mbedtls_targets})

@@ -3,7 +3,17 @@ COMPONENT_ADD_INCLUDEDIRS := . include port/$(IDF_TARGET)/ include/soc port/$(ID
 COMPONENT_ADD_LDFRAGMENTS := linker.lf
 
 ifdef IS_BOOTLOADER_BUILD
-COMPONENT_OBJEXCLUDE += clk_ctrl_os.o mac_addr.o sp_async_memcpy.o intr_alloc.o sleep_modes.o regi2c_ctrl.o
+COMPONENT_OBJEXCLUDE += clk_ctrl_os.o \
+						intr_alloc.o \
+						sleep_modes.o \
+						esp_async_memcpy.o \
+						mac_addr.o \
+						regi2c_ctrl.o \
+						port/$(IDF_TARGET)/dport_access.o \
+						port/$(IDF_TARGET)/cache_sram_mmu.o \
+						port/$(IDF_TARGET)/esp_himem.o \
+						port/$(IDF_TARGET)/spiram.o \
+						port/$(IDF_TARGET)/spiram_psram.o
 endif
 
 COMPONENT_OBJEXCLUDE += esp_async_memcpy.o

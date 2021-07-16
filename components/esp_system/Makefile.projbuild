@@ -1,0 +1,9 @@
+ESP32_LINKER_SCRIPT_TEMPLATE := $(COMPONENT_PATH)/ld/esp32/sections.ld.in
+ESP32_LINKER_SCRIPT_OUTPUT_DIR := $(BUILD_DIR_BASE)/esp_system/ld
+ESP32_SECTIONS_LINKER_SCRIPT := $(ESP32_LINKER_SCRIPT_OUTPUT_DIR)/sections.ld
+
+# Target to generate linker script generator from fragments presented by each of
+# the components
+$(eval $(call ldgen_process_template, $(ESP32_LINKER_SCRIPT_TEMPLATE), $(ESP32_SECTIONS_LINKER_SCRIPT)))
+
+$(APP_ELF): $(ESP32_SECTIONS_LINKER_SCRIPT)
