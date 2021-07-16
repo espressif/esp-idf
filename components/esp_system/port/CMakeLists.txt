@@ -1,4 +1,10 @@
-target_include_directories(${COMPONENT_LIB} PRIVATE . include PUBLIC soc)
+set(INCLUDE_FILES "include" . include PUBLIC soc)
+
+if(CONFIG_IDF_TARGET_ARCH_RISCV)
+    list(APPEND INCLUDE_FILES "include/riscv")
+endif()
+
+target_include_directories(${COMPONENT_LIB} PRIVATE ${INCLUDE_FILES})
 target_include_directories(${COMPONENT_LIB} PUBLIC public_compat)
 
 set(srcs "cpu_start.c" "panic_handler.c" "brownout.c")

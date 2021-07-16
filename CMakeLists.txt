@@ -108,6 +108,11 @@ if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
                                 )
 endif()
 
+if(CONFIG_ESP_SYSTEM_USE_EH_FRAME)
+  list(APPEND compile_options "-fasynchronous-unwind-tables")
+  list(APPEND link_options "-Wl,--eh-frame-hdr")
+endif()
+
 list(APPEND link_options "-fno-lto")
 
 # Placing jump tables in flash would cause issues with code that required

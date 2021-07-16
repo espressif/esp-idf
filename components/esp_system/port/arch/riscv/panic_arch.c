@@ -14,6 +14,8 @@
 // limitations under the License.
 #include <stdio.h>
 
+#include "esp_spi_flash.h"
+
 #include "soc/extmem_reg.h"
 #include "esp_private/panic_internal.h"
 #include "esp_private/panic_reason.h"
@@ -27,6 +29,11 @@
 #include "esp32h2/memprot.h"
 #endif
 #endif
+
+#if CONFIG_ESP_SYSTEM_USE_EH_FRAME
+#include "eh_frame_parser.h"
+#endif
+
 
 #define DIM(array) (sizeof(array)/sizeof(*array))
 
@@ -319,8 +326,7 @@ void panic_arch_fill_info(void *frame, panic_info_t *info)
     info->frame = &regs;
 }
 
-void panic_print_backtrace(const void *frame, int core)
-{
+static void panic_print_basic_backtrace(const void *frame, int core) {
     // Basic backtrace
     panic_print_str("\r\nStack memory:\r\n");
     uint32_t sp = (uint32_t)((RvExcFrame *)frame)->sp;
@@ -335,6 +341,21 @@ void panic_print_backtrace(const void *frame, int core)
             panic_print_str(y == per_line - 1 ? "\r\n" : " ");
         }
     }
+}
+
+void panic_print_backtrace(const void *frame, int core)
+{
+#if CONFIG_ESP_SYSTEM_USE_EH_FRAME
+    if (!spi_flash_cache_enabled()) {
+        panic_print_str("\r\nWarning: SPI Flash cache is disabled, cannot process eh_frame parsing. "
+                        "Falling back to basic backtrace.\r\n");
+        panic_print_basic_backtrace(frame, core);
+    } else {
+        esp_eh_frame_print_backtrace(frame);
+    }
+#else
+    panic_print_basic_backtrace(frame, core);
+#endif
 }
 
 uint32_t panic_get_address(const void *f)

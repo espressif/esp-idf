@@ -831,7 +831,11 @@ void bootloader_reset(void)
 
 void bootloader_atexit(void)
 {
+#ifdef BOOTLOADER_BUILD
     bootloader_console_deinit();
+#else
+    abort();
+#endif
 }
 
 esp_err_t bootloader_sha256_hex_to_str(char *out_str, const uint8_t *in_array_hex, size_t len)
