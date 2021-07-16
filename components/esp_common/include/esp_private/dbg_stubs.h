@@ -21,11 +21,12 @@
  */
 typedef enum {
     ESP_DBG_STUB_MAGIC_NUM,
+    ESP_DBG_STUB_TABLE_SIZE,
     ESP_DBG_STUB_CONTROL_DATA,   ///< stubs descriptor entry
     ESP_DBG_STUB_ENTRY_FIRST,
     ESP_DBG_STUB_ENTRY_GCOV	///< GCOV entry
         = ESP_DBG_STUB_ENTRY_FIRST,
-    ESP_DBG_STUB_CAPABILITIES,
+    ESP_DBG_STUB_ENTRY_CAPABILITIES,
     ESP_DBG_STUB_ENTRY_MAX
 } esp_dbg_stub_id_t;
 
