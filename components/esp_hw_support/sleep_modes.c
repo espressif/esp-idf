@@ -699,6 +699,10 @@ esp_err_t esp_light_sleep_start(void)
     // Decide which power domains can be powered down
     uint32_t pd_flags = get_power_down_flags();
 
+#ifdef CONFIG_ESP_SLEEP_RTC_BUS_ISO_WORKAROUND
+    pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
+#endif
+
     // Re-calibrate the RTC Timer clock
 #ifdef CONFIG_ESP_SYSTEM_RTC_EXT_XTAL
     uint64_t time_per_us = 1000000ULL;
