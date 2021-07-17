@@ -54,8 +54,10 @@ typedef bool (*async_memcpy_isr_cb_t)(async_memcpy_t mcp_hdl, async_memcpy_event
  *
  */
 typedef struct {
-    uint32_t backlog; /*!< Maximum number of streams that can be handled simultaneously */
-    uint32_t flags;   /*!< Extra flags to control async memcpy feature */
+    uint32_t backlog;          /*!< Maximum number of streams that can be handled simultaneously */
+    size_t sram_trans_align;   /*!< DMA transfer alignment (both in size and address) for SRAM memory */
+    size_t psram_trans_align;  /*!< DMA transfer alignment (both in size and address) for PSRAM memory */
+    uint32_t flags;            /*!< Extra flags to control async memcpy feature */
 } async_memcpy_config_t;
 
 /**
@@ -63,9 +65,11 @@ typedef struct {
  *
  */
 #define ASYNC_MEMCPY_DEFAULT_CONFIG() \
-    {                              \
-        .backlog = 8,              \
-        .flags = 0,                \
+    {                                 \
+        .backlog = 8,                 \
+        .sram_trans_align = 0,        \
+        .psram_trans_align = 0,       \
+        .flags = 0,                   \
     }
 
 /**

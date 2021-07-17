@@ -37,7 +37,7 @@ static inline esp_err_t crypto_shared_gdma_new_channel(gdma_channel_alloc_config
     esp_err_t ret;
     int time_waited_ms = 0;
 
-    while(1) {
+    while (1) {
         ret = gdma_new_channel(channel_config, channel);
 
         if (ret == ESP_OK) {
@@ -54,23 +54,18 @@ static inline esp_err_t crypto_shared_gdma_new_channel(gdma_channel_alloc_config
 }
 
 
-#if SOC_GDMA_SUPPORT_EXTMEM
+#if SOC_GDMA_SUPPORT_PSRAM
 /* Initialize external memory specific DMA configs */
 static void esp_crypto_shared_dma_init_extmem(void)
 {
-    int tx_ch_id = 0;
-    int rx_ch_id = 0;
-
-    gdma_get_channel_id(tx_channel, &tx_ch_id);
-    gdma_get_channel_id(rx_channel, &rx_ch_id);
-
-    /* An L2 FIFO bigger than 40 bytes is need when accessing external ram */
-    gdma_ll_tx_extend_fifo_size_to(&GDMA, tx_ch_id, 40);
-    gdma_ll_rx_extend_l2_fifo_size_to(&GDMA, rx_ch_id, 40);
-    gdma_ll_tx_set_block_size_psram(&GDMA, tx_ch_id, GDMA_LL_OUT_EXT_MEM_BK_SIZE_16B);
-    gdma_ll_rx_set_block_size_psram(&GDMA, rx_ch_id, GDMA_LL_OUT_EXT_MEM_BK_SIZE_16B);
+    gdma_transfer_ability_t transfer_ability = {
+        .sram_trans_align = 4,
+        .psram_trans_align = 16,
+    };
+    gdma_set_transfer_ability(tx_channel, &transfer_ability);
+    gdma_set_transfer_ability(rx_channel, &transfer_ability);
 }
-#endif //SOC_GDMA_SUPPORT_EXTMEM
+#endif //SOC_GDMA_SUPPORT_PSRAM
 
 /* Initialize GDMA module and channels */
 static esp_err_t crypto_shared_gdma_init(void)
@@ -96,9 +91,9 @@ static esp_err_t crypto_shared_gdma_init(void)
         goto err;
     }
 
-#if SOC_GDMA_SUPPORT_EXTMEM
+#if SOC_GDMA_SUPPORT_PSRAM
     esp_crypto_shared_dma_init_extmem();
-#endif //SOC_GDMA_SUPPORT_EXTMEM
+#endif //SOC_GDMA_SUPPORT_PSRAM
 
     gdma_connect(rx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_AES, 0));
     gdma_connect(tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_AES, 0));
@@ -140,7 +135,7 @@ esp_err_t esp_crypto_shared_gdma_start(const lldesc_t *input, const lldesc_t *ou
         return ESP_ERR_INVALID_ARG;
     }
 
-  /* tx channel is reset by gdma_connect(), also reset rx to ensure a known state */
+    /* tx channel is reset by gdma_connect(), also reset rx to ensure a known state */
     gdma_get_channel_id(tx_channel, &rx_ch_id);
     gdma_ll_rx_reset_channel(&GDMA, rx_ch_id);
 
