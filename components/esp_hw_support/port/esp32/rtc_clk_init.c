@@ -140,6 +140,9 @@ void rtc_clk_init(rtc_clk_config_t cfg)
 
 static rtc_xtal_freq_t rtc_clk_xtal_freq_estimate(void)
 {
+#if CONFIG_IDF_ENV_FPGA
+    return RTC_XTAL_FREQ_40M;
+#endif // CONFIG_IDF_ENV_FPGA
     /* Enable 8M/256 clock if needed */
     const bool clk_8m_enabled = rtc_clk_8m_enabled();
     const bool clk_8md256_enabled = rtc_clk_8md256_enabled();

@@ -484,6 +484,7 @@ void IRAM_ATTR call_start_cpu0(void)
 
     intr_matrix_clear();
 
+#ifndef CONFIG_IDF_ENV_FPGA // TODO: on FPGA it should be possible to configure this, not currently working with APB_CLK_FREQ changed
 #ifdef CONFIG_ESP_CONSOLE_UART
     uint32_t clock_hz = rtc_clk_apb_freq_get();
 #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
@@ -491,6 +492,7 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
     esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
     esp_rom_uart_set_clock_baudrate(CONFIG_ESP_CONSOLE_UART_NUM, clock_hz, CONFIG_ESP_CONSOLE_UART_BAUDRATE);
+#endif
 #endif
 
 #if SOC_RTCIO_HOLD_SUPPORTED

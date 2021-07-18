@@ -13,6 +13,9 @@
 // limitations under the License.
 #include "sdkconfig.h"
 #include "soc/soc.h"
+#ifndef CONFIG_IDF_TARGET_ESP32
+#include "soc/system_reg.h"
+#endif // not CONFIG_IDF_TARGET_ESP32
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "esp_log.h"

@@ -768,6 +768,9 @@ void rtc_clk_apb_freq_update(uint32_t apb_freq)
 
 uint32_t rtc_clk_apb_freq_get(void)
 {
+#if CONFIG_IDF_ENV_FPGA
+    return CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ * MHZ;
+#endif // CONFIG_IDF_ENV_FPGA
     uint32_t freq_hz = reg_val_to_clk_val(READ_PERI_REG(RTC_APB_FREQ_REG)) << 12;
     // round to the nearest MHz
     freq_hz += MHZ / 2;

@@ -58,7 +58,6 @@ void rtc_clk_init(rtc_clk_config_t cfg)
 
     rtc_xtal_freq_t xtal_freq = cfg.xtal_freq;
     esp_rom_uart_tx_wait_idle(0);
-    rtc_clk_xtal_freq_update(xtal_freq);
     rtc_clk_apb_freq_update(xtal_freq * MHZ);
 
     /* Set CPU frequency */

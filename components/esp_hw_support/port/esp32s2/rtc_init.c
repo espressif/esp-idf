@@ -26,7 +26,8 @@
 #include "soc_log.h"
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
-static const char *TAG = "rtc_init";
+
+__attribute__((unused)) static const char *TAG = "rtc_init";
 
 static void set_ocode_by_efuse(int calib_version);
 static void calibrate_ocode(void);
@@ -152,6 +153,8 @@ void rtc_init(rtc_config_t cfg)
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_UNHOLD);
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_NOISO);
     }
+
+#if !CONFIG_IDF_ENV_FPGA
     if (cfg.cali_ocode) {
         uint32_t rtc_calib_version = 0;
         esp_efuse_read_field_blob(ESP_EFUSE_BLOCK2_VERSION, &rtc_calib_version, 32);
@@ -161,6 +164,7 @@ void rtc_init(rtc_config_t cfg)
             calibrate_ocode();
         }
     }
+#endif // !CONFIG_IDF_ENV_FPGA
 
     REG_WRITE(RTC_CNTL_INT_ENA_REG, 0);
     REG_WRITE(RTC_CNTL_INT_CLR_REG, UINT32_MAX);

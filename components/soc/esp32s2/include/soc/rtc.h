@@ -143,6 +143,13 @@ typedef enum {
     RTC_XTAL_FREQ_40M = 40,     //!< 40 MHz XTAL
 } rtc_xtal_freq_t;
 
+/** @brief Fixed crystal frequency for this SoC
+
+    On an SoC where only one crystal frequency is supported,
+    using this macro is an alternative to calling rtc_clk_xtal_freq_get()
+ */
+#define RTC_XTAL_FREQ RTC_XTAL_FREQ_40M
+
 /**
  * @brief CPU frequency values
  */
@@ -315,22 +322,15 @@ void rtc_clk_init(rtc_clk_config_t cfg);
 /**
  * @brief Get main XTAL frequency
  *
- * This is the value stored in RTC register RTC_XTAL_FREQ_REG by the bootloader. As passed to
- * rtc_clk_init function
+ * Result is a constant as XTAL frequency is fixed.
  *
- * @return XTAL frequency, one of rtc_xtal_freq_t
+ * @note Function is included for ESP32 compatible code only. Code which only
+ * needs to support this SoC can use the macro RTC_XTAL_FREQ for this SoC's
+ * fixed crystal value.
+ *
+ * @return XTAL frequency in MHz, RTC_XTAL_FREQ_40M
  */
 rtc_xtal_freq_t rtc_clk_xtal_freq_get(void);
-
-/**
- * @brief Update XTAL frequency
- *
- * Updates the XTAL value stored in RTC_XTAL_FREQ_REG. Usually this value is ignored
- * after startup.
- *
- * @param xtal_freq New frequency value
- */
-void rtc_clk_xtal_freq_update(rtc_xtal_freq_t xtal_freq);
 
 /**
  * @brief Enable or disable 32 kHz XTAL oscillator
