@@ -191,4 +191,6 @@
 
 /tools/test_apps/**/*.py             @esp-idf-codeowners/ci @esp-idf-codeowners/tools
 
+/tools/unit-test-app/         @esp-idf-codeowners/system @esp-idf-codeowners/tools
+
 requirements.txt              @esp-idf-codeowners/tools
