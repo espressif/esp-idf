@@ -8,7 +8,7 @@
 #include <ctype.h>
 #include <string.h>
 #include "esp_log.h"
-#include "soc/soc_memory_layout.h"  // for esp_ptr_byte_accessible
+#include "soc/soc_memory_types.h"  // for esp_ptr_byte_accessible
 
 
 //print number of bytes per line for esp_log_buffer_char and esp_log_buffer_hex

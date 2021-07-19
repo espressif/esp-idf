@@ -25,7 +25,7 @@
 #include "hal/spi_flash_ll.h"
 #include "hal/spi_types.h"
 #include "hal/spi_flash_types.h"
-#include "soc/soc_memory_layout.h"
+#include "soc/soc_memory_types.h"
 
 /* Hardware host-specific constants */
 #define SPI_FLASH_HAL_MAX_WRITE_BYTES 64

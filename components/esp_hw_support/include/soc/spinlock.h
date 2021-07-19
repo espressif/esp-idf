@@ -18,7 +18,6 @@
 #include "sdkconfig.h"
 #include "soc/cpu.h"
 #include "hal/cpu_hal.h"
-#include "soc/soc_memory_layout.h"
 #include "soc/compare_set.h"
 
 #if __XTENSA__

@@ -25,7 +25,7 @@
 #define SOC_SDMMC_HOST_SUPPORTED        1
 #define SOC_FLASH_ENCRYPTION_XTS_AES      1
 #define SOC_FLASH_ENCRYPTION_XTS_AES_256 1
-
+#define SOC_PSRAM_DMA_CAPABLE           1
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
 #define SOC_ADC_PERIPH_NUM              (2)

@@ -25,6 +25,38 @@
 extern "C" {
 #endif
 
+#ifdef CONFIG_BT_ENABLED
+
+#define SOC_MEM_BT_DATA_START               0x3ffae6e0
+#define SOC_MEM_BT_DATA_END                 0x3ffaff10
+#define SOC_MEM_BT_EM_START                 0x3ffb0000
+#define SOC_MEM_BT_EM_END                   0x3ffb7cd8
+#define SOC_MEM_BT_EM_BTDM0_START           0x3ffb0000
+#define SOC_MEM_BT_EM_BTDM0_END             0x3ffb09a8
+#define SOC_MEM_BT_EM_BLE_START             0x3ffb09a8
+#define SOC_MEM_BT_EM_BLE_END               0x3ffb1ddc
+#define SOC_MEM_BT_EM_BTDM1_START           0x3ffb1ddc
+#define SOC_MEM_BT_EM_BTDM1_END             0x3ffb2730
+#define SOC_MEM_BT_EM_BREDR_START           0x3ffb2730
+#define SOC_MEM_BT_EM_BREDR_NO_SYNC_END     0x3ffb6388  //Not calculate with synchronize connection support
+#define SOC_MEM_BT_EM_BREDR_END             0x3ffb7cd8  //Calculate with synchronize connection support
+#define SOC_MEM_BT_EM_SYNC0_START           0x3ffb6388
+#define SOC_MEM_BT_EM_SYNC0_END             0x3ffb6bf8
+#define SOC_MEM_BT_EM_SYNC1_START           0x3ffb6bf8
+#define SOC_MEM_BT_EM_SYNC1_END             0x3ffb7468
+#define SOC_MEM_BT_EM_SYNC2_START           0x3ffb7468
+#define SOC_MEM_BT_EM_SYNC2_END             0x3ffb7cd8
+#define SOC_MEM_BT_BSS_START                0x3ffb8000
+#define SOC_MEM_BT_BSS_END                  0x3ffb9a20
+#define SOC_MEM_BT_MISC_START               0x3ffbdb28
+#define SOC_MEM_BT_MISC_END                 0x3ffbdb5c
+
+#define SOC_MEM_BT_EM_PER_SYNC_SIZE         0x870
+
+#define SOC_MEM_BT_EM_BREDR_REAL_END        (SOC_MEM_BT_EM_BREDR_NO_SYNC_END + CONFIG_BTDM_CTRL_BR_EDR_MAX_SYNC_CONN_EFF * SOC_MEM_BT_EM_PER_SYNC_SIZE)
+
+#endif //CONFIG_BT_ENABLED
+
 #define ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL  0x20200622
 
 /**
