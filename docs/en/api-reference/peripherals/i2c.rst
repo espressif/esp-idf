@@ -238,6 +238,7 @@ Delete Driver
 
 When the I2C communication is established with the function :cpp:func:`i2c_driver_install` and is not required for some substantial amount of time, the driver may be deinitialized to release allocated resources by calling :cpp:func:`i2c_driver_delete`.
 
+Before calling :cpp:func:`i2c_driver_delete` to remove i2c driver, please make sure that all threads have stopped using the driver in any way, because this function does not guarantee thread safety.
 
 Application Example
 -------------------

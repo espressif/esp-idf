@@ -68,6 +68,9 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
 /**
  * @brief I2C driver delete
  *
+ * @note This function does not guarantee thread safety.
+ *       Please make sure that no thread will continuously hold semaphores before calling the delete function.
+ *
  * @param i2c_num I2C port number
  *
  * @return
