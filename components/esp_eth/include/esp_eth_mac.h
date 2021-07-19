@@ -397,7 +397,14 @@ typedef struct {
         .smi_mdio_gpio_num = 18,                          \
         .flags = 0,                                       \
         .interface = EMAC_DATA_INTERFACE_RMII,            \
-        .clock_config.rmii.clock_mode = EMAC_CLK_DEFAULT, \
+        .clock_config =                                   \
+        {                                                 \
+            .rmii =                                       \
+            {                                             \
+                .clock_mode = EMAC_CLK_DEFAULT,           \
+                .clock_gpio = EMAC_CLK_IN_GPIO            \
+            }                                             \
+        }                                                 \
     }
 
 #if CONFIG_ETH_USE_ESP32_EMAC
