@@ -59,33 +59,29 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 ## Example Output
 Prerequisite: we startup a CoAP server on coap server example,
-or use the default of coap://californium.eclipse.org.  
+or use the default of coaps://californium.eclipseprojects.io.
 
 and you could receive data from CoAP server if succeed,  
 such as the following log:
 
 ```
 ...
-I (332) wifi: mode : sta (30:ae:a4:04:1b:7c)
-I (1672) wifi: n:11 0, o:1 0, ap:255 255, sta:11 0, prof:1
-I (1672) wifi: state: init -> auth (b0)
-I (1682) wifi: state: auth -> assoc (0)
-I (1692) wifi: state: assoc -> run (10)
-I (1692) wifi: connected with huawei_cw, channel 11
-I (1692) wifi: pm start, type: 1
-
-I (2582) event: sta ip: 192.168.3.89, mask: 255.255.255.0, gw: 192.168.3.1
-I (2582) CoAP_client: Connected to AP
-I (2582) CoAP_client: DNS lookup succeeded. IP=104.196.15.150
+I (5104) esp_netif_handlers: example_connect: sta ip: 192.168.0.103, mask: 255.255.255.0, gw: 192.168.0.1
+I (5104) example_connect: Got IPv4 event: Interface "example_connect: sta" address: 192.168.0.103
+I (5604) example_connect: Got IPv6 event: Interface "example_connect: sta" address: fe80:0000:0000:0000:32ae:a4ff:fec5:3234, type: ESP_IP6_ADDR_IS_LINK_LOCAL
+I (5604) example_connect: Connected to example_connect: sta
+I (5614) example_connect: - IPv4 address: 192.168.0.103
+I (5614) example_connect: - IPv6 address: fe80:0000:0000:0000:32ae:a4ff:fec5:3234, type: ESP_IP6_ADDR_IS_LINK_LOCAL
+I (6004) CoAP_client: DNS lookup succeeded. IP=35.185.40.182
 Received:
-************************************************************
-CoAP RFC 7252                              Cf 2.0.0-SNAPSHOT
-************************************************************
+****************************************************************
+CoAP RFC 7252                                  Cf 3.0.0-SNAPSHOT
+****************************************************************
 This server is using the Eclipse Californium (Cf) CoAP framework
 published under EPL+EDL: http://www.eclipse.org/californium/
 
-(c) 2014, 2015, 2016 Institute for Pervasive Computing, ETH Zurich and others
-************************************************************
+(c) 2014-2020 Institute for Pervasive Computing, ETH Zurich and others
+****************************************************************
 ...
 ```
 
@@ -96,6 +92,6 @@ This can be found at https://libcoap.net/doc/reference/4.2.0/
 * Please make sure Target Url includes valid `host`, optional `port`,
 optional `path`, and begins with `coap://`, `coaps://` or `coap+tcp://`
 for a coap server that supports TCP
-(not all do including coap+tcp://californium.eclipse.org).
+(not all do including coap+tcp://californium.eclipseprojects.io).
 
 * CoAP logging can be enabled by running 'idf.py menuconfig -> Component config -> CoAP Configuration' and setting appropriate log level
