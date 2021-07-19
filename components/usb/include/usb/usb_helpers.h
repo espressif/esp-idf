@@ -11,6 +11,8 @@ Warning: The USB Host Library API is still a beta version and may be subject to 
 #pragma once
 
 #include <stdint.h>
+#include "esp_err.h"
+#include "usb/usb_types_stack.h"
 #include "usb/usb_types_ch9.h"
 
 #ifdef __cplusplus
@@ -128,6 +130,25 @@ static inline int usb_round_up_to_mps(int num_bytes, int mps)
     }
     return ((num_bytes + mps - 1) / mps) * mps;
 }
+
+/**
+ * @brief Print class specific descriptor callback
+ *
+ * Optional callback to be provided to usb_print_descriptors() function.
+ * The callback is called when when a non-standard descriptor is encountered.
+ * The callback should decode the descriptor as print it.
+ */
+
+typedef void (*print_class_descriptor_cb)(const usb_standard_desc_t *);
+
+/**
+ * @brief Prints usb descriptors
+ *
+ * @param[in] device Handle to device
+ * @param[in] class_specific_cb Optional callback to print class specific descriptors
+ * @return esp_err_t
+ */
+esp_err_t usb_print_descriptors(usb_device_handle_t device, print_class_descriptor_cb class_specific_cb);
 
 #ifdef __cplusplus
 }
