@@ -15,13 +15,13 @@
 #include <string.h>
 #include <sys/param.h>
 #include "esp_log.h"
+#include "esp_check.h"
 #include "driver/spi_master.h"
 #include "driver/periph_ctrl.h"
 #include "essl_internal.h"
 #include "essl_spi.h"
 #include "essl_spi/esp32s2_defs.h"
 
-#define ESSL_SPI_CHECK(cond, warn, ret) do{if(!(cond)){ESP_LOGE(TAG, warn); return ret;}} while(0)
 
 /**
  * Initialise device function list of SPI by this macro.
@@ -294,7 +294,7 @@ esp_err_t essl_spi_init_dev(essl_handle_t *out_handle, const essl_spi_config_t *
 
 esp_err_t essl_spi_deinit_dev(essl_handle_t handle)
 {
-    ESSL_SPI_CHECK(handle, "ESSL SPI is not in use", ESP_ERR_INVALID_STATE);
+    ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_STATE, TAG, "ESSL SPI is not in use");
     free(handle->args);
     free(handle);
     return ESP_OK;
@@ -363,7 +363,7 @@ static esp_err_t essl_spi_update_rx_data_size(void *arg, uint32_t wait_ms)
 
 esp_err_t essl_spi_get_packet(void *arg, void *out_data, size_t size, uint32_t wait_ms)
 {
-    ESSL_SPI_CHECK(arg, "Check ESSL SPI initialization first", ESP_ERR_INVALID_STATE);
+    ESP_RETURN_ON_FALSE(arg, ESP_ERR_INVALID_STATE, TAG, "Check ESSL SPI initialization first");
     if (!esp_ptr_dma_capable(out_data) || ((intptr_t)out_data % 4) != 0) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -453,7 +453,7 @@ static esp_err_t essl_spi_update_tx_buffer_num(void *arg, uint32_t wait_ms)
 
 esp_err_t essl_spi_send_packet(void *arg, const void *data, size_t size, uint32_t wait_ms)
 {
-    ESSL_SPI_CHECK(arg, "Check ESSL SPI initialization first", ESP_ERR_INVALID_STATE);
+    ESP_RETURN_ON_FALSE(arg, ESP_ERR_INVALID_STATE, TAG, "Check ESSL SPI initialization first");
     if (!esp_ptr_dma_capable(data)) {
         return ESP_ERR_INVALID_ARG;
     }
