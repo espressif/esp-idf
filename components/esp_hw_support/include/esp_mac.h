@@ -79,6 +79,7 @@ esp_err_t esp_base_mac_addr_set(const uint8_t *mac);
   *                 8 bytes for EUI-64(used for IEEE 802.15.4)
   *
   * @return ESP_OK on success
+  *         ESP_ERR_INVALID_ARG mac is NULL
   *         ESP_ERR_INVALID_MAC base MAC address has not been set
   */
 esp_err_t esp_base_mac_addr_get(uint8_t *mac);
@@ -100,8 +101,10 @@ esp_err_t esp_base_mac_addr_get(uint8_t *mac);
   *                 8 bytes for EUI-64(used for IEEE 802.15.4)
   *
   * @return ESP_OK on success
-  *         ESP_ERR_INVALID_VERSION An invalid MAC version field was read from BLK3 of EFUSE
-  *         ESP_ERR_INVALID_CRC An invalid MAC CRC was read from BLK3 of EFUSE
+  *         ESP_ERR_INVALID_ARG mac is NULL
+  *         ESP_ERR_INVALID_MAC CUSTOM_MAC address has not been set, all zeros (for esp32-xx)
+  *         ESP_ERR_INVALID_VERSION An invalid MAC version field was read from BLK3 of EFUSE (for esp32)
+  *         ESP_ERR_INVALID_CRC An invalid MAC CRC was read from BLK3 of EFUSE (for esp32)
   */
 esp_err_t esp_efuse_mac_get_custom(uint8_t *mac);
 
@@ -113,6 +116,7 @@ esp_err_t esp_efuse_mac_get_custom(uint8_t *mac);
   *                 8 bytes for EUI-64(used for IEEE 802.15.4)
   *
   * @return ESP_OK on success
+  *         ESP_ERR_INVALID_ARG mac is NULL
   */
 esp_err_t esp_efuse_mac_get_default(uint8_t *mac);
 
