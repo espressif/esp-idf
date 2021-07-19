@@ -19,7 +19,6 @@
 #include "lwip/err.h"
 #include "lwip/sockets.h"
 
-#if CONFIG_OPENTHREAD_ENABLE_UDP_SOCKET_EXAMPLE
 #define TAG "ot_socket"
 
 static void udp_socket_server_task(void *pvParameters)
@@ -31,7 +30,7 @@ static void udp_socket_server_task(void *pvParameters)
     int err = 0;
     int len;
     int listen_sock;
-    int port = CONFIG_OPENTHEAD_EXAMPLE_UDP_SERVER_PORT;
+    int port = CONFIG_OPENTHREAD_CLI_UDP_SERVER_PORT;
     struct timeval timeout;
     struct sockaddr_storage source_addr; // Large enough for both IPv4 or IPv6
     struct sockaddr_in6 listen_addr;
@@ -88,7 +87,7 @@ static void udp_socket_client_task(void *pvParameters)
     char *host_ip = (char *)pvParameters;
     char *payload = "This message is from client\n";
     int client_sock;
-    int port = CONFIG_OPENTHEAD_EXAMPLE_UDP_SERVER_PORT;
+    int port = CONFIG_OPENTHREAD_CLI_UDP_SERVER_PORT;
     int err = 0;
     int len;
     esp_err_t ret = ESP_OK;
@@ -142,4 +141,3 @@ void esp_ot_process_udp_client(void *aContext, uint8_t aArgsLength, char *aArgs[
         xTaskCreate(udp_socket_client_task, "ot_udp_socket_client", 4096, aArgs[0], 4, NULL);
     }
 }
-#endif // CONFIG_OPENTHREAD_ENABLE_UDP_SOCKET_EXAMPLE

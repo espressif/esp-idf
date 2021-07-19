@@ -3,6 +3,6 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := ot_esp_cli
+PROJECT_NAME := esp_ot_cli
 
 include $(IDF_PATH)/make/project.mk
