@@ -62,10 +62,7 @@ esp_err_t essl_wait_for_ready(essl_handle_t handle, uint32_t wait_ms)
 
 esp_err_t essl_send_packet(essl_handle_t handle, const void *start, size_t length, uint32_t wait_ms)
 {
-    if (handle == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    if (start == NULL || length == 0) {
+    if (handle == NULL || start == NULL || length == 0) {
         return ESP_ERR_INVALID_ARG;
     }
     if (handle->send_packet == NULL) {
@@ -87,9 +84,9 @@ esp_err_t essl_send_packet(essl_handle_t handle, const void *start, size_t lengt
         } else if (err != ESP_ERR_NOT_FOUND) {
             return err;
         } // else ESP_ERR_NOT_FOUND
-        //the slave has no enough memory, retry
+        //the slave is not ready, retry
     } while (remain_wait_ms > 0);
-    return ESP_OK;
+    return err;
 }
 
 esp_err_t essl_get_packet(essl_handle_t handle, void *out_data, size_t size, size_t *out_length, uint32_t wait_ms)
