@@ -132,6 +132,16 @@ Failure to initialize
     If :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` is enabled, the option to ignore failure is not available as the linker will have assigned symbols to external memory addresses at link time.
 
 
+.. only:: not esp32
+
+    Encryption
+    ==========
+
+    It is possible to enable automatic encryption for data stored in external RAM. When this is enabled any data read and written through the cache will automatically be encrypted/decrypted by the external memory encryption hardware.
+
+    This feature is enabled whenever flash encryption is enabled. For more information on how to enable and how it works see :doc:`Flash Encryption </security/flash-encryption>`.
+
+
 .. only:: esp32
 
     .. include:: inc/external-ram-esp32-notes.rst

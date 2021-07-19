@@ -34,6 +34,7 @@ esp_err_t esp_flash_encryption_enable_secure_features(void)
 #ifndef CONFIG_SECURE_BOOT_ALLOW_JTAG
     ESP_LOGI(TAG, "Disable JTAG...");
     esp_efuse_write_field_bit(ESP_EFUSE_HARD_DIS_JTAG);
+    esp_efuse_write_field_bit(ESP_EFUSE_DIS_USB_JTAG);
 #else
     ESP_LOGW(TAG, "Not disabling JTAG - SECURITY COMPROMISED");
 #endif
