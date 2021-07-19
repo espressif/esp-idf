@@ -2822,6 +2822,7 @@ examples/peripherals/uart/uart_echo_rs485/main/rs485_example.c
 examples/peripherals/uart/uart_events/main/uart_events_example_main.c
 examples/peripherals/uart/uart_repl/main/uart_repl_example_main.c
 examples/peripherals/uart/uart_select/main/uart_select_example_main.c
+examples/peripherals/usb/host/msc/components/msc/test/msc_device.c
 examples/peripherals/usb/tusb_console/main/tusb_console_main.c
 examples/peripherals/usb/tusb_sample_descriptor/main/tusb_sample_descriptor_main.c
 examples/peripherals/usb/tusb_serial_device/main/tusb_serial_device_main.c
