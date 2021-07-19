@@ -53,11 +53,13 @@ class SerialReader(StoppableThread):
 
             self.serial.dtr = True      # Non reset state
             self.serial.rts = False     # IO0=HIGH
+            self.serial.dtr = self.serial.dtr   # usbser.sys workaround
             # Current state not reset the target!
             self.serial.open()
-            if self.gdb_exit == False:
+            if not self.gdb_exit:
                 self.serial.dtr = False     # Set dtr to reset state (affected by rts)
                 self.serial.rts = True      # Set rts/dtr to the reset state
+                self.serial.dtr = self.serial.dtr   # usbser.sys workaround
                 time.sleep(0.005)  # Add a delay to meet the requirements of minimal EN low time (2ms for ESP32-C3)
             self.gdb_exit = False
             self.serial.rts = False             # Set rts/dtr to the working state
