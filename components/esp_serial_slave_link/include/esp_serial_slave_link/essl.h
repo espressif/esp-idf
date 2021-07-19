@@ -29,42 +29,48 @@ typedef struct essl_dev_t* essl_handle_t;
  *
  * @param handle Handle of an ESSL device.
  * @param wait_ms Millisecond to wait before timeout, will not wait at all if set to 0-9.
- * @return ESP_OK if success, or other value returned from lower layer `init`.
+ * @return
+ *        - ESP_OK:                If success
+ *        - ESP_ERR_NOT_SUPPORTED: Current device does not support this function.
+ *        - Other value returned from lower layer `init`.
  */
 esp_err_t essl_init(essl_handle_t handle, uint32_t wait_ms);
 
-/** Wait for interrupt of an ESP slave device.
+/** Wait for interrupt of an ESSL slave device.
  *
  * @param handle Handle of an ESSL device.
  * @param wait_ms Millisecond to wait before timeout, will not wait at all if set to 0-9.
  *
  * @return
- *      - ESP_OK if success
+ *      - ESP_OK:                If success
+ *      - ESP_ERR_NOT_SUPPORTED: Current device does not support this function.
  *      - One of the error codes from SDMMC host controller
  */
 esp_err_t essl_wait_for_ready(essl_handle_t handle, uint32_t wait_ms);
 
 /** Get buffer num for the host to send data to the slave. The buffers are size of ``buffer_size``.
  *
- * @param handle Handle of an ESSL device.
- * @param out_tx_num Output of buffer num that host can send data to an ESP slave.
+ * @param handle Handle of a ESSL device.
+ * @param out_tx_num Output of buffer num that host can send data to ESSL slave.
  * @param wait_ms Millisecond to wait before timeout, will not wait at all if set to 0-9.
  *
  * @return
- *      - ESP_OK Success
- *      - One of the error codes from SDMMC host controller
+ *      - ESP_OK:                Success
+ *      - ESP_ERR_NOT_SUPPORTED: This API is not supported in this mode
+ *      - One of the error codes from SDMMC/SPI host controller
  */
 esp_err_t essl_get_tx_buffer_num(essl_handle_t handle, uint32_t *out_tx_num, uint32_t wait_ms);
 
-/** Get amount of data the ESP slave preparing to send to host.
+/** Get the size, in bytes, of the data that the ESSL slave is ready to send
  *
  * @param handle Handle of an ESSL device.
- * @param out_rx_size Output of data size to read from slave.
+ * @param out_rx_size Output of data size to read from slave, in bytes
  * @param wait_ms Millisecond to wait before timeout, will not wait at all if set to 0-9.
  *
  * @return
- *      - ESP_OK Success
- *      - One of the error codes from SDMMC host controller
+ *      - ESP_OK:                Success
+ *      - ESP_ERR_NOT_SUPPORTED: This API is not supported in this mode
+ *      - One of the error codes from SDMMC/SPI host controller
  */
 esp_err_t essl_get_rx_data_size(essl_handle_t handle, uint32_t *out_rx_size, uint32_t wait_ms);
 
@@ -72,10 +78,15 @@ esp_err_t essl_get_rx_data_size(essl_handle_t handle, uint32_t *out_rx_size, uin
 /** Reset the counters of this component. Usually you don't need to do this unless you know the slave is reset.
  *
  * @param handle Handle of an ESSL device.
+ *
+ * @return
+ *        - ESP_OK:                Success
+ *        - ESP_ERR_NOT_SUPPORTED: This API is not supported in this mode
+ *        - ESP_ERR_INVALID_ARG:   Invalid argument, handle is not init.
  */
 esp_err_t essl_reset_cnt(essl_handle_t handle);
 
-/** Send a packet to the ESP slave. The slave receive the packet into buffers whose size is ``buffer_size`` (configured during initialization).
+/** Send a packet to the ESSL Slave. The Slave receives the packet into buffers whose size is ``buffer_size`` (configured during initialization).
  *
  * @param handle Handle of an ESSL device.
  * @param start Start address of the packet to send
@@ -84,12 +95,15 @@ esp_err_t essl_reset_cnt(essl_handle_t handle);
  *
  * @return
  *      - ESP_OK Success
- *      - ESP_ERR_TIMEOUT No buffer to use, or error ftrom SDMMC host controller
- *      - One of the error codes from SDMMC host controller
+ *      - ESP_ERR_INVALID_ARG:   Invalid argument, handle is not init or other argument is not valid.
+ *      - ESP_ERR_TIMEOUT:       No buffer to use, or error ftrom SDMMC host controller.
+ *      - ESP_ERR_NOT_FOUND:     Slave is not ready for receiving.
+ *      - ESP_ERR_NOT_SUPPORTED: This API is not supported in this mode
+ *      - One of the error codes from SDMMC/SPI host controller.
  */
 esp_err_t essl_send_packet(essl_handle_t handle, const void *start, size_t length, uint32_t wait_ms);
 
-/** Get a packet from an ESP slave.
+/** Get a packet from ESSL slave.
  *
  * @param handle Handle of an ESSL device.
  * @param[out] out_data Data output address
@@ -98,16 +112,19 @@ esp_err_t essl_send_packet(essl_handle_t handle, const void *start, size_t lengt
  * @param wait_ms Millisecond to wait before timeout, will not wait at all if set to 0-9.
  *
  * @return
- *     - ESP_OK Success, all the data are read from the slave.
- *     - ESP_ERR_NOT_FINISHED Read success, while there're data remaining.
- *     - One of the error codes from SDMMC host controller
+ *     - ESP_OK Success:        All the data has been read from the slave.
+ *     - ESP_ERR_INVALID_ARG:   Invalid argument, The handle is not initialized or the other arguments are invalid.
+ *     - ESP_ERR_NOT_FINISHED:  Read was successful, but there is still data remaining.
+ *     - ESP_ERR_NOT_FOUND:     Slave is not ready to send data.
+ *     - ESP_ERR_NOT_SUPPORTED: This API is not supported in this mode
+ *     - One of the error codes from SDMMC/SPI host controller.
  */
 esp_err_t essl_get_packet(essl_handle_t handle, void *out_data, size_t size, size_t *out_length, uint32_t wait_ms);
 
-/** Write general purpose R/W registers (8-bit) of an ESP slave.
+/** Write general purpose R/W registers (8-bit) of ESSL slave.
  *
  * @param handle Handle of an ESSL device.
- * @param addr Address of register to write. Valid address: 0-59.
+ * @param addr Address of register to write. For SDIO, valid address: 0-59. For SPI, see ``essl_spi.h``
  * @param value Value to write to the register.
  * @param value_o Output of the returned written value.
  * @param wait_ms Millisecond to wait before timeout, will not wait at all if set to 0-9.
@@ -116,22 +133,20 @@ esp_err_t essl_get_packet(essl_handle_t handle, void *out_data, size_t size, siz
  *
  * @return
  *      - ESP_OK Success
- *      - ESP_ERR_INVALID_ARG Address not valid.
- *      - One of the error codes from SDMMC host controller
+ *      - One of the error codes from SDMMC/SPI host controller
  */
 esp_err_t essl_write_reg(essl_handle_t handle, uint8_t addr, uint8_t value, uint8_t *value_o, uint32_t wait_ms);
 
-/** Read general purpose R/W registers (8-bit) of an ESP slave.
+/** Read general purpose R/W registers (8-bit) of ESSL slave.
  *
- * @param handle Handle of an ESSL device.
- * @param add Address of register to read. Valid address: 0-27, 32-63 (28-31 reserved, return interrupt bits on read).
+ * @param handle Handle of a ``essl`` device.
+ * @param add Address of register to read. For SDIO, Valid address: 0-27, 32-63 (28-31 reserved, return interrupt bits on read). For SPI, see ``essl_spi.h``
  * @param value_o Output value read from the register.
  * @param wait_ms Millisecond to wait before timeout, will not wait at all if set to 0-9.
  *
  * @return
  *      - ESP_OK Success
- *      - ESP_ERR_INVALID_ARG Address not valid.
- *      - One of the error codes from SDMMC host controller
+ *      - One of the error codes from SDMMC/SPI host controller
  */
 esp_err_t essl_read_reg(essl_handle_t handle, uint8_t add, uint8_t *value_o, uint32_t wait_ms);
 
@@ -141,25 +156,26 @@ esp_err_t essl_read_reg(essl_handle_t handle, uint8_t add, uint8_t *value_o, uin
  * @param wait_ms Millisecond to wait before timeout, will not wait at all if set to 0-9.
  *
  * @return
- *      - ESP_ERR_NOT_SUPPORTED Currently our driver doesnot support SDIO with SPI interface.
- *      - ESP_OK If interrupt triggered.
- *      - ESP_ERR_TIMEOUT No interrupts before timeout.
+ *        - ESP_OK:                If interrupt is triggered.
+ *        - ESP_ERR_NOT_SUPPORTED: Current device does not support this function.
+ *        - ESP_ERR_TIMEOUT:       No interrupts before timeout.
  */
 esp_err_t essl_wait_int(essl_handle_t handle, uint32_t wait_ms);
 
-/** Clear interrupt bits of an ESP slave. All the bits set in the mask will be cleared, while other bits will stay the same.
+/** Clear interrupt bits of ESSL slave. All the bits set in the mask will be cleared, while other bits will stay the same.
  *
  * @param handle Handle of an ESSL device.
  * @param intr_mask Mask of interrupt bits to clear.
  * @param wait_ms Millisecond to wait before timeout, will not wait at all if set to 0-9.
  *
  * @return
- *      - ESP_OK Success
- *      - One of the error codes from SDMMC host controller
+ *        - ESP_OK:                Success
+ *        - ESP_ERR_NOT_SUPPORTED: Current device does not support this function.
+ *        - One of the error codes from SDMMC host controller
  */
 esp_err_t essl_clear_intr(essl_handle_t handle, uint32_t intr_mask, uint32_t wait_ms);
 
-/** Get interrupt bits of an ESP slave.
+/** Get interrupt bits of ESSL slave.
  *
  * @param handle Handle of an ESSL device.
  * @param intr_raw Output of the raw interrupt bits. Set to NULL if only masked bits are read.
@@ -167,25 +183,27 @@ esp_err_t essl_clear_intr(essl_handle_t handle, uint32_t intr_mask, uint32_t wai
  * @param wait_ms Millisecond to wait before timeout, will not wait at all if set to 0-9.
  *
  * @return
- *      - ESP_OK Success
- *      - ESP_INVALID_ARG   if both ``intr_raw`` and ``intr_st`` are NULL.
- *      - One of the error codes from SDMMC host controller
+ *        - ESP_OK:                Success
+ *        - ESP_INVALID_ARG:       If both ``intr_raw`` and ``intr_st`` are NULL.
+ *        - ESP_ERR_NOT_SUPPORTED: Current device does not support this function.
+ *        - One of the error codes from SDMMC host controller
  */
 esp_err_t essl_get_intr(essl_handle_t handle, uint32_t *intr_raw, uint32_t *intr_st, uint32_t wait_ms);
 
-/** Set interrupt enable bits of an ESP slave. The slave only sends interrupt on the line when there is a bit both the raw status and the enable are set.
+/** Set interrupt enable bits of ESSL slave. The slave only sends interrupt on the line when there is a bit both the raw status and the enable are set.
  *
  * @param handle Handle of an ESSL device.
  * @param ena_mask Mask of the interrupt bits to enable.
  * @param wait_ms Millisecond to wait before timeout, will not wait at all if set to 0-9.
  *
  * @return
- *      - ESP_OK Success
- *      - One of the error codes from SDMMC host controller
+ *        - ESP_OK:                Success
+ *        - ESP_ERR_NOT_SUPPORTED: Current device does not support this function.
+ *        - One of the error codes from SDMMC host controller
  */
 esp_err_t essl_set_intr_ena(essl_handle_t handle, uint32_t ena_mask, uint32_t wait_ms);
 
-/** Get interrupt enable bits of an ESP slave.
+/** Get interrupt enable bits of ESSL slave.
  *
  * @param handle Handle of an ESSL device.
  * @param ena_mask_o Output of interrupt bit enable mask.
@@ -204,7 +222,8 @@ esp_err_t essl_get_intr_ena(essl_handle_t handle, uint32_t *ena_mask_o, uint32_t
  * @param wait_ms Millisecond to wait before timeout, will not wait at all if set to 0-9.
  *
  * @return
- *      - ESP_OK Success
- *      - One of the error codes from SDMMC host controller
+ *        - ESP_OK:                Success
+ *        - ESP_ERR_NOT_SUPPORTED: Current device does not support this function.
+ *        - One of the error codes from SDMMC host controller
  */
 esp_err_t essl_send_slave_intr(essl_handle_t handle, uint32_t intr_mask, uint32_t wait_ms);
