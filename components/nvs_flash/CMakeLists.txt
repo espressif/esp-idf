@@ -13,12 +13,12 @@ set(srcs "src/nvs_api.cpp"
          "src/nvs_partition_manager.cpp"
          "src/nvs_types.cpp")
 
-set(public_req spi_flash)
+set(public_req "spi_flash")
 
 # Current linux-based builds don't have common components.
 # Add the necessary ones manually:
 if(${target} STREQUAL "linux")
-    list(APPEND public_req "esp_rom" "log")
+    list(APPEND public_req "esp_rom" "esp_common" "log")
 endif()
 
 set(include_dirs "include")

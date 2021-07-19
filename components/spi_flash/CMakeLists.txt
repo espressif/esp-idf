@@ -30,15 +30,17 @@ if(${spi_flash_mock})
              "${MOCK_GEN_DIR}/Mockesp_spi_flash.c"
              "${MOCK_GEN_DIR}/Mockesp_flash.c")
 
+    set(requires "cmock")
+
     if(${target} STREQUAL "linux")
         list(APPEND include_dirs
-            "${CMAKE_CURRENT_SOURCE_DIR}/../spi_flash/sim/stubs/soc/include"
-            "${CMAKE_CURRENT_SOURCE_DIR}/../spi_flash/sim/stubs/xtensa")
+            "${CMAKE_CURRENT_SOURCE_DIR}/../spi_flash/sim/stubs/soc/include")
+        list(APPEND requires "esp_common")
     endif()
 
     idf_component_register(SRCS "${srcs}"
-                        INCLUDE_DIRS ${include_dirs}
-                        REQUIRES cmock)
+                        INCLUDE_DIRS "${include_dirs}"
+                        REQUIRES "${requires}")
 
     add_custom_command(
         OUTPUT ruby_found SYMBOLIC
