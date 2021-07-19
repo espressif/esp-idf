@@ -13,12 +13,6 @@
 #pragma once
 
 #include "hal/dac_ll.h"
-#if CONFIG_IDF_TARGET_ESP32S2
-#include "soc/spi_struct.h"
-#include "hal/spi_ll.h"
-#include "soc/spi_reg.h"
-#include "soc/spi_periph.h"
-#endif
 
 /**
  * Power on dac module and start output voltage.
@@ -74,51 +68,3 @@ void dac_hal_cw_generator_config(dac_cw_config_t *cw);
  * Enable/disable DAC output data from DMA.
  */
 #define dac_hal_digi_enable_dma(enable) dac_ll_digi_enable_dma(enable)
-
-#if CONFIG_IDF_TARGET_ESP32S2
-/*******************************************************
- * DAC-DMA hal layer functions.
- * On ESP32-S2, DAC shares the DMA with SPI3.
-*******************************************************/
-
-/**
- * Read the interrupt status.
- */
-#define dac_hal_digi_read_intr_status()  spi_ll_read_intr_status(&GPSPI3)
-
-/**
- * Clear the interrupt bit.
- * @param mask spi-dma interrupt bit mask.
- */
-#define dac_hal_digi_clear_intr(mask)   spi_ll_clear_intr(&GPSPI3, mask)
-
-/**
- * Enable interrupt
- * @param mask spi-dma interrupt bit mask.
- */
-#define dac_hal_digi_enable_intr(mask)  spi_ll_enable_intr(&GPSPI3, mask)
-
-/**
- * Disable dac dma
- */
-#define dac_hal_dma_disable()           spi_dma_ll_tx_disable(&GPSPI3)
-
-/**
- * Reset dac dma
- * @param chan the dma channel.
- */
-#define dac_hal_dma_reset(chan)         spi_dma_ll_tx_reset(&GPSPI3, chan)
-
-/**
- * Start dac dma
- * @param chan the dma channel.
- * @param desc the pointer to the dma link.
- */
-#define dac_hal_dma_start(chan, desc)   spi_dma_ll_tx_start(&GPSPI3, chan, desc)
-
-/**
- * Reset the dma fifo
- */
-#define dac_hal_dma_fifo_reset()        spi_ll_dma_tx_fifo_reset(&GPSPI3)
-
-#endif //CONFIG_IDF_TARGET_ESP32S2

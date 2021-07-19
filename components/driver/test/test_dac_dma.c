@@ -61,6 +61,8 @@ static void test_pxp_deinit_io(void)
 
 #define SAR_SIMPLE_NUM  512  // Set out number of enabled unit.
 
+static const char *TAG = "test_adc";
+
 /*******************************************/
 /**           DAC-DMA INIT CODE            */
 /*******************************************/
@@ -98,28 +100,24 @@ void dac_dma_test_create_buffer(dac_digi_convert_mode_t mode)
 /**
  * Testcase: Check the interrupt types of DAC-DMA.
  */
-void test_dac_dig_dma_intr_check(dac_digi_convert_mode_t mode)
+void test_dac_dma(dac_digi_convert_mode_t mode)
 {
     ESP_LOGI(TAG, "  >> %s - dac mode %d<<  ", __func__, mode);
 
-    const dac_digi_config_t cfg = {
+    const dac_digi_init_config_t cfg = {
         .mode = mode,
+        .dac_chan_msk = BIT(DAC_CHANNEL_1) | BIT(DAC_CHANNEL_2),
         .interval = 100,
-        .dig_clk.use_apll = false,  // APB clk
-        .dig_clk.div_num = 79,
-        .dig_clk.div_b = 1,
-        .dig_clk.div_a = 0,
         .dac_dma_cnt = 4,
         .dac_dma_length = 128,
-        .dac_dma_link_type = DAC_DMA_LINK_LINE,
+        .dac_dma_link_type = DAC_DMA_LINK_RECURSIVE,
     };
     dac_digi_initialize(&cfg);
-    dac_output_enable(DAC_CHANNEL_1);
-    dac_output_enable(DAC_CHANNEL_2);
 
     dac_dma_test_create_buffer(mode);
     dac_digi_start();
-    dac_digi_write_bytes((uint8_t*)_buf);
+    uint32_t length = sizeof(_buf);
+    dac_digi_write_bytes(length, (uint8_t*)_buf, portMAX_DELAY);
     // /* Check interrupt type */
 
     ESP_LOGI(TAG, "DAC-DMA intr test over");
@@ -127,87 +125,10 @@ void test_dac_dig_dma_intr_check(dac_digi_convert_mode_t mode)
     dac_digi_deinitialize();
 }
 
-TEST_CASE("DAC-DMA interrupt test", "[dac]")
+TEST_CASE("DAC with DMA test", "[dac]")
 {
-    test_dac_dig_dma_intr_check(DAC_CONV_NORMAL);
-    test_dac_dig_dma_intr_check(DAC_CONV_ALTER);
-}
-
-/****************************************************
- * The code below is used for legacy implementation
- ***************************************************/
-#ifndef DAC_DMA_LEGACY_IMPL
-#define DAC_DMA_LEGACY_IMPL 1
-#endif
-
-#if DAC_DMA_LEGACY_IMPL
-
-typedef struct dma_msg {
-    uint32_t int_msk;
-    uint8_t *data;
-    uint32_t data_len;
-} dac_dma_event_t;
-
-static QueueHandle_t que_dac = NULL;
-static uint8_t link_buf[2][SAR_SIMPLE_NUM*2] = {0};
-static lldesc_t dma1 = {0};
-static lldesc_t dma2 = {0};
-
-/*******************************************/
-/**           DAC-DMA INIT CODE            */
-/*******************************************/
-
-/**
- * DMA liner initialization and start.
- * @param is_loop
- *     - true: The two dma linked lists are connected end to end, with no end mark (eof).
- *     - false: The two dma linked lists are connected end to end, with end mark (eof).
- * @param is_alter Is alter or not.
- */
-uint32_t dac_dma_linker_init(bool is_alter, bool is_loop)
-{
-    /* The DAC output is a sawtooth wave. */
-    if (is_alter) {
-        for(int i=0; i<SAR_SIMPLE_NUM*2; i++) {
-            if(i%2){
-                link_buf[0][i] = i%256;
-            }else{
-                link_buf[0][i] = 256-i%256;
-            }
-            if(i%2){
-                link_buf[1][i] = i%256;
-            }else{
-                link_buf[1][i] = 256-i%256;
-            }
-        }
-    } else {
-        for(int i=0; i<SAR_SIMPLE_NUM; i++) {
-            link_buf[0][i] = i%256;
-            link_buf[1][i] = i%256;
-        }
-    }
-    dma1 = (lldesc_t) {
-        .size = (is_alter) ? SAR_SIMPLE_NUM*2 : SAR_SIMPLE_NUM,
-        .length = (is_alter) ? SAR_SIMPLE_NUM*2 : SAR_SIMPLE_NUM,
-        .eof = 0,
-        .owner = 1,
-        .buf = &link_buf[0][0],
-        .qe.stqe_next = &dma2,
-    };
-    dma2 = (lldesc_t) {
-        .size = (is_alter) ? SAR_SIMPLE_NUM*2 : SAR_SIMPLE_NUM,
-        .length = (is_alter) ? SAR_SIMPLE_NUM*2 : SAR_SIMPLE_NUM,
-        .owner = 1,
-        .buf = &link_buf[1][0],
-    };
-    if (is_loop) {
-        dma2.eof = 0;
-        dma2.qe.stqe_next = &dma1;
-    } else {
-        dma2.eof = 1;
-        dma2.qe.stqe_next = NULL;
-    }
-    return (uint32_t)&dma1;
+    test_dac_dma(DAC_CONV_NORMAL);
+    test_dac_dma(DAC_CONV_ALTER);
 }
 
 /** ADC-DMA ISR handler. */
