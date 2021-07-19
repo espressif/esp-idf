@@ -450,7 +450,7 @@ Controlling Component Compilation
 
 .. highlight:: cmake
 
-To pass compiler options when compiling source files belonging to a particular component, use the ``target_compile_options`` function::
+To pass compiler options when compiling source files belonging to a particular component, use the `target_compile_options`_ function::
 
   target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-unused-variable)
 
@@ -648,15 +648,57 @@ Including components in the build
   - Components mentioned explicitly in ``COMPONENTS``.
   - Those components' requirements (evaluated recursively).
   - The "common" components that every component depends on.
-  
+
 - Setting ``COMPONENTS`` to the minimal list of required components can significantly reduce compile times.
+
+.. _component-circular-dependencies:
+
+Circular Dependencies
+---------------------
+
+It's possible for a project to contain Component A that requires (``REQUIRES`` or ``PRIV_REQUIRES``) Component B, and Component B that requires Component A. This is known as a dependency cycle or a circular dependency.
+
+CMake will usually handle circular dependencies automatically by repeating the component library names twice on the linker command line. However this strategy doesn't always work, and it's possible the build will fail with a linker error about "Undefined reference to ...", referencing a symbol defined by one of the components inside the circular dependency. This is particularly likely if there is a large circular dependency, i.e. A->B->C->D->A.
+
+The best solution is to restructure the components to remove the circular dependency. In most cases, a software architecture without circular dependencies has desirable properties of modularity and clean layering and will be more maintainable in the long term. However, removing circular dependencies is not always possible.
+
+To bypass a linker error caused by a circular dependency, the simplest workaround is to increase the CMake `LINK_INTERFACE_MULTIPLICITY`_ property of one of the component libraries. This causes CMake to repeat this library and its dependencies more than two times on the linker command line.
+
+For example:
+
+.. code-block:: cmake
+
+    set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 3)
+
+- This line should be placed after ``idf_component_register`` in the component CMakeLists.txt file.
+- If possible, place this line in the component that creates the circular dependency by depending on a lot of other components. However, the line can be placed inside any component that is part of the cycle. Choosing the component that owns the source file shown in the linker error message, or the component that defines the symbol(s) mentioned in the linker error message, is a good place to start.
+- Usually increasing the value to 3 (default is 2) is enough, but if this doesn't work then try increasing the number further.
+- Adding this option will make the linker command line longer, and the linking stage slower.
+
+Advanced Workaround: Undefined Symbols
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If only one or two symbols is causing a circular dependency, and all other dependencies are linear, then there is an alternative method to avoid linker errors: Specify the specific symbols required for the "reverse" dependency as undefined symbols at link time.
+
+For example, if component A depends on component B but component B also needs to reference ``reverse_ops`` from component A (but nothing else), then you can add a line like the following to the component B CMakeLists.txt to resolve the cycle at link time:
+
+.. code-block:: cmake
+
+    # This symbol is provided by 'Component A' at link time
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u reverse_ops")
+
+- The ``-u`` argument means that the linker will always include this symbol in the link, regardless of dependency ordering.
+- This line should be placed after ``idf_component_register`` in the component CMakeLists.txt file.
+- If 'Component B' doesn't need to access any headers of 'Component A', only link to a few symbol(s), then this line can be used instead of any ``REQUIRES`` from B to A. This further simplifies the component structure in the build system.
+
+See the `target_link_libraries`_ documentation for more information about this CMake function.
 
 .. _component-requirements-implementation:
 
 Requirements in the build system implementation
 -----------------------------------------------
 
-- Very early in the CMake configuration process, the script ``expand_requirements.cmake`` is run. This script does a partial evaluation of all component CMakeLists.txt files and builds a graph of component requirements (this graph may have cycles). The graph is used to generate a file ``component_depends.cmake`` in the build directory.
+- Very early in the CMake configuration process, the script ``expand_requirements.cmake`` is run. This script does a partial evaluation of all component CMakeLists.txt files and builds a graph of component requirements (this :ref:`graph may have cycles <component-circular-dependencies>`). The graph is used to generate a file ``component_depends.cmake`` in the build directory.
 - The main CMake process then includes this file and uses it to determine the list of components to include in the build (internal ``BUILD_COMPONENTS`` variable). The ``BUILD_COMPONENTS`` variable is sorted so dependencies are listed first, however as the component dependency graph has cycles this cannot be guaranteed for all components. The order should be deterministic given the same set of components and component dependencies.
 - The value of ``BUILD_COMPONENTS`` is logged by CMake as "Component names: "
 - Configuration is then evaluated for the components included in the build.
@@ -1584,6 +1626,7 @@ Flashing from make
 .. _target_compile_options: https://cmake.org/cmake/help/v3.5/command/target_compile_options.html
 .. _target_link_libraries: https://cmake.org/cmake/help/v3.5/command/target_link_libraries.html#command:target_link_libraries
 .. _cmake_toolchain_file: https://cmake.org/cmake/help/v3.5/variable/CMAKE_TOOLCHAIN_FILE.html
+.. _LINK_INTERFACE_MULTIPLICITY: https://cmake.org/cmake/help/v3.5/prop_tgt/LINK_INTERFACE_MULTIPLICITY.html
 .. _quirc: https://github.com/dlbeer/quirc
 .. _pyenv: https://github.com/pyenv/pyenv#readme
 .. _virtualenv: https://virtualenv.pypa.io/en/stable/
