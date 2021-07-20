@@ -132,6 +132,7 @@
 /components/tcp_transport/            @esp-idf-codeowners/network
 /components/tcpip_adapter/            @esp-idf-codeowners/network
 /components/tinyusb/                  @esp-idf-codeowners/peripherals/usb
+/components/touch_element/            @esp-idf-codeowners/peripherals
 /components/ulp/                      @esp-idf-codeowners/system
 /components/unity/                    @esp-idf-codeowners/ci
 /components/usb/                      @esp-idf-codeowners/peripherals/usb
