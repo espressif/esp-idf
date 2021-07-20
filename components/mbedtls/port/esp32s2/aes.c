@@ -161,12 +161,14 @@ int esp_aes_setkey( esp_aes_context *ctx, const unsigned char *key,
 static void esp_aes_setkey_hardware( esp_aes_context *ctx, int crypt_mode)
 {
     const uint32_t MODE_DECRYPT_BIT = 4;
+    uint32_t key_word;
     unsigned mode_reg_base = (crypt_mode == ESP_AES_ENCRYPT) ? 0 : MODE_DECRYPT_BIT;
 
     ctx->key_in_hardware = 0;
-
+    /* Memcpy to avoid potential unaligned access */
     for (int i = 0; i < ctx->key_bytes / 4; ++i) {
-        REG_WRITE(AES_KEY_BASE + i * 4, *(((uint32_t *)ctx->key) + i));
+        memcpy(&key_word, ctx->key + 4 * i, 4);
+        REG_WRITE(AES_KEY_BASE + i * 4,  key_word);
         ctx->key_in_hardware += 4;
     }
 
@@ -199,11 +201,13 @@ static inline void esp_aes_mode_init(esp_aes_mode_t mode)
  */
 static inline void esp_aes_set_iv(uint8_t *iv)
 {
-    uint32_t *iv_words = (uint32_t*)iv;
     uint32_t *reg_addr_buf = (uint32_t *)(AES_IV_BASE);
+    uint32_t iv_word;
 
     for (int i = 0; i<IV_WORDS; i++ ) {
-        REG_WRITE(&reg_addr_buf[i], iv_words[i]);
+        /* Memcpy to avoid potential unaligned access */
+        memcpy(&iv_word, iv + 4 * i, sizeof(iv_word));
+        REG_WRITE(&reg_addr_buf[i], iv_word);
     }
 }
 
@@ -1072,12 +1076,9 @@ static void increment32_j0(esp_gcm_context *ctx, uint8_t *j)
 /* Function to xor two data blocks */
 static void xor_data(uint8_t *d, const uint8_t *s)
 {
-    uint32_t *dst = (uint32_t *) d;
-    uint32_t *src = (uint32_t *) s;
-    *dst++ ^= *src++;
-    *dst++ ^= *src++;
-    *dst++ ^= *src++;
-    *dst++ ^= *src++;
+    for (int i = 0; i < AES_BLOCK_BYTES; i++) {
+        d[i] ^= s[i];
+    }
 }
 
 
