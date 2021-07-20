@@ -364,6 +364,11 @@ static IRAM_ATTR inline bool is_initialized(void)
     return s_timer_task != NULL;
 }
 
+esp_err_t esp_timer_early_init(void)
+{
+    return esp_timer_impl_early_init();
+}
+
 esp_err_t esp_timer_init(void)
 {
     esp_err_t err;

@@ -29,8 +29,19 @@
 #include "esp_intr_alloc.h"
 
 /**
+ * @brief Minimal initialization of platform specific layer of esp_timer
+ * This function can be called very early in startup process, after this call
+ * only esp_timer_get_time function can be used.
+ * esp_timer_impl_init has to be called after this function to initialize the
+ * rest of esp_timer implementation.
+ * @return ESP_OK
+ */
+esp_err_t esp_timer_impl_early_init(void);
+
+/**
  * @brief Initialize platform specific layer of esp_timer
  * @param alarm_handler function to call on timer interrupt
+ * Before calling this function, esp_timer_impl_early_init must be called.
  * @return ESP_OK, ESP_ERR_NO_MEM, or one of the errors from interrupt allocator
  */
 esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler);

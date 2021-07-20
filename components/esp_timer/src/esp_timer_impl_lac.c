@@ -146,9 +146,6 @@ uint64_t IRAM_ATTR esp_timer_impl_get_counter_reg(void)
 
 int64_t IRAM_ATTR esp_timer_impl_get_time(void)
 {
-    if (s_alarm_handler == NULL) {
-        return 0;
-    }
     return esp_timer_impl_get_counter_reg() / TICKS_PER_US;
 }
 
@@ -207,13 +204,10 @@ void esp_timer_impl_advance(int64_t time_diff_us)
     portEXIT_CRITICAL(&s_time_update_lock);
 }
 
-esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
+esp_err_t esp_timer_impl_early_init(void)
 {
-    s_alarm_handler = alarm_handler;
-
     periph_module_enable(PERIPH_LACT);
 
-    /* Reset the state */
     REG_WRITE(CONFIG_REG, 0);
     REG_WRITE(LOAD_LO_REG, 0);
     REG_WRITE(LOAD_HI_REG, 0);
@@ -221,6 +215,17 @@ esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
     REG_WRITE(ALARM_HI_REG, UINT32_MAX);
     REG_WRITE(LOAD_REG, 1);
     REG_SET_BIT(INT_CLR_REG, TIMG_LACT_INT_CLR);
+    REG_SET_FIELD(CONFIG_REG, TIMG_LACT_DIVIDER, APB_CLK_FREQ / 1000000 / TICKS_PER_US);
+    REG_SET_BIT(CONFIG_REG, TIMG_LACT_INCREASE |
+        TIMG_LACT_LEVEL_INT_EN |
+        TIMG_LACT_EN);
+
+    return ESP_OK;
+}
+
+esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
+{
+    s_alarm_handler = alarm_handler;
 
     esp_err_t err = esp_intr_alloc(INTR_SOURCE_LACT,
             ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_IRAM,
@@ -238,10 +243,6 @@ esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
     REG_SET_BIT(INT_ENA_REG, TIMG_LACT_INT_ENA);
 
     esp_timer_impl_update_apb_freq(esp_clk_apb_freq() / 1000000);
-
-    REG_SET_BIT(CONFIG_REG, TIMG_LACT_INCREASE |
-        TIMG_LACT_LEVEL_INT_EN |
-        TIMG_LACT_EN);
 
     // Set the step for the sleep mode when the timer will work
     // from a slow_clk frequency instead of the APB frequency.
