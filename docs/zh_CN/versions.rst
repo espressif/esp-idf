@@ -45,6 +45,8 @@ ESP-IDF 在 GitHub 平台上的完整发布历史请见 `发布说明页面`_。
 
 有关如何更新 ESP-IDF 本地副本的内容，请参考 :ref:`updating` 章节。
 
+.. _versioning-scheme:
+
 版本管理
 -----------------
 

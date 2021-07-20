@@ -13,5 +13,6 @@ API Reference
     Provisioning <provisioning/index>
     Storage <storage/index>
     System <system/index>
+    API Conventions <api-conventions>
     Configuration Options <kconfig>
     Error Codes Reference <error-codes>
