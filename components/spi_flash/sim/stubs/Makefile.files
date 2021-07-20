@@ -24,6 +24,7 @@ INCLUDE_DIRS := \
 	esp_hw_support/include/soc \
 	esp_system/include \
 	soc/esp32/include \
+        heap/include \
 	soc/include \
 	xtensa/include \
 	xtensa/esp32/include \

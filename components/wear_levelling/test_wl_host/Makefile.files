@@ -22,6 +22,7 @@ INCLUDE_DIRS := \
 	vfs/include \
 	) \
 	$(addprefix ../../../components/, \
+	heap/include \
 	esp_rom/include \
 	esp_system/include \
 	esp_common/include \
@@ -30,6 +31,7 @@ INCLUDE_DIRS := \
 	xtensa/include \
 	xtensa/esp32/include \
 	soc/esp32/include \
+      	heap/include \
 	soc/include \
 	esp32/include \
 	bootloader_support/include \
