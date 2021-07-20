@@ -129,6 +129,7 @@ esp_err_t esp_ds_start_sign(const void *message,
 
     if (result == ETS_DS_INVALID_KEY) {
         ds_disable_release();
+        free(context);
         return ESP_ERR_HW_CRYPTO_DS_INVALID_KEY;
     }
 
