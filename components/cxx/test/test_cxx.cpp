@@ -211,7 +211,7 @@ TEST_CASE("c++ std::exception child", "[cxx] [exceptions] [leaks=" LEAKS "]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ exceptions emergency pool", "[cxx] [exceptions] [ignore] [leaks=" LEAKS "]")
+TEST_CASE("c++ exceptions emergency pool", "[cxx] [exceptions] [leaks=" LEAKS "]")
 {
     void **p, **pprev = NULL;
     int thrown_value = 0;
@@ -241,7 +241,6 @@ TEST_CASE("c++ exceptions emergency pool", "[cxx] [exceptions] [ignore] [leaks="
     catch (int e)
     {
         thrown_value = e;
-        printf("Got exception %d\n", thrown_value);
     }
 #if CONFIG_COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE > 0
     // free all memory
