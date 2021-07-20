@@ -257,7 +257,7 @@ Example for general usage.
 
         i2s_driver_uninstall(i2s_num); //stop & destroy i2s driver
 
-    I2S on {IDF_TARGET_NAME} support TDM mode, up to 16 channels are available in TDM mode. If you want to use TDM mode, set field ``channel_format`` of :cpp:type:`i2s_config_t` to ``I2S_CHANNEL_FMT_TDM``. Then enable the channels by setting ``tdm_chan_cfg.chan_mask`` using masks in :cpp:type:`i2s_channel_t`, the number of active channels and total channels will be calculate automatically. Also you can set a particular total channel number for it, but it shouldn't be smaller than the largest channel you use.
+    I2S on {IDF_TARGET_NAME} support TDM mode, up to 16 channels are available in TDM mode. If you want to use TDM mode, set field ``channel_format`` of :cpp:type:`i2s_config_t` to ``I2S_CHANNEL_FMT_MULTIPLE``. Then enable the channels by setting ``tdm_chan_cfg.chan_mask`` using masks in :cpp:type:`i2s_channel_t`, the number of active channels and total channels will be calculate automatically. Also you can set a particular total channel number for it, but it shouldn't be smaller than the largest channel you use.
 
     .. code-block:: c
 
@@ -269,7 +269,7 @@ Example for general usage.
             .mode = I2S_MODE_MASTER | I2S_MODE_TX,
             .sample_rate = 44100,
             .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
-            .channel_format = I2S_CHANNEL_FMT_TDM,
+            .channel_format = I2S_CHANNEL_FMT_MULTIPLE,
             .communication_format = I2S_COMM_FORMAT_STAND_I2S
             .tx_desc_auto_clear = false,
             .dma_buf_count = 8,

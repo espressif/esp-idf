@@ -29,10 +29,10 @@ extern "C" {
  *
  */
 typedef enum {
-    I2S_BITS_PER_SAMPLE_8BIT    = 8,
-    I2S_BITS_PER_SAMPLE_16BIT   = 16,
-    I2S_BITS_PER_SAMPLE_24BIT   = 24,
-    I2S_BITS_PER_SAMPLE_32BIT   = 32,
+    I2S_BITS_PER_SAMPLE_8BIT    = 8,            /*!< data bit-width: 8 */
+    I2S_BITS_PER_SAMPLE_16BIT   = 16,           /*!< data bit-width: 16 */
+    I2S_BITS_PER_SAMPLE_24BIT   = 24,           /*!< data bit-width: 24 */
+    I2S_BITS_PER_SAMPLE_32BIT   = 32,           /*!< data bit-width: 32 */
 } i2s_bits_per_sample_t;
 
 /**
@@ -40,11 +40,11 @@ typedef enum {
  *
  */
 typedef enum {
-    I2S_BITS_PER_CHAN_DEFAULT        = (0),      /*!< chan bit equals to data bit*/
-    I2S_BITS_PER_CHAN_8BIT           = (8),      /*!< chan bit 8*/
-    I2S_BITS_PER_CHAN_16BIT          = (16),     /*!< chan bit 16*/
-    I2S_BITS_PER_CHAN_24BIT          = (24),     /*!< chan bit 24*/
-    I2S_BITS_PER_CHAN_32BIT          = (32),     /*!< chan bit 32*/
+    I2S_BITS_PER_CHAN_DEFAULT        = (0),      /*!< channel bit-width equals to data bit-width */
+    I2S_BITS_PER_CHAN_8BIT           = (8),      /*!< channel bit-width: 8 */
+    I2S_BITS_PER_CHAN_16BIT          = (16),     /*!< channel bit-width: 16 */
+    I2S_BITS_PER_CHAN_24BIT          = (24),     /*!< channel bit-width: 24 */
+    I2S_BITS_PER_CHAN_32BIT          = (32),     /*!< channel bit-width: 32 */
 } i2s_bits_per_chan_t;
 
 /**
@@ -93,7 +93,7 @@ typedef enum {
     I2S_COMM_FORMAT_STAND_MSB        = 0X02, /*!< I2S communication MSB alignment standard, data launch at first BCK*/
     I2S_COMM_FORMAT_STAND_PCM_SHORT  = 0x04, /*!< PCM Short standard, also known as DSP mode. The period of synchronization signal (WS) is 1 bck cycle.*/
     I2S_COMM_FORMAT_STAND_PCM_LONG   = 0x0C, /*!< PCM Long standard. The period of synchronization signal (WS) is channel_bit*bck cycles.*/
-    I2S_COMM_FORMAT_STAND_MAX, /*!< standard max*/
+    I2S_COMM_FORMAT_STAND_MAX,               /*!< standard max*/
 
     //old definition will be removed in the future.
     I2S_COMM_FORMAT_I2S       __attribute__((deprecated)) = 0x01, /*!< I2S communication format I2S, correspond to `I2S_COMM_FORMAT_STAND_I2S`*/
@@ -108,13 +108,14 @@ typedef enum {
  * @brief I2S channel format type
  */
 typedef enum {
-    I2S_CHANNEL_FMT_RIGHT_LEFT = 0x00,
-    I2S_CHANNEL_FMT_ALL_RIGHT,
-    I2S_CHANNEL_FMT_ALL_LEFT,
-    I2S_CHANNEL_FMT_ONLY_RIGHT,
-    I2S_CHANNEL_FMT_ONLY_LEFT,
+    I2S_CHANNEL_FMT_RIGHT_LEFT,         /*!< Separated left and right channel */
+    I2S_CHANNEL_FMT_ALL_RIGHT,          /*!< Load right channel data in both two channels */
+    I2S_CHANNEL_FMT_ALL_LEFT,           /*!< Load left channel data in both two channels */
+    I2S_CHANNEL_FMT_ONLY_RIGHT,         /*!< Only load data in right channel */
+    I2S_CHANNEL_FMT_ONLY_LEFT,          /*!< Only load data in left channel */
 #if SOC_I2S_SUPPORTS_TDM
-    I2S_CHANNEL_FMT_TDM,            // Up to 16 channels
+    // Multiple channels are available with TDM feature
+    I2S_CHANNEL_FMT_MULTIPLE,           /*!< More than two channels are used */
 #endif
 }  i2s_channel_fmt_t;
 
@@ -181,6 +182,15 @@ typedef enum {
     I2S_PDM_DSR_16S,     /*!< downsampling number is 16 for PDM RX mode*/
     I2S_PDM_DSR_MAX,
 } i2s_pdm_dsr_t;
+#endif
+
+#if SOC_I2S_SUPPORTS_PDM_TX
+typedef enum {
+    I2S_PDM_SIG_SCALING_DIV_2 = 0,   /*!< I2S TX PDM sigmadelta signal scaling: /2 */
+    I2S_PDM_SIG_SCALING_MUL_1 = 1,   /*!< I2S TX PDM sigmadelta signal scaling: x1 */
+    I2S_PDM_SIG_SCALING_MUL_2 = 2,   /*!< I2S TX PDM sigmadelta signal scaling: x2 */
+    I2S_PDM_SIG_SCALING_MUL_4 = 3,   /*!< I2S TX PDM sigmadelta signal scaling: x4 */
+} i2s_pdm_sig_scale_t;
 #endif
 
 /**

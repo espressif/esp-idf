@@ -57,15 +57,10 @@ typedef struct {
 #if SOC_I2S_SUPPORTS_TDM
     uint32_t                total_chan;             /*!< Total number of I2S channels */
     uint32_t                chan_mask;              /*!< Active channel bit mask, set value in `i2s_channel_t` to enable specific channel, the bit map of active channel can not exceed (0x1<<total_chan_num). */
-    union {
-        struct {
-            uint32_t        left_align_en    : 1;   /*!< Set to enable left aligment */
-            uint32_t        big_edin_en      : 1;   /*!< Set to enable big edin */
-            uint32_t        bit_order_msb_en : 1;   /*!< Set to enable msb order */
-            uint32_t        skip_msk_en      : 1;   /*!< Set to enable skip mask. If it is enabled, only the data of the enabled channels will be sent, otherwise all data stored in DMA TX buffer will be sent */
-        };
-        uint32_t val;                               /*!< TDM flags value */
-    } flags;                                        /*!< Set TDM flags */
+    bool                    left_align_en;          /*!< Set to enable left aligment */
+    bool                    big_edin_en;            /*!< Set to enable big edin */
+    bool                    bit_order_msb_en;       /*!< Set to enable msb order */
+    bool                    skip_msk_en;            /*!< Set to enable skip mask. If it is enabled, only the data of the enabled channels will be sent, otherwise all data stored in DMA TX buffer will be sent */
 #endif
 } i2s_hal_config_t;
 
@@ -82,28 +77,28 @@ typedef struct {
  *
  * @param hal Context of the HAL layer
  */
-#define i2s_hal_reset_tx(hal)                   i2s_ll_reset_tx((hal)->dev)
+#define i2s_hal_reset_tx(hal)                   i2s_ll_tx_reset((hal)->dev)
 
 /**
  * @brief Reset I2S TX fifo
  *
  * @param hal Context of the HAL layer
  */
-#define i2s_hal_reset_tx_fifo(hal)              i2s_ll_reset_tx_fifo((hal)->dev)
+#define i2s_hal_reset_tx_fifo(hal)              i2s_ll_tx_reset_fifo((hal)->dev)
 
 /**
  * @brief Reset I2S RX channel
  *
  * @param hal Context of the HAL layer
  */
-#define i2s_hal_reset_rx(hal)                   i2s_ll_reset_rx((hal)->dev)
+#define i2s_hal_reset_rx(hal)                   i2s_ll_rx_reset((hal)->dev)
 
 /**
  * @brief Reset I2S RX fifo
  *
  * @param hal Context of the HAL layer
  */
-#define i2s_hal_reset_rx_fifo(hal)              i2s_ll_reset_rx_fifo((hal)->dev)
+#define i2s_hal_reset_rx_fifo(hal)              i2s_ll_rx_reset_fifo((hal)->dev)
 
 /**
  * @brief Init the I2S hal. This function should be called first before other hal layer function is called
@@ -122,12 +117,20 @@ void i2s_hal_init(i2s_hal_context_t *hal, int i2s_num);
 void i2s_hal_set_clock_src(i2s_hal_context_t *hal, i2s_clock_src_t sel);
 
 /**
- * @brief Configure communication format
+ * @brief Set Tx channel style
  *
  * @param hal Context of the HAL layer
  * @param hal_cfg I2S hal configuration structer, refer to `i2s_hal_config_t`
  */
-void i2s_hal_samples_config(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cfg);
+void i2s_hal_tx_set_channel_style(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cfg);
+
+/**
+ * @brief Set Rx channel style
+ *
+ * @param hal Context of the HAL layer
+ * @param hal_cfg I2S hal configuration structer, refer to `i2s_hal_config_t`
+ */
+void i2s_hal_rx_set_channel_style(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cfg);
 
 /**
  * @brief Config I2S param
@@ -156,28 +159,28 @@ void i2s_hal_enable_slave_fd_mode(i2s_hal_context_t *hal);
  *
  * @param hal Context of the HAL layer
  */
-#define i2s_hal_start_tx(hal)               i2s_ll_start_tx((hal)->dev)
+#define i2s_hal_start_tx(hal)               i2s_ll_tx_start((hal)->dev)
 
 /**
  * @brief Start I2S rx
  *
  * @param hal Context of the HAL layer
  */
-#define i2s_hal_start_rx(hal)               i2s_ll_start_rx((hal)->dev)
+#define i2s_hal_start_rx(hal)               i2s_ll_rx_start((hal)->dev)
 
 /**
  * @brief Stop I2S tx
  *
  * @param hal Context of the HAL layer
  */
-#define i2s_hal_stop_tx(hal)                i2s_ll_stop_tx((hal)->dev)
+#define i2s_hal_stop_tx(hal)                i2s_ll_tx_stop((hal)->dev)
 
 /**
  * @brief Stop I2S rx
  *
  * @param hal Context of the HAL layer
  */
-#define i2s_hal_stop_rx(hal)                i2s_ll_stop_rx((hal)->dev)
+#define i2s_hal_stop_rx(hal)                i2s_ll_rx_stop((hal)->dev)
 
 /**
  * @brief Set the received data length to trigger `in_suc_eof` interrupt.
@@ -185,7 +188,7 @@ void i2s_hal_enable_slave_fd_mode(i2s_hal_context_t *hal);
  * @param hal Context of the HAL layer
  * @param eof_byte The byte length that trigger in_suc_eof interrupt.
  */
-#define i2s_hal_set_rx_eof_num(hal, eof_byte)   i2s_ll_set_rx_eof_num((hal)->dev, eof_byte)
+#define i2s_hal_set_rx_eof_num(hal, eof_byte)   i2s_ll_rx_set_eof_num((hal)->dev, eof_byte)
 
 /**
  * @brief Set I2S TX sample bit
@@ -194,7 +197,7 @@ void i2s_hal_enable_slave_fd_mode(i2s_hal_context_t *hal);
  * @param chan_bit I2S TX chan bit
  * @param data_bit The sample data bit length.
  */
-#define i2s_hal_set_tx_sample_bit(hal, chan_bit, data_bit)  i2s_ll_set_tx_sample_bit((hal)->dev, chan_bit, data_bit)
+#define i2s_hal_set_tx_sample_bit(hal, chan_bit, data_bit)  i2s_ll_tx_set_sample_bit((hal)->dev, chan_bit, data_bit)
 
 /**
  * @brief Set I2S RX sample bit
@@ -203,7 +206,7 @@ void i2s_hal_enable_slave_fd_mode(i2s_hal_context_t *hal);
  * @param chan_bit I2S RX chan bit
  * @param data_bit The sample data bit length.
  */
-#define i2s_hal_set_rx_sample_bit(hal, chan_bit, data_bit)  i2s_ll_set_rx_sample_bit((hal)->dev, chan_bit, data_bit)
+#define i2s_hal_set_rx_sample_bit(hal, chan_bit, data_bit)  i2s_ll_rx_set_sample_bit((hal)->dev, chan_bit, data_bit)
 
 /**
  * @brief Configure I2S TX module clock devider
@@ -232,7 +235,7 @@ void i2s_hal_rx_clock_config(i2s_hal_context_t *hal, uint32_t sclk, uint32_t fbc
  * @param hal Context of the HAL layer
  * @param cfg PCM configure paramater, refer to `i2s_pcm_compress_t`
  */
-#define i2s_hal_tx_pcm_cfg(hal, cfg)        i2s_ll_tx_pcm_cfg((hal)->dev, cfg)
+#define i2s_hal_tx_pcm_cfg(hal, cfg)        i2s_ll_tx_set_pcm_type((hal)->dev, cfg)
 
 /**
  * @brief Configure I2S RX PCM encoder or decoder.
@@ -240,7 +243,7 @@ void i2s_hal_rx_clock_config(i2s_hal_context_t *hal, uint32_t sclk, uint32_t fbc
  * @param hal Context of the HAL layer
  * @param cfg PCM configure paramater, refer to `i2s_pcm_compress_t`
  */
-#define i2s_hal_rx_pcm_cfg(hal, cfg)        i2s_ll_rx_pcm_cfg((hal)->dev, cfg)
+#define i2s_hal_rx_pcm_cfg(hal, cfg)        i2s_ll_rx_set_pcm_type((hal)->dev, cfg)
 #endif
 
 /**
@@ -248,7 +251,7 @@ void i2s_hal_rx_clock_config(i2s_hal_context_t *hal, uint32_t sclk, uint32_t fbc
  *
  * @param hal Context of the HAL layer
  */
-#define i2s_hal_enable_sig_loopback(hal)    i2s_ll_loop_back_ena((hal)->dev, true)
+#define i2s_hal_enable_sig_loopback(hal)    i2s_ll_enable_loop_back((hal)->dev, true)
 
 #if SOC_I2S_SUPPORTS_PDM_TX
 /**
@@ -259,16 +262,25 @@ void i2s_hal_rx_clock_config(i2s_hal_context_t *hal, uint32_t sclk, uint32_t fbc
  * @param fp TX PDM fp paramater configuration
  * @param fs TX PDM fs paramater configuration
  */
-#define i2s_hal_set_tx_pdm_fpfs(hal, fp, fs)    i2s_ll_set_tx_pdm_fpfs((hal)->dev, fp, fs)
+#define i2s_hal_set_tx_pdm_fpfs(hal, fp, fs)    i2s_ll_tx_set_pdm_fpfs((hal)->dev, fp, fs)
 
 /**
- * @brief Get I2S TX PDM configuration
+ * @brief Get I2S TX PDM fp
  *
  * @param hal Context of the HAL layer
- * @param fp Pointer to accept TX PDM fp paramater configuration
- * @param fs Pointer to accept TX PDM fs paramater configuration
+ * @return
+ *        - fp configuration paramater
  */
-#define i2s_hal_get_tx_pdm_fpfs(hal, fp, fs)    i2s_ll_get_tx_pdm_fpfs((hal)->dev, (uint32_t *)fp, (uint32_t *)fs)
+#define i2s_hal_get_tx_pdm_fp(hal)      i2s_ll_tx_get_pdm_fp((hal)->dev)
+
+/**
+ * @brief Get I2S TX PDM fs
+ *
+ * @param hal Context of the HAL layer
+ * @return
+ *        - fs configuration paramater
+ */
+#define i2s_hal_get_tx_pdm_fs(hal)      i2s_ll_tx_get_pdm_fs((hal)->dev)
 #endif
 
 #if SOC_I2S_SUPPORTS_PDM_RX
@@ -279,7 +291,7 @@ void i2s_hal_rx_clock_config(i2s_hal_context_t *hal, uint32_t sclk, uint32_t fbc
  * @param hal Context of the HAL layer
  * @param dsr PDM downsample configuration paramater
  */
-#define i2s_hal_set_rx_pdm_dsr(hal, dsr)         i2s_ll_set_pdm_rx_dsr((hal)->dev, dsr)
+#define i2s_hal_set_rx_pdm_dsr(hal, dsr)         i2s_ll_rx_set_pdm_dsr((hal)->dev, dsr)
 
 /**
  * @brief Get RX PDM downsample configuration
@@ -287,7 +299,7 @@ void i2s_hal_rx_clock_config(i2s_hal_context_t *hal, uint32_t sclk, uint32_t fbc
  * @param hal Context of the HAL layer
  * @param dsr Pointer to accept PDM downsample configuration
  */
-#define i2s_hal_get_rx_pdm_dsr(hal, dsr)        i2s_ll_get_pdm_rx_dsr((hal)->dev, dsr)
+#define i2s_hal_get_rx_pdm_dsr(hal, dsr)        i2s_ll_rx_get_pdm_dsr((hal)->dev, dsr)
 #endif
 
 #if !SOC_GDMA_SUPPORTED
@@ -296,22 +308,37 @@ void i2s_hal_rx_clock_config(i2s_hal_context_t *hal, uint32_t sclk, uint32_t fbc
  *
  * @param hal Context of the HAL layer
  */
-#define i2s_hal_attach_tx_dma(hal) i2s_ll_dma_enable((hal)->dev,true)
+#define i2s_hal_enable_tx_dma(hal) i2s_ll_enable_dma((hal)->dev,true)
 
 /**
  * @brief Enable I2S RX DMA
  *
  * @param hal Context of the HAL layer
  */
-#define i2s_hal_attach_rx_dma(hal) i2s_ll_dma_enable((hal)->dev,true)
+#define i2s_hal_enable_rx_dma(hal) i2s_ll_enable_dma((hal)->dev,true)
+
+/**
+ * @brief Disable I2S TX DMA
+ *
+ * @param hal Context of the HAL layer
+ */
+#define i2s_hal_disable_tx_dma(hal) i2s_ll_enable_dma((hal)->dev,false)
+
+/**
+ * @brief Disable I2S RX DMA
+ *
+ * @param hal Context of the HAL layer
+ */
+#define i2s_hal_disable_rx_dma(hal) i2s_ll_enable_dma((hal)->dev,false)
 
 /**
  * @brief Get I2S interrupt status
  *
  * @param hal Context of the HAL layer
- * @param status Pointer to accept I2S interrupt status
+ * @return
+ *        - module interrupt status
  */
-#define i2s_hal_get_intr_status(hal, status) i2s_ll_get_intr_status((hal)->dev, status)
+#define i2s_hal_get_intr_status(hal) i2s_ll_get_intr_status((hal)->dev)
 
 /**
  * @brief Get I2S interrupt status
@@ -326,28 +353,28 @@ void i2s_hal_rx_clock_config(i2s_hal_context_t *hal, uint32_t sclk, uint32_t fbc
  *
  * @param hal Context of the HAL layer
  */
-#define i2s_hal_enable_rx_intr(hal) i2s_ll_enable_rx_intr((hal)->dev)
+#define i2s_hal_enable_rx_intr(hal) i2s_ll_rx_enable_intr((hal)->dev)
 
 /**
  * @brief Disable I2S RX interrupt
  *
  * @param hal Context of the HAL layer
  */
-#define i2s_hal_disable_rx_intr(hal) i2s_ll_disable_rx_intr((hal)->dev)
+#define i2s_hal_disable_rx_intr(hal) i2s_ll_rx_disable_intr((hal)->dev)
 
 /**
  * @brief Disable I2S TX interrupt
  *
  * @param hal Context of the HAL layer
  */
-#define i2s_hal_disable_tx_intr(hal) i2s_ll_disable_tx_intr((hal)->dev)
+#define i2s_hal_disable_tx_intr(hal) i2s_ll_tx_disable_intr((hal)->dev)
 
 /**
  * @brief Enable I2S TX interrupt
  *
  * @param hal Context of the HAL layer
  */
-#define i2s_hal_enable_tx_intr(hal) i2s_ll_enable_tx_intr((hal)->dev)
+#define i2s_hal_enable_tx_intr(hal) i2s_ll_tx_enable_intr((hal)->dev)
 
 /**
  * @brief Configure TX DMA descriptor address and start TX DMA
@@ -355,7 +382,7 @@ void i2s_hal_rx_clock_config(i2s_hal_context_t *hal, uint32_t sclk, uint32_t fbc
  * @param hal Context of the HAL layer
  * @param link_addr DMA descriptor link address.
  */
-#define i2s_hal_start_tx_link(hal, link_addr) i2s_ll_start_tx_link((hal)->dev, link_addr)
+#define i2s_hal_start_tx_link(hal, link_addr) i2s_ll_tx_start_link((hal)->dev, link_addr)
 
 /**
  * @brief Configure RX DMA descriptor address and start RX DMA
@@ -363,35 +390,35 @@ void i2s_hal_rx_clock_config(i2s_hal_context_t *hal, uint32_t sclk, uint32_t fbc
  * @param hal Context of the HAL layer
  * @param link_addr DMA descriptor link address.
  */
-#define i2s_hal_start_rx_link(hal, link_addr) i2s_ll_start_rx_link((hal)->dev, link_addr)
+#define i2s_hal_start_rx_link(hal, link_addr) i2s_ll_rx_start_link((hal)->dev, link_addr)
 
 /**
  * @brief Stop TX DMA link
  *
  * @param hal Context of the HAL layer
  */
-#define i2s_hal_stop_tx_link(hal) i2s_ll_stop_out_link((hal)->dev)
+#define i2s_hal_stop_tx_link(hal) i2s_ll_tx_stop_link((hal)->dev)
 
 /**
  * @brief Stop RX DMA link
  *
  * @param hal Context of the HAL layer
  */
-#define i2s_hal_stop_rx_link(hal) i2s_ll_stop_in_link((hal)->dev)
+#define i2s_hal_stop_rx_link(hal) i2s_ll_rx_stop_link((hal)->dev)
 
 /**
  * @brief Reset RX DMA
  *
  * @param hal Context of the HAL layer
  */
-#define i2s_hal_reset_rxdma(hal) i2s_ll_reset_dma_in((hal)->dev)
+#define i2s_hal_reset_rxdma(hal) i2s_ll_rx_reset_dma((hal)->dev)
 
 /**
  * @brief Reset TX DMA
  *
  * @param hal Context of the HAL layer
  */
-#define i2s_hal_reset_txdma(hal) i2s_ll_reset_dma_out((hal)->dev)
+#define i2s_hal_reset_txdma(hal) i2s_ll_tx_reset_dma((hal)->dev)
 
 /**
  * @brief Get I2S out eof descriptor address
@@ -399,7 +426,7 @@ void i2s_hal_rx_clock_config(i2s_hal_context_t *hal, uint32_t sclk, uint32_t fbc
  * @param hal Context of the HAL layer
  * @param addr Pointer to accept out eof des address
  */
-#define i2s_hal_get_out_eof_des_addr(hal, addr) i2s_ll_get_out_eof_des_addr((hal)->dev, addr)
+#define i2s_hal_get_out_eof_des_addr(hal, addr) i2s_ll_tx_get_eof_des_addr((hal)->dev, addr)
 
 /**
  * @brief Get I2S in suc eof descriptor address
@@ -407,7 +434,7 @@ void i2s_hal_rx_clock_config(i2s_hal_context_t *hal, uint32_t sclk, uint32_t fbc
  * @param hal Context of the HAL layer
  * @param addr Pointer to accept in suc eof des address
  */
-#define i2s_hal_get_in_eof_des_addr(hal, addr) i2s_ll_get_in_eof_des_addr((hal)->dev, addr)
+#define i2s_hal_get_in_eof_des_addr(hal, addr) i2s_ll_rx_get_eof_des_addr((hal)->dev, addr)
 #endif
 
 #ifdef __cplusplus

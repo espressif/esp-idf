@@ -319,7 +319,7 @@ typedef volatile struct {
         };
         uint32_t val;
     } rx_eof_num;
-    uint32_t conf_signal_data;                             /*I2S signal data register*/
+    uint32_t conf_single_data;                               /*the right channel or left channel put out constant value stored in this register according to tx_chan_mod and reg_tx_msb_right*/
     union {
         struct {
             uint32_t tx_idle                       :    1;  /*1: i2s_tx is idle state. 0: i2s_tx is working.*/

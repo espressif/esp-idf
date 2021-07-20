@@ -61,7 +61,7 @@ static inline void i2s_ll_enable_clock(i2s_dev_t *hw)
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_enable_tx_clock(i2s_dev_t *hw)
+static inline void i2s_ll_tx_enable_clock(i2s_dev_t *hw)
 {
     hw->tx_clkm_conf.tx_clk_active = 1;
 }
@@ -71,7 +71,7 @@ static inline void i2s_ll_enable_tx_clock(i2s_dev_t *hw)
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_enable_rx_clock(i2s_dev_t *hw)
+static inline void i2s_ll_rx_enable_clock(i2s_dev_t *hw)
 {
     hw->rx_clkm_conf.rx_clk_active = 1;
 }
@@ -102,7 +102,7 @@ static inline void i2s_ll_mclk_use_rx_clk(i2s_dev_t *hw)
  * @param hw Peripheral I2S hardware instance address.
  * @param slave_en Set true to enable slave mode
  */
-static inline void i2s_ll_set_tx_slave_mod(i2s_dev_t *hw, bool slave_en)
+static inline void i2s_ll_tx_set_slave_mod(i2s_dev_t *hw, bool slave_en)
 {
     hw->tx_conf.tx_slave_mod = slave_en;
 }
@@ -113,7 +113,7 @@ static inline void i2s_ll_set_tx_slave_mod(i2s_dev_t *hw, bool slave_en)
  * @param hw Peripheral I2S hardware instance address.
  * @param slave_en Set true to enable slave mode
  */
-static inline void i2s_ll_set_rx_slave_mod(i2s_dev_t *hw, bool slave_en)
+static inline void i2s_ll_rx_set_slave_mod(i2s_dev_t *hw, bool slave_en)
 {
     hw->rx_conf.rx_slave_mod = slave_en;
 }
@@ -123,7 +123,7 @@ static inline void i2s_ll_set_rx_slave_mod(i2s_dev_t *hw, bool slave_en)
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_reset_tx(i2s_dev_t *hw)
+static inline void i2s_ll_tx_reset(i2s_dev_t *hw)
 {
     hw->tx_conf.tx_reset = 1;
     hw->tx_conf.tx_reset = 0;
@@ -134,7 +134,7 @@ static inline void i2s_ll_reset_tx(i2s_dev_t *hw)
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_reset_rx(i2s_dev_t *hw)
+static inline void i2s_ll_rx_reset(i2s_dev_t *hw)
 {
     hw->rx_conf.rx_reset = 1;
     hw->rx_conf.rx_reset = 0;
@@ -145,7 +145,7 @@ static inline void i2s_ll_reset_rx(i2s_dev_t *hw)
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_reset_tx_fifo(i2s_dev_t *hw)
+static inline void i2s_ll_tx_reset_fifo(i2s_dev_t *hw)
 {
     hw->tx_conf.tx_fifo_reset = 1;
     hw->tx_conf.tx_fifo_reset = 0;
@@ -156,7 +156,7 @@ static inline void i2s_ll_reset_tx_fifo(i2s_dev_t *hw)
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_reset_rx_fifo(i2s_dev_t *hw)
+static inline void i2s_ll_rx_reset_fifo(i2s_dev_t *hw)
 {
     hw->rx_conf.rx_fifo_reset = 1;
     hw->rx_conf.rx_fifo_reset = 0;
@@ -169,7 +169,7 @@ static inline void i2s_ll_reset_rx_fifo(i2s_dev_t *hw)
  * @param src I2S source clock,  ESP32-S3 only support `I2S_CLK_D2CLK`
  *            TX and RX share the same clock setting
  */
-static inline void i2s_ll_set_tx_clk_src(i2s_dev_t *hw, i2s_clock_src_t src)
+static inline void i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 {
     hw->tx_clkm_conf.tx_clk_sel = 2;
 }
@@ -181,7 +181,7 @@ static inline void i2s_ll_set_tx_clk_src(i2s_dev_t *hw, i2s_clock_src_t src)
  * @param src I2S source clock,  ESP32-S3 only support `I2S_CLK_D2CLK`
  *            TX and RX share the same clock setting
  */
-static inline void i2s_ll_set_rx_clk_src(i2s_dev_t *hw, i2s_clock_src_t src)
+static inline void i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 {
     hw->rx_clkm_conf.rx_clk_sel = 2;
 }
@@ -192,7 +192,7 @@ static inline void i2s_ll_set_rx_clk_src(i2s_dev_t *hw, i2s_clock_src_t src)
  * @param hw Peripheral I2S hardware instance address.
  * @param set Pointer to I2S clock devider configuration paramater
  */
-static inline void i2s_ll_set_tx_clk(i2s_dev_t *hw, i2s_ll_clk_cal_t *set)
+static inline void i2s_ll_tx_set_clk(i2s_dev_t *hw, i2s_ll_clk_cal_t *set)
 {
     if (set->a == 0 || set->b == 0) {
         hw->tx_clkm_div_conf.tx_clkm_div_x = 0;
@@ -221,7 +221,7 @@ static inline void i2s_ll_set_tx_clk(i2s_dev_t *hw, i2s_ll_clk_cal_t *set)
  * @param hw Peripheral I2S hardware instance address.
  * @param set Pointer to I2S clock devider configuration paramater
  */
-static inline void i2s_ll_set_rx_clk(i2s_dev_t *hw, i2s_ll_clk_cal_t *set)
+static inline void i2s_ll_rx_set_clk(i2s_dev_t *hw, i2s_ll_clk_cal_t *set)
 {
     if (set->a == 0 || set->b == 0) {
         hw->rx_clkm_div_conf.rx_clkm_div_x = 0;
@@ -249,7 +249,7 @@ static inline void i2s_ll_set_rx_clk(i2s_dev_t *hw, i2s_ll_clk_cal_t *set)
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_start_tx(i2s_dev_t *hw)
+static inline void i2s_ll_tx_start(i2s_dev_t *hw)
 {
     hw->tx_conf.tx_update = 0;
     hw->tx_conf.tx_update = 1;
@@ -261,7 +261,7 @@ static inline void i2s_ll_start_tx(i2s_dev_t *hw)
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_start_rx(i2s_dev_t *hw)
+static inline void i2s_ll_rx_start(i2s_dev_t *hw)
 {
     hw->rx_conf.rx_update = 0;
     hw->rx_conf.rx_update = 1;
@@ -273,7 +273,7 @@ static inline void i2s_ll_start_rx(i2s_dev_t *hw)
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_stop_tx(i2s_dev_t *hw)
+static inline void i2s_ll_tx_stop(i2s_dev_t *hw)
 {
     hw->tx_conf.tx_start = 0;
 }
@@ -283,7 +283,7 @@ static inline void i2s_ll_stop_tx(i2s_dev_t *hw)
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_stop_rx(i2s_dev_t *hw)
+static inline void i2s_ll_rx_stop(i2s_dev_t *hw)
 {
     hw->rx_conf.rx_start = 0;
 }
@@ -294,7 +294,7 @@ static inline void i2s_ll_stop_rx(i2s_dev_t *hw)
  * @param hw Peripheral I2S hardware instance address.
  * @param width WS width in BCK cycle
  */
-static inline void i2s_ll_set_tx_tdm_ws_width(i2s_dev_t *hw, int width)
+static inline void i2s_ll_tx_set_ws_width(i2s_dev_t *hw, int width)
 {
     hw->tx_conf1.tx_tdm_ws_width = width - 1;
 }
@@ -305,7 +305,7 @@ static inline void i2s_ll_set_tx_tdm_ws_width(i2s_dev_t *hw, int width)
  * @param hw Peripheral I2S hardware instance address.
  * @param width WS width in BCK cycle
  */
-static inline void i2s_ll_set_rx_tdm_ws_width(i2s_dev_t *hw, int width)
+static inline void i2s_ll_rx_set_ws_width(i2s_dev_t *hw, int width)
 {
     hw->rx_conf1.rx_tdm_ws_width = width - 1;
 }
@@ -316,7 +316,7 @@ static inline void i2s_ll_set_rx_tdm_ws_width(i2s_dev_t *hw, int width)
  * @param hw Peripheral I2S hardware instance address.
  * @param eof_num the byte length to trigger in_suc_eof interrupt
  */
-static inline void i2s_ll_set_rx_eof_num(i2s_dev_t *hw, int eof_num)
+static inline void i2s_ll_rx_set_eof_num(i2s_dev_t *hw, int eof_num)
 {
     hw->rx_eof_num.rx_eof_num = eof_num;
 }
@@ -325,26 +325,26 @@ static inline void i2s_ll_set_rx_eof_num(i2s_dev_t *hw, int eof_num)
  * @brief Congfigure TX chan bit and audio data bit
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param sample_bit The chan bit width
+ * @param chan_bit The chan bit width
  * @param data_bit The audio data bit width
  */
-static inline void i2s_ll_set_tx_sample_bit(i2s_dev_t *hw, uint8_t sample_bit, int data_bit)
+static inline void i2s_ll_tx_set_sample_bit(i2s_dev_t *hw, uint8_t chan_bit, int data_bit)
 {
     hw->tx_conf1.tx_bits_mod = data_bit - 1;
-    hw->tx_conf1.tx_tdm_chan_bits = sample_bit - 1;
+    hw->tx_conf1.tx_tdm_chan_bits = chan_bit - 1;
 }
 
 /**
  * @brief Congfigure RX chan bit and audio data bit
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param sample_bit The chan bit width
+ * @param chan_bit The chan bit width
  * @param data_bit The audio data bit width
  */
-static inline void i2s_ll_set_rx_sample_bit(i2s_dev_t *hw, uint8_t sample_bit, int data_bit)
+static inline void i2s_ll_rx_set_sample_bit(i2s_dev_t *hw, uint8_t chan_bit, int data_bit)
 {
     hw->rx_conf1.rx_bits_mod = data_bit - 1;
-    hw->rx_conf1.rx_tdm_chan_bits = sample_bit - 1;
+    hw->rx_conf1.rx_tdm_chan_bits = chan_bit - 1;
 }
 
 /**
@@ -353,7 +353,7 @@ static inline void i2s_ll_set_rx_sample_bit(i2s_dev_t *hw, uint8_t sample_bit, i
  * @param hw Peripheral I2S hardware instance address.
  * @param half_sample_bits half sample bit width
  */
-static inline void i2s_ll_set_tx_half_sample_bit(i2s_dev_t *hw, int half_sample_bits)
+static inline void i2s_ll_tx_set_half_sample_bit(i2s_dev_t *hw, int half_sample_bits)
 {
     hw->tx_conf1.tx_half_sample_bits = half_sample_bits - 1;
 }
@@ -364,7 +364,7 @@ static inline void i2s_ll_set_tx_half_sample_bit(i2s_dev_t *hw, int half_sample_
  * @param hw Peripheral I2S hardware instance address.
  * @param half_sample_bits half sample bit width
  */
-static inline void i2s_ll_set_rx_half_sample_bit(i2s_dev_t *hw, int half_sample_bits)
+static inline void i2s_ll_rx_set_half_sample_bit(i2s_dev_t *hw, int half_sample_bits)
 {
     hw->rx_conf1.rx_half_sample_bits = half_sample_bits - 1;
 }
@@ -375,7 +375,7 @@ static inline void i2s_ll_set_rx_half_sample_bit(i2s_dev_t *hw, int half_sample_
  * @param hw Peripheral I2S hardware instance address.
  * @param msb_shift_enable Set true to enable MSB shift
  */
-static inline void i2s_ll_tx_msb_shift_enable(i2s_dev_t *hw, bool msb_shift_enable)
+static inline void i2s_ll_tx_enable_msb_shift(i2s_dev_t *hw, bool msb_shift_enable)
 {
     hw->tx_conf1.tx_msb_shift = msb_shift_enable;
 }
@@ -386,7 +386,7 @@ static inline void i2s_ll_tx_msb_shift_enable(i2s_dev_t *hw, bool msb_shift_enab
  * @param hw Peripheral I2S hardware instance address.
  * @param msb_shift_enable Set true to enable MSB shift
  */
-static inline void i2s_ll_rx_msb_shift_enable(i2s_dev_t *hw, bool msb_shift_enable)
+static inline void i2s_ll_rx_enable_msb_shift(i2s_dev_t *hw, bool msb_shift_enable)
 {
     hw->rx_conf1.rx_msb_shift = msb_shift_enable;
 }
@@ -397,7 +397,7 @@ static inline void i2s_ll_rx_msb_shift_enable(i2s_dev_t *hw, bool msb_shift_enab
  * @param hw Peripheral I2S hardware instance address.
  * @param total_num Total chan number
  */
-static inline void i2s_ll_set_tx_chan_num(i2s_dev_t *hw, int total_num)
+static inline void i2s_ll_tx_set_chan_num(i2s_dev_t *hw, int total_num)
 {
     hw->tx_tdm_ctrl.tx_tdm_tot_chan_num = total_num - 1;
 }
@@ -408,7 +408,7 @@ static inline void i2s_ll_set_tx_chan_num(i2s_dev_t *hw, int total_num)
  * @param hw Peripheral I2S hardware instance address.
  * @param total_num Total chan number
  */
-static inline void i2s_ll_set_rx_chan_num(i2s_dev_t *hw, int total_num)
+static inline void i2s_ll_rx_set_chan_num(i2s_dev_t *hw, int total_num)
 {
     hw->rx_tdm_ctrl.rx_tdm_tot_chan_num = total_num - 1;
 }
@@ -419,7 +419,7 @@ static inline void i2s_ll_set_rx_chan_num(i2s_dev_t *hw, int total_num)
  * @param hw Peripheral I2S hardware instance address.
  * @param chan_mask mask of tx active chan
  */
-static inline void i2s_ll_set_tx_active_chan_mask(i2s_dev_t *hw, uint32_t chan_mask)
+static inline void i2s_ll_tx_set_active_chan_mask(i2s_dev_t *hw, uint32_t chan_mask)
 {
     typeof(hw->tx_tdm_ctrl) tdm_ctrl_reg = hw->tx_tdm_ctrl;
     tdm_ctrl_reg.val &= ~I2S_LL_TDM_CH_MASK;
@@ -433,7 +433,7 @@ static inline void i2s_ll_set_tx_active_chan_mask(i2s_dev_t *hw, uint32_t chan_m
  * @param hw Peripheral I2S hardware instance address.
  * @param chan_mask mask of rx active chan
  */
-static inline void i2s_ll_set_rx_active_chan_mask(i2s_dev_t *hw, uint32_t chan_mask)
+static inline void i2s_ll_rx_set_active_chan_mask(i2s_dev_t *hw, uint32_t chan_mask)
 {
     typeof(hw->rx_tdm_ctrl) tdm_ctrl_reg = hw->rx_tdm_ctrl;
     tdm_ctrl_reg.val &= ~I2S_LL_TDM_CH_MASK;
@@ -447,7 +447,7 @@ static inline void i2s_ll_set_rx_active_chan_mask(i2s_dev_t *hw, uint32_t chan_m
  * @param hw Peripheral I2S hardware instance address.
  * @param ws_pol_level pin level of WS(output) when receiving left channel data
  */
-static inline void i2s_set_tx_ws_idle_pol(i2s_dev_t *hw, int ws_pol_level)
+static inline void i2s_tx_set_ws_idle_pol(i2s_dev_t *hw, int ws_pol_level)
 {
     hw->tx_conf.tx_ws_idle_pol = ws_pol_level;
 }
@@ -458,7 +458,7 @@ static inline void i2s_set_tx_ws_idle_pol(i2s_dev_t *hw, int ws_pol_level)
  * @param hw Peripheral I2S hardware instance address.
  * @param ws_pol_level pin level of WS(input) when receiving left channel data
  */
-static inline void i2s_set_rx_ws_idle_pol(i2s_dev_t *hw, int ws_pol_level)
+static inline void i2s_rx_set_ws_idle_pol(i2s_dev_t *hw, int ws_pol_level)
 {
     hw->rx_conf.rx_ws_idle_pol = ws_pol_level;
 }
@@ -469,10 +469,11 @@ static inline void i2s_set_rx_ws_idle_pol(i2s_dev_t *hw, int ws_pol_level)
  * @param hw Peripheral I2S hardware instance address.
  * @param pdm_enable Set true to TX enable PDM mode
  */
-static inline void i2s_ll_set_tx_pdm_en(i2s_dev_t *hw, bool pdm_enable)
+static inline void i2s_ll_tx_enable_pdm(i2s_dev_t *hw, bool pdm_enable)
 {
     hw->tx_conf.tx_pdm_en = pdm_enable;
     hw->tx_conf.tx_tdm_en = !pdm_enable;
+    hw->tx_pcm2pdm_conf.pcm2pdm_conv_en = pdm_enable;
 }
 
 /**
@@ -481,10 +482,11 @@ static inline void i2s_ll_set_tx_pdm_en(i2s_dev_t *hw, bool pdm_enable)
  * @param hw Peripheral I2S hardware instance address.
  * @param pdm_enable Set true to RX enable PDM mode
  */
-static inline void i2s_ll_set_rx_pdm_en(i2s_dev_t *hw, bool pdm_enable)
+static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw, bool pdm_enable)
 {
     hw->rx_conf.rx_pdm_en = pdm_enable;
     hw->rx_conf.rx_tdm_en = !pdm_enable;
+    hw->rx_conf.rx_pdm2pcm_en = pdm_enable;
 }
 
 /**
@@ -495,7 +497,7 @@ static inline void i2s_ll_set_rx_pdm_en(i2s_dev_t *hw, bool pdm_enable)
  * @param fp The fp value of TX PDM filter module group0.
  * @param fs The fs value of TX PDM filter module group0.
  */
-static inline void i2s_ll_set_tx_pdm_fpfs(i2s_dev_t *hw, uint32_t fp, uint32_t fs)
+static inline void i2s_ll_tx_set_pdm_fpfs(i2s_dev_t *hw, uint32_t fp, uint32_t fs)
 {
     hw->tx_pcm2pdm_conf1.tx_pdm_fp = fp;
     hw->tx_pcm2pdm_conf1.tx_pdm_fs = fs;
@@ -503,61 +505,149 @@ static inline void i2s_ll_set_tx_pdm_fpfs(i2s_dev_t *hw, uint32_t fp, uint32_t f
 }
 
 /**
- * @brief Get I2S TX PDM configuration
+ * @brief Get I2S TX PDM fp configuration paramater
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param fp Pointer to accept TX PDM fp configuration paramater
- * @param fs Pointer to accept TX PDM fs configuration paramater
+ * @return
+ *        - fp configuration paramater
  */
-static inline void i2s_ll_get_tx_pdm_fpfs(i2s_dev_t *hw, uint32_t *fp, uint32_t *fs)
+static inline uint32_t i2s_ll_tx_get_pdm_fp(i2s_dev_t *hw)
 {
-    *fp = hw->tx_pcm2pdm_conf1.tx_pdm_fp;
-    *fs = hw->tx_pcm2pdm_conf1.tx_pdm_fs;
+    return hw->tx_pcm2pdm_conf1.tx_pdm_fp;
 }
 
 /**
- * @brief Configure I2S TX pdm
+ * @brief Get I2S TX PDM fs configuration paramater
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param sample_rate The sample rate to be set.
+ * @return
+ *        - fs configuration paramater
  */
-static inline void i2s_ll_tx_pdm_cfg(i2s_dev_t *hw, uint32_t sample_rate)
+static inline uint32_t i2s_ll_tx_get_pdm_fs(i2s_dev_t *hw)
 {
-    uint32_t fp = 960;
-    uint32_t fs = sample_rate / 100;
-    typeof(hw->tx_pcm2pdm_conf) pdm_conf_reg = hw->tx_pcm2pdm_conf;
-    typeof(hw->tx_pcm2pdm_conf1) pdm_conf1_reg = hw->tx_pcm2pdm_conf1;
-    pdm_conf_reg.pcm2pdm_conv_en = 1;
-    pdm_conf_reg.tx_prescale = 0;
-    pdm_conf_reg.tx_hp_in_shift = 1;
-    pdm_conf_reg.tx_lp_in_shift = 1;
-    pdm_conf_reg.tx_sinc_in_shift = 1;
-    pdm_conf_reg.tx_sigmadelta_in_shift = 1;
-    pdm_conf_reg.tx_sinc_osr2 =  fp / fs;
-    pdm_conf_reg.tx_dac_mode_en =  1;
-    pdm_conf_reg.tx_sigmadelta_dither = 0;
-    pdm_conf_reg.tx_sigmadelta_dither2 = 0;
-    pdm_conf_reg.tx_dac_2out_en = 1;
-    pdm_conf1_reg.tx_pdm_fp = fp;
-    pdm_conf1_reg.tx_pdm_fs = fs;
-    pdm_conf1_reg.tx_iir_hp_mult12_5 = 7;
-    pdm_conf1_reg.tx_iir_hp_mult12_0 = 6;
-    pdm_conf_reg.tx_hp_bypass = 0;
-    hw->tx_pcm2pdm_conf = pdm_conf_reg;
-    hw->tx_pcm2pdm_conf1 = pdm_conf1_reg;
+    return hw->tx_pcm2pdm_conf1.tx_pdm_fs;
 }
 
 /**
- * @brief Set default RX PDM mode
+ * @brief Set I2S TX PDM prescale
  *
  * @param hw Peripheral I2S hardware instance address.
+ * @param prescale I2S TX PDM prescale
  */
-static inline void i2s_ll_rx_pdm_cfg(i2s_dev_t *hw)
+static inline void i2s_ll_tx_set_pdm_prescale(i2s_dev_t *hw, bool prescale)
 {
-    hw->rx_conf.rx_tdm_en = 0;
-    hw->rx_conf.rx_pdm2pcm_en = 1;
-    hw->rx_conf.rx_pdm_sinc_dsr_16_en = 0;
-    hw->rx_conf.rx_pdm_en = 1;
+    hw->tx_pcm2pdm_conf.tx_prescale = prescale;
+}
+
+/**
+ * @brief Set I2S TX PDM high pass filter scaling
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param sig_scale I2S TX PDM signal scaling before transmit to the filter
+ */
+static inline void i2s_ll_tx_set_pdm_hp_scale(i2s_dev_t *hw, i2s_pdm_sig_scale_t sig_scale)
+{
+    hw->tx_pcm2pdm_conf.tx_hp_in_shift = sig_scale;
+}
+
+/**
+ * @brief Set I2S TX PDM low pass filter scaling
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param sig_scale I2S TX PDM signal scaling before transmit to the filter
+ */
+static inline void i2s_ll_tx_set_pdm_lp_scale(i2s_dev_t *hw, i2s_pdm_sig_scale_t sig_scale)
+{
+    hw->tx_pcm2pdm_conf.tx_lp_in_shift = sig_scale;
+}
+
+/**
+ * @brief Set I2S TX PDM sinc filter scaling
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param sig_scale I2S TX PDM signal scaling before transmit to the filter
+ */
+static inline void i2s_ll_tx_set_pdm_sinc_scale(i2s_dev_t *hw, i2s_pdm_sig_scale_t sig_scale)
+{
+    hw->tx_pcm2pdm_conf.tx_sinc_in_shift = sig_scale;
+}
+
+/**
+ * @brief Set I2S TX PDM sigma-delta filter scaling
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param sig_scale I2S TX PDM signal scaling before transmit to the filter
+ */
+static inline void i2s_ll_tx_set_pdm_sd_scale(i2s_dev_t *hw, i2s_pdm_sig_scale_t sig_scale)
+{
+    hw->tx_pcm2pdm_conf.tx_sigmadelta_in_shift = sig_scale;
+}
+
+/**
+ * @brief Set I2S TX PDM high pass filter param0
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param param The fourth parameter of PDM TX IIR_HP filter stage 1 is (504 + I2S_TX_IIR_HP_MULT12_0[2:0])
+ */
+static inline void i2s_ll_tx_set_pdm_hp_filter_param0(i2s_dev_t *hw, uint32_t param)
+{
+    hw->tx_pcm2pdm_conf1.tx_iir_hp_mult12_0 = param;
+}
+
+/**
+ * @brief Set I2S TX PDM high pass filter param5
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param param The fourth parameter of PDM TX IIR_HP filter stage 2 is (504 + I2S_TX_IIR_HP_MULT12_5[2:0])
+ */
+static inline void i2s_ll_tx_set_pdm_hp_filter_param5(i2s_dev_t *hw, uint32_t param)
+{
+    hw->tx_pcm2pdm_conf1.tx_iir_hp_mult12_5 = param;
+}
+
+/**
+ * @brief Enable I2S TX PDM high pass filter
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param enable Set true to enable I2S TX PDM high pass filter, set false to bypass it
+ */
+static inline void i2s_ll_tx_enable_pdm_hp_filter(i2s_dev_t *hw, bool enable)
+{
+    hw->tx_pcm2pdm_conf.tx_hp_bypass = !enable;
+}
+
+/**
+ * @brief Enable I2S TX PDM sigma-delta codec
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param dither I2S TX PDM sigmadelta dither value
+ */
+static inline void i2s_ll_tx_enable_pdm_sd_codec(i2s_dev_t *hw, bool enable)
+{
+    hw->tx_pcm2pdm_conf.tx_dac_2out_en = enable;
+    hw->tx_pcm2pdm_conf.tx_dac_mode_en = enable;
+}
+
+/**
+ * @brief Set I2S TX PDM sigma-delta codec dither
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param dither I2S TX PDM sigmadelta dither value
+ */
+static inline void i2s_ll_tx_set_pdm_sd_dither(i2s_dev_t *hw, uint32_t dither)
+{
+    hw->tx_pcm2pdm_conf.tx_sigmadelta_dither = dither;
+}
+
+/**
+ * @brief Set I2S TX PDM sigma-delta codec dither
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param dither2 I2S TX PDM sigmadelta dither2 value
+ */
+static inline void i2s_ll_tx_set_pdm_sd_dither2(i2s_dev_t *hw, uint32_t dither2)
+{
+    hw->tx_pcm2pdm_conf.tx_sigmadelta_dither2 = dither2;
 }
 
 /**
@@ -566,7 +656,7 @@ static inline void i2s_ll_rx_pdm_cfg(i2s_dev_t *hw)
  * @param hw Peripheral I2S hardware instance address.
  * @param dsr PDM downsample configuration paramater
  */
-static inline void i2s_ll_set_pdm_rx_dsr(i2s_dev_t *hw, i2s_pdm_dsr_t dsr)
+static inline void i2s_ll_rx_set_pdm_dsr(i2s_dev_t *hw, i2s_pdm_dsr_t dsr)
 {
     hw->rx_conf.rx_pdm_sinc_dsr_16_en = dsr;
 }
@@ -577,7 +667,7 @@ static inline void i2s_ll_set_pdm_rx_dsr(i2s_dev_t *hw, i2s_pdm_dsr_t dsr)
  * @param hw Peripheral I2S hardware instance address.
  * @param dsr Pointer to accept PDM downsample configuration
  */
-static inline void i2s_ll_get_pdm_rx_dsr(i2s_dev_t *hw, i2s_pdm_dsr_t *dsr)
+static inline void i2s_ll_rx_get_pdm_dsr(i2s_dev_t *hw, i2s_pdm_dsr_t *dsr)
 {
     *dsr = hw->rx_conf.rx_pdm_sinc_dsr_16_en;
 }
@@ -588,14 +678,10 @@ static inline void i2s_ll_get_pdm_rx_dsr(i2s_dev_t *hw, i2s_pdm_dsr_t *dsr)
  * @param hw Peripheral I2S hardware instance address.
  * @param pcm_cfg PCM configuration paramater
  */
-static inline void i2s_ll_tx_pcm_cfg(i2s_dev_t *hw, i2s_pcm_compress_t pcm_cfg)
+static inline void i2s_ll_tx_set_pcm_type(i2s_dev_t *hw, i2s_pcm_compress_t pcm_cfg)
 {
-    if (pcm_cfg == I2S_PCM_DISABLE) {
-        hw->tx_conf.tx_pcm_bypass = 1;
-    } else {
-        hw->tx_conf.tx_pcm_conf = pcm_cfg;
-        hw->tx_conf.tx_pcm_bypass = 0;
-    }
+    hw->tx_conf.tx_pcm_conf = pcm_cfg;
+    hw->tx_conf.tx_pcm_bypass = !pcm_cfg;
 }
 
 /**
@@ -604,14 +690,10 @@ static inline void i2s_ll_tx_pcm_cfg(i2s_dev_t *hw, i2s_pcm_compress_t pcm_cfg)
  * @param hw Peripheral I2S hardware instance address.
  * @param pcm_cfg PCM configuration paramater
  */
-static inline void i2s_ll_rx_pcm_cfg(i2s_dev_t *hw, i2s_pcm_compress_t pcm_cfg)
+static inline void i2s_ll_rx_set_pcm_type(i2s_dev_t *hw, i2s_pcm_compress_t pcm_cfg)
 {
-    if (pcm_cfg == I2S_PCM_DISABLE) {
-        hw->rx_conf.rx_pcm_bypass = 1;
-    } else {
-        hw->rx_conf.rx_pcm_conf = pcm_cfg;
-        hw->rx_conf.rx_pcm_bypass = 0;
-    }
+    hw->rx_conf.rx_pcm_conf = pcm_cfg;
+    hw->rx_conf.rx_pcm_bypass = !pcm_cfg;
 }
 
 /**
@@ -620,7 +702,7 @@ static inline void i2s_ll_rx_pcm_cfg(i2s_dev_t *hw, i2s_pcm_compress_t pcm_cfg)
  * @param hw Peripheral I2S hardware instance address.
  * @param ena Set true to enable left alignment
  */
-static inline void i2s_ll_tx_left_align_enable(i2s_dev_t *hw, bool ena)
+static inline void i2s_ll_tx_enable_left_align(i2s_dev_t *hw, bool ena)
 {
     hw->tx_conf.tx_left_align = ena;
 }
@@ -631,7 +713,7 @@ static inline void i2s_ll_tx_left_align_enable(i2s_dev_t *hw, bool ena)
  * @param hw Peripheral I2S hardware instance address.
  * @param ena Set true to enable left alignment
  */
-static inline void i2s_ll_rx_left_align_enable(i2s_dev_t *hw, bool ena)
+static inline void i2s_ll_rx_enable_left_align(i2s_dev_t *hw, bool ena)
 {
     hw->rx_conf.rx_left_align = ena;
 }
@@ -642,7 +724,7 @@ static inline void i2s_ll_rx_left_align_enable(i2s_dev_t *hw, bool ena)
  * @param hw Peripheral I2S hardware instance address.
  * @param ena Set true to enable big endian mode
  */
-static inline void i2s_ll_rx_big_endian_enable(i2s_dev_t *hw, bool ena)
+static inline void i2s_ll_rx_enable_big_endian(i2s_dev_t *hw, bool ena)
 {
     hw->rx_conf.rx_big_endian = ena;
 }
@@ -653,7 +735,7 @@ static inline void i2s_ll_rx_big_endian_enable(i2s_dev_t *hw, bool ena)
  * @param hw Peripheral I2S hardware instance address.
  * @param ena Set true to enable big endian mode
  */
-static inline void i2s_ll_tx_big_endian_enable(i2s_dev_t *hw, bool ena)
+static inline void i2s_ll_tx_enable_big_endian(i2s_dev_t *hw, bool ena)
 {
     hw->tx_conf.tx_big_endian = ena;
 }
@@ -698,9 +780,9 @@ static inline void i2s_ll_tx_set_skip_mask(i2s_dev_t *hw, bool skip_mask_ena)
  * @param hw Peripheral I2S hardware instance address.
  * @param data Single data to be set
  */
-static inline void i2s_ll_single_data_config(i2s_dev_t *hw, uint32_t data)
+static inline void i2s_ll_set_single_data(i2s_dev_t *hw, uint32_t data)
 {
-    hw->conf_signal_data = data;
+    hw->conf_single_data = data;
 }
 
 /**
@@ -709,7 +791,7 @@ static inline void i2s_ll_single_data_config(i2s_dev_t *hw, uint32_t data)
  * @param hw Peripheral I2S hardware instance address.
  * @param ena Set true to enable loopback mode.
  */
-static inline void i2s_ll_loop_back_ena(i2s_dev_t *hw, bool ena)
+static inline void i2s_ll_enable_loop_back(i2s_dev_t *hw, bool ena)
 {
     hw->tx_conf.sig_loopback = ena;
 }

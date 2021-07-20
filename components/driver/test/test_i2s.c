@@ -89,40 +89,40 @@ static void i2s_test_io_config(int mode)
 
     switch (mode) {
 #if SOC_I2S_NUM > 1
-        case I2S_TEST_MODE_SLAVE_TO_MAXTER: {
-            esp_rom_gpio_connect_out_signal(MASTER_BCK_IO, I2S0I_BCK_OUT_IDX, 0, 0);
-            esp_rom_gpio_connect_in_signal(MASTER_BCK_IO, I2S1O_BCK_IN_IDX, 0);
+    case I2S_TEST_MODE_SLAVE_TO_MAXTER: {
+        esp_rom_gpio_connect_out_signal(MASTER_BCK_IO, I2S0I_BCK_OUT_IDX, 0, 0);
+        esp_rom_gpio_connect_in_signal(MASTER_BCK_IO, I2S1O_BCK_IN_IDX, 0);
 
-            esp_rom_gpio_connect_out_signal(MASTER_WS_IO, I2S0I_WS_OUT_IDX, 0, 0);
-            esp_rom_gpio_connect_in_signal(MASTER_WS_IO, I2S1O_WS_IN_IDX, 0);
+        esp_rom_gpio_connect_out_signal(MASTER_WS_IO, I2S0I_WS_OUT_IDX, 0, 0);
+        esp_rom_gpio_connect_in_signal(MASTER_WS_IO, I2S1O_WS_IN_IDX, 0);
 
-            esp_rom_gpio_connect_out_signal(DATA_OUT_IO, I2S1_DATA_OUT_IDX, 0, 0);
-            esp_rom_gpio_connect_in_signal(DATA_OUT_IO, I2S0_DATA_IN_IDX, 0);
-        }
-        break;
+        esp_rom_gpio_connect_out_signal(DATA_OUT_IO, I2S1_DATA_OUT_IDX, 0, 0);
+        esp_rom_gpio_connect_in_signal(DATA_OUT_IO, I2S0_DATA_IN_IDX, 0);
+    }
+    break;
 
-        case I2S_TEST_MODE_MASTER_TO_SLAVE: {
-            esp_rom_gpio_connect_out_signal(MASTER_BCK_IO, I2S0O_BCK_OUT_IDX, 0, 0);
-            esp_rom_gpio_connect_in_signal(MASTER_BCK_IO, I2S1I_BCK_IN_IDX, 0);
+    case I2S_TEST_MODE_MASTER_TO_SLAVE: {
+        esp_rom_gpio_connect_out_signal(MASTER_BCK_IO, I2S0O_BCK_OUT_IDX, 0, 0);
+        esp_rom_gpio_connect_in_signal(MASTER_BCK_IO, I2S1I_BCK_IN_IDX, 0);
 
-            esp_rom_gpio_connect_out_signal(MASTER_WS_IO, I2S0O_WS_OUT_IDX, 0, 0);
-            esp_rom_gpio_connect_in_signal(MASTER_WS_IO, I2S1I_WS_IN_IDX, 0);
+        esp_rom_gpio_connect_out_signal(MASTER_WS_IO, I2S0O_WS_OUT_IDX, 0, 0);
+        esp_rom_gpio_connect_in_signal(MASTER_WS_IO, I2S1I_WS_IN_IDX, 0);
 
-            esp_rom_gpio_connect_out_signal(DATA_OUT_IO, I2S0_DATA_OUT_IDX, 0, 0);
-            esp_rom_gpio_connect_in_signal(DATA_OUT_IO, I2S1_DATA_IN_IDX, 0);
-        }
-        break;
+        esp_rom_gpio_connect_out_signal(DATA_OUT_IO, I2S0_DATA_OUT_IDX, 0, 0);
+        esp_rom_gpio_connect_in_signal(DATA_OUT_IO, I2S1_DATA_IN_IDX, 0);
+    }
+    break;
 #endif
-        case I2S_TEST_MODE_LOOPBACK: {
-            esp_rom_gpio_connect_out_signal(DATA_OUT_IO, I2S0_DATA_OUT_IDX, 0, 0);
-            esp_rom_gpio_connect_in_signal(DATA_OUT_IO, I2S0_DATA_IN_IDX, 0);
-        }
-        break;
+    case I2S_TEST_MODE_LOOPBACK: {
+        esp_rom_gpio_connect_out_signal(DATA_OUT_IO, I2S0_DATA_OUT_IDX, 0, 0);
+        esp_rom_gpio_connect_in_signal(DATA_OUT_IO, I2S0_DATA_IN_IDX, 0);
+    }
+    break;
 
-        default: {
-            TEST_FAIL_MESSAGE("error: mode not supported");
-        }
-        break;
+    default: {
+        TEST_FAIL_MESSAGE("error: mode not supported");
+    }
+    break;
     }
 }
 
@@ -144,7 +144,7 @@ TEST_CASE("I2S basic driver install, uninstall, set pin test", "[i2s]")
         .dma_buf_count = 6,
         .dma_buf_len = 60,
         .use_apll = 0,
-        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1 ,
+        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
     };
 
     // normal  i2s
@@ -180,7 +180,7 @@ TEST_CASE("I2S Loopback test(master tx and rx)", "[i2s]")
         .dma_buf_count = 6,
         .dma_buf_len = 100,
         .use_apll = 0,
-        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1 ,
+        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
     };
     i2s_pin_config_t master_pin_config = {
         .bck_io_num = MASTER_BCK_IO,
@@ -193,29 +193,28 @@ TEST_CASE("I2S Loopback test(master tx and rx)", "[i2s]")
     i2s_test_io_config(I2S_TEST_MODE_LOOPBACK);
     printf("\r\nheap size: %d\n", esp_get_free_heap_size());
 
-    uint8_t* data_wr = (uint8_t*)malloc(sizeof(uint8_t)*400);
+    uint8_t *data_wr = (uint8_t *)malloc(sizeof(uint8_t) * 400);
     size_t i2s_bytes_write = 0;
     size_t bytes_read = 0;
     int length = 0;
-    uint8_t *i2s_read_buff = (uint8_t*)malloc(sizeof(uint8_t)*10000);
+    uint8_t *i2s_read_buff = (uint8_t *)malloc(sizeof(uint8_t) * 10000);
 
-    for(int i=0; i<100; i++) {
-        data_wr[i] = i+1;
+    for (int i = 0; i < 100; i++) {
+        data_wr[i] = i + 1;
     }
-    int flag=0; // break loop flag
+    int flag = 0; // break loop flag
     int end_position = 0;
     // write data to slave
-    i2s_write(I2S_NUM_0, data_wr, sizeof(uint8_t)*400, &i2s_bytes_write, 1000 / portTICK_PERIOD_MS);
-    while(!flag){
+    i2s_write(I2S_NUM_0, data_wr, sizeof(uint8_t) * 400, &i2s_bytes_write, 1000 / portTICK_PERIOD_MS);
+    while (!flag) {
         if (length >= 10000 - 500) {
             break;
         }
-        i2s_read(I2S_NUM_0, i2s_read_buff + length, sizeof(uint8_t)*500, &bytes_read, 1000/portMAX_DELAY);
-        if(bytes_read>0) {
-            printf("read data size: %d\n", bytes_read);
-            for(int i=length; i<length + bytes_read; i++) {
-                if(i2s_read_buff[i] == 100) {
-                    flag=1;
+        i2s_read(I2S_NUM_0, i2s_read_buff + length, sizeof(uint8_t) * 500, &bytes_read, 1000 / portMAX_DELAY);
+        if (bytes_read > 0) {
+            for (int i = length; i < length + bytes_read; i++) {
+                if (i2s_read_buff[i] == 100) {
+                    flag = 1;
                     end_position = i;
                     break;
                 }
@@ -224,8 +223,8 @@ TEST_CASE("I2S Loopback test(master tx and rx)", "[i2s]")
         length = length + bytes_read;
     }
     // test the read data right or not
-    for(int i=end_position-99; i<=end_position; i++) {
-        TEST_ASSERT_EQUAL_UINT8((i-end_position+100), *(i2s_read_buff + i));
+    for (int i = end_position - 99; i <= end_position; i++) {
+        TEST_ASSERT_EQUAL_UINT8((i - end_position + 100), *(i2s_read_buff + i));
     }
     free(data_wr);
     free(i2s_read_buff);
@@ -246,7 +245,7 @@ TEST_CASE("I2S write and read test(master tx and slave rx)", "[i2s]")
         .dma_buf_count = 6,
         .dma_buf_len = 100,
         .use_apll = 0,
-        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1 ,
+        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
     };
     i2s_pin_config_t master_pin_config = {
         .bck_io_num = MASTER_BCK_IO,
@@ -268,7 +267,7 @@ TEST_CASE("I2S write and read test(master tx and slave rx)", "[i2s]")
         .dma_buf_count = 6,
         .dma_buf_len = 100,
         .use_apll = 0,
-        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1 ,
+        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
     };
     i2s_pin_config_t slave_pin_config = {
         .bck_io_num = SLAVE_BCK_IO,
@@ -282,27 +281,27 @@ TEST_CASE("I2S write and read test(master tx and slave rx)", "[i2s]")
     i2s_test_io_config(I2S_TEST_MODE_MASTER_TO_SLAVE);
     printf("\r\nheap size: %d\n", esp_get_free_heap_size());
 
-    uint8_t* data_wr = (uint8_t*)malloc(sizeof(uint8_t)*400);
+    uint8_t *data_wr = (uint8_t *)malloc(sizeof(uint8_t) * 400);
     size_t i2s_bytes_write = 0;
     size_t bytes_read = 0;
     int length = 0;
-    uint8_t *i2s_read_buff = (uint8_t*)malloc(sizeof(uint8_t)*10000);
+    uint8_t *i2s_read_buff = (uint8_t *)malloc(sizeof(uint8_t) * 10000);
 
-    for(int i=0; i<100; i++) {
-        data_wr[i] = i+1;
+    for (int i = 0; i < 100; i++) {
+        data_wr[i] = i + 1;
     }
-    int flag=0; // break loop flag
+    int flag = 0; // break loop flag
     int end_position = 0;
     // write data to slave
-    i2s_write(I2S_NUM_0, data_wr, sizeof(uint8_t)*400, &i2s_bytes_write, 1000 / portTICK_PERIOD_MS);
+    i2s_write(I2S_NUM_0, data_wr, sizeof(uint8_t) * 400, &i2s_bytes_write, 1000 / portTICK_PERIOD_MS);
     printf("write data size: %d\n", i2s_bytes_write);
-    while(!flag){
-        i2s_read(I2S_NUM_1, i2s_read_buff + length, sizeof(uint8_t)*500, &bytes_read, 1000/portMAX_DELAY);
-        if(bytes_read>0) {
+    while (!flag) {
+        i2s_read(I2S_NUM_1, i2s_read_buff + length, sizeof(uint8_t) * 500, &bytes_read, 1000 / portTICK_PERIOD_MS);
+        if (bytes_read > 0) {
             printf("read data size: %d\n", bytes_read);
-            for(int i=length; i<length + bytes_read; i++) {
-                if(i2s_read_buff[i] == 100) {
-                    flag=1;
+            for (int i = length; i < length + bytes_read; i++) {
+                if (i2s_read_buff[i] == 100) {
+                    flag = 1;
                     end_position = i;
                     break;
                 }
@@ -311,8 +310,8 @@ TEST_CASE("I2S write and read test(master tx and slave rx)", "[i2s]")
         length = length + bytes_read;
     }
     // test the readed data right or not
-    for(int i=end_position-99; i<=end_position; i++) {
-        TEST_ASSERT_EQUAL_UINT8((i-end_position+100), *(i2s_read_buff + i));
+    for (int i = end_position - 99; i <= end_position; i++) {
+        TEST_ASSERT_EQUAL_UINT8((i - end_position + 100), *(i2s_read_buff + i));
     }
     free(data_wr);
     free(i2s_read_buff);
@@ -332,7 +331,7 @@ TEST_CASE("I2S write and read test(master rx and slave tx)", "[i2s]")
         .dma_buf_count = 6,
         .dma_buf_len = 100,
         .use_apll = 1,
-        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1 ,
+        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
     };
     i2s_pin_config_t master_pin_config = {
         .bck_io_num = MASTER_BCK_IO,
@@ -354,7 +353,7 @@ TEST_CASE("I2S write and read test(master rx and slave tx)", "[i2s]")
         .dma_buf_count = 6,
         .dma_buf_len = 100,
         .use_apll = 1,
-        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1 ,
+        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
     };
     i2s_pin_config_t slave_pin_config = {
         .bck_io_num = SLAVE_BCK_IO,
@@ -366,28 +365,29 @@ TEST_CASE("I2S write and read test(master rx and slave tx)", "[i2s]")
     TEST_ESP_OK(i2s_driver_install(I2S_NUM_1, &slave_i2s_config, 0, NULL));
     TEST_ESP_OK(i2s_set_pin(I2S_NUM_1, &slave_pin_config));
     i2s_test_io_config(I2S_TEST_MODE_SLAVE_TO_MAXTER);
+    printf("\r\nheap size: %d\n", esp_get_free_heap_size());
 
-    uint8_t* data_wr = (uint8_t*)malloc(sizeof(uint8_t)*400);
+    uint8_t *data_wr = (uint8_t *)malloc(sizeof(uint8_t) * 400);
     size_t i2s_bytes_write = 0;
     size_t bytes_read = 0;
     int length = 0;
-    uint8_t *i2s_read_buff = (uint8_t*)malloc(sizeof(uint8_t)*100000);
+    uint8_t *i2s_read_buff = (uint8_t *)malloc(sizeof(uint8_t) * 10000);
 
-    for(int i=0; i<100; i++) {
-        data_wr[i] = i+1;
+    for (int i = 0; i < 100; i++) {
+        data_wr[i] = i + 1;
     }
     // slave write data to master
-    i2s_write(I2S_NUM_1, data_wr, sizeof(uint8_t)*400, &i2s_bytes_write, 1000 / portTICK_PERIOD_MS);
+    i2s_write(I2S_NUM_1, data_wr, sizeof(uint8_t) * 400, &i2s_bytes_write, 1000 / portTICK_PERIOD_MS);
     printf("write data size: %d\n", i2s_bytes_write);
-    int flag=0; // break loop flag
+    int flag = 0; // break loop flag
     int end_position = 0;
     // write data to slave
-    while(!flag){
-        TEST_ESP_OK(i2s_read(I2S_NUM_0, i2s_read_buff + length, 10000-length, &bytes_read, 1000/portMAX_DELAY));
-        if(bytes_read > 0) {
-            for(int i=length; i<length+bytes_read; i++) {
-                if(i2s_read_buff[i] == 100) {
-                    flag=1;
+    while (!flag) {
+        TEST_ESP_OK(i2s_read(I2S_NUM_0, i2s_read_buff + length, 10000 - length, &bytes_read, 1000 / portTICK_PERIOD_MS));
+        if (bytes_read > 0) {
+            for (int i = length; i < length + bytes_read; i++) {
+                if (i2s_read_buff[i] == 100) {
+                    flag = 1;
                     end_position = i;
                     break;
                 }
@@ -396,8 +396,8 @@ TEST_CASE("I2S write and read test(master rx and slave tx)", "[i2s]")
         length = length + bytes_read;
     }
     // test the readed data right or not
-    for(int i=end_position-99; i<=end_position; i++) {
-        TEST_ASSERT_EQUAL_UINT8((i-end_position+100), *(i2s_read_buff + i));
+    for (int i = end_position - 99; i <= end_position; i++) {
+        TEST_ASSERT_EQUAL_UINT8((i - end_position + 100), *(i2s_read_buff + i));
     }
     free(data_wr);
     free(i2s_read_buff);
@@ -417,7 +417,7 @@ TEST_CASE("I2S memory leaking test", "[i2s]")
         .dma_buf_count = 6,
         .dma_buf_len = 100,
         .use_apll = 0,
-        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1 ,
+        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
     };
     i2s_pin_config_t master_pin_config = {
         .bck_io_num = MASTER_BCK_IO,
@@ -431,7 +431,7 @@ TEST_CASE("I2S memory leaking test", "[i2s]")
     i2s_driver_uninstall(I2S_NUM_0);
     int initial_size = esp_get_free_heap_size();
 
-    for(int i=0; i<100; i++) {
+    for (int i = 0; i < 100; i++) {
         TEST_ESP_OK(i2s_driver_install(I2S_NUM_0, &master_i2s_config, 0, NULL));
         TEST_ESP_OK(i2s_set_pin(I2S_NUM_0, &master_pin_config));
         i2s_driver_uninstall(I2S_NUM_0);
@@ -475,14 +475,14 @@ TEST_CASE("I2S APLL clock variation test", "[i2s]")
     uint32_t sample_rate_arr[8] = { 10675, 11025, 16000, 22050, 32000, 44100, 48000, 96000 };
     int bits_per_sample_arr[3] = { 16, 24, 32 };
 
-    for (int i = 0; i < (sizeof(sample_rate_arr)/sizeof(sample_rate_arr[0])); i++) {
-        for (int j = 0; j < (sizeof(bits_per_sample_arr)/sizeof(bits_per_sample_arr[0])); j++) {
+    for (int i = 0; i < (sizeof(sample_rate_arr) / sizeof(sample_rate_arr[0])); i++) {
+        for (int j = 0; j < (sizeof(bits_per_sample_arr) / sizeof(bits_per_sample_arr[0])); j++) {
             i2s_config.sample_rate = sample_rate_arr[i];
             i2s_config.bits_per_sample = bits_per_sample_arr[j];
 
             TEST_ESP_OK(i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL));
             TEST_ESP_OK(i2s_set_pin(I2S_NUM_0, &pin_config));
-            TEST_ASSERT((fabs((i2s_get_clk(I2S_NUM_0) - sample_rate_arr[i]))/(sample_rate_arr[i]))*100 < PERCENT_DIFF);
+            TEST_ASSERT((fabs((i2s_get_clk(I2S_NUM_0) - sample_rate_arr[i])) / (sample_rate_arr[i])) * 100 < PERCENT_DIFF);
             TEST_ESP_OK(i2s_driver_uninstall(I2S_NUM_0));
             TEST_ASSERT(initial_size == esp_get_free_heap_size());
         }
@@ -506,7 +506,7 @@ TEST_CASE("I2S adc test", "[i2s]")
         .dma_buf_count = 2,
         .dma_buf_len = 1024,
         .use_apll = 0,
-     };
+    };
     // install and start I2S driver
     i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL);
     // init ADC pad
@@ -514,7 +514,7 @@ TEST_CASE("I2S adc test", "[i2s]")
     // enable adc sampling, ADC_WIDTH_BIT_12, ADC_ATTEN_DB_11 hard-coded in adc_i2s_mode_init
     i2s_adc_enable(I2S_NUM_0);
     // init read buffer
-    uint16_t* i2sReadBuffer = (uint16_t*)calloc(1024, sizeof(uint16_t));
+    uint16_t *i2sReadBuffer = (uint16_t *)calloc(1024, sizeof(uint16_t));
     size_t bytesRead;
 
     for (int loop = 0; loop < 10; loop++) {
@@ -526,7 +526,7 @@ TEST_CASE("I2S adc test", "[i2s]")
             }
             vTaskDelay(200 / portTICK_RATE_MS);
             // read data from adc, will block until buffer is full
-            i2s_read(I2S_NUM_0, (void*)i2sReadBuffer, 1024 * sizeof(uint16_t), &bytesRead, portMAX_DELAY);
+            i2s_read(I2S_NUM_0, (void *)i2sReadBuffer, 1024 * sizeof(uint16_t), &bytesRead, portMAX_DELAY);
 
             // calc average
             int64_t adcSumValue = 0;
@@ -571,7 +571,7 @@ TEST_CASE("I2S dac test", "[i2s]")
         .dma_buf_count = 6,
         .dma_buf_len = 60,
         .use_apll = 0,
-        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1 ,
+        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
     };
 
     //install and start i2s driver
