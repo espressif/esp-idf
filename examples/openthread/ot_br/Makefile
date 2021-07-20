@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := otbr_esp
+PROJECT_NAME := esp_ot_br
 
 EXTRA_COMPONENT_DIRS = $(IDF_PATH)/examples/common_components/protocol_examples_common
 

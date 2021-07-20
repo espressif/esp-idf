@@ -18,7 +18,6 @@
 extern "C" {
 #endif
 
-#if CONFIG_OPENTHREAD_ENABLE_UDP_SOCKET_EXAMPLE
 /**
  * @brief User command "udpsockserver" process.
  *
@@ -30,7 +29,6 @@ void esp_ot_process_udp_server(void *aContext, uint8_t aArgsLength, char *aArgs[
  *
  */
 void esp_ot_process_udp_client(void *aContext, uint8_t aArgsLength, char *aArgs[]);
-#endif // CONFIG_OPENTHREAD_ENABLE_UDP_SOCKET_EXAMPLE
 
 #ifdef __cplusplus
 }

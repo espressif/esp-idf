@@ -19,20 +19,18 @@
 #include "lwip/err.h"
 #include "lwip/sockets.h"
 
-#if CONFIG_OPENTHREAD_ENABLE_TCP_SOCKET_EXAMPLE
 #define TAG "ot_socket"
 
 static void tcp_socket_server_task(void *pvParameters)
 {
     char addr_str[128];
-    char payload[] = "This message is from server\n";
     char rx_buffer[128];
     esp_err_t ret = ESP_OK;
     int err = 0;
     int len = 0;
     int listen_sock;
     int opt = 1;
-    int port = CONFIG_OPENTHEAD_EXAMPLE_TCP_SERVER_PORT;
+    int port = CONFIG_OPENTHREAD_CLI_TCP_SERVER_PORT;
     int client_sock = 0;
     struct timeval timeout;
     struct sockaddr_storage source_addr; // Large enough for both IPv6
@@ -108,7 +106,7 @@ static void tcp_socket_client_task(void *pvParameters)
     int client_sock;
     int err = 0;
     int len = 0;
-    int port = CONFIG_OPENTHEAD_EXAMPLE_TCP_SERVER_PORT;
+    int port = CONFIG_OPENTHREAD_CLI_TCP_SERVER_PORT;
     struct sockaddr_in6 dest_addr = { 0 };
 
     inet6_aton(host_ip, &dest_addr.sin6_addr);
@@ -162,4 +160,3 @@ void esp_ot_process_tcp_client(void *aContext, uint8_t aArgsLength, char *aArgs[
         xTaskCreate(tcp_socket_client_task, "ot_tcp_socket_client", 4096, aArgs[0], 4, NULL);
     }
 }
-#endif // CONFIG_OPENTHREAD_ENABLE_TCP_SOCKET_EXAMPLE
