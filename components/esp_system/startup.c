@@ -241,7 +241,6 @@ static void do_core_init(void)
        fail initializing it properly. */
     heap_caps_init();
     esp_newlib_init();
-    esp_newlib_time_init();
 
     if (g_spiram_ok) {
 #if CONFIG_SPIRAM_BOOT_INIT && (CONFIG_SPIRAM_USE_CAPS_ALLOC || CONFIG_SPIRAM_USE_MALLOC)
@@ -265,6 +264,12 @@ static void do_core_init(void)
     // malloc (newlib) -> heap_caps_malloc (heap), so heap must be at least initialized
     esp_brownout_init();
 #endif
+
+    // esp_timer early initialization is required for esp_timer_get_time to work.
+    // This needs to happen before VFS initialization, since some USB_SERIAL_JTAG VFS driver uses
+    // esp_timer_get_time to determine timeout conditions.
+    esp_timer_early_init();
+    esp_newlib_time_init();
 
 #ifdef CONFIG_VFS_SUPPORT_IO
 #ifdef CONFIG_ESP_CONSOLE_UART
