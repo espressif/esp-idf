@@ -84,6 +84,9 @@
 
 .patterns-host_test: &patterns-host_test
   - ".gitlab/ci/host-test.yml"
+
+  - "components/**/*"
+
   - "tools/ci/test_autocomplete.py"
   - "tools/ci/test_build_system.sh"
   - "tools/ci/test_build_system_cmake.sh"
@@ -91,7 +94,6 @@
   - "tools/ci/test_configure_ci_environment.sh"
 
   - "tools/mass_mfg/**/*"
-  - "components/nvs_flash/test_nvs_host/**/*"
 
   - "tools/esp_app_trace/**/*"
   - "tools/ldgen/**/*"
