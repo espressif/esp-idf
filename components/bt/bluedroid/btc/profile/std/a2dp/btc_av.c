@@ -48,6 +48,11 @@ bool g_av_with_rc;
 bool g_a2dp_on_init;
 // global variable to indicate a2dp is deinitialized
 bool g_a2dp_on_deinit;
+// global variable to indicate a2dp source deinitialization is ongoing
+bool g_a2dp_source_ongoing_deinit;
+// global variable to indicate a2dp sink deinitialization is ongoing
+bool g_a2dp_sink_ongoing_deinit;
+
 
 /*****************************************************************************
 **  Constants & Macros
@@ -131,6 +136,7 @@ static BOOLEAN btc_av_state_opening_handler(btc_sm_event_t event, void *data);
 static BOOLEAN btc_av_state_opened_handler(btc_sm_event_t event, void *data);
 static BOOLEAN btc_av_state_started_handler(btc_sm_event_t event, void *data);
 static BOOLEAN btc_av_state_closing_handler(btc_sm_event_t event, void *data);
+static void clean_up(int service_id);
 
 #if BTC_AV_SRC_INCLUDED
 static bt_status_t btc_a2d_src_init(void);
@@ -695,6 +701,12 @@ static BOOLEAN btc_av_state_opened_handler(btc_sm_event_t event, void *p_data)
         }
         /* change state to idle, send acknowledgement if start is pending */
         btc_sm_change_state(btc_av_cb.sm_handle, BTC_AV_STATE_IDLE);
+
+        if (g_a2dp_source_ongoing_deinit) {
+            clean_up(BTA_A2DP_SOURCE_SERVICE_ID);
+        } else if (g_a2dp_sink_ongoing_deinit) {
+            clean_up(BTA_A2DP_SINK_SERVICE_ID);
+        }
         break;
     }
 
@@ -865,6 +877,12 @@ static BOOLEAN btc_av_state_started_handler(btc_sm_event_t event, void *p_data)
         /* inform the application that we are disconnected */
         btc_report_connection_state(ESP_A2D_CONNECTION_STATE_DISCONNECTED, &(btc_av_cb.peer_bda), close->disc_rsn);
         btc_sm_change_state(btc_av_cb.sm_handle, BTC_AV_STATE_IDLE);
+
+        if (g_a2dp_source_ongoing_deinit) {
+            clean_up(BTA_A2DP_SOURCE_SERVICE_ID);
+        } else if (g_a2dp_sink_ongoing_deinit) {
+            clean_up(BTA_A2DP_SINK_SERVICE_ID);
+        }
         break;
     }
 
@@ -969,7 +987,9 @@ static bt_status_t btc_av_init(int service_id)
         if (!stat) {
             g_a2dp_on_init = false;
             g_a2dp_on_deinit = true;
-            return BT_STATUS_FAIL;
+            g_a2dp_source_ongoing_deinit = false;
+            g_a2dp_sink_ongoing_deinit = false;
+            goto av_init_fail;
         }
 
         /* Also initialize the AV state machine */
@@ -982,6 +1002,10 @@ static bt_status_t btc_av_init(int service_id)
             btc_dm_enable_service(BTA_A2DP_SOURCE_SERVICE_ID);
         }
         btc_a2dp_on_init();
+        g_a2dp_on_init = true;
+        g_a2dp_on_deinit = false;
+        g_a2dp_source_ongoing_deinit = false;
+        g_a2dp_sink_ongoing_deinit = false;
 
         esp_a2d_cb_param_t param;
         memset(&param, 0, sizeof(esp_a2d_cb_param_t));
@@ -990,8 +1014,7 @@ static bt_status_t btc_av_init(int service_id)
         return BT_STATUS_SUCCESS;
     }
 
-    g_a2dp_on_init = true;
-    g_a2dp_on_deinit = false;
+av_init_fail:
     return BT_STATUS_FAIL;
 }
 
@@ -1059,6 +1082,8 @@ static void clean_up(int service_id)
 
     g_a2dp_on_init = false;
     g_a2dp_on_deinit = true;
+    g_a2dp_source_ongoing_deinit = false;
+    g_a2dp_sink_ongoing_deinit = false;
 }
 
 /*******************************************************************************
@@ -1486,7 +1511,15 @@ static bt_status_t btc_a2d_sink_connect(bt_bdaddr_t *remote_bda)
 
 static void btc_a2d_sink_deinit(void)
 {
-    clean_up(BTA_A2DP_SINK_SERVICE_ID);
+    g_a2dp_sink_ongoing_deinit = true;
+    if (btc_av_is_connected()) {
+        BTA_AvClose(btc_av_cb.bta_handle);
+        if (btc_av_cb.peer_sep == AVDT_TSEP_SRC && g_av_with_rc == true) {
+            BTA_AvCloseRc(btc_av_cb.bta_handle);
+        }
+    } else {
+        clean_up(BTA_A2DP_SINK_SERVICE_ID);
+    }
 }
 
 #endif /* BTC_AV_SINK_INCLUDED */
@@ -1511,7 +1544,15 @@ static bt_status_t btc_a2d_src_init(void)
 
 static void btc_a2d_src_deinit(void)
 {
-    clean_up(BTA_A2DP_SOURCE_SERVICE_ID);
+    g_a2dp_source_ongoing_deinit = true;
+    if (btc_av_is_connected()) {
+        BTA_AvClose(btc_av_cb.bta_handle);
+        if (btc_av_cb.peer_sep == AVDT_TSEP_SNK && g_av_with_rc == true) {
+            BTA_AvCloseRc(btc_av_cb.bta_handle);
+        }
+    } else {
+        clean_up(BTA_A2DP_SOURCE_SERVICE_ID);
+    }
 }
 
 static bt_status_t btc_a2d_src_connect(bt_bdaddr_t *remote_bda)
