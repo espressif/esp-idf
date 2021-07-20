@@ -39,10 +39,12 @@ ESP32D2W* 芯片的连接方式有待确定。
 
 ESP-IDF 完全支持将外部存储器集成到您的应用程序中。您可以将 ESP-IDF 配置成启动并完成初始化后以多种方式处理片外 RAM：
 
- * :ref:`external_ram_config_memory_map`
- * :ref:`external_ram_config_capability_allocator`
- * :ref:`external_ram_config_malloc` （默认）
- * :ref:`external_ram_config_bss`
+.. list::
+
+    * :ref:`external_ram_config_memory_map`
+    * :ref:`external_ram_config_capability_allocator`
+    * :ref:`external_ram_config_malloc` （默认）
+    :esp32: * :ref:`external_ram_config_bss`
 
 .. _external_ram_config_memory_map:
 
@@ -88,20 +90,22 @@ ESP-IDF 启动过程中，片外 RAM 被映射到以 0x3F800000 起始的数据�
 
 由于有些 Buffer 仅可在内部存储器中分配，因此需要使用第二个配置项 :ref:`CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL` 定义一个内部存储池，仅限显式的内部存储器分配使用（例如用于 DMA 的存储器）。常规 ``malloc()`` 将不会从该池中分配，但可以使用 :ref:`MALLOC_CAP_DMA <dma-capable-memory>` 和 ``MALLOC_CAP_INTERNAL`` 旗标从该池中分配存储器。
 
-.. _external_ram_config_bss:
+.. only:: esp32
 
-允许 .bss 段放入片外存储器
---------------------------------------------
+    .. _external_ram_config_bss:
 
-设置 :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` 启用该选项，此选项配置与上面三个选项互不影响。
+    允许 .bss 段放入片外存储器
+    --------------------------------------------
 
-启用该选项后，从 0x3F800000 起始的地址空间将用于存储来自 lwip、net80211、libpp 和 bluedroid ESP-IDF 库中零初始化的数据（BSS 段）。
+    设置 :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` 启用该选项，此选项配置与上面三个选项互不影响。
 
-``EXT_RAM_ATTR`` 宏应用于任何静态声明（未初始化为非零值）之后，可以将附加数据从内部 BSS 段移到片外 RAM。
+    启用该选项后，从 0x3F800000 起始的地址空间将用于存储来自 lwip、net80211、libpp 和 bluedroid ESP-IDF 库中零初始化的数据（BSS 段）。
 
-启用此选项可以减少 BSS 段占用的内部静态存储。
+    ``EXT_RAM_ATTR`` 宏应用于任何静态声明（未初始化为非零值）之后，可以将附加数据从内部 BSS 段移到片外 RAM。
 
-剩余的片外 RAM 也可以通过上述方法添加到内存分配程序中。
+    启用此选项可以减少 BSS 段占用的内部静态存储。
+
+    剩余的片外 RAM 也可以通过上述方法添加到内存分配程序中。
 
 片外 RAM 使用限制
 ===================
@@ -116,8 +120,11 @@ ESP-IDF 启动过程中，片外 RAM 被映射到以 0x3F800000 起始的数据�
 
  * 片外 RAM 不可用作任务堆栈存储器。因此 :cpp:func:`xTaskCreate` 及类似函数将始终为堆栈和任务 TCB 分配片上储存器，而 :cpp:func:`xTaskCreateStatic` 类型的函数将检查传递的 Buffer 是否属于片上存储器。
 
- * 默认情况下，片外 RAM 初始化失败将终止 ESP-IDF 启动。如果想禁用此功能，可启用 :ref:`CONFIG_SPIRAM_IGNORE_NOTFOUND` 配置选项。如果启用 :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`，:ref:`CONFIG_SPIRAM_IGNORE_NOTFOUND` 选项将不能使用，这是因为在链接时，链接器已经向片外 RAM 分配符号。
+ * 默认情况下，片外 RAM 初始化失败将终止 ESP-IDF 启动。如果想禁用此功能，可启用 :ref:`CONFIG_SPIRAM_IGNORE_NOTFOUND` 配置选项。
 
+.. only:: esp32
+
+    如果启用 :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`，:ref:`CONFIG_SPIRAM_IGNORE_NOTFOUND` 选项将不能使用，这是因为在链接时，链接器已经向片外 RAM 分配符号。
 
 .. only:: esp32
 

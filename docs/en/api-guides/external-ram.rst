@@ -45,10 +45,12 @@ Configuring External RAM
 
 ESP-IDF fully supports the use of external memory in applications. Once the external RAM is initialized at startup, ESP-IDF can be configured to handle it in several ways:
 
- * :ref:`external_ram_config_memory_map`
- * :ref:`external_ram_config_capability_allocator`
- * :ref:`external_ram_config_malloc` (default)
- * :ref:`external_ram_config_bss`
+.. list::
+
+    * :ref:`external_ram_config_memory_map`
+    * :ref:`external_ram_config_capability_allocator`
+    * :ref:`external_ram_config_malloc` (default)
+    :esp32: * :ref:`external_ram_config_bss`
 
 .. _external_ram_config_memory_map:
 
@@ -97,21 +99,22 @@ If a suitable block of preferred internal/external memory is not available, the 
 
 Because some buffers can only be allocated in internal memory, a second configuration item :ref:`CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL` defines a pool of internal memory which is reserved for *only* explicitly internal allocations (such as memory for DMA use). Regular ``malloc()`` will not allocate from this pool. The :ref:`MALLOC_CAP_DMA <dma-capable-memory>` and ``MALLOC_CAP_INTERNAL`` flags can be used to allocate memory from this pool.
 
-.. _external_ram_config_bss:
+.. only:: esp32
 
+    .. _external_ram_config_bss:
 
-Allow .bss segment placed in external memory
---------------------------------------------
+    Allow .bss segment placed in external memory
+    --------------------------------------------
 
-Enable this option by checking :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`. This configuration setting is independent of the other three.
+    Enable this option by checking :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`. This configuration setting is independent of the other three.
 
-If enabled, a region of the address space starting from 0x3F800000 will be used to store zero-initialized data (BSS segment) from the lwIP, net80211, libpp, and bluedroid ESP-IDF libraries.
+    If enabled, a region of the address space starting from 0x3F800000 will be used to store zero-initialized data (BSS segment) from the lwIP, net80211, libpp, and bluedroid ESP-IDF libraries.
 
-Additional data can be moved from the internal BSS segment to external RAM by applying the macro ``EXT_RAM_ATTR`` to any static declaration (which is not initialized to a non-zero value).
+    Additional data can be moved from the internal BSS segment to external RAM by applying the macro ``EXT_RAM_ATTR`` to any static declaration (which is not initialized to a non-zero value).
 
-This option reduces the internal static memory used by the BSS segment.
+    This option reduces the internal static memory used by the BSS segment.
 
-Remaining external RAM can also be added to the capability heap allocator using the method shown above.
+    Remaining external RAM can also be added to the capability heap allocator using the method shown above.
 
 
 Restrictions
@@ -123,7 +126,11 @@ External RAM use has the following restrictions:
  * External RAM cannot be used as a place to store DMA transaction descriptors or as a buffer for a DMA transfer to read from or write into. Any buffers that will be used in combination with DMA must be allocated using ``heap_caps_malloc(size, MALLOC_CAP_DMA)`` and can be freed using a standard ``free()`` call.
  * External RAM uses the same cache region as the external flash. This means that frequently accessed variables in external RAM can be read and modified almost as quickly as in internal ram. However, when accessing large chunks of data (>32 KB), the cache can be insufficient, and speeds will fall back to the access speed of the external RAM. Moreover, accessing large chunks of data can "push out" cached flash, possibly making the execution of code slower afterwards.
  * External RAM cannot be used as task stack memory. Due to this, :cpp:func:`xTaskCreate` and similar functions will always allocate internal memory for stack and task TCBs, and functions such as :cpp:func:`xTaskCreateStatic` will check if the buffers passed are internal.
- * By default, failure to initialize external RAM will cause the ESP-IDF startup to abort. This can be disabled by enabling the config item :ref:`CONFIG_SPIRAM_IGNORE_NOTFOUND`. If :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` is enabled, the option to ignore failure is not available as the linker will have assigned symbols to external memory addresses at link time.
+ * By default, failure to initialize external RAM will cause the ESP-IDF startup to abort. This can be disabled by enabling the config item :ref:`CONFIG_SPIRAM_IGNORE_NOTFOUND`.
+
+.. only:: esp32
+
+    If :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` is enabled, the option to ignore failure is not available as the linker will have assigned symbols to external memory addresses at link time.
 
 
 .. only:: esp32
