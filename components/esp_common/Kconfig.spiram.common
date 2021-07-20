@@ -92,7 +92,7 @@ config SPIRAM_MALLOC_RESERVE_INTERNAL
 config SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
     bool "Allow .bss segment placed in external memory"
     default n
-    depends on SPIRAM
+    depends on SPIRAM && IDF_TARGET_ESP32 # TODO ESP32-S2 IDFGH-4320
     help
         If enabled the option,and add EXT_RAM_ATTR defined your variable,then your variable will be placed in
         PSRAM instead of internal memory, and placed most of variables of lwip,net802.11,pp,bluedroid library
