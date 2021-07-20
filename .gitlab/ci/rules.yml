@@ -420,6 +420,7 @@
     - <<: *if-label-build
     - <<: *if-label-custom_test
     - <<: *if-label-custom_test_esp32
+    - <<: *if-label-weekend_test
     - <<: *if-dev-push
       changes: *patterns-build_components
     - <<: *if-dev-push
@@ -481,7 +482,6 @@
     - <<: *if-label-example_test
     - <<: *if-label-example_test_esp32
     - <<: *if-label-iperf_stress_test
-    - <<: *if-label-weekend_test
     - <<: *if-dev-push
       changes: *patterns-build-example_test
     - <<: *if-dev-push
@@ -577,11 +577,13 @@
     - <<: *if-label-example_test_esp32s2
     - <<: *if-label-example_test_esp32s3
     - <<: *if-label-integration_test
+    - <<: *if-label-iperf_stress_test
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32
     - <<: *if-label-unit_test_esp32c3
     - <<: *if-label-unit_test_esp32s2
     - <<: *if-label-unit_test_esp32s3
+    - <<: *if-label-weekend_test
     - <<: *if-dev-push
       changes: *patterns-build-example_test
     - <<: *if-dev-push
@@ -705,11 +707,13 @@
     - <<: *if-label-example_test_esp32s3
     - <<: *if-label-host_test
     - <<: *if-label-integration_test
+    - <<: *if-label-iperf_stress_test
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32
     - <<: *if-label-unit_test_esp32c3
     - <<: *if-label-unit_test_esp32s2
     - <<: *if-label-unit_test_esp32s3
+    - <<: *if-label-weekend_test
     - <<: *if-dev-push
       changes: *patterns-build-example_test
     - <<: *if-dev-push
