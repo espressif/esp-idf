@@ -72,15 +72,6 @@ build:integration_test:
 # -------------
 # Special Cases
 # -------------
-"build:example_test-esp32":
-  labels:
-    - build
-    - weekend_test  # only have esp32 jobs
-    - iperf_stress_test  # only have esp32 jobs
-  patterns:
-    - build_components
-    - build_system
-
 "build:example_test-esp32c3":  # esp32c3 test is only run by label, but build jobs should always be triggered
   labels:
     - build
@@ -167,13 +158,27 @@ build:integration_test:
 #################################
 # Triggered Only By Labels Jobs #
 #################################
-"labels:{0}":
-  matrix:
-    - [weekend_test, iperf_stress_test, nvs_coverage]
+"labels:iperf_stress_test": # example_test
   labels:
-    - "{0}"
+    - iperf_stress_test
+  included_in:
+    - build:example_test-esp32
+    - build:target_test
+    - test:any_test
 
-"labels:fuzzer_test-weekend_test":
+"labels:weekend_test": # custom test
+  labels:
+    - weekend_test
+  included_in:
+    - build:custom_test-esp32
+    - build:target_test
+    - test:any_test
+
+"labels:nvs_coverage": # host_test
+  labels:
+    - nvs_coverage
+
+"labels:fuzzer_test-weekend_test": # host test
   labels:
     - fuzzer_test
     - weekend_test

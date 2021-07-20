@@ -84,6 +84,9 @@
 
 .patterns-host_test: &patterns-host_test
   - ".gitlab/ci/host-test.yml"
+
+  - "components/**/*"
+
   - "tools/ci/test_autocomplete.py"
   - "tools/ci/test_build_system.sh"
   - "tools/ci/test_build_system_cmake.sh"
@@ -91,7 +94,6 @@
   - "tools/ci/test_configure_ci_environment.sh"
 
   - "tools/mass_mfg/**/*"
-  - "components/nvs_flash/test_nvs_host/**/*"
 
   - "tools/esp_app_trace/**/*"
   - "tools/ldgen/**/*"
@@ -418,6 +420,7 @@
     - <<: *if-label-build
     - <<: *if-label-custom_test
     - <<: *if-label-custom_test_esp32
+    - <<: *if-label-weekend_test
     - <<: *if-dev-push
       changes: *patterns-build_components
     - <<: *if-dev-push
@@ -479,7 +482,6 @@
     - <<: *if-label-example_test
     - <<: *if-label-example_test_esp32
     - <<: *if-label-iperf_stress_test
-    - <<: *if-label-weekend_test
     - <<: *if-dev-push
       changes: *patterns-build-example_test
     - <<: *if-dev-push
@@ -575,11 +577,13 @@
     - <<: *if-label-example_test_esp32s2
     - <<: *if-label-example_test_esp32s3
     - <<: *if-label-integration_test
+    - <<: *if-label-iperf_stress_test
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32
     - <<: *if-label-unit_test_esp32c3
     - <<: *if-label-unit_test_esp32s2
     - <<: *if-label-unit_test_esp32s3
+    - <<: *if-label-weekend_test
     - <<: *if-dev-push
       changes: *patterns-build-example_test
     - <<: *if-dev-push
@@ -703,11 +707,13 @@
     - <<: *if-label-example_test_esp32s3
     - <<: *if-label-host_test
     - <<: *if-label-integration_test
+    - <<: *if-label-iperf_stress_test
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32
     - <<: *if-label-unit_test_esp32c3
     - <<: *if-label-unit_test_esp32s2
     - <<: *if-label-unit_test_esp32s3
+    - <<: *if-label-weekend_test
     - <<: *if-dev-push
       changes: *patterns-build-example_test
     - <<: *if-dev-push
