@@ -14,6 +14,7 @@
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_log.h"
+#include <netdb.h>
 #include "nvs_flash.h"
 
 /* The examples use configuration that you can set via project configuration menu
@@ -27,7 +28,16 @@
 #define EXAMPLE_STATIC_IP_ADDR        CONFIG_EXAMPLE_STATIC_IP_ADDR
 #define EXAMPLE_STATIC_NETMASK_ADDR   CONFIG_EXAMPLE_STATIC_NETMASK_ADDR
 #define EXAMPLE_STATIC_GW_ADDR        CONFIG_EXAMPLE_STATIC_GW_ADDR
-
+#ifdef CONFIG_EXAMPLE_STATIC_DNS_AUTO
+#define EXAMPLE_MAIN_DNS_SERVER       EXAMPLE_STATIC_GW_ADDR
+#define EXAMPLE_BACKUP_DNS_SERVER     "0.0.0.0"
+#else
+#define EXAMPLE_MAIN_DNS_SERVER       CONFIG_EXAMPLE_STATIC_DNS_SERVER_MAIN
+#define EXAMPLE_BACKUP_DNS_SERVER     CONFIG_EXAMPLE_STATIC_DNS_SERVER_BACKUP
+#endif
+#ifdef CONFIG_EXAMPLE_STATIC_DNS_RESOLVE_TEST
+#define EXAMPLE_RESOLVE_DOMAIN        CONFIG_EXAMPLE_STATIC_RESOLVE_DOMAIN
+#endif
 /* FreeRTOS event group to signal when we are connected*/
 static EventGroupHandle_t s_wifi_event_group;
 
@@ -40,6 +50,17 @@ static EventGroupHandle_t s_wifi_event_group;
 static const char *TAG = "static_ip";
 
 static int s_retry_num = 0;
+
+static esp_err_t example_set_dns_server(esp_netif_t *netif, uint32_t addr, esp_netif_dns_type_t type)
+{
+    if (addr && (addr != IPADDR_NONE)) {
+        esp_netif_dns_info_t dns;
+        dns.ip.u_addr.ip4.addr = addr;
+        dns.ip.type = IPADDR_TYPE_V4;
+        ESP_ERROR_CHECK(esp_netif_set_dns_info(netif, type, &dns));
+    }
+    return ESP_OK;
+}
 
 static void example_set_static_ip(esp_netif_t *netif)
 {
@@ -57,6 +78,8 @@ static void example_set_static_ip(esp_netif_t *netif)
         return;
     }
     ESP_LOGD(TAG, "Success to set static ip: %s, netmask: %s, gw: %s", EXAMPLE_STATIC_IP_ADDR, EXAMPLE_STATIC_NETMASK_ADDR, EXAMPLE_STATIC_GW_ADDR);
+    ESP_ERROR_CHECK(example_set_dns_server(netif, ipaddr_addr(EXAMPLE_MAIN_DNS_SERVER), ESP_NETIF_DNS_MAIN));
+    ESP_ERROR_CHECK(example_set_dns_server(netif, ipaddr_addr(EXAMPLE_BACKUP_DNS_SERVER), ESP_NETIF_DNS_BACKUP));
 }
 
 static void event_handler(void* arg, esp_event_base_t event_base,
@@ -150,7 +173,30 @@ void wifi_init_sta(void)
     } else {
         ESP_LOGE(TAG, "UNEXPECTED EVENT");
     }
+#ifdef CONFIG_EXAMPLE_STATIC_DNS_RESOLVE_TEST
+    struct addrinfo *address_info;
+    struct addrinfo hints;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
 
+    int res = getaddrinfo(EXAMPLE_RESOLVE_DOMAIN, NULL, &hints, &address_info);
+    if (res != 0 || address_info == NULL) {
+        ESP_LOGE(TAG, "couldn't get hostname for :%s: "
+                      "getaddrinfo() returns %d, addrinfo=%p", EXAMPLE_RESOLVE_DOMAIN, res, address_info);
+    } else {
+        if (address_info->ai_family == AF_INET) {
+            struct sockaddr_in *p = (struct sockaddr_in *)address_info->ai_addr;
+            ESP_LOGI(TAG, "Resolved IPv4 address: %s", ipaddr_ntoa((const ip_addr_t*)&p->sin_addr.s_addr));
+        }
+#if CONFIG_LWIP_IPV6
+        else if (address_info->ai_family == AF_INET6) {
+            struct sockaddr_in6 *p = (struct sockaddr_in6 *)address_info->ai_addr;
+            ESP_LOGI(TAG, "Resolved IPv6 address: %s", ip6addr_ntoa((const ip6_addr_t*)&p->sin6_addr));
+        }
+#endif
+    }
+#endif
     /* The event will not be processed after unregister */
     ESP_ERROR_CHECK(esp_event_handler_instance_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, instance_got_ip));
     ESP_ERROR_CHECK(esp_event_handler_instance_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, instance_any_id));
