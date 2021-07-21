@@ -61,7 +61,7 @@ static void modbus_master_task(void *pvParameters)
             // Send response buffer if ready to be sent
             BOOL xSentState = xMBMasterPortSerialTxPoll();
             if (xSentState) {
-                // Let state machine know that response was transmitted out
+                // Let state machine know that request frame was transmitted out
                 (void)xMBMasterPortEventPost(EV_MASTER_FRAME_SENT);
             }
         }
