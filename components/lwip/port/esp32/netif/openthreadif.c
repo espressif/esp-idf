@@ -11,22 +11,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License
 
-
 #include <string.h>
 
 #include "esp_netif.h"
 #include "esp_netif_net_stack.h"
 #include "lwip/netif.h"
+#include "lwip/pbuf.h"
 #include "netif/openthreadif.h"
+#include "openthread/error.h"
 #include "openthread/ip6.h"
 #include "openthread/link.h"
+#include "openthread/message.h"
 
 #define OPENTHREAD_IP6_MTU 1280
-
-static void openthread_free_rx_buf_l2(struct netif *netif, void *buf)
-{
-    free(buf);
-}
 
 static err_t openthread_output_ip6(struct netif *netif, struct pbuf *p, const struct ip6_addr *peer_addr)
 {
@@ -69,24 +66,26 @@ void openthread_netif_input(void *h, void *buffer, size_t len, void *eb)
 {
     struct netif *netif = h;
     struct pbuf *p;
+    otMessage *message = (otMessage *)buffer;
 
     if (unlikely(buffer == NULL || !netif_is_up(netif))) {
-        if (buffer) {
-            openthread_free_rx_buf_l2(netif, buffer);
-        }
         return;
     }
 
-    /* acquire new pbuf, type: PBUF_REF */
-    p = pbuf_alloc(PBUF_RAW, len, PBUF_REF);
+    /* Allocate LINK buffer in case it's forwarded to WiFi/ETH */
+    p = pbuf_alloc(PBUF_LINK, len, PBUF_POOL);
     if (p == NULL) {
-        openthread_free_rx_buf_l2(netif, buffer);
+        LWIP_DEBUGF(NETIF_DEBUG, ("Failed to allocate input pbuf for OpenThread netif\n"));
         return;
     }
-    p->payload = buffer;
+
+    if (unlikely(otMessageRead(message, 0, p->payload, len) != OT_ERROR_NONE)) {
+        LWIP_DEBUGF(NETIF_DEBUG, ("Failed to read OpenThread message\n"));
+    }
+
 #if ESP_LWIP
-    p->l2_owner = netif;
-    p->l2_buf = buffer;
+    p->l2_owner = NULL;
+    p->l2_buf = NULL;
 #endif
     /* full packet send to tcpip_thread to process */
     if (unlikely(netif->input(p, netif) != ERR_OK)) {
@@ -106,7 +105,7 @@ err_t openthread_netif_init(struct netif *netif)
     netif->flags = NETIF_FLAG_BROADCAST;
     netif->output = NULL;
     netif->output_ip6 = openthread_output_ip6;
-    netif->l2_buffer_free_notify = openthread_free_rx_buf_l2;
+    netif->l2_buffer_free_notify = NULL;
     netif_set_link_up(netif);
 
     return ERR_OK;
