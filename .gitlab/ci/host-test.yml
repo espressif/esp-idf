@@ -349,6 +349,13 @@ test_log:
     - idf.py build
     - build/test_log_host.elf
 
+test_esp_event:
+  extends: .host_test_template
+  script:
+    - cd ${IDF_PATH}/components/esp_event/host_test/esp_event_unit_test
+    - idf.py build
+    - build/test_esp_event_host.elf
+
 test_eh_frame_parser:
   extends: .host_test_template
   script:

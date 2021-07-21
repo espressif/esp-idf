@@ -74,7 +74,9 @@
 // The arch-specific FreeRTOSConfig.h in port/<arch>/include.
 #include_next "freertos/FreeRTOSConfig.h"
 
-#if !(defined(FREERTOS_CONFIG_XTENSA_H) || defined(FREERTOS_CONFIG_RISCV_H))
+#if !(defined(FREERTOS_CONFIG_XTENSA_H) \
+        || defined(FREERTOS_CONFIG_RISCV_H) \
+        || defined(FREERTOS_CONFIG_LINUX_H))
 #error "Needs architecture-speific FreeRTOSConfig.h!"
 #endif
 
@@ -244,7 +246,9 @@
    kept at 1. */
 #define configKERNEL_INTERRUPT_PRIORITY                 1
 
+#if !CONFIG_IDF_TARGET_LINUX
 #define configUSE_NEWLIB_REENTRANT                      1
+#endif
 
 #define configSUPPORT_DYNAMIC_ALLOCATION                1
 #define configSUPPORT_STATIC_ALLOCATION                 1
