@@ -14,7 +14,7 @@ When PPP connection has been established, the IP packet flow from application si
 ### Hardware Required
 
 To run this example, you need an ESP32 dev board (e.g. ESP32-WROVER Kit) or ESP32 core board (e.g. ESP32-DevKitC).
-For test purpose, you also need a cellular modem module. Here we take the [SIM800L](https://www.simcom.com/product/SIM800.html) and [BG96](https://www.quectel.com/product/bg96.htm) as an example.
+For test purpose, you also need a cellular modem module. Here we take the [SIM800L](https://www.simcom.com/product/SIM800.html) and [BG96](https://www.quectel.com/product/lpwa-bg96-cat-m1-nb1-egprs/) as an example.
 You can also try other modules as long as they embedded PPP protocol.
 
 **Note:** Since SIM800L only support **2G** which will **not** work in some countries. And also keep in mind that in some other countries it will stop working soon (many remaining 2G networks will be switched off in the next 2-3 years). So you should **check with your local providers for further details** if you try this example with any 2G modules.
