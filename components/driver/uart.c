@@ -768,6 +768,7 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                         // Set RS485 RTS pin before transmission if the half duplex mode is enabled
                         if (UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX)) {
                             UART_ENTER_CRITICAL_ISR(&(uart_context[uart_num].spinlock));
+                            uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_TX_DONE);
                             uart_hal_set_rts(&(uart_context[uart_num].hal), 0);
                             uart_hal_ena_intr_mask(&(uart_context[uart_num].hal), UART_INTR_TX_DONE);
                             UART_EXIT_CRITICAL_ISR(&(uart_context[uart_num].spinlock));
@@ -1057,6 +1058,7 @@ int uart_tx_chars(uart_port_t uart_num, const char *buffer, uint32_t len)
     xSemaphoreTake(p_uart_obj[uart_num]->tx_mux, (portTickType)portMAX_DELAY);
     if (UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX)) {
         UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
+        uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_TX_DONE);
         uart_hal_set_rts(&(uart_context[uart_num].hal), 0);
         uart_hal_ena_intr_mask(&(uart_context[uart_num].hal), UART_INTR_TX_DONE);
         UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
@@ -1102,6 +1104,7 @@ static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool 
                 uint32_t sent = 0;
                 if (UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX)) {
                     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
+                    uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_TX_DONE);
                     uart_hal_set_rts(&(uart_context[uart_num].hal), 0);
                     uart_hal_ena_intr_mask(&(uart_context[uart_num].hal), UART_INTR_TX_DONE);
                     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
