@@ -103,6 +103,7 @@
         FLASH_ECC_EN,                     EFUSE_BLK0,  140,    1,     Enable ECC for flash boot
         FORCE_SEND_RESUME,                EFUSE_BLK0,  141,    1,     Force ROM code to send a resume command during SPI boot
         SECURE_VERSION,                   EFUSE_BLK0,  142,   16,     Secure version for anti-rollback
+        BOOT_DISABLE_FAST_WAKE,           EFUSE_BLK0,  158,    1,     Fast verify on wake option in ROM for Secure Boot
 
     # EFUSE_RD_REPEAT_DATA4_REG #
 
@@ -115,6 +116,8 @@
     ,                                     EFUSE_BLK1,   16,    8,     Factory MAC addr [3]
     ,                                     EFUSE_BLK1,    8,    8,     Factory MAC addr [4]
     ,                                     EFUSE_BLK1,    0,    8,     Factory MAC addr [5]
+    ,                                     EFUSE_BLK1,  123,    8,     Factory MAC addr [6]
+    ,                                     EFUSE_BLK1,  131,    8,     Factory MAC addr [7]
     SPI_PAD_CONFIG_CLK,                   EFUSE_BLK1,   48,    6,     SPI_PAD_configure CLK
     SPI_PAD_CONFIG_Q_D1,                  EFUSE_BLK1,   54,    6,     SPI_PAD_configure Q(D1)
     SPI_PAD_CONFIG_D_D0,                  EFUSE_BLK1,   60,    6,     SPI_PAD_configure D(D0)
@@ -154,12 +157,3 @@ KEY3,                                     EFUSE_BLK7,    0,  256,     Key3 or us
 KEY4,                                     EFUSE_BLK8,    0,  256,     Key4 or user data
 KEY5,                                     EFUSE_BLK9,    0,  256,     Key5 or user data
 SYS_DATA_PART2,                           EFUSE_BLK10,   0,  256,     System configuration
-
-# AUTO CONFIG DIG&RTC DBIAS#
-################
-K_RTC_LDO,                              EFUSE_BLK1,    135,    7,      BLOCK1 K_RTC_LDO
-K_DIG_LDO,                              EFUSE_BLK1,    142,    7,      BLOCK1 K_DIG_LDO
-V_RTC_DBIAS20,                          EFUSE_BLK1,    149,    8,      BLOCK1 voltage of rtc dbias20
-V_DIG_DBIAS20,                          EFUSE_BLK1,    157,    8,      BLOCK1 voltage of digital dbias20
-DIG_DBIAS_HVT,                          EFUSE_BLK1,    165,    5,      BLOCK1 digital dbias when hvt
-THRES_HVT,                              EFUSE_BLK1,    170,    10,     BLOCK1 pvt threshold when hvt

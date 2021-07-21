@@ -60,7 +60,9 @@ typedef enum {
   * @note If not using a valid OUI, set the "locally administered" bit
   *       (bit value 0x02 in the first byte) to avoid collisions.
   *
-  * @param  mac base MAC address, length: 6 bytes.
+  * @param  mac base MAC address, length: 6 bytes/8 bytes.
+  *         length: 6 bytes for MAC-48
+  *                 8 bytes for EUI-64(used for IEEE 802.15.4)
   *
   * @return ESP_OK on success
   *         ESP_ERR_INVALID_ARG If mac is NULL or is not a unicast MAC
@@ -72,7 +74,9 @@ esp_err_t esp_base_mac_addr_set(const uint8_t *mac);
   *
   * @note If no custom Base MAC has been set, this returns the pre-programmed Espressif base MAC address.
   *
-  * @param  mac base MAC address, length: 6 bytes.
+  * @param  mac base MAC address, length: 6 bytes/8 bytes.
+  *         length: 6 bytes for MAC-48
+  *                 8 bytes for EUI-64(used for IEEE 802.15.4)
   *
   * @return ESP_OK on success
   *         ESP_ERR_INVALID_MAC base MAC address has not been set
@@ -91,7 +95,9 @@ esp_err_t esp_base_mac_addr_get(uint8_t *mac);
   *
   * @note This function is currently only supported on ESP32.
   *
-  * @param  mac  base MAC address, length: 6 bytes.
+  * @param  mac base MAC address, length: 6 bytes/8 bytes.
+  *         length: 6 bytes for MAC-48
+  *                 8 bytes for EUI-64(used for IEEE 802.15.4)
   *
   * @return ESP_OK on success
   *         ESP_ERR_INVALID_VERSION An invalid MAC version field was read from BLK3 of EFUSE
@@ -102,7 +108,9 @@ esp_err_t esp_efuse_mac_get_custom(uint8_t *mac);
 /**
   * @brief  Return base MAC address which is factory-programmed by Espressif in EFUSE.
   *
-  * @param  mac  base MAC address, length: 6 bytes.
+  * @param  mac base MAC address, length: 6 bytes/8 bytes.
+  *         length: 6 bytes for MAC-48
+  *                 8 bytes for EUI-64(used for IEEE 802.15.4)
   *
   * @return ESP_OK on success
   */
@@ -115,12 +123,14 @@ esp_err_t esp_efuse_mac_get_default(uint8_t *mac);
   * Then calculates the MAC address of the specific interface requested,
   * refer to ESP-IDF Programming Guide for the algorithm.
   *
-  * @param  mac  MAC address of the interface, length: 6 bytes.
+  * @param  mac base MAC address, length: 6 bytes/8 bytes.
+  *         length: 6 bytes for MAC-48
+  *                 8 bytes for EUI-64(used for IEEE 802.15.4)
   * @param  type Type of MAC address to return
   *
   * @return ESP_OK on success
   */
-esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type);
+esp_err_t esp_read_mac(uint8_t *mac, esp_mac_type_t type);
 
 /**
   * @brief Derive local MAC address from universal MAC address.
@@ -133,12 +143,14 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type);
   * address, then the first octet is XORed with 0x4 in order to create a different
   * locally administered MAC address.
   *
-  * @param  local_mac  Derived local MAC address, length: 6 bytes.
+  * @param  mac base MAC address, length: 6 bytes/8 bytes.
+  *         length: 6 bytes for MAC-48
+  *                 8 bytes for EUI-64(used for IEEE 802.15.4)
   * @param  universal_mac  Source universal MAC address, length: 6 bytes.
   *
   * @return ESP_OK on success
   */
-esp_err_t esp_derive_local_mac(uint8_t* local_mac, const uint8_t* universal_mac);
+esp_err_t esp_derive_local_mac(uint8_t *local_mac, const uint8_t *universal_mac);
 
 #ifdef __cplusplus
 }

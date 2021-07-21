@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 
-// md5_digest_table 9e42b2f9dd879191ca75ad0cf50841a1
+// md5_digest_table aa238a3a131bf64a9386d3d4ce86a237
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -97,6 +97,7 @@ extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_PAGE_SIZE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_ECC_EN[];
 extern const esp_efuse_desc_t* ESP_EFUSE_FORCE_SEND_RESUME[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SECURE_VERSION[];
+extern const esp_efuse_desc_t* ESP_EFUSE_BOOT_DISABLE_FAST_WAKE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_MAC_FACTORY[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_CLK[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_Q_D1[];
@@ -132,12 +133,6 @@ extern const esp_efuse_desc_t* ESP_EFUSE_KEY3[];
 extern const esp_efuse_desc_t* ESP_EFUSE_KEY4[];
 extern const esp_efuse_desc_t* ESP_EFUSE_KEY5[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SYS_DATA_PART2[];
-extern const esp_efuse_desc_t* ESP_EFUSE_K_RTC_LDO[];
-extern const esp_efuse_desc_t* ESP_EFUSE_K_DIG_LDO[];
-extern const esp_efuse_desc_t* ESP_EFUSE_V_RTC_DBIAS20[];
-extern const esp_efuse_desc_t* ESP_EFUSE_V_DIG_DBIAS20[];
-extern const esp_efuse_desc_t* ESP_EFUSE_DIG_DBIAS_HVT[];
-extern const esp_efuse_desc_t* ESP_EFUSE_THRES_HVT[];
 
 #ifdef __cplusplus
 }
