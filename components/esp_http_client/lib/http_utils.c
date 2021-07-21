@@ -61,6 +61,30 @@ char *http_utils_assign_string(char **str, const char *new_str, int len)
     return old_str;
 }
 
+char *http_utils_append_string(char **str, const char *new_str, int len)
+{
+    int l = len;
+    int old_len = 0;
+    char *old_str = *str;
+    if (new_str != NULL) {
+        if (l < 0) {
+            l = strlen(new_str);
+        }
+        if (old_str) {
+            old_len = strlen(old_str);
+            old_str = realloc(old_str, old_len + l + 1);
+            mem_check(old_str);
+            old_str[old_len + l] = 0;
+        } else {
+            old_str = calloc(1, l + 1);
+            mem_check(old_str);
+        }
+        memcpy(old_str + old_len, new_str, l);
+        *str = old_str;
+    }
+    return old_str;
+}
+
 void http_utils_trim_whitespace(char **str)
 {
     char *end, *start;
