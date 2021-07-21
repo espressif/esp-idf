@@ -47,12 +47,25 @@ static const tsens_dac_offset_t dac_offset[TSENS_DAC_MAX] = {
     {TSENS_DAC_L4,    2,    10,   -40,   20,   3},
 };
 
+typedef enum {
+    TSENS_HW_STATE_UNCONFIGURED,
+    TSENS_HW_STATE_CONFIGURED,
+    TSENS_HW_STATE_STARTED,
+} tsens_hw_state_t;
+
+static tsens_hw_state_t tsens_hw_state = TSENS_HW_STATE_UNCONFIGURED;
+
 static SemaphoreHandle_t rtc_tsens_mux = NULL;
 
 static float s_deltaT = NAN; // Unused number
 
 esp_err_t temp_sensor_set_config(temp_sensor_config_t tsens)
 {
+    esp_err_t err = ESP_OK;
+    if (tsens_hw_state == TSENS_HW_STATE_STARTED) {
+        ESP_LOGE(TAG, "Do not configure the temp sensor when it's running!");
+        err = ESP_ERR_INVALID_STATE;
+    }
     CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PD_M);
     SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
     CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_SAR_M);
@@ -68,7 +81,8 @@ esp_err_t temp_sensor_set_config(temp_sensor_config_t tsens)
              dac_offset[tsens.dac_offset].range_min,
              dac_offset[tsens.dac_offset].range_max,
              dac_offset[tsens.dac_offset].error_max);
-    return ESP_OK;
+    tsens_hw_state = TSENS_HW_STATE_CONFIGURED;
+    return err;
 }
 
 esp_err_t temp_sensor_get_config(temp_sensor_config_t *tsens)
@@ -91,6 +105,11 @@ esp_err_t temp_sensor_get_config(temp_sensor_config_t *tsens)
 
 esp_err_t temp_sensor_start(void)
 {
+    esp_err_t err = ESP_OK;
+    if (tsens_hw_state != TSENS_HW_STATE_CONFIGURED) {
+        ESP_LOGE(TAG, "Temperature sensor is already running or not be configured");
+        err = ESP_ERR_INVALID_STATE;
+    }
     if (rtc_tsens_mux == NULL) {
         rtc_tsens_mux = xSemaphoreCreateMutex();
     }
@@ -98,7 +117,8 @@ esp_err_t temp_sensor_start(void)
     SENS.sar_tctrl.tsens_dump_out = 0;
     SENS.sar_tctrl2.tsens_clkgate_en = 1;
     SENS.sar_tctrl.tsens_power_up = 1;
-    return ESP_OK;
+    tsens_hw_state = TSENS_HW_STATE_STARTED;
+    return err;
 }
 
 esp_err_t temp_sensor_stop(void)

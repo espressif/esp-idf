@@ -152,6 +152,8 @@ PCNT_DOCS = ['api-reference/peripherals/pcnt.rst']
 
 DAC_DOCS = ['api-reference/peripherals/dac.rst']
 
+TEMP_SENSOR_DOCS = ['api-reference/peripherals/temp_sensor.rst']
+
 TOUCH_SENSOR_DOCS = ['api-reference/peripherals/touch_pad.rst']
 
 SPIRAM_DOCS = ['api-guides/external-ram.rst']
@@ -197,8 +199,7 @@ ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-reference/peripherals/spi_slave_hd.rst',
                 'api-reference/peripherals/temp_sensor.rst',
                 'api-reference/system/async_memcpy.rst',
-                'api-reference/peripherals/touch_element.rst',
-                'api-reference/peripherals/dac.rst'] + FTDI_JTAG_DOCS
+                'api-reference/peripherals/touch_element.rst'] + FTDI_JTAG_DOCS
 
 ESP32S3_DOCS = ['hw-reference/esp32s3/**',
                 'api-reference/system/ipc.rst']
@@ -225,6 +226,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_ASYNC_MEMCPY_SUPPORTED':['api-reference/system/async_memcpy.rst'],
                             'CONFIG_IDF_TARGET_ARCH_XTENSA':XTENSA_DOCS,
                             'CONFIG_IDF_TARGET_ARCH_RISCV':RISCV_DOCS,
+                            'SOC_TEMP_SENSOR_SUPPORTED':TEMP_SENSOR_DOCS,
                             'esp32':ESP32_DOCS,
                             'esp32s2':ESP32S2_DOCS,
                             'esp32s3':ESP32S3_DOCS,
