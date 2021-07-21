@@ -151,7 +151,6 @@ deploy_test_result:
       - ${CI_PROJECT_DIR}/test-management/*.log
       # save all test logs as artifacts, make it easier to track errors
       - ${CI_PROJECT_DIR}/TEST_LOGS
-      - $CI_PROJECT_DIR/$CI_COMMIT_SHA
     expire_in: 1 mos
   variables:
     UNIT_TEST_CASE_FILE: "${CI_PROJECT_DIR}/components/idf_test/unit_test/TestCaseAll.yml"
@@ -177,4 +176,4 @@ deploy_test_result:
     - cd test-management
     - echo $BOT_JIRA_ACCOUNT > ${BOT_ACCOUNT_CONFIG_FILE}
     # update test results
-    - python3 ImportTestResult.py -r "$GIT_SHA (r${REV_COUNT})" -j $JIRA_TEST_MANAGEMENT_PROJECT -s "$SUMMARY" -l CI -p ${CI_PROJECT_DIR}/TEST_LOGS ${CI_PROJECT_DIR}/${CI_COMMIT_SHA} --pipeline_url ${CI_PIPELINE_URL}
+    - python3 ImportTestResult.py -r "$GIT_SHA (r${REV_COUNT})" -j $JIRA_TEST_MANAGEMENT_PROJECT -s "$SUMMARY" -l CI -p ${CI_PROJECT_DIR}/TEST_LOGS --pipeline_url ${CI_PIPELINE_URL}
