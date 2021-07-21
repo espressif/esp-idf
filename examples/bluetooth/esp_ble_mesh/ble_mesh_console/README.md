@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
+
 # ble mesh node console demo
 ## Introduction  
 This demo implements ble mesh node basic features.Based on this demo, node can be scaned and proved by provisioner, reply get/set message to provisioner.  
