@@ -125,6 +125,16 @@ typedef struct {
 #define uart_hal_is_tx_idle(hal)  uart_ll_is_tx_idle((hal)->dev)
 
 /**
+ * @brief  Configure the UART core reset
+ *
+ * @param  hal Context of the HAL layer
+ * @param  Set true to enable the core reset, otherwise set it false
+ *
+ * @return None
+ */
+#define uart_hal_set_reset_core(hal, core_rst_en)  uart_ll_set_reset_core((hal)->dev, core_rst_en)
+
+/**
  * @brief  Read data from the UART rxfifo
  *
  * @param[in] hal Context of the HAL layer

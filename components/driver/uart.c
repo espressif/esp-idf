@@ -187,10 +187,19 @@ static void uart_module_enable(uart_port_t uart_num)
 {
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     if (uart_context[uart_num].hw_enabled != true) {
-        if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM) {
-            periph_module_reset(uart_periph_signal[uart_num].module);
-        }
         periph_module_enable(uart_periph_signal[uart_num].module);
+        if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM) {
+        // Workaround for ESP32C3: enable core reset
+        // before enabling uart module clock
+        // to prevent uart output garbage value.
+        #if SOC_UART_REQUIRE_CORE_RESET
+            uart_hal_set_reset_core(&(uart_context[uart_num].hal), true);
+            periph_module_reset(uart_periph_signal[uart_num].module);
+            uart_hal_set_reset_core(&(uart_context[uart_num].hal), false);
+        #else
+            periph_module_reset(uart_periph_signal[uart_num].module);
+        #endif
+        }
         uart_context[uart_num].hw_enabled = true;
     }
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
