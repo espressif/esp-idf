@@ -6,7 +6,7 @@
 
 This user guide will help you get started with ESP32-DevKitM-1 and will also provide more in-depth information.
 
-ESP32-DevKitM-1 is an ESP32-MINI-1-based development board produced by Espressif. Most of the I/O pins are broken out to the pin headers on both sides for easy interfacing. Users can either connect peripherals with jumper wires or mount ESP32-DevKitM-1 on a breadboard.
+ESP32-DevKitM-1 is an ESP32-MINI-1(1U)-based development board produced by Espressif. Most of the I/O pins are broken out to the pin headers on both sides for easy interfacing. Users can either connect peripherals with jumper wires or mount ESP32-DevKitM-1 on a breadboard.
 
 
 +---------------------------+-------------------------------+
@@ -39,7 +39,7 @@ Overview
 
 This is a small and convenient development board that features:
 
-- `ESP32-MINI-1 module <https://www.espressif.com/sites/default/files/documentation/esp32-mini-1_datasheet_en.pdf>`_
+- `ESP32-MINI-1, or ESP32-MINI-1U module <https://www.espressif.com/sites/default/files/documentation/esp32-mini-1_datasheet_en.pdf>`_
 - USB-to-serial programming interface that also provides power supply for the board
 - pin headers
 - pushbuttons for reset and activation of Firmware Download mode
@@ -62,13 +62,12 @@ Wholesale Orders
 
 If you order in bulk, the boards come in large cardboard boxes.
 
-For wholesale orders, please check `Espressif Product Ordering Information <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>`_ (PDF)
-
+For wholesale orders, please go to https://www.espressif.com/en/contact-us/sales-questions.
 
 Description of Components 
 ----------------------------
 
-The following figure and the table below describe the key components, interfaces and controls of the ESP32-DevKitM-1 board.
+The following figure and the table below describe the key components, interfaces and controls of the ESP32-DevKitM-1 board. We take the board with a ESP32-MINI-1 module as an example in the following sections.
 
 
 .. figure:: ../../../_static/esp32-devkitm-1-v1-annotated-photo.png
@@ -85,8 +84,8 @@ The following figure and the table below describe the key components, interfaces
 
     * - Key Component
       - Description
-    * - ESP32-MINI-1
-      - ESP32-MINI-1 is a powerful module with 4 MB Flash and a PCB antenna. For details, please see `ESP32-MINI-1 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-mini-1_datasheet_en.pdf>`_.
+    * - On-board module
+      - ESP32-MINI-1 module or ESP32-MINI-1U module. ESP32-MINI-1 comes with an on-board PCB antenna. ESP32-MINI-1U comes with an external antenna connector. The two modules both have a 4 MB flash in chip package. For details, please see `ESP32-MINI-1 & ESP32-MINI-1U Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-mini-1_datasheet_en.pdf>`_. 
     * - 5 V to 3.3 V LDO
       - Power regulator converts 5 V to 3.3 V.
     * - Boot Button
@@ -123,6 +122,9 @@ Software Setup
 
 Please proceed to :doc:`../../get-started/index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an application example onto your ESP32-DevKitM-1.
 
+.. attention::
+
+    ESP32-DevKitM-1 is a board with a single core module, please enable single core mode (:ref:`CONFIG_FREERTOS_UNICORE`) in :ref:`menuconfig <get-started-configure>` before flashing your applications.
 
 Hardware Reference 
 ======================
@@ -309,11 +311,11 @@ No previous versions available.
 Related Documents 
 ============================
 
-* `ESP32-MINI-1 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-mini-1_datasheet_en.pdf>`_ (PDF) 
+* `ESP32-MINI-1 & ESP32-MINI-1U Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-mini-1_datasheet_en.pdf>`_ (PDF) 
 * `ESP32-DevKitM-1 Schematics <https://dl.espressif.com/dl/schematics/SCH_ESP32-DEVKITM-1_V1_20200910A.pdf>`_ (PDF)
 * `ESP32-DevKitM-1 PCB layout <https://dl.espressif.com/dl/schematics/PCB_ESP32-DevKitM-1_V1_20200910AE.pdf>`_ (PDF)
 * `ESP32-DevKitM-1 layout <https://dl.espressif.com/dl/schematics/ESP32-DevKitM-1_V1.dxf>`_ (DXF) - You can view it with `Autodesk Viewer <https://viewer.autodesk.com/>`_ online
-* `Espressif Product Ordering Information <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>`_ (PDF) 
 * `ESP32 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF)
+* `ESP Product Selector <https://products.espressif.com/#/product-selector?names=>`_
 
 For other design documentation for the board, please contact us at sales@espressif.com.

@@ -8,9 +8,9 @@ Overview
 
 ESP32-PICO-DevKitM-2 is an ESP32-based development board produced by `Espressif <https://espressif.com>`_.
 
-The core of this board is `ESP32-PICO-MINI-02 <https://www.espressif.com/en/products/modules>`_ module with complete Wi-Fi and Bluetooth functionalities. The development board features a USB-to-UART Bridge circuit which allows developers to connect the board to a computer's USB port for flashing and debugging.
+The core of this board is `ESP32-PICO-MINI-02(02U) <https://www.espressif.com/en/products/modules>`_ module with complete Wi-Fi and Bluetooth functionalities. The development board features a USB-to-UART Bridge circuit which allows developers to connect the board to a computer's USB port for flashing and debugging.
 
-All the IO signals and system power on ESP32-PICO-MINI-02 are led out to two rows of 18 x 0.1" header pads on both sides of the development board for easy access. For compatibility with Dupont wires, all header pads are populated with two rows of male pin headers. 
+All the IO signals and system power on ESP32-PICO-MINI-02(02U) are led out to two rows of 18 x 0.1" header pads on both sides of the development board for easy access. For compatibility with Dupont wires, all header pads are populated with two rows of male pin headers. 
 
 .. note::
 
@@ -44,7 +44,7 @@ This section describes how to get started with the ESP32-PICO-DevKitM-2. It begi
 Description of Components
 -----------------------------
 
-The following figure and the table below describe the key components, interfaces, and controls of the ESP32-PICO-DevKitM-2 board.
+The following figure and the table below describe the key components, interfaces, and controls of the ESP32-PICO-DevKitM-2 board. We take the board with a ESP32-PICO-MINI-02 module as an example in the following sections.
 
 .. figure:: ../../../_static/esp32-pico-devkitm-2-layout-front.png
     :align: center
@@ -59,7 +59,7 @@ Below is the description of the items identified in the figure starting from the
 ==================  =================================================================================================================================
 Key Component       Description
 ==================  =================================================================================================================================
-ESP32-PICO-MINI-02       Standard ESP32-PICO-MINI-02 module soldered to the ESP32-PICO-DevKitM-2 board. The complete ESP32 system on a chip (ESP32 SoC) has been integrated into the module.
+ESP32-PICO-MINI-02       Standard ESP32-PICO-MINI-02 module soldered to the ESP32-PICO-DevKitM-2 board. The complete ESP32 system on a chip (ESP32 SoC) has been integrated into the module. Users can also select the board with ESP32-PICO-MINI-02U soldered.
 
 LDO                 5V-to-3.3V Low dropout voltage regulator (LDO).
 
@@ -111,7 +111,7 @@ Wholesale Orders
 
 If you order in bulk, the boards come in large cardboard boxes.
 
-For wholesale orders, please check `Espressif Product Ordering Information <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>`_ (PDF)
+For wholesale orders, please go to https://www.espressif.com/en/contact-us/sales-questions.
 
 Hardware Reference
 =======================
@@ -346,8 +346,8 @@ No previous versions available.
 Related Documents
 =========================
 
-* `ESP32-PICO-MINI-02 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-pico-mini-02_datasheet_en.pdf>`_ (PDF)
-* `Espressif Product Ordering Information <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>`_ (PDF) 
+* `ESP32-PICO-MINI-02 & ESP32-PICO-MINI-1U Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-pico-mini-02_datasheet_en.pdf>`_ (PDF)
+* `ESP Product Selector <https://products.espressif.com/#/product-selector?names=>`_
 * `ESP32-PICO-DevKitM-2 Schematic <https://dl.espressif.com/dl/schematics/SCH_ESP32-PICO-DEVKITM-2_V1_0_20200812A.pdf>`_ (PDF)
 * `ESP32-PICO-DevKitM-2 PCB Layout <https://dl.espressif.com/dl/schematics/PCB_ESP32-PICO-DevKitM-2_V1.0_20200812.pdf>`_ (PDF)
 

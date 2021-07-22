@@ -52,7 +52,7 @@ Wholesale Orders
 
 If you order in bulk, the boards come in large cardboard boxes.
 
-For wholesale orders, please check `Espressif Product Ordering Information <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>`_ (PDF).
+For wholesale orders, please go to https://www.espressif.com/en/contact-us/sales-questions.
 
 Description of Components
 -------------------------
@@ -222,6 +222,6 @@ Related Documents
 * `ESP32-S2-DevKitM-1(U) Dimensions <https://dl.espressif.com/dl/schematics/ESP32-S2-DevKitM-1_V1_Dimensions.pdf>`_ (PDF)
 * `ESP32-S2 Family Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_en.pdf>`_ (PDF)
 * `ESP32-S2-MINI-1 & ESP32-S2-MINI-1U Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-s2-mini-1_esp32-s2-mini-1u_datasheet_en.pdf>`_ (PDF)
-* `Espressif Product Ordering Information <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>`_ (PDF) 
+* `ESP Product Selector <https://products.espressif.com/#/product-selector?names=>`_ 
 
 For other design documentation for the board, please contact us at sales@espressif.com.

@@ -6,7 +6,7 @@
 
 本指南将介绍如何使用 ESP32-DevKitM-1，并提供更多关于此开发板的信息。
 
-ESP32-DevKitM-1 是乐鑫推出的一款基于 ESP32-MINI-1 模组的入门级开发板。板上模组大部分管脚均已引出至两侧排针，用户可根据实际需求，通过跳线轻松连接多种外围设备，同时也可将开发板插在面包板上使用。
+ESP32-DevKitM-1 是乐鑫推出的一款基于 ESP32-MINI-1(1U) 模组的入门级开发板。板上模组大部分管脚均已引出至两侧排针，用户可根据实际需求，通过跳线轻松连接多种外围设备，同时也可将开发板插在面包板上使用。
 
 
 +------------------------+-------------------------+
@@ -30,7 +30,7 @@ ESP32-DevKitM-1 是乐鑫推出的一款基于 ESP32-MINI-1 模组的入门级�
 快速入门
 ===========
 
-本节介绍如何开始使用 ESP32-DevKitM-1，主要包括三大部分：首先，介绍一些关于 ESP32-DevKitM-1 的基本信息，然后在  `应用程序开发`_ 章节介绍如何进行硬件初始化，最后介绍如何为 ESP32-DevKitM-1 烧录固件。
+本节介绍如何开始使用 ESP32-DevKitM-1，主要包括三大部分：首先，介绍一些关于 ESP32-DevKitM-1 的基本信息，然后在 `应用程序开发`_ 章节介绍如何进行硬件初始化，最后介绍如何为 ESP32-DevKitM-1 烧录固件。
 
 
 概述
@@ -38,7 +38,7 @@ ESP32-DevKitM-1 是乐鑫推出的一款基于 ESP32-MINI-1 模组的入门级�
 
 ESP32-DevKitM-1 开发板是一款小巧实用的开发板，具备以下特色功能：
 
-- 集成了 `ESP32-MINI-1 <https://www.espressif.com/sites/default/files/documentation/esp32-mini-1_datasheet_cn.pdf>`_ 模组
+- 集成了 `ESP32-MINI-1 或 ESP32-MINI-1U <https://www.espressif.com/sites/default/files/documentation/esp32-mini-1_datasheet_cn.pdf>`_ 模组
 - USB 转串口编程接口同时可为开发板供电
 - 设有排针
 - 设有重置按钮和固件下载模式激活按钮
@@ -52,7 +52,7 @@ ESP32-DevKitM-1 开发板是一款小巧实用的开发板，具备以下特色�
 零售订单
 ^^^^^^^^^^^
 
-如购买样品，每个 ESP32-DevKitM-1 底板将以防静电袋或零售商选择的其他方式包装。
+如购买样品，每个 ESP32-DevKitM-1 开发板将以防静电袋或零售商选择的其他方式包装。
 
 零售订单请前往 https://www.espressif.com/zh-hans/company/contact/buy-a-sample。
 
@@ -60,15 +60,14 @@ ESP32-DevKitM-1 开发板是一款小巧实用的开发板，具备以下特色�
 批量订单
 ^^^^^^^^^^^
 
-如批量购买，ESP32-DevKitM-1 烧录底板将以大纸板箱包装。
+如批量购买，ESP32-DevKitM-1 开发板将以大纸板箱包装。
 
-批量订单请参考 `乐鑫产品订购信息 <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_cn.pdf>`__ (PDF)。
-
+批量订单请前往 https://www.espressif.com/zh-hans/contact-us/sales-questions。
 
 组件介绍 
 -----------
 
-ESP32-DevKitM-1 开发板的主要组件、接口及控制方式见下。
+ESP32-DevKitM-1 开发板的主要组件、接口及控制方式见下图。下文以板载 ESP32-MINI-1 的开发板为例进行说明。
 
 
 .. figure:: ../../../_static/esp32-devkitm-1-v1-annotated-photo.png
@@ -85,8 +84,8 @@ ESP32-DevKitM-1 开发板的主要组件、接口及控制方式见下。
 
     * - 主要组件
       - 基本介绍
-    * - ESP32-MINI-1
-      - ESP32-MINI-1（4MB Flash，PCB Antenna）模组。更多详情，请见 `《ESP32-MINI-1 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32-mini-1_datasheet_cn.pdf>`_
+    * - 板载模组
+      - ESP32-MINI-1 模组或 ESP32-MINI-1U 模组。ESP32-MINI-1 带有板载 PCB 天线；ESP32-MINI-1U 带有外部天线连接器。两款模组内置的芯片均叠封 4 MB flash。更多详情，请见 `《ESP32-MINI-1 & ESP32-MINI-1U 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32-mini-1_datasheet_cn.pdf>`_
     * - 5 V 转 3.3 V LDO
       - 电源转换器，输入 5 V，输出 3.3 V
     * - Boot 键
@@ -123,7 +122,10 @@ ESP32-DevKitM-1 上电前，请首先确认开发板完好无损。
 
 现在，请前往 :doc:`../../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
 
- 
+.. attention::
+
+  ESP32-DevKitM-1 搭载的模组为单核 MCU 模组，烧录应用程序前，需要在 :ref:`menuconfig <get-started-configure>` 中使能单核模式 (:ref:`CONFIG_FREERTOS_UNICORE`)。
+
 硬件参考
 ===========
 
@@ -308,11 +310,11 @@ ESP32-DevKitM-1 的主要组件和连接方式如下图所示。
 相关文档
 ============
 
-* `《ESP32-MINI-1 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32-mini-1_datasheet_cn.pdf>`_ (PDF)
+* `《ESP32-MINI-1 & ESP32-MINI-1U 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32-mini-1_datasheet_cn.pdf>`_ (PDF)
 * `ESP32-DevKitM-1 原理图 <https://dl.espressif.com/dl/schematics/SCH_ESP32-DEVKITM-1_V1_20200910A.pdf>`_ (PDF)
 * `ESP32-DevKitM-1 PCB 布局图 <https://dl.espressif.com/dl/schematics/PCB_ESP32-DevKitM-1_V1_20200910AE.pdf>`_ (PDF)
 * `ESP32-DevKitM-1 布局图 <https://dl.espressif.com/dl/schematics/ESP32-DevKitM-1_V1.dxf>`_ (DXF) - 可使用 `Autodesk Viewer <https://viewer.autodesk.com/>`_ 查看
-* `乐鑫产品订购信息 <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_cn.pdf>`_ (PDF)
+* `乐鑫产品选型工具 <https://products.espressif.com/#/product-selector?names=>`_
 * `《ESP32 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_cn.pdf>`_ (PDF)
 
 有关本开发板的更多设计文档，请联系我们的商务部门 sales@espressif.com。
