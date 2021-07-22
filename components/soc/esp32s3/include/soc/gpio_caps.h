@@ -32,6 +32,8 @@ extern "C" {
 // No GPIO is input only
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK  (SOC_GPIO_VALID_GPIO_MASK)
 
+// Support to configure slept status
+#define SOC_GPIO_SUPPORT_SLP_SWITCH  (1)
 
 #ifdef __cplusplus
 }
