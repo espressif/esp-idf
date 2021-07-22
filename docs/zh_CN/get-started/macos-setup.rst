@@ -62,11 +62,9 @@ ESP-IDF 将使用 macOS 上默认安装的 Python 版本。
 
 请前往 :ref:`get-started-get-esp-idf` 章节继续设置开发环境。
 
-
 .. _cmake: https://cmake.org/
 .. _ninja: https://ninja-build.org/
 .. _ccache: https://ccache.samba.org/
 .. _homebrew: https://brew.sh/
 .. _MacPorts: https://www.macports.org/install.php
 .. _Catalina 10.15 发布说明: https://developer.apple.com/documentation/macos-release-notes/macos-catalina-10_15-release-notes
-

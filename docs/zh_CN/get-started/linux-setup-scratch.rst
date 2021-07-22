@@ -83,11 +83,9 @@
 
     export PATH="$HOME/esp/{IDF_TARGET_TOOLCHAIN_PREFIX}/bin:$PATH"
 
-
 .. 注解::
 
     如果您已将 ``/bin/bash`` 设置为登录 shell，且同时存在 ``.bash_profile`` 和 ``.profile`` 两个文件，则请更新 ``.bash_profile``。在 CentOS 环境下, ``alias`` 需要添加到 ``.bashrc`` 文件中。
-
 
 退出并重新登录以使 ``.profile`` 的更改生效。运行以下命令来检查 ``PATH`` 设置是否正确::
 
@@ -99,7 +97,6 @@
     /home/user-name/esp/{IDF_TARGET_TOOLCHAIN_PREFIX}/bin:/home/user-name/bin:/home/user-name/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
 
 注意这里的 ``/home/user-name`` 应该替换成您安装的主路径。
-
 
 后续步骤
 ==========

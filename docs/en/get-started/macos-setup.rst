@@ -57,12 +57,10 @@ Below is an overview of steps to install Python 3.
 
       sudo port install python38
 
-
 Next Steps
 ==========
 
 To carry on with development environment setup, proceed to :ref:`get-started-get-esp-idf`.
-
 
 .. _cmake: https://cmake.org/
 .. _ninja: https://ninja-build.org/

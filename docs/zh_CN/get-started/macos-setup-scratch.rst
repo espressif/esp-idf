@@ -79,9 +79,7 @@ MacPorts 需要完整的 XCode 软件，而 Homebrew 只需要安装 XCode 命�
 
 编译得到的工具链会被保存到 ``~/esp/ctng-volume/crosstool-NG/builds/{IDF_TARGET_TOOLCHAIN_PREFIX}``。使用工具链前，请将 ``~/esp/ctng-volume/crosstool-NG/builds/{IDF_TARGET_TOOLCHAIN_PREFIX}/bin`` 添加至 ``PATH`` 环境变量。
 
-
 后续步骤
 ==========
 
 请前往 :ref:`get-started-get-esp-idf` 章节继续设置开发环境。
-

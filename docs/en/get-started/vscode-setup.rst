@@ -28,7 +28,6 @@ Supported Features
 * `Rainmaker Cloud <https://rainmaker.espressif.com/>`_, we have inbuilt Rainmaker Cloud support where you can edit/read state of your connected IoT devices easily.
 * **Code Coverage**, we have inbuilt code coverage support which shall highlight in color which line have been covered. We also render the existing HTML report directly inside the IDE.
 
-
 Bugs & Feature Requests
 =======================
 

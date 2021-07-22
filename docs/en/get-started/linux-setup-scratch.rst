@@ -77,9 +77,7 @@ Toolchain will be built in ``~/esp/crosstool-NG/builds/{IDF_TARGET_TOOLCHAIN_PRE
 Add Toolchain to PATH
 =====================
 
-The custom toolchain needs to be copied to a binary directory and added to the ``PATH``.
-
-Choose a directory, for example ``~/esp/{IDF_TARGET_TOOLCHAIN_PREFIX}/``, and copy the build output to this directory.
+The custom toolchain needs to be copied to a binary directory and added to the ``PATH``. Choose a directory, for example ``~/esp/{IDF_TARGET_TOOLCHAIN_PREFIX}/``, and copy the build output to this directory.
 
 To use it, you will need to update your ``PATH`` environment variable in ``~/.profile`` file. To make ``{IDF_TARGET_TOOLCHAIN_PREFIX}`` available for all terminal sessions, add the following line to your ``~/.profile`` file::
 
