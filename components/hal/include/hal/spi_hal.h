@@ -101,6 +101,7 @@ typedef struct {
     uint8_t *send_buffer;               ///< Data to be sent
     uint8_t *rcv_buffer;                ///< Buffer to hold the receive data.
     spi_ll_io_mode_t io_mode;           ///< IO mode of the master
+    int cs_keep_active;                 ///< Keep CS active after transaction
 } spi_hal_trans_config_t;
 
 /**
