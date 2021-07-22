@@ -265,7 +265,7 @@ ESP32-S2-Kaluga-1 上电前，请首先确认开发板完好无损。
 
 ESP32-S2-Kaluga-1 开发套件的批发包装为纸板箱。
 
-批量订货，请参考 `乐鑫产品订购信息 <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_cn.pdf>`_ (PDF)。
+批量订单请前往 https://www.espressif.com/zh-hans/contact-us/sales-questions。
 
 
 硬件参考
@@ -378,7 +378,7 @@ ESP32-S2-Kaluga-1 Kit v1.2
     user-guide-esp-lyrat-8311a_v1.3
 
 - `ESP32-S2-WROVER 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-s2-wrover_esp32-s2-wrover-i_datasheet_cn.pdf>`_ (PDF)
-- `乐鑫产品订购信息 <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_cn.pdf>`_ (PDF)
+- `乐鑫产品选型工具 <https://products.espressif.com/#/product-selector?names=>`__
 - :doc:`../../api-guides/jtag-debugging/index`
 
 - `ESP32-S2-Kaluga-1 原理图 <https://dl.espressif.com/dl/schematics/ESP32-S2-Kaluga-1_V1_3_SCH_20200526A.pdf>`_ (PDF)
