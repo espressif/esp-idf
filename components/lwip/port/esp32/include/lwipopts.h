@@ -1074,6 +1074,11 @@ LWIP_FORWARD_DECLARE_C_CXX void sntp_sync_time(struct timeval *tv);
 
 LWIP_FORWARD_DECLARE_C_CXX uint32_t sntp_get_sync_interval(void);
 
+// Max number of SNTP servers handled (default equal to LWIP_DHCP_MAX_NTP_SERVERS)
+#if CONFIG_LWIP_SNTP_MAX_SERVERS_DEFINED && !defined SNTP_MAX_SERVERS
+#define SNTP_MAX_SERVERS                CONFIG_LWIP_SNTP_MAX_SERVERS
+#endif // CONFIG_LWIP_SNTP_MAX_SERVERS_DEFINED
+
 /** Set this to 1 to support DNS names (or IP address strings) to set sntp servers
  * One server address/name can be defined as default if SNTP_SERVER_DNS == 1:
  * \#define SNTP_SERVER_ADDRESS "pool.ntp.org"
