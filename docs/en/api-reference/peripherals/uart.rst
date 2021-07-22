@@ -1,20 +1,20 @@
 UART
 ====
 
-{IDF_TARGET_UART_NUM:default = "UART_NUM_1", esp32 = "UART_NUM_2", esp32s2 = "UART_NUM_1"}
+{IDF_TARGET_UART_NUM:default = "UART_NUM_1", esp32 = "UART_NUM_2", esp32s3 = "UART_NUM_2"}
 
 Overview
 --------
 
 A Universal Asynchronous Receiver/Transmitter (UART) is a hardware feature that handles communication (i.e., timing requirements and data framing) using widely-adopted asynchronous serial communication interfaces, such as RS232, RS422, RS485. A UART provides a widely adopted and cheap method to realize full-duplex or half-duplex data exchange among different devices.
 
-.. only:: esp32
+.. only:: esp32 or esp32s3
 
-    The ESP32 chip has three UART controllers (UART0, UART1, and UART2) that feature an identical set of registers for ease of programming and flexibility.
+    The {IDF_TARGET_NAME} chip has three UART controllers (UART0, UART1, and UART2), each featuring an identical set of registers to simplify programming and for more flexibility.
 
 .. only:: esp32s2 or esp32c3
 
-    The {IDF_TARGET_NAME} chip has two UART controllers (UART0 and UART1) that feature an identical set of registers for ease of programming and flexibility.
+    The {IDF_TARGET_NAME} chip has two UART controllers (UART0 and UART1), each featuring an identical set of registers to simplify programming and for more flexibility.
 
 Each UART controller is independently configurable with parameters such as baud rate, data bit length, bit ordering, number of stop bits, parity bit etc. All the controllers are compatible with UART-enabled devices from various manufacturers and can also support Infrared Data Association protocols (IrDA).
 
@@ -99,28 +99,10 @@ After setting communication parameters, configure the physical GPIO pins to whic
 
 The same macro should be specified for pins that will not be used.
 
+.. code-block:: c
 
-
-.. only:: esp32
-
-  .. code-block:: c
-
-    // Set UART pins(TX: IO17 (UART2 default), RX: IO16 (UART2 default), RTS: IO18, CTS: IO19)
-    ESP_ERROR_CHECK(uart_set_pin(UART_NUM_2, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, 18, 19));
-
-.. only:: esp32s2
-
-  .. code-block:: c
-
-    // Set UART pins(TX: IO17 (UART1 default), RX: IO18 (UART1 default), RTS: IO19, CTS: IO20)
-    ESP_ERROR_CHECK(uart_set_pin(UART_NUM_1, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, 19, 20));
-
-.. only:: esp32c3
-
-  .. code-block:: c
-  
-    // Set UART pins(TX: IO4, RX: IO5, RTS: IO19, CTS: IO20)
-    ESP_ERROR_CHECK(uart_set_pin(UART_NUM_1, 4, 5, 19, 20));
+  // Set UART pins(TX: IO4, RX: IO5, RTS: IO18, CTS: IO19)
+  ESP_ERROR_CHECK(uart_set_pin({IDF_TARGET_UART_NUM}, 4, 5, 18, 19));
 
 .. _uart-api-driver-installation:
 

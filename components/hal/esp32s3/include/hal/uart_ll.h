@@ -144,8 +144,8 @@ FORCE_INLINE_ATTR void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud)
     uint32_t clk_div = ((sclk_freq) << 4) / (baud * sclk_div);
     // The baud rate configuration register is divided into
     // an integer part and a fractional part.
-    hw->clk_div.div_int = clk_div >> 4;
-    hw->clk_div.div_frag = clk_div &  0xf;
+    hw->clkdiv.clkdiv = clk_div >> 4;
+    hw->clkdiv.clkdiv_frag = clk_div &  0xf;
     hw->clk_conf.sclk_div_num = sclk_div - 1;
 #undef DIV_UP
 }
@@ -160,8 +160,8 @@ FORCE_INLINE_ATTR void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud)
 FORCE_INLINE_ATTR uint32_t uart_ll_get_baudrate(uart_dev_t *hw)
 {
     uint32_t sclk_freq = uart_ll_get_sclk_freq(hw);
-    typeof(hw->clk_div) div_reg = hw->clk_div;
-    return ((sclk_freq << 4)) / (((div_reg.div_int << 4) | div_reg.div_frag) * (hw->clk_conf.sclk_div_num + 1));
+    uart_clkdiv_reg_t div_reg = hw->clkdiv;
+    return ((sclk_freq << 4)) / (((div_reg.clkdiv << 4) | div_reg.clkdiv_frag) * (hw->clk_conf.sclk_div_num + 1));
 }
 
 /**
@@ -239,7 +239,7 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_intr_ena_status(uart_dev_t *hw)
 FORCE_INLINE_ATTR void uart_ll_read_rxfifo(uart_dev_t *hw, uint8_t *buf, uint32_t rd_len)
 {
     for (int i = 0; i < (int)rd_len; i++) {
-        buf[i] = hw->ahb_fifo.rw_byte;
+        buf[i] = hw->fifo.rxfifo_rd_byte;
     }
 }
 
@@ -255,7 +255,7 @@ FORCE_INLINE_ATTR void uart_ll_read_rxfifo(uart_dev_t *hw, uint8_t *buf, uint32_
 FORCE_INLINE_ATTR void uart_ll_write_txfifo(uart_dev_t *hw, const uint8_t *buf, uint32_t wr_len)
 {
     for (int i = 0; i < (int)wr_len; i++) {
-        hw->ahb_fifo.rw_byte = buf[i];
+        hw->fifo.rxfifo_rd_byte = buf[i];
     }
 }
 
@@ -523,7 +523,7 @@ FORCE_INLINE_ATTR void uart_ll_set_sw_flow_ctrl(uart_dev_t *hw, uart_sw_flowctrl
  */
 FORCE_INLINE_ATTR void uart_ll_set_at_cmd_char(uart_dev_t *hw, uart_at_cmd_t *cmd_char)
 {
-    hw->at_cmd_char.data = cmd_char->cmd_char;
+    hw->at_cmd_char.at_cmd_char = cmd_char->cmd_char;
     hw->at_cmd_char.char_num = cmd_char->char_num;
     hw->at_cmd_postcnt.post_idle_num = cmd_char->post_idle;
     hw->at_cmd_precnt.pre_idle_num = cmd_char->pre_idle;
@@ -593,9 +593,9 @@ FORCE_INLINE_ATTR void uart_ll_set_wakeup_thrd(uart_dev_t *hw, uint32_t wakeup_t
  */
 FORCE_INLINE_ATTR void uart_ll_set_mode_normal(uart_dev_t *hw)
 {
-    hw->rs485_conf.en = 0;
-    hw->rs485_conf.tx_rx_en = 0;
-    hw->rs485_conf.rx_busy_tx_en = 0;
+    hw->rs485_conf.rs485_en = 0;
+    hw->rs485_conf.rs485tx_rx_en= 0;
+    hw->rs485_conf.rs485rxby_tx_en = 0;
     hw->conf0.irda_en = 0;
 }
 
@@ -609,11 +609,11 @@ FORCE_INLINE_ATTR void uart_ll_set_mode_normal(uart_dev_t *hw)
 FORCE_INLINE_ATTR void uart_ll_set_mode_rs485_app_ctrl(uart_dev_t *hw)
 {
     // Application software control, remove echo
-    hw->rs485_conf.rx_busy_tx_en = 1;
+    hw->rs485_conf.rs485rxby_tx_en = 1;
     hw->conf0.irda_en = 0;
     hw->conf0.sw_rts = 0;
     hw->conf0.irda_en = 0;
-    hw->rs485_conf.en = 1;
+    hw->rs485_conf.rs485_en = 1;
 }
 
 /**
@@ -628,11 +628,11 @@ FORCE_INLINE_ATTR void uart_ll_set_mode_rs485_half_duplex(uart_dev_t *hw)
     // Enable receiver, sw_rts = 1  generates low level on RTS pin
     hw->conf0.sw_rts = 1;
     // Must be set to 0 to automatically remove echo
-    hw->rs485_conf.tx_rx_en = 0;
+    hw->rs485_conf.rs485tx_rx_en = 0;
     // This is to void collision
-    hw->rs485_conf.rx_busy_tx_en = 1;
+    hw->rs485_conf.rs485rxby_tx_en = 1;
     hw->conf0.irda_en = 0;
-    hw->rs485_conf.en = 1;
+    hw->rs485_conf.rs485_en= 1;
 }
 
 /**
@@ -646,11 +646,11 @@ FORCE_INLINE_ATTR void uart_ll_set_mode_collision_detect(uart_dev_t *hw)
 {
     hw->conf0.irda_en = 0;
     // Transmitters output signal loop back to the receivers input signal
-    hw->rs485_conf.tx_rx_en = 1 ;
+    hw->rs485_conf.rs485tx_rx_en = 1 ;
     // Transmitter should send data when the receiver is busy
-    hw->rs485_conf.rx_busy_tx_en = 1;
+    hw->rs485_conf.rs485rxby_tx_en = 1;
     hw->conf0.sw_rts = 0;
-    hw->rs485_conf.en = 1;
+    hw->rs485_conf.rs485_en = 1;
 }
 
 /**
@@ -662,9 +662,9 @@ FORCE_INLINE_ATTR void uart_ll_set_mode_collision_detect(uart_dev_t *hw)
  */
 FORCE_INLINE_ATTR void uart_ll_set_mode_irda(uart_dev_t *hw)
 {
-    hw->rs485_conf.en = 0;
-    hw->rs485_conf.tx_rx_en = 0;
-    hw->rs485_conf.rx_busy_tx_en = 0;
+    hw->rs485_conf.rs485_en = 0;
+    hw->rs485_conf.rs485tx_rx_en = 0;
+    hw->rs485_conf.rs485rxby_tx_en = 0;
     hw->conf0.sw_rts = 0;
     hw->conf0.irda_en = 1;
 }
@@ -710,7 +710,7 @@ FORCE_INLINE_ATTR void uart_ll_set_mode(uart_dev_t *hw, uart_mode_t mode)
  */
 FORCE_INLINE_ATTR void uart_ll_get_at_cmd_char(uart_dev_t *hw, uint8_t *cmd_char, uint8_t *char_num)
 {
-    *cmd_char = hw->at_cmd_char.data;
+    *cmd_char = hw->at_cmd_char.at_cmd_char;
     *char_num = hw->at_cmd_char.char_num;
 }
 
@@ -799,7 +799,7 @@ FORCE_INLINE_ATTR void uart_ll_set_loop_back(uart_dev_t *hw, bool loop_back_en)
  */
 FORCE_INLINE_ATTR void uart_ll_inverse_signal(uart_dev_t *hw, uint32_t inv_mask)
 {
-    typeof(hw->conf0) conf0_reg = hw->conf0;
+    uart_conf0_reg_t conf0_reg = hw->conf0;
     conf0_reg.irda_tx_inv = (inv_mask & UART_SIGNAL_IRDA_TX_INV) ? 1 : 0;
     conf0_reg.irda_rx_inv = (inv_mask & UART_SIGNAL_IRDA_RX_INV) ? 1 : 0;
     conf0_reg.rxd_inv = (inv_mask & UART_SIGNAL_RXD_INV) ? 1 : 0;
