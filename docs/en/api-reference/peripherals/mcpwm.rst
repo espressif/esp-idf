@@ -53,7 +53,7 @@ In this case we will describe a simple configuration to control a brushed DC mot
 
 Configuration covers the following steps:
 
-1. Selection of a MPWn unit that will be used to drive the motor. There are two units available on-board of {IDF_TARGET_NAME} and enumerated in :cpp:type:`mcpwm_unit_t`.
+1. Selection of a MCPWM unit that will be used to drive the motor. There are two units available on-board of {IDF_TARGET_NAME} and enumerated in :cpp:type:`mcpwm_unit_t`.
 2. Initialization of two GPIOs as output signals within selected unit by calling :cpp:func:`mcpwm_gpio_init`. The two output signals are typically used to command the motor to rotate right or left. All available signal options are listed in :cpp:type:`mcpwm_io_signals_t`. To set more than a single pin at a time, use function :cpp:func:`mcpwm_set_pin` together with :cpp:type:`mcpwm_pin_config_t`.
 3. Selection of a timer. There are three timers available within the unit. The timers are listed in :cpp:type:`mcpwm_timer_t`.
 4. Setting of the timer frequency and initial duty within :cpp:type:`mcpwm_config_t` structure.
@@ -146,7 +146,7 @@ The MCPWM has a carrier submodule used if galvanic isolation from the motor driv
 
 To use the carrier submodule, it should be first initialized by calling :cpp:func:`mcpwm_carrier_init`. The carrier parameters are defined in :cpp:type:`mcpwm_carrier_config_t` structure invoked within the function call. Then the carrier functionality may be enabled by calling :cpp:func:`mcpwm_carrier_enable`.
 
-The carrier parameters may be then alerted at a runtime by calling dedicated functions to change individual fields of the :cpp:type:`mcpwm_carrier_config_t` structure, like :cpp:func:`mcpwm_carrier_set_period`, :cpp:func:`mcpwm_carrier_set_duty_cycle`, :cpp:func:`mcpwm_carrier_output_invert`, etc.
+The carrier parameters may be then altered at a runtime by calling dedicated functions to change individual fields of the :cpp:type:`mcpwm_carrier_config_t` structure, like :cpp:func:`mcpwm_carrier_set_period`, :cpp:func:`mcpwm_carrier_set_duty_cycle`, :cpp:func:`mcpwm_carrier_output_invert`, etc.
 
 This includes enabling and setting duration of the first pulse of the career with :cpp:func:`mcpwm_carrier_oneshot_mode_enable`. For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *Motor Control PWM (MCPWM)* > *PWM Carrier Submodule* [`PDF <{IDF_TARGET_TRM_EN_URL}#mcpwm>`__].
 
