@@ -28,7 +28,7 @@ esp_err_t esp_secure_boot_enable_secure_features(void)
 #ifndef CONFIG_SECURE_BOOT_ALLOW_JTAG
     ESP_LOGI(TAG, "Disable hardware & software JTAG...");
     esp_efuse_write_field_bit(ESP_EFUSE_HARD_DIS_JTAG);
-    esp_efuse_write_field_bit(ESP_EFUSE_SOFT_DIS_JTAG);
+    esp_efuse_write_field_cnt(ESP_EFUSE_SOFT_DIS_JTAG, ESP_EFUSE_SOFT_DIS_JTAG[0]->bit_count);
 #else
     ESP_LOGW(TAG, "Not disabling JTAG - SECURITY COMPROMISED");
 #endif

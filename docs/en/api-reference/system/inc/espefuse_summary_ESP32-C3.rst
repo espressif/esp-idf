@@ -56,7 +56,7 @@
                                             ag and pad_to_jtag through strapping gpio10 when b
                                             oth reg_dis_usb_jtag and reg_dis_pad_jtag are equa
                                             l to 0.                                           
-    SOFT_DIS_JTAG (BLOCK0)                   Software disables JTAG. When software disabled, JT = 0 R/W (0b00)
+    SOFT_DIS_JTAG (BLOCK0)                   Software disables JTAG. When software disabled, JT = 0 R/W (0b000)
                                             AG can be activated temporarily by HMAC peripheral
     DIS_PAD_JTAG (BLOCK0)                    Permanently disable JTAG access via pads. USB JTAG = False R/W (0b0)
                                             is controlled separately.                        
