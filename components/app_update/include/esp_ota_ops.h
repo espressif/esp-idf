@@ -112,6 +112,26 @@ esp_err_t esp_ota_begin(const esp_partition_t* partition, size_t image_size, esp
 esp_err_t esp_ota_write(esp_ota_handle_t handle, const void* data, size_t size);
 
 /**
+ * @brief   Write encrypted OTA update data to partition
+ *
+ * This function can be called multiple times as
+ * data is received during the OTA operation. Data is written
+ * sequentially to the partition.
+ *
+ * @param handle  Handle obtained from esp_ota_begin
+ * @param data    Data buffer to write
+ * @param size    Size of data buffer in bytes.
+ *
+ * @return
+ *    - ESP_OK: Data was written to flash successfully.
+ *    - ESP_ERR_INVALID_ARG: handle is invalid.
+ *    - ESP_ERR_OTA_VALIDATE_FAILED: First byte of image contains invalid app image magic byte.
+ *    - ESP_ERR_FLASH_OP_TIMEOUT or ESP_ERR_FLASH_OP_FAIL: Flash write failed.
+ *    - ESP_ERR_OTA_SELECT_INFO_INVALID: OTA data partition has invalid contents
+ */
+esp_err_t esp_ota_write_raw(esp_ota_handle_t handle, const void* data, size_t size);
+
+/**
  * @brief   Write OTA update data to partition
  *
  * This function can write data in non contiguous manner.

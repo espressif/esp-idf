@@ -38,6 +38,7 @@ typedef struct ota_ops_entry_ {
     uint32_t handle;
     const esp_partition_t *part;
     bool need_erase;
+    bool raw_write;
     uint32_t wrote_size;
     uint8_t partial_bytes;
     WORD_ALIGNED_ATTR uint8_t partial_data[16];
@@ -250,6 +251,67 @@ esp_err_t esp_ota_write(esp_ota_handle_t handle, const void *data, size_t size)
     return ESP_ERR_INVALID_ARG;
 }
 
+esp_err_t esp_ota_write_raw(esp_ota_handle_t handle, const void *data, size_t size)
+{
+    const uint8_t *data_bytes = (const uint8_t *)data;
+    esp_err_t ret;
+    ota_ops_entry_t *it;
+
+    if (!esp_flash_encryption_enabled()) {
+        ESP_LOGE(TAG, "Flash encryption is disabled");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    if (data == NULL) {
+        ESP_LOGE(TAG, "write data is invalid");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // find ota handle in linked list
+    for (it = LIST_FIRST(&s_ota_ops_entries_head); it != NULL; it = LIST_NEXT(it, entries)) {
+        if (it->handle == handle) {
+            if (it->need_erase) {
+                // must erase the partition before writing to it
+                uint32_t first_sector = it->wrote_size / SPI_FLASH_SEC_SIZE;
+                uint32_t last_sector = (it->wrote_size + size) / SPI_FLASH_SEC_SIZE;
+
+                ret = ESP_OK;
+                if ((it->wrote_size % SPI_FLASH_SEC_SIZE) == 0) {
+                    ret = esp_partition_erase_range(it->part, it->wrote_size, ((last_sector - first_sector) + 1) * SPI_FLASH_SEC_SIZE);
+                } else if (first_sector != last_sector) {
+                    ret = esp_partition_erase_range(it->part, (first_sector + 1) * SPI_FLASH_SEC_SIZE, (last_sector - first_sector) * SPI_FLASH_SEC_SIZE);
+                }
+                if (ret != ESP_OK) {
+                    return ret;
+                }
+            }
+
+            ret = esp_partition_write_raw(it->part, it->wrote_size, data_bytes, size);
+            if (ret == ESP_OK) {
+                if (it->wrote_size == 0 && it->partial_bytes == 0 && size > 0) {
+                    uint8_t magic_byte;
+                    ret = esp_partition_read(it->part, it->wrote_size, &magic_byte, 1);
+                    if (ret != ESP_OK) {
+                        return ret;
+                    }
+
+                    if (magic_byte != ESP_IMAGE_HEADER_MAGIC) {
+                        ESP_LOGE(TAG, "OTA image has invalid magic byte (expected 0xE9, saw 0x%02x)", magic_byte);
+                        return ESP_ERR_OTA_VALIDATE_FAILED;
+                    }
+                    it->raw_write = true;
+                }
+                it->wrote_size += size;
+            }
+            return ret;
+        }
+    }
+
+    //if go to here ,means don't find the handle
+    ESP_LOGE(TAG,"not found the handle");
+    return ESP_ERR_INVALID_ARG;
+}
+
 esp_err_t esp_ota_write_with_offset(esp_ota_handle_t handle, const void *data, size_t size, uint32_t offset)
 {
     const uint8_t *data_bytes = (const uint8_t *)data;
@@ -329,7 +391,11 @@ esp_err_t esp_ota_end(esp_ota_handle_t handle)
 
     if (it->partial_bytes > 0) {
         /* Write out last 16 bytes, if necessary */
-        ret = esp_partition_write(it->part, it->wrote_size, it->partial_data, 16);
+        if (it->raw_write) {
+            ret = esp_partition_write_raw(it->part, it->wrote_size, it->partial_data, 16);
+        } else {
+            ret = esp_partition_write(it->part, it->wrote_size, it->partial_data, 16);
+        }
         if (ret != ESP_OK) {
             ret = ESP_ERR_INVALID_STATE;
             goto cleanup;
