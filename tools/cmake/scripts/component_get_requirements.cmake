@@ -57,7 +57,11 @@ macro(require_idf_targets)
 endmacro()
 
 macro(idf_component_mock)
-    idf_component_register(REQUIRES cmock)
+    set(options)
+    set(single_value)
+    set(multi_value MOCK_HEADER_FILES INCLUDE_DIRS REQUIRES)
+    cmake_parse_arguments(_ "${options}" "${single_value}" "${multi_value}" "${ARGN}")
+    idf_component_register(REQUIRES ${__REQUIRES} cmock)
     return()
 endmacro()
 
