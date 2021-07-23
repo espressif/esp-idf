@@ -29,6 +29,16 @@ ESP-WIFI-MESH 的示例代码存放在 ESP-IDF 示例项目的 :example:`mesh` �
 
 本部分的以太网 API 示例代码存放在 ESP-IDF 示例项目的 :example:`ethernet` 目录下。
 
+Thread
+========
+
+.. toctree::
+   :maxdepth: 1
+
+   Thread <esp_openthread>
+
+本部分的Thread API 示例代码存放在 ESP-IDF 示例项目的 :example:`openthread` 目录下。
+
 
 IP 网络层协议
 ================

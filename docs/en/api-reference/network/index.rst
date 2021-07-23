@@ -29,6 +29,16 @@ Ethernet
 
 Code examples for the Ethernet API are provided in the :example:`ethernet` directory of ESP-IDF examples.
 
+Thread
+==========
+
+.. toctree::
+   :maxdepth: 1
+
+   Thread <esp_openthread>
+
+Thread is an IPv6-based mesh networking technology for IoT.
+Code examples for the Thread API are provided in the :example:`openthread` directory of ESP-IDF examples.
 
 IP Network Layer
 ================

@@ -27,6 +27,7 @@ API 指南
    JTAG 调试 <jtag-debugging/index>
    链接脚本生成机制 <linker-script-generation>
    lwIP TCP/IP 协议栈 <lwip>
+   OpenThread <openthread>
    Memory Types <memory-types>
    分区表 <partition-tables>
    Performance <performance/index>

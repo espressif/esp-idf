@@ -1,4 +1,4 @@
-# OpenThread command line example
+# OpenThread Border Router example
 
 ## Overview
 

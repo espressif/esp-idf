@@ -28,6 +28,7 @@ API Guides
     Linker Script Generation <linker-script-generation>
     Memory Types <memory-types>
     lwIP TCP/IP Stack <lwip>
+    OpenThread <openthread>
     Partition Tables <partition-tables>
     Performance <performance/index>
     RF Calibration <RF_calibration>
