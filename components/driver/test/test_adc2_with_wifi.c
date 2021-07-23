@@ -22,7 +22,7 @@
 #include "driver/gpio.h"
 
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3, ESP32S3)
 
 static const char* TAG = "test_adc2";
 
@@ -40,6 +40,11 @@ static const char* TAG = "test_adc2";
 #define ADC_HIGH                8191
 #define ADC_ERROR_THRES         100
 #elif CONFIG_IDF_TARGET_ESP32C3
+#define ADC2_CHAN1              ADC2_CHANNEL_0
+#define ADC_WIDTH               ADC_WIDTH_BIT_12
+#define ADC_HIGH                4095
+#define ADC_ERROR_THRES         100
+#elif CONFIG_IDF_TARGET_ESP32S3
 #define ADC2_CHAN1              ADC2_CHANNEL_0
 #define ADC_WIDTH               ADC_WIDTH_BIT_12
 #define ADC_HIGH                4095
@@ -206,7 +211,7 @@ TEST_CASE("adc2 work with wifi","[adc]")
     TEST_IGNORE_MESSAGE("this test case is ignored due to the critical memory leak of esp_netif and event_loop.");
 }
 
-#endif  //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+#endif  //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3, ESP32S3)
 
 
 #ifdef CONFIG_IDF_TARGET_ESP32
