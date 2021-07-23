@@ -343,6 +343,14 @@ example_test_015:
     - ESP32
     - Example_PPP
 
+test_app_test_esp32_generic:
+  extends: .test_app_template
+  tags:
+    - ESP32
+    - Example_GENERIC
+  variables:
+    SETUP_TOOLS: "1"
+
 test_app_test_001:
   extends: .test_app_template
   tags:

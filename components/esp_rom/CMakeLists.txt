@@ -1,6 +1,8 @@
 idf_build_get_property(target IDF_TARGET)
 
-idf_component_register(INCLUDE_DIRS include)
+idf_component_register(SRCS "patches/esp_rom_longjmp.S"
+                       INCLUDE_DIRS include "${target}"
+                       PRIV_REQUIRES soc)
 
 if(BOOTLOADER_BUILD)
     set(scripts
@@ -64,4 +66,5 @@ else() # Regular app build
 
     target_linker_script(${COMPONENT_LIB} INTERFACE "${scripts}")
 
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=longjmp")
 endif()
