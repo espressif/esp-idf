@@ -422,6 +422,9 @@ esp_err_t IRAM_ATTR esp_flash_erase_region(esp_flash_t *chip, uint32_t start, ui
         // Can only erase multiples of the sector size, starting at sector boundary
         return ESP_ERR_INVALID_ARG;
     }
+    if (len == 0) {
+        return ESP_OK;
+    }
 
     err = ESP_OK;
     // Check for write protected regions overlapping the erase region
@@ -483,6 +486,8 @@ esp_err_t IRAM_ATTR esp_flash_erase_region(esp_flash_t *chip, uint32_t start, ui
             erase_addr += sector_size;
             len_remain -= sector_size;
         }
+
+        assert(len_remain < len);
 
         if (err != ESP_OK || len_remain == 0) {
             // On ESP32, the cache re-enable is in the end() function, while flush_cache should
@@ -630,13 +635,13 @@ esp_err_t IRAM_ATTR esp_flash_set_protected_region(esp_flash_t *chip, const esp_
 
 esp_err_t IRAM_ATTR esp_flash_read(esp_flash_t *chip, void *buffer, uint32_t address, uint32_t length)
 {
-    if (length == 0) {
-        return ESP_OK;
-    }
     esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
     VERIFY_CHIP_OP(read);
     if (buffer == NULL || address > chip->size || address+length > chip->size) {
         return ESP_ERR_INVALID_ARG;
+    }
+    if (length == 0) {
+        return ESP_OK;
     }
 
     //when the cache is disabled, only the DRAM can be read, check whether we need to receive in another buffer in DRAM.
@@ -697,14 +702,14 @@ esp_err_t IRAM_ATTR esp_flash_read(esp_flash_t *chip, void *buffer, uint32_t add
 
 esp_err_t IRAM_ATTR esp_flash_write(esp_flash_t *chip, const void *buffer, uint32_t address, uint32_t length)
 {
-    if (length == 0) {
-        return ESP_OK;
-    }
     esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
     VERIFY_CHIP_OP(write);
     CHECK_WRITE_ADDRESS(chip, address, length);
     if (buffer == NULL || address > chip->size || address+length > chip->size) {
         return ESP_ERR_INVALID_ARG;
+    }
+    if (length == 0) {
+        return ESP_OK;
     }
 
     //when the cache is disabled, only the DRAM can be read, check whether we need to copy the data first
@@ -748,6 +753,7 @@ esp_err_t IRAM_ATTR esp_flash_write(esp_flash_t *chip, const void *buffer, uint3
 
         err = chip->chip_drv->write(chip, write_buf, write_addr, write_len);
         len_remain -= write_len;
+        assert(len_remain < length);
 
         if (err != ESP_OK || len_remain == 0) {
             // On ESP32, the cache re-enable is in the end() function, while flush_cache should
