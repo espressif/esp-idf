@@ -58,6 +58,15 @@ typedef struct psk_key_hint {
 } psk_hint_key_t;
 
 /**
+ * @brief esp-tls client session ticket ctx
+ */
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+typedef struct esp_tls_client_session {
+    mbedtls_ssl_session saved_session;
+} esp_tls_client_session_t;
+#endif /* CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS */
+
+/**
 *  @brief Keep alive parameters structure
 */
 typedef struct tls_keep_alive_cfg {
@@ -171,21 +180,25 @@ typedef struct esp_tls_cfg {
                                                  directly with esp_tls_plain_tcp_connect() API */
 
     struct ifreq *if_name;                  /*!< The name of interface for data to go through. Use the default interface without setting */
+
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+    esp_tls_client_session_t *client_session; /*! Pointer for the client session ticket context. */
+#endif /* CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS */
 } esp_tls_cfg_t;
 
 #ifdef CONFIG_ESP_TLS_SERVER
-#if defined(CONFIG_ESP_TLS_USING_MBEDTLS) && defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
+#if defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
 /**
  * @brief Data structures necessary to support TLS session tickets according to RFC5077
  */
-typedef struct esp_tls_session_ticket_ctx {
+typedef struct esp_tls_server_session_ticket_ctx {
     mbedtls_entropy_context entropy;                                            /*!< mbedTLS entropy context structure */
 
     mbedtls_ctr_drbg_context ctr_drbg;                                          /*!< mbedTLS ctr drbg context structure.
                                                                                      CTR_DRBG is deterministic random
                                                                                      bit generation based on AES-256 */
     mbedtls_ssl_ticket_context ticket_ctx;                                     /*!< Session ticket generation context */
-} esp_tls_session_ticket_ctx_t;
+} esp_tls_server_session_ticket_ctx_t;
 #endif
 
 typedef struct esp_tls_cfg_server {
@@ -239,8 +252,8 @@ typedef struct esp_tls_cfg_server {
     unsigned int serverkey_password_len;        /*!< String length of the password pointed to by
                                                      serverkey_password */
 
-#if defined(CONFIG_ESP_TLS_USING_MBEDTLS) && defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
-    esp_tls_session_ticket_ctx_t * ticket_ctx; /*!< Session ticket generation context.
+#if defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
+    esp_tls_server_session_ticket_ctx_t * ticket_ctx; /*!< Session ticket generation context.
                                                     You have to call esp_tls_cfg_server_session_tickets_init
                                                     to use it.
                                                     Call esp_tls_cfg_server_session_tickets_free
@@ -268,6 +281,8 @@ esp_err_t esp_tls_cfg_server_session_tickets_init(esp_tls_cfg_server_t *cfg);
 
 /**
  * @brief Free the server side TLS session ticket context
+ *
+ * @param cfg server configuration as esp_tls_cfg_server_t
  */
 void esp_tls_cfg_server_session_tickets_free(esp_tls_cfg_server_t *cfg);
 #endif /* ! CONFIG_ESP_TLS_SERVER */
@@ -656,6 +671,20 @@ void esp_tls_server_session_delete(esp_tls_t *tls);
  */
 esp_err_t esp_tls_plain_tcp_connect(const char *host, int hostlen, int port, const esp_tls_cfg_t *cfg, esp_tls_error_handle_t error_handle, int *sockfd);
 
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+/**
+ * @brief Obtain the client session ticket
+ *
+ * This function should be called when the TLS connection is already established.
+ * This can be passed again in the esp_tls_cfg_t structure, to appropriate tls session create (e.g. esp_tls_conn_http_new) API for session resumption.
+ *
+ * @param[in]  esp_tls context as esp_tls_t
+ * @return
+ *             Pointer to the saved client session.
+ *             NULL     on Failure
+ */
+esp_tls_client_session_t *esp_tls_get_client_session(esp_tls_t *tls);
+#endif /* CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS */
 #ifdef __cplusplus
 }
 #endif
