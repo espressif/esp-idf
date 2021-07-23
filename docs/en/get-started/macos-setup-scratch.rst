@@ -40,7 +40,7 @@ Install Prerequisites
 Compile the Toolchain from Source
 =================================
 
-- Install dependencies:
+Install dependencies:
 
   - with MacPorts::
 

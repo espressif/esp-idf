@@ -20,9 +20,9 @@
 概述
 ============
 
-.. only:: esp32
+{IDF_TARGET_NAME} SoC 芯片支持以下功能：
 
-    ESP32 SoC 芯片支持以下功能：
+.. only:: esp32
 
     * 2.4 GHz Wi-Fi
     * 蓝牙
@@ -32,8 +32,6 @@
 
 .. only:: esp32s2
 
-    ESP32-S2 SoC 芯片支持以下功能：
-
     * 2.4 GHz Wi-Fi
     * 高性能 Xtensa® 32 位 LX7 单核处理器
     * 运行 RISC-V 或 FSM 内核的超低功耗协处理器
@@ -42,8 +40,6 @@
     * USB OTG 接口
 
 .. only:: esp32s3
-
-    ESP32-S3 SoC 芯片支持以下功能：
 
     * 2.4 GHz Wi-Fi
     * 低功耗蓝牙
@@ -56,15 +52,16 @@
 
 .. only:: esp32c3
 
-    ESP32-C3 SoC 芯片支持以下功能：
-
     * 2.4 GHz Wi-Fi
     * 低功耗蓝牙
     * 高性能 32 位 RISC-V 单核处理器
     * 多种外设
     * 内置安全硬件
 
-{IDF_TARGET_NAME} 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、稳定性、通用性和可靠性，适用于各种应用场景和不同功耗需求。乐鑫为用户提供完整的软、硬件资源，进行 {IDF_TARGET_NAME} 硬件设备的开发。其中，乐鑫的软件开发环境 ESP-IDF 旨在协助用户快速开发物联网 (IoT) 应用，可满足用户对 Wi-Fi、蓝牙、低功耗等方面的要求。
+{IDF_TARGET_NAME} 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、稳定性、通用性和可靠性，适用于各种应用场景和不同功耗需求。
+
+乐鑫为用户提供完整的软、硬件资源，进行 {IDF_TARGET_NAME} 硬件设备的开发。其中，乐鑫的软件开发环境 ESP-IDF 旨在协助用户快速开发物联网 (IoT) 应用，可满足用户对 Wi-Fi、蓝牙、低功耗等方面的要求。
+
 
 准备工作
 =============
@@ -250,14 +247,14 @@ Windows 操作系统
 .. code-block:: batch
 
     cd %userprofile%\esp\esp-idf
-    install.bat
+    install.bat {IDF_TARGET_PATH_NAME}
 
 或使用 Windows PowerShell
 
 .. code-block:: powershell
 
     cd ~/esp/esp-idf
-    ./install.ps1
+    ./install.ps1 {IDF_TARGET_PATH_NAME}
 
 Linux 和 macOS 操作系统
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -265,7 +262,18 @@ Linux 和 macOS 操作系统
 .. code-block:: bash
 
     cd ~/esp/esp-idf
-    ./install.sh
+    ./install.sh {IDF_TARGET_PATH_NAME}
+
+或使用 Fish shell
+
+.. code-block:: fish
+
+    cd ~/esp/esp-idf
+    ./install.fish {IDF_TARGET_PATH_NAME}
+
+.. note::
+    通过一次性指定多个目标，可为多个目标芯片同时安装工具，如运行 ``./install.sh esp32,esp32c3,esp32s3``。
+    通过运行 ``./install.sh`` 或 ``./install.sh all`` 可一次性为所有支持的目标芯片安装工具。
 
 下载工具备选方案
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -393,8 +401,6 @@ ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照�
 
     ESP-IDF 编译系统不支持带有空格的路径。
 
-
-
 .. _get-started-connect:
 
 第六步：连接设备
@@ -464,7 +470,6 @@ Windows 操作系统
     您终端窗口中显示出的菜单颜色可能会与上图不同。您可以通过选项 ``--style`` 来改变外观。更多信息，请运行 ``idf.py menuconfig --help`` 命令。
 
 .. _get-started-build:
-
 
 第八步：编译工程
 =========================
