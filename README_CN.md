@@ -8,7 +8,7 @@ ESP-IDF 是由乐鑫官方针对乐鑫各系列芯片产品（发布于 2016 年
 
 ## 搭建 ESP-IDF 开发环境
 
-关于不同芯片如何搭建 ESP-IDF 的开发环境，请参考 https://idf.espressif.com/。
+关于不同芯片如何搭建 ESP-IDF 的开发环境，请参考 https://idf.espressif.com/ 。
 
 **注意：** 不同系列芯片和不同 ESP-IDF 版本都有其对应的文档。请参阅[版本](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32/versions.html)部分，获得关于如何查找文档以及如何检出 ESP-IDF 的特定发行版的详细信息。
 
