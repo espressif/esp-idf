@@ -23,6 +23,7 @@
 #include "sdkconfig.h"
 #include "esp_flash_internal.h"
 #include "spi_flash_defs.h"
+#include "esp_rom_caps.h"
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp_crypto_lock.h" // for locking flash encryption peripheral
 #endif //CONFIG_IDF_TARGET_ESP32S2
@@ -544,6 +545,28 @@ esp_err_t IRAM_ATTR esp_flash_erase_region(esp_flash_t *chip, uint32_t start, ui
 
     return rom_spiflash_api_funcs->flash_end_flush_cache(chip, err, bus_acquired, start, len);
 }
+
+#endif // !CONFIG_SPI_FLASH_ROM_IMPL
+
+#if defined(CONFIG_SPI_FLASH_ROM_IMPL) && ESP_ROM_HAS_ERASE_0_REGION_BUG
+
+/* ROM esp_flash_erase_region implementation doesn't handle 0 erase size correctly.
+ * Check the size and call ROM function instead of overriding it completely.
+ * The behavior is slightly different from esp_flash_erase_region above, thought:
+ * here the check for 0 size is done first, but in esp_flash_erase_region the check is
+ * done after the other arguments are checked.
+ */
+extern esp_err_t rom_esp_flash_erase_region(esp_flash_t *chip, uint32_t start, uint32_t len);
+esp_err_t IRAM_ATTR esp_flash_erase_region(esp_flash_t *chip, uint32_t start, uint32_t len)
+{
+    if (len == 0) {
+        return ESP_OK;
+    }
+    return rom_esp_flash_erase_region(chip, start, len);
+}
+#endif // defined(CONFIG_SPI_FLASH_ROM_IMPL) && ESP_ROM_HAS_ERASE_0_REGION_BUG
+
+#ifndef CONFIG_SPI_FLASH_ROM_IMPL
 
 esp_err_t IRAM_ATTR esp_flash_get_chip_write_protect(esp_flash_t *chip, bool *out_write_protected)
 {
