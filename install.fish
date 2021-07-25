@@ -14,8 +14,7 @@ else
 end
 echo "Installing ESP-IDF tools"
 "$ESP_PYTHON" "$IDF_PATH"/tools/idf_tools.py install --targets=$TARGETS
-    exit 1
-end
+or exit 1
 
 echo "Installing Python environment and packages"
 "$ESP_PYTHON" "$IDF_PATH"/tools/idf_tools.py install-python-env
