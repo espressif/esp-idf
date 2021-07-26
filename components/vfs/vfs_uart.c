@@ -366,9 +366,11 @@ static esp_err_t register_select(uart_select_args_t *args)
     if (args) {
         portENTER_CRITICAL(&s_registered_select_lock);
         const int new_size = s_registered_select_num + 1;
-        if ((s_registered_selects = realloc(s_registered_selects, new_size * sizeof(uart_select_args_t *))) == NULL) {
+        uart_select_args_t **new_selects;
+        if ((new_selects = realloc(s_registered_selects, new_size * sizeof(uart_select_args_t *))) == NULL) {
             ret = ESP_ERR_NO_MEM;
         } else {
+            s_registered_selects = new_selects;
             s_registered_selects[s_registered_select_num] = args;
             s_registered_select_num = new_size;
             ret = ESP_OK;
@@ -392,12 +394,9 @@ static esp_err_t unregister_select(uart_select_args_t *args)
                 // last item.
                 s_registered_selects[i] = s_registered_selects[new_size];
                 s_registered_selects = realloc(s_registered_selects, new_size * sizeof(uart_select_args_t *));
-                if (s_registered_selects || new_size == 0) {
-                    s_registered_select_num = new_size;
-                    ret = ESP_OK;
-                } else {
-                    ret = ESP_ERR_NO_MEM;
-                }
+                // Shrinking a buffer with realloc is guaranteed to succeed.
+                s_registered_select_num = new_size;
+                ret = ESP_OK;
                 break;
             }
         }

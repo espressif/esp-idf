@@ -162,8 +162,8 @@ int http_header_set_format(http_header_handle_t header, const char *key, const c
     char *buf = NULL;
     va_start(argptr, format);
     len = vasprintf(&buf, format, argptr);
-    HTTP_MEM_CHECK(TAG, buf, return 0);
     va_end(argptr);
+    HTTP_MEM_CHECK(TAG, buf, return 0);
     if (buf == NULL) {
         return 0;
     }

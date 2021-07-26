@@ -51,6 +51,7 @@ static int md5_printf(char *md, const char *fmt, ...)
     va_start(ap, fmt);
     len = vasprintf((char **)&buf, fmt, ap);
     if (buf == NULL) {
+        va_end(ap);
         return ESP_FAIL;
     }
 
