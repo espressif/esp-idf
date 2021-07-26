@@ -356,6 +356,13 @@ test_esp_event:
     - idf.py build
     - build/test_esp_event_host.elf
 
+test_esp_timer_cxx:
+  extends: .host_test_template
+  script:
+    - cd ${IDF_PATH}/examples/cxx/experimental/experimental_cpp_component/host_test/esp_timer
+    - idf.py build
+    - build/test_esp_timer_cxx_host.elf
+
 test_eh_frame_parser:
   extends: .host_test_template
   script:
