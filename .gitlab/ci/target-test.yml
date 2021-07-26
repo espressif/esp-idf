@@ -60,7 +60,7 @@ test_weekend_mqtt:
     - export MQTT_PUBLISH_TEST=1
     - export TEST_PATH=$CI_PROJECT_DIR/tools/test_apps/protocols/mqtt/publish_connect_test
     - cd $IDF_PATH/tools/ci/python_packages/tiny_test_fw/bin
-    - run_cmd python Runner.py $TEST_PATH -c $TEST_PATH/publish_connect_mqtt_.yml -e $TEST_PATH/env.yml
+    - run_cmd python Runner.py $TEST_PATH -c $TEST_PATH/publish_connect_mqtt_.yml
 
 .example_test_esp32_template:
   extends:
