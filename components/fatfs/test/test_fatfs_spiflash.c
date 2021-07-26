@@ -223,3 +223,15 @@ TEST_CASE("(WL) opendir, readdir, rewinddir, seekdir work as expected using UTF-
     test_teardown();
 }
 #endif
+
+#ifdef CONFIG_SPIRAM
+TEST_CASE("FATFS prefers SPI RAM for allocations", "[fatfs]")
+{
+    test_setup();
+    DIR* dir = opendir("/spiflash");
+    TEST_ASSERT_NOT_NULL(dir);
+    TEST_ASSERT(esp_ptr_external_ram(dir));
+    closedir(dir);
+    test_teardown();
+}
+#endif // CONFIG_SPIRAM

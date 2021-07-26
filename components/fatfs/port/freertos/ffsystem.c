@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include "ff.h"
 #include "sdkconfig.h"
-#ifdef CONFIG_FATFS_ALLOC_EXTRAM_FIRST
+#ifdef CONFIG_FATFS_ALLOC_PREFER_EXTRAM
 #include "esp_heap_caps.h"
 #endif
 
@@ -16,8 +16,8 @@ void* ff_memalloc (    /* Returns pointer to the allocated memory block (null on
     unsigned msize     /* Number of bytes to allocate */
 )
 {
-#ifdef CONFIG_FATFS_ALLOC_EXTRAM_FIRST
-    return heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM,
+#ifdef CONFIG_FATFS_ALLOC_PREFER_EXTRAM
+    return heap_caps_malloc_prefer(msize, 2, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM,
                                             MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
 #else
     return malloc(msize);
