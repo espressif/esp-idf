@@ -1,11 +1,11 @@
-| Supported Targets | ESP32-S2 |
-| ----------------- | -------- |
+| Supported Targets | ESP32-S2 | ESP32-S3 |
+| ----------------- | -------- | -------- |
 
 # TinyUSB Sample Descriptor
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example shows how to set up ESP32-S2 chip to get log output via Serial Device connection
+This example shows how to set up ESP chip to get log output via Serial Device connection.
 
 As a USB stack, a TinyUSB component is used.
 
@@ -13,21 +13,11 @@ As a USB stack, a TinyUSB component is used.
 
 ### Hardware Required
 
-- Any board with the ESP32-S2 chip with USB connectors or with exposed USB's D+ and D- (DATA+/DATA-) pins.
+Any ESP boards that have USB-OTG supported.
 
-If the board has no USB connector, but has the pins connect pins directly to the host (e.g. with DIY cable from any USB connection cable)
+#### Pin Assignment
 
-```
-ESP32-S2 BOARD          USB CONNECTOR (type A)
-                          --
-                         | || VCC
-    [GPIO 19]  --------> | || D-
-    [GPIO 20]  --------> | || D+
-                         | || GND
-                          --
-```
-
-You can also use power from the USB connector.
+See common pin assignments for USB Device examples from [upper level](../README.md#common-pin-assignments).
 
 ### Build and Flash
 
@@ -54,24 +44,36 @@ Note: if you want to send data to the target see how to implement it via `tud_cd
 After the flashing you should see the output at idf monitor:
 
 ```
-I (340) example: USB initialization
-I (340) TinyUSB: Driver installation...
-I (340) TinyUSB - Descriptors Control: Setting of a descriptor:
-.bDeviceClass       = 239
-.bDeviceSubClass    = 2,
-.bDeviceProtocol    = 1,
-.bMaxPacketSize0    = 64,
-.idVendor           = 0x0000303a,
-.idProduct          = 0x00004001,
-.bcdDevice          = 0x00000100,
-.iManufacturer      = 0x01,
-.iProduct           = 0x02,
-.iSerialNumber      = 0x03,
-.bNumConfigurations = 0x01
-
-I (373) TinyUSB: Driver installed
-I (373) example: USB initialization DONE
-I (383) example: log -> UART
+I (288) example: USB initialization
+I (288) tusb_desc:
+┌─────────────────────────────────┐
+│  USB Device Descriptor Summary  │
+├───────────────────┬─────────────┤
+│bDeviceClass       │ 239         │
+├───────────────────┼─────────────┤
+│bDeviceSubClass    │ 2           │
+├───────────────────┼─────────────┤
+│bDeviceProtocol    │ 1           │
+├───────────────────┼─────────────┤
+│bMaxPacketSize0    │ 64          │
+├───────────────────┼─────────────┤
+│idVendor           │ 0x303a      │
+├───────────────────┼─────────────┤
+│idProduct          │ 0x4001      │
+├───────────────────┼─────────────┤
+│bcdDevice          │ 0x100       │
+├───────────────────┼─────────────┤
+│iManufacturer      │ 0x1         │
+├───────────────────┼─────────────┤
+│iProduct           │ 0x2         │
+├───────────────────┼─────────────┤
+│iSerialNumber      │ 0x3         │
+├───────────────────┼─────────────┤
+│bNumConfigurations │ 0x1         │
+└───────────────────┴─────────────┘
+I (458) TinyUSB: TinyUSB Driver installed
+I (468) example: USB initialization DONE
+I (468) example: log -> UART
 example: print -> stdout
 example: print -> stderr
 ...
@@ -80,8 +82,7 @@ example: print -> stderr
 
 Other log will be printed to USB:
 ```
-I (5382) example: log -> USB
+I (3478) example: log -> USB
 example: print -> stdout
 example: print -> stderr
-...
 ```

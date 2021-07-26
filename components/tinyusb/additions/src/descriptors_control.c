@@ -130,26 +130,40 @@ uint8_t const *tud_hid_descriptor_report_cb(void)
 // Driver functions
 // =============================================================================
 
-void tusb_set_descriptor(tusb_desc_device_t *desc, char **str_desc)
+void tusb_set_descriptor(tusb_desc_device_t *dev_desc, const char **str_desc)
 {
-    ESP_LOGI(TAG, "Setting of a descriptor: \n"
-             ".bDeviceClass       = %u\n"
-             ".bDeviceSubClass    = %u,\n"
-             ".bDeviceProtocol    = %u,\n"
-             ".bMaxPacketSize0    = %u,\n"
-             ".idVendor           = 0x%08x,\n"
-             ".idProduct          = 0x%08x,\n"
-             ".bcdDevice          = 0x%08x,\n"
-             ".iManufacturer      = 0x%02x,\n"
-             ".iProduct           = 0x%02x,\n"
-             ".iSerialNumber      = 0x%02x,\n"
-             ".bNumConfigurations = 0x%02x\n",
-             desc->bDeviceClass, desc->bDeviceSubClass,
-             desc->bDeviceProtocol, desc->bMaxPacketSize0,
-             desc->idVendor, desc->idProduct, desc->bcdDevice,
-             desc->iManufacturer, desc->iProduct, desc->iSerialNumber,
-             desc->bNumConfigurations);
-    s_descriptor = *desc;
+    ESP_LOGI(TAG, "\n"
+             "┌─────────────────────────────────┐\n"
+             "│  USB Device Descriptor Summary  │\n"
+             "├───────────────────┬─────────────┤\n"
+             "│bDeviceClass       │ %-4u        │\n"
+             "├───────────────────┼─────────────┤\n"
+             "│bDeviceSubClass    │ %-4u        │\n"
+             "├───────────────────┼─────────────┤\n"
+             "│bDeviceProtocol    │ %-4u        │\n"
+             "├───────────────────┼─────────────┤\n"
+             "│bMaxPacketSize0    │ %-4u        │\n"
+             "├───────────────────┼─────────────┤\n"
+             "│idVendor           │ %-#10x  │\n"
+             "├───────────────────┼─────────────┤\n"
+             "│idProduct          │ %-#10x  │\n"
+             "├───────────────────┼─────────────┤\n"
+             "│bcdDevice          │ %-#10x  │\n"
+             "├───────────────────┼─────────────┤\n"
+             "│iManufacturer      │ %-#10x  │\n"
+             "├───────────────────┼─────────────┤\n"
+             "│iProduct           │ %-#10x  │\n"
+             "├───────────────────┼─────────────┤\n"
+             "│iSerialNumber      │ %-#10x  │\n"
+             "├───────────────────┼─────────────┤\n"
+             "│bNumConfigurations │ %-#10x  │\n"
+             "└───────────────────┴─────────────┘",
+             dev_desc->bDeviceClass, dev_desc->bDeviceSubClass,
+             dev_desc->bDeviceProtocol, dev_desc->bMaxPacketSize0,
+             dev_desc->idVendor, dev_desc->idProduct, dev_desc->bcdDevice,
+             dev_desc->iManufacturer, dev_desc->iProduct, dev_desc->iSerialNumber,
+             dev_desc->bNumConfigurations);
+    s_descriptor = *dev_desc;
 
     if (str_desc != NULL) {
         memcpy(s_str_descriptor, str_desc,

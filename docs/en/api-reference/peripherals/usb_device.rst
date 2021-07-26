@@ -1,6 +1,9 @@
 
-USB Driver
-==========
+USB Device Driver
+=================
+
+{IDF_TARGET_USB_DP_GPIO_NUM:default="20"}
+{IDF_TARGET_USB_DM_GPIO_NUM:default="19"}
 
 Overview
 --------
@@ -21,12 +24,14 @@ Hardware USB Connection
 
 - Any board with the {IDF_TARGET_NAME} chip with USB connectors or with exposed USB's D+ and D- (DATA+/DATA-) pins.
 
-If the board has no USB connector but has the pins, connect pins directly to the host (e.g. with do-it-yourself cable from any USB connection cable). For example, connect GPIO19/20 to D-/D+ respectively for an ESP32-S2 board:
+If the board has no USB connector but has the pins, connect pins directly to the host (e.g. with do-it-yourself cable from any USB connection cable).
+
+On {IDF_TARGET_NAME}, connect GPIO {IDF_TARGET_USB_DP_GPIO_NUM} and {IDF_TARGET_USB_DM_GPIO_NUM} to D+/D- respectively:
 
 
 .. figure:: ../../../_static/usb-board-connection.png
     :align: center
-    :alt: Connection of a board to a host ESP32-S2
+    :alt: Connection of a board to a host ESP chip
     :figclass: align-center
 
 Driver Structure

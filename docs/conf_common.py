@@ -164,7 +164,7 @@ LEGACY_DOCS = ['api-guides/build-system-legacy.rst',
                'api-guides/unit-tests-legacy.rst',
                'get-started-legacy/**']
 
-USB_DOCS = ['api-reference/peripherals/usb.rst',
+USB_DOCS = ['api-reference/peripherals/usb_device.rst',
             'api-guides/usb-otg-console.rst',
             'api-guides/dfu.rst']
 
@@ -212,7 +212,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_SDMMC_HOST_SUPPORTED':SDMMC_DOCS,
                             'SOC_SDIO_SLAVE_SUPPORTED':SDIO_SLAVE_DOCS,
                             'SOC_MCPWM_SUPPORTED':MCPWM_DOCS,
-                            'SOC_USB_SUPPORTED':USB_DOCS,
+                            'SOC_USB_OTG_SUPPORTED':USB_DOCS,
                             'SOC_USB_SERIAL_JTAG_SUPPORTED':USB_SERIAL_JTAG_DOCS,
                             'SOC_DEDICATED_GPIO_SUPPORTED':DEDIC_GPIO_DOCS,
                             'SOC_SPIRAM_SUPPORTED':SPIRAM_DOCS,

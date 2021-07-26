@@ -91,8 +91,8 @@ Although standard output is buffered, it's possible for an application to be lim
 .. list::
 
     - Reduce the volume of log output by lowering the app :ref:`CONFIG_LOG_DEFAULT_LEVEL` (the equivalent bootloader setting is :ref:`CONFIG_BOOTLOADER_LOG_LEVEL`). This also reduces the binary size, and saves some CPU time spent on string formatting.
-    :not SOC_USB_SUPPORTED: - Increase the speed of logging output by increasing the :ref:`CONFIG_ESP_CONSOLE_UART_BAUDRATE`
-    :SOC_USB_SUPPORTED: - Increase the speed of logging output by increasing the :ref:`CONFIG_ESP_CONSOLE_UART_BAUDRATE`. (Unless using internal USB-CDC for serial console, in which case the serial throughput doesn't depend on the configured baud rate.)
+    :not SOC_USB_OTG_SUPPORTED: - Increase the speed of logging output by increasing the :ref:`CONFIG_ESP_CONSOLE_UART_BAUDRATE`
+    :SOC_USB_OTG_SUPPORTED: - Increase the speed of logging output by increasing the :ref:`CONFIG_ESP_CONSOLE_UART_BAUDRATE`. (Unless using internal USB-CDC for serial console, in which case the serial throughput doesn't depend on the configured baud rate.)
 
 Not Recommended
 ^^^^^^^^^^^^^^^

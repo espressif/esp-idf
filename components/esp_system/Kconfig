@@ -201,9 +201,8 @@ menu "ESP System Settings"
             bool "Default: UART0"
         config ESP_CONSOLE_USB_CDC
             bool "USB CDC"
-            # The naming is confusing: USB_ENABLED means that TinyUSB driver is enabled, not USB in general.
-            # && !USB_ENABLED is because the ROM CDC driver is currently incompatible with TinyUSB.
-            depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3)  && !USB_ENABLED
+            # && !TINY_USB is because the ROM CDC driver is currently incompatible with TinyUSB.
+            depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3)  && !TINY_USB
         config ESP_CONSOLE_USB_SERIAL_JTAG
             bool "USB Serial/JTAG Controller"
             select ESPTOOLPY_NO_STUB if IDF_TARGET_ESP32S3  #ESPTOOL-251

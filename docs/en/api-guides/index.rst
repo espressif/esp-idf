@@ -12,7 +12,7 @@ API Guides
     Build System <build-system>
     :esp32: Build System (Legacy GNU Make) <build-system-legacy>
     Deep Sleep Wake Stubs <deep-sleep-stub>
-    :SOC_USB_SUPPORTED: Device Firmware Upgrade through USB <dfu>
+    :SOC_USB_OTG_SUPPORTED: Device Firmware Upgrade through USB <dfu>
     Error Handling <error-handling>
     :SOC_BT_SUPPORTED: ESP-BLE-MESH <esp-ble-mesh/ble-mesh-index>
     ESP-WIFI-MESH <esp-wifi-mesh>
@@ -41,6 +41,6 @@ API Guides
     Unit Testing (Target) <unit-tests>
     Unit Testing (Linux Host) <linux-host-testing>
     :esp32: Unit Testing (Legacy GNU Make) <unit-tests-legacy>
-    :SOC_USB_SUPPORTED: USB OTG Console <usb-otg-console>
+    :SOC_USB_OTG_SUPPORTED: USB OTG Console <usb-otg-console>
     :SOC_USB_SERIAL_JTAG_SUPPORTED: USB Serial/JTAG Controller Console <usb-serial-jtag-console>
     WiFi Driver <wifi>
