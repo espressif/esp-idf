@@ -403,26 +403,26 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "12a577aa04b6639766ae908f33cf70baefc11ac4499b8b1c8812d99f05fb6a02",
-            "size": 39517697,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.16.4/cmake-3.16.4-Linux-x86_64.tar.gz"
+            "sha256": "97bf730372f9900b2dfb9206fccbcf92f5c7f3b502148b832e77451aa0f9e0e6",
+            "size": 43877847,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.20.3/cmake-3.20.3-Linux-x86_64.tar.gz"
           },
           "macos": {
-            "sha256": "f60e0ef96da48725cd8da7d6abe83cd9501167aa51625c90dd4d31081a631279",
-            "size": 35802699,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.16.4/cmake-3.16.4-Darwin-x86_64.tar.gz"
+            "sha256": "5f72dba3aa5f3800fb29ab6115ae0b31f10bdb2aad66204e14c98f6ac7e6b6ed",
+            "size": 66311879,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.20.3/cmake-3.20.3-macos-universal.tar.gz"
           },
-          "name": "3.16.4",
+          "name": "3.20.3",
           "status": "recommended",
           "win32": {
-            "sha256": "f37963bcfcebdfe5864926a3623f6c21220c35790c39cd65e64bd521cbb39c55",
-            "size": 32812189,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.16.4/cmake-3.16.4-win64-x64.zip"
+            "sha256": "e276cf7fbb3e3e88bc666e183bc3ddaceb143a4c83fb357b1dbb1a26fd6e4ea2",
+            "size": 36995168,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.20.3/cmake-3.20.3-windows-x86_64.zip"
           },
           "win64": {
-            "sha256": "f37963bcfcebdfe5864926a3623f6c21220c35790c39cd65e64bd521cbb39c55",
-            "size": 32812189,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.16.4/cmake-3.16.4-win64-x64.zip"
+            "sha256": "e276cf7fbb3e3e88bc666e183bc3ddaceb143a4c83fb357b1dbb1a26fd6e4ea2",
+            "size": 36995168,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.20.3/cmake-3.20.3-windows-x86_64.zip"
           }
         }
       ]
@@ -591,7 +591,7 @@
       "description": "Ccache (compiler cache)",
       "export_paths": [
         [
-          ""
+          "ccache-4.3-windows-64"
         ]
       ],
       "export_vars": {
@@ -619,12 +619,12 @@
       "version_regex": "ccache version ([0-9.]+)",
       "versions": [
         {
-          "name": "3.7",
+          "name": "4.3",
           "status": "recommended",
           "win64": {
-            "sha256": "37e833f3f354f1145503533e776c1bd44ec2e77ff8a2476a1d2039b0b10c78d6",
-            "size": 142401,
-            "url": "https://dl.espressif.com/dl/ccache-3.7-w64.zip"
+            "sha256": "a9cacae73c3906d8193456328bee74f7748cb1559a32eaced9ee78eadd416105",
+            "size": 1550675,
+            "url": "https://github.com/ccache/ccache/releases/download/v4.3/ccache-4.3-windows-64.zip"
           }
         }
       ]

@@ -23,6 +23,8 @@ else()
     add_subdirectory(stubs/spi_flash)
 endif()
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 set(elf_file ${CMAKE_PROJECT_NAME}.elf)
 add_executable(${elf_file} main.c)
 
@@ -35,5 +37,3 @@ if("${TARGET}" STREQUAL "esp32")
 else()
     target_link_libraries(${elf_file} stub::esp32 stub::freertos stub::spi_flash)
 endif()
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
