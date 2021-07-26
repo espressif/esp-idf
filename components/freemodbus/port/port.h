@@ -65,10 +65,10 @@
 #define MB_SERIAL_BUF_SIZE              (CONFIG_FMB_SERIAL_BUF_SIZE)
 
 // common definitions for serial port implementations
-#define MB_SERIAL_TX_TOUT_MS            (100)
-#define MB_SERIAL_TX_TOUT_TICKS         (pdMS_TO_TICKS(MB_SERIAL_TX_TOUT_MS)) // timeout for transmission
-#define MB_SERIAL_RX_TOUT_MS            (1)
-#define MB_SERIAL_RX_TOUT_TICKS         (pdMS_TO_TICKS(MB_SERIAL_RX_TOUT_MS)) // timeout for receive
+#define MB_SERIAL_TX_TOUT_MS        (2200) // maximum time for transmission of longest allowed frame buffer
+#define MB_SERIAL_TX_TOUT_TICKS     pdMS_TO_TICKS(MB_SERIAL_TX_TOUT_MS) // timeout for transmission
+#define MB_SERIAL_RX_TOUT_MS        (1)
+#define MB_SERIAL_RX_TOUT_TICKS     pdMS_TO_TICKS(MB_SERIAL_RX_TOUT_MS) // timeout for receive
 
 #define MB_SERIAL_RESP_LEN_MIN          (4)
 
