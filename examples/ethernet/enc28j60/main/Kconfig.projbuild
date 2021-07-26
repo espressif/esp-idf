@@ -38,7 +38,7 @@ menu "Example Configuration"
     config EXAMPLE_ENC28J60_SPI_CLOCK_MHZ
         int "SPI clock speed (MHz)"
         range 5 20
-        default 6
+        default 8
         help
             Set the clock speed (MHz) of SPI interface.
 
@@ -47,4 +47,22 @@ menu "Example Configuration"
         default 4
         help
             Set the GPIO number used by ENC28J60 interrupt.
+
+    choice EXAMPLE_ENC28J60_DUPLEX_MODE
+        prompt "Duplex Mode"
+        default EXAMPLE_ENC28J60_DUPLEX_HALF
+        help
+            Select ENC28J60 Duplex operation mode.
+
+        config EXAMPLE_ENC28J60_DUPLEX_FULL
+            bool "Full Duplex"
+            help
+                Set ENC28J60 to Full Duplex mode. Do not forget to manually set the remote node (switch, router
+                or Ethernet controller) to full-duplex operation mode too.
+
+        config EXAMPLE_ENC28J60_DUPLEX_HALF
+            bool "Half Duplex"
+            help
+                Set ENC28J60 to Half Duplex mode.
+    endchoice # EXAMPLE_ENC28J60_DUPLEX_MODE
 endmenu

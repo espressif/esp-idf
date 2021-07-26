@@ -18,10 +18,6 @@
 extern "C" {
 #endif
 
-#include "esp_eth_mac.h"
-#include "esp_eth_phy.h"
-#include "driver/spi_master.h"
-
 /**
  * @brief SPI Instruction Set
  *
@@ -236,48 +232,6 @@ extern "C" {
 #define EFLOCON_FULDPXS  (1<<2) // Full-Duplex Shadown
 #define EFLOCON_FCEN1    (1<<1) // Flow Control Enable 1
 #define EFLOCON_FCEN0    (1<<0) // Flow Control Enable 0
-
-/**
- * @brief ENC28J60 specific configuration
- *
- */
-typedef struct {
-    spi_device_handle_t spi_hdl; /*!< Handle of SPI device driver */
-    int int_gpio_num;            /*!< Interrupt GPIO number */
-} eth_enc28j60_config_t;
-
-/**
- * @brief Default ENC28J60 specific configuration
- *
- */
-#define ETH_ENC28J60_DEFAULT_CONFIG(spi_device) \
-    {                                           \
-        .spi_hdl = spi_device,                  \
-        .int_gpio_num = 4,                      \
-    }
-
-/**
-* @brief Create ENC28J60 Ethernet MAC instance
-*
-* @param[in] enc28j60_config: ENC28J60 specific configuration
-* @param[in] mac_config: Ethernet MAC configuration
-*
-* @return
-*      - instance: create MAC instance successfully
-*      - NULL: create MAC instance failed because some error occurred
-*/
-esp_eth_mac_t *esp_eth_mac_new_enc28j60(const eth_enc28j60_config_t *enc28j60_config, const eth_mac_config_t *mac_config);
-
-/**
-* @brief Create a PHY instance of ENC28J60
-*
-* @param[in] config: configuration of PHY
-*
-* @return
-*      - instance: create PHY instance successfully
-*      - NULL: create PHY instance failed because some error occurred
-*/
-esp_eth_phy_t *esp_eth_phy_new_enc28j60(const eth_phy_config_t *config);
 
 #ifdef __cplusplus
 }
