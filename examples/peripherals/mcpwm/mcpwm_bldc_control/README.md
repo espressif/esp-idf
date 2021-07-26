@@ -1,10 +1,10 @@
-| Supported Targets | ESP32 |
-| ----------------- | ----- |
+| Supported Targets | ESP32 | ESP32-S3 |
+| ----------------- | ----- | -------- |
 
-# MCPWM BLDC motor control(hall sensor feedback) Example
+# MCPWM BLDC motor control (hall sensor feedback) Example
 
-This example will show you how to use MCPWM module to control bldc motor with hall sensor feedback
- 
+This example will show you how to use MCPWM module to control BLDC motor with hall sensor feedback.
+
 The following examples uses MCPWM module to control bldc motor and vary its speed continuously
 
 The bldc motor used for testing this code had hall sensor capture sequence of 6-->4-->5-->1-->3-->2-->6-->4--> and so on
@@ -13,7 +13,7 @@ IR2136 3-ph bridge driver is used for testing this example code
 
 User needs to make changes according to the motor and gate driver ic used
 
- 
+
 ## Step 1: Pin assignment
 * The gpio init function initializes:
 	* GPIO15 is assigned as the MCPWM signal for 1H(UH)
