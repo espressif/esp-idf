@@ -273,7 +273,7 @@ macro(project project_name)
     __project(${project_name} C CXX ASM)
 
     # Generate compile_commands.json (needs to come after project call).
-    set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
+    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
     # Since components can import third-party libraries, the original definition of project() should be restored
     # before the call to add components to the build.
