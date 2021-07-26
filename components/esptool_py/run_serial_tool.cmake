@@ -16,6 +16,12 @@ if(NOT SERIAL_TOOL OR NOT SERIAL_TOOL_ARGS)
         "strongly recommended to run ${SERIAL_TOOL} directly.")
 endif()
 
+# Propagate the IDF_ENV_FPGA to esptool, for Espressif internal use only
+if(DEFINED ENV{IDF_ENV_FPGA})
+    set(ENV{ESPTOOL_ENV_FPGA} 1)
+    message("Note: IDF_ENV_FPGA is set, propagating to esptool with ESPTOOL_ENV_FPGA = 1")
+endif()
+
 # Main purpose of this script: we can't expand these environment variables in the main IDF CMake build,
 # because we want to expand them at flashing time not at CMake runtime (so they can change
 # without needing a CMake re-run)
