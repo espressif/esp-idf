@@ -1,5 +1,5 @@
 CaseConfig:
-- name: test_weekend_mqtt_publish
+- name: test_app_protocol_mqtt_publish_connect
   overwrite:
     dut:
       class: ESP32QEMUDUT
