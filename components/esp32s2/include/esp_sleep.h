@@ -297,6 +297,8 @@ esp_err_t esp_light_sleep_start(void);
  *
  * This function does not return.
  *
+ * @note The device will wake up immediately if the deep-sleep time is set to 0
+ *
  * @param time_in_us  deep-sleep time, unit: microsecond
  */
 void esp_deep_sleep(uint64_t time_in_us) __attribute__((noreturn));
