@@ -119,7 +119,7 @@ BOOL xMBPortSerialTxPoll(void)
         }
         ESP_LOGD(TAG, "MB_TX_buffer send: (%d) bytes\n", (uint16_t)usCount);
         // Waits while UART sending the packet
-        esp_err_t xTxStatus = uart_wait_tx_idle_polling(ucUartNumber);
+        esp_err_t xTxStatus = uart_wait_tx_done(ucUartNumber, MB_SERIAL_TX_TOUT_TICKS);
         vMBPortSerialEnable(TRUE, FALSE);
         MB_PORT_CHECK((xTxStatus == ESP_OK), FALSE, "mb serial sent buffer failure.");
         return TRUE;
