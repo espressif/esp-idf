@@ -112,6 +112,8 @@ PLATFORM_FROM_NAME = {
     'osx': PLATFORM_MACOS,
     'darwin': PLATFORM_MACOS,
     'Darwin-x86_64': PLATFORM_MACOS,
+    # pretend it is x86_64 until Darwin-arm64 tool builds are available:
+    'Darwin-arm64': PLATFORM_MACOS,
     # Linux
     PLATFORM_LINUX64: PLATFORM_LINUX64,
     'linux64': PLATFORM_LINUX64,
