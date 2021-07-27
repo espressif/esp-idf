@@ -8,16 +8,18 @@ We have official support for VS Code and we aim to provide complete end to end s
 Quick Install Guide
 ===================
 
-Recommended way to install ESP-IDF Visual Studio Code Extension is by downloading it from `VS Code Marketplace <https://marketplace.visualstudio.com/items?itemName=espressif.esp-idf-extension>`_ or following `Quick Installation Guide <https://github.com/espressif/vscode-esp-idf-extension/#quick-installation-guide>`_.
+Recommended way to install ESP-IDF Visual Studio Code Extension is by downloading it from `VS Code Marketplace <https://marketplace.visualstudio.com/items?itemName=espressif.esp-idf-extension>`_ or following `Quick Installation Guide <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_.
+
+Review the `tutorials <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/toc.md>` for ESP-IDF Visual Studio Code Extension to learn how to use all features.
 
 Supported Features
 ==================
 
-* **Onboarding**, will help you to quickly install ESP-IDF and its relevant toolchain with just few clicks.
+* **Setup**, will help you to quickly install ESP-IDF and its relevant toolchain with just few clicks.
 * **Build**, with one click build and multi target build, you can easily build and deploy your applications.
 * **Flash**, with both UART and JTAG flash out of the box.
-* **Monitoring** comes with inbuilt terminal where you can trigger IDF Monitor Commands from within VS Code as you are used to in traditional terminals.
-* **Debugging**, with out of box hardware debugging and also support for postmortem debugging like core-dump, you can analyze the bugs with convenience.
+* **Monitoring** comes with built-in terminal where you can trigger IDF Monitor Commands from within VS Code as you are used to in traditional terminals.
+* `Debugging <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/debugging.md>`, with out of box hardware debugging and also support for postmortem debugging like core-dump, you can analyze the bugs with convenience.
 * **GUI Menu Config**, provides with simplified UI for configuring your chip.
 * **App & Heap Tracing**, provides support for collecting traces from your application and simplified UI for analyzing them.
 * **System View Tracing Viewer**, aims to read and display the *.svdat* files into trace UI, we also support multiple core tracing views.

@@ -10,17 +10,18 @@ VS Code IDE 快速入门
 快速安装指南
 ===============
 
-推荐您从 `VS Code 插件市场 <https://marketplace.visualstudio.com/items?itemName=espressif.esp-idf-extension>`_ 中下载 ESP-IDF VS Code 插件，或根据 `快速安装指南 <https://github.com/espressif/vscode-esp-idf-extension/#quick-installation-guide>`_ 安装 ESP-IDF VS Code 插件。
+推荐您从 `VS Code 插件市场 <https://marketplace.visualstudio.com/items?itemName=espressif.esp-idf-extension>`_ 中下载 ESP-IDF VS Code 插件，或根据 `快速安装指南 <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_ 安装 ESP-IDF VS Code 插件。
 
+查看 ESP-IDF VS Code 插件 `教程 <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/toc.md>` 了解如何使用所有功能。
 
 支持如下功能
 ==================
 
-* **安装**：帮助您迅速安装 ESP-IDF 及其相关工具链。
+* **安装程序**：帮助您迅速安装 ESP-IDF 及其相关工具链。
 * **构建**：通过一键构建和多目标构建，轻松构建并部署您的应用程序。
 * **烧录**：UART 和 JTAG 均可完成烧录。
 * **监控**：内置终端带有监控功能，您可以在 VS Code 中启用 IDF 监控命令，操作方法和传统终端一样。
-* **调试**：提供立即可用的硬件调试功能，同时支持事后剖析调试如 core-dump 功能，分析 bug 更加方便。
+* `调试 <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/debugging.md>`：提供立即可用的硬件调试功能，同时支持事后剖析调试如 core-dump 功能，分析 bug 更加方便。
 * **GUI 菜单配置**：提供简化的用户界面，用于配置您的芯片。
 * **应用程序追踪 & 堆追踪**：支持从应用程序中收集跟踪，并提供简化的用户界面分析跟踪。
 * **系统视图查看器**：读取并显示 *.svdat* 文件到用户追踪界面，同时支持多个内核追踪视图。
