@@ -23,23 +23,12 @@ menu "Supplicant"
         help
             Select this to enable unity test for DPP.
 
-    config WPA_WPS_WARS
-        bool "Add WPS Inter operatability Fixes"
+    config WPA_WPS_STRICT
+        bool "Strictly validate all WPS attributes"
         default n
         help
-            Select this option to enable WPS related IOT fixes with
-            different APs. This option fixes IOT related issues with
-            APs which do not follow some of the standards of WPS-2.0
-            specification. These do not include any of the security
-            related bypassing, just simple configuration corrections.
-
-            Current fixes under this flag.
-            1. Allow NULL-padded WPS attributes: Some APs keep NULL-padding
-            at the end of some variable length WPS Attributes.
-            This is not as par the WPS2.0 specs, but to avoid interop issues,
-            ignore the padding by reducing the attribute length by 1.
-            2. Bypass WPS-Config method validation: Some APs set display/pbc
-            button bit without setting virtual/phycial display/button bit which
-            will cause M2 validation fail, bypassing WPS-Config method validation.
+            Select this option to enable validate each WPS attribute
+            rigorously. Disabling this add the workaorunds with various APs.
+            Enabling this may cause inter operability issues with some APs.
 
 endmenu
