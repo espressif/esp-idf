@@ -122,6 +122,9 @@ struct PartitionMockFixture {
             const char *partition_name = NVS_DEFAULT_PART_NAME)
         : part_mock(start_sector * SPI_FLASH_SEC_SIZE, sector_size * SPI_FLASH_SEC_SIZE) {
         std::fill_n(raw_header, sizeof(raw_header)/sizeof(raw_header[0]), UINT8_MAX);
+
+        // This resets the mocks and prevents meeting accidental expectations from previous tests.
+        Mockesp_partition_Init();
     }
 
     ~PartitionMockFixture() { }
@@ -151,7 +154,7 @@ struct NVSPageFixture : public PartitionMockFixture {
     nvs::Page page;
 };
 
-struct NVSValidPageFixture : public PartitionMockFixture {
+struct NVSValidPageFlashFixture : public PartitionMockFixture {
     const static uint8_t NS_INDEX = 1;
 
     // valid header
@@ -164,7 +167,7 @@ struct NVSValidPageFixture : public PartitionMockFixture {
 
     uint8_t value_entry [32];
 
-    NVSValidPageFixture(uint32_t start_sector = 0,
+    NVSValidPageFlashFixture(uint32_t start_sector = 0,
             uint32_t sector_size = 1,
             const char *partition_name = NVS_DEFAULT_PART_NAME)
         : PartitionMockFixture(start_sector, sector_size, partition_name),
@@ -173,8 +176,7 @@ struct NVSValidPageFixture : public PartitionMockFixture {
         ns_entry {0x00, 0x01, 0x01, 0xff, 0x68, 0xc5, 0x3f, 0x0b, 't', 'e', 's', 't', '_', 'n', 's', '\0',
                 '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', 1, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
         value_entry {0x01, 0x01, 0x01, 0xff, 0x3d, 0xf3, 0x99, 0xe5, 't', 'e', 's', 't', '_', 'v', 'a', 'l',
-                'u', 'e', '\0', '\0', '\0', '\0', '\0', '\0', 47, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
-        page()
+                'u', 'e', '\0', '\0', '\0', '\0', '\0', '\0', 47, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
     {
         std::fill_n(raw_entry_table, sizeof(raw_entry_table)/sizeof(raw_entry_table[0]), 0);
         raw_entry_table[0] = 0xfa;
@@ -202,7 +204,15 @@ struct NVSValidPageFixture : public PartitionMockFixture {
         // read normal entry second time during duplicated entry check
         esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
         esp_partition_read_ReturnArrayThruPtr_dst(value_entry, 32);
+    }
+};
 
+struct NVSValidPageFixture : public NVSValidPageFlashFixture {
+    NVSValidPageFixture(uint32_t start_sector = 0,
+            uint32_t sector_size = 1,
+            const char *partition_name = NVS_DEFAULT_PART_NAME)
+        : NVSValidPageFlashFixture(start_sector, sector_size, partition_name), page()
+    {
         if (page.load(&part_mock, start_sector) != ESP_OK) throw FixtureException("couldn't setup page");
     }
 
@@ -392,9 +402,6 @@ struct NVSFullPageFixture : public PartitionMockFixture {
                 'u', 'e', '\0', '\0', '\0', '\0', '\0', '\0', 47, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
         page()
     {
-        std::fill_n(raw_entry_table, sizeof(raw_entry_table)/sizeof(raw_entry_table[0]), 0);
-        raw_entry_table[0] = 0xfa;
-
         // entry_table with all elements deleted except the namespace entry written and the last entry free
         std::fill_n(raw_entry_table, sizeof(raw_entry_table)/sizeof(raw_entry_table[0]), 0);
         raw_entry_table[0] = 0x0a;

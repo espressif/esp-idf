@@ -393,8 +393,9 @@ esp_err_t Page::findItem(uint8_t nsIndex, ItemType datatype, const char* key, ui
 
 esp_err_t Page::eraseEntryAndSpan(size_t index)
 {
+    uint32_t seq_num;
+    getSeqNumber(seq_num);
     auto state = mEntryTable.get(index);
-    assert(state == EntryState::WRITTEN || state == EntryState::EMPTY);
 
     size_t span = 1;
     if (state == EntryState::WRITTEN) {
@@ -404,7 +405,7 @@ esp_err_t Page::eraseEntryAndSpan(size_t index)
             return rc;
         }
         if (item.calculateCrc32() != item.crc32) {
-            mHashList.erase(index, false);
+            mHashList.erase(index);
             rc = alterEntryState(index, EntryState::ERASED);
             --mUsedEntryCount;
             ++mErasedEntryCount;
@@ -598,6 +599,16 @@ esp_err_t Page::mLoadEntryTable()
             span = 1;
             if (mEntryTable.get(i) == EntryState::ERASED) {
                 lastItemIndex = INVALID_ENTRY;
+                continue;
+            }
+
+            if (mEntryTable.get(i) == EntryState::ILLEGAL) {
+                lastItemIndex = INVALID_ENTRY;
+                auto err = eraseEntryAndSpan(i);
+                if (err != ESP_OK) {
+                    mState = PageState::INVALID;
+                    return err;
+                }
                 continue;
             }
 

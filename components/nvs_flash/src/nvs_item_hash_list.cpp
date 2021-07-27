@@ -65,7 +65,7 @@ esp_err_t HashList::insert(const Item& item, size_t index)
     return ESP_OK;
 }
 
-void HashList::erase(size_t index, bool itemShouldExist)
+bool HashList::erase(size_t index)
 {
     for (auto it = mBlockList.begin(); it != mBlockList.end();) {
         bool haveEntries = false;
@@ -81,7 +81,7 @@ void HashList::erase(size_t index, bool itemShouldExist)
             }
             if (haveEntries && foundIndex) {
                 /* item was found, and HashListBlock still has some items */
-                return;
+                return true;
             }
         }
         /* no items left in HashListBlock, can remove */
@@ -95,12 +95,12 @@ void HashList::erase(size_t index, bool itemShouldExist)
         }
         if (foundIndex) {
             /* item was found and empty HashListBlock was removed */
-            return;
+            return true;
         }
     }
-    if (itemShouldExist) {
-        assert(false && "item should have been present in cache");
-    }
+
+    // item hasn't been present in cache");
+    return false;
 }
 
 size_t HashList::find(size_t start, const Item& item)
