@@ -1,9 +1,12 @@
+#include "inttypes.h"
 #include "unity.h"
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "soc/soc.h"
 #include "esp_system.h"
-#include "esp32/spiram.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "spiram.h"
+#endif
 
 static __NOINIT_ATTR uint32_t s_noinit;
 static RTC_NOINIT_ATTR uint32_t s_rtc_noinit;
@@ -11,6 +14,9 @@ static RTC_DATA_ATTR uint32_t s_rtc_data;
 static RTC_RODATA_ATTR uint32_t s_rtc_rodata;
 static RTC_FAST_ATTR uint32_t s_rtc_force_fast;
 static RTC_SLOW_ATTR uint32_t s_rtc_force_slow;
+#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+static EXT_RAM_NOINIT_ATTR uint32_t s_noinit_ext;
+#endif
 
 extern int _rtc_noinit_start;
 extern int _rtc_noinit_end;
@@ -22,6 +28,10 @@ extern int _rtc_force_fast_start;
 extern int _rtc_force_fast_end;
 extern int _rtc_force_slow_start;
 extern int _rtc_force_slow_end;
+extern int _ext_ram_noinit_start;
+extern int _ext_ram_noinit_end;
+extern int _ext_ram_bss_start;
+extern int _ext_ram_bss_end;
 
 
 static bool data_in_segment(void *ptr, int *seg_start, int *seg_end)
@@ -54,6 +64,10 @@ TEST_CASE("Attributes place variables into correct sections", "[ld]")
 
     TEST_ASSERT(data_in_segment(&s_rtc_force_fast, (int*) SOC_RTC_DRAM_LOW, (int*) SOC_RTC_DRAM_HIGH));
     TEST_ASSERT(data_in_segment(&s_rtc_force_slow, (int*) SOC_RTC_DATA_LOW, (int*) SOC_RTC_DATA_HIGH));
+
+#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+    TEST_ASSERT(data_in_segment(&s_noinit_ext, &_ext_ram_noinit_start, &_ext_ram_noinit_end));
+#endif
 }
 
 
@@ -94,3 +108,17 @@ static void check_spiram_contents(void)
 TEST_CASE_MULTIPLE_STAGES("Spiram test noinit memory", "[spiram]", write_spiram_and_reset, check_spiram_contents);
 
 #endif // CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+
+
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+#define TEST_BSS_NUM    256
+static EXT_RAM_ATTR uint32_t s_bss_buffer[TEST_BSS_NUM];
+
+TEST_CASE("Test variables placed in external .bss segment", "[ld]")
+{
+    for (int i = 0; i < TEST_BSS_NUM; i++) {
+        TEST_ASSERT(data_in_segment(&s_bss_buffer[i], &_ext_ram_bss_start, &_ext_ram_bss_end));
+        TEST_ASSERT_EQUAL(0, s_bss_buffer[i]);
+    }
+}
+#endif  //#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
