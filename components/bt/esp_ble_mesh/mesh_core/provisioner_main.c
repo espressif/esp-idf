@@ -1691,55 +1691,65 @@ int bt_mesh_provisioner_set_heartbeat_filter_info(uint8_t op, uint16_t src, uint
     }
 }
 
-static bool filter_with_rejectlist(struct heartbeat_filter *filter,
-                                   uint16_t hb_src, uint16_t hb_dst)
+static bool filter_with_rejectlist(uint16_t hb_src, uint16_t hb_dst)
 {
-    switch (filter->type) {
-    case HEARTBEAT_FILTER_WITH_SRC:
-        if (hb_src == filter->src) {
-            return true;
+    int i;
+
+    for (i = 0; i < ARRAY_SIZE(hb_rx.filter); i++) {
+        struct heartbeat_filter *filter = &hb_rx.filter[i];
+
+        switch (filter->type) {
+        case HEARTBEAT_FILTER_WITH_SRC:
+            if (hb_src == filter->src) {
+                return true;
+            }
+            break;
+        case HEARTBEAT_FILTER_WITH_DST:
+            if (hb_dst == filter->dst) {
+                return true;
+            }
+            break;
+        case HEARTBEAT_FILTER_WITH_BOTH:
+            if (hb_src == filter->src && hb_dst == filter->dst) {
+                return true;
+            }
+            break;
+        default:
+            BT_DBG("Unknown filter addr type 0x%02x", filter->type);
+            break;
         }
-        break;
-    case HEARTBEAT_FILTER_WITH_DST:
-        if (hb_dst == filter->dst) {
-            return true;
-        }
-        break;
-    case HEARTBEAT_FILTER_WITH_BOTH:
-        if (hb_src == filter->src && hb_dst == filter->dst) {
-            return true;
-        }
-        break;
-    default:
-        BT_WARN("Unknown filter addr type 0x%02x", filter->type);
-        break;
     }
 
     return false;
 }
 
-static bool filter_with_acceptlist(struct heartbeat_filter *filter,
-                                   uint16_t hb_src, uint16_t hb_dst)
+static bool filter_with_acceptlist(uint16_t hb_src, uint16_t hb_dst)
 {
-    switch (filter->type) {
-    case HEARTBEAT_FILTER_WITH_SRC:
-        if (hb_src == filter->src) {
-            return false;
+    int i;
+
+    for (i = 0; i < ARRAY_SIZE(hb_rx.filter); i++) {
+        struct heartbeat_filter *filter = &hb_rx.filter[i];
+
+        switch (filter->type) {
+        case HEARTBEAT_FILTER_WITH_SRC:
+            if (hb_src == filter->src) {
+                return false;
+            }
+            break;
+        case HEARTBEAT_FILTER_WITH_DST:
+            if (hb_dst == filter->dst) {
+                return false;
+            }
+            break;
+        case HEARTBEAT_FILTER_WITH_BOTH:
+            if (hb_src == filter->src && hb_dst == filter->dst) {
+                return false;
+            }
+            break;
+        default:
+            BT_DBG("Unknown filter addr type 0x%02x", filter->type);
+            break;
         }
-        break;
-    case HEARTBEAT_FILTER_WITH_DST:
-        if (hb_dst == filter->dst) {
-            return false;
-        }
-        break;
-    case HEARTBEAT_FILTER_WITH_BOTH:
-        if (hb_src == filter->src && hb_dst == filter->dst) {
-            return false;
-        }
-        break;
-    default:
-        BT_WARN("Unknown filter addr type 0x%02x", filter->type);
-        return false;
     }
 
     return true;
@@ -1749,26 +1759,20 @@ void bt_mesh_provisioner_heartbeat(uint16_t hb_src, uint16_t hb_dst,
                                    uint8_t init_ttl, uint8_t rx_ttl,
                                    uint8_t hops, uint16_t feat, int8_t rssi)
 {
-    int i;
-
     if (hb_rx.cb == NULL) {
         BT_DBG("Receiving heartbeat is not enabled");
         return;
     }
 
-    for (i = 0; i < ARRAY_SIZE(hb_rx.filter); i++) {
-        struct heartbeat_filter *filter = &hb_rx.filter[i];
-
-        if (hb_rx.type == HEARTBEAT_FILTER_REJECTLIST) {
-            if (filter_with_rejectlist(filter, hb_src, hb_dst)) {
-                BT_DBG("Filtered by rejectlist, src 0x%04x, dst 0x%04x", hb_src, hb_dst);
-                return;
-            }
-        } else {
-            if (filter_with_acceptlist(filter, hb_src, hb_dst)) {
-                BT_DBG("Filtered by acceptlist, src 0x%04x, dst 0x%04x", hb_src, hb_dst);
-                return;
-            }
+    if (hb_rx.type == HEARTBEAT_FILTER_REJECTLIST) {
+        if (filter_with_rejectlist(hb_src, hb_dst)) {
+            BT_INFO("Filtered by rejectlist, src 0x%04x, dst 0x%04x", hb_src, hb_dst);
+            return;
+        }
+    } else {
+        if (filter_with_acceptlist(hb_src, hb_dst)) {
+            BT_INFO("Filtered by acceptlist, src 0x%04x, dst 0x%04x", hb_src, hb_dst);
+            return;
         }
     }
 
