@@ -37,7 +37,6 @@
 #define SRAM_DRAM_END       (SRAM_IRAM_END - I_D_SRAM_OFFSET)  /* 2nd stage bootloader iram_loader_seg start address */
 #define I_D_SRAM_SIZE       (SRAM_DRAM_END - SRAM_DRAM_START)
 
-
 #define ICACHE_SIZE         0x8000
 #define SRAM_IRAM_ORG       (SRAM_IRAM_START + CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE)
 #define SRAM_IRAM_SIZE      (I_D_SRAM_SIZE + ICACHE_SIZE - CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE)
@@ -66,7 +65,7 @@ MEMORY
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
   /* Flash mapped instruction data */
   iram0_2_seg (RX) :                 org = 0x42000020, len = 0x800000-0x20
-  
+
   /**
    * (0x20 offset above is a convenience for the app binary image generation.
    * Flash cache has 64KB pages. The .bin file which is flashed to the chip

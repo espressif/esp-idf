@@ -113,7 +113,7 @@ class MemRegions(object):
                 MemRegDef(0x3ff80000, 0x2000, MemRegions.RTC_FAST_D_ID, 0x600FE000),
                 MemRegDef(0x50000000, 0x2000, MemRegions.RTC_SLOW_D_ID, 0),
             ])
-        elif target == 'esp32c3':
+        elif target in ['esp32c3']:
             return sorted([
                 MemRegDef(0x3FC80000, 0x60000, MemRegions.DRAM_ID, 0x40380000),
                 MemRegDef(0x4037C000, 0x4000, MemRegions.IRAM_ID, 0),
@@ -137,7 +137,6 @@ class MemRegions(object):
 
             if (region.secondary_addr and region.secondary_addr <= start < region.secondary_addr + region.length):
                 return (region, min(length, region.secondary_addr + region.length - start))
-
         raise RuntimeError('Given section not found in any memory region. '
                            'Check whether the LD file is compatible with the definitions in get_mem_regions in idf_size.py')
 
@@ -223,12 +222,13 @@ class LinkingSections(object):
 
         score_list = [get_name_score(section) for section in section_name_list]
         ordered_name_list = sorted(section_name_list, key=lambda x: score_list[section_name_list.index(x)], reverse=True)
-        display_name_list = ordered_name_list.copy()
+        display_name_list = ordered_name_list[:]
 
         memory_name = ''
-        for i in range(len(section_name_list)):
-            section = ordered_name_list[i]
-
+        display_name_list = sorted(display_name_list)
+        ordered_name_list = sorted(ordered_name_list)
+        ordered_name_list = check_is_dict_sort(ordered_name_list)
+        for i, section in enumerate(ordered_name_list):
             if memory_name and section.startswith(memory_name):
                 # If the section has same memory type with the previous one, use shorter name
                 display_name_list[i] = section.replace(memory_name, '& ')
@@ -239,9 +239,12 @@ class LinkingSections(object):
             if len(split_name) > 1:
                 # If the section has a memory type, update the type and try to display the type properly
                 assert len(split_name) == 3 and split_name[0] == '', 'Unexpected section name'
-                memory_name = '.' + split_name[1]
+                memory_name = '.iram' if 'iram' in split_name[1] else\
+                              '.dram' if 'dram' in split_name[1] else\
+                              '.flash' if 'flash' in split_name[1] else\
+                              '.' + split_name[1]
                 display_name_list[i] = 'DRAM .' + split_name[2] if 'dram' in split_name[1] else\
-                                       'IRAM .' + split_name[2] if 'iram' in split_name[1] else\
+                                       'IRAM' + split_name[1].replace('iram', '') + ' .' + split_name[2] if 'iram' in split_name[1] else\
                                        'Flash .' + split_name[2] if 'flash' in split_name[1] else\
                                        section
                 continue
@@ -605,9 +608,10 @@ class StructureForSummary(object):
 
         dram_filter = filter(in_dram, segments)
         r.dram_total = get_size(dram_filter)
-
         iram_filter = filter(in_iram, segments)
         r.iram_total = get_size(iram_filter)
+        if r.diram_total == 0:
+            r.diram_total = r.dram_total + r.iram_total
 
         def filter_in_section(sections, section_to_check):  # type: (Iterable[MemRegions.Region], str) -> List[MemRegions.Region]
             return list(filter(lambda x: LinkingSections.in_section(x.section, section_to_check), sections))  # type: ignore
@@ -615,6 +619,8 @@ class StructureForSummary(object):
         dram_sections = list(filter(in_dram, sections))
         iram_sections = list(filter(in_iram, sections))
         diram_sections = list(filter(in_diram, sections))
+        if not diram_sections:
+            diram_sections = dram_sections + iram_sections
         flash_sections = filter_in_section(sections, 'flash')
 
         dram_data_list = filter_in_section(dram_sections, 'data')
@@ -679,7 +685,6 @@ class StructureForSummary(object):
 
         # The used DRAM BSS is counted into the "Used static DRAM" but not into the "Total image size"
         r.total_size = r.used_dram - r.used_dram_bss + r.used_iram + r.used_diram - r.used_diram_bss + r.used_flash
-
         return r
 
     def get_json_dic(self):  # type: (StructureForSummary) -> collections.OrderedDict
@@ -867,6 +872,23 @@ def get_summary(path, segments, sections, target,
     return output
 
 
+def check_is_dict_sort(non_sort_list):  # type: (List) -> List
+    # keeping the order data, bss, other, iram, diram, ram_st_total, flash_text, flash_rodata, flash_total
+    start_of_other = 0
+    props_sort = []  # type: List
+    props_elem = ['.data', '.bss', 'other', 'iram', 'diram', 'ram_st_total', 'flash.text', 'flash.rodata', 'flash', 'flash_total']
+    for i in props_elem:
+        for j in non_sort_list:
+            if i == 'other':
+                start_of_other = len(props_sort)
+            elif i in (j[0] if len(j[0]) > 1 else j) and (j[0] if len(j[0]) > 1 else j) not in props_sort:
+                props_sort.append(j)
+    for j in non_sort_list:
+        if j not in props_sort:
+            props_sort.insert(start_of_other, j)
+    return props_sort
+
+
 class StructureForDetailedSizes(object):
 
     @staticmethod
@@ -905,8 +927,10 @@ class StructureForDetailedSizes(object):
             section_dict['ram_st_total'] = ram_st_total
             section_dict['flash_total'] = flash_total
 
-            # TODO: keep the order data, bss, other, iram, diram, ram_st_total, flash_text, flash_rodata, flash_total
-            s.append((key, collections.OrderedDict(section_dict)))
+            sorted_dict = sorted(section_dict.items(), key=lambda elem: elem[0])
+            sorted_dict = check_is_dict_sort(sorted_dict)
+
+            s.append((key, collections.OrderedDict(sorted_dict)))
 
         s = sorted(s, key=lambda elem: elem[0])
         # do a secondary sort in order to have consistent order (for diff-ing the output)
