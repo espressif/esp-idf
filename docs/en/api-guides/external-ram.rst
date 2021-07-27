@@ -38,6 +38,7 @@ ESP-IDF fully supports the use of external memory in applications. Once the exte
     * :ref:`external_ram_config_capability_allocator`
     * :ref:`external_ram_config_malloc` (default)
     :esp32: * :ref:`external_ram_config_bss`
+    :esp32: * :ref:`external_ram_config_noinit`
 
 .. _external_ram_config_memory_map:
 
@@ -104,6 +105,14 @@ Because some buffers can only be allocated in internal memory, a second configur
 
     Remaining external RAM can also be added to the capability heap allocator using the method shown above.
 
+    .. _external_ram_config_noinit:
+
+    Allow .noinit segment placed in external memory
+    -----------------------------------------------
+
+    Enable this option by checking :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY`. If enabled, a region of the address space provided in external RAM will be used to store non-initialized data. The values placed in this segment will not be initialized or modified even during startup or restart.
+
+    By applying the macro ``EXT_RAM_NOINIT_ATTR``, data could be moved from the internal NOINIT segment to external RAM. Remaining external RAM can still be added to the capability heap allocator using the method shown above, :ref:`external_ram_config_capability_allocator`.
 
 Restrictions
 ============
