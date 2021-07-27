@@ -300,7 +300,7 @@
       ]
     },
     {
-      "description": "Toolchain for ESP32-S2 ULP coprocessor",
+      "description": "Toolchain for ESP32-S2 and ESP32-S3 ULP coprocessors",
       "export_paths": [
         [
           "esp32s2ulp-elf-binutils",
@@ -321,7 +321,8 @@
         }
       ],
       "supported_targets": [
-        "esp32s2"
+        "esp32s2",
+        "esp32s3"
       ],
       "version_cmd": [
         "esp32s2ulp-elf-as",
