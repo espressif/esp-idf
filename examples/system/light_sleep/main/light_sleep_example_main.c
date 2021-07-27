@@ -1,11 +1,10 @@
-/* Light sleep example
+/*
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
+/* Light sleep example */
 
 #include <stdio.h>
 #include <string.h>
@@ -20,6 +19,9 @@
 #include "driver/gpio.h"
 #include "esp_timer.h"
 #include "soc/uart_struct.h"
+#include "soc/rtc.h"
+#include "esp_pm.h"
+#include "esp32c3/pm.h"
 
 #define TAG              "UART"
 #define TEST_UART_NUM    1
@@ -41,20 +43,43 @@ void light_sleep_wakeup_config(void)
     ESP_LOGI(TAG, "set_light_sleep_wakeup ok");
 }
 
+void light_sleep_setup(void)
+{
+    light_sleep_wakeup_config();
+
+    esp_pm_config_esp32c3_t pm_config = {
+        .max_freq_mhz = CONFIG_ESP32C3_DEFAULT_CPU_FREQ_MHZ,
+        .min_freq_mhz = (int) rtc_clk_xtal_freq_get(),
+        .light_sleep_enable = true
+    };
+    ESP_ERROR_CHECK(esp_pm_configure(&pm_config));
+}
+
+#define RD_BUF_SIZE 1024
+
 static void uart_wakeup_task(void *arg)
 {
     uart_event_t event;
-    esp_light_sleep_start();
+    // esp_light_sleep_start();
+
+    esp_pm_lock_handle_t lock = ((struct { esp_pm_lock_handle_t lock; } *)arg)->lock;
+    light_sleep_setup();
+
+    uint8_t* dtmp = (uint8_t*) malloc(RD_BUF_SIZE);
+
     for(;;) {
         //Waiting for UART event.
         if(xQueueReceive(uart0_queue, (void * )&event, (portTickType)portMAX_DELAY)) {
-            ESP_LOGI(TAG, "uart[%d] event:", TEST_UART_NUM);
+
+            esp_pm_lock_acquire(lock);
+
+            ESP_LOGI(TAG, "uar%d recved event:%d (wk:%d)", TEST_UART_NUM, event.type, UART_WAKEUP);
             switch(event.type) {
                 case UART_DATA:
                     ESP_LOGI(TAG, "[UART DATA]: %d", event.size);
-                    //uart_read_bytes(TEST_UART_NUM, dtmp, event.size, portMAX_DELAY);
-                    //ESP_LOGI(TAG, "[DATA EVT]:");
-                    //uart_write_bytes(TEST_UART_NUM, (const char*) dtmp, event.size);
+                    uart_read_bytes(TEST_UART_NUM, dtmp, event.size, portMAX_DELAY);
+                    ESP_LOGI(TAG, "[DATA EVT]:");
+                    uart_write_bytes(TEST_UART_NUM, (const char *)dtmp, event.size);
                     break;
                 //Event of HW FIFO overflow detected
                 case UART_FIFO_OVF:
@@ -92,6 +117,8 @@ static void uart_wakeup_task(void *arg)
                     ESP_LOGI(TAG, "uart event type: %d", event.type);
                     break;
             }
+            ESP_LOGI(TAG, "uart[%d] esp_pm_lock_release()", TEST_UART_NUM);
+            esp_pm_lock_release(lock);
         }
     }
     vTaskDelete(NULL);
@@ -112,5 +139,9 @@ void app_main(void)
     uart_param_config(TEST_UART_NUM, &uart_config);
     uart_set_pin(TEST_UART_NUM, 7, 6, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
     light_sleep_wakeup_config();
-    xTaskCreate(uart_wakeup_task, "uart_wakeup_task", 2048, NULL, 12, NULL);
+
+    static esp_pm_lock_handle_t uart_event_lock;
+    ESP_ERROR_CHECK(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "uart_evt", &uart_event_lock));
+    struct { esp_pm_lock_handle_t lock; } args = { .lock = uart_event_lock };
+    xTaskCreate(uart_wakeup_task, "uart_wakeup_task", 2048, &args, 12, NULL);
 }

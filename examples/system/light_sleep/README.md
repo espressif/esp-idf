@@ -1,3 +1,5 @@
+| Supported Targets | ESP32-C3 |
+| ----------------- | -------- |
 # Light Sleep Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
