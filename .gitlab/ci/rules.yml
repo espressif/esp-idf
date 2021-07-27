@@ -109,6 +109,7 @@
   - "tools/idf_size.py"
   - "tools/test_idf_size/**/*"
 
+  - "tools/tools.json"
   - "tools/tools_schema.json"
   - "tools/idf_tools.py"
   - "tools/test_idf_tools/**/*"
