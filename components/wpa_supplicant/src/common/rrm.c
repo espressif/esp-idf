@@ -17,7 +17,9 @@
 #include "rrm.h"
 #include "scan.h"
 #include <sys/errno.h>
-#include "esp_supplicant/esp_common_i.h"
+#ifdef ESP_SUPPLICANT
+#include "esp_common_i.h"
+#endif
 
 static void wpas_rrm_neighbor_rep_timeout_handler(void *data, void *user_ctx)
 {

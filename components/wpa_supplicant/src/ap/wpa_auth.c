@@ -25,7 +25,7 @@
 #include "crypto/sha256.h"
 #include "crypto/random.h"
 
-#include "esp_supplicant/esp_wifi_driver.h"
+#include "esp_wifi_driver.h"
 #include "esp_wifi.h"
 #include "esp_private/wifi.h"
 

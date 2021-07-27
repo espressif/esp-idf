@@ -13,7 +13,7 @@
  */
 
 #include "os.h"
-#include "esp_supplicant/esp_wifi_driver.h"
+#include "esp_wifi_driver.h"
 #ifndef WPA_COMMON_H
 #define WPA_COMMON_H
 
