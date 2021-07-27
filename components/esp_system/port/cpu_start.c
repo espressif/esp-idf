@@ -129,10 +129,6 @@ static const char *TAG = "cpu_start";
 extern int _ext_ram_bss_start;
 extern int _ext_ram_bss_end;
 #endif
-#if CONFIG_SPIRAM_ALLOW_NOINIT_EXTERNAL_MEMORY
-extern int _ext_ram_noinit_start;
-extern int _ext_ram_noinit_end;
-#endif
 #ifdef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
 extern int _iram_bss_start;
 extern int _iram_bss_end;
@@ -423,11 +419,7 @@ void IRAM_ATTR call_start_cpu0(void)
 
 #if CONFIG_SPIRAM_MEMTEST
     if (g_spiram_ok) {
-#if CONFIG_SPIRAM_ALLOW_NOINIT_EXTERNAL_MEMORY
-        bool ext_ram_ok = esp_spiram_test(&_ext_ram_noinit_start, &_ext_ram_noinit_end);
-#else
-        bool ext_ram_ok = esp_spiram_test(0, 0);
-#endif
+        bool ext_ram_ok = esp_spiram_test();
         if (!ext_ram_ok) {
             ESP_EARLY_LOGE(TAG, "External RAM failed memory test!");
             abort();

@@ -59,7 +59,7 @@ void esp_spiram_init_cache(void);
  *
  * @return true on success, false on failed memory test
  */
-bool esp_spiram_test(const void* keepout_addr_low, const void* keepout_addr_high);
+bool esp_spiram_test(void);
 
 
 /**

@@ -72,14 +72,6 @@ extern "C" {
 #define EXT_RAM_ATTR
 #endif
 
-#if CONFIG_SPIRAM_ALLOW_NOINIT_EXTERNAL_MEMORY
-// Forces data into external memory noinit section to avoid initialization after restart.
-#define EXT_RAM_NOINIT_ATTR _SECTION_ATTR_IMPL(".ext_ram.noinit", __COUNTER__)
-#else
-// Place in internal noinit section
-#define EXT_RAM_NOINIT_ATTR __NOINIT_ATTR
-#endif
-
 // Forces data into RTC slow memory. See "docs/deep-sleep-stub.rst"
 // Any variable marked with this attribute will keep its value
 // during a deep sleep / wake cycle.
@@ -96,6 +88,14 @@ extern "C" {
 
 // Forces data into noinit section to avoid initialization after restart.
 #define __NOINIT_ATTR _SECTION_ATTR_IMPL(".noinit", __COUNTER__)
+
+#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+// Forces data into external memory noinit section to avoid initialization after restart.
+#define EXT_RAM_NOINIT_ATTR _SECTION_ATTR_IMPL(".ext_ram.noinit", __COUNTER__)
+#else
+// Place in internal noinit section
+#define EXT_RAM_NOINIT_ATTR __NOINIT_ATTR
+#endif
 
 // Forces data into RTC slow memory of .noinit section.
 // Any variable marked with this attribute will keep its value

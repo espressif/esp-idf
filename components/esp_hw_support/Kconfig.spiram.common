@@ -102,10 +102,12 @@ config SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
 
         Note that the variables placed in SPIRAM using EXT_RAM_ATTR will be zero initialized.
 
-config SPIRAM_ALLOW_NOINIT_EXTERNAL_MEMORY
-    bool "Enable placement of noinit segments in external memory"
+config SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+    bool "Allow .noinit segment placed in external memory"
     default n
-    depends on SPIRAM
+    depends on SPIRAM && IDF_TARGET_ESP32
     help
         If enabled, noinit variables can be placed in PSRAM using EXT_RAM_NOINIT_ATTR.
-        If disabled, EXT_RAM_NOINIT_ATTR will act like __NOINIT_ATTR.
+
+        Note the values placed into this section will not be initialized at startup and should keep its value
+        after software restart.

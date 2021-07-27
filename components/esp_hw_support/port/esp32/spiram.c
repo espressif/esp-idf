@@ -55,7 +55,7 @@ static const char* TAG = "spiram";
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
 extern uint8_t _ext_ram_bss_start, _ext_ram_bss_end;
 #endif
-#if CONFIG_SPIRAM_ALLOW_NOINIT_EXTERNAL_MEMORY
+#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
 extern uint8_t _ext_ram_noinit_start, _ext_ram_noinit_end;
 #endif
 
@@ -83,25 +83,32 @@ static size_t spiram_size_usable_for_malloc(void)
  true when RAM seems OK, false when test fails. WARNING: Do not run this before the 2nd cpu has been
  initialized (in a two-core system) or after the heap allocator has taken ownership of the memory.
 */
-bool esp_spiram_test(const void* keepout_addr_low, const void* keepout_addr_high)
+bool esp_spiram_test(void)
 {
+
+#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+    const void *keepout_addr_low = (const void*)&_ext_ram_noinit_start;
+    const void *keepout_addr_high = (const void*)&_ext_ram_noinit_end;
+#else
+    const void *keepout_addr_low = 0;
+    const void *keepout_addr_high = 0;
+#endif
+
     volatile int *spiram=(volatile int*)SOC_EXTRAM_DATA_LOW;
     size_t p;
     size_t s=spiram_size_usable_for_malloc();
     int errct=0;
     int initial_err=-1;
     for (p=0; p<(s/sizeof(int)); p+=8) {
-        if ((keepout_addr_low <= (const void*)&spiram[p]) && ((const void*)&spiram[p] < keepout_addr_high)) {
-            continue;
-        } else if ((keepout_addr_low < (const void*)&spiram[p+1]) && ((const void*)&spiram[p+1] <= keepout_addr_high)) {
+        const void *addr = (const void *)&spiram[p];
+        if ((keepout_addr_low <= addr) && (addr < keepout_addr_high)) {
             continue;
         }
         spiram[p]=p^0xAAAAAAAA;
     }
     for (p=0; p<(s/sizeof(int)); p+=8) {
-        if ((keepout_addr_low <= (const void*)&spiram[p]) && ((const void*)&spiram[p] < keepout_addr_high)) {
-            continue;
-        } else if ((keepout_addr_low < (const void*)&spiram[p+1]) && ((const void*)&spiram[p+1] <= keepout_addr_high)) {
+        const void *addr = (const void *)&spiram[p];
+        if ((keepout_addr_low <= addr) && (addr < keepout_addr_high)) {
             continue;
         }
         if (spiram[p]!=(p^0xAAAAAAAA)) {
@@ -192,7 +199,7 @@ esp_err_t esp_spiram_add_to_heapalloc(void)
         mallocable_ram_start = (intptr_t)&_ext_ram_bss_end;
     }
 #endif
-#if CONFIG_SPIRAM_ALLOW_NOINIT_EXTERNAL_MEMORY
+#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
     if (mallocable_ram_start < (intptr_t)&_ext_ram_noinit_end) {
         mallocable_ram_start = (intptr_t)&_ext_ram_noinit_end;
     }
