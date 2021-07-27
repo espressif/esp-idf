@@ -17,6 +17,7 @@
 from __future__ import print_function
 
 import sys
+from typing import Dict
 
 try:
     import idf_size
@@ -41,6 +42,6 @@ if __name__ == '__main__':
 
     segments = {'iram0_0_seg': {'origin': 0, 'length': 0},
                 'dram0_0_seg': {'origin': 0, 'length': 0}}
-    sections = {}
+    sections = {}  # type: Dict
 
     print(idf_size.get_summary('a.map', segments, sections, 'esp32'), end='')

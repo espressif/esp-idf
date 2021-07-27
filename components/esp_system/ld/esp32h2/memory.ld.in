@@ -46,7 +46,7 @@ MEMORY
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
   /* Flash mapped instruction data */
-  iram0_2_seg (RX) :                 org = 0x42000020, len = 0x8000000-0x20
+  iram0_2_seg (RX) :                 org = 0x42000020, len = 0x800000-0x20
 
   /**
    * (0x20 offset above is a convenience for the app binary image generation.
@@ -65,7 +65,7 @@ MEMORY
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
   /* Flash mapped constant data */
-  drom0_0_seg (R) :                  org = 0x3C000020, len = 0x8000000-0x20
+  drom0_0_seg (R) :                  org = 0x3C000020, len = 0x800000-0x20
 
   /* (See iram0_2_seg for meaning of 0x20 offset in the above.) */
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS

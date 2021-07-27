@@ -1,7 +1,6 @@
 components/app_update/otatool.py
 components/efuse/efuse_table_gen.py
 components/efuse/test_efuse_host/efuse_tests.py
-components/esp32s2/test/gen_digital_signature_tests.py
 components/esp_local_ctrl/python/esp_local_ctrl_pb2.py
 components/esp_netif/test_apps/component_ut_test.py
 components/espcoredump/corefile/gdb.py
@@ -141,20 +140,12 @@ examples/system/ota/otatool/otatool_example.py
 examples/system/ota/simple_ota_example/example_test.py
 examples/system/perfmon/example_test.py
 examples/system/select/example_test.py
-<<<<<<< HEAD
 examples/system/startup_time/example_test.py
 examples/system/sysview_tracing/example_test.py
 examples/system/sysview_tracing_heap_log/example_test.py
 examples/system/task_watchdog/example_test.py
 examples/system/ulp_fsm/ulp/example_test.py
 examples/system/ulp_fsm/ulp_adc/example_test.py
-=======
-examples/system/sysview_tracing/example_test.py
-examples/system/sysview_tracing_heap_log/example_test.py
-examples/system/task_watchdog/example_test.py
-examples/system/ulp/example_test.py
-examples/system/ulp_adc/example_test.py
->>>>>>> idf_size.py: fixed diram counted twice issue, and improve display
 examples/system/unit_test/example_test.py
 examples/wifi/iperf/iperf_test.py
 tools/ble/lib_ble_client.py
@@ -199,10 +190,6 @@ tools/ci/python_packages/tiny_test_fw/Utility/TestCase.py
 tools/ci/python_packages/tiny_test_fw/bin/Runner.py
 tools/ci/python_packages/tiny_test_fw/bin/example.py
 tools/ci/python_packages/tiny_test_fw/docs/conf.py
-<<<<<<< HEAD
-=======
-tools/ci/python_packages/ttfw_idf/CIScanTests.py
->>>>>>> idf_size.py: fixed diram counted twice issue, and improve display
 tools/ci/python_packages/ttfw_idf/DebugUtils.py
 tools/ci/python_packages/ttfw_idf/IDFAssignTest.py
 tools/ci/python_packages/ttfw_idf/IDFDUT.py
@@ -234,8 +221,6 @@ tools/find_build_apps/common.py
 tools/find_build_apps/make.py
 tools/gen_esp_err_to_name.py
 tools/idf.py
-tools/idf_monitor.py
-tools/idf_py_actions/constants.py
 tools/idf_py_actions/core_ext.py
 tools/idf_py_actions/create_ext.py
 tools/idf_py_actions/debug_ext.py
@@ -245,7 +230,6 @@ tools/idf_py_actions/global_options.py
 tools/idf_py_actions/serial_ext.py
 tools/idf_py_actions/tools.py
 tools/idf_py_actions/uf2_ext.py
-tools/idf_size.py
 tools/kconfig_new/confgen.py
 tools/kconfig_new/confserver.py
 tools/kconfig_new/esp-windows-curses/setup.py
@@ -286,7 +270,6 @@ tools/test_idf_py/extra_path/some_ext.py
 tools/test_idf_py/idf_ext.py
 tools/test_idf_py/test_idf_extensions/test_ext/test_extension.py
 tools/test_idf_py/test_idf_py.py
-tools/test_idf_size/test_idf_size.py
 tools/test_idf_tools/test_idf_tools.py
 tools/test_mkdfu/test_mkdfu.py
 tools/test_mkuf2/test_mkuf2.py

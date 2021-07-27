@@ -64,6 +64,36 @@
     && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32s2 --archive_details libdriver.a app_esp32s2.map &>> output \
     && echo -e "\n***\nRunning idf_size.py diff with another app (different target)..." &>> output \
     && coverage run -a $IDF_PATH/tools/idf_size.py app.map --diff app_esp32s2.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py for esp32h2..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32h2 app_esp32h2.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py for esp32h2 (target autodetected)..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py app_esp32h2.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py --archives for esp32h2..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32h2 --archives app_esp32h2.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py --files for esp32h2..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32h2 --files app_esp32h2.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py --archive_details for esp32h2..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32h2 --archive_details libdriver.a app_esp32h2.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py for esp32c3..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32c3 app_esp32c3.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py for esp32c3 (target autodetected)..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py app_esp32c3.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py --archives for esp32c3..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32c3 --archives app_esp32c3.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py --files for esp32c3..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32c3 --files app_esp32c3.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py --archive_details for esp32c3..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32c3 --archive_details libdriver.a app_esp32c3.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py for esp32s3..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32s3 app_esp32s3.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py for esp32s3 (target autodetected)..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py app_esp32s3.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py --archives for esp32s3..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32s3 --archives app_esp32s3.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py --files for esp32s3..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32s3 --files app_esp32s3.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py --archive_details for esp32s3..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32s3 --archive_details libdriver.a app_esp32s3.map &>> output \
     && echo -e "\n***\nProducing JSON output..." &>> output \
     && coverage run -a $IDF_PATH/tools/idf_size.py --json app.map &>> output \
     && coverage run -a $IDF_PATH/tools/idf_size.py --json --archives app.map &>> output \
