@@ -59,7 +59,7 @@ You have a choice to either download and install the following software manually
 **or** get through the onboarding process using the following official plugins for integrated development environments (IDE) described in separate documents
 
     * `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin>`_ (`installation link <https://github.com/espressif/idf-eclipse-plugin#installing-idf-plugin-using-update-site-url>`_)
-    * `VS Code Extension <https://github.com/espressif/vscode-esp-idf-extension>`_ (`onboarding <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/ONBOARDING.md>`_)
+    * `VS Code Extension <https://github.com/espressif/vscode-esp-idf-extension>`_ (`setup <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_)
 
 .. figure:: ../../_static/what-you-need.png
     :align: center
