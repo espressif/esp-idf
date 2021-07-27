@@ -20,13 +20,14 @@
 */
 const i2s_signal_conn_t i2s_periph_signal[SOC_I2S_NUM] = {
     {
+        .mck_out_sig  = I2S_MCLK_OUT_IDX,
         .rx_bck_sig   = I2SI_BCK_IN_IDX,
         .tx_bck_sig   = I2SO_BCK_OUT_IDX,
         .tx_ws_sig    = I2SO_WS_OUT_IDX,
         .rx_ws_sig    = I2SI_WS_IN_IDX,
-        .data_out_sig  = I2SO_SD_OUT_IDX,
-        .data_in_sig = I2SI_SD_IN_IDX,
-        .irq = -1,
-        .module = PERIPH_I2S1_MODULE,
+        .data_out_sig = I2SO_SD_OUT_IDX,
+        .data_in_sig  = I2SI_SD_IN_IDX,
+        .irq          = -1,
+        .module       = PERIPH_I2S1_MODULE,
     }
 };

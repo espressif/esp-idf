@@ -102,7 +102,7 @@ void i2s_hal_init(i2s_hal_context_t *hal, int i2s_num)
     i2s_ll_enable_clock(hal->dev);
 }
 
-static void i2s_hal_tx_set_pdm_mode(i2s_hal_context_t *hal, uint32_t sample_rate)
+void i2s_hal_tx_set_pdm_mode_default(i2s_hal_context_t *hal, uint32_t sample_rate)
 {
 #if SOC_I2S_SUPPORTS_PDM_TX
     /* enable pdm tx mode */
@@ -136,7 +136,7 @@ static void i2s_hal_tx_set_pdm_mode(i2s_hal_context_t *hal, uint32_t sample_rate
 #endif // SOC_I2S_SUPPORTS_PDM_TX
 }
 
-static void i2s_hal_rx_set_pdm_mode(i2s_hal_context_t *hal)
+void i2s_hal_rx_set_pdm_mode_default(i2s_hal_context_t *hal)
 {
 #if SOC_I2S_SUPPORTS_PDM_RX
     /* enable pdm rx mode */
@@ -147,7 +147,7 @@ static void i2s_hal_rx_set_pdm_mode(i2s_hal_context_t *hal)
 }
 
 
-static void i2s_hal_tx_set_common_mode(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cfg)
+void i2s_hal_tx_set_common_mode(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cfg)
 {
     /* disable pdm tx mode */
     i2s_ll_tx_enable_pdm(hal->dev, false);
@@ -158,10 +158,10 @@ static void i2s_hal_tx_set_common_mode(i2s_hal_context_t *hal, const i2s_hal_con
     i2s_ll_mclk_use_tx_clk(hal->dev);
 
     i2s_ll_tx_set_active_chan_mask(hal->dev, hal_cfg->chan_mask);
-    i2s_ll_tx_enable_left_align(hal->dev, hal_cfg->left_align_en);
-    i2s_ll_tx_enable_big_endian(hal->dev, hal_cfg->big_edin_en);
-    i2s_ll_tx_set_bit_order(hal->dev, hal_cfg->bit_order_msb_en);
-    i2s_ll_tx_set_skip_mask(hal->dev, hal_cfg->skip_msk_en);
+    i2s_ll_tx_enable_left_align(hal->dev, hal_cfg->left_align);
+    i2s_ll_tx_enable_big_endian(hal->dev, hal_cfg->big_edin);
+    i2s_ll_tx_set_bit_order(hal->dev, hal_cfg->bit_order_msb);
+    i2s_ll_tx_set_skip_mask(hal->dev, hal_cfg->skip_msk);
 #else
     i2s_ll_tx_enable_msb_right(hal->dev, false);
     i2s_ll_tx_enable_right_first(hal->dev, false);
@@ -169,7 +169,7 @@ static void i2s_hal_tx_set_common_mode(i2s_hal_context_t *hal, const i2s_hal_con
 #endif
 }
 
-static void i2s_hal_rx_set_common_mode(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cfg)
+void i2s_hal_rx_set_common_mode(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cfg)
 {
     /* disable pdm rx mode */
     i2s_ll_rx_enable_pdm(hal->dev, false);
@@ -180,9 +180,9 @@ static void i2s_hal_rx_set_common_mode(i2s_hal_context_t *hal, const i2s_hal_con
     i2s_ll_mclk_use_rx_clk(hal->dev);
 
     i2s_ll_rx_set_active_chan_mask(hal->dev, hal_cfg->chan_mask);
-    i2s_ll_rx_enable_left_align(hal->dev, hal_cfg->left_align_en);
-    i2s_ll_rx_enable_big_endian(hal->dev, hal_cfg->big_edin_en);
-    i2s_ll_rx_set_bit_order(hal->dev, hal_cfg->bit_order_msb_en);
+    i2s_ll_rx_enable_left_align(hal->dev, hal_cfg->left_align);
+    i2s_ll_rx_enable_big_endian(hal->dev, hal_cfg->big_edin);
+    i2s_ll_rx_set_bit_order(hal->dev, hal_cfg->bit_order_msb);
 #else
     i2s_ll_rx_enable_msb_right(hal->dev, false);
     i2s_ll_rx_enable_right_first(hal->dev, false);
@@ -251,29 +251,13 @@ void i2s_hal_rx_set_channel_style(i2s_hal_context_t *hal, const i2s_hal_config_t
 
 void i2s_hal_config_param(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cfg)
 {
-#if SOC_I2S_SUPPORTS_ADC_DAC
-    if ((hal_cfg->mode & I2S_MODE_DAC_BUILT_IN) || (hal_cfg->mode & I2S_MODE_ADC_BUILT_IN)) {
-        if (hal_cfg->mode & I2S_MODE_DAC_BUILT_IN) {
-            i2s_ll_enable_builtin_dac(hal->dev, true);
-        }
-        if (hal_cfg->mode & I2S_MODE_ADC_BUILT_IN) {
-            i2s_ll_enable_builtin_adc(hal->dev, true);
-        }
-        /* Use builtin ADC/DAC, return directly. */
-        return;
-    } else {
-        i2s_ll_enable_builtin_dac(hal->dev, false);
-        i2s_ll_enable_builtin_adc(hal->dev, false);
-    }
-#endif
-
     if (hal_cfg->mode & I2S_MODE_TX) {
         i2s_ll_tx_stop(hal->dev);
         i2s_ll_tx_reset(hal->dev);
         i2s_ll_tx_set_slave_mod(hal->dev, (hal_cfg->mode & I2S_MODE_SLAVE) != 0); //TX Slave
         if (hal_cfg->mode & I2S_MODE_PDM) {
             /* Set tx pdm mode */
-            i2s_hal_tx_set_pdm_mode(hal, hal_cfg->sample_rate);
+            i2s_hal_tx_set_pdm_mode_default(hal, hal_cfg->sample_rate);
         } else {
             /* Set tx common mode */
             i2s_hal_tx_set_common_mode(hal, hal_cfg);
@@ -286,7 +270,7 @@ void i2s_hal_config_param(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cf
         i2s_ll_rx_set_slave_mod(hal->dev, (hal_cfg->mode & I2S_MODE_SLAVE) != 0); //RX Slave
         if (hal_cfg->mode & I2S_MODE_PDM) {
             /* Set rx pdm mode */
-            i2s_hal_rx_set_pdm_mode(hal);
+            i2s_hal_rx_set_pdm_mode_default(hal);
         } else {
             /* Set rx common mode */
             i2s_hal_rx_set_common_mode(hal, hal_cfg);

@@ -14,6 +14,7 @@
 #include "soc/rtc_periph.h"
 #include "soc/soc_caps.h"
 #include "hal/i2s_types.h"
+#include "driver/periph_ctrl.h"
 #include "esp_intr_alloc.h"
 
 #if SOC_I2S_SUPPORTS_ADC_DAC
@@ -37,27 +38,52 @@ typedef enum {
     I2S_NUM_MAX,                   /*!< I2S port max */
 } i2s_port_t;
 
-/**
- * @brief I2S pin number for i2s_set_pin
- *
- */
-typedef struct {
-    int bck_io_num;     /*!< BCK in out pin*/
-    int ws_io_num;      /*!< WS in out pin*/
-    int data_out_num;   /*!< DATA out pin*/
-    int data_in_num;    /*!< DATA in pin*/
-} i2s_pin_config_t;
-
 #if SOC_I2S_SUPPORTS_PCM
 /**
  * @brief I2S PCM configuration
  *
  */
 typedef struct {
-    i2s_mode_t          mode;           /*!< I2S mode. Usually only need to choose I2S_MODE_TX or I2S_MODE_RX */
     i2s_pcm_compress_t  pcm_type;       /*!< I2S PCM a/u-law decompress or compress type */
 } i2s_pcm_cfg_t;
 #endif
+
+#if SOC_I2S_SUPPORTS_PDM_TX
+/**
+ * @brief Default I2S PDM Up-Sampling Rate configuration
+ */
+#define I2S_PDM_DEFAULT_UPSAMPLE_CONFIG(rate) { \
+        .sample_rate = rate,                    \
+        .fp = 960,                              \
+        .fs = (rate) / 100,                     \
+    }
+
+/**
+ * @brief I2S PDM up-sample rate configuration
+ * @note  TX PDM can only be set to the following two upsampling rate configurations:
+ *        1: fp = 960, fs = sample_rate / 100, in this case, Fpdm = 128*48000
+ *        2: fp = 960, fs = 480, in this case, Fpdm = 128*Fpcm = 128*sample_rate
+ *        If the pdm receiver do not care the pdm serial clock, it's recommended set Fpdm = 128*48000.
+ *        Otherwise, the second configuration should be applied.
+ */
+typedef struct  {
+    int sample_rate;                    /*!< I2S PDM sample rate */
+    int fp;                             /*!< I2S PDM TX upsampling paramater. Normally it should be set to 960 */
+    int fs;                             /*!< I2S PDM TX upsampling paramater. When it is set to 480, the pdm clock frequency Fpdm = 128 * sample_rate, when it is set to sample_rate / 100， Fpdm will be fixed to 128*48000 */
+} i2s_pdm_tx_upsample_cfg_t;
+#endif
+
+/**
+ * @brief I2S pin number for i2s_set_pin
+ *
+ */
+typedef struct {
+    int mck_io_num;     /*!< MCK in out pin*/
+    int bck_io_num;     /*!< BCK in out pin*/
+    int ws_io_num;      /*!< WS in out pin*/
+    int data_out_num;   /*!< DATA out pin*/
+    int data_in_num;    /*!< DATA in pin*/
+} i2s_pin_config_t;
 
 /**
  * @brief I2S driver configuration parameters
@@ -75,16 +101,17 @@ typedef struct {
     int                     dma_buf_len;                /*!< I2S DMA Buffer Length */
     bool                    use_apll;                   /*!< I2S using APLL as main I2S clock, enable it to get accurate clock */
     bool                    tx_desc_auto_clear;         /*!< I2S auto clear tx descriptor if there is underflow condition (helps in avoiding noise in case of data unavailability) */
-    int                     fixed_mclk;                 /*!< I2S using fixed MCLK output. If use_apll = true and fixed_mclk > 0, then the clock output for i2s is fixed and equal to the fixed_mclk value.*/
+    int                     fixed_mclk;                 /*!< I2S using fixed MCLK output. If use_apll = true and fixed_mclk > 0, then the clock output for i2s is fixed and equal to the fixed_mclk value. If fixed_mclk set, mclk_multiple won't take effect */
+    i2s_mclk_multiple_t     mclk_multiple;              /*!< The multiple of I2S master clock(MCLK) to sample rate */
     i2s_bits_per_chan_t     bits_per_chan;              /*!< I2S total bits in one channel， only take effect when larger than 'bits_per_sample', default '0' means equal to 'bits_per_sample' */
 
 #if SOC_I2S_SUPPORTS_TDM
     i2s_channel_t           chan_mask;                  /*!< I2S active channel bit mask, set value in `i2s_channel_t` to enable specific channel, the bit map of active channel can not exceed (0x1<<total_chan). */
     uint32_t                total_chan;                 /*!< I2S Total number of channels. If it is smaller than the biggest active channel number, it will be set to this number automatically. */
-    bool                    left_align_en;              /*!< Set to enable left alignment */
-    bool                    big_edin_en;                /*!< Set to enable big edin */
-    bool                    bit_order_msb_en;           /*!< Set to enable msb order */
-    bool                    skip_msk_en;                /*!< Set to enable skip mask. If it is enabled, only the data of the enabled channels will be sent, otherwise all data stored in DMA TX buffer will be sent */
+    bool                    left_align;                 /*!< Set to enable left alignment */
+    bool                    big_edin;                   /*!< Set to enable big edin */
+    bool                    bit_order_msb;              /*!< Set to enable msb order */
+    bool                    skip_msk;                   /*!< Set to enable skip mask. If it is enabled, only the data of the enabled channels will be sent, otherwise all data stored in DMA TX buffer will be sent */
 #endif // SOC_I2S_SUPPORTS_TDM
 
 } i2s_driver_config_t;
@@ -146,7 +173,7 @@ esp_err_t i2s_set_pin(i2s_port_t i2s_num, const i2s_pin_config_t *pin);
  *        In the second downsample process, the sampling number is fixed as 8.
  *        So the clock frequency in PDM RX mode would be (fpcm * 64) or (fpcm * 128) accordingly.
  * @param i2s_num I2S_NUM_0, I2S_NUM_1
- * @param dsr i2s RX down sample rate for PDM mode.
+ * @param downsample i2s RX down sample rate for PDM mode.
  *
  * @note After calling this function, it would call i2s_set_clk inside to update the clock frequency.
  *       Please call this function after I2S driver has been initialized.
@@ -156,31 +183,25 @@ esp_err_t i2s_set_pin(i2s_port_t i2s_num, const i2s_pin_config_t *pin);
  *     - ESP_ERR_INVALID_ARG Parameter error
  *     - ESP_ERR_NO_MEM      Out of memory
  */
-esp_err_t i2s_set_pdm_rx_down_sample(i2s_port_t i2s_num, i2s_pdm_dsr_t dsr);
+esp_err_t i2s_set_pdm_rx_down_sample(i2s_port_t i2s_num, i2s_pdm_dsr_t downsample);
 #endif
 
 #if SOC_I2S_SUPPORTS_PDM_TX
 /**
  * @brief Set TX PDM mode up-sample rate
- *        TX PDM can only be set to the following two upsampling rate configurations:
- *        1: fp = 960, fs = sample_rate / 100, in this case, Fpdm = 128*48000
- *        2: fp = 960, fs = 480, in this case, Fpdm = 128*Fpcm = 128*sample_rate
- *        If the pdm receiver do not care the pdm serial clock, it's recommended set Fpdm = 128*48000
+ * @note  If you have set PDM mode while calling 'i2s_driver_install',
+ *        default PDM TX upsample parameters have already been set,
+ *        no need to call this function again if you don't have to change the default configuration
  *
- * @param i2s_num I2S_NUM_0
- * @param sample_rate The sample rate to be set
- * @param fp PDM TX upsampling configuration paramater
- * @param fs PDM TX upsampling configuration paramater
- *
- * @note After calling this function, it would call i2s_set_clk inside to update the clock frequency.
- *       Please call this function after I2S driver has been initialized.
+ * @param i2s_num I2S_NUM_0, I2S_NUM_1
+ * @param upsample_cfg Set I2S PDM up-sample rate configuration
  *
  * @return
  *     - ESP_OK              Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  *     - ESP_ERR_NO_MEM      Out of memory
  */
-esp_err_t i2s_set_pdm_tx_up_sample(i2s_port_t i2s_num, int sample_rate, int fp, int fs);
+esp_err_t i2s_set_pdm_tx_up_sample(i2s_port_t i2s_num, const i2s_pdm_tx_upsample_cfg_t *upsample_cfg);
 #endif
 
 /**
@@ -356,6 +377,7 @@ esp_err_t i2s_zero_dma_buffer(i2s_port_t i2s_num);
  * @brief Configure I2S a/u-law decompress or compress
  *
  * @note  This function should be called after i2s driver installed
+ *        Only take effecttive when the i2s 'communication_format' is set to 'I2S_COMM_FORMAT_STAND_PCM_SHORT' or 'I2S_COMM_FORMAT_STAND_PCM_LONG'
  *
  * @param i2s_num  I2S_NUM_0
  *
@@ -385,8 +407,9 @@ esp_err_t i2s_pcm_config(i2s_port_t i2s_num, const i2s_pcm_cfg_t *pcm_cfg);
  * @param bits_cfg I2S bits configuration
  *             the low 16 bits is for data bits per sample in one channel (see 'i2s_bits_per_sample_t')
  *             the high 16 bits is for total bits in one channel (see 'i2s_bits_per_chan_t')
+ *             high 16bits =0 means same as the bits per sample.
  *
- * @param ch I2S channel, (I2S_CHANNEL_MONO, I2S_CHANNEL_STEREO)
+ * @param ch I2S channel, (I2S_CHANNEL_MONO, I2S_CHANNEL_STEREO or specific channel in TDM mode)
  *
  * @return
  *     - ESP_OK              Success

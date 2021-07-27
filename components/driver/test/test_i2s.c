@@ -463,7 +463,9 @@ TEST_CASE("I2S APLL clock variation test", "[i2s]")
         .communication_format = I2S_COMM_FORMAT_STAND_I2S,
         .dma_buf_count = 6,
         .dma_buf_len = 60,
+#if SOC_I2S_SUPPORTS_APLL
         .use_apll = true,
+#endif
         .intr_alloc_flags = 0,
     };
 

@@ -52,16 +52,12 @@ typedef enum {
  *
  */
 typedef enum {
-    // I2S_CHANNEL_MONO and I2S_CHANNEL_STEREO values are changed to be compatible with TDM mode
-    // The lower 16 bits is for enabling specific channels
-    // The highest bit in I2S_CHANNEL_MONO is for differentiating I2S_CHANNEL_MONO and I2S_CHANNEL_STEREO because they both use two channels
-    // Two channels will transmit same data in I2S_CHANNEL_MONO mode, and different data in I2S_CHANNEL_STEREO mode
-    I2S_CHANNEL_MONO        = (0x01 << 31) | 0x03,  /*!< I2S channel (mono), two channel enabled */
-    I2S_CHANNEL_STEREO      = 0x03,                 /*!< I2S channel (stereo), two channel enabled */
+    I2S_CHANNEL_MONO        = (0x01 << 31) | 0x03,  /*!< I2S channel (mono), two channel enabled. In this mode, you only need to send one channel data but the fifo will copy same data for another channel automatically, then both channels will transmit same data. The highest bit is for differentiating I2S_CHANNEL_STEREO since they both use two channels */
+    I2S_CHANNEL_STEREO      = 0x03,                 /*!< I2S channel (stereo), two channel enabled. In this mode, two channels will transmit different data. */
 #if SOC_I2S_SUPPORTS_TDM
     // Bit map of active chan.
     // There are 16 channels in TDM mode.
-    // For TX module, only the active channel send the audio data, the inactive channel send a constant(configurable) or will be skiped if 'skip_msk_en' in 'i2s_hal_tdm_flags_t' is set.
+    // For TX module, only the active channel send the audio data, the inactive channel send a constant(configurable) or will be skiped if 'skip_msk' is set.
     // For RX module, only receive the audio data in active channels, the data in inactive channels will be ignored.
     // the bit map of active channel can not exceed (0x1<<total_chan_num).
     // e.g: active_chan_mask = (I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH3), here the active_chan_number is 2 and total_chan_num is not supposed to be smaller than 4.
@@ -141,8 +137,20 @@ typedef enum {
  */
 typedef enum {
     I2S_CLK_D2CLK = 0,               /*!< Clock from PLL_D2_CLK(160M)*/
+#if SOC_I2S_SUPPORTS_APLL
     I2S_CLK_APLL,                    /*!< Clock from APLL*/
+#endif
 } i2s_clock_src_t;
+
+/**
+ * @brief The multiple of mclk to sample rate
+ */
+typedef enum {
+    I2S_MCLK_MULTIPLE_DEFAULT   = 0,       /*!< Default value. mclk = sample_rate * 256 */
+    I2S_MCLK_MULTIPLE_128       = 128,     /*!< mclk = sample_rate * 128 */
+    I2S_MCLK_MULTIPLE_256       = 256,     /*!< mclk = sample_rate * 256 */
+    I2S_MCLK_MULTIPLE_384       = 384,     /*!< mclk = sample_rate * 384 */
+} i2s_mclk_multiple_t;
 
 #if SOC_I2S_SUPPORTS_ADC_DAC
 /**
@@ -192,16 +200,6 @@ typedef enum {
     I2S_PDM_SIG_SCALING_MUL_4 = 3,   /*!< I2S TX PDM sigmadelta signal scaling: x4 */
 } i2s_pdm_sig_scale_t;
 #endif
-
-/**
- * @brief PDM PCM convter enable/disable.
- *
- */
-typedef enum {
-    PDM_PCM_CONV_ENABLE,     /*!< Enable PDM PCM convert*/
-    PDM_PCM_CONV_DISABLE,    /*!< Disable PDM PCM convert*/
-} pdm_pcm_conv_t;
-
 
 #ifdef __cplusplus
 }

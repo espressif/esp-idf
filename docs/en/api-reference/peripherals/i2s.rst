@@ -12,6 +12,7 @@ I2S (Inter-IC Sound) is a serial, synchronous communication protocol that is usu
 
 An I2S bus consists of the following lines:
 
+- Master clock line (operational)
 - Bit clock line
 - Channel select line
 - Serial data line
@@ -38,13 +39,15 @@ Each controller can operate in half-duplex communication mode. Thus, the two con
 
     For more information, see *{IDF_TARGET_NAME} Technical Reference Manual* > *I2S Controller (I2S)* > LCD Mode [`PDF <{IDF_TARGET_TRM_EN_URL}#camlcdctrl>`__].
 
-.. note::
+.. only:: SOC_I2S_SUPPORTS_APLL
 
-    For high accuracy clock applications, use the APLL_CLK clock source, which has the frequency range of 16 ~ 128 MHz. You can enable the APLL_CLK clock source by setting :cpp:member:`i2s_config_t::use_apll` to ``TRUE``.
+    .. note::
 
-    If :cpp:member:`i2s_config_t::use_apll` = ``TRUE`` and :cpp:member:`i2s_config_t::fixed_mclk` > ``0``, then the master clock output frequency for I2S will be equal to the value of :cpp:member:`i2s_config_t::fixed_mclk`, which means that the mclk frequency is provided by the user, instead of being calculated by the driver.
+        For high accuracy clock applications, use the APLL_CLK clock source, which has the frequency range of 16 ~ 128 MHz. You can enable the APLL_CLK clock source by setting :cpp:member:`i2s_config_t::use_apll` to ``TRUE``.
 
-    The clock rate of the word select line, which is called audio left-right clock rate (LRCK) here, is always the divisor of the master clock output frequency and for which the following is always true: 0 < MCLK/LRCK/channels/bits_per_sample < 64.
+        If :cpp:member:`i2s_config_t::use_apll` = ``TRUE`` and :cpp:member:`i2s_config_t::fixed_mclk` > ``0``, then the master clock output frequency for I2S will be equal to the value of :cpp:member:`i2s_config_t::fixed_mclk`, which means that the mclk frequency is provided by the user, instead of being calculated by the driver.
+
+        The clock rate of the word select line, which is called audio left-right clock rate (LRCK) here, is always the divisor of the master clock output frequency and for which the following is always true: 0 < MCLK/LRCK/channels/bits_per_sample < 64.
 
 
 Functional Overview
@@ -60,7 +63,7 @@ Install the I2S driver by calling the function :cpp:func`i2s_driver_install` and
 - The structure :cpp:type:`i2s_config_t` with defined communication parameters
 - Event queue size and handle
 
-I2S will start automatically once :cpp:func`i2s_driver_install` returns ``ESP_OK``.
+Once :cpp:func`i2s_driver_install` returns ``ESP_OK``, it means I2S has started.
 
 Configuration example:
 
@@ -111,11 +114,16 @@ Setting Communication Pins
 Once the driver is installed, configure physical GPIO pins to which signals will be routed. For this, call the function :cpp:func`i2s_set_pin` and pass the following arguments to it:
 
 - Port number
-- The structure :cpp:type:`i2s_pin_config_t` defining the GPIO pin numbers to which the driver should route the BCK, WS, DATA out, and DATA in signals. If you want to keep a currently allocated pin number for a specific signal, or if this signal is unused, then pass the macro :c:macro:`I2S_PIN_NO_CHANGE`. See the example below.
+- The structure :cpp:type:`i2s_pin_config_t` defining the GPIO pin numbers to which the driver should route the MCK, BCK, WS, DATA out, and DATA in signals. If you want to keep a currently allocated pin number for a specific signal, or if this signal is unused, then pass the macro :c:macro:`I2S_PIN_NO_CHANGE`. See the example below.
+
+.. note::
+
+    MCK only takes effect in `I2S_MODE_MASTER` mode.
 
 .. code-block:: c
 
     static const i2s_pin_config_t pin_config = {
+        .mck_io_num = 0,
         .bck_io_num = 4,
         .ws_io_num = 5,
         .data_out_num = 18,
@@ -257,7 +265,9 @@ Example for general usage.
 
         i2s_driver_uninstall(i2s_num); //stop & destroy i2s driver
 
-    I2S on {IDF_TARGET_NAME} support TDM mode, up to 16 channels are available in TDM mode. If you want to use TDM mode, set field ``channel_format`` of :cpp:type:`i2s_config_t` to ``I2S_CHANNEL_FMT_MULTIPLE``. Then enable the channels by setting ``tdm_chan_cfg.chan_mask`` using masks in :cpp:type:`i2s_channel_t`, the number of active channels and total channels will be calculate automatically. Also you can set a particular total channel number for it, but it shouldn't be smaller than the largest channel you use.
+    I2S on {IDF_TARGET_NAME} support TDM mode, up to 16 channels are available in TDM mode. If you want to use TDM mode, set field ``channel_format`` of :cpp:type:`i2s_config_t` to ``I2S_CHANNEL_FMT_MULTIPLE``. Then enable the channels by setting ``chan_mask`` using masks in :cpp:type:`i2s_channel_t`, the number of active channels and total channels will be calculate automatically. Also you can set a particular total channel number for it, but it shouldn't be smaller than the largest channel you use.
+
+    If active channels are discrete, the inactive channels within total channels will be filled by a constant automatically. But if ``skip_msk`` is enabled, these inactive channels will be skiped.
 
     .. code-block:: c
 

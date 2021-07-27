@@ -57,10 +57,10 @@ typedef struct {
 #if SOC_I2S_SUPPORTS_TDM
     uint32_t                total_chan;             /*!< Total number of I2S channels */
     uint32_t                chan_mask;              /*!< Active channel bit mask, set value in `i2s_channel_t` to enable specific channel, the bit map of active channel can not exceed (0x1<<total_chan_num). */
-    bool                    left_align_en;          /*!< Set to enable left aligment */
-    bool                    big_edin_en;            /*!< Set to enable big edin */
-    bool                    bit_order_msb_en;       /*!< Set to enable msb order */
-    bool                    skip_msk_en;            /*!< Set to enable skip mask. If it is enabled, only the data of the enabled channels will be sent, otherwise all data stored in DMA TX buffer will be sent */
+    bool                    left_align;          /*!< Set to enable left aligment */
+    bool                    big_edin;            /*!< Set to enable big edin */
+    bool                    bit_order_msb;       /*!< Set to enable msb order */
+    bool                    skip_msk;            /*!< Set to enable skip mask. If it is enabled, only the data of the enabled channels will be sent, otherwise all data stored in DMA TX buffer will be sent */
 #endif
 } i2s_hal_config_t;
 
@@ -253,6 +253,24 @@ void i2s_hal_rx_clock_config(i2s_hal_context_t *hal, uint32_t sclk, uint32_t fbc
  */
 #define i2s_hal_enable_sig_loopback(hal)    i2s_ll_enable_loop_back((hal)->dev, true)
 
+/**
+ * @brief Set I2S configuration for common TX mode
+ * @note Common mode is for non-PDM mode like philip/MSB/PCM
+ *
+ * @param hal Context of the HAL layer
+ * @param hal_cfg hal configuration structure
+ */
+void i2s_hal_tx_set_common_mode(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cfg);
+
+/**
+ * @brief Set I2S configuration for common RX mode
+ * @note Common mode is for non-PDM mode like philip/MSB/PCM
+ *
+ * @param hal Context of the HAL layer
+ * @param hal_cfg hal configuration structure
+ */
+void i2s_hal_rx_set_common_mode(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cfg);
+
 #if SOC_I2S_SUPPORTS_PDM_TX
 /**
  * @brief Configure I2S TX PDM sample rate
@@ -281,6 +299,14 @@ void i2s_hal_rx_clock_config(i2s_hal_context_t *hal, uint32_t sclk, uint32_t fbc
  *        - fs configuration paramater
  */
 #define i2s_hal_get_tx_pdm_fs(hal)      i2s_ll_tx_get_pdm_fs((hal)->dev)
+
+/**
+ * @brief Set I2S default configuration for PDM TX mode
+ *
+ * @param hal Context of the HAL layer
+ * @param sample_rate PDM sample rate
+ */
+void i2s_hal_tx_set_pdm_mode_default(i2s_hal_context_t *hal, uint32_t sample_rate);
 #endif
 
 #if SOC_I2S_SUPPORTS_PDM_RX
@@ -300,6 +326,13 @@ void i2s_hal_rx_clock_config(i2s_hal_context_t *hal, uint32_t sclk, uint32_t fbc
  * @param dsr Pointer to accept PDM downsample configuration
  */
 #define i2s_hal_get_rx_pdm_dsr(hal, dsr)        i2s_ll_rx_get_pdm_dsr((hal)->dev, dsr)
+
+/**
+ * @brief Set I2S default configuration for PDM R mode
+ *
+ * @param hal Context of the HAL layer
+ */
+void i2s_hal_rx_set_pdm_mode_default(i2s_hal_context_t *hal);
 #endif
 
 #if !SOC_GDMA_SUPPORTED
@@ -435,6 +468,36 @@ void i2s_hal_rx_clock_config(i2s_hal_context_t *hal, uint32_t sclk, uint32_t fbc
  * @param addr Pointer to accept in suc eof des address
  */
 #define i2s_hal_get_in_eof_des_addr(hal, addr) i2s_ll_rx_get_eof_des_addr((hal)->dev, addr)
+#endif
+
+#if SOC_I2S_SUPPORTS_ADC_DAC
+/**
+ * @brief Enable Builtin DAC
+ *
+ * @param hal Context of the HAL layer
+ */
+#define i2s_hal_enable_builtin_dac(hal)      i2s_ll_enable_builtin_dac((hal)->dev, true);
+
+/**
+ * @brief Enable Builtin ADC
+ *
+ * @param hal Context of the HAL layer
+ */
+#define i2s_hal_enable_builtin_adc(hal)      i2s_ll_enable_builtin_adc((hal)->dev, true);
+
+/**
+ * @brief Disable Builtin DAC
+ *
+ * @param hal Context of the HAL layer
+ */
+#define i2s_hal_disable_builtin_dac(hal)     i2s_ll_enable_builtin_dac((hal)->dev, false);
+
+/**
+ * @brief Disable Builtin ADC
+ *
+ * @param hal Context of the HAL layer
+ */
+#define i2s_hal_disable_builtin_adc(hal)     i2s_ll_enable_builtin_adc((hal)->dev, false);
 #endif
 
 #ifdef __cplusplus

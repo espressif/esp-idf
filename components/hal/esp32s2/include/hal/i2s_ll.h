@@ -200,7 +200,7 @@ static inline void i2s_ll_rx_reset_fifo(i2s_dev_t *hw)
  */
 static inline void i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 {
-    hw->clkm_conf.clk_sel = (src == 1) ? 1 : 2;
+    hw->clkm_conf.clk_sel = (src == I2S_CLK_APLL) ? 1 : 2;
 }
 
 /**
@@ -211,7 +211,7 @@ static inline void i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
  */
 static inline void i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 {
-    hw->clkm_conf.clk_sel = (src == 1) ? 1 : 2;
+    hw->clkm_conf.clk_sel = (src == I2S_CLK_APLL) ? 1 : 2;
 }
 
 /**

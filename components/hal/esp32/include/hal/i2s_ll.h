@@ -202,7 +202,7 @@ static inline void i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 {
     //0: disable APLL clock, I2S module will using PLL_D2_CLK(160M) as source clock
     //1: Enable APLL clock, I2S module will using APLL as source clock
-    hw->clkm_conf.clka_en = (src == 1) ? 1 : 0;
+    hw->clkm_conf.clka_en = (src == I2S_CLK_APLL) ? 1 : 0;
 }
 
 /**
@@ -215,7 +215,7 @@ static inline void i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 {
     //0: disable APLL clock, I2S module will using PLL_D2_CLK(160M) as source clock
     //1: Enable APLL clock, I2S module will using APLL as source clock
-    hw->clkm_conf.clka_en = (src == 1) ? 1 : 0;
+    hw->clkm_conf.clka_en = (src == I2S_CLK_APLL) ? 1 : 0;
 }
 
 /**

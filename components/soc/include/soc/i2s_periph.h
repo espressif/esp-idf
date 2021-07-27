@@ -27,6 +27,7 @@ extern "C" {
  Stores a bunch of per-I2S-peripheral data.
 */
 typedef struct {
+    const uint8_t mck_out_sig;
     const uint8_t tx_bck_sig;
     const uint8_t rx_bck_sig;
     const uint8_t tx_ws_sig;
