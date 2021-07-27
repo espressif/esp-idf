@@ -449,9 +449,9 @@ static void smtp_client_task(void *pvParameters)
 
     /* Attachment */
     len = snprintf((char *) buf, BUF_SIZE,
-                   "Content-Type: image/image/png;name=esp_logo.png\n"
+                   "Content-Type: image/png;name=esp_logo.png\n"
                    "Content-Transfer-Encoding: base64\n"
-                   "Content-Disposition:attachment;filename=\"esp_logo.png\"\n");
+                   "Content-Disposition:attachment;filename=\"esp_logo.png\"\r\n\n");
     ret = write_ssl_data(&ssl, (unsigned char *) buf, len);
 
     /* Image contents... */
