@@ -987,7 +987,7 @@ def get_python_env_path():  # type: () -> Tuple[str, str, str]
             # OSError should cover FileNotFoundError and WindowsError
             warn('Git was not found')
         except subprocess.CalledProcessError as e:
-            warn('Git describe was unsuccessul: {}'.format(e.output))
+            warn('Git describe was unsuccessful: {}'.format(e.output))
     match = re.match(r'^v([0-9]+\.[0-9]+).*', idf_version_str)
     if match:
         idf_version = match.group(1)  # type: Optional[str]
