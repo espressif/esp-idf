@@ -20,10 +20,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from __future__ import print_function
-from __future__ import unicode_literals
-from __future__ import division
-from future.utils import iteritems
+from __future__ import division, print_function, unicode_literals
+
 import argparse
 import collections
 import json
@@ -31,8 +29,6 @@ import os.path
 import re
 import sys
 
-<<<<<<< HEAD
-=======
 from future.utils import iteritems
 
 try:
@@ -48,7 +44,6 @@ except NameError:
     basestring = str
 
 
->>>>>>> idf_size.py: fixed diram counted twice issue, and improve display
 GLOBAL_JSON_INDENT = 4
 GLOBAL_JSON_SEPARATORS = (',', ': ')
 
@@ -98,37 +93,6 @@ class MemRegions(object):
                 MemRegDef(0x40070000, 0x2000, MemRegions.RTC_FAST_D_ID, 0x3FF9E000),
                 MemRegDef(0x50000000, 0x2000, MemRegions.RTC_SLOW_D_ID, 0),
             ])
-<<<<<<< HEAD
-=======
-        elif target == 'esp32s3':
-            return sorted([
-                # IRAM, usually used by Icache.
-                #
-                # The segment from the ld file lies across the boundary of the line below: it is
-                # partly IRAM and partly D/IRAM. Here's a workaround for this kind of segment: we
-                # only list the DIRAM part. If a segment from the ld file falls in any part of a
-                # DIRAM def region, we treat the whole segment D/IRAM.
-                #
-                # Uncomment the following line if sections of the same segment can be
-                # distinguished, or the ld file can give separated segment for the region.
-                #
-                MemRegDef(0x40370000, 0x8000, MemRegions.IRAM_ID, 0),
-                MemRegDef(0x3FC88000, 0x8000 + 6 * 0x10000, MemRegions.DRAM_ID, 0x40378000),
-                MemRegDef(0x3FCF0000, 0x10000, MemRegions.DRAM_ID, 0),
-                MemRegDef(0x42000000, 0x2000000, MemRegions.CACHE_I_ID, 0),
-                MemRegDef(0x3C000000, 0x2000000, MemRegions.CACHE_D_ID, 0),
-                MemRegDef(0x3ff80000, 0x2000, MemRegions.RTC_FAST_D_ID, 0x600FE000),
-                MemRegDef(0x50000000, 0x2000, MemRegions.RTC_SLOW_D_ID, 0),
-            ])
-        elif target == 'esp32c3':
-            return sorted([
-                MemRegDef(0x3FC80000, 0x60000, MemRegions.DRAM_ID, 0x40380000),
-                MemRegDef(0x4037C000, 0x4000, MemRegions.IRAM_ID, 0),
-                MemRegDef(0x42000000, 0x800000, MemRegions.CACHE_I_ID, 0),
-                MemRegDef(0x3C000000, 0x800000, MemRegions.CACHE_D_ID, 0),
-                MemRegDef(0x50000000, 0x2000, MemRegions.RTC_SLOW_D_ID, 0),
-            ])
->>>>>>> idf_size.py: fixed diram counted twice issue, and improve display
         else:
             raise RuntimeError('Target not detected.')
 
@@ -231,12 +195,13 @@ class LinkingSections(object):
 
         score_list = [get_name_score(section) for section in section_name_list]
         ordered_name_list = sorted(section_name_list, key=lambda x: score_list[section_name_list.index(x)], reverse=True)
-        display_name_list = ordered_name_list.copy()
+        display_name_list = ordered_name_list[:]
 
         memory_name = ''
-        for i in range(len(section_name_list)):
-            section = ordered_name_list[i]
-
+        display_name_list = sorted(display_name_list)
+        ordered_name_list = sorted(ordered_name_list)
+        ordered_name_list = check_is_dict_sort(ordered_name_list)
+        for i, section in enumerate(ordered_name_list):
             if memory_name and section.startswith(memory_name):
                 # If the section has same memory type with the previous one, use shorter name
                 display_name_list[i] = section.replace(memory_name, '& ')
@@ -247,9 +212,12 @@ class LinkingSections(object):
             if len(split_name) > 1:
                 # If the section has a memory type, update the type and try to display the type properly
                 assert len(split_name) == 3 and split_name[0] == '', 'Unexpected section name'
-                memory_name = '.' + split_name[1]
+                memory_name = '.iram' if 'iram' in split_name[1] else\
+                              '.dram' if 'dram' in split_name[1] else\
+                              '.flash' if 'flash' in split_name[1] else\
+                              '.' + split_name[1]
                 display_name_list[i] = 'DRAM .' + split_name[2] if 'dram' in split_name[1] else\
-                                       'IRAM .' + split_name[2] if 'iram' in split_name[1] else\
+                                       'IRAM' + split_name[1].replace('iram', '') + ' .' + split_name[2] if 'iram' in split_name[1] else\
                                        'Flash .' + split_name[2] if 'flash' in split_name[1] else\
                                        section
                 continue
@@ -285,13 +253,6 @@ def load_map_data(map_file):  # type: (TextIO) -> Tuple[str, Dict, Dict]
     if dummy_keys:
         sections.pop(*dummy_keys)
 
-<<<<<<< HEAD
-def load_memory_config(map_file):
-    """ Memory Configuration section is the total size of each output section """
-    result = {}
-    scan_to_header(map_file, "Memory Configuration")
-    RE_MEMORY_SECTION = re.compile(r"(?P<name>[^ ]+) +0x(?P<origin>[\da-f]+) +0x(?P<length>[\da-f]+)")
-=======
     return detected_chip, segments, sections
 
 
@@ -300,7 +261,6 @@ def load_segments(map_file):  # type: (TextIO) -> Dict
     result = {}  # type: Dict[Any, Dict]
     scan_to_header(map_file, 'Memory Configuration')
     RE_MEMORY_SECTION = re.compile(r'(?P<name>[^ ]+) +0x(?P<origin>[\da-f]+) +0x(?P<length>[\da-f]+)')
->>>>>>> idf_size.py: fixed diram counted twice issue, and improve display
 
     for line in map_file:
         m = RE_MEMORY_SECTION.match(line)
@@ -309,20 +269,6 @@ def load_segments(map_file):  # type: (TextIO) -> Dict
                 continue  # whitespace or a header, before the content we want
             else:
                 return result  # we're at the end of the Memory Configuration
-<<<<<<< HEAD
-        section = {
-            "name": m.group("name"),
-            "origin": int(m.group("origin"), 16),
-            "length": int(m.group("length"), 16),
-        }
-        if section["name"] != "*default*":
-            result[section["name"]] = section
-    raise RuntimeError("End of file while scanning memory configuration?")
-
-
-def detect_target_chip(map_file):
-    ''' Detect target chip based on the xtensa toolchain name in in the linker script part of the MAP file '''
-=======
         segment = {
             'name': m.group('name'),
             'origin': int(m.group('origin'), 16),
@@ -335,28 +281,30 @@ def detect_target_chip(map_file):
 
 def detect_target_chip(map_file):  # type: (Iterable) -> str
     ''' Detect target chip based on the target archive name in the linker script part of the MAP file '''
->>>>>>> idf_size.py: fixed diram counted twice issue, and improve display
     scan_to_header(map_file, 'Linker script and memory map')
 
-    RE_TARGET = re.compile(r'^LOAD .*?/xtensa-([^-]+)-elf/')
+    RE_TARGET = re.compile(r'project_elf_src_(.*)\.c.obj')
+    # For back-compatible with make
+    RE_TARGET_MAKE = re.compile(r'^LOAD .*?/xtensa-([^-]+)-elf/')
 
     for line in map_file:
         m = RE_TARGET.search(line)
         if m:
             return m.group(1)
+
+        m = RE_TARGET_MAKE.search(line)
+        if m:
+            return m.group(1)
+
         line = line.strip()
         # There could be empty line(s) between the "Linker script and memory map" header and "LOAD lines". Therefore,
         # line stripping and length is checked as well. The "LOAD lines" are between START GROUP and END GROUP for
         # older MAP files.
-        if not line.startswith(('LOAD', 'START GROUP')) and len(line) > 0:
+        if not line.startswith(('LOAD', 'START GROUP', 'END GROUP')) and len(line) > 0:
             # This break is a failsafe to not process anything load_sections() might want to analyze.
             break
-<<<<<<< HEAD
-    return None
-=======
 
     raise RuntimeError('Target not detected')
->>>>>>> idf_size.py: fixed diram counted twice issue, and improve display
 
 
 def load_sections(map_file):  # type: (TextIO) -> Dict
@@ -374,31 +322,17 @@ def load_sections(map_file):  # type: (TextIO) -> Dict
           line, the <file> must exist, or the <sym_name> should be is no *fill*. This rule is used to tell sections from
           source lines.
     """
-<<<<<<< HEAD
-    # output section header, ie '.iram0.text     0x0000000040080400    0x129a5'
-    RE_SECTION_HEADER = re.compile(r"(?P<name>[^ ]+) +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+)$")
-=======
 
     # Check for lines which only contain the sym name (and rest is on following lines)
     RE_SYMBOL_ONLY_LINE = re.compile(r'^\s*(?P<sym_name>\S*)$')
 
     # Fast check to see if line is a potential source line before running the slower full regex against it
     RE_PRE_FILTER = re.compile(r'.*0x[\da-f]+\s*0x[\da-f]+.*')
->>>>>>> idf_size.py: fixed diram counted twice issue, and improve display
 
     # source file line, ie
     # 0x0000000040080400       0xa4 /home/gus/esp/32/idf/examples/get-started/hello_world/build/esp32/libesp32.a(cpu_start.o)
     # cmake build system links some object files directly, not part of any archive, so make that part optional
     #  .xtensa.info   0x0000000000000000       0x38 CMakeFiles/hello-world.elf.dir/project_elf_src.c.obj
-<<<<<<< HEAD
-    RE_SOURCE_LINE = re.compile(r"\s*(?P<sym_name>\S*) +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+) (?P<archive>.+\.a)?\(?(?P<object_file>.+\.(o|obj))\)?")
-
-    # Fast check to see if line is a potential source line before running the slower full regex against it
-    RE_PRE_FILTER = re.compile(r".*\.(o|obj)\)?")
-
-    # Check for lines which only contain the sym name (and rest is on following lines)
-    RE_SYMBOL_ONLY_LINE = re.compile(r"^ (?P<sym_name>\S*)$")
-=======
     #  *fill*         0x00000000400e2967        0x1
     RE_FULL_LINE = re.compile(r'\s*(?P<sym_name>\S*) +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+)\s*(?P<file>.*)$')
 
@@ -407,18 +341,12 @@ def load_sections(map_file):  # type: (TextIO) -> Dict
 
     def dump_src_line(src):  # type: (Dict) -> str
         return '%s(%s) addr: 0x%08x, size: 0x%x+%d' % (src['sym_name'], src['file'], src['address'], src['size'], src['fill'])
->>>>>>> idf_size.py: fixed diram counted twice issue, and improve display
 
     sections = {}  # type: Dict[Any, Dict]
     section = {}  # type: Dict[str, Any]
     sym_backup = ''
     for line in map_file:
-<<<<<<< HEAD
-
-        if line.strip() == "Cross Reference Table":
-=======
         if line.strip() == 'Cross Reference Table':
->>>>>>> idf_size.py: fixed diram counted twice issue, and improve display
             # stop processing lines because we are at the next section in the map file
             break
 
@@ -445,21 +373,6 @@ def load_sections(map_file):  # type: (TextIO) -> Dict
             # section
 
             section = {
-<<<<<<< HEAD
-                "name": m.group("name"),
-                "address": int(m.group("address"), 16),
-                "size": int(m.group("size"), 16),
-                "sources": [],
-            }
-            sections[section["name"]] = section
-            continue
-
-        if section is not None:
-            m = RE_SYMBOL_ONLY_LINE.match(line)
-            if m is not None:
-                # In some cases the section name appears on the previous line, back it up in here
-                sym_backup = m.group("sym_name")
-=======
                 'name': name,
                 'address': int(m.group('address'), 16),
                 'size': int(m.group('size'), 16),
@@ -470,7 +383,6 @@ def load_sections(map_file):  # type: (TextIO) -> Dict
         else:
             # symbol
             if not section:
->>>>>>> idf_size.py: fixed diram counted twice issue, and improve display
                 continue
 
             # There are some source lines in rodata section doesn't actually take any space, but have size
@@ -494,25 +406,6 @@ def load_sections(map_file):  # type: (TextIO) -> Dict
                         break
                 continue
 
-<<<<<<< HEAD
-            m = RE_SOURCE_LINE.match(line)
-            if m is not None:  # input source file details=ma,e
-                sym_name = m.group("sym_name") if len(m.group("sym_name")) > 0 else sym_backup
-                archive = m.group("archive")
-                if archive is None:
-                    # optional named group "archive" was not matched, so assign a value to it
-                    archive = "(exe)"
-
-                source = {
-                    "size": int(m.group("size"), 16),
-                    "address": int(m.group("address"), 16),
-                    "archive": os.path.basename(archive),
-                    "object_file": os.path.basename(m.group("object_file")),
-                    "sym_name": sym_name,
-                }
-                source["file"] = "%s:%s" % (source["archive"], source["object_file"])
-                section["sources"] += [source]
-=======
             # Extract archive and file information
             n = RE_FILE.match(m.group('file'))
             assert n
@@ -551,7 +444,6 @@ def load_sections(map_file):  # type: (TextIO) -> Dict
                 print('    ' + dump_src_line(src))
 
             src_curr = src
->>>>>>> idf_size.py: fixed diram counted twice issue, and improve display
 
     return sections
 
@@ -561,31 +453,14 @@ def check_target(target, map_file):  # type: (str, TextIO) -> None
         raise RuntimeError('The target chip cannot be detected for {}. '
                            'Please report the issue.'.format(map_file.name))
 
-<<<<<<< HEAD
-    @staticmethod
-    def get(mem_regions, memory_config, sections):
-        mreg = MemRegNames()
-        mreg.iram_names = mem_regions.get_names(memory_config, MemRegions.IRAM_ID)
-        mreg.dram_names = mem_regions.get_names(memory_config, MemRegions.DRAM_ID)
-        mreg.diram_names = mem_regions.get_names(memory_config, MemRegions.DIRAM_ID)
-        mreg.used_iram_names = mem_regions.get_names(sections, MemRegions.IRAM_ID)
-        mreg.used_dram_names = mem_regions.get_names(sections, MemRegions.DRAM_ID)
-        mreg.used_diram_names = mem_regions.get_names(sections, MemRegions.DIRAM_ID)
-        return mreg
-
-
-def main():
-    parser = argparse.ArgumentParser(description="idf_size - a tool to print size information from an IDF MAP file")
-=======
 
 def main():  # type: () -> None
     parser = argparse.ArgumentParser(description='idf_size - a tool to print size information from an IDF MAP file')
->>>>>>> idf_size.py: fixed diram counted twice issue, and improve display
 
     parser.add_argument(
         '--json',
-        help="Output results as JSON",
-        action="store_true")
+        help='Output results as JSON',
+        action='store_true')
 
     parser.add_argument(
         'map_file', help='MAP file produced by linker',
@@ -614,7 +489,7 @@ def main():  # type: () -> None
         '--output-file',
         type=argparse.FileType('w'),
         default=sys.stdout,
-        help="Print output to the specified file instead of stdout")
+        help='Print output to the specified file instead of stdout')
 
     args = parser.parse_args()
 
@@ -647,15 +522,9 @@ def main():  # type: () -> None
                               args.another_map_file, segments_diff, sections_diff, detected_target_diff)
 
     if args.archives:
-<<<<<<< HEAD
-        output += get_detailed_sizes(mem_reg, sections, "archive", "Archive File", args.json, sections_diff)
-    if args.files:
-        output += get_detailed_sizes(mem_reg, sections, "file", "Object File", args.json, sections_diff)
-=======
         output += get_detailed_sizes(sections, 'archive', 'Archive File', args.json, sections_diff)
     if args.files:
         output += get_detailed_sizes(sections, 'file', 'Object File', args.json, sections_diff)
->>>>>>> idf_size.py: fixed diram counted twice issue, and improve display
 
     if args.archive_details:
         output += get_archive_symbols(sections, args.archive_details, args.json, sections_diff)
@@ -712,9 +581,10 @@ class StructureForSummary(object):
 
         dram_filter = filter(in_dram, segments)
         r.dram_total = get_size(dram_filter)
-
         iram_filter = filter(in_iram, segments)
         r.iram_total = get_size(iram_filter)
+        if r.diram_total == 0:
+            r.diram_total = r.dram_total + r.iram_total
 
         def filter_in_section(sections, section_to_check):  # type: (Iterable[MemRegions.Region], str) -> List[MemRegions.Region]
             return list(filter(lambda x: LinkingSections.in_section(x.section, section_to_check), sections))  # type: ignore
@@ -722,6 +592,8 @@ class StructureForSummary(object):
         dram_sections = list(filter(in_dram, sections))
         iram_sections = list(filter(in_iram, sections))
         diram_sections = list(filter(in_diram, sections))
+        if not diram_sections:
+            diram_sections = dram_sections + iram_sections
         flash_sections = filter_in_section(sections, 'flash')
 
         dram_data_list = filter_in_section(dram_sections, 'data')
@@ -786,7 +658,6 @@ class StructureForSummary(object):
 
         # The used DRAM BSS is counted into the "Used static DRAM" but not into the "Total image size"
         r.total_size = r.used_dram - r.used_dram_bss + r.used_iram + r.used_diram - r.used_diram_bss + r.used_flash
-
         return r
 
     def get_json_dic(self):  # type: (StructureForSummary) -> collections.OrderedDict
@@ -974,6 +845,23 @@ def get_summary(path, segments, sections, target,
     return output
 
 
+def check_is_dict_sort(non_sort_list):  # type: (List) -> List
+    # keeping the order data, bss, other, iram, diram, ram_st_total, flash_text, flash_rodata, flash_total
+    start_of_other = 0
+    props_sort = []  # type: List
+    props_elem = ['.data', '.bss', 'other', 'iram', 'diram', 'ram_st_total', 'flash.text', 'flash.rodata', 'flash', 'flash_total']
+    for i in props_elem:
+        for j in non_sort_list:
+            if i == 'other':
+                start_of_other = len(props_sort)
+            elif i in (j[0] if len(j[0]) > 1 else j) and (j[0] if len(j[0]) > 1 else j) not in props_sort:
+                props_sort.append(j)
+    for j in non_sort_list:
+        if j not in props_sort:
+            props_sort.insert(start_of_other, j)
+    return props_sort
+
+
 class StructureForDetailedSizes(object):
 
     @staticmethod
@@ -985,21 +873,15 @@ class StructureForDetailedSizes(object):
         """
         result = {}  # type: Dict[str, Dict[str, int]]
         for _, section in iteritems(sections):
-            for s in section["sources"]:
+            for s in section['sources']:
                 if not s[key] in result:
                     result[s[key]] = {}
                 archive = result[s[key]]
-<<<<<<< HEAD
-                if not section["name"] in archive:
-                    archive[section["name"]] = 0
-                archive[section["name"]] += s["size"]
-=======
                 if not section['name'] in archive:
                     archive[section['name']] = 0
                 archive[section['name']] += s['size']
                 if include_padding:
                     archive[section['name']] += s['fill']
->>>>>>> idf_size.py: fixed diram counted twice issue, and improve display
         return result
 
     @staticmethod
@@ -1018,8 +900,10 @@ class StructureForDetailedSizes(object):
             section_dict['ram_st_total'] = ram_st_total
             section_dict['flash_total'] = flash_total
 
-            # TODO: keep the order data, bss, other, iram, diram, ram_st_total, flash_text, flash_rodata, flash_total
-            s.append((key, collections.OrderedDict(section_dict)))
+            sorted_dict = sorted(section_dict.items(), key=lambda elem: elem[0])
+            sorted_dict = check_is_dict_sort(sorted_dict)
+
+            s.append((key, collections.OrderedDict(sorted_dict)))
 
         s = sorted(s, key=lambda elem: elem[0])
         # do a secondary sort in order to have consistent order (for diff-ing the output)
