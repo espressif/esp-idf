@@ -615,6 +615,13 @@ void test_erase_large_region(const esp_partition_t *part)
     TEST_ASSERT_EQUAL(ESP_OK, esp_flash_read(chip, &readback, part->address, 4));
     TEST_ASSERT_EQUAL_HEX32(0, readback & (~written_data));
 
+    /* Erase zero bytes, check that nothing got erased */
+    TEST_ASSERT_EQUAL(ESP_OK, esp_flash_erase_region(chip, part->address, 0));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_flash_read(chip, &readback, part->address + part->size - 5, 4));
+    TEST_ASSERT_EQUAL_HEX32(0, readback & (~written_data));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_flash_read(chip, &readback, part->address, 4));
+    TEST_ASSERT_EQUAL_HEX32(0, readback & (~written_data));
+
     /* Erase whole region */
     TEST_ASSERT_EQUAL(ESP_OK, esp_flash_erase_region(chip, part->address, part->size));
 
