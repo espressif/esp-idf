@@ -846,13 +846,22 @@ menu "LWIP"
                 First argument of sntp_setserver/sntp_setservername functions
                 is limited to this value.
 
+        config LWIP_DHCP_GET_NTP_SRV
+            bool "Request NTP servers from DHCP"
+            default n
+            help
+                If enabled, LWIP will add 'NTP' to Parameter-Request Option sent via DHCP-request.
+                DHCP server might reply with an NTP server address in option 42.
+                SNTP callback for such replies should be set accordingly (see sntp_servermode_dhcp() func.)
+
         config LWIP_DHCP_MAX_NTP_SERVERS
             int "Maximum number of NTP servers aquired via DHCP"
             default 1
             range 1 16
+            depends on LWIP_DHCP_GET_NTP_SRV
             help
                 Set maximum number of NTP servers aquired via DHCP-offer.
-                Must be less or equal to total "Maximum number of NTP servers".
+                Should be less or equal to "Maximum number of NTP servers", any extra servers would be just ignored.
 
         config LWIP_SNTP_UPDATE_DELAY
             int "Request interval to update time (ms)"
@@ -1030,6 +1039,11 @@ menu "LWIP"
 
     config LWIP_TCP_DEBUG
         bool "Enable TCP debug messages"
+        depends on LWIP_DEBUG
+        default n
+
+    config LWIP_SNTP_DEBUG
+        bool "Enable SNTP debug messages"
         depends on LWIP_DEBUG
         default n
 
