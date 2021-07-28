@@ -32,6 +32,14 @@ menu "Example Configuration"
             select ETH_SPI_ETHERNET_W5500
             help
                 Select external SPI-Ethernet module (W5500).
+
+        config EXAMPLE_USE_KSZ8851SNL
+            bool "KSZ8851SNL Module"
+            select EXAMPLE_USE_SPI_ETHERNET
+            select ETH_USE_SPI_ETHERNET
+            select ETH_SPI_ETHERNET_KSZ8851SNL
+            help
+                Select external SPI-Ethernet module (KSZ8851SNL).
     endchoice # EXAMPLE_ETHERNET_TYPE
 
     if EXAMPLE_USE_INTERNAL_ETHERNET
@@ -53,11 +61,18 @@ menu "Example Configuration"
                     RTL8201F/SR8201F is a single port 10/100Mb Ethernet Transceiver with auto MDIX.
                     Goto http://www.corechip-sz.com/productsview.asp?id=22 for more information about it.
 
-            config EXAMPLE_ETH_PHY_LAN8720
-                bool "LAN8720"
+            config EXAMPLE_ETH_PHY_LAN87XX
+                bool "LAN87xx"
                 help
+                    Below chips are supported:
+                    LAN8710A is a small footprint MII/RMII 10/100 Ethernet Transceiver with HP Auto-MDIX and
+                        flexPWR® Technology.
                     LAN8720A is a small footprint RMII 10/100 Ethernet Transceiver with HP Auto-MDIX Support.
-                    Goto https://www.microchip.com/LAN8720A for more information about it.
+                    LAN8740A/LAN8741A is a small footprint MII/RMII 10/100 Energy Efficient Ethernet Transceiver
+                        with HP Auto-MDIX and flexPWR® Technology.
+                    LAN8742A is a small footprint RMII 10/100 Ethernet Transceiver with HP Auto-MDIX and
+                        flexPWR® Technology.
+                    Goto https://www.microchip.com for more information about them.
 
             config EXAMPLE_ETH_PHY_DP83848
                 bool "DP83848"
@@ -70,6 +85,12 @@ menu "Example Configuration"
                 help
                     The KSZ8041 is a single supply 10Base-T/100Base-TX Physical Layer Transceiver.
                     Goto https://www.microchip.com/wwwproducts/en/KSZ8041 for more information about it.
+
+            config EXAMPLE_ETH_PHY_KSZ8081
+                bool "KSZ8081"
+                help
+                    The KSZ8081 is a single supply 10Base-T/100Base-TX Physical Layer Transceiver.
+                    Goto https://www.microchip.com/wwwproducts/en/KSZ8081 for more information about it.
         endchoice # EXAMPLE_ETH_PHY_MODEL
 
         config EXAMPLE_ETH_MDC_GPIO
@@ -95,42 +116,60 @@ menu "Example Configuration"
 
         config EXAMPLE_ETH_SPI_SCLK_GPIO
             int "SPI SCLK GPIO number"
-            range 0 33
-            default 20
+            range 0 34 if IDF_TARGET_ESP32
+            range 0 46 if IDF_TARGET_ESP32S2
+            range 0 19 if IDF_TARGET_ESP32C3
+            default 18 if IDF_TARGET_ESP32
+            default 20 if IDF_TARGET_ESP32S2
+            default 6 if IDF_TARGET_ESP32C3
             help
                 Set the GPIO number used by SPI SCLK.
 
         config EXAMPLE_ETH_SPI_MOSI_GPIO
             int "SPI MOSI GPIO number"
-            range 0 33
-            default 19
+            range 0 34 if IDF_TARGET_ESP32
+            range 0 46 if IDF_TARGET_ESP32S2
+            range 0 19 if IDF_TARGET_ESP32C3
+            default 23 if IDF_TARGET_ESP32
+            default 19 if IDF_TARGET_ESP32S2
+            default 7 if IDF_TARGET_ESP32C3
             help
                 Set the GPIO number used by SPI MOSI.
 
         config EXAMPLE_ETH_SPI_MISO_GPIO
             int "SPI MISO GPIO number"
-            range 0 33
-            default 18
+            range 0 34 if IDF_TARGET_ESP32
+            range 0 46 if IDF_TARGET_ESP32S2
+            range 0 19 if IDF_TARGET_ESP32C3
+            default 19 if IDF_TARGET_ESP32
+            default 18 if IDF_TARGET_ESP32S2
+            default 2 if IDF_TARGET_ESP32C3
             help
                 Set the GPIO number used by SPI MISO.
 
         config EXAMPLE_ETH_SPI_CS_GPIO
             int "SPI CS GPIO number"
-            range 0 33
-            default 21
+            range 0 34 if IDF_TARGET_ESP32
+            range 0 46 if IDF_TARGET_ESP32S2
+            range 0 19 if IDF_TARGET_ESP32C3
+            default 16 if IDF_TARGET_ESP32
+            default 21 if IDF_TARGET_ESP32S2
+            default 10 if IDF_TARGET_ESP32C3
             help
                 Set the GPIO number used by SPI CS.
 
         config EXAMPLE_ETH_SPI_CLOCK_MHZ
             int "SPI clock speed (MHz)"
             range 5 80
-            default 36
+            default 12 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32C3
+            default 36 if IDF_TARGET_ESP32S2
             help
                 Set the clock speed (MHz) of SPI interface.
 
         config EXAMPLE_ETH_SPI_INT_GPIO
             int "Interrupt GPIO number"
-            default 4
+            default 17 if IDF_TARGET_ESP32
+            default 4 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3
             help
                 Set the GPIO number used by the SPI Ethernet module interrupt line.
     endif # EXAMPLE_USE_SPI_ETHERNET

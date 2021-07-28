@@ -162,11 +162,18 @@ menu "Example Connection Configuration"
                         RTL8201F/SR8201F is a single port 10/100Mb Ethernet Transceiver with auto MDIX.
                         Goto http://www.corechip-sz.com/productsview.asp?id=22 for more information about it.
 
-                config EXAMPLE_ETH_PHY_LAN8720
-                    bool "LAN8720"
+                config EXAMPLE_ETH_PHY_LAN87XX
+                    bool "LAN87xx"
                     help
+                        Below chips are supported:
+                        LAN8710A is a small footprint MII/RMII 10/100 Ethernet Transceiver with HP Auto-MDIX and
+                            flexPWR® Technology.
                         LAN8720A is a small footprint RMII 10/100 Ethernet Transceiver with HP Auto-MDIX Support.
-                        Goto https://www.microchip.com/LAN8720A for more information about it.
+                        LAN8740A/LAN8741A is a small footprint MII/RMII 10/100 Energy Efficient Ethernet Transceiver
+                            with HP Auto-MDIX and flexPWR® Technology.
+                        LAN8742A is a small footprint RMII 10/100 Ethernet Transceiver with HP Auto-MDIX and
+                            flexPWR® Technology.
+                        Goto https://www.microchip.com for more information about them.
 
                 config EXAMPLE_ETH_PHY_DP83848
                     bool "DP83848"
