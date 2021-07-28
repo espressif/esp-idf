@@ -553,6 +553,18 @@ esp_err_t wifi_prov_mgr_get_wifi_disconnect_reason(wifi_prov_sta_fail_reason_t *
  */
 esp_err_t wifi_prov_mgr_configure_sta(wifi_config_t *wifi_cfg);
 
+/**
+ * @brief   Reset internal state machine and clear provisioned credentials.
+ *
+ * This API can be used to restart provisioning in case invalid credentials are entered.
+ *
+ * @return
+ *  - ESP_OK      : Reset provisioning state machine successfully
+ *  - ESP_FAIL    : Failed to reset provisioning state machine
+ *  - ESP_ERR_INVALID_STATE : Manager not initialized
+ */
+esp_err_t wifi_prov_mgr_reset_sm_state_on_failure(void);
+
 #ifdef __cplusplus
 }
 #endif
