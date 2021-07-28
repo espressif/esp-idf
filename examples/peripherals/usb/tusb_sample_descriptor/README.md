@@ -25,7 +25,7 @@ There are two ways to set up a descriptor - using Menuconfig tool and in-code
 
 #### In-code setting up
 
-For the manual descriptor configuration use the default example's settings and modify `my_descriptor` in [source code](tusb_sample_descriptor_main.c) according to your needs
+For the manual descriptor configuration use the default example's settings and modify `my_descriptor` in [source code](main/tusb_sample_descriptor_main.c) according to your needs
 
 #### Menuconfig
 
