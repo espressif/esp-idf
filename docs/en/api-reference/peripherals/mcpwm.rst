@@ -35,6 +35,7 @@ Contents
 * Use `Fault Handler`_ to detect and manage faults
 * Add a higher frequency `Carrier`_, if output signals are passed through an isolation transformer
 * Configuration and handling of `Interrupts`_.
+* Extra configuration of `Resolution`_.
 
 
 Configure
@@ -57,7 +58,8 @@ Configuration covers the following steps:
 2. Initialization of two GPIOs as output signals within selected unit by calling :cpp:func:`mcpwm_gpio_init`. The two output signals are typically used to command the motor to rotate right or left. All available signal options are listed in :cpp:type:`mcpwm_io_signals_t`. To set more than a single pin at a time, use function :cpp:func:`mcpwm_set_pin` together with :cpp:type:`mcpwm_pin_config_t`.
 3. Selection of a timer. There are three timers available within the unit. The timers are listed in :cpp:type:`mcpwm_timer_t`.
 4. Setting of the timer frequency and initial duty within :cpp:type:`mcpwm_config_t` structure.
-5. Calling of :cpp:func:`mcpwm_init` with the above parameters to make the configuration effective.
+5. Setting timer resolution if necessary, by calling :cpp:func:`mcpwm_group_set_resolution` and :cpp:func:`mcpwm_timer_set_resolution`
+6. Calling of :cpp:func:`mcpwm_init` with the above parameters to make the configuration effective.
 
 
 Operate
@@ -158,6 +160,16 @@ Interrupts
 
 Registering of the MCPWM interrupt handler is possible by calling :cpp:func:`mcpwm_isr_register`.
 
+
+Resolution
+----------
+
+The default resolution for MCPWM group and MCPWM timer are configured to **10MHz** and **1MHz** in :cpp:func:`mcpwm_init`, which might be not enough for some applications.
+The driver also provides two APIs that can be used to override the default resolution: :cpp:func:`mcpwm_group_set_resolution` and :cpp:func:`mcpwm_timer_set_resolution`.
+
+Note that, these two APIs won't update the frequency and duty automatically, to achieve that, one has to call :cpp:func:`mcpwm_set_frequency` and :cpp:func:`mcpwm_set_duty` accordingly.
+
+To get PWM pulse that is below 15Hz, please set the resolution to a lower value. For high frequency PWM with limited step range, please set them with higher value.
 
 Application Example
 -------------------

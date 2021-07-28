@@ -41,7 +41,7 @@ extern "C" {
 
 /********************* Group registers *******************/
 
-// Set/Get group clock: PWM_clk = CLK_160M / (prescale + 1)
+// Set/Get group clock: PWM_clk = CLK_160M / (clk_cfg.prescale + 1)
 static inline void mcpwm_ll_group_set_clock_prescale(mcpwm_dev_t *mcpwm, int pre_scale)
 {
     mcpwm->clk_cfg.prescale = pre_scale - 1;

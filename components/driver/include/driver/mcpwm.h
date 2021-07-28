@@ -277,6 +277,10 @@ esp_err_t mcpwm_set_pin(mcpwm_unit_t mcpwm_num, const mcpwm_pin_config_t *mcpwm_
 
 /**
  * @brief Initialize MCPWM parameters
+ * @note
+ *        The default resolution configured for MCPWM group and timer are 160M / 16 = 10M and 10M / 10 = 1M
+ *        The default resolution can be changed by calling mcpwm_group_set_resolution() and mcpwm_timer_set_resolution(),
+ *        before calling this function.
  *
  * @param mcpwm_num set MCPWM unit(0-1)
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers.
@@ -287,6 +291,39 @@ esp_err_t mcpwm_set_pin(mcpwm_unit_t mcpwm_num, const mcpwm_pin_config_t *mcpwm_
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
 esp_err_t mcpwm_init( mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, const mcpwm_config_t  *mcpwm_conf);
+
+/**
+ * @brief Set resolution of the MCPWM group
+ * @note
+ *        This will override default resolution of group(=10,000,000).
+ *        This WILL NOT automatically update frequency and duty. Call mcpwm_set_frequency() and mcpwm_set_duty() manually
+ *        to set them back.
+ *
+ * @param mcpwm_num set MCPWM unit(0-1)
+ * @param resolution set expected frequency resolution
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t mcpwm_group_set_resolution(mcpwm_unit_t mcpwm_num, unsigned long int resolution);
+
+/**
+ * @brief Set resolution of each timer
+ * @note
+ *        This WILL override default resolution of timer(=1,000,000).
+ *        This WILL NOT automatically update frequency and duty. Call mcpwm_set_frequency() and mcpwm_set_duty() manually
+ *        to set them back.
+ *
+ * @param mcpwm_num set MCPWM unit(0-1)
+ * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
+ * @param resolution set expected frequency resolution
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t mcpwm_timer_set_resolution(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, unsigned long int resolution);
 
 /**
  * @brief Set frequency(in Hz) of MCPWM timer
@@ -331,7 +368,7 @@ esp_err_t mcpwm_set_duty_in_us(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, 
 
 /**
  * @brief Set duty either active high or active low(out of phase/inverted)
- *        @note
+ * @note
  *        Call this function every time after mcpwm_set_signal_high or mcpwm_set_signal_low to resume with previously set duty cycle
  *
  * @param mcpwm_num set MCPWM unit(0-1)
@@ -367,6 +404,18 @@ uint32_t mcpwm_get_frequency(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num);
  *     - duty cycle in % of each operator(56.7 means duty is 56.7%)
  */
 float mcpwm_get_duty(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, mcpwm_operator_t gen);
+
+/**
+ * @brief Get duty cycle of each operator in us
+ *
+ * @param mcpwm_num set MCPWM unit(0-1)
+ * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
+ * @param gen set the generator(MCPWMXA/MCPWMXB), 'x' is operator number selected
+ *
+ * @return
+ *     - duty cycle in us of each operator
+ */
+uint32_t mcpwm_get_duty_in_us(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, mcpwm_operator_t gen);
 
 /**
  * @brief Use this function to set MCPWM signal high
@@ -568,7 +617,7 @@ esp_err_t mcpwm_fault_init(mcpwm_unit_t mcpwm_num, mcpwm_fault_input_level_t int
 
 /**
  * @brief Set oneshot mode on fault detection, once fault occur in oneshot mode reset is required to resume MCPWM signals
- *        @note
+ * @note
  *        currently low level triggering is not supported
  *
  * @param mcpwm_num set MCPWM unit(0-1)
@@ -586,7 +635,7 @@ esp_err_t mcpwm_fault_set_oneshot_mode(mcpwm_unit_t mcpwm_num, mcpwm_timer_t tim
 
 /**
  * @brief Set cycle-by-cycle mode on fault detection, once fault occur in cyc mode MCPWM signal resumes as soon as fault signal becomes inactive
- *        @note
+ * @note
  *        currently low level triggering is not supported
  *
  * @param mcpwm_num set MCPWM unit(0-1)
