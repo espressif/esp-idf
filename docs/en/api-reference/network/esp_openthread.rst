@@ -12,7 +12,8 @@ Application Examples
 The :example:`openthread` directory of ESP-IDF examples contains the following applications:
 
 - The OpenThread interactive shell :example:`openthread/ot_cli`.
-- The Thread border router :example:`openthread/ot_cli`.
+- The Thread border router :example:`openthread/ot_br`.
+- The Thread radio co-processor :example:`openthread/ot_rcp`.
 
 
 API Reference
@@ -28,5 +29,5 @@ ESP-IDF provides extra apis for launching and managing the OpenThread stack, bin
 .. include-build-file:: inc/esp_openthread_lock.inc
 .. include-build-file:: inc/esp_openthread_netif_glue.inc
 .. include-build-file:: inc/esp_openthread_border_router.inc
-
+.. include-build-file:: inc/openthread-core-esp32x-ftd-config.inc
 

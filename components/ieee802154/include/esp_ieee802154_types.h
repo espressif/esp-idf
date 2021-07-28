@@ -41,6 +41,8 @@ typedef enum {
     ESP_IEEE802154_TX_ERR_NO_ACK,       /*!< No Ack frame received until timeout */
     ESP_IEEE802154_TX_ERR_INVALID_ACK,  /*!< Invalid Ack frame */
     ESP_IEEE802154_TX_ERR_COEXIST,      /*!< Rejected by coexist system */
+    ESP_IEEE802154_TX_ERR_COEXIST_REJ,  /*!< Rejected by coexist system before transmitting frame */
+    ESP_IEEE802154_TX_ERR_COEXIST_ACK,  /*!< Rejected by coexist system when receiving ack */
 } esp_ieee802154_tx_error_t;
 
 /**
