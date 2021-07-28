@@ -28,6 +28,7 @@
 
 #define MB_PORT_TAG "MB_PORT_COMMON"
 
+#define MB_PORT_TASK_AFFINITY       (CONFIG_FMB_PORT_TASK_AFFINITY)
 #define MB_PORT_HAS_CLOSE           (1) // Define to explicitly close port on destroy
 
 #define MB_PORT_CHECK(a, ret_val, str, ...) \
