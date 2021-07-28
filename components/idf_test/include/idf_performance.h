@@ -50,6 +50,20 @@
 #define IDF_PERFORMANCE_MIN_UDP_TX_THROUGHPUT                                   50
 #endif
 
+// throughput performance by ethernet iperf
+#ifndef IDF_PERFORMANCE_MIN_TCP_RX_ETH_THROUGHPUT
+#define IDF_PERFORMANCE_MIN_TCP_RX_ETH_THROUGHPUT                                   20
+#endif
+#ifndef IDF_PERFORMANCE_MIN_TCP_TX_ETH_THROUGHPUT
+#define IDF_PERFORMANCE_MIN_TCP_TX_ETH_THROUGHPUT                                   30
+#endif
+#ifndef IDF_PERFORMANCE_MIN_UDP_RX_ETH_THROUGHPUT
+#define IDF_PERFORMANCE_MIN_UDP_RX_ETH_THROUGHPUT                                   50
+#endif
+#ifndef IDF_PERFORMANCE_MIN_UDP_TX_ETH_THROUGHPUT
+#define IDF_PERFORMANCE_MIN_UDP_TX_ETH_THROUGHPUT                                   70
+#endif
+
 // events dispatched per second by event loop library
 #ifndef IDF_PERFORMANCE_MIN_EVENT_DISPATCH
 #define IDF_PERFORMANCE_MIN_EVENT_DISPATCH                                      25000
