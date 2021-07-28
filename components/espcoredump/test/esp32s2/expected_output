@@ -7,19 +7,17 @@ Crashed task handle: 0x3ffc2c5c, name: 'unaligned_ptr_t', GDB name: 'process 107
 ================== CURRENT THREAD REGISTERS ===================
 exccause       0x1d (StoreProhibitedCause)
 excvaddr       0x5
-epc1           0x0
+epc1           0x40089aa3
 epc2           0x0
 epc3           0x0
 epc4           0x0
 epc5           0x0
 epc6           0x0
-epc7           0x0
 eps2           0x0
 eps3           0x0
 eps4           0x0
 eps5           0x0
 eps6           0x0
-eps7           0x40089aa3
 pc             0x40086009	0x40086009 <UnityPrintNumberUnsigned+45>
 lbeg           0x0	0
 lend           0x0	0
