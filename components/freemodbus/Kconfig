@@ -78,6 +78,29 @@ menu "Modbus configuration"
                 Modbus UART driver event task priority.
                 The priority of Modbus controller task is equal to (CONFIG_FMB_SERIAL_TASK_PRIO - 1).
 
+    choice FMB_PORT_TASK_AFFINITY
+        prompt "Modbus task affinity"
+        default FMB_PORT_TASK_AFFINITY_CPU0
+        depends on !FREERTOS_UNICORE
+        help
+            Allows setting the core affinity of the Modbus controller task, i.e. whether the task is pinned to
+            particular CPU, or allowed to run on any CPU.
+
+        config FMB_PORT_TASK_AFFINITY_NO_AFFINITY
+            bool "No affinity"
+        config FMB_PORT_TASK_AFFINITY_CPU0
+            bool "CPU0"
+        config FMB_PORT_TASK_AFFINITY_CPU1
+            bool "CPU1"
+
+    endchoice
+
+    config FMB_PORT_TASK_AFFINITY
+        hex
+        default FREERTOS_NO_AFFINITY if FMB_PORT_TASK_AFFINITY_NO_AFFINITY || FREERTOS_UNICORE
+        default 0x0 if FMB_PORT_TASK_AFFINITY_CPU0
+        default 0x1 if FMB_PORT_TASK_AFFINITY_CPU1
+
     config FMB_CONTROLLER_SLAVE_ID_SUPPORT
         bool "Modbus controller slave ID support"
         default n
@@ -130,7 +153,7 @@ menu "Modbus configuration"
 
     config FMB_TIMER_PORT_ENABLED
         bool "Modbus slave stack use timer for 3.5T symbol time measurement"
-        default y
+        default n
         help
                 If this option is set the Modbus stack uses timer for T3.5 time measurement.
                 Else the internal UART TOUT timeout is used for 3.5T symbol time measurement.
