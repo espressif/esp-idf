@@ -318,3 +318,14 @@ uint32_t osi_time_get_os_boottime_ms(void)
 {
     return (uint32_t)(esp_timer_get_time() / 1000);
 }
+
+bool osi_alarm_is_active(osi_alarm_t *alarm)
+{
+    assert(alarm != NULL);
+
+    if (alarm->alarm_hdl != NULL) {
+        return esp_timer_is_active(alarm->alarm_hdl);
+    }
+
+    return false;
+}
