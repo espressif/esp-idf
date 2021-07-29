@@ -3,6 +3,6 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := mcpwm_bldc_control_hall_sensor
+PROJECT_NAME := mcpwm_bldc_hall_control
 
 include $(IDF_PATH)/make/project.mk
