@@ -95,6 +95,10 @@ config SOC_SIGMADELTA_SUPPORTED
     bool
     default y
 
+config SOC_SUPPORT_COEXISTENCE
+    bool
+    default y
+
 config SOC_ADC_RTC_CTRL_SUPPORTED
     bool
     default y

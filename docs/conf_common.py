@@ -49,6 +49,8 @@ WIFI_DOCS = ['api-guides/wifi.rst',
              'api-guides/wifi-security.rst',
              'api-guides/wireshark-user-guide.rst']
 
+COEXISTENCE_DOCS = ['api-guides/coexist.rst']
+
 SDMMC_DOCS = ['api-reference/peripherals/sdmmc_host.rst',
               'api-reference/peripherals/sd_pullup_requirements.rst']
 
@@ -129,6 +131,7 @@ ESP32C3_DOCS = ['hw-reference/esp32c3/**',
 conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_WIFI_SUPPORTED':WIFI_DOCS,
                             'SOC_CLASSIC_BT_SUPPORTED':CLASSIC_BT_DOCS,
+                            'SOC_SUPPORT_COEXISTENCE':COEXISTENCE_DOCS,
                             'SOC_SDMMC_HOST_SUPPORTED':SDMMC_DOCS,
                             'SOC_SDIO_SLAVE_SUPPORTED':SDIO_SLAVE_DOCS,
                             'SOC_MCPWM_SUPPORTED':MCPWM_DOCS,
