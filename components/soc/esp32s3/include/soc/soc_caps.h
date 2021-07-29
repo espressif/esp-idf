@@ -34,6 +34,7 @@
 #define SOC_ADC_MAX_CHANNEL_NUM         (10)
 #define SOC_ADC_MAX_BITWIDTH            (12)
 #define SOC_ADC_SUPPORT_RTC_CTRL        (1)
+#define SOC_ADC_ARBITER_SUPPORTED       (1)
 
 
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
