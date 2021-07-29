@@ -78,7 +78,14 @@ size_t esp_spiram_get_size(void);
  */
 void esp_spiram_writeback_cache(void);
 
-
+/**
+ * @brief If SPI RAM(PSRAM) has been initialized
+ *
+ * @return
+ *          - true SPI RAM has been initialized successfully
+ *          - false SPI RAM hasn't been initialized or initialized failed
+ */
+bool esp_spiram_is_initialized(void);
 
 /**
  * @brief Reserve a pool of internal memory for specific DMA/internal allocations
@@ -90,6 +97,15 @@ void esp_spiram_writeback_cache(void);
  *          - ESP_ERR_NO_MEM when no memory available for pool
  */
 esp_err_t esp_spiram_reserve_dma_pool(size_t size);
+
+/**
+ * @brief If SPI RAM(PSRAM) has been initialized
+ *
+ * @return
+ *          - true SPI RAM has been initialized successfully
+ *          - false SPI RAM hasn't been initialized or initialized failed
+ */
+bool esp_spiram_is_initialized(void);
 
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
 
