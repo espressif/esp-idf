@@ -879,7 +879,7 @@ FORCE_INLINE_ATTR void uart_ll_set_autobaud_en(uart_dev_t *hw, bool enable)
  */
 FORCE_INLINE_ATTR uint32_t uart_ll_get_rxd_edge_cnt(uart_dev_t *hw)
 {
-    return hw->rxd_cnt.edge_cnt;
+    return hw->rxd_cnt.rxd_edge_cnt;
 }
 
 /**
@@ -889,7 +889,7 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_rxd_edge_cnt(uart_dev_t *hw)
  */
 FORCE_INLINE_ATTR uint32_t uart_ll_get_pos_pulse_cnt(uart_dev_t *hw)
 {
-    return hw->pospulse.min_cnt;
+    return hw->pospulse.posedge_min_cnt;
 }
 
 /**
@@ -899,7 +899,7 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_pos_pulse_cnt(uart_dev_t *hw)
  */
 FORCE_INLINE_ATTR uint32_t uart_ll_get_neg_pulse_cnt(uart_dev_t *hw)
 {
-    return hw->negpulse.min_cnt;
+    return hw->negpulse.negedge_min_cnt;
 }
 
 /**
@@ -909,7 +909,7 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_neg_pulse_cnt(uart_dev_t *hw)
  */
 FORCE_INLINE_ATTR uint32_t uart_ll_get_high_pulse_cnt(uart_dev_t *hw)
 {
-    return hw->highpulse.min_cnt;
+    return hw->highpulse.highpulse_min_cnt;
 }
 
 /**
@@ -919,7 +919,7 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_high_pulse_cnt(uart_dev_t *hw)
  */
 FORCE_INLINE_ATTR uint32_t uart_ll_get_low_pulse_cnt(uart_dev_t *hw)
 {
-    return hw->lowpulse.min_cnt;
+    return hw->lowpulse.lowpulse_min_cnt;
 }
 
 /**
