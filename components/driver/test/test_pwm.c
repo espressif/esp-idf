@@ -52,12 +52,12 @@ static esp_err_t test_mcpwm_gpio_init(mcpwm_unit_t mcpwm_num, mcpwm_io_signals_t
         esp_rom_gpio_connect_out_signal(gpio_num, mcpwm_periph_signals.groups[mcpwm_num].operators[operator_id].generators[generator_id].pwm_sig, 0, 0);
     } else if (io_signal <= MCPWM_SYNC_2) { // External sync input signal
         gpio_set_direction(gpio_num, GPIO_MODE_INPUT_OUTPUT);
-        int ext_sync_id = io_signal - MCPWM_SYNC_0;
-        esp_rom_gpio_connect_in_signal(gpio_num, mcpwm_periph_signals.groups[mcpwm_num].ext_syncers[ext_sync_id].sync_sig, 0);
+        int gpio_sync_id = io_signal - MCPWM_SYNC_0;
+        esp_rom_gpio_connect_in_signal(gpio_num, mcpwm_periph_signals.groups[mcpwm_num].gpio_synchros[gpio_sync_id].sync_sig, 0);
     } else if (io_signal <= MCPWM_FAULT_2) { // Fault input signal
         gpio_set_direction(gpio_num, GPIO_MODE_INPUT_OUTPUT);
         int fault_id = io_signal - MCPWM_FAULT_0;
-        esp_rom_gpio_connect_in_signal(gpio_num, mcpwm_periph_signals.groups[mcpwm_num].detectors[fault_id].fault_sig, 0);
+        esp_rom_gpio_connect_in_signal(gpio_num, mcpwm_periph_signals.groups[mcpwm_num].gpio_faults[fault_id].fault_sig, 0);
     } else if (io_signal >= MCPWM_CAP_0 && io_signal <= MCPWM_CAP_2) { // Capture input signal
         gpio_set_direction(gpio_num, GPIO_MODE_INPUT_OUTPUT);
         int capture_id = io_signal - MCPWM_CAP_0;
