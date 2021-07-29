@@ -153,10 +153,10 @@ enable_autocomplete() {
     if [ -n "${ZSH_VERSION-}" ]
     then
         autoload -Uz compinit && compinit -u
-        eval "$(env _IDF.PY_COMPLETE=$SOURCE_ZSH idf.py)" || echo "WARNING: Failed to load shell autocompletion!"
+        eval "$(env _IDF.PY_COMPLETE=$SOURCE_ZSH idf.py)" || echo "WARNING: Failed to load shell autocompletion for zsh version: $ZSH_VERSION!"
     elif [ -n "${BASH_SOURCE-}" ]
     then
-        eval "$(env _IDF.PY_COMPLETE=$SOURCE_BASH idf.py)"  || echo "WARNING: Failed to load shell autocompletion!"
+        eval "$(env LANG=en _IDF.PY_COMPLETE=$SOURCE_BASH idf.py)"  || echo "WARNING: Failed to load shell autocompletion for bash version: $BASH_VERSION!"
     fi
 
     unset SOURCE_ZSH

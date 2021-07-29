@@ -83,9 +83,9 @@ idf.py
 
 对于 ``idf.py`` 不知道的指令，``idf.py`` 会尝试将其作为构建系统的目标来执行。
 
-``idf.py`` 命令支持 bash, zsh 以及 fish shell 的 `自动补全 <https://click.palletsprojects.com/bashcomplete/>`_。
+``idf.py`` 命令支持 bash, zsh 以及 fish shell 的 `自动补全 <https://click.palletsprojects.com/shell-completion/>`_。
 
-要实现实现 shell `自动补全 <https://click.palletsprojects.com/bashcomplete/>`_，请先确保您安装了 Python 3.5 以及 `click <https://click.palletsprojects.com/>`_ 7.1 及以上版本（:ref:`请参考这里 <get-started-get-prerequisites>`)。
+要实现实现 shell `自动补全 <https://click.palletsprojects.com/shell-completion/>`_，请先确保您安装了 Python 3.5 以及 `click <https://click.palletsprojects.com/>`_ 7.1 及以上版本（:ref:`请参考这里 <get-started-get-prerequisites>`)。
 
 使用 ``export`` 命令来启用 ``idf.py`` 的自动补全功能（:ref:`请参考这里 <get-started-export>`）。按 TAB 键可实现自动补全。输入 “idf.py -” 后按 TAB 键可自动补全选项。
 
