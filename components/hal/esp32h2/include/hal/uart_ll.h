@@ -891,6 +891,67 @@ static inline uint16_t uart_ll_max_tout_thrd(uart_dev_t *hw)
 }
 
 /**
+ * @brief  Configure the auto baudrate.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  enable Boolean marking whether the auto baudrate should be enabled or not.
+ */
+static inline void uart_ll_set_autobaud_en(uart_dev_t *hw, bool enable)
+{
+    hw->conf0.autobaud_en = enable ? 1 : 0;
+}
+
+/**
+ * @brief  Get the RXD edge count.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ */
+static inline uint32_t uart_ll_get_rxd_edge_cnt(uart_dev_t *hw)
+{
+    return hw->rxd_cnt.edge_cnt;
+}
+
+/**
+ * @brief  Get the positive pulse minimum count.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ */
+static inline uint32_t uart_ll_get_pos_pulse_cnt(uart_dev_t *hw)
+{
+    return hw->pospulse.min_cnt;
+}
+
+/**
+ * @brief  Get the negative pulse minimum count.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ */
+static inline uint32_t uart_ll_get_neg_pulse_cnt(uart_dev_t *hw)
+{
+    return hw->negpulse.min_cnt;
+}
+
+/**
+ * @brief  Get the high pulse minimum count.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ */
+static inline uint32_t uart_ll_get_high_pulse_cnt(uart_dev_t *hw)
+{
+    return hw->highpulse.min_cnt;
+}
+
+/**
+ * @brief  Get the low pulse minimum count.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ */
+static inline uint32_t uart_ll_get_low_pulse_cnt(uart_dev_t *hw)
+{
+    return hw->lowpulse.min_cnt;
+}
+
+/**
  * @brief  Force UART xoff.
  *
  * @param  uart_num UART port number, the max port number is (UART_NUM_MAX -1).

@@ -18,16 +18,19 @@ If you have some trouble in developing I2C related applications, or just want to
 
 ### Hardware Required
 
-To run this example, you should have one ESP32 dev board (e.g. ESP32-WROVER Kit) or ESP32 core board (e.g. ESP32-DevKitC). For test purpose, you should have a kind of device with I2C interface as well. Here we will take the CCS811 sensor as an example to show how to test the function of this sensor without writing any code (just use the command-line tools supported by this example). For more information about CCS811, you can consult the [online datasheet](http://ams.com/ccs811).
+To run this example, you should have any ESP32, ESP32-S and ESP32-C based development board. For test purpose, you should have a kind of device with I2C interface as well. Here we will take the CCS811 sensor as an example to show how to test the function of this sensor without writing any code (just use the command-line tools supported by this example). For more information about CCS811, you can consult the [online datasheet](http://ams.com/ccs811).
 
 #### Pin Assignment:
 
 **Note:** The following pin assignments are used by default, you can change them with `i2cconfig` command at any time.
 
-|                  | SDA    | SCL    | GND  | Other | VCC  |
-| ---------------- | ------ | ------ | ---- | ----- | ---- |
-| ESP32 I2C Master | GPIO18 | GPIO19 | GND  | GND   | 3.3V |
-| Sensor           | SDA    | SCL    | GND  | WAK   | VCC  |
+|                     | SDA    | SCL    | GND  | Other | VCC  |
+| ------------------- | ------ | ------ | ---- | ----- | ---- |
+| ESP32 I2C Master    | GPIO18 | GPIO19 | GND  | GND   | 3.3V |
+| ESP32-S2 I2C Master | GPIO18 | GPIO19 | GND  | GND   | 3.3V |
+| ESP32-S3 I2C Master | GPIO1  | GPIO2  | GND  | GND   | 3.3V |
+| ESP32-C3 I2C Master | GPIO5  | GPIO6  | GND  | GND   | 3.3V |
+| Sensor              | SDA    | SCL    | GND  | WAK   | VCC  |
 
 **Note: ** There’s no need to add an external pull-up resistors for SDA/SCL pin, because the driver will enable the internal pull-up resistors itself.
 
