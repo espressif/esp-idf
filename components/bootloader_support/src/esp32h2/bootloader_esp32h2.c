@@ -202,7 +202,7 @@ static esp_err_t bootloader_init_spi_flash(void)
 #endif
 
     bootloader_spi_flash_resume();
-    esp_rom_spiflash_unlock();
+    bootloader_flash_unlock();
 
 #if CONFIG_ESPTOOLPY_FLASHMODE_QIO || CONFIG_ESPTOOLPY_FLASHMODE_QOUT
     bootloader_enable_qio_mode();

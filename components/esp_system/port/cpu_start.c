@@ -66,6 +66,7 @@
 
 #include "spi_flash_private.h"
 #include "bootloader_flash_config.h"
+#include "bootloader_flash.h"
 #include "esp_private/crosscore_int.h"
 #include "esp_flash_encrypt.h"
 
@@ -527,7 +528,7 @@ void IRAM_ATTR call_start_cpu0(void)
 
     extern void esp_rom_spiflash_attach(uint32_t, bool);
     esp_rom_spiflash_attach(esp_rom_efuse_get_flash_gpio_info(), false);
-    esp_rom_spiflash_unlock();
+    bootloader_flash_unlock();
 #else
     // This assumes that DROM is the first segment in the application binary, i.e. that we can read
     // the binary header through cache by accessing SOC_DROM_LOW address.
