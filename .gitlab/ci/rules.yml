@@ -13,6 +13,9 @@
   - ".gitlab/ci/static-code-analysis.yml"
   - "**/*.py"
 
+.patterns-sonarqube-files: &patterns-sonarqube-files
+  - "tools/ci/sonar_exclude_list.txt"
+
 .patterns-example_test: &patterns-example_test
   - "tools/ci/python_packages/gitlab_api.py"
   - "tools/ci/python_packages/idf_http_server_test/**/*"
@@ -237,6 +240,8 @@
       changes: *patterns-c-files
     - <<: *if-dev-push
       changes: *patterns-python-files
+    - <<: *if-dev-push
+      changes: *patterns-sonarqube-files
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # DO NOT place comments or maintain any code from this line
