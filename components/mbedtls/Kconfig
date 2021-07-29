@@ -538,6 +538,13 @@ menu "mbedTLS"
         depends on MBEDTLS_TLS_ENABLED
         default y
 
+    config MBEDTLS_SSL_PROTO_GMTSSL1_1
+        bool "Support GM/T SSL 1.1 protocol"
+        depends on MBEDTLS_TLS_ENABLED
+        default n
+        help
+            Provisions for GM/T SSL 1.1 support
+
     config MBEDTLS_SSL_PROTO_DTLS
         bool "Support DTLS protocol (all versions)"
         default n

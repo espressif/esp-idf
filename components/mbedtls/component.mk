@@ -9,6 +9,20 @@ COMPONENT_SRCDIRS := mbedtls/library port port/$(IDF_TARGET) port/sha port/sha/p
 
 COMPONENT_OBJEXCLUDE := mbedtls/library/net_sockets.o
 
+ifdef CONFIG_MBEDTLS_SSL_PROTO_GMTSSL1_1
+COMPONENT_OBJEXCLUDE += \
+mbedtls/library/ssl_ciphersuites.o \
+mbedtls/library/ecp.o \
+mbedtls/library/cipher_wrap.o \
+mbedtls/library/oid.o \
+mbedtls/library/ecp_curves.o \
+mbedtls/library/pk_wrap.o \
+mbedtls/library/ecdsa.o \
+mbedtls/library/x509_crt.o \
+mbedtls/library/ssl_tls.o \
+mbedtls/library/ssl_cli.o
+endif
+
 COMPONENT_SUBMODULES += mbedtls
 
 
