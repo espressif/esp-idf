@@ -42,14 +42,14 @@ ESP32 是一套 Wi-Fi (2.4 GHz) 和蓝牙 (4.2) 双模解决方案，集成了�
 开发环境的准备工作包括以下两部分：
 
 1. 设置 **工具链**
-2. 从 GitHub 上获取 **ESP-IDF** 
+2. 从 GitHub 上获取 **ESP-IDF**
 
 开发环境设置完成后，遵循以下步骤创建 ESP-IDF 应用程序：
 
 1. 配置**工程** 并编写代码
 2. 编译**工程** 并链接成一个**应用程序**
 3. 通过 USB/串口连接，烧录（上传）预编译的**应用程序**到 **ESP32**
-4. 通过 USB/串口，监视/调试**应用程序**输出 
+4. 通过 USB/串口，监视/调试**应用程序**输出
 
 
 .. The label below is placeholder to link a new section "Installation Step by Step"
@@ -82,8 +82,8 @@ ESP32 是一套 Wi-Fi (2.4 GHz) 和蓝牙 (4.2) 双模解决方案，集成了�
     :hidden:
 
     Windows <windows-setup>
-    Linux <linux-setup> 
-    MacOS <macos-setup> 
+    Linux <linux-setup>
+    MacOS <macos-setup>
 
 +-------------------+-------------------+-------------------+
 | |windows-logo|    | |linux-logo|      | |macos-logo|      |
@@ -157,7 +157,7 @@ ESP-IDF 将会被下载到用户的 ``esp\esp-idf`` 目录下。
 ESP-IDF 的正常运行需要设置两个环境变量：
 
 - ``IDF_PATH`` 应设置为 ESP-IDF 根目录的路径。
-- ``PATH`` 应包括同一 ``IDF_PATH`` 目录下的 ``tools`` 目录路径。 
+- ``PATH`` 应包括同一 ``IDF_PATH`` 目录下的 ``tools`` 目录路径。
 
 你需在你的电脑中设置这两个变量，否则工程将不能编译。
 
@@ -226,7 +226,7 @@ Windows Command Prompt
     cd %userprofile%\esp\hello_world
     idf.py menuconfig
 
-.. note:: 如果你收到未发现 ``idf.py`` 的报错信息，查看是否如上 :ref:`get-started-setup-path-cmake` 所述将 ``tools`` 目录添加到你的路径中。如果 ``tools`` 目录中没有 ``idf.py``，查看 :ref:`get-started-get-esp-idf-cmake` 中 CMake 预览所处的分支是否正确。 
+.. note:: 如果你收到未发现 ``idf.py`` 的报错信息，查看是否如上 :ref:`get-started-setup-path-cmake` 所述将 ``tools`` 目录添加到你的路径中。如果 ``tools`` 目录中没有 ``idf.py``，查看 :ref:`get-started-get-esp-idf-cmake` 中 CMake 预览所处的分支是否正确。
 
 .. note:: 对于 Windows 用户而言，Python 2.7 安装器会尝试配置 Windows，关联扩展名为 ``.py`` 的 Python 2 文件。如果单独安装的程序（如 Visual Studio Python 工具）关联到其他 Python 版本，``idf.py`` 可能无法运行（而仅是在 Visual Studio 中打开此文件）。你可以每次运行 ``C:\Python27\python idf.py`` 或更改 Windows 中有关``.py`` 文件的关联设置。
 
@@ -277,12 +277,12 @@ Windows Command Prompt
    -- Building empty aws_iot component due to configuration
    -- Component names: ...
    -- Component paths: ...
-   
+
    ... (more lines of build system output)
-   
+
    [527/527] Generating hello-world.bin
    esptool.py v2.3.1
-   
+
    Project build complete. To flash, run this command:
    ../../../components/esptool_py/esptool/esptool.py -p (PORT) -b 921600 write_flash --flash_mode dio --flash_size detect --flash_freq 40m 0x10000 build/hello-world.bin  build 0x1000 build/bootloader/bootloader.bin 0x8000 build/partition_table/partition-table.bin
    or run 'idf.py -p PORT flash'
@@ -331,7 +331,7 @@ Windows Command Prompt
     Compressed 136672 bytes to 67544...
     Wrote 136672 bytes (67544 compressed) at 0x00010000 in 1.9 seconds (effective 567.5 kbit/s)...
     Hash of data verified.
-    
+
     Leaving...
     Hard resetting via RTS pin...
 
@@ -372,14 +372,14 @@ Windows Command Prompt
 
 要退出监视器，请使用快捷键 ``Ctrl+]``。
 
-.. note::
+如果串口打印的不是上面显示的消息而是类似下面的乱码:
 
-    如果串口打印的不是上面显示的消息而是类似下面的乱码::
+.. figure:: ../../_static/get-started-garbled-output.png
+    :align: center
+    :alt: Garbled output
+    :figclass: align-center
 
-        e���)(Xn@�y.!��(�PW+)��Hn9a؅/9�!�t5��P�~�k��e�ea�5�jA
-        ~zY��Y(1�,1�� e���)(Xn@�y.!Dr�zY(�jpi�|�+z5Ymvp
-
-    或者监视器程序启动失败，那么可能你的开发板用的是 26 MHz 晶振，而大多数开发板用的是 40 MHz 晶振，并且 ESP-IDF 默认的也是这一数值。请退出监视器，回到 :ref:`menuconfig <get-started-configure-cmake>`，将 :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` 改为 26 MHz，然后再次 :ref:`编写和烧录 <get-started-flash-cmake>` 程序。请在 ``idf.py menuconfig`` 的 Component config --> ESP32-specific --> Main XTAL frequency 中配置。
+或者监视器程序启动失败，那么可能你的开发板用的是 26 MHz 晶振，而 ESP-IDF 默认的是 40 MHz 晶振。请退出监视器，回到 :ref:`配置 <get-started-configure>`，将 :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` 改为 26 MHz，然后再次 :ref:`编译和烧写 <get-started-build-flash>`。请在 ``make menuconfig`` 的 Component config --> ESP32-specific --> Main XTAL frequency 中配置。
 
 .. note::
 

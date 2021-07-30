@@ -24,6 +24,7 @@ tools/ci/check_idf_version.sh
 tools/ci/check-executable.sh
 tools/ci/check-line-endings.sh
 tools/ci/checkout_project_ref.py
+tools/ci/deploy_docs.py
 tools/ci/envsubst.py
 tools/ci/mirror-submodule-update.sh
 tools/ci/push_to_github.sh

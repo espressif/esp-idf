@@ -3,7 +3,7 @@ Get Started
 ***********
 :link_to_translation:`zh_CN:[中文]`
 
-This document is intended to help users set up the software environment for development of applications using hardware based on the Espressif ESP32. Through a simple example we would like to illustrate how to use ESP-IDF (Espressif IoT Development Framework), including the menu based configuration, compiling the ESP-IDF and firmware download to ESP32 boards. 
+This document is intended to help users set up the software environment for development of applications using hardware based on the Espressif ESP32. Through a simple example we would like to illustrate how to use ESP-IDF (Espressif IoT Development Framework), including the menu based configuration, compiling the ESP-IDF and firmware download to ESP32 boards.
 
 .. include:: /_build/inc/version-note.inc
 
@@ -12,7 +12,7 @@ Introduction
 
 ESP32 integrates Wi-Fi (2.4 GHz band) and Bluetooth 4.2 solutions on a single chip, along with dual high performance cores, Ultra Low Power co-processor and several peripherals. Powered by 40 nm technology, ESP32 provides a robust, highly integrated platform to meet the continuous demands for efficient power usage, compact design, security, high performance, and reliability.
 
-Espressif provides the basic hardware and software resources that help application developers to build their ideas around the ESP32 series hardware. The software development framework by Espressif is intended for rapidly developing Internet-of-Things (IoT) applications, with Wi-Fi, Bluetooth, power management and several other system features. 
+Espressif provides the basic hardware and software resources that help application developers to build their ideas around the ESP32 series hardware. The software development framework by Espressif is intended for rapidly developing Internet-of-Things (IoT) applications, with Wi-Fi, Bluetooth, power management and several other system features.
 
 
 What You Need
@@ -71,14 +71,14 @@ If you have different board, move to sections below.
 Setup Toolchain
 ===============
 
-The quickest way to start development with ESP32 is by installing a prebuilt toolchain. Pick up your OS below and follow provided instructions. 
+The quickest way to start development with ESP32 is by installing a prebuilt toolchain. Pick up your OS below and follow provided instructions.
 
 .. toctree::
     :hidden:
 
     Windows <windows-setup>
-    Linux <linux-setup> 
-    MacOS <macos-setup> 
+    Linux <linux-setup>
+    MacOS <macos-setup>
 
 +-------------------+-------------------+-------------------+
 | |windows-logo|    | |linux-logo|      | |macos-logo|      |
@@ -195,7 +195,7 @@ Being in terminal window, go to directory of ``hello_world`` application by typi
     cd ~/esp/hello_world
     make menuconfig
 
-If previous steps have been done correctly, the following menu will be displayed: 
+If previous steps have been done correctly, the following menu will be displayed:
 
 .. figure:: ../../_static/project-configuration.png
     :align: center
@@ -303,20 +303,19 @@ Several lines below, after start up and diagnostic log, you should see "Hello wo
     Restarting in 8 seconds...
     Restarting in 7 seconds...
 
-To exit the monitor use shortcut ``Ctrl+]``. 
+To exit the monitor use shortcut ``Ctrl+]``.
 
-.. note::
+If instead of the messages above, you see a random garbage similar to what is shown below, or monitor fails shortly after upload, your board is likely using 26MHz crystal, while the ESP-IDF assumes default of 40MHz. Exit the monitor, go back to the :ref:`menuconfig <get-started-configure>`, change :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` to 26MHz, then :ref:`build and flash <get-started-build-flash>` the application again. This is found under ``make menuconfig`` under Component config --> ESP32-specific --> Main XTAL frequency.
 
-    If instead of the messages above, you see a random garbage similar to::
+.. figure:: ../../_static/get-started-garbled-output.png
+    :align: center
+    :alt: Garbled output
+    :figclass: align-center
 
-        e���)(Xn@�y.!��(�PW+)��Hn9a؅/9�!�t5��P�~�k��e�ea�5�jA
-        ~zY��Y(1�,1�� e���)(Xn@�y.!Dr�zY(�jpi�|�+z5Ymvp
-
-    or monitor fails shortly after upload, your board is likely using 26MHz crystal, while the ESP-IDF assumes default of 40MHz. Exit the monitor, go back to the :ref:`menuconfig <get-started-configure>`, change :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` to 26MHz, then :ref:`build and flash <get-started-build-flash>` the application again. This is found under ``make menuconfig`` under Component config --> ESP32-specific --> Main XTAL frequency.
 
 To execute ``make flash`` and ``make monitor`` in one go, type ``make flash monitor``. Check section :doc:`IDF Monitor <idf-monitor>` for handy shortcuts and more details on using this application.
 
-That's all what you need to get started with ESP32! 
+That's all what you need to get started with ESP32!
 
 Now you are ready to try some other :idf:`examples`, or go right to developing your own applications.
 
@@ -345,7 +344,7 @@ Some environment variables can be specified whilst calling ``make`` allowing use
 
 .. note::
     Users can export environment variables (e.g. ``export ESPPORT=/dev/ttyUSB1``).
-    All subsequent calls of ``make`` within the same terminal session will use 
+    All subsequent calls of ``make`` within the same terminal session will use
     the exported value given that the variable is not simultaneously overridden.
 
 Updating ESP-IDF
