@@ -1274,6 +1274,28 @@ esp_err_t uart_flush_input(uart_port_t uart_num)
     return ESP_OK;
 }
 
+RingbufHandle_t AllocateRingBufferInternal(size_t size, RingbufferType_t buffer_type)
+{
+    //Allocate memory for ring buffer data structure
+    StaticRingbuffer_t* buffer_struct = (StaticRingbuffer_t *)heap_caps_malloc(sizeof(StaticRingbuffer_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    //Allocate memory for ring buffer's data storage area
+    uint8_t* buffer_storage = (uint8_t *)heap_caps_malloc(sizeof(uint8_t) * size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    //Create static ring buffer
+    return xRingbufferCreateStatic(size, buffer_type, buffer_storage, buffer_struct);
+}
+
+SemaphoreHandle_t AllocateSemaphoreBinaryInternal()
+{
+   StaticSemaphore_t *buffer_struct = (StaticSemaphore_t *)heap_caps_malloc(sizeof(StaticSemaphore_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    return xSemaphoreCreateBinaryStatic(buffer_struct);
+}
+
+SemaphoreHandle_t AllocateSemaphoreMutexInternal()
+{
+   StaticSemaphore_t *buffer_struct = (StaticSemaphore_t *)heap_caps_malloc(sizeof(StaticSemaphore_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+   return xSemaphoreCreateMutexStatic(buffer_struct);
+}
+
 esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_buffer_size, int queue_size, QueueHandle_t *uart_queue, int intr_alloc_flags)
 {
     esp_err_t r;
@@ -1302,12 +1324,47 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
         p_uart_obj[uart_num]->uart_mode = UART_MODE_UART;
         p_uart_obj[uart_num]->coll_det_flg = false;
         p_uart_obj[uart_num]->rx_always_timeout_flg = false;
-        p_uart_obj[uart_num]->tx_fifo_sem = xSemaphoreCreateBinary();
+        if ((intr_alloc_flags & ESP_INTR_FLAG_IRAM) == 0)
+        {
+           p_uart_obj[uart_num]->tx_fifo_sem = xSemaphoreCreateBinary();
+        }
+        else
+        {
+           p_uart_obj[uart_num]->tx_fifo_sem = AllocateSemaphoreBinaryInternal();
+        }
         xSemaphoreGive(p_uart_obj[uart_num]->tx_fifo_sem);
-        p_uart_obj[uart_num]->tx_done_sem = xSemaphoreCreateBinary();
-        p_uart_obj[uart_num]->tx_brk_sem = xSemaphoreCreateBinary();
-        p_uart_obj[uart_num]->tx_mux = xSemaphoreCreateMutex();
-        p_uart_obj[uart_num]->rx_mux = xSemaphoreCreateMutex();
+        if ((intr_alloc_flags & ESP_INTR_FLAG_IRAM) == 0)
+        {
+           p_uart_obj[uart_num]->tx_done_sem = xSemaphoreCreateBinary();
+        }
+        else
+        {
+           p_uart_obj[uart_num]->tx_done_sem = AllocateSemaphoreBinaryInternal();
+        }
+        if ((intr_alloc_flags & ESP_INTR_FLAG_IRAM) == 0)
+        {
+           p_uart_obj[uart_num]->tx_brk_sem = xSemaphoreCreateBinary();
+        }
+        else
+        {
+           p_uart_obj[uart_num]->tx_brk_sem = AllocateSemaphoreBinaryInternal();
+        }
+        if ((intr_alloc_flags & ESP_INTR_FLAG_IRAM) == 0)
+        {
+           p_uart_obj[uart_num]->tx_mux = xSemaphoreCreateMutex();
+        }
+        else
+        {
+           p_uart_obj[uart_num]->tx_mux = AllocateSemaphoreMutexInternal();
+        }
+        if ((intr_alloc_flags & ESP_INTR_FLAG_IRAM) == 0)
+        {
+           p_uart_obj[uart_num]->rx_mux = xSemaphoreCreateMutex();
+        }
+        else
+        {
+           p_uart_obj[uart_num]->rx_mux = AllocateSemaphoreMutexInternal();
+        }
         p_uart_obj[uart_num]->queue_size = queue_size;
         p_uart_obj[uart_num]->tx_ptr = NULL;
         p_uart_obj[uart_num]->tx_head = NULL;
@@ -1330,9 +1387,25 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
         p_uart_obj[uart_num]->rx_ptr = NULL;
         p_uart_obj[uart_num]->rx_cur_remain = 0;
         p_uart_obj[uart_num]->rx_head_ptr = NULL;
-        p_uart_obj[uart_num]->rx_ring_buf = xRingbufferCreate(rx_buffer_size, RINGBUF_TYPE_BYTEBUF);
+
+        if ((intr_alloc_flags & ESP_INTR_FLAG_IRAM) == 0)
+        {
+            p_uart_obj[uart_num]->rx_ring_buf = xRingbufferCreate(rx_buffer_size, RINGBUF_TYPE_BYTEBUF);
+        }
+        else
+        {
+            p_uart_obj[uart_num]->rx_ring_buf = AllocateRingBufferInternal(rx_buffer_size, RINGBUF_TYPE_BYTEBUF);
+        }
+        
         if(tx_buffer_size > 0) {
-            p_uart_obj[uart_num]->tx_ring_buf = xRingbufferCreate(tx_buffer_size, RINGBUF_TYPE_NOSPLIT);
+            if ((intr_alloc_flags & ESP_INTR_FLAG_IRAM) == 0)
+            {
+                p_uart_obj[uart_num]->tx_ring_buf = xRingbufferCreate(tx_buffer_size, RINGBUF_TYPE_NOSPLIT);
+            }
+            else
+            {
+                p_uart_obj[uart_num]->tx_ring_buf = AllocateRingBufferInternal(rx_buffer_size, RINGBUF_TYPE_NOSPLIT);
+            }
             p_uart_obj[uart_num]->tx_buf_size = tx_buffer_size;
         } else {
             p_uart_obj[uart_num]->tx_ring_buf = NULL;
