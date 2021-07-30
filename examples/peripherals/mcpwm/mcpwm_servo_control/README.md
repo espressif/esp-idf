@@ -4,7 +4,7 @@
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example illustrates how to drive a typical [RC Servo](https://en.wikipedia.org/wiki/Servo_(radio_control)) by sending a PWM signal using the MCPWM driver. The PWM pulse has a frequency of 50Hz (period of 20ms), and the active-high time (which controls the rotation) ranges from 1ms to 2ms with 1.5ms always being center of range.
+This example illustrates how to drive a typical [RC Servo](https://en.wikipedia.org/wiki/Servo_%28radio_control%29) by sending a PWM signal using the MCPWM driver. The PWM pulse has a frequency of 50Hz (period of 20ms), and the active-high time (which controls the rotation) ranges from 1ms to 2ms with 1.5ms always being center of range.
 
 ## How to Use Example
 
