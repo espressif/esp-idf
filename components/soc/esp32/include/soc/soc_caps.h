@@ -275,3 +275,6 @@
 #  define CAN_BRP_DIV_SUPPORTED             SOC_TWAI_BRP_DIV_SUPPORTED
 #  define CAN_BRP_DIV_THRESH                SOC_TWAI_BRP_DIV_THRESH
 #endif
+
+/*------------------------------ BLE --------------------------------------------*/
+#define SOC_BLE_UPDATE_OWN_RPA  (0)
