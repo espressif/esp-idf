@@ -10,6 +10,7 @@
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <string.h>
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -27,6 +28,9 @@
 #include "esp_private/gdma.h"
 #include "driver/gpio.h"
 #include "driver/periph_ctrl.h"
+#if CONFIG_SPIRAM
+#include "spiram.h"
+#endif
 #if SOC_LCDCAM_SUPPORTED
 #include "esp_lcd_common.h"
 #include "soc/lcd_periph.h"
@@ -36,6 +40,9 @@
 static const char *TAG = "lcd_panel.rgb";
 
 typedef struct esp_rgb_panel_t esp_rgb_panel_t;
+
+// This function is located in ROM (also see esp_rom/${target}/ld/${target}.rom.ld)
+extern int Cache_WriteBack_Addr(uint32_t addr, uint32_t size);
 
 static esp_err_t rgb_panel_del(esp_lcd_panel_t *panel);
 static esp_err_t rgb_panel_reset(esp_lcd_panel_t *panel);
@@ -72,11 +79,12 @@ struct esp_rgb_panel_t {
     int x_gap;                      // Extra gap in x coordinate, it's used when calculate the flush window
     int y_gap;                      // Extra gap in y coordinate, it's used when calculate the flush window
     struct {
-        int disp_en_level: 1; // The level which can turn on the screen by `disp_gpio_num`
-        int stream_mode: 1;   // If set, the LCD transfers data continuously, otherwise, it stops refreshing the LCD when transaction done
-        int new_frame: 1;     // Whether the frame we're going to flush is a new one
+        unsigned int disp_en_level: 1; // The level which can turn on the screen by `disp_gpio_num`
+        unsigned int stream_mode: 1;   // If set, the LCD transfers data continuously, otherwise, it stops refreshing the LCD when transaction done
+        unsigned int new_frame: 1;     // Whether the frame we're going to flush is a new one
+        unsigned int fb_in_psram: 1;   // Whether the frame buffer is in PSRAM
     } flags;
-    dma_descriptor_t dma_nodes[0]; // DMA descriptor pool of size `num_dma_nodes`
+    dma_descriptor_t dma_nodes[]; // DMA descriptor pool of size `num_dma_nodes`
 };
 
 esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_config, esp_lcd_panel_handle_t *ret_panel)
@@ -96,10 +104,24 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     rgb_panel = heap_caps_calloc(1, sizeof(esp_rgb_panel_t) + num_dma_nodes * sizeof(dma_descriptor_t), MALLOC_CAP_DMA);
     ESP_GOTO_ON_FALSE(rgb_panel, ESP_ERR_NO_MEM, no_mem_panel, TAG, "no mem for rgb panel");
     rgb_panel->num_dma_nodes = num_dma_nodes;
-    // alloc frame buffer, currently we have to put the frame buffer in SRAM
-    rgb_panel->fb = heap_caps_calloc(1, fb_size, MALLOC_CAP_INTERNAL);
+    // alloc frame buffer
+    bool alloc_from_psram = false;
+    // fb_in_psram is only an option, if there's no PSRAM on board, we still alloc from SRAM
+    if (rgb_panel_config->flags.fb_in_psram) {
+#if CONFIG_SPIRAM_USE_MALLOC || CONFIG_SPIRAM_USE_CAPS_ALLOC
+        if (esp_spiram_is_initialized()) {
+            alloc_from_psram = true;
+        }
+#endif
+    }
+    if (alloc_from_psram) {
+        rgb_panel->fb = heap_caps_calloc(1, fb_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    } else {
+        rgb_panel->fb = heap_caps_calloc(1, fb_size, MALLOC_CAP_INTERNAL);
+    }
     ESP_GOTO_ON_FALSE(rgb_panel->fb, ESP_ERR_NO_MEM, no_mem_fb, TAG, "no mem for frame buffer");
     rgb_panel->fb_size = fb_size;
+    rgb_panel->flags.fb_in_psram = alloc_from_psram;
     // semaphore indicates new frame trans done
     rgb_panel->done_sem = xSemaphoreCreateBinary();
     ESP_GOTO_ON_FALSE(rgb_panel->done_sem, ESP_ERR_NO_MEM, no_mem_sem, TAG, "create done sem failed");
@@ -113,9 +135,9 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     // initialize HAL layer, so we can call LL APIs later
     lcd_hal_init(&rgb_panel->hal, panel_id);
     // install interrupt service, (LCD peripheral shares the interrupt source with Camera by different mask)
-    int isr_flags = 0;
+    int isr_flags = ESP_INTR_FLAG_SHARED;
     ret = esp_intr_alloc_intrstatus(lcd_periph_signals.panels[panel_id].irq_id, isr_flags,
-                                    lcd_ll_get_interrupt_status_reg(rgb_panel->hal.dev),
+                                    (uint32_t)lcd_ll_get_interrupt_status_reg(rgb_panel->hal.dev),
                                     LCD_LL_EVENT_VSYNC_END, lcd_default_isr_handler, rgb_panel, &rgb_panel->intr);
     ESP_GOTO_ON_ERROR(ret, no_int, TAG, "install interrupt failed");
     lcd_ll_enable_interrupt(rgb_panel->hal.dev, LCD_LL_EVENT_VSYNC_END, false); // disable all interrupts
@@ -257,17 +279,21 @@ static esp_err_t rgb_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
     y_end = MIN(y_end, rgb_panel->timings.v_res);
     xSemaphoreTake(rgb_panel->done_sem, portMAX_DELAY); // wait for last transaction done
     // convert the frame buffer to 3D array
-    int bytes_pre_pixel = rgb_panel->data_width / 8;
-    int pixels_pre_line = rgb_panel->timings.h_res;
+    int bytes_per_pixel = rgb_panel->data_width / 8;
+    int pixels_per_line = rgb_panel->timings.h_res;
     const uint8_t *from = (const uint8_t *)color_data;
-    uint8_t (*to)[pixels_pre_line][bytes_pre_pixel] = (uint8_t (*)[pixels_pre_line][bytes_pre_pixel])rgb_panel->fb;
+    uint8_t (*to)[pixels_per_line][bytes_per_pixel] = (uint8_t (*)[pixels_per_line][bytes_per_pixel])rgb_panel->fb;
     // manipulate the frame buffer
     for (int j = y_start; j < y_end; j++) {
         for (int i = x_start; i < x_end; i++) {
-            for (int k = 0; k < bytes_pre_pixel; k++) {
+            for (int k = 0; k < bytes_per_pixel; k++) {
                 to[j][i][k] = *from++;
             }
         }
+    }
+    if (rgb_panel->flags.fb_in_psram) {
+        // CPU writes data to PSRAM through DCache, data in PSRAM might not get updated, so write back
+        Cache_WriteBack_Addr((uint32_t)&to[y_start][0][0], (y_end - y_start) * rgb_panel->timings.h_res * bytes_per_pixel);
     }
     // we don't care the exact frame ID, as long as it's different from the previous one
     rgb_panel->new_frame_id++;
@@ -400,6 +426,11 @@ static esp_err_t lcd_rgb_panel_create_trans_link(esp_rgb_panel_t *panel)
     ret = gdma_new_channel(&dma_chan_config, &panel->dma_chan);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "alloc DMA channel failed");
     gdma_connect(panel->dma_chan, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_LCD, 0));
+    gdma_transfer_ability_t ability = {
+        .psram_trans_align = 64,
+        .sram_trans_align = 4,
+    };
+    gdma_set_transfer_ability(panel->dma_chan, &ability);
     // the start of DMA should be prior to the start of LCD engine
     gdma_start(panel->dma_chan, (intptr_t)panel->dma_nodes);
 

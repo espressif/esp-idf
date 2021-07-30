@@ -128,7 +128,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     // interrupt is disabled by default
     int isr_flags = ESP_INTR_FLAG_INTRDISABLED;
     ret = esp_intr_alloc_intrstatus(lcd_periph_signals.buses[bus_id].irq_id, isr_flags,
-                                    lcd_ll_get_interrupt_status_reg(bus->hal.dev),
+                                    (uint32_t)lcd_ll_get_interrupt_status_reg(bus->hal.dev),
                                     LCD_LL_EVENT_TRANS_DONE, lcd_default_isr_handler, bus, &bus->intr);
     ESP_GOTO_ON_ERROR(ret, no_int, TAG, "install interrupt failed");
     lcd_ll_enable_interrupt(bus->hal.dev, LCD_LL_EVENT_TRANS_DONE, false); // disable all interrupts

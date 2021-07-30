@@ -91,6 +91,15 @@ void esp_spiram_writeback_cache(void);
  */
 esp_err_t esp_spiram_reserve_dma_pool(size_t size);
 
+/**
+ * @brief If SPI RAM(PSRAM) has been initialized
+ *
+ * @return
+ *          - true SPI RAM has been initialized successfully
+ *          - false SPI RAM hasn't been initialized or initialized failed
+ */
+bool esp_spiram_is_initialized(void);
+
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
 
 extern int _instruction_reserved_start, _instruction_reserved_end;

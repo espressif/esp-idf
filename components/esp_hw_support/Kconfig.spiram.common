@@ -2,7 +2,7 @@
 #
 # sourced into the "SPIRAM config" submenu for ESP32 or ESP32S2
 
-# invisible option selected by ESP32_SPIRAM_SUPPORT || ESP32S2_SPIRAM_SUPPORT
+# invisible option selected by ${target}_SPIRAM_SUPPORT
 config SPIRAM
     bool
 

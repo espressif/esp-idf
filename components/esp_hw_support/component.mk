@@ -1,5 +1,5 @@
 COMPONENT_SRCDIRS := . port/$(IDF_TARGET)
-COMPONENT_ADD_INCLUDEDIRS := . include port/$(IDF_TARGET)/ include/soc port/$(IDF_TARGET)/private_include
+COMPONENT_ADD_INCLUDEDIRS := . include port/$(IDF_TARGET)/ include/soc include/soc/${IDF_TARGET} port/$(IDF_TARGET)/private_include
 COMPONENT_ADD_LDFRAGMENTS := linker.lf
 
 ifdef IS_BOOTLOADER_BUILD

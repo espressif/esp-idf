@@ -165,12 +165,10 @@ static inline void lcd_ll_set_command(lcd_cam_dev_t *dev, uint32_t data_width, u
 {
     // if command phase has two cycles, in the first cycle, command[15:0] is sent out via lcd_data_out[15:0]
     // in the second cycle, command[31:16] is sent out via lcd_data_out[15:0]
-    // no matter the LCD is in 8bit mode or 16bit mode
-    // so this is a workaround especially for 8bit mode
     if (data_width == 8) {
         command = (command & 0xFF) | (command & 0xFF00) << 8;
     }
-    dev->lcd_cmd_val = command;
+    dev->lcd_cmd_val.lcd_cmd_value = command;
 }
 
 static inline void lcd_ll_enable_rgb_mode(lcd_cam_dev_t *dev, bool en)
@@ -252,9 +250,9 @@ static inline void lcd_ll_clear_interrupt_status(lcd_cam_dev_t *dev, uint32_t ma
     dev->lc_dma_int_clr.val = mask & 0x03;
 }
 
-static inline uint32_t lcd_ll_get_interrupt_status_reg(lcd_cam_dev_t *dev)
+static inline volatile void *lcd_ll_get_interrupt_status_reg(lcd_cam_dev_t *dev)
 {
-    return (uint32_t)(&dev->lc_dma_int_st);
+    return &dev->lc_dma_int_st;
 }
 
 #ifdef __cplusplus
