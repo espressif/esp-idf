@@ -67,7 +67,14 @@ menu "Example Configuration"
         range 1 10
         default 6
         help
-            The number of stations allowed to connect in.
+            The number of mesh stations allowed to connect in.
+
+    config MESH_NON_MESH_AP_CONNECTIONS
+        int "Mesh Non Mesh AP Connections"
+        range 0 9
+        default 0
+        help
+            The number of non-mesh stations allowed to connect in.
 
     config MESH_MAX_LAYER
         int "Mesh Max Layer"
