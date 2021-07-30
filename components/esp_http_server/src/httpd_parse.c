@@ -1070,3 +1070,92 @@ esp_err_t httpd_req_get_hdr_value_str(httpd_req_t *r, const char *field, char *v
     }
     return ESP_ERR_NOT_FOUND;
 }
+
+/* Helper function to get a cookie value from a cookie string of the type "cookie1=val1; cookie2=val2" */
+esp_err_t static httpd_cookie_key_value(const char *cookie_str, const char *key, char *val, size_t *val_size)
+{
+    if (cookie_str == NULL || key == NULL || val == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    const char *cookie_ptr = cookie_str;
+    const size_t buf_len = *val_size;
+    size_t _val_size = *val_size;
+
+    while (strlen(cookie_ptr)) {
+        /* Search for the '=' character. Else, it would mean
+         * that the parameter is invalid */
+        const char *val_ptr = strchr(cookie_ptr, '=');
+        if (!val_ptr) {
+            break;
+        }
+        size_t offset = val_ptr - cookie_ptr;
+
+        /* If the key, does not match, continue searching.
+         * Compare lengths first as key from cookie string is not
+         * null terminated (has '=' in the end) */
+        if ((offset != strlen(key)) || (strncasecmp(cookie_ptr, key, offset) != 0)) {
+            /* Get the name=val string. Multiple name=value pairs
+             * are separated by '; ' */
+            cookie_ptr = strchr(val_ptr, ' ');
+            if (!cookie_ptr) {
+                break;
+            }
+            cookie_ptr++;
+            continue;
+        }
+
+        /* Locate start of next query */
+        cookie_ptr = strchr(++val_ptr, ';');
+        /* Or this could be the last query, in which
+         * case get to the end of query string */
+        if (!cookie_ptr) {
+            cookie_ptr = val_ptr + strlen(val_ptr);
+        }
+
+        /* Update value length, including one byte for null */
+        _val_size = cookie_ptr - val_ptr + 1;
+
+        /* Copy value to the caller's buffer. */
+        strlcpy(val, val_ptr, MIN(_val_size, buf_len));
+
+        /* If buffer length is smaller than needed, return truncation error */
+        if (buf_len < _val_size) {
+            *val_size = _val_size;
+            return ESP_ERR_HTTPD_RESULT_TRUNC;
+        }
+        /* Save amount of bytes copied to caller's buffer */
+        *val_size = MIN(_val_size, buf_len);
+        return ESP_OK;
+    }
+    ESP_LOGD(TAG, LOG_FMT("cookie %s not found"), key);
+    return ESP_ERR_NOT_FOUND;
+}
+
+/* Get the value of a cookie from the request headers */
+esp_err_t httpd_req_get_cookie_val(httpd_req_t *req, const char *cookie_name, char *val, size_t *val_size)
+{
+    esp_err_t ret;
+    size_t hdr_len_cookie = httpd_req_get_hdr_value_len(req, "Cookie");
+    char *cookie_str = NULL;
+
+    if (hdr_len_cookie <= 0) {
+        return ESP_ERR_NOT_FOUND;
+    }
+    cookie_str = malloc(hdr_len_cookie + 1);
+    if (cookie_str == NULL) {
+        ESP_LOGE(TAG, "Failed to allocate memory for cookie string");
+        return ESP_ERR_NO_MEM;
+    }
+
+    if (httpd_req_get_hdr_value_str(req, "Cookie", cookie_str, hdr_len_cookie + 1) != ESP_OK) {
+        ESP_LOGW(TAG, "Cookie not found in header uri:[%s]", req->uri);
+        free(cookie_str);
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    ret = httpd_cookie_key_value(cookie_str, cookie_name, val, val_size);
+    free(cookie_str);
+    return ret;
+
+}
