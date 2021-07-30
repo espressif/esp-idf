@@ -44,16 +44,16 @@ ESP32-S2-Saola-1 是乐鑫一款基于 ESP32-S2 的小型开发板。板上的�
 零售订单
 ^^^^^^^^
 
-如购买样品，每个 ESP32-S2-Saola-1 底板将以防静电袋或零售商选择的其他方式包装。
+如购买样品，每个 ESP32-S2-Saola-1 开发板将以防静电袋或零售商选择的其他方式包装。
 
 零售订单请前往 https://www.espressif.com/zh-hans/company/contact/buy-a-sample。
 
 批量订单
 ^^^^^^^^
 
-如批量购买，ESP32-S2-Saola-1 烧录底板将以大纸板箱包装。
+如批量购买，ESP32-S2-Saola-1 开发板将以大纸板箱包装。
 
-批量订单请参考 `乐鑫产品订购信息 <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_cn.pdf>`__ (PDF)。
+批量订单请前往 https://www.espressif.com/zh-hans/contact-us/sales-questions。
 
 组件介绍
 --------
@@ -143,6 +143,6 @@ ESP32-S2-Saola-1 的主要组件和连接方式如下图所示。
 * `ESP32-S2 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_cn.pdf>`_ (PDF)
 * `ESP32-S2-WROVER & ESP32-S2-WROVER-I 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-s2-wrover_esp32-s2-wrover-i_datasheet_cn.pdf>`_ (PDF)
 * `ESP32-S2-WROOM & ESP32-S2-WROOM-I 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-s2-wroom_esp32-s2-wroom-i_datasheet_cn.pdf>`_ (PDF)
-* `乐鑫产品订购信息 <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_cn.pdf>`_ (PDF) 
+* `乐鑫产品选型工具 <https://products.espressif.com/#/product-selector?names=>`__
 
 有关本开发板的更多设计文档，请联系我们的商务部门 sales@espressif.com。

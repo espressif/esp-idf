@@ -120,7 +120,7 @@ Wholesale Orders
 
 If you order in bulk, the boards come in large cardboard boxes.
 
-For wholesale orders, please check `Espressif Product Ordering Information <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>`_ (PDF)
+For wholesale orders, please go to https://www.espressif.com/en/contact-us/sales-questions.
 
 Hardware Reference
 ===================
@@ -357,7 +357,7 @@ Related Documents
 ===================
 
 * `ESP32-PICO-V3 Datasheet <http://espressif.com/sites/default/files/documentation/esp32-pico-v3_datasheet_en.pdf>`_ (PDF)
-* `Espressif Product Ordering Information <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>`_ (PDF) 
+* `ESP Product Selector <https://products.espressif.com/#/product-selector?names=>`_
 * `ESP32-PICO-KIT-1 Schematic <https://dl.espressif.com/dl/schematics/SCH_ESP32-PICO-KIT-1_V1_0_20200811A.pdf>`_ (PDF)
 * `ESP32-PICO-KIT-1 PCB Layout <https://dl.espressif.com/dl/schematics/PCB_ESP32-PICO-KIT-1_V1.0_20200811.pdf>`_ (PDF)
 
