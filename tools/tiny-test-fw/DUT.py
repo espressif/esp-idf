@@ -543,13 +543,11 @@ class BaseDUT(object):
         :return: match groups if match succeed otherwise None
         """
         ret = None
-        if isinstance(pattern.pattern, type(u'')):
-            pattern = re.compile(BaseDUT.u_to_bytearray(pattern.pattern))
-        if isinstance(data, type(u'')):
-            data = BaseDUT.u_to_bytearray(data)
+        if isinstance(pattern.pattern, bytes):
+            pattern = re.compile(_decode_data(pattern.pattern))
         match = pattern.search(data)
         if match:
-            ret = tuple(None if x is None else x.decode() for x in match.groups())
+            ret = tuple(x for x in match.groups())
             index = match.end()
         else:
             index = -1
