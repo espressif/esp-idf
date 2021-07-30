@@ -63,16 +63,20 @@ Pins in use. The SPI Master can use the GPIO mux, so feel free to change these i
 #define GPIO_SCLK 6
 #define GPIO_CS 10
 
+#elif CONFIG_IDF_TARGET_ESP32S3
+#define GPIO_HANDSHAKE 2
+#define GPIO_MOSI 11
+#define GPIO_MISO 13
+#define GPIO_SCLK 12
+#define GPIO_CS 10
+
 #endif //CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
 
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #define RCV_HOST    HSPI_HOST
 
-#elif defined CONFIG_IDF_TARGET_ESP32S2
-#define RCV_HOST    SPI2_HOST
-
-#elif defined CONFIG_IDF_TARGET_ESP32C3
+#else
 #define RCV_HOST    SPI2_HOST
 
 #endif
