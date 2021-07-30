@@ -261,6 +261,11 @@ Transmit Mode Parameters
 * Binary level on the output to apply the carrier - :cpp:func:`rmt_set_tx_carrier`, selected from :cpp:type:`rmt_carrier_level_t`
 * Determines the binary level on the output when transmitter is idle - :cpp:func:`rmt_set_idle_level()`, selected from :cpp:type:`rmt_idle_level_t`
 
+.. only:: SOC_RMT_SUPPORT_TX_LOOP_COUNT
+
+    * Enable or disable loop count feature to automatically transmit items for N iterations, then trigger an ISR callback - :cpp:func:`rmt_set_tx_loop_count`
+    * Enable automatically stopping when the number of iterations matches the set loop count. Note this is not reliable for target that doesn't support `SOC_RMT_SUPPORT_TX_LOOP_AUTOSTOP`. - :cpp:func:`rmt_enable_tx_loop_autostop`
+
 
 Receive Mode Parameters
 ^^^^^^^^^^^^^^^^^^^^^^^
