@@ -82,14 +82,14 @@ If you have different board, move to sections below.
 Step 1. Set up Toolchain
 ========================
 
-The quickest way to start development with ESP32 is by installing a prebuilt toolchain. Pick up your OS below and follow provided instructions. 
+The quickest way to start development with ESP32 is by installing a prebuilt toolchain. Pick up your OS below and follow provided instructions.
 
 .. toctree::
     :hidden:
 
     Windows <windows-setup>
-    Linux <linux-setup> 
-    MacOS <macos-setup> 
+    Linux <linux-setup>
+    MacOS <macos-setup>
 
 +-------------------+-------------------+-------------------+
 | |windows-logo|    | |linux-logo|      | |macos-logo|      |
@@ -298,12 +298,12 @@ This command will compile the application and all the ESP-IDF components, genera
    -- Building empty aws_iot component due to configuration
    -- Component names: ...
    -- Component paths: ...
-   
+
    ... (more lines of build system output)
-   
+
    [527/527] Generating hello-world.bin
    esptool.py v2.3.1
-   
+
    Project build complete. To flash, run this command:
    ../../../components/esptool_py/esptool/esptool.py -p (PORT) -b 921600 write_flash --flash_mode dio --flash_size detect --flash_freq 40m 0x10000 build/hello-world.bin  build 0x1000 build/bootloader/bootloader.bin 0x8000 build/partition_table/partition-table.bin
    or run 'idf.py -p PORT flash'
@@ -352,7 +352,7 @@ This step will flash the binaries that you just built to your ESP32 board.
     Compressed 136672 bytes to 67544...
     Wrote 136672 bytes (67544 compressed) at 0x00010000 in 1.9 seconds (effective 567.5 kbit/s)...
     Hash of data verified.
-    
+
     Leaving...
     Hard resetting via RTS pin...
 
@@ -393,14 +393,13 @@ Several lines below, after start up and diagnostic log, you should see "Hello wo
 
 To exit the monitor use shortcut ``Ctrl+]``.
 
-.. note::
+If instead of the messages above, you see a random garbage similar to what is shown below, or monitor fails shortly after upload, your board is likely using 26MHz crystal, while the ESP-IDF assumes default of 40MHz. Exit the monitor, go back to the :ref:`menuconfig <get-started-configure>`, change :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` to 26MHz, then :ref:`build and flash <get-started-build-flash>` the application again. This is found under ``make menuconfig`` under Component config --> ESP32-specific --> Main XTAL frequency.
 
-    If instead of the messages above, you see a random garbage similar to::
+.. figure:: ../../_static/get-started-garbled-output.png
+    :align: center
+    :alt: Garbled output
+    :figclass: align-center
 
-        e���)(Xn@�y.!��(�PW+)��Hn9a؅/9�!�t5��P�~�k��e�ea�5�jA
-        ~zY��Y(1�,1�� e���)(Xn@�y.!Dr�zY(�jpi�|�+z5Ymvp
-
-    or monitor fails shortly after upload, your board is likely using 26MHz crystal. Most development board designs use 40MHz and the ESP-IDF uses this default value. Exit the monitor, go back to the :ref:`menuconfig <get-started-configure-cmake>`, change :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` to 26MHz, then :ref:`build and flash <get-started-flash-cmake>` the application again. This is found under ``idf.py menuconfig`` under Component config --> ESP32-specific --> Main XTAL frequency.
 
 .. note::
 

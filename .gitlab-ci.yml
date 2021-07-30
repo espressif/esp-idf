@@ -49,8 +49,10 @@ variables:
   CI_AUTO_TEST_SCRIPT_REPO_URL: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/qa/auto_test_script.git"
   CI_AUTO_TEST_SCRIPT_REPO_BRANCH: "ci/v3.1"
 
-  # Versioned esp-idf-doc env image to use for all document building jobs
-  ESP_IDF_DOC_ENV_IMAGE: "$CI_DOCKER_REGISTRY/esp-idf-doc-env:v5"
+# Versioned esp-idf-doc env image to use for all document building jobs
+  ESP_IDF_DOC_ENV_IMAGE: "$CI_DOCKER_REGISTRY/esp-idf-doc-env:v7"
+
+
 
 # before each job, we need to check if this job is filtered by bot stage/job filter
 .apply_bot_filter: &apply_bot_filter
@@ -284,25 +286,18 @@ build_examples_cmake:
     - mkdir -p ${LOG_PATH}
     - ${IDF_PATH}/tools/ci/build_examples_cmake.sh
 
-build_docs:
+
+.build_docs_template: &build_docs_template
   stage: build
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  image: $ESP_IDF_DOC_ENV_IMAGE
   tags:
     - build_docs
   artifacts:
     when: always
     paths:
-      # English version of documentation
-      - docs/en/doxygen-warning-log.txt
-      - docs/en/sphinx-warning-log.txt
-      - docs/en/sphinx-warning-log-sanitized.txt
-      - docs/en/_build/html
-      - docs/sphinx-err-*
-      # Chinese version of documentation
-      - docs/zh_CN/doxygen-warning-log.txt
-      - docs/zh_CN/sphinx-warning-log.txt
-      - docs/zh_CN/sphinx-warning-log-sanitized.txt
-      - docs/zh_CN/_build/html
+      - docs/*/*.txt
+      - docs/_build/*/html/*
+      - docs/_build/*/latex/*
     expire_in: 4 days
   only:
     variables:
@@ -310,17 +305,32 @@ build_docs:
       - $BOT_LABEL_BUILD
       - $BOT_LABEL_BUILD_DOCS
       - $BOT_LABEL_REGULAR_TEST
+  dependencies: []
   script:
+    # Active python 3.6.10 env as this is where Sphinx is installed
+    - source /opt/pyenv/activate && pyenv global 3.6.10
+      # Setup a build dir with both languages to simplify deployment
     - cd docs
+    - mkdir -p _build/$DOCLANG
     - ./check_lang_folder_sync.sh
-    - cd en
+    - cd $DOCLANG
     - make gh-linkcheck
     - make html
     - ../check_doc_warnings.sh
-    - cd ../zh_CN
-    - make gh-linkcheck
-    - make html
+    - make latexpdf LATEXMKOPTS="--f --interaction=nonstopmode --quiet --outdir=build"
     - ../check_doc_warnings.sh
+    - mv -f _build/* ../_build/$DOCLANG
+
+build_docs_en:
+  extends: .build_docs_template
+  variables:
+    DOCLANG: "en"
+
+build_docs_zh_CN:
+  extends: .build_docs_template
+  variables:
+    DOCLANG: "zh_CN"
+
 
 .check_job_template: &check_job_template
   stage: check
@@ -614,45 +624,67 @@ push_to_github:
     - git remote add github git@github.com:espressif/esp-idf.git
     - tools/ci/push_to_github.sh
 
-deploy_docs:
+.deploy_docs_template:
+  extends: .before_script_lesser
   stage: deploy
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  image: $ESP_IDF_DOC_ENV_IMAGE
   tags:
     - deploy
     - shiny
+  dependencies:
+    - build_docs_en
+    - build_docs_zh_CN
+  variables:
+    DOCS_BUILD_DIR: "${IDF_PATH}/docs/_build/"
+    PYTHONUNBUFFERED: 1
+  script:
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -n $DOCS_DEPLOY_PRIVATEKEY > ~/.ssh/id_rsa_base64
+    - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - echo -e "Host $DOCS_DEPLOY_SERVER\n\tStrictHostKeyChecking no\n\tUser $DOCS_DEPLOY_SERVER_USER\n" >> ~/.ssh/config
+    - export GIT_VER=$(git describe --always)
+
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ${IDF_PATH}/tools/ci/deploy_docs.py
+
+
+# deploys docs to CI_DOCKER_REGISTRY webserver, for internal review
+deploy_docs_preview:
+  extends: .deploy_docs_template
   only:
     refs:
-      - master
-      - /^release\/v/
-      - /^v\d+\.\d+(\.\d+)?($|-)/
       - triggers
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null
       - $BOT_LABEL_BUILD_DOCS
-  dependencies:
-    - build_docs
-  <<: *before_script_lesser
-  script:
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - echo -n $DOCS_DEPLOY_KEY > ~/.ssh/id_rsa_base64
-    - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
-    - chmod 600 ~/.ssh/id_rsa
-    - echo -e "Host $DOCS_SERVER\n\tStrictHostKeyChecking no\n\tUser $DOCS_SERVER_USER\n" >> ~/.ssh/config
-    - export GIT_VER=$(git describe --always)
-    - cd docs/en/_build/
-    - mv html $GIT_VER
-    - tar czvf $GIT_VER.tar.gz $GIT_VER
-    - scp $GIT_VER.tar.gz $DOCS_SERVER:$DOCS_PATH/en
-    - ssh $DOCS_SERVER -x "cd $DOCS_PATH/en && tar xzvf $GIT_VER.tar.gz && rm -f latest && ln -s $GIT_VER latest"
-    - cd ../../zh_CN/_build/
-    - mv html $GIT_VER
-    - tar czvf $GIT_VER.tar.gz $GIT_VER
-    - scp $GIT_VER.tar.gz $DOCS_SERVER:$DOCS_PATH/zh_CN
-    - ssh $DOCS_SERVER -x "cd $DOCS_PATH/zh_CN && tar xzvf $GIT_VER.tar.gz && rm -f latest && ln -s $GIT_VER latest"
-    # add link to preview doc
-    - echo "[document preview][en] $CI_DOCKER_REGISTRY/docs/esp-idf/en/${GIT_VER}/index.html"
-    - echo "[document preview][zh_CN] $CI_DOCKER_REGISTRY/docs/esp-idf/zh_CN/${GIT_VER}/index.html"
+  variables:
+    TYPE: "preview"
+    # older branches use DOCS_DEPLOY_KEY, DOCS_SERVER, DOCS_SERVER_USER, DOCS_PATH for preview server so we keep these names for 'preview'
+    DOCS_DEPLOY_PRIVATEKEY: "$DOCS_DEPLOY_KEY"
+    DOCS_DEPLOY_SERVER: "$DOCS_SERVER"
+    DOCS_DEPLOY_SERVER_USER: "$DOCS_SERVER_USER"
+    DOCS_DEPLOY_PATH: "$DOCS_PATH"
+    DOCS_DEPLOY_URL_BASE: "https://$CI_DOCKER_REGISTRY/docs/esp-idf"
+
+# deploy docs to production webserver
+deploy_docs_production:
+  extends: .deploy_docs_template
+  only:
+    refs:
+      # The DOCS_PROD_* variables used by this job are "Protected" so these branches must all be marked "Protected" in Gitlab settings
+      - master
+      - /^release\/v/
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+  variables:
+    TYPE: "preview"
+    DOCS_DEPLOY_PRIVATEKEY: "$DOCS_PROD_DEPLOY_KEY"
+    DOCS_DEPLOY_SERVER: "$DOCS_PROD_SERVER"
+    DOCS_DEPLOY_SERVER_USER: "$DOCS_PROD_SERVER_USER"
+    DOCS_DEPLOY_PATH: "$DOCS_PROD_PATH"
+    DOCS_DEPLOY_URL_BASE: "https://docs.espressif.com/projects/esp-idf"
 
 check_doc_links:
   stage: host_test
