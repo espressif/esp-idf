@@ -1,16 +1,8 @@
-// Copyright 2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+*/
 
 #include "esp_check.h"
 #include "esp_err.h"
@@ -32,7 +24,7 @@ static void tcp_socket_server_task(void *pvParameters)
     int opt = 1;
     int port = CONFIG_OPENTHREAD_CLI_TCP_SERVER_PORT;
     int client_sock = 0;
-    struct timeval timeout;
+    struct timeval timeout = { 0 };
     struct sockaddr_storage source_addr; // Large enough for both IPv6
     struct sockaddr_in6 listen_addr = { 0 };
     // The TCP server listen at the address "::", which means all addresses can be listened to.
@@ -154,7 +146,7 @@ void esp_ot_process_tcp_client(void *aContext, uint8_t aArgsLength, char *aArgs[
 {
     (void)(aContext);
     (void)(aArgsLength);
-    if (aArgs[0] == NULL) {
+    if (aArgsLength == 0) {
         ESP_LOGE(TAG, "Invalid arguments.");
     } else {
         xTaskCreate(tcp_socket_client_task, "ot_tcp_socket_client", 4096, aArgs[0], 4, NULL);

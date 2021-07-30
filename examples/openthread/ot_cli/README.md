@@ -84,7 +84,9 @@ leader
 Done
 ```
 
-## Example1: TCP/UDP server and client
+## Example1: Set up network
+
+You need to prepare two esp32h2(or two ESP devices each connected to a 15.4 RCP) and flashed with this example.
 
 ### Step 1 Configure the project
 
@@ -92,10 +94,7 @@ Done
 idf.py menuconfig
 ```
 
-Enable the operation: Example Configuration -> Enable custom command in ot-cli -> Enable openthread tcp/udp socket
-
 ### Step 2 Build, Flash, and Run
-You need to prepare two ESP devices each connected to a 15.4 RCP and flashed with this example.
 
 ```
 idf.py -p PORT flash monitor
@@ -136,7 +135,6 @@ Done
 leader
 Done
 ```
-
 Now the first device has formed a Thread network, on the second device run:
 
 ```bash
@@ -174,7 +172,21 @@ Done
 
 Now the second device has joined the Thread network and acting as a router (or a child).
 
-### Step 4 Set up tcp/udp socket server and client
+## Example2: TCP/UDP server and client
+
+You need to prepare two ESP devices each connected to a 15.4 RCP and flashed with this example.
+
+### Step 1 Configure the project and Set up network 
+
+```bash
+idf.py menuconfig
+```
+Enable the operation: Example Configuration -> Enable custom command in ot-cli
+
+After configuring the project project, you should follow 'Example1' to set up network.
+
+
+### Step 2 Set up tcp/udp socket server and client
 
 In leader device, run this command in command line shell.
 
@@ -243,3 +255,64 @@ I (38321) ot_secket: This message is from server
 I (38323) ot_secket: Socket client is closed.
 ```
 
+## Example3 iperf:
+
+### Step 1 Configure the project and Set up network 
+
+```bash
+idf.py menuconfig
+```
+Enable the operation: Openthread -> Enable custom command in ot-cli
+
+After configuring the project project, you should follow 'Example1' to set up network.
+
+### Step 2 Iperf test:
+
+Run this command for iperf help:
+```bash
+iperf
+I(272113) OPENTHREAD:[INFO]-CLI-----: execute command: iperf
+---iperf parameter---
+-s                  :     server mode, only receive
+-u                  :     upd mode
+-V                  :     use IPV6 address  
+-c <addr>           :     client mode, only transmit
+-i <interval>       :     seconds between periodic bandwidth reports
+-t <time>           :     time in seconds to transmit for (default 10 secs)
+-p <port>           :     server port to listen on/connect to
+-l <len_send_buf>   :     the lenth of send buffer
+---example---
+create a tcp server :     iperf -s -i 3 -p 5001 -t 60 
+create a udp client :     iperf -c <addr> -u -i 3 -t 60 -p 5001 -l 512
+Done
+```
+
+In leader device, run this command to get the leader IPv6 address.
+
+```bash
+> ipaddr
+fd00:db8:0:0:0:ff:fe00:fc00
+fd00:db8:0:0:0:ff:fe00:ac00
+fd00:db8:0:0:284a:cb4a:cb3b:2a42
+fe80:0:0:0:146e:a00:0:1
+```
+
+Then run this command in command line shell.
+
+```bash
+# for setting up an iperf tcp server
+> iperf -V -s -i 3 -p 5001 -t 20
+
+# for setting up an iperf udp server
+> iperf -V -s -u -i 3 -p 5001 -t 20
+```
+
+In router device, run this command in command line shell.
+
+```bash
+# for setting up an iperf tcp client
+> iperf -V -c fd00:db8:0:0:284a:cb4a:cb3b:2a42 -i 1 -t 14 -p 5001 -l 512
+
+# for setting up an iperf udp client
+> iperf -V -c fd00:db8:0:0:284a:cb4a:cb3b:2a42 -u -i 1 -t 14 -p 5001 -l 512
+```
