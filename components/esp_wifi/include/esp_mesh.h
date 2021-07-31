@@ -505,8 +505,13 @@ typedef struct {
  * @brief Mesh softAP configuration
  */
 typedef struct {
-    uint8_t password[64];      /**< mesh softAP password */
-    uint8_t max_connection;    /**< max number of stations allowed to connect in, max 10 */
+    uint8_t password[64];              /**< mesh softAP password */
+    /**
+     * max number of stations allowed to connect in, default 6, max 10
+     * = max_connection + nonmesh_max_connection
+     */
+    uint8_t max_connection;            /**< max mesh connections */
+    uint8_t nonmesh_max_connection;    /**< max non-mesh connections */
 } mesh_ap_cfg_t;
 
 /**
@@ -947,7 +952,8 @@ esp_err_t esp_mesh_set_ap_authmode(wifi_auth_mode_t authmode);
 wifi_auth_mode_t esp_mesh_get_ap_authmode(void);
 
 /**
- * @brief      Set mesh softAP max connection value
+ * @brief      Set mesh max connection value
+ *             - Set mesh softAP max connection = mesh max connection + non-mesh max connection
  *
  * @attention  This API shall be called before mesh is started.
  *
@@ -960,11 +966,18 @@ wifi_auth_mode_t esp_mesh_get_ap_authmode(void);
 esp_err_t esp_mesh_set_ap_connections(int connections);
 
 /**
- * @brief      Get mesh softAP max connection configuration
+ * @brief      Get mesh max connection configuration
  *
- * @return     the number of max connections
+ * @return     the number of mesh max connections
  */
 int esp_mesh_get_ap_connections(void);
+
+/**
+ * @brief      Get non-mesh max connection configuration
+ *
+ * @return     the number of non-mesh max connections
+ */
+int esp_mesh_get_non_mesh_connections(void);
 
 /**
  * @brief      Get current layer value over the mesh network
