@@ -41,15 +41,20 @@ extern "C" {
 
 /********************* Group registers *******************/
 
-// Set/Get group clock: PWM_clk = CLK_160M / (prescale + 1)
+// Set/Get group clock: PWM_clk = CLK_160M / (clk_cfg.prescale + 1)
 static inline void mcpwm_ll_group_set_clock_prescale(mcpwm_dev_t *mcpwm, int pre_scale)
 {
-    mcpwm->clk_cfg.prescale = pre_scale - 1;
+    // In case the compiler optimise a 32bit instruction (e.g. s32i) into 8bit instruction (e.g. s8i, which is not allowed to access a register)
+    // We take care of the "read-modify-write" procedure by ourselves.
+    typeof(mcpwm->clk_cfg) clkcfg = mcpwm->clk_cfg;
+    clkcfg.prescale = pre_scale - 1;
+    mcpwm->clk_cfg = clkcfg;
 }
 
 static inline uint32_t mcpwm_ll_group_get_clock_prescale(mcpwm_dev_t *mcpwm)
 {
-    return mcpwm->clk_cfg.prescale + 1;
+    typeof(mcpwm->clk_cfg) clkcfg = mcpwm->clk_cfg;
+    return clkcfg.prescale + 1;
 }
 
 static inline void mcpwm_ll_group_enable_shadow_mode(mcpwm_dev_t *mcpwm)
@@ -265,12 +270,17 @@ static inline void mcpwm_ll_intr_enable_capture(mcpwm_dev_t *mcpwm, uint32_t cap
 
 static inline void mcpwm_ll_timer_set_clock_prescale(mcpwm_dev_t *mcpwm, int timer_id, uint32_t prescale)
 {
-    mcpwm->timer[timer_id].period.prescale = prescale - 1;
+    // In case the compiler optimise a 32bit instruction (e.g. s32i) into 8bit instruction (e.g. s8i, which is not allowed to access a register)
+    // We take care of the "read-modify-write" procedure by ourselves.
+    typeof(mcpwm->timer[timer_id].period) period = mcpwm->timer[timer_id].period;
+    period.prescale = prescale - 1;
+    mcpwm->timer[timer_id].period = period;
 }
 
 static inline uint32_t mcpwm_ll_timer_get_clock_prescale(mcpwm_dev_t *mcpwm, int timer_id)
 {
-    return mcpwm->timer[timer_id].period.prescale + 1;
+    typeof(mcpwm->timer[timer_id].period) period = mcpwm->timer[timer_id].period;
+    return period.prescale + 1;
 }
 
 static inline void mcpwm_ll_timer_set_peak(mcpwm_dev_t *mcpwm, int timer_id, uint32_t peak, bool symmetric)
