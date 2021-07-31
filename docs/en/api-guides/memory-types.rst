@@ -16,6 +16,8 @@ Non-constant static data (.data) and zero-initialized data (.bss) is placed by t
 
 .. only:: esp32
 
+   By applying the ``EXT_RAM_ATTR`` macro, zero-initialized data can also be placed into external RAM. To use this macro, the :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` needs to be enabled. See :ref:`external_ram_config_bss`.
+
    The available size of the internal DRAM region is reduced by 64kB (by shifting start address to ``0x3FFC0000``) if Bluetooth stack is used. Length of this region is also reduced by 16 kB or 32kB if trace memory is used. Due to some memory fragmentation issues caused by ROM, it is also not possible to use all available DRAM for static allocations - however the remaining DRAM is still available as heap at runtime.
 
 .. only:: not esp32
@@ -30,6 +32,10 @@ Constant data may also be placed into DRAM, for example if it is used in an non-
 =============
 
 The macro ``__NOINIT_ATTR`` can be used as attribute to place data into ``.noinit`` section. The values placed into this section will not be initialized at startup and should keep its value after software restart.
+
+.. only:: esp32
+
+    By applying the ``EXT_RAM_NOINIT_ATTR`` macro, Non-initialized value could also be placed in external RAM. To do this, the :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY` needs to be enabled. See :ref:`external_ram_config_noinit`. If the :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY` is not enabled, ``EXT_RAM_NOINIT_ATTR`` will behave just as ``__NOINIT_ATTR``, it will make data to be placed into ``.noinit`` segment in internal RAM.
 
 Example::
 
@@ -209,5 +215,3 @@ Placing DMA buffers in the stack is possible but discouraged. If doing so, pay a
             spi_device_transmit(spi, &temp);
             // other stuff
         }
-
-

@@ -197,6 +197,18 @@ SECTIONS
     . = ALIGN(4);
   } > dram0_0_seg
 
+  /**
+   * This section holds data that won't be initialised when startup.
+   * This section locates in External RAM region.
+   */
+  .ext_ram.noinit (NOLOAD) :
+  {
+    _ext_ram_noinit_start = ABSOLUTE(.);
+    *(.ext_ram.noinit*)
+    . = ALIGN(4);
+    _ext_ram_noinit_end = ABSOLUTE(.);
+  } > extern_ram_seg
+
   /*This section holds data that should not be initialized at power up.
     The section located in Internal SRAM memory region. The macro _NOINIT
     can be used as attribute to place data into this section.
