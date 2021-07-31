@@ -67,20 +67,20 @@ static void usb_serial_jtag_isr_handler_default(void *arg) {
             // If the hardware fifo is avaliable, write in it. Otherwise, do nothing.
             if (queued_buff != NULL) {  //Although tx_queued_bytes may be larger than 0. We may have interrupt before xRingbufferSend() was called.
                 //Copy the queued buffer into the TX FIFO
-                usb_serial_jtag_ll_clr_intr_sts_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
+                usb_serial_jtag_ll_clr_intsts_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
                 usb_serial_jtag_write_and_flush(queued_buff, queued_size);
                 vRingbufferReturnItemFromISR(p_usb_serial_jtag_obj->tx_ring_buf, queued_buff, &xTaskWoken);
                 usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
             }
         } else {
-            usb_serial_jtag_ll_clr_intr_sts_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
+            usb_serial_jtag_ll_clr_intsts_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
         }
     }
 
     if (usbjtag_intr_status & USB_SERIAL_JTAG_INTR_SERIAL_OUT_RECV_PKT) {
         // read rx buffer(max length is 64), and send avaliable data to ringbuffer.
         // Ensure the rx buffer size is larger than RX_MAX_SIZE.
-        usb_serial_jtag_ll_clr_intr_sts_mask(USB_SERIAL_JTAG_INTR_SERIAL_OUT_RECV_PKT);
+        usb_serial_jtag_ll_clr_intsts_mask(USB_SERIAL_JTAG_INTR_SERIAL_OUT_RECV_PKT);
         uint32_t rx_fifo_len = usb_serial_jtag_ll_read_rxfifo(p_usb_serial_jtag_obj->rx_data_buf, USB_SER_JTAG_RX_MAX_SIZE);
         xRingbufferSendFromISR(p_usb_serial_jtag_obj->rx_ring_buf, p_usb_serial_jtag_obj->rx_data_buf, rx_fifo_len, &xTaskWoken);
     }
@@ -120,12 +120,12 @@ esp_err_t usb_serial_jtag_driver_install(usb_serial_jtag_driver_config_t *usb_se
         goto _exit;
     }
 
-    usb_serial_jtag_ll_clr_intr_sts_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY|
+    usb_serial_jtag_ll_clr_intsts_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY|
                                          USB_SERIAL_JTAG_INTR_SERIAL_OUT_RECV_PKT);
     usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY|
                                      USB_SERIAL_JTAG_INTR_SERIAL_OUT_RECV_PKT);
 
-    err = esp_intr_alloc(ETS_USB_INTR_SOURCE, 0, usb_serial_jtag_isr_handler_default, NULL, &p_usb_serial_jtag_obj->intr_handle);
+    err = esp_intr_alloc(ETS_USB_SERIAL_JTAG_INTR_SOURCE, 0, usb_serial_jtag_isr_handler_default, NULL, &p_usb_serial_jtag_obj->intr_handle);
     if (err != ESP_OK) {
         goto _exit;
     }
