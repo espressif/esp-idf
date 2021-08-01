@@ -14,6 +14,14 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Read flash ID by sending RDID command (0x9F)
+ * @return flash raw ID
+ *     mfg_id = (ID >> 16) & 0xFF;
+       flash_id = ID & 0xffff;
+ */
+uint32_t bootloader_read_flash_id(void);
+
 #if SOC_CACHE_SUPPORT_WRAP
 /**
  * @brief Set the burst mode setting command for specified wrap mode.
@@ -31,6 +39,13 @@ esp_err_t bootloader_flash_wrap_set(spi_flash_wrap_mode_t mode);
   * @note This can be overridden because it's attribute weak.
   */
 esp_err_t bootloader_flash_unlock(void);
+
+/**
+ * @brief Startup flow recommended by XMC. Call at startup before any erase/write operation.
+ *
+ * @return ESP_OK When startup successfully, otherwise ESP_FAIL (indiciating you should reboot before erase/write).
+ */
+esp_err_t bootloader_flash_xmc_startup(void);
 
 #ifdef __cplusplus
 }
