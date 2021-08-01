@@ -18,9 +18,9 @@ Connect {IDF_TARGET_NAME} to the USB port as follows:
 +------+-------------+
 | GPIO | USB         |
 +======+=============+
-| 19   | D+ (green)  |
+| 18   | D+ (green)  |
 +------+-------------+
-| 18   | D- (white)  |
+| 19   | D- (white)  |
 +------+-------------+
 | GND  | GND (black) |
 +------+-------------+
