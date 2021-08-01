@@ -11,6 +11,8 @@
 #include "esp_intr_alloc.h"
 #include "test_utils.h"
 #include "esp_log.h"
+#include "../include_bootloader/flash_qio_mode.h"   //for bootloader_flash_xmc_startup
+
 
 struct flash_test_ctx {
     uint32_t offset;
@@ -352,3 +354,22 @@ TEST_CASE("spi_flash deadlock with high priority busy-waiting task", "[spi_flash
     TEST_ASSERT_EQUAL_INT(uxTaskPriorityGet(NULL), UNITY_FREERTOS_PRIORITY);
 }
 #endif // portNUM_PROCESSORS > 1
+
+
+static IRAM_ATTR NOINLINE_ATTR void test_xmc_startup(void)
+{
+    extern void spi_flash_disable_interrupts_caches_and_other_cpu(void);
+    extern void spi_flash_enable_interrupts_caches_and_other_cpu(void);
+    esp_err_t ret = ESP_OK;
+
+    spi_flash_disable_interrupts_caches_and_other_cpu();
+    ret = bootloader_flash_xmc_startup();
+    spi_flash_enable_interrupts_caches_and_other_cpu();
+
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+}
+
+TEST_CASE("bootloader_flash_xmc_startup can be called when cache disabled", "[spi_flash]")
+{
+    test_xmc_startup();
+}
