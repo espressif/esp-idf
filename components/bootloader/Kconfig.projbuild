@@ -365,6 +365,15 @@ menu "Bootloader config"
             in this area of memory, you can increase it. It must be a multiple of 4 bytes.
             This area (rtc_retain_mem_t) is reserved and has access from the bootloader and an application.
 
+    config BOOTLOADER_FLASH_XMC_SUPPORT
+        bool "Enable the support for flash chips of XMC (READ HELP FIRST)"
+        default y
+        help
+            Perform the startup flow recommended by XMC. Please consult XMC for the details of this flow.
+            XMC chips will be forbidden to be used, when this option is disabled.
+
+            DON'T DISABLE THIS UNLESS YOU KNOW WHAT YOU ARE DOING.
+
 endmenu  # Bootloader
 
 

@@ -111,14 +111,6 @@ static esp_err_t enable_qio_mode(read_status_fn_t read_status_fn,
    The command passed here is always the on-the-wire command given to the SPI flash unit.
 */
 
-/* dummy_len_plus values defined in ROM for SPI flash configuration */
-uint32_t bootloader_read_flash_id(void)
-{
-    uint32_t id = bootloader_execute_flash_command(CMD_RDID, 0, 0, 24);
-    id = ((id & 0xff) << 16) | ((id >> 16) & 0xff) | (id & 0xff00);
-    return id;
-}
-
 void bootloader_enable_qio_mode(void)
 {
     uint32_t raw_flash_id;
