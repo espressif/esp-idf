@@ -122,6 +122,12 @@ static esp_err_t bootloader_main()
     bootloader_common_vddsdio_configure();
     /* Read and keep flash ID, for further use. */
     g_rom_flashchip.device_id = bootloader_read_flash_id();
+    /* Check and run XMC startup flow */
+    if (bootloader_flash_xmc_startup() != ESP_OK) {
+        ESP_LOGE(TAG, "failed when running XMC startup flow, reboot!");
+        return ESP_FAIL;
+    }
+
     esp_image_header_t fhdr;
     if (bootloader_flash_read(ESP_BOOTLOADER_OFFSET, &fhdr, sizeof(esp_image_header_t), true) != ESP_OK) {
         ESP_LOGE(TAG, "failed to load bootloader header!");
