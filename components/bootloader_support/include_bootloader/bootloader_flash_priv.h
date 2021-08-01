@@ -37,6 +37,7 @@
 #define CMD_RDSR       0x05
 #define CMD_RDSR2      0x35 /* Not all SPI flash uses this command */
 #define CMD_OTPEN      0x3A /* Enable OTP mode, not all SPI flash uses this command */
+#define CMD_RDSFDP     0x5A /* Read the SFDP of the flash */
 #define CMD_WRAP       0x77 /* Set burst with wrap command */
 
 
@@ -164,10 +165,17 @@ static inline uint32_t bootloader_cache_pages_to_map(uint32_t size, uint32_t vad
 uint32_t bootloader_execute_flash_command(uint8_t command, uint32_t mosi_data, uint8_t mosi_len, uint8_t miso_len);
 
 /**
+ * @brief Read the SFDP of the flash
+ *
+ * @param sfdp_addr Address of the parameter to read
+ * @param miso_byte_num Bytes to read
+ * @return The read SFDP, little endian, 4 bytes at most
+ */
+uint32_t bootloader_flash_read_sfdp(uint32_t sfdp_addr, unsigned int miso_byte_num);
+
+/**
  * @brief Enable the flash write protect (WEL bit).
  */
 void bootloader_enable_wp(void);
-
-#endif
 
 #endif
