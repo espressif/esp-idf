@@ -3283,28 +3283,23 @@ void vTaskSwitchContext( void )
 		vPortCPUAcquireMutex( &xTaskQueueMutex );
 
 		#if !configUSE_PORT_OPTIMISED_TASK_SELECTION
-		unsigned portBASE_TYPE foundNonExecutingWaiter = pdFALSE, ableToSchedule = pdFALSE, resetListHead;
+		unsigned portBASE_TYPE foundNonExecutingWaiter = pdFALSE, ableToSchedule = pdFALSE;
 		unsigned portBASE_TYPE holdTop=pdFALSE;
 		tskTCB * pxTCB;
 
 		portBASE_TYPE uxDynamicTopReady = uxTopReadyPriority;
-		/*
-		 *  ToDo: This scheduler doesn't correctly implement the round-robin scheduling as done in the single-core
-		 *  FreeRTOS stack when multiple tasks have the same priority and are all ready; it just keeps grabbing the
-		 *  first one. ToDo: fix this.
-		 *  (Is this still true? if any, there's the issue with one core skipping over the processes for the other
-		 *  core, potentially not giving the skipped-over processes any time.)
-		 */
-
+		
 		while ( ableToSchedule == pdFALSE && uxDynamicTopReady >= 0 )
 		{
-			resetListHead = pdFALSE;
 			// Nothing to do for empty lists
 			if (!listLIST_IS_EMPTY( &( pxReadyTasksLists[ uxDynamicTopReady ] ) )) {
 
 				ableToSchedule = pdFALSE;
 				tskTCB * pxRefTCB;
-
+				
+				ListItem_t * pxSkipped = NULL;
+				unsigned portBASE_TYPE skippedTask = pdFALSE;
+				
 				/* Remember the current list item so that we
 				can detect if all items have been inspected.
 				Once this happens, we move on to a lower
@@ -3339,28 +3334,30 @@ void vTaskSwitchContext( void )
 						by another core and its affinity is
 						compatible with the current one,
 						prepare it to be swapped in */
-						if (pxTCB->xCoreID == tskNO_AFFINITY) {
+						if (pxTCB->xCoreID == tskNO_AFFINITY || pxTCB->xCoreID == xPortGetCoreID()) {
 							pxCurrentTCB[xPortGetCoreID()] = pxTCB;
 							ableToSchedule = pdTRUE;
-						} else if (pxTCB->xCoreID == xPortGetCoreID()) {
-							pxCurrentTCB[xPortGetCoreID()] = pxTCB;
-							ableToSchedule = pdTRUE;
+							if(skippedTask == pdTRUE) {
+								/* Move the task we are about to run to the end of the list
+								and set the skipped task to be next up */
+								ListItem_t * moveItem = pxReadyTasksLists[ uxDynamicTopReady ].pxIndex; 
+								uxListRemove(moveItem);
+								pxReadyTasksLists[ uxDynamicTopReady ].pxIndex = pxSkipped->pxPrevious;
+								vListInsertEnd(&(pxReadyTasksLists[ uxDynamicTopReady ]), moveItem);
+							}
 						} else {
 							ableToSchedule = pdFALSE;
 							holdTop=pdTRUE; //keep this as the top prio, for the other CPU
+							/* Keep track of the first skipped task */
+							if (skippedTask == pdFALSE) {
+								skippedTask = pdTRUE;
+								pxSkipped = pxReadyTasksLists[ uxDynamicTopReady ].pxIndex;
+							}
 						}
 					} else {
 						ableToSchedule = pdFALSE;
 					}
 
-					if (ableToSchedule == pdFALSE) {
-						resetListHead = pdTRUE;
-					} else if ((ableToSchedule == pdTRUE) && (resetListHead == pdTRUE)) {
-						tskTCB * pxResetTCB;
-						do {
-							listGET_OWNER_OF_NEXT_ENTRY( pxResetTCB, &( pxReadyTasksLists[ uxDynamicTopReady ] ) );
-						} while(pxResetTCB != pxRefTCB);
-					}
 				} while ((ableToSchedule == pdFALSE) && (pxTCB != pxRefTCB));
 			} else {
 				if (!holdTop) --uxTopReadyPriority;
