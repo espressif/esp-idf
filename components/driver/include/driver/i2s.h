@@ -355,7 +355,7 @@ esp_err_t i2s_stop(i2s_port_t i2s_num);
  *
  * @param i2s_num  I2S port number
  *
-* @return
+ * @return
  *     - ESP_OK              Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
