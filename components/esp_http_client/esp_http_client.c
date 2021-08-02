@@ -776,7 +776,7 @@ esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *u
         } else {
             return ESP_ERR_NO_MEM;
         }
-    } 
+    }
 
     //Reset path and query if there are no information
     if (purl.field_data[UF_PATH].len) {
@@ -888,11 +888,18 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
                 }
                 ESP_LOG_LEVEL(sev, TAG, "esp_transport_read returned:%d and errno:%d ", rlen, errno);
             }
-            if (rlen < 0 && ridx == 0 && !esp_http_client_is_complete_data_received(client)) {
-                return ESP_FAIL;
-            } else {
+#ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS
+            if (rlen == MBEDTLS_ERR_SSL_WANT_READ || errno == EAGAIN) {
+#else
+            if (errno == EAGAIN) {
+#endif
+                ESP_LOGD(TAG, "Received EAGAIN! rlen = %d, errno %d", rlen, errno);
                 return ridx;
             }
+            if (rlen < 0 && ridx == 0 && !esp_http_client_is_complete_data_received(client)) {
+                return ESP_FAIL;
+            }
+            return ridx;
         }
         res_buffer->output_ptr = buffer + ridx;
         http_parser_execute(client->parser, client->parser_settings, res_buffer->data, rlen);
