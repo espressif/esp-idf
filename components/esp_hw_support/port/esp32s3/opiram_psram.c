@@ -205,10 +205,19 @@ static void IRAM_ATTR s_print_psram_info(opi_psram_mode_reg_t *reg_val)
                                                                                 reg_val->mr0.drive_str == 0x02 ? 4 : 8);
 }
 
+static void IRAM_ATTR s_init_psram_pins(void)
+{
+    //Set cs1 pin function
+    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[OCT_PSRAM_CS1_IO],  FUNC_SPICS1_SPICS1);
+    //Set mspi cs1 drive strength
+    PIN_SET_DRV(IO_MUX_GPIO26_REG, 3);
+    //Set psram clock pin drive strength
+    REG_SET_FIELD(SPI_MEM_DATE_REG(0), SPI_MEM_SPI_SMEM_SPICLK_FUN_DRV, 3);
+}
+
 esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vaddrmode)
 {
-    // enable CS signal
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[OCT_PSRAM_CS1_IO],  FUNC_SPICS1_SPICS1);
+    s_init_psram_pins();
 
     //enter MSPI slow mode to init PSRAM device registers
     spi_timing_enter_mspi_low_speed_mode();

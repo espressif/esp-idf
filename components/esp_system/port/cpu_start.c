@@ -366,6 +366,7 @@ void IRAM_ATTR call_start_cpu0(void)
     Cache_Set_IDROM_MMU_Size(cache_mmu_irom_size, CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
 #endif // CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
 
+    esp_mspi_pin_init();
 #if CONFIG_ESPTOOLPY_OCT_FLASH
     bool efuse_opflash_en = REG_GET_FIELD(EFUSE_RD_REPEAT_DATA3_REG, EFUSE_FLASH_TYPE);
     if (!efuse_opflash_en) {
