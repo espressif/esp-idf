@@ -73,12 +73,12 @@ const spi_signal_conn_t spi_periph_signal[SOC_SPI_PERIPH_NUM] = {
         .spid_out = SPI3_D_OUT_IDX,
         .spiq_out = SPI3_Q_OUT_IDX,
         //SPI3 doesn't have wp and hd signals
-        .spiwp_out = -1,
-        .spihd_out = -1,
+        .spiwp_out = SPI3_WP_OUT_IDX,
+        .spihd_out = SPI3_HD_OUT_IDX,
         .spid_in = SPI3_D_IN_IDX,
         .spiq_in = SPI3_Q_IN_IDX,
-        .spiwp_in = -1,
-        .spihd_in = -1,
+        .spiwp_in = SPI3_WP_IN_IDX,
+        .spihd_in = SPI3_HD_IN_IDX,
         .spics_out = {SPI3_CS0_OUT_IDX, SPI3_CS1_OUT_IDX, SPI3_CS2_OUT_IDX},
         .spics_in = SPI3_CS0_IN_IDX,
         //SPI3 doesn't have iomux pins
