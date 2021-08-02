@@ -1392,7 +1392,7 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
         p_uart_obj[uart_num]->rx_cur_remain = 0;
         p_uart_obj[uart_num]->rx_head_ptr = NULL;
 
-        p_uart_obj[uart_num]->alloc_static = ((intr_alloc_flags & ESP_INTR_FLAG_IRAM) == 0); 
+        p_uart_obj[uart_num]->alloc_static = !((intr_alloc_flags & ESP_INTR_FLAG_IRAM) == 0); 
 
         if ((intr_alloc_flags & ESP_INTR_FLAG_IRAM) == 0)
         {
