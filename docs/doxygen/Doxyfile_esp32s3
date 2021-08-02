@@ -1,5 +1,6 @@
 INPUT += \
          $(IDF_PATH)/components/ulp/include/$(IDF_TARGET)/ulp.h \
+         $(IDF_PATH)/components/esp_hw_support/include/soc/$(IDF_TARGET)/esp_hmac.h \
          $(IDF_PATH)/components/hal/include/hal/mcpwm_types.h \
          $(IDF_PATH)/components/driver/include/driver/mcpwm.h \
          $(IDF_PATH)/components/hal/include/hal/pcnt_types.h \
