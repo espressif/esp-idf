@@ -180,11 +180,25 @@ static void find_max_consecutive_success_points(uint8_t *array, uint32_t size, u
 
 static void select_best_tuning_config(spi_timing_config_t *config, uint32_t consecutive_length, uint32_t end, bool is_flash)
 {
+#if (SPI_TIMING_FLASH_DTR_MODE && CONFIG_ESPTOOLPY_FLASHFREQ_80M) || (SPI_TIMING_PSRAM_DTR_MODE && CONFIG_SPIRAM_SPEED_80M)
+    //80M DTR best point scheme
     uint32_t best_point;
-    if (length >= 3) {
-        best_point = end - length / 2;
-    } else {
+    /**
+     * If the consecutive success point list is no longer than 2, or all available points are successful,
+     * tuning is FAIL, select default point, and generate a warning
+     */
+    //Define these magic number in macros in `spi_timing_config.h`. TODO: IDF-3146
+    if (consecutive_length <= 2 || consecutive_length >= 6) {
         best_point = config->default_config_id;
+        ESP_EARLY_LOGW("timing tuning:", "tuning fail, best point is %d\n", best_point + 1);
+    } else if (consecutive_length <= 4) {
+        //consevutive length :  3 or 4
+        best_point = end - 1;
+        ESP_EARLY_LOGD("timing tuning:","tuning success, best point is %d\n", best_point + 1);
+    } else {
+        //consecutive point list length equals 5
+        best_point = end - 2;
+        ESP_EARLY_LOGD("timing tuning:","tuning success, best point is %d\n", best_point + 1);
     }
 
     if (is_flash) {
@@ -192,6 +206,10 @@ static void select_best_tuning_config(spi_timing_config_t *config, uint32_t cons
     } else {
         s_psram_best_timing_tuning_config = config->tuning_config_table[best_point];
     }
+#else
+    //won't reach here
+    abort();
+#endif
 }
 
 static void do_tuning(uint8_t *reference_data, spi_timing_config_t *timing_config, bool is_flash)
