@@ -102,7 +102,7 @@ Software Setup
 ^^^^^^^^^^^^^^
 
 Please proceed to :doc:`../../get-started/index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an application example onto your board.
-DXF_ESP32-S3-DevKitM-1_V1_20210310AC.pdf
+
 
 Contents and Packaging
 -----------------------
