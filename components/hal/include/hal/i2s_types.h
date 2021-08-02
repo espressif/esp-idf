@@ -17,6 +17,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stddef.h>
+
+#include "sdkconfig.h"
+
 #include "soc/soc_caps.h"
 
 #ifdef __cplusplus
@@ -165,6 +168,9 @@ typedef enum {
  */
 typedef struct {
     i2s_event_type_t    type;   /*!< I2S event type */
+#ifdef CONFIG_I2S_ESP32_DMA_QUEUE_TIMESTAMPS
+    int64_t timestamp;  /*!< I2S event timestamp from esp_timer_get_time() */
+#endif
     size_t              size;   /*!< I2S data size for I2S_DATA event*/
 } i2s_event_t;
 

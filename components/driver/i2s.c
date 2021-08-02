@@ -35,6 +35,11 @@
 
 #include "sdkconfig.h"
 
+
+#ifdef CONFIG_I2S_ESP32_DMA_QUEUE_TIMESTAMPS
+#include "esp_timer.h"
+#endif
+
 static const char* I2S_TAG = "I2S";
 
 #define I2S_CHECK(a, str, ret) if (!(a)) {                                              \
@@ -503,7 +508,14 @@ static void IRAM_ATTR i2s_intr_handler_default(void *arg)
     }
 
     i2s_event_t i2s_event;
-    int dummy;
+#ifdef CONFIG_I2S_ESP32_DMA_QUEUE_TIMESTAMPS
+    i2s_event.timestamp = esp_timer_get_time();
+#endif
+
+    union {
+        int i;
+        i2s_event_t ev;
+    } dummy;
 
     portBASE_TYPE high_priority_task_awoken = 0;
 
@@ -514,7 +526,7 @@ static void IRAM_ATTR i2s_intr_handler_default(void *arg)
         if (p_i2s->i2s_queue) {
             i2s_event.type = I2S_EVENT_DMA_ERROR;
             if (xQueueIsQueueFullFromISR(p_i2s->i2s_queue)) {
-                xQueueReceiveFromISR(p_i2s->i2s_queue, &dummy, &high_priority_task_awoken);
+                xQueueReceiveFromISR(p_i2s->i2s_queue, &dummy.ev, &high_priority_task_awoken);
             }
             xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &high_priority_task_awoken);
         }
@@ -524,19 +536,19 @@ static void IRAM_ATTR i2s_intr_handler_default(void *arg)
         i2s_hal_get_out_eof_des_addr(&(p_i2s->hal), (uint32_t *)&finish_desc);
         // All buffers are empty. This means we have an underflow on our hands.
         if (xQueueIsQueueFullFromISR(p_i2s->tx->queue)) {
-            xQueueReceiveFromISR(p_i2s->tx->queue, &dummy, &high_priority_task_awoken);
+            xQueueReceiveFromISR(p_i2s->tx->queue, &dummy.i, &high_priority_task_awoken);
             // See if tx descriptor needs to be auto cleared:
             // This will avoid any kind of noise that may get introduced due to transmission
             // of previous data from tx descriptor on I2S line.
             if (p_i2s->tx_desc_auto_clear == true) {
-                memset((void *) dummy, 0, p_i2s->tx->buf_size);
+                memset((void *) dummy.i, 0, p_i2s->tx->buf_size);
             }
         }
         xQueueSendFromISR(p_i2s->tx->queue, (void*)(&finish_desc->buf), &high_priority_task_awoken);
         if (p_i2s->i2s_queue) {
             i2s_event.type = I2S_EVENT_TX_DONE;
             if (xQueueIsQueueFullFromISR(p_i2s->i2s_queue)) {
-                xQueueReceiveFromISR(p_i2s->i2s_queue, &dummy, &high_priority_task_awoken);
+                xQueueReceiveFromISR(p_i2s->i2s_queue, &dummy.ev, &high_priority_task_awoken);
             }
             xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &high_priority_task_awoken);
         }
@@ -546,13 +558,15 @@ static void IRAM_ATTR i2s_intr_handler_default(void *arg)
         // All buffers are full. This means we have an overflow.
         i2s_hal_get_in_eof_des_addr(&(p_i2s->hal), (uint32_t *)&finish_desc);
         if (xQueueIsQueueFullFromISR(p_i2s->rx->queue)) {
-            xQueueReceiveFromISR(p_i2s->rx->queue, &dummy, &high_priority_task_awoken);
+            ESP_EARLY_LOGE(I2S_TAG, "dma RX OVERFLOW!", status);
+            xQueueReceiveFromISR(p_i2s->rx->queue, &dummy.i, &high_priority_task_awoken);
         }
         xQueueSendFromISR(p_i2s->rx->queue, (void*)(&finish_desc->buf), &high_priority_task_awoken);
         if (p_i2s->i2s_queue) {
             i2s_event.type = I2S_EVENT_RX_DONE;
             if (p_i2s->i2s_queue && xQueueIsQueueFullFromISR(p_i2s->i2s_queue)) {
-                xQueueReceiveFromISR(p_i2s->i2s_queue, &dummy, &high_priority_task_awoken);
+	            ESP_EARLY_LOGE(I2S_TAG, "dma RXEV OVERFLOW!", status);
+                xQueueReceiveFromISR(p_i2s->i2s_queue, &dummy.ev, &high_priority_task_awoken);
             }
             xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &high_priority_task_awoken);
         }

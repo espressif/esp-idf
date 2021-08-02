@@ -170,4 +170,17 @@ menu "Driver configurations"
 
     endmenu # GPIO Configuration
 
+    menu "I2S Configuration"
+        visible if IDF_TARGET_ESP32
+
+        config I2S_ESP32_DMA_QUEUE_TIMESTAMPS
+            bool "Add timestamps in DMA queue events"
+            depends on IDF_TARGET_ESP32
+            default n
+            help
+                This option adds  esp_timer_get_time() timestamp to the DMA queue events so the buffers
+                can be related to other events in the system
+
+    endmenu # GPIO Configuration
+
 endmenu  # Driver configurations
