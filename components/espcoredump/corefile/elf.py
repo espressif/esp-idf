@@ -121,7 +121,6 @@ class ElfFile(object):
 
         self._struct = None  # type: Optional[Struct]
         self._model = None  # type: Optional[Container]
-        self._section_names = {}  # type: dict[int, str]
 
         self.sections = []  # type: list[ElfSection]
         self.load_segments = []  # type: list[ElfSegment]
@@ -146,36 +145,28 @@ class ElfFile(object):
         self._struct = self._generate_struct_from_headers(header_tables)
         self._model = self._struct.parse(elf_bytes)
 
-        if 'string_table' in self._model:
-            self._section_names = self._parse_string_table(self._model.string_table)
-
         self.load_segments = [ElfSegment(seg.ph.p_vaddr,
                                          seg.data,
                                          seg.ph.p_flags) for seg in self._model.load_segments]
         self.note_segments = [ElfNoteSegment(seg.ph.p_vaddr,
                                              seg.data,
                                              seg.ph.p_flags) for seg in self._model.note_segments]
-        self.sections = [ElfSection(self._section_names[sec.sh.sh_name],
+        self.sections = [ElfSection(self._parse_string_table(self._model.string_table, sec.sh.sh_name),
                                     sec.sh.sh_addr,
                                     sec.data,
                                     sec.sh.sh_flags) for sec in self._model.sections]
 
     @staticmethod
-    def _parse_string_table(byte_str):  # type: (bytes) -> dict
-        name = ''
-        index = 0
-        res = {}
-        for i, c in enumerate(byte_str):
-            if c in [0x00, '\x00']:  # a workaround for python 2 bytes is actually string
-                res[index] = name
-                name = ''
-                index = i + 1
-                continue
-            if isinstance(c, int):
-                name += chr(c)
-            else:
-                name += c
-        return res
+    def _parse_string_table(byte_str, offset):  # type: (bytes, int) -> str
+        section_name_str = byte_str[offset:]
+        string_end = section_name_str.find(0x00)
+
+        if (string_end == -1):
+            raise ValueError('Unable to get section name from section header string table')
+
+        name = section_name_str[:string_end].decode('utf-8')
+
+        return name
 
     def _generate_struct_from_headers(self, header_tables):  # type: (Container) -> Struct
         """
