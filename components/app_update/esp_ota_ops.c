@@ -371,7 +371,7 @@ static esp_err_t rewrite_ota_seq(esp_ota_select_entry_t *two_otadata, uint32_t s
     }
 }
 
-static uint8_t get_ota_partition_count(void)
+uint8_t esp_ota_get_app_partition_count(void)
 {
     uint16_t ota_app_count = 0;
     while (esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_OTA_MIN + ota_app_count, NULL) != NULL) {
@@ -389,7 +389,7 @@ static esp_err_t esp_rewrite_ota_data(esp_partition_subtype_t subtype)
         return ESP_ERR_NOT_FOUND;
     }
 
-    uint8_t ota_app_count = get_ota_partition_count();
+    uint8_t ota_app_count = esp_ota_get_app_partition_count();
     if (SUB_TYPE_ID(subtype) >= ota_app_count) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -507,7 +507,7 @@ const esp_partition_t *esp_ota_get_boot_partition(void)
         return NULL;
     }
 
-    int ota_app_count = get_ota_partition_count();
+    int ota_app_count = esp_ota_get_app_partition_count();
     ESP_LOGD(TAG, "found ota app max = %d", ota_app_count);
 
     if ((bootloader_common_ota_select_invalid(&otadata[0]) &&
@@ -652,7 +652,7 @@ bool esp_ota_check_rollback_is_possible(void)
         return false;
     }
 
-    int ota_app_count = get_ota_partition_count();
+    int ota_app_count = esp_ota_get_app_partition_count();
     if (ota_app_count == 0) {
         return false;
     }
@@ -710,7 +710,7 @@ static esp_err_t esp_ota_current_ota_is_workable(bool valid)
     }
 
     int active_otadata = bootloader_common_get_active_otadata(otadata);
-    if (active_otadata != -1 && get_ota_partition_count() != 0) {
+    if (active_otadata != -1 && esp_ota_get_app_partition_count() != 0) {
         if (valid == true && otadata[active_otadata].ota_state != ESP_OTA_IMG_VALID) {
             otadata[active_otadata].ota_state = ESP_OTA_IMG_VALID;
             ESP_LOGD(TAG, "OTA[current] partition is marked as VALID");
@@ -779,7 +779,7 @@ const esp_partition_t* esp_ota_get_last_invalid_partition(void)
 
     int invalid_otadata = get_last_invalid_otadata(otadata);
 
-    int ota_app_count = get_ota_partition_count();
+    int ota_app_count = esp_ota_get_app_partition_count();
     if (invalid_otadata != -1 && ota_app_count != 0) {
         int ota_slot = (otadata[invalid_otadata].ota_seq - 1) % ota_app_count;
         ESP_LOGD(TAG, "Find invalid ota_%d app", ESP_PARTITION_SUBTYPE_APP_OTA_MIN + ota_slot);
@@ -807,7 +807,7 @@ esp_err_t esp_ota_get_state_partition(const esp_partition_t *partition, esp_ota_
     }
 
     esp_ota_select_entry_t otadata[2];
-    int ota_app_count = get_ota_partition_count();
+    int ota_app_count = esp_ota_get_app_partition_count();
     if (read_otadata(otadata) == NULL || ota_app_count == 0) {
         return ESP_ERR_NOT_FOUND;
     }
@@ -839,7 +839,7 @@ esp_err_t esp_ota_erase_last_boot_app_partition(void)
     }
 
     int active_otadata = bootloader_common_get_active_otadata(otadata);
-    int ota_app_count = get_ota_partition_count();
+    int ota_app_count = esp_ota_get_app_partition_count();
     if (active_otadata == -1 || ota_app_count == 0) {
         return ESP_FAIL;
     }

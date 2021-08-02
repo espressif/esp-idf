@@ -245,6 +245,14 @@ const esp_partition_t* esp_ota_get_next_update_partition(const esp_partition_t *
 esp_err_t esp_ota_get_partition_description(const esp_partition_t *partition, esp_app_desc_t *app_desc);
 
 /**
+ * @brief Returns number of ota partitions provided in partition table.
+ *
+ * @return
+ *  - Number of OTA partitions
+ */
+uint8_t esp_ota_get_app_partition_count(void);
+
+/**
  * @brief This function is called to indicate that the running app is working well.
  *
  * @return
