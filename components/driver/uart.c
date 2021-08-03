@@ -298,7 +298,7 @@ esp_err_t uart_set_sw_flow_ctrl(uart_port_t uart_num, bool enable,  uint8_t rx_t
 {
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
     ESP_RETURN_ON_FALSE((rx_thresh_xon < SOC_UART_FIFO_LEN), ESP_FAIL, UART_TAG, "rx flow xon thresh error");
-    ESP_RETURN_ON_FALSE((rx_thresh_xoff < SOC_UART_FIFO_LEN), ESP_FAIL, UART_TAG, "rx flow xon thresh error");
+    ESP_RETURN_ON_FALSE((rx_thresh_xoff < SOC_UART_FIFO_LEN), ESP_FAIL, UART_TAG, "rx flow xoff thresh error");
     uart_sw_flowctrl_t sw_flow_ctl = {
         .xon_char = XON,
         .xoff_char = XOFF,
