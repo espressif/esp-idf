@@ -264,7 +264,7 @@ esp_err_t uart_set_sw_flow_ctrl(uart_port_t uart_num, bool enable,  uint8_t rx_t
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
     UART_CHECK((rx_thresh_xon < UART_FIFO_LEN), "rx flow xon thresh error", ESP_FAIL);
-    UART_CHECK((rx_thresh_xoff < UART_FIFO_LEN), "rx flow xon thresh error", ESP_FAIL);
+    UART_CHECK((rx_thresh_xoff < UART_FIFO_LEN), "rx flow xoff thresh error", ESP_FAIL);
     UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
     UART[uart_num]->flow_conf.sw_flow_con_en = enable? 1:0;
     UART[uart_num]->flow_conf.xonoff_del = enable?1:0;
