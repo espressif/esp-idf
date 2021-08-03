@@ -3337,7 +3337,7 @@ void vTaskSwitchContext( void )
 						if (pxTCB->xCoreID == tskNO_AFFINITY || pxTCB->xCoreID == xPortGetCoreID()) {
 							pxCurrentTCB[xPortGetCoreID()] = pxTCB;
 							ableToSchedule = pdTRUE;
-							if(skippedTask == pdTRUE) {
+							if(skippedTask == pdTRUE && listCURRENT_LIST_LENGTH(&(pxReadyTasksLists[ uxDynamicTopReady ])) > ( UBaseType_t ) 2 ) {
 								/* Move the task we are about to run to the end of the list
 								and set the skipped task to be next up */
 								ListItem_t * moveItem = pxReadyTasksLists[ uxDynamicTopReady ].pxIndex; 
