@@ -518,9 +518,6 @@ void esp_startup_start_app_other_cores(void)
 #endif
 
 	esp_crosscore_int_init();
-#if CONFIG_IDF_TARGET_ESP32
-	esp_dport_access_int_init();
-#endif
 
 	ESP_EARLY_LOGI(TAG, "Starting scheduler on APP CPU.");
 	xPortStartScheduler();

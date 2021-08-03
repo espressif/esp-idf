@@ -24,6 +24,7 @@
 #include "esp_log.h"
 #include "esp_newlib.h"
 #include "esp_timer.h"
+#include "esp_ipc_isr.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "soc/soc_caps.h"
@@ -701,7 +702,7 @@ esp_err_t esp_light_sleep_start(void)
     uint64_t frc_time_at_start = esp_system_get_time();
     uint32_t sleep_time_overhead_in = (ccount_at_sleep_start - s_config.ccount_ticks_record) / (esp_clk_cpu_freq() / 1000000ULL);
 
-    DPORT_STALL_OTHER_CPU_START();
+    esp_ipc_isr_stall_other_cpu();
 
     // Decide which power domains can be powered down
     uint32_t pd_flags = get_power_down_flags();
@@ -825,7 +826,7 @@ esp_err_t esp_light_sleep_start(void)
     esp_set_time_from_rtc();
 
     esp_timer_private_unlock();
-    DPORT_STALL_OTHER_CPU_END();
+    esp_ipc_isr_release_other_cpu();
     if (!wdt_was_enabled) {
         wdt_hal_write_protect_disable(&rtc_wdt_ctx);
         wdt_hal_disable(&rtc_wdt_ctx);

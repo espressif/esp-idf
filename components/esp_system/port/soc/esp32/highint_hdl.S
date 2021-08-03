@@ -27,7 +27,7 @@
 /*
 
 Interrupt , a high-priority interrupt, is used for several things:
-- Dport access mediation
+- IPC_ISR handler
 - Cache error panic handler
 - Interrupt watchdog panic handler
 
@@ -64,11 +64,11 @@ _l4_intr_livelock_pro:
 xt_highint4:
 
 #ifndef CONFIG_FREERTOS_UNICORE
-    /* See if we're here for the dport access interrupt */
+    /* See if we're here for the IPC_ISR interrupt */
     rsr     a0, INTERRUPT
-    extui   a0, a0, ETS_DPORT_INUM, 1
-    bnez    a0, .handle_dport_access_int
-#endif // CONFIG_FREERTOS_UNICORE
+    extui   a0, a0, ETS_IPC_ISR_INUM, 1
+    bnez    a0, esp_ipc_isr_handler
+#endif // not CONFIG_FREERTOS_UNICORE
 
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_ESP_INT_WDT
     /* See if we're here for the tg1 watchdog interrupt */
@@ -382,7 +382,7 @@ xt_highint4:
     /* Feed watchdog */
 8:  wdt_feed    TIMERG1
 
-9:  wsr     a0, PS                          /* restore iterrupt level */
+9:  wsr     a0, PS                          /* restore interrupt level */
 
     movi    a0, 0
     beqz    a5, 1f
@@ -415,75 +415,9 @@ xt_highint4:
 
 #endif
 
-
-#ifndef CONFIG_FREERTOS_UNICORE
-
-    .align      4
-.handle_dport_access_int:
-    /* This section is for dport access register protection */
-    /* Allocate exception frame and save minimal context. */
-    /* Because the interrupt cause code has protection that only
-       allows one cpu to enter in the dport section of the L4
-       interrupt at one time, there's no need to have two
-       _l4_intr_stack for each cpu */
-
-    /* This int is edge-triggered and needs clearing. */
-    movi    a0, (1<<ETS_DPORT_INUM)
-    wsr     a0, INTCLEAR
-
-    /* Save A2, A3, A4 so we can use those registers */
-    movi    a0, _l4_intr_stack
-    s32i    a2, a0, L4_INTR_A2_OFFSET
-    s32i    a3, a0, L4_INTR_A3_OFFSET
-    s32i    a4, a0, L4_INTR_A4_OFFSET
-
-    /* handle dport interrupt */
-    /* get CORE_ID */
-    getcoreid   a0
-    beqz    a0, 2f
-
-    /* current cpu is 1 */
-    movi    a0, DPORT_CPU_INTR_FROM_CPU_3_REG
-    movi    a2, 0
-    s32i    a2, a0, 0   /* clear intr */
-    movi    a0, 0       /* other cpu id */
-    j       3f
-2:
-    /* current cpu is 0 */
-    movi    a0, DPORT_CPU_INTR_FROM_CPU_2_REG
-    movi    a2, 0
-    s32i    a2, a0, 0   /* clear intr */
-    movi    a0, 1       /* other cpu id */
-3:
-    rsil    a4, CONFIG_ESP32_DPORT_DIS_INTERRUPT_LVL /* disable nested iterrupt */
-    /* set and wait flag */
-    movi    a2, dport_access_start
-    addx4   a2, a0, a2
-    movi    a3, 1
-    s32i    a3, a2, 0
-    memw
-    movi    a2, dport_access_end
-    addx4   a2, a0, a2
-.check_dport_access_end:
-    l32i    a3, a2, 0
-    beqz    a3, .check_dport_access_end
-
-    wsr     a4, PS                                   /* restore iterrupt level */
-    /* Done. Restore registers and return. */
-    movi    a0, _l4_intr_stack
-    l32i    a2, a0, L4_INTR_A2_OFFSET
-    l32i    a3, a0, L4_INTR_A3_OFFSET
-    l32i    a4, a0, L4_INTR_A4_OFFSET
-    rsync                                   /* ensure register restored */
-
-    rsr     a0, EXCSAVE_4                   /* restore a0 */
-    rfi     4
-
-#endif // CONFIG_FREERTOS_UNICORE
-
 /* The linker has no reason to link in this file; all symbols it exports are already defined
    (weakly!) in the default int handler. Define a symbol here so we can use it to have the
    linker inspect this anyway. */
 
-    .global ld_include_panic_highint_hdl
-ld_include_panic_highint_hdl:
+    .global ld_include_highint_hdl
+ld_include_highint_hdl:
