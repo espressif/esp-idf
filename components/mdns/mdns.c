@@ -178,7 +178,7 @@ static mdns_srv_item_t * _mdns_get_service_item(const char * service, const char
 
 static mdns_host_item_t * mdns_get_host_item(const char * hostname)
 {
-    if (strcasecmp(hostname, _mdns_server->hostname) == 0) {
+    if (hostname == NULL || strcasecmp(hostname, _mdns_server->hostname) == 0) {
         return &_mdns_self_host;
     }
     mdns_host_item_t * host = _mdns_host_list;
@@ -4898,8 +4898,7 @@ esp_err_t mdns_instance_name_set(const char * instance)
 esp_err_t mdns_service_add_for_host(const char * instance, const char * service, const char * proto, const char * hostname,
                                     uint16_t port, mdns_txt_item_t txt[], size_t num_items)
 {
-    if (!_mdns_server || _str_null_or_empty(service) || _str_null_or_empty(proto) || _str_null_or_empty(hostname) ||
-        !port) {
+    if (!_mdns_server || _str_null_or_empty(service) || _str_null_or_empty(proto) || !port) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -4959,7 +4958,7 @@ esp_err_t mdns_service_add_for_host(const char * instance, const char * service,
 esp_err_t mdns_service_add(const char * instance, const char * service, const char * proto, uint16_t port,
                            mdns_txt_item_t txt[], size_t num_items)
 {
-    if (!_mdns_server || _str_null_or_empty(_mdns_server->hostname)) {
+    if (!_mdns_server) {
         return ESP_ERR_INVALID_STATE;
     }
     return mdns_service_add_for_host(instance, service, proto, _mdns_server->hostname, port, txt, num_items);
