@@ -12,15 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import textwrap
-
-try:
-    from typing import Optional
-except ImportError:
-    pass
-
-
 import queue
+import textwrap
+from typing import Optional
 
 from serial.tools import miniterm
 

@@ -7,7 +7,8 @@ from contextlib import contextmanager
 from typing import Generator
 
 from .constants import COREDUMP_SCRIPT, TAG_KEY
-from .output_helpers import Logger, yellow_print
+from .logger import Logger
+from .output_helpers import yellow_print
 from .web_socket_client import WebSocketClient
 
 # coredump related messages
