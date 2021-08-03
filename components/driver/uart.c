@@ -263,7 +263,7 @@ esp_err_t uart_set_sw_flow_ctrl(uart_port_t uart_num, bool enable,  uint8_t rx_t
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
     UART_CHECK((rx_thresh_xon < UART_FIFO_LEN), "rx flow xon thresh error", ESP_FAIL);
-    UART_CHECK((rx_thresh_xoff < UART_FIFO_LEN), "rx flow xon thresh error", ESP_FAIL);
+    UART_CHECK((rx_thresh_xoff < UART_FIFO_LEN), "rx flow xoff thresh error", ESP_FAIL);
     uart_sw_flowctrl_t sw_flow_ctl = {
         .xon_char = XON,
         .xoff_char = XOFF,
