@@ -1156,6 +1156,8 @@
 #define DPORT_CPU_INTR_FROM_CPU_1_V  0x1
 #define DPORT_CPU_INTR_FROM_CPU_1_S  0
 
+#define SYSTEM_CPU_INTR_FROM_CPU_2_REG          DPORT_CPU_INTR_FROM_CPU_2_REG
+#define SYSTEM_CPU_INTR_FROM_CPU_2              DPORT_CPU_INTR_FROM_CPU_2
 #define DPORT_CPU_INTR_FROM_CPU_2_REG          (DR_REG_DPORT_BASE + 0x0E4)
 /* DPORT_CPU_INTR_FROM_CPU_2 : R/W ;bitpos:[0] ;default: 1'b0 ; */
 /*description: */
@@ -1164,6 +1166,8 @@
 #define DPORT_CPU_INTR_FROM_CPU_2_V  0x1
 #define DPORT_CPU_INTR_FROM_CPU_2_S  0
 
+#define SYSTEM_CPU_INTR_FROM_CPU_3_REG          DPORT_CPU_INTR_FROM_CPU_3_REG
+#define SYSTEM_CPU_INTR_FROM_CPU_3              DPORT_CPU_INTR_FROM_CPU_3
 #define DPORT_CPU_INTR_FROM_CPU_3_REG          (DR_REG_DPORT_BASE + 0x0E8)
 /* DPORT_CPU_INTR_FROM_CPU_3 : R/W ;bitpos:[0] ;default: 1'b0 ; */
 /*description: */

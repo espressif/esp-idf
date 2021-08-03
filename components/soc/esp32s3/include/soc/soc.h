@@ -331,7 +331,7 @@
  *      25                      4               extern level            CACHEERR
  *      26                      5               extern level
  *      27                      3               extern level            Reserved                Reserved
- *      28                      4               extern edge             DPORT ACCESS            DPORT ACCESS
+ *      28                      4               extern edge             IPC_ISR                 IPC_ISR
  *      29                      3               software                Reserved                Reserved
  *      30                      4               extern edge             Reserved                Reserved
  *      31                      5               extern level
@@ -346,7 +346,7 @@
 #define ETS_FRC1_INUM                           22
 #define ETS_T1_WDT_INUM                         24
 #define ETS_CACHEERR_INUM                       25
-#define ETS_DPORT_INUM                          28
+#define ETS_IPC_ISR_INUM                        28
 
 //CPU0 Interrupt number used in ROM, should be cancelled in SDK
 #define ETS_SLC_INUM                            1

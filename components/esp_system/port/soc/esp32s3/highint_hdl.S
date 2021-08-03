@@ -1,9 +1,9 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -21,20 +21,36 @@
 #include "sdkconfig.h"
 #include "soc/soc.h"
 #include "soc/dport_reg.h"
+#include "soc/soc_caps.h"
 
 /*
 
 Interrupt , a high-priority interrupt, is used for several things:
+- IPC_ISR handler
 - Cache error panic handler
 - Interrupt watchdog panic handler
 
 */
 
+#define L4_INTR_STACK_SIZE  12
+#define L4_INTR_A2_OFFSET   0
+#define L4_INTR_A3_OFFSET   4
+#define L4_INTR_A4_OFFSET   8
+.data
+_l4_intr_stack:
+    .space      L4_INTR_STACK_SIZE*SOC_CPU_CORES_NUM /* This allocates stacks for each individual CPU. */
     .section .iram1,"ax"
     .global     xt_highint4
     .type       xt_highint4,@function
     .align      4
 xt_highint4:
+
+#ifndef CONFIG_FREERTOS_UNICORE
+    /* See if we're here for the IPC_ISR interrupt */
+    rsr     a0, INTERRUPT
+    extui   a0, a0, ETS_IPC_ISR_INUM, 1
+    bnez    a0, esp_ipc_isr_handler
+#endif // not CONFIG_FREERTOS_UNICORE
 
     /* Allocate exception frame and save minimal context. */
     mov     a0, sp
@@ -61,16 +77,28 @@ xt_highint4:
     /* Figure out reason, save into EXCCAUSE reg */
 
     rsr     a0, INTERRUPT
-    extui   a0, a0, ETS_MEMACCESS_ERR_INUM, 1 /* get cacheerr int bit */
+    extui   a0, a0, ETS_CACHEERR_INUM, 1 /* get cacheerr int bit */
     beqz    a0, 1f
     /* Kill this interrupt; we cannot reset it. */
     rsr     a0, INTENABLE
-    movi    a4, ~(1<<ETS_MEMACCESS_ERR_INUM)
+    movi    a4, ~(1<<ETS_CACHEERR_INUM)
     and     a0, a4, a0
     wsr     a0, INTENABLE
     movi    a0, PANIC_RSN_CACHEERR
     j 9f
+
 1:
+#if CONFIG_ESP_INT_WDT_CHECK_CPU1
+    /* Check if the cause is the app cpu failing to tick.*/
+    movi    a0, int_wdt_app_cpu_ticked
+    l32i    a0, a0, 0
+    bnez    a0, 2f
+    /* It is. Modify cause. */
+    movi    a0,PANIC_RSN_INTWDT_CPU1
+    j 9f
+2:
+#endif
+
     /* Set EXCCAUSE to reflect cause of the wdt int trigger */
     movi    a0,PANIC_RSN_INTWDT_CPU0
 9:
@@ -106,5 +134,5 @@ xt_highint4:
    (weakly!) in the default int handler. Define a symbol here so we can use it to have the
    linker inspect this anyway. */
 
-    .global ld_include_panic_highint_hdl
-ld_include_panic_highint_hdl:
+    .global ld_include_highint_hdl
+ld_include_highint_hdl:

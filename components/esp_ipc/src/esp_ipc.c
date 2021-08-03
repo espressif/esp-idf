@@ -18,11 +18,14 @@
 #include <assert.h>
 #include "esp_err.h"
 #include "esp_ipc.h"
+#include "esp_ipc_isr.h"
 #include "esp_attr.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+
+#ifndef CONFIG_FREERTOS_UNICORE
 
 static TaskHandle_t s_ipc_task_handle[portNUM_PROCESSORS];
 static SemaphoreHandle_t s_ipc_mutex[portNUM_PROCESSORS];    // This mutex is used as a global lock for esp_ipc_* APIs
@@ -86,6 +89,9 @@ static void esp_ipc_init(void) __attribute__((constructor));
 
 static void esp_ipc_init(void)
 {
+#ifdef CONFIG_ESP_IPC_ISR_ENABLE
+	esp_ipc_isr_init();
+#endif
     char task_name[15];
     for (int i = 0; i < portNUM_PROCESSORS; ++i) {
         snprintf(task_name, sizeof(task_name), "ipc%d", i);
@@ -144,3 +150,5 @@ esp_err_t esp_ipc_call_blocking(uint32_t cpu_id, esp_ipc_func_t func, void* arg)
 {
     return esp_ipc_call_and_wait(cpu_id, func, arg, IPC_WAIT_FOR_END);
 }
+
+#endif // not CONFIG_FREERTOS_UNICORE

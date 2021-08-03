@@ -77,12 +77,6 @@ void esp_startup_start_app_common(void)
 
 	esp_crosscore_int_init();
 
-#ifndef CONFIG_FREERTOS_UNICORE
-#if CONFIG_IDF_TARGET_ESP32
-	esp_dport_access_int_init();
-#endif
-#endif
-
 #ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
     esp_gdbstub_init();
 #endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME

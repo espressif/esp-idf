@@ -347,7 +347,6 @@
 #define ETS_T1_WDT_INUM                         24
 #define ETS_CACHEERR_INUM                       25
 #define ETS_MEMPROT_ERR_INUM                    26
-#define ETS_DPORT_INUM                          28
 
 //CPU0 Max valid interrupt number
 #define ETS_MAX_INUM                            31

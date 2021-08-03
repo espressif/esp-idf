@@ -86,8 +86,8 @@ typedef enum {
     ETS_DEDICATED_GPIO_INTR_SOURCE,             /**< interrupt of dedicated GPIO, level*/
     ETS_FROM_CPU_INTR0_SOURCE,                  /**< interrupt0 generated from a CPU, level*/ /* Used for FreeRTOS */
     ETS_FROM_CPU_INTR1_SOURCE,                  /**< interrupt1 generated from a CPU, level*/ /* Used for FreeRTOS */
-    ETS_FROM_CPU_INTR2_SOURCE,                  /**< interrupt2 generated from a CPU, level*/ /* Used for DPORT Access */
-    ETS_FROM_CPU_INTR3_SOURCE,                  /**< interrupt3 generated from a CPU, level*/ /* Used for DPORT Access */
+    ETS_FROM_CPU_INTR2_SOURCE,                  /**< interrupt2 generated from a CPU, level*/
+    ETS_FROM_CPU_INTR3_SOURCE,                  /**< interrupt3 generated from a CPU, level*/
 
     ETS_SPI1_INTR_SOURCE = 32,                  /**< interrupt of SPI1, level, SPI1 is for flash read/write, do not use this*/
     ETS_SPI2_INTR_SOURCE,                       /**< interrupt of SPI2, level*/
