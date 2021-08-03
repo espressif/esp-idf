@@ -42,6 +42,7 @@
   - "tools/cmake/**/*"
   - "tools/kconfig_new/**/*"
   - "tools/tools.json"
+  - "tools/ci/test_build_system*.sh"
 
 .patterns-custom_test: &patterns-custom_test
   - "components/espcoredump/**/*"

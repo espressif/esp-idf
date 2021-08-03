@@ -201,6 +201,12 @@ component_project_vars.mk::
 	@echo 'COMPONENT_LIBRARIES += $(COMPONENT_NAME)' >> $@
 	@echo 'COMPONENT_LDFRAGMENTS += $(call MakeVariablePath,$(abspath $(addprefix $(COMPONENT_PATH)/,$(COMPONENT_ADD_LDFRAGMENTS))))' >> $@
 	@echo 'component-$(COMPONENT_NAME)-build: $(addprefix component-,$(addsuffix -build,$(COMPONENT_DEPENDS)))' >> $@
+ifdef COMPONENT_OWNBUILDTARGET
+	@echo 'COMPONENT_$(COMPONENT_NAME)_BUILDTARGET := $(COMPONENT_OWNBUILDTARGET)' >> $@
+endif
+ifdef COMPONENT_OWNCLEANTARGET
+	@echo 'COMPONENT_$(COMPONENT_NAME)_CLEANTARGET := $(COMPONENT_OWNCLEANTARGET)' >> $@
+endif
 ################################################################################
 # 5) Where COMPONENT_OWNBUILDTARGET / COMPONENT_OWNCLEANTARGET
 # is not set by component.mk, define default build, clean, etc. targets
