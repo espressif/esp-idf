@@ -1,16 +1,31 @@
 idf_build_get_property(target IDF_TARGET)
 
-set(sources "patches/esp_rom_crc.c"
-            "patches/esp_rom_sys.c"
-            "patches/esp_rom_uart.c")
+set(include_dirs "include" "include/${target}")
+
+set(private_required_comp "")
+
+set(sources "")
+
+if(target STREQUAL "linux")
+    list(APPEND sources "${target}/esp_rom_sys.c"
+                        "${target}/esp_rom_crc.c"
+                        "${target}/esp_rom_md5.c"
+                        "${target}/esp_rom_efuse.c")
+else()
+    list(APPEND include_dirs "${target}")
+    list(APPEND sources "patches/esp_rom_crc.c"
+                        "patches/esp_rom_sys.c"
+                        "patches/esp_rom_uart.c")
+    list(APPEND private_required_comp soc hal)
+endif()
 
 if(CONFIG_IDF_TARGET_ARCH_XTENSA)
     list(APPEND sources "patches/esp_rom_longjmp.S")
 endif()
 
 idf_component_register(SRCS ${sources}
-                       INCLUDE_DIRS include "${target}" "include/${target}"
-                       PRIV_REQUIRES soc hal)
+                       INCLUDE_DIRS ${include_dirs}
+                       PRIV_REQUIRES ${private_required_comp})
 
 # Append a target linker script at the target-specific path,
 # only the 'name' part is different for each script
@@ -18,9 +33,16 @@ function(rom_linker_script name)
     target_linker_script(${COMPONENT_LIB} INTERFACE "${target}/ld/${target}.rom.${name}.ld")
 endfunction()
 
-target_linker_script(${COMPONENT_LIB} INTERFACE "${target}/ld/${target}.rom.ld")
-rom_linker_script("api")
-rom_linker_script("libgcc")
+if(target STREQUAL "linux")
+    # We need to disable some warnings due to the ROM code's printf implementation
+    if(${CMAKE_CXX_COMPILER_VERSION} GREATER "7.0.0") # TODO: clang compatibility
+        target_compile_options(${COMPONENT_LIB} PUBLIC -Wimplicit-fallthrough=0 -Wno-shift-count-overflow)
+    endif()
+else()
+    target_linker_script(${COMPONENT_LIB} INTERFACE "${target}/ld/${target}.rom.ld")
+    rom_linker_script("api")
+    rom_linker_script("libgcc")
+endif()
 
 if(BOOTLOADER_BUILD)
     if(target STREQUAL "esp32")

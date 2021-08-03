@@ -10,9 +10,7 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include "sdkconfig.h"
-#if !defined(CONFIG_IDF_TARGET_LINUX)
 #include "esp_rom_sys.h"
-#endif // !CONFIG_IDF_TARGET_LINUX
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h" // will be removed in idf v5.0
 #elif CONFIG_IDF_TARGET_ESP32S2

@@ -1,9 +1,9 @@
 | Supported Targets | Linux |
 | ----------------- | ----- |
 
-# Simple log test on Linux target
+# Simplest rom test on Linux target
 
-This unit test tests basic functionality of the log component. The test does not use mocks. Instead, it runs the whole implementation of the component on the Linux host. The test framework is CATCH. For early log, we only perform a compile time test since there's nothing to test on Linux except for the log macros themselves (all the implementation will be in chip ROM).
+This unit test tests only if some of the supplied Linux functions seem to work correctly. The test framework is CATCH.
 
 ## Requirements
 
@@ -22,7 +22,7 @@ First, make sure that the target is set to Linux. Run `idf.py --preview set-targ
 IDF monitor doesn't work yet for Linux. You have to run the app manually: 
 
 ```bash
-./build/test_log_host.elf
+./build/test_rom_host.elf
 ```
 
 ## Example Output
@@ -30,7 +30,8 @@ IDF monitor doesn't work yet for Linux. You have to run the app manually:
 Ideally, all tests pass, which is indicated by "All tests passed" in the last line:
 
 ```bash
-$ ./build/test_log_host.elf 
+$ ./build/test_rom_host.elf 
+test
 ===============================================================================
 All tests passed (8 assertions in 6 test cases)
 ```
