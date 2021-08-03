@@ -225,6 +225,24 @@ EMAC ``REF_CLK`` can be optionally configured from user application code.
 Install Driver
 --------------
 
+To install the Ethernet driver, we need to combine the instance of MAC and PHY and set some additional high-level configurations (i.e. not specific to either MAC or PHY) in :cpp:class:`esp_eth_config_t`:
+
+* :cpp:member:`mac`: instance that created from MAC generator (e.g. :cpp:func:`esp_eth_mac_new_esp32`).
+* :cpp:member:`phy`: instance that created from PHY generator (e.g. :cpp:func:`esp_eth_phy_new_ip101`).
+* :cpp:member:`check_link_period_ms`: Ethernet driver starts an OS timer to check the link status periodically, this field is used to set the interval, in milliseconds.
+* :cpp:member:`stack_input`: In most of Ethernet IoT applications, any Ethernet frame that received by driver should be passed to upper layer (e.g. TCP/IP stack). This field is set to a function which is responsible to deal with the incoming frames. You can even update this field at runtime via function :cpp:func:`esp_eth_update_input_path` after driver installation.
+* :cpp:member:`on_lowlevel_init_done` and :cpp:member:`on_lowlevel_deinit_done`: These two fields are used to specify the hooks which get invoked when low level hardware has been initialized or de-initialized.
+
+ESP-IDF provides a default configuration for driver installation in macro :c:macro:`ETH_DEFAULT_CONFIG`.
+
+.. highlight:: c
+
+::
+
+    esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy); // apply default driver configuration
+    esp_eth_handle_t eth_handle = NULL; // after driver installed, we will get the handle of the driver
+    esp_eth_driver_install(&config, &eth_handle); // install driver
+
 Ethernet driver also includes event-driven model, which will send useful and important event to user space. We need to initialize the event loop before installing the Ethernet driver. For more information about event-driven programming, please refer to :doc:`ESP Event <../system/esp_event>`.
 
 .. highlight:: c
@@ -244,7 +262,7 @@ Ethernet driver also includes event-driven model, which will send useful and imp
             esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, mac_addr);
             ESP_LOGI(TAG, "Ethernet Link Up");
             ESP_LOGI(TAG, "Ethernet HW Addr %02x:%02x:%02x:%02x:%02x:%02x",
-                     mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
+                        mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
             break;
         case ETHERNET_EVENT_DISCONNECTED:
             ESP_LOGI(TAG, "Ethernet Link Down");
@@ -262,24 +280,6 @@ Ethernet driver also includes event-driven model, which will send useful and imp
 
     esp_event_loop_create_default(); // create a default event loop that running in background
     esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, NULL); // register Ethernet event handler (to deal with user specific stuffs when event like link up/down happened)
-
-To install the Ethernet driver, we need to combine the instance of MAC and PHY and set some additional high-level configurations (i.e. not specific to either MAC or PHY) in :cpp:class:`esp_eth_config_t`:
-
-* :cpp:member:`mac`: instance that created from MAC generator (e.g. :cpp:func:`esp_eth_mac_new_esp32`).
-* :cpp:member:`phy`: instance that created from PHY generator (e.g. :cpp:func:`esp_eth_phy_new_ip101`).
-* :cpp:member:`check_link_period_ms`: Ethernet driver starts an OS timer to check the link status periodically, this field is used to set the interval, in milliseconds.
-* :cpp:member:`stack_input`: In most of Ethernet IoT applications, any Ethernet frame that received by driver should be passed to upper layer (e.g. TCP/IP stack). This field is set to a function which is responsible to deal with the incoming frames. You can even update this field at runtime via function :cpp:func:`esp_eth_update_input_path` after driver installation.
-* :cpp:member:`on_lowlevel_init_done` and :cpp:member:`on_lowlevel_deinit_done`: These two fields are used to specify the hooks which get invoked when low level hardware has been initialized or de-initialized.
-
-ESP-IDF provides a default configuration for driver installation in macro :c:macro:`ETH_DEFAULT_CONFIG`.
-
-.. highlight:: c
-
-::
-
-    esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy); // apply default driver configuration
-    esp_eth_handle_t eth_handle = NULL; // after driver installed, we will get the handle of the driver
-    esp_eth_driver_install(&config, &eth_handle); // install driver
 
 Start Ethernet Driver
 ---------------------
@@ -303,8 +303,8 @@ The TCP/IP stack used in ESP-IDF is called LwIP, for more information about it, 
 To connect Ethernet driver to TCP/IP stack, these three steps need to follow:
 
 1. Create network interface for Ethernet driver
-2. Register IP event handlers
-3. Attach the network interface to Ethernet driver
+2. Attach the network interface to Ethernet driver
+3. Register IP event handlers
 
 More information about network interface, please refer to :doc:`Network Interface <esp_netif>`.
 
@@ -330,11 +330,13 @@ More information about network interface, please refer to :doc:`Network Interfac
     esp_netif_init()); // Initialize TCP/IP network interface (should be called only once in application)
     esp_netif_config_t cfg = ESP_NETIF_DEFAULT_ETH(); // apply default network interface configuration for Ethernet
     esp_netif_t *eth_netif = esp_netif_new(&cfg); // create network interface for Ethernet driver
-    esp_eth_set_default_handlers(eth_netif); // set default handlers to process TCP/IP stuffs
-    esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, NULL); // register user defined IP event handlers
 
     esp_netif_attach(eth_netif, esp_eth_new_netif_glue(eth_handle)); // attach Ethernet driver to TCP/IP stack
+    esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, NULL); // register user defined IP event handlers
     esp_eth_start(eth_handle); // start Ethernet driver state machine
+
+.. warning::
+    It is recommended to fully initialize the Ethernet driver and network interface prior registering user's Ethernet/IP event handlers, i.e. register the event handlers as the last thing prior starting the Ethernet driver. Such approach ensures that Ethernet/IP events get executed first by the Ethernet driver or network interface and so the system is in expected state when executing user's handlers.
 
 .. _misc-operation-of-driver:
 

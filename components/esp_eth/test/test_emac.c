@@ -218,11 +218,7 @@ TEST_CASE("esp32 ethernet dhcp test", "[ethernet][test_env=UT_T2_Ethernet]")
     // create TCP/IP netif
     esp_netif_config_t netif_cfg = ESP_NETIF_DEFAULT_ETH();
     esp_netif_t *eth_netif = esp_netif_new(&netif_cfg);
-    // set default handlers to do layer 3 (and up) stuffs
-    TEST_ESP_OK(esp_eth_set_default_handlers(eth_netif));
-    // register user defined event handers
-    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
-    TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
+
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
     esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
@@ -232,8 +228,11 @@ TEST_CASE("esp32 ethernet dhcp test", "[ethernet][test_env=UT_T2_Ethernet]")
     // install Ethernet driver
     TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
     // combine driver with netif
-    void *glue = esp_eth_new_netif_glue(eth_handle);
+    esp_eth_netif_glue_handle_t glue = esp_eth_new_netif_glue(eth_handle);
     TEST_ESP_OK(esp_netif_attach(eth_netif, glue));
+    // register user defined event handers
+    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
+    TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
     // start Ethernet driver
     TEST_ESP_OK(esp_eth_start(eth_handle));
     /* wait for IP lease */
@@ -251,7 +250,6 @@ TEST_CASE("esp32 ethernet dhcp test", "[ethernet][test_env=UT_T2_Ethernet]")
     TEST_ESP_OK(mac->del(mac));
     TEST_ESP_OK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, got_ip_event_handler));
     TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
-    TEST_ESP_OK(esp_eth_clear_default_handlers(eth_netif));
     esp_netif_destroy(eth_netif);
     TEST_ESP_OK(esp_event_loop_delete_default());
     vEventGroupDelete(eth_event_group);
@@ -267,11 +265,7 @@ TEST_CASE("esp32 ethernet start/stop stress test", "[ethernet][test_env=UT_T2_Et
     // create TCP/IP netif
     esp_netif_config_t netif_cfg = ESP_NETIF_DEFAULT_ETH();
     esp_netif_t *eth_netif = esp_netif_new(&netif_cfg);
-    // set default handlers to do layer 3 (and up) stuffs
-    TEST_ESP_OK(esp_eth_set_default_handlers(eth_netif));
-    // register user defined event handers
-    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
-    TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
+
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
     esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
@@ -281,8 +275,11 @@ TEST_CASE("esp32 ethernet start/stop stress test", "[ethernet][test_env=UT_T2_Et
     // install Ethernet driver
     TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
     // combine driver with netif
-    void *glue = esp_eth_new_netif_glue(eth_handle);
+    esp_eth_netif_glue_handle_t glue = esp_eth_new_netif_glue(eth_handle);
     TEST_ESP_OK(esp_netif_attach(eth_netif, glue));
+    // register user defined event handers
+    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
+    TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
 
     for (int i = 0; i < 10; i++) {
         // start Ethernet driver
@@ -304,7 +301,6 @@ TEST_CASE("esp32 ethernet start/stop stress test", "[ethernet][test_env=UT_T2_Et
     TEST_ESP_OK(mac->del(mac));
     TEST_ESP_OK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, got_ip_event_handler));
     TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
-    TEST_ESP_OK(esp_eth_clear_default_handlers(eth_netif));
     esp_netif_destroy(eth_netif);
     TEST_ESP_OK(esp_event_loop_delete_default());
     vEventGroupDelete(eth_event_group);
@@ -320,11 +316,7 @@ TEST_CASE("esp32 ethernet icmp test", "[ethernet][test_env=UT_T2_Ethernet]")
     // create TCP/IP netif
     esp_netif_config_t netif_cfg = ESP_NETIF_DEFAULT_ETH();
     esp_netif_t *eth_netif = esp_netif_new(&netif_cfg);
-    // set default handlers to do layer 3 (and up) stuffs
-    TEST_ESP_OK(esp_eth_set_default_handlers(eth_netif));
-    // register user defined event handers
-    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
-    TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
+
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
     esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
@@ -333,8 +325,11 @@ TEST_CASE("esp32 ethernet icmp test", "[ethernet][test_env=UT_T2_Ethernet]")
     esp_eth_handle_t eth_handle = NULL;
     TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
     // combine driver with netif
-    void *glue = esp_eth_new_netif_glue(eth_handle);
+    esp_eth_netif_glue_handle_t glue = esp_eth_new_netif_glue(eth_handle);
     TEST_ESP_OK(esp_netif_attach(eth_netif, glue));
+    // register user defined event handers
+    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
+    TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
     // start Ethernet driver
     TEST_ESP_OK(esp_eth_start(eth_handle));
     /* wait for IP lease */
@@ -395,7 +390,6 @@ TEST_CASE("esp32 ethernet icmp test", "[ethernet][test_env=UT_T2_Ethernet]")
     TEST_ESP_OK(phy->del(phy));
     TEST_ESP_OK(mac->del(mac));
     TEST_ESP_OK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, got_ip_event_handler));
-    TEST_ESP_OK(esp_eth_clear_default_handlers(eth_netif));
     esp_netif_destroy(eth_netif);
     TEST_ESP_OK(esp_event_loop_delete_default());
     vEventGroupDelete(eth_event_group);
@@ -458,11 +452,7 @@ TEST_CASE("esp32 ethernet download test", "[ethernet][test_env=UT_T2_Ethernet][t
     // create TCP/IP netif
     esp_netif_config_t netif_cfg = ESP_NETIF_DEFAULT_ETH();
     esp_netif_t *eth_netif = esp_netif_new(&netif_cfg);
-    // set default handlers to do layer 3 (and up) stuffs
-    TEST_ESP_OK(esp_eth_set_default_handlers(eth_netif));
-    // register user defined event handers
-    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
-    TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
+
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
     esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
@@ -472,8 +462,11 @@ TEST_CASE("esp32 ethernet download test", "[ethernet][test_env=UT_T2_Ethernet][t
     // install Ethernet driver
     TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
     // combine driver with netif
-    void *glue = esp_eth_new_netif_glue(eth_handle);
+    esp_eth_netif_glue_handle_t glue = esp_eth_new_netif_glue(eth_handle);
     TEST_ESP_OK(esp_netif_attach(eth_netif, glue));
+    // register user defined event handers
+    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
+    TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
     // start Ethernet driver
     TEST_ESP_OK(esp_eth_start(eth_handle));
     /* wait for IP lease */
@@ -506,7 +499,6 @@ TEST_CASE("esp32 ethernet download test", "[ethernet][test_env=UT_T2_Ethernet][t
     TEST_ESP_OK(mac->del(mac));
     TEST_ESP_OK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, got_ip_event_handler));
     TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
-    TEST_ESP_OK(esp_eth_clear_default_handlers(eth_netif));
     esp_netif_destroy(eth_netif);
     TEST_ESP_OK(esp_event_loop_delete_default());
     vEventGroupDelete(eth_event_group);

@@ -1,46 +1,21 @@
 menu "Example Configuration"
 
-    config EXAMPLE_USE_SPI_ETHERNET
-        bool
+    config EXAMPLE_GPIO_RANGE_MIN
+        int
+        default 0
 
-    choice EXAMPLE_ETHERNET_TYPE
-        prompt "Ethernet Type"
-        default EXAMPLE_USE_INTERNAL_ETHERNET if IDF_TARGET_ESP32
-        default EXAMPLE_USE_W5500
+    config EXAMPLE_GPIO_RANGE_MAX
+        int
+        default 33 if IDF_TARGET_ESP32
+        default 46 if IDF_TARGET_ESP32S2
+        default 19 if IDF_TARGET_ESP32C3
+
+    config EXAMPLE_USE_INTERNAL_ETHERNET
+        depends on IDF_TARGET_ESP32
+        select ETH_USE_ESP32_EMAC
+        bool "Internal EMAC"
         help
-            Select which kind of Ethernet will be used in the example.
-
-        config EXAMPLE_USE_INTERNAL_ETHERNET
-            depends on IDF_TARGET_ESP32
-            select ETH_USE_ESP32_EMAC
-            bool "Internal EMAC"
-            help
-                Select internal Ethernet MAC controller.
-
-        config EXAMPLE_USE_DM9051
-            bool "DM9051 Module"
-            select EXAMPLE_USE_SPI_ETHERNET
-            select ETH_USE_SPI_ETHERNET
-            select ETH_SPI_ETHERNET_DM9051
-            help
-                Select external SPI-Ethernet module (DM9051).
-
-        config EXAMPLE_USE_W5500
-            bool "W5500 Module"
-            select EXAMPLE_USE_SPI_ETHERNET
-            select ETH_USE_SPI_ETHERNET
-            select ETH_SPI_ETHERNET_W5500
-            help
-                Select external SPI-Ethernet module (W5500).
-
-        config EXAMPLE_USE_KSZ8851SNL
-            bool "KSZ8851SNL Module"
-            select EXAMPLE_USE_SPI_ETHERNET
-            select ETH_USE_SPI_ETHERNET
-            select ETH_SPI_ETHERNET_KSZ8851SNL
-            help
-                Select external SPI-Ethernet module (KSZ8851SNL).
-    endchoice # EXAMPLE_ETHERNET_TYPE
+            Use internal Ethernet MAC controller.
 
     if EXAMPLE_USE_INTERNAL_ETHERNET
         choice EXAMPLE_ETH_PHY_MODEL
@@ -95,18 +70,75 @@ menu "Example Configuration"
 
         config EXAMPLE_ETH_MDC_GPIO
             int "SMI MDC GPIO number"
+            range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
             default 23
             help
                 Set the GPIO number used by SMI MDC.
 
         config EXAMPLE_ETH_MDIO_GPIO
             int "SMI MDIO GPIO number"
+            range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
             default 18
             help
                 Set the GPIO number used by SMI MDIO.
+
+        config EXAMPLE_ETH_PHY_RST_GPIO
+            int "PHY Reset GPIO number"
+            range -1 EXAMPLE_GPIO_RANGE_MAX
+            default 5
+            help
+                Set the GPIO number used to reset PHY chip.
+                Set to -1 to disable PHY chip hardware reset.
+
+        config EXAMPLE_ETH_PHY_ADDR
+            int "PHY Address"
+            range 0 31
+            default 1
+            help
+                Set PHY address according your board schematic.
     endif # EXAMPLE_USE_INTERNAL_ETHERNET
 
+    config EXAMPLE_USE_SPI_ETHERNET
+        bool "SPI Ethernet"
+        default y
+        select ETH_USE_SPI_ETHERNET
+        help
+            Use external SPI-Ethernet module(s).
+
     if EXAMPLE_USE_SPI_ETHERNET
+        config EXAMPLE_SPI_ETHERNETS_NUM
+            int "Number of SPI Ethernet modules to use at a time"
+            range 1 2
+            default 1
+            help
+                Set the number of SPI Ethernet modules you want to use at a time. Multiple SPI modules can be connected
+                to one SPI interface and can be separately accessed based on state of associated Chip Select (CS).
+
+        choice EXAMPLE_ETHERNET_TYPE_SPI
+            prompt "Ethernet SPI"
+            default EXAMPLE_USE_W5500
+            help
+                Select which kind of Ethernet will be used in the example.
+
+            config EXAMPLE_USE_DM9051
+                bool "DM9051 Module"
+                select ETH_SPI_ETHERNET_DM9051
+                help
+                    Select external SPI-Ethernet module (DM9051).
+
+            config EXAMPLE_USE_KSZ8851SNL
+                bool "KSZ8851SNL Module"
+                select ETH_SPI_ETHERNET_KSZ8851SNL
+                help
+                    Select external SPI-Ethernet module (KSZ8851SNL).
+
+            config EXAMPLE_USE_W5500
+                bool "W5500 Module"
+                select ETH_SPI_ETHERNET_W5500
+                help
+                    Select external SPI-Ethernet module (W5500).
+        endchoice
+
         config EXAMPLE_ETH_SPI_HOST
             int "SPI Host Number"
             range 0 2
@@ -116,47 +148,30 @@ menu "Example Configuration"
 
         config EXAMPLE_ETH_SPI_SCLK_GPIO
             int "SPI SCLK GPIO number"
-            range 0 34 if IDF_TARGET_ESP32
-            range 0 46 if IDF_TARGET_ESP32S2
-            range 0 19 if IDF_TARGET_ESP32C3
-            default 18 if IDF_TARGET_ESP32
-            default 20 if IDF_TARGET_ESP32S2
+            range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+            default 14 if IDF_TARGET_ESP32
+            default 12 if IDF_TARGET_ESP32S2
             default 6 if IDF_TARGET_ESP32C3
             help
                 Set the GPIO number used by SPI SCLK.
 
         config EXAMPLE_ETH_SPI_MOSI_GPIO
             int "SPI MOSI GPIO number"
-            range 0 34 if IDF_TARGET_ESP32
-            range 0 46 if IDF_TARGET_ESP32S2
-            range 0 19 if IDF_TARGET_ESP32C3
-            default 23 if IDF_TARGET_ESP32
-            default 19 if IDF_TARGET_ESP32S2
+            range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+            default 13 if IDF_TARGET_ESP32
+            default 11 if IDF_TARGET_ESP32S2
             default 7 if IDF_TARGET_ESP32C3
             help
                 Set the GPIO number used by SPI MOSI.
 
         config EXAMPLE_ETH_SPI_MISO_GPIO
             int "SPI MISO GPIO number"
-            range 0 34 if IDF_TARGET_ESP32
-            range 0 46 if IDF_TARGET_ESP32S2
-            range 0 19 if IDF_TARGET_ESP32C3
-            default 19 if IDF_TARGET_ESP32
-            default 18 if IDF_TARGET_ESP32S2
+            range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+            default 12 if IDF_TARGET_ESP32
+            default 13 if IDF_TARGET_ESP32S2
             default 2 if IDF_TARGET_ESP32C3
             help
                 Set the GPIO number used by SPI MISO.
-
-        config EXAMPLE_ETH_SPI_CS_GPIO
-            int "SPI CS GPIO number"
-            range 0 34 if IDF_TARGET_ESP32
-            range 0 46 if IDF_TARGET_ESP32S2
-            range 0 19 if IDF_TARGET_ESP32C3
-            default 16 if IDF_TARGET_ESP32
-            default 21 if IDF_TARGET_ESP32S2
-            default 10 if IDF_TARGET_ESP32C3
-            help
-                Set the GPIO number used by SPI CS.
 
         config EXAMPLE_ETH_SPI_CLOCK_MHZ
             int "SPI clock speed (MHz)"
@@ -166,25 +181,70 @@ menu "Example Configuration"
             help
                 Set the clock speed (MHz) of SPI interface.
 
-        config EXAMPLE_ETH_SPI_INT_GPIO
-            int "Interrupt GPIO number"
-            default 17 if IDF_TARGET_ESP32
-            default 4 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3
+        config EXAMPLE_ETH_SPI_CS0_GPIO
+            int "SPI CS0 GPIO number for SPI Ethernet module #1"
+            range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+            default 15 if IDF_TARGET_ESP32
+            default 10 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3
             help
-                Set the GPIO number used by the SPI Ethernet module interrupt line.
+                Set the GPIO number used by SPI CS0, i.e. Chip Select associated with the first SPI Eth module).
+
+        config EXAMPLE_ETH_SPI_CS1_GPIO
+            depends on EXAMPLE_SPI_ETHERNETS_NUM > 1
+            int "SPI CS1 GPIO number for SPI Ethernet module #2"
+            range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+            default 32 if IDF_TARGET_ESP32
+            default 7 if IDF_TARGET_ESP32S2
+            default 8 if IDF_TARGET_ESP32C3
+            help
+                Set the GPIO number used by SPI CS1, i.e. Chip Select associated with the second SPI Eth module.
+
+        config EXAMPLE_ETH_SPI_INT0_GPIO
+            int "Interrupt GPIO number SPI Ethernet module #1"
+            range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+            default 4 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3
+            help
+                Set the GPIO number used by the first SPI Ethernet module interrupt line.
+
+        config EXAMPLE_ETH_SPI_INT1_GPIO
+            depends on EXAMPLE_SPI_ETHERNETS_NUM > 1
+            int "Interrupt GPIO number SPI Ethernet module #2"
+            range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+            default 33 if IDF_TARGET_ESP32
+            default 5 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3
+            help
+                Set the GPIO number used by the second SPI Ethernet module interrupt line.
+
+        config EXAMPLE_ETH_SPI_PHY_RST0_GPIO
+            int "PHY Reset GPIO number of SPI Ethernet Module #1"
+            range -1 EXAMPLE_GPIO_RANGE_MAX
+            default -1
+            help
+                Set the GPIO number used to reset PHY chip on the first SPI Ethernet module.
+                Set to -1 to disable PHY chip hardware reset.
+
+        config EXAMPLE_ETH_SPI_PHY_RST1_GPIO
+            depends on EXAMPLE_SPI_ETHERNETS_NUM > 1
+            int "PHY Reset GPIO number of SPI Ethernet Module #2"
+            range -1 EXAMPLE_GPIO_RANGE_MAX
+            default -1
+            help
+                Set the GPIO number used to reset PHY chip on the second SPI Ethernet module.
+                Set to -1 to disable PHY chip hardware reset.
+
+        config EXAMPLE_ETH_SPI_PHY_ADDR0
+            int "PHY Address of SPI Ethernet Module #1"
+            range 0 31
+            default 1
+            help
+                Set the first SPI Ethernet module PHY address according your board schematic.
+
+        config EXAMPLE_ETH_SPI_PHY_ADDR1
+            depends on EXAMPLE_SPI_ETHERNETS_NUM > 1
+            int "PHY Address of SPI Ethernet Module #2"
+            range 0 31
+            default 1
+            help
+                Set the second SPI Ethernet module PHY address according your board schematic.
     endif # EXAMPLE_USE_SPI_ETHERNET
-
-    config EXAMPLE_ETH_PHY_RST_GPIO
-        int "PHY Reset GPIO number"
-        default 5
-        help
-            Set the GPIO number used to reset PHY chip.
-            Set to -1 to disable PHY chip hardware reset.
-
-    config EXAMPLE_ETH_PHY_ADDR
-        int "PHY Address"
-        range 0 31
-        default 1
-        help
-            Set PHY address according your board schematic.
 endmenu
