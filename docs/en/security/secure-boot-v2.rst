@@ -160,19 +160,19 @@ eFuse usage
 How To Enable Secure Boot V2
 ----------------------------
 
-1. Open the :ref:`project-configuration-menu`, in "Security Features" set "Enable hardware Secure Boot in bootloader" to enable Secure Boot.
+1. Open the :ref:`project-configuration-menu`, in "Security features" set "Enable hardware Secure Boot in bootloader" to enable Secure Boot.
 
 .. only:: esp32
 
     2. For ESP32, Secure Boot V2 is available only ESP32 ECO3 onwards. To view the "Secure Boot V2" option the chip revision should be changed to revision 3 (ESP32- ECO3). To change the chip revision, set "Minimum Supported ESP32 Revision" to Rev 3 in "Component Config" -> "ESP32- Specific".
 
-    3. Specify the secure boot signing key path. The file can be anywhere on your system. A relative path will be evaluated from the project directory. The file does not need to exist yet.
+    3. Specify the path to secure boot signing key, relative to the project directory.
 
 .. only:: esp32s2
 
     2. The "Secure Boot V2" option will be selected and the "App Signing Scheme" would be set to RSA by default.
 
-    3. Select the number of keys to be used to sign the bootloader binary and chose one of them to sign the application. Specify the secure boot signing key paths for each one of these. The file can be anywhere on your system. A relative path will be evaluated from the project directory. The file does not need to exist yet.
+    3. Specify the path to secure boot signing key, relative to the project directory.
 
 4. Set other menuconfig options (as desired). Pay particular attention to the "Bootloader Config" options, as you can only flash the bootloader once. Then exit menuconfig and save your configuration.
 
