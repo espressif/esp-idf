@@ -548,68 +548,68 @@ esp_err_t mcpwm_deadtime_enable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num,
     mcpwm_ll_deadtime_set_falling_delay(hal->dev, op, fed + 1);
     switch (dt_mode) {
     case MCPWM_BYPASS_RED:
-        mcpwm_ll_deadtime_bypass_path(hal->dev, op, 1, false);    // S0
-        mcpwm_ll_deadtime_bypass_path(hal->dev, op, 0, true);     // S1
-        mcpwm_ll_deadtime_invert_outpath(hal->dev, op, 0, false); // S2
-        mcpwm_ll_deadtime_invert_outpath(hal->dev, op, 1, false); // S3
-        mcpwm_ll_deadtime_red_select_generator(hal->dev, op, 0);  // S4
-        mcpwm_ll_deadtime_fed_select_generator(hal->dev, op, 1);  // S5
+        mcpwm_ll_deadtime_bypass_path(hal->dev, op, 1, false);    // S0=0
+        mcpwm_ll_deadtime_bypass_path(hal->dev, op, 0, true);     // S1=1
+        mcpwm_ll_deadtime_invert_outpath(hal->dev, op, 0, false); // S2=0
+        mcpwm_ll_deadtime_invert_outpath(hal->dev, op, 1, false); // S3=0
+        mcpwm_ll_deadtime_red_select_generator(hal->dev, op, 0);  // S4=0
+        mcpwm_ll_deadtime_fed_select_generator(hal->dev, op, 0);  // S5=0
         break;
     case MCPWM_BYPASS_FED:
-        mcpwm_ll_deadtime_bypass_path(hal->dev, op, 1, true);     // S0
-        mcpwm_ll_deadtime_bypass_path(hal->dev, op, 0, false);    // S1
-        mcpwm_ll_deadtime_invert_outpath(hal->dev, op, 0, false); // S2
-        mcpwm_ll_deadtime_invert_outpath(hal->dev, op, 1, false); // S3
-        mcpwm_ll_deadtime_red_select_generator(hal->dev, op, 0);  // S4
-        mcpwm_ll_deadtime_fed_select_generator(hal->dev, op, 0);  // S5
+        mcpwm_ll_deadtime_bypass_path(hal->dev, op, 1, true);     // S0=1
+        mcpwm_ll_deadtime_bypass_path(hal->dev, op, 0, false);    // S1=0
+        mcpwm_ll_deadtime_invert_outpath(hal->dev, op, 0, false); // S2=0
+        mcpwm_ll_deadtime_invert_outpath(hal->dev, op, 1, false); // S3=0
+        mcpwm_ll_deadtime_red_select_generator(hal->dev, op, 0);  // S4=0
+        mcpwm_ll_deadtime_fed_select_generator(hal->dev, op, 0);  // S5=0
         break;
     case MCPWM_ACTIVE_HIGH_MODE:
-        mcpwm_ll_deadtime_bypass_path(hal->dev, op, 1, false);    // S0
-        mcpwm_ll_deadtime_bypass_path(hal->dev, op, 0, false);    // S1
-        mcpwm_ll_deadtime_invert_outpath(hal->dev, op, 0, false); // S2
-        mcpwm_ll_deadtime_invert_outpath(hal->dev, op, 1, false); // S3
-        mcpwm_ll_deadtime_red_select_generator(hal->dev, op, 0);  // S4
-        mcpwm_ll_deadtime_fed_select_generator(hal->dev, op, 1);  // S5
+        mcpwm_ll_deadtime_bypass_path(hal->dev, op, 1, false);    // S0=0
+        mcpwm_ll_deadtime_bypass_path(hal->dev, op, 0, false);    // S1=0
+        mcpwm_ll_deadtime_invert_outpath(hal->dev, op, 0, false); // S2=0
+        mcpwm_ll_deadtime_invert_outpath(hal->dev, op, 1, false); // S3=0
+        mcpwm_ll_deadtime_red_select_generator(hal->dev, op, 0);  // S4=0
+        mcpwm_ll_deadtime_fed_select_generator(hal->dev, op, 0);  // S5=0
         break;
     case MCPWM_ACTIVE_LOW_MODE:
-        mcpwm_ll_deadtime_bypass_path(hal->dev, op, 1, false);   // S0
-        mcpwm_ll_deadtime_bypass_path(hal->dev, op, 0, false);   // S1
-        mcpwm_ll_deadtime_invert_outpath(hal->dev, op, 0, true); // S2
-        mcpwm_ll_deadtime_invert_outpath(hal->dev, op, 1, true); // S3
-        mcpwm_ll_deadtime_red_select_generator(hal->dev, op, 0); // S4
-        mcpwm_ll_deadtime_fed_select_generator(hal->dev, op, 1); // S5
+        mcpwm_ll_deadtime_bypass_path(hal->dev, op, 1, false);   // S0=0
+        mcpwm_ll_deadtime_bypass_path(hal->dev, op, 0, false);   // S1=0
+        mcpwm_ll_deadtime_invert_outpath(hal->dev, op, 0, true); // S2=1
+        mcpwm_ll_deadtime_invert_outpath(hal->dev, op, 1, true); // S3=1
+        mcpwm_ll_deadtime_red_select_generator(hal->dev, op, 0); // S4=0
+        mcpwm_ll_deadtime_fed_select_generator(hal->dev, op, 0); // S5=0
         break;
     case MCPWM_ACTIVE_HIGH_COMPLIMENT_MODE:
-        mcpwm_ll_deadtime_bypass_path(hal->dev, op, 1, false);    // S0
-        mcpwm_ll_deadtime_bypass_path(hal->dev, op, 0, false);    // S1
-        mcpwm_ll_deadtime_invert_outpath(hal->dev, op, 0, false); // S2
-        mcpwm_ll_deadtime_invert_outpath(hal->dev, op, 1, true);  // S3
-        mcpwm_ll_deadtime_red_select_generator(hal->dev, op, 0);  // S4
-        mcpwm_ll_deadtime_fed_select_generator(hal->dev, op, 1);  // S5
+        mcpwm_ll_deadtime_bypass_path(hal->dev, op, 1, false);    // S0=0
+        mcpwm_ll_deadtime_bypass_path(hal->dev, op, 0, false);    // S1=0
+        mcpwm_ll_deadtime_invert_outpath(hal->dev, op, 0, false); // S2=0
+        mcpwm_ll_deadtime_invert_outpath(hal->dev, op, 1, true);  // S3=1
+        mcpwm_ll_deadtime_red_select_generator(hal->dev, op, 0);  // S4=0
+        mcpwm_ll_deadtime_fed_select_generator(hal->dev, op, 0);  // S5=0
         break;
     case MCPWM_ACTIVE_LOW_COMPLIMENT_MODE:
-        mcpwm_ll_deadtime_bypass_path(hal->dev, op, 1, false);    // S0
-        mcpwm_ll_deadtime_bypass_path(hal->dev, op, 0, false);    // S1
-        mcpwm_ll_deadtime_invert_outpath(hal->dev, op, 0, true);  // S2
-        mcpwm_ll_deadtime_invert_outpath(hal->dev, op, 1, false); // S3
-        mcpwm_ll_deadtime_red_select_generator(hal->dev, op, 1);  // S4
-        mcpwm_ll_deadtime_fed_select_generator(hal->dev, op, 0);  // S5
+        mcpwm_ll_deadtime_bypass_path(hal->dev, op, 1, false);    // S0=0
+        mcpwm_ll_deadtime_bypass_path(hal->dev, op, 0, false);    // S1=0
+        mcpwm_ll_deadtime_invert_outpath(hal->dev, op, 0, true);  // S2=1
+        mcpwm_ll_deadtime_invert_outpath(hal->dev, op, 1, false); // S3=0
+        mcpwm_ll_deadtime_red_select_generator(hal->dev, op, 0);  // S4=0
+        mcpwm_ll_deadtime_fed_select_generator(hal->dev, op, 0);  // S5=0
         break;
     case MCPWM_ACTIVE_RED_FED_FROM_PWMXA:
-        mcpwm_ll_deadtime_bypass_path(hal->dev, op, 1, false);    // S0
-        mcpwm_ll_deadtime_invert_outpath(hal->dev, op, 1, false); // S3
-        mcpwm_ll_deadtime_red_select_generator(hal->dev, op, 1);  // S4
-        mcpwm_ll_deadtime_swap_out_path(hal->dev, op, 0, true);   // S6
-        mcpwm_ll_deadtime_swap_out_path(hal->dev, op, 1, false);  // S7
-        mcpwm_ll_deadtime_enable_deb(hal->dev, op, true);         // S8
+        mcpwm_ll_deadtime_bypass_path(hal->dev, op, 1, false);    // S0=0
+        mcpwm_ll_deadtime_invert_outpath(hal->dev, op, 1, false); // S3=0
+        mcpwm_ll_deadtime_red_select_generator(hal->dev, op, 0);  // S4=0
+        mcpwm_ll_deadtime_swap_out_path(hal->dev, op, 0, true);   // S6=1
+        mcpwm_ll_deadtime_swap_out_path(hal->dev, op, 1, false);  // S7=0
+        mcpwm_ll_deadtime_enable_deb(hal->dev, op, true);         // S8=1
         break;
     case MCPWM_ACTIVE_RED_FED_FROM_PWMXB:
-        mcpwm_ll_deadtime_bypass_path(hal->dev, op, 1, false);    // S0
-        mcpwm_ll_deadtime_invert_outpath(hal->dev, op, 1, false); // S3
-        mcpwm_ll_deadtime_red_select_generator(hal->dev, op, 0);  // S4
-        mcpwm_ll_deadtime_swap_out_path(hal->dev, op, 0, true);   // S6
-        mcpwm_ll_deadtime_swap_out_path(hal->dev, op, 1, false);  // S7
-        mcpwm_ll_deadtime_enable_deb(hal->dev, op, true);         // S8
+        mcpwm_ll_deadtime_bypass_path(hal->dev, op, 1, false);    // S0=0
+        mcpwm_ll_deadtime_invert_outpath(hal->dev, op, 1, false); // S3=0
+        mcpwm_ll_deadtime_red_select_generator(hal->dev, op, 1);  // S4=1
+        mcpwm_ll_deadtime_swap_out_path(hal->dev, op, 0, true);   // S6=1
+        mcpwm_ll_deadtime_swap_out_path(hal->dev, op, 1, false);  // S7=0
+        mcpwm_ll_deadtime_enable_deb(hal->dev, op, true);         // S8=1
         break;
     default :
         break;
