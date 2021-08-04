@@ -37,6 +37,7 @@
 #include "esp_pm.h"
 #include "esp_efuse.h"
 #include "esp_rom_gpio.h"
+#include "esp_private/i2s_platform.h"
 
 #include "sdkconfig.h"
 
@@ -107,9 +108,12 @@ typedef struct {
     i2s_hal_config_t hal_cfg; /*!< I2S hal configurations*/
 } i2s_obj_t;
 
-static i2s_obj_t *p_i2s[I2S_NUM_MAX] = {0};
+static i2s_obj_t *p_i2s[SOC_I2S_NUM];
+static portMUX_TYPE i2s_platform_spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
+static portMUX_TYPE i2s_spinlock[SOC_I2S_NUM] = {
+    [0 ... SOC_I2S_NUM - 1] = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED,
+};
 
-static portMUX_TYPE i2s_spinlock[I2S_NUM_MAX];
 #if SOC_I2S_SUPPORTS_ADC_DAC
 static int _i2s_adc_unit = -1;
 static int _i2s_adc_channel = -1;
@@ -939,7 +943,7 @@ esp_err_t i2s_pcm_config(i2s_port_t i2s_num, const i2s_pcm_cfg_t *pcm_cfg)
     I2S_ENTER_CRITICAL(i2s_num);
     if (p_i2s[i2s_num]->mode & I2S_MODE_TX) {
         i2s_hal_tx_pcm_cfg(&(p_i2s[i2s_num]->hal), pcm_cfg->pcm_type);
-    } else if(p_i2s[i2s_num]->mode & I2S_MODE_RX) {
+    } else if (p_i2s[i2s_num]->mode & I2S_MODE_RX) {
         i2s_hal_rx_pcm_cfg(&(p_i2s[i2s_num]->hal), pcm_cfg->pcm_type);
     }
     I2S_EXIT_CRITICAL(i2s_num);
@@ -1174,97 +1178,86 @@ esp_err_t i2s_stop(i2s_port_t i2s_num)
 esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config, int queue_size, void *i2s_queue)
 {
     esp_err_t ret = ESP_FAIL;
+    i2s_obj_t *pre_alloc_i2s_obj = NULL;
     ESP_RETURN_ON_FALSE((i2s_num < I2S_NUM_MAX), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
     ESP_RETURN_ON_FALSE((i2s_config != NULL), ESP_ERR_INVALID_ARG, TAG, "I2S configuration must not NULL");
     ESP_RETURN_ON_FALSE((i2s_config->dma_buf_count >= 2 && i2s_config->dma_buf_count <= 128), ESP_ERR_INVALID_ARG, TAG, "I2S buffer count less than 128 and more than 2");
     ESP_RETURN_ON_FALSE((i2s_config->dma_buf_len >= 8 && i2s_config->dma_buf_len <= 1024), ESP_ERR_INVALID_ARG, TAG, "I2S buffer length at most 1024 and more than 8");
-    if (p_i2s[i2s_num] != NULL) {
-        ESP_LOGW(TAG, "I2S driver already installed");
-        return ESP_OK;
-    }
 
-    p_i2s[i2s_num] = (i2s_obj_t *) calloc(1, sizeof(i2s_obj_t));
-    if (p_i2s[i2s_num] == NULL) {
-        ESP_LOGE(TAG, "Malloc I2S driver error");
-        return ESP_ERR_NO_MEM;
+    // alloc driver object and register to platform
+    pre_alloc_i2s_obj = calloc(1, sizeof(i2s_obj_t));
+    ESP_RETURN_ON_FALSE(pre_alloc_i2s_obj, ESP_ERR_NO_MEM, TAG, "no mem for I2S driver");
+    ret = i2s_priv_register_object(pre_alloc_i2s_obj, i2s_num);
+    if (ret != ESP_OK) {
+        free(pre_alloc_i2s_obj);
+        ESP_LOGE(TAG, "register I2S object to platform failed");
+        return ret;
     }
-
-    portMUX_TYPE i2s_spinlock_unlocked[1] = {portMUX_INITIALIZER_UNLOCKED};
-    for (int x = 0; x < I2S_NUM_MAX; x++) {
-        i2s_spinlock[x] = i2s_spinlock_unlocked[0];
-    }
-    //To make sure hardware is enabled before any hardware register operations.
-    periph_module_enable(i2s_periph_signal[i2s_num].module);
-    i2s_hal_init(&(p_i2s[i2s_num]->hal), i2s_num);
+    // initialize HAL layer
+    i2s_hal_init(&(pre_alloc_i2s_obj->hal), i2s_num);
 
     // Set I2S HAL configurations
-    p_i2s[i2s_num]->hal_cfg.mode = i2s_config->mode;
-    p_i2s[i2s_num]->hal_cfg.sample_rate = i2s_config->sample_rate;
-    p_i2s[i2s_num]->hal_cfg.comm_fmt = i2s_config->communication_format;
-    p_i2s[i2s_num]->hal_cfg.chan_fmt = i2s_config->channel_format;
-    p_i2s[i2s_num]->hal_cfg.bits_cfg.sample_bits = i2s_config->bits_per_sample;
-    p_i2s[i2s_num]->hal_cfg.bits_cfg.chan_bits = i2s_config->bits_per_chan;
+    pre_alloc_i2s_obj->hal_cfg.mode = i2s_config->mode;
+    pre_alloc_i2s_obj->hal_cfg.sample_rate = i2s_config->sample_rate;
+    pre_alloc_i2s_obj->hal_cfg.comm_fmt = i2s_config->communication_format;
+    pre_alloc_i2s_obj->hal_cfg.chan_fmt = i2s_config->channel_format;
+    pre_alloc_i2s_obj->hal_cfg.bits_cfg.sample_bits = i2s_config->bits_per_sample;
+    pre_alloc_i2s_obj->hal_cfg.bits_cfg.chan_bits = i2s_config->bits_per_chan;
 #if SOC_I2S_SUPPORTS_TDM
     int active_chan = 0;
     switch (i2s_config->channel_format) {
     case I2S_CHANNEL_FMT_RIGHT_LEFT:
     case I2S_CHANNEL_FMT_ALL_RIGHT:
     case I2S_CHANNEL_FMT_ALL_LEFT:
-        p_i2s[i2s_num]->hal_cfg.chan_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1;
-        p_i2s[i2s_num]->hal_cfg.total_chan = 2;
+        pre_alloc_i2s_obj->hal_cfg.chan_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1;
+        pre_alloc_i2s_obj->hal_cfg.total_chan = 2;
         active_chan = 2;
         break;
     case I2S_CHANNEL_FMT_ONLY_RIGHT:
-        p_i2s[i2s_num]->hal_cfg.chan_mask = i2s_config->left_align ? I2S_TDM_ACTIVE_CH1 : I2S_TDM_ACTIVE_CH0;
-        p_i2s[i2s_num]->hal_cfg.total_chan = 1;
+        pre_alloc_i2s_obj->hal_cfg.chan_mask = i2s_config->left_align ? I2S_TDM_ACTIVE_CH1 : I2S_TDM_ACTIVE_CH0;
+        pre_alloc_i2s_obj->hal_cfg.total_chan = 1;
         active_chan = 1;
         break;
     case I2S_CHANNEL_FMT_ONLY_LEFT:
-        p_i2s[i2s_num]->hal_cfg.chan_mask = i2s_config->left_align ? I2S_TDM_ACTIVE_CH0 : I2S_TDM_ACTIVE_CH1;
-        p_i2s[i2s_num]->hal_cfg.total_chan = 1;
+        pre_alloc_i2s_obj->hal_cfg.chan_mask = i2s_config->left_align ? I2S_TDM_ACTIVE_CH0 : I2S_TDM_ACTIVE_CH1;
+        pre_alloc_i2s_obj->hal_cfg.total_chan = 1;
         active_chan = 1;
         break;
     case I2S_CHANNEL_FMT_MULTIPLE:
-        ESP_RETURN_ON_FALSE((i2s_config->chan_mask != 0), ESP_ERR_INVALID_ARG, TAG, "i2s all channel are disabled");
-        p_i2s[i2s_num]->hal_cfg.chan_mask = i2s_config->chan_mask;
-        i2s_get_active_chan_num(&p_i2s[i2s_num]->hal_cfg);
+        ESP_GOTO_ON_FALSE(i2s_config->chan_mask != 0, ESP_ERR_INVALID_ARG, err, TAG, "i2s all channel are disabled");
+        pre_alloc_i2s_obj->hal_cfg.chan_mask = i2s_config->chan_mask;
+        i2s_get_active_chan_num(&pre_alloc_i2s_obj->hal_cfg);
         break;
     default:
-        ESP_LOGE(TAG, "wrong i2s channel format, uninstalled i2s.");
-        goto err;
+        ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "invalid I2S channel format:%d", i2s_config->channel_format);
     }
-    p_i2s[i2s_num]->hal_cfg.left_align    = i2s_config->left_align;
-    p_i2s[i2s_num]->hal_cfg.big_edin      = i2s_config->big_edin;
-    p_i2s[i2s_num]->hal_cfg.bit_order_msb = i2s_config->bit_order_msb;
-    p_i2s[i2s_num]->hal_cfg.skip_msk      = i2s_config->skip_msk;
+    pre_alloc_i2s_obj->hal_cfg.left_align    = i2s_config->left_align;
+    pre_alloc_i2s_obj->hal_cfg.big_edin      = i2s_config->big_edin;
+    pre_alloc_i2s_obj->hal_cfg.bit_order_msb = i2s_config->bit_order_msb;
+    pre_alloc_i2s_obj->hal_cfg.skip_msk      = i2s_config->skip_msk;
 #endif
 
     // Set I2S driver configurations
-    p_i2s[i2s_num]->i2s_num = i2s_num;
-    p_i2s[i2s_num]->mode = i2s_config->mode;
-    p_i2s[i2s_num]->channel_num = i2s_get_active_chan_num(&p_i2s[i2s_num]->hal_cfg);
-    p_i2s[i2s_num]->i2s_queue = i2s_queue;
-    p_i2s[i2s_num]->bits_per_sample = 0;
-    p_i2s[i2s_num]->bytes_per_sample = 0; // Not initialized yet
-    p_i2s[i2s_num]->dma_buf_count = i2s_config->dma_buf_count;
-    p_i2s[i2s_num]->dma_buf_len = i2s_config->dma_buf_len;
-    p_i2s[i2s_num]->mclk_multiple = i2s_config->mclk_multiple;
+    pre_alloc_i2s_obj->i2s_num = i2s_num;
+    pre_alloc_i2s_obj->mode = i2s_config->mode;
+    pre_alloc_i2s_obj->channel_num = i2s_get_active_chan_num(&pre_alloc_i2s_obj->hal_cfg);
+    pre_alloc_i2s_obj->i2s_queue = i2s_queue;
+    pre_alloc_i2s_obj->bits_per_sample = 0;
+    pre_alloc_i2s_obj->bytes_per_sample = 0; // Not initialized yet
+    pre_alloc_i2s_obj->dma_buf_count = i2s_config->dma_buf_count;
+    pre_alloc_i2s_obj->dma_buf_len = i2s_config->dma_buf_len;
+    pre_alloc_i2s_obj->mclk_multiple = i2s_config->mclk_multiple;
 
 #ifdef CONFIG_PM_ENABLE
 #if SOC_I2S_SUPPORTS_APLL
     if (i2s_config->use_apll) {
-        ret = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "i2s_driver", &p_i2s[i2s_num]->pm_lock);
+        ret = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "i2s_driver", &pre_alloc_i2s_obj->pm_lock);
     } else
 #endif // SOC_I2S_SUPPORTS_APLL
     {
-        ret = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "i2s_driver", &p_i2s[i2s_num]->pm_lock);
+        ret = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "i2s_driver", &pre_alloc_i2s_obj->pm_lock);
     }
-    if (ret != ESP_OK) {
-        free(p_i2s[i2s_num]);
-        p_i2s[i2s_num] = NULL;
-        ESP_LOGE(TAG, "I2S pm lock error");
-        return ret;
-    }
+    ESP_GOTO_ON_ERROR(ret, err, TAG, "create PM lock failed");
 #endif //CONFIG_PM_ENABLE
 #if SOC_GDMA_SUPPORTED
     ret = ESP_OK;
@@ -1275,85 +1268,79 @@ esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config,
     trig.instance_id = SOC_GDMA_TRIG_PERIPH_I2S0;
 #endif
     gdma_channel_alloc_config_t dma_cfg = {.flags.reserve_sibling = 1};
-    if ( p_i2s[i2s_num]->mode & I2S_MODE_RX) {
+    if (pre_alloc_i2s_obj->mode & I2S_MODE_RX) {
         dma_cfg.direction = GDMA_CHANNEL_DIRECTION_RX;
-        ESP_GOTO_ON_ERROR(gdma_new_channel(&dma_cfg, &p_i2s[i2s_num]->rx_dma_chan), err, TAG, "Register rx dma channel error");
-        ESP_GOTO_ON_ERROR(gdma_connect(p_i2s[i2s_num]->rx_dma_chan, trig), err, TAG, "Connect rx dma channel error");
+        ESP_GOTO_ON_ERROR(gdma_new_channel(&dma_cfg, &pre_alloc_i2s_obj->rx_dma_chan), err, TAG, "Register rx dma channel error");
+        ESP_GOTO_ON_ERROR(gdma_connect(pre_alloc_i2s_obj->rx_dma_chan, trig), err, TAG, "Connect rx dma channel error");
         gdma_rx_event_callbacks_t cb = {.on_recv_eof = i2s_dma_rx_callback};
-        gdma_register_rx_event_callbacks(p_i2s[i2s_num]->rx_dma_chan, &cb, p_i2s[i2s_num]);
+        gdma_register_rx_event_callbacks(pre_alloc_i2s_obj->rx_dma_chan, &cb, pre_alloc_i2s_obj);
     }
-    if ( p_i2s[i2s_num]->mode & I2S_MODE_TX) {
+    if (pre_alloc_i2s_obj->mode & I2S_MODE_TX) {
         dma_cfg.direction = GDMA_CHANNEL_DIRECTION_TX;
-        ESP_GOTO_ON_ERROR(gdma_new_channel(&dma_cfg, &p_i2s[i2s_num]->tx_dma_chan), err, TAG, "Register tx dma channel error");
-        ESP_GOTO_ON_ERROR(gdma_connect(p_i2s[i2s_num]->tx_dma_chan, trig), err, TAG, "Connect tx dma channel error");
+        ESP_GOTO_ON_ERROR(gdma_new_channel(&dma_cfg, &pre_alloc_i2s_obj->tx_dma_chan), err, TAG, "Register tx dma channel error");
+        ESP_GOTO_ON_ERROR(gdma_connect(pre_alloc_i2s_obj->tx_dma_chan, trig), err, TAG, "Connect tx dma channel error");
         gdma_tx_event_callbacks_t cb = {.on_trans_eof = i2s_dma_tx_callback};
-        gdma_register_tx_event_callbacks(p_i2s[i2s_num]->tx_dma_chan, &cb, p_i2s[i2s_num]);
+        gdma_register_tx_event_callbacks(pre_alloc_i2s_obj->tx_dma_chan, &cb, pre_alloc_i2s_obj);
     }
 #else
     //initial interrupt
-    ret = esp_intr_alloc(i2s_periph_signal[i2s_num].irq, i2s_config->intr_alloc_flags, i2s_intr_handler_default, p_i2s[i2s_num], &p_i2s[i2s_num]->i2s_isr_handle);
+    ret = esp_intr_alloc(i2s_periph_signal[i2s_num].irq, i2s_config->intr_alloc_flags, i2s_intr_handler_default, pre_alloc_i2s_obj, &pre_alloc_i2s_obj->i2s_isr_handle);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "Register I2S Interrupt error");
 #endif // SOC_GDMA_SUPPORTED
     i2s_stop(i2s_num);
-    p_i2s[i2s_num]->use_apll = i2s_config->use_apll;
-    p_i2s[i2s_num]->fixed_mclk = i2s_config->fixed_mclk;
-    p_i2s[i2s_num]->tx_desc_auto_clear = i2s_config->tx_desc_auto_clear;
+    pre_alloc_i2s_obj->use_apll = i2s_config->use_apll;
+    pre_alloc_i2s_obj->fixed_mclk = i2s_config->fixed_mclk;
+    pre_alloc_i2s_obj->tx_desc_auto_clear = i2s_config->tx_desc_auto_clear;
     ret = i2s_param_config(i2s_num);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "I2S param configure error");
     if (i2s_queue) {
-        p_i2s[i2s_num]->i2s_queue = xQueueCreate(queue_size, sizeof(i2s_event_t));
-        ESP_GOTO_ON_ERROR((p_i2s[i2s_num]->i2s_queue != NULL), err, TAG, "I2S queue create failed");
-        *((QueueHandle_t *) i2s_queue) = p_i2s[i2s_num]->i2s_queue;
-        ESP_LOGI(TAG, "queue free spaces: %d", uxQueueSpacesAvailable(p_i2s[i2s_num]->i2s_queue));
+        pre_alloc_i2s_obj->i2s_queue = xQueueCreate(queue_size, sizeof(i2s_event_t));
+        ESP_GOTO_ON_ERROR((pre_alloc_i2s_obj->i2s_queue != NULL), err, TAG, "I2S queue create failed");
+        *((QueueHandle_t *) i2s_queue) = pre_alloc_i2s_obj->i2s_queue;
+        ESP_LOGI(TAG, "queue free spaces: %d", uxQueueSpacesAvailable(pre_alloc_i2s_obj->i2s_queue));
     } else {
-        p_i2s[i2s_num]->i2s_queue = NULL;
+        pre_alloc_i2s_obj->i2s_queue = NULL;
     }
 
     //set clock and start
 #if SOC_I2S_SUPPORTS_TDM
     ret = i2s_set_clk(i2s_num, i2s_config->sample_rate,
-                      p_i2s[i2s_num]->hal_cfg.bits_cfg.val,
+                      pre_alloc_i2s_obj->hal_cfg.bits_cfg.val,
                       (i2s_channel_t)active_chan);
 #else
     ret = i2s_set_clk(i2s_num, i2s_config->sample_rate,
-                      p_i2s[i2s_num]->hal_cfg.bits_cfg.val,
+                      pre_alloc_i2s_obj->hal_cfg.bits_cfg.val,
                       I2S_CHANNEL_STEREO);
 #endif
     ESP_GOTO_ON_ERROR(ret, err, TAG, "I2S set clock failed");
     return ret;
-
 err:
-#ifdef CONFIG_PM_ENABLE
-    if (p_i2s[i2s_num]->pm_lock) {
-        esp_pm_lock_delete(p_i2s[i2s_num]->pm_lock);
-    }
-#endif
     i2s_driver_uninstall(i2s_num);
     return ret;
 }
 
 esp_err_t i2s_driver_uninstall(i2s_port_t i2s_num)
 {
-    ESP_RETURN_ON_FALSE((i2s_num < I2S_NUM_MAX), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
-    if (p_i2s[i2s_num] == NULL) {
-        ESP_LOGI(TAG, "already uninstalled");
-        return ESP_OK;
-    }
+    ESP_RETURN_ON_FALSE(i2s_num < I2S_NUM_MAX, ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
+    ESP_RETURN_ON_FALSE(p_i2s[i2s_num], ESP_ERR_INVALID_STATE, TAG, "I2S port %d has not installed", i2s_num);
+    i2s_obj_t *obj = p_i2s[i2s_num];
     i2s_stop(i2s_num);
 #if SOC_I2S_SUPPORTS_ADC_DAC
     i2s_set_dac_mode(I2S_DAC_CHANNEL_DISABLE);
 #endif
 #if SOC_GDMA_SUPPORTED
-    if (p_i2s[i2s_num]->mode & I2S_MODE_TX) {
+    if (p_i2s[i2s_num]->tx_dma_chan) {
         gdma_disconnect(p_i2s[i2s_num]->tx_dma_chan);
         gdma_del_channel(p_i2s[i2s_num]->tx_dma_chan);
     }
-    if (p_i2s[i2s_num]->mode & I2S_MODE_RX) {
+    if (p_i2s[i2s_num]->rx_dma_chan) {
         gdma_disconnect(p_i2s[i2s_num]->rx_dma_chan);
         gdma_del_channel(p_i2s[i2s_num]->rx_dma_chan);
     }
 #else
-    esp_intr_free(p_i2s[i2s_num]->i2s_isr_handle);
+    if (p_i2s[i2s_num]->i2s_isr_handle) {
+        esp_intr_free(p_i2s[i2s_num]->i2s_isr_handle);
+    }
 #endif
     if (p_i2s[i2s_num]->tx != NULL && p_i2s[i2s_num]->mode & I2S_MODE_TX) {
         i2s_destroy_dma_queue(i2s_num, p_i2s[i2s_num]->tx);
@@ -1382,12 +1369,8 @@ esp_err_t i2s_driver_uninstall(i2s_port_t i2s_num)
         esp_pm_lock_delete(p_i2s[i2s_num]->pm_lock);
     }
 #endif
-
-    free(p_i2s[i2s_num]);
-    p_i2s[i2s_num] = NULL;
-#if !SOC_GDMA_SUPPORTED
-    periph_module_disable(i2s_periph_signal[i2s_num].module);
-#endif
+    i2s_priv_deregister_object(i2s_num);
+    free(obj);
     return ESP_OK;
 }
 
@@ -1530,5 +1513,33 @@ esp_err_t i2s_read(i2s_port_t i2s_num, void *dest, size_t size, size_t *bytes_re
     esp_pm_lock_release(p_i2s[i2s_num]->pm_lock);
 #endif
     xSemaphoreGive(p_i2s[i2s_num]->rx->mux);
+    return ret;
+}
+
+esp_err_t i2s_priv_register_object(void *driver_obj, int port_id)
+{
+    esp_err_t ret = ESP_ERR_NOT_FOUND;
+    ESP_RETURN_ON_FALSE(driver_obj && (port_id < SOC_I2S_NUM), ESP_ERR_INVALID_ARG, TAG, "invalid arguments");
+    portENTER_CRITICAL(&i2s_platform_spinlock);
+    if (!p_i2s[port_id]) {
+        ret = ESP_OK;
+        p_i2s[port_id] = driver_obj;
+        periph_module_enable(i2s_periph_signal[port_id].module);
+    }
+    portEXIT_CRITICAL(&i2s_platform_spinlock);
+    return ret;
+}
+
+esp_err_t i2s_priv_deregister_object(int port_id)
+{
+    esp_err_t ret = ESP_ERR_INVALID_STATE;
+    ESP_RETURN_ON_FALSE(port_id < SOC_I2S_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid arguments");
+    portENTER_CRITICAL(&i2s_platform_spinlock);
+    if (p_i2s[port_id]) {
+        ret = ESP_OK;
+        p_i2s[port_id] = NULL;
+        periph_module_disable(i2s_periph_signal[port_id].module);
+    }
+    portEXIT_CRITICAL(&i2s_platform_spinlock);
     return ret;
 }

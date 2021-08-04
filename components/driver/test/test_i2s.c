@@ -165,7 +165,7 @@ TEST_CASE("I2S basic driver install, uninstall, set pin test", "[i2s]")
     TEST_ASSERT(i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL) == ESP_ERR_INVALID_ARG);
     i2s_config.dma_buf_count = 129;
     TEST_ASSERT(i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL) == ESP_ERR_INVALID_ARG);
-    TEST_ESP_OK(i2s_driver_uninstall(I2S_NUM_0));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, i2s_driver_uninstall(I2S_NUM_0));
 }
 
 TEST_CASE("I2S Loopback test(master tx and rx)", "[i2s]")

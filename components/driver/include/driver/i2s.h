@@ -148,7 +148,7 @@ typedef struct {
  * The I2S peripheral output signals can be connected to multiple GPIO pads.
  * However, the I2S peripheral input signal can only be connected to one GPIO pad.
  *
- * @param   i2s_num     I2S_NUM_0 or I2S_NUM_1
+ * @param   i2s_num     I2S port number
  *
  * @param   pin         I2S Pin structure, or NULL to set 2-channel 8-bit internal DAC pin configuration (GPIO25 & GPIO26)
  *
@@ -172,7 +172,7 @@ esp_err_t i2s_set_pin(i2s_port_t i2s_num, const i2s_pin_config_t *pin);
  *        In the first downsample process, the sampling number can be 16 or 8.
  *        In the second downsample process, the sampling number is fixed as 8.
  *        So the clock frequency in PDM RX mode would be (fpcm * 64) or (fpcm * 128) accordingly.
- * @param i2s_num I2S_NUM_0, I2S_NUM_1
+ * @param i2s_num I2S port number
  * @param downsample i2s RX down sample rate for PDM mode.
  *
  * @note After calling this function, it would call i2s_set_clk inside to update the clock frequency.
@@ -193,7 +193,7 @@ esp_err_t i2s_set_pdm_rx_down_sample(i2s_port_t i2s_num, i2s_pdm_dsr_t downsampl
  *        default PDM TX upsample parameters have already been set,
  *        no need to call this function again if you don't have to change the default configuration
  *
- * @param i2s_num I2S_NUM_0, I2S_NUM_1
+ * @param i2s_num I2S port number
  * @param upsample_cfg Set I2S PDM up-sample rate configuration
  *
  * @return
@@ -207,7 +207,7 @@ esp_err_t i2s_set_pdm_tx_up_sample(i2s_port_t i2s_num, const i2s_pdm_tx_upsample
 /**
  * @brief Install and start I2S driver.
  *
- * @param i2s_num         I2S_NUM_0, I2S_NUM_1
+ * @param i2s_num         I2S port number
  *
  * @param i2s_config      I2S configurations - see i2s_config_t struct
  *
@@ -221,24 +221,26 @@ esp_err_t i2s_set_pdm_tx_up_sample(i2s_port_t i2s_num, const i2s_pdm_tx_upsample
  *     - ESP_OK              Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  *     - ESP_ERR_NO_MEM      Out of memory
+ *     - ESP_ERR_NOT_FOUND   I2S port is not found or has been installed by others (e.g. LCD i80)
  */
 esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config, int queue_size, void *i2s_queue);
 
 /**
  * @brief Uninstall I2S driver.
  *
- * @param i2s_num  I2S_NUM_0, I2S_NUM_1
+ * @param i2s_num  I2S port number
  *
  * @return
  *     - ESP_OK              Success
  *     - ESP_ERR_INVALID_ARG Parameter error
+ *     - ESP_ERR_INVALID_STATE I2S port has been uninstalled by others (e.g. LCD i80)
  */
 esp_err_t i2s_driver_uninstall(i2s_port_t i2s_num);
 
 /**
  * @brief Write data to I2S DMA transmit buffer.
  *
- * @param i2s_num             I2S_NUM_0, I2S_NUM_1
+ * @param i2s_num             I2S port number
  *
  * @param src                 Source address to write from
  *
@@ -262,7 +264,7 @@ esp_err_t i2s_write(i2s_port_t i2s_num, const void *src, size_t size, size_t *by
 /**
  * @brief Write data to I2S DMA transmit buffer while expanding the number of bits per sample. For example, expanding 16-bit PCM to 32-bit PCM.
  *
- * @param i2s_num             I2S_NUM_0, I2S_NUM_1
+ * @param i2s_num             I2S port number
  *
  * @param src                 Source address to write from
  *
@@ -293,7 +295,7 @@ esp_err_t i2s_write_expand(i2s_port_t i2s_num, const void *src, size_t size, siz
 /**
  * @brief Read data from I2S DMA receive buffer
  *
- * @param i2s_num         I2S_NUM_0, I2S_NUM_1
+ * @param i2s_num         I2S port number
  *
  * @param dest            Destination address to read into
  *
@@ -319,7 +321,7 @@ esp_err_t i2s_read(i2s_port_t i2s_num, void *dest, size_t size, size_t *bytes_re
  *
  * `bit_clock = rate * (number of channels) * bits_per_sample`
  *
- * @param i2s_num  I2S_NUM_0, I2S_NUM_1
+ * @param i2s_num  I2S port number
  *
  * @param rate I2S sample rate (ex: 8000, 44100...)
  *
@@ -337,7 +339,7 @@ esp_err_t i2s_set_sample_rates(i2s_port_t i2s_num, uint32_t rate);
  *
  * Disables I2S TX/RX, until i2s_start() is called.
  *
- * @param i2s_num  I2S_NUM_0, I2S_NUM_1
+ * @param i2s_num  I2S port number
  *
  * @return
  *     - ESP_OK              Success
@@ -351,7 +353,7 @@ esp_err_t i2s_stop(i2s_port_t i2s_num);
  * It is not necessary to call this function after i2s_driver_install() (it is started automatically), however it is necessary to call it after i2s_stop().
  *
  *
- * @param i2s_num  I2S_NUM_0, I2S_NUM_1
+ * @param i2s_num  I2S port number
  *
 * @return
  *     - ESP_OK              Success
@@ -364,7 +366,7 @@ esp_err_t i2s_start(i2s_port_t i2s_num);
  *
  * Pushes zero-byte samples into the TX DMA buffer, until it is full.
  *
- * @param i2s_num  I2S_NUM_0, I2S_NUM_1
+ * @param i2s_num  I2S port number
  *
  * @return
  *     - ESP_OK              Success
@@ -379,7 +381,7 @@ esp_err_t i2s_zero_dma_buffer(i2s_port_t i2s_num);
  * @note  This function should be called after i2s driver installed
  *        Only take effecttive when the i2s 'communication_format' is set to 'I2S_COMM_FORMAT_STAND_PCM_SHORT' or 'I2S_COMM_FORMAT_STAND_PCM_LONG'
  *
- * @param i2s_num  I2S_NUM_0
+ * @param i2s_num  I2S port number
  *
  * @param pcm_cfg  including mode selection and a/u-law decompress or compress configuration paramater
  *
@@ -400,7 +402,7 @@ esp_err_t i2s_pcm_config(i2s_port_t i2s_num, const i2s_pcm_cfg_t *pcm_cfg);
  * 3. malloc dma buffer;
  * 4. start i2s
  *
- * @param i2s_num  I2S_NUM_0, I2S_NUM_1
+ * @param i2s_num  I2S port number
  *
  * @param rate I2S sample rate (ex: 8000, 44100...)
  *
@@ -421,7 +423,7 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
 /**
  * @brief get clock set on particular port number.
  *
- * @param i2s_num  I2S_NUM_0, I2S_NUM_1
+ * @param i2s_num  I2S port number
  *
  * @return
  *     - actual clock set by i2s driver
