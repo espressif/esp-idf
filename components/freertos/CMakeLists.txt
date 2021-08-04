@@ -21,7 +21,6 @@ if(CONFIG_IDF_TARGET_ARCH_XTENSA)
         port/xtensa/include)
 
     set(private_include_dirs
-        include/freertos
         port/xtensa/include/freertos
         port/xtensa
         port/priv_include
@@ -37,7 +36,6 @@ elseif(CONFIG_IDF_TARGET_ARCH_RISCV)
         port/riscv/include)
 
     set(private_include_dirs
-        include/freertos
         port/riscv/include/freertos
         port/riscv
         port/priv_include
@@ -46,6 +44,7 @@ elseif(CONFIG_IDF_TARGET_ARCH_RISCV)
 endif()
 
 list(APPEND srcs
+    "esp_additions/task_snapshot.c"
     "port/port_common.c"
     "port/port_systick.c"
     "croutine.c"
@@ -57,6 +56,12 @@ list(APPEND srcs
     "stream_buffer.c"
     "FreeRTOS-openocd.c"
     "freertos_v8_compat.c")
+
+list(APPEND include_dirs
+    "include/esp_additions")
+
+list(APPEND private_include_dirs
+    "include/freertos")
 
 if(CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
     list(APPEND srcs "port/xtensa/xtensa_loadstore_handler.S")
