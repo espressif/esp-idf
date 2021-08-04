@@ -366,11 +366,11 @@ static void rsa_key_operations(int keysize, bool check_performance, bool use_bli
     private_perf = ccomp_timer_stop();
 
     if (check_performance && keysize == 2048) {
-        TEST_PERFORMANCE_LESS_THAN(RSA_2048KEY_PUBLIC_OP, "public operations %d us", public_perf);
-        TEST_PERFORMANCE_LESS_THAN(RSA_2048KEY_PRIVATE_OP, "private operations %d us", private_perf);
+        TEST_PERFORMANCE_LESS_THAN(RSA_2048KEY_PUBLIC_OP, "%d us", public_perf);
+        TEST_PERFORMANCE_LESS_THAN(RSA_2048KEY_PRIVATE_OP, "%d us", private_perf);
     } else if (check_performance && keysize == 4096) {
-        TEST_PERFORMANCE_LESS_THAN(RSA_4096KEY_PUBLIC_OP, "public operations %d us", public_perf);
-        TEST_PERFORMANCE_LESS_THAN(RSA_4096KEY_PRIVATE_OP, "private operations %d us", private_perf);
+        TEST_PERFORMANCE_LESS_THAN(RSA_4096KEY_PUBLIC_OP, "%d us", public_perf);
+        TEST_PERFORMANCE_LESS_THAN(RSA_4096KEY_PRIVATE_OP, "%d us", private_perf);
     }
 
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(orig_buf, decrypted_buf, keysize / 8, "RSA operation");
