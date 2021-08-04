@@ -37,6 +37,7 @@
 
 .patterns-build_components: &patterns-build_components
   - "components/**/*"
+  - "examples/cxx/experimental/experimental_cpp_component/*"
 
 .patterns-build_system: &patterns-build_system
   - "tools/cmake/**/*"
