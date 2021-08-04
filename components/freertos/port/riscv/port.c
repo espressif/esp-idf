@@ -91,6 +91,7 @@
 #include "riscv/riscv_interrupts.h"
 #include "riscv/interrupt.h"
 
+#include "port_systick.h"
 #include "esp_system.h"
 #include "esp_intr_alloc.h"
 #include "esp_private/crosscore_int.h"
@@ -115,8 +116,6 @@ StackType_t *xIsrStackTop = &xIsrStack[0] + (configISR_STACK_SIZE & (~((portPOIN
 
 static const char *TAG = "cpu_start"; // [refactor-todo]: might be appropriate to change in the future, but
 
-static void vPortSysTickHandler(void *arg);
-static void vPortSetupTimer(void);
 static void prvTaskExitError(void);
 
 extern void esprv_intc_int_set_threshold(int); // FIXME, this function is in ROM only
@@ -139,27 +138,6 @@ void vPortExitCritical(void)
             portEXIT_CRITICAL_NESTED(uxSavedInterruptState);
         }
     }
-}
-
-/**
- * @brief Set up the systimer peripheral to generate the tick interrupt
- *
- */
-void vPortSetupTimer(void)
-{
-    /* Systimer HAL layer object */
-    static systimer_hal_context_t systimer_hal;
-    /* set system timer interrupt vector */
-    ESP_ERROR_CHECK(esp_intr_alloc(ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE, ESP_INTR_FLAG_IRAM, vPortSysTickHandler, &systimer_hal, NULL));
-
-    /* configure the timer */
-    systimer_hal_init(&systimer_hal);
-    systimer_hal_connect_alarm_counter(&systimer_hal, SYSTIMER_LL_ALARM_OS_TICK_CORE0, SYSTIMER_LL_COUNTER_OS_TICK);
-    systimer_hal_enable_counter(&systimer_hal, SYSTIMER_LL_COUNTER_OS_TICK);
-    systimer_hal_counter_can_stall_by_cpu(&systimer_hal, SYSTIMER_LL_COUNTER_OS_TICK, 0, true);
-    systimer_hal_set_alarm_period(&systimer_hal, SYSTIMER_LL_ALARM_OS_TICK_CORE0, 1000000UL / CONFIG_FREERTOS_HZ);
-    systimer_hal_select_alarm_mode(&systimer_hal, SYSTIMER_LL_ALARM_OS_TICK_CORE0, SYSTIMER_ALARM_MODE_PERIOD);
-    systimer_hal_enable_alarm_int(&systimer_hal, SYSTIMER_LL_ALARM_OS_TICK_CORE0);
 }
 
 void prvTaskExitError(void)
@@ -293,35 +271,13 @@ StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxC
     return (StackType_t *)frame;
 }
 
-IRAM_ATTR void vPortSysTickHandler(void *arg)
-{
-    systimer_hal_context_t *systimer_hal = (systimer_hal_context_t *)arg;
-
-    systimer_ll_clear_alarm_int(systimer_hal->dev, SYSTIMER_LL_ALARM_OS_TICK_CORE0);
-
-#ifdef CONFIG_PM_TRACE
-    ESP_PM_TRACE_ENTER(TICK, xPortGetCoreID());
-#endif
-
-    if (!uxSchedulerRunning) {
-        return;
-    }
-
-    if (xTaskIncrementTick() != pdFALSE) {
-        vPortYieldFromISR();
-    }
-
-#ifdef CONFIG_PM_TRACE
-    ESP_PM_TRACE_EXIT(TICK, xPortGetCoreID());
-#endif
-}
-
 BaseType_t xPortStartScheduler(void)
 {
     uxInterruptNesting = 0;
     uxCriticalNesting = 0;
     uxSchedulerRunning = 0;
 
+	/* Setup the hardware to generate the tick. */
     vPortSetupTimer();
 
     esprv_intc_int_set_threshold(1); /* set global INTC masking level */

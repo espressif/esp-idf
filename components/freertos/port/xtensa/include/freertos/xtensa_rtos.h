@@ -50,6 +50,7 @@ Should be included by all Xtensa generic and RTOS port-specific sources.
 
 #include    <xtensa/corebits.h>
 #include    <xtensa/config/system.h>
+#include    "sdkconfig.h"
 
 /*
 Include any RTOS specific definitions that are needed by this header.
@@ -145,7 +146,9 @@ May be coded in or called from C or assembly, per ABI conventions.
 RTOS may optionally define XT_TICK_PER_SEC in its own way (eg. macro).
 */
 // void XT_RTOS_TIMER_INT(void)
+#ifdef CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
 #define XT_RTOS_TIMER_INT   _frxt_timer_int
+#endif
 #define XT_TICK_PER_SEC     configTICK_RATE_HZ
 
 /*
