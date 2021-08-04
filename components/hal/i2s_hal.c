@@ -1,4 +1,4 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,263 +12,269 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
 // The HAL layer for I2S (common part)
 
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
 #include "hal/i2s_hal.h"
 
-#define I2S_TX_PDM_FP_DEF  960   // Set to the recommended value(960) in TRM
-#define I2S_RX_PDM_DSR_DEF 0
+#define I2S_MODE_I2S (I2S_MODE_MASTER|I2S_MODE_SLAVE|I2S_MODE_TX|I2S_MODE_RX) /*!< I2S normal mode*/
 
-void i2s_hal_set_tx_mode(i2s_hal_context_t *hal, i2s_channel_t ch, i2s_bits_per_sample_t bits)
+/**
+ * @brief Calculate the closest sample rate clock configuration.
+ *        clock relationship:
+ *        Fmclk = bck_div*fbck = fsclk/(mclk_div+b/a)
+ *
+ * @param fsclk I2S source clock freq.
+ * @param fbck BCK freuency.
+ * @param bck_div The BCK devider of bck. Generally, set bck_div to 8.
+ * @param cal Point to `i2s_ll_clk_cal_t` structure.
+ */
+static void i2s_hal_clk_cal(uint32_t fsclk, uint32_t fbck, int bck_div, i2s_ll_clk_cal_t *cal)
 {
-    if (bits <= I2S_BITS_PER_SAMPLE_16BIT) {
-        i2s_ll_set_tx_fifo_mod(hal->dev, (ch == I2S_CHANNEL_STEREO) ? 0 : 1);
-    } else {
-        i2s_ll_set_tx_fifo_mod(hal->dev, (ch == I2S_CHANNEL_STEREO) ? 2 : 3);
-    }
-    i2s_ll_set_tx_chan_mod(hal->dev, (ch == I2S_CHANNEL_STEREO) ? 0 : 1);
-#if SOC_I2S_SUPPORTS_DMA_EQUAL
-    i2s_ll_set_tx_dma_equal(hal->dev, (ch == I2S_CHANNEL_STEREO) ? 0 : 1);
-#endif
-}
-
-void i2s_hal_set_rx_mode(i2s_hal_context_t *hal, i2s_channel_t ch, i2s_bits_per_sample_t bits)
-{
-    if (bits <= I2S_BITS_PER_SAMPLE_16BIT) {
-        i2s_ll_set_rx_fifo_mod(hal->dev, (ch == I2S_CHANNEL_STEREO) ? 0 : 1);
-    } else {
-        i2s_ll_set_rx_fifo_mod(hal->dev, (ch == I2S_CHANNEL_STEREO) ? 2 : 3);
-    }
-    i2s_ll_set_rx_chan_mod(hal->dev, (ch == I2S_CHANNEL_STEREO) ? 0 : 1);
-#if SOC_I2S_SUPPORTS_DMA_EQUAL
-    i2s_ll_set_rx_dma_equal(hal->dev, (ch == I2S_CHANNEL_STEREO) ? 0 : 1);
-#endif
-}
-
-void i2s_hal_set_in_link(i2s_hal_context_t *hal, uint32_t bytes_num, uint32_t addr)
-{
-    i2s_ll_set_in_link_addr(hal->dev, addr);
-    i2s_ll_set_rx_eof_num(hal->dev, bytes_num);
-}
-
-#if SOC_I2S_SUPPORTS_PDM
-void i2s_hal_tx_pdm_cfg(i2s_hal_context_t *hal, uint32_t fp, uint32_t fs)
-{
-    i2s_ll_tx_pdm_cfg(hal->dev, fp, fs);
-}
-
-void i2s_hal_get_tx_pdm(i2s_hal_context_t *hal, uint32_t *fp, uint32_t *fs)
-{
-    i2s_ll_get_tx_pdm(hal->dev, fp, fs);
-}
-
-void i2s_hal_rx_pdm_cfg(i2s_hal_context_t *hal, uint32_t dsr)
-{
-    i2s_ll_rx_pdm_cfg(hal->dev, dsr);
-}
-
-void i2s_hal_get_rx_pdm(i2s_hal_context_t *hal, uint32_t *dsr)
-{
-    i2s_ll_get_rx_pdm(hal->dev, dsr);
-}
-#endif
-
-void i2s_hal_set_clk_div(i2s_hal_context_t *hal, int div_num, int div_a, int div_b, int tx_bck_div, int rx_bck_div)
-{
-    i2s_ll_set_clkm_div_num(hal->dev, div_num);
-    i2s_ll_set_clkm_div_a(hal->dev, div_a);
-    i2s_ll_set_clkm_div_b(hal->dev, div_b);
-    i2s_ll_set_tx_bck_div_num(hal->dev, tx_bck_div);
-    i2s_ll_set_rx_bck_div_num(hal->dev, rx_bck_div);
-}
-
-void i2s_hal_set_tx_bits_mod(i2s_hal_context_t *hal, i2s_bits_per_sample_t bits)
-{
-    i2s_ll_set_tx_bits_mod(hal->dev, bits);
-}
-
-void i2s_hal_set_rx_bits_mod(i2s_hal_context_t *hal, i2s_bits_per_sample_t bits)
-{
-    i2s_ll_set_rx_bits_mod(hal->dev, bits);
-}
-
-void i2s_hal_reset(i2s_hal_context_t *hal)
-{
-    // Reset I2S TX/RX module first, and then, reset DMA and FIFO.
-    i2s_ll_reset_tx(hal->dev);
-    i2s_ll_reset_rx(hal->dev);
-    i2s_ll_reset_dma_in(hal->dev);
-    i2s_ll_reset_dma_out(hal->dev);
-    i2s_ll_reset_rx_fifo(hal->dev);
-    i2s_ll_reset_tx_fifo(hal->dev);
-}
-
-void i2s_hal_start_tx(i2s_hal_context_t *hal)
-{
-    i2s_ll_start_out_link(hal->dev);
-    i2s_ll_start_tx(hal->dev);
-}
-
-void i2s_hal_start_rx(i2s_hal_context_t *hal)
-{
-    i2s_ll_start_in_link(hal->dev);
-    i2s_ll_start_rx(hal->dev);
-}
-
-void i2s_hal_stop_tx(i2s_hal_context_t *hal)
-{
-    i2s_ll_stop_out_link(hal->dev);
-    i2s_ll_stop_tx(hal->dev);
-}
-
-void i2s_hal_stop_rx(i2s_hal_context_t *hal)
-{
-    i2s_ll_stop_in_link(hal->dev);
-    i2s_ll_stop_rx(hal->dev);
-}
-
-void i2s_hal_format_config(i2s_hal_context_t *hal, const i2s_config_t *i2s_config)
-{
-    switch (i2s_config->communication_format) {
-        case I2S_COMM_FORMAT_STAND_MSB:
-            if (i2s_config->mode & I2S_MODE_TX) {
-                i2s_ll_set_tx_format_msb_align(hal->dev);
-            }
-            if (i2s_config->mode & I2S_MODE_RX) {
-                i2s_ll_set_rx_format_msb_align(hal->dev);
-            }
-            break;
-        case I2S_COMM_FORMAT_STAND_PCM_SHORT:
-            if (i2s_config->mode & I2S_MODE_TX) {
-                i2s_ll_set_tx_pcm_long(hal->dev);
-            }
-            if (i2s_config->mode & I2S_MODE_RX) {
-                i2s_ll_set_rx_pcm_long(hal->dev);
-            }
-            break;
-        case I2S_COMM_FORMAT_STAND_PCM_LONG:
-            if (i2s_config->mode & I2S_MODE_TX) {
-                i2s_ll_set_tx_pcm_short(hal->dev);
-            }
-            if (i2s_config->mode & I2S_MODE_RX) {
-                i2s_ll_set_rx_pcm_short(hal->dev);
-            }
-            break;
-        default: //I2S_COMM_FORMAT_STAND_I2S
-            if (i2s_config->mode & I2S_MODE_TX) {
-                i2s_ll_set_tx_format_philip(hal->dev);
-            }
-            if (i2s_config->mode & I2S_MODE_RX) {
-                i2s_ll_set_rx_format_philip(hal->dev);
-            }
-            break;
-    }
-}
-
-void i2s_hal_config_param(i2s_hal_context_t *hal, const i2s_config_t *i2s_config)
-{
-    //reset i2s
-    i2s_ll_reset_tx(hal->dev);
-    i2s_ll_reset_rx(hal->dev);
-
-    //reset dma
-    i2s_ll_reset_dma_in(hal->dev);
-    i2s_ll_reset_dma_out(hal->dev);
-
-    i2s_ll_enable_dma(hal->dev);
-
-    i2s_ll_set_lcd_en(hal->dev, 0);
-    i2s_ll_set_camera_en(hal->dev, 0);
-
-    i2s_ll_set_dscr_en(hal->dev, 0);
-
-    i2s_ll_set_tx_chan_mod(hal->dev, i2s_config->channel_format < I2S_CHANNEL_FMT_ONLY_RIGHT ? i2s_config->channel_format : (i2s_config->channel_format >> 1)); // 0-two channel;1-right;2-left;3-righ;4-left
-    i2s_ll_set_tx_fifo_mod(hal->dev, i2s_config->channel_format < I2S_CHANNEL_FMT_ONLY_RIGHT ? 0 : 1); // 0-right&left channel;1-one channel
-    i2s_ll_set_tx_mono(hal->dev, 0);
-
-    i2s_ll_set_rx_chan_mod(hal->dev, i2s_config->channel_format < I2S_CHANNEL_FMT_ONLY_RIGHT ? i2s_config->channel_format : (i2s_config->channel_format >> 1)); // 0-two channel;1-right;2-left;3-righ;4-left
-    i2s_ll_set_rx_fifo_mod(hal->dev, i2s_config->channel_format < I2S_CHANNEL_FMT_ONLY_RIGHT ? 0 : 1); // 0-right&left channel;1-one channel
-    i2s_ll_set_rx_mono(hal->dev, 0);
-
-    i2s_ll_set_dscr_en(hal->dev, 1); //connect dma to fifo
-
-    i2s_ll_stop_tx(hal->dev);
-    i2s_ll_stop_rx(hal->dev);
-
-    if (i2s_config->mode & I2S_MODE_TX) {
-        i2s_ll_set_tx_msb_right(hal->dev, 0);
-        i2s_ll_set_tx_right_first(hal->dev, 0);
-
-        i2s_ll_set_tx_slave_mod(hal->dev, 0); // Master
-        i2s_ll_set_tx_fifo_mod_force_en(hal->dev, 1);
-
-        if (i2s_config->mode & I2S_MODE_SLAVE) {
-            i2s_ll_set_tx_slave_mod(hal->dev, 1); //TX Slave
-        }
-    }
-
-    if (i2s_config->mode & I2S_MODE_RX) {
-        i2s_ll_set_rx_msb_right(hal->dev, 0);
-        i2s_ll_set_rx_right_first(hal->dev, 0);
-        i2s_ll_set_rx_slave_mod(hal->dev, 0); // Master
-        i2s_ll_set_rx_fifo_mod_force_en(hal->dev, 1);
-
-        if (i2s_config->mode & I2S_MODE_SLAVE) {
-            i2s_ll_set_rx_slave_mod(hal->dev, 1); //RX Slave
-        }
-    }
-
-#if SOC_I2S_SUPPORTS_PDM
-    if (!(i2s_config->mode & I2S_MODE_PDM)) {
-        i2s_ll_set_rx_pdm_en(hal->dev, 0);
-        i2s_ll_set_tx_pdm_en(hal->dev, 0);
-    } else {
-        if (i2s_config->mode & I2S_MODE_TX) {
-            i2s_ll_tx_pdm_cfg(hal->dev, I2S_TX_PDM_FP_DEF, i2s_config->sample_rate/100);
-        }
-        if(i2s_config->mode & I2S_MODE_RX) {
-            i2s_ll_rx_pdm_cfg(hal->dev, I2S_RX_PDM_DSR_DEF);
-        }
-        // PDM mode have nothing to do with communication format configuration.
+    int ma = 0;
+    int mb = 0;
+    uint32_t mclk = fbck * bck_div;
+    cal->mclk_div = fsclk / mclk;
+    cal->bck_div = bck_div;
+    cal->a = 1;
+    cal->b = 0;
+    uint32_t freq_diff = fsclk - mclk * cal->mclk_div;
+    uint32_t min = ~0;
+    if (freq_diff == 0) {
         return;
     }
-#endif
-
-#if SOC_I2S_SUPPORTS_ADC_DAC
-    if (i2s_config->mode & (I2S_MODE_DAC_BUILT_IN | I2S_MODE_ADC_BUILT_IN)) {
-        if (i2s_config->mode & I2S_MODE_DAC_BUILT_IN) {
-            i2s_ll_build_in_dac_ena(hal->dev);
+    for (int a = 2; a <= I2S_LL_MCLK_DIVIDER_MAX; a++) {
+        for (int b = 1; b < a; b++) {
+            ma = freq_diff * a;
+            mb = mclk * b;
+            if (ma == mb) {
+                cal->a = a;
+                cal->b = b;
+                return;
+            }
+            if (abs((mb - ma)) < min) {
+                cal->a = a;
+                cal->b = b;
+                min = abs(mb - ma);
+            }
         }
-        if (i2s_config->mode & I2S_MODE_ADC_BUILT_IN) {
-            i2s_ll_build_in_adc_ena(hal->dev);
-            i2s_ll_set_rx_chan_mod(hal->dev, 1);
-            i2s_ll_set_rx_fifo_mod(hal->dev, 1);
-            i2s_ll_set_rx_mono(hal->dev, 0);
-        }
-        // Buildin ADC and DAC have nothing to do with communication format configuration.
-        return;
     }
-#endif
-
-    i2s_hal_format_config(hal, i2s_config);
 }
 
-void i2s_hal_enable_master_mode(i2s_hal_context_t *hal)
+void i2s_hal_set_clock_src(i2s_hal_context_t *hal, i2s_clock_src_t sel)
 {
-    i2s_ll_set_tx_slave_mod(hal->dev, 0); //MASTER Slave
-    i2s_ll_set_rx_slave_mod(hal->dev, 1); //RX Slave
+    i2s_ll_tx_clk_set_src(hal->dev, sel);
+    i2s_ll_rx_clk_set_src(hal->dev, sel);
 }
 
-void i2s_hal_enable_slave_mode(i2s_hal_context_t *hal)
+void i2s_hal_tx_clock_config(i2s_hal_context_t *hal, uint32_t sclk, uint32_t fbck, int factor)
 {
-    i2s_ll_set_tx_slave_mod(hal->dev, 1); //TX Slave
-    i2s_ll_set_rx_slave_mod(hal->dev, 1); //RX Slave
+    i2s_ll_clk_cal_t clk_set = {0};
+    i2s_hal_clk_cal(sclk, fbck, factor, &clk_set);
+    i2s_ll_tx_set_clk(hal->dev, &clk_set);
+}
+
+void i2s_hal_rx_clock_config(i2s_hal_context_t *hal, uint32_t sclk, uint32_t fbck, int factor)
+{
+    i2s_ll_clk_cal_t clk_set = {0};
+    i2s_hal_clk_cal(sclk, fbck, factor, &clk_set);
+    i2s_ll_rx_set_clk(hal->dev, &clk_set);
+}
+
+void i2s_hal_enable_master_fd_mode(i2s_hal_context_t *hal)
+{
+    i2s_ll_tx_set_slave_mod(hal->dev, 0); //TX master
+    i2s_ll_rx_set_slave_mod(hal->dev, 1); //RX Slave
+}
+
+void i2s_hal_enable_slave_fd_mode(i2s_hal_context_t *hal)
+{
+    i2s_ll_tx_set_slave_mod(hal->dev, 1); //TX Slave
+    i2s_ll_rx_set_slave_mod(hal->dev, 1); //RX Slave
 }
 
 void i2s_hal_init(i2s_hal_context_t *hal, int i2s_num)
 {
     //Get hardware instance.
     hal->dev = I2S_LL_GET_HW(i2s_num);
+    i2s_ll_enable_clock(hal->dev);
+}
+
+void i2s_hal_tx_set_pdm_mode_default(i2s_hal_context_t *hal, uint32_t sample_rate)
+{
+#if SOC_I2S_SUPPORTS_PDM_TX
+    /* enable pdm tx mode */
+    i2s_ll_tx_enable_pdm(hal->dev, true);
+    /* set pdm tx default presacle */
+    i2s_ll_tx_set_pdm_prescale(hal->dev, 0);
+    /* set pdm tx default sacle of high pass filter */
+    i2s_ll_tx_set_pdm_hp_scale(hal->dev, I2S_PDM_SIG_SCALING_MUL_1);
+    /* set pdm tx default sacle of low pass filter */
+    i2s_ll_tx_set_pdm_lp_scale(hal->dev, I2S_PDM_SIG_SCALING_MUL_1);
+    /* set pdm tx default sacle of sinc filter */
+    i2s_ll_tx_set_pdm_sinc_scale(hal->dev, I2S_PDM_SIG_SCALING_MUL_1);
+    /* set pdm tx default sacle of sigma-delta filter */
+    i2s_ll_tx_set_pdm_sd_scale(hal->dev, I2S_PDM_SIG_SCALING_MUL_1);
+    /* set pdm tx sample rate */
+    i2s_ll_tx_set_pdm_fpfs(hal->dev, 960, sample_rate / 100);
+
+#if SOC_I2S_SUPPORTS_PDM_CODEC
+    /* enable pdm high pass filter */
+    i2s_ll_tx_enable_pdm_hp_filter(hal->dev, true);
+    /* set pdm tx high pass filter parameters */
+    i2s_ll_tx_set_pdm_hp_filter_param0(hal->dev, 6);
+    i2s_ll_tx_set_pdm_hp_filter_param5(hal->dev, 7);
+    /* enable pdm sigma-delta codec */
+    i2s_ll_tx_enable_pdm_sd_codec(hal->dev, true);
+    /* set pdm tx sigma-delta codec dither */
+    i2s_ll_tx_set_pdm_sd_dither(hal->dev, 0);
+    i2s_ll_tx_set_pdm_sd_dither2(hal->dev, 0);
+
+#endif // SOC_I2S_SUPPORTS_PDM_CODEC
+#endif // SOC_I2S_SUPPORTS_PDM_TX
+}
+
+void i2s_hal_rx_set_pdm_mode_default(i2s_hal_context_t *hal)
+{
+#if SOC_I2S_SUPPORTS_PDM_RX
+    /* enable pdm rx mode */
+    i2s_ll_rx_enable_pdm(hal->dev, true);
+    /* set pdm rx downsample number */
+    i2s_ll_rx_set_pdm_dsr(hal->dev, I2S_PDM_DSR_8S);
+#endif // SOC_I2S_SUPPORTS_PDM_RX
+}
+
+
+void i2s_hal_tx_set_common_mode(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cfg)
+{
+    /* disable pdm tx mode */
+    i2s_ll_tx_enable_pdm(hal->dev, false);
+
+#if SOC_I2S_SUPPORTS_TDM
+    i2s_ll_tx_enable_clock(hal->dev);
+    i2s_ll_tx_clk_set_src(hal->dev, I2S_CLK_D2CLK); // Set I2S_CLK_D2CLK as default
+    i2s_ll_mclk_use_tx_clk(hal->dev);
+
+    i2s_ll_tx_set_active_chan_mask(hal->dev, hal_cfg->chan_mask);
+    i2s_ll_tx_enable_left_align(hal->dev, hal_cfg->left_align);
+    i2s_ll_tx_enable_big_endian(hal->dev, hal_cfg->big_edin);
+    i2s_ll_tx_set_bit_order(hal->dev, hal_cfg->bit_order_msb);
+    i2s_ll_tx_set_skip_mask(hal->dev, hal_cfg->skip_msk);
+#else
+    i2s_ll_tx_enable_msb_right(hal->dev, false);
+    i2s_ll_tx_enable_right_first(hal->dev, false);
+    i2s_ll_tx_force_enable_fifo_mod(hal->dev, true);
+#endif
+}
+
+void i2s_hal_rx_set_common_mode(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cfg)
+{
+    /* disable pdm rx mode */
+    i2s_ll_rx_enable_pdm(hal->dev, false);
+
+#if SOC_I2S_SUPPORTS_TDM
+    i2s_ll_rx_enable_clock(hal->dev);
+    i2s_ll_rx_clk_set_src(hal->dev, I2S_CLK_D2CLK); // Set I2S_CLK_D2CLK as default
+    i2s_ll_mclk_use_rx_clk(hal->dev);
+
+    i2s_ll_rx_set_active_chan_mask(hal->dev, hal_cfg->chan_mask);
+    i2s_ll_rx_enable_left_align(hal->dev, hal_cfg->left_align);
+    i2s_ll_rx_enable_big_endian(hal->dev, hal_cfg->big_edin);
+    i2s_ll_rx_set_bit_order(hal->dev, hal_cfg->bit_order_msb);
+#else
+    i2s_ll_rx_enable_msb_right(hal->dev, false);
+    i2s_ll_rx_enable_right_first(hal->dev, false);
+    i2s_ll_rx_force_enable_fifo_mod(hal->dev, true);
+#endif
+}
+
+static uint32_t i2s_hal_get_ws_bit(i2s_comm_format_t fmt, uint32_t chan_num, uint32_t chan_bits)
+{
+    switch (fmt) {
+    case I2S_COMM_FORMAT_STAND_MSB:
+        return chan_num * chan_bits / 2;
+    case I2S_COMM_FORMAT_STAND_PCM_SHORT:
+        return 1;
+    case I2S_COMM_FORMAT_STAND_PCM_LONG:
+        return chan_bits;
+    default: //I2S_COMM_FORMAT_STAND_I2S
+        return chan_num * chan_bits / 2;
+    }
+}
+
+void i2s_hal_tx_set_channel_style(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cfg)
+{
+    uint32_t chan_num = 2;
+    uint32_t chan_bits = hal_cfg->bits_cfg.chan_bits;
+    uint32_t data_bits = hal_cfg->bits_cfg.sample_bits;
+
+    /* Set channel number and valid data bits */
+#if SOC_I2S_SUPPORTS_TDM
+    chan_num = hal_cfg->total_chan;
+    i2s_ll_tx_set_chan_num(hal->dev, chan_num);
+#endif
+    i2s_ll_tx_set_sample_bit(hal->dev, chan_bits, data_bits);
+
+    /* Set communication format */
+    bool shift_en = hal_cfg->comm_fmt == I2S_COMM_FORMAT_STAND_I2S ? true : false;
+    uint32_t ws_width = i2s_hal_get_ws_bit(hal_cfg->comm_fmt, chan_num, chan_bits);
+    i2s_ll_tx_enable_msb_shift(hal->dev, shift_en);
+    i2s_ll_tx_set_ws_width(hal->dev, ws_width);
+#if SOC_I2S_SUPPORTS_TDM
+    i2s_ll_tx_set_half_sample_bit(hal->dev, chan_num * chan_bits / 2);
+#endif
+}
+
+void i2s_hal_rx_set_channel_style(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cfg)
+{
+    uint32_t chan_num = 2;
+    uint32_t chan_bits = hal_cfg->bits_cfg.chan_bits;
+    uint32_t data_bits = hal_cfg->bits_cfg.sample_bits;
+
+#if SOC_I2S_SUPPORTS_TDM
+    chan_num = hal_cfg->total_chan;
+    i2s_ll_rx_set_chan_num(hal->dev, chan_num);
+#endif
+    i2s_ll_rx_set_sample_bit(hal->dev, chan_bits, data_bits);
+
+    /* Set communication format */
+    bool shift_en = hal_cfg->comm_fmt == I2S_COMM_FORMAT_STAND_I2S ? true : false;
+    uint32_t ws_width = i2s_hal_get_ws_bit(hal_cfg->comm_fmt, chan_num, chan_bits);
+    i2s_ll_rx_enable_msb_shift(hal->dev, shift_en);
+    i2s_ll_rx_set_ws_width(hal->dev, ws_width);
+#if SOC_I2S_SUPPORTS_TDM
+    i2s_ll_rx_set_half_sample_bit(hal->dev, chan_num * chan_bits / 2);
+#endif
+}
+
+void i2s_hal_config_param(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cfg)
+{
+    if (hal_cfg->mode & I2S_MODE_TX) {
+        i2s_ll_tx_stop(hal->dev);
+        i2s_ll_tx_reset(hal->dev);
+        i2s_ll_tx_set_slave_mod(hal->dev, (hal_cfg->mode & I2S_MODE_SLAVE) != 0); //TX Slave
+        if (hal_cfg->mode & I2S_MODE_PDM) {
+            /* Set tx pdm mode */
+            i2s_hal_tx_set_pdm_mode_default(hal, hal_cfg->sample_rate);
+        } else {
+            /* Set tx common mode */
+            i2s_hal_tx_set_common_mode(hal, hal_cfg);
+            i2s_hal_tx_set_channel_style(hal, hal_cfg);
+        }
+    }
+    if (hal_cfg->mode & I2S_MODE_RX) {
+        i2s_ll_rx_stop(hal->dev);
+        i2s_ll_rx_reset(hal->dev);
+        i2s_ll_rx_set_slave_mod(hal->dev, (hal_cfg->mode & I2S_MODE_SLAVE) != 0); //RX Slave
+        if (hal_cfg->mode & I2S_MODE_PDM) {
+            /* Set rx pdm mode */
+            i2s_hal_rx_set_pdm_mode_default(hal);
+        } else {
+            /* Set rx common mode */
+            i2s_hal_rx_set_common_mode(hal, hal_cfg);
+            i2s_hal_rx_set_channel_style(hal, hal_cfg);
+        }
+    }
 }

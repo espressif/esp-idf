@@ -18,12 +18,10 @@
  * See readme.md in soc/include/hal/readme.md
  ******************************************************************************/
 
-// The LL layer for ESP32-S3 I2S register operations
+// The LL layer for ESP32-H2 I2S register operations
 
 #pragma once
-
 #include <stdbool.h>
-#include <stdlib.h>
 #include "soc/i2s_periph.h"
 #include "hal/i2s_types.h"
 
@@ -31,676 +29,746 @@
 extern "C" {
 #endif
 
-// Get I2S hardware instance with giving i2s num
-#define I2S_LL_GET_HW(num) (((num) == 0) ? (&I2S0) : NULL)
+#define I2S_LL_GET_HW(num)             (&I2S0)
 
-#define I2S_INTR_IN_SUC_EOF   BIT(9)
-#define I2S_INTR_OUT_EOF      BIT(12)
-#define I2S_INTR_IN_DSCR_ERR  BIT(13)
-#define I2S_INTR_OUT_DSCR_ERR BIT(14)
-#define I2S_INTR_MAX          (0xFFFFFFFF)
+#define I2S_LL_TDM_CH_MASK             (0xffff)
+#define I2S_LL_PDM_BCK_FACTOR          (64)
+#define I2S_LL_BASE_CLK                (2*APB_CLK_FREQ)
+
+#define I2S_LL_MCLK_DIVIDER_BIT_WIDTH  (9)
+#define I2S_LL_MCLK_DIVIDER_MAX        ((1 << I2S_LL_MCLK_DIVIDER_BIT_WIDTH) - 1)
+
+/* I2S clock configuration structure */
+typedef struct {
+    uint16_t mclk_div; // I2S module clock devider, Fmclk = Fsclk /(mclk_div+b/a)
+    uint16_t a;
+    uint16_t b;        // The decimal part of module clock devider, the decimal is: b/a
+    uint16_t bck_div;  // The BCK devider, Fbck = Fmclk / bck_div
+} i2s_ll_clk_cal_t;
 
 /**
- * @brief Reset rx fifo
+ * @brief I2S module general init, enable I2S clock.
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_reset_rx_fifo(i2s_dev_t *hw)
+static inline void i2s_ll_enable_clock(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
-
+    hw->tx_clkm_conf.clk_en = 1;
 }
 
 /**
- * @brief Reset tx fifo
+ * @brief Enable I2S tx module clock
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_reset_tx_fifo(i2s_dev_t *hw)
+static inline void i2s_ll_tx_enable_clock(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
-
+    hw->tx_clkm_conf.tx_clk_active = 1;
 }
 
 /**
- * @brief Enable rx interrupt
+ * @brief Enable I2S rx module clock
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_enable_rx_intr(i2s_dev_t *hw)
+static inline void i2s_ll_rx_enable_clock(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
-
+    hw->rx_clkm_conf.rx_clk_active = 1;
 }
 
 /**
- * @brief Disable rx interrupt
+ * @brief I2S mclk use tx module clock
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_disable_rx_intr(i2s_dev_t *hw)
+static inline void i2s_ll_mclk_use_tx_clk(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
-
+    hw->rx_clkm_conf.mclk_sel = 0;
 }
 
 /**
- * @brief Disable tx interrupt
+ * @brief I2S mclk use rx module clock
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_disable_tx_intr(i2s_dev_t *hw)
+static inline void i2s_ll_mclk_use_rx_clk(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
-
+    hw->rx_clkm_conf.mclk_sel = 1;
 }
 
 /**
- * @brief Enable tx interrupt
+ * @brief Enable I2S TX slave mode
  *
  * @param hw Peripheral I2S hardware instance address.
+ * @param slave_en Set true to enable slave mode
  */
-static inline void i2s_ll_enable_tx_intr(i2s_dev_t *hw)
+static inline void i2s_ll_tx_set_slave_mod(i2s_dev_t *hw, bool slave_en)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
-
+    hw->tx_conf.tx_slave_mod = slave_en;
 }
 
 /**
- * @brief Reset dma in
+ * @brief Enable I2S RX slave mode
  *
  * @param hw Peripheral I2S hardware instance address.
+ * @param slave_en Set true to enable slave mode
  */
-static inline void i2s_ll_reset_dma_in(i2s_dev_t *hw)
+static inline void i2s_ll_rx_set_slave_mod(i2s_dev_t *hw, bool slave_en)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
-
+    hw->rx_conf.rx_slave_mod = slave_en;
 }
 
 /**
- * @brief Reset dma out
+ * @brief Reset I2S TX module
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_reset_dma_out(i2s_dev_t *hw)
+static inline void i2s_ll_tx_reset(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
-
+    hw->tx_conf.tx_reset = 1;
+    hw->tx_conf.tx_reset = 0;
 }
 
 /**
- * @brief Reset tx
+ * @brief Reset I2S RX module
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_reset_tx(i2s_dev_t *hw)
+static inline void i2s_ll_rx_reset(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
-
+    hw->rx_conf.rx_reset = 1;
+    hw->rx_conf.rx_reset = 0;
 }
 
 /**
- * @brief Reset rx
+ * @brief Reset I2S TX FIFO
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_reset_rx(i2s_dev_t *hw)
+static inline void i2s_ll_tx_reset_fifo(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
-
+    hw->tx_conf.tx_fifo_reset = 1;
+    hw->tx_conf.tx_fifo_reset = 0;
 }
 
 /**
- * @brief Start out link
+ * @brief Reset I2S RX FIFO
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_start_out_link(i2s_dev_t *hw)
+static inline void i2s_ll_rx_reset_fifo(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    hw->rx_conf.rx_fifo_reset = 1;
+    hw->rx_conf.rx_fifo_reset = 0;
 }
 
 /**
- * @brief Start tx
+ * @brief Set TX source clock
  *
  * @param hw Peripheral I2S hardware instance address.
+ * @param src I2S source clock.
  */
-static inline void i2s_ll_start_tx(i2s_dev_t *hw)
+static inline void i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    hw->tx_clkm_conf.tx_clk_sel = 2;
 }
 
 /**
- * @brief Start in link
+ * @brief Set RX source clock
  *
  * @param hw Peripheral I2S hardware instance address.
+ * @param src I2S source clock,  ESP32-H2 only support `I2S_CLK_D2CLK`
  */
-static inline void i2s_ll_start_in_link(i2s_dev_t *hw)
+static inline void i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    hw->rx_clkm_conf.rx_clk_sel = 2;
 }
 
 /**
- * @brief Start rx
+ * @brief Configure I2S TX clock devider
  *
  * @param hw Peripheral I2S hardware instance address.
+ * @param set Pointer to I2S clock devider configuration paramater
  */
-static inline void i2s_ll_start_rx(i2s_dev_t *hw)
+static inline void i2s_ll_tx_set_clk(i2s_dev_t *hw, i2s_ll_clk_cal_t *set)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    if (set->a == 0 || set->b == 0) {
+        hw->tx_clkm_div_conf.tx_clkm_div_x = 0;
+        hw->tx_clkm_div_conf.tx_clkm_div_y = 0;
+        hw->tx_clkm_div_conf.tx_clkm_div_z = 0;
+    } else {
+        if (set->b > set->a / 2) {
+            hw->tx_clkm_div_conf.tx_clkm_div_x = set->a / (set->a - set->b) - 1;
+            hw->tx_clkm_div_conf.tx_clkm_div_y = set->a % (set->a - set->b);
+            hw->tx_clkm_div_conf.tx_clkm_div_z = set->a - set->b;
+            hw->tx_clkm_div_conf.tx_clkm_div_yn1 = 1;
+        } else {
+            hw->tx_clkm_div_conf.tx_clkm_div_x = set->a / set->b - 1;
+            hw->tx_clkm_div_conf.tx_clkm_div_y = set->a % set->b + 1;
+            hw->tx_clkm_div_conf.tx_clkm_div_z = set->b;
+            hw->tx_clkm_div_conf.tx_clkm_div_yn1 = 0;
+        }
+    }
+    hw->tx_clkm_conf.tx_clkm_div_num = set->mclk_div;
+    hw->tx_conf1.tx_bck_div_num = set->bck_div - 1;
 }
 
 /**
- * @brief Stop out link
+ * @brief Configure I2S RX clock devider
  *
  * @param hw Peripheral I2S hardware instance address.
+ * @param set Pointer to I2S clock devider configuration paramater
  */
-static inline void i2s_ll_stop_out_link(i2s_dev_t *hw)
+static inline void i2s_ll_rx_set_clk(i2s_dev_t *hw, i2s_ll_clk_cal_t *set)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    if (set->a == 0 || set->b == 0) {
+        hw->rx_clkm_div_conf.rx_clkm_div_x = 0;
+        hw->rx_clkm_div_conf.rx_clkm_div_y = 0;
+        hw->rx_clkm_div_conf.rx_clkm_div_z = 0;
+    } else {
+        if (set->b > set->a / 2) {
+            hw->rx_clkm_div_conf.rx_clkm_div_x = set->a / (set->a - set->b) - 1;
+            hw->rx_clkm_div_conf.rx_clkm_div_y = set->a % (set->a - set->b);
+            hw->rx_clkm_div_conf.rx_clkm_div_z = set->a - set->b;
+            hw->rx_clkm_div_conf.rx_clkm_div_yn1 = 1;
+        } else {
+            hw->rx_clkm_div_conf.rx_clkm_div_x = set->a / set->b - 1;
+            hw->rx_clkm_div_conf.rx_clkm_div_y = set->a % set->b + 1;
+            hw->rx_clkm_div_conf.rx_clkm_div_z = set->b;
+            hw->rx_clkm_div_conf.rx_clkm_div_yn1 = 0;
+        }
+    }
+    hw->rx_clkm_conf.rx_clkm_div_num = set->mclk_div;
+    hw->rx_conf1.rx_bck_div_num = set->bck_div - 1;
 }
 
 /**
- * @brief Stop tx
+ * @brief Start I2S TX
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_stop_tx(i2s_dev_t *hw)
+static inline void i2s_ll_tx_start(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    hw->tx_conf.tx_update = 0;
+    hw->tx_conf.tx_update = 1;
+    hw->tx_conf.tx_start = 1;
 }
 
 /**
- * @brief Stop in link
+ * @brief Start I2S RX
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_stop_in_link(i2s_dev_t *hw)
+static inline void i2s_ll_rx_start(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    hw->rx_conf.rx_update = 0;
+    hw->rx_conf.rx_update = 1;
+    hw->rx_conf.rx_start = 1;
 }
 
 /**
- * @brief Stop rx
+ * @brief Stop I2S TX
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_stop_rx(i2s_dev_t *hw)
+static inline void i2s_ll_tx_stop(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    hw->tx_conf.tx_start = 0;
 }
 
 /**
- * @brief Enable dma
+ * @brief Stop I2S RX
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_enable_dma(i2s_dev_t *hw)
+static inline void i2s_ll_rx_stop(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-    // //Enable and configure DMA
-    // typeof(hw->lc_conf) lc_conf;
-    // lc_conf.val = 0;
-    // lc_conf.out_eof_mode = 1;
-
+    hw->rx_conf.rx_start = 0;
 }
 
 /**
- * @brief Get I2S interrupt status
+ * @brief Configure TX WS signal width
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to get interrupt status
+ * @param width WS width in BCK cycle
  */
-static inline void i2s_ll_get_intr_status(i2s_dev_t *hw, uint32_t *val)
+static inline void i2s_ll_tx_set_ws_width(i2s_dev_t *hw, int width)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-    // *val = hw->int_st.val;
+    hw->tx_conf1.tx_tdm_ws_width = width - 1;
 }
 
 /**
- * @brief Clear I2S interrupt status
+ * @brief Configure RX WS signal width
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to clear interrupt status
+ * @param width WS width in BCK cycle
  */
-static inline void i2s_ll_clear_intr_status(i2s_dev_t *hw, uint32_t val)
+static inline void i2s_ll_rx_set_ws_width(i2s_dev_t *hw, int width)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    hw->rx_conf1.rx_tdm_ws_width = width - 1;
 }
 
 /**
- * @brief Get I2S out eof des address
+ * @brief Configure the received length to trigger in_suc_eof interrupt
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to get out eof des address
+ * @param eof_num the byte length to trigger in_suc_eof interrupt
  */
-static inline void i2s_ll_get_out_eof_des_addr(i2s_dev_t *hw, uint32_t *val)
+static inline void i2s_ll_rx_set_eof_num(i2s_dev_t *hw, int eof_num)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-    // *val = hw->out_eof_des_addr;
+    hw->rx_eof_num.rx_eof_num = eof_num;
 }
 
 /**
- * @brief Get I2S in eof des address
+ * @brief Congfigure TX chan bit and audio data bit
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to get in eof des address
+ * @param chan_bit The chan bit width
+ * @param data_bit The audio data bit width
  */
-static inline void i2s_ll_get_in_eof_des_addr(i2s_dev_t *hw, uint32_t *val)
+static inline void i2s_ll_tx_set_sample_bit(i2s_dev_t *hw, uint8_t chan_bit, int data_bit)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-    // *val = hw->in_eof_des_addr;
+    hw->tx_conf1.tx_bits_mod = data_bit - 1;
+    hw->tx_conf1.tx_tdm_chan_bits = chan_bit - 1;
 }
 
 /**
- * @brief Get I2S tx fifo mode
+ * @brief Congfigure RX chan bit and audio data bit
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to get tx fifo mode
+ * @param chan_bit The chan bit width
+ * @param data_bit The audio data bit width
  */
-static inline void i2s_ll_get_tx_fifo_mod(i2s_dev_t *hw, uint32_t *val)
+static inline void i2s_ll_rx_set_sample_bit(i2s_dev_t *hw, uint8_t chan_bit, int data_bit)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-    // *val = hw->fifo_conf.tx_fifo_mod;
+    hw->rx_conf1.rx_bits_mod = data_bit - 1;
+    hw->rx_conf1.rx_tdm_chan_bits = chan_bit - 1;
 }
 
 /**
- * @brief Set I2S tx fifo mode
+ * @brief Configure RX half_sample_bit
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to set tx fifo mode
+ * @param half_sample_bits half sample bit width
  */
-static inline void i2s_ll_set_tx_fifo_mod(i2s_dev_t *hw, uint32_t val)
+static inline void i2s_ll_tx_set_half_sample_bit(i2s_dev_t *hw, int half_sample_bits)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    hw->tx_conf1.tx_half_sample_bits = half_sample_bits - 1;
 }
 
 /**
- * @brief Get I2S rx fifo mode
+ * @brief Configure RX half_sample_bit
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to get rx fifo mode
+ * @param half_sample_bits half sample bit width
  */
-static inline void i2s_ll_get_rx_fifo_mod(i2s_dev_t *hw, uint32_t *val)
+static inline void i2s_ll_rx_set_half_sample_bit(i2s_dev_t *hw, int half_sample_bits)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-    // *val = hw->fifo_conf.rx_fifo_mod;
+    hw->rx_conf1.rx_half_sample_bits = half_sample_bits - 1;
 }
 
 /**
- * @brief Set I2S rx fifo mode
+ * @brief Enable TX MSB shift, the data will be launch at the first BCK clock
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to set rx fifo mode
+ * @param msb_shift_enable Set true to enable MSB shift
  */
-static inline void i2s_ll_set_rx_fifo_mod(i2s_dev_t *hw, uint32_t val)
+static inline void i2s_ll_tx_enable_msb_shift(i2s_dev_t *hw, bool msb_shift_enable)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    hw->tx_conf1.tx_msb_shift = msb_shift_enable;
 }
 
 /**
- * @brief Set I2S tx chan mode
+ * @brief Enable RX MSB shift, the data will be launch at the first BCK clock
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to set tx chan mode
+ * @param msb_shift_enable Set true to enable MSB shift
  */
-static inline void i2s_ll_set_tx_chan_mod(i2s_dev_t *hw, uint32_t val)
+static inline void i2s_ll_rx_enable_msb_shift(i2s_dev_t *hw, bool msb_shift_enable)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    hw->rx_conf1.rx_msb_shift = msb_shift_enable;
 }
 
 /**
- * @brief Set I2S rx chan mode
+ * @brief Configure TX total chan number
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to set rx chan mode
+ * @param total_num Total chan number
  */
-static inline void i2s_ll_set_rx_chan_mod(i2s_dev_t *hw, uint32_t val)
+static inline void i2s_ll_tx_set_chan_num(i2s_dev_t *hw, int total_num)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    hw->tx_tdm_ctrl.tx_tdm_tot_chan_num = total_num - 1;
 }
 
 /**
- * @brief Set I2S out link address
+ * @brief Configure RX total chan number
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to set out link address
+ * @param total_num Total chan number
  */
-static inline void i2s_ll_set_out_link_addr(i2s_dev_t *hw, uint32_t val)
+static inline void i2s_ll_rx_set_chan_num(i2s_dev_t *hw, int total_num)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    hw->rx_tdm_ctrl.rx_tdm_tot_chan_num = total_num - 1;
 }
 
 /**
- * @brief Set I2S in link address
+ * @brief Set the bimap of the active TX chan, only the active chan can launch audio data.
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to set in link address
+ * @param chan_mask mask of tx active chan
  */
-static inline void i2s_ll_set_in_link_addr(i2s_dev_t *hw, uint32_t val)
+static inline void i2s_ll_tx_set_active_chan_mask(i2s_dev_t *hw, uint32_t chan_mask)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    typeof(hw->tx_tdm_ctrl) tdm_ctrl_reg = hw->tx_tdm_ctrl;
+    tdm_ctrl_reg.val &= ~I2S_LL_TDM_CH_MASK;
+    tdm_ctrl_reg.val |= chan_mask & I2S_LL_TDM_CH_MASK;
+    hw->tx_tdm_ctrl.val = tdm_ctrl_reg.val;
 }
 
 /**
- * @brief Set I2S rx eof num
+ * @brief Set the bimap of the active RX chan, only the active chan can receive audio data.
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to set rx eof num
+ * @param chan_mask mask of rx active chan
  */
-static inline void i2s_ll_set_rx_eof_num(i2s_dev_t *hw, uint32_t val)
+static inline void i2s_ll_rx_set_active_chan_mask(i2s_dev_t *hw, uint32_t chan_mask)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    typeof(hw->rx_tdm_ctrl) tdm_ctrl_reg = hw->rx_tdm_ctrl;
+    tdm_ctrl_reg.val &= ~I2S_LL_TDM_CH_MASK;
+    tdm_ctrl_reg.val |= chan_mask & I2S_LL_TDM_CH_MASK;
+    hw->rx_tdm_ctrl.val = tdm_ctrl_reg.val;
 }
 
 /**
- * @brief Get I2S tx pdm fp
+ * @brief Set TX WS signal pol level
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to get tx pdm fp
+ * @param ws_pol_level pin level of WS(output) when receiving left channel data
  */
-static inline void i2s_ll_get_tx_pdm_fp(i2s_dev_t *hw, uint32_t *val)
+static inline void i2s_tx_set_ws_idle_pol(i2s_dev_t *hw, int ws_pol_level)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-    // *val = hw->pdm_freq_conf.tx_pdm_fp;
+    hw->tx_conf.tx_ws_idle_pol = ws_pol_level;
 }
 
 /**
- * @brief Get I2S tx pdm fs
+ * @brief Set RX WS signal pol level
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to get tx pdm fs
+ * @param ws_pol_level pin level of WS(input) when receiving left channel data
  */
-static inline void i2s_ll_get_tx_pdm_fs(i2s_dev_t *hw, uint32_t *val)
+static inline void i2s_rx_set_ws_idle_pol(i2s_dev_t *hw, int ws_pol_level)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-    // *val = hw->pdm_freq_conf.tx_pdm_fs;
+    hw->rx_conf.rx_ws_idle_pol = ws_pol_level;
 }
 
 /**
- * @brief Set I2S tx pdm fp
+ * @brief Enable TX PDM mode.
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to set tx pdm fp
+ * @param pdm_enable Set true to TX enable PDM mode
  */
-static inline void i2s_ll_set_tx_pdm_fp(i2s_dev_t *hw, uint32_t val)
+static inline void i2s_ll_tx_enable_pdm(i2s_dev_t *hw, bool pdm_enable)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    hw->tx_conf.tx_pdm_en = pdm_enable;
+    hw->tx_conf.tx_tdm_en = !pdm_enable;
+    hw->tx_pcm2pdm_conf.pcm2pdm_conv_en = pdm_enable;
 }
 
 /**
- * @brief Set I2S tx pdm fs
+ * @brief Set I2S TX PDM prescale
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to set tx pdm fs
+ * @param prescale I2S TX PDM prescale
  */
-static inline void i2s_ll_set_tx_pdm_fs(i2s_dev_t *hw, uint32_t val)
+static inline void i2s_ll_tx_set_pdm_prescale(i2s_dev_t *hw, bool prescale)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    hw->tx_pcm2pdm_conf.tx_pdm_prescale = prescale;
 }
 
 /**
- * @brief Get I2S rx sinc dsr 16 en
+ * @brief Set I2S TX PDM high pass filter scaling
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to get rx sinc dsr 16 en
+ * @param sig_scale I2S TX PDM signal scaling before transmit to the filter
  */
-static inline void i2s_ll_get_rx_sinc_dsr_16_en(i2s_dev_t *hw, bool *val)
+static inline void i2s_ll_tx_set_pdm_hp_scale(i2s_dev_t *hw, i2s_pdm_sig_scale_t sig_scale)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-    // *val = hw->pdm_conf.rx_sinc_dsr_16_en;
+    hw->tx_pcm2pdm_conf.tx_pdm_hp_in_shift = sig_scale;
 }
 
 /**
- * @brief Set I2S clkm div num
+ * @brief Set I2S TX PDM low pass filter scaling
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to set clkm div num
+ * @param sig_scale I2S TX PDM signal scaling before transmit to the filter
  */
-static inline void i2s_ll_set_clkm_div_num(i2s_dev_t *hw, uint32_t val)
+static inline void i2s_ll_tx_set_pdm_lp_scale(i2s_dev_t *hw, i2s_pdm_sig_scale_t sig_scale)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    hw->tx_pcm2pdm_conf.tx_pdm_lp_in_shift = sig_scale;
 }
 
 /**
- * @brief Set I2S clkm div b
+ * @brief Set I2S TX PDM sinc filter scaling
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to set clkm div b
+ * @param sig_scale I2S TX PDM signal scaling before transmit to the filter
  */
-static inline void i2s_ll_set_clkm_div_b(i2s_dev_t *hw, uint32_t val)
+static inline void i2s_ll_tx_set_pdm_sinc_scale(i2s_dev_t *hw, i2s_pdm_sig_scale_t sig_scale)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    hw->tx_pcm2pdm_conf.tx_pdm_sinc_in_shift = sig_scale;
 }
 
 /**
- * @brief Set I2S clkm div a
+ * @brief Set I2S TX PDM sigma-delta filter scaling
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to set clkm div a
+ * @param sig_scale I2S TX PDM signal scaling before transmit to the filter
  */
-static inline void i2s_ll_set_clkm_div_a(i2s_dev_t *hw, uint32_t val)
+static inline void i2s_ll_tx_set_pdm_sd_scale(i2s_dev_t *hw, i2s_pdm_sig_scale_t sig_scale)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    hw->tx_pcm2pdm_conf.tx_pdm_sigmadelta_in_shift = sig_scale;
 }
 
 /**
- * @brief Set I2S tx bck div num
+ * @brief Set I2S TX PDM high pass filter param0
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to set tx bck div num
+ * @param param The fourth parameter of PDM TX IIR_HP filter stage 1 is (504 + I2S_TX_IIR_HP_MULT12_0[2:0])
  */
-static inline void i2s_ll_set_tx_bck_div_num(i2s_dev_t *hw, uint32_t val)
+static inline void i2s_ll_tx_set_pdm_hp_filter_param0(i2s_dev_t *hw, uint32_t param)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    hw->tx_pcm2pdm_conf1.tx_iir_hp_mult12_0 = param;
 }
 
 /**
- * @brief Set I2S rx bck div num
+ * @brief Set I2S TX PDM high pass filter param5
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to set rx bck div num
+ * @param param The fourth parameter of PDM TX IIR_HP filter stage 2 is (504 + I2S_TX_IIR_HP_MULT12_5[2:0])
  */
-static inline void i2s_ll_set_rx_bck_div_num(i2s_dev_t *hw, uint32_t val)
+static inline void i2s_ll_tx_set_pdm_hp_filter_param5(i2s_dev_t *hw, uint32_t param)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    hw->tx_pcm2pdm_conf1.tx_iir_hp_mult12_5 = param;
 }
 
 /**
- * @brief Set I2S clk sel
+ * @brief Enable I2S TX PDM high pass filter
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to set clk sel
+ * @param enable Set true to enable I2S TX PDM high pass filter, set false to bypass it
  */
-static inline void i2s_ll_set_clk_sel(i2s_dev_t *hw, uint32_t val)
+static inline void i2s_ll_tx_enable_pdm_hp_filter(i2s_dev_t *hw, bool enable)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    hw->tx_pcm2pdm_conf.tx_pdm_hp_bypass = !enable;
 }
 
 /**
- * @brief Set I2S tx bits mod
+ * @brief Enable I2S TX PDM sigma-delta codec
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to set tx bits mod
+ * @param dither I2S TX PDM sigmadelta dither value
  */
-static inline void i2s_ll_set_tx_bits_mod(i2s_dev_t *hw, uint32_t val)
+static inline void i2s_ll_tx_enable_pdm_sd_codec(i2s_dev_t *hw, bool enable)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    hw->tx_pcm2pdm_conf.tx_pdm_dac_2out_en = enable;
+    hw->tx_pcm2pdm_conf.tx_pdm_dac_mode_en = enable;
 }
 
 /**
- * @brief Set I2S rx bits mod
+ * @brief Set I2S TX PDM sigma-delta codec dither
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to set rx bits mod
+ * @param dither I2S TX PDM sigmadelta dither value
  */
-static inline void i2s_ll_set_rx_bits_mod(i2s_dev_t *hw, uint32_t val)
+static inline void i2s_ll_tx_set_pdm_sd_dither(i2s_dev_t *hw, uint32_t dither)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    hw->tx_pcm2pdm_conf.tx_pdm_sigmadelta_dither = dither;
 }
 
 /**
- * @brief Set I2S rx sinc dsr 16 en
+ * @brief Set I2S TX PDM sigma-delta codec dither
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to set rx sinc dsr 16 en
+ * @param dither2 I2S TX PDM sigmadelta dither2 value
  */
-static inline void i2s_ll_set_rx_sinc_dsr_16_en(i2s_dev_t *hw, bool val)
+static inline void i2s_ll_tx_set_pdm_sd_dither2(i2s_dev_t *hw, uint32_t dither2)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    hw->tx_pcm2pdm_conf.tx_pdm_sigmadelta_dither2 = dither2;
 }
 
 /**
- * @brief Set I2S dscr en
+ * @brief Configure I2S TX PDM sample rate
+ *        Fpdm = 64*Fpcm*fp/fs
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to set dscr en
+ * @param fp The fp value of TX PDM filter module group0.
+ * @param fs The fs value of TX PDM filter module group0.
  */
-static inline void i2s_ll_set_dscr_en(i2s_dev_t *hw, bool val)
+static inline void i2s_ll_tx_set_pdm_fpfs(i2s_dev_t *hw, uint32_t fp, uint32_t fs)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    hw->tx_pcm2pdm_conf1.tx_pdm_fp = fp;
+    hw->tx_pcm2pdm_conf1.tx_pdm_fs = fs;
+    hw->tx_pcm2pdm_conf.tx_pdm_sinc_osr2 = fp / fs;
 }
 
 /**
- * @brief Set I2S lcd en
+ * @brief Get I2S TX PDM fp configuration paramater
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to set lcd en
+ * @return
+ *        - fp configuration paramater
  */
-static inline void i2s_ll_set_lcd_en(i2s_dev_t *hw, bool val)
+static inline uint32_t i2s_ll_tx_get_pdm_fp(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    return hw->tx_pcm2pdm_conf1.tx_pdm_fp;
 }
 
 /**
- * @brief Set I2S camera en
+ * @brief Get I2S TX PDM fs configuration paramater
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to set camera en
+ * @return
+ *        - fs configuration paramater
  */
-static inline void i2s_ll_set_camera_en(i2s_dev_t *hw, bool val)
+static inline uint32_t i2s_ll_tx_get_pdm_fs(i2s_dev_t *hw)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    return hw->tx_pcm2pdm_conf1.tx_pdm_fs;
 }
 
 /**
- * @brief Set I2S pcm2pdm conv en
+ * @brief Enable RX PDM mode.
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to set pcm2pdm conv en
+ * @param pdm_enable Set true to RX enable PDM mode
  */
-static inline void i2s_ll_set_pcm2pdm_conv_en(i2s_dev_t *hw, bool val)
+static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw, bool pdm_enable)
 {
-    abort(); // TODO ESP32-H2 IDF-2098
-
+    hw->rx_conf.rx_pdm_en = pdm_enable;
+    hw->rx_conf.rx_tdm_en = !pdm_enable;
 }
 
 /**
- * @brief Set I2S TX to MSB Alignment Standard
+ * @brief Configura TX a/u-law decompress or compress
  *
  * @param hw Peripheral I2S hardware instance address.
+ * @param pcm_cfg PCM configuration paramater
  */
-static inline void i2s_ll_set_tx_format_msb_align(i2s_dev_t *hw)
+static inline void i2s_ll_tx_set_pcm_type(i2s_dev_t *hw, i2s_pcm_compress_t pcm_cfg)
 {
-}
-
-
-static inline void i2s_ll_set_rx_format_msb_align(i2s_dev_t *hw)
-{
-}
-
-/**
- * @brief Set I2S TX to PCM long standard
- *
- * @param hw Peripheral I2S hardware instance address.
- */
-static inline void i2s_ll_set_tx_pcm_long(i2s_dev_t *hw)
-{
+    hw->tx_conf.tx_pcm_conf = pcm_cfg;
+    hw->tx_conf.tx_pcm_bypass = !pcm_cfg;
 }
 
 /**
- * @brief Set I2S RX to PCM long standard
+ * @brief Configure RX a/u-law decompress or compress
  *
  * @param hw Peripheral I2S hardware instance address.
+ * @param pcm_cfg PCM configuration paramater
  */
-static inline void i2s_ll_set_rx_pcm_long(i2s_dev_t *hw)
+static inline void i2s_ll_rx_set_pcm_type(i2s_dev_t *hw, i2s_pcm_compress_t pcm_cfg)
 {
+    hw->rx_conf.rx_pcm_conf = pcm_cfg;
+    hw->rx_conf.rx_pcm_bypass = !pcm_cfg;
 }
 
 /**
- * @brief Set I2S RX to PCM short standard
+ * @brief Enable TX audio data left alignment
  *
  * @param hw Peripheral I2S hardware instance address.
+ * @param ena Set true to enable left alignment
  */
-static inline void i2s_ll_set_rx_pcm_short(i2s_dev_t *hw)
+static inline void i2s_ll_tx_enable_left_align(i2s_dev_t *hw, bool ena)
 {
+    hw->tx_conf.tx_left_align = ena;
 }
 
 /**
- * @brief Set I2S RX to philip standard
+ * @brief Enable RX audio data left alignment
  *
  * @param hw Peripheral I2S hardware instance address.
+ * @param ena Set true to enable left alignment
  */
-static inline void i2s_ll_set_rx_format_philip(i2s_dev_t *hw)
+static inline void i2s_ll_rx_enable_left_align(i2s_dev_t *hw, bool ena)
 {
+    hw->rx_conf.rx_left_align = ena;
 }
 
 /**
- * @brief Set I2S TX to PCM short standard
+ * @brief Enable TX big endian mode
  *
  * @param hw Peripheral I2S hardware instance address.
+ * @param ena Set true to enable big endian mode
  */
-static inline void i2s_ll_set_tx_pcm_short(i2s_dev_t *hw)
+static inline void i2s_ll_rx_enable_big_endian(i2s_dev_t *hw, bool ena)
 {
+    hw->rx_conf.rx_big_endian = ena;
 }
 
 /**
- * @brief Set I2S TX to philip standard
+ * @brief Enable RX big endian mode
  *
  * @param hw Peripheral I2S hardware instance address.
+ * @param ena Set true to enable big endian mode
  */
-static inline void i2s_ll_set_tx_format_philip(i2s_dev_t *hw)
+static inline void i2s_ll_tx_enable_big_endian(i2s_dev_t *hw, bool ena)
 {
+    hw->tx_conf.tx_big_endian = ena;
+}
+
+/**
+ * @brief Configure TX bit order
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param lsb_order_ena Set true to enable LSB bit order
+ */
+static inline void i2s_ll_tx_set_bit_order(i2s_dev_t *hw, bool lsb_order_ena)
+{
+    hw->tx_conf.tx_bit_order = lsb_order_ena;
+}
+
+/**
+ * @brief Configure RX bit order
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param lsb_order_ena Set true to enable LSB bit order
+ */
+static inline void i2s_ll_rx_set_bit_order(i2s_dev_t *hw, bool lsb_order_ena)
+{
+    hw->rx_conf.rx_bit_order = lsb_order_ena;
+}
+
+/**
+ * @brief Configure TX skip mask enable
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param skip_mask_ena Set true to skip inactive channels.
+ */
+static inline void i2s_ll_tx_set_skip_mask(i2s_dev_t *hw, bool skip_mask_ena)
+{
+    hw->tx_tdm_ctrl.tx_tdm_skip_msk_en = skip_mask_ena;
+}
+
+
+/**
+ * @brief Configure single data
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param data Single data to be set
+ */
+static inline void i2s_ll_set_single_data(i2s_dev_t *hw, uint32_t data)
+{
+    hw->conf_single_data = data;
+}
+
+/**
+ * @brief Enable loopback mode
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param ena Set true to enable loopback mode.
+ */
+static inline void i2s_ll_enable_loop_back(i2s_dev_t *hw, bool ena)
+{
+    hw->tx_conf.sig_loopback = ena;
 }
 
 /**
@@ -710,198 +778,6 @@ static inline void i2s_ll_set_tx_format_philip(i2s_dev_t *hw)
  * @param val value to set pdm2pcm conv en
  */
 static inline void i2s_ll_set_pdm2pcm_conv_en(i2s_dev_t *hw, bool val)
-{
-    abort(); // TODO ESP32-H2 IDF-2098
-
-}
-
-/**
- * @brief Set I2S rx pdm en
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set rx pdm en
- */
-static inline void i2s_ll_set_rx_pdm_en(i2s_dev_t *hw, bool val)
-{
-    abort(); // TODO ESP32-H2 IDF-2098
-
-}
-
-/**
- * @brief Set I2S tx pdm en
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set tx pdm en
- */
-static inline void i2s_ll_set_tx_pdm_en(i2s_dev_t *hw, bool val)
-{
-    abort(); // TODO ESP32-H2 IDF-2098
-
-}
-
-/**
- * @brief Set I2S tx fifo mod force en
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set tx fifo mod force en
- */
-static inline void i2s_ll_set_tx_fifo_mod_force_en(i2s_dev_t *hw, bool val)
-{
-    abort(); // TODO ESP32-H2 IDF-2098
-
-}
-
-/**
- * @brief Set I2S rx fifo mod force en
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set rx fifo mod force en
- */
-static inline void i2s_ll_set_rx_fifo_mod_force_en(i2s_dev_t *hw, bool val)
-{
-    abort(); // TODO ESP32-H2 IDF-2098
-
-}
-
-/**
- * @brief Set I2S tx right first
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set tx right first
- */
-static inline void i2s_ll_set_tx_right_first(i2s_dev_t *hw, uint32_t val)
-{
-    abort(); // TODO ESP32-H2 IDF-2098
-
-}
-
-/**
- * @brief Set I2S rx right first
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set rx right first
- */
-static inline void i2s_ll_set_rx_right_first(i2s_dev_t *hw, uint32_t val)
-{
-    abort(); // TODO ESP32-H2 IDF-2098
-
-}
-
-/**
- * @brief Set I2S tx slave mod
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set tx slave mod
- */
-static inline void i2s_ll_set_tx_slave_mod(i2s_dev_t *hw, uint32_t val)
-{
-    abort(); // TODO ESP32-H2 IDF-2098
-
-}
-
-/**
- * @brief Set I2S rx slave mod
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set rx slave mod
- */
-static inline void i2s_ll_set_rx_slave_mod(i2s_dev_t *hw, uint32_t val)
-{
-    abort(); // TODO ESP32-H2 IDF-2098
-
-}
-
-/**
- * @brief Get I2S tx msb right
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to get tx msb right
- */
-static inline void i2s_ll_get_tx_msb_right(i2s_dev_t *hw, uint32_t *val)
-{
-    abort(); // TODO ESP32-H2 IDF-2098
-    // *val = hw->conf.tx_msb_right;
-}
-
-/**
- * @brief Get I2S rx msb right
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to get rx msb right
- */
-static inline void i2s_ll_get_rx_msb_right(i2s_dev_t *hw, uint32_t *val)
-{
-    abort(); // TODO ESP32-H2 IDF-2098
-    // *val = hw->conf.rx_msb_right;
-}
-
-/**
- * @brief Set I2S tx msb right
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set tx msb right
- */
-static inline void i2s_ll_set_tx_msb_right(i2s_dev_t *hw, uint32_t val)
-{
-    abort(); // TODO ESP32-H2 IDF-2098
-
-}
-
-/**
- * @brief Set I2S rx msb right
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set rx msb right
- */
-static inline void i2s_ll_set_rx_msb_right(i2s_dev_t *hw, uint32_t val)
-{
-    abort(); // TODO ESP32-H2 IDF-2098
-
-}
-
-/**
- * @brief Set I2S tx mono
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set tx mono
- */
-static inline void i2s_ll_set_tx_mono(i2s_dev_t *hw, uint32_t val)
-{
-    abort(); // TODO ESP32-H2 IDF-2098
-
-}
-
-/**
- * @brief Set I2S rx mono
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set rx mono
- */
-static inline void i2s_ll_set_rx_mono(i2s_dev_t *hw, uint32_t val)
-{
-    abort(); // TODO ESP32-H2 IDF-2098
-
-}
-
-/**
- * @brief Set I2S tx sinc osr2
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set tx sinc osr2
- */
-static inline void i2s_ll_set_tx_sinc_osr2(i2s_dev_t *hw, uint32_t val)
-{
-    abort(); // TODO ESP32-H2 IDF-2098
-
-}
-
-/**
- * @brief Set I2S sig loopback
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set sig loopback
- */
-static inline void i2s_ll_set_sig_loopback(i2s_dev_t *hw, uint32_t val)
 {
     abort(); // TODO ESP32-H2 IDF-2098
 

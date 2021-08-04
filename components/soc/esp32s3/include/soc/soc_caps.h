@@ -63,7 +63,12 @@
 #include "i2c_caps.h"
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
-#include "i2s_caps.h"
+#define SOC_I2S_NUM                 (2)
+#define SOC_I2S_SUPPORTS_PCM        (1)
+#define SOC_I2S_SUPPORTS_PDM_TX     (1)
+#define SOC_I2S_SUPPORTS_PDM_RX     (1)
+#define SOC_I2S_SUPPORTS_PDM_CODEC  (1)
+#define SOC_I2S_SUPPORTS_TDM        (1)
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 #include "ledc_caps.h"
