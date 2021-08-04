@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 54e3ee07e1f682ea20e8af0561df669c
+// md5_digest_table e460a50d9f80fa56cb87cd54ff055feb
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -350,6 +350,9 @@ static const esp_efuse_desc_t MAC_FACTORY[] = {
     {EFUSE_BLK1, 16, 8}, 	 // Factory MAC addr [3],
     {EFUSE_BLK1, 8, 8}, 	 // Factory MAC addr [4],
     {EFUSE_BLK1, 0, 8}, 	 // Factory MAC addr [5],
+};
+
+static const esp_efuse_desc_t MAC_EXT[] = {
     {EFUSE_BLK1, 123, 8}, 	 // Factory MAC addr [6],
     {EFUSE_BLK1, 131, 8}, 	 // Factory MAC addr [7],
 };
@@ -460,6 +463,10 @@ static const esp_efuse_desc_t ADC1_CAL_VOL_ATTEN3[] = {
 
 static const esp_efuse_desc_t USER_DATA[] = {
     {EFUSE_BLK3, 0, 256}, 	 // User data,
+};
+
+static const esp_efuse_desc_t USER_DATA_MAC_CUSTOM[] = {
+    {EFUSE_BLK3, 200, 48}, 	 // Custom MAC,
 };
 
 static const esp_efuse_desc_t KEY0[] = {
@@ -911,8 +918,12 @@ const esp_efuse_desc_t* ESP_EFUSE_MAC_FACTORY[] = {
     &MAC_FACTORY[3],    		// Factory MAC addr [3]
     &MAC_FACTORY[4],    		// Factory MAC addr [4]
     &MAC_FACTORY[5],    		// Factory MAC addr [5]
-    &MAC_FACTORY[6],    		// Factory MAC addr [6]
-    &MAC_FACTORY[7],    		// Factory MAC addr [7]
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_MAC_EXT[] = {
+    &MAC_EXT[6],    		// Factory MAC addr [6]
+    &MAC_EXT[7],    		// Factory MAC addr [7]
     NULL
 };
 
@@ -1048,6 +1059,11 @@ const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN3[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_USER_DATA[] = {
     &USER_DATA[0],    		// User data
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_USER_DATA_MAC_CUSTOM[] = {
+    &USER_DATA_MAC_CUSTOM[0],    		// Custom MAC
     NULL
 };
 

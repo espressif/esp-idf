@@ -135,6 +135,9 @@
 
 ################
 USER_DATA,                                EFUSE_BLK3,    0,  256,     User data
+USER_DATA.MAC_CUSTOM,                     EFUSE_BLK3,  200,   48,     Custom MAC
+
+################
 KEY0,                                     EFUSE_BLK4,    0,  256,     Key0 or user data
 KEY1,                                     EFUSE_BLK5,    0,  256,     Key1 or user data
 KEY2,                                     EFUSE_BLK6,    0,  256,     Key2 or user data
