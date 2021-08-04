@@ -57,6 +57,11 @@ void spi_timing_flash_tuning(void);
 void spi_timing_psram_tuning(void);
 
 /**
+ * @brief To initislize the MSPI pins
+ */
+void esp_mspi_pin_init(void);
+
+/**
  * @brief Set SPI1 registers to make ROM functions work
  * @note This function is used for setting SPI1 registers to the state that ROM SPI functions work
  */

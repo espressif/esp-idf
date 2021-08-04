@@ -36,6 +36,6 @@
 #define MSPI_TIMING_PSRAM_DEFAULT_CONFIG_ID_CORE_CLK_80M_MODULE_CLK_40M_DTR_MODE     4
 
 //Octal PSRAM: core clock 160M, module clock 80M, DTR mode
-#define MSPI_TIMING_PSRAM_CONFIG_TABLE_CORE_CLK_160M_MODULE_CLK_80M_DTR_MODE         {{1, 0, 0}, {0, 0, 0}, {3, 0, 1}, {1, 0, 1}, {0, 0, 1}, {3, 0, 2}, {1, 0, 2}, {0, 0, 2}, {3, 0, 3}, {1, 0, 3}, {0, 0, 3}, {3, 0, 4}, {1, 0, 4}, {0, 0, 4}}
+#define MSPI_TIMING_PSRAM_CONFIG_TABLE_CORE_CLK_160M_MODULE_CLK_80M_DTR_MODE         {{0, 0, 0}, {4, 2, 2}, {2, 1, 2}, {4, 1, 2}, {1, 0, 1}, {4, 0, 2}, {0, 0, 1}, {4, 2, 3}, {2, 1, 3}, {4, 1, 3}, {1, 0, 2}, {4, 0, 3}, {0, 0, 2}, {4, 2, 4}}
 #define MSPI_TIMING_PSRAM_CONFIG_NUM_CORE_CLK_160M_MODULE_CLK_80M_DTR_MODE           14
 #define MSPI_TIMING_PSRAM_DEFAULT_CONFIG_ID_CORE_CLK_160M_MODULE_CLK_80M_DTR_MODE    1
