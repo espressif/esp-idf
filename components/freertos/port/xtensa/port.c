@@ -130,24 +130,15 @@
 #include "esp32s3/spiram.h"
 #endif
 
+#include "port_systick.h"
 #include "esp_private/startup_internal.h" // [refactor-todo] for g_spiram_ok
 #include "esp_app_trace.h" // [refactor-todo] for esp_app_trace_init
-
-/* Defined in portasm.h */
-extern void _frxt_tick_timer_init(void);
 
 /* Defined in xtensa_context.S */
 extern void _xt_coproc_init(void);
 
 static const char* TAG = "cpu_start"; // [refactor-todo]: might be appropriate to change in the future, but
 								// for now maintain the same log output
-
-#if CONFIG_FREERTOS_CORETIMER_0
-    #define SYSTICK_INTR_ID (ETS_INTERNAL_TIMER0_INTR_SOURCE+ETS_INTERNAL_INTR_SOURCE_OFF)
-#endif
-#if CONFIG_FREERTOS_CORETIMER_1
-    #define SYSTICK_INTR_ID (ETS_INTERNAL_TIMER1_INTR_SOURCE+ETS_INTERNAL_INTR_SOURCE_OFF)
-#endif
 
 _Static_assert(tskNO_AFFINITY == CONFIG_FREERTOS_NO_AFFINITY, "incorrect tskNO_AFFINITY value");
 
@@ -303,11 +294,8 @@ BaseType_t xPortStartScheduler( void )
 	_xt_coproc_init();
 	#endif
 
-	/* Init the tick divisor value */
-	_xt_tick_divisor_init();
-
 	/* Setup the hardware to generate the tick. */
-	_frxt_tick_timer_init();
+	vPortSetupTimer();
 
 	port_xSchedulerRunning[xPortGetCoreID()] = 1;
 
@@ -318,23 +306,6 @@ BaseType_t xPortStartScheduler( void )
 	return pdTRUE;
 }
 /*-----------------------------------------------------------*/
-
-BaseType_t xPortSysTickHandler( void )
-{
-	BaseType_t ret;
-
-	portbenchmarkIntLatency();
-	traceISR_ENTER(SYSTICK_INTR_ID);
-	ret = xTaskIncrementTick();
-	if( ret != pdFALSE )
-	{
-		portYIELD_FROM_ISR();
-	} else {
-		traceISR_EXIT();
-	}
-	return ret;
-}
-
 
 void vPortYieldOtherCore( BaseType_t coreid ) {
 	esp_crosscore_int_send_yield( coreid );

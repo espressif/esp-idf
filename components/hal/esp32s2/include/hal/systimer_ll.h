@@ -135,6 +135,11 @@ __attribute__((always_inline)) static inline void systimer_ll_set_alarm_period(s
     dev->target_conf[alarm_id].target_period = period;
 }
 
+__attribute__((always_inline)) static inline uint32_t systimer_ll_get_alarm_period(systimer_dev_t *dev, uint32_t alarm_id)
+{
+    return dev->target_conf[alarm_id].target_period;
+}
+
 __attribute__((always_inline)) static inline void systimer_ll_apply_alarm_value(systimer_dev_t *dev, uint32_t alarm_id)
 {
     (void)dev;
