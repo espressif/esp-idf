@@ -267,6 +267,3 @@
 #define SOC_PM_SUPPORT_WIFI_PD          (1)
 
 #define SOC_PM_SUPPORT_BT_PD            (1)
-
-/*------------------------------ BLE --------------------------------------------*/
-#define SOC_BLE_UPDATE_OWN_RPA  (1)

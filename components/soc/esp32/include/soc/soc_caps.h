@@ -277,4 +277,4 @@
 #endif
 
 /*------------------------------ BLE --------------------------------------------*/
-#define SOC_BLE_UPDATE_OWN_RPA  (0)
+#define SOC_BLE_DONT_UPDATE_OWN_RPA  (1)

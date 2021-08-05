@@ -258,10 +258,10 @@
 #define BLE_ESTABLISH_LINK_CONNECTION_TIMEOUT UC_BT_BLE_ESTAB_LINK_CONN_TOUT
 #endif
 
-#if (SOC_BLE_UPDATE_OWN_RPA)
-#define BLE_UPDATE_BLE_ADDR_TYPE_RPA TRUE
-#else
+#ifdef SOC_BLE_DONT_UPDATE_OWN_RPA
 #define BLE_UPDATE_BLE_ADDR_TYPE_RPA FALSE
+#else
+#define BLE_UPDATE_BLE_ADDR_TYPE_RPA TRUE
 #endif
 //------------------Added from bdroid_buildcfg.h---------------------
 #ifndef L2CAP_EXTFEA_SUPPORTED_MASK
