@@ -2,13 +2,13 @@
 
 * [English Version](./README.md)
 
-ESP-IDF 是由乐鑫官方针对乐鑫各系列芯片产品（发布于 2016 年后<sup>[1](#fn1)</sup>）推出的开发框架，支持 Windows、Linux 和 macOS 操作系统。
+ESP-IDF 是乐鑫官方推出的开发框架，适用于 2016 年之后发布的系列芯片<sup>[1](#fn1)</sup>，支持 Windows、Linux 和 macOS 操作系统。
 
 # 使用 ESP-IDF 进行开发
 
 ## 搭建 ESP-IDF 开发环境
 
-关于不同芯片如何搭建 ESP-IDF 的开发环境，请参考 https://idf.espressif.com/。
+关于不同芯片如何搭建 ESP-IDF 的开发环境，请参考 https://idf.espressif.com/ 。
 
 **注意：** 不同系列芯片和不同 ESP-IDF 版本都有其对应的文档。请参阅[版本](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32/versions.html)部分，获得关于如何查找文档以及如何检出 ESP-IDF 的特定发行版的详细信息。
 
