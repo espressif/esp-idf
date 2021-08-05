@@ -277,17 +277,17 @@ static BaseType_t prvCheckItemFitsDefault( Ringbuffer_t *pxRingbuffer, size_t xI
     configASSERT(rbCHECK_ALIGNED(pxRingbuffer->pucAcquire));              //pucAcquire is always aligned in no-split/allow-split ring buffers
     configASSERT(pxRingbuffer->pucAcquire >= pxRingbuffer->pucHead && pxRingbuffer->pucAcquire < pxRingbuffer->pucTail);    //Check write pointer is within bounds
 
-    size_t xTotalItemSize = rbALIGN_SIZE(xItemSize) + rbHEADER_SIZE;    //Rounded up aligned item size with header
+    size_t xTotalItemSize = xItemSize + rbHEADER_SIZE;
     if (pxRingbuffer->pucAcquire == pxRingbuffer->pucFree) {
         //Buffer is either complete empty or completely full
         return (pxRingbuffer->uxRingbufferFlags & rbBUFFER_FULL_FLAG) ? pdFALSE : pdTRUE;
     }
     if (pxRingbuffer->pucFree > pxRingbuffer->pucAcquire) {
         //Free space does not wrap around
-        return (xTotalItemSize <= pxRingbuffer->pucFree - pxRingbuffer->pucAcquire) ? pdTRUE : pdFALSE;
+        return (xTotalItemSize + pxRingbuffer->pucAcquire <= pxRingbuffer->pucFree) ? pdTRUE : pdFALSE;
     }
     //Free space wraps around
-    if (xTotalItemSize <= pxRingbuffer->pucTail - pxRingbuffer->pucAcquire) {
+    if (xTotalItemSize + pxRingbuffer->pucAcquire <= pxRingbuffer->pucTail) {
         return pdTRUE;      //Item fits without wrapping around
     }
     //Check if item fits by wrapping
@@ -326,7 +326,7 @@ static uint8_t* prvAcquireItemNoSplit(Ringbuffer_t *pxRingbuffer, size_t xItemSi
     configASSERT(xRemLen >= rbHEADER_SIZE);                             //Remaining length must be able to at least fit an item header
 
     //If remaining length can't fit item, set as dummy data and wrap around
-    if (xRemLen < xAlignedItemSize + rbHEADER_SIZE) {
+    if (xRemLen < xItemSize + rbHEADER_SIZE) {
         ItemHeader_t *pxDummy = (ItemHeader_t *)pxRingbuffer->pucAcquire;
         pxDummy->uxItemFlags = rbITEM_DUMMY_DATA_FLAG;      //Set remaining length as dummy data
         pxDummy->xItemLen = 0;                              //Dummy data should have no length
@@ -344,7 +344,7 @@ static uint8_t* prvAcquireItemNoSplit(Ringbuffer_t *pxRingbuffer, size_t xItemSi
 
     //After the allocation, add some padding after the buffer and correct the flags
     //If current remaining length can't fit a header, wrap around write pointer
-    if (pxRingbuffer->pucTail - pxRingbuffer->pucAcquire < rbHEADER_SIZE) {
+    if (pxRingbuffer->pucTail < rbHEADER_SIZE + pxRingbuffer->pucAcquire) {
         pxRingbuffer->pucAcquire = pxRingbuffer->pucHead;   //Wrap around pucAcquire
     }
     //Check if buffer is full
@@ -381,7 +381,7 @@ static void prvSendItemDoneNoSplit(Ringbuffer_t *pxRingbuffer, uint8_t* pucItem)
      */
     pxCurHeader = (ItemHeader_t *)pxRingbuffer->pucWrite;
     //Skip over Items that have already been written or are dummy items
-    while (((pxCurHeader->uxItemFlags & rbITEM_WRITTEN_FLAG) || (pxCurHeader->uxItemFlags & rbITEM_DUMMY_DATA_FLAG)) && pxRingbuffer->pucWrite != pxRingbuffer->pucAcquire) {
+    while ((pxCurHeader->uxItemFlags & (rbITEM_WRITTEN_FLAG | rbITEM_DUMMY_DATA_FLAG)) && pxRingbuffer->pucWrite != pxRingbuffer->pucAcquire) {
         if (pxCurHeader->uxItemFlags & rbITEM_DUMMY_DATA_FLAG) {
             pxCurHeader->uxItemFlags |= rbITEM_WRITTEN_FLAG;   //Mark as freed (not strictly necessary but adds redundancy)
             pxRingbuffer->pucWrite = pxRingbuffer->pucHead;    //Wrap around due to dummy data
@@ -393,7 +393,7 @@ static void prvSendItemDoneNoSplit(Ringbuffer_t *pxRingbuffer, uint8_t* pucItem)
             configASSERT(pxRingbuffer->pucWrite <= pxRingbuffer->pucHead + pxRingbuffer->xSize);
         }
         //Check if pucAcquire requires wrap around
-        if ((pxRingbuffer->pucTail - pxRingbuffer->pucWrite) < rbHEADER_SIZE) {
+        if (pxRingbuffer->pucTail < rbHEADER_SIZE + pxRingbuffer->pucWrite) {
             pxRingbuffer->pucWrite = pxRingbuffer->pucHead;
         }
         pxCurHeader = (ItemHeader_t *)pxRingbuffer->pucWrite;      //Update header to point to item
@@ -449,7 +449,7 @@ static void prvCopyItemAllowSplit(Ringbuffer_t *pxRingbuffer, const uint8_t *puc
     pxRingbuffer->pucAcquire += xAlignedItemSize;  //Advance pucAcquire past item to next aligned address
 
     //If current remaining length can't fit a header, wrap around write pointer
-    if (pxRingbuffer->pucTail - pxRingbuffer->pucAcquire < rbHEADER_SIZE) {
+    if (pxRingbuffer->pucTail < rbHEADER_SIZE + pxRingbuffer->pucAcquire) {
         pxRingbuffer->pucAcquire = pxRingbuffer->pucHead;   //Wrap around pucAcquire
     }
     //Check if buffer is full
@@ -537,12 +537,12 @@ static void *prvGetItemDefault(Ringbuffer_t *pxRingbuffer,
         configASSERT(pcReturn >= pxRingbuffer->pucHead && pcReturn < pxRingbuffer->pucTail);
     }
     *pxItemSize = pxHeader->xItemLen;   //Get length of item
-    pxRingbuffer->xItemsWaiting --;     //Update item count
+    pxRingbuffer->xItemsWaiting--;      //Update item count
     *pxIsSplit = (pxHeader->uxItemFlags & rbITEM_SPLIT_FLAG) ? pdTRUE : pdFALSE;
 
     pxRingbuffer->pucRead += rbHEADER_SIZE + rbALIGN_SIZE(pxHeader->xItemLen);   //Update pucRead
     //Check if pucRead requires wrap around
-    if ((pxRingbuffer->pucTail - pxRingbuffer->pucRead) < rbHEADER_SIZE) {
+    if (pxRingbuffer->pucTail < rbHEADER_SIZE + pxRingbuffer->pucRead) {
         pxRingbuffer->pucRead = pxRingbuffer->pucHead;
     }
     return (void *)pcReturn;
@@ -612,7 +612,7 @@ static void prvReturnItemDefault(Ringbuffer_t *pxRingbuffer, uint8_t *pucItem)
      */
     pxCurHeader = (ItemHeader_t *)pxRingbuffer->pucFree;
     //Skip over Items that have already been freed or are dummy items
-    while (((pxCurHeader->uxItemFlags & rbITEM_FREE_FLAG) || (pxCurHeader->uxItemFlags & rbITEM_DUMMY_DATA_FLAG)) && pxRingbuffer->pucFree != pxRingbuffer->pucRead) {
+    while ((pxCurHeader->uxItemFlags & (rbITEM_FREE_FLAG | rbITEM_DUMMY_DATA_FLAG)) && pxRingbuffer->pucFree != pxRingbuffer->pucRead) {
         if (pxCurHeader->uxItemFlags & rbITEM_DUMMY_DATA_FLAG) {
             pxCurHeader->uxItemFlags |= rbITEM_FREE_FLAG;   //Mark as freed (not strictly necessary but adds redundancy)
             pxRingbuffer->pucFree = pxRingbuffer->pucHead;    //Wrap around due to dummy data
@@ -620,25 +620,15 @@ static void prvReturnItemDefault(Ringbuffer_t *pxRingbuffer, uint8_t *pucItem)
             //Item with data that has already been freed, advance free pointer past this item
             size_t xAlignedItemSize = rbALIGN_SIZE(pxCurHeader->xItemLen);
             pxRingbuffer->pucFree += xAlignedItemSize + rbHEADER_SIZE;
-            //Redundancy check to ensure free pointer has not overshot buffer bounds
-            configASSERT(pxRingbuffer->pucFree <= pxRingbuffer->pucHead + pxRingbuffer->xSize);
         }
-        //Check if pucRead requires wrap around
-        if ((pxRingbuffer->pucTail - pxRingbuffer->pucFree) < rbHEADER_SIZE) {
+        //Check if pucFree requires wrap around
+        if (pxRingbuffer->pucTail < rbHEADER_SIZE + pxRingbuffer->pucFree) {
             pxRingbuffer->pucFree = pxRingbuffer->pucHead;
         }
         pxCurHeader = (ItemHeader_t *)pxRingbuffer->pucFree;      //Update header to point to item
     }
 
-    //Check if the buffer full flag should be reset
-    if (pxRingbuffer->uxRingbufferFlags & rbBUFFER_FULL_FLAG) {
-        if (pxRingbuffer->pucFree != pxRingbuffer->pucAcquire) {
-            pxRingbuffer->uxRingbufferFlags &= ~rbBUFFER_FULL_FLAG;
-        } else if (pxRingbuffer->pucFree == pxRingbuffer->pucAcquire && pxRingbuffer->pucFree == pxRingbuffer->pucRead) {
-            //Special case where a full buffer is completely freed in one go
-            pxRingbuffer->uxRingbufferFlags &= ~rbBUFFER_FULL_FLAG;
-        }
-    }
+    pxRingbuffer->uxRingbufferFlags &= ~rbBUFFER_FULL_FLAG;
 }
 
 static void prvReturnItemByteBuf(Ringbuffer_t *pxRingbuffer, uint8_t *pucItem)
@@ -672,14 +662,13 @@ static size_t prvGetCurMaxSizeNoSplit(Ringbuffer_t *pxRingbuffer)
         xFreeSize = (xSize1 > xSize2) ? xSize1 : xSize2;
     }
 
-    //No-split ring buffer items need space for a header
-    xFreeSize -= rbHEADER_SIZE;
     //Limit free size to be within bounds
-    if (xFreeSize > pxRingbuffer->xMaxItemSize) {
+    if (xFreeSize > pxRingbuffer->xMaxItemSize + rbHEADER_SIZE) {
         xFreeSize = pxRingbuffer->xMaxItemSize;
-    } else if (xFreeSize < 0) {
-        //Occurs when free space is less than header size
+    } else if (xFreeSize < rbHEADER_SIZE) {
         xFreeSize = 0;
+    } else {
+        xFreeSize -= rbHEADER_SIZE;
     }
     return xFreeSize;
 }
@@ -744,7 +733,7 @@ static BaseType_t prvReceiveGeneric(Ringbuffer_t *pxRingbuffer,
     BaseType_t xReturnSemaphore = pdFALSE;
     TickType_t xTicksEnd = xTaskGetTickCount() + xTicksToWait;
     TickType_t xTicksRemaining = xTicksToWait;
-    while (xTicksRemaining <= xTicksToWait) {   //xTicksToWait will underflow once xTaskGetTickCount() > ticks_end
+    while (xTicksRemaining <= xTicksToWait) {   // xTicksRemaining will underflow once xTaskGetTickCount() > ticks_end
         //Block until more free space becomes available or timeout
         if (xSemaphoreTake(rbGET_RX_SEM_HANDLE(pxRingbuffer), xTicksRemaining) != pdTRUE) {
             xReturn = pdFALSE;     //Timed out attempting to get semaphore
@@ -937,7 +926,7 @@ BaseType_t xRingbufferSendAcquire(RingbufHandle_t xRingbuffer, void **ppvItem, s
     BaseType_t xReturnSemaphore = pdFALSE;
     TickType_t xTicksEnd = xTaskGetTickCount() + xTicksToWait;
     TickType_t xTicksRemaining = xTicksToWait;
-    while (xTicksRemaining <= xTicksToWait) {   //xTicksToWait will underflow once xTaskGetTickCount() > ticks_end
+    while (xTicksRemaining <= xTicksToWait) {   // xTicksRemaining will underflow once xTaskGetTickCount() > ticks_end
         //Block until more free space becomes available or timeout
         if (xSemaphoreTake(rbGET_TX_SEM_HANDLE(pxRingbuffer), xTicksRemaining) != pdTRUE) {
             xReturn = pdFALSE;
@@ -1011,7 +1000,7 @@ BaseType_t xRingbufferSend(RingbufHandle_t xRingbuffer,
     BaseType_t xReturnSemaphore = pdFALSE;
     TickType_t xTicksEnd = xTaskGetTickCount() + xTicksToWait;
     TickType_t xTicksRemaining = xTicksToWait;
-    while (xTicksRemaining <= xTicksToWait) {   //xTicksToWait will underflow once xTaskGetTickCount() > ticks_end
+    while (xTicksRemaining <= xTicksToWait) {   // xTicksRemaining will underflow once xTaskGetTickCount() > ticks_end
         //Block until more free space becomes available or timeout
         if (xSemaphoreTake(rbGET_TX_SEM_HANDLE(pxRingbuffer), xTicksRemaining) != pdTRUE) {
             xReturn = pdFALSE;
@@ -1403,3 +1392,4 @@ void xRingbufferPrintInfo(RingbufHandle_t xRingbuffer)
            pxRingbuffer->pucWrite - pxRingbuffer->pucHead,
            pxRingbuffer->pucAcquire - pxRingbuffer->pucHead);
 }
+
