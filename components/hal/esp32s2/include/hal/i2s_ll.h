@@ -33,7 +33,7 @@ extern "C" {
 // Get I2S hardware instance with giving i2s num
 #define I2S_LL_GET_HW(num)             (((num) == 0) ? (&I2S0) : NULL)
 
-#define I2S_LL_BASE_CLK                (2*APB_CLK_FREQ)
+#define I2S_LL_BASE_CLK                (2 * APB_CLK_FREQ)
 
 #define I2S_LL_MCLK_DIVIDER_BIT_WIDTH  (6)
 #define I2S_LL_MCLK_DIVIDER_MAX        ((1 << I2S_LL_MCLK_DIVIDER_BIT_WIDTH) - 1)
@@ -43,8 +43,43 @@ typedef struct {
     uint16_t mclk_div; // I2S module clock devider, Fmclk = Fsclk /(mclk_div+b/a)
     uint16_t a;
     uint16_t b;        // The decimal part of module clock devider, the decimal is: b/a
-    uint16_t bck_div;  // The BCK devider, Fbck = Fmclk / bck_div
 } i2s_ll_clk_cal_t;
+
+#define I2S_LL_EVENT_TX_EOF      (1 << 12)
+#define I2S_LL_BCK_MAX_PRESCALE  (64)
+
+/**
+ * @brief Enable DMA descriptor owner check
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param en whether to enable owner check
+ */
+static inline void i2s_ll_dma_enable_owner_check(i2s_dev_t *hw, bool en)
+{
+    hw->lc_conf.check_owner = en;
+}
+
+/**
+ * @brief Enable DMA descriptor write back
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param en whether to enable write back
+ */
+static inline void i2s_ll_dma_enable_auto_write_back(i2s_dev_t *hw, bool en)
+{
+    hw->lc_conf.out_auto_wrback = en;
+}
+
+/**
+ * @brief I2S DMA generate EOF event on data in FIFO poped out
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param en True to enable, False to disable
+ */
+static inline void i2s_ll_dma_enable_eof_on_fifo_empty(i2s_dev_t *hw, bool en)
+{
+    hw->lc_conf.out_eof_mode = en;
+}
 
 /**
  * @brief I2S module general init, enable I2S clock.
@@ -215,6 +250,17 @@ static inline void i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 }
 
 /**
+ * @brief Set I2S tx bck div num
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param val value to set tx bck div num
+ */
+static inline void i2s_ll_tx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
+{
+    hw->sample_rate_conf.tx_bck_div_num = val;
+}
+
+/**
  * @brief Configure I2S TX clock devider
  *
  * @param hw Peripheral I2S hardware instance address.
@@ -225,7 +271,17 @@ static inline void i2s_ll_tx_set_clk(i2s_dev_t *hw, i2s_ll_clk_cal_t *set)
     hw->clkm_conf.clkm_div_num = set->mclk_div;
     hw->clkm_conf.clkm_div_b = set->b;
     hw->clkm_conf.clkm_div_a = set->a;
-    hw->sample_rate_conf.tx_bck_div_num = set->bck_div;
+}
+
+/**
+ * @brief Set I2S rx bck div num
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param val value to set rx bck div num
+ */
+static inline void i2s_ll_rx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
+{
+    hw->sample_rate_conf.rx_bck_div_num = val;
 }
 
 /**
@@ -239,7 +295,22 @@ static inline void i2s_ll_rx_set_clk(i2s_dev_t *hw, i2s_ll_clk_cal_t *set)
     hw->clkm_conf.clkm_div_num = set->mclk_div;
     hw->clkm_conf.clkm_div_b = set->b;
     hw->clkm_conf.clkm_div_a = set->a;
-    hw->sample_rate_conf.rx_bck_div_num = set->bck_div;
+}
+
+/**
+ * @brief Enable interrupt by mask
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param mask Interrupt event mask
+ * @param en true to enable, false to disable
+ */
+static inline void i2s_ll_enable_intr(i2s_dev_t *hw, uint32_t mask, bool en)
+{
+    if (en) {
+        hw->int_ena.val |= mask;
+    } else {
+        hw->int_ena.val &= ~mask;
+    }
 }
 
 /**
@@ -284,6 +355,17 @@ static inline void i2s_ll_rx_disable_intr(i2s_dev_t *hw)
 {
     hw->int_ena.in_suc_eof = 0;
     hw->int_ena.in_dscr_err = 0;
+}
+
+/**
+ * @brief Get interrupt status register address
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @return interrupt status register address
+ */
+static inline volatile void *i2s_ll_get_intr_status_reg(i2s_dev_t *hw)
+{
+    return &hw->int_st;
 }
 
 /**
@@ -358,6 +440,27 @@ static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw, bool pdm_enable)
 }
 
 /**
+ * @brief Start out link
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ */
+static inline void i2s_ll_start_out_link(i2s_dev_t *hw)
+{
+    hw->out_link.start = 1;
+}
+
+/**
+ * @brief Set I2S out link address
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param val value to set out link address
+ */
+static inline void i2s_ll_set_out_link_addr(i2s_dev_t *hw, uint32_t val)
+{
+    hw->out_link.addr = val;
+}
+
+/**
  * @brief Start TX module
  *
  * @param hw Peripheral I2S hardware instance address.
@@ -385,8 +488,8 @@ static inline void i2s_ll_rx_start(i2s_dev_t *hw)
  */
 static inline void i2s_ll_tx_start_link(i2s_dev_t *hw, uint32_t link_addr)
 {
-    hw->out_link.addr = link_addr;
-    hw->out_link.start = 1;
+    i2s_ll_set_out_link_addr(hw, link_addr);
+    i2s_ll_start_out_link(hw);
 }
 
 /**
@@ -644,6 +747,39 @@ static inline void i2s_ll_rx_enable_msb_shift(i2s_dev_t *hw, bool msb_shift_enab
 }
 
 /**
+ * @brief Set I2S tx chan mode
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param val value to set tx chan mode
+ */
+static inline void i2s_ll_tx_set_chan_mod(i2s_dev_t *hw, uint32_t val)
+{
+    hw->conf_chan.tx_chan_mod = val;
+}
+
+/**
+ * @brief Set I2S tx bits mod
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param val value to set tx bits mod
+ */
+static inline void i2s_ll_tx_set_bits_mod(i2s_dev_t *hw, uint32_t val)
+{
+    hw->sample_rate_conf.tx_bits_mod = val;
+}
+
+/**
+ * @brief Set I2S tx dma equal
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param val value to set tx dma equal
+ */
+static inline void i2s_ll_tx_enable_dma_equal(i2s_dev_t *hw, bool en)
+{
+    hw->conf.tx_dma_equal = en;
+}
+
+/**
  * @brief Enable TX mono mode
  *
  * @param hw Peripheral I2S hardware instance address.
@@ -680,6 +816,39 @@ static inline void i2s_ll_rx_enable_mono_mode(i2s_dev_t *hw, bool mono_ena)
 static inline void i2s_ll_enable_loop_back(i2s_dev_t *hw, bool loopback_en)
 {
     hw->conf.sig_loopback = loopback_en;
+}
+
+/**
+ * @brief Enable I2S LCD mode
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param enable Set true to enable LCD mode.
+ */
+static inline void i2s_ll_enable_lcd(i2s_dev_t *hw, bool enable)
+{
+    hw->conf2.lcd_en = enable;
+}
+
+/**
+ * @brief Set whether to continue I2S signal on bus when TX FIFO is empty
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param en whether to stop when tx fifo is empty
+ */
+static inline void i2s_ll_tx_stop_on_fifo_empty(i2s_dev_t *hw, bool en)
+{
+    hw->conf1.tx_stop_en = en;
+}
+
+/**
+ * @brief Set whether to bypass the internal PCM module
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param bypass whether to bypass the PCM module
+ */
+static inline void i2s_ll_tx_bypass_pcm(i2s_dev_t *hw, bool bypass)
+{
+    hw->conf1.tx_pcm_bypass = bypass;
 }
 
 #ifdef __cplusplus
