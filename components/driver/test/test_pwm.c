@@ -29,8 +29,6 @@
 #define MCPWM_TEST_GROUP_CLK_HZ (SOC_MCPWM_BASE_CLK_HZ / 16)
 #define MCPWM_TEST_TIMER_CLK_HZ (MCPWM_TEST_GROUP_CLK_HZ / 10)
 
-
-static mcpwm_dev_t *MCPWM[2] = {&MCPWM0, &MCPWM1}; // interrupt handling still lacks API to get/clear pending event, currently we have to read/write interrupt register
 const static mcpwm_io_signals_t pwma[] = {MCPWM0A, MCPWM1A, MCPWM2A};
 const static mcpwm_io_signals_t pwmb[] = {MCPWM0B, MCPWM1B, MCPWM2B};
 const static mcpwm_fault_signal_t fault_sig_array[] = {MCPWM_SELECT_F0, MCPWM_SELECT_F1, MCPWM_SELECT_F2};
@@ -383,18 +381,13 @@ static void mcpwm_capture_test(mcpwm_unit_t unit, mcpwm_capture_signal_t cap_cha
         TaskHandle_t task_hdl;
     } test_capture_callback_data_t;
 
-    void test_mcpwm_intr_handler(void *arg) {
+    bool test_mcpwm_intr_handler(mcpwm_unit_t mcpwm, mcpwm_capture_channel_id_t cap_sig, const cap_event_data_t *edata, void *arg) {
         BaseType_t high_task_wakeup = pdFALSE;
         test_capture_callback_data_t *cb_data = (test_capture_callback_data_t *)arg;
-        uint32_t status = MCPWM[cb_data->unit]->int_st.val;
-        MCPWM[cb_data->unit]->int_clr.val = status;
         vTaskNotifyGiveFromISR(cb_data->task_hdl, &high_task_wakeup);
-        if (high_task_wakeup == pdTRUE) {
-            portYIELD_FROM_ISR();
-        }
+        return high_task_wakeup == pdTRUE;
     }
 
-    intr_handle_t mcpwm_intr = NULL;
     test_capture_callback_data_t callback_data = {
         .unit = unit,
         .task_hdl = xTaskGetCurrentTaskHandle(),
@@ -402,17 +395,23 @@ static void mcpwm_capture_test(mcpwm_unit_t unit, mcpwm_capture_signal_t cap_cha
 
     //each timer test the capture sig with the same id with it.
     mcpwm_io_signals_t cap_io = cap_io_sig_array[cap_chan];
-    mcpwm_capture_signal_t cap_sig = cap_sig_array[cap_chan];
+    mcpwm_capture_channel_id_t cap_channel = cap_sig_array[cap_chan];
 
     TEST_ESP_OK(test_mcpwm_gpio_init(unit, cap_io, TEST_CAP_GPIO));
-    TEST_ESP_OK(mcpwm_capture_enable(unit, cap_sig, MCPWM_POS_EDGE, 0));
-    TEST_ESP_OK(mcpwm_isr_register(unit, test_mcpwm_intr_handler, &callback_data, 0, &mcpwm_intr));
+    mcpwm_capture_config_t conf = {
+            .cap_edge = MCPWM_POS_EDGE,
+            .cap_prescale = 1,
+            .capture_cb = test_mcpwm_intr_handler,
+            .user_data = &callback_data
+    };
+    TEST_ESP_OK(mcpwm_capture_enable_channel(unit, cap_channel, &conf));
     // generate an posage
     gpio_set_level(TEST_CAP_GPIO, 0);
     gpio_set_level(TEST_CAP_GPIO, 1);
     vTaskDelay(pdMS_TO_TICKS(100));
     TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(40)));
     uint32_t cap_val0 = mcpwm_capture_signal_get_value(unit, cap_chan);
+
     // generate another posage
     gpio_set_level(TEST_CAP_GPIO, 0);
     gpio_set_level(TEST_CAP_GPIO, 1);
@@ -421,8 +420,7 @@ static void mcpwm_capture_test(mcpwm_unit_t unit, mcpwm_capture_signal_t cap_cha
     // capture clock source is APB (80MHz), 100ms means 8000000 ticks
     TEST_ASSERT_UINT_WITHIN(100000, 8000000, cap_val1 - cap_val0);
 
-    TEST_ESP_OK(mcpwm_capture_disable(unit, cap_sig));
-    TEST_ESP_OK(esp_intr_free(mcpwm_intr));
+    TEST_ESP_OK(mcpwm_capture_disable_channel(unit, cap_channel));
 }
 
 TEST_CASE("MCPWM capture test", "[mcpwm]")

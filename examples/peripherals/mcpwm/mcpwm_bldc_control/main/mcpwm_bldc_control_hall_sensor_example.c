@@ -20,10 +20,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
-#include "esp_attr.h"
 #include "soc/rtc.h"
 #include "driver/mcpwm.h"
-#include "soc/mcpwm_periph.h"
 
 #define INITIAL_DUTY 10.0   //initial duty cycle is 10.0%
 #define MCPWM_GPIO_INIT 0   //select which function to use to initialize gpio signals
@@ -55,8 +53,6 @@ static uint32_t hall_sensor_value = 0;
 static uint32_t hall_sensor_previous = 0;
 
 xQueueHandle cap_queue;
-
-static mcpwm_dev_t *MCPWM[2] = {&MCPWM0, &MCPWM1};
 
 static void mcpwm_example_gpio_initialize(void)
 {
@@ -162,27 +158,25 @@ static void disp_captured_signal(void *arg)
 /**
  * @brief this is ISR handler function, here we check for interrupt that triggers rising edge on CAP0 signal and according take action
  */
-static void IRAM_ATTR isr_handler(void *arg)
+static bool isr_handler(mcpwm_unit_t mcpwm, mcpwm_capture_channel_id_t cap_sig, const cap_event_data_t *edata, void *arg)
 {
-    uint32_t mcpwm_intr_status;
     capture evt;
-    mcpwm_intr_status = MCPWM[MCPWM_UNIT_0]->int_st.val; //Read interrupt status
-    if (mcpwm_intr_status & CAP0_INT_EN) { //Check for interrupt on rising edge on CAP0 signal
-        evt.capture_signal = mcpwm_capture_signal_get_value(MCPWM_UNIT_0, MCPWM_SELECT_CAP0); //get capture signal counter value
+    if (cap_sig == MCPWM_SELECT_CAP0) { //Check for interrupt on rising edge on CAP0 signal
+        evt.capture_signal = edata->cap_value; //get capture signal counter value
         evt.sel_cap_signal = MCPWM_SELECT_CAP0;
         xQueueSendFromISR(cap_queue, &evt, NULL);
     }
-    if (mcpwm_intr_status & CAP1_INT_EN) { //Check for interrupt on rising edge on CAP1 signal
-        evt.capture_signal = mcpwm_capture_signal_get_value(MCPWM_UNIT_0, MCPWM_SELECT_CAP1); //get capture signal counter value
+    if (cap_sig == MCPWM_SELECT_CAP1) { //Check for interrupt on rising edge on CAP1 signal
+        evt.capture_signal = edata->cap_value; //get capture signal counter value
         evt.sel_cap_signal = MCPWM_SELECT_CAP1;
         xQueueSendFromISR(cap_queue, &evt, NULL);
     }
-    if (mcpwm_intr_status & CAP2_INT_EN) { //Check for interrupt on rising edge on CAP2 signal
-        evt.capture_signal = mcpwm_capture_signal_get_value(MCPWM_UNIT_0, MCPWM_SELECT_CAP2); //get capture signal counter value
+    if (cap_sig == MCPWM_SELECT_CAP2) { //Check for interrupt on rising edge on CAP2 signal
+        evt.capture_signal = edata->cap_value; //get capture signal counter value
         evt.sel_cap_signal = MCPWM_SELECT_CAP2;
         xQueueSendFromISR(cap_queue, &evt, NULL);
     }
-    MCPWM[MCPWM_UNIT_0]->int_clr.val = mcpwm_intr_status;
+    return false;
 }
 
 #if CHANGE_DUTY_CONTINUOUSLY
@@ -228,12 +222,15 @@ static void mcpwm_example_bldc_control(void *arg)
     //configure CAP0, CAP1 and CAP2 signal to start capture counter on rising edge
     //we generate a gpio_test_signal of 20ms on GPIO 12 and connect it to one of the capture signal, the disp_captured_function displays the time between rising edge
     //In general practice you can connect Capture  to external signal, measure time between rising edge or falling edge and take action accordingly
-    mcpwm_capture_enable(MCPWM_UNIT_0, MCPWM_SELECT_CAP0, MCPWM_POS_EDGE, 0);  //capture signal on rising edge, pulse num = 0 i.e. 800,000,000 counts is equal to one second
-    mcpwm_capture_enable(MCPWM_UNIT_0, MCPWM_SELECT_CAP1, MCPWM_POS_EDGE, 0);  //capture signal on rising edge, pulse num = 0 i.e. 800,000,000 counts is equal to one second
-    mcpwm_capture_enable(MCPWM_UNIT_0, MCPWM_SELECT_CAP2, MCPWM_POS_EDGE, 0);  //capture signal on rising edge, pulse num = 0 i.e. 800,000,000 counts is equal to one second
-    //enable interrupt, so each this a rising edge occurs interrupt is triggered
-    MCPWM[MCPWM_UNIT_0]->int_ena.val = (CAP0_INT_EN | CAP1_INT_EN | CAP2_INT_EN);  //Enable interrupt on  CAP0, CAP1 and CAP2 signal
-    mcpwm_isr_register(MCPWM_UNIT_0, isr_handler, NULL, ESP_INTR_FLAG_IRAM, NULL);  //Set ISR Handler
+    mcpwm_capture_config_t conf = {
+            .cap_edge = MCPWM_POS_EDGE,
+            .cap_prescale = 1,
+            .capture_cb = isr_handler,
+            .user_data = NULL,
+    };
+    mcpwm_capture_enable_channel(MCPWM_UNIT_0, MCPWM_SELECT_CAP0, &conf);    //capture signal on rising edge, pulse num = 0 i.e. 800,000,000 counts is equal to one second
+    mcpwm_capture_enable_channel(MCPWM_UNIT_0, MCPWM_SELECT_CAP1, &conf);    //capture signal on rising edge, pulse num = 0 i.e. 800,000,000 counts is equal to one second
+    mcpwm_capture_enable_channel(MCPWM_UNIT_0, MCPWM_SELECT_CAP2, &conf);    //capture signal on rising edge, pulse num = 0 i.e. 800,000,000 counts is equal to one second
     //According to the hall sensor input value take action on PWM0A/0B/1A/1B/2A/2B
     while (1) {
         hall_sensor_value = (gpio_get_level(GPIO_NUM_27) * 1) + (gpio_get_level(GPIO_NUM_26) * 2) + (gpio_get_level(GPIO_NUM_25) * 4);

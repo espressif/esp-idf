@@ -18,23 +18,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
-#include "esp_attr.h"
-#include "soc/rtc.h"
 #include "driver/mcpwm.h"
-#include "soc/mcpwm_periph.h"
 
 #define MCPWM_EN_CARRIER 0   //Make this 1 to test carrier submodule of mcpwm, set high frequency carrier parameters
 #define MCPWM_EN_DEADTIME 0  //Make this 1 to test deadtime submodule of mcpwm, set deadtime value and deadtime mode
 #define MCPWM_EN_FAULT 0     //Make this 1 to test fault submodule of mcpwm, set action on MCPWM signal on fault occurence like overcurrent, overvoltage, etc
 #define MCPWM_EN_SYNC 0      //Make this 1 to test sync submodule of mcpwm, sync timer signals
-#define MCPWM_EN_CAPTURE 0   //Make this 1 to test capture submodule of mcpwm, measure time between rising/falling edge of captured signal
 #define MCPWM_GPIO_INIT 0    //select which function to use to initialize gpio signals
-#define CAP_SIG_NUM 3   //Three capture signals
-
-#define CAP0_INT_EN BIT(27)  //Capture 0 interrupt bit
-#define CAP1_INT_EN BIT(28)  //Capture 1 interrupt bit
-#define CAP2_INT_EN BIT(29)  //Capture 2 interrupt bit
-
 
 #define GPIO_PWM0A_OUT 19   //Set GPIO 19 as PWM0A
 #define GPIO_PWM0B_OUT 18   //Set GPIO 18 as PWM0B
@@ -42,28 +32,12 @@
 #define GPIO_PWM1B_OUT 16   //Set GPIO 16 as PWM1B
 #define GPIO_PWM2A_OUT 15   //Set GPIO 15 as PWM2A
 #define GPIO_PWM2B_OUT 14   //Set GPIO 14 as PWM2B
-#define GPIO_CAP0_IN   23   //Set GPIO 23 as  CAP0
-#define GPIO_CAP1_IN   25   //Set GPIO 25 as  CAP1
-#define GPIO_CAP2_IN   26   //Set GPIO 26 as  CAP2
 #define GPIO_SYNC0_IN   2   //Set GPIO 02 as SYNC0
 #define GPIO_SYNC1_IN   4   //Set GPIO 04 as SYNC1
 #define GPIO_SYNC2_IN   5   //Set GPIO 05 as SYNC2
 #define GPIO_FAULT0_IN 32   //Set GPIO 32 as FAULT0
 #define GPIO_FAULT1_IN 33   //Set GPIO 33 as FAULT1
 #define GPIO_FAULT2_IN 34   //Set GPIO 34 as FAULT2
-
-typedef struct {
-    uint32_t capture_signal;
-    mcpwm_capture_signal_t sel_cap_signal;
-} capture;
-
-uint32_t *current_cap_value = NULL;
-uint32_t *previous_cap_value = NULL;
-
-xQueueHandle cap_queue;
-#if MCPWM_EN_CAPTURE
-static mcpwm_dev_t *MCPWM[2] = {&MCPWM0, &MCPWM1};
-#endif
 
 static void mcpwm_example_gpio_initialize(void)
 {
@@ -97,16 +71,10 @@ static void mcpwm_example_gpio_initialize(void)
         .mcpwm_sync2_in_num  = GPIO_SYNC2_IN,
         .mcpwm_fault0_in_num = GPIO_FAULT0_IN,
         .mcpwm_fault1_in_num = GPIO_FAULT1_IN,
-        .mcpwm_fault2_in_num = GPIO_FAULT2_IN,
-        .mcpwm_cap0_in_num   = GPIO_CAP0_IN,
-        .mcpwm_cap1_in_num   = GPIO_CAP1_IN,
-        .mcpwm_cap2_in_num   = GPIO_CAP2_IN
+        .mcpwm_fault2_in_num = GPIO_FAULT2_IN
     };
     mcpwm_set_pin(MCPWM_UNIT_0, &pin_config);
 #endif
-    gpio_pulldown_en(GPIO_CAP0_IN);    //Enable pull down on CAP0   signal
-    gpio_pulldown_en(GPIO_CAP1_IN);    //Enable pull down on CAP1   signal
-    gpio_pulldown_en(GPIO_CAP2_IN);    //Enable pull down on CAP2   signal
     gpio_pulldown_en(GPIO_SYNC0_IN);   //Enable pull down on SYNC0  signal
     gpio_pulldown_en(GPIO_SYNC1_IN);   //Enable pull down on SYNC1  signal
     gpio_pulldown_en(GPIO_SYNC2_IN);   //Enable pull down on SYNC2  signal
@@ -114,82 +82,6 @@ static void mcpwm_example_gpio_initialize(void)
     gpio_pulldown_en(GPIO_FAULT1_IN);  //Enable pull down on FAULT1 signal
     gpio_pulldown_en(GPIO_FAULT2_IN);  //Enable pull down on FAULT2 signal
 }
-
-/**
- * @brief Set gpio 12 as our test signal that generates high-low waveform continuously, connect this gpio to capture pin.
- */
-static void gpio_test_signal(void *arg)
-{
-    printf("intializing test signal...\n");
-    gpio_config_t gp;
-    gp.intr_type = GPIO_INTR_DISABLE;
-    gp.mode = GPIO_MODE_OUTPUT;
-    gp.pin_bit_mask = GPIO_SEL_12;
-    gpio_config(&gp);
-    while (1) {
-        //here the period of test signal is 20ms
-        gpio_set_level(GPIO_NUM_12, 1); //Set high
-        vTaskDelay(10);             //delay of 10ms
-        gpio_set_level(GPIO_NUM_12, 0); //Set low
-        vTaskDelay(10);         //delay of 10ms
-    }
-}
-
-/**
- * @brief When interrupt occurs, we receive the counter value and display the time between two rising edge
- */
-static void disp_captured_signal(void *arg)
-{
-    capture evt;
-    while (1) {
-        xQueueReceive(cap_queue, &evt, portMAX_DELAY);
-        if (evt.sel_cap_signal == MCPWM_SELECT_CAP0) {
-            printf("CAP0 : %d us\n", evt.capture_signal);
-        }
-        if (evt.sel_cap_signal == MCPWM_SELECT_CAP1) {
-            printf("CAP1 : %d us\n", evt.capture_signal);
-        }
-        if (evt.sel_cap_signal == MCPWM_SELECT_CAP2) {
-            printf("CAP2 : %d us\n", evt.capture_signal);
-        }
-    }
-}
-
-#if MCPWM_EN_CAPTURE
-/**
- * @brief this is ISR handler function, here we check for interrupt that triggers rising edge on CAP0 signal and according take action
- */
-static void IRAM_ATTR isr_handler(void* arg)
-{
-    uint32_t mcpwm_intr_status;
-    capture evt;
-    mcpwm_intr_status = MCPWM[MCPWM_UNIT_0]->int_st.val; //Read interrupt status
-    //calculate the interval in the ISR,
-    //so that the interval will be always correct even when cap_queue is not handled in time and overflow.
-    if (mcpwm_intr_status & CAP0_INT_EN) { //Check for interrupt on rising edge on CAP0 signal
-        current_cap_value[0] = mcpwm_capture_signal_get_value(MCPWM_UNIT_0, MCPWM_SELECT_CAP0); //get capture signal counter value
-        evt.capture_signal = (current_cap_value[0] - previous_cap_value[0]) / (rtc_clk_apb_freq_get() / 1000000);
-        previous_cap_value[0] = current_cap_value[0];
-        evt.sel_cap_signal = MCPWM_SELECT_CAP0;
-        xQueueSendFromISR(cap_queue, &evt, NULL);
-    }
-    if (mcpwm_intr_status & CAP1_INT_EN) { //Check for interrupt on rising edge on CAP0 signal
-        current_cap_value[1] = mcpwm_capture_signal_get_value(MCPWM_UNIT_0, MCPWM_SELECT_CAP1); //get capture signal counter value
-        evt.capture_signal = (current_cap_value[1] - previous_cap_value[1]) / (rtc_clk_apb_freq_get() / 1000000);
-        previous_cap_value[1] = current_cap_value[1];
-        evt.sel_cap_signal = MCPWM_SELECT_CAP1;
-        xQueueSendFromISR(cap_queue, &evt, NULL);
-    }
-    if (mcpwm_intr_status & CAP2_INT_EN) { //Check for interrupt on rising edge on CAP0 signal
-        current_cap_value[2] = mcpwm_capture_signal_get_value(MCPWM_UNIT_0, MCPWM_SELECT_CAP2); //get capture signal counter value
-        evt.capture_signal = (current_cap_value[2] - previous_cap_value[2]) / (rtc_clk_apb_freq_get() / 1000000);
-        previous_cap_value[2] = current_cap_value[2];
-        evt.sel_cap_signal = MCPWM_SELECT_CAP2;
-        xQueueSendFromISR(cap_queue, &evt, NULL);
-    }
-    MCPWM[MCPWM_UNIT_0]->int_clr.val = mcpwm_intr_status;
-}
-#endif
 
 /**
  * @brief Configure whole MCPWM module
@@ -266,29 +158,11 @@ static void mcpwm_example_config(void *arg)
     mcpwm_sync_enable(MCPWM_UNIT_0, MCPWM_TIMER_1, MCPWM_SELECT_SYNC0, 200);    //Load counter value with 20% of period counter of mcpwm timer 1 when sync 0 occurs
 #endif
 
-#if MCPWM_EN_CAPTURE
-    //7. Capture configuration
-    //comment if you don't want to use capture submodule, also u can comment the capture gpio signals
-    //configure CAP0, CAP1 and CAP2 signal to start capture counter on rising edge
-    //we generate a gpio_test_signal of 20ms on GPIO 12 and connect it to one of the capture signal, the disp_captured_function displays the time between rising edge
-    //In general practice you can connect Capture  to external signal, measure time between rising edge or falling edge and take action accordingly
-    mcpwm_capture_enable(MCPWM_UNIT_0, MCPWM_SELECT_CAP0, MCPWM_POS_EDGE, 0);  //capture signal on rising edge, prescale = 0 i.e. 800,000,000 counts is equal to one second
-    mcpwm_capture_enable(MCPWM_UNIT_0, MCPWM_SELECT_CAP2, MCPWM_POS_EDGE, 0);  //capture signal on rising edge, prescale = 0 i.e. 800,000,000 counts is equal to one second
-    mcpwm_capture_enable(MCPWM_UNIT_0, MCPWM_SELECT_CAP1, MCPWM_POS_EDGE, 0);  //capture signal on rising edge, prescale = 0 i.e. 800,000,000 counts is equal to one second
-    //enable interrupt, so each this a rising edge occurs interrupt is triggered
-    MCPWM[MCPWM_UNIT_0]->int_ena.val = CAP0_INT_EN | CAP1_INT_EN | CAP2_INT_EN;  //Enable interrupt on  CAP0, CAP1 and CAP2 signal
-    mcpwm_isr_register(MCPWM_UNIT_0, isr_handler, NULL, ESP_INTR_FLAG_IRAM, NULL);  //Set ISR Handler
-#endif
     vTaskDelete(NULL);
 }
 
 void app_main(void)
 {
     printf("Testing MCPWM...\n");
-    cap_queue = xQueueCreate(1, sizeof(capture)); //comment if you don't want to use capture module
-    current_cap_value = (uint32_t *)malloc(CAP_SIG_NUM*sizeof(uint32_t)); //comment if you don't want to use capture module
-    previous_cap_value = (uint32_t *)malloc(CAP_SIG_NUM*sizeof(uint32_t));  //comment if you don't want to use capture module
-    xTaskCreate(disp_captured_signal, "mcpwm_config", 4096, NULL, 5, NULL);  //comment if you don't want to use capture module
-    xTaskCreate(gpio_test_signal, "gpio_test_signal", 4096, NULL, 5, NULL); //comment if you don't want to use capture module
     xTaskCreate(mcpwm_example_config, "mcpwm_example_config", 4096, NULL, 5, NULL);
 }
