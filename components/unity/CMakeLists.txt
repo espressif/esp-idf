@@ -5,6 +5,8 @@ set(includes
     "include"
     "unity/src")
 
+set(requires "")
+
 if(CONFIG_UNITY_ENABLE_BACKTRACE_ON_FAIL)
     list(APPEND COMPONENT_PRIV_INCLUDEDIRS "include/priv")
 endif()
@@ -19,14 +21,14 @@ if(CONFIG_UNITY_ENABLE_FIXTURE)
 endif()
 
 if(${IDF_TARGET} STREQUAL "linux")
-    idf_component_get_property(spi_flash_dir spi_flash COMPONENT_DIR)
-    list(APPEND includes "${spi_flash_dir}/sim/stubs/esp_common")
+    list(APPEND requires "esp_common")
 else()
     list(APPEND srcs "unity_port_esp32.c")
 endif()
 
 idf_component_register(SRCS "${srcs}"
-                    INCLUDE_DIRS ${includes})
+                    INCLUDE_DIRS ${includes}
+                    REQUIRES ${requires})
 
 if(NOT ${IDF_TARGET} STREQUAL "linux")
     target_compile_definitions(${COMPONENT_LIB} PUBLIC
