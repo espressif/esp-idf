@@ -124,9 +124,6 @@
 #define GPIO_PAD_PULLDOWN(num) do{PIN_PULLUP_DIS(IOMUX_REG_GPIO##num);PIN_PULLDWN_EN(IOMUX_REG_GPIO##num);}while(0)
 #define GPIO_PAD_SET_DRV(num, drv) PIN_SET_DRV(IOMUX_REG_GPIO##num, drv)
 
-#define U0RXD_GPIO_NUM 20
-#define U0TXD_GPIO_NUM 21
-
 #define SPI_HD_GPIO_NUM  12
 #define SPI_WP_GPIO_NUM  13
 #define SPI_CS0_GPIO_NUM 14

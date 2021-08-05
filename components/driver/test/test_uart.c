@@ -276,7 +276,7 @@ TEST_CASE("uart read write test", "[uart]")
     TEST_ESP_OK(uart_set_loop_back(uart_num, true));
     TEST_ESP_OK(uart_set_pin(uart_num, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART1_CTS_PIN));
     //Connect the RTS out_signal to the CTS pin (which is mapped to CTS in_signal)
-    esp_rom_gpio_connect_out_signal(UART1_CTS_PIN, uart_periph_signal[uart_num].rts_sig, 0, 0);
+    esp_rom_gpio_connect_out_signal(UART1_CTS_PIN, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RTS_PIN_IDX), 0, 0);
 
     TEST_ESP_OK(uart_wait_tx_done(uart_num, portMAX_DELAY));
     vTaskDelay(1 / portTICK_PERIOD_MS); // make sure last byte has flushed from TX FIFO
@@ -345,7 +345,7 @@ TEST_CASE("uart tx with ringbuffer test", "[uart]")
     TEST_ESP_OK(uart_set_loop_back(uart_num, true));
     TEST_ESP_OK(uart_set_pin(uart_num, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART1_CTS_PIN));
     //Connect the RTS out_signal to the CTS pin (which is mapped to CTS in_signal)
-    esp_rom_gpio_connect_out_signal(UART1_CTS_PIN, uart_periph_signal[uart_num].rts_sig, 0, 0);
+    esp_rom_gpio_connect_out_signal(UART1_CTS_PIN, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RTS_PIN_IDX), 0, 0);
 
     for (int i = 0; i < 1024; i++) {
         wr_data[i] = i;

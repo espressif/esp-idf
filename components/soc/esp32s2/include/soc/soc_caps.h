@@ -238,7 +238,7 @@
 #define SOC_TWAI_SUPPORTS_RX_STATUS     1
 
 /*-------------------------- UART CAPS ---------------------------------------*/
-// ESP32-S2 have 2 UART.
+// ESP32-S2 has 2 UART.
 #define SOC_UART_NUM                (2)
 #define SOC_UART_SUPPORT_REF_TICK   (1)         /*!< Support REF_TICK as the clock source */
 #define SOC_UART_FIFO_LEN           (128)       /*!< The UART hardware FIFO length */

@@ -234,9 +234,8 @@
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (32)
 
 /*-------------------------- UART CAPS ---------------------------------------*/
-// ESP32-C3 has 2 UARTs
+// ESP32-H2 has 2 UARTs
 #define SOC_UART_NUM                (2)
-
 #define SOC_UART_FIFO_LEN           (128)      /*!< The UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX        (5000000)  /*!< Max bit rate supported by UART */
 
