@@ -314,8 +314,8 @@ static void test_scheduler_suspend2(int cpu)
 
     printf("count_tick[cpu0] = %d, count_tick[cpu1] = %d\n", count_tick[0], count_tick[1]);
 
-    TEST_ASSERT_INT_WITHIN(1, waiting_ms * 2, count_tick[0]);
-    TEST_ASSERT_INT_WITHIN(1, waiting_ms * 2, count_tick[1]);
+    TEST_ASSERT_INT_WITHIN(portTICK_PERIOD_MS * 2, waiting_ms * 2, count_tick[0]);
+    TEST_ASSERT_INT_WITHIN(portTICK_PERIOD_MS * 2, waiting_ms * 2, count_tick[1]);
     printf("\n");
 }
 
