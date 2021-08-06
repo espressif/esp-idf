@@ -390,7 +390,7 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
                 } else if (!is_recv_complete) {
                     return ESP_ERR_HTTPS_OTA_IN_PROGRESS;
                 }
-                ESP_LOGI(TAG, "Connection closed");
+                ESP_LOGD(TAG, "Connection closed");
             } else if (data_read > 0) {
                 return _ota_write(handle, (const void *)handle->ota_upgrade_buf, data_read);
             } else {
@@ -425,6 +425,7 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
                 ESP_LOGE(TAG, "Failed to establish HTTP connection");
                 return ESP_FAIL;
             }
+            ESP_LOGD(TAG, "Connection start");
             return ESP_ERR_HTTPS_OTA_IN_PROGRESS;
         }
     }
