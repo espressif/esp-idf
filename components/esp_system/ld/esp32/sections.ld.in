@@ -349,7 +349,7 @@ SECTIONS
       * safe access to up to 16 bytes after the last real instruction, add
       * dummy bytes to ensure this
       */
-    . += 16;
+    . += _esp_flash_mmap_prefetch_pad_size;
 
     _text_end = ABSOLUTE(.);
     _etext = .;
