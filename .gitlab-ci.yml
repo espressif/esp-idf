@@ -58,7 +58,7 @@ variables:
   # target test repo parameters
   TEST_ENV_CONFIG_REPO: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/qa/ci-test-runner-configs.git"
   CI_AUTO_TEST_SCRIPT_REPO_URL: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/qa/auto_test_script.git"
-  CI_AUTO_TEST_SCRIPT_REPO_BRANCH: "ci/v3.1"
+  CI_AUTO_TEST_SCRIPT_REPO_BRANCH: "ci/v4.1"
 
   # Versioned esp-idf-doc env image to use for all document building jobs
   ESP_IDF_DOC_ENV_IMAGE: "$CI_DOCKER_REGISTRY/esp-idf-doc-env:v7"
