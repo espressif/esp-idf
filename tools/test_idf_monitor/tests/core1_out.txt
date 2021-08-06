@@ -46,19 +46,17 @@ Crashed task handle: 0x3ffb5e80, name: '', GDB name: 'process 1073438336'
 ================== CURRENT THREAD REGISTERS ===================
 exccause       0x1d (StoreProhibitedCause)
 excvaddr       0x1
-epc1           0x0
+epc1           0x400e38bf
 epc2           0x0
 epc3           0x0
 epc4           0x0
 epc5           0x0
 epc6           0x0
-epc7           0x0
 eps2           0x0
 eps3           0x0
 eps4           0x0
 eps5           0x0
 eps6           0x0
-eps7           0x400e38bf
 pc             0x400e37f7	0x400e37f7
 lbeg           0x0	0
 lend           0x0	0
