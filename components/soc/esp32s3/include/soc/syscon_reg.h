@@ -169,9 +169,9 @@ extern "C" {
 #define SYSTEM_WIFI_CLK_EN_REG SYSCON_WIFI_CLK_EN_REG
 /* SYSTEM_WIFI_CLK_EN : R/W ;bitpos:[31:0] ;default: 32'hfffce030 ; */
 /*description: */
-#define SYSTEM_WIFI_CLK_EN 0xFFFFFFFF
+#define SYSTEM_WIFI_CLK_EN 0x00FB9FCF
 #define SYSTEM_WIFI_CLK_EN_M ((SYSTEM_WIFI_CLK_EN_V) << (SYSTEM_WIFI_CLK_EN_S))
-#define SYSTEM_WIFI_CLK_EN_V 0xFFFFFFFF
+#define SYSTEM_WIFI_CLK_EN_V 0x00FB9FCF
 #define SYSTEM_WIFI_CLK_EN_S 0
 
 /* Mask for all Wifi clock bits, 6 */

@@ -39,6 +39,8 @@
 #define SOC_ADC_SUPPORT_RTC_CTRL        (1)
 #define SOC_ADC_ARBITER_SUPPORTED       (1)
 
+/*-------------------------- APB BACKUP DMA CAPS -------------------------------*/
+#define SOC_APB_BACKUP_DMA              (1)
 
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 #include "brownout_caps.h"
