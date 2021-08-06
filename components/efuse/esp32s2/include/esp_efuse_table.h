@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 
-// md5_digest_table 2590bb432c70411ba365bce92ac37032
+// md5_digest_table 614c862c2cfa8ccda3a79183ce767255
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -108,9 +108,10 @@ extern const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_D5[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_D6[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_D7[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION[];
-extern const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[];
+extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_VERSION[];
 extern const esp_efuse_desc_t* ESP_EFUSE_BLOCK1_VERSION[];
-extern const esp_efuse_desc_t* ESP_EFUSE_SYS_DATA_PART0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_PSRAM_VERSION[];
+extern const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[];
 extern const esp_efuse_desc_t* ESP_EFUSE_OPTIONAL_UNIQUE_ID[];
 extern const esp_efuse_desc_t* ESP_EFUSE_BLOCK2_VERSION[];
 extern const esp_efuse_desc_t* ESP_EFUSE_USER_DATA[];
