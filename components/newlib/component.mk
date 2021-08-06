@@ -15,10 +15,12 @@ endif
 COMPONENT_PRIV_INCLUDEDIRS := priv_include
 COMPONENT_SRCDIRS := . port
 
-# Forces the linker to include heap, syscalls, and pthread from this component,
+# Forces the linker to include heap, syscalls, pthread, and assert from this component,
 # instead of the implementations provided by newlib.
 COMPONENT_ADD_LDFLAGS += -u newlib_include_heap_impl
 COMPONENT_ADD_LDFLAGS += -u newlib_include_syscalls_impl
+COMPONENT_ADD_LDFLAGS += -u newlib_include_pthread_impl
+COMPONENT_ADD_LDFLAGS += -u newlib_include_assert_impl
 
 COMPONENT_ADD_LDFRAGMENTS += newlib.lf system_libs.lf
 

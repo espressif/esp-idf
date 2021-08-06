@@ -267,6 +267,11 @@ def test_panic_abort(env, _extra_data):
     test.abort_inner(env, 'panic')
 
 
+@panic_test(target=['ESP32'])
+def test_panic_abort_cache_disabled(env, _extra_data):
+    test.abort_cached_disabled_inner(env, 'panic')
+
+
 @panic_test()
 def test_coredump_abort_uart_elf_crc(env, _extra_data):
     test.abort_inner(env, 'coredump_uart_elf_crc')
@@ -290,6 +295,18 @@ def test_coredump_abort_flash_bin_crc(env, _extra_data):
 @panic_test()
 def test_gdbstub_abort(env, _extra_data):
     test.abort_inner(env, 'gdbstub')
+
+
+# test_assert
+
+@panic_test(target=['ESP32', 'ESP32S2'])
+def test_panic_assert(env, _extra_data):
+    test.assert_inner(env, 'panic')
+
+
+@panic_test(target=['ESP32'])
+def test_panic_assert_cache_disabled(env, _extra_data):
+    test.assert_cached_disabled_inner(env, 'panic')
 
 
 # test_ub
