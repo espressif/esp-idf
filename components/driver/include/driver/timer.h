@@ -130,8 +130,9 @@ esp_err_t timer_set_counter_mode(timer_group_t group_num, timer_idx_t timer_num,
 esp_err_t timer_set_auto_reload(timer_group_t group_num, timer_idx_t timer_num, timer_autoreload_t reload);
 
 /**
- * @brief Set hardware timer source clock divider. Timer groups clock are divider from APB clock.
- *
+ * @brief Set hardware divider of the source clock to the timer group.
+ * By default, the source clock is APB clock running at 80 MHz.
+ * For more information, please check Chapter Reset and Clock in Chip Technical Reference Manual.
  * @param group_num Timer group number, 0 for TIMERG0 or 1 for TIMERG1
  * @param timer_num Timer index, 0 for hw_timer[0] & 1 for hw_timer[1]
  * @param divider Timer clock divider value. The divider's range is from from 2 to 65536.
