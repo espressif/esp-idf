@@ -24,14 +24,8 @@
 #include "ble_mesh_console_lib.h"
 #include "ble_mesh_adapter.h"
 #include "transaction.h"
-
-#include "provisioner_prov.h"
-
-
 #include "esp_ble_mesh_config_model_api.h"
-
 #include "ble_mesh_console_decl.h"
-
 
 typedef struct {
     struct arg_str *static_val;
@@ -146,6 +140,17 @@ typedef struct {
     struct arg_end *end;
 } ble_mesh_provisioner_bind_model_t;
 ble_mesh_provisioner_bind_model_t provisioner_local_bind;
+
+typedef struct {
+    struct arg_str *action_type;
+    struct arg_int *enable;
+    struct arg_int *op;
+    struct arg_int *hb_src;
+    struct arg_int *hb_dst;
+    struct arg_int *type;
+    struct arg_end *end;
+} ble_mesh_provisioner_heartbeat_t;
+static ble_mesh_provisioner_heartbeat_t heartbeat;
 
 void ble_mesh_register_cmd(void);
 // Register callback function
@@ -339,6 +344,18 @@ void ble_mesh_prov_cb(esp_ble_mesh_prov_cb_event_t event, esp_ble_mesh_prov_cb_p
         break;
     case ESP_BLE_MESH_PROVISIONER_ADD_LOCAL_NET_KEY_COMP_EVT:
         ble_mesh_callback_check_err_code(param->provisioner_add_net_key_comp.err_code, "Provisioner:NetKeyAdd");
+        break;
+    case ESP_BLE_MESH_PROVISIONER_ENABLE_HEARTBEAT_RECV_COMP_EVT:
+        ble_mesh_callback_check_err_code(param->provisioner_enable_heartbeat_recv_comp.err_code, "Provisioner:EnHbRecv");
+        break;
+    case ESP_BLE_MESH_PROVISIONER_SET_HEARTBEAT_FILTER_TYPE_COMP_EVT:
+        ble_mesh_callback_check_err_code(param->provisioner_set_heartbeat_filter_type_comp.err_code, "Provisioner:SetHbFilterType");
+        break;
+    case ESP_BLE_MESH_PROVISIONER_SET_HEARTBEAT_FILTER_INFO_COMP_EVT:
+        ble_mesh_callback_check_err_code(param->provisioner_set_heartbeat_filter_info_comp.err_code, "Provisioner:SetHbFilterInfo");
+        break;
+    case ESP_BLE_MESH_PROVISIONER_RECV_HEARTBEAT_MESSAGE_EVT:
+        ESP_LOGI(TAG, "Provisioner:HbRecv,OK,%d,%d", param->provisioner_recv_heartbeat.hb_src, param->provisioner_recv_heartbeat.hb_dst);
         break;
 #endif
     default:
@@ -593,6 +610,46 @@ int ble_mesh_init(int argc, char **argv)
     return err;
 }
 
+int ble_mesh_provisioner_heartbeat(int argc, char** argv)
+{
+    esp_err_t result = ESP_OK;
+    bool enable = 1;
+    uint8_t type = 0;
+    esp_ble_mesh_heartbeat_filter_info_t info;
+    uint8_t op = 0;
+
+    ESP_LOGD(TAG, "enter %s\n", __func__);
+
+    int nerrors = arg_parse(argc, argv, (void **) &heartbeat);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, heartbeat.end, argv[0]);
+        return 1;
+    }
+
+    arg_int_to_value(heartbeat.enable, enable, "enable/disable receiving heartbeat");
+    arg_int_to_value(heartbeat.type, type, "heartbeat filter type");
+    arg_int_to_value(heartbeat.hb_dst, info.hb_dst, "destination address");
+    arg_int_to_value(heartbeat.hb_src, info.hb_src, "source address");
+    arg_int_to_value(heartbeat.op, op, "op");
+
+    if (strcmp(heartbeat.action_type->sval[0], "recv") == 0){
+        result = esp_ble_mesh_provisioner_recv_heartbeat(enable);
+    }else if(strcmp(heartbeat.action_type->sval[0], "type") == 0){
+        result = esp_ble_mesh_provisioner_set_heartbeat_filter_type(type);
+    }else if(strcmp(heartbeat.action_type->sval[0], "info")== 0){
+        result = esp_ble_mesh_provisioner_set_heartbeat_filter_info(op, &info);
+    }
+
+    if(result == ESP_OK){
+        ESP_LOGI(TAG, "provisioner:OK\n");
+    }else{
+        ESP_LOGE(TAG, "provisioner:ERROR\n");
+    }
+
+    ESP_LOGD(TAG, "exit %s\n", __func__);
+    return result;
+}
+
 int ble_mesh_node_enable_bearer(int argc, char **argv)
 {
     esp_err_t  err = 0;
@@ -730,13 +787,13 @@ int ble_mesh_node_enter_network_auto(int argc, char **argv)
 
     ESP_LOGD(TAG, "enter %s\n", __func__);
 
+    err = get_value_string((char *)node_network_info.net_key->sval[0], (char *)info.net_key);
+    err = get_value_string((char *)node_network_info.dev_key->sval[0], (char *)info.dev_key);
+    err = get_value_string((char *)node_network_info.app_key->sval[0], (char *)info.app_key);
     arg_int_to_value(node_network_info.net_idx, info.net_idx, "network key index");
     arg_int_to_value(node_network_info.unicast_addr, info.unicast_addr, "unicast address");
     arg_int_to_value(node_network_info.app_idx, info.app_idx, "appkey index");
     arg_int_to_value(node_network_info.group_addr, info.group_addr, "group address");
-    err = get_value_string((char *)node_network_info.net_key->sval[0], (char *)info.net_key);
-    err = get_value_string((char *)node_network_info.dev_key->sval[0], (char *)info.dev_key);
-    err = get_value_string((char *)node_network_info.app_key->sval[0], (char *)info.app_key);
 
     err = bt_mesh_device_auto_enter_network(&info);
     if (err == ESP_OK) {
@@ -809,7 +866,7 @@ int ble_mesh_provisioner_add_key(int argc, char **argv)
     uint8_t key[16] = {0};
     esp_ble_mesh_prov_data_info_t info = {
         .net_idx = 1,
-        .flag = NET_IDX_FLAG,
+        .flag = PROV_DATA_NET_IDX_FLAG,
     };
     ESP_LOGD(TAG, " enter %s\n", __func__);
 
@@ -1145,6 +1202,23 @@ void ble_mesh_register_cmd(void)
         .argtable = &node_network_info,
     };
     ESP_ERROR_CHECK(esp_console_cmd_register(&node_network_info_cmd));
+
+    heartbeat.action_type = arg_str0("z", NULL, "<action type>", "action type");
+    heartbeat.op = arg_int0("o", NULL, "<heartbeat filter>", "add or remove a heartbeat filter entry");
+    heartbeat.hb_src = arg_int0("s", NULL, "<source address>", "Heartbeat source address");
+    heartbeat.hb_dst = arg_int0("d", NULL, "<destination address>", "Heartbeat destination address");
+    heartbeat.type = arg_int0("t", NULL, "<heartbeat filter>", "set the heartbeat filter type");
+    heartbeat.enable = arg_int0("e", NULL, "<enable/disable>", "enable or disable receiving heartbeat messages");
+    heartbeat.end = arg_end(1);
+
+    const esp_console_cmd_t provisioner_heartbeat_cmd = {
+        .command = "bmphb",
+        .help = "ble mesh provisioner: support recv heartbeat",
+        .hint = NULL,
+        .func = &ble_mesh_provisioner_heartbeat,
+        .argtable = &heartbeat,
+    };
+    ESP_ERROR_CHECK(esp_console_cmd_register(&provisioner_heartbeat_cmd));
 
     init_transactions();
 }
