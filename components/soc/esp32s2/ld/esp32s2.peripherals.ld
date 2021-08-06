@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 PROVIDE ( UART0 = 0x3f400000 );
 PROVIDE ( SPIMEM1 = 0x3f402000 );
 PROVIDE ( SPIMEM0 = 0x3f403000 );
