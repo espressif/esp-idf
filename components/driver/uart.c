@@ -870,10 +870,11 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                 }
             }
         }
-        else if ((uart_intr_status & UART_INTR_RXFIFO_TOUT)
+        else if (((uart_intr_status & UART_INTR_RXFIFO_TOUT)
                 || (uart_intr_status & UART_INTR_RXFIFO_FULL)
                 || (uart_intr_status & UART_INTR_CMD_CHAR_DET)
-                ) {
+                ) || ( (uart_intr_status & UART_INTR_BRK_DET) 
+                      && (uart_ll_get_rxfifo_len(uart_context[uart_num].hal.dev) > 0) )) {
             if(pat_flg == 1) {
                 uart_intr_status |= UART_INTR_CMD_CHAR_DET;
                 pat_flg = 0;
