@@ -53,20 +53,6 @@ static inline esp_err_t crypto_shared_gdma_new_channel(gdma_channel_alloc_config
     return ret;
 }
 
-
-#if SOC_GDMA_SUPPORT_PSRAM
-/* Initialize external memory specific DMA configs */
-static void esp_crypto_shared_dma_init_extmem(void)
-{
-    gdma_transfer_ability_t transfer_ability = {
-        .sram_trans_align = 4,
-        .psram_trans_align = 16,
-    };
-    gdma_set_transfer_ability(tx_channel, &transfer_ability);
-    gdma_set_transfer_ability(rx_channel, &transfer_ability);
-}
-#endif //SOC_GDMA_SUPPORT_PSRAM
-
 /* Initialize GDMA module and channels */
 static esp_err_t crypto_shared_gdma_init(void)
 {
@@ -80,6 +66,12 @@ static esp_err_t crypto_shared_gdma_init(void)
         .direction = GDMA_CHANNEL_DIRECTION_RX,
     };
 
+    gdma_transfer_ability_t transfer_ability = {
+        .sram_trans_align = 1,
+        .psram_trans_align = 16,
+    };
+
+
     ret = crypto_shared_gdma_new_channel(&channel_config_tx, &tx_channel);
     if (ret != ESP_OK) {
         goto err;
@@ -91,9 +83,9 @@ static esp_err_t crypto_shared_gdma_init(void)
         goto err;
     }
 
-#if SOC_GDMA_SUPPORT_PSRAM
-    esp_crypto_shared_dma_init_extmem();
-#endif //SOC_GDMA_SUPPORT_PSRAM
+
+    gdma_set_transfer_ability(tx_channel, &transfer_ability);
+    gdma_set_transfer_ability(rx_channel, &transfer_ability);
 
     gdma_connect(rx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_AES, 0));
     gdma_connect(tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_AES, 0));
