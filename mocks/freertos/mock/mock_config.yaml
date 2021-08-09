@@ -1,0 +1,18 @@
+        :cmock:
+          :includes_h_pre_orig_header:
+            - FreeRTOS.h
+          :plugins:
+            - expect
+            - expect_any_args
+            - return_thru_ptr
+            - array
+            - ignore
+            - ignore_arg
+            - callback
+          :strippables:
+            - '(?:__attribute__\s*\(+.*?\)+)'
+            - '(?:vQueueAddToRegistry\s*\(+.*?\)+)'
+            - '(?:vQueueUnregisterQueue\s*\(+.*?\)+)'
+            - '(?:pcQueueGetName\s*\(+.*?\)+)'
+            - '(?:vTaskSetThreadLocalStoragePointerAndDelCallback\s*\(+.*?\)+)'
+            - PRIVILEGED_FUNCTION
