@@ -292,3 +292,6 @@
  */
 #define SOC_SDMMC_USE_IOMUX  1
 #define SOC_SDMMC_NUM_SLOTS  2
+
+/*------------------------------ BLE --------------------------------------------*/
+#define SOC_BLE_DONT_UPDATE_OWN_RPA  (1)
