@@ -150,6 +150,7 @@ static inline void twai_handle_rx_buffer_frames(BaseType_t *task_woken, int *ale
             //Valid frame copied from RX buffer
             if (xQueueSendFromISR(p_twai_obj->rx_queue, &frame, task_woken) == pdTRUE) {
                 p_twai_obj->rx_msg_count++;
+                twai_alert_handler(TWAI_ALERT_RX_DATA, alert_req);
             } else {
                 p_twai_obj->rx_missed_count++;
                 twai_alert_handler(TWAI_ALERT_RX_QUEUE_FULL, alert_req);
