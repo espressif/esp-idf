@@ -16,7 +16,6 @@
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/ecdh.h>
 #include <mbedtls/error.h>
-#include <mbedtls/ssl_internal.h>
 #include <mbedtls/constant_time.h>
 #include <mbedtls/library/ssl_misc.h>
 
@@ -215,14 +214,14 @@ static esp_err_t handle_session_command0(session_t *cur_session,
         goto exit_cmd0;
     }
 
-    mbed_err = mbedtls_ecp_group_load(&ctx_server->grp, MBEDTLS_ECP_DP_CURVE25519);
+    mbed_err = mbedtls_ecp_group_load(&ctx_server->MBEDTLS_PRIVATE(grp), MBEDTLS_ECP_DP_CURVE25519);
     if (mbed_err != 0) {
         ESP_LOGE(TAG, "Failed at mbedtls_ecp_group_load with error code : -0x%x", -mbed_err);
         ret = ESP_FAIL;
         goto exit_cmd0;
     }
 
-    mbed_err = mbedtls_ecdh_gen_public(&ctx_server->grp, &ctx_server->d, &ctx_server->Q,
+    mbed_err = mbedtls_ecdh_gen_public(&ctx_server->MBEDTLS_PRIVATE(grp), &ctx_server->MBEDTLS_PRIVATE(d), &ctx_server->MBEDTLS_PRIVATE(Q),
                                        mbedtls_ctr_drbg_random, ctr_drbg);
     if (mbed_err != 0) {
         ESP_LOGE(TAG, "Failed at mbedtls_ecdh_gen_public with error code : -0x%x", -mbed_err);
@@ -230,7 +229,7 @@ static esp_err_t handle_session_command0(session_t *cur_session,
         goto exit_cmd0;
     }
 
-    mbed_err = mbedtls_mpi_write_binary(&ctx_server->Q.X,
+    mbed_err = mbedtls_mpi_write_binary(&ctx_server->MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(X),
                                         cur_session->device_pubkey,
                                         PUBLIC_KEY_LEN);
     if (mbed_err != 0) {
@@ -247,7 +246,7 @@ static esp_err_t handle_session_command0(session_t *cur_session,
     hexdump("Device pubkey", dev_pubkey, PUBLIC_KEY_LEN);
     hexdump("Client pubkey", cli_pubkey, PUBLIC_KEY_LEN);
 
-    mbed_err = mbedtls_mpi_lset(&ctx_server->Qp.Z, 1);
+    mbed_err = mbedtls_mpi_lset(&ctx_server->MBEDTLS_PRIVATE(Qp).MBEDTLS_PRIVATE(Z), 1);
     if (mbed_err != 0) {
         ESP_LOGE(TAG, "Failed at mbedtls_mpi_lset with error code : -0x%x", -mbed_err);
         ret = ESP_FAIL;
@@ -255,7 +254,7 @@ static esp_err_t handle_session_command0(session_t *cur_session,
     }
 
     flip_endian(cur_session->client_pubkey, PUBLIC_KEY_LEN);
-    mbed_err = mbedtls_mpi_read_binary(&ctx_server->Qp.X, cli_pubkey, PUBLIC_KEY_LEN);
+    mbed_err = mbedtls_mpi_read_binary(&ctx_server->MBEDTLS_PRIVATE(Qp).MBEDTLS_PRIVATE(X), cli_pubkey, PUBLIC_KEY_LEN);
     flip_endian(cur_session->client_pubkey, PUBLIC_KEY_LEN);
     if (mbed_err != 0) {
         ESP_LOGE(TAG, "Failed at mbedtls_mpi_read_binary with error code : -0x%x", -mbed_err);
@@ -263,15 +262,15 @@ static esp_err_t handle_session_command0(session_t *cur_session,
         goto exit_cmd0;
     }
 
-    mbed_err = mbedtls_ecdh_compute_shared(&ctx_server->grp, &ctx_server->z, &ctx_server->Qp,
-                                           &ctx_server->d, mbedtls_ctr_drbg_random, ctr_drbg);
+    mbed_err = mbedtls_ecdh_compute_shared(&ctx_server->MBEDTLS_PRIVATE(grp), &ctx_server->MBEDTLS_PRIVATE(z), &ctx_server->MBEDTLS_PRIVATE(Qp),
+                                           &ctx_server->MBEDTLS_PRIVATE(d), mbedtls_ctr_drbg_random, ctr_drbg);
     if (mbed_err != 0) {
         ESP_LOGE(TAG, "Failed at mbedtls_ecdh_compute_shared with error code : -0x%x", -mbed_err);
         ret = ESP_FAIL;
         goto exit_cmd0;
     }
 
-    mbed_err = mbedtls_mpi_write_binary(&ctx_server->z, cur_session->sym_key, PUBLIC_KEY_LEN);
+    mbed_err = mbedtls_mpi_write_binary(&ctx_server->MBEDTLS_PRIVATE(z), cur_session->sym_key, PUBLIC_KEY_LEN);
     if (mbed_err != 0) {
         ESP_LOGE(TAG, "Failed at mbedtls_mpi_write_binary with error code : -0x%x", -mbed_err);
         ret = ESP_FAIL;
@@ -283,7 +282,7 @@ static esp_err_t handle_session_command0(session_t *cur_session,
         ESP_LOGD(TAG, "Adding proof of possession");
         uint8_t sha_out[PUBLIC_KEY_LEN];
 
-        mbed_err = mbedtls_sha256_ret((const unsigned char *) pop->data, pop->len, sha_out, 0);
+        mbed_err = mbedtls_sha256((const unsigned char *) pop->data, pop->len, sha_out, 0);
         if (mbed_err != 0) {
             ESP_LOGE(TAG, "Failed at mbedtls_sha256_ret with error code : -0x%x", -mbed_err);
             ret = ESP_FAIL;

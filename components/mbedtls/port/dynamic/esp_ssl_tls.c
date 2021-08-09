@@ -3,7 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 #include <sys/param.h>
 #include "esp_mbedtls_dynamic_impl.h"
 
@@ -27,7 +26,7 @@ static const char *TAG = "SSL TLS";
 
 static int tx_done(mbedtls_ssl_context *ssl)
 {
-    if (!ssl->out_left)
+    if (!ssl->MBEDTLS_PRIVATE(out_left))
         return 1;
 
     return 0;
@@ -35,7 +34,7 @@ static int tx_done(mbedtls_ssl_context *ssl)
 
 static int rx_done(mbedtls_ssl_context *ssl)
 {
-    if (!ssl->in_msglen) {
+    if (!ssl->MBEDTLS_PRIVATE(in_msglen)) {
         return 1;
     }
 
@@ -178,10 +177,12 @@ int __wrap_mbedtls_ssl_setup(mbedtls_ssl_context *ssl, const mbedtls_ssl_config 
     ssl->conf = conf;
     CHECK_OK(ssl_handshake_init(ssl));
 
-    ssl->out_buf = NULL;
+    mbedtls_free(ssl->MBEDTLS_PRIVATE(out_buf));
+    ssl->MBEDTLS_PRIVATE(out_buf) = NULL;
     CHECK_OK(esp_mbedtls_setup_tx_buffer(ssl));
 
-    ssl->in_buf = NULL;
+    mbedtls_free(ssl->MBEDTLS_PRIVATE(in_buf));
+    ssl->MBEDTLS_PRIVATE(in_buf) = NULL;
     esp_mbedtls_setup_rx_buffer(ssl);
 
     return 0;
@@ -228,14 +229,14 @@ int __wrap_mbedtls_ssl_read(mbedtls_ssl_context *ssl, unsigned char *buf, size_t
 
 void __wrap_mbedtls_ssl_free(mbedtls_ssl_context *ssl)
 {
-    if (ssl->out_buf) {
-        esp_mbedtls_free_buf(ssl->out_buf);
-        ssl->out_buf = NULL;
+    if (ssl->MBEDTLS_PRIVATE(out_buf)) {
+        esp_mbedtls_free_buf(ssl->MBEDTLS_PRIVATE(out_buf));
+        ssl->MBEDTLS_PRIVATE(out_buf) = NULL;
     }
 
-    if (ssl->in_buf) {
-        esp_mbedtls_free_buf(ssl->in_buf);
-        ssl->in_buf = NULL;
+    if (ssl->MBEDTLS_PRIVATE(in_buf)) {
+        esp_mbedtls_free_buf(ssl->MBEDTLS_PRIVATE(in_buf));
+        ssl->MBEDTLS_PRIVATE(in_buf) = NULL;
     }
 
     __real_mbedtls_ssl_free(ssl);

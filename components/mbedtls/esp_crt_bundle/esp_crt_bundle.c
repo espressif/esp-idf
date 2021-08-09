@@ -53,28 +53,28 @@ static int esp_crt_check_signature(mbedtls_x509_crt *child, const uint8_t *pub_k
 
     mbedtls_x509_crt_init(&parent);
 
-    if ( (ret = mbedtls_pk_parse_public_key(&parent.pk, pub_key_buf, pub_key_len) ) != 0) {
+    if ( (ret = mbedtls_pk_parse_public_key(&parent.MBEDTLS_PRIVATE(pk), pub_key_buf, pub_key_len) ) != 0) {
         ESP_LOGE(TAG, "PK parse failed with error %X", ret);
         goto cleanup;
     }
 
 
     // Fast check to avoid expensive computations when not necessary
-    if (!mbedtls_pk_can_do(&parent.pk, child->sig_pk)) {
+    if (!mbedtls_pk_can_do(&parent.MBEDTLS_PRIVATE(pk), child->MBEDTLS_PRIVATE(sig_pk))) {
         ESP_LOGE(TAG, "Simple compare failed");
         ret = -1;
         goto cleanup;
     }
 
-    md_info = mbedtls_md_info_from_type(child->sig_md);
-    if ( (ret = mbedtls_md( md_info, child->tbs.p, child->tbs.len, hash )) != 0 ) {
+    md_info = mbedtls_md_info_from_type(child->MBEDTLS_PRIVATE(sig_md));
+    if ( (ret = mbedtls_md( md_info, child->MBEDTLS_PRIVATE(tbs).MBEDTLS_PRIVATE(p), child->MBEDTLS_PRIVATE(tbs).MBEDTLS_PRIVATE(len), hash )) != 0 ) {
         ESP_LOGE(TAG, "Internal mbedTLS error %X", ret);
         goto cleanup;
     }
 
-    if ( (ret = mbedtls_pk_verify_ext( child->sig_pk, child->sig_opts, &parent.pk,
-                                       child->sig_md, hash, mbedtls_md_get_size( md_info ),
-                                       child->sig.p, child->sig.len )) != 0 ) {
+    if ( (ret = mbedtls_pk_verify_ext( child->MBEDTLS_PRIVATE(sig_pk), child->MBEDTLS_PRIVATE(sig_opts), &parent.MBEDTLS_PRIVATE(pk),
+                                       child->MBEDTLS_PRIVATE(sig_md), hash, mbedtls_md_get_size( md_info ),
+                                       child->MBEDTLS_PRIVATE(sig).MBEDTLS_PRIVATE(p), child->MBEDTLS_PRIVATE(sig).MBEDTLS_PRIVATE(len) )) != 0 ) {
 
         ESP_LOGE(TAG, "PK verify failed with error %X", ret);
         goto cleanup;
@@ -125,7 +125,7 @@ int esp_crt_verify_callback(void *buf, mbedtls_x509_crt *crt, int depth, uint32_
         name_len = s_crt_bundle.crts[middle][0] << 8 | s_crt_bundle.crts[middle][1];
         crt_name = s_crt_bundle.crts[middle] + CRT_HEADER_OFFSET;
 
-        int cmp_res = memcmp(child->issuer_raw.p, crt_name, name_len );
+        int cmp_res = memcmp(child->MBEDTLS_PRIVATE(issuer_raw).MBEDTLS_PRIVATE(p), crt_name, name_len );
         if (cmp_res == 0) {
             crt_found = true;
             break;

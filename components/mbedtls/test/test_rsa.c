@@ -1,9 +1,12 @@
 /* mbedTLS RSA functionality tests
-
-   Focus on testing functionality where we use ESP32 hardware
-   accelerated crypto features.
-
-*/
+ *
+ * Focus on testing functionality where we use ESP32 hardware
+ * accelerated crypto features
+ *
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <string.h>
 #include <stdbool.h>
 #include "esp_system.h"
@@ -358,7 +361,7 @@ static void test_cert(const char *cert, const uint8_t *expected_output, size_t o
                                                             strlen(cert)+1),
                                     "parse cert");
 
-    rsa = mbedtls_pk_rsa(crt.pk);
+    rsa = mbedtls_pk_rsa(crt.MBEDTLS_PRIVATE(pk));
     TEST_ASSERT_NOT_NULL(rsa);
 
     res = mbedtls_rsa_check_pubkey(rsa);
@@ -461,20 +464,20 @@ static void rsa_key_operations(int keysize, bool check_performance, bool use_bli
     memset(orig_buf, 0xAA, sizeof(orig_buf));
     orig_buf[0] = 0; // Ensure that orig_buf is smaller than rsa.N
     if (generate_new_rsa) {
-        mbedtls_rsa_init(&rsa, MBEDTLS_RSA_PRIVATE, 0);
+        mbedtls_rsa_init(&rsa);
         TEST_ASSERT_EQUAL(0, mbedtls_rsa_gen_key(&rsa, myrand, NULL, keysize, 65537));
     } else {
         mbedtls_pk_init(&clientkey);
 
         switch(keysize) {
         case 4096:
-            res = mbedtls_pk_parse_key(&clientkey, (const uint8_t *)privkey_4096_buf, sizeof(privkey_4096_buf), NULL, 0);
+            res = mbedtls_pk_parse_key(&clientkey, (const uint8_t *)privkey_4096_buf, sizeof(privkey_4096_buf), NULL, 0, myrand, NULL);
             break;
         case 3072:
-            res = mbedtls_pk_parse_key(&clientkey, (const uint8_t *)privkey_3072_buf, sizeof(privkey_3072_buf), NULL, 0);
+            res = mbedtls_pk_parse_key(&clientkey, (const uint8_t *)privkey_3072_buf, sizeof(privkey_3072_buf), NULL, 0, myrand, NULL);
             break;
         case 2048:
-            res = mbedtls_pk_parse_key(&clientkey, (const uint8_t *)privkey_2048_buf, sizeof(privkey_2048_buf), NULL, 0);
+            res = mbedtls_pk_parse_key(&clientkey, (const uint8_t *)privkey_2048_buf, sizeof(privkey_2048_buf), NULL, 0, myrand, NULL);
             break;
         default:
             TEST_FAIL_MESSAGE("unsupported keysize, pass generate_new_rsa=true or update test");
@@ -489,8 +492,8 @@ static void rsa_key_operations(int keysize, bool check_performance, bool use_bli
     print_rsa_details(&rsa);
 #endif
 
-    TEST_ASSERT_EQUAL(keysize, (int)rsa.len * 8);
-    TEST_ASSERT_EQUAL(keysize, (int)rsa.D.n * sizeof(mbedtls_mpi_uint) * 8); // The private exponent
+    TEST_ASSERT_EQUAL(keysize, (int)rsa.MBEDTLS_PRIVATE(len) * 8);
+    TEST_ASSERT_EQUAL(keysize, (int)rsa.MBEDTLS_PRIVATE(D).MBEDTLS_PRIVATE(n) * sizeof(mbedtls_mpi_uint) * 8); // The private exponent
 
     ccomp_timer_start();
     res = mbedtls_rsa_public(&rsa, orig_buf, encrypted_buf);

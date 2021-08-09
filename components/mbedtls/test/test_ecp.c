@@ -1,9 +1,12 @@
 /* mbedTLS Elliptic Curve functionality tests
-
-   Focus on testing functionality where we use ESP32 hardware
-   accelerated crypto features.
-
-*/
+ *
+ * Focus on testing functionality where we use ESP32 hardware
+ * accelerated crypto features.
+ *
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -33,9 +36,9 @@ TEST_CASE("mbedtls ECDH Generate Key", "[mbedtls]")
     mbedtls_entropy_init(&entropy);
     TEST_ASSERT_MBEDTLS_OK( mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0) );
 
-    TEST_ASSERT_MBEDTLS_OK( mbedtls_ecp_group_load(&ctx.grp, MBEDTLS_ECP_DP_CURVE25519) );
+    TEST_ASSERT_MBEDTLS_OK( mbedtls_ecp_group_load(&ctx.MBEDTLS_PRIVATE(grp), MBEDTLS_ECP_DP_CURVE25519) );
 
-    TEST_ASSERT_MBEDTLS_OK( mbedtls_ecdh_gen_public(&ctx.grp, &ctx.d, &ctx.Q,
+    TEST_ASSERT_MBEDTLS_OK( mbedtls_ecdh_gen_public(&ctx.MBEDTLS_PRIVATE(grp), &ctx.MBEDTLS_PRIVATE(d), &ctx.MBEDTLS_PRIVATE(Q),
                                                     mbedtls_ctr_drbg_random, &ctr_drbg ) );
 
     mbedtls_ecdh_free(&ctx);
@@ -67,7 +70,7 @@ TEST_CASE("mbedtls ECP mul w/ koblitz", "[mbedtls]")
                                                  mbedtls_ctr_drbg_random, &ctxRandom) );
 
 
-    TEST_ASSERT_MBEDTLS_OK(mbedtls_ecp_mul(&ctxECDSA.grp, &ctxECDSA.Q, &ctxECDSA.d, &ctxECDSA.grp.G,
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_ecp_mul(&ctxECDSA.MBEDTLS_PRIVATE(grp), &ctxECDSA.MBEDTLS_PRIVATE(Q), &ctxECDSA.MBEDTLS_PRIVATE(d), &ctxECDSA.MBEDTLS_PRIVATE(grp).G,
                                            mbedtls_ctr_drbg_random, &ctxRandom) );
 
     mbedtls_ecdsa_free(&ctxECDSA);

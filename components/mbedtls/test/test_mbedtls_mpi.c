@@ -1,5 +1,9 @@
 /* mbedTLS bignum (MPI) self-tests as unit tests
-*/
+ *
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -24,7 +28,7 @@ void mbedtls_mpi_printf(const char *name, const mbedtls_mpi *X)
     memset(buf, 0, sizeof(buf));
     mbedtls_mpi_write_string(X, 16, buf, sizeof(buf)-1, &n);
     if(n) {
-        printf("%s = (s=%d) 0x%s\n", name, X->s, buf);
+        printf("%s = (s=%d) 0x%s\n", name, X->MBEDTLS_PRIVATE(s), buf);
     } else {
         printf("%s = TOOLONG\n", name);
     }

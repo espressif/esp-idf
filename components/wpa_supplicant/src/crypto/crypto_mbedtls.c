@@ -399,12 +399,12 @@ static int crypto_init_cipher_ctx(mbedtls_cipher_context_t *ctx,
 		return -1;
 	}
 
-	if (mbedtls_cipher_setkey(ctx, key, cipher_info->key_bitlen,
+	if (mbedtls_cipher_setkey(ctx, key, cipher_info->MBEDTLS_PRIVATE(key_bitlen),
 				 operation) != 0) {
 		wpa_printf(MSG_ERROR, "mbedtls_cipher_setkey returned error");
 		return -1;
 	}
-	if (mbedtls_cipher_set_iv(ctx, iv, cipher_info->iv_size) != 0) {
+	if (mbedtls_cipher_set_iv(ctx, iv, cipher_info->MBEDTLS_PRIVATE(iv_size)) != 0) {
 		wpa_printf(MSG_ERROR, "mbedtls_cipher_set_iv returned error");
 		return -1;
 	}

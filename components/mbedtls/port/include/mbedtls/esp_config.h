@@ -2188,8 +2188,10 @@
  * This module adds support for SHA-384 and SHA-512.
  */
 #ifdef CONFIG_MBEDTLS_SHA512_C
+#define MBEDTLS_SHA384_C
 #define MBEDTLS_SHA512_C
 #else
+#undef MBEDTLS_SHA384_C
 #undef MBEDTLS_SHA512_C
 #endif
 

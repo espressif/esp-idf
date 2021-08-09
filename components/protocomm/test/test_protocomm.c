@@ -1,16 +1,8 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -155,24 +147,24 @@ static esp_err_t verify_response0(session_t *session, SessionData *resp)
     hexdump("Device pubkey", dev_pubkey, PUBLIC_KEY_LEN);
     hexdump("Client pubkey", cli_pubkey, PUBLIC_KEY_LEN);
 
-    ret = mbedtls_mpi_lset(&session->ctx_client.Qp.Z, 1);
+    ret = mbedtls_mpi_lset(&session->ctx_client.MBEDTLS_PRIVATE(Qp).MBEDTLS_PRIVATE(Z), 1);
     if (ret != 0) {
         ESP_LOGE(TAG, "Failed at mbedtls_mpi_lset with error code : %d", ret);
         return ESP_FAIL;
     }
 
     flip_endian(session->device_pubkey, PUBLIC_KEY_LEN);
-    ret = mbedtls_mpi_read_binary(&session->ctx_client.Qp.X, dev_pubkey, PUBLIC_KEY_LEN);
+    ret = mbedtls_mpi_read_binary(&session->ctx_client.MBEDTLS_PRIVATE(Qp).MBEDTLS_PRIVATE(X), dev_pubkey, PUBLIC_KEY_LEN);
     flip_endian(session->device_pubkey, PUBLIC_KEY_LEN);
     if (ret != 0) {
         ESP_LOGE(TAG, "Failed at mbedtls_mpi_read_binary with error code : %d", ret);
         return ESP_FAIL;
     }
 
-    ret = mbedtls_ecdh_compute_shared(&session->ctx_client.grp,
-                                      &session->ctx_client.z,
-                                      &session->ctx_client.Qp,
-                                      &session->ctx_client.d,
+    ret = mbedtls_ecdh_compute_shared(&session->ctx_client.MBEDTLS_PRIVATE(grp),
+                                      &session->ctx_client.MBEDTLS_PRIVATE(z),
+                                      &session->ctx_client.MBEDTLS_PRIVATE(Qp),
+                                      &session->ctx_client.MBEDTLS_PRIVATE(d),
                                       mbedtls_ctr_drbg_random,
                                       &session->ctr_drbg);
     if (ret != 0) {
@@ -180,7 +172,7 @@ static esp_err_t verify_response0(session_t *session, SessionData *resp)
         return ESP_FAIL;
     }
 
-    ret = mbedtls_mpi_write_binary(&session->ctx_client.z, session->sym_key, PUBLIC_KEY_LEN);
+    ret = mbedtls_mpi_write_binary(&session->ctx_client.MBEDTLS_PRIVATE(z), session->sym_key, PUBLIC_KEY_LEN);
     if (ret != 0) {
         ESP_LOGE(TAG, "Failed at mbedtls_mpi_write_binary with error code : %d", ret);
         return ESP_FAIL;
@@ -192,7 +184,7 @@ static esp_err_t verify_response0(session_t *session, SessionData *resp)
         ESP_LOGD(TAG, "Adding proof of possession");
         uint8_t sha_out[PUBLIC_KEY_LEN];
 
-        ret = mbedtls_sha256_ret((const unsigned char *) pop->data, pop->len, sha_out, 0);
+        ret = mbedtls_sha256((const unsigned char *) pop->data, pop->len, sha_out, 0);
         if (ret != 0) {
             ESP_LOGE(TAG, "Failed at mbedtls_sha256_ret with error code : %d", ret);
             return ESP_FAIL;
@@ -381,15 +373,15 @@ static esp_err_t test_sec_endpoint(session_t *session)
         goto abort_test_sec_endpoint;
     }
 
-    ret = mbedtls_ecp_group_load(&session->ctx_client.grp, MBEDTLS_ECP_DP_CURVE25519);
+    ret = mbedtls_ecp_group_load(&session->ctx_client.MBEDTLS_PRIVATE(grp), MBEDTLS_ECP_DP_CURVE25519);
     if (ret != 0) {
         ESP_LOGE(TAG, "Failed at mbedtls_ecp_group_load with error code : %d", ret);
         goto abort_test_sec_endpoint;
     }
 
-    ret = mbedtls_ecdh_gen_public(&session->ctx_client.grp,
-                                  &session->ctx_client.d,
-                                  &session->ctx_client.Q,
+    ret = mbedtls_ecdh_gen_public(&session->ctx_client.MBEDTLS_PRIVATE(grp),
+                                  &session->ctx_client.MBEDTLS_PRIVATE(d),
+                                  &session->ctx_client.MBEDTLS_PRIVATE(Q),
                                   mbedtls_ctr_drbg_random,
                                   &session->ctr_drbg);
     if (ret != 0) {
@@ -399,7 +391,7 @@ static esp_err_t test_sec_endpoint(session_t *session)
 
     if (session->weak) {
         /* Read zero client public key */
-        ret = mbedtls_mpi_read_binary(&session->ctx_client.Q.X,
+        ret = mbedtls_mpi_read_binary(&session->ctx_client.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(X),
                                       session->client_pubkey,
                                       PUBLIC_KEY_LEN);
         if (ret != 0) {
@@ -407,7 +399,7 @@ static esp_err_t test_sec_endpoint(session_t *session)
             goto abort_test_sec_endpoint;
         }
     }
-    ret = mbedtls_mpi_write_binary(&session->ctx_client.Q.X,
+    ret = mbedtls_mpi_write_binary(&session->ctx_client.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(X),
                                    session->client_pubkey,
                                    PUBLIC_KEY_LEN);
     if (ret != 0) {

@@ -204,7 +204,7 @@ static int rsa_rsassa_pkcs1_v15_encode( mbedtls_md_type_t md_alg,
 
 int esp_ds_rsa_sign( void *ctx,
                      int (*f_rng)(void *, unsigned char *, size_t), void *p_rng,
-                     int mode, mbedtls_md_type_t md_alg, unsigned int hashlen,
+                     mbedtls_md_type_t md_alg, unsigned int hashlen,
                      const unsigned char *hash, unsigned char *sig )
 {
     esp_ds_context_t *esp_ds_ctx;

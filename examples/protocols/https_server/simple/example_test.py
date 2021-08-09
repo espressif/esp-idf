@@ -121,7 +121,7 @@ def test_examples_protocol_https_server_simple(env, extra_data):  # type: (tiny_
     CLIENT_CERT_FILE = 'client_cert.pem'
     CLIENT_KEY_FILE = 'client_key.pem'
 
-    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
     ssl_context.verify_mode = ssl.CERT_REQUIRED
     ssl_context.check_hostname = False
     ssl_context.load_verify_locations(cadata=server_cert_pem)

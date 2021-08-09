@@ -66,11 +66,11 @@ void mbedtls_timing_set_delay( void *data, uint32_t int_ms, uint32_t fin_ms )
 {
     mbedtls_timing_delay_context *ctx = (mbedtls_timing_delay_context *) data;
 
-    ctx->int_ms = int_ms;
-    ctx->fin_ms = fin_ms;
+    ctx->MBEDTLS_PRIVATE(int_ms) = int_ms;
+    ctx->MBEDTLS_PRIVATE(fin_ms) = fin_ms;
 
     if( fin_ms != 0 )
-        (void) mbedtls_timing_get_timer( &ctx->timer, 1 );
+        (void) mbedtls_timing_get_timer( &ctx->MBEDTLS_PRIVATE(timer), 1 );
 }
 
 /*
@@ -81,15 +81,15 @@ int mbedtls_timing_get_delay( void *data )
     mbedtls_timing_delay_context *ctx = (mbedtls_timing_delay_context *) data;
     unsigned long elapsed_ms;
 
-    if( ctx->fin_ms == 0 )
+    if( ctx->MBEDTLS_PRIVATE(fin_ms) == 0 )
         return( -1 );
 
-    elapsed_ms = mbedtls_timing_get_timer( &ctx->timer, 0 );
+    elapsed_ms = mbedtls_timing_get_timer( &ctx->MBEDTLS_PRIVATE(timer), 0 );
 
-    if( elapsed_ms >= ctx->fin_ms )
+    if( elapsed_ms >= ctx->MBEDTLS_PRIVATE(fin_ms) )
         return( 2 );
 
-    if( elapsed_ms >= ctx->int_ms )
+    if( elapsed_ms >= ctx->MBEDTLS_PRIVATE(int_ms) )
         return( 1 );
 
     return( 0 );

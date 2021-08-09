@@ -19,7 +19,7 @@
  */
 
 /* This is mbedtls boilerplate for library configuration */
-#include "mbedtls/config.h"
+#include "mbedtls/mbedtls_config.h"
 
 /* System Includes*/
 #include <stdio.h>
@@ -146,7 +146,7 @@ static int atca_ecdsa_test(void)
 #endif
 
     ESP_LOGI(TAG, " Generating ECDSA Signature...");
-    ret = mbedtls_pk_sign(&pkey, MBEDTLS_MD_SHA256, hash, 0, buf, &olen,
+    ret = mbedtls_pk_sign(&pkey, MBEDTLS_MD_SHA256, hash, 0, buf, MBEDTLS_MPI_MAX_SIZE, &olen,
         mbedtls_ctr_drbg_random, &ctr_drbg);
     if (ret != 0) {
         ESP_LOGI(TAG, " failed ! mbedtls_pk_sign returned -0x%04x", -ret);

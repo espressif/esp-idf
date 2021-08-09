@@ -74,7 +74,7 @@ esp_err_t esp_create_mbedtls_handle(const char *hostname, size_t hostlen, const 
     assert(tls != NULL);
     int ret;
     esp_err_t esp_ret = ESP_FAIL;
-    tls->server_fd.fd = tls->sockfd;
+    tls->server_fd.MBEDTLS_PRIVATE(fd) = tls->sockfd;
     mbedtls_ssl_init(&tls->ssl);
     mbedtls_ctr_drbg_init(&tls->ctr_drbg);
     mbedtls_ssl_config_init(&tls->conf);
@@ -251,7 +251,7 @@ void esp_mbedtls_conn_delete(esp_tls_t *tls)
         esp_mbedtls_cleanup(tls);
         if (tls->is_tls) {
             mbedtls_net_free(&tls->server_fd);
-            tls->sockfd = tls->server_fd.fd;
+            tls->sockfd = tls->server_fd.MBEDTLS_PRIVATE(fd);
         }
     }
 }
@@ -365,7 +365,8 @@ static esp_err_t set_pki_context(esp_tls_t *tls, const esp_tls_pki_t *pki)
 #endif
         if (pki->privkey_pem_buf != NULL) {
             ret = mbedtls_pk_parse_key(pki->pk_key, pki->privkey_pem_buf, pki->privkey_pem_bytes,
-                                       pki->privkey_password, pki->privkey_password_len);
+                                       pki->privkey_password, pki->privkey_password_len,
+                                       mbedtls_ctr_drbg_random, &tls->ctr_drbg);
         } else {
             return ESP_ERR_INVALID_ARG;
         }

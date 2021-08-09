@@ -80,11 +80,11 @@ void esp_mpi_interrupt_clear( void )
 static inline void mpi_to_mem_block(uint32_t mem_base, const mbedtls_mpi *mpi, size_t num_words)
 {
     uint32_t *pbase = (uint32_t *)mem_base;
-    uint32_t copy_words = MIN(num_words, mpi->n);
+    uint32_t copy_words = MIN(num_words, mpi->MBEDTLS_PRIVATE(n));
 
     /* Copy MPI data to memory block registers */
     for (int i = 0; i < copy_words; i++) {
-        pbase[i] = mpi->p[i];
+        pbase[i] = mpi->MBEDTLS_PRIVATE(p)[i];
     }
 
     /* Zero any remaining memory block data */
@@ -103,12 +103,12 @@ static inline void mem_block_to_mpi(mbedtls_mpi *x, uint32_t mem_base, int num_w
     /* Copy data from memory block registers */
     const size_t REG_WIDTH = sizeof(uint32_t);
     for (size_t i = 0; i < num_words; i++) {
-        x->p[i] = REG_READ(mem_base + (i * REG_WIDTH));
+        x->MBEDTLS_PRIVATE(p)[i] = REG_READ(mem_base + (i * REG_WIDTH));
     }
     /* Zero any remaining limbs in the bignum, if the buffer is bigger
        than num_words */
-    for (size_t i = num_words; i < x->n; i++) {
-        x->p[i] = 0;
+    for (size_t i = num_words; i < x->MBEDTLS_PRIVATE(n); i++) {
+        x->MBEDTLS_PRIVATE(p)[i] = 0;
     }
 }
 

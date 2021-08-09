@@ -83,11 +83,11 @@ void esp_mpi_interrupt_clear( void )
 static inline void mpi_to_mem_block(uint32_t mem_base, const mbedtls_mpi *mpi, size_t hw_words)
 {
     uint32_t *pbase = (uint32_t *)mem_base;
-    uint32_t copy_words = MIN(hw_words, mpi->n);
+    uint32_t copy_words = MIN(hw_words, mpi->MBEDTLS_PRIVATE(n));
 
     /* Copy MPI data to memory block registers */
     for (uint32_t i = 0; i < copy_words; i++) {
-        pbase[i] = mpi->p[i];
+        pbase[i] = mpi->MBEDTLS_PRIVATE(p[i]);
     }
 
     /* Zero any remaining memory block data */
@@ -105,15 +105,15 @@ static inline void mpi_to_mem_block(uint32_t mem_base, const mbedtls_mpi *mpi, s
 */
 static inline void mem_block_to_mpi(mbedtls_mpi *x, uint32_t mem_base, size_t num_words)
 {
-    assert(x->n >= num_words);
+    assert(x->MBEDTLS_PRIVATE(n) >= num_words);
 
     /* Copy data from memory block registers */
-    esp_dport_access_read_buffer(x->p, mem_base, num_words);
+    esp_dport_access_read_buffer(x->MBEDTLS_PRIVATE(p), mem_base, num_words);
 
     /* Zero any remaining limbs in the bignum, if the buffer is bigger
        than num_words */
-    for (size_t i = num_words; i < x->n; i++) {
-        x->p[i] = 0;
+    for (size_t i = num_words; i < x->MBEDTLS_PRIVATE(n); i++) {
+        x->MBEDTLS_PRIVATE(p[i]) = 0;
     }
 }
 
@@ -215,7 +215,7 @@ int esp_mont_hw_op(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, c
     mpi_to_mem_block(RSA_MEM_RB_BLOCK_BASE, Y, hw_words);
 
     start_op(RSA_MULT_START_REG);
-    Z->s = 1; // The sign of Z will be = M->s (but M->s is always 1)
+    Z->MBEDTLS_PRIVATE(s) = 1; // The sign of Z will be = M->s (but M->s is always 1)
     MBEDTLS_MPI_CHK( mbedtls_mpi_grow(Z, hw_words) );
 
     wait_op_complete();

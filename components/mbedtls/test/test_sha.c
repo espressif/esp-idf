@@ -118,12 +118,12 @@ TEST_CASE("Test esp_sha() function with long input", "[hw_crypto]")
     TEST_ASSERT_EQUAL(0, r);
 
     esp_sha(SHA2_256, ptr, LEN, sha256_espsha);
-    r = mbedtls_sha256_ret(ptr, LEN, sha256_mbedtls, 0);
+    r = mbedtls_sha256(ptr, LEN, sha256_mbedtls, 0);
     TEST_ASSERT_EQUAL(0, r);
 
 #if SOC_SHA_SUPPORT_SHA512
     esp_sha(SHA2_512, ptr, LEN, sha512_espsha);
-    r = mbedtls_sha512_ret(ptr, LEN, sha512_mbedtls, 0);
+    r = mbedtls_sha512(ptr, LEN, sha512_mbedtls, 0);
     TEST_ASSERT_EQUAL(0, r);
 #endif
 

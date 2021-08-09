@@ -1,6 +1,9 @@
 /* mbedTLS GCM test
-*/
-
+ *
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -99,15 +102,16 @@ TEST_CASE("mbedtls GCM stream test", "[aes-gcm]")
 
         mbedtls_gcm_init(&ctx);
         mbedtls_gcm_setkey(&ctx, cipher, key, 128);
-        mbedtls_gcm_starts( &ctx, MBEDTLS_AES_ENCRYPT, nonce, sizeof(nonce), NULL, 0 );
+        mbedtls_gcm_starts( &ctx, MBEDTLS_AES_ENCRYPT, nonce, sizeof(nonce) );
 
         // Encrypt
         for (int idx = 0; idx < SZ; idx = idx + bytes_to_process) {
             // Limit length of last call to avoid exceeding buffer size
             size_t length = (idx + bytes_to_process > SZ) ? (SZ - idx) : bytes_to_process;
-            mbedtls_gcm_update(&ctx, length, plaintext + idx, chipertext + idx );
+            mbedtls_gcm_update(&ctx, plaintext + idx, length, chipertext + idx, 0, NULL);
         }
-        mbedtls_gcm_finish( &ctx, tag, sizeof(tag) );
+        size_t olen;
+        mbedtls_gcm_finish( &ctx, NULL, 0, &olen, tag, sizeof(tag) );
         TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher, chipertext, SZ);
         TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_tag, tag, sizeof(tag));
 
@@ -116,15 +120,15 @@ TEST_CASE("mbedtls GCM stream test", "[aes-gcm]")
         mbedtls_gcm_free( &ctx );
         mbedtls_gcm_init(&ctx);
         mbedtls_gcm_setkey(&ctx, cipher, key, 128);
-        mbedtls_gcm_starts( &ctx, MBEDTLS_AES_DECRYPT, nonce, sizeof(nonce), NULL, 0 );
+        mbedtls_gcm_starts( &ctx, MBEDTLS_AES_DECRYPT, nonce, sizeof(nonce));
 
         for (int idx = 0; idx < SZ; idx = idx + bytes_to_process) {
             // Limit length of last call to avoid exceeding buffer size
 
             size_t length = (idx + bytes_to_process > SZ) ? (SZ - idx) : bytes_to_process;
-            mbedtls_gcm_update(&ctx, length, chipertext + idx, decryptedtext + idx );
+            mbedtls_gcm_update(&ctx, chipertext + idx, length, decryptedtext + idx, 0, NULL);
         }
-        mbedtls_gcm_finish( &ctx, tag, sizeof(tag) );
+        mbedtls_gcm_finish( &ctx, NULL, 0, &olen, tag, sizeof(tag) );
         TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
         mbedtls_gcm_free( &ctx );
     }
@@ -185,14 +189,15 @@ static void aes_gcm_test(aes_gcm_test_cfg_t *cfg, aes_gcm_test_expected_res_t *r
 
     mbedtls_gcm_init(&ctx);
     mbedtls_gcm_setkey(&ctx, cipher, cfg->key, cfg->key_bits);
-
+    size_t olen;
     /* Encrypt and tag */
     if (aes_gcm_type == AES_GCM_TEST_CRYPT_N_TAG) {
         mbedtls_gcm_crypt_and_tag(&ctx, MBEDTLS_AES_ENCRYPT, cfg->plaintext_length, iv_buf, cfg->iv_length, cfg->add_buf, cfg->add_length, cfg->plaintext, ciphertext, cfg->tag_len, tag_buf_encrypt);
     } else if (aes_gcm_type == AES_GCM_TEST_START_UPDATE_FINISH) {
-        TEST_ASSERT(mbedtls_gcm_starts( &ctx, MBEDTLS_AES_ENCRYPT, iv_buf, cfg->iv_length, cfg->add_buf, cfg->add_length) == 0 );
-        TEST_ASSERT(mbedtls_gcm_update( &ctx, cfg->plaintext_length, cfg->plaintext, ciphertext) == 0 );
-        TEST_ASSERT(mbedtls_gcm_finish( &ctx, tag_buf_encrypt, cfg->tag_len) == 0 );
+        TEST_ASSERT(mbedtls_gcm_starts( &ctx, MBEDTLS_AES_ENCRYPT, iv_buf, cfg->iv_length) == 0 );
+        TEST_ASSERT(mbedtls_gcm_update_ad( &ctx, cfg->add_buf, cfg->add_length) == 0 );
+        TEST_ASSERT(mbedtls_gcm_update( &ctx, cfg->plaintext, cfg->plaintext_length, ciphertext, 0, NULL) == 0 );
+        TEST_ASSERT(mbedtls_gcm_finish( &ctx, NULL, 0, &olen, tag_buf_encrypt, cfg->tag_len) == 0 );
     }
     size_t offset = cfg->plaintext_length > 16 ? cfg->plaintext_length - 16 : 0;
     /* Sanity check: make sure the last ciphertext block matches what we expect to see. */
@@ -204,9 +209,10 @@ static void aes_gcm_test(aes_gcm_test_cfg_t *cfg, aes_gcm_test_expected_res_t *r
     if (aes_gcm_type == AES_GCM_TEST_CRYPT_N_TAG) {
         TEST_ASSERT(mbedtls_gcm_auth_decrypt(&ctx, cfg->plaintext_length, iv_buf, cfg->iv_length, cfg->add_buf, cfg->add_length, res->expected_tag, cfg->tag_len, ciphertext, output) == 0);
     } else if (aes_gcm_type == AES_GCM_TEST_START_UPDATE_FINISH) {
-        TEST_ASSERT(mbedtls_gcm_starts( &ctx, MBEDTLS_AES_DECRYPT, iv_buf, cfg->iv_length, cfg->add_buf, cfg->add_length) == 0 );
-        TEST_ASSERT(mbedtls_gcm_update( &ctx, cfg->plaintext_length, ciphertext, output) == 0 );
-        TEST_ASSERT(mbedtls_gcm_finish( &ctx, tag_buf_decrypt, cfg->tag_len) == 0 );
+        TEST_ASSERT(mbedtls_gcm_starts( &ctx, MBEDTLS_AES_DECRYPT, iv_buf, cfg->iv_length) == 0 );
+        TEST_ASSERT(mbedtls_gcm_update_ad( &ctx, cfg->add_buf, cfg->add_length) == 0 );
+        TEST_ASSERT(mbedtls_gcm_update( &ctx, ciphertext, cfg->plaintext_length, output, 0, NULL) == 0 );
+        TEST_ASSERT(mbedtls_gcm_finish( &ctx, NULL, 0, &olen, tag_buf_decrypt, cfg->tag_len) == 0 );
 
         /* mbedtls_gcm_auth_decrypt already checks tag so only needed for AES_GCM_TEST_START_UPDATE_FINISH */
         TEST_ASSERT_EQUAL_HEX8_ARRAY(res->expected_tag, tag_buf_decrypt, cfg->tag_len);
@@ -412,7 +418,7 @@ TEST_CASE("mbedtls AES GCM performance, start, update, ret", "[aes-gcm]")
     uint8_t iv[16];
     uint8_t key[16];
     uint8_t aad[16];
-
+    size_t olen;
     memset(iv, 0xEE, 16);
     memset(key, 0x44, 16);
     memset(aad, 0x76, 16);
@@ -428,9 +434,10 @@ TEST_CASE("mbedtls AES GCM performance, start, update, ret", "[aes-gcm]")
 
     memset(buf, 0xAA, CALL_SZ);
 
-    TEST_ASSERT(mbedtls_gcm_starts( &ctx, MBEDTLS_AES_ENCRYPT, iv, sizeof(iv), aad, sizeof(aad) ) == 0 );
-    TEST_ASSERT(mbedtls_gcm_update( &ctx, CALL_SZ, buf, buf ) == 0 );
-    TEST_ASSERT(mbedtls_gcm_finish( &ctx, tag_buf, 16 ) == 0 );
+    TEST_ASSERT(mbedtls_gcm_starts( &ctx, MBEDTLS_AES_ENCRYPT, iv, sizeof(iv) ) == 0 );
+    TEST_ASSERT(mbedtls_gcm_update_ad( &ctx, aad, sizeof(aad)) == 0 );
+    TEST_ASSERT(mbedtls_gcm_update( &ctx, buf, CALL_SZ, buf, 0, NULL) == 0 );
+    TEST_ASSERT(mbedtls_gcm_finish( &ctx, NULL, 0, &olen, tag_buf, 16 ) == 0 );
 
     elapsed_usec = ccomp_timer_stop();
 
