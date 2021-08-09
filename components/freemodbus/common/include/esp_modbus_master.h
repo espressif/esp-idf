@@ -232,7 +232,7 @@ esp_err_t mbc_master_get_cid_info(uint16_t cid, const mb_parameter_descriptor_t*
  * @return
  *     - esp_err_t ESP_OK - request was successful and value buffer contains
  *                          representation of actual parameter data from slave
- *     - esp_err_t ESP_ERR_INVALID_ARG - invalid argument of function
+ *     - esp_err_t ESP_ERR_INVALID_ARG - invalid argument of function or parameter descriptor
  *     - esp_err_t ESP_ERR_INVALID_RESPONSE - an invalid response from slave
  *     - esp_err_t ESP_ERR_INVALID_STATE - invalid state during data processing or allocation failure
  *     - esp_err_t ESP_ERR_TIMEOUT - operation timed out and no response from slave
@@ -253,7 +253,7 @@ esp_err_t mbc_master_get_parameter(uint16_t cid, char* name, uint8_t* value, uin
  *
  * @return
  *     - esp_err_t ESP_OK - request was successful and value was saved in the slave device registers
- *     - esp_err_t ESP_ERR_INVALID_ARG - invalid argument of function
+ *     - esp_err_t ESP_ERR_INVALID_ARG - invalid argument of function or parameter descriptor
  *     - esp_err_t ESP_ERR_INVALID_RESPONSE - an invalid response from slave during processing of parameter
  *     - esp_err_t ESP_ERR_INVALID_STATE - invalid state during data processing or allocation failure
  *     - esp_err_t ESP_ERR_TIMEOUT - operation timed out and no response from slave
