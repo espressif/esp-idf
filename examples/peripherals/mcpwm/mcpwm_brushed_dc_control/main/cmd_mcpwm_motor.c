@@ -63,8 +63,8 @@ static void print_current_status(void)
     printf(" Configuration\n       Period = %d ms\tPID = %s\n\n",
            mc->cfg.ctrl_period, mc->cfg.pid_enable ? "enabled" : "disabled");
     printf(" PID - %s\n       Kp = %.3f\tKi = %.3f\tKd = %.3f\n\n",
-           (mc->pid->type == PID_LOCATION) ? "Location" : "Increment",
-           mc->pid->Kp, mc->pid->Ki, mc->pid->Kd);
+           (mc->pid_param.cal_type == PID_CAL_TYPE_POSITIONAL) ? "Location" : "Increment",
+           mc->pid_param.kp, mc->pid_param.ki, mc->pid_param.kd);
     printf(" Expectation - %s\n       init = %.3f\tmax = %.3f\tmin = %.3f\tpace = %.3f\n\n",
            mc->cfg.expt_mode ? (mc->cfg.expt_mode == MOTOR_CTRL_MODE_TRIANGLE ? "Triangle" : "Rectangle") : "Fixed",
            mc->cfg.expt_init, mc->cfg.expt_max, mc->cfg.expt_min, mc->cfg.expt_pace);
@@ -143,35 +143,37 @@ static int do_motor_ctrl_expt_cmd(int argc, char **argv)
 
 static int do_motor_ctrl_pid_cmd(int argc, char **argv)
 {
+    int ret = 0;
     MOTOR_CTRL_CMD_CHECK(motor_ctrl_pid_args);
     xSemaphoreTake(g_motor_mux, portMAX_DELAY);
     if (motor_ctrl_pid_args.kp->count) {
-        mc->pid->Kp = motor_ctrl_pid_args.kp->dval[0];
-        printf("pid: kp = %.3f\n", mc->pid->Kp);
+        mc->pid_param.kp = motor_ctrl_pid_args.kp->dval[0];
+        printf("pid: kp = %.3f\n", mc->pid_param.kp);
     }
     if (motor_ctrl_pid_args.ki->count) {
-        mc->pid->Ki = motor_ctrl_pid_args.ki->dval[0];
-        printf("pid: ki = %.3f\n", mc->pid->Ki);
+        mc->pid_param.ki = motor_ctrl_pid_args.ki->dval[0];
+        printf("pid: ki = %.3f\n", mc->pid_param.ki);
     }
     if (motor_ctrl_pid_args.kd->count) {
-        mc->pid->Kd = motor_ctrl_pid_args.kd->dval[0];
-        printf("pid: kd = %.3f\n", mc->pid->Kd);
+        mc->pid_param.kd = motor_ctrl_pid_args.kd->dval[0];
+        printf("pid: kd = %.3f\n", mc->pid_param.kd);
     }
 
     if (motor_ctrl_pid_args.type->count) {
-        if (!strcmp(*motor_ctrl_pid_args.type->sval, "loc")) {
-            mc->pid->type = PID_LOCATION;
-            printf("pid: type = location\n");
-        } else if (!strcmp(*motor_ctrl_pid_args.type->sval, "inc")) {
-            mc->pid->type = PID_INCREMENT;
-            printf("pid: type = increment\n");
+        if (!strcmp(motor_ctrl_pid_args.type->sval[0], "loc")) {
+            mc->pid_param.cal_type = PID_CAL_TYPE_POSITIONAL;
+            printf("pid: type = positional\n");
+        } else if (!strcmp(motor_ctrl_pid_args.type->sval[0], "inc")) {
+            mc->pid_param.cal_type = PID_CAL_TYPE_INCREMENTAL;
+            printf("pid: type = incremental\n");
         } else {
-            mc->pid->type = PID_INCREMENT;
-            printf("pid: type = increment\n");
+            printf("Invalid pid type:%s\n", motor_ctrl_pid_args.type->sval[0]);
+            ret = 1;
         }
     }
+    pid_update_parameters(mc->pid, &mc->pid_param);
     xSemaphoreGive(g_motor_mux);
-    return 0;
+    return ret;
 }
 
 static int do_motor_ctrl_motor_cmd(int argc, char **argv)
@@ -183,7 +185,7 @@ static int do_motor_ctrl_motor_cmd(int argc, char **argv)
         // Start the motor
         brushed_motor_start(mc);
         mc->cfg.running_sec ?
-        printf("motor: motor starts to run in %d seconds\n", mc->cfg.running_sec):
+        printf("motor: motor starts to run in %d seconds\n", mc->cfg.running_sec) :
         printf("motor: motor starts to run, input 'motor -d' to stop it\n");
     }
 

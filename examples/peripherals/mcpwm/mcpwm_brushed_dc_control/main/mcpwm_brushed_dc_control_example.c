@@ -118,10 +118,14 @@ static int pcnt_get_pulse_callback(void *args)
 static void motor_ctrl_default_init(void)
 {
     motor_ctrl.cfg.pid_enable = true;
-    motor_ctrl.cfg.pid_init_kp = 0.8;
-    motor_ctrl.cfg.pid_init_ki = 0.0;
-    motor_ctrl.cfg.pid_init_kd = 0.1;
-    motor_ctrl.cfg.pid_init_type = PID_INCREMENT;
+    motor_ctrl.pid_param.kp = 0.8;
+    motor_ctrl.pid_param.ki = 0.0;
+    motor_ctrl.pid_param.kd = 0.1;
+    motor_ctrl.pid_param.cal_type = PID_CAL_TYPE_INCREMENTAL;
+    motor_ctrl.pid_param.max_output   = 100;
+    motor_ctrl.pid_param.min_output   = -100;
+    motor_ctrl.pid_param.max_integral = 1000;
+    motor_ctrl.pid_param.min_integral = -1000;
     motor_ctrl.cfg.expt_init = 30;
     motor_ctrl.cfg.expt_mode = MOTOR_CTRL_MODE_TRIANGLE;
     motor_ctrl.cfg.expt_max = 50;
@@ -195,11 +199,10 @@ static void motor_ctrl_init_all(void)
     /* 3.MCPWM initialization */
     motor_ctrl_mcpwm_init();
     /* 4.pid_ctrl initialization */
-    pid_init(motor_ctrl.cfg.pid_init_kp,
-             motor_ctrl.cfg.pid_init_ki,
-             motor_ctrl.cfg.pid_init_kd,
-             motor_ctrl.cfg.pid_init_type,
-             &motor_ctrl.pid);
+    pid_ctrl_config_t pid_config = {
+        .init_param = motor_ctrl.pid_param,
+    };
+    pid_new_control_block(&pid_config, &motor_ctrl.pid);
     /* 5.Timer initialization */
     motor_ctrl_timer_init();
 }
@@ -220,7 +223,7 @@ static void mcpwm_brushed_motor_ctrl_thread(void *arg)
         if (motor_ctrl.cfg.pid_enable) {
             /* Calculate the output by PID algorithm according to the pulse. Pid_output here is the duty of MCPWM */
             motor_ctrl.error = motor_ctrl.expt - motor_ctrl.pulse_in_one_period;
-            motor_ctrl.pid_output = motor_ctrl.pid->calculate_func(motor_ctrl.pid, motor_ctrl.error);
+            pid_compute(motor_ctrl.pid, motor_ctrl.error, &motor_ctrl.pid_output);
         } else {
             motor_ctrl.pid_output = motor_ctrl.expt;
         }

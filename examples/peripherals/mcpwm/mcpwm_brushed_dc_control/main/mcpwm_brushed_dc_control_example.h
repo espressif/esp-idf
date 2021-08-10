@@ -32,7 +32,8 @@ typedef struct {
     /* Handles */
     rotary_encoder_t *encoder;               // PCNT rotary encoder handler
     motor_ctrl_timer_info_t *timer_info;     // Timer infomation handler
-    pid_ctrl_t *pid;                         // PID algoritm handler
+    pid_ctrl_block_handle_t pid;             // PID algoritm handler
+    pid_ctrl_parameter_t pid_param;          // PID parameters
     QueueHandle_t timer_evt_que;             // Timer event queue handler
 
     /* Control visualization */
@@ -49,10 +50,6 @@ typedef struct {
     struct {
         /* PID configuration */
         bool pid_enable;                     // PID enable flag
-        float pid_init_kp;                   // PID initial kp value
-        float pid_init_ki;                   // PID initial ki value
-        float pid_init_kd;                   // PID initial kd value
-        pid_calculate_type_e pid_init_type;  // PID initial calcalation type (PID_INCREMENT/PID_LOCATION)
 
         /* Expectation configuration */
         float expt_init;                     // Initial expectation
