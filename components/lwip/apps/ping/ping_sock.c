@@ -275,7 +275,7 @@ esp_err_t esp_ping_new_session(const esp_ping_config_t *config, const esp_ping_c
             ESP_LOGE(TAG, "fail to find interface name with netif index %d", config->interface);
             goto err;
         }
-        if(setsockopt(ep->sock, SOL_SOCKET, SO_BINDTODEVICE, &iface, sizeof(iface) !=0)) {
+        if(setsockopt(ep->sock, SOL_SOCKET, SO_BINDTODEVICE, &iface, sizeof(iface)) != 0) {
             ESP_LOGE(TAG, "fail to setsockopt SO_BINDTODEVICE");
             goto err;
         }
