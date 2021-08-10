@@ -30,15 +30,15 @@
 #include "esp_common_i.h"
 
 void  wpa_install_key(enum wpa_alg alg, u8 *addr, int key_idx, int set_tx,
-                      u8 *seq, size_t seq_len, u8 *key, size_t key_len, int key_entry_valid)
+                      u8 *seq, size_t seq_len, u8 *key, size_t key_len, enum key_flag key_flag)
 {
-    esp_wifi_set_sta_key_internal(alg, addr, key_idx, set_tx, seq, seq_len, key, key_len, key_entry_valid);
+    esp_wifi_set_sta_key_internal(alg, addr, key_idx, set_tx, seq, seq_len, key, key_len, key_flag);
 }
 
 int  wpa_get_key(uint8_t *ifx, int *alg, u8 *addr, int *key_idx,
-                 u8 *key, size_t key_len, int key_entry_valid)
+                 u8 *key, size_t key_len, enum key_flag key_flag)
 {
-    return esp_wifi_get_sta_key_internal(ifx, alg, addr, key_idx, key, key_len, key_entry_valid);
+    return esp_wifi_get_sta_key_internal(ifx, alg, addr, key_idx, key, key_len, key_flag);
 }
 
 /**
