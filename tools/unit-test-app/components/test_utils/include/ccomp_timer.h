@@ -18,6 +18,10 @@
 
 #include "esp_err.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Start the timer on the current core.
  *
@@ -52,3 +56,7 @@ int64_t ccomp_timer_stop(void);
  *          core.
  */
 int64_t ccomp_timer_get_time(void);
+
+#ifdef __cplusplus
+}
+#endif
