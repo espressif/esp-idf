@@ -344,6 +344,7 @@ build_docker:
     - .before_script_minimal
     - .rules:build:docker
   stage: host_test
+  needs: []
   image: espressif/docker-builder:1
   tags:
     - build_docker_amd64_brno
