@@ -13,19 +13,30 @@
 # limitations under the License.
 
 """ Interface for test cases. """
-import os
-import time
-import traceback
 import functools
+import os
 import socket
+import time
 from datetime import datetime
 
 import junit_xml
 
-from . import Env
-from . import DUT
-from . import App
-from . import Utility
+from . import DUT, App, Env, Utility
+from .Utility import format_case_id
+
+
+class TestCaseFailed(AssertionError):
+    def __init__(self, *cases):
+        """
+        Raise this exception if one or more test cases fail in a 'normal' way (ie the test runs but fails, no unexpected exceptions)
+
+        This will avoid dumping the Python stack trace, because the assumption is the junit error info and full job log already has
+        enough information for a developer to debug.
+
+        'cases' argument is the names of one or more test cases
+        """
+        message = 'Test case{} failed: {}'.format('s' if len(cases) > 1 else '', ', '.join(str(c) for c in cases))
+        super(TestCaseFailed, self).__init__(self, message)
 
 
 class DefaultEnvConfig(object):
@@ -87,8 +98,8 @@ class JunitReport(object):
     @classmethod
     def output_report(cls, junit_file_path):
         """ Output current test result to file. """
-        with open(os.path.join(junit_file_path, cls.JUNIT_FILE_NAME), "w") as f:
-            cls.JUNIT_TEST_SUITE.to_file(f, [cls.JUNIT_TEST_SUITE], prettyprint=False)
+        with open(os.path.join(junit_file_path, cls.JUNIT_FILE_NAME), 'w') as f:
+            junit_xml.to_xml_report_file(f, [cls.JUNIT_TEST_SUITE], prettyprint=False)
 
     @classmethod
     def get_current_test_case(cls):
@@ -184,21 +195,20 @@ def test_method(**kwargs):
             env_inst = Env.Env(**env_config)
 
             # prepare for xunit test results
-            junit_file_path = env_inst.app_cls.get_log_folder(env_config["test_suite_name"])
-            junit_test_case = JunitReport.create_test_case(case_info["ID"])
+            junit_file_path = env_inst.app_cls.get_log_folder(env_config['test_suite_name'])
+            junit_test_case = JunitReport.create_test_case(format_case_id(case_info['ID'],
+                                                                          target=case_info['chip'].lower()))
             result = False
-
             try:
                 Utility.console_log("starting running test: " + test_func.__name__, color="green")
                 # execute test function
                 test_func(env_inst, extra_data)
                 # if finish without exception, test result is True
                 result = True
+            except TestCaseFailed as e:
+                junit_test_case.add_failure_info(str(e))
             except Exception as e:
-                # handle all the exceptions here
-                traceback.print_exc()
-                # log failure
-                junit_test_case.add_failure_info(str(e) + ":\r\n" + traceback.format_exc())
+                Utility.handle_unexpected_exception(junit_test_case, e)
             finally:
                 # do close all DUTs, if result is False then print DUT debug info
                 close_errors = env_inst.close(dut_debug=(not result))
@@ -210,7 +220,7 @@ def test_method(**kwargs):
                 # and raise exception in DUT close to fail test case if reset detected.
                 if close_errors:
                     for error in close_errors:
-                        junit_test_case.add_failure_info("env close error: ".format(error))
+                        junit_test_case.add_failure_info(str(error))
                     result = False
                 if not case_info["junit_report_by_case"]:
                     JunitReport.test_case_finish(junit_test_case)
