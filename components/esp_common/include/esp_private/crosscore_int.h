@@ -51,4 +51,14 @@ void esp_crosscore_int_send_yield(int core_id);
  */
 void esp_crosscore_int_send_freq_switch(int core_id);
 
+/**
+ * Send an interrupt to a CPU indicating it should print its current backtrace
+ * 
+ * This is use internally by the Task Watchdog to dump the backtrace of the
+ * opposite core and should not be called from application code.
+ * 
+ * @param core_id Core that should print its backtrace
+ */
+void esp_crosscore_int_send_print_backtrace(int core_id);
+
 #endif
