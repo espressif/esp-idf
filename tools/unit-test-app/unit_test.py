@@ -18,16 +18,19 @@
 Test script for unit test case.
 """
 
-import re
-import time
 import argparse
+import re
 import threading
+import time
 
-from tiny_test_fw import TinyFW, Utility, Env, DUT
 import ttfw_idf
-
+from tiny_test_fw import DUT, Env, TinyFW, Utility
+from tiny_test_fw.TinyFW import TestCaseFailed
+from tiny_test_fw.Utility import format_case_id, handle_unexpected_exception
 
 UT_APP_BOOT_UP_DONE = "Press ENTER to see the list of tests."
+
+STRIP_CONFIG_PATTERN = re.compile(r'(.+?)(_\d+)?$')
 
 # matches e.g.: "rst:0xc (SW_CPU_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)"
 RESET_PATTERN = re.compile(r"(rst:0x[0-9a-fA-F]*\s\([\w].*?\),boot:0x[0-9a-fA-F]*\s\([\w].*?\))")
@@ -70,11 +73,7 @@ def reset_reason_matches(reported_str, expected_str):
     return False
 
 
-class TestCaseFailed(AssertionError):
-    pass
-
-
-def format_test_case_config(test_case_data):
+def format_test_case_config(test_case_data, target='esp32'):
     """
     convert the test case data to unified format.
     We need to following info to run unit test cases:
@@ -94,6 +93,7 @@ def format_test_case_config(test_case_data):
     If config is not specified for test case, then
 
     :param test_case_data: string, list, or a dictionary list
+    :param target: target
     :return: formatted data
     """
 
@@ -133,6 +133,9 @@ def format_test_case_config(test_case_data):
         if "config" not in _case:
             _case["config"] = "default"
 
+        if 'target' not in _case:
+            _case['target'] = target
+
         return _case
 
     if not isinstance(test_case_data, list):
@@ -160,7 +163,11 @@ def replace_app_bin(dut, name, new_app_bin):
 
 
 def format_case_name(case):
-    return "[{}] {}".format(case["config"], case["name"])
+    # we could split cases of same config into multiple binaries as we have limited rom space
+    # we should regard those configs like `default` and `default_2` as the same config
+    match = STRIP_CONFIG_PATTERN.match(case['config'])
+    stripped_config_name = match.group(1)
+    return format_case_id(case['name'], target=case['target'], config=stripped_config_name)
 
 
 def reset_dut(dut):
@@ -188,8 +195,11 @@ def reset_dut(dut):
 
 
 def log_test_case(description, test_case, ut_config):
-            Utility.console_log("Running {} '{}' (config {})".format(description, test_case["name"], ut_config), color="orange")
-            Utility.console_log("Tags: %s" % ", ".join("%s=%s" % (k,v) for (k,v) in test_case.items() if k != "name" and v is not None), color="orange")
+    Utility.console_log("Running {} '{}' (config {})".format(description, test_case['name'], ut_config),
+                        color='orange')
+    Utility.console_log('Tags: %s' % ', '.join('%s=%s' % (k, v) for (k, v) in test_case.items()
+                                               if k != 'name' and v is not None),
+                        color='orange')
 
 
 def run_one_normal_case(dut, one_case, junit_test_case):
@@ -287,7 +297,7 @@ def run_unit_test_cases(env, extra_data):
     :return: None
     """
 
-    case_config = format_test_case_config(extra_data)
+    case_config = format_test_case_config(extra_data, env.default_dut_cls.TARGET)
 
     # we don't want stop on failed case (unless some special scenarios we can't handle)
     # this flag is used to log if any of the case failed during executing
@@ -306,27 +316,20 @@ def run_unit_test_cases(env, extra_data):
             log_test_case("test case", one_case, ut_config)
             performance_items = []
             # create junit report test case
-            junit_test_case = TinyFW.JunitReport.create_test_case("[{}] {}".format(ut_config, one_case["name"]))
+            junit_test_case = TinyFW.JunitReport.create_test_case(format_case_name(one_case))
             try:
                 run_one_normal_case(dut, one_case, junit_test_case)
                 performance_items = dut.get_performance_items()
             except TestCaseFailed:
                 failed_cases.append(format_case_name(one_case))
             except Exception as e:
-                junit_test_case.add_failure_info("Unexpected exception: " + str(e))
+                handle_unexpected_exception(junit_test_case, e)
                 failed_cases.append(format_case_name(one_case))
             finally:
                 TinyFW.JunitReport.update_performance(performance_items)
                 TinyFW.JunitReport.test_case_finish(junit_test_case)
         # close DUT when finish running all cases for one config
         env.close_dut(dut.name)
-
-    # raise exception if any case fails
-    if failed_cases:
-        Utility.console_log("Failed Cases:", color="red")
-        for _case_name in failed_cases:
-            Utility.console_log("\t" + _case_name, color="red")
-        raise AssertionError("Unit Test Failed")
 
 
 class Handler(threading.Thread):
@@ -502,19 +505,21 @@ def run_multiple_devices_cases(env, extra_data):
 
     """
     failed_cases = []
-    case_config = format_test_case_config(extra_data)
+    case_config = format_test_case_config(extra_data, env.default_dut_cls.TARGET)
     duts = {}
     for ut_config in case_config:
         Utility.console_log("Running unit test for config: " + ut_config, "O")
         for one_case in case_config[ut_config]:
             log_test_case("multi-device test", one_case, ut_config, )
             result = False
-            junit_test_case = TinyFW.JunitReport.create_test_case("[{}] {}".format(ut_config, one_case["name"]))
+            junit_test_case = TinyFW.JunitReport.create_test_case(format_case_name(one_case))
             try:
                 result = run_one_multiple_devices_case(duts, ut_config, env, one_case,
                                                        one_case.get('app_bin'), junit_test_case)
+            except TestCaseFailed:
+                pass  # result is False, this is handled by the finally block
             except Exception as e:
-                junit_test_case.add_failure_info("Unexpected exception: " + str(e))
+                handle_unexpected_exception(junit_test_case, e)
             finally:
                 if result:
                     Utility.console_log("Success: " + format_case_name(one_case), color="green")
@@ -526,12 +531,6 @@ def run_multiple_devices_cases(env, extra_data):
         for dut in duts:
             env.close_dut(dut)
         duts = {}
-
-    if failed_cases:
-        Utility.console_log("Failed Cases:", color="red")
-        for _case_name in failed_cases:
-            Utility.console_log("\t" + _case_name, color="red")
-        raise AssertionError("Unit Test Failed")
 
 
 def run_one_multiple_stage_case(dut, one_case, junit_test_case):
@@ -641,7 +640,7 @@ def run_one_multiple_stage_case(dut, one_case, junit_test_case):
 def run_multiple_stage_cases(env, extra_data):
     """
     extra_data can be 2 types of value
-    1. as dict: Mandantory keys: "name" and "child case num", optional keys: "reset" and others
+    1. as dict: Mandatory keys: "name" and "child case num", optional keys: "reset" and others
     3. as list of string or dict:
                [case1, case2, case3, {"name": "restart from PRO CPU", "child case num": 2}, ...]
 
@@ -650,7 +649,7 @@ def run_multiple_stage_cases(env, extra_data):
     :return: None
     """
 
-    case_config = format_test_case_config(extra_data)
+    case_config = format_test_case_config(extra_data, env.default_dut_cls.TARGET)
 
     # we don't want stop on failed case (unless some special scenarios we can't handle)
     # this flag is used to log if any of the case failed during executing
@@ -667,14 +666,14 @@ def run_multiple_stage_cases(env, extra_data):
         for one_case in case_config[ut_config]:
             log_test_case("multi-stage test", one_case, ut_config)
             performance_items = []
-            junit_test_case = TinyFW.JunitReport.create_test_case("[{}] {}".format(ut_config, one_case["name"]))
+            junit_test_case = TinyFW.JunitReport.create_test_case(format_case_name(one_case))
             try:
                 run_one_multiple_stage_case(dut, one_case, junit_test_case)
                 performance_items = dut.get_performance_items()
             except TestCaseFailed:
                 failed_cases.append(format_case_name(one_case))
             except Exception as e:
-                junit_test_case.add_failure_info("Unexpected exception: " + str(e))
+                handle_unexpected_exception(junit_test_case, e)
                 failed_cases.append(format_case_name(one_case))
             finally:
                 TinyFW.JunitReport.update_performance(performance_items)
@@ -682,17 +681,9 @@ def run_multiple_stage_cases(env, extra_data):
         # close DUT when finish running all cases for one config
         env.close_dut(dut.name)
 
-    # raise exception if any case fails
-    if failed_cases:
-        Utility.console_log("Failed Cases:", color="red")
-        for _case_name in failed_cases:
-            Utility.console_log("\t" + _case_name, color="red")
-        raise AssertionError("Unit Test Failed")
-
 
 def detect_update_unit_test_info(env, extra_data, app_bin):
-
-    case_config = format_test_case_config(extra_data)
+    case_config = format_test_case_config(extra_data, env.default_dut_cls.TARGET)
 
     for ut_config in case_config:
         dut = env.get_dut("unit-test-app", app_path=UT_APP_PATH, app_config_name=ut_config)
@@ -762,20 +753,16 @@ if __name__ == '__main__':
         type=int,
         default=1
     )
-    parser.add_argument("--env_config_file", "-e",
-                        help="test env config file",
-                        default=None
-                        )
-    parser.add_argument("--app_bin", "-b",
-                        help="application binary file for flashing the chip",
-                        default=None
-                        )
-    parser.add_argument(
-        'test',
-        help='Comma separated list of <option>:<argument> where option can be "name" (default), "child case num", \
-                "config", "timeout".',
-        nargs='+'
-    )
+    parser.add_argument('--env_config_file', '-e',
+                        help='test env config file',
+                        default=None)
+    parser.add_argument('--app_bin', '-b',
+                        help='application binary file for flashing the chip',
+                        default=None)
+    parser.add_argument('test',
+                        help='Comma separated list of <option>:<argument> where option can be "name" (default), '
+                             '"child case num", "config", "timeout".',
+                        nargs='+')
     args = parser.parse_args()
     list_of_dicts = []
     for test in args.test:
