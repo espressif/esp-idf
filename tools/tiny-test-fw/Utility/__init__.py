@@ -1,6 +1,7 @@
 from __future__ import print_function
-import sys
 
+import sys
+import traceback
 
 _COLOR_CODES = {
     "white": u'\033[0m',
@@ -46,3 +47,20 @@ def load_source(name, path):
         # importlib.machinery doesn't exists in Python 2 so we will use imp (deprecated in Python 3)
         import imp
         return imp.load_source(name, path)
+
+
+def handle_unexpected_exception(junit_test_case, exception):
+    """
+    Helper to log & add junit result details for an unexpected exception encountered
+    when running a test case.
+
+    Should always be called from inside an except: block
+    """
+    traceback.print_exc()
+    # AssertionError caused by an 'assert' statement has an empty string as its 'str' form
+    e_str = str(exception) if str(exception) else repr(exception)
+    junit_test_case.add_failure_info('Unexpected exception: {}\n{}'.format(e_str, traceback.format_exc()))
+
+
+def format_case_id(case_name, target='esp32', config='default'):
+    return '{}.{}.{}'.format(target, config, case_name)

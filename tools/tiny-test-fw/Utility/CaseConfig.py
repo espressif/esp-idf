@@ -154,7 +154,7 @@ class Parser(object):
         configs = cls.DEFAULT_CONFIG.copy()
         if config_file:
             with open(config_file, "r") as f:
-                configs.update(yaml.load(f))
+                configs.update(yaml.load(f, Loader=yaml.FullLoader))
         return configs
 
     @classmethod
