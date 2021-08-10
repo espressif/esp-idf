@@ -91,7 +91,7 @@ extern "C" {
 
 #if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
 // Forces data into external memory noinit section to avoid initialization after restart.
-#define EXT_RAM_NOINIT_ATTR _SECTION_ATTR_IMPL(".ext_ram.noinit", __COUNTER__)
+#define EXT_RAM_NOINIT_ATTR _SECTION_ATTR_IMPL(".ext_ram_noinit", __COUNTER__)
 #else
 // Place in internal noinit section
 #define EXT_RAM_NOINIT_ATTR __NOINIT_ATTR

@@ -201,10 +201,10 @@ SECTIONS
    * This section holds data that won't be initialised when startup.
    * This section locates in External RAM region.
    */
-  .ext_ram.noinit (NOLOAD) :
+  .ext_ram_noinit (NOLOAD) :
   {
     _ext_ram_noinit_start = ABSOLUTE(.);
-    *(.ext_ram.noinit*)
+    *(.ext_ram_noinit*)
     . = ALIGN(4);
     _ext_ram_noinit_end = ABSOLUTE(.);
   } > extern_ram_seg
