@@ -48,6 +48,7 @@ typedef struct {
  *
  * @return
  *  - ESP_OK: Success
+ *  - ESP_ERR_INVALID_ARG: event_loop_args or event_loop was NULL
  *  - ESP_ERR_NO_MEM: Cannot allocate memory for event loops list
  *  - ESP_FAIL: Failed to create task loop
  *  - Others: Fail
@@ -57,7 +58,7 @@ esp_err_t esp_event_loop_create(const esp_event_loop_args_t* event_loop_args, es
 /**
  * @brief Delete an existing event loop.
  *
- * @param[in] event_loop event loop to delete
+ * @param[in] event_loop event loop to delete, must not be NULL
  *
  * @return
  *  - ESP_OK: Success
@@ -102,7 +103,7 @@ esp_err_t esp_event_loop_delete_default(void);
  * In cases where waiting on the queue times out, ESP_OK is returned and not ESP_ERR_TIMEOUT, since it is
  * normal behavior.
  *
- * @param[in] event_loop event loop to dispatch posted events from
+ * @param[in] event_loop event loop to dispatch posted events from, must not be NULL
  * @param[in] ticks_to_run number of ticks to run the loop
  *
  * @note encountering an unknown event that has been posted to the loop will only generate a warning, not an error.
@@ -152,7 +153,7 @@ esp_err_t esp_event_handler_register(esp_event_base_t event_base,
  * This function behaves in the same manner as esp_event_handler_register, except the additional
  * specification of the event loop to register the handler to.
  *
- * @param[in] event_loop the event loop to register this handler function to
+ * @param[in] event_loop the event loop to register this handler function to, must not be NULL
  * @param[in] event_base the base id of the event to register the handler for
  * @param[in] event_id the id of the event to register the handler for
  * @param[in] event_handler the handler function which gets called when the event is dispatched
@@ -168,23 +169,23 @@ esp_err_t esp_event_handler_register(esp_event_base_t event_base,
  *  - Others: Fail
  */
 esp_err_t esp_event_handler_register_with(esp_event_loop_handle_t event_loop,
-                                            esp_event_base_t event_base,
-                                            int32_t event_id,
-                                            esp_event_handler_t event_handler,
-                                            void* event_handler_arg);
+                                          esp_event_base_t event_base,
+                                          int32_t event_id,
+                                          esp_event_handler_t event_handler,
+                                          void *event_handler_arg);
 
 /**
  * @brief Unregister a handler with the system event loop.
  *
- * This function can be used to unregister a handler so that it no longer gets called during dispatch.
- * Handlers can be unregistered for either: (1) specific events, (2) all events of a certain event base,
- * or (3) all events known by the system event loop
+ * Unregisters a handler so it will no longer be called during dispatch.
+ * Handlers can be unregistered for any combination of event_base and event_id which were previously registered.
+ * To unregister a handler, the event_base and event_id arguments must match exactly the arguments passed to
+ * esp_event_handler_register() when that handler was registered. Passing ESP_EVENT_ANY_BASE and/or ESP_EVENT_ANY_ID
+ * will only unregister handlers that were registered with the same wildcard arguments.
  *
- *  - specific events: specify exact event_base and event_id
- *  - all events of a certain base: specify exact event_base and use ESP_EVENT_ANY_ID as the event_id
- *  - all events known by the loop: use ESP_EVENT_ANY_BASE for event_base and ESP_EVENT_ANY_ID as the event_id
- *
- * This function ignores unregistration of handlers that has not been previously registered.
+ * @note When using ESP_EVENT_ANY_ID, handlers registered to specific event IDs using the same base will not be
+ *       unregistered. When using ESP_EVENT_ANY_BASE, events registered to specific bases will also not be
+ *       unregistered. This avoids accidental unregistration of handlers registered by other users or components.
  *
  * @param[in] event_base the base of the event with which to unregister the handler
  * @param[in] event_id the id of the event with which to unregister the handler
@@ -202,7 +203,7 @@ esp_err_t esp_event_handler_unregister(esp_event_base_t event_base, int32_t even
  * This function behaves in the same manner as esp_event_handler_unregister, except the additional specification of
  * the event loop to unregister the handler with.
  *
- * @param[in] event_loop the event loop with which to unregister this handler function
+ * @param[in] event_loop the event loop with which to unregister this handler function, must not be NULL
  * @param[in] event_base the base of the event with which to unregister the handler
  * @param[in] event_id the id of the event with which to unregister the handler
  * @param[in] event_handler the handler to unregister
@@ -230,7 +231,7 @@ esp_err_t esp_event_handler_unregister_with(esp_event_loop_handle_t event_loop,
  *
  * @return
  *  - ESP_OK: Success
- *  - ESP_ERR_TIMEOUT: Time to wait for event queue to unblock expired, 
+ *  - ESP_ERR_TIMEOUT: Time to wait for event queue to unblock expired,
  *                      queue full when posting from ISR
  *  - ESP_ERR_INVALID_ARG: Invalid combination of event base and event id
  *  - Others: Fail
@@ -249,7 +250,7 @@ esp_err_t esp_event_post(esp_event_base_t event_base,
  * This function behaves in the same manner as esp_event_post_to, except the additional specification of the event loop
  * to post the event to.
  *
- * @param[in] event_loop the event loop to post to
+ * @param[in] event_loop the event loop to post to, must not be NULL
  * @param[in] event_base the event base that identifies the event
  * @param[in] event_id the event id that identifies the event
  * @param[in] event_data the data, specific to the event occurence, that gets passed to the handler
@@ -258,7 +259,7 @@ esp_err_t esp_event_post(esp_event_base_t event_base,
  *
  * @return
  *  - ESP_OK: Success
- *  - ESP_ERR_TIMEOUT: Time to wait for event queue to unblock expired, 
+ *  - ESP_ERR_TIMEOUT: Time to wait for event queue to unblock expired,
  *                      queue full when posting from ISR
  *  - ESP_ERR_INVALID_ARG: Invalid combination of event base and event id
  *  - Others: Fail
@@ -273,14 +274,14 @@ esp_err_t esp_event_post_to(esp_event_loop_handle_t event_loop,
 #if CONFIG_ESP_EVENT_POST_FROM_ISR
 /**
  * @brief Special variant of esp_event_post for posting events from interrupt handlers.
- * 
+ *
  * @param[in] event_base the event base that identifies the event
  * @param[in] event_id the event id that identifies the event
  * @param[in] event_data the data, specific to the event occurence, that gets passed to the handler
  * @param[in] event_data_size the size of the event data; max is 4 bytes
- * @param[out] task_unblocked an optional parameter (can be NULL) which indicates that an event task with 
+ * @param[out] task_unblocked an optional parameter (can be NULL) which indicates that an event task with
  *                            higher priority than currently running task has been unblocked by the posted event;
- *                            a context switch should be requested before the interrupt is existed.
+ *                            a context switch should be requested before the interrupt is exited.
  *
  * @note this function is only available when CONFIG_ESP_EVENT_POST_FROM_ISR is enabled
  * @note when this function is called from an interrupt handler placed in IRAM, this function should
@@ -290,7 +291,7 @@ esp_err_t esp_event_post_to(esp_event_loop_handle_t event_loop,
  *  - ESP_OK: Success
  *  - ESP_FAIL: Event queue for the default event loop full
  *  - ESP_ERR_INVALID_ARG: Invalid combination of event base and event id,
- *                          data size of more than 4 bytes 
+ *                          data size of more than 4 bytes
  *  - Others: Fail
  */
 esp_err_t esp_event_isr_post(esp_event_base_t event_base,
@@ -302,13 +303,14 @@ esp_err_t esp_event_isr_post(esp_event_base_t event_base,
 /**
  * @brief Special variant of esp_event_post_to for posting events from interrupt handlers
  *
+ * @param[in] event_loop the event loop to post to, must not be NULL
  * @param[in] event_base the event base that identifies the event
  * @param[in] event_id the event id that identifies the event
  * @param[in] event_data the data, specific to the event occurence, that gets passed to the handler
  * @param[in] event_data_size the size of the event data
- * @param[out] task_unblocked an optional parameter (can be NULL) which indicates that an event task with 
+ * @param[out] task_unblocked an optional parameter (can be NULL) which indicates that an event task with
  *                            higher priority than currently running task has been unblocked by the posted event;
- *                            a context switch should be requested before the interrupt is existed.
+ *                            a context switch should be requested before the interrupt is exited.
  *
  * @note this function is only available when CONFIG_ESP_EVENT_POST_FROM_ISR is enabled
  * @note when this function is called from an interrupt handler placed in IRAM, this function should
@@ -318,7 +320,7 @@ esp_err_t esp_event_isr_post(esp_event_base_t event_base,
  *  - ESP_OK: Success
  *  - ESP_FAIL: Event queue for the loop full
  *  - ESP_ERR_INVALID_ARG: Invalid combination of event base and event id,
- *                          data size of more than 4 bytes 
+ *                          data size of more than 4 bytes
  *  - Others: Fail
  */
 esp_err_t esp_event_isr_post_to(esp_event_loop_handle_t event_loop,
