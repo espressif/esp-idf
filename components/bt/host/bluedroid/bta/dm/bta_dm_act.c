@@ -4975,9 +4975,6 @@ void bta_dm_ble_update_conn_params (tBTA_DM_MSG *p_data)
                                   p_data->ble_update_conn_params.latency,
                                   p_data->ble_update_conn_params.timeout)) {
         APPL_TRACE_ERROR("Update connection parameters failed!");
-    } else {
-        BTM_BleConfigConnParams(p_data->ble_update_conn_params.min_int, p_data->ble_update_conn_params.max_int,
-            p_data->ble_update_conn_params.latency, p_data->ble_update_conn_params.timeout);
     }
 }
 /*******************************************************************************
