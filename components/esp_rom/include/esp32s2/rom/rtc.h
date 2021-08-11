@@ -94,6 +94,7 @@ typedef enum {
     TG1WDT_CPU_RESET       = 17,    /**<17, Time Group1 reset CPU*/
     SUPER_WDT_RESET        = 18,    /**<18, super watchdog reset digital core and rtc module*/
     GLITCH_RTC_RESET       = 19,    /**<19, glitch reset digital core and rtc module*/
+    EFUSE_RESET            = 20,    /**<20, efuse reset digital core*/
 } RESET_REASON;
 
 typedef enum {
