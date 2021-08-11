@@ -66,6 +66,7 @@
 /components/bootloader*/              @esp-idf-codeowners/system @esp-idf-codeowners/security
 /components/bt/                       @esp-idf-codeowners/bluetooth
 /components/cbor/                     @esp-idf-codeowners/app-utilities
+/components/cmock/                    @esp-idf-codeowners/system
 /components/coap/                     @esp-idf-codeowners/app-utilities
 /components/console/                  @esp-idf-codeowners/system @esp-idf-codeowners/app-utilities
 /components/cxx/                      @esp-idf-codeowners/system
@@ -183,6 +184,7 @@
 /tools/kconfig*/              @esp-idf-codeowners/build-config
 /tools/ldgen/                 @esp-idf-codeowners/build-config
 /tools/mass_mfg/              @esp-idf-codeowners/app-utilities
+/tools/mocks/                 @esp-idf-codeowners/system
 
 ## Note: owners here should be the same as the owners for the same example subdir, above
 /tools/test_apps/build_system/       @esp-idf-codeowners/build-config

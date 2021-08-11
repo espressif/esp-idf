@@ -9,7 +9,7 @@ set(srcs "default_event_loop.c"
 if(${target} STREQUAL "linux")
     list(APPEND requires "linux")
     # Temporary fix until esp_system is available for linux, too
-    list(APPEND priv_include_dirs "$ENV{IDF_PATH}/mocks/esp_system/include")
+    list(APPEND priv_include_dirs "$ENV{IDF_PATH}/tools/mocks/esp_system/include")
 else()
     list(APPEND requires "esp_netif")
     list(APPEND srcs "event_loop_legacy.c" "event_send.c")
