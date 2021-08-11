@@ -118,6 +118,11 @@ void esp_efuse_utility_clear_program_registers(void)
     efuse_hal_clear_program_registers();
 }
 
+esp_err_t esp_efuse_utility_check_errors(void)
+{
+    return ESP_OK;
+}
+
 // Burn values written to the efuse write registers
 esp_err_t esp_efuse_utility_burn_chip(void)
 {
