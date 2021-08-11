@@ -681,7 +681,6 @@ components/esp_system/port/soc/esp32/intr.c
 components/esp_system/port/soc/esp32/reset_reason.c
 components/esp_system/port/soc/esp32c3/apb_backup_dma.c
 components/esp_system/port/soc/esp32c3/cache_err_int.h
-components/esp_system/port/soc/esp32c3/reset_reason.c
 components/esp_system/port/soc/esp32h2/apb_backup_dma.c
 components/esp_system/port/soc/esp32h2/cache_err_int.h
 components/esp_system/port/soc/esp32h2/reset_reason.c
@@ -1357,7 +1356,6 @@ components/soc/esp32s2/include/soc/ledc_reg.h
 components/soc/esp32s2/include/soc/ledc_struct.h
 components/soc/esp32s2/include/soc/memprot_defs.h
 components/soc/esp32s2/include/soc/nrx_reg.h
-components/soc/esp32s2/include/soc/reset_reasons.h
 components/soc/esp32s2/include/soc/rtc_cntl_reg.h
 components/soc/esp32s2/include/soc/rtc_cntl_struct.h
 components/soc/esp32s2/include/soc/rtc_i2c_reg.h

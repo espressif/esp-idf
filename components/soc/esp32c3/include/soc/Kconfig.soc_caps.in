@@ -55,6 +55,10 @@ config SOC_EFUSE_KEY_PURPOSE_FIELD
     bool
     default y
 
+config SOC_EFUSE_HAS_EFUSE_RST_BUG
+    bool
+    default y
+
 config SOC_RTC_FAST_MEM_SUPPORTED
     bool
     default y

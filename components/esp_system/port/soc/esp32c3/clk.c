@@ -68,7 +68,11 @@ static const char *TAG = "clk";
     rtc_config_t cfg = RTC_CONFIG_DEFAULT();
     soc_reset_reason_t rst_reas;
     rst_reas = esp_rom_get_reset_reason(0);
-    if (rst_reas == RESET_REASON_CHIP_POWER_ON) {
+    if (rst_reas == RESET_REASON_CHIP_POWER_ON
+#if SOC_EFUSE_HAS_EFUSE_RST_BUG
+        || rst_reas == RESET_REASON_CORE_EFUSE_CRC
+#endif
+        ) {
         cfg.cali_ocode = 1;
     }
     rtc_init(cfg);
