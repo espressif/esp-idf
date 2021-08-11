@@ -51,4 +51,4 @@ I (920) example: Unmounting FAT filesystem
 I (1000) example: Done
 ```
 
-To erase the contents of wear levelling partition, run `idf.py erase_flash` command. Then upload the example again as described above.
+To erase the contents of wear levelling partition, run `idf.py erase-flash` command. Then upload the example again as described above.

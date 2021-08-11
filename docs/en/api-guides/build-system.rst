@@ -87,7 +87,7 @@ The command ``idf.py`` supports `shell autocompletion <https://click.palletsproj
 
 In order to make `shell autocompletion <https://click.palletsprojects.com/shell-completion/>`_ supported, please make sure you have at least Python 3.5 and `click <https://click.palletsprojects.com/>`_ 7.1 or newer (:ref:`see also <get-started-get-prerequisites>`).
 
-To enable autocompletion for ``idf.py`` use the ``export`` command (:ref:`see this <get-started-export>`). Autocompletion is initiated by pressing the TAB key. Type "idf.py -" and press the TAB key to autocomplete options. 
+To enable autocompletion for ``idf.py`` use the ``export`` command (:ref:`see this <get-started-export>`). Autocompletion is initiated by pressing the TAB key. Type "idf.py -" and press the TAB key to autocomplete options.
 
 The autocomplete support for PowerShell is planned in the future.
 
@@ -96,9 +96,9 @@ The autocomplete support for PowerShell is planned in the future.
 Advanced Commands
 ^^^^^^^^^^^^^^^^^
 
-- ``idf.py app``, ``idf.py bootloader``, ``idf.py partition_table`` can be used to build only the app, bootloader, or partition table from the project as applicable.
+- ``idf.py app``, ``idf.py bootloader``, ``idf.py partition-table`` can be used to build only the app, bootloader, or partition table from the project as applicable.
 - There are matching commands ``idf.py app-flash``, etc. to flash only that single part of the project to the target.
-- ``idf.py -p PORT erase_flash`` will use esptool.py to erase the target's entire flash chip.
+- ``idf.py -p PORT erase-flash`` will use esptool.py to erase the target's entire flash chip.
 - ``idf.py size`` prints some size information about the app. ``size-components`` and ``size-files`` are similar commands which print more detailed per-component or per-source-file information, respectively. If you define variable ``-DOUTPUT_JSON=1`` when running CMake (or ``idf.py``), the output will be formatted as JSON not as human readable text. See ``idf.py-size`` for more information.
 - ``idf.py reconfigure`` re-runs CMake_ even if it doesn't seem to need re-running. This isn't necessary during normal usage, but can be useful after adding/removing files from the source tree, or when modifying CMake cache variables. For example, ``idf.py -DNAME='VALUE' reconfigure`` can be used to set variable ``NAME`` in CMake cache to value ``VALUE``.
 - ``idf.py python-clean`` deletes generated Python byte code from the IDF directory which may cause issues when switching between IDF and Python versions. It is advised to run this target after switching versions of Python.
@@ -325,7 +325,7 @@ The build system provides special treatment to the ``main`` component. It is a c
 Overriding default build specifications
 ---------------------------------------
 
-The build sets some global build specifications (compile flags, definitions, etc.) that gets used in compiling all sources from all components. 
+The build sets some global build specifications (compile flags, definitions, etc.) that gets used in compiling all sources from all components.
 
 .. highlight:: cmake
 
@@ -414,7 +414,7 @@ The following component-specific variables are available for use inside componen
 - ``COMPONENT_DIR``: The component directory. Evaluates to the absolute path of the directory containing ``CMakeLists.txt``. The component path cannot contain spaces. This is the same as the ``CMAKE_CURRENT_SOURCE_DIR`` variable.
 - ``COMPONENT_NAME``: Name of the component. Same as the name of the component directory.
 - ``COMPONENT_ALIAS``: Alias of the library created internally by the build system for the component.
-- ``COMPONENT_LIB``: Name of the library created internally by the build system for the component. 
+- ``COMPONENT_LIB``: Name of the library created internally by the build system for the component.
 
 The following variables are set at the project level, but available for use in component CMakeLists:
 
@@ -1175,7 +1175,7 @@ where:
 - ``target_name``- name that can be used to reference the imported library, such as when linking to other targets
 - ``lib_path``- path to prebuilt library; may be an absolute or relative path to the component directory
 
-Optional arguments ``REQUIRES`` and ``PRIV_REQUIRES`` specify dependency on other components. These have the same meaning as the arguments for ``idf_component_register``. 
+Optional arguments ``REQUIRES`` and ``PRIV_REQUIRES`` specify dependency on other components. These have the same meaning as the arguments for ``idf_component_register``.
 
 Take note that the prebuilt library must have been compiled for the same target as the consuming project. Configuration relevant to the prebuilt library must also match. If not paid attention to, these two factors may contribute to subtle bugs in the app.
 
@@ -1196,12 +1196,12 @@ It is possible to do so by using the :ref:`build system APIs provided<cmake_buil
   # Include CMake file that provides ESP-IDF CMake build system APIs.
   include($ENV{IDF_PATH}/tools/cmake/idf.cmake)
 
-  # Include ESP-IDF components in the build, may be thought as an equivalent of 
+  # Include ESP-IDF components in the build, may be thought as an equivalent of
   # add_subdirectory() but with some additional processing and magic for ESP-IDF build
   # specific build processes.
   idf_build_process(esp32)
-  
-  # Create the project executable and plainly link the newlib component to it using 
+
+  # Create the project executable and plainly link the newlib component to it using
   # its alias, idf::newlib.
   add_executable(${CMAKE_PROJECT_NAME}.elf main.c)
   target_link_libraries(${CMAKE_PROJECT_NAME}.elf idf::newlib)
@@ -1233,20 +1233,20 @@ Retrieve a :ref:`build property<cmake-build-properties>` *property* and store it
 
   idf_build_set_property(property val [APPEND])
 
-Set a :ref:`build property<cmake-build-properties>` *property* with value *val*. Specifying *APPEND* will append the specified value to the current value of the property. If the property does not previously exist or it is currently empty, the specified value becomes the first element/member instead. 
+Set a :ref:`build property<cmake-build-properties>` *property* with value *val*. Specifying *APPEND* will append the specified value to the current value of the property. If the property does not previously exist or it is currently empty, the specified value becomes the first element/member instead.
 
 .. code-block:: none
 
   idf_build_component(component_dir)
 
 Present a directory *component_dir* that contains a component to the build system. Relative paths are converted to absolute paths with respect to current directory.
-All calls to this command must be performed before `idf_build_process`. 
+All calls to this command must be performed before `idf_build_process`.
 
 This command does not guarantee that the component will be processed during build (see the `COMPONENTS` argument description for `idf_build_process`)
 
 .. code-block:: none
 
-  idf_build_process(target 
+  idf_build_process(target
                     [PROJECT_DIR project_dir]
                     [PROJECT_VER project_ver]
                     [PROJECT_NAME project_name]
@@ -1256,7 +1256,7 @@ This command does not guarantee that the component will be processed during buil
                     [COMPONENTS component1 component2 ...])
 
 Performs the bulk of the behind-the-scenes magic for including ESP-IDF components such as component configuration, libraries creation, dependency expansion and resolution. Among these functions, perhaps the most important from a user's perspective is the libraries creation by calling each component's ``idf_component_register``. This command creates the libraries for each component, which are accessible using aliases in the form idf::*component_name*.
-These aliases can be used to link the components to the user's own targets, either libraries or executables. 
+These aliases can be used to link the components to the user's own targets, either libraries or executables.
 
 The call requires the target chip to be specified with *target* argument. Optional arguments for the call include:
 
@@ -1266,7 +1266,7 @@ The call requires the target chip to be specified with *target* argument. Option
 - SDKCONFIG - output path of generated sdkconfig file; defaults to PROJECT_DIR/sdkconfig or CMAKE_SOURCE_DIR/sdkconfig depending if PROJECT_DIR is set
 - SDKCONFIG_DEFAULTS - list of files containing default config to use in the build (list must contain full paths); defaults to empty. For each value *filename* in the list, the config from file *filename.target*, if it exists, is also loaded.
 - BUILD_DIR - directory to place ESP-IDF build-related artifacts, such as generated binaries, text files, components; defaults to CMAKE_BINARY_DIR
-- COMPONENTS - select components to process among the components known by the build system (added via `idf_build_component`). This argument is used to trim the build. 
+- COMPONENTS - select components to process among the components known by the build system (added via `idf_build_component`). This argument is used to trim the build.
   Other components are automatically added if they are required in the dependency chain, i.e. the public and private requirements of the components in this list are automatically added, and in turn the public and private requirements of those requirements, so on and so forth. If not specified, all components known to the build system are processed.
 
 .. code-block:: none
@@ -1333,7 +1333,7 @@ Retrieve a specified *component*'s :ref:`component property<cmake-component-prop
 
   idf_component_set_property(component property val [APPEND])
 
-Set a specified *component*'s :ref:`component property<cmake-component-properties>`, *property* with value *val*. Specifying *APPEND* will append the specified value to the current value of the property. If the property does not previously exist or it is currently empty, the specified value becomes the first element/member instead. 
+Set a specified *component*'s :ref:`component property<cmake-component-properties>`, *property* with value *val*. Specifying *APPEND* will append the specified value to the current value of the property. If the property does not previously exist or it is currently empty, the specified value becomes the first element/member instead.
 
 .. _cmake-component-register:
 
@@ -1352,7 +1352,7 @@ Set a specified *component*'s :ref:`component property<cmake-component-propertie
                          [KCONFIG_PROJBUILD kconfig_projbuild])
 
 Register a component to the build system. Much like the ``project()`` CMake command, this should be called from the component's CMakeLists.txt directly (not through a function or macro) and is recommended to be called before any other command. Here are some guidelines on what commands can **not** be called before ``idf_component_register``:
-  
+
   - commands that are not valid in CMake script mode
   - custom commands defined in project_include.cmake
   - build system API commands except ``idf_build_get_property``; although consider whether the property may not have been set yet
@@ -1376,7 +1376,7 @@ The following are used for :ref:`embedding data into the component<cmake_embed_d
 
   - EMBED_FILES - binary files to be embedded in the component
   - EMBED_TXTFILES - text files to be embedded in the component
-  
+
 .. _cmake-component-properties:
 
 idf-component-properties
@@ -1484,7 +1484,7 @@ The listfiles for the ESP-IDF build system reside in :idf:`/tools/cmake`. The mo
     - idf.cmake - Sets up the build and includes the core modules listed above. Included in CMake projects in order to access ESP-IDF build system functionality.
     - project.cmake - Includes ``idf.cmake`` and provides a custom ``project()`` command that takes care of all the heavy lifting of building an executable. Included in the top-level CMakeLists.txt of standard ESP-IDF projects.
 
-The rest of the files in :idf:`/tools/cmake` are support or third-party scripts used in the build process. 
+The rest of the files in :idf:`/tools/cmake` are support or third-party scripts used in the build process.
 
 Build Process
 -------------
@@ -1495,14 +1495,14 @@ This section describes the standard ESP-IDF application build process. The build
     :scale: 100%
     :caption: ESP-IDF Build System Process
     :align: center
-    
+
     blockdiag idf-build-system-process {
         Initialization -> Enumeration
         Enumeration -> Processing
         Processing -> Finalization
     }
 
-Initialization 
+Initialization
 ^^^^^^^^^^^^^^
 
 This phase sets up necessary parameters for the build.
@@ -1515,7 +1515,7 @@ This phase sets up necessary parameters for the build.
         - Set global build specifications i.e. compile options, compile definitions, include directories for all components in the build.
         - Add components in :idf:`components` to the build.
     - The initial part of the custom ``project()`` command performs the following steps:
-        - Set ``IDF_TARGET`` from environment variable or CMake cache and the corresponding ``CMAKE_TOOLCHAIN_FILE`` to be used. 
+        - Set ``IDF_TARGET`` from environment variable or CMake cache and the corresponding ``CMAKE_TOOLCHAIN_FILE`` to be used.
         - Add components in ``EXTRA_COMPONENTS_DIRS`` to the build.
         - Prepare arguments for calling command ``idf_build_process()`` from variables such as ``COMPONENTS``/``EXCLUDE_COMPONENTS``, ``SDKCONFIG``, ``SDKCONFIG_DEFAULTS``.
 
@@ -1539,8 +1539,8 @@ Processing
 
 Finalization
 ^^^^^^^^^^^^
-  This phase is everything after ``idf_build_process()``. 
-  
+  This phase is everything after ``idf_build_process()``.
+
   - Create executable and link the component libraries to it.
   - Generate project metadata files such as project_description.json and display relevant information about the project built.
 

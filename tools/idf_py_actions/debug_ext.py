@@ -367,8 +367,26 @@ def action_extensions(base_actions, project_path):
                 'options': [gdbinit, fail_if_openocd_failed],
                 'order_dependencies': ['all', 'flash'],
             },
+            'post-debug': {
+                'callback': post_debug,
+                'help': 'Utility target to read the output of async debug action and stop them.',
+                'options': [
+                    {
+                        'names': ['--block', '--block'],
+                        'help':
+                        ('Set to 1 for blocking the console on the outputs of async debug actions\n'),
+                        'default': 0,
+                    },
+                ],
+                'order_dependencies': [],
+            },
             'post_debug': {
                 'callback': post_debug,
+                'deprecated': {
+                    'removed': 'v5.0',
+                    'message': 'Please use "post-debug" instead.',
+                },
+                'hidden': True,
                 'help': 'Utility target to read the output of async debug action and stop them.',
                 'options': [
                     {

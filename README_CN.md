@@ -56,7 +56,7 @@ ESP-IDF 中的子模块采用相对路径（[详见 .gitmodules 文件](.gitmodu
 * 在主机中安装入门指南中提到的构建所依赖的工具。
 * 运行安装脚本来设置构建环境。可为 Windows shell 选择 `install.bat` 或 `install.ps1`，为 Unix shell 选择 `install.sh` 和 `install.fish`。
 * 在使用 ESP-IDF 之前，需要在 shell 中运行导出脚本。Windows 下可运行 `export.bat`，Unix 下可运行 `source export.sh`。
-  
+
 ## 配置项目
 
 * `idf.py set-target <chip_name>` 可将项目的目标芯片设置为 `<chip_name>`。运行 `idf.py set-target`，不用带任何参数，可查看所有支持的目标芯片列表。
@@ -103,9 +103,9 @@ ESP-IDF 中的子模块采用相对路径（[详见 .gitmodules 文件](.gitmodu
 
 ## 擦除 Flash
 
-`idf.py flash` 并不会擦除 flash 上所有的内容，但是有时候我们需要设备恢复到完全擦除的状态，尤其是分区表发生了变化或者 OTA 应用升级时。要擦除整块 flash 请运行 `idf.py erase_flash`。
+`idf.py flash` 并不会擦除 flash 上所有的内容，但是有时候我们需要设备恢复到完全擦除的状态，尤其是分区表发生了变化或者 OTA 应用升级时。要擦除整块 flash 请运行 `idf.py erase-flash`。
 
-这条命令还可以和其余命令整合在一起，`idf.py -p PORT erase_flash flash` 会擦除一切然后重新烧写新的应用程序、引导程序和分区表。
+这条命令还可以和其余命令整合在一起，`idf.py -p PORT erase-flash flash` 会擦除一切然后重新烧写新的应用程序、引导程序和分区表。
 
 # 其它参考资源
 

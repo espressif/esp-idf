@@ -38,8 +38,8 @@ When ``make all`` finishes, it will print a command line to use esptool.py to fl
 
     make flash
 
-This will flash the entire project (app, bootloader and partition table) to a new chip. Also if partition table has ota_data then this command will flash a initial ota_data. 
-It allows to run the newly loaded app from a factory partition (or the first OTA partition, if factory partition is not present). 
+This will flash the entire project (app, bootloader and partition table) to a new chip. Also if partition table has ota_data then this command will flash a initial ota_data.
+It allows to run the newly loaded app from a factory partition (or the first OTA partition, if factory partition is not present).
 The settings for serial port flashing can be configured with `make menuconfig`.
 
 You don't need to run ``make all`` before running ``make flash``, ``make flash`` will automatically rebuild anything which needs it.
@@ -75,4 +75,3 @@ The simplest way to use the partition table is to `make menuconfig` and choose o
 In both cases the factory app is flashed at offset 0x10000. If you `make partition_table` then it will print a summary of the partition table.
 
 For more details about :doc:`partition tables <../api-guides/partition-tables>` and how to create custom variations, view the :doc:`documentation <../api-guides/partition-tables>`.
-
