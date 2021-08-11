@@ -90,6 +90,9 @@ typedef enum {
     SUPER_WDT_RESET        = 18,    /**<18, super watchdog reset digital core and rtc module*/
     GLITCH_RTC_RESET       = 19,    /**<19, glitch reset digital core and rtc module*/
     EFUSE_RESET            = 20,    /**<20, efuse reset digital core*/
+    USB_UART_CHIP_RESET    = 21,    /**<21, usb uart reset digital core */
+    USB_JTAG_CHIP_RESET    = 22,    /**<22, usb jtag reset digital core */
+    POWER_GLITCH_RESET     = 23,    /**<23, power glitch reset digital core and rtc module*/
 } RESET_REASON;
 
 typedef enum {
