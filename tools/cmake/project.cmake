@@ -197,6 +197,20 @@ function(__project_init components_var test_components_var)
         __project_component_dir("${CMAKE_CURRENT_LIST_DIR}/components")
     endif()
 
+    # For bootloader components, we only need to set-up the Kconfig files.
+    # Indeed, bootloader is currently compiled as a subproject, thus,
+    # its components are not part of the main project.
+    # However, in order to be able to configure these bootloader components
+    # using menuconfig, we need to look for their Kconfig-related files now.
+    file(GLOB bootloader_component_dirs "${CMAKE_CURRENT_LIST_DIR}/bootloader_components/*")
+    list(SORT bootloader_component_dirs)
+    foreach(bootloader_component_dir ${bootloader_component_dirs})
+        __component_dir_quick_check(is_component ${bootloader_component_dir})
+        if(is_component)
+            __kconfig_bootloader_component_add("${bootloader_component_dir}")
+        endif()
+    endforeach()
+
     spaces2list(COMPONENTS)
     spaces2list(EXCLUDE_COMPONENTS)
     idf_build_get_property(component_targets __COMPONENT_TARGETS)
