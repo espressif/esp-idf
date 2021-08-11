@@ -287,6 +287,9 @@
 
 #define SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP    (1)     /*!<Supports waking up from touch pad trigger */
 
+#define SOC_PM_SUPPORT_DEEPSLEEP_VERIFY_STUB_ONLY   (1)
+
+
 /*-------------------------- Flash Encryption CAPS----------------------------*/
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (64)
 

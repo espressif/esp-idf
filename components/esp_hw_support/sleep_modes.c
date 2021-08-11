@@ -188,12 +188,41 @@ static void touch_wakeup_prepare(void);
 static void esp_deep_sleep_wakeup_prepare(void);
 #endif
 
+#if SOC_PM_SUPPORT_DEEPSLEEP_VERIFY_STUB_ONLY
+static RTC_FAST_ATTR esp_deep_sleep_wake_stub_fn_t wake_stub_fn_handler = NULL;
+
+static void RTC_IRAM_ATTR __attribute__((used, noinline)) esp_wake_stub_start(void)
+{
+    if (wake_stub_fn_handler) {
+        (*wake_stub_fn_handler)();
+    }
+}
+
+/* We must have a default deep sleep wake stub entry function, which must be
+ * located at the start address of the RTC fast memory, and its implementation
+ * must be simple enough to ensure that there is no litteral data before the
+ * wake stub entry, otherwise, the litteral data before the wake stub entry
+ * will not be CRC checked. */
+static void __attribute__((section(".rtc.entry.text"))) esp_wake_stub_entry(void)
+{
+#define _SYM2STR(s) # s
+#define SYM2STR(s)  _SYM2STR(s)
+    // call4 has a larger effective addressing range (-524284 to 524288 bytes),
+    // which is sufficient for instruction addressing in RTC fast memory.
+    __asm__ __volatile__ ("call4 " SYM2STR(esp_wake_stub_start) "\n");
+}
+#endif // SOC_PM_SUPPORT_DEEPSLEEP_VERIFY_STUB_ONLY
+
 /* Wake from deep sleep stub
    See esp_deepsleep.h esp_wake_deep_sleep() comments for details.
 */
 esp_deep_sleep_wake_stub_fn_t esp_get_deep_sleep_wake_stub(void)
 {
+#if SOC_PM_SUPPORT_DEEPSLEEP_VERIFY_STUB_ONLY
+    esp_deep_sleep_wake_stub_fn_t stub_ptr = wake_stub_fn_handler;
+#else
     esp_deep_sleep_wake_stub_fn_t stub_ptr = (esp_deep_sleep_wake_stub_fn_t) REG_READ(RTC_ENTRY_ADDR_REG);
+#endif
     if (!esp_ptr_executable(stub_ptr)) {
         return NULL;
     }
@@ -202,7 +231,11 @@ esp_deep_sleep_wake_stub_fn_t esp_get_deep_sleep_wake_stub(void)
 
 void esp_set_deep_sleep_wake_stub(esp_deep_sleep_wake_stub_fn_t new_stub)
 {
+#if SOC_PM_SUPPORT_DEEPSLEEP_VERIFY_STUB_ONLY
+    wake_stub_fn_handler = new_stub;
+#else
     REG_WRITE(RTC_ENTRY_ADDR_REG, (uint32_t)new_stub);
+#endif
 }
 
 void RTC_IRAM_ATTR esp_default_wake_deep_sleep(void)
@@ -416,18 +449,27 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
          */
         portENTER_CRITICAL(&spinlock_rtc_deep_sleep);
 
+#if SOC_PM_SUPPORT_DEEPSLEEP_VERIFY_STUB_ONLY
+        extern char _rtc_text_start[];
+#if CONFIG_ESP32S3_RTCDATA_IN_FAST_MEM
+        extern char _rtc_noinit_end[];
+        size_t rtc_fast_length = (size_t)_rtc_noinit_end - (size_t)_rtc_text_start;
+#else
+        extern char _rtc_force_fast_end[];
+        size_t rtc_fast_length = (size_t)_rtc_force_fast_end - (size_t)_rtc_text_start;
+#endif
+        esp_rom_set_rtc_wake_addr((esp_rom_wake_func_t)esp_wake_stub_entry, rtc_fast_length);
+        result = call_rtc_sleep_start(reject_triggers, config.lslp_mem_inf_fpu);
+#else
 #if !CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
         /* If not possible stack is in RTC FAST memory, use the ROM function to calculate the CRC and save ~140 bytes IRAM */
-#if CONFIG_IDF_TARGET_ESP32S3//TODO: WIFI-3542
-        result = 0;
-#else
         set_rtc_memory_crc();
         result = call_rtc_sleep_start(reject_triggers, config.lslp_mem_inf_fpu);
-#endif
 #else
         /* Otherwise, need to call the dedicated soc function for this */
         result = rtc_deep_sleep_start(s_config.wakeup_triggers, reject_triggers);
 #endif
+#endif // SOC_PM_SUPPORT_DEEPSLEEP_VERIFY_STUB_ONLY
 
         portEXIT_CRITICAL(&spinlock_rtc_deep_sleep);
     } else {
