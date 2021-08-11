@@ -15,12 +15,6 @@ set(srcs "src/nvs_api.cpp"
 
 set(public_req "spi_flash")
 
-# Current linux-based builds don't have common components.
-# Add the necessary ones manually:
-if(${target} STREQUAL "linux")
-    list(APPEND public_req "esp_rom" "esp_common" "log")
-endif()
-
 set(include_dirs "include")
 
 idf_component_register(SRCS "${srcs}"
