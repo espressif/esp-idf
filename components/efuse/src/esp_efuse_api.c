@@ -287,3 +287,8 @@ esp_err_t esp_efuse_batch_write_commit(void)
     }
     return ESP_OK;
 }
+
+esp_err_t esp_efuse_check_errors(void)
+{
+    return esp_efuse_utility_check_errors();
+}
