@@ -177,7 +177,7 @@ static void esp_clear_bssid_flag(struct wpa_supplicant *wpa_s)
 
 static void esp_register_action_frame(struct wpa_supplicant *wpa_s)
 {
-	wpa_s->type &= ~WLAN_FC_STYPE_ACTION;
+	wpa_s->type &= ~(1 << WLAN_FC_STYPE_ACTION);
 	/* subtype is defined only for action frame */
 	wpa_s->subtype = 0;
 
@@ -281,9 +281,7 @@ int esp_rrm_send_neighbor_rep_request(neighbor_rep_request_cb cb,
 	struct wifi_ssid *ssid = esp_wifi_sta_get_prof_ssid_internal();
 	os_memcpy(wpa_ssid.ssid, ssid->ssid, ssid->len);
 	wpa_ssid.ssid_len = ssid->len;
-	wpas_rrm_send_neighbor_rep_request(wpa_s, &wpa_ssid, 0, 0, cb, cb_ctx);
-
-	return 0;
+	return wpas_rrm_send_neighbor_rep_request(wpa_s, &wpa_ssid, 0, 0, cb, cb_ctx);
 }
 
 int esp_wnm_send_bss_transition_mgmt_query(enum btm_query_reason query_reason,
