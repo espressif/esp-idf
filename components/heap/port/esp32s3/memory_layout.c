@@ -69,7 +69,9 @@ const soc_memory_region_t soc_memory_regions[] = {
     { 0x3FCC0000, 0x10000, 2, 0x403B0000}, //Level 6, IDRAM, can be used as trace memroy
     { 0x3FCD0000, 0x10000, 2, 0x403C0000}, //Level 7, IDRAM, can be used as trace memroy
     { 0x3FCE0000, 0x10000, 1, 0},          //Level 8, IDRAM, can be used as trace memroy, contains stacks used by startup flow, recycled by heap allocator in app_main task
-#if CONFIG_ESP32S3_DATA_CACHE_32KB
+#if CONFIG_ESP32S3_DATA_CACHE_16KB
+    { 0x3FCF0000, 0xC000,  0, 0},          //Level 9, DRAM
+#elif CONFIG_ESP32S3_DATA_CACHE_32KB
     { 0x3FCF0000, 0x8000,  0, 0},          //Level 9, DRAM
 #endif
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
@@ -93,11 +95,11 @@ SOC_RESERVE_MEMORY_REGION((intptr_t)&_data_start, (intptr_t)&_heap_start, dram_d
 // ESP32S3 has a big D/IRAM region, the part used by code is reserved
 // The address of the D/I bus are in the same order, directly shift IRAM address to get reserved DRAM address
 #define I_D_OFFSET (SOC_DIRAM_IRAM_LOW - SOC_DIRAM_DRAM_LOW)
-#if CONFIG_ESP32S3_INSTRUCTION_CACHE_16KB
-SOC_RESERVE_MEMORY_REGION((intptr_t)&_iram_start, (intptr_t)&_iram_start + 0x4000, iram_code_1);
-SOC_RESERVE_MEMORY_REGION((intptr_t)&_iram_start + 0x4000 - I_D_OFFSET, (intptr_t)&_iram_end - I_D_OFFSET, iram_code_2);
-#else
+// .text region in diram. DRAM used by text (shared with IBUS).
 SOC_RESERVE_MEMORY_REGION((intptr_t)&_iram_start - I_D_OFFSET, (intptr_t)&_iram_end - I_D_OFFSET, iram_code);
+
+#if CONFIG_ESP32S3_INSTRUCTION_CACHE_16KB
+SOC_RESERVE_MEMORY_REGION((intptr_t)&_iram_start, (intptr_t)&_iram_end, iram_code_2);
 #endif
 
 #ifdef CONFIG_SPIRAM

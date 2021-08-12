@@ -230,7 +230,6 @@ tools/idf_py_actions/global_options.py
 tools/idf_py_actions/serial_ext.py
 tools/idf_py_actions/tools.py
 tools/idf_py_actions/uf2_ext.py
-tools/idf_size.py
 tools/kconfig_new/confgen.py
 tools/kconfig_new/confserver.py
 tools/kconfig_new/esp-windows-curses/setup.py
@@ -271,7 +270,6 @@ tools/test_idf_py/extra_path/some_ext.py
 tools/test_idf_py/idf_ext.py
 tools/test_idf_py/test_idf_extensions/test_ext/test_extension.py
 tools/test_idf_py/test_idf_py.py
-tools/test_idf_size/test_idf_size.py
 tools/test_idf_tools/test_idf_tools.py
 tools/test_mkdfu/test_mkdfu.py
 tools/test_mkuf2/test_mkuf2.py
