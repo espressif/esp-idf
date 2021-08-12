@@ -25,7 +25,7 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 
-#ifndef CONFIG_FREERTOS_UNICORE
+#if !defined(CONFIG_FREERTOS_UNICORE) || defined(CONFIG_APPTRACE_GCOV_ENABLE)
 
 static TaskHandle_t s_ipc_task_handle[portNUM_PROCESSORS];
 static SemaphoreHandle_t s_ipc_mutex[portNUM_PROCESSORS];    // This mutex is used as a global lock for esp_ipc_* APIs
@@ -180,6 +180,6 @@ esp_err_t esp_ipc_start_gcov_from_isr(uint32_t cpu_id, esp_ipc_func_t func, void
 
     return ESP_OK;
 }
-#endif 
+#endif
 
-#endif // not CONFIG_FREERTOS_UNICORE
+#endif // not CONFIG_FREERTOS_UNICORE or CONFIG_APPTRACE_GCOV_ENABLE
