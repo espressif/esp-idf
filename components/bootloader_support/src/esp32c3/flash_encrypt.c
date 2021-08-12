@@ -152,6 +152,12 @@ static esp_err_t initialise_flash_encryption(void)
 
     esp_efuse_write_field_bit(ESP_EFUSE_DIS_LEGACY_SPI_BOOT);
 
+#if defined(CONFIG_SECURE_BOOT_V2_ENABLED) && !defined(CONFIG_SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS)
+    // This bit is set when enabling Secure Boot V2, but we can't enable it until this later point in the first boot
+    // otherwise the Flash Encryption key cannot be read protected
+    esp_efuse_write_field_bit(ESP_EFUSE_WR_DIS_RD_DIS);
+#endif
+
     esp_err_t err = esp_efuse_batch_write_commit();
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Error programming security eFuses (err=0x%x).", err);
