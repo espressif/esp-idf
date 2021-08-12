@@ -173,4 +173,4 @@ esp_err_t esp_ipc_start_gcov_from_isr(uint32_t cpu_id, esp_ipc_func_t func, void
 
     return ESP_OK;
 }
-#endif 
+#endif
