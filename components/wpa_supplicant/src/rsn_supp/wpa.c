@@ -2081,7 +2081,7 @@ bool wpa_sm_init(char * payload, WPA_SEND_FUNC snd_func,
 
     spp_attrubute = esp_wifi_get_spp_attrubute_internal(WIFI_IF_STA);
     sm->spp_sup.capable = ((spp_attrubute & WPA_CAPABILITY_SPP_CAPABLE) ? SPP_AMSDU_CAP_ENABLE : SPP_AMSDU_CAP_DISABLE);
-    sm->spp_sup.require = ((spp_attrubute & WPA_CAPABILITY_SPP_REQUIRED) ? SPP_AMSDU_CAP_ENABLE : SPP_AMSDU_REQ_DISABLE);
+    sm->spp_sup.require = ((spp_attrubute & WPA_CAPABILITY_SPP_REQUIRED) ? SPP_AMSDU_REQ_ENABLE : SPP_AMSDU_REQ_DISABLE);
 
     wpa_sm_set_state(WPA_INACTIVE);
 
