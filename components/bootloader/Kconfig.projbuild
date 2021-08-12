@@ -755,9 +755,17 @@ menu "Security features"
                 efuse when Secure Boot is enabled. This prevents any more efuses from being read protected.
 
                 If this option is set, it will remain possible to write the EFUSE_RD_DIS efuse field after Secure
-                Boot is enabled. This may allow an attacker to read-protect the BLK2 efuse holding the public
-                key digest, causing an immediate denial of service and possibly allowing an additional fault
-                injection attack to bypass the signature protection.
+                Boot is enabled. This may allow an attacker to read-protect the BLK2 efuse (for ESP32) and
+                BLOCK4-BLOCK10 (i.e. BLOCK_KEY0-BLOCK_KEY5)(for other chips) holding the public key digest, causing an
+                immediate denial of service and possibly allowing an additional fault injection attack to
+                bypass the signature protection.
+
+                NOTE: Once a BLOCK is read-protected, the application will read all zeros from that block
+
+                NOTE: If "UART ROM download mode (Permanently disabled (recommended))" or
+                "UART ROM download mode (Permanently switch to Secure mode (recommended))" is set,
+                then it is __NOT__ possible to read/write efuses using espefuse.py utility.
+                However, efuse can be read/written from the application
 
         config SECURE_BOOT_ALLOW_UNUSED_DIGEST_SLOTS
             bool "Leave unused digest slots available (not revoke)"
