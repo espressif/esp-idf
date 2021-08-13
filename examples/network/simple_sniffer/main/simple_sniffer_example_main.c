@@ -161,7 +161,7 @@ static void initialize_eth(void)
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
     };
-    ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_SNIFFER_ETH_SPI_HOST, &buscfg, 1));
+    ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_SNIFFER_ETH_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
 
 #if CONFIG_SNIFFER_USE_KSZ8851SNL
     spi_device_interface_config_t devcfg = {
