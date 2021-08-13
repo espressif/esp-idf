@@ -87,11 +87,7 @@ menu "ESP System Settings"
 
     config ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
         bool "Enable RTC fast memory for dynamic allocations"
-        default y if IDF_TARGET_ESP32
-        default y if IDF_TARGET_ESP32S2
-        default y if IDF_TARGET_ESP32C3
-        default n if IDF_TARGET_ESP32S3  # TODO
-        default y if IDF_TARGET_ESP32H2
+        default y
         depends on ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK
         help
             This config option allows to add RTC fast memory region to system heap with capability
