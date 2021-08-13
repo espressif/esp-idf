@@ -2089,7 +2089,6 @@ components/vfs/include/esp_vfs_eventfd.h
 components/vfs/include/esp_vfs_semihost.h
 components/vfs/test/test_vfs_access.c
 components/vfs/test/test_vfs_append.c
-components/vfs/test/test_vfs_fd.c
 components/vfs/test/test_vfs_lwip.c
 components/vfs/test/test_vfs_paths.c
 components/vfs/test/test_vfs_select.c

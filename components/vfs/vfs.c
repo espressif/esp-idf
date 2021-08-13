@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -127,8 +127,8 @@ esp_err_t esp_vfs_register_fd_range(const esp_vfs_t *vfs, void *ctx, int min_fd,
         _lock_acquire(&s_fd_table_lock);
         for (int i = min_fd; i < max_fd; ++i) {
             if (s_fd_table[i].vfs_index != -1) {
-                free(s_vfs[i]);
-                s_vfs[i] = NULL;
+                free(s_vfs[index]);
+                s_vfs[index] = NULL;
                 for (int j = min_fd; j < i; ++j) {
                     if (s_fd_table[j].vfs_index == index) {
                         s_fd_table[j] = FD_TABLE_ENTRY_UNUSED;
@@ -143,9 +143,9 @@ esp_err_t esp_vfs_register_fd_range(const esp_vfs_t *vfs, void *ctx, int min_fd,
             s_fd_table[i].local_fd = i;
         }
         _lock_release(&s_fd_table_lock);
-    }
 
-    ESP_LOGD(TAG, "esp_vfs_register_fd_range is successful for range <%d; %d) and VFS ID %d", min_fd, max_fd, index);
+        ESP_LOGW(TAG, "esp_vfs_register_fd_range is successful for range <%d; %d) and VFS ID %d", min_fd, max_fd, index);
+    }
 
     return ret;
 }
