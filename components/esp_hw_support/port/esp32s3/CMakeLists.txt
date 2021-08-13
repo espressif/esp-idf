@@ -15,6 +15,7 @@ set(srcs
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "../async_memcpy_impl_gdma.c"
                      "dport_access.c"
+                     "esp_hmac.c"
                      "esp_crypto_lock.c"
                      "memprot.c"
                      "spiram.c")
