@@ -556,13 +556,25 @@ function(idf_component_mock)
                         INCLUDE_DIRS ${__INCLUDE_DIRS}
                         REQUIRES ${__REQUIRES})
 
-    execute_process(COMMAND ${CMAKE_COMMAND} -E env "UNITY_DIR=${IDF_PATH}/components/unity/unity"
+    add_custom_command(
+        OUTPUT ruby_found SYMBOLIC
+        COMMAND "ruby" "-v"
+        COMMENT "Try to find ruby. If this fails, you need to install ruby"
+    )
+
+    # This command builds the mocks.
+    # First, environment variable UNITY_DIR is set. This is necessary to prevent unity from looking in its own submodule
+    # which doesn't work in our CI yet...
+    # The rest is a straight forward call to cmock.rb, consult cmock's documentation for more information.
+    add_custom_command(
+        OUTPUT ${MOCK_GENERATED_SRCS} ${MOCK_GENERATED_HEADERS}
+        DEPENDS ruby_found
+        COMMAND ${CMAKE_COMMAND} -E env "UNITY_DIR=${IDF_PATH}/components/unity/unity"
             ruby
             ${CMOCK_DIR}/lib/cmock.rb
             -o${CMAKE_CURRENT_SOURCE_DIR}/mock/mock_config.yaml
             ${__MOCK_HEADER_FILES}
-            WORKING_DIRECTORY ${MOCK_GEN_DIR}
-            RESULT_VARIABLE cmock_result)
+      )
 endfunction()
 
 #
