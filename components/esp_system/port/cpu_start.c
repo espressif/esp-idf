@@ -373,6 +373,9 @@ void IRAM_ATTR call_start_cpu0(void)
         abort();
     }
     esp_opiflash_init();
+#endif
+#if CONFIG_IDF_TARGET_ESP32S3
+    //On other chips, this feature is not provided by HW, or hasn't been tested yet.
     spi_timing_flash_tuning();
 #endif
 

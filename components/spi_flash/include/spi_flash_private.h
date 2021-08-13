@@ -32,19 +32,33 @@ extern "C" {
 #endif
 
 /**
+ * This struct provide MSPI Flash necessary timing related config
+ */
+typedef struct {
+    uint8_t flash_clk_div;      /*!< clock divider of Flash module. */
+    uint8_t flash_extra_dummy;  /*!< timing required extra dummy length for Flash */
+    bool    flash_setup_en;     /*!< SPI0/1 Flash setup enable or not */
+    uint8_t flash_setup_time;   /*!< SPI0/1 Flash setup time. This value should be set to register directly */
+    bool    flash_hold_en;      /*!< SPI0/1 Flash hold enable or not */
+    uint8_t flash_hold_time;    /*!< SPI0/1 Flash hold time. This value should be set to register directly */
+} spi_timing_flash_config_t;
+
+/**
  * @brief Register ROM functions and init flash device registers to make use of octal flash
  */
 esp_err_t esp_opiflash_init(void);
 
 /**
  * @brief Make MSPI work under 20Mhz
+ * @param control_spi1  Select whether to control SPI1. For tuning, we need to use SPI1. After tuning (during startup stage), let the flash driver to control SPI1
  */
-void spi_timing_enter_mspi_low_speed_mode(void);
+void spi_timing_enter_mspi_low_speed_mode(bool control_spi1);
 
 /**
  * @brief Make MSPI work under the frequency as users set
+ * @param control_spi1  Select whether to control SPI1. For tuning, we need to use SPI1. After tuning (during startup stage), let the flash driver to control SPI1
  */
-void spi_timing_enter_mspi_high_speed_mode(void);
+void spi_timing_enter_mspi_high_speed_mode(bool control_spi1);
 
 /**
  * @brief Tune MSPI flash timing to make it work under high frequency
@@ -66,6 +80,12 @@ void esp_mspi_pin_init(void);
  * @note This function is used for setting SPI1 registers to the state that ROM SPI functions work
  */
 void spi_flash_set_rom_required_regs(void);
+
+/**
+ * @brief Get MSPI Flash necessary timing related config
+ * @param config see `spi_timing_flash_config_t`
+ */
+void spi_timing_get_flash_regs(spi_timing_flash_config_t *config);
 
 #ifdef __cplusplus
 }

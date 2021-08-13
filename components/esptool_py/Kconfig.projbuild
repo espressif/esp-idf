@@ -123,7 +123,7 @@ menu "Serial flasher config"
             The SPI flash frequency to be used.
 
         config ESPTOOLPY_FLASHFREQ_120M
-            depends on ESPTOOLPY_FLASHMODE_OPI_STR
+            depends on ESPTOOLPY_FLASHMODE_OPI_STR || !ESPTOOLPY_OCT_FLASH
             bool "120 MHz"
         config ESPTOOLPY_FLASHFREQ_80M
             bool "80 MHz"
