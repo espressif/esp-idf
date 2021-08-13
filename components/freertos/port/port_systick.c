@@ -48,14 +48,11 @@ void vPortSetupTimer(void)
 
 #elif CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER
 
+_Static_assert(SOC_CPU_CORES_NUM <= SOC_SYSTIMER_ALARM_NUM - 1, "the number of cores must match the number of core alarms in SYSTIMER");
 
 void SysTickIsrHandler(void *arg);
 
-#ifdef CONFIG_FREERTOS_UNICORE
-static uint32_t s_handled_systicks[1] = { 0 };
-#else
-static uint32_t s_handled_systicks[2] = { 0 };
-#endif
+static uint32_t s_handled_systicks[portNUM_PROCESSORS] = { 0 };
 
 #define SYSTICK_INTR_ID (ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE)
 
@@ -74,11 +71,6 @@ void vPortSetupTimer(void)
 #else
     const unsigned level = ESP_INTR_FLAG_LEVEL1;
 #endif
-#ifdef CONFIG_FREERTOS_UNICORE
-    const unsigned max_cpu = 1;
-#else
-    const unsigned max_cpu = 2;
-#endif
     /* Systimer HAL layer object */
     static systimer_hal_context_t systimer_hal;
     /* set system timer interrupt vector */
@@ -89,7 +81,11 @@ void vPortSetupTimer(void)
         systimer_ll_set_counter_value(systimer_hal.dev, SYSTIMER_LL_COUNTER_OS_TICK, 0);
         systimer_ll_apply_counter_value(systimer_hal.dev, SYSTIMER_LL_COUNTER_OS_TICK);
 
-        for (cpuid = 0; cpuid < max_cpu; ++cpuid) {
+        for (cpuid = 0; cpuid < SOC_CPU_CORES_NUM; cpuid++) {
+            systimer_hal_counter_can_stall_by_cpu(&systimer_hal, SYSTIMER_LL_COUNTER_OS_TICK, cpuid, false);
+        }
+
+        for (cpuid = 0; cpuid < portNUM_PROCESSORS; ++cpuid) {
             uint32_t alarm_id = SYSTIMER_LL_ALARM_OS_TICK_CORE0 + cpuid;
 
             /* configure the timer */
@@ -100,8 +96,10 @@ void vPortSetupTimer(void)
             if (cpuid == 0) {
                 systimer_hal_enable_alarm_int(&systimer_hal, alarm_id);
                 systimer_hal_enable_counter(&systimer_hal, SYSTIMER_LL_COUNTER_OS_TICK);
+#ifndef CONFIG_FREERTOS_UNICORE
                 // SysTick of core 0 and core 1 are shifted by half of period
                 systimer_hal_counter_value_advance(&systimer_hal, SYSTIMER_LL_COUNTER_OS_TICK, 1000000UL / CONFIG_FREERTOS_HZ / 2);
+#endif
             }
         }
     } else {
