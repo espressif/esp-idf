@@ -113,6 +113,8 @@ typedef struct {
     size_t                      client_cert_len;     /*!< Length of the buffer pointed to by client_cert_pem. May be 0 for null-terminated pem */
     const char                  *client_key_pem;     /*!< SSL client key, PEM format as string, if the server requires to verify client */
     size_t                      client_key_len;      /*!< Length of the buffer pointed to by client_key_pem. May be 0 for null-terminated pem */
+    const char                  *client_key_password;      /*!< Client key decryption password string */
+    size_t                      client_key_password_len;   /*!< String length of the password pointed to by client_key_password */
     const char                  *user_agent;         /*!< The User Agent string to send with HTTP requests */
     esp_http_client_method_t    method;                   /*!< HTTP Method */
     int                         timeout_ms;               /*!< Network timeout in milliseconds */
