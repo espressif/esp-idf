@@ -117,6 +117,8 @@ typedef struct {
     const char                  *cert_pem;           /*!< SSL server certification, PEM format as string, if the client requires to verify server */
     const char                  *client_cert_pem;    /*!< SSL client certification, PEM format as string, if the server requires to verify client */
     const char                  *client_key_pem;     /*!< SSL client key, PEM format as string, if the server requires to verify client */
+    const char                  *client_key_password;      /*!< Client key decryption password string */
+    size_t                      client_key_password_len;   /*!< String length of the password pointed to by client_key_password */
     const char                  *user_agent;         /*!< The User Agent string to send with HTTP requests */
     esp_http_client_method_t    method;                   /*!< HTTP Method */
     int                         timeout_ms;               /*!< Network timeout in milliseconds */
