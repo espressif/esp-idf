@@ -348,15 +348,6 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     // For deep sleep, wait for the contents of UART FIFO to be sent.
     bool deep_sleep = pd_flags & RTC_SLEEP_PD_DIG;
 
-#if !CONFIG_FREERTOS_UNICORE && CONFIG_IDF_TARGET_ESP32S3 && CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-    /* Currently only safe to use deep sleep wake stub & RTC memory as heap in single core mode.
-
-       For ESP32-S3, either disable ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP in config or find a way to set the
-       deep sleep wake stub to NULL.
-     */
-    assert(!deep_sleep || esp_get_deep_sleep_wake_stub() == NULL);
-#endif
-
     if (deep_sleep) {
         flush_uarts();
     } else {
@@ -508,11 +499,17 @@ void IRAM_ATTR esp_deep_sleep_start(void)
     esp_brownout_disable();
 #endif //CONFIG_IDF_TARGET_ESP32S2
 
+    esp_sync_counters_rtc_and_frc();
+
+    /* Disable interrupts and stall another core in case another task writes
+     * to RTC memory while we calculate RTC memory CRC.
+     */
+    portENTER_CRITICAL(&spinlock_rtc_deep_sleep);
+    esp_ipc_isr_stall_other_cpu();
+
     // record current RTC time
     s_config.rtc_ticks_at_sleep_start = rtc_time_get();
 
-    // record current RTC time
-    esp_sync_counters_rtc_and_frc();
     // Configure wake stub
     if (esp_get_deep_sleep_wake_stub() == NULL) {
         esp_set_deep_sleep_wake_stub(esp_wake_deep_sleep);
@@ -544,6 +541,9 @@ void IRAM_ATTR esp_deep_sleep_start(void)
     while (1) {
         ;
     }
+    // Never returns here
+    esp_ipc_isr_release_other_cpu();
+    portEXIT_CRITICAL(&spinlock_rtc_deep_sleep);
 }
 
 /**
