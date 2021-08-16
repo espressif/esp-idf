@@ -367,6 +367,7 @@ build_docker:
     - .before_script_minimal
     - .rules:build:windows
   stage: host_test
+  needs: []
   image: $CI_DOCKER_REGISTRY/esp32-toolchain-win-cross
   tags:
     - build
