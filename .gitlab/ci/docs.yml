@@ -39,7 +39,6 @@
 check_readme_links:
   extends:
     - .pre_check_job_template
-    - .doc-rules:build:docs
   tags: ["build", "amd64", "internet"]
   allow_failure: true
   script:

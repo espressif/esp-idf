@@ -8,7 +8,7 @@ This unit test tests basic functionality of the `ESPTimer` class. The test does 
 ## Requirements
 
 * A Linux system
-* The usual IDF requirements for Linux system, as described in the [Getting Started Guides](../../../../docs/en/get-started/index.rst).
+* The usual IDF requirements for Linux system, as described in the [Getting Started Guides](../../../../../../docs/en/get-started/index.rst).
 * The host's gcc/g++
 
 This application has been tested on Ubuntu 20.04 with `gcc` version *9.3.0*.
@@ -19,7 +19,7 @@ First, make sure that the target is set to Linux. Run `idf.py --preview set-targ
 
 ## Run
 
-IDF monitor doesn't work yet for Linux. You have to run the app manually: 
+IDF monitor doesn't work yet for Linux. You have to run the app manually:
 
 ```bash
 build/test_esp_timer_cxx_host.elf
@@ -30,7 +30,7 @@ build/test_esp_timer_cxx_host.elf
 Ideally, all tests pass, which is indicated by "All tests passed" in the last line:
 
 ```bash
-$ build/test_esp_timer_cxx_host.elf 
+$ build/test_esp_timer_cxx_host.elf
 ===============================================================================
 All tests passed (9 assertions in 11 test cases)
 ```
