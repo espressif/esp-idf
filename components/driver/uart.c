@@ -88,7 +88,7 @@ typedef struct {
     intr_handle_t intr_handle;          /*!< UART interrupt handle*/
     uart_mode_t uart_mode;              /*!< UART controller actual mode set by uart_set_mode() */
     bool coll_det_flg;                  /*!< UART collision detection flag */
-    
+
     //rx parameters
     int rx_buffered_len;                  /*!< UART cached data length */
     SemaphoreHandle_t rx_mux;           /*!< UART RX data mutex*/
@@ -176,12 +176,14 @@ esp_err_t uart_set_stop_bits(uart_port_t uart_num, uart_stop_bits_t stop_bit)
 esp_err_t uart_get_stop_bits(uart_port_t uart_num, uart_stop_bits_t* stop_bit)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
+    UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
     //workaround for hardware bug, when uart stop bit set as 2-bit mode.
     if (UART[uart_num]->rs485_conf.dl1_en == 1 && UART[uart_num]->conf0.stop_bit_num == UART_STOP_BITS_1) {
         (*stop_bit) = UART_STOP_BITS_2;
     } else {
         (*stop_bit) = UART[uart_num]->conf0.stop_bit_num;
     }
+    UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
     return ESP_OK;
 }
 
@@ -198,6 +200,7 @@ esp_err_t uart_set_parity(uart_port_t uart_num, uart_parity_t parity_mode)
 esp_err_t uart_get_parity(uart_port_t uart_num, uart_parity_t* parity_mode)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
+    UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
     int val = UART[uart_num]->conf0.val;
     if(val & UART_PARITY_EN_M) {
         if(val & UART_PARITY_M) {
@@ -208,6 +211,7 @@ esp_err_t uart_get_parity(uart_port_t uart_num, uart_parity_t* parity_mode)
     } else {
         (*parity_mode) = UART_PARITY_DISABLE;
     }
+    UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
     return ESP_OK;
 }
 
@@ -893,8 +897,8 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                 ) {
             rx_fifo_len = uart_reg->status.rxfifo_cnt;
             typeof(uart_reg->mem_rx_status) rx_status = uart_reg->mem_rx_status;
-            
-            // When using DPort to read fifo, fifo_cnt is not credible, we need to calculate the real cnt based on the fifo read and write pointer. 
+
+            // When using DPort to read fifo, fifo_cnt is not credible, we need to calculate the real cnt based on the fifo read and write pointer.
             // When using AHB to read FIFO, we can use fifo_cnt to indicate the data length in fifo.
             if (rx_status.wr_addr > rx_status.rd_addr) {
                 rx_fifo_len = rx_status.wr_addr - rx_status.rd_addr;
@@ -1040,13 +1044,13 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
             UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
             uart_reset_rx_fifo(uart_num);
             // Set collision detection flag
-            p_uart_obj[uart_num]->coll_det_flg = true; 
+            p_uart_obj[uart_num]->coll_det_flg = true;
             UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
             uart_event.type = UART_EVENT_MAX;
         } else if(uart_intr_status & UART_TX_DONE_INT_ST_M) {
             uart_disable_intr_mask_from_isr(uart_num, UART_TX_DONE_INT_ENA_M);
             uart_clear_intr_status(uart_num, UART_TX_DONE_INT_CLR_M);
-            // If RS485 half duplex mode is enable then reset FIFO and 
+            // If RS485 half duplex mode is enable then reset FIFO and
             // reset RTS pin to start receiver driver
             if (UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX)) {
                 UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
@@ -1302,7 +1306,9 @@ esp_err_t uart_get_buffered_data_len(uart_port_t uart_num, size_t* size)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
     UART_CHECK((p_uart_obj[uart_num]), "uart driver error", ESP_FAIL);
+    UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
     *size = p_uart_obj[uart_num]->rx_buffered_len;
+    UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
     return ESP_OK;
 }
 
@@ -1332,14 +1338,19 @@ esp_err_t uart_flush_input(uart_port_t uart_num)
         }
         data = (uint8_t*) xRingbufferReceive(p_uart->rx_ring_buf, &size, (portTickType) 0);
         if(data == NULL) {
+            bool error = false;
+            UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
             if( p_uart_obj[uart_num]->rx_buffered_len != 0 ) {
-                ESP_LOGE(UART_TAG, "rx_buffered_len error");
                 p_uart_obj[uart_num]->rx_buffered_len = 0;
+                error = true;
             }
             //We also need to clear the `rx_buffer_full_flg` here.
-            UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
             p_uart_obj[uart_num]->rx_buffer_full_flg = false;
             UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
+            if (error) {
+                // this must be called outside the critical section
+                ESP_LOGE(UART_TAG, "rx_buffered_len error");
+            }
             break;
         }
         UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
@@ -1526,11 +1537,11 @@ portMUX_TYPE *uart_get_selectlock()
     return &uart_selectlock;
 }
 // Set UART mode
-esp_err_t uart_set_mode(uart_port_t uart_num, uart_mode_t mode) 
+esp_err_t uart_set_mode(uart_port_t uart_num, uart_mode_t mode)
 {
     UART_CHECK((p_uart_obj[uart_num]), "uart driver error", ESP_ERR_INVALID_STATE);
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_ERR_INVALID_ARG);
-    if ((mode == UART_MODE_RS485_COLLISION_DETECT) || (mode == UART_MODE_RS485_APP_CTRL) 
+    if ((mode == UART_MODE_RS485_COLLISION_DETECT) || (mode == UART_MODE_RS485_APP_CTRL)
             || (mode == UART_MODE_RS485_HALF_DUPLEX)) {
         UART_CHECK((UART[uart_num]->conf1.rx_flow_en != 1),
                 "disable hw flowctrl before using RS485 mode", ESP_ERR_INVALID_ARG);
@@ -1585,13 +1596,13 @@ esp_err_t uart_set_mode(uart_port_t uart_num, uart_mode_t mode)
     return ESP_OK;
 }
 
-esp_err_t uart_set_rx_timeout(uart_port_t uart_num, const uint8_t tout_thresh) 
+esp_err_t uart_set_rx_timeout(uart_port_t uart_num, const uint8_t tout_thresh)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_ERR_INVALID_ARG);
     UART_CHECK((tout_thresh < 127), "tout_thresh max value is 126", ESP_ERR_INVALID_ARG);
     UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
-    // The tout_thresh = 1, defines TOUT interrupt timeout equal to  
-    // transmission time of one symbol (~11 bit) on current baudrate  
+    // The tout_thresh = 1, defines TOUT interrupt timeout equal to
+    // transmission time of one symbol (~11 bit) on current baudrate
     if (tout_thresh > 0) {
         //Hardware issue workaround: when using ref_tick, the rx timeout threshold needs increase to 10 times.
         //T_ref = T_apb * APB_CLK/(REF_TICK << CLKDIV_FRAG_BIT_WIDTH)
@@ -1612,8 +1623,8 @@ esp_err_t uart_get_collision_flag(uart_port_t uart_num, bool* collision_flag)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_ERR_INVALID_ARG);
     UART_CHECK((collision_flag != NULL), "wrong parameter pointer", ESP_ERR_INVALID_ARG);
-    UART_CHECK((UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX) 
-                    || UART_IS_MODE_SET(uart_num, UART_MODE_RS485_COLLISION_DETECT)), 
+    UART_CHECK((UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX)
+                    || UART_IS_MODE_SET(uart_num, UART_MODE_RS485_COLLISION_DETECT)),
                     "wrong mode", ESP_ERR_INVALID_ARG);
     *collision_flag = p_uart_obj[uart_num]->coll_det_flg;
     return ESP_OK;
