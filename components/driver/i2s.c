@@ -885,7 +885,7 @@ float i2s_apll_get_fi2s(int bits_per_sample, int sdm0, int sdm1, int sdm2, int o
 /**
  * @brief Calculate APLL parameters to get a closest frequency
  */
-void i2s_apll_calculate_fi2s(int rate, int bits_per_sample, int *sdm0, int *sdm1, int *sdm2, int *odir)
+static void i2s_apll_calculate_fi2s(int rate, int bits_per_sample, int *sdm0, int *sdm1, int *sdm2, int *odir)
 {
     int _odir, _sdm0, _sdm1, _sdm2;
     float avg;
@@ -966,11 +966,13 @@ static uint32_t i2s_get_source_clock(i2s_port_t i2s_num, bool use_apll, uint32_t
         int sdm1 = 0;
         int sdm2 = 0;
         int odir = 0;
-        if (fixed_mclk / p_i2s[i2s_num]->hal_cfg.chan_bits / 16 < SOC_I2S_APLL_MIN_RATE) {
-            ESP_LOGW(TAG, "i2s sample rate is too small, use I2S_CLK_D2CLK as default clock source");
+        if ((fixed_mclk / p_i2s[i2s_num]->hal_cfg.chan_bits / 16) < SOC_I2S_APLL_MIN_RATE) {
+            ESP_LOGW(TAG, "fixed_mclk is too small, use I2S_CLK_D2CLK as default clock source");
             goto err;
         }
-        ESP_LOGD(TAG, "APLL coefficient: sdm0=%d, sdm1=%d, sdm2=%d, odir=%d", sdm0, sdm1, sdm2, odir);
+        i2s_apll_calculate_fi2s(p_i2s[i2s_num]->hal_cfg.sample_rate, p_i2s[i2s_num]->hal_cfg.sample_bits,
+                                &sdm0, &sdm1, &sdm2, &odir);
+        ESP_LOGI(TAG, "APLL Enabled, coefficient: sdm0=%d, sdm1=%d, sdm2=%d, odir=%d", sdm0, sdm1, sdm2, odir);
         rtc_clk_apll_enable(true, sdm0, sdm1, sdm2, odir);
         return fixed_mclk;
     }
@@ -1199,7 +1201,7 @@ static uint32_t i2s_get_max_channel_num(i2s_channel_t chan_mask)
     uint32_t max_chan = 0;
     uint32_t channel = chan_mask & 0xFFFF;
     for (int i = 0; channel && i < 16; i++, channel >>= 1) {
-        if (chan_mask & 0x01) {
+        if (channel & 0x01) {
             max_chan = i + 1;
         }
     }
@@ -1562,6 +1564,8 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
 #if !SOC_I2S_SUPPORTS_TDM
         cfg->active_chan = i2s_get_active_channel_num(cfg);
         cfg->total_chan = ch == I2S_CHANNEL_MONO ? 2 : cfg->active_chan;
+        /* Default */
+        cfg->chan_fmt = cfg->chan_fmt < I2S_CHANNEL_FMT_ONLY_RIGHT ? I2S_CHANNEL_FMT_ONLY_RIGHT : cfg->chan_fmt;
 #endif
     }
     uint32_t data_bits = cfg->sample_bits;
@@ -1578,7 +1582,7 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
 
     /* If uising chips like ESP32 and ESP32S2
      * Only need to calculate clock for MASTER mode
-     * Because BCK and WS clock are provide by external codec in SLAVE mode
+     * Because BCK and WS clock are provided by the external codec in SLAVE mode
      * In SLAVE mode, the mclk_div and bck_div will be set to 1
      * So that we can get a high module clock which could detect the edges of externel clock more accurately
      * Otherwise the data we receive or send would get a large latency and go wrong due to the slow module clock
@@ -1628,7 +1632,7 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
             /* Reset the end-of-frame number */
             i2s_hal_set_rx_eof_num(&(p_i2s[i2s_num]->hal), buf_size);
         }
-        /* Reset the queue to avoid receive invalid data */
+        /* Reset the queue to avoid receiving invalid data */
         xQueueReset(p_i2s[i2s_num]->rx->queue);
         xSemaphoreGive(p_i2s[i2s_num]->rx->mux);
         ESP_RETURN_ON_ERROR(ret, TAG, "I2S%d rx DMA buffer malloc failed", i2s_num);
@@ -1756,20 +1760,25 @@ static esp_err_t i2s_driver_init(i2s_port_t i2s_num, const i2s_config_t *i2s_con
 
     /* Set chan_mask according to channel format */
     switch (i2s_config->channel_format) {
-    case I2S_CHANNEL_FMT_RIGHT_LEFT:
-    case I2S_CHANNEL_FMT_ALL_RIGHT:
+    case I2S_CHANNEL_FMT_RIGHT_LEFT:    // fall through
+    case I2S_CHANNEL_FMT_ALL_RIGHT:     // fall through
     case I2S_CHANNEL_FMT_ALL_LEFT:
         p_i2s[i2s_num]->hal_cfg.chan_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1;
+        p_i2s[i2s_num]->hal_cfg.total_chan = 2;
         break;
-    case I2S_CHANNEL_FMT_ONLY_RIGHT:
-        p_i2s[i2s_num]->hal_cfg.chan_mask = i2s_config->left_align ? I2S_TDM_ACTIVE_CH1 : I2S_TDM_ACTIVE_CH0;
-        break;
+    case I2S_CHANNEL_FMT_ONLY_RIGHT:    // fall through
     case I2S_CHANNEL_FMT_ONLY_LEFT:
-        p_i2s[i2s_num]->hal_cfg.chan_mask = i2s_config->left_align ? I2S_TDM_ACTIVE_CH0 : I2S_TDM_ACTIVE_CH1;
+        p_i2s[i2s_num]->hal_cfg.chan_mask = I2S_TDM_ACTIVE_CH0;
+        p_i2s[i2s_num]->hal_cfg.total_chan = 2;
         break;
     case I2S_CHANNEL_FMT_MULTIPLE:
         ESP_RETURN_ON_FALSE(i2s_config->chan_mask, ESP_ERR_INVALID_ARG, TAG, "i2s all channel are disabled");
         p_i2s[i2s_num]->hal_cfg.chan_mask = i2s_config->chan_mask;
+        /* Get the max actived channel number */
+        uint32_t max_channel = i2s_get_max_channel_num(p_i2s[i2s_num]->hal_cfg.chan_mask);
+        /* If total channel is smaller than max actived channel number then set it to the max active channel number */
+        p_i2s[i2s_num]->hal_cfg.total_chan    = p_i2s[i2s_num]->hal_cfg.total_chan < max_channel ? max_channel :
+                                                p_i2s[i2s_num]->hal_cfg.total_chan;
         break;
     default:
         ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_ARG, TAG, "wrong i2s channel format, going to uninstall i2s");
@@ -1777,11 +1786,7 @@ static esp_err_t i2s_driver_init(i2s_port_t i2s_num, const i2s_config_t *i2s_con
 
     /* Calculate actived channel number in channel mask */
     p_i2s[i2s_num]->hal_cfg.active_chan   = i2s_get_active_channel_num(&p_i2s[i2s_num]->hal_cfg);
-    /* Get the max actived channel number */
-    uint32_t max_channel = i2s_get_max_channel_num(p_i2s[i2s_num]->hal_cfg.chan_mask);
-    /* If total channel is smaller than max actived channel number then set it to the max active channel number */
-    p_i2s[i2s_num]->hal_cfg.total_chan    = p_i2s[i2s_num]->hal_cfg.total_chan < max_channel ? max_channel :
-                                            p_i2s[i2s_num]->hal_cfg.total_chan;
+
 #else
     /* Calculate actived channel number in channel mask */
     p_i2s[i2s_num]->hal_cfg.active_chan   = i2s_get_active_channel_num(&p_i2s[i2s_num]->hal_cfg);
@@ -1878,7 +1883,6 @@ esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config,
 #if SOC_I2S_SUPPORTS_ADC_DAC
     /* If using built-in ADC, we need to enable ADC power manerge*/
     if (p_i2s[i2s_num]->hal_cfg.mode & I2S_MODE_ADC_BUILT_IN) {
-        printf("ADC power on\n");
         adc_power_acquire();
     }
 #endif

@@ -107,8 +107,8 @@ typedef enum {
     I2S_CHANNEL_FMT_RIGHT_LEFT,         /*!< Separated left and right channel */
     I2S_CHANNEL_FMT_ALL_RIGHT,          /*!< Load right channel data in both two channels */
     I2S_CHANNEL_FMT_ALL_LEFT,           /*!< Load left channel data in both two channels */
-    I2S_CHANNEL_FMT_ONLY_RIGHT,         /*!< Only load data in right channel */
-    I2S_CHANNEL_FMT_ONLY_LEFT,          /*!< Only load data in left channel */
+    I2S_CHANNEL_FMT_ONLY_RIGHT,         /*!< Only load data in right channel (mono mode) */
+    I2S_CHANNEL_FMT_ONLY_LEFT,          /*!< Only load data in left channel (mono mode) */
 #if SOC_I2S_SUPPORTS_TDM
     // Multiple channels are available with TDM feature
     I2S_CHANNEL_FMT_MULTIPLE,           /*!< More than two channels are used */

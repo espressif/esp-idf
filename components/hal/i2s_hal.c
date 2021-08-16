@@ -225,6 +225,8 @@ void i2s_hal_tx_set_channel_style(i2s_hal_context_t *hal, const i2s_hal_config_t
     uint32_t chan_num = 2;
     uint32_t chan_bits = hal_cfg->chan_bits;
     uint32_t data_bits = hal_cfg->sample_bits;
+    bool is_mono = (hal_cfg->chan_fmt == I2S_CHANNEL_FMT_ONLY_RIGHT) ||
+                   (hal_cfg->chan_fmt == I2S_CHANNEL_FMT_ONLY_LEFT);
 
     /* Set channel number and valid data bits */
 #if SOC_I2S_SUPPORTS_TDM
@@ -232,6 +234,7 @@ void i2s_hal_tx_set_channel_style(i2s_hal_context_t *hal, const i2s_hal_config_t
     i2s_ll_tx_set_chan_num(hal->dev, chan_num);
 #endif
     i2s_ll_tx_set_sample_bit(hal->dev, chan_bits, data_bits);
+    i2s_ll_tx_enable_mono_mode(hal->dev, is_mono);
 
     /* Set communication format */
     bool shift_en = hal_cfg->comm_fmt == I2S_COMM_FORMAT_STAND_I2S ? true : false;
@@ -248,12 +251,15 @@ void i2s_hal_rx_set_channel_style(i2s_hal_context_t *hal, const i2s_hal_config_t
     uint32_t chan_num = 2;
     uint32_t chan_bits = hal_cfg->chan_bits;
     uint32_t data_bits = hal_cfg->sample_bits;
+    bool is_mono = (hal_cfg->chan_fmt == I2S_CHANNEL_FMT_ONLY_RIGHT) ||
+                   (hal_cfg->chan_fmt == I2S_CHANNEL_FMT_ONLY_LEFT);
 
 #if SOC_I2S_SUPPORTS_TDM
     chan_num = hal_cfg->total_chan;
     i2s_ll_rx_set_chan_num(hal->dev, chan_num);
 #endif
     i2s_ll_rx_set_sample_bit(hal->dev, chan_bits, data_bits);
+    i2s_ll_rx_enable_mono_mode(hal->dev, is_mono);
 
     /* Set communication format */
     bool shift_en = hal_cfg->comm_fmt == I2S_COMM_FORMAT_STAND_I2S ? true : false;

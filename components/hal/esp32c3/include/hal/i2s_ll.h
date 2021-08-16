@@ -782,6 +782,30 @@ static inline void i2s_ll_set_single_data(i2s_dev_t *hw, uint32_t data)
 }
 
 /**
+ * @brief Enable TX mono mode
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param mono_ena Set true to enable mono mde.
+ */
+static inline void i2s_ll_tx_enable_mono_mode(i2s_dev_t *hw, bool mono_ena)
+{
+    hw->tx_conf.tx_mono = mono_ena;
+    hw->tx_conf.tx_chan_equal = mono_ena;
+}
+
+/**
+ * @brief Enable RX mono mode
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param mono_ena Set true to enable mono mde.
+ */
+static inline void i2s_ll_rx_enable_mono_mode(i2s_dev_t *hw, bool mono_ena)
+{
+    hw->rx_conf.rx_mono = mono_ena;
+    hw->rx_conf.rx_mono_fst_vld = mono_ena;
+}
+
+/**
  * @brief Enable loopback mode
  *
  * @param hw Peripheral I2S hardware instance address.

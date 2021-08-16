@@ -804,6 +804,28 @@ static inline void i2s_ll_set_pdm2pcm_conv_en(i2s_dev_t *hw, bool val)
 
 }
 
+/**
+ * @brief Enable TX mono mode
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param mono_ena Set true to enable mono mde.
+ */
+static inline void i2s_ll_tx_enable_mono_mode(i2s_dev_t *hw, bool mono_ena)
+{
+    abort();
+}
+
+/**
+ * @brief Enable RX mono mode
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param mono_ena Set true to enable mono mde.
+ */
+static inline void i2s_ll_rx_enable_mono_mode(i2s_dev_t *hw, bool mono_ena)
+{
+    abort();
+}
+
 #ifdef __cplusplus
 }
 #endif
