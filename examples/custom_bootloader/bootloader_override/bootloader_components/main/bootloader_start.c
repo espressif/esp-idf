@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdbool.h>
+#include "sdkconfig.h"
 #include "esp_log.h"
 #include "bootloader_init.h"
 #include "bootloader_utility.h"
@@ -41,7 +42,7 @@ void __attribute__((noreturn)) call_start_cpu0(void)
     }
 
     // 2.1 Print a custom message!
-    esp_rom_printf("[%s] Custom bootloader has been initialized correctly.\n", TAG);
+    esp_rom_printf("[%s] %s\n", TAG, CONFIG_EXAMPLE_BOOTLOADER_WELCOME_MESSAGE);
 
     // 3. Load the app image for booting
     bootloader_utility_load_boot_image(&bs, boot_index);
