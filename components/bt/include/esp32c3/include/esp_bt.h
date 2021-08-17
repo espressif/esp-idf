@@ -527,12 +527,6 @@ void esp_bt_controller_wakeup_request(void);
  */
 int esp_bt_h4tl_eif_io_event_notify(int event);
 
-/**
- * @brief  Get BT MAC address.
- * @return Array pointer of length 6 storing MAC address value.
- */
-uint8_t* esp_bt_get_mac(void);
-
 #ifdef __cplusplus
 }
 #endif
