@@ -1056,7 +1056,7 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
                     if (client->is_async && errno == EAGAIN) {
                         return ESP_ERR_HTTP_EAGAIN;
                     }
-                    if (esp_tls_get_and_clear_last_error(esp_transport_get_error_handle(client->transport), NULL, NULL) == ESP_ERR_ESP_TLS_TCP_CLOSED_FIN) {
+                    if (esp_transport_get_errno(client->transport) == ENOTCONN) {
                         ESP_LOGW(TAG, "Close connection due to FIN received");
                         esp_http_client_close(client);
                         http_dispatch_event(client, HTTP_EVENT_ERROR, esp_transport_get_error_handle(client->transport), 0);
