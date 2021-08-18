@@ -23,7 +23,6 @@
 #include "esp_gap_bt_api.h"
 #include "esp_a2dp_api.h"
 #include "esp_avrc_api.h"
-#include "driver/i2s.h"
 
 /* device name */
 #define LOCAL_DEVICE_NAME    "ESP_SPEAKER"

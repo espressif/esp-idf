@@ -13,6 +13,7 @@
 #pragma once
 
 #include "hal/i2s_types.h"
+#include "hal/gpio_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,9 +26,8 @@ extern "C" {
  * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
  */
 #define I2S_STD_PHILIP_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
-    .mode = I2S_COMM_MODE_STD, \
     .data_bit_width = bits_per_sample, \
-    .slot_bit_width = I2S_SLOT_BIT_WIDTH_DEFAULT, \
+    .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
     .ws_width = bits_per_sample, \
     .ws_pol = false, \
@@ -44,9 +44,8 @@ extern "C" {
  * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
  */
 #define I2S_STD_PCM_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo)  { \
-    .mode = I2S_COMM_MODE_STD, \
     .data_bit_width = bits_per_sample, \
-    .slot_bit_width = I2S_SLOT_BIT_WIDTH_DEFAULT, \
+    .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
     .ws_width = 1, \
     .ws_pol = true, \
@@ -62,9 +61,8 @@ extern "C" {
  * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
  */
 #define I2S_STD_MSB_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
-    .mode = I2S_COMM_MODE_STD, \
     .data_bit_width = bits_per_sample, \
-    .slot_bit_width = I2S_SLOT_BIT_WIDTH_DEFAULT, \
+    .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
     .ws_width = bits_per_sample, \
     .ws_pol = false, \
@@ -81,9 +79,8 @@ extern "C" {
  * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
  */
 #define I2S_STD_PHILIP_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
-    .mode = I2S_COMM_MODE_STD, \
     .data_bit_width = bits_per_sample, \
-    .slot_bit_width = I2S_SLOT_BIT_WIDTH_DEFAULT, \
+    .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
     .ws_width = bits_per_sample, \
     .ws_pol = false, \
@@ -102,9 +99,8 @@ extern "C" {
  * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
  */
 #define I2S_STD_PCM_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo)  { \
-    .mode = I2S_COMM_MODE_STD, \
     .data_bit_width = bits_per_sample, \
-    .slot_bit_width = I2S_SLOT_BIT_WIDTH_DEFAULT, \
+    .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
     .ws_width = 1, \
     .ws_pol = true, \
@@ -122,9 +118,8 @@ extern "C" {
  * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
  */
 #define I2S_STD_MSB_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
-    .mode = I2S_COMM_MODE_STD, \
     .data_bit_width = bits_per_sample, \
-    .slot_bit_width = I2S_SLOT_BIT_WIDTH_DEFAULT, \
+    .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
     .ws_width = bits_per_sample, \
     .ws_pol = false, \
@@ -145,7 +140,7 @@ extern "C" {
  */
 #define I2S_STD_CLK_DEFAULT_CONFIG(rate) { \
     .sample_rate_hz = rate, \
-    .clk_src = I2S_CLK_D2CLK, \
+    .clk_src = I2S_CLK_160M_PLL, \
     .mclk_multiple = I2S_MCLK_MULTIPLE_256, \
 }
 
@@ -154,7 +149,6 @@ extern "C" {
  */
 typedef struct {
     /* General fields */
-    i2s_comm_mode_t         mode;               /*!< I2S communication mode, this field is for identification (MUST match the communication mode in 'i2s_chan_config_t') */
     i2s_data_bit_width_t    data_bit_width;     /*!< I2S sample data bit width (valid data bits per sample) */
     i2s_slot_bit_width_t    slot_bit_width;     /*!< I2S slot bit width (total bits per slot) */
     i2s_slot_mode_t         slot_mode;          /*!< Set mono or stereo mode with I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO */
@@ -182,6 +176,31 @@ typedef struct {
     i2s_clock_src_t         clk_src;            /*!< Choose clock source */
     i2s_mclk_multiple_t     mclk_multiple;      /*!< The multiple of mclk to the sample rate */
 } i2s_std_clk_config_t;
+
+/**
+ * @brief I2S standard mode GPIO pins configuration
+ */
+typedef struct {
+    gpio_num_t mclk;               /*!< MCK pin, output */
+    gpio_num_t bclk;               /*!< BCK pin, input in slave role, output in master role */
+    gpio_num_t ws;                 /*!< WS pin, input in slave role, output in master role */
+    gpio_num_t dout;               /*!< DATA pin, output */
+    gpio_num_t din;                /*!< DATA pin, input */
+} i2s_std_gpio_config_t;
+
+typedef struct {
+    i2s_std_clk_config_t    clk_cfg;    /*!< Standard mode clock configuration */
+    i2s_std_slot_config_t   slot_cfg;   /*!< Standard mode slot configuration */
+    i2s_std_gpio_config_t   gpio_cfg;   /*!< Standard mode gpio configuration */
+} i2s_std_config_t;
+
+esp_err_t i2s_init_std_channel(i2s_chan_handle_t handle, const i2s_std_config_t *std_cfg);
+
+esp_err_t i2s_reconfig_std_clock(i2s_chan_handle_t handle, const i2s_std_clk_config_t *clk_cfg);
+
+esp_err_t i2s_reconfig_std_slot(i2s_chan_handle_t handle, const i2s_std_slot_config_t *slot_cfg);
+
+esp_err_t i2s_reconfig_std_gpio(i2s_chan_handle_t handle, const i2s_std_gpio_config_t *gpio_cfg);
 
 #ifdef __cplusplus
 }

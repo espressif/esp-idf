@@ -88,36 +88,29 @@ The main function installs I2S to play the audio. A loudspeaker, additional ADC 
 
 ```c
     /* I2S configuration parameters */
-    i2s_config_t i2s_config = {
-#ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
-        .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
-#else
-        .mode = I2S_MODE_MASTER | I2S_MODE_TX,              /* only TX */
-#endif
-        .sample_rate = 44100,
-        .bits_per_sample = 16,
-        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,       /* 2-channels */
-        .communication_format = I2S_COMM_FORMAT_STAND_MSB,
-        .dma_buf_count = 6,
-        .dma_buf_len = 60,
-        .intr_alloc_flags = 0,                              /* default interrupt priority */
-        .tx_desc_auto_clear = true                          /* auto clear tx descriptor on underflow */
-    };
-
-    /* enable I2S */
-    i2s_driver_install(0, &i2s_config, 0, NULL);
-#ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
-    i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
-    i2s_set_pin(0, NULL);
-#else
-    i2s_pin_config_t pin_config = {
-        .bck_io_num = CONFIG_EXAMPLE_I2S_BCK_PIN,
-        .ws_io_num = CONFIG_EXAMPLE_I2S_LRCK_PIN,
-        .data_out_num = CONFIG_EXAMPLE_I2S_DATA_PIN,
-        .data_in_num = -1                                   /* not used */
-    };
-    i2s_set_pin(0, &pin_config);
-#endif
+    #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
+        i2s_chan_config_t chan_cfg = I2S_CHANNEL_CONFIG(I2S_ROLE_MASTER, I2S_COMM_MODE_ADC_DAC, NULL);
+        chan_cfg.id = I2S_NUM_0;
+        i2s_dac_slot_config_t slot_cfg = I2S_DAC_SLOT_CONFIG(I2S_DAC_CHAN_BOTH);
+        i2s_adc_dac_clk_config_t clk_cfg = I2S_ADC_DAC_CLK_CONFIG(44100);
+    #else
+        i2s_gpio_config_t i2s_pin = {
+            .mclk = I2S_GPIO_UNUSED,
+            .bclk = CONFIG_EXAMPLE_I2S_BCK_PIN,
+            .ws = CONFIG_EXAMPLE_I2S_LRCK_PIN,
+            .dout = CONFIG_EXAMPLE_I2S_DATA_PIN,
+            .din = I2S_GPIO_UNUSED
+        };
+        i2s_chan_config_t chan_cfg = I2S_CHANNEL_CONFIG(I2S_ROLE_MASTER, I2S_COMM_MODE_STD, &i2s_pin);
+        chan_cfg.id = I2S_NUM_0;
+        i2s_std_slot_config_t slot_cfg = I2S_STD_MSB_SLOT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO);
+        slot_cfg.auto_clear = true;
+        i2s_std_clk_config_t clk_cfg = I2S_STD_CLK_CONFIG(44100);
+    #endif
+        /* enable I2S */
+        i2s_new_channel(&chan_cfg, &tx_chan, NULL);
+        i2s_init_channel(tx_chan, &clk_cfg, &slot_cfg);
+        i2s_start_channel(tx_chan);
 ```
 
 ### Paring Parameter Settings

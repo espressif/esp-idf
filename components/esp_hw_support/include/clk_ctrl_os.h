@@ -5,6 +5,7 @@
  */
 
 #include "soc/rtc.h"
+#include "soc/soc_caps.h"
 #include "esp_err.h"
 
 #ifdef __cplusplus

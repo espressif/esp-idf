@@ -12,6 +12,7 @@
 #pragma once
 
 #include "hal/i2s_types.h"
+#include "hal/gpio_types.h"
 
 #if SOC_I2S_SUPPORTS_TDM
 
@@ -31,7 +32,7 @@ extern "C" {
 #define I2S_TDM_PHILIP_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo, mask) { \
     .mode = I2S_COMM_MODE_TDM, \
     .data_bit_width = (bits_per_sample), \
-    .slot_bit_width = I2S_SLOT_BIT_WIDTH_DEFAULT, \
+    .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
     .ws_width = I2S_TDM_AUTO_WS_WIDTH, \
     .ws_pol = false, \
@@ -53,7 +54,7 @@ extern "C" {
 #define I2S_TDM_MSB_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo, mask) { \
     .mode = I2S_COMM_MODE_TDM, \
     .data_bit_width = (bits_per_sample), \
-    .slot_bit_width = I2S_SLOT_BIT_WIDTH_DEFAULT, \
+    .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
     .ws_width = I2S_TDM_AUTO_WS_WIDTH, \
     .ws_pol = false, \
@@ -75,7 +76,7 @@ extern "C" {
 #define I2S_TDM_PCM_SHORT_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo, mask) { \
     .mode = I2S_COMM_MODE_TDM, \
     .data_bit_width = (bits_per_sample), \
-    .slot_bit_width = I2S_SLOT_BIT_WIDTH_DEFAULT, \
+    .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
     .ws_width = 1, \
     .ws_pol = true, \
@@ -97,7 +98,7 @@ extern "C" {
 #define I2S_TDM_PCM_LONG_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo, mask) { \
     .mode = I2S_COMM_MODE_TDM, \
     .data_bit_width = (bits_per_sample), \
-    .slot_bit_width = I2S_SLOT_BIT_WIDTH_DEFAULT, \
+    .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
     .ws_width = (bits_per_sample), \
     .ws_pol = true, \
@@ -118,7 +119,7 @@ extern "C" {
  */
 #define I2S_TDM_CLK_DEFAULT_CONFIG(rate) { \
     .sample_rate_hz = rate, \
-    .clk_src = I2S_CLK_D2CLK, \
+    .clk_src = I2S_CLK_160M_PLL, \
     .mclk_multiple = I2S_MCLK_MULTIPLE_256, \
 }
 
@@ -155,6 +156,32 @@ typedef struct {
     i2s_clock_src_t         clk_src;            /*!< Choose clock source */
     i2s_mclk_multiple_t     mclk_multiple;      /*!< The multiple of mclk to the sample rate */
 } i2s_tdm_clk_config_t;
+
+/**
+ * @brief I2S TDM mode GPIO pins configuration
+ */
+typedef struct {
+    gpio_num_t mclk;               /*!< MCK pin, output */
+    gpio_num_t bclk;               /*!< BCK pin, input in slave role, output in master role */
+    gpio_num_t ws;                 /*!< WS pin, input in slave role, output in master role */
+    gpio_num_t dout;               /*!< DATA pin, output */
+    gpio_num_t din;                /*!< DATA pin, input */
+} i2s_tdm_gpio_config_t;
+
+typedef struct {
+    i2s_tdm_clk_config_t    clk_cfg;    /*!< TDM mode clock configuration */
+    i2s_tdm_slot_config_t   slot_cfg;   /*!< TDM mode slot configuration */
+    i2s_tdm_gpio_config_t   gpio_cfg;   /*!< TDM mode gpio configuration */
+} i2s_tdm_config_t;
+
+esp_err_t i2s_init_tdm_channel(i2s_chan_handle_t handle, const i2s_tdm_config_t *std_cfg);
+
+esp_err_t i2s_reconfig_tdm_clock(i2s_chan_handle_t handle, const i2s_tdm_clk_config_t *clk_cfg);
+
+esp_err_t i2s_reconfig_tdm_slot(i2s_chan_handle_t handle, const i2s_tdm_slot_config_t *slot_cfg);
+
+esp_err_t i2s_reconfig_tdm_gpio(i2s_chan_handle_t handle, const i2s_tdm_gpio_config_t *gpio_cfg);
+
 
 #ifdef __cplusplus
 }

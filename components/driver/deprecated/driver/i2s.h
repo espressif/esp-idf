@@ -4,146 +4,36 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * This file is for the backward compatible to the deprecated I2S APIs,
+ * The deprecated APIs will no longer supported in the future
+ * Please refer to "driver/i2s_controller.h" for the latest I2S driver
+ * Note that only one set of I2S APIs is allowed to be used at the same time
+ */
+
 #pragma once
 
 #include "esp_types.h"
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
-#include "soc/soc_caps.h"
-#include "hal/i2s_types.h"
-#include "esp_intr_alloc.h"
+#include "soc/i2s_periph.h"
+#include "driver/i2s_types_legacy.h"
 
 #if SOC_I2S_SUPPORTS_ADC
 #include "driver/adc.h"
 #endif
 
+#if !CONFIG_I2S_SUPPRESS_DEPRECATE_WARN
+#warning "This set of I2S APIs has been deprecated, \
+please include 'driver/i2s_std.h', 'driver/i2s_pdm' or 'driver/i2s_tdm' instead. \
+if you want to keep using the old APIs and ignore this warning, \
+you can enable 'Suppress leagcy driver deprecated warning' option under 'I2S Configuration' menu in Kconfig"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define I2S_PIN_NO_CHANGE (-1) /*!< Use in i2s_pin_config_t for pins which should not be changed */
-
-/**
- * @brief I2S port number, the max port number is (I2S_NUM_MAX -1).
- */
-typedef enum {
-    I2S_NUM_0 = 0,                 /*!< I2S port 0 */
-#if SOC_I2S_NUM > 1
-    I2S_NUM_1 = 1,                 /*!< I2S port 1 */
-#endif
-    I2S_NUM_MAX,                   /*!< I2S port max */
-} i2s_port_t;
-
-#if SOC_I2S_SUPPORTS_PCM
-/**
- * @brief I2S PCM configuration
- *
- */
-typedef struct {
-    i2s_pcm_compress_t  pcm_type;       /*!< I2S PCM a/u-law decompress or compress type */
-} i2s_pcm_cfg_t;
-#endif
-
-#if SOC_I2S_SUPPORTS_PDM_TX
-/**
- * @brief Default I2S PDM Up-Sampling Rate configuration
- */
-#define I2S_PDM_DEFAULT_UPSAMPLE_CONFIG(rate) { \
-        .sample_rate = rate,                    \
-        .fp = 960,                              \
-        .fs = (rate) / 100,                     \
-    }
-
-/**
- * @brief I2S PDM up-sample rate configuration
- * @note  TX PDM can only be set to the following two upsampling rate configurations:
- *        1: fp = 960, fs = sample_rate / 100, in this case, Fpdm = 128*48000
- *        2: fp = 960, fs = 480, in this case, Fpdm = 128*Fpcm = 128*sample_rate
- *        If the pdm receiver do not care the pdm serial clock, it's recommended set Fpdm = 128*48000.
- *        Otherwise, the second configuration should be applied.
- */
-typedef struct  {
-    int sample_rate;                    /*!< I2S PDM sample rate */
-    int fp;                             /*!< I2S PDM TX upsampling paramater. Normally it should be set to 960 */
-    int fs;                             /*!< I2S PDM TX upsampling paramater. When it is set to 480, the pdm clock frequency Fpdm = 128 * sample_rate, when it is set to sample_rate / 100， Fpdm will be fixed to 128*48000 */
-} i2s_pdm_tx_upsample_cfg_t;
-#endif
-
-/**
- * @brief I2S pin number for i2s_set_pin
- *
- */
-typedef struct {
-    int mck_io_num;     /*!< MCK in out pin. Note that ESP32 supports setting MCK on GPIO0/GPIO1/GPIO3 only*/
-    int bck_io_num;     /*!< BCK in out pin*/
-    int ws_io_num;      /*!< WS in out pin*/
-    int data_out_num;   /*!< DATA out pin*/
-    int data_in_num;    /*!< DATA in pin*/
-} i2s_pin_config_t;
-
-/**
- * @brief I2S driver configuration parameters
- *
- */
-typedef struct {
-
-    i2s_mode_t              mode;                       /*!< I2S work mode */
-    uint32_t                sample_rate;                /*!< I2S sample rate */
-    i2s_bits_per_sample_t   bits_per_sample;            /*!< I2S sample bits in one channel */
-    i2s_channel_fmt_t       channel_format;             /*!< I2S channel format.*/
-    i2s_comm_format_t       communication_format;       /*!< I2S communication format */
-    int                     intr_alloc_flags;           /*!< Flags used to allocate the interrupt. One or multiple (ORred) ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info */
-    union {
-        int dma_desc_num;                               /*!< The total number of descriptors used by I2S DMA to receive/transmit data */
-        int dma_buf_count __attribute__((deprecated));  /*!< This is an alias to 'dma_desc_num' for backward compatibility */
-    };
-    union {
-        int dma_frame_num;                              /*!< Number of frames for one-time sampling. The frame here means the total data from all the channels in a WS cycle */
-        int dma_buf_len __attribute__((deprecated));    /*!< This is an alias to 'dma_frame_num' for backward compatibility */
-    };
-
-    bool                    use_apll;                   /*!< I2S using APLL as main I2S clock, enable it to get accurate clock */
-    bool                    tx_desc_auto_clear;         /*!< I2S auto clear tx descriptor if there is underflow condition (helps in avoiding noise in case of data unavailability) */
-    int                     fixed_mclk;                 /*!< I2S using fixed MCLK output. If use_apll = true and fixed_mclk > 0, then the clock output for i2s is fixed and equal to the fixed_mclk value. If fixed_mclk set, mclk_multiple won't take effect */
-    i2s_mclk_multiple_t     mclk_multiple;              /*!< The multiple of I2S master clock(MCLK) to sample rate */
-    i2s_bits_per_chan_t     bits_per_chan;              /*!< I2S total bits in one channel， only take effect when larger than 'bits_per_sample', default '0' means equal to 'bits_per_sample' */
-
-#if SOC_I2S_SUPPORTS_TDM
-    i2s_channel_t           chan_mask;                  /*!< I2S active channel bit mask, set value in `i2s_channel_t` to enable specific channel, the bit map of active channel can not exceed (0x1<<total_chan). */
-    uint32_t                total_chan;                 /*!< I2S Total number of channels. If it is smaller than the biggest active channel number, it will be set to this number automatically. */
-    bool                    left_align;                 /*!< Set to enable left alignment */
-    bool                    big_edin;                   /*!< Set to enable big edin */
-    bool                    bit_order_msb;              /*!< Set to enable msb order */
-    bool                    skip_msk;                   /*!< Set to enable skip mask. If it is enabled, only the data of the enabled channels will be sent, otherwise all data stored in DMA TX buffer will be sent */
-#endif // SOC_I2S_SUPPORTS_TDM
-
-} i2s_driver_config_t;
-
-typedef i2s_driver_config_t i2s_config_t;       // for backward compatible
-typedef intr_handle_t i2s_isr_handle_t;         // for backward compatible
-
-/**
- * @brief I2S event queue types
- *
- */
-typedef enum {
-    I2S_EVENT_DMA_ERROR,
-    I2S_EVENT_TX_DONE,     /*!< I2S DMA finish sent 1 buffer*/
-    I2S_EVENT_RX_DONE,     /*!< I2S DMA finish received 1 buffer*/
-    I2S_EVENT_TX_Q_OVF,    /*!< I2S DMA sent queue overflow*/
-    I2S_EVENT_RX_Q_OVF,    /*!< I2S DMA receive queue overflow*/
-    I2S_EVENT_MAX,         /*!< I2S event max index*/
-} i2s_event_type_t;
-
-/**
- * @brief Event structure used in I2S event queue
- *
- */
-typedef struct {
-    i2s_event_type_t    type;   /*!< I2S event type */
-    size_t              size;   /*!< I2S data size for I2S_DATA event*/
-} i2s_event_t;
 
 /**
  * @brief Set I2S pin number
@@ -156,7 +46,7 @@ typedef struct {
  *
  * @param   pin         I2S Pin structure, or NULL to set 2-channel 8-bit internal DAC pin configuration (GPIO25 & GPIO26)
  *
- * Inside the pin configuration structure, set I2S_PIN_NO_CHANGE for any pin where
+ * Inside the pin configuration structure, set I2S_GPIO_UNUSED for any pin where
  * the current configuration should not be changed.
  *
  * @note if *pin is set as NULL, this function will initialize both of the built-in DAC channels by default.

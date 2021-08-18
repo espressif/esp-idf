@@ -137,7 +137,7 @@ The example have contained a piece of music in canon.pcm, if you want to play yo
 5. Transfer the music format into .pcm. ```ffmpeg -i a_cut.mp3 -f s16ls -ar 16000 -ac -1 -acodec pcm_s16le a.pcm```
 6. Move 'a.pcm' under 'main' directory
 7. Replace 'canon.pcm' with 'a.pcm' in 'CMakeLists.txt' under 'main' directory
-8. Replace '_binary_canon_pcm_start' and '_binary_canon_pcm_end' with '_binary_a_pcm_start' and '_binary_a_pcm_end' in `i2s_es9311_example.c`(line 46/47)
+8. Replace '_binary_canon_pcm_start' and '_binary_canon_pcm_end' with '_binary_a_pcm_start' and '_binary_a_pcm_end' in `i2s_es8311_example.c`(line 46/47)
 9. Download the example and enjoy your own music
 
 ## Troubleshooting

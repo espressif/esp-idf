@@ -190,7 +190,7 @@ static inline void i2s_ll_rx_reset_fifo(i2s_dev_t *hw)
  * @brief Set TX source clock
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param src I2S source clock,  ESP32-S3 only support `I2S_CLK_D2CLK`
+ * @param src I2S source clock,  ESP32-S3 only support `I2S_CLK_160M_PLL`
  *            TX and RX share the same clock setting
  */
 static inline void i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
@@ -202,7 +202,7 @@ static inline void i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
  * @brief Set RX source clock
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param src I2S source clock,  ESP32-S3 only support `I2S_CLK_D2CLK`
+ * @param src I2S source clock,  ESP32-S3 only support `I2S_CLK_160M_PLL`
  *            TX and RX share the same clock setting
  */
 static inline void i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)

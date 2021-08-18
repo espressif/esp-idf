@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
@@ -11,19 +11,17 @@
  * Please do not connect GPIO32(ESP32) any pull-up resistors externally, it will be used to test i2s adc function.
  */
 
-
 #include <stdio.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
+#include "driver/i2s.h"
 #include "driver/gpio.h"
 #include "hal/gpio_hal.h"
 #include "unity.h"
 #include "math.h"
 #include "esp_rom_gpio.h"
-#if SOC_I2S_SUPPORTED
-#include "driver/i2s.h"
 
 #define SAMPLE_RATE     (36000)
 #define SAMPLE_BITS     (16)
@@ -78,7 +76,12 @@
 #define I2S_TEST_MODE_MASTER_TO_SLAVE 1
 #define I2S_TEST_MODE_LOOPBACK        2
 
-// mode: 0, master rx, slave tx. mode: 1, master tx, slave rx. mode: 2, master tx rx loopback
+// This empty function is used to force the compiler link this file
+void test_app_include_i2s_legacy(void)
+{
+}
+
+// mode: 0, master rx, slave tx. mode: 1, master tx, slave rx. mode: 2, master tx rx loop-back
 // Since ESP32-S2 has only one I2S, only loop back test can be tested.
 static void i2s_test_io_config(int mode)
 {
@@ -136,7 +139,7 @@ static void i2s_test_io_config(int mode)
  * 1. i2s_driver_install
  * 2. i2s_set_pin
  */
-TEST_CASE("I2S basic driver install, uninstall, set pin test", "[i2s]")
+TEST_CASE("I2S basic driver install, uninstall, set pin test", "[i2s_legacy]")
 {
     // dac, adc  i2s
     i2s_config_t  i2s_config = {
@@ -183,7 +186,7 @@ TEST_CASE("I2S basic driver install, uninstall, set pin test", "[i2s]")
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, i2s_driver_uninstall(I2S_NUM_0));
 }
 
-TEST_CASE("I2S Loopback test(master tx and rx)", "[i2s]")
+TEST_CASE("I2S Loopback test(master tx and rx)", "[i2s_legacy]")
 {
     // master driver installed and send data
     i2s_config_t master_i2s_config = {
@@ -256,7 +259,7 @@ TEST_CASE("I2S Loopback test(master tx and rx)", "[i2s]")
 }
 
 #if SOC_I2S_SUPPORTS_TDM
-TEST_CASE("I2S TDM Loopback test(master tx and rx)", "[i2s]")
+TEST_CASE("I2S TDM Loopback test(master tx and rx)", "[i2s_legacy]")
 {
     // master driver installed and send data
     i2s_config_t master_i2s_config = {
@@ -325,7 +328,7 @@ TEST_CASE("I2S TDM Loopback test(master tx and rx)", "[i2s]")
 
 #if SOC_I2S_NUM > 1
 /* ESP32S2 and ESP32C3 has only single I2S port and hence following test cases are not applicable */
-TEST_CASE("I2S write and read test(master tx and slave rx)", "[i2s]")
+TEST_CASE("I2S write and read test(master tx and slave rx)", "[i2s_legacy]")
 {
     // master driver installed and send data
     i2s_config_t master_i2s_config = {
@@ -429,7 +432,7 @@ TEST_CASE("I2S write and read test(master tx and slave rx)", "[i2s]")
     i2s_driver_uninstall(I2S_NUM_1);
 }
 
-TEST_CASE("I2S write and read test(master rx and slave tx)", "[i2s]")
+TEST_CASE("I2S write and read test(master rx and slave tx)", "[i2s_legacy]")
 {
     // master driver installed and send data
     i2s_config_t master_i2s_config = {
@@ -535,7 +538,7 @@ TEST_CASE("I2S write and read test(master rx and slave tx)", "[i2s]")
 }
 #endif
 
-TEST_CASE("I2S memory leaking test", "[i2s]")
+TEST_CASE("I2S memory leaking test", "[i2s_legacy]")
 {
     i2s_config_t master_i2s_config = {
         .mode = I2S_MODE_MASTER | I2S_MODE_RX,
@@ -585,7 +588,7 @@ TEST_CASE("I2S memory leaking test", "[i2s]")
  *   and the APLL clock generate for it. The TEST_CASE passes PERCENT_DIFF variation from the provided sample rate in APLL generated clock
  *   The percentage difference calculated as (mod((obtained clock rate - desired clock rate)/(desired clock rate))) * 100.
  */
-TEST_CASE("I2S APLL clock variation test", "[i2s]")
+TEST_CASE("I2S APLL clock variation test", "[i2s_legacy]")
 {
     i2s_pin_config_t pin_config = {
         .mck_io_num = -1,
@@ -643,7 +646,7 @@ TEST_CASE("I2S APLL clock variation test", "[i2s]")
 
 #if SOC_I2S_SUPPORTS_ADC
 /* Only ESP32 need I2S adc/dac test */
-TEST_CASE("I2S adc test", "[i2s]")
+TEST_CASE("I2S adc test", "[i2s_legacy]")
 {
     // init I2S ADC
     i2s_config_t i2s_config = {
@@ -673,7 +676,7 @@ TEST_CASE("I2S adc test", "[i2s]")
             } else {
                 gpio_set_pull_mode(ADC1_CHANNEL_4_IO, GPIO_PULLUP_ONLY);
             }
-            vTaskDelay(200 / portTICK_PERIOD_MS);
+            vTaskDelay(pdMS_TO_TICKS(200));
             // read data from adc, will block until buffer is full
             i2s_read(I2S_NUM_0, (void *)i2sReadBuffer, 1024 * sizeof(uint16_t), &bytesRead, portMAX_DELAY);
 
@@ -710,7 +713,7 @@ TEST_CASE("I2S adc test", "[i2s]")
 #endif
 
 #if SOC_I2S_SUPPORTS_DAC
-TEST_CASE("I2S dac test", "[i2s]")
+TEST_CASE("I2S dac test", "[i2s_legacy]")
 {
     // dac, adc  i2s
     i2s_config_t  i2s_config = {
@@ -733,5 +736,3 @@ TEST_CASE("I2S dac test", "[i2s]")
     TEST_ESP_OK(i2s_driver_uninstall(I2S_NUM_0));
 }
 #endif
-
-#endif //SOC_I2S_SUPPORTED

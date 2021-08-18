@@ -19,7 +19,6 @@
 #include "soc/i2s_periph.h"
 #include "soc/i2s_struct.h"
 #include "hal/i2s_types.h"
-#include "hal/i2s_types_priv.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -14,6 +14,7 @@
 #pragma once
 
 #include "hal/i2s_types.h"
+#include "hal/gpio_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,7 +30,7 @@ extern "C" {
 #define I2S_PDM_RX_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
     .mode = I2S_COMM_MODE_PDM, \
     .data_bit_width = bits_per_sample, \
-    .slot_bit_width = I2S_SLOT_BIT_WIDTH_DEFAULT, \
+    .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
 }
 
@@ -39,7 +40,7 @@ extern "C" {
  */
 #define I2S_PDM_RX_CLK_DEFAULT_CONFIG(rate) { \
     .sample_rate_hz = rate, \
-    .clk_src = I2S_CLK_D2CLK, \
+    .clk_src = I2S_CLK_160M_PLL, \
     .mclk_multiple = I2S_MCLK_MULTIPLE_256, \
     .dn_sample_mode = I2S_PDM_DSR_8S \
 }
@@ -69,6 +70,21 @@ typedef struct {
     i2s_pdm_dsr_t           dn_sample_mode;     /*!< Down-sampling rate mode */
 } i2s_pdm_rx_clk_config_t;
 
+/**
+ * @brief I2S PDM tx mode GPIO pins configuration
+ */
+typedef struct {
+    gpio_num_t clk;                /*!< PDM clk pin, output */
+    gpio_num_t din;                /*!< DATA pin, input */
+} i2s_pdm_rx_gpio_config_t;
+
+typedef struct
+{
+    i2s_pdm_rx_clk_config_t    clk_cfg;
+    i2s_pdm_rx_slot_config_t   slot_cfg;
+    i2s_pdm_rx_gpio_config_t   gpio_cfg;
+} i2s_pdm_rx_config_t;
+
 #endif // SOC_I2S_SUPPORTS_PDM_RX
 
 
@@ -82,7 +98,7 @@ typedef struct {
 #define I2S_PDM_TX_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
     .mode = I2S_COMM_MODE_PDM, \
     .data_bit_width = bits_per_sample, \
-    .slot_bit_width = I2S_SLOT_BIT_WIDTH_DEFAULT, \
+    .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
     .sd_prescale = 0, \
     .sd_scale = I2S_PDM_SIG_SCALING_MUL_1, \
@@ -104,7 +120,7 @@ typedef struct {
 #define I2S_PDM_TX_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
     .mode = I2S_COMM_MODE_PDM, \
     .data_bit_width = bits_per_sample, \
-    .slot_bit_width = I2S_SLOT_BIT_WIDTH_DEFAULT, \
+    .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .dma_desc_num = 8, \
     .dma_frame_num = 200, \
     .auto_clear = false, \
@@ -128,7 +144,7 @@ typedef struct {
  */
 #define I2S_PDM_TX_CLK_DEFAULT_CONFIG(rate) { \
     .sample_rate_hz = rate, \
-    .clk_src = I2S_CLK_D2CLK, \
+    .clk_src = I2S_CLK_160M_PLL, \
     .mclk_multiple = I2S_MCLK_MULTIPLE_256, \
     .up_sample_fp = 960, \
     .up_sample_fs = ((rate) / 100), \
@@ -187,6 +203,22 @@ typedef struct {
     uint32_t                up_sample_fp;       /*!< Up-sampling param fp */
     uint32_t                up_sample_fs;       /*!< Up-sampling param fs */
 } i2s_pdm_tx_clk_config_t;
+
+/**
+ * @brief I2S PDM tx mode GPIO pins configuration
+ */
+typedef struct {
+    gpio_num_t clk;                /*!< PDM clk pin, output */
+    gpio_num_t dout;               /*!< DATA pin, output */
+} i2s_pdm_tx_gpio_config_t;
+
+typedef struct
+{
+    i2s_pdm_tx_clk_config_t    clk_cfg;
+    i2s_pdm_tx_slot_config_t   slot_cfg;
+    i2s_pdm_tx_gpio_config_t   gpio_cfg;
+} i2s_pdm_tx_config_t;
+
 
 #endif // SOC_I2S_SUPPORTS_PDM_TX
 
