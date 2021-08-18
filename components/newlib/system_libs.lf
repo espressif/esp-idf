@@ -4,6 +4,8 @@ entries:
     lib2funcs (noflash_text)
     if IDF_TARGET_ESP32 = n:
         _divsf3 (noflash)
+    if IDF_TARGET_ARCH_RISCV:
+        save-restore (noflash)
 
 [mapping:gcov]
 archive: libgcov.a

@@ -61,6 +61,10 @@ else()
     list(APPEND link_options "-fno-rtti")           # used to invoke correct multilib variant (no-rtti) during linking
 endif()
 
+if(CONFIG_COMPILER_SAVE_RESTORE_LIBCALLS)
+    list(APPEND compile_options "-msave-restore")
+endif()
+
 if(CONFIG_COMPILER_DISABLE_GCC8_WARNINGS)
     list(APPEND compile_options "-Wno-parentheses"
                                 "-Wno-sizeof-pointer-memaccess"
