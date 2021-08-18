@@ -349,7 +349,7 @@ static inline void spi_ll_write_buffer(spi_dev_t *hw, const uint8_t *buffer_to_s
  */
 static inline void spi_ll_write_buffer_byte(spi_dev_t *hw, int byte_id, uint8_t *data, int len)
 {
-    HAL_ASSERT(byte_id+len <= 64);
+    HAL_ASSERT(byte_id + len <= 64);
     HAL_ASSERT(len > 0);
     HAL_ASSERT(byte_id >= 0);
 
@@ -357,10 +357,14 @@ static inline void spi_ll_write_buffer_byte(spi_dev_t *hw, int byte_id, uint8_t 
         uint32_t word;
         int offset = byte_id % 4;
         int copy_len = 4 - offset;
-        if (copy_len > len) copy_len = len;
+        if (copy_len > len) {
+            copy_len = len;
+        }
 
         //read-modify-write
-        if (copy_len != 4) word = hw->data_buf[byte_id / 4];  //read
+        if (copy_len != 4) {
+            word = hw->data_buf[byte_id / 4];    //read
+        }
         memcpy(((uint8_t *)&word) + offset, data, copy_len);  //modify
         hw->data_buf[byte_id / 4] = word;                     //write
 
@@ -404,7 +408,9 @@ static inline void spi_ll_read_buffer_byte(spi_dev_t *hw, int byte_id, uint8_t *
         uint32_t word = hw->data_buf[byte_id / 4];
         int offset = byte_id % 4;
         int copy_len = 4 - offset;
-        if (copy_len > len) copy_len = len;
+        if (copy_len > len) {
+            copy_len = len;
+        }
 
         memcpy(out_data, ((uint8_t *)&word) + offset, copy_len);
         byte_id += copy_len;
@@ -587,7 +593,8 @@ static inline void spi_ll_master_select_cs(spi_dev_t *hw, int cs_id)
  * @param hw Beginning address of the peripheral registers.
  * @param keep_active if 0 don't keep CS activated, else keep CS activated
  */
-static inline void spi_ll_master_keep_cs(spi_dev_t *hw, int keep_active) {
+static inline void spi_ll_master_keep_cs(spi_dev_t *hw, int keep_active)
+{
     hw->misc.cs_keep_active = (keep_active != 0) ? 1 : 0;
 }
 
@@ -971,35 +978,35 @@ static inline uint32_t spi_ll_slave_get_rcv_bitlen(spi_dev_t *hw)
     item(SPI_LL_INTR_CMDA,          dma_int_ena.cmda,               dma_int_raw.cmda,               dma_int_clr.cmda=1)
 
 
-static inline void spi_ll_enable_intr(spi_dev_t* hw, spi_ll_intr_t intr_mask)
+static inline void spi_ll_enable_intr(spi_dev_t *hw, spi_ll_intr_t intr_mask)
 {
 #define ENA_INTR(intr_bit, en_reg, ...) if (intr_mask & (intr_bit)) hw->en_reg = 1;
     FOR_EACH_ITEM(ENA_INTR, INTR_LIST);
 #undef ENA_INTR
 }
 
-static inline void spi_ll_disable_intr(spi_dev_t* hw, spi_ll_intr_t intr_mask)
+static inline void spi_ll_disable_intr(spi_dev_t *hw, spi_ll_intr_t intr_mask)
 {
 #define DIS_INTR(intr_bit, en_reg, ...) if (intr_mask & (intr_bit)) hw->en_reg = 0;
     FOR_EACH_ITEM(DIS_INTR, INTR_LIST);
 #undef DIS_INTR
 }
 
-static inline void spi_ll_set_intr(spi_dev_t* hw, spi_ll_intr_t intr_mask)
+static inline void spi_ll_set_intr(spi_dev_t *hw, spi_ll_intr_t intr_mask)
 {
 #define SET_INTR(intr_bit, _, st_reg, ...) if (intr_mask & (intr_bit)) hw->st_reg = 1;
     FOR_EACH_ITEM(SET_INTR, INTR_LIST);
 #undef SET_INTR
 }
 
-static inline void spi_ll_clear_intr(spi_dev_t* hw, spi_ll_intr_t intr_mask)
+static inline void spi_ll_clear_intr(spi_dev_t *hw, spi_ll_intr_t intr_mask)
 {
 #define CLR_INTR(intr_bit, _, __, clr_reg) if (intr_mask & (intr_bit)) hw->clr_reg;
     FOR_EACH_ITEM(CLR_INTR, INTR_LIST);
 #undef CLR_INTR
 }
 
-static inline bool spi_ll_get_intr(spi_dev_t* hw, spi_ll_intr_t intr_mask)
+static inline bool spi_ll_get_intr(spi_dev_t *hw, spi_ll_intr_t intr_mask)
 {
 #define GET_INTR(intr_bit, _, st_reg, ...) if (intr_mask & (intr_bit) && hw->st_reg) return true;
     FOR_EACH_ITEM(GET_INTR, INTR_LIST);
@@ -1053,7 +1060,7 @@ static inline void spi_ll_enable_int(spi_dev_t *hw)
 /*------------------------------------------------------------------------------
  * Slave HD
  *----------------------------------------------------------------------------*/
-static inline void spi_ll_slave_hd_set_len_cond(spi_dev_t* hw, spi_ll_trans_len_cond_t cond_mask)
+static inline void spi_ll_slave_hd_set_len_cond(spi_dev_t *hw, spi_ll_trans_len_cond_t cond_mask)
 {
     hw->slave.rdbuf_bitlen_en = (cond_mask & SPI_LL_TRANS_LEN_COND_RDBUF) ? 1 : 0;
     hw->slave.wrbuf_bitlen_en = (cond_mask & SPI_LL_TRANS_LEN_COND_WRBUF) ? 1 : 0;
@@ -1061,12 +1068,12 @@ static inline void spi_ll_slave_hd_set_len_cond(spi_dev_t* hw, spi_ll_trans_len_
     hw->slave.wrdma_bitlen_en = (cond_mask & SPI_LL_TRANS_LEN_COND_WRDMA) ? 1 : 0;
 }
 
-static inline int spi_ll_slave_get_rx_byte_len(spi_dev_t* hw)
+static inline int spi_ll_slave_get_rx_byte_len(spi_dev_t *hw)
 {
     return hw->slave1.data_bitlen / 8;
 }
 
-static inline uint32_t spi_ll_slave_hd_get_last_addr(spi_dev_t* hw)
+static inline uint32_t spi_ll_slave_hd_get_last_addr(spi_dev_t *hw)
 {
     return hw->slave1.last_addr;
 }

@@ -63,10 +63,8 @@ extern "C"
 #define SPICOMMON_BUSFLAG_DUAL          (1<<6)     ///< Check MOSI and MISO pins can output. Or indicates bus able to work under DIO mode.
 #define SPICOMMON_BUSFLAG_WPHD          (1<<7)     ///< Check existing of WP and HD pins. Or indicates WP & HD pins initialized.
 #define SPICOMMON_BUSFLAG_QUAD          (SPICOMMON_BUSFLAG_DUAL|SPICOMMON_BUSFLAG_WPHD)     ///< Check existing of MOSI/MISO/WP/HD pins as output. Or indicates bus able to work under QIO mode.
-#if SOC_SPI_SUPPORT_OCT
 #define SPICOMMON_BUSFLAG_IO4_IO7       (1<<8)     ///< Check existing of IO4~IO7 pins. Or indicates IO4~IO7 pins initialized.
 #define SPICOMMON_BUSFLAG_OCTAL         (SPICOMMON_BUSFLAG_QUAD|SPICOMMON_BUSFLAG_IO4_IO7)  ///< Check existing of MOSI/MISO/WP/HD/SPIIO4/SPIIO5/SPIIO6/SPIIO7 pins as output. Or indicates bus able to work under octal mode.
-#endif
 #define SPICOMMON_BUSFLAG_NATIVE_PINS   SPICOMMON_BUSFLAG_IOMUX_PINS
 
 /**
@@ -115,12 +113,10 @@ typedef struct {
       int quadhd_io_num;  ///< GPIO pin for HD (Hold) signal, or -1 if not used.
       int data3_io_num;   ///< GPIO pin for spi data3 signal in quad/octal mode, or -1 if not used.
     };
-#if SOC_SPI_SUPPORT_OCT
     int data4_io_num;     ///< GPIO pin for spi data4 signal in octal mode, or -1 if not used.
     int data5_io_num;     ///< GPIO pin for spi data5 signal in octal mode, or -1 if not used.
     int data6_io_num;     ///< GPIO pin for spi data6 signal in octal mode, or -1 if not used.
     int data7_io_num;     ///< GPIO pin for spi data7 signal in octal mode, or -1 if not used.
-#endif
     int max_transfer_sz;  ///< Maximum transfer size, in bytes. Defaults to 4092 if 0 when DMA enabled, or to `SOC_SPI_MAXIMUM_BUFFER_SIZE` if DMA is disabled.
     uint32_t flags;       ///< Abilities of bus to be checked by the driver. Or-ed value of ``SPICOMMON_BUSFLAG_*`` flags.
     int intr_flags;       /**< Interrupt flag for the bus to set the priority, and IRAM attribute, see

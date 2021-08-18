@@ -354,6 +354,9 @@ esp_err_t spicommon_slave_free_dma(spi_host_device_t host_id)
 #if SOC_SPI_SUPPORT_OCT
 static bool check_iomux_pins_oct(spi_host_device_t host, const spi_bus_config_t* bus_config)
 {
+    if (host != SPI2_HOST) {
+        return false;
+    }
     int io_nums[] = {bus_config->data0_io_num, bus_config->data1_io_num, bus_config->data2_io_num, bus_config->data3_io_num,
         bus_config->sclk_io_num, bus_config->data4_io_num, bus_config->data5_io_num, bus_config->data6_io_num, bus_config->data7_io_num};
     int io_mux_nums[] = {SPI2_IOMUX_PIN_NUM_MOSI_OCT, SPI2_IOMUX_PIN_NUM_MISO_OCT, SPI2_IOMUX_PIN_NUM_WP_OCT, SPI2_IOMUX_PIN_NUM_HD_OCT,

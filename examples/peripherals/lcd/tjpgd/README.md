@@ -14,75 +14,70 @@ If you want to adapt this example to another type of display or pinout, check [l
 
 ### Hardware Required
 
-* An ESP development board 
+* An ESP development board
 * An SPI-interfaced LCD
 * An USB cable for power supply and programming
 
 ### Hardware Connection
 
-If using default settings, the hardware connection can be as below:
+The connection between ESP Board and the LCD is as follows:
 
 ```
-        Board                               LCD Screen
-      +--------+              +---------------------------------+
-      |        |              |                                 |
-      |    3V3 +--------------+ VCC   +----------------------+  |
-      |        |              |       |                      |  |
-      |    GND +--------------+ GND   |                      |  |
-      |        |              |       |                      |  |
-      |     23 +--------------+ MOSI  |                      |  |
-      |        |              |       |                      |  |
-      |     19 +--------------+ SCK   |                      |  |
-      |        |              |       |                      |  |
-      |     22 +--------------+ CS    |                      |  |
-      |        |              |       |                      |  |
-      |     21 +--------------+ DC    |                      |  |
-      |        |              |       |                      |  |
-      |     18 +--------------+ RST   |                      |  |
-      |        |              |       |                      |  |
-      |      5 +--------------+ BCKL  +----------------------+  |
-      |        |              |                                 |
-      +--------+              +---------------------------------+
+      ESP Board                            LCD Screen
+      +---------+              +---------------------------------+
+      |         |              |                                 |
+      |     3V3 +--------------+ VCC   +----------------------+  |
+      |         |              |       |                      |  |
+      |     GND +--------------+ GND   |                      |  |
+      |         |              |       |                      |  |
+      |   DATA0 +--------------+ MOSI  |                      |  |
+      |         |              |       |                      |  |
+      |    PCLK +--------------+ SCK   |                      |  |
+      |         |              |       |                      |  |
+      |      CS +--------------+ CS    |                      |  |
+      |         |              |       |                      |  |
+      |     D/C +--------------+ D/C   |                      |  |
+      |         |              |       |                      |  |
+      |     RST +--------------+ RST   |                      |  |
+      |         |              |       |                      |  |
+      |BK_LIGHT +--------------+ BCKL  +----------------------+  |
+      |         |              |                                 |
+      +---------+              +---------------------------------+
 ```
 
-If not using default settings, the interface GPIOs should be set by macros in [lcd_tjpgd_example_main.c](main/lcd_tjpgd_example_main.c), where:
+The GPIO number used by this example can be changed in [lcd_tjpgd_example_main.c](main/lcd_tjpgd_example_main.c), where:
 
-| GPIO number   | LCD pin |
-| :-----------: | :--: |
-| PIN_NUM_CLK   | SCK  |
-| PIN_NUM_CS    | CS   |
-| PIN_NUM_DC    | DC   |
-| PIN_NUM_RST   | RST  |
-| PIN_NUM_BCKL  | LED  |
-| PIN_NUM_MOSI  | MOSI |
+| GPIO number              | LCD pin |
+| ------------------------ | ------- |
+| EXAMPLE_PIN_NUM_PCLK     | SCK     |
+| EXAMPLE_PIN_NUM_CS       | CS      |
+| EXAMPLE_PIN_NUM_DC       | DC      |
+| EXAMPLE_PIN_NUM_RST      | RST     |
+| EXAMPLE_PIN_NUM_DATA0    | MOSI    |
+| EXAMPLE_PIN_NUM_BK_LIGHT | BCKL    |
+
+Especially, please pay attention to the level used to turn on the LCD backlight, some LCD module needs a low level to turn it on, while others take a high level. You can change the backlight level macro `EXAMPLE_LCD_BK_LIGHT_ON_LEVEL` in [lcd_tjpgd_example_main.c](main/lcd_tjpgd_example_main.c).
 
 
-### 8-line LCD Usage
+#### Extra connections for 8-line LCD (Octal SPI)
 
 Firstly, please run `idf.py menuconfig` and set the `Drive a LCD with 8 data lines` option at `Example Configuration`.
 
-Check if the pins below are correctly connected as the settings by macros in [lcd_tjpgd_example_main.c](main/lcd_tjpgd_example_main.c), where:
+Change the extra GPOIs used by octal SPI in [lcd_tjpgd_example_main.c](main/lcd_tjpgd_example_main.c), where:
 
 | GPIO number   | LCD pin |
-| :-----------: | :--: |
-| PIN_NUM_CLK   | SCK  |
-| PIN_NUM_CS    | CS   |
-| PIN_NUM_DC    | DC   |
-| PIN_NUM_RST   | RST  |
-| PIN_NUM_BCKL  | LED  |
-| PIN_NUM_MOSI  | D0   |
-| PIN_NUM_DATA1 | D1   |
-| PIN_NUM_DATA2 | D2   |
-| PIN_NUM_DATA3 | D3   |
-| PIN_NUM_DATA4 | D4   |
-| PIN_NUM_DATA5 | D5   |
-| PIN_NUM_DATA6 | D6   |
-| PIN_NUM_DATA7 | D7   |
-
+| ------------- | ------- |
+| PIN_NUM_DATA1 | D1      |
+| PIN_NUM_DATA2 | D2      |
+| PIN_NUM_DATA3 | D3      |
+| PIN_NUM_DATA4 | D4      |
+| PIN_NUM_DATA5 | D5      |
+| PIN_NUM_DATA6 | D6      |
+| PIN_NUM_DATA7 | D7      |
 
 ### Build and Flash
 
-Run `idf.py -p PORT flash monitor` to build, flash and monitor the project. A flowing picture will be shown on the LCD screen. 
+Run `idf.py -p PORT flash monitor` to build, flash and monitor the project. A flowing picture will be shown on the LCD screen.
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 

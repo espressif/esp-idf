@@ -9,29 +9,15 @@
 #include "esp_lcd_panel_vendor.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_system.h"
+#include "soc/soc_caps.h"
+#include "test_spi_board.h"
 
-#define TEST_LCD_H_RES          (240)
-#define TEST_LCD_V_RES          (280)
-#define TEST_LCD_CLK_GPIO       (2)
-#define TEST_LCD_DATA0_GPIO     (4)
-#define TEST_LCD_RST_GPIO       (5)
-#define TEST_LCD_DC_GPIO        (18)
-#define TEST_LCD_BK_LIGHT_GPIO  (19)
-#define TEST_LCD_CS_GPIO        (0)
-#define TEST_LCD_DATA1_GPIO     (7)
-#define TEST_LCD_DATA2_GPIO     (8)
-#define TEST_LCD_DATA3_GPIO     (9)
-#define TEST_LCD_DATA4_GPIO     (10)
-#define TEST_LCD_DATA5_GPIO     (11)
-#define TEST_LCD_DATA6_GPIO     (12)
-#define TEST_LCD_DATA7_GPIO     (13)
 #define TEST_SPI_HOST_ID        (1)
-#define TEST_LCD_PIXEL_CLOCK_HZ (20 * 1000 * 1000)
+#define TEST_LCD_PIXEL_CLOCK_HZ (20 * 1000 * 1000) // 20MHz
 
-typedef bool (*trans_done_callback)(esp_lcd_panel_io_handle_t, void *, void *);
+typedef bool (*trans_done_callback_t)(esp_lcd_panel_io_handle_t, void *, void *);
 
-static void lcd_initialize(bool is_8_line_lcd, esp_lcd_panel_io_handle_t *io_handle, esp_lcd_panel_handle_t *panel_handle,
-                           int spi_mode, trans_done_callback on_color_trans_done, void *user_data)
+static void lcd_initialize_spi(esp_lcd_panel_io_handle_t *io_handle, esp_lcd_panel_handle_t *panel_handle, trans_done_callback_t on_color_trans_done, void *user_data, bool oct_mode)
 {
     gpio_config_t bk_gpio_config = {
         .mode = GPIO_MODE_OUTPUT,
@@ -40,15 +26,14 @@ static void lcd_initialize(bool is_8_line_lcd, esp_lcd_panel_io_handle_t *io_han
     TEST_ESP_OK(gpio_config(&bk_gpio_config));
 
     spi_bus_config_t buscfg = {
-        .miso_io_num = -1,
+        .sclk_io_num = TEST_LCD_PCLK_GPIO,
         .mosi_io_num = TEST_LCD_DATA0_GPIO,
-        .sclk_io_num = TEST_LCD_CLK_GPIO,
+        .miso_io_num = -1,
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
         .max_transfer_sz = TEST_LCD_H_RES * TEST_LCD_V_RES * sizeof(uint16_t)
     };
-#if SOC_SPI_SUPPORT_OCT
-    if (is_8_line_lcd) {
+    if (oct_mode) {
         buscfg.data1_io_num = TEST_LCD_DATA1_GPIO;
         buscfg.data2_io_num = TEST_LCD_DATA2_GPIO;
         buscfg.data3_io_num = TEST_LCD_DATA3_GPIO;
@@ -58,25 +43,23 @@ static void lcd_initialize(bool is_8_line_lcd, esp_lcd_panel_io_handle_t *io_han
         buscfg.data7_io_num = TEST_LCD_DATA7_GPIO;
         buscfg.flags = SPICOMMON_BUSFLAG_OCTAL;
     }
-#endif //SOC_SPI_SUPPORT_OCT
     TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST_ID, &buscfg, SPI_DMA_CH_AUTO));
 
     esp_lcd_panel_io_spi_config_t io_config = {
         .dc_gpio_num = TEST_LCD_DC_GPIO,
         .cs_gpio_num = TEST_LCD_CS_GPIO,
         .pclk_hz = TEST_LCD_PIXEL_CLOCK_HZ,
-        .spi_mode = spi_mode,
+        .spi_mode = 0,
         .trans_queue_depth = 10,
         .lcd_cmd_bits = 8,
         .lcd_param_bits = 8,
         .on_color_trans_done = on_color_trans_done,
         .user_data = user_data
     };
-#if SOC_SPI_SUPPORT_OCT
-    if (is_8_line_lcd) {
+    if (oct_mode) {
         io_config.flags.octal_mode = 1;
+        io_config.spi_mode = 3;
     }
-#endif
     TEST_ESP_OK(esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)TEST_SPI_HOST_ID, &io_config, io_handle));
 
     esp_lcd_panel_dev_config_t panel_config = {
@@ -125,7 +108,7 @@ TEST_CASE("lcd panel with 8-line spi interface (st7789)", "[lcd]")
 {
     esp_lcd_panel_io_handle_t io_handle = NULL;
     esp_lcd_panel_handle_t panel_handle = NULL;
-    lcd_initialize(true, &io_handle, &panel_handle, 3, NULL, NULL);
+    lcd_initialize_spi(&io_handle, &panel_handle, NULL, NULL, true);
     lcd_panel_test(io_handle, panel_handle);
 }
 #endif // SOC_SPI_SUPPORT_OCT
@@ -134,7 +117,7 @@ TEST_CASE("lcd panel with 1-line spi interface (st7789)", "[lcd]")
 {
     esp_lcd_panel_io_handle_t io_handle = NULL;
     esp_lcd_panel_handle_t panel_handle = NULL;
-    lcd_initialize(false, &io_handle, &panel_handle, 0, NULL, NULL);
+    lcd_initialize_spi(&io_handle, &panel_handle, NULL, NULL, false);
     lcd_panel_test(io_handle, panel_handle);
 }
 
@@ -166,13 +149,14 @@ static void lvgl_gui_test(esp_lcd_panel_io_handle_t io_handle, esp_lcd_panel_han
 
     test_lvgl_task_loop(panel_handle, TEST_LCD_H_RES, TEST_LCD_V_RES, disp);
 }
+
 #if SOC_SPI_SUPPORT_OCT
 TEST_CASE("lvgl gui with 8-line spi interface (st7789)", "[lcd][lvgl][ignore]")
 {
     lv_disp_t *disp = NULL;
     esp_lcd_panel_io_handle_t io_handle = NULL;
     esp_lcd_panel_handle_t panel_handle = NULL;
-    lcd_initialize(true, &io_handle, &panel_handle, 3, notify_lvgl_ready_to_flush, &disp);
+    lcd_initialize_spi(&io_handle, &panel_handle, notify_lvgl_ready_to_flush, &disp, true);
 
     lvgl_gui_test(io_handle, panel_handle, &disp);
 }
@@ -183,7 +167,7 @@ TEST_CASE("lvgl gui with 1-line spi interface (st7789)", "[lcd][lvgl][ignore]")
     lv_disp_t *disp = NULL;
     esp_lcd_panel_io_handle_t io_handle = NULL;
     esp_lcd_panel_handle_t panel_handle = NULL;
-    lcd_initialize(false, &io_handle, &panel_handle, 0, notify_lvgl_ready_to_flush, &disp);
+    lcd_initialize_spi(&io_handle, &panel_handle, notify_lvgl_ready_to_flush, &disp, false);
 
     lvgl_gui_test(io_handle, panel_handle, &disp);
 }

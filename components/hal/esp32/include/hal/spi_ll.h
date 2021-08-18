@@ -29,6 +29,7 @@
 #include "soc/spi_periph.h"
 #include "hal/misc.h"
 #include "hal/spi_types.h"
+#include "hal/assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -453,40 +454,40 @@ static inline void spi_ll_master_set_line_mode(spi_dev_t *hw, spi_line_mode_t li
     hw->ctrl.val &= ~SPI_LL_ONE_LINE_CTRL_MASK;
     hw->user.val &= ~SPI_LL_ONE_LINE_USER_MASK;
     if (line_mode.cmd_lines > 1) {
-        abort();
+        HAL_ASSERT(false);
     }
     switch (line_mode.data_lines) {
-        case 2:
-            if (line_mode.addr_lines == 1) {
-                // 1-line-cmd + 1-line-addr + 2-line-data
-                hw->ctrl.fread_dual = 1;
-                hw->user.fwrite_dual = 1;
-            } else if (line_mode.addr_lines == 2) {
-                // 1-line-cmd + 2-line-addr + 2-line-data
-                hw->ctrl.fread_dio = 1;
-                hw->user.fwrite_dio = 1;
-            } else {
-                abort();
-            }
-            hw->ctrl.fastrd_mode = 1;
-            break;
-        case 4:
-            if (line_mode.addr_lines == 1) {
-                // 1-line-cmd + 1-line-addr + 4-line-data
-                hw->ctrl.fread_quad = 1;
-                hw->user.fwrite_quad = 1;
-            } else if (line_mode.addr_lines == 4) {
-                // 1-line-cmd + 4-line-addr + 4-line-data
-                hw->ctrl.fread_qio = 1;
-                hw->user.fwrite_qio = 1;
-            } else {
-                abort();
-            }
-            hw->ctrl.fastrd_mode = 1;
-            break;
-        default:
-            // 1-line-cmd + 1-line-addr + 1-line-data
-            break;
+    case 2:
+        if (line_mode.addr_lines == 1) {
+            // 1-line-cmd + 1-line-addr + 2-line-data
+            hw->ctrl.fread_dual = 1;
+            hw->user.fwrite_dual = 1;
+        } else if (line_mode.addr_lines == 2) {
+            // 1-line-cmd + 2-line-addr + 2-line-data
+            hw->ctrl.fread_dio = 1;
+            hw->user.fwrite_dio = 1;
+        } else {
+            HAL_ASSERT(false);
+        }
+        hw->ctrl.fastrd_mode = 1;
+        break;
+    case 4:
+        if (line_mode.addr_lines == 1) {
+            // 1-line-cmd + 1-line-addr + 4-line-data
+            hw->ctrl.fread_quad = 1;
+            hw->user.fwrite_quad = 1;
+        } else if (line_mode.addr_lines == 4) {
+            // 1-line-cmd + 4-line-addr + 4-line-data
+            hw->ctrl.fread_qio = 1;
+            hw->user.fwrite_qio = 1;
+        } else {
+            HAL_ASSERT(false);
+        }
+        hw->ctrl.fastrd_mode = 1;
+        break;
+    default:
+        // 1-line-cmd + 1-line-addr + 1-line-data
+        break;
     }
 }
 
@@ -509,7 +510,8 @@ static inline void spi_ll_master_select_cs(spi_dev_t *hw, int cs_id)
  * @param hw Beginning address of the peripheral registers.
  * @param keep_active if 0 don't keep CS activated, else keep CS activated
  */
-static inline void spi_ll_master_keep_cs(spi_dev_t *hw, int keep_active) {
+static inline void spi_ll_master_keep_cs(spi_dev_t *hw, int keep_active)
+{
     hw->pin.cs_keep_active = (keep_active != 0) ? 1 : 0;
 }
 
