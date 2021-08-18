@@ -22,13 +22,15 @@ static const char *TAG = "lcd_panel.io.i2c";
 #define BYTESHIFT(VAR, IDX) (((VAR) >> ((IDX) * 8)) & 0xFF)
 
 static esp_err_t panel_io_i2c_del(esp_lcd_panel_io_t *io);
-static esp_err_t panel_io_i2c_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, int lcd_cmd_bits, const void *param, size_t param_size);
-static esp_err_t panel_io_i2c_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, int lcd_cmd_bits, const void *color, size_t color_size);
+static esp_err_t panel_io_i2c_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, const void *param, size_t param_size);
+static esp_err_t panel_io_i2c_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, const void *color, size_t color_size);
 
 typedef struct {
     esp_lcd_panel_io_t base; // Base class of generic lcd panel io
     uint32_t i2c_bus_id;     // I2C bus id, indicating which I2C port
     uint32_t dev_addr;       // Device address
+    int lcd_cmd_bits;        // Bit width of LCD command
+    int lcd_param_bits;      // Bit width of LCD parameter
     uint32_t control_phase_cmd;  // control byte when transferring command
     uint32_t control_phase_data; // control byte when transferring data
     bool (*on_color_trans_done)(esp_lcd_panel_io_handle_t panel_io, void *user_data, void *event_data); // User register's callback, invoked when color data trans done
@@ -46,6 +48,8 @@ esp_err_t esp_lcd_new_panel_io_i2c(esp_lcd_i2c_bus_handle_t bus, const esp_lcd_p
     ESP_GOTO_ON_FALSE(i2c_panel_io, ESP_ERR_NO_MEM, err, TAG, "no mem for i2c panel io");
 
     i2c_panel_io->i2c_bus_id = (uint32_t)bus;
+    i2c_panel_io->lcd_cmd_bits = io_config->lcd_cmd_bits;
+    i2c_panel_io->lcd_param_bits = io_config->lcd_param_bits;
     i2c_panel_io->on_color_trans_done = io_config->on_color_trans_done;
     i2c_panel_io->control_phase_data = (!io_config->flags.dc_low_on_data) << (io_config->dc_bit_offset);
     i2c_panel_io->control_phase_cmd = (io_config->flags.dc_low_on_data) << (io_config->dc_bit_offset);
@@ -72,7 +76,7 @@ static esp_err_t panel_io_i2c_del(esp_lcd_panel_io_t *io)
     return ret;
 }
 
-static esp_err_t panel_io_i2c_tx_buffer(esp_lcd_panel_io_t *io, int lcd_cmd, int lcd_cmd_bits, const void *buffer, size_t buffer_size, bool is_param)
+static esp_err_t panel_io_i2c_tx_buffer(esp_lcd_panel_io_t *io, int lcd_cmd, const void *buffer, size_t buffer_size, bool is_param)
 {
     esp_err_t ret = ESP_OK;
     lcd_panel_io_i2c_t *i2c_panel_io = __containerof(io, lcd_panel_io_i2c_t, base);
@@ -81,14 +85,12 @@ static esp_err_t panel_io_i2c_tx_buffer(esp_lcd_panel_io_t *io, int lcd_cmd, int
     ESP_GOTO_ON_FALSE(cmd_link, ESP_ERR_NO_MEM, err, TAG, "no mem for i2c cmd link");
     ESP_GOTO_ON_ERROR(i2c_master_start(cmd_link), err, TAG, "issue start failed"); // start phase
     ESP_GOTO_ON_ERROR(i2c_master_write_byte(cmd_link, (i2c_panel_io->dev_addr << 1) | I2C_MASTER_WRITE, true), err, TAG, "write address failed"); // address phase
-    ESP_GOTO_ON_ERROR(
-            i2c_master_write_byte(cmd_link, is_param ? i2c_panel_io->control_phase_cmd : i2c_panel_io->control_phase_data, true),
-            err, TAG, "write control phase failed"); // control phase
+    ESP_GOTO_ON_ERROR(i2c_master_write_byte(cmd_link, is_param ? i2c_panel_io->control_phase_cmd : i2c_panel_io->control_phase_data, true),
+                      err, TAG, "write control phase failed"); // control phase
     uint8_t cmds[4] = {BYTESHIFT(lcd_cmd, 3), BYTESHIFT(lcd_cmd, 2), BYTESHIFT(lcd_cmd, 1), BYTESHIFT(lcd_cmd, 0)};
-    size_t cmds_size = lcd_cmd_bits / 8;
+    size_t cmds_size = i2c_panel_io->lcd_cmd_bits / 8;
     if (cmds_size > 0 && cmds_size <= sizeof(cmds)) {
-        ESP_GOTO_ON_ERROR(i2c_master_write(cmd_link, cmds + (sizeof(cmds) - cmds_size), cmds_size, true), err, TAG,
-                          "write LCD cmd failed");
+        ESP_GOTO_ON_ERROR(i2c_master_write(cmd_link, cmds + (sizeof(cmds) - cmds_size), cmds_size, true), err, TAG, "write LCD cmd failed");
     }
 
     if (buffer) {
@@ -114,12 +116,12 @@ err:
     return ret;
 }
 
-static esp_err_t panel_io_i2c_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, int lcd_cmd_bits, const void *param, size_t param_size)
+static esp_err_t panel_io_i2c_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, const void *param, size_t param_size)
 {
-    return panel_io_i2c_tx_buffer(io, lcd_cmd, lcd_cmd_bits, param, param_size, true);
+    return panel_io_i2c_tx_buffer(io, lcd_cmd, param, param_size, true);
 }
 
-static esp_err_t panel_io_i2c_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, int lcd_cmd_bits, const void *color, size_t color_size)
+static esp_err_t panel_io_i2c_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, const void *color, size_t color_size)
 {
-    return panel_io_i2c_tx_buffer(io, lcd_cmd, lcd_cmd_bits, color, color_size, false);
+    return panel_io_i2c_tx_buffer(io, lcd_cmd, color, color_size, false);
 }

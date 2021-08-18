@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/cdefs.h>
+#include <sys/param.h>
 #include <sys/queue.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -38,10 +39,10 @@ typedef struct esp_lcd_i80_bus_t esp_lcd_i80_bus_t;
 typedef struct lcd_panel_io_i80_t lcd_panel_io_i80_t;
 typedef struct lcd_i80_trans_descriptor_t lcd_i80_trans_descriptor_t;
 
-static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, int lcd_cmd_bits, const void *param, size_t param_size);
-static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, int lcd_cmd_bits, const void *color, size_t color_size);
+static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, const void *param, size_t param_size);
+static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, const void *color, size_t color_size);
 static esp_err_t panel_io_i80_del(esp_lcd_panel_io_t *io);
-static esp_err_t lcd_i80_bus_create_trans_link(esp_lcd_i80_bus_handle_t bus);
+static esp_err_t lcd_i80_init_dma_link(esp_lcd_i80_bus_handle_t bus);
 static void lcd_periph_trigger_quick_trans_done_event(esp_lcd_i80_bus_handle_t bus);
 static esp_err_t lcd_i80_bus_configure_gpio(esp_lcd_i80_bus_handle_t bus, const esp_lcd_i80_bus_config_t *bus_config);
 static void lcd_i80_switch_devices(lcd_panel_io_i80_t *cur_device, lcd_panel_io_i80_t *next_device);
@@ -52,15 +53,16 @@ struct esp_lcd_i80_bus_t {
     int bus_id;            // Bus ID, index from 0
     portMUX_TYPE spinlock; // spinlock used to protect i80 bus members(hal, device_list, cur_trans)
     lcd_hal_context_t hal; // Hal object
-    size_t data_width;   // Number of data lines
+    size_t bus_width;      // Number of data lines
     intr_handle_t intr;    // LCD peripheral interrupt handle
     size_t num_dma_nodes;  // Number of DMA descriptors
+    uint8_t *format_buffer;  // The driver allocates an internal buffer for DMA to do data format transformer
     size_t resolution_hz;    // LCD_CLK resolution, determined by selected clock source
     gdma_channel_handle_t dma_chan; // DMA channel handle
     lcd_i80_trans_descriptor_t *cur_trans; // Current transaction
     lcd_panel_io_i80_t *cur_device; // Current working device
     LIST_HEAD(i80_device_list, lcd_panel_io_i80_t) device_list; // Head of i80 device list
-    dma_descriptor_t dma_nodes[0]; // DMA descriptor pool, the descriptors are shared by all i80 devices
+    dma_descriptor_t dma_nodes[]; // DMA descriptor pool, the descriptors are shared by all i80 devices
 };
 
 struct lcd_i80_trans_descriptor_t {
@@ -82,24 +84,26 @@ struct lcd_panel_io_i80_t {
     QueueHandle_t trans_queue; // Transaction queue, transactions in this queue are pending for scheduler to dispatch
     QueueHandle_t done_queue;  // Transaction done queue, transactions in this queue are finished but not recycled by the caller
     size_t queue_size;         // Size of transaction queue
-    size_t num_trans_working;  // Number of transactions that are undergoing (the descriptor not recycled yet)
+    size_t num_trans_inflight;  // Number of transactions that are undergoing (the descriptor not recycled yet)
+    int lcd_cmd_bits;          // Bit width of LCD command
+    int lcd_param_bits;        // Bit width of LCD parameter
     void *cb_user_data;        // private data used when transfer color data
     bool (*on_color_trans_done)(esp_lcd_panel_io_handle_t panel_io, void *user_data, void *event_data); // color data trans done callback
     LIST_ENTRY(lcd_panel_io_i80_t) device_list_entry; // Entry of i80 device list
     struct {
-        int dc_idle_level: 1;  // Level of DC line in IDLE phase
-        int dc_cmd_level: 1;   // Level of DC line in CMD phase
-        int dc_dummy_level: 1; // Level of DC line in DUMMY phase
-        int dc_data_level: 1;  // Level of DC line in DATA phase
+        unsigned int dc_idle_level: 1;  // Level of DC line in IDLE phase
+        unsigned int dc_cmd_level: 1;   // Level of DC line in CMD phase
+        unsigned int dc_dummy_level: 1; // Level of DC line in DUMMY phase
+        unsigned int dc_data_level: 1;  // Level of DC line in DATA phase
     } dc_levels;
     struct {
-        int invert_cs: 1;          // Whether to invert the CS line
-        int reverse_color_bits: 1; // Reverse the data bits, D[N:0] -> D[0:N]
-        int swap_color_bytes: 1;   // Swap adjacent two data bytes before sending out
-        int pclk_active_neg: 1;    // The display will write data lines when there's a falling edge on WR line
-        int pclk_idle_low: 1;      // The WR line keeps at low level in IDLE phase
+        unsigned int cs_active_high: 1;     // Whether the CS line is active on high level
+        unsigned int reverse_color_bits: 1; // Reverse the data bits, D[N:0] -> D[0:N]
+        unsigned int swap_color_bytes: 1;   // Swap adjacent two data bytes before sending out
+        unsigned int pclk_active_neg: 1;    // The display will write data lines when there's a falling edge on WR line
+        unsigned int pclk_idle_low: 1;      // The WR line keeps at low level in IDLE phase
     } flags;
-    lcd_i80_trans_descriptor_t trans_pool[0]; // Transaction pool
+    lcd_i80_trans_descriptor_t trans_pool[]; // Transaction pool
 };
 
 esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lcd_i80_bus_handle_t *ret_bus)
@@ -112,6 +116,8 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     bus = heap_caps_calloc(1, sizeof(esp_lcd_i80_bus_t) + num_dma_nodes * sizeof(dma_descriptor_t), MALLOC_CAP_DMA);
     ESP_GOTO_ON_FALSE(bus, ESP_ERR_NO_MEM, no_mem_bus, TAG, "no mem for i80 bus");
     bus->num_dma_nodes = num_dma_nodes;
+    bus->format_buffer = heap_caps_calloc(1, CONFIG_LCD_PANEL_IO_FORMAT_BUF_SIZE, MALLOC_CAP_DMA);
+    ESP_GOTO_ON_FALSE(bus->format_buffer, ESP_ERR_NO_MEM, no_mem_format, TAG, "no mem for format buffer");
     // register to platform
     int bus_id = lcd_com_register_device(LCD_COM_DEVICE_TYPE_I80, bus);
     ESP_GOTO_ON_FALSE(bus_id >= 0, ESP_ERR_NOT_FOUND, no_slot, TAG, "no free i80 bus slot");
@@ -126,7 +132,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     lcd_ll_enable_clock(bus->hal.dev, true);
     // install interrupt service, (LCD peripheral shares the same interrupt source with Camera peripheral with different mask)
     // interrupt is disabled by default
-    int isr_flags = ESP_INTR_FLAG_INTRDISABLED;
+    int isr_flags = ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED;
     ret = esp_intr_alloc_intrstatus(lcd_periph_signals.buses[bus_id].irq_id, isr_flags,
                                     (uint32_t)lcd_ll_get_interrupt_status_reg(bus->hal.dev),
                                     LCD_LL_EVENT_TRANS_DONE, lcd_default_isr_handler, bus, &bus->intr);
@@ -134,13 +140,14 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     lcd_ll_enable_interrupt(bus->hal.dev, LCD_LL_EVENT_TRANS_DONE, false); // disable all interrupts
     lcd_ll_clear_interrupt_status(bus->hal.dev, UINT32_MAX); // clear pending interrupt
     // install DMA service
-    ret = lcd_i80_bus_create_trans_link(bus);
+    ret = lcd_i80_init_dma_link(bus);
     ESP_GOTO_ON_ERROR(ret, no_dma, TAG, "install DMA failed");
     // set peripheral clock resolution
     bus->resolution_hz = lcd_com_select_periph_clock(&bus->hal);
-    // enable 8080 mode and set data width
+    // enable 8080 mode and set bus width
     lcd_ll_enable_rgb_mode(bus->hal.dev, false);
-    lcd_ll_set_data_width(bus->hal.dev, bus_config->data_width);
+    lcd_ll_set_data_width(bus->hal.dev, bus_config->bus_width);
+    bus->bus_width = lcd_ll_get_data_width(bus->hal.dev);
     // number of data cycles is controlled by DMA buffer size
     lcd_ll_enable_output_always_on(bus->hal.dev, true);
     // enable trans done interrupt
@@ -154,7 +161,6 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     // fill other i80 bus runtime parameters
     LIST_INIT(&bus->device_list); // initialize device list head
     bus->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
-    bus->data_width = lcd_ll_get_data_width(bus->hal.dev);
     *ret_bus = bus;
     ESP_LOGD(TAG, "new i80 bus(%d) @%p, %zu dma nodes", bus_id, bus, bus->num_dma_nodes);
     return ESP_OK;
@@ -168,6 +174,8 @@ no_int:
     periph_module_disable(lcd_periph_signals.buses[bus_id].module);
     lcd_com_remove_device(LCD_COM_DEVICE_TYPE_I80, bus->bus_id);
 no_slot:
+    free(bus->format_buffer);
+no_mem_format:
     free(bus);
 no_mem_bus:
 err_arg:
@@ -185,6 +193,7 @@ esp_err_t esp_lcd_del_i80_bus(esp_lcd_i80_bus_handle_t bus)
     esp_intr_free(bus->intr);
     periph_module_disable(lcd_periph_signals.buses[bus_id].module);
     lcd_com_remove_device(LCD_COM_DEVICE_TYPE_I80, bus_id);
+    free(bus->format_buffer);
     free(bus);
     ESP_LOGD(TAG, "del i80 bus(%d)", bus_id);
 err:
@@ -198,7 +207,7 @@ esp_err_t esp_lcd_new_panel_io_i80(esp_lcd_i80_bus_handle_t bus, const esp_lcd_p
     ESP_GOTO_ON_FALSE(bus && io_config && ret_io, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     // check if pixel clock setting is valid
     uint32_t pclk_prescale = bus->resolution_hz / io_config->pclk_hz;
-    ESP_GOTO_ON_FALSE(pclk_prescale <= LCD_LL_CLOCK_PRESCALE_MAX, ESP_ERR_NOT_SUPPORTED, err, TAG,
+    ESP_GOTO_ON_FALSE(pclk_prescale > 0 && pclk_prescale <= LCD_LL_CLOCK_PRESCALE_MAX, ESP_ERR_NOT_SUPPORTED, err, TAG,
                       "prescaler can't satisfy PCLK clock %u", io_config->pclk_hz);
     i80_device = calloc(1, sizeof(lcd_panel_io_i80_t) + io_config->trans_queue_depth * sizeof(lcd_i80_trans_descriptor_t));
     ESP_GOTO_ON_FALSE(i80_device, ESP_ERR_NO_MEM, err, TAG, "no mem for i80 panel io");
@@ -214,6 +223,8 @@ esp_err_t esp_lcd_new_panel_io_i80(esp_lcd_i80_bus_handle_t bus, const esp_lcd_p
     // we don't initialize the i80 bus at the memont, but initialize the bus when start a transaction for a new device
     // so save these as i80 device runtime parameters
     i80_device->bus = bus;
+    i80_device->lcd_cmd_bits = io_config->lcd_cmd_bits;
+    i80_device->lcd_param_bits = io_config->lcd_param_bits;
     i80_device->queue_size = io_config->trans_queue_depth;
     i80_device->clock_prescale = pclk_prescale;
     i80_device->pclk_hz = bus->resolution_hz / pclk_prescale;
@@ -224,7 +235,7 @@ esp_err_t esp_lcd_new_panel_io_i80(esp_lcd_i80_bus_handle_t bus, const esp_lcd_p
     i80_device->cs_gpio_num = io_config->cs_gpio_num;
     i80_device->flags.reverse_color_bits = io_config->flags.reverse_color_bits;
     i80_device->flags.swap_color_bytes = io_config->flags.swap_color_bytes;
-    i80_device->flags.invert_cs = io_config->flags.invert_cs;
+    i80_device->flags.cs_active_high = io_config->flags.cs_active_high;
     i80_device->flags.pclk_idle_low = io_config->flags.pclk_idle_low;
     i80_device->flags.pclk_active_neg = io_config->flags.pclk_active_neg;
     i80_device->on_color_trans_done = io_config->on_color_trans_done;
@@ -235,7 +246,7 @@ esp_err_t esp_lcd_new_panel_io_i80(esp_lcd_i80_bus_handle_t bus, const esp_lcd_p
     i80_device->base.tx_color = panel_io_i80_tx_color;
     // we only configure the CS GPIO as output, don't connect to the peripheral signal at the moment
     // we will connect the CS GPIO to peripheral signal when switching devices in lcd_i80_switch_devices()
-    gpio_set_level(io_config->cs_gpio_num, !io_config->flags.invert_cs);
+    gpio_set_level(io_config->cs_gpio_num, !io_config->flags.cs_active_high);
     gpio_set_direction(io_config->cs_gpio_num, GPIO_MODE_OUTPUT);
     gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[io_config->cs_gpio_num], PIN_FUNC_GPIO);
     *ret_io = &(i80_device->base);
@@ -261,7 +272,7 @@ static esp_err_t panel_io_i80_del(esp_lcd_panel_io_t *io)
     esp_lcd_i80_bus_t *bus = i80_device->bus;
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
     // wait all pending transaction to finish
-    for (size_t i = 0; i < i80_device->num_trans_working; i++) {
+    for (size_t i = 0; i < i80_device->num_trans_inflight; i++) {
         xQueueReceive(i80_device->done_queue, &trans_desc, portMAX_DELAY);
     }
     // remove from device list
@@ -276,31 +287,72 @@ static esp_err_t panel_io_i80_del(esp_lcd_panel_io_t *io)
     return ESP_OK;
 }
 
-static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, int lcd_cmd_bits, const void *param, size_t param_size)
+static void i80_lcd_prepare_cmd_buffer(esp_lcd_i80_bus_t *bus, lcd_panel_io_i80_t *i80_device, void *lcd_cmd)
+{
+    uint8_t *from = (uint8_t *)lcd_cmd;
+    if (bus->bus_width < i80_device->lcd_cmd_bits) {
+        // LCD is big-endian, e.g. to send command 0x1234, byte 0x12 should appear on the bus first
+        // However, the i80 peripheral will send 0x34 first, so we reversed the order below
+        int start = 0;
+        int end = i80_device->lcd_cmd_bits / 8 - 1;
+        lcd_com_reverse_buffer_bytes(from, start, end);
+    }
+}
+
+static uint32_t i80_lcd_prepare_param_buffer(esp_lcd_i80_bus_t *bus, lcd_panel_io_i80_t *i80_device, const void *lcd_param, size_t param_size)
+{
+    int param_per_size = i80_device->lcd_param_bits / 8;
+    int param_num = param_size / param_per_size;
+    const uint8_t *from = (const uint8_t *)lcd_param;
+    uint8_t *to = bus->format_buffer;
+    uint8_t step = bus->bus_width / 8;
+    int param_cycle = i80_device->lcd_param_bits / bus->bus_width;
+    // in case bus_width=16 and param_bits=8, we still need 1 param_cycle
+    if (param_cycle * bus->bus_width < i80_device->lcd_param_bits) {
+        param_cycle++;
+    }
+    int ele_cycles = param_cycle * param_num;
+    int bytes_to_copy = MIN(bus->bus_width, i80_device->lcd_param_bits) / 8;
+    int cnt_from = 0;
+    // expand the width of parameters when necessary
+    for (int i = 0; i < ele_cycles; i++) {
+        for (int j = 0; j < bytes_to_copy; j++) {
+            to[j] = from[cnt_from++];
+        }
+        to += step;
+    }
+    return to - bus->format_buffer;
+}
+
+static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, const void *param, size_t param_size)
 {
     lcd_panel_io_i80_t *next_device = __containerof(io, lcd_panel_io_i80_t, base);
     esp_lcd_i80_bus_t *bus = next_device->bus;
     lcd_panel_io_i80_t *cur_device = bus->cur_device;
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
     assert(param_size <= (bus->num_dma_nodes * DMA_DESCRIPTOR_BUFFER_MAX_SIZE) && "parameter bytes too long, enlarge max_transfer_bytes");
-    uint32_t cmd_cycles = lcd_cmd_bits / bus->data_width;
-    // in case data_width=16 and cmd_bits=8, we still need 1 cmd_cycle
-    if (cmd_cycles * bus->data_width < lcd_cmd_bits) {
+    assert(param_size <= CONFIG_LCD_PANEL_IO_FORMAT_BUF_SIZE && "format buffer too small, increase CONFIG_LCD_PANEL_IO_FORMAT_BUF_SIZE");
+    uint32_t cmd_cycles = next_device->lcd_cmd_bits / bus->bus_width;
+    // in case bus_width=16 and cmd_bits=8, we still need 1 cmd_cycle
+    if (cmd_cycles * bus->bus_width < next_device->lcd_cmd_bits) {
         cmd_cycles++;
     }
+    i80_lcd_prepare_cmd_buffer(bus, next_device, &lcd_cmd);
+    uint32_t param_len = i80_lcd_prepare_param_buffer(bus, next_device, param, param_size);
     // wait all pending transaction in the queue to finish
-    for (size_t i = 0; i < next_device->num_trans_working; i++) {
+    for (size_t i = 0; i < next_device->num_trans_inflight; i++) {
         xQueueReceive(next_device->done_queue, &trans_desc, portMAX_DELAY);
     }
-    next_device->num_trans_working = 0;
+    next_device->num_trans_inflight = 0;
 
     uint32_t intr_status = lcd_ll_get_interrupt_status(bus->hal.dev);
     lcd_ll_clear_interrupt_status(bus->hal.dev, intr_status);
     // switch devices if necessary
     lcd_i80_switch_devices(cur_device, next_device);
-    // don't reverse bit/bytes for parameters
+    // set data format
+    lcd_ll_reverse_data_byte_order(bus->hal.dev, false);
     lcd_ll_reverse_data_bit_order(bus->hal.dev, false);
-    lcd_ll_reverse_data_byte_order(bus->hal.dev, bus->data_width, false);
+    lcd_ll_reverse_data_8bits_order(bus->hal.dev, next_device->lcd_param_bits > bus->bus_width);
     bus->cur_trans = NULL;
     bus->cur_device = next_device;
     // package a transaction
@@ -308,34 +360,35 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, int 
     trans_desc->i80_device = next_device;
     trans_desc->cmd_cycles = cmd_cycles;
     trans_desc->cmd_value = lcd_cmd;
-    trans_desc->data = param;
-    trans_desc->data_length = param_size;
+    trans_desc->data = param ? bus->format_buffer : NULL;
+    trans_desc->data_length = param ? param_len : 0;
     trans_desc->trans_done_cb = NULL; // no callback for parameter transaction
     // mount data to DMA links
     lcd_com_mount_dma_data(bus->dma_nodes, trans_desc->data, trans_desc->data_length);
     lcd_start_transaction(bus, trans_desc);
     // polling the trans done event, but don't clear the event status
-    while (!(lcd_ll_get_interrupt_status(bus->hal.dev) & LCD_LL_EVENT_TRANS_DONE));
+    while (!(lcd_ll_get_interrupt_status(bus->hal.dev) & LCD_LL_EVENT_TRANS_DONE)) {}
     return ESP_OK;
 }
 
-static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, int lcd_cmd_bits, const void *color, size_t color_size)
+static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, const void *color, size_t color_size)
 {
     lcd_panel_io_i80_t *i80_device = __containerof(io, lcd_panel_io_i80_t, base);
     esp_lcd_i80_bus_t *bus = i80_device->bus;
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
     assert(color_size <= (bus->num_dma_nodes * DMA_DESCRIPTOR_BUFFER_MAX_SIZE) && "color bytes too long, enlarge max_transfer_bytes");
-    // in case data_width=16 and cmd_bits=8, we still need 1 cmd_cycle
-    uint32_t cmd_cycles = lcd_cmd_bits / bus->data_width;
-    if (cmd_cycles * bus->data_width < lcd_cmd_bits) {
+    // in case bus_width=16 and cmd_bits=8, we still need 1 cmd_cycle
+    uint32_t cmd_cycles = i80_device->lcd_cmd_bits / bus->bus_width;
+    if (cmd_cycles * bus->bus_width < i80_device->lcd_cmd_bits) {
         cmd_cycles++;
     }
-    if (i80_device->num_trans_working < i80_device->queue_size) {
-        trans_desc = &i80_device->trans_pool[i80_device->num_trans_working];
+    i80_lcd_prepare_cmd_buffer(bus, i80_device, &lcd_cmd);
+    if (i80_device->num_trans_inflight < i80_device->queue_size) {
+        trans_desc = &i80_device->trans_pool[i80_device->num_trans_inflight];
     } else {
         // transaction pool has used up, recycle one from done_queue
         xQueueReceive(i80_device->done_queue, &trans_desc, portMAX_DELAY);
-        i80_device->num_trans_working--;
+        i80_device->num_trans_inflight--;
     }
     trans_desc->i80_device = i80_device;
     trans_desc->cmd_cycles = cmd_cycles;
@@ -346,14 +399,14 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, int 
     trans_desc->cb_user_data = i80_device->cb_user_data;
     // send transaction to trans_queue
     xQueueSend(i80_device->trans_queue, &trans_desc, portMAX_DELAY);
-    i80_device->num_trans_working++;
+    i80_device->num_trans_inflight++;
     // enable interrupt and go into isr handler, where we fetch the transactions from trans_queue and start it
     // we will go into `lcd_default_isr_handler` almost at once, because the "trans done" event is active at the moment
     esp_intr_enable(bus->intr);
     return ESP_OK;
 }
 
-static esp_err_t lcd_i80_bus_create_trans_link(esp_lcd_i80_bus_handle_t bus)
+static esp_err_t lcd_i80_init_dma_link(esp_lcd_i80_bus_handle_t bus)
 {
     esp_err_t ret = ESP_OK;
     // chain DMA descriptors
@@ -387,24 +440,24 @@ static esp_err_t lcd_i80_bus_configure_gpio(esp_lcd_i80_bus_handle_t bus, const 
     int bus_id = bus->bus_id;
     // check validation of GPIO number
     bool valid_gpio = (bus_config->wr_gpio_num >= 0) && (bus_config->dc_gpio_num >= 0);
-    for (size_t i = 0; i < bus_config->data_width; i++) {
+    for (size_t i = 0; i < bus_config->bus_width; i++) {
         valid_gpio = valid_gpio && (bus_config->data_gpio_nums[i] >= 0);
     }
     if (!valid_gpio) {
         return ESP_ERR_INVALID_ARG;
     }
     // connect peripheral signals via GPIO matrix
-    for (size_t i = 0; i < bus_config->data_width; i++) {
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[bus_config->data_gpio_nums[i]], PIN_FUNC_GPIO);
+    for (size_t i = 0; i < bus_config->bus_width; i++) {
         gpio_set_direction(bus_config->data_gpio_nums[i], GPIO_MODE_OUTPUT);
         esp_rom_gpio_connect_out_signal(bus_config->data_gpio_nums[i], lcd_periph_signals.buses[bus_id].data_sigs[i], false, false);
+        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[bus_config->data_gpio_nums[i]], PIN_FUNC_GPIO);
     }
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[bus_config->dc_gpio_num], PIN_FUNC_GPIO);
     gpio_set_direction(bus_config->dc_gpio_num, GPIO_MODE_OUTPUT);
     esp_rom_gpio_connect_out_signal(bus_config->dc_gpio_num, lcd_periph_signals.buses[bus_id].dc_sig, false, false);
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[bus_config->wr_gpio_num], PIN_FUNC_GPIO);
+    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[bus_config->dc_gpio_num], PIN_FUNC_GPIO);
     gpio_set_direction(bus_config->wr_gpio_num, GPIO_MODE_OUTPUT);
     esp_rom_gpio_connect_out_signal(bus_config->wr_gpio_num, lcd_periph_signals.buses[bus_id].wr_sig, false, false);
+    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[bus_config->wr_gpio_num], PIN_FUNC_GPIO);
     return ESP_OK;
 }
 
@@ -415,7 +468,7 @@ static void lcd_periph_trigger_quick_trans_done_event(esp_lcd_i80_bus_handle_t b
     // where we dispatch transactions for i80 devices
     lcd_ll_set_phase_cycles(bus->hal.dev, 0, 1, 0);
     lcd_ll_start(bus->hal.dev);
-    while (!(lcd_ll_get_interrupt_status(bus->hal.dev) & LCD_LL_EVENT_TRANS_DONE));
+    while (!(lcd_ll_get_interrupt_status(bus->hal.dev) & LCD_LL_EVENT_TRANS_DONE)) {}
 }
 
 static void lcd_start_transaction(esp_lcd_i80_bus_t *bus, lcd_i80_trans_descriptor_t *trans_desc)
@@ -423,7 +476,7 @@ static void lcd_start_transaction(esp_lcd_i80_bus_t *bus, lcd_i80_trans_descript
     // by default, the dummy phase is disabled because it's not common for most LCDs
     // Number of data phase cycles are controlled by DMA buffer length, we only need to enable/disable the phase here
     lcd_ll_set_phase_cycles(bus->hal.dev, trans_desc->cmd_cycles, 0, trans_desc->data ? 1 : 0);
-    lcd_ll_set_command(bus->hal.dev, bus->data_width, trans_desc->cmd_value);
+    lcd_ll_set_command(bus->hal.dev, bus->bus_width, trans_desc->cmd_value);
     if (trans_desc->data) { // some specific LCD commands can have no parameters
         gdma_start(bus->dma_chan, (intptr_t)(bus->dma_nodes));
     }
@@ -448,7 +501,7 @@ static void lcd_i80_switch_devices(lcd_panel_io_i80_t *cur_device, lcd_panel_io_
         }
         // connect CS signal to the new device
         esp_rom_gpio_connect_out_signal(next_device->cs_gpio_num, lcd_periph_signals.buses[bus->bus_id].cs_sig,
-                                        next_device->flags.invert_cs, false);
+                                        next_device->flags.cs_active_high, false);
     }
 }
 
@@ -498,7 +551,8 @@ IRAM_ATTR static void lcd_default_isr_handler(void *args)
                 lcd_i80_switch_devices(cur_device, next_device);
                 // only reverse data bit/bytes for color data
                 lcd_ll_reverse_data_bit_order(bus->hal.dev, next_device->flags.reverse_color_bits);
-                lcd_ll_reverse_data_byte_order(bus->hal.dev, bus->data_width, next_device->flags.swap_color_bytes);
+                lcd_ll_reverse_data_byte_order(bus->hal.dev, next_device->flags.swap_color_bytes);
+                lcd_ll_reverse_data_8bits_order(bus->hal.dev, false);
                 bus->cur_trans = trans_desc;
                 bus->cur_device = next_device;
                 // mount data to DMA links

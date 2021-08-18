@@ -131,15 +131,14 @@ static inline void lcd_ll_reverse_data_bit_order(lcd_cam_dev_t *dev, bool en)
     dev->lcd_user.lcd_bit_order = en;
 }
 
-static inline void lcd_ll_reverse_data_byte_order(lcd_cam_dev_t *dev, uint32_t data_width, bool en)
+static inline void lcd_ll_reverse_data_byte_order(lcd_cam_dev_t *dev, bool en)
 {
-    if (data_width == 8) {
-        dev->lcd_user.lcd_8bits_order = en; // valid in 8bit mode
-        dev->lcd_user.lcd_byte_order = 0;
-    } else if (data_width == 16) {
-        dev->lcd_user.lcd_byte_order = en;  // valid in 16bit mode
-        dev->lcd_user.lcd_8bits_order = 0;
-    }
+    dev->lcd_user.lcd_byte_order = en;
+}
+
+static inline void lcd_ll_reverse_data_8bits_order(lcd_cam_dev_t *dev, bool en)
+{
+    dev->lcd_user.lcd_8bits_order = en;
 }
 
 static inline void lcd_ll_fifo_reset(lcd_cam_dev_t *dev)

@@ -1,9 +1,7 @@
 menu "LCD and Touch Panel"
     menu "LCD Peripheral Configuration"
-        depends on IDF_TARGET_ESP32S3
         choice LCD_PERIPH_CLK_SRC
             prompt "Select clock source for LCD peripheral"
-            default LCD_PERIPH_CLK_SRC_XTAL if PM_ENABLE
             default LCD_PERIPH_CLK_SRC_PLL160M
             help
                 The peripheral clock is where LCD bus clock derives from.
@@ -16,5 +14,12 @@ menu "LCD and Touch Panel"
             config LCD_PERIPH_CLK_SRC_XTAL
                 bool "XTAL clock"
         endchoice # LCD_PERIPH_CLK_SRC
+
+        config LCD_PANEL_IO_FORMAT_BUF_SIZE
+            int "LCD panel io format buffer size"
+            default 32
+            help
+                LCD driver allocates an internal buffer to transform the data into a proper format, because of
+                the endian order mismatch. This option is to set the size of the buffer, in bytes.
     endmenu
 endmenu

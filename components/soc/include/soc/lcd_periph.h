@@ -21,6 +21,7 @@
 extern "C" {
 #endif
 
+#if SOC_LCDCAM_SUPPORTED
 typedef struct {
     struct {
         const periph_module_t module;
@@ -40,6 +41,19 @@ typedef struct {
         const int de_sig;
     } panels[SOC_LCD_RGB_PANELS];
 } lcd_signal_conn_t;
+
+#endif // SOC_LCDCAM_SUPPORTED
+
+#if SOC_I2S_LCD_I80_VARIANT
+typedef struct {
+    struct {
+        const periph_module_t module;
+        const int irq_id;
+        const int data_sigs[SOC_LCD_I80_BUS_WIDTH];
+        const int wr_sig;
+    } buses[SOC_LCD_I80_BUSES];
+} lcd_signal_conn_t;
+#endif // SOC_I2S_LCD_I80_VARIANT
 
 extern const lcd_signal_conn_t lcd_periph_signals;
 

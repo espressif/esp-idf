@@ -50,6 +50,8 @@ TEST_CASE("lcd panel with spi interface (st7789)", "[lcd]")
         .pclk_hz = TEST_LCD_PIXEL_CLOCK_HZ,
         .spi_mode = 0,
         .trans_queue_depth = 10,
+        .lcd_cmd_bits = 8,
+        .lcd_param_bits = 8,
     };
     TEST_ESP_OK(esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)TEST_SPI_HOST_ID, &io_config, &io_handle));
 
@@ -119,7 +121,7 @@ TEST_CASE("lvgl gui with spi interface (st7789)", "[lcd][lvgl][ignore]")
         .quadhd_io_num = -1,
         .max_transfer_sz = TEST_LCD_H_RES * TEST_LCD_V_RES * 2
     };
-    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST_ID, &buscfg, 1));
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST_ID, &buscfg, SPI_DMA_CH_AUTO));
 
     esp_lcd_panel_io_handle_t io_handle = NULL;
     esp_lcd_panel_io_spi_config_t io_config = {
@@ -129,7 +131,9 @@ TEST_CASE("lvgl gui with spi interface (st7789)", "[lcd][lvgl][ignore]")
         .spi_mode = 0,
         .trans_queue_depth = 10,
         .on_color_trans_done = notify_lvgl_ready_to_flush,
-        .user_data = &disp // we must use "address of disp" here, since the disp object has not been allocated
+        .user_data = &disp, // we must use "address of disp" here, since the disp object has not been allocated
+        .lcd_cmd_bits = 8,
+        .lcd_param_bits = 8,
     };
     TEST_ESP_OK(esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)TEST_SPI_HOST_ID, &io_config, &io_handle));
 
