@@ -137,7 +137,8 @@
 #define SOC_I2S_NUM                 (2)
 #define SOC_I2S_SUPPORTS_PDM_TX     (1)
 #define SOC_I2S_SUPPORTS_PDM_RX     (1)
-#define SOC_I2S_SUPPORTS_ADC_DAC    (1) // ESP32 support ADC and DAC
+#define SOC_I2S_SUPPORTS_ADC        (1) // ESP32 support ADC and DAC
+#define SOC_I2S_SUPPORTS_DAC        (1)
 
 #define SOC_I2S_SUPPORTS_APLL       (1)// ESP32 support APLL
 #define SOC_I2S_APLL_MIN_FREQ       (250000000)

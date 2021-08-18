@@ -380,11 +380,12 @@ TEST_CASE("I2S write and read test(master rx and slave tx)", "[i2s]")
     i2s_write(I2S_NUM_1, data_wr, sizeof(uint8_t) * 400, &i2s_bytes_write, 1000 / portTICK_PERIOD_MS);
     printf("write data size: %d\n", i2s_bytes_write);
     int flag = 0; // break loop flag
-    int end_position = 0;
+    volatile int end_position = 0;
     // write data to slave
     while (!flag) {
         TEST_ESP_OK(i2s_read(I2S_NUM_0, i2s_read_buff + length, 10000 - length, &bytes_read, 1000 / portTICK_PERIOD_MS));
         if (bytes_read > 0) {
+            printf("read data size: %d\n", bytes_read);
             for (int i = length; i < length + bytes_read; i++) {
                 if (i2s_read_buff[i] == 100) {
                     flag = 1;
@@ -494,7 +495,7 @@ TEST_CASE("I2S APLL clock variation test", "[i2s]")
     TEST_ASSERT(initial_size == esp_get_free_heap_size());
 }
 
-#if SOC_I2S_SUPPORTS_ADC_DAC
+#if SOC_I2S_SUPPORTS_ADC
 /* Only ESP32 need I2S adc/dac test */
 TEST_CASE("I2S adc test", "[i2s]")
 {
@@ -560,7 +561,9 @@ TEST_CASE("I2S adc test", "[i2s]")
     free(i2sReadBuffer);
     i2s_driver_uninstall(I2S_NUM_0);
 }
+#endif
 
+#if SOC_I2S_SUPPORTS_DAC
 TEST_CASE("I2S dac test", "[i2s]")
 {
     // dac, adc  i2s

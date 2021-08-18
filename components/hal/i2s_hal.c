@@ -25,15 +25,18 @@
  *        Fmclk = bck_div*fbck = fsclk/(mclk_div+b/a)
  *
  * @param clk_cfg I2S clock configuration(input)
- * @param cal Point to `i2s_ll_clk_cal_t` structure(output).
+ * @param cal Point to `i2s_ll_mclk_div_t` structure(output).
  */
-static void i2s_hal_mclk_div_decimal_cal(i2s_hal_clock_cfg_t *clk_cfg, i2s_ll_clk_cal_t *cal)
+static void i2s_hal_mclk_div_decimal_cal(i2s_hal_clock_cfg_t *clk_cfg, i2s_ll_mclk_div_t *cal)
 {
     int ma = 0;
     int mb = 0;
     cal->mclk_div = clk_cfg->mclk_div;
     cal->a = 1;
     cal->b = 0;
+    if (!clk_cfg->sclk) {
+        return;
+    }
     uint32_t freq_diff = clk_cfg->sclk - clk_cfg->mclk * cal->mclk_div;
     uint32_t min = ~0;
     for (int a = 2; a <= I2S_LL_MCLK_DIVIDER_MAX; a++) {
@@ -62,7 +65,7 @@ void i2s_hal_set_clock_src(i2s_hal_context_t *hal, i2s_clock_src_t sel)
 
 void i2s_hal_tx_clock_config(i2s_hal_context_t *hal, i2s_hal_clock_cfg_t *clk_cfg)
 {
-    i2s_ll_clk_cal_t mclk_set;
+    i2s_ll_mclk_div_t mclk_set;
     i2s_hal_mclk_div_decimal_cal(clk_cfg, &mclk_set);
     i2s_ll_tx_set_clk(hal->dev, &mclk_set);
     i2s_ll_tx_set_bck_div_num(hal->dev, clk_cfg->bclk_div);
@@ -70,7 +73,7 @@ void i2s_hal_tx_clock_config(i2s_hal_context_t *hal, i2s_hal_clock_cfg_t *clk_cf
 
 void i2s_hal_rx_clock_config(i2s_hal_context_t *hal, i2s_hal_clock_cfg_t *clk_cfg)
 {
-    i2s_ll_clk_cal_t mclk_set;
+    i2s_ll_mclk_div_t mclk_set;
     i2s_hal_mclk_div_decimal_cal(clk_cfg, &mclk_set);
     i2s_ll_rx_set_clk(hal->dev, &mclk_set);
     i2s_ll_rx_set_bck_div_num(hal->dev, clk_cfg->bclk_div);
@@ -88,35 +91,11 @@ void i2s_hal_enable_slave_fd_mode(i2s_hal_context_t *hal)
     i2s_ll_rx_set_slave_mod(hal->dev, true); //RX Slave
 }
 
-void i2s_hal_get_instance(i2s_hal_context_t *hal, int i2s_num)
+void i2s_hal_init(i2s_hal_context_t *hal, int i2s_num)
 {
     /* Get hardware instance */
     hal->dev = I2S_LL_GET_HW(i2s_num);
-    /* Enable I2S module clock */
-    i2s_ll_enable_clock(hal->dev);
 }
-
-#if SOC_I2S_SUPPORTS_ADC_DAC
-void i2s_hal_enable_adc_dac_mode(i2s_hal_context_t *hal, i2s_mode_t mode)
-{
-    if (mode & I2S_MODE_DAC_BUILT_IN) {
-        i2s_ll_enable_builtin_dac(hal->dev, true);
-    }
-    /* In ADC built-in mode, we need to call i2s_set_adc_mode to initialize the specific ADC channel.
-     * In the current stage, we only support ADC1 and single channel mode.
-     * In default data mode, the ADC data is in 12-bit resolution mode.
-     */
-    if (mode & I2S_MODE_ADC_BUILT_IN) {
-        i2s_ll_enable_builtin_adc(hal->dev, true);
-    }
-}
-
-void i2s_hal_disable_adc_dac_mode(i2s_hal_context_t *hal)
-{
-    i2s_ll_enable_builtin_dac(hal->dev, false);
-    i2s_ll_enable_builtin_adc(hal->dev, false);
-}
-#endif
 
 #if SOC_I2S_SUPPORTS_PDM_TX
 void i2s_hal_tx_set_pdm_mode_default(i2s_hal_context_t *hal, uint32_t sample_rate)
@@ -271,18 +250,26 @@ void i2s_hal_rx_set_channel_style(i2s_hal_context_t *hal, const i2s_hal_config_t
 #endif
 }
 
-void i2s_hal_init(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cfg)
+void i2s_hal_config_param(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cfg)
 {
-#if SOC_I2S_SUPPORTS_ADC_DAC
-    if (hal_cfg->mode & (I2S_MODE_DAC_BUILT_IN | I2S_MODE_ADC_BUILT_IN)) {
-        i2s_hal_enable_adc_dac_mode(hal, hal_cfg->mode);
-        /* Return directly if using ADC/DAC mode, no need to set othet configurations */
+#if SOC_I2S_SUPPORTS_ADC
+    if (hal_cfg->mode & I2S_MODE_ADC_BUILT_IN) {
+        /* In ADC built-in mode, we need to call i2s_set_adc_mode to initialize the specific ADC channel.
+         * In the current stage, we only support ADC1 and single channel mode.
+         * In default data mode, the ADC data is in 12-bit resolution mode.
+         */
+        i2s_ll_enable_builtin_adc(hal->dev, true);
         return;
     }
-    /* If not using built-in ADC/DAC, disable them */
-    i2s_hal_disable_adc_dac_mode(hal);
+    i2s_ll_enable_builtin_adc(hal->dev, false);
 #endif
-
+#if SOC_I2S_SUPPORTS_DAC
+    if (hal_cfg->mode & I2S_MODE_DAC_BUILT_IN) {
+        i2s_ll_enable_builtin_dac(hal->dev, true);
+        return;
+    }
+    i2s_ll_enable_builtin_dac(hal->dev, false);
+#endif
     /* Set configurations for TX mode */
     if (hal_cfg->mode & I2S_MODE_TX) {
         i2s_ll_tx_stop(hal->dev);
@@ -320,8 +307,8 @@ void i2s_hal_init(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cfg)
     }
 
     /* Set configurations for full-duplex mode */
-    if ((hal_cfg->mode & I2S_MODE_RX) &&  (hal_cfg->mode & I2S_MODE_TX)) {
-        i2s_ll_enable_loop_back(hal->dev, true);
+    if ((hal_cfg->mode & I2S_MODE_RX) && (hal_cfg->mode & I2S_MODE_TX)) {
+        i2s_ll_share_bck_ws(hal->dev, true);
         if (hal_cfg->mode & I2S_MODE_MASTER) {
             i2s_hal_enable_master_fd_mode(hal);
         } else {

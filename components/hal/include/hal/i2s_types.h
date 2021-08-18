@@ -92,12 +92,12 @@ typedef enum {
     I2S_COMM_FORMAT_STAND_MAX,               /*!< standard max*/
 
     //old definition will be removed in the future.
-    // I2S_COMM_FORMAT_I2S       __attribute__((deprecated)) = 0x01, /*!< I2S communication format I2S, correspond to `I2S_COMM_FORMAT_STAND_I2S`*/
-    // I2S_COMM_FORMAT_I2S_MSB   __attribute__((deprecated)) = 0x01, /*!< I2S format MSB, (I2S_COMM_FORMAT_I2S |I2S_COMM_FORMAT_I2S_MSB) correspond to `I2S_COMM_FORMAT_STAND_I2S`*/
-    // I2S_COMM_FORMAT_I2S_LSB   __attribute__((deprecated)) = 0x02, /*!< I2S format LSB, (I2S_COMM_FORMAT_I2S |I2S_COMM_FORMAT_I2S_LSB) correspond to `I2S_COMM_FORMAT_STAND_MSB`*/
-    // I2S_COMM_FORMAT_PCM       __attribute__((deprecated)) = 0x04, /*!< I2S communication format PCM, correspond to `I2S_COMM_FORMAT_STAND_PCM_SHORT`*/
-    // I2S_COMM_FORMAT_PCM_SHORT __attribute__((deprecated)) = 0x04, /*!< PCM Short, (I2S_COMM_FORMAT_PCM | I2S_COMM_FORMAT_PCM_SHORT) correspond to `I2S_COMM_FORMAT_STAND_PCM_SHORT`*/
-    // I2S_COMM_FORMAT_PCM_LONG  __attribute__((deprecated)) = 0x08, /*!< PCM Long, (I2S_COMM_FORMAT_PCM | I2S_COMM_FORMAT_PCM_LONG) correspond to `I2S_COMM_FORMAT_STAND_PCM_LONG`*/
+    I2S_COMM_FORMAT_I2S       __attribute__((deprecated)) = 0x01, /*!< I2S communication format I2S, correspond to `I2S_COMM_FORMAT_STAND_I2S`*/
+    I2S_COMM_FORMAT_I2S_MSB   __attribute__((deprecated)) = 0x01, /*!< I2S format MSB, (I2S_COMM_FORMAT_I2S |I2S_COMM_FORMAT_I2S_MSB) correspond to `I2S_COMM_FORMAT_STAND_I2S`*/
+    I2S_COMM_FORMAT_I2S_LSB   __attribute__((deprecated)) = 0x02, /*!< I2S format LSB, (I2S_COMM_FORMAT_I2S |I2S_COMM_FORMAT_I2S_LSB) correspond to `I2S_COMM_FORMAT_STAND_MSB`*/
+    I2S_COMM_FORMAT_PCM       __attribute__((deprecated)) = 0x04, /*!< I2S communication format PCM, correspond to `I2S_COMM_FORMAT_STAND_PCM_SHORT`*/
+    I2S_COMM_FORMAT_PCM_SHORT __attribute__((deprecated)) = 0x04, /*!< PCM Short, (I2S_COMM_FORMAT_PCM | I2S_COMM_FORMAT_PCM_SHORT) correspond to `I2S_COMM_FORMAT_STAND_PCM_SHORT`*/
+    I2S_COMM_FORMAT_PCM_LONG  __attribute__((deprecated)) = 0x08, /*!< PCM Long, (I2S_COMM_FORMAT_PCM | I2S_COMM_FORMAT_PCM_LONG) correspond to `I2S_COMM_FORMAT_STAND_PCM_LONG`*/
 } i2s_comm_format_t;
 
 /**
@@ -123,11 +123,13 @@ typedef enum {
     I2S_MODE_SLAVE        = (0x1 << 1),       /*!< Slave mode*/
     I2S_MODE_TX           = (0x1 << 2),       /*!< TX mode*/
     I2S_MODE_RX           = (0x1 << 3),       /*!< RX mode*/
-#if SOC_I2S_SUPPORTS_ADC_DAC
+#if SOC_I2S_SUPPORTS_DAC
     //built-in DAC functions are only supported on I2S0 for ESP32 chip.
     I2S_MODE_DAC_BUILT_IN = (0x1 << 4),       /*!< Output I2S data to built-in DAC, no matter the data format is 16bit or 32 bit, the DAC module will only take the 8bits from MSB*/
+#endif // SOC_I2S_SUPPORTS_DAC
+#if SOC_I2S_SUPPORTS_ADC
     I2S_MODE_ADC_BUILT_IN = (0x1 << 5),       /*!< Input I2S data from built-in ADC, each data can be 12-bit width at most*/
-#endif
+#endif // SOC_I2S_SUPPORTS_ADC
     // PDM functions are only supported on I2S0 (all chips).
     I2S_MODE_PDM          = (0x1 << 6),       /*!< I2S PDM mode*/
 } i2s_mode_t;
@@ -152,7 +154,7 @@ typedef enum {
     I2S_MCLK_MULTIPLE_384       = 384,     /*!< mclk = sample_rate * 384 */
 } i2s_mclk_multiple_t;
 
-#if SOC_I2S_SUPPORTS_ADC_DAC
+#if SOC_I2S_SUPPORTS_DAC
 /**
  * @brief I2S DAC mode for i2s_set_dac_mode.
  *
@@ -165,7 +167,7 @@ typedef enum {
     I2S_DAC_CHANNEL_BOTH_EN  = 0x3,  /*!< Enable both of the I2S built-in DAC channels.*/
     I2S_DAC_CHANNEL_MAX      = 0x4,  /*!< I2S built-in DAC mode max index*/
 } i2s_dac_mode_t;
-#endif //SOC_I2S_SUPPORTS_ADC_DAC
+#endif //SOC_I2S_SUPPORTS_DAC
 
 #if SOC_I2S_SUPPORTS_PCM
 /**

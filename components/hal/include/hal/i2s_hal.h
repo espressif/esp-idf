@@ -75,6 +75,20 @@ typedef struct {
 } i2s_hal_context_t;
 
 /**
+ * @brief Enable I2S module clock
+ *
+ * @param hal Context of the HAL layer
+ */
+#define i2s_hal_enable_module_clock(hal)        i2s_ll_enable_clock((hal)->dev);
+
+/**
+ * @brief Disable I2S module clock
+ *
+ * @param hal Context of the HAL layer
+ */
+#define i2s_hal_disable_module_clock(hal)       i2s_ll_disable_clock((hal)->dev);
+
+/**
  * @brief Reset I2S TX channel
  *
  * @param hal Context of the HAL layer
@@ -109,7 +123,7 @@ typedef struct {
  * @param hal Context of the HAL layer
  * @param i2s_num The uart port number, the max port number is (I2S_NUM_MAX -1)
  */
-void i2s_hal_get_instance(i2s_hal_context_t *hal, int i2s_num);
+void i2s_hal_init(i2s_hal_context_t *hal, int i2s_num);
 
 /**
  * @brief Configure I2S source clock
@@ -141,7 +155,7 @@ void i2s_hal_rx_set_channel_style(i2s_hal_context_t *hal, const i2s_hal_config_t
  * @param hal Context of the HAL layer
  * @param hal_cfg I2S hal configuration structer, refer to `i2s_hal_config_t`
  */
-void i2s_hal_init(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cfg);
+void i2s_hal_config_param(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cfg);
 
 /**
  * @brief Enable I2S master full-duplex mode
@@ -264,7 +278,7 @@ void i2s_hal_rx_clock_config(i2s_hal_context_t *hal, i2s_hal_clock_cfg_t *clk_cf
  *
  * @param hal Context of the HAL layer
  */
-#define i2s_hal_enable_sig_loopback(hal)    i2s_ll_enable_loop_back((hal)->dev, true)
+#define i2s_hal_enable_sig_loopback(hal)    i2s_ll_share_bck_ws((hal)->dev, true)
 
 /**
  * @brief Set I2S configuration for common TX mode
@@ -501,7 +515,7 @@ void i2s_hal_rx_set_pdm_mode_default(i2s_hal_context_t *hal);
 #define i2s_hal_get_in_eof_des_addr(hal, addr) i2s_ll_rx_get_eof_des_addr((hal)->dev, addr)
 #endif
 
-#if SOC_I2S_SUPPORTS_ADC_DAC
+#if SOC_I2S_SUPPORTS_ADC
 /**
  * @brief Enable Builtin DAC
  *
@@ -517,18 +531,20 @@ void i2s_hal_rx_set_pdm_mode_default(i2s_hal_context_t *hal);
 #define i2s_hal_enable_builtin_adc(hal)      i2s_ll_enable_builtin_adc((hal)->dev, true);
 
 /**
- * @brief Disable Builtin DAC
- *
- * @param hal Context of the HAL layer
- */
-#define i2s_hal_disable_builtin_dac(hal)     i2s_ll_enable_builtin_dac((hal)->dev, false);
-
-/**
  * @brief Disable Builtin ADC
  *
  * @param hal Context of the HAL layer
  */
 #define i2s_hal_disable_builtin_adc(hal)     i2s_ll_enable_builtin_adc((hal)->dev, false);
+#endif
+
+#if SOC_I2S_SUPPORTS_DAC
+/**
+ * @brief Disable Builtin DAC
+ *
+ * @param hal Context of the HAL layer
+ */
+#define i2s_hal_disable_builtin_dac(hal)     i2s_ll_enable_builtin_dac((hal)->dev, false);
 #endif
 
 #ifdef __cplusplus
