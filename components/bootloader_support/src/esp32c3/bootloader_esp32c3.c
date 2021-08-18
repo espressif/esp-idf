@@ -273,7 +273,8 @@ static inline void bootloader_glitch_reset_disable(void)
     uint8_t chip_version = bootloader_common_get_chip_revision();
     if (chip_version < 2) {
         REG_SET_FIELD(RTC_CNTL_FIB_SEL_REG, RTC_CNTL_FIB_SEL, RTC_CNTL_FIB_SUPER_WDT_RST);
-    } else if (chip_version == 2) {
+    } else {
+        // checked on ESP32-C3 revisions 2 and 3
         REG_SET_FIELD(RTC_CNTL_FIB_SEL_REG, RTC_CNTL_FIB_SEL, RTC_CNTL_FIB_SUPER_WDT_RST | RTC_CNTL_FIB_BOR_RST);
     }
 }
