@@ -130,20 +130,25 @@ class MemRegions(object):
             raise RuntimeError('Target {} is not implemented in idf_size'.format(target))
 
     def _get_first_region(self, start, length):
-        # type: (int, int) -> Tuple[MemRegions.MemRegDef, int]
+        # type: (int, int) -> Tuple[Union[MemRegions.MemRegDef, None], int]
         for region in self.chip_mem_regions:  # type: ignore
             if region.primary_addr <= start < region.primary_addr + region.length:
-                return (region, min(length, region.primary_addr + region.length - start))
-
-            if (region.secondary_addr and region.secondary_addr <= start < region.secondary_addr + region.length):
-                return (region, min(length, region.secondary_addr + region.length - start))
-        raise RuntimeError('Given section not found in any memory region. '
-                           'Check whether the LD file is compatible with the definitions in get_mem_regions in idf_size.py')
+                return (region, length)
+            if region.secondary_addr and region.secondary_addr <= start < region.secondary_addr + region.length:
+                return (region, length)
+        print('WARNING: Given section not found in any memory region.')
+        print('Check whether the LD file is compatible with the definitions in get_mem_regions in idf_size.py')
+        return (None, length)
 
     def _get_regions(self, start, length, name=None):  # type: (int, int, Optional[str]) -> List
         ret = []
         while length > 0:
             (region, cur_len) = self._get_first_region(start, length)
+            if region is None:
+                # skip regions that not in given section
+                length -= cur_len
+                start += cur_len
+                continue
             ret.append(MemRegions.Region(start, cur_len, region, name))
             length -= cur_len
             start += cur_len
@@ -152,6 +157,7 @@ class MemRegions(object):
 
     def fit_segments_into_regions(self, segments):  # type: (MemRegions, Dict) -> List
         region_list = []
+
         for segment in segments.values():
             sorted_segments = self._get_regions(segment['origin'], segment['length'])
             region_list.extend(sorted_segments)
@@ -227,6 +233,7 @@ class LinkingSections(object):
         memory_name = ''
         display_name_list = sorted(display_name_list)
         ordered_name_list = sorted(ordered_name_list)
+        ordered_name_list = check_is_dict_sort(ordered_name_list)
         for i, section in enumerate(ordered_name_list):
             if memory_name and section.startswith(memory_name):
                 # If the section has same memory type with the previous one, use shorter name
@@ -545,7 +552,7 @@ def main():  # type: () -> None
     if not args.json or not (args.archives or args.files or args.archive_details):
         output += get_summary(args.map_file.name, segments, sections, detected_target,
                               args.json,
-                              args.another_map_file, segments_diff, sections_diff, detected_target_diff)
+                              args.another_map_file, segments_diff, sections_diff, detected_target_diff, not (args.archives or args.files))
 
     if args.archives:
         output += get_detailed_sizes(sections, 'archive', 'Archive File', args.json, sections_diff)
@@ -560,8 +567,6 @@ def main():  # type: () -> None
 
 
 class StructureForSummary(object):
-    # this is from main branch
-    # used_dram_data, used_dram_bss, used_dram_other, used_dram, dram_total, dram_remain = (0, ) * 6
     used_dram_data, used_dram_bss, used_dram_rodata, used_dram_other, used_dram, dram_total, dram_remain = (0, ) * 7
 
     used_dram_ratio = 0.
@@ -578,6 +583,15 @@ class StructureForSummary(object):
             setattr(ret, key, getattr(self, key) - getattr(rhs, key))
 
         return ret
+
+    def get_dram_overflowed(self):  # type: (StructureForSummary) -> bool
+        return self.used_dram_ratio > 1.0
+
+    def get_iram_overflowed(self):  # type: (StructureForSummary) -> bool
+        return self.used_iram_ratio > 1.0
+
+    def get_diram_overflowed(self):  # type: (StructureForSummary) -> bool
+        return self.used_diram_ratio > 1.0
 
     @classmethod
     def get_required_items(cls):  # type: (Any) -> List
@@ -727,19 +741,27 @@ class StructureForSummary(object):
         return ret
 
 
+def get_structure_for_target(segments, sections, target):  # type: (Dict, Dict, str) -> StructureForSummary
+    """
+    Return StructureForSummary for spasific target
+    """
+    mem_regions = MemRegions(target)
+    segment_layout = mem_regions.fit_segments_into_regions(segments)
+    section_layout = mem_regions.fit_sections_into_regions(LinkingSections.filter_sections(sections))
+    current = StructureForSummary.get(segment_layout, section_layout)
+    return current
+
+
 def get_summary(path, segments, sections, target,
                 as_json=False,
-                path_diff='', segments_diff=None, sections_diff=None, target_diff=''):
-    # type: (str, Dict, Dict, str, bool, str, Optional[Dict], Optional[Dict], str) -> str
+                path_diff='', segments_diff=None, sections_diff=None, target_diff='',  print_suggestions=True):
+    # type: (str, Dict, Dict, str, bool, str, Optional[Dict], Optional[Dict], str, bool) -> str
     if segments_diff is None:
         segments_diff = {}
     if sections_diff is None:
         sections_diff = {}
 
-    mem_regions = MemRegions(target)
-    segment_layout = mem_regions.fit_segments_into_regions(segments)
-    section_layout = mem_regions.fit_sections_into_regions(LinkingSections.filter_sections(sections))
-    current = StructureForSummary.get(segment_layout, section_layout)
+    current = get_structure_for_target(segments, sections, target)
 
     if path_diff:
         diff_en = True
@@ -782,15 +804,17 @@ def get_summary(path, segments, sections, target,
             remain = ''
             ratio = ''
             total = ''
+            warning_message = ''
 
-            def __init__(self, title, name, remain, ratio, total):  # type: (HeadLineDef, str, str, str, str, str) -> None
+            def __init__(self, title, name, remain, ratio, total, warning_message):  # type: (HeadLineDef, str, str, str, str, str, str) -> None
                 super(HeadLineDef, self).__init__(title, name)
                 self.remain = remain
                 self.ratio = ratio
                 self.total = total
+                self.warning_message = warning_message
 
             def format_line(self):  # type: (HeadLineDef) -> Tuple[str, str, str, str]
-                return ('%s: {%s:>7} bytes ({%s:>7} remain, {%s:.1%%} used)' % (self.title, self.name, self.remain, self.ratio),
+                return ('%s: {%s:>7} bytes ({%s:>7} remain, {%s:.1%%} used)%s' % (self.title, self.name, self.remain, self.ratio, self.warning_message),
                         '{%s:>7}' % self.name,
                         '{%s:+}' % self.name,
                         '({%s:>+7} remain, {%s:>+7} total)' % (self.remain, self.total))
@@ -803,18 +827,23 @@ def get_summary(path, segments, sections, target,
                         '{%s:+}' % self.name,
                         '')
 
+        warning_message = ' Overflow detected!' + (' You can run idf.py size-files for more information.' if print_suggestions else '')
+
         format_list = [
-            HeadLineDef('Used static DRAM', 'used_dram', remain='dram_remain', ratio='used_dram_ratio', total='dram_total'),
+            HeadLineDef('Used static DRAM', 'used_dram', remain='dram_remain', ratio='used_dram_ratio', total='dram_total',
+                        warning_message=warning_message if current.get_dram_overflowed() else ''),
             LineDef('      .data size', 'used_dram_data'),
             LineDef('      .bss  size', 'used_dram_bss'),
             LineDef('   .rodata  size', 'used_dram_rodata'),
             LineDef(' DRAM other size', 'used_dram_other'),
 
-            HeadLineDef('Used static IRAM', 'used_iram', remain='iram_remain', ratio='used_iram_ratio', total='iram_total'),
+            HeadLineDef('Used static IRAM', 'used_iram', remain='iram_remain', ratio='used_iram_ratio', total='iram_total',
+                        warning_message=warning_message if current.get_iram_overflowed() else ''),
             LineDef('      .text size', 'used_iram_text'),
             LineDef('   .vectors size', 'used_iram_vectors'),
 
-            HeadLineDef('Used stat D/IRAM', 'used_diram', remain='diram_remain', ratio='used_diram_ratio', total='diram_total'),
+            HeadLineDef('Used stat D/IRAM', 'used_diram', remain='diram_remain', ratio='used_diram_ratio', total='diram_total',
+                        warning_message=warning_message if current.get_diram_overflowed() else ''),
             LineDef('      .data size', 'used_diram_data'),
             LineDef('      .bss  size', 'used_diram_bss'),
             LineDef('      .text size', 'used_diram_text'),
@@ -872,18 +901,22 @@ def get_summary(path, segments, sections, target,
 
 
 def check_is_dict_sort(non_sort_list):  # type: (List) -> List
-    # keeping the order data, bss, other, iram, diram, ram_st_total, flash_text, flash_rodata, flash_total
+    '''
+    sort with keeping the order data, bss, other, iram, diram, ram_st_total, flash_text, flash_rodata, flash_total
+    '''
     start_of_other = 0
     props_sort = []  # type: List
-    props_elem = ['data', 'bss', 'other', 'iram', 'diram', 'ram_st_total', 'flash_text', 'flash_rodata', 'flash_total']
+    props_elem = ['.data', '.bss', 'other', 'iram', 'diram', 'ram_st_total', 'flash.text', 'flash.rodata', 'flash', 'flash_total']
     for i in props_elem:
         for j in non_sort_list:
             if i == 'other':
+                # remembering where 'other' will start
                 start_of_other = len(props_sort)
-            elif i in j[0]:
+            elif i in j and j not in props_sort:
                 props_sort.append(j)
     for j in non_sort_list:
         if j not in props_sort:
+            # add all item that fit in other in dict
             props_sort.insert(start_of_other, j)
     return props_sort
 
@@ -927,13 +960,12 @@ class StructureForDetailedSizes(object):
             section_dict['flash_total'] = flash_total
 
             sorted_dict = sorted(section_dict.items(), key=lambda elem: elem[0])
-            sorted_dict = check_is_dict_sort(sorted_dict)
 
             s.append((key, collections.OrderedDict(sorted_dict)))
 
         s = sorted(s, key=lambda elem: elem[0])
         # do a secondary sort in order to have consistent order (for diff-ing the output)
-        # s = sorted(s, key=lambda elem: elem[1]['flash_total'], reverse=True)
+        s = sorted(s, key=lambda elem: elem[1]['flash_total'], reverse=True)
 
         return collections.OrderedDict(s)
 
@@ -955,7 +987,6 @@ def get_detailed_sizes(sections, key, header, as_json=False, sections_diff=None)
 
     key_name_list = list(key_name_set)
     ordered_key_list, display_name_list = LinkingSections.get_display_name_order(key_name_list)
-
     if as_json:
         if diff_en:
             diff_json_dic = collections.OrderedDict()

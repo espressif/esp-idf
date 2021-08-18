@@ -458,15 +458,15 @@ macro(project project_name)
 
     # Add size targets, depend on map file, run idf_size.py
     add_custom_target(size
-        DEPENDS ${project_elf}
+        DEPENDS ${mapfile}
         COMMAND ${idf_size} ${mapfile}
         )
     add_custom_target(size-files
-        DEPENDS ${project_elf}
+        DEPENDS ${mapfile}
         COMMAND ${idf_size} --files ${mapfile}
         )
     add_custom_target(size-components
-        DEPENDS ${project_elf}
+        DEPENDS ${mapfile}
         COMMAND ${idf_size} --archives ${mapfile}
         )
 
