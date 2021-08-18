@@ -3821,7 +3821,6 @@ examples/protocols/pppos_client/components/modem/include/esp_modem_netif.h
 examples/protocols/pppos_client/components/modem/include/sim7600.h
 examples/protocols/pppos_client/components/modem/include/sim800.h
 examples/protocols/pppos_client/components/modem/src/bg96.c
-examples/protocols/pppos_client/components/modem/src/esp_modem.c
 examples/protocols/pppos_client/components/modem/src/esp_modem_compat.c
 examples/protocols/pppos_client/components/modem/src/esp_modem_dce_service.c
 examples/protocols/pppos_client/components/modem/src/esp_modem_netif.c
