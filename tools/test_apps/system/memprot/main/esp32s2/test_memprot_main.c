@@ -313,13 +313,23 @@ static void __attribute__((unused)) dump_bus_permissions(mem_type_prot_t mem_typ
 static void __attribute__((unused)) dump_status_register(mem_type_prot_t mem_type)
 {
     uint32_t *faulting_address, op_type, op_subtype;
-    esp_memprot_get_fault_status(mem_type, &faulting_address, &op_type, &op_subtype);
-    esp_rom_printf(
-        " FAULT [split addr: 0x%08X, fault addr: 0x%08X, fault status: 0x%08X]\n",
-        (uint32_t)test_memprot_get_split_addr(mem_type),
-        (uint32_t)faulting_address,
-        esp_memprot_get_fault_reg(mem_type)
-    );
+    esp_err_t res = esp_memprot_get_fault_status(mem_type, &faulting_address, &op_type, &op_subtype);
+    if ( res == ESP_OK ) {
+        uint32_t fault_reg;
+        res = esp_memprot_get_fault_reg(mem_type, &fault_reg);
+        esp_rom_printf(
+            " FAULT [split addr: 0x%08X, fault addr: 0x%08X, fault status: ",
+            (uint32_t) test_memprot_get_split_addr(mem_type),
+            (uint32_t) faulting_address
+        );
+        if ( res == ESP_OK ) {
+            esp_rom_printf("0x%08X]\n", fault_reg );
+        } else {
+            esp_rom_printf("<failed, err: 0x%08X>]\n", res );
+        }
+    } else {
+        esp_rom_printf(" FAULT [failed to get fault details, error 0x%08X]\n", res);
+    }
 }
 
 
@@ -328,13 +338,17 @@ static void __attribute__((unused)) dump_status_register(mem_type_prot_t mem_typ
  */
 static void check_test_result(mem_type_prot_t mem_type, bool expected_status)
 {
-    uint32_t fault = esp_memprot_get_fault_reg(mem_type);
-
-    bool test_result = expected_status ? fault == 0 : fault != 0;
-    if ( test_result ) {
-        esp_rom_printf("OK\n");
+    uint32_t fault;
+    esp_err_t res = esp_memprot_get_fault_reg(mem_type, &fault);
+    if ( res == ESP_OK ) {
+        bool test_result = expected_status ? fault == 0 : fault != 0;
+        if (test_result) {
+            esp_rom_printf("OK\n");
+        } else {
+            dump_status_register(mem_type);
+        }
     } else {
-        dump_status_register(mem_type);
+        esp_rom_printf(" FAULT [failed to get test results, error 0x%08X]\n", res);
     }
 }
 

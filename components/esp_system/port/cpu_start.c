@@ -305,7 +305,7 @@ void IRAM_ATTR call_start_cpu0(void)
     // from panic handler we can be reset by RWDT or TG0WDT
     if (rst_reas[0] == RESET_REASON_CORE_RTC_WDT || rst_reas[0] == RESET_REASON_CORE_MWDT0
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-        || rst_reas[1] == RESET_REASON_CORE_RTC_WDT || rst_reas[1] == RESET_REASON_CORE_MWDT0
+            || rst_reas[1] == RESET_REASON_CORE_RTC_WDT || rst_reas[1] == RESET_REASON_CORE_MWDT0
 #endif
        ) {
         wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
@@ -513,15 +513,28 @@ void IRAM_ATTR call_start_cpu0(void)
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
     // Memprot cannot be locked during OS startup as the lock-on prevents any PMS changes until a next reboot
     // If such a situation appears, it is likely an malicious attempt to bypass the system safety setup -> print error & reset
-    if ( esp_memprot_is_locked_any() ) {
+    if (esp_memprot_is_locked_any()) {
         ESP_EARLY_LOGE(TAG, "Memprot feature locked after the system reset! Potential safety corruption, rebooting.");
         esp_restart_noos_dig();
     }
+    esp_err_t memp_err = ESP_OK;
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE_LOCK
+#if CONFIG_IDF_TARGET_ESP32S2 //specific for ESP32S2 unless IDF-3024 is merged
+    memp_err = esp_memprot_set_prot(true, true, NULL);
+#else
     esp_memprot_set_prot(true, true, NULL);
+#endif
+#else
+#if CONFIG_IDF_TARGET_ESP32S2 //specific for ESP32S2 unless IDF-3024 is merged
+    memp_err = esp_memprot_set_prot(true, false, NULL);
 #else
     esp_memprot_set_prot(true, false, NULL);
 #endif
+#endif
+    if (memp_err != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "Failed to set Memprot feature (error 0x%08X), rebooting.", memp_err);
+        esp_restart_noos_dig();
+    }
 #endif
 
     bootloader_flash_update_id();

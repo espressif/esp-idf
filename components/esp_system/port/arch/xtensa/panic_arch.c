@@ -76,7 +76,7 @@ void panic_print_registers(const void *f, int core)
             && ((core == 0 && frame->exccause == PANIC_RSN_INTWDT_CPU0) ||
                 (core == 1 && frame->exccause == PANIC_RSN_INTWDT_CPU1))
 #endif //!CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-        ) {
+       ) {
 
         panic_print_str("\r\n");
 
@@ -264,27 +264,46 @@ static inline void print_cache_err_details(const void *f)
 }
 
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#define MEMPROT_OP_INVALID 0xFFFFFFFF
 static inline void print_memprot_err_details(const void *f)
 {
     uint32_t *fault_addr;
     uint32_t op_type, op_subtype;
-    mem_type_prot_t mem_type = esp_memprot_get_active_intr_memtype();
-    esp_memprot_get_fault_status( mem_type, &fault_addr, &op_type, &op_subtype );
+    char *operation_type;
 
-    char *operation_type = "Write";
-    if ( op_type == 0 ) {
-        operation_type = (mem_type == MEMPROT_IRAM0_SRAM && op_subtype == 0) ? "Instruction fetch" : "Read";
+    mem_type_prot_t mem_type = esp_memprot_get_active_intr_memtype();
+    if (mem_type != MEMPROT_NONE) {
+#if CONFIG_IDF_TARGET_ESP32S2 //specific for ESP32S2 unless IDF-3024 is merged
+        if (esp_memprot_get_fault_status(mem_type, &fault_addr, &op_type, &op_subtype) != ESP_OK) {
+            op_type = MEMPROT_OP_INVALID;
+        }
+#else
+        esp_memprot_get_fault_status(mem_type, &fault_addr, &op_type, &op_subtype);
+#endif
     }
 
-    panic_print_str( operation_type );
-    panic_print_str( " operation at address 0x" );
-    panic_print_hex( (uint32_t)fault_addr );
-    panic_print_str(" not permitted.\r\n");
+    if (op_type == MEMPROT_OP_INVALID) {
+        operation_type = "Unknown";
+        fault_addr = (uint32_t *)MEMPROT_OP_INVALID;
+    } else {
+        if (op_type == 0) {
+            operation_type = (mem_type == MEMPROT_IRAM0_SRAM && op_subtype == 0) ? "Instruction fetch" : "Read";
+        } else {
+            operation_type = "Write";
+        }
+    }
+
+    panic_print_str(operation_type);
+    panic_print_str(" operation at address 0x");
+    panic_print_hex((uint32_t)fault_addr);
+    panic_print_str(" not permitted (");
+    panic_print_str(esp_memprot_type_to_str(mem_type));
+    panic_print_str(")\r\n");
 }
 #endif
 
 #elif CONFIG_IDF_TARGET_ESP32S3
-static inline void print_cache_err_details(const void* f)
+static inline void print_cache_err_details(const void *f)
 {
     uint32_t vaddr = 0, size = 0;
     uint32_t status;
@@ -355,7 +374,7 @@ static inline void print_cache_err_details(const void* f)
 
 void panic_arch_fill_info(void *f, panic_info_t *info)
 {
-    XtExcFrame *frame = (XtExcFrame*) f;
+    XtExcFrame *frame = (XtExcFrame *) f;
     static const char *reason[] = {
         "IllegalInstruction", "Syscall", "InstructionFetchError", "LoadStoreError",
         "Level1Interrupt", "Alloca", "IntegerDivideByZero", "PCValue",
@@ -388,7 +407,7 @@ void panic_soc_fill_info(void *f, panic_info_t *info)
 {
     // [refactor-todo] this should be in the common port panic_handler.c, once
     // these special exceptions are supported in there.
-    XtExcFrame *frame = (XtExcFrame*) f;
+    XtExcFrame *frame = (XtExcFrame *) f;
     if (frame->exccause == PANIC_RSN_INTWDT_CPU0) {
         info->core = 0;
         info->exception = PANIC_EXCEPTION_IWDT;
@@ -442,19 +461,19 @@ void panic_soc_fill_info(void *f, panic_info_t *info)
 #endif
 }
 
-uint32_t panic_get_address(const void* f)
+uint32_t panic_get_address(const void *f)
 {
-    return ((XtExcFrame*)f)->pc;
+    return ((XtExcFrame *)f)->pc;
 }
 
-uint32_t panic_get_cause(const void* f)
+uint32_t panic_get_cause(const void *f)
 {
-    return ((XtExcFrame*)f)->exccause;
+    return ((XtExcFrame *)f)->exccause;
 }
 
 void panic_set_address(void *f, uint32_t addr)
 {
-    ((XtExcFrame*)f)->pc = addr;
+    ((XtExcFrame *)f)->pc = addr;
 }
 
 void panic_print_backtrace(const void *f, int core)
