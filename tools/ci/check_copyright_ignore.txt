@@ -4148,7 +4148,6 @@ tools/idf_py_actions/global_options.py
 tools/idf_py_actions/serial_ext.py
 tools/idf_py_actions/tools.py
 tools/idf_py_actions/uf2_ext.py
-tools/idf_size.py
 tools/kconfig/conf.c
 tools/kconfig/confdata.c
 tools/kconfig/expand_env.c
