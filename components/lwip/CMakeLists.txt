@@ -56,6 +56,8 @@ set(srcs
     "lwip/src/core/ipv6/nd6.c"
     "lwip/src/netif/ethernet.c"
     "lwip/src/netif/lowpan6.c"
+	"lwip/src/netif/lowpan6_ble.c"
+	"lwip/src/netif/lowpan6_common.c"
     "lwip/src/netif/slipif.c"
     "lwip/src/netif/ppp/auth.c"
     "lwip/src/netif/ppp/ccp.c"
