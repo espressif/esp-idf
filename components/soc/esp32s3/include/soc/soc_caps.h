@@ -16,6 +16,7 @@
 #define SOC_CACHE_SUPPORT_WRAP          1
 #define SOC_ULP_SUPPORTED               1
 #define SOC_USB_OTG_SUPPORTED           1
+#define SOC_USB_SERIAL_JTAG_SUPPORTED   1
 #define SOC_RTC_SLOW_MEM_SUPPORTED      1
 #define SOC_CCOMP_TIMER_SUPPORTED       1
 #define SOC_DIG_SIGN_SUPPORTED          1
