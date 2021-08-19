@@ -917,12 +917,24 @@ extern "C" {
 #define EFUSE_SPI_PAD_CONF_1_S  0
 
 #define EFUSE_RD_MAC_SPI_SYS_3_REG          (DR_REG_EFUSE_BASE + 0x050)
-/* EFUSE_SYS_DATA_PART0_0 : RO ;bitpos:[31:18] ;default: 14'h0 ; */
-/*description: Stores the fist 14 bits of the zeroth part of system data.*/
-#define EFUSE_SYS_DATA_PART0_0  0x00003FFF
-#define EFUSE_SYS_DATA_PART0_0_M  ((EFUSE_SYS_DATA_PART0_0_V)<<(EFUSE_SYS_DATA_PART0_0_S))
-#define EFUSE_SYS_DATA_PART0_0_V  0x3FFF
-#define EFUSE_SYS_DATA_PART0_0_S  18
+/* EFUSE_PSRAM_VERSION : RO ;bitpos:[31:28] ;default: 4'h0 ; */
+/*description: PSRAM version */
+#define EFUSE_PSRAM_VERSION  0x0000000F
+#define EFUSE_PSRAM_VERSION_M  ((EFUSE_PSRAM_VERSION_V)<<(EFUSE_PSRAM_VERSION_S))
+#define EFUSE_PSRAM_VERSION_V  0xF
+#define EFUSE_PSRAM_VERSION_S  28
+/* EFUSE_FLASH_VERSION : RO ;bitpos:[24:21] ;default: 4'h0 ; */
+/*description: Flash version */
+#define EFUSE_FLASH_VERSION  0x0000000F
+#define EFUSE_FLASH_VERSION_M  ((EFUSE_FLASH_VERSION_V)<<(EFUSE_FLASH_VERSION_S))
+#define EFUSE_FLASH_VERSION_V  0xF
+#define EFUSE_FLASH_VERSION_S  21
+/* EFUSE_WAFER_VERSION : RO ;bitpos:[20:18] ;default: 3'h0 ; */
+/*description: WAFER version 0:A */
+#define EFUSE_WAFER_VERSION  0x00000007
+#define EFUSE_WAFER_VERSION_M  ((EFUSE_WAFER_VERSION_V)<<(EFUSE_WAFER_VERSION_S))
+#define EFUSE_WAFER_VERSION_V  0x7
+#define EFUSE_WAFER_VERSION_S  18
 /* EFUSE_SPI_PAD_CONF_2 : RO ;bitpos:[17:0] ;default: 18'h0 ; */
 /*description: Stores the second part of SPI_PAD_CONF.*/
 #define EFUSE_SPI_PAD_CONF_2  0x0003FFFF
@@ -931,12 +943,18 @@ extern "C" {
 #define EFUSE_SPI_PAD_CONF_2_S  0
 
 #define EFUSE_RD_MAC_SPI_SYS_4_REG          (DR_REG_EFUSE_BASE + 0x054)
-/* EFUSE_SYS_DATA_PART0_1 : RO ;bitpos:[31:0] ;default: 32'h0 ; */
+/* EFUSE_SYS_DATA_PART0_1 : RO ;bitpos:[31:4] ;default: 28'h0 ; */
 /*description: Stores the fist 32 bits of the zeroth part of system data.*/
-#define EFUSE_SYS_DATA_PART0_1  0xFFFFFFFF
+#define EFUSE_SYS_DATA_PART0_1  0x0FFFFFFF
 #define EFUSE_SYS_DATA_PART0_1_M  ((EFUSE_SYS_DATA_PART0_1_V)<<(EFUSE_SYS_DATA_PART0_1_S))
-#define EFUSE_SYS_DATA_PART0_1_V  0xFFFFFFFF
-#define EFUSE_SYS_DATA_PART0_1_S  0
+#define EFUSE_SYS_DATA_PART0_1_V  0x0FFFFFFF
+#define EFUSE_SYS_DATA_PART0_1_S  4
+/* EFUSE_PKG_VERSION : RO ;bitpos:[3:0] ;default: 4'h0 ; */
+/*description: Package version */
+#define EFUSE_PKG_VERSION  0x0000000F
+#define EFUSE_PKG_VERSION_M  ((EFUSE_PKG_VERSION_V)<<(EFUSE_PKG_VERSION_S))
+#define EFUSE_PKG_VERSION_V  0xF
+#define EFUSE_PKG_VERSION_S  0
 
 #define EFUSE_RD_MAC_SPI_SYS_5_REG          (DR_REG_EFUSE_BASE + 0x058)
 /* EFUSE_SYS_DATA_PART0_2 : RO ;bitpos:[31:0] ;default: 32'h0 ; */
@@ -2298,5 +2316,3 @@ extern "C" {
 
 
 #endif /*_SOC_EFUSE_REG_H_ */
-
-
