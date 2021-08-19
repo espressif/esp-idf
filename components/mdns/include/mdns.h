@@ -21,6 +21,13 @@ extern "C" {
 #define MDNS_TYPE_NSEC              0x002F
 #define MDNS_TYPE_ANY               0x00FF
 
+#define CONFIG_MDNS_IF_MAX 4
+#define ACTION_ENABLE 1
+#define ACTION_ENABLE_WITH_DHCP_CHECK 2
+#define ACTION_ANNOUNCE 3
+#define ACTION_ENABLE_ANNOUNCE 4
+#define ACTION_DISABLE 5
+
 /**
  * @brief   Asynchronous query handle
  */
@@ -53,10 +60,8 @@ typedef struct mdns_ip_addr_s {
 } mdns_ip_addr_t;
 
 typedef enum mdns_if_internal {
-    MDNS_IF_STA = 0,
-    MDNS_IF_AP = 1,
-    MDNS_IF_ETH = 2,
-    MDNS_IF_MAX
+    MDNS_IF_INVALID = -1,
+    MDNS_IF_MAX = CONFIG_MDNS_IF_MAX
 } mdns_if_t;
 
 /**

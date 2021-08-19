@@ -58,31 +58,43 @@ static bool _mdns_append_host_list_in_services(mdns_out_answer_t ** destination,
 static bool _mdns_append_host_list(mdns_out_answer_t ** destination, bool flush, bool bye);
 static void _mdns_remap_self_service_hostname(const char *old_hostname, const char *new_hostname);
 
+
+typedef struct mdns_event_action {
+    esp_event_base_t event_base;
+    int32_t event_id;
+    uint32_t action;
+} mdns_event_action_t;
+
+typedef struct mdns_interfaces {
+    esp_netif_t * netif;
+    mdns_event_action_t actions[5];
+} mdns_interfaces_t;
+
 /*
  * @brief  Internal collection of mdns supported interfaces
  *
  */
-static esp_netif_t * s_esp_netifs[MDNS_IF_MAX] = {};
+static mdns_interfaces_t s_esp_netifs[MDNS_IF_MAX] = {};
 
 /*
  * @brief  Convert mdns if to esp-netif handle
  */
 esp_netif_t *_mdns_get_esp_netif(mdns_if_t tcpip_if)
 {
-    if (tcpip_if < MDNS_IF_MAX) {
-        if (s_esp_netifs[tcpip_if] == NULL) {
+    if (tcpip_if > MDNS_IF_INVALID && tcpip_if < MDNS_IF_MAX) {
+        if (s_esp_netifs[tcpip_if].netif == NULL) {
             // if local netif copy is NULL, try to search for the default interface key
-            if (tcpip_if == MDNS_IF_STA) {
-                s_esp_netifs[MDNS_IF_STA] = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
-            } else if (tcpip_if == MDNS_IF_AP) {
-                s_esp_netifs[MDNS_IF_AP] = esp_netif_get_handle_from_ifkey("WIFI_AP_DEF");
-#if CONFIG_ETH_ENABLED
-            } else if (tcpip_if == MDNS_IF_ETH) {
-                s_esp_netifs[MDNS_IF_ETH] = esp_netif_get_handle_from_ifkey("ETH_DEF");
-#endif
-            }
+//            if (tcpip_if == MDNS_IF_STA) {
+//                s_esp_netifs[MDNS_IF_STA] = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+//            } else if (tcpip_if == MDNS_IF_AP) {
+//                s_esp_netifs[MDNS_IF_AP] = esp_netif_get_handle_from_ifkey("WIFI_AP_DEF");
+//#if CONFIG_ETH_ENABLED
+//            } else if (tcpip_if == MDNS_IF_ETH) {
+//                s_esp_netifs[MDNS_IF_ETH] = esp_netif_get_handle_from_ifkey("ETH_DEF");
+//#endif
+//            }
         }
-        return s_esp_netifs[tcpip_if];
+        return s_esp_netifs[tcpip_if].netif;
     }
     return NULL;
 }
@@ -93,7 +105,7 @@ esp_netif_t *_mdns_get_esp_netif(mdns_if_t tcpip_if)
  */
 static inline void _mdns_clean_netif_ptr(mdns_if_t tcpip_if) {
     if (tcpip_if < MDNS_IF_MAX) {
-        s_esp_netifs[tcpip_if] = NULL;
+        s_esp_netifs[tcpip_if].netif = NULL;
     }
 }
 
@@ -104,7 +116,7 @@ static inline void _mdns_clean_netif_ptr(mdns_if_t tcpip_if) {
 static mdns_if_t _mdns_get_if_from_esp_netif(esp_netif_t *interface)
 {
     for (int i=0; i<MDNS_IF_MAX; ++i) {
-        if (interface == s_esp_netifs[i])
+        if (interface == s_esp_netifs[i].netif)
             return i;
     }
     return MDNS_IF_MAX;
@@ -1057,11 +1069,11 @@ static uint16_t _mdns_append_question(uint8_t * packet, uint16_t * index, mdns_o
  */
 static mdns_if_t _mdns_get_other_if (mdns_if_t tcpip_if)
 {
-    if (tcpip_if == MDNS_IF_STA) {
-        return MDNS_IF_ETH;
-    } else if (tcpip_if == MDNS_IF_ETH) {
-        return MDNS_IF_STA;
-    }
+//    if (tcpip_if == MDNS_IF_STA) {
+//        return MDNS_IF_ETH;
+//    } else if (tcpip_if == MDNS_IF_ETH) {
+//        return MDNS_IF_STA;
+//    }
     return MDNS_IF_MAX;
 }
 
@@ -3779,6 +3791,68 @@ void _mdns_disable_pcb(mdns_if_t tcpip_if, mdns_ip_protocol_t ip_protocol)
 /**
  * @brief  Dispatch interface changes based on system events
  */
+void _action_enable_pcb_dhcps_status_check(esp_netif_t *netif, mdns_if_t interface) {
+    esp_netif_dhcp_status_t dcst;
+
+    if (!esp_netif_dhcpc_get_status(netif, &dcst)) {
+        if (dcst == ESP_NETIF_DHCP_STOPPED) {
+            _mdns_enable_pcb(interface, MDNS_IP_PROTOCOL_V4);
+        }
+    }
+}
+
+void _action_enable_pcb(mdns_if_t interface) {
+    _mdns_enable_pcb(interface, MDNS_IP_PROTOCOL_V4);
+}
+
+void _action_announce_pcb(mdns_if_t interface) {
+    _mdns_enable_pcb(interface, MDNS_IP_PROTOCOL_V4);
+}
+
+void _action_enable_announce_pcb(mdns_if_t interface) {
+    _mdns_enable_pcb(interface, MDNS_IP_PROTOCOL_V4);
+    _mdns_announce_pcb(interface, MDNS_IP_PROTOCOL_V6, NULL, 0, true);
+}
+
+void _action_disable_pcb(mdns_if_t interface) {
+    _mdns_disable_pcb(interface, MDNS_IP_PROTOCOL_V4);
+    _mdns_disable_pcb(interface, MDNS_IP_PROTOCOL_V6);
+}
+
+#define CONFIG_MDNS_EVENT_ACTIONS  5
+/**
+ * @brief  Dispatch interface changes based on system events
+ */
+static void _mdns_handle_system_event(esp_event_base_t event_base,
+                                      int32_t event_id, esp_netif_t* interface)
+{
+    if (!_mdns_server) {
+        return;
+    }
+    mdns_if_t mdns_if = _mdns_get_if_from_esp_netif(interface);
+
+    if (mdns_if > MDNS_IF_MAX) {
+        return;
+    }
+
+    for (int i = 0; i < CONFIG_MDNS_EVENT_ACTIONS; ++i) { // TO-DO
+        if (s_esp_netifs[mdns_if].actions[i].event_id == event_id) {
+            if (s_esp_netifs[mdns_if].actions[i].action == ACTION_ENABLE) {
+                _action_enable_pcb(mdns_if);
+            }
+            if (s_esp_netifs[mdns_if].actions[i].action == ACTION_ENABLE_WITH_DHCP_CHECK) {
+                _action_enable_pcb_dhcps_status_check(interface, mdns_if);
+            }
+            if (s_esp_netifs[mdns_if].actions[i].action == ACTION_ENABLE_ANNOUNCE) {
+                _action_enable_announce_pcb(mdns_if);
+            }
+            if (s_esp_netifs[mdns_if].actions[i].action == ACTION_DISABLE) {
+                _action_disable_pcb(mdns_if);
+            }
+        }
+    }
+}
+#if 0
 static void _mdns_handle_system_event(esp_event_base_t event_base,
                                       int32_t event_id, esp_netif_t* interface)
 {
@@ -3856,6 +3930,7 @@ static void _mdns_handle_system_event(esp_event_base_t event_base,
         }
     }
 }
+#endif
 
 /*
  * MDNS Search
