@@ -63,7 +63,8 @@ extern "C"
 #define SPICOMMON_BUSFLAG_DUAL          (1<<6)     ///< Check MOSI and MISO pins can output. Or indicates bus able to work under DIO mode.
 #define SPICOMMON_BUSFLAG_WPHD          (1<<7)     ///< Check existing of WP and HD pins. Or indicates WP & HD pins initialized.
 #define SPICOMMON_BUSFLAG_QUAD          (SPICOMMON_BUSFLAG_DUAL|SPICOMMON_BUSFLAG_WPHD)     ///< Check existing of MOSI/MISO/WP/HD pins as output. Or indicates bus able to work under QIO mode.
-
+#define SPICOMMON_BUSFLAG_IO4_IO7       (1<<8)     ///< Check existing of IO4~IO7 pins. Or indicates IO4~IO7 pins initialized.
+#define SPICOMMON_BUSFLAG_OCTAL         (SPICOMMON_BUSFLAG_QUAD|SPICOMMON_BUSFLAG_IO4_IO7)  ///< Check existing of MOSI/MISO/WP/HD/SPIIO4/SPIIO5/SPIIO6/SPIIO7 pins as output. Or indicates bus able to work under octal mode.
 #define SPICOMMON_BUSFLAG_NATIVE_PINS   SPICOMMON_BUSFLAG_IOMUX_PINS
 
 /**
@@ -95,18 +96,34 @@ typedef spi_common_dma_t spi_dma_chan_t;
  * @note Be advised that the slave driver does not use the quadwp/quadhd lines and fields in spi_bus_config_t refering to these lines will be ignored and can thus safely be left uninitialized.
  */
 typedef struct {
-    int mosi_io_num;                ///< GPIO pin for Master Out Slave In (=spi_d) signal, or -1 if not used.
-    int miso_io_num;                ///< GPIO pin for Master In Slave Out (=spi_q) signal, or -1 if not used.
-    int sclk_io_num;                ///< GPIO pin for Spi CLocK signal, or -1 if not used.
-    int quadwp_io_num;              ///< GPIO pin for WP (Write Protect) signal which is used as D2 in 4-bit communication modes, or -1 if not used.
-    int quadhd_io_num;              ///< GPIO pin for HD (HolD) signal which is used as D3 in 4-bit communication modes, or -1 if not used.
-    int max_transfer_sz;            ///< Maximum transfer size, in bytes. Defaults to 4092 if 0 when DMA enabled, or to `SOC_SPI_MAXIMUM_BUFFER_SIZE` if DMA is disabled.
-    uint32_t flags;                 ///< Abilities of bus to be checked by the driver. Or-ed value of ``SPICOMMON_BUSFLAG_*`` flags.
-    int intr_flags;    /**< Interrupt flag for the bus to set the priority, and IRAM attribute, see
-                         *  ``esp_intr_alloc.h``. Note that the EDGE, INTRDISABLED attribute are ignored
-                         *  by the driver. Note that if ESP_INTR_FLAG_IRAM is set, ALL the callbacks of
-                         *  the driver, and their callee functions, should be put in the IRAM.
-                         */
+    union {
+      int mosi_io_num;    ///< GPIO pin for Master Out Slave In (=spi_d) signal, or -1 if not used.
+      int data0_io_num;   ///< GPIO pin for spi data0 signal in quad/octal mode, or -1 if not used.
+    };
+    union {
+      int miso_io_num;    ///< GPIO pin for Master In Slave Out (=spi_q) signal, or -1 if not used.
+      int data1_io_num;   ///< GPIO pin for spi data1 signal in quad/octal mode, or -1 if not used.
+    };
+    int sclk_io_num;      ///< GPIO pin for SPI Clock signal, or -1 if not used.
+    union {
+      int quadwp_io_num;  ///< GPIO pin for WP (Write Protect) signal, or -1 if not used.
+      int data2_io_num;   ///< GPIO pin for spi data2 signal in quad/octal mode, or -1 if not used.
+    };
+    union {
+      int quadhd_io_num;  ///< GPIO pin for HD (Hold) signal, or -1 if not used.
+      int data3_io_num;   ///< GPIO pin for spi data3 signal in quad/octal mode, or -1 if not used.
+    };
+    int data4_io_num;     ///< GPIO pin for spi data4 signal in octal mode, or -1 if not used.
+    int data5_io_num;     ///< GPIO pin for spi data5 signal in octal mode, or -1 if not used.
+    int data6_io_num;     ///< GPIO pin for spi data6 signal in octal mode, or -1 if not used.
+    int data7_io_num;     ///< GPIO pin for spi data7 signal in octal mode, or -1 if not used.
+    int max_transfer_sz;  ///< Maximum transfer size, in bytes. Defaults to 4092 if 0 when DMA enabled, or to `SOC_SPI_MAXIMUM_BUFFER_SIZE` if DMA is disabled.
+    uint32_t flags;       ///< Abilities of bus to be checked by the driver. Or-ed value of ``SPICOMMON_BUSFLAG_*`` flags.
+    int intr_flags;       /**< Interrupt flag for the bus to set the priority, and IRAM attribute, see
+                           *  ``esp_intr_alloc.h``. Note that the EDGE, INTRDISABLED attribute are ignored
+                           *  by the driver. Note that if ESP_INTR_FLAG_IRAM is set, ALL the callbacks of
+                           *  the driver, and their callee functions, should be put in the IRAM.
+                           */
 } spi_bus_config_t;
 
 

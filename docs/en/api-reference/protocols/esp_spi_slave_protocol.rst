@@ -31,7 +31,7 @@ Introduction
 ------------
 
 In the half duplex mode, the master has to use the protocol defined by the slave to communicate
-with the slave. Each transaction may consists of the following phases (list by the order they
+with the slave. Each transaction may consist of the following phases (list by the order they
 should exist):
 
 - Command: 8-bit, master to slave
