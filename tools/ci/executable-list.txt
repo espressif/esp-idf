@@ -63,7 +63,6 @@ tools/ci/get-full-sources.sh
 tools/ci/get_supported_examples.sh
 tools/ci/mirror-submodule-update.sh
 tools/ci/multirun_with_pyenv.sh
-tools/ci/normalize_clangtidy_path.py
 tools/ci/push_to_github.sh
 tools/ci/test_autocomplete.py
 tools/ci/test_build_system.sh
