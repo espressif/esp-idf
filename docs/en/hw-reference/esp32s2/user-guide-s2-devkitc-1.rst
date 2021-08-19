@@ -50,7 +50,7 @@ The key components of the board are described in a clockwise direction.
    * - Key Component
      - Description
    * - ESP32-S2-SOLO or ESP32-S2-SOLO-U
-     - ESP32-S2-SOLO and ESP32-S2-SOLO-U are two general-purpose Wi-Fi modules. ESP32-S2-SOLO comes with an on-board PCB antenna and ESP32-S2-SOLO-U comes with a connector for an external antenna. ESP32-S2-SOLO or ESP32-S2-SOLO-U on the board may come either with a 4 MB flash, or a 8 MB flash plus a 2 MB PSRAM embedded in the chip.
+     - ESP32-S2-SOLO and ESP32-S2-SOLO-U are two general-purpose Wi-Fi modules. ESP32-S2-SOLO comes with an on-board PCB antenna and ESP32-S2-SOLO-U comes with a connector for an external antenna. ESP32-S2-SOLO or ESP32-S2-SOLO-U on the board may come either with a 4 MB flash, or a 4 MB flash plus a 2 MB PSRAM embedded in the chip.
    * - 3.3 V Power On LED
      - Turns on when the USB power is connected to the board.
    * - USB-to-UART Bridge
