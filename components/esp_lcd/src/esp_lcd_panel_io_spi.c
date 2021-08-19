@@ -15,6 +15,7 @@
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "esp_check.h"
+#include "esp_lcd_common.h"
 
 static const char *TAG = "lcd_panel.io.spi";
 
@@ -131,6 +132,34 @@ err:
     return ret;
 }
 
+static void spi_lcd_prepare_cmd_buffer(esp_lcd_panel_io_spi_t *panel_io, const void *cmd)
+{
+    uint8_t *from = (uint8_t *)cmd;
+    // LCD is big-endian, e.g. to send command 0x1234, byte 0x12 should appear on the bus first
+    // However, the SPI peripheral will send 0x34 first, so we reversed the order below
+    if (panel_io->lcd_cmd_bits > 8) {
+        int start = 0;
+        int end = panel_io->lcd_cmd_bits / 8 - 1;
+        lcd_com_reverse_buffer_bytes(from, start, end);
+    }
+}
+
+static void spi_lcd_prepare_param_buffer(esp_lcd_panel_io_spi_t *panel_io, const void *param, size_t param_size)
+{
+    uint8_t *from = (uint8_t *)param;
+    int param_width = panel_io->lcd_param_bits / 8;
+    size_t param_num = param_size / param_width;
+    // LCD is big-endian, e.g. to send command 0x1234, byte 0x12 should appear on the bus first
+    // However, the SPI peripheral will send 0x34 first, so we reversed the order below
+    if (panel_io->lcd_param_bits > 8) {
+        for (size_t i = 0; i < param_num; i++) {
+            int start = i * param_width;
+            int end = start + param_width - 1;
+            lcd_com_reverse_buffer_bytes(from, start, end);
+        }
+    }
+}
+
 static esp_err_t panel_io_spi_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, const void *param, size_t param_size)
 {
     esp_err_t ret = ESP_OK;
@@ -146,6 +175,7 @@ static esp_err_t panel_io_spi_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     spi_panel_io->num_trans_inflight = 0;
     lcd_trans = &spi_panel_io->trans_pool[0];
     memset(lcd_trans, 0, sizeof(lcd_spi_trans_descriptor_t));
+    spi_lcd_prepare_cmd_buffer(spi_panel_io, &lcd_cmd);
     lcd_trans->base.user = spi_panel_io;
     lcd_trans->flags.dc_gpio_level = !spi_panel_io->flags.dc_data_level; // set D/C line to command mode
     lcd_trans->base.length = spi_panel_io->lcd_cmd_bits;
@@ -162,6 +192,7 @@ static esp_err_t panel_io_spi_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     ESP_GOTO_ON_ERROR(ret, err, TAG, "spi transmit (polling) command failed");
 
     if (param && param_size) {
+        spi_lcd_prepare_param_buffer(spi_panel_io, param, param_size);
         lcd_trans->flags.dc_gpio_level = spi_panel_io->flags.dc_data_level; // set D/C line to data mode
         lcd_trans->base.length = param_size * 8; // transaction length is in bits
         lcd_trans->base.tx_buffer = param;
@@ -192,6 +223,7 @@ static esp_err_t panel_io_spi_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     spi_panel_io->num_trans_inflight = 0;
     lcd_trans = &spi_panel_io->trans_pool[0];
     memset(lcd_trans, 0, sizeof(lcd_spi_trans_descriptor_t));
+    spi_lcd_prepare_cmd_buffer(spi_panel_io, &lcd_cmd);
     lcd_trans->base.user = spi_panel_io;
     lcd_trans->flags.dc_gpio_level = !spi_panel_io->flags.dc_data_level; // set D/C line to command mode
     lcd_trans->base.length = spi_panel_io->lcd_cmd_bits;
