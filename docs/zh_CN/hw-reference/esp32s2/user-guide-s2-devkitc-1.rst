@@ -50,7 +50,7 @@ ESP32-S2-DevKitC-1 是一款入门级开发板，使用带有 4 MB SPI flash 的
    * - 主要组件
      - 介绍
    * - ESP32-S2-SOLO 或 ESP32-S2-SOLO-U
-     - ESP32-S2-SOLO 和 ESP32-S2-SOLO-U 是两款通用型 Wi-Fi 模组。ESP32-S2-SOLO 采用 PCB 板载天线，ESP32-S2-SOLO-U 采用连接器连接外部天线。开发板上的 ESP32-S2-SOLO 或 ESP32-S2-SOLO-U 模组可配置 4 MB flash，也可配置 8 MB flash 加 2 MB PSRAM（芯片内置）。
+     - ESP32-S2-SOLO 和 ESP32-S2-SOLO-U 是两款通用型 Wi-Fi 模组。ESP32-S2-SOLO 采用 PCB 板载天线，ESP32-S2-SOLO-U 采用连接器连接外部天线。开发板上的 ESP32-S2-SOLO 或 ESP32-S2-SOLO-U 模组可配置 4 MB flash，也可配置 4 MB flash 加 2 MB PSRAM（芯片内置）。
    * - 3.3 V Power On LED（3.3 V 电源指示灯）
      - 开发板连接 USB 电源后，该指示灯亮起。
    * - USB-to-UART Bridge（USB 转 UART 桥接器）
