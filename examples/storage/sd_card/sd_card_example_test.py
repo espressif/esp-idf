@@ -13,6 +13,9 @@ def test_examples_sd_card(env, extra_data):
     Utility.console_log('peripheral {} detected'.format(peripheral))
     assert peripheral in ('SDMMC', 'SPI')
 
+    # Provide enough time for possible SD card formatting
+    dut.expect('Filesystem mounted', timeout=60)
+
     # These lines are matched separately because of ASCII color codes in the output
     name = dut.expect(re.compile(r'Name: (\w+)'), timeout=5)[0]
     _type = dut.expect(re.compile(r'Type: (\S+)'), timeout=5)[0]
