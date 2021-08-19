@@ -19,6 +19,8 @@ entries:
         esp_clk:esp_clk_slowclk_cal_set (noflash)
         esp_clk:esp_clk_slowclk_cal_get (noflash)
         esp_clk:esp_rtc_get_time_us (noflash)
+        if GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL = y:
+            sleep_gpio:gpio_sleep_mode_config_apply (noflash)
 
 [mapping:esp_system_pm]
 archive: libesp_system.a

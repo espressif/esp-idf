@@ -49,6 +49,7 @@
 #include "esp32/rom/rtc.h"
 #include "esp32/clk.h"
 #include "esp_private/gpio.h"
+#include "esp_private/sleep_gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/clk.h"
 #include "esp32s2/rom/cache.h"
@@ -391,54 +392,6 @@ esp_err_t esp_sleep_cpu_pd_low_init(bool enable)
     return ESP_OK;
 }
 #endif // SOC_PM_SUPPORT_CPU_PD
-
-#if SOC_GPIO_SUPPORT_SLP_SWITCH
-#if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
-static inline void gpio_sleep_mode_config_apply(void)
-{
-    for (gpio_num_t gpio_num = GPIO_NUM_0; gpio_num < GPIO_NUM_MAX; gpio_num++) {
-        if (GPIO_IS_VALID_GPIO(gpio_num)) {
-            gpio_sleep_pupd_config_apply(gpio_num);
-        }
-    }
-}
-
-static inline void gpio_sleep_mode_config_unapply(void)
-{
-    for (gpio_num_t gpio_num = GPIO_NUM_0; gpio_num < GPIO_NUM_MAX; gpio_num++) {
-        if (GPIO_IS_VALID_GPIO(gpio_num)) {
-            gpio_sleep_pupd_config_unapply(gpio_num);
-        }
-    }
-}
-#endif
-
-void esp_sleep_config_gpio_isolate(void)
-{
-    ESP_LOGI(TAG, "Configure to isolate all GPIO pins in sleep state");
-    for (gpio_num_t gpio_num = GPIO_NUM_0; gpio_num < GPIO_NUM_MAX; gpio_num++) {
-        if (GPIO_IS_VALID_GPIO(gpio_num)) {
-            gpio_sleep_set_direction(gpio_num, GPIO_MODE_DISABLE);
-            gpio_sleep_set_pull_mode(gpio_num, GPIO_FLOATING);
-        }
-    }
-}
-
-void esp_sleep_enable_gpio_switch(bool enable)
-{
-    ESP_LOGI(TAG, "%s automatic switching of GPIO sleep configuration", enable ? "Enable" : "Disable");
-    for (gpio_num_t gpio_num = GPIO_NUM_0; gpio_num < GPIO_NUM_MAX; gpio_num++) {
-        if (GPIO_IS_VALID_GPIO(gpio_num)) {
-            if (enable) {
-                gpio_sleep_sel_en(gpio_num);
-            } else {
-                gpio_sleep_sel_dis(gpio_num);
-            }
-        }
-    }
-}
-#endif // SOC_GPIO_SUPPORT_SLP_SWITCH
-
 
 static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 {
