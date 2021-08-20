@@ -123,6 +123,9 @@ menu "Serial flasher config"
         help
             The SPI flash frequency to be used.
 
+        config ESPTOOLPY_FLASHFREQ_120M
+            depends on ESPTOOLPY_FLASHMODE_OPI_STR
+            bool "120 MHz"
         config ESPTOOLPY_FLASHFREQ_80M
             bool "80 MHz"
         config ESPTOOLPY_FLASHFREQ_40M
@@ -136,6 +139,9 @@ menu "Serial flasher config"
 
     config ESPTOOLPY_FLASHFREQ
         string
+        # On some of the ESP chips, max boot frequency would be equal to (or even lower than) 80m.
+        # We currently define this to `80m`.
+        default "80m" if ESPTOOLPY_FLASHFREQ_120M
         default "80m" if ESPTOOLPY_FLASHFREQ_80M
         default "40m" if ESPTOOLPY_FLASHFREQ_40M
         default "26m" if ESPTOOLPY_FLASHFREQ_26M

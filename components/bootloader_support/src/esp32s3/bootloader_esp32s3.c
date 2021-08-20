@@ -139,7 +139,7 @@ static void print_flash_info(const esp_image_header_t *bootloader_hdr)
         str = "20MHz";
         break;
     }
-    ESP_LOGI(TAG, "SPI Speed      : %s", str);
+    ESP_LOGI(TAG, "Boot SPI Speed : %s", str);
 
     /* SPI mode could have been set to QIO during boot already,
        so test the SPI registers not the flash header */
