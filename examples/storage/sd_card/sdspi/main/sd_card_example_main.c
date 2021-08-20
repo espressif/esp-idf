@@ -88,6 +88,7 @@ void app_main(void)
     slot_config.gpio_cs = PIN_NUM_CS;
     slot_config.host_id = host.slot;
 
+    ESP_LOGI(TAG, "Mounting filesystem");
     ret = esp_vfs_fat_sdspi_mount(mount_point, &host, &slot_config, &mount_config, &card);
 
     if (ret != ESP_OK) {
@@ -100,6 +101,7 @@ void app_main(void)
         }
         return;
     }
+    ESP_LOGI(TAG, "Filesystem mounted");
 
     // Card has been initialized, print its properties
     sdmmc_card_print_info(stdout, card);
