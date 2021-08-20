@@ -15,6 +15,7 @@
 // The HAL layer for PCNT (common part)
 
 #include "hal/pcnt_hal.h"
+#include "hal/pcnt_ll.h"
 
 void pcnt_hal_init(pcnt_hal_context_t *hal, int pcnt_num)
 {

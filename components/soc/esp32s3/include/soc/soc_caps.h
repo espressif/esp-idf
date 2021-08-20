@@ -92,9 +92,10 @@
 #include "mpu_caps.h"
 
 /*-------------------------- PCNT CAPS ---------------------------------------*/
-#define SOC_PCNT_PORT_NUM         (1)
-#define SOC_PCNT_UNIT_NUM         (4)
-#define SOC_PCNT_UNIT_CHANNEL_NUM (2)
+#define SOC_PCNT_GROUPS               (1)
+#define SOC_PCNT_UNITS_PER_GROUP      (4)
+#define SOC_PCNT_CHANNELS_PER_UNIT    (2)
+#define SOC_PCNT_THRES_POINT_PER_UNIT (2)
 
 /*-------------------------- RMT CAPS ----------------------------------------*/
 #define SOC_RMT_GROUPS                  (1)  /*!< One RMT group */
