@@ -546,6 +546,11 @@ static void btc_spp_uninit(void)
         osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
     } while(0);
 
+    if (spp_local_param.tx_event_group) {
+        vEventGroupDelete(spp_local_param.tx_event_group);
+        spp_local_param.tx_event_group = NULL;
+    }
+
     if (ret != ESP_SPP_SUCCESS) {
         esp_spp_cb_param_t param;
         param.uninit.status = ret;
