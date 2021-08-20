@@ -16,6 +16,7 @@ if(NOT BOOTLOADER_BUILD)
                      "mac_addr.c"
                      "sleep_modes.c"
                      "sleep_gpio.c"
+                     "sleep_mac_bb.c"
                      "regi2c_ctrl.c")
     list(APPEND requires esp_ipc)
 else()

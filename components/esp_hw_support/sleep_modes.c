@@ -61,12 +61,14 @@
 #include "esp32s3/rom/cache.h"
 #include "esp32s3/rom/rtc.h"
 #include "soc/extmem_reg.h"
+#include "esp_private/sleep_mac_bb.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/clk.h"
 #include "esp32c3/rom/cache.h"
 #include "esp32c3/rom/rtc.h"
 #include "soc/extmem_reg.h"
 #include "esp_heap_caps.h"
+#include "esp_private/sleep_mac_bb.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/clk.h"
 #include "esp32h2/rom/cache.h"
@@ -183,95 +185,6 @@ static void touch_wakeup_prepare(void);
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 static void esp_deep_sleep_wakeup_prepare(void);
 #endif
-
-#if CONFIG_MAC_BB_PD
-#define MAC_BB_POWER_DOWN_CB_NO 2
-#define MAC_BB_POWER_UP_CB_NO 2
-static DRAM_ATTR mac_bb_power_down_cb_t   s_mac_bb_power_down_cb[MAC_BB_POWER_DOWN_CB_NO];
-static DRAM_ATTR mac_bb_power_up_cb_t    s_mac_bb_power_up_cb[MAC_BB_POWER_UP_CB_NO];
-
-esp_err_t esp_register_mac_bb_pd_callback(mac_bb_power_down_cb_t cb)
-{
-    int index = MAC_BB_POWER_DOWN_CB_NO;
-    for (int i = MAC_BB_POWER_DOWN_CB_NO - 1; i >= 0; i--) {
-        if (s_mac_bb_power_down_cb[i] == cb) {
-            return ESP_OK;
-        }
-
-        if (s_mac_bb_power_down_cb[i] == NULL) {
-            index = i;
-        }
-    }
-
-    if (index < MAC_BB_POWER_DOWN_CB_NO) {
-        s_mac_bb_power_down_cb[index] = cb;
-        return ESP_OK;
-    }
-
-    return ESP_ERR_NO_MEM;
-}
-
-esp_err_t esp_unregister_mac_bb_pd_callback(mac_bb_power_down_cb_t cb)
-{
-    for (int i = MAC_BB_POWER_DOWN_CB_NO - 1; i >= 0; i--) {
-        if (s_mac_bb_power_down_cb[i] == cb) {
-            s_mac_bb_power_down_cb[i] = NULL;
-            return ESP_OK;
-        }
-    }
-    return ESP_ERR_INVALID_STATE;
-}
-
-static IRAM_ATTR void mac_bb_power_down_cb_execute(void)
-{
-    for (int i = 0; i < MAC_BB_POWER_DOWN_CB_NO; i++) {
-        if (s_mac_bb_power_down_cb[i]) {
-            s_mac_bb_power_down_cb[i]();
-        }
-    }
-}
-
-esp_err_t esp_register_mac_bb_pu_callback(mac_bb_power_up_cb_t cb)
-{
-    int index = MAC_BB_POWER_UP_CB_NO;
-    for (int i = MAC_BB_POWER_UP_CB_NO - 1; i >= 0; i--) {
-        if (s_mac_bb_power_up_cb[i] == cb) {
-            return ESP_OK;
-        }
-
-        if (s_mac_bb_power_up_cb[i] == NULL) {
-            index = i;
-        }
-    }
-
-    if (index < MAC_BB_POWER_UP_CB_NO) {
-        s_mac_bb_power_up_cb[index] = cb;
-        return ESP_OK;
-    }
-
-    return ESP_ERR_NO_MEM;
-}
-
-esp_err_t esp_unregister_mac_bb_pu_callback(mac_bb_power_up_cb_t cb)
-{
-    for (int i = MAC_BB_POWER_UP_CB_NO - 1; i >= 0; i--) {
-        if (s_mac_bb_power_up_cb[i] == cb) {
-            s_mac_bb_power_up_cb[i] = NULL;
-            return ESP_OK;
-        }
-    }
-    return ESP_ERR_INVALID_STATE;
-}
-
-static IRAM_ATTR void mac_bb_power_up_cb_execute(void)
-{
-    for (int i = 0; i < MAC_BB_POWER_UP_CB_NO; i++) {
-        if (s_mac_bb_power_up_cb[i]) {
-            s_mac_bb_power_up_cb[i]();
-        }
-    }
-}
-#endif ///CONFIG_MAC_BB_PD
 
 /* Wake from deep sleep stub
    See esp_deepsleep.h esp_wake_deep_sleep() comments for details.
