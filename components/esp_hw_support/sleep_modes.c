@@ -43,6 +43,7 @@
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
 #include "brownout.h"
+#include "esp_private/sleep_retention.h"
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/cache.h"
@@ -67,14 +68,12 @@
 #include "esp32c3/rom/cache.h"
 #include "esp32c3/rom/rtc.h"
 #include "soc/extmem_reg.h"
-#include "esp_heap_caps.h"
 #include "esp_private/sleep_mac_bb.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/clk.h"
 #include "esp32h2/rom/cache.h"
 #include "esp32h2/rom/rtc.h"
 #include "soc/extmem_reg.h"
-#include "esp_heap_caps.h"
 #endif
 
 // If light sleep time is less than that, don't power down flash
@@ -151,13 +150,16 @@ typedef struct {
     uint32_t sleep_time_overhead_out;
     uint32_t rtc_clk_cal_period;
     uint64_t rtc_ticks_at_sleep_start;
-#if SOC_PM_SUPPORT_CPU_PD
-    void     *cpu_pd_mem;
-#endif
 } sleep_config_t;
 
 static sleep_config_t s_config = {
-    .pd_options = { ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO },
+    .pd_options = {
+        ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO,
+#if SOC_PM_SUPPORT_CPU_PD
+        ESP_PD_OPTION_AUTO,
+#endif
+        ESP_PD_OPTION_AUTO
+    },
     .ccount_ticks_record = 0,
     .sleep_time_overhead_out = DEFAULT_SLEEP_OUT_OVERHEAD_US,
     .wakeup_triggers = 0
@@ -278,33 +280,33 @@ static void IRAM_ATTR resume_uarts(void)
     }
 }
 
-inline static uint32_t IRAM_ATTR call_rtc_sleep_start(uint32_t reject_triggers, uint32_t lslp_mem_inf_fpu);
-
-#if SOC_PM_SUPPORT_CPU_PD
-esp_err_t esp_sleep_cpu_pd_low_init(bool enable)
+inline static void IRAM_ATTR misc_modules_sleep_prepare(void)
 {
-    if (enable) {
-        if (s_config.cpu_pd_mem == NULL) {
-            void *buf = heap_caps_aligned_alloc(SOC_RTC_CNTL_CPU_PD_DMA_ADDR_ALIGN,
-                                                SOC_RTC_CNTL_CPU_PD_RETENTION_MEM_SIZE + RTC_HAL_DMA_LINK_NODE_SIZE,
-                                                MALLOC_CAP_RETENTION | MALLOC_CAP_DEFAULT);
-            if (buf) {
-                memset(buf, 0, SOC_RTC_CNTL_CPU_PD_RETENTION_MEM_SIZE + RTC_HAL_DMA_LINK_NODE_SIZE);
-                s_config.cpu_pd_mem = rtc_cntl_hal_dma_link_init(buf,
-                                      buf + RTC_HAL_DMA_LINK_NODE_SIZE, SOC_RTC_CNTL_CPU_PD_RETENTION_MEM_SIZE, NULL);
-            } else {
-                return ESP_ERR_NO_MEM;
-            }
-        }
-    } else {
-        if (s_config.cpu_pd_mem) {
-            heap_caps_free(s_config.cpu_pd_mem);
-            s_config.cpu_pd_mem = NULL;
-        }
-    }
-    return ESP_OK;
+#if CONFIG_MAC_BB_PD
+    mac_bb_power_down_cb_execute();
+#endif
+#if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
+    gpio_sleep_mode_config_apply();
+#endif
+#if SOC_PM_SUPPORT_CPU_PD || SOC_PM_SUPPORT_TAGMEM_PD
+    sleep_enable_memory_retention();
+#endif
 }
-#endif // SOC_PM_SUPPORT_CPU_PD
+
+inline static void IRAM_ATTR misc_modules_wake_prepare(void)
+{
+#if SOC_PM_SUPPORT_CPU_PD || SOC_PM_SUPPORT_TAGMEM_PD
+    sleep_disable_memory_retention();
+#endif
+#if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
+    gpio_sleep_mode_config_unapply();
+#endif
+#if CONFIG_MAC_BB_PD
+    mac_bb_power_up_cb_execute();
+#endif
+}
+
+inline static uint32_t IRAM_ATTR call_rtc_sleep_start(uint32_t reject_triggers, uint32_t lslp_mem_inf_fpu);
 
 static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 {
@@ -333,10 +335,6 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     rtc_clk_cpu_freq_get_config(&cpu_freq_config);
     rtc_clk_cpu_freq_set_xtal();
 
-#if CONFIG_MAC_BB_PD
-    mac_bb_power_down_cb_execute();
-#endif
-
 #if SOC_PM_SUPPORT_EXT_WAKEUP
     // Configure pins for external wakeup
     if (s_config.wakeup_triggers & RTC_EXT0_TRIG_EN) {
@@ -358,10 +356,9 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     if (s_config.wakeup_triggers & RTC_ULP_TRIG_EN) {
         rtc_hal_ulp_wakeup_enable();
     }
-#if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
-    gpio_sleep_mode_config_apply();
 #endif
-#endif
+
+    misc_modules_sleep_prepare();
 
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     if (deep_sleep) {
@@ -443,17 +440,8 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
         s_config.ccount_ticks_record = cpu_ll_get_cycle_count();
     }
 
-#if SOC_PM_SUPPORT_CPU_PD
-    rtc_cntl_hal_disable_cpu_retention();
-#endif
+    misc_modules_wake_prepare();
 
-#if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
-    gpio_sleep_mode_config_unapply();
-#endif
-
-#if CONFIG_MAC_BB_PD
-    mac_bb_power_up_cb_execute();
-#endif
     // re-enable UART output
     resume_uarts();
 
@@ -636,10 +624,6 @@ esp_err_t esp_light_sleep_start(void)
     }
 
     periph_inform_out_light_sleep_overhead(s_config.sleep_time_adjustment - sleep_time_overhead_in);
-
-#if SOC_PM_SUPPORT_CPU_PD
-    rtc_cntl_hal_enable_cpu_retention(s_config.cpu_pd_mem);
-#endif
 
     rtc_vddsdio_config_t vddsdio_config = rtc_vddsdio_get_config();
 
@@ -1176,11 +1160,7 @@ static uint32_t get_power_down_flags(void)
     }
 
 #if SOC_PM_SUPPORT_CPU_PD
-    if (s_config.cpu_pd_mem == NULL) {
-        s_config.pd_options[ESP_PD_DOMAIN_CPU] = ESP_PD_OPTION_ON;
-    }
-#else
-    if (s_config.pd_options[ESP_PD_DOMAIN_CPU] != ESP_PD_OPTION_ON) {
+    if (!cpu_domain_pd_allowed()) {
         s_config.pd_options[ESP_PD_DOMAIN_CPU] = ESP_PD_OPTION_ON;
     }
 #endif
