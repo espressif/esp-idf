@@ -32,7 +32,7 @@ typedef struct {
     uint32_t mdash;
 } ets_rsa_pubkey_t;
 
-bool ets_rsa_pss_verify(const ets_rsa_pubkey_t *key, const uint8_t *sig, const uint8_t *digest);
+bool ets_rsa_pss_verify(const ets_rsa_pubkey_t *key, const uint8_t *sig, const uint8_t *digest, uint8_t *verified_digest);
 
 void ets_mgf1_sha256(const uint8_t *mgfSeed, size_t seedLen, size_t maskLen, uint8_t *mask);
 
