@@ -9,6 +9,7 @@
 #include "esp_err.h"
 #include "esp_lcd_types.h"
 #include "soc/soc_caps.h"
+#include "hal/lcd_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -130,6 +131,7 @@ esp_err_t esp_lcd_new_panel_io_i2c(esp_lcd_i2c_bus_handle_t bus, const esp_lcd_p
 typedef struct {
     int dc_gpio_num; /*!< GPIO used for D/C line */
     int wr_gpio_num; /*!< GPIO used for WR line */
+    lcd_clock_source_t clk_src; /*!< Clock source for the I80 LCD peripheral */
     int data_gpio_nums[SOC_LCD_I80_BUS_WIDTH]; /*!< GPIOs used for data lines */
     size_t bus_width;          /*!< Number of data lines, 8 or 16 */
     size_t max_transfer_bytes; /*!< Maximum transfer size, this determines the length of internal DMA link */

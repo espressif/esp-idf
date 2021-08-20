@@ -18,6 +18,7 @@
 #include "esp_check.h"
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
+#include "esp_pm.h"
 #include "esp_lcd_panel_io_interface.h"
 #include "esp_lcd_panel_io.h"
 #include "esp_rom_gpio.h"
@@ -44,6 +45,7 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
 static esp_err_t panel_io_i80_del(esp_lcd_panel_io_t *io);
 static esp_err_t lcd_i80_init_dma_link(esp_lcd_i80_bus_handle_t bus);
 static void lcd_periph_trigger_quick_trans_done_event(esp_lcd_i80_bus_handle_t bus);
+static esp_err_t lcd_i80_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_clock_source_t clk_src);
 static esp_err_t lcd_i80_bus_configure_gpio(esp_lcd_i80_bus_handle_t bus, const esp_lcd_i80_bus_config_t *bus_config);
 static void lcd_i80_switch_devices(lcd_panel_io_i80_t *cur_device, lcd_panel_io_i80_t *next_device);
 static void lcd_start_transaction(esp_lcd_i80_bus_t *bus, lcd_i80_trans_descriptor_t *trans_desc);
@@ -55,6 +57,7 @@ struct esp_lcd_i80_bus_t {
     lcd_hal_context_t hal; // Hal object
     size_t bus_width;      // Number of data lines
     intr_handle_t intr;    // LCD peripheral interrupt handle
+    esp_pm_lock_handle_t pm_lock; // Power management lock
     size_t num_dma_nodes;  // Number of DMA descriptors
     uint8_t *format_buffer;  // The driver allocates an internal buffer for DMA to do data format transformer
     size_t resolution_hz;    // LCD_CLK resolution, determined by selected clock source
@@ -110,17 +113,18 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
 {
     esp_err_t ret = ESP_OK;
     esp_lcd_i80_bus_t *bus = NULL;
-    ESP_GOTO_ON_FALSE(bus_config && ret_bus, ESP_ERR_INVALID_ARG, err_arg, TAG, "invalid argument");
+    ESP_GOTO_ON_FALSE(bus_config && ret_bus, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     size_t num_dma_nodes = bus_config->max_transfer_bytes / DMA_DESCRIPTOR_BUFFER_MAX_SIZE + 1;
     // DMA descriptors must be placed in internal SRAM
     bus = heap_caps_calloc(1, sizeof(esp_lcd_i80_bus_t) + num_dma_nodes * sizeof(dma_descriptor_t), MALLOC_CAP_DMA);
-    ESP_GOTO_ON_FALSE(bus, ESP_ERR_NO_MEM, no_mem_bus, TAG, "no mem for i80 bus");
+    ESP_GOTO_ON_FALSE(bus, ESP_ERR_NO_MEM, err, TAG, "no mem for i80 bus");
     bus->num_dma_nodes = num_dma_nodes;
+    bus->bus_id = -1;
     bus->format_buffer = heap_caps_calloc(1, CONFIG_LCD_PANEL_IO_FORMAT_BUF_SIZE, MALLOC_CAP_DMA);
-    ESP_GOTO_ON_FALSE(bus->format_buffer, ESP_ERR_NO_MEM, no_mem_format, TAG, "no mem for format buffer");
+    ESP_GOTO_ON_FALSE(bus->format_buffer, ESP_ERR_NO_MEM, err, TAG, "no mem for format buffer");
     // register to platform
     int bus_id = lcd_com_register_device(LCD_COM_DEVICE_TYPE_I80, bus);
-    ESP_GOTO_ON_FALSE(bus_id >= 0, ESP_ERR_NOT_FOUND, no_slot, TAG, "no free i80 bus slot");
+    ESP_GOTO_ON_FALSE(bus_id >= 0, ESP_ERR_NOT_FOUND, err, TAG, "no free i80 bus slot");
     bus->bus_id = bus_id;
     // enable APB to access LCD registers
     periph_module_enable(lcd_periph_signals.buses[bus_id].module);
@@ -130,20 +134,21 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     lcd_ll_reset(bus->hal.dev);
     lcd_ll_fifo_reset(bus->hal.dev);
     lcd_ll_enable_clock(bus->hal.dev, true);
+    // set peripheral clock resolution
+    ret = lcd_i80_select_periph_clock(bus, bus_config->clk_src);
+    ESP_GOTO_ON_ERROR(ret, err, TAG, "select periph clock %d failed", bus_config->clk_src);
     // install interrupt service, (LCD peripheral shares the same interrupt source with Camera peripheral with different mask)
     // interrupt is disabled by default
     int isr_flags = ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED;
     ret = esp_intr_alloc_intrstatus(lcd_periph_signals.buses[bus_id].irq_id, isr_flags,
                                     (uint32_t)lcd_ll_get_interrupt_status_reg(bus->hal.dev),
                                     LCD_LL_EVENT_TRANS_DONE, lcd_default_isr_handler, bus, &bus->intr);
-    ESP_GOTO_ON_ERROR(ret, no_int, TAG, "install interrupt failed");
+    ESP_GOTO_ON_ERROR(ret, err, TAG, "install interrupt failed");
     lcd_ll_enable_interrupt(bus->hal.dev, LCD_LL_EVENT_TRANS_DONE, false); // disable all interrupts
     lcd_ll_clear_interrupt_status(bus->hal.dev, UINT32_MAX); // clear pending interrupt
     // install DMA service
     ret = lcd_i80_init_dma_link(bus);
-    ESP_GOTO_ON_ERROR(ret, no_dma, TAG, "install DMA failed");
-    // set peripheral clock resolution
-    bus->resolution_hz = lcd_com_select_periph_clock(&bus->hal);
+    ESP_GOTO_ON_ERROR(ret, err, TAG, "install DMA failed");
     // enable 8080 mode and set bus width
     lcd_ll_enable_rgb_mode(bus->hal.dev, false);
     lcd_ll_set_data_width(bus->hal.dev, bus_config->bus_width);
@@ -157,7 +162,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     lcd_periph_trigger_quick_trans_done_event(bus);
     // configure GPIO
     ret = lcd_i80_bus_configure_gpio(bus, bus_config);
-    ESP_GOTO_ON_ERROR(ret, no_gpio, TAG, "configure GPIO failed");
+    ESP_GOTO_ON_ERROR(ret, err, TAG, "configure GPIO failed");
     // fill other i80 bus runtime parameters
     LIST_INIT(&bus->device_list); // initialize device list head
     bus->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
@@ -165,20 +170,27 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     ESP_LOGD(TAG, "new i80 bus(%d) @%p, %zu dma nodes", bus_id, bus, bus->num_dma_nodes);
     return ESP_OK;
 
-no_gpio:
-    gdma_disconnect(bus->dma_chan);
-    gdma_del_channel(bus->dma_chan);
-no_dma:
-    esp_intr_free(bus->intr);
-no_int:
-    periph_module_disable(lcd_periph_signals.buses[bus_id].module);
-    lcd_com_remove_device(LCD_COM_DEVICE_TYPE_I80, bus->bus_id);
-no_slot:
-    free(bus->format_buffer);
-no_mem_format:
-    free(bus);
-no_mem_bus:
-err_arg:
+err:
+    if (bus) {
+        if (bus->intr) {
+            esp_intr_free(bus->intr);
+        }
+        if (bus->dma_chan) {
+            gdma_disconnect(bus->dma_chan);
+            gdma_del_channel(bus->dma_chan);
+        }
+        if (bus->bus_id >= 0) {
+            periph_module_disable(lcd_periph_signals.buses[bus->bus_id].module);
+            lcd_com_remove_device(LCD_COM_DEVICE_TYPE_I80, bus->bus_id);
+        }
+        if (bus->format_buffer) {
+            free(bus->format_buffer);
+        }
+        if (bus->pm_lock) {
+            esp_pm_lock_delete(bus->pm_lock);
+        }
+        free(bus);
+    }
     return ret;
 }
 
@@ -188,12 +200,15 @@ esp_err_t esp_lcd_del_i80_bus(esp_lcd_i80_bus_handle_t bus)
     ESP_GOTO_ON_FALSE(bus, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     ESP_GOTO_ON_FALSE(LIST_EMPTY(&bus->device_list), ESP_ERR_INVALID_STATE, err, TAG, "device list not empty");
     int bus_id = bus->bus_id;
+    lcd_com_remove_device(LCD_COM_DEVICE_TYPE_I80, bus_id);
+    periph_module_disable(lcd_periph_signals.buses[bus_id].module);
     gdma_disconnect(bus->dma_chan);
     gdma_del_channel(bus->dma_chan);
     esp_intr_free(bus->intr);
-    periph_module_disable(lcd_periph_signals.buses[bus_id].module);
-    lcd_com_remove_device(LCD_COM_DEVICE_TYPE_I80, bus_id);
     free(bus->format_buffer);
+    if (bus->pm_lock) {
+        esp_pm_lock_delete(bus->pm_lock);
+    }
     free(bus);
     ESP_LOGD(TAG, "del i80 bus(%d)", bus_id);
 err:
@@ -365,9 +380,17 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     trans_desc->trans_done_cb = NULL; // no callback for parameter transaction
     // mount data to DMA links
     lcd_com_mount_dma_data(bus->dma_nodes, trans_desc->data, trans_desc->data_length);
+    // increase the pm lock reference count before starting a new transaction
+    if (bus->pm_lock) {
+        esp_pm_lock_acquire(bus->pm_lock);
+    }
     lcd_start_transaction(bus, trans_desc);
     // polling the trans done event, but don't clear the event status
     while (!(lcd_ll_get_interrupt_status(bus->hal.dev) & LCD_LL_EVENT_TRANS_DONE)) {}
+    // decrease pm lock reference count
+    if (bus->pm_lock) {
+        esp_pm_lock_release(bus->pm_lock);
+    }
     return ESP_OK;
 }
 
@@ -404,6 +427,29 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     // we will go into `lcd_default_isr_handler` almost at once, because the "trans done" event is active at the moment
     esp_intr_enable(bus->intr);
     return ESP_OK;
+}
+
+static esp_err_t lcd_i80_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_clock_source_t clk_src)
+{
+    esp_err_t ret = ESP_OK;
+    lcd_ll_set_group_clock_src(bus->hal.dev, clk_src, LCD_PERIPH_CLOCK_PRE_SCALE, 1, 0);
+    switch (clk_src) {
+    case LCD_CLK_SRC_PLL160M:
+        bus->resolution_hz = 160000000 / LCD_PERIPH_CLOCK_PRE_SCALE;
+#if CONFIG_PM_ENABLE
+        ret = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "i80_bus_lcd", &bus->pm_lock);
+        ESP_RETURN_ON_ERROR(ret, TAG, "create ESP_PM_APB_FREQ_MAX lock failed");
+        ESP_LOGD(TAG, "installed ESP_PM_APB_FREQ_MAX lock");
+#endif
+        break;
+    case LCD_CLK_SRC_XTAL:
+        bus->resolution_hz = rtc_clk_xtal_freq_get() * 1000000 / LCD_PERIPH_CLOCK_PRE_SCALE;
+        break;
+    default:
+        ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG,  "unsupported clock source: %d", clk_src);
+        break;
+    }
+    return ret;
 }
 
 static esp_err_t lcd_i80_init_dma_link(esp_lcd_i80_bus_handle_t bus)
@@ -522,6 +568,10 @@ IRAM_ATTR static void lcd_default_isr_handler(void *args)
         // process finished transaction
         if (trans_desc) {
             assert(trans_desc->i80_device == cur_device && "transaction device mismatch");
+            // decrease pm lock reference count
+            if (bus->pm_lock) {
+                esp_pm_lock_release(bus->pm_lock);
+            }
             // device callback
             if (trans_desc->trans_done_cb) {
                 if (trans_desc->trans_done_cb(&cur_device->base, trans_desc->cb_user_data, NULL)) {
@@ -559,6 +609,10 @@ IRAM_ATTR static void lcd_default_isr_handler(void *args)
                 lcd_com_mount_dma_data(bus->dma_nodes, trans_desc->data, trans_desc->data_length);
                 // enable interrupt again, because the new transaction can trigger new trans done event
                 esp_intr_enable(bus->intr);
+                // increase the pm lock reference count before starting a new transaction
+                if (bus->pm_lock) {
+                    esp_pm_lock_acquire(bus->pm_lock);
+                }
                 lcd_start_transaction(bus, trans_desc);
                 break; // exit for-each loop
             }

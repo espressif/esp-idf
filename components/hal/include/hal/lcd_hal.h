@@ -24,10 +24,10 @@
 extern "C" {
 #endif
 
-#include "soc/lcd_cam_struct.h"
+typedef struct lcd_cam_dev_t *lcd_soc_handle_t;
 
 typedef struct {
-    lcd_cam_dev_t *dev;
+    lcd_soc_handle_t dev;
 } lcd_hal_context_t;
 
 void lcd_hal_init(lcd_hal_context_t *hal, int id);

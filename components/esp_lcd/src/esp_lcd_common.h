@@ -41,18 +41,6 @@ int lcd_com_register_device(lcd_com_device_type_t device_type, void *device_obj)
  * @param member_id member ID
  */
 void lcd_com_remove_device(lcd_com_device_type_t device_type, int member_id);
-
-/**
- * @brief Select clock source and return peripheral clock resolution (in Hz)
- *
- * @note The clock source selection is injected by the Kconfig system,
- *       dynamic switching peripheral clock source is not supported in driver.
- *
- * @param hal HAL object
- * @return Peripheral clock resolution, in Hz
- */
-unsigned long lcd_com_select_periph_clock(lcd_hal_context_t *hal);
-
 #endif // SOC_LCDCAM_SUPPORTED
 
 /**
