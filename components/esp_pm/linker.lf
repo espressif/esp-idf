@@ -77,3 +77,5 @@ entries:
             gpio_hal_workaround:gpio_hal_fun_pupd_restore           (noflash)
     if PM_SLP_IRAM_OPT = y && PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP = y:
         rtc_cntl_hal:rtc_cntl_hal_enable_cpu_retention (noflash)
+    if PM_SLP_IRAM_OPT = y && PM_POWER_DOWN_TAGMEM_IN_LIGHT_SLEEP = y:
+        rtc_cntl_hal:rtc_cntl_hal_enable_tagmem_retention (noflash)

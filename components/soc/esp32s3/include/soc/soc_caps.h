@@ -126,6 +126,10 @@
 
 #define SOC_RTC_CNTL_CPU_PD_RETENTION_MEM_SIZE  (SOC_RTC_CNTL_CPU_PD_REG_FILE_NUM * (SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH >> 3))
 
+/* I/D Cache tag memory retention hardware parameters */
+#define SOC_RTC_CNTL_TAGMEM_PD_DMA_BUS_WIDTH    (128)
+#define SOC_RTC_CNTL_TAGMEM_PD_DMA_ADDR_ALIGN   (SOC_RTC_CNTL_TAGMEM_PD_DMA_BUS_WIDTH >> 3)
+
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 #include "rtc_io_caps.h"
 
@@ -219,6 +223,8 @@
 #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
 
 #define SOC_PM_SUPPORT_CPU_PD           (1)
+
+#define SOC_PM_SUPPORT_TAGMEM_PD        (1)
 
 
 /*-------------------------- Flash Encryption CAPS----------------------------*/
