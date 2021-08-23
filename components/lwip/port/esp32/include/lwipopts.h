@@ -515,6 +515,49 @@
 
 /*
    ------------------------------------
+   ---------- 6LoWPAN options ----------
+   ------------------------------------
+*/
+
+#ifdef CONFIG_LWIP_LOWPAN6_SUPPORT
+
+/**
+ * LOWPAN6_DEBUG: Enable debugging for 6LoWPAN.
+ */
+#define LWIP_LOWPAN6_DEBUG_ON           CONFIG_LWIP_LOWPAN6_DEBUG_ON
+
+#if LWIP_LOWPAN6_DEBUG_ON
+#define LWIP_LOWPAN6_DEBUG              LWIP_DBG_ON
+#else
+#define LWIP_LOWPAN6_DEBUG              LWIP_DBG_OFF
+#endif
+
+/** 
+ * LWIP_LOWPAN6_DECOMPRESSION_DEBUG: enable decompression debug output
+ */
+#define LWIP_LOWPAN6_DECOM_DEBUG_ON     CONFIG_LWIP_LOWPAN6_DECOMPRESSION_DEBUG_ON
+
+#if LWIP_LOWPAN6_DECOM_DEBUG_ON
+#define LWIP_LOWPAN6_DECOMPRESSION_DEBUG LWIP_DBG_ON
+#else
+#define LWIP_LOWPAN6_DECOMPRESSION_DEBUG LWIP_DBG_OFF
+#endif
+
+/**
+ * LWIP_RFC7668_IP_UNCOMPRESSED_DEBUG: enable decompressed IP frame output debugging
+ */
+#define LWIP_LOWPAN6_UNCOMPRESSED_DEBUG_ON CONFIG_LWIP_LOWPAN6_UNCOMPRESSED_DEBUG_ON
+
+#if LWIP_LOWPAN6_UNCOMPRESSED_DEBUG_ON
+#define LWIP_RFC7668_IP_UNCOMPRESSED_DEBUG LWIP_DBG_ON
+#else
+#define LWIP_RFC7668_IP_UNCOMPRESSED_DEBUG LWIP_DBG_OFF
+#endif
+
+#endif
+
+/*
+   ------------------------------------
    ---------- Thread options ----------
    ------------------------------------
 */

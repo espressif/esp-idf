@@ -802,6 +802,41 @@ menu "LWIP"
         help
             Enable SLIP debug log output
 
+    menu "6LoWPAN"
+        config LWIP_LOWPAN6_SUPPORT
+        bool "Enable 6LoWPAN support (new/experimental)"
+        default n
+        help
+            Enable 6LoWPAN (RFC4944) and 6LoWPAN over BLE (RFC7668) stack.
+            6LoWPAN is an acronym of IPv6 over Low -Power Wireless Personal Area Networks.
+
+            6LoWPAN  support is experimental and unsupported.
+
+    config LWIP_LOWPAN6_DEBUG_ON
+        bool "Enable 6LoWPAN debug log output"
+        depends on LWIP_LOWPAN6_SUPPORT
+        default n
+        help
+            Enable 6LoWPAN debug log output
+
+    config LWIP_LOWPAN6_DECOMPRESSION_DEBUG_ON
+        bool "Enable 6LoWPAN header decompression debug log output"
+        depends on LWIP_LOWPAN6_SUPPORT && LWIP_LOWPAN6_DEBUG_ON
+        default n
+        help
+            Enable 6LoWPAN extended debug logging output during header decompression
+            6LoWPAN over BLE Only
+
+    config LWIP_LOWPAN6_UNCOMPRESSED_DEBUG_ON
+        bool "Enable 6LoWPAN uncompressed payload debug log output"
+        depends on LWIP_LOWPAN6_SUPPORT && LWIP_LOWPAN6_DEBUG_ON
+        default n
+        help
+            Enable 6LoWPAN extended debug logging from uncompressed payload
+            6LoWPAN over BLE Only
+
+    endmenu # 6LoWPAN
+
     menu "ICMP"
 
         config LWIP_ICMP

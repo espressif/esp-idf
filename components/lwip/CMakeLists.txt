@@ -55,9 +55,6 @@ set(srcs
     "lwip/src/core/ipv6/mld6.c"
     "lwip/src/core/ipv6/nd6.c"
     "lwip/src/netif/ethernet.c"
-    "lwip/src/netif/lowpan6.c"
-    "lwip/src/netif/lowpan6_ble.c"
-    "lwip/src/netif/lowpan6_common.c"
     "lwip/src/netif/slipif.c"
     "lwip/src/netif/ppp/auth.c"
     "lwip/src/netif/ppp/ccp.c"
@@ -123,6 +120,13 @@ if(CONFIG_LWIP_PPP_SUPPORT)
         "lwip/src/netif/ppp/polarssl/md4.c"
         "lwip/src/netif/ppp/polarssl/md5.c"
         "lwip/src/netif/ppp/polarssl/sha1.c")
+endif()
+
+if(CONFIG_LWIP_LOWPAN6_SUPPORT)
+    list(APPEND srcs
+        "lwip/src/netif/lowpan6_common.c"
+        "lwip/src/netif/lowpan6.c"
+        "lwip/src/netif/lowpan6_ble.c")
 endif()
 
 if(CONFIG_ETH_ENABLED)
