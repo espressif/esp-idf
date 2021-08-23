@@ -92,6 +92,19 @@ def get_subtype_as_int(ptype, subtype):
             return subtype
 
 
+ALIGNMENT = {
+    APP_TYPE: 0x10000,
+    DATA_TYPE: 0x4,
+}
+
+
+STRICT_DATA_ALIGNMENT = 0x1000
+
+
+def get_alignment_for_type(ptype):
+    return ALIGNMENT.get(ptype, ALIGNMENT[DATA_TYPE])
+
+
 quiet = False
 md5sum = True
 secure = False
@@ -161,7 +174,7 @@ class PartitionTable(list):
                     raise InputError('CSV Error: Partitions overlap. Partition at line %d sets offset 0x%x. Previous partition ends 0x%x'
                                      % (e.line_no, e.offset, last_end))
             if e.offset is None:
-                pad_to = 0x10000 if e.type == APP_TYPE else 4
+                pad_to = get_alignment_for_type(e.type)
                 if last_end % pad_to != 0:
                     last_end += pad_to - (last_end % pad_to)
                 e.offset = last_end
@@ -287,11 +300,6 @@ class PartitionTable(list):
 class PartitionDefinition(object):
     MAGIC_BYTES = b'\xAA\x50'
 
-    ALIGNMENT = {
-        APP_TYPE: 0x10000,
-        DATA_TYPE: 0x04,
-    }
-
     # dictionary maps flag name (as used in CSV flags list, property name)
     # to bit set in flags words in binary format
     FLAGS = {
@@ -388,9 +396,14 @@ class PartitionDefinition(object):
             raise ValidationError(self, 'Subtype field is not set')
         if self.offset is None:
             raise ValidationError(self, 'Offset field is not set')
-        align = self.ALIGNMENT.get(self.type, 4)
+        align = get_alignment_for_type(self.type)
         if self.offset % align:
             raise ValidationError(self, 'Offset 0x%x is not aligned to 0x%x' % (self.offset, align))
+        # The alignment requirement for non-app partition is 4 bytes, but it should be 4 kB.
+        # Print a warning for now, make it an error in IDF 5.0 (IDF-3742).
+        if self.type != APP_TYPE and self.offset % STRICT_DATA_ALIGNMENT:
+            critical('WARNING: Partition %s not aligned to 0x%x.'
+                     'This is deprecated and will be considered an error in the future release.' % (self.name, STRICT_DATA_ALIGNMENT))
         if self.size % align and secure and self.type == APP_TYPE:
             raise ValidationError(self, 'Size 0x%x is not aligned to 0x%x' % (self.size, align))
         if self.size is None:

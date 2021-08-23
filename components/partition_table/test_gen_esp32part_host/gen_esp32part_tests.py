@@ -451,6 +451,19 @@ ota_1,             0,  ota_1,          , 1M,
             self.assertIn('WARNING', sys.stderr.getvalue())
             self.assertIn('partition subtype', sys.stderr.getvalue())
 
+            sys.stderr = io.StringIO()
+            csv_3 = 'nvs, data, nvs, 0x8800, 32k'
+            gen_esp32part.PartitionTable.from_csv(csv_3).verify()
+            self.assertIn('WARNING', sys.stderr.getvalue())
+            self.assertIn('not aligned to 0x1000', sys.stderr.getvalue())
+
+            sys.stderr = io.StringIO()
+            csv_4 = 'factory, app, factory, 0x10000, 0x100100\n' \
+                    'nvs, data, nvs, , 32k'
+            gen_esp32part.PartitionTable.from_csv(csv_4).verify()
+            self.assertIn('WARNING', sys.stderr.getvalue())
+            self.assertIn('not aligned to 0x1000', sys.stderr.getvalue())
+
         finally:
             sys.stderr = sys.__stderr__
 
