@@ -391,7 +391,7 @@ class PartitionDefinition(object):
         align = self.ALIGNMENT.get(self.type, 4)
         if self.offset % align:
             raise ValidationError(self, 'Offset 0x%x is not aligned to 0x%x' % (self.offset, align))
-        if self.size % align and secure:
+        if self.size % align and secure and self.type == APP_TYPE:
             raise ValidationError(self, 'Size 0x%x is not aligned to 0x%x' % (self.size, align))
         if self.size is None:
             raise ValidationError(self, 'Size field is not set')
