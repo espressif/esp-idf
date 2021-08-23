@@ -23,8 +23,10 @@ extern "C" {
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include "hal/misc.h"
 #include "hal/wdt_types.h"
 #include "soc/rtc_cntl_periph.h"
+#include "soc/rtc_cntl_struct.h"
 #include "soc/efuse_reg.h"
 #include "esp_attr.h"
 
@@ -239,7 +241,7 @@ FORCE_INLINE_ATTR void rwdt_ll_set_chip_reset_en(rtc_cntl_dev_t* hw, bool enable
  */
 FORCE_INLINE_ATTR void rwdt_ll_set_chip_reset_width(rtc_cntl_dev_t *hw, uint32_t width)
 {
-    hw->wdt_config0.chip_reset_width = width;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->wdt_config0, chip_reset_width, width);
 }
 
 /**

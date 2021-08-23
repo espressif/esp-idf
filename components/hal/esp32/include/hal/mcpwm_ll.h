@@ -23,6 +23,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include "hal/misc.h"
 #include "soc/soc_caps.h"
 #include "soc/mcpwm_struct.h"
 #include "hal/mcpwm_types.h"
@@ -44,17 +45,12 @@ extern "C" {
 // Set/Get group clock: PWM_clk = CLK_160M / (prescale + 1)
 static inline void mcpwm_ll_group_set_clock_prescale(mcpwm_dev_t *mcpwm, int pre_scale)
 {
-    // In case the compiler optimise a 32bit instruction (e.g. s32i) into 8bit instruction (e.g. s8i, which is not allowed to access a register)
-    // We take care of the "read-modify-write" procedure by ourselves.
-    mcpwm_clk_cfg_reg_t clkcfg = mcpwm->clk_cfg;
-    clkcfg.clk_prescale = pre_scale - 1;
-    mcpwm->clk_cfg = clkcfg;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->clk_cfg, clk_prescale, pre_scale - 1);
 }
 
 static inline uint32_t mcpwm_ll_group_get_clock_prescale(mcpwm_dev_t *mcpwm)
 {
-    mcpwm_clk_cfg_reg_t clkcfg = mcpwm->clk_cfg;
-    return clkcfg.clk_prescale + 1;
+    return HAL_FORCE_READ_U32_REG_FIELD(mcpwm->clk_cfg, clk_prescale) + 1;
 }
 
 static inline void mcpwm_ll_group_enable_shadow_mode(mcpwm_dev_t *mcpwm)
@@ -272,25 +268,20 @@ static inline void mcpwm_ll_intr_enable_capture(mcpwm_dev_t *mcpwm, uint32_t cap
 
 static inline void mcpwm_ll_timer_set_clock_prescale(mcpwm_dev_t *mcpwm, int timer_id, uint32_t prescale)
 {
-    // In case the compiler optimise a 32bit instruction (e.g. s32i) into 8bit instruction (e.g. s8i, which is not allowed to access a register)
-    // We take care of the "read-modify-write" procedure by ourselves.
-    mcpwm_timer_cfg0_reg_t cfg0 = mcpwm->timer[timer_id].timer_cfg0;
-    cfg0.timer_prescale = prescale - 1;
-    mcpwm->timer[timer_id].timer_cfg0 = cfg0;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->timer[timer_id].timer_cfg0, timer_prescale, prescale - 1);
 }
 
 static inline uint32_t mcpwm_ll_timer_get_clock_prescale(mcpwm_dev_t *mcpwm, int timer_id)
 {
-    mcpwm_timer_cfg0_reg_t cfg0 = mcpwm->timer[timer_id].timer_cfg0;
-    return cfg0.timer_prescale + 1;
+    return HAL_FORCE_READ_U32_REG_FIELD(mcpwm->timer[timer_id].timer_cfg0, timer_prescale) + 1;
 }
 
 static inline void mcpwm_ll_timer_set_peak(mcpwm_dev_t *mcpwm, int timer_id, uint32_t peak, bool symmetric)
 {
     if (!symmetric) { // in asymmetric mode, period = [0,peak-1]
-        mcpwm->timer[timer_id].timer_cfg0.timer_period = peak - 1;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->timer[timer_id].timer_cfg0, timer_period, peak - 1);
     } else { // in symmetric mode, period = [0,peak-1] + [peak,1]
-        mcpwm->timer[timer_id].timer_cfg0.timer_period = peak;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->timer[timer_id].timer_cfg0, timer_period, peak);
     }
 }
 
@@ -298,10 +289,10 @@ static inline uint32_t mcpwm_ll_timer_get_peak(mcpwm_dev_t *mcpwm, int timer_id,
 {
     // asymmetric mode
     if (!symmetric) {
-        return mcpwm->timer[timer_id].timer_cfg0.timer_period + 1;
+        return HAL_FORCE_READ_U32_REG_FIELD(mcpwm->timer[timer_id].timer_cfg0, timer_period) + 1;
     }
     // symmetric mode
-    return mcpwm->timer[timer_id].timer_cfg0.timer_period;
+    return HAL_FORCE_READ_U32_REG_FIELD(mcpwm->timer[timer_id].timer_cfg0, timer_period);
 }
 
 static inline void mcpwm_ll_timer_update_period_at_once(mcpwm_dev_t *mcpwm, int timer_id)
@@ -385,7 +376,7 @@ static inline void mcpwm_ll_timer_set_execute_command(mcpwm_dev_t *mcpwm, int ti
 
 static inline uint32_t mcpwm_ll_timer_get_count_value(mcpwm_dev_t *mcpwm, int timer_id)
 {
-    return mcpwm->timer[timer_id].timer_status.timer_value;
+    return HAL_FORCE_READ_U32_REG_FIELD(mcpwm->timer[timer_id].timer_status, timer_value);
 }
 
 static inline mcpwm_timer_direction_t mcpwm_ll_timer_get_count_direction(mcpwm_dev_t *mcpwm, int timer_id)
@@ -428,7 +419,7 @@ static inline void mcpwm_ll_timer_trigger_soft_sync(mcpwm_dev_t *mcpwm, int time
 
 static inline void mcpwm_ll_timer_set_sync_phase_value(mcpwm_dev_t *mcpwm, int timer_id, uint32_t phase_value)
 {
-    mcpwm->timer[timer_id].timer_sync.timer_phase = phase_value;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->timer[timer_id].timer_sync, timer_phase, phase_value);
 }
 
 static inline void mcpwm_ll_timer_set_sync_phase_direction(mcpwm_dev_t *mcpwm, int timer_id, mcpwm_timer_direction_t direction)
@@ -515,12 +506,12 @@ static inline void mcpwm_ll_operator_enable_update_compare_on_sync(mcpwm_dev_t *
 
 static inline void mcpwm_ll_operator_set_compare_value(mcpwm_dev_t *mcpwm, int operator_id, int compare_id, uint32_t compare_value)
 {
-    mcpwm->operator[operator_id].timestamp[compare_id].gen = compare_value;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->operator[operator_id].timestamp[compare_id], gen, compare_value);
 }
 
 static inline uint32_t mcpwm_ll_operator_get_compare_value(mcpwm_dev_t *mcpwm, int operator_id, int compare_id)
 {
-    return mcpwm->operator[operator_id].timestamp[compare_id].gen;
+    return HAL_FORCE_READ_U32_REG_FIELD(mcpwm->operator[operator_id].timestamp[compare_id], gen);
 }
 
 static inline void mcpwm_ll_operator_update_action_at_once(mcpwm_dev_t *mcpwm, int operator_id)
@@ -719,22 +710,22 @@ static inline uint32_t mcpwm_ll_deadtime_get_switch_topology(mcpwm_dev_t *mcpwm,
 
 static inline void mcpwm_ll_deadtime_set_falling_delay(mcpwm_dev_t *mcpwm, int operator_id, uint32_t fed)
 {
-    mcpwm->operator[operator_id].dt_fed_cfg.dt_fed = fed - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->operator[operator_id].dt_fed_cfg, dt_fed, fed - 1);
 }
 
 static inline uint32_t mcpwm_ll_deadtime_get_falling_delay(mcpwm_dev_t *mcpwm, int operator_id)
 {
-    return mcpwm->operator[operator_id].dt_fed_cfg.dt_fed + 1;
+    return HAL_FORCE_READ_U32_REG_FIELD(mcpwm->operator[operator_id].dt_fed_cfg, dt_fed) + 1;
 }
 
 static inline void mcpwm_ll_deadtime_set_rising_delay(mcpwm_dev_t *mcpwm, int operator_id, uint32_t red)
 {
-    mcpwm->operator[operator_id].dt_red_cfg.dt_red = red - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->operator[operator_id].dt_red_cfg, dt_red, red - 1);
 }
 
 static inline uint32_t mcpwm_ll_deadtime_get_rising_delay(mcpwm_dev_t *mcpwm, int operator_id)
 {
-    return mcpwm->operator[operator_id].dt_red_cfg.dt_red + 1;
+    return HAL_FORCE_READ_U32_REG_FIELD(mcpwm->operator[operator_id].dt_red_cfg, dt_red) + 1;
 }
 
 static inline void mcpwm_ll_deadtime_update_delay_at_once(mcpwm_dev_t *mcpwm, int operator_id)
@@ -1006,12 +997,12 @@ static inline bool mcpwm_ll_capture_is_negedge(mcpwm_dev_t *mcpwm, int channel)
 
 static inline void mcpwm_ll_capture_set_prescale(mcpwm_dev_t *mcpwm, int channel, uint32_t prescale)
 {
-    mcpwm->cap_chn_cfg[channel].capn_prescale = prescale - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->cap_chn_cfg[channel], capn_prescale, prescale - 1);
 }
 
 static inline uint32_t mcpwm_ll_capture_get_prescale(mcpwm_dev_t *mcpwm, int channel)
 {
-    return mcpwm->cap_chn_cfg[channel].capn_prescale + 1;
+    return HAL_FORCE_READ_U32_REG_FIELD(mcpwm->cap_chn_cfg[channel], capn_prescale) + 1;
 }
 
 #ifdef __cplusplus

@@ -47,6 +47,7 @@ tools/ci/check_idf_version.sh
 tools/ci/check_kconfigs.py
 tools/ci/check_readme_links.py
 tools/ci/check_rules_yml.py
+tools/ci/check_soc_struct_headers.py
 tools/ci/check_tools_files_patterns.py
 tools/ci/check_type_comments.py
 tools/ci/check_ut_cmake_make.sh

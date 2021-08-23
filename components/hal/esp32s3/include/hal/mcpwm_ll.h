@@ -23,6 +23,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include "hal/misc.h"
 #include "soc/soc_caps.h"
 #include "soc/mcpwm_struct.h"
 #include "hal/mcpwm_types.h"
@@ -288,9 +289,9 @@ static inline uint32_t mcpwm_ll_timer_get_clock_prescale(mcpwm_dev_t *mcpwm, int
 static inline void mcpwm_ll_timer_set_peak(mcpwm_dev_t *mcpwm, int timer_id, uint32_t peak, bool symmetric)
 {
     if (!symmetric) { // in asymmetric mode, period = [0,peak-1]
-        mcpwm->timer[timer_id].timer_cfg0.timer_period = peak - 1;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->timer[timer_id].timer_cfg0, timer_period, peak - 1);
     } else { // in symmetric mode, period = [0,peak-1] + [peak,1]
-        mcpwm->timer[timer_id].timer_cfg0.timer_period = peak;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->timer[timer_id].timer_cfg0, timer_period, peak);
     }
 }
 
@@ -298,10 +299,10 @@ static inline uint32_t mcpwm_ll_timer_get_peak(mcpwm_dev_t *mcpwm, int timer_id,
 {
     // asymmetric mode
     if (!symmetric) {
-        return mcpwm->timer[timer_id].timer_cfg0.timer_period + 1;
+        return HAL_FORCE_READ_U32_REG_FIELD(mcpwm->timer[timer_id].timer_cfg0, timer_period) + 1;
     }
     // symmetric mode
-    return mcpwm->timer[timer_id].timer_cfg0.timer_period;
+    return HAL_FORCE_READ_U32_REG_FIELD(mcpwm->timer[timer_id].timer_cfg0, timer_period);
 }
 
 static inline void mcpwm_ll_timer_update_period_at_once(mcpwm_dev_t *mcpwm, int timer_id)
@@ -388,13 +389,16 @@ static inline uint32_t mcpwm_ll_timer_get_count_value(mcpwm_dev_t *mcpwm, int ti
     // status.value saves the "next count value", so need an extra round up here to get the current count value according to count mode
     // timer is paused
     if (mcpwm->timer[timer_id].timer_cfg1.timer_mod == 0) {
-        return mcpwm->timer[timer_id].timer_status.timer_value;
+        return HAL_FORCE_READ_U32_REG_FIELD(mcpwm->timer[timer_id].timer_status, timer_value);
     }
     if (mcpwm->timer[timer_id].timer_status.timer_direction) { // down direction
-        return (mcpwm->timer[timer_id].timer_status.timer_value + 1) % (mcpwm->timer[timer_id].timer_cfg0.timer_period + 1);
+        return (HAL_FORCE_READ_U32_REG_FIELD(mcpwm->timer[timer_id].timer_status, timer_value) + 1) %
+               (HAL_FORCE_READ_U32_REG_FIELD(mcpwm->timer[timer_id].timer_cfg0, timer_period) + 1);
     }
     // up direction
-    return (mcpwm->timer[timer_id].timer_status.timer_value + mcpwm->timer[timer_id].timer_cfg0.timer_period) % (mcpwm->timer[timer_id].timer_cfg0.timer_period + 1);
+    return (HAL_FORCE_READ_U32_REG_FIELD(mcpwm->timer[timer_id].timer_status, timer_value) +
+                HAL_FORCE_READ_U32_REG_FIELD(mcpwm->timer[timer_id].timer_cfg0, timer_period)) %
+           (HAL_FORCE_READ_U32_REG_FIELD(mcpwm->timer[timer_id].timer_cfg0, timer_period) + 1);
 }
 
 static inline mcpwm_timer_direction_t mcpwm_ll_timer_get_count_direction(mcpwm_dev_t *mcpwm, int timer_id)
@@ -437,7 +441,7 @@ static inline void mcpwm_ll_timer_trigger_soft_sync(mcpwm_dev_t *mcpwm, int time
 
 static inline void mcpwm_ll_timer_set_sync_phase_value(mcpwm_dev_t *mcpwm, int timer_id, uint32_t phase_value)
 {
-    mcpwm->timer[timer_id].timer_sync.timer_phase = phase_value;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->timer[timer_id].timer_sync, timer_phase, phase_value);
 }
 
 static inline void mcpwm_ll_timer_set_sync_phase_direction(mcpwm_dev_t *mcpwm, int timer_id, mcpwm_timer_direction_t direction)
@@ -524,12 +528,12 @@ static inline void mcpwm_ll_operator_enable_update_compare_on_sync(mcpwm_dev_t *
 
 static inline void mcpwm_ll_operator_set_compare_value(mcpwm_dev_t *mcpwm, int operator_id, int compare_id, uint32_t compare_value)
 {
-    mcpwm->operator[operator_id].timestamp[compare_id].gen = compare_value;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->operator[operator_id].timestamp[compare_id], gen, compare_value);
 }
 
 static inline uint32_t mcpwm_ll_operator_get_compare_value(mcpwm_dev_t *mcpwm, int operator_id, int compare_id)
 {
-    return mcpwm->operator[operator_id].timestamp[compare_id].gen;
+    return HAL_FORCE_READ_U32_REG_FIELD(mcpwm->operator[operator_id].timestamp[compare_id], gen);
 }
 
 static inline void mcpwm_ll_operator_update_action_at_once(mcpwm_dev_t *mcpwm, int operator_id)
@@ -728,22 +732,22 @@ static inline uint32_t mcpwm_ll_deadtime_get_switch_topology(mcpwm_dev_t *mcpwm,
 
 static inline void mcpwm_ll_deadtime_set_falling_delay(mcpwm_dev_t *mcpwm, int operator_id, uint32_t fed)
 {
-    mcpwm->operator[operator_id].dt_fed_cfg.dt_fed = fed - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->operator[operator_id].dt_fed_cfg, dt_fed, fed - 1);
 }
 
 static inline uint32_t mcpwm_ll_deadtime_get_falling_delay(mcpwm_dev_t *mcpwm, int operator_id)
 {
-    return mcpwm->operator[operator_id].dt_fed_cfg.dt_fed + 1;
+    return HAL_FORCE_READ_U32_REG_FIELD(mcpwm->operator[operator_id].dt_fed_cfg, dt_fed) + 1;
 }
 
 static inline void mcpwm_ll_deadtime_set_rising_delay(mcpwm_dev_t *mcpwm, int operator_id, uint32_t red)
 {
-    mcpwm->operator[operator_id].dt_red_cfg.dt_red = red - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->operator[operator_id].dt_red_cfg, dt_red, red - 1);
 }
 
 static inline uint32_t mcpwm_ll_deadtime_get_rising_delay(mcpwm_dev_t *mcpwm, int operator_id)
 {
-    return mcpwm->operator[operator_id].dt_red_cfg.dt_red + 1;
+    return HAL_FORCE_READ_U32_REG_FIELD(mcpwm->operator[operator_id].dt_red_cfg, dt_red) + 1;
 }
 
 static inline void mcpwm_ll_deadtime_update_delay_at_once(mcpwm_dev_t *mcpwm, int operator_id)
@@ -1015,12 +1019,12 @@ static inline bool mcpwm_ll_capture_is_negedge(mcpwm_dev_t *mcpwm, int channel)
 
 static inline void mcpwm_ll_capture_set_prescale(mcpwm_dev_t *mcpwm, int channel, uint32_t prescale)
 {
-    mcpwm->cap_chn_cfg[channel].capn_prescale = prescale - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->cap_chn_cfg[channel], capn_prescale, prescale - 1);
 }
 
 static inline uint32_t mcpwm_ll_capture_get_prescale(mcpwm_dev_t *mcpwm, int channel)
 {
-    return mcpwm->cap_chn_cfg[channel].capn_prescale + 1;
+    return HAL_FORCE_READ_U32_REG_FIELD(mcpwm->cap_chn_cfg[channel], capn_prescale) + 1;
 }
 
 #ifdef __cplusplus

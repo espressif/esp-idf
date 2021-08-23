@@ -18,9 +18,11 @@
 #include "soc/adc_periph.h"
 #include "hal/adc_types.h"
 #include "soc/apb_saradc_struct.h"
+#include "soc/sens_struct.h"
 #include "soc/apb_saradc_reg.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_cntl_reg.h"
+#include "hal/misc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -109,11 +111,11 @@ typedef struct {
 static inline void adc_ll_digi_set_fsm_time(uint32_t rst_wait, uint32_t start_wait, uint32_t standby_wait)
 {
     // Internal FSM reset wait time
-    APB_SARADC.fsm_wait.rstb_wait = rst_wait;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.fsm_wait, rstb_wait, rst_wait);
     // Internal FSM start wait time
-    APB_SARADC.fsm_wait.xpd_wait = start_wait;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.fsm_wait, xpd_wait, start_wait);
     // Internal FSM standby wait time
-    APB_SARADC.fsm_wait.standby_wait = standby_wait;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.fsm_wait, standby_wait, standby_wait);
 }
 
 /**
@@ -138,7 +140,7 @@ static inline void adc_ll_set_sample_cycle(uint32_t sample_cycle)
 static inline void adc_ll_digi_set_clk_div(uint32_t div)
 {
     /* ADC clock divided from digital controller clock clk */
-    APB_SARADC.ctrl.sar_clk_div = div;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.ctrl, sar_clk_div, div);
 }
 
 /**
@@ -149,7 +151,7 @@ static inline void adc_ll_digi_set_clk_div(uint32_t div)
  */
 static inline void adc_ll_digi_set_convert_limit_num(uint32_t meas_num)
 {
-    APB_SARADC.ctrl2.max_meas_num = meas_num;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.ctrl2, max_meas_num, meas_num);
 }
 
 /**
@@ -307,7 +309,7 @@ static inline void adc_ll_digi_trigger_disable(void)
  */
 static inline void adc_ll_digi_controller_clk_div(uint32_t div_num, uint32_t div_b, uint32_t div_a)
 {
-    APB_SARADC.apb_adc_clkm_conf.clkm_div_num = div_num;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.apb_adc_clkm_conf, clkm_div_num, div_num);
     APB_SARADC.apb_adc_clkm_conf.clkm_div_b = div_b;
     APB_SARADC.apb_adc_clkm_conf.clkm_div_a = div_a;
 }
@@ -450,7 +452,7 @@ static inline void adc_ll_digi_monitor_enable(adc_ll_num_t adc_n, bool enable)
  */
 static inline void adc_ll_digi_dma_set_eof_num(uint32_t num)
 {
-    APB_SARADC.dma_conf.apb_adc_eof_num = num;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.dma_conf, apb_adc_eof_num, num);
 }
 
 /**
@@ -765,9 +767,9 @@ static inline void adc_ll_vref_output(adc_ll_num_t adc, adc_channel_t channel, b
 static inline void adc_ll_set_sar_clk_div(adc_ll_num_t adc_n, uint32_t div)
 {
     if (adc_n == ADC_NUM_1) {
-        SENS.sar_reader1_ctrl.sar1_clk_div = div;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_reader1_ctrl, sar1_clk_div, div);
     } else { // adc_n == ADC_NUM_2
-        SENS.sar_reader2_ctrl.sar2_clk_div = div;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_reader2_ctrl, sar2_clk_div, div);
     }
 }
 
@@ -828,7 +830,7 @@ static inline void adc_ll_rtc_disable_channel(adc_ll_num_t adc_n)
 static inline void adc_ll_rtc_start_convert(adc_ll_num_t adc_n, int channel)
 {
     if (adc_n == ADC_NUM_1) {
-        while (SENS.sar_slave_addr1.meas_status != 0);
+        while (HAL_FORCE_READ_U32_REG_FIELD(SENS.sar_slave_addr1, meas_status) != 0) {}
         SENS.sar_meas1_ctrl2.meas1_start_sar = 0;
         SENS.sar_meas1_ctrl2.meas1_start_sar = 1;
     } else { // adc_n == ADC_NUM_2
@@ -867,9 +869,9 @@ static inline int adc_ll_rtc_get_convert_value(adc_ll_num_t adc_n)
 {
     int ret_val = 0;
     if (adc_n == ADC_NUM_1) {
-        ret_val = SENS.sar_meas1_ctrl2.meas1_data_sar;
+        ret_val = HAL_FORCE_READ_U32_REG_FIELD(SENS.sar_meas1_ctrl2, meas1_data_sar);
     } else { // adc_n == ADC_NUM_2
-        ret_val = SENS.sar_meas2_ctrl2.meas2_data_sar;
+        ret_val = HAL_FORCE_READ_U32_REG_FIELD(SENS.sar_meas2_ctrl2, meas2_data_sar);
     }
     return ret_val;
 }

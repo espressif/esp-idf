@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct efuse_dev_s {
     uint32_t pgm_data0;
     uint32_t pgm_data1;
     uint32_t pgm_data2;

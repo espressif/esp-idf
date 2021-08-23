@@ -19,7 +19,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct gdma_dev_s {
     struct {
         union {
             struct {

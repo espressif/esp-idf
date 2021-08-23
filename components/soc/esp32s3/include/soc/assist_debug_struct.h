@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct assist_debug_dev_s {
     union {
         struct {
             uint32_t core_0_area_dram0_0_rd        :    1;

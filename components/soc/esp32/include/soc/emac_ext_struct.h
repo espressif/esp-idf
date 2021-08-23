@@ -19,7 +19,7 @@ extern "C" {
 
 #include <stdint.h>
 
-typedef volatile struct {
+typedef volatile struct emac_ext_dev_s {
     union {
         struct {
             uint32_t div_num : 4;
