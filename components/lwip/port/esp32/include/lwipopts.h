@@ -33,9 +33,7 @@
 #define __LWIPOPTS_H__
 
 #include <stdlib.h>
-#include <time.h>
 #include <unistd.h>
-#include <sys/time.h>
 #include <sys/fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
@@ -44,6 +42,7 @@
 #include "esp_system.h"
 #include "sdkconfig.h"
 #include "netif/dhcp_state.h"
+#include "sntp/sntp_get_set_time.h"
 
 /* Enable all Espressif-only options */
 
@@ -1058,22 +1057,6 @@
  * SNTP update delay - in milliseconds
  */
 
-/*
- * Forward declarations of weak definitions from lwip's sntp.c which could
- * be redefined by user application. This is needed to provide custom definition
- * of the below macros in lwip's sntp.c.
- * Full declaration is provided in IDF's port layer in esp_sntp.h
- */
-#ifdef __cplusplus
-#define LWIP_FORWARD_DECLARE_C_CXX extern "C"
-#else
-#define LWIP_FORWARD_DECLARE_C_CXX
-#endif
-
-LWIP_FORWARD_DECLARE_C_CXX void sntp_sync_time(struct timeval *tv);
-
-LWIP_FORWARD_DECLARE_C_CXX uint32_t sntp_get_sync_interval(void);
-
 /** Set this to 1 to support DNS names (or IP address strings) to set sntp servers
  * One server address/name can be defined as default if SNTP_SERVER_DNS == 1:
  * \#define SNTP_SERVER_ADDRESS "pool.ntp.org"
@@ -1083,22 +1066,9 @@ LWIP_FORWARD_DECLARE_C_CXX uint32_t sntp_get_sync_interval(void);
 // It disables a check of SNTP_UPDATE_DELAY it is done in sntp_set_sync_interval
 #define SNTP_SUPPRESS_DELAY_CHECK
 
-#define SNTP_UPDATE_DELAY              (sntp_get_sync_interval())
-
-#define SNTP_SET_SYSTEM_TIME_US(sec, us)  \
-    do { \
-        struct timeval tv = { .tv_sec = sec, .tv_usec = us }; \
-        sntp_sync_time(&tv); \
-    } while (0);
-
-#define SNTP_GET_SYSTEM_TIME(sec, us) \
-    do { \
-        struct timeval tv = { .tv_sec = 0, .tv_usec = 0 }; \
-        gettimeofday(&tv, NULL); \
-        (sec) = tv.tv_sec;  \
-        (us) = tv.tv_usec; \
-        sntp_set_sync_status(SNTP_SYNC_STATUS_RESET); \
-    } while (0);
+#define SNTP_UPDATE_DELAY                 (sntp_get_sync_interval())
+#define SNTP_SET_SYSTEM_TIME_US(sec, us)  (sntp_set_system_time(sec, us))
+#define SNTP_GET_SYSTEM_TIME(sec, us)     (sntp_get_system_time(&(sec), &(us)))
 
 #define SOC_SEND_LOG //printf
 
