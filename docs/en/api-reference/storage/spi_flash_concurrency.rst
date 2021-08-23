@@ -24,7 +24,7 @@ There are no such constraints and impacts for flash chips on other SPI buses tha
 
 For differences between IRAM, DRAM, and flash cache, please refer to the :ref:`application memory layout <memory-layout>` documentation.
 
-.. only: not CONFIG_FREERTOS_UNICORE
+.. only:: not CONFIG_FREERTOS_UNICORE
 
     To avoid reading flash cache accidentally, when one CPU initiates a flash write or erase operation, the other CPU is put into a blocked state, and all non-IRAM-safe interrupts are disabled on all CPUs until the flash operation completes.
 
