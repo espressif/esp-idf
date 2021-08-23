@@ -75,7 +75,6 @@ static void IRAM_ATTR ipc_task(void* arg)
             if (s_ipc_wait[cpuid] == IPC_WAIT_FOR_END) {
                 xSemaphoreGive(s_ipc_ack[cpuid]);
             }
-            s_func[cpuid] = NULL;
         }
 
     }
@@ -142,6 +141,7 @@ static esp_err_t esp_ipc_call_and_wait(uint32_t cpu_id, esp_ipc_func_t func, voi
     s_ipc_wait[cpu_id] = wait_for;
     xSemaphoreGive(s_ipc_sem[cpu_id]);
     xSemaphoreTake(s_ipc_ack[cpu_id], portMAX_DELAY);
+    s_func[cpu_id] = NULL;
 #ifdef CONFIG_ESP_IPC_USES_CALLERS_PRIORITY
     xSemaphoreGive(s_ipc_mutex[cpu_id]);
 #else
