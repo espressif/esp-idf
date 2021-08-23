@@ -14,6 +14,11 @@ menu "Virtual file system"
             Disabling this option can save memory when the support for these functions
             is not required.
 
+            Note that the following functions can still be used with socket file descriptors
+            when this option is disabled:
+
+            close, read, write, ioctl, fcntl.
+
     config VFS_SUPPORT_DIR
         bool "Provide directory related functions"
         default y
