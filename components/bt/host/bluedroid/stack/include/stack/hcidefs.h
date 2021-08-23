@@ -800,7 +800,7 @@
 #define HCI_ERR_SCO_AIR_MODE                            0x1D
 #define HCI_ERR_INVALID_LMP_PARAM                       0x1E
 #define HCI_ERR_UNSPECIFIED                             0x1F
-#define HCI_ERR_UNSUPPORTED_LMP_FEATURE                 0x20
+#define HCI_ERR_UNSUPPORTED_LMP_PARAMETERS              0x20
 #define HCI_ERR_ROLE_CHANGE_NOT_ALLOWED                 0x21
 #define HCI_ERR_LMP_RESPONSE_TIMEOUT                    0x22
 #define HCI_ERR_LMP_ERR_TRANS_COLLISION                 0x23
