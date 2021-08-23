@@ -211,10 +211,10 @@ class PartitionTable(list):
 
         # print sorted duplicate partitions by name
         if len(duplicates) != 0:
-            print('A list of partitions that have the same name:')
+            critical('A list of partitions that have the same name:')
             for p in sorted(self, key=lambda x:x.name):
                 if len(duplicates.intersection([p.name])) != 0:
-                    print('%s' % (p.to_csv()))
+                    critical('%s' % (p.to_csv()))
             raise InputError('Partition names must be unique')
 
         # check for overlaps
@@ -230,12 +230,12 @@ class PartitionTable(list):
         otadata_duplicates = [p for p in self if p.type == TYPES['data'] and p.subtype == SUBTYPES[DATA_TYPE]['ota']]
         if len(otadata_duplicates) > 1:
             for p in otadata_duplicates:
-                print(p.name, p.type, p.subtype)
+                critical('%s' % (p.to_csv()))
             raise InputError('Found multiple otadata partitions. Only one partition can be defined with type="data"(1) and subtype="ota"(0).')
 
         if len(otadata_duplicates) == 1 and otadata_duplicates[0].size != 0x2000:
             p = otadata_duplicates[0]
-            print(p.name, p.type, p.subtype, p.offset, p.size)
+            critical('%s' % (p.to_csv()))
             raise InputError('otadata partition must have size = 0x2000')
 
     def flash_size(self):
