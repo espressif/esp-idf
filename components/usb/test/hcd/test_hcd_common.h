@@ -1,22 +1,14 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "hcd.h"
 #include "usb_private.h"
-#include "usb.h"
+#include "usb/usb_types_ch9.h"
 
 #define URB_CONTEXT_VAL ((void *)0xDEADBEEF)
 
@@ -109,7 +101,7 @@ void test_hcd_wait_for_disconn(hcd_port_handle_t port_hdl, bool already_disabled
  * @param dev_speed Device speed of the pipe
  * @return hcd_pipe_handle_t Pipe handle
  */
-hcd_pipe_handle_t test_hcd_pipe_alloc(hcd_port_handle_t port_hdl, const usb_desc_ep_t *ep_desc, uint8_t dev_addr, usb_speed_t dev_speed);
+hcd_pipe_handle_t test_hcd_pipe_alloc(hcd_port_handle_t port_hdl, const usb_ep_desc_t *ep_desc, uint8_t dev_addr, usb_speed_t dev_speed);
 
 /**
  * @brief Test the freeing of a pipe

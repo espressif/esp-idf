@@ -4,7 +4,13 @@ set(priv_include)
 set(priv_require)
 
 if(CONFIG_USB_OTG_SUPPORTED)
-    list(APPEND srcs "hcd.c")
+    list(APPEND srcs "hcd.c"
+                     "hub.c"
+                     "usb_host_misc.c"
+                     "usb_host.c"
+                     "usb_private.c"
+                     "usbh.c")
+    list(APPEND include "include")
     list(APPEND priv_include "private_include")
     list(APPEND priv_require "hal" "driver")
 endif()
