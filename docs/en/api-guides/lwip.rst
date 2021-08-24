@@ -358,6 +358,16 @@ The default lwIP implementation is to have these timers enabled all the time, ev
 
 To return to the default lwIP behaviour (always-on timers), disable :ref:`CONFIG_LWIP_TIMERS_ONDEMAND`.
 
+Lwip timers API
++++++++++++++++
+
+When users are not using WiFi, these APIs provide users with the ability to turn off LwIP timer to reduce power consumption.
+
+The following API functions are supported. For full details see :component_file:`lwip/lwip/src/include/lwip/timeouts.h`.
+
+- ``sys_timeouts_init()``
+- ``sys_timeouts_deinit()``
+
 Abort TCP connections when IP changes
 +++++++++++++++++++++++++++++++++++++
 
