@@ -24,8 +24,6 @@ components/wifi_provisioning/python/wifi_constants_pb2.py
 components/wifi_provisioning/python/wifi_scan_pb2.py
 components/xtensa/trax/traceparse.py
 docs/build_docs.py
-docs/conf_common.py
-docs/en/conf.py
 docs/extensions/google_analytics.py
 docs/extensions/html_redirects.py
 docs/extensions/list_filter.py

@@ -295,22 +295,6 @@ test_mkuf2:
     - cd ${IDF_PATH}/tools/test_mkuf2
     - ./test_mkuf2.py
 
-test_docs:
-  extends: .host_test_template
-  image: $ESP_IDF_DOC_ENV_IMAGE
-  variables:
-    PYTHON_VER: 3.6.13
-  artifacts:
-    when: on_failure
-    paths:
-      - docs/test/_build/*/*/*/html/*
-    expire_in: 1 week
-  script:
-    - cd ${IDF_PATH}/docs/test
-    - python -m pip install -r ${IDF_PATH}/docs/requirements.txt
-    - ./test_docs.py
-    - ./test_sphinx_idf_extensions.py
-
 test_autocomplete:
   extends: .host_test_template
   image: $CI_DOCKER_REGISTRY/linux-shells:1
