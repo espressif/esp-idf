@@ -12,6 +12,8 @@
 #include "driver/touch_pad.h"
 #include "esp_log.h"
 
+#if CONFIG_IDF_TARGET_ESP32
+
 #define TOUCH_PAD_NO_CHANGE   (-1)
 #define TOUCH_THRESH_NO_USE   (0)
 #define TOUCH_FILTER_MODE_EN  (1)
@@ -70,3 +72,5 @@ void app_main(void)
     // Start task to read values sensed by pads
     xTaskCreate(&tp_example_read_task, "touch_pad_read_task", 2048, NULL, 5, NULL);
 }
+
+#endif // CONFIG_IDF_TARGET_ESP32
