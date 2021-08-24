@@ -46,7 +46,9 @@ Limitations
 
 There are several limitations to the USB console feature. These may or may not be significant, depending on the type of application being developed, and the development workflow.
 
-1. If the application accidentally reconfigures the USB peripheral pins, or disables the USB Serial/JTAG Controller, the device will disappear from the system. After fixing the issue in the application, you will need to manually put the {IDF_TARGET_NAME} into download mode by pulling low GPIO0 and resetting the chip.
+{IDF_TARGET_BOOT_PIN:default = "GPIO0", esp32c3 = "GPIO9"}
+
+1. If the application accidentally reconfigures the USB peripheral pins, or disables the USB Serial/JTAG Controller, the device will disappear from the system. After fixing the issue in the application, you will need to manually put the {IDF_TARGET_NAME} into download mode by pulling low {IDF_TARGET_BOOT_PIN} and resetting the chip.
 
 2. If the application enters light sleep (including automatic light sleep) or deep sleep mode, USB CDC device will disappear from the system.
 
