@@ -15,6 +15,9 @@ import os.path
 
 from esp_docs.conf_docs import *  # noqa: F403,F401
 
+if os.environ.get('IDF_PATH') is None:
+    raise RuntimeError('IDF_PATH should be set, run export.sh before building docs')
+
 BT_DOCS = ['api-guides/blufi.rst',
            'api-guides/esp-ble-mesh/**',
            'api-reference/bluetooth/**']
@@ -131,7 +134,7 @@ github_repo = 'espressif/esp-idf'
 
 # context used by sphinx_idf_theme
 html_context['github_user'] = 'espressif'
-html_context['github_repo'] = 'esp-docs'
+html_context['github_repo'] = 'esp-idf'
 
 # Extra options required by sphinx_idf_theme
 project_slug = 'esp-idf'
