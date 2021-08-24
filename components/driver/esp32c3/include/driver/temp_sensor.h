@@ -54,7 +54,7 @@ esp_err_t temp_sensor_get_config(temp_sensor_config_t *tsens);
  * @brief Start temperature sensor measure.
  * @return
  *     - ESP_OK Success
- *     - ESP_ERR_INVALID_ARG
+ *     - ESP_ERR_INVALID_STATE if temperature sensor is started already.
  */
 esp_err_t temp_sensor_start(void);
 
@@ -62,6 +62,7 @@ esp_err_t temp_sensor_start(void);
  * @brief Stop temperature sensor measure.
  * @return
  *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_STATE if temperature sensor is stopped already.
  */
 esp_err_t temp_sensor_stop(void);
 

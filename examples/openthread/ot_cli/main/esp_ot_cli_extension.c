@@ -22,14 +22,10 @@
 #include "openthread/cli.h"
 
 static const otCliCommand kCommands[] = {
-#if CONFIG_OPENTHREAD_ENABLE_TCP_SOCKET_EXAMPLE
     {"tcpsockserver", esp_ot_process_tcp_server},
     {"tcpsockclient", esp_ot_process_tcp_client},
-#endif // CONFIG_OPENTHREAD_ENABLE_TCP_SOCKET_EXAMPLE
-#if CONFIG_OPENTHREAD_ENABLE_UDP_SOCKET_EXAMPLE
     {"udpsockserver", esp_ot_process_udp_server},
     {"udpsockclient", esp_ot_process_udp_client},
-#endif // CONFIG_OPENTHREAD_ENABLE_UDP_SOCKET_EXAMPLE
 };
 
 void esp_cli_custom_command_init()

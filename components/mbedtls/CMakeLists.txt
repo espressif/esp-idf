@@ -71,6 +71,20 @@ get_target_property(src_tls mbedtls SOURCES)
 list(REMOVE_ITEM src_tls net_sockets.c)
 set_property(TARGET mbedtls PROPERTY SOURCES ${src_tls})
 
+if(CONFIG_MBEDTLS_SSL_PROTO_GMTSSL1_1)
+get_target_property(src_tls mbedtls SOURCES)
+list(REMOVE_ITEM src_tls ssl_ciphersuites.c ssl_cli.c ssl_tls.c)
+set_property(TARGET mbedtls PROPERTY SOURCES ${src_tls})
+
+get_target_property(src_crypto mbedcrypto SOURCES)
+list(REMOVE_ITEM src_crypto cipher_wrap.c ecdsa.c ecp.c ecp_curves.c oid.c pk_wrap.c)
+set_property(TARGET mbedcrypto PROPERTY SOURCES ${src_crypto})
+
+get_target_property(src_x509 mbedx509 SOURCES)
+list(REMOVE_ITEM src_x509 x509_crt.c)
+set_property(TARGET mbedx509 PROPERTY SOURCES ${src_x509})
+endif()
+
 set(mbedtls_targets mbedtls mbedcrypto mbedx509)
 
 set(mbedtls_target_sources "${COMPONENT_DIR}/port/mbedtls_debug.c"

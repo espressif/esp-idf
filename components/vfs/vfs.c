@@ -37,7 +37,7 @@ static const char *TAG = "vfs";
 
 #define VFS_MAX_COUNT   8   /* max number of VFS entries (registered filesystems) */
 #define LEN_PATH_PREFIX_IGNORED SIZE_MAX /* special length value for VFS which is never recognised by open() */
-#define FD_TABLE_ENTRY_UNUSED   (fd_table_t) { .permanent = false, .vfs_index = -1, .local_fd = -1 }
+#define FD_TABLE_ENTRY_UNUSED   (fd_table_t) { .permanent = false, .has_pending_close = false, .has_pending_select = false, .vfs_index = -1, .local_fd = -1 }
 
 typedef uint8_t local_fd_t;
 _Static_assert((1 << (sizeof(local_fd_t)*8)) >= MAX_FDS, "file descriptor type too small");
@@ -47,7 +47,10 @@ _Static_assert((1 << (sizeof(vfs_index_t)*8)) >= VFS_MAX_COUNT, "VFS index type 
 _Static_assert(((vfs_index_t) -1) < 0, "vfs_index_t must be a signed type");
 
 typedef struct {
-    bool permanent;
+    bool permanent :1;
+    bool has_pending_close :1;
+    bool has_pending_select :1;
+    uint8_t _reserved :5;
     vfs_index_t vfs_index;
     local_fd_t local_fd;
 } fd_table_t;
@@ -511,7 +514,11 @@ int esp_vfs_close(struct _reent *r, int fd)
 
     _lock_acquire(&s_fd_table_lock);
     if (!s_fd_table[fd].permanent) {
-        s_fd_table[fd] = FD_TABLE_ENTRY_UNUSED;
+        if (s_fd_table[fd].has_pending_select) {
+            s_fd_table[fd].has_pending_close = true;
+        } else {
+            s_fd_table[fd] = FD_TABLE_ENTRY_UNUSED;
+        }
     }
     _lock_release(&s_fd_table_lock);
     return ret;
@@ -906,6 +913,9 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
         const bool is_socket_fd = s_fd_table[fd].permanent;
         const int vfs_index = s_fd_table[fd].vfs_index;
         const int local_fd = s_fd_table[fd].local_fd;
+        if (esp_vfs_safe_fd_isset(fd, errorfds)) {
+            s_fd_table[fd].has_pending_select = true;
+        }
         _lock_release(&s_fd_table_lock);
 
         if (vfs_index < 0) {
@@ -1034,12 +1044,20 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
     }
 
     call_end_selects(vfs_count, vfs_fds_triple, driver_args); // for VFSs for start_select was called before
+
     if (ret >= 0) {
         ret += set_global_fd_sets(vfs_fds_triple, vfs_count, readfds, writefds, errorfds);
     }
     if (sel_sem.is_sem_local && sel_sem.sem) {
         vSemaphoreDelete(sel_sem.sem);
         sel_sem.sem = NULL;
+    }
+    for (int fd = 0; fd < nfds; ++fd) {
+        _lock_acquire(&s_fd_table_lock);
+        if (s_fd_table[fd].has_pending_close) {
+            s_fd_table[fd] = FD_TABLE_ENTRY_UNUSED;
+        }
+        _lock_release(&s_fd_table_lock);
     }
     free(vfs_fds_triple);
     free(driver_args);

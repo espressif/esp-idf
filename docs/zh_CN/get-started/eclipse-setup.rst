@@ -15,3 +15,4 @@ ESP-IDF V4.0 默认采用基于 CMake 的构建系统。
 .. only:: esp32
 
      如需使用针对 GNU Make 传统构建系统的 Eclipse IDE 开发环境，请前往 :doc:`快速入门（传统 GNU Make）</get-started-legacy/index>`，查看 :doc:`Eclipse IDE 的创建和烧录指南（传统 GNU Make）</get-started-legacy/eclipse-setup>`。
+     

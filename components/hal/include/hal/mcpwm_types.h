@@ -37,7 +37,7 @@ typedef enum {
     MCPWM_TIMER_START_NO_STOP,      /*!< MCPWM timer starts couting */
     MCPWM_TIMER_START_STOP_AT_ZERO, /*!< MCPWM timer starts counting and stops when couting to zero */
     MCPWM_TIMER_START_STOP_AT_PEAK, /*!< MCPWM timer starts counting and stops when counting to peak */
-} mcpwm_timer_operate_cmd_t;
+} mcpwm_timer_execute_cmd_t;
 
 typedef enum {
     MCPWM_GEN_ACTION_KEEP,   /*!< Generator action: Keep the same level */
@@ -47,6 +47,6 @@ typedef enum {
 } mcpwm_generator_action_t;
 
 typedef enum {
-    MCPWM_FAULT_REACTION_CBC, /*!< Reaction on fault signal: recover cycle by cycle */
-    MCPWM_FAULT_REACTION_OST, /*!< Reaction on fault signal: one shot trip */
-} mcpwm_fault_reaction_t;
+    MCPWM_TRIP_TYPE_CBC, /*!< CBC trip type, shut down the operator cycle by cycle*/
+    MCPWM_TRIP_TYPE_OST, /*!< OST trip type, shut down the operator in one shot */
+} mcpwm_trip_type_t;

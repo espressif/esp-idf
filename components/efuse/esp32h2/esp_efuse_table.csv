@@ -60,7 +60,7 @@
         DIS_USB,                          EFUSE_BLK0,   45,    1,     Disable USB function
         DIS_CAN,                          EFUSE_BLK0,   46,    1,     Disable CAN function
         JTAG_SEL_ENABLE,                  EFUSE_BLK0,   47,    1,     Set this bit to enable selection between usb_to_jtag and pad_to_jtag through strapping gpio10 when both reg_dis_usb_jtag and reg_dis_pad_jtag are equal to 0.
-        SOFT_DIS_JTAG,                    EFUSE_BLK0,   48,    2,     Set these bits to disable JTAG in the soft way (odd number 1 means disable). JTAG can be enabled in HMAC module.
+        SOFT_DIS_JTAG,                    EFUSE_BLK0,   48,    3,     Set these bits to disable JTAG in the soft way (odd number 1 means disable). JTAG can be enabled in HMAC module.
         DIS_PAD_JTAG,                     EFUSE_BLK0,   51,    1,     Disable JTAG in the hard way. JTAG is disabled permanently.
         DIS_DOWNLOAD_MANUAL_ENCRYPT,      EFUSE_BLK0,   52,    1,     Disable flash encryption when in download boot modes.
         USB_DREFH,                        EFUSE_BLK0,   53,    2,     Controls single-end input threshold vrefh 1.76 V to 2 V with step of 80 mV stored in eFuse.
@@ -103,6 +103,7 @@
         FLASH_ECC_EN,                     EFUSE_BLK0,  140,    1,     Enable ECC for flash boot
         FORCE_SEND_RESUME,                EFUSE_BLK0,  141,    1,     Force ROM code to send a resume command during SPI boot
         SECURE_VERSION,                   EFUSE_BLK0,  142,   16,     Secure version for anti-rollback
+        BOOT_DISABLE_FAST_WAKE,           EFUSE_BLK0,  158,    1,     Fast verify on wake option in ROM for Secure Boot
 
     # EFUSE_RD_REPEAT_DATA4_REG #
 
@@ -115,6 +116,8 @@
     ,                                     EFUSE_BLK1,   16,    8,     Factory MAC addr [3]
     ,                                     EFUSE_BLK1,    8,    8,     Factory MAC addr [4]
     ,                                     EFUSE_BLK1,    0,    8,     Factory MAC addr [5]
+    MAC_EXT,                              EFUSE_BLK1,  123,    8,     Factory MAC addr [6]
+    ,                                     EFUSE_BLK1,  131,    8,     Factory MAC addr [7]
     SPI_PAD_CONFIG_CLK,                   EFUSE_BLK1,   48,    6,     SPI_PAD_configure CLK
     SPI_PAD_CONFIG_Q_D1,                  EFUSE_BLK1,   54,    6,     SPI_PAD_configure Q(D1)
     SPI_PAD_CONFIG_D_D0,                  EFUSE_BLK1,   60,    6,     SPI_PAD_configure D(D0)
@@ -147,6 +150,9 @@
 
 ################
 USER_DATA,                                EFUSE_BLK3,    0,  256,     User data
+USER_DATA.MAC_CUSTOM,                     EFUSE_BLK3,  200,   48,     Custom MAC
+
+################
 KEY0,                                     EFUSE_BLK4,    0,  256,     Key0 or user data
 KEY1,                                     EFUSE_BLK5,    0,  256,     Key1 or user data
 KEY2,                                     EFUSE_BLK6,    0,  256,     Key2 or user data
@@ -154,12 +160,3 @@ KEY3,                                     EFUSE_BLK7,    0,  256,     Key3 or us
 KEY4,                                     EFUSE_BLK8,    0,  256,     Key4 or user data
 KEY5,                                     EFUSE_BLK9,    0,  256,     Key5 or user data
 SYS_DATA_PART2,                           EFUSE_BLK10,   0,  256,     System configuration
-
-# AUTO CONFIG DIG&RTC DBIAS#
-################
-K_RTC_LDO,                              EFUSE_BLK1,    135,    7,      BLOCK1 K_RTC_LDO
-K_DIG_LDO,                              EFUSE_BLK1,    142,    7,      BLOCK1 K_DIG_LDO
-V_RTC_DBIAS20,                          EFUSE_BLK1,    149,    8,      BLOCK1 voltage of rtc dbias20
-V_DIG_DBIAS20,                          EFUSE_BLK1,    157,    8,      BLOCK1 voltage of digital dbias20
-DIG_DBIAS_HVT,                          EFUSE_BLK1,    165,    5,      BLOCK1 digital dbias when hvt
-THRES_HVT,                              EFUSE_BLK1,    170,    10,     BLOCK1 pvt threshold when hvt

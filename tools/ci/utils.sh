@@ -112,3 +112,13 @@ function retry_failed() {
   fi
   return $exitCode
 }
+
+function internal_pip_install() {
+    project=$1
+    package=$2
+    token_name=${3:-${BOT_TOKEN_NAME}}
+    token=${4:-${BOT_TOKEN}}
+    python=${5:-python}
+
+    $python -m pip install --index-url https://${token_name}:${token}@${GITLAB_HTTPS_HOST}/api/v4/projects/${project}/packages/pypi/simple --force-reinstall --no-deps ${package}
+}

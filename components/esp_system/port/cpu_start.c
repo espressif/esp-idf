@@ -66,6 +66,7 @@
 
 #include "spi_flash_private.h"
 #include "bootloader_flash_config.h"
+#include "bootloader_flash.h"
 #include "esp_private/crosscore_int.h"
 #include "esp_flash_encrypt.h"
 
@@ -365,6 +366,7 @@ void IRAM_ATTR call_start_cpu0(void)
     Cache_Set_IDROM_MMU_Size(cache_mmu_irom_size, CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
 #endif // CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
 
+    esp_mspi_pin_init();
 #if CONFIG_ESPTOOLPY_OCT_FLASH
     bool efuse_opflash_en = REG_GET_FIELD(EFUSE_RD_REPEAT_DATA3_REG, EFUSE_FLASH_TYPE);
     if (!efuse_opflash_en) {
@@ -413,7 +415,13 @@ void IRAM_ATTR call_start_cpu0(void)
     DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN); // stop the other core
 #elif CONFIG_IDF_TARGET_ESP32S3
     REG_CLR_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_CLKGATE_EN);
+#if SOC_APPCPU_HAS_CLOCK_GATING_BUG
+    /* The clock gating signal of the App core is invalid. We use RUNSTALL and RESETING
+       signals to ensure that the App core stops running in single-core mode. */
+    REG_SET_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RUNSTALL);
+    REG_CLR_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RESETING);
 #endif
+#endif // CONFIG_IDF_TARGET_ESP32
 #endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 #endif // SOC_CPU_CORES_NUM > 1
 
@@ -527,7 +535,7 @@ void IRAM_ATTR call_start_cpu0(void)
 
     extern void esp_rom_spiflash_attach(uint32_t, bool);
     esp_rom_spiflash_attach(esp_rom_efuse_get_flash_gpio_info(), false);
-    esp_rom_spiflash_unlock();
+    bootloader_flash_unlock();
 #else
     // This assumes that DROM is the first segment in the application binary, i.e. that we can read
     // the binary header through cache by accessing SOC_DROM_LOW address.

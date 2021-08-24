@@ -16,6 +16,7 @@ api-reference/ethernet/esp_eth                  api-reference/network/esp_eth
 api-reference/mesh/index                        api-reference/network/index
 api-reference/mesh/esp_mesh                     api-reference/network/esp_mesh
 api-reference/peripherals/can                   api-reference/peripherals/twai
+api-reference/peripherals/usb                   api-reference/peripherals/usb_device
 api-reference/wifi/index                        api-reference/network/index
 api-reference/wifi/esp_now                      api-reference/network/esp_now
 api-reference/wifi/esp_smartconfig              api-reference/network/esp_smartconfig

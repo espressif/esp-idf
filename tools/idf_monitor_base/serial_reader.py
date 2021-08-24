@@ -12,26 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import queue
 import sys
 import time
 
 import serial
 
-from .constants import TAG_SERIAL
+from .constants import CHECK_ALIVE_FLAG_TIMEOUT, MINIMAL_EN_LOW_DELAY, RECONNECT_DELAY, TAG_SERIAL
 from .output_helpers import red_print, yellow_print
 from .stoppable_thread import StoppableThread
-
-try:
-    import queue
-except ImportError:
-    import Queue as queue  # type: ignore  # noqa
 
 
 class SerialReader(StoppableThread):
     """ Read serial data from the serial port and push to the
     event queue, until stopped.
     """
-
     def __init__(self, serial_instance, event_queue):
         #  type: (serial.Serial, queue.Queue) -> None
         super(SerialReader, self).__init__()
@@ -42,7 +37,7 @@ class SerialReader(StoppableThread):
         if not hasattr(self.serial, 'cancel_read'):
             # enable timeout for checking alive flag,
             # if cancel_read not available
-            self.serial.timeout = 0.25
+            self.serial.timeout = CHECK_ALIVE_FLAG_TIMEOUT
 
     def run(self):
         #  type: () -> None
@@ -50,22 +45,24 @@ class SerialReader(StoppableThread):
             self.serial.baudrate = self.baud
             # We can come to this thread at startup or from external application line GDB.
             # If we come from GDB we would like to continue to run without reset.
-            if self.gdb_exit:
-                self.serial.rts = False
-                self.serial.dtr = True
-            else:                           # if we exit from GDB, we don't need to reset the target
-                # This sequence of DTR/RTS and open/close set the serial port to
-                # condition when GDB not make reset of the target by switching DTR/RTS.
-                self.serial.rts = True  # IO0=LOW
-                self.serial.dtr = self.serial.dtr   # usbser.sys workaround
-                self.serial.rts = False     # IO0=HIGH
-                self.serial.dtr = False
 
+            high = False
+            low = True
+
+            self.serial.dtr = low      # Non reset state
+            self.serial.rts = high     # IO0=HIGH
+            self.serial.dtr = self.serial.dtr   # usbser.sys workaround
             # Current state not reset the target!
-            self.gdb_exit = False
             self.serial.open()
-            time.sleep(0.005)  # Add a delay to meet the requirements of minimal EN low time (2ms for ESP32-C3)
-            self.serial.rts = False             # Set rts/dtr to the working state
+            if not self.gdb_exit:
+                self.serial.dtr = high     # Set dtr to reset state (affected by rts)
+                self.serial.rts = low      # Set rts/dtr to the reset state
+                self.serial.dtr = self.serial.dtr   # usbser.sys workaround
+
+                # Add a delay to meet the requirements of minimal EN low time (2ms for ESP32-C3)
+                time.sleep(MINIMAL_EN_LOW_DELAY)
+            self.gdb_exit = False
+            self.serial.rts = high             # Set rts/dtr to the working state
             self.serial.dtr = self.serial.dtr   # usbser.sys workaround
         try:
             while self.alive:
@@ -74,13 +71,13 @@ class SerialReader(StoppableThread):
                 except (serial.serialutil.SerialException, IOError) as e:
                     data = b''
                     # self.serial.open() was successful before, therefore, this is an issue related to
-                    # the disapperence of the device
+                    # the disappearance of the device
                     red_print(e)
                     yellow_print('Waiting for the device to reconnect', newline='')
                     self.serial.close()
                     while self.alive:  # so that exiting monitor works while waiting
                         try:
-                            time.sleep(0.5)
+                            time.sleep(RECONNECT_DELAY)
                             self.serial.open()
                             break  # device connected
                         except serial.serialutil.SerialException:

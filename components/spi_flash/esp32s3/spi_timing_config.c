@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <sys/param.h>
 #include "sdkconfig.h"
 #include "string.h"
 #include "esp_attr.h"
@@ -156,16 +157,13 @@ void IRAM_ATTR spi_timing_config_flash_read_data(uint8_t spi_num, uint8_t *buf, 
 #endif
 }
 
-void IRAM_ATTR spi_timing_config_psram_write_data(uint8_t spi_num, uint8_t *buf, uint32_t addr, uint32_t len)
+static void IRAM_ATTR s_psram_write_data(uint8_t spi_num, uint8_t *buf, uint32_t addr, uint32_t len)
 {
-#if CONFIG_ESPTOOLPY_OCT_FLASH
-    uint32_t cmd = OPI_PSRAM_SYNC_WRITE;
-    int dummy = OCT_PSRAM_WR_DUMMY_NUM;
-
+#if CONFIG_SPIRAM_MODE_OCT
     esp_rom_opiflash_exec_cmd(spi_num, ESP_ROM_SPIFLASH_OPI_DTR_MODE,
-                            cmd, 16,
+                            OPI_PSRAM_SYNC_WRITE, 16,
                             addr, 32,
-                            dummy,
+                            OCT_PSRAM_WR_DUMMY_NUM,
                             buf, 8 * len,
                             NULL, 0,
                             BIT(1),
@@ -175,16 +173,16 @@ void IRAM_ATTR spi_timing_config_psram_write_data(uint8_t spi_num, uint8_t *buf,
 #endif
 }
 
-void IRAM_ATTR spi_timing_config_psram_read_data(uint8_t spi_num,uint8_t *buf, uint32_t addr, uint32_t len)
+static void IRAM_ATTR s_psram_read_data(uint8_t spi_num, uint8_t *buf, uint32_t addr, uint32_t len)
 {
-#if CONFIG_ESPTOOLPY_OCT_FLASH
-    uint32_t cmd = OPI_PSRAM_SYNC_READ;
-    int dummy = OCT_PSRAM_RD_DUMMY_NUM;
-
+#if CONFIG_SPIRAM_MODE_OCT
+    for (int i = 0; i < 16; i++) {
+        REG_WRITE(SPI_MEM_W0_REG(1) + i*4, 0);
+    }
     esp_rom_opiflash_exec_cmd(spi_num, ESP_ROM_SPIFLASH_OPI_DTR_MODE,
-                            cmd, 16,
+                            OPI_PSRAM_SYNC_READ, 16,
                             addr, 32,
-                            dummy,
+                            OCT_PSRAM_RD_DUMMY_NUM,
                             NULL, 0,
                             buf, 8 * len,
                             BIT(1),
@@ -192,6 +190,31 @@ void IRAM_ATTR spi_timing_config_psram_read_data(uint8_t spi_num,uint8_t *buf, u
 #else
     abort();
 #endif
+}
+
+static void IRAM_ATTR s_psram_execution(uint8_t spi_num, uint8_t *buf, uint32_t addr, uint32_t len, bool is_read)
+{
+    while (len) {
+        uint32_t length = MIN(len, 32);
+        if (is_read) {
+            s_psram_read_data(1, buf, addr, length);
+        } else {
+            s_psram_write_data(1, buf, addr, length);
+        }
+        addr += length;
+        buf += length;
+        len -= length;
+    }
+}
+
+void IRAM_ATTR spi_timing_config_psram_write_data(uint8_t spi_num, uint8_t *buf, uint32_t addr, uint32_t len)
+{
+    s_psram_execution(spi_num, buf, addr, len, false);
+}
+
+void IRAM_ATTR spi_timing_config_psram_read_data(uint8_t spi_num, uint8_t *buf, uint32_t addr, uint32_t len)
+{
+    s_psram_execution(spi_num, buf, addr, len, true);
 }
 
 #endif //#if SPI_TIMING_FLASH_NEEDS_TUNING || SPI_TIMING_PSRAM_NEEDS_TUNING

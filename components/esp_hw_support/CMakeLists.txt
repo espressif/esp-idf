@@ -1,6 +1,5 @@
 idf_build_get_property(target IDF_TARGET)
 
-set(priv_requires efuse)
 set(requires soc)
 set(priv_requires efuse bootloader_support spi_flash)
 if(${target} STREQUAL "esp32")
@@ -17,7 +16,7 @@ if(NOT BOOTLOADER_BUILD)
                      "mac_addr.c"
                      "sleep_modes.c"
                      "regi2c_ctrl.c")
-    list(APPEND priv_requires esp_ipc)
+    list(APPEND requires esp_ipc)
 else()
     # Requires "_esp_error_check_failed()" function
     list(APPEND priv_requires "esp_system")

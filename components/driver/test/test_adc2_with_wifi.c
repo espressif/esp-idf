@@ -17,32 +17,46 @@
 #include "test_utils.h"
 #include "driver/i2s.h"
 #include "driver/gpio.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "driver/gpio.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C3)
-#include "driver/dac.h"
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3, ESP32S3)
 
 static const char* TAG = "test_adc2";
 
-#ifdef CONFIG_IDF_TARGET_ESP32
-    #define ADC_TEST_WIDTH         ADC_WIDTH_BIT_12
-    #define ADC_TEST_RESOLUTION    (4096)
-    #define ADC_TEST_DAC_RANGE     (256)
-    #define ADC_TEST_CH1           ADC2_CHANNEL_8
-    #define ADC_TEST_CH2           ADC2_CHANNEL_9
-    #define ADC_TEST_ERROR         (600)
-    #define ADC1_CHANNEL_4_IO      (32)
-    #define SAMPLE_RATE            (36000)
-    #define SAMPLE_BITS            (16)
-#elif defined CONFIG_IDF_TARGET_ESP32S2
-    #define ADC_TEST_WIDTH         ADC_WIDTH_BIT_13   //ESP32S2 only support 13 bit width
-    #define ADC_TEST_RESOLUTION    (8192)
-    #define ADC_TEST_DAC_RANGE     (210)
-    #define ADC_TEST_CH1           ADC2_CHANNEL_6
-    #define ADC_TEST_CH2           ADC2_CHANNEL_7
-    #define ADC_TEST_ERROR         (1500)
-#endif
 #define DEFAULT_SSID "TEST_SSID"
-#define DEFAULT_PWD "TEST_PASS"
+#define DEFAULT_PWD  "TEST_PASS"
+
+#if CONFIG_IDF_TARGET_ESP32
+#define ADC2_CHAN1              ADC2_CHANNEL_9
+#define ADC_WIDTH               ADC_WIDTH_BIT_12
+#define ADC_HIGH                4095
+#define ADC_ERROR_THRES         20
+#elif CONFIG_IDF_TARGET_ESP32S2
+#define ADC2_CHAN1              ADC2_CHANNEL_7
+#define ADC_WIDTH               ADC_WIDTH_BIT_13
+#define ADC_HIGH                8191
+#define ADC_ERROR_THRES         100
+#elif CONFIG_IDF_TARGET_ESP32C3
+#define ADC2_CHAN1              ADC2_CHANNEL_0
+#define ADC_WIDTH               ADC_WIDTH_BIT_12
+#define ADC_HIGH                4095
+#define ADC_ERROR_THRES         100
+#elif CONFIG_IDF_TARGET_ESP32S3
+#define ADC2_CHAN1              ADC2_CHANNEL_0
+#define ADC_WIDTH               ADC_WIDTH_BIT_12
+#define ADC_HIGH                4095
+#define ADC_ERROR_THRES         100
+#endif
+
+#define ADC_LOW                 0
+#define TEST_NUM                8
+
+#define MINUS_UNTIL_ZERO(a, b) ( ((a) > (b)) ? ((a)-(b)): 0)
+#define TIME_REMAIN(start, now, timeout) ((start) >= (now) ? MINUS_UNTIL_ZERO((timeout), (now)-(start)) : -1)
+
 
 static void wifi_event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
@@ -99,19 +113,9 @@ static int event_deinit(void)
 
 TEST_CASE("adc2 work with wifi","[adc]")
 {
-    int     read_raw;
-    int     target_value;
-
     test_case_uses_tcpip();
 
-    //adc and dac init
-    TEST_ESP_OK( dac_output_enable( DAC_CHANNEL_1 ));
-    TEST_ESP_OK( dac_output_enable( DAC_CHANNEL_2 ));
-    TEST_ESP_OK( dac_output_voltage( DAC_CHANNEL_1, 30 ));
-    TEST_ESP_OK( dac_output_voltage( DAC_CHANNEL_2, 60 ));
-    TEST_ESP_OK( adc2_config_channel_atten( ADC_TEST_CH1, ADC_ATTEN_0db ));
-    TEST_ESP_OK( adc2_config_channel_atten( ADC_TEST_CH2, ADC_ATTEN_0db ));
-    //init wifi
+    //---------------------------------WiFi init-----------------------------------//
     printf("nvs init\n");
     esp_err_t r = nvs_flash_init();
     if (r == ESP_ERR_NVS_NO_FREE_PAGES || r == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -135,52 +139,87 @@ TEST_CASE("adc2 work with wifi","[adc]")
     TEST_ESP_OK(esp_wifi_set_mode(WIFI_MODE_STA));
     TEST_ESP_OK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
 
-    //test read value
-    TEST_ESP_OK( adc2_get_raw( ADC_TEST_CH1, ADC_TEST_WIDTH, &read_raw ));
-    target_value = 30*ADC_TEST_RESOLUTION*3/ADC_TEST_DAC_RANGE; //3 = 3.3/1.1
-    printf("dac set: %d, adc read: %d (target_value: %d)\n", 30, read_raw, target_value );
-    TEST_ASSERT_INT_WITHIN( ADC_TEST_ERROR, target_value, read_raw );
-    TEST_ESP_OK( adc2_get_raw( ADC_TEST_CH2, ADC_TEST_WIDTH, &read_raw ));
-    target_value = 60*ADC_TEST_RESOLUTION*3/ADC_TEST_DAC_RANGE;
-    printf("dac set: %d, adc read: %d (target_value: %d)\n", 60, read_raw, target_value );
-    TEST_ASSERT_INT_WITHIN( ADC_TEST_ERROR, target_value, read_raw );
+    //---------------------------------ADC init-----------------------------------//
+    int read_raw;
+    int target_value;
+    gpio_num_t test_adc_io;
+    bool test_list[TEST_NUM] ={1, 1, 0, 0, 1, 0, 1, 0};
 
-    //now start wifi
-    printf("wifi start...\n");
-    TEST_ESP_OK(esp_wifi_start());
-    //test reading during wifi on
-#ifdef CONFIG_IDF_TARGET_ESP32
-    TEST_ASSERT_EQUAL( adc2_get_raw( ADC_TEST_CH1, ADC_TEST_WIDTH, &read_raw ), ESP_ERR_TIMEOUT );
-    TEST_ASSERT_EQUAL( adc2_get_raw( ADC_TEST_CH2, ADC_TEST_WIDTH, &read_raw ), ESP_ERR_TIMEOUT );
-#elif defined CONFIG_IDF_TARGET_ESP32S2
-    TEST_ASSERT_EQUAL( adc2_get_raw( ADC_TEST_CH1, ADC_TEST_WIDTH, &read_raw ), ESP_OK );
-    TEST_ASSERT_EQUAL( adc2_get_raw( ADC_TEST_CH2, ADC_TEST_WIDTH, &read_raw ), ESP_OK );
-#endif
-    //wifi stop again
-    printf("wifi stop...\n");
-    TEST_ESP_OK( esp_wifi_stop() );
+    adc2_pad_get_io_num(ADC2_CHAN1, &test_adc_io);
+    TEST_ESP_OK(adc2_config_channel_atten(ADC2_CHAN1, ADC_ATTEN_0db));
+    printf("test_adc_io is %d\n", test_adc_io);
+
+    //---------------------------------GPIO init-----------------------------------//
+    gpio_config_t gpio_cfg = {
+        .pin_bit_mask = BIT64(test_adc_io),
+        .mode = GPIO_MODE_OUTPUT,
+        //for powersave reasons, the GPIO should not be floating, select pullup
+        .pull_up_en = true,
+        .pull_down_en = false,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+    gpio_config(&gpio_cfg);
+
+    for (int i = 0; i < TEST_NUM; i++) {
+        TEST_ESP_OK(gpio_set_level(test_adc_io, test_list[i]));
+        target_value = test_list[i] ? ADC_HIGH : ADC_LOW;
+
+        /* ADC2 single read before WIFI start */
+        TEST_ESP_OK(adc2_get_raw(ADC2_CHAN1, ADC_WIDTH, &read_raw));
+        printf("Before WiFi starts, ADC read: %d (target_value: %d)\n", read_raw, target_value);
+        TEST_ASSERT_INT_WITHIN(ADC_ERROR_THRES, target_value, read_raw);
+
+        /* ADC2 single read when WIFI is on */
+        TEST_ESP_OK(esp_wifi_start());
+    #if CONFIG_IDF_TARGET_ESP32
+        TEST_ASSERT_EQUAL(adc2_get_raw(ADC2_CHAN1, ADC_WIDTH, &read_raw), ESP_ERR_TIMEOUT);
+    #elif SOC_ADC_ARBITER_SUPPORTED
+        esp_err_t ret;
+        int32_t start = xTaskGetTickCount();
+        int32_t now;
+        int32_t remain_wait_ms = 0;
+        int32_t timeout = pdMS_TO_TICKS(10);
+
+        do {
+            now = xTaskGetTickCount();
+            remain_wait_ms = pdTICKS_TO_MS(TIME_REMAIN(start, now, timeout));
+
+            ret = adc2_get_raw(ADC2_CHAN1, ADC_WIDTH, &read_raw);
+            if (ret == ESP_OK) {
+                printf("When WiFi is ON, ADC read: %d (target_value: %d)\n", read_raw, target_value);
+                TEST_ASSERT_INT_WITHIN(ADC_ERROR_THRES, target_value, read_raw);
+                break;
+            } else if (ret == ESP_ERR_INVALID_STATE) {
+                continue;
+            } else {
+                TEST_ESP_OK(ret);
+            }
+        } while (remain_wait_ms);
+    #endif
+
+        /* ADC2 single read after WIFI is off */
+        TEST_ESP_OK(esp_wifi_stop());
+        TEST_ESP_OK(adc2_get_raw(ADC2_CHAN1, ADC_WIDTH, &read_raw));
+        printf("After WiFi is OFF, ADC read: %d (target_value: %d)\n", read_raw, target_value);
+        TEST_ASSERT_INT_WITHIN(ADC_ERROR_THRES, target_value, read_raw);
+    }
+
     TEST_ESP_OK(esp_wifi_deinit());
     event_deinit();
     nvs_flash_deinit();
 
-    //test read value
-    TEST_ESP_OK( adc2_get_raw( ADC_TEST_CH1, ADC_TEST_WIDTH, &read_raw ));
-    target_value = 30*ADC_TEST_RESOLUTION*3/ADC_TEST_DAC_RANGE; //3 = 3.3/1.1
-    printf("dac set: %d, adc read: %d (target_value: %d)\n", 30, read_raw, target_value );
-    TEST_ASSERT_INT_WITHIN( ADC_TEST_ERROR, target_value, read_raw );
-    TEST_ESP_OK( adc2_get_raw( ADC_TEST_CH2, ADC_TEST_WIDTH, &read_raw ));
-    target_value = 60*ADC_TEST_RESOLUTION*3/ADC_TEST_DAC_RANGE;
-    printf("dac set: %d, adc read: %d (target_value: %d)\n", 60, read_raw, target_value );
-    TEST_ASSERT_INT_WITHIN( ADC_TEST_ERROR, target_value, read_raw );
-
-    printf("test passed...\n");
-
     TEST_IGNORE_MESSAGE("this test case is ignored due to the critical memory leak of esp_netif and event_loop.");
 }
 
-#endif
+#endif  //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3, ESP32S3)
+
 
 #ifdef CONFIG_IDF_TARGET_ESP32
+
+#define ADC1_CHANNEL_4_IO      (32)
+#define SAMPLE_RATE            (36000)
+#define SAMPLE_BITS            (16)
+
 static void i2s_adc_init(void)
 {
     i2s_config_t i2s_config = {

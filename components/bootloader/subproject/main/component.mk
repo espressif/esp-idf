@@ -10,8 +10,7 @@ LINKER_SCRIPTS := \
     $(COMPONENT_PATH)/ld/$(IDF_TARGET)/bootloader.rom.ld \
     $(IDF_PATH)/components/esp_rom/$(IDF_TARGET)/ld/$(IDF_TARGET).rom.ld \
     $(IDF_PATH)/components/esp_rom/$(IDF_TARGET)/ld/$(IDF_TARGET).rom.newlib-funcs.ld \
-    $(IDF_PATH)/components/esp_rom/$(IDF_TARGET)/ld/$(IDF_TARGET).rom.api.ld \
-    $(IDF_PATH)/components/$(IDF_TARGET)/ld/$(IDF_TARGET).peripherals.ld
+    $(IDF_PATH)/components/esp_rom/$(IDF_TARGET)/ld/$(IDF_TARGET).rom.api.ld
 
 # SPI driver patch for ROM is only needed in ESP32
 ifdef CONFIG_IDF_TARGET_ESP32

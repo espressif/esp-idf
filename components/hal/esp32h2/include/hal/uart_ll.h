@@ -58,9 +58,8 @@ typedef enum {
     UART_INTR_CMD_CHAR_DET     = (0x1 << 18),
 } uart_intr_t;
 
-static inline void uart_ll_reset_core(uart_dev_t *hw) {
-    hw->clk_conf.rst_core = 1;
-    hw->clk_conf.rst_core = 0;
+static inline void uart_ll_set_reset_core(uart_dev_t *hw, bool core_rst_en) {
+    hw->clk_conf.rst_core = core_rst_en;
 }
 
 static inline void uart_ll_sclk_enable(uart_dev_t *hw) {
@@ -889,6 +888,67 @@ static inline uint16_t uart_ll_get_rx_tout_thr(uart_dev_t *hw)
 static inline uint16_t uart_ll_max_tout_thrd(uart_dev_t *hw)
 {
     return UART_RX_TOUT_THRHD_V;
+}
+
+/**
+ * @brief  Configure the auto baudrate.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  enable Boolean marking whether the auto baudrate should be enabled or not.
+ */
+static inline void uart_ll_set_autobaud_en(uart_dev_t *hw, bool enable)
+{
+    hw->conf0.autobaud_en = enable ? 1 : 0;
+}
+
+/**
+ * @brief  Get the RXD edge count.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ */
+static inline uint32_t uart_ll_get_rxd_edge_cnt(uart_dev_t *hw)
+{
+    return hw->rxd_cnt.edge_cnt;
+}
+
+/**
+ * @brief  Get the positive pulse minimum count.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ */
+static inline uint32_t uart_ll_get_pos_pulse_cnt(uart_dev_t *hw)
+{
+    return hw->pospulse.min_cnt;
+}
+
+/**
+ * @brief  Get the negative pulse minimum count.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ */
+static inline uint32_t uart_ll_get_neg_pulse_cnt(uart_dev_t *hw)
+{
+    return hw->negpulse.min_cnt;
+}
+
+/**
+ * @brief  Get the high pulse minimum count.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ */
+static inline uint32_t uart_ll_get_high_pulse_cnt(uart_dev_t *hw)
+{
+    return hw->highpulse.min_cnt;
+}
+
+/**
+ * @brief  Get the low pulse minimum count.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ */
+static inline uint32_t uart_ll_get_low_pulse_cnt(uart_dev_t *hw)
+{
+    return hw->lowpulse.min_cnt;
 }
 
 /**

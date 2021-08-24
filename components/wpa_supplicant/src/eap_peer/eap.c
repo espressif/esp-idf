@@ -35,7 +35,7 @@
 #include "eap_peer/eap_config.h"
 #include "eap_peer/eap.h"
 #include "eap_peer/eap_tls.h"
-#include "esp_supplicant/esp_wifi_driver.h"
+#include "esp_wifi_driver.h"
 #ifdef EAP_PEER_METHOD
 #include "eap_peer/eap_methods.h"
 #endif

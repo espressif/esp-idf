@@ -1,0 +1,13 @@
+menu "FreeRTOS"
+    config FREERTOS_MAX_TASK_NAME_LEN
+        int "Maximum task name length"
+        range 1 256
+        default 16
+        help
+            Changes the maximum task name length. Each task allocated will
+            include this many bytes for a task name. Using a shorter value
+            saves a small amount of RAM, a longer value allows more complex
+            names.
+
+            For most uses, the default of 16 is OK.
+endmenu

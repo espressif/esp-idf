@@ -52,18 +52,6 @@ static inline void usb_serial_jtag_ll_ena_intr_mask(uint32_t mask)
 }
 
 /**
- * @brief  Clear the USB_SERIAL_JTAG interrupt based on the given mask.
- *
- * @param  mask The bitmap of the interrupts bits need to be cleared.
- *
- * @return None
- */
-static inline void usb_serial_jtag_ll_clr_intr_sts_mask(uint32_t mask)
-{
-    USB_SERIAL_JTAG.int_clr.val = mask;
-}
-
-/**
  * @brief  Disable the USB_SERIAL_JTAG interrupt based on the given mask.
  *
  * @param  mask The bitmap of the interrupts need to be disabled.

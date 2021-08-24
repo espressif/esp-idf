@@ -30,6 +30,7 @@
 #include "esp_ot_config.h"
 #include "esp_vfs_eventfd.h"
 #include "esp_wifi.h"
+#include "mdns.h"
 #include "nvs_flash.h"
 #include "protocol_examples_common.h"
 #include "sdkconfig.h"
@@ -109,18 +110,19 @@ static void create_config_network(otInstance *instance)
         abort();
     }
     dataset.mComponents.mIsExtendedPanIdPresent = true;
-    if (hex_string_to_binary(CONFIG_OPENTHREAD_NETWORK_MASTERKEY, dataset.mMasterKey.m8,
-                             sizeof(dataset.mMasterKey.m8)) != sizeof(dataset.mMasterKey.m8)) {
+    if (hex_string_to_binary(CONFIG_OPENTHREAD_NETWORK_MASTERKEY, dataset.mNetworkKey.m8,
+                             sizeof(dataset.mNetworkKey.m8)) != sizeof(dataset.mNetworkKey.m8)) {
         ESP_LOGE(TAG, "Cannot convert OpenThread master key. Please double-check your config.");
         abort();
     }
-    dataset.mComponents.mIsMasterKeyPresent = true;
+    dataset.mComponents.mIsNetworkKeyPresent = true;
     if (hex_string_to_binary(CONFIG_OPENTHREAD_NETWORK_PSKC, dataset.mPskc.m8, sizeof(dataset.mPskc.m8)) !=
             sizeof(dataset.mPskc.m8)) {
         ESP_LOGE(TAG, "Cannot convert OpenThread pre-shared commissioner key. Please double-check your config.");
         abort();
     }
     dataset.mComponents.mIsPskcPresent = true;
+    dataset.mComponents.mIsMeshLocalPrefixPresent = false;
     if (otDatasetSetActive(instance, &dataset) != OT_ERROR_NONE) {
         ESP_LOGE(TAG, "Failed to set OpenThread active dataset.");
         abort();
@@ -188,5 +190,7 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     ESP_ERROR_CHECK(example_connect());
     ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
+    ESP_ERROR_CHECK(mdns_init());
+    ESP_ERROR_CHECK(mdns_hostname_set("esp-ot-br"));
     xTaskCreate(ot_task_worker, "ot_br_main", 20480, xTaskGetCurrentTaskHandle(), 5, NULL);
 }

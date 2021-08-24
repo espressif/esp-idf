@@ -39,6 +39,7 @@
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "soc/spi_mem_reg.h"
 #include "esp32s3/rom/spi_flash.h"
+#include "esp32s3/rom/opi_flash.h"
 #include "esp32s3/rom/cache.h"
 #include "esp32s3/clk.h"
 #include "esp32s3/clk.h"
@@ -56,6 +57,7 @@
 #include "esp_flash.h"
 #include "esp_attr.h"
 #include "spi_flash_private.h"
+#include "bootloader_flash.h"
 
 esp_rom_spiflash_result_t IRAM_ATTR spi_flash_write_encrypted_chip(size_t dest_addr, const void *src, size_t size);
 
@@ -163,6 +165,17 @@ void IRAM_ATTR *spi_flash_malloc_internal(size_t size)
 }
 #endif
 
+void IRAM_ATTR esp_mspi_pin_init(void)
+{
+#if CONFIG_ESPTOOLPY_OCT_FLASH || CONFIG_SPIRAM_MODE_OCT
+    esp_rom_opiflash_pin_config();
+    extern void spi_timing_set_pin_drive_strength(void);
+    spi_timing_set_pin_drive_strength();
+#else
+    //Set F4R4 board pin drive strength. TODO: IDF-3663
+#endif
+}
+
 void spi_flash_init(void)
 {
     spi_flash_init_lock();
@@ -248,11 +261,8 @@ static esp_rom_spiflash_result_t IRAM_ATTR spi_flash_unlock(void)
     static bool unlocked = false;
     if (!unlocked) {
         spi_flash_guard_start();
-        esp_rom_spiflash_result_t rc = esp_rom_spiflash_unlock();
+        bootloader_flash_unlock();
         spi_flash_guard_end();
-        if (rc != ESP_ROM_SPIFLASH_RESULT_OK) {
-            return rc;
-        }
         unlocked = true;
     }
     return ESP_ROM_SPIFLASH_RESULT_OK;

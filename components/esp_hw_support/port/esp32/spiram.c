@@ -55,6 +55,10 @@ static const char* TAG = "spiram";
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
 extern uint8_t _ext_ram_bss_start, _ext_ram_bss_end;
 #endif
+#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+extern uint8_t _ext_ram_noinit_start, _ext_ram_noinit_end;
+#endif
+
 static bool spiram_inited=false;
 
 
@@ -81,15 +85,32 @@ static size_t spiram_size_usable_for_malloc(void)
 */
 bool esp_spiram_test(void)
 {
+
+#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+    const void *keepout_addr_low = (const void*)&_ext_ram_noinit_start;
+    const void *keepout_addr_high = (const void*)&_ext_ram_noinit_end;
+#else
+    const void *keepout_addr_low = 0;
+    const void *keepout_addr_high = 0;
+#endif
+
     volatile int *spiram=(volatile int*)SOC_EXTRAM_DATA_LOW;
     size_t p;
     size_t s=spiram_size_usable_for_malloc();
     int errct=0;
     int initial_err=-1;
     for (p=0; p<(s/sizeof(int)); p+=8) {
+        const void *addr = (const void *)&spiram[p];
+        if ((keepout_addr_low <= addr) && (addr < keepout_addr_high)) {
+            continue;
+        }
         spiram[p]=p^0xAAAAAAAA;
     }
     for (p=0; p<(s/sizeof(int)); p+=8) {
+        const void *addr = (const void *)&spiram[p];
+        if ((keepout_addr_low <= addr) && (addr < keepout_addr_high)) {
+            continue;
+        }
         if (spiram[p]!=(p^0xAAAAAAAA)) {
             errct++;
             if (errct==1) initial_err=p*4;
@@ -172,13 +193,20 @@ esp_err_t esp_spiram_add_to_heapalloc(void)
 {
     //Add entire external RAM region to heap allocator. Heap allocator knows the capabilities of this type of memory, so there's
     //no need to explicitly specify them.
+    intptr_t mallocable_ram_start = (intptr_t)SOC_EXTRAM_DATA_LOW;
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
-    ESP_EARLY_LOGI(TAG, "Adding pool of %dK of external SPI memory to heap allocator", (spiram_size_usable_for_malloc() - (&_ext_ram_bss_end - &_ext_ram_bss_start))/1024);
-    return heap_caps_add_region((intptr_t)&_ext_ram_bss_end, (intptr_t)SOC_EXTRAM_DATA_LOW + spiram_size_usable_for_malloc()-1);
-#else
-    ESP_EARLY_LOGI(TAG, "Adding pool of %dK of external SPI memory to heap allocator", spiram_size_usable_for_malloc()/1024);
-    return heap_caps_add_region((intptr_t)SOC_EXTRAM_DATA_LOW, (intptr_t)SOC_EXTRAM_DATA_LOW + spiram_size_usable_for_malloc()-1);
+    if (mallocable_ram_start < (intptr_t)&_ext_ram_bss_end) {
+        mallocable_ram_start = (intptr_t)&_ext_ram_bss_end;
+    }
 #endif
+#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+    if (mallocable_ram_start < (intptr_t)&_ext_ram_noinit_end) {
+        mallocable_ram_start = (intptr_t)&_ext_ram_noinit_end;
+    }
+#endif
+    intptr_t mallocable_ram_end = (intptr_t)SOC_EXTRAM_DATA_LOW + spiram_size_usable_for_malloc() - 1;
+    ESP_EARLY_LOGI(TAG, "Adding pool of %dK of external SPI memory to heap allocator", (mallocable_ram_end - mallocable_ram_start)/1024);
+    return heap_caps_add_region(mallocable_ram_start, mallocable_ram_end);
 }
 
 

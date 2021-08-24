@@ -24,5 +24,3 @@
 	windows-setup-scratch
 	linux-setup-scratch
 	macos-setup-scratch
-
-

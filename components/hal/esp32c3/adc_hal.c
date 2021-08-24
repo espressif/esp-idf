@@ -142,24 +142,3 @@ void adc_hal_digi_monitor_enable(adc_digi_monitor_idx_t mon_idx, bool enable)
     s_monitor_enabled[mon_idx] = enable;
     update_monitor(mon_idx);
 }
-
-/*---------------------------------------------------------------
-                    Common setting
----------------------------------------------------------------*/
-
-/**
- * Config ADC2 module arbiter.
- * The arbiter is to improve the use efficiency of ADC2. After the control right is robbed by the high priority,
- * the low priority controller will read the invalid ADC2 data, and the validity of the data can be judged by the flag bit in the data.
- *
- * @note Only ADC2 support arbiter.
- * @note The arbiter's working clock is APB_CLK. When the APB_CLK clock drops below 8 MHz, the arbiter must be in shield mode.
- * @note Default priority: Wi-Fi > RTC > Digital;
- *
- * @param config Refer to `adc_arbiter_t`.
- */
-void adc_hal_arbiter_config(adc_arbiter_t *config)
-{
-    adc_ll_set_arbiter_work_mode(config->mode);
-    adc_ll_set_arbiter_priority(config->rtc_pri, config->dig_pri, config->pwdet_pri);
-}

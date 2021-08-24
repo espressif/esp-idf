@@ -275,6 +275,7 @@ macro(__component_add_sources sources)
                 endif()
 
                 file(GLOB dir_sources "${abs_dir}/*.c" "${abs_dir}/*.cpp" "${abs_dir}/*.S")
+                list(SORT dir_sources)
 
                 if(dir_sources)
                     foreach(src ${dir_sources})
@@ -530,7 +531,7 @@ endfunction()
 function(idf_component_mock)
     set(options)
     set(single_value)
-    set(multi_value MOCK_HEADER_FILES INCLUDE_DIRS)
+    set(multi_value MOCK_HEADER_FILES INCLUDE_DIRS REQUIRES)
     cmake_parse_arguments(_ "${options}" "${single_value}" "${multi_value}" ${ARGN})
 
     list(APPEND __REQUIRES "cmock")
@@ -555,13 +556,25 @@ function(idf_component_mock)
                         INCLUDE_DIRS ${__INCLUDE_DIRS}
                         REQUIRES ${__REQUIRES})
 
-    execute_process(COMMAND ${CMAKE_COMMAND} -E env "UNITY_DIR=${IDF_PATH}/components/unity/unity"
+    add_custom_command(
+        OUTPUT ruby_found SYMBOLIC
+        COMMAND "ruby" "-v"
+        COMMENT "Try to find ruby. If this fails, you need to install ruby"
+    )
+
+    # This command builds the mocks.
+    # First, environment variable UNITY_DIR is set. This is necessary to prevent unity from looking in its own submodule
+    # which doesn't work in our CI yet...
+    # The rest is a straight forward call to cmock.rb, consult cmock's documentation for more information.
+    add_custom_command(
+        OUTPUT ${MOCK_GENERATED_SRCS} ${MOCK_GENERATED_HEADERS}
+        DEPENDS ruby_found
+        COMMAND ${CMAKE_COMMAND} -E env "UNITY_DIR=${IDF_PATH}/components/unity/unity"
             ruby
             ${CMOCK_DIR}/lib/cmock.rb
             -o${CMAKE_CURRENT_SOURCE_DIR}/mock/mock_config.yaml
             ${__MOCK_HEADER_FILES}
-            WORKING_DIRECTORY ${MOCK_GEN_DIR}
-            RESULT_VARIABLE cmock_result)
+      )
 endfunction()
 
 #

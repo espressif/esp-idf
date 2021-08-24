@@ -50,16 +50,13 @@
 #define MB_TIMER_DIVIDER        ((TIMER_BASE_CLK / 1000000UL) * MB_TICK_TIME_US - 1) // divider for 50uS
 #define MB_TIMER_WITH_RELOAD    (1)
 
-// Timer group and timer number to measure time (configurable in KConfig)
-#define MB_TIMER_INDEX          (CONFIG_FMB_TIMER_INDEX)
-#define MB_TIMER_GROUP          (CONFIG_FMB_TIMER_GROUP)
-
 /* ----------------------- Variables ----------------------------------------*/
 static USHORT usT35TimeOut50us;
 
-static const USHORT usTimerIndex = MB_TIMER_INDEX;      // Initialize Modbus Timer index used by stack,
-static const USHORT usTimerGroupIndex = MB_TIMER_GROUP; // Timer group index used by stack
-static timer_isr_handle_t xTimerIntHandle;              // Timer interrupt handle
+// Initialize Modbus Timer group and index used by stack
+static const USHORT usTimerIndex = CONFIG_FMB_MASTER_TIMER_INDEX;
+static const USHORT usTimerGroupIndex = CONFIG_FMB_MASTER_TIMER_GROUP;
+static timer_isr_handle_t xTimerIntHandle;  // Timer interrupt handle
 
 /* ----------------------- static functions ---------------------------------*/
 static void IRAM_ATTR vTimerGroupIsr(void *param)
@@ -193,7 +190,6 @@ vMBMasterPortTimersDisable()
 
 void vMBMasterPortTimerClose(void)
 {
-    ESP_ERROR_CHECK(timer_pause(usTimerGroupIndex, usTimerIndex));
-    ESP_ERROR_CHECK(timer_disable_intr(usTimerGroupIndex, usTimerIndex));
+    ESP_ERROR_CHECK(timer_deinit(usTimerGroupIndex, usTimerIndex));
     ESP_ERROR_CHECK(esp_intr_free(xTimerIntHandle));
 }

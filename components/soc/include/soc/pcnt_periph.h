@@ -1,4 +1,4 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2019-2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,12 +27,14 @@ extern "C" {
 typedef struct {
     struct {
         struct {
-            const uint32_t pulse_sig;
-            const uint32_t control_sig;
-        } channels[SOC_PCNT_UNIT_CHANNEL_NUM];
-    } units[SOC_PCNT_UNIT_NUM];
-    const uint32_t irq;
-    const periph_module_t module;
+            struct {
+                const uint32_t pulse_sig;
+                const uint32_t control_sig;
+            } channels[SOC_PCNT_CHANNELS_PER_UNIT];
+        } units[SOC_PCNT_UNITS_PER_GROUP];
+        const uint32_t irq;
+        const periph_module_t module;
+    } groups[SOC_PCNT_GROUPS];
 } pcnt_signal_conn_t;
 
 extern const pcnt_signal_conn_t pcnt_periph_signals;

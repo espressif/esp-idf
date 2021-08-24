@@ -65,7 +65,10 @@ esp_err_t spi_flash_hal_device_config(spi_flash_host_inst_t *host)
         spi_flash_hal_disable_auto_resume_mode(host);
     }
 #endif //SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
+#else
+    gpspi_flash_ll_set_hold_pol(dev, 1);
 #endif //GPSPI_BUILD
+
     return ESP_OK;
 }
 
@@ -93,26 +96,6 @@ esp_err_t spi_flash_hal_configure_host_io_mode(
     if (!SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(host_id) && io_mode > SPI_FLASH_FASTRD) {
         return ESP_ERR_NOT_SUPPORTED;
     }
-
-#if CONFIG_SPI_FLASH_ROM_IMPL && CONFIG_IDF_TARGET_ESP32S3
-    /*
-     * In S3 ROM, extra bits than 24-bit are used to indicate requirements of M7-M0:
-     * - 24: normal transactions
-     * - 28: 24bit DIO + conf bits (M7-M0 excluded from dummy_bitlen)
-     * - 32: 24bit QIO + conf bits (M7-M0 excluded from dummy_bitlen)
-
-     * Detect requirements for the conf bits by the address len, and modify the length to normal
-     * case (addr_bitlen = 24, dummy_bitlen includes M7-M0) as other chip versions use.
-     */
-    int m70_bits = addr_bitlen - 24;
-    if (m70_bits) {
-        HAL_ASSERT(io_mode == SPI_FLASH_DIO || io_mode == SPI_FLASH_QIO);
-        conf_required = true;
-        addr_bitlen -= m70_bits;
-        int line_width = (io_mode == SPI_FLASH_DIO? 2: 4);
-        dummy_cyclelen_base += m70_bits / line_width;
-    }
-#endif //CONFIG_SPI_FLASH_ROM_IMPL
 
 #if SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT
     // The CONTROL_DUMMY_OUTPUT feature is used to control M7-M0 bits.

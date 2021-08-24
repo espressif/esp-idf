@@ -61,7 +61,7 @@ API Reference
 
     1. This repository provides for automatic update of API reference documentation using :doc:`code markup retrieved by Doxygen from header files <../contribute/documenting-code>`.
 
-    1. Update is done on each documentation build by invoking Sphinx extension :idf_file:`docs/idf_extensions/run_doxygen.py` for all header files listed in the ``INPUT`` statement of :idf_file:`docs/doxygen/Doxyfile_common`.
+    1. Update is done on each documentation build by invoking Sphinx extension :`esp_extensions/run_doxygen.py` for all header files listed in the ``INPUT`` statement of :idf_file:`docs/doxygen/Doxyfile`.
 
     1. Each line of the ``INPUT`` statement  (other than a comment that begins with ``##``) contains a path to header file ``*.h`` that will be used to generate corresponding ``*.inc`` files::
 
@@ -94,10 +94,10 @@ API Reference
 
        See `Breathe documentation <https://breathe.readthedocs.io/en/latest/directives.html>`_ for additional information.
 
-       To provide a link to header file, use the :ref:`link custom role <link-custom-roles>` as follows::
+       To provide a link to header file, use the `link custom role` directive as follows::
 
        * :component_file:`path_to/header_file.h`
 
-    1. In any case, to generate API reference, the file :idf_file:`docs/doxygen/Doxyfile_common` should be updated with paths to ``*.h`` headers that are being documented.
+    1. In any case, to generate API reference, the file :idf_file:`docs/doxygen/Doxyfile` should be updated with paths to ``*.h`` headers that are being documented.
 
     1. When changes are committed and documentation is build, check how this section has been rendered. :doc:`Correct annotations <../contribute/documenting-code>` in respective header files, if required.

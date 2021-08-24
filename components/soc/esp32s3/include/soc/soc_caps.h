@@ -15,17 +15,22 @@
 #define SOC_CPU_CORES_NUM               2
 #define SOC_CACHE_SUPPORT_WRAP          1
 #define SOC_ULP_SUPPORTED               1
+#define SOC_USB_OTG_SUPPORTED           1
 #define SOC_RTC_SLOW_MEM_SUPPORTED      1
 #define SOC_CCOMP_TIMER_SUPPORTED       1
 #define SOC_DIG_SIGN_SUPPORTED          0
-#define SOC_HMAC_SUPPORTED              0
+#define SOC_HMAC_SUPPORTED              1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
+#define SOC_SUPPORTS_SECURE_DL_MODE     1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS 3
 #define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS 1
 #define SOC_SDMMC_HOST_SUPPORTED        1
 #define SOC_FLASH_ENCRYPTION_XTS_AES      1
 #define SOC_FLASH_ENCRYPTION_XTS_AES_256 1
+#define SOC_PSRAM_DMA_CAPABLE           1
 
+/*-------------------------- SOC CAPS ----------------------------------------*/
+#define SOC_APPCPU_HAS_CLOCK_GATING_BUG (1)
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
 #define SOC_ADC_PERIPH_NUM              (2)
@@ -33,7 +38,10 @@
 #define SOC_ADC_MAX_CHANNEL_NUM         (10)
 #define SOC_ADC_MAX_BITWIDTH            (12)
 #define SOC_ADC_SUPPORT_RTC_CTRL        (1)
+#define SOC_ADC_ARBITER_SUPPORTED       (1)
 
+/*-------------------------- APB BACKUP DMA CAPS -------------------------------*/
+#define SOC_APB_BACKUP_DMA              (1)
 
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 #include "brownout_caps.h"
@@ -58,7 +66,12 @@
 #include "i2c_caps.h"
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
-#include "i2s_caps.h"
+#define SOC_I2S_NUM                 (2)
+#define SOC_I2S_SUPPORTS_PCM        (1)
+#define SOC_I2S_SUPPORTS_PDM_TX     (1)
+#define SOC_I2S_SUPPORTS_PDM_RX     (1)
+#define SOC_I2S_SUPPORTS_PDM_CODEC  (1)
+#define SOC_I2S_SUPPORTS_TDM        (1)
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 #include "ledc_caps.h"
@@ -69,19 +82,21 @@
 #define SOC_MCPWM_OPERATORS_PER_GROUP        (3)    ///< The number of operators that each group has
 #define SOC_MCPWM_COMPARATORS_PER_OPERATOR   (2)    ///< The number of comparators that each operator has
 #define SOC_MCPWM_GENERATORS_PER_OPERATOR    (2)    ///< The number of generators that each operator has
-#define SOC_MCPWM_FAULT_DETECTORS_PER_GROUP  (3)    ///< The number of fault signal detectors that each group has
+#define SOC_MCPWM_TRIGGERS_PER_OPERATOR      (2)    ///< The number of triggers that each operator has
+#define SOC_MCPWM_GPIO_FAULTS_PER_GROUP      (3)    ///< The number of fault signal detectors that each group has
 #define SOC_MCPWM_CAPTURE_TIMERS_PER_GROUP   (1)    ///< The number of capture timers that each group has
 #define SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER (3)    ///< The number of capture channels that each capture timer has
-#define SOC_MCPWM_EXT_SYNCERS_PER_GROUP      (3)    ///< The number of external syncers that each group has
+#define SOC_MCPWM_GPIO_SYNCHROS_PER_GROUP    (3)    ///< The number of GPIO synchros that each group has
 #define SOC_MCPWM_BASE_CLK_HZ       (160000000ULL)  ///< Base Clock frequency of 160MHz
 
 /*-------------------------- MPU CAPS ----------------------------------------*/
 #include "mpu_caps.h"
 
 /*-------------------------- PCNT CAPS ---------------------------------------*/
-#define SOC_PCNT_PORT_NUM         (1)
-#define SOC_PCNT_UNIT_NUM         (4)
-#define SOC_PCNT_UNIT_CHANNEL_NUM (2)
+#define SOC_PCNT_GROUPS               (1)
+#define SOC_PCNT_UNITS_PER_GROUP      (4)
+#define SOC_PCNT_CHANNELS_PER_UNIT    (2)
+#define SOC_PCNT_THRES_POINT_PER_UNIT (2)
 
 /*-------------------------- RMT CAPS ----------------------------------------*/
 #define SOC_RMT_GROUPS                  (1)  /*!< One RMT group */
@@ -113,7 +128,24 @@
 #define SOC_SIGMADELTA_CHANNEL_NUM (8) // 8 channels
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
-#include "spi_caps.h"
+#define SOC_SPI_PERIPH_NUM                  3
+#define SOC_SPI_DMA_CHAN_NUM                3
+#define SOC_SPI_PERIPH_CS_NUM(i)            3
+#define SOC_SPI_MAXIMUM_BUFFER_SIZE         64
+#define SOC_SPI_SUPPORT_DDRCLK              1
+#define SOC_SPI_SLAVE_SUPPORT_SEG_TRANS     1
+#define SOC_SPI_SUPPORT_CD_SIG              1
+#define SOC_SPI_SUPPORT_CONTINUOUS_TRANS    1
+#define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1
+
+// Peripheral supports DIO, DOUT, QIO, or QOUT
+#define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(host_id)  ({(void)host_id; 1;})
+
+// Peripheral supports output given level during its "dummy phase"
+#define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT 1
+#define SOC_MEMSPI_IS_INDEPENDENT                   1
+#define SOC_SPI_MAX_PRE_DIVIDER                     16
+#define SOC_SPI_SUPPORT_OCT                         1
 
 /*-------------------------- SPIRAM CAPS ----------------------------------------*/
 #define SOC_SPIRAM_SUPPORTED            1

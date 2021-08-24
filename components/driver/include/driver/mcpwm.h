@@ -11,7 +11,6 @@
 #include "esp_err.h"
 #include "soc/soc.h"
 #include "driver/gpio.h"
-#include "driver/periph_ctrl.h"
 #include "esp_intr_alloc.h"
 #include "hal/mcpwm_types.h"
 
@@ -46,8 +45,7 @@ typedef enum {
 } mcpwm_io_signals_t;
 
 /**
- * @brief MCPWM pin number for
- *
+ * @brief pin number for MCPWM
  */
 typedef struct {
     int mcpwm0a_out_num;       /*!<MCPWM0A out pin*/
@@ -71,9 +69,9 @@ typedef struct {
  * @brief Select MCPWM unit
  */
 typedef enum {
-    MCPWM_UNIT_0 = 0,  /*!<MCPWM unit0 selected*/
-    MCPWM_UNIT_1,      /*!<MCPWM unit1 selected*/
-    MCPWM_UNIT_MAX,    /*!<Num of MCPWM units on ESP32*/
+    MCPWM_UNIT_0,   /*!<MCPWM unit0 selected*/
+    MCPWM_UNIT_1,   /*!<MCPWM unit1 selected*/
+    MCPWM_UNIT_MAX, /*!<Max number of MCPWM units*/
 } mcpwm_unit_t;
 
 _Static_assert(MCPWM_UNIT_MAX == SOC_MCPWM_GROUPS, "MCPWM unit number not equal to chip capabilities");
@@ -82,19 +80,19 @@ _Static_assert(MCPWM_UNIT_MAX == SOC_MCPWM_GROUPS, "MCPWM unit number not equal 
  * @brief Select MCPWM timer
  */
 typedef enum {
-    MCPWM_TIMER_0 = 0,  /*!<Select MCPWM timer0*/
-    MCPWM_TIMER_1,      /*!<Select MCPWM timer1*/
-    MCPWM_TIMER_2,      /*!<Select MCPWM timer2*/
-    MCPWM_TIMER_MAX,    /*!<Num of MCPWM timers on ESP32*/
+    MCPWM_TIMER_0,   /*!<Select MCPWM timer0*/
+    MCPWM_TIMER_1,   /*!<Select MCPWM timer1*/
+    MCPWM_TIMER_2,   /*!<Select MCPWM timer2*/
+    MCPWM_TIMER_MAX, /*!<Max number of timers in a unit*/
 } mcpwm_timer_t;
 
 /**
  * @brief Select MCPWM operator
  */
 typedef enum {
-    MCPWM_GEN_A = 0,  /*!<Select MCPWMXA, where 'X' is operator number*/
-    MCPWM_GEN_B,      /*!<Select MCPWMXB, where 'X' is operator number*/
-    MCPWM_GEN_MAX,    /*!<Num of generators to each operator of MCPWM*/
+    MCPWM_GEN_A,   /*!<Select MCPWMXA, where 'X' is operator number*/
+    MCPWM_GEN_B,   /*!<Select MCPWMXB, where 'X' is operator number*/
+    MCPWM_GEN_MAX, /*!<Num of generators to each operator of MCPWM*/
 } mcpwm_generator_t;
 
 //definitions and macros to be back-compatible before IDFv4.1
@@ -107,25 +105,25 @@ typedef mcpwm_generator_t mcpwm_operator_t; ///< @deprecated
  * @brief MCPWM carrier oneshot mode, in this mode the width of the first pulse of carrier can be programmed
  */
 typedef enum {
-    MCPWM_ONESHOT_MODE_DIS = 0,  /*!<Enable oneshot mode*/
-    MCPWM_ONESHOT_MODE_EN,       /*!<Disable oneshot mode*/
+    MCPWM_ONESHOT_MODE_DIS, /*!<Enable oneshot mode*/
+    MCPWM_ONESHOT_MODE_EN,  /*!<Disable oneshot mode*/
 } mcpwm_carrier_os_t;
 
 /**
  * @brief MCPWM carrier output inversion, high frequency carrier signal active with MCPWM signal is high
  */
 typedef enum {
-    MCPWM_CARRIER_OUT_IVT_DIS = 0,  /*!<Enable  carrier output inversion*/
-    MCPWM_CARRIER_OUT_IVT_EN,       /*!<Disable carrier output inversion*/
+    MCPWM_CARRIER_OUT_IVT_DIS, /*!<Enable  carrier output inversion*/
+    MCPWM_CARRIER_OUT_IVT_EN,  /*!<Disable carrier output inversion*/
 } mcpwm_carrier_out_ivt_t;
 
 /**
  * @brief MCPWM select fault signal input
  */
 typedef enum {
-    MCPWM_SELECT_F0 = 0,  /*!<Select F0 as input*/
-    MCPWM_SELECT_F1,      /*!<Select F1 as input*/
-    MCPWM_SELECT_F2,      /*!<Select F2 as input*/
+    MCPWM_SELECT_F0, /*!<Select F0 as input*/
+    MCPWM_SELECT_F1, /*!<Select F1 as input*/
+    MCPWM_SELECT_F2, /*!<Select F2 as input*/
 } mcpwm_fault_signal_t;
 
 /**
@@ -141,8 +139,8 @@ typedef enum {
  * @brief MCPWM select triggering level of fault signal
  */
 typedef enum {
-    MCPWM_LOW_LEVEL_TGR = 0,  /*!<Fault condition occurs when fault input signal goes from high to low, currently not supported*/
-    MCPWM_HIGH_LEVEL_TGR,     /*!<Fault condition occurs when fault input signal goes low to high*/
+    MCPWM_LOW_LEVEL_TGR,  /*!<Fault condition occurs when fault input signal goes from high to low, currently not supported*/
+    MCPWM_HIGH_LEVEL_TGR, /*!<Fault condition occurs when fault input signal goes low to high*/
 } mcpwm_fault_input_level_t;
 
 /**
@@ -153,6 +151,16 @@ typedef enum {
     MCPWM_POS_EDGE = BIT(1),           /*!<Capture the positive edge*/
     MCPWM_BOTH_EDGE = BIT(1) | BIT(0), /*!<Capture both edges*/
 } mcpwm_capture_on_edge_t;
+
+/**
+ * @brief Interrupt masks for MCPWM capture
+ */
+__attribute__ ((deprecated("please use callback function to avoid directly accessing registers")))
+typedef enum {
+    MCPWM_LL_INTR_CAP0 = BIT(27), ///< Capture 0 happened
+    MCPWM_LL_INTR_CAP1 = BIT(28), ///< Capture 1 happened
+    MCPWM_LL_INTR_CAP2 = BIT(29), ///< Capture 2 happened
+} mcpwm_intr_t;
 
 /**
  * @brief Select type of MCPWM counter
@@ -181,15 +189,15 @@ typedef enum {
  */
 typedef enum {
     MCPWM_DEADTIME_BYPASS = 0,          /*!<Bypass the deadtime*/
-    MCPWM_BYPASS_RED,                   /*!<MCPWMXA = no change, MCPWMXB = falling edge delay*/
-    MCPWM_BYPASS_FED,                   /*!<MCPWMXA = rising edge delay, MCPWMXB = no change*/
-    MCPWM_ACTIVE_HIGH_MODE,             /*!<MCPWMXA = rising edge delay,  MCPWMXB = falling edge delay*/
-    MCPWM_ACTIVE_LOW_MODE,              /*!<MCPWMXA = compliment of rising edge delay,  MCPWMXB = compliment of falling edge delay*/
-    MCPWM_ACTIVE_HIGH_COMPLIMENT_MODE,  /*!<MCPWMXA = rising edge delay,  MCPWMXB = compliment of falling edge delay*/
-    MCPWM_ACTIVE_LOW_COMPLIMENT_MODE,   /*!<MCPWMXA = compliment of rising edge delay,  MCPWMXB = falling edge delay*/
-    MCPWM_ACTIVE_RED_FED_FROM_PWMXA,    /*!<MCPWMXA = MCPWMXB = rising edge delay as well as falling edge delay, generated from MCPWMXA*/
-    MCPWM_ACTIVE_RED_FED_FROM_PWMXB,    /*!<MCPWMXA = MCPWMXB = rising edge delay as well as falling edge delay, generated from MCPWMXB*/
-    MCPWM_DEADTIME_TYPE_MAX,
+    MCPWM_BYPASS_RED,                   /*!<MCPWMXA Out = MCPWMXA In with no delay, MCPWMXB Out = MCPWMXA In with falling edge delay*/
+    MCPWM_BYPASS_FED,                   /*!<MCPWMXA Out = MCPWMXA In with rising edge delay, MCPWMXB Out = MCPWMXB In with no delay*/
+    MCPWM_ACTIVE_HIGH_MODE,             /*!<MCPWMXA Out = MCPWMXA In with rising edge delay,  MCPWMXB Out = MCPWMXA In with falling edge delay*/
+    MCPWM_ACTIVE_LOW_MODE,              /*!<MCPWMXA Out = MCPWMXA In with compliment of rising edge delay,  MCPWMXB Out = MCPWMXA In with compliment of falling edge delay*/
+    MCPWM_ACTIVE_HIGH_COMPLIMENT_MODE,  /*!<MCPWMXA Out = MCPWMXA In with rising edge delay,  MCPWMXB = MCPWMXA In with compliment of falling edge delay*/
+    MCPWM_ACTIVE_LOW_COMPLIMENT_MODE,   /*!<MCPWMXA Out = MCPWMXA In with compliment of rising edge delay,  MCPWMXB Out = MCPWMXA In with falling edge delay*/
+    MCPWM_ACTIVE_RED_FED_FROM_PWMXA,    /*!<MCPWMXA Out = MCPWMXB Out = MCPWMXA In with rising edge delay as well as falling edge delay*/
+    MCPWM_ACTIVE_RED_FED_FROM_PWMXB,    /*!<MCPWMXA Out = MCPWMXB Out = MCPWMXB In with rising edge delay as well as falling edge delay*/
+    MCPWM_DEADTIME_TYPE_MAX,            /*!<Maximum number of supported dead time modes*/
 } mcpwm_deadtime_type_t;
 
 /**
@@ -220,10 +228,39 @@ typedef mcpwm_output_action_t mcpwm_action_on_pwmxb_t;
  * @brief MCPWM select capture signal input
  */
 typedef enum {
-    MCPWM_SELECT_CAP0 = 0, /*!<Select CAP0 as input*/
-    MCPWM_SELECT_CAP1,     /*!<Select CAP1 as input*/
-    MCPWM_SELECT_CAP2,     /*!<Select CAP2 as input*/
+    MCPWM_SELECT_CAP0, /*!<Select CAP0 as input*/
+    MCPWM_SELECT_CAP1, /*!<Select CAP1 as input*/
+    MCPWM_SELECT_CAP2, /*!<Select CAP2 as input*/
 } mcpwm_capture_signal_t;
+
+/**
+ * @brief MCPWM capture channel ID alias
+ */
+typedef mcpwm_capture_signal_t mcpwm_capture_channel_id_t;
+
+/**
+ * @brief event data that will be passed into ISR callback
+ */
+typedef struct {
+    mcpwm_capture_on_edge_t cap_edge;   /*!<Which signal edge is detected*/
+    uint32_t cap_value;                 /*!<Corresponding timestamp when event occurs. Clock rate = APB(usually 80M)*/
+} cap_event_data_t;
+
+/**
+ * @brief Type of capture event callback
+ * @param mcpwm MCPWM unit(0-1)
+ * @param cap_channel capture channel ID
+ * @param edata Capture event data, contains capture edge and capture value, fed by the driver
+ * @param user_data User registered data, passed from `mcpwm_capture_config_t`
+ *
+ * @note Since this an ISR callback so do not do anything that may block and call APIs that is designed to be used within ISR(usually has '_ISR' postfix)
+ *
+ * @return Whether a task switch is needed after the callback function returns,
+ *         this is usually due to the callback wakes up some high priority task.
+ *
+ */
+typedef bool (*cap_isr_cb_t)(mcpwm_unit_t mcpwm, mcpwm_capture_channel_id_t cap_channel, const cap_event_data_t *edata,
+                             void *user_data);
 
 /**
  * @brief MCPWM config structure
@@ -237,7 +274,7 @@ typedef struct {
 } mcpwm_config_t;
 
 /**
- * @brief MCPWM config carrier structure
+ * @brief MCPWM carrier configuration structure
  */
 typedef struct {
     uint8_t carrier_period;                    /*!<Set carrier period = (carrier_period + 1)*800ns, carrier_period should be < 16*/
@@ -248,9 +285,19 @@ typedef struct {
 } mcpwm_carrier_config_t;
 
 /**
+ * @brief MCPWM config capture structure
+ */
+typedef struct {
+    mcpwm_capture_on_edge_t cap_edge;      /*!<Set capture edge*/
+    uint32_t cap_prescale;                 /*!<Prescale of capture signal, ranging from 1 to 256*/
+    cap_isr_cb_t capture_cb;               /*!<User defined capture event callback, running under interrupt context */
+    void *user_data;                       /*!<User defined ISR callback function args*/
+} mcpwm_capture_config_t;
+
+/**
  * @brief This function initializes each gpio signal for MCPWM
- *        @note
- *        This function initializes one gpio at a time.
+ *
+ * @note This function initializes one gpio at a time.
  *
  * @param mcpwm_num set MCPWM unit(0-1)
  * @param io_signal set MCPWM signals, each MCPWM unit has 6 output(MCPWMXA, MCPWMXB) and 9 input(SYNC_X, FAULT_X, CAP_X)
@@ -265,8 +312,8 @@ esp_err_t mcpwm_gpio_init(mcpwm_unit_t mcpwm_num, mcpwm_io_signals_t io_signal, 
 
 /**
  * @brief Initialize MCPWM gpio structure
- *        @note
- *        This function can be used to initialize more then one gpio at a time.
+ *
+ * @note This function initialize a group of MCPWM GPIOs at a time.
  *
  * @param mcpwm_num set MCPWM unit(0-1)
  * @param mcpwm_pin MCPWM pin structure
@@ -279,6 +326,10 @@ esp_err_t mcpwm_set_pin(mcpwm_unit_t mcpwm_num, const mcpwm_pin_config_t *mcpwm_
 
 /**
  * @brief Initialize MCPWM parameters
+ * @note
+ *        The default resolution configured for MCPWM group and timer are 160M / 16 = 10M and 10M / 10 = 1M
+ *        The default resolution can be changed by calling mcpwm_group_set_resolution() and mcpwm_timer_set_resolution(),
+ *        before calling this function.
  *
  * @param mcpwm_num set MCPWM unit(0-1)
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers.
@@ -289,6 +340,39 @@ esp_err_t mcpwm_set_pin(mcpwm_unit_t mcpwm_num, const mcpwm_pin_config_t *mcpwm_
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
 esp_err_t mcpwm_init( mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, const mcpwm_config_t  *mcpwm_conf);
+
+/**
+ * @brief Set resolution of the MCPWM group
+ * @note
+ *        This will override default resolution of group(=10,000,000).
+ *        This WILL NOT automatically update frequency and duty. Call mcpwm_set_frequency() and mcpwm_set_duty() manually
+ *        to set them back.
+ *
+ * @param mcpwm_num set MCPWM unit(0-1)
+ * @param resolution set expected frequency resolution
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t mcpwm_group_set_resolution(mcpwm_unit_t mcpwm_num, unsigned long int resolution);
+
+/**
+ * @brief Set resolution of each timer
+ * @note
+ *        This WILL override default resolution of timer(=1,000,000).
+ *        This WILL NOT automatically update frequency and duty. Call mcpwm_set_frequency() and mcpwm_set_duty() manually
+ *        to set them back.
+ *
+ * @param mcpwm_num set MCPWM unit(0-1)
+ * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
+ * @param resolution set expected frequency resolution
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t mcpwm_timer_set_resolution(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, unsigned long int resolution);
 
 /**
  * @brief Set frequency(in Hz) of MCPWM timer
@@ -333,7 +417,7 @@ esp_err_t mcpwm_set_duty_in_us(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, 
 
 /**
  * @brief Set duty either active high or active low(out of phase/inverted)
- *        @note
+ * @note
  *        Call this function every time after mcpwm_set_signal_high or mcpwm_set_signal_low to resume with previously set duty cycle
  *
  * @param mcpwm_num set MCPWM unit(0-1)
@@ -369,6 +453,18 @@ uint32_t mcpwm_get_frequency(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num);
  *     - duty cycle in % of each operator(56.7 means duty is 56.7%)
  */
 float mcpwm_get_duty(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, mcpwm_operator_t gen);
+
+/**
+ * @brief Get duty cycle of each operator in us
+ *
+ * @param mcpwm_num set MCPWM unit(0-1)
+ * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
+ * @param gen set the generator(MCPWMXA/MCPWMXB), 'x' is operator number selected
+ *
+ * @return
+ *     - duty cycle in us of each operator
+ */
+uint32_t mcpwm_get_duty_in_us(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, mcpwm_operator_t gen);
 
 /**
  * @brief Use this function to set MCPWM signal high
@@ -570,7 +666,7 @@ esp_err_t mcpwm_fault_init(mcpwm_unit_t mcpwm_num, mcpwm_fault_input_level_t int
 
 /**
  * @brief Set oneshot mode on fault detection, once fault occur in oneshot mode reset is required to resume MCPWM signals
- *        @note
+ * @note
  *        currently low level triggering is not supported
  *
  * @param mcpwm_num set MCPWM unit(0-1)
@@ -588,7 +684,7 @@ esp_err_t mcpwm_fault_set_oneshot_mode(mcpwm_unit_t mcpwm_num, mcpwm_timer_t tim
 
 /**
  * @brief Set cycle-by-cycle mode on fault detection, once fault occur in cyc mode MCPWM signal resumes as soon as fault signal becomes inactive
- *        @note
+ * @note
  *        currently low level triggering is not supported
  *
  * @param mcpwm_num set MCPWM unit(0-1)
@@ -619,20 +715,20 @@ esp_err_t mcpwm_fault_deinit(mcpwm_unit_t mcpwm_num, mcpwm_fault_signal_t fault_
 /**
  * @brief Initialize capture submodule
  *
- * @note Enabling capture feature could also enable the capture interrupt,
+ * @note Enabling capture feature would also enable the capture interrupt event,
  *       users have to register an interrupt handler by `mcpwm_isr_register`, and in there, query the capture data.
+ * @note The capture timer uses APB_CLK (typically 80MHz) as the count source.
  *
  * @param mcpwm_num set MCPWM unit(0-1)
  * @param cap_edge set capture edge, BIT(0) - negative edge, BIT(1) - positive edge
  * @param cap_sig capture pin, which needs to be enabled
- * @param num_of_pulse count time between rising/falling edge between 2 *(pulses mentioned), counter uses APB_CLK
- *                     [0~MCPWM_LL_MAX_PRESCALE] (MCPWM_LL_MAX_PRESCALE = 255 on ESP32);
+ * @param num_of_pulse Input capture signal prescaling, ranges from 0 to 255, representing prescaling from 1 to 256.
  *
  * @return
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-
+__attribute__((deprecated("please use mcpwm_capture_enable_channel instead")))
 esp_err_t mcpwm_capture_enable(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t cap_sig, mcpwm_capture_on_edge_t cap_edge,
                                uint32_t num_of_pulse);
 
@@ -646,13 +742,39 @@ esp_err_t mcpwm_capture_enable(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t ca
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
+__attribute__((deprecated("please use mcpwm_capture_disable_channel instead")))
 esp_err_t mcpwm_capture_disable(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t cap_sig);
+
+/**
+ * @brief Enable capture channel
+ *
+ * @param mcpwm_num set MCPWM unit(0-1)
+ * @param cap_channel capture channel, which needs to be enabled
+ * @param cap_conf capture channel configuration
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t mcpwm_capture_enable_channel(mcpwm_unit_t mcpwm_num, mcpwm_capture_channel_id_t cap_channel, const mcpwm_capture_config_t *cap_conf);
+
+/**
+ * @brief Disable capture channel
+ *
+ * @param mcpwm_num set MCPWM unit(0-1)
+ * @param cap_channel capture channel, which needs to be disabled
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t mcpwm_capture_disable_channel(mcpwm_unit_t mcpwm_num, mcpwm_capture_channel_id_t cap_channel);
 
 /**
  * @brief Get capture value
  *
  * @param mcpwm_num set MCPWM unit(0-1)
- * @param cap_sig capture pin on which value is to be measured
+ * @param cap_sig capture channel on which value is to be measured
  *
  * @return
  *     Captured value
@@ -663,7 +785,7 @@ uint32_t mcpwm_capture_signal_get_value(mcpwm_unit_t mcpwm_num, mcpwm_capture_si
  * @brief Get edge of capture signal
  *
  * @param mcpwm_num set MCPWM unit(0-1)
- * @param cap_sig capture pin of whose edge is to be determined
+ * @param cap_sig capture channel of whose edge is to be determined
  *
  * @return
  *     Capture signal edge: 1 - positive edge, 2 - negtive edge
@@ -713,8 +835,9 @@ esp_err_t mcpwm_sync_disable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num);
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Function pointer error.
  */
-esp_err_t mcpwm_isr_register(mcpwm_unit_t mcpwm_num, void (*fn)(void *), void *arg, int intr_alloc_flags, intr_handle_t *handle);
-
+__attribute__((deprecated("interrupt events are handled by driver, please use callback")))
+esp_err_t mcpwm_isr_register(mcpwm_unit_t mcpwm_num, void (*fn)(void *), void *arg, int intr_alloc_flags,
+                             intr_handle_t *handle);
 
 #ifdef __cplusplus
 }

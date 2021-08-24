@@ -3,19 +3,11 @@ Abstraction layer for spi-ram. For now, it's no more than a stub for the spiram_
 we add more types of external RAM memory, this can be made into a more intelligent dispatcher.
 */
 
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdint.h>
 #include <string.h>
@@ -375,6 +367,15 @@ void IRAM_ATTR esp_spiram_writeback_cache(void)
     Cache_WriteBack_All();
 }
 
-
+/**
+ * @brief If SPI RAM(PSRAM) has been initialized
+ *
+ * @return true SPI RAM has been initialized successfully
+ * @return false SPI RAM hasn't been initialized or initialized failed
+ */
+bool esp_spiram_is_initialized(void)
+{
+    return spiram_inited;
+}
 
 #endif

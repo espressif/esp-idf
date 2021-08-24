@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* ESP32S2 Linker Script Memory Layout
 
    This file describes the memory layout (memory blocks) by virtual memory addresses.

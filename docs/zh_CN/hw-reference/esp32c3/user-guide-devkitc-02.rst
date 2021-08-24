@@ -93,16 +93,16 @@ ESP32-C3-DevKitC-02 是一款入门级开发板，使用配置 4 MB SPI flash �
 零售订单
 ^^^^^^^^
 
-如购买样品，每个 ESP32-C3-DevKitC-02 底板将以防静电袋或零售商选择的其他方式包装。
+如购买样品，每个 ESP32-C3-DevKitC-02 开发板将以防静电袋或零售商选择的其他方式包装。
 
 零售订单请前往 https://www.espressif.com/zh-hans/company/contact/buy-a-sample。
 
 批量订单
 ^^^^^^^^
 
-如批量购买，ESP32-C3-DevKitC-02 烧录底板将以大纸板箱包装。
+如批量购买，ESP32-C3-DevKitC-02 开发板将以大纸板箱包装。
 
-批量订单请参考 `乐鑫产品订购信息 <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_cn.pdf>`__ (PDF)。
+批量订单请前往 https://www.espressif.com/zh-hans/contact-us/sales-questions。
 
 硬件参考
 ========

@@ -344,6 +344,7 @@ build_docker:
     - .before_script_minimal
     - .rules:build:docker
   stage: host_test
+  needs: []
   image: espressif/docker-builder:1
   tags:
     - build_docker_amd64_brno
@@ -366,6 +367,7 @@ build_docker:
     - .before_script_minimal
     - .rules:build:windows
   stage: host_test
+  needs: []
   image: $CI_DOCKER_REGISTRY/esp32-toolchain-win-cross
   tags:
     - build
@@ -384,28 +386,6 @@ build_idf_exe:
     expire_in: 4 days
   variables:
     TEST_DIR: tools/windows/idf_exe
-
-build_cmdlinerunner:
-  extends: .test-on-windows
-  stage: host_test
-  artifacts:
-    paths:
-      - tools/windows/tool_setup/cmdlinerunner/build/cmdlinerunner.dll
-    expire_in: 4 days
-  variables:
-    TEST_DIR: tools/windows/tool_setup/cmdlinerunner
-
-build_installer:
-  extends: .test-on-windows
-  # using a different stage here to be able to use artifacts from build_cmdlinerunner job
-  stage: test_deploy  # need to be after host_test since depends on `build_cmdlinerunner`
-  image: $CI_DOCKER_REGISTRY/wine-innosetup:2
-  dependencies:  # set dependencies to null to avoid missing artifacts issue
-  needs:
-    - build_cmdlinerunner
-  script:
-    - cd tools/windows/tool_setup/
-    - ./build_installer.sh
 
 # This job builds template app with permutations of targets and optimization levels
 build_template_app:

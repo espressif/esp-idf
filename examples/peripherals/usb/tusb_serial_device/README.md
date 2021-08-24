@@ -1,11 +1,11 @@
-| Supported Targets | ESP32-S2 |
-| ----------------- | -------- |
+| Supported Targets | ESP32-S2 | ESP32-S3 |
+| ----------------- | -------- | -------- |
 
 # TinyUSB Sample Descriptor
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example shows how to set up ESP32-S2 chip to work as a USB Serial Device.
+This example shows how to set up ESP chip to work as a USB Serial Device.
 
 As a USB stack, a TinyUSB component is used.
 
@@ -13,21 +13,11 @@ As a USB stack, a TinyUSB component is used.
 
 ### Hardware Required
 
-- Any board with the ESP32-S2 chip with USB connectors or with exposed USB's D+ and D- (DATA+/DATA-) pins.
+Any ESP boards that have USB-OTG supported.
 
-If the board has no USB connector, but has the pins connect pins directly to the host (e.g. with DIY cable from any USB connection cable)
+#### Pin Assignment
 
-```
-ESP32-S2 BOARD          USB CONNECTOR (type A)
-                          --
-                         | || VCC
-    [GPIO 19]  --------> | || D-
-    [GPIO 20]  --------> | || D+
-                         | || GND
-                          --
-```
-
-You can also use power from the USB connector.
+See common pin assignments for USB Device examples from [upper level](../README.md#common-pin-assignments).
 
 ### Build and Flash
 
@@ -43,37 +33,55 @@ idf.py -p PORT flash monitor
 
 See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
 
-## Serial Connection
-
-After program's start and getting of the message of readiness (`Serial device is ready to connect`) you can connect to the board using any serial port terminal application (e.g. CoolTerm).
-
 ## Example Output
 
 After the flashing you should see the output:
 
 ```
-I (346) example: USB initialization
-I (346) TinyUSB: Driver installation...
-I (346) TinyUSB - Descriptors Control: Setting of a descriptor:
-.bDeviceClass       = 239
-.bDeviceSubClass    = 2,
-.bDeviceProtocol    = 1,
-.bMaxPacketSize0    = 64,
-.idVendor           = 0x0000303a,
-.idProduct          = 0x00004001,
-.bcdDevice          = 0x00000100,
-.iManufacturer      = 0x01,
-.iProduct           = 0x02,
-.iSerialNumber      = 0x03,
-.bNumConfigurations = 0x01
-
-I (362) TinyUSB: Driver installed
-I (362) example: USB initialization DONE
-I (922) example: Line state changed! dtr:0, rst:0
+I (285) example: USB initialization
+I (285) tusb_desc:
+┌─────────────────────────────────┐
+│  USB Device Descriptor Summary  │
+├───────────────────┬─────────────┤
+│bDeviceClass       │ 239         │
+├───────────────────┼─────────────┤
+│bDeviceSubClass    │ 2           │
+├───────────────────┼─────────────┤
+│bDeviceProtocol    │ 1           │
+├───────────────────┼─────────────┤
+│bMaxPacketSize0    │ 64          │
+├───────────────────┼─────────────┤
+│idVendor           │ 0x303a      │
+├───────────────────┼─────────────┤
+│idProduct          │ 0x4001      │
+├───────────────────┼─────────────┤
+│bcdDevice          │ 0x100       │
+├───────────────────┼─────────────┤
+│iManufacturer      │ 0x1         │
+├───────────────────┼─────────────┤
+│iProduct           │ 0x2         │
+├───────────────────┼─────────────┤
+│iSerialNumber      │ 0x3         │
+├───────────────────┼─────────────┤
+│bNumConfigurations │ 0x1         │
+└───────────────────┴─────────────┘
+I (455) TinyUSB: TinyUSB Driver installed
+I (465) example: USB initialization DONE
 ```
 
-Let's try to send a string "espressif" and get the return string in your console on PC:
+Connect to the serial port (e.g. on Linux, it should be `/dev/ttyACM0`) by any terminal application (e.g. `picocom /dev/ttyACM0`), typing a string "espressif" and you will get the exactly same string returned.
+
+The monitor tool will also print the communication process:
 
 ```
-I (18346) example: Got data (9 bytes): espressif
+I (146186) example: Line state changed! dtr:1, rst:1
+I (147936) example: Got data (1 bytes): e
+I (148136) example: Got data (1 bytes): s
+I (148336) example: Got data (1 bytes): p
+I (148416) example: Got data (1 bytes): r
+I (148446) example: Got data (1 bytes): e
+I (148676) example: Got data (1 bytes): s
+I (148836) example: Got data (1 bytes): s
+I (148956) example: Got data (1 bytes): i
+I (149066) example: Got data (1 bytes): f
 ```

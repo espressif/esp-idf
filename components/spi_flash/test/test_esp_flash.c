@@ -86,12 +86,12 @@ static uint8_t sector_buf[4096];
 #define SPI1_HD_IO          27  //the pin which is usually used by the PSRAM hd
 #define SPI1_WP_IO          28  //the pin which is usually used by the PSRAM wp
 
-#define FSPI_PIN_NUM_MOSI   35
-#define FSPI_PIN_NUM_MISO   37
-#define FSPI_PIN_NUM_CLK    36
-#define FSPI_PIN_NUM_HD     33
-#define FSPI_PIN_NUM_WP     38
-#define FSPI_PIN_NUM_CS     34
+#define FSPI_PIN_NUM_MOSI   11
+#define FSPI_PIN_NUM_MISO   13
+#define FSPI_PIN_NUM_CLK    12
+#define FSPI_PIN_NUM_HD     9
+#define FSPI_PIN_NUM_WP     14
+#define FSPI_PIN_NUM_CS     10
 
 // Just use the same pins for HSPI
 #define HSPI_PIN_NUM_MOSI   FSPI_PIN_NUM_MOSI
@@ -139,8 +139,7 @@ typedef void (*flash_test_func_t)(const esp_partition_t *part);
 
    These tests run for all the flash chip configs shown in config_list, below (internal and external).
  */
-#if defined(CONFIG_SPIRAM) || TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
-// No S3 runner
+#if defined(CONFIG_SPIRAM)
 #define FLASH_TEST_CASE_3(STR, FUNCT_TO_RUN)
 #define FLASH_TEST_CASE_3_IGNORE(STR, FUNCT_TO_RUN)
 #else //CONFIG_SPIRAM
@@ -230,8 +229,11 @@ flashtest_config_t config_list[] = {
 };
 #elif CONFIG_IDF_TARGET_ESP32S3
 flashtest_config_t config_list[] = {
-    FLASHTEST_CONFIG_COMMON,
-    /* No runners for esp32s3 for these config yet */
+    /* No SPI1 CS1 flash on esp32S3 test */
+    {
+        /* no need to init */
+        .host_id = -1,
+    },
     {
         .io_mode = TEST_SPI_READ_MODE,
         .speed = TEST_SPI_SPEED,
@@ -615,6 +617,13 @@ void test_erase_large_region(const esp_partition_t *part)
     TEST_ASSERT_EQUAL(ESP_OK, esp_flash_read(chip, &readback, part->address, 4));
     TEST_ASSERT_EQUAL_HEX32(0, readback & (~written_data));
 
+    /* Erase zero bytes, check that nothing got erased */
+    TEST_ASSERT_EQUAL(ESP_OK, esp_flash_erase_region(chip, part->address, 0));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_flash_read(chip, &readback, part->address + part->size - 5, 4));
+    TEST_ASSERT_EQUAL_HEX32(0, readback & (~written_data));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_flash_read(chip, &readback, part->address, 4));
+    TEST_ASSERT_EQUAL_HEX32(0, readback & (~written_data));
+
     /* Erase whole region */
     TEST_ASSERT_EQUAL(ESP_OK, esp_flash_erase_region(chip, part->address, part->size));
 
@@ -897,15 +906,12 @@ TEST_CASE("SPI flash test reading with all speed/mode permutations", "[esp_flash
 }
 
 #ifndef CONFIG_SPIRAM
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
-// No S3 runner
 TEST_CASE("SPI flash test reading with all speed/mode permutations, 3 chips", "[esp_flash_3][test_env=UT_T1_ESP_FLASH]")
 {
     for (int i = 0; i < TEST_CONFIG_NUM; i++) {
         test_permutations_chip(&config_list[i]);
     }
 }
-#endif// !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 #endif
 
 
@@ -975,9 +981,6 @@ static void test_write_large_buffer(const esp_partition_t* part, const uint8_t *
 }
 
 #if !CONFIG_SPIRAM
-
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
-// No S3 runner
 
 typedef struct {
     uint32_t us_start;
@@ -1157,7 +1160,6 @@ static void test_flash_read_write_performance(const esp_partition_t *part)
 
 
 TEST_CASE("Test esp_flash read/write performance", "[esp_flash][test_env=UT_T1_ESP_FLASH]") {flash_test_func(test_flash_read_write_performance, 1);}
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 
 #endif // !CONFIG_SPIRAM
 FLASH_TEST_CASE_3("Test esp_flash read/write performance"", 3 chips", test_flash_read_write_performance);

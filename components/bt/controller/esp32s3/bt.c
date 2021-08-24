@@ -972,7 +972,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
         // configure and initialize resources
         s_lp_cntl.enable = (cfg->sleep_mode == ESP_BT_SLEEP_MODE_1) ? 1 : 0;
-        s_lp_cntl.no_light_sleep = 0;
+        s_lp_cntl.no_light_sleep = 1;
 
         if (s_lp_cntl.enable) {
 #if (CONFIG_MAC_BB_PD)
@@ -1009,31 +1009,29 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         btdm_lpcycle_us_frac = RTC_CLK_CAL_FRACT;
         btdm_lpcycle_us = 2 << (btdm_lpcycle_us_frac);
 
-        // // set default bluetooth sleep clock source
-        // s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_XTAL;
+        // set default bluetooth sleep clock source
+        s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_XTAL; // set default value
 #if CONFIG_BT_CTRL_LPCLK_SEL_EXT_32K_XTAL
         // check whether or not EXT_CRYS is working
         if (rtc_clk_slow_freq_get() == RTC_SLOW_FREQ_32K_XTAL) {
-            s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_XTAL32K; // set default value
-// #ifdef CONFIG_PM_ENABLE
-//             s_btdm_allow_light_sleep = true;
-// #endif
+            s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_XTAL32K; // External 32 kHz XTAL
+            s_lp_cntl.no_light_sleep = 0;
         } else {
             ESP_LOGW(BT_LOG_TAG, "32.768kHz XTAL not detected, fall back to main XTAL as Bluetooth sleep clock\n"
                  "light sleep mode will not be able to apply when bluetooth is enabled");
-            s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_XTAL; // set default value
         }
 #elif (CONFIG_BT_CTRL_LPCLK_SEL_RTC_SLOW)
         // check whether or not EXT_CRYS is working
         if (rtc_clk_slow_freq_get() == RTC_SLOW_FREQ_RTC) {
-            s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_RTC_SLOW; // set default value
+            s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_RTC_SLOW; // Internal 150 kHz RC oscillator
+            ESP_LOGW(BTDM_LOG_TAG, "Internal 150kHz RC osciallator. The accuracy of this clock is a lot larger than 500ppm which is "
+                 "required in Bluetooth communication, so don't select this option in scenarios such as BLE connection state.");
         } else {
-            ESP_LOGW(BT_LOG_TAG, "Internal 90kHz RC oscillator not detected, fall back to main XTAL as Bluetooth sleep clock\n"
-                 "light sleep mode will not be able to apply when bluetooth is enabled");
-            s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_XTAL; // set default value
+            ESP_LOGW(BT_LOG_TAG, "Internal 150kHz RC oscillator not detected.");
+            assert(0);
         }
 #else
-        s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_XTAL; // set default value
+        s_lp_cntl.no_light_sleep = 1;
 #endif
 
         bool select_src_ret __attribute__((unused));

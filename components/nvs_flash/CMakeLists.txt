@@ -13,13 +13,9 @@ set(srcs "src/nvs_api.cpp"
          "src/nvs_partition_manager.cpp"
          "src/nvs_types.cpp")
 
-set(public_req spi_flash)
-
-set(include_dirs "include")
-
 idf_component_register(SRCS "${srcs}"
-                    REQUIRES "${public_req}"
-                    INCLUDE_DIRS "${include_dirs}")
+                    REQUIRES "spi_flash"
+                    INCLUDE_DIRS "include")
 
 # If we use the linux target, we need to redirect the crc functions to the linux
 if(${target} STREQUAL "linux")
@@ -27,11 +23,6 @@ if(${target} STREQUAL "linux")
         # mbedtls isn't configured for building with linux or as mock target. It will draw in all kind of dependencies
         message(FATAL_ERROR "NVS currently doesn't support encryption if built for Linux.")
     endif()
-    idf_component_get_property(spi_flash_dir spi_flash COMPONENT_DIR)
-    target_include_directories(${COMPONENT_LIB} PUBLIC
-            "${CMAKE_CURRENT_SOURCE_DIR}/mock/int"
-            "${spi_flash_dir}/sim/stubs/freertos/include")
-    target_sources(${COMPONENT_LIB} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/mock/int/crc.cpp")
     target_compile_options(${COMPONENT_LIB} PUBLIC "-DLINUX_TARGET")
 else()
     # TODO: this is a workaround until IDF-2085 is fixed

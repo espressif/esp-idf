@@ -4,7 +4,6 @@ if(CONFIG_OPENTHREAD_ENABLED)
         "openthread/include")
 
     set(private_include_dirs
-        "openthread/include/openthread"
         "openthread/src"
         "openthread/src/core"
         "openthread/src/lib/hdlc"
@@ -38,10 +37,14 @@ if(CONFIG_OPENTHREAD_ENABLED)
     endif()
 
     set(exclude_srcs
-        "openthread/examples/apps/cli/main.cpp"
+        "openthread/examples/apps/cli/main.c"
         "openthread/examples/platforms/utils/logging_rtt.c"
         "openthread/examples/platforms/utils/soft_source_match_table.c"
         "openthread/src/core/common/extension_example.cpp")
+
+    set_source_files_properties("openthread/src/core/net/srp_server.cpp"
+        PROPERTIES COMPILE_FLAGS
+        -Wno-maybe-uninitialized)
 
     if(CONFIG_OPENTHREAD_FTD)
         set(device_type "OPENTHREAD_FTD=1")

@@ -9,7 +9,7 @@ and echoes it back to the monitoring console.
 
 ### Hardware Required
 
-The example can be used with any ESP32 development board connected to a computer with a USB cable.
+The example can be used with any ESP32, ESP32-S and ESP32-C series based development board connected to a computer with a USB cable.
 
 ### Configure the project
 

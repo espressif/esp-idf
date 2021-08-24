@@ -530,7 +530,7 @@ esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten)
 
 static inline void adc2_init(void)
 {
-#if !CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_TARGET_ESP32S2
 #ifdef CONFIG_PM_ENABLE
     /* Lock APB clock. */
     if (s_adc2_arbiter_lock == NULL) {
@@ -593,6 +593,12 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     //avoid collision with other tasks
     adc2_init();   // in critical section with whole rtc module. because the PWDET use the same registers, place it here.
     SARADC2_ENTER();
+
+#if SOC_ADC_ARBITER_SUPPORTED
+    adc_arbiter_t config = ADC_ARBITER_CONFIG_DEFAULT();
+    adc_hal_arbiter_config(&config);
+#endif
+
 #ifdef CONFIG_ADC_DISABLE_DAC
     adc2_dac_disable(channel);      //disable other peripherals
 #endif
@@ -603,7 +609,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     adc_hal_set_controller(ADC_NUM_2, ADC_CTRL_RTC);
 #endif
 
-#if !CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_TARGET_ESP32S2
 #ifdef CONFIG_PM_ENABLE
     if (s_adc2_arbiter_lock) {
         esp_pm_lock_acquire(s_adc2_arbiter_lock);

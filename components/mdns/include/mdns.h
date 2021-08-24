@@ -75,10 +75,13 @@ typedef struct mdns_result_s {
     struct mdns_result_s * next;            /*!< next result, or NULL for the last result in the list */
 
     mdns_if_t tcpip_if;                     /*!< interface index */
+    uint32_t ttl;                           /*!< time to live */
 
     mdns_ip_protocol_t ip_protocol;         /*!< ip_protocol type of the interface (v4/v6) */
     // PTR
     char * instance_name;                   /*!< instance name */
+    char * service_type;                    /*!< service type */
+    char * proto;                           /*!< srevice protocol */
     // SRV
     char * hostname;                        /*!< hostname */
     uint16_t port;                          /*!< service port */

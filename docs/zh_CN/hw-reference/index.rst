@@ -13,6 +13,6 @@
     :esp32: ESP32 勘误表及解决方法 (PDF) <https://espressif.com/sites/default/files/documentation/eco_and_workarounds_for_bugs_in_esp32_cn.pdf>
     模组 <https://www.espressif.com/zh-hans/products/modules>
     开发板 <https://www.espressif.com/zh-hans/products/devkits>
-    乐鑫产品订购信息 (PDF) <http://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_cn.pdf>
+    乐鑫产品选型工具 <https://products.espressif.com/#/product-selector?names=>
     乐鑫产品证书 <https://www.espressif.com/zh-hans/certificates>
     芯片系列对比 <chip-series-comparison>

@@ -11,5 +11,3 @@ endif()
 
 idf_component_register(REQUIRES riscv "${legacy_reqs}"
                        REQUIRED_IDF_TARGETS esp32h2)
-
-target_linker_script(${COMPONENT_LIB} INTERFACE "ld/esp32h2.peripherals.ld")

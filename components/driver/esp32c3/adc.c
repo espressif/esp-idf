@@ -538,6 +538,9 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 
     SAR_ADC2_LOCK_ACQUIRE();
 
+    adc_arbiter_t config = ADC_ARBITER_CONFIG_DEFAULT();
+    adc_hal_arbiter_config(&config);
+
     adc_atten_t atten = s_atten2_single[channel];
     uint32_t cal_val = adc_get_calibration_offset(ADC_NUM_2, channel, atten);
     adc_hal_set_calibration_param(ADC_NUM_2, cal_val);

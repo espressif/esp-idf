@@ -142,8 +142,9 @@ esp_err_t esp_event_loop_delete_default(void)
     return ESP_OK;
 }
 
-
+#if !CONFIG_IDF_TARGET_LINUX
 /* Include the code to forward legacy system_event_t events to the this default
  * event loop.
  */
 #include "event_send_compat.inc"
+#endif

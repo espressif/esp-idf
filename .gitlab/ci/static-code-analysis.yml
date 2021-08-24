@@ -5,17 +5,46 @@ clang_tidy_check:
     - .rules:patterns:clang_tidy
   image: ${CLANG_STATIC_ANALYSIS_IMAGE}
   artifacts:
-    reports:
-      junit: $IDF_PATH/output.xml
+    paths:
+      - $OUTPUT_DIR
+    when: always
+    expire_in: 1 day
+  variables:
+    CLANG_TIDY_RUNNER_PROJ: 2107  # idf/clang-tidy-runner
+    CLANG_TIDY_DIRS_TXT: ${CI_PROJECT_DIR}/tools/ci/clang_tidy_dirs.txt
+    RULES_FILE: ${CI_PROJECT_DIR}/tools/ci/static-analysis-rules.yml
+    OUTPUT_DIR: ${CI_PROJECT_DIR}/clang_tidy_reports
+  script:
+    - python -m pip install -U pip
+    - internal_pip_install $CLANG_TIDY_RUNNER_PROJ pyclang
+    - export PATH=$PATH:$(python -c "import sys; print(sys.executable.rsplit('/', 1)[0])")
+    - dirs=$(cat ${CLANG_TIDY_DIRS_TXT} | while read line; do echo ${CI_PROJECT_DIR}/${line}; done | xargs)
+    - run_cmd idf_clang ${dirs}
+      --output-path ${OUTPUT_DIR}
+      --limit-file ${RULES_FILE}
+      --xtensa-include-dir
+      --run-clang-tidy-py ${RUN_CLANG_TIDY_PY}
+
+check_pylint:
+  extends:
+    - .pre_check_base_template
+    - .rules:patterns:python-files
+    - .before_script_minimal
+  image: $CI_DOCKER_REGISTRY/sonarqube-scanner:2
+  artifacts:
     when: always
     paths:
-      - $IDF_PATH/examples/get-started/hello_world/tidybuild/report/*
-    expire_in: 1 day
+      - pylint-report.txt
+    expire_in: 1 week
   script:
-    - retry_failed git clone $IDF_ANALYSIS_UTILS static_analysis_utils && cd static_analysis_utils
-    # Setup parameters of triggered/regular job
-    - export TARGET_BRANCH=${BOT_CUSTOMIZED_REVISION-}
-    - ./analyze.sh $IDF_PATH/examples/get-started/hello_world/ $IDF_PATH/tools/ci/static-analysis-rules.yml $IDF_PATH/output.xml
+    - export PYTHONPATH="$IDF_PATH/tools:$IDF_PATH/tools/ci/python_packages:$PYTHONPATH"
+    - |
+      if [ -n "$CI_MERGE_REQUEST_IID" ]; then
+        export files=$(python ${CI_PROJECT_DIR}/tools/ci/ci_get_mr_info.py files ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME} | grep ".py");
+      else
+        export files=$(find . -iname "*.py" -print);
+      fi
+    - pylint --rcfile=.pylintrc $files -r n --output-format=parseable > pylint-report.txt || exit 0
 
 # build stage
 # Sonarqube related jobs put here for this reason:
@@ -38,21 +67,18 @@ clang_tidy_check:
     - source tools/ci/utils.sh
     - export PYTHONPATH="$CI_PROJECT_DIR/tools:$CI_PROJECT_DIR/tools/ci/python_packages:$PYTHONPATH"
     - fetch_submodules
-    # Exclude the submodules, all paths ends with /**
-    - export SUBMODULES=$(get_all_submodules)
-    # get all exclude paths specified in tools/ci/sonar_exclude_list.txt | ignore lines start with # | xargs | replace all <space> to <comma>
-    - export CUSTOM_EXCLUDES=$(cat $CI_PROJECT_DIR/tools/ci/sonar_exclude_list.txt | grep -v '^#' | xargs | sed -e 's/ /,/g')
-    # Exclude the report dir
-    - export EXCLUSIONS="$SUBMODULES,$REPORT_DIR/**,docs/_static/**,**/*.png,**/*.jpg"
-    - python $NORMALIZE_CLANGTIDY_PY $CI_PROJECT_DIR/$REPORT_DIR/warnings.txt $CI_PROJECT_DIR/$REPORT_DIR/clang_tidy_report.txt $CI_PROJECT_DIR
   variables:
     GIT_DEPTH: 0
-    NORMALIZE_CLANGTIDY_PY: $CI_PROJECT_DIR/tools/ci/normalize_clangtidy_path.py
-    REPORT_DIR: examples/get-started/hello_world/tidybuild/report
+    REPORT_PATTERN: clang_tidy_reports/*.txt
+  artifacts:
+    when: always
+    paths:
+      - $REPORT_PATTERN
   tags:
     - host_test
   dependencies:  # Here is not a hard dependency relationship, could be skipped when only python files changed. so we do not use "needs" here.
     - clang_tidy_check
+    - check_pylint
 
 code_quality_check:
   extends:
@@ -67,23 +93,14 @@ code_quality_check:
     - test -n "$CI_MERGE_REQUEST_COMMITS" || exit 0
     - sonar-scanner
       -Dsonar.analysis.mode=preview
-      -Dsonar.branch.name=$CI_COMMIT_REF_NAME
-      -Dsonar.cxx.clangtidy.reportPath=$REPORT_DIR/clang_tidy_report.txt
-      -Dsonar.cxx.includeDirectories=components,/usr/include
-      -Dsonar.exclusions=$EXCLUSIONS
+      -Dsonar.branch.name=$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
+      -Dsonar.cxx.clangtidy.reportPath=$REPORT_PATTERN
       -Dsonar.gitlab.ci_merge_request_iid=$CI_MERGE_REQUEST_IID
       -Dsonar.gitlab.commit_sha=$CI_MERGE_REQUEST_COMMITS
-      -Dsonar.gitlab.failure_notification_mode=exit-code
-      -Dsonar.gitlab.merge_request_discussion=true
-      -Dsonar.gitlab.project_id=$CI_PROJECT_ID
-      -Dsonar.gitlab.ref_name=$CI_COMMIT_REF_NAME
+      -Dsonar.gitlab.ref_name=$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
       -Dsonar.host.url=$SONAR_HOST_URL
       -Dsonar.login=$SONAR_LOGIN
-      -Dsonar.projectBaseDir=$CI_PROJECT_DIR
-      -Dsonar.projectKey=esp-idf
-      -Dsonar.python.pylint_config=.pylintrc
-      -Dsonar.sourceEncoding=UTF-8
-      -Dsonar.sources=$CI_PROJECT_DIR
+      -Dsonar.python.pylint.reportPath=pylint-report.txt
 
 code_quality_report:
   extends:
@@ -94,41 +111,9 @@ code_quality_report:
   script:
     - sonar-scanner
       -Dsonar.branch.name=$CI_COMMIT_REF_NAME
-      -Dsonar.cxx.clangtidy.reportPath=$REPORT_DIR/clang_tidy_report.txt
-      -Dsonar.cxx.includeDirectories=components,/usr/include
-      -Dsonar.exclusions=$EXCLUSIONS
+      -Dsonar.cxx.clangtidy.reportPath=$REPORT_PATTERN
       -Dsonar.gitlab.commit_sha=$CI_COMMIT_SHA
-      -Dsonar.gitlab.failure_notification_mode=exit-code
-      -Dsonar.gitlab.project_id=$CI_PROJECT_ID
       -Dsonar.gitlab.ref_name=$CI_COMMIT_REF_NAME
       -Dsonar.host.url=$SONAR_HOST_URL
       -Dsonar.login=$SONAR_LOGIN
-      -Dsonar.projectBaseDir=$CI_PROJECT_DIR
-      -Dsonar.projectKey=esp-idf
-      -Dsonar.python.pylint_config=.pylintrc
-      -Dsonar.sourceEncoding=UTF-8
-      -Dsonar.sources=$CI_PROJECT_DIR
-
-# deploy stage
-clang_tidy_deploy:
-  extends:
-    - .deploy_job_template
-    - .rules:patterns:clang_tidy
-  needs:
-    - clang_tidy_check
-  tags:
-    - deploy
-    - shiny
-  script:
-    - add_doc_server_ssh_keys $DOCS_DEPLOY_KEY $DOCS_SERVER $DOCS_SERVER_USER
-    - export GIT_VER=$(git describe --always)
-    - cd $IDF_PATH/examples/get-started/hello_world/tidybuild
-    - mv report $GIT_VER
-    - tar czvf $GIT_VER.tar.gz $GIT_VER
-    - export STATIC_REPORT_PATH="web/static_analysis/esp-idf/"
-    - ssh $DOCS_SERVER -x "mkdir -p $STATIC_REPORT_PATH/clang-tidy"
-    - scp $GIT_VER.tar.gz $DOCS_SERVER:$STATIC_REPORT_PATH/clang-tidy
-    - ssh $DOCS_SERVER -x "cd $STATIC_REPORT_PATH/clang-tidy && tar xzvf $GIT_VER.tar.gz && rm -f latest && ln -s $GIT_VER latest"
-    # add link to view the report
-    - echo "[static analysis][clang tidy] $CI_DOCKER_REGISTRY/static_analysis/esp-idf/clang-tidy/${GIT_VER}/index.html"
-    - test ! -e ${GIT_VER}/FAILED_RULES || { echo 'Failed static analysis rules!'; cat ${GIT_VER}/FAILED_RULES; exit 1; }
+      -Dsonar.python.pylint.reportPath=pylint-report.txt

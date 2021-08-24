@@ -39,7 +39,6 @@
 check_readme_links:
   extends:
     - .pre_check_job_template
-    - .doc-rules:build:docs
   tags: ["build", "amd64", "internet"]
   allow_failure: true
   script:
@@ -62,8 +61,8 @@ check_docs_lang_sync:
   dependencies: []
   script:
     - cd docs
-    - python -m pip install -r requirements.txt
-    - python ./build_docs.py -bs $DOC_BUILDERS -l $DOCLANG -t $DOCTGT build
+    - pip install -r requirements.txt
+    - build-docs -t $DOCTGT -bs $DOC_BUILDERS -l $DOCLANG build
   parallel:
     matrix:
       - DOCLANG: ["en", "zh_CN"]
@@ -78,8 +77,8 @@ check_docs_gh_links:
     - .doc-rules:build:docs
   script:
     - cd docs
-    - python -m pip install -r requirements.txt
-    - python ./build_docs.py gh-linkcheck
+    - pip install -r requirements.txt
+    - build-docs gh-linkcheck
 
 # stage: build_doc
 # Add this stage to let the build_docs job run in parallel with build
@@ -168,7 +167,8 @@ build_docs_pdf:
   script:
     - add_doc_server_ssh_keys $DOCS_DEPLOY_PRIVATEKEY $DOCS_DEPLOY_SERVER $DOCS_DEPLOY_SERVER_USER
     - export GIT_VER=$(git describe --always)
-    - python ${IDF_PATH}/tools/ci/deploy_docs.py
+    - pip install -r docs/requirements.txt
+    - deploy-docs
 
 # stage: test_deploy
 deploy_docs_preview:
@@ -227,6 +227,6 @@ check_doc_links:
   allow_failure: true
   script:
     - cd docs
-    - python -m pip install -r requirements.txt
+    - pip install -r requirements.txt
     # At the moment this check will always fail due to multiple known limitations, ignore result
-    - python ./build_docs.py -l $DOCLANG -t $DOCTGT linkcheck || { echo "THERE ARE ISSUES DUE TO KNOWN LIMITATIONS, PLEASE FIX THEM. Nowadays we're ignored them to pass pipeline."; true; }
+    - build-docs -t $DOCTGT -l $DOCLANG linkcheck || { echo "THERE ARE ISSUES DUE TO KNOWN LIMITATIONS, PLEASE FIX THEM. Nowadays we're ignored them to pass pipeline."; true; }

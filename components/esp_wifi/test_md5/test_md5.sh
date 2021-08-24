@@ -64,7 +64,7 @@ check_md5 ${IDF_PATH}/components/esp_wifi/include/esp_private/wifi_os_adapter.h 
 check_md5 ${IDF_PATH}/components/esp_wifi/include/esp_wifi_crypto_types.h g_wifi_crypto_funcs_md5
 check_md5 ${IDF_PATH}/components/esp_wifi/include/esp_wifi_types.h g_wifi_type_md5
 check_md5 ${IDF_PATH}/components/esp_wifi/include/esp_coexist_adapter.h g_coex_adapter_funcs_md5
-check_md5 ${IDF_PATH}/components/wpa_supplicant/src/esp_supplicant/esp_wifi_driver.h g_wifi_supplicant_funcs_md5
+check_md5 ${IDF_PATH}/components/wpa_supplicant/esp_supplicant/src/esp_wifi_driver.h g_wifi_supplicant_funcs_md5
 
 if [ $FAILURES -gt 0 ]; then
     exit 1

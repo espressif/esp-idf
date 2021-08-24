@@ -66,7 +66,6 @@
 #define DR_REG_UHCI0_BASE                       0x60014000
 #define DR_REG_SLCHOST_BASE                     0x60019000
 #define DR_REG_RMT_BASE                         0x60016000
-#define DR_REG_PCNT_BASE                        0x60017000
 #define DR_REG_SLC_BASE                         0x6002D000
 #define DR_REG_LEDC_BASE                        0x60019000
 #define DR_REG_EFUSE_BASE                       0x6001A000
@@ -347,7 +346,6 @@
 #define ETS_T1_WDT_INUM                         24
 #define ETS_CACHEERR_INUM                       25
 #define ETS_MEMPROT_ERR_INUM                    26
-#define ETS_DPORT_INUM                          28
 
 //CPU0 Max valid interrupt number
 #define ETS_MAX_INUM                            31

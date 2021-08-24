@@ -28,11 +28,11 @@ Peripherals API
     SPI Slave <spi_slave>
     :esp32: Secure Element <secure_element>
     :esp32s2: SPI Slave Half Duplex <spi_slave_hd>
-    :esp32s2: Temp sensor <temp_sensor>
+    :SOC_TEMP_SENSOR_SUPPORTED: Temp sensor <temp_sensor>
     :SOC_TOUCH_SENSOR_NUM: Touch Sensor <touch_pad>
     :esp32s2: Touch Element <touch_element>
     TWAI <twai>
     UART <uart>
-    :SOC_USB_SUPPORTED: USB <usb>
+    :SOC_USB_OTG_SUPPORTED: USB Device <usb_device>
 
 Code examples for this API section are provided in the :example:`peripherals` directory of ESP-IDF examples.

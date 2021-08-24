@@ -116,15 +116,16 @@
 #define HMAC_ONE_BLOCK_REG             ((DR_REG_HMAC_BASE) + 0xF4)
 
 /* AES-XTS registers */
-#define AES_XTS_PLAIN_BASE        ((DR_REG_AES_BASE) + 0x100)
-#define AES_XTS_SIZE_REG          ((DR_REG_AES_BASE) + 0x140)
-#define AES_XTS_DESTINATION_REG   ((DR_REG_AES_BASE) + 0x144)
-#define AES_XTS_PHYSICAL_ADDR_REG ((DR_REG_AES_BASE) + 0x148)
+#define AES_XTS_PLAIN_BASE        ((DR_REG_EXT_MEM_ENC) + 0x00)
+#define AES_XTS_SIZE_REG          ((DR_REG_EXT_MEM_ENC) + 0x40)
+#define AES_XTS_DESTINATION_REG   ((DR_REG_EXT_MEM_ENC) + 0x44)
+#define AES_XTS_PHYSICAL_ADDR_REG ((DR_REG_EXT_MEM_ENC) + 0x48)
 
-#define AES_XTS_TRIGGER_REG       ((DR_REG_AES_BASE) + 0x14C)
-#define AES_XTS_RELEASE_REG       ((DR_REG_AES_BASE) + 0x150)
-#define AES_XTS_DESTROY_REG       ((DR_REG_AES_BASE) + 0x154)
-#define AES_XTS_STATE_REG         ((DR_REG_AES_BASE) + 0x158)
+#define AES_XTS_TRIGGER_REG       ((DR_REG_EXT_MEM_ENC) + 0x4C)
+#define AES_XTS_RELEASE_REG       ((DR_REG_EXT_MEM_ENC) + 0x50)
+#define AES_XTS_DESTROY_REG       ((DR_REG_EXT_MEM_ENC) + 0x54)
+#define AES_XTS_STATE_REG         ((DR_REG_EXT_MEM_ENC) + 0x58)
+#define AES_XTS_DATE_REG          ((DR_REG_EXT_MEM_ENC) + 0x5C)
 
 /* Digital Signature registers*/
 #define DS_C_BASE                 ((DR_REG_DIGITAL_SIGNATURE_BASE) + 0x000 )

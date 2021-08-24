@@ -45,6 +45,7 @@ components/bootloader_support/include/esp_app_format.h
 
 components/wpa_supplicant/include/
 components/wpa_supplicant/port/
+components/wpa_supplicant/esp_supplicant/include/
 
 components/mbedtls/port/include/
 components/mbedtls/mbedtls/include/mbedtls/

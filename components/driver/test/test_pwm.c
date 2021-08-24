@@ -26,7 +26,9 @@
 #define TEST_SYNC_GPIO (21)
 #define TEST_CAP_GPIO (21)
 
-static mcpwm_dev_t *MCPWM[2] = {&MCPWM0, &MCPWM1}; // interrupt handling still lacks API to get/clear pending event, currently we have to read/write interrupt register
+#define MCPWM_TEST_GROUP_CLK_HZ (SOC_MCPWM_BASE_CLK_HZ / 16)
+#define MCPWM_TEST_TIMER_CLK_HZ (MCPWM_TEST_GROUP_CLK_HZ / 10)
+
 const static mcpwm_io_signals_t pwma[] = {MCPWM0A, MCPWM1A, MCPWM2A};
 const static mcpwm_io_signals_t pwmb[] = {MCPWM0B, MCPWM1B, MCPWM2B};
 const static mcpwm_fault_signal_t fault_sig_array[] = {MCPWM_SELECT_F0, MCPWM_SELECT_F1, MCPWM_SELECT_F2};
@@ -52,12 +54,12 @@ static esp_err_t test_mcpwm_gpio_init(mcpwm_unit_t mcpwm_num, mcpwm_io_signals_t
         esp_rom_gpio_connect_out_signal(gpio_num, mcpwm_periph_signals.groups[mcpwm_num].operators[operator_id].generators[generator_id].pwm_sig, 0, 0);
     } else if (io_signal <= MCPWM_SYNC_2) { // External sync input signal
         gpio_set_direction(gpio_num, GPIO_MODE_INPUT_OUTPUT);
-        int ext_sync_id = io_signal - MCPWM_SYNC_0;
-        esp_rom_gpio_connect_in_signal(gpio_num, mcpwm_periph_signals.groups[mcpwm_num].ext_syncers[ext_sync_id].sync_sig, 0);
+        int gpio_sync_id = io_signal - MCPWM_SYNC_0;
+        esp_rom_gpio_connect_in_signal(gpio_num, mcpwm_periph_signals.groups[mcpwm_num].gpio_synchros[gpio_sync_id].sync_sig, 0);
     } else if (io_signal <= MCPWM_FAULT_2) { // Fault input signal
         gpio_set_direction(gpio_num, GPIO_MODE_INPUT_OUTPUT);
         int fault_id = io_signal - MCPWM_FAULT_0;
-        esp_rom_gpio_connect_in_signal(gpio_num, mcpwm_periph_signals.groups[mcpwm_num].detectors[fault_id].fault_sig, 0);
+        esp_rom_gpio_connect_in_signal(gpio_num, mcpwm_periph_signals.groups[mcpwm_num].gpio_faults[fault_id].fault_sig, 0);
     } else if (io_signal >= MCPWM_CAP_0 && io_signal <= MCPWM_CAP_2) { // Capture input signal
         gpio_set_direction(gpio_num, GPIO_MODE_INPUT_OUTPUT);
         int capture_id = io_signal - MCPWM_CAP_0;
@@ -67,7 +69,8 @@ static esp_err_t test_mcpwm_gpio_init(mcpwm_unit_t mcpwm_num, mcpwm_io_signals_t
     return ESP_OK;
 }
 
-static void mcpwm_setup_testbench(mcpwm_unit_t group, mcpwm_timer_t timer, uint32_t pwm_freq, float pwm_duty)
+static void mcpwm_setup_testbench(mcpwm_unit_t group, mcpwm_timer_t timer, uint32_t pwm_freq, float pwm_duty,
+                                  unsigned long int group_resolution, unsigned long int timer_resolution)
 {
     // PWMA <--> PCNT UNIT0
     pcnt_config_t pcnt_config = {
@@ -100,6 +103,8 @@ static void mcpwm_setup_testbench(mcpwm_unit_t group, mcpwm_timer_t timer, uint3
         .counter_mode = MCPWM_UP_COUNTER,
         .duty_mode = MCPWM_DUTY_MODE_0,
     };
+    mcpwm_group_set_resolution(group, group_resolution);
+    mcpwm_timer_set_resolution(group, timer, timer_resolution);
     TEST_ESP_OK(mcpwm_init(group, timer, &pwm_config));
 }
 
@@ -115,24 +120,24 @@ static uint32_t mcpwm_pcnt_get_pulse_number(pcnt_unit_t pwm_pcnt_unit, int captu
     return (uint32_t)count_value;
 }
 
-static void mcpwm_timer_duty_test(mcpwm_unit_t unit, mcpwm_timer_t timer)
+static void mcpwm_timer_duty_test(mcpwm_unit_t unit, mcpwm_timer_t timer, unsigned long int group_resolution, unsigned long int timer_resolution)
 {
-    mcpwm_setup_testbench(unit, timer, 1000, 50.0);
+    mcpwm_setup_testbench(unit, timer, 1000, 50.0, group_resolution, timer_resolution);
     vTaskDelay(pdMS_TO_TICKS(100));
 
     TEST_ESP_OK(mcpwm_set_duty(unit, timer, MCPWM_OPR_A, 10.0));
     TEST_ESP_OK(mcpwm_set_duty(unit, timer, MCPWM_OPR_B, 20.0));
-    TEST_ASSERT_EQUAL_FLOAT(10.0, mcpwm_get_duty(unit, timer, MCPWM_OPR_A));
-    TEST_ASSERT_EQUAL_FLOAT(20.0, mcpwm_get_duty(unit, timer, MCPWM_OPR_B));
+    TEST_ASSERT_FLOAT_WITHIN(0.1, 10.0, mcpwm_get_duty(unit, timer, MCPWM_OPR_A));
+    TEST_ASSERT_FLOAT_WITHIN(0.1, 20.0, mcpwm_get_duty(unit, timer, MCPWM_OPR_B));
     vTaskDelay(pdMS_TO_TICKS(100));
 
     TEST_ESP_OK(mcpwm_set_duty(unit, timer, MCPWM_OPR_A, 55.5f));
     TEST_ESP_OK(mcpwm_set_duty_type(unit, timer, MCPWM_OPR_A, MCPWM_DUTY_MODE_0));
-    TEST_ASSERT_EQUAL_FLOAT(55.5, mcpwm_get_duty(unit, timer, MCPWM_OPR_A));
+    TEST_ASSERT_FLOAT_WITHIN(0.1, 55.5, mcpwm_get_duty(unit, timer, MCPWM_OPR_A));
     vTaskDelay(pdMS_TO_TICKS(100));
 
     TEST_ESP_OK(mcpwm_set_duty_in_us(unit, timer, MCPWM_OPR_B, 500));
-    TEST_ASSERT_EQUAL_FLOAT(50.0, mcpwm_get_duty(unit, timer, MCPWM_OPR_B));
+    TEST_ASSERT_INT_WITHIN(5, 500, mcpwm_get_duty_in_us(unit, timer, MCPWM_OPR_B));
     vTaskDelay(pdMS_TO_TICKS(100));
 
     TEST_ESP_OK(mcpwm_stop(unit, timer));
@@ -143,7 +148,8 @@ TEST_CASE("MCPWM duty test", "[mcpwm]")
 {
     for (int i = 0; i < SOC_MCPWM_GROUPS; i++) {
         for (int j = 0; j < SOC_MCPWM_TIMERS_PER_GROUP; j++) {
-            mcpwm_timer_duty_test(i, j);
+            mcpwm_timer_duty_test(i, j, MCPWM_TEST_GROUP_CLK_HZ, MCPWM_TEST_TIMER_CLK_HZ);
+            mcpwm_timer_duty_test(i, j, MCPWM_TEST_GROUP_CLK_HZ / 2, MCPWM_TEST_TIMER_CLK_HZ * 2);
         }
     }
 }
@@ -154,7 +160,7 @@ static void mcpwm_start_stop_test(mcpwm_unit_t unit, mcpwm_timer_t timer)
 {
     uint32_t pulse_number = 0;
 
-    mcpwm_setup_testbench(unit, timer, 1000, 50.0); // Period: 1000us, 1ms
+    mcpwm_setup_testbench(unit, timer, 1000, 50.0, MCPWM_TEST_GROUP_CLK_HZ, MCPWM_TEST_TIMER_CLK_HZ); // Period: 1000us, 1ms
     // count the pulse number within 100ms
     pulse_number = mcpwm_pcnt_get_pulse_number(TEST_PWMA_PCNT_UNIT, 100);
     TEST_ASSERT_INT_WITHIN(2, 100, pulse_number);
@@ -187,7 +193,7 @@ TEST_CASE("MCPWM start and stop test", "[mcpwm]")
 
 static void mcpwm_deadtime_test(mcpwm_unit_t unit, mcpwm_timer_t timer)
 {
-    mcpwm_setup_testbench(unit, timer, 1000, 50.0); // Period: 1000us, 1ms
+    mcpwm_setup_testbench(unit, timer, 1000, 50.0, MCPWM_TEST_GROUP_CLK_HZ, MCPWM_TEST_TIMER_CLK_HZ); // Period: 1000us, 1ms
     mcpwm_deadtime_type_t deadtime_type[] = {MCPWM_BYPASS_RED, MCPWM_BYPASS_FED, MCPWM_ACTIVE_HIGH_MODE,
                                              MCPWM_ACTIVE_LOW_MODE, MCPWM_ACTIVE_HIGH_COMPLIMENT_MODE, MCPWM_ACTIVE_LOW_COMPLIMENT_MODE,
                                              MCPWM_ACTIVE_RED_FED_FROM_PWMXA, MCPWM_ACTIVE_RED_FED_FROM_PWMXB
@@ -220,7 +226,7 @@ static void mcpwm_carrier_test(mcpwm_unit_t unit, mcpwm_timer_t timer, mcpwm_car
 {
     uint32_t pulse_number = 0;
 
-    mcpwm_setup_testbench(unit, timer, 1000, 50.0);
+    mcpwm_setup_testbench(unit, timer, 1000, 50.0, MCPWM_TEST_GROUP_CLK_HZ, MCPWM_TEST_TIMER_CLK_HZ);
     mcpwm_set_signal_high(unit, timer, MCPWM_GEN_A);
     mcpwm_set_signal_high(unit, timer, MCPWM_GEN_B);
     TEST_ESP_OK(mcpwm_carrier_enable(unit, timer));
@@ -276,7 +282,7 @@ static void mcpwm_fault_cbc_test(mcpwm_unit_t unit, mcpwm_timer_t timer)
     mcpwm_fault_signal_t fault_sig = fault_sig_array[timer];
     mcpwm_io_signals_t fault_io_sig = fault_io_sig_array[timer];
 
-    mcpwm_setup_testbench(unit, timer, 1000, 50.0);
+    mcpwm_setup_testbench(unit, timer, 1000, 50.0, MCPWM_TEST_GROUP_CLK_HZ, MCPWM_TEST_TIMER_CLK_HZ);
     TEST_ESP_OK(test_mcpwm_gpio_init(unit, fault_io_sig, TEST_FAULT_GPIO));
     gpio_set_level(TEST_FAULT_GPIO, 0);
     TEST_ESP_OK(mcpwm_fault_init(unit, MCPWM_HIGH_LEVEL_TGR, fault_sig));
@@ -312,7 +318,7 @@ static void mcpwm_fault_ost_test(mcpwm_unit_t unit, mcpwm_timer_t timer)
     mcpwm_fault_signal_t fault_sig = fault_sig_array[timer];
     mcpwm_io_signals_t fault_io_sig = fault_io_sig_array[timer];
 
-    mcpwm_setup_testbench(unit, timer, 1000, 50.0);
+    mcpwm_setup_testbench(unit, timer, 1000, 50.0, MCPWM_TEST_GROUP_CLK_HZ, MCPWM_TEST_TIMER_CLK_HZ);
     TEST_ESP_OK(test_mcpwm_gpio_init(unit, fault_io_sig, TEST_FAULT_GPIO));
     gpio_set_level(TEST_FAULT_GPIO, 0);
     TEST_ESP_OK(mcpwm_fault_init(unit, MCPWM_HIGH_LEVEL_TGR, fault_sig));
@@ -345,7 +351,7 @@ static void mcpwm_sync_test(mcpwm_unit_t unit, mcpwm_timer_t timer)
     mcpwm_sync_signal_t sync_sig = sync_sig_array[timer];
     mcpwm_io_signals_t sync_io_sig = sync_io_sig_array[timer];
 
-    mcpwm_setup_testbench(unit, timer, 1000, 50.0);
+    mcpwm_setup_testbench(unit, timer, 1000, 50.0, MCPWM_TEST_GROUP_CLK_HZ, MCPWM_TEST_TIMER_CLK_HZ);
     TEST_ESP_OK(test_mcpwm_gpio_init(unit, sync_io_sig, TEST_SYNC_GPIO));
     gpio_set_level(TEST_SYNC_GPIO, 0);
 
@@ -375,18 +381,13 @@ static void mcpwm_capture_test(mcpwm_unit_t unit, mcpwm_capture_signal_t cap_cha
         TaskHandle_t task_hdl;
     } test_capture_callback_data_t;
 
-    void test_mcpwm_intr_handler(void *arg) {
+    bool test_mcpwm_intr_handler(mcpwm_unit_t mcpwm, mcpwm_capture_channel_id_t cap_sig, const cap_event_data_t *edata, void *arg) {
         BaseType_t high_task_wakeup = pdFALSE;
         test_capture_callback_data_t *cb_data = (test_capture_callback_data_t *)arg;
-        uint32_t status = MCPWM[cb_data->unit]->int_st.val;
-        MCPWM[cb_data->unit]->int_clr.val = status;
         vTaskNotifyGiveFromISR(cb_data->task_hdl, &high_task_wakeup);
-        if (high_task_wakeup == pdTRUE) {
-            portYIELD_FROM_ISR();
-        }
+        return high_task_wakeup == pdTRUE;
     }
 
-    intr_handle_t mcpwm_intr = NULL;
     test_capture_callback_data_t callback_data = {
         .unit = unit,
         .task_hdl = xTaskGetCurrentTaskHandle(),
@@ -394,17 +395,23 @@ static void mcpwm_capture_test(mcpwm_unit_t unit, mcpwm_capture_signal_t cap_cha
 
     //each timer test the capture sig with the same id with it.
     mcpwm_io_signals_t cap_io = cap_io_sig_array[cap_chan];
-    mcpwm_capture_signal_t cap_sig = cap_sig_array[cap_chan];
+    mcpwm_capture_channel_id_t cap_channel = cap_sig_array[cap_chan];
 
     TEST_ESP_OK(test_mcpwm_gpio_init(unit, cap_io, TEST_CAP_GPIO));
-    TEST_ESP_OK(mcpwm_capture_enable(unit, cap_sig, MCPWM_POS_EDGE, 0));
-    TEST_ESP_OK(mcpwm_isr_register(unit, test_mcpwm_intr_handler, &callback_data, 0, &mcpwm_intr));
+    mcpwm_capture_config_t conf = {
+            .cap_edge = MCPWM_POS_EDGE,
+            .cap_prescale = 1,
+            .capture_cb = test_mcpwm_intr_handler,
+            .user_data = &callback_data
+    };
+    TEST_ESP_OK(mcpwm_capture_enable_channel(unit, cap_channel, &conf));
     // generate an posage
     gpio_set_level(TEST_CAP_GPIO, 0);
     gpio_set_level(TEST_CAP_GPIO, 1);
     vTaskDelay(pdMS_TO_TICKS(100));
     TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(40)));
     uint32_t cap_val0 = mcpwm_capture_signal_get_value(unit, cap_chan);
+
     // generate another posage
     gpio_set_level(TEST_CAP_GPIO, 0);
     gpio_set_level(TEST_CAP_GPIO, 1);
@@ -413,8 +420,7 @@ static void mcpwm_capture_test(mcpwm_unit_t unit, mcpwm_capture_signal_t cap_cha
     // capture clock source is APB (80MHz), 100ms means 8000000 ticks
     TEST_ASSERT_UINT_WITHIN(100000, 8000000, cap_val1 - cap_val0);
 
-    TEST_ESP_OK(mcpwm_capture_disable(unit, cap_sig));
-    TEST_ESP_OK(esp_intr_free(mcpwm_intr));
+    TEST_ESP_OK(mcpwm_capture_disable_channel(unit, cap_channel));
 }
 
 TEST_CASE("MCPWM capture test", "[mcpwm]")

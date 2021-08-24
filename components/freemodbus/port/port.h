@@ -37,7 +37,7 @@
 #define MB_SERIAL_BUF_SIZE              (CONFIG_FMB_SERIAL_BUF_SIZE)
 
 // common definitions for serial port implementations
-#define MB_SERIAL_TX_TOUT_MS            (100)
+#define MB_SERIAL_TX_TOUT_MS            (2200) // maximum time for transmission of longest allowed frame buffer
 #define MB_SERIAL_TX_TOUT_TICKS         (pdMS_TO_TICKS(MB_SERIAL_TX_TOUT_MS)) // timeout for transmission
 #define MB_SERIAL_RX_TOUT_MS            (1)
 #define MB_SERIAL_RX_TOUT_TICKS         (pdMS_TO_TICKS(MB_SERIAL_RX_TOUT_MS)) // timeout for receive
@@ -50,6 +50,9 @@
 #define MB_TCP_STACK_SIZE               (CONFIG_FMB_PORT_TASK_STACK_SIZE)
 #define MB_TCP_TASK_PRIO                (CONFIG_FMB_PORT_TASK_PRIO)
 
+// The task affinity for Modbus stack tasks
+#define MB_PORT_TASK_AFFINITY           (CONFIG_FMB_PORT_TASK_AFFINITY)
+
 #define MB_TCP_READ_TIMEOUT_MS          (100) // read timeout in mS
 #define MB_TCP_READ_TIMEOUT             (pdMS_TO_TICKS(MB_TCP_READ_TIMEOUT_MS))
 #define MB_TCP_SEND_TIMEOUT_MS          (500) // send event timeout in mS
@@ -57,6 +60,8 @@
 #define MB_TCP_PORT_MAX_CONN            (CONFIG_FMB_TCP_PORT_MAX_CONN)
 
 #define MB_TCP_FRAME_LOG_BUFSIZE        (256)
+
+#define MB_PORT_HAS_CLOSE               (1) // Define to explicitly close port on destroy
 
 // Define number of timer reloads per 1 mS
 #define MB_TIMER_TICS_PER_MS            (20UL)

@@ -13,6 +13,9 @@
       "install": "always",
       "license": "GPL-3.0-with-GCC-exception",
       "name": "xtensa-esp32-elf",
+      "supported_targets": [
+        "esp32"
+      ],
       "version_cmd": [
         "xtensa-esp32-elf-gcc",
         "--version"
@@ -69,6 +72,9 @@
       "install": "always",
       "license": "GPL-3.0-with-GCC-exception",
       "name": "xtensa-esp32s2-elf",
+      "supported_targets": [
+        "esp32s2"
+      ],
       "version_cmd": [
         "xtensa-esp32s2-elf-gcc",
         "--version"
@@ -125,6 +131,9 @@
       "install": "always",
       "license": "GPL-3.0-with-GCC-exception",
       "name": "xtensa-esp32s3-elf",
+      "supported_targets": [
+        "esp32s3"
+      ],
       "version_cmd": [
         "xtensa-esp32s3-elf-gcc",
         "--version"
@@ -181,6 +190,11 @@
       "install": "always",
       "license": "GPL-3.0-with-GCC-exception",
       "name": "riscv32-esp-elf",
+      "supported_targets": [
+        "esp32s2",
+        "esp32s3",
+        "esp32c3"
+      ],
       "version_cmd": [
         "riscv32-esp-elf-gcc",
         "--version"
@@ -245,6 +259,9 @@
           ]
         }
       ],
+      "supported_targets": [
+        "esp32"
+      ],
       "version_cmd": [
         "esp32ulp-elf-as",
         "--version"
@@ -283,7 +300,7 @@
       ]
     },
     {
-      "description": "Toolchain for ESP32-S2 ULP coprocessor",
+      "description": "Toolchain for ESP32-S2 and ESP32-S3 ULP coprocessors",
       "export_paths": [
         [
           "esp32s2ulp-elf-binutils",
@@ -302,6 +319,10 @@
             "linux-i686"
           ]
         }
+      ],
+      "supported_targets": [
+        "esp32s2",
+        "esp32s3"
       ],
       "version_cmd": [
         "esp32s2ulp-elf-as",
@@ -374,6 +395,9 @@
         }
       ],
       "strip_container_dirs": 1,
+      "supported_targets": [
+        "all"
+      ],
       "version_cmd": [
         "cmake",
         "--version"
@@ -382,26 +406,26 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "12a577aa04b6639766ae908f33cf70baefc11ac4499b8b1c8812d99f05fb6a02",
-            "size": 39517697,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.16.4/cmake-3.16.4-Linux-x86_64.tar.gz"
+            "sha256": "97bf730372f9900b2dfb9206fccbcf92f5c7f3b502148b832e77451aa0f9e0e6",
+            "size": 43877847,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.20.3/cmake-3.20.3-linux-x86_64.tar.gz"
           },
           "macos": {
-            "sha256": "f60e0ef96da48725cd8da7d6abe83cd9501167aa51625c90dd4d31081a631279",
-            "size": 35802699,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.16.4/cmake-3.16.4-Darwin-x86_64.tar.gz"
+            "sha256": "5f72dba3aa5f3800fb29ab6115ae0b31f10bdb2aad66204e14c98f6ac7e6b6ed",
+            "size": 66311879,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.20.3/cmake-3.20.3-macos-universal.tar.gz"
           },
-          "name": "3.16.4",
+          "name": "3.20.3",
           "status": "recommended",
           "win32": {
-            "sha256": "f37963bcfcebdfe5864926a3623f6c21220c35790c39cd65e64bd521cbb39c55",
-            "size": 32812189,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.16.4/cmake-3.16.4-win64-x64.zip"
+            "sha256": "e276cf7fbb3e3e88bc666e183bc3ddaceb143a4c83fb357b1dbb1a26fd6e4ea2",
+            "size": 36995168,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.20.3/cmake-3.20.3-windows-x86_64.zip"
           },
           "win64": {
-            "sha256": "f37963bcfcebdfe5864926a3623f6c21220c35790c39cd65e64bd521cbb39c55",
-            "size": 32812189,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.16.4/cmake-3.16.4-win64-x64.zip"
+            "sha256": "e276cf7fbb3e3e88bc666e183bc3ddaceb143a4c83fb357b1dbb1a26fd6e4ea2",
+            "size": 36995168,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.20.3/cmake-3.20.3-windows-x86_64.zip"
           }
         }
       ]
@@ -429,6 +453,9 @@
           ]
         }
       ],
+      "supported_targets": [
+        "all"
+      ],
       "version_cmd": [
         "openocd",
         "--version"
@@ -437,31 +464,31 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "0973c2503909af3e430b7a2309b6162ca375671ab2b22e37cba5159eea142139",
-            "size": 1773107,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20210401/openocd-esp32-linux64-0.10.0-esp32-20210401.tar.gz"
+            "sha256": "4a47edaa77c9593856f394a129f5969b786ea0a78a089c11fccb3f2f4cd3ba19",
+            "size": 1801109,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20210721/openocd-esp32-linux64-0.10.0-esp32-20210721.tar.gz"
           },
           "linux-armel": {
-            "sha256": "3703401322cc51f85cb44e3a14a788fdc45883051eac3428b4d7bdf323dee2c7",
-            "size": 1829351,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20210401/openocd-esp32-armel-0.10.0-esp32-20210401.tar.gz"
+            "sha256": "5e20031e1df2efd0a4f41925c6a8afda43ddb2327c353e352d5b8eed1e2d836b",
+            "size": 1833373,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20210721/openocd-esp32-armel-0.10.0-esp32-20210721.tar.gz"
           },
           "macos": {
-            "sha256": "cb9e8d486197fc6e8080fde089fa3e92770f8c7af01971a57d4ca9b424264b63",
-            "size": 1859246,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20210401/openocd-esp32-macos-0.10.0-esp32-20210401.tar.gz"
+            "sha256": "2315202693aa35efc78d41bb2db48dd14ae1821a5fd2bb8c2c044908f170648a",
+            "size": 1909600,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20210721/openocd-esp32-macos-0.10.0-esp32-20210721.tar.gz"
           },
-          "name": "v0.10.0-esp32-20210401",
+          "name": "v0.10.0-esp32-20210721",
           "status": "recommended",
           "win32": {
-            "sha256": "931bc4c4587e0713d4fc4fbc81b9a79c8228268e61fcd14b2bdcb2f8bd519ef9",
-            "size": 2253723,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20210401/openocd-esp32-win32-0.10.0-esp32-20210401.zip"
+            "sha256": "ea9859004f49d7a192f65efa3e3c2ca2434454d5a7834485273673086f18e012",
+            "size": 2280686,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20210721/openocd-esp32-win32-0.10.0-esp32-20210721.zip"
           },
           "win64": {
-            "sha256": "931bc4c4587e0713d4fc4fbc81b9a79c8228268e61fcd14b2bdcb2f8bd519ef9",
-            "size": 2253723,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20210401/openocd-esp32-win32-0.10.0-esp32-20210401.zip"
+            "sha256": "ea9859004f49d7a192f65efa3e3c2ca2434454d5a7834485273673086f18e012",
+            "size": 2280686,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20210721/openocd-esp32-win32-0.10.0-esp32-20210721.zip"
           }
         }
       ]
@@ -486,6 +513,9 @@
             "win64"
           ]
         }
+      ],
+      "supported_targets": [
+        "all"
       ],
       "version_cmd": [
         "ninja",
@@ -535,6 +565,9 @@
           ]
         }
       ],
+      "supported_targets": [
+        "all"
+      ],
       "version_cmd": [
         "idf.py.exe",
         "-v"
@@ -561,7 +594,7 @@
       "description": "Ccache (compiler cache)",
       "export_paths": [
         [
-          ""
+          "ccache-4.3-windows-64"
         ]
       ],
       "export_vars": {
@@ -579,6 +612,9 @@
           ]
         }
       ],
+      "supported_targets": [
+        "all"
+      ],
       "version_cmd": [
         "ccache.exe",
         "--version"
@@ -586,12 +622,12 @@
       "version_regex": "ccache version ([0-9.]+)",
       "versions": [
         {
-          "name": "3.7",
+          "name": "4.3",
           "status": "recommended",
           "win64": {
-            "sha256": "37e833f3f354f1145503533e776c1bd44ec2e77ff8a2476a1d2039b0b10c78d6",
-            "size": 142401,
-            "url": "https://dl.espressif.com/dl/ccache-3.7-w64.zip"
+            "sha256": "a9cacae73c3906d8193456328bee74f7748cb1559a32eaced9ee78eadd416105",
+            "size": 1550675,
+            "url": "https://github.com/ccache/ccache/releases/download/v4.3/ccache-4.3-windows-64.zip"
           }
         }
       ]
@@ -615,6 +651,10 @@
             "win64"
           ]
         }
+      ],
+      "supported_targets": [
+        "esp32s2",
+        "esp32s3"
       ],
       "version_cmd": [
         "dfu-util",

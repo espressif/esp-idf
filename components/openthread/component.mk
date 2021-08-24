@@ -34,6 +34,10 @@ COMPONENT_SRCDIRS :=                      \
     openthread/src/lib/spinel             \
     port
 
+ifdef CONFIG_OPENTHREAD_BORDER_ROUTER
+COMPONENT_SRCDIRS += openthread/src/core/border_router
+endif
+
 COMPONENT_OBJEXCLUDE :=                              \
     openthread/examples/apps/cli/main.o              \
     openthread/src/core/common/extension_example.o   \
@@ -54,7 +58,8 @@ OPENTHREAD_PACKAGE_VERSION := $(IDF_VERSION_FOR_OPENTHREAD_PACKAGE)-$(OPENTHREAD
 
 COMMON_FLAGS :=                                                              \
     -DOPENTHREAD_CONFIG_FILE=\<openthread-core-esp32x-config.h\>             \
-    -DPACKAGE_VERSION=\"OPENTHREAD_PACKAGE_VERSION\"
+    -DPACKAGE_VERSION=\"OPENTHREAD_PACKAGE_VERSION\"                         \
+    -Wno-maybe-uninitialized
 
 ifdef CONFIG_OPENTHREAD_FTD
     COMMON_FLAGS += -DOPENTHREAD_FTD=1

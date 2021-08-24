@@ -5,7 +5,7 @@ import subprocess
 import sys
 
 import ttfw_idf
-from pygdbmi.gdbcontroller import GdbController
+from pygdbmi.gdbcontroller import GdbController, GdbTimeoutError, NoGdbProcessError
 from tiny_test_fw import DUT, TinyFW, Utility
 from tiny_test_fw.Utility import CaseConfig, SearchCases
 
@@ -161,6 +161,23 @@ class PanicTestMixin(object):
 
         Utility.console_log('Starting GDB...', 'orange')
         self.gdb = GdbController(gdb_path=self.TOOLCHAIN_PREFIX + 'gdb')
+        Utility.console_log('Running command: {}'.format(self.gdb.get_subprocess_cmd()), 'orange')
+
+        for _ in range(10):
+            try:
+                # GdbController creates a process with subprocess.Popen(). Is it really running? It is probable that
+                # an RPI under high load will get non-responsive during creating a lot of processes.
+                resp = self.gdb.get_gdb_response(timeout_sec=10)  # calls verify_valid_gdb_subprocess() internally
+                # it will be interesting to look up this response if the next GDB command fails (times out)
+                Utility.console_log('GDB response: {}'.format(resp), 'orange')
+                break  # success
+            except GdbTimeoutError:
+                Utility.console_log('GDB internal error: cannot get response from the subprocess', 'orange')
+            except NoGdbProcessError:
+                Utility.console_log('GDB internal error: process is not running', 'red')
+                break  # failure - TODO: create another GdbController
+            except ValueError:
+                Utility.console_log('GDB internal error: select() returned an unexpected file number', 'red')
 
         # pygdbmi logs to console by default, make it log to a file instead
         log_folder = self.app.get_log_folder(TEST_SUITE)

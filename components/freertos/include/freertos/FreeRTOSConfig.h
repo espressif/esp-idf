@@ -74,7 +74,9 @@
 // The arch-specific FreeRTOSConfig.h in port/<arch>/include.
 #include_next "freertos/FreeRTOSConfig.h"
 
-#if !(defined(FREERTOS_CONFIG_XTENSA_H) || defined(FREERTOS_CONFIG_RISCV_H))
+#if !(defined(FREERTOS_CONFIG_XTENSA_H) \
+        || defined(FREERTOS_CONFIG_RISCV_H) \
+        || defined(FREERTOS_CONFIG_LINUX_H))
 #error "Needs architecture-speific FreeRTOSConfig.h!"
 #endif
 
@@ -244,7 +246,9 @@
    kept at 1. */
 #define configKERNEL_INTERRUPT_PRIORITY                 1
 
+#if !CONFIG_IDF_TARGET_LINUX
 #define configUSE_NEWLIB_REENTRANT                      1
+#endif
 
 #define configSUPPORT_DYNAMIC_ALLOCATION                1
 #define configSUPPORT_STATIC_ALLOCATION                 1
@@ -273,11 +277,11 @@ extern void vPortCleanUpTCB ( void *pxTCB );
 #endif //configUSE_TICKLESS_IDLE
 
 
-#if CONFIG_ESP_COREDUMP_ENABLE
+#if CONFIG_ESP_COREDUMP_ENABLE || CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 #define configENABLE_TASK_SNAPSHOT                      1
 #endif
 #ifndef configENABLE_TASK_SNAPSHOT
-#define configENABLE_TASK_SNAPSHOT                      1
+#define configENABLE_TASK_SNAPSHOT                      0
 #endif
 
 #if CONFIG_SYSVIEW_ENABLE
@@ -292,5 +296,8 @@ extern void vPortCleanUpTCB ( void *pxTCB );
 #else
 #define configCHECK_MUTEX_GIVEN_BY_OWNER                0
 #endif
+
+
+#define configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H       1
 
 #endif /* FREERTOS_CONFIG_H */

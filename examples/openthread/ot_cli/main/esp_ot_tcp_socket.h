@@ -18,7 +18,6 @@
 extern "C" {
 #endif
 
-#if CONFIG_OPENTHREAD_ENABLE_TCP_SOCKET_EXAMPLE
 /**
  * @brief User command "tcpsockserver" process.
  *
@@ -31,7 +30,6 @@ void esp_ot_process_tcp_server(void *aContext, uint8_t aArgsLength, char *aArgs[
  */
 void esp_ot_process_tcp_client(void *aContext, uint8_t aArgsLength, char *aArgs[]);
 
-#endif // CONFIG_OPENTHREAD_ENABLE_TCP_SOCKET_EXAMPLE
 #ifdef __cplusplus
 }
 #endif

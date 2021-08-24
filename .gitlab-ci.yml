@@ -48,10 +48,10 @@ variables:
 
   # Docker images
   BOT_DOCKER_IMAGE_TAG: ":latest"
-  ESP_IDF_DOC_ENV_IMAGE: "$CI_DOCKER_REGISTRY/esp-idf-doc-env:v4.4-1-v2"
+  ESP_IDF_DOC_ENV_IMAGE: "$CI_DOCKER_REGISTRY/esp-idf-doc-env:v4.4-1-v3"
   ESP_ENV_IMAGE: "$CI_DOCKER_REGISTRY/esp-env:v4.4-1"
   AFL_FUZZER_TEST_IMAGE: "$CI_DOCKER_REGISTRY/afl-fuzzer-test:v4.4-1-1"
-  CLANG_STATIC_ANALYSIS_IMAGE: "${CI_DOCKER_REGISTRY}/clang-static-analysis:v4.4-1-1"
+  CLANG_STATIC_ANALYSIS_IMAGE: "${CI_DOCKER_REGISTRY}/clang-static-analysis:v4.4-1-2"
 
   # target test config file, used by assign test job
   CI_TARGET_TEST_CONFIG_FILE: "$CI_PROJECT_DIR/.gitlab/ci/target-test.yml"
@@ -66,7 +66,7 @@ variables:
   export IDF_MIRROR_PREFIX_MAP=
   fi
   if [[ "$SETUP_TOOLS" == "1" || "$CI_JOB_STAGE" != "target_test" ]]; then
-  tools/idf_tools.py --non-interactive install && eval "$(tools/idf_tools.py --non-interactive export)" || exit 1
+  tools/idf_tools.py --non-interactive install ${SETUP_TOOLS_LIST:-} && eval "$(tools/idf_tools.py --non-interactive export)" || exit 1
     if [[ ! -z "$OOCD_DISTRO_URL" && "$CI_JOB_STAGE" == "target_test" ]]; then
     echo "Using custom OpenOCD from ${OOCD_DISTRO_URL}"
     wget $OOCD_DISTRO_URL

@@ -2,9 +2,9 @@ menu "Echo RS485 Example Configuration"
 
     config ECHO_UART_PORT_NUM
         int "UART port number"
-        range 0 2 if IDF_TARGET_ESP32
+        range 0 2 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3
         range 0 1 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3
-        default 2 if IDF_TARGET_ESP32
+        default 2 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3
         default 1 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3
         help
             UART communication port number for the example.
@@ -23,8 +23,9 @@ menu "Echo RS485 Example Configuration"
         default 22 if IDF_TARGET_ESP32
         range 0 46 if IDF_TARGET_ESP32S2
         default 19 if IDF_TARGET_ESP32S2
+        range 0 48 if IDF_TARGET_ESP32S3
         range 0 19 if IDF_TARGET_ESP32C3
-        default 5  if IDF_TARGET_ESP32C3
+        default 5  if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
         help
             GPIO number for UART RX pin. See UART documentation for more information
             about available pin numbers for UART.
@@ -35,8 +36,9 @@ menu "Echo RS485 Example Configuration"
         default 23 if IDF_TARGET_ESP32
         range 0 46 if IDF_TARGET_ESP32S2
         default 20 if IDF_TARGET_ESP32S2
+        range 0 48 if IDF_TARGET_ESP32S3
         range 0 19 if IDF_TARGET_ESP32C3
-        default 4  if IDF_TARGET_ESP32C3
+        default 4  if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
         help
             GPIO number for UART TX pin. See UART documentation for more information
             about available pin numbers for UART.
@@ -45,6 +47,7 @@ menu "Echo RS485 Example Configuration"
         int "UART RTS pin number"
         range 0 34 if IDF_TARGET_ESP32
         range 0 46 if IDF_TARGET_ESP32S2
+        range 0 48 if IDF_TARGET_ESP32S3
         range 0 19 if IDF_TARGET_ESP32C3
         default 18
         help

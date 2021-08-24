@@ -4,3 +4,4 @@ cxx/experimental/experimental_cpp_component/
 main/
 build_system/cmake/
 mb_example_common/
+examples/cxx/experimental/blink_cxx

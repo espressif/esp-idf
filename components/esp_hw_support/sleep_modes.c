@@ -1,16 +1,8 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stddef.h>
 #include <string.h>
@@ -24,6 +16,7 @@
 #include "esp_log.h"
 #include "esp_newlib.h"
 #include "esp_timer.h"
+#include "esp_ipc_isr.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "soc/soc_caps.h"
@@ -100,8 +93,8 @@
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (28)
 #elif CONFIG_IDF_TARGET_ESP32S3
 #define DEFAULT_CPU_FREQ_MHZ                CONFIG_ESP32S3_DEFAULT_CPU_FREQ_MHZ
-#define DEFAULT_SLEEP_OUT_OVERHEAD_US       (0)
-#define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (0)
+#define DEFAULT_SLEEP_OUT_OVERHEAD_US       (382)
+#define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (133)
 #elif CONFIG_IDF_TARGET_ESP32C3
 #define DEFAULT_CPU_FREQ_MHZ                CONFIG_ESP32C3_DEFAULT_CPU_FREQ_MHZ
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (105)
@@ -113,11 +106,7 @@
 #endif
 
 #define LIGHT_SLEEP_TIME_OVERHEAD_US        DEFAULT_HARDWARE_OUT_OVERHEAD_US
-#if defined(CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS)   || \
-    defined(CONFIG_ESP32S2_RTC_CLK_SRC_EXT_CRYS) || \
-    defined(CONFIG_ESP32C3_RTC_CLK_SRC_EXT_CRYS) || \
-    defined(CONFIG_ESP32H2_RTC_CLK_SRC_EXT_CRYS) || \
-    defined(CONFIG_ESP32S3_RTC_CLK_SRC_EXT_CRYS)
+#ifdef CONFIG_ESP_SYSTEM_RTC_EXT_XTAL
 #define DEEP_SLEEP_TIME_OVERHEAD_US         (650 + 100 * 240 / DEFAULT_CPU_FREQ_MHZ)
 #else
 #define DEEP_SLEEP_TIME_OVERHEAD_US         (250 + 100 * 240 / DEFAULT_CPU_FREQ_MHZ)
@@ -125,6 +114,8 @@
 
 #if defined(CONFIG_IDF_TARGET_ESP32) && defined(CONFIG_ESP32_DEEP_SLEEP_WAKEUP_DELAY)
 #define DEEP_SLEEP_WAKEUP_DELAY     CONFIG_ESP32_DEEP_SLEEP_WAKEUP_DELAY
+#elif defined(CONFIG_IDF_TARGET_ESP32S3) && defined(CONFIG_ESP32S3_DEEP_SLEEP_WAKEUP_DELAY)
+#define DEEP_SLEEP_WAKEUP_DELAY     CONFIG_ESP32S3_DEEP_SLEEP_WAKEUP_DELAY
 #else
 #define DEEP_SLEEP_WAKEUP_DELAY     0
 #endif
@@ -373,7 +364,7 @@ static void IRAM_ATTR resume_uarts(void)
     }
 }
 
-inline static uint32_t IRAM_ATTR call_rtc_sleep_start(uint32_t reject_triggers);
+inline static uint32_t IRAM_ATTR call_rtc_sleep_start(uint32_t reject_triggers, uint32_t lslp_mem_inf_fpu);
 
 #if SOC_PM_SUPPORT_CPU_PD
 esp_err_t esp_sleep_cpu_pd_low_init(bool enable)
@@ -539,7 +530,6 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     // Enter sleep
     rtc_sleep_config_t config = RTC_SLEEP_CONFIG_DEFAULT(pd_flags);
     rtc_sleep_init(config);
-    rtc_sleep_low_init(s_config.rtc_clk_cal_period);
 
     // Set state machine time for light sleep
     if (!deep_sleep) {
@@ -547,8 +537,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     }
 
     // Configure timer wakeup
-    if ((s_config.wakeup_triggers & RTC_TIMER_TRIG_EN) &&
-            s_config.sleep_duration > 0) {
+    if (s_config.wakeup_triggers & RTC_TIMER_TRIG_EN) {
         timer_wakeup_prepare();
     }
 
@@ -568,7 +557,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
         result = 0;
 #else
         set_rtc_memory_crc();
-        result = call_rtc_sleep_start(reject_triggers);
+        result = call_rtc_sleep_start(reject_triggers, config.lslp_mem_inf_fpu);
 #endif
 #else
         /* Otherwise, need to call the dedicated soc function for this */
@@ -577,7 +566,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 
         portEXIT_CRITICAL(&spinlock_rtc_deep_sleep);
     } else {
-        result = call_rtc_sleep_start(reject_triggers);
+        result = call_rtc_sleep_start(reject_triggers, config.lslp_mem_inf_fpu);
     }
 
     // Restore CPU frequency
@@ -604,12 +593,12 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     return result;
 }
 
-inline static uint32_t IRAM_ATTR call_rtc_sleep_start(uint32_t reject_triggers)
+inline static uint32_t IRAM_ATTR call_rtc_sleep_start(uint32_t reject_triggers, uint32_t lslp_mem_inf_fpu)
 {
 #ifdef CONFIG_IDF_TARGET_ESP32
     return rtc_sleep_start(s_config.wakeup_triggers, reject_triggers);
 #else
-    return rtc_sleep_start(s_config.wakeup_triggers, reject_triggers, 1);
+    return rtc_sleep_start(s_config.wakeup_triggers, reject_triggers, lslp_mem_inf_fpu);
 #endif
 }
 
@@ -704,13 +693,17 @@ esp_err_t esp_light_sleep_start(void)
     uint64_t frc_time_at_start = esp_system_get_time();
     uint32_t sleep_time_overhead_in = (ccount_at_sleep_start - s_config.ccount_ticks_record) / (esp_clk_cpu_freq() / 1000000ULL);
 
-    DPORT_STALL_OTHER_CPU_START();
+    esp_ipc_isr_stall_other_cpu();
 
     // Decide which power domains can be powered down
     uint32_t pd_flags = get_power_down_flags();
 
+#ifdef CONFIG_ESP_SLEEP_RTC_BUS_ISO_WORKAROUND
+    pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
+#endif
+
     // Re-calibrate the RTC Timer clock
-#if defined(CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS) || defined(CONFIG_ESP32S2_RTC_CLK_SRC_EXT_CRYS) || defined(CONFIG_ESP32C3_RTC_CLK_SRC_EXT_CRYS)
+#ifdef CONFIG_ESP_SYSTEM_RTC_EXT_XTAL
     uint64_t time_per_us = 1000000ULL;
     s_config.rtc_clk_cal_period = (time_per_us << RTC_CLK_CAL_FRACT) / rtc_clk_slow_freq_get_hz();
 #elif defined(CONFIG_ESP32S2_RTC_CLK_SRC_INT_RC)
@@ -828,7 +821,7 @@ esp_err_t esp_light_sleep_start(void)
     esp_set_time_from_rtc();
 
     esp_timer_private_unlock();
-    DPORT_STALL_OTHER_CPU_END();
+    esp_ipc_isr_release_other_cpu();
     if (!wdt_was_enabled) {
         wdt_hal_write_protect_disable(&rtc_wdt_ctx);
         wdt_hal_disable(&rtc_wdt_ctx);

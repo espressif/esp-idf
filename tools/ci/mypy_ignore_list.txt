@@ -3,7 +3,6 @@ components/efuse/efuse_table_gen.py
 components/efuse/test_efuse_host/efuse_tests.py
 components/esp_local_ctrl/python/esp_local_ctrl_pb2.py
 components/esp_netif/test_apps/component_ut_test.py
-components/espcoredump/corefile/elf.py
 components/espcoredump/corefile/gdb.py
 components/espcoredump/test/test_espcoredump.py
 components/lwip/weekend_test/net_suite_test.py
@@ -25,8 +24,6 @@ components/wifi_provisioning/python/wifi_constants_pb2.py
 components/wifi_provisioning/python/wifi_scan_pb2.py
 components/xtensa/trax/traceparse.py
 docs/build_docs.py
-docs/conf_common.py
-docs/en/conf.py
 docs/extensions/google_analytics.py
 docs/extensions/html_redirects.py
 docs/extensions/list_filter.py
@@ -231,7 +228,6 @@ tools/idf_py_actions/global_options.py
 tools/idf_py_actions/serial_ext.py
 tools/idf_py_actions/tools.py
 tools/idf_py_actions/uf2_ext.py
-tools/idf_size.py
 tools/kconfig_new/confgen.py
 tools/kconfig_new/confserver.py
 tools/kconfig_new/esp-windows-curses/setup.py
@@ -272,7 +268,6 @@ tools/test_idf_py/extra_path/some_ext.py
 tools/test_idf_py/idf_ext.py
 tools/test_idf_py/test_idf_extensions/test_ext/test_extension.py
 tools/test_idf_py/test_idf_py.py
-tools/test_idf_size/test_idf_size.py
 tools/test_idf_tools/test_idf_tools.py
 tools/test_mkdfu/test_mkdfu.py
 tools/test_mkuf2/test_mkuf2.py
@@ -281,6 +276,3 @@ tools/unit-test-app/tools/CreateSectionTable.py
 tools/unit-test-app/tools/UnitTestParser.py
 tools/unit-test-app/unit_test.py
 tools/windows/eclipse_make.py
-tools/windows/tool_setup/system_check/system_check_download.py
-tools/windows/tool_setup/system_check/system_check_subprocess.py
-tools/windows/tool_setup/system_check/system_check_virtualenv.py

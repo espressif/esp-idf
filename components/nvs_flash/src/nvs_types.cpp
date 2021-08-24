@@ -13,11 +13,7 @@
 // limitations under the License.
 #include "nvs_types.hpp"
 
-#if defined(LINUX_TARGET)
-#include "crc.h"
-#else
-#include <esp_rom_crc.h>
-#endif
+#include "esp_rom_crc.h"
 
 namespace nvs
 {

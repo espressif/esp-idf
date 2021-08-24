@@ -11,5 +11,3 @@ endif()
 
 idf_component_register(REQUIRES xtensa "${legacy_reqs}"
                        REQUIRED_IDF_TARGETS esp32s2)
-
-target_linker_script(${COMPONENT_LIB} INTERFACE "ld/esp32s2.peripherals.ld")

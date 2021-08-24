@@ -66,9 +66,11 @@
     OPTIONAL_UNIQUE_ID (BLOCK2)(0 errors):   Optional unique 128-bit ID                        
     = 7d 33 b8 bb 0b 13 b3 c8 71 37 0e e8 7c ab d5 92 R/W 
     BLOCK2_VERSION (BLOCK2)                  Version of BLOCK2                                  = With calibration R/W (0b001)
+    CUSTOM_MAC (BLOCK3)                      Custom MAC Address                                
+    = 00:00:00:00:00:00 (OK) R/W 
 
     Security fuses:
-    SOFT_DIS_JTAG (BLOCK0)                   Software disables JTAG. When software disabled, JT = False R/W (0b0)
+    SOFT_DIS_JTAG (BLOCK0)                   Software disables JTAG. When software disabled, JT = False R/W (0b000)
                                             AG can be activated temporarily by HMAC peripheral
     HARD_DIS_JTAG (BLOCK0)                   Hardware disables JTAG permanently                 = False R/W (0b0)
     DIS_DOWNLOAD_MANUAL_ENCRYPT (BLOCK0)     Disables flash encryption when in download boot mo = False R/W (0b0)

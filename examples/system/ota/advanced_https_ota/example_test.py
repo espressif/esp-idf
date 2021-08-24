@@ -525,13 +525,15 @@ def test_examples_protocol_advanced_https_ota_example_partial_request(env, extra
     """
     dut1 = env.get_dut('advanced_https_ota_example', 'examples/system/ota/advanced_https_ota', dut_class=ttfw_idf.ESP32DUT, app_config_name='partial_download')
     server_port = 8001
+    # Size of partial HTTP request
+    request_size = 16384
     # File to be downloaded. This file is generated after compilation
     bin_name = 'advanced_https_ota.bin'
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, bin_name)
     bin_size = os.path.getsize(binary_file)
     ttfw_idf.log_performance('advanced_https_ota_bin_size', '{}KB'.format(bin_size // 1024))
-    http_requests = int((bin_size / 50000) + 1)
+    http_requests = int((bin_size / request_size) - 1)
     # start test
     host_ip = get_my_ip()
     if (get_server_status(host_ip, server_port) is False):

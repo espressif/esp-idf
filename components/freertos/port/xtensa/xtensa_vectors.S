@@ -289,9 +289,13 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     rsil    a3, \level - 1                  /* lower interrupt level by 1 */
     #endif
 
+    #ifdef XT_RTOS_TIMER_INT
     movi    a3, XT_TIMER_INTEN              /* a3 = timer interrupt bit */
     wsr     a4, INTCLEAR                    /* clear sw or edge-triggered interrupt */
     beq     a3, a4, 7f                      /* if timer interrupt then skip table */
+    #else
+    wsr     a4, INTCLEAR                    /* clear sw or edge-triggered interrupt */
+    #endif // XT_RTOS_TIMER_INT
 
     find_ms_setbit a3, a4, a3, 0            /* a3 = interrupt number */
 
@@ -316,6 +320,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     j       .L_xt_user_int_&level&          /* check for more interrupts */
     #endif
 
+    #ifdef XT_RTOS_TIMER_INT
 7:
 
     .ifeq XT_TIMER_INTPRI - \level
@@ -335,6 +340,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     call4   XT_RTOS_TIMER_INT
     #endif
     .endif
+    #endif // XT_RTOS_TIMER_INT
 
     #ifdef XT_USE_SWPRI
     j       8f

@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "esp_log.h"
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "hal/usb_hal.h"
+#include "esp_log.h"
+#include "esp_check.h"
 #include "tinyusb.h"
 #include "tusb_tasks.h"
-#include "sdkconfig.h"
 
 const static char *TAG = "tusb_tsk";
 static TaskHandle_t s_tusb_tskh;
@@ -34,29 +34,21 @@ static void tusb_device_task(void *arg)
     }
 }
 
-
 esp_err_t tusb_run_task(void)
 {
+    // This function is not garanteed to be thread safe, if invoked multiple times without calling `tusb_stop_task`, will cause memory leak
+    // doing a sanity check anyway
+    ESP_RETURN_ON_FALSE(!s_tusb_tskh, ESP_ERR_INVALID_STATE, TAG, "TinyUSB main task already started");
     // Create a task for tinyusb device stack:
-    xTaskCreate(tusb_device_task, "tinyUSB: main task", CFG_TUD_MAINTASK_SIZE, NULL, CONFIG_USB_TASK_PRIORITY, &s_tusb_tskh);
-    if (!s_tusb_tskh) {
-        return ESP_FAIL;
-    } else {
-        return ESP_OK;
-    }
+    xTaskCreate(tusb_device_task, "TinyUSB", CONFIG_TINYUSB_TASK_STACK_SIZE, NULL, CONFIG_TINYUSB_TASK_PRIORITY, &s_tusb_tskh);
+    ESP_RETURN_ON_FALSE(s_tusb_tskh, ESP_FAIL, TAG, "create TinyUSB main task failed");
+    return ESP_OK;
 }
 
 esp_err_t tusb_stop_task(void)
 {
-    if ( s_tusb_tskh != NULL ) {
-        vTaskDelete(s_tusb_tskh);
-    } else {
-        ESP_LOGE(TAG, "tinyusb task is not started");
-        return ESP_FAIL;
-    }
-    if (s_tusb_tskh) {
-        return ESP_FAIL;
-    } else {
-        return ESP_OK;
-    }
+    ESP_RETURN_ON_FALSE(s_tusb_tskh, ESP_ERR_INVALID_STATE, TAG, "TinyUSB main task not started yet");
+    vTaskDelete(s_tusb_tskh);
+    s_tusb_tskh = NULL;
+    return ESP_OK;
 }

@@ -26,6 +26,7 @@ tools/format-minimal.sh
 tools/format.sh
 tools/gen_esp_err_to_name.py
 tools/kconfig/**/*
+tools/mocks/**/*
 tools/set-submodules-to-github.sh
 tools/templates/sample_component/CMakeLists.txt
 tools/templates/sample_component/include/main.h

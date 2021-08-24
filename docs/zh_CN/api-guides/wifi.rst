@@ -399,11 +399,11 @@ Wi-Fi 驱动程序初始化成功后，可以进入到配置阶段。该场景�
         EVENT_TASK <-  WIFI_TASK   [label="3.2> WIFI_EVENT_AP_START"];
         APP_TASK   <-  EVENT_TASK  [label="3.3> WIFI_EVENT_AP_START"];
         === 4.连接阶段 ===
-        EVENT_TASK <-  WIFI_TASK   [label="4.1> WIFI_EVENT_AP_STA_CONNECTED"];
-        APP_TASK   <- EVENT_TASK   [label="4.2> WIFI_EVENT_AP_STA_CONNECTED"];
+        EVENT_TASK <-  WIFI_TASK   [label="4.1> WIFI_EVENT_AP_STACONNECTED"];
+        APP_TASK   <- EVENT_TASK   [label="4.2> WIFI_EVENT_AP_STACONNECTED"];
         === 5.断开阶段 ===
-        EVENT_TASK <-  WIFI_TASK   [label="5.1> WIFI_EVENT_STA_DISCONNECTED"];
-        APP_TASK   <-  EVENT_TASK  [label="5.2> WIFI_EVENT_STA_DISCONNECTED"];
+        EVENT_TASK <-  WIFI_TASK   [label="5.1> WIFI_EVENT_AP_STADISCONNECTED"];
+        APP_TASK   <-  EVENT_TASK  [label="5.2> WIFI_EVENT_AP_STADISCONNECTED"];
         APP_TASK   ->  APP_TASK    [label="5.3> 断开处理"];
         === 6.清理阶段 ===
         APP_TASK   ->  WIFI_TASK   [label="6.1> 断开 Wi-Fi 连接"];

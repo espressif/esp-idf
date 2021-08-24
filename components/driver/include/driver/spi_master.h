@@ -104,7 +104,10 @@ typedef struct {
 #define SPI_TRANS_VARIABLE_CMD        (1<<5)  ///< Use the ``command_bits`` in ``spi_transaction_ext_t`` rather than default value in ``spi_device_interface_config_t``.
 #define SPI_TRANS_VARIABLE_ADDR       (1<<6)  ///< Use the ``address_bits`` in ``spi_transaction_ext_t`` rather than default value in ``spi_device_interface_config_t``.
 #define SPI_TRANS_VARIABLE_DUMMY      (1<<7)  ///< Use the ``dummy_bits`` in ``spi_transaction_ext_t`` rather than default value in ``spi_device_interface_config_t``.
-#define SPI_TRANS_SET_CD              (1<<7)  ///< Set the CD pin
+#define SPI_TRANS_CS_KEEP_ACTIVE      (1<<8)  ///< Keep CS active after data transfer
+#define SPI_TRANS_MULTILINE_CMD       (1<<9)  ///< The data lines used at command phase is the same as data phase (otherwise, only one data line is used at command phase)
+#define SPI_TRANS_MODE_OCT            (1<<10) ///< Transmit/receive data in 8-bit mode
+#define SPI_TRANS_MULTILINE_ADDR      SPI_TRANS_MODE_DIOQIO_ADDR ///< The data lines used at address phase is the same as data phase (otherwise, only one data line is used at address phase)
 
 /**
  * This structure describes one SPI transaction. The descriptor should not be modified until the transaction finishes.
@@ -148,7 +151,7 @@ typedef struct {
 } spi_transaction_ext_t ;
 
 
-typedef struct spi_device_t* spi_device_handle_t;  ///< Handle for a device on a SPI bus
+typedef struct spi_device_t *spi_device_handle_t;  ///< Handle for a device on a SPI bus
 /**
  * @brief Allocate a device on a SPI bus
  *
@@ -194,7 +197,8 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle);
  * @param ticks_to_wait Ticks to wait until there's room in the queue; use portMAX_DELAY to
  *                      never time out.
  * @return
- *         - ESP_ERR_INVALID_ARG   if parameter is invalid
+ *         - ESP_ERR_INVALID_ARG   if parameter is invalid. This can happen if SPI_DEVICE_CS_KEEP_LOW flag is specified while
+ *                                 the bus was not acquired (`spi_device_acquire_bus()` should be called first)
  *         - ESP_ERR_TIMEOUT       if there was no room in the queue before ticks_to_wait expired
  *         - ESP_ERR_NO_MEM        if allocating DMA-capable temporary buffer failed
  *         - ESP_ERR_INVALID_STATE if previous transactions are not finished
@@ -257,7 +261,8 @@ esp_err_t spi_device_transmit(spi_device_handle_t handle, spi_transaction_t *tra
  *              currently only portMAX_DELAY is supported.
  *
  * @return
- *         - ESP_ERR_INVALID_ARG   if parameter is invalid
+ *         - ESP_ERR_INVALID_ARG   if parameter is invalid. This can happen if SPI_DEVICE_CS_KEEP_LOW flag is specified while
+ *                                 the bus was not acquired (`spi_device_acquire_bus()` should be called first)
  *         - ESP_ERR_TIMEOUT       if the device cannot get control of the bus before ``ticks_to_wait`` expired
  *         - ESP_ERR_NO_MEM        if allocating DMA-capable temporary buffer failed
  *         - ESP_ERR_INVALID_STATE if previous transactions are not finished
@@ -339,7 +344,7 @@ void spi_device_release_bus(spi_device_handle_t dev);
  *
  * @return Actual working frequency that most fit.
  */
-int spi_cal_clock(int fapb, int hz, int duty_cycle, uint32_t* reg_o) __attribute__((deprecated));
+int spi_cal_clock(int fapb, int hz, int duty_cycle, uint32_t *reg_o) __attribute__((deprecated));
 
 /**
  * @brief Calculate the working frequency that is most close to desired frequency.
@@ -366,7 +371,7 @@ int spi_get_actual_clock(int fapb, int hz, int duty_cycle);
   *
   * @note If **dummy_o* is not zero, it means dummy bits should be applied in half duplex mode, and full duplex mode may not work.
   */
-void spi_get_timing(bool gpio_is_used, int input_delay_ns, int eff_clk, int* dummy_o, int* cycles_remain_o);
+void spi_get_timing(bool gpio_is_used, int input_delay_ns, int eff_clk, int *dummy_o, int *cycles_remain_o);
 
 /**
   * @brief Get the frequency limit of current configurations.

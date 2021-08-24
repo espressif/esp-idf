@@ -30,6 +30,7 @@
 #include "soc/rtc_periph.h"
 #include "soc/syscon_reg.h"
 #include "soc/system_reg.h"
+#include "soc/uart_reg.h"
 #include "hal/wdt_hal.h"
 #include "cache_err_int.h"
 
@@ -103,9 +104,13 @@ void IRAM_ATTR esp_restart_noos(void)
 
     REG_WRITE(SYSTEM_CORE_RST_EN_REG, 0);
 
+    // Reset uart0 core first, then reset apb side.
+    // rom will clear this bit, as well as SYSTEM_UART_RST
+    SET_PERI_REG_MASK(UART_CLK_CONF_REG(0), UART_RST_CORE_M);
+
     // Reset timer/spi/uart
     SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG,
-                      SYSTEM_TIMERS_RST | SYSTEM_SPI01_RST | SYSTEM_UART_RST);
+                      SYSTEM_TIMERS_RST | SYSTEM_SPI01_RST | SYSTEM_UART_RST | SYSTEM_SYSTIMER_RST);
     REG_WRITE(SYSTEM_PERIP_RST_EN0_REG, 0);
     // Reset dma
     SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, SYSTEM_DMA_RST);

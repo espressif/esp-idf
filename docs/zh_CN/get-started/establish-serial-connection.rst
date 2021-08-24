@@ -57,6 +57,7 @@ macOS::
 
     对于 macOS 用户：若你没有看到串口，请检查你是否已按照《入门指南》安装了适用于你特定开发板的 USB/串口驱动程序。对于 macOS High Sierra (10.13) 的用户，你可能还需要手动允许驱动程序的加载，具体可打开 ``系统偏好设置`` -> ``安全和隐私`` -> ``通用``，检查是否有信息显示：“来自开发人员的系统软件...”，其中开发人员的名称为 Silicon Labs 或 FTDI。
 
+
 .. _linux-dialout-group:
 
 在 Linux 中添加用户到 ``dialout``
@@ -77,7 +78,6 @@ macOS::
 ------------------------
 
 现在，请使用串口终端程序，查看重置 {IDF_TARGET_NAME} 后终端上是否有输出，从而验证串口连接是否可用。
-
 
 Windows 和 Linux 操作系统
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -103,11 +103,9 @@ Windows 和 Linux 操作系统
 
 然后，请检查 {IDF_TARGET_NAME} 是否有打印日志。如有，请在终端打开串口进行查看。这里的日志内容取决于加载到 {IDF_TARGET_NAME} 的应用程序，请参考 `输出示例`_。
 
-
 .. 注解::
 
    请在验证完串口通信正常后，关闭串口终端。如果您让终端一直保持打开的状态，之后上传固件时将无法访问串口。
-
 
 macOS 操作系统
 ^^^^^^^^^^^^^^^^^
@@ -140,7 +138,6 @@ macOS 提供了 **屏幕** 命令，因此您不用安装串口终端程序。
 
 以下是 {IDF_TARGET_NAME} 的一个日志示例。如果没看到任何输出，请尝试重置开发板。
 
-
 .. highlight:: none
 
 ::
@@ -170,9 +167,6 @@ macOS 提供了 **屏幕** 命令，因此您不用安装串口终端程序。
 
    在某些串口接线方式下，在 {IDF_TARGET_NAME} 启动并开始打印串口日志前，需要在终端程序中禁用串口 RTS ＆ DTR 管脚。该问题仅存在于将 RTS ＆ DTR 管脚直接连接到 EN ＆ GPIO0 管脚上的情况，绝大多数开发板（包括乐鑫所有的开发板）都没有这个问题。更多详细信息，请参考 `esptool 文档`_。
 
-
 如您在安装 {IDF_TARGET_NAME} 硬件开发的软件环境时，从 :ref:`get-started-connect` 跳转到了这里，请从 :ref:`get-started-configure` 继续阅读。
 
-
 .. _esptool 文档: https://github.com/espressif/esptool/wiki/ESP32-Boot-Mode-Selection#automatic-bootloader
-

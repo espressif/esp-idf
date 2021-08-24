@@ -22,7 +22,7 @@
 #include "soc/gpio_periph.h"
 #include "soc/rtc.h"
 #include "soc/efuse_reg.h"
-#include "soc/soc_memory_layout.h"
+#include "soc/soc_memory_types.h"
 #include "hal/gpio_ll.h"
 #include "esp_image_format.h"
 #include "bootloader_sha.h"
@@ -141,7 +141,8 @@ esp_err_t bootloader_common_get_partition_description(const esp_partition_pos_t 
 
 rtc_retain_mem_t *const rtc_retain_mem = (rtc_retain_mem_t *)RTC_RETAIN_MEM_ADDR;
 
-#if !IS_BOOTLOADER_BUILD
+#ifndef BOOTLOADER_BUILD
+#include "heap_memory_layout.h"
 /* The app needs to be told this memory is reserved, important if configured to use RTC memory as heap.
 
    Note that keeping this macro here only works when other symbols in this file are referenced by the app, as

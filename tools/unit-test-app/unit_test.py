@@ -37,6 +37,7 @@ RESET_PATTERN = re.compile(r'(rst:0x[0-9a-fA-F]*\s\([\w].*?\),boot:0x[0-9a-fA-F]
 
 EXCEPTION_PATTERN = re.compile(r"(Guru Meditation Error: Core\s+\d panic'ed \([\w].*?\))")
 ABORT_PATTERN = re.compile(r'(abort\(\) was called at PC 0x[a-fA-F\d]{8} on core \d)')
+ASSERT_PATTERN = re.compile(r'(assert failed: .*)')
 FINISH_PATTERN = re.compile(r'1 Tests (\d) Failures (\d) Ignored')
 END_LIST_STR = r'\r?\nEnter test for running'
 TEST_PATTERN = re.compile(r'\((\d+)\)\s+"([^"]+)" ([^\r\n]+)\r?\n(' + END_LIST_STR + r')?')
@@ -268,6 +269,7 @@ def run_one_normal_case(dut, one_case, junit_test_case):
             dut.expect_any((RESET_PATTERN, handle_exception_reset),
                            (EXCEPTION_PATTERN, handle_exception_reset),
                            (ABORT_PATTERN, handle_exception_reset),
+                           (ASSERT_PATTERN, handle_exception_reset),
                            (FINISH_PATTERN, handle_test_finish),
                            (UT_APP_BOOT_UP_DONE, handle_reset_finish),
                            timeout=timeout_value)
@@ -622,6 +624,7 @@ def run_one_multiple_stage_case(dut, one_case, junit_test_case):
                 dut.expect_any((RESET_PATTERN, handle_exception_reset),
                                (EXCEPTION_PATTERN, handle_exception_reset),
                                (ABORT_PATTERN, handle_exception_reset),
+                               (ASSERT_PATTERN, handle_exception_reset),
                                (FINISH_PATTERN, handle_test_finish),
                                (UT_APP_BOOT_UP_DONE, handle_next_stage),
                                timeout=timeout_value)

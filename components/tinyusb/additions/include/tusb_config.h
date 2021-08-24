@@ -25,6 +25,7 @@
  */
 
 #pragma once
+
 #include "tusb_option.h"
 #include "sdkconfig.h"
 
@@ -32,11 +33,27 @@
 extern "C" {
 #endif
 
-/*                      */
-/* COMMON CONFIGURATION */
-/*                      */
+#ifndef CONFIG_TINYUSB_CDC_ENABLED
+#   define CONFIG_TINYUSB_CDC_ENABLED 0
+#endif
 
-#define CFG_TUSB_RHPORT0_MODE       OPT_MODE_DEVICE
+#ifndef CONFIG_TINYUSB_MSC_ENABLED
+#   define CONFIG_TINYUSB_MSC_ENABLED 0
+#endif
+
+#ifndef CONFIG_TINYUSB_HID_ENABLED
+#   define CONFIG_TINYUSB_HID_ENABLED 0
+#endif
+
+#ifndef CONFIG_TINYUSB_MIDI_ENABLED
+#   define CONFIG_TINYUSB_MIDI_ENABLED 0
+#endif
+
+#ifndef CONFIG_TINYUSB_CUSTOM_CLASS_ENABLED
+#   define CONFIG_TINYUSB_CUSTOM_CLASS_ENABLED 0
+#endif
+
+#define CFG_TUSB_RHPORT0_MODE       OPT_MODE_DEVICE | OPT_MODE_FULL_SPEED
 #define CFG_TUSB_OS                 OPT_OS_FREERTOS
 
 /* USB DMA on some MCUs can only access a specific SRAM region with restriction on alignment.
@@ -51,55 +68,29 @@ extern "C" {
 #endif
 
 #ifndef CFG_TUSB_MEM_ALIGN
-#   define CFG_TUSB_MEM_ALIGN          TU_ATTR_ALIGNED(4)
+#   define CFG_TUSB_MEM_ALIGN       TU_ATTR_ALIGNED(4)
 #endif
 
-/*                      */
-/* DRIVER CONFIGURATION */
-/*                      */
-
-#define CFG_TUD_MAINTASK_SIZE 4096
-#define CFG_TUD_ENDOINT0_SIZE 64
+#ifndef CFG_TUD_ENDPOINT0_SIZE
+#define CFG_TUD_ENDPOINT0_SIZE      64
+#endif
 
 // CDC FIFO size of TX and RX
-#define CFG_TUD_CDC_RX_BUFSIZE CONFIG_USB_CDC_RX_BUFSIZE
-#define CFG_TUD_CDC_TX_BUFSIZE CONFIG_USB_CDC_TX_BUFSIZE
+#define CFG_TUD_CDC_RX_BUFSIZE      CONFIG_TINYUSB_CDC_RX_BUFSIZE
+#define CFG_TUD_CDC_TX_BUFSIZE      CONFIG_TINYUSB_CDC_TX_BUFSIZE
 
-// MSC Buffer size of Device Mass storage:
-#define CFG_TUD_MSC_BUFSIZE CONFIG_USB_MSC_BUFSIZE
+// MSC Buffer size of Device Mass storage
+#define CFG_TUD_MSC_BUFSIZE         CONFIG_TINYUSB_MSC_BUFSIZE
 
 // HID buffer size Should be sufficient to hold ID (if any) + Data
-#define CFG_TUD_HID_BUFSIZE CONFIG_USB_HID_BUFSIZE
+#define CFG_TUD_HID_BUFSIZE         CONFIG_TINYUSB_HID_BUFSIZE
 
-#define CFG_TUD_CDC CONFIG_USB_CDC_ENABLED
-#define CFG_TUD_MSC CONFIG_USB_MSC_ENABLED
-#define CFG_TUD_HID CONFIG_USB_HID_ENABLED
-#define CFG_TUD_MIDI CONFIG_USB_MIDI_ENABLED
-#define CFG_TUD_CUSTOM_CLASS CONFIG_USB_CUSTOM_CLASS_ENABLED
-
-/*         */
-/* KCONFIG */
-/*         */
-
-#ifndef CONFIG_USB_CDC_ENABLED
-#   define CONFIG_USB_CDC_ENABLED 0
-#endif
-
-#ifndef CONFIG_USB_MSC_ENABLED
-#   define CONFIG_USB_MSC_ENABLED 0
-#endif
-
-#ifndef CONFIG_USB_HID_ENABLED
-#   define CONFIG_USB_HID_ENABLED 0
-#endif
-
-#ifndef CONFIG_USB_MIDI_ENABLED
-#   define CONFIG_USB_MIDI_ENABLED 0
-#endif
-
-#ifndef CONFIG_USB_CUSTOM_CLASS_ENABLED
-#   define CONFIG_USB_CUSTOM_CLASS_ENABLED 0
-#endif
+// Enabled device class driver
+#define CFG_TUD_CDC                 CONFIG_TINYUSB_CDC_ENABLED
+#define CFG_TUD_MSC                 CONFIG_TINYUSB_MSC_ENABLED
+#define CFG_TUD_HID                 CONFIG_TINYUSB_HID_ENABLED
+#define CFG_TUD_MIDI                CONFIG_TINYUSB_MIDI_ENABLED
+#define CFG_TUD_CUSTOM_CLASS        CONFIG_TINYUSB_CUSTOM_CLASS_ENABLED
 
 #ifdef __cplusplus
 }

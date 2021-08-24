@@ -11,6 +11,8 @@
 #include "freertos/task.h"
 #include "driver/ledc.h"
 #include "esp_err.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 
 /*
  * About this example
@@ -43,7 +45,7 @@
 #endif
 #define LEDC_LS_TIMER          LEDC_TIMER_1
 #define LEDC_LS_MODE           LEDC_LOW_SPEED_MODE
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3
+#if !CONFIG_IDF_TARGET_ESP32
 #define LEDC_LS_CH0_GPIO       (18)
 #define LEDC_LS_CH0_CHANNEL    LEDC_CHANNEL_0
 #define LEDC_LS_CH1_GPIO       (19)
@@ -57,6 +59,23 @@
 #define LEDC_TEST_CH_NUM       (4)
 #define LEDC_TEST_DUTY         (4000)
 #define LEDC_TEST_FADE_TIME    (3000)
+
+/*
+ * This callback function will be called when fade operation has ended
+ * Use callback only if you are aware it is being called inside an ISR
+ * Otherwise, you can use a semaphore to unblock tasks
+ */
+static bool cb_ledc_fade_end_event(const ledc_cb_param_t *param, void *user_arg)
+{
+    portBASE_TYPE taskAwoken = pdFALSE;
+
+    if (param->event == LEDC_FADE_END_EVT) {
+        SemaphoreHandle_t counting_sem = (SemaphoreHandle_t) user_arg;
+        xSemaphoreGiveFromISR(counting_sem, &taskAwoken);
+    }
+
+    return (taskAwoken == pdTRUE);
+}
 
 void app_main(void)
 {
@@ -114,7 +133,7 @@ void app_main(void)
             .timer_sel  = LEDC_HS_TIMER,
             .flags.output_invert = 0
         },
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3
+#else
         {
             .channel    = LEDC_LS_CH0_CHANNEL,
             .duty       = 0,
@@ -161,6 +180,14 @@ void app_main(void)
 
     // Initialize fade service.
     ledc_fade_func_install(0);
+    ledc_cbs_t callbacks = {
+        .fade_cb = cb_ledc_fade_end_event
+    };
+    SemaphoreHandle_t counting_sem = xSemaphoreCreateCounting(LEDC_TEST_CH_NUM, 0);
+
+    for (ch = 0; ch < LEDC_TEST_CH_NUM; ch++) {
+        ledc_cb_register(ledc_channel[ch].speed_mode, ledc_channel[ch].channel, &callbacks, (void *) counting_sem);
+    }
 
     while (1) {
         printf("1. LEDC fade up to duty = %d\n", LEDC_TEST_DUTY);
@@ -170,7 +197,10 @@ void app_main(void)
             ledc_fade_start(ledc_channel[ch].speed_mode,
                     ledc_channel[ch].channel, LEDC_FADE_NO_WAIT);
         }
-        vTaskDelay(LEDC_TEST_FADE_TIME / portTICK_PERIOD_MS);
+
+        for (int i = 0; i < LEDC_TEST_CH_NUM; i++) {
+            xSemaphoreTake(counting_sem, portMAX_DELAY);
+        }
 
         printf("2. LEDC fade down to duty = 0\n");
         for (ch = 0; ch < LEDC_TEST_CH_NUM; ch++) {
@@ -179,7 +209,10 @@ void app_main(void)
             ledc_fade_start(ledc_channel[ch].speed_mode,
                     ledc_channel[ch].channel, LEDC_FADE_NO_WAIT);
         }
-        vTaskDelay(LEDC_TEST_FADE_TIME / portTICK_PERIOD_MS);
+
+        for (int i = 0; i < LEDC_TEST_CH_NUM; i++) {
+            xSemaphoreTake(counting_sem, portMAX_DELAY);
+        }
 
         printf("3. LEDC set duty = %d without fade\n", LEDC_TEST_DUTY);
         for (ch = 0; ch < LEDC_TEST_CH_NUM; ch++) {
