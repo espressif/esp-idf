@@ -19,13 +19,18 @@
 #include "esp32c3/rom/efuse.h"
 #include "esp32c3/rom/digital_signature.h"
 #include "esp32c3/rom/hmac.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/efuse.h"
+#include "esp32s3/rom/digital_signature.h"
+#include "esp32s3/rom/aes.h"
+#include "esp32s3/rom/sha.h"
 #endif
 
 #include "esp_ds.h"
 
 #define NUM_RESULTS 10
 
-#if CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 #define DS_MAX_BITS (4096)
 #elif CONFIG_IDF_TARGET_ESP32C3
 #define DS_MAX_BITS (ETS_DS_MAX_BITS)
@@ -36,17 +41,17 @@ typedef struct {
     ets_ds_p_data_t p_data;
     uint8_t expected_c[ETS_DS_C_LEN];
     uint8_t hmac_key_idx;
-    uint32_t expected_results[NUM_RESULTS][DS_MAX_BITS/32];
+    uint32_t expected_results[NUM_RESULTS][DS_MAX_BITS / 32];
 } encrypt_testcase_t;
 
 // Generated header digital_signature_test_cases_<bits>.h (by gen_digital_signature_tests.py) defines
 // NUM_HMAC_KEYS, test_hmac_keys, NUM_MESSAGES, NUM_CASES, test_messages[], test_cases[]
 // Some adaptations were made: removed the 512 bit case and changed RSA lengths to the enums from esp_ds.h
 #if DS_MAX_BITS == 4096
-#define RSA_LEN			(ESP_DS_RSA_4096)
+#define RSA_LEN         (ESP_DS_RSA_4096)
 #include "digital_signature_test_cases_4096.h"
 #elif DS_MAX_BITS == 3072
-#define RSA_LEN			(ESP_DS_RSA_3072)
+#define RSA_LEN         (ESP_DS_RSA_3072)
 #include "digital_signature_test_cases_3072.h"
 #endif
 
@@ -96,14 +101,14 @@ TEST_CASE("Digital Signature Parameter Encryption", "[hw_crypto] [ds]")
         esp_ds_data_t result = { };
         esp_ds_p_data_t p_data;
 
-        memcpy(p_data.Y, t->p_data.Y, DS_MAX_BITS/8);
-        memcpy(p_data.M, t->p_data.M, DS_MAX_BITS/8);
-        memcpy(p_data.Rb, t->p_data.Rb, DS_MAX_BITS/8);
+        memcpy(p_data.Y, t->p_data.Y, DS_MAX_BITS / 8);
+        memcpy(p_data.M, t->p_data.M, DS_MAX_BITS / 8);
+        memcpy(p_data.Rb, t->p_data.Rb, DS_MAX_BITS / 8);
         p_data.M_prime = t->p_data.M_prime;
         p_data.length = t->p_data.length;
 
         esp_err_t r = esp_ds_encrypt_params(&result, t->iv, &p_data,
-                                                  test_hmac_keys[t->hmac_key_idx]);
+                                            test_hmac_keys[t->hmac_key_idx]);
         printf("Encrypting test case %d done\n", i);
         TEST_ASSERT_EQUAL(ESP_OK, r);
         TEST_ASSERT_EQUAL(t->p_data.length, result.rsa_length);
@@ -249,9 +254,10 @@ static void burn_hmac_keys(void)
 
         // starting from block 1, block 0 occupied with HMAC upstream test key
         int __attribute__((unused)) ets_status = ets_efuse_write_key(ETS_EFUSE_BLOCK_KEY1 + i,
-                                             purpose,
-                                             test_hmac_keys[i], 32);
-#if CONFIG_IDF_TARGET_ESP32S2
+                purpose,
+                test_hmac_keys[i], 32);
+
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
         if (ets_status == ESP_OK) {
             printf("written DS test key to block [%d]!\n", ETS_EFUSE_BLOCK_KEY1 + i);
         } else {
@@ -280,7 +286,7 @@ TEST_CASE("Digital Signature wrong HMAC key purpose (FPGA only)", "[hw_crypto] [
     const char *message = "test";
 
     // HMAC fails in that case because it checks for the correct purpose
-#if CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     TEST_ASSERT_EQUAL(ESP_ERR_HW_CRYPTO_DS_HMAC_FAIL, esp_ds_start_sign(message, &ds_data, HMAC_KEY0, &ctx));
 #elif CONFIG_IDF_TARGET_ESP32C3
     TEST_ASSERT_EQUAL(ESP32C3_ERR_HW_CRYPTO_DS_HMAC_FAIL, esp_ds_start_sign(message, &ds_data, HMAC_KEY0, &ctx));
@@ -297,7 +303,7 @@ TEST_CASE("Digital Signature Blocking wrong HMAC key purpose (FPGA only)", "[hw_
     uint8_t signature_data [128 * 4];
 
     // HMAC fails in that case because it checks for the correct purpose
-#if CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     TEST_ASSERT_EQUAL(ESP_ERR_HW_CRYPTO_DS_HMAC_FAIL, esp_ds_sign(message, &ds_data, HMAC_KEY0, signature_data));
 #elif CONFIG_IDF_TARGET_ESP32C3
     TEST_ASSERT_EQUAL(ESP32C3_ERR_HW_CRYPTO_DS_HMAC_FAIL, esp_ds_sign(message, &ds_data, HMAC_KEY0, signature_data));
@@ -319,15 +325,15 @@ TEST_CASE("Digital Signature Operation (FPGA only)", "[hw_crypto] [ds]")
         ds_data.rsa_length = t->p_data.length;
 
         for (int j = 0; j < NUM_MESSAGES; j++) {
-            uint8_t signature[DS_MAX_BITS/8] = { 0 };
+            uint8_t signature[DS_MAX_BITS / 8] = { 0 };
             printf(" ... message %d\n", j);
 
             esp_ds_context_t *esp_ds_ctx;
 
             esp_err_t ds_r = esp_ds_start_sign(test_messages[j],
-                    &ds_data,
-                    t->hmac_key_idx + 1,
-                    &esp_ds_ctx);
+                                               &ds_data,
+                                               t->hmac_key_idx + 1,
+                                               &esp_ds_ctx);
             TEST_ASSERT_EQUAL(ESP_OK, ds_r);
 
             ds_r = esp_ds_finish_sign(signature, esp_ds_ctx);
@@ -355,23 +361,23 @@ TEST_CASE("Digital Signature Blocking Operation (FPGA only)", "[hw_crypto] [ds]"
         memcpy(ds_data.c, t->expected_c, ETS_DS_C_LEN);
         ds_data.rsa_length = t->p_data.length;
 
-        uint8_t signature[DS_MAX_BITS/8] = { 0 };
-#if CONFIG_IDF_TARGET_ESP32S2
+        uint8_t signature[DS_MAX_BITS / 8] = { 0 };
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
         esp_ds_context_t *esp_ds_ctx;
 
         esp_err_t ds_r = esp_ds_start_sign(test_messages[0],
-                &ds_data,
-                t->hmac_key_idx + 1,
-                &esp_ds_ctx);
+                                           &ds_data,
+                                           t->hmac_key_idx + 1,
+                                           &esp_ds_ctx);
         TEST_ASSERT_EQUAL(ESP_OK, ds_r);
 
         ds_r = esp_ds_finish_sign(signature, esp_ds_ctx);
         TEST_ASSERT_EQUAL(ESP_OK, ds_r);
 #elif CONFIG_IDF_TARGET_ESP32C3
         esp_err_t ds_r = esp_ds_sign(test_messages[0],
-                &ds_data,
-                t->hmac_key_idx + 1,
-                signature);
+                                     &ds_data,
+                                     t->hmac_key_idx + 1,
+                                     signature);
         TEST_ASSERT_EQUAL(ESP_OK, ds_r);
 #endif
 
@@ -390,8 +396,8 @@ TEST_CASE("Digital Signature Invalid Data (FPGA only)", "[hw_crypto] [ds]")
     memcpy(ds_data.c, t->expected_c, ETS_DS_C_LEN);
     ds_data.rsa_length = t->p_data.length;
 
-    uint8_t signature[DS_MAX_BITS/8] = { 0 };
-    const uint8_t zero[DS_MAX_BITS/8] = { 0 };
+    uint8_t signature[DS_MAX_BITS / 8] = { 0 };
+    const uint8_t zero[DS_MAX_BITS / 8] = { 0 };
 
     // Corrupt the IV one bit at a time, rerun and expect failure
     for (int bit = 0; bit < 128; bit++) {
@@ -402,12 +408,12 @@ TEST_CASE("Digital Signature Invalid Data (FPGA only)", "[hw_crypto] [ds]")
         esp_err_t ds_r = esp_ds_start_sign(test_messages[0], &ds_data, t->hmac_key_idx + 1, &esp_ds_ctx);
         TEST_ASSERT_EQUAL(ESP_OK, ds_r);
         ds_r = esp_ds_finish_sign(signature, esp_ds_ctx);
-#if CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
         TEST_ASSERT_EQUAL(ESP_ERR_HW_CRYPTO_DS_INVALID_DIGEST, ds_r);
 #elif CONFIG_IDF_TARGET_ESP32C3
         TEST_ASSERT_EQUAL(ESP32C3_ERR_HW_CRYPTO_DS_INVALID_DIGEST, ds_r);
 #endif
-        TEST_ASSERT_EQUAL_HEX8_ARRAY(zero, signature, DS_MAX_BITS/8);
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(zero, signature, DS_MAX_BITS / 8);
 
         ds_data.iv[bit / 8] ^= 1 << (bit % 8);
     }
@@ -422,12 +428,12 @@ TEST_CASE("Digital Signature Invalid Data (FPGA only)", "[hw_crypto] [ds]")
         esp_err_t ds_r = esp_ds_start_sign(test_messages[0], &ds_data, t->hmac_key_idx + 1, &esp_ds_ctx);
         TEST_ASSERT_EQUAL(ESP_OK, ds_r);
         ds_r = esp_ds_finish_sign(signature, esp_ds_ctx);
-#if CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
         TEST_ASSERT_EQUAL(ESP_ERR_HW_CRYPTO_DS_INVALID_DIGEST, ds_r);
 #elif CONFIG_IDF_TARGET_ESP32C3
         TEST_ASSERT_EQUAL(ESP32C3_ERR_HW_CRYPTO_DS_INVALID_DIGEST, ds_r);
 #endif
-        TEST_ASSERT_EQUAL_HEX8_ARRAY(zero, signature, DS_MAX_BITS/8);
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(zero, signature, DS_MAX_BITS / 8);
 
         ds_data.c[bit / 8] ^= 1 << (bit % 8);
     }

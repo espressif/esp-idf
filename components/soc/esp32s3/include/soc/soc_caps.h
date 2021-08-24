@@ -18,7 +18,7 @@
 #define SOC_USB_OTG_SUPPORTED           1
 #define SOC_RTC_SLOW_MEM_SUPPORTED      1
 #define SOC_CCOMP_TIMER_SUPPORTED       1
-#define SOC_DIG_SIGN_SUPPORTED          0
+#define SOC_DIG_SIGN_SUPPORTED          1
 #define SOC_HMAC_SUPPORTED              1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
@@ -50,6 +50,17 @@
 
 /*-------------------------- CPU CAPS ----------------------------------------*/
 #include "cpu_caps.h"
+
+/*-------------------------- DIGITAL SIGNATURE CAPS ----------------------------------------*/
+/** The maximum length of a Digital Signature in bits. */
+#define SOC_DS_SIGNATURE_MAX_BIT_LEN (4096)
+
+/** Initialization vector (IV) length for the RSA key parameter message digest (MD) in bytes. */
+#define SOC_DS_KEY_PARAM_MD_IV_LENGTH (16)
+
+/** Maximum wait time for DS parameter decryption key. If overdue, then key error.
+    See TRM DS chapter for more details */
+#define SOC_DS_KEY_CHECK_MAX_WAIT_US (1100)
 
 /*-------------------------- GDMA CAPS ---------------------------------------*/
 #define SOC_GDMA_GROUPS            (1)  // Number of GDMA groups
