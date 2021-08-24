@@ -165,7 +165,7 @@ esp_err_t esp_lcd_del_i80_bus(esp_lcd_i80_bus_handle_t bus);
  * @brief Panel IO configuration structure, for intel 8080 interface
  */
 typedef struct {
-    int cs_gpio_num;         /*!< GPIO used for CS line */
+    int cs_gpio_num;         /*!< GPIO used for CS line, set to -1 will declaim exclusively use of I80 bus */
     unsigned int pclk_hz;    /*!< Frequency of pixel clock */
     size_t trans_queue_depth; /*!< Transaction queue size, larger queue, higher throughput */
     bool (*on_color_trans_done)(esp_lcd_panel_io_handle_t panel_io, void *user_data, void *event_data); /*!< Callback, invoked when color data was tranferred done */

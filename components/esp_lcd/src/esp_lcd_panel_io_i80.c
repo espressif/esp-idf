@@ -65,6 +65,9 @@ struct esp_lcd_i80_bus_t {
     lcd_i80_trans_descriptor_t *cur_trans; // Current transaction
     lcd_panel_io_i80_t *cur_device; // Current working device
     LIST_HEAD(i80_device_list, lcd_panel_io_i80_t) device_list; // Head of i80 device list
+    struct {
+        unsigned int exclusive: 1; // Indicate whether the I80 bus is owned by one device (whose CS GPIO is not assigned) exclusively
+    } flags;
     dma_descriptor_t dma_nodes[]; // DMA descriptor pool, the descriptors are shared by all i80 devices
 };
 
@@ -219,7 +222,17 @@ esp_err_t esp_lcd_new_panel_io_i80(esp_lcd_i80_bus_handle_t bus, const esp_lcd_p
 {
     esp_err_t ret = ESP_OK;
     lcd_panel_io_i80_t *i80_device = NULL;
+    bool bus_exclusive = false;
     ESP_GOTO_ON_FALSE(bus && io_config && ret_io, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    // check if the bus has been configured as exclusive
+    portENTER_CRITICAL(&bus->spinlock);
+    if (!bus->flags.exclusive) {
+        bus->flags.exclusive = io_config->cs_gpio_num < 0;
+    } else {
+        bus_exclusive = true;
+    }
+    portEXIT_CRITICAL(&bus->spinlock);
+    ESP_GOTO_ON_FALSE(!bus_exclusive, ESP_ERR_INVALID_STATE, err, TAG, "bus has been exclusively owned by device");
     // check if pixel clock setting is valid
     uint32_t pclk_prescale = bus->resolution_hz / io_config->pclk_hz;
     ESP_GOTO_ON_FALSE(pclk_prescale > 0 && pclk_prescale <= LCD_LL_CLOCK_PRESCALE_MAX, ESP_ERR_NOT_SUPPORTED, err, TAG,
@@ -261,9 +274,11 @@ esp_err_t esp_lcd_new_panel_io_i80(esp_lcd_i80_bus_handle_t bus, const esp_lcd_p
     i80_device->base.tx_color = panel_io_i80_tx_color;
     // we only configure the CS GPIO as output, don't connect to the peripheral signal at the moment
     // we will connect the CS GPIO to peripheral signal when switching devices in lcd_i80_switch_devices()
-    gpio_set_level(io_config->cs_gpio_num, !io_config->flags.cs_active_high);
-    gpio_set_direction(io_config->cs_gpio_num, GPIO_MODE_OUTPUT);
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[io_config->cs_gpio_num], PIN_FUNC_GPIO);
+    if (io_config->cs_gpio_num >= 0) {
+        gpio_set_level(io_config->cs_gpio_num, !io_config->flags.cs_active_high);
+        gpio_set_direction(io_config->cs_gpio_num, GPIO_MODE_OUTPUT);
+        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[io_config->cs_gpio_num], PIN_FUNC_GPIO);
+    }
     *ret_io = &(i80_device->base);
     ESP_LOGD(TAG, "new i80 lcd panel io @%p on bus(%d)", i80_device, bus->bus_id);
     return ESP_OK;
@@ -541,13 +556,15 @@ static void lcd_i80_switch_devices(lcd_panel_io_i80_t *cur_device, lcd_panel_io_
         // configure DC line level for the new device
         lcd_ll_set_dc_level(bus->hal.dev, next_device->dc_levels.dc_idle_level, next_device->dc_levels.dc_cmd_level,
                             next_device->dc_levels.dc_dummy_level, next_device->dc_levels.dc_data_level);
-        if (cur_device) {
+        if (cur_device && cur_device->cs_gpio_num >= 0) {
             // disconnect current CS GPIO from peripheral signal
             esp_rom_gpio_connect_out_signal(cur_device->cs_gpio_num, SIG_GPIO_OUT_IDX, false, false);
         }
-        // connect CS signal to the new device
-        esp_rom_gpio_connect_out_signal(next_device->cs_gpio_num, lcd_periph_signals.buses[bus->bus_id].cs_sig,
-                                        next_device->flags.cs_active_high, false);
+        if (next_device->cs_gpio_num >= 0) {
+            // connect CS signal to the new device
+            esp_rom_gpio_connect_out_signal(next_device->cs_gpio_num, lcd_periph_signals.buses[bus->bus_id].cs_sig,
+                                            next_device->flags.cs_active_high, false);
+        }
     }
 }
 
