@@ -66,7 +66,6 @@
 #define DR_REG_UHCI0_BASE                       0x60014000
 #define DR_REG_SLCHOST_BASE                     0x60019000
 #define DR_REG_RMT_BASE                         0x60016000
-#define DR_REG_PCNT_BASE                        0x60017000
 #define DR_REG_SLC_BASE                         0x6002D000
 #define DR_REG_LEDC_BASE                        0x60019000
 #define DR_REG_EFUSE_BASE                       0x6001A000

@@ -37,7 +37,6 @@ static void i2s_hal_clk_cal(uint32_t fsclk, uint32_t fbck, int bck_div, i2s_ll_c
     int mb = 0;
     uint32_t mclk = fbck * bck_div;
     cal->mclk_div = fsclk / mclk;
-    cal->bck_div = bck_div;
     cal->a = 1;
     cal->b = 0;
     uint32_t freq_diff = fsclk - mclk * cal->mclk_div;
@@ -74,6 +73,7 @@ void i2s_hal_tx_clock_config(i2s_hal_context_t *hal, uint32_t sclk, uint32_t fbc
     i2s_ll_clk_cal_t clk_set = {0};
     i2s_hal_clk_cal(sclk, fbck, factor, &clk_set);
     i2s_ll_tx_set_clk(hal->dev, &clk_set);
+    i2s_ll_tx_set_bck_div_num(hal->dev, factor);
 }
 
 void i2s_hal_rx_clock_config(i2s_hal_context_t *hal, uint32_t sclk, uint32_t fbck, int factor)
@@ -81,6 +81,7 @@ void i2s_hal_rx_clock_config(i2s_hal_context_t *hal, uint32_t sclk, uint32_t fbc
     i2s_ll_clk_cal_t clk_set = {0};
     i2s_hal_clk_cal(sclk, fbck, factor, &clk_set);
     i2s_ll_rx_set_clk(hal->dev, &clk_set);
+    i2s_ll_rx_set_bck_div_num(hal->dev, factor);
 }
 
 void i2s_hal_enable_master_fd_mode(i2s_hal_context_t *hal)

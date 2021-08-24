@@ -1,3 +1,5 @@
+idf_build_get_property(target IDF_TARGET)
+
 set(srcs
     "unity/src/unity.c")
 
@@ -20,9 +22,7 @@ if(CONFIG_UNITY_ENABLE_FIXTURE)
     list(APPEND includes "unity/extras/fixture/src")
 endif()
 
-if(${IDF_TARGET} STREQUAL "linux")
-    list(APPEND requires "esp_common")
-else()
+if(NOT "${target}" STREQUAL "linux")
     list(APPEND srcs "unity_port_esp32.c")
 endif()
 
@@ -30,7 +30,7 @@ idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS ${includes}
                     REQUIRES ${requires})
 
-if(NOT ${IDF_TARGET} STREQUAL "linux")
+if(NOT "${target}" STREQUAL "linux")
     target_compile_definitions(${COMPONENT_LIB} PUBLIC
         -DUNITY_INCLUDE_CONFIG_H
     )

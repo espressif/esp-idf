@@ -46,6 +46,8 @@ TEST_CASE("lcd panel with i2c interface (ssd1306)", "[lcd]")
         .dev_addr = TEST_I2C_DEV_ADDR,
         .control_phase_bytes = 1, // According to SSD1306 datasheet
         .dc_bit_offset = 6,       // According to SSD1306 datasheet
+        .lcd_cmd_bits = 8,        // According to SSD1306 datasheet
+        .lcd_param_bits = 8,      // According to SSD1306 datasheet
     };
     TEST_ESP_OK(esp_lcd_new_panel_io_i2c((esp_lcd_i2c_bus_handle_t)TEST_I2C_HOST_ID, &io_config, &io_handle));
 
@@ -104,6 +106,8 @@ TEST_CASE("lvgl gui with i2c interface (ssd1306)", "[lcd][lvgl][ignore]")
         .dev_addr = TEST_I2C_DEV_ADDR,
         .control_phase_bytes = 1, // According to SSD1306 datasheet
         .dc_bit_offset = 6,       // According to SSD1306 datasheet
+        .lcd_cmd_bits = 8,        // According to SSD1306 datasheet
+        .lcd_param_bits = 8,      // According to SSD1306 datasheet
         .on_color_trans_done = notify_lvgl_ready_to_flush,
         .user_data = &disp,
     };

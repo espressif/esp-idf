@@ -85,29 +85,30 @@ static const char * if_str[] = {"STA", "AP", "ETH", "MAX"};
 /* these strings match mdns_ip_protocol_t enumeration */
 static const char * ip_protocol_str[] = {"V4", "V6", "MAX"};
 
-static void mdns_print_results(mdns_result_t * results){
-    mdns_result_t * r = results;
-    mdns_ip_addr_t * a = NULL;
+static void mdns_print_results(mdns_result_t *results)
+{
+    mdns_result_t *r = results;
+    mdns_ip_addr_t *a = NULL;
     int i = 1, t;
-    while(r){
-        printf("%d: Interface: %s, Type: %s\n", i++, if_str[r->tcpip_if], ip_protocol_str[r->ip_protocol]);
-        if(r->instance_name){
-            printf("  PTR : %s\n", r->instance_name);
+    while (r) {
+        printf("%d: Interface: %s, Type: %s, TTL: %u\n", i++, if_str[r->tcpip_if], ip_protocol_str[r->ip_protocol],
+               r->ttl);
+        if (r->instance_name) {
+            printf("  PTR : %s.%s.%s\n", r->instance_name, r->service_type, r->proto);
         }
-        if(r->hostname){
+        if (r->hostname) {
             printf("  SRV : %s.local:%u\n", r->hostname, r->port);
         }
-        if(r->txt_count){
+        if (r->txt_count) {
             printf("  TXT : [%zu] ", r->txt_count);
-            for(t=0; t<r->txt_count; t++){
-                printf("%s=%s(%d); ", r->txt[t].key, r->txt[t].value?r->txt[t].value:"NULL",
-                       r->txt_value_len[t]);
+            for (t = 0; t < r->txt_count; t++) {
+                printf("%s=%s(%d); ", r->txt[t].key, r->txt[t].value ? r->txt[t].value : "NULL", r->txt_value_len[t]);
             }
             printf("\n");
         }
         a = r->addr;
-        while(a){
-            if(a->addr.type == ESP_IPADDR_TYPE_V6){
+        while (a) {
+            if (a->addr.type == ESP_IPADDR_TYPE_V6) {
                 printf("  AAAA: " IPV6STR "\n", IPV62STR(a->addr.u_addr.ip6));
             } else {
                 printf("  A   : " IPSTR "\n", IP2STR(&(a->addr.u_addr.ip4)));
@@ -116,7 +117,6 @@ static void mdns_print_results(mdns_result_t * results){
         }
         r = r->next;
     }
-
 }
 
 static void query_mdns_service(const char * service_name, const char * proto)

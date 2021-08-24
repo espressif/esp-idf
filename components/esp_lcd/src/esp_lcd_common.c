@@ -7,8 +7,8 @@
 #include "freertos/FreeRTOS.h"
 #include "soc/rtc.h" // for querying XTAL clock
 #include "soc/soc_caps.h"
-#if SOC_LCDCAM_SUPPORTED
 #include "esp_lcd_common.h"
+#if SOC_LCDCAM_SUPPORTED
 #include "hal/lcd_ll.h"
 #include "hal/lcd_hal.h"
 
@@ -81,8 +81,8 @@ void lcd_com_remove_device(lcd_com_device_type_t device_type, int member_id)
 
 unsigned long lcd_com_select_periph_clock(lcd_hal_context_t *hal)
 {
-    unsigned long resolution_hz = 0;
-    int clock_source = -1;
+    unsigned long resolution_hz;
+    int clock_source;
 #if CONFIG_LCD_PERIPH_CLK_SRC_PLL160M
     resolution_hz = 160000000 / LCD_PERIPH_CLOCK_PRE_SCALE;
     clock_source = LCD_LL_CLOCK_SRC_PLL160M;
@@ -96,6 +96,8 @@ unsigned long lcd_com_select_periph_clock(lcd_hal_context_t *hal)
     lcd_ll_set_group_clock_src(hal->dev, clock_source, LCD_PERIPH_CLOCK_PRE_SCALE, 1, 0);
     return resolution_hz;
 }
+
+#endif // SOC_LCDCAM_SUPPORTED
 
 void lcd_com_mount_dma_data(dma_descriptor_t *desc_head, const void *buffer, size_t len)
 {
@@ -122,5 +124,3 @@ void lcd_com_mount_dma_data(dma_descriptor_t *desc_head, const void *buffer, siz
         prepared_length += len;
     }
 }
-
-#endif // SOC_LCDCAM_SUPPORTED

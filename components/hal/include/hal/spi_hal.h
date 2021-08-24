@@ -38,6 +38,7 @@
 #include <esp_err.h>
 #include "soc/lldesc.h"
 #include "soc/soc_caps.h"
+#include "hal/spi_types.h"
 
 /**
  * Input parameters to the ``spi_hal_cal_clock_conf`` to calculate the timing configuration
@@ -100,7 +101,7 @@ typedef struct {
     uint64_t addr;                      ///< Address value to be sent
     uint8_t *send_buffer;               ///< Data to be sent
     uint8_t *rcv_buffer;                ///< Buffer to hold the receive data.
-    spi_ll_io_mode_t io_mode;           ///< IO mode of the master
+    spi_line_mode_t line_mode;          ///< SPI line mode of this transaction
     int cs_keep_active;                 ///< Keep CS active after transaction
 } spi_hal_trans_config_t;
 

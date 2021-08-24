@@ -14,8 +14,6 @@
 
 #if CONFIG_IDF_ENV_FPGA
 
-#include "esp32s2/rom/efuse.h"
-
 /* Allow testing varying message lengths (truncating the same message)
    for various results */
 typedef struct {
@@ -23,25 +21,29 @@ typedef struct {
     uint8_t result[32];
 } hmac_result;
 
-static const ets_efuse_block_t key_block = ETS_EFUSE_BLOCK_KEY4;
-static const char *TAG = "test_hmac";
+static const esp_efuse_block_t key_block = EFUSE_BLK_KEY0;
 
 static void setup_keyblock(void) {
     const uint8_t key_data[32] = {
         1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,
         25,26,27,28,29,30,31,32
     };
-    int ets_status = ets_efuse_write_key(key_block,
-                        ETS_EFUSE_KEY_PURPOSE_HMAC_UP,
+    esp_err_t status = esp_efuse_write_key(key_block,
+                        ESP_EFUSE_KEY_PURPOSE_HMAC_UP,
                         key_data, sizeof(key_data));
 
-    if (ets_status == ESP_OK) {
-        printf("written key!\n");
+    if (status == ESP_OK) {
+        printf("Written key!\n");
+    } else if (ESP_ERR_EFUSE_REPEATED_PROG) {
+        printf("Key written already.\n");
     } else {
-        printf("writing key failed, maybe written already\n");
+        printf("ERROR while writing key.\n");
     }
 }
 
+#if !CONFIG_IDF_TARGET_ESP32S3 // TODO: IDF-3664: S3 JTAG enable hasn't been implemented yet
+#include "esp32s2/rom/efuse.h"
+static const char *TAG = "test_hmac";
 TEST_CASE("HMAC 'downstream' JTAG Enable mode", "[hw_crypto]")
 {
     int ets_status;
@@ -99,6 +101,7 @@ TEST_CASE("HMAC 'downstream' JTAG Disable", "[hw_crypto]")
     TEST_ASSERT_EQUAL_HEX32_MESSAGE(ESP_OK, esp_hmac_jtag_disable(),
 		    "JTAG should be disabled now, please manually verify");
 }
+#endif
 
 TEST_CASE("HMAC 'upstream' MAC generation with zeroes", "[hw_crypto]")
 {
@@ -1015,6 +1018,12 @@ TEST_CASE("HMAC 'upstream' wait lock", "[hw_crypto]")
     }
 }
 
+#endif // CONFIG_IDF_ENV_FPGA
+
+/**
+ * This test is just a parameter test and does not write any keys to efuse.
+ * It can be done safely on any chip which supports HMAC.
+ */
 TEST_CASE("HMAC key out of range", "[hw_crypto]")
 {
     uint8_t hmac[32];
@@ -1025,7 +1034,5 @@ TEST_CASE("HMAC key out of range", "[hw_crypto]")
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_hmac_calculate(HMAC_KEY0 - 1, message, 47, hmac));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_hmac_calculate(HMAC_KEY5 + 1, message, 47, hmac));
 }
-
-#endif // CONFIG_IDF_ENV_FPGA
 
 #endif // SOC_HMAC_SUPPORTED

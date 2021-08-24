@@ -2,7 +2,7 @@ Unit Testing in {IDF_TARGET_NAME}
 =================================
 :link_to_translation:`zh_CN:[中文]`
 
-ESP-IDF comes with two possibilities to test software.
+ESP-IDF provides the following methods to test software.
 
 - A unit test application which runs on the target and that is based on the Unity - unit test framework. These unit tests are integrated in the ESP-IDF repository and are placed in the ``test`` subdirectories of each component respectively. Target-based unit tests are covered in this document.
 - Linux-host based unit tests in which all the hardware is abstracted via mocks. Linux-host based tests are still under development and only a small fraction of IDF components supports them currently. They are covered here: :doc:`target based unit testing <linux-host-testing>`.
@@ -29,7 +29,7 @@ Tests are added in a function in the C file as follows:
 .. note::
     There is no need to add a main function with ``UNITY_BEGIN()`` and ``​UNITY_END()`` in each test case. ``unity_platform.c`` will run ``UNITY_BEGIN()`` autonomously, and run the test cases, then call ``​UNITY_END()``.
 
-The ``test`` subdirectory should contain a :ref:`component CMakeLists.txt <component-directories>`, since they are themselves, components. ESP-IDF uses the ``unity`` test framework and should be specified as a requirement for the component. Normally, components :ref:`should list their sources manually <cmake-file-globbing>`; for component tests however, this requirement is relaxed and the use of the ``SRC_DIRS`` argument in ``idf_component_register`` is advised.
+The ``test`` subdirectory should contain a :ref:`component CMakeLists.txt <component-directories>`, since they are themselves components (i.e., a test component). ESP-IDF uses the Unity test framework located in the ``unity`` component. Thus, each test component should specify the ``unity`` component as a component requirement using the ``REQUIRES`` argument. Normally, components :ref:`should list their sources manually <cmake-file-globbing>`; for component tests however, this requirement is relaxed and the use of the ``SRC_DIRS`` argument in ``idf_component_register`` is advised.
 
 Overall, the minimal ``test`` subdirectory ``CMakeLists.txt`` file should contain the following:
 

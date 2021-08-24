@@ -3835,7 +3835,10 @@ static void bta_dm_adjust_roles(BOOLEAN delay_role_switch)
                     } else {
                         bta_dm_cb.switch_delay_timer[i].p_cback =
                             (TIMER_CBACK *)&bta_dm_delay_role_switch_cback;
-                        bta_sys_start_timer(&bta_dm_cb.switch_delay_timer[i], 0, 500);
+                        /* Start the timer if not active */
+                        if (!bta_sys_timer_is_active(&bta_dm_cb.switch_delay_timer[i])) {
+                            bta_sys_start_timer(&bta_dm_cb.switch_delay_timer[i], 0, 500);
+                        }
                     }
                 }
 
@@ -4975,9 +4978,6 @@ void bta_dm_ble_update_conn_params (tBTA_DM_MSG *p_data)
                                   p_data->ble_update_conn_params.latency,
                                   p_data->ble_update_conn_params.timeout)) {
         APPL_TRACE_ERROR("Update connection parameters failed!");
-    } else {
-        BTM_BleConfigConnParams(p_data->ble_update_conn_params.min_int, p_data->ble_update_conn_params.max_int,
-            p_data->ble_update_conn_params.latency, p_data->ble_update_conn_params.timeout);
     }
 }
 /*******************************************************************************

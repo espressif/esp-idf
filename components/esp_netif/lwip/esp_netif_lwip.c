@@ -178,7 +178,7 @@ static void esp_netif_set_default_netif(esp_netif_t *esp_netif)
         esp_netif_ppp_set_default_netif(esp_netif->netif_handle);
 #endif
     } else {
-        netif_set_default(esp_netif->netif_handle);
+        netif_set_default(esp_netif->lwip_netif);
     }
 }
 

@@ -117,7 +117,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     if (alloc_from_psram) {
         rgb_panel->fb = heap_caps_calloc(1, fb_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     } else {
-        rgb_panel->fb = heap_caps_calloc(1, fb_size, MALLOC_CAP_INTERNAL);
+        rgb_panel->fb = heap_caps_calloc(1, fb_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
     }
     ESP_GOTO_ON_FALSE(rgb_panel->fb, ESP_ERR_NO_MEM, no_mem_fb, TAG, "no mem for frame buffer");
     rgb_panel->fb_size = fb_size;

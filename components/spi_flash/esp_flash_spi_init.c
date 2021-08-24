@@ -41,6 +41,13 @@
 
 __attribute__((unused)) static const char TAG[] = "spi_flash";
 
+/* This pointer is defined in ROM and extern-ed on targets where CONFIG_SPI_FLASH_ROM_IMPL = y*/
+#if !CONFIG_SPI_FLASH_ROM_IMPL
+esp_flash_t *esp_flash_default_chip = NULL;
+#endif
+
+#ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
+
 #ifdef CONFIG_ESPTOOLPY_FLASHFREQ_80M
 #define DEFAULT_FLASH_SPEED ESP_FLASH_80MHZ
 #elif defined CONFIG_ESPTOOLPY_FLASHFREQ_40M
@@ -263,13 +270,6 @@ esp_err_t spi_bus_remove_flash_device(esp_flash_t *chip)
 
 /* The default (ie initial boot) no-OS ROM esp_flash_os_functions_t */
 extern const esp_flash_os_functions_t esp_flash_noos_functions;
-
-/* This pointer is defined in ROM and extern-ed on targets where CONFIG_SPI_FLASH_ROM_IMPL = y*/
-#if !CONFIG_SPI_FLASH_ROM_IMPL
-esp_flash_t *esp_flash_default_chip = NULL;
-#endif
-
-#ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
 
 static DRAM_ATTR memspi_host_inst_t esp_flash_default_host;
 

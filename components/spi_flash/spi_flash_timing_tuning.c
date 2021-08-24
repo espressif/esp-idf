@@ -42,6 +42,7 @@ void spi_timing_set_pin_drive_strength(void)
 }
 
 #if SPI_TIMING_FLASH_NEEDS_TUNING || SPI_TIMING_PSRAM_NEEDS_TUNING
+static char *TAG = "MSPI Timing";
 static spi_timing_tuning_param_t s_flash_best_timing_tuning_config;
 static spi_timing_tuning_param_t s_psram_best_timing_tuning_config;
 
@@ -178,44 +179,85 @@ static void find_max_consecutive_success_points(uint8_t *array, uint32_t size, u
     *out_end_index = match_num == size ? size : end;
 }
 
-static void select_best_tuning_config(spi_timing_config_t *config, uint32_t consecutive_length, uint32_t end, bool is_flash)
+#if SPI_TIMING_FLASH_DTR_MODE || SPI_TIMING_PSRAM_DTR_MODE
+static uint32_t select_best_tuning_config_dtr(spi_timing_config_t *config, uint32_t consecutive_length, uint32_t end)
 {
-#if (SPI_TIMING_FLASH_DTR_MODE && CONFIG_ESPTOOLPY_FLASHFREQ_80M) || (SPI_TIMING_PSRAM_DTR_MODE && CONFIG_SPIRAM_SPEED_80M)
-    //80M DTR best point scheme
+#if (SPI_TIMING_CORE_CLOCK_MHZ == 160)
+    //Core clock 160M DTR best point scheme
     uint32_t best_point;
-    /**
-     * If the consecutive success point list is no longer than 2, or all available points are successful,
-     * tuning is FAIL, select default point, and generate a warning
-     */
-    //Define these magic number in macros in `spi_timing_config.h`. TODO: IDF-3146
+
+    //Define these magic number in macros in `spi_timing_config.h`. TODO: IDF-3663
     if (consecutive_length <= 2 || consecutive_length >= 6) {
+        //tuning is FAIL, select default point, and generate a warning
         best_point = config->default_config_id;
-        ESP_EARLY_LOGW("timing tuning:", "tuning fail, best point is %d\n", best_point + 1);
+        ESP_EARLY_LOGW(TAG, "tuning fail, best point is fallen back to index %d", best_point);
     } else if (consecutive_length <= 4) {
-        //consevutive length :  3 or 4
+        //consecutive length :  3 or 4
         best_point = end - 1;
-        ESP_EARLY_LOGD("timing tuning:","tuning success, best point is %d\n", best_point + 1);
+        ESP_EARLY_LOGD(TAG,"tuning success, best point is index %d", best_point);
     } else {
         //consecutive point list length equals 5
         best_point = end - 2;
-        ESP_EARLY_LOGD("timing tuning:","tuning success, best point is %d\n", best_point + 1);
+        ESP_EARLY_LOGD(TAG,"tuning success, best point is index %d", best_point);
     }
 
-    if (is_flash) {
-        s_flash_best_timing_tuning_config = config->tuning_config_table[best_point];
-    } else {
-        s_psram_best_timing_tuning_config = config->tuning_config_table[best_point];
-    }
+    return best_point;
 #else
     //won't reach here
     abort();
 #endif
 }
+#endif
+
+#if SPI_TIMING_FLASH_STR_MODE || SPI_TIMING_PSRAM_STR_MODE
+static uint32_t select_best_tuning_config_str(spi_timing_config_t *config, uint32_t consecutive_length, uint32_t end)
+{
+#if (SPI_TIMING_CORE_CLOCK_MHZ == 120 || SPI_TIMING_CORE_CLOCK_MHZ == 240)
+    //STR best point scheme
+    uint32_t best_point;
+
+    if (consecutive_length <= 2|| consecutive_length >= 5) {
+        //tuning is FAIL, select default point, and generate a warning
+        best_point = config->default_config_id;
+        ESP_EARLY_LOGW(TAG, "tuning fail, best point is fallen back to index %d", best_point);
+    } else {
+        //consecutive length :  3 or 4
+        best_point = end - consecutive_length / 2;
+        ESP_EARLY_LOGD(TAG,"tuning success, best point is index %d", best_point);
+    }
+
+    return best_point;
+#else
+    //won't reach here
+    abort();
+#endif
+}
+#endif
+
+static void select_best_tuning_config(spi_timing_config_t *config, uint32_t consecutive_length, uint32_t end, bool is_flash)
+{
+    uint32_t best_point = 0;
+    if (is_flash) {
+#if SPI_TIMING_FLASH_DTR_MODE
+        best_point = select_best_tuning_config_dtr(config, consecutive_length, end);
+#else   //#if SPI_TIMING_FLASH_STR_MODE
+        best_point = select_best_tuning_config_str(config, consecutive_length, end);
+#endif
+        s_flash_best_timing_tuning_config = config->tuning_config_table[best_point];
+    } else {
+#if SPI_TIMING_PSRAM_DTR_MODE
+        best_point = select_best_tuning_config_dtr(config, consecutive_length, end);
+#else   //#if SPI_TIMING_PSRAM_STR_MODE
+        best_point = select_best_tuning_config_str(config, consecutive_length, end);
+#endif
+        s_psram_best_timing_tuning_config = config->tuning_config_table[best_point];
+    }
+}
 
 static void do_tuning(uint8_t *reference_data, spi_timing_config_t *timing_config, bool is_flash)
 {
     /**
-     * We use SPI1 to tune the FLASH timing:
+     * We use SPI1 to tune the timing:
      * 1. Get all SPI1 sampling results.
      * 2. Find the longest consecutive successful sampling points from the result above.
      * 3. The middle one will be the best sampling point.

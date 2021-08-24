@@ -295,22 +295,6 @@ test_mkuf2:
     - cd ${IDF_PATH}/tools/test_mkuf2
     - ./test_mkuf2.py
 
-test_docs:
-  extends: .host_test_template
-  image: $ESP_IDF_DOC_ENV_IMAGE
-  variables:
-    PYTHON_VER: 3.6.13
-  artifacts:
-    when: on_failure
-    paths:
-      - docs/test/_build/*/*/*/html/*
-    expire_in: 1 week
-  script:
-    - cd ${IDF_PATH}/docs/test
-    - python -m pip install -r ${IDF_PATH}/docs/requirements.txt
-    - ./test_docs.py
-    - ./test_sphinx_idf_extensions.py
-
 test_autocomplete:
   extends: .host_test_template
   image: $CI_DOCKER_REGISTRY/linux-shells:1
@@ -340,7 +324,7 @@ test_nvs_page:
   script:
     - cd ${IDF_PATH}/components/nvs_flash/host_test/nvs_page_test
     - idf.py build
-    - build/host_nvs_page_test.elf
+    - build/test_nvs_page_host.elf
 
 test_log:
   extends: .host_test_template
@@ -355,6 +339,13 @@ test_esp_event:
     - cd ${IDF_PATH}/components/esp_event/host_test/esp_event_unit_test
     - idf.py build
     - build/test_esp_event_host.elf
+
+test_esp_timer_cxx:
+  extends: .host_test_template
+  script:
+    - cd ${IDF_PATH}/examples/cxx/experimental/experimental_cpp_component/host_test/esp_timer
+    - idf.py build
+    - build/test_esp_timer_cxx_host.elf
 
 test_eh_frame_parser:
   extends: .host_test_template

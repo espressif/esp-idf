@@ -82,6 +82,7 @@ if(NOT BOOTLOADER_BUILD)
             "touch_sensor_hal.c"
             "usb_hal.c"
             "esp32s3/brownout_hal.c"
+            "esp32s3/hmac_hal.c"
             "esp32s3/interrupt_descriptor_table.c"
             "esp32s3/touch_sensor_hal.c"
             "usbh_hal.c")

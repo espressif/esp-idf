@@ -19,6 +19,20 @@ extern "C" {
  */
 
 /**
+ * @brief Acquire lock for HMAC cryptography peripheral
+ *
+ * Internally also takes the SHA & AES lock, as the HMAC depends on the SHA peripheral
+ */
+void esp_crypto_hmac_lock_acquire(void);
+
+/**
+ * @brief Release lock for HMAC cryptography peripheral
+ *
+ * Internally also releases the SHA & AES lock, as the HMAC depends on the SHA peripheral
+ */
+void esp_crypto_hmac_lock_release(void);
+
+/**
  * @brief Acquire lock for the SHA and AES cryptography peripheral.
  *
  */

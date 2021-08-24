@@ -1394,7 +1394,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 #if CONFIG_BTDM_CTRL_LPCLK_SEL_EXT_32K_XTAL
     // check whether or not EXT_CRYS is working
     if (rtc_clk_slow_freq_get() == RTC_SLOW_FREQ_32K_XTAL) {
-        btdm_lpclk_sel = BTDM_LPCLK_SEL_XTAL32K; // set default value
+        btdm_lpclk_sel = BTDM_LPCLK_SEL_XTAL32K; // External 32kHz XTAL
 #ifdef CONFIG_PM_ENABLE
         s_btdm_allow_light_sleep = true;
 #endif

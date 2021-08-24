@@ -359,7 +359,8 @@ menu "MODEM SLEEP Options"
             bool "Internal 150kHz RC oscillator"
             depends on ESP32C3_RTC_CLK_SRC_INT_RC
             help
-                Internal 150kHz RC oscillator.
+                Internal 150kHz RC oscillator. The accuracy of this clock is a lot larger than 500ppm which is required
+                in Bluetooth communication, so don't select this option in scenarios such as BLE connection state.
 
 
     endchoice

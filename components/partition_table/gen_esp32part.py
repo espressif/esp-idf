@@ -73,6 +73,7 @@ SUBTYPES = {
         'coredump': 0x03,
         'nvs_keys': 0x04,
         'efuse': 0x05,
+        'undefined': 0x06,
         'esphttpd': 0x80,
         'fat': 0x81,
         'spiffs': 0x82,
@@ -89,6 +90,19 @@ def get_subtype_as_int(ptype, subtype):
             return int(subtype, 0)
         except TypeError:
             return subtype
+
+
+ALIGNMENT = {
+    APP_TYPE: 0x10000,
+    DATA_TYPE: 0x4,
+}
+
+
+STRICT_DATA_ALIGNMENT = 0x1000
+
+
+def get_alignment_for_type(ptype):
+    return ALIGNMENT.get(ptype, ALIGNMENT[DATA_TYPE])
 
 
 quiet = False
@@ -143,8 +157,8 @@ class PartitionTable(list):
                 continue
             try:
                 res.append(PartitionDefinition.from_csv(line, line_no + 1))
-            except InputError as e:
-                raise InputError('Error at line %d: %s' % (line_no + 1, e))
+            except InputError as err:
+                raise InputError('Error at line %d: %s' % (line_no + 1, err))
             except Exception:
                 critical('Unexpected error parsing CSV line %d: %s' % (line_no + 1, line))
                 raise
@@ -160,7 +174,7 @@ class PartitionTable(list):
                     raise InputError('CSV Error: Partitions overlap. Partition at line %d sets offset 0x%x. Previous partition ends 0x%x'
                                      % (e.line_no, e.offset, last_end))
             if e.offset is None:
-                pad_to = 0x10000 if e.type == APP_TYPE else 4
+                pad_to = get_alignment_for_type(e.type)
                 if last_end % pad_to != 0:
                     last_end += pad_to - (last_end % pad_to)
                 e.offset = last_end
@@ -210,10 +224,10 @@ class PartitionTable(list):
 
         # print sorted duplicate partitions by name
         if len(duplicates) != 0:
-            print('A list of partitions that have the same name:')
+            critical('A list of partitions that have the same name:')
             for p in sorted(self, key=lambda x:x.name):
                 if len(duplicates.intersection([p.name])) != 0:
-                    print('%s' % (p.to_csv()))
+                    critical('%s' % (p.to_csv()))
             raise InputError('Partition names must be unique')
 
         # check for overlaps
@@ -224,6 +238,18 @@ class PartitionTable(list):
             if last is not None and p.offset < last.offset + last.size:
                 raise InputError('Partition at 0x%x overlaps 0x%x-0x%x' % (p.offset, last.offset, last.offset + last.size - 1))
             last = p
+
+        # check that otadata should be unique
+        otadata_duplicates = [p for p in self if p.type == TYPES['data'] and p.subtype == SUBTYPES[DATA_TYPE]['ota']]
+        if len(otadata_duplicates) > 1:
+            for p in otadata_duplicates:
+                critical('%s' % (p.to_csv()))
+            raise InputError('Found multiple otadata partitions. Only one partition can be defined with type="data"(1) and subtype="ota"(0).')
+
+        if len(otadata_duplicates) == 1 and otadata_duplicates[0].size != 0x2000:
+            p = otadata_duplicates[0]
+            critical('%s' % (p.to_csv()))
+            raise InputError('otadata partition must have size = 0x2000')
 
     def flash_size(self):
         """ Return the size that partitions will occupy in flash
@@ -273,11 +299,6 @@ class PartitionTable(list):
 
 class PartitionDefinition(object):
     MAGIC_BYTES = b'\xAA\x50'
-
-    ALIGNMENT = {
-        APP_TYPE: 0x10000,
-        DATA_TYPE: 0x04,
-    }
 
     # dictionary maps flag name (as used in CSV flags list, property name)
     # to bit set in flags words in binary format
@@ -358,7 +379,9 @@ class PartitionDefinition(object):
 
     def parse_subtype(self, strval):
         if strval == '':
-            return 0  # default
+            if self.type == TYPES['app']:
+                raise InputError('App partition cannot have an empty subtype')
+            return SUBTYPES[DATA_TYPE]['undefined']
         return parse_int(strval, SUBTYPES.get(self.type, {}))
 
     def parse_address(self, strval):
@@ -373,10 +396,15 @@ class PartitionDefinition(object):
             raise ValidationError(self, 'Subtype field is not set')
         if self.offset is None:
             raise ValidationError(self, 'Offset field is not set')
-        align = self.ALIGNMENT.get(self.type, 4)
+        align = get_alignment_for_type(self.type)
         if self.offset % align:
             raise ValidationError(self, 'Offset 0x%x is not aligned to 0x%x' % (self.offset, align))
-        if self.size % align and secure:
+        # The alignment requirement for non-app partition is 4 bytes, but it should be 4 kB.
+        # Print a warning for now, make it an error in IDF 5.0 (IDF-3742).
+        if self.type != APP_TYPE and self.offset % STRICT_DATA_ALIGNMENT:
+            critical('WARNING: Partition %s not aligned to 0x%x.'
+                     'This is deprecated and will be considered an error in the future release.' % (self.name, STRICT_DATA_ALIGNMENT))
+        if self.size % align and secure and self.type == APP_TYPE:
             raise ValidationError(self, 'Size 0x%x is not aligned to 0x%x' % (self.size, align))
         if self.size is None:
             raise ValidationError(self, 'Size field is not set')

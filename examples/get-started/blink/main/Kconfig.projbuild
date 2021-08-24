@@ -32,7 +32,7 @@ menu "Example Configuration"
         range 0 48
         default 8 if IDF_TARGET_ESP32C3
         default 18 if IDF_TARGET_ESP32S2
-        default 47 if IDF_TARGET_ESP32S3
+        default 48 if IDF_TARGET_ESP32S3
         default 5
         help
             GPIO number (IOxx) to blink on and off or the RMT signal for the addressable LED.

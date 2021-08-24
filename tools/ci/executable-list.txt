@@ -20,11 +20,7 @@ components/partition_table/test_gen_esp32part_host/gen_esp32part_tests.py
 components/spiffs/spiffsgen.py
 components/spiffs/test_spiffsgen/test_spiffsgen.py
 components/ulp/esp32ulp_mapgen.py
-docs/build_docs.py
 docs/check_lang_folder_sync.sh
-docs/idf_extensions/gen_version_specific_includes.py
-docs/test/test_docs.py
-docs/test/test_sphinx_idf_extensions.py
 examples/build_system/cmake/idf_as_lib/build-esp32.sh
 examples/build_system/cmake/idf_as_lib/build.sh
 examples/build_system/cmake/idf_as_lib/run-esp32.sh
@@ -63,7 +59,6 @@ tools/ci/get-full-sources.sh
 tools/ci/get_supported_examples.sh
 tools/ci/mirror-submodule-update.sh
 tools/ci/multirun_with_pyenv.sh
-tools/ci/normalize_clangtidy_path.py
 tools/ci/push_to_github.sh
 tools/ci/test_autocomplete.py
 tools/ci/test_build_system.sh

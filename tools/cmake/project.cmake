@@ -1,6 +1,11 @@
 # Designed to be included from an IDF app's CMakeLists.txt file
 cmake_minimum_required(VERSION 3.5)
 
+include(${CMAKE_CURRENT_LIST_DIR}/targets.cmake)
+# Initialize build target for this build using the environment variable or
+# value passed externally.
+__target_init()
+
 # The mere inclusion of this CMake file sets up some interal build properties.
 # These properties can be modified in between this inclusion the the idf_build_process
 # call.
@@ -32,10 +37,6 @@ if(WARN_UNINITIALIZED)
 else()
     idf_build_set_property(EXTRA_CMAKE_ARGS "")
 endif()
-
-# Initialize build target for this build using the environment variable or
-# value passed externally.
-__target_init()
 
 #
 # Get the project version from either a version file or the Git revision. This is passed
@@ -172,7 +173,6 @@ function(__project_init components_var test_components_var)
         endif()
     endfunction()
 
-
     # Add component directories to the build, given the component filters, exclusions
     # extra directories, etc. passed from the root CMakeLists.txt.
     if(COMPONENT_DIRS)
@@ -196,6 +196,20 @@ function(__project_init components_var test_components_var)
         # extra component dirs, and CMAKE_CURRENT_LIST_DIR/components
         __project_component_dir("${CMAKE_CURRENT_LIST_DIR}/components")
     endif()
+
+    # For bootloader components, we only need to set-up the Kconfig files.
+    # Indeed, bootloader is currently compiled as a subproject, thus,
+    # its components are not part of the main project.
+    # However, in order to be able to configure these bootloader components
+    # using menuconfig, we need to look for their Kconfig-related files now.
+    file(GLOB bootloader_component_dirs "${CMAKE_CURRENT_LIST_DIR}/bootloader_components/*")
+    list(SORT bootloader_component_dirs)
+    foreach(bootloader_component_dir ${bootloader_component_dirs})
+        __component_dir_quick_check(is_component ${bootloader_component_dir})
+        if(is_component)
+            __kconfig_bootloader_component_add("${bootloader_component_dir}")
+        endif()
+    endforeach()
 
     spaces2list(COMPONENTS)
     spaces2list(EXCLUDE_COMPONENTS)

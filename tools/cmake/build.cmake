@@ -126,6 +126,9 @@ endfunction()
 # properties used for the processing phase of the build.
 #
 function(__build_init idf_path)
+
+    set(target ${IDF_TARGET})
+
     # Create the build target, to which the ESP-IDF build properties, dependencies are attached to.
     # Must be global so as to be accessible from any subdirectory in custom projects.
     add_library(__idf_build_target STATIC IMPORTED GLOBAL)
@@ -155,9 +158,10 @@ function(__build_init idf_path)
         endif()
     endforeach()
 
-
-    idf_build_get_property(target IDF_TARGET)
-    if(NOT target STREQUAL "linux")
+    if("${target}" STREQUAL "linux")
+        set(requires_common freertos log esp_rom esp_common)
+        idf_build_set_property(__COMPONENT_REQUIRES_COMMON "${requires_common}")
+    else()
         # Set components required by all other components in the build
         #
         # - lwip is here so that #include <sys/socket.h> works without any special provisions
@@ -411,10 +415,8 @@ macro(idf_build_process target)
 
     idf_build_get_property(target IDF_TARGET)
 
-    if(NOT target STREQUAL "linux")
+    if(NOT "${target}" STREQUAL "linux")
         idf_build_set_property(__COMPONENT_REQUIRES_COMMON ${target} APPEND)
-    else()
-        idf_build_set_property(__COMPONENT_REQUIRES_COMMON "")
     endif()
 
     # Call for component manager to download dependencies for all components

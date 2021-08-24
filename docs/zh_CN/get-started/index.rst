@@ -286,14 +286,7 @@ ESP-IDF 工具安装器会下载 Github 发布版本中附带的一些工具，�
 Windows 操作系统
 -----------------
 
-如果希望在运行 ESP-IDF 工具安装器时优先选择 Espressif 下载服务器，请在安装程序窗口中勾选 ``Use Espressif download server instead of downloading tool packages from GitHub.`` 选项。
-
-.. figure:: ../../_static/esp-idf-installer-download-server.png
-    :align: center
-    :alt: 配置 ESP-IDF 工具安装向导优先选择 Espressif 下载服务器
-    :figclass: align-center
-
-    配置 ESP-IDF 工具安装向导优先选择 Espressif 下载服务器
+如果希望在运行 ESP-IDF 工具安装器时优先选择 Espressif 下载服务器，请在 **Select Components** 窗口中的 **Optimization** 部分勾选 **Use Espressif download mirror instead of GitHub** 选项。
 
 Linux 和 macOS 操作系统
 --------------------------

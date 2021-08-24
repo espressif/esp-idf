@@ -19,8 +19,9 @@
 #define SOC_RTC_SLOW_MEM_SUPPORTED      1
 #define SOC_CCOMP_TIMER_SUPPORTED       1
 #define SOC_DIG_SIGN_SUPPORTED          0
-#define SOC_HMAC_SUPPORTED              0
+#define SOC_HMAC_SUPPORTED              1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
+#define SOC_SUPPORTS_SECURE_DL_MODE     1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS 3
 #define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS 1
 #define SOC_SDMMC_HOST_SUPPORTED        1
@@ -92,9 +93,10 @@
 #include "mpu_caps.h"
 
 /*-------------------------- PCNT CAPS ---------------------------------------*/
-#define SOC_PCNT_PORT_NUM         (1)
-#define SOC_PCNT_UNIT_NUM         (4)
-#define SOC_PCNT_UNIT_CHANNEL_NUM (2)
+#define SOC_PCNT_GROUPS               (1)
+#define SOC_PCNT_UNITS_PER_GROUP      (4)
+#define SOC_PCNT_CHANNELS_PER_UNIT    (2)
+#define SOC_PCNT_THRES_POINT_PER_UNIT (2)
 
 /*-------------------------- RMT CAPS ----------------------------------------*/
 #define SOC_RMT_GROUPS                  (1)  /*!< One RMT group */
@@ -126,7 +128,24 @@
 #define SOC_SIGMADELTA_CHANNEL_NUM (8) // 8 channels
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
-#include "spi_caps.h"
+#define SOC_SPI_PERIPH_NUM                  3
+#define SOC_SPI_DMA_CHAN_NUM                3
+#define SOC_SPI_PERIPH_CS_NUM(i)            3
+#define SOC_SPI_MAXIMUM_BUFFER_SIZE         64
+#define SOC_SPI_SUPPORT_DDRCLK              1
+#define SOC_SPI_SLAVE_SUPPORT_SEG_TRANS     1
+#define SOC_SPI_SUPPORT_CD_SIG              1
+#define SOC_SPI_SUPPORT_CONTINUOUS_TRANS    1
+#define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1
+
+// Peripheral supports DIO, DOUT, QIO, or QOUT
+#define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(host_id)  ({(void)host_id; 1;})
+
+// Peripheral supports output given level during its "dummy phase"
+#define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT 1
+#define SOC_MEMSPI_IS_INDEPENDENT                   1
+#define SOC_SPI_MAX_PRE_DIVIDER                     16
+#define SOC_SPI_SUPPORT_OCT                         1
 
 /*-------------------------- SPIRAM CAPS ----------------------------------------*/
 #define SOC_SPIRAM_SUPPORTED            1

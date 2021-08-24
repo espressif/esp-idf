@@ -73,13 +73,47 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t phy_addr : 5; /* PHY Address */
-        uint32_t mode : 3;     /* Transceiver Mode of Operation */
-        uint32_t reserved : 8; /* Reserved */
+        uint32_t phy_addr : 5;   /* PHY Address */
+        uint32_t mode : 3;       /* Transceiver Mode of Operation */
+        uint32_t reserved_1 : 6; /* Reserved */
+        uint32_t mii_mode : 1;   /* Mode of the digital interface (only LAN8710A/LAN8740A/LAN8741A) */
+        uint32_t reserved_2 : 1; /* Reserved */
     };
     uint32_t val;
 } smr_reg_t;
 #define ETH_PHY_SMR_REG_ADDR (0x12)
+
+/**
+ * @brief Time Domain Reflectometry Patterns/Delay Control Register
+ * Only available in LAN8740A/LAN8742A
+ */
+typedef union {
+    struct {
+        uint32_t tdr_pattern_low : 6;        /* Data pattern sent in TDR mode for the low cycle */
+        uint32_t tdr_pattern_high : 6;       /* Data pattern sent in TDR mode for the high cycle */
+        uint32_t tdr_line_break_counter : 3; /* Increments of 256ms of break time */
+        uint32_t tdr_delay_in : 1;           /* Line break counter used */
+    };
+    uint32_t val;
+} tdr_pattern_reg_t;
+#define EHT_PHY_TDRPD_REG_ADDR (0x18)
+
+/**
+ * @brief Time Domain Reflectometry Control/Status Register)
+ * Only available in LAN8740A/LAN8742A
+ */
+typedef union {
+    struct {
+        uint32_t tdr_channel_length : 8;     /* TDR channel length */
+        uint32_t tdr_channel_status : 1;     /* TDR channel status */
+        uint32_t tdr_channel_cable_type : 2; /* TDR channel cable type */
+        uint32_t reserved : 3;               /* Reserved */
+        uint32_t tdr_a2d_filter_enable: 1;   /* Analog to Digital Filter Enabled */
+        uint32_t tdr_enable : 1;             /* Enable TDR */
+    };
+    uint32_t val;
+} tdr_control_reg_t;
+#define EHT_PHY_TDRC_REG_ADDR (0x19)
 
 /**
  * @brief SECR(Symbol Error Counter Register)
@@ -113,6 +147,19 @@ typedef union {
 #define ETH_PHY_CSIR_REG_ADDR (0x1B)
 
 /**
+ * @brief Cable Length Register
+ * Only available in LAN8740A/LAN8742A
+ */
+typedef union {
+    struct {
+        uint32_t reserved : 12;              /* Reserved */
+        uint32_t cable_length : 4;           /* Cable length */
+    };
+    uint32_t val;
+} cbln_reg_t;
+#define EHT_PHY_CBLN_REG_ADDR (0x1C)
+
+/**
  * @brief ISR(Interrupt Source Register)
  *
  */
@@ -125,8 +172,9 @@ typedef union {
         uint32_t link_down : 1;                /* Link Down */
         uint32_t remote_fault_detect : 1;      /* Remote Fault Detect */
         uint32_t auto_nego_complete : 1;       /* Auto-Negotiation Complete */
-        uint32_t energy_on_generate : 1;       /* ENERYON generated */
-        uint32_t reserved2 : 8;                /* Reserved */
+        uint32_t energy_on_generate : 1;       /* ENERGY ON generated */
+        uint32_t wake_on_lan : 1;              /* Wake on Lan (WOL) event detected (only LAN8740A/LAN8742A) */
+        uint32_t reserved2 : 7;                /* Reserved */
     };
     uint32_t val;
 } isfr_reg_t;
@@ -146,7 +194,8 @@ typedef union {
         uint32_t remote_fault_detect : 1;      /* Remote Fault Detect */
         uint32_t auto_nego_complete : 1;       /* Auto-Negotiation Complete */
         uint32_t energy_on_generate : 1;       /* ENERGY ON generated */
-        uint32_t reserved2 : 8;                /* Reserved */
+        uint32_t wake_on_lan : 1;              /* Wake on Lan (WOL) event detected (only LAN8740A/LAN8742A) */
+        uint32_t reserved2 : 7;                /* Reserved */
     };
     uint32_t val;
 } imr_reg_t;
@@ -160,9 +209,11 @@ typedef union {
     struct {
         uint32_t reserved1 : 2;        /* Reserved */
         uint32_t speed_indication : 3; /* Speed Indication */
-        uint32_t reserved2 : 7;        /* Reserved */
+        uint32_t reserved2 : 1;        /* Reserved */
+        uint32_t enable_4b5b : 1;      /* Enable 4B5B encoder (only LAN8740A/LAN8741A) */
+        uint32_t reserved3 : 5;        /* Reserved */
         uint32_t auto_nego_done : 1;   /* Auto Negotiation Done */
-        uint32_t reserved3 : 3;        /* Reserved */
+        uint32_t reserved4 : 3;        /* Reserved */
     };
     uint32_t val;
 } pscsr_reg_t;
