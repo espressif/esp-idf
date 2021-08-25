@@ -36,6 +36,14 @@ static const char *TAG = "mcpwm";
 #define MCPWM_DT_ERROR          "MCPWM DEADTIME TYPE ERROR"
 #define MCPWM_CAP_EXIST_ERROR   "MCPWM USER CAP INT SERVICE ALREADY EXISTS"
 
+#ifdef CONFIG_MCPWM_ISR_IN_IRAM
+#define MCPWM_ISR_ATTR     IRAM_ATTR
+#define MCPWM_INTR_FLAG  (ESP_INTR_FLAG_IRAM)
+#else
+#define MCPWM_ISR_ATTR
+#define MCPWM_INTR_FLAG  0
+#endif
+
 #define MCPWM_GROUP_CLK_PRESCALE (16)
 #define MCPWM_GROUP_CLK_HZ (SOC_MCPWM_BASE_CLK_HZ / MCPWM_GROUP_CLK_PRESCALE)
 #define MCPWM_TIMER_CLK_HZ (MCPWM_GROUP_CLK_HZ / 10)
@@ -729,7 +737,7 @@ esp_err_t mcpwm_fault_set_oneshot_mode(mcpwm_unit_t mcpwm_num, mcpwm_timer_t tim
     return ESP_OK;
 }
 
-static void mcpwm_default_isr_handler(void *arg) {
+static void MCPWM_ISR_ATTR mcpwm_default_isr_handler(void *arg) {
     mcpwm_context_t *curr_context = (mcpwm_context_t *) arg;
     uint32_t intr_status = mcpwm_ll_intr_get_capture_status(curr_context->hal.dev);
     mcpwm_ll_intr_clear_capture_status(curr_context->hal.dev, intr_status);
@@ -826,7 +834,7 @@ esp_err_t mcpwm_capture_enable_channel(mcpwm_unit_t mcpwm_num, mcpwm_capture_cha
     context[mcpwm_num].cap_isr_func[cap_channel].args = cap_conf->user_data;
     esp_err_t ret = ESP_OK;
     if (context[mcpwm_num].mcpwm_intr_handle == NULL) {
-        ret = esp_intr_alloc(mcpwm_periph_signals.groups[mcpwm_num].irq_id, 0,
+        ret = esp_intr_alloc(mcpwm_periph_signals.groups[mcpwm_num].irq_id, MCPWM_INTR_FLAG,
                               mcpwm_default_isr_handler,
                               (void *) (context + mcpwm_num), &(context[mcpwm_num].mcpwm_intr_handle));
     }
@@ -873,7 +881,7 @@ esp_err_t mcpwm_capture_disable_channel(mcpwm_unit_t mcpwm_num, mcpwm_capture_ch
     return ret;
 }
 
-uint32_t mcpwm_capture_signal_get_value(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t cap_sig)
+uint32_t MCPWM_ISR_ATTR mcpwm_capture_signal_get_value(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t cap_sig)
 {
     ESP_RETURN_ON_FALSE(mcpwm_num < SOC_MCPWM_GROUPS, ESP_ERR_INVALID_ARG, TAG, MCPWM_GROUP_NUM_ERROR);
     ESP_RETURN_ON_FALSE(cap_sig < SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER, ESP_ERR_INVALID_ARG, TAG, MCPWM_CAPTURE_ERROR);
@@ -881,7 +889,7 @@ uint32_t mcpwm_capture_signal_get_value(mcpwm_unit_t mcpwm_num, mcpwm_capture_si
     return mcpwm_ll_capture_get_value(hal->dev, cap_sig);
 }
 
-uint32_t mcpwm_capture_signal_get_edge(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t cap_sig)
+uint32_t MCPWM_ISR_ATTR mcpwm_capture_signal_get_edge(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t cap_sig)
 {
     ESP_RETURN_ON_FALSE(mcpwm_num < SOC_MCPWM_GROUPS, ESP_ERR_INVALID_ARG, TAG, MCPWM_GROUP_NUM_ERROR);
     ESP_RETURN_ON_FALSE(cap_sig < SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER, ESP_ERR_INVALID_ARG, TAG, MCPWM_CAPTURE_ERROR);
