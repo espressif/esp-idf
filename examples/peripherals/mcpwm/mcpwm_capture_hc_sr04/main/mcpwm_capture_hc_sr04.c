@@ -79,6 +79,13 @@ static bool sr04_echo_isr_handler(mcpwm_unit_t mcpwm, mcpwm_capture_channel_id_t
 void app_main(void) {
     ESP_LOGI(TAG, "HC-SR04 example based on capture function from MCPWM");
 
+    // the queue where we read data
+    cap_queue = xQueueCreate(1, sizeof(uint32_t));
+    if (cap_queue == NULL) {
+        ESP_LOGE(TAG, "failed to alloc cap_queue");
+        return;
+    }
+
     /* configure Echo pin */
     // set CAP_0 on GPIO
     ESP_ERROR_CHECK(mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM_CAP_0, HC_SR04_PIN_ECHO));
@@ -105,12 +112,6 @@ void app_main(void) {
     ESP_ERROR_CHECK(gpio_config(&io_conf));
     ESP_ERROR_CHECK(gpio_set_level(HC_SR04_PIN_TRIG, 0)); // drive low by default
     ESP_LOGI(TAG, "Trig pin configured");
-
-    // the queue where we read data
-    cap_queue = xQueueCreate(1, sizeof(uint32_t));
-    if (cap_queue == 0) {
-        ESP_LOGE(TAG, "failed to alloc cap_queue");
-    }
 
     // start generating trig signal
     xTaskCreate(gen_trig_output, "gen_trig_output", TRIGGER_THREAD_STACK_SIZE, NULL, TRIGGER_THREAD_PRIORITY, NULL);
