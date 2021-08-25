@@ -14,7 +14,6 @@ The examples are grouped into sub-directories by category. Each category directo
 * `power_save` contains a how to use power save mode of Wi-Fi.
 * `roaming` contains a example using 802.11k and 802.11v APIs.
 * `scan` shows how to scan for all the available APs.
-* `simple_sniffer` demonstrates basic usage of WiFi sniffer mode by saving packets into SD card with pcap format.
 * `smart_config` shows how ESP connects to a target AP with ESPTOUCH.
 * `wifi_easy_connect` shows how to configure an ESP device as an enrollee using Device Provisioning Protocol (DPP).
 * `wpa2_enterprise` connects to AP with WPA2 enterprise encryption.
