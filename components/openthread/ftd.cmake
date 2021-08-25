@@ -10,6 +10,7 @@ set(private_include_dirs
     "openthread/src/lib/hdlc"
     "openthread/src/lib/spinel"
     "openthread/src/ncp"
+    "private_include"
     )
 
 set(src_dirs

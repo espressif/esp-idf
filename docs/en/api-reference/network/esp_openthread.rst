@@ -29,5 +29,3 @@ ESP-IDF provides extra apis for launching and managing the OpenThread stack, bin
 .. include-build-file:: inc/esp_openthread_lock.inc
 .. include-build-file:: inc/esp_openthread_netif_glue.inc
 .. include-build-file:: inc/esp_openthread_border_router.inc
-.. include-build-file:: inc/openthread-core-esp32x-ftd-config.inc
-
