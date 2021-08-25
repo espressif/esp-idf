@@ -75,7 +75,7 @@ def dut_start_secure_app(dut):      # type: (ttfw_idf.IDFDUT) -> None
 
 # Test secure boot flow.
 # Correctly signed bootloader + correctly signed app should work
-@ttfw_idf.idf_custom_test(env_tag='Example_Secure_Boot', target=['esp32c3fpga'], ignore=True)
+@ttfw_idf.idf_custom_test(env_tag='Example_Secure_Boot', target=['esp32c3fpga', 'esp32s3fpga'], ignore=True)
 def test_examples_security_secure_boot(env, _):    # type: (ttfw_idf.TinyFW.Env, None) -> None
     efuse_port = os.getenv('EFUSEPORT')
     dut = env.get_dut('secure_boot', 'tools/test_apps/security/secure_boot', efuse_reset_port=efuse_port)
@@ -85,7 +85,7 @@ def test_examples_security_secure_boot(env, _):    # type: (ttfw_idf.TinyFW.Env,
 
 # Test efuse key index and key block combination.
 # Any key index can be written to any key block and should work
-@ttfw_idf.idf_custom_test(env_tag='Example_Secure_Boot', target=['esp32c3fpga'], ignore=True)
+@ttfw_idf.idf_custom_test(env_tag='Example_Secure_Boot', target=['esp32c3fpga', 'esp32s3fpga'], ignore=True)
 def test_examples_security_secure_boot_key_combo(env, _):      # type: (ttfw_idf.TinyFW.Env, None) -> None
     efuse_port = os.getenv('EFUSEPORT')
     dut = env.get_dut('secure_boot', 'tools/test_apps/security/secure_boot', efuse_reset_port=efuse_port)
@@ -101,7 +101,7 @@ def test_examples_security_secure_boot_key_combo(env, _):      # type: (ttfw_idf
 
 # Test secure boot key revoke.
 # If a key is revoked, bootloader signed with that key should fail verification
-@ttfw_idf.idf_custom_test(env_tag='Example_Secure_Boot', target=['esp32c3fpga'], ignore=True)
+@ttfw_idf.idf_custom_test(env_tag='Example_Secure_Boot', target=['esp32c3fpga', 'esp32s3fpga'], ignore=True)
 def test_examples_security_secure_boot_key_revoke(env, _):     # type: (ttfw_idf.TinyFW.Env, None) -> None
     efuse_port = os.getenv('EFUSEPORT')
     dut = env.get_dut('secure_boot', 'tools/test_apps/security/secure_boot', efuse_reset_port=efuse_port)
@@ -117,7 +117,7 @@ def test_examples_security_secure_boot_key_revoke(env, _):     # type: (ttfw_idf
 
 # Test bootloader signature corruption.
 # Corrupt one byte at a time of bootloader signature and test that the verification fails
-@ttfw_idf.idf_custom_test(env_tag='Example_Secure_Boot', target=['esp32c3fpga'], ignore=True)
+@ttfw_idf.idf_custom_test(env_tag='Example_Secure_Boot', target=['esp32c3fpga', 'esp32s3fpga'], ignore=True)
 def test_examples_security_secure_boot_corrupt_bl_sig(env, _):     # type: (ttfw_idf.TinyFW.Env, None) -> None
     efuse_port = os.getenv('EFUSEPORT')
     dut = env.get_dut('secure_boot', 'tools/test_apps/security/secure_boot', efuse_reset_port=efuse_port)
@@ -140,7 +140,7 @@ def test_examples_security_secure_boot_corrupt_bl_sig(env, _):     # type: (ttfw
 
 # Test app signature corruption.
 # Corrupt app signature, one byte at a time, and test that the verification fails
-@ttfw_idf.idf_custom_test(env_tag='Example_Secure_Boot', target=['esp32c3fpga'], ignore=True)
+@ttfw_idf.idf_custom_test(env_tag='Example_Secure_Boot', target=['esp32c3fpga', 'esp32s3fpga'], ignore=True)
 def test_examples_security_secure_boot_corrupt_app_sig(env, _):    # type: (ttfw_idf.TinyFW.Env, None) -> None
     efuse_port = os.getenv('EFUSEPORT')
     dut = env.get_dut('secure_boot', 'tools/test_apps/security/secure_boot', efuse_reset_port=efuse_port)

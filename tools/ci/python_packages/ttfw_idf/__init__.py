@@ -24,7 +24,7 @@ from tiny_test_fw import TinyFW, Utility
 from .DebugUtils import CustomProcess, GDBBackend, OCDBackend  # noqa: export DebugUtils for users
 from .IDFApp import UT, ComponentUTApp, Example, IDFApp, LoadableElfTestApp, TestApp  # noqa: export all Apps for users
 from .IDFDUT import (ESP32C3DUT, ESP32C3FPGADUT, ESP32DUT, ESP32QEMUDUT, ESP32S2DUT,  # noqa: export DUTs for users
-                     ESP32S3DUT, ESP8266DUT, IDFDUT)
+                     ESP32S3DUT, ESP32S3FPGADUT, ESP8266DUT, IDFDUT)
 from .unity_test_parser import TestFormat, TestResults
 
 # pass TARGET_DUT_CLS_DICT to Env.py to avoid circular dependency issue.
@@ -34,6 +34,7 @@ TARGET_DUT_CLS_DICT = {
     'ESP32S3': ESP32S3DUT,
     'ESP32C3': ESP32C3DUT,
     'ESP32C3FPGA': ESP32C3FPGADUT,
+    'ESP32S3FPGA': ESP32S3FPGADUT,
 }
 
 

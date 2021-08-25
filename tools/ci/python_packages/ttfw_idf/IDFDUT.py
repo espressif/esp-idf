@@ -849,3 +849,40 @@ class ESP32C3FPGADUT(IDFFPGADUT):
     @classmethod
     def confirm_dut(cls, port, **kwargs):
         return True, cls.TARGET
+
+
+class ESP32S3FPGADUT(IDFFPGADUT):
+    TARGET = 'esp32s3'
+    TOOLCHAIN_PREFIX = 'xtensa-esp32s3-elf-'
+    FLASH_ENCRYPT_SCHEME = 'AES-XTS'
+    FLASH_ENCRYPT_CNT_KEY = 'SPI_BOOT_CRYPT_CNT'
+    FLASH_ENCRYPT_CNT_VAL = 1
+    FLASH_ENCRYPT_PURPOSE = 'XTS_AES_128_KEY'
+    SECURE_BOOT_EN_KEY = 'SECURE_BOOT_EN'
+    SECURE_BOOT_EN_VAL = 1
+
+    @classmethod
+    def get_rom(cls):
+        return esptool.ESP32S3ROM
+
+    def erase_partition(self, esp, partition):
+        raise NotImplementedError()
+
+    def flash_encrypt_burn_cnt(self):
+        self.burn_efuse(self.FLASH_ENCRYPT_CNT_KEY, self.FLASH_ENCRYPT_CNT_VAL)
+
+    def flash_encrypt_burn_key(self, key, block=0):
+        self.burn_efuse_key(key, self.FLASH_ENCRYPT_PURPOSE, 'BLOCK_KEY%d' % block)
+
+    def flash_encrypt_get_scheme(self):
+        return self.FLASH_ENCRYPT_SCHEME
+
+    def secure_boot_burn_en_bit(self):
+        self.burn_efuse(self.SECURE_BOOT_EN_KEY, self.SECURE_BOOT_EN_VAL)
+
+    def secure_boot_burn_digest(self, digest, key_index=0, block=0):
+        self.burn_efuse_key_digest(digest, 'SECURE_BOOT_DIGEST%d' % key_index, 'BLOCK_KEY%d' % block)
+
+    @classmethod
+    def confirm_dut(cls, port, **kwargs):
+        return True, cls.TARGET
