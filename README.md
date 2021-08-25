@@ -2,7 +2,21 @@
 
 * [中文版](./README_CN.md)
 
-ESP-IDF is the development framework for Espressif SoCs (released after 2016<sup>[1](#fn1)</sup>) provided for Windows, Linux and macOS.
+ESP-IDF is the development framework for Espressif SoCs supported on Windows, Linux and macOS.
+
+# ESP-IDF Release and SoC Compatibility
+
+The following table shows ESP-IDF support of Espressif SoCs where :yellow_circle: and :green_circle: denote preview status and support, respectively. In preview status the build is not yet enabled and some crucial parts could be missing (like documentation, datasheet). Please use an ESP-IDF release where the desired SoC is already supported.
+
+|Chip         |     v3.3       |      v4.0      |       v4.1     |     v4.2       |     v4.3       |     v4.4       |                                                            |
+|:----------- |:-------------: | :-------------:| :-------------:| :-------------:| :-------------:| :-------------:|:---------------------------------------------------------- |
+|ESP32        | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |                                                            |
+|ESP32-S2     |                |                |                | :green_circle: | :green_circle: | :green_circle: |                                                            |
+|ESP32-C3     |                |                |                |                | :green_circle: | :green_circle: |                                                            |
+|ESP32-S3     |                |                |                |                | :yellow_circle:| :green_circle: | [Announcement](https://www.espressif.com/en/news/ESP32_S3) |
+|ESP32-H2     |                |                |                |                |                | :yellow_circle:| [Announcement](https://www.espressif.com/en/news/ESP32_H2) |
+
+Espressif SoCs released before 2016 (ESP8266 and ESP8285) are supported by [RTOS SDK](https://github.com/espressif/ESP8266_RTOS_SDK) instead.
 
 # Developing With ESP-IDF
 
@@ -99,8 +113,3 @@ This can be combined with other targets, ie `idf.py -p PORT erase_flash flash` w
 * [Check the Issues section on github](https://github.com/espressif/esp-idf/issues) if you find a bug or have a feature request. Please check existing Issues before opening a new one.
 
 * If you're interested in contributing to ESP-IDF, please check the [Contributions Guide](https://docs.espressif.com/projects/esp-idf/en/latest/contribute/index.html).
-
-
-________
-
-<a name="fn1">1</a>: ESP8266 and ESP8285 are not supported in ESP-IDF. See [RTOS SDK](https://github.com/espressif/ESP8266_RTOS_SDK) instead.
