@@ -290,7 +290,7 @@ size_t tinyusb_cdcacm_write_queue_char(tinyusb_cdcacm_itf_t itf, char ch)
 }
 
 
-size_t tinyusb_cdcacm_write_queue(tinyusb_cdcacm_itf_t itf, uint8_t *in_buf, size_t in_size)
+size_t tinyusb_cdcacm_write_queue(tinyusb_cdcacm_itf_t itf, const uint8_t *in_buf, size_t in_size)
 {
     if (!get_acm(itf)) { // non-initialized
         return 0;
