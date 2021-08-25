@@ -2,7 +2,21 @@
 
 * [English Version](./README.md)
 
-ESP-IDF 是乐鑫官方推出的开发框架，适用于 2016 年之后发布的系列芯片<sup>[1](#fn1)</sup>，支持 Windows、Linux 和 macOS 操作系统。
+ESP-IDF 是乐鑫官方推出的物联网开发框架，支持 Windows、Linux 和 macOS 操作系统。
+
+# ESP-IDF 与乐鑫芯片
+
+下表总结了乐鑫芯片在 ESP-IDF 各版本中的支持状态，其中 :green_circle: 代表已支持，:yellow_circle: 代表目前处于预览支持状态。在预览支持阶段，因为新芯片尚未完全添加到构建系统目录，所以一些重要的内容（如文档和技术规格书等）可能会缺失。请确保使用与芯片相匹配的 ESP-IDF 版本。
+
+|   芯片      |     v3.3       |      v4.0      |       v4.1     |     v4.2       |     v4.3       |     v4.4       |                                                            |
+|:----------- |:-------------: | :-------------:| :-------------:| :-------------:| :-------------:| :-------------:|:---------------------------------------------------------- |
+|ESP32        | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |                                                            |
+|ESP32-S2     |                |                |                | :green_circle: | :green_circle: | :green_circle: |                                                            |
+|ESP32-C3     |                |                |                |                | :green_circle: | :green_circle: |                                                            |
+|ESP32-S3     |                |                |                |                | :yellow_circle:| :green_circle: | [芯片发布公告](https://www.espressif.com/zh-hans/news/ESP32_S3) |
+|ESP32-H2     |                |                |                |                |                | :yellow_circle:| [芯片发布公告](https://www.espressif.com/zh-hans/news/ESP32_H2) |
+
+对于 2016 年之前发布的乐鑫芯片（包括 ESP8266 和 ESP8285），请参考 [RTOS SDK](https://github.com/espressif/ESP8266_RTOS_SDK)。
 
 # 使用 ESP-IDF 进行开发
 
@@ -99,8 +113,3 @@ ESP-IDF 中的子模块采用相对路径（[详见 .gitmodules 文件](.gitmodu
 * 如果你在使用中发现了错误或者需要新的功能，请先[查看 GitHub Issues](https://github.com/espressif/esp-idf/issues)，确保该问题没有重复提交。
 
 * 如果你有兴趣为 ESP-IDF 作贡献，请先阅读[贡献指南](https://docs.espressif.com/projects/esp-idf/en/latest/contribute/index.html)。
-
-
-__________
-
-<a name="fn1">1</a>: ESP-IDF 不支持 ESP8266 和 ESP8285。如有需要，请参考 [RTOS SDK](https://github.com/espressif/ESP8266_RTOS_SDK)。
