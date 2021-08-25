@@ -178,7 +178,7 @@ void init_microphone(void)
         .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
         .communication_format = I2S_COMM_FORMAT_STAND_I2S,
         .intr_alloc_flags = ESP_INTR_FLAG_LEVEL2,
-        .dma_buf_count = 8,
+        .dma_buf_count = 16,
         .dma_buf_len = 1024,
         .use_apll = 1,
     };
@@ -191,9 +191,9 @@ void init_microphone(void)
         .data_in_num = CONFIG_EXAMPLE_I2S_DATA_GPIO,
     };
 
+    // Call driver installation function before any I2S R/W operation.
     ESP_ERROR_CHECK( i2s_driver_install(CONFIG_EXAMPLE_I2S_CH, &i2s_config, 0, NULL) );
     ESP_ERROR_CHECK( i2s_set_pin(CONFIG_EXAMPLE_I2S_CH, &pin_config) );
-    // Set the I2S clock using the sample rate divided by 2 if channel is mono
     ESP_ERROR_CHECK( i2s_set_clk(CONFIG_EXAMPLE_I2S_CH, (CONFIG_EXAMPLE_AUDIO_SAMPLE_RATE / 2), I2S_BITS_PER_SAMPLE_16BIT, I2S_CHANNEL_MONO) );
 }
 
@@ -207,4 +207,6 @@ void app_main(void)
     ESP_LOGI(TAG, "Starting recording for %d seconds!", CONFIG_EXAMPLE_REC_TIME);
     // Start Recording
     record_wav();
+    // Stop I2S driver and destroy
+    ESP_ERROR_CHECK( i2s_driver_uninstall(CONFIG_EXAMPLE_I2S_CH) );
 }
