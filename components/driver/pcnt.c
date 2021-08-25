@@ -5,6 +5,7 @@
  */
 #include "freertos/FreeRTOS.h"
 #include "esp_log.h"
+#include "esp_check.h"
 #include "soc/soc_caps.h"
 #if SOC_PCNT_SUPPORTED
 #include "driver/periph_ctrl.h"
@@ -32,11 +33,7 @@
 
 static const char *TAG = "pcnt";
 
-#define PCNT_CHECK(a, str, ret_val) \
-    if (!(a)) { \
-        ESP_LOGE(TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str); \
-        return (ret_val); \
-    }
+#define PCNT_CHECK(a, str, ret_val) ESP_RETURN_ON_FALSE(a, ret_val, TAG, "%s", str)
 
 typedef struct {
     pcnt_hal_context_t hal;        /*!< PCNT hal context*/

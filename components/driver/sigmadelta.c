@@ -5,6 +5,7 @@
  */
 
 #include "esp_log.h"
+#include "esp_check.h"
 #include "esp_err.h"
 #include "driver/sigmadelta.h"
 #include "esp_heap_caps.h"
@@ -14,10 +15,7 @@
 
 static const char *TAG = "sigma-delta";
 
-#define SIGMADELTA_CHECK(a,str,ret_val) if(!(a)) {                 \
-        ESP_LOGE(TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str);   \
-        return (ret_val);                                          \
-    }
+#define SIGMADELTA_CHECK(a,str,ret_val) ESP_RETURN_ON_FALSE(a, ret_val, TAG, "%s", str)
 
 typedef struct {
     sigmadelta_hal_context_t hal;        /*!< SIGMADELTA hal context*/
