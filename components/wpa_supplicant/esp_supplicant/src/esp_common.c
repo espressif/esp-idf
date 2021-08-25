@@ -304,9 +304,6 @@ void esp_supplicant_common_deinit(void)
 {
 	struct wpa_supplicant *wpa_s = &g_wpa_supp;
 
-	if (esp_supplicant_post_evt(SIG_SUPPLICANT_DEL_TASK, 0) != 0) {
-		wpa_printf(MSG_ERROR, "failed to send task delete event");
-	}
 	esp_scan_deinit(wpa_s);
 	wpas_rrm_reset(wpa_s);
 	wpas_clear_beacon_rep_data(wpa_s);
@@ -314,6 +311,12 @@ void esp_supplicant_common_deinit(void)
 			&supplicant_sta_conn_handler);
 	esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED,
 			&supplicant_sta_disconn_handler);
+	wpa_s->type = 0;
+	wpa_s->subtype = 0;
+	esp_wifi_register_mgmt_frame_internal(wpa_s->type, wpa_s->subtype);
+	if (esp_supplicant_post_evt(SIG_SUPPLICANT_DEL_TASK, 0) != 0) {
+		wpa_printf(MSG_ERROR, "failed to send task delete event");
+	}
 }
 
 int esp_rrm_send_neighbor_rep_request(neighbor_rep_request_cb cb,
@@ -587,12 +590,19 @@ int esp_supplicant_post_evt(uint32_t evt_id, uint32_t data)
 	evt->id = evt_id;
 	evt->data = data;
 
-	SUPPLICANT_API_LOCK();
+	/* Make sure lock exists before taking it */
+	if (s_supplicant_api_lock) {
+		SUPPLICANT_API_LOCK();
+	} else {
+		return -1;
+	}
 	if (xQueueSend(s_supplicant_evt_queue, &evt, 10 / portTICK_PERIOD_MS ) != pdPASS) {
 		SUPPLICANT_API_UNLOCK();
 		os_free(evt);
 		return -1;
 	}
-	SUPPLICANT_API_UNLOCK();
+	if (evt_id != SIG_SUPPLICANT_DEL_TASK) {
+	    SUPPLICANT_API_UNLOCK();
+	}
 	return 0;
 }
