@@ -910,6 +910,15 @@
 #endif
 
 /**
+ * SNTP_DEBUG: Enable debugging for SNTP.
+ */
+#ifdef CONFIG_LWIP_SNTP_DEBUG
+#define SNTP_DEBUG                       LWIP_DBG_ON
+#else
+#define SNTP_DEBUG                       LWIP_DBG_OFF
+#endif
+
+/**
  * MEMP_DEBUG: Enable debugging in memp.c.
  */
 #define MEMP_DEBUG                      LWIP_DBG_OFF
@@ -1053,9 +1062,15 @@
    ------------ SNTP options ------------
    --------------------------------------
 */
-/*
- * SNTP update delay - in milliseconds
- */
+
+// Max number of SNTP servers handled (default equal to LWIP_DHCP_MAX_NTP_SERVERS)
+#if defined CONFIG_LWIP_SNTP_MAX_SERVERS
+#define SNTP_MAX_SERVERS                CONFIG_LWIP_SNTP_MAX_SERVERS
+#endif // CONFIG_LWIP_SNTP_MAX_SERVERS
+
+#ifdef CONFIG_LWIP_DHCP_GET_NTP_SRV
+#define LWIP_DHCP_GET_NTP_SRV           CONFIG_LWIP_DHCP_GET_NTP_SRV
+#endif // CONFIG_LWIP_DHCP_GET_NTP_SRV
 
 /** Set this to 1 to support DNS names (or IP address strings) to set sntp servers
  * One server address/name can be defined as default if SNTP_SERVER_DNS == 1:
