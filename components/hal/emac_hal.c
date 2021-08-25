@@ -142,15 +142,15 @@ void emac_hal_init(emac_hal_context_t *hal, void *descriptors,
 void emac_hal_set_csr_clock_range(emac_hal_context_t *hal, int freq)
 {
     /* Tell MAC system clock Frequency in MHz, which will determine the frequency range of MDC(1MHz~2.5MHz) */
-    if (freq >= 20 && freq < 35) {
+    if (freq >= 20000000 && freq < 35000000) {
         emac_ll_set_csr_clock_division(hal->mac_regs, 2);   // CSR clock/16
-    } else if (freq >= 35 && freq < 60) {
+    } else if (freq >= 35000000 && freq < 60000000) {
         emac_ll_set_csr_clock_division(hal->mac_regs, 3);   // CSR clock/26
-    } else if (freq >= 60 && freq < 100) {
+    } else if (freq >= 60000000 && freq < 100000000) {
         emac_ll_set_csr_clock_division(hal->mac_regs, 0);   // CSR clock/42
-    } else if (freq >= 100 && freq < 150) {
+    } else if (freq >= 100000000 && freq < 150000000) {
         emac_ll_set_csr_clock_division(hal->mac_regs, 1);   // CSR clock/62
-    } else if (freq >= 150 && freq < 250) {
+    } else if (freq >= 150000000 && freq < 250000000) {
         emac_ll_set_csr_clock_division(hal->mac_regs, 4);   // CSR clock/102
     } else {
         emac_ll_set_csr_clock_division(hal->mac_regs, 5);   // CSR clock/124

@@ -129,7 +129,7 @@ example_test_002:
     - ESP32
     - Example_ShieldBox_Basic
 
-example_test_enternet:
+example_test_ethernet:
   extends: .example_test_esp32_template
   tags:
     - ESP32

@@ -353,7 +353,7 @@ static esp_err_t emac_esp32_init(esp_eth_mac_t *mac)
     }
     ESP_GOTO_ON_FALSE(to < emac->sw_reset_timeout_ms / 10, ESP_ERR_TIMEOUT, err, TAG, "reset timeout");
     /* set smi clock */
-    emac_hal_set_csr_clock_range(&emac->hal, esp_clk_apb_freq() / 1e6);
+    emac_hal_set_csr_clock_range(&emac->hal, esp_clk_apb_freq());
     /* reset descriptor chain */
     emac_hal_reset_desc_chain(&emac->hal);
     /* init mac registers by default */
