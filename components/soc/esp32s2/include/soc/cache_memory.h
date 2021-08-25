@@ -67,7 +67,7 @@ extern "C" {
 #define BUS_DROM0_CACHE_SIZE              BUS_SIZE(DROM0)
 #define BUS_DRAM0_CACHE_SIZE              BUS_SIZE(DRAM0_CACHE)
 #define BUS_DRAM1_CACHE_SIZE              BUS_SIZE(DRAM1)
-#define BUS_DPORT_CACHE_SIZE              BUS_SIZE(DPORT)
+#define BUS_DPORT_CACHE_SIZE              BUS_SIZE(DPORT_CACHE)
 
 #define PRO_CACHE_IBUS0                 0
 #define PRO_CACHE_IBUS0_MMU_START       0

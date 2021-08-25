@@ -125,16 +125,15 @@ extern int _vector_table;
 
 static const char *TAG = "cpu_start";
 
-#if CONFIG_IDF_TARGET_ESP32
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
 extern int _ext_ram_bss_start;
 extern int _ext_ram_bss_end;
 #endif
+
 #ifdef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
 extern int _iram_bss_start;
 extern int _iram_bss_end;
 #endif
-#endif // CONFIG_IDF_TARGET_ESP32
 
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 static volatile bool s_cpu_up[SOC_CPU_CORES_NUM] = { false };
@@ -380,7 +379,7 @@ void IRAM_ATTR call_start_cpu0(void)
     bootloader_init_mem();
 #if CONFIG_SPIRAM_BOOT_INIT
     if (esp_spiram_init() != ESP_OK) {
-#if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
         ESP_EARLY_LOGE(TAG, "Failed to init external RAM, needed for external .bss segment");
         abort();

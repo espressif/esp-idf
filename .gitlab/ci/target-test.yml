@@ -482,7 +482,7 @@ UT_006:
 
 UT_007:
   extends: .unit_test_esp32_template
-  parallel: 3
+  parallel: 4
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -633,7 +633,7 @@ UT_046:
 
 UT_047:
   extends: .unit_test_esp32s2_template
-  parallel: 3
+  parallel: 4
   tags:
     - ESP32S2_IDF
     - UT_T1_1

@@ -226,6 +226,17 @@ SECTIONS
     _noinit_end = ABSOLUTE(.);
   } > dram0_0_seg
 
+   /* external memory bss, from any global variable with EXT_RAM_ATTR attribute*/
+  .ext_ram.bss (NOLOAD) :
+  {
+    _ext_ram_bss_start = ABSOLUTE(.);
+
+    mapping[extern_ram]
+
+    . = ALIGN(4);
+    _ext_ram_bss_end = ABSOLUTE(.);
+  } > extern_ram_seg
+
   /* Shared RAM */
   .dram0.bss (NOLOAD) :
   {
