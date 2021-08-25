@@ -32,6 +32,22 @@ void bootloader_enable_qio_mode(void);
  */
 uint32_t bootloader_read_flash_id();
 
+/**
+ * @brief Read the SFDP of the flash
+ *
+ * @param sfdp_addr Address of the parameter to read
+ * @param miso_byte_num Bytes to read
+ * @return The read SFDP, little endian, 4 bytes at most
+ */
+uint32_t bootloader_flash_read_sfdp(uint32_t sfdp_addr, unsigned int miso_byte_num);
+
+/**
+ * @brief Startup flow recommended by XMC. Call at startup before any erase/write operation.
+ *
+ * @return ESP_OK When startup successfully, otherwise ESP_FAIL (indiciating you should reboot before erase/write).
+ */
+esp_err_t bootloader_flash_xmc_startup(void);
+
 #ifdef __cplusplus
 }
 #endif
