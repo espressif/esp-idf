@@ -313,6 +313,9 @@ More information about network interface, please refer to :doc:`Network Interfac
     esp_netif_attach(eth_netif, esp_eth_new_netif_glue(eth_handle)); // attach Ethernet driver to TCP/IP stack
     esp_eth_start(eth_handle); // start Ethernet driver state machine
 
+.. warning::
+    User's Ethernet/IP event handlers need to be registered after registration of default handlers (i.e. after :cpp:func:`esp_eth_set_default_handlers`). General recommendation is to fully initialize Ethernet driver and network interface prior registering user's Ethernet/IP event handlers, i.e. register the user event handlers as the last thing prior starting the Ethernet driver. Such approach ensures that Ethernet/IP events get executed first by the Ethernet driver or network interface and so the system is in expected state when executing user's handlers.
+
 .. _misc-operation-of-driver:
 
 Misc control of Ethernet driver
