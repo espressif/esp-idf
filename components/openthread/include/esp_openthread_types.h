@@ -82,8 +82,9 @@ typedef enum {
  *
  */
 typedef enum {
-    HOST_CONNECTION_MODE_NONE = 0x0, /*!< Disable host connection*/
-    HOST_CONNECTION_MODE_UART = 0x1, /*!< UART connection to the host*/
+    HOST_CONNECTION_MODE_NONE     = 0x0, /*!< Disable host connection*/
+    HOST_CONNECTION_MODE_CLI_UART = 0x1, /*!< CLI UART connection to the host*/
+    HOST_CONNECTION_MODE_RCP_UART = 0x2, /*!< RCP UART connection to the host*/
 } esp_openthread_host_connection_mode_t;
 
 /**
