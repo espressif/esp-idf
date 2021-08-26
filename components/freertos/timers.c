@@ -55,7 +55,7 @@
 #if ( configUSE_TIMERS == 1 )
 
 /* Misc definitions. */
-#define tmrNO_DELAY     ( TickType_t ) 0U
+    #define tmrNO_DELAY    ( TickType_t ) 0U
 
 /* The name assigned to the timer service task.  This can be overridden by
  * defining trmTIMER_SERVICE_TASK_NAME in FreeRTOSConfig.h. */
@@ -476,7 +476,7 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
 
     TickType_t xTimerGetExpiryTime( TimerHandle_t xTimer )
     {
-        Timer_t * pxTimer =  xTimer;
+        Timer_t * pxTimer = xTimer;
         TickType_t xReturn;
 
         configASSERT( xTimer );
@@ -487,7 +487,7 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
 
     const char * pcTimerGetName( TimerHandle_t xTimer ) /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
     {
-        Timer_t *pxTimer = xTimer;
+        Timer_t * pxTimer = xTimer;
 
         configASSERT( xTimer );
         return pxTimer->pcTimerName;
@@ -500,21 +500,21 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
         Timer_t * const pxTimer = ( Timer_t * ) listGET_OWNER_OF_HEAD_ENTRY( pxCurrentTimerList ); /*lint !e9087 !e9079 void * is used as this macro is used with tasks and co-routines too.  Alignment is known to be fine as the type of the pointer stored and retrieved is the same. */
 
         /* Remove the timer from the list of active timers.  A check has already
-        been performed to ensure the list is not empty. */
+         * been performed to ensure the list is not empty. */
         ( void ) uxListRemove( &( pxTimer->xTimerListItem ) );
         traceTIMER_EXPIRED( pxTimer );
 
-        /* If the timer is an auto reload timer then calculate the next
-        expiry time and re-insert the timer in the list of active timers. */
+        /* If the timer is an auto-reload timer then calculate the next
+         * expiry time and re-insert the timer in the list of active timers. */
         if( ( pxTimer->ucStatus & tmrSTATUS_IS_AUTORELOAD ) != 0 )
         {
             /* The timer is inserted into a list using a time relative to anything
-            other than the current time.  It will therefore be inserted into the
-            correct list relative to the time this task thinks it is now. */
+             * other than the current time.  It will therefore be inserted into the
+             * correct list relative to the time this task thinks it is now. */
             if( prvInsertTimerInActiveList( pxTimer, ( xNextExpireTime + pxTimer->xTimerPeriodInTicks ), xTimeNow, xNextExpireTime ) != pdFALSE )
             {
                 /* The timer expired before it was added to the active timer
-                list.  Reload it now.  */
+                 * list.  Reload it now.  */
                 xResult = xTimerGenericCommand( pxTimer, tmrCOMMAND_START_DONT_TRACE, xNextExpireTime, NULL, tmrNO_DELAY );
                 configASSERT( xResult );
                 ( void ) xResult;
@@ -543,26 +543,26 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
         /* Just to avoid compiler warnings. */
         ( void ) pvParameters;
 
-        #if( configUSE_DAEMON_TASK_STARTUP_HOOK == 1 )
-        {
-            extern void vApplicationDaemonTaskStartupHook( void );
+        #if ( configUSE_DAEMON_TASK_STARTUP_HOOK == 1 )
+            {
+                extern void vApplicationDaemonTaskStartupHook( void );
 
-            /* Allow the application writer to execute some code in the context of
-            this task at the point the task starts executing.  This is useful if the
-            application includes initialisation code that would benefit from
-            executing after the scheduler has been started. */
-            vApplicationDaemonTaskStartupHook();
-        }
+                /* Allow the application writer to execute some code in the context of
+                 * this task at the point the task starts executing.  This is useful if the
+                 * application includes initialisation code that would benefit from
+                 * executing after the scheduler has been started. */
+                vApplicationDaemonTaskStartupHook();
+            }
         #endif /* configUSE_DAEMON_TASK_STARTUP_HOOK */
 
-        for( ;; )
+        for( ; ; )
         {
             /* Query the timers list to see if it contains any timers, and if so,
-            obtain the time at which the next timer will expire. */
+             * obtain the time at which the next timer will expire. */
             xNextExpireTime = prvGetNextExpireTime( &xListWasEmpty );
 
             /* If a timer has expired, process it.  Otherwise, block this task
-            until either a timer does expire, or a command is received. */
+             * until either a timer does expire, or a command is received. */
             prvProcessTimerOrBlockTask( xNextExpireTime, xListWasEmpty );
 
             /* Empty the command queue. */
@@ -571,7 +571,8 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
     }
 /*-----------------------------------------------------------*/
 
-    static void prvProcessTimerOrBlockTask( const TickType_t xNextExpireTime, BaseType_t xListWasEmpty )
+    static void prvProcessTimerOrBlockTask( const TickType_t xNextExpireTime,
+                                            BaseType_t xListWasEmpty )
     {
         TickType_t xTimeNow;
         BaseType_t xTimerListsWereSwitched;
@@ -579,11 +580,12 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
         taskENTER_CRITICAL( &xTimerMux);
         {
             /* Obtain the time now to make an assessment as to whether the timer
-            has expired or not.  If obtaining the time causes the lists to switch
-            then don't process this timer as any timers that remained in the list
-            when the lists were switched will have been processed within the
-            prvSampleTimeNow() function. */
+             * has expired or not.  If obtaining the time causes the lists to switch
+             * then don't process this timer as any timers that remained in the list
+             * when the lists were switched will have been processed within the
+             * prvSampleTimeNow() function. */
             xTimeNow = prvSampleTimeNow( &xTimerListsWereSwitched );
+
             if( xTimerListsWereSwitched == pdFALSE )
             {
                 /* The tick count has not overflowed, has the timer expired? */
@@ -595,15 +597,15 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
                 else
                 {
                     /* The tick count has not overflowed, and the next expire
-                    time has not been reached yet.  This task should therefore
-                    block to wait for the next expire time or a command to be
-                    received - whichever comes first.  The following line cannot
-                    be reached unless xNextExpireTime > xTimeNow, except in the
-                    case when the current timer list is empty. */
+                     * time has not been reached yet.  This task should therefore
+                     * block to wait for the next expire time or a command to be
+                     * received - whichever comes first.  The following line cannot
+                     * be reached unless xNextExpireTime > xTimeNow, except in the
+                     * case when the current timer list is empty. */
                     if( xListWasEmpty != pdFALSE )
                     {
                         /* The current timer list is empty - is the overflow list
-                        also empty? */
+                         * also empty? */
                         xListWasEmpty = listLIST_IS_EMPTY( pxOverflowTimerList );
                     }
 
@@ -612,9 +614,9 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
                     taskEXIT_CRITICAL( &xTimerMux);
 
                     /* Yield to wait for either a command to arrive, or the
-                    block time to expire.  If a command arrived between the
-                    critical section being exited and this yield then the yield
-                    will not cause the task to block. */
+                     * block time to expire.  If a command arrived between the
+                     * critical section being exited and this yield then the yield
+                     * will not cause the task to block. */
                     portYIELD_WITHIN_API();
 
                 }
@@ -632,13 +634,14 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
         TickType_t xNextExpireTime;
 
         /* Timers are listed in expiry time order, with the head of the list
-        referencing the task that will expire first.  Obtain the time at which
-        the timer with the nearest expiry time will expire.  If there are no
-        active timers then just set the next expire time to 0.  That will cause
-        this task to unblock when the tick count overflows, at which point the
-        timer lists will be switched and the next expiry time can be
-        re-assessed.  */
+         * referencing the task that will expire first.  Obtain the time at which
+         * the timer with the nearest expiry time will expire.  If there are no
+         * active timers then just set the next expire time to 0.  That will cause
+         * this task to unblock when the tick count overflows, at which point the
+         * timer lists will be switched and the next expiry time can be
+         * re-assessed.  */
         *pxListWasEmpty = listLIST_IS_EMPTY( pxCurrentTimerList );
+
         if( *pxListWasEmpty == pdFALSE )
         {
             xNextExpireTime = listGET_ITEM_VALUE_OF_HEAD_ENTRY( pxCurrentTimerList );
@@ -676,7 +679,10 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
     }
 /*-----------------------------------------------------------*/
 
-    static BaseType_t prvInsertTimerInActiveList( Timer_t * const pxTimer, const TickType_t xNextExpiryTime, const TickType_t xTimeNow, const TickType_t xCommandTime )
+    static BaseType_t prvInsertTimerInActiveList( Timer_t * const pxTimer,
+                                                  const TickType_t xNextExpiryTime,
+                                                  const TickType_t xTimeNow,
+                                                  const TickType_t xCommandTime )
     {
         BaseType_t xProcessTimerNow = pdFALSE;
 
@@ -686,11 +692,11 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
         if( xNextExpiryTime <= xTimeNow )
         {
             /* Has the expiry time elapsed between the command to start/reset a
-            timer was issued, and the time the command was processed? */
+             * timer was issued, and the time the command was processed? */
             if( ( ( TickType_t ) ( xTimeNow - xCommandTime ) ) >= pxTimer->xTimerPeriodInTicks ) /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
             {
                 /* The time between a command being issued and the command being
-                processed actually exceeds the timers period.  */
+                 * processed actually exceeds the timers period.  */
                 xProcessTimerNow = pdTRUE;
             }
             else
@@ -703,8 +709,8 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
             if( ( xTimeNow < xCommandTime ) && ( xNextExpiryTime >= xCommandTime ) )
             {
                 /* If, since the command was issued, the tick count has overflowed
-                but the expiry time has not, then the timer must have already passed
-                its expiry time and should be processed immediately. */
+                 * but the expiry time has not, then the timer must have already passed
+                 * its expiry time and should be processed immediately. */
                 xProcessTimerNow = pdTRUE;
             }
             else
@@ -720,40 +726,40 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
     static void prvProcessReceivedCommands( void )
     {
         DaemonTaskMessage_t xMessage;
-        Timer_t *pxTimer;
+        Timer_t * pxTimer;
         BaseType_t xTimerListsWereSwitched, xResult;
         TickType_t xTimeNow;
 
         while( xQueueReceive( xTimerQueue, &xMessage, tmrNO_DELAY ) != pdFAIL ) /*lint !e603 xMessage does not have to be initialised as it is passed out, not in, and it is not used unless xQueueReceive() returns pdTRUE. */
         {
             #if ( INCLUDE_xTimerPendFunctionCall == 1 )
-            {
-                /* Negative commands are pended function calls rather than timer
-                commands. */
-                if( xMessage.xMessageID < ( BaseType_t ) 0 )
                 {
-                    const CallbackParameters_t * const pxCallback = &( xMessage.u.xCallbackParameters );
+                    /* Negative commands are pended function calls rather than timer
+                     * commands. */
+                    if( xMessage.xMessageID < ( BaseType_t ) 0 )
+                    {
+                        const CallbackParameters_t * const pxCallback = &( xMessage.u.xCallbackParameters );
 
-                    /* The timer uses the xCallbackParameters member to request a
-                    callback be executed.  Check the callback is not NULL. */
-                    configASSERT( pxCallback );
+                        /* The timer uses the xCallbackParameters member to request a
+                         * callback be executed.  Check the callback is not NULL. */
+                        configASSERT( pxCallback );
 
-                    /* Call the function. */
-                    pxCallback->pxCallbackFunction( pxCallback->pvParameter1, pxCallback->ulParameter2 );
+                        /* Call the function. */
+                        pxCallback->pxCallbackFunction( pxCallback->pvParameter1, pxCallback->ulParameter2 );
+                    }
+                    else
+                    {
+                        mtCOVERAGE_TEST_MARKER();
+                    }
                 }
-                else
-                {
-                    mtCOVERAGE_TEST_MARKER();
-                }
-            }
             #endif /* INCLUDE_xTimerPendFunctionCall */
 
             /* Commands that are positive are timer commands rather than pended
-            function calls. */
+             * function calls. */
             if( xMessage.xMessageID >= ( BaseType_t ) 0 )
             {
                 /* The messages uses the xTimerParameters member to work on a
-                software timer. */
+                 * software timer. */
                 pxTimer = xMessage.u.xTimerParameters.pxTimer;
 
                 if( listIS_CONTAINED_WITHIN( NULL, &( pxTimer->xTimerListItem ) ) == pdFALSE ) /*lint !e961. The cast is only redundant when NULL is passed into the macro. */
@@ -769,11 +775,11 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
                 traceTIMER_COMMAND_RECEIVED( pxTimer, xMessage.xMessageID, xMessage.u.xTimerParameters.xMessageValue );
 
                 /* In this case the xTimerListsWereSwitched parameter is not used, but
-                 * it must be present in the function call.  prvSampleTimeNow() must be
-                 * called after the message is received from xTimerQueue so there is no
-                 * possibility of a higher priority task adding a message to the message
-                 * queue with a time that is ahead of the timer daemon task (because it
-                 * pre-empted the timer daemon task after the xTimeNow value was set). */
+                 *  it must be present in the function call.  prvSampleTimeNow() must be
+                 *  called after the message is received from xTimerQueue so there is no
+                 *  possibility of a higher priority task adding a message to the message
+                 *  queue with a time that is ahead of the timer daemon task (because it
+                 *  pre-empted the timer daemon task after the xTimeNow value was set). */
                 xTimeNow = prvSampleTimeNow( &xTimerListsWereSwitched );
 
                 switch( xMessage.xMessageID )

@@ -129,27 +129,24 @@ void vListInsert( List_t * const pxList,
     {
         /* *** NOTE ***********************************************************
         *  If you find your application is crashing here then likely causes are
-        *  listed below.  In addition see https://www.freertos.org/FAQHelp.html for
+        *  listed below.  In addition see https://www.FreeRTOS.org/FAQHelp.html for
         *  more tips, and ensure configASSERT() is defined!
-        *  https://www.freertos.org/a00110.html#configASSERT
+        *  https://www.FreeRTOS.org/a00110.html#configASSERT
         *
         *   1) Stack overflow -
-        *      see https://www.freertos.org/Stacks-and-stack-overflow-checking.html
+        *      see https://www.FreeRTOS.org/Stacks-and-stack-overflow-checking.html
         *   2) Incorrect interrupt priority assignment, especially on Cortex-M
         *      parts where numerically high priority values denote low actual
         *      interrupt priorities, which can seem counter intuitive.  See
-        *      https://www.freertos.org/RTOS-Cortex-M3-M4.html and the definition
+        *      https://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html and the definition
         *      of configMAX_SYSCALL_INTERRUPT_PRIORITY on
-        *      https://www.freertos.org/a00110.html
+        *      https://www.FreeRTOS.org/a00110.html
         *   3) Calling an API function from within a critical section or when
         *      the scheduler is suspended, or calling an API function that does
         *      not end in "FromISR" from an interrupt.
         *   4) Using a queue or semaphore before it has been initialised or
         *      before the scheduler has been started (are interrupts firing
         *      before vTaskStartScheduler() has been called?).
-        *   5) If the FreeRTOS port supports interrupt nesting then ensure that
-        *      the priority of the tick interrupt is at or below
-        *      configMAX_SYSCALL_INTERRUPT_PRIORITY.
         **********************************************************************/
 
         for( pxIterator = ( ListItem_t * ) &( pxList->xListEnd ); pxIterator->pxNext->xItemValue <= xValueOfInsertion; pxIterator = pxIterator->pxNext ) /*lint !e826 !e740 !e9087 The mini list structure is used as the list end to save RAM.  This is checked and valid. *//*lint !e440 The iterator moves to a different value, not xValueOfInsertion. */

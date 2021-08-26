@@ -92,7 +92,7 @@ typedef struct SemaphoreData
 /*
  * Definition of the queue used by the scheduler.
  * Items are queued by copy, not reference.  See the following link for the
- * rationale: https://www.freertos.org/Embedded-RTOS-Queues.html
+ * rationale: https://www.FreeRTOS.org/Embedded-RTOS-Queues.html
  */
 typedef struct QueueDefinition /* The old naming convention is used to prevent breaking kernel aware debuggers. */
 {
@@ -333,7 +333,7 @@ BaseType_t xQueueGenericReset( QueueHandle_t xQueue,
                                              StaticQueue_t * pxStaticQueue,
                                              const uint8_t ucQueueType )
     {
-    Queue_t * pxNewQueue;
+        Queue_t * pxNewQueue;
 
         configASSERT( uxQueueLength > ( UBaseType_t ) 0 );
 
@@ -416,7 +416,7 @@ BaseType_t xQueueGenericReset( QueueHandle_t xQueue,
         configASSERT( ( uxItemSize == 0 ) || ( uxQueueLength == ( xQueueSizeInBytes / uxItemSize ) ) );
 
         /* Check for addition overflow. */
-        configASSERT( ( sizeof( Queue_t ) + xQueueSizeInBytes ) > xQueueSizeInBytes );
+        configASSERT( ( sizeof( Queue_t ) + xQueueSizeInBytes ) >  xQueueSizeInBytes );
 
         /* Allocate the queue and storage area.  Justification for MISRA
          * deviation as follows:  pvPortMalloc() always ensures returned memory
@@ -969,7 +969,7 @@ BaseType_t xQueueGenericSend( QueueHandle_t xQueue,
                 vTaskPlaceOnEventList( &( pxQueue->xTasksWaitingToSend ), xTicksToWait );
 
                 /* Unlocking the queue means queue events can effect the
-                 * event list. It is possible that interrupts occurring now
+                 * event list.  It is possible that interrupts occurring now
                  * remove this task from the event list again - but as the
                  * scheduler is suspended the task will go onto the pending
                  * ready list instead of the actual ready list. */
@@ -1030,7 +1030,7 @@ BaseType_t xQueueGenericSendFromISR( QueueHandle_t xQueue,
      * system call interrupt priority.  FreeRTOS maintains a separate interrupt
      * safe API to ensure interrupt entry is as fast and as simple as possible.
      * More information (albeit Cortex-M specific) is provided on the following
-     * link: https://www.freertos.org/RTOS-Cortex-M3-M4.html */
+     * link: https://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html */
     portASSERT_IF_INTERRUPT_PRIORITY_INVALID();
 
     /* Similar to xQueueGenericSend, except without blocking if there is no room
@@ -1199,7 +1199,7 @@ BaseType_t xQueueGiveFromISR( QueueHandle_t xQueue,
      * system call interrupt priority.  FreeRTOS maintains a separate interrupt
      * safe API to ensure interrupt entry is as fast and as simple as possible.
      * More information (albeit Cortex-M specific) is provided on the following
-     * link: https://www.freertos.org/RTOS-Cortex-M3-M4.html */
+     * link: https://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html */
     portASSERT_IF_INTERRUPT_PRIORITY_INVALID();
 
     uxSavedInterruptStatus = portSET_INTERRUPT_MASK_FROM_ISR();
@@ -1847,7 +1847,7 @@ BaseType_t xQueueReceiveFromISR( QueueHandle_t xQueue,
      * system call interrupt priority.  FreeRTOS maintains a separate interrupt
      * safe API to ensure interrupt entry is as fast and as simple as possible.
      * More information (albeit Cortex-M specific) is provided on the following
-     * link: https://www.freertos.org/RTOS-Cortex-M3-M4.html */
+     * link: https://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html */
     portASSERT_IF_INTERRUPT_PRIORITY_INVALID();
 
     uxSavedInterruptStatus = portSET_INTERRUPT_MASK_FROM_ISR();
@@ -1944,7 +1944,7 @@ BaseType_t xQueuePeekFromISR( QueueHandle_t xQueue,
      * system call interrupt priority.  FreeRTOS maintains a separate interrupt
      * safe API to ensure interrupt entry is as fast and as simple as possible.
      * More information (albeit Cortex-M specific) is provided on the following
-     * link: https://www.freertos.org/RTOS-Cortex-M3-M4.html */
+     * link: https://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html */
     portASSERT_IF_INTERRUPT_PRIORITY_INVALID();
 
     uxSavedInterruptStatus = portSET_INTERRUPT_MASK_FROM_ISR();
@@ -2346,7 +2346,7 @@ static void prvUnlockQueue( Queue_t * const pxQueue )
 }
 /*-----------------------------------------------------------*/
 
-static BaseType_t prvIsQueueEmpty( const Queue_t *pxQueue )
+static BaseType_t prvIsQueueEmpty( const Queue_t * pxQueue )
 {
     BaseType_t xReturn;
     Queue_t * pxQ = (Queue_t *)pxQueue;
