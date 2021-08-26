@@ -632,6 +632,10 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
         }
     }
 
+    if (config->client_key_password && config->client_key_password_len > 0) {
+        esp_transport_ssl_set_client_key_password(ssl, config->client_key_password, config->client_key_password_len);
+    }
+
     if (config->skip_cert_common_name_check) {
         esp_transport_ssl_skip_common_name_check(ssl);
     }
