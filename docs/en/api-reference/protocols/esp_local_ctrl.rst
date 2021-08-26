@@ -24,6 +24,11 @@ Initialization of the **esp_local_ctrl** service over BLE transport is performed
                     }
                 }
             },
+            .proto_sec = {
+                .version = PROTOCOM_SEC0,
+                .custom_handle = NULL,
+                .pop = NULL,
+            },
             .handlers = {
                 /* User defined handler functions */
                 .get_prop_values = get_property_values,
@@ -65,6 +70,11 @@ Similarly for HTTPS transport:
             .transport_config = {
                 .httpd = &https_conf
             },
+            .proto_sec = {
+                .version = PROTOCOM_SEC0,
+                .custom_handle = NULL,
+                .pop = NULL,
+            },
             .handlers = {
                 /* User defined handler functions */
                 .get_prop_values = get_property_values,
@@ -79,6 +89,11 @@ Similarly for HTTPS transport:
         /* Start esp_local_ctrl service */
         ESP_ERROR_CHECK(esp_local_ctrl_start(&config));
 
+You may set security for transport in ESP local control using following options:
+
+1. `PROTOCOM_SEC1`: specifies that end to end encryption is used.
+2. `PROTOCOM_SEC0`: specifies that data will be exchanged as a plain text.
+3. `PROTOCOM_SEC_CUSTOM`: you can define your own security requirement. Please note that you will also have to provide `custom_handle` of type `protocomm_security_t *` in this context.
 
 Creating a property
 -------------------
