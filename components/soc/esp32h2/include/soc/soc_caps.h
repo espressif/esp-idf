@@ -245,9 +245,6 @@
 // UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
 #define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)
 
-/*-------------------------- WI-FI HARDWARE TSF CAPS -------------------------------*/
-#define SOC_WIFI_HW_TSF                 (1)
-
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)
 
@@ -255,16 +252,9 @@
 #define SOC_PHY_DIG_REGS_MEM_SIZE       (21*4)
 #define SOC_MAC_BB_PD_MEM_SIZE          (192*4)
 
-/*--------------- WIFI LIGHT SLEEP CLOCK WIDTH CAPS --------------------------*/
-#define SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH  (12)
-
 /*-------------------------- Power Management CAPS ----------------------------*/
-#define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
-
 #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
 
 #define SOC_PM_SUPPORT_CPU_PD           (1)
-
-#define SOC_PM_SUPPORT_WIFI_PD          (1)
 
 #define SOC_PM_SUPPORT_BT_PD            (1)
