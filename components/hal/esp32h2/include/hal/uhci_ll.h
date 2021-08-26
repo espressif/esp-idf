@@ -18,8 +18,12 @@
 
 #pragma once
 #include <stdio.h>
-#include "uhci_types.h"
+#include "hal/uhci_types.h"
 #include "soc/uhci_struct.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define UHCI_LL_GET_HW(num) (((num) == 0) ? (&UHCI0) : (NULL))
 
@@ -128,3 +132,7 @@ static inline void uhci_ll_set_eof_mode(uhci_dev_t *hw, uint32_t eof_mode)
         hw->conf0.len_eof_en = 1;
     }
 }
+
+#ifdef __cplusplus
+}
+#endif
