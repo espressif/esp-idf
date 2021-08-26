@@ -8,6 +8,8 @@ import os
 import subprocess
 import sys
 from shutil import copyfile
+import json
+import re
 
 from construct import GreedyRange, Int32ul, Struct
 from corefile import RISCV_TARGETS, SUPPORTED_TARGETS, XTENSA_TARGETS, __version__, xtensa
@@ -139,7 +141,6 @@ def dbg_corefile():  # type: () -> Optional[list[str]]
     p.wait()
     print('Done!')
     return temp_files
-
 
 def info_corefile():  # type: () -> Optional[list[str]]
     """
@@ -286,6 +287,144 @@ def info_corefile():  # type: () -> Optional[list[str]]
     print('Done!')
     return temp_files
 
+task_regex = re.compile(r"\#([0-9]+)\s+(0x[0-9a-fA-F]+) in (\S*) \((.*)\) at (.*)")
+
+def json_corefile():  # type: () -> Optional[list[str]]
+    """
+    Command to load core dump from file or flash and print it's data in JSON
+    """
+    exe_elf = ESPCoreDumpElfFile(args.prog)
+    core_elf_path, target, temp_files = get_core_dump_elf(e_machine=exe_elf.e_machine)
+    core_elf = ESPCoreDumpElfFile(core_elf_path)
+
+    if exe_elf.e_machine != core_elf.e_machine:
+        raise ValueError('The arch should be the same between core elf and exe elf')
+
+    extra_note = None
+    task_info = []
+    for seg in core_elf.note_segments:
+        for note_sec in seg.note_secs:
+            if note_sec.type == ESPCoreDumpElfFile.PT_EXTRA_INFO and 'EXTRA_INFO' in note_sec.name.decode('ascii'):
+                extra_note = note_sec
+            if note_sec.type == ESPCoreDumpElfFile.PT_TASK_INFO and 'TASK_INFO' in note_sec.name.decode('ascii'):
+                task_info_struct = EspTaskStatus.parse(note_sec.desc)
+                task_info.append(task_info_struct)
+
+    dump = {}
+
+    rom_elf_path = get_rom_elf_path(target)
+    rom_sym_cmd = load_aux_elf(rom_elf_path)
+
+    gdb_tool = get_gdb_path(target)
+    gdb = EspGDB(gdb_tool, [rom_sym_cmd], core_elf_path, args.prog, timeout_sec=args.gdb_timeout_sec)
+
+    extra_info = None
+    if extra_note:
+        extra_info = Struct('regs' / GreedyRange(Int32ul)).parse(extra_note.desc).regs
+        marker = extra_info[0]
+        if marker == ESPCoreDumpElfFile.CURR_TASK_MARKER:
+            dump["task"] = None
+        else:
+            task_name = gdb.get_freertos_task_name(marker)
+            dump["task"] = {
+                "handle": "0x%x" % marker,
+                "name": task_name,
+                "process": marker
+            }
+
+    # Only xtensa have exception registers
+    # TODO: can't get this in string / convertable form rn
+    #if exe_elf.e_machine == ESPCoreDumpElfFile.EM_XTENSA:
+    #    if extra_note and extra_info:
+    #        xtensa.print_exc_regs_info(extra_info)
+    #    else:
+    #        print('Exception registers have not been found!')
+
+    # Add registers to dump object
+    regs = gdb.run_cmd('info registers')
+    dump["regs"] = {}
+    for reg in regs.splitlines():
+        r = list(filter(None, reg.strip().replace('\t', ' ').split(' ')))
+        dump["regs"][r[0]] = r[1:]
+
+    # Add current thread stack
+    stack = gdb.run_cmd('bt')
+    dump["current"] = { "stack": [] }
+    for frame in stack.splitlines():
+        f = task_regex.match(frame)
+        if f:
+            dump["current"]["stack"].append({
+                "index": f[1],
+                "address": f[2],
+                "in": f[3],
+                "details": f[4],
+                "at": f[5],
+            })
+        else:
+            dump["current"]["stack"].append({"raw": frame})
+
+    # Check for corrupted stack
+    if task_info and task_info[0].task_flags != TASK_STATUS_CORRECT:
+        dump["current"]["corrupted"] = True
+        dump["current"].update({
+            "task": task_info[0].task_index,
+            "flags": task_info[0].task_flags,
+            "tcb": task_info[0].task_tcb_addr,
+            "stack_start": task_info[0].task_stack_start
+        })
+
+    # TODO: is this actually useful given the next listing
+    #threads = gdb.run_cmd('info threads')
+
+    dump["threads"] = []
+
+    # THREAD STACKS
+    threads, _ = gdb.get_thread_info()
+    for thr in threads:
+        thr_id = int(thr['id'])
+        task_index = int(thr_id) - 1
+        tcb_addr = gdb.gdb2freertos_thread_id(thr['target-id'])
+
+        t = {
+            "id": thr_id,
+            "tcb": "0x%x" % tcb_addr,
+            "name": gdb.get_freertos_task_name(tcb_addr),
+        }
+
+        gdb.switch_thread(thr_id)
+        stack = gdb.run_cmd('bt')
+        t["stack"] = []
+        for frame in stack.splitlines():
+            f = task_regex.match(frame)
+            if f:
+                t["stack"].append({
+                    "index": f[1],
+                    "address": f[2],
+                    "in": f[3],
+                    "details": f[4],
+                    "at": f[5],
+                })
+            else:
+                t["stack"].append({"raw": frame})
+
+        
+        if task_info and task_info[task_index].task_flags != TASK_STATUS_CORRECT:
+            t["corrupted"] = True
+            t.update({
+                "task": task_info[task_index].task_index,
+                "flags": task_info[task_index].task_flags,
+                "tcb": task_info[task_index].task_tcb_addr,
+                "stack_start": task_info[task_index].task_stack_start
+            })
+
+        dump["threads"].append(t)
+
+
+    print(json.dumps(dump, indent=4))
+
+    del gdb
+    return temp_files
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='espcoredump.py v%s - ESP32 Core Dump Utility' % __version__)
@@ -326,8 +465,12 @@ if __name__ == '__main__':
 
     info_coredump = operations.add_parser('info_corefile', parents=[common_args],
                                           help='Print core dump info from file')
+
     info_coredump.add_argument('--print-mem', '-m', action='store_true',
                                help='Print memory dump')
+                            
+    operations.add_parser('json_corefile', parents=[common_args],
+                          help='Decodes coredump to a JSON object')
 
     args = parser.parse_args()
 
@@ -350,6 +493,8 @@ if __name__ == '__main__':
             temp_core_files = info_corefile()
         elif args.operation == 'dbg_corefile':
             temp_core_files = dbg_corefile()
+        elif args.operation == 'json_corefile':
+            temp_core_files = json_corefile()
         else:
             raise ValueError('Please specify action, should be info_corefile or dbg_corefile')
     finally:
