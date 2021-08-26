@@ -255,7 +255,6 @@ EventBits_t xEventGroupSync( EventGroupHandle_t xEventGroup,
             }
         }
     }
-
     taskEXIT_CRITICAL( &pxEventBits->eventGroupMux );
 
     if( xTicksToWait != ( TickType_t ) 0 )
@@ -266,7 +265,7 @@ EventBits_t xEventGroupSync( EventGroupHandle_t xEventGroup,
          * point either the required bits were set or the block time expired.  If
          * the required bits were set they will have been stored in the task's
          * event list item, and they should now be retrieved then cleared. */
-         uxReturn = uxTaskResetEventItemValue();
+        uxReturn = uxTaskResetEventItemValue();
 
         if( ( uxReturn & eventUNBLOCKED_DUE_TO_BIT_SET ) == ( EventBits_t ) 0 )
         {
@@ -401,7 +400,6 @@ EventBits_t xEventGroupWaitBits( EventGroupHandle_t xEventGroup,
             traceEVENT_GROUP_WAIT_BITS_BLOCK( xEventGroup, uxBitsToWaitFor );
         }
     }
-
     taskEXIT_CRITICAL( &pxEventBits->eventGroupMux );
 
     if( xTicksToWait != ( TickType_t ) 0 )
@@ -538,7 +536,6 @@ EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
 
     pxList = &( pxEventBits->xTasksWaitingForBits );
     pxListEnd = listGET_END_MARKER( pxList ); /*lint !e826 !e740 !e9087 The mini list structure is used as the list end to save RAM.  This is checked and valid. */
-
     taskENTER_CRITICAL( &pxEventBits->eventGroupMux );
     {
         traceEVENT_GROUP_SET_BITS( xEventGroup, uxBitsToSet );
@@ -619,8 +616,8 @@ EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
 
 void vEventGroupDelete( EventGroupHandle_t xEventGroup )
 {
-    EventGroup_t *pxEventBits = xEventGroup;
-    const List_t *pxTasksWaitingForBits = &( pxEventBits->xTasksWaitingForBits );
+    EventGroup_t * pxEventBits = xEventGroup;
+    const List_t * pxTasksWaitingForBits = &( pxEventBits->xTasksWaitingForBits );
 
     traceEVENT_GROUP_DELETE( xEventGroup );
 
