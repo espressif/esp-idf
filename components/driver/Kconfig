@@ -21,6 +21,20 @@ menu "Driver configurations"
 
     endmenu  # ADC Configuration
 
+    menu "MCPWM configuration"
+
+        config MCPWM_ISR_IN_IRAM
+            bool "Place MCPWM ISR function into IRAM"
+            default n
+            help
+                If this option is not selected, the MCPWM interrupt will be deferred when the Cache
+                is in a disabled state (e.g. Flash write/erase operation).
+
+                Note that if this option is selected, all user registered ISR callbacks should never
+                try to use cache as well. (with IRAM_ATTR)
+
+    endmenu # MCPWM Configuration
+
     menu "SPI configuration"
 
         config SPI_MASTER_IN_IRAM

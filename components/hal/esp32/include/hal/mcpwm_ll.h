@@ -131,6 +131,7 @@ static inline uint32_t mcpwm_ll_intr_get_trip_ost_status(mcpwm_dev_t *mcpwm)
     return (mcpwm->int_st.val >> 24) & 0x07;
 }
 
+__attribute__((always_inline))
 static inline uint32_t mcpwm_ll_intr_get_capture_status(mcpwm_dev_t *mcpwm)
 {
     return (mcpwm->int_st.val >> 27) & 0x07;
@@ -178,6 +179,7 @@ static inline void mcpwm_ll_intr_clear_trip_ost_status(mcpwm_dev_t *mcpwm, uint3
     mcpwm->int_clr.val = (ost_mask & 0x07) << 24;
 }
 
+__attribute__((always_inline))
 static inline void mcpwm_ll_intr_clear_capture_status(mcpwm_dev_t *mcpwm, uint32_t capture_mask)
 {
     mcpwm->int_clr.val = (capture_mask & 0x07) << 27;
@@ -990,11 +992,13 @@ static inline void mcpwm_ll_trigger_soft_capture(mcpwm_dev_t *mcpwm, int channel
     mcpwm->cap_chn_cfg[channel].capn_sw = 1; // auto clear
 }
 
+__attribute__((always_inline))
 static inline uint32_t mcpwm_ll_capture_get_value(mcpwm_dev_t *mcpwm, int channel)
 {
     return mcpwm->cap_chn[channel].capn_value;
 }
 
+__attribute__((always_inline))
 static inline bool mcpwm_ll_capture_is_negedge(mcpwm_dev_t *mcpwm, int channel)
 {
     return mcpwm->cap_status.val & (1 << channel) ? true : false;
