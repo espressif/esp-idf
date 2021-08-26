@@ -139,7 +139,7 @@ typedef enum {
  * @brief MCPWM select triggering level of fault signal
  */
 typedef enum {
-    MCPWM_LOW_LEVEL_TGR,  /*!<Fault condition occurs when fault input signal goes from high to low, currently not supported*/
+    MCPWM_LOW_LEVEL_TGR,  /*!<Fault condition occurs when fault input signal goes from high to low*/
     MCPWM_HIGH_LEVEL_TGR, /*!<Fault condition occurs when fault input signal goes low to high*/
 } mcpwm_fault_input_level_t;
 
