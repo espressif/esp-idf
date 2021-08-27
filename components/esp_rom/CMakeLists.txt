@@ -15,7 +15,8 @@ else()
     list(APPEND include_dirs "${target}")
     list(APPEND sources "patches/esp_rom_crc.c"
                         "patches/esp_rom_sys.c"
-                        "patches/esp_rom_uart.c")
+                        "patches/esp_rom_uart.c"
+                        "patches/esp_rom_tjpgd.c")
     list(APPEND private_required_comp soc hal)
 endif()
 
