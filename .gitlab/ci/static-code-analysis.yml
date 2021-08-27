@@ -30,7 +30,7 @@ check_pylint:
     - .pre_check_base_template
     - .rules:patterns:python-files
     - .before_script_minimal
-  image: $CI_DOCKER_REGISTRY/sonarqube-scanner:2
+  image: $SONARQUBE_SCANNER_IMAGE
   artifacts:
     when: always
     paths:
@@ -62,7 +62,7 @@ check_pylint:
 .sonar_scan_template:
   stage: build
   image:
-    name: $CI_DOCKER_REGISTRY/sonarqube-scanner:2
+    name: $SONARQUBE_SCANNER_IMAGE
   before_script:
     - source tools/ci/utils.sh
     - export PYTHONPATH="$CI_PROJECT_DIR/tools:$CI_PROJECT_DIR/tools/ci/python_packages:$PYTHONPATH"
