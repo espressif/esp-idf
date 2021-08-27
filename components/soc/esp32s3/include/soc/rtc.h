@@ -672,6 +672,7 @@ typedef struct {
 #define RTC_SLEEP_PD_RTC_MEM_FOLLOW_CPU BIT(4)  //!< RTC FAST and SLOW memories are automatically powered up and down along with the CPU
 #define RTC_SLEEP_PD_VDDSDIO            BIT(5)  //!< Power down VDDSDIO regulator
 #define RTC_SLEEP_PD_WIFI               BIT(6)
+#define RTC_SLEEP_PD_INT_8M             BIT(10) //!< Power down Internal 8M oscillator
 
 /**
  * @brief Prepare the chip to enter sleep mode
