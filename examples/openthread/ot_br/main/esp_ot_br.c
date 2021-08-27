@@ -122,7 +122,6 @@ static void create_config_network(otInstance *instance)
         abort();
     }
     dataset.mComponents.mIsPskcPresent = true;
-    dataset.mComponents.mIsMeshLocalPrefixPresent = false;
     if (otDatasetSetActive(instance, &dataset) != OT_ERROR_NONE) {
         ESP_LOGE(TAG, "Failed to set OpenThread active dataset.");
         abort();
