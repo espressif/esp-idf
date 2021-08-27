@@ -18,15 +18,12 @@
 #include "soc/soc_caps.h"
 #include "soc/gpio_periph.h"
 #include "esp_log.h"
+#include "esp_check.h"
 #include "hal/gpio_hal.h"
 #include "esp_rom_gpio.h"
 
 static const char *GPIO_TAG = "gpio";
-#define GPIO_CHECK(a, str, ret_val) \
-    if (!(a)) { \
-        ESP_LOGE(GPIO_TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str); \
-        return (ret_val); \
-    }
+#define GPIO_CHECK(a, str, ret_val) ESP_RETURN_ON_FALSE(a, ret_val, GPIO_TAG, "%s", str)
 
 #define GPIO_ISR_CORE_ID_UNINIT    (3)
 
