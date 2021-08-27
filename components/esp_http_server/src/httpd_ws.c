@@ -250,9 +250,19 @@ esp_err_t httpd_ws_recv_frame(httpd_req_t *req, httpd_ws_frame_t *frame, size_t 
         return ESP_FAIL;
     }
 
-    if (httpd_recv_with_opt(req, (char *)frame->payload, frame->len, false) <= 0) {
-        ESP_LOGW(TAG, LOG_FMT("Failed to receive payload"));
-        return ESP_FAIL;
+    size_t left_len = frame->len;
+    size_t offset = 0;
+
+    while (left_len > 0) {
+        int read_len = httpd_recv_with_opt(req, (char *)frame->payload + offset, left_len, false);
+        if (read_len <= 0) {
+            ESP_LOGW(TAG, LOG_FMT("Failed to receive payload"));
+            return ESP_FAIL;
+        }
+        offset += read_len;
+        left_len -= read_len;
+
+        ESP_LOGD(TAG, "Frame length: %d, Bytes Read: %d", frame->len, offset);
     }
 
     /* Unmask payload */
