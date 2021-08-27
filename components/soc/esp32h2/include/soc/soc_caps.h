@@ -6,6 +6,7 @@
 #pragma once
 
 #define SOC_CPU_CORES_NUM               1
+#define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_GDMA_SUPPORTED              1
 #define SOC_TWAI_SUPPORTED              1
 #define SOC_BT_SUPPORTED                1
@@ -91,6 +92,11 @@
 
 // Support to configure sleep status
 #define SOC_GPIO_SUPPORT_SLP_SWITCH  (1)
+
+/*-------------------------- Dedicated GPIO CAPS -----------------------------*/
+#define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
+#define SOC_DEDIC_GPIO_IN_CHANNELS_NUM  (8) /*!< 8 inward channels on each CPU core */
+#define SOC_DEDIC_PERIPH_AUTO_ENABLE    (1) /*!< The dedicated GPIO peripheral is enabled automatically */
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
 // ESP32-C3 have 2 I2C.
