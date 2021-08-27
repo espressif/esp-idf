@@ -228,7 +228,7 @@
 #if CONFIG_IDF_ENV_FPGA
 #define  APB_CLK_FREQ                                ( 32*1000000 )
 #else
-#define  APB_CLK_FREQ                                ( 96*1000000 )
+#define  APB_CLK_FREQ                                ( 48*1000000 )         //ESP32H2-TODO: IDF-3786
 #endif
 #define  REF_CLK_FREQ                                ( 1000000 )
 #define  RTC_CLK_FREQ                                (17.5*1000000)
