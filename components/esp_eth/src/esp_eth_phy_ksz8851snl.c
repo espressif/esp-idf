@@ -160,6 +160,11 @@ err:
     return ret;
 }
 
+/**
+ * @note This function is responsible for restarting a new auto-negotiation,
+ *       the result of negotiation won't be relected to uppler layers.
+ *       Instead, the negotiation result is fetched by linker timer, see `phy_ksz8851_get_link()`
+ */
 static esp_err_t phy_ksz8851_negotiate(esp_eth_phy_t *phy)
 {
     esp_err_t ret = ESP_OK;
@@ -181,8 +186,8 @@ static esp_err_t phy_ksz8851_negotiate(esp_eth_phy_t *phy)
             break;
         }
     }
-    if (to >= ksz8851->autonego_timeout_ms / 100) {
-        ESP_LOGW(TAG, "Ethernet PHY auto negotiation timeout");
+    if ((to >= ksz8851->autonego_timeout_ms / 100) && (ksz8851->link_status == ETH_LINK_UP)) {
+        ESP_LOGW(TAG, "auto negotiation timeout");
     }
 
     ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz8851->addr, KSZ8851_P1CR, control), err, TAG, "P1CR write failed");
