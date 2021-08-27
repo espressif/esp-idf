@@ -14,7 +14,9 @@
 
 #pragma once
 
-#include "hal/assert.h"
+#include <stdbool.h>
+#include "soc/memprot_defs.h"
+#include "hal/memprot_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,23 +27,18 @@ extern "C" {
  * === IRAM0 common
  * ========================================================================================
  */
-//IRAM0 interrupt status bitmasks
-#define IRAM0_INTR_ST_OP_TYPE_BIT           BIT(1)      //instruction: 0, data: 1
-#define IRAM0_INTR_ST_OP_RW_BIT             BIT(0)      //read: 0, write: 1
-#define CONF_REG_ADDRESS_SHIFT              2
-
-static inline void esp_memprot_iram0_clear_intr(void)
+static inline void memprot_ll_iram0_clear_intr(void)
 {
     DPORT_SET_PERI_REG_MASK(DPORT_PMS_PRO_IRAM0_4_REG, DPORT_PMS_PRO_IRAM0_ILG_CLR);
     DPORT_CLEAR_PERI_REG_MASK(DPORT_PMS_PRO_IRAM0_4_REG, DPORT_PMS_PRO_IRAM0_ILG_CLR);
 }
 
-static inline uint32_t esp_memprot_iram0_get_intr_source_num(void)
+static inline uint32_t memprot_ll_iram0_get_intr_source_num(void)
 {
     return ETS_PMS_PRO_IRAM0_ILG_INTR_SOURCE;
 }
 
-static inline void esp_memprot_iram0_intr_ena(bool enable)
+static inline void memprot_ll_iram0_intr_ena(bool enable)
 {
     if (enable) {
         DPORT_SET_PERI_REG_MASK(DPORT_PMS_PRO_IRAM0_4_REG, DPORT_PMS_PRO_IRAM0_ILG_EN);
@@ -50,55 +47,55 @@ static inline void esp_memprot_iram0_intr_ena(bool enable)
     }
 }
 
-static inline uint32_t esp_memprot_iram0_get_conf_reg(void)
+static inline uint32_t memprot_ll_iram0_get_conf_reg(void)
 {
     return DPORT_READ_PERI_REG(DPORT_PMS_PRO_IRAM0_4_REG);
 }
 
-static inline uint32_t esp_memprot_iram0_get_fault_reg(void)
+static inline uint32_t memprot_ll_iram0_get_fault_reg(void)
 {
     return DPORT_READ_PERI_REG(DPORT_PMS_PRO_IRAM0_5_REG);
 }
 
-static inline void esp_memprot_iram0_get_fault_op_type(uint32_t *op_type, uint32_t *op_subtype)
+static inline void memprot_ll_iram0_get_fault_op_type(uint32_t *op_type, uint32_t *op_subtype)
 {
-    uint32_t status_bits = esp_memprot_iram0_get_fault_reg();
+    uint32_t status_bits = memprot_ll_iram0_get_fault_reg();
     *op_type = (uint32_t)status_bits & IRAM0_INTR_ST_OP_RW_BIT;
     *op_subtype = (uint32_t)status_bits & IRAM0_INTR_ST_OP_TYPE_BIT;
 }
 
-static inline bool esp_memprot_iram0_is_assoc_intr(void)
+static inline bool memprot_ll_iram0_is_assoc_intr(void)
 {
     return DPORT_GET_PERI_REG_MASK(DPORT_PMS_PRO_IRAM0_4_REG, DPORT_PMS_PRO_IRAM0_ILG_INTR) > 0;
 }
 
-static inline uint32_t esp_memprot_iram0_get_intr_ena_bit(void)
+static inline uint32_t memprot_ll_iram0_get_intr_ena_bit(void)
 {
     return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_4_REG, DPORT_PMS_PRO_IRAM0_ILG_EN);
 }
 
-static inline uint32_t esp_memprot_iram0_get_intr_on_bit(void)
+static inline uint32_t memprot_ll_iram0_get_intr_on_bit(void)
 {
     return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_4_REG, DPORT_PMS_PRO_IRAM0_ILG_INTR);
 }
 
-static inline uint32_t esp_memprot_iram0_get_intr_clr_bit(void)
+static inline uint32_t memprot_ll_iram0_get_intr_clr_bit(void)
 {
     return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_4_REG, DPORT_PMS_PRO_IRAM0_ILG_CLR);
 }
 
 //resets automatically on CPU restart
-static inline void esp_memprot_iram0_set_lock(void)
+static inline void memprot_ll_iram0_set_lock(void)
 {
     DPORT_WRITE_PERI_REG( DPORT_PMS_PRO_IRAM0_0_REG, DPORT_PMS_PRO_IRAM0_LOCK);
 }
 
-static inline uint32_t esp_memprot_iram0_get_lock_reg(void)
+static inline uint32_t memprot_ll_iram0_get_lock_reg(void)
 {
     return DPORT_READ_PERI_REG(DPORT_PMS_PRO_IRAM0_0_REG);
 }
 
-static inline uint32_t esp_memprot_iram0_get_lock_bit(void)
+static inline uint32_t memprot_ll_iram0_get_lock_bit(void)
 {
     return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_0_REG, DPORT_PMS_PRO_IRAM0_LOCK);
 }
@@ -108,52 +105,26 @@ static inline uint32_t esp_memprot_iram0_get_lock_bit(void)
  * === IRAM0 SRAM
  * ========================================================================================
  */
-#define IRAM0_SRAM_BASE_ADDRESS             0x40000000
-#define IRAM0_SRAM_ADDRESS_LOW              0x40020000
-#define IRAM0_SRAM_ADDRESS_HIGH             0x4006FFFF
-
-#define IRAM0_SRAM_TOTAL_UNI_BLOCKS         4
-#define IRAM0_SRAM_UNI_BLOCK_0              0
-#define IRAM0_SRAM_UNI_BLOCK_1              1
-#define IRAM0_SRAM_UNI_BLOCK_2              2
-#define IRAM0_SRAM_UNI_BLOCK_3              3
-
-//unified management (SRAM blocks 0-3)
-#define IRAM0_SRAM_UNI_BLOCK_0_LOW          0x40020000
-#define IRAM0_SRAM_UNI_BLOCK_1_LOW          0x40022000
-#define IRAM0_SRAM_UNI_BLOCK_2_LOW          0x40024000
-#define IRAM0_SRAM_UNI_BLOCK_3_LOW          0x40026000
-
-//split management (SRAM blocks 4-21)
-#define IRAM0_SRAM_SPL_BLOCK_LOW            0x40028000 //block 4 low
-#define IRAM0_SRAM_SPL_BLOCK_HIGH           0x4006FFFF //block 21 high
-
-#define IRAM0_INTR_ST_FAULTADDR_M           0x003FFFFC  //bits 21:6 in the reg, as well as in real address
-#define IRAM0_SRAM_INTR_ST_FAULTADDR_HI     0x40000000  //high nonsignificant bits 31:22 of the faulting address - constant
-
-#define IRAM0_SRAM_ADDR_TO_CONF_REG(addr)   (((addr >> CONF_REG_ADDRESS_SHIFT) & DPORT_PMS_PRO_IRAM0_SRAM_4_SPLTADDR) << DPORT_PMS_PRO_IRAM0_SRAM_4_SPLTADDR_S)
-
-static inline uint32_t *esp_memprot_iram0_sram_get_fault_address(void)
+static inline intptr_t memprot_ll_iram0_sram_get_fault_address(void)
 {
-    uint32_t status_bits = esp_memprot_iram0_get_fault_reg();
-    return (uint32_t *)((status_bits & IRAM0_INTR_ST_FAULTADDR_M) | IRAM0_SRAM_INTR_ST_FAULTADDR_HI);
+    uint32_t status_bits = memprot_ll_iram0_get_fault_reg();
+    return (intptr_t)((status_bits & IRAM0_INTR_ST_FAULTADDR_M) | IRAM0_SRAM_INTR_ST_FAULTADDR_HI);
 }
 
-static inline bool esp_memprot_iram0_sram_is_intr_mine(void)
+static inline bool memprot_ll_iram0_sram_is_intr_mine(void)
 {
-    if (esp_memprot_iram0_is_assoc_intr()) {
-        uint32_t *faulting_address = esp_memprot_iram0_sram_get_fault_address();
-        return (uint32_t)faulting_address >= IRAM0_SRAM_ADDRESS_LOW && (uint32_t)faulting_address <= IRAM0_SRAM_ADDRESS_HIGH;
+    if (memprot_ll_iram0_is_assoc_intr()) {
+        uint32_t faulting_address = (uint32_t)memprot_ll_iram0_sram_get_fault_address();
+        return faulting_address >= IRAM0_SRAM_ADDRESS_LOW && faulting_address <= IRAM0_SRAM_ADDRESS_HIGH;
     }
     return false;
 }
 
 //block 0-3
-static inline void esp_memprot_iram0_sram_set_uni_block_perm(uint32_t block, bool write_perm, bool read_perm, bool exec_perm)
+static inline bool memprot_ll_iram0_sram_set_uni_block_perm(uint32_t block, bool write_perm, bool read_perm, bool exec_perm)
 {
-    HAL_ASSERT(block < IRAM0_SRAM_TOTAL_UNI_BLOCKS);
-
     uint32_t write_bit, read_bit, exec_bit;
+
     switch (block) {
     case IRAM0_SRAM_UNI_BLOCK_0:
         write_bit = DPORT_PMS_PRO_IRAM0_SRAM_0_W;
@@ -176,7 +147,7 @@ static inline void esp_memprot_iram0_sram_set_uni_block_perm(uint32_t block, boo
         exec_bit = DPORT_PMS_PRO_IRAM0_SRAM_3_F;
         break;
     default:
-        abort();
+        return false;
     }
 
     if (write_perm) {
@@ -196,66 +167,78 @@ static inline void esp_memprot_iram0_sram_set_uni_block_perm(uint32_t block, boo
     } else {
         DPORT_CLEAR_PERI_REG_MASK(DPORT_PMS_PRO_IRAM0_1_REG, exec_bit);
     }
+
+    return true;
 }
 
-static inline uint32_t esp_memprot_iram0_sram_get_uni_block_read_bit(uint32_t block)
+static inline bool memprot_ll_iram0_sram_get_uni_block_read_bit(uint32_t block, uint32_t *read_bit)
 {
-    HAL_ASSERT(block < IRAM0_SRAM_TOTAL_UNI_BLOCKS);
-
     switch (block) {
     case IRAM0_SRAM_UNI_BLOCK_0:
-        return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_0_R);
+        *read_bit = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_0_R);
+        break;
     case IRAM0_SRAM_UNI_BLOCK_1:
-        return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_1_R);
+        *read_bit = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_1_R);
+        break;
     case IRAM0_SRAM_UNI_BLOCK_2:
-        return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_2_R);
+        *read_bit = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_2_R);
+        break;
     case IRAM0_SRAM_UNI_BLOCK_3:
-        return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_3_R);
+        *read_bit = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_3_R);
+        break;
     default:
-        abort();
+        return false;
     }
+
+    return true;
 }
 
-static inline uint32_t esp_memprot_iram0_sram_get_uni_block_write_bit(uint32_t block)
+static inline bool memprot_ll_iram0_sram_get_uni_block_write_bit(uint32_t block, uint32_t *write_bit)
 {
-    HAL_ASSERT(block < IRAM0_SRAM_TOTAL_UNI_BLOCKS);
-
     switch (block) {
     case IRAM0_SRAM_UNI_BLOCK_0:
-        return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_0_W);
+        *write_bit = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_0_W);
+        break;
     case IRAM0_SRAM_UNI_BLOCK_1:
-        return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_1_W);
+        *write_bit = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_1_W);
+        break;
     case IRAM0_SRAM_UNI_BLOCK_2:
-        return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_2_W);
+        *write_bit = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_2_W);
+        break;
     case IRAM0_SRAM_UNI_BLOCK_3:
-        return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_3_W);
+        *write_bit = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_3_W);
+        break;
     default:
-        abort();
+        return false;
     }
+
+    return true;
 }
 
-static inline uint32_t esp_memprot_iram0_sram_get_uni_block_exec_bit(uint32_t block)
+static inline bool memprot_ll_iram0_sram_get_uni_block_exec_bit(uint32_t block, uint32_t *exec_bit)
 {
-    HAL_ASSERT(block < IRAM0_SRAM_TOTAL_UNI_BLOCKS);
-
     switch (block) {
     case IRAM0_SRAM_UNI_BLOCK_0:
-        return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_0_F);
+        *exec_bit = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_0_F);
+        break;
     case IRAM0_SRAM_UNI_BLOCK_1:
-        return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_1_F);
+        *exec_bit = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_1_F);
+        break;
     case IRAM0_SRAM_UNI_BLOCK_2:
-        return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_2_F);
+        *exec_bit = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_2_F);
+        break;
     case IRAM0_SRAM_UNI_BLOCK_3:
-        return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_3_F);
+        *exec_bit = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_3_F);
+        break;
     default:
-        abort();
+        return false;
     }
+
+    return true;
 }
 
-static inline void esp_memprot_iram0_sram_get_uni_block_sgnf_bits(uint32_t block, uint32_t *write_bit, uint32_t *read_bit, uint32_t *exec_bit)
+static inline bool memprot_ll_iram0_sram_get_uni_block_sgnf_bits(uint32_t block, uint32_t *write_bit, uint32_t *read_bit, uint32_t *exec_bit)
 {
-    HAL_ASSERT(block < IRAM0_SRAM_TOTAL_UNI_BLOCKS);
-
     switch (block) {
     case IRAM0_SRAM_UNI_BLOCK_0:
         *write_bit = DPORT_PMS_PRO_IRAM0_SRAM_0_W;
@@ -278,25 +261,33 @@ static inline void esp_memprot_iram0_sram_get_uni_block_sgnf_bits(uint32_t block
         *exec_bit = DPORT_PMS_PRO_IRAM0_SRAM_3_F;
         break;
     default:
-        abort();
+        return false;
     }
+
+    return true;
 }
 
-static inline uint32_t esp_memprot_iram0_sram_get_perm_uni_reg(void)
+static inline uint32_t memprot_ll_iram0_sram_get_perm_uni_reg(void)
 {
     return DPORT_READ_PERI_REG(DPORT_PMS_PRO_IRAM0_1_REG);
 }
 
-static inline uint32_t esp_memprot_iram0_sram_get_perm_split_reg(void)
+static inline uint32_t memprot_ll_iram0_sram_get_perm_split_reg(void)
 {
     return DPORT_READ_PERI_REG(DPORT_PMS_PRO_IRAM0_2_REG);
 }
 
-static inline void esp_memprot_iram0_sram_set_prot(uint32_t *split_addr, bool lw, bool lr, bool lx, bool hw, bool hr, bool hx)
+static inline memprot_ll_err_t memprot_ll_iram0_sram_set_prot(uint32_t *split_addr, bool lw, bool lr, bool lx, bool hw, bool hr, bool hx)
 {
     uint32_t addr = (uint32_t)split_addr;
-    HAL_ASSERT(addr <= IRAM0_SRAM_SPL_BLOCK_HIGH);
-    HAL_ASSERT(addr % 0x4 == 0);
+
+    //sanity check: split address required above unified mgmt region & 32bit aligned
+    if (addr > IRAM0_SRAM_SPL_BLOCK_HIGH) {
+        return MEMP_LL_ERR_SPLIT_ADDR_INVALID;
+    }
+    if (addr % 0x4 != 0) {
+        return MEMP_LL_ERR_SPLIT_ADDR_UNALIGNED;
+    }
 
     //find possible split.address in low region blocks
     int uni_blocks_low = -1;
@@ -318,7 +309,9 @@ static inline void esp_memprot_iram0_sram_set_prot(uint32_t *split_addr, bool lw
     uint32_t uni_block_perm = 0;
 
     for (int x = 0; x < IRAM0_SRAM_TOTAL_UNI_BLOCKS; x++) {
-        esp_memprot_iram0_sram_get_uni_block_sgnf_bits(x, &write_bit, &read_bit, &exec_bit);
+        if (!memprot_ll_iram0_sram_get_uni_block_sgnf_bits(x, &write_bit, &read_bit, &exec_bit)) {
+            return MEMP_LL_ERR_UNI_BLOCK_INVALID;
+        }
         if (x <= uni_blocks_low) {
             if (lw) {
                 uni_block_perm |= write_bit;
@@ -346,7 +339,7 @@ static inline void esp_memprot_iram0_sram_set_prot(uint32_t *split_addr, bool lw
     uint32_t reg_split_addr = 0;
 
     if (addr >= IRAM0_SRAM_SPL_BLOCK_LOW) {
-        reg_split_addr = IRAM0_SRAM_ADDR_TO_CONF_REG( addr ); //cfg reg - [16:0]
+        reg_split_addr = IRAM0_SRAM_ADDR_TO_CONF_REG(addr); //cfg reg - [16:0]
     }
 
     //prepare high & low permission mask (bits: [22:20] high range, [19:17] low range)
@@ -373,9 +366,11 @@ static inline void esp_memprot_iram0_sram_set_prot(uint32_t *split_addr, bool lw
     //write IRAM SRAM uni & splt cfg. registers
     DPORT_WRITE_PERI_REG(DPORT_PMS_PRO_IRAM0_1_REG, uni_block_perm);
     DPORT_WRITE_PERI_REG(DPORT_PMS_PRO_IRAM0_2_REG, (uint32_t)(reg_split_addr | permission_mask));
+
+    return MEMP_LL_OK;
 }
 
-static inline void esp_memprot_iram0_sram_get_split_sgnf_bits(bool *lw, bool *lr, bool *lx, bool *hw, bool *hr, bool *hx)
+static inline void memprot_ll_iram0_sram_get_split_sgnf_bits(bool *lw, bool *lr, bool *lx, bool *hw, bool *hr, bool *hx)
 {
     *lw = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_2_REG, DPORT_PMS_PRO_IRAM0_SRAM_4_L_W);
     *lr = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_2_REG, DPORT_PMS_PRO_IRAM0_SRAM_4_L_R);
@@ -385,19 +380,19 @@ static inline void esp_memprot_iram0_sram_get_split_sgnf_bits(bool *lw, bool *lr
     *hx = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_2_REG, DPORT_PMS_PRO_IRAM0_SRAM_4_H_F);
 }
 
-static inline void esp_memprot_iram0_sram_set_read_perm(bool lr, bool hr)
+static inline void memprot_ll_iram0_sram_set_read_perm(bool lr, bool hr)
 {
     DPORT_REG_SET_FIELD(DPORT_PMS_PRO_IRAM0_2_REG, DPORT_PMS_PRO_IRAM0_SRAM_4_L_R, lr ? 1 : 0);
     DPORT_REG_SET_FIELD(DPORT_PMS_PRO_IRAM0_2_REG, DPORT_PMS_PRO_IRAM0_SRAM_4_H_R, hr ? 1 : 0);
 }
 
-static inline void esp_memprot_iram0_sram_set_write_perm(bool lw, bool hw)
+static inline void memprot_ll_iram0_sram_set_write_perm(bool lw, bool hw)
 {
     DPORT_REG_SET_FIELD(DPORT_PMS_PRO_IRAM0_2_REG, DPORT_PMS_PRO_IRAM0_SRAM_4_L_W, lw ? 1 : 0);
     DPORT_REG_SET_FIELD(DPORT_PMS_PRO_IRAM0_2_REG, DPORT_PMS_PRO_IRAM0_SRAM_4_H_W, hw ? 1 : 0);
 }
 
-static inline void esp_memprot_iram0_sram_set_exec_perm(bool lx, bool hx)
+static inline void memprot_ll_iram0_sram_set_exec_perm(bool lx, bool hx)
 {
     DPORT_REG_SET_FIELD(DPORT_PMS_PRO_IRAM0_2_REG, DPORT_PMS_PRO_IRAM0_SRAM_4_L_F, lx ? 1 : 0);
     DPORT_REG_SET_FIELD(DPORT_PMS_PRO_IRAM0_2_REG, DPORT_PMS_PRO_IRAM0_SRAM_4_H_F, hx ? 1 : 0);
@@ -409,37 +404,37 @@ static inline void esp_memprot_iram0_sram_set_exec_perm(bool lx, bool hx)
  * === IRAM0 RTC FAST
  * ========================================================================================
  */
-#define IRAM0_RTCFAST_ADDRESS_LOW               0x40070000
-#define IRAM0_RTCFAST_ADDRESS_HIGH              0x40071FFF
-#define IRAM0_RTCFAST_INTR_ST_FAULTADDR_HI      0x40070000  //RTCFAST faulting address high bits (31:22, constant)
-
-#define IRAM0_RTCFAST_ADDR_TO_CONF_REG(addr)    (((addr >> CONF_REG_ADDRESS_SHIFT) & DPORT_PMS_PRO_IRAM0_RTCFAST_SPLTADDR) << DPORT_PMS_PRO_IRAM0_RTCFAST_SPLTADDR_S)
-
-
-static inline uint32_t *esp_memprot_iram0_rtcfast_get_fault_address(void)
+static inline intptr_t memprot_ll_iram0_rtcfast_get_fault_address(void)
 {
-    uint32_t status_bits = esp_memprot_iram0_get_fault_reg();
-    return (uint32_t *)((status_bits & IRAM0_INTR_ST_FAULTADDR_M) | IRAM0_RTCFAST_INTR_ST_FAULTADDR_HI);
+    uint32_t status_bits = memprot_ll_iram0_get_fault_reg();
+    return (intptr_t)((status_bits & IRAM0_INTR_ST_FAULTADDR_M) | IRAM0_RTCFAST_INTR_ST_FAULTADDR_HI);
 }
 
-static inline bool esp_memprot_iram0_rtcfast_is_intr_mine(void)
+static inline bool memprot_ll_iram0_rtcfast_is_intr_mine(void)
 {
-    if (esp_memprot_iram0_is_assoc_intr()) {
-        uint32_t *faulting_address = esp_memprot_iram0_rtcfast_get_fault_address();
-        return (uint32_t)faulting_address >= IRAM0_RTCFAST_ADDRESS_LOW && (uint32_t)faulting_address <= IRAM0_RTCFAST_ADDRESS_HIGH;
+    if (memprot_ll_iram0_is_assoc_intr()) {
+        uint32_t faulting_address = (uint32_t)memprot_ll_iram0_rtcfast_get_fault_address();
+        return faulting_address >= IRAM0_RTCFAST_ADDRESS_LOW && faulting_address <= IRAM0_RTCFAST_ADDRESS_HIGH;
     }
     return false;
 }
 
-static inline uint32_t esp_memprot_iram0_rtcfast_get_perm_split_reg(void)
+static inline uint32_t memprot_ll_iram0_rtcfast_get_perm_split_reg(void)
 {
     return DPORT_READ_PERI_REG(DPORT_PMS_PRO_IRAM0_3_REG);
 }
 
-static inline void esp_memprot_iram0_rtcfast_set_prot(uint32_t *split_addr, bool lw, bool lr, bool lx, bool hw, bool hr, bool hx)
+static inline memprot_ll_err_t memprot_ll_iram0_rtcfast_set_prot(uint32_t *split_addr, bool lw, bool lr, bool lx, bool hw, bool hr, bool hx)
 {
     uint32_t addr = (uint32_t)split_addr;
-    HAL_ASSERT(addr % 0x4 == 0);
+
+    //32bit aligned
+    if (addr < IRAM0_RTCFAST_ADDRESS_LOW || addr > IRAM0_RTCFAST_ADDRESS_HIGH) {
+        return MEMP_LL_ERR_SPLIT_ADDR_INVALID;
+    }
+    if (addr % 0x4 != 0) {
+        return MEMP_LL_ERR_SPLIT_ADDR_UNALIGNED;
+    }
 
     //conf reg [10:0]
     uint32_t reg_split_addr = IRAM0_RTCFAST_ADDR_TO_CONF_REG(addr);
@@ -467,9 +462,11 @@ static inline void esp_memprot_iram0_rtcfast_set_prot(uint32_t *split_addr, bool
 
     //write IRAM0 RTCFAST cfg register
     DPORT_WRITE_PERI_REG(DPORT_PMS_PRO_IRAM0_3_REG, reg_split_addr | permission_mask);
+
+    return MEMP_LL_OK;
 }
 
-static inline void esp_memprot_iram0_rtcfast_get_split_sgnf_bits(bool *lw, bool *lr, bool *lx, bool *hw, bool *hr, bool *hx)
+static inline void memprot_ll_iram0_rtcfast_get_split_sgnf_bits(bool *lw, bool *lr, bool *lx, bool *hw, bool *hr, bool *hx)
 {
     *lw = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_3_REG, DPORT_PMS_PRO_IRAM0_RTCFAST_L_W);
     *lr = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_3_REG, DPORT_PMS_PRO_IRAM0_RTCFAST_L_R);
@@ -479,19 +476,19 @@ static inline void esp_memprot_iram0_rtcfast_get_split_sgnf_bits(bool *lw, bool 
     *hx = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_3_REG, DPORT_PMS_PRO_IRAM0_RTCFAST_H_F);
 }
 
-static inline void esp_memprot_iram0_rtcfast_set_read_perm(bool lr, bool hr)
+static inline void memprot_ll_iram0_rtcfast_set_read_perm(bool lr, bool hr)
 {
     DPORT_REG_SET_FIELD(DPORT_PMS_PRO_IRAM0_3_REG, DPORT_PMS_PRO_IRAM0_RTCFAST_L_R, lr ? 1 : 0);
     DPORT_REG_SET_FIELD(DPORT_PMS_PRO_IRAM0_3_REG, DPORT_PMS_PRO_IRAM0_RTCFAST_H_R, hr ? 1 : 0);
 }
 
-static inline void esp_memprot_iram0_rtcfast_set_write_perm(bool lw, bool hw)
+static inline void memprot_ll_iram0_rtcfast_set_write_perm(bool lw, bool hw)
 {
     DPORT_REG_SET_FIELD(DPORT_PMS_PRO_IRAM0_3_REG, DPORT_PMS_PRO_IRAM0_RTCFAST_L_W, lw ? 1 : 0);
     DPORT_REG_SET_FIELD(DPORT_PMS_PRO_IRAM0_3_REG, DPORT_PMS_PRO_IRAM0_RTCFAST_H_W, hw ? 1 : 0);
 }
 
-static inline void esp_memprot_iram0_rtcfast_set_exec_perm(bool lx, bool hx)
+static inline void memprot_ll_iram0_rtcfast_set_exec_perm(bool lx, bool hx)
 {
     DPORT_REG_SET_FIELD(DPORT_PMS_PRO_IRAM0_3_REG, DPORT_PMS_PRO_IRAM0_RTCFAST_L_F, lx ? 1 : 0);
     DPORT_REG_SET_FIELD(DPORT_PMS_PRO_IRAM0_3_REG, DPORT_PMS_PRO_IRAM0_RTCFAST_H_F, hx ? 1 : 0);
@@ -503,19 +500,12 @@ static inline void esp_memprot_iram0_rtcfast_set_exec_perm(bool lx, bool hx)
  * === DRAM0 common
  * ========================================================================================
  */
-//DRAM0 interrupt status bitmasks
-#define DRAM0_INTR_ST_FAULTADDR_M           0x03FFFFC0  //(bits 25:6 in the reg)
-#define DRAM0_INTR_ST_FAULTADDR_S           0x4         //(bits 21:2 of real address)
-#define DRAM0_INTR_ST_OP_RW_BIT             BIT(4)      //read: 0, write: 1
-#define DRAM0_INTR_ST_OP_ATOMIC_BIT         BIT(5)      //non-atomic: 0, atomic: 1
-
-
-static inline uint32_t esp_memprot_dram0_get_intr_source_num(void)
+static inline uint32_t memprot_ll_dram0_get_intr_source_num(void)
 {
     return ETS_PMS_PRO_DRAM0_ILG_INTR_SOURCE;
 }
 
-static inline void esp_memprot_dram0_intr_ena(bool enable)
+static inline void memprot_ll_dram0_intr_ena(bool enable)
 {
     if (enable) {
         DPORT_SET_PERI_REG_MASK(DPORT_PMS_PRO_DRAM0_3_REG, DPORT_PMS_PRO_DRAM0_ILG_EN);
@@ -524,112 +514,87 @@ static inline void esp_memprot_dram0_intr_ena(bool enable)
     }
 }
 
-static inline bool esp_memprot_dram0_is_assoc_intr(void)
+static inline bool memprot_ll_dram0_is_assoc_intr(void)
 {
     return DPORT_GET_PERI_REG_MASK(DPORT_PMS_PRO_DRAM0_3_REG, DPORT_PMS_PRO_DRAM0_ILG_INTR) > 0;
 }
 
-static inline void esp_memprot_dram0_clear_intr(void)
+static inline void memprot_ll_dram0_clear_intr(void)
 {
     DPORT_SET_PERI_REG_MASK(DPORT_PMS_PRO_DRAM0_3_REG, DPORT_PMS_PRO_DRAM0_ILG_CLR);
     DPORT_CLEAR_PERI_REG_MASK(DPORT_PMS_PRO_DRAM0_3_REG, DPORT_PMS_PRO_DRAM0_ILG_CLR);
 }
 
-static inline uint32_t esp_memprot_dram0_get_intr_ena_bit(void)
+static inline uint32_t memprot_ll_dram0_get_intr_ena_bit(void)
 {
     return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_3_REG, DPORT_PMS_PRO_DRAM0_ILG_EN);
 }
 
-static inline uint32_t esp_memprot_dram0_get_intr_on_bit(void)
+static inline uint32_t memprot_ll_dram0_get_intr_on_bit(void)
 {
     return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_3_REG, DPORT_PMS_PRO_DRAM0_ILG_INTR);
 }
 
-static inline uint32_t esp_memprot_dram0_get_intr_clr_bit(void)
+static inline uint32_t memprot_ll_dram0_get_intr_clr_bit(void)
 {
     return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_3_REG, DPORT_PMS_PRO_DRAM0_ILG_CLR);
 }
 
 //lock resets automatically on CPU restart
-static inline void esp_memprot_dram0_set_lock(void)
+static inline void memprot_ll_dram0_set_lock(void)
 {
     DPORT_WRITE_PERI_REG(DPORT_PMS_PRO_DRAM0_0_REG, DPORT_PMS_PRO_DRAM0_LOCK);
 }
 
-static inline uint32_t esp_memprot_dram0_get_lock_reg(void)
+static inline uint32_t memprot_ll_dram0_get_lock_reg(void)
 {
     return DPORT_READ_PERI_REG(DPORT_PMS_PRO_DRAM0_0_REG);
 }
 
-static inline uint32_t esp_memprot_dram0_get_lock_bit(void)
+static inline uint32_t memprot_ll_dram0_get_lock_bit(void)
 {
     return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_0_REG, DPORT_PMS_PRO_DRAM0_LOCK);
 }
 
-static inline uint32_t esp_memprot_dram0_get_conf_reg(void)
+static inline uint32_t memprot_ll_dram0_get_conf_reg(void)
 {
     return DPORT_READ_PERI_REG(DPORT_PMS_PRO_DRAM0_3_REG);
 }
 
-static inline uint32_t esp_memprot_dram0_get_fault_reg(void)
+static inline uint32_t memprot_ll_dram0_get_fault_reg(void)
 {
     return DPORT_READ_PERI_REG(DPORT_PMS_PRO_DRAM0_4_REG);
 }
 
-static inline void esp_memprot_dram0_get_fault_op_type(uint32_t *op_type, uint32_t *op_subtype)
+static inline void memprot_ll_dram0_get_fault_op_type(uint32_t *op_type, uint32_t *op_subtype)
 {
-    uint32_t status_bits = esp_memprot_dram0_get_fault_reg();
+    uint32_t status_bits = memprot_ll_dram0_get_fault_reg();
     *op_type = status_bits & DRAM0_INTR_ST_OP_RW_BIT;
     *op_subtype = status_bits & DRAM0_INTR_ST_OP_ATOMIC_BIT;
 }
-
 
 /**
  * ========================================================================================
  * === DRAM0 SRAM
  * ========================================================================================
  */
-#define DRAM0_SRAM_ADDRESS_LOW              0x3FFB0000
-#define DRAM0_SRAM_ADDRESS_HIGH             0x3FFFFFFF
-
-#define DRAM0_SRAM_TOTAL_UNI_BLOCKS         4
-#define DRAM0_SRAM_UNI_BLOCK_0              0
-#define DRAM0_SRAM_UNI_BLOCK_1              1
-#define DRAM0_SRAM_UNI_BLOCK_2              2
-#define DRAM0_SRAM_UNI_BLOCK_3              3
-
-//unified management (SRAM blocks 0-3)
-#define DRAM0_SRAM_UNI_BLOCK_0_LOW          0x3FFB0000
-#define DRAM0_SRAM_UNI_BLOCK_1_LOW          0x3FFB2000
-#define DRAM0_SRAM_UNI_BLOCK_2_LOW          0x3FFB4000
-#define DRAM0_SRAM_UNI_BLOCK_3_LOW          0x3FFB6000
-
-//split management (SRAM blocks 4-21)
-#define DRAM0_SRAM_SPL_BLOCK_HIGH           0x3FFFFFFF  //block 21 high
-#define DRAM0_SRAM_INTR_ST_FAULTADDR_HI     0x3FF00000  //SRAM high bits 31:22 of the faulting address - constant
-
-#define DRAM0_SRAM_ADDR_TO_CONF_REG(addr)   (((addr >> CONF_REG_ADDRESS_SHIFT) & DPORT_PMS_PRO_DRAM0_SRAM_4_SPLTADDR) << DPORT_PMS_PRO_DRAM0_SRAM_4_SPLTADDR_S)
-
-
-static inline uint32_t *esp_memprot_dram0_sram_get_fault_address(void)
+static inline intptr_t memprot_ll_dram0_sram_get_fault_address(void)
 {
-    uint32_t status_bits = esp_memprot_dram0_get_fault_reg();
-    return (uint32_t *)(((status_bits & DRAM0_INTR_ST_FAULTADDR_M) >> DRAM0_INTR_ST_FAULTADDR_S) | DRAM0_SRAM_INTR_ST_FAULTADDR_HI);
+    uint32_t status_bits = memprot_ll_dram0_get_fault_reg();
+    return (intptr_t)(((status_bits & DRAM0_INTR_ST_FAULTADDR_M) >> DRAM0_INTR_ST_FAULTADDR_S) | DRAM0_SRAM_INTR_ST_FAULTADDR_HI);
 }
 
-static inline bool esp_memprot_dram0_sram_is_intr_mine(void)
+static inline bool memprot_ll_dram0_sram_is_intr_mine(void)
 {
-    if (esp_memprot_dram0_is_assoc_intr()) {
-        uint32_t *faulting_address = esp_memprot_dram0_sram_get_fault_address();
-        return (uint32_t)faulting_address >= DRAM0_SRAM_ADDRESS_LOW && (uint32_t)faulting_address <= DRAM0_SRAM_ADDRESS_HIGH;
+    if (memprot_ll_dram0_is_assoc_intr()) {
+        uint32_t faulting_address = (uint32_t)memprot_ll_dram0_sram_get_fault_address();
+        return faulting_address >= DRAM0_SRAM_ADDRESS_LOW && faulting_address <= DRAM0_SRAM_ADDRESS_HIGH;
     }
     return false;
 }
 
-static inline void esp_memprot_dram0_sram_get_uni_block_sgnf_bits(uint32_t block, uint32_t *write_bit, uint32_t *read_bit)
+static inline bool memprot_ll_dram0_sram_get_uni_block_sgnf_bits(uint32_t block, uint32_t *write_bit, uint32_t *read_bit)
 {
-    HAL_ASSERT(block < DRAM0_SRAM_TOTAL_UNI_BLOCKS);
-
     switch (block) {
     case DRAM0_SRAM_UNI_BLOCK_0:
         *write_bit = DPORT_PMS_PRO_DRAM0_SRAM_0_W;
@@ -648,79 +613,97 @@ static inline void esp_memprot_dram0_sram_get_uni_block_sgnf_bits(uint32_t block
         *read_bit = DPORT_PMS_PRO_DRAM0_SRAM_3_R;
         break;
     default:
-        abort();
+        return false;
     }
+
+    return true;
 }
 
-static inline void esp_memprot_dram0_sram_set_uni_block_perm(uint32_t block, bool write_perm, bool read_perm)
+static inline memprot_ll_err_t memprot_ll_dram0_sram_set_uni_block_perm(uint32_t block, bool write_perm, bool read_perm)
 {
-    HAL_ASSERT(block < DRAM0_SRAM_TOTAL_UNI_BLOCKS);
+    //get block-specific WR flags offset within the conf.register
+    uint32_t write_bit_offset, read_bit_offset;
+    if (!memprot_ll_dram0_sram_get_uni_block_sgnf_bits(block, &write_bit_offset, &read_bit_offset)) {
+        return MEMP_LL_ERR_UNI_BLOCK_INVALID;
+    }
 
-    uint32_t write_bit, read_bit;
-    esp_memprot_dram0_sram_get_uni_block_sgnf_bits(block, &write_bit, &read_bit);
-
+    //set/reset required flags
     if (write_perm) {
-        DPORT_SET_PERI_REG_MASK(DPORT_PMS_PRO_DRAM0_1_REG, write_bit);
+        DPORT_SET_PERI_REG_MASK(DPORT_PMS_PRO_DRAM0_1_REG, write_bit_offset);
     } else {
-        DPORT_CLEAR_PERI_REG_MASK(DPORT_PMS_PRO_DRAM0_1_REG, write_bit);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PMS_PRO_DRAM0_1_REG, write_bit_offset);
     }
 
     if (read_perm) {
-        DPORT_SET_PERI_REG_MASK(DPORT_PMS_PRO_DRAM0_1_REG, read_bit);
+        DPORT_SET_PERI_REG_MASK(DPORT_PMS_PRO_DRAM0_1_REG, read_bit_offset);
     } else {
-        DPORT_CLEAR_PERI_REG_MASK(DPORT_PMS_PRO_DRAM0_1_REG, read_bit);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PMS_PRO_DRAM0_1_REG, read_bit_offset);
     }
+
+    return MEMP_LL_OK;
 }
 
-static inline uint32_t esp_memprot_dram0_sram_get_uni_block_read_bit(uint32_t block)
+static inline bool memprot_ll_dram0_sram_get_uni_block_read_bit(uint32_t block, uint32_t *read_bit)
 {
-    HAL_ASSERT(block < DRAM0_SRAM_TOTAL_UNI_BLOCKS);
-
     switch (block) {
     case DRAM0_SRAM_UNI_BLOCK_0:
-        return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_0_R);
+        *read_bit = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_0_R);
+        break;
     case DRAM0_SRAM_UNI_BLOCK_1:
-        return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_1_R);
+        *read_bit = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_1_R);
+        break;
     case DRAM0_SRAM_UNI_BLOCK_2:
-        return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_2_R);
+        *read_bit = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_2_R);
+        break;
     case DRAM0_SRAM_UNI_BLOCK_3:
-        return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_3_R);
+        *read_bit = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_3_R);
+        break;
     default:
-        abort();
+        return false;
     }
+
+    return true;
 }
 
-static inline uint32_t esp_memprot_dram0_sram_get_uni_block_write_bit(uint32_t block)
+static inline bool memprot_ll_dram0_sram_get_uni_block_write_bit(uint32_t block, uint32_t *write_bit)
 {
-    HAL_ASSERT(block < DRAM0_SRAM_TOTAL_UNI_BLOCKS);
-
     switch (block) {
     case DRAM0_SRAM_UNI_BLOCK_0:
-        return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_0_W);
+        *write_bit = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_0_W);
+        break;
     case DRAM0_SRAM_UNI_BLOCK_1:
-        return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_1_W);
+        *write_bit = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_1_W);
+        break;
     case DRAM0_SRAM_UNI_BLOCK_2:
-        return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_2_W);
+        *write_bit = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_2_W);
+        break;
     case DRAM0_SRAM_UNI_BLOCK_3:
-        return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_3_W);
+        *write_bit = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_3_W);
+        break;
     default:
-        abort();
+        return false;
     }
+
+    return true;
 }
 
 //DRAM0 has both unified blocks and split address configured in 1 register
-static inline uint32_t esp_memprot_dram0_sram_get_perm_reg(void)
+static inline uint32_t memprot_ll_dram0_sram_get_perm_reg(void)
 {
     return DPORT_READ_PERI_REG(DPORT_PMS_PRO_DRAM0_1_REG);
 }
 
-static inline void esp_memprot_dram0_sram_set_prot(uint32_t *split_addr, bool lw, bool lr, bool hw, bool hr)
+static inline memprot_ll_err_t memprot_ll_dram0_sram_set_prot(uint32_t *split_addr, bool lw, bool lr, bool hw, bool hr)
 {
     uint32_t addr = (uint32_t)split_addr;
 
-    //low boundary check provided by LD script. see comment in esp_memprot_iram0_sram_set_prot()
-    HAL_ASSERT(addr <= DRAM0_SRAM_SPL_BLOCK_HIGH);
-    HAL_ASSERT(addr % 0x4 == 0 );
+    //low boundary check provided by LD script. see comment in memprot_ll_iram0_sram_set_prot()
+    if (addr > DRAM0_SRAM_SPL_BLOCK_HIGH) {
+        return MEMP_LL_ERR_SPLIT_ADDR_INVALID;
+    }
+    if (addr % 0x4 != 0) {
+        return MEMP_LL_ERR_SPLIT_ADDR_UNALIGNED;
+    }
 
     //set low region
     int uni_blocks_low = -1;
@@ -740,7 +723,9 @@ static inline void esp_memprot_dram0_sram_set_prot(uint32_t *split_addr, bool lw
     //set unified mgmt region
     uint32_t write_bit, read_bit, uni_block_perm = 0;
     for (int x = 0; x < DRAM0_SRAM_TOTAL_UNI_BLOCKS; x++) {
-        esp_memprot_dram0_sram_get_uni_block_sgnf_bits(x, &write_bit, &read_bit);
+        if (!memprot_ll_dram0_sram_get_uni_block_sgnf_bits(x, &write_bit, &read_bit)) {
+            return MEMP_LL_ERR_UNI_BLOCK_INVALID;
+        }
         if (x <= uni_blocks_low) {
             if (lw) {
                 uni_block_perm |= write_bit;
@@ -778,9 +763,11 @@ static inline void esp_memprot_dram0_sram_set_prot(uint32_t *split_addr, bool lw
 
     //write DRAM0 SRAM cfg register
     DPORT_WRITE_PERI_REG(DPORT_PMS_PRO_DRAM0_1_REG, reg_split_addr | permission_mask | uni_block_perm);
+
+    return MEMP_LL_OK;
 }
 
-static inline void esp_memprot_dram0_sram_get_split_sgnf_bits(bool *lw, bool *lr, bool *hw, bool *hr)
+static inline void memprot_ll_dram0_sram_get_split_sgnf_bits(bool *lw, bool *lr, bool *hw, bool *hr)
 {
     *lw = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_4_L_W);
     *lr = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_4_L_R);
@@ -788,13 +775,13 @@ static inline void esp_memprot_dram0_sram_get_split_sgnf_bits(bool *lw, bool *lr
     *hr = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_4_H_R);
 }
 
-static inline void esp_memprot_dram0_sram_set_read_perm(bool lr, bool hr)
+static inline void memprot_ll_dram0_sram_set_read_perm(bool lr, bool hr)
 {
     DPORT_REG_SET_FIELD(DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_4_L_R, lr ? 1 : 0);
     DPORT_REG_SET_FIELD(DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_4_H_R, hr ? 1 : 0);
 }
 
-static inline void esp_memprot_dram0_sram_set_write_perm(bool lw, bool hw)
+static inline void memprot_ll_dram0_sram_set_write_perm(bool lw, bool hw)
 {
     DPORT_REG_SET_FIELD(DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_4_L_W, lw ? 1 : 0);
     DPORT_REG_SET_FIELD(DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_4_H_W, hw ? 1 : 0);
@@ -806,34 +793,35 @@ static inline void esp_memprot_dram0_sram_set_write_perm(bool lw, bool hw)
  * === DRAM0 RTC FAST
  * ========================================================================================
  */
-#define DRAM0_RTCFAST_ADDRESS_LOW               0x3FF9E000
-#define DRAM0_RTCFAST_ADDRESS_HIGH              0x3FF9FFFF
-#define DRAM0_RTCFAST_INTR_ST_FAULTADDR_HI      0x3FF00000  //RTCFAST high bits 31:22 of the faulting address - constant
-#define DRAM0_RTCFAST_ADDR_TO_CONF_REG(addr)   (((addr >> CONF_REG_ADDRESS_SHIFT) & DPORT_PMS_PRO_DRAM0_RTCFAST_SPLTADDR) << DPORT_PMS_PRO_DRAM0_RTCFAST_SPLTADDR_S)
-
-
-static inline uint32_t *esp_memprot_dram0_rtcfast_get_fault_address(void)
+static inline intptr_t memprot_ll_dram0_rtcfast_get_fault_address(void)
 {
-    uint32_t status_bits = esp_memprot_dram0_get_fault_reg();
-    return (uint32_t *)(((status_bits & DRAM0_INTR_ST_FAULTADDR_M) >> DRAM0_INTR_ST_FAULTADDR_S) | DRAM0_RTCFAST_INTR_ST_FAULTADDR_HI);
+    uint32_t status_bits = memprot_ll_dram0_get_fault_reg();
+    return (intptr_t)(((status_bits & DRAM0_INTR_ST_FAULTADDR_M) >> DRAM0_INTR_ST_FAULTADDR_S) | DRAM0_RTCFAST_INTR_ST_FAULTADDR_HI);
 }
 
-static inline bool esp_memprot_dram0_rtcfast_is_intr_mine(void)
+static inline bool memprot_ll_dram0_rtcfast_is_intr_mine(void)
 {
-    if (esp_memprot_dram0_is_assoc_intr()) {
-        uint32_t *faulting_address = esp_memprot_dram0_rtcfast_get_fault_address();
-        return (uint32_t)faulting_address >= DRAM0_RTCFAST_ADDRESS_LOW && (uint32_t)faulting_address <= DRAM0_RTCFAST_ADDRESS_HIGH;
+    if (memprot_ll_dram0_is_assoc_intr()) {
+        uint32_t faulting_address = (uint32_t)memprot_ll_dram0_rtcfast_get_fault_address();
+        return faulting_address >= DRAM0_RTCFAST_ADDRESS_LOW && faulting_address <= DRAM0_RTCFAST_ADDRESS_HIGH;
     }
     return false;
 }
 
-static inline void esp_memprot_dram0_rtcfast_set_prot(uint32_t *split_addr, bool lw, bool lr, bool hw, bool hr)
+static inline memprot_ll_err_t memprot_ll_dram0_rtcfast_set_prot(uint32_t *split_addr, bool lw, bool lr, bool hw, bool hr)
 {
     uint32_t addr = (uint32_t)split_addr;
-    HAL_ASSERT(addr % 0x4 == 0);
+
+    //addr: 32bit aligned, inside corresponding range
+    if (addr < DRAM0_RTCFAST_ADDRESS_LOW || addr > DRAM0_RTCFAST_ADDRESS_HIGH) {
+        return MEMP_LL_ERR_SPLIT_ADDR_INVALID;
+    }
+    if (addr % 0x4 != 0) {
+        return MEMP_LL_ERR_SPLIT_ADDR_UNALIGNED;
+    }
 
     //conf reg [10:0]
-    uint32_t reg_split_addr = DRAM0_RTCFAST_ADDR_TO_CONF_REG( addr );
+    uint32_t reg_split_addr = DRAM0_RTCFAST_ADDR_TO_CONF_REG(addr);
 
     //prepare high & low permission mask
     uint32_t permission_mask = 0;
@@ -852,9 +840,11 @@ static inline void esp_memprot_dram0_rtcfast_set_prot(uint32_t *split_addr, bool
 
     //write DRAM0 RTC FAST cfg register
     DPORT_WRITE_PERI_REG(DPORT_PMS_PRO_DRAM0_2_REG, reg_split_addr | permission_mask);
+
+    return MEMP_LL_OK;
 }
 
-static inline void esp_memprot_dram0_rtcfast_get_split_sgnf_bits(bool *lw, bool *lr, bool *hw, bool *hr)
+static inline void memprot_ll_dram0_rtcfast_get_split_sgnf_bits(bool *lw, bool *lr, bool *hw, bool *hr)
 {
     *lw = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_2_REG, DPORT_PMS_PRO_DRAM0_RTCFAST_L_W);
     *lr = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_2_REG, DPORT_PMS_PRO_DRAM0_RTCFAST_L_R);
@@ -862,18 +852,18 @@ static inline void esp_memprot_dram0_rtcfast_get_split_sgnf_bits(bool *lw, bool 
     *hr = DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_2_REG, DPORT_PMS_PRO_DRAM0_RTCFAST_H_R);
 }
 
-static inline uint32_t esp_memprot_dram0_rtcfast_get_perm_split_reg(void)
+static inline uint32_t memprot_ll_dram0_rtcfast_get_perm_split_reg(void)
 {
     return DPORT_READ_PERI_REG(DPORT_PMS_PRO_DRAM0_2_REG);
 }
 
-static inline void esp_memprot_dram0_rtcfast_set_read_perm(bool lr, bool hr)
+static inline void memprot_ll_dram0_rtcfast_set_read_perm(bool lr, bool hr)
 {
     DPORT_REG_SET_FIELD(DPORT_PMS_PRO_DRAM0_2_REG, DPORT_PMS_PRO_DRAM0_RTCFAST_L_R, lr ? 1 : 0);
     DPORT_REG_SET_FIELD(DPORT_PMS_PRO_DRAM0_2_REG, DPORT_PMS_PRO_DRAM0_RTCFAST_H_R, hr ? 1 : 0);
 }
 
-static inline void esp_memprot_dram0_rtcfast_set_write_perm(bool lw, bool hw)
+static inline void memprot_ll_dram0_rtcfast_set_write_perm(bool lw, bool hw)
 {
     DPORT_REG_SET_FIELD(DPORT_PMS_PRO_DRAM0_2_REG, DPORT_PMS_PRO_DRAM0_RTCFAST_L_W, lw ? 1 : 0);
     DPORT_REG_SET_FIELD(DPORT_PMS_PRO_DRAM0_2_REG, DPORT_PMS_PRO_DRAM0_RTCFAST_H_W, hw ? 1 : 0);
