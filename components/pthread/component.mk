@@ -17,3 +17,6 @@ endif
 COMPONENT_ADD_LDFLAGS += -u pthread_include_pthread_impl
 COMPONENT_ADD_LDFLAGS += -u pthread_include_pthread_cond_impl
 COMPONENT_ADD_LDFLAGS += -u pthread_include_pthread_local_storage_impl
+COMPONENT_ADD_LDFLAGS += -u pthread_include_pthread_rwlock_impl
+
+CFLAGS += -D_POSIX_READER_WRITER_LOCKS
