@@ -1,5 +1,5 @@
-I2S
-===
+Inter-IC Sound (I2S)
+====================
 
 {IDF_TARGET_I2S_NUM:default="two", esp32s2="one", esp32c3="one"}
 

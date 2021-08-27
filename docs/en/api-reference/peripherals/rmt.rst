@@ -1,5 +1,5 @@
-RMT
-===
+Remote Control (RMT)
+====================
 
 The RMT (Remote Control) module driver can be used to send and receive infrared remote control signals. Due to flexibility of RMT module, the driver can also be used to generate or receive many other types of signals.
 
