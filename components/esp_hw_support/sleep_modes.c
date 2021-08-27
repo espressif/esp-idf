@@ -158,7 +158,7 @@ static sleep_config_t s_config = {
 #if SOC_PM_SUPPORT_CPU_PD
         ESP_PD_OPTION_AUTO,
 #endif
-        ESP_PD_OPTION_AUTO
+        ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO
     },
     .ccount_ticks_record = 0,
     .sleep_time_overhead_out = DEFAULT_SLEEP_OUT_OVERHEAD_US,
@@ -1194,6 +1194,9 @@ static uint32_t get_power_down_flags(void)
         pd_flags |= RTC_SLEEP_PD_CPU;
     }
 #endif
+    if (s_config.pd_options[ESP_PD_DOMAIN_RTC8M] != ESP_PD_OPTION_ON) {
+        pd_flags |= RTC_SLEEP_PD_INT_8M;
+    }
 
 #ifdef CONFIG_IDF_TARGET_ESP32
     pd_flags |= RTC_SLEEP_PD_XTAL;
