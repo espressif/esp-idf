@@ -45,6 +45,11 @@ __attribute__((always_inline)) static inline bool efuse_ll_get_secure_boot_v2_en
     return EFUSE.rd_repeat_data2.secure_boot_en;
 }
 
+__attribute__((always_inline)) static inline bool efuse_ll_get_err_rst_enable(void)
+{
+    return EFUSE.rd_repeat_data3.err_rst_enable;
+}
+
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_revision(void)
 {
     return EFUSE.rd_mac_spi_sys_3.wafer_version;
