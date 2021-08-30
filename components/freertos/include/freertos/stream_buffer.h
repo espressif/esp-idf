@@ -193,7 +193,7 @@ typedef struct StreamBufferDef_t * StreamBufferHandle_t;
  *
  * // Used to dimension the array used to hold the streams.  The available space
  * // will actually be one less than this, so 999.
- * \#define STORAGE_SIZE_BYTES 1000
+ * #define STORAGE_SIZE_BYTES 1000
  *
  * // Defines the memory that will actually hold the streams within the stream
  * // buffer.

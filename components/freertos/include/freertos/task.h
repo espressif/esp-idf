@@ -521,7 +521,7 @@ typedef enum
  *  // Dimensions the buffer that the task being created will use as its stack.
  *  // NOTE:  This is the number of bytes the stack will hold, not the number of
  *  // words as found in vanilla FreeRTOS.
- * \#define STACK_SIZE 200
+ * #define STACK_SIZE 200
  *
  *  // Structure that will hold the TCB of the task being created.
  *  StaticTask_t xTaskBuffer;
