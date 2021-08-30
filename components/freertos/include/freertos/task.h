@@ -763,9 +763,9 @@ typedef enum
 /**
  * @cond
  * task. h
- * <pre>
+ * @code{c}
  * void vTaskAllocateMPURegions( TaskHandle_t xTask, const MemoryRegion_t * const pxRegions );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Memory regions are assigned to a restricted task when the task is created by
@@ -975,9 +975,9 @@ void vTaskDelayUntil( TickType_t * const pxPreviousWakeTime,
 /**
  * @cond
  * task. h
- * <pre>
+ * @code{c}
  * BaseType_t xTaskAbortDelay( TaskHandle_t xTask );
- * </pre>
+ * @endcode
  * @endcond
  *
  * INCLUDE_xTaskAbortDelay must be defined as 1 in FreeRTOSConfig.h for this
@@ -1011,9 +1011,9 @@ BaseType_t xTaskAbortDelay( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
 /**
  * @cond
  * task. h
- * <pre>
+ * @code{c}
  * UBaseType_t uxTaskPriorityGet( const TaskHandle_t xTask );
- * </pre>
+ * @endcode
  * @endcond
  *
  * INCLUDE_uxTaskPriorityGet must be defined as 1 for this function to be available.
@@ -1064,9 +1064,9 @@ UBaseType_t uxTaskPriorityGet( const TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
 /**
  * @cond
  * task. h
- * <pre>
+ * @code{c}
  * UBaseType_t uxTaskPriorityGetFromISR( const TaskHandle_t xTask );
- * </pre>
+ * @endcode
  * @endcond
  *
  * A version of uxTaskPriorityGet() that can be used from an ISR.
@@ -1076,9 +1076,9 @@ UBaseType_t uxTaskPriorityGetFromISR( const TaskHandle_t xTask ) PRIVILEGED_FUNC
 /**
  * @cond
  * task. h
- * <pre>
+ * @code{c}
  * eTaskState eTaskGetState( TaskHandle_t xTask );
- * </pre>
+ * @endcode
  * @endcond
  *
  * INCLUDE_eTaskGetState must be defined as 1 for this function to be available.
@@ -1098,9 +1098,9 @@ eTaskState eTaskGetState( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
 /**
  * @cond
  * task. h
- * <pre>
+ * @code{c}
  * void vTaskGetInfo( TaskHandle_t xTask, TaskStatus_t *pxTaskStatus, BaseType_t xGetFreeStackSpace, eTaskState eState );
- * </pre>
+ * @endcode
  * @endcond
  *
  * configUSE_TRACE_FACILITY must be defined as 1 for this function to be
@@ -1163,9 +1163,9 @@ void vTaskGetInfo( TaskHandle_t xTask,
 /**
  * @cond
  * task. h
- * <pre>
+ * @code{c}
  * void vTaskPrioritySet( TaskHandle_t xTask, UBaseType_t uxNewPriority );
- * </pre>
+ * @endcode
  * @endcond
  *
  * INCLUDE_vTaskPrioritySet must be defined as 1 for this function to be available.
@@ -1264,9 +1264,9 @@ void vTaskSuspend( TaskHandle_t xTaskToSuspend ) PRIVILEGED_FUNCTION;
 /**
  * @cond
  * task. h
- * <pre>
+ * @code{c}
  * void vTaskResume( TaskHandle_t xTaskToResume );
- * </pre>
+ * @endcode
  * @endcond
  *
  * INCLUDE_vTaskSuspend must be defined as 1 for this function to be available.
@@ -1361,7 +1361,7 @@ BaseType_t xTaskResumeFromISR( TaskHandle_t xTaskToResume ) PRIVILEGED_FUNCTION;
  * tasks and starting the kernel.
  *
  * Example usage:
- * <pre>
+ * @code{c}
  * void vAFunction( void )
  * {
  *   // Create at least one task before starting the kernel.
@@ -1372,7 +1372,7 @@ BaseType_t xTaskResumeFromISR( TaskHandle_t xTaskToResume ) PRIVILEGED_FUNCTION;
  *
  *   // Will not get here unless a task calls vTaskEndScheduler ()
  * }
- * </pre>
+ * @endcode
  *
  * @cond
  * \defgroup vTaskStartScheduler vTaskStartScheduler
@@ -1404,7 +1404,7 @@ void vTaskStartScheduler( void ) PRIVILEGED_FUNCTION;
  * tasks.
  *
  * Example usage:
- * <pre>
+ * @code{c}
  * void vTaskCode( void * pvParameters )
  * {
  *   for( ;; )
@@ -1429,7 +1429,7 @@ void vTaskStartScheduler( void ) PRIVILEGED_FUNCTION;
  *   // vTaskEndScheduler ().  When we get here we are back to single task
  *   // execution.
  * }
- * </pre>
+ * @endcode
  *
  * @cond
  * \defgroup vTaskEndScheduler vTaskEndScheduler
@@ -1494,9 +1494,9 @@ void vTaskSuspendAll( void ) PRIVILEGED_FUNCTION;
 /**
  * @cond
  * task. h
- * <pre>
+ * @code{c}
  * BaseType_t xTaskResumeAll( void );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Resumes scheduler activity after it was suspended by a call to
@@ -1706,9 +1706,9 @@ uint8_t* pxTaskGetStackStart( TaskHandle_t xTask) PRIVILEGED_FUNCTION;
 /**
  * @cond
  * task.h
- * <pre>
+ * @code{c}
  * void vTaskSetApplicationTaskTag( TaskHandle_t xTask, TaskHookFunction_t pxHookFunction );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Sets pxHookFunction to be the task hook function used by the task xTask.
@@ -1723,9 +1723,9 @@ uint8_t* pxTaskGetStackStart( TaskHandle_t xTask) PRIVILEGED_FUNCTION;
 /**
  * @cond
  * task.h
- * <pre>
+ * @code{c}
  * void xTaskGetApplicationTaskTag( TaskHandle_t xTask );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Returns the pxHookFunction value assigned to the task xTask.  Do not
@@ -1737,9 +1737,9 @@ uint8_t* pxTaskGetStackStart( TaskHandle_t xTask) PRIVILEGED_FUNCTION;
 /**
  * @cond
  * task.h
- * <pre>
+ * @code{c}
  * void xTaskGetApplicationTaskTagFromISR( TaskHandle_t xTask );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Returns the pxHookFunction value assigned to the task xTask.  Can
@@ -1820,9 +1820,9 @@ uint8_t* pxTaskGetStackStart( TaskHandle_t xTask) PRIVILEGED_FUNCTION;
 /**
  * @cond
  * task.h
- * <pre>
+ * @code{c}
  * BaseType_t xTaskCallApplicationTaskHook( TaskHandle_t xTask, void *pvParameter );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Calls the hook function associated with xTask.  Passing xTask as NULL has
@@ -2052,7 +2052,7 @@ void vTaskGetRunTimeStats( char * pcWriteBuffer ) PRIVILEGED_FUNCTION;     /*lin
 /**
  * @cond
  * task. h
- * <pre>uint32_t ulTaskGetIdleRunTimeCounter( void );</pre>
+ * @code{c}uint32_t ulTaskGetIdleRunTimeCounter( void );@endcode
  * @endcond
  *
  * configGENERATE_RUN_TIME_STATS and configUSE_STATS_FORMATTING_FUNCTIONS

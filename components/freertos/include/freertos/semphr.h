@@ -42,9 +42,9 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /** @cond */
 /**
  * semphr. h
- * <pre>
+ * @code{c}
  * vSemaphoreCreateBinary( SemaphoreHandle_t xSemaphore );
- * </pre>
+ * @endcode
  *
  * In many usage scenarios it is faster and more memory efficient to use a
  * direct to task notification in place of a binary semaphore!
@@ -72,7 +72,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  * @param xSemaphore Handle to the created semaphore.  Should be of type SemaphoreHandle_t.
  *
  * Example usage:
- * <pre>
+ * @code{c}
  * SemaphoreHandle_t xSemaphore = NULL;
  *
  * void vATask( void * pvParameters )
@@ -87,7 +87,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  *      // The semaphore can now be used.
  *  }
  * }
- * </pre>
+ * @endcode
  * @cond
  * \defgroup vSemaphoreCreateBinary vSemaphoreCreateBinary
  * @endcond
@@ -108,9 +108,9 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /**
  * @cond
  * semphr. h
- * <pre>
+ * @code{c}
  * SemaphoreHandle_t xSemaphoreCreateBinary( void );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Creates a new binary semaphore instance, and returns a handle by which the
@@ -175,9 +175,9 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /**
  * @cond
  * semphr. h
- * <pre>
+ * @code{c}
  * SemaphoreHandle_t xSemaphoreCreateBinaryStatic( StaticSemaphore_t *pxSemaphoreBuffer );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Creates a new binary semaphore instance, and returns a handle by which the
@@ -241,12 +241,12 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /**
  * @cond
  * semphr. h
- * <pre>
+ * @code{c}
  * xSemaphoreTake(
  *                   SemaphoreHandle_t xSemaphore,
  *                   TickType_t xBlockTime
  *               );
- * </pre>
+ * @endcode
  * @endcond
  *
  * <i>Macro</i> to obtain a semaphore.  The semaphore must have previously been
@@ -481,9 +481,9 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /**
  * @cond
  * semphr. h
- * <pre>
+ * @code{c}
  * xSemaphoreGiveRecursive( SemaphoreHandle_t xMutex );
- * </pre>
+ * @endcode
  * @endcond
  *
  * <i>Macro</i> to recursively release, or 'give', a mutex type semaphore.
@@ -674,12 +674,12 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /**
  * @cond
  * semphr. h
- * <pre>
+ * @code{c}
  * xSemaphoreTakeFromISR(
  *                        SemaphoreHandle_t xSemaphore,
  *                        BaseType_t *pxHigherPriorityTaskWoken
  *                    );
- * </pre>
+ * @endcode
  * @endcond
  *
  * <i>Macro</i> to  take a semaphore from an ISR.  The semaphore must have
@@ -711,9 +711,9 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /**
  * @cond
  * semphr. h
- * <pre>
+ * @code{c}
  * SemaphoreHandle_t xSemaphoreCreateMutex( void );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Creates a new mutex type semaphore instance, and returns a handle by which
@@ -776,9 +776,9 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /**
  * @cond
  * semphr. h
- * <pre>
+ * @code{c}
  * SemaphoreHandle_t xSemaphoreCreateMutexStatic( StaticSemaphore_t *pxMutexBuffer );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Creates a new mutex type semaphore instance, and returns a handle by which
@@ -976,9 +976,9 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /**
  * @cond
  * semphr. h
- * <pre>
+ * @code{c}
  * SemaphoreHandle_t xSemaphoreCreateCounting( UBaseType_t uxMaxCount, UBaseType_t uxInitialCount );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Creates a new counting semaphore instance, and returns a handle by which the
@@ -1062,9 +1062,9 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /**
  * @cond
  * semphr. h
- * <pre>
+ * @code{c}
  * SemaphoreHandle_t xSemaphoreCreateCountingStatic( UBaseType_t uxMaxCount, UBaseType_t uxInitialCount, StaticSemaphore_t *pxSemaphoreBuffer );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Creates a new counting semaphore instance, and returns a handle by which the
@@ -1153,9 +1153,9 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /**
  * @cond
  * semphr. h
- * <pre>
+ * @code{c}
  * void vSemaphoreDelete( SemaphoreHandle_t xSemaphore );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Delete a semaphore.  This function must be used with care.  For example,
@@ -1173,9 +1173,9 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /**
  * @cond
  * semphr.h
- * <pre>
+ * @code{c}
  * TaskHandle_t xSemaphoreGetMutexHolder( SemaphoreHandle_t xMutex );
- * </pre>
+ * @endcode
  * @endcond
  *
  * If xMutex is indeed a mutex type semaphore, return the current mutex holder.
@@ -1192,9 +1192,9 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /**
  * @cond
  * semphr.h
- * <pre>
+ * @code{c}
  * TaskHandle_t xSemaphoreGetMutexHolderFromISR( SemaphoreHandle_t xMutex );
- * </pre>
+ * @endcode
  * @endcond
  *
  * If xMutex is indeed a mutex type semaphore, return the current mutex holder.
@@ -1207,9 +1207,9 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /**
  * @cond
  * semphr.h
- * <pre>
+ * @code{c}
  * UBaseType_t uxSemaphoreGetCount( SemaphoreHandle_t xSemaphore );
- * </pre>
+ * @endcode
  * @endcond
  *
  * If the semaphore is a counting semaphore then uxSemaphoreGetCount() returns

@@ -101,9 +101,9 @@ typedef TickType_t               EventBits_t;
 /**
  * @cond
  * event_groups.h
- * <pre>
+ * @code{c}
  * EventGroupHandle_t xEventGroupCreate( void );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Create a new event group.
@@ -161,9 +161,9 @@ typedef TickType_t               EventBits_t;
 /**
  * @cond
  * event_groups.h
- * <pre>
+ * @code{c}
  * EventGroupHandle_t xEventGroupCreateStatic( EventGroupHandle_t * pxEventGroupBuffer );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Create a new event group.
@@ -216,13 +216,13 @@ typedef TickType_t               EventBits_t;
 /**
  * @cond
  * event_groups.h
- * <pre>
+ * @code{c}
  *  EventBits_t xEventGroupWaitBits(    EventGroupHandle_t xEventGroup,
  *                                      const EventBits_t uxBitsToWaitFor,
  *                                      const BaseType_t xClearOnExit,
  *                                      const BaseType_t xWaitForAllBits,
  *                                      const TickType_t xTicksToWait );
- * </pre>
+ * @endcode
  * @endcond
  *
  * [Potentially] block to wait for one or more bits to be set within a
@@ -318,9 +318,9 @@ EventBits_t xEventGroupWaitBits( EventGroupHandle_t xEventGroup,
 /**
  * @cond
  * event_groups.h
- * <pre>
+ * @code{c}
  *  EventBits_t xEventGroupClearBits( EventGroupHandle_t xEventGroup, const EventBits_t uxBitsToClear );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Clear bits within an event group.  This function cannot be called from an
@@ -380,9 +380,9 @@ EventBits_t xEventGroupClearBits( EventGroupHandle_t xEventGroup,
 /**
  * @cond
  * event_groups.h
- * <pre>
+ * @code{c}
  *  BaseType_t xEventGroupClearBitsFromISR( EventGroupHandle_t xEventGroup, const EventBits_t uxBitsToSet );
- * </pre>
+ * @endcode
  * @endcond
  *
  * A version of xEventGroupClearBits() that can be called from an interrupt.
@@ -445,9 +445,9 @@ EventBits_t xEventGroupClearBits( EventGroupHandle_t xEventGroup,
 /**
  * @cond
  * event_groups.h
- * <pre>
+ * @code{c}
  *  EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup, const EventBits_t uxBitsToSet );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Set bits within an event group.
@@ -524,9 +524,9 @@ EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
 /**
  * @cond
  * event_groups.h
- * <pre>
+ * @code{c}
  *  BaseType_t xEventGroupSetBitsFromISR( EventGroupHandle_t xEventGroup, const EventBits_t uxBitsToSet, BaseType_t *pxHigherPriorityTaskWoken );
- * </pre>
+ * @endcode
  * @endcond
  *
  * A version of xEventGroupSetBits() that can be called from an interrupt.
@@ -609,12 +609,12 @@ EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
 /**
  * @cond
  * event_groups.h
- * <pre>
+ * @code{c}
  *  EventBits_t xEventGroupSync(    EventGroupHandle_t xEventGroup,
  *                                  const EventBits_t uxBitsToSet,
  *                                  const EventBits_t uxBitsToWaitFor,
  *                                  TickType_t xTicksToWait );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Atomically set bits within an event group, then wait for a combination of
@@ -743,9 +743,9 @@ EventBits_t xEventGroupSync( EventGroupHandle_t xEventGroup,
 /**
  * @cond
  * event_groups.h
- * <pre>
+ * @code{c}
  *  EventBits_t xEventGroupGetBits( EventGroupHandle_t xEventGroup );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Returns the current value of the bits in an event group.  This function
@@ -765,9 +765,9 @@ EventBits_t xEventGroupSync( EventGroupHandle_t xEventGroup,
 /**
  * @cond
  * event_groups.h
- * <pre>
+ * @code{c}
  *  EventBits_t xEventGroupGetBitsFromISR( EventGroupHandle_t xEventGroup );
- * </pre>
+ * @endcode
  * @endcond
  *
  * A version of xEventGroupGetBits() that can be called from an ISR.
@@ -786,9 +786,9 @@ EventBits_t xEventGroupGetBitsFromISR( EventGroupHandle_t xEventGroup ) PRIVILEG
 /**
  * @cond
  * event_groups.h
- * <pre>
+ * @code{c}
  *  void xEventGroupDelete( EventGroupHandle_t xEventGroup );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Delete an event group that was previously created by a call to
