@@ -28,6 +28,8 @@
 #define SOC_FLASH_ENCRYPTION_XTS_AES      1
 #define SOC_FLASH_ENCRYPTION_XTS_AES_256 1
 #define SOC_PSRAM_DMA_CAPABLE           1
+#define SOC_XT_WDT_SUPPORTED            1
+
 
 /*-------------------------- SOC CAPS ----------------------------------------*/
 #define SOC_APPCPU_HAS_CLOCK_GATING_BUG (1)

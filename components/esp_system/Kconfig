@@ -53,6 +53,12 @@ menu "ESP System Settings"
         bool
         default n
 
+    config ESP_SYSTEM_RTC_EXT_OSC
+        # This is a High Layer Kconfig option, invisible, can be selected by other Kconfig option
+        # e.g. It will be selected on when ESPX_RTC_CLK_SRC_EXT_OSC is on
+        bool
+        default n
+
     config ESP_SYSTEM_RTC_EXT_XTAL_BOOTSTRAP_CYCLES
         int "Bootstrap cycles for external 32kHz crystal"
         depends on ESP_SYSTEM_RTC_EXT_XTAL
@@ -388,6 +394,31 @@ menu "ESP System Settings"
         help
             If this option is enabled, the Task Wtachdog Timer will wach the CPU1
             Idle Task.
+
+    config ESP_XT_WDT
+        bool "Initialize XTAL32K watchdog timer on startup"
+        depends on !IDF_TARGET_ESP32 && (ESP_SYSTEM_RTC_EXT_OSC || ESP_SYSTEM_RTC_EXT_XTAL)
+        default n
+        help
+            This watchdog timer can detect oscillation failure of the XTAL32K_CLK. When such a failure
+            is detected the hardware can be set up to automatically switch to BACKUP32K_CLK and generate
+            an interrupt.
+
+    config ESP_XT_WDT_TIMEOUT
+        int "XTAL32K watchdog timeout period"
+        depends on ESP_XT_WDT
+        range 1 255
+        default 200
+        help
+            Timeout period configuration for the XTAL32K watchdog timer based on RTC_CLK.
+
+    config ESP_XT_WDT_BACKUP_CLK_ENABLE
+        bool "Automatically switch to BACKUP32K_CLK when timer expires"
+        depends on ESP_XT_WDT
+        default y
+        help
+            Enable this to automatically switch to BACKUP32K_CLK as the source of RTC_SLOW_CLK when
+            the watchdog timer expires.
 
     config ESP_PANIC_HANDLER_IRAM
         bool "Place panic handler code in IRAM"
