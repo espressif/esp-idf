@@ -10,10 +10,13 @@ menu "ESP32H2-Specific"
 
         config ESP32H2_DEFAULT_CPU_FREQ_16
             bool "16 MHz"
+            depends on IDF_ENV_FPGA     #ESP32H2-TODO: IDF-3786
         config ESP32H2_DEFAULT_CPU_FREQ_32
             bool "32 MHz"
+            depends on IDF_ENV_FPGA     #ESP32H2-TODO: IDF-3786
         config ESP32H2_DEFAULT_CPU_FREQ_64
             bool "64 MHz"
+            depends on IDF_ENV_FPGA     #ESP32H2-TODO: IDF-3786
         config ESP32H2_DEFAULT_CPU_FREQ_96
             bool "96 MHz"
             depends on !IDF_ENV_FPGA
