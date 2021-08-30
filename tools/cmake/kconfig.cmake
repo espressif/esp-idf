@@ -121,11 +121,13 @@ function(__kconfig_bootloader_component_add component_dir)
     idf_build_get_property(bootloader_kconfigs_proj BOOTLOADER_KCONFIGS_PROJ)
 
     file(GLOB kconfig "${component_dir}/Kconfig")
+    list(SORT kconfig)
     if(EXISTS "${kconfig}" AND NOT IS_DIRECTORY "${kconfig}")
         list(APPEND bootloader_kconfigs "${kconfig}")
     endif()
 
     file(GLOB kconfig "${component_dir}/Kconfig.projbuild")
+    list(SORT kconfig)
     if(EXISTS "${kconfig}" AND NOT IS_DIRECTORY "${kconfig}")
         list(APPEND bootloader_kconfigs_proj "${kconfig}")
     endif()
