@@ -12,6 +12,7 @@
 #include "esp32/himem.h"
 #include "soc/soc.h"
 #include "esp_log.h"
+#include "esp_check.h"
 
 /*
 So, why does the API look this way and is so inflexible to not allow any maps beyond the full 32K chunks? Most of
@@ -55,8 +56,6 @@ peripheral. This needs support for SPI1 to be in the SPI driver, however.
 #define PHYS_HIMEM_BLOCKSTART (128-SPIRAM_BANKSWITCH_RESERVE)
 
 #define TAG "esp_himem"
-
-#define HIMEM_CHECK(cond, str, err) if (cond) do {ESP_LOGE(TAG, "%s: %s", __FUNCTION__, str); return err; } while(0)
 
 // Metadata for a block of physical RAM
 typedef struct {
@@ -134,10 +133,10 @@ void __attribute__((constructor)) esp_himem_init(void)
     if (SPIRAM_BANKSWITCH_RESERVE == 0) return;
     int maxram=esp_spiram_get_size();
     //catch double init
-    HIMEM_CHECK(s_ram_descriptor != NULL, "already initialized", ); //Looks weird; last arg is empty so it expands to 'return ;'
-    HIMEM_CHECK(s_range_descriptor != NULL, "already initialized", );
+    ESP_RETURN_ON_FALSE(s_ram_descriptor != NULL,  , TAG, "already initialized"); //Looks weird; last arg is empty so it expands to 'return ;'
+    ESP_RETURN_ON_FALSE(s_range_descriptor != NULL,  , TAG, "already initialized");
     //need to have some reserved banks
-    HIMEM_CHECK(SPIRAM_BANKSWITCH_RESERVE == 0, "No banks reserved for himem", );
+    ESP_RETURN_ON_FALSE(SPIRAM_BANKSWITCH_RESERVE == 0,  , TAG, "No banks reserved for himem");
     //Start and end of physical reserved memory. Note it starts slightly under
     //the 4MiB mark as the reserved banks can't have an unity mapping to be used by malloc
     //anymore; we treat them as himem instead.
@@ -219,7 +218,7 @@ esp_err_t esp_himem_free(esp_himem_handle_t handle)
     //Check if any of the blocks is still mapped; fail if this is the case.
     for (int i = 0; i < handle->block_ct; i++) {
         assert(ramblock_idx_valid(handle->block[i]));
-        HIMEM_CHECK(s_ram_descriptor[handle->block[i]].is_mapped, "block in range still mapped", ESP_ERR_INVALID_ARG);
+        ESP_RETURN_ON_FALSE(s_ram_descriptor[handle->block[i]].is_mapped, ESP_ERR_INVALID_ARG, TAG, "block in range still mapped");
     }
     //Mark blocks as free
     portENTER_CRITICAL(&spinlock);
@@ -237,8 +236,8 @@ esp_err_t esp_himem_free(esp_himem_handle_t handle)
 
 esp_err_t esp_himem_alloc_map_range(size_t size, esp_himem_rangehandle_t *handle_out)
 {
-    HIMEM_CHECK(s_ram_descriptor == NULL, "Himem not available!", ESP_ERR_INVALID_STATE);
-    HIMEM_CHECK(size % CACHE_BLOCKSIZE != 0, "requested size not aligned to blocksize", ESP_ERR_INVALID_SIZE);
+    ESP_RETURN_ON_FALSE(s_ram_descriptor == NULL, ESP_ERR_INVALID_STATE, TAG, "Himem not available!");
+    ESP_RETURN_ON_FALSE(size % CACHE_BLOCKSIZE != 0, ESP_ERR_INVALID_SIZE, TAG, "requested size not aligned to blocksize");
     int blocks = size / CACHE_BLOCKSIZE;
     esp_himem_rangedata_t *r = calloc(sizeof(esp_himem_rangedata_t), 1);
     if (!r) {
@@ -280,7 +279,7 @@ esp_err_t esp_himem_free_map_range(esp_himem_rangehandle_t handle)
     for (int i = 0; i < handle->block_ct; i++) {
         assert(rangeblock_idx_valid(handle->block_start + i));
         assert(s_range_descriptor[i + handle->block_start].is_alloced == 1); //should be, if handle is valid
-        HIMEM_CHECK(s_range_descriptor[i + handle->block_start].is_mapped, "memory still mapped to range", ESP_ERR_INVALID_ARG);
+        ESP_RETURN_ON_FALSE(s_range_descriptor[i + handle->block_start].is_mapped, ESP_ERR_INVALID_ARG, TAG, "memory still mapped to range");
     }
     //We should be good to free this. Mark blocks as free.
     portENTER_CRITICAL(&spinlock);
@@ -298,19 +297,19 @@ esp_err_t esp_himem_map(esp_himem_handle_t handle, esp_himem_rangehandle_t range
     int ram_block = ram_offset / CACHE_BLOCKSIZE;
     int range_block = range_offset / CACHE_BLOCKSIZE;
     int blockcount = len / CACHE_BLOCKSIZE;
-    HIMEM_CHECK(s_ram_descriptor == NULL, "Himem not available!", ESP_ERR_INVALID_STATE);
+    ESP_RETURN_ON_FALSE(s_ram_descriptor == NULL, ESP_ERR_INVALID_STATE, TAG, "Himem not available!");
     //Offsets and length must be block-aligned
-    HIMEM_CHECK(ram_offset % CACHE_BLOCKSIZE != 0, "ram offset not aligned to blocksize", ESP_ERR_INVALID_ARG);
-    HIMEM_CHECK(range_offset % CACHE_BLOCKSIZE != 0, "range not aligned to blocksize", ESP_ERR_INVALID_ARG);
-    HIMEM_CHECK(len % CACHE_BLOCKSIZE != 0, "length not aligned to blocksize", ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(ram_offset % CACHE_BLOCKSIZE != 0, ESP_ERR_INVALID_ARG, TAG, "ram offset not aligned to blocksize");
+    ESP_RETURN_ON_FALSE(range_offset % CACHE_BLOCKSIZE != 0, ESP_ERR_INVALID_ARG, TAG, "range not aligned to blocksize");
+    ESP_RETURN_ON_FALSE(len % CACHE_BLOCKSIZE != 0, ESP_ERR_INVALID_ARG, TAG, "length not aligned to blocksize");
     //ram and range should be within allocated range
-    HIMEM_CHECK(ram_block + blockcount > handle->block_ct, "args not in range of phys ram handle", ESP_ERR_INVALID_SIZE);
-    HIMEM_CHECK(range_block + blockcount > range->block_ct, "args not in range of range handle", ESP_ERR_INVALID_SIZE);
+    ESP_RETURN_ON_FALSE(ram_block + blockcount > handle->block_ct, ESP_ERR_INVALID_SIZE, TAG, "args not in range of phys ram handle");
+    ESP_RETURN_ON_FALSE(range_block + blockcount > range->block_ct, ESP_ERR_INVALID_SIZE, TAG, "args not in range of range handle");
 
     //Check if ram blocks aren't already mapped, and if memory range is unmapped
     for (int i = 0; i < blockcount; i++) {
-        HIMEM_CHECK(s_ram_descriptor[handle->block[i + ram_block]].is_mapped, "ram already mapped", ESP_ERR_INVALID_STATE);
-        HIMEM_CHECK(s_range_descriptor[range->block_start + i + range_block].is_mapped, "range already mapped", ESP_ERR_INVALID_STATE);
+        ESP_RETURN_ON_FALSE(s_ram_descriptor[handle->block[i + ram_block]].is_mapped, ESP_ERR_INVALID_STATE, TAG, "ram already mapped");
+        ESP_RETURN_ON_FALSE(s_range_descriptor[range->block_start + i + range_block].is_mapped, ESP_ERR_INVALID_STATE, TAG, "range already mapped");
     }
 
     //Map and mark as mapped
@@ -339,9 +338,9 @@ esp_err_t esp_himem_unmap(esp_himem_rangehandle_t range, void *ptr, size_t len)
     int range_offset = (uint32_t)ptr - VIRT_HIMEM_RANGE_START;
     int range_block = (range_offset / CACHE_BLOCKSIZE) - range->block_start;
     int blockcount = len / CACHE_BLOCKSIZE;
-    HIMEM_CHECK(range_offset % CACHE_BLOCKSIZE != 0, "range offset not block-aligned", ESP_ERR_INVALID_ARG);
-    HIMEM_CHECK(len % CACHE_BLOCKSIZE != 0, "map length not block-aligned", ESP_ERR_INVALID_ARG);
-    HIMEM_CHECK(range_block + blockcount > range->block_ct, "range out of bounds for handle", ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(range_offset % CACHE_BLOCKSIZE != 0, ESP_ERR_INVALID_ARG, TAG, "range offset not block-aligned");
+    ESP_RETURN_ON_FALSE(len % CACHE_BLOCKSIZE != 0, ESP_ERR_INVALID_ARG, TAG, "map length not block-aligned");
+    ESP_RETURN_ON_FALSE(range_block + blockcount > range->block_ct, ESP_ERR_INVALID_ARG, TAG, "range out of bounds for handle");
 
     portENTER_CRITICAL(&spinlock);
     for (int i = 0; i < blockcount; i++) {
