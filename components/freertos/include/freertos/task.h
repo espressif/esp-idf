@@ -203,9 +203,18 @@ typedef enum
  * @endcond
  * \ingroup SchedulerControl
  */
-#define taskENTER_CRITICAL( x )     portENTER_CRITICAL( x )
+#ifdef ESP_PLATFORM
+#define taskENTER_CRITICAL( x )   portENTER_CRITICAL( x )
+#else
+#define taskENTER_CRITICAL( )     portENTER_CRITICAL( )
+#endif //  ESP_PLATFORM
 #define taskENTER_CRITICAL_FROM_ISR( ) portSET_INTERRUPT_MASK_FROM_ISR()
-#define taskENTER_CRITICAL_ISR(mux)     portENTER_CRITICAL_ISR(mux)
+
+#ifdef ESP_PLATFORM
+#define taskENTER_CRITICAL_ISR( x )   portENTER_CRITICAL_ISR( x )
+#else
+#define taskENTER_CRITICAL_ISR( )     portENTER_CRITICAL_ISR( )
+#endif //  ESP_PLATFORM
 
 /**
  * task. h
@@ -221,10 +230,19 @@ typedef enum
  * @endcond
  * \ingroup SchedulerControl
  */
-#define taskEXIT_CRITICAL( x )          portEXIT_CRITICAL( x )
-#define taskEXIT_CRITICAL_FROM_ISR( x ) portCLEAR_INTERRUPT_MASK_FROM_ISR( x )
-#define taskEXIT_CRITICAL_ISR(mux)      portEXIT_CRITICAL_ISR(mux)
 
+#ifdef ESP_PLATFORM
+#define taskEXIT_CRITICAL( x )          portEXIT_CRITICAL( x )
+#else
+#define taskEXIT_CRITICAL( )            portEXIT_CRITICAL( )
+#endif // ESP_PLATFORM
+#define taskEXIT_CRITICAL_FROM_ISR( x ) portCLEAR_INTERRUPT_MASK_FROM_ISR( x )
+
+#ifdef ESP_PLATFORM
+#define taskEXIT_CRITICAL_ISR( x )      portEXIT_CRITICAL_ISR( x )
+#else
+#define taskEXIT_CRITICAL_ISR( )        portEXIT_CRITICAL_ISR( )
+#endif // ESP_PLATFORM
 /**
  * task. h
  *
