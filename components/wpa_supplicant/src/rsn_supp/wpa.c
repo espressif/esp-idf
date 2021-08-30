@@ -1,4 +1,3 @@
-
 /*
  * WPA Supplicant - WPA state machine and EAPOL-Key processing
  * Copyright (c) 2003-2010, Jouni Malinen <j@w1.fi>
@@ -12,6 +11,7 @@
  *
  * See README and COPYING for more details.
  */
+
 #include "utils/includes.h"
 
 #include "utils/common.h"

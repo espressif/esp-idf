@@ -626,7 +626,8 @@ int tls_global_set_verify(void *tls_ctx, int check_crl)
 }
 
 int tls_connection_set_verify(void *tls_ctx, struct tls_connection *conn,
-			      int verify_peer)
+			      int verify_peer, unsigned int flags,
+			      const u8 *session_ctx, size_t session_ctx_len)
 {
 	wpa_printf(MSG_INFO, "TLS: tls_connection_set_verify not supported");
 	return -1;
@@ -903,9 +904,25 @@ static int tls_connection_prf(void *tls_ctx, struct tls_connection *conn,
 }
 
 int tls_connection_export_key(void *tls_ctx, struct tls_connection *conn,
-			      const char *label, u8 *out, size_t out_len)
+			      const char *label, const u8 *context,
+			      size_t context_len, u8 *out, size_t out_len)
 {
 	return tls_connection_prf(tls_ctx, conn, label, 0, out, out_len);
+}
+
+int tls_connection_get_eap_fast_key(void *tls_ctx, struct tls_connection *conn,
+				    u8 *out, size_t out_len)
+{
+	wpa_printf(MSG_INFO, "TLS: tls_connection_get_eap_fast_key not supported, please unset mbedtls crypto and try again");
+	return -1;
+}
+
+int tls_connection_client_hello_ext(void *tls_ctx, struct tls_connection *conn,
+				    int ext_type, const u8 *data,
+				    size_t data_len)
+{
+	wpa_printf(MSG_INFO, "TLS: tls_connection_client_hello_ext not supported, please unset mbedtls crypto and try again");
+	return -1;
 }
 
 int tls_connection_shutdown(void *tls_ctx, struct tls_connection *conn)
