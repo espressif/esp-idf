@@ -447,6 +447,10 @@ void vTimerSetTimerID( TimerHandle_t xTimer,
 BaseType_t xTimerIsTimerActive( TimerHandle_t xTimer ) PRIVILEGED_FUNCTION;
 
 /**
+ * @cond
+ * TaskHandle_t xTimerGetTimerDaemonTaskHandle( void );
+ * @endcond
+ *
  * xTimerGetTimerDaemonTaskHandle() is only available if
  * INCLUDE_xTimerGetTimerDaemonTaskHandle is set to 1 in FreeRTOSConfig.h.
  *
@@ -1254,7 +1258,7 @@ const char * pcTimerGetName( TimerHandle_t xTimer ) PRIVILEGED_FUNCTION; /*lint 
  * void vTimerSetReloadMode( TimerHandle_t xTimer, const UBaseType_t uxAutoReload );
  *
  * Updates a timer to be either an auto-reload timer, in which case the timer
- * automatically resets itself each time it expires, or a one shot timer, in
+ * automatically resets itself each time it expires, or a one-shot timer, in
  * which case the timer will only expire once unless it is manually restarted.
  *
  * @param xTimer The handle of the timer being updated.
@@ -1267,6 +1271,20 @@ const char * pcTimerGetName( TimerHandle_t xTimer ) PRIVILEGED_FUNCTION; /*lint 
  */
 void vTimerSetReloadMode( TimerHandle_t xTimer,
                           const UBaseType_t uxAutoReload ) PRIVILEGED_FUNCTION;
+
+/**
+ * UBaseType_t uxTimerGetReloadMode( TimerHandle_t xTimer );
+ *
+ * Queries a timer to determine if it is an auto-reload timer, in which case the timer
+ * automatically resets itself each time it expires, or a one-shot timer, in
+ * which case the timer will only expire once unless it is manually restarted.
+ *
+ * @param xTimer The handle of the timer being queried.
+ *
+ * @return If the timer is an auto-reload timer then pdTRUE is returned, otherwise
+ * pdFALSE is returned.
+ */
+UBaseType_t uxTimerGetReloadMode( TimerHandle_t xTimer ) PRIVILEGED_FUNCTION;
 
 /**
  * TickType_t xTimerGetPeriod( TimerHandle_t xTimer );
@@ -1314,6 +1332,27 @@ BaseType_t xTimerGenericCommand( TimerHandle_t xTimer,
 #endif
 
 /** @endcond */
+
+#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
+
+    /**
+     * @cond
+     * task.h
+     * <pre>void vApplicationGetTimerTaskMemory( StaticTask_t ** ppxTimerTaskTCBBuffer, StackType_t ** ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize ) </pre>
+     * @endcond
+     *
+     * This function is used to provide a statically allocated block of memory to FreeRTOS to hold the Timer Task TCB.  This function is required when
+     * configSUPPORT_STATIC_ALLOCATION is set.  For more information see this URI: https://www.FreeRTOS.org/a00110.html#configSUPPORT_STATIC_ALLOCATION
+     *
+     * @param ppxTimerTaskTCBBuffer   A handle to a statically allocated TCB buffer
+     * @param ppxTimerTaskStackBuffer A handle to a statically allocated Stack buffer for thie idle task
+     * @param pulTimerTaskStackSize   A pointer to the number of elements that will fit in the allocated stack buffer
+     */
+    void vApplicationGetTimerTaskMemory( StaticTask_t ** ppxTimerTaskTCBBuffer,
+                                          StackType_t ** ppxTimerTaskStackBuffer,
+                                              uint32_t * pulTimerTaskStackSize );
+
+#endif
 
 /* *INDENT-OFF* */
 #ifdef __cplusplus

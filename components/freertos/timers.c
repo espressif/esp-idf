@@ -147,16 +147,6 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
 
 /*-----------------------------------------------------------*/
 
-#if( configSUPPORT_STATIC_ALLOCATION == 1 )
-
-    /* If static allocation is supported then the application must provide the
-     * following callback function - which enables the application to optionally
-     * provide the memory that will be used by the timer task as the task's stack
-     * and TCB. */
-    extern void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer, StackType_t **ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize );
-
-#endif
-
 /*
  * Initialise the infrastructure used by the timer service task if it has not
  * been initialised already.
@@ -471,6 +461,31 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
             }
         }
         taskEXIT_CRITICAL( &xTimerMux );
+    }
+/*-----------------------------------------------------------*/
+
+    UBaseType_t uxTimerGetReloadMode( TimerHandle_t xTimer )
+    {
+        Timer_t * pxTimer = xTimer;
+        UBaseType_t uxReturn;
+
+        configASSERT( xTimer );
+        taskENTER_CRITICAL( &xTimerMux );
+        {
+            if( ( pxTimer->ucStatus & tmrSTATUS_IS_AUTORELOAD ) == 0 )
+            {
+                /* Not an auto-reload timer. */
+                uxReturn = ( UBaseType_t ) pdFALSE;
+            }
+            else
+            {
+                /* Is an auto-reload timer. */
+                uxReturn = ( UBaseType_t ) pdTRUE;
+            }
+        }
+        taskEXIT_CRITICAL( &xTimerMux );
+
+        return uxReturn;
     }
 /*-----------------------------------------------------------*/
 
