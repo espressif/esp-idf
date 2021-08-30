@@ -30,6 +30,7 @@ void eap_peer_unregister_methods(void);
 int eap_peer_tls_register(void);
 int eap_peer_peap_register(void);
 int eap_peer_ttls_register(void);
+int eap_peer_fast_register(void);
 int eap_peer_mschapv2_register(void);
 
 void eap_peer_unregister_methods(void);
