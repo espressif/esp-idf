@@ -163,8 +163,12 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     # Take into account bootloader components configuration files
     idf_build_get_property(bootloader_kconfigs BOOTLOADER_KCONFIGS)
     idf_build_get_property(bootloader_kconfigs_proj BOOTLOADER_KCONFIGS_PROJ)
-    list(APPEND kconfigs "${bootloader_kconfigs}")
-    list(APPEND kconfig_projbuilds "${bootloader_kconfigs_proj}")
+    if(bootloader_kconfigs)
+        list(APPEND kconfigs "${bootloader_kconfigs}")
+    endif()
+    if(bootloader_kconfigs_proj)
+        list(APPEND kconfig_projbuilds "${bootloader_kconfigs_proj}")
+    endif()
 
     # Store the list version of kconfigs and kconfig_projbuilds
     idf_build_set_property(KCONFIGS "${kconfigs}")
