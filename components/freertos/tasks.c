@@ -39,6 +39,18 @@
 #include "timers.h"
 #include "stack_macros.h"
 
+#ifdef ESP_PLATFORM
+#define taskCRITICAL_MUX &xTaskQueueMutex
+#undef taskENTER_CRITICAL
+#undef taskEXIT_CRITICAL
+#undef taskENTER_CRITICAL_ISR
+#undef taskEXIT_CRITICAL_ISR
+#define taskENTER_CRITICAL( )     portENTER_CRITICAL( taskCRITICAL_MUX )
+#define taskEXIT_CRITICAL( )            portEXIT_CRITICAL( taskCRITICAL_MUX )
+#define taskENTER_CRITICAL_ISR( )     portENTER_CRITICAL_ISR( taskCRITICAL_MUX )
+#define taskEXIT_CRITICAL_ISR( )        portEXIT_CRITICAL_ISR( taskCRITICAL_MUX )
+#endif
+
 /* Lint e9021, e961 and e750 are suppressed as a MISRA exception justified
  * because the MPU ports require MPU_WRAPPERS_INCLUDED_FROM_API_FILE to be defined
  * for the header files above, but not in this file, in order to generate the
@@ -358,7 +370,10 @@ PRIVILEGED_DATA static List_t xDelayedTaskList2;                         /*< Del
 PRIVILEGED_DATA static List_t * volatile pxDelayedTaskList;              /*< Points to the delayed task list currently being used. */
 PRIVILEGED_DATA static List_t * volatile pxOverflowDelayedTaskList;      /*< Points to the delayed task list currently being used to hold tasks that have overflowed the current tick count. */
 PRIVILEGED_DATA static List_t xPendingReadyList[ portNUM_PROCESSORS ];                      /*< Tasks that have been readied while the scheduler was suspended.  They will be moved to the ready list when the scheduler is resumed. */
+
+#ifdef ESP_PLATFORM
 PRIVILEGED_DATA static portMUX_TYPE xTaskQueueMutex = portMUX_INITIALIZER_UNLOCKED;
+#endif // ESP_PLATFORM
 
 #if ( INCLUDE_vTaskDelete == 1 )
 
@@ -1173,7 +1188,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
 
     /* Ensure interrupts don't access the task lists while the lists are being
      * updated. */
-    taskENTER_CRITICAL( &xTaskQueueMutex );
+    taskENTER_CRITICAL();
     {
         uxCurrentNumberOfTasks++;
 
@@ -1267,13 +1282,13 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
 
         portSETUP_TCB( pxNewTCB );
     }
-    taskEXIT_CRITICAL( &xTaskQueueMutex );
+    taskEXIT_CRITICAL();
 
     if( xSchedulerRunning != pdFALSE )
     {
         /* If the created task is of a higher priority than the current task
          * then it should run now. */
-        taskENTER_CRITICAL(&xTaskQueueMutex);
+        taskENTER_CRITICAL();
 
         curTCB = pxCurrentTCB[ xCoreID ];
         if( curTCB == NULL || curTCB->uxPriority < pxNewTCB->uxPriority )
@@ -1290,7 +1305,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
         {
             mtCOVERAGE_TEST_MARKER();
         }
-        taskEXIT_CRITICAL(&xTaskQueueMutex);
+        taskEXIT_CRITICAL();
     }
     else
     {
@@ -1308,7 +1323,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
         BaseType_t core;
         BaseType_t xFreeNow = 0;
 
-        taskENTER_CRITICAL( &xTaskQueueMutex );
+        taskENTER_CRITICAL();
         {
             core = xPortGetCoreID();
             curTCB = pxCurrentTCB[core];
@@ -1396,7 +1411,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
 
             traceTASK_DELETE( pxTCB );
         }
-        taskEXIT_CRITICAL( &xTaskQueueMutex );
+        taskEXIT_CRITICAL();
 
         if(xFreeNow == pdTRUE) {
             #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
@@ -1437,7 +1452,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
         configASSERT( ( xTimeIncrement > 0U ) );
         configASSERT( uxSchedulerSuspended[xPortGetCoreID()] == 0 );
 
-        taskENTER_CRITICAL( &xTaskQueueMutex );
+        taskENTER_CRITICAL();
         {
             /* Minor optimisation.  The tick count cannot change in this
              * block. */
@@ -1493,7 +1508,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                 mtCOVERAGE_TEST_MARKER();
             }
         }
-        taskEXIT_CRITICAL( &xTaskQueueMutex );
+        taskEXIT_CRITICAL();
 
         /* Force a reschedule, we may have put ourselves to sleep. */
         portYIELD_WITHIN_API();
@@ -1510,7 +1525,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
         if( xTicksToDelay > ( TickType_t ) 0U )
         {
             configASSERT( uxSchedulerSuspended[xPortGetCoreID()] == 0 );
-            taskENTER_CRITICAL( &xTaskQueueMutex );
+            taskENTER_CRITICAL();
             {
                 traceTASK_DELAY();
 
@@ -1523,7 +1538,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                  * executing task. */
                 prvAddCurrentTaskToDelayedList( xPortGetCoreID(), xTicksToDelay );
             }
-            taskEXIT_CRITICAL( &xTaskQueueMutex );
+            taskEXIT_CRITICAL();
         }
         else
         {
@@ -1547,7 +1562,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
 
         configASSERT( pxTCB );
 
-        taskENTER_CRITICAL( &xTaskQueueMutex );     //Need critical section incase either core context switches in between
+        taskENTER_CRITICAL();     //Need critical section incase either core context switches in between
         if( pxTCB == pxCurrentTCB[xPortGetCoreID()])
         {
             /* The task calling this function is querying its own state. */
@@ -1626,7 +1641,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                 eReturn = eReady;
             }
         }
-        taskEXIT_CRITICAL( &xTaskQueueMutex );
+        taskEXIT_CRITICAL();
 
         return eReturn;
     } /*lint !e818 xTask cannot be a pointer to const because it is a typedef. */
@@ -1641,14 +1656,14 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
         TCB_t const * pxTCB;
         UBaseType_t uxReturn;
 
-        taskENTER_CRITICAL( &xTaskQueueMutex );
+        taskENTER_CRITICAL();
         {
             /* If null is passed in here then it is the priority of the task
              * that called uxTaskPriorityGet() that is being queried. */
             pxTCB = prvGetTCBFromHandle( xTask );
             uxReturn = pxTCB->uxPriority;
         }
-        taskEXIT_CRITICAL( &xTaskQueueMutex );
+        taskEXIT_CRITICAL();
 
         return uxReturn;
     }
@@ -1717,7 +1732,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
             mtCOVERAGE_TEST_MARKER();
         }
 
-        taskENTER_CRITICAL( &xTaskQueueMutex );
+        taskENTER_CRITICAL();
         {
             /* If null is passed in here then it is the priority of the calling
              * task that is being changed. */
@@ -1878,7 +1893,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                 ( void ) uxPriorityUsedOnEntry;
             }
         }
-        taskEXIT_CRITICAL( &xTaskQueueMutex );
+        taskEXIT_CRITICAL();
     }
 
 #endif /* INCLUDE_vTaskPrioritySet */
@@ -1891,7 +1906,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
         TCB_t * pxTCB;
         TCB_t * curTCB;
 
-        taskENTER_CRITICAL( &xTaskQueueMutex );
+        taskENTER_CRITICAL();
         {
             /* If null is passed in here then it is the running task that is
              * being suspended. */
@@ -1934,17 +1949,17 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                 }
             #endif
         }
-        taskEXIT_CRITICAL( &xTaskQueueMutex );
+        taskEXIT_CRITICAL();
 
         if( xSchedulerRunning != pdFALSE )
         {
             /* Reset the next expected unblock time in case it referred to the
              * task that is now in the Suspended state. */
-            taskENTER_CRITICAL( &xTaskQueueMutex );
+            taskENTER_CRITICAL();
             {
                 prvResetNextTaskUnblockTime();
             }
-            taskEXIT_CRITICAL( &xTaskQueueMutex );
+            taskEXIT_CRITICAL();
         }
         else
         {
@@ -1956,9 +1971,9 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
             if( xSchedulerRunning != pdFALSE )
             {
                 /* The current task has just been suspended. */
-                taskENTER_CRITICAL(&xTaskQueueMutex);
+                taskENTER_CRITICAL();
                 BaseType_t suspended = uxSchedulerSuspended[xPortGetCoreID()];
-                taskEXIT_CRITICAL(&xTaskQueueMutex);
+                taskEXIT_CRITICAL();
 
                 configASSERT( suspended == 0 );
                 (void)suspended;
@@ -1975,9 +1990,9 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                      * NULL so when the next task is created pxCurrentTCB will
                      * be set to point to it no matter what its relative priority
                      * is. */
-                    taskENTER_CRITICAL(&xTaskQueueMutex);
+                    taskENTER_CRITICAL();
                     pxCurrentTCB[ xPortGetCoreID() ] = NULL;
-                    taskEXIT_CRITICAL(&xTaskQueueMutex);
+                    taskEXIT_CRITICAL();
                 }
                 else
                 {
@@ -1992,11 +2007,11 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                 /* A task other than the currently running task was suspended,
                  * reset the next expected unblock time in case it referred to the
                  * task that is now in the Suspended state. */
-                taskENTER_CRITICAL(&xTaskQueueMutex);
+                taskENTER_CRITICAL();
                 {
                     prvResetNextTaskUnblockTime();
                 }
-                taskEXIT_CRITICAL(&xTaskQueueMutex);
+                taskEXIT_CRITICAL();
             }
             else
             {
@@ -2063,7 +2078,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
 
         /* It does not make sense to resume the calling task. */
         configASSERT( xTaskToResume );
-        taskENTER_CRITICAL( &xTaskQueueMutex );
+        taskENTER_CRITICAL();
 
         /* The parameter cannot be NULL as it is impossible to resume the
          * currently executing task. */
@@ -2106,7 +2121,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
         {
             mtCOVERAGE_TEST_MARKER();
         }
-        taskEXIT_CRITICAL( &xTaskQueueMutex );
+        taskEXIT_CRITICAL();
     }
 
 #endif /* INCLUDE_vTaskSuspend */
@@ -2140,7 +2155,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
          * https://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html */
         //portASSERT_IF_INTERRUPT_PRIORITY_INVALID();
 
-        taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
+        taskENTER_CRITICAL_ISR();
         {
             if( prvTaskIsTaskSuspended( pxTCB ) != pdFALSE )
             {
@@ -2180,7 +2195,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                 mtCOVERAGE_TEST_MARKER();
             }
         }
-        taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
+        taskEXIT_CRITICAL_ISR();
 
         return xYieldRequired;
     }
@@ -2394,7 +2409,7 @@ void vTaskSuspendAll( void )
     TickType_t xReturn;
 
 
-        taskENTER_CRITICAL(&xTaskQueueMutex);
+        taskENTER_CRITICAL();
         if( pxCurrentTCB[ xPortGetCoreID() ]->uxPriority > tskIDLE_PRIORITY )
         {
             xReturn = 0;
@@ -2421,7 +2436,7 @@ void vTaskSuspendAll( void )
         {
             xReturn = xNextTaskUnblockTime - xTickCount;
         }
-        taskEXIT_CRITICAL(&xTaskQueueMutex);
+        taskEXIT_CRITICAL();
 
         return xReturn;
     }
@@ -2436,7 +2451,7 @@ BaseType_t xTaskResumeAll( void )
     TickType_t xTicksToNextUnblockTime;
 
     /* If uxSchedulerSuspended[xPortGetCoreID()] is zero then this function does not match a
-     * previous call to taskENTER_CRITICAL( &xTaskQueueMutex ). */
+     * previous call to taskENTER_CRITICAL(). */
     configASSERT( uxSchedulerSuspended[xPortGetCoreID()] );
 
     /* It is possible that an ISR caused a task to be removed from an event
@@ -2444,7 +2459,7 @@ BaseType_t xTaskResumeAll( void )
      * removed task will have been added to the xPendingReadyList.  Once the
      * scheduler has been resumed it is safe to move all the pending ready
      * tasks from this list into their appropriate ready list. */
-    taskENTER_CRITICAL( &xTaskQueueMutex );
+    taskENTER_CRITICAL();
     {
         --uxSchedulerSuspended[xPortGetCoreID()];
 
@@ -2555,7 +2570,7 @@ BaseType_t xTaskResumeAll( void )
             mtCOVERAGE_TEST_MARKER();
         }
     }
-    taskEXIT_CRITICAL( &xTaskQueueMutex );
+    taskEXIT_CRITICAL();
 
     return xAlreadyYielded;
 }
@@ -2701,7 +2716,7 @@ char * pcTaskGetName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char 
         /* Task names will be truncated to configMAX_TASK_NAME_LEN - 1 bytes. */
         configASSERT( strlen( pcNameToQuery ) < configMAX_TASK_NAME_LEN );
 
-        taskENTER_CRITICAL( &xTaskQueueMutex );
+        taskENTER_CRITICAL();
         {
             /* Search the ready lists. */
             do
@@ -2747,7 +2762,7 @@ char * pcTaskGetName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char 
                 }
             #endif
         }
-        taskEXIT_CRITICAL( &xTaskQueueMutex );
+        taskEXIT_CRITICAL();
 
         return pxTCB;
     }
@@ -2763,7 +2778,7 @@ char * pcTaskGetName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char 
     {
         UBaseType_t uxTask = 0, uxQueue = configMAX_PRIORITIES;
 
-        taskENTER_CRITICAL( &xTaskQueueMutex );
+        taskENTER_CRITICAL();
         {
             /* Is there a space in the array for each task in the system? */
             if( uxArraySize >= uxCurrentNumberOfTasks )
@@ -2822,7 +2837,7 @@ char * pcTaskGetName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char 
                 mtCOVERAGE_TEST_MARKER();
             }
         }
-        taskEXIT_CRITICAL( &xTaskQueueMutex );
+        taskEXIT_CRITICAL();
 
         return uxTask;
     }
@@ -2860,11 +2875,11 @@ char * pcTaskGetName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char 
         /* Correct the tick count value after a period during which the tick
          * was suppressed.  Note this does *not* call the tick hook function for
          * each stepped tick. */
-        taskENTER_CRITICAL(&xTaskQueueMutex);
+        taskENTER_CRITICAL();
         configASSERT( ( xTickCount + xTicksToJump ) <= xNextTaskUnblockTime );
         xTickCount += xTicksToJump;
         traceINCREASE_TICK_COUNT( xTicksToJump );
-        taskEXIT_CRITICAL(&xTaskQueueMutex);
+        taskEXIT_CRITICAL();
     }
 
 #endif /* configUSE_TICKLESS_IDLE */
@@ -2880,9 +2895,9 @@ BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp )
 
     /* Use xPendedTicks to mimic xTicksToCatchUp number of ticks occuring when
      * the scheduler is suspended so the ticks are executed in xTaskResumeAll(). */
-    taskENTER_CRITICAL( &xTaskQueueMutex );
+    taskENTER_CRITICAL();
     xPendedTicks += xTicksToCatchUp;
-    taskEXIT_CRITICAL( &xTaskQueueMutex );
+    taskEXIT_CRITICAL();
 
     return xYieldRequired;
 }
@@ -2897,7 +2912,7 @@ BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp )
 
         configASSERT( pxTCB );
 
-        taskENTER_CRITICAL( &xTaskQueueMutex );
+        taskENTER_CRITICAL();
         {
             /* A task can only be prematurely removed from the Blocked state if
              * it is actually in the Blocked state. */
@@ -2914,7 +2929,7 @@ BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp )
                  * the event list too.  Interrupts can touch the event list item,
                  * even though the scheduler is suspended, so a critical section
                  * is used. */
-                taskENTER_CRITICAL( &xTaskQueueMutex );
+                taskENTER_CRITICAL();
                 {
                     if( listLIST_ITEM_CONTAINER( &( pxTCB->xEventListItem ) ) != NULL )
                     {
@@ -2926,7 +2941,7 @@ BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp )
                         mtCOVERAGE_TEST_MARKER();
                     }
                 }
-                taskEXIT_CRITICAL( &xTaskQueueMutex );
+                taskEXIT_CRITICAL();
 
                 /* Place the unblocked task into the appropriate ready list. */
                 prvAddTaskToReadyList( pxTCB );
@@ -2960,7 +2975,7 @@ BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp )
                 xReturn = pdFAIL;
             }
         }
-        taskEXIT_CRITICAL( &xTaskQueueMutex );
+        taskEXIT_CRITICAL();
 
         return xReturn;
     }
@@ -2998,7 +3013,7 @@ BaseType_t xTaskIncrementTick( void )
     traceTASK_INCREMENT_TICK( xTickCount );
     if( uxSchedulerSuspended[xPortGetCoreID()] == ( UBaseType_t ) pdFALSE )
     {
-        taskENTER_CRITICAL_ISR( &xTaskQueueMutex );
+        taskENTER_CRITICAL_ISR();
         /* Minor optimisation.  The tick count cannot change in this
          * block. */
         const TickType_t xConstTickCount = xTickCount + ( TickType_t ) 1;
@@ -3113,7 +3128,7 @@ BaseType_t xTaskIncrementTick( void )
                 }
             }
         #endif /* ( ( configUSE_PREEMPTION == 1 ) && ( configUSE_TIME_SLICING == 1 ) ) */
-        taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
+        taskEXIT_CRITICAL_ISR();
     }
     else
     {
@@ -3156,11 +3171,11 @@ BaseType_t xTaskIncrementTick( void )
 
         /* Save the hook function in the TCB.  A critical section is required as
          * the value can be accessed from an interrupt. */
-        taskENTER_CRITICAL( &xTaskQueueMutex );
+        taskENTER_CRITICAL();
         {
             xTCB->pxTaskTag = pxHookFunction;
         }
-        taskEXIT_CRITICAL( &xTaskQueueMutex );
+        taskEXIT_CRITICAL();
     }
 
 #endif /* configUSE_APPLICATION_TASK_TAG */
@@ -3178,11 +3193,11 @@ BaseType_t xTaskIncrementTick( void )
 
         /* Save the hook function in the TCB.  A critical section is required as
          * the value can be accessed from an interrupt. */
-        taskENTER_CRITICAL( &xTaskQueueMutex );
+        taskENTER_CRITICAL();
         {
             xReturn = pxTCB->pxTaskTag;
         }
-        taskEXIT_CRITICAL( &xTaskQueueMutex );
+        taskEXIT_CRITICAL();
 
         return xReturn;
     }
@@ -3280,7 +3295,7 @@ void vTaskSwitchContext( void )
                  * overflows.  The guard against negative values is to protect
                  * against suspect run time stat counter implementations - which
                  * are provided by the application, not the kernel. */
-                taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
+                taskENTER_CRITICAL_ISR();
                 if( ulTotalRunTime > ulTaskSwitchedInTime[ xPortGetCoreID() ] )
                 {
                     pxCurrentTCB[ xPortGetCoreID() ]->ulRunTimeCounter += ( ulTotalRunTime - ulTaskSwitchedInTime[ xPortGetCoreID() ] );
@@ -3289,7 +3304,7 @@ void vTaskSwitchContext( void )
                 {
                     mtCOVERAGE_TEST_MARKER();
                 }
-                taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
+                taskEXIT_CRITICAL_ISR();
                 ulTaskSwitchedInTime[ xPortGetCoreID() ] = ulTotalRunTime;
             }
         #endif /* configGENERATE_RUN_TIME_STATS */
@@ -3301,7 +3316,7 @@ void vTaskSwitchContext( void )
         /* Select a new task to run */
 
         /*
-         We cannot do taskENTER_CRITICAL_ISR(&xTaskQueueMutex); here because it saves the interrupt context to the task tcb, and we're
+         We cannot do taskENTER_CRITICAL_ISR(); here because it saves the interrupt context to the task tcb, and we're
          swapping that out here. Instead, we're going to do the work here ourselves. Because interrupts are already disabled, we only
          need to acquire the mutex.
         */
@@ -3405,9 +3420,11 @@ void vTaskSwitchContext( void )
         traceTASK_SWITCHED_IN();
         xSwitchingContext[ xPortGetCoreID() ] = pdFALSE;
 
+#ifdef ESP_PLATFORM
         //Exit critical region manually as well: release the mux now, interrupts will be re-enabled when we
         //exit the function.
         vPortCPUReleaseMutex( &xTaskQueueMutex );
+#endif // ESP_PLATFORM
 
         #if CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK
         vPortSetStackWatchpoint(pxCurrentTCB[xPortGetCoreID()]->pxStack);
@@ -3421,7 +3438,7 @@ void vTaskSwitchContext( void )
 void vTaskPlaceOnEventList( List_t * const pxEventList, const TickType_t xTicksToWait )
 {
     configASSERT( pxEventList );
-    taskENTER_CRITICAL(&xTaskQueueMutex);
+    taskENTER_CRITICAL();
 
     /* THIS FUNCTION MUST BE CALLED WITH EITHER INTERRUPTS DISABLED OR THE
      * SCHEDULER SUSPENDED AND THE QUEUE BEING ACCESSED LOCKED. */
@@ -3433,14 +3450,14 @@ void vTaskPlaceOnEventList( List_t * const pxEventList, const TickType_t xTicksT
     vListInsert( pxEventList, &( pxCurrentTCB[xPortGetCoreID()]->xEventListItem ) );
 
     prvAddCurrentTaskToDelayedList( xPortGetCoreID(), xTicksToWait);
-    taskEXIT_CRITICAL(&xTaskQueueMutex);
+    taskEXIT_CRITICAL();
 }
 /*-----------------------------------------------------------*/
 
 void vTaskPlaceOnUnorderedEventList( List_t * pxEventList, const TickType_t xItemValue, const TickType_t xTicksToWait )
 {
     configASSERT( pxEventList );
-    taskENTER_CRITICAL(&xTaskQueueMutex);
+    taskENTER_CRITICAL();
 
     /* Store the item value in the event list item.  It is safe to access the
      * event list item here as interrupts won't access the event list item of a
@@ -3455,7 +3472,7 @@ void vTaskPlaceOnUnorderedEventList( List_t * pxEventList, const TickType_t xIte
     vListInsertEnd( pxEventList, &( pxCurrentTCB[xPortGetCoreID()]->xEventListItem ) );
 
     prvAddCurrentTaskToDelayedList( xPortGetCoreID(), xTicksToWait );
-    taskEXIT_CRITICAL(&xTaskQueueMutex);
+    taskEXIT_CRITICAL();
 }
 /*-----------------------------------------------------------*/
 
@@ -3463,7 +3480,7 @@ void vTaskPlaceOnUnorderedEventList( List_t * pxEventList, const TickType_t xIte
 
     void vTaskPlaceOnEventListRestricted( List_t * const pxEventList, TickType_t xTicksToWait, const BaseType_t xWaitIndefinitely )
     {
-        taskENTER_CRITICAL(&xTaskQueueMutex);
+        taskENTER_CRITICAL();
         configASSERT( pxEventList );
 
         /* This function should not be called by application code hence the
@@ -3488,7 +3505,7 @@ void vTaskPlaceOnUnorderedEventList( List_t * pxEventList, const TickType_t xIte
 
         traceTASK_DELAY_UNTIL( );
         prvAddCurrentTaskToDelayedList( xPortGetCoreID(), xTicksToWait );
-        taskEXIT_CRITICAL(&xTaskQueueMutex);
+        taskEXIT_CRITICAL();
     }
 
 #endif /* configUSE_TIMERS */
@@ -3501,7 +3518,7 @@ BaseType_t xTaskRemoveFromEventList( const List_t * const pxEventList )
     BaseType_t xTaskCanBeReady;
     UBaseType_t i, uxTargetCPU;
 
-    taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
+    taskENTER_CRITICAL_ISR();
     /* THIS FUNCTION MUST BE CALLED FROM A CRITICAL SECTION.  It can also be
      * called from a critical section within an ISR. */
 
@@ -3523,7 +3540,7 @@ BaseType_t xTaskRemoveFromEventList( const List_t * const pxEventList )
     }
     else
     {
-        taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
+        taskEXIT_CRITICAL_ISR();
         return pdFALSE;
     }
 
@@ -3593,7 +3610,7 @@ BaseType_t xTaskRemoveFromEventList( const List_t * const pxEventList )
     }
     #endif
 
-    taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
+    taskEXIT_CRITICAL_ISR();
     return xReturn;
 }
 /*-----------------------------------------------------------*/
@@ -3603,7 +3620,7 @@ BaseType_t xTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem, cons
     TCB_t * pxUnblockedTCB;
     BaseType_t xReturn;
 
-    taskENTER_CRITICAL(&xTaskQueueMutex);
+    taskENTER_CRITICAL();
 
     /* Store the new item value in the event list. */
     listSET_LIST_ITEM_VALUE( pxEventListItem, xItemValue | taskEVENT_LIST_ITEM_VALUE_IN_USE );
@@ -3642,7 +3659,7 @@ BaseType_t xTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem, cons
         xReturn = pdFALSE;
     }
 
-    taskEXIT_CRITICAL(&xTaskQueueMutex);
+    taskEXIT_CRITICAL();
     return xReturn;
 }
 /*-----------------------------------------------------------*/
@@ -3650,12 +3667,12 @@ BaseType_t xTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem, cons
 void vTaskSetTimeOutState( TimeOut_t * const pxTimeOut )
 {
     configASSERT( pxTimeOut );
-    taskENTER_CRITICAL( &xTaskQueueMutex );
+    taskENTER_CRITICAL();
     {
         pxTimeOut->xOverflowCount = xNumOfOverflows;
         pxTimeOut->xTimeOnEntering = xTickCount;
     }
-    taskEXIT_CRITICAL( &xTaskQueueMutex );
+    taskEXIT_CRITICAL();
 }
 /*-----------------------------------------------------------*/
 
@@ -3674,7 +3691,7 @@ BaseType_t xTaskCheckForTimeOut( TimeOut_t * const pxTimeOut, TickType_t * const
     configASSERT( pxTimeOut );
     configASSERT( pxTicksToWait );
 
-    taskENTER_CRITICAL( &xTaskQueueMutex );
+    taskENTER_CRITICAL();
     {
         /* Minor optimisation.  The tick count cannot change in this block. */
         const TickType_t xConstTickCount = xTickCount;
@@ -3724,7 +3741,7 @@ BaseType_t xTaskCheckForTimeOut( TimeOut_t * const pxTimeOut, TickType_t * const
             xReturn = pdTRUE;
         }
     }
-    taskEXIT_CRITICAL( &xTaskQueueMutex );
+    taskEXIT_CRITICAL();
 
     return xReturn;
 }
@@ -3872,7 +3889,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 
                 if( xExpectedIdleTime >= configEXPECTED_IDLE_TIME_BEFORE_SLEEP )
                 {
-                    taskENTER_CRITICAL( &xTaskQueueMutex );
+                    taskENTER_CRITICAL();
                     {
                         /* Now the scheduler is suspended, the expected idle
                          * time can be sampled again, and this time its value can
@@ -3896,7 +3913,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
                             mtCOVERAGE_TEST_MARKER();
                         }
                     }
-                    taskEXIT_CRITICAL( &xTaskQueueMutex );
+                    taskEXIT_CRITICAL();
                 }
                 else
                 {
@@ -3916,7 +3933,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
         const UBaseType_t uxNonApplicationTasks = 1;
         eSleepModeStatus eReturn = eStandardSleep;
 
-        taskEXIT_CRITICAL(&xTaskQueueMutex);
+        taskEXIT_CRITICAL();
         if( listCURRENT_LIST_LENGTH( &xPendingReadyList[xPortGetCoreID()] ) != 0 )
         {
             /* A task was made ready while the scheduler was suspended. */
@@ -3942,7 +3959,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
                 mtCOVERAGE_TEST_MARKER();
             }
         }
-        taskEXIT_CRITICAL(&xTaskQueueMutex);
+        taskEXIT_CRITICAL();
 
         return eReturn;
     }
@@ -3960,11 +3977,11 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 
         if( xIndex < configNUM_THREAD_LOCAL_STORAGE_POINTERS )
         {
-            taskENTER_CRITICAL(&xTaskQueueMutex);
+            taskENTER_CRITICAL();
             pxTCB = prvGetTCBFromHandle( xTaskToSet );
             pxTCB->pvThreadLocalStoragePointers[ xIndex ] = pvValue;
             pxTCB->pvThreadLocalStoragePointersDelCallback[ xIndex ] = xDelCallback;
-            taskEXIT_CRITICAL(&xTaskQueueMutex);
+            taskEXIT_CRITICAL();
         }
     }
 
@@ -3983,10 +4000,10 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 
         if( xIndex < configNUM_THREAD_LOCAL_STORAGE_POINTERS )
         {
-            taskENTER_CRITICAL(&xTaskQueueMutex);
+            taskENTER_CRITICAL();
             pxTCB = prvGetTCBFromHandle( xTaskToSet );
             pxTCB->pvThreadLocalStoragePointers[ xIndex ] = pvValue;
-            taskEXIT_CRITICAL(&xTaskQueueMutex);
+            taskEXIT_CRITICAL();
         }
     }
 #endif /* configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS */
@@ -4083,13 +4100,13 @@ static void prvCheckTasksWaitingTermination( void )
             BaseType_t xListIsEmpty;
             BaseType_t core = xPortGetCoreID();
 
-            /* uxDeletedTasksWaitingCleanUp is used to prevent taskENTER_CRITICAL( &xTaskQueueMutex )
+            /* uxDeletedTasksWaitingCleanUp is used to prevent taskENTER_CRITICAL()
              * being called too often in the idle task. */
             while( uxDeletedTasksWaitingCleanUp > ( UBaseType_t ) 0U )
             {
                 TCB_t *pxTCB = NULL;
 
-	            taskENTER_CRITICAL(&xTaskQueueMutex);
+	            taskENTER_CRITICAL();
                 {
                     xListIsEmpty = listLIST_IS_EMPTY( &xTasksWaitingTermination );
                     if( xListIsEmpty == pdFALSE )
@@ -4116,7 +4133,7 @@ static void prvCheckTasksWaitingTermination( void )
                         }
                     }
                 }
-                taskEXIT_CRITICAL(&xTaskQueueMutex);    //Need to call deletion callbacks outside critical section
+                taskEXIT_CRITICAL();    //Need to call deletion callbacks outside critical section
 
                 if (pxTCB != NULL) {    //Call deletion callbacks and free TCB memory
                     #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
@@ -4197,14 +4214,14 @@ static void prvCheckTasksWaitingTermination( void )
                          *  it should be reported as being in the Blocked state. */
                         if( eState == eSuspended )
                         {
-                        taskENTER_CRITICAL( &xTaskQueueMutex );
+                        taskENTER_CRITICAL();
                             {
                                 if( listLIST_ITEM_CONTAINER( &( pxTCB->xEventListItem ) ) != NULL )
                                 {
                                     pxTaskStatus->eCurrentState = eBlocked;
                                 }
                             }
-                        taskEXIT_CRITICAL( &xTaskQueueMutex );
+                        taskEXIT_CRITICAL();
                         }
                     }
                 #endif /* INCLUDE_vTaskSuspend */
@@ -4553,7 +4570,7 @@ TCB_t *pxTCB;
         TCB_t * const pxMutexHolderTCB = pxMutexHolder;
         BaseType_t xReturn = pdFALSE;
 
-        taskENTER_CRITICAL(&xTaskQueueMutex);
+        taskENTER_CRITICAL();
         /* If the mutex was given back by an interrupt while the queue was
          * locked then the mutex holder might now be NULL.  _RB_ Is this still
          * needed as interrupts can no longer use mutexes? */
@@ -4630,7 +4647,7 @@ TCB_t *pxTCB;
         {
             mtCOVERAGE_TEST_MARKER();
         }
-        taskEXIT_CRITICAL(&xTaskQueueMutex);
+        taskEXIT_CRITICAL();
 
         return xReturn;
     }
@@ -4645,7 +4662,7 @@ TCB_t *pxTCB;
         TCB_t * const pxTCB = pxMutexHolder;
         BaseType_t xReturn = pdFALSE;
 
-        taskENTER_CRITICAL(&xTaskQueueMutex);
+        taskENTER_CRITICAL();
         if( pxMutexHolder != NULL )
         {
             /* A task can only have an inherited priority if it holds the mutex.
@@ -4712,7 +4729,7 @@ TCB_t *pxTCB;
         {
             mtCOVERAGE_TEST_MARKER();
         }
-        taskEXIT_CRITICAL(&xTaskQueueMutex);
+        taskEXIT_CRITICAL();
 
         return xReturn;
     }
@@ -4729,7 +4746,7 @@ TCB_t *pxTCB;
         UBaseType_t uxPriorityUsedOnEntry, uxPriorityToUse;
         const UBaseType_t uxOnlyOneMutexHeld = ( UBaseType_t ) 1;
 
-        taskENTER_CRITICAL(&xTaskQueueMutex);
+        taskENTER_CRITICAL();
         if( pxMutexHolder != NULL )
         {
             /* If pxMutexHolder is not NULL then the holder must hold at least
@@ -4822,7 +4839,7 @@ TCB_t *pxTCB;
         {
             mtCOVERAGE_TEST_MARKER();
         }
-        taskEXIT_CRITICAL(&xTaskQueueMutex);
+        taskEXIT_CRITICAL();
     }
 
 #endif /* configUSE_MUTEXES */
@@ -5156,13 +5173,13 @@ TickType_t uxTaskResetEventItemValue( void )
 {
     TickType_t uxReturn;
 
-    taskENTER_CRITICAL(&xTaskQueueMutex);
+    taskENTER_CRITICAL();
     uxReturn = listGET_LIST_ITEM_VALUE( &( pxCurrentTCB[ xPortGetCoreID() ]->xEventListItem ) );
 
     /* Reset the event list item to its normal value - so it can be used with
      * queues and semaphores. */
     listSET_LIST_ITEM_VALUE( &( pxCurrentTCB[ xPortGetCoreID() ]->xEventListItem ), ( ( TickType_t ) configMAX_PRIORITIES - ( TickType_t ) pxCurrentTCB[ xPortGetCoreID() ]->uxPriority ) ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
-    taskEXIT_CRITICAL(&xTaskQueueMutex);
+    taskEXIT_CRITICAL();
 
     return uxReturn;
 }
@@ -5176,13 +5193,13 @@ TickType_t uxTaskResetEventItemValue( void )
 
         /* If xSemaphoreCreateMutex() is called before any tasks have been created
          * then pxCurrentTCB will be NULL. */
-        taskENTER_CRITICAL(&xTaskQueueMutex);
+        taskENTER_CRITICAL();
         if( pxCurrentTCB[ xPortGetCoreID() ] != NULL )
         {
             ( pxCurrentTCB[ xPortGetCoreID() ]->uxMutexesHeld )++;
         }
         curTCB = pxCurrentTCB[ xPortGetCoreID() ];
-        taskEXIT_CRITICAL(&xTaskQueueMutex);
+        taskEXIT_CRITICAL();
 
         return curTCB;
     }
@@ -5196,7 +5213,7 @@ TickType_t uxTaskResetEventItemValue( void )
     {
     uint32_t ulReturn;
 
-        taskENTER_CRITICAL( &xTaskQueueMutex );
+        taskENTER_CRITICAL();
         {
             /* Only block if the notification count is not already non-zero. */
             if( pxCurrentTCB[xPortGetCoreID()]->ulNotifiedValue == 0UL )
@@ -5225,9 +5242,9 @@ TickType_t uxTaskResetEventItemValue( void )
                 mtCOVERAGE_TEST_MARKER();
             }
         }
-        taskEXIT_CRITICAL( &xTaskQueueMutex );
+        taskEXIT_CRITICAL();
 
-        taskENTER_CRITICAL( &xTaskQueueMutex );
+        taskENTER_CRITICAL();
         {
             traceTASK_NOTIFY_TAKE();
             ulReturn = pxCurrentTCB[xPortGetCoreID()]->ulNotifiedValue;
@@ -5250,7 +5267,7 @@ TickType_t uxTaskResetEventItemValue( void )
 
             pxCurrentTCB[xPortGetCoreID()]->ucNotifyState = taskNOT_WAITING_NOTIFICATION;
         }
-        taskEXIT_CRITICAL( &xTaskQueueMutex );
+        taskEXIT_CRITICAL();
 
         return ulReturn;
     }
@@ -5264,7 +5281,7 @@ TickType_t uxTaskResetEventItemValue( void )
     {
     BaseType_t xReturn;
 
-        taskENTER_CRITICAL( &xTaskQueueMutex );
+        taskENTER_CRITICAL();
         {
             /* Only block if a notification is not already pending. */
             if( pxCurrentTCB[xPortGetCoreID()]->ucNotifyState != taskNOTIFICATION_RECEIVED )
@@ -5298,9 +5315,9 @@ TickType_t uxTaskResetEventItemValue( void )
                 mtCOVERAGE_TEST_MARKER();
             }
         }
-        taskEXIT_CRITICAL( &xTaskQueueMutex );
+        taskEXIT_CRITICAL();
 
-        taskENTER_CRITICAL( &xTaskQueueMutex );
+        taskENTER_CRITICAL();
         {
             traceTASK_NOTIFY_WAIT();
 
@@ -5330,7 +5347,7 @@ TickType_t uxTaskResetEventItemValue( void )
 
             pxCurrentTCB[xPortGetCoreID()]->ucNotifyState = taskNOT_WAITING_NOTIFICATION;
         }
-        taskEXIT_CRITICAL( &xTaskQueueMutex );
+        taskEXIT_CRITICAL();
 
         return xReturn;
     }
@@ -5349,7 +5366,7 @@ TickType_t uxTaskResetEventItemValue( void )
         configASSERT( xTaskToNotify );
         pxTCB = xTaskToNotify;
 
-        taskENTER_CRITICAL( &xTaskQueueMutex );
+        taskENTER_CRITICAL();
         {
             if( pulPreviousNotificationValue != NULL )
             {
@@ -5448,7 +5465,7 @@ TickType_t uxTaskResetEventItemValue( void )
                 mtCOVERAGE_TEST_MARKER();
             }
         }
-        taskEXIT_CRITICAL( &xTaskQueueMutex );
+        taskEXIT_CRITICAL();
 
         return xReturn;
     }
@@ -5486,7 +5503,7 @@ TickType_t uxTaskResetEventItemValue( void )
 
         pxTCB = xTaskToNotify;
 
-        taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
+        taskENTER_CRITICAL_ISR();
         {
             if( pulPreviousNotificationValue != NULL )
             {
@@ -5576,7 +5593,7 @@ TickType_t uxTaskResetEventItemValue( void )
 
             }
         }
-        taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
+        taskEXIT_CRITICAL_ISR();
 
         return xReturn;
     }
@@ -5614,7 +5631,7 @@ TickType_t uxTaskResetEventItemValue( void )
 
         pxTCB = xTaskToNotify;
 
-        taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
+        taskENTER_CRITICAL_ISR();
         {
             ucOriginalNotifyState = pxTCB->ucNotifyState;
             pxTCB->ucNotifyState = taskNOTIFICATION_RECEIVED;
@@ -5665,7 +5682,7 @@ TickType_t uxTaskResetEventItemValue( void )
 
             }
         }
-        taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
+        taskEXIT_CRITICAL_ISR();
     }
 
 #endif /* configUSE_TASK_NOTIFICATIONS */
@@ -5683,7 +5700,7 @@ TickType_t uxTaskResetEventItemValue( void )
         its notification state cleared. */
         pxTCB = prvGetTCBFromHandle( xTask );
 
-        taskENTER_CRITICAL( &xTaskQueueMutex );
+        taskENTER_CRITICAL();
         {
             if( pxTCB->ucNotifyState == taskNOTIFICATION_RECEIVED )
             {
@@ -5695,7 +5712,7 @@ TickType_t uxTaskResetEventItemValue( void )
                 xReturn = pdFAIL;
             }
         }
-        taskEXIT_CRITICAL( &xTaskQueueMutex );
+        taskEXIT_CRITICAL();
 
         return xReturn;
     }
@@ -5707,9 +5724,9 @@ TickType_t uxTaskResetEventItemValue( void )
 
     uint32_t ulTaskGetIdleRunTimeCounter( void )
     {
-        taskENTER_CRITICAL(&xTaskQueueMutex);
+        taskENTER_CRITICAL();
         tskTCB *pxTCB = (tskTCB *)xIdleTaskHandle[xPortGetCoreID()];
-        taskEXIT_CRITICAL(&xTaskQueueMutex);
+        taskEXIT_CRITICAL();
 
         return pxTCB->ulRunTimeCounter;
     }
