@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdint.h>
 #include <string.h>
@@ -30,7 +22,9 @@
 #include "driver/periph_ctrl.h"
 #include "hcd.h"
 #include "usb_private.h"
-#include "usb.h"
+#include "usb/usb_types_ch9.h"
+
+#include "esp_rom_sys.h"
 
 // ----------------------------------------------------- Macros --------------------------------------------------------
 
@@ -219,13 +213,11 @@ typedef struct {
     } flags;
     union {
         struct {
-            uint32_t stop_idx: 8;           //The descriptor index when the channel was halted
             uint32_t executing: 1;          //The buffer is currently executing
-            uint32_t error_occurred: 1;     //An error occurred
-            uint32_t cancelled: 1;          //The buffer was actively cancelled
-            uint32_t reserved5: 5;
-            hcd_pipe_state_t pipe_state: 8; //The pipe's state when the error occurred
-            hcd_pipe_event_t pipe_event: 8; //The pipe event when the error occurred
+            uint32_t reserved7: 7;
+            uint32_t stop_idx: 8;           //The descriptor index when the channel was halted
+            hcd_pipe_event_t pipe_event: 8; //The pipe event when the buffer was done
+            uint32_t reserved8: 8;
         };
         uint32_t val;
     } status_flags;                         //Status flags for the buffer
@@ -236,8 +228,8 @@ typedef struct {
  */
 struct pipe_obj {
     //URB queueing related
-    TAILQ_HEAD(tailhead_urb_pending, urb_obj) pending_urb_tailq;
-    TAILQ_HEAD(tailhead_urb_done, urb_obj) done_urb_tailq;
+    TAILQ_HEAD(tailhead_urb_pending, urb_s) pending_urb_tailq;
+    TAILQ_HEAD(tailhead_urb_done, urb_s) done_urb_tailq;
     int num_urb_pending;
     int num_urb_done;
     //Multi-buffer control
@@ -268,13 +260,12 @@ struct pipe_obj {
     TaskHandle_t task_waiting_pipe_notif;   //Task handle used for internal pipe events
     union {
         struct {
-            uint32_t waiting_xfer_done: 1;
-            uint32_t paused: 1;
+            uint32_t waiting_halt: 1;
             uint32_t pipe_cmd_processing: 1;
-            uint32_t is_active: 1;
+            uint32_t has_urb: 1;            //Indicates there is at least one URB either pending, inflight, or done
             uint32_t persist: 1;            //indicates that this pipe should persist through a run-time port reset
             uint32_t reset_lock: 1;         //Indicates that this pipe is undergoing a run-time reset
-            uint32_t reserved26: 26;
+            uint32_t reserved27: 27;
         };
         uint32_t val;
     } cs_flags;
@@ -305,17 +296,17 @@ struct port_obj {
             uint32_t event_pending: 1;              //The port has an event that needs to be handled
             uint32_t event_processing: 1;           //The port is current processing (handling) an event
             uint32_t cmd_processing: 1;             //Used to indicate command handling is ongoing
-            uint32_t waiting_all_pipes_pause: 1;    //Waiting for all pipes routed through this port to be paused
             uint32_t disable_requested: 1;
             uint32_t conn_dev_ena: 1;               //Used to indicate the port is connected to a device that has been reset
             uint32_t periodic_scheduling_enabled: 1;
-            uint32_t reserved9:9;
-            uint32_t num_pipes_waiting_pause: 16;
+            uint32_t reserved26: 26;
         };
         uint32_t val;
     } flags;
     bool initialized;
-    hcd_port_fifo_bias_t fifo_bias;
+    //FIFO biasing related
+    const usbh_hal_fifo_config_t *fifo_config;
+    const fifo_mps_limits_t *fifo_mps_limits;
     //Port callback and context
     hcd_port_callback_t callback;
     void *callback_arg;
@@ -400,13 +391,30 @@ static void _buffer_exec(pipe_t *pipe);
  * @brief Check if a buffer as completed execution
  *
  * This should only be called after receiving a USBH_HAL_CHAN_EVENT_CPLT event to check if a buffer is actually
- * done. Buffers that aren't complete (such as Control transfers) will be continued automatically.
+ * done.
  *
  * @param pipe Pipe object
  * @return true Buffer complete
  * @return false Buffer not complete
  */
-static bool _buffer_check_done(pipe_t *pipe);
+static inline bool _buffer_check_done(pipe_t *pipe)
+{
+    if (pipe->ep_char.type != USB_PRIV_XFER_TYPE_CTRL) {
+        return true;
+    }
+    //Only control transfers need to be continued
+    dma_buffer_block_t *buffer_inflight = pipe->buffers[pipe->multi_buffer_control.rd_idx];
+    return (buffer_inflight->flags.ctrl.cur_stg == 2);
+}
+
+/**
+ * @brief Continue execution of a buffer
+ *
+ * This should only be called after checking if a buffer has completed execution using _buffer_check_done()
+ *
+ * @param pipe Pipe object
+ */
+static void _buffer_exec_cont(pipe_t *pipe);
 
 /**
  * @brief Marks the last executed buffer as complete
@@ -415,40 +423,14 @@ static bool _buffer_check_done(pipe_t *pipe);
  *
  * @param pipe Pipe object
  * @param stop_idx Descriptor index when the buffer stopped execution
+ * @param pipe_event Pipe event that caused the buffer to be complete
  */
-static inline void _buffer_done(pipe_t *pipe, int stop_idx)
+static inline void _buffer_done(pipe_t *pipe, int stop_idx, hcd_pipe_event_t pipe_event)
 {
-    //Store the stop_idx for later parsing
+    //Store the stop_idx and pipe_event for later parsing
     dma_buffer_block_t *buffer_done = pipe->buffers[pipe->multi_buffer_control.rd_idx];
     buffer_done->status_flags.executing = 0;
-    buffer_done->status_flags.error_occurred = 0;
     buffer_done->status_flags.stop_idx = stop_idx;
-    pipe->multi_buffer_control.rd_idx++;
-    pipe->multi_buffer_control.buffer_num_to_exec--;
-    pipe->multi_buffer_control.buffer_num_to_parse++;
-    pipe->multi_buffer_control.buffer_is_executing = 0;
-}
-
-/**
- * @brief Marks the last executed buffer as complete due to an error
- *
- * This should be called on a pipe that has received a USBH_HAL_CHAN_EVENT_ERROR event
- *
- * @param pipe Pipe object
- * @param stop_idx Descriptor index when the buffer stopped execution
- * @param pipe_state State of the pipe after the error
- * @param pipe_event Error event
- * @param cancelled Whether the pipe stopped due to cancellation
- */
-static inline void _buffer_done_error(pipe_t *pipe, int stop_idx, hcd_pipe_state_t pipe_state, hcd_pipe_event_t pipe_event, bool cancelled)
-{
-    //Mark the buffer as erroneous for later parsing
-    dma_buffer_block_t *buffer_done = pipe->buffers[pipe->multi_buffer_control.rd_idx];
-    buffer_done->status_flags.executing = 0;
-    buffer_done->status_flags.error_occurred = 1;
-    buffer_done->status_flags.cancelled = cancelled;
-    buffer_done->status_flags.stop_idx = stop_idx;
-    buffer_done->status_flags.pipe_state = pipe_state;
     buffer_done->status_flags.pipe_event = pipe_event;
     pipe->multi_buffer_control.rd_idx++;
     pipe->multi_buffer_control.buffer_num_to_exec--;
@@ -493,49 +475,12 @@ static void _buffer_parse(pipe_t *pipe);
  *
  * @param pipe Pipe object
  * @param cancelled Whether this flush is due to cancellation
+ * @return true One or more buffers were flushed
+ * @return false There were no buffers that needed to be flushed
  */
-static void _buffer_flush_all(pipe_t *pipe, bool cancelled);
+static bool _buffer_flush_all(pipe_t *pipe, bool cancelled);
 
 // ------------------------ Pipe ---------------------------
-
-/**
- * @brief Wait until a pipe's in-flight URB is done
- *
- * If the pipe has an in-flight URB, this function will block until it is done (via a internal pipe event).
- * If the pipe has no in-flight URB, this function do nothing and return immediately.
- * If the pipe's state changes unexpectedly, this function will return false.
- *
- * Also parses all buffers on exit
- *
- * @note This function is blocking (will exit and re-enter the critical section to do so)
- *
- * @param pipe Pipe object
- * @return true Pipes in-flight URB is done
- * @return false Pipes state unexpectedly changed
- */
-static bool _pipe_wait_done(pipe_t *pipe);
-
-/**
- * @brief Retires all URBs (those that were previously in-flight or pending)
- *
- * Retiring all URBs will result in any pending URB being moved to the done tailq. This function will update the IPR
- * status of each URB.
- *  - If the retiring is self-initiated (i.e., due to a pipe command), the URB status will be set to USB_TRANSFER_STATUS_CANCELED.
- *  - If the retiring is NOT self-initiated (i.e., the pipe is no longer valid), the URB status will be set to USB_TRANSFER_STATUS_NO_DEVICE
- *
- * Entry:
- * - There can be no in-flight URB (must already be parsed and returned to done queue)
- * - All buffers must be parsed
- * Exit:
- * - If there was an in-flight URB, it is parsed and returned to the done queue
- * - If there are any pending URBs:
- *      - They are moved to the done tailq
- *
- * @param pipe Pipe object
- * @param cancelled Are we actively Pipe retire is initialized by the user due to a command, thus URB are
- *                  actively cancelled.
- */
-static void _pipe_retire(pipe_t *pipe, bool self_initiated);
 
 /**
  * @brief Decode a HAL channel error to the corresponding pipe event
@@ -545,58 +490,46 @@ static void _pipe_retire(pipe_t *pipe, bool self_initiated);
  */
 static inline hcd_pipe_event_t pipe_decode_error_event(usbh_hal_chan_error_t chan_error);
 
+/**
+ * @brief Halt a pipe
+ *
+ * - Attempts to halt a pipe. Pipe must be active in order to be halted
+ * - If the underlying channel has an ongoing transfer, a halt will be requested, then the function will block until the
+ *   channel indicates it is halted
+ * - If the channel is no on-going transfer, the pipe will simply be marked has halted (thus preventing any further URBs
+ *   from being enqueued)
+ *
+ * @note This function can block
+ * @param pipe Pipe object
+ * @return esp_err_t
+ */
+static esp_err_t _pipe_cmd_halt(pipe_t *pipe);
+
+/**
+ * @brief Flush a pipe
+ *
+ * - Flushing a pipe causes all of its pending URBs to be become done, thus allowing them to be dequeued
+ * - The pipe must be halted in order to be flushed
+ * - The pipe callback will be run if one or more URBs become done
+ *
+ * @param pipe Pipe object
+ * @return esp_err_t
+ */
+static esp_err_t _pipe_cmd_flush(pipe_t *pipe);
+
+/**
+ * @brief Clear a pipe from its halt
+ *
+ * - Pipe must be halted in order to be cleared
+ * - Clearing a pipe makes it active again
+ * - If there are any enqueued URBs, they will executed
+ *
+ * @param pipe Pipe object
+ * @return esp_err_t
+ */
+static esp_err_t _pipe_cmd_clear(pipe_t *pipe);
+
 // ------------------------ Port ---------------------------
-
-/**
- * @brief Invalidates all the pipes routed through a port
- *
- * This should be called when port or its connected device is no longer valid (e.g., the port is suddenly reset/disabled
- * or the device suddenly disconnects)
- *
- * @note This function may run one or more callbacks, and will exit and enter the critical section to do so
- *
- * Entry:
- *  - The port or its connected device is no longer valid. This guarantees that none of the pipes will be transferring
- * Exit:
- *  - Each pipe will have any pending URBs moved to their respective done tailq
- *  - Each pipe will be put into the invalid state
- *  - Generate a HCD_PIPE_EVENT_INVALID event on each pipe and run their respective callbacks
- *
- * @param port Port object
- */
-static void _port_invalidate_all_pipes(port_t *port);
-
-/**
- * @brief Pause all pipes routed through a port
- *
- * Call this before attempting to reset or suspend a port
- *
- * Entry:
- *  - The port is in the HCD_PORT_STATE_ENABLED state (i.e., there is a connected device which has been reset)
- * Exit:
- *  - All pipes routed through the port have either paused, or are waiting to complete their in-flight URBs before pausing
- *  - If waiting for one or more pipes to pause, _internal_port_event_wait() must be called after this function returns
- *
- * @param port Port object
- * @return true All pipes have been paused
- * @return false Need to wait for one or more pipes to pause. Call _internal_port_event_wait() afterwards
- */
-static bool _port_pause_all_pipes(port_t *port);
-
-/**
- * @brief Un-pause all pipes routed through a port
- *
- * Call this before after coming out of a port reset or resume.
- *
- * Entry:
- *  - The port is in the HCD_PORT_STATE_ENABLED state
- *  - All pipes are paused
- * Exit:
- *  - All pipes un-paused. If those pipes have pending URBs, they will be started.
- *
- * @param port Port object
- */
-static void _port_unpause_all_pipes(port_t *port);
 
 /**
  * @brief Prepare persistent pipes for reset
@@ -621,72 +554,13 @@ static bool _port_persist_all_pipes(port_t *port);
 static void _port_recover_all_pipes(port_t *port);
 
 /**
- * @brief Send a reset condition on a port's bus
- *
- * Entry:
- *  - The port must be in the HCD_PORT_STATE_ENABLED or HCD_PORT_STATE_DISABLED state
- * Exit:
- * - Reset condition sent on the port's bus
- *
- * @note This function is blocking (will exit and re-enter the critical section to do so)
+ * @brief Checks if all pipes are in the halted state
  *
  * @param port Port object
- * @return true Reset condition successfully sent
- * @return false Failed to send reset condition due to unexpected port state
+ * @return true All pipes are halted
+ * @return false Not all pipes are halted
  */
-static bool _port_bus_reset(port_t *port);
-
-/**
- * @brief Send a suspend condition on a port's bus
- *
- * This function will first pause pipes routed through a port, and then send a suspend condition.
- *
- * Entry:
- *  - The port must be in the HCD_PORT_STATE_ENABLED state
- * Exit:
- *  - All pipes paused and the port is put into the suspended state
- *
- * @note This function is blocking (will exit and re-enter the critical section to do so)
- *
- * @param port Port object
- * @return true Suspend condition successfully sent. Port is now in the HCD_PORT_STATE_SUSPENDED state
- * @return false Failed to send a suspend condition due to unexpected port state
- */
-static bool _port_bus_suspend(port_t *port);
-
-/**
- * @brief Send a resume condition on a port's bus
- *
- * This function will send a resume condition, and then un-pause all the pipes routed through a port
- *
- * Entry:
- *  - The port must be in the HCD_PORT_STATE_SUSPENDED state
- * Exit:
- *  - The port is put into the enabled state and all pipes un-paused
- *
- * @note This function is blocking (will exit and re-enter the critical section to do so)
- *
- * @param port Port object
- * @return true Resume condition successfully sent. Port is now in the HCD_PORT_STATE_ENABLED state
- * @return false Failed to send a resume condition due to unexpected port state.
- */
-static bool _port_bus_resume(port_t *port);
-
-/**
- * @brief Disable a port
- *
- * Entry:
- *  - The port must be in the HCD_PORT_STATE_ENABLED or HCD_PORT_STATE_SUSPENDED state
- * Exit:
- *  - All pipes paused (should already be paused if port was suspended), and the port is put into the disabled state.
- *
- * @note This function is blocking (will exit and re-enter the critical section to do so)
- *
- * @param port Port object
- * @return true Port successfully disabled
- * @return false Port to disable port due to unexpected port state
- */
-static bool _port_disable(port_t *port);
+static bool _port_check_all_pipes_halted(port_t *port);
 
 /**
  * @brief Debounce port after a connection or disconnection event
@@ -694,11 +568,76 @@ static bool _port_disable(port_t *port);
  * This function should be called after a port connection or disconnect event. This function will execute a debounce
  * delay then check the actual connection/disconnections state.
  *
+ * @note This function can block
  * @param port Port object
  * @return true A device is connected
  * @return false No device connected
  */
 static bool _port_debounce(port_t *port);
+
+/**
+ * @brief Power ON the port
+ *
+ * @param port Port object
+ * @return esp_err_t
+ */
+static esp_err_t _port_cmd_power_on(port_t *port);
+
+/**
+ * @brief Power OFF the port
+ *
+ * - If a device is currently connected, this function will cause a disconnect event
+ *
+ * @param port Port object
+ * @return esp_err_t
+ */
+static esp_err_t _port_cmd_power_off(port_t *port);
+
+/**
+ * @brief Reset the port
+ *
+ * - This function issues a reset signal using the timings specified by the USB2.0 spec
+ *
+ * @note This function can block
+ * @param port Port object
+ * @return esp_err_t
+ */
+static esp_err_t _port_cmd_reset(port_t *port);
+
+/**
+ * @brief Suspend the port
+ *
+ * - Port must be enabled in order to to be suspended
+ * - All pipes must be halted for the port to be suspended
+ * - Suspending the port stops Keep Alive/SOF from being sent to the connected device
+ *
+ * @param port Port object
+ * @return esp_err_t
+ */
+static esp_err_t _port_cmd_bus_suspend(port_t *port);
+
+/**
+ * @brief Resume the port
+ *
+ * - Port must be suspended in order to be resumed
+ *
+ * @note This function can block
+ * @param port Port object
+ * @return esp_err_t
+ */
+static esp_err_t _port_cmd_bus_resume(port_t *port);
+
+/**
+ * @brief Disable the port
+ *
+ * - All pipes must be halted for the port to be disabled
+ * - The port must be enabled or suspended in order to be disabled
+ *
+ * @note This function can block
+ * @param port Port object
+ * @return esp_err_t
+ */
+static esp_err_t _port_cmd_disable(port_t *port);
 
 // ----------------------- Events --------------------------
 
@@ -822,14 +761,8 @@ static hcd_port_event_t _intr_hdlr_hprt(port_t *port, usbh_hal_port_event_t hal_
             break;
         }
         case USBH_HAL_PORT_EVENT_DISCONN: {
-            if (port->flags.conn_dev_ena) {
-                //The port was previously enabled, so this is a sudden disconnection
-                port->state = HCD_PORT_STATE_RECOVERY;
-                port_event = HCD_PORT_EVENT_SUDDEN_DISCONN;
-            } else {
-                //For normal disconnections, don't update state immediately as we still need to debounce.
-                port_event = HCD_PORT_EVENT_DISCONNECTION;
-            }
+            port->state = HCD_PORT_STATE_RECOVERY;
+            port_event = HCD_PORT_EVENT_DISCONNECTION;
             port->flags.conn_dev_ena = 0;
             break;
         }
@@ -892,31 +825,27 @@ static hcd_pipe_event_t _intr_hdlr_chan(pipe_t *pipe, usbh_hal_chan_t *chan_obj,
 {
     usbh_hal_chan_event_t chan_event = usbh_hal_chan_decode_intr(chan_obj);
     hcd_pipe_event_t event = HCD_PIPE_EVENT_NONE;
-    //Check the the pipe's port still has a connected and enabled device before processing the interrupt
-    if (!pipe->port->flags.conn_dev_ena) {
-        return event;   //Treat as a no event.
-    }
-    bool handle_waiting_xfer_done = false;
+
     switch (chan_event) {
         case USBH_HAL_CHAN_EVENT_CPLT: {
             if (!_buffer_check_done(pipe)) {
+                _buffer_exec_cont(pipe);
                 break;
             }
             pipe->last_event = HCD_PIPE_EVENT_URB_DONE;
             event = pipe->last_event;
             //Mark the buffer as done
             int stop_idx = usbh_hal_chan_get_qtd_idx(chan_obj);
-            _buffer_done(pipe, stop_idx);
-            //First check if there is another buffer we can execute
-            if (_buffer_can_exec(pipe) && !pipe->cs_flags.waiting_xfer_done) {
+            _buffer_done(pipe, stop_idx, pipe->last_event);
+            //First check if there is another buffer we can execute. But we only want to execute if there's still a valid device
+            if (_buffer_can_exec(pipe) && pipe->port->flags.conn_dev_ena) {
                 //If the next buffer is filled and ready to execute, execute it
                 _buffer_exec(pipe);
             }
             //Handle the previously done buffer
             _buffer_parse(pipe);
-            if (pipe->cs_flags.waiting_xfer_done) {
-                handle_waiting_xfer_done = true;
-            } else if (_buffer_can_fill(pipe)) {
+            //Check to see if we can fill another buffer. But we only want to fill if there is still a valid device
+            if (_buffer_can_fill(pipe) && pipe->port->flags.conn_dev_ena) {
                 //Now that we've parsed a buffer, see if another URB can be filled in its place
                 _buffer_fill(pipe);
             }
@@ -931,38 +860,32 @@ static hcd_pipe_event_t _intr_hdlr_chan(pipe_t *pipe, usbh_hal_chan_t *chan_obj,
             pipe->state = HCD_PIPE_STATE_HALTED;
             //Mark the buffer as done with an error
             int stop_idx = usbh_hal_chan_get_qtd_idx(chan_obj);
-            _buffer_done_error(pipe, stop_idx, pipe->state, pipe->last_event, false);
+            _buffer_done(pipe, stop_idx, pipe->last_event);
             //Parse the buffer
             _buffer_parse(pipe);
-            if (pipe->cs_flags.waiting_xfer_done) {
-                handle_waiting_xfer_done = true;
-            }
+            break;
+        }
+        case USBH_HAL_CHAN_EVENT_HALT_REQ: {
+            assert(pipe->cs_flags.waiting_halt);
+            //We've halted a transfer, so we need to trigger the pipe callback
+            pipe->last_event = HCD_PIPE_EVENT_URB_DONE;
+            event = pipe->last_event;
+            //Halt request event is triggered when packet is successful completed. But just treat all halted transfers as errors
+            pipe->state = HCD_PIPE_STATE_HALTED;
+            int stop_idx = usbh_hal_chan_get_qtd_idx(chan_obj);
+            _buffer_done(pipe, stop_idx, HCD_PIPE_EVENT_NONE);
+            //Parse the buffer
+            _buffer_parse(pipe);
+            //Notify the task waiting for the pipe halt
+            *yield |= _internal_pipe_event_notify(pipe, true);
             break;
         }
         case USBH_HAL_CHAN_EVENT_NONE: {
             break;  //Nothing to do
         }
-        case USBH_HAL_CHAN_EVENT_HALT_REQ:  //We currently don't halt request so this event should never occur
         default:
             abort();
             break;
-    }
-    if (handle_waiting_xfer_done) {
-        //A port/pipe command is waiting for this pipe to complete its transfer. So don't load the next transfer
-        pipe->cs_flags.waiting_xfer_done = 0;
-        if (pipe->port->flags.waiting_all_pipes_pause) {
-            //Port command is waiting for all pipes to be paused
-            pipe->cs_flags.paused = 1;
-            pipe->port->flags.num_pipes_waiting_pause--;
-            if (pipe->port->flags.num_pipes_waiting_pause == 0) {
-                //All pipes have finished pausing, Notify the blocked port command
-                pipe->port->flags.waiting_all_pipes_pause = 0;
-                *yield |= _internal_port_event_notify_from_isr(pipe->port);
-            }
-        } else {
-            //Pipe command is waiting for transfer to complete
-            *yield |= _internal_pipe_event_notify(pipe, true);
-        }
     }
     return event;
 }
@@ -1138,94 +1061,7 @@ esp_err_t hcd_uninstall(void)
 
 // ------------------------------------------------------ Port ---------------------------------------------------------
 
-// ----------------------- Private -------------------------
-
-static void _port_invalidate_all_pipes(port_t *port)
-{
-    //This function should only be called when the port is invalid
-    assert(!port->flags.conn_dev_ena);
-    pipe_t *pipe;
-    //Process all pipes that have queued URBs
-    TAILQ_FOREACH(pipe, &port->pipes_active_tailq, tailq_entry) {
-        //Mark the pipe as invalid and set an invalid event
-        pipe->state = HCD_PIPE_STATE_INVALID;
-        pipe->last_event = HCD_PIPE_EVENT_INVALID;
-        //Flush all buffers that are still awaiting exec
-        _buffer_flush_all(pipe, false);
-        //Retire any remaining URBs in the pending tailq
-        _pipe_retire(pipe, false);
-        if (pipe->task_waiting_pipe_notif != NULL) {
-            //Unblock the thread/task waiting for a notification from the pipe as the pipe is no longer valid.
-            _internal_pipe_event_notify(pipe, false);
-        }
-        if (pipe->callback != NULL) {
-            HCD_EXIT_CRITICAL();
-            (void) pipe->callback((hcd_pipe_handle_t)pipe, HCD_PIPE_EVENT_INVALID, pipe->callback_arg, false);
-            HCD_ENTER_CRITICAL();
-        }
-    }
-    //Process all idle pipes
-    TAILQ_FOREACH(pipe, &port->pipes_idle_tailq, tailq_entry) {
-        //Mark pipe as invalid and call its callback
-        pipe->state = HCD_PIPE_STATE_INVALID;
-        pipe->last_event = HCD_PIPE_EVENT_INVALID;
-        if (pipe->callback != NULL) {
-            HCD_EXIT_CRITICAL();
-            (void) pipe->callback((hcd_pipe_handle_t)pipe, HCD_PIPE_EVENT_INVALID, pipe->callback_arg, false);
-            HCD_ENTER_CRITICAL();
-        }
-    }
-}
-
-static bool _port_pause_all_pipes(port_t *port)
-{
-    assert(port->state == HCD_PORT_STATE_ENABLED);
-    pipe_t *pipe;
-    int num_pipes_waiting_done = 0;
-    //Process all pipes that have queued URBs
-    TAILQ_FOREACH(pipe, &port->pipes_active_tailq, tailq_entry) {
-        //Check if pipe is currently executing
-        if (pipe->multi_buffer_control.buffer_is_executing) {
-            //Pipe is executing a buffer. Indicate to the pipe we are waiting the buffer's transfer to complete
-            pipe->cs_flags.waiting_xfer_done = 1;
-            num_pipes_waiting_done++;
-        } else {
-            //No buffer is being executed so need to wait
-            pipe->cs_flags.paused = 1;
-        }
-    }
-    //Process all idle pipes. They don't have queue transfer so just mark them as paused
-    TAILQ_FOREACH(pipe, &port->pipes_idle_tailq, tailq_entry) {
-        pipe->cs_flags.paused = 1;
-    }
-    if (num_pipes_waiting_done > 0) {
-        //Indicate we need to wait for one or more pipes to complete their transfers
-        port->flags.num_pipes_waiting_pause = num_pipes_waiting_done;
-        port->flags.waiting_all_pipes_pause = 1;
-        return false;
-    }
-    return true;
-}
-
-static void _port_unpause_all_pipes(port_t *port)
-{
-    assert(port->state == HCD_PORT_STATE_ENABLED);
-    pipe_t *pipe;
-    //Process all idle pipes. They don't have queue transfer so just mark them as un-paused
-    TAILQ_FOREACH(pipe, &port->pipes_idle_tailq, tailq_entry) {
-        pipe->cs_flags.paused = 0;
-    }
-    //Process all pipes that have queued URBs
-    TAILQ_FOREACH(pipe, &port->pipes_active_tailq, tailq_entry) {
-        pipe->cs_flags.paused = 0;
-        if (_buffer_can_fill(pipe)) {
-            _buffer_fill(pipe);
-        }
-        if (_buffer_can_exec(pipe)) {
-            _buffer_exec(pipe);
-        }
-    }
-}
+// ----------------------- Helpers -------------------------
 
 static bool _port_persist_all_pipes(port_t *port)
 {
@@ -1264,108 +1100,23 @@ static void _port_recover_all_pipes(port_t *port)
     }
 }
 
-static bool _port_bus_reset(port_t *port)
+static bool _port_check_all_pipes_halted(port_t *port)
 {
-    assert(port->state == HCD_PORT_STATE_ENABLED || port->state == HCD_PORT_STATE_DISABLED);
-    //Put and hold the bus in the reset state. If the port was previously enabled, a disabled event will occur after this
-    port->state = HCD_PORT_STATE_RESETTING;
-    usbh_hal_port_toggle_reset(port->hal, true);
-    HCD_EXIT_CRITICAL();
-    vTaskDelay(pdMS_TO_TICKS(RESET_HOLD_MS));
-    HCD_ENTER_CRITICAL();
-    if (port->state != HCD_PORT_STATE_RESETTING) {
-        //The port state has unexpectedly changed
-        goto bailout;
-    }
-    //Return the bus to the idle state and hold it for the required reset recovery time. Port enabled event should occur
-    usbh_hal_port_toggle_reset(port->hal, false);
-    HCD_EXIT_CRITICAL();
-    vTaskDelay(pdMS_TO_TICKS(RESET_RECOVERY_MS));
-    HCD_ENTER_CRITICAL();
-    if (port->state != HCD_PORT_STATE_ENABLED || !port->flags.conn_dev_ena) {
-        //The port state has unexpectedly changed
-        goto bailout;
-    }
-    return true;
-bailout:
-    return false;
-}
-
-static bool _port_bus_suspend(port_t *port)
-{
-    assert(port->state == HCD_PORT_STATE_ENABLED);
-    //Pause all pipes before suspending the bus
-    if (!_port_pause_all_pipes(port)) {
-        //Need to wait for some pipes to pause. Wait for notification from ISR
-        _internal_port_event_wait(port);
-        if (port->state != HCD_PORT_STATE_ENABLED || !port->flags.conn_dev_ena) {
-            //Port state unexpectedly changed
-            goto bailout;
+    bool all_halted = true;
+    pipe_t *pipe;
+    TAILQ_FOREACH(pipe, &port->pipes_active_tailq, tailq_entry) {
+        if (pipe->state != HCD_PIPE_STATE_HALTED) {
+            all_halted = false;
+            break;
         }
     }
-    //All pipes are guaranteed paused at this point. Proceed to suspend the port
-    usbh_hal_port_suspend(port->hal);
-    port->state = HCD_PORT_STATE_SUSPENDED;
-    return true;
-bailout:
-    return false;
-}
-
-static bool _port_bus_resume(port_t *port)
-{
-    assert(port->state == HCD_PORT_STATE_SUSPENDED);
-    //Put and hold the bus in the K state.
-    usbh_hal_port_toggle_resume(port->hal, true);
-    port->state = HCD_PORT_STATE_RESUMING;
-    HCD_EXIT_CRITICAL();
-    vTaskDelay(pdMS_TO_TICKS(RESUME_HOLD_MS));
-    HCD_ENTER_CRITICAL();
-    //Return and hold the bus to the J state (as port of the LS EOP)
-    usbh_hal_port_toggle_resume(port->hal, false);
-    if (port->state != HCD_PORT_STATE_RESUMING || !port->flags.conn_dev_ena) {
-        //Port state unexpectedly changed
-        goto bailout;
-    }
-    HCD_EXIT_CRITICAL();
-    vTaskDelay(pdMS_TO_TICKS(RESUME_RECOVERY_MS));
-    HCD_ENTER_CRITICAL();
-    if (port->state != HCD_PORT_STATE_RESUMING || !port->flags.conn_dev_ena) {
-        //Port state unexpectedly changed
-        goto bailout;
-    }
-    port->state = HCD_PORT_STATE_ENABLED;
-    _port_unpause_all_pipes(port);
-    return true;
-bailout:
-    return false;
-}
-
-static bool _port_disable(port_t *port)
-{
-    assert(port->state == HCD_PORT_STATE_ENABLED || port->state == HCD_PORT_STATE_SUSPENDED);
-    if (port->state == HCD_PORT_STATE_ENABLED) {
-        //There may be pipes that are still transferring, so pause them.
-        if (!_port_pause_all_pipes(port)) {
-            //Need to wait for some pipes to pause. Wait for notification from ISR
-            _internal_port_event_wait(port);
-            if (port->state != HCD_PORT_STATE_ENABLED || !port->flags.conn_dev_ena) {
-                //Port state unexpectedly changed
-                goto bailout;
-            }
+    TAILQ_FOREACH(pipe, &port->pipes_idle_tailq, tailq_entry) {
+        if (pipe->state != HCD_PIPE_STATE_HALTED) {
+            all_halted = false;
+            break;
         }
     }
-    //All pipes are guaranteed paused at this point. Proceed to suspend the port. This should trigger an internal event
-    port->flags.disable_requested = 1;
-    usbh_hal_port_disable(port->hal);
-    _internal_port_event_wait(port);
-    if (port->state != HCD_PORT_STATE_DISABLED) {
-        //Port state unexpectedly changed
-        goto bailout;
-    }
-    _port_invalidate_all_pipes(port);
-    return true;
-bailout:
-    return false;
+    return all_halted;
 }
 
 static bool _port_debounce(port_t *port)
@@ -1389,12 +1140,195 @@ static bool _port_debounce(port_t *port)
     return is_connected;
 }
 
+// ---------------------- Commands -------------------------
+
+static esp_err_t _port_cmd_power_on(port_t *port)
+{
+    esp_err_t ret;
+    //Port can only be powered on if it's currently unpowered
+    if (port->state == HCD_PORT_STATE_NOT_POWERED) {
+        port->state = HCD_PORT_STATE_DISCONNECTED;
+        usbh_hal_port_init(port->hal);
+        usbh_hal_port_toggle_power(port->hal, true);
+        ret = ESP_OK;
+    } else {
+        ret = ESP_ERR_INVALID_STATE;
+    }
+    return ret;
+}
+
+static esp_err_t _port_cmd_power_off(port_t *port)
+{
+    esp_err_t ret;
+    //Port can only be unpowered if already powered
+    if (port->state != HCD_PORT_STATE_NOT_POWERED) {
+        port->state = HCD_PORT_STATE_NOT_POWERED;
+        usbh_hal_port_deinit(port->hal);
+        usbh_hal_port_toggle_power(port->hal, false);
+        //If a device is currently connected, this should trigger a disconnect event
+        ret = ESP_OK;
+    } else {
+        ret = ESP_ERR_INVALID_STATE;
+    }
+    return ret;
+}
+
+static esp_err_t _port_cmd_reset(port_t *port)
+{
+    esp_err_t ret;
+    //Port can only a reset when it is in the enabled or disabled states (in case of new connection)
+    if (port->state != HCD_PORT_STATE_ENABLED && port->state != HCD_PORT_STATE_DISABLED) {
+        ret = ESP_ERR_INVALID_STATE;
+        goto exit;
+    }
+    bool is_runtime_reset = (port->state == HCD_PORT_STATE_ENABLED) ? true : false;
+    if (is_runtime_reset && !_port_persist_all_pipes(port)) {
+        //If this is a run time reset, check all pipes that are still allocated can persist the reset
+        ret = ESP_ERR_INVALID_STATE;
+        goto exit;
+    }
+    //All pipes (if any_) are guaranteed to be persistent at this point. Proceed to resetting the bus
+    port->state = HCD_PORT_STATE_RESETTING;
+    //Put and hold the bus in the reset state. If the port was previously enabled, a disabled event will occur after this
+    usbh_hal_port_toggle_reset(port->hal, true);
+    HCD_EXIT_CRITICAL();
+    vTaskDelay(pdMS_TO_TICKS(RESET_HOLD_MS));
+    HCD_ENTER_CRITICAL();
+    if (port->state != HCD_PORT_STATE_RESETTING) {
+        //The port state has unexpectedly changed
+        ret = ESP_ERR_INVALID_RESPONSE;
+        goto bailout;
+    }
+    //Return the bus to the idle state and hold it for the required reset recovery time. Port enabled event should occur
+    usbh_hal_port_toggle_reset(port->hal, false);
+    HCD_EXIT_CRITICAL();
+    vTaskDelay(pdMS_TO_TICKS(RESET_RECOVERY_MS));
+    HCD_ENTER_CRITICAL();
+    if (port->state != HCD_PORT_STATE_ENABLED || !port->flags.conn_dev_ena) {
+        //The port state has unexpectedly changed
+        ret = ESP_ERR_INVALID_RESPONSE;
+        goto bailout;
+    }
+    //Set FIFO sizes based on the selected biasing
+    usbh_hal_set_fifo_size(port->hal, port->fifo_config);
+    //We start periodic scheduling only after a RESET command since SOFs only start after a reset
+    usbh_hal_port_set_frame_list(port->hal, port->frame_list, FRAME_LIST_LEN);
+    usbh_hal_port_periodic_enable(port->hal);
+    ret = ESP_OK;
+bailout:
+    if (is_runtime_reset) {
+        _port_recover_all_pipes(port);
+    }
+exit:
+    return ret;
+}
+
+static esp_err_t _port_cmd_bus_suspend(port_t *port)
+{
+    esp_err_t ret;
+    //Port must have been previously enabled, and all pipes must already be halted
+    if (port->state == HCD_PORT_STATE_ENABLED && !_port_check_all_pipes_halted(port)) {
+        ret = ESP_ERR_INVALID_STATE;
+        goto exit;
+    }
+    //All pipes are guaranteed halted at this point. Proceed to suspend the port
+    usbh_hal_port_suspend(port->hal);
+    port->state = HCD_PORT_STATE_SUSPENDED;
+    ret = ESP_OK;
+exit:
+    return ret;
+}
+
+static esp_err_t _port_cmd_bus_resume(port_t *port)
+{
+    esp_err_t ret;
+    //Port can only be resumed if it was previously suspended
+    if (port->state != HCD_PORT_STATE_SUSPENDED) {
+        ret = ESP_ERR_INVALID_STATE;
+        goto exit;
+    }
+    //Put and hold the bus in the K state.
+    usbh_hal_port_toggle_resume(port->hal, true);
+    port->state = HCD_PORT_STATE_RESUMING;
+    HCD_EXIT_CRITICAL();
+    vTaskDelay(pdMS_TO_TICKS(RESUME_HOLD_MS));
+    HCD_ENTER_CRITICAL();
+    //Return and hold the bus to the J state (as port of the LS EOP)
+    usbh_hal_port_toggle_resume(port->hal, false);
+    if (port->state != HCD_PORT_STATE_RESUMING || !port->flags.conn_dev_ena) {
+        //Port state unexpectedly changed
+        ret = ESP_ERR_INVALID_RESPONSE;
+        goto exit;
+    }
+    HCD_EXIT_CRITICAL();
+    vTaskDelay(pdMS_TO_TICKS(RESUME_RECOVERY_MS));
+    HCD_ENTER_CRITICAL();
+    if (port->state != HCD_PORT_STATE_RESUMING || !port->flags.conn_dev_ena) {
+        //Port state unexpectedly changed
+        ret = ESP_ERR_INVALID_RESPONSE;
+        goto exit;
+    }
+    port->state = HCD_PORT_STATE_ENABLED;
+    ret = ESP_OK;
+exit:
+    return ret;
+}
+
+static esp_err_t _port_cmd_disable(port_t *port)
+{
+    esp_err_t ret;
+    if (port->state != HCD_PORT_STATE_ENABLED && port->state != HCD_PORT_STATE_SUSPENDED) {
+        ret = ESP_ERR_INVALID_STATE;
+        goto exit;
+    }
+    //All pipes must be halted before disabling the port
+    if (!_port_check_all_pipes_halted(port)){
+        ret = ESP_ERR_INVALID_STATE;
+        goto exit;
+    }
+    //All pipes are guaranteed to be halted or freed at this point. Proceed to disable the port
+    port->flags.disable_requested = 1;
+    usbh_hal_port_disable(port->hal);
+    _internal_port_event_wait(port);
+    if (port->state != HCD_PORT_STATE_DISABLED) {
+        //Port state unexpectedly changed
+        ret = ESP_ERR_INVALID_RESPONSE;
+        goto exit;
+    }
+    ret = ESP_OK;
+exit:
+    return ret;
+}
+
 // ----------------------- Public --------------------------
 
 esp_err_t hcd_port_init(int port_number, const hcd_port_config_t *port_config, hcd_port_handle_t *port_hdl)
 {
     HCD_CHECK(port_number > 0 && port_config != NULL && port_hdl != NULL, ESP_ERR_INVALID_ARG);
     HCD_CHECK(port_number <= NUM_PORTS, ESP_ERR_NOT_FOUND);
+
+    //Get a pointer to the correct FIFO bias constant values
+    const usbh_hal_fifo_config_t *fifo_config;
+    const fifo_mps_limits_t *mps_limits;
+    switch (port_config->fifo_bias) {
+        case HCD_PORT_FIFO_BIAS_BALANCED:
+            fifo_config = &fifo_config_default;
+            mps_limits = &mps_limits_default;
+            break;
+        case HCD_PORT_FIFO_BIAS_RX:
+            fifo_config = &fifo_config_bias_rx;
+            mps_limits = &mps_limits_bias_rx;
+            break;
+        case HCD_PORT_FIFO_BIAS_PTX:
+            fifo_config = &fifo_config_bias_ptx;
+            mps_limits = &mps_limits_bias_ptx;
+            break;
+        default:
+            fifo_config = NULL;
+            mps_limits = NULL;
+            abort();
+            break;
+    }
 
     HCD_ENTER_CRITICAL();
     HCD_CHECK_FROM_CRIT(s_hcd_obj != NULL && !s_hcd_obj->port_obj->initialized, ESP_ERR_INVALID_STATE);
@@ -1404,6 +1338,8 @@ esp_err_t hcd_port_init(int port_number, const hcd_port_config_t *port_config, h
     TAILQ_INIT(&port_obj->pipes_active_tailq);
     port_obj->state = HCD_PORT_STATE_NOT_POWERED;
     port_obj->last_event = HCD_PORT_EVENT_NONE;
+    port_obj->fifo_config = fifo_config;
+    port_obj->fifo_mps_limits = mps_limits;
     port_obj->callback = port_config->callback;
     port_obj->callback_arg = port_config->callback_arg;
     port_obj->context = port_config->context;
@@ -1427,7 +1363,7 @@ esp_err_t hcd_port_deinit(hcd_port_handle_t port_hdl)
     HCD_CHECK_FROM_CRIT(s_hcd_obj != NULL && port->initialized
                         && port->num_pipes_idle == 0 && port->num_pipes_queued == 0
                         && (port->state == HCD_PORT_STATE_NOT_POWERED || port->state == HCD_PORT_STATE_RECOVERY)
-                        && port->flags.val == 0 && port->task_waiting_port_notif == NULL,
+                        && port->task_waiting_port_notif == NULL,
                         ESP_ERR_INVALID_STATE);
     port->initialized = false;
     esp_intr_disable(s_hcd_obj->isr_hdl);
@@ -1447,74 +1383,27 @@ esp_err_t hcd_port_command(hcd_port_handle_t port_hdl, hcd_port_cmd_t command)
         port->flags.cmd_processing = 1;
         switch (command) {
             case HCD_PORT_CMD_POWER_ON: {
-                //Port can only be powered on if currently unpowered
-                if (port->state == HCD_PORT_STATE_NOT_POWERED) {
-                    port->state = HCD_PORT_STATE_DISCONNECTED;
-                    usbh_hal_port_init(port->hal);
-                    usbh_hal_port_toggle_power(port->hal, true);
-                    ret = ESP_OK;
-                }
+                ret = _port_cmd_power_on(port);
                 break;
             }
             case HCD_PORT_CMD_POWER_OFF: {
-                //Port can only be unpowered if already powered
-                if (port->state != HCD_PORT_STATE_NOT_POWERED) {
-                    port->state = HCD_PORT_STATE_NOT_POWERED;
-                    usbh_hal_port_deinit(port->hal);
-                    usbh_hal_port_toggle_power(port->hal, false);
-                    //If a device is currently connected, this should trigger a disconnect event
-                    ret = ESP_OK;
-                }
+                ret = _port_cmd_power_off(port);
                 break;
             }
             case HCD_PORT_CMD_RESET: {
-                //Port can only a reset when it is in the enabled or disabled states (in case of new connection)
-                if (port->state == HCD_PORT_STATE_ENABLED || port->state == HCD_PORT_STATE_DISABLED) {
-                    bool is_runtime_reset = (port->state == HCD_PORT_STATE_ENABLED) ? true : false;
-                    if (is_runtime_reset) {
-                        //Check all pipes that are still allocated are persistent before we execute the reset
-                        if (!_port_persist_all_pipes(port)) {
-                            ret = ESP_ERR_INVALID_STATE;
-                            break;
-                        }
-                    }
-                    if (_port_bus_reset(port)) {
-                        //Set FIFO sizes to default
-                        usbh_hal_set_fifo_size(port->hal, &fifo_config_default);
-                        port->fifo_bias = HCD_PORT_FIFO_BIAS_BALANCED;
-                        //We start periodic scheduling only after a RESET command since SOFs only start after a reset
-                        usbh_hal_port_set_frame_list(port->hal, port->frame_list, FRAME_LIST_LEN);
-                        usbh_hal_port_periodic_enable(port->hal);
-                        ret = ESP_OK;
-                    } else {
-                        ret = ESP_ERR_INVALID_RESPONSE;
-                    }
-                    if (is_runtime_reset) {
-                        _port_recover_all_pipes(port);
-                    }
-
-                }
+                ret = _port_cmd_reset(port);
                 break;
             }
             case HCD_PORT_CMD_SUSPEND: {
-                //Port can only be suspended if already in the enabled state
-                if (port->state == HCD_PORT_STATE_ENABLED) {
-                    ret = (_port_bus_suspend(port)) ? ESP_OK : ESP_ERR_INVALID_RESPONSE;
-                }
+                ret = _port_cmd_bus_suspend(port);
                 break;
             }
             case HCD_PORT_CMD_RESUME: {
-                //Port can only be resumed if already suspended
-                if (port->state == HCD_PORT_STATE_SUSPENDED) {
-                    ret = (_port_bus_resume(port)) ? ESP_OK : ESP_ERR_INVALID_RESPONSE;
-                }
+                ret = _port_cmd_bus_resume(port);
                 break;
             }
             case HCD_PORT_CMD_DISABLE: {
-                //Can only disable the port when already enabled or suspended
-                if (port->state == HCD_PORT_STATE_ENABLED || port->state == HCD_PORT_STATE_SUSPENDED) {
-                    ret = (_port_disable(port)) ? ESP_OK : ESP_ERR_INVALID_RESPONSE;
-                }
+                ret = _port_cmd_disable(port);
                 break;
             }
         }
@@ -1570,22 +1459,8 @@ hcd_port_event_t hcd_port_handle_event(hcd_port_handle_t port_hdl)
                 break;
             }
             case HCD_PORT_EVENT_DISCONNECTION:
-                if (_port_debounce(port)) {
-                    //A device is still connected, so it was just a debounce
-                    port->state = HCD_PORT_STATE_DISABLED;
-                    ret = HCD_PORT_EVENT_NONE;
-                } else {
-                    //No device connected after debounce delay. This is an actual disconnection
-                    if (port->state != HCD_PORT_STATE_NOT_POWERED) {    //Don't update state if disconnect was due to power-off
-                        port->state = HCD_PORT_STATE_DISCONNECTED;
-                    }
-                    ret = HCD_PORT_EVENT_DISCONNECTION;
-                }
-                break;
             case HCD_PORT_EVENT_ERROR:
-            case HCD_PORT_EVENT_OVERCURRENT:
-            case HCD_PORT_EVENT_SUDDEN_DISCONN: {
-                _port_invalidate_all_pipes(port);
+            case HCD_PORT_EVENT_OVERCURRENT: {
                 break;
             }
             default: {
@@ -1637,28 +1512,37 @@ void *hcd_port_get_context(hcd_port_handle_t port_hdl)
 esp_err_t hcd_port_set_fifo_bias(hcd_port_handle_t port_hdl, hcd_port_fifo_bias_t bias)
 {
     esp_err_t ret;
+    //Get a pointer to the correct FIFO bias constant values
+    const usbh_hal_fifo_config_t *fifo_config;
+    const fifo_mps_limits_t *mps_limits;
+    switch (bias) {
+        case HCD_PORT_FIFO_BIAS_BALANCED:
+            fifo_config = &fifo_config_default;
+            mps_limits = &mps_limits_default;
+            break;
+        case HCD_PORT_FIFO_BIAS_RX:
+            fifo_config = &fifo_config_bias_rx;
+            mps_limits = &mps_limits_bias_rx;
+            break;
+        case HCD_PORT_FIFO_BIAS_PTX:
+            fifo_config = &fifo_config_bias_ptx;
+            mps_limits = &mps_limits_bias_ptx;
+            break;
+        default:
+            fifo_config = NULL;
+            mps_limits = NULL;
+            abort();
+            break;
+    }
+    //Configure the new FIFO sizes and store the pointers
     port_t *port = (port_t *)port_hdl;
     xSemaphoreTake(port->port_mux, portMAX_DELAY);
     HCD_ENTER_CRITICAL();
     //Check that port is in the correct state to update FIFO sizes
     if (port->initialized && !port->flags.event_pending && port->num_pipes_idle == 0 && port->num_pipes_queued == 0) {
-        const usbh_hal_fifo_config_t *fifo_config;
-        switch (bias) {
-            case HCD_PORT_FIFO_BIAS_BALANCED:
-                fifo_config = &fifo_config_default;
-                break;
-            case HCD_PORT_FIFO_BIAS_RX:
-                fifo_config = &fifo_config_bias_rx;
-                break;
-            case HCD_PORT_FIFO_BIAS_PTX:
-                fifo_config = &fifo_config_bias_ptx;
-                break;
-            default:
-                fifo_config = NULL;
-                abort();
-        }
         usbh_hal_set_fifo_size(port->hal, fifo_config);
-        port->fifo_bias = bias;
+        port->fifo_config = fifo_config;
+        port->fifo_mps_limits = mps_limits;
         ret = ESP_OK;
     } else {
         ret = ESP_ERR_INVALID_STATE;
@@ -1671,45 +1555,6 @@ esp_err_t hcd_port_set_fifo_bias(hcd_port_handle_t port_hdl, hcd_port_fifo_bias_
 // --------------------------------------------------- HCD Pipes -------------------------------------------------------
 
 // ----------------------- Private -------------------------
-
-static bool _pipe_wait_done(pipe_t *pipe)
-{
-    //Check if the pipe has a currently executing buffer
-    if (pipe->multi_buffer_control.buffer_is_executing) {
-        //Wait for pipe to complete its transfer
-        pipe->cs_flags.waiting_xfer_done = 1;
-        _internal_pipe_event_wait(pipe);
-        if (pipe->state == HCD_PIPE_STATE_INVALID) {
-            //The pipe become invalid whilst waiting for its internal event
-            pipe->cs_flags.waiting_xfer_done = 0;  //Need to manually reset this bit in this case
-            return false;
-        }
-        bool chan_halted = usbh_hal_chan_request_halt(pipe->chan_obj);
-        assert(chan_halted);
-        (void) chan_halted;
-    }
-    return true;
-}
-
-static void _pipe_retire(pipe_t *pipe, bool self_initiated)
-{
-    //Cannot have a currently executing buffer
-    assert(!pipe->multi_buffer_control.buffer_is_executing);
-    if (pipe->num_urb_pending > 0) {
-        //Process all remaining pending URBs
-        urb_t *urb;
-        TAILQ_FOREACH(urb, &pipe->pending_urb_tailq, tailq_entry) {
-            //Update the URB's current state
-            urb->hcd_var = URB_HCD_STATE_DONE;
-            //If we are initiating the retire, mark the URB as canceled
-            urb->transfer.status = (self_initiated) ? USB_TRANSFER_STATUS_CANCELED : USB_TRANSFER_STATUS_NO_DEVICE;
-        }
-        //Concatenated pending tailq to the done tailq
-        TAILQ_CONCAT(&pipe->done_urb_tailq, &pipe->pending_urb_tailq, tailq_entry);
-        pipe->num_urb_done += pipe->num_urb_pending;
-        pipe->num_urb_pending = 0;
-    }
-}
 
 static inline hcd_pipe_event_t pipe_decode_error_event(usbh_hal_chan_error_t chan_error)
 {
@@ -1768,7 +1613,7 @@ static void buffer_block_free(dma_buffer_block_t *buffer)
     free(buffer);
 }
 
-static bool pipe_alloc_check_args(const hcd_pipe_config_t *pipe_config, usb_speed_t port_speed, hcd_port_fifo_bias_t fifo_bias, usb_transfer_type_t type, bool is_default_pipe)
+static bool pipe_alloc_check_args(const hcd_pipe_config_t *pipe_config, usb_speed_t port_speed, const fifo_mps_limits_t *mps_limits, usb_transfer_type_t type, bool is_default_pipe)
 {
     //Check if pipe can be supported
     if (port_speed == USB_SPEED_LOW && pipe_config->dev_speed == USB_SPEED_FULL) {
@@ -1790,25 +1635,12 @@ static bool pipe_alloc_check_args(const hcd_pipe_config_t *pipe_config, usb_spee
         //Interval not supported for isochronous pipe (where 0 < 2^(bInterval - 1) <= 32)
         return false;
     }
-
     if (is_default_pipe) {
         return true;
     }
-    //Check if MPS is within FIFO limits
-    const fifo_mps_limits_t *mps_limits;
-    switch (fifo_bias) {
-        case HCD_PORT_FIFO_BIAS_BALANCED:
-            mps_limits = &mps_limits_default;
-            break;
-        case HCD_PORT_FIFO_BIAS_RX:
-            mps_limits = &mps_limits_bias_rx;
-            break;
-        default:    //HCD_PORT_FIFO_BIAS_PTX
-            mps_limits = &mps_limits_bias_ptx;
-            break;
-    }
+
     int limit;
-    if (USB_DESC_EP_GET_EP_DIR(pipe_config->ep_desc)) { //IN
+    if (USB_EP_DESC_GET_EP_DIR(pipe_config->ep_desc)) { //IN
         limit = mps_limits->in_mps;
     } else {    //OUT
         if (type == USB_TRANSFER_TYPE_CTRL || type == USB_TRANSFER_TYPE_BULK) {
@@ -1880,6 +1712,102 @@ static void pipe_set_ep_char(const hcd_pipe_config_t *pipe_config, usb_transfer_
     }
 }
 
+// ---------------------- Commands -------------------------
+
+static esp_err_t _pipe_cmd_halt(pipe_t *pipe)
+{
+    esp_err_t ret;
+    //Pipe must be in the active state in order to be halted
+    if (pipe->state != HCD_PIPE_STATE_ACTIVE) {
+        ret = ESP_ERR_INVALID_STATE;
+        goto exit;
+    }
+    //Request that the channel halts
+    if (!usbh_hal_chan_request_halt(pipe->chan_obj)) {
+        //We need to wait for channel to be halted. State will be updated in the ISR
+        pipe->cs_flags.waiting_halt = 1;
+        _internal_pipe_event_wait(pipe);
+    } else {
+        pipe->state = HCD_PIPE_STATE_HALTED;
+    }
+    ret = ESP_OK;
+exit:
+    return ret;
+}
+
+static esp_err_t _pipe_cmd_flush(pipe_t *pipe)
+{
+    esp_err_t ret;
+    //The pipe must be halted in order to be flushed
+    if (pipe->state != HCD_PIPE_STATE_HALTED) {
+        ret = ESP_ERR_INVALID_STATE;
+        goto exit;
+    }
+    //Cannot have a currently executing buffer
+    assert(!pipe->multi_buffer_control.buffer_is_executing);
+    bool call_pipe_cb;
+    //Flush any filled buffers
+    call_pipe_cb = _buffer_flush_all(pipe, true);
+    //Move all URBs from the pending tailq to the done tailq
+    if (pipe->num_urb_pending > 0) {
+        //Process all remaining pending URBs
+        urb_t *urb;
+        TAILQ_FOREACH(urb, &pipe->pending_urb_tailq, tailq_entry) {
+            //Update the URB's current state
+            urb->hcd_var = URB_HCD_STATE_DONE;
+            //We are canceling the URB. Update its actual_num_bytes and status
+            urb->transfer.actual_num_bytes = 0;
+            urb->transfer.status = USB_TRANSFER_STATUS_CANCELED;
+            if (pipe->ep_char.type == USB_PRIV_XFER_TYPE_ISOCHRONOUS) {
+                //Update the URB's isoc packet descriptors as well
+                for (int pkt_idx = 0; pkt_idx < urb->transfer.num_isoc_packets; pkt_idx++) {
+                    urb->transfer.isoc_packet_desc[pkt_idx].actual_num_bytes = 0;
+                    urb->transfer.isoc_packet_desc[pkt_idx].status = USB_TRANSFER_STATUS_CANCELED;
+                }
+            }
+        }
+        //Concatenated pending tailq to the done tailq
+        TAILQ_CONCAT(&pipe->done_urb_tailq, &pipe->pending_urb_tailq, tailq_entry);
+        pipe->num_urb_done += pipe->num_urb_pending;
+        pipe->num_urb_pending = 0;
+        call_pipe_cb = true;
+    }
+    if (call_pipe_cb) {
+        //One or more URBs can be dequeued as a result of the flush. We need to call the callback
+        HCD_EXIT_CRITICAL();
+        pipe->callback((hcd_pipe_handle_t)pipe, HCD_PIPE_EVENT_URB_DONE, pipe->callback_arg, false);
+        HCD_ENTER_CRITICAL();
+    }
+    ret = ESP_OK;
+exit:
+    return ret;
+}
+
+static esp_err_t _pipe_cmd_clear(pipe_t *pipe)
+{
+    esp_err_t ret;
+    //Pipe must be in the halted state in order to be made active, and there must be an enabled device on the port
+    if (pipe->state != HCD_PIPE_STATE_HALTED || !pipe->port->flags.conn_dev_ena) {
+        ret = ESP_ERR_INVALID_STATE;
+        goto exit;
+    }
+    //Update the pipe's state
+    pipe->state = HCD_PIPE_STATE_ACTIVE;
+    if (pipe->num_urb_pending > 0) {
+        //Fill as many buffers as possible
+        while (_buffer_can_fill(pipe)) {
+            _buffer_fill(pipe);
+        }
+    }
+    //Execute any filled buffers
+    if (_buffer_can_exec(pipe)) {
+        _buffer_exec(pipe);
+    }
+    ret = ESP_OK;
+exit:
+    return ret;
+}
+
 // ----------------------- Public --------------------------
 
 esp_err_t hcd_pipe_alloc(hcd_port_handle_t port_hdl, const hcd_pipe_config_t *pipe_config, hcd_pipe_handle_t *pipe_hdl)
@@ -1890,7 +1818,7 @@ esp_err_t hcd_pipe_alloc(hcd_port_handle_t port_hdl, const hcd_pipe_config_t *pi
     //Can only allocate a pipe if the target port is initialized and connected to an enabled device
     HCD_CHECK_FROM_CRIT(port->initialized && port->flags.conn_dev_ena, ESP_ERR_INVALID_STATE);
     usb_speed_t port_speed = port->speed;
-    hcd_port_fifo_bias_t port_fifo_bias = port->fifo_bias;
+    const fifo_mps_limits_t *mps_limits = port->fifo_mps_limits;
     int pipe_idx = port->num_pipes_idle + port->num_pipes_queued;
     HCD_EXIT_CRITICAL();
 
@@ -1900,11 +1828,11 @@ esp_err_t hcd_pipe_alloc(hcd_port_handle_t port_hdl, const hcd_pipe_config_t *pi
         type = USB_TRANSFER_TYPE_CTRL;
         is_default = true;
     } else {
-        type = USB_DESC_EP_GET_XFERTYPE(pipe_config->ep_desc);
+        type = USB_EP_DESC_GET_XFERTYPE(pipe_config->ep_desc);
         is_default = false;
     }
     //Check if pipe configuration can be supported
-    if (!pipe_alloc_check_args(pipe_config, port_speed, port_fifo_bias, type, is_default)) {
+    if (!pipe_alloc_check_args(pipe_config, port_speed, mps_limits, type, is_default)) {
         return ESP_ERR_NOT_SUPPORTED;
     }
 
@@ -1979,10 +1907,7 @@ esp_err_t hcd_pipe_free(hcd_pipe_handle_t pipe_hdl)
     HCD_ENTER_CRITICAL();
     //Check that all URBs have been removed and pipe has no pending events
     HCD_CHECK_FROM_CRIT(!pipe->multi_buffer_control.buffer_is_executing
-                        && pipe->multi_buffer_control.buffer_num_to_parse == 0
-                        && pipe->multi_buffer_control.buffer_num_to_exec == 0
-                        && pipe->num_urb_pending == 0
-                        && pipe->num_urb_done == 0
+                        && !pipe->cs_flags.has_urb
                         && !pipe->cs_flags.reset_lock,
                         ESP_ERR_INVALID_STATE);
     //Remove pipe from the list of idle pipes (it must be in the idle list because it should have no queued URBs)
@@ -2005,11 +1930,9 @@ esp_err_t hcd_pipe_update_mps(hcd_pipe_handle_t pipe_hdl, int mps)
     pipe_t *pipe = (pipe_t *)pipe_hdl;
     HCD_ENTER_CRITICAL();
     //Check if pipe is in the correct state to be updated
-    HCD_CHECK_FROM_CRIT(pipe->state != HCD_PIPE_STATE_INVALID
-                        && !pipe->cs_flags.pipe_cmd_processing
-                        && pipe->num_urb_pending == 0
-                        && pipe->num_urb_done == 0
-                        && !pipe->cs_flags.reset_lock,
+    HCD_CHECK_FROM_CRIT(!pipe->cs_flags.pipe_cmd_processing &&
+                        !pipe->cs_flags.has_urb &&
+                        !pipe->cs_flags.reset_lock,
                         ESP_ERR_INVALID_STATE);
     pipe->ep_char.mps = mps;
     //Update the underlying channel's registers
@@ -2023,11 +1946,9 @@ esp_err_t hcd_pipe_update_dev_addr(hcd_pipe_handle_t pipe_hdl, uint8_t dev_addr)
     pipe_t *pipe = (pipe_t *)pipe_hdl;
     HCD_ENTER_CRITICAL();
     //Check if pipe is in the correct state to be updated
-    HCD_CHECK_FROM_CRIT(pipe->state != HCD_PIPE_STATE_INVALID
-                        && !pipe->cs_flags.pipe_cmd_processing
-                        && pipe->num_urb_pending == 0
-                        && pipe->num_urb_done == 0
-                        && !pipe->cs_flags.reset_lock,
+    HCD_CHECK_FROM_CRIT(!pipe->cs_flags.pipe_cmd_processing &&
+                        !pipe->cs_flags.has_urb &&
+                        !pipe->cs_flags.reset_lock,
                         ESP_ERR_INVALID_STATE);
     pipe->ep_char.dev_addr = dev_addr;
     //Update the underlying channel's registers
@@ -2036,16 +1957,29 @@ esp_err_t hcd_pipe_update_dev_addr(hcd_pipe_handle_t pipe_hdl, uint8_t dev_addr)
     return ESP_OK;
 }
 
-esp_err_t hcd_pipe_persist_reset(hcd_pipe_handle_t pipe_hdl)
+esp_err_t hcd_pipe_update_callback(hcd_pipe_handle_t pipe_hdl, hcd_pipe_callback_t callback, void *user_arg)
 {
     pipe_t *pipe = (pipe_t *)pipe_hdl;
     HCD_ENTER_CRITICAL();
     //Check if pipe is in the correct state to be updated
-    HCD_CHECK_FROM_CRIT(pipe->state != HCD_PIPE_STATE_INVALID
-                        && !pipe->cs_flags.pipe_cmd_processing
-                        && pipe->num_urb_pending == 0
-                        && pipe->num_urb_done == 0
-                        && !pipe->cs_flags.reset_lock,
+    HCD_CHECK_FROM_CRIT(!pipe->cs_flags.pipe_cmd_processing &&
+                        !pipe->cs_flags.has_urb &&
+                        !pipe->cs_flags.reset_lock,
+                        ESP_ERR_INVALID_STATE);
+    pipe->callback = callback;
+    pipe->callback_arg = user_arg;
+    HCD_EXIT_CRITICAL();
+    return ESP_OK;
+}
+
+esp_err_t hcd_pipe_set_persist_reset(hcd_pipe_handle_t pipe_hdl)
+{
+    pipe_t *pipe = (pipe_t *)pipe_hdl;
+    HCD_ENTER_CRITICAL();
+    //Check if pipe is in the correct state to be updated
+    HCD_CHECK_FROM_CRIT(!pipe->cs_flags.pipe_cmd_processing &&
+                        !pipe->cs_flags.has_urb &&
+                        !pipe->cs_flags.reset_lock,
                         ESP_ERR_INVALID_STATE);
     pipe->cs_flags.persist = 1;
     HCD_EXIT_CRITICAL();
@@ -2067,14 +2001,7 @@ hcd_pipe_state_t hcd_pipe_get_state(hcd_pipe_handle_t pipe_hdl)
     hcd_pipe_state_t ret;
     pipe_t *pipe = (pipe_t *)pipe_hdl;
     HCD_ENTER_CRITICAL();
-    //If there is no enabled device, all existing pipes are invalid.
-    if (pipe->port->state != HCD_PORT_STATE_ENABLED
-        && pipe->port->state != HCD_PORT_STATE_SUSPENDED
-        && pipe->port->state != HCD_PORT_STATE_RESUMING) {
-            ret = HCD_PIPE_STATE_INVALID;
-    } else {
-        ret = pipe->state;
-    }
+    ret = pipe->state;
     HCD_EXIT_CRITICAL();
     return ret;
 }
@@ -2084,60 +2011,31 @@ esp_err_t hcd_pipe_command(hcd_pipe_handle_t pipe_hdl, hcd_pipe_cmd_t command)
     pipe_t *pipe = (pipe_t *)pipe_hdl;
     esp_err_t ret = ESP_OK;
 
+    xSemaphoreTake(pipe->port->port_mux, portMAX_DELAY);
     HCD_ENTER_CRITICAL();
     //Cannot execute pipe commands the pipe is already executing a command, or if the pipe or its port are no longer valid
-    if (pipe->cs_flags.pipe_cmd_processing || pipe->cs_flags.reset_lock || !pipe->port->flags.conn_dev_ena || pipe->state == HCD_PIPE_STATE_INVALID) {
+    if (pipe->cs_flags.reset_lock) {
         ret = ESP_ERR_INVALID_STATE;
     } else {
         pipe->cs_flags.pipe_cmd_processing = 1;
         switch (command) {
-            case HCD_PIPE_CMD_ABORT: {
-                //Retire all scheduled URBs. Pipe's state remains unchanged
-                if (!_pipe_wait_done(pipe)) {   //Stop any on going transfers
-                    ret = ESP_ERR_INVALID_RESPONSE;
-                }
-                _buffer_flush_all(pipe, true);  //Some buffers might still be filled. Flush them
-                _pipe_retire(pipe, true);  //Retire any pending transfers
-                break;
-            }
-            case HCD_PIPE_CMD_RESET: {
-                //Retire all scheduled URBs. Pipe's state moves to active
-                if (!_pipe_wait_done(pipe)) {   //Stop any on going transfers
-                    ret = ESP_ERR_INVALID_RESPONSE;
-                    break;
-                }
-                _buffer_flush_all(pipe, true);  //Some buffers might still be filled. Flush them
-                _pipe_retire(pipe, true);  //Retire any pending transfers
-                pipe->state = HCD_PIPE_STATE_ACTIVE;
-                break;
-            }
-            case HCD_PIPE_CMD_CLEAR: {  //Can only do this if port is still active
-                //Pipe's state moves from halted to active
-                if (pipe->state == HCD_PIPE_STATE_HALTED) {
-                    pipe->state = HCD_PIPE_STATE_ACTIVE;
-                    //Start the next pending transfer if it exists
-                    if (_buffer_can_fill(pipe)) {
-                        _buffer_fill(pipe);
-                    }
-                    if (_buffer_can_exec(pipe)) {
-                        _buffer_exec(pipe);
-                    }
-                }
-                break;
-            }
             case HCD_PIPE_CMD_HALT: {
-                //Pipe's state moves to halted
-                if (!_pipe_wait_done(pipe)) {   //Stop any on going transfers
-                    ret = ESP_ERR_INVALID_RESPONSE;
-                    break;
-                }
-                pipe->state = HCD_PIPE_STATE_HALTED;
+                ret = _pipe_cmd_halt(pipe);
+                break;
+            }
+            case HCD_PIPE_CMD_FLUSH: {
+                ret = _pipe_cmd_flush(pipe);
+                break;
+            }
+            case HCD_PIPE_CMD_CLEAR: {
+                ret = _pipe_cmd_clear(pipe);
                 break;
             }
         }
         pipe->cs_flags.pipe_cmd_processing = 0;
     }
     HCD_EXIT_CRITICAL();
+    xSemaphoreGive(pipe->port->port_mux);
     return ret;
 }
 
@@ -2157,11 +2055,11 @@ hcd_pipe_event_t hcd_pipe_get_event(hcd_pipe_handle_t pipe_hdl)
 static inline void _buffer_fill_ctrl(dma_buffer_block_t *buffer, usb_transfer_t *transfer)
 {
     //Get information about the control transfer by analyzing the setup packet (the first 8 bytes of the URB's data)
-    usb_ctrl_req_t *ctrl_req = (usb_ctrl_req_t *)transfer->data_buffer;
-    bool data_stg_in = (ctrl_req->bRequestType & USB_B_REQUEST_TYPE_DIR_IN);
-    bool data_stg_skip = (transfer->num_bytes == 0);
+    usb_setup_packet_t *setup_pkt = (usb_setup_packet_t *)transfer->data_buffer;
+    bool data_stg_in = (setup_pkt->bmRequestType & USB_BM_REQUEST_TYPE_DIR_IN);
+    bool data_stg_skip = (setup_pkt->wLength == 0);
     //Fill setup stage
-    usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 0, transfer->data_buffer, sizeof(usb_ctrl_req_t),
+    usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 0, transfer->data_buffer, sizeof(usb_setup_packet_t),
                             USBH_HAL_XFER_DESC_FLAG_SETUP | USBH_HAL_XFER_DESC_FLAG_HOC);
     //Fill data stage
     if (data_stg_skip) {
@@ -2169,7 +2067,7 @@ static inline void _buffer_fill_ctrl(dma_buffer_block_t *buffer, usb_transfer_t 
         usbh_hal_xfer_desc_clear(buffer->xfer_desc_list, 1);
     } else {
         //Fill data stage
-        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 1, transfer->data_buffer + sizeof(usb_ctrl_req_t), transfer->num_bytes,
+        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 1, transfer->data_buffer + sizeof(usb_setup_packet_t), setup_pkt->wLength,
                                 ((data_stg_in) ? USBH_HAL_XFER_DESC_FLAG_IN : 0) | USBH_HAL_XFER_DESC_FLAG_HOC);
     }
     //Fill status stage (i.e., a zero length packet). If data stage is skipped, the status stage is always IN.
@@ -2370,15 +2268,14 @@ static void _buffer_exec(pipe_t *pipe)
     usbh_hal_chan_activate(pipe->chan_obj, buffer_to_exec->xfer_desc_list, desc_list_len, start_idx);
 }
 
-static bool _buffer_check_done(pipe_t *pipe)
+static void _buffer_exec_cont(pipe_t *pipe)
 {
-    if (pipe->ep_char.type != USB_PRIV_XFER_TYPE_CTRL) {
-        return true;
-    }
-    //Only control transfers need to be continued
+    //This should only ever be called on control transfers
+    assert(pipe->ep_char.type == USB_PRIV_XFER_TYPE_CTRL);
     dma_buffer_block_t *buffer_inflight = pipe->buffers[pipe->multi_buffer_control.rd_idx];
     bool next_dir_is_in;
     int next_pid;
+    assert(buffer_inflight->flags.ctrl.cur_stg != 2);
     if (buffer_inflight->flags.ctrl.cur_stg == 0) { //Just finished control stage
         if (buffer_inflight->flags.ctrl.data_stg_skip) {
             //Skipping data stage. Go straight to status stage
@@ -2391,18 +2288,15 @@ static bool _buffer_check_done(pipe_t *pipe)
             next_pid = 1;   //Data stage always starts with a PID of DATA1
             buffer_inflight->flags.ctrl.cur_stg = 1;
         }
-    } else if (buffer_inflight->flags.ctrl.cur_stg == 1) {  //Just finished data stage. Go to status stage
+    } else {        //cur_stg == 1. //Just finished data stage. Go to status stage
         next_dir_is_in = !buffer_inflight->flags.ctrl.data_stg_in;  //Status stage is always the opposite direction of data stage
         next_pid = 1;   //Status stage always has a PID of DATA1
         buffer_inflight->flags.ctrl.cur_stg = 2;
-    } else {    //Just finished status stage. Transfer is complete
-        return true;
     }
     //Continue the control transfer
     usbh_hal_chan_set_dir(pipe->chan_obj, next_dir_is_in);
     usbh_hal_chan_set_pid(pipe->chan_obj, next_pid);
     usbh_hal_chan_activate(pipe->chan_obj, buffer_inflight->xfer_desc_list, XFER_LIST_LEN_CTRL, buffer_inflight->flags.ctrl.cur_stg);
-    return false;
 }
 
 static inline void _buffer_parse_ctrl(dma_buffer_block_t *buffer)
@@ -2410,15 +2304,15 @@ static inline void _buffer_parse_ctrl(dma_buffer_block_t *buffer)
     usb_transfer_t *transfer = &buffer->urb->transfer;
     //Update URB's actual number of bytes
     if (buffer->flags.ctrl.data_stg_skip)     {
-        //There was no data stage. Just set the actual length to zero
-        transfer->actual_num_bytes = 0;
+        //There was no data stage. Just set the actual length to the size of the setup packet
+        transfer->actual_num_bytes = sizeof(usb_setup_packet_t);
     } else {
         //Parse the data stage for the remaining length
         int rem_len;
         int desc_status;
         usbh_hal_xfer_desc_parse(buffer->xfer_desc_list, 1, &rem_len, &desc_status);
         assert(desc_status == USBH_HAL_XFER_DESC_STS_SUCCESS);
-        assert(rem_len <= transfer->num_bytes);
+        assert(rem_len <= (transfer->num_bytes - sizeof(usb_setup_packet_t)));
         transfer->actual_num_bytes = transfer->num_bytes - rem_len;
     }
     //Update URB status
@@ -2497,6 +2391,7 @@ static inline void _buffer_parse_isoc(dma_buffer_block_t *buffer, bool is_in)
 {
     usb_transfer_t *transfer = &buffer->urb->transfer;
     int desc_idx = buffer->flags.isoc.start_idx;    //Descriptor index tracks which descriptor in the QTD list
+    int total_actual_num_bytes = 0;
     for (int pkt_idx = 0; pkt_idx < transfer->num_isoc_packets; pkt_idx++) {
         //Clear the filled descriptor
         int rem_len;
@@ -2508,6 +2403,7 @@ static inline void _buffer_parse_isoc(dma_buffer_block_t *buffer, bool is_in)
         assert(rem_len <= transfer->isoc_packet_desc[pkt_idx].num_bytes);    //Check for DMA errata
         //Update ISO packet actual length and status
         transfer->isoc_packet_desc[pkt_idx].actual_num_bytes = transfer->isoc_packet_desc[pkt_idx].num_bytes - rem_len;
+        total_actual_num_bytes += transfer->isoc_packet_desc[pkt_idx].actual_num_bytes;
         transfer->isoc_packet_desc[pkt_idx].status = (desc_status == USBH_HAL_XFER_DESC_STS_NOT_EXECUTED) ? USB_TRANSFER_STATUS_SKIPPED : USB_TRANSFER_STATUS_COMPLETED;
         //A descriptor is also allocated for unscheduled frames. We need to skip over them
         desc_idx += buffer->flags.isoc.interval;
@@ -2515,43 +2411,39 @@ static inline void _buffer_parse_isoc(dma_buffer_block_t *buffer, bool is_in)
             desc_idx -= XFER_LIST_LEN_INTR;
         }
     }
+    //Write back the actual_num_bytes and statue of entire transfer
+    assert(total_actual_num_bytes <= transfer->num_bytes);
+    transfer->actual_num_bytes = total_actual_num_bytes;
+    transfer->status = USB_TRANSFER_STATUS_COMPLETED;
 }
 
 static inline void _buffer_parse_error(dma_buffer_block_t *buffer)
 {
-    //The URB had an error, so we consider that NO bytes were transferred
+    //The URB had an error, so we consider that NO bytes were transferred. Set actual_num_bytes to zero
     usb_transfer_t *transfer = &buffer->urb->transfer;
     transfer->actual_num_bytes = 0;
     for (int i = 0; i < transfer->num_isoc_packets; i++) {
         transfer->isoc_packet_desc[i].actual_num_bytes = 0;
     }
-    //Update status of URB
-    if (buffer->status_flags.cancelled) {
-        transfer->status = USB_TRANSFER_STATUS_CANCELED;
-    } else if (buffer->status_flags.pipe_state == HCD_PIPE_STATE_INVALID) {
-        transfer->status = USB_TRANSFER_STATUS_NO_DEVICE;
-    } else {
-        switch (buffer->status_flags.pipe_event) {
-            case HCD_PIPE_EVENT_ERROR_XFER: //Excessive transaction error
-                transfer->status = USB_TRANSFER_STATUS_ERROR;
-                break;
-            case HCD_PIPE_EVENT_ERROR_OVERFLOW:
-                transfer->status = USB_TRANSFER_STATUS_OVERFLOW;
-                break;
-            case HCD_PIPE_EVENT_ERROR_STALL:
-                transfer->status = USB_TRANSFER_STATUS_STALL;
-                break;
-            case HCD_PIPE_EVENT_URB_DONE:   //Special case where we are cancelling an URB due to pipe_retire
-                transfer->status = USB_TRANSFER_STATUS_CANCELED;
-                break;
-            default:
-                //HCD_PIPE_EVENT_ERROR_URB_NOT_AVAIL should never occur
-                abort();
-                break;
-        }
+    //Update status of URB. Status will depend on the pipe_event
+    switch (buffer->status_flags.pipe_event) {
+        case HCD_PIPE_EVENT_NONE:
+            transfer->status = USB_TRANSFER_STATUS_CANCELED;
+            break;
+        case HCD_PIPE_EVENT_ERROR_XFER:
+            transfer->status = USB_TRANSFER_STATUS_ERROR;
+            break;
+        case HCD_PIPE_EVENT_ERROR_OVERFLOW:
+            transfer->status = USB_TRANSFER_STATUS_OVERFLOW;
+            break;
+        case HCD_PIPE_EVENT_ERROR_STALL:
+            transfer->status = USB_TRANSFER_STATUS_STALL;
+            break;
+        default:
+            //HCD_PIPE_EVENT_URB_DONE and HCD_PIPE_EVENT_ERROR_URB_NOT_AVAIL should not occur here
+            abort();
+            break;
     }
-    //Clear error flags
-    buffer->status_flags.val = 0;
 }
 
 static void _buffer_parse(pipe_t *pipe)
@@ -2563,9 +2455,8 @@ static void _buffer_parse(pipe_t *pipe)
     int mps = pipe->ep_char.mps;
 
     //Parsing the buffer will update the buffer's corresponding URB
-    if (buffer_to_parse->status_flags.error_occurred) {
-        _buffer_parse_error(buffer_to_parse);
-    } else {
+    if (buffer_to_parse->status_flags.pipe_event == HCD_PIPE_EVENT_URB_DONE) {
+        //URB was successful
         switch (pipe->ep_char.type) {
             case USB_PRIV_XFER_TYPE_CTRL: {
                 _buffer_parse_ctrl(buffer_to_parse);
@@ -2588,6 +2479,9 @@ static void _buffer_parse(pipe_t *pipe)
                 break;
             }
         }
+    } else {
+        //URB failed
+        _buffer_parse_error(buffer_to_parse);
     }
     urb_t *urb = buffer_to_parse->urb;
     urb->hcd_var = URB_HCD_STATE_DONE;
@@ -2602,18 +2496,19 @@ static void _buffer_parse(pipe_t *pipe)
     pipe->multi_buffer_control.buffer_num_to_fill++;
 }
 
-static void _buffer_flush_all(pipe_t *pipe, bool cancelled)
+static bool _buffer_flush_all(pipe_t *pipe, bool cancelled)
 {
-    int cur_num_to_mark_done =  pipe->multi_buffer_control.buffer_num_to_exec;
+    int cur_num_to_mark_done = pipe->multi_buffer_control.buffer_num_to_exec;
     for (int i = 0; i < cur_num_to_mark_done; i++) {
         //Mark any filled buffers as done
-        _buffer_done_error(pipe, 0, pipe->state, pipe->last_event, cancelled);
+        _buffer_done(pipe, 0, HCD_PIPE_EVENT_NONE);
     }
     int cur_num_to_parse = pipe->multi_buffer_control.buffer_num_to_parse;
     for (int i = 0; i < cur_num_to_parse; i++) {
         _buffer_parse(pipe);
     }
     //At this point, there should be no more filled buffers. Only URBs in the pending or done tailq
+    return (cur_num_to_parse > 0);
 }
 
 // ---------------------------------------------- HCD Transfer Descriptors ---------------------------------------------
@@ -2646,13 +2541,13 @@ esp_err_t hcd_urb_enqueue(hcd_pipe_handle_t pipe_hdl, urb_t *urb)
     if (_buffer_can_exec(pipe)) {
         _buffer_exec(pipe);
     }
-    if (!pipe->cs_flags.is_active) {
+    if (!pipe->cs_flags.has_urb) {
         //This is the first URB to be enqueued into the pipe. Move the pipe to the list of active pipes
         TAILQ_REMOVE(&pipe->port->pipes_idle_tailq, pipe, tailq_entry);
         TAILQ_INSERT_TAIL(&pipe->port->pipes_active_tailq, pipe, tailq_entry);
         pipe->port->num_pipes_idle--;
         pipe->port->num_pipes_queued++;
-        pipe->cs_flags.is_active = 1;
+        pipe->cs_flags.has_urb = 1;
     }
     HCD_EXIT_CRITICAL();
     return ESP_OK;
@@ -2672,7 +2567,7 @@ urb_t *hcd_urb_dequeue(hcd_pipe_handle_t pipe_hdl)
         assert(urb->hcd_ptr == (void *)pipe && urb->hcd_var == URB_HCD_STATE_DONE);  //The URB's reserved field should have been set to this pipe
         urb->hcd_ptr = NULL;
         urb->hcd_var = URB_HCD_STATE_IDLE;
-        if (pipe->cs_flags.is_active
+        if (pipe->cs_flags.has_urb
             && pipe->num_urb_pending == 0 && pipe->num_urb_done == 0
             && pipe->multi_buffer_control.buffer_num_to_exec == 0 && pipe->multi_buffer_control.buffer_num_to_parse == 0) {
             //This pipe has no more enqueued URBs. Move the pipe to the list of idle pipes
@@ -2680,7 +2575,7 @@ urb_t *hcd_urb_dequeue(hcd_pipe_handle_t pipe_hdl)
             TAILQ_INSERT_TAIL(&pipe->port->pipes_idle_tailq, pipe, tailq_entry);
             pipe->port->num_pipes_idle++;
             pipe->port->num_pipes_queued--;
-            pipe->cs_flags.is_active = 0;
+            pipe->cs_flags.has_urb = 0;
         }
     } else {
         //No more URBs to dequeue from this pipe

@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -26,10 +18,10 @@
 static void mock_msc_reset_req(hcd_pipe_handle_t default_pipe)
 {
     //Create URB
-    urb_t *urb = test_hcd_alloc_urb(0, sizeof(usb_ctrl_req_t));
-    usb_ctrl_req_t *ctrl_req = (usb_ctrl_req_t *)urb->transfer.data_buffer;
-    MOCK_MSC_SCSI_REQ_INIT_RESET(ctrl_req, MOCK_MSC_SCSI_INTF_NUMBER);
-    urb->transfer.num_bytes = 0;
+    urb_t *urb = test_hcd_alloc_urb(0, sizeof(usb_setup_packet_t));
+    usb_setup_packet_t *setup_pkt = (usb_setup_packet_t *)urb->transfer.data_buffer;
+    MOCK_MSC_SCSI_REQ_INIT_RESET(setup_pkt, MOCK_MSC_SCSI_INTF_NUMBER);
+    urb->transfer.num_bytes = sizeof(usb_setup_packet_t);
     //Enqueue, wait, dequeue, and check URB
     TEST_ASSERT_EQUAL(ESP_OK, hcd_urb_enqueue(default_pipe, urb));
     test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_URB_DONE);

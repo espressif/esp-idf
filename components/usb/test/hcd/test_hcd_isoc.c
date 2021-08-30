@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <string.h>
@@ -65,7 +57,7 @@ TEST_CASE("Test HCD isochronous pipe URBs", "[hcd][ignore]")
     //Initialize URBs
     for (int urb_idx = 0; urb_idx < NUM_URBS; urb_idx++) {
         urb_list[urb_idx] = test_hcd_alloc_urb(NUM_PACKETS_PER_URB, URB_DATA_BUFF_SIZE);
-        urb_list[urb_idx]->transfer.num_bytes = 0;  //num_bytes is not used for ISOC
+        urb_list[urb_idx]->transfer.num_bytes = URB_DATA_BUFF_SIZE;
         urb_list[urb_idx]->transfer.context = URB_CONTEXT_VAL;
         for (int pkt_idx = 0; pkt_idx < NUM_PACKETS_PER_URB; pkt_idx++) {
             urb_list[urb_idx]->transfer.isoc_packet_desc[pkt_idx].num_bytes = ISOC_PACKET_SIZE;
