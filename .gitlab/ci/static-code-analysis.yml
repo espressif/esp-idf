@@ -67,6 +67,14 @@ check_pylint:
     - source tools/ci/utils.sh
     - export PYTHONPATH="$CI_PROJECT_DIR/tools:$CI_PROJECT_DIR/tools/ci/python_packages:$PYTHONPATH"
     - fetch_submodules
+    # Exclude the submodules, all paths ends with /**
+    - submodules=$(get_all_submodules)
+    # get all exclude paths specified in tools/ci/sonar_exclude_list.txt | ignore lines start with # | xargs | replace all <space> to <comma>
+    - custom_excludes=$(cat $CI_PROJECT_DIR/tools/ci/sonar_exclude_list.txt | grep -v '^#' | xargs | sed -e 's/ /,/g')
+    # Exclude the report dir as well
+    - export EXCLUSIONS="$custom_excludes,$submodules"
+    - export SONAR_SCANNER_OPTS="-Xmx2048m"
+
   variables:
     GIT_DEPTH: 0
     REPORT_PATTERN: clang_tidy_reports/*.txt
@@ -95,8 +103,10 @@ code_quality_check:
       -Dsonar.analysis.mode=preview
       -Dsonar.branch.name=$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
       -Dsonar.cxx.clangtidy.reportPath=$REPORT_PATTERN
+      -Dsonar.exclusions=$EXCLUSIONS
       -Dsonar.gitlab.ci_merge_request_iid=$CI_MERGE_REQUEST_IID
       -Dsonar.gitlab.commit_sha=$CI_MERGE_REQUEST_COMMITS
+      -Dsonar.gitlab.merge_request_discussion=true
       -Dsonar.gitlab.ref_name=$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
       -Dsonar.host.url=$SONAR_HOST_URL
       -Dsonar.login=$SONAR_LOGIN
@@ -112,6 +122,7 @@ code_quality_report:
     - sonar-scanner
       -Dsonar.branch.name=$CI_COMMIT_REF_NAME
       -Dsonar.cxx.clangtidy.reportPath=$REPORT_PATTERN
+      -Dsonar.exclusions=$EXCLUSIONS
       -Dsonar.gitlab.commit_sha=$CI_COMMIT_SHA
       -Dsonar.gitlab.ref_name=$CI_COMMIT_REF_NAME
       -Dsonar.host.url=$SONAR_HOST_URL
