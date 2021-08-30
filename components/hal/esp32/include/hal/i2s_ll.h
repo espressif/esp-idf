@@ -23,7 +23,9 @@
 #pragma once
 
 #include <stdbool.h>
+#include "hal/misc.h"
 #include "soc/i2s_periph.h"
+#include "soc/i2s_struct.h"
 #include "hal/i2s_types.h"
 
 #ifdef __cplusplus
@@ -272,7 +274,7 @@ static inline void i2s_ll_tx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_tx_set_clk(i2s_dev_t *hw, i2s_ll_clk_cal_t *set)
 {
-    hw->clkm_conf.clkm_div_num = set->mclk_div;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clkm_conf, clkm_div_num, set->mclk_div);
     hw->clkm_conf.clkm_div_b = set->b;
     hw->clkm_conf.clkm_div_a = set->a;
 }
@@ -296,7 +298,7 @@ static inline void i2s_ll_rx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_rx_set_clk(i2s_dev_t *hw, i2s_ll_clk_cal_t *set)
 {
-    hw->clkm_conf.clkm_div_num = set->mclk_div;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clkm_conf, clkm_div_num, set->mclk_div);
     hw->clkm_conf.clkm_div_b = set->b;
     hw->clkm_conf.clkm_div_a = set->a;
 }
@@ -775,7 +777,7 @@ static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw, bool pdm_ena)
  */
 static inline void i2s_ll_tx_set_pdm_prescale(i2s_dev_t *hw, bool prescale)
 {
-    hw->pdm_conf.tx_prescale = prescale;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->pdm_conf, tx_prescale, prescale);
 }
 
 /**

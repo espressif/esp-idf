@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct spi_mem_dev_s {
     union {
         struct {
             uint32_t mst_st:         4;                 /*The current status of SPI1 master FSM.*/

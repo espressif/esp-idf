@@ -1103,9 +1103,7 @@ typedef struct {
 
 typedef struct {
     struct {
-        union {
-            volatile rmt_item32_t data32[48];
-        };
+        volatile rmt_item32_t data32[48];
     } chan[8];
 } rmt_mem_t;
 

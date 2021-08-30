@@ -24,7 +24,11 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include "hal/misc.h"
 #include "soc/touch_sensor_periph.h"
+#include "soc/rtc_cntl_struct.h"
+#include "soc/rtc_io_struct.h"
+#include "soc/sens_struct.h"
 #include "soc/soc_caps.h"
 #include "hal/touch_sensor_types.h"
 
@@ -47,9 +51,9 @@ extern "C" {
 static inline void touch_ll_set_meas_times(uint16_t meas_time)
 {
     //The times of charge and discharge in each measure process of touch channels.
-    RTCCNTL.touch_ctrl1.touch_meas_num = meas_time;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(RTCCNTL.touch_ctrl1, touch_meas_num, meas_time);
     //the waiting cycles (in 8MHz) between TOUCH_START and TOUCH_XPD
-    RTCCNTL.touch_ctrl2.touch_xpd_wait = SOC_TOUCH_PAD_MEASURE_WAIT_MAX; //wait volt stable
+    HAL_FORCE_MODIFY_U32_REG_FIELD(RTCCNTL.touch_ctrl2, touch_xpd_wait, SOC_TOUCH_PAD_MEASURE_WAIT_MAX); //wait volt stable
 }
 
 /**
@@ -59,7 +63,7 @@ static inline void touch_ll_set_meas_times(uint16_t meas_time)
  */
 static inline void touch_ll_get_measure_times(uint16_t *meas_time)
 {
-    *meas_time = RTCCNTL.touch_ctrl1.touch_meas_num;
+    *meas_time = HAL_FORCE_READ_U32_REG_FIELD(RTCCNTL.touch_ctrl1, touch_meas_num);
 }
 
 /**
@@ -73,7 +77,7 @@ static inline void touch_ll_get_measure_times(uint16_t *meas_time)
 static inline void touch_ll_set_sleep_time(uint16_t sleep_time)
 {
     // touch sensor sleep cycle Time = sleep_cycle / RTC_SLOW_CLK(150k)
-    RTCCNTL.touch_ctrl1.touch_sleep_cycles = sleep_time;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(RTCCNTL.touch_ctrl1, touch_sleep_cycles, sleep_time);
 }
 
 /**
@@ -83,7 +87,7 @@ static inline void touch_ll_set_sleep_time(uint16_t sleep_time)
  */
 static inline void touch_ll_get_sleep_time(uint16_t *sleep_time)
 {
-    *sleep_time = RTCCNTL.touch_ctrl1.touch_sleep_cycles;
+    *sleep_time = HAL_FORCE_READ_U32_REG_FIELD(RTCCNTL.touch_ctrl1, touch_sleep_cycles);
 }
 
 /**
@@ -990,7 +994,7 @@ static inline void touch_ll_proximity_get_channel_num(touch_pad_t prox_pad[])
  */
 static inline void touch_ll_proximity_set_meas_times(uint32_t times)
 {
-    RTCCNTL.touch_approach.touch_approach_meas_time = times;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(RTCCNTL.touch_approach, touch_approach_meas_time, times);
 }
 
 /**
@@ -1000,7 +1004,7 @@ static inline void touch_ll_proximity_set_meas_times(uint32_t times)
  */
 static inline void touch_ll_proximity_get_meas_times(uint32_t *times)
 {
-    *times = RTCCNTL.touch_approach.touch_approach_meas_time;
+    *times = HAL_FORCE_READ_U32_REG_FIELD(RTCCNTL.touch_approach, touch_approach_meas_time);
 }
 
 /**

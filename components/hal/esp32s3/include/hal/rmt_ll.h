@@ -15,6 +15,7 @@
 
 #include <stddef.h>
 #include <stdbool.h>
+#include "hal/misc.h"
 #include "soc/rmt_struct.h"
 
 #ifdef __cplusplus
@@ -57,7 +58,7 @@ static inline void rmt_ll_set_group_clock_src(rmt_dev_t *dev, uint32_t channel, 
     // Formula: rmt_sclk = module_clock_src / (1 + div_num + div_a / div_b)
     dev->sys_conf.sclk_active = 0;
     dev->sys_conf.sclk_sel = src;
-    dev->sys_conf.sclk_div_num = div_num;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->sys_conf, sclk_div_num, div_num);
     dev->sys_conf.sclk_div_a = div_a;
     dev->sys_conf.sclk_div_b = div_b;
     dev->sys_conf.sclk_active = 1;
@@ -139,22 +140,22 @@ static inline uint32_t rmt_ll_rx_get_mem_blocks(rmt_dev_t *dev, uint32_t channel
 
 static inline void rmt_ll_tx_set_channel_clock_div(rmt_dev_t *dev, uint32_t channel, uint32_t div)
 {
-    dev->chnconf0[channel].div_cnt_n = div;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->chnconf0[channel], div_cnt_n, div);
 }
 
 static inline void rmt_ll_rx_set_channel_clock_div(rmt_dev_t *dev, uint32_t channel, uint32_t div)
 {
-    dev->chmconf[channel].conf0.div_cnt_m = div;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->chmconf[channel].conf0, div_cnt_m, div);
 }
 
 static inline uint32_t rmt_ll_tx_get_channel_clock_div(rmt_dev_t *dev, uint32_t channel)
 {
-    return dev->chnconf0[channel].div_cnt_n;
+    return HAL_FORCE_READ_U32_REG_FIELD(dev->chnconf0[channel], div_cnt_n);
 }
 
 static inline uint32_t rmt_ll_rx_get_channel_clock_div(rmt_dev_t *dev, uint32_t channel)
 {
-    return dev->chmconf[channel].conf0.div_cnt_m;
+    return HAL_FORCE_READ_U32_REG_FIELD(dev->chmconf[channel].conf0, div_cnt_m);
 }
 
 static inline void rmt_ll_tx_enable_pingpong(rmt_dev_t *dev, uint32_t channel, bool enable)
@@ -230,7 +231,7 @@ static inline void rmt_ll_rx_enable_filter(rmt_dev_t *dev, uint32_t channel, boo
 
 static inline void rmt_ll_rx_set_filter_thres(rmt_dev_t *dev, uint32_t channel, uint32_t thres)
 {
-    dev->chmconf[channel].conf1.rx_filter_thres_m = thres;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->chmconf[channel].conf1, rx_filter_thres_m, thres);
 }
 
 static inline void rmt_ll_tx_enable_idle(rmt_dev_t *dev, uint32_t channel, bool enable)
@@ -440,14 +441,14 @@ static inline void rmt_ll_rx_set_carrier_high_low_ticks(rmt_dev_t *dev, uint32_t
 
 static inline void rmt_ll_tx_get_carrier_high_low_ticks(rmt_dev_t *dev, uint32_t channel, uint32_t *high_ticks, uint32_t *low_ticks )
 {
-    *high_ticks = dev->chncarrier_duty[channel].carrier_high_chn;
-    *low_ticks = dev->chncarrier_duty[channel].carrier_low_chn;
+    *high_ticks = HAL_FORCE_READ_U32_REG_FIELD(dev->chncarrier_duty[channel], carrier_high_chn);
+    *low_ticks = HAL_FORCE_READ_U32_REG_FIELD(dev->chncarrier_duty[channel], carrier_low_chn);
 }
 
 static inline void rmt_ll_rx_get_carrier_high_low_ticks(rmt_dev_t *dev, uint32_t channel, uint32_t *high_ticks, uint32_t *low_ticks)
 {
-    *high_ticks = dev->chm_rx_carrier_rm[channel].carrier_high_thres_chm;
-    *low_ticks = dev->chm_rx_carrier_rm[channel].carrier_low_thres_chm;
+    *high_ticks = HAL_FORCE_READ_U32_REG_FIELD(dev->chm_rx_carrier_rm[channel], carrier_high_thres_chm);
+    *low_ticks = HAL_FORCE_READ_U32_REG_FIELD(dev->chm_rx_carrier_rm[channel], carrier_low_thres_chm);
 }
 
 static inline void rmt_ll_tx_enable_carrier_modulation(rmt_dev_t *dev, uint32_t channel, bool enable)

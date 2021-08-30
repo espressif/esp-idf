@@ -22,7 +22,9 @@
 
 #pragma once
 #include <stdbool.h>
+#include "hal/misc.h"
 #include "soc/i2s_periph.h"
+#include "soc/i2s_struct.h"
 #include "hal/i2s_types.h"
 
 #ifdef __cplusplus
@@ -219,7 +221,7 @@ static inline void i2s_ll_tx_set_clk(i2s_dev_t *hw, i2s_ll_clk_cal_t *set)
             hw->tx_clkm_div_conf.tx_clkm_div_yn1 = 0;
         }
     }
-    hw->tx_clkm_conf.tx_clkm_div_num = set->mclk_div;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->tx_clkm_conf, tx_clkm_div_num, set->mclk_div);
 }
 
 /**
@@ -258,7 +260,7 @@ static inline void i2s_ll_rx_set_clk(i2s_dev_t *hw, i2s_ll_clk_cal_t *set)
             hw->rx_clkm_div_conf.rx_clkm_div_yn1 = 0;
         }
     }
-    hw->rx_clkm_conf.rx_clkm_div_num = set->mclk_div;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->rx_clkm_conf, rx_clkm_div_num, set->mclk_div);
 }
 
 /**
@@ -501,7 +503,7 @@ static inline void i2s_ll_tx_enable_pdm(i2s_dev_t *hw, bool pdm_enable)
  */
 static inline void i2s_ll_tx_set_pdm_prescale(i2s_dev_t *hw, bool prescale)
 {
-    hw->tx_pcm2pdm_conf.tx_pdm_prescale = prescale;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->tx_pcm2pdm_conf, tx_pdm_prescale, prescale);
 }
 
 /**

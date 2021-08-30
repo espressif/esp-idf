@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct extmem_dev_s {
     union {
         struct {
             uint32_t dcache_enable                 :    1;  /*The bit is used to activate the data cache. 0: disable, 1: enable*/

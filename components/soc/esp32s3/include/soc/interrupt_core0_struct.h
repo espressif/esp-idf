@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct interrupt_core0_dev_s {
     union {
         struct {
             uint32_t core0_mac_intr_map: 5;

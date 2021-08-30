@@ -23,6 +23,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "hal/misc.h"
 #include "hal/eth_types.h"
 #include "soc/emac_dma_struct.h"
 #include "soc/emac_mac_struct.h"
@@ -310,7 +311,7 @@ static inline void emac_ll_promiscuous_mode_enable(emac_mac_dev_t *mac_regs, boo
 /* gmacfc */
 static inline void emac_ll_set_pause_time(emac_mac_dev_t *mac_regs, uint32_t time)
 {
-    mac_regs->gmacfc.pause_time = time;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mac_regs->gmacfc, pause_time, time);
 }
 
 static inline void emac_ll_zero_quanta_pause_enable(emac_mac_dev_t *mac_regs, bool enable)
@@ -346,18 +347,18 @@ static inline void emac_ll_clear(emac_mac_dev_t *mac_regs)
 /* emacmiidata */
 static inline void emac_ll_set_phy_data(emac_mac_dev_t *mac_regs, uint32_t data)
 {
-    mac_regs->emacmiidata.mii_data = data;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mac_regs->emacmiidata, mii_data, data);
 }
 
 static inline uint32_t emac_ll_get_phy_data(emac_mac_dev_t *mac_regs)
 {
-    return mac_regs->emacmiidata.mii_data;
+    return HAL_FORCE_READ_U32_REG_FIELD(mac_regs->emacmiidata, mii_data);
 }
 
 /* emacaddr0 */
 static inline void emac_ll_set_addr(emac_mac_dev_t *mac_regs, const uint8_t *addr)
 {
-    mac_regs->emacaddr0high.address0_hi = (addr[5] << 8) | addr[4];
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mac_regs->emacaddr0high, address0_hi, (addr[5] << 8) | addr[4]);
     mac_regs->emacaddr0low = (addr[3] << 24) | (addr[2] << 16) | (addr[1] << 8) | (addr[0]);
 }
 /*************** End of mac regs operation *********************/

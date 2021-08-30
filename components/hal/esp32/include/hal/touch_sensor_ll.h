@@ -24,7 +24,11 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include "hal/misc.h"
 #include "soc/touch_sensor_periph.h"
+#include "soc/sens_struct.h"
+#include "soc/rtc_io_struct.h"
+#include "soc/rtc_cntl_struct.h"
 #include "hal/touch_sensor_types.h"
 
 
@@ -60,9 +64,9 @@ static inline touch_pad_t touch_ll_num_wrap(touch_pad_t touch_num)
 static inline void touch_ll_set_meas_time(uint16_t meas_time)
 {
     //touch sensor measure time= meas_cycle / 8Mhz
-    SENS.sar_touch_ctrl1.touch_meas_delay = meas_time;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_touch_ctrl1, touch_meas_delay, meas_time);
     //the waiting cycles (in 8MHz) between TOUCH_START and TOUCH_XPD
-    SENS.sar_touch_ctrl1.touch_xpd_wait = SOC_TOUCH_PAD_MEASURE_WAIT_MAX;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_touch_ctrl1, touch_xpd_wait, SOC_TOUCH_PAD_MEASURE_WAIT_MAX);
 }
 
 /**
@@ -72,7 +76,7 @@ static inline void touch_ll_set_meas_time(uint16_t meas_time)
  */
 static inline void touch_ll_get_meas_time(uint16_t *meas_time)
 {
-    *meas_time = SENS.sar_touch_ctrl1.touch_meas_delay;
+    *meas_time = HAL_FORCE_READ_U32_REG_FIELD(SENS.sar_touch_ctrl1, touch_meas_delay);
 }
 
 /**
@@ -86,7 +90,7 @@ static inline void touch_ll_get_meas_time(uint16_t *meas_time)
 static inline void touch_ll_set_sleep_time(uint16_t sleep_time)
 {
     //touch sensor sleep cycle Time = sleep_cycle / RTC_SLOW_CLK( can be 150k or 32k depending on the options)
-    SENS.sar_touch_ctrl2.touch_sleep_cycles = sleep_time;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_touch_ctrl2, touch_sleep_cycles, sleep_time);
 }
 
 /**
@@ -96,7 +100,7 @@ static inline void touch_ll_set_sleep_time(uint16_t sleep_time)
  */
 static inline void touch_ll_get_sleep_time(uint16_t *sleep_time)
 {
-    *sleep_time = SENS.sar_touch_ctrl2.touch_sleep_cycles;
+    *sleep_time = HAL_FORCE_READ_U32_REG_FIELD(SENS.sar_touch_ctrl2, touch_sleep_cycles);
 }
 
 /**
@@ -291,9 +295,9 @@ static inline void touch_ll_set_threshold(touch_pad_t touch_num, uint16_t thresh
 {
     touch_pad_t tp_wrap = touch_ll_num_wrap(touch_num);
     if (tp_wrap & 0x1) {
-        SENS.touch_thresh[tp_wrap / 2].l_thresh = threshold;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.touch_thresh[tp_wrap / 2], l_thresh, threshold);
     } else {
-        SENS.touch_thresh[tp_wrap / 2].h_thresh = threshold;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.touch_thresh[tp_wrap / 2], h_thresh, threshold);
     }
 }
 
@@ -308,8 +312,8 @@ static inline void touch_ll_get_threshold(touch_pad_t touch_num, uint16_t *thres
     touch_pad_t tp_wrap = touch_ll_num_wrap(touch_num);
     if (threshold) {
         *threshold = (tp_wrap & 0x1 ) ?
-                     SENS.touch_thresh[tp_wrap / 2].l_thresh :
-                     SENS.touch_thresh[tp_wrap / 2].h_thresh;
+            HAL_FORCE_READ_U32_REG_FIELD(SENS.touch_thresh[tp_wrap / 2], l_thresh) :
+            HAL_FORCE_READ_U32_REG_FIELD(SENS.touch_thresh[tp_wrap / 2], h_thresh);
     }
 }
 
@@ -489,7 +493,8 @@ static inline void touch_ll_intr_clear(void)
 static inline uint32_t touch_ll_read_raw_data(touch_pad_t touch_num)
 {
     touch_pad_t tp_wrap = touch_ll_num_wrap(touch_num);
-    return ((tp_wrap & 0x1) ? SENS.touch_meas[tp_wrap / 2].l_val : SENS.touch_meas[tp_wrap / 2].h_val);
+    return ((tp_wrap & 0x1) ? HAL_FORCE_READ_U32_REG_FIELD(SENS.touch_meas[tp_wrap / 2], l_val) :
+                              HAL_FORCE_READ_U32_REG_FIELD(SENS.touch_meas[tp_wrap / 2], h_val));
 }
 
 /**

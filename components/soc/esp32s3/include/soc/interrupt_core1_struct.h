@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct interrupt_core1_dev_s {
     uint32_t reserved_0;
     uint32_t reserved_4;
     uint32_t reserved_8;
