@@ -16,8 +16,8 @@ The following table shows ESP-IDF support of Espressif SoCs where ![alt text][pr
 |ESP32-S3     |                        |                        |                        |                        | ![alt text][preview]   | ![alt text][supported] | [Announcement](https://www.espressif.com/en/news/ESP32_S3) |
 |ESP32-H2     |                        |                        |                        |                        |                        | ![alt text][preview]   | [Announcement](https://www.espressif.com/en/news/ESP32_H2) |
 
-[supported]: docs/_static/supported.png "supported"
-[preview]: docs/_static/preview.png "preview"
+[supported]: https://img.shields.io/badge/-supported-green "supported"
+[preview]: https://img.shields.io/badge/-preview-orange "preview"
 
 Espressif SoCs released before 2016 (ESP8266 and ESP8285) are supported by [RTOS SDK](https://github.com/espressif/ESP8266_RTOS_SDK) instead.
 
