@@ -84,7 +84,9 @@ typedef struct EventGroupDef_t
         uint8_t ucStaticallyAllocated; /*< Set to pdTRUE if the event group is statically allocated to ensure no attempt is made to free the memory. */
     #endif
 
+#ifdef ESP_PLATFORM
     portMUX_TYPE eventGroupMux;     //Mutex required due to SMP
+#endif // ESP_PLATFORM
 } EventGroup_t;
 
 /*-----------------------------------------------------------*/
@@ -140,8 +142,9 @@ static BaseType_t prvTestWaitCondition( const EventBits_t uxCurrentEventBits,
             #endif /* configSUPPORT_DYNAMIC_ALLOCATION */
 
             traceEVENT_GROUP_CREATE( pxEventBits );
-
+#ifdef ESP_PLATFORM
             vPortCPUInitializeMutex( &pxEventBits->eventGroupMux );
+#endif // ESP_PLATFORM
         }
         else
         {
@@ -191,9 +194,9 @@ static BaseType_t prvTestWaitCondition( const EventBits_t uxCurrentEventBits,
                     pxEventBits->ucStaticallyAllocated = pdFALSE;
                 }
             #endif /* configSUPPORT_STATIC_ALLOCATION */
-
+#ifdef ESP_PLATFORM
             vPortCPUInitializeMutex( &pxEventBits->eventGroupMux );
-
+#endif // ESP_PLATFORM
             traceEVENT_GROUP_CREATE( pxEventBits );
         }
         else

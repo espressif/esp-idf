@@ -152,8 +152,10 @@
     PRIVILEGED_DATA static QueueHandle_t xTimerQueue = NULL;
     PRIVILEGED_DATA static TaskHandle_t xTimerTaskHandle = NULL;
 
+#ifdef ESP_PLATFORM
 /* Mux. We use a single mux for all the timers for now. ToDo: maybe increase granularity here? */
 PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
+#endif // ESP_PLATFORM
 
 /*lint -restore */
 
@@ -521,13 +523,15 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
     }
 /*-----------------------------------------------------------*/
 
-    static void prvProcessExpiredTimer( const TickType_t xNextExpireTime, const TickType_t xTimeNow )
+    static void prvProcessExpiredTimer( const TickType_t xNextExpireTime,
+                                        const TickType_t xTimeNow )
     {
         BaseType_t xResult;
         Timer_t * const pxTimer = ( Timer_t * ) listGET_OWNER_OF_HEAD_ENTRY( pxCurrentTimerList ); /*lint !e9087 !e9079 void * is used as this macro is used with tasks and co-routines too.  Alignment is known to be fine as the type of the pointer stored and retrieved is the same. */
 
         /* Remove the timer from the list of active timers.  A check has already
          * been performed to ensure the list is not empty. */
+
         ( void ) uxListRemove( &( pxTimer->xTimerListItem ) );
         traceTIMER_EXPIRED( pxTimer );
 
@@ -965,8 +969,9 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
         /* Check that the list from which active timers are referenced, and the
          * queue used to communicate with the timer service, have been
          * initialised. */
-
+#ifdef ESP_PLATFORM
         if( xTimerQueue == NULL ) vPortCPUInitializeMutex( &xTimerMux );
+#endif // ESP_PLATFORM
 
         taskENTER_CRITICAL();
         {
