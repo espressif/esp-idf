@@ -49,6 +49,7 @@ LEGACY_DOCS = ['api-guides/build-system-legacy.rst',
                'get-started-legacy/**']
 
 USB_DOCS = ['api-reference/peripherals/usb_device.rst',
+            'api-reference/peripherals/usb_host.rst',
             'api-guides/usb-otg-console.rst',
             'api-guides/dfu.rst']
 

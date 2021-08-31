@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/*
+Warning: The USB Host Library API is still a beta version and may be subject to change
+*/
+
 #pragma once
 
 #include "usb/usb_types_ch9.h"
@@ -101,7 +105,7 @@ typedef struct {
  *                of the endpoint.
  *
  * @note For Bulk/Control/Interrupt IN transfers, the num_bytes must be a integer multiple of the endpoint's MPS
- * @note This structure should be allocated via __insert_func_name__()
+ * @note This structure should be allocated via usb_host_transfer_alloc()
  * @note Once the transfer has be submitted, users should not modify the structure until the transfer has completed
  */
 typedef struct usb_transfer_s usb_transfer_t;
@@ -123,7 +127,7 @@ struct usb_transfer_s{
     usb_device_handle_t device_handle;              /**< Device handle */
     uint8_t bEndpointAddress;                       /**< Endpoint Address */
     usb_transfer_status_t status;                   /**< Status of the transfer */
-    uint32_t timeout;                               /**< Timeout (in milliseconds) of the packet (currently not supported yet) */
+    uint32_t timeout_ms;                            /**< Timeout (in milliseconds) of the packet (currently not supported yet) */
     usb_transfer_cb_t callback;                     /**< Transfer callback */
     void *context;                                  /**< Context variable for transfer to associate transfer with something */
     const int num_isoc_packets;                     /**< Only relevant to Isochronous. Number of service periods (i.e., intervals) to transfer data buffer over. */

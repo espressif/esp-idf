@@ -17,7 +17,7 @@
 #include "esp_heap_caps.h"
 #include "hcd.h"
 #include "usbh.h"
-#include "usb/usb_host_misc.h"
+#include "usb/usb_helpers.h"
 #include "usb/usb_types_ch9.h"
 
 //Device action flags. Listed in the order they should handled in. Some actions are mutually exclusive

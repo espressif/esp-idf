@@ -143,7 +143,7 @@ void msc_client_async_seq_task(void *arg)
     usb_transfer_t *xfer_out = NULL;    //Must be large enough to contain CBW and MSC reset control transfer
     usb_transfer_t *xfer_in = NULL;     //Must be large enough to contain CSW and Data
     size_t out_worst_case_size = MAX(sizeof(mock_msc_bulk_cbw_t), sizeof(usb_setup_packet_t));
-    size_t in_worst_case_size = usb_host_round_up_to_mps(MAX(MOCK_MSC_SCSI_SECTOR_SIZE * msc_obj.test_param.num_sectors_per_xfer, sizeof(mock_msc_bulk_csw_t)), MOCK_MSC_SCSI_BULK_EP_MPS);
+    size_t in_worst_case_size = usb_round_up_to_mps(MAX(MOCK_MSC_SCSI_SECTOR_SIZE * msc_obj.test_param.num_sectors_per_xfer, sizeof(mock_msc_bulk_csw_t)), MOCK_MSC_SCSI_BULK_EP_MPS);
     TEST_ASSERT_EQUAL(ESP_OK, usb_host_transfer_alloc(out_worst_case_size, 0, &xfer_out));
     TEST_ASSERT_EQUAL(ESP_OK, usb_host_transfer_alloc(in_worst_case_size, 0, &xfer_in));
     xfer_out->callback = msc_transfer_cb;
@@ -207,7 +207,7 @@ void msc_client_async_seq_task(void *arg)
             }
             case TEST_STAGE_MSC_DATA: {
                 ESP_LOGD(MSC_CLIENT_TAG, "Data");
-                xfer_in->num_bytes = usb_host_round_up_to_mps(MOCK_MSC_SCSI_SECTOR_SIZE * msc_obj.test_param.num_sectors_per_xfer, MOCK_MSC_SCSI_BULK_EP_MPS);
+                xfer_in->num_bytes = usb_round_up_to_mps(MOCK_MSC_SCSI_SECTOR_SIZE * msc_obj.test_param.num_sectors_per_xfer, MOCK_MSC_SCSI_BULK_EP_MPS);
                 xfer_in->bEndpointAddress = MOCK_MSC_SCSI_BULK_IN_EP_ADDR;
                 TEST_ASSERT_EQUAL(ESP_OK, usb_host_transfer_submit(xfer_in));
                 //Next stage set from transfer callback
@@ -215,7 +215,7 @@ void msc_client_async_seq_task(void *arg)
             }
             case TEST_STAGE_MSC_CSW: {
                 ESP_LOGD(MSC_CLIENT_TAG, "CSW");
-                xfer_in->num_bytes = usb_host_round_up_to_mps(sizeof(mock_msc_bulk_csw_t), MOCK_MSC_SCSI_BULK_EP_MPS);
+                xfer_in->num_bytes = usb_round_up_to_mps(sizeof(mock_msc_bulk_csw_t), MOCK_MSC_SCSI_BULK_EP_MPS);
                 xfer_in->bEndpointAddress = MOCK_MSC_SCSI_BULK_IN_EP_ADDR;
                 TEST_ASSERT_EQUAL(ESP_OK, usb_host_transfer_submit(xfer_in));
                 //Next stage set from transfer callback

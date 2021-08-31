@@ -5,12 +5,7 @@
  */
 
 /*
-Note: This header file contains the types and macros belong/relate to the USB2.0 protocol and are HW implementation
-and mode (i.e., Host or Device) agnostic.
-
-- On the USB Host Stack, this header is only meant to be used on the HCD layer and above. For types and macros on the
-  Host stack that are HW implementation specific (i.e., HAL layer and below), add them to the "hal/usb_types_private.h"
-  header instead.
+Warning: The USB Host Library API is still a beta version and may be subject to change
 */
 
 #pragma once
@@ -28,15 +23,20 @@ extern "C"
 
 /**
  * @brief USB2.0 device states
+ *
+ * See Table 9-1 of USB2.0 specification for more details
+ *
+ * @note The USB_DEVICE_STATE_NOT_ATTACHED is not part of the USB2.0 specification, but is a catch all state for devices
+ *       that need to be cleaned up after a sudden disconnection or port error.
  */
 typedef enum {
-    USB_DEVICE_STATE_NOT_ATTACHED,  //Not in the USB spec, but is a catch all state for devices that need to be cleaned up after a sudden disconnection or port error
-    USB_DEVICE_STATE_ATTACHED,
-    USB_DEVICE_STATE_POWERED,
-    USB_DEVICE_STATE_DEFAULT,
-    USB_DEVICE_STATE_ADDRESS,
-    USB_DEVICE_STATE_CONFIGURED,
-    USB_DEVICE_STATE_SUSPENDED,
+    USB_DEVICE_STATE_NOT_ATTACHED,              /**< The device was previously configured or suspended, but is no longer attached (either suddenly disconnected or a port error) */
+    USB_DEVICE_STATE_ATTACHED,                  /**< Device is attached to the USB, but is not powered. */
+    USB_DEVICE_STATE_POWERED,                   /**< Device is attached to the USB and powered, but has not been reset. */
+    USB_DEVICE_STATE_DEFAULT,                   /**< Device is attached to the USB and powered and has been reset, but has not been assigned a unique address. Device responds at the default address. */
+    USB_DEVICE_STATE_ADDRESS,                   /**< Device is attached to the USB, powered, has been reset, and a unique device address has been assigned. Device is not configured. */
+    USB_DEVICE_STATE_CONFIGURED,                /**< Device is attached to the USB, powered, has been reset, has a unique address, is configured, and is not suspended. The host may now use the function provided by the device. */
+    USB_DEVICE_STATE_SUSPENDED,                 /**< Device is, at minimum, attached to the USB and is powered and has not seen bus activity for 3 ms. It may also have a unique address and be configured for use. However, because the device is suspended, the host may not use the device’s function. */
 } usb_device_state_t;
 
 /**
@@ -85,14 +85,16 @@ typedef enum {
 
 /**
  * @brief Structure representing a USB control transfer setup packet
+ *
+ * See Table 9-2 of USB2.0 specification for more details
  */
 typedef union {
     struct {
-        uint8_t bmRequestType;
-        uint8_t bRequest;
-        uint16_t wValue;
-        uint16_t wIndex;
-        uint16_t wLength;
+        uint8_t bmRequestType;              /**< Characteristics of request */
+        uint8_t bRequest;                   /**< Specific request */
+        uint16_t wValue;                    /**< Word-sized field that varies according to request */
+        uint16_t wIndex;                    /**< Word-sized field that varies according to request; typically used to pass an index or offset */
+        uint16_t wLength;                   /**< Number of bytes to transfer if there is a data stage */
     } __attribute__((packed));
     uint8_t val[USB_SETUP_PACKET_SIZE];
 } usb_setup_packet_t;
@@ -220,14 +222,14 @@ _Static_assert(sizeof(usb_setup_packet_t) == USB_SETUP_PACKET_SIZE, "Size of usb
 #define USB_STANDARD_DESC_SIZE              2
 
 /**
- * @brief Dummy USB standard descriptor
+ * @brief USB standard descriptor
  *
- * All USB standard descriptors start with these two bytes. Use this type traversing over descriptors
+ * All USB standard descriptors start with these two bytes. Use this type when traversing over configuration descriptors
  */
 typedef union {
     struct {
-        uint8_t bLength;
-        uint8_t bDescriptorType;
+        uint8_t bLength;                    /**< Size of the descriptor in bytes */
+        uint8_t bDescriptorType;            /**< Descriptor Type */
     } USB_DESC_ATTR;
     uint8_t val[USB_STANDARD_DESC_SIZE];
 } usb_standard_desc_t;
@@ -242,23 +244,25 @@ _Static_assert(sizeof(usb_standard_desc_t) == USB_STANDARD_DESC_SIZE, "Size of u
 
 /**
  * @brief Structure representing a USB device descriptor
+ *
+ * See Table 9-8 of USB2.0 specification for more details
  */
 typedef union {
     struct {
-        uint8_t bLength;
-        uint8_t bDescriptorType;
-        uint16_t bcdUSB;
-        uint8_t bDeviceClass;
-        uint8_t bDeviceSubClass;
-        uint8_t bDeviceProtocol;
-        uint8_t bMaxPacketSize0;
-        uint16_t idVendor;
-        uint16_t idProduct;
-        uint16_t bcdDevice;
-        uint8_t iManufacturer;
-        uint8_t iProduct;
-        uint8_t iSerialNumber;
-        uint8_t bNumConfigurations;
+        uint8_t bLength;                    /**< Size of the descriptor in bytes */
+        uint8_t bDescriptorType;            /**< DEVICE Descriptor Type */
+        uint16_t bcdUSB;                    /**< USB Specification Release Number in Binary-Coded Decimal (i.e., 2.10 is 210H) */
+        uint8_t bDeviceClass;               /**< Class code (assigned by the USB-IF) */
+        uint8_t bDeviceSubClass;            /**< Subclass code (assigned by the USB-IF) */
+        uint8_t bDeviceProtocol;            /**< Protocol code (assigned by the USB-IF) */
+        uint8_t bMaxPacketSize0;            /**< Maximum packet size for endpoint zero (only 8, 16, 32, or 64 are valid) */
+        uint16_t idVendor;                  /**< Vendor ID (assigned by the USB-IF) */
+        uint16_t idProduct;                 /**< Product ID (assigned by the manufacturer) */
+        uint16_t bcdDevice;                 /**< Device release number in binary-coded decimal */
+        uint8_t iManufacturer;              /**< Index of string descriptor describing manufacturer */
+        uint8_t iProduct;                   /**< Index of string descriptor describing product */
+        uint8_t iSerialNumber;              /**< Index of string descriptor describing the device’s serial number */
+        uint8_t bNumConfigurations;         /**< Number of possible configurations */
     } USB_DESC_ATTR;
     uint8_t val[USB_DEVICE_DESC_SIZE];
 } usb_device_desc_t;
@@ -307,19 +311,21 @@ _Static_assert(sizeof(usb_device_desc_t) == USB_DEVICE_DESC_SIZE, "Size of usb_d
 /**
  * @brief Structure representing a short USB configuration descriptor
  *
+ * See Table 9-10 of USB2.0 specification for more details
+ *
  * @note The full USB configuration includes all the interface and endpoint
  *       descriptors of that configuration.
  */
 typedef union {
     struct {
-        uint8_t bLength;
-        uint8_t bDescriptorType;
-        uint16_t wTotalLength;
-        uint8_t bNumInterfaces;
-        uint8_t bConfigurationValue;
-        uint8_t iConfiguration;
-        uint8_t bmAttributes;
-        uint8_t bMaxPower;
+        uint8_t bLength;                    /**< Size of the descriptor in bytes */
+        uint8_t bDescriptorType;            /**< CONFIGURATION Descriptor Type */
+        uint16_t wTotalLength;              /**< Total length of data returned for this configuration */
+        uint8_t bNumInterfaces;             /**< Number of interfaces supported by this configuration */
+        uint8_t bConfigurationValue;        /**< Value to use as an argument to the SetConfiguration() request to select this configuration */
+        uint8_t iConfiguration;             /**< Index of string descriptor describing this configuration */
+        uint8_t bmAttributes;               /**< Configuration characteristics */
+        uint8_t bMaxPower;                  /**< Maximum power consumption of the USB device from the bus in this specific configuration when the device is fully operational. */
     } USB_DESC_ATTR;
     uint8_t val[USB_CONFIG_DESC_SIZE];
 } usb_config_desc_t;
@@ -345,14 +351,14 @@ _Static_assert(sizeof(usb_config_desc_t) == USB_CONFIG_DESC_SIZE, "Size of usb_c
  */
 typedef union {
     struct {
-        uint8_t bLength;
-        uint8_t bDescriptorType;
-        uint8_t bFirstInterface;
-        uint8_t bInterfaceCount;
-        uint8_t bFunctionClass;
-        uint8_t bFunctionSubClass;
-        uint8_t bFunctionProtocol;
-        uint8_t iFunction;
+        uint8_t bLength;                    /**< Size of the descriptor in bytes */
+        uint8_t bDescriptorType;            /**< INTERFACE ASSOCIATION Descriptor Type */
+        uint8_t bFirstInterface;            /**< Interface number of the first interface that is associated with this function */
+        uint8_t bInterfaceCount;            /**< Number of contiguous interfaces that are associated with this function */
+        uint8_t bFunctionClass;             /**< Class code (assigned by USB-IF) */
+        uint8_t bFunctionSubClass;          /**< Subclass code (assigned by USB-IF) */
+        uint8_t bFunctionProtocol;          /**< Protocol code (assigned by USB-IF) */
+        uint8_t iFunction;                  /**< Index of string descriptor describing this function */
     } USB_DESC_ATTR;
     uint8_t val[USB_IAD_DESC_SIZE];
 } usb_iad_desc_t;
@@ -367,18 +373,20 @@ _Static_assert(sizeof(usb_iad_desc_t) == USB_IAD_DESC_SIZE, "Size of usb_iad_des
 
 /**
  * @brief Structure representing a USB interface descriptor
+ *
+ * See Table 9-12 of USB2.0 specification for more details
  */
 typedef union {
     struct {
-        uint8_t bLength;
-        uint8_t bDescriptorType;
-        uint8_t bInterfaceNumber;
-        uint8_t bAlternateSetting;
-        uint8_t bNumEndpoints;
-        uint8_t bInterfaceClass;
-        uint8_t bInterfaceSubClass;
-        uint8_t bInterfaceProtocol;
-        uint8_t iInterface;
+        uint8_t bLength;                    /**< Size of the descriptor in bytes */
+        uint8_t bDescriptorType;            /**< INTERFACE Descriptor Type */
+        uint8_t bInterfaceNumber;           /**< Number of this interface. */
+        uint8_t bAlternateSetting;          /**< Value used to select this alternate setting for the interface identified in the prior field */
+        uint8_t bNumEndpoints;              /**< Number of endpoints used by this interface (excluding endpoint zero). */
+        uint8_t bInterfaceClass;            /**< Class code (assigned by the USB-IF) */
+        uint8_t bInterfaceSubClass;         /**< Subclass code (assigned by the USB-IF) */
+        uint8_t bInterfaceProtocol;         /**< Protocol code (assigned by the USB) */
+        uint8_t iInterface;                 /**< Index of string descriptor describing this interface */
     } USB_DESC_ATTR;
     uint8_t val[USB_INTF_DESC_SIZE];
 } usb_intf_desc_t;
@@ -393,15 +401,17 @@ _Static_assert(sizeof(usb_intf_desc_t) == USB_INTF_DESC_SIZE, "Size of usb_intf_
 
 /**
  * @brief Structure representing a USB endpoint descriptor
+ *
+ * See Table 9-13 of USB2.0 specification for more details
  */
 typedef union {
     struct {
-        uint8_t bLength;
-        uint8_t bDescriptorType;
-        uint8_t bEndpointAddress;
-        uint8_t bmAttributes;
-        uint16_t wMaxPacketSize;
-        uint8_t bInterval;
+        uint8_t bLength;                    /**< Size of the descriptor in bytes */
+        uint8_t bDescriptorType;            /**< ENDPOINT Descriptor Type */
+        uint8_t bEndpointAddress;           /**< The address of the endpoint on the USB device described by this descriptor */
+        uint8_t bmAttributes;               /**< This field describes the endpoint’s attributes when it is configured using the bConfigurationValue. */
+        uint16_t wMaxPacketSize;            /**< Maximum packet size this endpoint is capable of sending or receiving when this configuration is selected. */
+        uint8_t bInterval;                  /**< Interval for polling Isochronous and Interrupt endpoints. Expressed in frames or microframes depending on the device operating speed (1 ms for Low-Speed and Full-Speed or 125 us for USB High-Speed and above). */
     } USB_DESC_ATTR;
     uint8_t val[USB_EP_DESC_SIZE];
 } usb_ep_desc_t;
@@ -451,9 +461,9 @@ _Static_assert(sizeof(usb_ep_desc_t) == USB_EP_DESC_SIZE, "Size of usb_ep_desc_t
  */
 typedef union {
     struct {
-        uint8_t bLength;
-        uint8_t bDescriptorType;
-        uint16_t wData[1];        /* UTF-16LE encoded */
+        uint8_t bLength;                    /**< Size of the descriptor in bytes */
+        uint8_t bDescriptorType;            /**< STRING Descriptor Type */
+        uint16_t wData[1];                  /**< UTF-16LE encoded */
     } USB_DESC_ATTR;
     uint8_t val[USB_STR_DESC_SIZE];
 } usb_str_desc_t;
