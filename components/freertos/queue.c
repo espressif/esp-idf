@@ -139,9 +139,9 @@ typedef struct QueueDefinition /* The old naming convention is used to prevent b
         UBaseType_t uxQueueNumber;
         uint8_t ucQueueType;
     #endif
-
+#ifdef ESP_PLATFORM
     portMUX_TYPE mux;       //Mutex required due to SMP
-
+#endif // ESP_PLATFORM
 } xQUEUE;
 
 /* The old xQUEUE name is maintained above then typedefed to the new Queue_t
@@ -174,10 +174,10 @@ typedef xQUEUE Queue_t;
  * The pcQueueName member of a structure being NULL is indicative of the
  * array position being vacant. */
     PRIVILEGED_DATA QueueRegistryItem_t xQueueRegistry[ configQUEUE_REGISTRY_SIZE ];
-
+#ifdef ESP_PLATFORM
     //Need to add queue registry mutex to protect against simultaneous access
     static portMUX_TYPE queue_registry_spinlock = portMUX_INITIALIZER_UNLOCKED;
-
+#endif // ESP_PLATFORM
 #endif /* configQUEUE_REGISTRY_SIZE */
 
 /*
@@ -285,10 +285,12 @@ BaseType_t xQueueGenericReset( QueueHandle_t xQueue,
 
     configASSERT( pxQueue );
 
+#ifdef ESP_PLATFORM
     if( xNewQueue == pdTRUE )
     {
         vPortCPUInitializeMutex(&pxQueue->mux);
     }
+#endif // ESP_PLATFORM
 
     taskENTER_CRITICAL();
     {
@@ -532,8 +534,9 @@ static void prvInitialiseNewQueue( const UBaseType_t uxQueueLength,
 
             /* In case this is a recursive mutex. */
             pxNewQueue->u.xSemaphore.uxRecursiveCallCount = 0;
+#ifdef ESP_PLATFORM
             vPortCPUInitializeMutex(&pxNewQueue->mux);
-
+#endif // ESP_PLATFORM
             traceCREATE_MUTEX( pxNewQueue );
 
             /* Start with the semaphore in the expected state. */

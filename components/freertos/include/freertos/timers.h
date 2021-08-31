@@ -75,8 +75,11 @@
  * (for example, xTimerStart(), xTimerReset(), etc.).
  */
 struct tmrTimerControl; /* The old naming convention is used to prevent breaking kernel aware debuggers. */
-//typedef struct tmrTimerControl * TimerHandle_t;
+#ifdef ESP_PLATFORM // IDF-3768
 typedef void* TimerHandle_t;
+#else
+typedef struct tmrTimerControl * TimerHandle_t;
+#endif // ESP_PLATFORM
 /*
  * Defines the prototype to which timer callback functions must conform.
  */
