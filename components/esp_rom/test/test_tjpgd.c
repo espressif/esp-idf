@@ -5,9 +5,7 @@
 #include "sdkconfig.h"
 #include "unity.h"
 
-#if CONFIG_IDF_TARGET_ESP32
-
-#include "esp32/rom/tjpgd.h"
+#include "esp_rom_tjpgd.h"
 #include "test_tjpgd_logo.h"
 
 typedef struct {
@@ -18,7 +16,7 @@ typedef struct {
     int outH;
 } JpegDev;
 
-static UINT infunc(JDEC *decoder, BYTE *buf, UINT len)
+static uint32_t infunc(esp_rom_tjpgd_dec_t *decoder, uint8_t *buf, uint32_t len)
 {
     JpegDev *jd = (JpegDev *)decoder->device;
     printf("Reading %d bytes from pos %d\n", len, jd->inPos);
@@ -29,7 +27,7 @@ static UINT infunc(JDEC *decoder, BYTE *buf, UINT len)
     return len;
 }
 
-static UINT outfunc(JDEC *decoder, void *bitmap, JRECT *rect)
+static uint32_t outfunc(esp_rom_tjpgd_dec_t *decoder, void *bitmap, esp_rom_tjpgd_rect_t *rect)
 {
     unsigned char *in = (unsigned char *)bitmap;
     unsigned char *out;
@@ -55,10 +53,10 @@ TEST_CASE("Test JPEG decompression library", "[rom][tjpgd]")
     char *work;
     int r;
     int x, y, v;
-    JDEC decoder;
+    esp_rom_tjpgd_dec_t decoder;
     JpegDev jd;
-    decoded = malloc(48 * 48 * 3);
-    for (x = 0; x < 48 * 48 * 3; x += 2) {
+    decoded = malloc(TESTW * TESTH * 3);
+    for (x = 0; x < TESTW * TESTH * 3; x += 2) {
         decoded[x] = 0;
         decoded[x + 1] = 0xff;
     }
@@ -71,9 +69,9 @@ TEST_CASE("Test JPEG decompression library", "[rom][tjpgd]")
     jd.outW = TESTW;
     jd.outH = TESTH;
 
-    r = jd_prepare(&decoder, infunc, work, WORKSZ, (void *)&jd);
+    r = esp_rom_tjpgd_prepare(&decoder, infunc, work, WORKSZ, (void *)&jd);
     TEST_ASSERT_EQUAL(r, JDR_OK);
-    r = jd_decomp(&decoder, outfunc, 0);
+    r = esp_rom_tjpgd_decomp(&decoder, outfunc, 0);
     TEST_ASSERT_EQUAL(r, JDR_OK);
 
     p = decoded + 2;
@@ -89,5 +87,3 @@ TEST_CASE("Test JPEG decompression library", "[rom][tjpgd]")
     free(work);
     free(decoded);
 }
-
-#endif // #if CONFIG_IDF_TARGET_ESP32

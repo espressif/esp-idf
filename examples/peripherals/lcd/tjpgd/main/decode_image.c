@@ -18,7 +18,7 @@ format if you want to use a different image file.
 */
 
 #include "decode_image.h"
-#include "tjpgd.h"
+#include "esp_rom_tjpgd.h"
 #include "esp_log.h"
 #include <string.h>
 
@@ -42,7 +42,7 @@ typedef struct {
 } JpegDev;
 
 //Input function for jpeg decoder. Just returns bytes from the inData field of the JpegDev structure.
-static uint16_t infunc(JDEC *decoder, uint8_t *buf, uint16_t len)
+static uint32_t infunc(esp_rom_tjpgd_dec_t *decoder, uint8_t *buf, uint32_t len)
 {
     //Read bytes from input file
     JpegDev *jd = (JpegDev *)decoder->device;
@@ -55,7 +55,7 @@ static uint16_t infunc(JDEC *decoder, uint8_t *buf, uint16_t len)
 
 //Output function. Re-encodes the RGB888 data from the decoder as big-endian RGB565 and
 //stores it in the outData array of the JpegDev structure.
-static uint16_t outfunc(JDEC *decoder, void *bitmap, JRECT *rect)
+static uint32_t outfunc(esp_rom_tjpgd_dec_t *decoder, void *bitmap, esp_rom_tjpgd_rect_t *rect)
 {
     JpegDev *jd = (JpegDev *)decoder->device;
     uint8_t *in = (uint8_t *)bitmap;
@@ -83,7 +83,7 @@ esp_err_t decode_image(uint16_t ***pixels)
 {
     char *work = NULL;
     int r;
-    JDEC decoder;
+    esp_rom_tjpgd_dec_t decoder;
     JpegDev jd;
     *pixels = NULL;
     esp_err_t ret = ESP_OK;
@@ -120,13 +120,13 @@ esp_err_t decode_image(uint16_t ***pixels)
     jd.outH = IMAGE_H;
 
     //Prepare and decode the jpeg.
-    r = jd_prepare(&decoder, infunc, work, WORKSZ, (void *)&jd);
+    r = esp_rom_tjpgd_prepare(&decoder, infunc, work, WORKSZ, (void *)&jd);
     if (r != JDR_OK) {
         ESP_LOGE(TAG, "Image decoder: jd_prepare failed (%d)", r);
         ret = ESP_ERR_NOT_SUPPORTED;
         goto err;
     }
-    r = jd_decomp(&decoder, outfunc, 0);
+    r = esp_rom_tjpgd_decomp(&decoder, outfunc, 0);
     if (r != JDR_OK && r != JDR_FMT1) {
         ESP_LOGE(TAG, "Image decoder: jd_decode failed (%d)", r);
         ret = ESP_ERR_NOT_SUPPORTED;
