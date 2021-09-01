@@ -14,6 +14,12 @@ if(BOOTLOADER_BUILD)
         list(APPEND scripts "esp32s2beta/ld/esp32s2beta.rom.spiflash.ld")
     endif()
 
+    if(target STREQUAL "esp32")
+        if(NOT CONFIG_SPI_FLASH_ROM_DRIVER_PATCH)
+            list(APPEND scripts "esp32/ld/esp32.rom.spiflash.ld")
+        endif()
+    endif()
+
     if(CONFIG_ESP32_REV_MIN_3)
         list(APPEND scripts "esp32/ld/esp32.rom.eco3.ld")
     endif()
