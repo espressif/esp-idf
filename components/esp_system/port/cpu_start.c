@@ -372,6 +372,9 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif // CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
 
     esp_mspi_pin_init();
+    // For Octal flash, it's hard to implement a read_id function in OPI mode for all vendors.
+    // So we have to read it here in SPI mode, before entering the OPI mode.
+    bootloader_flash_update_id();
 #if CONFIG_ESPTOOLPY_OCT_FLASH
     bool efuse_opflash_en = REG_GET_FIELD(EFUSE_RD_REPEAT_DATA3_REG, EFUSE_FLASH_TYPE);
     if (!efuse_opflash_en) {
@@ -571,7 +574,6 @@ void IRAM_ATTR call_start_cpu0(void)
     }
 #endif
 
-    bootloader_flash_update_id();
     // Read the application binary image header. This will also decrypt the header if the image is encrypted.
     __attribute__((unused)) esp_image_header_t fhdr = {0};
 #ifdef CONFIG_APP_BUILD_TYPE_ELF_RAM

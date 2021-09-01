@@ -262,6 +262,9 @@
 #define SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND                  (1)
 #define SOC_SPI_MEM_SUPPORT_AUTO_RESUME                   (1)
 #define SOC_SPI_MEM_SUPPORT_SW_SUSPEND                    (1)
+#define SOC_SPI_MEM_SUPPORT_OPI_MODE                      (1)
+#define SOC_SPI_MEM_SUPPORT_TIME_TUNING                   (1)
+
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)
 

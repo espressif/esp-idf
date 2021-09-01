@@ -30,15 +30,6 @@ typedef struct {
     uint32_t page_program_timeout;  ///< Timeout for page program operation
 } flash_chip_op_timeout_t;
 
-typedef struct flash_chip_dummy {
-    uint8_t dio_dummy_bitlen;
-    uint8_t qio_dummy_bitlen;
-    uint8_t qout_dummy_bitlen;
-    uint8_t dout_dummy_bitlen;
-    uint8_t fastrd_dummy_bitlen;
-    uint8_t slowrd_dummy_bitlen;
-} flash_chip_dummy_t;
-
 typedef enum {
     SPI_FLASH_REG_STATUS = 1,
 } spi_flash_register_t;
@@ -215,6 +206,11 @@ struct spi_flash_chip_t {
      * Get the capabilities of the flash chip. See SPI_FLASH_CHIP_CAP_* macros as reference.
      */
     spi_flash_caps_t (*get_chip_caps)(esp_flash_t *chip);
+
+    /**
+     *  Configure the host registers to use the specified read mode set in the ``chip->read_mode``.
+     */
+    esp_err_t (*config_host_io_mode)(esp_flash_t *chip, uint32_t flags);
 };
 
 /* Pointer to an array of pointers to all known drivers for flash chips. This array is used

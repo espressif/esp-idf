@@ -242,6 +242,14 @@ void spi_timing_config_flash_tune_din_num_mode(uint8_t din_mode, uint8_t din_num
 void spi_timing_config_flash_tune_dummy(uint8_t extra_dummy);
 void spi_timing_config_psram_tune_din_num_mode(uint8_t din_mode, uint8_t din_num);
 void spi_timing_config_psram_tune_dummy(uint8_t extra_dummy);
+
+/**
+ * SPI1 register info get APIs. These APIs inform `spi_flash_timing_tuning.c` (driver layer) of the SPI1 flash settings.
+ * In this way, other components (e.g.: esp_flash driver) can get the info from it.
+ */
+void spi_timing_config_get_cs_timing(uint8_t *setup_time, uint32_t *hold_time);
+uint32_t spi_timing_config_get_flash_clock_reg(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -16,18 +16,19 @@
 #include "spi_flash_chip_generic.h"
 #include "spi_flash_defs.h"
 #include "esp_log.h"
-#include "string.h"
-#include <sys/param.h> // For MIN/MAX
+#include "hal/spi_flash_hal.h"
 
 /* Driver for MXIC flash chip */
-
-extern flash_chip_dummy_t *rom_flash_chip_dummy;
 
 esp_err_t spi_flash_chip_mxic_probe(esp_flash_t *chip, uint32_t flash_id)
 {
     /* Check manufacturer and product IDs match our desired masks */
     const uint8_t MFG_ID = 0xC2;
     if (flash_id >> 16 != MFG_ID) {
+        return ESP_ERR_NOT_FOUND;
+    }
+    if (chip->read_mode >= SPI_FLASH_OPI_FLAG) {
+        // The code here serve for ordinary mxic chip. If opi mode has been selected, go `spi_flash_chip_mxic_opi.c`
         return ESP_ERR_NOT_FOUND;
     }
 
@@ -43,50 +44,6 @@ esp_err_t spi_flash_chip_issi_get_io_mode(esp_flash_t *chip, esp_flash_io_mode_t
 #define spi_flash_chip_mxic_read_reg        spi_flash_chip_generic_read_reg
 
 static const char chip_name[] = "mxic";
-
-esp_err_t spi_flash_chip_mxic_read_unique_id(esp_flash_t *chip, uint64_t* flash_unique_id)
-{
-    //MXIC not support read unique id.
-    ESP_LOGE(chip_name, "chip %s doesn't support reading unique id", chip->chip_drv->name);
-    return ESP_ERR_NOT_SUPPORTED;
-}
-
-esp_err_t spi_flash_chip_mxic_read(esp_flash_t *chip, void *buffer, uint32_t address, uint32_t length)
-{
-    esp_err_t err = ESP_OK;
-    const uint32_t page_size = chip->chip_drv->page_size;
-    uint32_t align_address;
-    uint8_t temp_buffer[64]; //spiflash hal max length of read no longer than 64byte
-
-    // Configure the host, and return
-    uint32_t addr_bitlen = SPI_FLASH_FASTRD_ADDR_BITLEN;
-    uint32_t dummy_cyclelen_base = rom_flash_chip_dummy->fastrd_dummy_bitlen;;
-    uint32_t read_command = CMD_FASTRD;
-    uint32_t read_mode = SPI_FLASH_FASTRD;
-
-    err = chip->host->driver->configure_host_io_mode(chip->host, read_command, addr_bitlen, dummy_cyclelen_base, read_mode);
-
-    if (err == ESP_ERR_NOT_SUPPORTED) {
-        ESP_LOGE(chip_name, "configure host io mode failed - unsupported");
-        return err;
-    }
-
-    while (err == ESP_OK && length > 0) {
-        memset(temp_buffer, 0xFF, sizeof(temp_buffer));
-        uint32_t read_len = chip->host->driver->read_data_slicer(chip->host, address, length, &align_address, page_size);
-        uint32_t left_off = address - align_address;
-        uint32_t data_len = MIN(align_address + read_len, address + length) - address;
-        err = chip->host->driver->read(chip->host, temp_buffer, align_address, read_len);
-
-        memcpy(buffer, temp_buffer + left_off, data_len);
-
-        address += data_len;
-        buffer = (void *)((intptr_t)buffer + data_len);
-        length = length - data_len;
-    }
-
-    return err;
-}
 
 spi_flash_caps_t spi_flash_chip_mxic_get_caps(esp_flash_t *chip)
 {
@@ -132,6 +89,7 @@ const spi_flash_chip_t esp_flash_chip_mxic = {
     .read_reg = spi_flash_chip_mxic_read_reg,
     .yield = spi_flash_chip_generic_yield,
     .sus_setup = spi_flash_chip_generic_suspend_cmd_conf,
-    .read_unique_id = spi_flash_chip_mxic_read_unique_id,
+    .read_unique_id = spi_flash_chip_generic_read_unique_id_none,
     .get_chip_caps = spi_flash_chip_mxic_get_caps,
+    .config_host_io_mode = spi_flash_chip_generic_config_host_io_mode,
 };

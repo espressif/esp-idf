@@ -56,7 +56,6 @@
 #include "cache_utils.h"
 #include "esp_flash.h"
 #include "esp_attr.h"
-#include "spi_flash_private.h"
 #include "bootloader_flash.h"
 
 esp_rom_spiflash_result_t IRAM_ATTR spi_flash_write_encrypted_chip(size_t dest_addr, const void *src, size_t size);
@@ -518,7 +517,7 @@ out:
 #endif // CONFIG_SPI_FLASH_USE_LEGACY_IMPL
 
 #if !CONFIG_SPI_FLASH_USE_LEGACY_IMPL
-#if !CONFIG_ESPTOOLPY_OCT_FLASH
+#if !CONFIG_ESPTOOLPY_OCT_FLASH // Test for encryption on opi flash, IDF-3852.
 extern void spi_common_set_dummy_output(esp_rom_spiflash_read_mode_t mode);
 extern void spi_dummy_len_fix(uint8_t spi, uint8_t freqdiv);
 void IRAM_ATTR flash_rom_init(void)
@@ -558,10 +557,6 @@ void IRAM_ATTR flash_rom_init(void)
     read_mode = ESP_ROM_SPIFLASH_DIO_MODE;
 #elif CONFIG_ESPTOOLPY_FLASHMODE_DOUT
     read_mode = ESP_ROM_SPIFLASH_DOUT_MODE;
-#elif CONFIG_ESPTOOLPY_FLASHMODE_FASTRD
-    read_mode = ESP_ROM_SPIFLASH_FASTRD_MODE;
-#elif CONFIG_ESPTOOLPY_FLASHMODE_SLOWRD
-    read_mode = ESP_ROM_SPIFLASH_SLOWRD_MODE;
 #endif
 #endif //!CONFIG_IDF_TARGET_ESP32S2 && !CONFIG_IDF_TARGET_ESP32
 
