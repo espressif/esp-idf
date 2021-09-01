@@ -1,5 +1,5 @@
 //
-// chat_server.cpp
+// server.hpp
 // ~~~~~~~~~~~~~~~
 //
 // Copyright (c) 2003-2018 Christopher M. Kohlhoff (chris at kohlhoff dot com)
@@ -8,27 +8,24 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <cstdlib>
-#include <deque>
-#include <iostream>
+#ifndef CHAT_SERVER_HPP
+#define CHAT_SERVER_HPP
+
 #include <list>
-#include <memory>
 #include <set>
+#include <deque>
 #include <utility>
 #include "asio.hpp"
 #include "chat_message.hpp"
-#include "protocol_examples_common.h"
-#include "esp_event.h"
-#include "nvs_flash.h"
-
-
-using asio::ip::tcp;
 
 //----------------------------------------------------------------------
 
 typedef std::deque<chat_message> chat_message_queue;
 
+extern std::mutex server_ready;
+
 //----------------------------------------------------------------------
+
 
 class chat_participant
 {
@@ -74,12 +71,13 @@ private:
 
 //----------------------------------------------------------------------
 
+
 class chat_session
   : public chat_participant,
     public std::enable_shared_from_this<chat_session>
 {
 public:
-  chat_session(tcp::socket socket, chat_room& room)
+  chat_session(asio::ip::tcp::socket socket, chat_room& room)
     : socket_(std::move(socket)),
       room_(room)
   {
@@ -117,56 +115,57 @@ private:
           {
             room_.leave(shared_from_this());
           }
-        });
-  }
+         });
+   }
 
-  void do_read_body()
-  {
-    auto self(shared_from_this());
-    asio::async_read(socket_,
-        asio::buffer(read_msg_.body(), read_msg_.body_length()),
-        [this, self](std::error_code ec, std::size_t /*length*/)
-        {
-          if (!ec)
-          {
-            room_.deliver(read_msg_);
-            do_read_header();
-          }
-          else
-          {
-            room_.leave(shared_from_this());
-          }
-        });
-  }
+   void do_read_body()
+   {
+     auto self(shared_from_this());
+     asio::async_read(socket_,
+         asio::buffer(read_msg_.body(), read_msg_.body_length()),
+         [this, self](std::error_code ec, std::size_t /*length*/)
+         {
+           if (!ec)
+           {
+             ESP_LOGD("asio-chat:", "%s", read_msg_.body());
+             room_.deliver(read_msg_);
+             do_read_header();
+           }
+           else
+           {
+             room_.leave(shared_from_this());
+           }
+         });
+   }
 
-  void do_write()
-  {
-    auto self(shared_from_this());
-    asio::async_write(socket_,
-        asio::buffer(write_msgs_.front().data(),
-          write_msgs_.front().length()),
-        [this, self](std::error_code ec, std::size_t /*length*/)
-        {
-          if (!ec)
-          {
-            write_msgs_.pop_front();
-            if (!write_msgs_.empty())
-            {
-              do_write();
-            }
-          }
-          else
-          {
-            room_.leave(shared_from_this());
-          }
-        });
-  }
+   void do_write()
+   {
+     auto self(shared_from_this());
+     asio::async_write(socket_,
+         asio::buffer(write_msgs_.front().data(),
+           write_msgs_.front().length()),
+         [this, self](std::error_code ec, std::size_t /*length*/)
+         {
+           if (!ec)
+           {
+             write_msgs_.pop_front();
+             if (!write_msgs_.empty())
+             {
+               do_write();
+             }
+           }
+           else
+           {
+             room_.leave(shared_from_this());
+           }
+         });
+   }
 
-  tcp::socket socket_;
-  chat_room& room_;
-  chat_message read_msg_;
-  chat_message_queue write_msgs_;
-};
+   asio::ip::tcp::socket socket_;
+   chat_room& room_;
+   chat_message read_msg_;
+   chat_message_queue write_msgs_;
+ };
 
 //----------------------------------------------------------------------
 
@@ -174,7 +173,7 @@ class chat_server
 {
 public:
   chat_server(asio::io_context& io_context,
-      const tcp::endpoint& endpoint)
+      const asio::ip::tcp::endpoint& endpoint)
     : acceptor_(io_context, endpoint)
   {
     do_accept();
@@ -183,49 +182,21 @@ public:
 private:
   void do_accept()
   {
+    std::lock_guard<std::mutex> guard(server_ready);
     acceptor_.async_accept(
-        [this](std::error_code ec, tcp::socket socket)
-        {
-          if (!ec)
-          {
-            std::make_shared<chat_session>(std::move(socket), room_)->start();
-          }
+       [this](std::error_code ec, asio::ip::tcp::socket socket)
+       {
+         if (!ec)
+         {
+           std::make_shared<chat_session>(std::move(socket), room_)->start();
+         }
 
-          do_accept();
-        });
+         do_accept();
+       });
   }
 
-  tcp::acceptor acceptor_;
+  asio::ip::tcp::acceptor acceptor_;
   chat_room room_;
 };
 
-//----------------------------------------------------------------------
-
-extern "C" void app_main(void)
-{
-    ESP_ERROR_CHECK(nvs_flash_init());
-    esp_netif_init();
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
-
-    /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
-     * Read "Establishing Wi-Fi or Ethernet Connection" section in
-     * examples/protocols/README.md for more information about this function.
-     */
-    ESP_ERROR_CHECK(example_connect());
-
-    /* This helper function configures blocking UART I/O */
-    ESP_ERROR_CHECK(example_configure_stdin_stdout());
-
-    asio::io_context io_context;
-
-    std::list<chat_server> servers;
-
-    {
-      tcp::endpoint endpoint(tcp::v4(), std::atoi(CONFIG_EXAMPLE_PORT));
-      servers.emplace_back(io_context, endpoint);
-    }
-
-    std::cout << "ASIO engine is up and running" << std::endl;
-
-    io_context.run();
-}
+#endif // CHAT_SERVER_HPP

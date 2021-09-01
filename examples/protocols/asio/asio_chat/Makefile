@@ -2,7 +2,7 @@
 # This is a project Makefile. It is assumed the directory this Makefile resides in is a
 # project subdirectory.
 #
-PROJECT_NAME := asio_chat_client
+PROJECT_NAME := asio_chat
 
 EXTRA_COMPONENT_DIRS = $(IDF_PATH)/examples/common_components/protocol_examples_common
 
