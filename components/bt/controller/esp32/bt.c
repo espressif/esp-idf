@@ -40,6 +40,7 @@
 #include "driver/periph_ctrl.h"
 #include "soc/rtc.h"
 #include "soc/soc_memory_layout.h"
+#include "soc/dport_reg.h"
 #include "esp32/clk.h"
 #include "esp_coexist_internal.h"
 #if !CONFIG_FREERTOS_UNICORE
@@ -47,6 +48,7 @@
 #endif
 
 #include "esp_rom_sys.h"
+#include "hli_api.h"
 
 #if CONFIG_BT_ENABLED
 
@@ -54,6 +56,7 @@
  ************************************************************************
  */
 
+#define UNUSED(x)                           (void)(x)
 #define BTDM_LOG_TAG                        "BTDM_INIT"
 
 #define BTDM_INIT_PERIOD                    (5000)    /* ms */
@@ -92,13 +95,8 @@ do{\
 } while(0)
 
 #define OSI_FUNCS_TIME_BLOCKING  0xffffffff
-#define OSI_VERSION              0x00010002
+#define OSI_VERSION              0x00010003
 #define OSI_MAGIC_VALUE          0xFADEBEAD
-
-/* SPIRAM Configuration */
-#if CONFIG_SPIRAM_USE_MALLOC
-#define BTDM_MAX_QUEUE_NUM       (5)
-#endif
 
 /* Types definition
  ************************************************************************
@@ -116,15 +114,6 @@ typedef struct {
     intptr_t start;
     intptr_t end;
 } btdm_dram_available_region_t;
-
-/* PSRAM configuration */
-#if CONFIG_SPIRAM_USE_MALLOC
-typedef struct {
-    QueueHandle_t handle;
-    void *storage;
-    void *buffer;
-} btdm_queue_item_t;
-#endif
 
 /* OSI function */
 struct osi_funcs_t {
@@ -184,6 +173,10 @@ struct osi_funcs_t {
     void *(* _coex_schm_curr_phase_get)(void);
     int (* _coex_wifi_channel_get)(uint8_t *primary, uint8_t *secondary);
     int (* _coex_register_wifi_channel_change_callback)(void *cb);
+    xt_handler (*_set_isr_l3)(int n, xt_handler f, void *arg);
+    void (*_interrupt_l3_disable)(void);
+    void (*_interrupt_l3_restore)(void);
+    void *(* _customer_queue_create)(uint32_t queue_len, uint32_t item_size);
     uint32_t _magic;
 };
 
@@ -264,12 +257,10 @@ extern uint32_t _btdm_data_end;
 /* Local Function Declare
  *********************************************************************
  */
-#if CONFIG_SPIRAM_USE_MALLOC
-static bool btdm_queue_generic_register(const btdm_queue_item_t *queue);
-static bool btdm_queue_generic_deregister(btdm_queue_item_t *queue);
-#endif /* CONFIG_SPIRAM_USE_MALLOC */
-static void IRAM_ATTR interrupt_disable(void);
-static void IRAM_ATTR interrupt_restore(void);
+static xt_handler set_isr_hlevel_wrapper(int n, xt_handler f, void *arg);
+static void IRAM_ATTR interrupt_hlevel_disable(void);
+static void IRAM_ATTR interrupt_hlevel_restore(void);
+static void IRAM_ATTR task_yield(void);
 static void IRAM_ATTR task_yield_from_isr(void);
 static void *semphr_create_wrapper(uint32_t max, uint32_t init);
 static void semphr_delete_wrapper(void *semphr);
@@ -281,12 +272,12 @@ static void *mutex_create_wrapper(void);
 static void mutex_delete_wrapper(void *mutex);
 static int32_t mutex_lock_wrapper(void *mutex);
 static int32_t mutex_unlock_wrapper(void *mutex);
-static void *queue_create_wrapper(uint32_t queue_len, uint32_t item_size);
-static void queue_delete_wrapper(void *queue);
-static int32_t queue_send_wrapper(void *queue, void *item, uint32_t block_time_ms);
-static int32_t IRAM_ATTR queue_send_from_isr_wrapper(void *queue, void *item, void *hptw);
-static int32_t queue_recv_wrapper(void *queue, void *item, uint32_t block_time_ms);
-static int32_t IRAM_ATTR queue_recv_from_isr_wrapper(void *queue, void *item, void *hptw);
+static void *queue_create_hlevel_wrapper(uint32_t queue_len, uint32_t item_size);
+static void queue_delete_hlevel_wrapper(void *queue);
+static int32_t IRAM_ATTR queue_send_hlevel_wrapper(void *queue, void *item, uint32_t block_time_ms);
+static int32_t IRAM_ATTR queue_send_from_isr_hlevel_wrapper(void *queue, void *item, void *hptw);
+static int32_t IRAM_ATTR queue_recv_hlevel_wrapper(void *queue, void *item, uint32_t block_time_ms);
+static int32_t IRAM_ATTR queue_recv_from_isr_hlevel_wrapper(void *queue, void *item, void *hptw);
 static int32_t task_create_wrapper(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle, uint32_t core_id);
 static void task_delete_wrapper(void *task_handle);
 static bool IRAM_ATTR is_in_isr_wrapper(void);
@@ -317,17 +308,21 @@ static uint8_t coex_schm_curr_period_get_wrapper(void);
 static void * coex_schm_curr_phase_get_wrapper(void);
 static int coex_wifi_channel_get_wrapper(uint8_t *primary, uint8_t *secondary);
 static int coex_register_wifi_channel_change_callback_wrapper(void *cb);
+static void *customer_queue_create_hlevel_wrapper(uint32_t queue_len, uint32_t item_size);
+static void IRAM_ATTR interrupt_l3_disable(void);
+static void IRAM_ATTR interrupt_l3_restore(void);
+
 /* Local variable definition
  ***************************************************************************
  */
 /* OSI funcs */
 static const struct osi_funcs_t osi_funcs_ro = {
     ._version = OSI_VERSION,
-    ._set_isr = xt_set_interrupt_handler,
+    ._set_isr = set_isr_hlevel_wrapper,
     ._ints_on = xt_ints_on,
-    ._interrupt_disable = interrupt_disable,
-    ._interrupt_restore = interrupt_restore,
-    ._task_yield = vPortYield,
+    ._interrupt_disable = interrupt_hlevel_disable,
+    ._interrupt_restore = interrupt_hlevel_restore,
+    ._task_yield = task_yield,
     ._task_yield_from_isr = task_yield_from_isr,
     ._semphr_create = semphr_create_wrapper,
     ._semphr_delete = semphr_delete_wrapper,
@@ -339,12 +334,12 @@ static const struct osi_funcs_t osi_funcs_ro = {
     ._mutex_delete = mutex_delete_wrapper,
     ._mutex_lock = mutex_lock_wrapper,
     ._mutex_unlock = mutex_unlock_wrapper,
-    ._queue_create = queue_create_wrapper,
-    ._queue_delete = queue_delete_wrapper,
-    ._queue_send = queue_send_wrapper,
-    ._queue_send_from_isr = queue_send_from_isr_wrapper,
-    ._queue_recv = queue_recv_wrapper,
-    ._queue_recv_from_isr = queue_recv_from_isr_wrapper,
+    ._queue_create = queue_create_hlevel_wrapper,
+    ._queue_delete = queue_delete_hlevel_wrapper,
+    ._queue_send = queue_send_hlevel_wrapper,
+    ._queue_send_from_isr = queue_send_from_isr_hlevel_wrapper,
+    ._queue_recv = queue_recv_hlevel_wrapper,
+    ._queue_recv_from_isr = queue_recv_from_isr_hlevel_wrapper,
     ._task_create = task_create_wrapper,
     ._task_delete = task_delete_wrapper,
     ._is_in_isr = is_in_isr_wrapper,
@@ -378,6 +373,10 @@ static const struct osi_funcs_t osi_funcs_ro = {
     ._coex_schm_curr_phase_get = coex_schm_curr_phase_get_wrapper,
     ._coex_wifi_channel_get = coex_wifi_channel_get_wrapper,
     ._coex_register_wifi_channel_change_callback = coex_register_wifi_channel_change_callback_wrapper,
+    ._set_isr_l3 = xt_set_interrupt_handler,
+    ._interrupt_l3_disable = interrupt_l3_disable,
+    ._interrupt_l3_restore = interrupt_l3_restore,
+    ._customer_queue_create = customer_queue_create_hlevel_wrapper,
     ._magic = OSI_MAGIC_VALUE,
 };
 
@@ -403,11 +402,6 @@ SOC_RESERVE_MEMORY_REGION(SOC_MEM_BT_MISC_START, SOC_MEM_BT_MISC_END,           
 SOC_RESERVE_MEMORY_REGION(SOC_MEM_BT_DATA_START, SOC_MEM_BT_DATA_END,           rom_bt_data);
 
 static DRAM_ATTR struct osi_funcs_t *osi_funcs_p;
-
-#if CONFIG_SPIRAM_USE_MALLOC
-static DRAM_ATTR btdm_queue_item_t btdm_queue_table[BTDM_MAX_QUEUE_NUM];
-static DRAM_ATTR SemaphoreHandle_t btdm_queue_table_mux = NULL;
-#endif /* #if CONFIG_SPIRAM_USE_MALLOC */
 
 /* Static variable declare */
 // timestamp when PHY/RF was switched on
@@ -448,53 +442,45 @@ static inline void btdm_check_and_init_bb(void)
     }
 }
 
-#if CONFIG_SPIRAM_USE_MALLOC
-static bool btdm_queue_generic_register(const btdm_queue_item_t *queue)
-{
-    if (!btdm_queue_table_mux || !queue) {
-        return NULL;
-    }
+struct interrupt_hlevel_cb{
+    uint32_t status;
+    uint8_t nested;
+};
 
-    bool ret = false;
-    btdm_queue_item_t *item;
-    xSemaphoreTake(btdm_queue_table_mux, portMAX_DELAY);
-    for (int i = 0; i < BTDM_MAX_QUEUE_NUM; ++i) {
-        item = &btdm_queue_table[i];
-        if (item->handle == NULL) {
-            memcpy(item, queue, sizeof(btdm_queue_item_t));
-            ret = true;
-            break;
-        }
+static DRAM_ATTR struct interrupt_hlevel_cb hli_cb = {
+    .status = 0,
+    .nested = 0,
+};
+
+static xt_handler set_isr_hlevel_wrapper(int mask, xt_handler f, void *arg)
+{
+    esp_err_t err = hli_intr_register((intr_handler_t) f, arg, DPORT_PRO_INTR_STATUS_0_REG, mask);
+    if (err == ESP_OK) {
+        return f;
+    } else {
+        return 0;
     }
-    xSemaphoreGive(btdm_queue_table_mux);
-    return ret;
+ }
+
+static void IRAM_ATTR interrupt_hlevel_disable(void)
+{
+    assert(xPortGetCoreID() == CONFIG_BTDM_CTRL_PINNED_TO_CORE);
+    uint32_t status = hli_intr_disable();
+    if (hli_cb.nested++ == 0) {
+        hli_cb.status = status;
+    }
 }
 
-static bool btdm_queue_generic_deregister(btdm_queue_item_t *queue)
+static void IRAM_ATTR interrupt_hlevel_restore(void)
 {
-    if (!btdm_queue_table_mux || !queue) {
-        return false;
+    assert(xPortGetCoreID() == CONFIG_BTDM_CTRL_PINNED_TO_CORE);
+    assert(hli_cb.nested > 0);
+    if (--hli_cb.nested == 0) {
+        hli_intr_restore(hli_cb.status);
     }
-
-    bool ret = false;
-    btdm_queue_item_t *item;
-    xSemaphoreTake(btdm_queue_table_mux, portMAX_DELAY);
-    for (int i = 0; i < BTDM_MAX_QUEUE_NUM; ++i) {
-        item = &btdm_queue_table[i];
-        if (item->handle == queue->handle) {
-            memcpy(queue, item, sizeof(btdm_queue_item_t));
-            memset(item, 0, sizeof(btdm_queue_item_t));
-            ret = true;
-            break;
-        }
-    }
-    xSemaphoreGive(btdm_queue_table_mux);
-    return ret;
 }
 
-#endif /* CONFIG_SPIRAM_USE_MALLOC */
-
-static void IRAM_ATTR interrupt_disable(void)
+static void IRAM_ATTR interrupt_l3_disable(void)
 {
     if (xPortInIsrContext()) {
         portENTER_CRITICAL_ISR(&global_int_mux);
@@ -503,7 +489,7 @@ static void IRAM_ATTR interrupt_disable(void)
     }
 }
 
-static void IRAM_ATTR interrupt_restore(void)
+static void IRAM_ATTR interrupt_l3_restore(void)
 {
     if (xPortInIsrContext()) {
         portEXIT_CRITICAL_ISR(&global_int_mux);
@@ -512,6 +498,12 @@ static void IRAM_ATTR interrupt_restore(void)
     }
 }
 
+static void IRAM_ATTR task_yield(void)
+{
+    vPortYield();
+}
+
+
 static void IRAM_ATTR task_yield_from_isr(void)
 {
     portYIELD_FROM_ISR();
@@ -519,148 +511,58 @@ static void IRAM_ATTR task_yield_from_isr(void)
 
 static void *semphr_create_wrapper(uint32_t max, uint32_t init)
 {
-#if !CONFIG_SPIRAM_USE_MALLOC
-    return (void *)xSemaphoreCreateCounting(max, init);
-#else
-    StaticQueue_t *queue_buffer = NULL;
-    QueueHandle_t handle = NULL;
-
-    queue_buffer = heap_caps_malloc(sizeof(StaticQueue_t), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
-    if (!queue_buffer) {
-        goto error;
-    }
-
-    handle = xSemaphoreCreateCountingStatic(max, init, queue_buffer);
-    if (!handle) {
-        goto error;
-    }
-
-    btdm_queue_item_t item = {
-        .handle = handle,
-        .storage = NULL,
-        .buffer = queue_buffer,
-    };
-
-    if (!btdm_queue_generic_register(&item)) {
-        goto error;
-    }
-    return handle;
-
- error:
-    if (handle) {
-        vSemaphoreDelete(handle);
-    }
-    if (queue_buffer) {
-        free(queue_buffer);
-    }
-
-    return NULL;
-#endif
+    SemaphoreHandle_t downstream_semaphore = xSemaphoreCreateCounting(max, init);
+    assert(downstream_semaphore);
+    hli_queue_handle_t s_semaphore = hli_semaphore_create(max, downstream_semaphore);
+    assert(downstream_semaphore);
+    return s_semaphore;
 }
 
 static void semphr_delete_wrapper(void *semphr)
 {
-#if !CONFIG_SPIRAM_USE_MALLOC
-    vSemaphoreDelete(semphr);
-#else
-    btdm_queue_item_t item = {
-        .handle = semphr,
-        .storage = NULL,
-        .buffer = NULL,
-    };
+    if (((hli_queue_handle_t)semphr)->downstream != NULL) {
+        vSemaphoreDelete(((hli_queue_handle_t)semphr)->downstream);
+     }
 
-    if (btdm_queue_generic_deregister(&item)) {
-        vSemaphoreDelete(item.handle);
-        free(item.buffer);
-    }
-
-    return;
-#endif
+    hli_queue_delete(semphr);
 }
 
 static int32_t IRAM_ATTR semphr_take_from_isr_wrapper(void *semphr, void *hptw)
 {
-    return (int32_t)xSemaphoreTakeFromISR(semphr, hptw);
+    return (int32_t)xSemaphoreTakeFromISR(((hli_queue_handle_t)semphr)->downstream, hptw);
 }
 
 static int32_t IRAM_ATTR semphr_give_from_isr_wrapper(void *semphr, void *hptw)
 {
-    return (int32_t)xSemaphoreGiveFromISR(semphr, hptw);
+    UNUSED(hptw);
+    assert(xPortGetCoreID() == CONFIG_BTDM_CTRL_PINNED_TO_CORE);
+    return hli_semaphore_give(semphr);
 }
 
 static int32_t semphr_take_wrapper(void *semphr, uint32_t block_time_ms)
 {
+    bool ret;
     if (block_time_ms == OSI_FUNCS_TIME_BLOCKING) {
-        return (int32_t)xSemaphoreTake(semphr, portMAX_DELAY);
+        ret = xSemaphoreTake(((hli_queue_handle_t)semphr)->downstream, portMAX_DELAY);
     } else {
-        return (int32_t)xSemaphoreTake(semphr, block_time_ms / portTICK_PERIOD_MS);
+        ret = xSemaphoreTake(((hli_queue_handle_t)semphr)->downstream, block_time_ms / portTICK_PERIOD_MS);
     }
+    return (int32_t)ret;
 }
 
 static int32_t semphr_give_wrapper(void *semphr)
 {
-    return (int32_t)xSemaphoreGive(semphr);
+    return (int32_t)xSemaphoreGive(((hli_queue_handle_t)semphr)->downstream);
 }
 
 static void *mutex_create_wrapper(void)
 {
-#if CONFIG_SPIRAM_USE_MALLOC
-    StaticQueue_t *queue_buffer = NULL;
-    QueueHandle_t handle = NULL;
-
-    queue_buffer = heap_caps_malloc(sizeof(StaticQueue_t), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
-    if (!queue_buffer) {
-        goto error;
-    }
-
-    handle = xSemaphoreCreateMutexStatic(queue_buffer);
-    if (!handle) {
-        goto error;
-    }
-
-    btdm_queue_item_t item = {
-        .handle = handle,
-        .storage = NULL,
-        .buffer = queue_buffer,
-    };
-
-    if (!btdm_queue_generic_register(&item)) {
-        goto error;
-    }
-    return handle;
-
- error:
-    if (handle) {
-        vSemaphoreDelete(handle);
-    }
-    if (queue_buffer) {
-        free(queue_buffer);
-    }
-
-    return NULL;
-#else
     return (void *)xSemaphoreCreateMutex();
-#endif
 }
 
 static void mutex_delete_wrapper(void *mutex)
 {
-#if !CONFIG_SPIRAM_USE_MALLOC
     vSemaphoreDelete(mutex);
-#else
-    btdm_queue_item_t item = {
-        .handle = mutex,
-        .storage = NULL,
-        .buffer = NULL,
-    };
-
-    if (btdm_queue_generic_deregister(&item)) {
-        vSemaphoreDelete(item.handle);
-        free(item.buffer);
-    }
-
-    return;
-#endif
 }
 
 static int32_t mutex_lock_wrapper(void *mutex)
@@ -673,104 +575,74 @@ static int32_t mutex_unlock_wrapper(void *mutex)
     return (int32_t)xSemaphoreGive(mutex);
 }
 
-static void *queue_create_wrapper(uint32_t queue_len, uint32_t item_size)
+static void *queue_create_hlevel_wrapper(uint32_t queue_len, uint32_t item_size)
 {
-#if CONFIG_SPIRAM_USE_MALLOC
-    StaticQueue_t *queue_buffer = NULL;
-    uint8_t *queue_storage = NULL;
-    QueueHandle_t handle = NULL;
-
-    queue_buffer = heap_caps_malloc(sizeof(StaticQueue_t), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
-    if (!queue_buffer) {
-        goto error;
-    }
-
-    queue_storage = heap_caps_malloc((queue_len*item_size), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
-    if (!queue_storage ) {
-        goto error;
-    }
-
-    handle = xQueueCreateStatic(queue_len, item_size, queue_storage, queue_buffer);
-    if (!handle) {
-        goto error;
-    }
-
-    btdm_queue_item_t item = {
-        .handle = handle,
-        .storage = queue_storage,
-        .buffer = queue_buffer,
-    };
-
-    if (!btdm_queue_generic_register(&item)) {
-        goto error;
-    }
-
-    return handle;
-
- error:
-    if (handle) {
-        vQueueDelete(handle);
-    }
-    if (queue_storage) {
-        free(queue_storage);
-    }
-    if (queue_buffer) {
-        free(queue_buffer);
-    }
-
-    return NULL;
-#else
-    return (void *)xQueueCreate(queue_len, item_size);
-#endif
+    QueueHandle_t downstream_queue = xQueueCreate(queue_len, item_size);
+    assert(downstream_queue);
+    hli_queue_handle_t queue = hli_queue_create(queue_len, item_size, downstream_queue);
+    assert(queue);
+    return queue;
 }
 
-static void queue_delete_wrapper(void *queue)
+static void *customer_queue_create_hlevel_wrapper(uint32_t queue_len, uint32_t item_size)
 {
-#if !CONFIG_SPIRAM_USE_MALLOC
-    vQueueDelete(queue);
-#else
-    btdm_queue_item_t item = {
-        .handle = queue,
-        .storage = NULL,
-        .buffer = NULL,
-    };
-
-    if (btdm_queue_generic_deregister(&item)) {
-        vQueueDelete(item.handle);
-        free(item.storage);
-        free(item.buffer);
-    }
-
-    return;
-#endif
+    QueueHandle_t downstream_queue = xQueueCreate(queue_len, item_size);
+    assert(downstream_queue);
+    hli_queue_handle_t queue = hli_customer_queue_create(queue_len, item_size, downstream_queue);
+    assert(queue);
+    return queue;
 }
 
-static int32_t queue_send_wrapper(void *queue, void *item, uint32_t block_time_ms)
+static void queue_delete_hlevel_wrapper(void *queue)
+{
+    if (((hli_queue_handle_t)queue)->downstream != NULL) {
+        vQueueDelete(((hli_queue_handle_t)queue)->downstream);
+    }
+    hli_queue_delete(queue);
+}
+
+static int32_t queue_send_hlevel_wrapper(void *queue, void *item, uint32_t block_time_ms)
 {
     if (block_time_ms == OSI_FUNCS_TIME_BLOCKING) {
-        return (int32_t)xQueueSend(queue, item, portMAX_DELAY);
+        return (int32_t)xQueueSend(((hli_queue_handle_t)queue)->downstream, item, portMAX_DELAY);
     } else {
-        return (int32_t)xQueueSend(queue, item, block_time_ms / portTICK_PERIOD_MS);
+        return (int32_t)xQueueSend(((hli_queue_handle_t)queue)->downstream, item, block_time_ms / portTICK_PERIOD_MS);
     }
 }
 
-static int32_t IRAM_ATTR queue_send_from_isr_wrapper(void *queue, void *item, void *hptw)
+/**
+ * Queue send from isr
+ * @param  queue The queue which will send to
+ * @param  item  The message which will be send
+ * @param  hptw  need do task yield or not
+ * @return       send success or not
+ *               There is an issue here:  When the queue is full, it may reture true but it send fail to the queue, sometimes.
+ *               But in Bluetooth controller's isr, We don't care about the return value.
+ *               It only required tp send success when the queue is empty all the time.
+ *               So, this function meets the requirement.
+ */
+static int32_t IRAM_ATTR queue_send_from_isr_hlevel_wrapper(void *queue, void *item, void *hptw)
 {
-    return (int32_t)xQueueSendFromISR(queue, item, hptw);
+    UNUSED(hptw);
+    assert(xPortGetCoreID() == CONFIG_BTDM_CTRL_PINNED_TO_CORE);
+    return hli_queue_put(queue, item);
 }
 
-static int32_t queue_recv_wrapper(void *queue, void *item, uint32_t block_time_ms)
+static int32_t queue_recv_hlevel_wrapper(void *queue, void *item, uint32_t block_time_ms)
 {
+    bool ret;
     if (block_time_ms == OSI_FUNCS_TIME_BLOCKING) {
-        return (int32_t)xQueueReceive(queue, item, portMAX_DELAY);
+        ret = (int32_t)xQueueReceive(((hli_queue_handle_t)queue)->downstream, item, portMAX_DELAY);
     } else {
-        return (int32_t)xQueueReceive(queue, item, block_time_ms / portTICK_PERIOD_MS);
+        ret =(int32_t)xQueueReceive(((hli_queue_handle_t)queue)->downstream, item, block_time_ms / portTICK_PERIOD_MS);
     }
+
+    return ret;
 }
 
-static int32_t IRAM_ATTR queue_recv_from_isr_wrapper(void *queue, void *item, void *hptw)
+static int32_t IRAM_ATTR queue_recv_from_isr_hlevel_wrapper(void *queue, void *item, void *hptw)
 {
-    return (int32_t)xQueueReceiveFromISR(queue, item, hptw);
+    return (int32_t)xQueueReceiveFromISR(((hli_queue_handle_t)queue)->downstream, item, hptw);
 }
 
 static int32_t task_create_wrapper(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle, uint32_t core_id)
@@ -1317,10 +1189,30 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
     return ESP_OK;
 }
 
+static void hli_queue_setup_cb(void* arg)
+{
+    hli_queue_setup();
+}
+
+static void hli_queue_setup_pinned_to_core(int core_id)
+{
+#if CONFIG_FREERTOS_UNICORE
+    hli_queue_setup_cb(NULL);
+#else /* CONFIG_FREERTOS_UNICORE */
+    if (xPortGetCoreID() == core_id) {
+        hli_queue_setup_cb(NULL);
+    } else {
+        esp_ipc_call(core_id, hli_queue_setup_cb, NULL);
+    }
+#endif /* !CONFIG_FREERTOS_UNICORE */
+}
+
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 {
     esp_err_t err;
     uint32_t btdm_cfg_mask = 0;
+
+    hli_queue_setup_pinned_to_core(CONFIG_BTDM_CTRL_PINNED_TO_CORE);
 
     //if all the bt available memory was already released, cannot initialize bluetooth controller
     if (btdm_dram_available_region[0].mode == ESP_BT_MODE_IDLE) {
@@ -1361,14 +1253,6 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     }
 
     ESP_LOGI(BTDM_LOG_TAG, "BT controller compile version [%s]", btdm_controller_get_compile_version());
-
-#if CONFIG_SPIRAM_USE_MALLOC
-    btdm_queue_table_mux = xSemaphoreCreateMutex();
-    if (btdm_queue_table_mux == NULL) {
-        return ESP_ERR_NO_MEM;
-    }
-    memset(btdm_queue_table, 0, sizeof(btdm_queue_item_t) * BTDM_MAX_QUEUE_NUM);
-#endif
 
     s_wakeup_req_sem = semphr_create_wrapper(1, 0);
     if (s_wakeup_req_sem == NULL) {
@@ -1514,12 +1398,6 @@ esp_err_t esp_bt_controller_deinit(void)
 #endif
     semphr_delete_wrapper(s_wakeup_req_sem);
     s_wakeup_req_sem = NULL;
-
-#if CONFIG_SPIRAM_USE_MALLOC
-    vSemaphoreDelete(btdm_queue_table_mux);
-    btdm_queue_table_mux = NULL;
-    memset(btdm_queue_table, 0, sizeof(btdm_queue_item_t) * BTDM_MAX_QUEUE_NUM);
-#endif
 
     free(osi_funcs_p);
     osi_funcs_p = NULL;
@@ -1734,6 +1612,17 @@ esp_err_t esp_ble_scan_dupilcate_list_flush(void)
     }
     btdm_controller_scan_duplicate_list_clear();
     return ESP_OK;
+}
+
+/**
+ * This function re-write controller's function,
+ * As coredump can not show paramerters in function which is in a .a file.
+ *
+ * After coredump fixing this issue, just delete this function.
+ */
+void IRAM_ATTR r_assert(const char *condition, int param0, int param1, const char *file, int line)
+{
+    __asm__ __volatile__("ill\n");
 }
 
 #endif /*  CONFIG_BT_ENABLED */

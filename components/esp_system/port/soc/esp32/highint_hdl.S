@@ -33,156 +33,10 @@ Interrupt , a high-priority interrupt, is used for several things:
 
 */
 
-#define L4_INTR_STACK_SIZE  12
-#define L4_INTR_A2_OFFSET   0
-#define L4_INTR_A3_OFFSET   4
-#define L4_INTR_A4_OFFSET   8
-    .data
-_l4_intr_stack:
-    .space      L4_INTR_STACK_SIZE*portNUM_PROCESSORS /* This allocates stacks for each individual CPU. */
-
-#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_ESP_INT_WDT
-    .global _l4_intr_livelock_counter
-    .global _l4_intr_livelock_max
-    .align  16
-_l4_intr_livelock_counter:
-    .word   0
-_l4_intr_livelock_max:
-    .word   0
-_l4_intr_livelock_sync:
-    .word   0, 0
-_l4_intr_livelock_app:
-    .word   0
-_l4_intr_livelock_pro:
-    .word   0
-#endif
-
-    .section .iram1,"ax"
-    .global     xt_highint4
-    .type       xt_highint4,@function
-    .align      4
-xt_highint4:
-
-#ifndef CONFIG_FREERTOS_UNICORE
-    /* See if we're here for the IPC_ISR interrupt */
-    rsr     a0, INTERRUPT
-    extui   a0, a0, ETS_IPC_ISR_INUM, 1
-    bnez    a0, esp_ipc_isr_handler
-#endif // not CONFIG_FREERTOS_UNICORE
-
-#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_ESP_INT_WDT
-    /* See if we're here for the tg1 watchdog interrupt */
-    rsr     a0, INTERRUPT
-    extui   a0, a0, ETS_T1_WDT_INUM, 1
-    beqz    a0, 1f
-
-    wsr     a5, depc                        /* use DEPC as temp storage */
-    movi    a0, _l4_intr_livelock_counter
-    l32i    a0, a0, 0
-    movi    a5, _l4_intr_livelock_max
-    l32i    a5, a5, 0
-    bltu    a0, a5, .handle_livelock_int    /* _l4_intr_livelock_counter < _l4_intr_livelock_max */
-
-    rsr     a5, depc                        /* restore a5 */
-#endif
-
-    /* Allocate exception frame and save minimal context. */
-1:  mov     a0, sp
-    addi    sp, sp, -XT_STK_FRMSZ
-    s32i    a0, sp, XT_STK_A1
-    #if XCHAL_HAVE_WINDOWED
-    s32e    a0, sp, -12                     /* for debug backtrace */
-    #endif
-    rsr     a0, PS                          /* save interruptee's PS */
-    s32i    a0, sp, XT_STK_PS
-    rsr     a0, EPC_4                       /* save interruptee's PC */
-    s32i    a0, sp, XT_STK_PC
-    #if XCHAL_HAVE_WINDOWED
-    s32e    a0, sp, -16                     /* for debug backtrace */
-    #endif
-    s32i    a12, sp, XT_STK_A12             /* _xt_context_save requires A12- */
-    s32i    a13, sp, XT_STK_A13             /* A13 to have already been saved */
-    call0   _xt_context_save
-
-    /* Save vaddr into exception frame */
-    rsr     a0, EXCVADDR
-    s32i    a0, sp, XT_STK_EXCVADDR
-
-    /* Figure out reason, save into EXCCAUSE reg */
-
-    rsr     a0, INTERRUPT
-    extui   a0, a0, ETS_MEMACCESS_ERR_INUM, 1 /* get cacheerr int bit */
-    beqz    a0, 1f
-    /* Kill this interrupt; we cannot reset it. */
-    rsr     a0, INTENABLE
-    movi    a4, ~(1<<ETS_MEMACCESS_ERR_INUM)
-    and     a0, a4, a0
-    wsr     a0, INTENABLE
-    movi    a0, PANIC_RSN_CACHEERR
-    j 9f
-1:
-#if CONFIG_ESP_INT_WDT_CHECK_CPU1
-    /* Check if the cause is the app cpu failing to tick.*/
-    movi    a0, int_wdt_app_cpu_ticked
-    l32i    a0, a0, 0
-    bnez    a0, 2f
-    /* It is. Modify cause. */
-    movi    a0,PANIC_RSN_INTWDT_CPU1
-    j 9f
-2:
-#endif
-    /* Set EXCCAUSE to reflect cause of the wdt int trigger */
-    movi    a0,PANIC_RSN_INTWDT_CPU0
-9:
-    /* Found the reason, now save it. */
-    s32i    a0, sp, XT_STK_EXCCAUSE
-
-    /* _xt_context_save seems to save the current a0, but we need the interuptees a0. Fix this. */
-    rsr     a0, EXCSAVE_4                   /* save interruptee's a0 */
-
-    s32i    a0, sp, XT_STK_A0
-
-    /* Set up PS for C, disable all interrupts except NMI and debug, and clear EXCM. */
-    movi    a0, PS_INTLEVEL(5) | PS_UM | PS_WOE
-    wsr     a0, PS
-
-    //Call panic handler
-    mov     a6,sp
-    call4   panicHandler
-
-    call0   _xt_context_restore
-    l32i    a0, sp, XT_STK_PS               /* retrieve interruptee's PS */
-    wsr     a0, PS
-    l32i    a0, sp, XT_STK_PC               /* retrieve interruptee's PC */
-    wsr     a0, EPC_4
-    l32i    a0, sp, XT_STK_A0               /* retrieve interruptee's A0 */
-    l32i    sp, sp, XT_STK_A1               /* remove exception frame */
-    rsync                                   /* ensure PS and EPC written */
-
-    rsr     a0, EXCSAVE_4                   /* restore a0 */
-    rfi     4
-
-
-#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_ESP_INT_WDT
-
-/*
---------------------------------------------------------------------------------
-  Macro intr_matrix_map - Attach an CPU interrupt to a hardware source.
-
-  Input  : "addr" - Interrupt map configuration base address
-  Input  : "src"  - Interrupt source.
-  Input  : "inum" - Interrupt number.
---------------------------------------------------------------------------------
-*/
-    .macro intr_matrix_map  addr src inum
-    movi    a2, \src
-    slli    a2, a2, 2
-    movi    a3, \addr
-    add     a3, a3, a2
-    movi    a2, \inum
-    s32i    a2, a3, 0
-    memw
-    .endm
+#define L5_INTR_STACK_SIZE  12
+#define L5_INTR_A2_OFFSET   0
+#define L5_INTR_A3_OFFSET   4
+#define L5_INTR_A4_OFFSET   8
 
 /*
 --------------------------------------------------------------------------------
@@ -190,6 +44,10 @@ xt_highint4:
   Macro wdt_feed            - Feed the WDT.
 
   Input  : "dev" - Beginning address of the peripheral registers
+
+  Macro get_int_status_tg1wdt - Get the ETS_TG1_WDT_LEVEL_INTR_SOURCE bit in interrupt status
+
+  output  : "reg" - Store the result into the reg
 --------------------------------------------------------------------------------
 */
 
@@ -221,7 +79,7 @@ xt_highint4:
     movi    a3, TIMG_WDT_WKEY_VALUE
     s32i    a3, a2, TIMG1_WDTWPROTECT_OFFSET    /* disable write protect */
     memw
-    movi    a4, _l4_intr_livelock_max
+    movi    a4, _l5_intr_livelock_max
     l32i    a4, a4, 0
     memw
     addi    a4, a4, 1
@@ -240,19 +98,197 @@ xt_highint4:
     memw
     .endm
 
+    .macro get_int_status_tg1wdt reg
+    rsr     \reg, INTERRUPT
+    extui   \reg, \reg, ETS_T1_WDT_CACHEERR_INUM, 1
+    beqz    \reg, 99f        // not ETS_T1_WDT_INUM or ETS_CACHEERR_INUM
+
+    getcoreid   \reg
+    bnez    \reg, 98f
+    // core 0
+    movi    \reg,  0x3FF40078
+    l32i    \reg, \reg, 0     // Workaround for DPORT read error, for silicon revision 0~2 (ECO V0 ~ ECO V2).
+    movi    \reg, DPORT_PRO_INTR_STATUS_0_REG
+    l32i    \reg, \reg, 0
+    extui   \reg, \reg, 20, 1 // ETS_TG1_WDT_LEVEL_INTR_SOURCE
+    j       99f
+
+98: // core 1
+    movi    \reg,  0x3FF40078
+    l32i    \reg, \reg, 0     // Workaround for DPORT read error, for silicon revision 0~2 (ECO V0 ~ ECO V2).
+    movi    \reg, DPORT_APP_INTR_STATUS_0_REG
+    l32i    \reg, \reg, 0
+    extui   \reg, \reg, 20, 1 // ETS_TG1_WDT_LEVEL_INTR_SOURCE
+99:
+    .endm
+
+    .data
+_l5_intr_stack:
+    .space      L5_INTR_STACK_SIZE*portNUM_PROCESSORS /* This allocates stacks for each individual CPU. */
+
+#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_ESP_INT_WDT
+    .global _l5_intr_livelock_counter
+    .global _l5_intr_livelock_max
+    .align  16
+_l5_intr_livelock_counter:
+    .word   0
+_l5_intr_livelock_max:
+    .word   0
+_l5_intr_livelock_sync:
+    .word   0, 0
+_l5_intr_livelock_app:
+    .word   0
+_l5_intr_livelock_pro:
+    .word   0
+#endif
+
+    .section .iram1,"ax"
+    .global     xt_highint5
+    .type       xt_highint5,@function
+    .align      4
+xt_highint5:
+
+#ifndef CONFIG_FREERTOS_UNICORE
+    /* See if we're here for the IPC_ISR interrupt */
+    rsr     a0, INTERRUPT
+    extui   a0, a0, ETS_IPC_ISR_INUM, 1
+    bnez    a0, esp_ipc_isr_handler
+#endif // not CONFIG_FREERTOS_UNICORE
+
+
+ // ETS_T1_WDT_INUM
+#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_ESP_INT_WDT
+    get_int_status_tg1wdt a0
+    beqz    a0, 1f
+
+    wsr     a5, depc                        /* use DEPC as temp storage */
+    movi    a0, _l5_intr_livelock_counter
+    l32i    a0, a0, 0
+    movi    a5, _l5_intr_livelock_max
+    l32i    a5, a5, 0
+    bltu    a0, a5, .handle_livelock_int    /* _l5_intr_livelock_counter < _l5_intr_livelock_max */
+
+    rsr     a5, depc                        /* restore a5 */
+#endif
+
+1: //ETS_CACHEERR_INUM or ETS_T1_WDT_INUM
+    /* Allocate exception frame and save minimal context. */
+    mov     a0, sp
+    addi    sp, sp, -XT_STK_FRMSZ
+    s32i    a0, sp, XT_STK_A1
+    #if XCHAL_HAVE_WINDOWED
+    s32e    a0, sp, -12                     /* for debug backtrace */
+    #endif
+    rsr     a0, PS                          /* save interruptee's PS */
+    s32i    a0, sp, XT_STK_PS
+    rsr     a0, EPC_5                       /* save interruptee's PC */
+    s32i    a0, sp, XT_STK_PC
+    #if XCHAL_HAVE_WINDOWED
+    s32e    a0, sp, -16                     /* for debug backtrace */
+    #endif
+    s32i    a12, sp, XT_STK_A12             /* _xt_context_save requires A12- */
+    s32i    a13, sp, XT_STK_A13             /* A13 to have already been saved */
+    call0   _xt_context_save
+
+    /* Save vaddr into exception frame */
+    rsr     a0, EXCVADDR
+    s32i    a0, sp, XT_STK_EXCVADDR
+
+    /* Figure out reason, save into EXCCAUSE reg */
+
+    get_int_status_tg1wdt a0
+    bnez    a0, 1f
+
+    /* TODO: Clear the MEMACCESS_ERR interrupt status. */
+
+    /* Kill this interrupt; we cannot reset it. */
+    rsr     a0, INTENABLE
+    movi    a4, ~(1<<ETS_MEMACCESS_ERR_INUM)
+    and     a0, a4, a0
+    wsr     a0, INTENABLE
+    movi    a0, PANIC_RSN_CACHEERR
+    j 9f
+1:
+   /* Clear the WDT interrupt status. */
+    wdt_clr_intr_status TIMERG1
+#if CONFIG_ESP_INT_WDT_CHECK_CPU1
+    /* Check if the cause is the app cpu failing to tick.*/
+    movi    a0, int_wdt_app_cpu_ticked
+    l32i    a0, a0, 0
+    bnez    a0, 2f
+    /* It is. Modify cause. */
+    movi    a0,PANIC_RSN_INTWDT_CPU1
+    j 9f
+2:
+#endif
+    /* Set EXCCAUSE to reflect cause of the wdt int trigger */
+    movi    a0,PANIC_RSN_INTWDT_CPU0
+9:
+    /* Found the reason, now save it. */
+    s32i    a0, sp, XT_STK_EXCCAUSE
+
+    /* _xt_context_save seems to save the current a0, but we need the interuptees a0. Fix this. */
+    rsr     a0, EXCSAVE_5                   /* save interruptee's a0 */
+
+    s32i    a0, sp, XT_STK_A0
+
+    /* Set up PS for C, disable all interrupts except NMI and debug, and clear EXCM. */
+    movi    a0, PS_INTLEVEL(5) | PS_UM | PS_WOE
+    wsr     a0, PS
+
+    //Call panic handler
+    mov     a6,sp
+    call4   panicHandler
+
+    call0   _xt_context_restore
+    l32i    a0, sp, XT_STK_PS               /* retrieve interruptee's PS */
+    wsr     a0, PS
+    l32i    a0, sp, XT_STK_PC               /* retrieve interruptee's PC */
+    wsr     a0, EPC_5
+    l32i    a0, sp, XT_STK_A0               /* retrieve interruptee's A0 */
+    l32i    sp, sp, XT_STK_A1               /* remove exception frame */
+    rsync                                   /* ensure PS and EPC written */
+
+    rsr     a0, EXCSAVE_5                   /* restore a0 */
+    rfi     5
+
+
+#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_ESP_INT_WDT
+
+/*
+--------------------------------------------------------------------------------
+  Macro intr_matrix_map - Attach an CPU interrupt to a hardware source.
+
+  Input  : "addr" - Interrupt map configuration base address
+  Input  : "src"  - Interrupt source.
+  Input  : "inum" - Interrupt number.
+--------------------------------------------------------------------------------
+*/
+    .macro intr_matrix_map  addr src inum
+    movi    a2, \src
+    slli    a2, a2, 2
+    movi    a3, \addr
+    add     a3, a3, a2
+    movi    a2, \inum
+    s32i    a2, a3, 0
+    memw
+    .endm
+
+
+
     .align      4
 .handle_livelock_int:
 
     getcoreid   a5
 
     /* Save A2, A3, A4 so we can use those registers */
-    movi    a0, L4_INTR_STACK_SIZE
+    movi    a0, L5_INTR_STACK_SIZE
     mull    a5, a5, a0
-    movi    a0, _l4_intr_stack
+    movi    a0, _l5_intr_stack
     add     a0, a0, a5
-    s32i    a2, a0, L4_INTR_A2_OFFSET
-    s32i    a3, a0, L4_INTR_A3_OFFSET
-    s32i    a4, a0, L4_INTR_A4_OFFSET
+    s32i    a2, a0, L5_INTR_A2_OFFSET
+    s32i    a3, a0, L5_INTR_A3_OFFSET
+    s32i    a4, a0, L5_INTR_A4_OFFSET
 
     /* Here, we can use a0, a2, a3, a4, a5 registers */
     getcoreid   a5
@@ -260,18 +296,18 @@ xt_highint4:
     rsil    a0, CONFIG_ESP32_DPORT_DIS_INTERRUPT_LVL /* disable nested interrupt */
 
     beqz    a5, 1f
-    movi    a2, _l4_intr_livelock_app
+    movi    a2, _l5_intr_livelock_app
     l32i    a3, a2, 0
     addi    a3, a3, 1
     s32i    a3, a2, 0
 
     /* Dual core synchronization, ensuring that both cores enter interrupts */
 1:  movi    a4, 0x1
-    movi    a2, _l4_intr_livelock_sync
+    movi    a2, _l5_intr_livelock_sync
     addx4   a3, a5, a2
     s32i    a4, a3, 0
 
-1:  movi    a2, _l4_intr_livelock_sync
+1:  movi    a2, _l5_intr_livelock_sync
     movi    a3, 1
     addx4   a3, a3, a2
     l32i    a2, a2, 0
@@ -281,10 +317,10 @@ xt_highint4:
 
     beqz    a5, 1f                          /* Pro cpu (Core 0) jump bypass */
 
-    movi    a2, _l4_intr_livelock_app
+    movi    a2, _l5_intr_livelock_app
     l32i    a2, a2, 0
     bnei    a2, 2, 1f
-    movi    a2, _l4_intr_livelock_counter   /* _l4_intr_livelock_counter++ */
+    movi    a2, _l5_intr_livelock_counter   /* _l5_intr_livelock_counter++ */
     l32i    a3, a2, 0
     addi    a3, a3, 1
     s32i    a3, a2, 0
@@ -333,17 +369,17 @@ xt_highint4:
     bltu    a4, a3, 2b
 
     beqz    a5, 2f
-    movi    a2, _l4_intr_livelock_app
+    movi    a2, _l5_intr_livelock_app
     l32i    a2, a2, 0
     beqi    a2, 2, 8f
     j       3f
 
-2:  movi    a2, _l4_intr_livelock_pro
+2:  movi    a2, _l5_intr_livelock_pro
     l32i    a4, a2, 0
     addi    a4, a4, 1
     s32i    a4, a2, 0
 
-    movi    a2, _l4_intr_livelock_sync
+    movi    a2, _l5_intr_livelock_sync
     movi    a3, 1
     addx4   a3, a3, a2
     l32i    a2, a2, 0
@@ -357,7 +393,7 @@ xt_highint4:
     /*
     Pro cpu (Core 0) jump bypass, continue waiting, App cpu (Core 1)
     can execute to here, unmap itself tg1 1st stage timeout interrupt
-    then restore registers and exit highint4.
+    then restore registers and exit highint5.
     */
 3:  intr_matrix_map DPORT_APP_MAC_INTR_MAP_REG, ETS_TG1_WDT_LEVEL_INTR_SOURCE, 16
     j       9f
@@ -368,13 +404,13 @@ xt_highint4:
     */
 4:  intr_matrix_map DPORT_APP_MAC_INTR_MAP_REG, ETS_TG1_WDT_LEVEL_INTR_SOURCE, ETS_T1_WDT_INUM
 
-1:  movi    a2, _l4_intr_livelock_sync
+1:  movi    a2, _l5_intr_livelock_sync
     movi    a4, 1
     addx4   a3, a4, a2
     l32i    a2, a2, 0
     l32i    a3, a3, 0
     and     a2, a2, a3
-    beqz    a2, 1b                          /* Wait for App cpu to enter highint4 again */
+    beqz    a2, 1b                          /* Wait for App cpu to enter highint5 again */
 
     wdt_clr_intr_status TIMERG1
     j       9f
@@ -386,32 +422,32 @@ xt_highint4:
 
     movi    a0, 0
     beqz    a5, 1f
-    movi    a2, _l4_intr_livelock_app
+    movi    a2, _l5_intr_livelock_app
     l32i    a3, a2, 0
     bnei    a3, 2, 1f
     s32i    a0, a2, 0
 
 1:  bnez    a5, 2f
-    movi    a2, _l4_intr_livelock_pro
+    movi    a2, _l5_intr_livelock_pro
     s32i    a0, a2, 0
-2:  movi    a2, _l4_intr_livelock_sync
+2:  movi    a2, _l5_intr_livelock_sync
     addx4   a2, a5, a2
     s32i    a0, a2, 0
 
     /* Done. Restore registers and return. */
-    movi    a0, L4_INTR_STACK_SIZE
+    movi    a0, L5_INTR_STACK_SIZE
     mull    a5, a5, a0
-    movi    a0, _l4_intr_stack
+    movi    a0, _l5_intr_stack
     add     a0, a0, a5
-    l32i    a2, a0, L4_INTR_A2_OFFSET
-    l32i    a3, a0, L4_INTR_A3_OFFSET
-    l32i    a4, a0, L4_INTR_A4_OFFSET
+    l32i    a2, a0, L5_INTR_A2_OFFSET
+    l32i    a3, a0, L5_INTR_A3_OFFSET
+    l32i    a4, a0, L5_INTR_A4_OFFSET
     rsync                                   /* ensure register restored */
 
     rsr     a5, depc
 
-    rsr     a0, EXCSAVE_4                   /* restore a0 */
-    rfi     4
+    rsr     a0, EXCSAVE_5                   /* restore a0 */
+    rfi     5
 
 #endif
 

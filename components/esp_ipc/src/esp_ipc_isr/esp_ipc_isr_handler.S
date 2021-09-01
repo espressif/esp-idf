@@ -15,14 +15,14 @@
 
 /* High-priority interrupt - IPC_ISR handler */
 
-#define L4_INTR_STACK_SIZE  16
-#define L4_INTR_A0_OFFSET   0
-#define L4_INTR_A2_OFFSET   4
-#define L4_INTR_A3_OFFSET   8
-#define L4_INTR_A4_OFFSET   12
+#define L5_INTR_STACK_SIZE  16
+#define L5_INTR_A0_OFFSET   0
+#define L5_INTR_A2_OFFSET   4
+#define L5_INTR_A3_OFFSET   8
+#define L5_INTR_A4_OFFSET   12
     .data
-_l4_intr_stack:
-    .space      L4_INTR_STACK_SIZE
+_l5_intr_stack:
+    .space      L5_INTR_STACK_SIZE
     .section .iram1,"ax"
     .global     esp_ipc_isr_handler
     .type       esp_ipc_isr_handler,@function
@@ -32,15 +32,15 @@ esp_ipc_isr_handler:
     /* Because the interrupt cause code has protection that only
        allows one cpu to enter in the IPC_ISR section of the L4
        interrupt at one time, there's no need to have two
-       _l4_intr_stack for each cpu */
+       _l5_intr_stack for each cpu */
 
     /* Save A0, A2, A3, A4 so we can use those registers further*/
-    movi    a0, _l4_intr_stack
-    s32i    a2, a0, L4_INTR_A2_OFFSET
-    s32i    a3, a0, L4_INTR_A3_OFFSET
-    s32i    a4, a0, L4_INTR_A4_OFFSET
-    rsr     a2, EXCSAVE_4
-    s32i    a2, a0, L4_INTR_A0_OFFSET
+    movi    a0, _l5_intr_stack
+    s32i    a2, a0, L5_INTR_A2_OFFSET
+    s32i    a3, a0, L5_INTR_A3_OFFSET
+    s32i    a4, a0, L5_INTR_A4_OFFSET
+    rsr     a2, EXCSAVE_5
+    s32i    a2, a0, L5_INTR_A0_OFFSET
 
     /* disable nested iterrupts */
     /* PS.EXCM is changed from 1 to 0 . It allows using usually exception handler instead of the Double exception handler. */
@@ -85,16 +85,16 @@ esp_ipc_isr_handler:
     callx0  a0
 
     /* Done. Restore registers and return. */
-    movi    a0, _l4_intr_stack
-    l32i    a2, a0, L4_INTR_A2_OFFSET
-    l32i    a3, a0, L4_INTR_A3_OFFSET
-    l32i    a4, a0, L4_INTR_A4_OFFSET
+    movi    a0, _l5_intr_stack
+    l32i    a2, a0, L5_INTR_A2_OFFSET
+    l32i    a3, a0, L5_INTR_A3_OFFSET
+    l32i    a4, a0, L5_INTR_A4_OFFSET
 
     /* set the end flag */
     movi    a0, esp_ipc_isr_end_fl
     s32i    a0, a0, 0
 
     /* restore a0 */
-    rsr     a0, EXCSAVE_4
-    /* restores PS from EPS[4] and jumps to the address in EPC[4] */
-    rfi     4
+    rsr     a0, EXCSAVE_5
+    /* restores PS from EPS[5] and jumps to the address in EPC[5] */
+    rfi     5

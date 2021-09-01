@@ -51,7 +51,7 @@ static wdt_hal_context_t iwdt_context;
  */
 #define IWDT_LIVELOCK_TIMEOUT_MS    (20)
 
-extern uint32_t _l4_intr_livelock_counter, _l4_intr_livelock_max;
+extern uint32_t _l5_intr_livelock_counter, _l5_intr_livelock_max;
 #endif
 
 //Take care: the tick hook can also be called before esp_int_wdt_init() is called.
@@ -70,9 +70,9 @@ static void IRAM_ATTR tick_hook(void)
             wdt_hal_write_protect_disable(&iwdt_context);
             //Reconfigure stage timeouts
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
-            _l4_intr_livelock_counter = 0;
+            _l5_intr_livelock_counter = 0;
             wdt_hal_config_stage(&iwdt_context, WDT_STAGE0,
-                                 CONFIG_ESP_INT_WDT_TIMEOUT_MS * 1000 / IWDT_TICKS_PER_US / (_l4_intr_livelock_max + 1), WDT_STAGE_ACTION_INT);                    //Set timeout before interrupt
+                                 CONFIG_ESP_INT_WDT_TIMEOUT_MS * 1000 / IWDT_TICKS_PER_US / (_l5_intr_livelock_max + 1), WDT_STAGE_ACTION_INT);                    //Set timeout before interrupt
 #else
             wdt_hal_config_stage(&iwdt_context, WDT_STAGE0, CONFIG_ESP_INT_WDT_TIMEOUT_MS * 1000 / IWDT_TICKS_PER_US, WDT_STAGE_ACTION_INT);          //Set timeout before interrupt
 #endif
@@ -136,11 +136,11 @@ void esp_int_wdt_cpu_init(void)
      * This is a workaround for issue 3.15 in "ESP32 ECO and workarounds for
      * Bugs" document.
      */
-    _l4_intr_livelock_counter = 0;
+    _l5_intr_livelock_counter = 0;
     if (soc_has_cache_lock_bug()) {
         assert((portTICK_PERIOD_MS << 1) <= IWDT_LIVELOCK_TIMEOUT_MS);
         assert(CONFIG_ESP_INT_WDT_TIMEOUT_MS >= (IWDT_LIVELOCK_TIMEOUT_MS * 3));
-        _l4_intr_livelock_max = CONFIG_ESP_INT_WDT_TIMEOUT_MS / IWDT_LIVELOCK_TIMEOUT_MS - 1;
+        _l5_intr_livelock_max = CONFIG_ESP_INT_WDT_TIMEOUT_MS / IWDT_LIVELOCK_TIMEOUT_MS - 1;
     }
 #endif
 
