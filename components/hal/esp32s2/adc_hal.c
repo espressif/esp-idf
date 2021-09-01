@@ -18,7 +18,6 @@
 #include "hal/adc_hal.h"
 #include "hal/adc_types.h"
 #include "hal/adc_hal_conf.h"
-#include "esp_log.h"
 
 /*---------------------------------------------------------------
                     Digital controller setting
