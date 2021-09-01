@@ -53,6 +53,8 @@
 
 #define TAG "esp_ot_br"
 
+extern void otAppCliInit(otInstance *aInstance);
+
 static int hex_digit_to_int(char hex)
 {
     if ('A' <= hex && hex <= 'F') {
@@ -161,6 +163,7 @@ static void ot_task_worker(void *aContext)
     ESP_ERROR_CHECK(esp_openthread_border_router_init(get_example_netif()));
 
     esp_openthread_lock_acquire(portMAX_DELAY);
+    otAppCliInit(esp_openthread_get_instance());
     create_config_network(esp_openthread_get_instance());
     esp_openthread_lock_release();
 
@@ -179,8 +182,9 @@ void app_main(void)
     // Used eventfds:
     // * netif
     // * task queue
+    // * border router
     esp_vfs_eventfd_config_t eventfd_config = {
-        .max_fds = 2,
+        .max_fds = 3,
     };
     ESP_ERROR_CHECK(esp_vfs_eventfd_register(&eventfd_config));
 
