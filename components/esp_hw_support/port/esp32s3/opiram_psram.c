@@ -40,6 +40,10 @@
 #define OCT_PSRAM_WR_DUMMY_BITLEN       (2*(5-1))
 #define OCT_PSRAM_CS1_IO                26
 
+#define OCT_PSRAM_CS_SETUP_TIME         3
+#define OCT_PSRAM_CS_HOLD_TIME          3
+#define OCT_PSRAM_CS_HOLD_DELAY         2
+
 typedef struct {
     union {
         struct {
@@ -96,7 +100,7 @@ typedef struct {
 
 static const char* TAG = "opi psram";
 static DRAM_ATTR psram_size_t s_psram_size;
-static void IRAM_ATTR psram_cache_init(psram_cache_mode_t psram_cache_mode, psram_vaddr_mode_t vaddrmode);
+static void IRAM_ATTR s_config_psram_spi_phases(void);
 
 /**
  * Initialise mode registers of the PSRAM
@@ -205,6 +209,16 @@ static void IRAM_ATTR s_print_psram_info(opi_psram_mode_reg_t *reg_val)
                                                                                 reg_val->mr0.drive_str == 0x02 ? 4 : 8);
 }
 
+static void psram_set_cs_timing(void)
+{
+    //SPI0/1 share the cs_hold / cs_setup, cd_hold_time / cd_setup_time, cs_hold_delay registers for PSRAM, so we only need to set SPI0 related registers here
+    SET_PERI_REG_MASK(SPI_MEM_SPI_SMEM_AC_REG(0), SPI_MEM_SPI_SMEM_CS_HOLD_M | SPI_MEM_SPI_SMEM_CS_SETUP_M);
+    SET_PERI_REG_BITS(SPI_MEM_SPI_SMEM_AC_REG(0), SPI_MEM_SPI_SMEM_CS_HOLD_TIME_V, OCT_PSRAM_CS_HOLD_TIME, SPI_MEM_SPI_SMEM_CS_HOLD_TIME_S);
+    SET_PERI_REG_BITS(SPI_MEM_SPI_SMEM_AC_REG(0), SPI_MEM_SPI_SMEM_CS_SETUP_TIME_V, OCT_PSRAM_CS_SETUP_TIME, SPI_MEM_SPI_SMEM_CS_SETUP_TIME_S);
+    //CS1 high time
+    SET_PERI_REG_BITS(SPI_MEM_SPI_SMEM_AC_REG(0), SPI_MEM_SPI_SMEM_CS_HOLD_DELAY_V, OCT_PSRAM_CS_HOLD_DELAY, SPI_MEM_SPI_SMEM_CS_HOLD_DELAY_S);
+}
+
 static void IRAM_ATTR s_init_psram_pins(void)
 {
     //Set cs1 pin function
@@ -218,9 +232,10 @@ static void IRAM_ATTR s_init_psram_pins(void)
 esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vaddrmode)
 {
     s_init_psram_pins();
+    psram_set_cs_timing();
 
     //enter MSPI slow mode to init PSRAM device registers
-    spi_timing_enter_mspi_low_speed_mode();
+    spi_timing_enter_mspi_low_speed_mode(true);
 
     //set to variable dummy mode
     SET_PERI_REG_MASK(SPI_MEM_DDR_REG(1), SPI_MEM_SPI_FMEM_VAR_DUMMY);
@@ -245,10 +260,10 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
 #if CONFIG_ESPTOOLPY_FLASH_VENDOR_MXIC && CONFIG_ESPTOOLPY_FLASHMODE_OPI_DTR
     esp_rom_spi_set_dtr_swap_mode(1, true, true);
 #endif
-
+    //Do PSRAM timing tuning, we use SPI1 to do the tuning, and set the SPI0 PSRAM timing related registers accordingly
     spi_timing_psram_tuning();
-
-    spi_timing_enter_mspi_high_speed_mode();
+    ////Back to the high speed mode. Flash/PSRAM clocks are set to the clock that user selected. SPI0/1 registers are all set correctly
+    spi_timing_enter_mspi_high_speed_mode(true);
 
     /**
      * Tuning may change SPI1 regs, whereas legacy spi_flash APIs rely on these regs.
@@ -256,12 +271,12 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
      */
     spi_flash_set_rom_required_regs();
 
-    psram_cache_init(mode, vaddrmode);
+    s_config_psram_spi_phases();
     return ESP_OK;
 }
 
-//register initialization for sram cache params and r/w commands
-static void IRAM_ATTR psram_cache_init(psram_cache_mode_t psram_cache_mode, psram_vaddr_mode_t vaddrmode)
+//Configure PSRAM SPI0 phase related registers here according to the PSRAM chip requirement
+static void IRAM_ATTR s_config_psram_spi_phases(void)
 {
     //Config Write CMD phase for SPI0 to access PSRAM
     SET_PERI_REG_MASK(SPI_MEM_CACHE_SCTRL_REG(0), SPI_MEM_CACHE_SRAM_USR_WCMD_M);

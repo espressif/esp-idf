@@ -20,6 +20,12 @@
 
 #define ARRAY_SIZE(arr) (sizeof(arr)/sizeof(*(arr)))
 
+#if SPI_TIMING_FLASH_NEEDS_TUNING || SPI_TIMING_PSRAM_NEEDS_TUNING
+const static char *TAG = "MSPI Timing";
+static spi_timing_tuning_param_t s_flash_best_timing_tuning_config;
+static spi_timing_tuning_param_t s_psram_best_timing_tuning_config;
+#endif
+
 /*------------------------------------------------------------------------------
  * Common settings
  *----------------------------------------------------------------------------*/
@@ -40,11 +46,6 @@ void spi_timing_set_pin_drive_strength(void)
         PIN_SET_DRV(regs[i], 3);
     }
 }
-
-#if SPI_TIMING_FLASH_NEEDS_TUNING || SPI_TIMING_PSRAM_NEEDS_TUNING
-static char *TAG = "MSPI Timing";
-static spi_timing_tuning_param_t s_flash_best_timing_tuning_config;
-static spi_timing_tuning_param_t s_psram_best_timing_tuning_config;
 
 /*------------------------------------------------------------------------------
  * Static functions to get clock configs
@@ -75,12 +76,15 @@ static uint32_t get_psram_clock_divider(void)
     return SPI_TIMING_CORE_CLOCK_MHZ / 40;
 #elif CONFIG_SPIRAM_SPEED_80M
     return SPI_TIMING_CORE_CLOCK_MHZ / 80;
+#elif CONFIG_SPIRAM_SPEED_120M
+    return SPI_TIMING_CORE_CLOCK_MHZ / 120;
 #else
     //Will enter this branch only if PSRAM is not enable
     return 0;
 #endif
 }
 
+#if SPI_TIMING_FLASH_NEEDS_TUNING || SPI_TIMING_PSRAM_NEEDS_TUNING
 /*------------------------------------------------------------------------------
  * Static functions to do timing tuning
  *----------------------------------------------------------------------------*/
@@ -121,25 +125,15 @@ static void sweep_for_success_sample_points(uint8_t *reference_data, const spi_t
         memset(read_data, 0, SPI_TIMING_TEST_DATA_LEN);
 #if SPI_TIMING_FLASH_NEEDS_TUNING
         if (is_flash) {
-            /**
-             * 1. SPI_MEM_DINx_MODE(1), SPI_MEM_DINx_NUM(1) are meaningless
-             *    SPI0 and SPI1 share the SPI_MEM_DINx_MODE(0), SPI_MEM_DINx_NUM(0) for FLASH timing tuning
-             * 2. We use SPI1 to get the best Flash timing tuning (mode and num) config
-             */
-            spi_timing_config_flash_set_din_mode_num(0, config->tuning_config_table[config_idx].spi_din_mode, config->tuning_config_table[config_idx].spi_din_num);
-            spi_timing_config_flash_set_extra_dummy(1, config->tuning_config_table[config_idx].extra_dummy_len);
+            spi_timing_config_flash_tune_din_num_mode(config->tuning_config_table[config_idx].spi_din_mode, config->tuning_config_table[config_idx].spi_din_num);
+            spi_timing_config_flash_tune_dummy(config->tuning_config_table[config_idx].extra_dummy_len);
             spi_timing_config_flash_read_data(1, read_data, SPI_TIMING_FLASH_TEST_DATA_ADDR, sizeof(read_data));
         }
 #endif
 #if SPI_TIMING_PSRAM_NEEDS_TUNING
         if (!is_flash) {
-            /**
-             * 1. SPI_MEM_SPI_SMEM_DINx_MODE(1), SPI_MEM_SPI_SMEM_DINx_NUM(1) are meaningless
-             *    SPI0 and SPI1 share the SPI_MEM_SPI_SMEM_DINx_MODE(0), SPI_MEM_SPI_SMEM_DINx_NUM(0) for PSRAM timing tuning
-             * 2. We use SPI1 to get the best PSRAM timing tuning (mode and num) config
-             */
-            spi_timing_config_psram_set_din_mode_num(0, config->tuning_config_table[config_idx].spi_din_mode, config->tuning_config_table[config_idx].spi_din_num);
-            spi_timing_config_flash_set_extra_dummy(1, config->tuning_config_table[config_idx].extra_dummy_len);
+            spi_timing_config_psram_tune_din_num_mode(config->tuning_config_table[config_idx].spi_din_mode, config->tuning_config_table[config_idx].spi_din_num);
+            spi_timing_config_psram_tune_dummy(config->tuning_config_table[config_idx].extra_dummy_len);
             spi_timing_config_psram_read_data(1, read_data, SPI_TIMING_PSRAM_TEST_DATA_ADDR, SPI_TIMING_TEST_DATA_LEN);
         }
 #endif
@@ -304,9 +298,9 @@ void spi_timing_flash_tuning(void)
     ESP_EARLY_LOGW("FLASH", "DO NOT USE FOR MASS PRODUCTION! Timing parameters will be updated in future IDF version.");
     /**
      * set SPI01 related regs to 20mhz configuration, to get reference data from FLASH
-     * see detailed comments in this function (`spi_timing_enter_mspi_low_speed_mode)
+     * see detailed comments in this function (`spi_timing_enter_mspi_low_speed_mode`)
      */
-    spi_timing_enter_mspi_low_speed_mode();
+    spi_timing_enter_mspi_low_speed_mode(true);
 
     //Disable the variable dummy mode when doing timing tuning
     CLEAR_PERI_REG_MASK(SPI_MEM_DDR_REG(1), SPI_MEM_SPI_FMEM_VAR_DUMMY);    //GD flash will read error in variable mode with 20MHz
@@ -317,7 +311,7 @@ void spi_timing_flash_tuning(void)
     get_flash_tuning_configs(&timing_configs);
 
     do_tuning(reference_data, &timing_configs, true);
-    spi_timing_enter_mspi_high_speed_mode();
+    spi_timing_enter_mspi_high_speed_mode(true);
 }
 #else
 void spi_timing_flash_tuning(void)
@@ -343,6 +337,8 @@ static void get_psram_tuning_configs(spi_timing_config_t *config)
     *config = SPI_TIMING_PSRAM_GET_TUNING_CONFIG(SPI_TIMING_CORE_CLOCK_MHZ, 40, PSRAM_MODE);
 #elif CONFIG_SPIRAM_SPEED_80M
     *config = SPI_TIMING_PSRAM_GET_TUNING_CONFIG(SPI_TIMING_CORE_CLOCK_MHZ, 80, PSRAM_MODE);
+#elif CONFIG_SPIRAM_SPEED_120M
+    *config = SPI_TIMING_PSRAM_GET_TUNING_CONFIG(SPI_TIMING_CORE_CLOCK_MHZ, 120, PSRAM_MODE);
 #endif
 
 #undef PSRAM_MODE
@@ -353,9 +349,9 @@ void spi_timing_psram_tuning(void)
     ESP_EARLY_LOGW("PSRAM", "DO NOT USE FOR MASS PRODUCTION! Timing parameters will be updated in future IDF version.");
     /**
      * set SPI01 related regs to 20mhz configuration, to write reference data to PSRAM
-     * see detailed comments in this function (`spi_timing_enter_mspi_low_speed_mode)
+     * see detailed comments in this function (`spi_timing_enter_mspi_low_speed_mode`)
      */
-    spi_timing_enter_mspi_low_speed_mode();
+    spi_timing_enter_mspi_low_speed_mode(true);
 
     // write data into psram, used to do timing tuning test.
     uint8_t reference_data[SPI_TIMING_TEST_DATA_LEN];
@@ -370,7 +366,7 @@ void spi_timing_psram_tuning(void)
     CLEAR_PERI_REG_MASK(SPI_MEM_DDR_REG(1), SPI_MEM_SPI_FMEM_VAR_DUMMY);
     //Get required config, and set them to PSRAM related registers
     do_tuning(reference_data, &timing_configs, false);
-    spi_timing_enter_mspi_high_speed_mode();
+    spi_timing_enter_mspi_high_speed_mode(true);
 }
 
 #else
@@ -381,20 +377,23 @@ void spi_timing_psram_tuning(void)
 #endif  //SPI_TIMING_PSRAM_NEEDS_TUNING
 
 /*------------------------------------------------------------------------------
- * APIs to make SPI0 and SPI1 FLASH work for high/low freq
+ * APIs to make SPI0 (and SPI1) FLASH work for high/low freq
  *----------------------------------------------------------------------------*/
 #if SPI_TIMING_FLASH_NEEDS_TUNING || SPI_TIMING_PSRAM_NEEDS_TUNING
-static void clear_timing_tuning_regs(void)
+static void clear_timing_tuning_regs(bool control_spi1)
 {
     spi_timing_config_flash_set_din_mode_num(0, 0, 0);  //SPI0 and SPI1 share the registers for flash din mode and num setting, so we only set SPI0's reg
     spi_timing_config_flash_set_extra_dummy(0, 0);
-    spi_timing_config_flash_set_extra_dummy(1, 0);
+    if (control_spi1) {
+        spi_timing_config_flash_set_extra_dummy(1, 0);
+    } else {
+        //Won't touch SPI1 registers
+    }
 }
 #endif  //#if SPI_TIMING_FLASH_NEEDS_TUNING || SPI_TIMING_PSRAM_NEEDS_TUNING
 
-void spi_timing_enter_mspi_low_speed_mode(void)
+void spi_timing_enter_mspi_low_speed_mode(bool control_spi1)
 {
-#if SPI_TIMING_FLASH_NEEDS_TUNING || SPI_TIMING_PSRAM_NEEDS_TUNING
     /**
      * Here we are going to slow the SPI1 frequency to 20Mhz, so we need to set SPI1 din_num and din_mode regs.
      *
@@ -406,22 +405,26 @@ void spi_timing_enter_mspi_low_speed_mode(void)
 
     //Switch SPI1 and SPI0 clock as 20MHz, set its SPIMEM core clock as 80M and set clock division as 4
     spi_timing_config_set_core_clock(0, SPI_TIMING_CONFIG_CORE_CLOCK_80M);  //SPI0 and SPI1 share the register for core clock. So we only set SPI0 here.
-    spi_timing_config_set_flash_clock(1, 4);
     spi_timing_config_set_flash_clock(0, 4);
+    if (control_spi1) {
+        //After tuning, won't touch SPI1 again
+        spi_timing_config_set_flash_clock(1, 4);
+    }
 
-    clear_timing_tuning_regs();
-#else
-    //Empty function for compatibility, therefore upper layer won't need to know that FLASH in which operation mode and frequency config needs to be tuned
+#if SPI_TIMING_FLASH_NEEDS_TUNING || SPI_TIMING_PSRAM_NEEDS_TUNING
+    clear_timing_tuning_regs(control_spi1);
 #endif
 }
 
 #if SPI_TIMING_FLASH_NEEDS_TUNING || SPI_TIMING_PSRAM_NEEDS_TUNING
-static void set_timing_tuning_regs_as_required(void)
+static void set_timing_tuning_regs_as_required(bool control_spi1)
 {
     //SPI0 and SPI1 share the registers for flash din mode and num setting, so we only set SPI0's reg
     spi_timing_config_flash_set_din_mode_num(0, s_flash_best_timing_tuning_config.spi_din_mode, s_flash_best_timing_tuning_config.spi_din_num);
     spi_timing_config_flash_set_extra_dummy(0, s_flash_best_timing_tuning_config.extra_dummy_len);
-    spi_timing_config_flash_set_extra_dummy(1, s_flash_best_timing_tuning_config.extra_dummy_len);
+    if (control_spi1) {
+        spi_timing_config_flash_set_extra_dummy(1, s_flash_best_timing_tuning_config.extra_dummy_len);
+    }
 
     spi_timing_config_psram_set_din_mode_num(0, s_psram_best_timing_tuning_config.spi_din_mode, s_psram_best_timing_tuning_config.spi_din_num);
     spi_timing_config_psram_set_extra_dummy(0, s_psram_best_timing_tuning_config.extra_dummy_len);
@@ -429,14 +432,14 @@ static void set_timing_tuning_regs_as_required(void)
 #endif  //#if SPI_TIMING_FLASH_NEEDS_TUNING || SPI_TIMING_PSRAM_NEEDS_TUNING
 
 /**
- * Set SPI0 and SPI1 flash module clock, din_num, din_mode and extra dummy,
+ * Set SPI0 FLASH and PSRAM module clock, din_num, din_mode and extra dummy,
  * according to the configuration got from timing tuning function (`calculate_best_flash_tuning_config`).
+ * iF control_spi1 == 1, will also update SPI1 timing registers. Should only be set to 1 when do tuning.
  *
  * This function should always be called after `spi_timing_flash_tuning` or `calculate_best_flash_tuning_config`
  */
-void spi_timing_enter_mspi_high_speed_mode(void)
+void spi_timing_enter_mspi_high_speed_mode(bool control_spi1)
 {
-#if SPI_TIMING_FLASH_NEEDS_TUNING || SPI_TIMING_PSRAM_NEEDS_TUNING
     spi_timing_config_core_clock_t core_clock = get_mspi_core_clock();
     uint32_t flash_div = get_flash_clock_divider();
     uint32_t psram_div = get_psram_clock_divider();
@@ -445,12 +448,31 @@ void spi_timing_enter_mspi_high_speed_mode(void)
     spi_timing_config_set_core_clock(0, core_clock); //SPI0 and SPI1 share the register for core clock. So we only set SPI0 here.
     //Set FLASH module clock
     spi_timing_config_set_flash_clock(0, flash_div);
-    spi_timing_config_set_flash_clock(1, flash_div);
+    if (control_spi1) {
+        spi_timing_config_set_flash_clock(1, flash_div);
+    }
     //Set PSRAM module clock
     spi_timing_config_set_psram_clock(0, psram_div);
 
-    set_timing_tuning_regs_as_required();
-#else
-    //Empty function for compatibility, therefore upper layer won't need to know that FLASH in which operation mode and frequency config needs to be tuned
+#if SPI_TIMING_FLASH_NEEDS_TUNING || SPI_TIMING_PSRAM_NEEDS_TUNING
+    set_timing_tuning_regs_as_required(true);
 #endif
+}
+
+/**
+ * Should be only used by SPI1 Flash driver to know the necessary timing registers
+ */
+void spi_timing_get_flash_regs(spi_timing_flash_config_t *config)
+{
+    config->flash_clk_div = get_flash_clock_divider();
+#if SPI_TIMING_FLASH_NEEDS_TUNING || SPI_TIMING_PSRAM_NEEDS_TUNING
+    config->flash_extra_dummy = s_flash_best_timing_tuning_config.extra_dummy_len;
+#else
+    config->flash_extra_dummy = 0;
+#endif
+    config->flash_setup_en = REG_GET_BIT(SPI_MEM_USER_REG(0), SPI_MEM_CS_SETUP);
+    config->flash_setup_time = REG_GET_FIELD(SPI_MEM_CTRL2_REG(0), SPI_MEM_CS_SETUP_TIME);
+
+    config->flash_hold_en = REG_GET_BIT(SPI_MEM_USER_REG(0), SPI_MEM_CS_HOLD);
+    config->flash_hold_time = REG_GET_FIELD(SPI_MEM_CTRL2_REG(0), SPI_MEM_CS_HOLD_TIME);
 }

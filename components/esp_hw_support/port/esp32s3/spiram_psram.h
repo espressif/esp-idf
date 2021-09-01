@@ -14,8 +14,6 @@
 typedef enum {
     PSRAM_CACHE_S80M = 1,
     PSRAM_CACHE_S40M,
-    PSRAM_CACHE_S26M,
-    PSRAM_CACHE_S20M,
     PSRAM_CACHE_MAX,
 } psram_cache_mode_t;
 

@@ -14,6 +14,7 @@ entries:
 
     if IDF_TARGET_ESP32S3 = y:
         spi_flash_timing_tuning (noflash)
+        spi_timing_config (noflash)
 
     if IDF_TARGET_ESP32S3 = y && ESPTOOLPY_OCT_FLASH = y:
         spi_flash_oct_flash_init (noflash)
