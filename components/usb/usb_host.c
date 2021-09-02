@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/*
+Warning: The USB Host Library API is still a beta version and may be subject to change
+*/
+
 #include <stdlib.h>
 #include <stdint.h>
 #include "freertos/FreeRTOS.h"
@@ -921,7 +925,7 @@ static esp_err_t interface_claim(client_t *client_obj, usb_device_handle_t dev_h
     //We need to walk to configuration descriptor to find the correct interface descriptor, and each of its constituent endpoint descriptors
     //Find the interface descriptor and allocate the interface object
     int offset_intf;
-    const usb_intf_desc_t *intf_desc = usb_host_parse_interface(config_desc, bInterfaceNumber, bAlternateSetting, &offset_intf);
+    const usb_intf_desc_t *intf_desc = usb_parse_interface_descriptor(config_desc, bInterfaceNumber, bAlternateSetting, &offset_intf);
     if (intf_desc == NULL) {
         ret = ESP_ERR_NOT_FOUND;
         goto exit;
@@ -935,7 +939,7 @@ static esp_err_t interface_claim(client_t *client_obj, usb_device_handle_t dev_h
     //Find each endpoint descriptor in the interface by index, and allocate those endpoints
     for (int i = 0; i < intf_desc->bNumEndpoints; i++) {
         int offset_ep = offset_intf;
-        const usb_ep_desc_t *ep_desc = usb_host_parse_endpoint_by_index(intf_desc, i, config_desc->wTotalLength, &offset_ep);
+        const usb_ep_desc_t *ep_desc = usb_parse_endpoint_descriptor_by_index(intf_desc, i, config_desc->wTotalLength, &offset_ep);
         if (ep_desc == NULL) {
             ret = ESP_ERR_NOT_FOUND;
             goto ep_alloc_err;

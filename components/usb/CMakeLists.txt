@@ -6,7 +6,7 @@ set(priv_require)
 if(CONFIG_USB_OTG_SUPPORTED)
     list(APPEND srcs "hcd.c"
                      "hub.c"
-                     "usb_host_misc.c"
+                     "usb_helpers.c"
                      "usb_host.c"
                      "usb_private.c"
                      "usbh.c")

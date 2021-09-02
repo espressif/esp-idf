@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/*
+Warning: The USB Host Library API is still a beta version and may be subject to change
+*/
+
 #pragma once
 
 #include <stdint.h>
@@ -11,7 +15,7 @@
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
 //Include the other USB Host Library headers as well
-#include "usb/usb_host_misc.h"
+#include "usb/usb_helpers.h"
 #include "usb/usb_types_ch9.h"
 #include "usb/usb_types_stack.h"
 
@@ -197,7 +201,7 @@ esp_err_t usb_host_device_open(usb_host_client_handle_t client_hdl, uint8_t dev_
  * @brief Close a device
  *
  * - This function allows a client to close a device
- * - A client must close a device after it has finished using the device
+ * - A client must close a device after it has finished using the device (claimed interfaces must also be released)
  * - A client must close all devices it has opened before deregistering
  *
  * @param[in] client_hdl Client handle
@@ -225,7 +229,7 @@ esp_err_t usb_host_device_free_all(void);
 // ------------------- Cached Requests ---------------------
 
 /**
- * @brief Get a device's information
+ * @brief Get device's information
  *
  * - This function gets some basic information of a device
  * - The device must be opened first before attempting to get its information
@@ -241,7 +245,7 @@ esp_err_t usb_host_device_info(usb_device_handle_t dev_hdl, usb_device_info_t *d
 // ----------------- Cached Descriptors --------------------
 
 /**
- * @brief Get a device's device descriptor
+ * @brief Get device's device descriptor
  *
  * - A client must call usb_host_device_open() first
  * - No control transfer is sent. The device's descriptor is cached on enumeration
@@ -255,7 +259,7 @@ esp_err_t usb_host_device_info(usb_device_handle_t dev_hdl, usb_device_info_t *d
 esp_err_t usb_host_get_device_descriptor(usb_device_handle_t dev_hdl, const usb_device_desc_t **device_desc);
 
 /**
- * @brief Get a device's active configuration descriptor
+ * @brief Get device's active configuration descriptor
  *
  * - A client must call usb_host_device_open() first
  * - No control transfer is sent. The device's active configuration descriptor is cached on enumeration
@@ -271,7 +275,7 @@ esp_err_t usb_host_get_active_config_descriptor(usb_device_handle_t dev_hdl, con
 // ----------------------------------------------- Interface Functions -------------------------------------------------
 
 /**
- * @brief Function for a client to claim an device's interface
+ * @brief Function for a client to claim a device's interface
  *
  * - A client must claim a device's interface before attempting to communicate with any of its endpoints
  * - Once an interface is claimed by a client, it cannot be claimed by any other client.
@@ -285,7 +289,7 @@ esp_err_t usb_host_get_active_config_descriptor(usb_device_handle_t dev_hdl, con
 esp_err_t usb_host_interface_claim(usb_host_client_handle_t client_hdl, usb_device_handle_t dev_hdl, uint8_t bInterfaceNumber, uint8_t bAlternateSetting);
 
 /**
- * @brief Function for a client to release a device's interface
+ * @brief Function for a client to release a previously claimed interface
  *
  * - A client should release a device's interface after it no longer needs to communicate with the interface
  * - A client must release all of its interfaces of a device it has claimed before being able to close the device

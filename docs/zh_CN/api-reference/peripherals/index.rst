@@ -33,6 +33,7 @@
     :esp32s2: Touch Element <touch_element>
     TWAI <twai>
     UART <uart>
-    :SOC_USB_OTG_SUPPORTED: USB Device <usb_device>
+    :SOC_USB_OTG_SUPPORTED: USB 设备 (Device) <usb_device>
+    :SOC_USB_OTG_SUPPORTED: USB 主机 (Host) <usb_host>
 
 本部分的 API 示例代码存放在 ESP-IDF 示例项目的 :example:`peripherals` 目录下。

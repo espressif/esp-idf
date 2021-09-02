@@ -34,5 +34,6 @@ Peripherals API
     TWAI <twai>
     UART <uart>
     :SOC_USB_OTG_SUPPORTED: USB Device <usb_device>
+    :SOC_USB_OTG_SUPPORTED: USB Host <usb_host>
 
 Code examples for this API section are provided in the :example:`peripherals` directory of ESP-IDF examples.
