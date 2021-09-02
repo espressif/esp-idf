@@ -158,6 +158,14 @@ xt_highint5:
 
  // ETS_T1_WDT_INUM
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_ESP_INT_WDT
+    /* Timer 2 interrupt */
+    rsr     a0, INTENABLE
+    extui   a0, a0, 16, 1
+    beqz    a0, 1f
+    rsr     a0, INTERRUPT
+    extui   a0, a0, 16, 1
+    bnez    a0, .handle_multicore_debug_int
+1:
     get_int_status_tg1wdt a0
     beqz    a0, 1f
 
@@ -254,6 +262,50 @@ xt_highint5:
 
 
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_ESP_INT_WDT
+#define APB_ITCTRL              (0x3f00)
+#define APB_DCRSET              (0x200c)
+
+#define ERI_ADDR(APB)           (0x100000 + (APB))
+
+    .align      4
+.handle_multicore_debug_int:
+
+    wsr     a2, depc                        /* temp storage */
+
+    rsr.ccount  a2
+    addmi   a2, a2, (CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ*50)
+    wsr     a2, CCOMPARE2
+
+    /* Enable Integration Mode */
+    movi    a2, ERI_ADDR(APB_ITCTRL)
+    rer     a0, a2
+    addi    a0, a0, 1
+    wer     a0, a2
+
+    /* Enable and emit BreakOut signal */
+    movi    a2, ERI_ADDR(APB_DCRSET)
+    rer     a0, a2
+    movi    a2, 0x1020000
+    or      a0, a2, a0
+    movi    a2, ERI_ADDR(APB_DCRSET)
+    wer     a0, a2
+
+    .rept   4
+    nop
+    .endr
+
+    /* Enable Normally Mode */
+    movi    a2, ERI_ADDR(APB_ITCTRL)
+    rer     a0, a2
+    movi    a2, ~0x1
+    and     a0, a2, a0
+    movi    a2, ERI_ADDR(APB_ITCTRL)
+    wer     a0, a2
+
+    rsr     a2, depc
+
+    rsr     a0, EXCSAVE_5                   /* restore a0 */
+    rfi     5
 
 /*
 --------------------------------------------------------------------------------

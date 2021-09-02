@@ -39,6 +39,31 @@ _l4_save_ctx:
     .align      4
 
 xt_highint4:
+
+#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+    /*
+    Here, Timer2 is used to count a little time(50us).
+    The subsequent dram0 write operation is blocked due to live lock, which will
+    cause timer2 to timeout and trigger a l5 interrupt.
+    */
+    rsr.ccount  a0
+    addmi   a0, a0, (CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ*50)
+    wsr     a0, CCOMPARE2
+
+    /* Enable Timer 2 interrupt */
+    rsr     a0, INTENABLE
+    extui   a0, a0, 16, 1
+    bnez    a0, 1f
+    movi    a0, 0
+    xsr     a0, INTENABLE     // disable all interrupts
+    addmi   a0, a0, (1<<14)
+    addmi   a0, a0, (1<<14)
+    addmi   a0, a0, (1<<14)
+    addmi   a0, a0, (1<<14)
+    wsr     a0, INTENABLE
+1:
+#endif
+
     movi    a0, _l4_save_ctx
     /* save 4 lower registers */
     s32i    a1, a0, 4
@@ -63,6 +88,14 @@ xt_highint4:
     s32i    a2, a0, 20
     rsr     a2, EPC1
     s32i    a2, a0, 24
+
+#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+    movi    a0, 0
+    xsr     a0, INTENABLE     // disable all interrupts
+    movi    a2, ~(1<<16)
+    and     a0, a2, a0
+    wsr     a0, INTENABLE
+#endif
 
     /* disable exception mode, window overflow */
     movi    a0, PS_INTLEVEL(5) | PS_EXCM  /*TOCHECK*/
