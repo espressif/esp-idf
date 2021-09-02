@@ -1,5 +1,5 @@
 /*
- * FreeRTOS Kernel V10.2.1
+ * FreeRTOS Kernel V10.4.3
  * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -47,10 +47,10 @@
  * MACROS AND DEFINITIONS
  *----------------------------------------------------------*/
 
-#define tskKERNEL_VERSION_NUMBER "V10.2.1"
+#define tskKERNEL_VERSION_NUMBER "V10.4.3"
 #define tskKERNEL_VERSION_MAJOR 10
-#define tskKERNEL_VERSION_MINOR 2
-#define tskKERNEL_VERSION_BUILD 1
+#define tskKERNEL_VERSION_MINOR 4
+#define tskKERNEL_VERSION_BUILD 3
 
 /* MPU region parameters passed in ulParameters
  * of MemoryRegion_t struct. */
