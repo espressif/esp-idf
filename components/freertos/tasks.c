@@ -1440,19 +1440,36 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
 #endif /* INCLUDE_vTaskDelete */
 /*-----------------------------------------------------------*/
 
-#if ( INCLUDE_vTaskDelayUntil == 1 )
-
+#if ( INCLUDE_xTaskDelayUntil == 1 )
+#ifdef ESP_PLATFORM
+    // backward binary compatibility - remove later
+    #undef vTaskDelayUntil
     void vTaskDelayUntil( TickType_t * const pxPreviousWakeTime,
                                 const TickType_t xTimeIncrement )
     {
+        xTaskDelayUntil(pxPreviousWakeTime, xTimeIncrement);
+    }
+#endif // ESP_PLATFORM
+
+    BaseType_t xTaskDelayUntil( TickType_t * const pxPreviousWakeTime,
+                                const TickType_t xTimeIncrement )
+    {
         TickType_t xTimeToWake;
+#ifdef ESP_PLATFORM
         BaseType_t xShouldDelay = pdFALSE;
+#else
+        BaseType_t xAlreadyYielded, xShouldDelay = pdFALSE;
+#endif // ESP_PLATFORM
 
         configASSERT( pxPreviousWakeTime );
         configASSERT( ( xTimeIncrement > 0U ) );
         configASSERT( uxSchedulerSuspended[xPortGetCoreID()] == 0 );
 
+#ifdef ESP_PLATFORM
         taskENTER_CRITICAL();
+#else
+        vTaskSuspendAll();
+#endif // ESP_PLATFORM
         {
             /* Minor optimisation.  The tick count cannot change in this
              * block. */
@@ -1508,13 +1525,30 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                 mtCOVERAGE_TEST_MARKER();
             }
         }
+#ifdef ESP_PLATFORM
         taskEXIT_CRITICAL();
+#else
+        xAlreadyYielded = xTaskResumeAll();
+#endif // ESP_PLATFORM
 
-        /* Force a reschedule, we may have put ourselves to sleep. */
+        /* Force a reschedule if xTaskResumeAll has not already done so, we may
+         * have put ourselves to sleep. */
+#ifdef ESP_PLATFORM
         portYIELD_WITHIN_API();
+#else
+        if( xAlreadyYielded == pdFALSE )
+        {
+            portYIELD_WITHIN_API();
+        }
+        else
+        {
+            mtCOVERAGE_TEST_MARKER();
+        }
+#endif // ESP_PLATFORM
+        return xShouldDelay;
     }
 
-#endif /* INCLUDE_vTaskDelayUntil */
+#endif /* INCLUDE_xTaskDelayUntil */
 /*-----------------------------------------------------------*/
 
 #if ( INCLUDE_vTaskDelay == 1 )

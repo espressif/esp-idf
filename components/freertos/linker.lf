@@ -34,6 +34,7 @@ entries:
         tasks: xTaskGetCurrentTaskHandleForCPU (default)
         tasks: vTaskDelete (default)
         tasks: vTaskDelayUntil (default)
+        tasks: xTaskDelayUntil (default)
         tasks: vTaskDelay (default)
         tasks: vTaskSuspend (default)
         tasks: xTaskResumeAll (default)
