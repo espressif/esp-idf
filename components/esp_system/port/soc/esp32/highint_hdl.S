@@ -33,10 +33,29 @@ Interrupt , a high-priority interrupt, is used for several things:
 
 */
 
-#define L5_INTR_STACK_SIZE  12
-#define L5_INTR_A2_OFFSET   0
-#define L5_INTR_A3_OFFSET   4
-#define L5_INTR_A4_OFFSET   8
+#if CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_5
+
+#define LX_INTR_STACK_SIZE  12
+#define LX_INTR_A2_OFFSET   0
+#define LX_INTR_A3_OFFSET   4
+#define LX_INTR_A4_OFFSET   8
+#define EPC_X               EPC_5
+#define EXCSAVE_X           EXCSAVE_5
+#define RFI_X               5
+#define xt_highintx         xt_highint5
+
+#elif CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_4
+
+#define LX_INTR_STACK_SIZE  12
+#define LX_INTR_A2_OFFSET   0
+#define LX_INTR_A3_OFFSET   4
+#define LX_INTR_A4_OFFSET   8
+#define EPC_X               EPC_4
+#define EXCSAVE_X           EXCSAVE_4
+#define RFI_X               4
+#define xt_highintx         xt_highint4
+
+#endif /* CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_5 */
 
 /*
 --------------------------------------------------------------------------------
@@ -79,7 +98,7 @@ Interrupt , a high-priority interrupt, is used for several things:
     movi    a3, TIMG_WDT_WKEY_VALUE
     s32i    a3, a2, TIMG1_WDTWPROTECT_OFFSET    /* disable write protect */
     memw
-    movi    a4, _l5_intr_livelock_max
+    movi    a4, _lx_intr_livelock_max
     l32i    a4, a4, 0
     memw
     addi    a4, a4, 1
@@ -123,30 +142,30 @@ Interrupt , a high-priority interrupt, is used for several things:
     .endm
 
     .data
-_l5_intr_stack:
-    .space      L5_INTR_STACK_SIZE*portNUM_PROCESSORS /* This allocates stacks for each individual CPU. */
+_lx_intr_stack:
+    .space      LX_INTR_STACK_SIZE*portNUM_PROCESSORS /* This allocates stacks for each individual CPU. */
 
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_ESP_INT_WDT
-    .global _l5_intr_livelock_counter
-    .global _l5_intr_livelock_max
+    .global _lx_intr_livelock_counter
+    .global _lx_intr_livelock_max
     .align  16
-_l5_intr_livelock_counter:
+_lx_intr_livelock_counter:
     .word   0
-_l5_intr_livelock_max:
+_lx_intr_livelock_max:
     .word   0
-_l5_intr_livelock_sync:
+_lx_intr_livelock_sync:
     .word   0, 0
-_l5_intr_livelock_app:
+_lx_intr_livelock_app:
     .word   0
-_l5_intr_livelock_pro:
+_lx_intr_livelock_pro:
     .word   0
 #endif
 
     .section .iram1,"ax"
-    .global     xt_highint5
-    .type       xt_highint5,@function
+    .global     xt_highintx
+    .type       xt_highintx,@function
     .align      4
-xt_highint5:
+xt_highintx:
 
 #ifndef CONFIG_FREERTOS_UNICORE
     /* See if we're here for the IPC_ISR interrupt */
@@ -166,15 +185,21 @@ xt_highint5:
     extui   a0, a0, 16, 1
     bnez    a0, .handle_multicore_debug_int
 1:
+#if CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_5
     get_int_status_tg1wdt a0
+#elif CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_4
+    /* See if we're here for the tg1 watchdog interrupt */
+    rsr     a0, INTERRUPT
+    extui   a0, a0, ETS_T1_WDT_INUM, 1
+#endif /* CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_5 */
     beqz    a0, 1f
 
     wsr     a5, depc                        /* use DEPC as temp storage */
-    movi    a0, _l5_intr_livelock_counter
+    movi    a0, _lx_intr_livelock_counter
     l32i    a0, a0, 0
-    movi    a5, _l5_intr_livelock_max
+    movi    a5, _lx_intr_livelock_max
     l32i    a5, a5, 0
-    bltu    a0, a5, .handle_livelock_int    /* _l5_intr_livelock_counter < _l5_intr_livelock_max */
+    bltu    a0, a5, .handle_livelock_int    /* _lx_intr_livelock_counter < _lx_intr_livelock_max */
 
     rsr     a5, depc                        /* restore a5 */
 #endif
@@ -189,7 +214,7 @@ xt_highint5:
     #endif
     rsr     a0, PS                          /* save interruptee's PS */
     s32i    a0, sp, XT_STK_PS
-    rsr     a0, EPC_5                       /* save interruptee's PC */
+    rsr     a0, EPC_X                       /* save interruptee's PC */
     s32i    a0, sp, XT_STK_PC
     #if XCHAL_HAVE_WINDOWED
     s32e    a0, sp, -16                     /* for debug backtrace */
@@ -203,11 +228,16 @@ xt_highint5:
     s32i    a0, sp, XT_STK_EXCVADDR
 
     /* Figure out reason, save into EXCCAUSE reg */
-
+#if CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_5
     get_int_status_tg1wdt a0
     bnez    a0, 1f
 
     /* TODO: Clear the MEMACCESS_ERR interrupt status. */
+#elif CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_4
+    rsr     a0, INTERRUPT
+    extui   a0, a0, ETS_MEMACCESS_ERR_INUM, 1 /* get cacheerr int bit */
+    beqz    a0, 1f
+#endif /* CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_5 */
 
     /* Kill this interrupt; we cannot reset it. */
     rsr     a0, INTENABLE
@@ -217,8 +247,10 @@ xt_highint5:
     movi    a0, PANIC_RSN_CACHEERR
     j 9f
 1:
+#if CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_5
    /* Clear the WDT interrupt status. */
     wdt_clr_intr_status TIMERG1
+#endif /* CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_5 */
 #if CONFIG_ESP_INT_WDT_CHECK_CPU1
     /* Check if the cause is the app cpu failing to tick.*/
     movi    a0, int_wdt_app_cpu_ticked
@@ -236,7 +268,7 @@ xt_highint5:
     s32i    a0, sp, XT_STK_EXCCAUSE
 
     /* _xt_context_save seems to save the current a0, but we need the interuptees a0. Fix this. */
-    rsr     a0, EXCSAVE_5                   /* save interruptee's a0 */
+    rsr     a0, EXCSAVE_X                   /* save interruptee's a0 */
 
     s32i    a0, sp, XT_STK_A0
 
@@ -252,13 +284,13 @@ xt_highint5:
     l32i    a0, sp, XT_STK_PS               /* retrieve interruptee's PS */
     wsr     a0, PS
     l32i    a0, sp, XT_STK_PC               /* retrieve interruptee's PC */
-    wsr     a0, EPC_5
+    wsr     a0, EPC_X
     l32i    a0, sp, XT_STK_A0               /* retrieve interruptee's A0 */
     l32i    sp, sp, XT_STK_A1               /* remove exception frame */
     rsync                                   /* ensure PS and EPC written */
 
-    rsr     a0, EXCSAVE_5                   /* restore a0 */
-    rfi     5
+    rsr     a0, EXCSAVE_X                   /* restore a0 */
+    rfi     RFI_X
 
 
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_ESP_INT_WDT
@@ -304,7 +336,7 @@ xt_highint5:
 
     rsr     a2, depc
 
-    rsr     a0, EXCSAVE_5                   /* restore a0 */
+    rsr     a0, EXCSAVE_X                   /* restore a0 */
     rfi     5
 
 /*
@@ -334,13 +366,13 @@ xt_highint5:
     getcoreid   a5
 
     /* Save A2, A3, A4 so we can use those registers */
-    movi    a0, L5_INTR_STACK_SIZE
+    movi    a0, LX_INTR_STACK_SIZE
     mull    a5, a5, a0
-    movi    a0, _l5_intr_stack
+    movi    a0, _lx_intr_stack
     add     a0, a0, a5
-    s32i    a2, a0, L5_INTR_A2_OFFSET
-    s32i    a3, a0, L5_INTR_A3_OFFSET
-    s32i    a4, a0, L5_INTR_A4_OFFSET
+    s32i    a2, a0, LX_INTR_A2_OFFSET
+    s32i    a3, a0, LX_INTR_A3_OFFSET
+    s32i    a4, a0, LX_INTR_A4_OFFSET
 
     /* Here, we can use a0, a2, a3, a4, a5 registers */
     getcoreid   a5
@@ -348,18 +380,18 @@ xt_highint5:
     rsil    a0, CONFIG_ESP32_DPORT_DIS_INTERRUPT_LVL /* disable nested interrupt */
 
     beqz    a5, 1f
-    movi    a2, _l5_intr_livelock_app
+    movi    a2, _lx_intr_livelock_app
     l32i    a3, a2, 0
     addi    a3, a3, 1
     s32i    a3, a2, 0
 
     /* Dual core synchronization, ensuring that both cores enter interrupts */
 1:  movi    a4, 0x1
-    movi    a2, _l5_intr_livelock_sync
+    movi    a2, _lx_intr_livelock_sync
     addx4   a3, a5, a2
     s32i    a4, a3, 0
 
-1:  movi    a2, _l5_intr_livelock_sync
+1:  movi    a2, _lx_intr_livelock_sync
     movi    a3, 1
     addx4   a3, a3, a2
     l32i    a2, a2, 0
@@ -369,10 +401,10 @@ xt_highint5:
 
     beqz    a5, 1f                          /* Pro cpu (Core 0) jump bypass */
 
-    movi    a2, _l5_intr_livelock_app
+    movi    a2, _lx_intr_livelock_app
     l32i    a2, a2, 0
     bnei    a2, 2, 1f
-    movi    a2, _l5_intr_livelock_counter   /* _l5_intr_livelock_counter++ */
+    movi    a2, _lx_intr_livelock_counter   /* _lx_intr_livelock_counter++ */
     l32i    a3, a2, 0
     addi    a3, a3, 1
     s32i    a3, a2, 0
@@ -421,17 +453,17 @@ xt_highint5:
     bltu    a4, a3, 2b
 
     beqz    a5, 2f
-    movi    a2, _l5_intr_livelock_app
+    movi    a2, _lx_intr_livelock_app
     l32i    a2, a2, 0
     beqi    a2, 2, 8f
     j       3f
 
-2:  movi    a2, _l5_intr_livelock_pro
+2:  movi    a2, _lx_intr_livelock_pro
     l32i    a4, a2, 0
     addi    a4, a4, 1
     s32i    a4, a2, 0
 
-    movi    a2, _l5_intr_livelock_sync
+    movi    a2, _lx_intr_livelock_sync
     movi    a3, 1
     addx4   a3, a3, a2
     l32i    a2, a2, 0
@@ -445,7 +477,7 @@ xt_highint5:
     /*
     Pro cpu (Core 0) jump bypass, continue waiting, App cpu (Core 1)
     can execute to here, unmap itself tg1 1st stage timeout interrupt
-    then restore registers and exit highint5.
+    then restore registers and exit highint5/4.
     */
 3:  intr_matrix_map DPORT_APP_MAC_INTR_MAP_REG, ETS_TG1_WDT_LEVEL_INTR_SOURCE, 16
     j       9f
@@ -456,13 +488,13 @@ xt_highint5:
     */
 4:  intr_matrix_map DPORT_APP_MAC_INTR_MAP_REG, ETS_TG1_WDT_LEVEL_INTR_SOURCE, ETS_T1_WDT_INUM
 
-1:  movi    a2, _l5_intr_livelock_sync
+1:  movi    a2, _lx_intr_livelock_sync
     movi    a4, 1
     addx4   a3, a4, a2
     l32i    a2, a2, 0
     l32i    a3, a3, 0
     and     a2, a2, a3
-    beqz    a2, 1b                          /* Wait for App cpu to enter highint5 again */
+    beqz    a2, 1b                          /* Wait for App cpu to enter highint5/4 again */
 
     wdt_clr_intr_status TIMERG1
     j       9f
@@ -474,32 +506,32 @@ xt_highint5:
 
     movi    a0, 0
     beqz    a5, 1f
-    movi    a2, _l5_intr_livelock_app
+    movi    a2, _lx_intr_livelock_app
     l32i    a3, a2, 0
     bnei    a3, 2, 1f
     s32i    a0, a2, 0
 
 1:  bnez    a5, 2f
-    movi    a2, _l5_intr_livelock_pro
+    movi    a2, _lx_intr_livelock_pro
     s32i    a0, a2, 0
-2:  movi    a2, _l5_intr_livelock_sync
+2:  movi    a2, _lx_intr_livelock_sync
     addx4   a2, a5, a2
     s32i    a0, a2, 0
 
     /* Done. Restore registers and return. */
-    movi    a0, L5_INTR_STACK_SIZE
+    movi    a0, LX_INTR_STACK_SIZE
     mull    a5, a5, a0
-    movi    a0, _l5_intr_stack
+    movi    a0, _lx_intr_stack
     add     a0, a0, a5
-    l32i    a2, a0, L5_INTR_A2_OFFSET
-    l32i    a3, a0, L5_INTR_A3_OFFSET
-    l32i    a4, a0, L5_INTR_A4_OFFSET
+    l32i    a2, a0, LX_INTR_A2_OFFSET
+    l32i    a3, a0, LX_INTR_A3_OFFSET
+    l32i    a4, a0, LX_INTR_A4_OFFSET
     rsync                                   /* ensure register restored */
 
     rsr     a5, depc
 
-    rsr     a0, EXCSAVE_5                   /* restore a0 */
-    rfi     5
+    rsr     a0, EXCSAVE_X                   /* restore a0 */
+    rfi     RFI_X
 
 #endif
 
