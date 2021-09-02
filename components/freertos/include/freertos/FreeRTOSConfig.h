@@ -277,7 +277,7 @@ extern void vPortCleanUpTCB ( void *pxTCB );
 #endif //configUSE_TICKLESS_IDLE
 
 
-#if CONFIG_ESP_COREDUMP_ENABLE || CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
+#if CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT
 #define configENABLE_TASK_SNAPSHOT                      1
 #endif
 #ifndef configENABLE_TASK_SNAPSHOT
