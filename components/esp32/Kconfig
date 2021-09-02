@@ -646,6 +646,7 @@ menu "ESP32-specific"
             select ESP_SYSTEM_RTC_EXT_XTAL
         config ESP32_RTC_CLK_SRC_EXT_OSC
             bool "External 32kHz oscillator at 32K_XN pin"
+            select ESP_SYSTEM_RTC_EXT_OSC
         config ESP32_RTC_CLK_SRC_INT_8MD256
             bool "Internal 8.5MHz oscillator, divided by 256 (~33kHz)"
     endchoice

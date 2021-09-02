@@ -21,7 +21,8 @@ else()
             "system_time.c"
             "stack_check.c"
             "task_wdt.c"
-            "ubsan.c")
+            "ubsan.c"
+            "xt_wdt.c")
 
     if(NOT (${target} STREQUAL "esp32c3") AND NOT (${target} STREQUAL "esp32h2"))
         list(APPEND srcs  "dbg_stubs.c")

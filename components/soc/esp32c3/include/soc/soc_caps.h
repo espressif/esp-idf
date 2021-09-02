@@ -14,7 +14,9 @@
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
 #define SOC_TEMP_SENSOR_SUPPORTED       1
-#define SOC_FLASH_ENCRYPTION_XTS_AES      1
+#define SOC_FLASH_ENCRYPTION_XTS_AES    1
+#define SOC_XT_WDT_SUPPORTED            1
+
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
