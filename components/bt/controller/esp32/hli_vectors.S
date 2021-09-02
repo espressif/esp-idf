@@ -8,6 +8,8 @@
 #include "sdkconfig.h"
 #include "soc/soc.h"
 
+#if CONFIG_BTDM_CTRL_HLI
+
 /* Interrupt stack size, for C code.
  * TODO: reduce and make configurable.
  */
@@ -249,6 +251,8 @@ _highint4_stack_switch:
 
     /* Return from the interrupt, restoring PS from EPS_4 */
     rfi     4
+
+#endif /* CONFIG_BTDM_CTRL_HLI */
 
 /* The linker has no reason to link in this file; all symbols it exports are already defined
    (weakly!) in the default int handler. Define a symbol here so we can use it to have the

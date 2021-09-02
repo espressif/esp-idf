@@ -14,6 +14,8 @@ extern "C" {
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 
+#if CONFIG_BTDM_CTRL_HLI
+
 /*** Queues ***/
 
 struct hli_queue_t
@@ -154,6 +156,8 @@ bool hli_queue_put(hli_queue_handle_t queue, const void* data);
  * @return true  if the event was sent to a hli queue successfully
  */
 bool hli_semaphore_give(hli_queue_handle_t queue);
+
+#endif /* CONFIG_BTDM_CTRL_HLI */
 
 #ifdef __cplusplus
 }

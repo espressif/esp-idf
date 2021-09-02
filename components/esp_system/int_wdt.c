@@ -118,7 +118,7 @@ void esp_int_wdt_init(void)
     wdt_hal_write_protect_enable(&iwdt_context);
 
 
-#if (CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BT_ENABLED)
+#if (CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
 
 #define APB_DCRSET      (0x200c)
 #define APB_ITCTRL      (0x3f00)

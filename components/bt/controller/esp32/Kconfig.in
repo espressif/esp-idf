@@ -415,3 +415,10 @@ config BTDM_BLE_ADV_REPORT_DISCARD_THRSHOLD
         of ADV packets lost in the controller reaches this threshold. It is better to set a larger value.
         If you set `BTDM_BLE_ADV_REPORT_DISCARD_THRSHOLD` to a small value or printf every adv lost event, it
         may cause adv packets lost more.
+
+config BTDM_CTRL_HLI
+    bool "High level interrut"
+    depends on BT_ENABLED
+    default y
+    help
+        Using Level 4 interrupt for Bluetooth.

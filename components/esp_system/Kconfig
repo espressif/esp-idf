@@ -475,6 +475,7 @@ menu "ESP System Settings"
 
         config ESP_SYSTEM_CHECK_INT_LEVEL_4
             bool "Level 4 interrupt"
+            depends on !BTDM_CTRL_HLI
             help
                 Using level 4 interrupt for Interrupt Watchdog and other system checks.
     endchoice

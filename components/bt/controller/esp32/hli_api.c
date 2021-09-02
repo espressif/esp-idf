@@ -10,7 +10,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 
-
+#if CONFIG_BTDM_CTRL_HLI
 #define HLI_MAX_HANDLERS    4
 
 typedef struct {
@@ -292,3 +292,5 @@ bool IRAM_ATTR hli_semaphore_give(hli_queue_handle_t queue)
     uint8_t data = 0;
     return hli_queue_put(queue, &data);
 }
+
+#endif /* CONFIG_BTDM_CTRL_HLI */

@@ -32,7 +32,7 @@ The default behaviour is to just exit the interrupt or call the panic handler on
     .align      4
 
 _xt_debugexception:
-#if (CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BT_ENABLED)
+#if (CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
 #define XT_DEBUGCAUSE_DI        (5)
     getcoreid   a0
 #if (CONFIG_BTDM_CTRL_PINNED_TO_CORE == PRO_CPU_NUM)
@@ -45,7 +45,7 @@ _xt_debugexception:
     extui   a0, a0, XT_DEBUGCAUSE_DI, 1
     bnez    a0, _xt_debug_di_exc
 1:
-#endif //(CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BT_ENABLED)
+#endif //(CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
 
     movi    a0,PANIC_RSN_DEBUGEXCEPTION
     wsr     a0,EXCCAUSE
@@ -59,7 +59,7 @@ _xt_debugexception:
     call0   _xt_panic                       /* does not return */
     rfi     XCHAL_DEBUGLEVEL
 
-#if (CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BT_ENABLED)
+#if (CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
     .align  4
 _xt_debug_di_exc:
 
@@ -107,7 +107,7 @@ _xt_debug_di_exc:
 
     rsr     a0, EXCSAVE+XCHAL_DEBUGLEVEL
     rfi     XCHAL_DEBUGLEVEL
-#endif //(CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BT_ENABLED)
+#endif //(CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
 #endif /* Debug exception */
 
 
