@@ -53,12 +53,13 @@
 #endif
 /* *INDENT-ON* */
 
+#ifdef ESP_PLATFORM
 /* for likely and unlikely */
 #include "esp_compiler.h"
+#endif // ESP_PLATFORM
 
 /* Application specific configuration options. */
 #include "freertos/FreeRTOSConfig.h"
-
 /* Basic FreeRTOS definitions. */
 #include "projdefs.h"
 
@@ -129,8 +130,28 @@
     #define INCLUDE_vTaskSuspend    0
 #endif
 
-#ifndef INCLUDE_vTaskDelayUntil
-    #define INCLUDE_vTaskDelayUntil    0
+#ifdef INCLUDE_xTaskDelayUntil
+    #ifdef INCLUDE_vTaskDelayUntil
+        /* INCLUDE_vTaskDelayUntil was replaced by INCLUDE_xTaskDelayUntil.  Backward
+         * compatibility is maintained if only one or the other is defined, but
+         * there is a conflict if both are defined. */
+        #error INCLUDE_vTaskDelayUntil and INCLUDE_xTaskDelayUntil are both defined.  INCLUDE_vTaskDelayUntil is no longer required and should be removed
+    #endif
+#endif
+
+#ifndef INCLUDE_xTaskDelayUntil
+    #ifdef INCLUDE_vTaskDelayUntil
+        /* If INCLUDE_vTaskDelayUntil is set but INCLUDE_xTaskDelayUntil is not then
+         * the project's FreeRTOSConfig.h probably pre-dates the introduction of
+         * xTaskDelayUntil and setting INCLUDE_xTaskDelayUntil to whatever
+         * INCLUDE_vTaskDelayUntil is set to will ensure backward compatibility.
+         */
+        #define INCLUDE_xTaskDelayUntil INCLUDE_vTaskDelayUntil
+    #endif
+#endif
+
+#ifndef INCLUDE_xTaskDelayUntil
+    #define INCLUDE_xTaskDelayUntil    0
 #endif
 
 #ifndef INCLUDE_vTaskDelay
@@ -888,12 +909,14 @@
 #endif
 
 #ifndef configSTACK_DEPTH_TYPE
+
 /* Defaults to uint16_t for backward compatibility, but can be overridden
  * in FreeRTOSConfig.h if uint16_t is too restrictive. */
     #define configSTACK_DEPTH_TYPE    uint16_t
 #endif
 
 #ifndef configMESSAGE_BUFFER_LENGTH_TYPE
+
 /* Defaults to size_t for backward compatibility, but can be overridden
  * in FreeRTOSConfig.h if lengths will always be less than the number of bytes
  * in a size_t. */
@@ -920,6 +943,7 @@
 #endif
 
 #if ( portTICK_TYPE_IS_ATOMIC == 0 )
+
 /* Either variables of tick type cannot be read atomically, or
  * portTICK_TYPE_IS_ATOMIC was not set - map the critical sections used when
  * the tick count is returned to the standard critical section macros. */
@@ -1005,9 +1029,11 @@
     #define pxContainer                   pvContainer
 #endif /* configENABLE_BACKWARD_COMPATIBILITY */
 
+#ifdef ESP_PLATFORM
 #ifndef configESP32_PER_TASK_DATA
     #define configESP32_PER_TASK_DATA 1
 #endif
+#endif // ESP_PLATFORM
 
 #if ( configUSE_ALTERNATIVE_API != 0 )
     #error The alternative API was deprecated some time ago, and was removed in FreeRTOS V9.0 0
@@ -1246,9 +1272,7 @@ typedef struct xSTATIC_QUEUE
         UBaseType_t uxDummy8;
         uint8_t ucDummy9;
     #endif
-
     portMUX_TYPE xDummy10;
-
 } StaticQueue_t;
 typedef StaticQueue_t StaticSemaphore_t;
 
@@ -1278,9 +1302,7 @@ typedef struct xSTATIC_EVENT_GROUP
     #if ( ( configSUPPORT_STATIC_ALLOCATION == 1 ) && ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) )
         uint8_t ucDummy4;
     #endif
-
     portMUX_TYPE xDummy5;
-
 } StaticEventGroup_t;
 
 /*
@@ -1332,9 +1354,7 @@ typedef struct xSTATIC_STREAM_BUFFER
     #if ( configUSE_TRACE_FACILITY == 1 )
         UBaseType_t uxDummy4;
     #endif
-
     portMUX_TYPE xDummy5;
-
 } StaticStreamBuffer_t;
 
 /* Message buffers are built on stream buffers. */
