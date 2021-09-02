@@ -111,13 +111,13 @@ TEST_CASE("light sleep stress test", "[deepsleep]")
     vSemaphoreDelete(done);
 }
 
+static void timer_func(void* arg)
+{
+    esp_rom_delay_us(50);
+}
+
 TEST_CASE("light sleep stress test with periodic esp_timer", "[deepsleep]")
 {
-    void timer_func(void* arg)
-    {
-        esp_rom_delay_us(50);
-    }
-
     SemaphoreHandle_t done = xSemaphoreCreateCounting(2, 0);
     esp_sleep_enable_timer_wakeup(1000);
     esp_timer_handle_t timer;
