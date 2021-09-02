@@ -511,6 +511,7 @@ code_quality_report:
   extends:
     - .sonar_scan_template
     - .rules:protected-schedule
+  allow_failure: true
   script:
     - sonar-scanner
       -Dsonar.host.url=$SONAR_HOST_URL
