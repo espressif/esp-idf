@@ -14,7 +14,7 @@ except ImportError:
     pass
 
 # configurations
-TEST_TIME = TEST_TIMEOUT = 60
+TEST_TIME = TEST_TIMEOUT = 66
 WAIT_AP_POWER_ON_TIMEOUT = 90
 SCAN_TIMEOUT = 3
 SCAN_RETRY_COUNT = 3
@@ -96,6 +96,7 @@ class TestResult(object):
         """
         fall_to_0_recorded = 0
         throughput_list = []
+        throughput = 0.0
         result_list = self.PC_BANDWIDTH_LOG_PATTERN.findall(raw_data)
         if not result_list:
             # failed to find raw data by PC pattern, it might be DUT pattern
@@ -106,6 +107,7 @@ class TestResult(object):
                 # this could be summary, ignore this
                 continue
             throughput_list.append(float(result[2]))
+            throughput = (throughput if (throughput > float(result[2])) else float(result[2]))
             if float(result[2]) == 0 and rssi > self.ZERO_POINT_THRESHOLD \
                     and fall_to_0_recorded < 1:
                 # throughput fall to 0 error. we only record 1 records for one test
@@ -113,9 +115,7 @@ class TestResult(object):
                                        .format(ap_ssid, att, rssi, result[0], result[1]))
                 fall_to_0_recorded += 1
 
-        if len(throughput_list) > self.THROUGHPUT_QUALIFY_COUNT:
-            throughput = sum(throughput_list) / len(throughput_list)
-        else:
+        if len(throughput_list) < self.THROUGHPUT_QUALIFY_COUNT:
             throughput = 0.0
 
         if throughput == 0 and rssi > self.ZERO_THROUGHPUT_THRESHOLD:
@@ -330,6 +330,12 @@ class IperfTestUtility(object):
                     process = subprocess.Popen(['iperf', '-c', dut_ip,
                                                 '-t', str(TEST_TIME), '-f', 'm'],
                                                stdout=f, stderr=f)
+                    for _ in range(TEST_TIMEOUT):
+                        if process.poll() is not None:
+                            break
+                        time.sleep(1)
+                    else:
+                        process.terminate()
                 else:
                     self.dut.write('iperf -s -u -i 1 -t {}'.format(TEST_TIME))
                     # wait until DUT TCP server created
@@ -338,16 +344,15 @@ class IperfTestUtility(object):
                     except DUT.ExpectTimeout:
                         # compatible with old iperf example binary
                         Utility.console_log('create iperf udp server fail')
-                    process = subprocess.Popen(['iperf', '-c', dut_ip, '-u', '-b', '100M',
-                                                '-t', str(TEST_TIME), '-f', 'm'],
-                                               stdout=f, stderr=f)
-
-                for _ in range(TEST_TIMEOUT):
-                    if process.poll() is not None:
-                        break
-                    time.sleep(1)
-                else:
-                    process.terminate()
+                    for bandwidth in range(50, 101, 5):
+                        process = subprocess.Popen(['iperf', '-c', dut_ip, '-u', '-b', str(bandwidth) + 'm',
+                                                    '-t', str(TEST_TIME / 11), '-f', 'm'], stdout=f, stderr=f)
+                        for _ in range(TEST_TIMEOUT):
+                            if process.poll() is not None:
+                                break
+                            time.sleep(1)
+                        else:
+                            process.terminate()
 
             server_raw_data = self.dut.read()
             with open(PC_IPERF_TEMP_LOG_FILE, 'r') as f:
