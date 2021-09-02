@@ -64,7 +64,7 @@ The key software and hardware components that perform debugging of {IDF_TARGET_N
 
 Likewise, the "Application Loading and Monitoring" label indicates the key software and hardware components that allow an application to be compiled, built, and flashed to {IDF_TARGET_NAME}, as well as to provide means to monitor diagnostic messages from {IDF_TARGET_NAME}.
 
-"Debugging With JTAG" and "Application Loading and Monitoring" is integrated under the `Eclipse <https://www.eclipse.org/>`_ IDE in order to provide a quick and easy transition between writing/compiling/loading/debugging code. The Eclipse IDE (and the integrated debugging software) is available for Windows, Linux and macOS platforms.
+"Debugging With JTAG" and "Application Loading and Monitoring" is integrated under the `Eclipse <https://www.eclipse.org/>`_ IDE in order to provide a quick and easy transition between writing/compiling/loading/debugging code. The Eclipse IDE (and the integrated debugging software) is available for Windows, Linux and macOS platforms. Depending on user preferences, both the debugger and ``idf.py build`` can also be used directly from terminal/command line, instead of Eclipse.
 
 .. only:: not SOC_USB_SERIAL_JTAG_SUPPORTED
 
@@ -78,9 +78,7 @@ Likewise, the "Application Loading and Monitoring" label indicates the key softw
 
     .. note::
 
-        Debugging through the USB interface implemented in {IDF_TARGET_NAME} requires to have a chip with revision 3 or newer. Please use other debugging options (e.g. with ESP-Prog) for chip revision 1 and 2. The easiest way to determine the chip revision is to look for the `Chip is ESP32-C3 (revision 3)` message near the end of a successful chip flashing done by `idf.py flash`.
-
-Depending on user preferences, both `debugger` and `idf.py build` can be operated directly from terminal/command line, instead from Eclipse.
+        Debugging through the USB interface implemented in {IDF_TARGET_NAME} requires to have a chip with revision 3 or newer. Please use other debugging options (e.g. with ESP-Prog) for chip revision 1 and 2. The easiest way to determine the chip revision is to look for the ``Chip is ESP32-C3 (revision 3)`` message near the end of a successful chip flashing done by ``idf.py flash``.
 
 .. _jtag-debugging-selecting-jtag-adapter:
 
