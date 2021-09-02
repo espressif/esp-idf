@@ -1,4 +1,4 @@
-/* ROM version variables for esp32b1z
+/* ROM version variables for esp32h2
  *
  * These addresses should be compatible with any ROM version for this chip.
  *

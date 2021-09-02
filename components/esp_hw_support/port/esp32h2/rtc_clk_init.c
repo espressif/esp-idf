@@ -43,7 +43,11 @@ void rtc_clk_init(rtc_clk_config_t cfg)
      * - CK8M_DFREQ value controls tuning of 8M clock.
      *   CLK_8M_DFREQ constant gives the best temperature characteristics.
      */
+#if CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2
+    REG_SET_FIELD(RTC_CNTL_REGULATOR_REG, RTC_CNTL_SCK_DCAP, cfg.slow_clk_dcap);
+#elif CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_SCK_DCAP, cfg.slow_clk_dcap);
+#endif
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_DFREQ, cfg.clk_8m_dfreq);
 
     /* enable modem clk */

@@ -1949,6 +1949,7 @@ components/soc/esp32c3/spi_periph.c
 components/soc/esp32c3/uart_periph.c
 components/soc/esp32h2/adc_periph.c
 components/soc/esp32h2/gpio_periph.c
+components/soc/esp32h2/gdma_periph.c
 components/soc/esp32h2/i2c_periph.c
 components/soc/esp32h2/i2s_periph.c
 components/soc/esp32h2/include/soc/adc_channel.h
@@ -1956,7 +1957,6 @@ components/soc/esp32h2/include/soc/apb_ctrl_reg.h
 components/soc/esp32h2/include/soc/apb_ctrl_struct.h
 components/soc/esp32h2/include/soc/apb_saradc_reg.h
 components/soc/esp32h2/include/soc/apb_saradc_struct.h
-components/soc/esp32h2/include/soc/assist_debug_reg.h
 components/soc/esp32h2/include/soc/bb_reg.h
 components/soc/esp32h2/include/soc/boot_mode.h
 components/soc/esp32h2/include/soc/clkout_channel.h
@@ -1977,7 +1977,6 @@ components/soc/esp32h2/include/soc/i2c_reg.h
 components/soc/esp32h2/include/soc/i2c_struct.h
 components/soc/esp32h2/include/soc/i2s_reg.h
 components/soc/esp32h2/include/soc/i2s_struct.h
-components/soc/esp32h2/include/soc/interrupt_core0_reg.h
 components/soc/esp32h2/include/soc/interrupt_reg.h
 components/soc/esp32h2/include/soc/io_mux_reg.h
 components/soc/esp32h2/include/soc/ledc_reg.h
@@ -1987,14 +1986,10 @@ components/soc/esp32h2/include/soc/periph_defs.h
 components/soc/esp32h2/include/soc/reset_reasons.h
 components/soc/esp32h2/include/soc/rmt_reg.h
 components/soc/esp32h2/include/soc/rmt_struct.h
-components/soc/esp32h2/include/soc/rtc.h
 components/soc/esp32h2/include/soc/rtc_caps.h
-components/soc/esp32h2/include/soc/rtc_cntl_reg.h
-components/soc/esp32h2/include/soc/rtc_cntl_struct.h
 components/soc/esp32h2/include/soc/rtc_i2c_reg.h
 components/soc/esp32h2/include/soc/rtc_i2c_struct.h
 components/soc/esp32h2/include/soc/rtc_io_caps.h
-components/soc/esp32h2/include/soc/sensitive_reg.h
 components/soc/esp32h2/include/soc/sensitive_struct.h
 components/soc/esp32h2/include/soc/soc.h
 components/soc/esp32h2/include/soc/soc_caps.h

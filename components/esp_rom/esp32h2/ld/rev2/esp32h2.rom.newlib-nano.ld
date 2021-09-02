@@ -1,7 +1,7 @@
-/* ROM function interface esp32b1z.rom.newlib-nano.ld for esp32b1z
+/* ROM function interface esp32h2.rom.newlib-nano.ld for esp32h2
  *
  *
- * Generated from ./interface-esp32b1z.yml md5sum a8cce65aa1422e5781ad0d729ef0a0a6
+ * Generated from ./interface-esp32h2.yml md5sum 47e064f8d2b991d372a72a89ab7d47d3
  *
  * Compatible with ROM where ECO version equal or greater to 0.
  *
@@ -13,15 +13,15 @@
  ***************************************/
 
 /* Functions */
-__sprint_r = 0x40000488;
-_fiprintf_r = 0x4000048c;
-_fprintf_r = 0x40000490;
-_printf_common = 0x40000494;
-_printf_i = 0x40000498;
-_vfiprintf_r = 0x4000049c;
-_vfprintf_r = 0x400004a0;
-fiprintf = 0x400004a4;
-fprintf = 0x400004a8;
-printf = 0x400004ac;
-vfiprintf = 0x400004b0;
-vfprintf = 0x400004b4;
+__sprint_r = 0x4000044c;
+_fiprintf_r = 0x40000450;
+_fprintf_r = 0x40000454;
+_printf_common = 0x40000458;
+_printf_i = 0x4000045c;
+_vfiprintf_r = 0x40000460;
+_vfprintf_r = 0x40000464;
+fiprintf = 0x40000468;
+fprintf = 0x4000046c;
+printf = 0x40000470;
+vfiprintf = 0x40000474;
+vfprintf = 0x40000478;

@@ -16,4 +16,14 @@ set(srcs
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")
 
 target_sources(${COMPONENT_LIB} PRIVATE "${srcs}")
-target_include_directories(${COMPONENT_LIB} PUBLIC . include)
+
+if(target STREQUAL "esp32h2")
+    if(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1)
+        set(inc_file "include/soc/rev1")
+    elseif(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2)
+        set(inc_file "include/soc/rev2")
+    endif()
+    target_include_directories(${COMPONENT_LIB} PUBLIC . include ${inc_file})
+else()
+    target_include_directories(${COMPONENT_LIB} PUBLIC . include)
+endif()

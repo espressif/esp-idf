@@ -4,6 +4,7 @@
 // include them here.
 
 #pragma once
+#include "sdkconfig.h"
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 #define SOC_CPU_CORES_NUM               1
@@ -79,7 +80,11 @@
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-C3 has 1 GPIO peripheral
 #define SOC_GPIO_PORT               (1)
+#if CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2
+#define SOC_GPIO_PIN_COUNT          (26)
+#elif CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1
 #define SOC_GPIO_PIN_COUNT          (22)
+#endif
 
 // Target has no full RTC IO subsystem, so GPIO is 100% "independent" of RTC
 // On ESP32-C3, Digital IOs have their own registers to control pullup/down capability, independent of RTC registers.

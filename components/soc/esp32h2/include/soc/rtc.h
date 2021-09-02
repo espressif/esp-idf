@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 
 #include <stdbool.h>
@@ -153,6 +145,19 @@ typedef enum {
     RTC_XTAL_FREQ_32M = 32,
     RTC_XTAL_FREQ_40M = 40,     //!< 40 MHz XTAL
 } rtc_xtal_freq_t;
+
+#if CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2
+/**
+ * @brief CPU frequency values
+ */
+typedef enum {
+    RTC_CPU_FREQ_XTAL = 0,      //!< Main XTAL frequency
+    RTC_CPU_FREQ_80M = 1,       //!< 80 MHz
+    RTC_CPU_FREQ_160M = 2,      //!< 160 MHz
+    RTC_CPU_FREQ_240M = 3,      //!< 240 MHz
+    RTC_CPU_FREQ_2M = 4,        //!< 2 MHz
+} rtc_cpu_freq_t;
+#endif
 
 /**
  * @brief CPU clock source
