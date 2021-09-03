@@ -28,7 +28,7 @@ Overview of {IDF_TARGET_NAME}'s SPI peripherals
 
     - SPI2 and SPI3 are general purpose SPI controllers, sometimes referred to as HSPI and VSPI, respectively. They are open to users. SPI2 and SPI3 have independent bus signals with the same respective names. Each bus has three CS lines to drive up to same number of SPI slaves.
 
-.. only:: esp32s2
+.. only:: esp32s2 or esp32s3
 
     - SPI2 and SPI3 are general purpose SPI controllers. They are open to users. SPI2 and SPI3 have independent signal buses with the same respective names. SPI2 has {IDF_TARGET_SPI2_CS_NUM} CS lines. SPI3 has {IDF_TARGET_SPI3_CS_NUM} CS lines.  Each CS line can be used to drive one SPI slave.
 
@@ -439,10 +439,10 @@ The main parameter that determines the transfer speed for large transactions is 
 Transaction Duration
 ^^^^^^^^^^^^^^^^^^^^
 
-{IDF_TARGET_TRANS_TIME_INTR_DMA:default="28", esp32="28", esp32s2="23", esp32c3="28"}
-{IDF_TARGET_TRANS_TIME_POLL_DMA:default="10", esp32="10", esp32s2="9", esp32c3="10"}
-{IDF_TARGET_TRANS_TIME_INTR_CPU:default="25", esp32="25", esp32s2="22", esp32c3="27"}
-{IDF_TARGET_TRANS_TIME_POLL_CPU:default="8", esp32="8", esp32s2="8", esp32c3="9"}
+{IDF_TARGET_TRANS_TIME_INTR_DMA:default="28", esp32="28", esp32s2="23", esp32c3="28", esp32s3="26"}
+{IDF_TARGET_TRANS_TIME_POLL_DMA:default="10", esp32="10", esp32s2="9", esp32c3="10", esp32s3="11"}
+{IDF_TARGET_TRANS_TIME_INTR_CPU:default="25", esp32="25", esp32s2="22", esp32c3="27", esp32s3="24"}
+{IDF_TARGET_TRANS_TIME_POLL_CPU:default="8", esp32="8", esp32s2="8", esp32c3="9", esp32s3="9"}
 
 Transaction duration includes setting up SPI peripheral registers, copying data to FIFOs or setting up DMA links, and the time for SPI transaction.
 
