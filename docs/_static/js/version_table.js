@@ -23,7 +23,7 @@ $(document).ready(function() {
 
     (Where 'idf_target' path element are optional depending on if the project has multiple target support)
     */
-    let project_base_url = DOCUMENTATION_OPTIONS.URL_ROOT + "../..";
+    let project_base_url = DOCUMENTATION_OPTIONS.URL_ROOT + "../../..";
     if (DOCUMENTATION_OPTIONS.IDF_TARGETS) {
         project_base_url += "/..";
     }
@@ -38,17 +38,29 @@ $(document).ready(function() {
         return result + "/";
     };
 
-    old_ver_list = "";
+    old_ver_table = "";
+    old_ver_table_row = "<tr>"
+    let row_items = 0;
+    const ITEMS_PER_ROW = 4;
 
     for (let i = 0; i < versions.length; i++) {
         let v = versions[i];
         let url = getVersionUrl(v);
 
         if (v.old) {
-            old_ver_list += "<li><a href=\"" + url + "\">" + v.name + "</li>";
+            old_ver_table_row += "<td><a href=\"" + url + "\">" + v.name + "</td>";
+            row_items++;
+            if (row_items === ITEMS_PER_ROW) {
+                old_ver_table_row += "</tr>"
+                old_ver_table += old_ver_table_row
+
+                /* Prepare a new row */
+                old_ver_table_row = "<tr>"
+                row_items = 0
+            }
         }
 
     }
 
-    $( "#version_list" ).append(old_ver_list);
+    $( "#version_table" ).append(old_ver_table);
 });
