@@ -316,6 +316,25 @@ err:
     return ret;
 }
 
+static esp_err_t dm9051_loopback(esp_eth_phy_t *phy, bool enable)
+{
+    esp_err_t ret = ESP_OK;
+    phy_dm9051_t *dm9051 = __containerof(phy, phy_dm9051_t, parent);
+    esp_eth_mediator_t *eth = dm9051->eth;
+    /* Set Loopback function */
+    bmcr_reg_t bmcr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, dm9051->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+    if (enable) {
+        bmcr.en_loopback = 1;
+    } else {
+        bmcr.en_loopback = 0;
+    }
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, dm9051->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+    return ESP_OK;
+err:
+    return ret;
+}
+
 static esp_err_t dm9051_init(esp_eth_phy_t *phy)
 {
     esp_err_t ret = ESP_OK;
@@ -372,6 +391,7 @@ esp_eth_phy_t *esp_eth_phy_new_dm9051(const eth_phy_config_t *config)
     dm9051->parent.get_addr = dm9051_get_addr;
     dm9051->parent.set_addr = dm9051_set_addr;
     dm9051->parent.advertise_pause_ability = dm9051_advertise_pause_ability;
+    dm9051->parent.loopback = dm9051_loopback;
     dm9051->parent.del = dm9051_del;
     return &(dm9051->parent);
 err:

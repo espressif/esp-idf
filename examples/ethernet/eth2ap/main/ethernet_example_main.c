@@ -242,7 +242,8 @@ static void initialize_ethernet(void)
         0x02, 0x00, 0x00, 0x12, 0x34, 0x56
     }));
 #endif
-    esp_eth_ioctl(s_eth_handle, ETH_CMD_S_PROMISCUOUS, (void *)true);
+    bool eth_promiscuous = true;
+    esp_eth_ioctl(s_eth_handle, ETH_CMD_S_PROMISCUOUS, &eth_promiscuous);
     esp_eth_start(s_eth_handle);
 }
 
