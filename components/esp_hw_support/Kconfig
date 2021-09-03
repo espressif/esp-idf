@@ -42,5 +42,13 @@ menu "Hardware Settings"
                 increase during light sleep. If the CS pin of SPIRAM has an external
                 pull-up, you do not need to select this option, otherwise, you
                 should enable this option.
+
+        config ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND
+            bool "Flash leakage current workaround in light sleep"
+            help
+                When the CS pin of Flash is not pulled up, the sleep current will
+                increase during light sleep. If the CS pin of Flash has an external
+                pull-up, you do not need to select this option, otherwise, you
+                should enable this option.
     endmenu
 endmenu

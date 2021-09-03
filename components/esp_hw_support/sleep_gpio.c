@@ -19,6 +19,7 @@
 #include "driver/gpio.h"
 #include "esp_private/gpio.h"
 #include "esp_private/sleep_gpio.h"
+#include "bootloader_common.h"
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/spiram.h"
@@ -63,6 +64,9 @@ void esp_sleep_config_gpio_isolate(void)
     }
 #if CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND && CONFIG_SPIRAM
     gpio_sleep_set_pull_mode(esp_spiram_get_cs_io(), GPIO_PULLUP_ONLY);
+#endif
+#if CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND
+    gpio_sleep_set_pull_mode(bootloader_flash_get_cs_io(), GPIO_PULLUP_ONLY);
 #endif
 }
 
