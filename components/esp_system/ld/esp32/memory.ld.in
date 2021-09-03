@@ -20,6 +20,7 @@
    to simple macros with numeric values, and/or #if/#endif blocks.
 */
 #include "sdkconfig.h"
+#include "ld.common"
 
 /* If BT is not built at all */
 #ifndef CONFIG_BT_RESERVE_DRAM

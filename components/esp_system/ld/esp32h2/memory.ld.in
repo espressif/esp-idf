@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /**
  *                    ESP32-H2 Linker Script Memory Layout
  * This file describes the memory layout (memory blocks) by virtual memory addresses.
@@ -7,6 +13,7 @@
  */
 
 #include "sdkconfig.h"
+#include "ld.common"
 
 #ifdef CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
 #define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE + CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE)

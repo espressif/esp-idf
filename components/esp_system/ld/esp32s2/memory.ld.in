@@ -13,6 +13,7 @@
    Restrict to simple macros with numeric values, and/or #if/#endif blocks.
 */
 #include "sdkconfig.h"
+#include "ld.common"
 
 #ifdef CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
 #define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE + CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE)

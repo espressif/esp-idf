@@ -53,7 +53,7 @@ $(COMPONENT_LIBRARY): $(ld_output)
 
 $(ld_output): $(ld_input) ../include/sdkconfig.h
 	mkdir -p $(COMPONENT_BUILD_DIR)/ld
-	$(CC) -I ../include -C -P -x c -E $< -o $@
+	$(CC) -I ../include -I $(COMPONENT_PATH)/ld -C -P -x c -E $< -o $@
 
 COMPONENT_EXTRA_CLEAN := $(ld_output) $(sections_ld)
 endif
