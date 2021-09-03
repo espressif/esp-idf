@@ -157,6 +157,8 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return SYSTEM_DMA_RST;
     case PERIPH_HMAC_MODULE:
         return SYSTEM_CRYPTO_HMAC_RST;
+    case PERIPH_DS_MODULE:
+        return SYSTEM_CRYPTO_DS_RST;
     case PERIPH_AES_MODULE:
         if (enable == true) {
             // Clear reset on digital signature, otherwise AES unit is held in reset also.
@@ -203,6 +205,7 @@ static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
     case PERIPH_LCD_CAM_MODULE:
     case PERIPH_GDMA_MODULE:
     case PERIPH_HMAC_MODULE:
+    case PERIPH_DS_MODULE:
     case PERIPH_AES_MODULE:
     case PERIPH_SHA_MODULE:
     case PERIPH_RSA_MODULE:
@@ -229,6 +232,7 @@ static uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
     case PERIPH_LCD_CAM_MODULE:
     case PERIPH_GDMA_MODULE:
     case PERIPH_HMAC_MODULE:
+    case PERIPH_DS_MODULE:
     case PERIPH_AES_MODULE:
     case PERIPH_SHA_MODULE:
     case PERIPH_RSA_MODULE:
