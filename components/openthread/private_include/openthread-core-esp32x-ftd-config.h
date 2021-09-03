@@ -331,6 +331,16 @@
 #define OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE 1
 
 /**
+ * @def OPENTHREAD_CONFIG_PING_SENDER_ENABLE
+ *
+ * Define to 1 to enable ping sender module.
+ *
+ * Ping sender module implements sending ICMPv6 Echo Request messages and processing ICMPv6 Echo Reply messages.
+ *
+ */
+#define OPENTHREAD_CONFIG_PING_SENDER_ENABLE 1
+
+/**
  * @def OPENTHREAD_CONFIG_DTLS_MAX_CONTENT_LEN
  *
  * The max length of the OpenThread dtls content buffer.
