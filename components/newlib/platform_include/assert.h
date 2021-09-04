@@ -43,7 +43,11 @@
 
 #elif CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT
 
+#ifdef BOOTLOADER_BUILD
+#define assert(__e) (__builtin_expect(!!(__e), 1) ? (void)0 : abort())
+#else
 #define assert(__e) (__builtin_expect(!!(__e), 1) ? (void)0 : __assert_func(NULL, 0, NULL, NULL))
+#endif
 
 #else // !CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT
 
