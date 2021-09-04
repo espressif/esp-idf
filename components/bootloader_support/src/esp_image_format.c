@@ -792,6 +792,13 @@ err:
     return err;
 }
 
+static void log_debug_hash(const char *label, const uint8_t *buf)
+{
+#if LOG_LOCAL_LEVEL >= 4
+    bootloader_debug_buffer(buf, HASH_LEN, label);
+#endif
+}
+
 static esp_err_t verify_secure_boot_signature(bootloader_sha256_handle_t sha_handle, esp_image_metadata_t *data, uint8_t *image_digest, uint8_t *verified_digest)
 {
 #if (SECURE_BOOT_CHECK_SIGNATURE == 1)
@@ -822,7 +829,7 @@ static esp_err_t verify_secure_boot_signature(bootloader_sha256_handle_t sha_han
     bootloader_sha256_finish(sha_handle, image_digest);
 
     // Log the hash for debugging
-    bootloader_debug_buffer(image_digest, HASH_LEN, "Calculated secure boot hash");
+    log_debug_hash("Calculated secure boot hash", image_digest);
 
     // Use hash to verify signature block
     esp_err_t err = ESP_ERR_IMAGE_INVALID;
@@ -872,12 +879,12 @@ static esp_err_t verify_simple_hash(bootloader_sha256_handle_t sha_handle, esp_i
     bootloader_sha256_finish(sha_handle, image_hash);
 
     // Log the hash for debugging
-    bootloader_debug_buffer(image_hash, HASH_LEN, "Calculated hash");
+    log_debug_hash("Calculated hash", image_hash);
 
     // Simple hash for verification only
     if (memcmp(data->image_digest, image_hash, HASH_LEN) != 0) {
         ESP_LOGE(TAG, "Image hash failed - image is corrupt");
-        bootloader_debug_buffer(data->image_digest, HASH_LEN, "Expected hash");
+        log_debug_hash("Expected hash", data->image_digest);
 #ifdef CONFIG_IDF_ENV_FPGA
         ESP_LOGW(TAG, "Ignoring invalid SHA-256 as running on FPGA");
         return ESP_OK;

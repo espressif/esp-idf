@@ -858,7 +858,7 @@ esp_err_t bootloader_sha256_hex_to_str(char *out_str, const uint8_t *in_array_he
 
 void bootloader_debug_buffer(const void *buffer, size_t length, const char *label)
 {
-#if BOOT_LOG_LEVEL >= LOG_LEVEL_DEBUG
+#if LOG_LOCAL_LEVEL >= 4
     assert(length <= 128); // Avoid unbounded VLA size
     const uint8_t *bytes = (const uint8_t *)buffer;
     char hexbuf[length * 2 + 1];
