@@ -44,6 +44,7 @@ void panic_print_registers(const void *f, int core)
 {
     XtExcFrame *frame = (XtExcFrame *) f;
     int *regs = (int *)frame;
+    (void)regs;
 
     const char *sdesc[] = {
         "PC      ", "PS      ", "A0      ", "A1      ", "A2      ", "A3      ", "A4      ", "A5      ",
@@ -115,6 +116,7 @@ static void print_illegal_instruction_details(const void *f)
         return;
     }
     volatile uint32_t *pepc = (uint32_t *)epc;
+    (void)pepc;
 
     panic_print_str("Memory dump at 0x");
     panic_print_hex(epc);
