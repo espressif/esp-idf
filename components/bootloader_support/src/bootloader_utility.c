@@ -858,23 +858,23 @@ esp_err_t bootloader_sha256_hex_to_str(char *out_str, const uint8_t *in_array_he
 
 void bootloader_debug_buffer(const void *buffer, size_t length, const char *label)
 {
-#if LOG_LOCAL_LEVEL >= 4
-    assert(length <= 128); // Avoid unbounded VLA size
-    const uint8_t *bytes = (const uint8_t *)buffer;
-    char hexbuf[length * 2 + 1];
-    hexbuf[length * 2] = 0;
-    for (size_t i = 0; i < length; i++) {
-        for (int shift = 0; shift < 2; shift++) {
-            uint8_t nibble = (bytes[i] >> (shift ? 0 : 4)) & 0x0F;
-            if (nibble < 10) {
-                hexbuf[i * 2 + shift] = '0' + nibble;
-            } else {
-                hexbuf[i * 2 + shift] = 'a' + nibble - 10;
+    if (LOG_LOCAL_LEVEL >= ESP_LOG_DEBUG) {
+        assert(length <= 128); // Avoid unbounded VLA size
+        const uint8_t *bytes = (const uint8_t *)buffer;
+        char hexbuf[length * 2 + 1];
+        hexbuf[length * 2] = 0;
+        for (size_t i = 0; i < length; i++) {
+            for (int shift = 0; shift < 2; shift++) {
+                uint8_t nibble = (bytes[i] >> (shift ? 0 : 4)) & 0x0F;
+                if (nibble < 10) {
+                    hexbuf[i * 2 + shift] = '0' + nibble;
+                } else {
+                    hexbuf[i * 2 + shift] = 'a' + nibble - 10;
+                }
             }
         }
+        ESP_LOGD(TAG, "%s: %s", label, hexbuf);
     }
-    ESP_LOGD(TAG, "%s: %s", label, hexbuf);
-#endif
 }
 
 esp_err_t bootloader_sha256_flash_contents(uint32_t flash_offset, uint32_t len, uint8_t *digest)

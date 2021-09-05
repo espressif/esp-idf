@@ -794,9 +794,9 @@ err:
 
 static void log_debug_hash(const char *label, const uint8_t *buf)
 {
-#if LOG_LOCAL_LEVEL >= 4
-    bootloader_debug_buffer(buf, HASH_LEN, label);
-#endif
+    if (LOG_LOCAL_LEVEL >= ESP_LOG_DEBUG) {
+        bootloader_debug_buffer(buf, HASH_LEN, label);
+    }
 }
 
 static esp_err_t verify_secure_boot_signature(bootloader_sha256_handle_t sha_handle, esp_image_metadata_t *data, uint8_t *image_digest, uint8_t *verified_digest)
