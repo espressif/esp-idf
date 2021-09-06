@@ -1164,9 +1164,9 @@ static uint32_t get_power_down_flags(void)
     }
 #endif
 
-    if (s_config.pd_options[ESP_PD_DOMAIN_XTAL] == ESP_PD_OPTION_AUTO) {
-        s_config.pd_options[ESP_PD_DOMAIN_XTAL] = ESP_PD_OPTION_OFF;
-    }
+#ifdef CONFIG_IDF_TARGET_ESP32
+    s_config.pd_options[ESP_PD_DOMAIN_XTAL] = ESP_PD_OPTION_OFF;
+#endif
 
     const char *option_str[] = {"OFF", "ON", "AUTO(OFF)" /* Auto works as OFF */};
     ESP_LOGD(TAG, "RTC_PERIPH: %s", option_str[s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH]]);
@@ -1197,10 +1197,9 @@ static uint32_t get_power_down_flags(void)
     if (s_config.pd_options[ESP_PD_DOMAIN_RTC8M] != ESP_PD_OPTION_ON) {
         pd_flags |= RTC_SLEEP_PD_INT_8M;
     }
-
-#ifdef CONFIG_IDF_TARGET_ESP32
-    pd_flags |= RTC_SLEEP_PD_XTAL;
-#endif
+    if (s_config.pd_options[ESP_PD_DOMAIN_XTAL] != ESP_PD_OPTION_ON) {
+        pd_flags |= RTC_SLEEP_PD_XTAL;
+    }
 
     /**
      * VDD_SDIO power domain shall be kept on during the light sleep

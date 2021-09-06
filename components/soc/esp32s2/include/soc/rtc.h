@@ -667,6 +667,7 @@ typedef struct {
     uint32_t rtc_dbias_wak : 3;         //!< set bias for RTC domain, in active mode
     uint32_t rtc_dbias_slp : 3;         //!< set bias for RTC domain, in sleep mode
     uint32_t vddsdio_pd_en : 1;         //!< power down VDDSDIO regulator
+    uint32_t xtal_fpu : 1;              //!< keep main XTAL powered up in sleep
     uint32_t deep_slp_reject : 1;
     uint32_t light_slp_reject : 1;
 } rtc_sleep_config_t;
@@ -699,6 +700,7 @@ typedef struct {
                    : !((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? RTC_CNTL_DBIAS_1V10 \
                    : RTC_CNTL_DBIAS_1V00, \
     .vddsdio_pd_en = ((sleep_flags) & RTC_SLEEP_PD_VDDSDIO) ? 1 : 0, \
+    .xtal_fpu = is_dslp(sleep_flags) ? 0 : ((sleep_flags) & RTC_SLEEP_PD_XTAL) ? 0 : 1, \
     .deep_slp_reject = 1, \
     .light_slp_reject = 1 \
 };
@@ -711,6 +713,7 @@ typedef struct {
 #define RTC_SLEEP_PD_VDDSDIO            BIT(5)  //!< Power down VDDSDIO regulator
 #define RTC_SLEEP_PD_WIFI               BIT(6)
 #define RTC_SLEEP_PD_INT_8M             BIT(7)  //!< Power down Internal 8M oscillator
+#define RTC_SLEEP_PD_XTAL               BIT(8)  //!< Power down main XTAL
 
 /**
  * @brief Prepare the chip to enter sleep mode
