@@ -1,5 +1,5 @@
-UART
-====
+Universal Asynchronous Receiver/Transmitter (UART)
+==================================================
 
 {IDF_TARGET_UART_NUM:default = "UART_NUM_1", esp32 = "UART_NUM_2", esp32s3 = "UART_NUM_2"}
 

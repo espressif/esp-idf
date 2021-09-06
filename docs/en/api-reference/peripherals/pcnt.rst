@@ -1,5 +1,5 @@
-Pulse Counter
-=============
+Pulse Counter (PCNT)
+====================
 
 {IDF_TARGET_PCNT_UNIT_NUM:default="8", esp32s2="4"}
 {IDF_TARGET_PCNT_MAX_UNIT_NUM:default="7", esp32s2="3"}

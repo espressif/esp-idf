@@ -1,5 +1,5 @@
-HMAC
-====
+Hash-based Message Authentication Code (HMAC)
+=============================================
 
 The HMAC (Hash-based Message Authentication Code) module provides hardware acceleration for SHA256-HMAC generation using a key burned into an eFuse block.
 HMACs work with pre-shared secret keys and provide authenticity and integrity to a message.
