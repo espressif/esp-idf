@@ -318,3 +318,16 @@ uint32_t osi_time_get_os_boottime_ms(void)
 {
     return (uint32_t)(esp_timer_get_time() / 1000);
 }
+
+bool osi_alarm_is_active(osi_alarm_t *alarm)
+{
+    assert(alarm != NULL);
+    assert(alarm_mutex != NULL);
+    bool is_active = false;
+
+    osi_mutex_lock(&alarm_mutex, OSI_MUTEX_MAX_TIMEOUT);
+    is_active = alarm->deadline_us > 0;
+    osi_mutex_unlock(&alarm_mutex);
+
+    return is_active;
+}
