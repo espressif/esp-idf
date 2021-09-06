@@ -15,7 +15,8 @@ MEM_TEST_S2 = [
 
 MEM_TEST_C3 = [
     ['IRAM0_SRAM', 'WRX'],
-    ['DRAM0_SRAM', 'WR']
+    ['DRAM0_SRAM', 'WR'],
+    ['IRAM0_RTCFAST', 'WRX'],
 ]
 
 

@@ -457,7 +457,6 @@ components/esp_common/include/esp_assert.h
 components/esp_common/include/esp_bit_defs.h
 components/esp_common/include/esp_check.h
 components/esp_common/include/esp_compiler.h
-components/esp_common/include/esp_err.h
 components/esp_common/include/esp_types.h
 components/esp_common/src/esp_err_to_name.c
 components/esp_common/test/test_attr.c
@@ -1020,7 +1019,6 @@ components/hal/esp32c3/include/hal/hmac_hal.h
 components/hal/esp32c3/include/hal/hmac_ll.h
 components/hal/esp32c3/include/hal/i2c_ll.h
 components/hal/esp32c3/include/hal/interrupt_controller_ll.h
-components/hal/esp32c3/include/hal/memprot_ll.h
 components/hal/esp32c3/include/hal/mpu_ll.h
 components/hal/esp32c3/include/hal/rtc_cntl_ll.h
 components/hal/esp32c3/include/hal/rwdt_ll.h
@@ -1145,7 +1143,6 @@ components/hal/include/hal/interrupt_controller_types.h
 components/hal/include/hal/ledc_hal.h
 components/hal/include/hal/mcpwm_hal.h
 components/hal/include/hal/mcpwm_types.h
-components/hal/include/hal/memprot_types.h
 components/hal/include/hal/mpu_hal.h
 components/hal/include/hal/mpu_types.h
 components/hal/include/hal/pcnt_hal.h
@@ -3235,7 +3232,6 @@ tools/test_apps/system/gdb_loadable_elf/main/hello_world_main.c
 tools/test_apps/system/longjmp_test/app_test.py
 tools/test_apps/system/longjmp_test/main/hello_world_main.c
 tools/test_apps/system/memprot/app_test.py
-tools/test_apps/system/memprot/main/esp32c3/test_memprot_main.c
 tools/test_apps/system/memprot/main/esp32c3/test_panic.c
 tools/test_apps/system/memprot/main/esp32s2/test_memprot_main.c
 tools/test_apps/system/memprot/main/esp32s2/test_panic.c

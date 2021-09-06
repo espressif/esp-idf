@@ -23,6 +23,9 @@
 #if __has_include("esp_image_format.h")
 #include "esp_image_format.h"
 #endif
+#if __has_include("esp_memprot_err.h")
+#include "esp_memprot_err.h"
+#endif
 #if __has_include("esp_mesh.h")
 #include "esp_mesh.h"
 #endif
@@ -758,6 +761,33 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   endif
 #   ifdef      ESP_ERR_HW_CRYPTO_DS_INVALID_PADDING
     ERR_TBL_IT(ESP_ERR_HW_CRYPTO_DS_INVALID_PADDING),           /* 49157 0xc005 */
+#   endif
+    // components/esp_common/include/esp_err.h
+#   ifdef      ESP_ERR_MEMPROT_BASE
+    ERR_TBL_IT(ESP_ERR_MEMPROT_BASE),                           /* 53248 0xd000 Starting number of Memory Protection API
+                                                                                error codes */
+#   endif
+    // components/esp_hw_support/include/esp_memprot_err.h
+#   ifdef      ESP_ERR_MEMPROT_MEMORY_TYPE_INVALID
+    ERR_TBL_IT(ESP_ERR_MEMPROT_MEMORY_TYPE_INVALID),            /* 53249 0xd001 */
+#   endif
+#   ifdef      ESP_ERR_MEMPROT_SPLIT_ADDR_INVALID
+    ERR_TBL_IT(ESP_ERR_MEMPROT_SPLIT_ADDR_INVALID),             /* 53250 0xd002 */
+#   endif
+#   ifdef      ESP_ERR_MEMPROT_SPLIT_ADDR_OUT_OF_RANGE
+    ERR_TBL_IT(ESP_ERR_MEMPROT_SPLIT_ADDR_OUT_OF_RANGE),        /* 53251 0xd003 */
+#   endif
+#   ifdef      ESP_ERR_MEMPROT_SPLIT_ADDR_UNALIGNED
+    ERR_TBL_IT(ESP_ERR_MEMPROT_SPLIT_ADDR_UNALIGNED),           /* 53252 0xd004 */
+#   endif
+#   ifdef      ESP_ERR_MEMPROT_UNIMGMT_BLOCK_INVALID
+    ERR_TBL_IT(ESP_ERR_MEMPROT_UNIMGMT_BLOCK_INVALID),          /* 53253 0xd005 */
+#   endif
+#   ifdef      ESP_ERR_MEMPROT_WORLD_INVALID
+    ERR_TBL_IT(ESP_ERR_MEMPROT_WORLD_INVALID),                  /* 53254 0xd006 */
+#   endif
+#   ifdef      ESP_ERR_MEMPROT_AREA_INVALID
+    ERR_TBL_IT(ESP_ERR_MEMPROT_AREA_INVALID),                   /* 53255 0xd007 */
 #   endif
 };
 #endif //CONFIG_ESP_ERR_TO_NAME_LOOKUP
