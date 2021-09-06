@@ -673,6 +673,7 @@ typedef struct {
 #define RTC_SLEEP_PD_VDDSDIO            BIT(5)  //!< Power down VDDSDIO regulator
 #define RTC_SLEEP_PD_WIFI               BIT(6)
 #define RTC_SLEEP_PD_INT_8M             BIT(10) //!< Power down Internal 8M oscillator
+#define RTC_SLEEP_PD_XTAL               BIT(11) //!< Power down main XTAL
 
 /**
  * @brief Prepare the chip to enter sleep mode
