@@ -58,9 +58,9 @@ const int CONNECTED_BIT = BIT0;
 
 static const char *TAG = "example";
 
-/* CA cert, taken from wpa2_ca.pem
-   Client cert, taken from wpa2_client.crt
-   Client key, taken from wpa2_client.key
+/* CA cert, taken from ca.pem
+   Client cert, taken from client.crt
+   Client key, taken from client.key
 
    The PEM, CRT and KEY file were provided by the person or organization
    who configured the AP with wpa2 enterprise.
@@ -69,15 +69,15 @@ static const char *TAG = "example";
    in the component.mk COMPONENT_EMBED_TXTFILES variable.
 */
 #ifdef CONFIG_EXAMPLE_VALIDATE_SERVER_CERT
-extern uint8_t ca_pem_start[] asm("_binary_wpa2_ca_pem_start");
-extern uint8_t ca_pem_end[]   asm("_binary_wpa2_ca_pem_end");
+extern uint8_t ca_pem_start[] asm("_binary_ca_pem_start");
+extern uint8_t ca_pem_end[]   asm("_binary_ca_pem_end");
 #endif /* CONFIG_EXAMPLE_VALIDATE_SERVER_CERT */
 
 #ifdef CONFIG_EXAMPLE_EAP_METHOD_TLS
-extern uint8_t client_crt_start[] asm("_binary_wpa2_client_crt_start");
-extern uint8_t client_crt_end[]   asm("_binary_wpa2_client_crt_end");
-extern uint8_t client_key_start[] asm("_binary_wpa2_client_key_start");
-extern uint8_t client_key_end[]   asm("_binary_wpa2_client_key_end");
+extern uint8_t client_crt_start[] asm("_binary_client_crt_start");
+extern uint8_t client_crt_end[]   asm("_binary_client_crt_end");
+extern uint8_t client_key_start[] asm("_binary_client_key_start");
+extern uint8_t client_key_end[]   asm("_binary_client_key_end");
 #endif /* CONFIG_EXAMPLE_EAP_METHOD_TLS */
 
 #if defined CONFIG_EXAMPLE_EAP_METHOD_TTLS
@@ -122,6 +122,18 @@ static void initialise_wifi(void)
     wifi_config_t wifi_config = {
         .sta = {
             .ssid = EXAMPLE_WIFI_SSID,
+#if defined(CONFIG_EXAMPLE_WPA3_ENTERPRISE)
+            .pmf_cfg = {
+                .capable = true,
+                .required = false
+            },
+#endif
+#if defined (CONFIG_EXAMPLE_WPA3_192BIT_ENTERPRISE)
+            .pmf_cfg = {
+                .capable = true,
+                .required = true
+            },
+#endif
         },
     };
     ESP_LOGI(TAG, "Setting WiFi configuration SSID %s...", wifi_config.sta.ssid);
@@ -129,9 +141,11 @@ static void initialise_wifi(void)
     ESP_ERROR_CHECK( esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
     ESP_ERROR_CHECK( esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)EXAMPLE_EAP_ID, strlen(EXAMPLE_EAP_ID)) );
 
-#ifdef CONFIG_EXAMPLE_VALIDATE_SERVER_CERT
+#if defined(CONFIG_EXAMPLE_VALIDATE_SERVER_CERT) || \
+    defined(CONFIG_EXAMPLE_WPA3_ENTERPRISE) || \
+    defined(CONFIG_EXAMPLE_WPA3_192BIT_ENTERPRISE)
     ESP_ERROR_CHECK( esp_wifi_sta_wpa2_ent_set_ca_cert(ca_pem_start, ca_pem_bytes) );
-#endif /* CONFIG_EXAMPLE_VALIDATE_SERVER_CERT */
+#endif /* CONFIG_EXAMPLE_VALIDATE_SERVER_CERT */ /* EXAMPLE_WPA3_ENTERPRISE */
 
 #ifdef CONFIG_EXAMPLE_EAP_METHOD_TLS
     ESP_ERROR_CHECK( esp_wifi_sta_wpa2_ent_set_cert_key(client_crt_start, client_crt_bytes,\
@@ -146,7 +160,10 @@ static void initialise_wifi(void)
 #if defined CONFIG_EXAMPLE_EAP_METHOD_TTLS
     ESP_ERROR_CHECK( esp_wifi_sta_wpa2_ent_set_ttls_phase2_method(TTLS_PHASE2_METHOD) );
 #endif /* CONFIG_EXAMPLE_EAP_METHOD_TTLS */
-
+#if defined (CONFIG_EXAMPLE_WPA3_192BIT_ENTERPRISE)
+    ESP_LOGI(TAG, "Enabling 192 bit certification");
+    ESP_ERROR_CHECK(esp_wifi_sta_wpa2_set_suiteb_192bit_certification(true));
+#endif
     ESP_ERROR_CHECK( esp_wifi_sta_wpa2_ent_enable() );
     ESP_ERROR_CHECK( esp_wifi_start() );
 }
