@@ -61,7 +61,7 @@ typedef enum {
 typedef enum {
     // In order to keep compatibility, remain the old definitions and introduce new definitions,
     I2S_COMM_FORMAT_STAND_I2S   = 0X01, /*!< I2S communication I2S Philips standard, data launch at second BCK*/
-    I2S_COMM_FORMAT_STAND_MSB   = 0X03, /*!< I2S communication MSB alignment standard, data launch at first BCK*/
+    I2S_COMM_FORMAT_STAND_MSB   = 0X02, /*!< I2S communication MSB alignment standard, data launch at first BCK*/
     I2S_COMM_FORMAT_STAND_PCM_SHORT  = 0x04, /*!< PCM Short standard, also known as DSP mode. The period of synchronization signal (WS) is 1 bck cycle.*/
     I2S_COMM_FORMAT_STAND_PCM_LONG   = 0x0C, /*!< PCM Long standard. The period of synchronization signal (WS) is channel_bit*bck cycles.*/
     I2S_COMM_FORMAT_STAND_MAX, /*!< standard max*/

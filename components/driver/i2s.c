@@ -327,6 +327,14 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
         return ESP_ERR_INVALID_ARG;
     }
     p_i2s_obj[i2s_num]->sample_rate = rate;
+
+    /**
+     * Due to hardware issue, bck division on ESP32/ESP32-S2 should be greater than 8 in slave mode
+     * So the factor need to be an appropriate value
+     */
+    if ((p_i2s_obj[i2s_num]->mode & I2S_MODE_SLAVE) && !p_i2s_obj[i2s_num]->use_apll) {
+        factor = 64 * bits;
+    }
     double clkmdiv = (double)I2S_BASE_CLK / (rate * factor);
 
     if (clkmdiv > 256) {
