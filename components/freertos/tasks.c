@@ -576,7 +576,7 @@ static void prvAddCurrentTaskToDelayedList( const portBASE_TYPE xCoreID,
  * Set xNextTaskUnblockTime to the time at which the next Blocked state task
  * will exit the Blocked state.
  */
-static void prvResetNextTaskUnblockTime( void );
+static void prvResetNextTaskUnblockTime( void ) PRIVILEGED_FUNCTION;
 
 #if ( ( configUSE_TRACE_FACILITY == 1 ) && ( configUSE_STATS_FORMATTING_FUNCTIONS > 0 ) )
 
@@ -671,15 +671,15 @@ void taskYIELD_OTHER_CORE( BaseType_t xCoreID, UBaseType_t uxPriority )
         configASSERT( portVALID_STACK_MEM(pxStackBuffer) );
         configASSERT( (xCoreID>=0 && xCoreID<portNUM_PROCESSORS) || (xCoreID==tskNO_AFFINITY) );
 
-        #if( configASSERT_DEFINED == 1 )
-        {
-            /* Sanity check that the size of the structure used to declare a
-            variable of type StaticTask_t equals the size of the real task
-            structure. */
-            volatile size_t xSize = sizeof( StaticTask_t );
-            configASSERT( xSize == sizeof( TCB_t ) );
-            ( void ) xSize; /* Prevent lint warning when configASSERT() is not used. */
-        }
+        #if ( configASSERT_DEFINED == 1 )
+            {
+                /* Sanity check that the size of the structure used to declare a
+                 * variable of type StaticTask_t equals the size of the real task
+                 * structure. */
+                volatile size_t xSize = sizeof( StaticTask_t );
+                configASSERT( xSize == sizeof( TCB_t ) );
+                ( void ) xSize; /* Prevent lint warning when configASSERT() is not used. */
+            }
         #endif /* configASSERT_DEFINED */
 
 
@@ -762,7 +762,8 @@ void taskYIELD_OTHER_CORE( BaseType_t xCoreID, UBaseType_t uxPriority )
 
 #if ( ( portUSING_MPU_WRAPPERS == 1 ) && ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) )
 
-    BaseType_t xTaskCreateRestricted( const TaskParameters_t * const pxTaskDefinition, TaskHandle_t *pxCreatedTask )
+    BaseType_t xTaskCreateRestricted( const TaskParameters_t * const pxTaskDefinition,
+                                      TaskHandle_t * pxCreatedTask )
     {
         TCB_t * pxNewTCB;
         BaseType_t xReturn = errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY;
@@ -1559,7 +1560,11 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
         if( xTicksToDelay > ( TickType_t ) 0U )
         {
             configASSERT( uxSchedulerSuspended[xPortGetCoreID()] == 0 );
+#ifdef ESP_PLATFORM // IDF-3755
             taskENTER_CRITICAL();
+#else
+            vTaskSuspendAll();
+#endif // ESP_PLATFORM
             {
                 traceTASK_DELAY();
 
@@ -1572,7 +1577,11 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                  * executing task. */
                 prvAddCurrentTaskToDelayedList( xPortGetCoreID(), xTicksToDelay );
             }
+#ifdef ESP_PLATFORM // IDF-3755
             taskEXIT_CRITICAL();
+#else
+            xAlreadyYielded = xTaskResumeAll();
+#endif // ESP_PLATFORM
         }
         else
         {
@@ -2760,7 +2769,11 @@ char * pcTaskGetName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char 
         /* Task names will be truncated to configMAX_TASK_NAME_LEN - 1 bytes. */
         configASSERT( strlen( pcNameToQuery ) < configMAX_TASK_NAME_LEN );
 
+#ifdef ESP_PLATFORM // IDF-3755
         taskENTER_CRITICAL();
+#else
+        vTaskSuspendAll();
+#endif // ESP_PLATFORM
         {
             /* Search the ready lists. */
             do
@@ -2806,7 +2819,11 @@ char * pcTaskGetName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char 
                 }
             #endif
         }
+#ifdef ESP_PLATFORM // IDF-3755
         taskEXIT_CRITICAL();
+#else
+        ( void ) xTaskResumeAll();
+#endif // ESP_PLATFORM
 
         return pxTCB;
     }
@@ -2822,7 +2839,11 @@ char * pcTaskGetName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char 
     {
         UBaseType_t uxTask = 0, uxQueue = configMAX_PRIORITIES;
 
+#ifdef ESP_PLATFORM // IDF-3755
         taskENTER_CRITICAL();
+#else
+        vTaskSuspendAll();
+#endif // ESP_PLATFORM
         {
             /* Is there a space in the array for each task in the system? */
             if( uxArraySize >= uxCurrentNumberOfTasks )
@@ -2881,7 +2902,11 @@ char * pcTaskGetName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char 
                 mtCOVERAGE_TEST_MARKER();
             }
         }
+#ifdef ESP_PLATFORM // IDF-3755
         taskEXIT_CRITICAL();
+#else
+        ( void ) xTaskResumeAll();
+#endif // ESP_PLATFORM
 
         return uxTask;
     }
@@ -2931,7 +2956,11 @@ char * pcTaskGetName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char 
 
 BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp )
 {
+#ifdef ESP_PLATFORM
     BaseType_t xYieldRequired = pdFALSE;
+#else
+    BaseType_t xYieldOccurred;
+#endif // ESP_PLATFORM
 
     /* Must not be called with the scheduler suspended as the implementation
      * relies on xPendedTicks being wound down to 0 in xTaskResumeAll(). */
@@ -2939,11 +2968,20 @@ BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp )
 
     /* Use xPendedTicks to mimic xTicksToCatchUp number of ticks occuring when
      * the scheduler is suspended so the ticks are executed in xTaskResumeAll(). */
+#ifdef ESP_PLATFORM // IDF-3755
     taskENTER_CRITICAL();
+#else
+    vTaskSuspendAll();
+#endif // ESP_PLATFORM
     xPendedTicks += xTicksToCatchUp;
+#ifdef ESP_PLATFORM // IDF-3755
     taskEXIT_CRITICAL();
-
     return xYieldRequired;
+#else
+    xYieldOccurred = xTaskResumeAll();
+
+    return xYieldOccurred;
+#endif // ESP_PLATFORM
 }
 /*----------------------------------------------------------*/
 
@@ -2956,7 +2994,11 @@ BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp )
 
         configASSERT( pxTCB );
 
+#ifdef ESP_PLATFORM // IDF-3755
         taskENTER_CRITICAL();
+#else
+        vTaskSuspendAll();
+#endif // ESP_PLATFORM
         {
             /* A task can only be prematurely removed from the Blocked state if
              * it is actually in the Blocked state. */
@@ -3019,7 +3061,11 @@ BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp )
                 xReturn = pdFAIL;
             }
         }
+#ifdef ESP_PLATFORM // IDF-3755
         taskEXIT_CRITICAL();
+#else
+        ( void ) xTaskResumeAll();
+#endif // ESP_PLATFORM
 
         return xReturn;
     }
@@ -3933,7 +3979,11 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 
                 if( xExpectedIdleTime >= configEXPECTED_IDLE_TIME_BEFORE_SLEEP )
                 {
+#ifdef ESP_PLATFORM // IDF-3755
                     taskENTER_CRITICAL();
+#else
+                    vTaskSuspendAll();
+#endif // ESP_PLATFORM
                     {
                         /* Now the scheduler is suspended, the expected idle
                          * time can be sampled again, and this time its value can
@@ -3957,7 +4007,11 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
                             mtCOVERAGE_TEST_MARKER();
                         }
                     }
+#ifdef ESP_PLATFORM // IDF-3755
                     taskEXIT_CRITICAL();
+#else
+                    ( void ) xTaskResumeAll();
+#endif // ESP_PLATFORM
                 }
                 else
                 {
@@ -4258,14 +4312,22 @@ static void prvCheckTasksWaitingTermination( void )
                          *  it should be reported as being in the Blocked state. */
                         if( eState == eSuspended )
                         {
-                        taskENTER_CRITICAL();
+#ifdef ESP_PLATFORM // IDF-3755
+                            taskENTER_CRITICAL();
+#else
+                            vTaskSuspendAll();
+#endif // ESP_PLATFORM
                             {
                                 if( listLIST_ITEM_CONTAINER( &( pxTCB->xEventListItem ) ) != NULL )
                                 {
                                     pxTaskStatus->eCurrentState = eBlocked;
                                 }
                             }
-                        taskEXIT_CRITICAL();
+#ifdef ESP_PLATFORM // IDF-3755
+                            taskEXIT_CRITICAL();
+#else
+                            ( void ) xTaskResumeAll();
+#endif // ESP_PLATFORM
                         }
                     }
                 #endif /* INCLUDE_vTaskSuspend */

@@ -613,7 +613,16 @@ typedef enum
     }
 #endif /* configSUPPORT_STATIC_ALLOCATION */
 
-/*
+/**
+ * @cond
+ * task. h
+ * @code{c}
+ * BaseType_t xTaskCreateRestricted( TaskParameters_t *pxTaskDefinition, TaskHandle_t *pxCreatedTask );
+ * @endcode
+ * @endcond
+ *
+ * Only available when configSUPPORT_DYNAMIC_ALLOCATION is set to 1.
+ *
  * xTaskCreateRestricted() should only be used in systems that include an MPU
  * implementation.
  *
@@ -686,11 +695,18 @@ typedef enum
 	                                  TaskHandle_t * pxCreatedTask );
 #endif
 
-/*
- * xTaskCreateRestrictedStatic() should only be used in systems that include an
- * MPU implementation.
+/**
+ * @cond
+ * task. h
+ * @code{c}
+ * BaseType_t xTaskCreateRestrictedStatic( TaskParameters_t *pxTaskDefinition, TaskHandle_t *pxCreatedTask );
+ * @endcode
+ * @endcond
  *
  * Only available when configSUPPORT_STATIC_ALLOCATION is set to 1.
+ *
+ * xTaskCreateRestrictedStatic() should only be used in systems that include an
+ * MPU implementation.
  *
  * Internally, within the FreeRTOS implementation, tasks use two blocks of
  * memory.  The first block is used to hold the task's data structures.  The
@@ -770,7 +786,7 @@ typedef enum
  */
 #if ( ( portUSING_MPU_WRAPPERS == 1 ) && ( configSUPPORT_STATIC_ALLOCATION == 1 ) )
     BaseType_t xTaskCreateRestrictedStatic( const TaskParameters_t * const pxTaskDefinition,
-	                                        TaskHandle_t * pxCreatedTask );
+                                            TaskHandle_t * pxCreatedTask ) PRIVILEGED_FUNCTION;
 #endif
 
 /**
@@ -828,8 +844,12 @@ void vTaskAllocateMPURegions( TaskHandle_t xTask,
                               const MemoryRegion_t * const pxRegions ) PRIVILEGED_FUNCTION;
 
 /**
- * Remove a task from the RTOS real time kernel's management.  The task being
- * deleted will be removed from all ready, blocked, suspended and event lists.
+ * @cond
+ * task. h
+ * @code{c}
+ * void vTaskDelete( TaskHandle_t xTask );
+ * @endcode
+ * @endcond
  *
  * INCLUDE_vTaskDelete must be defined as 1 for this function to be available.
  * See the configuration section for more information.
@@ -1245,7 +1265,12 @@ void vTaskPrioritySet( TaskHandle_t xTask,
                        UBaseType_t uxNewPriority ) PRIVILEGED_FUNCTION;
 
 /**
- * Suspend a task.
+ * @cond
+ * task. h
+ * @code{c}
+ * void vTaskSuspend( TaskHandle_t xTaskToSuspend );
+ * @endcode
+ * @endcond
  *
  * INCLUDE_vTaskSuspend must be defined as 1 for this function to be available.
  * See the configuration section for more information.
@@ -1352,10 +1377,17 @@ void vTaskSuspend( TaskHandle_t xTaskToSuspend ) PRIVILEGED_FUNCTION;
 void vTaskResume( TaskHandle_t xTaskToResume ) PRIVILEGED_FUNCTION;
 
 /**
- * An implementation of vTaskResume() that can be called from within an ISR.
+ * @cond
+ * task. h
+ * @code{c}
+ * void xTaskResumeFromISR( TaskHandle_t xTaskToResume );
+ * @endcode
+ * @endcond
  *
  * INCLUDE_xTaskResumeFromISR must be defined as 1 for this function to be
  * available.  See the configuration section for more information.
+ *
+ * An implementation of vTaskResume() that can be called from within an ISR.
  *
  * A task that has been suspended by one or more calls to vTaskSuspend ()
  * will be made available for running again by a single call to
@@ -1384,13 +1416,19 @@ BaseType_t xTaskResumeFromISR( TaskHandle_t xTaskToResume ) PRIVILEGED_FUNCTION;
  *----------------------------------------------------------*/
 /** @cond */
 /**
- * Starts the real time kernel tick processing.
+ * @cond
+ * task. h
+ * @code{c}
+ * void vTaskStartScheduler( void );
+ * @endcode
+ * @endcond
  *
+ * Starts the real time kernel tick processing.  After calling the kernel
+ * has control over which tasks are executed and when.
+
  * NOTE: In ESP-IDF the scheduler is started automatically during
  * application startup, vTaskStartScheduler() should not be called from
  * ESP-IDF applications.
- *
- * After calling the kernel has control over which tasks are executed and when.
  *
  * See the demo application file main.c for an example of creating
  * tasks and starting the kernel.
@@ -1417,7 +1455,12 @@ BaseType_t xTaskResumeFromISR( TaskHandle_t xTaskToResume ) PRIVILEGED_FUNCTION;
 void vTaskStartScheduler( void ) PRIVILEGED_FUNCTION;
 
 /**
- * Stops the real time kernel tick.
+ * @cond
+ * task. h
+ * @code{c}
+ * void vTaskEndScheduler( void );
+ * @endcode
+ * @endcond
  *
  * NOTE:  At the time of writing only the x86 real mode port, which runs on a PC
  * in place of DOS, implements this function.
@@ -1476,9 +1519,15 @@ void vTaskEndScheduler( void ) PRIVILEGED_FUNCTION;
 /** @endcond */
 
 /**
- * Suspends the scheduler without disabling interrupts.
+ * @cond
+ * task. h
+ * @code{c}
+ * void vTaskSuspendAll( void );
+ * @endcode
+ * @endcond
  *
- * Context switches will not occur while the scheduler is suspended.
+ * Suspends the scheduler without disabling interrupts.  Context switches will
+ * not occur while the scheduler is suspended.
  *
  * After calling vTaskSuspendAll () the calling task will continue to execute
  * without risk of being swapped out until a call to xTaskResumeAll () has been
@@ -1591,7 +1640,12 @@ BaseType_t xTaskResumeAll( void ) PRIVILEGED_FUNCTION;
  *----------------------------------------------------------*/
 
 /**
- * Get tick count
+ * @cond
+ * task. h
+ * @code{c}
+ * TickType_t xTaskGetTickCount( void );
+ * @endcode
+ * @endcond
  *
  * @return The count of ticks since vTaskStartScheduler was called.
  *
@@ -1603,7 +1657,12 @@ BaseType_t xTaskResumeAll( void ) PRIVILEGED_FUNCTION;
 TickType_t xTaskGetTickCount( void ) PRIVILEGED_FUNCTION;
 
 /**
- * Get tick count from ISR
+ * @cond
+ * task. h
+ * @code{c}
+ * TickType_t xTaskGetTickCountFromISR( void );
+ * @endcode
+ * @endcond
  *
  * @return The count of ticks since vTaskStartScheduler was called.
  *
@@ -1620,7 +1679,12 @@ TickType_t xTaskGetTickCount( void ) PRIVILEGED_FUNCTION;
 TickType_t xTaskGetTickCountFromISR( void ) PRIVILEGED_FUNCTION;
 
 /**
- * Get current number of tasks
+ * @cond
+ * task. h
+ * @code{c}
+ * uint16_t uxTaskGetNumberOfTasks( void );
+ * @endcode
+ * @endcond
  *
  * @return The number of tasks that the real time kernel is currently managing.
  * This includes all ready, blocked and suspended tasks.  A task that
@@ -1635,7 +1699,12 @@ TickType_t xTaskGetTickCountFromISR( void ) PRIVILEGED_FUNCTION;
 UBaseType_t uxTaskGetNumberOfTasks( void ) PRIVILEGED_FUNCTION;
 
 /**
- * Get task name
+ * @cond
+ * task. h
+ * @code{c}
+ * char *pcTaskGetName( TaskHandle_t xTaskToQuery );
+ * @endcode
+ * @endcond
  *
  * @return The text (human readable) name of the task referenced by the handle
  * xTaskToQuery.  A task can query its own name by either passing in its own
@@ -1646,10 +1715,17 @@ UBaseType_t uxTaskGetNumberOfTasks( void ) PRIVILEGED_FUNCTION;
  * @endcond
  * \ingroup TaskUtils
  */
-char *pcTaskGetName( TaskHandle_t xTaskToQuery ) PRIVILEGED_FUNCTION; /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+char * pcTaskGetName( TaskHandle_t xTaskToQuery ) PRIVILEGED_FUNCTION;     /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
 
 /**
- * @note This function takes a relatively long time to complete and should be
+ * @cond
+ * task. h
+ * @code{c}
+ * TaskHandle_t xTaskGetHandle( const char *pcNameToQuery );
+ * @endcode
+ * @endcond
+ *
+ * NOTE:  This function takes a relatively long time to complete and should be
  * used sparingly.
  *
  * @return The handle of the task that has the human readable name pcNameToQuery.

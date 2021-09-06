@@ -210,6 +210,21 @@ BaseType_t xPortStartScheduler( void ) PRIVILEGED_FUNCTION;
  */
 void vPortEndScheduler( void ) PRIVILEGED_FUNCTION;
 
+/*
+ * The structures and methods of manipulating the MPU are contained within the
+ * port layer.
+ *
+ * Fills the xMPUSettings structure with the memory region information
+ * contained in xRegions.
+ */
+#if ( portUSING_MPU_WRAPPERS == 1 )
+    struct xMEMORY_REGION;
+    void vPortStoreTaskMPUSettings( xMPU_SETTINGS * xMPUSettings,
+                                    const struct xMEMORY_REGION * const xRegions,
+                                    StackType_t * pxBottomOfStack,
+                                    uint32_t ulStackDepth ) PRIVILEGED_FUNCTION;
+#endif
+
 /* *INDENT-OFF* */
 #ifdef __cplusplus
     }

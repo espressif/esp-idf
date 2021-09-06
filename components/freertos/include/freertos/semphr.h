@@ -312,6 +312,16 @@ typedef QueueHandle_t SemaphoreHandle_t;
 #define xSemaphoreTake( xSemaphore, xBlockTime )    xQueueSemaphoreTake( ( xSemaphore ), ( xBlockTime ) )
 
 /**
+ * @cond
+ * semphr. h
+ * @code{c}
+ * xSemaphoreTakeRecursive(
+ *                          SemaphoreHandle_t xMutex,
+ *                          TickType_t xBlockTime
+ *                        );
+ * @endcode
+ * @endcond
+ *
  * <i>Macro</i> to recursively obtain, or 'take', a mutex type semaphore.
  * The mutex must have previously been created using a call to
  * xSemaphoreCreateRecursiveMutex();
@@ -400,6 +410,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  */
 #define xSemaphoreTakeRecursive( xMutex, xBlockTime )   xQueueTakeMutexRecursive( ( xMutex ), ( xBlockTime ) )
 
+#ifdef ESP_PLATFORM // IDF-3814
 /** @cond */
 /*
  * xSemaphoreAltTake() is an alternative version of xSemaphoreTake().
@@ -415,7 +426,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  */
 #define xSemaphoreAltTake( xSemaphore, xBlockTime )     xQueueAltGenericReceive( ( QueueHandle_t ) ( xSemaphore ), NULL, ( xBlockTime ), pdFALSE )
 /** @endcond */
-
+#endif // ESP_PLATFORM
 /**
  * <i>Macro</i> to release a semaphore.  The semaphore must have previously been
  * created with a call to xSemaphoreCreateBinary(), xSemaphoreCreateMutex() or
@@ -568,6 +579,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  */
 #define xSemaphoreGiveRecursive( xMutex )   xQueueGiveMutexRecursive( ( xMutex ) )
 
+#ifdef ESP_PLATFORM // IDF-3814
 /** @cond */
 /*
  * xSemaphoreAltGive() is an alternative version of xSemaphoreGive().
@@ -584,6 +596,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
 #define xSemaphoreAltGive( xSemaphore )     xQueueAltGenericSend( ( QueueHandle_t ) ( xSemaphore ), NULL, semGIVE_BLOCK_TIME, queueSEND_TO_BACK )
 
 /** @endcond */
+#endif // ESP_PLATFORM
 
 /**
  * <i>Macro</i> to  release a semaphore.  The semaphore must have previously been
