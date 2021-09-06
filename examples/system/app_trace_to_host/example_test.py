@@ -11,8 +11,9 @@ def test_examples_app_trace_to_host(env, extra_data):
     dut = env.get_dut('app_trace_to_host', rel_project_path)
     idf_path = dut.app.get_sdk_path()
     proj_path = os.path.join(idf_path, rel_project_path)
+    oocd_log_path = os.path.join(proj_path, 'openocd.log')
 
-    with ttfw_idf.OCDProcess(os.path.join(proj_path, 'openocd.log')):
+    with ttfw_idf.OCDProcess(oocd_log_path):
         with ttfw_idf.TelnetProcess(os.path.join(proj_path, 'telnet.log')) as telnet_p:
             dut.start_app()
             dut.expect_all('example: Enabling ADC1 on channel 6 / GPIO34.',
@@ -32,6 +33,15 @@ def test_examples_app_trace_to_host(env, extra_data):
             telnet_p.pexpect_proc.expect_exact('Targets disconnected.')
             telnet_p.pexpect_proc.expect_exact('Tracing is STOPPED. Size is 9000 of 9000 @')
             telnet_p.pexpect_proc.expect_exact('Data: blocks incomplete 0, lost bytes: 0')
+
+    with open(oocd_log_path) as oocd_log:
+        cores = 1 if dut.app.get_sdkconfig().get('CONFIG_FREERTOS_UNICORE', '').replace('"','') == 'y' else 2
+        params_str = 'App trace params: from {} cores'.format(cores)
+        for line in oocd_log:
+            if params_str in line:
+                break
+        else:
+            raise RuntimeError('"{}" could not be found in {}'.format(params_str, oocd_log_path))
 
     with ttfw_idf.CustomProcess(' '.join([os.path.join(idf_path, 'tools/esp_app_trace/logtrace_proc.py'),
                                           'adc.log',
