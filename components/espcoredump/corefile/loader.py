@@ -29,7 +29,7 @@ from . import ESPCoreDumpLoaderError
 from .elf import (TASK_STATUS_CORRECT, TASK_STATUS_TCB_CORRUPTED, ElfFile, ElfSegment, ESPCoreDumpElfFile,
                   EspTaskStatus, NoteSection)
 from .riscv import Esp32c3Methods
-from .xtensa import Esp32Methods, Esp32S2Methods
+from .xtensa import Esp32Methods, Esp32S2Methods, Esp32S3Methods
 
 try:
     from typing import Optional, Tuple
@@ -80,7 +80,10 @@ class EspCoreDumpVersion(object):
     # This class contains all version-dependent params
     ESP32 = 0
     ESP32S2 = 2
-    XTENSA_CHIPS = [ESP32, ESP32S2]
+    # TODO: The value for chip is different from components/esp_hw_support/include/esp_chip_info.h
+    # and this value comes from the hardware.
+    ESP32S3 = 9
+    XTENSA_CHIPS = [ESP32, ESP32S2, ESP32S3]
 
     ESP32C3 = 5
     RISCV_CHIPS = [ESP32C3]
@@ -195,6 +198,8 @@ class EspCoreDumpLoader(EspCoreDumpVersion):
                 self.target_methods = Esp32S2Methods()  # type: ignore
             elif self.chip_ver == self.ESP32C3:
                 self.target_methods = Esp32c3Methods()  # type: ignore
+            elif self.chip_ver == self.ESP32S3:
+                self.target_methods = Esp32S3Methods()  # type: ignore
             else:
                 raise NotImplementedError
         else:
