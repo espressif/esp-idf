@@ -16,6 +16,7 @@ import json
 import logging
 import os
 import re
+from collections import defaultdict
 from copy import deepcopy
 
 import junit_xml
@@ -229,16 +230,23 @@ class ComponentUTResult:
     Function Class, parse component unit test results
     """
 
+    results_list = defaultdict(list)   # type: dict[str, list[junit_xml.TestSuite]]
+
+    """
+    For origin unity test cases with macro "TEST", please set "test_format" to "TestFormat.UNITY_FIXTURE_VERBOSE".
+    For IDF unity test cases with macro "TEST CASE", please set "test_format" to "TestFormat.UNITY_BASIC".
+    """
     @staticmethod
-    def parse_result(stdout):
+    def parse_result(stdout, test_format=TestFormat.UNITY_FIXTURE_VERBOSE):
         try:
-            results = TestResults(stdout, TestFormat.UNITY_FIXTURE_VERBOSE)
+            results = TestResults(stdout, test_format)
         except (ValueError, TypeError) as e:
             raise ValueError('Error occurs when parsing the component unit test stdout to JUnit report: ' + str(e))
 
         group_name = results.tests()[0].group()
+        ComponentUTResult.results_list[group_name].append(results.to_junit())
         with open(os.path.join(os.getenv('LOG_PATH', ''), '{}_XUNIT_RESULT.xml'.format(group_name)), 'w') as fw:
-            junit_xml.to_xml_report_file(fw, [results.to_junit()])
+            junit_xml.to_xml_report_file(fw, ComponentUTResult.results_list[group_name])
 
         if results.num_failed():
             # raise exception if any case fails
