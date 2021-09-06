@@ -1,4 +1,5 @@
 // Copyright 2020 Espressif Systems (Shanghai) PTE LTD
+// Modifications Copyright © 2021 Ci4Rail GmbH
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -121,7 +122,12 @@ tusb_desc_strarray_device_t descriptor_str_kconfig = {
 #endif
 
 #if CONFIG_TINYUSB_HID_ENABLED
-    CONFIG_TINYUSB_DESC_HID_STRING           // 6: HIDs
+    CONFIG_TINYUSB_DESC_HID_STRING,          // 6: HIDs
+#else
+    "",
+#endif
+#if CONFIG_USB_NET_ENABLED
+    CONFIG_TINYUSB_DESC_ECM_STRING,          // 7: CDC-ECM
 #else
     "",
 #endif

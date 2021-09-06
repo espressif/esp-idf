@@ -36,6 +36,7 @@ if(CONFIG_TINYUSB)
     list(APPEND includes_public
         "tinyusb/src/"
         "additions/include"
+        "tinyusb/lib/networking"
         # The FreeRTOS API include convention in tinyusb is different from esp-idf
         "${freertos_component_dir}/include/freertos"
         )
@@ -47,14 +48,18 @@ if(CONFIG_TINYUSB)
         "tinyusb/src/class/midi/midi_device.c"
         "tinyusb/src/class/msc/msc_device.c"
         "tinyusb/src/class/vendor/vendor_device.c"
+        "tinyusb/src/class/net/net_device.c"
         "tinyusb/src/common/tusb_fifo.c"
         "tinyusb/src/device/usbd_control.c"
         "tinyusb/src/device/usbd.c"
         "tinyusb/src/tusb.c"
+        "tinyusb/lib/networking/rndis_reports.c"
         "additions/src/descriptors_control.c"
         "additions/src/tinyusb.c"
         "additions/src/tusb_tasks.c"
         "additions/src/usb_descriptors.c"
+        "additions/src/esp_cdc_ecm_driver.c"
+        "additions/src/esp_cdc_ecm_netif_glue.c"
         )
 
     # when no builtin class driver is enabled, an uint8_t data compared with `BUILTIN_DRIVER_COUNT` will always be false

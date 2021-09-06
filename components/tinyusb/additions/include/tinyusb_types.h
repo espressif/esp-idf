@@ -1,4 +1,5 @@
 // Copyright 2020 Espressif Systems (Shanghai) Co. Ltd.
+// Modifications Copyright © 2021 Ci4Rail GmbH
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,7 +20,7 @@ extern "C" {
 #endif
 
 #define USB_ESPRESSIF_VID 0x303A
-#define USB_STRING_DESCRIPTOR_ARRAY_SIZE 7
+#define USB_STRING_DESCRIPTOR_ARRAY_SIZE 8
 
 typedef enum{
     TINYUSB_USBDEV_0,
