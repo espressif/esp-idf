@@ -16,8 +16,6 @@
 #include "soc/rtc_periph.h"
 #include "soc/sens_periph.h"
 
-#if CONFIG_IDF_TARGET_ESP32
-
 static const char *TAG = "Touch pad";
 
 #define TOUCH_THRESH_NO_USE   (0)
@@ -171,5 +169,3 @@ void app_main(void)
     // Start a task to show what pads have been touched
     xTaskCreate(&tp_example_read_task, "touch_pad_read_task", 2048, NULL, 5, NULL);
 }
-
-#endif // CONFIG_IDF_TARGET_ESP32
