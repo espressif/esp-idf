@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #include <stdlib.h>
 
 #include "esp_spi_flash.h"
@@ -24,16 +25,16 @@
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/dport_access.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
+#endif
+
+#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#ifdef CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/memprot.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/memprot.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/memprot.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/memprot.h"
 #elif CONFIG_IDF_TARGET_ESP8684
 #include "esp8684/memprot.h"
+#else
+#include "esp_memprot.h"
+#endif
 #endif
 
 #include "esp_private/panic_internal.h"
@@ -230,9 +231,18 @@ void __attribute__((noreturn)) panic_restart(void)
     }
 #endif
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#if CONFIG_IDF_TARGET_ESP32S2
     if (esp_memprot_is_intr_ena_any() || esp_memprot_is_locked_any()) {
         digital_reset_needed = true;
     }
+#else
+    bool is_on = false;
+    if (esp_mprot_is_intr_ena_any(&is_on) != ESP_OK || is_on) {
+        digital_reset_needed = true;
+    } else if (esp_mprot_is_conf_locked_any(&is_on) != ESP_OK || is_on) {
+        digital_reset_needed = true;
+    }
+#endif
 #endif
     if (digital_reset_needed) {
         esp_restart_noos_dig();
