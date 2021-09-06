@@ -333,8 +333,8 @@ typedef struct tskTaskControlBlock       /* The old naming convention is used to
     #endif
 
     #if ( configUSE_TASK_NOTIFICATIONS == 1 )
-        volatile uint32_t ulNotifiedValue;
-        volatile uint8_t ucNotifyState;
+        volatile uint32_t ulNotifiedValue[ configTASK_NOTIFICATION_ARRAY_ENTRIES ];
+        volatile uint8_t ucNotifyState[ configTASK_NOTIFICATION_ARRAY_ENTRIES ];
     #endif
 
     /* See the comments in FreeRTOS.h with the definition of
@@ -1090,8 +1090,8 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
 
     #if ( configUSE_TASK_NOTIFICATIONS == 1 )
         {
-            pxNewTCB->ulNotifiedValue = 0;
-            pxNewTCB->ucNotifyState = taskNOT_WAITING_NOTIFICATION;
+            memset( ( void * ) &( pxNewTCB->ulNotifiedValue[ 0 ] ), 0x00, sizeof( pxNewTCB->ulNotifiedValue ) );
+            memset( ( void * ) &( pxNewTCB->ucNotifyState[ 0 ] ), 0x00, sizeof( pxNewTCB->ucNotifyState ) );
         }
     #endif
 
@@ -1630,19 +1630,24 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                      * indefinitely? */
                     if( listLIST_ITEM_CONTAINER( &( pxTCB->xEventListItem ) ) == NULL )
                     {
-                        #if( configUSE_TASK_NOTIFICATIONS == 1 )
+                        #if ( configUSE_TASK_NOTIFICATIONS == 1 )
                             {
+                                BaseType_t x;
+
                                 /* The task does not appear on the event list item of
                                  * and of the RTOS objects, but could still be in the
                                  * blocked state if it is waiting on its notification
-                                 * rather than waiting on an object. */
-                                if( pxTCB->ucNotifyState == taskWAITING_NOTIFICATION )
+                                 * rather than waiting on an object.  If not, is
+                                 * suspended. */
+                                eReturn = eSuspended;
+
+                                for( x = 0; x < configTASK_NOTIFICATION_ARRAY_ENTRIES; x++ )
                                 {
-                                    eReturn = eBlocked;
-                                }
-                                else
-                                {
-                                    eReturn = eSuspended;
+                                    if( pxTCB->ucNotifyState[ x ] == taskWAITING_NOTIFICATION )
+                                    {
+                                        eReturn = eBlocked;
+                                        break;
+                                    }
                                 }
                             }
                         #else /* if ( configUSE_TASK_NOTIFICATIONS == 1 ) */
@@ -1972,16 +1977,21 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
             vListInsertEnd( &xSuspendedTaskList, &( pxTCB->xStateListItem ) );
             curTCB = pxCurrentTCB[ xPortGetCoreID() ];
 
-            #if( configUSE_TASK_NOTIFICATIONS == 1 )
+            #if ( configUSE_TASK_NOTIFICATIONS == 1 )
                 {
-                    if( pxTCB->ucNotifyState == taskWAITING_NOTIFICATION )
+                    BaseType_t x;
+
+                    for( x = 0; x < configTASK_NOTIFICATION_ARRAY_ENTRIES; x++ )
                     {
-                        /* The task was blocked to wait for a notification, but is
-                         * now suspended, so no notification was received. */
-                        pxTCB->ucNotifyState = taskNOT_WAITING_NOTIFICATION;
+                        if( pxTCB->ucNotifyState[ x ] == taskWAITING_NOTIFICATION )
+                        {
+                            /* The task was blocked to wait for a notification, but is
+                             * now suspended, so no notification was received. */
+                            pxTCB->ucNotifyState[ x ] = taskNOT_WAITING_NOTIFICATION;
+                        }
                     }
                 }
-            #endif
+            #endif /* if ( configUSE_TASK_NOTIFICATIONS == 1 ) */
         }
         taskEXIT_CRITICAL();
 
@@ -5241,19 +5251,33 @@ TickType_t uxTaskResetEventItemValue( void )
 #endif /* configUSE_MUTEXES */
 /*-----------------------------------------------------------*/
 
-#if( configUSE_TASK_NOTIFICATIONS == 1 )
+#if ( configUSE_TASK_NOTIFICATIONS == 1 )
 
-    uint32_t ulTaskNotifyTake( BaseType_t xClearCountOnExit, TickType_t xTicksToWait )
+#ifdef ESP_PLATFORM // IDF-3851
+    // included here for backward binary compatibility
+    #undef ulTaskNotifyTake
+    uint32_t ulTaskNotifyTake(BaseType_t xClearCountOnExit,
+                              TickType_t xTicksToWait )
     {
-    uint32_t ulReturn;
+        return ulTaskGenericNotifyTake(tskDEFAULT_INDEX_TO_NOTIFY, xClearCountOnExit, xTicksToWait);
+    }
+#endif // ESP-PLATFORM
+
+    uint32_t ulTaskGenericNotifyTake( UBaseType_t uxIndexToWait,
+                                      BaseType_t xClearCountOnExit,
+                                      TickType_t xTicksToWait )
+    {
+        uint32_t ulReturn;
+
+        configASSERT( uxIndexToWait < configTASK_NOTIFICATION_ARRAY_ENTRIES );
 
         taskENTER_CRITICAL();
         {
             /* Only block if the notification count is not already non-zero. */
-            if( pxCurrentTCB[xPortGetCoreID()]->ulNotifiedValue == 0UL )
+            if( pxCurrentTCB[xPortGetCoreID()]->ulNotifiedValue[ uxIndexToWait ] == 0UL )
             {
                 /* Mark this task as waiting for a notification. */
-                pxCurrentTCB[xPortGetCoreID()]->ucNotifyState = taskWAITING_NOTIFICATION;
+                pxCurrentTCB[xPortGetCoreID()]->ucNotifyState[ uxIndexToWait ] = taskWAITING_NOTIFICATION;
 
                 if( xTicksToWait > ( TickType_t ) 0 )
                 {
@@ -5261,9 +5285,9 @@ TickType_t uxTaskResetEventItemValue( void )
                     traceTASK_NOTIFY_TAKE_BLOCK();
 
                     /* All ports are written to allow a yield in a critical
-                    section (some will yield immediately, others wait until the
-                    critical section exits) - but it is not something that
-                    application code should ever do. */
+                     * section (some will yield immediately, others wait until the
+                     * critical section exits) - but it is not something that
+                     * application code should ever do. */
                     portYIELD_WITHIN_API();
                 }
                 else
@@ -5281,17 +5305,17 @@ TickType_t uxTaskResetEventItemValue( void )
         taskENTER_CRITICAL();
         {
             traceTASK_NOTIFY_TAKE();
-            ulReturn = pxCurrentTCB[xPortGetCoreID()]->ulNotifiedValue;
+            ulReturn = pxCurrentTCB[xPortGetCoreID()]->ulNotifiedValue[ uxIndexToWait ];
 
             if( ulReturn != 0UL )
             {
                 if( xClearCountOnExit != pdFALSE )
                 {
-                    pxCurrentTCB[xPortGetCoreID()]->ulNotifiedValue = 0UL;
+                    pxCurrentTCB[xPortGetCoreID()]->ulNotifiedValue[ uxIndexToWait ] = 0UL;
                 }
                 else
                 {
-                    pxCurrentTCB[xPortGetCoreID()]->ulNotifiedValue = ulReturn - ( uint32_t ) 1;
+                    pxCurrentTCB[xPortGetCoreID()]->ulNotifiedValue[ uxIndexToWait ] = ulReturn - ( uint32_t ) 1;
                 }
             }
             else
@@ -5299,7 +5323,7 @@ TickType_t uxTaskResetEventItemValue( void )
                 mtCOVERAGE_TEST_MARKER();
             }
 
-            pxCurrentTCB[xPortGetCoreID()]->ucNotifyState = taskNOT_WAITING_NOTIFICATION;
+            pxCurrentTCB[xPortGetCoreID()]->ucNotifyState[ uxIndexToWait ] = taskNOT_WAITING_NOTIFICATION;
         }
         taskEXIT_CRITICAL();
 
@@ -5309,24 +5333,41 @@ TickType_t uxTaskResetEventItemValue( void )
 #endif /* configUSE_TASK_NOTIFICATIONS */
 /*-----------------------------------------------------------*/
 
-#if( configUSE_TASK_NOTIFICATIONS == 1 )
+#if ( configUSE_TASK_NOTIFICATIONS == 1 )
 
-    BaseType_t xTaskNotifyWait( uint32_t ulBitsToClearOnEntry, uint32_t ulBitsToClearOnExit, uint32_t *pulNotificationValue, TickType_t xTicksToWait )
+#ifdef ESP_PLATFORM // IDF-3851
+    // included for backward compatibility
+    #undef xTaskNotifyWait
+    BaseType_t xTaskNotifyWait( uint32_t ulBitsToClearOnEntry,
+                                uint32_t ulBitsToClearOnExit,
+                                uint32_t * pulNotificationValue,
+                                TickType_t xTicksToWait )
     {
-    BaseType_t xReturn;
+        return xTaskGenericNotifyWait(tskDEFAULT_INDEX_TO_NOTIFY, ulBitsToClearOnEntry, ulBitsToClearOnExit, pulNotificationValue, xTicksToWait);
+    }
+#endif // ESP-PLATFORM
 
+    BaseType_t xTaskGenericNotifyWait( UBaseType_t uxIndexToWait,
+                                       uint32_t ulBitsToClearOnEntry,
+                                       uint32_t ulBitsToClearOnExit,
+                                       uint32_t * pulNotificationValue,
+                                       TickType_t xTicksToWait )
+    {
+        BaseType_t xReturn;
+
+        configASSERT( uxIndexToWait < configTASK_NOTIFICATION_ARRAY_ENTRIES );
         taskENTER_CRITICAL();
         {
             /* Only block if a notification is not already pending. */
-            if( pxCurrentTCB[xPortGetCoreID()]->ucNotifyState != taskNOTIFICATION_RECEIVED )
+            if( pxCurrentTCB[xPortGetCoreID()]->ucNotifyState[ uxIndexToWait ] != taskNOTIFICATION_RECEIVED )
             {
                 /* Clear bits in the task's notification value as bits may get
-                set by the notifying task or interrupt.  This can be used to
-                clear the value to zero. */
-                pxCurrentTCB[xPortGetCoreID()]->ulNotifiedValue &= ~ulBitsToClearOnEntry;
+                 * set  by the notifying task or interrupt.  This can be used to
+                 * clear the value to zero. */
+                pxCurrentTCB[xPortGetCoreID()]->ulNotifiedValue[ uxIndexToWait ] &= ~ulBitsToClearOnEntry;
 
                 /* Mark this task as waiting for a notification. */
-                pxCurrentTCB[xPortGetCoreID()]->ucNotifyState = taskWAITING_NOTIFICATION;
+                pxCurrentTCB[xPortGetCoreID()]->ucNotifyState[ uxIndexToWait ] = taskWAITING_NOTIFICATION;
 
                 if( xTicksToWait > ( TickType_t ) 0 )
                 {
@@ -5334,9 +5375,9 @@ TickType_t uxTaskResetEventItemValue( void )
                     traceTASK_NOTIFY_WAIT_BLOCK();
 
                     /* All ports are written to allow a yield in a critical
-                    section (some will yield immediately, others wait until the
-                    critical section exits) - but it is not something that
-                    application code should ever do. */
+                     * section (some will yield immediately, others wait until the
+                     * critical section exits) - but it is not something that
+                     * application code should ever do. */
                     portYIELD_WITHIN_API();
                 }
                 else
@@ -5358,15 +5399,15 @@ TickType_t uxTaskResetEventItemValue( void )
             if( pulNotificationValue != NULL )
             {
                 /* Output the current notification value, which may or may not
-                have changed. */
-                *pulNotificationValue = pxCurrentTCB[xPortGetCoreID()]->ulNotifiedValue;
+                 * have changed. */
+                *pulNotificationValue = pxCurrentTCB[xPortGetCoreID()]->ulNotifiedValue[ uxIndexToWait ];
             }
 
             /* If ucNotifyValue is set then either the task never entered the
-            blocked state (because a notification was already pending) or the
-            task unblocked because of a notification.  Otherwise the task
-            unblocked because of a timeout. */
-            if( pxCurrentTCB[xPortGetCoreID()]->ucNotifyState != taskNOTIFICATION_RECEIVED )
+             * blocked state (because a notification was already pending) or the
+             * task unblocked because of a notification.  Otherwise the task
+             * unblocked because of a timeout. */
+            if( pxCurrentTCB[xPortGetCoreID()]->ucNotifyState[ uxIndexToWait ] != taskNOTIFICATION_RECEIVED )
             {
                 /* A notification was not received. */
                 xReturn = pdFALSE;
@@ -5374,12 +5415,12 @@ TickType_t uxTaskResetEventItemValue( void )
             else
             {
                 /* A notification was already pending or a notification was
-                received while the task was waiting. */
-                pxCurrentTCB[xPortGetCoreID()]->ulNotifiedValue &= ~ulBitsToClearOnExit;
+                 * received while the task was waiting. */
+                pxCurrentTCB[xPortGetCoreID()]->ulNotifiedValue[ uxIndexToWait ] &= ~ulBitsToClearOnExit;
                 xReturn = pdTRUE;
             }
 
-            pxCurrentTCB[xPortGetCoreID()]->ucNotifyState = taskNOT_WAITING_NOTIFICATION;
+            pxCurrentTCB[xPortGetCoreID()]->ucNotifyState[ uxIndexToWait ] = taskNOT_WAITING_NOTIFICATION;
         }
         taskEXIT_CRITICAL();
 
@@ -5389,14 +5430,19 @@ TickType_t uxTaskResetEventItemValue( void )
 #endif /* configUSE_TASK_NOTIFICATIONS */
 /*-----------------------------------------------------------*/
 
-#if( configUSE_TASK_NOTIFICATIONS == 1 )
+#if ( configUSE_TASK_NOTIFICATIONS == 1 )
 
-    BaseType_t xTaskGenericNotify( TaskHandle_t xTaskToNotify, uint32_t ulValue, eNotifyAction eAction, uint32_t *pulPreviousNotificationValue )
+    BaseType_t xTaskGenericNotify( TaskHandle_t xTaskToNotify,
+                                   UBaseType_t uxIndexToNotify,
+                                   uint32_t ulValue,
+                                   eNotifyAction eAction,
+                                   uint32_t * pulPreviousNotificationValue )
     {
-    TCB_t * pxTCB;
-    BaseType_t xReturn = pdPASS;
-    uint8_t ucOriginalNotifyState;
+        TCB_t * pxTCB;
+        BaseType_t xReturn = pdPASS;
+        uint8_t ucOriginalNotifyState;
 
+        configASSERT( uxIndexToNotify < configTASK_NOTIFICATION_ARRAY_ENTRIES );
         configASSERT( xTaskToNotify );
         pxTCB = xTaskToNotify;
 
@@ -5404,49 +5450,53 @@ TickType_t uxTaskResetEventItemValue( void )
         {
             if( pulPreviousNotificationValue != NULL )
             {
-                *pulPreviousNotificationValue = pxTCB->ulNotifiedValue;
+                *pulPreviousNotificationValue = pxTCB->ulNotifiedValue[ uxIndexToNotify ];
             }
 
-            ucOriginalNotifyState = pxTCB->ucNotifyState;
+            ucOriginalNotifyState = pxTCB->ucNotifyState[ uxIndexToNotify ];
 
-            pxTCB->ucNotifyState = taskNOTIFICATION_RECEIVED;
+            pxTCB->ucNotifyState[ uxIndexToNotify ] = taskNOTIFICATION_RECEIVED;
 
             switch( eAction )
             {
-                case eSetBits   :
-                    pxTCB->ulNotifiedValue |= ulValue;
+                case eSetBits:
+                    pxTCB->ulNotifiedValue[ uxIndexToNotify ] |= ulValue;
                     break;
 
-                case eIncrement :
-                    ( pxTCB->ulNotifiedValue )++;
+                case eIncrement:
+                    ( pxTCB->ulNotifiedValue[ uxIndexToNotify ] )++;
                     break;
 
-                case eSetValueWithOverwrite :
-                    pxTCB->ulNotifiedValue = ulValue;
+                case eSetValueWithOverwrite:
+                    pxTCB->ulNotifiedValue[ uxIndexToNotify ] = ulValue;
                     break;
 
-                case eSetValueWithoutOverwrite :
+                case eSetValueWithoutOverwrite:
+
                     if( ucOriginalNotifyState != taskNOTIFICATION_RECEIVED )
                     {
-                        pxTCB->ulNotifiedValue = ulValue;
+                        pxTCB->ulNotifiedValue[ uxIndexToNotify ] = ulValue;
                     }
                     else
                     {
                         /* The value could not be written to the task. */
                         xReturn = pdFAIL;
                     }
+
                     break;
 
                 case eNoAction:
+
                     /* The task is being notified without its notify value being
-                    updated. */
+                     * updated. */
                     break;
 
                 default:
+
                     /* Should not get here if all enums are handled.
-                    Artificially force an assert by testing a value the
-                    compiler can't assume is const. */
-                    configASSERT( pxTCB->ulNotifiedValue == ~0UL );
+                     * Artificially force an assert by testing a value the
+                     * compiler can't assume is const. */
+                    configASSERT( pxTCB->ulNotifiedValue[ uxIndexToNotify ] == ~0UL );
 
                     break;
             }
@@ -5454,7 +5504,7 @@ TickType_t uxTaskResetEventItemValue( void )
             traceTASK_NOTIFY();
 
             /* If the task is in the blocked state specifically to wait for a
-            notification then unblock it now. */
+             * notification then unblock it now. */
             if( ucOriginalNotifyState == taskWAITING_NOTIFICATION )
             {
                 ( void ) uxListRemove( &( pxTCB->xStateListItem ) );
@@ -5463,20 +5513,20 @@ TickType_t uxTaskResetEventItemValue( void )
                 /* The task should not have been on an event list. */
                 configASSERT( listLIST_ITEM_CONTAINER( &( pxTCB->xEventListItem ) ) == NULL );
 
-                #if( configUSE_TICKLESS_IDLE != 0 )
-                {
-                    /* If a task is blocked waiting for a notification then
-                    xNextTaskUnblockTime might be set to the blocked task's time
-                    out time.  If the task is unblocked for a reason other than
-                    a timeout xNextTaskUnblockTime is normally left unchanged,
-                    because it will automatically get reset to a new value when
-                    the tick count equals xNextTaskUnblockTime.  However if
-                    tickless idling is used it might be more important to enter
-                    sleep mode at the earliest possible time - so reset
-                    xNextTaskUnblockTime here to ensure it is updated at the
-                    earliest possible time. */
-                    prvResetNextTaskUnblockTime();
-                }
+                #if ( configUSE_TICKLESS_IDLE != 0 )
+                    {
+                        /* If a task is blocked waiting for a notification then
+                         * xNextTaskUnblockTime might be set to the blocked task's time
+                         * out time.  If the task is unblocked for a reason other than
+                         * a timeout xNextTaskUnblockTime is normally left unchanged,
+                         * because it will automatically get reset to a new value when
+                         * the tick count equals xNextTaskUnblockTime.  However if
+                         * tickless idling is used it might be more important to enter
+                         * sleep mode at the earliest possible time - so reset
+                         * xNextTaskUnblockTime here to ensure it is updated at the
+                         * earliest possible time. */
+                        prvResetNextTaskUnblockTime();
+                    }
                 #endif
 
                 if( tskCAN_RUN_HERE(pxTCB->xCoreID) && pxTCB->uxPriority > pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
@@ -5507,32 +5557,38 @@ TickType_t uxTaskResetEventItemValue( void )
 #endif /* configUSE_TASK_NOTIFICATIONS */
 /*-----------------------------------------------------------*/
 
-#if( configUSE_TASK_NOTIFICATIONS == 1 )
+#if ( configUSE_TASK_NOTIFICATIONS == 1 )
 
-    BaseType_t xTaskGenericNotifyFromISR( TaskHandle_t xTaskToNotify, uint32_t ulValue, eNotifyAction eAction, uint32_t *pulPreviousNotificationValue, BaseType_t *pxHigherPriorityTaskWoken )
+    BaseType_t xTaskGenericNotifyFromISR( TaskHandle_t xTaskToNotify,
+                                          UBaseType_t uxIndexToNotify,
+                                          uint32_t ulValue,
+                                          eNotifyAction eAction,
+                                          uint32_t * pulPreviousNotificationValue,
+                                          BaseType_t * pxHigherPriorityTaskWoken )
     {
-    TCB_t * pxTCB;
-    uint8_t ucOriginalNotifyState;
-    BaseType_t xReturn = pdPASS;
+        TCB_t * pxTCB;
+        uint8_t ucOriginalNotifyState;
+        BaseType_t xReturn = pdPASS;
 
         configASSERT( xTaskToNotify );
+        configASSERT( uxIndexToNotify < configTASK_NOTIFICATION_ARRAY_ENTRIES );
 
         /* RTOS ports that support interrupt nesting have the concept of a
-        maximum system call (or maximum API call) interrupt priority.
-        Interrupts that are above the maximum system call priority are keep
-        permanently enabled, even when the RTOS kernel is in a critical section,
-        but cannot make any calls to FreeRTOS API functions.  If configASSERT()
-        is defined in FreeRTOSConfig.h then
-        portASSERT_IF_INTERRUPT_PRIORITY_INVALID() will result in an assertion
-        failure if a FreeRTOS API function is called from an interrupt that has
-        been assigned a priority above the configured maximum system call
-        priority.  Only FreeRTOS functions that end in FromISR can be called
-        from interrupts that have been assigned a priority at or (logically)
-        below the maximum system call interrupt priority.  FreeRTOS maintains a
-        separate interrupt safe API to ensure interrupt entry is as fast and as
-        simple as possible.  More information (albeit Cortex-M specific) is
-        provided on the following link:
-        http://www.freertos.org/RTOS-Cortex-M3-M4.html */
+         * maximum  system call (or maximum API call) interrupt priority.
+         * Interrupts that are  above the maximum system call priority are keep
+         * permanently enabled, even when the RTOS kernel is in a critical section,
+         * but cannot make any calls to FreeRTOS API functions.  If configASSERT()
+         * is defined in FreeRTOSConfig.h then
+         * portASSERT_IF_INTERRUPT_PRIORITY_INVALID() will result in an assertion
+         * failure if a FreeRTOS API function is called from an interrupt that has
+         * been assigned a priority above the configured maximum system call
+         * priority.  Only FreeRTOS functions that end in FromISR can be called
+         * from interrupts  that have been assigned a priority at or (logically)
+         * below the maximum system call interrupt priority.  FreeRTOS maintains a
+         * separate interrupt safe API to ensure interrupt entry is as fast and as
+         * simple as possible.  More information (albeit Cortex-M specific) is
+         * provided on the following link:
+         * https://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html */
         portASSERT_IF_INTERRUPT_PRIORITY_INVALID();
 
         pxTCB = xTaskToNotify;
@@ -5541,55 +5597,59 @@ TickType_t uxTaskResetEventItemValue( void )
         {
             if( pulPreviousNotificationValue != NULL )
             {
-                *pulPreviousNotificationValue = pxTCB->ulNotifiedValue;
+                *pulPreviousNotificationValue = pxTCB->ulNotifiedValue[ uxIndexToNotify ];
             }
 
-            ucOriginalNotifyState = pxTCB->ucNotifyState;
-            pxTCB->ucNotifyState = taskNOTIFICATION_RECEIVED;
+            ucOriginalNotifyState = pxTCB->ucNotifyState[ uxIndexToNotify ];
+            pxTCB->ucNotifyState[ uxIndexToNotify ] = taskNOTIFICATION_RECEIVED;
 
             switch( eAction )
             {
-                case eSetBits   :
-                    pxTCB->ulNotifiedValue |= ulValue;
+                case eSetBits:
+                    pxTCB->ulNotifiedValue[ uxIndexToNotify ] |= ulValue;
                     break;
 
-                case eIncrement :
-                    ( pxTCB->ulNotifiedValue )++;
+                case eIncrement:
+                    ( pxTCB->ulNotifiedValue[ uxIndexToNotify ] )++;
                     break;
 
-                case eSetValueWithOverwrite :
-                    pxTCB->ulNotifiedValue = ulValue;
+                case eSetValueWithOverwrite:
+                    pxTCB->ulNotifiedValue[ uxIndexToNotify ] = ulValue;
                     break;
 
-                case eSetValueWithoutOverwrite :
+                case eSetValueWithoutOverwrite:
+
                     if( ucOriginalNotifyState != taskNOTIFICATION_RECEIVED )
                     {
-                        pxTCB->ulNotifiedValue = ulValue;
+                        pxTCB->ulNotifiedValue[ uxIndexToNotify ] = ulValue;
                     }
                     else
                     {
                         /* The value could not be written to the task. */
                         xReturn = pdFAIL;
                     }
+
                     break;
 
-                case eNoAction :
+                case eNoAction:
+
                     /* The task is being notified without its notify value being
-                    updated. */
+                     * updated. */
                     break;
 
                 default:
+
                     /* Should not get here if all enums are handled.
-                    Artificially force an assert by testing a value the
-                    compiler can't assume is const. */
-                    configASSERT( pxTCB->ulNotifiedValue == ~0UL );
+                     * Artificially force an assert by testing a value the
+                     * compiler can't assume is const. */
+                    configASSERT( pxTCB->ulNotifiedValue[ uxIndexToNotify ] == ~0UL );
                     break;
             }
 
             traceTASK_NOTIFY_FROM_ISR();
 
             /* If the task is in the blocked state specifically to wait for a
-            notification then unblock it now. */
+             * notification then unblock it now. */
             if( ucOriginalNotifyState == taskWAITING_NOTIFICATION )
             {
                 /* The task should not have been on an event list. */
@@ -5603,14 +5663,14 @@ TickType_t uxTaskResetEventItemValue( void )
                 else
                 {
                     /* The delayed and ready lists cannot be accessed, so hold
-                    this task pending until the scheduler is resumed. */
+                     * this task pending until the scheduler is resumed. */
                     vListInsertEnd( &( xPendingReadyList[xPortGetCoreID()] ), &( pxTCB->xEventListItem ) );
                 }
 
                 if( tskCAN_RUN_HERE(pxTCB->xCoreID) && pxTCB->uxPriority > pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
                 {
                     /* The notified task has a priority above the currently
-                    executing task so a yield is required. */
+                     * executing task so a yield is required. */
                     if( pxHigherPriorityTaskWoken != NULL )
                     {
                         *pxHigherPriorityTaskWoken = pdTRUE;
@@ -5637,47 +5697,50 @@ TickType_t uxTaskResetEventItemValue( void )
 
 #if( configUSE_TASK_NOTIFICATIONS == 1 )
 
-    void vTaskNotifyGiveFromISR( TaskHandle_t xTaskToNotify, BaseType_t *pxHigherPriorityTaskWoken )
+    void vTaskGenericNotifyGiveFromISR( TaskHandle_t xTaskToNotify,
+                                        UBaseType_t uxIndexToNotify,
+                                        BaseType_t * pxHigherPriorityTaskWoken )
     {
     TCB_t * pxTCB;
     uint8_t ucOriginalNotifyState;
 
 
         configASSERT( xTaskToNotify );
+        configASSERT( uxIndexToNotify < configTASK_NOTIFICATION_ARRAY_ENTRIES );
 
         /* RTOS ports that support interrupt nesting have the concept of a
-        maximum system call (or maximum API call) interrupt priority.
-        Interrupts that are above the maximum system call priority are keep
-        permanently enabled, even when the RTOS kernel is in a critical section,
-        but cannot make any calls to FreeRTOS API functions.  If configASSERT()
-        is defined in FreeRTOSConfig.h then
-        portASSERT_IF_INTERRUPT_PRIORITY_INVALID() will result in an assertion
-        failure if a FreeRTOS API function is called from an interrupt that has
-        been assigned a priority above the configured maximum system call
-        priority.  Only FreeRTOS functions that end in FromISR can be called
-        from interrupts that have been assigned a priority at or (logically)
-        below the maximum system call interrupt priority.  FreeRTOS maintains a
-        separate interrupt safe API to ensure interrupt entry is as fast and as
-        simple as possible.  More information (albeit Cortex-M specific) is
-        provided on the following link:
-        http://www.freertos.org/RTOS-Cortex-M3-M4.html */
+         * maximum  system call (or maximum API call) interrupt priority.
+         * Interrupts that are  above the maximum system call priority are keep
+         * permanently enabled, even when the RTOS kernel is in a critical section,
+         * but cannot make any calls to FreeRTOS API functions.  If configASSERT()
+         * is defined in FreeRTOSConfig.h then
+         * portASSERT_IF_INTERRUPT_PRIORITY_INVALID() will result in an assertion
+         * failure if a FreeRTOS API function is called from an interrupt that has
+         * been assigned a priority above the configured maximum system call
+         * priority.  Only FreeRTOS functions that end in FromISR can be called
+         * from interrupts  that have been assigned a priority at or (logically)
+         * below the maximum system call interrupt priority.  FreeRTOS maintains a
+         * separate interrupt safe API to ensure interrupt entry is as fast and as
+         * simple as possible.  More information (albeit Cortex-M specific) is
+         * provided on the following link:
+         * https://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html */
         portASSERT_IF_INTERRUPT_PRIORITY_INVALID();
 
         pxTCB = xTaskToNotify;
 
         taskENTER_CRITICAL_ISR();
         {
-            ucOriginalNotifyState = pxTCB->ucNotifyState;
-            pxTCB->ucNotifyState = taskNOTIFICATION_RECEIVED;
+            ucOriginalNotifyState = pxTCB->ucNotifyState[ uxIndexToNotify ];
+            pxTCB->ucNotifyState[ uxIndexToNotify ] = taskNOTIFICATION_RECEIVED;
 
             /* 'Giving' is equivalent to incrementing a count in a counting
-            semaphore. */
-            ( pxTCB->ulNotifiedValue )++;
+             * semaphore. */
+            ( pxTCB->ulNotifiedValue[ uxIndexToNotify ] )++;
 
             traceTASK_NOTIFY_GIVE_FROM_ISR();
 
             /* If the task is in the blocked state specifically to wait for a
-            notification then unblock it now. */
+             * notification then unblock it now. */
             if( ucOriginalNotifyState == taskWAITING_NOTIFICATION )
             {
                 /* The task should not have been on an event list. */
@@ -5691,7 +5754,7 @@ TickType_t uxTaskResetEventItemValue( void )
                 else
                 {
                     /* The delayed and ready lists cannot be accessed, so hold
-                    this task pending until the scheduler is resumed. */
+                     * this task pending until the scheduler is resumed. */
                     vListInsertEnd( &( xPendingReadyList[xPortGetCoreID()] ), &( pxTCB->xEventListItem ) );
                 }
 
@@ -5699,7 +5762,7 @@ TickType_t uxTaskResetEventItemValue( void )
                 if( tskCAN_RUN_HERE(pxTCB->xCoreID) && pxTCB->uxPriority > pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
                 {
                     /* The notified task has a priority above the currently
-                    executing task so a yield is required. */
+                     * executing task so a yield is required. */
                     if( pxHigherPriorityTaskWoken != NULL )
                     {
                         *pxHigherPriorityTaskWoken = pdTRUE;
@@ -5720,25 +5783,27 @@ TickType_t uxTaskResetEventItemValue( void )
     }
 
 #endif /* configUSE_TASK_NOTIFICATIONS */
-
 /*-----------------------------------------------------------*/
 
-#if( configUSE_TASK_NOTIFICATIONS == 1 )
+#if ( configUSE_TASK_NOTIFICATIONS == 1 )
 
-    BaseType_t xTaskNotifyStateClear( TaskHandle_t xTask )
+    BaseType_t xTaskGenericNotifyStateClear( TaskHandle_t xTask,
+                                             UBaseType_t uxIndexToClear )
     {
-    TCB_t *pxTCB;
-    BaseType_t xReturn;
+        TCB_t * pxTCB;
+        BaseType_t xReturn;
+
+        configASSERT( uxIndexToClear < configTASK_NOTIFICATION_ARRAY_ENTRIES );
 
         /* If null is passed in here then it is the calling task that is having
-        its notification state cleared. */
+         * its notification state cleared. */
         pxTCB = prvGetTCBFromHandle( xTask );
 
         taskENTER_CRITICAL();
         {
-            if( pxTCB->ucNotifyState == taskNOTIFICATION_RECEIVED )
+            if( pxTCB->ucNotifyState[ uxIndexToClear ] == taskNOTIFICATION_RECEIVED )
             {
-                pxTCB->ucNotifyState = taskNOT_WAITING_NOTIFICATION;
+                pxTCB->ucNotifyState[ uxIndexToClear ] = taskNOT_WAITING_NOTIFICATION;
                 xReturn = pdPASS;
             }
             else
@@ -5754,7 +5819,35 @@ TickType_t uxTaskResetEventItemValue( void )
 #endif /* configUSE_TASK_NOTIFICATIONS */
 /*-----------------------------------------------------------*/
 
-#if( ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) )
+#if ( configUSE_TASK_NOTIFICATIONS == 1 )
+
+    uint32_t ulTaskGenericNotifyValueClear( TaskHandle_t xTask,
+                                            UBaseType_t uxIndexToClear,
+                                            uint32_t ulBitsToClear )
+    {
+        TCB_t * pxTCB;
+        uint32_t ulReturn;
+
+        /* If null is passed in here then it is the calling task that is having
+         * its notification state cleared. */
+        pxTCB = prvGetTCBFromHandle( xTask );
+
+        taskENTER_CRITICAL();
+        {
+            /* Return the notification as it was before the bits were cleared,
+             * then clear the bit mask. */
+            ulReturn = pxTCB->ulNotifiedValue[ uxIndexToClear ];
+            pxTCB->ulNotifiedValue[ uxIndexToClear ] &= ~ulBitsToClear;
+        }
+        taskEXIT_CRITICAL();
+
+        return ulReturn;
+    }
+
+#endif /* configUSE_TASK_NOTIFICATIONS */
+/*-----------------------------------------------------------*/
+
+#if ( ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) )
 
     uint32_t ulTaskGetIdleRunTimeCounter( void )
     {
