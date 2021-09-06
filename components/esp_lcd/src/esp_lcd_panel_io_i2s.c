@@ -536,7 +536,7 @@ static unsigned long i2s_lcd_select_periph_clock(i2s_hal_context_t *hal)
 #error "invalid LCD peripheral clock source"
 #endif
     i2s_ll_tx_clk_set_src(hal->dev, clock_source);
-    i2s_ll_clk_cal_t clk_cal_config = {
+    i2s_ll_mclk_div_t clk_cal_config = {
         .mclk_div = LCD_PERIPH_CLOCK_PRE_SCALE,
         .a = 1,
         .b = 0,

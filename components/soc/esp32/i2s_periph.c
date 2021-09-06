@@ -21,23 +21,39 @@
 const i2s_signal_conn_t i2s_periph_signal[SOC_I2S_NUM] = {
     {
         .mck_out_sig  = -1, // Unavailable
-        .rx_bck_sig   = I2S0I_BCK_IN_IDX,
-        .tx_bck_sig   = I2S0O_BCK_OUT_IDX,
-        .tx_ws_sig    = I2S0O_WS_OUT_IDX,
-        .rx_ws_sig    = I2S0I_WS_IN_IDX,
+
+        .m_tx_bck_sig = I2S0O_BCK_OUT_IDX,
+        .m_rx_bck_sig = I2S0I_BCK_OUT_IDX,
+        .m_tx_ws_sig  = I2S0O_WS_OUT_IDX,
+        .m_rx_ws_sig  = I2S0I_WS_OUT_IDX,
+
+        .s_tx_bck_sig = I2S0O_BCK_IN_IDX,
+        .s_rx_bck_sig = I2S0I_BCK_IN_IDX,
+        .s_tx_ws_sig  = I2S0O_WS_IN_IDX,
+        .s_rx_ws_sig  = I2S0I_WS_IN_IDX,
+
         .data_out_sig = I2S0O_DATA_OUT23_IDX,
         .data_in_sig  = I2S0I_DATA_IN15_IDX,
+
         .irq          = ETS_I2S0_INTR_SOURCE,
         .module       = PERIPH_I2S0_MODULE,
     },
     {
         .mck_out_sig  = -1, // Unavailable
-        .rx_bck_sig   = I2S1I_BCK_IN_IDX,
-        .tx_bck_sig   = I2S1O_BCK_OUT_IDX,
-        .tx_ws_sig    = I2S1O_WS_OUT_IDX,
-        .rx_ws_sig    = I2S1I_WS_IN_IDX,
+
+        .m_tx_bck_sig = I2S1O_BCK_OUT_IDX,
+        .m_rx_bck_sig = I2S1I_BCK_OUT_IDX,
+        .m_tx_ws_sig  = I2S1O_WS_OUT_IDX,
+        .m_rx_ws_sig  = I2S1I_WS_OUT_IDX,
+
+        .s_tx_bck_sig = I2S1O_BCK_IN_IDX,
+        .s_rx_bck_sig = I2S1I_BCK_IN_IDX,
+        .s_tx_ws_sig  = I2S1O_WS_IN_IDX,
+        .s_rx_ws_sig  = I2S1I_WS_IN_IDX,
+
         .data_out_sig = I2S1O_DATA_OUT23_IDX,
         .data_in_sig  = I2S1I_DATA_IN15_IDX,
+
         .irq          = ETS_I2S1_INTR_SOURCE,
         .module       = PERIPH_I2S1_MODULE,
     }

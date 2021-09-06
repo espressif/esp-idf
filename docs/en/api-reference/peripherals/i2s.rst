@@ -166,11 +166,11 @@ Application Example
 
 A code example for the I2S driver can be found in the directory :example:`peripherals/i2s`.
 
-.. only:: SOC_I2S_SUPPORTS_ADC_DAC
+.. only:: SOC_I2S_SUPPORTS_ADC or SOC_I2S_SUPPORTS_DAC
 
     In addition, there are two short configuration examples for the I2S driver.
 
-.. only:: not SOC_I2S_SUPPORTS_ADC_DAC
+.. only:: not SOC_I2S_SUPPORTS_ADC or SOC_I2S_SUPPORTS_DAC
 
     In addition, there is a short configuration examples for the I2S driver.
 
@@ -310,7 +310,7 @@ Example for general usage.
 
         i2s_driver_uninstall(i2s_num); //stop & destroy i2s driver
 
-.. only:: SOC_I2S_SUPPORTS_ADC_DAC
+.. only:: SOC_I2S_SUPPORTS_ADC or SOC_I2S_SUPPORTS_DAC
 
     Configuring I2S to use internal DAC for analog output
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

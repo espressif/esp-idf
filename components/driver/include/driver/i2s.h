@@ -17,7 +17,7 @@
 #include "driver/periph_ctrl.h"
 #include "esp_intr_alloc.h"
 
-#if SOC_I2S_SUPPORTS_ADC_DAC
+#if SOC_I2S_SUPPORTS_ADC
 #include "driver/adc.h"
 #endif
 
@@ -355,7 +355,7 @@ esp_err_t i2s_stop(i2s_port_t i2s_num);
  *
  * @param i2s_num  I2S port number
  *
-* @return
+ * @return
  *     - ESP_OK              Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
@@ -430,7 +430,7 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
  */
 float i2s_get_clk(i2s_port_t i2s_num);
 
-#if SOC_I2S_SUPPORTS_ADC_DAC
+#if SOC_I2S_SUPPORTS_ADC
 /**
  * @brief Set built-in ADC mode for I2S DMA, this function will initialize ADC pad,
  *        and set ADC parameters.
@@ -466,7 +466,9 @@ esp_err_t i2s_adc_enable(i2s_port_t i2s_num);
  *     - ESP_ERR_INVALID_STATE  Driver state error
  */
 esp_err_t i2s_adc_disable(i2s_port_t i2s_num);
+#endif // SOC_I2S_SUPPORTS_ADC
 
+#if SOC_I2S_SUPPORTS_DAC
 /**
  * @brief Set I2S dac mode, I2S built-in DAC is disabled by default
  *
@@ -481,7 +483,7 @@ esp_err_t i2s_adc_disable(i2s_port_t i2s_num);
  *     - ESP_ERR_INVALID_ARG  Parameter error
  */
 esp_err_t i2s_set_dac_mode(i2s_dac_mode_t dac_mode);
-#endif //SOC_I2S_SUPPORTS_ADC_DAC
+#endif //SOC_I2S_SUPPORTS_DAC
 
 
 #ifdef __cplusplus
