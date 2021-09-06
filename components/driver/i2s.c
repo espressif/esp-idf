@@ -314,6 +314,14 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
         return ESP_ERR_INVALID_ARG;
     }
     p_i2s_obj[i2s_num]->sample_rate = rate;
+
+    /**
+     * Due to hardware issue, bck division on ESP32/ESP32-S2 should be greater than 8 in slave mode
+     * So the factor need to be an appropriate value
+     */
+    if (p_i2s_obj[i2s_num]->mode & I2S_MODE_SLAVE) {
+        factor = 16 * bits;
+    }
     double clkmdiv = (double)I2S_BASE_CLK / (rate * factor);
 
     if (clkmdiv > 256) {
@@ -485,7 +493,7 @@ static void IRAM_ATTR i2s_intr_handler_default(void *arg)
         //Avoid spurious interrupt
         return;
     }
-    
+
     i2s_event_t i2s_event;
     int dummy;
 
@@ -883,7 +891,7 @@ esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config,
         }
         memset(p_i2s_obj[i2s_num], 0, sizeof(i2s_obj_t));
 
-        portMUX_TYPE i2s_spinlock_unlocked[1] = {portMUX_INITIALIZER_UNLOCKED}; 
+        portMUX_TYPE i2s_spinlock_unlocked[1] = {portMUX_INITIALIZER_UNLOCKED};
         for (int x = 0; x < I2S_NUM_MAX; x++) {
             i2s_spinlock[x] = i2s_spinlock_unlocked[0];
         }
