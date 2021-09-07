@@ -47,10 +47,10 @@
  * MACROS AND DEFINITIONS
  *----------------------------------------------------------*/
 
-#define tskKERNEL_VERSION_NUMBER "V10.4.3"
-#define tskKERNEL_VERSION_MAJOR 10
-#define tskKERNEL_VERSION_MINOR 4
-#define tskKERNEL_VERSION_BUILD 3
+#define tskKERNEL_VERSION_NUMBER       "V10.4.3"
+#define tskKERNEL_VERSION_MAJOR        10
+#define tskKERNEL_VERSION_MINOR        4
+#define tskKERNEL_VERSION_BUILD        3
 
 /* MPU region parameters passed in ulParameters
  * of MemoryRegion_t struct. */
@@ -151,10 +151,8 @@ typedef struct xTASK_PARAMETERS
     #endif
 } TaskParameters_t;
 
-
-/*
- *  Used with the uxTaskGetSystemState() function to return the state of each task in the system.
- */
+/* Used with the uxTaskGetSystemState() function to return the state of each task
+ * in the system. */
 typedef struct xTASK_STATUS
 {
     TaskHandle_t xHandle;                            /* The handle of the task to which the rest of the information in the structure relates. */
@@ -163,8 +161,8 @@ typedef struct xTASK_STATUS
     eTaskState eCurrentState;                        /* The state in which the task existed when the structure was populated. */
     UBaseType_t uxCurrentPriority;                   /* The priority at which the task was running (may be inherited) when the structure was populated. */
     UBaseType_t uxBasePriority;                      /* The priority to which the task will return if the task's current priority has been inherited to avoid unbounded priority inversion when obtaining a mutex.  Only valid if configUSE_MUTEXES is defined as 1 in FreeRTOSConfig.h. */
-    uint32_t ulRunTimeCounter;                       /* The total run time allocated to the task so far, as defined by the run time stats clock.  See http://www.freertos.org/rtos-run-time-stats.html.  Only valid when configGENERATE_RUN_TIME_STATS is defined as 1 in FreeRTOSConfig.h. */
-    StackType_t *pxStackBase;                        /* Points to the lowest address of the task's stack area. */
+    uint32_t ulRunTimeCounter;                       /* The total run time allocated to the task so far, as defined by the run time stats clock.  See https://www.FreeRTOS.org/rtos-run-time-stats.html.  Only valid when configGENERATE_RUN_TIME_STATS is defined as 1 in FreeRTOSConfig.h. */
+    StackType_t * pxStackBase;                       /* Points to the lowest address of the task's stack area. */
     configSTACK_DEPTH_TYPE usStackHighWaterMark;     /* The minimum amount of stack space that has remained for the task since the task was created.  The closer this value is to zero the closer the task has come to overflowing its stack. */
 #if configTASKLIST_INCLUDE_COREID
     BaseType_t xCoreID;                              /*!< Core this task is pinned to (0, 1, or -1 for tskNO_AFFINITY). This field is present if CONFIG_FREERTOS_VTASKLIST_INCLUDE_COREID is set. */
@@ -1875,7 +1873,9 @@ uint8_t* pxTaskGetStackStart( TaskHandle_t xTask) PRIVILEGED_FUNCTION;
      *               configNUM_THREAD_LOCAL_STORAGE_POINTERS - 1.
      * @param pvValue  Pointer value to set.
      */
-    void vTaskSetThreadLocalStoragePointer( TaskHandle_t xTaskToSet, BaseType_t xIndex, void *pvValue ) PRIVILEGED_FUNCTION;
+    void vTaskSetThreadLocalStoragePointer( TaskHandle_t xTaskToSet,
+                                            BaseType_t xIndex,
+                                            void * pvValue ) PRIVILEGED_FUNCTION;
 
 
     /**
@@ -1891,7 +1891,8 @@ uint8_t* pxTaskGetStackStart( TaskHandle_t xTask) PRIVILEGED_FUNCTION;
      *               configNUM_THREAD_LOCAL_STORAGE_POINTERS - 1.
      * @return  Pointer value
      */
-    void *pvTaskGetThreadLocalStoragePointer( TaskHandle_t xTaskToQuery, BaseType_t xIndex ) PRIVILEGED_FUNCTION;
+    void * pvTaskGetThreadLocalStoragePointer( TaskHandle_t xTaskToQuery,
+                                               BaseType_t xIndex ) PRIVILEGED_FUNCTION;
 
     #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
 
@@ -2163,7 +2164,9 @@ void vTaskGetRunTimeStats( char * pcWriteBuffer ) PRIVILEGED_FUNCTION;     /*lin
 /**
  * @cond
  * task. h
- * @code{c}uint32_t ulTaskGetIdleRunTimeCounter( void );@endcode
+ * @code
+ * uint32_t ulTaskGetIdleRunTimeCounter( void );
+ * @endcode
  * @endcond
  *
  * configGENERATE_RUN_TIME_STATS and configUSE_STATS_FORMATTING_FUNCTIONS
@@ -2196,8 +2199,10 @@ uint32_t ulTaskGetIdleRunTimeCounter( void ) PRIVILEGED_FUNCTION;
 
 /**
  * task. h
- * <PRE>BaseType_t xTaskNotifyIndexed( TaskHandle_t xTaskToNotify, UBaseType_t uxIndexToNotify, uint32_t ulValue, eNotifyAction eAction );</PRE>
- * <PRE>BaseType_t xTaskNotify( TaskHandle_t xTaskToNotify, uint32_t ulValue, eNotifyAction eAction );</PRE>
+ * @code{c}
+ * BaseType_t xTaskNotifyIndexed( TaskHandle_t xTaskToNotify, UBaseType_t uxIndexToNotify, uint32_t ulValue, eNotifyAction eAction );
+ * BaseType_t xTaskNotify( TaskHandle_t xTaskToNotify, uint32_t ulValue, eNotifyAction eAction );
+ * @endcode
  *
  * See https://www.FreeRTOS.org/RTOS-task-notifications.html for details.
  *
@@ -2313,8 +2318,10 @@ BaseType_t xTaskGenericNotify( TaskHandle_t xTaskToNotify,
 
 /**
  * task. h
- * <PRE>BaseType_t xTaskNotifyAndQueryIndexed( TaskHandle_t xTaskToNotify, UBaseType_t uxIndexToNotify, uint32_t ulValue, eNotifyAction eAction, uint32_t *pulPreviousNotifyValue );</PRE>
- * <PRE>BaseType_t xTaskNotifyAndQuery( TaskHandle_t xTaskToNotify, uint32_t ulValue, eNotifyAction eAction, uint32_t *pulPreviousNotifyValue );</PRE>
+ * @code{c}
+ * BaseType_t xTaskNotifyAndQueryIndexed( TaskHandle_t xTaskToNotify, UBaseType_t uxIndexToNotify, uint32_t ulValue, eNotifyAction eAction, uint32_t *pulPreviousNotifyValue );
+ * BaseType_t xTaskNotifyAndQuery( TaskHandle_t xTaskToNotify, uint32_t ulValue, eNotifyAction eAction, uint32_t *pulPreviousNotifyValue );
+ * @endcode
  *
  * See https://www.FreeRTOS.org/RTOS-task-notifications.html for details.
  *
@@ -2340,8 +2347,10 @@ BaseType_t xTaskGenericNotify( TaskHandle_t xTaskToNotify,
 
 /**
  * task. h
- * <PRE>BaseType_t xTaskNotifyIndexedFromISR( TaskHandle_t xTaskToNotify, UBaseType_t uxIndexToNotify, uint32_t ulValue, eNotifyAction eAction, BaseType_t *pxHigherPriorityTaskWoken );</PRE>
- * <PRE>BaseType_t xTaskNotifyFromISR( TaskHandle_t xTaskToNotify, uint32_t ulValue, eNotifyAction eAction, BaseType_t *pxHigherPriorityTaskWoken );</PRE>
+ * @code{c}
+ * BaseType_t xTaskNotifyIndexedFromISR( TaskHandle_t xTaskToNotify, UBaseType_t uxIndexToNotify, uint32_t ulValue, eNotifyAction eAction, BaseType_t *pxHigherPriorityTaskWoken );
+ * BaseType_t xTaskNotifyFromISR( TaskHandle_t xTaskToNotify, uint32_t ulValue, eNotifyAction eAction, BaseType_t *pxHigherPriorityTaskWoken );
+ * @endcode
  *
  * See https://www.FreeRTOS.org/RTOS-task-notifications.html for details.
  *
@@ -2462,8 +2471,10 @@ BaseType_t xTaskGenericNotifyFromISR( TaskHandle_t xTaskToNotify,
 
 /**
  * task. h
- * <PRE>BaseType_t xTaskNotifyAndQueryIndexedFromISR( TaskHandle_t xTaskToNotify, UBaseType_t uxIndexToNotify, uint32_t ulValue, eNotifyAction eAction, uint32_t *pulPreviousNotificationValue, BaseType_t *pxHigherPriorityTaskWoken );</PRE>
- * <PRE>BaseType_t xTaskNotifyAndQueryFromISR( TaskHandle_t xTaskToNotify, uint32_t ulValue, eNotifyAction eAction, uint32_t *pulPreviousNotificationValue, BaseType_t *pxHigherPriorityTaskWoken );</PRE>
+ * @code{c}
+ * BaseType_t xTaskNotifyAndQueryIndexedFromISR( TaskHandle_t xTaskToNotify, UBaseType_t uxIndexToNotify, uint32_t ulValue, eNotifyAction eAction, uint32_t *pulPreviousNotificationValue, BaseType_t *pxHigherPriorityTaskWoken );
+ * BaseType_t xTaskNotifyAndQueryFromISR( TaskHandle_t xTaskToNotify, uint32_t ulValue, eNotifyAction eAction, uint32_t *pulPreviousNotificationValue, BaseType_t *pxHigherPriorityTaskWoken );
+ * @endcode
  *
  * See https://www.FreeRTOS.org/RTOS-task-notifications.html for details.
  *
@@ -2489,11 +2500,11 @@ BaseType_t xTaskGenericNotifyFromISR( TaskHandle_t xTaskToNotify,
 
 /**
  * task. h
- * <pre>
+ * @code{c}
  * BaseType_t xTaskNotifyWaitIndexed( UBaseType_t uxIndexToWaitOn, uint32_t ulBitsToClearOnEntry, uint32_t ulBitsToClearOnExit, uint32_t *pulNotificationValue, TickType_t xTicksToWait );
  *
  * BaseType_t xTaskNotifyWait( uint32_t ulBitsToClearOnEntry, uint32_t ulBitsToClearOnExit, uint32_t *pulNotificationValue, TickType_t xTicksToWait );
- * </pre>
+ * @endcode
  *
  * Waits for a direct to task notification to be pending at a given index within
  * an array of direct to task notifications.
@@ -2603,8 +2614,10 @@ BaseType_t xTaskGenericNotifyWait( UBaseType_t uxIndexToWaitOn,
 
 /**
  * task. h
- * <PRE>BaseType_t xTaskNotifyGiveIndexed( TaskHandle_t xTaskToNotify, UBaseType_t uxIndexToNotify );</PRE>
- * <PRE>BaseType_t xTaskNotifyGive( TaskHandle_t xTaskToNotify );</PRE>
+ * @code{c}
+ * BaseType_t xTaskNotifyGiveIndexed( TaskHandle_t xTaskToNotify, UBaseType_t uxIndexToNotify );
+ * BaseType_t xTaskNotifyGive( TaskHandle_t xTaskToNotify );
+ * @endcode
  *
  * Sends a direct to task notification to a particular index in the target
  * task's notification array in a manner similar to giving a counting semaphore.
@@ -2678,8 +2691,10 @@ BaseType_t xTaskGenericNotifyWait( UBaseType_t uxIndexToWaitOn,
 
 /**
  * task. h
- * <PRE>void vTaskNotifyGiveIndexedFromISR( TaskHandle_t xTaskHandle, UBaseType_t uxIndexToNotify, BaseType_t *pxHigherPriorityTaskWoken );</PRE>
- * <PRE>void vTaskNotifyGiveFromISR( TaskHandle_t xTaskHandle, BaseType_t *pxHigherPriorityTaskWoken );</PRE>
+ * @code{c}
+ * void vTaskNotifyGiveIndexedFromISR( TaskHandle_t xTaskHandle, UBaseType_t uxIndexToNotify, BaseType_t *pxHigherPriorityTaskWoken );
+ * void vTaskNotifyGiveFromISR( TaskHandle_t xTaskHandle, BaseType_t *pxHigherPriorityTaskWoken );
+ * @endcode
  *
  * A version of xTaskNotifyGiveIndexed() that can be called from an interrupt
  * service routine (ISR).
@@ -2763,11 +2778,11 @@ void vTaskGenericNotifyGiveFromISR( TaskHandle_t xTaskToNotify,
 
 /**
  * task. h
- * <pre>
+ * @code{c}
  * uint32_t ulTaskNotifyTakeIndexed( UBaseType_t uxIndexToWaitOn, BaseType_t xClearCountOnExit, TickType_t xTicksToWait );
  *
  * uint32_t ulTaskNotifyTake( BaseType_t xClearCountOnExit, TickType_t xTicksToWait );
- * </pre>
+ * @endcode
  *
  * Waits for a direct to task notification on a particular index in the calling
  * task's notification array in a manner similar to taking a counting semaphore.
@@ -2869,11 +2884,11 @@ uint32_t ulTaskGenericNotifyTake( UBaseType_t uxIndexToWaitOn,
 
 /**
  * task. h
- * <pre>
+ * @code{c}
  * BaseType_t xTaskNotifyStateClearIndexed( TaskHandle_t xTask, UBaseType_t uxIndexToCLear );
  *
  * BaseType_t xTaskNotifyStateClear( TaskHandle_t xTask );
- * </pre>
+ * @endcode
  *
  * See https://www.FreeRTOS.org/RTOS-task-notifications.html for details.
  *
@@ -2933,11 +2948,11 @@ BaseType_t xTaskGenericNotifyStateClear( TaskHandle_t xTask,
 
 /**
  * task. h
- * <pre>
+ * @code{c}
  * uint32_t ulTaskNotifyValueClearIndexed( TaskHandle_t xTask, UBaseType_t uxIndexToClear, uint32_t ulBitsToClear );
  *
  * uint32_t ulTaskNotifyValueClear( TaskHandle_t xTask, uint32_t ulBitsToClear );
- * </pre>
+ * @endcode
  *
  * See https://www.FreeRTOS.org/RTOS-task-notifications.html for details.
  *
@@ -2997,6 +3012,148 @@ uint32_t ulTaskGenericNotifyValueClear( TaskHandle_t xTask,
 #define ulTaskNotifyValueClearIndexed( xTask, uxIndexToClear, ulBitsToClear ) \
     ulTaskGenericNotifyValueClear( ( xTask ), ( uxIndexToClear ), ( ulBitsToClear ) )
 
+/**
+ * @cond
+ * task.h
+ * @code{c}
+ * void vTaskSetTimeOutState( TimeOut_t * const pxTimeOut );
+ * @endcode
+ * @endcond
+ *
+ * Capture the current time for future use with xTaskCheckForTimeOut().
+ *
+ * @param pxTimeOut Pointer to a timeout object into which the current time
+ * is to be captured.  The captured time includes the tick count and the number
+ * of times the tick count has overflowed since the system first booted.
+ * \defgroup vTaskSetTimeOutState vTaskSetTimeOutState
+ * @cond
+ * \ingroup TaskCtrl
+ * @endcond
+ */
+void vTaskSetTimeOutState( TimeOut_t * const pxTimeOut ) PRIVILEGED_FUNCTION;
+
+/**
+ * @cond
+ * task.h
+ * @code
+ * BaseType_t xTaskCheckForTimeOut( TimeOut_t * const pxTimeOut, TickType_t * const pxTicksToWait );
+ * @endcode
+ * @endcond
+ *
+ * Determines if pxTicksToWait ticks has passed since a time was captured
+ * using a call to vTaskSetTimeOutState().  The captured time includes the tick
+ * count and the number of times the tick count has overflowed.
+ *
+ * @param pxTimeOut The time status as captured previously using
+ * vTaskSetTimeOutState. If the timeout has not yet occurred, it is updated
+ * to reflect the current time status.
+ * @param pxTicksToWait The number of ticks to check for timeout i.e. if
+ * pxTicksToWait ticks have passed since pxTimeOut was last updated (either by
+ * vTaskSetTimeOutState() or xTaskCheckForTimeOut()), the timeout has occurred.
+ * If the timeout has not occurred, pxTIcksToWait is updated to reflect the
+ * number of remaining ticks.
+ *
+ * @return If timeout has occurred, pdTRUE is returned. Otherwise pdFALSE is
+ * returned and pxTicksToWait is updated to reflect the number of remaining
+ * ticks.
+ *
+ * @see https://www.FreeRTOS.org/xTaskCheckForTimeOut.html
+ *
+ * Example Usage:
+ * @code
+ *  // Driver library function used to receive uxWantedBytes from an Rx buffer
+ *  // that is filled by a UART interrupt. If there are not enough bytes in the
+ *  // Rx buffer then the task enters the Blocked state until it is notified that
+ *  // more data has been placed into the buffer. If there is still not enough
+ *  // data then the task re-enters the Blocked state, and xTaskCheckForTimeOut()
+ *  // is used to re-calculate the Block time to ensure the total amount of time
+ *  // spent in the Blocked state does not exceed MAX_TIME_TO_WAIT. This
+ *  // continues until either the buffer contains at least uxWantedBytes bytes,
+ *  // or the total amount of time spent in the Blocked state reaches
+ *  // MAX_TIME_TO_WAIT – at which point the task reads however many bytes are
+ *  // available up to a maximum of uxWantedBytes.
+ *
+ *  size_t xUART_Receive( uint8_t *pucBuffer, size_t uxWantedBytes )
+ *  {
+ *  size_t uxReceived = 0;
+ *  TickType_t xTicksToWait = MAX_TIME_TO_WAIT;
+ *  TimeOut_t xTimeOut;
+ *
+ *      // Initialize xTimeOut.  This records the time at which this function
+ *      // was entered.
+ *      vTaskSetTimeOutState( &xTimeOut );
+ *
+ *      // Loop until the buffer contains the wanted number of bytes, or a
+ *      // timeout occurs.
+ *      while( UART_bytes_in_rx_buffer( pxUARTInstance ) < uxWantedBytes )
+ *      {
+ *          // The buffer didn't contain enough data so this task is going to
+ *          // enter the Blocked state. Adjusting xTicksToWait to account for
+ *          // any time that has been spent in the Blocked state within this
+ *          // function so far to ensure the total amount of time spent in the
+ *          // Blocked state does not exceed MAX_TIME_TO_WAIT.
+ *          if( xTaskCheckForTimeOut( &xTimeOut, &xTicksToWait ) != pdFALSE )
+ *          {
+ *              //Timed out before the wanted number of bytes were available,
+ *              // exit the loop.
+ *              break;
+ *          }
+ *
+ *          // Wait for a maximum of xTicksToWait ticks to be notified that the
+ *          // receive interrupt has placed more data into the buffer.
+ *          ulTaskNotifyTake( pdTRUE, xTicksToWait );
+ *      }
+ *
+ *      // Attempt to read uxWantedBytes from the receive buffer into pucBuffer.
+ *      // The actual number of bytes read (which might be less than
+ *      // uxWantedBytes) is returned.
+ *      uxReceived = UART_read_from_receive_buffer( pxUARTInstance,
+ *                                                  pucBuffer,
+ *                                                  uxWantedBytes );
+ *
+ *      return uxReceived;
+ *  }
+ * @endcode
+ * @cond
+ * \defgroup xTaskCheckForTimeOut xTaskCheckForTimeOut
+ * @endcond
+ * \ingroup TaskCtrl
+ */
+BaseType_t xTaskCheckForTimeOut( TimeOut_t * const pxTimeOut,
+                                 TickType_t * const pxTicksToWait ) PRIVILEGED_FUNCTION;
+
+/**
+ * @cond
+ * task.h
+ * @code{c}
+ * BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp );
+ * @endcode
+ * @endcond
+ *
+ * This function corrects the tick count value after the application code has held
+ * interrupts disabled for an extended period resulting in tick interrupts having
+ * been missed.
+ *
+ * This function is similar to vTaskStepTick(), however, unlike
+ * vTaskStepTick(), xTaskCatchUpTicks() may move the tick count forward past a
+ * time at which a task should be removed from the blocked state.  That means
+ * tasks may have to be removed from the blocked state as the tick count is
+ * moved.
+ *
+ * @param xTicksToCatchUp The number of tick interrupts that have been missed due to
+ * interrupts being disabled.  Its value is not computed automatically, so must be
+ * computed by the application writer.
+ *
+ * @return pdTRUE if moving the tick count forward resulted in a task leaving the
+ * blocked state and a context switch being performed.  Otherwise pdFALSE.
+ *
+ * \defgroup xTaskCatchUpTicks xTaskCatchUpTicks
+ * @cond
+ * \ingroup TaskCtrl
+ * @endcond
+ */
+BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp ) PRIVILEGED_FUNCTION;
+
 
 /*-----------------------------------------------------------
  * SCHEDULER INTERNALS AVAILABLE FOR PORTING PURPOSES
@@ -3022,7 +3179,6 @@ TaskHandle_t xTaskGetCurrentTaskHandleForCPU( BaseType_t cpuid );
  * xTaskGetIdleTaskHandleForCPU() before the scheduler has been started.
  */
 TaskHandle_t xTaskGetIdleTaskHandleForCPU( UBaseType_t cpuid );
-
 
 /*
  * Get the current core affinity of a task
@@ -3148,17 +3304,6 @@ TickType_t uxTaskResetEventItemValue( void ) PRIVILEGED_FUNCTION;
 TaskHandle_t xTaskGetCurrentTaskHandle( void ) PRIVILEGED_FUNCTION;
 
 /*
- * Capture the current time status for future reference.
- */
-void vTaskSetTimeOutState( TimeOut_t * const pxTimeOut ) PRIVILEGED_FUNCTION;
-
-/*
- * Compare the time status now with that previously captured to see if the
- * timeout has expired.
- */
-BaseType_t xTaskCheckForTimeOut( TimeOut_t * const pxTimeOut, TickType_t * const pxTicksToWait ) PRIVILEGED_FUNCTION;
-
-/*
  * Shortcut used by the queue implementation to prevent unnecessary call to
  * taskYIELD();
  */
@@ -3219,19 +3364,6 @@ void vTaskSetTaskNumber( TaskHandle_t xTask,
  * equal to the idle period.
  */
 void vTaskStepTick( const TickType_t xTicksToJump ) PRIVILEGED_FUNCTION;
-
-/* Correct the tick count value after the application code has held
-interrupts disabled for an extended period.  xTicksToCatchUp is the number
-of tick interrupts that have been missed due to interrupts being disabled.
-Its value is not computed automatically, so must be computed by the
-application writer.
-
-This function is similar to vTaskStepTick(), however, unlike
-vTaskStepTick(), xTaskCatchUpTicks() may move the tick count forward past a
-time at which a task should be removed from the blocked state.  That means
-tasks may have to be removed from the blocked state as the tick count is
-moved. */
-BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp ) PRIVILEGED_FUNCTION;
 
 /*
  * Only available when configUSE_TICKLESS_IDLE is set to 1.

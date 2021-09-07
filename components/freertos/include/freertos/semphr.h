@@ -963,7 +963,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  * returned.
  *
  * Example usage:
- * @code
+ * @code{c}
  *  SemaphoreHandle_t xSemaphore;
  *  StaticSemaphore_t xMutexBuffer;
  *
