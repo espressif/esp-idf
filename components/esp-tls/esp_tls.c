@@ -575,17 +575,14 @@ mbedtls_x509_crt *esp_tls_get_global_ca_store(void)
 int esp_tls_cfg_server_session_tickets_init(esp_tls_cfg_server_t *cfg)
 {
 #if defined(CONFIG_ESP_TLS_USING_MBEDTLS) && defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
-    if (cfg->ticket_ctx) {
+    if (!cfg || cfg->ticket_ctx) {
         return ESP_ERR_INVALID_ARG;
     }
     cfg->ticket_ctx = calloc(1, sizeof(esp_tls_session_ticket_ctx_t));
     if (!cfg->ticket_ctx) {
         return ESP_ERR_NO_MEM;
     }
-    if (_esp_tls_session_ticket_ctx_init(cfg->ticket_ctx) != ESP_OK) {
-        return ESP_FAIL;
-    }
-    return ESP_OK;
+    return _esp_tls_session_ticket_ctx_init(cfg->ticket_ctx);
 #else
     return ESP_ERR_NOT_SUPPORTED;
 #endif
@@ -594,7 +591,9 @@ int esp_tls_cfg_server_session_tickets_init(esp_tls_cfg_server_t *cfg)
 void esp_tls_cfg_server_session_tickets_free(esp_tls_cfg_server_t *cfg)
 {
 #if defined(CONFIG_ESP_TLS_USING_MBEDTLS) && defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
-    _esp_tls_session_ticket_ctx_free(cfg->ticket_ctx);
+    if (cfg && cfg->ticket_ctx) {
+        _esp_tls_session_ticket_ctx_free(cfg->ticket_ctx);
+    }
 #endif
 }
 

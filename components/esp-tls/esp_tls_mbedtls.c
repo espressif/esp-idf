@@ -394,6 +394,9 @@ int esp_mbedtls_session_ticket_parse(void *p_ticket, mbedtls_ssl_session *sessio
 
 int esp_mbedtls_session_ticket_ctx_init(esp_tls_session_ticket_ctx_t *ctx)
 {
+    if (!ctx) {
+        return ESP_ERR_INVALID_ARG;
+    }
     mbedtls_ctr_drbg_init(&ctx->ctr_drbg);
     mbedtls_entropy_init(&ctx->entropy);
     mbedtls_ssl_ticket_init(&ctx->ticket_ctx);
@@ -417,9 +420,11 @@ int esp_mbedtls_session_ticket_ctx_init(esp_tls_session_ticket_ctx_t *ctx)
 
 void esp_mbedtls_session_ticket_ctx_free(esp_tls_session_ticket_ctx_t *ctx)
 {
-    mbedtls_ssl_ticket_free(&ctx->ticket_ctx);
-    mbedtls_ctr_drbg_init(&ctx->ctr_drbg);
-    mbedtls_entropy_free(&ctx->entropy);
+    if (ctx) {
+        mbedtls_ssl_ticket_free(&ctx->ticket_ctx);
+        mbedtls_ctr_drbg_init(&ctx->ctr_drbg);
+        mbedtls_entropy_free(&ctx->entropy);
+    }
 }
 #endif
 
