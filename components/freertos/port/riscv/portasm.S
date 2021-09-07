@@ -88,12 +88,13 @@ isr_skip_decrement:
     lw t2, 0x0(t0)
     beq t2, zero, no_switch
 
-    /* preserve return address and schedule next task */
-    addi sp,sp,-4
+    /* preserve return address and schedule next task
+       stack pointer for riscv should always be 16 byte aligned */
+    addi sp,sp,-16
     sw  ra, 0(sp)
     call vTaskSwitchContext
     lw  ra, 0(sp)
-    addi sp, sp, 4
+    addi sp, sp, 16
 
     /* Clears the switch pending flag */
     la t0, xPortSwitchFlag

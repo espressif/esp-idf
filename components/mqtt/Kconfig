@@ -15,6 +15,7 @@ menu "ESP-MQTT Configurations"
     config MQTT_TRANSPORT_WEBSOCKET
         bool "Enable MQTT over Websocket"
         default y
+        depends on WS_TRANSPORT
         help
             Enable MQTT transport over Websocket.
 

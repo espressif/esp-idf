@@ -2,35 +2,24 @@
  * SHA1 hash implementation and interface functions
  * Copyright (c) 2003-2005, Jouni Malinen <j@w1.fi>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * Alternatively, this software may be distributed under the terms of BSD
- * license.
- *
- * See README and COPYING for more details.
+ * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
  */
 
-#include "utils/includes.h"
+#include "includes.h"
 
-#include "utils/common.h"
+#include "common.h"
 #include "sha1.h"
 #include "sha1_i.h"
 #include "md5.h"
 #include "crypto.h"
-
-#ifdef USE_MBEDTLS_CRYPTO
-#include "mbedtls/sha1.h"
-#endif
 
 typedef struct SHA1Context SHA1_CTX;
 
 void SHA1Transform(u32 state[5], const unsigned char buffer[64]);
 
 
-
-#ifndef USE_MBEDTLS_CRYPTO
+#ifdef CONFIG_CRYPTO_INTERNAL
 /**
  * sha1_vector - SHA-1 hash for data vector
  * @num_elem: Number of elements in the data vector
@@ -39,11 +28,13 @@ void SHA1Transform(u32 state[5], const unsigned char buffer[64]);
  * @mac: Buffer for the hash
  * Returns: 0 on success, -1 of failure
  */
-int
-sha1_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
+int sha1_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 {
 	SHA1_CTX ctx;
 	size_t i;
+
+	if (TEST_FAIL())
+		return -1;
 
 	SHA1Init(&ctx);
 	for (i = 0; i < num_elem; i++)
@@ -51,49 +42,8 @@ sha1_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 	SHA1Final(mac, &ctx);
 	return 0;
 }
-#else
-/**
- * sha1_vector - SHA-1 hash for data vector
- * @num_elem: Number of elements in the data vector
- * @addr: Pointers to the data areas
- * @len: Lengths of the data blocks
- * @mac: Buffer for the hash
- * Returns: 0 on success, -1 of failure
- */
-int
-sha1_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
-{
-    mbedtls_sha1_context ctx;
-	size_t i;
-    int ret;
+#endif /* CONFIG_CRYPTO_INTERNAL */
 
-    mbedtls_sha1_init( &ctx );
-
-    if ((ret = mbedtls_sha1_starts_ret( &ctx)) != 0) {
-        goto exit;
-    }
-
-
-    for (i = 0; i < num_elem; i++) {
-        if ((ret = mbedtls_sha1_update_ret(&ctx, addr[i], len[i])) != 0) {
-            goto exit;
-        }
-    }
-
-    if ((ret = mbedtls_sha1_finish_ret( &ctx, mac)) != 0) {
-        goto exit;
-    }
-
-exit:
-    mbedtls_sha1_free( &ctx );
-
-    if (ret) {
-        return -1;
-    }
-
-    return 0;
-}
-#endif
 
 /* ===== start - public domain SHA1 implementation ===== */
 
@@ -223,8 +173,7 @@ void SHAPrintContext(SHA1_CTX *context, char *msg)
 
 /* Hash a single 512-bit block. This is the core of the algorithm. */
 
-void
-SHA1Transform(u32 state[5], const unsigned char buffer[64])
+void SHA1Transform(u32 state[5], const unsigned char buffer[64])
 {
 	u32 a, b, c, d, e;
 	typedef union {
@@ -275,15 +224,14 @@ SHA1Transform(u32 state[5], const unsigned char buffer[64])
 	/* Wipe variables */
 	a = b = c = d = e = 0;
 #ifdef SHA1HANDSOFF
-	os_memset(block, 0, 64);
+	forced_memzero(block, 64);
 #endif
 }
 
 
 /* SHA1Init - Initialize new context */
 
-void
-SHA1Init(SHA1_CTX* context)
+void SHA1Init(SHA1_CTX* context)
 {
 	/* SHA1 initialization constants */
 	context->state[0] = 0x67452301;
@@ -297,8 +245,7 @@ SHA1Init(SHA1_CTX* context)
 
 /* Run your data through this. */
 
-void
-SHA1Update(SHA1_CTX* context, const void *_data, u32 len)
+void SHA1Update(SHA1_CTX* context, const void *_data, u32 len)
 {
 	u32 i, j;
 	const unsigned char *data = _data;
@@ -328,8 +275,7 @@ SHA1Update(SHA1_CTX* context, const void *_data, u32 len)
 
 /* Add padding and return the message digest. */
 
-void
-SHA1Final(unsigned char digest[20], SHA1_CTX* context)
+void SHA1Final(unsigned char digest[20], SHA1_CTX* context)
 {
 	u32 i;
 	unsigned char finalcount[8];
@@ -351,10 +297,10 @@ SHA1Final(unsigned char digest[20], SHA1_CTX* context)
 			 255);
 	}
 	/* Wipe variables */
-	i = 0;
 	os_memset(context->buffer, 0, 64);
 	os_memset(context->state, 0, 20);
 	os_memset(context->count, 0, 8);
-	os_memset(finalcount, 0, 8);
+	forced_memzero(finalcount, sizeof(finalcount));
 }
+
 /* ===== end - public domain SHA1 implementation ===== */

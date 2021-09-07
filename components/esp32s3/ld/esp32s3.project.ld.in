@@ -314,20 +314,39 @@ SECTIONS
     _flash_cache_start = ABSOLUTE(0);
   } > default_code_seg
 
+  /**
+   * This dummy section represents the .flash.text section but in default_rodata_seg.
+   * Thus, it must have its alignement and (at least) its size.
+   */
   .flash_rodata_dummy (NOLOAD):
   {
-    . = SIZEOF(.flash.text);
+    _flash_rodata_dummy_start = .;
+    /* Start at the same alignement constraint than .flash.text */
+    . = ALIGN(ALIGNOF(.flash.text));
+    /* Create an empty gap as big as .flash.text section */
+    . = . + SIZEOF(.flash.text);
+    /* Prepare the alignement of the section above. Few bytes (0x20) must be
+     * added for the mapping header. */
     . = ALIGN(0x10000) + 0x20;
     _rodata_reserved_start = .;
   } > default_rodata_seg
 
-  /* When modifying the alignment, don't forget to update tls_section_alignment in pxPortInitialiseStack */
-  .flash.rodata : ALIGN(0x10)
+  .flash.appdesc : ALIGN(0x10)
   {
     _rodata_start = ABSOLUTE(.);
 
     *(.rodata_desc .rodata_desc.*)               /* Should be the first.  App version info.        DO NOT PUT ANYTHING BEFORE IT! */
     *(.rodata_custom_desc .rodata_custom_desc.*) /* Should be the second. Custom app version info. DO NOT PUT ANYTHING BEFORE IT! */
+
+    /* Create an empty gap within this section. Thanks to this, the end of this
+     * section will match .flah.rodata's begin address. Thus, both sections
+     * will be merged when creating the final bin image. */
+    . = ALIGN(ALIGNOF(.flash.rodata));
+  } >default_rodata_seg
+
+  .flash.rodata : ALIGN(0x10)
+  {
+    _flash_rodata_start = ABSOLUTE(.);
 
     mapping[flash_rodata]
 
@@ -380,6 +399,14 @@ SECTIONS
     _thread_local_end = ABSOLUTE(.);
     _rodata_reserved_end = ABSOLUTE(.);
     . = ALIGN(4);
+  } > default_rodata_seg
+
+  _flash_rodata_align = ALIGNOF(.flash.rodata);
+
+  .flash.rodata_noload (NOLOAD) :
+  {
+    . = ALIGN (4);
+    mapping[rodata_noload]
   } > default_rodata_seg
 
   /* Marks the end of IRAM code segment */

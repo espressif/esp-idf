@@ -605,19 +605,20 @@ esp_err_t esp_wifi_get_channel(uint8_t *primary, wifi_second_chan_t *second);
 /**
   * @brief     configure country info
   *
-  * @attention 1. The default country is {.cc="CN", .schan=1, .nchan=13, policy=WIFI_COUNTRY_POLICY_AUTO}
-  * @attention 2. When the country policy is WIFI_COUNTRY_POLICY_AUTO, the country info of the AP to which
+  * @attention 1. It is discouraged to call this API since this doesn't validate the per-country rules,
+  *               it's up to the user to fill in all fields according to local regulations.
+  *               Please use esp_wifi_set_country_code instead.
+  * @attention 2. The default country is CHINA {.cc="CN", .schan=1, .nchan=13, policy=WIFI_COUNTRY_POLICY_AUTO}
+  * @attention 3. When the country policy is WIFI_COUNTRY_POLICY_AUTO, the country info of the AP to which
   *               the station is connected is used. E.g. if the configured country info is {.cc="USA", .schan=1, .nchan=11}
   *               and the country info of the AP to which the station is connected is {.cc="JP", .schan=1, .nchan=14}
   *               then the country info that will be used is {.cc="JP", .schan=1, .nchan=14}. If the station disconnected
-  *               from the AP the country info is set back back to the country info of the station automatically,
+  *               from the AP the country info is set back to the country info of the station automatically,
   *               {.cc="US", .schan=1, .nchan=11} in the example.
-  * @attention 3. When the country policy is WIFI_COUNTRY_POLICY_MANUAL, always use the configured country info.
-  * @attention 4. When the country info is changed because of configuration or because the station connects to a different
-  *               external AP, the country IE in probe response/beacon of the soft-AP is changed also.
-  * @attention 5. The country configuration is stored into flash.
-  * @attention 6. This API doesn't validate the per-country rules, it's up to the user to fill in all fields according to
-  *               local regulations.
+  * @attention 4. When the country policy is WIFI_COUNTRY_POLICY_MANUAL, then the configured country info is used always.
+  * @attention 5. When the country info is changed because of configuration or because the station connects to a different
+  *               external AP, the country IE in probe response/beacon of the soft-AP is also changed.
+  * @attention 6. The country configuration is stored into flash.
   * @attention 7. When this API is called, the PHY init data will switch to the PHY init data type corresponding to the
   *               country info.
   *
@@ -1178,6 +1179,31 @@ esp_err_t esp_wifi_set_rssi_threshold(int32_t rssi);
 esp_err_t esp_wifi_ftm_initiate_session(wifi_ftm_initiator_cfg_t *cfg);
 
 /**
+  * @brief      End the ongoing FTM Initiator session
+  *
+  * @attention  This API works only on FTM Initiator
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_wifi_ftm_end_session(void);
+
+/**
+  * @brief      Set offset in cm for FTM Responder. An equivalent offset is calculated in picoseconds
+  *             and added in TOD of FTM Measurement frame (T1).
+  *
+  * @attention  Use this API only in AP mode before performing FTM as responder
+  *
+  * @param      offset_cm  T1 Offset to be added in centimeters
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_wifi_ftm_resp_set_offset(int16_t offset_cm);
+
+/**
   * @brief      Enable or disable 11b rate of specified interface
   *
   * @attention  1. This API should be called after esp_wifi_init() and before esp_wifi_start().
@@ -1198,7 +1224,7 @@ esp_err_t esp_wifi_config_11b_rate(wifi_interface_t ifx, bool disable);
   * @attention  1. This API should be called after esp_wifi_init() and before esp_wifi_start().
   *
   * @param      ifx  Interface to be configured.
-  * @param      rate Only support 1M, 6M and MCS0_LGI
+  * @param      rate Phy rate to be configured.
   *
   * @return
   *    - ESP_OK: succeed
@@ -1217,6 +1243,65 @@ esp_err_t esp_wifi_config_espnow_rate(wifi_interface_t ifx, wifi_phy_rate_t rate
   * @param      interval  how much micriosecond would the chip wake up, from 1 to 65535.
   */
 esp_err_t esp_wifi_set_connectionless_wake_interval(uint16_t interval);
+
+/**
+  * @brief     configure country
+  *
+  * @attention 1. When ieee80211d_enabled, the country info of the AP to which
+  *               the station is connected is used. E.g. if the configured country is US
+  *               and the country info of the AP to which the station is connected is JP
+  *               then the country info that will be used is JP. If the station disconnected
+  *               from the AP the country info is set back to the country info of the station automatically,
+  *               US in the example.
+  * @attention 2. When ieee80211d_enabled is disabled, then the configured country info is used always.
+  * @attention 3. When the country info is changed because of configuration or because the station connects to a different
+  *               external AP, the country IE in probe response/beacon of the soft-AP is also changed.
+  * @attention 4. The country configuration is stored into flash.
+  * @attention 5. When this API is called, the PHY init data will switch to the PHY init data type corresponding to the
+  *               country info.
+  * @attention 6. Supported country codes are "01"(world safe mode) "AT","AU","BE","BG","BR",
+  *               "CA","CH","CN","CY","CZ","DE","DK","EE","ES","FI","FR","GB","GR","HK","HR","HU",
+  *               "IE","IN","IS","IT","JP","KR","LI","LT","LU","LV","MT","MX","NL","NO","NZ","PL","PT",
+  *               "RO","SE","SI","SK","TW","US"
+  *
+  * @attention 7. When country code "01" (world safe mode) is set, SoftAP mode won't contain country IE.
+  * @attention 8. The default country is "CN" and ieee80211d_enabled is TRUE.
+  *
+  * @param     country   the configured country ISO code
+  * @param     ieee80211d_enabled   802.11d is enabled or not
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_INVALID_ARG: invalid argument
+  */
+esp_err_t esp_wifi_set_country_code(const char *country, bool ieee80211d_enabled);
+
+/**
+  * @brief     get the current country code
+  *
+  * @param     country  country code
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_INVALID_ARG: invalid argument
+  */
+esp_err_t esp_wifi_get_country_code(char *country);
+
+/**
+  * @brief      Config 80211 tx rate of specified interface
+  *
+  * @attention  1. This API should be called after esp_wifi_init() and before esp_wifi_start().
+  *
+  * @param      ifx  Interface to be configured.
+  * @param      rate Phy rate to be configured.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_wifi_config_80211_tx_rate(wifi_interface_t ifx, wifi_phy_rate_t rate);
 
 #ifdef __cplusplus
 }

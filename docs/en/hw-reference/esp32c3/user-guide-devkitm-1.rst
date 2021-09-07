@@ -6,7 +6,7 @@ ESP32-C3-DevKitM-1
 
 This user guide will help you get started with ESP32-C3-DevKitM-1 and will also provide more in-depth information.
 
-ESP32-C3-DevKitM-1 is an entry-level development board based on `ESP32-C3-MINI-1 <https://www.espressif.com/en/products/modules>`_, a module named for its small size. This board integrates complete Wi-Fi and Bluetooth LE functions.
+ESP32-C3-DevKitM-1 is an entry-level development board based on `ESP32-C3-MINI-1 <https://www.espressif.com/sites/default/files/documentation/esp32-c3-mini-1_datasheet_en.pdf>`_, a module named for its small size. This board integrates complete Wi-Fi and Bluetooth LE functions.
 
 Most of the I/O pins on the ESP32-C3-MINI-1 module are broken out to the pin headers on both sides of this board for easy interfacing. Developers can either connect peripherals with jumper wires or mount ESP32-C3-DevKitM-1 on a breadboard. 
 
@@ -49,7 +49,7 @@ Description of Components
    * - Key Component
      - Description
    * - ESP32-C3-MINI-1
-     - ESP32-C3-MINI-1 is a general-purpose Wi-Fi and Bluetooth LE combo module that comes with a PCB antenna. At the core of this module is `ESP32-C3FN4 <https://www.espressif.com/en/products/socs/esp32-c3>`_, a chip that has an embedded flash of 4 MB. Since flash is packaged in the ESP32-C3FN4 chip, rather than integrated into the module, ESP32-C3-MINI-1 has a smaller package size.
+     - ESP32-C3-MINI-1 is a general-purpose Wi-Fi and Bluetooth LE combo module that comes with a PCB antenna. At the core of this module is `ESP32-C3FN4 <https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf>`_, a chip that has an embedded flash of 4 MB. Since flash is packaged in the ESP32-C3FN4 chip, rather than integrated into the module, ESP32-C3-MINI-1 has a smaller package size.
    * - 5 V to 3.3 V LDO
      - Power regulator that converts a 5 V supply into a 3.3 V output.
    * - 5 V Power On LED
@@ -124,76 +124,75 @@ Power Supply Options
 
 There are three mutually exclusive ways to provide power to the board:
 
-- Micro USB port, default power supply
-- 5V and GND header pins
-- 3V3 and GND header pins
+- Micro-USB port, default power supply
+- 5V and GND pin headers
+- 3V3 and GND pin headers
 
-It is recommended to use the first option: micro USB port.
+It is recommended to use the first option: micro-USB port.
 
 .. _user-guide-c3-devkitm-1-v1-header-blocks:
 
 Header Block
 ------------
 
-The two tables below provide the **Name** and **Function** of I/O header pins on both sides of the board, as shown in :ref:`user-guide-c3-devkitm-1-v1-board-front`. The numbering and names are the same as in the `ESP32-C3-DevKitM-1 Schematic <https://dl.espressif.com/dl/schematics/SCH_ESP32-C3-DEVKITM-1_V1_20200915A.pdf>`_ (PDF).
+The two tables below provide the **Name** and **Function** of the pin headers on both sides of the board (J1 and J3). The pin header names are shown in :ref:`user-guide-c3-devkitm-1-v1-board-front`. The numbering is the same as in the `ESP32-C3-DevKitM-1 Schematic`_ (PDF).
 
 J1
 ^^^
-===  ====  =====  ===================================
-No.  Name  Type   Function
-===  ====  =====  ===================================
-1    GND   G      Ground
-2    3V3   P      3.3 V power supply
-3    3V3   P      3.3 V power supply
-4    IO2   I/O/T  GPIO2, ADC1_CH2, FSPIQ
-5    IO3   I/O/T  GPIO3, ADC1_CH3
-6    GND   G      Ground
-7    RST   I      CHIP_PU
-8    GND   G      Ground
-9    IO0   I/O/T  GPIO0, ADC1_CH0, XTAL_32K_P
-10   IO1   I/O/T  GPIO1, ADC1_CH1, XTAL_32K_N
-11   IO10  I/O/T  GPIO10, FSPICS0
-12   GND   G      Ground
-13   5V    P      5 V power supply
-14   5V    P      5 V power supply
-15   GND   G      Ground
-===  ====  =====  ===================================
+===  ====  ==========  ===================================
+No.  Name  Type [1]_   Function
+===  ====  ==========  ===================================
+1    GND   G           Ground
+2    3V3   P           3.3 V power supply
+3    3V3   P           3.3 V power supply
+4    IO2   I/O/T       GPIO2 [2]_, ADC1_CH2, FSPIQ
+5    IO3   I/O/T       GPIO3, ADC1_CH3
+6    GND   G           Ground
+7    RST   I           CHIP_PU
+8    GND   G           Ground
+9    IO0   I/O/T       GPIO0, ADC1_CH0, XTAL_32K_P
+10   IO1   I/O/T       GPIO1, ADC1_CH1, XTAL_32K_N
+11   IO10  I/O/T       GPIO10, FSPICS0
+12   GND   G           Ground
+13   5V    P           5 V power supply
+14   5V    P           5 V power supply
+15   GND   G           Ground
+===  ====  ==========  ===================================
 
 J3
 ^^^
-===  ====  =====  ====================================
-No.  Name  Type   Function
-===  ====  =====  ====================================
-1    GND   G      Ground
-2    TX    I/O/T  GPIO21, U0TXD
-3    RX    I/O/T  GPIO20, U0RXD
-4    GND   G      Ground
-5    IO9   I/O/T  GPIO9
-6    IO8   I/O/T  GPIO8
-7    GND   G      Ground
-8    IO7   I/O/T  GPIO7, FSPID, MTDO
-9    IO6   I/O/T  GPIO6, FSPICLK, MTCK
-10   IO5   I/O/T  GPIO5, ADC2_CH0, FSPIWP, MTDI
-11   IO4   I/O/T  GPIO4, ADC1_CH4, FSPIHD, MTMS
-12   GND   G      Ground
-13   IO18  I/O/T  GPIO18
-14   IO19  I/O/T  GPIO19
-15   GND   G      Ground
-===  ====  =====  ====================================
+===  ====  ==========  ====================================
+No.  Name  Type [1]_   Function
+===  ====  ==========  ====================================
+1    GND   G           Ground
+2    TX    I/O/T       GPIO21, U0TXD
+3    RX    I/O/T       GPIO20, U0RXD
+4    GND   G           Ground
+5    IO9   I/O/T       GPIO9 [2]_
+6    IO8   I/O/T       GPIO8 [2]_, RGB LED
+7    GND   G           Ground
+8    IO7   I/O/T       GPIO7, FSPID, MTDO
+9    IO6   I/O/T       GPIO6, FSPICLK, MTCK
+10   IO5   I/O/T       GPIO5, ADC2_CH0, FSPIWP, MTDI
+11   IO4   I/O/T       GPIO4, ADC1_CH4, FSPIHD, MTMS
+12   GND   G           Ground
+13   IO18  I/O/T       GPIO18
+14   IO19  I/O/T       GPIO19
+15   GND   G           Ground
+===  ====  ==========  ====================================
 
-    P: Power supply;
-    I: Input;
-    O: Output;
-    T: High impedance.
+.. [1] P: Power supply; I: Input; O: Output; T: High impedance.
+.. [2] GPIO2, GPIO8, and GPIO9 are strapping pins of the ESP32-C3FN4 chip. During the chip's system reset, the latches of the strapping pins sample the voltage level as strapping bits, and hold these bits until the chip is powered down or shut down. For description and application of strapping pins, please refer to Section Strapping Pins in `ESP32-C3 Datasheet`_.
 
 Pin Layout
 ^^^^^^^^^^^
 .. figure:: ../../../_static/esp32-c3-devkitm-1-v1-pinout.png
     :align: center
-    :alt: ESP32-C3-DevKitM-1
+    :scale: 100%
+    :alt: ESP32-C3-DevKitM-1 (click to enlarge)
     :figclass: align-center
 
-    ESP32-C3-DevKitM-1 Pin Layout
+    ESP32-C3-DevKitM-1 Pin Layout (click to enlarge)
 
 Hardware Revision Details
 =========================
@@ -202,11 +201,16 @@ No previous versions available.
 
 Related Documents
 =================
-* `ESP32-C3 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf>`_ (PDF)
-* `ESP32-C3-MINI-1 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-c3-mini-1_datasheet_en.pdf>`_ (PDF)
-* `ESP32-C3-DevKitM-1 Schematic <https://dl.espressif.com/dl/schematics/SCH_ESP32-C3-DEVKITM-1_V1_20200915A.pdf>`_ (PDF)
+* `Build Secure and Cost-effective Connected Devices with ESP32-C3 <http://c3.espressif.com/>`_
+* `ESP32-C3 Datasheet`_ (PDF)
+* `ESP32-C3-MINI-1 Datasheet`_ (PDF)
+* `ESP32-C3-DevKitM-1 Schematic`_ (PDF)
 * `ESP32-C3-DevKitM-1 PCB Layout <https://dl.espressif.com/dl/schematics/PCB_ESP32-C3-DEVKITM-1_V1_20200915AA.pdf>`_ (PDF)
 * `ESP32-C3-DevKitM-1 Dimensions <https://dl.espressif.com/dl/schematics/DIMENSION_ESP32-C3-DEVKITM-1_V1_20200915AA.pdf>`_ (PDF)
 * `ESP32-C3-DevKitM-1 Dimensions source file <https://dl.espressif.com/dl/schematics/DIMENSION_ESP32-C3-DEVKITM-1_V1_20200915AA.dxf>`_ (DXF) - You can view it with `Autodesk Viewer <https://viewer.autodesk.com/>`_ online
 
 For further design documentation for the board, please contact us at `sales@espressif.com <sales@espressif.com>`_.
+
+.. _ESP32-C3 Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf
+.. _ESP32-C3-MINI-1 Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-c3-mini-1_datasheet_en.pdf
+.. _ESP32-C3-DevKitM-1 Schematic: https://dl.espressif.com/dl/schematics/SCH_ESP32-C3-DEVKITM-1_V1_20200915A.pdf

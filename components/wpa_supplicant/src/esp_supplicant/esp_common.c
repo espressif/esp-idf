@@ -177,7 +177,7 @@ static void esp_clear_bssid_flag(struct wpa_supplicant *wpa_s)
 
 static void esp_register_action_frame(struct wpa_supplicant *wpa_s)
 {
-	wpa_s->type &= ~WLAN_FC_STYPE_ACTION;
+	wpa_s->type &= ~(1 << WLAN_FC_STYPE_ACTION);
 	/* subtype is defined only for action frame */
 	wpa_s->subtype = 0;
 
@@ -257,6 +257,22 @@ void esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
 	wpa_cb->wpa_sta_rx_mgmt = esp_ieee80211_handle_rx_frm;
 }
 
+void esp_supplicant_common_deinit(void)
+{
+	struct wpa_supplicant *wpa_s = &g_wpa_supp;
+
+	if (esp_supplicant_post_evt(SIG_SUPPLICANT_DEL_TASK, 0) != 0) {
+		wpa_printf(MSG_ERROR, "failed to send task delete event");
+	}
+	esp_scan_deinit(wpa_s);
+	wpas_rrm_reset(wpa_s);
+	wpas_clear_beacon_rep_data(wpa_s);
+	esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED,
+			&esp_supplicant_sta_conn_handler);
+	esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED,
+			&esp_supplicant_sta_disconn_handler);
+}
+
 int esp_rrm_send_neighbor_rep_request(neighbor_rep_request_cb cb,
 				      void *cb_ctx)
 {
@@ -265,9 +281,7 @@ int esp_rrm_send_neighbor_rep_request(neighbor_rep_request_cb cb,
 	struct wifi_ssid *ssid = esp_wifi_sta_get_prof_ssid_internal();
 	os_memcpy(wpa_ssid.ssid, ssid->ssid, ssid->len);
 	wpa_ssid.ssid_len = ssid->len;
-	wpas_rrm_send_neighbor_rep_request(wpa_s, &wpa_ssid, 0, 0, cb, cb_ctx);
-
-	return 0;
+	return wpas_rrm_send_neighbor_rep_request(wpa_s, &wpa_ssid, 0, 0, cb, cb_ctx);
 }
 
 int esp_wnm_send_bss_transition_mgmt_query(enum btm_query_reason query_reason,

@@ -38,6 +38,7 @@ INPUT = \
     $(IDF_PATH)/components/esp_event/include/esp_event_base.h \
     $(IDF_PATH)/components/esp_event/include/esp_event_legacy.h \
     $(IDF_PATH)/components/bt/include/esp32/include/esp_bt.h \
+    $(IDF_PATH)/components/bt/common/api/include/api/esp_blufi_api.h \
     $(IDF_PATH)/components/bt/host/bluedroid/api/include/api/esp_bt_defs.h \
     $(IDF_PATH)/components/bt/host/bluedroid/api/include/api/esp_bt_main.h \
     $(IDF_PATH)/components/bt/host/bluedroid/api/include/api/esp_bt_device.h \
@@ -45,7 +46,6 @@ INPUT = \
     $(IDF_PATH)/components/bt/host/bluedroid/api/include/api/esp_gatt_defs.h \
     $(IDF_PATH)/components/bt/host/bluedroid/api/include/api/esp_gatts_api.h \
     $(IDF_PATH)/components/bt/host/bluedroid/api/include/api/esp_gattc_api.h \
-    $(IDF_PATH)/components/bt/host/bluedroid/api/include/api/esp_blufi_api.h \
     $(IDF_PATH)/components/bt/host/bluedroid/api/include/api/esp_gap_bt_api.h \
     $(IDF_PATH)/components/bt/host/bluedroid/api/include/api/esp_a2dp_api.h \
     $(IDF_PATH)/components/bt/host/bluedroid/api/include/api/esp_avrc_api.h \

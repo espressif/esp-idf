@@ -1445,13 +1445,13 @@ WPA2-Enterprise
 WPA2-Enterprise is the secure authentication mechanism for enterprise wireless networks. It uses RADIUS server for authentication of network users before connecting to the Access Point. The authentication process is based on 802.1X policy and comes with different Extended Authentication Protocol (EAP) methods like TLS, TTLS, PEAP etc. RADIUS server authenticates the users based on their credentials (username and password), digital certificates or both. When {IDF_TARGET_NAME} in Station mode tries to connect to an AP in enterprise mode, it sends authentication request to AP which is sent to RADIUS server by AP for authenticating the Station. Based on different EAP methods, the parameters can be set in configuration which can be opened using ``idf.py menuconfig``. WPA2_Enterprise is supported by {IDF_TARGET_NAME} only in Station mode.
 
 
-For establishing a secure connection, AP and Station negotiate and agree on the best possible cipher suite to be used. {IDF_TARGET_NAME} supports 802.1X/EAP (WPA) method of AKM and Advanced encryption standard with Counter Mode Cipher Block Chaining Message Authentication protocol (AES-CCM) cipher suite. It also supports the cipher suites supported by mbedtls if `USE_MBEDTLS_CRYPTO` flag is set. 
+For establishing a secure connection, AP and Station negotiate and agree on the best possible cipher suite to be used. {IDF_TARGET_NAME} supports 802.1X/EAP (WPA) method of AKM and Advanced encryption standard with Counter Mode Cipher Block Chaining Message Authentication protocol (AES-CCM) cipher suite. It also supports the cipher suites supported by mbedtls if `USE_MBEDTLS_CRYPTO` flag is set.
 
 
 {IDF_TARGET_NAME} currently supports the following EAP methods:
   - EAP-TLS: This is certificate based method and only requires SSID and EAP-IDF.
   - PEAP: This is Protected EAP method. Username and Password are mandatory.
-  - EAP-TTLS: This is credentials based method. Only server authentication is mandatory while user authentication is optional. Username and Password are mandatory. It supports different Phase2 methods like, 
+  - EAP-TTLS: This is credentials based method. Only server authentication is mandatory while user authentication is optional. Username and Password are mandatory. It supports different Phase2 methods like,
      - PAP: Password Authentication Protocol.
      - CHAP: Challenge Handshake Authentication Protocol.
      - MSCHAP and MSCHAP-V2.
@@ -1872,7 +1872,7 @@ Wi-Fi Fragment
     supports Wi-Fi receiving fragment, but doesn't support Wi-Fi transmitting fragment.
 
 .. only:: esp32c3
-    
+
     ESP32C3 supports Wi-Fi receiving and transmitting fragment.
 
 WPS Enrollee
@@ -1993,7 +1993,7 @@ Increasing the size or number of the buffers mentioned above properly can improv
 
 .. only:: esp32s2
 
-    **CACHE:**    
+    **CACHE:**
 
      - :ref:`CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE`
         Configure the size of the instruction cache.
@@ -2038,13 +2038,13 @@ The parameters not mentioned in the following table should be set to the default
     +----------------------------+-------+----------+------------------+----------+---------+---------------+---------+
     | LWIP_IRAM_OPTIMIZATION     | 13    | 13       | 13               | 13       | 13      | 13            | 13      |
     +----------------------------+-------+----------+------------------+----------+---------+---------------+---------+
-    | TCP TX throughput          | 74.6  | 50.8     | 46.5             | 39.9     | 44.2    | 33.8          | 25.6    |
+    | TCP TX throughput (Mbit/s) | 74.6  | 50.8     | 46.5             | 39.9     | 44.2    | 33.8          | 25.6    |
     +----------------------------+-------+----------+------------------+----------+---------+---------------+---------+
-    | TCP RX throughput          | 63.6  | 35.5     | 42.3             | 48.5     | 40.5    | 30.1          | 27.8    |
+    | TCP RX throughput (Mbit/s) | 63.6  | 35.5     | 42.3             | 48.5     | 40.5    | 30.1          | 27.8    |
     +----------------------------+-------+----------+------------------+----------+---------+---------------+---------+
-    | UDP TX throughput          | 76.2  | 75.1     | 74.1             | 72.4     | 69.6    | 64.1          | 36.5    |
+    | UDP TX throughput (Mbit/s) | 76.2  | 75.1     | 74.1             | 72.4     | 69.6    | 64.1          | 36.5    |
     +----------------------------+-------+----------+------------------+----------+---------+---------------+---------+
-    | UDP RX throughput          | 83.1  | 66.3     | 75.1             | 75.6     | 73.1    | 65.3          | 54.7    |
+    | UDP RX throughput (Mbit/s) | 83.1  | 66.3     | 75.1             | 75.6     | 73.1    | 65.3          | 54.7    |
     +----------------------------+-------+----------+------------------+----------+---------+---------------+---------+
 
 .. only:: esp32s2
@@ -2052,38 +2052,38 @@ The parameters not mentioned in the following table should be set to the default
     +----------------------------+-------+------------------+---------+---------------+---------+
     | Rank                       | Iperf | High-performance | Default | Memory saving | Minimum |
     +============================+=======+==================+=========+===============+=========+
-    | Available memory(KB)       | 4.1   | 24.2             | 78.4    | 86.5          | 116.4   | 
+    | Available memory (KB)      | 4.1   | 24.2             | 78.4    | 86.5          | 116.4   |
     +----------------------------+-------+------------------+---------+---------------+---------+
-    | WIFI_STATIC_RX_BUFFER_NUM  | 8     |6                 | 6       | 4             | 3       | 
+    | WIFI_STATIC_RX_BUFFER_NUM  | 8     |6                 | 6       | 4             | 3       |
     +----------------------------+-------+------------------+---------+---------------+---------+
-    | WIFI_DYNAMIC_RX_BUFFER_NUM | 24    | 18               | 12      | 8             | 6       | 
+    | WIFI_DYNAMIC_RX_BUFFER_NUM | 24    | 18               | 12      | 8             | 6       |
     +----------------------------+-------+------------------+---------+---------------+---------+
-    | WIFI_DYNAMIC_TX_BUFFER_NUM | 24    | 18               | 12      | 8             | 6       | 
+    | WIFI_DYNAMIC_TX_BUFFER_NUM | 24    | 18               | 12      | 8             | 6       |
     +----------------------------+-------+------------------+---------+---------------+---------+
-    | WIFI_RX_BA_WIN             | 12    | 9                | 6       | 4             | 3       | 
+    | WIFI_RX_BA_WIN             | 12    | 9                | 6       | 4             | 3       |
     +----------------------------+-------+------------------+---------+---------------+---------+
-    | TCP_SND_BUF_DEFAULT(KB)    | 24    | 18               | 12      | 8             | 6       |  
-    +----------------------------+-------+------------------+---------+---------------+---------+ 
-    | TCP_WND_DEFAULT(KB)        | 24    | 18               | 12      | 8             | 6       | 
-    +----------------------------+-------+------------------+---------+---------------+---------+ 
+    | TCP_SND_BUF_DEFAULT (KB)   | 24    | 18               | 12      | 8             | 6       |
+    +----------------------------+-------+------------------+---------+---------------+---------+
+    | TCP_WND_DEFAULT(KB)        | 24    | 18               | 12      | 8             | 6       |
+    +----------------------------+-------+------------------+---------+---------------+---------+
     | WIFI_IRAM_OPT              | 15    | 15               | 15      | 15            | 0       |
-    +----------------------------+-------+------------------+---------+---------------+---------+  
-    | WIFI_RX_IRAM_OPT           | 16    | 16               | 16      | 0             | 0       |  
-    +----------------------------+-------+------------------+---------+---------------+---------+ 
-    | LWIP_IRAM_OPTIMIZATION     | 13    | 13               | 0       | 0             | 0       |  
-    +----------------------------+-------+------------------+---------+---------------+---------+ 
-    | INSTRUCTION_CACHE          | 16    | 16               | 16      | 16            | 8       | 
-    +----------------------------+-------+------------------+---------+---------------+---------+ 
-    | INSTRUCTION_CACHE_LINE     | 16    | 16               | 16      | 16            | 16      |  
     +----------------------------+-------+------------------+---------+---------------+---------+
-    | TCP TX throughput          | 37.6  | 33.1             | 22.5    | 12.2          | 5.5     | 
+    | WIFI_RX_IRAM_OPT           | 16    | 16               | 16      | 0             | 0       |
     +----------------------------+-------+------------------+---------+---------------+---------+
-    | TCP RX throughput          | 31.5  | 28.1             | 20.1    | 13.1          | 7.2     | 
+    | LWIP_IRAM_OPTIMIZATION     | 13    | 13               | 0       | 0             | 0       |
     +----------------------------+-------+------------------+---------+---------------+---------+
-    | UDP TX throughput          | 58.1  | 57.3             | 28.1    | 22.6          | 8.7     | 
+    | INSTRUCTION_CACHE          | 16    | 16               | 16      | 16            | 8       |
     +----------------------------+-------+------------------+---------+---------------+---------+
-    | UDP RX throughput          | 78.1  | 66.7             | 65.3    | 53.8          | 28.5    | 
-    +----------------------------+-------+------------------+---------+---------------+---------+  
+    | INSTRUCTION_CACHE_LINE     | 16    | 16               | 16      | 16            | 16      |
+    +----------------------------+-------+------------------+---------+---------------+---------+
+    | TCP TX throughput (Mbit/s) | 37.6  | 33.1             | 22.5    | 12.2          | 5.5     |
+    +----------------------------+-------+------------------+---------+---------------+---------+
+    | TCP RX throughput (Mbit/s) | 31.5  | 28.1             | 20.1    | 13.1          | 7.2     |
+    +----------------------------+-------+------------------+---------+---------------+---------+
+    | UDP TX throughput (Mbit/s) | 58.1  | 57.3             | 28.1    | 22.6          | 8.7     |
+    +----------------------------+-------+------------------+---------+---------------+---------+
+    | UDP RX throughput (Mbit/s) | 78.1  | 66.7             | 65.3    | 53.8          | 28.5    |
+    +----------------------------+-------+------------------+---------+---------------+---------+
 
 .. only:: esp32c3
 
@@ -2110,13 +2110,13 @@ The parameters not mentioned in the following table should be set to the default
     +----------------------------+-------+---------+---------+
     | LWIP_IRAM_OPTIMIZATION     | 13    | 13      | 0       |
     +----------------------------+-------+---------+---------+
-    | TCP TX throughput          | 38.1  | 27.2    | 20.4    |
+    | TCP TX throughput (Mbit/s) | 38.1  | 27.2    | 20.4    |
     +----------------------------+-------+---------+---------+
-    | TCP RX throughput          | 35.3  | 24.2    | 17.4    |
+    | TCP RX throughput (Mbit/s) | 35.3  | 24.2    | 17.4    |
     +----------------------------+-------+---------+---------+
-    | UDP TX throughput          | 40.6  | 38.9    | 34.1    |
+    | UDP TX throughput (Mbit/s) | 40.6  | 38.9    | 34.1    |
     +----------------------------+-------+---------+---------+
-    | UDP RX throughput          | 52.4  | 44.5    | 44.2    |
+    | UDP RX throughput (Mbit/s) | 52.4  | 44.5    | 44.2    |
     +----------------------------+-------+---------+---------+
 
 .. only:: esp32 or esp32s2
@@ -2129,51 +2129,51 @@ The parameters not mentioned in the following table should be set to the default
 
     **Ranks:**
 
-     - **Iperf rank** 
+     - **Iperf rank**
         {IDF_TARGET_NAME} extreme performance rank used to test extreme performance.
 
-     - **High-performance rank** 
+     - **High-performance rank**
         The {IDF_TARGET_NAME}'s high-performance configuration rank, suitable for scenarios that the application occupies less memory and has high-performance requirements. In this rank, users can choose to use the RX prior rank or the TX prior rank according to the usage scenario.
 
-     - **Default rank** 
+     - **Default rank**
         {IDF_TARGET_NAME}'s default configuration rank, the available memory, and performance are in balance.
 
-     - **Memory saving rank** 
+     - **Memory saving rank**
         This rank is suitable for scenarios where the application requires a large amount of memory, and the transceiver performance will be reduced in this rank.
 
-     - **Minimum rank** 
+     - **Minimum rank**
         This is the minimum configuration rank of {IDF_TARGET_NAME}. The protocol stack only uses the necessary memory for running. It is suitable for scenarios that have no requirement for performance and the application requires lots of space.
 
 .. only:: esp32s2
 
     **Ranks:**
 
-     - **Iperf rank** 
+     - **Iperf rank**
         {IDF_TARGET_NAME} extreme performance rank used to test extreme performance.
 
-     - **High-performance rank** 
+     - **High-performance rank**
         The {IDF_TARGET_NAME}'s high-performance configuration rank, suitable for scenarios that the application occupies less memory and has high-performance requirements.
 
-     - **Default rank** 
+     - **Default rank**
         {IDF_TARGET_NAME}'s default configuration rank, the available memory, and performance are in balance.
 
-     - **Memory saving rank** 
+     - **Memory saving rank**
         This rank is suitable for scenarios where the application requires a large amount of memory, and the transceiver performance will be reduced in this rank.
 
-     - **Minimum rank** 
+     - **Minimum rank**
         This is the minimum configuration rank of {IDF_TARGET_NAME}. The protocol stack only uses the necessary memory for running. It is suitable for scenarios that have no requirement for performance and the application requires lots of space.
 
 .. only:: esp32c3
 
     **Ranks:**
 
-     - **Iperf rank** 
+     - **Iperf rank**
         {IDF_TARGET_NAME} extreme performance rank used to test extreme performance.
 
-     - **Default rank** 
+     - **Default rank**
         {IDF_TARGET_NAME}'s default configuration rank, the available memory, and performance are in balance.
 
-     - **Minimum rank** 
+     - **Minimum rank**
         This is the minimum configuration rank of {IDF_TARGET_NAME}. The protocol stack only uses the necessary memory for running. It is suitable for scenarios that have no requirement for performance and the application requires lots of space.
 
 .. only:: esp32 or esp32s2
@@ -2184,84 +2184,84 @@ The parameters not mentioned in the following table should be set to the default
     PSRAM is generally used when the application takes up a lot of memory. In this mode, the :ref:`CONFIG_ESP32_WIFI_TX_BUFFER` is forced to be static. :ref:`CONFIG_ESP32_WIFI_STATIC_TX_BUFFER_NUM` indicates the number of DMA buffers at the hardware layer, increase this parameter can improve performance.
     The following are the recommended ranks for using PSRAM:
 
-.. only:: esp32
+    .. only:: esp32
 
-    +----------------------------+-------+---------+---------------+---------+
-    |         Rank               | Iperf | Default | Memory saving | Minimum |
-    +============================+=======+=========+===============+=========+
-    | Available memory(KB)       | 113.8 | 152.4   |     181.2     |   202.6 |
-    +----------------------------+-------+---------+---------------+---------+
-    | WIFI_STATIC_RX_BUFFER_NUM  | 16    | 8       | 4             | 2       |
-    +----------------------------+-------+---------+---------------+---------+
-    | WIFI_DYNAMIC_RX_BUFFER_NUM | 128   | 128     | 128           | 128     |
-    +----------------------------+-------+---------+---------------+---------+
-    | WIFI_STATIC_TX_BUFFER_NUM  | 16    | 8       | 4             |       2 |
-    +----------------------------+-------+---------+---------------+---------+
-    | WIFI_RX_BA_WIN             |    16 |      16 |             8 | Disable |
-    +----------------------------+-------+---------+---------------+---------+
-    | TCP_SND_BUF_DEFAULT(KB)    |    65 |      65 |            65 |      65 |
-    +----------------------------+-------+---------+---------------+---------+
-    | TCP_WND_DEFAULT(KB)        |    65 |      65 |            65 |      65 |
-    +----------------------------+-------+---------+---------------+---------+
-    | WIFI_IRAM_OPT              |    15 |     15  |            15 |       0 |
-    +----------------------------+-------+---------+---------------+---------+
-    | WIFI_RX_IRAM_OPT           |    16 |     16  |             0 |       0 |
-    +----------------------------+-------+---------+---------------+---------+
-    | LWIP_IRAM_OPTIMIZATION     |    13 |       0 |             0 |       0 |
-    +----------------------------+-------+---------+---------------+---------+
-    | TCP TX throughput          | 37.5  |   31.7  |          21.7 |    14.6 |
-    +----------------------------+-------+---------+---------------+---------+
-    | TCP RX throughput          |  31.5 |    29.8 |          26.5 |    21.1 |
-    +----------------------------+-------+---------+---------------+---------+
-    | UDP TX throughput          | 69.1  |   31.5  |          27.1 |    24.1 |
-    +----------------------------+-------+---------+---------------+---------+
-    | UDP RX throughput          |  40.1 |    38.5 |          37.5 |    36.9 |
-    +----------------------------+-------+---------+---------------+---------+
+        +----------------------------+-------+---------+---------------+---------+
+        |         Rank               | Iperf | Default | Memory saving | Minimum |
+        +============================+=======+=========+===============+=========+
+        | Available memory(KB)       | 113.8 | 152.4   |     181.2     |   202.6 |
+        +----------------------------+-------+---------+---------------+---------+
+        | WIFI_STATIC_RX_BUFFER_NUM  | 16    | 8       | 4             | 2       |
+        +----------------------------+-------+---------+---------------+---------+
+        | WIFI_DYNAMIC_RX_BUFFER_NUM | 128   | 128     | 128           | 128     |
+        +----------------------------+-------+---------+---------------+---------+
+        | WIFI_STATIC_TX_BUFFER_NUM  | 16    | 8       | 4             |       2 |
+        +----------------------------+-------+---------+---------------+---------+
+        | WIFI_RX_BA_WIN             |    16 |      16 |             8 | Disable |
+        +----------------------------+-------+---------+---------------+---------+
+        | TCP_SND_BUF_DEFAULT(KB)    |    65 |      65 |            65 |      65 |
+        +----------------------------+-------+---------+---------------+---------+
+        | TCP_WND_DEFAULT(KB)        |    65 |      65 |            65 |      65 |
+        +----------------------------+-------+---------+---------------+---------+
+        | WIFI_IRAM_OPT              |    15 |     15  |            15 |       0 |
+        +----------------------------+-------+---------+---------------+---------+
+        | WIFI_RX_IRAM_OPT           |    16 |     16  |             0 |       0 |
+        +----------------------------+-------+---------+---------------+---------+
+        | LWIP_IRAM_OPTIMIZATION     |    13 |       0 |             0 |       0 |
+        +----------------------------+-------+---------+---------------+---------+
+        | TCP TX throughput (Mbit/s) | 37.5  |   31.7  |          21.7 |    14.6 |
+        +----------------------------+-------+---------+---------------+---------+
+        | TCP RX throughput (Mbit/s) |  31.5 |    29.8 |          26.5 |    21.1 |
+        +----------------------------+-------+---------+---------------+---------+
+        | UDP TX throughput (Mbit/s) | 69.1  |   31.5  |          27.1 |    24.1 |
+        +----------------------------+-------+---------+---------------+---------+
+        | UDP RX throughput (Mbit/s) |  40.1 |    38.5 |          37.5 |    36.9 |
+        +----------------------------+-------+---------+---------------+---------+
 
-.. only:: esp32s2
+    .. only:: esp32s2
 
-    +----------------------------+-------+---------+---------------+---------+
-    |         Rank               | Iperf | Default | Memory saving | Minimum |
-    +============================+=======+=========+===============+=========+
-    | Available memory(KB)       | 70.6  | 96.4    |     118.8     |   148.2 |
-    +----------------------------+-------+---------+---------------+---------+
-    | WIFI_STATIC_RX_BUFFER_NUM  | 8     | 8       | 6             | 4       |
-    +----------------------------+-------+---------+---------------+---------+
-    | WIFI_DYNAMIC_RX_BUFFER_NUM | 64    | 64      | 64            | 64      |
-    +----------------------------+-------+---------+---------------+---------+
-    | WIFI_STATIC_TX_BUFFER_NUM  | 16    | 8       | 6             |       4 |
-    +----------------------------+-------+---------+---------------+---------+
-    | WIFI_RX_BA_WIN             |    16 |      6  |            6  | Disable |
-    +----------------------------+-------+---------+---------------+---------+
-    | TCP_SND_BUF_DEFAULT(KB)    |    32 |      32 |            32 |      32 |
-    +----------------------------+-------+---------+---------------+---------+
-    | TCP_WND_DEFAULT(KB)        |    32 |      32 |            32 |      32 |
-    +----------------------------+-------+---------+---------------+---------+
-    | WIFI_IRAM_OPT              |    15 |     15  |            15 |       0 |
-    +----------------------------+-------+---------+---------------+---------+
-    | WIFI_RX_IRAM_OPT           |    16 |     16  |             0 |       0 |
-    +----------------------------+-------+---------+---------------+---------+
-    | LWIP_IRAM_OPTIMIZATION     |    13 |       0 |             0 |       0 |
-    +----------------------------+-------+---------+---------------+---------+
-    | INSTRUCTION_CACHE          |    16 |      16 |            16 |      8  |
-    +----------------------------+-------+---------+---------------+---------+
-    | INSTRUCTION_CACHE_LINE     |    16 |      16 |            16 |      16 |
-    +----------------------------+-------+---------+---------------+---------+
-    | DATA_CACHE                 |    8  |       8 |             8 |       8 |
-    +----------------------------+-------+---------+---------------+---------+
-    | DATA_CACHE_LINE            |    32 |      32 |            32 |      32 |
-    +----------------------------+-------+---------+---------------+---------+
-    | TCP TX throughput          |  40.1 |    29.2 |          20.1 |    8.9  |
-    +----------------------------+-------+---------+---------------+---------+    
-    | TCP RX throughput          | 21.9  |   16.8  |          14.8 |    9.6  |
-    +----------------------------+-------+---------+---------------+---------+
-    | UDP TX throughput          | 50.1  |   25.7  |          22.4 |   10.2  |
-    +----------------------------+-------+---------+---------------+---------+
-    | UDP RX throughput          |  45.3 |    43.1 |          28.5 |   15.1  |
-    +----------------------------+-------+---------+---------------+---------+   
-    
-    .. note::
-        Reaching peak performance may cause task watchdog. It is a normal phenomenon considering the CPU may have no time for lower priority tasks.
+        +----------------------------+-------+---------+---------------+---------+
+        |         Rank               | Iperf | Default | Memory saving | Minimum |
+        +============================+=======+=========+===============+=========+
+        | Available memory(KB)       | 70.6  | 96.4    |     118.8     |   148.2 |
+        +----------------------------+-------+---------+---------------+---------+
+        | WIFI_STATIC_RX_BUFFER_NUM  | 8     | 8       | 6             | 4       |
+        +----------------------------+-------+---------+---------------+---------+
+        | WIFI_DYNAMIC_RX_BUFFER_NUM | 64    | 64      | 64            | 64      |
+        +----------------------------+-------+---------+---------------+---------+
+        | WIFI_STATIC_TX_BUFFER_NUM  | 16    | 8       | 6             |       4 |
+        +----------------------------+-------+---------+---------------+---------+
+        | WIFI_RX_BA_WIN             |    16 |      6  |            6  | Disable |
+        +----------------------------+-------+---------+---------------+---------+
+        | TCP_SND_BUF_DEFAULT(KB)    |    32 |      32 |            32 |      32 |
+        +----------------------------+-------+---------+---------------+---------+
+        | TCP_WND_DEFAULT(KB)        |    32 |      32 |            32 |      32 |
+        +----------------------------+-------+---------+---------------+---------+
+        | WIFI_IRAM_OPT              |    15 |     15  |            15 |       0 |
+        +----------------------------+-------+---------+---------------+---------+
+        | WIFI_RX_IRAM_OPT           |    16 |     16  |             0 |       0 |
+        +----------------------------+-------+---------+---------------+---------+
+        | LWIP_IRAM_OPTIMIZATION     |    13 |       0 |             0 |       0 |
+        +----------------------------+-------+---------+---------------+---------+
+        | INSTRUCTION_CACHE          |    16 |      16 |            16 |      8  |
+        +----------------------------+-------+---------+---------------+---------+
+        | INSTRUCTION_CACHE_LINE     |    16 |      16 |            16 |      16 |
+        +----------------------------+-------+---------+---------------+---------+
+        | DATA_CACHE                 |    8  |       8 |             8 |       8 |
+        +----------------------------+-------+---------+---------------+---------+
+        | DATA_CACHE_LINE            |    32 |      32 |            32 |      32 |
+        +----------------------------+-------+---------+---------------+---------+
+        | TCP TX throughput (Mbit/s) |  40.1 |    29.2 |          20.1 |    8.9  |
+        +----------------------------+-------+---------+---------------+---------+
+        | TCP RX throughput (Mbit/s) | 21.9  |   16.8  |          14.8 |    9.6  |
+        +----------------------------+-------+---------+---------------+---------+
+        | UDP TX throughput (Mbit/s) | 50.1  |   25.7  |          22.4 |   10.2  |
+        +----------------------------+-------+---------+---------------+---------+
+        | UDP RX throughput (Mbit/s) |  45.3 |    43.1 |          28.5 |   15.1  |
+        +----------------------------+-------+---------+---------------+---------+
+
+        .. note::
+            Reaching peak performance may cause task watchdog. It is a normal phenomenon considering the CPU may have no time for lower priority tasks.
 
 Wi-Fi Menuconfig
 -----------------------

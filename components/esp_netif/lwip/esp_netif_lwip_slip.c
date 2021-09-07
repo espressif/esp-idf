@@ -31,7 +31,6 @@
 
 #include <string.h>
 
-
 static const char *TAG = "esp-netif_lwip-slip";
 
 /**
@@ -160,7 +159,6 @@ esp_err_t esp_netif_slip_set_ipv6(esp_netif_t *netif, const esp_ip6_addr_t *ipv6
  */
 void esp_netif_lwip_slip_input(void *h, void *buffer, unsigned int len, void *eb)
 {
-#if CONFIG_LWIP_SLIP_SUPPORT
     esp_netif_t *netif = h;
     lwip_slip_ctx_t *slip_ctx = (lwip_slip_ctx_t *)netif->related_data;
     assert(slip_ctx->base.netif_type == SLIP_LWIP_NETIF);
@@ -181,7 +179,6 @@ void esp_netif_lwip_slip_input(void *h, void *buffer, unsigned int len, void *eb
     for (int i = 0; i < len; i++) {
         slipif_process_rxqueue(netif->lwip_netif);
     }
-#endif
 }
 
 /**
@@ -313,4 +310,5 @@ void sio_send(uint8_t c, sio_fd_t fd)
         ESP_LOGD(TAG, "%s: uart_write_bytes error %i", __func__, ret);
     }
 }
+
 #endif /* CONFIG_ESP_NETIF_TCPIP_LWIP */

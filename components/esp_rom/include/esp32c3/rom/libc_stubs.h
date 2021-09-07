@@ -27,7 +27,7 @@ extern "C" {
 #endif
 
 /*
-ESP32 ROM code contains implementations of some of C library functions.
+ESP32-C3 ROM code contains implementations of some of C library functions.
 Whenever a function in ROM needs to use a syscall, it calls a pointer to the corresponding syscall
 implementation defined in the following struct.
 
@@ -65,7 +65,6 @@ struct syscall_stub_table
     int (*_write_r)(struct _reent *r, int, const void *, int);
     int (*_lseek_r)(struct _reent *r, int, int, int);
     int (*_read_r)(struct _reent *r, int, void *, int);
-#ifdef _RETARGETABLE_LOCKING
     void (*_retarget_lock_init)(_LOCK_T *lock);
     void (*_retarget_lock_init_recursive)(_LOCK_T *lock);
     void (*_retarget_lock_close)(_LOCK_T lock);
@@ -76,18 +75,6 @@ struct syscall_stub_table
     int (*_retarget_lock_try_acquire_recursive)(_LOCK_T lock);
     void (*_retarget_lock_release)(_LOCK_T lock);
     void (*_retarget_lock_release_recursive)(_LOCK_T lock);
-#else
-    void (*_lock_init)(_lock_t *lock);
-    void (*_lock_init_recursive)(_lock_t *lock);
-    void (*_lock_close)(_lock_t *lock);
-    void (*_lock_close_recursive)(_lock_t *lock);
-    void (*_lock_acquire)(_lock_t *lock);
-    void (*_lock_acquire_recursive)(_lock_t *lock);
-    int (*_lock_try_acquire)(_lock_t *lock);
-    int (*_lock_try_acquire_recursive)(_lock_t *lock);
-    void (*_lock_release)(_lock_t *lock);
-    void (*_lock_release_recursive)(_lock_t *lock);
-#endif
     int (*_printf_float)(struct _reent *data, void *pdata, FILE * fp, int (*pfunc) (struct _reent *, FILE *, const char *, size_t len), va_list * ap);
     int (*_scanf_float) (struct _reent *rptr, void *pdata, FILE *fp, va_list *ap);
     void (*__assert_func) (const char *file, int line, const char * func, const char *failedexpr) __attribute__((noreturn));

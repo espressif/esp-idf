@@ -217,7 +217,7 @@
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_BRP_MIN                2
-#define SOC_TWAI_BRP_MAX                32768
+#define SOC_TWAI_BRP_MAX                16384
 #define SOC_TWAI_SUPPORTS_RX_STATUS     1
 
 /*-------------------------- UART CAPS ---------------------------------------*/
@@ -229,6 +229,7 @@
 
 #define SOC_UART_SUPPORT_RTC_CLK    (1)
 #define SOC_UART_SUPPORT_XTAL_CLK   (1)
+#define SOC_UART_REQUIRE_CORE_RESET (1)
 
 // UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
 #define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)

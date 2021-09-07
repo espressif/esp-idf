@@ -12,6 +12,7 @@
   artifacts:
     when: always
     paths:
+      - "**/*.log"
       - $LOG_PATH
     expire_in: 1 week
     reports:
@@ -118,7 +119,7 @@
     - build_ssc_esp32
   variables:
     LOCAL_ENV_CONFIG_PATH: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32_IDF"
-    LOG_PATH: "${CI_PROJECT_DIR}/${CI_COMMIT_SHA}"
+    LOG_PATH: "${CI_PROJECT_DIR}/TEST_LOGS"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/auto_test_script/TestCaseFiles"
     MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/ModuleDefinition.yml"
     CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/components/idf_test/integration_test/CIConfigs"
@@ -145,28 +146,17 @@
 
 test_weekend_mqtt:
   extends:
-    - .example_test_template
+    - .test_app_template
     - .rules:labels:weekend_test-only
   tags:
     - ESP32
     - Example_WIFI
-  variables:
-    ENV_FILE: "$CI_PROJECT_DIR/components/mqtt/weekend_test/env.yml"
-    TEST_CASE_PATH: "$CI_PROJECT_DIR/components/mqtt/weekend_test"
-    CONFIG_FILE_PATH: "$CI_PROJECT_DIR/components/mqtt/weekend_test"
+  script:
+    - export MQTT_PUBLISH_TEST=1
+    - export TEST_PATH=$CI_PROJECT_DIR/tools/test_apps/protocols/mqtt/publish_connect_test
+    - cd $IDF_PATH/tools/ci/python_packages/tiny_test_fw/bin
+    - run_cmd python Runner.py $TEST_PATH -c $TEST_PATH/publish_connect_mqtt_.yml -e $TEST_PATH/env.yml
 
-test_weekend_network:
-  extends:
-    - .example_test_template
-    - .rules:labels:weekend_test-only
-  image: $CI_DOCKER_REGISTRY/rpi-net-suite$BOT_DOCKER_IMAGE_TAG
-  tags:
-    - ESP32
-    - Example_WIFI
-  variables:
-    ENV_FILE: "$CI_PROJECT_DIR/components/lwip/weekend_test/env.yml"
-    TEST_CASE_PATH: "$CI_PROJECT_DIR/components/lwip/weekend_test"
-    CONFIG_FILE_PATH: "$CI_PROJECT_DIR/components/lwip/weekend_test"
 
 example_test_001A:
   extends: .example_test_template
@@ -263,9 +253,6 @@ example_test_009:
   tags:
     - ESP32
     - test_jtag_arm
-  artifacts:
-    paths:
-      - $CI_PROJECT_DIR/examples/*/*/*.log
   variables:
     SETUP_TOOLS: "1"
     PYTHON_VER: 3
@@ -281,10 +268,6 @@ example_test_011:
   tags:
     - ESP32
     - Example_T2_RS485
-  artifacts:
-    paths:
-      - $CI_PROJECT_DIR/examples/protocols/modbus/serial/*.log
-      - $LOG_PATH
   variables:
     SETUP_TOOLS: "1"
 
@@ -311,20 +294,12 @@ example_test_015:
   tags:
     - ESP32
     - Example_PPP
-  artifacts:
-    paths:
-      - $CI_PROJECT_DIR/examples/*/*/*.log
-      - $LOG_PATH
 
 example_test_016:
   extends: .example_test_template
   tags:
     - ESP32
     - Example_Modbus_TCP
-  artifacts:
-    paths:
-      - $CI_PROJECT_DIR/examples/*/*/*.log
-      - $LOG_PATH
 
 example_test_C3_GENERIC:
   extends: .example_test_template
@@ -338,9 +313,6 @@ test_app_test_001:
   tags:
     - ESP32
     - test_jtag_arm
-  artifacts:
-    paths:
-      - $CI_PROJECT_DIR/tools/test_apps/system/*/*.log
   variables:
     SETUP_TOOLS: "1"
 

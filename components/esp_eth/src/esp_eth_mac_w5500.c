@@ -93,6 +93,7 @@ static esp_err_t w5500_read(emac_w5500_t *emac, uint32_t address, void *value, u
     esp_err_t ret = ESP_OK;
 
     spi_transaction_t trans = {
+        .flags = len <= 4 ? SPI_TRANS_USE_RXDATA : 0, // use direct reads for registers to prevent overwrites by 4-byte boundary writes
         .cmd = (address >> W5500_ADDR_OFFSET),
         .addr = ((address & 0xFFFF) | (W5500_ACCESS_MODE_READ << W5500_RWB_OFFSET) | W5500_SPI_OP_MODE_VDM),
         .length = 8 * len,
@@ -106,6 +107,9 @@ static esp_err_t w5500_read(emac_w5500_t *emac, uint32_t address, void *value, u
         w5500_unlock(emac);
     } else {
         ret = ESP_ERR_TIMEOUT;
+    }
+    if ((trans.flags&SPI_TRANS_USE_RXDATA) && len <= 4) {
+        memcpy(value, trans.rx_data, len);  // copy register values to output
     }
     return ret;
 }
@@ -263,9 +267,12 @@ static esp_err_t w5500_setup_default(emac_w5500_t *emac)
     /* Enable MAC RAW mode for SOCK0, enable MAC filter, no blocking broadcast and multicast */
     reg_value = W5500_SMR_MAC_RAW | W5500_SMR_MAC_FILTER;
     MAC_CHECK(w5500_write(emac, W5500_REG_SOCK_MR(0), &reg_value, sizeof(reg_value)) == ESP_OK, "write SMR failed", err, ESP_FAIL);
-    /* Enable receive and send event for SOCK0 */
-    reg_value = W5500_SIR_RECV | W5500_SIR_SEND;
+    /* Enable receive event for SOCK0 */
+    reg_value = W5500_SIR_RECV;
     MAC_CHECK(w5500_write(emac, W5500_REG_SOCK_IMR(0), &reg_value, sizeof(reg_value)) == ESP_OK, "write SOCK0 IMR failed", err, ESP_FAIL);
+    /* Set the interrupt re-assert level to maximum (~1.5ms) to lower the chances of missing it */
+    uint16_t int_level = __builtin_bswap16(0xFFFF);
+    MAC_CHECK(w5500_write(emac, W5500_REG_INTLEVEL, &int_level, sizeof(int_level)) == ESP_OK, "write INTLEVEL failed", err, ESP_FAIL);
 
 err:
     return ret;
@@ -318,8 +325,12 @@ static void emac_w5500_task(void *arg)
     uint8_t *buffer = NULL;
     uint32_t length = 0;
     while (1) {
-        // block indefinitely until some task notifies me
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        // check if the task receives any notification
+        if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000)) == 0 &&    // if no notification ...
+            gpio_get_level(emac->int_gpio_num) != 0) {               // ...and no interrupt asserted
+            continue;                                                // -> just continue to check again
+        }
+
         /* read interrupt status */
         w5500_read(emac, W5500_REG_SOCK_IR(0), &status, sizeof(status));
         /* packet received */
@@ -498,6 +509,16 @@ static esp_err_t emac_w5500_set_peer_pause_ability(esp_eth_mac_t *mac, uint32_t 
     return ESP_ERR_NOT_SUPPORTED;
 }
 
+static inline bool is_w5500_sane_for_rxtx(emac_w5500_t *emac)
+{
+    uint8_t phycfg;
+    /* phy is ok for rx and tx operations if bits RST and LNK are set (no link down, no reset) */
+    if (w5500_read(emac, W5500_REG_PHYCFGR, &phycfg, 1) == ESP_OK && (phycfg & 0x8001)) {
+        return true;
+    }
+   return false;
+}
+
 static esp_err_t emac_w5500_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint32_t length)
 {
     esp_err_t ret = ESP_OK;
@@ -521,10 +542,14 @@ static esp_err_t emac_w5500_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint32_t 
     MAC_CHECK(w5500_send_command(emac, W5500_SCR_SEND, 100) == ESP_OK, "issue SEND command failed", err, ESP_FAIL);
 
     // pooling the TX done event
+    int retry = 0;
     uint8_t status = 0;
-    do {
+    while (!(status & W5500_SIR_SEND)) {
         MAC_CHECK(w5500_read(emac, W5500_REG_SOCK_IR(0), &status, sizeof(status)) == ESP_OK, "read SOCK0 IR failed", err, ESP_FAIL);
-    } while (!(status & W5500_SIR_SEND));
+        if ((retry++ > 3 && !is_w5500_sane_for_rxtx(emac)) || retry > 10) {
+            return ESP_FAIL;
+        }
+    }
     // clear the event bit
     status  = W5500_SIR_SEND;
     MAC_CHECK(w5500_write(emac, W5500_REG_SOCK_IR(0), &status, sizeof(status)) == ESP_OK, "write SOCK0 IR failed", err, ESP_FAIL);

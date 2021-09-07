@@ -154,15 +154,14 @@ static esp_err_t w5500_negotiate(esp_eth_phy_t *phy)
 {
     phy_w5500_t *w5500 = __containerof(phy, phy_w5500_t, parent);
     esp_eth_mediator_t *eth = w5500->eth;
-
+    /* in case any link status has changed, let's assume we're in link down status */
+    w5500->link_status = ETH_LINK_DOWN;
     phycfg_reg_t phycfg;
     PHY_CHECK(eth->phy_reg_read(eth, w5500->addr, W5500_REG_PHYCFGR, (uint32_t *) & (phycfg.val)) == ESP_OK, "read PHYCFG failed", err);
     phycfg.opsel = 1;  // PHY working mode configured by register
     phycfg.opmode = 7; // all capable, auto-negotiation enabled
     PHY_CHECK(eth->phy_reg_write(eth, w5500->addr, W5500_REG_PHYCFGR, phycfg.val) == ESP_OK, "write PHYCFG failed", err);
 
-    /* Update information about link, speed, duplex */
-    PHY_CHECK(w5500_update_link_duplex_speed(w5500) == ESP_OK, "update link duplex speed failed", err);
     return ESP_OK;
 err:
     return ESP_FAIL;

@@ -79,6 +79,19 @@ void esp_core_dump_to_uart(panic_info_t *info);
 /**************************************************************************************/
 
 /**
+ * @brief  Check integrity of coredump data in flash.
+ *         This function reads the coredump data while calculating their checksum. If it
+ *         doesn't match the checksum written on flash, it means data are corrupted,
+ *         an error will be returned. Else, ESP_OK is returned.
+ *
+ * @return `ESP_OK` if core dump is present and valid, `ESP_ERR_NOT_FOUND` if no core dump
+ *         is stored in the partition, `ESP_ERR_INVALID_SIZE` or `ESP_ERR_INVALID_CRC`
+ *         if the core dump is corrupted, other errors when unable to access flash, in that
+ *         case please refer to \see esp_err_t
+ */
+esp_err_t esp_core_dump_image_check(void);
+
+/**
  * @brief  Retrieves address and size of coredump data in flash.
  *         This function is always available, even when core dump is disabled in menuconfig.
  *
@@ -88,6 +101,15 @@ void esp_core_dump_to_uart(panic_info_t *info);
  * @return ESP_OK on success, otherwise \see esp_err_t
  */
 esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size);
+
+/**
+ * @brief  Erases coredump data in flash. esp_core_dump_image_get() will then return
+ *         ESP_ERR_NOT_FOUND. Can be used after a coredump has been transmitted successfully.
+ *         This function is always available, even when core dump is disabled in menuconfig.
+ *
+ * @return ESP_OK on success, otherwise \see esp_err_t
+ */
+esp_err_t esp_core_dump_image_erase(void);
 
 #ifdef __cplusplus
 }

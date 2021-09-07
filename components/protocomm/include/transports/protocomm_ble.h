@@ -26,6 +26,14 @@ extern "C" {
  */
 #define MAX_BLE_DEVNAME_LEN 29
 #define BLE_UUID128_VAL_LENGTH  16
+ /**
+ * Theoretically, the limit for max manufacturer length remains same as BLE
+ * device name i.e. 31 bytes (max scan response size) - 1 byte (length) - 1
+ * byte (type) = 29 bytes
+ * However, manufacturer data goes along with BLE device name in scan response.
+ * So, it is important to understand the actual length should be smaller than
+ * (29 - (BLE device name length) - 2). */
+#define MAX_BLE_MANUFACTURER_DATA_LEN 29
 
 /**
  * @brief   This structure maps handler required by protocomm layer to
@@ -58,6 +66,16 @@ typedef struct protocomm_ble_config {
      * 128 bit UUID of the provisioning service
      */
     uint8_t      service_uuid[BLE_UUID128_VAL_LENGTH];
+
+    /**
+     * BLE device manufacturer data pointer in advertisement
+     */
+    uint8_t      *manufacturer_data;
+
+    /**
+     * BLE device manufacturer data length in advertisement
+     */
+    ssize_t      manufacturer_data_len;
 
     /**
      * Number of entries in the Name-UUID lookup table

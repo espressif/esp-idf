@@ -88,6 +88,26 @@ entries:
 entries:
     .wifislprxiram+
 
+[sections:wifi_log_error]
+entries:
+    .rodata_wlog_error+
+
+[sections:wifi_log_warning]
+entries:
+    .rodata_wlog_warning+
+
+[sections:wifi_log_info]
+entries:
+    .rodata_wlog_info+
+
+[sections:wifi_log_debug]
+entries:
+    .rodata_wlog_debug+
+
+[sections:wifi_log_verbose]
+entries:
+    .rodata_wlog_verbose+
+
 [scheme:default]
 entries:
     if APP_BUILD_USE_FLASH_SECTIONS = y:
@@ -116,6 +136,42 @@ entries:
     wifi_slp_iram -> flash_text
     wifi_or_slp_iram -> flash_text
     wifi_slp_rx_iram -> flash_text
+    if WIFI_LOG_DEFAULT_LEVEL_NONE = y:
+        wifi_log_error -> rodata_noload
+        wifi_log_warning -> rodata_noload
+        wifi_log_info -> rodata_noload
+        wifi_log_debug -> rodata_noload
+        wifi_log_verbose -> rodata_noload
+    if WIFI_LOG_DEFAULT_LEVEL_ERROR = y:
+        wifi_log_error -> flash_rodata
+        wifi_log_warning -> rodata_noload
+        wifi_log_info -> rodata_noload
+        wifi_log_debug -> rodata_noload
+        wifi_log_verbose -> rodata_noload
+    if WIFI_LOG_DEFAULT_LEVEL_WARN = y:
+        wifi_log_error -> flash_rodata
+        wifi_log_warning -> flash_rodata
+        wifi_log_info -> rodata_noload
+        wifi_log_debug -> rodata_noload
+        wifi_log_verbose -> rodata_noload
+    if WIFI_LOG_DEFAULT_LEVEL_INFO = y:
+        wifi_log_error -> flash_rodata
+        wifi_log_warning -> flash_rodata
+        wifi_log_info -> flash_rodata
+        wifi_log_debug -> rodata_noload
+        wifi_log_verbose -> rodata_noload
+    if WIFI_LOG_DEFAULT_LEVEL_DEBUG = y:
+        wifi_log_error -> flash_rodata
+        wifi_log_warning -> flash_rodata
+        wifi_log_info -> flash_rodata
+        wifi_log_debug -> flash_rodata
+        wifi_log_verbose -> rodata_noload
+    if WIFI_LOG_DEFAULT_LEVEL_VERBOSE = y:
+        wifi_log_error -> flash_rodata
+        wifi_log_warning -> flash_rodata
+        wifi_log_info -> flash_rodata
+        wifi_log_debug -> flash_rodata
+        wifi_log_verbose -> flash_rodata
 
 [scheme:rtc]
 entries:

@@ -52,8 +52,10 @@ fast_template_app:
     BUILD_COMMAND_ARGS: "-p"
 
 check_docs_gh_links:
-  extends: .build_docs_template
+  image: $ESP_IDF_DOC_ENV_IMAGE
   stage: pre_check
+  tags:
+    - build_docs
   variables:
     SUBMODULES_TO_FETCH: "none"
   script:

@@ -206,10 +206,26 @@ static int http_on_status(http_parser *parser, const char *at, size_t length)
     return 0;
 }
 
+static int http_on_header_event(esp_http_client_handle_t client)
+{
+    if (client->current_header_key != NULL && client->current_header_value != NULL) {
+        ESP_LOGD(TAG, "HEADER=%s:%s", client->current_header_key, client->current_header_value);
+        client->event.header_key = client->current_header_key;
+        client->event.header_value = client->current_header_value;
+        http_dispatch_event(client, HTTP_EVENT_ON_HEADER, NULL, 0);
+        free(client->current_header_key);
+        free(client->current_header_value);
+        client->current_header_key = NULL;
+        client->current_header_value = NULL;
+    }
+    return 0;
+}
+
 static int http_on_header_field(http_parser *parser, const char *at, size_t length)
 {
     esp_http_client_t *client = parser->data;
-    http_utils_assign_string(&client->current_header_key, at, length);
+    http_on_header_event(client);
+    http_utils_append_string(&client->current_header_key, at, length);
 
     return 0;
 }
@@ -221,29 +237,21 @@ static int http_on_header_value(http_parser *parser, const char *at, size_t leng
         return 0;
     }
     if (strcasecmp(client->current_header_key, "Location") == 0) {
-        http_utils_assign_string(&client->location, at, length);
+        http_utils_append_string(&client->location, at, length);
     } else if (strcasecmp(client->current_header_key, "Transfer-Encoding") == 0
                && memcmp(at, "chunked", length) == 0) {
         client->response->is_chunked = true;
     } else if (strcasecmp(client->current_header_key, "WWW-Authenticate") == 0) {
-        http_utils_assign_string(&client->auth_header, at, length);
+        http_utils_append_string(&client->auth_header, at, length);
     }
-    http_utils_assign_string(&client->current_header_value, at, length);
-
-    ESP_LOGD(TAG, "HEADER=%s:%s", client->current_header_key, client->current_header_value);
-    client->event.header_key = client->current_header_key;
-    client->event.header_value = client->current_header_value;
-    http_dispatch_event(client, HTTP_EVENT_ON_HEADER, NULL, 0);
-    free(client->current_header_key);
-    free(client->current_header_value);
-    client->current_header_key = NULL;
-    client->current_header_value = NULL;
+    http_utils_append_string(&client->current_header_value, at, length);
     return 0;
 }
 
 static int http_on_headers_complete(http_parser *parser)
 {
     esp_http_client_handle_t client = parser->data;
+    http_on_header_event(client);
     client->response->status_code = parser->status_code;
     client->response->data_offset = parser->nread;
     client->response->content_length = parser->content_length;

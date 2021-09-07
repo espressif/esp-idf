@@ -230,6 +230,15 @@ menu "LWIP"
             Enabling this option performs a check (via ARP request) if the offered IP address
             is not already in use by another host on the network.
 
+    config LWIP_DHCP_DISABLE_CLIENT_ID
+        bool "DHCP: Disable Use of HW address as client identification"
+        default n
+        help
+            This option could be used to disable DHCP client identification with its MAC address.
+            (Client id is used by DHCP servers to uniquely identify clients and are included
+            in the DHCP packets as an option 61)
+            Set this option to "y" in order to exclude option 61 from DHCP packets.
+
     config LWIP_DHCP_RESTORE_LAST_IP
         bool "DHCP: Restore last IP obtained from DHCP server"
         default n
@@ -240,10 +249,18 @@ menu "LWIP"
 
     menu "DHCP server"
 
+        config LWIP_DHCPS
+            bool "DHCPS: Enable IPv4 Dynamic Host Configuration Protocol Server (DHCPS)"
+            default y
+            help
+                Enabling this option allows the device to run the DHCP server
+                (to dynamically assign IPv4 addresses to clients).
+
         config LWIP_DHCPS_LEASE_UNIT
             int "Multiplier for lease time, in seconds"
             range 1 3600
             default 60
+            depends on LWIP_DHCPS
             help
                 The DHCP server is calculating lease time multiplying the sent
                 and received times by this number of seconds per unit.
@@ -253,6 +270,7 @@ menu "LWIP"
             int "Maximum number of stations"
             range 1 64
             default 8
+            depends on LWIP_DHCPS
             help
                 The maximum number of DHCP clients that are connected to the server.
                 After this number is exceeded, DHCP server removes of the oldest device
@@ -723,13 +741,21 @@ menu "LWIP"
 
     menu "ICMP"
 
+        config LWIP_ICMP
+            bool "ICMP: Enable ICMP"
+            default y
+            help
+                Enable ICMP module for check network stability
+
         config LWIP_MULTICAST_PING
             bool "Respond to multicast pings"
             default n
+            depends on LWIP_ICMP6 || LWIP_ICMP
 
         config LWIP_BROADCAST_PING
             bool "Respond to broadcast pings"
             default n
+            depends on LWIP_ICMP
 
     endmenu # ICMP
 
@@ -884,7 +910,7 @@ menu "LWIP"
 
     config LWIP_ICMP_DEBUG
         bool "Enable ICMP debug messages"
-        depends on LWIP_DEBUG
+        depends on LWIP_DEBUG && LWIP_ICMP
         default n
 
     config LWIP_DHCP_STATE_DEBUG

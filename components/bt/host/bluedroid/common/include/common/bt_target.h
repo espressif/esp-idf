@@ -21,6 +21,7 @@
 #define BT_TARGET_H
 
 #include <bt_common.h>
+#include "soc/soc_caps.h"
 
 #ifndef BUILDCFG
 #define BUILDCFG
@@ -190,12 +191,6 @@
 #define GATTC_INCLUDED              FALSE
 #endif  /* UC_BT_GATTC_ENABLE */
 
-#if (UC_BT_BLUFI_ENABLE)
-#define BLUFI_INCLUDED              TRUE
-#else
-#define BLUFI_INCLUDED              FALSE
-#endif  /* UC_BT_BLUFI_ENABLE */
-
 #if (UC_BT_GATTC_ENABLE && UC_BT_GATTC_CACHE_NVS_FLASH_ENABLED)
 #define GATTC_CACHE_NVS             TRUE
 #else
@@ -263,6 +258,11 @@
 #define BLE_ESTABLISH_LINK_CONNECTION_TIMEOUT UC_BT_BLE_ESTAB_LINK_CONN_TOUT
 #endif
 
+#ifdef SOC_BLE_DONT_UPDATE_OWN_RPA
+#define BLE_UPDATE_BLE_ADDR_TYPE_RPA FALSE
+#else
+#define BLE_UPDATE_BLE_ADDR_TYPE_RPA TRUE
+#endif
 //------------------Added from bdroid_buildcfg.h---------------------
 #ifndef L2CAP_EXTFEA_SUPPORTED_MASK
 #define L2CAP_EXTFEA_SUPPORTED_MASK (L2CAP_EXTFEA_ENH_RETRANS | L2CAP_EXTFEA_STREAM_MODE | L2CAP_EXTFEA_NO_CRC | L2CAP_EXTFEA_FIXED_CHNLS)

@@ -540,13 +540,11 @@ class BaseDUT(object):
         :return: match groups if match succeed otherwise None
         """
         ret = None
-        if isinstance(pattern.pattern, type(u'')):
-            pattern = re.compile(BaseDUT.u_to_bytearray(pattern.pattern))
-        if isinstance(data, type(u'')):
-            data = BaseDUT.u_to_bytearray(data)
+        if isinstance(pattern.pattern, bytes):
+            pattern = re.compile(_decode_data(pattern.pattern))
         match = pattern.search(data)
         if match:
-            ret = tuple(None if x is None else x.decode() for x in match.groups())
+            ret = tuple(x for x in match.groups())
             index = match.end()
         else:
             index = -1
@@ -596,6 +594,7 @@ class BaseDUT(object):
         while True:
             ret, index = method(data, pattern)
             if ret is not None:
+                stdout = data[:index]
                 self.data_cache.flush(index)
                 break
             time_remaining = start_time + timeout - time.time()
@@ -603,7 +602,6 @@ class BaseDUT(object):
                 break
             # wait for new data from cache
             data = self.data_cache.get_data(time_remaining)
-            stdout = data
 
         if ret is None:
             pattern = _pattern_to_string(pattern)

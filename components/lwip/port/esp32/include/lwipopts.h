@@ -217,6 +217,7 @@
    ---------- ICMP options ----------
    ----------------------------------
 */
+#define LWIP_ICMP  CONFIG_LWIP_ICMP
 
 #define LWIP_BROADCAST_PING CONFIG_LWIP_BROADCAST_PING
 
@@ -249,6 +250,10 @@
  */
 #define DHCP_DOES_ARP_CHECK             CONFIG_LWIP_DHCP_DOES_ARP_CHECK
 
+/**
+ * LWIP_DHCP_DISABLE_CLIENT_ID==1: Do not add option 61 (client-id) to DHCP packets
+ */
+#define ESP_DHCP_DISABLE_CLIENT_ID      CONFIG_LWIP_DHCP_DISABLE_CLIENT_ID
 
 /**
  * CONFIG_LWIP_DHCP_RESTORE_LAST_IP==1: Last valid IP address obtained from DHCP server
@@ -952,7 +957,13 @@
 #define ESP_STATS_MEM                   CONFIG_LWIP_STATS
 #define ESP_STATS_DROP                  CONFIG_LWIP_STATS
 #define ESP_STATS_TCP                   0
+#ifdef CONFIG_LWIP_DHCPS
+#define ESP_DHCPS                       1
 #define ESP_DHCPS_TIMER                 1
+#else
+#define ESP_DHCPS                       0
+#define ESP_DHCPS_TIMER                 0
+#endif /* CONFIG_LWIP_DHCPS */
 #define ESP_LWIP_LOGI(...)              ESP_LOGI("lwip", __VA_ARGS__)
 #define ESP_PING                        1
 #define ESP_HAS_SELECT                  1

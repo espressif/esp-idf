@@ -7,10 +7,11 @@
  * See README for more details.
  */
 
+#include "includes.h"
 
-#include "utils/common.h"
-#include "crypto/aes.h"
-#include "crypto/aes_wrap.h"
+#include "common.h"
+#include "aes.h"
+#include "aes_wrap.h"
 
 static void gf_mulx(u8 *pad)
 {
@@ -46,6 +47,9 @@ int omac1_aes_vector(const u8 *key, size_t key_len, size_t num_elem,
 	u8 cbc[AES_BLOCK_SIZE], pad[AES_BLOCK_SIZE];
 	const u8 *pos, *end;
 	size_t i, e, left, total_len;
+
+	if (TEST_FAIL())
+		return -1;
 
 	ctx = aes_encrypt_init(key, key_len);
 	if (ctx == NULL)
