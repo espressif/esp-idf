@@ -283,6 +283,10 @@
     #define portMEMORY_BARRIER()
 #endif
 
+#ifndef portSOFTWARE_BARRIER
+    #define portSOFTWARE_BARRIER()
+#endif
+
 /* The timers module relies on xTaskGetSchedulerState(). */
 #if configUSE_TIMERS == 1
 
@@ -488,9 +492,15 @@
     #define traceCREATE_COUNTING_SEMAPHORE_FAILED()
 #endif
 
+#ifndef traceQUEUE_SET_SEND
+    #define traceQUEUE_SET_SEND    traceQUEUE_SEND
+#endif
+
+#ifdef ESP_PLATFORM
 #ifndef traceQUEUE_SEMAPHORE_RECEIVE
     #define traceQUEUE_SEMAPHORE_RECEIVE( pxQueue )
 #endif
+#endif // ESP_PLATFORM
 
 #ifndef traceQUEUE_SEND
     #define traceQUEUE_SEND( pxQueue )
@@ -544,6 +554,7 @@
     #define traceQUEUE_DELETE( pxQueue )
 #endif
 
+#ifdef ESP_PLATFORM
 #ifndef traceQUEUE_GIVE_FROM_ISR
     #define traceQUEUE_GIVE_FROM_ISR( pxQueue )
 #endif
@@ -551,6 +562,7 @@
 #ifndef traceQUEUE_GIVE_FROM_ISR_FAILED
     #define traceQUEUE_GIVE_FROM_ISR_FAILED( pxQueue )
 #endif
+#endif // ESP_PLATFORM
 
 #ifndef traceTASK_CREATE
     #define traceTASK_CREATE( pxNewTCB )
@@ -677,31 +689,31 @@
 #endif
 
 #ifndef traceTASK_NOTIFY_TAKE_BLOCK
-    #define traceTASK_NOTIFY_TAKE_BLOCK()
+    #define traceTASK_NOTIFY_TAKE_BLOCK( uxIndexToWait )
 #endif
 
 #ifndef traceTASK_NOTIFY_TAKE
-    #define traceTASK_NOTIFY_TAKE()
+    #define traceTASK_NOTIFY_TAKE( uxIndexToWait )
 #endif
 
 #ifndef traceTASK_NOTIFY_WAIT_BLOCK
-    #define traceTASK_NOTIFY_WAIT_BLOCK()
+    #define traceTASK_NOTIFY_WAIT_BLOCK( uxIndexToWait )
 #endif
 
 #ifndef traceTASK_NOTIFY_WAIT
-    #define traceTASK_NOTIFY_WAIT()
+    #define traceTASK_NOTIFY_WAIT( uxIndexToWait )
 #endif
 
 #ifndef traceTASK_NOTIFY
-    #define traceTASK_NOTIFY()
+    #define traceTASK_NOTIFY( uxIndexToNotify )
 #endif
 
 #ifndef traceTASK_NOTIFY_FROM_ISR
-    #define traceTASK_NOTIFY_FROM_ISR()
+    #define traceTASK_NOTIFY_FROM_ISR( uxIndexToNotify )
 #endif
 
 #ifndef traceTASK_NOTIFY_GIVE_FROM_ISR
-    #define traceTASK_NOTIFY_GIVE_FROM_ISR()
+    #define traceTASK_NOTIFY_GIVE_FROM_ISR( uxIndexToNotify )
 #endif
 
 #ifndef traceSTREAM_BUFFER_CREATE_FAILED
@@ -756,6 +768,7 @@
     #define traceSTREAM_BUFFER_RECEIVE_FROM_ISR( xStreamBuffer, xReceivedLength )
 #endif
 
+#ifdef ESP_PLATFORM
 #ifndef traceISR_EXIT_TO_SCHEDULER
     #define traceISR_EXIT_TO_SCHEDULER()
 #endif
@@ -767,6 +780,7 @@
 #ifndef traceISR_ENTER
     #define traceISR_ENTER(_n_)
 #endif
+#endif // ESP_PLATFORM
 
 #ifndef configGENERATE_RUN_TIME_STATS
     #define configGENERATE_RUN_TIME_STATS    0
