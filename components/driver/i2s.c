@@ -1194,7 +1194,7 @@ static esp_err_t i2s_calculate_common_clock(int i2s_num, i2s_hal_clock_cfg_t *cl
          * Here use 'SOC_I2S_SUPPORTS_TDM' to differentialize other chips with ESP32 and ESP32S2.
          */
 #if SOC_I2S_SUPPORTS_TDM
-        multi = clk_cfg->sclk / rate;
+        multi = I2S_LL_BASE_CLK / rate;
 #else
         multi =  64 * chan_bit;
 #endif
@@ -1906,6 +1906,7 @@ static esp_err_t i2s_dma_object_init(i2s_port_t i2s_num)
  *     - ESP_OK              Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  *     - ESP_ERR_NO_MEM      Out of memory
+ *     - ESP_ERR_INVALID_STATE  Current I2S port is in use
  */
 esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config, int queue_size, void *i2s_queue)
 {
@@ -1926,7 +1927,7 @@ esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config,
     if (ret != ESP_OK) {
         free(pre_alloc_i2s_obj);
         ESP_LOGE(TAG, "register I2S object to platform failed");
-        return ret;
+        return ESP_ERR_INVALID_STATE;
     }
 
     /* Step 3: Initialize I2S object, assign configarations */

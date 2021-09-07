@@ -145,6 +145,14 @@ TEST_CASE("I2S basic driver install, uninstall, set pin test", "[i2s]")
         .dma_buf_len = 60,
         .use_apll = 0,
         .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
+#if SOC_I2S_SUPPORTS_TDM
+        .chan_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1,
+        .total_chan = 2,
+        .left_align = false,
+        .big_edin = false,
+        .bit_order_msb = false,
+        .skip_msk = false
+#endif
     };
 
     // normal  i2s
@@ -181,6 +189,14 @@ TEST_CASE("I2S Loopback test(master tx and rx)", "[i2s]")
         .dma_buf_len = 100,
         .use_apll = 0,
         .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
+#if SOC_I2S_SUPPORTS_TDM
+        .chan_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1,
+        .total_chan = 2,
+        .left_align = false,
+        .big_edin = false,
+        .bit_order_msb = false,
+        .skip_msk = false
+#endif
     };
     i2s_pin_config_t master_pin_config = {
         .bck_io_num = MASTER_BCK_IO,
@@ -246,6 +262,14 @@ TEST_CASE("I2S write and read test(master tx and slave rx)", "[i2s]")
         .dma_buf_len = 100,
         .use_apll = 0,
         .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
+#if SOC_I2S_SUPPORTS_TDM
+        .chan_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1,
+        .total_chan = 2,
+        .left_align = false,
+        .big_edin = false,
+        .bit_order_msb = false,
+        .skip_msk = false
+#endif
     };
     i2s_pin_config_t master_pin_config = {
         .bck_io_num = MASTER_BCK_IO,
@@ -268,6 +292,14 @@ TEST_CASE("I2S write and read test(master tx and slave rx)", "[i2s]")
         .dma_buf_len = 100,
         .use_apll = 0,
         .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
+#if SOC_I2S_SUPPORTS_TDM
+        .chan_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1,
+        .total_chan = 2,
+        .left_align = false,
+        .big_edin = false,
+        .bit_order_msb = false,
+        .skip_msk = false
+#endif
     };
     i2s_pin_config_t slave_pin_config = {
         .bck_io_num = SLAVE_BCK_IO,
@@ -332,6 +364,14 @@ TEST_CASE("I2S write and read test(master rx and slave tx)", "[i2s]")
         .dma_buf_len = 100,
         .use_apll = 1,
         .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
+#if SOC_I2S_SUPPORTS_TDM
+        .chan_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1,
+        .total_chan = 2,
+        .left_align = false,
+        .big_edin = false,
+        .bit_order_msb = false,
+        .skip_msk = false
+#endif
     };
     i2s_pin_config_t master_pin_config = {
         .bck_io_num = MASTER_BCK_IO,
@@ -354,6 +394,14 @@ TEST_CASE("I2S write and read test(master rx and slave tx)", "[i2s]")
         .dma_buf_len = 100,
         .use_apll = 1,
         .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
+#if SOC_I2S_SUPPORTS_TDM
+        .chan_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1,
+        .total_chan = 2,
+        .left_align = false,
+        .big_edin = false,
+        .bit_order_msb = false,
+        .skip_msk = false
+#endif
     };
     i2s_pin_config_t slave_pin_config = {
         .bck_io_num = SLAVE_BCK_IO,
@@ -419,6 +467,14 @@ TEST_CASE("I2S memory leaking test", "[i2s]")
         .dma_buf_len = 100,
         .use_apll = 0,
         .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
+#if SOC_I2S_SUPPORTS_TDM
+        .chan_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1,
+        .total_chan = 2,
+        .left_align = false,
+        .big_edin = false,
+        .bit_order_msb = false,
+        .skip_msk = false
+#endif
     };
     i2s_pin_config_t master_pin_config = {
         .bck_io_num = MASTER_BCK_IO,
@@ -442,6 +498,7 @@ TEST_CASE("I2S memory leaking test", "[i2s]")
     TEST_ASSERT(initial_size == esp_get_free_heap_size());
 }
 
+#if SOC_I2S_SUPPORTS_APLL
 /*
  *   The I2S APLL clock variation test used to test the difference between the different sample rates, different bits per sample
  *   and the APLL clock generate for it. The TEST_CASE passes PERCENT_DIFF variation from the provided sample rate in APLL generated clock
@@ -464,10 +521,16 @@ TEST_CASE("I2S APLL clock variation test", "[i2s]")
         .communication_format = I2S_COMM_FORMAT_STAND_I2S,
         .dma_buf_count = 6,
         .dma_buf_len = 60,
-#if SOC_I2S_SUPPORTS_APLL
         .use_apll = true,
-#endif
         .intr_alloc_flags = 0,
+#if SOC_I2S_SUPPORTS_TDM
+        .chan_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1,
+        .total_chan = 2,
+        .left_align = false,
+        .big_edin = false,
+        .bit_order_msb = false,
+        .skip_msk = false
+#endif
     };
 
     TEST_ESP_OK(i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL));
@@ -494,6 +557,7 @@ TEST_CASE("I2S APLL clock variation test", "[i2s]")
     vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ASSERT(initial_size == esp_get_free_heap_size());
 }
+#endif
 
 #if SOC_I2S_SUPPORTS_ADC
 /* Only ESP32 need I2S adc/dac test */
