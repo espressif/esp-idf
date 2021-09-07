@@ -105,7 +105,8 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
     } else {
         SET_PERI_REG_MASK(RTC_CNTL_REG, RTC_CNTL_REGULATOR_FORCE_PU);
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_DG_WRAP_PD_EN);
-        REG_SET_FIELD(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_DBG_ATTEN_DEEP_SLP, RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_DEFAULT);
+        REG_SET_FIELD(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_DBG_ATTEN_DEEP_SLP,
+                cfg.int_8m_pd_en ? RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_DEFAULT : RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_NODROP);
     }
 
     //Keep the RTC8M_CLK on in light_sleep mode if the ledc low-speed channel is clocked by RTC8M_CLK.

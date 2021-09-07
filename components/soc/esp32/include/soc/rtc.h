@@ -528,9 +528,13 @@ typedef struct rtc_sleep_config_s {
     .deep_slp = ((sleep_flags) & RTC_SLEEP_PD_DIG) ? 1 : 0, \
     .wdt_flashboot_mod_en = 0, \
     .dig_dbias_wak = RTC_CNTL_DBIAS_1V10, \
-    .dig_dbias_slp = RTC_CNTL_DBIAS_0V90, \
+    .dig_dbias_slp = is_dslp(sleep_flags)                   ? RTC_CNTL_DBIAS_0V90 \
+                   : !((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? RTC_CNTL_DBIAS_1V10 \
+                   : RTC_CNTL_DBIAS_0V90, \
     .rtc_dbias_wak = RTC_CNTL_DBIAS_1V10, \
-    .rtc_dbias_slp = RTC_CNTL_DBIAS_0V90, \
+    .rtc_dbias_slp = is_dslp(sleep_flags)                   ? RTC_CNTL_DBIAS_0V90 \
+                   : !((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? RTC_CNTL_DBIAS_1V10 \
+                   : RTC_CNTL_DBIAS_0V90, \
     .lslp_meminf_pd = 1, \
     .vddsdio_pd_en = ((sleep_flags) & RTC_SLEEP_PD_VDDSDIO) ? 1 : 0, \
     .xtal_fpu = ((sleep_flags) & RTC_SLEEP_PD_XTAL) ? 0 : 1 \
