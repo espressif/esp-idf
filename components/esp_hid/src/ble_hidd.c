@@ -38,6 +38,8 @@ static const char *TAG = "BLE_HIDD";
 /// Length of Boot Report Char. Value Maximal Length
 #define HIDD_LE_BOOT_REPORT_MAX_LEN           (8)
 
+typedef hidd_report_item_t hidd_le_report_item_t;
+
 /*
  * UUIDs
  * */
@@ -125,30 +127,6 @@ enum {
 
     HIDD_LE_IDX_NB,
 };
-
-/* Client Characteristic Configuration value structure */
-typedef union {
-    struct {
-        uint16_t notify_enable: 1;
-        uint16_t indicate_enable: 1;
-        uint16_t reserved: 14;
-    };
-    uint16_t value;
-} hidd_le_ccc_value_t;
-
-typedef struct {
-    uint8_t map_index;      //the index of the report map
-    uint8_t report_id;      //the id of the report
-    uint8_t report_type;    //input, output or feature
-    uint8_t protocol_mode;  //boot or report
-    esp_hid_usage_t usage; //generic, keyboard, mouse, joystick or gamepad
-    uint16_t value_len;     //maximum len of value by report map
-    //used by gatts
-    uint8_t index;          //index of the value in the gatts attr db
-    uint16_t handle;        //obtained once all attributes are registered
-    uint16_t ccc_handle;    //obtained once all attributes are registered
-    hidd_le_ccc_value_t ccc;    //notifications and/or indications enabled
-} hidd_le_report_item_t;
 
 typedef struct {
     esp_gatt_if_t               gatt_if;
@@ -872,8 +850,14 @@ static esp_err_t esp_ble_hidd_dev_input_set(void *devp, size_t index, size_t id,
     if (!dev || s_dev != dev) {
         return ESP_FAIL;
     }
+
     if (!dev->connected) {
-        ESP_LOGE(TAG, "Device Not Connected: %d", index);
+        ESP_LOGE(TAG, "%s Device Not Connected", __func__);
+        return ESP_FAIL;
+    }
+
+    if (index >= dev->devices_len) {
+        ESP_LOGE(TAG, "%s index out of range[0-%d]", __func__, dev->devices_len - 1);
         return ESP_FAIL;
     }
 
@@ -898,6 +882,17 @@ static esp_err_t esp_ble_hidd_dev_feature_set(void *devp, size_t index, size_t i
     if (!dev || s_dev != dev) {
         return ESP_FAIL;
     }
+
+    if (!dev->connected) {
+        ESP_LOGE(TAG, "%s Device Not Connected", __func__);
+        return ESP_FAIL;
+    }
+
+    if (index >= dev->devices_len) {
+        ESP_LOGE(TAG, "%s index out of range[0-%d]", __func__, dev->devices_len - 1);
+        return ESP_FAIL;
+    }
+
     hidd_le_report_item_t *p_rpt;
     if ((p_rpt = get_report_by_id_and_type(dev, id, ESP_HID_REPORT_TYPE_FEATURE)) != NULL) {
         ret = esp_ble_gatts_set_attr_value(p_rpt->handle, length, data);
@@ -941,9 +936,11 @@ static esp_err_t esp_ble_hidd_dev_event_handler_unregister(void *devp, esp_event
 
 static void ble_hidd_dev_free(void)
 {
-    ble_hid_free_config(s_dev);
-    free(s_dev);
-    s_dev = NULL;
+    if (s_dev) {
+        ble_hid_free_config(s_dev);
+        free(s_dev);
+        s_dev = NULL;
+    }
 }
 
 esp_err_t esp_ble_hidd_dev_init(esp_hidd_dev_t *dev_p, const esp_hid_device_config_t *config, esp_event_handler_t callback)

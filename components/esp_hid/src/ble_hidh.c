@@ -534,13 +534,16 @@ void esp_hidh_gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gatt
         } else {
             dev->connected = false;
             dev->status = p_data->close.status;
+            // free the device in the wrapper event handler
+            dev->in_use = false;
             if (event_loop_handle) {
                 esp_hidh_event_data_t p = {0};
                 p.close.dev = dev;
                 p.close.reason = p_data->close.reason;
+                p.close.status = ESP_OK;
                 esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_CLOSE_EVENT, &p, sizeof(esp_hidh_event_data_t), portMAX_DELAY);
             } else {
-                esp_hidh_dev_free(dev);
+                esp_hidh_dev_free_inner(dev);
             }
         }
         break;
@@ -659,7 +662,7 @@ esp_err_t esp_ble_hidh_init(const esp_hidh_config_t *config)
         ret = esp_event_handler_register_with(event_loop_handle, ESP_HIDH_EVENTS, ESP_EVENT_ANY_ID,
                                               esp_hidh_process_event_data_handler, NULL);
         ret |= esp_event_handler_register_with(event_loop_handle, ESP_HIDH_EVENTS, ESP_EVENT_ANY_ID, config->callback,
-                                              NULL);
+                                              config->callback_arg);
     } while (0);
 
     if (ret != ESP_OK) {
@@ -706,6 +709,7 @@ esp_hidh_dev_t *esp_ble_hidh_dev_open(esp_bd_addr_t bda, esp_ble_addr_type_t add
         return NULL;
     }
 
+    dev->in_use = true;
     dev->transport = ESP_HID_TRANSPORT_BLE;
     memcpy(dev->bda, bda, sizeof(esp_bd_addr_t));
     dev->ble.address_type = address_type;
@@ -713,7 +717,7 @@ esp_hidh_dev_t *esp_ble_hidh_dev_open(esp_bd_addr_t bda, esp_ble_addr_type_t add
 
     ret = esp_ble_gattc_open(hid_gattc_if, dev->bda, dev->ble.address_type, true);
     if (ret) {
-        esp_hidh_dev_free(dev);
+        esp_hidh_dev_free_inner(dev);
         ESP_LOGE(TAG, "esp_ble_gattc_open failed: %d", ret);
         return NULL;
     }
@@ -721,7 +725,7 @@ esp_hidh_dev_t *esp_ble_hidh_dev_open(esp_bd_addr_t bda, esp_ble_addr_type_t add
     if (dev->ble.conn_id < 0) {
         ret = dev->status;
         ESP_LOGE(TAG, "dev open failed! status: 0x%x", dev->status);
-        esp_hidh_dev_free(dev);
+        esp_hidh_dev_free_inner(dev);
         return NULL;
     }
 
@@ -734,6 +738,7 @@ esp_hidh_dev_t *esp_ble_hidh_dev_open(esp_bd_addr_t bda, esp_ble_addr_type_t add
 
     if (event_loop_handle) {
         esp_hidh_event_data_t p = {0};
+        p.open.status = ESP_OK;
         p.open.dev = dev;
         esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_OPEN_EVENT, &p, sizeof(esp_hidh_event_data_t), portMAX_DELAY);
     }

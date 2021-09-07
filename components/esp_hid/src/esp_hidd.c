@@ -20,11 +20,14 @@
 #include "ble_hidd.h"
 #endif /* CONFIG_GATTS_ENABLE */
 
+#if CONFIG_BT_HID_DEVICE_ENABLED
+#include "bt_hidd.h"
+#endif /* CONFIG_BT_HID_DEVICE_ENABLED */
+
 ESP_EVENT_DEFINE_BASE(ESP_HIDD_EVENTS);
 
 esp_err_t esp_hidd_dev_init(const esp_hid_device_config_t *config, esp_hid_transport_t transport, esp_event_handler_t callback, esp_hidd_dev_t **dev_out)
 {
-
     esp_err_t ret = ESP_OK;
     esp_hidd_dev_t *dev = (esp_hidd_dev_t *)calloc(1, sizeof(esp_hidd_dev_t));
     if (dev == NULL) {
@@ -37,6 +40,11 @@ esp_err_t esp_hidd_dev_init(const esp_hid_device_config_t *config, esp_hid_trans
         ret = esp_ble_hidd_dev_init(dev, config, callback);
         break;
 #endif /* CONFIG_GATTS_ENABLE */
+#if CONFIG_BT_HID_DEVICE_ENABLED
+    case ESP_HID_TRANSPORT_BT:
+        ret = esp_bt_hidd_dev_init(dev, config, callback);
+        break;
+#endif /* CONFIG_BT_HID_DEVICE_ENABLED */
     default:
         ret = ESP_FAIL;
         break;
