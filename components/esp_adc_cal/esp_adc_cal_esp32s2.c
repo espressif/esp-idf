@@ -17,6 +17,7 @@
 #include "driver/adc.h"
 #include "soc/efuse_periph.h"
 #include "esp_err.h"
+#include "esp_check.h"
 #include "assert.h"
 #include "esp_adc_cal.h"
 #include "esp_efuse.h"
@@ -24,11 +25,6 @@
 #include "esp_efuse_rtc_table.h"
 #include "hal/adc_hal.h"
 
-#define ADC_CAL_CHECK(cond, ret) ({                                         \
-            if(!(cond)){                                                    \
-                return ret;                                                 \
-            }                                                               \
-})
 const static char LOG_TAG[] = "adc_calib";
 
 /* ------------------------ Characterization Constants ---------------------- */
@@ -207,8 +203,7 @@ esp_adc_cal_value_t esp_adc_cal_characterize(adc_unit_t adc_num,
 
 uint32_t esp_adc_cal_raw_to_voltage(uint32_t adc_reading, const esp_adc_cal_characteristics_t *chars)
 {
-    ADC_CAL_CHECK(chars != NULL, ESP_ERR_INVALID_ARG);
-
+    assert(chars != NULL);
     return adc_reading * chars->coeff_a / coeff_a_scaling + chars->coeff_b / coeff_b_scaling;
 }
 
@@ -217,21 +212,20 @@ esp_err_t esp_adc_cal_get_voltage(adc_channel_t channel,
                                   uint32_t *voltage)
 {
     // Check parameters
-    ADC_CAL_CHECK(chars != NULL, ESP_ERR_INVALID_ARG);
-    ADC_CAL_CHECK(voltage != NULL, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(chars != NULL, ESP_ERR_INVALID_ARG, LOG_TAG, "No characteristic input");
+    ESP_RETURN_ON_FALSE(voltage != NULL, ESP_ERR_INVALID_ARG, LOG_TAG, "No output buffer");
 
+    esp_err_t ret = ESP_OK;
     int adc_reading;
     if (chars->adc_num == ADC_UNIT_1) {
         //Check if channel is valid on ADC1
-        ADC_CAL_CHECK((adc1_channel_t)channel < ADC1_CHANNEL_MAX, ESP_ERR_INVALID_ARG);
+        ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(0), ESP_ERR_INVALID_ARG, LOG_TAG, "Invalid channel");
         adc_reading = adc1_get_raw(channel);
     } else {
         //Check if channel is valid on ADC2
-        ADC_CAL_CHECK((adc2_channel_t)channel < ADC2_CHANNEL_MAX, ESP_ERR_INVALID_ARG);
-        if (adc2_get_raw(channel, chars->bit_width, &adc_reading) != ESP_OK) {
-            return ESP_ERR_TIMEOUT;     //Timed out waiting for ADC2
-        }
+        ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(1), ESP_ERR_INVALID_ARG, LOG_TAG, "Invalid channel");
+        ret = adc2_get_raw(channel, chars->bit_width, &adc_reading);
     }
     *voltage = esp_adc_cal_raw_to_voltage((uint32_t)adc_reading, chars);
-    return ESP_OK;
+    return ret;
 }
