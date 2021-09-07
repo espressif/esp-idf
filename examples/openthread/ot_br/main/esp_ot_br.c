@@ -92,6 +92,12 @@ static size_t hex_string_to_binary(const char *hex_string, uint8_t *buf, size_t 
 static void create_config_network(otInstance *instance)
 {
     otOperationalDataset dataset;
+
+    if (otDatasetGetActive(instance, &dataset) == OT_ERROR_NONE) {
+        ESP_LOGI(TAG, "Already has network, skip configuring OpenThread network.");
+        return;
+    }
+
     uint16_t network_name_len = strnlen(CONFIG_OPENTHREAD_NETWORK_NAME, OT_NETWORK_NAME_MAX_SIZE + 1);
 
     assert(network_name_len <= OT_NETWORK_NAME_MAX_SIZE);
@@ -132,6 +138,11 @@ static void create_config_network(otInstance *instance)
         ESP_LOGE(TAG, "Failed to register border router.");
         abort();
     }
+    return;
+}
+
+static void launch_openthread_network(otInstance *instance)
+{
     if (otIp6SetEnabled(instance, true) != OT_ERROR_NONE) {
         ESP_LOGE(TAG, "Failed to enable OpenThread IP6 link");
         abort();
@@ -140,7 +151,6 @@ static void create_config_network(otInstance *instance)
         ESP_LOGE(TAG, "Failed to enable OpenThread");
         abort();
     }
-    return;
 }
 
 static void ot_task_worker(void *aContext)
@@ -165,6 +175,7 @@ static void ot_task_worker(void *aContext)
     esp_openthread_lock_acquire(portMAX_DELAY);
     otAppCliInit(esp_openthread_get_instance());
     create_config_network(esp_openthread_get_instance());
+    launch_openthread_network(esp_openthread_get_instance());
     esp_openthread_lock_release();
 
     // Run the main loop
