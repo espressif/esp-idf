@@ -93,7 +93,6 @@ static void esp_cdc_ecm_rx_task(void *arg)
 
 void esp_cdc_ecm_free_rx_buffer(void *h, void* buffer)
 {
-    ESP_LOGI(TAG, "esp_cdc_ecm_free_rx_buffer");
     if(buffer != NULL) {
         free(buffer);
         buffer = NULL;
