@@ -486,4 +486,30 @@ esp_hidh_dev_t *esp_hidh_dev_get_by_conn_id(uint16_t conn_id)
 #endif /* CONFIG_GATTC_ENABLE */
     return NULL;
 }
+
+/**
+ * The deep copy data append the end of the esp_hidh_event_data_t, move the data pointer to the correct address. This is
+ * a workaround way, it's better to use flexiable array in the interface.
+ */
+void esp_hidh_process_event_data_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id,
+                                         void *event_data)
+{
+    esp_hidh_event_t event = (esp_hidh_event_t)event_id;
+    esp_hidh_event_data_t *param = (esp_hidh_event_data_t *)event_data;
+
+    switch (event) {
+    case ESP_HIDH_INPUT_EVENT:
+        if (param->input.length && param->input.data) {
+            param->input.data = (uint8_t *)param + sizeof(esp_hidh_event_data_t);
+        }
+        break;
+    case ESP_HIDH_FEATURE_EVENT:
+        if (param->feature.length && param->feature.data) {
+            param->feature.data = (uint8_t *)param + sizeof(esp_hidh_event_data_t);
+        }
+        break;
+    default:
+        break;
+    }
+}
 #endif /* CONFIG_BLUEDROID_ENABLED */

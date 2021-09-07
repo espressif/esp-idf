@@ -119,3 +119,29 @@ esp_err_t esp_hidd_dev_event_handler_unregister(esp_hidd_dev_t *dev, esp_event_h
     }
     return dev->event_handler_unregister(dev->dev, callback, event);
 }
+
+/**
+ * The deep copy data append the end of the esp_hidd_event_data_t, move the data pointer to the correct address. This is
+ * a workaround way, it's better to use flexiable array in the interface.
+ */
+void esp_hidd_process_event_data_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id,
+                                         void *event_data)
+{
+    esp_hidd_event_t event = (esp_hidd_event_t)event_id;
+    esp_hidd_event_data_t *param = (esp_hidd_event_data_t *)event_data;
+
+    switch (event) {
+    case ESP_HIDD_OUTPUT_EVENT:
+        if (param->output.length && param->output.data) {
+            param->output.data = (uint8_t *)param + sizeof(esp_hidd_event_data_t);
+        }
+        break;
+    case ESP_HIDD_FEATURE_EVENT:
+        if (param->feature.length && param->feature.data) {
+            param->feature.data = (uint8_t *)param + sizeof(esp_hidd_event_data_t);
+        }
+        break;
+    default:
+        break;
+    }
+}

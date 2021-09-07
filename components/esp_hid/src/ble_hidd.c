@@ -559,23 +559,43 @@ static void hid_event_handler(esp_ble_hidd_dev_t *dev, int device_index, esp_gat
                 } else {
                     ESP_LOGV(TAG, "HID WRITE %8s %7s %6s id: %d, len: %d", esp_hid_usage_str(map->usage), esp_hid_report_type_str(map->report_type), esp_hid_protocol_mode_str(map->protocol_mode), map->report_id, param->write.len);
 
-                    esp_hidd_event_data_t cb_param = {0};
+                    esp_hidd_event_data_t *p_cb_param = NULL;
+                    size_t event_data_size = sizeof(esp_hidd_event_data_t);
+                    if (param->write.len > 0 && param->write.value) {
+                        event_data_size += param->write.len;
+                    }
+
+                    if ((p_cb_param = (esp_hidd_event_data_t *)malloc(event_data_size)) == NULL) {
+                        ESP_LOGE(TAG, "%s malloc event data failed!", __func__);
+                        break;
+                    }
+                    memset(p_cb_param, 0, event_data_size);
+                    if (param->write.len > 0 && param->write.value) {
+                        memcpy(((uint8_t *)p_cb_param) + sizeof(esp_hidd_event_data_t), param->write.value,
+                               param->write.len);
+                    }
+
                     if (map->report_type == ESP_HID_REPORT_TYPE_OUTPUT) {
-                        cb_param.output.dev = dev->dev;
-                        cb_param.output.report_id = map->report_id;
-                        cb_param.output.usage = map->usage;
-                        cb_param.output.length = param->write.len;
-                        cb_param.output.data = param->write.value;
-                        cb_param.output.map_index = device_index;
-                        esp_event_post_to(dev->event_loop_handle, ESP_HIDD_EVENTS, ESP_HIDD_OUTPUT_EVENT, &cb_param, sizeof(esp_hidd_event_data_t), portMAX_DELAY);
+                        p_cb_param->output.dev = dev->dev;
+                        p_cb_param->output.report_id = map->report_id;
+                        p_cb_param->output.usage = map->usage;
+                        p_cb_param->output.length = param->write.len;
+                        p_cb_param->output.data = param->write.value; /* move the data pointer in the wrapper loop handler */
+                        p_cb_param->output.map_index = device_index;
+                        esp_event_post_to(dev->event_loop_handle, ESP_HIDD_EVENTS, ESP_HIDD_OUTPUT_EVENT, p_cb_param, event_data_size, portMAX_DELAY);
                     } else {
-                        cb_param.feature.dev = dev->dev;
-                        cb_param.feature.report_id = map->report_id;
-                        cb_param.feature.usage = map->usage;
-                        cb_param.feature.length = param->write.len;
-                        cb_param.feature.data = param->write.value;
-                        cb_param.feature.map_index = device_index;
-                        esp_event_post_to(dev->event_loop_handle, ESP_HIDD_EVENTS, ESP_HIDD_FEATURE_EVENT, &cb_param, sizeof(esp_hidd_event_data_t), portMAX_DELAY);
+                        p_cb_param->feature.dev = dev->dev;
+                        p_cb_param->feature.report_id = map->report_id;
+                        p_cb_param->feature.usage = map->usage;
+                        p_cb_param->feature.length = param->write.len;
+                        p_cb_param->feature.data = param->write.value; /* move the data pointer in the wrapper loop handler */
+                        p_cb_param->feature.map_index = device_index;
+                        esp_event_post_to(dev->event_loop_handle, ESP_HIDD_EVENTS, ESP_HIDD_FEATURE_EVENT, p_cb_param, event_data_size, portMAX_DELAY);
+                    }
+
+                    if (p_cb_param) {
+                        free(p_cb_param);
+                        p_cb_param = NULL;
                     }
                 }
             }
@@ -984,6 +1004,12 @@ esp_err_t esp_ble_hidd_dev_init(esp_hidd_dev_t *dev_p, const esp_hid_device_conf
     dev_p->feature_set = esp_ble_hidd_dev_feature_set;
     dev_p->event_handler_register = esp_ble_hidd_dev_event_handler_register;
     dev_p->event_handler_unregister = esp_ble_hidd_dev_event_handler_unregister;
+
+    ret = esp_ble_hidd_dev_event_handler_register(s_dev, esp_hidd_process_event_data_handler, ESP_EVENT_ANY_ID);
+    if (ret != ESP_OK) {
+        ble_hidd_dev_free();
+        return ret;
+    }
 
     if (callback != NULL) {
         ret = esp_ble_hidd_dev_event_handler_register(s_dev, callback, ESP_EVENT_ANY_ID);

@@ -333,6 +333,8 @@ esp_err_t esp_bt_hidh_init(const esp_hidh_config_t *config)
         ESP_LOGE(TAG, "esp_event_loop_create failed!");
         return ret;
     }
+    esp_event_handler_register_with(event_loop_handle, ESP_HIDH_EVENTS, ESP_EVENT_ANY_ID,
+                                    esp_hidh_process_event_data_handler, NULL);
     esp_event_handler_register_with(event_loop_handle, ESP_HIDH_EVENTS, ESP_EVENT_ANY_ID, config->callback, NULL);
     BTA_HhEnable(0, bta_hh_cb);
     return ESP_OK;
@@ -401,21 +403,40 @@ void bta_hh_co_data(uint8_t handle, uint8_t *p_rpt, uint16_t len, tBTA_HH_PROTO_
     }
 
     if (event_loop_handle) {
-        esp_hidh_event_data_t p = {0};
+        esp_hidh_event_data_t *p_param = NULL;
+        size_t event_data_size = sizeof(esp_hidh_event_data_t);
+
+        if (len > 1 && p_rpt) {
+            event_data_size += (len - 1);
+        }
+
+        if ((p_param = (esp_hidh_event_data_t *)malloc(event_data_size)) == NULL) {
+            ESP_LOGE(TAG, "%s malloc event data failed!", __func__);
+            return;
+        }
+        memset(p_param, 0, event_data_size);
+        if (len > 1 && p_rpt) {
+            memcpy(((uint8_t *)p_param) + sizeof(esp_hidh_event_data_t), p_rpt + 1, len - 1);
+        }
         if (report->report_type == ESP_HID_REPORT_TYPE_FEATURE) {
-            p.feature.dev = dev;
-            p.feature.report_id = report->report_id;
-            p.feature.usage = report->usage;
-            p.feature.data = p_rpt + 1;
-            p.feature.length = len - 1;
-            esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_FEATURE_EVENT, &p, sizeof(esp_hidh_event_data_t), portMAX_DELAY);
+            p_param->feature.dev = dev;
+            p_param->feature.report_id = report->report_id;
+            p_param->feature.usage = report->usage;
+            p_param->feature.data = p_rpt + 1;
+            p_param->feature.length = len - 1;
+            esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_FEATURE_EVENT, p_param, event_data_size, portMAX_DELAY);
         } else {
-            p.input.dev = dev;
-            p.input.report_id = report->report_id;
-            p.input.usage = report->usage;
-            p.input.data = p_rpt + 1;
-            p.input.length = len - 1;
-            esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_INPUT_EVENT, &p, sizeof(esp_hidh_event_data_t), portMAX_DELAY);
+            p_param->input.dev = dev;
+            p_param->input.report_id = report->report_id;
+            p_param->input.usage = report->usage;
+            p_param->input.data = p_rpt + 1;
+            p_param->input.length = len - 1;
+            esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_INPUT_EVENT, p_param, event_data_size, portMAX_DELAY);
+        }
+
+        if (p_param) {
+            free(p_param);
+            p_param = NULL;
         }
     }
 }

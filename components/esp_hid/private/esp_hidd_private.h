@@ -37,6 +37,9 @@ struct esp_hidd_dev_s {
 
 typedef struct esp_hidd_dev_s esp_hidd_dev_t;
 
+void esp_hidd_process_event_data_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id,
+                                         void *event_data);
+
 #ifdef __cplusplus
 }
 #endif
