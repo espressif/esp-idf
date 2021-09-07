@@ -245,6 +245,9 @@ def connection_tests(dut, cases):
     set_server_cert_cn(ip)
     server_port = 2222
 
+    def teardown_connection_suite():
+        dut.write('conn teardown 0 0')
+
     def start_connection_case(case, desc):
         print('Starting {}: {}'.format(case, desc))
         case_id = cases[case]
@@ -300,6 +303,8 @@ def connection_tests(dut, cases):
                 print(' - client with alpn on, negotiated protocol resolved: OK')
             else:
                 raise Exception('Unexpected negotiated protocol {}'.format(s.get_negotiated_protocol()))
+
+    teardown_connection_suite()
 
 
 @ttfw_idf.idf_custom_test(env_tag='Example_WIFI', group='test-apps')

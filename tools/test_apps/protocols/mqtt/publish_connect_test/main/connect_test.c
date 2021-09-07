@@ -70,6 +70,17 @@ static void create_client(void)
     esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, client);
     mqtt_client = client;
     esp_mqtt_client_start(client);
+    ESP_LOGI(TAG, "mqtt client created for connection tests");
+}
+
+static void destroy_client(void)
+{
+    if (mqtt_client) {
+        esp_mqtt_client_stop(mqtt_client);
+        esp_mqtt_client_destroy(mqtt_client);
+        mqtt_client = NULL;
+        ESP_LOGI(TAG, "mqtt client for connection tests destroyed");
+    }
 }
 
 static void connect_no_certs(const char *host, const int port)
@@ -199,6 +210,9 @@ void connection_test(const char *line)
     sscanf(line, "%s %s %d %d", test_type, host, &port, &test_case);
     if (mqtt_client == NULL) {
         create_client();
+    }
+    if (strcmp(host, "teardown") == 0) {
+        destroy_client();;
     }
     ESP_LOGI(TAG, "CASE:%d, connecting to mqtts://%s:%d ", test_case, host, port);
     running_test_case = test_case;

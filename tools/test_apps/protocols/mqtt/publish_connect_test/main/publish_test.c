@@ -159,17 +159,12 @@ static void configure_client(char *transport)
 
     if (selected_transport != current_transport) {
         esp_mqtt_client_config_t config = {0};
-        if (selected_transport == SSL || selected_transport == WSS) {
-            ESP_LOGI(TAG, "Set certificate");
-            config.cert_pem = (const char *)mqtt_eclipseprojects_io_pem_start;
-            esp_mqtt_set_config(mqtt_client, &config);
-        }
         switch (selected_transport) {
         case NONE:
             break;
         case TCP:
             ESP_LOGI(TAG, "[TCP transport] Startup..");
-            esp_mqtt_client_set_uri(mqtt_client, CONFIG_EXAMPLE_BROKER_TCP_URI);
+            config.uri = CONFIG_EXAMPLE_BROKER_TCP_URI;
             break;
         case SSL:
             ESP_LOGI(TAG, "[SSL transport] Startup..");
@@ -177,14 +172,21 @@ static void configure_client(char *transport)
             break;
         case WS:
             ESP_LOGI(TAG, "[WS transport] Startup..");
-            esp_mqtt_client_set_uri(mqtt_client, CONFIG_EXAMPLE_BROKER_WS_URI);
+            config.uri = CONFIG_EXAMPLE_BROKER_WS_URI;
             break;
         case WSS:
             ESP_LOGI(TAG, "[WSS transport] Startup..");
-            esp_mqtt_client_set_uri(mqtt_client, CONFIG_EXAMPLE_BROKER_WSS_URI);
+            config.uri = CONFIG_EXAMPLE_BROKER_WSS_URI;
             break;
         }
+        if (selected_transport == SSL || selected_transport == WSS) {
+            ESP_LOGI(TAG, "Set certificate");
+            config.cert_pem = (const char *)mqtt_eclipseprojects_io_pem_start;
+        }
+        esp_mqtt_set_config(mqtt_client, &config);
+
     }
+
 }
 void publish_test(const char *line)
 {
@@ -193,12 +195,12 @@ void publish_test(const char *line)
     int repeat = 0;
     int enqueue = 0;
 
-    esp_mqtt_client_stop(mqtt_client);
-
     static bool is_test_init = false;
     if (!is_test_init) {
         test_init();
         is_test_init = true;
+    } else {
+        esp_mqtt_client_stop(mqtt_client);
     }
 
     sscanf(line, "%s %s %d %d %d %d", transport, pattern, &repeat, &expected_published, &qos_test, &enqueue);
