@@ -2,7 +2,5 @@
 # CMakeLists in this exact order for cmake to work correctly
 cmake_minimum_required(VERSION 3.5)
 
-set(EXCLUDE_COMPONENTS asio coap)
-
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(tusb_cdc_ecm)
