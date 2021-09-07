@@ -124,8 +124,10 @@ set sleep_init default param
 #define RTC_CNTL_DBG_ATTEN_DEEPSLEEP_DEFAULT  15
 #define RTC_CNTL_DBG_ATTEN_MONITOR_DEFAULT  0
 #define RTC_CNTL_BIASSLP_MONITOR_DEFAULT  0
+#define RTC_CNTL_BIASSLP_SLEEP_ON  0
 #define RTC_CNTL_BIASSLP_SLEEP_DEFAULT  1
 #define RTC_CNTL_PD_CUR_MONITOR_DEFAULT  1
+#define RTC_CNTL_PD_CUR_SLEEP_ON  0
 #define RTC_CNTL_PD_CUR_SLEEP_DEFAULT  1
 
 #define APLL_SDM_STOP_VAL_1         0x09
@@ -694,10 +696,12 @@ typedef struct {
     .dig_dbias_wak = RTC_CNTL_DIG_DBIAS_1V10, \
     .dig_dbias_slp = is_dslp(sleep_flags)                   ? RTC_CNTL_DIG_DBIAS_0V90 \
                    : !((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? RTC_CNTL_DIG_DBIAS_1V10 \
+                   : !((sleep_flags) & RTC_SLEEP_PD_XTAL)   ? RTC_CNTL_DIG_DBIAS_1V10 \
                    : RTC_CNTL_DIG_DBIAS_0V90, \
     .rtc_dbias_wak = RTC_CNTL_DBIAS_1V10, \
     .rtc_dbias_slp = is_dslp(sleep_flags)                   ? RTC_CNTL_DBIAS_1V00 \
                    : !((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? RTC_CNTL_DBIAS_1V10 \
+                   : !((sleep_flags) & RTC_SLEEP_PD_XTAL)   ? RTC_CNTL_DBIAS_1V10 \
                    : RTC_CNTL_DBIAS_1V00, \
     .vddsdio_pd_en = ((sleep_flags) & RTC_SLEEP_PD_VDDSDIO) ? 1 : 0, \
     .xtal_fpu = is_dslp(sleep_flags) ? 0 : ((sleep_flags) & RTC_SLEEP_PD_XTAL) ? 0 : 1, \
