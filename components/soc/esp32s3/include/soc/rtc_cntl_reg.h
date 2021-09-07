@@ -3584,6 +3584,10 @@ ork.*/
 #define RTC_CNTL_FIB_SEL_V  0x7
 #define RTC_CNTL_FIB_SEL_S  0
 
+#define RTC_CNTL_FIB_GLITCH_RST BIT(0)
+#define RTC_CNTL_FIB_BOR_RST BIT(1)
+#define RTC_CNTL_FIB_SUPER_WDT_RST BIT(2)
+
 #define RTC_CNTL_TOUCH_DAC_REG          (DR_REG_RTCCNTL_BASE + 0x14C)
 /* RTC_CNTL_TOUCH_PAD0_DAC : R/W ;bitpos:[31:29] ;default: 3'd0 ; */
 /*description: .*/

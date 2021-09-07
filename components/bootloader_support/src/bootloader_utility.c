@@ -76,6 +76,7 @@
 #include "bootloader_utility.h"
 #include "bootloader_sha.h"
 #include "bootloader_console.h"
+#include "bootloader_soc.h"
 #include "esp_efuse.h"
 
 static const char *TAG = "boot";
@@ -635,6 +636,12 @@ static void load_image(const esp_image_metadata_t *image_data)
 
     ESP_LOGI(TAG, "Disabling RNG early entropy source...");
     bootloader_random_disable();
+
+    /* Disable glitch reset after all the security checks are completed.
+     * Glitch detection can be falsely triggered by EMI interference (high RF TX power, etc)
+     * and to avoid such false alarms, disable it.
+     */
+    bootloader_ana_clock_glitch_reset_config(false);
 
     // copy loaded segments to RAM, set up caches for mapped segments, and start application
     unpack_load_app(image_data);
