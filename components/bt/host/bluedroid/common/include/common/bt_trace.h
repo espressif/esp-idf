@@ -106,6 +106,7 @@ static inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t l
 #define BTTRC_ID_STK_CE                    51
 #define BTTRC_ID_STK_SNEP                  52
 #define BTTRC_ID_STK_NDEF                  53
+#define BTTRC_ID_STK_HIDD                  54
 
 /* LayerIDs for BTA */
 #define BTTRC_ID_BTA_ACC                   55         /* Advanced Camera Client */
@@ -199,6 +200,7 @@ static inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t l
 #define AVRC_INITIAL_TRACE_LEVEL            UC_BT_LOG_AVRC_TRACE_LEVEL
 #define MCA_INITIAL_TRACE_LEVEL             UC_BT_LOG_MCA_TRACE_LEVEL
 #define HIDH_INITIAL_TRACE_LEVEL            UC_BT_LOG_HIDH_TRACE_LEVEL
+#define HIDD_INITIAL_TRACE_LEVEL            UC_BT_LOG_HIDD_TRACE_LEVEL
 #define APPL_INITIAL_TRACE_LEVEL            UC_BT_LOG_APPL_TRACE_LEVEL
 #define GATT_INITIAL_TRACE_LEVEL            UC_BT_LOG_GATT_TRACE_LEVEL
 #define SMP_INITIAL_TRACE_LEVEL             UC_BT_LOG_SMP_TRACE_LEVEL
@@ -257,6 +259,14 @@ static inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t l
 #define HIDH_TRACE_API(fmt, args...)        {if (hh_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(HIDH,API)) BT_PRINT_I("BT_HIDH", fmt, ## args);}
 #define HIDH_TRACE_EVENT(fmt, args...)      {if (hh_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(HIDH,EVENT)) BT_PRINT_D("BT_HIDH", fmt, ## args);}
 #define HIDH_TRACE_DEBUG(fmt, args...)      {if (hh_cb.trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(HIDH,DEBUG)) BT_PRINT_D("BT_HIDH", fmt, ## args);}
+
+/* define traces for HID Device */
+#define HIDD_TRACE_ERROR(fmt, args...)      {if (hd_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(HIDD, ERROR)) BT_PRINT_E("BT_HIDD", fmt, ## args);}
+#define HIDD_TRACE_WARNING(fmt, args...)    {if (hd_cb.trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(HIDD, WARNING)) BT_PRINT_W("BT_HIDD", fmt, ## args);}
+#define HIDD_TRACE_API(fmt, args...)        {if (hd_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(HIDD,API)) BT_PRINT_I("BT_HIDD", fmt, ## args);}
+#define HIDD_TRACE_EVENT(fmt, args...)      {if (hd_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(HIDD,EVENT)) BT_PRINT_D("BT_HIDD", fmt, ## args);}
+#define HIDD_TRACE_DEBUG(fmt, args...)      {if (hd_cb.trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(HIDD,DEBUG)) BT_PRINT_D("BT_HIDD", fmt, ## args);}
+#define HIDD_TRACE_VERBOSE(fmt, args...)    {if (hd_cb.trace_level >= BT_TRACE_LEVEL_VERBOSE && BT_LOG_LEVEL_CHECK(HIDD,VERBOSE)) BT_PRINT_D("BT_HIDD", fmt, ## args);}
 
 /* define traces for BNEP */
 
@@ -417,6 +427,14 @@ extern UINT8 btif_trace_level;
 #define HIDH_TRACE_API(fmt, args...)
 #define HIDH_TRACE_EVENT(fmt, args...)
 #define HIDH_TRACE_DEBUG(fmt, args...)
+
+/* define traces for HID Device */
+#define HIDD_TRACE_ERROR(fmt, args...)
+#define HIDD_TRACE_WARNING(fmt, args...)
+#define HIDD_TRACE_API(fmt, args...)
+#define HIDD_TRACE_EVENT(fmt, args...)
+#define HIDD_TRACE_DEBUG(fmt, args...)
+#define HIDD_TRACE_VERBOSE(fmt, args...)
 
 /* define traces for BNEP */
 

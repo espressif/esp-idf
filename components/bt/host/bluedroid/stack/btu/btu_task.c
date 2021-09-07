@@ -54,7 +54,7 @@
 #endif
 
 #if (defined(HID_HOST_INCLUDED) && HID_HOST_INCLUDED == TRUE )
-#include "hidh_int.h"
+#include "hid_int.h"
 #endif
 
 #if (defined(AVDT_INCLUDED) && AVDT_INCLUDED == TRUE)

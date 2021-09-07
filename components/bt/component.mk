@@ -46,6 +46,7 @@ COMPONENT_PRIV_INCLUDEDIRS +=   host/bluedroid/bta/include                   \
                                 host/bluedroid/bta/hf_client/include         \
                                 host/bluedroid/bta/dm/include                \
                                 host/bluedroid/bta/gatt/include              \
+                                host/bluedroid/bta/hd/include                \
                                 host/bluedroid/bta/hh/include                \
                                 host/bluedroid/bta/jv/include                \
                                 host/bluedroid/bta/sdp/include               \
@@ -70,6 +71,7 @@ COMPONENT_PRIV_INCLUDEDIRS +=   host/bluedroid/bta/include                   \
                                 host/bluedroid/stack/gap/include             \
                                 host/bluedroid/stack/gatt/include            \
                                 host/bluedroid/stack/hcic/include            \
+                                host/bluedroid/stack/hid/include             \
                                 host/bluedroid/stack/l2cap/include           \
                                 host/bluedroid/stack/sdp/include             \
                                 host/bluedroid/stack/smp/include             \
@@ -86,6 +88,7 @@ COMPONENT_ADD_INCLUDEDIRS +=    host/bluedroid/api/include/api       \
 
 COMPONENT_SRCDIRS +=    host/bluedroid/bta/dm                      \
                         host/bluedroid/bta/gatt                    \
+                        host/bluedroid/bta/hd                      \
                         host/bluedroid/bta/hh                      \
                         host/bluedroid/bta/sdp                     \
                         host/bluedroid/bta/av                      \
@@ -118,6 +121,7 @@ COMPONENT_SRCDIRS +=    host/bluedroid/bta/dm                      \
                         host/bluedroid/stack/gap                   \
                         host/bluedroid/stack/gatt                  \
                         host/bluedroid/stack/hcic                  \
+                        host/bluedroid/stack/hid                   \
                         host/bluedroid/stack/include               \
                         host/bluedroid/stack/l2cap                 \
                         host/bluedroid/stack/sdp                   \
