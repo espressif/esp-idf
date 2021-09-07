@@ -786,7 +786,7 @@ esp_err_t esp_netif_start(esp_netif_t *esp_netif)
     if (_IS_NETIF_POINT2POINT_TYPE(esp_netif, PPP_LWIP_NETIF)) {
 #if CONFIG_PPP_SUPPORT
         // No need to start PPP interface in lwip thread
-        esp_err_t ret = esp_netif_start_ppp(esp_netif->related_data);
+        esp_err_t ret = esp_netif_start_ppp(esp_netif);
         if (ret == ESP_OK) {
             esp_netif_update_default_netif(esp_netif, ESP_NETIF_STARTED);
         }
