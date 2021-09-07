@@ -1466,7 +1466,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
         configASSERT( ( xTimeIncrement > 0U ) );
         configASSERT( uxSchedulerSuspended[xPortGetCoreID()] == 0 );
 
-#ifdef ESP_PLATFORM
+#ifdef ESP_PLATFORM // IDF-3755
         taskENTER_CRITICAL();
 #else
         vTaskSuspendAll();
@@ -1526,7 +1526,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                 mtCOVERAGE_TEST_MARKER();
             }
         }
-#ifdef ESP_PLATFORM
+#ifdef ESP_PLATFORM // IDF-3755
         taskEXIT_CRITICAL();
 #else
         xAlreadyYielded = xTaskResumeAll();
@@ -2605,10 +2605,10 @@ BaseType_t xTaskResumeAll( void )
 
                 if( xYieldPending[xPortGetCoreID()] != pdFALSE )
                 {
-                    #if( configUSE_PREEMPTION != 0 )
-                    {
-                        xAlreadyYielded = pdTRUE;
-                    }
+                    #if ( configUSE_PREEMPTION != 0 )
+                        {
+                            xAlreadyYielded = pdTRUE;
+                        }
                     #endif
                     taskYIELD_IF_USING_PREEMPTION();
                 }
@@ -3020,6 +3020,10 @@ BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp )
                     if( listLIST_ITEM_CONTAINER( &( pxTCB->xEventListItem ) ) != NULL )
                     {
                         ( void ) uxListRemove( &( pxTCB->xEventListItem ) );
+
+                        /* This lets the task know it was forcibly removed from the
+                         * blocked state so it should not re-evaluate its block time and
+                         * then block again. */
                         pxTCB->ucDelayAborted = pdTRUE;
                     }
                     else
@@ -3246,7 +3250,7 @@ BaseType_t xTaskIncrementTick( void )
 
     void vTaskSetApplicationTaskTag( TaskHandle_t xTask, TaskHookFunction_t pxHookFunction )
     {
-    TCB_t *xTCB;
+        TCB_t * xTCB;
 
         /* If xTask is NULL then it is the task hook of the calling task that is
          * getting set. */
@@ -4590,7 +4594,7 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
 
 static void prvResetNextTaskUnblockTime( void )
 {
-TCB_t *pxTCB;
+    TCB_t * pxTCB;
 
     if( listLIST_IS_EMPTY( pxDelayedTaskList ) != pdFALSE )
     {
@@ -5016,7 +5020,8 @@ TCB_t *pxTCB;
 
 #if ( ( configUSE_TRACE_FACILITY == 1 ) && ( configUSE_STATS_FORMATTING_FUNCTIONS > 0 ) )
 
-    static char *prvWriteNameToBuffer( char *pcBuffer, const char *pcTaskName )
+    static char * prvWriteNameToBuffer( char * pcBuffer,
+                                        const char * pcTaskName )
     {
         size_t x;
 
@@ -5746,7 +5751,6 @@ TickType_t uxTaskResetEventItemValue( void )
                 {
                     mtCOVERAGE_TEST_MARKER();
                 }
-
             }
         }
         taskEXIT_CRITICAL_ISR();
@@ -5757,14 +5761,14 @@ TickType_t uxTaskResetEventItemValue( void )
 #endif /* configUSE_TASK_NOTIFICATIONS */
 /*-----------------------------------------------------------*/
 
-#if( configUSE_TASK_NOTIFICATIONS == 1 )
+#if ( configUSE_TASK_NOTIFICATIONS == 1 )
 
     void vTaskGenericNotifyGiveFromISR( TaskHandle_t xTaskToNotify,
                                         UBaseType_t uxIndexToNotify,
                                         BaseType_t * pxHigherPriorityTaskWoken )
     {
-    TCB_t * pxTCB;
-    uint8_t ucOriginalNotifyState;
+        TCB_t * pxTCB;
+        uint8_t ucOriginalNotifyState;
 
 
         configASSERT( xTaskToNotify );
@@ -5820,7 +5824,6 @@ TickType_t uxTaskResetEventItemValue( void )
                     vListInsertEnd( &( xPendingReadyList[xPortGetCoreID()] ), &( pxTCB->xEventListItem ) );
                 }
 
-
                 if( tskCAN_RUN_HERE(pxTCB->xCoreID) && pxTCB->uxPriority > pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
                 {
                     /* The notified task has a priority above the currently
@@ -5838,7 +5841,6 @@ TickType_t uxTaskResetEventItemValue( void )
                 {
                     mtCOVERAGE_TEST_MARKER();
                 }
-
             }
         }
         taskEXIT_CRITICAL_ISR();

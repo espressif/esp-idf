@@ -194,9 +194,11 @@ static BaseType_t prvTestWaitCondition( const EventBits_t uxCurrentEventBits,
                     pxEventBits->ucStaticallyAllocated = pdFALSE;
                 }
             #endif /* configSUPPORT_STATIC_ALLOCATION */
+
 #ifdef ESP_PLATFORM
             vPortCPUInitializeMutex( &pxEventBits->eventGroupMux );
 #endif // ESP_PLATFORM
+
             traceEVENT_GROUP_CREATE( pxEventBits );
         }
         else
