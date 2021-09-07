@@ -95,7 +95,6 @@ void esp_cdc_ecm_free_rx_buffer(void *h, void* buffer)
 {
     if(buffer != NULL) {
         free(buffer);
-        buffer = NULL;
     }
 }
 
@@ -155,7 +154,7 @@ esp_err_t esp_cdc_ecm_transmit(void* h, void* buffer, size_t len)
 
 esp_err_t esp_cdc_ecm_driver_start(esp_cdc_ecm_driver_t* handle, esp_netif_t* netif)
 {
-    xTaskCreate( esp_cdc_ecm_rx_task, "cdc-ecm_rx_task", 4096, netif, 6, NULL);
+    xTaskCreate(esp_cdc_ecm_rx_task, "cdc-ecm_rx_task", 4096, netif, CONFIG_TINYUSB_CDC_ECM_RXTASK_PRIO, NULL);
     esp_event_post(ETH_EVENT, ETHERNET_EVENT_START, &handle, sizeof(esp_cdc_ecm_driver_t*), 0);
     esp_event_post(ETH_EVENT, ETHERNET_EVENT_CONNECTED, &handle, sizeof(esp_cdc_ecm_driver_t*), 0);
     return ESP_OK;

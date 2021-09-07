@@ -2,6 +2,7 @@ menu "Example Configuration"
 
     config EXAMPLE_STATIC_IP
         bool "Set static IP Address"
+        default n
         help
             Set static IP Address. If this option is disabled, a DHCP client is started instead.
     

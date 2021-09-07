@@ -158,12 +158,23 @@ menu "TinyUSB Stack"
                     CDC FIFO size of TX channel.
         endmenu # "Communication Device Class"
 
-        config TINYUSB_NET_ENABLED
-            bool "Enable Ethernet over USB TinyUSB driver"
-            default n
-            depends on TINYUSB
-            help
-                Enable Ethernet over USB TinyUSB driver.
+        menu "Ethernet over USB"
+
+            config TINYUSB_NET_ENABLED
+                bool "Enable Ethernet over USB TinyUSB driver"
+                default n
+                depends on TINYUSB
+                help
+                    Enable Ethernet over USB TinyUSB driver.
+
+            config TINYUSB_CDC_ECM_RXTASK_PRIO
+                depends on TINYUSB_NET_ENABLED
+                int "Rx Thread Priority"
+                default 6
+                help
+                    Set the priority of rx task.
+
+        endmenu # "Ethernet over USB"
     
     endif # TINYUSB
 

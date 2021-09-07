@@ -18,7 +18,6 @@ limitations under the License.
 
 typedef struct {
     esp_netif_t* netif;
-    uint8_t mac_address[6];
     esp_err_t (*stack_input)(uint8_t*, uint32_t, esp_netif_t*);
 } esp_cdc_ecm_driver_t;
 
