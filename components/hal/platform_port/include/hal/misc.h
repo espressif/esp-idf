@@ -19,20 +19,41 @@
 
 /** @cond */    //Doxy command to hide preprocessor definitions from docs */
 
-// In case the compiler optimise a 32bit instruction (e.g. s32i) into 8/16bit instruction with size optimization enabled
-// which is not allowed on s2 and later chips (s2, s3, c3, h2)
-// use these wrappers for manually read-modify-write with l32i and s32i
-
-// modify register as uint32_t
-#define HAL_FORCE_MODIFY_U32_REG_FIELD(base_reg, field, val)    \
+/**
+ * @brief Macro to force a 32-bit read, modify, then write on a peripheral register
+ *
+ * Due to a GCC bug, the compiler may still try to optimize read/writes to peripheral register fields by using 8/16 bit
+ * access, even if they are marked volatile (i.e., -fstrict-volatile-bitfields has no effect).
+ *
+ * For ESP chips, the peripheral bus only allows 32-bit read/writes. The following macro works around the compiler issue
+ * by forcing a 32-bit read/modify/write.
+ *
+ * @note This macro should only be called on register fields of xxx_struct.h type headers, as it depends on the presence
+ *       of a 'val' field of the register union.
+ * @note Current implementation reads into a uint32_t instead of copy base_reg direclty to temp_reg. The reason being
+ *       that C++ does not create a copy constructor for volatile structs.
+ */
+#define HAL_FORCE_MODIFY_U32_REG_FIELD(base_reg, reg_field, field_val)    \
 {                                                           \
-    typeof(base_reg) temp_reg = (base_reg);                 \
-    temp_reg.field = (val);                                 \
-    (base_reg) = temp_reg;                                  \
+    uint32_t temp_val = base_reg.val;                       \
+    typeof(base_reg) temp_reg;                              \
+    temp_reg.val = temp_val;                                \
+    temp_reg.reg_field = (field_val);                       \
+    (base_reg).val = temp_reg.val;                          \
 }
 
-// read register as uint32_t
-#define HAL_FORCE_READ_U32_REG_FIELD(base_reg, field)      \
-( ((typeof(base_reg))((base_reg).val)).field )
+/**
+ * @brief Macro to force a 32-bit read on a peripheral register
+ *
+ * @note This macro should only be called on register fields of xxx_struct.h type headers. See description above for
+ *       more details.
+ * @note Current implementation reads into a uint32_t. See description above for more details.
+ */
+#define HAL_FORCE_READ_U32_REG_FIELD(base_reg, reg_field) ({    \
+    uint32_t temp_val = base_reg.val;                       \
+    typeof(base_reg) temp_reg;                              \
+    temp_reg.val = temp_val;                                \
+    temp_reg.reg_field;                                     \
+})
 
 /** @endcond */
