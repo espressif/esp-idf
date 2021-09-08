@@ -718,7 +718,7 @@ void l2c_info_timeout (tL2C_LCB *p_lcb)
 *******************************************************************************/
 void l2c_link_adjust_allocation (void)
 {
-    UINT16      qq, yy = 0, qq_remainder;
+    UINT16      qq, qq_remainder;
     tL2C_LCB    *p_lcb;
     UINT16      hi_quota, low_quota;
     UINT16      num_lowpri_links = 0;
@@ -803,8 +803,8 @@ void l2c_link_adjust_allocation (void)
                 }
             }
 
-            L2CAP_TRACE_EVENT ("l2c_link_adjust_allocation LCB %d   Priority: %d  XmitQuota: %d\n",
-                               yy, p_lcb->acl_priority, p_lcb->link_xmit_quota);
+            L2CAP_TRACE_EVENT ("l2c_link_adjust_allocation  Priority: %d  XmitQuota: %d\n",
+                               p_lcb->acl_priority, p_lcb->link_xmit_quota);
 
             L2CAP_TRACE_EVENT ("        SentNotAcked: %d  RRUnacked: %d\n",
                                p_lcb->sent_not_acked, l2cb.round_robin_unacked);
