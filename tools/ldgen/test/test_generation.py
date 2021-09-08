@@ -102,31 +102,22 @@ class GenerationTest(unittest.TestCase):
     def generate_default_rules(self):
         rules = collections.defaultdict(list)
 
-        rules['flash_text'].append(InputSectionDesc(ROOT, ['.literal', '.literal.*', '.text', '.text.*'], []))
-        rules['flash_rodata'].append(InputSectionDesc(ROOT, ['.rodata', '.rodata.*'], []))
         rules['dram0_data'].append(InputSectionDesc(ROOT, ['.data', '.data.*'], []))
         rules['dram0_data'].append(InputSectionDesc(ROOT, ['.dram', '.dram.*'], []))
         rules['dram0_bss'].append(InputSectionDesc(ROOT, ['.bss', '.bss.*'], []))
         rules['dram0_bss'].append(InputSectionDesc(ROOT, ['COMMON'], []))
+        rules['flash_text'].append(InputSectionDesc(ROOT, ['.literal', '.literal.*', '.text', '.text.*'], []))
+        rules['flash_rodata'].append(InputSectionDesc(ROOT, ['.rodata', '.rodata.*'], []))
         rules['iram0_text'].append(InputSectionDesc(ROOT, ['.iram', '.iram.*'], []))
-        rules['rtc_text'].append(InputSectionDesc(ROOT, ['.rtc.text', '.rtc.literal'], []))
+        rules['rtc_bss'].append(InputSectionDesc(ROOT, ['.rtc.bss'], []))
         rules['rtc_data'].append(InputSectionDesc(ROOT, ['.rtc.data'], []))
         rules['rtc_data'].append(InputSectionDesc(ROOT, ['.rtc.rodata'], []))
-        rules['rtc_bss'].append(InputSectionDesc(ROOT, ['.rtc.bss'], []))
+        rules['rtc_text'].append(InputSectionDesc(ROOT, ['.rtc.text', '.rtc.literal'], []))
 
         return rules
 
     def compare_rules(self, expected, actual):
-        self.assertEqual(set(expected.keys()), set(actual.keys()))
-
-        for target in sorted(actual.keys()):
-            a_cmds = actual[target]
-            e_cmds = expected[target]
-
-            self.assertEqual(len(a_cmds), len(e_cmds))
-
-            for a, e in zip(a_cmds, e_cmds):
-                self.assertEqual(a, e)
+        self.assertEqual(expected, actual)
 
     def get_default(self, target, rules):
         return rules[target][0]

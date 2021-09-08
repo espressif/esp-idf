@@ -149,7 +149,7 @@ class RuleNode():
             self.add_node_child(entity, sections, target, sections_db)
 
     def get_section_keys(self):
-        return sorted(self.sections.keys(), key=' '.join)
+        return sorted(self.sections.keys(), key=lambda x: sorted(x))
 
 
 class SymbolNode(RuleNode):
