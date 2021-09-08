@@ -48,6 +48,7 @@ static inline void uhci_ll_attach_uart_port(uhci_dev_t *hw, int uart_num)
 {
     hw->conf0.uart0_ce = (uart_num == 0)? 1: 0;
     hw->conf0.uart1_ce = (uart_num == 1)? 1: 0;
+    hw->conf0.uart2_ce = (uart_num == 2)? 1: 0;
 }
 
 static inline void uhci_ll_set_seper_chr(uhci_dev_t *hw, uhci_seper_chr_t *seper_char)
