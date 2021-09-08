@@ -19,7 +19,7 @@
 typedef struct {
     iperf_cfg_t cfg;
     bool finish;
-    uint32_t total_len;
+    uint32_t actual_len;
     uint32_t buffer_len;
     uint8_t *buffer;
     uint32_t sockfd;
@@ -69,24 +69,26 @@ static void iperf_report_task(void *arg)
     uint32_t interval = s_iperf_ctrl.cfg.interval;
     uint32_t time = s_iperf_ctrl.cfg.time;
     TickType_t delay_interval = (interval * 1000) / portTICK_PERIOD_MS;
-    uint32_t last_len = 0;
     uint32_t cur = 0;
+    double average = 0;
+    double actual_bandwidth = 0;
+    int k = 1;
 
     printf("\n%16s %s\n", "Interval", "Bandwidth");
     while (!s_iperf_ctrl.finish) {
         vTaskDelay(delay_interval);
+        actual_bandwidth = (s_iperf_ctrl.actual_len / 1e6 * 8) / interval;
         printf("%4d-%4d sec       %.2f Mbits/sec\n", cur, cur + interval,
-               (double)((s_iperf_ctrl.total_len - last_len) * 8) / interval / 1e6);
+            actual_bandwidth);
         cur += interval;
-        last_len = s_iperf_ctrl.total_len;
+        average = ((average * (k - 1) / k) + (actual_bandwidth / k));
+        k++;
+        s_iperf_ctrl.actual_len = 0;
         if (cur >= time) {
+            printf("%4d-%4d sec       %.2f Mbits/sec\n", 0, time,
+                average);
             break;
         }
-    }
-
-    if (cur != 0) {
-        printf("%4d-%4d sec       %.2f Mbits/sec\n", 0, time,
-               (double)(s_iperf_ctrl.total_len * 8) / cur / 1e6);
     }
 
     s_iperf_ctrl.finish = true;
@@ -140,7 +142,7 @@ static void socket_recv(int recv_socket, struct sockaddr_storage listen_addr, ui
                 iperf_start_report();
                 udp_recv_start = false;
             }
-            s_iperf_ctrl.total_len += actual_recv;
+            s_iperf_ctrl.actual_len += actual_recv;
         }
     }
 }
@@ -192,7 +194,7 @@ static void socket_send(int send_socket, struct sockaddr_storage dest_addr, uint
                 break;
             }
         } else {
-            s_iperf_ctrl.total_len += actual_send;
+            s_iperf_ctrl.actual_len += actual_send;
         }
     }
 }
