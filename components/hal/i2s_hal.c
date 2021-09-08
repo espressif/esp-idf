@@ -34,7 +34,9 @@ static void i2s_hal_mclk_div_decimal_cal(i2s_hal_clock_cfg_t *clk_cfg, i2s_ll_mc
     cal->mclk_div = clk_cfg->mclk_div;
     cal->a = 1;
     cal->b = 0;
+    /* If sclk = 0 means APLL clock applied, mclk_div should set to 1 */
     if (!clk_cfg->sclk) {
+        cal->mclk_div = 1;
         return;
     }
     uint32_t freq_diff = clk_cfg->sclk - clk_cfg->mclk * cal->mclk_div;
