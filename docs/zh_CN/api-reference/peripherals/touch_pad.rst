@@ -2,6 +2,8 @@
 ============
 :link_to_translation:`en:[English]`
 
+{IDF_TARGET_TOUCH_SENSOR_VERSION:default="v2", esp32="v1"}
+
 概述
 ------------
 
@@ -9,11 +11,11 @@
 
 .. only:: esp32
 
-	ESP32 可最多支持 10 个电容式触摸传感器通道/GPIO。
+	ESP32 上的触摸传感器硬件版本为V1.0，可最多支持 10 个电容式触摸传感器通道/GPIO。
 
-.. only:: esp32s2
+.. only:: esp32s2 or esp32s3
 
-    {IDF_TARGET_NAME} 可最多支持 14 个电容式触摸传感器通道/GPIO。
+    {IDF_TARGET_NAME} 上的触摸传感器硬件版本为V2.0，可最多支持 14 个电容式触摸传感器通道/GPIO。
 
 触摸传感器可以以矩阵或滑条等方式组合使用，从而覆盖更大触感区域及更多触感点。触摸传感由软件或专用硬件计时器发起，由有限状态机 (FSM) 硬件控制。
 
@@ -72,7 +74,7 @@
 
         使用 :cpp:func:`touch_pad_read_filtered` 之前，需要先调用 `滤波采样`_ 中特定的滤波器函数来初始化并配置该滤波器。
 
-.. only:: esp32s2
+.. only:: esp32s2 or esp32s3
 
     借助以下函数从传感器读取原始数据：
 
@@ -80,7 +82,7 @@
 
     该函数也可以用于检查触碰和释放触摸传感器时传感器读数变化范围，然后根据这些信息设定触摸传感器的触摸阈值。
 
-请参考应用示例 :example:`peripherals/touch_pad_read`，查看如何使用读取触摸传感器数据。
+请参考应用示例 :example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}/touch_pad_read`，查看如何使用读取触摸传感器数据。
 
 优化测量
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -123,7 +125,7 @@
 
     如需停止滤波器，请调用 :cpp:func:`touch_pad_filter_stop` 函数。如果不再使用该滤波器，请调用 :cpp:func:`touch_pad_filter_delete` 删除此滤波器。
 
-.. only:: esp32s2
+.. only:: esp32s2 or esp32s3
 
     如果测量中存在噪声，可以使用提供的 API 函数对采样进行滤波。{IDF_TARGET_NAME} 的触摸功能提供了两套 API 可实现此功能。
 
@@ -139,7 +141,7 @@
 
 用户也可以将硬件触摸监测连接至中断，详细介绍见下一章节。
 
-如果测量中存在噪声，且电容变化幅度较小，硬件触摸监测结果可能就不太理想。如需解决这一问题，不建议使用硬件监测或中断信号，建议用户在自己的应用程序中进行采样滤波，并执行触摸监测。请参考 :example:`peripherals/touch_pad_interrupt`，查看以上两种触摸监测的实现方式。
+如果测量中存在噪声，且电容变化幅度较小，硬件触摸监测结果可能就不太理想。如需解决这一问题，不建议使用硬件监测或中断信号，建议用户在自己的应用程序中进行采样滤波，并执行触摸监测。请参考 :example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}/touch_pad_interrupt`，查看以上两种触摸监测的实现方式。
 
 中断触发
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -182,8 +184,8 @@
 应用示例
 --------------------
 
-- 触摸传感器读值示例：:example:`peripherals/touch_pad_read`
-- 触摸传感器中断示例：:example:`peripherals/touch_pad_interrupt`
+- 触摸传感器读值示例：:example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}/touch_pad_read`
+- 触摸传感器中断示例：:example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}/touch_pad_interrupt`
 
 .. _touch_pad-api-reference:
 
