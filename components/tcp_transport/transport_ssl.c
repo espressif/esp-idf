@@ -446,6 +446,9 @@ esp_transport_handle_t esp_transport_ssl_init(void)
 struct transport_esp_tls* esp_transport_esp_tls_create(void)
 {
     transport_esp_tls_t *transport_esp_tls = calloc(1, sizeof(transport_esp_tls_t));
+    if (transport_esp_tls == NULL) {
+        return NULL;
+    }
     transport_esp_tls->sockfd = INVALID_SOCKET;
     return transport_esp_tls;
 }
