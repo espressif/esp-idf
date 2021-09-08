@@ -120,7 +120,7 @@ If you have one of {IDF_TARGET_NAME} development boards listed below, you can cl
 
         ESP32-C3-DevKitM-1 <../hw-reference/esp32c3/user-guide-devkitm-1>
         ESP32-C3-DevKitC-02 <../hw-reference/esp32c3/user-guide-devkitc-02>
-        
+
 .. _get-started-step-by-step:
 
 Installation Step by Step
@@ -230,14 +230,14 @@ If you want to install the tools without the help of ESP-IDF Tools Installer, op
 .. code-block:: batch
 
     cd %userprofile%\esp\esp-idf
-    install.bat
+    install.bat {IDF_TARGET_PATH_NAME}
 
 or with Windows PowerShell
 
 .. code-block:: powershell
 
     cd ~/esp/esp-idf
-    ./install.ps1
+    ./install.ps1 {IDF_TARGET_PATH_NAME}
 
 Linux and macOS
 ~~~~~~~~~~~~~~~
@@ -245,7 +245,18 @@ Linux and macOS
 .. code-block:: bash
 
     cd ~/esp/esp-idf
-    ./install.sh
+    ./install.sh {IDF_TARGET_PATH_NAME}
+
+or with Fish shell
+
+.. code-block:: fish
+
+    cd ~/esp/esp-idf
+    ./install.fish {IDF_TARGET_PATH_NAME}
+
+.. note::
+    To install tools for multiple targets you can specify those targets at once. For example: ``./install.sh esp32,esp32c3,esp32s3``.
+    To install tools for all supported targets, run the script without specifying targets ``./install.sh`` or use ``./install.sh all``.
 
 Alternative File Downloads
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
