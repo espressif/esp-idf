@@ -26,22 +26,12 @@
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/spi_flash.h"
 #endif
+#include "esp_flash.h"
+#include "hal/spi_flash_hal.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * This struct provide MSPI Flash necessary timing related config
- */
-typedef struct {
-    uint8_t flash_clk_div;      /*!< clock divider of Flash module. */
-    uint8_t flash_extra_dummy;  /*!< timing required extra dummy length for Flash */
-    bool    flash_setup_en;     /*!< SPI0/1 Flash setup enable or not */
-    uint8_t flash_setup_time;   /*!< SPI0/1 Flash setup time. This value should be set to register directly */
-    bool    flash_hold_en;      /*!< SPI0/1 Flash hold enable or not */
-    uint8_t flash_hold_time;    /*!< SPI0/1 Flash hold time. This value should be set to register directly */
-} spi_timing_flash_config_t;
 
 /**
  * @brief Register ROM functions and init flash device registers to make use of octal flash
@@ -82,10 +72,21 @@ void esp_mspi_pin_init(void);
 void spi_flash_set_rom_required_regs(void);
 
 /**
- * @brief Get MSPI Flash necessary timing related config
- * @param config see `spi_timing_flash_config_t`
+ * @brief Initialize main flash
+ * @param chip Pointer to main SPI flash(SPI1 CS0) chip to use..
  */
-void spi_timing_get_flash_regs(spi_timing_flash_config_t *config);
+esp_err_t esp_flash_init_main(esp_flash_t *chip);
+
+/**
+ * @brief Should be only used by SPI1 Flash driver to know the necessary timing registers
+ * @param out_timing_config Pointer to timing_tuning parameters.
+ */
+void spi_timing_get_flash_timing_param(spi_flash_hal_timing_config_t *out_timing_config);
+
+/**
+ * @brief Judge if the flash in tuned
+ */
+bool spi_timine_config_flash_is_tuned(void);
 
 #ifdef __cplusplus
 }

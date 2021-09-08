@@ -14,6 +14,7 @@
 #include "soc/spi_mem_reg.h"
 #include "soc/io_mux_reg.h"
 #include "spi_flash_private.h"
+#include "soc/soc.h"
 #if CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/spi_timing_config.h"
 #endif
@@ -462,17 +463,24 @@ void spi_timing_enter_mspi_high_speed_mode(bool control_spi1)
 /**
  * Should be only used by SPI1 Flash driver to know the necessary timing registers
  */
-void spi_timing_get_flash_regs(spi_timing_flash_config_t *config)
-{
-    config->flash_clk_div = get_flash_clock_divider();
 #if SPI_TIMING_FLASH_NEEDS_TUNING || SPI_TIMING_PSRAM_NEEDS_TUNING
-    config->flash_extra_dummy = s_flash_best_timing_tuning_config.extra_dummy_len;
-#else
-    config->flash_extra_dummy = 0;
-#endif
-    config->flash_setup_en = REG_GET_BIT(SPI_MEM_USER_REG(0), SPI_MEM_CS_SETUP);
-    config->flash_setup_time = REG_GET_FIELD(SPI_MEM_CTRL2_REG(0), SPI_MEM_CS_SETUP_TIME);
+void spi_timing_get_flash_timing_param(spi_flash_hal_timing_config_t *out_timing_config)
+{
+    // Get clock configuration directly from system.
+    out_timing_config->clock_config.spimem.val = spi_timing_config_get_flash_clock_reg();
 
-    config->flash_hold_en = REG_GET_BIT(SPI_MEM_USER_REG(0), SPI_MEM_CS_HOLD);
-    config->flash_hold_time = REG_GET_FIELD(SPI_MEM_CTRL2_REG(0), SPI_MEM_CS_HOLD_TIME);
+    // Get extra dummy length here. Therefore, no matter what freq, or mode.
+    // If it needs tuning, it will return correct extra dummy len. If no tuning, it will return 0.
+
+    out_timing_config->extra_dummy = s_flash_best_timing_tuning_config.extra_dummy_len;
+
+    // Get CS setup/hold value here.
+    spi_timing_config_get_cs_timing(&out_timing_config->cs_setup, &out_timing_config->cs_hold);
 }
+#else
+void spi_timing_get_flash_timing_param(spi_flash_hal_timing_config_t *out_timing_config)
+{
+    // This function shouldn't be called if timing tuning is not used.
+    abort();
+}
+#endif // SPI_TIMING_FLASH_NEEDS_TUNING || SPI_TIMING_PSRAM_NEEDS_TUNING
