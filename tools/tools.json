@@ -13,6 +13,9 @@
       "install": "always",
       "license": "GPL-3.0-with-GCC-exception",
       "name": "xtensa-esp32-elf",
+      "supported_targets": [
+        "esp32"
+      ],
       "version_cmd": [
         "xtensa-esp32-elf-gcc",
         "--version"
@@ -69,6 +72,9 @@
       "install": "always",
       "license": "GPL-3.0-with-GCC-exception",
       "name": "xtensa-esp32s2-elf",
+      "supported_targets": [
+        "esp32s2"
+      ],
       "version_cmd": [
         "xtensa-esp32s2-elf-gcc",
         "--version"
@@ -133,6 +139,9 @@
           ]
         }
       ],
+      "supported_targets": [
+        "esp32"
+      ],
       "version_cmd": [
         "esp32ulp-elf-as",
         "--version"
@@ -190,6 +199,9 @@
             "linux-i686"
           ]
         }
+      ],
+      "supported_targets": [
+        "esp32s2"
       ],
       "version_cmd": [
         "esp32s2ulp-elf-as",
@@ -262,6 +274,9 @@
         }
       ],
       "strip_container_dirs": 1,
+      "supported_targets": [
+        "all"
+      ],
       "version_cmd": [
         "cmake",
         "--version"
@@ -316,6 +331,9 @@
             "linux-i686"
           ]
         }
+      ],
+      "supported_targets": [
+        "all"
       ],
       "version_cmd": [
         "openocd",
@@ -375,6 +393,9 @@
           ]
         }
       ],
+      "supported_targets": [
+        "all"
+      ],
       "version_cmd": [
         "ninja",
         "--version"
@@ -423,6 +444,9 @@
           ]
         }
       ],
+      "supported_targets": [
+        "all"
+      ],
       "version_cmd": [
         "idf.py.exe",
         "-v"
@@ -467,6 +491,9 @@
           ]
         }
       ],
+      "supported_targets": [
+        "all"
+      ],
       "version_cmd": [
         "ccache.exe",
         "--version"
@@ -503,6 +530,10 @@
             "win64"
           ]
         }
+      ],
+      "supported_targets": [
+        "esp32s2",
+        "esp32s3"
       ],
       "version_cmd": [
         "dfu-util",

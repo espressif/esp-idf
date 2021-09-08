@@ -18,8 +18,11 @@ if not "%MISSING_REQUIREMENTS%" == "" goto :error_missing_requirements
 set IDF_PATH=%~dp0
 set IDF_PATH=%IDF_PATH:~0,-1%
 
+set TARGETS="all"
+if NOT "%1"=="" set TARGETS=%*
+
 echo Installing ESP-IDF tools
-python.exe %IDF_PATH%\tools\idf_tools.py install
+python.exe %IDF_PATH%\tools\idf_tools.py install --targets=%TARGETS%
 if %errorlevel% neq 0 goto :end
 
 echo Setting up Python environment
