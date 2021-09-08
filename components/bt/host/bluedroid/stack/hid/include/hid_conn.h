@@ -26,18 +26,21 @@
 #define HID_CONN_H
 
 #include "common/bt_defs.h"
-#if (HID_HOST_INCLUDED == TRUE)
+
+#if (BT_HID_INCLUDED == TRUE)
 
 /* Define the HID Connection Block
 */
 typedef struct hid_conn {
-#define HID_CONN_STATE_UNUSED           (0)
-#define HID_CONN_STATE_CONNECTING_CTRL  (1)
-#define HID_CONN_STATE_CONNECTING_INTR  (2)
-#define HID_CONN_STATE_CONFIG           (3)
-#define HID_CONN_STATE_CONNECTED        (4)
-#define HID_CONN_STATE_DISCONNECTING    (5)
-#define HID_CONN_STATE_SECURITY         (6)
+#define HID_CONN_STATE_UNUSED               (0)
+#define HID_CONN_STATE_CONNECTING_CTRL      (1)
+#define HID_CONN_STATE_CONNECTING_INTR      (2)
+#define HID_CONN_STATE_CONFIG               (3)
+#define HID_CONN_STATE_CONNECTED            (4)
+#define HID_CONN_STATE_DISCONNECTING        (5)
+#define HID_CONN_STATE_SECURITY             (6)
+#define HID_CONN_STATE_DISCONNECTING_CTRL   (7)
+#define HID_CONN_STATE_DISCONNECTING_INTR   (8)
 
     UINT8             conn_state;
 
@@ -62,9 +65,8 @@ typedef struct hid_conn {
 
 #define HID_SEC_CHN   1
 #define HID_NOSEC_CHN 2
+#define HIDD_SEC_CHN 3
+#define HIDD_NOSEC_CHN 4
 
-#define HIDD_SEC_CHN    3
-#define HIDD_NOSEC_CHN  4
-
-#endif  ///HID_HOST_INCLUDED == TRUE
+#endif  ///BT_HID_INCLUDED == TRUE
 #endif

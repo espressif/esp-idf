@@ -1252,9 +1252,12 @@ typedef UINT8 tBTM_LINK_KEY_TYPE;
 #define BTM_SEC_SERVICE_HDP_SNK         48
 #define BTM_SEC_SERVICE_HDP_SRC         49
 #define BTM_SEC_SERVICE_ATT             50
+#define BTM_SEC_SERVICE_HIDD_SEC_CTRL   51
+#define BTM_SEC_SERVICE_HIDD_NOSEC_CTRL 52
+#define BTM_SEC_SERVICE_HIDD_INTR       53
 
 /* Update these as services are added */
-#define BTM_SEC_SERVICE_FIRST_EMPTY     51
+#define BTM_SEC_SERVICE_FIRST_EMPTY     54
 
 #ifndef BTM_SEC_MAX_SERVICES
 #define BTM_SEC_MAX_SERVICES            65
@@ -1915,11 +1918,11 @@ typedef UINT8 tBTM_CONTRL_STATE;
 /*****************************************************************************
 **  EXTERNAL FUNCTION DECLARATIONS
 *****************************************************************************/
-/*
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-*/
+
 /*****************************************************************************
 **  DEVICE CONTROL and COMMON FUNCTIONS
 *****************************************************************************/
@@ -4141,10 +4144,8 @@ tBTM_STATUS BTM_SetAfhChannels (AFH_CHANNELS channels, tBTM_CMPL_CB *p_afh_chann
 *******************************************************************************/
 tBTM_STATUS BTM_BleSetChannels (BLE_CHANNELS channels, tBTM_CMPL_CB *p_ble_channels_cmpl_cback);
 
-/*
 #ifdef __cplusplus
 }
 #endif
-*/
 
 #endif /* BTM_API_H */

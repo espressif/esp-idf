@@ -10,7 +10,8 @@ if(CONFIG_BT_ENABLED)
         list(APPEND srcs
              "src/ble_hidd.c"
              "src/ble_hidh.c"
-             "src/bt_hidh.c")
+             "src/bt_hidh.c"
+             "src/bt_hidd.c")
     endif()
 endif()
 

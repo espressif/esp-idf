@@ -41,7 +41,7 @@
 #include "stack/hiddefs.h"
 
 #include "stack/hidh_api.h"
-#include "hidh_int.h"
+#include "hid_int.h"
 #include "osi/osi.h"
 
 #if (HID_HOST_INCLUDED == TRUE)
@@ -132,15 +132,16 @@ tHID_STATUS hidh_conn_disconnect (UINT8 dhandle)
     HIDH_TRACE_EVENT ("HID-Host disconnect");
 
     if ((p_hcon->ctrl_cid != 0) || (p_hcon->intr_cid != 0)) {
-        p_hcon->conn_state = HID_CONN_STATE_DISCONNECTING;
 
         /* Set l2cap idle timeout to 0 (so ACL link is disconnected
          * immediately after last channel is closed) */
         L2CA_SetIdleTimeoutByBdAddr(hh_cb.devices[dhandle].addr, 0, BT_TRANSPORT_BR_EDR);
         /* Disconnect both interrupt and control channels */
         if (p_hcon->intr_cid) {
+            p_hcon->conn_state = HID_CONN_STATE_DISCONNECTING_INTR;
             L2CA_DisconnectReq (p_hcon->intr_cid);
         } else if (p_hcon->ctrl_cid) {
+            p_hcon->conn_state = HID_CONN_STATE_DISCONNECTING_CTRL;
             L2CA_DisconnectReq (p_hcon->ctrl_cid);
         }
     } else {
@@ -360,12 +361,12 @@ static void hidh_l2cif_connect_cfm (UINT16 l2cap_cid, UINT16 result)
         p_hcon = &hh_cb.devices[dhandle].conn;
     }
 
-    if ((p_hcon == NULL)
-            || (!(p_hcon->conn_flags & HID_CONN_FLAGS_IS_ORIG))
-            || ((l2cap_cid == p_hcon->ctrl_cid) && (p_hcon->conn_state != HID_CONN_STATE_CONNECTING_CTRL))
-            || ((l2cap_cid == p_hcon->intr_cid) && (p_hcon->conn_state != HID_CONN_STATE_CONNECTING_INTR)
-                && (p_hcon->conn_state != HID_CONN_STATE_DISCONNECTING))) {
-        HIDH_TRACE_WARNING ("HID-Host Rcvd unexpected conn cnf, CID 0x%x ", l2cap_cid);
+    if ((p_hcon == NULL) || (!(p_hcon->conn_flags & HID_CONN_FLAGS_IS_ORIG)) ||
+        ((l2cap_cid == p_hcon->ctrl_cid) && (p_hcon->conn_state != HID_CONN_STATE_CONNECTING_CTRL) &&
+         (p_hcon->conn_state != HID_CONN_STATE_DISCONNECTING_INTR)) ||
+        ((l2cap_cid == p_hcon->intr_cid) && (p_hcon->conn_state != HID_CONN_STATE_CONNECTING_INTR) &&
+         (p_hcon->conn_state != HID_CONN_STATE_DISCONNECTING_CTRL))) {
+        HIDH_TRACE_WARNING("HID-Host Rcvd unexpected conn cnf, CID 0x%x ", l2cap_cid);
         return;
     }
 
@@ -592,12 +593,12 @@ static void hidh_l2cif_disconnect_ind (UINT16 l2cap_cid, BOOLEAN ack_needed)
 
     HIDH_TRACE_EVENT ("HID-Host Rcvd L2CAP disc, CID: 0x%x", l2cap_cid);
 
-    p_hcon->conn_state = HID_CONN_STATE_DISCONNECTING;
-
     if (l2cap_cid == p_hcon->ctrl_cid) {
         p_hcon->ctrl_cid = 0;
+        p_hcon->conn_state = HID_CONN_STATE_DISCONNECTING_CTRL;
     } else {
         p_hcon->intr_cid = 0;
+        p_hcon->conn_state = HID_CONN_STATE_DISCONNECTING_INTR;
     }
 
     if ((p_hcon->ctrl_cid == 0) && (p_hcon->intr_cid == 0)) {

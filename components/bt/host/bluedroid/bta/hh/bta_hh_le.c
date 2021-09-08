@@ -32,7 +32,7 @@
 #include "bta/utl.h"
 
 #define LOG_TAG "bt_bta_hh"
-#include "osi/include/log.h"
+// #include "osi/include/log.h"
 
 #ifndef BTA_HH_LE_RECONN
 #define BTA_HH_LE_RECONN    TRUE

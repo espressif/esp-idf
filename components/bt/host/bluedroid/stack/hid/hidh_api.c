@@ -31,7 +31,7 @@
 #include "stack/bt_types.h"
 #include "stack/hiddefs.h"
 #include "stack/hidh_api.h"
-#include "hidh_int.h"
+#include "hid_int.h"
 #include "stack/btm_api.h"
 #include "stack/btu.h"
 #include "btm_int.h"
@@ -39,7 +39,9 @@
 #if (HID_HOST_INCLUDED == TRUE)
 
 #if HID_DYNAMIC_MEMORY == FALSE
-tHID_HOST_CTB   hh_cb;
+tHID_HOST_CTB hh_cb;
+#else
+tHID_HOST_CTB *hidh_cb_ptr = NULL;
 #endif
 
 static void hidh_search_callback (UINT16 sdp_result);
@@ -218,18 +220,46 @@ static void hidh_search_callback (UINT16 sdp_result)
 **
 ** Description      This function initializes the control block and trace variable
 **
-** Returns          void
+** Returns          tHID_STATUS
 **
 *******************************************************************************/
-void HID_HostInit (void)
+tHID_STATUS HID_HostInit (void)
 {
+#if (HID_DYNAMIC_MEMORY)
+    if (!hidh_cb_ptr) {
+        hidh_cb_ptr = (tHID_HOST_CTB *)osi_malloc(sizeof(tHID_HOST_CTB));
+        if (!hidh_cb_ptr) {
+            return HID_ERR_NO_RESOURCES;
+        }
+    }
+#endif /* #if (HID_DYNAMIC_MEMORY) */
     memset(&hh_cb, 0, sizeof(tHID_HOST_CTB));
 
-#if defined(HID_INITIAL_TRACE_LEVEL)
-    hh_cb.trace_level = HID_INITIAL_TRACE_LEVEL;
+#if defined(HIDH_INITIAL_TRACE_LEVEL)
+    hh_cb.trace_level = HIDH_INITIAL_TRACE_LEVEL;
 #else
     hh_cb.trace_level = BT_TRACE_LEVEL_NONE;
 #endif
+    return HID_SUCCESS;
+}
+
+/*******************************************************************************
+**
+** Function         HID_HostInit
+**
+** Description      This function deinitializes the control block
+**
+** Returns          void
+**
+*******************************************************************************/
+void HID_HostDeinit (void)
+{
+#if (HID_DYNAMIC_MEMORY)
+    if (hidh_cb_ptr) {
+        osi_free(hidh_cb_ptr);
+        hidh_cb_ptr = NULL;
+    }
+#endif /* #if (HID_DYNAMIC_MEMORY) */
 }
 
 /*******************************************************************************
@@ -362,6 +392,36 @@ tHID_STATUS HID_HostAddDev ( BD_ADDR addr, UINT16 attr_mask, UINT8 *handle )
     return (HID_SUCCESS);
 }
 
+/*******************************************************************************
+**
+** Function         HID_HostGetDev
+**
+** Description      This is called so HID-host can find this device.
+**
+** Returns          tHID_STATUS
+**
+*******************************************************************************/
+tHID_STATUS HID_HostGetDev(BD_ADDR addr, UINT8 *handle)
+{
+    int i;
+    /* Find an entry for this device in hh_cb.devices array */
+    if (!hh_cb.reg_flag) {
+        return (HID_ERR_NOT_REGISTERED);
+    }
+
+    for (i = 0; i < HID_HOST_MAX_DEVICES; i++) {
+        if ((hh_cb.devices[i].in_use) && (!memcmp(addr, hh_cb.devices[i].addr, BD_ADDR_LEN))) {
+            break;
+        }
+    }
+
+    if (i == HID_HOST_MAX_DEVICES) {
+        *handle = 0xff;
+    } else {
+        *handle = i;
+    }
+    return (HID_SUCCESS);
+}
 
 /*******************************************************************************
 **
