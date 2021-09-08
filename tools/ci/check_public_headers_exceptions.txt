@@ -26,9 +26,6 @@ components/esp32/include/esp32/cache_err_int.h
 components/driver/include/driver/sdmmc_defs.h
 components/driver/include/driver/sdmmc_types.h
 
-components/lwip/include/apps/dhcpserver/dhcpserver_options.h
-components/lwip/include/apps/dhcpserver/dhcpserver.h
-
 components/lwip/lwip/src/include/lwip/priv/memp_std.h
 components/lwip/port/esp32/include/arch/cc.h
 components/lwip/port/esp32/include/debug/lwip_debug.h
