@@ -16,7 +16,7 @@
 
 from __future__ import print_function
 import sys
-import collections
+from typing import Dict
 
 try:
     import idf_size
@@ -34,16 +34,13 @@ if __name__ == "__main__":
 
     # Should deliver a RuntimeError as there's no content under the heading
     try:
-        idf_size.load_memory_config(["Memory Configuration"])
+        idf_size.load_segments(['Memory Configuration'])
         pass
     except RuntimeError as e:
         assert "End of file" in str(e)
 
-    # This used to crash with a division by zero error but now it just prints nan% due to
-    # zero lengths
-    MemRegNames = collections.namedtuple('MemRegNames', ['iram_names', 'dram_names', 'diram_names', 'used_iram_names',
-                                                         'used_dram_names', 'used_diram_names'])
-    mem_reg = MemRegNames(set(), set(), set(), set(), set(), set())
+    segments = {'iram0_0_seg': {'origin': 0, 'length': 0},
+                'dram0_0_seg': {'origin': 0, 'length': 0}}
+    sections = {}  # type: Dict
 
-    print(idf_size.get_summary('a.map', mem_reg, {"iram0_0_seg": {"origin":0,"length":0}, "dram0_0_seg":
-          {"origin":0, "length":0}}, {}), end="")
+    print(idf_size.get_summary('a.map', segments, sections, 'esp32'), end='')
