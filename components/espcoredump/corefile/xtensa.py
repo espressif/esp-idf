@@ -85,19 +85,19 @@ class XtensaRegisters(object):
     # extra regs IDs used in EXTRA_INFO note
     EXCCAUSE_IDX = 0
     EXCVADDR_IDX = 1
-    EPS2_IDX = 2
-    EPS3_IDX = 3
-    EPS4_IDX = 4
-    EPS5_IDX = 5
-    EPS6_IDX = 6
-    EPS7_IDX = 7
-    EPC1_IDX = 8
-    EPC2_IDX = 9
-    EPC3_IDX = 10
-    EPC4_IDX = 11
-    EPC5_IDX = 12
-    EPC6_IDX = 13
-    EPC7_IDX = 14
+    EPC1_IDX = 177
+    EPC2_IDX = 178
+    EPC3_IDX = 179
+    EPC4_IDX = 180
+    EPC5_IDX = 181
+    EPC6_IDX = 182
+    EPC7_IDX = 183
+    EPS2_IDX = 194
+    EPS3_IDX = 195
+    EPS4_IDX = 196
+    EPS5_IDX = 197
+    EPS6_IDX = 198
+    EPS7_IDX = 199
 
     @property
     def registers(self):
@@ -138,19 +138,16 @@ def print_exc_regs_info(extra_info):
         exccause_str = ('Invalid EXCCAUSE code', 'Invalid EXCAUSE description or not found.')
     print('exccause       0x%x (%s)' % (exccause, exccause_str[0]))
     print('excvaddr       0x%x' % extra_info[1 + 2 * XtensaRegisters.EXCVADDR_IDX + 1])
-    print('epc1           0x%x' % extra_info[1 + 2 * XtensaRegisters.EPC1_IDX + 1])
-    print('epc2           0x%x' % extra_info[1 + 2 * XtensaRegisters.EPC2_IDX + 1])
-    print('epc3           0x%x' % extra_info[1 + 2 * XtensaRegisters.EPC3_IDX + 1])
-    print('epc4           0x%x' % extra_info[1 + 2 * XtensaRegisters.EPC4_IDX + 1])
-    print('epc5           0x%x' % extra_info[1 + 2 * XtensaRegisters.EPC5_IDX + 1])
-    print('epc6           0x%x' % extra_info[1 + 2 * XtensaRegisters.EPC6_IDX + 1])
-    print('epc7           0x%x' % extra_info[1 + 2 * XtensaRegisters.EPC7_IDX + 1])
-    print('eps2           0x%x' % extra_info[1 + 2 * XtensaRegisters.EPS2_IDX + 1])
-    print('eps3           0x%x' % extra_info[1 + 2 * XtensaRegisters.EPS3_IDX + 1])
-    print('eps4           0x%x' % extra_info[1 + 2 * XtensaRegisters.EPS4_IDX + 1])
-    print('eps5           0x%x' % extra_info[1 + 2 * XtensaRegisters.EPS5_IDX + 1])
-    print('eps6           0x%x' % extra_info[1 + 2 * XtensaRegisters.EPS6_IDX + 1])
-    print('eps7           0x%x' % extra_info[1 + 2 * XtensaRegisters.EPS7_IDX + 1])
+
+    # skip crashed_task_tcb, exccause, and excvaddr
+    for i in range(5, len(extra_info), 2):
+        if (extra_info[i] >= XtensaRegisters.EPC1_IDX and extra_info[i] <= XtensaRegisters.EPC7_IDX):
+            print('epc%d           0x%x' % ((extra_info[i] - XtensaRegisters.EPC1_IDX + 1), extra_info[i + 1]))
+
+    # skip crashed_task_tcb, exccause, and excvaddr
+    for i in range(5, len(extra_info), 2):
+        if (extra_info[i] >= XtensaRegisters.EPS2_IDX and extra_info[i] <= XtensaRegisters.EPS7_IDX):
+            print('eps%d           0x%x' % ((extra_info[i] - XtensaRegisters.EPS2_IDX + 2), extra_info[i + 1]))
 
 
 # from "gdb/xtensa-tdep.h"
