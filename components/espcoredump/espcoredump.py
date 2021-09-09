@@ -10,6 +10,8 @@ import sys
 from shutil import copyfile
 import json
 import re
+import uuid
+import datetime
 
 from construct import GreedyRange, Int32ul, Struct
 from corefile import RISCV_TARGETS, SUPPORTED_TARGETS, XTENSA_TARGETS, __version__, xtensa
@@ -125,6 +127,8 @@ def dbg_corefile():  # type: () -> Optional[list[str]]
     """
     exe_elf = ESPCoreDumpElfFile(args.prog)
     core_elf_path, target, temp_files = get_core_dump_elf(e_machine=exe_elf.e_machine)
+
+    print("Core: %s" % core_elf_path)
 
     rom_elf_path = get_rom_elf_path(target)
     rom_sym_cmd = load_aux_elf(rom_elf_path)
@@ -287,11 +291,13 @@ def info_corefile():  # type: () -> Optional[list[str]]
     print('Done!')
     return temp_files
 
-task_regex = re.compile(r"\#([0-9]+)\s+(0x[0-9a-fA-F]+) in (\S*) \((.*)\) at (.*)")
+# Regex for parsing lines from GDB's thread listing
+task_regex = re.compile(r"^\#([0-9]+)\s+((0x[0-9a-fA-F]+){0,1} in){0,1} ((\S*) \((.*)\)){0,1}( at (.*):(\d+)){0,1}$")
 
+# Generate a sentry.io compatible JSON object from a corefile
 def json_corefile():  # type: () -> Optional[list[str]]
     """
-    Command to load core dump from file or flash and print it's data in JSON
+    Command to load core dump from file or flash and print it's data in sentry.io compatible JSON
     """
     exe_elf = ESPCoreDumpElfFile(args.prog)
     core_elf_path, target, temp_files = get_core_dump_elf(e_machine=exe_elf.e_machine)
@@ -310,7 +316,30 @@ def json_corefile():  # type: () -> Optional[list[str]]
                 task_info_struct = EspTaskStatus.parse(note_sec.desc)
                 task_info.append(task_info_struct)
 
-    dump = {}
+    # Base event object
+    # See https://develop.sentry.dev/sdk/event-payloads/ for detail
+    dump = {
+        "event_id": str(uuid.uuid4()),
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "platform": "c",
+        "logger": "espcoredump.py",
+        "release": os.path.basename(args.prog),
+        "tags": {}
+        # "fingerprint": [] # keys for event deduplication, crashed thread?
+    }
+
+    if args.environment:
+        dump["environment"] = args.environment
+
+    if args.tags:
+        for tag in args.tags:
+            t = tag.split(':')
+            if len(t) == 2:
+                dump["tags"].update({
+                    t[0]: t[1]
+                })
+            else:
+                print("Unrecognised tag: " + tag)
 
     rom_elf_path = get_rom_elf_path(target)
     rom_sym_cmd = load_aux_elf(rom_elf_path)
@@ -318,107 +347,132 @@ def json_corefile():  # type: () -> Optional[list[str]]
     gdb_tool = get_gdb_path(target)
     gdb = EspGDB(gdb_tool, [rom_sym_cmd], core_elf_path, args.prog, timeout_sec=args.gdb_timeout_sec)
 
+    # Setup exception
+    exception_value = {
+        "type": "panic",
+    }
+
     extra_info = None
     if extra_note:
         extra_info = Struct('regs' / GreedyRange(Int32ul)).parse(extra_note.desc).regs
         marker = extra_info[0]
         if marker == ESPCoreDumpElfFile.CURR_TASK_MARKER:
-            dump["task"] = None
+            exception_value["value"] = "unknown"
         else:
             task_name = gdb.get_freertos_task_name(marker)
-            dump["task"] = {
-                "handle": "0x%x" % marker,
-                "name": task_name,
-                "process": marker
-            }
+            exception_value.update({
+                "thread_id": "0x%x" % marker,
+                "value": task_name,
+            })
 
     # Only xtensa have exception registers
-    # TODO: can't get this in string / convertable form rn
+    # TODO: update xtensa.print_exc_regs_info with a version that returns an object or string
+    # so this can be filled into the exception
     #if exe_elf.e_machine == ESPCoreDumpElfFile.EM_XTENSA:
     #    if extra_note and extra_info:
     #        xtensa.print_exc_regs_info(extra_info)
     #    else:
     #        print('Exception registers have not been found!')
 
-    # Add registers to dump object
+    # Add registers to exception
     regs = gdb.run_cmd('info registers')
-    dump["regs"] = {}
+    register_values = {}
     for reg in regs.splitlines():
         r = list(filter(None, reg.strip().replace('\t', ' ').split(' ')))
-        dump["regs"][r[0]] = r[1:]
+        try:
+            int(r[1].replace('0x', ''), 16)
+            register_values[r[0]] = r[1]
+        except ValueError:
+            pass
 
-    # Add current thread stack
+    # Add frames to the exception as part of the stacktrace
+    frame_values = []
     stack = gdb.run_cmd('bt')
-    dump["current"] = { "stack": [] }
     for frame in stack.splitlines():
         f = task_regex.match(frame)
         if f:
-            dump["current"]["stack"].append({
+            frame_values.append({
                 "index": f[1],
-                "address": f[2],
-                "in": f[3],
-                "details": f[4],
-                "at": f[5],
+                "instruction_addr": f[3],
+                "function": f[5],
+                "filename": f[8],
+                "lineno": int(f[9]) if f[9] else None,
+                "vars": { "details": f[6] } if f[6] else {},
             })
         else:
-            dump["current"]["stack"].append({"raw": frame})
+            frame_values.append({"raw_function": frame})
 
-    # Check for corrupted stack
-    if task_info and task_info[0].task_flags != TASK_STATUS_CORRECT:
-        dump["current"]["corrupted"] = True
-        dump["current"].update({
-            "task": task_info[0].task_index,
-            "flags": task_info[0].task_flags,
-            "tcb": task_info[0].task_tcb_addr,
-            "stack_start": task_info[0].task_stack_start
-        })
+    # Build and attach exception
+    frame_values.reverse()
+    exception_value.update({
+        "stacktrace": {
+            "frames": frame_values,
+            "registers": register_values,
+        }
+    })
+    dump["exception"] = exception_value
 
-    # TODO: is this actually useful given the next listing
-    #threads = gdb.run_cmd('info threads')
-
-    dump["threads"] = []
-
-    # THREAD STACKS
+    
+    # Setup per-thread stacktraces
+    thread_values = []
     threads, _ = gdb.get_thread_info()
     for thr in threads:
         thr_id = int(thr['id'])
         task_index = int(thr_id) - 1
         tcb_addr = gdb.gdb2freertos_thread_id(thr['target-id'])
 
+        # Thread base
         t = {
             "id": thr_id,
-            "tcb": "0x%x" % tcb_addr,
             "name": gdb.get_freertos_task_name(tcb_addr),
+            "tcb": "0x%x" % tcb_addr,
+            "stacktrace": {},
         }
 
+        if task_index == 0:
+            t.update({
+                "current": True,
+                "crashed": True,
+            })
+
+        # Stacktrace
         gdb.switch_thread(thr_id)
         stack = gdb.run_cmd('bt')
-        t["stack"] = []
+        frame_values = []
         for frame in stack.splitlines():
             f = task_regex.match(frame)
             if f:
-                t["stack"].append({
+                frame_values.append({
                     "index": f[1],
-                    "address": f[2],
-                    "in": f[3],
-                    "details": f[4],
-                    "at": f[5],
+                    "instruction_addr": f[3],
+                    "function": f[5],
+                    "filename": f[8],
+                    "lineno": int(f[9]) if f[9] else None,
+                    "vars": { "details": f[6] } if f[6] else {},
                 })
             else:
-                t["stack"].append({"raw": frame})
-
+                frame_values.append({"raw_function": frame})
         
+        t["stacktrace"].update({
+            "frames": frame_values,
+        })
+
         if task_info and task_info[task_index].task_flags != TASK_STATUS_CORRECT:
-            t["corrupted"] = True
+            t.vars["corrupted"] = True
             t.update({
                 "task": task_info[task_index].task_index,
                 "flags": task_info[task_index].task_flags,
                 "tcb": task_info[task_index].task_tcb_addr,
-                "stack_start": task_info[task_index].task_stack_start
+                "stack_start": task_info[task_index].task_stack_start,
             })
 
-        dump["threads"].append(t)
+        thread_values.append(t)
 
+    # Attach threads to dump
+    thread_values.reverse()
+    dump["threads"] = {
+        "values": thread_values,
+    }
 
     print(json.dumps(dump, indent=4))
 
@@ -469,8 +523,17 @@ if __name__ == '__main__':
     info_coredump.add_argument('--print-mem', '-m', action='store_true',
                                help='Print memory dump')
                             
-    operations.add_parser('json_corefile', parents=[common_args],
-                          help='Decodes coredump to a JSON object')
+    json_coredump = operations.add_parser('json_corefile', parents=[common_args],
+                          help='Decodes coredump to a sentry.io compatible JSON object')
+
+    json_coredump.add_argument('--timestamp',
+                               help='Override timestamp event')
+
+    json_coredump.add_argument('--environment',
+                               help='Set environment for event')
+
+    json_coredump.add_argument('--tags', action='append',
+                               help='Tags for sorting events in the form KEY:VALUE')
 
     args = parser.parse_args()
 
@@ -486,7 +549,9 @@ if __name__ == '__main__':
         log_level = logging.DEBUG
     logging.basicConfig(format='%(levelname)s: %(message)s', level=log_level)
 
-    print('espcoredump.py v%s' % __version__)
+    if args.operation != 'json_corefile':
+        print('espcoredump.py v%s' % __version__)
+
     temp_core_files = None
     try:
         if args.operation == 'info_corefile':
