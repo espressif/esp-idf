@@ -286,6 +286,11 @@ static esp_err_t lan8720_reset_hw(esp_eth_phy_t *phy)
     return ESP_OK;
 }
 
+/**
+ * @note This function is responsible for restarting a new auto-negotiation,
+ *       the result of negotiation won't be relected to uppler layers.
+ *       Instead, the negotiation result is fetched by linker timer, see `lan8720_get_link()`
+ */
 static esp_err_t lan8720_negotiate(esp_eth_phy_t *phy)
 {
     phy_lan8720_t *lan8720 = __containerof(phy, phy_lan8720_t, parent);
@@ -315,7 +320,7 @@ static esp_err_t lan8720_negotiate(esp_eth_phy_t *phy)
         }
     }
     /* Auto negotiation failed, maybe no network cable plugged in, so output a warning */
-    if (to >= lan8720->autonego_timeout_ms / 100) {
+    if (to >= lan8720->autonego_timeout_ms / 100 && (lan8720->link_status == ETH_LINK_UP)) {
         ESP_LOGW(TAG, "auto negotiation timeout");
     }
     return ESP_OK;

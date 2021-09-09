@@ -189,6 +189,11 @@ static esp_err_t ksz8041_reset_hw(esp_eth_phy_t *phy)
     return ESP_OK;
 }
 
+/**
+ * @note This function is responsible for restarting a new auto-negotiation,
+ *       the result of negotiation won't be relected to uppler layers.
+ *       Instead, the negotiation result is fetched by linker timer, see `ksz8041_get_link()`
+ */
 static esp_err_t ksz8041_negotiate(esp_eth_phy_t *phy)
 {
     phy_ksz8041_t *ksz8041 = __containerof(phy, phy_ksz8041_t, parent);
@@ -205,8 +210,8 @@ static esp_err_t ksz8041_negotiate(esp_eth_phy_t *phy)
     bmsr_reg_t bmsr;
     pc2r_reg_t pc2r;
     uint32_t to = 0;
-    for (to = 0; to < ksz8041->autonego_timeout_ms / 10; to++) {
-        vTaskDelay(pdMS_TO_TICKS(10));
+    for (to = 0; to < ksz8041->autonego_timeout_ms / 100; to++) {
+        vTaskDelay(pdMS_TO_TICKS(100));
         PHY_CHECK(eth->phy_reg_read(eth, ksz8041->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)) == ESP_OK,
                   "read BMSR failed", err);
         PHY_CHECK(eth->phy_reg_read(eth, ksz8041->addr, ETH_PHY_PC2R_REG_ADDR, &(pc2r.val)) == ESP_OK,
@@ -216,7 +221,7 @@ static esp_err_t ksz8041_negotiate(esp_eth_phy_t *phy)
         }
     }
     /* Auto negotiation failed, maybe no network cable plugged in, so output a warning */
-    if (to >= ksz8041->autonego_timeout_ms / 10) {
+    if ((to >= ksz8041->autonego_timeout_ms / 100) && (ksz8041->link_status == ETH_LINK_UP)) {
         ESP_LOGW(TAG, "auto negotiation timeout");
     }
     /* Updata information about link, speed, duplex */
