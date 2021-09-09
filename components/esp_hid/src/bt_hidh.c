@@ -41,7 +41,7 @@ static hidh_local_param_t hidh_local_param;
 #define TRANS_TO 1000000 // us
 #define is_init() (hidh_local_param.event_loop_handle != NULL)
 
-#define get_protocol_mode(mode) (mode) ? "BOOT" : "REPORT"
+#define get_protocol_mode(mode) (mode) ? "REPORT" : "BOOT"
 static const char *s_esp_hh_evt_names[] = {"INIT", "DEINIT", "OPEN", "CLOSE", "GET_RPT", "SET_RPT", "GET_PROTO", "SET_PROTO", "GET_IDLE", "SET_IDLE", "GET_DSCP", "ADD_DEV", "RMV_DEV", "VC_UNPLUG", "DATA", "DATA_IND", "SET_INFO"};
 static const char *s_esp_hh_status_names[] = {"OK",
                                               "HS_HID_NOT_READY",
@@ -654,6 +654,7 @@ static void esp_hh_cb(esp_hidh_cb_event_t event, esp_hidh_cb_param_t *param)
         break;
     }
     case ESP_HIDH_DATA_IND_EVT: {
+        esp_hid_usage_t _usage;
         if (param->data_ind.status != ESP_HIDH_OK) {
             ESP_LOGE(TAG, "DATA_IND ERROR: handle: %d, status: %s", param->data_ind.handle,
                      s_esp_hh_status_names[param->data_ind.status]);
@@ -663,30 +664,43 @@ static void esp_hh_cb(esp_hidh_cb_event_t event, esp_hidh_cb_param_t *param)
             ESP_LOGE(TAG, "Device Not Found: handle %u", param->data_ind.handle);
             break;
         }
-        esp_hidh_dev_lock(dev);
+
         if (param->data_ind.len > 0 && param->data_ind.data != NULL) {
+            esp_hidh_dev_lock(dev);
             event_data_size += param->data_ind.len;
             if (param->data_ind.proto_mode == ESP_HID_PROTOCOL_MODE_BOOT) {
-                // first data is report id
-                if (param->data_ind.data[0]) {
-                    report = esp_hidh_dev_get_input_report_by_len_and_proto(dev, param->data_ind.len,
-                                                                            ESP_HID_PROTOCOL_MODE_BOOT);
+                /**
+                 * first data shall have report_id, according to HID_SPEC_V10
+                 * | Device   | Report ID | Report Size |
+                 * --------------------------------------
+                 * | Keyboard | 1         | 9 Bytes     |
+                 * | Mouse    | 2         | 4 Bytes     |
+                 * | Reserved | 0, 3-255  | N/A         |
+                 */
+                if (param->data_ind.len == 9 && *(param->data_ind.data) == 1) {
                     has_report_id = true;
+                    _usage = ESP_HID_USAGE_KEYBOARD;
+                } else if (param->data_ind.len == 4 && *(param->data_ind.data) == 2) {
+                    has_report_id = true;
+                    _usage = ESP_HID_USAGE_MOUSE;
                 } else {
                     esp_hidh_dev_unlock(dev);
-                    ESP_LOGE(TAG, "report_id=0 in boot mode!");
+                    ESP_LOGE(TAG, "Invalid Boot Report format, rpt_len:%d, rpt_id:%d!", param->data_ind.len,
+                             *(param->data_ind.data));
                     break;
                 }
             } else {
                 report = esp_hidh_dev_get_input_report_by_proto_and_data(
                     dev, ESP_HID_PROTOCOL_MODE_REPORT, param->data_ind.len, param->data_ind.data, &has_report_id);
+                if (report == NULL) {
+                    esp_hidh_dev_unlock(dev);
+                    ESP_LOGE(TAG, "Not find report handle: %d mode: %s", param->data_ind.handle,
+                             param->data_ind.proto_mode == ESP_HID_PROTOCOL_MODE_REPORT ? "REPORT" : "BOOT");
+                    break;
+                }
+                _usage = report->usage;
             }
-            if (report == NULL) {
-                esp_hidh_dev_unlock(dev);
-                ESP_LOGE(TAG, "Not find report handle: %d mode: %s", param->data_ind.handle,
-                         param->data_ind.proto_mode == ESP_HID_PROTOCOL_MODE_REPORT ? "REPORT" : "BOOT");
-                break;
-            }
+
             if ((p_param = (esp_hidh_event_data_t *)malloc(event_data_size)) == NULL) {
                 esp_hidh_dev_unlock(dev);
                 ESP_LOGE(TAG, "DATA_IND ERROR: malloc event data failed!");
@@ -694,7 +708,7 @@ static void esp_hh_cb(esp_hidh_cb_event_t event, esp_hidh_cb_param_t *param)
             }
             memset(p_param, 0, event_data_size);
             p_param->input.dev = dev;
-            p_param->input.usage = report->usage;
+            p_param->input.usage = _usage;
             if (has_report_id) {
                 data_len = param->data_ind.len - 1;
                 p_data = (uint8_t *)param->data_ind.data + 1;
@@ -710,9 +724,7 @@ static void esp_hh_cb(esp_hidh_cb_event_t event, esp_hidh_cb_param_t *param)
             esp_hidh_dev_unlock(dev);
             esp_event_post_to(hidh_local_param.event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_INPUT_EVENT, p_param,
                               event_data_size, portMAX_DELAY);
-            break;
         }
-        esp_hidh_dev_unlock(dev);
         break;
     }
     case ESP_HIDH_DATA_EVT:
