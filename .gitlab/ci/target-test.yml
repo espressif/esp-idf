@@ -303,6 +303,11 @@ example_test_ESP32C3_SDSPI:
     - .test_app_template
     - .rules:test:custom_test-esp32c3
 
+.test_app_esp32s3_template:
+  extends:
+    - .test_app_template
+    - .rules:test:custom_test-esp32s3
+
 test_app_test_001:
   extends: .test_app_esp32_template
   tags:
@@ -344,6 +349,24 @@ test_app_test_esp32_generic:
     - Example_GENERIC
   variables:
     SETUP_TOOLS: "1"
+
+test_app_test_flash_psram_f4r4:
+  extends: .test_app_esp32s3_template
+  tags:
+    - ESP32S3
+    - MSPI_F4R4
+
+test_app_test_flash_psram_f4r8:
+  extends: .test_app_esp32s3_template
+  tags:
+    - ESP32S3
+    - MSPI_F4R8
+
+test_app_test_flash_psram_f8r8:
+  extends: .test_app_esp32s3_template
+  tags:
+    - ESP32S3
+    - MSPI_F8R8
 
 .component_ut_template:
   extends: .target_test_job_template
