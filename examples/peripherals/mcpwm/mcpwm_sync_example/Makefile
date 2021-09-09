@@ -3,6 +3,6 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := mcpwm_basic_config
+PROJECT_NAME := mcpwm_sync_example
 
 include $(IDF_PATH)/make/project.mk
