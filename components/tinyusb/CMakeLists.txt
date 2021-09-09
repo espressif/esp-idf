@@ -36,6 +36,7 @@ if(CONFIG_TINYUSB)
     list(APPEND includes_public
         "tinyusb/src/"
         "additions/include"
+        "tinyusb/lib/networking"
         # The FreeRTOS API include convention in tinyusb is different from esp-idf
         "${freertos_component_dir}/include/freertos"
         )
@@ -68,6 +69,16 @@ if(CONFIG_TINYUSB)
             "additions/src/vfs_tinyusb.c"
             )
     endif() # CONFIG_TINYUSB_CDC_ENABLED
+
+    if(CONFIG_TINYUSB_NET_ENABLED)
+        list(APPEND srcs
+            "tinyusb/src/class/net/net_device.c"
+            "tinyusb/lib/networking/rndis_reports.c"
+            "additions/src/esp_cdc_ecm_driver.c"
+            "additions/src/esp_cdc_ecm_netif_glue.c"
+            )
+    endif() # CONFIG_TINYUSB_CDC_ENABLED
+
 endif() # CONFIG_TINYUSB
 
 idf_component_register(SRCS ${srcs}

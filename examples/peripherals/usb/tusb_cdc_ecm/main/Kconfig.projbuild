@@ -1,0 +1,50 @@
+menu "Example Configuration"
+
+    config EXAMPLE_STATIC_IP
+        bool "Set static IP Address"
+        default n
+        help
+            Set static IP Address. If this option is disabled, a DHCP client is started instead.
+    
+    if EXAMPLE_STATIC_IP
+
+        menu "IP Address"
+
+            config EXAMPLE_IP_ADDRESS_1
+                int "IP Address 1 ([].xxx.xxx.xxx)"
+                range 0 255
+                default 192
+                help 
+                    IP Address Part 1: This option sets the first byte of the static IP Address
+                    of the internal cdc-ecm network interface.
+
+            config EXAMPLE_IP_ADDRESS_2
+                int "IP Address 2 (xxx.[].xxx.xxx)"
+                range 0 255
+                default 168
+                help 
+                    IP Address Part 2: This option sets the second byte of the static IP Address
+                    of the internal cdc-ecm network interface.
+
+            config EXAMPLE_IP_ADDRESS_3
+                int "IP Address 3 (xxx.xxx.[].xxx)"
+                range 0 255
+                default 7
+                help 
+                    IP Address Part 3: This option sets the third byte of the static IP Address
+                    of the internal cdc-ecm network interface.
+
+            config EXAMPLE_IP_ADDRESS_4
+                int "IP Address 4 (xxx.xxx.xxx.[])"
+                range 0 255
+                default 1
+                help 
+                    IP Address Part 4: This option sets the fourth byte of the static IP Address
+                    of the internal cdc-ecm network interface.
+
+        endmenu
+
+
+    endif # EXAMPLE_STATIC_IP
+
+endmenu

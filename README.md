@@ -1,6 +1,13 @@
 # Espressif IoT Development Framework
 
-* [中文版](./README_CN.md)
+# Changes in this Fork
+
+This fork contains:
+* New [Ethernet-over-USB driver](components/tinyusb/additions/src/esp_cdc_ecm_driver.c), see [this example](examples/peripherals/usb/tusb_cdc_ecm/README.md)
+
+# Original README:
+
+[中文版](./README_CN.md)
 
 ESP-IDF is the development framework for Espressif SoCs supported on Windows, Linux and macOS.
 
