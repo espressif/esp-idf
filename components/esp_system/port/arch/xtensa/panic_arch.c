@@ -273,7 +273,7 @@ static inline void print_memprot_err_details(const void *f)
     mem_type_prot_t mem_type = esp_memprot_get_active_intr_memtype();
     esp_memprot_get_fault_status( mem_type, &fault_addr, &op_type, &op_subtype );
 
-    char *operation_type = "Write";
+    const char *operation_type = "Write";
     if ( op_type == 0 ) {
         operation_type = (mem_type == MEMPROT_IRAM0_SRAM && op_subtype == 0) ? "Instruction fetch" : "Read";
     }
