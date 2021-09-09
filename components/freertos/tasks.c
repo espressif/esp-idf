@@ -155,9 +155,9 @@
         }                                                                     \
                                                                               \
         /* listGET_OWNER_OF_NEXT_ENTRY indexes through the list, so the tasks of \
-         * the same priority get an equal share of the processor time. */                    \
+         * the  same priority get an equal share of the processor time. */                    \
         listGET_OWNER_OF_NEXT_ENTRY( pxCurrentTCB[xPortGetCoreID()], &( pxReadyTasksLists[ uxTopPriority ] ) ); \
-        uxTopReadyPriority = uxTopPriority;                                                  \
+        uxTopReadyPriority = uxTopPriority;                                                   \
     } /* taskSELECT_HIGHEST_PRIORITY_TASK */
 
 /*-----------------------------------------------------------*/
@@ -418,8 +418,8 @@ PRIVILEGED_DATA static volatile UBaseType_t uxSchedulerSuspended[portNUM_PROCESS
 
 #if ( configGENERATE_RUN_TIME_STATS == 1 )
 
-    /* Do not move these variables to function scope as doing so prevents the
-    code working with debuggers that need to remove the static qualifier. */
+/* Do not move these variables to function scope as doing so prevents the
+ * code working with debuggers that need to remove the static qualifier. */
     PRIVILEGED_DATA static uint32_t ulTaskSwitchedInTime[portNUM_PROCESSORS] = {0U}; /*< Holds the value of a timer/counter the last time a task was switched in. */
     PRIVILEGED_DATA static uint32_t ulTotalRunTime = 0UL;                            /*< Holds the total amount of execution time as defined by the run time counter clock. */
 
@@ -483,7 +483,7 @@ static void prvInitialiseTaskLists( void ) PRIVILEGED_FUNCTION;
  * void prvIdleTask( void *pvParameters );
  *
  */
-static portTASK_FUNCTION_PROTO( prvIdleTask, pvParameters );
+static portTASK_FUNCTION_PROTO( prvIdleTask, pvParameters ) PRIVILEGED_FUNCTION;
 
 /*
  * Utility to free all memory allocated by the scheduler to hold a TCB,
@@ -814,12 +814,12 @@ void taskYIELD_OTHER_CORE( BaseType_t xCoreID, UBaseType_t uxPriority )
 #if ( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
 
     BaseType_t xTaskCreatePinnedToCore( TaskFunction_t pvTaskCode,
-                                        const char * const pcName,
-                                        const uint32_t usStackDepth,
-                                        void * const pvParameters,
-                                        UBaseType_t uxPriority,
-                                        TaskHandle_t * const pvCreatedTask,
-                                        const BaseType_t xCoreID)
+                            const char * const pcName, /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+                            const uint32_t usStackDepth,
+                            void * const pvParameters,
+                            UBaseType_t uxPriority,
+                            TaskHandle_t * const pvCreatedTask,
+                            const BaseType_t xCoreID)
     {
         TCB_t * pxNewTCB;
         BaseType_t xReturn;
@@ -1906,7 +1906,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                 if( listIS_CONTAINED_WITHIN( &( pxReadyTasksLists[ uxPriorityUsedOnEntry ] ), &( pxTCB->xStateListItem ) ) != pdFALSE )
                 {
                     /* The task is currently in its ready list - remove before
-                     * adding it to it's new ready list.  As we are in a critical
+                     * adding it to its new ready list.  As we are in a critical
                      * section we can do this even if the scheduler is suspended. */
                     if( uxListRemove( &( pxTCB->xStateListItem ) ) == ( UBaseType_t ) 0 )
                     {

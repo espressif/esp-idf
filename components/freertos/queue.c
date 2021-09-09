@@ -62,6 +62,7 @@
 /* Constants used with the cRxLock and cTxLock structure members. */
 #define queueUNLOCKED             ( ( int8_t ) -1 )
 #define queueLOCKED_UNMODIFIED    ( ( int8_t ) 0 )
+#define queueINT8_MAX             ( ( int8_t ) 127 )
 
 /* When the Queue_t structure is used to represent a base queue its pcHead and
  * pcTail members are used as pointers into the queue storage area.  When the
@@ -264,7 +265,7 @@ static void prvInitialiseNewQueue( const UBaseType_t uxQueueLength,
  * accessing the queue event lists.
  */
 #define prvLockQueue( pxQueue )                            \
-    taskENTER_CRITICAL();                   \
+    taskENTER_CRITICAL();                                  \
     {                                                      \
         if( ( pxQueue )->cRxLock == queueUNLOCKED )        \
         {                                                  \
@@ -366,8 +367,10 @@ BaseType_t xQueueGenericReset( QueueHandle_t xQueue,
                  * variable of type StaticQueue_t or StaticSemaphore_t equals the size of
                  * the real queue and semaphore structures. */
                 volatile size_t xSize = sizeof( StaticQueue_t );
-                configASSERT( xSize == sizeof( Queue_t ) );
-                ( void ) xSize; /* Keeps lint quiet when configASSERT() is not defined. */
+
+                /* This assertion cannot be branch covered in unit tests */
+                configASSERT( xSize == sizeof( Queue_t ) ); /* LCOV_EXCL_BR_LINE */
+                ( void ) xSize;                             /* Keeps lint quiet when configASSERT() is not defined. */
             }
         #endif /* configASSERT_DEFINED */
 
@@ -430,7 +433,7 @@ BaseType_t xQueueGenericReset( QueueHandle_t xQueue,
         configASSERT( ( uxItemSize == 0 ) || ( uxQueueLength == ( xQueueSizeInBytes / uxItemSize ) ) );
 
         /* Check for addition overflow. */
-        configASSERT( ( sizeof( Queue_t ) + xQueueSizeInBytes ) >  xQueueSizeInBytes );
+        configASSERT( ( sizeof( Queue_t ) + xQueueSizeInBytes ) > xQueueSizeInBytes );
 
         /* Allocate the queue and storage area.  Justification for MISRA
          * deviation as follows:  pvPortMalloc() always ensures returned memory
@@ -3087,7 +3090,10 @@ BaseType_t xQueueIsQueueFullFromISR( const QueueHandle_t xQueue )
 
         /* This function must be called form a critical section. */
 
-        configASSERT( pxQueueSetContainer );
+        /* The following line is not reachable in unit tests because every call
+         * to prvNotifyQueueSetContainer is preceded by a check that
+         * pxQueueSetContainer != NULL */
+        configASSERT( pxQueueSetContainer ); /* LCOV_EXCL_BR_LINE */
 
         //Acquire the Queue set's spinlock
         portENTER_CRITICAL(&(pxQueueSetContainer->mux));

@@ -314,7 +314,6 @@ static void prvInitialiseNewStreamBuffer( StreamBuffer_t * const pxStreamBuffer,
             pucAllocatedMemory = NULL;
         }
 
-
         if( pucAllocatedMemory != NULL )
         {
             prvInitialiseNewStreamBuffer( ( StreamBuffer_t * ) pucAllocatedMemory,       /* Structure at the start of the allocated memory. */ /*lint !e9087 Safe cast as allocated memory is aligned. */ /*lint !e826 Area is not too small and alignment is guaranteed provided malloc() behaves as expected and returns aligned buffer. */
@@ -571,13 +570,14 @@ size_t xStreamBufferSend( StreamBufferHandle_t xStreamBuffer,
     size_t xReturn, xSpace = 0;
     size_t xRequiredSpace = xDataLengthBytes;
     TimeOut_t xTimeOut;
-
-    /* The maximum amount of space a stream buffer will ever report is its length
-     * minus 1. */
-    const size_t xMaxReportedSpace = pxStreamBuffer->xLength - ( size_t ) 1;
+    size_t xMaxReportedSpace = 0;
 
     configASSERT( pvTxData );
     configASSERT( pxStreamBuffer );
+
+    /* The maximum amount of space a stream buffer will ever report is its length
+     * minus 1. */
+    xMaxReportedSpace = pxStreamBuffer->xLength - ( size_t ) 1;
 
     /* This send function is used to write to both message buffers and stream
      * buffers.  If this is a message buffer then the space needed must be
