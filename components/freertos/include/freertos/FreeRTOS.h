@@ -53,11 +53,6 @@
 #endif
 /* *INDENT-ON* */
 
-#ifdef ESP_PLATFORM
-/* for likely and unlikely */
-#include "esp_compiler.h"
-#endif // ESP_PLATFORM
-
 /* Application specific configuration options. */
 #include "freertos/FreeRTOSConfig.h"
 /* Basic FreeRTOS definitions. */

@@ -71,6 +71,10 @@
 #define FREERTOS_CONFIG_H
 
 #include "sdkconfig.h"
+
+/* for likely and unlikely */
+#include "esp_compiler.h"
+
 // The arch-specific FreeRTOSConfig.h in port/<arch>/include.
 #include_next "freertos/FreeRTOSConfig.h"
 
