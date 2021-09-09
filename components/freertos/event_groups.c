@@ -661,7 +661,7 @@ EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
                  * eventUNBLOCKED_DUE_TO_BIT_SET bit is set so the task knows
                  * that is was unblocked due to its required bits matching, rather
                  * than because it timed out. */
-                xTaskRemoveFromUnorderedEventList( pxListItem, pxEventBits->uxEventBits | eventUNBLOCKED_DUE_TO_BIT_SET );
+                vTaskRemoveFromUnorderedEventList( pxListItem, pxEventBits->uxEventBits | eventUNBLOCKED_DUE_TO_BIT_SET );
             }
 
             /* Move onto the next list item.  Note pxListItem->pxNext is not
@@ -699,7 +699,7 @@ void vEventGroupDelete( EventGroupHandle_t xEventGroup )
             /* Unblock the task, returning 0 as the event list is being deleted
              * and cannot therefore have any bits set. */
             configASSERT( pxTasksWaitingForBits->xListEnd.pxNext != ( const ListItem_t * ) &( pxTasksWaitingForBits->xListEnd ) );
-            xTaskRemoveFromUnorderedEventList( pxTasksWaitingForBits->xListEnd.pxNext, eventUNBLOCKED_DUE_TO_BIT_SET );
+            vTaskRemoveFromUnorderedEventList( pxTasksWaitingForBits->xListEnd.pxNext, eventUNBLOCKED_DUE_TO_BIT_SET );
         }
     }
     taskEXIT_CRITICAL();
