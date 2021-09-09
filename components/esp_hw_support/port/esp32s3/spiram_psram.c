@@ -39,7 +39,7 @@
 
 #if CONFIG_SPIRAM_MODE_QUAD
 #include "soc/rtc.h"
-#include "spi_flash_private.h"
+#include "esp_private/spi_flash_os.h"
 
 static const char* TAG = "psram";
 

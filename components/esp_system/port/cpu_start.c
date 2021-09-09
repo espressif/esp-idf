@@ -1,16 +1,8 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdint.h>
 #include <string.h>
@@ -64,7 +56,7 @@
 #include "esp32h2/memprot.h"
 #endif
 
-#include "spi_flash_private.h"
+#include "esp_private/spi_flash_os.h"
 #include "bootloader_flash_config.h"
 #include "bootloader_flash.h"
 #include "esp_private/crosscore_int.h"
@@ -371,18 +363,25 @@ void IRAM_ATTR call_start_cpu0(void)
     Cache_Set_IDROM_MMU_Size(cache_mmu_irom_size, CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
 #endif // CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
 
-    esp_mspi_pin_init();
-    // For Octal flash, it's hard to implement a read_id function in OPI mode for all vendors.
-    // So we have to read it here in SPI mode, before entering the OPI mode.
-    bootloader_flash_update_id();
 #if CONFIG_ESPTOOLPY_OCT_FLASH
     bool efuse_opflash_en = REG_GET_FIELD(EFUSE_RD_REPEAT_DATA3_REG, EFUSE_FLASH_TYPE);
     if (!efuse_opflash_en) {
         ESP_EARLY_LOGE(TAG, "Octal Flash option selected, but EFUSE not configured!");
         abort();
     }
-    esp_opiflash_init();
 #endif
+    esp_mspi_pin_init();
+    // For Octal flash, it's hard to implement a read_id function in OPI mode for all vendors.
+    // So we have to read it here in SPI mode, before entering the OPI mode.
+    bootloader_flash_update_id();
+    /**
+     * This function initialise the Flash chip to the user-defined settings.
+     *
+     * In bootloader, we only init Flash (and MSPI) to a preliminary state, for being flexible to
+     * different chips.
+     * In this stage, we re-configure the Flash (and MSPI) to required configuration
+     */
+    spi_flash_init_chip_state();
 #if CONFIG_IDF_TARGET_ESP32S3
     //On other chips, this feature is not provided by HW, or hasn't been tested yet.
     spi_timing_flash_tuning();

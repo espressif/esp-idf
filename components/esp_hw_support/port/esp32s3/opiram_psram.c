@@ -27,7 +27,7 @@
 
 #if CONFIG_SPIRAM_MODE_OCT
 #include "soc/rtc.h"
-#include "spi_flash_private.h"
+#include "esp_private/spi_flash_os.h"
 
 #define OPI_PSRAM_SYNC_READ             0x0000
 #define OPI_PSRAM_SYNC_WRITE            0x8080
@@ -153,7 +153,7 @@ static void IRAM_ATTR s_get_psram_mode_reg(int spi_num, opi_psram_mode_reg_t *ou
     int dummy = OCT_PSRAM_RD_DUMMY_BITLEN;
     int data_bit_len = 16;
 
-    //Read MR0 register
+    //Read MR0~1 register
     esp_rom_opiflash_exec_cmd(spi_num, mode,
                              OPI_PSRAM_REG_READ, cmd_len,
                              0x0, addr_bit_len,
@@ -162,7 +162,7 @@ static void IRAM_ATTR s_get_psram_mode_reg(int spi_num, opi_psram_mode_reg_t *ou
                              &out_reg->mr0.val, data_bit_len,
                              BIT(1),
                              false);
-    //Read MR2 register
+    //Read MR2~3 register
     esp_rom_opiflash_exec_cmd(spi_num, mode,
                             OPI_PSRAM_REG_READ, cmd_len,
                             0x2, addr_bit_len,
@@ -171,6 +171,7 @@ static void IRAM_ATTR s_get_psram_mode_reg(int spi_num, opi_psram_mode_reg_t *ou
                             &out_reg->mr2.val, data_bit_len,
                             BIT(1),
                             false);
+    data_bit_len = 8;
     //Read MR4 register
     esp_rom_opiflash_exec_cmd(spi_num, mode,
                             OPI_PSRAM_REG_READ, cmd_len,
@@ -244,9 +245,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
 
     //set to variable dummy mode
     SET_PERI_REG_MASK(SPI_MEM_DDR_REG(1), SPI_MEM_SPI_FMEM_VAR_DUMMY);
-#if CONFIG_ESPTOOLPY_FLASH_VENDOR_MXIC && CONFIG_ESPTOOLPY_FLASHMODE_OPI_DTR
     esp_rom_spi_set_dtr_swap_mode(1, false, false);
-#endif
 
     //Set PSRAM read latency and drive strength
     static DRAM_ATTR opi_psram_mode_reg_t mode_reg = {0};
@@ -262,12 +261,9 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
                    mode_reg.mr2.density == 0x5 ? PSRAM_SIZE_128MBITS :
                    mode_reg.mr2.density == 0x7 ? PSRAM_SIZE_256MBITS : 0;
 
-#if CONFIG_ESPTOOLPY_FLASH_VENDOR_MXIC && CONFIG_ESPTOOLPY_FLASHMODE_OPI_DTR
-    esp_rom_spi_set_dtr_swap_mode(1, true, true);
-#endif
     //Do PSRAM timing tuning, we use SPI1 to do the tuning, and set the SPI0 PSRAM timing related registers accordingly
     spi_timing_psram_tuning();
-    ////Back to the high speed mode. Flash/PSRAM clocks are set to the clock that user selected. SPI0/1 registers are all set correctly
+    //Back to the high speed mode. Flash/PSRAM clocks are set to the clock that user selected. SPI0/1 registers are all set correctly
     spi_timing_enter_mspi_high_speed_mode(true);
 
     /**
@@ -275,6 +271,8 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
      * This function is to restore SPI1 init state.
      */
     spi_flash_set_rom_required_regs();
+    //Flash chip requires MSPI specifically, call this function to set them
+    spi_flash_set_vendor_required_regs();
 
     s_config_psram_spi_phases();
     return ESP_OK;

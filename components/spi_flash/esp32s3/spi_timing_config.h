@@ -44,8 +44,8 @@ extern "C" {
  * 2. DDR mode requires the core clock divider (core_clk / div = module_clk) to be power of 2.
  */
 //--------------------------------------FLASH Sampling Mode --------------------------------------//
-#define SPI_TIMING_FLASH_DTR_MODE                   (CONFIG_ESPTOOLPY_FLASHMODE_OPI_DTR || CONFIG_ESPTOOLPY_FLASHMODE_OIO_DTR)
-#define SPI_TIMING_FLASH_STR_MODE                   (CONFIG_ESPTOOLPY_FLASHMODE_OPI_STR || !CONFIG_ESPTOOLPY_OCT_FLASH)
+#define SPI_TIMING_FLASH_DTR_MODE                   CONFIG_ESPTOOLPY_FLASH_SAMPLE_MODE_DTR
+#define SPI_TIMING_FLASH_STR_MODE                   CONFIG_ESPTOOLPY_FLASH_SAMPLE_MODE_STR
 //--------------------------------------FLASH Module Clock --------------------------------------//
 #if CONFIG_ESPTOOLPY_FLASHFREQ_20M
 #define SPI_TIMING_FLASH_MODULE_CLOCK               20
