@@ -28,6 +28,8 @@
 
 #define MB_PORT_TAG "MB_PORT_COMMON"
 
+#define MB_PORT_HAS_CLOSE           (1) // Define to explicitly close port on destroy
+
 #define MB_PORT_CHECK(a, ret_val, str, ...) \
     if (!(a)) { \
         ESP_LOGE(MB_PORT_TAG, "%s(%u): " str, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
@@ -60,13 +62,13 @@ typedef long    LONG;
 void vMBPortEnterCritical( );
 void vMBPortExitCritical( );
 
-#define ENTER_CRITICAL_SECTION( ) { ESP_LOGD(MB_PORT_TAG,"%s: Port enter critical.", __func__); \
-                                    vMBPortEnterCritical(); }
+#define ENTER_CRITICAL_SECTION( )   { ESP_LOGD(MB_PORT_TAG,"%s: Port enter critical.", __func__); \
+                                        vMBPortEnterCritical(); }
 
-#define EXIT_CRITICAL_SECTION( )  { vMBPortExitCritical(); \
-                                    ESP_LOGD(MB_PORT_TAG,"%s: Port exit critical", __func__); }
-#define MB_PORT_PARITY_GET(parity) ((parity != UART_PARITY_DISABLE) ? \
-                                        ((parity == UART_PARITY_ODD) ? MB_PAR_ODD : MB_PAR_EVEN) : MB_PAR_NONE)
+#define EXIT_CRITICAL_SECTION( )    { vMBPortExitCritical(); \
+                                        ESP_LOGD(MB_PORT_TAG,"%s: Port exit critical", __func__); }
+#define MB_PORT_PARITY_GET(parity)  ((parity != UART_PARITY_DISABLE) ? \
+                                            ((parity == UART_PARITY_ODD) ? MB_PAR_ODD : MB_PAR_EVEN) : MB_PAR_NONE)
 
 #define MB_PORT_CHECK_EVENT( event, mask ) ( event & mask )
 #define MB_PORT_CLEAR_EVENT( event, mask ) do { event &= ~mask; } while(0)

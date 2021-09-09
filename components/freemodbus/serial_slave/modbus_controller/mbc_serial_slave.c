@@ -28,7 +28,7 @@
 #include "port_serial_slave.h"
 
 // Shared pointer to interface structure
-static mb_slave_interface_t* mbs_interface_ptr = NULL; // &default_interface_inst;
+static mb_slave_interface_t* mbs_interface_ptr = NULL;
 
 // Modbus task function
 static void modbus_slave_task(void *pvParameters)
@@ -36,7 +36,7 @@ static void modbus_slave_task(void *pvParameters)
     // Modbus interface must be initialized before start 
     MB_SLAVE_ASSERT(mbs_interface_ptr != NULL);
     mb_slave_options_t* mbs_opts = &mbs_interface_ptr->opts;
-    
+
     MB_SLAVE_ASSERT(mbs_opts != NULL);
     // Main Modbus stack processing cycle
     for (;;) {
@@ -129,7 +129,7 @@ static esp_err_t mbc_serial_slave_destroy(void)
     MB_SLAVE_CHECK((mb_error == MB_ENOERR), ESP_ERR_INVALID_STATE,
             "mb stack close failure returned (0x%x).", (uint32_t)mb_error);
     free(mbs_interface_ptr);
-
+    mbs_interface_ptr = NULL;
     return ESP_OK;
 }
 
