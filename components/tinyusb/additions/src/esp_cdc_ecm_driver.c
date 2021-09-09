@@ -148,7 +148,8 @@ esp_err_t esp_cdc_ecm_transmit(void* h, void* buffer, size_t len)
         }
 
         /* transfer execution to TinyUSB in the hopes that it will finish transmitting the prior packet */
-        vTaskDelay(pdMS_TO_TICKS(1));
+        /* delay 1 tick, to allow execution of other (maybe lower prio) tasks */
+        vTaskDelay(1);
     }
 }
 
