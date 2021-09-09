@@ -523,10 +523,6 @@ tBTM_STATUS BTM_BleStartExtAdv(BOOLEAN enable, UINT8 num, tBTM_BLE_EXT_ADV *ext_
 end:
 
     if (!enable && status == BTM_SUCCESS) {
-        // Reset the configure parameters when stop extend adv.
-        for (int i = 0; i < MAX_BLE_ADV_INSTANCE; i++) {
-            extend_adv_cb.inst[i].configured = false;
-        }
         // disable all ext adv
         if(num == 0) {
 
