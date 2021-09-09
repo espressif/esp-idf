@@ -257,10 +257,11 @@ test_espcoredump:
     expire_in: 1 week
   variables:
     IDF_COREDUMP_ELF_REPO: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/idf/idf-coredump-elf.git"
+    IDF_COREDUMP_ELF_TAG: idf-20210909-00
     # install CMake version specified in tools.json
     SETUP_TOOLS_LIST: "all"
   script:
-    - retry_failed git clone ${IDF_COREDUMP_ELF_REPO} -b master
+    - retry_failed git clone ${IDF_COREDUMP_ELF_REPO} -b $IDF_COREDUMP_ELF_TAG
     - cd components/espcoredump/test/
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_espcoredump.sh ${CI_PROJECT_DIR}/idf-coredump-elf
 
