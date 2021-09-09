@@ -19,23 +19,34 @@
 #pragma once
 #include <sdkconfig.h>
 #include <stdlib.h>
-#include "esp_compiler.h"
+#include <stdint.h>
 
 #include_next <assert.h>
 
-#if defined(CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT) && !defined(NDEBUG)
-    #undef assert
-    #define assert(__e) (likely(__e)) ? (void)0 : abort()
-#else
-    /* moved part of toolchain provided assert to there then
-     * we can tweak the original assert macro to perform likely
-     * before deliver it to original toolchain implementation
-     */
-    #undef assert
-    #ifdef NDEBUG
-    # define assert(__e) ((void)0)
-    #else
-    # define assert(__e) (likely(__e) ? (void)0 : __assert_func (__FILE__, __LINE__, \
-                                __ASSERT_FUNC, #__e))
-    #endif
+/* moved part of libc provided assert to here allows
+ * tweaking the assert macro to use __builtin_expect()
+ * and reduce jumps in the "asserts OK" code path
+ *
+ * Note: using __builtin_expect() not likely() to avoid defining the likely
+ * macro in namespace of non-IDF code that may include this standard header.
+ */
+#undef assert
+
+/* __FILENAME__ points to the file name instead of path + filename
+ * e.g __FILE__ points to "/apps/test.c" where as __FILENAME__ points to "test.c"
+ */
+#define __FILENAME__ (__builtin_strrchr( "/" __FILE__, '/') + 1)
+
+#if defined(NDEBUG)
+
+#define assert(__e) ((void)(__e))
+
+#elif CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT
+
+#define assert(__e) (__builtin_expect(!!(__e), 1) ? (void)0 : __assert_func(NULL, 0, NULL, NULL))
+
+#else // !CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT
+
+#define assert(__e) (__builtin_expect(!!(__e), 1) ? (void)0 : __assert_func (__FILENAME__, __LINE__, \
+                                                                             __ASSERT_FUNC, #__e))
 #endif
