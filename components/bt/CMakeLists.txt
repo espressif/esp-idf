@@ -1,6 +1,8 @@
 if(CONFIG_BT_ENABLED)
     if(CONFIG_IDF_TARGET_ESP32)
-        set(srcs "controller/esp32/bt.c")
+        set(srcs "controller/esp32/bt.c"
+                 "controller/esp32/hli_api.c"
+                 "controller/esp32/hli_vectors.S")
     elseif(CONFIG_IDF_TARGET_ESP32C3)
         set(srcs "controller/esp32c3/bt.c")
     elseif(CONFIG_IDF_TARGET_ESP32S3)
@@ -608,6 +610,8 @@ if(CONFIG_BT_ENABLED)
     if(CONFIG_IDF_TARGET_ESP32)
         target_link_libraries(${COMPONENT_LIB} INTERFACE "-L${CMAKE_CURRENT_LIST_DIR}/controller/lib_esp32/esp32")
         target_link_libraries(${COMPONENT_LIB} PUBLIC btdm_app)
+
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-u ld_include_hli_vectors_bt")
     elseif(CONFIG_IDF_TARGET_ESP32C3)
         target_link_libraries(${COMPONENT_LIB} INTERFACE
                 "-L${CMAKE_CURRENT_LIST_DIR}/controller/lib_esp32c3_family/esp32c3")
