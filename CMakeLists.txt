@@ -20,7 +20,9 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_COMPILER_OPTIMIZATION_SIZE)
         list(APPEND compile_options "-Os")
-        list(APPEND compile_options "-freorder-blocks")
+        if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+            list(APPEND compile_options "-freorder-blocks")
+        endif()
     elseif(CONFIG_COMPILER_OPTIMIZATION_DEFAULT)
         list(APPEND compile_options "-Og")
     elseif(CONFIG_COMPILER_OPTIMIZATION_NONE)
@@ -33,7 +35,9 @@ else()  # BOOTLOADER_BUILD
 
     if(CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_SIZE)
         list(APPEND compile_options "-Os")
-        list(APPEND compile_options "-freorder-blocks")
+        if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+            list(APPEND compile_options "-freorder-blocks")
+        endif()
     elseif(CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_DEBUG)
         list(APPEND compile_options "-Og")
     elseif(CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_NONE)
@@ -72,6 +76,10 @@ if(CONFIG_COMPILER_DISABLE_GCC8_WARNINGS)
                                 "-Wno-format-truncation"
                                 "-Wno-memset-elt-size"
                                 "-Wno-int-in-bool-context")
+endif()
+
+if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+    list(APPEND c_compile_options "-Wno-old-style-declaration")
 endif()
 
 if(CONFIG_COMPILER_WARN_WRITE_STRINGS)
@@ -118,7 +126,15 @@ list(APPEND link_options "-fno-lto")
 # Placing jump tables in flash would cause issues with code that required
 # to be placed in IRAM
 list(APPEND compile_options "-fno-jump-tables")
-list(APPEND compile_options "-fno-tree-switch-conversion")
+if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+    # This flag is GCC-specific.
+    # Not clear yet if some other flag should be used for Clang.
+    list(APPEND compile_options "-fno-tree-switch-conversion")
+endif()
+
+if(CMAKE_C_COMPILER_ID MATCHES "LLVM")
+    list(APPEND compile_options "-fno-use-cxa-atexit")
+endif()
 
 idf_build_set_property(COMPILE_OPTIONS "${compile_options}" APPEND)
 idf_build_set_property(C_COMPILE_OPTIONS "${c_compile_options}" APPEND)

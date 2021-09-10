@@ -107,8 +107,7 @@ function(__build_set_default_build_specifications)
                                     # go into the final binary so have no impact on size
                                     "-ggdb")
 
-    list(APPEND c_compile_options   "-std=gnu99"
-                                    "-Wno-old-style-declaration")
+    list(APPEND c_compile_options   "-std=gnu99")
 
     list(APPEND cxx_compile_options "-std=gnu++11")
 
