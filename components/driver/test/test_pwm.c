@@ -472,21 +472,20 @@ TEST_CASE("MCPWM timer swsync test", "[mcpwm]")
 }
 
 // -------------------------------------------------------------------------------------
+typedef struct {
+    mcpwm_unit_t unit;
+    TaskHandle_t task_hdl;
+} test_capture_callback_data_t;
+
+static bool test_mcpwm_intr_handler(mcpwm_unit_t mcpwm, mcpwm_capture_channel_id_t cap_sig, const cap_event_data_t *edata, void *arg) {
+    BaseType_t high_task_wakeup = pdFALSE;
+    test_capture_callback_data_t *cb_data = (test_capture_callback_data_t *)arg;
+    vTaskNotifyGiveFromISR(cb_data->task_hdl, &high_task_wakeup);
+    return high_task_wakeup == pdTRUE;
+}
 
 static void mcpwm_capture_test(mcpwm_unit_t unit, mcpwm_capture_signal_t cap_chan)
 {
-    typedef struct {
-        mcpwm_unit_t unit;
-        TaskHandle_t task_hdl;
-    } test_capture_callback_data_t;
-
-    bool test_mcpwm_intr_handler(mcpwm_unit_t mcpwm, mcpwm_capture_channel_id_t cap_sig, const cap_event_data_t *edata, void *arg) {
-        BaseType_t high_task_wakeup = pdFALSE;
-        test_capture_callback_data_t *cb_data = (test_capture_callback_data_t *)arg;
-        vTaskNotifyGiveFromISR(cb_data->task_hdl, &high_task_wakeup);
-        return high_task_wakeup == pdTRUE;
-    }
-
     test_capture_callback_data_t callback_data = {
         .unit = unit,
         .task_hdl = xTaskGetCurrentTaskHandle(),
