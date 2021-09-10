@@ -68,15 +68,12 @@ Pins in use. The SPI Master can use the GPIO mux, so feel free to change these i
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #define RCV_HOST    HSPI_HOST
-#define DMA_CHAN    2
 
 #elif defined CONFIG_IDF_TARGET_ESP32S2
 #define RCV_HOST    SPI2_HOST
-#define DMA_CHAN    RCV_HOST
 
 #elif defined CONFIG_IDF_TARGET_ESP32C3
 #define RCV_HOST    SPI2_HOST
-#define DMA_CHAN    RCV_HOST
 
 #endif
 
@@ -132,7 +129,7 @@ void app_main(void)
     gpio_set_pull_mode(GPIO_CS, GPIO_PULLUP_ONLY);
 
     //Initialize SPI slave interface
-    ret=spi_slave_initialize(RCV_HOST, &buscfg, &slvcfg, DMA_CHAN);
+    ret=spi_slave_initialize(RCV_HOST, &buscfg, &slvcfg, SPI_DMA_CH_AUTO);
     assert(ret==ESP_OK);
 
     WORD_ALIGNED_ATTR char sendbuf[129]="";
