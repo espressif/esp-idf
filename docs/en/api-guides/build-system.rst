@@ -781,16 +781,16 @@ Browse the :idf_file:`/tools/cmake/project.cmake` file and supporting functions 
 Example Component CMakeLists
 ============================
 
-Because the build environment tries to set reasonable defaults that will work most
-of the time, component ``CMakeLists.txt`` can be very small or even empty (see `Minimal Component CMakeLists`_). However, overriding `component variables`_ is usually required for some functionality.
+Because the build environment tries to set reasonable defaults that will work most of the time, component ``CMakeLists.txt`` can be very small or even empty (see `Minimal Component CMakeLists`_). However, overriding `component variables`_ is usually required for some functionality.
 
 Here are some more advanced examples of component CMakeLists files.
+
+.. _add_conditional_config:
 
 Adding conditional configuration
 --------------------------------
 
-The configuration system can be used to conditionally compile some files
-depending on the options selected in the project configuration.
+The configuration system can be used to conditionally compile some files depending on the options selected in the project configuration.
 
 .. highlight:: none
 
