@@ -6,11 +6,11 @@ Note: To use examples in this directory, you need to have Bluetooth enabled in c
 
 This directory includes examples to demonstrate controller interactions by virtual HCI layer and UART.
 
-## controller_hci_uart
+## controller_hci_uart_esp32
 
 Demonstrates interaction with controller through HCI over UART.
 
-See the [README.md](./controller_hci_uart/README.md) file in the example [controller_hci_uart](./controller_hci_uart).
+See the [README.md](./controller_hci_uart_esp32/README.md) file in the example [controller_hci_uart_esp32](./controller_hci_uart_esp32).
 
 ## controller_vhci_ble_adv
 
