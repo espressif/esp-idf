@@ -79,8 +79,10 @@ ssize_t _write_r(struct _reent *r, int fd, const void * data, size_t size)
  * doesn't have the same signature as the original function.
  * Disable type mismatch warnings for this reason.
  */
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattribute-alias"
+#endif
 
 int _open_r(struct _reent *r, const char * path, int flags, int mode)
     __attribute__((weak,alias("syscall_not_implemented")));
@@ -122,7 +124,9 @@ int _kill_r(struct _reent *r, int pid, int sig)
 void _exit(int __status)
     __attribute__((alias("syscall_not_implemented_aborts")));
 
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic pop
+#endif
 
 /* Replaces newlib fcntl, which has been compiled without HAVE_FCNTL */
 int fcntl(int fd, int cmd, ...)
