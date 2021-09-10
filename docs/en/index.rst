@@ -6,7 +6,7 @@ This is the documentation for Espressif IoT Development Framework (`esp-idf <htt
 
 .. only:: html
 
-    This document describes using ESP-IDF with the {IDF_TARGET_NAME} SoC. To switch to a different SoC target, click "Switch Version" in the bottom left.
+    This document describes using ESP-IDF with the {IDF_TARGET_NAME} SoC. To switch to a different SoC target, choose target from the dropdown in the upper left.
 
 .. only:: latex
 
