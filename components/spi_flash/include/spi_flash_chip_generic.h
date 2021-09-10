@@ -408,4 +408,4 @@ esp_err_t spi_flash_chip_generic_suspend_cmd_conf(esp_flash_t *chip);
 esp_err_t spi_flash_chip_generic_read_unique_id_none(esp_flash_t *chip, uint64_t* flash_unique_id);
 
 /// Default timeout configuration used by most chips
-const flash_chip_op_timeout_t spi_flash_chip_generic_timeout;
+extern const flash_chip_op_timeout_t spi_flash_chip_generic_timeout;
