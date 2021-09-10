@@ -103,8 +103,7 @@ static int handle_report(hid_report_params_t *report, bool first)
             }
 
             item.protocol_mode = ESP_HID_PROTOCOL_MODE_BOOT;
-            item.report_id = 0x01;
-            item.value_len = 9;
+            item.value_len = 8;
             if (add_report(map, &item) != 0) {
                 return -1;
             }
@@ -143,8 +142,7 @@ static int handle_report(hid_report_params_t *report, bool first)
             }
 
             item.protocol_mode = ESP_HID_PROTOCOL_MODE_BOOT;
-            item.report_id = 0x02;
-            item.value_len = 4;
+            item.value_len = 3;
             if (add_report(map, &item) != 0) {
                 return -1;
             }
