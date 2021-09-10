@@ -1,12 +1,12 @@
 Wi-Fi Driver
 =============
-:link_to_translation:`zh_CN:[中文]`
 
+:link_to_translation:`zh_CN:[中文]`
 
 {IDF_TARGET_NAME} Wi-Fi Feature List
 ------------------------------------
-- Support Station-only mode, AP-only mode, Station/AP-coexistence mode
-- Support IEEE 802.11B, IEEE 802.11G, IEEE 802.11N and APIs to configure the protocol mode
+- Support station-only mode, AP-only mode, station/AP-coexistence mode
+- Support IEEE 802.11b, IEEE 802.11g, IEEE 802.11n and APIs to configure the protocol mode
 - Support WPA/WPA2/WPA3/WPA2-Enterprise and WPS
 - Support AMPDU, HT40, QoS and other key features
 - Support Modem-sleep
@@ -22,7 +22,9 @@ How To Write a Wi-Fi Application
 
 Preparation
 +++++++++++
-Generally, the most effective way to begin your own Wi-Fi application is to select an example which is similar to your own application, and port the useful part into your project. It is not a MUST but it is strongly recommended that you take some time to read this article first, especially if you want to program a robust Wi-Fi application. This article is supplementary to the Wi-Fi APIs/Examples. It describes the principles of using the Wi-Fi APIs, the limitations of the current Wi-Fi API implementation, and the most common pitfalls in using Wi-Fi. This article also reveals some design details of the Wi-Fi driver. We recommend you to select an :example:`example <wifi>`.
+Generally, the most effective way to begin your own Wi-Fi application is to select an example which is similar to your own application, and port the useful part into your project. It is not a MUST but it is strongly recommended that you take some time to read this article first, especially if you want to program a robust Wi-Fi application.
+
+This article is supplementary to the Wi-Fi APIs/Examples. It describes the principles of using the Wi-Fi APIs, the limitations of the current Wi-Fi API implementation, and the most common pitfalls in using Wi-Fi. This article also reveals some design details of the Wi-Fi driver. We recommend you to select an :example:`example <wifi>`.
 
 Setting Wi-Fi Compile-time Options
 ++++++++++++++++++++++++++++++++++++
@@ -30,15 +32,15 @@ Refer to `Wi-Fi Menuconfig`_.
 
 Init Wi-Fi
 +++++++++++
-Refer to `{IDF_TARGET_NAME} Wi-Fi Station General Scenario`_, `{IDF_TARGET_NAME} Wi-Fi AP General Scenario`_.
+Refer to `{IDF_TARGET_NAME} Wi-Fi station General Scenario`_, `{IDF_TARGET_NAME} Wi-Fi AP General Scenario`_.
 
 Start/Connect Wi-Fi
 ++++++++++++++++++++
-Refer to `{IDF_TARGET_NAME} Wi-Fi Station General Scenario`_, `{IDF_TARGET_NAME} Wi-Fi AP General Scenario`_.
+Refer to `{IDF_TARGET_NAME} Wi-Fi station General Scenario`_, `{IDF_TARGET_NAME} Wi-Fi AP General Scenario`_.
 
 Event-Handling
 ++++++++++++++
-Generally, it is easy to write code in "sunny-day" scenarios, such as `WIFI_EVENT_STA_START`_, `WIFI_EVENT_STA_CONNECTED`_ etc. The hard part is to write routines in "rainy-day" scenarios, such as `WIFI_EVENT_STA_DISCONNECTED`_ etc. Good handling of "rainy-day" scenarios is fundamental to robust Wi-Fi applications. Refer to `{IDF_TARGET_NAME} Wi-Fi Event Description`_, `{IDF_TARGET_NAME} Wi-Fi Station General Scenario`_, `{IDF_TARGET_NAME} Wi-Fi AP General Scenario`_. See also :doc:`an overview of event handling in ESP-IDF<event-handling>`.
+Generally, it is easy to write code in "sunny-day" scenarios, such as `WIFI_EVENT_STA_START`_, `WIFI_EVENT_STA_CONNECTED`_ etc. The hard part is to write routines in "rainy-day" scenarios, such as `WIFI_EVENT_STA_DISCONNECTED`_ etc. Good handling of "rainy-day" scenarios is fundamental to robust Wi-Fi applications. Refer to `{IDF_TARGET_NAME} Wi-Fi Event Description`_, `{IDF_TARGET_NAME} Wi-Fi station General Scenario`_, `{IDF_TARGET_NAME} Wi-Fi AP General Scenario`_. See also :doc:`an overview of event handling in ESP-IDF<event-handling>`.
 
 Write Error-Recovery Routines Correctly at All Times
 ++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -62,8 +64,7 @@ Whether the error is critical or not depends on the API and the application scen
  - for non-recoverable, yet non-critical, errors, in which case printing the error code is a good method for error handling.
  - for non-recoverable, critical errors, in which case "assert" may be a good method for error handling. For example, if :cpp:func:`esp_wifi_set_mode` returns ESP_ERR_WIFI_NOT_INIT, it means that the Wi-Fi driver is not initialized by :cpp:func:`esp_wifi_init` successfully. You can detect this kind of error very quickly in the application development phase.
 
-In esp_err.h, ESP_ERROR_CHECK checks the return values. It is a rather commonplace error-handling code and can be used
-as the default error-handling code in the application development phase. However, we strongly recommend that API users write their own error-handling code.
+In esp_err.h, ESP_ERROR_CHECK checks the return values. It is a rather commonplace error-handling code and can be used as the default error-handling code in the application development phase. However, we strongly recommend that API users write their own error-handling code.
 
 {IDF_TARGET_NAME} Wi-Fi API Parameter Initialization
 ----------------------------------------------------
@@ -127,6 +128,7 @@ The Wi-Fi driver can be considered a black box that knows nothing about high-lay
 
 Wi-Fi event handling is based on the :doc:`esp_event library <../api-reference/system/esp_event>`. Events are sent by the Wi-Fi driver to the :ref:`default event loop <esp-event-default-loops>`. Application may handle these events in callbacks registered using :cpp:func:`esp_event_handler_register`. Wi-Fi events are also handled by :doc:`esp_netif component <../api-reference/network/esp_netif>` to provide a set of default behaviors. For example, when Wi-Fi station connects to an AP, esp_netif will automatically start the DHCP client (by default).
 
+
 {IDF_TARGET_NAME} Wi-Fi Event Description
 -----------------------------------------
 
@@ -152,11 +154,11 @@ Refer to `{IDF_TARGET_NAME} Wi-Fi Scan`_ for a more detailed description.
 
 WIFI_EVENT_STA_START
 ++++++++++++++++++++++++++++++++++++
-If :cpp:func:`esp_wifi_start()` returns ESP_OK and the current Wi-Fi mode is Station or AP+Station, then this event will arise. Upon receiving this event, the event task will initialize the LwIP network interface (netif). Generally, the application event callback needs to call :cpp:func:`esp_wifi_connect()` to connect to the configured AP.
+If :cpp:func:`esp_wifi_start()` returns ESP_OK and the current Wi-Fi mode is station or station/AP, then this event will arise. Upon receiving this event, the event task will initialize the LwIP network interface (netif). Generally, the application event callback needs to call :cpp:func:`esp_wifi_connect()` to connect to the configured AP.
 
 WIFI_EVENT_STA_STOP
 ++++++++++++++++++++++++++++++++++++
-If :cpp:func:`esp_wifi_stop()` returns ESP_OK and the current Wi-Fi mode is Station or AP+Station, then this event will arise. Upon receiving this event, the event task will release the station's IP address, stop the DHCP client, remove TCP/UDP-related connections and clear the LwIP station netif, etc. The application event callback generally does not need to do anything.
+If :cpp:func:`esp_wifi_stop()` returns ESP_OK and the current Wi-Fi mode is station or station/AP, then this event will arise. Upon receiving this event, the event task will release the station's IP address, stop the DHCP client, remove TCP/UDP-related connections and clear the LwIP station netif, etc. The application event callback generally does not need to do anything.
 
 WIFI_EVENT_STA_CONNECTED
 ++++++++++++++++++++++++++++++++++++
@@ -166,7 +168,7 @@ WIFI_EVENT_STA_DISCONNECTED
 ++++++++++++++++++++++++++++++++++++
 This event can be generated in the following scenarios:
 
-  - When :cpp:func:`esp_wifi_disconnect()`, or :cpp:func:`esp_wifi_stop()`, or :cpp:func:`esp_wifi_deinit()` is called and the station is already connected to the AP.
+  - When :cpp:func:`esp_wifi_disconnect()`, or :cpp:func:`esp_wifi_stop()` is called and the station is already connected to the AP.
   - When :cpp:func:`esp_wifi_connect()` is called, but the Wi-Fi driver fails to set up a connection with the AP due to certain reasons, e.g. the scan fails to find the target AP, authentication times out, etc. If there are more than one AP with the same SSID, the disconnected event is raised after the station fails to connect all of the found APs.
   - When the Wi-Fi connection is disrupted because of specific reasons, e.g., the station continuously loses N beacons, the AP kicks off the station, the AP's authentication mode is changed, etc.
 
@@ -242,7 +244,7 @@ When this event is enabled, it will be raised each time the AP receives a probe 
 
 {IDF_TARGET_NAME} Wi-Fi Station General Scenario
 ------------------------------------------------
-Below is a "big scenario" which describes some small scenarios in Station mode:
+Below is a "big scenario" which describes some small scenarios in station mode:
 
 .. seqdiag::
     :caption: Sample Wi-Fi Event Scenarios in Station Mode
@@ -314,7 +316,7 @@ Step 1.1 ~ 1.5 is a recommended sequence that initializes a Wi-Fi-/LwIP-based ap
 
 2. Wi-Fi Configuration Phase
 +++++++++++++++++++++++++++++++
-Once the Wi-Fi driver is initialized, you can start configuring the Wi-Fi driver. In this scenario, the mode is Station, so you may need to call :cpp:func:`esp_wifi_set_mode` (WIFI_MODE_STA) to configure the Wi-Fi mode as Station. You can call other esp_wifi_set_xxx APIs to configure more settings, such as the protocol mode, country code, bandwidth, etc. Refer to `{IDF_TARGET_NAME} Wi-Fi Configuration`_.
+Once the Wi-Fi driver is initialized, you can start configuring the Wi-Fi driver. In this scenario, the mode is station, so you may need to call :cpp:func:`esp_wifi_set_mode` (WIFI_MODE_STA) to configure the Wi-Fi mode as station. You can call other esp_wifi_set_xxx APIs to configure more settings, such as the protocol mode, country code, bandwidth, etc. Refer to `{IDF_TARGET_NAME} Wi-Fi Configuration`_.
 
 Generally, we configure the Wi-Fi driver before setting up the Wi-Fi connection, but this is **NOT** mandatory, which means that you can configure the Wi-Fi connection anytime, provided that the Wi-Fi driver is initialized successfully. However, if the configuration does not need to change after the Wi-Fi connection is set up, you should configure the Wi-Fi driver at this stage, because the configuration APIs (such as :cpp:func:`esp_wifi_set_protocol`) will cause the Wi-Fi to reconnect, which may not be desirable.
 
@@ -414,45 +416,29 @@ Below is a "big scenario" which describes some small scenarios in AP mode:
 {IDF_TARGET_NAME} Wi-Fi Scan
 ----------------------------
 
-Currently, the :cpp:func:`esp_wifi_scan_start()` API is supported only in Station or Station+AP mode.
+Currently, the :cpp:func:`esp_wifi_scan_start()` API is supported only in station or station/AP mode.
 
 Scan Type
 +++++++++++++++++++++++++
 
-+------------------+--------------------------------------------------------------+
-| Mode             | Description                                                  |
-+==================+==============================================================+
-| Active Scan      | Scan by sending a probe request.                             |
-|                  | The default scan is an active scan.                          |
-|                  |                                                              |
-+------------------+--------------------------------------------------------------+
-| Passive Scan     | No probe request is sent out. Just switch to the specific    |
-|                  | channel and wait for a beacon.                               |
-|                  | Application can enable it via the scan_type field of         |
-|                  | wifi_scan_config_t.                                          |
-|                  |                                                              |
-+------------------+--------------------------------------------------------------+
-| Foreground Scan  | This scan is applicable when there is no Wi-Fi connection    |
-|                  | in Station mode. Foreground or background scanning is        |
-|                  | controlled by the Wi-Fi driver and cannot be configured by   |
-|                  | the application.                                             |
-+------------------+--------------------------------------------------------------+
-| Background Scan  | This scan is applicable when there is a Wi-Fi connection in  |
-|                  | Station mode or in Station+AP mode.                          |
-|                  | Whether it is a foreground scan or background scan depends on|
-|                  | the Wi-Fi driver and cannot be configured by the application.|
-|                  |                                                              |
-+------------------+--------------------------------------------------------------+
-| All-Channel Scan | It scans all of the channels.                                |
-|                  | If the channel field of wifi_scan_config_t is set            |
-|                  | to 0, it is an all-channel scan.                             |
-|                  |                                                              |
-+------------------+--------------------------------------------------------------+
-| Specific Channel | It scans specific channels only.                             |
-|     Scan         | If the channel field of wifi_scan_config_t set to            |
-|                  | 1, it is a specific-channel scan.                            |
-|                  |                                                              |
-+------------------+--------------------------------------------------------------+
+.. list-table::
+   :header-rows: 1
+   :widths: 15 50
+
+   * - Mode
+     - Description
+   * - Active Scan
+     - Scan by sending a probe request. The default scan is an active scan.
+   * - Passive Scan
+     - No probe request is sent out. Just switch to the specific channel and wait for a beacon. Application can enable it via the scan_type field of wifi_scan_config_t.
+   * - Foreground Scan
+     - This scan is applicable when there is no Wi-Fi connection in station mode. Foreground or background scanning is controlled by the Wi-Fi driver and cannot be configured by the application.
+   * - Background Scan
+     - This scan is applicable when there is a Wi-Fi connection in station mode or in station/AP mode. Whether it is a foreground scan or background scan depends on the Wi-Fi driver and cannot be configured by the application.
+   * - All-Channel Scan
+     - It scans all of the channels. If the channel field of wifi_scan_config_t is set to 0, it is an all-channel scan.
+   * - Specific Channel Scan
+     - It scans specific channels only. If the channel field of wifi_scan_config_t set to 1-14, it is a specific-channel scan.
 
 The scan modes in above table can be combined arbitrarily, so we totally have 8 different scans:
 
@@ -470,51 +456,36 @@ Scan Configuration
 
 The scan type and other per-scan attributes are configured by :cpp:func:`esp_wifi_scan_start`. The table below provides a detailed description of wifi_scan_config_t.
 
-+------------------+--------------------------------------------------------------+
-| Field            | Description                                                  |
-+==================+==============================================================+
-| ssid             | If the SSID is not NULL, it is only the AP with the same     |
-|                  | SSID that can be scanned.                                    |
-|                  |                                                              |
-+------------------+--------------------------------------------------------------+
-| bssid            | If the BSSID is not NULL, it is only the AP with the same    |
-|                  | BSSID that can be scanned.                                   |
-|                  |                                                              |
-+------------------+--------------------------------------------------------------+
-| channel          | If "channel" is 0, there will be an all-channel scan;        |
-|                  | otherwise, there will be a specific-channel scan.            |
-|                  |                                                              |
-+------------------+--------------------------------------------------------------+
-| show_hidden      | If "show_hidden" is 0, the scan ignores the AP with a hidden |
-|                  | SSID; otherwise, the scan considers the hidden AP a normal   |
-|                  | one.                                                         |
-+------------------+--------------------------------------------------------------+
-| scan_type        | If "scan_type" is WIFI_SCAN_TYPE_ACTIVE, the scan is         |
-|                  | "active"; otherwise, it is a "passive" one.                  |
-|                  |                                                              |
-+------------------+--------------------------------------------------------------+
-| scan_time        | This field is used to control how long the scan dwells on    |
-|                  | each channel.                                                |
-|                  |                                                              |
-|                  | For passive scans, scan_time.passive designates the dwell    |
-|                  | time for each channel.                                       |
-|                  |                                                              |
-|                  | For active scans, dwell times for each channel are listed    |
-|                  | in the table below. Here, min is short for scan              |
-|                  | time.active.min and max is short for scan_time.active.max.   |
-|                  |                                                              |
-|                  | - min=0, max=0: scan dwells on each channel for 120 ms.      |
-|                  | - min>0, max=0: scan dwells on each channel for 120 ms.      |
-|                  | - min=0, max>0: scan dwells on each channel for ``max`` ms.  |
-|                  | - min>0, max>0: the minimum time the scan dwells on each     |
-|                  |   channel is ``min`` ms. If no AP is found during this time  |
-|                  |   frame, the scan switches to the next channel. Otherwise,   |
-|                  |   the scan dwells on the channel for ``max`` ms.             |
-|                  |                                                              |
-|                  | If you want to improve the performance of the                |
-|                  | the scan, you can try to modify these two parameters.        |
-|                  |                                                              |
-+------------------+--------------------------------------------------------------+
+.. list-table::
+   :header-rows: 1
+   :widths: 15 50
+
+   * - Field
+     - Description
+   * - ssid
+     - If the SSID is not NULL, it is only the AP with the same SSID that can be scanned.
+   * - bssid
+     - If the BSSID is not NULL, it is only the AP with the same BSSID that can be scanned.
+   * - channel
+     - If “channel” is 0, there will be an all-channel scan; otherwise, there will be a specific-channel scan.
+   * - show_hidden
+     - If “show_hidden” is 0, the scan ignores the AP with a hidden SSID; otherwise, the scan considers the hidden AP a normal one.
+   * - scan_type
+     - If “scan_type” is WIFI_SCAN_TYPE_ACTIVE, the scan is “active”; otherwise, it is a “passive” one.
+   * - scan_time
+     - This field is used to control how long the scan dwells on each channel.
+
+       For passive scans, scan_time.passive designates the dwell time for each channel.
+
+       For active scans, dwell times for each channel are listed in the table below. Here, min is short for scan time.active.min and max is short for scan_time.active.max.
+
+       - min=0, max=0: scan dwells on each channel for 120 ms.
+       - min>0, max=0: scan dwells on each channel for 120 ms.
+       - min=0, max>0: scan dwells on each channel for ``max`` ms.
+       - min>0, max>0: the minimum time the scan dwells on each channel is ``min`` ms. If no AP is found during this time frame, the scan switches to the next channel. Otherwise, the scan dwells on the channel for ``max`` ms.
+
+       If you want to improve the performance of the the scan, you can try to modify these two parameters.
+
 
 There are also some global scan attributes which are configured by API :cpp:func:`esp_wifi_set_config`, refer to `Station Basic Configuration`_
 
@@ -551,7 +522,7 @@ Scenario:
     }
 
 
-The scenario above describes an all-channel, foreground scan. The foreground scan can only occur in Station mode where the station does not connect to any AP. Whether it is a foreground or background scan is totally determined by the Wi-Fi driver, and cannot be configured by the application.
+The scenario above describes an all-channel, foreground scan. The foreground scan can only occur in station mode where the station does not connect to any AP. Whether it is a foreground or background scan is totally determined by the Wi-Fi driver, and cannot be configured by the application.
 
 Detailed scenario description:
 
@@ -645,7 +616,7 @@ Scenario:
 This scan is similar to `Scan All APs on All Channels (Foreground)`_. The differences are:
 
  - s1.1: In step 1.2, the target AP will be configured to SSID/BSSID.
- - s2.1~s2.N: Each time the Wi-Fi driver scans an AP, it will check whether it is a target AP or not. If the scan is WIFI_FAST_SCAN scan and the target AP is found, then the scan-done event will arise and scanning will end; otherwise, the scan will continue. Please note that the first scanned channel may not be channel 1, because the Wi-Fi driver optimizes the scanning sequence.
+ - s2.1 ~ s2.N: Each time the Wi-Fi driver scans an AP, it will check whether it is a target AP or not. If the scan is WIFI_FAST_SCAN scan and the target AP is found, then the scan-done event will arise and scanning will end; otherwise, the scan will continue. Please note that the first scanned channel may not be channel 1, because the Wi-Fi driver optimizes the scanning sequence.
 
 If there are multiple APs which match the target AP info, for example, if we happen to scan two APs whose SSID is "ap". If the scan is WIFI_FAST_SCAN, then only the first scanned "ap" will be found, if the scan is WIFI_ALL_CHANNEL_SCAN, both "ap" will be found and the station will connect the "ap" according to the configured strategy, refer to `Station Basic Configuration`_.
 
@@ -762,11 +733,11 @@ Four-way Handshake Phase
 
  - s4.1, The handshake timer is enabled, the 1/4 EAPOL is not received before the handshake timer expires, `WIFI_EVENT_STA_DISCONNECTED`_ will arise and the reason-code will be WIFI_REASON_HANDSHAKE_TIMEOUT. Refer to `Wi-Fi Reason Code`_.
  - s4.2, The 1/4 EAPOL is received.
- - s4.3, The STA replies 2/4 EAPOL.
+ - s4.3, The station replies 2/4 EAPOL.
  - s4.4, If the 3/4 EAPOL is not received before the handshake timer expires, `WIFI_EVENT_STA_DISCONNECTED`_ will arise and the reason-code will be WIFI_REASON_HANDSHAKE_TIMEOUT. Refer to `Wi-Fi Reason Code`_.
  - s4.5, The 3/4 EAPOL is received.
- - s4.6, The STA replies 4/4 EAPOL.
- - s4.7, The STA raises `WIFI_EVENT_STA_CONNECTED`_.
+ - s4.6, The station replies 4/4 EAPOL.
+ - s4.7, The station raises `WIFI_EVENT_STA_CONNECTED`_.
 
 
 Wi-Fi Reason Code
@@ -774,258 +745,263 @@ Wi-Fi Reason Code
 
 The table below shows the reason-code defined in {IDF_TARGET_NAME}. The first column is the macro name defined in esp_wifi_types.h. The common prefix *WIFI_REASON* is removed, which means that *UNSPECIFIED* actually stands for *WIFI_REASON_UNSPECIFIED* and so on. The second column is the value of the reason. The third column is the standard value to which this reason is mapped in section 8.4.1.7 of IEEE 802.11-2012. (For more information, refer to the standard mentioned above.) The last column is a description of the reason.
 
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| Reason code               | Value |Mapped To| Description                                                 |
-+===========================+=======+=========+=============================================================+
-| UNSPECIFIED               |   1   |    1    | Generally, it means an internal failure, e.g., the memory   |
-|                           |       |         | runs out, the internal TX fails, or the reason is received  |
-|                           |       |         | from the remote side, etc.                                  |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| AUTH_EXPIRE               |   2   |    2    | The previous authentication is no longer valid.             |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - auth is timed out.                                       |
-|                           |       |         |  - the reason is received from the AP.                      |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP AP, this reason is reported when:               |
-|                           |       |         |                                                             |
-|                           |       |         |  - the AP has not received any packets from the station     |
-|                           |       |         |    in the past five minutes.                                |
-|                           |       |         |  - the AP is stopped by calling :cpp:func:`esp_wifi_stop()`.|
-|                           |       |         |  - the station is de-authed by calling                      |
-|                           |       |         |    :cpp:func:`esp_wifi_deauth_sta()`.                       |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| AUTH_LEAVE                |   3   |    3    | De-authenticated, because the sending STA is                |
-|                           |       |         | leaving (or has left).                                      |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| ASSOC_EXPIRE              |   4   |    4    | Disassociated due to inactivity.                            |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP AP, this reason is reported when:               |
-|                           |       |         |                                                             |
-|                           |       |         |  - the AP has not received any packets from the             |
-|                           |       |         |    station in the past five minutes.                        |
-|                           |       |         |  - the AP is stopped by calling :cpp:func:`esp_wifi_stop()` |
-|                           |       |         |  - the station is de-authed by calling                      |
-|                           |       |         |    :cpp:func:`esp_wifi_deauth_sta()`                        |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| ASSOC_TOOMANY             |   5   |    5    | Disassociated, because the AP is unable to handle           |
-|                           |       |         | all currently associated STAs at the same time.             |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP AP, this reason is reported when:               |
-|                           |       |         |                                                             |
-|                           |       |         |  - the stations associated with the AP reach the            |
-|                           |       |         |    maximum number that the AP can support.                  |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| NOT_AUTHED                |   6   |    6    | Class-2 frame received from a non-authenticated STA.        |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP AP, this reason is reported when:               |
-|                           |       |         |                                                             |
-|                           |       |         |  - the AP receives a packet with data from a                |
-|                           |       |         |    non-authenticated station.                               |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| NOT_ASSOCED               |   7   |    7    | Class-3 frame received from a non-associated STA.           |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP AP, this reason is reported when:               |
-|                           |       |         |                                                             |
-|                           |       |         |  - the AP receives a packet with data from a                |
-|                           |       |         |    non-associated station.                                  |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| ASSOC_LEAVE               |   8   |    8    | Disassociated, because the sending STA is leaving (or has   |
-|                           |       |         | left) BSS.                                                  |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |  - the station is disconnected by                           |
-|                           |       |         |    :cpp:func:`esp_wifi_disconnect()` and other APIs.        |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| ASSOC_NOT_AUTHED          |   9   |    9    | STA requesting (re)association is not authenticated by the  |
-|                           |       |         | responding STA.                                             |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP AP, this reason is reported when:               |
-|                           |       |         |                                                             |
-|                           |       |         |  - the AP receives packets with data from an                |
-|                           |       |         |    associated, yet not authenticated, station.              |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| DISASSOC_PWRCAP_BAD       |   10  |    10   | Disassociated, because the information in the Power         |
-|                           |       |         | Capability element is unacceptable.                         |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| DISASSOC_SUPCHAN_BAD      |   11  |    11   | Disassociated, because the information in the Supported     |
-|                           |       |         | Channels element is unacceptable.                           |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| IE_INVALID                |   13  |    13   | Invalid element, i.e. an element whose content does not meet|
-|                           |       |         | the specifications of the Standard in frame formats clause. |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP AP, this reason is reported when:               |
-|                           |       |         |                                                             |
-|                           |       |         |  - the AP parses a wrong WPA or RSN IE.                     |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| MIC_FAILURE               |   14  |    14   | Message integrity code (MIC) failure.                       |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| 4WAY_HANDSHAKE_TIMEOUT    |   15  |    15   | Four-way handshake times out. For legacy reasons, in ESP    |
-|                           |       |         | this reason-code is replaced with                           |
-|                           |       |         | WIFI_REASON_HANDSHAKE_TIMEOUT.                              |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - the handshake times out.                                 |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| GROUP_KEY_UPDATE_TIMEOUT  |   16  |    16   | Group-Key Handshake times out.                              |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| IE_IN_4WAY_DIFFERS        |   17  |    17   | The element in the four-way handshake is different from the |
-|                           |       |         | (Re-)Association Request/Probe and Response/Beacon frame.   |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |  - the station finds that the four-way handshake IE differs |
-|                           |       |         |    from the IE in the (Re-)Association Request/Probe and    |
-|                           |       |         |    Response/Beacon frame.                                   |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| GROUP_CIPHER_INVALID      |   18  |    18   | Invalid group cipher.                                       |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| PAIRWISE_CIPHER_INVALID   |   19  |    19   | Invalid pairwise cipher.                                    |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| AKMP_INVALID              |   20  |    20   | Invalid AKMP.                                               |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| UNSUPP_RSN_IE_VERSION     |   21  |    21   | Unsupported RSNE version.                                   |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| INVALID_RSN_IE_CAP        |   22  |    22   | Invalid RSNE capabilities.                                  |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| 802_1X_AUTH_FAILED        |   23  |    23   | IEEE 802.1X. authentication failed.                         |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP AP, this reason is reported when:               |
-|                           |       |         |                                                             |
-|                           |       |         |  - 802.1 x authentication fails.                            |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| CIPHER_SUITE_REJECTED     |   24  |    24   | Cipher suite rejected due to security policies.             |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| BEACON_TIMEOUT            |  200  |reserved | Espressif-specific Wi-Fi reason-code: when the station      |
-|                           |       |         | loses N beacons continuously, it will disrupt the connection|
-|                           |       |         | and report this reason.                                     |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| NO_AP_FOUND               |  201  |reserved | Espressif-specific Wi-Fi reason-code: when the station      |
-|                           |       |         | fails to scan the target AP, this reason code will be       |
-|                           |       |         | reported.                                                   |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| AUTH_FAIL                 |  202  |reserved | Espressif-specific Wi-Fi reason-code: the                   |
-|                           |       |         | authentication fails, but not because of a timeout.         |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| ASSOC_FAIL                |  203  |reserved | Espressif-specific Wi-Fi reason-code: the association       |
-|                           |       |         | fails, but not because of ASSOC_EXPIRE or ASSOC_TOOMANY.    |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| HANDSHAKE_TIMEOUT         |  204  |reserved | Espressif-specific Wi-Fi reason-code: the                   |
-|                           |       |         | handshake fails for the same reason as that in              |
-|                           |       |         | WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT.                         |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| CONNECTION_FAIL           |  205  |reserved | Espressif-specific Wi-Fi reason-code: the                   |
-|                           |       |         | connection to the AP has failed.                            |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
+.. list-table::
+   :header-rows: 1
+   :widths: 5 10 12 40
+
+   * - Reason code
+     - Value
+     - Mapped To
+     - Description
+   * - UNSPECIFIED
+     - 1
+     - 1
+     - Generally, it means an internal failure, e.g., the memory runs out, the internal TX fails, or the reason is received from the remote side, etc.
+   * - AUTH_EXPIRE
+     - 2
+     - 2
+     - The previous authentication is no longer valid.
+
+       For the ESP station, this reason is reported when:
+
+       - auth is timed out.
+       - the reason is received from the AP.
+
+       For the ESP AP, this reason is reported when:
+
+       - the AP has not received any packets from the station in the past five minutes.
+       - the AP is stopped by calling :cpp:func:`esp_wifi_stop()`.
+       - the station is de-authed by calling :cpp:func:`esp_wifi_deauth_sta()`.
+   * - AUTH_LEAVE
+     - 3
+     - 3
+     - De-authenticated, because the sending station is leaving (or has left).
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+   * - ASSOC_EXPIRE
+     - 4
+     - 4
+     - Disassociated due to inactivity.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+
+       For the ESP AP, this reason is reported when:
+
+       - the AP has not received any packets from the station in the past five minutes.
+       - the AP is stopped by calling :cpp:func:`esp_wifi_stop()`.
+       - the station is de-authed by calling :cpp:func:`esp_wifi_deauth_sta()`.
+   * - ASSOC_TOOMANY
+     - 5
+     - 5
+     - Disassociated, because the AP is unable to handle all currently associated STAs at the same time.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+
+       For the ESP AP, this reason is reported when:
+
+       - the stations associated with the AP reach the maximum number that the AP can support.
+   * - NOT_AUTHED
+     - 6
+     - 6
+     - Class-2 frame received from a non-authenticated STA.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+
+       For the ESP AP, this reason is reported when:
+
+       - the AP receives a packet with data from a non-authenticated station.
+   * - NOT_ASSOCED
+     - 7
+     - 7
+     - Class-3 frame received from a non-associated STA.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+
+       For the ESP AP, this reason is reported when:
+
+       - the AP receives a packet with data from a non-associated station.
+   * - ASSOC_LEAVE
+     - 8
+     - 8
+     - Disassociated, because the sending station is leaving (or has left) BSS.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+       - the station is disconnected by :cpp:func:`esp_wifi_disconnect()` and other APIs.
+   * - ASSOC_NOT_AUTHED
+     - 9
+     - 9
+     - station requesting (re)association is not authenticated by the responding STA.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+
+       For the ESP AP, this reason is reported when:
+
+       - the AP receives packets with data from an associated, yet not authenticated, station.
+   * - DISASSOC_PWRCAP_BAD
+     - 10
+     - 10
+     - Disassociated, because the information in the Power Capability element is unacceptable.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+   * - DISASSOC_SUPCHAN_BAD
+     - 11
+     - 11
+     - Disassociated, because the information in the Supported Channels element is unacceptable.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+   * - IE_INVALID
+     - 13
+     - 13
+     - Invalid element, i.e. an element whose content does not meet the specifications of the Standard in frame formats clause.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+
+       For the ESP AP, this reason is reported when:
+
+       - the AP parses a wrong WPA or RSN IE.
+   * - MIC_FAILURE
+     - 14
+     - 14
+     - Message integrity code (MIC) failure.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+   * - 4WAY_HANDSHAKE_TIMEOUT
+     - 15
+     - 15
+     - Four-way handshake times out. For legacy reasons, in ESP this reason-code is replaced with WIFI_REASON_HANDSHAKE_TIMEOUT.
+
+       For the ESP station, this reason is reported when:
+
+       - the handshake times out.
+       - it is received from the AP.
+   * - GROUP_KEY_UPDATE_TIMEOUT
+     - 16
+     - 16
+     - Group-Key Handshake times out.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+   * - IE_IN_4WAY_DIFFERS
+     - 17
+     - 17
+     - The element in the four-way handshake is different from the (Re-)Association Request/Probe and Response/Beacon frame.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+       - the station finds that the four-way handshake IE differs from the IE in the (Re-)Association Request/Probe and Response/Beacon frame.
+   * - GROUP_CIPHER_INVALID
+     - 18
+     - 18
+     - Invalid group cipher.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+   * - PAIRWISE_CIPHER_INVALID
+     - 19
+     - 19
+     - Invalid pairwise cipher.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+   * - AKMP_INVALID
+     - 20
+     - 20
+     - Invalid AKMP.
+
+       For the ESP station, this reason is reported when:
+       - it is received from the AP.
+   * - UNSUPP_RSN_IE_VERSION
+     - 21
+     - 21
+     - Unsupported RSNE version.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+   * - INVALID_RSN_IE_CAP
+     - 22
+     - 22
+     - Invalid RSNE capabilities.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+   * - 802_1X_AUTH_FAILED
+     - 23
+     - 23
+     - IEEE 802.1X. authentication failed.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+
+       For the ESP AP, this reason is reported when:
+
+       - IEEE 802.1X. authentication fails.
+   * - CIPHER_SUITE_REJECTED
+     - 24
+     - 24
+     - Cipher suite rejected due to security policies.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+   * - BEACON_TIMEOUT
+     - 200
+     - reserved
+     - Espressif-specific Wi-Fi reason-code: when the station loses N beacons continuously, it will disrupt the connection and report this reason.
+   * - NO_AP_FOUND
+     - 201
+     - reserved
+     - Espressif-specific Wi-Fi reason-code: when the station fails to scan the target AP, this reason code will be reported.
+   * - AUTH_FAIL
+     - 202
+     - reserved
+     - Espressif-specific Wi-Fi reason-code: the authentication fails, but not because of a timeout.
+   * - ASSOC_FAIL
+     - 203
+     - reserved
+     - Espressif-specific Wi-Fi reason-code: the association fails, but not because of ASSOC_EXPIRE or ASSOC_TOOMANY.
+   * - HANDSHAKE_TIMEOUT
+     - 204
+     - reserved
+     - Espressif-specific Wi-Fi reason-code: the handshake fails for the same reason as that in WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT.
+   * - CONNECTION_FAIL
+     - 205
+     - reserved
+     - Espressif-specific Wi-Fi reason-code: the connection to the AP has failed.
+
 
 {IDF_TARGET_NAME} Wi-Fi Station Connecting When Multiple APs Are Found
 ----------------------------------------------------------------------
 
 This scenario is similar as `{IDF_TARGET_NAME} Wi-Fi Station Connecting Scenario`_, the difference is the station will not raise the event `WIFI_EVENT_STA_DISCONNECTED`_ unless it fails to connect all of the found APs.
-
 
 Wi-Fi Reconnect
 ---------------------------
@@ -1055,103 +1031,59 @@ Wi-Fi Mode
 +++++++++++++++++++++++++
 Call :cpp:func:`esp_wifi_set_mode()` to set the Wi-Fi mode.
 
-+------------------+--------------------------------------------------------------+
-| Mode             | Description                                                  |
-+==================+==============================================================+
-| WIFI_MODE_NULL   | NULL mode: in this mode, the internal data struct is not     |
-|                  | allocated to the station and the AP, while both the          |
-|                  | station and AP interfaces are not initialized for            |
-|                  | RX/TX Wi-Fi data. Generally, this mode is used for Sniffer,  |
-|                  | or when you only want to stop both the STA and the AP        |
-|                  | without calling :cpp:func:`esp_wifi_deinit()` to unload the  |
-|                  | whole Wi-Fi driver.                                          |
-+------------------+--------------------------------------------------------------+
-| WIFI_MODE_STA    | Station mode: in this mode, :cpp:func:`esp_wifi_start()` will|
-|                  | init the internal station data, while the station's interface|
-|                  | is ready for the RX and TX Wi-Fi data. After                 |
-|                  | :cpp:func:`esp_wifi_connect()` is called, the STA will       |
-|                  | connect to the target target AP.                             |
-+------------------+--------------------------------------------------------------+
-| WIFI_MODE_AP     | AP mode: in this mode, :cpp:func:`esp_wifi_start()` will init|
-|                  | the internal AP data, while the AP's interface is ready      |
-|                  | for RX/TX Wi-Fi data. Then, the Wi-Fi driver starts broad-   |
-|                  | casting beacons, and the AP is ready to get connected        |
-|                  | to other stations.                                           |
-+------------------+--------------------------------------------------------------+
-| WIFI_MODE_APSTA  | Station-AP coexistence mode: in this mode,                   |
-|                  | :cpp:func:`esp_wifi_start()` will simultaneously init both   |
-|                  | the station and the AP.This is done in station mode and AP   |
-|                  | mode. Please note that the channel of the external AP, which |
-|                  | the ESP Station is connected to, has higher priority over the|
-|                  | ESP AP channel.                                              |
-+------------------+--------------------------------------------------------------+
+.. list-table::
+   :header-rows: 1
+   :widths: 15 50
+
+   * - Mode
+     - Description
+   * - WIFI_MODE_NULL
+     - NULL mode: in this mode, the internal data struct is not allocated to the station and the AP, while both the station and AP interfaces are not initialized for RX/TX Wi-Fi data. Generally, this mode is used for Sniffer, or when you only want to stop both the station and the AP without calling :cpp:func:`esp_wifi_deinit()` to unload the whole Wi-Fi driver.
+   * - WIFI_MODE_STA
+     - Station mode: in this mode, :cpp:func:`esp_wifi_start()` will init the internal station data, while the station’s interface is ready for the RX and TX Wi-Fi data. After :cpp:func:`esp_wifi_connect()`, the station will connect to the target AP.
+   * - WIFI_MODE_AP
+     - AP mode: in this mode, :cpp:func:`esp_wifi_start()` will init the internal AP data, while the AP’s interface is ready for RX/TX Wi-Fi data. Then, the Wi-Fi driver starts broad-casting beacons, and the AP is ready to get connected to other stations.
+   * - WIFI_MODE_APSTA
+     - Station/AP coexistence mode: in this mode, :cpp:func:`esp_wifi_start()` will simultaneously init both the station and the AP. This is done in station mode and AP mode. Please note that the channel of the external AP, which the ESP station is connected to, has higher priority over the ESP AP channel.
+
 
 Station Basic Configuration
 +++++++++++++++++++++++++++++++++++++
 
 API esp_wifi_set_config() can be used to configure the station. The table below describes the fields in detail.
 
-+------------------+--------------------------------------------------------------+
-| Field            | Description                                                  |
-+==================+==============================================================+
-| ssid             | This is the SSID of the target AP, to which the station wants|
-|                  | to connect to.                                               |
-|                  |                                                              |
-+------------------+--------------------------------------------------------------+
-| password         | Password of the target AP.                                   |
-|                  |                                                              |
-+------------------+--------------------------------------------------------------+
-| scan_method      | For WIFI_FAST_SCAN scan, the scan ends when the first matched|
-|                  | AP is found, for WIFI_ALL_CHANNEL_SCAN, the scan finds all   |
-|                  | matched APs on all channels.                                 |
-|                  | The default scan is WIFI_FAST_SCAN.                          |
-+------------------+--------------------------------------------------------------+
-| bssid_set        | If bssid_set is 0, the station connects to the AP whose SSID |
-|                  | is the same as the field "ssid", while the field "bssid"     |
-|                  | is ignored. In all other cases, the station connects to      |
-|                  | the AP whose SSID is the same as the "ssid" field, while its |
-|                  | BSSID is the same the "bssid" field .                        |
-+------------------+--------------------------------------------------------------+
-| bssid            | This is valid only when bssid_set is 1; see field            |
-|                  | "bssid_set".                                                 |
-+------------------+--------------------------------------------------------------+
-| channel          | If the channel is 0, the station scans the channel 1 ~ N to  |
-|                  | search for the target AP; otherwise, the station starts by   |
-|                  | scanning the channel whose value is the same as that of the  |
-|                  | "channel" field, and then scans others to find the target AP.|
-|                  | If you do not know which channel the target AP is running on,|
-|                  | set it to 0.                                                 |
-+------------------+--------------------------------------------------------------+
-| sort_method      | This field is only for WIFI_ALL_CHANNEL_SCAN                 |
-|                  |                                                              |
-|                  | If the sort_method is WIFI_CONNECT_AP_BY_SIGNAL, all matched |
-|                  | APs are sorted by signal, for AP with best signal will be    |
-|                  | connected firstly. E.g. if the station want to connect AP    |
-|                  | whose ssid is "apxx", the scan finds two AP whose ssid equals|
-|                  | to "apxx", the first AP's signal is -90 dBm, the second AP's |
-|                  | signal is -30 dBm, the station connects the second AP        |
-|                  | firstly, it doesn't connect the first one unless it fails to |
-|                  | connect the second one.                                      |
-|                  |                                                              |
-|                  | If the sort_method is WIFI_CONNECT_AP_BY_SECURITY, all       |
-|                  | matched APs are sorted by security. E.g. if the station wants|
-|                  | to connect AP whose ssid is "apxx", the scan finds two AP    |
-|                  | whose ssid is "apxx", the security of the first found AP is  |
-|                  | open while the second one is WPA2, the stations connects to  |
-|                  | the second AP firstly, it doesn't connect the second one     |
-|                  | unless it fails to connect the first one.                    |
-+------------------+--------------------------------------------------------------+
-| threshold        | The threshold is used to filter the found AP, if the RSSI or |
-|                  | security mode is less than the configured threshold, the AP  |
-|                  | will be discard.                                             |
-|                  |                                                              |
-|                  | If the RSSI set to 0, it means default threshold, the default|
-|                  | RSSI threshold is -127 dBm. If the authmode threshold is set |
-|                  | to 0, it means default threshold, the default authmode       |
-|                  | threshold is open.                                           |
-+------------------+--------------------------------------------------------------+
+.. list-table::
+   :header-rows: 1
+   :widths: 15 50
+
+   * - Field
+     - Description
+   * - ssid
+     - This is the SSID of the target AP, to which the station wants to connect to.
+   * - password
+     - Password of the target AP.
+   * - scan_method
+     - For WIFI_FAST_SCAN scan, the scan ends when the first matched AP is found. For WIFI_ALL_CHANNEL_SCAN, the scan finds all matched APs on all channels. The default scan is WIFI_FAST_SCAN.
+   * - bssid_set
+     - If bssid_set is 0, the station connects to the AP whose SSID is the same as the field “ssid”, while the field “bssid” is ignored. In all other cases, the station connects to the AP whose SSID is the same as the “ssid” field, while its BSSID is the same the “bssid” field .
+   * - bssid
+     - This is valid only when bssid_set is 1; see field “bssid_set”.
+   * - channel
+     - If the channel is 0, the station scans the channel 1 ~ N to search for the target AP; otherwise, the station starts by scanning the channel whose value is the same as that of the “channel” field, and then scans others to find the target AP. If you do not know which channel the target AP is running on, set it to 0.
+   * - sort_method
+     - This field is only for WIFI_ALL_CHANNEL_SCAN.
+
+       If the sort_method is WIFI_CONNECT_AP_BY_SIGNAL, all matched APs are sorted by signal, for AP with best signal will be connected firstly. E.g. if the station want to connect AP whose ssid is “apxx”, the scan finds two AP whose ssid equals to “apxx”, the first AP’s signal is -90 dBm, the second AP’s signal is -30 dBm, the station connects the second AP firstly, it doesn’t connect the first one unless it fails to connect the second one.
+
+       If the sort_method is WIFI_CONNECT_AP_BY_SECURITY, all matched APs are sorted by security. E.g. if the station wants to connect AP whose ssid is “apxx”, the scan finds two AP whose ssid is “apxx”, the security of the first found AP is open while the second one is WPA2, the stations connects to the second AP firstly, it doesn’t connect the second one unless it fails to connect the first one.
+   * - threshold
+     - The threshold is used to filter the found AP, if the RSSI or security mode is less than the configured threshold, the AP will be discard.
+
+       If the RSSI set to 0, it means default threshold, the default RSSI threshold is -127 dBm. If the authmode threshold is set to 0, it means default threshold, the default authmode threshold is open.
+
 
 .. attention::
+
     WEP/WPA security modes are deprecated in IEEE 802.11-2016 specifications and are recommended not to be used. These modes can be rejected using authmode threshold by setting threshold as WPA2 by threshold.authmode as WIFI_AUTH_WPA2_PSK.
 
 AP Basic Configuration
@@ -1159,85 +1091,59 @@ AP Basic Configuration
 
 API esp_wifi_set_config() can be used to configure the AP. The table below describes the fields in detail.
 
-+------------------+--------------------------------------------------------------+
-| Field            | Description                                                  |
-+==================+==============================================================+
-| ssid             | SSID of AP; if the ssid[0] is 0xFF and ssid[1] is 0xFF,      |
-|                  | the AP defaults the SSID to ESP_aabbcc, where "aabbcc"       |
-|                  | is the last three bytes of the AP MAC.                       |
-|                  |                                                              |
-+------------------+--------------------------------------------------------------+
-| password         | Password of AP; if the auth mode is WIFI_AUTH_OPEN,          |
-|                  | this field will be ignored.                                  |
-|                  |                                                              |
-+------------------+--------------------------------------------------------------+
-| ssid_len         | Length of SSID; if ssid_len is 0, check the SSID until there |
-|                  | is a termination character. If ssid_len > 32, change it to   |
-|                  | 32; otherwise, set the SSID length according to ssid_len.    |
-|                  |                                                              |
-+------------------+--------------------------------------------------------------+
-| channel          | Channel of AP; if the channel is out of range, the Wi-Fi     |
-|                  | driver defaults the channel to channel 1. So, please make    |
-|                  | sure the channel is within the required range.               |
-|                  | For more details, refer to `Wi-Fi Country Code`_.            |
-+------------------+--------------------------------------------------------------+
-| authmode         | Auth mode of ESP AP; currently, ESP Wi-Fi does not           |
-|                  | support AUTH_WEP. If the authmode is an invalid value,       |
-|                  | AP defaults the value to WIFI_AUTH_OPEN.                     |
-|                  |                                                              |
-+------------------+--------------------------------------------------------------+
-| ssid_hidden      | If ssid_hidden is 1, AP does not broadcast the SSID;         |
-|                  | otherwise, it does broadcast the SSID.                       |
-|                  |                                                              |
-+------------------+--------------------------------------------------------------+
-| max_connection   | Currently, ESP Wi-Fi supports up to 10 Wi-Fi connections.    |
-|                  | If max_connection > 10, AP defaults the value to 10.         |
-|                  |                                                              |
-+------------------+--------------------------------------------------------------+
-| beacon_interval  | Beacon interval; the value is 100 ~ 60000 ms, with default   |
-|                  | value being 100 ms. If the value is out of range,            |
-|                  | AP defaults it to 100 ms.                                    |
-+------------------+--------------------------------------------------------------+
+.. list-table::
+   :header-rows: 1
+   :widths: 15 55
+
+   * - Field
+     - Description
+   * - ssid
+     - SSID of AP; if the ssid[0] is 0xFF and ssid[1] is 0xFF, the AP defaults the SSID to ESP_aabbcc, where “aabbcc” is the last three bytes of the AP MAC.
+   * - password
+     - Password of AP; if the auth mode is WIFI_AUTH_OPEN, this field will be ignored.
+   * - ssid_len
+     - Length of SSID; if ssid_len is 0, check the SSID until there is a termination character. If ssid_len > 32, change it to 32; otherwise, set the SSID length according to ssid_len.
+   * - channel
+     - Channel of AP; if the channel is out of range, the Wi-Fi driver defaults the channel to channel 1. So, please make sure the channel is within the required range. For more details, refer to `Wi-Fi Country Code`_.
+   * - authmode
+     - Auth mode of ESP AP; currently, ESP Wi-Fi does not support AUTH_WEP. If the authmode is an invalid value, AP defaults the value to WIFI_AUTH_OPEN.
+   * - ssid_hidden
+     - If ssid_hidden is 1, AP does not broadcast the SSID; otherwise, it does broadcast the SSID.
+   * - max_connection
+     - Currently, ESP Wi-Fi supports up to 10 Wi-Fi connections. If max_connection > 10, AP defaults the value to 10.
+   * - beacon_interval
+     - Beacon interval; the value is 100 ~ 60000 ms, with default value being 100 ms. If the value is out of range, AP defaults it to 100 ms.
+
 
 Wi-Fi Protocol Mode
 +++++++++++++++++++++++++
 
 Currently, the IDF supports the following protocol modes:
 
-+--------------------+------------------------------------------------------------+
-| Protocol Mode      | Description                                                |
-+====================+============================================================+
-| 802.11 B           | Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B) to set  |
-|                    | the station/AP to 802.11B-only mode.                       |
-|                    |                                                            |
-+--------------------+------------------------------------------------------------+
-| 802.11 BG          | Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B|WIFI_    |
-|                    | PROTOCOL_11G) to set the station/AP to 802.11BG mode.      |
-|                    |                                                            |
-+--------------------+------------------------------------------------------------+
-| 802.11 BGN         | Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B|         |
-|                    | WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N) to set the station/   |
-|                    | AP to BGN mode.                                            |
-|                    |                                                            |
-+--------------------+------------------------------------------------------------+
-| 802.11 BGNLR       | Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B|         |
-|                    | WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_LR)      |
-|                    | to set the station/AP to BGN and the                       |
-|                    | Espressif-specific mode.                                   |
-+--------------------+------------------------------------------------------------+
-| 802.11 LR          | Call esp_wifi_set_protocol (ifx, WIFI_PROTOCOL_LR) to set  |
-|                    | the station/AP only to the Espressif-specific mode.        |
-|                    |                                                            |
-|                    | **This mode is an Espressif-patented mode which can achieve|
-|                    | a one-kilometer line of sight range. Please, make sure both|
-|                    | the station and the AP are connected to an                 |
-|                    | ESP device**                                               |
-+--------------------+------------------------------------------------------------+
+.. list-table::
+   :header-rows: 1
+   :widths: 15 55
+
+   * - Protocol Mode
+     - Description
+   * - 802.11b
+     - Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B) to set the station/AP to 802.11b-only mode.
+   * - 802.11bg
+     - Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G) to set the station/AP to 802.11bg mode.
+   * - 802.11bgn
+     - Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B| WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N) to set the station/ AP to BGN mode.
+   * - 802.11 BGNLR
+     - Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B| WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_LR) to set the station/AP to BGN and the Espressif-specific mode.
+   * - 802.11 LR
+     - Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_LR) to set the station/AP only to the Espressif-specific mode.
+
+       **This mode is an Espressif-patented mode which can achieve a one-kilometer line of sight range. Please, make sure both the station and the AP are connected to an ESP device.**
+
 
 Long Range (LR)
 +++++++++++++++++++++++++
 
-Long Range (LR) mode is an Espressif-patented Wi-Fi mode which can achieve a one-kilometer line of sight range. It has better reception sensitivity, stronger anti-interference ability and longer transmission distance than the traditional 802.11B mode.
+Long Range (LR) mode is an Espressif-patented Wi-Fi mode which can achieve a one-kilometer line of sight range. It has better reception sensitivity, stronger anti-interference ability and longer transmission distance than the traditional 802.11b mode.
 
 LR Compatibility
 *************************
@@ -1282,12 +1188,12 @@ The data transmission in LR rate has no impacts on the traditional Wi-Fi device 
  - The CCA and backoff process in LR mode are consistent with 802.11 specification.
  - The traditional Wi-Fi device can detect the LR signal via CCA and do backoff.
 
-In other words, the impact transmission in LR mode is similar as the impact in 802.11B mode.
+In other words, the impact transmission in LR mode is similar as the impact in 802.11b mode.
 
 LR Transmission Distance
 *************************
 
-The reception sensitivity of LR has about 4 dB gain than the traditional 802.11B mode, theoretically the transmission distance is about 2 to 2.5 times the distance of 11B.
+The reception sensitivity of LR has about 4 dB gain than the traditional 802.11b mode, theoretically the transmission distance is about 2 to 2.5 times the distance of 11B.
 
 LR Throughput
 *************************
@@ -1306,96 +1212,78 @@ The general conditions for using LR are:
 Wi-Fi Country Code
 +++++++++++++++++++++++++
 
-Call :cpp:func:`esp_wifi_set_country()` to set the country info.
-The table below describes the fields in detail,  please consult local 2.4 GHz RF operating regulations before configuring these fields.
+Call :cpp:func:`esp_wifi_set_country()` to set the country info. The table below describes the fields in detail,  please consult local 2.4 GHz RF operating regulations before configuring these fields.
 
-+------------------+-----------------------------------------------------------------------------------+
-| Field            | Description                                                                       |
-+==================+===================================================================================+
-| cc[3]            | Country code string, this attributes identify the country or noncountry entity    |
-|                  | in which the station/AP is operating. If it's a country, the first two            |
-|                  | octets of this string is the two character country info as described in document  |
-|                  | ISO/IEC3166-1. The third octect is one of the following:                          |
-|                  |                                                                                   |
-|                  |  - an ASCII space character, if the regulations under which the station/AP is     |
-|                  |    operating encompass all environments for the current frequency band in the     |
-|                  |    country.                                                                       |
-|                  |  - an ASCII 'O' character if the regulations under which the station/AP is        |
-|                  |    operating are for an outdoor environment only.                                 |
-|                  |  - an ASCII 'I' character if the regulations under which the station/AP is        |
-|                  |    operating are for an indoor environment only.                                  |
-|                  |  - an ASCII 'X' character if the station/AP is operating under a noncountry       |
-|                  |    entity. The first two octets of the noncountry entity is two ASCII 'XX'        |
-|                  |    characters.                                                                    |
-|                  |  - the binary representation of the Operating Class table number currently in use.|
-|                  |    Refer to Annex E, IEEE Std 802.11-2012.                                        |
-|                  |                                                                                   |
-+------------------+-----------------------------------------------------------------------------------+
-| schan            | Start channel, it's the minimum channel number of the regulations under which the |
-|                  | station/AP can operate.                                                           |
-|                  |                                                                                   |
-+------------------+-----------------------------------------------------------------------------------+
-| nchan            | Total number of channels as per the regulations, e.g. if the schan=1, nchan=13,   |
-|                  | it means the station/AP can send data from channel 1 to 13.                       |
-|                  |                                                                                   |
-+------------------+-----------------------------------------------------------------------------------+
-| policy           | Country policy, this field control which country info will be used if the         |
-|                  | configured country info is conflict with the connected AP's. More description     |
-|                  | about policy is provided in following section.                                    |
-|                  |                                                                                   |
-+------------------+-----------------------------------------------------------------------------------+
+.. list-table::
+   :header-rows: 1
+   :widths: 15 55
+
+   * - Field
+     - Description
+   * - cc[3]
+     - Country code string, this attributes identify the country or noncountry entity in which the station/AP is operating. If it’s a country, the first two octets of this string is the two character country info as described in document ISO/IEC3166-1. The third octect is one of the following:
+
+       - an ASCII space character, if the regulations under which the station/AP is operating encompass all environments for the current frequency band in the country.
+       - an ASCII ‘O’ character if the regulations under which the station/AP is operating are for an outdoor environment only.
+       - an ASCII ‘I’ character if the regulations under which the station/AP is operating are for an indoor environment only.
+       - an ASCII ‘X’ character if the station/AP is operating under a noncountry entity. The first two octets of the noncountry entity is two ASCII ‘XX’ characters.
+       - the binary representation of the Operating Class table number currently in use. Refer to Annex E, IEEE Std 802.11-2012.
+
+   * - schan
+     - Start channel, it’s the minimum channel number of the regulations under which the station/AP can operate.
+   * - nchan
+     - Total number of channels as per the regulations, e.g. if the schan=1, nchan=13, it means the station/AP can send data from channel 1 to 13.
+   * - policy
+     - Country policy, this field control which country info will be used if the configured country info is conflict with the connected AP’s. More description about policy is provided in following section.
+
 
 The default country info is {.cc="CN", .schan=1, .nchan=13, policy=WIFI_COUNTRY_POLICY_AUTO}, if the Wi-Fi Mode is station/AP coexist mode, they share the same configured country info. Sometimes, the country info of AP, to which the station is connected, is different from the country info of configured. For example, the configured station has country info {.cc="JP", .schan=1, .nchan=14, policy=WIFI_COUNTRY_POLICY_AUTO}, but the connected AP has country info {.cc="CN", .schan=1, .nchan=13}, then country info of connected AP's is used.
+
 Following table depicts which country info is used in different Wi-Fi Mode and different country policy, also describe the impact to active scan.
 
-+-----------+----------------------------+----------------------------------------------------------------+
-| WiFi Mode | Policy                     | Description                                                    |
-+===========+============================+================================================================+
-| Station   | WIFI_COUNTRY_POLICY_AUTO   | If the connected AP has country IE in its beacon, the country  |
-|           |                            | info equals to the country info in beacon, otherwise, use      |
-|           |                            | default country info.                                          |
-|           |                            |                                                                |
-|           |                            | For scan:                                                      |
-|           |                            |                                                                |
-|           |                            |   -If schan+nchan-1 >11 :                                      |
-|           |                            |    Use active scan from schan to 11 and use passive scan       |
-|           |                            |    from 12 to schan+nchan-1.                                   |
-|           |                            |                                                                |
-|           |                            |   -If schan+nchan-1 <= 11 :                                    |
-|           |                            |    Use active scan from schan to schan+nchan-1.                |
-|           |                            |                                                                |
-|           |                            | Always keep in mind that if an AP with hidden SSID             |
-|           |                            | is set to a passive scan channel, the passive scan will not    |
-|           |                            | find it. In other words, if the application hopes to find the  |
-|           |                            | AP with hidden SSID in every channel, the policy of            |
-|           |                            | country info should be configured to                           |
-|           |                            | WIFI_COUNTRY_POLICY_MANUAL.                                    |
-|           |                            |                                                                |
-+-----------+----------------------------+----------------------------------------------------------------+
-| Station   | WIFI_COUNTRY_POLICY_MANUAL | Always use the configured country info.                        |
-|           |                            |                                                                |
-|           |                            | For scan, scans channel "schan" to "schan+nchan-1" with active |
-|           |                            | scan.                                                          |
-|           |                            |                                                                |
-+-----------+----------------------------+----------------------------------------------------------------+
-| AP        | WIFI_COUNTRY_POLICY_AUTO   | Always use the configured country info.                        |
-|           |                            |                                                                |
-+-----------+----------------------------+----------------------------------------------------------------+
-| AP        | WIFI_COUNTRY_POLICY_MANUAL | Always use the configured country info.                        |
-|           |                            |                                                                |
-+-----------+----------------------------+----------------------------------------------------------------+
-|Station/AP-| WIFI_COUNTRY_POLICY_AUTO   | If the station doesn't connects to any AP, the AP use the      |
-|           |                            | configured country info.                                       |
-|coexistence|                            | If the station connects to an AP, the AP has the same          |
-|           |                            | country info as the station.                                   |
-|           |                            |                                                                |
-|           |                            | Same as station mode with policy WIFI_COUNTRY_POLICY_AUTO.     |
-+-----------+----------------------------+----------------------------------------------------------------+
+.. list-table::
+   :header-rows: 1
+   :widths: 15 15 35
+
+   * - Wi-Fi Mode
+     - Policy
+     - Description
+   * - Station
+     - WIFI_COUNTRY_POLICY_AUTO
+     - If the connected AP has country IE in its beacon, the country info equals to the country info in beacon, otherwise, use default country info.
+
+       For scan:
+
+       - If schan+nchan-1 >11 :
+
+         Use active scan from schan to 11 and use passive scan from 12 to schan+nchan-1.
+
+       - If schan+nchan-1 <= 11 :
+
+         Use active scan from schan to schan+nchan-1.
+
+       Always keep in mind that if an AP with hidden SSID and station is set to a passive scan channel, the passive scan will not find it. In other words, if the application hopes to find the AP with hidden SSID in every channel, the policy of country info should be configured to WIFI_COUNTRY_POLICY_MANUAL.
+
+   * - Station
+     - WIFI_COUNTRY_POLICY_MANUAL
+     - Always use the configured country info. For scan, scans channel “schan” to “schan+nchan-1” with active scan.
+   * - AP
+     - WIFI_COUNTRY_POLICY_AUTO
+     - Always use the configured country info.
+   * - AP
+     - WIFI_COUNTRY_POLICY_MANUAL
+     - Always use the configured country info.
+   * - Station/AP-coexistence
+     - WIFI_COUNTRY_POLICY_AUTO
+     - If the station doesn’t connects to any external AP, the AP use the configured country info. If the station connects to an external AP, the AP has the same country info as the station.
+
+       Same as station mode with policy WIFI_COUNTRY_POLICY_AUTO.
+
 
 Home Channel
 *************************
 
-In AP mode, the home channel is defined as the AP channel. In Station mode, home channel is defined as the channel of AP which the station is connected to. In Station/AP-coexistence mode, the home channel of AP and station must be the same, if they are different, the station's home channel is always in priority. Take the following as an example: the AP is on channel 6, and the station connects to an AP whose channel is 9. Since the station's home channel has higher priority, the AP needs to switch its channel from 6 to make sure that it has the same home channel as the station. While switching channel, the {IDF_TARGET_NAME} in SoftAP mode will notify the connected stations about the channel migration using a Channel Switch Announcement (CSA). Station that supports channel switching will transit without disconnecting and reconnecting to the SoftAP.
+In AP mode, the home channel is defined as the AP channel. In station mode, home channel is defined as the channel of AP which the station is connected to. In station/AP-coexistence mode, the home channel of AP and station must be the same, if they are different, the station's home channel is always in priority. Take the following as an example: the AP is on channel 6, and the station connects to an AP whose channel is 9. Since the station's home channel has higher priority, the AP needs to switch its channel from 6 to make sure that it has the same home channel as the station. While switching channel, the {IDF_TARGET_NAME} in AP mode will notify the connected stations about the channel migration using a Channel Switch Announcement (CSA). Station that supports channel switching will transit without disconnecting and reconnecting to the AP.
 
 
 Wi-Fi Vendor IE Configuration
@@ -1407,17 +1295,14 @@ By default, all Wi-Fi management frames are processed by the Wi-Fi driver, and t
 Wi-Fi Easy Connect™ (DPP)
 --------------------------
 
-Wi-Fi Easy Connect\ :sup:`TM` (or Device Provisioning Protocol) is a secure and standardized provisioning protocol for configuration of Wi-Fi Devices.
-More information can be found on the API reference page :doc:`esp_dpp <../api-reference/network/esp_dpp>`.
+Wi-Fi Easy Connect\ :sup:`TM` (or Device Provisioning Protocol) is a secure and standardized provisioning protocol for configuration of Wi-Fi Devices. More information can be found on the API reference page :doc:`esp_dpp <../api-reference/network/esp_dpp>`.
 
 WPA2-Enterprise
 +++++++++++++++++++++++++++++++++
 
-WPA2-Enterprise is the secure authentication mechanism for enterprise wireless networks. It uses RADIUS server for authentication of network users before connecting to the Access Point. The authentication process is based on 802.1X policy and comes with different Extended Authentication Protocol (EAP) methods like TLS, TTLS, PEAP etc. RADIUS server authenticates the users based on their credentials (username and password), digital certificates or both. When {IDF_TARGET_NAME} in Station mode tries to connect to an AP in enterprise mode, it sends authentication request to AP which is sent to RADIUS server by AP for authenticating the Station. Based on different EAP methods, the parameters can be set in configuration which can be opened using ``idf.py menuconfig``. WPA2_Enterprise is supported by {IDF_TARGET_NAME} only in Station mode.
+WPA2-Enterprise is the secure authentication mechanism for enterprise wireless networks. It uses RADIUS server for authentication of network users before connecting to the Access Point. The authentication process is based on 802.1X policy and comes with different Extended Authentication Protocol (EAP) methods like TLS, TTLS, PEAP etc. RADIUS server authenticates the users based on their credentials (username and password), digital certificates or both. When {IDF_TARGET_NAME} in station mode tries to connect to an AP in enterprise mode, it sends authentication request to AP which is sent to RADIUS server by AP for authenticating the station. Based on different EAP methods, the parameters can be set in configuration which can be opened using ``idf.py menuconfig``. WPA2_Enterprise is supported by {IDF_TARGET_NAME} only in station mode.
 
-
-For establishing a secure connection, AP and Station negotiate and agree on the best possible cipher suite to be used. {IDF_TARGET_NAME} supports 802.1X/EAP (WPA) method of AKM and Advanced encryption standard with Counter Mode Cipher Block Chaining Message Authentication protocol (AES-CCM) cipher suite. It also supports the cipher suites supported by mbedtls if `USE_MBEDTLS_CRYPTO` flag is set.
-
+For establishing a secure connection, AP and station negotiate and agree on the best possible cipher suite to be used. {IDF_TARGET_NAME} supports 802.1X/EAP (WPA) method of AKM and Advanced encryption standard with Counter Mode Cipher Block Chaining Message Authentication protocol (AES-CCM) cipher suite. It also supports the cipher suites supported by mbedtls if `USE_MBEDTLS_CRYPTO` flag is set.
 
 {IDF_TARGET_NAME} currently supports the following EAP methods:
   - EAP-TLS: This is certificate based method and only requires SSID and EAP-IDF.
@@ -1452,19 +1337,22 @@ Refer IDF example :idf_file:`examples/wifi/roaming/README.md` to set up and use 
     Wi-Fi Location
     -------------------------------
 
-    Wi-Fi Location will improve the accuracy of a device's location data beyond the Access Point, which will enable creation of new, feature-rich applications and services such as geo-fencing, network management, navigation and others. One of the protocols used to determine the device location with respect to the Access Point is Fine Timing Measurement which calculates Time-of-Flight of a WiFi frame.
+    Wi-Fi Location will improve the accuracy of a device's location data beyond the Access Point, which will enable creation of new, feature-rich applications and services such as geo-fencing, network management, navigation and others. One of the protocols used to determine the device location with respect to the Access Point is Fine Timing Measurement which calculates Time-of-Flight of a Wi-Fi frame.
 
     Fine Timing Measurement (FTM)
     +++++++++++++++++++++++++++++
 
     FTM is used to measure Wi-Fi Round Trip Time (Wi-Fi RTT) which is the time a Wi-Fi signal takes to travel from a device to another device and back again. Using Wi-Fi RTT the distance between the devices can be calculated with a simple formula of `RTT * c / 2`, where c is the speed of light.
-    FTM uses timestamps given by Wi-Fi interface hardware at the time of arrival or departure of frames exchanged between a pair of devices. One entity called FTM Initiator (mostly a Station device) discovers the FTM Responder (can be a Station or an Access Point) and negotiates to start an FTM procedure. The procedure uses multiple Action frames sent in bursts and its ACK's to gather the timestamps data. FTM Initiator gathers the data in the end to calculate an average Round-Trip-Time.
+
+    FTM uses timestamps given by Wi-Fi interface hardware at the time of arrival or departure of frames exchanged between a pair of devices. One entity called FTM Initiator (mostly a station device) discovers the FTM Responder (can be a station or an Access Point) and negotiates to start an FTM procedure. The procedure uses multiple Action frames sent in bursts and its ACK's to gather the timestamps data. FTM Initiator gathers the data in the end to calculate an average Round-Trip-Time.
+
     {IDF_TARGET_NAME} supports FTM in below configuration:
 
-    - {IDF_TARGET_NAME} as FTM Initiator in Station mode.
-    - {IDF_TARGET_NAME} as FTM Responder in SoftAP mode.
+    - {IDF_TARGET_NAME} as FTM Initiator in station mode.
+    - {IDF_TARGET_NAME} as FTM Responder in AP mode.
 
-    Distance measurement using RTT is not accurate, factors such as RF interference, multi-path travel, antenna orientation and lack of calibration increase these inaccuracies. For better results it is suggested to perform FTM between two {IDF_TARGET_NAME} devices as Station and SoftAP.
+    Distance measurement using RTT is not accurate, factors such as RF interference, multi-path travel, antenna orientation and lack of calibration increase these inaccuracies. For better results it is suggested to perform FTM between two {IDF_TARGET_NAME} devices as station and AP.
+
     Refer to IDF example :idf_file:`examples/wifi/ftm/README.md` for steps on how to setup and perform FTM.
 
 {IDF_TARGET_NAME} Wi-Fi Power-saving Mode
@@ -1473,7 +1361,7 @@ Refer IDF example :idf_file:`examples/wifi/roaming/README.md` to set up and use 
 Station Sleep
 ++++++++++++++++++++++
 
-Currently, {IDF_TARGET_NAME} Wi-Fi supports the Modem-sleep mode which refers to the legacy power-saving mode in the IEEE 802.11 protocol. Modem-sleep mode works in Station-only mode and the station must connect to the AP first. If the Modem-sleep mode is enabled, station will switch between active and sleep state periodically. In sleep state, RF, PHY and BB are turned off in order to reduce power consumption. Station can keep connection with AP in modem-sleep mode.
+Currently, {IDF_TARGET_NAME} Wi-Fi supports the Modem-sleep mode which refers to the legacy power-saving mode in the IEEE 802.11 protocol. Modem-sleep mode works in station-only mode and the station must connect to the AP first. If the Modem-sleep mode is enabled, station will switch between active and sleep state periodically. In sleep state, RF, PHY and BB are turned off in order to reduce power consumption. Station can keep connection with AP in modem-sleep mode.
 
 Modem-sleep mode includes minimum and maximum power save modes. In minimum power save mode, station wakes up every DTIM to receive beacon. Broadcast data will not be lost because it is transmitted after DTIM. However, it can not save much more power if DTIM is short for DTIM is determined by AP.
 
@@ -1499,64 +1387,133 @@ The table below shows the best throughput results we got in Espressif's lab and 
 
 .. only:: esp32
 
-    +----------------------+-----------------+-----------------+---------------+--------------+
-    | Type/Throughput      | Air In Lab      | Shield-box      | Test Tool     | IDF Version  |
-    |                      |                 |                 |               | (commit ID)  |
-    +======================+=================+=================+===============+==============+
-    | Raw 802.11 Packet RX |   N/A           | **130 MBit/s**  | Internal tool | NA           |
-    +----------------------+-----------------+-----------------+---------------+--------------+
-    | Raw 802.11 Packet TX |   N/A           | **130 MBit/s**  | Internal tool | NA           |
-    +----------------------+-----------------+-----------------+---------------+--------------+
-    | UDP RX               |   30 MBit/s     | 85 MBit/s       | iperf example | 15575346     |
-    +----------------------+-----------------+-----------------+---------------+--------------+
-    | UDP TX               |   30 MBit/s     | 75 MBit/s       | iperf example | 15575346     |
-    +----------------------+-----------------+-----------------+---------------+--------------+
-    | TCP RX               |   20 MBit/s     | 65 MBit/s       | iperf example | 15575346     |
-    +----------------------+-----------------+-----------------+---------------+--------------+
-    | TCP TX               |   20 MBit/s     | 75 MBit/s       | iperf example | 15575346     |
-    +----------------------+-----------------+-----------------+---------------+--------------+
+    .. list-table::
+       :header-rows: 1
+       :widths: 10 10 10 10 25
+
+       * - Type/Throughput
+         - Air In Lab
+         - Shield-box
+         - Test Tool
+         - IDF Version (commit ID)
+       * - Raw 802.11 Packet RX
+         - N/A
+         - **130 MBit/s**
+         - Internal tool
+         - NA
+       * - Raw 802.11 Packet TX
+         - N/A
+         - **130 MBit/s**
+         - Internal tool
+         - NA
+       * - UDP RX
+         - 30 MBit/s
+         - 85 MBit/s
+         - iperf example
+         - 15575346
+       * - UDP TX
+         - 30 MBit/s
+         - 75 MBit/s
+         - iperf example
+         - 15575346
+       * - TCP RX
+         - 20 MBit/s
+         - 65 MBit/s
+         - iperf example
+         - 15575346
+       * - TCP TX
+         - 20 MBit/s
+         - 75 MBit/s
+         - iperf example
+         - 15575346
 
     When the throughput is tested by iperf example, the sdkconfig is :idf_file:`examples/wifi/iperf/sdkconfig.defaults.esp32`.
 
 .. only:: esp32s2
 
-    +----------------------+-----------------+-----------------+---------------+--------------+
-    | Type/Throughput      | Air In Lab      | Shield-box      | Test Tool     | IDF Version  |
-    |                      |                 |                 |               | (commit ID)  |
-    +======================+=================+=================+===============+==============+
-    | Raw 802.11 Packet RX |   N/A           | **130 MBit/s**  | Internal tool | NA           |
-    +----------------------+-----------------+-----------------+---------------+--------------+
-    | Raw 802.11 Packet TX |   N/A           | **130 MBit/s**  | Internal tool | NA           |
-    +----------------------+-----------------+-----------------+---------------+--------------+
-    | UDP RX               |   30 MBit/s     | 70 MBit/s       | iperf example | 15575346     |
-    +----------------------+-----------------+-----------------+---------------+--------------+
-    | UDP TX               |   30 MBit/s     | 50 MBit/s       | iperf example | 15575346     |
-    +----------------------+-----------------+-----------------+---------------+--------------+
-    | TCP RX               |   20 MBit/s     | 32 MBit/s       | iperf example | 15575346     |
-    +----------------------+-----------------+-----------------+---------------+--------------+
-    | TCP TX               |   20 MBit/s     | 37 MBit/s       | iperf example | 15575346     |
-    +----------------------+-----------------+-----------------+---------------+--------------+
+    .. list-table::
+       :header-rows: 1
+       :widths: 10 10 10 10 25
+
+       * - Type/Throughput
+         - Air In Lab
+         - Shield-box
+         - Test Tool
+         - IDF Version (commit ID)
+       * - Raw 802.11 Packet RX
+         - N/A
+         - **130 MBit/s**
+         - Internal tool
+         - NA
+       * - Raw 802.11 Packet TX
+         - N/A
+         - **130 MBit/s**
+         - Internal tool
+         - NA
+       * - UDP RX
+         - 30 MBit/s
+         - 70 MBit/s
+         - iperf example
+         - 15575346
+       * - UDP TX
+         - 30 MBit/s
+         - 50 MBit/s
+         - iperf example
+         - 15575346
+       * - TCP RX
+         - 20 MBit/s
+         - 32 MBit/s
+         - iperf example
+         - 15575346
+       * - TCP TX
+         - 20 MBit/s
+         - 37 MBit/s
+         - iperf example
+         - 15575346
 
     When the throughput is tested by iperf example, the sdkconfig is :idf_file:`examples/wifi/iperf/sdkconfig.defaults.esp32s2`.
 
 .. only:: esp32c3
 
-    +----------------------+-----------------+-----------------+---------------+--------------+
-    | Type/Throughput      | Air In Lab      | Shield-box      | Test Tool     | IDF Version  |
-    |                      |                 |                 |               | (commit ID)  |
-    +======================+=================+=================+===============+==============+
-    | Raw 802.11 Packet RX |   N/A           | **130 MBit/s**  | Internal tool | NA           |
-    +----------------------+-----------------+-----------------+---------------+--------------+
-    | Raw 802.11 Packet TX |   N/A           | **130 MBit/s**  | Internal tool | NA           |
-    +----------------------+-----------------+-----------------+---------------+--------------+
-    | UDP RX               |   30 MBit/s     | 50 MBit/s       | iperf example | 15575346     |
-    +----------------------+-----------------+-----------------+---------------+--------------+
-    | UDP TX               |   30 MBit/s     | 40 MBit/s       | iperf example | 15575346     |
-    +----------------------+-----------------+-----------------+---------------+--------------+
-    | TCP RX               |   20 MBit/s     | 35 MBit/s       | iperf example | 15575346     |
-    +----------------------+-----------------+-----------------+---------------+--------------+
-    | TCP TX               |   20 MBit/s     | 37 MBit/s       | iperf example | 15575346     |
-    +----------------------+-----------------+-----------------+---------------+--------------+
+     .. list-table::
+        :header-rows: 1
+        :widths: 10 10 10 15 20
+
+        * - Type/Throughput
+          - Air In Lab
+          - Shield-box
+          - Test Tool
+          - IDF Version (commit ID)
+        * - Raw 802.11 Packet RX
+          - N/A
+          - **130 MBit/s**
+          - Internal tool
+          - NA
+        * - Raw 802.11 Packet TX
+          - N/A
+          - **130 MBit/s**
+          - Internal tool
+          - NA
+        * - UDP RX
+          - 30 MBit/s
+          - 50 MBit/s
+          - iperf example
+          - 15575346
+        * - UDP TX
+          - 30 MBit/s
+          - 40 MBit/s
+          - iperf example
+          - 15575346
+        * - TCP RX
+          - 20 MBit/s
+          - 35 MBit/s
+          - iperf example
+          - 15575346
+        * - TCP TX
+          - 20 MBit/s
+          - 37 MBit/s
+          - iperf example
+          - 15575346
 
     When the throughput is tested by iperf example, the sdkconfig is :idf_file:`examples/wifi/iperf/sdkconfig.defaults.esp32c3`.
 
@@ -1573,7 +1530,7 @@ It cannot be used for sending encrypted or QoS frames.
 Preconditions of Using :cpp:func:`esp_wifi_80211_tx`
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
- - The Wi-Fi mode is Station, or AP, or Station+AP.
+ - The Wi-Fi mode is station, or AP, or station/AP.
  - Either esp_wifi_set_promiscuous(true), or :cpp:func:`esp_wifi_start()`, or both of these APIs return ESP_OK. This is because we need to make sure that Wi-Fi hardware is initialized before :cpp:func:`esp_wifi_80211_tx` is called. In {IDF_TARGET_NAME}, both esp_wifi_set_promiscuous(true) and :cpp:func:`esp_wifi_start()` can trigger the initialization of Wi-Fi hardware.
  - The parameters of :cpp:func:`esp_wifi_80211_tx` are hereby correctly provided.
 
@@ -1588,88 +1545,42 @@ Side-Effects to Avoid in Different Scenarios
 
 Theoretically, if we do not consider the side-effects the API imposes on the Wi-Fi driver or other stations/APs, we can send a raw 802.11 packet over the air, with any destination MAC, any source MAC, any BSSID, or any other type of packet. However,robust/useful applications should avoid such side-effects. The table below provides some tips/recommendations on how to avoid the side-effects of :cpp:func:`esp_wifi_80211_tx` in different scenarios.
 
-+-----------------------------+---------------------------------------------------+
-| Scenario                    | Description                                       |
-+=============================+===================================================+
-| No WiFi connection          | In this scenario, no Wi-Fi connection is set up,  |
-|                             | so there are no side-effects on the Wi-Fi driver. |
-|                             | If en_sys_seq==true, the Wi-Fi driver is          |
-|                             | responsible for the sequence control. If          |
-|                             | en_sys_seq==false, the application needs to ensure|
-|                             | that the buffer has the correct sequence.         |
-|                             |                                                   |
-|                             | Theoretically, the MAC address can be any address.|
-|                             | However, this may impact other stations/APs       |
-|                             | with the same MAC/BSSID.                          |
-|                             |                                                   |
-|                             | Side-effect example#1                             |
-|                             | The application calls esp_wifi_80211_tx to send   |
-|                             | a beacon with BSSID == mac_x in AP mode, but      |
-|                             | the mac_x is not the MAC of the AP interface.     |
-|                             | Moreover, there is another AP, say                |
-|                             | "other-AP", whose bssid is mac_x. If this         |
-|                             | happens, an "unexpected behavior" may occur,      |
-|                             | because the stations which connect to the         |
-|                             | "other-AP" cannot figure out whether the beacon is|
-|                             | from the "other-AP" or the esp_wifi_80211_tx.     |
-|                             |                                                   |
-|                             | To avoid the above-mentioned side-effects, we     |
-|                             | recommend that:                                   |
-|                             |                                                   |
-|                             |  - If esp_wifi_80211_tx is called in Station mode,|
-|                             |    the first MAC should be a multicast MAC or the |
-|                             |    exact target-device's MAC, while the second MAC|
-|                             |    should be that of the station interface.       |
-|                             |  - If esp_wifi_80211_tx is called in AP mode,     |
-|                             |    the first MAC should be a multicast MAC or the |
-|                             |    exact target-device's MAC, while the second MAC|
-|                             |    should be that of the AP interface.            |
-|                             |                                                   |
-|                             | The recommendations above are only for avoiding   |
-|                             | side-effects and can be ignored when there are    |
-|                             | good reasons for doing this.                      |
-+-----------------------------+---------------------------------------------------+
-| Have WiFi connection        | When the Wi-Fi connection is already set up, and  |
-|                             | the sequence is controlled by the application, the|
-|                             | latter may impact the sequence control of the     |
-|                             | Wi-Fi connection, as a whole. So, the             |
-|                             | en_sys_seq need to be true, otherwise             |
-|                             | ESP_ERR_WIFI_ARG is returned.                     |
-|                             |                                                   |
-|                             | The MAC-address recommendations in the            |
-|                             | "No WiFi connection" scenario also apply to this  |
-|                             | scenario.                                         |
-|                             |                                                   |
-|                             | If the WiFi mode is station mode and the MAC      |
-|                             | address1 is the MAC of AP to which the station is |
-|                             | connected, the MAC address2 is the MAC of station |
-|                             | interface, we say the packets is from the station |
-|                             | to AP. On the other hand, if the WiFi mode is     |
-|                             | AP mode and the MAC address1 is the MAC of        |
-|                             | the station who connects to this AP, the MAC      |
-|                             | address2 is the MAC of AP interface, we say       |
-|                             | the packet is from the AP to station.             |
-|                             | To avoid conflicting with WiFi connections, the   |
-|                             | following checks are applied:                     |
-|                             |                                                   |
-|                             |  - If the packet type is data and is from the     |
-|                             |    station to AP, the ToDS bit in IEEE 80211      |
-|                             |    frame control should be 1, the FromDS bit      |
-|                             |    should be 0, otherwise the packet will be      |
-|                             |    discarded by WiFi driver.                      |
-|                             |  - If the packet type is data and is from the     |
-|                             |    AP to station, the ToDS bit in IEEE 80211      |
-|                             |    frame control should be 0, the FromDS bit      |
-|                             |    should be 1, otherwise the packet will be      |
-|                             |    discarded by WiFi driver.                      |
-|                             |  - If the packet is from station to AP or         |
-|                             |    from AP to station, the Power Management,      |
-|                             |    More Data, Re-Transmission bits should be 0,   |
-|                             |    otherwise the packet will be discarded by WiFi |
-|                             |    driver.                                        |
-|                             |                                                   |
-|                             | ESP_ERR_WIFI_ARG is returned if any check fails.  |
-+-----------------------------+---------------------------------------------------+
+.. list-table::
+   :header-rows: 1
+   :widths: 10 50
+
+   * - Scenario
+     - Description
+   * - No Wi-Fi connection
+     - In this scenario, no Wi-Fi connection is set up, so there are no side-effects on the Wi-Fi driver. If en_sys_seq==true, the Wi-Fi driver is responsible for the sequence control. If en_sys_seq==false, the application needs to ensure that the buffer has the correct sequence.
+
+       Theoretically, the MAC address can be any address. However, this may impact other stations/APs with the same MAC/BSSID.
+
+       Side-effect example#1 The application calls esp_wifi_80211_tx to send a beacon with BSSID == mac_x in AP mode, but the mac_x is not the MAC of the AP interface. Moreover, there is another AP, say “other-AP”, whose bssid is mac_x. If this happens, an “unexpected behavior” may occur, because the stations which connect to the “other-AP” cannot figure out whether the beacon is from the “other-AP” or the esp_wifi_80211_tx.
+
+       To avoid the above-mentioned side-effects, we recommend that:
+
+       - If esp_wifi_80211_tx is called in station mode, the first MAC should be a multicast MAC or the exact target-device’s MAC, while the second MAC should be that of the station interface.
+
+       - If esp_wifi_80211_tx is called in AP mode, the first MAC should be a multicast MAC or the exact target-device’s MAC, while the second MAC should be that of the AP interface.
+
+       The recommendations above are only for avoiding side-effects and can be ignored when there are good reasons for doing this.
+
+   * - Have Wi-Fi connection
+     - When the Wi-Fi connection is already set up, and the sequence is controlled by the application, the latter may impact the sequence control of the Wi-Fi connection, as a whole. So, the en_sys_seq need to be true, otherwise ESP_ERR_WIFI_ARG is returned.
+
+       The MAC-address recommendations in the “No Wi-Fi connection” scenario also apply to this scenario.
+
+       If the Wi-Fi mode is station mode and the MAC address1 is the MAC of AP to which the station is connected, the MAC address2 is the MAC of station interface, we say the packets is from the station to AP. On the other hand, if the Wi-Fi mode is AP mode and the MAC address1 is the MAC of the station who connects to this AP, the MAC address2 is the MAC of AP interface, we say the packet is from the AP to station. To avoid conflicting with Wi-Fi connections, the following checks are applied:
+
+       - If the packet type is data and is from the station to AP, the ToDS bit in IEEE 80211 frame control should be 1, the FromDS bit should be 0, otherwise the packet will be discarded by Wi-Fi driver.
+
+       - If the packet type is data and is from the AP to station, the ToDS bit in IEEE 80211 frame control should be 0, the FromDS bit should be 1, otherwise the packet will be discarded by Wi-Fi driver.
+
+       - If the packet is from station to AP or from AP to station, the Power Management, More Data, Re-Transmission bits should be 0, otherwise the packet will be discarded by Wi-Fi driver.
+
+       ESP_ERR_WIFI_ARG is returned if any check fails.
+
 
 Wi-Fi Sniffer Mode
 ---------------------------
@@ -1680,10 +1591,11 @@ The Wi-Fi sniffer mode can be enabled by esp_wifi_set_promiscuous(). If the snif
  - 802.11 Data frame, including MPDU, AMPDU, AMSDU, etc.
  - 802.11 MIMO frame, for MIMO frame, the sniffer only dumps the length of the frame.
  - 802.11 Control frame.
+ - 802.11 CRC error frame.
 
 The following packets will **NOT** be dumped to the application:
 
- - 802.11 error frame, such as the frame with a CRC error, etc.
+ - Other 802.11 error frames.
 
 For frames that the sniffer **can** dump, the application can additionally decide which specific type of packets can be filtered to the application by using :cpp:func:`esp_wifi_set_promiscuous_filter()` and :cpp:func:`esp_wifi_set_promiscuous_ctrl_filter()`. By default, it will filter all 802.11 data and management frames to the application.
 
@@ -1779,13 +1691,14 @@ All of the information in the table can be found in the structure wifi_csi_info_
     - Channel bandwidth refers to cwb field of rx_ctrl field.
     - STBC refers to stbc field of rx_ctrl field.
     - Total bytes refers to len field.
-    - The CSI data corresponding to each Long Training Field(LTF) type is stored in a buffer starting from the buf field. Each item is stored as two bytes: imaginary part followed by real part. The order of each item is the same as the sub-carrier in the table. The order of LTF is: LLTF, HT-LTF, STBC-HT-LTF. However all 3 LTFs may not be present, depending on the channel and packet information (see above).
+    - The CSI data corresponding to each Long Training Field (LTF) type is stored in a buffer starting from the buf field. Each item is stored as two bytes: imaginary part followed by real part. The order of each item is the same as the sub-carrier in the table. The order of LTF is: LLTF, HT-LTF, STBC-HT-LTF. However all 3 LTFs may not be present, depending on the channel and packet information (see above).
     - If first_word_invalid field of wifi_csi_info_t is true, it means that the first four bytes of CSI data is invalid due to a hardware limitation in {IDF_TARGET_NAME}.
     - More information like RSSI, noise floor of RF, receiving time and antenna is in the rx_ctrl field.
 
 .. note::
 
     - For STBC packet, CSI is provided for every space-time stream without CSD (cyclic shift delay). As each cyclic shift on the additional chains shall be -200 ns, only the CSD angle of first space-time stream is recorded in sub-carrier 0 of HT-LTF and STBC-HT-LTF for there is no channel frequency response in sub-carrier 0. CSD[10:0] is 11 bits, ranging from -pi to pi.
+
     - If LLTF, HT-LTF or STBC-HT-LTF is not enabled by calling API :cpp:func:`esp_wifi_set_csi_config`, the total bytes of CSI data will be fewer than that in the table. For example, if LLTF and HT-LTF is not enabled and STBC-HT-LTF is enabled, when a packet is received with the condition above/HT/40MHz/STBC, the total bytes of CSI data is 244 ((61 + 60) * 2 + 2 = 244, the result is aligned to four bytes and the last two bytes is invalid).
 
 Wi-Fi Channel State Information Configure
@@ -1793,7 +1706,7 @@ Wi-Fi Channel State Information Configure
 
 To use Wi-Fi CSI, the following steps need to be done.
 
-    - Select Wi-Fi CSI in menuconfig. It is "Menuconfig --> Components config --> Wi-Fi --> WiFi CSI(Channel State Information)".
+    - Select Wi-Fi CSI in menuconfig. It is "Menuconfig --> Components config --> Wi-Fi --> Wi-Fi CSI (Channel State Information)".
     - Set CSI receiving callback function by calling API :cpp:func:`esp_wifi_set_csi_rx_cb`.
     - Configure CSI by calling API :cpp:func:`esp_wifi_set_csi_config`.
     - Enable CSI by calling API :cpp:func:`esp_wifi_set_csi`.
@@ -1818,7 +1731,7 @@ Wi-Fi QoS
 
 {IDF_TARGET_NAME} supports all the mandatory features required in WFA Wi-Fi QoS Certification.
 
-Four ACs(Access Category) are defined in Wi-Fi specification, each AC has a its own priority to access the Wi-Fi channel. Moreover a map rule is defined to map the QoS priority of other protocol, such as 802.11D or TCP/IP precedence to Wi-Fi AC.
+Four ACs (Access Category) are defined in Wi-Fi specification, each AC has a its own priority to access the Wi-Fi channel. Moreover a map rule is defined to map the QoS priority of other protocol, such as 802.11D or TCP/IP precedence to Wi-Fi AC.
 
 Below is a table describes how the IP Precedences are mapped to Wi-Fi ACs in {IDF_TARGET_NAME}, it also indicates whether the AMPDU is supported for this AC. The table is sorted with priority descending order, namely, the AC_VO has highest priority.
 
@@ -1953,18 +1866,18 @@ Increasing the size or number of the buffers mentioned above properly can improv
     This parameter indicates the size of the AMPDU BA Window at the receiving end. This parameter should be configured to the smaller value between twice of :ref:`CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM` and :ref:`CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM`.
 
  - :ref:`CONFIG_LWIP_TCP_WND_DEFAULT`
-    This parameter represents the RX buffer size of the LWIP layer for each TCP stream. Its value should be configured to the value of WIFI_DYNAMIC_RX_BUFFER_NUM(KB) to reach a high and stable performance. Meanwhile, in case of multiple streams, this value needs to be reduced proportionally.
+    This parameter represents the RX buffer size of the LWIP layer for each TCP stream. Its value should be configured to the value of WIFI_DYNAMIC_RX_BUFFER_NUM (KB) to reach a high and stable performance. Meanwhile, in case of multiple streams, this value needs to be reduced proportionally.
 
 **TX direction:**
 
- - :ref:`CONFIG_ESP32_WIFI_STATIC_TX_BUFFER_NUM`
+ - :ref:`CONFIG_ESP32_WIFI_TX_BUFFER`
     This parameter indicates the type of TX buffer, it is recommended to configure it as a dynamic buffer, which can make full use of memory.
 
  - :ref:`CONFIG_ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM`
     This parameter indicates the number of TX buffer on the Wi-Fi layer. Increasing this parameter will improve the performance of packet sending. The parameter value needs to match the TX buffer size of the LWIP layer.
 
  - :ref:`CONFIG_LWIP_TCP_SND_BUF_DEFAULT`
-    This parameter represents the TX buffer size of the LWIP layer for each TCP stream. Its value should be configured to the value of WIFI_DYNAMIC_TX_BUFFER_NUM(KB) to reach a high and stable performance. In case of multiple streams, this value needs to be reduced proportionally.
+    This parameter represents the TX buffer size of the LWIP layer for each TCP stream. Its value should be configured to the value of WIFI_DYNAMIC_TX_BUFFER_NUM (KB) to reach a high and stable performance. In case of multiple streams, this value needs to be reduced proportionally.
 
 **Throughput optimization by placing code in IRAM:**
 
@@ -2003,145 +1916,378 @@ The parameters not mentioned in the following table should be set to the default
 
 .. only:: esp32
 
-    +----------------------------+-------+----------+------------------+----------+---------+---------------+---------+
-    | Rank                       | Iperf | TX prior | High-performance | RX prior | Default | Memory saving | Minimum |
-    +============================+=======+==========+==================+==========+=========+===============+=========+
-    | Available memory(KB)       | 37.1  | 113.8    | 123.3            | 145.5    | 144.5   | 170.2         | 185.2   |
-    +----------------------------+-------+----------+------------------+----------+---------+---------------+---------+
-    | WIFI_STATIC_RX_BUFFER_NUM  | 16    | 6        | 6                | 6        | 6       | 6             | 4       |
-    +----------------------------+-------+----------+------------------+----------+---------+---------------+---------+
-    | WIFI_DYNAMIC_RX_BUFFER_NUM | 64    | 16       | 24               | 34       | 20      | 12            | 8       |
-    +----------------------------+-------+----------+------------------+----------+---------+---------------+---------+
-    | WIFI_DYNAMIC_TX_BUFFER_NUM | 64    | 28       | 24               | 18       | 20      | 12            | 8       |
-    +----------------------------+-------+----------+------------------+----------+---------+---------------+---------+
-    | WIFI_RX_BA_WIN             | 32    |  8       | 12               | 12       | 10      |  6            | Disable |
-    +----------------------------+-------+----------+------------------+----------+---------+---------------+---------+
-    | TCP_SND_BUF_DEFAULT(KB)    | 65    | 28       | 24               | 18       | 20      | 12            | 8       |
-    +----------------------------+-------+----------+------------------+----------+---------+---------------+---------+
-    | TCP_WND_DEFAULT(KB)        | 65    | 16       | 24               | 34       | 20      | 12            | 8       |
-    +----------------------------+-------+----------+------------------+----------+---------+---------------+---------+
-    | WIFI_IRAM_OPT              | 15    | 15       | 15               | 15       | 15      | 15            | 15      |
-    +----------------------------+-------+----------+------------------+----------+---------+---------------+---------+
-    | WIFI_RX_IRAM_OPT           | 16    | 16       | 16               | 16       | 16      | 16            | 16      |
-    +----------------------------+-------+----------+------------------+----------+---------+---------------+---------+
-    | LWIP_IRAM_OPTIMIZATION     | 13    | 13       | 13               | 13       | 13      | 13            | 13      |
-    +----------------------------+-------+----------+------------------+----------+---------+---------------+---------+
-    | TCP TX throughput (Mbit/s) | 74.6  | 50.8     | 46.5             | 39.9     | 44.2    | 33.8          | 25.6    |
-    +----------------------------+-------+----------+------------------+----------+---------+---------------+---------+
-    | TCP RX throughput (Mbit/s) | 63.6  | 35.5     | 42.3             | 48.5     | 40.5    | 30.1          | 27.8    |
-    +----------------------------+-------+----------+------------------+----------+---------+---------------+---------+
-    | UDP TX throughput (Mbit/s) | 76.2  | 75.1     | 74.1             | 72.4     | 69.6    | 64.1          | 36.5    |
-    +----------------------------+-------+----------+------------------+----------+---------+---------------+---------+
-    | UDP RX throughput (Mbit/s) | 83.1  | 66.3     | 75.1             | 75.6     | 73.1    | 65.3          | 54.7    |
-    +----------------------------+-------+----------+------------------+----------+---------+---------------+---------+
+     .. list-table::
+        :header-rows: 1
+        :widths: 10 5 5 10 5 5 10 5
+
+        * - Rank
+          - Iperf
+          - TX prior
+          - High-performance
+          - RX prior
+          - Default
+          - Memory saving
+          - Minimum
+        * - Available memory (KB)
+          - 37.1
+          - 113.8
+          - 123.3
+          - 145.5
+          - 144.5
+          - 170.2
+          - 185.2
+        * - WIFI_STATIC_RX_BUFFER_NUM
+          - 16
+          - 6
+          - 6
+          - 6
+          - 6
+          - 6
+          - 4
+        * - WIFI_DYNAMIC_RX_BUFFER_NUM
+          - 64
+          - 16
+          - 24
+          - 34
+          - 20
+          - 12
+          - 8
+        * - WIFI_DYNAMIC_TX_BUFFER_NUM
+          - 64
+          - 28
+          - 24
+          - 18
+          - 20
+          - 12
+          - 8
+        * - WIFI_RX_BA_WIN
+          - 32
+          - 8
+          - 12
+          - 12
+          - 10
+          - 6
+          - Disable
+        * - TCP_SND_BUF_DEFAULT (KB)
+          - 65
+          - 28
+          - 24
+          - 18
+          - 20
+          - 12
+          - 8
+        * - TCP_WND_DEFAULT (KB)
+          - 65
+          - 16
+          - 24
+          - 34
+          - 20
+          - 12
+          - 8
+        * - WIFI_IRAM_OPT
+          - 15
+          - 15
+          - 15
+          - 15
+          - 15
+          - 15
+          - 15
+        * - WIFI_RX_IRAM_OPT
+          - 16
+          - 16
+          - 16
+          - 16
+          - 16
+          - 16
+          - 16
+        * - LWIP_IRAM_OPTIMIZATION
+          - 13
+          - 13
+          - 13
+          - 13
+          - 13
+          - 13
+          - 13
+        * - TCP TX throughput (Mbit/s)
+          - 74.6
+          - 50.8
+          - 46.5
+          - 39.9
+          - 44.2
+          - 33.8
+          - 25.6
+        * - TCP RX throughput (Mbit/s)
+          - 63.6
+          - 35.5
+          - 42.3
+          - 48.5
+          - 40.5
+          - 30.1
+          - 27.8
+        * - UDP TX throughput (Mbit/s)
+          - 76.2
+          - 75.1
+          - 74.1
+          - 72.4
+          - 69.6
+          - 64.1
+          - 36.5
+        * - UDP RX throughput (Mbit/s)
+          - 83.1
+          - 66.3
+          - 75.1
+          - 75.6
+          - 73.1
+          - 65.3
+          - 54.7
+
 
 .. only:: esp32s2
 
-    +----------------------------+-------+------------------+---------+---------------+---------+
-    | Rank                       | Iperf | High-performance | Default | Memory saving | Minimum |
-    +============================+=======+==================+=========+===============+=========+
-    | Available memory (KB)      | 4.1   | 24.2             | 78.4    | 86.5          | 116.4   |
-    +----------------------------+-------+------------------+---------+---------------+---------+
-    | WIFI_STATIC_RX_BUFFER_NUM  | 8     |6                 | 6       | 4             | 3       |
-    +----------------------------+-------+------------------+---------+---------------+---------+
-    | WIFI_DYNAMIC_RX_BUFFER_NUM | 24    | 18               | 12      | 8             | 6       |
-    +----------------------------+-------+------------------+---------+---------------+---------+
-    | WIFI_DYNAMIC_TX_BUFFER_NUM | 24    | 18               | 12      | 8             | 6       |
-    +----------------------------+-------+------------------+---------+---------------+---------+
-    | WIFI_RX_BA_WIN             | 12    | 9                | 6       | 4             | 3       |
-    +----------------------------+-------+------------------+---------+---------------+---------+
-    | TCP_SND_BUF_DEFAULT (KB)   | 24    | 18               | 12      | 8             | 6       |
-    +----------------------------+-------+------------------+---------+---------------+---------+
-    | TCP_WND_DEFAULT(KB)        | 24    | 18               | 12      | 8             | 6       |
-    +----------------------------+-------+------------------+---------+---------------+---------+
-    | WIFI_IRAM_OPT              | 15    | 15               | 15      | 15            | 0       |
-    +----------------------------+-------+------------------+---------+---------------+---------+
-    | WIFI_RX_IRAM_OPT           | 16    | 16               | 16      | 0             | 0       |
-    +----------------------------+-------+------------------+---------+---------------+---------+
-    | LWIP_IRAM_OPTIMIZATION     | 13    | 13               | 0       | 0             | 0       |
-    +----------------------------+-------+------------------+---------+---------------+---------+
-    | INSTRUCTION_CACHE          | 16    | 16               | 16      | 16            | 8       |
-    +----------------------------+-------+------------------+---------+---------------+---------+
-    | INSTRUCTION_CACHE_LINE     | 16    | 16               | 16      | 16            | 16      |
-    +----------------------------+-------+------------------+---------+---------------+---------+
-    | TCP TX throughput (Mbit/s) | 37.6  | 33.1             | 22.5    | 12.2          | 5.5     |
-    +----------------------------+-------+------------------+---------+---------------+---------+
-    | TCP RX throughput (Mbit/s) | 31.5  | 28.1             | 20.1    | 13.1          | 7.2     |
-    +----------------------------+-------+------------------+---------+---------------+---------+
-    | UDP TX throughput (Mbit/s) | 58.1  | 57.3             | 28.1    | 22.6          | 8.7     |
-    +----------------------------+-------+------------------+---------+---------------+---------+
-    | UDP RX throughput (Mbit/s) | 78.1  | 66.7             | 65.3    | 53.8          | 28.5    |
-    +----------------------------+-------+------------------+---------+---------------+---------+
+     .. list-table::
+        :header-rows: 1
+        :widths: 10 10 10 10 10 10
+
+        * - Rank
+          - Iperf
+          - High-performance
+          - Default
+          - Memory saving
+          - Minimum
+        * - Available memory (KB)
+          - 4.1
+          - 24.2
+          - 78.4
+          - 86.5
+          - 116.4
+        * - WIFI_STATIC_RX_BUFFER_NUM
+          - 8
+          - 6
+          - 6
+          - 4
+          - 3
+        * - WIFI_DYNAMIC_RX_BUFFER_NUM
+          - 24
+          - 18
+          - 12
+          - 8
+          - 6
+        * - WIFI_DYNAMIC_TX_BUFFER_NUM
+          - 24
+          - 18
+          - 12
+          - 8
+          - 6
+        * - WIFI_RX_BA_WIN
+          - 12
+          - 9
+          - 6
+          - 4
+          - 3
+        * - TCP_SND_BUF_DEFAULT (KB)
+          - 24
+          - 18
+          - 12
+          - 8
+          - 6
+        * - TCP_WND_DEFAULT (KB)
+          - 24
+          - 18
+          - 12
+          - 8
+          - 6
+        * - WIFI_IRAM_OPT
+          - 15
+          - 15
+          - 15
+          - 15
+          - 0
+        * - WIFI_RX_IRAM_OPT
+          - 16
+          - 16
+          - 16
+          - 0
+          - 0
+        * - LWIP_IRAM_OPTIMIZATION
+          - 13
+          - 13
+          - 0
+          - 0
+          - 0
+        * - INSTRUCTION_CACHE
+          - 16
+          - 16
+          - 16
+          - 16
+          - 8
+        * - INSTRUCTION_CACHE_LINE
+          - 16
+          - 16
+          - 16
+          - 16
+          - 16
+        * - TCP TX throughput (Mbit/s)
+          - 37.6
+          - 33.1
+          - 22.5
+          - 12.2
+          - 5.5
+        * - TCP RX throughput (Mbit/s)
+          - 31.5
+          - 28.1
+          - 20.1
+          - 13.1
+          - 7.2
+        * - UDP TX throughput (Mbit/s)
+          - 58.1
+          - 57.3
+          - 28.1
+          - 22.6
+          - 8.7
+        * - UDP RX throughput (Mbit/s)
+          - 78.1
+          - 66.7
+          - 65.3
+          - 53.8
+          - 28.5
 
 .. only:: esp32c3
 
-    +----------------------------+-------+---------+---------+
-    | Rank                       | Iperf | Default | Minimum |
-    +============================+=======+=========+=========+
-    | Available memory(KB)       | 59    | 160     | 180     |
-    +----------------------------+-------+---------+---------+
-    | WIFI_STATIC_RX_BUFFER_NUM  | 20    | 8       | 3       |
-    +----------------------------+-------+---------+---------+
-    | WIFI_DYNAMIC_RX_BUFFER_NUM | 40    | 16      | 6       |
-    +----------------------------+-------+---------+---------+
-    | WIFI_DYNAMIC_TX_BUFFER_NUM | 40    | 16      | 6       |
-    +----------------------------+-------+---------+---------+
-    | WIFI_RX_BA_WIN             | 32    | 16      | 6       |
-    +----------------------------+-------+---------+---------+
-    | TCP_SND_BUF_DEFAULT(KB)    | 40    | 16      | 6       |
-    +----------------------------+-------+---------+---------+
-    | TCP_WND_DEFAULT(KB)        | 40    | 16      | 6       |
-    +----------------------------+-------+---------+---------+
-    | LWIP_IRAM_OPTIMIZATION     | 13    | 13      | 0       |
-    +----------------------------+-------+---------+---------+
-    | TCP TX throughput (Mbit/s) | 38.1  | 27.2    | 20.4    |
-    +----------------------------+-------+---------+---------+
-    | TCP RX throughput (Mbit/s) | 35.3  | 24.2    | 17.4    |
-    +----------------------------+-------+---------+---------+
-    | UDP TX throughput (Mbit/s) | 40.6  | 38.9    | 34.1    |
-    +----------------------------+-------+---------+---------+
-    | UDP RX throughput (Mbit/s) | 52.4  | 44.5    | 44.2    |
-    +----------------------------+-------+---------+---------+
+     .. list-table::
+        :header-rows: 1
+        :widths: 10 10 10 15
+
+        * - Rank
+          - Iperf
+          - Default
+          - Minimum
+        * - Available memory (KB)
+          - 59
+          - 160
+          - 180
+        * - WIFI_STATIC_RX_BUFFER_NUM
+          - 20
+          - 8
+          - 3
+        * - WIFI_DYNAMIC_RX_BUFFER_NUM
+          - 40
+          - 16
+          - 6
+        * - WIFI_DYNAMIC_TX_BUFFER_NUM
+          - 40
+          - 16
+          - 6
+        * - WIFI_RX_BA_WIN
+          - 32
+          - 16
+          - 6
+        * - TCP_SND_BUF_DEFAULT (KB)
+          - 40
+          - 16
+          - 6
+        * - TCP_WND_DEFAULT (KB)
+          - 40
+          - 16
+          - 6
+        * - LWIP_IRAM_OPTIMIZATION
+          - 13
+          - 13
+          - 0
+        * - TCP TX throughput (Mbit/s)
+          - 38.1
+          - 27.2
+          - 20.4
+        * - TCP RX throughput (Mbit/s)
+          - 35.3
+          - 24.2
+          - 17.4
+        * - UDP TX throughput (Mbit/s)
+          - 40.6
+          - 38.9
+          - 34.1
+        * - UDP RX throughput (Mbit/s)
+          - 52.4
+          - 44.5
+          - 44.2
 
 .. only:: esp32s3
 
-    +----------------------------+-------+---------+---------+
-    | Rank                       | Iperf | Default | Minimum |
-    +============================+=======+=========+=========+
-    | Available memory(KB)       | 133.9 |  183.9  | 273.6   |
-    +----------------------------+-------+---------+---------+
-    | WIFI_STATIC_RX_BUFFER_NUM  | 24    | 8       | 3       |
-    +----------------------------+-------+---------+---------+
-    | WIFI_DYNAMIC_RX_BUFFER_NUM | 64    | 32      | 6       |
-    +----------------------------+-------+---------+---------+
-    | WIFI_DYNAMIC_TX_BUFFER_NUM | 64    | 32      |  6      |
-    +----------------------------+-------+---------+---------+
-    | WIFI_RX_BA_WIN             | 32    | 16      | 6       |
-    +----------------------------+-------+---------+---------+
-    | TCP_SND_BUF_DEFAULT (KB)   | 64    | 32      |  6      |
-    +----------------------------+-------+---------+---------+
-    | TCP_WND_DEFAULT (KB)       | 64    | 32      |   6     |
-    +----------------------------+-------+---------+---------+
-    | WIFI_IRAM_OPT              | 15    | 15      |  15     |
-    +----------------------------+-------+---------+---------+
-    | WIFI_RX_IRAM_OPT           | 16    | 16      |  16     |
-    +----------------------------+-------+---------+---------+
-    | LWIP_IRAM_OPTIMIZATION     | 13    | 13      |   0     |
-    +----------------------------+-------+---------+---------+
-    | INSTRUCTION_CACHE          | 32    | 32      |  16     |
-    +----------------------------+-------+---------+---------+
-    | INSTRUCTION_CACHE_LINE     | 32    | 32      |   32    |
-    +----------------------------+-------+---------+---------+
-    | INSTRUCTION_CACHE_WAYS     | 8     |     8   |    4    |
-    +----------------------------+-------+---------+---------+
-    | TCP TX throughput (Mbit/s) | 83.93 |  64.28  | 23.17   |
-    +----------------------------+-------+---------+---------+
-    | TCP RX throughput (Mbit/s) | 73.98 | 60.39   | 18.11   |
-    +----------------------------+-------+---------+---------+
-    | UDP TX throughput (Mbit/s) | 98.69 | 96.28   | 48.78   |
-    +----------------------------+-------+---------+---------+
-    | UDP RX throughput (Mbit/s) | 88.58 | 86.57   |  59.45  |
-    +----------------------------+-------+---------+---------+
+     .. list-table::
+        :header-rows: 1
+        :widths: 25 20 25 25
+
+        * - Rank
+          - Iperf
+          - Default
+          - Minimum
+        * - Available memory (KB)
+          - 133.9
+          - 183.9
+          - 273.6
+        * - WIFI_STATIC_RX_BUFFER_NUM
+          - 24
+          - 8
+          - 3
+        * - WIFI_DYNAMIC_RX_BUFFER_NUM
+          - 64
+          - 32
+          - 6
+        * - WIFI_DYNAMIC_TX_BUFFER_NUM
+          - 64
+          - 32
+          - 6
+        * - WIFI_RX_BA_WIN
+          - 32
+          - 16
+          - 6
+        * - TCP_SND_BUF_DEFAULT (KB)
+          - 64
+          - 32
+          - 6
+        * - TCP_WND_DEFAULT (KB)
+          - 64
+          - 32
+          - 6
+        * - WIFI_IRAM_OPT
+          - 15
+          - 15
+          - 15
+        * - WIFI_RX_IRAM_OPT
+          - 16
+          - 16
+          - 16
+        * - LWIP_IRAM_OPTIMIZATION
+          - 13
+          - 13
+          - 0
+        * - INSTRUCTION_CACHE
+          - 32
+          - 32
+          - 16
+        * - INSTRUCTION_CACHE_LINE
+          - 32
+          - 32
+          - 32
+        * - INSTRUCTION_CACHE_WAYS
+          - 8
+          - 8
+          - 4
+        * - TCP TX throughput (Mbit/s)
+          - 83.93
+          - 64.28
+          - 23.17
+        * - TCP RX throughput (Mbit/s)
+          - 73.98
+          - 60.39
+          - 18.11
+        * - UDP TX throughput (Mbit/s)
+          - 98.69
+          - 96.28
+          - 48.78
+        * - UDP RX throughput (Mbit/s)
+          - 88.58
+          - 86.57
+          - 59.45
 
 .. only:: esp32 or esp32s3
 
@@ -2222,79 +2368,187 @@ The parameters not mentioned in the following table should be set to the default
 
     .. only:: esp32
 
-        +----------------------------+-------+---------+---------------+---------+
-        |         Rank               | Iperf | Default | Memory saving | Minimum |
-        +============================+=======+=========+===============+=========+
-        | Available memory (KB)      | 113.8 | 152.4   |     181.2     |   202.6 |
-        +----------------------------+-------+---------+---------------+---------+
-        | WIFI_STATIC_RX_BUFFER_NUM  | 16    | 8       | 4             | 2       |
-        +----------------------------+-------+---------+---------------+---------+
-        | WIFI_DYNAMIC_RX_BUFFER_NUM | 128   | 128     | 128           | 128     |
-        +----------------------------+-------+---------+---------------+---------+
-        | WIFI_STATIC_TX_BUFFER_NUM  | 16    | 8       | 4             |       2 |
-        +----------------------------+-------+---------+---------------+---------+
-        | WIFI_RX_BA_WIN             |    16 |      16 |             8 | Disable |
-        +----------------------------+-------+---------+---------------+---------+
-        | TCP_SND_BUF_DEFAULT (KB)   |    65 |      65 |            65 |      65 |
-        +----------------------------+-------+---------+---------------+---------+
-        | TCP_WND_DEFAULT (KB)       |    65 |      65 |            65 |      65 |
-        +----------------------------+-------+---------+---------------+---------+
-        | WIFI_IRAM_OPT              |    15 |     15  |            15 |       0 |
-        +----------------------------+-------+---------+---------------+---------+
-        | WIFI_RX_IRAM_OPT           |    16 |     16  |             0 |       0 |
-        +----------------------------+-------+---------+---------------+---------+
-        | LWIP_IRAM_OPTIMIZATION     |    13 |       0 |             0 |       0 |
-        +----------------------------+-------+---------+---------------+---------+
-        | TCP TX throughput (Mbit/s) | 37.5  |   31.7  |          21.7 |    14.6 |
-        +----------------------------+-------+---------+---------------+---------+
-        | TCP RX throughput (Mbit/s) |  31.5 |    29.8 |          26.5 |    21.1 |
-        +----------------------------+-------+---------+---------------+---------+
-        | UDP TX throughput (Mbit/s) | 69.1  |   31.5  |          27.1 |    24.1 |
-        +----------------------------+-------+---------+---------------+---------+
-        | UDP RX throughput (Mbit/s) |  40.1 |    38.5 |          37.5 |    36.9 |
-        +----------------------------+-------+---------+---------------+---------+
+        .. list-table::
+             :header-rows: 1
+             :widths: 15 10 10 15 10
+
+             * - Rank
+               - Iperf
+               - Default
+               - Memory saving
+               - Minimum
+             * - Available memory (KB)
+               - 113.8
+               - 152.4
+               - 181.2
+               - 202.6
+             * - WIFI_STATIC_RX_BUFFER_NUM
+               - 16
+               - 8
+               - 4
+               - 2
+             * - WIFI_DYNAMIC_RX_BUFFER_NUM
+               - 128
+               - 128
+               - 128
+               - 128
+             * - WIFI_STATIC_TX_BUFFER_NUM
+               - 16
+               - 8
+               - 4
+               - 2
+             * - WIFI_RX_BA_WIN
+               - 16
+               - 16
+               - 8
+               - Disable
+             * - TCP_SND_BUF_DEFAULT (KB)
+               - 65
+               - 65
+               - 65
+               - 65
+             * - TCP_WND_DEFAULT (KB)
+               - 65
+               - 65
+               - 65
+               - 65
+             * - WIFI_IRAM_OPT
+               - 15
+               - 15
+               - 15
+               - 0
+             * - WIFI_RX_IRAM_OPT
+               - 16
+               - 16
+               - 0
+               - 0
+             * - LWIP_IRAM_OPTIMIZATION
+               - 13
+               - 0
+               - 0
+               - 0
+             * - TCP TX throughput (Mbit/s)
+               - 37.5
+               - 31.7
+               - 21.7
+               - 14.6
+             * - TCP RX throughput (Mbit/s)
+               - 31.5
+               - 29.8
+               - 26.5
+               - 21.1
+             * - UDP TX throughput (Mbit/s)
+               - 69.1
+               - 31.5
+               - 27.1
+               - 24.1
+             * - UDP RX throughput (Mbit/s)
+               - 40.1
+               - 38.5
+               - 37.5
+               - 36.9
 
     .. only:: esp32s2
 
-        +----------------------------+-------+---------+---------------+---------+
-        |         Rank               | Iperf | Default | Memory saving | Minimum |
-        +============================+=======+=========+===============+=========+
-        | Available memory (KB)      | 70.6  | 96.4    |     118.8     |   148.2 |
-        +----------------------------+-------+---------+---------------+---------+
-        | WIFI_STATIC_RX_BUFFER_NUM  | 8     | 8       | 6             | 4       |
-        +----------------------------+-------+---------+---------------+---------+
-        | WIFI_DYNAMIC_RX_BUFFER_NUM | 64    | 64      | 64            | 64      |
-        +----------------------------+-------+---------+---------------+---------+
-        | WIFI_STATIC_TX_BUFFER_NUM  | 16    | 8       | 6             |       4 |
-        +----------------------------+-------+---------+---------------+---------+
-        | WIFI_RX_BA_WIN             |    16 |      6  |            6  | Disable |
-        +----------------------------+-------+---------+---------------+---------+
-        | TCP_SND_BUF_DEFAULT (KB)   |    32 |      32 |            32 |      32 |
-        +----------------------------+-------+---------+---------------+---------+
-        | TCP_WND_DEFAULT (KB)       |    32 |      32 |            32 |      32 |
-        +----------------------------+-------+---------+---------------+---------+
-        | WIFI_IRAM_OPT              |    15 |     15  |            15 |       0 |
-        +----------------------------+-------+---------+---------------+---------+
-        | WIFI_RX_IRAM_OPT           |    16 |     16  |             0 |       0 |
-        +----------------------------+-------+---------+---------------+---------+
-        | LWIP_IRAM_OPTIMIZATION     |    13 |       0 |             0 |       0 |
-        +----------------------------+-------+---------+---------------+---------+
-        | INSTRUCTION_CACHE          |    16 |      16 |            16 |      8  |
-        +----------------------------+-------+---------+---------------+---------+
-        | INSTRUCTION_CACHE_LINE     |    16 |      16 |            16 |      16 |
-        +----------------------------+-------+---------+---------------+---------+
-        | DATA_CACHE                 |    8  |       8 |             8 |       8 |
-        +----------------------------+-------+---------+---------------+---------+
-        | DATA_CACHE_LINE            |    32 |      32 |            32 |      32 |
-        +----------------------------+-------+---------+---------------+---------+
-        | TCP TX throughput (Mbit/s) |  40.1 |    29.2 |          20.1 |    8.9  |
-        +----------------------------+-------+---------+---------------+---------+
-        | TCP RX throughput (Mbit/s) | 21.9  |   16.8  |          14.8 |    9.6  |
-        +----------------------------+-------+---------+---------------+---------+
-        | UDP TX throughput (Mbit/s) | 50.1  |   25.7  |          22.4 |   10.2  |
-        +----------------------------+-------+---------+---------------+---------+
-        | UDP RX throughput (Mbit/s) |  45.3 |    43.1 |          28.5 |   15.1  |
-        +----------------------------+-------+---------+---------------+---------+
+        .. list-table::
+             :header-rows: 1
+             :widths: 10 10 10 10 15
+
+             * - Rank
+               - Iperf
+               - Default
+               - Memory saving
+               - Minimum
+             * - Available memory (KB)
+               - 70.6
+               - 96.4
+               - 118.8
+               - 148.2
+             * - WIFI_STATIC_RX_BUFFER_NUM
+               - 8
+               - 8
+               - 6
+               - 4
+             * - WIFI_DYNAMIC_RX_BUFFER_NUM
+               - 64
+               - 64
+               - 64
+               - 64
+             * - WIFI_STATIC_TX_BUFFER_NUM
+               - 16
+               - 8
+               - 6
+               - 4
+             * - WIFI_RX_BA_WIN
+               - 16
+               - 6
+               - 6
+               - Disable
+             * - TCP_SND_BUF_DEFAULT (KB)
+               - 32
+               - 32
+               - 32
+               - 32
+             * - TCP_WND_DEFAULT (KB)
+               - 32
+               - 32
+               - 32
+               - 32
+             * - WIFI_IRAM_OPT
+               - 15
+               - 15
+               - 15
+               - 0
+             * - WIFI_RX_IRAM_OPT
+               - 16
+               - 16
+               - 0
+               - 0
+             * - LWIP_IRAM_OPTIMIZATION
+               - 13
+               - 0
+               - 0
+               - 0
+             * - INSTRUCTION_CACHE
+               - 16
+               - 16
+               - 16
+               - 8
+             * - INSTRUCTION_CACHE_LINE
+               - 16
+               - 16
+               - 16
+               - 16
+             * - DATA_CACHE
+               - 8
+               - 8
+               - 8
+               - 8
+             * - DATA_CACHE_LINE
+               - 32
+               - 32
+               - 32
+               - 32
+             * - TCP TX throughput (Mbit/s)
+               - 40.1
+               - 29.2
+               - 20.1
+               - 8.9
+             * - TCP RX throughput (Mbit/s)
+               - 21.9
+               - 16.8
+               - 14.8
+               - 9.6
+             * - UDP TX throughput (Mbit/s)
+               - 50.1
+               - 25.7
+               - 22.4
+               - 10.2
+             * - UDP RX throughput (Mbit/s)
+               - 45.3
+               - 43.1
+               - 28.5
+               - 15.1
 
         .. note::
             Reaching peak performance may cause task watchdog. It is a normal phenomenon considering the CPU may have no time for lower priority tasks.
@@ -2303,99 +2557,238 @@ The parameters not mentioned in the following table should be set to the default
 
         **PSRAM with 4 lines:**
 
-        +----------------------------+-------+--------+---------------+----------+
-        | Rank                       | Iperf | Default| Memory saving |  Minimum |
-        +============================+=======+========+===============+==========+
-        | Available memory (KB)      |  50.3 | 158.7  |    198.2      |    228.9 |
-        +----------------------------+-------+--------+---------------+----------+
-        | WIFI_STATIC_RX_BUFFER_NUM  |    24 |    8   |        6      |     4    |
-        +----------------------------+-------+--------+---------------+----------+
-        | WIFI_DYNAMIC_RX_BUFFER_NUM |    85 |   64   |       32      |    32    |
-        +----------------------------+-------+--------+---------------+----------+
-        | WIFI_STATIC_TX_BUFFER_NUM  |    32 |   32   |        6      |     4    |
-        +----------------------------+-------+--------+---------------+----------+
-        | WIFI_RX_BA_WIN             |    32 |   16   |       12      |  Disable |
-        +----------------------------+-------+--------+---------------+----------+
-        | TCP_SND_BUF_DEFAULT (KB)   |    85 |   32   |       32      |    32    |
-        +----------------------------+-------+--------+---------------+----------+
-        | TCP_WND_DEFAULT (KB)       |    85 |   32   |       32      |    32    |
-        +----------------------------+-------+--------+---------------+----------+
-        | WIFI_IRAM_OPT              |    15 |   15   |       15      |     0    |
-        +----------------------------+-------+--------+---------------+----------+
-        | WIFI_RX_IRAM_OPT           |    16 |   16   |        0      |     0    |
-        +----------------------------+-------+--------+---------------+----------+
-        | LWIP_IRAM_OPTIMIZATION     |    13 |    0   |        0      |     0    |
-        +----------------------------+-------+--------+---------------+----------+
-        | LWIP_UDP_RECVMBOX_SIZE     |    16 |   16   |       16      |    16    |
-        +----------------------------+-------+--------+---------------+----------+
-        | INSTRUCTION_CACHE          |    32 |   16   |       16      |    16    |
-        +----------------------------+-------+--------+---------------+----------+
-        | INSTRUCTION_CACHE_LINE     |    32 |   16   |       16      |    16    |
-        +----------------------------+-------+--------+---------------+----------+
-        | INSTRUCTION_CACHE_WAYS     |    8  |   8    |       8       |     8    |
-        +----------------------------+-------+--------+---------------+----------+
-        | DATA_CACHE                 |    64 |   16   |       16      |    16    |
-        +----------------------------+-------+--------+---------------+----------+
-        | DATA_CACHE_LINE            |    32 |   32   |       32      |    32    |
-        +----------------------------+-------+--------+---------------+----------+
-        | DATA_CACHE_WAYS            |    8  |   8    |       8       |     8    |
-        +----------------------------+-------+--------+---------------+----------+
-        | TCP TX throughput (Mbit/s) |  93.1 | 62.5   |     41.3      |  42.7    |
-        +----------------------------+-------+--------+---------------+----------+
-        | TCP RX throughput (Mbit/s) |  88.9 | 46.5   |     46.2      |  37.9    |
-        +----------------------------+-------+--------+---------------+----------+
-        | UDP TX throughput (Mbit/s) | 106.4 | 106.2  |     60.7      |  50.0    |
-        +----------------------------+-------+--------+---------------+----------+
-        | UDP RX throughput (Mbit/s) | 99.8  | 92.6   |     94.3      |  53.3    |
-        +----------------------------+-------+--------+---------------+----------+
+          .. list-table::
+             :header-rows: 1
+             :widths: 25 20 25 25 25
+
+             * - Rank
+               - Iperf
+               - Default
+               - Memory saving
+               - Minimum
+             * - Available memory (KB)
+               - 50.3
+               - 158.7
+               - 198.2
+               - 228.9
+             * - WIFI_STATIC_RX_BUFFER_NUM
+               - 24
+               - 8
+               - 6
+               - 4
+             * - WIFI_DYNAMIC_RX_BUFFER_NUM
+               - 85
+               - 64
+               - 32
+               - 32
+             * - WIFI_STATIC_TX_BUFFER_NUM
+               - 32
+               - 32
+               - 6
+               - 4
+             * - WIFI_RX_BA_WIN
+               - 32
+               - 16
+               - 12
+               - Disable
+             * - TCP_SND_BUF_DEFAULT (KB)
+               - 85
+               - 32
+               - 32
+               - 32
+             * - TCP_WND_DEFAULT (KB)
+               - 85
+               - 32
+               - 32
+               - 32
+             * - WIFI_IRAM_OPT
+               - 15
+               - 15
+               - 15
+               - 0
+             * - WIFI_RX_IRAM_OPT
+               - 16
+               - 16
+               - 0
+               - 0
+             * - LWIP_IRAM_OPTIMIZATION
+               - 13
+               - 0
+               - 0
+               - 0
+             * - LWIP_UDP_RECVMBOX_SIZE
+               - 16
+               - 16
+               - 16
+               - 16
+             * - INSTRUCTION_CACHE
+               - 32
+               - 16
+               - 16
+               - 16
+             * - INSTRUCTION_CACHE_LINE
+               - 32
+               - 16
+               - 16
+               - 16
+             * - INSTRUCTION_CACHE_WAYS
+               - 8
+               - 8
+               - 8
+               - 8
+             * - DATA_CACHE
+               - 64
+               - 16
+               - 16
+               - 16
+             * - DATA_CACHE_LINE
+               - 32
+               - 32
+               - 32
+               - 32
+             * - DATA_CACHE_WAYS
+               - 8
+               - 8
+               - 8
+               - 8
+             * - TCP TX throughput (Mbit/s)
+               - 93.1
+               - 62.5
+               - 41.3
+               - 42.7
+             * - TCP RX throughput (Mbit/s)
+               - 88.9
+               - 46.5
+               - 46.2
+               - 37.9
+             * - UDP TX throughput (Mbit/s)
+               - 106.4
+               - 106.2
+               - 60.7
+               - 50
+             * - UDP RX throughput (Mbit/s)
+               - 99.8
+               - 92.6
+               - 94.3
+               - 53.3
 
         **PSRAM with 8 lines:**
 
-        +----------------------------+-------+--------+---------------+----------+
-        | Rank                       | Iperf | Default| Memory saving |  Minimum |
-        +============================+=======+========+===============+==========+
-        | Available memory (KB)      |  49.1 | 151.3  |    215.3      |    243.6 |
-        +----------------------------+-------+--------+---------------+----------+
-        | WIFI_STATIC_RX_BUFFER_NUM  |    24 |    8   |        6      |     4    |
-        +----------------------------+-------+--------+---------------+----------+
-        | WIFI_DYNAMIC_RX_BUFFER_NUM |    85 |   64   |       32      |    32    |
-        +----------------------------+-------+--------+---------------+----------+
-        | WIFI_STATIC_TX_BUFFER_NUM  |    32 |   32   |        6      |     4    |
-        +----------------------------+-------+--------+---------------+----------+
-        | WIFI_RX_BA_WIN             |    32 |   16   |       12      |  Disable |
-        +----------------------------+-------+--------+---------------+----------+
-        | TCP_SND_BUF_DEFAULT (KB)   |    85 |   32   |       32      |    32    |
-        +----------------------------+-------+--------+---------------+----------+
-        | TCP_WND_DEFAULT (KB)       |    85 |   32   |       32      |    32    |
-        +----------------------------+-------+--------+---------------+----------+
-        | WIFI_IRAM_OPT              |    15 |   15   |       15      |     0    |
-        +----------------------------+-------+--------+---------------+----------+
-        | WIFI_RX_IRAM_OPT           |    16 |   16   |        0      |     0    |
-        +----------------------------+-------+--------+---------------+----------+
-        | LWIP_IRAM_OPTIMIZATION     |    13 |    0   |        0      |     0    |
-        +----------------------------+-------+--------+---------------+----------+
-        | LWIP_UDP_RECVMBOX_SIZE     |    16 |   16   |       16      |    16    |
-        +----------------------------+-------+--------+---------------+----------+
-        | INSTRUCTION_CACHE          |    32 |   16   |       16      |    16    |
-        +----------------------------+-------+--------+---------------+----------+
-        | INSTRUCTION_CACHE_LINE     |    32 |   16   |       16      |    16    |
-        +----------------------------+-------+--------+---------------+----------+
-        | INSTRUCTION_CACHE_WAYS     |    8  |   8    |       8       |     8    |
-        +----------------------------+-------+--------+---------------+----------+
-        | DATA_CACHE                 |    64 |   16   |       16      |    16    |
-        +----------------------------+-------+--------+---------------+----------+
-        | DATA_CACHE_LINE            |    32 |   32   |       32      |    32    |
-        +----------------------------+-------+--------+---------------+----------+
-        | DATA_CACHE_WAYS            |    8  |   8    |       8       |     8    |
-        +----------------------------+-------+--------+---------------+----------+
-        | TCP TX throughput (Mbit/s) |  93.3 | 58.4   |     37.1      |  35.6    |
-        +----------------------------+-------+--------+---------------+----------+
-        | TCP RX throughput (Mbit/s) |  86.1 | 43.6   |     42.5      |  35.0    |
-        +----------------------------+-------+--------+---------------+----------+
-        | UDP TX throughput (Mbit/s) | 104.7 | 82.2   |     60.4      |  47.9    |
-        +----------------------------+-------+--------+---------------+----------+
-        | UDP RX throughput (Mbit/s) | 104.6 |104.8   |    104.0      |  55.7    |
-        +----------------------------+-------+--------+---------------+----------+
+          .. list-table::
+             :header-rows: 1
+             :widths: 25 20 25 25 25
+
+             * - Rank
+               - Iperf
+               - Default
+               - Memory saving
+               - Minimum
+             * - Available memory (KB)
+               - 49.1
+               - 151.3
+               - 215.3
+               - 243.6
+             * - WIFI_STATIC_RX_BUFFER_NUM
+               - 24
+               - 8
+               - 6
+               - 4
+             * - WIFI_DYNAMIC_RX_BUFFER_NUM
+               - 85
+               - 64
+               - 32
+               - 32
+             * - WIFI_STATIC_TX_BUFFER_NUM
+               - 32
+               - 32
+               - 6
+               - 4
+             * - WIFI_RX_BA_WIN
+               - 32
+               - 16
+               - 12
+               - Disable
+             * - TCP_SND_BUF_DEFAULT (KB)
+               - 85
+               - 32
+               - 32
+               - 32
+             * - TCP_WND_DEFAULT (KB)
+               - 85
+               - 32
+               - 32
+               - 32
+             * - WIFI_IRAM_OPT
+               - 15
+               - 15
+               - 15
+               - 0
+             * - WIFI_RX_IRAM_OPT
+               - 16
+               - 16
+               - 0
+               - 0
+             * - LWIP_IRAM_OPTIMIZATION
+               - 13
+               - 0
+               - 0
+               - 0
+             * - LWIP_UDP_RECVMBOX_SIZE
+               - 16
+               - 16
+               - 16
+               - 16
+             * - INSTRUCTION_CACHE
+               - 32
+               - 16
+               - 16
+               - 16
+             * - INSTRUCTION_CACHE_LINE
+               - 32
+               - 16
+               - 16
+               - 16
+             * - INSTRUCTION_CACHE_WAYS
+               - 8
+               - 8
+               - 8
+               - 8
+             * - DATA_CACHE
+               - 64
+               - 16
+               - 16
+               - 16
+             * - DATA_CACHE_LINE
+               - 32
+               - 32
+               - 32
+               - 32
+             * - DATA_CACHE_WAYS
+               - 8
+               - 8
+               - 8
+               - 8
+             * - TCP TX throughput (Mbit/s)
+               - 93.3
+               - 58.4
+               - 37.1
+               - 35.6
+             * - TCP RX throughput (Mbit/s)
+               - 86.1
+               - 43.6
+               - 42.5
+               - 35
+             * - UDP TX throughput (Mbit/s)
+               - 104.7
+               - 82.2
+               - 60.4
+               - 47.9
+             * - UDP RX throughput (Mbit/s)
+               - 104.6
+               - 104.8
+               - 104
+               - 55.7
+
 
 Wi-Fi Menuconfig
 -----------------------
@@ -2481,80 +2874,58 @@ Description:
 
 The diagram shows the configuration of the Wi-Fi internal buffer.
 
-+------------------+------------+------------+--------------+---------------------------------------+
-| Buffer Type      | Alloc Type | Default    | Configurable | Description                           |
-+==================+============+============+==============+=======================================+
-| Static RX Buffer | Static     | 10  *      | Yes          | This is a kind of DMA memory. It is   |
-| (Hardware RX     |            | 1600 Bytes |              | initialized in                        |
-| Buffer)          |            |            |              | :cpp:func:`esp_wifi_init()` and freed |
-|                  |            |            |              | in :cpp:func:`esp_wifi_deinit()`. The |
-|                  |            |            |              | 'Static Rx Buffer' forms the hardware |
-|                  |            |            |              | receiving list. Upon receiving a frame|
-|                  |            |            |              | over the air, hardware writes the     |
-|                  |            |            |              | frame into the buffer and raises an   |
-|                  |            |            |              | interrupt to the CPU. Then, the Wi-Fi |
-|                  |            |            |              | driver reads the content from the     |
-|                  |            |            |              | buffer and returns the buffer back to |
-|                  |            |            |              | the list.                             |
-|                  |            |            |              |                                       |
-|                  |            |            |              | If the application want to reduce the |
-|                  |            |            |              | the memory statically allocated by    |
-|                  |            |            |              | Wi-Fi, they can reduce this value from|
-|                  |            |            |              | 10 to 6 to save 6400 Bytes memory.    |
-|                  |            |            |              | It's not recommended to reduce the    |
-|                  |            |            |              | configuration to a value less than 6  |
-|                  |            |            |              | unless the AMPDU feature is disabled. |
-|                  |            |            |              |                                       |
-+------------------+------------+------------+--------------+---------------------------------------+
-| Dynamic RX Buffer| Dynamic    | 32         | Yes          | The buffer length is variable and it  |
-|                  |            |            |              | depends on the received frames'       |
-|                  |            |            |              | length. When the Wi-Fi driver receives|
-|                  |            |            |              | a frame from the 'Hardware Rx Buffer',|
-|                  |            |            |              | the 'Dynamic Rx Buffer' needs to be   |
-|                  |            |            |              | allocated from the heap. The number of|
-|                  |            |            |              | the Dynamic Rx Buffer, configured in  |
-|                  |            |            |              | the menuconfig, is used to limit the  |
-|                  |            |            |              | total un-freed Dynamic Rx Buffer      |
-|                  |            |            |              | number.                               |
-+------------------+------------+------------+--------------+---------------------------------------+
-| Dynamic TX Buffer| Dynamic    | 32         | Yes          | This is a kind of DMA memory. It is   |
-|                  |            |            |              | allocated to the heap. When the upper-|
-|                  |            |            |              | layer (LwIP) sends packets to the     |
-|                  |            |            |              | Wi-Fi driver, it firstly allocates a  |
-|                  |            |            |              | 'Dynamic TX Buffer' and makes a copy  |
-|                  |            |            |              | of the upper-layer buffer.            |
-|                  |            |            |              |                                       |
-|                  |            |            |              | The Dynamic and Static TX Buffers are |
-|                  |            |            |              | mutually exclusive.                   |
-+------------------+------------+------------+--------------+---------------------------------------+
-| Static TX Buffer | Static     | 16 *       | Yes          | This is a kind of DMA memory. It is   |
-|                  |            | 1600Bytes  |              | initialized in                        |
-|                  |            |            |              | :cpp:func:`esp_wifi_init()` and freed |
-|                  |            |            |              | in :cpp:func:`esp_wifi_deinit()`. When|
-|                  |            |            |              | the upper-layer (LwIP) sends packets  |
-|                  |            |            |              | to the Wi-Fi driver, it firstly       |
-|                  |            |            |              | allocates a 'Static TX Buffer' and    |
-|                  |            |            |              | makes a copy of the upper-layer       |
-|                  |            |            |              | buffer.                               |
-|                  |            |            |              |                                       |
-|                  |            |            |              | The Dynamic and Static TX Buffer are  |
-|                  |            |            |              | mutually exclusive.                   |
-|                  |            |            |              |                                       |
-|                  |            |            |              | Since the TX buffer must be DMA       |
-|                  |            |            |              | buffer, so when PSRAM is enabled, the |
-|                  |            |            |              | TX buffer must be static.             |
-+------------------+------------+------------+--------------+---------------------------------------+
-| Management Short | Dynamic    | 8          | NO           | Wi-Fi driver's internal buffer.       |
-|      Buffer      |            |            |              |                                       |
-+------------------+------------+------------+--------------+---------------------------------------+
-| Management Long  | Dynamic    | 32         | NO           | Wi-Fi driver's internal buffer.       |
-|      Buffer      |            |            |              |                                       |
-+------------------+------------+------------+--------------+---------------------------------------+
-| Management Long  | Dynamic    | 32         | NO           | Wi-Fi driver's internal buffer.       |
-|   Long Buffer    |            |            |              |                                       |
-+------------------+------------+------------+--------------+---------------------------------------+
+.. list-table::
+   :header-rows: 1
+   :widths: 10 10 10 10 25
 
+   * - Buffer Type
+     - Alloc Type
+     - Default
+     - Configurable
+     - Description
+   * - Static RX Buffer (Hardware RX Buffer)
+     - Static
+     - 10 * 1600 Bytes
+     - Yes
+     - This is a kind of DMA memory. It is initialized in :cpp:func:`esp_wifi_init()` and freed in :cpp:func:`esp_wifi_deinit()`. The ‘Static Rx Buffer’ forms the hardware receiving list. Upon receiving a frame over the air, hardware writes the frame into the buffer and raises an interrupt to the CPU. Then, the Wi-Fi driver reads the content from the buffer and returns the buffer back to the list.
 
+       If the application want to reduce the the memory statically allocated by Wi-Fi, they can reduce this value from 10 to 6 to save 6400 Bytes memory. It’s not recommended to reduce the configuration to a value less than 6 unless the AMPDU feature is disabled.
+   * - Dynamic RX Buffer
+     - Dynamic
+     - 32
+     - Yes
+     - The buffer length is variable and it depends on the received frames’ length. When the Wi-Fi driver receives a frame from the ‘Hardware Rx Buffer’, the ‘Dynamic Rx Buffer’ needs to be allocated from the heap. The number of the Dynamic Rx Buffer, configured in the menuconfig, is used to limit the total un-freed Dynamic Rx Buffer number.
+   * - Dynamic TX Buffer
+     - Dynamic
+     - 32
+     - Yes
+     - This is a kind of DMA memory. It is allocated to the heap. When the upper- layer (LwIP) sends packets to the Wi-Fi driver, it firstly allocates a ‘Dynamic TX Buffer’ and makes a copy of the upper-layer buffer.
+
+       The Dynamic and Static TX Buffers are mutually exclusive.
+   * - Static TX Buffer
+     - Static
+     - 16 * 1600Bytes
+     - Yes
+     - This is a kind of DMA memory. It is initialized in :cpp:func:`esp_wifi_init()` and freed in :cpp:func:`esp_wifi_deinit()`. When the upper-layer (LwIP) sends packets to the Wi-Fi driver, it firstly allocates a ‘Static TX Buffer’ and makes a copy of the upper-layer buffer.
+
+       The Dynamic and Static TX Buffer are mutually exclusive.
+
+       Since the TX buffer must be DMA buffer, so when PSRAM is enabled, the TX buffer must be static.
+   * - Management Short Buffer
+     - Dynamic
+     - 8
+     - NO
+     - Wi-Fi driver’s internal buffer.
+   * - Management Long Buffer
+     - Dynamic
+     - 32
+     - NO
+     - Wi-Fi driver’s internal buffer.
+   * - Management Long Long Buffer
+     - Dynamic
+     - 32
+     - NO
+     - Wi-Fi driver’s internal buffer.
 
 Wi-Fi NVS Flash
 +++++++++++++++++++++
