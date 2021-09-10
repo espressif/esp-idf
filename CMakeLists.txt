@@ -82,6 +82,44 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU")
     list(APPEND c_compile_options "-Wno-old-style-declaration")
 endif()
 
+# Clang finds some warnings in IDF code which GCC doesn't.
+# All these warnings should be fixed before Clang is presented
+# as a toolchain choice for users.
+if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+    # Clang checks Doxygen comments for being in sync with function prototype.
+    # There are some inconsistencies, especially in ROM headers.
+    list(APPEND compile_options "-Wno-documentation")
+    # GCC allows repeated typedefs when the source and target types are the same.
+    # Clang doesn't allow this. This occurs in many components due to forward
+    # declarations.
+    list(APPEND compile_options "-Wno-typedef-redefinition")
+    # This issue is seemingly related to newlib's char type functions.
+    # Fix is not clear yet.
+    list(APPEND compile_options "-Wno-char-subscripts")
+    # Clang seems to notice format string issues which GCC doesn't.
+    list(APPEND compile_options "-Wno-format-security")
+    # Logic bug in essl component
+    list(APPEND compile_options "-Wno-tautological-overlap-compare")
+    # Some pointer checks in mDNS component check addresses which can't be NULL
+    list(APPEND compile_options "-Wno-tautological-pointer-compare")
+    # Similar to the above, in tcp_transport
+    list(APPEND compile_options "-Wno-pointer-bool-conversion")
+    # mbedTLS md5.c triggers this warning in md5_test_buf (false positive)
+    list(APPEND compile_options "-Wno-string-concatenation")
+    # multiple cases of implict convertions between unrelated enum types
+    list(APPEND compile_options "-Wno-enum-conversion")
+    # When IRAM_ATTR is specified both in function declaration and definition,
+    # it produces different section names, since section names include __COUNTER__.
+    # Occurs in multiple places.
+    list(APPEND compile_options "-Wno-section")
+    # Multiple cases of attributes unknown to clang, for example
+    # __attribute__((optimize("-O3")))
+    list(APPEND compile_options "-Wno-unknown-attributes")
+    # Clang also produces many -Wunused-function warnings which GCC doesn't.
+    # However these aren't treated as errors.
+endif()
+# More warnings may exist in unit tests and example projects.
+
 if(CONFIG_COMPILER_WARN_WRITE_STRINGS)
     list(APPEND compile_options "-Wwrite-strings")
 endif()
