@@ -762,7 +762,7 @@ typedef union {
 } lcd_cam_lc_reg_date_reg_t;
 
 
-typedef struct {
+typedef struct lcd_cam_dev_t {
     volatile lcd_cam_lcd_clock_reg_t lcd_clock;
     volatile lcd_cam_cam_ctrl_reg_t cam_ctrl;
     volatile lcd_cam_cam_ctrl1_reg_t cam_ctrl1;

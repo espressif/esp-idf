@@ -19,6 +19,7 @@
 #include "soc/lcd_cam_reg.h"
 #include "soc/lcd_cam_struct.h"
 #include "hal/assert.h"
+#include "hal/lcd_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,11 +31,6 @@ extern "C" {
 #define LCD_LL_EVENT_VSYNC_END  (1 << 0)
 #define LCD_LL_EVENT_TRANS_DONE (1 << 1)
 
-// Clock source ID represented in register
-#define LCD_LL_CLOCK_SRC_XTAL    (1)
-#define LCD_LL_CLOCK_SRC_APLL    (2)
-#define LCD_LL_CLOCK_SRC_PLL160M (3)
-
 // Maximum coefficient of clock prescaler
 #define LCD_LL_CLOCK_PRESCALE_MAX (64)
 
@@ -43,7 +39,7 @@ static inline void lcd_ll_enable_clock(lcd_cam_dev_t *dev, bool en)
     dev->lcd_clock.clk_en = en;
 }
 
-static inline void lcd_ll_set_group_clock_src(lcd_cam_dev_t *dev, int src, int div_num, int div_a, int div_b)
+static inline void lcd_ll_set_group_clock_src(lcd_cam_dev_t *dev, lcd_clock_source_t src, int div_num, int div_a, int div_b)
 {
     // lcd_clk = module_clock_src / (div_num + div_b / div_a)
     HAL_ASSERT(div_num >= 2);
@@ -51,6 +47,20 @@ static inline void lcd_ll_set_group_clock_src(lcd_cam_dev_t *dev, int src, int d
     HAL_FORCE_MODIFY_U32_REG_FIELD(dev->lcd_clock, lcd_clkm_div_num, div_num);
     dev->lcd_clock.lcd_clkm_div_a = div_a;
     dev->lcd_clock.lcd_clkm_div_b = div_b;
+    switch (src) {
+    case LCD_CLK_SRC_PLL160M:
+        dev->lcd_clock.lcd_clk_sel = 3;
+        break;
+    case LCD_CLK_SRC_APLL:
+        dev->lcd_clock.lcd_clk_sel = 2;
+        break;
+    case LCD_CLK_SRC_XTAL:
+        dev->lcd_clock.lcd_clk_sel = 1;
+        break;
+    default:
+        HAL_ASSERT(false && "unsupported clock source");
+        break;
+    }
 }
 
 static inline void lcd_ll_set_clock_idle_level(lcd_cam_dev_t *dev, bool level)

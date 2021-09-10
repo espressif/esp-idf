@@ -18,11 +18,13 @@
 #include "esp_check.h"
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
+#include "esp_pm.h"
 #include "esp_lcd_panel_interface.h"
 #include "esp_lcd_panel_rgb.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_rom_gpio.h"
 #include "soc/soc_caps.h"
+#include "soc/rtc.h" // for querying XTAL clock
 #include "hal/dma_types.h"
 #include "hal/gpio_hal.h"
 #include "esp_private/gdma.h"
@@ -53,6 +55,7 @@ static esp_err_t rgb_panel_mirror(esp_lcd_panel_t *panel, bool mirror_x, bool mi
 static esp_err_t rgb_panel_swap_xy(esp_lcd_panel_t *panel, bool swap_axes);
 static esp_err_t rgb_panel_set_gap(esp_lcd_panel_t *panel, int x_gap, int y_gap);
 static esp_err_t rgb_panel_disp_off(esp_lcd_panel_t *panel, bool off);
+static esp_err_t lcd_rgb_panel_select_periph_clock(esp_rgb_panel_t *panel, lcd_clock_source_t clk_src);
 static esp_err_t lcd_rgb_panel_create_trans_link(esp_rgb_panel_t *panel);
 static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *panel, const esp_lcd_rgb_panel_config_t *panel_config);
 static IRAM_ATTR void lcd_default_isr_handler(void *args);
@@ -64,6 +67,7 @@ struct esp_rgb_panel_t {
     size_t data_width;     // Number of data lines (e.g. for RGB565, the data width is 16)
     int disp_gpio_num;     // Display control GPIO, which is used to perform action like "disp_off"
     intr_handle_t intr;    // LCD peripheral interrupt handle
+    esp_pm_lock_handle_t pm_lock; // Power management lock
     size_t num_dma_nodes;  // Number of DMA descriptors that used to carry the frame buffer
     uint8_t *fb;           // Frame buffer
     size_t fb_size;        // Size of frame buffer
@@ -91,8 +95,8 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
 {
     esp_err_t ret = ESP_OK;
     esp_rgb_panel_t *rgb_panel = NULL;
-    ESP_GOTO_ON_FALSE(rgb_panel_config && ret_panel, ESP_ERR_INVALID_ARG, err_arg, TAG, "invalid parameter");
-    ESP_GOTO_ON_FALSE(rgb_panel_config->data_width == 16, ESP_ERR_NOT_SUPPORTED, err_arg, TAG,
+    ESP_GOTO_ON_FALSE(rgb_panel_config && ret_panel, ESP_ERR_INVALID_ARG, err, TAG, "invalid parameter");
+    ESP_GOTO_ON_FALSE(rgb_panel_config->data_width == 16, ESP_ERR_NOT_SUPPORTED, err, TAG,
                       "unsupported data width %d", rgb_panel_config->data_width);
     // calculate the number of DMA descriptors
     size_t fb_size = rgb_panel_config->timings.h_res * rgb_panel_config->timings.v_res * rgb_panel_config->data_width / 8;
@@ -102,8 +106,15 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     }
     // DMA descriptors must be placed in internal SRAM (requested by DMA)
     rgb_panel = heap_caps_calloc(1, sizeof(esp_rgb_panel_t) + num_dma_nodes * sizeof(dma_descriptor_t), MALLOC_CAP_DMA);
-    ESP_GOTO_ON_FALSE(rgb_panel, ESP_ERR_NO_MEM, no_mem_panel, TAG, "no mem for rgb panel");
+    ESP_GOTO_ON_FALSE(rgb_panel, ESP_ERR_NO_MEM, err, TAG, "no mem for rgb panel");
     rgb_panel->num_dma_nodes = num_dma_nodes;
+    rgb_panel->panel_id = -1;
+    // register to platform
+    int panel_id = lcd_com_register_device(LCD_COM_DEVICE_TYPE_RGB, rgb_panel);
+    ESP_GOTO_ON_FALSE(panel_id >= 0, ESP_ERR_NOT_FOUND, err, TAG, "no free rgb panel slot");
+    rgb_panel->panel_id = panel_id;
+    // enable APB to access LCD registers
+    periph_module_enable(lcd_periph_signals.panels[panel_id].module);
     // alloc frame buffer
     bool alloc_from_psram = false;
     // fb_in_psram is only an option, if there's no PSRAM on board, we still alloc from SRAM
@@ -119,36 +130,33 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     } else {
         rgb_panel->fb = heap_caps_calloc(1, fb_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
     }
-    ESP_GOTO_ON_FALSE(rgb_panel->fb, ESP_ERR_NO_MEM, no_mem_fb, TAG, "no mem for frame buffer");
+    ESP_GOTO_ON_FALSE(rgb_panel->fb, ESP_ERR_NO_MEM, err, TAG, "no mem for frame buffer");
     rgb_panel->fb_size = fb_size;
     rgb_panel->flags.fb_in_psram = alloc_from_psram;
     // semaphore indicates new frame trans done
     rgb_panel->done_sem = xSemaphoreCreateBinary();
-    ESP_GOTO_ON_FALSE(rgb_panel->done_sem, ESP_ERR_NO_MEM, no_mem_sem, TAG, "create done sem failed");
+    ESP_GOTO_ON_FALSE(rgb_panel->done_sem, ESP_ERR_NO_MEM, err, TAG, "create done sem failed");
     xSemaphoreGive(rgb_panel->done_sem); // initialize the semaphore count to 1
-    // register to platform
-    int panel_id = lcd_com_register_device(LCD_COM_DEVICE_TYPE_RGB, rgb_panel);
-    ESP_GOTO_ON_FALSE(panel_id >= 0, ESP_ERR_NOT_FOUND, no_slot, TAG, "no free rgb panel slot");
-    rgb_panel->panel_id = panel_id;
-    // enable APB to access LCD registers
-    periph_module_enable(lcd_periph_signals.panels[panel_id].module);
     // initialize HAL layer, so we can call LL APIs later
     lcd_hal_init(&rgb_panel->hal, panel_id);
+    // set peripheral clock resolution
+    ret = lcd_rgb_panel_select_periph_clock(rgb_panel, rgb_panel_config->clk_src);
+    ESP_GOTO_ON_ERROR(ret, err, TAG, "select periph clock failed");
     // install interrupt service, (LCD peripheral shares the interrupt source with Camera by different mask)
     int isr_flags = ESP_INTR_FLAG_SHARED;
     ret = esp_intr_alloc_intrstatus(lcd_periph_signals.panels[panel_id].irq_id, isr_flags,
                                     (uint32_t)lcd_ll_get_interrupt_status_reg(rgb_panel->hal.dev),
                                     LCD_LL_EVENT_VSYNC_END, lcd_default_isr_handler, rgb_panel, &rgb_panel->intr);
-    ESP_GOTO_ON_ERROR(ret, no_int, TAG, "install interrupt failed");
+    ESP_GOTO_ON_ERROR(ret, err, TAG, "install interrupt failed");
     lcd_ll_enable_interrupt(rgb_panel->hal.dev, LCD_LL_EVENT_VSYNC_END, false); // disable all interrupts
     lcd_ll_clear_interrupt_status(rgb_panel->hal.dev, UINT32_MAX); // clear pending interrupt
     // install DMA service
     rgb_panel->flags.stream_mode = !rgb_panel_config->flags.relax_on_idle;
     ret = lcd_rgb_panel_create_trans_link(rgb_panel);
-    ESP_GOTO_ON_ERROR(ret, no_dma, TAG, "install DMA failed");
+    ESP_GOTO_ON_ERROR(ret, err, TAG, "install DMA failed");
     // configure GPIO
     ret = lcd_rgb_panel_configure_gpio(rgb_panel, rgb_panel_config);
-    ESP_GOTO_ON_ERROR(ret, no_gpio, TAG, "configure GPIO failed");
+    ESP_GOTO_ON_ERROR(ret, err, TAG, "configure GPIO failed");
     // fill other rgb panel runtime parameters
     memcpy(rgb_panel->data_gpio_nums, rgb_panel_config->data_gpio_nums, SOC_LCD_RGB_DATA_WIDTH);
     rgb_panel->timings = rgb_panel_config->timings;
@@ -172,22 +180,31 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     ESP_LOGD(TAG, "new rgb panel(%d) @%p, fb_size=%zu", rgb_panel->panel_id, rgb_panel, rgb_panel->fb_size);
     return ESP_OK;
 
-no_gpio:
-    gdma_disconnect(rgb_panel->dma_chan);
-    gdma_del_channel(rgb_panel->dma_chan);
-no_dma:
-    esp_intr_free(rgb_panel->intr);
-no_int:
-    periph_module_disable(lcd_periph_signals.panels[rgb_panel->panel_id].module);
-    lcd_com_remove_device(LCD_COM_DEVICE_TYPE_RGB, rgb_panel->panel_id);
-no_slot:
-    vSemaphoreDelete(rgb_panel->done_sem);
-no_mem_sem:
-    free(rgb_panel->fb);
-no_mem_fb:
-    free(rgb_panel);
-no_mem_panel:
-err_arg:
+err:
+    if (rgb_panel) {
+        if (rgb_panel->panel_id >= 0) {
+            periph_module_disable(lcd_periph_signals.panels[rgb_panel->panel_id].module);
+            lcd_com_remove_device(LCD_COM_DEVICE_TYPE_RGB, rgb_panel->panel_id);
+        }
+        if (rgb_panel->fb) {
+            free(rgb_panel->fb);
+        }
+        if (rgb_panel->done_sem) {
+            vSemaphoreDelete(rgb_panel->done_sem);
+        }
+        if (rgb_panel->dma_chan) {
+            gdma_disconnect(rgb_panel->dma_chan);
+            gdma_del_channel(rgb_panel->dma_chan);
+        }
+        if (rgb_panel->intr) {
+            esp_intr_free(rgb_panel->intr);
+        }
+        if (rgb_panel->pm_lock) {
+            esp_pm_lock_release(rgb_panel->pm_lock);
+            esp_pm_lock_delete(rgb_panel->pm_lock);
+        }
+        free(rgb_panel);
+    }
     return ret;
 }
 
@@ -203,6 +220,10 @@ static esp_err_t rgb_panel_del(esp_lcd_panel_t *panel)
     lcd_com_remove_device(LCD_COM_DEVICE_TYPE_RGB, rgb_panel->panel_id);
     vSemaphoreDelete(rgb_panel->done_sem);
     free(rgb_panel->fb);
+    if (rgb_panel->pm_lock) {
+        esp_pm_lock_release(rgb_panel->pm_lock);
+        esp_pm_lock_delete(rgb_panel->pm_lock);
+    }
     free(rgb_panel);
     ESP_LOGD(TAG, "del rgb panel(%d)", panel_id);
     return ESP_OK;
@@ -222,8 +243,6 @@ static esp_err_t rgb_panel_init(esp_lcd_panel_t *panel)
     esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
     // configure clock
     lcd_ll_enable_clock(rgb_panel->hal.dev, true);
-    // set peripheral clock resolution
-    rgb_panel->resolution_hz = lcd_com_select_periph_clock(&rgb_panel->hal);
     // set PCLK frequency
     uint32_t pclk_prescale = rgb_panel->resolution_hz / rgb_panel->timings.pclk_hz;
     ESP_GOTO_ON_FALSE(pclk_prescale <= LCD_LL_CLOCK_PRESCALE_MAX, ESP_ERR_NOT_SUPPORTED, err, TAG,
@@ -401,6 +420,31 @@ static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *panel, const esp_
         esp_rom_gpio_connect_out_signal(panel_config->disp_gpio_num, SIG_GPIO_OUT_IDX, false, false);
     }
     return ESP_OK;
+}
+
+static esp_err_t lcd_rgb_panel_select_periph_clock(esp_rgb_panel_t *panel, lcd_clock_source_t clk_src)
+{
+    esp_err_t ret = ESP_OK;
+    lcd_ll_set_group_clock_src(panel->hal.dev, clk_src, LCD_PERIPH_CLOCK_PRE_SCALE, 1, 0);
+    switch (clk_src) {
+    case LCD_CLK_SRC_PLL160M:
+        panel->resolution_hz = 160000000 / LCD_PERIPH_CLOCK_PRE_SCALE;
+#if CONFIG_PM_ENABLE
+        ret = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "rgb_panel", &panel->pm_lock);
+        ESP_RETURN_ON_ERROR(ret, TAG, "create ESP_PM_APB_FREQ_MAX lock failed");
+        // hold the lock during the whole lifecycle of RGB panel
+        esp_pm_lock_acquire(panel->pm_lock);
+        ESP_LOGD(TAG, "installed ESP_PM_APB_FREQ_MAX lock and hold the lock during the whole panel lifecycle");
+#endif
+        break;
+    case LCD_CLK_SRC_XTAL:
+        panel->resolution_hz = rtc_clk_xtal_freq_get() * 1000000 / LCD_PERIPH_CLOCK_PRE_SCALE;
+        break;
+    default:
+        ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG,  "unsupported clock source: %d", clk_src);
+        break;
+    }
+    return ret;
 }
 
 static esp_err_t lcd_rgb_panel_create_trans_link(esp_rgb_panel_t *panel)
