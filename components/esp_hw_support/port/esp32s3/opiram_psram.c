@@ -38,7 +38,7 @@
 #define OCT_PSRAM_ADDR_BITLEN           32
 #define OCT_PSRAM_RD_DUMMY_BITLEN       (2*(10-1))
 #define OCT_PSRAM_WR_DUMMY_BITLEN       (2*(5-1))
-#define OCT_PSRAM_CS1_IO                26
+#define OCT_PSRAM_CS1_IO                CONFIG_DEFAULT_PSRAM_CS_IO
 
 #define OCT_PSRAM_CS_SETUP_TIME         3
 #define OCT_PSRAM_CS_HOLD_TIME          3
@@ -101,6 +101,11 @@ typedef struct {
 static const char* TAG = "opi psram";
 static DRAM_ATTR psram_size_t s_psram_size;
 static void IRAM_ATTR s_config_psram_spi_phases(void);
+
+uint8_t IRAM_ATTR psram_get_cs_io(void)
+{
+    return OCT_PSRAM_CS1_IO;
+}
 
 /**
  * Initialise mode registers of the PSRAM
@@ -224,7 +229,7 @@ static void IRAM_ATTR s_init_psram_pins(void)
     //Set cs1 pin function
     PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[OCT_PSRAM_CS1_IO],  FUNC_SPICS1_SPICS1);
     //Set mspi cs1 drive strength
-    PIN_SET_DRV(IO_MUX_GPIO26_REG, 3);
+    PIN_SET_DRV(GPIO_PIN_MUX_REG[OCT_PSRAM_CS1_IO], 3);
     //Set psram clock pin drive strength
     REG_SET_FIELD(SPI_MEM_DATE_REG(0), SPI_MEM_SPI_SMEM_SPICLK_FUN_DRV, 3);
 }
