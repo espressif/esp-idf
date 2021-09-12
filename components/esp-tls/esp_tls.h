@@ -470,6 +470,10 @@ int esp_tls_conn_http_new_async(const char *url, const esp_tls_cfg_t *cfg, esp_t
  *                   of bytes actually written to the TLS/SSL connection.
  *             - <0  if write operation was not successful, because either an
  *                   error occured or an action must be taken by the calling process.
+ *             - ESP_TLS_ERR_SSL_WANT_READ/
+ *               ESP_TLS_ERR_SSL_WANT_WRITE.
+ *                  if the handshake is incomplete and waiting for data to be available for reading.
+ *                  In this case this functions needs to be called again when the underlying transport is ready for operation.
  */
 static inline ssize_t esp_tls_conn_write(esp_tls_t *tls, const void *data, size_t datalen)
 {
