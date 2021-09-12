@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -764,14 +764,14 @@ esp_err_t esp_netif_recv_hook_detach(esp_netif_t *esp_netif)
 #endif // CONFIG_ESP_NETIF_L2_TAP
 
 #if ESP_DHCPS
-static void esp_netif_dhcps_cb(u8_t client_ip[4])
+static void esp_netif_dhcps_cb(uint8_t ip[4], uint8_t mac[6])
 {
-    ESP_LOGI(TAG, "DHCP server assigned IP to a station, IP is: %d.%d.%d.%d",
-             client_ip[0], client_ip[1], client_ip[2], client_ip[3]);
-    ip_event_ap_staipassigned_t evt;
+    ip_event_ap_staipassigned_t evt = { 0 };
+    memcpy((char *)&evt.ip.addr, (char *)ip, sizeof(evt.ip.addr));
+    memcpy((char *)&evt.mac, mac, sizeof(evt.mac));
+    ESP_LOGI(TAG, "DHCP server assigned IP to a station, IP is: " IPSTR, IP2STR(&evt.ip));
+    ESP_LOGD(TAG, "Client's MAC: %x:%x:%x:%x:%x:%x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
-    memset(&evt, 0, sizeof(ip_event_ap_staipassigned_t));
-    memcpy((char *)&evt.ip.addr, (char *)client_ip, sizeof(evt.ip.addr));
     int ret = esp_event_send_internal(IP_EVENT, IP_EVENT_AP_STAIPASSIGNED, &evt, sizeof(evt), 0);
     if (ESP_OK != ret) {
         ESP_LOGE(TAG, "dhcps cb: failed to post IP_EVENT_AP_STAIPASSIGNED (%x)", ret);
