@@ -829,6 +829,16 @@ esp_err_t esp_mbedtls_init_global_ca_store(void)
     return ESP_OK;
 }
 
+esp_err_t esp_mbedtls_set_global_ca(mbedtls_x509_crt *trust_ca)
+{
+    if (global_cacert != NULL) {
+        free(global_cacert);
+    }
+
+    global_cacert = trust_ca;
+    return ESP_OK;
+}
+
 esp_err_t esp_mbedtls_set_global_ca_store(const unsigned char *cacert_pem_buf, const unsigned int cacert_pem_bytes)
 {
 #ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_CA_CERT

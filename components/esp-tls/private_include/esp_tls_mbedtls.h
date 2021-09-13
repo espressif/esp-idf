@@ -8,6 +8,10 @@
 #include "esp_tls.h"
 #include "esp_tls_private.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Internal Callback API for mbedtls_ssl_read
  */
@@ -123,6 +127,11 @@ void esp_mbedtls_free_client_session(esp_tls_client_session_t *client_session);
 esp_err_t esp_mbedtls_init_global_ca_store(void);
 
 /**
+ * Set the global trust CA directly
+ */
+esp_err_t esp_mbedtls_set_global_ca(mbedtls_x509_crt *trust_ca);
+
+/**
  * Callback function for setting global CA store data for TLS/SSL using mbedtls
  */
 esp_err_t esp_mbedtls_set_global_ca_store(const unsigned char *cacert_pem_buf, const unsigned int cacert_pem_bytes);
@@ -136,3 +145,8 @@ mbedtls_x509_crt *esp_mbedtls_get_global_ca_store(void);
  * Callback function for freeing global ca store for TLS/SSL using mbedtls
  */
 void esp_mbedtls_free_global_ca_store(void);
+
+
+#ifdef __cplusplus
+}
+#endif
