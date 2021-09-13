@@ -269,7 +269,7 @@ static inline void print_memprot_err_details(const void *f)
 {
     uint32_t *fault_addr;
     uint32_t op_type, op_subtype;
-    char *operation_type;
+    const char *operation_type;
 
     mem_type_prot_t mem_type = esp_memprot_get_active_intr_memtype();
     if (mem_type != MEMPROT_NONE) {
