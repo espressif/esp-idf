@@ -364,7 +364,7 @@ ESP-IDF 适用于所有支持的 Python 版本。即使您系统中默认的 ``p
 
 ESP-IDF 在搜索所有待构建的组件时，会按照 ``COMPONENT_DIRS`` 指定的顺序依次进行，这意味着在默认情况下，首先搜索 ESP-IDF 内部组件（``IDF_PATH/components``），然后是 ``EXTRA_COMPONENT_DIRS`` 中的组件，最后是项目组件（``PROJECT_DIR/components``）。如果这些目录中的两个或者多个包含具有相同名字的组件，则使用搜索到的最后一个位置的组件。这就允许将组件复制到项目目录中再修改以覆盖 ESP-IDF 组件，如果使用这种方式，ESP-IDF 目录本身可以保持不变。
 
-.. 注解:: 如果在现有项目中通过将组件移动到一个新位置来覆盖它，项目不会自动看到新组件的路径。请运行 ``idf.py reconfigure`` 命令后（或删除项目构建文件夹）再重新构建。 
+.. 注解:: 如果在现有项目中通过将组件移动到一个新位置来覆盖它，项目不会自动看到新组件的路径。请运行 ``idf.py reconfigure`` 命令后（或删除项目构建文件夹）再重新构建。
 
 .. _minimum_cmakelists:
 
@@ -684,7 +684,7 @@ CMake 通常会在链接器命令行上重复两次组件库名称来自动处�
 
 .. code-block:: cmake
 
-    # 该符号是由“组件 A”在链接时提供
+    # 该符号是由“组件 A”在链接时提供
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u reverse_ops")
 
 - ``-u`` 参数意味着链接器将始终在链接中包含此符号，而不管依赖项顺序如何。
@@ -1144,7 +1144,7 @@ CMake 在许多开源的 C/C++ 项目中广泛使用，用户可以在自己的�
 
 每当使用 ESP-IDF 构建系统时，CMake 变量 ``ESP_PLATFORM`` 都会被设置为 1。如果要在通用的 CMake 代码加入 IDF 特定的代码时，可以采用 ``if (ESP_PLATFORM)`` 的形式加以分隔。
 
-外部库中使用 ESP-IDF 组件 
+外部库中使用 ESP-IDF 组件
 --------------------------
 
 上述示例中假设的是外部库 ``foo`` （或 ``import_lib`` 示例中的 ``tinyxml`` 库）除了常见的 API 如 libc、libstdc++ 等外不需要使用其它 ESP-IDF API。如果外部库需要使用其它 ESP-IDF 组件提供的 API，则需要在外部 CMakeLists.txt 文件中通过添加对库目标 ``idf::<componentname>`` 的依赖关系。
@@ -1154,12 +1154,12 @@ CMake 在许多开源的 C/C++ 项目中广泛使用，用户可以在自己的�
   add_library(foo bar.c fizz.cpp buzz.cpp)
 
   if(ESP_PLATFORM)
-    # 在 ESP-IDF 中、 bar.c 需要包含 spi_flash 组件中的 esp_spi_flash.h 
+    # 在 ESP-IDF 中、 bar.c 需要包含 spi_flash 组件中的 esp_spi_flash.h
     target_link_libraries(foo PRIVATE idf::spi_flash)
   endif()
 
 
-组件中使用预建库 
+组件中使用预建库
 =================
 
 .. highlight:: cmake
@@ -1196,11 +1196,11 @@ ESP-IDF 提供了一个模板 CMake 项目，可以基于此轻松创建应用�
   # 导入提供 ESP-IDF CMake 构建系统 API 的 CMake 文件
   include($ENV{IDF_PATH}/tools/cmake/idf.cmake)
 
-  # 在构建中导入 ESP-IDF 组件，可以视作等同 add_subdirectory() 
+  # 在构建中导入 ESP-IDF 组件，可以视作等同 add_subdirectory()
   # 但为 ESP-IDF 构建增加额外的构建过程
   # 具体构建过程
   idf_build_process(esp32)
-  
+
   # 创建项目可执行文件
   # 使用其别名 idf::newlib 将其链接到 newlib 组件
   add_executable(${CMAKE_PROJECT_NAME}.elf main.c)
@@ -1246,7 +1246,7 @@ idf 构建命令
 
 .. code-block:: none
 
-  idf_build_process(target 
+  idf_build_process(target
                     [PROJECT_DIR project_dir]
                     [PROJECT_VER project_ver]
                     [PROJECT_NAME project_name]
@@ -1376,7 +1376,7 @@ idf 组件命令
 
   - EMBED_FILES - 嵌入组件的二进制文件
   - EMBED_TXTFILES - 嵌入组件的文本文件
-  
+
 .. _cmake-component-properties:
 
 idf 组件属性
@@ -1495,16 +1495,16 @@ ESP-IDF 构建系统的列表文件位于 :idf:`/tools/cmake` 中。实现构建
     :scale: 100%
     :caption: ESP-IDF Build System Process
     :align: center
-    
+
     blockdiag idf-build-system-process {
         初始化 -> 枚举
         枚举 -> 处理
         处理 -> 完成
     }
 
-初始化 
+初始化
 ^^^^^^^
-  
+
  该阶段为构建设置必要的参数。
 
     - 在将 ``idf.cmake`` 导入 ``project.cmake`` 后，将执行以下步骤：
@@ -1540,7 +1540,7 @@ ESP-IDF 构建系统的列表文件位于 :idf:`/tools/cmake` 中。实现构建
 完成
 ^^^^^^^
   该阶段是 ``idf_build_process()`` 剩余的步骤。
-  
+
   - 创建可执行文件并将其链接到组件库中。
   - 生成 project_description.json 等项目元数据文件并且显示所建项目等相关信息。
 
