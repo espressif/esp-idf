@@ -1189,7 +1189,7 @@ void vQueueDelete( QueueHandle_t xQueue ) PRIVILEGED_FUNCTION;
  * void vFunction( void *pvParameters )
  * {
  *  // Create a queue to hold one uint32_t value.  It is strongly
- *  // recommended \*not\* to use xQueueOverwriteFromISR() on queues that can
+ *  // recommended *not* to use xQueueOverwriteFromISR() on queues that can
  *  // contain more than one value, and doing so will trigger an assertion
  *  // if configASSERT() is defined.
  *  xQueue = xQueueCreate( 1, sizeof( uint32_t ) );

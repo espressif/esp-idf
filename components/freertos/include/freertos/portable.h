@@ -181,6 +181,13 @@ void vPortInitialiseBlocks( void ) PRIVILEGED_FUNCTION;
 size_t xPortGetFreeHeapSize( void ) PRIVILEGED_FUNCTION;
 size_t xPortGetMinimumEverFreeHeapSize( void ) PRIVILEGED_FUNCTION;
 
+#if( configSTACK_ALLOCATION_FROM_SEPARATE_HEAP == 1 )
+    void *pvPortMallocStack( size_t xSize ) PRIVILEGED_FUNCTION;
+    void vPortFreeStack( void *pv ) PRIVILEGED_FUNCTION;
+#else
+    #define pvPortMallocStack pvPortMalloc
+    #define vPortFreeStack vPortFree
+#endif
 #else  // configUSE_FREERTOS_PROVIDED_HEAP
 
 /*
