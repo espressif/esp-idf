@@ -1,6 +1,5 @@
 choice BTDM_CTRL_MODE
     prompt "Bluetooth controller mode (BR/EDR/BLE/DUALMODE)"
-    depends on BT_CTRL_ESP32
     help
         Specify the bluetooth controller mode (BR/EDR, BLE or dual mode).
 
@@ -152,7 +151,7 @@ config BTDM_CTRL_BR_EDR_MAX_SYNC_CONN_EFF
 
 choice BTDM_CTRL_PINNED_TO_CORE_CHOICE
     prompt "The cpu core which bluetooth controller run"
-    depends on BT_CTRL_ESP32 && !FREERTOS_UNICORE
+    depends on !FREERTOS_UNICORE
     help
         Specify the cpu core to run bluetooth controller.
         Can not specify no-affinity.
@@ -172,7 +171,6 @@ config BTDM_CTRL_PINNED_TO_CORE
 
 choice BTDM_CTRL_HCI_MODE_CHOICE
     prompt "HCI mode"
-    depends on BT_CTRL_ESP32
     help
         Speicify HCI mode as VHCI or UART(H4)
 
@@ -210,11 +208,8 @@ menu "HCI UART(H4) Options"
 endmenu
 
 menu "MODEM SLEEP Options"
-    visible if BT_CTRL_ESP32
-
     config BTDM_CTRL_MODEM_SLEEP
         bool "Bluetooth modem sleep"
-        depends on BT_CTRL_ESP32
         default y
         help
             Enable/disable bluetooth controller low power mode.
