@@ -1,11 +1,11 @@
-/* Hello World Example
+// NVSPage Host Test
+//
+// This example code is in the Public Domain (or CC0 licensed, at your option.)
+//
+// Unless required by applicable law or agreed to in writing, this
+// software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+// CONDITIONS OF ANY KIND, either express or implied.
 
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
 #include <stdio.h>
 #include "unity.h"
 #include "test_fixtures.hpp"
@@ -929,6 +929,6 @@ int main(int argc, char **argv)
     RUN_TEST(test_Page_calcEntries__active_wo_blob);
     RUN_TEST(test_Page_calcEntries__active_with_blob);
     RUN_TEST(test_Page_calcEntries__invalid);
-    UNITY_END();
-    return 0;
+    int failures = UNITY_END();
+    return failures;
 }
