@@ -13,22 +13,10 @@ menu "Bluetooth"
         default y if BT_ENABLED && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
         default n
 
-    menu "Bluetooth controller(ESP32 Dual Mode Bluetooth)"
-        depends on BT_ENABLED && IDF_TARGET_ESP32
+    menu "Bluetooth controller"
+        depends on BT_ENABLED
 
-        source "$IDF_PATH/components/bt/controller/esp32/Kconfig.in"
-    endmenu
-
-    menu "Bluetooth controller(ESP32C3 Bluetooth Low Energy)"
-        depends on BT_ENABLED && IDF_TARGET_ESP32C3
-
-        source "$IDF_PATH/components/bt/controller/esp32c3/Kconfig.in"
-    endmenu
-
-    menu "Bluetooth controller(ESP32S3 Bluetooth Low Energy)"
-        depends on BT_ENABLED && IDF_TARGET_ESP32S3
-
-        source "$IDF_PATH/components/bt/controller/esp32s3/Kconfig.in"
+        source "$IDF_PATH/components/bt/controller/$IDF_TARGET/Kconfig.in"
     endmenu
 
     choice BT_HOST
@@ -59,12 +47,12 @@ menu "Bluetooth"
     endchoice
 
     menu "Bluedroid Options"
-        visible if BT_BLUEDROID_ENABLED
+        depends on BT_BLUEDROID_ENABLED
 
         source "$IDF_PATH/components/bt/host/bluedroid/Kconfig.in"
     endmenu
     menu "NimBLE Options"
-        visible if BT_NIMBLE_ENABLED
+        depends on BT_NIMBLE_ENABLED
 
         source "$IDF_PATH/components/bt/host/nimble/Kconfig.in"
     endmenu
