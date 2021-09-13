@@ -25,10 +25,11 @@
 
 static const char* TAG = "pdm_rec_example";
 
-#define SPI_DMA_CHAN            (1)
-#define SD_MOUNT_POINT          "/sdcard"
-#define SAMPLE_SIZE       (CONFIG_EXAMPLE_BIT_SAMPLE * 1024)
-#define BYTE_RATE               1 * CONFIG_EXAMPLE_SAMPLE_RATE * (CONFIG_EXAMPLE_BIT_SAMPLE / 8)
+#define SPI_DMA_CHAN        (1)
+#define NUM_CHANNELS        (1) // For mono recording only!
+#define SD_MOUNT_POINT      "/sdcard"
+#define SAMPLE_SIZE         (CONFIG_EXAMPLE_BIT_SAMPLE * 1024)
+#define BYTE_RATE           (CONFIG_EXAMPLE_SAMPLE_RATE * (CONFIG_EXAMPLE_BIT_SAMPLE / 8)) * NUM_CHANNELS
 
 // When testing SD and SPI modes, keep in mind that once the card has been
 // initialized in SPI mode, it can not be reinitialized in SD mode without
@@ -49,16 +50,9 @@ void mount_sdcard(void)
     esp_vfs_fat_sdmmc_mount_config_t mount_config = {
         .format_if_mount_failed = true,
         .max_files = 5,
-        .allocation_unit_size = 16 * 1024
+        .allocation_unit_size = 8 * 1024
     };
     ESP_LOGI(TAG, "Initializing SD card");
-
-    // Use settings defined above to initialize SD card and mount FAT filesystem.
-    // Note: esp_vfs_fat_sdmmc/sdspi_mount is all-in-one convenience functions.
-    // Please check its source code and implement error recovery when developing
-    // production applications.
-
-    ESP_LOGI(TAG, "Using SPI peripheral");
 
     spi_bus_config_t bus_cfg = {
         .mosi_io_num = CONFIG_EXAMPLE_SPI_MOSI_GPIO,
@@ -84,8 +78,7 @@ void mount_sdcard(void)
 
     if (ret != ESP_OK) {
         if (ret == ESP_FAIL) {
-            ESP_LOGE(TAG, "Failed to mount filesystem. "
-                "If you want the card to be formatted, set the EXAMPLE_FORMAT_IF_MOUNT_FAILED menuconfig option.");
+            ESP_LOGE(TAG, "Failed to mount filesystem.");
         } else {
             ESP_LOGE(TAG, "Failed to initialize the card (%s). "
                 "Make sure SD card lines have pull-up resistors in place.", esp_err_to_name(ret));
@@ -173,7 +166,7 @@ void record_wav(uint32_t rec_time)
 void init_microphone(void)
 {
 
-    // Set the I2S configuration as PDM 16bits per sample
+    // Set the I2S configuration as PDM and 16bits per sample
     i2s_config_t i2s_config = {
         .mode = I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_PDM,
         .sample_rate = CONFIG_EXAMPLE_SAMPLE_RATE,
@@ -181,7 +174,7 @@ void init_microphone(void)
         .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
         .communication_format = I2S_COMM_FORMAT_STAND_I2S,
         .intr_alloc_flags = ESP_INTR_FLAG_LEVEL2,
-        .dma_buf_count = 16,
+        .dma_buf_count = 8,
         .dma_buf_len = 1024,
         .use_apll = 1,
     };
@@ -198,7 +191,7 @@ void init_microphone(void)
     // Call driver installation function before any I2S R/W operation.
     ESP_ERROR_CHECK( i2s_driver_install(CONFIG_EXAMPLE_I2S_CH, &i2s_config, 0, NULL) );
     ESP_ERROR_CHECK( i2s_set_pin(CONFIG_EXAMPLE_I2S_CH, &pin_config) );
-    ESP_ERROR_CHECK( i2s_set_clk(CONFIG_EXAMPLE_I2S_CH, (CONFIG_EXAMPLE_SAMPLE_RATE / 2), I2S_BITS_PER_SAMPLE_16BIT, I2S_CHANNEL_MONO) );
+    ESP_ERROR_CHECK( i2s_set_clk(CONFIG_EXAMPLE_I2S_CH, CONFIG_EXAMPLE_SAMPLE_RATE, I2S_BITS_PER_SAMPLE_16BIT, I2S_CHANNEL_MONO) );
 }
 
 void app_main(void)
