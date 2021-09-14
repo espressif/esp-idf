@@ -75,13 +75,11 @@ MemSegmentHeader = Struct(
 
 
 class EspCoreDumpVersion(object):
-    """Core dump version class
+    """Core dump version class, it contains all version-dependent params
     """
-    # This class contains all version-dependent params
+    # Chip IDs should be in sync with components/esp_hw_support/include/esp_chip_info.h
     ESP32 = 0
     ESP32S2 = 2
-    # TODO: The value for chip is different from components/esp_hw_support/include/esp_chip_info.h
-    # and this value comes from the hardware.
     ESP32S3 = 9
     XTENSA_CHIPS = [ESP32, ESP32S2, ESP32S3]
 
