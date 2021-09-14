@@ -215,7 +215,7 @@ static void IRAM_ATTR s_print_psram_info(opi_psram_mode_reg_t *reg_val)
                                                                                 reg_val->mr0.drive_str == 0x02 ? 4 : 8);
 }
 
-static void psram_set_cs_timing(void)
+static void IRAM_ATTR psram_set_cs_timing(void)
 {
     //SPI0/1 share the cs_hold / cs_setup, cd_hold_time / cd_setup_time, cs_hold_delay registers for PSRAM, so we only need to set SPI0 related registers here
     SET_PERI_REG_MASK(SPI_MEM_SPI_SMEM_AC_REG(0), SPI_MEM_SPI_SMEM_CS_HOLD_M | SPI_MEM_SPI_SMEM_CS_SETUP_M);

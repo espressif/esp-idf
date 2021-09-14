@@ -290,7 +290,7 @@ static void IRAM_ATTR psram_enable_qio_mode(int spi_num)
     false);                           /* whether is program/erase operation */
 }
 
-static void psram_set_cs_timing(void)
+static void IRAM_ATTR psram_set_cs_timing(void)
 {
     //SPI0/1 share the cs_hold / cs_setup, cd_hold_time / cd_setup_time registers for PSRAM, so we only need to set SPI0 related registers here
     SET_PERI_REG_BITS(SPI_MEM_SPI_SMEM_AC_REG(0), SPI_MEM_SPI_SMEM_CS_HOLD_TIME_V, 0, SPI_MEM_SPI_SMEM_CS_HOLD_TIME_S);
