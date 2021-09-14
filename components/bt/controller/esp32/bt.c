@@ -100,7 +100,7 @@ do{\
 
 /* SPIRAM Configuration */
 #if CONFIG_SPIRAM_USE_MALLOC
-#define BTDM_MAX_QUEUE_NUM       (5)
+#define BTDM_MAX_QUEUE_NUM       (6)
 #endif
 
 /* Types definition
