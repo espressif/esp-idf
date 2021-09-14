@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 
-// md5_digest_table 2b4b79060b04576a3d189a54f42dd462
+// md5_digest_table 0f3dc076304dac1cb56cea03c223d26d
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -117,9 +117,26 @@ extern const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_D7[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION[];
 extern const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[];
 extern const esp_efuse_desc_t* ESP_EFUSE_BLOCK1_VERSION[];
-extern const esp_efuse_desc_t* ESP_EFUSE_SYS_DATA_PART0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_CAL_VOL_ATTEN3[];
 extern const esp_efuse_desc_t* ESP_EFUSE_OPTIONAL_UNIQUE_ID[];
 extern const esp_efuse_desc_t* ESP_EFUSE_BLOCK2_VERSION[];
+extern const esp_efuse_desc_t* ESP_EFUSE_TEMP_CALIB[];
+extern const esp_efuse_desc_t* ESP_EFUSE_OCODE[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN2[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN3[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_INIT_CODE_ATTEN0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_INIT_CODE_ATTEN1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_INIT_CODE_ATTEN2[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_INIT_CODE_ATTEN3[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN2[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN3[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_CAL_VOL_ATTEN0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_CAL_VOL_ATTEN1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_CAL_VOL_ATTEN2[];
 extern const esp_efuse_desc_t* ESP_EFUSE_USER_DATA[];
 extern const esp_efuse_desc_t* ESP_EFUSE_USER_DATA_MAC_CUSTOM[];
 extern const esp_efuse_desc_t* ESP_EFUSE_KEY0[];

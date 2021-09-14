@@ -437,7 +437,7 @@ static uint16_t s_adc_cali_param[ADC_NUM_MAX][ADC_ATTEN_MAX] = { {0}, {0} };
 //  1. Semaphore when reading efuse
 //  2. Spinlock when actually doing ADC calibration
 //This function shoudn't be called inside critical section or ISR
-uint32_t adc_get_calibration_offset(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten, bool no_cal)
+uint32_t adc_get_calibration_offset(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten)
 {
 #ifdef CONFIG_IDF_ENV_FPGA
     return 0;
@@ -446,10 +446,6 @@ uint32_t adc_get_calibration_offset(adc_ll_num_t adc_n, adc_channel_t channel, a
     if (s_adc_cali_param[adc_n][atten]) {
         ESP_LOGV(ADC_TAG, "Use calibrated val ADC%d atten=%d: %04X", adc_n, atten, s_adc_cali_param[adc_n][atten]);
         return (uint32_t)s_adc_cali_param[adc_n][atten];
-    }
-
-    if (no_cal) {
-        return 0;   //indicating failure
     }
 
     uint32_t dout = 0;
@@ -474,7 +470,7 @@ uint32_t adc_get_calibration_offset(adc_ll_num_t adc_n, adc_channel_t channel, a
 esp_err_t adc_cal_offset(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten)
 {
     adc_hal_calibration_init(adc_n);
-    uint32_t cal_val = adc_get_calibration_offset(adc_n, channel, atten, false);
+    uint32_t cal_val = adc_get_calibration_offset(adc_n, channel, atten);
     ADC_ENTER_CRITICAL();
     adc_hal_set_calibration_param(adc_n, cal_val);
     ADC_EXIT_CRITICAL();

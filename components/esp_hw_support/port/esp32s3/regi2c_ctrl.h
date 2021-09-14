@@ -9,6 +9,12 @@
 #include <stdint.h>
 #include "regi2c_bbpll.h"
 #include "regi2c_dig_reg.h"
+#include "regi2c_lp_bias.h"
+#include "regi2c_saradc.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Analog function control register */
 #define I2C_MST_ANA_CONF0_REG  0x6000E040
@@ -73,3 +79,8 @@ void regi2c_ctrl_write_reg_mask(uint8_t block, uint8_t host_id, uint8_t reg_add,
 
 #define REGI2C_READ(block, reg_add) \
       regi2c_ctrl_read_reg(block, block##_HOSTID,  reg_add)
+
+
+#ifdef __cplusplus
+}
+#endif
