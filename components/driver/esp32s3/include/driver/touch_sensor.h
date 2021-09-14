@@ -293,7 +293,7 @@ esp_err_t touch_pad_reset_benchmark(touch_pad_t touch_num);
  * @return
  *     - ESP_OK Success
  */
-esp_err_t touch_pad_filter_set_config(touch_filter_config_t *filter_info);
+esp_err_t touch_pad_filter_set_config(const touch_filter_config_t *filter_info);
 
 /**
  * @brief get parameter of touch sensor filter and detection algorithm.
@@ -331,7 +331,7 @@ esp_err_t touch_pad_filter_disable(void);
  * @return
  *     - ESP_OK Success
  */
-esp_err_t touch_pad_denoise_set_config(touch_pad_denoise_t *denoise);
+esp_err_t touch_pad_denoise_set_config(const touch_pad_denoise_t *denoise);
 
 /**
  * @brief get parameter of denoise pad (TOUCH_PAD_NUM0).
@@ -380,7 +380,7 @@ esp_err_t touch_pad_denoise_read_data(uint32_t *data);
  * @return
  *     - ESP_OK Success
  */
-esp_err_t touch_pad_waterproof_set_config(touch_pad_waterproof_t *waterproof);
+esp_err_t touch_pad_waterproof_set_config(const touch_pad_waterproof_t *waterproof);
 
 /**
  * @brief get parameter of waterproof function.

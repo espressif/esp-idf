@@ -9,13 +9,13 @@ Introduction
 
 A touch sensor system is built on a substrate which carries electrodes and relevant connections under a protective flat surface. When a user touches the surface, the capacitance variation is used to evaluate if the touch was valid.
 
-.. only:: esp32
+.. only:: SOC_TOUCH_VERSION_1
 
-    Touch sensor on {IDF_TARGET_NAME} is version 1 which supports up to 10 capacitive touch pads / GPIOs.
+    Touch sensor on {IDF_TARGET_NAME} can support up to 10 capacitive touch pads / GPIOs.
 
-.. only:: esp32s2 or esp32s3
+.. only:: SOC_TOUCH_VERSION_2
 
-    Touch sensor on {IDF_TARGET_NAME} is version 2 which supports up to 14 capacitive touch pads / GPIOs.
+    Touch sensor on {IDF_TARGET_NAME} can support up to 14 capacitive touch pads / GPIOs.
 
 The sensing pads can be arranged in different combinations (e.g., matrix, slider), so that a larger area or more points can be detected. The touch pad sensing process is under the control of a hardware-implemented finite-state machine (FSM) which is initiated by software or a dedicated hardware timer.
 
@@ -23,7 +23,7 @@ For design, operation, and control registers of a touch sensor, see *{IDF_TARGET
 
 In-depth design details of touch sensors and firmware development guidelines for {IDF_TARGET_NAME} are available in `Touch Sensor Application Note <https://github.com/espressif/esp-iot-solution/blob/release/v1.0/documents/touch_pad_solution/touch_sensor_design_en.md>`_.
 
-.. only:: esp32
+.. only:: SOC_TOUCH_VERSION_1
 
     For more information about testing touch sensors in various configurations, please check the `Guide for ESP32-Sense-Kit <https://github.com/espressif/esp-dev-kits/blob/master/esp32-sense-kit/docs/esp32_sense_kit_guide_en.md>`_.
 
@@ -61,7 +61,7 @@ Use the function :cpp:func:`touch_pad_set_fsm_mode` to select if touch pad measu
 Touch State Measurements
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. only:: esp32
+.. only:: SOC_TOUCH_VERSION_1
 
     The following two functions come in handy to read raw or filtered measurements from the sensor:
 
@@ -74,7 +74,7 @@ Touch State Measurements
 
         Before using :cpp:func:`touch_pad_read_filtered`, you need to initialize and configure the filter by calling specific filter functions described in Section `Filtering of Measurements`_.
 
-.. only:: esp32s2 or esp32s3
+.. only:: SOC_TOUCH_VERSION_2
 
     The following function come in handy to read raw measurements from the sensor:
 
@@ -117,7 +117,7 @@ All functions are provided in pairs to *set* a specific parameter and to *get* t
 
 Filtering of Measurements
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-.. only:: esp32
+.. only:: SOC_TOUCH_VERSION_1
 
     If measurements are noisy, you can filter them with provided API functions. Before using the filter, please start it by calling :cpp:func:`touch_pad_filter_start`.
 
@@ -125,7 +125,7 @@ Filtering of Measurements
 
     You can stop the filter with :cpp:func:`touch_pad_filter_stop`. If not required anymore, the filter can be deleted by invoking :cpp:func:`touch_pad_filter_delete`.
 
-.. only:: esp32s2 or esp32s3
+.. only:: SOC_TOUCH_VERSION_2
 
     If measurements are noisy, you can filter them with provided API functions. The {IDF_TARGET_NAME}'s touch functionality provide two sets of APIs for doing this.
 
@@ -150,7 +150,7 @@ Before enabling an interrupt on a touch detection, you should establish a touch 
 
 Once a detection threshold is established, it can be set during initialization with :cpp:func:`touch_pad_config` or at the runtime with :cpp:func:`touch_pad_set_thresh`.
 
-.. only:: esp32
+.. only:: SOC_TOUCH_VERSION_1
 
     In the next step, configure how interrupts are triggered. They can be triggered below or above the threshold, which is set with the function :cpp:func:`touch_pad_set_trigger_mode`.
 
@@ -161,13 +161,13 @@ Finally, configure and manage interrupt calls using the following functions:
 
 When interrupts are operational, you can obtain the information from which particular pad an interrupt came by invoking :cpp:func:`touch_pad_get_status` and clear the pad status with :cpp:func:`touch_pad_clear_status`.
 
-.. only:: esp32
+.. only:: SOC_TOUCH_VERSION_1
 
     .. note::
 
         Interrupts on touch detection operate on raw / unfiltered measurements checked against user established threshold and are implemented in hardware. Enabling the software filtering API (see :ref:`touch_pad-api-filtering-of-measurements`) does not affect this process.
 
-.. only:: esp32
+.. only:: SOC_TOUCH_VERSION_1
 
     Wakeup from Sleep Mode
     ^^^^^^^^^^^^^^^^^^^^^^
@@ -184,8 +184,8 @@ When interrupts are operational, you can obtain the information from which parti
 Application Examples
 --------------------
 
-    - Touch sensor read example: :example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}/touch_pad_read`.
-    - Touch sensor interrupt example: :example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}/touch_pad_interrupt`.
+- Touch sensor read example: :example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}/touch_pad_read`.
+- Touch sensor interrupt example: :example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}/touch_pad_interrupt`.
 
 .. _touch_pad-api-reference:
 

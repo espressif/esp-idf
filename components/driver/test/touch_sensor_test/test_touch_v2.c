@@ -5,7 +5,7 @@
  */
 
 /*
- Tests for the touch sensor device driver for ESP32-S2 only
+ Tests for the touch sensor device driver for ESP32-S2 & ESP32-S3
 */
 #include "sdkconfig.h"
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
@@ -1157,25 +1157,32 @@ esp_err_t test_touch_filter_parameter_reset(int reset_cnt)
     }
     printf_touch_hw_read("[raw ] cnt:");
     printf_touch_benchmark_read("[base] cnt:");
+
+    /*The benchmark on S2 will track the raw data in real time while the channel is not active.
+      But on S3, it track the smooth data. And due to the latency of the smooth data,
+      the benchmark will be updated to the last smooth data. Thus we have to read smooth data here
+      but read benchmark after one measurement step. */
 #if CONFIG_IDF_TARGET_ESP32S3
     uint32_t smooth_data[TEST_TOUCH_CHANNEL] = {0};
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
         TEST_ESP_OK( touch_pad_filter_read_smooth(touch_list[i], &(smooth_data[i])) );
     }
 #endif
+    /* Run 1 time measurement, the benchmark will update after finishing the channel scan*/
     test_touch_measure_step(1);
     printf_touch_hw_read("[raw ] cnt+1:");
     printf_touch_smooth_read("[smooth]cnt+1:");
     printf_touch_benchmark_read("[base] cnt+1:");
-    /* ESP32S2 reset benchmark to smooth data */
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
         TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &base_value) );
 #if CONFIG_IDF_TARGET_ESP32S2
-        /* In ESP32S3, reset to raw data. */
+        /* In ESP32S3, benchmark will update to the raw data. */
         TEST_ESP_OK( touch_pad_read_raw_data(touch_list[i], &touch_value) );
+        /* Here we compare the benchmark with raw data directly */
         TEST_ASSERT_EQUAL_UINT32(base_value, touch_value);
 #elif CONFIG_IDF_TARGET_ESP32S3
-        /* In ESP32S3, reset to smooth data, smooth data filtered from raw data by IIR. */
+        /* In ESP32S3, benchmark will update to the smooth data. Smooth data is filtered from raw data by IIR.
+           Here we compare the benchmark with the previous smooth data*/
         TEST_ASSERT_EQUAL_UINT32(base_value, smooth_data[i]);
 #endif
     }

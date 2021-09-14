@@ -197,6 +197,7 @@
 #define SOC_SPIRAM_SUPPORTED            1
 
 /*-------------------------- SYS TIMER CAPS ----------------------------------*/
+#define SOC_TOUCH_VERSION_2                (1)  // Hardware version of touch sensor
 #define SOC_SYSTIMER_COUNTER_NUM           (2)  // Number of counter units
 #define SOC_SYSTIMER_ALARM_NUM             (3)  // Number of alarm units
 #define SOC_SYSTIMER_BIT_WIDTH_LO          (32) // Bit width of systimer low part
