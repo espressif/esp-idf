@@ -28,11 +28,10 @@
 #include "esp_rom_crc.h"
 #include "esp_rom_sys.h"
 
-#if CONFIG_IDF_TARGET_ESP32C3
 #include "soc/rtc_cntl_reg.h"
+#if CONFIG_IDF_TARGET_ESP32C3
 #include "soc/syscon_reg.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
-#include "soc/rtc_cntl_reg.h"
 #include "soc/syscon_reg.h"
 #endif
 
@@ -43,6 +42,11 @@ extern wifi_mac_time_update_cb_t s_wifi_mac_time_update_cb;
 static const char* TAG = "phy_init";
 
 static _lock_t s_phy_access_lock;
+
+static DRAM_ATTR struct {
+    int     count;  /* power on count of wifi and bt power domain */
+    _lock_t lock;
+} s_wifi_bt_pd_controller = { .count = 0 };
 
 /* Indicate PHY is calibrated or not */
 static bool s_is_phy_calibrated = false;
@@ -273,6 +277,30 @@ void esp_phy_disable(void)
     _lock_release(&s_phy_access_lock);
 }
 
+void IRAM_ATTR esp_wifi_bt_power_domain_on(void)
+{
+    _lock_acquire(&s_wifi_bt_pd_controller.lock);
+    if (s_wifi_bt_pd_controller.count++ == 0) {
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3
+        SET_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_BB_RST | SYSTEM_FE_RST);
+        CLEAR_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_BB_RST | SYSTEM_FE_RST);
+#endif
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_ISO);
+    }
+    _lock_release(&s_wifi_bt_pd_controller.lock);
+}
+
+void esp_wifi_bt_power_domain_off(void)
+{
+    _lock_acquire(&s_wifi_bt_pd_controller.lock);
+    if (--s_wifi_bt_pd_controller.count == 0) {
+        SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_ISO);
+        SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
+    }
+    _lock_release(&s_wifi_bt_pd_controller.lock);
+}
+
 #if CONFIG_MAC_BB_PD
 void esp_mac_bb_pd_mem_init(void)
 {
@@ -287,12 +315,12 @@ void esp_mac_bb_pd_mem_init(void)
 
 IRAM_ATTR void esp_mac_bb_power_up(void)
 {
-    if (s_mac_bb_pd_mem != NULL && (!s_mac_bb_pu)) {
+    if (s_mac_bb_pd_mem == NULL) {
+        return;
+    }
+    esp_wifi_bt_power_domain_on();
+    if (!s_mac_bb_pu) {
         esp_phy_common_clock_enable();
-        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
-        SET_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_BB_RST | SYSTEM_FE_RST);
-        CLEAR_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_BB_RST | SYSTEM_FE_RST);
-        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_ISO);
         phy_freq_mem_backup(false, s_mac_bb_pd_mem);
         esp_phy_common_clock_disable();
         s_mac_bb_pu = true;
@@ -301,14 +329,16 @@ IRAM_ATTR void esp_mac_bb_power_up(void)
 
 IRAM_ATTR void esp_mac_bb_power_down(void)
 {
-    if (s_mac_bb_pd_mem != NULL && s_mac_bb_pu) {
+    if (s_mac_bb_pd_mem == NULL) {
+        return;
+    }
+    if (s_mac_bb_pu) {
         esp_phy_common_clock_enable();
         phy_freq_mem_backup(true, s_mac_bb_pd_mem);
-        SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_ISO);
-        SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
         esp_phy_common_clock_disable();
         s_mac_bb_pu = false;
     }
+    esp_wifi_bt_power_domain_off();
 }
 #endif
 
@@ -905,3 +935,6 @@ esp_err_t esp_phy_update_country_info(const char *country)
 #endif
     return ESP_OK;
 }
+
+void esp_wifi_power_domain_on(void) __attribute__((alias("esp_wifi_bt_power_domain_on")));
+void esp_wifi_power_domain_off(void) __attribute__((alias("esp_wifi_bt_power_domain_off")));
