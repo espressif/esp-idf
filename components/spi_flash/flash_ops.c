@@ -450,6 +450,43 @@ out:
 }
 #endif // CONFIG_SPI_FLASH_USE_LEGACY_IMPL
 
+#ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
+extern void spi_dummy_len_fix(uint8_t spi, uint8_t freqdiv);
+extern uint8_t g_rom_spiflash_dummy_len_plus[];
+void IRAM_ATTR flash_rom_init(void)
+{
+    uint32_t freqdiv = 0;
+    uint32_t dummy_bit = 0;
+
+#if CONFIG_ESPTOOLPY_FLASHFREQ_80M
+    dummy_bit = ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_80M;
+#elif CONFIG_ESPTOOLPY_FLASHFREQ_40M
+    dummy_bit = ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_40M;
+#elif CONFIG_ESPTOOLPY_FLASHFREQ_26M
+    dummy_bit = ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_26M;
+#elif CONFIG_ESPTOOLPY_FLASHFREQ_20M
+    dummy_bit = ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_20M;
+#endif
+
+#if CONFIG_ESPTOOLPY_FLASHFREQ_80M
+    freqdiv = 1;
+#elif CONFIG_ESPTOOLPY_FLASHFREQ_40M
+    freqdiv = 2;
+#elif CONFIG_ESPTOOLPY_FLASHFREQ_26M
+    freqdiv = 3;
+#elif CONFIG_ESPTOOLPY_FLASHFREQ_20M
+    freqdiv = 4;
+#endif
+
+    g_rom_spiflash_dummy_len_plus[1] = dummy_bit;
+    esp_rom_spiflash_config_clk(freqdiv, 1);
+}
+#else
+void IRAM_ATTR flash_rom_init(void)
+{
+    return;
+}
+#endif // !CONFIG_SPI_FLASH_USE_LEGACY_IMPL
 esp_err_t IRAM_ATTR spi_flash_write_encrypted(size_t dest_addr, const void *src, size_t size)
 {
     CHECK_WRITE_ADDRESS(dest_addr, size);
@@ -498,6 +535,7 @@ esp_err_t IRAM_ATTR spi_flash_write_encrypted(size_t dest_addr, const void *src,
             }
 
             spi_flash_guard_start();
+            flash_rom_init();
             rc = esp_rom_spiflash_write_encrypted(row_addr, (uint32_t *)encrypt_buf, 32);
             spi_flash_guard_end();
             if (rc != ESP_ROM_SPIFLASH_RESULT_OK) {
