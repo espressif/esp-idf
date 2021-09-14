@@ -68,7 +68,7 @@
     BLOCK2_VERSION (BLOCK2)                  Version of BLOCK2                                  = With calibration R/W (0b001)
 
     Security fuses:
-    SOFT_DIS_JTAG (BLOCK0)                   Software disables JTAG. When software disabled, JT = False R/W (0b0)
+    SOFT_DIS_JTAG (BLOCK0)                   Software disables JTAG. When software disabled, JT = False R/W (0b000)
                                             AG can be activated temporarily by HMAC peripheral
     HARD_DIS_JTAG (BLOCK0)                   Hardware disables JTAG permanently                 = False R/W (0b0)
     DIS_DOWNLOAD_MANUAL_ENCRYPT (BLOCK0)     Disables flash encryption when in download boot mo = False R/W (0b0)

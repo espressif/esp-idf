@@ -211,69 +211,41 @@ test_esp_err_to_name_on_host:
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.4.8 ./gen_esp_err_to_name.py
     - git diff --exit-code -- ../components/esp_common/src/esp_err_to_name.c || { echo 'Differences found between running under Python 2 and 3.'; exit 1; }
 
-test_esp32_efuse_table_on_host:
+.test_efuse_table_on_host_template:
   extends: .host_test_template
+  variables:
+    IDF_TARGET: "esp32"
   artifacts:
     when: on_failure
     paths:
-      - components/efuse/esp32/esp_efuse_table.c
+      - components/efuse/${IDF_TARGET}/esp_efuse_table.c
     expire_in: 1 week
   script:
     - cd ${IDF_PATH}/components/efuse/
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 2.7.15 ./efuse_table_gen.py ${IDF_PATH}/components/efuse/esp32/esp_efuse_table.csv
-    - git diff --exit-code -- esp32/esp_efuse_table.c || { echo 'Differences found for esp32 target. Please run make efuse_common_table or idf.py efuse_common_table and commit the changes.'; exit 1; }
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.4.8 ./efuse_table_gen.py ${IDF_PATH}/components/efuse/esp32/esp_efuse_table.csv
-    - git diff --exit-code -- esp32/esp_efuse_table.c || { echo 'Differences found between running under Python 2 and 3.'; exit 1; }
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 2.7.15 ./efuse_table_gen.py -t "${IDF_TARGET}" ${IDF_PATH}/components/efuse/${IDF_TARGET}/esp_efuse_table.csv
+    - git diff --exit-code -- ${IDF_TARGET}/esp_efuse_table.c || { echo 'Differences found for ${IDF_TARGET} target. Please run make efuse_common_table or idf.py efuse_common_table and commit the changes.'; exit 1; }
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.4.8 ./efuse_table_gen.py -t "${IDF_TARGET}" ${IDF_PATH}/components/efuse/${IDF_TARGET}/esp_efuse_table.csv
+    - git diff --exit-code -- ${IDF_TARGET}/esp_efuse_table.c || { echo 'Differences found between running under Python 2 and 3.'; exit 1; }
     - cd ${IDF_PATH}/components/efuse/test_efuse_host
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./efuse_tests.py
 
-test_esp32s2_efuse_table_on_host:
-  extends: .host_test_template
-  artifacts:
-    when: on_failure
-    paths:
-      - components/efuse/esp32s2/esp_efuse_table.c
-    expire_in: 1 week
-  script:
-    - cd ${IDF_PATH}/components/efuse/
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 2.7.15 ./efuse_table_gen.py -t "esp32s2" ${IDF_PATH}/components/efuse/esp32s2/esp_efuse_table.csv
-    - git diff --exit-code -- esp32s2/esp_efuse_table.c || { echo 'Differences found for esp32s2 target. Please run make efuse_common_table or idf.py efuse_common_table and commit the changes.'; exit 1; }
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.4.8 ./efuse_table_gen.py -t "esp32s2" ${IDF_PATH}/components/efuse/esp32s2/esp_efuse_table.csv
-    - git diff --exit-code -- esp32s2/esp_efuse_table.c || { echo 'Differences found between running under Python 2 and 3.'; exit 1; }
-    - cd ${IDF_PATH}/components/efuse/test_efuse_host
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./efuse_tests.py
+test_efuse_table_on_host_esp32:
+  extends: .test_efuse_table_on_host_template
 
-test_esp32s3_efuse_table_on_host:
-  extends: .host_test_template
-  artifacts:
-    when: on_failure
-    paths:
-      - components/efuse/esp32s3/esp_efuse_table.c
-    expire_in: 1 week
-  script:
-    - cd ${IDF_PATH}/components/efuse/
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 2.7.15 ./efuse_table_gen.py -t "esp32s3" ${IDF_PATH}/components/efuse/esp32s3/esp_efuse_table.csv
-    - git diff --exit-code -- esp32s3/esp_efuse_table.c || { echo 'Differences found for esp32s3 target. Please run make efuse_common_table or idf.py efuse_common_table and commit the changes.'; exit 1; }
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.4.8 ./efuse_table_gen.py -t "esp32s3" ${IDF_PATH}/components/efuse/esp32s3/esp_efuse_table.csv
-    - git diff --exit-code -- esp32s3/esp_efuse_table.c || { echo 'Differences found between running under Python 2 and 3.'; exit 1; }
-    - cd ${IDF_PATH}/components/efuse/test_efuse_host
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./efuse_tests.py
+test_efuse_table_on_host_esp32s2:
+  extends: .test_efuse_table_on_host_template
+  variables:
+    IDF_TARGET: esp32s2
 
-test_esp32c3_efuse_table_on_host:
-  extends: .host_test_template
-  artifacts:
-    when: on_failure
-    paths:
-      - components/efuse/esp32c3/esp_efuse_table.c
-    expire_in: 1 week
-  script:
-    - cd ${IDF_PATH}/components/efuse/
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 2.7.15 ./efuse_table_gen.py -t "esp32c3" ${IDF_PATH}/components/efuse/esp32c3/esp_efuse_table.csv
-    - git diff --exit-code -- esp32c3/esp_efuse_table.c || { echo 'Differences found for esp32c3 target. Please run make efuse_common_table or idf.py efuse_common_table and commit the changes.'; exit 1; }
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.4.8 ./efuse_table_gen.py -t "esp32c3" ${IDF_PATH}/components/efuse/esp32c3/esp_efuse_table.csv
-    - git diff --exit-code -- esp32c3/esp_efuse_table.c || { echo 'Differences found between running under Python 2 and 3.'; exit 1; }
-    - cd ${IDF_PATH}/components/efuse/test_efuse_host
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./efuse_tests.py
+test_efuse_table_on_host_esp32s3:
+  extends: .test_efuse_table_on_host_template
+  variables:
+    IDF_TARGET: esp32s3
+
+test_efuse_table_on_host_esp32c3:
+  extends: .test_efuse_table_on_host_template
+  variables:
+    IDF_TARGET: esp32c3
 
 test_espcoredump:
   extends: .host_test_template

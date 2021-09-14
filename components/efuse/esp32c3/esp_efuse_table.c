@@ -17,7 +17,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 61baa79d296df996c838bc2adc1837e5
+// md5_digest_table 7e5a29e190c8e3a63e1a85a40b50c355
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -192,7 +192,7 @@ static const esp_efuse_desc_t JTAG_SEL_ENABLE[] = {
 };
 
 static const esp_efuse_desc_t SOFT_DIS_JTAG[] = {
-    {EFUSE_BLK0, 48, 2}, 	 // Set these bits to disable JTAG in the soft way (odd number 1 means disable). JTAG can be enabled in HMAC module.,
+    {EFUSE_BLK0, 48, 3}, 	 // Set these bits to disable JTAG in the soft way (odd number 1 means disable). JTAG can be enabled in HMAC module.,
 };
 
 static const esp_efuse_desc_t DIS_PAD_JTAG[] = {
