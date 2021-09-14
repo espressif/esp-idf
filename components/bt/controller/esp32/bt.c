@@ -488,6 +488,18 @@ static void btdm_slp_tmr_callback(void *arg);
 #endif /* #ifdef CONFIG_PM_ENABLE */
 
 
+static inline void esp_bt_power_domain_on(void)
+{
+    // Bluetooth module power up
+    esp_wifi_bt_power_domain_on();
+}
+
+static inline void esp_bt_power_domain_off(void)
+{
+    // Bluetooth module power down
+    esp_wifi_bt_power_domain_off();
+}
+
 static inline void btdm_check_and_init_bb(void)
 {
     /* init BT-BB if PHY/RF has been switched off since last BT-BB init */
@@ -1621,6 +1633,8 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         goto error;
     }
 
+    esp_bt_power_domain_on();
+
     btdm_controller_mem_init();
 
     periph_module_enable(PERIPH_BT_MODULE);
@@ -1773,6 +1787,8 @@ esp_err_t esp_bt_controller_deinit(void)
 
     btdm_lpcycle_us = 0;
     btdm_controller_set_sleep_mode(BTDM_MODEM_SLEEP_MODE_NONE);
+
+    esp_bt_power_domain_off();
 
     return ESP_OK;
 }

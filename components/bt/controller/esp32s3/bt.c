@@ -407,10 +407,6 @@ static DRAM_ATTR esp_pm_lock_handle_t s_light_sleep_pm_lock;
 void IRAM_ATTR btdm_hw_mac_power_down_wrapper(void)
 {
 #if CONFIG_MAC_BB_PD
-    // le module power down
-    SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_ISO);
-    SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PD);
-
     esp_mac_bb_power_down();
 #endif
 }
@@ -418,10 +414,6 @@ void IRAM_ATTR btdm_hw_mac_power_down_wrapper(void)
 void IRAM_ATTR btdm_hw_mac_power_up_wrapper(void)
 {
 #if CONFIG_MAC_BB_PD
-    // le module power up
-    CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PD);
-    CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_ISO);
-
     esp_mac_bb_power_up();
 #endif
 }
@@ -431,6 +423,18 @@ void IRAM_ATTR btdm_backup_dma_copy_wrapper(uint32_t reg, uint32_t mem_addr, uin
 #if CONFIG_MAC_BB_PD
     ets_backup_dma_copy(reg, mem_addr, num, to_mem);
 #endif
+}
+
+static inline void esp_bt_power_domain_on(void)
+{
+    // Bluetooth module power up
+    esp_wifi_bt_power_domain_on();
+}
+
+static inline void esp_bt_power_domain_off(void)
+{
+    // Bluetooth module power down
+    esp_wifi_bt_power_domain_off();
 }
 
 static void interrupt_set_wrapper(int32_t cpu_no, int32_t intr_source, int32_t intr_num, int32_t intr_prio)
@@ -936,6 +940,8 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     // overwrite some parameters
     cfg->magic = ESP_BT_CTRL_CONFIG_MAGIC_VAL;
 
+    esp_bt_power_domain_on();
+
     btdm_controller_mem_init();
 
 #if CONFIG_MAC_BB_PD
@@ -1142,6 +1148,8 @@ error:
 
     esp_unregister_mac_bb_pu_callback(btdm_mac_bb_power_up_cb);
 #endif
+
+    esp_bt_power_domain_off();
 
     if (osi_funcs_p != NULL) {
         free(osi_funcs_p);
