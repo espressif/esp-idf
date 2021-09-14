@@ -505,6 +505,16 @@ bool esp_wifi_internal_is_tsf_active(void);
 void esp_wifi_internal_update_light_sleep_wake_ahead_time(uint32_t);
 #endif
 
+/**
+ * @brief Wifi power domain power on
+ */
+void esp_wifi_power_domain_on(void);
+
+/**
+ * @brief Wifi power domain power off
+ */
+void esp_wifi_power_domain_off(void);
+
 #if CONFIG_MAC_BB_PD
 /**
   * @brief     Enable or disable powering down MAC and baseband when Wi-Fi is sleeping.
