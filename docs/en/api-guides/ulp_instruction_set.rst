@@ -3,7 +3,7 @@ ESP32 ULP coprocessor instruction set
 
 This document provides details about the instructions used by {IDF_TARGET_NAME} ULP coprocessor assembler.
 
-ULP coprocessor has 4 16-bit general purpose registers, labeled R0, R1, R2, R3. It also has an 8-bit counter register (stage_cnt) which can be used to implement loops. Stage count regiter is accessed using special instructions.
+ULP coprocessor has 4 16-bit general purpose registers, labeled R0, R1, R2, R3. It also has an 8-bit counter register (stage_cnt) which can be used to implement loops. Stage count register is accessed using special instructions.
 
 ULP coprocessor can access 8k bytes of RTC_SLOW_MEM memory region. Memory is addressed in 32-bit word units. It can also access peripheral registers in RTC_CNTL, RTC_IO, and SENS peripherals.
 
@@ -73,7 +73,7 @@ ULP coprocessor is clocked from RTC_FAST_CLK, which is normally derived from the
     uint32_t rtc_8md256_period = rtc_clk_cal(RTC_CAL_8MD256, 100);
     uint32_t rtc_fast_freq_hz = 1000000ULL * (1 << RTC_CLK_CAL_FRACT) * 256 / rtc_8md256_period;
 
-ULP coprocessor needs certain number of clock cycles to fetch each instuction, plus certain number of cycles to execute it, depending on the instruction. See description of each instruction below for details on the execution time.
+ULP coprocessor needs certain number of clock cycles to fetch each instruction, plus certain number of cycles to execute it, depending on the instruction. See description of each instruction below for details on the execution time.
 
 Instruction fetch time is:
 
@@ -639,7 +639,7 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
 
   1:        STAGE_DEC      10        // stage_cnt -= 10;
 
-  2:        // Down counting loop exaple
+  2:        // Down counting loop example
             STAGE_RST                // set stage_cnt to 0
             STAGE_INC  16            // increment stage_cnt to 16
     label:  STAGE_DEC  1             // stage_cnt--;
@@ -786,7 +786,7 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
 **Operands**
   - *Rdst* – Destination Register R[0..3], result will be stored to this register
   - *Sar_sel* – Select ADC: 0 = SARADC1, 1 = SARADC2
-  - *Mux*  -  selected PAD, SARADC Pad[Mux+1] is enabled
+  - *Mux*  - Enable ADC channel. Channel number is [Mux-1]. If the user passes Mux value 1, then ADC channel 0 gets used.
 
 **Cycles**
   ``23 + max(1, SAR_AMP_WAIT1) + max(1, SAR_AMP_WAIT2) + max(1, SAR_AMP_WAIT3) + SARx_SAMPLE_CYCLE + SARx_SAMPLE_BIT`` cycles to execute, 4 cycles to fetch next instruction
@@ -796,7 +796,7 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
 
 **Examples**::
 
-   1:        ADC      R1, 0, 1      // Measure value using ADC1 pad 2 and store result into R1
+   1:        ADC      R1, 0, 1      // Measure value using ADC1 channel 0 and store result into R1
 
 **I2C_RD** - read single byte from I2C slave
 ----------------------------------------------
