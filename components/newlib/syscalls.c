@@ -17,6 +17,7 @@
 #include <stdarg.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <string.h>
 #include <errno.h>
 #include <reent.h>
 #include <sys/fcntl.h>
@@ -64,6 +65,18 @@ ssize_t _read_r_console(struct _reent *r, int fd, void * data, size_t size)
     return -1;
 }
 
+static ssize_t _fstat_r_console(struct _reent *r, int fd, struct stat * st)
+{
+    if (fd == STDOUT_FILENO || fd == STDERR_FILENO) {
+        memset(st, 0, sizeof(*st));
+        /* This needs to be set so that stdout and stderr are line buffered. */
+        st->st_mode = S_IFCHR;
+        return 0;
+    }
+    __errno_r(r) = EBADF;
+    return -1;
+}
+
 
 /* The following weak definitions of syscalls will be used unless
  * another definition is provided. That definition may come from
@@ -73,6 +86,8 @@ ssize_t _read_r(struct _reent *r, int fd, void * dst, size_t size)
     __attribute__((weak,alias("_read_r_console")));
 ssize_t _write_r(struct _reent *r, int fd, const void * data, size_t size)
     __attribute__((weak,alias("_write_r_console")));
+int _fstat_r (struct _reent *r, int fd, struct stat *st)
+    __attribute__((weak,alias("_fstat_r_console")));
 
 
 /* The aliases below are to "syscall_not_implemented", which
@@ -89,8 +104,6 @@ int _close_r(struct _reent *r, int fd)
 off_t _lseek_r(struct _reent *r, int fd, off_t size, int mode)
     __attribute__((weak,alias("syscall_not_implemented")));
 int _fcntl_r(struct _reent *r, int fd, int cmd, int arg)
-    __attribute__((weak,alias("syscall_not_implemented")));
-int _fstat_r(struct _reent *r, int fd, struct stat * st)
     __attribute__((weak,alias("syscall_not_implemented")));
 int _stat_r(struct _reent *r, const char * path, struct stat * st)
     __attribute__((weak,alias("syscall_not_implemented")));
