@@ -5,7 +5,8 @@ set(srcs "clk.c"
          "apb_backup_dma.c"
          "../../arch/riscv/expression_with_stack.c"
          "../../arch/riscv/expression_with_stack_asm.S"
-         "../../arch/riscv/panic_arch.c")
+         "../../arch/riscv/panic_arch.c"
+         "../../arch/riscv/debug_stubs.c")
 
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" ${srcs})
 

@@ -43,7 +43,7 @@ The example will enable the following options by default:
 
 * Enable the Application Tracing Module under `Component config -> Application Level Tracing -> Data Destination` by choosing `Trace memory`.
 * Enable GCOV to host interface under `Component config -> Application Level Tracing -> GCOV to Host Enable`.
-* Enable OpenOCD Debug Stubs under `Component config -> ESP32-specific -> OpenOCD debug stubs`
+* Enable OpenOCD Debug Stubs under `Component config -> ESP System Settings -> OpenOCD debug stubs`
 
 ### Build, Flash, and Run
 

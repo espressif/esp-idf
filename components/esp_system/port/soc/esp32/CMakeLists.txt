@@ -9,6 +9,7 @@ set(srcs "highint_hdl.S"
          "../../arch/xtensa/expression_with_stack_asm.S"
          "../../arch/xtensa/debug_helpers.c"
          "../../arch/xtensa/debug_helpers_asm.S"
+         "../../arch/xtensa/debug_stubs.c"
          "../../arch/xtensa/trax.c"
          )
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" ${srcs})

@@ -1,5 +1,4 @@
 components/app_trace/port/include/esp_app_trace_port.h
-components/app_trace/port/riscv/port.c
 components/app_trace/private_include/esp_app_trace_membufs_proto.h
 components/app_trace/sys_view/Config/Global.h
 components/app_trace/sys_view/Config/SEGGER_RTT_Conf.h
@@ -927,7 +926,6 @@ components/esp_serial_slave_link/include/essl_spi/esp32h2_defs.h
 components/esp_serial_slave_link/include/essl_spi/esp32s2_defs.h
 components/esp_serial_slave_link/include/essl_spi/esp32s3_defs.h
 components/esp_system/crosscore_int.c
-components/esp_system/dbg_stubs.c
 components/esp_system/eh_frame_parser.c
 components/esp_system/esp_err.c
 components/esp_system/fpga_overrides.c
@@ -1213,7 +1211,6 @@ components/hal/esp32c3/include/hal/adc_hal_conf.h
 components/hal/esp32c3/include/hal/adc_ll.h
 components/hal/esp32c3/include/hal/aes_ll.h
 components/hal/esp32c3/include/hal/clk_gate_ll.h
-components/hal/esp32c3/include/hal/cpu_ll.h
 components/hal/esp32c3/include/hal/ds_ll.h
 components/hal/esp32c3/include/hal/gdma_ll.h
 components/hal/esp32c3/include/hal/gpspi_flash_ll.h
@@ -1247,7 +1244,6 @@ components/hal/esp32h2/include/hal/adc_hal_conf.h
 components/hal/esp32h2/include/hal/adc_ll.h
 components/hal/esp32h2/include/hal/aes_ll.h
 components/hal/esp32h2/include/hal/clk_gate_ll.h
-components/hal/esp32h2/include/hal/cpu_ll.h
 components/hal/esp32h2/include/hal/ds_ll.h
 components/hal/esp32h2/include/hal/gdma_ll.h
 components/hal/esp32h2/include/hal/gpspi_flash_ll.h
@@ -1357,7 +1353,6 @@ components/hal/include/hal/adc_types.h
 components/hal/include/hal/aes_hal.h
 components/hal/include/hal/aes_types.h
 components/hal/include/hal/brownout_hal.h
-components/hal/include/hal/cpu_hal.h
 components/hal/include/hal/cpu_types.h
 components/hal/include/hal/dac_hal.h
 components/hal/include/hal/dac_types.h
