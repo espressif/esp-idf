@@ -24,9 +24,9 @@
 #include "sdkconfig.h"
 #include "esp_rom_uart.h"
 
-static int syscall_not_implemented(void)
+static int syscall_not_implemented(struct _reent *r, ...)
 {
-    errno = ENOSYS;
+    __errno_r(r) = ENOSYS;
     return -1;
 }
 
@@ -44,7 +44,7 @@ ssize_t _write_r_console(struct _reent *r, int fd, const void * data, size_t siz
         }
         return size;
     }
-    errno = EBADF;
+    __errno_r(r) = EBADF;
     return -1;
 }
 
@@ -61,7 +61,7 @@ ssize_t _read_r_console(struct _reent *r, int fd, void * data, size_t size)
         }
         return received;
     }
-    errno = EBADF;
+    __errno_r(r) = EBADF;
     return -1;
 }
 
@@ -118,8 +118,6 @@ int _isatty_r(struct _reent *r, int fd)
 
 
 /* These functions are not expected to be overridden */
-int system(const char* str)
-    __attribute__((alias("syscall_not_implemented")));
 int _system_r(struct _reent *r, const char *str)
     __attribute__((alias("syscall_not_implemented")));
 int raise(int sig)
@@ -136,6 +134,13 @@ void _exit(int __status)
     __attribute__((alias("syscall_not_implemented_aborts")));
 
 #pragma GCC diagnostic pop
+
+/* Similar to syscall_not_implemented, but not taking struct _reent argument */
+int system(const char* str)
+{
+    errno = ENOSYS;
+    return -1;
+}
 
 /* Replaces newlib fcntl, which has been compiled without HAVE_FCNTL */
 int fcntl(int fd, int cmd, ...)
