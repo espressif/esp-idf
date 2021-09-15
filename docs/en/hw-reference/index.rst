@@ -13,6 +13,6 @@
     :esp32: Silicon Errata (PDF) <https://espressif.com/sites/default/files/documentation/eco_and_workarounds_for_bugs_in_esp32_en.pdf>
     Modules and Boards <modules-and-boards>
     Previous Versions of Modules and Boards <modules-and-boards-previous>
-    Espressif Products Ordering Information (PDF) <http://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>
+    ESP Product Selector <https://products.espressif.com/#/product-selector?names=>
     Regulatory Certificates <https://www.espressif.com/en/certificates>
     Chip Series Comparison <chip-series-comparison>

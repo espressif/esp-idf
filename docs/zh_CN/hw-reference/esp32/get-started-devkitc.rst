@@ -38,7 +38,7 @@ ESP32-DevKitC V4 是 `乐鑫 <https://espressif.com>`_ 一款基于 ESP32 的小
 
 - 可选排针或排母
 
-详情请见 `《乐鑫产品订购信息》 <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_cn.pdf>`_。
+详情请见 `乐鑫产品选型工具 <https://products.espressif.com/#/product-selector?names=>`__。
 
 
 功能说明
@@ -146,7 +146,7 @@ ESP32-DevKitC 开发板尺寸 -- 仰视图
 * `《ESP32-WROOM-32D & ESP32-WROOM-32U 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32d_esp32-wroom-32u_datasheet_cn.pdf>`_ (PDF)
 * `《ESP32-WROVER 技术规格书》 <https://espressif.com/sites/default/files/documentation/esp32_wrover_datasheet_cn.pdf>`_ (PDF)
 * `《ESP32-WROVER-B 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-b_datasheet_cn.pdf>`_ (PDF)
-* `《乐鑫产品订购信息》 <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_cn.pdf>`_ (PDF)
+* `乐鑫产品选型工具 <https://products.espressif.com/#/product-selector?names=>`__
 
 .. toctree::
 	:hidden:

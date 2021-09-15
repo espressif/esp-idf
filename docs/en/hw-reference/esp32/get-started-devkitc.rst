@@ -37,7 +37,7 @@ To cover a wide range of user requirements, the following versions of ESP32-DevK
 
 - male or female pin headers.
 
-For details please refer to `Espressif Product Ordering Information`_.
+For details please refer to `ESP Product Selector <https://products.espressif.com/#/product-selector?names=>`_.
 
 
 Functional Description
@@ -138,13 +138,23 @@ Board Dimensions
 Related Documents
 -----------------
 
-* `ESP32-DevKitC V4 schematics <https://dl.espressif.com/dl/schematics/esp32_devkitc_v4-sch.pdf>`_ (PDF)
-* `ESP32 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF)
-* `ESP32-WROOM-32 Datasheet <https://espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_en.pdf>`_ (PDF)
-* `ESP32-WROOM-32D & ESP32-WROOM-32U Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32d_esp32-wroom-32u_datasheet_en.pdf>`_ (PDF)
-* `ESP32-WROVER Datasheet <https://espressif.com/sites/default/files/documentation/esp32-wrover_datasheet_en.pdf>`_ (PDF)
-* `ESP32-WROVER-B Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-b_datasheet_en.pdf>`_ (PDF)
-* `Espressif Product Ordering Information <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>`_ (PDF)
+* `ESP32-DevKitC V4 schematics`_ (PDF)
+* `ESP32 Datasheet`_ (PDF)
+* `ESP32-WROOM-32 Datasheet`_ (PDF)
+* `ESP32-WROOM-32D and ESP32-WROOM-32U Datasheet`_ (PDF)
+* `ESP32-WROVER Datasheet`_ (PDF)
+* `ESP32-WROVER-B Datasheet`_ (PDF)
+* `ESP Product Selector`_ 
+
+For further design documentation for the board, please contact us at `sales@espressif.com <sales@espressif.com>`_.
+
+.. _ESP32-DevKitC V4 schematics: https://dl.espressif.com/dl/schematics/esp32_devkitc_v4-sch.pdf
+.. _ESP32 Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf
+.. _ESP32-WROOM-32 Datasheet: https://espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_en.pdf
+.. _ESP32-WROOM-32D and ESP32-WROOM-32U Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32d_esp32-wroom-32u_datasheet_en.pdf
+.. _ESP32-WROVER Datasheet: https://espressif.com/sites/default/files/documentation/esp32-wrover_datasheet_en.pdf
+.. _ESP32-WROVER-B Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-wrover-b_datasheet_en.pdf
+.. _ESP Product Selector: https://products.espressif.com/#/product-selector?names=
 
 .. toctree::
     :hidden:

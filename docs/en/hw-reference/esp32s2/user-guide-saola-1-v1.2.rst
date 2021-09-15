@@ -54,7 +54,7 @@ Wholesale Orders
 
 If you order in bulk, the boards come in large cardboard boxes.
 
-For wholesale orders, please check `Espressif Product Ordering Information <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>`_ (PDF)
+For wholesale orders, please go to https://www.espressif.com/en/contact-us/sales-questions.
 
 Description of Components
 -------------------------
@@ -138,11 +138,19 @@ There are three mutually exclusive ways to provide power to the board:
 
 Related Documents
 =================
-* `ESP32-S2-Saola-1 Schematics <https://dl.espressif.com/dl/schematics/ESP32-S2-SAOLA-1_V1.1_schematics.pdf>`_ (PDF)
-* `ESP32-S2-Saola-1 Dimensions <https://dl.espressif.com/dl/schematics/ESP32-S2-Saola-1_V1.2_Dimensions.pdf>`_ (PDF)
-* `ESP32-S2 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_en.pdf>`_ (PDF)
-* `ESP32-S2-WROVER & ESP32-S2-WROVER-I Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-s2-wrover_esp32-s2-wrover-i_datasheet_en.pdf>`_ (PDF)
-* `ESP32-S2-WROOM & ESP32-S2-WROOM-I Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-s2-wroom_esp32-s2-wroom-i_datasheet_en.pdf>`_ (PDF)
-* `Espressif Product Ordering Information <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>`_ (PDF) 
+
+* `ESP32-S2-Saola-1 Schematics`_ (PDF)
+* `ESP32-S2-Saola-1 Dimensions`_ (PDF)
+* `ESP32-S2 Datasheet`_ (PDF)
+* `ESP32-S2-WROVER and ESP32-S2-WROVER-I Datasheet`_ (PDF)
+* `ESP32-S2-WROOM and ESP32-S2-WROOM-I Datasheet`_ (PDF)
+* `ESP Product Selector`_
 
 For other design documentation for the board, please contact us at sales@espressif.com.
+
+.. _ESP32-S2-Saola-1 Schematics: https://dl.espressif.com/dl/schematics/ESP32-S2-SAOLA-1_V1.1_schematics.pdf
+.. _ESP32-S2-Saola-1 Dimensions: https://dl.espressif.com/dl/schematics/ESP32-S2-Saola-1_V1.2_Dimensions.pdf
+.. _ESP32-S2 Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_en.pdf
+.. _ESP32-S2-WROVER and ESP32-S2-WROVER-I Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-s2-wrover_esp32-s2-wrover-i_datasheet_en.pdf
+.. _ESP32-S2-WROOM and ESP32-S2-WROOM-I Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-s2-wroom_esp32-s2-wroom-i_datasheet_en.pdf
+.. _ESP Product Selector: https://products.espressif.com/#/product-selector?names=
