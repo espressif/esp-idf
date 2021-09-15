@@ -221,25 +221,29 @@ static esp_err_t ksz80xx_negotiate(esp_eth_phy_t *phy)
     /* in case any link status has changed, let's assume we're in link down status */
     ksz80xx->link_status = ETH_LINK_DOWN;
     /* Restart auto negotiation */
-    bmcr_reg_t bmcr = {
-        .speed_select = 1,     /* 100Mbps */
-        .duplex_mode = 1,      /* Full Duplex */
-        .en_auto_nego = 1,     /* Auto Negotiation */
-        .restart_auto_nego = 1 /* Restart Auto Negotiation */
-    };
-    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz80xx->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
-    /* Wait for auto negotiation complete */
-    bmsr_reg_t bmsr;
-    uint32_t to = 0;
-    for (to = 0; to < ksz80xx->autonego_timeout_ms / 100; to++) {
-        vTaskDelay(pdMS_TO_TICKS(100));
-        ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)), err, TAG, "read BMSR failed");
-        if (bmsr.auto_nego_complete) {
-            break;
-        }
+    bmcr_reg_t bmcr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+    if (bmcr.en_auto_nego == 1)
+    {
+    	bmcr.restart_auto_nego = 1;
+		ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz80xx->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+		/* Wait for auto negotiation complete */
+		bmsr_reg_t bmsr;
+		uint32_t to = 0;
+		for (to = 0; to < ksz80xx->autonego_timeout_ms / 100; to++) {
+			vTaskDelay(pdMS_TO_TICKS(100));
+			ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)), err, TAG, "read BMSR failed");
+			if (bmsr.auto_nego_complete) {
+				break;
+			}
+		}
+		if ((to >= ksz80xx->autonego_timeout_ms / 100) && (ksz80xx->link_status == ETH_LINK_UP)) {
+			ESP_LOGW(TAG, "auto negotiation timeout");
+		}
     }
-    if ((to >= ksz80xx->autonego_timeout_ms / 100) && (ksz80xx->link_status == ETH_LINK_UP)) {
-        ESP_LOGW(TAG, "auto negotiation timeout");
+    else
+    {
+    	ESP_LOGI(TAG, "auto negotiation cancelled");
     }
     return ESP_OK;
 err:
