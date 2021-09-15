@@ -247,11 +247,16 @@ uint32_t adc_get_calibration_offset(adc_ll_num_t adc_n, adc_channel_t channel, a
     uint32_t init_code = 0;
     if (version == 1) {
         init_code = esp_efuse_rtc_calib_get_init_code(version, adc_n, atten);
-        s_adc_cali_param[adc_n][atten] = init_code;
     } else {
-        ESP_LOGW(ADC_TAG, "Calibration eFuse is not configured, skip calibration");
+        ESP_LOGV(ADC_TAG, "Calibration eFuse is not configured, use self-calibration for ICode");
+        adc_power_acquire();
+        RTC_ENTER_CRITICAL();
+        const bool internal_gnd = true;
+        init_code = adc_hal_self_calibration(adc_n, channel, atten, internal_gnd);
+        RTC_EXIT_CRITICAL();
+        adc_power_release();
     }
-
+    s_adc_cali_param[adc_n][atten] = init_code;
     return s_adc_cali_param[adc_n][atten];
 }
 #elif CONFIG_IDF_TARGET_ESP32S2
