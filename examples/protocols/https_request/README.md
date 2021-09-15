@@ -4,6 +4,13 @@ Uses APIs from `esp-tls` component to make a very simple HTTPS request over a se
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
+### Session Tickets
+
+Session Tickets, specified in [RFC 5077](https://datatracker.ietf.org/doc/html/rfc5077) are a mechanism to distribute encrypted
+session-state information to the client in the form of a ticket and a mechanism to present the ticket back to the server.  The ticket is created by a TLS server and sent to a TLS client.  The TLS client presents the ticket to the TLS server to resume a session. In TLS 1.2, this speeds up handshakes from two to one round-trip.
+
+In ESP-IDF, this feature is supported (for both server and client) when mbedTLS is used as the SSL library.
+
 ## How to use example
 Before project configuration and build, be sure to set the correct chip target using `idf.py set-target <chip_name>`.
 
@@ -18,6 +25,15 @@ Before project configuration and build, be sure to set the correct chip target u
 idf.py menuconfig
 ```
 Open the project configuration menu (`idf.py menuconfig`) to configure Wi-Fi or Ethernet. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../../README.md) for more details.
+
+#### Configuring Client Session Tickets
+
+Note: This example has client session tickets enabled by default.
+
+* Open the project configuration menu (`idf.py menuconfig`)
+* In the `Component Config` -> `ESP-TLS` submenu, select the `Enable client session tickets` option.
+
+Ensure that the server has the session tickets feature enabled.
 
 ### Build and Flash
 
