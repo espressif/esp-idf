@@ -302,6 +302,25 @@ err:
     return ret;
 }
 
+static esp_err_t rtl8201_loopback(esp_eth_phy_t *phy, bool enable)
+{
+    esp_err_t ret = ESP_OK;
+    phy_rtl8201_t *rtl8201 = __containerof(phy, phy_rtl8201_t, parent);
+    esp_eth_mediator_t *eth = rtl8201->eth;
+    /* Set Loopback function */
+    bmcr_reg_t bmcr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+    if (enable) {
+        bmcr.en_loopback = 1;
+    } else {
+        bmcr.en_loopback = 0;
+    }
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+    return ESP_OK;
+err:
+    return ret;
+}
+
 static esp_err_t rtl8201_init(esp_eth_phy_t *phy)
 {
     esp_err_t ret = ESP_OK;
@@ -358,6 +377,7 @@ esp_eth_phy_t *esp_eth_phy_new_rtl8201(const eth_phy_config_t *config)
     rtl8201->parent.get_addr = rtl8201_get_addr;
     rtl8201->parent.set_addr = rtl8201_set_addr;
     rtl8201->parent.advertise_pause_ability = rtl8201_advertise_pause_ability;
+    rtl8201->parent.loopback = rtl8201_loopback;
     rtl8201->parent.del = rtl8201_del;
 
     return &(rtl8201->parent);

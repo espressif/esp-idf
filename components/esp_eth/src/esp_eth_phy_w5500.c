@@ -197,6 +197,12 @@ static esp_err_t w5500_advertise_pause_ability(esp_eth_phy_t *phy, uint32_t abil
     return ESP_OK;
 }
 
+static esp_err_t w5500_loopback(esp_eth_phy_t *phy, bool enable)
+{
+    // Loopback is not supported for W5500 internal PHY
+    return ESP_ERR_NOT_SUPPORTED;
+}
+
 static esp_err_t w5500_init(esp_eth_phy_t *phy)
 {
     esp_err_t ret = ESP_OK;
@@ -241,6 +247,7 @@ esp_eth_phy_t *esp_eth_phy_new_w5500(const eth_phy_config_t *config)
     w5500->parent.get_addr = w5500_get_addr;
     w5500->parent.set_addr = w5500_set_addr;
     w5500->parent.advertise_pause_ability = w5500_advertise_pause_ability;
+    w5500->parent.loopback = w5500_loopback;
     w5500->parent.del = w5500_del;
     return &(w5500->parent);
 err:
