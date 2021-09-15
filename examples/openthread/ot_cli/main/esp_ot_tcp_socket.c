@@ -1,7 +1,10 @@
-/*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
- *
- * SPDX-License-Identifier: Apache-2.0
+/* OpenThread Command Line Example
+
+   This example code is in the Public Domain (or CC0 licensed, at your option.)
+
+   Unless required by applicable law or agreed to in writing, this
+   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+   CONDITIONS OF ANY KIND, either express or implied.
 */
 
 #include "esp_check.h"
@@ -108,7 +111,7 @@ static void tcp_socket_client_task(void *pvParameters)
     client_sock = socket(AF_INET6, SOCK_STREAM, IPPROTO_IPV6);
     ESP_GOTO_ON_FALSE((client_sock >= 0), ESP_OK, exit, TAG, "Unable to create socket: errno %d", errno);
 
-    ESP_LOGI(TAG, "Socket created, connecting to %x:%x:%x:%x:%d", dest_addr.sin6_addr.un.u32_addr[0], dest_addr.sin6_addr.un.u32_addr[1], dest_addr.sin6_addr.un.u32_addr[2], dest_addr.sin6_addr.un.u32_addr[3], port);
+    ESP_LOGI(TAG, "Socket created, connecting to %s:%d", host_ip, port);
 
     err = connect(client_sock, (struct sockaddr *)&dest_addr, sizeof(struct sockaddr_in6));
     ESP_GOTO_ON_FALSE((err == 0), ESP_FAIL, exit, TAG, "Socket unable to connect: errno %d", errno);
