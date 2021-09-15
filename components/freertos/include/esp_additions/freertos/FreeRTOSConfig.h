@@ -75,8 +75,8 @@
 /* for likely and unlikely */
 #include "esp_compiler.h"
 
-// The arch-specific FreeRTOSConfig.h in port/<arch>/include.
-#include_next "freertos/FreeRTOSConfig.h"
+// The arch-specific FreeRTOSConfig_arch.h in port/<arch>/include.
+#include "freertos/FreeRTOSConfig_arch.h"
 
 #if !(defined(FREERTOS_CONFIG_XTENSA_H) \
         || defined(FREERTOS_CONFIG_RISCV_H) \

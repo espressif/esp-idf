@@ -54,7 +54,8 @@
 /* *INDENT-ON* */
 
 /* Application specific configuration options. */
-#include "freertos/FreeRTOSConfig.h"
+#include "FreeRTOSConfig.h"
+
 /* Basic FreeRTOS definitions. */
 #include "projdefs.h"
 
