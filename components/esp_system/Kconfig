@@ -109,6 +109,14 @@ menu "ESP System Settings"
             pull-up, you do not need to select this option, otherwise, you
             should enable this option.
 
+    config ESP_SYSTEM_FLASH_LEAKAGE_WORKAROUND
+        bool "Flash leakage current workaround in light sleep"
+        help
+            When the CS pin of Flash is not pulled up, the sleep current will
+            increase during light sleep. If the CS pin of Flash has an external
+            pull-up, you do not need to select this option, otherwise, you
+            should enable this option.
+
     menu "Memory protection"
 
         config ESP_SYSTEM_MEMPROT_FEATURE

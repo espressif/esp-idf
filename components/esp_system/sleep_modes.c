@@ -29,6 +29,7 @@
 #include "soc/soc_caps.h"
 #include "driver/rtc_io.h"
 #include "hal/rtc_io_hal.h"
+#include "bootloader_common.h"
 
 #include "driver/uart.h"
 
@@ -423,6 +424,9 @@ void esp_sleep_config_gpio_isolate(void)
     }
 #if CONFIG_ESP_SYSTEM_PSRAM_LEAKAGE_WORKAROUND && CONFIG_SPIRAM
     gpio_sleep_set_pull_mode(esp_spiram_get_cs_io(), GPIO_PULLUP_ONLY);
+#endif
+#if CONFIG_ESP_SYSTEM_FLASH_LEAKAGE_WORKAROUND
+    gpio_sleep_set_pull_mode(bootloader_flash_get_cs_io(), GPIO_PULLUP_ONLY);
 #endif
 }
 
