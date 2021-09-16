@@ -40,8 +40,8 @@ static const char *TAG = "test_adc";
 
 #define PLATFORM_SELECT            (1)  //0: pxp; 1: chip
 #if (PLATFORM_SELECT == 0)              //PXP platform
-#include "soc/apb_ctrl_reg.h"
-#define SET_BREAK_POINT(flag) REG_WRITE(APB_CTRL_DATE_REG, flag)
+#include "soc/syscon_reg.h"
+#define SET_BREAK_POINT(flag) REG_WRITE(SYSCON_DATE_REG, flag)
 //PXP clk is slower.
 #define SYS_DELAY_TIME_MOM    (1/40)
 #define RTC_SLOW_CLK_FLAG     1     // Slow clock is 32KHz.

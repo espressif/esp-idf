@@ -17,7 +17,7 @@
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
-#include "soc/apb_ctrl_reg.h"
+#include "soc/syscon_reg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,7 +49,7 @@ static inline void rtc_cntl_ll_gpio_clear_wakeup_pins(void)
 
 static inline void rtc_cntl_ll_set_cpu_retention_link_addr(uint32_t addr)
 {
-    REG_SET_FIELD(APB_CTRL_RETENTION_CTRL_REG, APB_CTRL_RETENTION_LINK_ADDR, (uint32_t)addr);
+    REG_SET_FIELD(SYSCON_RETENTION_CTRL_REG, SYSCON_RETENTION_LINK_ADDR, (uint32_t)addr);
 }
 
 static inline void rtc_cntl_ll_enable_cpu_retention_clock(void)

@@ -18,7 +18,7 @@
 #include "esp32s3/rom/cache.h"
 #include "soc/io_mux_reg.h"
 #include "soc/dport_reg.h"
-#include "soc/apb_ctrl_reg.h"
+#include "soc/syscon_reg.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/efuse_reg.h"
 #include "driver/gpio.h"

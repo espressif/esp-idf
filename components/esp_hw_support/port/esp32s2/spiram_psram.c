@@ -25,7 +25,7 @@
 #include "soc/efuse_periph.h"
 #include "soc/soc_caps.h"
 #include "soc/io_mux_reg.h"
-#include "soc/apb_ctrl_reg.h"
+#include "soc/syscon_reg.h"
 #include "soc/efuse_reg.h"
 #include "soc/soc.h"
 #include "driver/gpio.h"

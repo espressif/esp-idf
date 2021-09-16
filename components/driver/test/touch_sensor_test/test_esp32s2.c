@@ -29,7 +29,7 @@
 #include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_io_reg.h"
 #include "soc/rtc_io_struct.h"
-#include "soc/apb_ctrl_reg.h"
+#include "soc/syscon_reg.h"
 #include "driver/rtc_io.h"
 #include "esp_rom_sys.h"
 
@@ -37,7 +37,7 @@ static const char *TAG = "test_touch";
 
 #define PLATFORM_SELECT            (1)  //0: pxp; 1: chip
 #if (PLATFORM_SELECT == 0)              //PXP platform
-#define SET_BREAK_POINT(flag) REG_WRITE(APB_CTRL_DATE_REG, flag)
+#define SET_BREAK_POINT(flag) REG_WRITE(SYSCON_DATE_REG, flag)
 //PXP clk is slower.
 #define SYS_DELAY_TIME_MOM    (1/40)
 #define RTC_SLOW_CLK_FLAG     1     // Slow clock is 32KHz.
