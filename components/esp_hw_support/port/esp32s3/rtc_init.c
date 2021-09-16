@@ -10,7 +10,7 @@
 #include "soc/rtc_cntl_reg.h"
 #include "soc/dport_reg.h"
 #include "soc/gpio_reg.h"
-#include "soc/apb_ctrl_reg.h"
+#include "soc/syscon_reg.h"
 #include "soc/spi_mem_reg.h"
 #include "soc/extmem_reg.h"
 #include "soc/syscon_reg.h"
@@ -94,7 +94,7 @@ void rtc_init(rtc_config_t cfg)
         //clear CMMU clock force on
         CLEAR_PERI_REG_MASK(EXTMEM_CACHE_MMU_POWER_CTRL_REG, EXTMEM_CACHE_MMU_MEM_FORCE_ON);
         //clear clkgate force on
-        REG_WRITE(APB_CTRL_CLKGATE_FORCE_ON_REG, 0);
+        REG_WRITE(SYSCON_CLKGATE_FORCE_ON_REG, 0);
         //clear tag clock force on
         CLEAR_PERI_REG_MASK(EXTMEM_DCACHE_TAG_POWER_CTRL_REG, EXTMEM_DCACHE_TAG_MEM_FORCE_ON);
         CLEAR_PERI_REG_MASK(EXTMEM_ICACHE_TAG_POWER_CTRL_REG, EXTMEM_ICACHE_TAG_MEM_FORCE_ON);
