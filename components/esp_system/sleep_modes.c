@@ -53,6 +53,7 @@
 #include "esp32/clk.h"
 #include "esp32/rom/rtc.h"
 #include "esp_private/gpio.h"
+#include "esp32/spiram.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/clk.h"
 #include "esp32s2/rom/cache.h"
@@ -60,11 +61,13 @@
 #include "esp32s2/brownout.h"
 #include "soc/extmem_reg.h"
 #include "esp_private/gpio.h"
+#include "esp32s2/spiram.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/clk.h"
 #include "esp32s3/rom/cache.h"
 #include "esp32s3/rom/rtc.h"
 #include "soc/extmem_reg.h"
+#include "esp32s3/spiram.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/clk.h"
 #include "esp32c3/rom/cache.h"
@@ -418,6 +421,9 @@ void esp_sleep_config_gpio_isolate(void)
             gpio_sleep_set_pull_mode(gpio_num, GPIO_FLOATING);
         }
     }
+#if CONFIG_ESP_SYSTEM_PSRAM_LEAKAGE_WORKAROUND && CONFIG_SPIRAM
+    gpio_sleep_set_pull_mode(esp_spiram_get_cs_io(), GPIO_PULLUP_ONLY);
+#endif
 }
 
 void esp_sleep_enable_gpio_switch(bool enable)
