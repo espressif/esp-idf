@@ -1066,8 +1066,3 @@ config BT_BLE_42_FEATURES_SUPPORTED
     default n
     help
         This enables BLE 4.2 features.
-
-config BT_RESERVE_DRAM
-    hex
-    default 0xdb5c if BT_ENABLED
-    default 0
