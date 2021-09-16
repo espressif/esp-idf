@@ -54,9 +54,9 @@ static bool adc_calibration_init(void)
 
     ret = esp_adc_cal_check_efuse(ADC_EXAMPLE_CALI_SCHEME);
     if (ret == ESP_ERR_NOT_SUPPORTED) {
-        ESP_LOGW(TAG, "Calibration scheme not supported, skip calibration");
+        ESP_LOGW(TAG, "Calibration scheme not supported, skip software calibration");
     } else if (ret == ESP_ERR_INVALID_VERSION) {
-        ESP_LOGW(TAG, "eFuse not burnt, skip calibration");
+        ESP_LOGW(TAG, "eFuse not burnt, skip software calibration");
     } else if (ret == ESP_OK) {
         cali_enable = true;
         esp_adc_cal_characterize(ADC_UNIT_1, ADC_EXAMPLE_ATTEN, ADC_WIDTH_BIT_DEFAULT, 0, &adc1_chars);

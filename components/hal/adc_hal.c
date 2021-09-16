@@ -71,10 +71,14 @@ void adc_hal_set_calibration_param(adc_ll_num_t adc_n, uint32_t param)
     }
 }
 
-#if CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 static void cal_setup(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten, bool internal_gnd)
 {
+#if CONFIG_IDF_TARGET_ESP32S2
     adc_hal_set_controller(adc_n, ADC_CTRL_RTC);    //Set controller
+#else
+    adc_hal_set_controller(adc_n, ADC_LL_CTRL_ARB);    //Set controller
+#endif
 
     /* Enable/disable internal connect GND (for calibration). */
     if (internal_gnd) {
@@ -134,7 +138,6 @@ static uint32_t read_cal_channel(adc_ll_num_t adc_n, int channel)
 #define ADC_HAL_CAL_TIMES        (10)
 #define ADC_HAL_CAL_OFFSET_RANGE (4096)
 
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
 uint32_t adc_hal_self_calibration(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten, bool internal_gnd)
 {
     if (adc_n == ADC_NUM_2) {
@@ -190,9 +193,9 @@ uint32_t adc_hal_self_calibration(adc_ll_num_t adc_n, adc_channel_t channel, adc
                    : (code_sum - chk_code) / (ADC_HAL_CAL_TIMES - 2) + 1;
 
     adc_ll_calibration_finish(adc_n);
+
     return ret;
 }
-#endif  //#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
 #endif //SOC_ADC_CALIBRATION_V1_SUPPORTED
 
 #if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
