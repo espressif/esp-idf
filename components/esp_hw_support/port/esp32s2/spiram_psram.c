@@ -160,6 +160,13 @@ static uint32_t s_psram_id = 0;
 static void IRAM_ATTR psram_cache_init(psram_cache_mode_t psram_cache_mode, psram_vaddr_mode_t vaddrmode);
 extern void esp_rom_spi_set_op_mode(int spi_num, esp_rom_spiflash_read_mode_t mode);
 
+static uint8_t s_psram_cs_io = (uint8_t)-1;
+
+uint8_t psram_get_cs_io(void)
+{
+    return s_psram_cs_io;
+}
+
 static void psram_set_op_mode(int spi_num, psram_cmd_mode_t mode)
 {
     if (mode == PSRAM_CMD_QPI) {
@@ -367,6 +374,7 @@ static void IRAM_ATTR psram_gpio_config(psram_cache_mode_t mode)
         psram_io.psram_spiwp_sd3_io = esp_rom_efuse_get_flash_wp_gpio();
     }
     esp_rom_spiflash_select_qio_pins(psram_io.psram_spiwp_sd3_io, spiconfig);
+    s_psram_cs_io = psram_io.psram_cs_io;
 }
 
 psram_size_t psram_get_size(void)
