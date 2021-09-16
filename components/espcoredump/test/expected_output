@@ -20,12 +20,12 @@ eps4           0x60820
 eps5           0x0
 eps6           0x0
 eps7           0x0
-pc             0x400d0e45	0x400d0e45 <recur_func+29>
-lbeg           0x400014fd	1073747197
-lend           0x4000150d	1073747213
-lcount         0xffffffff	4294967295
-sar            0x0	0
-ps             0x60820	395296
+pc             0x400d0e45          0x400d0e45 <recur_func+29>
+lbeg           0x400014fd          1073747197
+lend           0x4000150d          1073747213
+lcount         0xffffffff          4294967295
+sar            0x0                 0
+ps             0x60820             395296
 threadptr      <unavailable>
 br             <unavailable>
 scompare1      <unavailable>
@@ -41,22 +41,22 @@ f64r_hi        <unavailable>
 f64s           <unavailable>
 fcr            <unavailable>
 fsr            <unavailable>
-a0             0x800d0e20	-2146628064
-a1             0x3ffbaad0	1073457872
-a2             0x2	2
-a3             0x3ffbab1c	1073457948
-a4             0x3ffbab10	1073457936
-a5             0x3ffae970	1073408368
-a6             0x0	0
-a7             0x0	0
-a8             0x5	5
-a9             0xffffffad	-83
-a10            0x20	32
-a11            0x3ffb62e0	1073439456
-a12            0x1	1
-a13            0x80	128
-a14            0x1	1
-a15            0x0	0
+a0             0x800d0e20          -2146628064
+a1             0x3ffbaad0          1073457872
+a2             0x2                 2
+a3             0x3ffbab1c          1073457948
+a4             0x3ffbab10          1073457936
+a5             0x3ffae970          1073408368
+a6             0x0                 0
+a7             0x0                 0
+a8             0x5                 5
+a9             0xffffffad          -83
+a10            0x20                32
+a11            0x3ffb62e0          1073439456
+a12            0x1                 1
+a13            0x80                128
+a14            0x1                 1
+a15            0x0                 0
 
 ==================== CURRENT THREAD STACK =====================
 #0  0x400d0e45 in recur_func () at /home/alexey/projects/esp/esp-idf/components/espcoredump/test/test_core_dump.c:61
@@ -66,7 +66,7 @@ a15            0x0	0
 #4  0x40088160 in xthal_restore_extra_nw () at /Users/igrokhotkov/e/esp32/hal/hal/state_asm.S:97
 
 ======================== THREADS INFO =========================
-  Id   Target Id         Frame 
+  Id   Target Id          Frame 
 * 1    process 1073439328 0x400d0e45 in recur_func () at /home/alexey/projects/esp/esp-idf/components/espcoredump/test/test_core_dump.c:61
   2    process 1073455736 0x400092dc in ?? ()
   3    process 1073444404 0x400e85b2 in intrusive_list<nvs::HashList::HashListBlock>::intrusive_list (this=0x0) at /home/alexey/projects/esp/esp-idf/components/nvs_flash/src/intrusive_list.h:33
