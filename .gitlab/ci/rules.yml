@@ -124,6 +124,7 @@
   - "tools/tools_schema.json"
   - "tools/idf_tools.py"
   - "tools/test_idf_tools/**/*"
+  - "tools/install_util.py"
 
   - "tools/mkdfu.py"
   - "tools/test_mkdfu/**/*"

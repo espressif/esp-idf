@@ -101,6 +101,10 @@ Any mirror server can be used provided the URL matches the ``github.com`` downlo
 
 * ``check``: For each tool, checks whether the tool is available in the system path and in ``IDF_TOOLS_PATH``.
 
+* ``install-python-env``: Create Python virtual environment and install the required Python packages.
+
+* ``check-python-dependencies``: Checks if all required Python packages are installed.
+
 .. _idf-tools-install:
 
 Install scripts

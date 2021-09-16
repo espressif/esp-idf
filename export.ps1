@@ -69,7 +69,7 @@ if ($dif_Path -ne $null) {
 
 Write-Output "Checking if Python packages are up to date..."
 
-Start-Process -Wait -NoNewWindow -FilePath "python" -Args "`"$IDF_PATH/tools/check_python_dependencies.py`""
+Start-Process -Wait -NoNewWindow -FilePath "python" -Args "`"$IDF_PATH/tools/idf_tools.py`" check-python-dependencies"
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } # if error
 
 Write-Output "
