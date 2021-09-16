@@ -11,6 +11,11 @@ else
   elf_dir=$1
 fi
 
+if ! command -v coverage &> /dev/null; then
+  echo "coverage could not be found, please install it ('pip install coverage')"
+  exit 1
+fi
+
 SUPPORTED_TARGETS=("esp32" "esp32s2" "esp32c3" "esp32s3" )
 res=0
 coverage erase
