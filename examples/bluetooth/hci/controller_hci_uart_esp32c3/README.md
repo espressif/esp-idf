@@ -1,7 +1,8 @@
+| Supported Targets | ESP32-C3 |
+| ----------------- | -------- |
+
 ESP-IDF UART HCI Controller
 =================================
-| Supported Targets | ESP32-C3 | ESP32-S3 |
-| ----------------- | -------- | -------- |
 
 This example demonstrates how to configure the Bluetooth Low Energy Controller's HCI (Host Controller Interface) to communicate over UART.
 
