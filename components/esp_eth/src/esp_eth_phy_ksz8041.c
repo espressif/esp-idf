@@ -198,6 +198,8 @@ static esp_err_t ksz8041_negotiate(esp_eth_phy_t *phy)
 {
     phy_ksz8041_t *ksz8041 = __containerof(phy, phy_ksz8041_t, parent);
     esp_eth_mediator_t *eth = ksz8041->eth;
+    /* in case any link status has changed, let's assume we're in link down status */
+    ksz8041->link_status = ETH_LINK_DOWN;
     /* Restart auto negotiation */
     bmcr_reg_t bmcr = {
         .speed_select = 1,     /* 100Mbps */
@@ -224,8 +226,6 @@ static esp_err_t ksz8041_negotiate(esp_eth_phy_t *phy)
     if ((to >= ksz8041->autonego_timeout_ms / 100) && (ksz8041->link_status == ETH_LINK_UP)) {
         ESP_LOGW(TAG, "auto negotiation timeout");
     }
-    /* Updata information about link, speed, duplex */
-    PHY_CHECK(ksz8041_update_link_duplex_speed(ksz8041) == ESP_OK, "update link duplex speed failed", err);
     return ESP_OK;
 err:
     return ESP_FAIL;
