@@ -56,12 +56,12 @@ eps3           0x0
 eps4           0x0
 eps5           0x0
 eps6           0x0
-pc             0x400e37f7	0x400e37f7
-lbeg           0x0	0
-lend           0x0	0
-lcount         0x0	0
-sar            0x14	20
-ps             0x60420	394272
+pc             0x400e37f7          0x400e37f7
+lbeg           0x0                 0
+lend           0x0                 0
+lcount         0x0                 0
+sar            0x14                20
+ps             0x60420             394272
 threadptr      <unavailable>
 br             <unavailable>
 scompare1      <unavailable>
@@ -77,22 +77,22 @@ f64r_hi        <unavailable>
 f64s           <unavailable>
 fcr            <unavailable>
 fsr            <unavailable>
-a0             0x800d0c31	-2146628559
-a1             0x3ffb5db0	1073438128
-a2             0x1	1
-a3             0x1	1
-a4             0x1	1
-a5             0x60023	393251
-a6             0x1	1
-a7             0x60023	393251
-a8             0x1	1
-a9             0x0	0
-a10            0x7fffffff	2147483647
-a11            0x8001f880	-2147354496
-a12            0x6ff1ff8	117383160
-a13            0x0	0
-a14            0x3ffb7d80	1073446272
-a15            0x0	0
+a0             0x800d0c31          -2146628559
+a1             0x3ffb5db0          1073438128
+a2             0x1                 1
+a3             0x1                 1
+a4             0x1                 1
+a5             0x60023             393251
+a6             0x1                 1
+a7             0x60023             393251
+a8             0x1                 1
+a9             0x0                 0
+a10            0x7fffffff          2147483647
+a11            0x8001f880          -2147354496
+a12            0x6ff1ff8           117383160
+a13            0x0                 0
+a14            0x3ffb7d80          1073446272
+a15            0x0                 0
 
 ==================== CURRENT THREAD STACK =====================
 #0  0x400e37f7 in ?? ()
@@ -100,7 +100,7 @@ a15            0x0	0
 #2  0x40087018 in ?? ()
 
 ======================== THREADS INFO =========================
-  Id   Target Id         Frame 
+  Id   Target Id          Frame 
 * 1    process 1073438336 0x400e37f7 in ?? ()
   2    process 1073442120 0x40087010 in ?? ()
   3    process 1073440228 0x40087010 in ?? ()
