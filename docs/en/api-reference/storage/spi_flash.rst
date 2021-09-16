@@ -29,7 +29,7 @@ Support for features of flash chips
 
 Flash features of different vendors are operated in different ways and need special support. The fast/slow read and Dual mode (DOUT/DIO) of almost all 24-bits address flash chips are supported, because they don't need any vendor-specific commands.
 
-The Quad mode (QIO/QOUT) the following chip types are supported:
+Quad mode (QIO/QOUT) is supported on following chip types:
 
 1. ISSI
 2. GD
@@ -38,6 +38,14 @@ The Quad mode (QIO/QOUT) the following chip types are supported:
 5. Winbond
 6. XMC
 7. BOYA
+
+.. only:: esp32s3
+
+    Octal mode (OPI) are supported on following chip types:
+
+    1. MXIC
+
+    To know how to configure menuconfig for a board with different Flash and PSRAM, please refer to the :ref:`SPI Flash and External SPI RAM Configuration <flash-psram-configuration>`
 
 The 32-bit address range of following chip type is supported:
 
@@ -151,7 +159,7 @@ Differences between :cpp:func:`spi_flash_mmap` and :cpp:func:`esp_partition_mmap
 
 Note that since memory mapping happens in pages, it may be possible to read data outside of the partition provided to ``esp_partition_mmap``, regardless of the partition boundary.
 
-.. note:: 
+.. note::
     mmap is supported by cache, so it can only be used on main flash.
 
 SPI Flash Implementation
@@ -248,5 +256,3 @@ API Reference - Flash Encrypt
 -----------------------------
 
 .. include-build-file:: inc/esp_flash_encrypt.inc
-
-

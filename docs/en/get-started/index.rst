@@ -774,6 +774,12 @@ To exit IDF monitor use the shortcut ``Ctrl+]``.
 
        idf.py -p PORT flash monitor
 
+.. only:: esp32s3
+
+    .. note::
+
+        If a board with Octal Flash resets before the second-stage bootloader, please refer to :ref:`Octal Flash Error Handling <flash-psram-error>`
+
 See also:
 
 - :doc:`IDF Monitor <../api-guides/tools/idf-monitor>` for handy shortcuts and more details on using IDF monitor.
