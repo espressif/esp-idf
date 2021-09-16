@@ -215,8 +215,7 @@ test_idf_tools:
     - cd ${IDF_PATH}/tools/test_idf_tools
     - ./test_idf_tools.py
     # Test for create virtualenv. It must be invoked from Python, not from virtualenv.
-    - cd ${IDF_PATH}/tools
-    - python3 ./idf_tools.py install-python-env
+    - python3 ./test_idf_tools_python_env.py
 
 .test_efuse_table_on_host_template:
   extends: .host_test_template
