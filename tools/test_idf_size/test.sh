@@ -6,6 +6,8 @@
     && coverage run -a $IDF_PATH/tools/idf_size.py app.map &>> output \
     && echo -e "\n***\nRunning idf_size.py on bootloader..." &>> output \
     && coverage run -a $IDF_PATH/tools/idf_size.py bootloader.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py with overflow..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py overflow.map &>> output \
     && echo -e "\n***\nRunning idf_size.py --archives..." &>> output \
     && coverage run -a $IDF_PATH/tools/idf_size.py --archives app.map &>> output \
     && echo -e "\n***\nRunning idf_size.py --files..." &>> output \
@@ -50,6 +52,8 @@
     && coverage run -a $IDF_PATH/tools/idf_size.py app.map --archive_details libfreertos.a --diff app2.map &>> output \
     && echo -e "\n***\nRunning idf_size.py for esp32s2..." &>> output \
     && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32s2 app_esp32s2.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py for esp32s2 with overflow..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32s2 overflow_esp32s2.map &>> output \
     && echo -e "\n***\nRunning idf_size.py for esp32s2 (target autodetected)..." &>> output \
     && coverage run -a $IDF_PATH/tools/idf_size.py app_esp32s2.map &>> output \
     && echo -e "\n***\nRunning idf_size.py on bootloader for esp32s2..." &>> output \
@@ -76,6 +80,8 @@
     && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32h2 --archive_details libdriver.a app_esp32h2.map &>> output \
     && echo -e "\n***\nRunning idf_size.py for esp32c3..." &>> output \
     && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32c3 app_esp32c3.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py for esp32c3 with overflow..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32c3 overflow_esp32c3.map &>> output \
     && echo -e "\n***\nRunning idf_size.py for esp32c3 (target autodetected)..." &>> output \
     && coverage run -a $IDF_PATH/tools/idf_size.py app_esp32c3.map &>> output \
     && echo -e "\n***\nRunning idf_size.py --archives for esp32c3..." &>> output \
@@ -86,6 +92,8 @@
     && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32c3 --archive_details libdriver.a app_esp32c3.map &>> output \
     && echo -e "\n***\nRunning idf_size.py for esp32s3..." &>> output \
     && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32s3 app_esp32s3.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py for esp32s3 with overflow..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32s3 overflow_esp32s3.map &>> output \
     && echo -e "\n***\nRunning idf_size.py for esp32s3 (target autodetected)..." &>> output \
     && coverage run -a $IDF_PATH/tools/idf_size.py app_esp32s3.map &>> output \
     && echo -e "\n***\nRunning idf_size.py --archives for esp32s3..." &>> output \
