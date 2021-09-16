@@ -295,6 +295,8 @@ def unpack(filename, destination):  # type: (str, str) -> None
     info('Extracting {0} to {1}'.format(filename, destination))
     if filename.endswith(('.tar.gz', '.tgz')):
         archive_obj = tarfile.open(filename, 'r:gz')  # type: Union[TarFile, ZipFile]
+    elif filename.endswith(('.tar.xz')):
+        archive_obj = tarfile.open(filename, 'r:xz')
     elif filename.endswith('zip'):
         archive_obj = ZipFile(filename)
     else:
