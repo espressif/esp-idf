@@ -411,6 +411,12 @@ config BTDM_BLE_ADV_REPORT_DISCARD_THRSHOLD
         If you set `BTDM_BLE_ADV_REPORT_DISCARD_THRSHOLD` to a small value or printf every adv lost event, it
         may cause adv packets lost more.
 
+
+config BTDM_RESERVE_DRAM
+    hex
+    default 0xdb5c if BT_ENABLED
+    default 0
+
 config BTDM_CTRL_HLI
     bool "High level interrupt"
     depends on BT_ENABLED
