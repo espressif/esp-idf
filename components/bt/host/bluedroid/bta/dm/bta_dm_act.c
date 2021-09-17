@@ -126,7 +126,7 @@ static void bta_dm_ctrl_features_rd_cmpl_cback(tBTM_STATUS result);
 #endif
 #endif
 #if (SMP_INCLUDED == TRUE)
-static void bta_dm_remove_sec_dev_entry(BD_ADDR remote_bd_addr);
+static BOOLEAN bta_dm_remove_sec_dev_entry(BD_ADDR remote_bd_addr);
 #endif  ///SMP_INCLUDED == TRUE
 #if (BLE_INCLUDED == TRUE)
 static void bta_dm_observe_results_cb(tBTM_INQ_RESULTS *p_inq, UINT8 *p_eir);
@@ -3069,7 +3069,9 @@ static UINT8 bta_dm_authentication_complete_cback(BD_ADDR bd_addr, DEV_CLASS dev
             bta_dm_cb.p_sec_cback(BTA_DM_AUTH_CMPL_EVT, &sec_event);
         }
 
-        bta_dm_remove_sec_dev_entry(bd_addr);
+        if (bta_dm_remove_sec_dev_entry(bd_addr)) {
+            return BTM_SEC_DEV_REC_REMOVED;
+        }
     }
 
     return BTM_SUCCESS;
@@ -3740,12 +3742,13 @@ static void bta_dm_delay_role_switch_cback(TIMER_LIST_ENT *p_tle)
 **                  remtoe device does not exist, else schedule for dev entry removal upon
                      ACL close
 **
-** Returns          void
+** Returns          TRUE if device entry is removed from Security device DB, FALSE otherwise
 **
 *******************************************************************************/
 #if (SMP_INCLUDED == TRUE)
-static void bta_dm_remove_sec_dev_entry(BD_ADDR remote_bd_addr)
+static BOOLEAN bta_dm_remove_sec_dev_entry(BD_ADDR remote_bd_addr)
 {
+    BOOLEAN is_device_deleted = FALSE;
     UINT16 index = 0;
     if ( BTM_IsAclConnectionUp(remote_bd_addr, BT_TRANSPORT_LE) ||
             BTM_IsAclConnectionUp(remote_bd_addr, BT_TRANSPORT_BR_EDR)) {
@@ -3763,7 +3766,7 @@ static void bta_dm_remove_sec_dev_entry(BD_ADDR remote_bd_addr)
             APPL_TRACE_ERROR(" %s Device does not exist in DB", __FUNCTION__);
         }
     } else {
-        BTM_SecDeleteDevice (remote_bd_addr, bta_dm_cb.device_list.peer_device[index].transport);
+        is_device_deleted = BTM_SecDeleteDevice (remote_bd_addr, bta_dm_cb.device_list.peer_device[index].transport);
 #if (BLE_INCLUDED == TRUE && GATTC_INCLUDED == TRUE)
         /* need to remove all pending background connection */
         BTA_GATTC_CancelOpen(0, remote_bd_addr, FALSE);
@@ -3771,6 +3774,7 @@ static void bta_dm_remove_sec_dev_entry(BD_ADDR remote_bd_addr)
         BTA_GATTC_Refresh(remote_bd_addr, false);
 #endif
     }
+    return is_device_deleted;
 }
 #endif  ///SMP_INCLUDED == TRUE
 
