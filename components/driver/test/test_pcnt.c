@@ -29,7 +29,7 @@
 #define PULSE_IO 21
 #define PCNT_INPUT_IO 4
 #define PCNT_CTRL_VCC_IO 5
-#define PCNT_CTRL_GND_IO 19
+#define PCNT_CTRL_GND_IO 2
 #define HIGHEST_LIMIT 10
 #define LOWEST_LIMIT 0
 #define MAX_THRESHOLD 5
