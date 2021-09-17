@@ -88,6 +88,7 @@ static void do_global_ctors(void);
 static void main_task(void* args);
 extern void app_main(void);
 extern esp_err_t esp_pthread_init(void);
+extern esp_err_t bootloader_flash_unlock(void);
 
 extern int _bss_start;
 extern int _bss_end;
@@ -466,6 +467,7 @@ void start_cpu0_default(void)
 #endif
 
     bootloader_flash_update_id();
+    bootloader_flash_unlock();
 #if !CONFIG_SPIRAM_BOOT_INIT
     // If psram is uninitialized, we need to improve some flash configuration.
     bootloader_flash_clock_config(&fhdr);
