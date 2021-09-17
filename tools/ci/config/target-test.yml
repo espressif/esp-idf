@@ -571,6 +571,12 @@ UT_046:
     - ESP32_IDF
     - UT_T1_GPIO
 
+UT_047:
+  extends: .unit_test_s2_template
+  parallel: 5
+  tags:
+    - ESP32S2_IDF
+    - UT_T1_1
 
 UT_C3:
   extends: .unit_test_c3_template
