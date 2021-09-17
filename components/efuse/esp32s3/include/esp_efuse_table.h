@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 
-// md5_digest_table 6a29c09c943d9cb07bd874af57b5870e
+// md5_digest_table 32d4e5502110edd26bdad463b5ac1d2d
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -25,7 +25,6 @@ extern "C" {
 
 
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RD_DIS[];
-extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_RTC_RAM_BOOT[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_GROUP_1[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_GROUP_2[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SPI_BOOT_CRYPT_CNT[];
@@ -59,7 +58,6 @@ extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_KEY3[];
 extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_KEY4[];
 extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_KEY5[];
 extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_SYS_DATA_PART2[];
-extern const esp_efuse_desc_t* ESP_EFUSE_DIS_RTC_RAM_BOOT[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_ICACHE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_DCACHE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_DOWNLOAD_ICACHE[];

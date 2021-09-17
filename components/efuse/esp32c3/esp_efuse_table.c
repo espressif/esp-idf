@@ -17,7 +17,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 7e5a29e190c8e3a63e1a85a40b50c355
+// md5_digest_table fe80e03d1417e5757ef89923f8d01d33
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -153,10 +153,6 @@ static const esp_efuse_desc_t RD_DIS_KEY5[] = {
 
 static const esp_efuse_desc_t RD_DIS_SYS_DATA_PART2[] = {
     {EFUSE_BLK0, 38, 1}, 	 // Read protection for EFUSE_BLK10. SYS_DATA_PART2,
-};
-
-static const esp_efuse_desc_t DIS_RTC_RAM_BOOT[] = {
-    {EFUSE_BLK0, 39, 1}, 	 // Disable boot from RTC RAM,
 };
 
 static const esp_efuse_desc_t DIS_ICACHE[] = {
@@ -674,11 +670,6 @@ const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_KEY5[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_SYS_DATA_PART2[] = {
     &RD_DIS_SYS_DATA_PART2[0],    		// Read protection for EFUSE_BLK10. SYS_DATA_PART2
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_DIS_RTC_RAM_BOOT[] = {
-    &DIS_RTC_RAM_BOOT[0],    		// Disable boot from RTC RAM
     NULL
 };
 
