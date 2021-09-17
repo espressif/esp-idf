@@ -45,15 +45,15 @@
 
 #define BYTESHIFT(VAR, IDX)    (((VAR) >> ((IDX) * 8)) & 0xFF)
 #define ISSI_ID                0x9D
+#define MXIC_ID                0xC2
 #define GD_Q_ID_HIGH           0xC8
 #define GD_Q_ID_MID            0x40
 #define GD_Q_ID_LOW            0x16
 
 #define ESP_BOOTLOADER_SPIFLASH_BP_MASK_ISSI    (BIT7 | BIT5 | BIT4 | BIT3 | BIT2)
-#define ESP_BOOTLOADER_SPIFLASH_QE_16B           BIT9   // QE position when you write 16 bits at one time.
-#define ESP_BOOTLOADER_SPIFLASH_QE_8B            BIT1   // QE position when you write 8 bits(for SR2) at one time.
-#define ESP_BOOTLOADER_SPIFLASH_WRITE_8B         (8)
-#define ESP_BOOTLOADER_SPIFLASH_WRITE_16B        (16)
+#define ESP_BOOTLOADER_SPIFLASH_QE_GD_SR2        BIT1   // QE position when you write 8 bits(for SR2) at one time.
+#define ESP_BOOTLOADER_SPIFLASH_QE_SR1_2BYTE     BIT9   // QE position when you write 16 bits at one time.
+
 
 #ifndef BOOTLOADER_BUILD
 /* Normal app version maps to esp_spi_flash.h operations...
@@ -452,72 +452,77 @@ FORCE_INLINE_ATTR bool is_gd_q_chip(const esp_rom_spiflash_chip_t* chip)
     return BYTESHIFT(chip->device_id, 2) == GD_Q_ID_HIGH && BYTESHIFT(chip->device_id, 1) == GD_Q_ID_MID && BYTESHIFT(chip->device_id, 0) >= GD_Q_ID_LOW;
 }
 
+FORCE_INLINE_ATTR bool is_mxic_chip(const esp_rom_spiflash_chip_t* chip)
+{
+    return BYTESHIFT(chip->device_id, 2) == MXIC_ID;
+}
+
 esp_err_t IRAM_ATTR __attribute__((weak)) bootloader_flash_unlock(void)
 {
+    // At the beginning status == new_status == status_sr2 == new_status_sr2 == 0.
+    // If the register doesn't need to be updated, keep them the same (0), so that no command will be actually sent.
     uint16_t status = 0;    // status for SR1 or SR1+SR2 if writing SR with 01H + 2Bytes.
     uint16_t new_status = 0;
     uint8_t status_sr2 = 0;    // status_sr2 for SR2.
     uint8_t new_status_sr2 = 0;
-    uint8_t write_sr_bit = 0;
+    uint8_t sr1_bit_num = 0;
     esp_err_t err = ESP_OK;
 
     esp_rom_spiflash_wait_idle(&g_rom_flashchip);
-    if (is_issi_chip(&g_rom_flashchip)) {
-        write_sr_bit = ESP_BOOTLOADER_SPIFLASH_WRITE_8B;
-        // ISSI chips have different QE position
-
+    if (is_issi_chip(&g_rom_flashchip) || is_mxic_chip(&g_rom_flashchip)) {
+        // Currently ISSI & MXIC share the same command and register layout, which is different from the default model.
+        // If any code here needs to be modified, check both chips.
         status = bootloader_execute_flash_command(CMD_RDSR, 0, 0, 8);
 
         /* Clear all bits in the mask.
         (This is different from ROM esp_rom_spiflash_unlock, which keeps all bits as-is.)
         */
+        sr1_bit_num = 8;
         new_status = status & (~ESP_BOOTLOADER_SPIFLASH_BP_MASK_ISSI);
-        // Skip if nothing needs to be cleared. Otherwise will waste time waiting for the flash to clear nothing.
     } else if (is_gd_q_chip(&g_rom_flashchip)) {
         /* The GD chips behaviour is to clear all bits in SR1 and clear bits in SR2 except QE bit.
            Use 01H to write SR1 and 31H to write SR2.
         */
-        write_sr_bit = ESP_BOOTLOADER_SPIFLASH_WRITE_8B;
-
         status = bootloader_execute_flash_command(CMD_RDSR, 0, 0, 8);
+        sr1_bit_num = 8;
         new_status = 0;
 
         status_sr2 = bootloader_execute_flash_command(CMD_RDSR2, 0, 0, 8);
-        new_status_sr2 = status_sr2 & ESP_BOOTLOADER_SPIFLASH_QE_8B;
+        new_status_sr2 = status_sr2 & ESP_BOOTLOADER_SPIFLASH_QE_GD_SR2;
     } else {
         /* For common behaviour, like XMC chips, Use 01H+2Bytes to write both SR1 and SR2*/
-        write_sr_bit = ESP_BOOTLOADER_SPIFLASH_WRITE_16B;
         status = bootloader_execute_flash_command(CMD_RDSR, 0, 0, 8) | (bootloader_execute_flash_command(CMD_RDSR2, 0, 0, 8) << 8);
 
         /* Clear all bits except QE, if it is set.
         (This is different from ROM esp_rom_spiflash_unlock, which keeps all bits as-is.)
         */
-        new_status = status & ESP_BOOTLOADER_SPIFLASH_QE_16B;
+        sr1_bit_num = 16;
+        new_status = status & ESP_BOOTLOADER_SPIFLASH_QE_SR1_2BYTE;
     }
 
+    // When SR is written, set to true to indicate that WRDI need to be sent to ensure the protection is ON before return.
+    bool status_written = false;
+    // Skip if nothing needs to be changed. Meaningless writing to SR increases the risk during write and wastes time.
     if (status != new_status) {
-        /* if the status in SR not equal to the ideal status, the status need to be updated */
         esp_rom_spiflash_wait_idle(&g_rom_flashchip);
         bootloader_execute_flash_command(CMD_WREN, 0, 0, 0);
-        esp_rom_spiflash_wait_idle(&g_rom_flashchip);
-        bootloader_execute_flash_command(CMD_WRSR, new_status, write_sr_bit, 0);
-        esp_rom_spiflash_wait_idle(&g_rom_flashchip);
+        bootloader_execute_flash_command(CMD_WRSR, new_status, sr1_bit_num, 0);
+        status_written = true;
     }
 
     if (status_sr2 != new_status_sr2) {
-        /* If the status in SR2 not equal to the ideal status, the status need to be updated.
-           It doesn't need to be updated if status in SR2 is 0.
-           Note: if we need to update both SR1 and SR2, the `CMD_WREN` needs to be sent again.
-        */
         esp_rom_spiflash_wait_idle(&g_rom_flashchip);
         bootloader_execute_flash_command(CMD_WREN, 0, 0, 0);
-        esp_rom_spiflash_wait_idle(&g_rom_flashchip);
-        bootloader_execute_flash_command(CMD_WRSR2, new_status_sr2, write_sr_bit, 0);
-        esp_rom_spiflash_wait_idle(&g_rom_flashchip);
+        bootloader_execute_flash_command(CMD_WRSR2, new_status_sr2, 8, 0);
+        status_written = true;
     }
 
-    bootloader_execute_flash_command(CMD_WRDI, 0, 0, 0);
-    esp_rom_spiflash_wait_idle(&g_rom_flashchip);
+    if (status_written) {
+        //Call esp_rom_spiflash_wait_idle to make sure previous WRSR is completed.
+        esp_rom_spiflash_wait_idle(&g_rom_flashchip);
+        bootloader_execute_flash_command(CMD_WRDI, 0, 0, 0);
+    }
+
     return err;
 }
 
