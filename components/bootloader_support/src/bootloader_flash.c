@@ -17,6 +17,7 @@
 #include <esp_log.h>
 #include <esp_spi_flash.h> /* including in bootloader for error values */
 #include <esp_flash_encrypt.h>
+#include "flash_qio_mode.h"
 
 #ifndef BOOTLOADER_BUILD
 /* Normal app version maps to esp_spi_flash.h operations...
@@ -249,7 +250,7 @@ esp_err_t bootloader_flash_write(size_t dest_addr, void *src, size_t size, bool 
         return ESP_FAIL;
     }
 
-    err = spi_to_esp_err(esp_rom_spiflash_unlock());
+    err = bootloader_flash_unlock();
     if (err != ESP_OK) {
         return err;
     }

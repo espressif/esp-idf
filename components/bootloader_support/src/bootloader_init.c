@@ -183,7 +183,7 @@ static esp_err_t bootloader_main()
     }
 #endif
 
-    esp_rom_spiflash_unlock();
+    bootloader_flash_unlock();
 
     ESP_LOGI(TAG, "Enabling RNG early entropy source...");
     bootloader_random_enable();

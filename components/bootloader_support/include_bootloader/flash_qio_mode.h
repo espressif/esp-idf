@@ -17,6 +17,8 @@
 extern "C" {
 #endif
 
+#include "esp_err.h"
+
 /** @brief Enable Quad I/O mode in bootloader (if configured)
  *
  * Queries attached SPI flash ID and sends correct SPI flash
@@ -31,6 +33,14 @@ void bootloader_enable_qio_mode(void);
        flash_id = ID & 0xffff;
  */
 uint32_t bootloader_read_flash_id();
+
+/**
+  * @brief Unlock Flash write protect.
+  *        Please do not call this function in SDK.
+  *
+  * @note This can be overridden because it's attribute weak.
+  */
+esp_err_t bootloader_flash_unlock(void);
 
 /**
  * @brief Read the SFDP of the flash
