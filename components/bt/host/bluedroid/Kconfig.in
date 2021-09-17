@@ -42,7 +42,7 @@ config BT_BLUEDROID_MEM_DEBUG
 
 config BT_CLASSIC_ENABLED
     bool "Classic Bluetooth"
-    depends on BT_BLUEDROID_ENABLED && BT_CTRL_ESP32
+    depends on BT_BLUEDROID_ENABLED && IDF_TARGET_ESP32
     default n
     help
         For now this option needs "SMP_ENABLE" to be set to yes
@@ -1070,8 +1070,3 @@ config BT_BLE_42_FEATURES_SUPPORTED
     default n
     help
         This enables BLE 4.2 features.
-
-config BT_RESERVE_DRAM
-    hex
-    default 0xdb5c if BT_ENABLED
-    default 0
