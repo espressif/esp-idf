@@ -81,19 +81,6 @@ menu "LWIP"
             the maximum amount of sockets here. The valid value is from 1
             to 16.
 
-    config LWIP_USE_ONLY_LWIP_SELECT
-        bool "Support LWIP socket select() only (DEPRECATED)"
-        default n
-        help
-            This option is deprecated. Use VFS_SUPPORT_SELECT instead, which is
-            the inverse of this option.
-
-            The virtual filesystem layer of select() redirects sockets to
-            lwip_select() and non-socket file descriptors to their respective driver
-            implementations. If this option is enabled then all calls of select()
-            will be redirected to lwip_select(), therefore, select can be used
-            for sockets only.
-
     config LWIP_SO_LINGER
         bool "Enable SO_LINGER processing"
         default n
@@ -189,32 +176,6 @@ menu "LWIP"
         default n
         help
             Enabling this option allows LWIP statistics
-
-    config LWIP_ETHARP_TRUST_IP_MAC
-        bool "Enable LWIP ARP trust"
-        default n
-        help
-            Enabling this option allows ARP table to be updated.
-
-            If this option is enabled, the incoming IP packets cause the ARP table to be
-            updated with the source MAC and IP addresses supplied in the packet.
-            You may want to disable this if you do not trust LAN peers to have the
-            correct addresses, or as a limited approach to attempt to handle
-            spoofing. If disabled, lwIP will need to make a new ARP request if
-            the peer is not already in the ARP table, adding a little latency.
-            The peer *is* in the ARP table if it requested our address before.
-            Also notice that this slows down input processing of every IP packet!
-
-            There are two known issues in real application if this feature is enabled:
-            - The LAN peer may have bug to update the ARP table after the ARP entry is aged out.
-            If the ARP entry on the LAN peer is aged out but failed to be updated, all IP packets
-            sent from LWIP to the LAN peer will be dropped by LAN peer.
-            - The LAN peer may not be trustful, the LAN peer may send IP packets to LWIP with
-            two different MACs, but the same IP address. If this happens, the LWIP has problem
-            to receive IP packets from LAN peer.
-
-            So the recommendation is to disable this option.
-            Here the LAN peer means the other side to which the ESP station or soft-AP is connected.
 
     config LWIP_ESP_GRATUITOUS_ARP
         bool "Send gratuitous ARP periodically"
@@ -420,6 +381,7 @@ menu "LWIP"
             Enabling this option means that if a packet is sent with a destination
             address equal to the interface's own IP address, it will "loop back" and
             be received by this interface.
+            Disabling this option disables support of loopback interface in lwIP
 
     config LWIP_LOOPBACK_MAX_PBUFS
         int "Max queued loopback packets per interface"
@@ -574,15 +536,6 @@ menu "LWIP"
             default n
             help
                 TCP will support sending selective acknowledgements (SACKs).
-
-        config LWIP_TCP_KEEP_CONNECTION_WHEN_IP_CHANGES
-            bool "Keep TCP connections when IP changed"
-            default n
-            help
-                This option is enabled when the following scenario happen:
-                network dropped and reconnected, IP changes is like: 192.168.0.2->0.0.0.0->192.168.0.2
-
-                Disable this option to keep consistent with the original LWIP code behavior.
 
 
         choice LWIP_TCP_OVERSIZE
