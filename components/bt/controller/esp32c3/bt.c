@@ -972,6 +972,9 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     // overwrite some parameters
     cfg->magic = ESP_BT_CTRL_CONFIG_MAGIC_VAL;
 
+#if CONFIG_MAC_BB_PD
+    esp_mac_bb_pd_mem_init();
+#endif
     esp_bt_power_domain_on();
 
     btdm_controller_mem_init();
