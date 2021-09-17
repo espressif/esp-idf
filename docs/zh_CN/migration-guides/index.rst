@@ -7,3 +7,4 @@ ESP-IDF 5.0 迁移指南
 
     外设 <peripherals>
     构建系统 <build-system>
+    系统 <system>

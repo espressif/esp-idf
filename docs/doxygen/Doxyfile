@@ -184,7 +184,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_system/include/esp_task_wdt.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_crc.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_freertos_hooks.h \
-    $(PROJECT_PATH)/components/esp_ipc/include/esp_ipc.h \
+    $(PROJECT_PATH)/components/esp_system/include/esp_ipc.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_expression_with_stack.h \
     $(PROJECT_PATH)/components/app_update/include/esp_ota_ops.h \
     $(PROJECT_PATH)/components/esp_https_ota/include/esp_https_ota.h \
