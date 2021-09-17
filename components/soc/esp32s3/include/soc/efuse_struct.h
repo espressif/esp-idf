@@ -300,7 +300,6 @@ typedef volatile struct efuse_dev_s {
         };
         uint32_t val;
     } rd_repeat_err3;
-    uint32_t reserved_18c;
     union {
         struct {
             uint32_t reg_rpt4_reserved2_err        :    24;  /*If any bits in this filed are 1, then it indicates a programming error.*/
@@ -308,6 +307,7 @@ typedef volatile struct efuse_dev_s {
         };
         uint32_t val;
     } rd_repeat_err4;
+    uint32_t reserved_190;
     uint32_t reserved_194;
     uint32_t reserved_198;
     uint32_t reserved_19c;

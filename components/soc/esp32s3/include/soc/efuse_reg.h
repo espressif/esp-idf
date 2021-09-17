@@ -1572,7 +1572,7 @@ apping gpio10 when both reg_dis_usb_jtag and reg_dis_pad_jtag are equal to 0..*/
 #define EFUSE_DIS_DOWNLOAD_MODE_ERR_V  0x1
 #define EFUSE_DIS_DOWNLOAD_MODE_ERR_S  0
 
-#define EFUSE_RD_REPEAT_ERR4_REG          (DR_REG_EFUSE_BASE + 0x190)
+#define EFUSE_RD_REPEAT_ERR4_REG          (DR_REG_EFUSE_BASE + 0x18C)
 /* EFUSE_RPT4_RESERVED2_ERR : RO ;bitpos:[23:0] ;default: 24'h0 ; */
 /*description: If any bits in this filed are 1, then it indicates a programming error..*/
 #define EFUSE_RPT4_RESERVED2_ERR    0x00FFFFFF
