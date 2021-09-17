@@ -46,7 +46,7 @@
   extends:
     - .example_test_template
     - .rules:test:example_test-esp32
-variables:
+  variables:
     SUBMODULES_TO_FETCH: "all"
 
 test_weekend_mqtt:
