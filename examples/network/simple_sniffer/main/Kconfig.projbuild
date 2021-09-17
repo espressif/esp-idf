@@ -33,6 +33,10 @@ menu "Example Configuration"
             depends on APPTRACE_DEST_TRAX
             help
                 Store pcap file to host via JTAG interface.
+        config SNIFFER_PCAP_DESTINATION_MEMORY
+            bool "Memory"
+            help
+                Store pcap file to memory.
     endchoice
 
     if SNIFFER_PCAP_DESTINATION_SD
@@ -62,6 +66,14 @@ menu "Example Configuration"
             default 32
             help
                 Specify maximum name length of pcap file.
+    endif
+
+    if SNIFFER_PCAP_DESTINATION_MEMORY
+        config SNIFFER_PCAP_MEMORY_SIZE
+            int "Memory size of the '.pcap' file in memory"
+            default 4096
+            help
+                Max memory size to storage packet in memory.
     endif
 
     config SNIFFER_WORK_QUEUE_LEN
