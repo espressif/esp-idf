@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 0f3dc076304dac1cb56cea03c223d26d
+// md5_digest_table ee5142bc489eee22230a49b5c7cafe00
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -21,10 +21,6 @@ static const esp_efuse_desc_t WR_DIS[] = {
 
 static const esp_efuse_desc_t WR_DIS_RD_DIS[] = {
     {EFUSE_BLK0, 0, 1}, 	 // Write protection for RD_DIS_KEY0 RD_DIS_KEY1 RD_DIS_KEY2 RD_DIS_KEY3 RD_DIS_KEY4 RD_DIS_KEY5 RD_DIS_SYS_DATA_PART2,
-};
-
-static const esp_efuse_desc_t WR_DIS_DIS_RTC_RAM_BOOT[] = {
-    {EFUSE_BLK0, 1, 1}, 	 // Write protection for DIS_RTC_RAM_BOOT,
 };
 
 static const esp_efuse_desc_t WR_DIS_GROUP_1[] = {
@@ -161,10 +157,6 @@ static const esp_efuse_desc_t RD_DIS_KEY5[] = {
 
 static const esp_efuse_desc_t RD_DIS_SYS_DATA_PART2[] = {
     {EFUSE_BLK0, 38, 1}, 	 // Read protection for EFUSE_BLK10. SYS_DATA_PART2,
-};
-
-static const esp_efuse_desc_t DIS_RTC_RAM_BOOT[] = {
-    {EFUSE_BLK0, 39, 1}, 	 // Disable boot from RTC RAM,
 };
 
 static const esp_efuse_desc_t DIS_ICACHE[] = {
@@ -554,11 +546,6 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RD_DIS[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_RTC_RAM_BOOT[] = {
-    &WR_DIS_DIS_RTC_RAM_BOOT[0],    		// Write protection for DIS_RTC_RAM_BOOT
-    NULL
-};
-
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_GROUP_1[] = {
     &WR_DIS_GROUP_1[0],    		// Write protection for DIS_ICACHE DIS_DCACHE DIS_DOWNLOAD_ICACHE DIS_DOWNLOAD_DCACHE DIS_FORCE_DOWNLOAD DIS_USB DIS_CAN SOFT_DIS_JTAG HARD_DIS_JTAG DIS_DOWNLOAD_MANUAL_ENCRYPT
     NULL
@@ -726,11 +713,6 @@ const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_KEY5[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_SYS_DATA_PART2[] = {
     &RD_DIS_SYS_DATA_PART2[0],    		// Read protection for EFUSE_BLK10. SYS_DATA_PART2
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_DIS_RTC_RAM_BOOT[] = {
-    &DIS_RTC_RAM_BOOT[0],    		// Disable boot from RTC RAM
     NULL
 };
 
