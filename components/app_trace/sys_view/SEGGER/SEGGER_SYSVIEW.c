@@ -1686,7 +1686,8 @@ void SEGGER_SYSVIEW_Start(void) {
 void SEGGER_SYSVIEW_Stop(void) {
   U8* pPayloadStart;
   RECORD_START(SEGGER_SYSVIEW_INFO_SIZE);
-  //
+  // We should send answer for the Stop command in any case.
+  _SYSVIEW_Globals.EnableState = 1;
   if (_SYSVIEW_Globals.EnableState) {
     _SendPacket(pPayloadStart, pPayloadStart, SYSVIEW_EVTID_TRACE_STOP);
     _SYSVIEW_Globals.EnableState = 0;
@@ -1806,6 +1807,10 @@ void SEGGER_SYSVIEW_SendSysDesc(const char *sSysDesc) {
 */
 void SEGGER_SYSVIEW_RecordSystime(void) {
   U64 Systime;
+    // This code requeued because SystemView expect the answer from the device.
+    // If there is no answer, then communication will be broken.
+    U8 old_en = _SYSVIEW_Globals.EnableState;
+    _SYSVIEW_Globals.EnableState = 1;
 
   if (_SYSVIEW_Globals.pOSAPI && _SYSVIEW_Globals.pOSAPI->pfGetTime) {
     Systime = _SYSVIEW_Globals.pOSAPI->pfGetTime();
@@ -1815,6 +1820,7 @@ void SEGGER_SYSVIEW_RecordSystime(void) {
   } else {
     SEGGER_SYSVIEW_RecordU32(SYSVIEW_EVTID_SYSTIME_CYCLES, SEGGER_SYSVIEW_GET_TIMESTAMP());
   }
+    _SYSVIEW_Globals.EnableState = old_en;
 }
 
 /*********************************************************************

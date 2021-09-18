@@ -210,12 +210,6 @@ static uint8_t * const s_trax_blocks[] = {
     (uint8_t *)TRACEMEM_BLK1_ADDR
 };
 
-
-esp_apptrace_hw_t *esp_apptrace_uart_hw_get(int num, void **data)
-{
-    return NULL;
-}
-
 esp_apptrace_hw_t *esp_apptrace_jtag_hw_get(void **data)
 {
 #if CONFIG_APPTRACE_DEST_JTAG

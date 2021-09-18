@@ -9,20 +9,32 @@
 #include "esp_app_trace.h"
 #include "esp_app_trace_port.h"
 
-#define ESP_APPTRACE_MAX_VPRINTF_ARGS           256
-#define ESP_APPTRACE_HOST_BUF_SIZE              256
+#ifdef CONFIG_APPTRACE_DEST_UART0
+#define ESP_APPTRACE_DEST_UART_NUM 0
+#elif CONFIG_APPTRACE_DEST_UART1
+#define ESP_APPTRACE_DEST_UART_NUM 1
+#elif CONFIG_APPTRACE_DEST_UART2
+#define ESP_APPTRACE_DEST_UART_NUM 2
+#elif CONFIG_APPTRACE_DEST_USB_CDC
+#define ESP_APPTRACE_DEST_UART_NUM 10
+#else
+#define ESP_APPTRACE_DEST_UART_NUM 0
+#endif
 
-#define ESP_APPTRACE_PRINT_LOCK                 0
+#define ESP_APPTRACE_MAX_VPRINTF_ARGS 256
+#define ESP_APPTRACE_HOST_BUF_SIZE 256
+
+#define ESP_APPTRACE_PRINT_LOCK 0
 
 const static char *TAG = "esp_apptrace";
 
 /** tracing module internal data */
 typedef struct {
-    esp_apptrace_hw_t * hw;
-    void *              hw_data;
+    esp_apptrace_hw_t *hw;
+    void               *hw_data;
 } esp_apptrace_channel_t;
 
-static esp_apptrace_channel_t   s_trace_channels[ESP_APPTRACE_DEST_NUM];
+static esp_apptrace_channel_t   s_trace_channels[ESP_APPTRACE_DEST_MAX];
 static bool s_inited;
 
 esp_err_t esp_apptrace_init(void)
@@ -40,16 +52,16 @@ esp_err_t esp_apptrace_init(void)
             s_trace_channels[ESP_APPTRACE_DEST_JTAG].hw = hw;
             s_trace_channels[ESP_APPTRACE_DEST_JTAG].hw_data = hw_data;
         }
-        hw = esp_apptrace_uart_hw_get(0, &hw_data);
+        hw = esp_apptrace_uart_hw_get(ESP_APPTRACE_DEST_UART_NUM, &hw_data);
         if (hw != NULL) {
-            s_trace_channels[ESP_APPTRACE_DEST_UART0].hw = hw;
-            s_trace_channels[ESP_APPTRACE_DEST_UART0].hw_data = hw_data;
+            s_trace_channels[ESP_APPTRACE_DEST_UART].hw = hw;
+            s_trace_channels[ESP_APPTRACE_DEST_UART].hw_data = hw_data;
         }
         s_inited = true;
     }
 
     // esp_apptrace_init() is called on every core, so initialize trace channel on every core
-    for (int i = 0; i < sizeof(s_trace_channels)/sizeof(s_trace_channels[0]); i++) {
+    for (int i = 0; i < sizeof(s_trace_channels) / sizeof(s_trace_channels[0]); i++) {
         esp_apptrace_channel_t *ch = &s_trace_channels[i];
         if (ch->hw) {
             res = ch->hw->init(ch->hw_data);
@@ -73,15 +85,21 @@ void esp_apptrace_down_buffer_config(uint8_t *buf, uint32_t size)
     // currently down buffer is supported for JTAG interface only
     // TODO: one more argument should be added to this function to specify HW inteface: JTAG, UART0 etc
     ch = &s_trace_channels[ESP_APPTRACE_DEST_JTAG];
-    if (ch->hw == NULL) {
-        ESP_APPTRACE_LOGE("Trace destination not supported!");
-        return;
+    if (ch->hw != NULL) {
+        if (ch->hw->down_buffer_config != NULL) {
+            ch->hw->down_buffer_config(ch->hw_data, buf, size);
+        }
+    } else {
+        ESP_APPTRACE_LOGD("Trace destination for JTAG not supported!");
     }
-    if (ch->hw->down_buffer_config == NULL) {
-        return;
+    ch = &s_trace_channels[ESP_APPTRACE_DEST_UART];
+    if (ch->hw != NULL) {
+        if (ch->hw->down_buffer_config != NULL) {
+            ch->hw->down_buffer_config(ch->hw_data, buf, size);
+        }
+    } else {
+        ESP_APPTRACE_LOGD("Trace destination for UART not supported!");
     }
-
-    ch->hw->down_buffer_config(ch->hw_data, buf, size);
 }
 
 uint8_t *esp_apptrace_down_buffer_get(esp_apptrace_dest_t dest, uint32_t *size, uint32_t user_tmo)
@@ -169,7 +187,7 @@ esp_err_t esp_apptrace_read(esp_apptrace_dest_t dest, void *buf, uint32_t *size,
     esp_apptrace_tmo_init(&tmo, user_tmo);
     uint32_t act_sz = *size;
     *size = 0;
-    uint8_t * ptr = ch->hw->get_down_buffer(ch->hw_data, &act_sz, &tmo);
+    uint8_t *ptr = ch->hw->get_down_buffer(ch->hw_data, &act_sz, &tmo);
     if (ptr && act_sz > 0) {
         ESP_APPTRACE_LOGD("Read %d bytes from host", act_sz);
         memcpy(buf, ptr, act_sz);
@@ -419,3 +437,10 @@ bool esp_apptrace_host_is_connected(esp_apptrace_dest_t dest)
 
     return ch->hw->host_is_connected(ch->hw_data);
 }
+
+#if !CONFIG_APPTRACE_DEST_JTAG
+esp_apptrace_hw_t *esp_apptrace_jtag_hw_get(void **data)
+{
+    return NULL;
+}
+#endif
