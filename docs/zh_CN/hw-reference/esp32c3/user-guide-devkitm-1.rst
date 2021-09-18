@@ -41,6 +41,8 @@ ESP32-C3-DevKitM-1 是一款入门级开发板，使用以尺寸小而得名的 
 
     ESP32-C3-DevKitM-1 - 正面
 
+以下按照逆时针的顺序依次介绍开发板上的主要组件。
+
 .. list-table::
    :widths: 30 70
    :header-rows: 1
@@ -49,22 +51,22 @@ ESP32-C3-DevKitM-1 是一款入门级开发板，使用以尺寸小而得名的 
      - 介绍
    * - ESP32-C3-MINI-1
      - ESP32-C3-MINI-1 是一款通用型 Wi-Fi 和低功耗蓝牙双模模组，采用 PCB 板载天线。该款模组集成配置 4 MB 嵌入式 flash 的 `ESP32-C3FN4 <https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_cn.pdf>`_ 芯片。由于 flash 直接封装在芯片中，ESP32-C3-MINI-1 模组具有更小的封装尺寸。
-   * - 5 V 转 3.3 V LDO
+   * - 5 V to 3.3 V LDO（5 V 转 3.3 V LDO）
      - 电源转换器，输入 5 V，输出 3.3 V。
-   * - 5 V 电源指示灯
+   * - 5 V Power On LED（5 V 电源指示灯）
      - 开发板连接 USB 电源后，该指示灯亮起。
-   * - I/O 连接器 
+   * - Pin Headers（排针）
      - 所有可用 GPIO 管脚（除 flash 的 SPI 总线）均已引出至开发板的排针。请查看 :ref:`user-guide-c3-devkitm-1-v1-header-blocks` 获取更多信息。
-   * - Boot 键
+   * - Boot Button（Boot 键）
      - 下载按键。按住 **Boot** 键的同时按一下 **Reset** 键进入“固件下载”模式，通过串口下载固件。
-   * - Micro-USB 接口
+   * - Micro-USB Port（Micro-USB 接口）
      - USB 接口。可用作开发板的供电电源或 PC 和 ESP32-C3FN4 芯片的通信接口。     
-   * - Reset 键
+   * - Reset Button（Reset 键）
      - 复位按键。 
-   * - USB 至 UART 桥接器
+   * - USB-to-UART Bridge（USB 至 UART 桥接器）
      - 单芯片 USB 至 UART 桥接器，可提供高达 3 Mbps 的传输速率。
    * - RGB LED
-     - 可寻址 RGB 发光二极管 (WS2812)，由 GPIO8 驱动。
+     - 可寻址 RGB 发光二极管，由 GPIO8 驱动。
 
 开始开发应用
 ------------
@@ -77,6 +79,10 @@ ESP32-C3-DevKitM-1 是一款入门级开发板，使用以尺寸小而得名的 
 - ESP32-C3-DevKitM-1
 - USB 2.0 数据线（标准 A 型转 Micro-B 型）
 - 电脑 （Windows、Linux 或 macOS）
+
+.. 注解::
+
+  请确保使用适当的 USB 数据线。部分数据线仅可用于充电，无法用于数据传输和编程。
 
 软件设置
 ^^^^^^^^
@@ -179,7 +185,7 @@ J3
 ====  ====  ==========  ================================
 
 .. [1] P：电源；I：输入；O：输出；T：可设置为高阻。
-.. [2] GPIO2、GPIO8、GPIO9 为 ESP32-C3FN4 芯片的 Strapping 管脚。在芯片的系统复位过程中，Strapping 管脚对自己管脚上的电平采样并存储到锁存器中，并一直保持到芯片掉电或关闭。Strapping 管脚的具体描述和应用，请参考 `ESP32-C3 技术规格书`_ 的 Strapping 管脚章节。 
+.. [2] GPIO2、GPIO8、GPIO9 为 ESP32-C3FN4 芯片的 Strapping 管脚。在芯片上电和系统复位过程中，Strapping 管脚根据管脚的二进制电压值控制芯片功能。Strapping 管脚的具体描述和应用，请参考 `ESP32-C3 技术规格书`_ 的 Strapping 管脚章节。 
 
 管脚布局
 ^^^^^^^^
