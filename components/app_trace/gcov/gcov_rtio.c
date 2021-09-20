@@ -22,7 +22,9 @@
 #include "soc/cpu.h"
 #include "soc/timer_periph.h"
 #include "esp_app_trace.h"
+#include "esp_freertos_hooks.h"
 #include "esp_private/dbg_stubs.h"
+#include "esp_ipc.h"
 #include "hal/wdt_hal.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/libc_stubs.h"
@@ -37,128 +39,113 @@
 #define LOG_LOCAL_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include "esp_log.h"
 const static char *TAG = "esp_gcov_rtio";
+static volatile bool s_create_gcov_task = false;
+static volatile bool s_gcov_task_running = false;
 
 extern void __gcov_dump(void);
 extern void __gcov_reset(void);
 
-static struct syscall_stub_table s_gcov_stub_table;
-
-
-static int gcov_stub_lock_try_acquire_recursive(_lock_t *lock)
+void gcov_dump_task(void *pvParameter)
 {
-    if (*lock && uxSemaphoreGetCount((xSemaphoreHandle)(*lock)) == 0) {
-        // we can do nothing here, gcov dump is initiated with some resource locked
-        // which is also used by gcov functions
-        ESP_EARLY_LOGE(TAG, "Lock 0x%x is busy during GCOV dump! System state can be inconsistent after dump!", lock);
-    }
-    return pdTRUE;
-}
+    int dump_result = 0;
+    bool *running = (bool *)pvParameter;
 
-static void gcov_stub_lock_acquire_recursive(_lock_t *lock)
-{
-    gcov_stub_lock_try_acquire_recursive(lock);
-}
+    ESP_EARLY_LOGV(TAG, "%s stack use in %d", __FUNCTION__, uxTaskGetStackHighWaterMark(NULL));
 
-static void gcov_stub_lock_release_recursive(_lock_t *lock)
-{
-}
-
-static int esp_dbg_stub_gcov_dump_do(void)
-{
-    int ret = ESP_OK;
-    FILE* old_stderr = stderr;
-    FILE* old_stdout = stdout;
-    static struct syscall_stub_table *old_tables[portNUM_PROCESSORS];
-
-    old_tables[0] = syscall_table_ptr_pro;
-#if portNUM_PROCESSORS > 1
-    old_tables[1] = syscall_table_ptr_app;
-#endif
     ESP_EARLY_LOGV(TAG, "Alloc apptrace down buf %d bytes", ESP_GCOV_DOWN_BUF_SIZE);
     void *down_buf = malloc(ESP_GCOV_DOWN_BUF_SIZE);
     if (down_buf == NULL) {
         ESP_EARLY_LOGE(TAG, "Could not allocate memory for the buffer");
-        return ESP_ERR_NO_MEM;
+        dump_result = ESP_ERR_NO_MEM;
+        goto gcov_exit;
     }
     ESP_EARLY_LOGV(TAG, "Config apptrace down buf");
     esp_apptrace_down_buffer_config(down_buf, ESP_GCOV_DOWN_BUF_SIZE);
+    /* we are directing the std outputs to the fake ones in order to reduce stack usage */
+    FILE *old_stderr = stderr;
+    FILE *old_stdout = stdout;
+    stderr = (FILE *) &__sf_fake_stderr;
+    stdout = (FILE *) &__sf_fake_stdout;
     ESP_EARLY_LOGV(TAG, "Dump data...");
-    // incase of dual-core chip APP and PRO CPUs share the same table, so it is safe to save only PRO's table
-    memcpy(&s_gcov_stub_table, syscall_table_ptr_pro, sizeof(s_gcov_stub_table));
-    s_gcov_stub_table._lock_acquire_recursive = &gcov_stub_lock_acquire_recursive;
-    s_gcov_stub_table._lock_release_recursive = &gcov_stub_lock_release_recursive;
-    s_gcov_stub_table._lock_try_acquire_recursive = &gcov_stub_lock_try_acquire_recursive,
-    syscall_table_ptr_pro = &s_gcov_stub_table;
-#if portNUM_PROCESSORS > 1
-    syscall_table_ptr_app = &s_gcov_stub_table;
-#endif
-    stderr = (FILE*) &__sf_fake_stderr;
-    stdout = (FILE*) &__sf_fake_stdout;
     __gcov_dump();
     // reset dump status to allow incremental data accumulation
     __gcov_reset();
-    stdout = old_stdout;
-    stderr = old_stderr;
-    syscall_table_ptr_pro = old_tables[0];
-#if portNUM_PROCESSORS > 1
-    syscall_table_ptr_app = old_tables[1];
-#endif
-    ESP_EARLY_LOGV(TAG, "Free apptrace down buf");
     free(down_buf);
+    stderr = old_stderr;
+    stdout = old_stdout;
     ESP_EARLY_LOGV(TAG, "Finish file transfer session");
-    ret = esp_apptrace_fstop(ESP_APPTRACE_DEST_TRAX);
-    if (ret != ESP_OK) {
-        ESP_EARLY_LOGE(TAG, "Failed to send files transfer stop cmd (%d)!", ret);
+    dump_result = esp_apptrace_fstop(ESP_APPTRACE_DEST_TRAX);
+    if (dump_result != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "Failed to send files transfer stop cmd (%d)!", dump_result);
     }
-    ESP_EARLY_LOGV(TAG, "exit %d", ret);
-    return ret;
+
+gcov_exit:
+    ESP_EARLY_LOGV(TAG, "dump_result %d", dump_result);
+    if (running) {
+        *running = false;
+    }
+
+    ESP_EARLY_LOGV(TAG, "%s stack use out %d", __FUNCTION__, uxTaskGetStackHighWaterMark(NULL));
+
+    vTaskDelete(NULL);
+}
+
+void gcov_create_task(void *arg)
+{
+    ESP_EARLY_LOGV(TAG, "%s", __FUNCTION__);
+    xTaskCreatePinnedToCore(&gcov_dump_task, "gcov_dump_task", 2048, (void *)&s_gcov_task_running, configMAX_PRIORITIES - 1, NULL, 0);
+}
+
+void gcov_create_task_tick_hook(void)
+{
+    extern esp_err_t esp_ipc_start_gcov_from_isr(uint32_t cpu_id, esp_ipc_func_t func, void* arg);
+    if (s_create_gcov_task) {
+        if (esp_ipc_start_gcov_from_isr(xPortGetCoreID(), &gcov_create_task, NULL) == ESP_OK) {
+            s_create_gcov_task = false;
+        }
+    }
 }
 
 /**
- * @brief Triggers gcov info dump.
+ * @brief Triggers gcov info dump task
  *        This function is to be called by OpenOCD, not by normal user code.
- * TODO: what about interrupted flash access (when cache disabled)???
+ * TODO: what about interrupted flash access (when cache disabled)
  *
  * @return ESP_OK on success, otherwise see esp_err_t
  */
 static int esp_dbg_stub_gcov_entry(void)
 {
-    return esp_dbg_stub_gcov_dump_do();
+    /* we are in isr context here */
+    s_create_gcov_task = true;
+    return ESP_OK;
 }
 
 int gcov_rtio_atexit(void (*function)(void) __attribute__ ((unused)))
 {
+    uint32_t capabilities = 0;
     ESP_EARLY_LOGV(TAG, "%s", __FUNCTION__);
     esp_dbg_stub_entry_set(ESP_DBG_STUB_ENTRY_GCOV, (uint32_t)&esp_dbg_stub_gcov_entry);
-    return 0;
+    if (esp_dbg_stub_entry_get(ESP_DBG_STUB_ENTRY_CAPABILITIES, &capabilities) == ESP_OK) {
+        esp_dbg_stub_entry_set(ESP_DBG_STUB_ENTRY_CAPABILITIES, capabilities | ESP_DBG_STUB_CAP_GCOV_TASK);
+    }
+    esp_register_freertos_tick_hook(gcov_create_task_tick_hook);
+    return ESP_OK;
 }
 
 void esp_gcov_dump(void)
 {
-    // disable IRQs on this CPU, other CPU is halted by OpenOCD
-    unsigned irq_state = portENTER_CRITICAL_NESTED();
-#if !CONFIG_FREERTOS_UNICORE
-    int other_core = xPortGetCoreID() ? 0 : 1;
-    esp_cpu_stall(other_core);
-#endif
+    ESP_EARLY_LOGV(TAG, "%s", __FUNCTION__);
+
     while (!esp_apptrace_host_is_connected(ESP_APPTRACE_DEST_TRAX)) {
-        wdt_hal_context_t twdt = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
-        wdt_hal_context_t iwdt = {.inst = WDT_MWDT1, .mwdt_dev = &TIMERG1};
-        //Feed the Task Watchdog (TG0) to prevent it from timing out
-        wdt_hal_write_protect_disable(&twdt);
-        wdt_hal_feed(&twdt);
-        wdt_hal_write_protect_enable(&twdt);
-        //Likewise, feed the Interrupt Watchdog (TG1) to prevent a reboot
-        wdt_hal_write_protect_disable(&iwdt);
-        wdt_hal_feed(&iwdt);
-        wdt_hal_write_protect_enable(&iwdt);
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 
-    esp_dbg_stub_gcov_dump_do();
-#if !CONFIG_FREERTOS_UNICORE
-    esp_cpu_unstall(other_core);
-#endif
-    portEXIT_CRITICAL_NESTED(irq_state);
+    /* We are not in isr context here. Waiting for the completion is safe */
+    s_gcov_task_running = true;
+    s_create_gcov_task = true;
+    while (s_gcov_task_running) {
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
 }
 
 void *gcov_rtio_fopen(const char *path, const char *mode)
@@ -177,7 +164,7 @@ int gcov_rtio_fclose(void *stream)
 
 size_t gcov_rtio_fread(void *ptr, size_t size, size_t nmemb, void *stream)
 {
-    ESP_EARLY_LOGV(TAG, "%s read %u", __FUNCTION__, size*nmemb);
+    ESP_EARLY_LOGV(TAG, "%s read %u", __FUNCTION__, size * nmemb);
     size_t sz = esp_apptrace_fread(ESP_APPTRACE_DEST_TRAX, ptr, size, nmemb, stream);
     ESP_EARLY_LOGV(TAG, "%s actually read %u", __FUNCTION__, sz);
     return sz;
