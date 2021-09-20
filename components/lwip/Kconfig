@@ -81,6 +81,12 @@ menu "LWIP"
             the maximum amount of sockets here. The valid value is from 1
             to 16.
 
+    config LWIP_USE_ONLY_LWIP_SELECT
+        bool "Support LWIP socket select() only (DEPRECATED)"
+        default n
+        help
+            This option is deprecated. Do not use this option, use VFS_SUPPORT_SELECT instead.
+
     config LWIP_SO_LINGER
         bool "Enable SO_LINGER processing"
         default n
