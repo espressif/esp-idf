@@ -368,11 +368,6 @@ The following API functions are supported. For full details see :component_file:
 - ``sys_timeouts_init()``
 - ``sys_timeouts_deinit()``
 
-Abort TCP connections when IP changes
-+++++++++++++++++++++++++++++++++++++
-
-:ref:`CONFIG_LWIP_TCP_KEEP_CONNECTION_WHEN_IP_CHANGES` is disabled by default. This disables the default lwIP behaviour of keeping TCP connections open if an interface IP changes, in case the interface IP changes back (for example, if an interface connection goes down and comes back up). Enable this option to keep TCP connections open in this case, until they time out normally. This may increase the number of sockets in use if a network interface goes down temporarily.
-
 Additional Socket Options
 +++++++++++++++++++++++++
 
