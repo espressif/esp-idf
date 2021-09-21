@@ -2,16 +2,14 @@
 # SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
-import argparse
 import os
-import uuid
 from typing import Any, List, Optional
 
 from construct import Const, Int8ul, Int16ul, Int32ul, PaddedString, Struct
 from fatfsgen_utils.fat import FAT
 from fatfsgen_utils.fatfs_state import FATFSState
 from fatfsgen_utils.fs_object import Directory
-from fatfsgen_utils.utils import pad_string
+from fatfsgen_utils.utils import generate_4bytes_random, get_args_for_partition_generator, pad_string
 
 
 class FATFS:
@@ -61,7 +59,6 @@ class FATFS:
                  hidden_sectors: int = 0,
                  long_names_enabled: bool = False,
                  entry_size: int = 32,
-                 wl_sectors: int = 0,
                  num_heads: int = 0xff,
                  oem_name: str = 'MSDOS5.0',
                  sec_per_track: int = 0x3f,
@@ -84,7 +81,6 @@ class FATFS:
                                 sec_per_track=sec_per_track,
                                 long_names_enabled=long_names_enabled,
                                 volume_label=volume_label,
-                                wl_sectors=wl_sectors,
                                 oem_name=oem_name)
         binary_image = bytearray(
             self.read_filesystem(binary_image_path) if binary_image_path else self.create_empty_fatfs())
@@ -119,7 +115,7 @@ class FATFS:
 
     def create_empty_fatfs(self) -> Any:
         sectors_count = self.state.size // self.state.sector_size
-        volume_uuid = uuid.uuid4().int & 0xFFFFFFFF
+        volume_uuid = generate_4bytes_random()
         return (
             FATFS.BOOT_SECTOR_HEADER.build(
                 dict(BS_OEMName=pad_string(self.state.oem_name, size=FATFS.MAX_OEM_NAME_SIZE),
@@ -195,22 +191,12 @@ class FATFS:
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Create a FAT filesystem and populate it with directory content')
-    parser.add_argument('input_directory',
-                        help='Path to the directory that will be encoded into fatfs image')
-    parser.add_argument('--output_file',
-                        default='fatfs_image.img',
-                        help='Filename of the generated fatfs image')
-    parser.add_argument('--partition_size',
-                        default=1024 * 1024,
-                        help='Size of the partition in bytes')
-    args = parser.parse_args()
-
+    args = get_args_for_partition_generator('Create a FAT filesystem and populate it with directory content')
     input_dir = args.input_directory
-    try:
-        partition_size = eval(args.partition_size)
-    except ValueError:
-        partition_size = args.partition_size
-    fatfs = FATFS(size=partition_size)
+
+    partition_size = int(str(args.partition_size), 0)
+    sector_size_bytes = int(str(args.sector_size), 0)
+
+    fatfs = FATFS(size=partition_size, sector_size=sector_size_bytes)
     fatfs.generate(input_dir)
     fatfs.write_filesystem(args.output_file)

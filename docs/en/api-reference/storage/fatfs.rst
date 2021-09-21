@@ -88,20 +88,26 @@ They provide implementation of disk I/O functions for SD/MMC cards and can be re
 FATFS partition generator
 -------------------------
 
-We provide partition generator for FATFS (:component_file:`fatfsgen.py<fatfs/fatfsgen.py>`)
+We provide partition generator for FATFS (:component_file:`wl_fatfsgen.py<fatfs/wl_fatfsgen.py>`)
 which is integrated into the build system and could be easily used in the user project.
 The tool is used to create filesystem images on a host and populate it with content of the specified host folder.
-Current implementation supports short file names, FAT12 and read-only mode
-(because the wear levelling is not implemented yet). The WL, long file names, and FAT16 are subjects of future work.
+The script is based on the partition generator (:component_file:`fatfsgen.py<fatfs/fatfsgen.py>`) and except for generating partition also initializes wear levelling.
+Current implementation supports short file names and FAT12. Long file names, and FAT16 are subjects of the future work.
+
 
 Build system integration with FATFS partition generator
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-It is possible to invoke FATFS generator directly from the CMake build system by calling ``fatfs_create_partition_image``::
+It is possible to invoke FATFS generator directly from the CMake build system by calling ``fatfs_create_spiflash_image``::
 
-    fatfs_create_partition_image(<partition> <base_dir> [FLASH_IN_PROJECT])
+    fatfs_create_spiflash_image(<partition> <base_dir> [FLASH_IN_PROJECT])
 
-``fatfs_create_partition_image`` must be called from project's CMakeLists.txt.
+If you prefer generating partition without wear levelling support you can use ``fatfs_create_rawflash_image``::
+
+    fatfs_create_rawflash_image(<partition> <base_dir> [FLASH_IN_PROJECT])
+
+``fatfs_create_spiflash_image`` respectively ``fatfs_create_rawflash_image`` must be called from project's CMakeLists.txt.
+If you decided because of any reason to use ``fatfs_create_rawflash_image`` (without wear levelling support) beware that it supports mounting only in read-only mode in the device.
 
 The arguments of the function are as follows:
 
@@ -113,7 +119,7 @@ The arguments of the function are as follows:
 
 For example::
 
-    fatfs_create_partition_image(my_fatfs_partition my_folder FLASH_IN_PROJECT)
+    fatfs_create_spiflash_image(my_fatfs_partition my_folder FLASH_IN_PROJECT)
 
 If FLASH_IN_PROJECT is not specified, the image will still be generated, but you will have to flash it manually using ``esptool.py`` or a custom build system target.
 

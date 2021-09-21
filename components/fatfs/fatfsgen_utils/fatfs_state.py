@@ -28,12 +28,10 @@ class FATFSState:
                  num_heads: int,
                  hidden_sectors: int,
                  file_sys_type: str,
-                 wl_sectors: int,
                  long_names_enabled: bool = False):
         self._binary_image: bytearray = bytearray(b'')
         self.fat_tables_cnt: int = fat_tables_cnt
         self.oem_name: str = oem_name
-        self.wl_sectors_cnt: int = wl_sectors
         self.file_sys_type: str = file_sys_type
         self.sec_per_track: int = sec_per_track
         self.hidden_sectors: int = hidden_sectors
@@ -70,7 +68,7 @@ class FATFSState:
 
     @property
     def non_data_sectors(self) -> int:
-        return self.reserved_sectors_cnt + self.sectors_per_fat_cnt + self.root_dir_sectors_cnt + self.wl_sectors_cnt
+        return self.reserved_sectors_cnt + self.sectors_per_fat_cnt + self.root_dir_sectors_cnt
 
     @property
     def data_region_start(self) -> int:
