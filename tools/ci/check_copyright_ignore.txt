@@ -670,7 +670,6 @@ components/esp_hw_support/include/esp_clk.h
 components/esp_hw_support/include/soc/esp_himem.h
 components/esp_hw_support/include/soc/esp_spiram.h
 components/esp_ipc/include/esp_ipc.h
-components/esp_ipc/src/esp_ipc.c
 components/esp_ipc/test/test_ipc.c
 components/esp_ipc/test/test_ipc_isr.c
 components/esp_lcd/test/test_i2c_lcd_panel.c
