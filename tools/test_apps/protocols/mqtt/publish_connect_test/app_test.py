@@ -267,7 +267,7 @@ def connection_tests(dut, cases):
         with TlsServer(server_port, client_cert=True) as s:
             test_nr = start_connection_case(case, 'server with client verification - handshake error since client presents no client certificate')
             dut.expect('MQTT_EVENT_ERROR: Test={}'.format(test_nr), timeout=30)
-            dut.expect('ESP-TLS ERROR: 0x8010')  # expect ... handshake error (PEER_DID_NOT_RETURN_A_CERTIFICATE)
+            dut.expect('ESP-TLS ERROR: ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED')  # expect ... handshake error (PEER_DID_NOT_RETURN_A_CERTIFICATE)
             if 'PEER_DID_NOT_RETURN_A_CERTIFICATE' not in s.get_last_ssl_error():
                 raise('Unexpected ssl error from the server {}'.format(s.get_last_ssl_error()))
 
@@ -281,7 +281,7 @@ def connection_tests(dut, cases):
     with TlsServer(server_port) as s:
         test_nr = start_connection_case(case, 'invalid server certificate on default server - expect ssl handshake error')
         dut.expect('MQTT_EVENT_ERROR: Test={}'.format(test_nr), timeout=30)
-        dut.expect('ESP-TLS ERROR: 0x8010')  # expect ... handshake error (TLSV1_ALERT_UNKNOWN_CA)
+        dut.expect('ESP-TLS ERROR: ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED')  # expect ... handshake error (TLSV1_ALERT_UNKNOWN_CA)
         if 'alert unknown ca' not in s.get_last_ssl_error():
             raise Exception('Unexpected ssl error from the server {}'.format(s.get_last_ssl_error()))
 
@@ -289,7 +289,7 @@ def connection_tests(dut, cases):
     with TlsServer(server_port, client_cert=True) as s:
         test_nr = start_connection_case(case, 'Invalid client certificate on server with client verification - expect ssl handshake error')
         dut.expect('MQTT_EVENT_ERROR: Test={}'.format(test_nr), timeout=30)
-        dut.expect('ESP-TLS ERROR: 0x8010')  # expect ... handshake error (CERTIFICATE_VERIFY_FAILED)
+        dut.expect('ESP-TLS ERROR: ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED')  # expect ... handshake error (CERTIFICATE_VERIFY_FAILED)
         if 'CERTIFICATE_VERIFY_FAILED' not in s.get_last_ssl_error():
             raise Exception('Unexpected ssl error from the server {}'.format(s.get_last_ssl_error()))
 
