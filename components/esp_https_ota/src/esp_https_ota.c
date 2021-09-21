@@ -308,6 +308,7 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
             } else if (data_read > 0) {
                 return _ota_write(handle, (const void *)handle->ota_upgrade_buf, data_read);
             } else {
+                ESP_LOGE(TAG, "data read %d, errno %d", data_read, errno);
                 return ESP_FAIL;
             }
             handle->state = ESP_HTTPS_OTA_SUCCESS;
