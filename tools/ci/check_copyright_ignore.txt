@@ -2119,7 +2119,6 @@ components/openssl/include/internal/tls1.h
 components/openssl/include/internal/x509_vfy.h
 components/openssl/include/openssl/bio.h
 components/openssl/include/openssl/err.h
-components/openssl/include/openssl/ssl.h
 components/openssl/include/platform/ssl_opt.h
 components/openssl/include/platform/ssl_pm.h
 components/openssl/include/platform/ssl_port.h
@@ -2130,7 +2129,6 @@ components/openssl/library/ssl_lib.c
 components/openssl/library/ssl_methods.c
 components/openssl/library/ssl_pkey.c
 components/openssl/library/ssl_stack.c
-components/openssl/library/ssl_x509.c
 components/openssl/platform/ssl_pm.c
 components/openssl/platform/ssl_port.c
 components/openssl/test/test_openssl.c
