@@ -362,7 +362,7 @@ html_static_path = ['../_static']
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'ReadtheDocsTemplatedoc'
 
-google_analytics_id = os.environ['CI_GOOGLE_ANALYTICS_ID']
+google_analytics_id = os.environ.get('CI_GOOGLE_ANALYTICS_ID', None)
 
 # -- Options for LaTeX output ---------------------------------------------
 
