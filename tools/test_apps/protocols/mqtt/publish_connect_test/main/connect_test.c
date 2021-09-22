@@ -48,7 +48,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     case MQTT_EVENT_ERROR:
         ESP_LOGI(TAG, "MQTT_EVENT_ERROR: Test=%d", running_test_case);
         if (event->error_handle->error_type == MQTT_ERROR_TYPE_ESP_TLS) {
-            ESP_LOGI(TAG, "ESP-TLS ERROR: 0x%x", event->error_handle->esp_tls_last_esp_err);
+            ESP_LOGI(TAG, "ESP-TLS ERROR: %s", esp_err_to_name(event->error_handle->esp_tls_last_esp_err));
         } else if (event->error_handle->error_type == MQTT_ERROR_TYPE_CONNECTION_REFUSED) {
             ESP_LOGI(TAG, "MQTT ERROR: 0x%x", event->error_handle->connect_return_code);
         } else {
