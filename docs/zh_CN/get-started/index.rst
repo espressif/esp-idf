@@ -19,9 +19,9 @@
 概述
 ============
 
-.. only:: esp32
+{IDF_TARGET_NAME} SoC 芯片支持以下功能：
 
-    ESP32 SoC 芯片支持以下功能：
+.. only:: esp32
 
     * 2.4 GHz Wi-Fi
     * 蓝牙
@@ -31,8 +31,6 @@
 
 .. only:: esp32s2
 
-    ESP32-S2 SoC 芯片支持以下功能：
-
     * 2.4 GHz Wi-Fi
     * 高性能 Xtensa® 32 位 LX7 单核处理器
     * 运行 RISC-V 或 FSM 内核的超低功耗协处理器
@@ -41,8 +39,6 @@
     * USB OTG 接口
 
 .. only:: esp32c3
-
-    ESP32-C3 SoC 芯片支持以下功能：
 
     * 2.4 GHz Wi-Fi
     * 低能耗蓝牙
@@ -230,14 +226,14 @@ Windows 操作系统
 .. code-block:: batch
 
     cd %userprofile%\esp\esp-idf
-    install.bat
+    install.bat {IDF_TARGET_PATH_NAME}
 
 或使用 Windows PowerShell
 
 .. code-block:: powershell
 
     cd ~/esp/esp-idf
-    ./install.ps1
+    ./install.ps1 {IDF_TARGET_PATH_NAME}
 
 Linux 和 macOS 操作系统
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -245,7 +241,18 @@ Linux 和 macOS 操作系统
 .. code-block:: bash
 
     cd ~/esp/esp-idf
-    ./install.sh
+    ./install.sh {IDF_TARGET_PATH_NAME}
+
+或使用 Fish shell
+
+.. code-block:: fish
+
+    cd ~/esp/esp-idf
+    ./install.fish {IDF_TARGET_PATH_NAME}
+
+.. note::
+    通过一次性指定多个目标，可为多个目标芯片同时安装工具，如运行 ``./install.sh esp32,esp32c3,esp32s3``。
+    通过运行 ``./install.sh`` 或 ``./install.sh all`` 可一次性为所有支持的目标芯片安装工具。
 
 下载工具备选方案
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -330,7 +337,7 @@ Linux 和 macOS 操作系统
 如果您需要经常运行 ESP-IDF，您可以为执行 ``export.sh`` 创建一个别名，具体步骤如下：
 
 1. 复制并粘贴以下命令到 shell 配置文件中（``.profile``， ``.bashrc``， ``.zprofile`` 等）
-    
+
    .. code-block:: bash
 
         alias get_idf='. $HOME/esp/esp-idf/export.sh'
@@ -371,8 +378,6 @@ ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照�
 .. important::
 
     ESP-IDF 编译系统不支持带有空格的路径。
-
-
 
 .. _get-started-connect:
 
@@ -443,7 +448,6 @@ Windows 操作系统
     您终端窗口中显示出的菜单颜色可能会与上图不同。您可以通过选项 ``--style`` 来改变外观。更多信息，请运行 ``idf.py menuconfig --help`` 命令。
 
 .. _get-started-build:
-
 
 第八步：编译工程
 =========================
@@ -644,7 +648,7 @@ Windows 操作系统
 
         Leaving...
         Hard resetting via RTS pin...
-        Done        
+        Done
 
 
 如果一切顺利，烧录完成后，开发板将会复位，应用程序 "hello_world" 开始运行。

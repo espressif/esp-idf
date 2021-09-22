@@ -24,8 +24,7 @@ For this Getting Started we're going to use the Command Prompt, but after ESP-ID
 .. note::
     Limitation: the installation path of Python or ESP-IDF must not contain white spaces or parentheses.
 
-    Limitation: the installation path of Python or ESP-IDF should not contain special characters (non-ASCII) unless the operating system is configured with "Unicode UTF-8" support.
-    System Administrator can enable the support via Control Panel - Change date, time, or number formats - Administrative tab - Change system locale - check the option "Beta: Use Unicode UTF-8 for worldwide language support" - Ok and reboot the computer.
+    Limitation: the installation path of Python or ESP-IDF should not contain special characters (non-ASCII) unless the operating system is configured with "Unicode UTF-8" support. System Administrator can enable the support via Control Panel - Change date, time, or number formats - Administrative tab - Change system locale - check the option "Beta: Use Unicode UTF-8 for worldwide language support" - Ok and reboot the computer.
 
 .. _get-started-windows-tools-installer:
 
@@ -118,7 +117,6 @@ For advanced users who want to customize the install process:
     :maxdepth: 1
 
     windows-setup-update
-
 
 .. _MSYS2: https://www.msys2.org/
 .. _CMake: https://cmake.org/download/

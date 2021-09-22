@@ -28,7 +28,6 @@ ESP-IDF 需要安装一些必备工具，才能围绕 {IDF_TARGET_NAME} 构建�
 
 .. _get-started-windows-tools-installer:
 
-
 ESP-IDF 工具安装器
 =======================
 
@@ -118,7 +117,6 @@ ESP-IDF 工具安装器可在“开始”菜单中，创建一个打开 ESP-IDF 
     :maxdepth: 1
 
     windows-setup-update
-
 
 .. _MSYS2: https://www.msys2.org/
 .. _CMake: https://cmake.org/download/

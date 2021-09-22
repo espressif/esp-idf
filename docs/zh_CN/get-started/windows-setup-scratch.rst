@@ -72,7 +72,6 @@ Python 安装完成后，从 Windows 开始菜单中打开“命令提示符”�
 
     pip install --user pyserial
 
-
 工具链设置
 ===============
 
