@@ -18,3 +18,4 @@
               # following function is disabled by configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS
             - '(?:vTaskSetThreadLocalStoragePointerAndDelCallback\s*\([\s\w\*_,]*\))'
             - PRIVILEGED_FUNCTION
+            - portDONT_DISCARD
