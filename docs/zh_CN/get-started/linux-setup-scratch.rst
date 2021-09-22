@@ -64,7 +64,7 @@
 
 .. include-build-file:: inc/scratch-build-code.inc
 
-.. 注解:: 在设置支持 64 位 time_t 的工具链时，您需要将 ``crosstool-NG/samples/xtensa-esp32-elf/crosstool.config`` 文件中第 33 和 43 行的可选参数 ``--enable-newlib-long-time_t`` 删除。 
+.. 注解:: 在设置支持 64 位 time_t 的工具链时，您需要将 ``crosstool-NG/samples/xtensa-esp32-elf/crosstool.config`` 文件中第 33 和 43 行的可选参数 ``--enable-newlib-long-time_t`` 删除。
 
 编译工具链::
 
@@ -73,7 +73,6 @@
     chmod -R u+w builds/xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf
 
 编译得到的工具链会被保存至 ``~/esp/crosstool-NG/builds/xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf``。
-
 
 添加工具链到 PATH 环境变量
 ===========================
@@ -85,7 +84,7 @@
     export PATH="$HOME/esp/xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf/bin:$PATH"
 
 .. 注解::
-    
+
     如果您已将 ``/bin/bash`` 设置为登录 shell，且同时存在 ``.bash_profile`` 和 ``.profile`` 两个文件，则请更新 ``.bash_profile``。在 CentOS 环境下, ``alias`` 需要添加到 ``.bashrc`` 文件中。
 
 退出并重新登录以使 ``.profile`` 的更改生效。运行以下命令来检查 ``PATH`` 设置是否正确::
@@ -99,8 +98,7 @@
 
 注意这里的 ``/home/user-name`` 应该替换成您安装的主路径。
 
-
-停用 Python 2 
+停用 Python 2
 ====================
 
 Python 2 已经 `结束生命周期 <https://www.python.org/doc/sunset-python-2/>`_，ESP-IDF 很快将不再支持 Python 2。请安装 Python 3.6 或以上版本。可参考上面列出的目前主流 Linux 发行版的安装说明。

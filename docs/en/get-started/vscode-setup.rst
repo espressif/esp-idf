@@ -2,6 +2,7 @@
 Getting Started with VS Code IDE
 ********************************
 
+:link_to_translation:`zh_CN:[中文]`
 
 We have official support for VS Code and we aim to provide complete end to end support for all actions related to ESP-IDF namely build, flash, monitor, debug, tracing, core-dump, System Trace Viewer, etc.
 

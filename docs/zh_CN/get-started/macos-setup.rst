@@ -7,7 +7,7 @@ MacOS 平台工具链的标准设置
 安装准备
 =====================
 
-ESP-IDF 将使用 Mac OS 上默认安装的 Python 版本。
+ESP-IDF 将使用 macOS 上默认安装的 Python 版本。
 
 - 安装 pip::
 
@@ -23,11 +23,11 @@ ESP-IDF 将使用 Mac OS 上默认安装的 Python 版本。
 
         sudo port install cmake ninja dfu-util
 
-    - 若以上均不适用，请访问 CMake_ 和 Ninja_ 主页，查询有关 Mac OS 平台的下载安装问题。
+    - 若以上均不适用，请访问 CMake_ 和 Ninja_ 主页，查询有关 macOS 平台的下载安装问题。
 
 - 强烈建议同时安装 ccache_ 以获得更快的编译速度。如有 HomeBrew_，可通过 MacPorts_ 上的 ``brew install ccache`` 或 ``sudo port install ccache`` 完成安装。
 
-.. note::   
+.. note::
     如您在上述任何步骤中遇到以下错误::
 
     ``xcrun: error: invalid active developer path (/Library/Developer/CommandLineTools), missing xcrun at:/Library/Developer/CommandLineTools/usr/bin/xcrun``
@@ -57,7 +57,7 @@ ESP-IDF 将使用 Mac OS 上默认安装的 Python 版本。
 
       sudo port install python38
 
-停用 Python 2 
+停用 Python 2
 ====================
 
 Python 2 已经 `结束生命周期 <https://www.python.org/doc/sunset-python-2/>`_，ESP-IDF 很快将不再支持 Python 2。请安装 Python 3.6 或以上版本。可参考上面列出的 macOS 安装说明。

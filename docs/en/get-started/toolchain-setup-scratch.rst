@@ -24,4 +24,3 @@ In any case, here are the instructions to compile the toolchain yourself.
     windows-setup-scratch
     linux-setup-scratch
     macos-setup-scratch
-

@@ -1,5 +1,5 @@
 **********************************************
-Standard Setup of Toolchain for Mac OS
+Standard Setup of Toolchain for macOS
 **********************************************
 
 :link_to_translation:`zh_CN:[中文]`
@@ -45,7 +45,7 @@ If the output is like ``Python 2.7.17``, your default interpreter is Python 2.7.
 
   python3 --version
 
-If above command returns an error, it means Python 3 is not installed. 
+If above command returns an error, it means Python 3 is not installed.
 
 Below is an overview of steps to install Python 3.
 
@@ -61,7 +61,6 @@ Python 2 deprecation
 ====================
 
 Python 2 reached its `end of life <https://www.python.org/doc/sunset-python-2/>`_ and support for it in ESP-IDF will be removed soon. Please install Python 3.6 or higher. Instructions for macOS are listed above.
-
 
 Next Steps
 ==========

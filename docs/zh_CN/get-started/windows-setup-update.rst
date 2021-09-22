@@ -16,6 +16,7 @@
 	install.ps1
 
 该命令可下载安装 ESP-IDF 所需的工具。如您已经安装了某个版本的工具，则该命令将无效。
+
 该工具的下载安装位置由 ESP-IDF 工具安装器的设置决定，默认情况下为： ``C:\Users\username\.espressif``。
 
 .. _get-started-export_bat-windows:
@@ -38,4 +39,3 @@ ESP-IDF 工具安装器将在“开始菜单”为 “ESP-IDF 命令提示符”
 	export.ps1
 
 运行完成后，您就可以通过命令提示符使用 ESP-IDF 工具了。
-

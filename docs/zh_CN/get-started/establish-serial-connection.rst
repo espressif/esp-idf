@@ -40,7 +40,7 @@
     Windows 设备管理器中 ESP-WROVER-KIT 的两个 USB 串行端口
 
 
-在 Linux 和 MacOS 上查看端口
+在 Linux 和 macOS 上查看端口
 -----------------------------
 
 查看 {IDF_TARGET_NAME} 开发板（或外部转串口适配器）的串口设备名称，请运行两次以下命令。首先，断开开发板或适配器，第一次运行命令；然后，连接开发板或适配器，第二次运行命令。其中，第二次运行命令后出现的端口即是 {IDF_TARGET_NAME} 对应的串口：
@@ -49,13 +49,13 @@ Linux ::
 
     ls /dev/tty*
 
-MacOS ::
+macOS ::
 
     ls /dev/cu.*
 
 .. note::
 
-    对于 MacOS 用户：若你没有看到串口，请检查你是否已按照《入门指南》安装了适用于你特定开发板的 USB/串口驱动程序。对于 MacOS High Sierra (10.13) 的用户，你可能还需要手动允许驱动程序的加载，具体可打开 ``系统偏好设置`` -> ``安全和隐私`` -> ``通用``，检查是否有信息显示：“来自开发人员的系统软件...”，其中开发人员的名称为 Silicon Labs 或 FTDI。
+    对于 macOS 用户：若你没有看到串口，请检查你是否已按照《入门指南》安装了适用于你特定开发板的 USB/串口驱动程序。对于 macOS High Sierra (10.13) 的用户，你可能还需要手动允许驱动程序的加载，具体可打开 ``系统偏好设置`` -> ``安全和隐私`` -> ``通用``，检查是否有信息显示：“来自开发人员的系统软件...”，其中开发人员的名称为 Silicon Labs 或 FTDI。
 
 .. _linux-dialout-group:
 
@@ -132,6 +132,4 @@ MacOS ::
 
 如你在安装 {IDF_TARGET_NAME} 硬件开发的软件环境时，从 :ref:`get-started-connect` 跳转到了这里，请从 :ref:`get-started-configure` 继续阅读。
 
-
 .. _esptool 文档: https://github.com/espressif/esptool/wiki/ESP32-Boot-Mode-Selection#automatic-bootloader
-
