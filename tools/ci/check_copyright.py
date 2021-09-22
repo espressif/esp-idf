@@ -93,7 +93,7 @@ MIME = {
     'cpp': 'text/x-c++'
 }
 
-# terminal color outupu
+# terminal color output
 
 TERMINAL_RESET = '\33[0m'
 TERMINAL_YELLOW = '\33[93m'
