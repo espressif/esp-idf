@@ -42,6 +42,7 @@
 #include "openthread/error.h"
 #include "openthread/instance.h"
 #include "openthread/ip6.h"
+#include "openthread/logging.h"
 #include "openthread/tasklet.h"
 #include "openthread/thread.h"
 #include "openthread/thread_ftd.h"
@@ -168,6 +169,7 @@ static void ot_task_worker(void *aContext)
     ESP_ERROR_CHECK(esp_openthread_border_router_init(get_example_netif()));
 
     esp_openthread_lock_acquire(portMAX_DELAY);
+    (void)otLoggingSetLevel(CONFIG_LOG_DEFAULT_LEVEL);
     otAppCliInit(esp_openthread_get_instance());
     create_config_network(esp_openthread_get_instance());
     launch_openthread_network(esp_openthread_get_instance());

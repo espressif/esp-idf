@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* OpenThread Command Line Example
 
    This example code is in the Public Domain (or CC0 licensed, at your option.)
@@ -28,6 +33,7 @@
 #include "hal/uart_types.h"
 #include "openthread/cli.h"
 #include "openthread/instance.h"
+#include "openthread/logging.h"
 #include "openthread/tasklet.h"
 
 #if CONFIG_OPENTHREAD_CLI_ESP_EXTENSION
@@ -61,6 +67,8 @@ static void ot_task_worker(void *aContext)
     // Initialize the OpenThread stack
     ESP_ERROR_CHECK(esp_openthread_init(&config));
 
+    // The OpenThread log level directly matches ESP log level
+    (void)otLoggingSetLevel(CONFIG_LOG_DEFAULT_LEVEL);
     // Initialize the OpenThread cli
     otAppCliInit(esp_openthread_get_instance());
 
