@@ -94,8 +94,10 @@ int _fstat_r (struct _reent *r, int fd, struct stat *st)
  * doesn't have the same signature as the original function.
  * Disable type mismatch warnings for this reason.
  */
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattribute-alias"
+#endif
 
 int _open_r(struct _reent *r, const char * path, int flags, int mode)
     __attribute__((weak,alias("syscall_not_implemented")));
@@ -133,7 +135,9 @@ int _kill_r(struct _reent *r, int pid, int sig)
 void _exit(int __status)
     __attribute__((alias("syscall_not_implemented_aborts")));
 
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic pop
+#endif
 
 /* Similar to syscall_not_implemented, but not taking struct _reent argument */
 int system(const char* str)

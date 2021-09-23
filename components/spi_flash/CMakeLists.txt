@@ -55,5 +55,9 @@ idf_component_register(SRCS "${srcs}"
                     LDFRAGMENTS linker.lf)
 
 # Avoid cache miss by unexpected inlineing when built by -Os
-set_source_files_properties(${cache_srcs} PROPERTIES COMPILE_FLAGS
-    "-fno-inline-functions -fno-inline-small-functions -fno-inline-functions-called-once")
+set_source_files_properties(${cache_srcs} PROPERTIES COMPILE_FLAGS "-fno-inline-functions")
+if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+    # These flags are GCC specific
+    set_property(SOURCE ${cache_srcs} APPEND_STRING PROPERTY COMPILE_FLAGS
+        " -fno-inline-small-functions -fno-inline-functions-called-once")
+endif()
