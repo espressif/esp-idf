@@ -1,23 +1,12 @@
-# Copyright 2015-2021 Espressif Systems (Shanghai) CO LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 
 import os
 import queue  # noqa: F401
 import re
 import subprocess
 import time
-from typing import Callable
+from typing import Callable, Optional
 
 import serial  # noqa: F401
 from serial.tools import miniterm  # noqa: F401
@@ -28,13 +17,13 @@ from .console_reader import ConsoleReader  # noqa: F401
 from .constants import (CMD_APP_FLASH, CMD_ENTER_BOOT, CMD_MAKE, CMD_OUTPUT_TOGGLE, CMD_RESET, CMD_STOP,
                         CMD_TOGGLE_LOGGING, CMD_TOGGLE_TIMESTAMPS, PANIC_DECODE_DISABLE, PANIC_END, PANIC_IDLE,
                         PANIC_READING, PANIC_STACK_DUMP, PANIC_START)
-from .coredump import CoreDump  # noqa: F401
-from .exceptions import SerialStopException  # noqa: F401
-from .gdbhelper import GDBHelper  # noqa: F401
-from .line_matcher import LineMatcher  # noqa: F401
-from .logger import Logger  # noqa: F401
+from .coredump import CoreDump
+from .exceptions import SerialStopException
+from .gdbhelper import GDBHelper
+from .line_matcher import LineMatcher
+from .logger import Logger
 from .output_helpers import yellow_print
-from .serial_reader import SerialReader  # noqa: F401
+from .serial_reader import Reader
 
 
 def run_make(target, make, console, console_parser, event_queue, cmd_queue, logger):
@@ -60,7 +49,7 @@ class SerialHandler:
     The class is responsible for buffering serial input and performing corresponding commands.
     """
     def __init__(self, last_line_part, serial_check_exit, logger, decode_panic, reading_panic, panic_buffer, target,
-                 force_line_print, start_cmd_sent, serial_instance, encrypted, ):
+                 force_line_print, start_cmd_sent, serial_instance, encrypted):
         # type: (bytes, bool, Logger, str, int, bytes,str, bool, bool, serial.Serial, bool) -> None
         self._last_line_part = last_line_part
         self._serial_check_exit = serial_check_exit
@@ -76,7 +65,7 @@ class SerialHandler:
 
     def handle_serial_input(self, data, console_parser, coredump, gdb_helper, line_matcher,
                             check_gdb_stub_and_run, finalize_line=False):
-        #  type: (bytes, ConsoleParser, CoreDump, GDBHelper, LineMatcher, Callable, bool) -> None
+        #  type: (bytes, ConsoleParser, CoreDump, Optional[GDBHelper], LineMatcher, Callable, bool) -> None
         # Remove "+" after Continue command
         if self.start_cmd_sent:
             self.start_cmd_sent = False
@@ -97,7 +86,8 @@ class SerialHandler:
                 continue
             if self._serial_check_exit and line == console_parser.exit_key.encode('latin-1'):
                 raise SerialStopException()
-            self.check_panic_decode_trigger(line, gdb_helper)
+            if gdb_helper:
+                self.check_panic_decode_trigger(line, gdb_helper)
             with coredump.check(line):
                 if self._force_line_print or line_matcher.match(line.decode(errors='ignore')):
                     self.logger.print(line + b'\n')
@@ -125,7 +115,8 @@ class SerialHandler:
             self.logger.pc_address_buffer = self._last_line_part[-9:]
             # GDB sequence can be cut in half also. GDB sequence is 7
             # characters long, therefore, we save the last 6 characters.
-            gdb_helper.gdb_buffer = self._last_line_part[-6:]
+            if gdb_helper:
+                gdb_helper.gdb_buffer = self._last_line_part[-6:]
             self._last_line_part = b''
         # else: keeping _last_line_part and it will be processed the next time
         # handle_serial_input is invoked
@@ -151,7 +142,7 @@ class SerialHandler:
             self._panic_buffer = b''
 
     def handle_commands(self, cmd, chip, run_make_func, console_reader, serial_reader):
-        # type: (int, str, Callable, ConsoleReader, SerialReader) -> None
+        # type: (int, str, Callable, ConsoleReader, Reader) -> None
         config = get_chip_config(chip)
         reset_delay = config['reset']
         enter_boot_set = config['enter_boot_set']
@@ -159,6 +150,14 @@ class SerialHandler:
 
         high = False
         low = True
+
+        if chip == 'linux':
+            if cmd in [CMD_RESET,
+                       CMD_MAKE,
+                       CMD_APP_FLASH,
+                       CMD_ENTER_BOOT]:
+                yellow_print('linux target does not support this command')
+                return
 
         if cmd == CMD_STOP:
             console_reader.stop()
@@ -181,6 +180,7 @@ class SerialHandler:
         elif cmd == CMD_TOGGLE_TIMESTAMPS:
             self.logger.toggle_timestamps()
         elif cmd == CMD_ENTER_BOOT:
+            yellow_print('Pause app (enter bootloader mode), press Ctrl-T Ctrl-R to restart')
             self.serial_instance.setDTR(high)  # IO0=HIGH
             self.serial_instance.setRTS(low)  # EN=LOW, chip in reset
             self.serial_instance.setDTR(self.serial_instance.dtr)  # usbser.sys workaround
