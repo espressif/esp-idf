@@ -62,7 +62,7 @@ esp_err_t esp_lcd_new_panel_io_spi(esp_lcd_spi_bus_handle_t bus, const esp_lcd_p
     ESP_GOTO_ON_FALSE(spi_panel_io, ESP_ERR_NO_MEM, err, TAG, "no mem for spi panel io");
 
     spi_device_interface_config_t devcfg = {
-        .flags = io_config->flags.octal_mode ? SPI_DEVICE_HALFDUPLEX : 0,
+        .flags = SPI_DEVICE_HALFDUPLEX,
         .clock_speed_hz = io_config->pclk_hz,
         .mode = io_config->spi_mode,
         .spics_io_num = io_config->cs_gpio_num,
