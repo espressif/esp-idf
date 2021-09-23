@@ -3737,9 +3737,7 @@ examples/protocols/esp_local_ctrl/scripts/esp_local_ctrl.py
 examples/protocols/esp_local_ctrl/scripts/proto_lc.py
 examples/protocols/http2_request/components/sh2lib/sh2lib.c
 examples/protocols/http2_request/components/sh2lib/sh2lib.h
-examples/protocols/http2_request/example_test.py
 examples/protocols/http2_request/main/http2_request_example_main.c
-examples/protocols/http_request/example_test.py
 examples/protocols/http_request/main/http_request_example_main.c
 examples/protocols/http_server/advanced_tests/http_server_advanced_test.py
 examples/protocols/http_server/advanced_tests/main/include/tests.h
@@ -3761,7 +3759,6 @@ examples/protocols/http_server/simple/http_server_simple_test.py
 examples/protocols/http_server/simple/main/main.c
 examples/protocols/http_server/ws_echo_server/main/ws_echo_server.c
 examples/protocols/http_server/ws_echo_server/ws_server_example_test.py
-examples/protocols/https_mbedtls/example_test.py
 examples/protocols/https_mbedtls/main/https_mbedtls_example_main.c
 examples/protocols/https_request/example_test.py
 examples/protocols/https_request/main/https_request_example_main.c
