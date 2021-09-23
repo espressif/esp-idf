@@ -57,6 +57,14 @@ mainmenu "Espressif IoT Development Framework Configuration"
         select FREERTOS_UNICORE
         select IDF_TARGET_ARCH_RISCV
 
+    config IDF_TARGET_ESP8684
+        bool
+        default "y" if IDF_TARGET="esp8684"
+        select FREERTOS_UNICORE
+        select IDF_TARGET_ARCH_RISCV
+        select ESPTOOLPY_NO_STUB  # remove if ESPTOOL-303
+        select IDF_ENV_FPGA
+
     config IDF_TARGET_LINUX
         bool
         default "y" if IDF_TARGET="linux"
@@ -68,6 +76,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
         default 0x0005 if IDF_TARGET_ESP32C3
         default 0x0009 if IDF_TARGET_ESP32S3
         default 0x000A if IDF_TARGET_ESP32H2 # ESP32H2-TODO: IDF-3475
+        default 0x000C if IDF_TARGET_ESP8684
         default 0xFFFF
 
     menu "SDK tool configuration"
@@ -78,6 +87,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
             default "xtensa-esp32s3-elf-" if IDF_TARGET_ESP32S3
             default "riscv32-esp-elf-" if IDF_TARGET_ESP32C3
             default "riscv32-esp-elf-" if IDF_TARGET_ESP32H2
+            default "riscv32-esp-elf-" if IDF_TARGET_ESP8684
 
             help
                 The prefix/path that is used to call the toolchain. The default setting assumes
