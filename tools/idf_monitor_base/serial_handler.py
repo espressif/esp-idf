@@ -180,7 +180,6 @@ class SerialHandler:
             self.logger.toggle_logging()
         elif cmd == CMD_TOGGLE_TIMESTAMPS:
             self.logger.toggle_timestamps()
-            self.logger.toggle_logging()
         elif cmd == CMD_ENTER_BOOT:
             self.serial_instance.setDTR(high)  # IO0=HIGH
             self.serial_instance.setRTS(low)  # EN=LOW, chip in reset
