@@ -1,4 +1,13 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "sdkconfig.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define TEST_LCD_H_RES         (240)
 #define TEST_LCD_V_RES         (280)
@@ -69,4 +78,8 @@
 #define TEST_LCD_DATA13_GPIO   (25)
 #define TEST_LCD_DATA14_GPIO   (16)
 #define TEST_LCD_DATA15_GPIO   (17)
+#endif
+
+#ifdef __cplusplus
+}
 #endif

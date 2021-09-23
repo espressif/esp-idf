@@ -153,6 +153,19 @@ component_ut_pytest_esp32s3_generic:
     - ESP32S3
     - COMPONENT_UT_GENERIC
 
+component_ut_pytest_esp32s3_octal_psram:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s3
+  needs:
+    - build_pytest_components_esp32s3
+  variables:
+    TARGET: esp32s3
+    ENV_MARKER: octal_psram
+  tags:
+    - ESP32S3
+    - MSPI_F8R8
+
 component_ut_pytest_esp32c3_generic:
   extends:
     - .pytest_components_dir_template

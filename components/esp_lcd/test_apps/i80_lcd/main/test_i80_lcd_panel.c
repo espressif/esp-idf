@@ -1,7 +1,14 @@
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: CC0-1.0
+ */
+
 #include <stdio.h>
 #include <string.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "unity.h"
-#include "test_utils.h"
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_vendor.h"
 #include "esp_lcd_panel_ops.h"
@@ -9,8 +16,51 @@
 #include "driver/gpio.h"
 #include "test_i80_board.h"
 
+void test_app_include_i80_lcd(void)
+{
+}
+
+#if SOC_I2S_LCD_I80_VARIANT
+#include "driver/i2s.h"
+
+TEST_CASE("i80_and_i2s_driver_co-existence", "[lcd][i2s]")
+{
+    esp_lcd_i80_bus_handle_t i80_bus = NULL;
+    esp_lcd_i80_bus_config_t bus_config = {
+        .dc_gpio_num = TEST_LCD_DC_GPIO,
+        .wr_gpio_num = TEST_LCD_PCLK_GPIO,
+        .data_gpio_nums = {
+            TEST_LCD_DATA0_GPIO,
+            TEST_LCD_DATA1_GPIO,
+            TEST_LCD_DATA2_GPIO,
+            TEST_LCD_DATA3_GPIO,
+            TEST_LCD_DATA4_GPIO,
+            TEST_LCD_DATA5_GPIO,
+            TEST_LCD_DATA6_GPIO,
+            TEST_LCD_DATA7_GPIO,
+        },
+        .bus_width = 8,
+        .max_transfer_bytes = 20,
+    };
+    TEST_ESP_OK(esp_lcd_new_i80_bus(&bus_config, &i80_bus));
+
+    i2s_config_t i2s_config = {
+        .mode = I2S_MODE_MASTER | I2S_MODE_TX,
+        .sample_rate = 36000,
+        .bits_per_sample = 16,
+        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+        .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+        .dma_desc_num = 6,
+        .dma_frame_num = 60,
+    };
+    // I2S driver won't be installed as the same I2S port has been used by LCD
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, i2s_driver_install(0, &i2s_config, 0, NULL));
+    TEST_ESP_OK(esp_lcd_del_i80_bus(i80_bus));
+}
+#endif // SOC_I2S_LCD_I80_VARIANT
+
 #if SOC_LCDCAM_SUPPORTED
-TEST_CASE("lcd i80 device swap color bytes", "[lcd]")
+TEST_CASE("lcd_i80_device_swap_color_bytes", "[lcd]")
 {
     esp_lcd_i80_bus_handle_t i80_bus = NULL;
     esp_lcd_i80_bus_config_t bus_config = {
@@ -72,7 +122,7 @@ TEST_CASE("lcd i80 device swap color bytes", "[lcd]")
     TEST_ESP_OK(esp_lcd_del_i80_bus(i80_bus));
 }
 
-TEST_CASE("lcd i80 device clock mode", "[lcd]")
+TEST_CASE("lcd_i80_device_clock_mode", "[lcd]")
 {
     esp_lcd_i80_bus_handle_t i80_bus = NULL;
     esp_lcd_i80_bus_config_t bus_config = {
@@ -131,8 +181,7 @@ TEST_CASE("lcd i80 device clock mode", "[lcd]")
 }
 #endif // SOC_LCDCAM_SUPPORTED
 
-#if SOC_LCD_I80_SUPPORTED
-TEST_CASE("lcd i80 bus and device allocation", "[lcd]")
+TEST_CASE("lcd_i80_bus_and_device_allocation", "[lcd]")
 {
     esp_lcd_i80_bus_handle_t i80_buses[SOC_LCD_I80_BUSES] = {};
     esp_lcd_i80_bus_config_t bus_config = {
@@ -176,7 +225,7 @@ TEST_CASE("lcd i80 bus and device allocation", "[lcd]")
     }
 }
 
-TEST_CASE("lcd i80 bus exclusively owned by one device", "[lcd]")
+TEST_CASE("lcd_i80_bus_exclusively_owned_by_one_device", "[lcd]")
 {
     esp_lcd_i80_bus_handle_t i80_bus_handle = NULL;
     esp_lcd_i80_bus_config_t bus_config = {
@@ -211,7 +260,7 @@ TEST_CASE("lcd i80 bus exclusively owned by one device", "[lcd]")
     TEST_ESP_OK(esp_lcd_del_i80_bus(i80_bus_handle));
 }
 
-TEST_CASE("lcd panel i80 io test", "[lcd]")
+TEST_CASE("lcd_panel_i80_io_test", "[lcd]")
 {
     esp_lcd_i80_bus_handle_t i80_bus = NULL;
     esp_lcd_i80_bus_config_t bus_config = {
@@ -257,9 +306,6 @@ TEST_CASE("lcd panel i80 io test", "[lcd]")
         .bits_per_pixel = 16,
     };
 
-// On esp32, GPIO16 and GPIO17 are connected to PSRAM, and we don't have other spare GPIOs can be used in the test
-// so we skip the 16bit test on esp32 when PSRAM is enabled
-#if !CONFIG_ESP32_SPIRAM_SUPPORT
     printf("testing bus-width=16bit, cmd/param bit-width=8bit\r\n");
     bus_config.bus_width = 16;
     TEST_ESP_OK(esp_lcd_new_i80_bus(&bus_config, &i80_bus));
@@ -292,7 +338,6 @@ TEST_CASE("lcd panel i80 io test", "[lcd]")
     TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
     TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
     TEST_ESP_OK(esp_lcd_del_i80_bus(i80_bus));
-#endif
 
     printf("testing bus-width=8bit, cmd/param bit-width=8bit\r\n");
     bus_config.bus_width = 8;
@@ -327,7 +372,7 @@ TEST_CASE("lcd panel i80 io test", "[lcd]")
     TEST_ESP_OK(esp_lcd_del_i80_bus(i80_bus));
 }
 
-TEST_CASE("lcd panel with i80 interface (st7789, 8bits)", "[lcd]")
+TEST_CASE("lcd_panel_with_i80_interface_(st7789, 8bits)", "[lcd]")
 {
 #define TEST_IMG_SIZE (100 * 100 * sizeof(uint16_t))
     uint8_t *img = heap_caps_malloc(TEST_IMG_SIZE, MALLOC_CAP_DMA);
@@ -407,44 +452,3 @@ TEST_CASE("lcd panel with i80 interface (st7789, 8bits)", "[lcd]")
     free(img);
 #undef TEST_IMG_SIZE
 }
-
-#endif // SOC_LCD_I80_SUPPORTED
-
-#if SOC_I2S_LCD_I80_VARIANT
-#include "driver/i2s.h"
-
-TEST_CASE("i80 and i2s driver coexistance", "[lcd][i2s]")
-{
-    esp_lcd_i80_bus_handle_t i80_bus = NULL;
-    esp_lcd_i80_bus_config_t bus_config = {
-        .dc_gpio_num = TEST_LCD_DC_GPIO,
-        .wr_gpio_num = TEST_LCD_PCLK_GPIO,
-        .data_gpio_nums = {
-            TEST_LCD_DATA0_GPIO,
-            TEST_LCD_DATA1_GPIO,
-            TEST_LCD_DATA2_GPIO,
-            TEST_LCD_DATA3_GPIO,
-            TEST_LCD_DATA4_GPIO,
-            TEST_LCD_DATA5_GPIO,
-            TEST_LCD_DATA6_GPIO,
-            TEST_LCD_DATA7_GPIO,
-        },
-        .bus_width = 8,
-        .max_transfer_bytes = 20,
-    };
-    TEST_ESP_OK(esp_lcd_new_i80_bus(&bus_config, &i80_bus));
-
-    i2s_config_t i2s_config = {
-        .mode = I2S_MODE_MASTER | I2S_MODE_TX,
-        .sample_rate = 36000,
-        .bits_per_sample = 16,
-        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-        .communication_format = I2S_COMM_FORMAT_STAND_I2S,
-        .dma_desc_num = 6,
-        .dma_frame_num = 60,
-    };
-    // I2S driver won't be installed as the same I2S port has been used by LCD
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, i2s_driver_install(0, &i2s_config, 0, NULL));
-    TEST_ESP_OK(esp_lcd_del_i80_bus(i80_bus));
-}
-#endif // SOC_I2S_LCD_I80_VARIANT
