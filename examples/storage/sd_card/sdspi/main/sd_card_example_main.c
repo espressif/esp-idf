@@ -19,18 +19,26 @@ static const char *TAG = "example";
 #define MOUNT_POINT "/sdcard"
 
 // Pin mapping
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_IDF_TARGET_ESP32
 
 #define PIN_NUM_MISO 2
 #define PIN_NUM_MOSI 15
 #define PIN_NUM_CLK  14
 #define PIN_NUM_CS   13
 
+#elif CONFIG_IDF_TARGET_ESP32S2
+
+// adapted for internal test board ESP-32-S3-USB-OTG-Ev-BOARD_V1.0 (with ESP32-S2-MINI-1 module)
+#define PIN_NUM_MISO 37
+#define PIN_NUM_MOSI 35
+#define PIN_NUM_CLK  36
+#define PIN_NUM_CS   34
+
 #elif CONFIG_IDF_TARGET_ESP32C3
-#define PIN_NUM_MISO 18
-#define PIN_NUM_MOSI 9
-#define PIN_NUM_CLK  8
-#define PIN_NUM_CS   19
+#define PIN_NUM_MISO 6
+#define PIN_NUM_MOSI 4
+#define PIN_NUM_CLK  5
+#define PIN_NUM_CS   1
 
 #endif //CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
 
