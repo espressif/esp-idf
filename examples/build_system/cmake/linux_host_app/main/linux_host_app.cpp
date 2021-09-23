@@ -8,13 +8,23 @@
 */
 
 #include "stdio.h"
+#include <unistd.h>
 
 void app_main() {
-    printf("Hello, Host!\n");
+    while(1) {
+        printf("Hello, Host!\n");
+
+        for (int i = 10; i >= 0; i--) {
+            printf("Restarting in %d seconds...\n", i);
+            sleep(1);
+        }
+    }
 }
 
 int main(int argc, char **argv)
 {
+    setbuf(stdout, NULL);
     app_main();
+
     return 0;
 }
