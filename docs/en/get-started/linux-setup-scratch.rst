@@ -105,7 +105,6 @@ Python 2 deprecation
 
 Python 2 reached its `end of life <https://www.python.org/doc/sunset-python-2/>`_ and support for it in ESP-IDF will be removed soon. Please install Python 3.6 or higher. Instructions for popular Linux distributions are listed above.
 
-
 Next Steps
 ==========
 

@@ -38,7 +38,7 @@ With some Linux distributions you may get the ``Failed to open port /dev/ttyUSB0
 Fixing broken pip on Ubuntu 16.04
 =================================
 
-Package ``python3-pip`` could be broken without possibility to upgrade it. 
+Package ``python3-pip`` could be broken without possibility to upgrade it.
 Package has to be removed and installed manually using script `get-pip.py <https://bootstrap.pypa.io/get-pip.py>`_.::
 
     apt remove python3-pip python3-virtualenv; rm -r ~/.local
@@ -53,6 +53,5 @@ Next Steps
 ==========
 
 To carry on with development environment setup, proceed to :ref:`get-started-get-esp-idf`.
-
 
 .. _AUR: https://wiki.archlinux.org/index.php/Arch_User_Repository
