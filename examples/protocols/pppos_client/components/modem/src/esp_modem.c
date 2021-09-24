@@ -1,16 +1,8 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <stdlib.h>
 #include <string.h>
 #include <sys/param.h>
@@ -83,6 +75,13 @@ static inline bool is_only_cr_lf(const char *str, uint32_t len)
     return true;
 }
 
+static inline void report_unknown_line(esp_modem_dte_t *esp_dte, char *line)
+{
+    /* Send ESP_MODEM_EVENT_UNKNOWN signal to event loop */
+    esp_event_post_to(esp_dte->event_loop_hdl, ESP_MODEM_EVENT, ESP_MODEM_EVENT_UNKNOWN,
+                      (void *)line, strlen(line) + 1, pdMS_TO_TICKS(100));
+}
+
 esp_err_t esp_modem_set_rx_cb(modem_dte_t *dte, esp_modem_on_receive receive_cb, void *receive_cb_ctx)
 {
     esp_modem_dte_t *esp_dte = __containerof(dte, esp_modem_dte_t, parent);
@@ -118,18 +117,19 @@ static esp_err_t esp_dte_handle_line(esp_modem_dte_t *esp_dte, char * line, size
             if (dce->handle_line == NULL) {
                 /* Received an asynchronous line, but no handler waiting this this */
                 ESP_LOGD(MODEM_TAG, "No handler for line: %s", p);
-                err = ESP_OK; /* Not an error, just propagate the line to user handler */
-                goto post_event_unknown;
+                report_unknown_line(esp_dte, line);
+                return ESP_OK; /* Not an error, just propagate the line to user handler */
             }
-            MODEM_CHECK(dce->handle_line(dce, p) == ESP_OK, "handle line failed", post_event_unknown);
+            if (dce->handle_line(dce, p) != ESP_OK) {
+                ESP_LOGE(MODEM_TAG, "handle line failed");
+                report_unknown_line(esp_dte, line);
+            }
         }
         p = strtok_r(NULL, "\n", &str_ptr);
     }
     return ESP_OK;
 post_event_unknown:
-    /* Send ESP_MODEM_EVENT_UNKNOWN signal to event loop */
-    esp_event_post_to(esp_dte->event_loop_hdl, ESP_MODEM_EVENT, ESP_MODEM_EVENT_UNKNOWN,
-                      (void *)line, strlen(line) + 1, pdMS_TO_TICKS(100));
+    report_unknown_line(esp_dte, line);
 err:
     return err;
 }
