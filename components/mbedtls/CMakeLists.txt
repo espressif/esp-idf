@@ -137,8 +137,10 @@ target_sources(mbedtls PRIVATE ${mbedtls_target_sources})
 if(CONFIG_SOC_SHA_SUPPORTED)
     if(CONFIG_SOC_SHA_SUPPORT_DMA)
         set(SHA_PERIPHERAL_TYPE "dma")
-    else()
+    elseif(CONFIG_SOC_SHA_SUPPORT_PARALLEL_ENG)
         set(SHA_PERIPHERAL_TYPE "parallel_engine")
+    else()
+        set(SHA_PERIPHERAL_TYPE "block")
     endif()
 endif()
 
@@ -163,7 +165,6 @@ if(SHA_PERIPHERAL_TYPE STREQUAL "dma")
 endif()
 
 if(AES_PERIPHERAL_TYPE STREQUAL "dma")
-
     if(NOT CONFIG_SOC_AES_GDMA)
         set(AES_DMA_SRCS "${COMPONENT_DIR}/port/aes/dma/esp_aes_crypto_dma_impl.c")
     else()
@@ -174,6 +175,7 @@ if(AES_PERIPHERAL_TYPE STREQUAL "dma")
     target_include_directories(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/aes/dma/include")
     target_sources(mbedcrypto PRIVATE  "${AES_DMA_SRCS}")
 endif()
+
 
 target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_hardware.c"
                                   "${COMPONENT_DIR}/port/esp_mem.c"

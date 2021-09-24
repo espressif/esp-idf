@@ -89,8 +89,6 @@ TEST_CASE("Test esp_sha()", "[hw_crypto]")
 #endif
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5141
 TEST_CASE("Test esp_sha() function with long input", "[hw_crypto]")
 {
     const void* ptr;
@@ -137,4 +135,3 @@ TEST_CASE("Test esp_sha() function with long input", "[hw_crypto]")
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha512_espsha, sha512_mbedtls, sizeof(sha512_espsha), "SHA512 results should match");
 #endif
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

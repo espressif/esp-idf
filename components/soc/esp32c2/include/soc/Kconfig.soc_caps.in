@@ -45,7 +45,7 @@ config SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 
 config SOC_SHA_SUPPORTED
     bool
-    default n
+    default y
 
 config SOC_ECC_SUPPORTED
     bool
@@ -291,19 +291,7 @@ config SOC_RSA_MAX_BIT_LEN
     int
     default 3072
 
-config SOC_SHA_DMA_MAX_BUFFER_SIZE
-    int
-    default 3968
-
-config SOC_SHA_SUPPORT_DMA
-    bool
-    default y
-
 config SOC_SHA_SUPPORT_RESUME
-    bool
-    default y
-
-config SOC_SHA_GDMA
     bool
     default y
 
