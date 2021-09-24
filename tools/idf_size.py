@@ -649,7 +649,7 @@ class StructureForSummary(object):
         try:
             r.used_dram_ratio = r.used_dram / r.dram_total
         except ZeroDivisionError:
-            r.used_dram_ratio = float('nan')
+            r.used_dram_ratio = float('nan') if r.used_dram != 0 else 0
         r.dram_remain = r.dram_total - r.used_dram
 
         r.used_iram_vectors = get_size((iram_vectors_list))
@@ -659,7 +659,7 @@ class StructureForSummary(object):
         try:
             r.used_iram_ratio = r.used_iram / r.iram_total
         except ZeroDivisionError:
-            r.used_iram_ratio = float('nan')
+            r.used_iram_ratio = float('nan') if r.used_iram != 0 else 0
         r.iram_remain = r.iram_total - r.used_iram
 
         r.used_diram_data = get_size(diram_data_list)
@@ -672,7 +672,7 @@ class StructureForSummary(object):
         try:
             r.used_diram_ratio = r.used_diram / r.diram_total
         except ZeroDivisionError:
-            r.used_diram_ratio = float('nan')
+            r.used_diram_ratio = float('nan') if r.used_diram != 0 else 0
         r.diram_remain = r.diram_total - r.used_diram
 
         r.used_flash_text = get_size(flash_text_list)
