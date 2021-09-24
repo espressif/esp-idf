@@ -90,7 +90,6 @@
 #define portNUM_PROCESSORS                              1
 #endif
 
-#define configASSERT_2                                  0
 #define portUSING_MPU_WRAPPERS                          0
 #define configUSE_MUTEX                                 1
 
@@ -206,7 +205,6 @@
 #define configGENERATE_RUN_TIME_STATS                   1       /* Used by vTaskGetRunTimeStats() */
 #endif
 
-#define configUSE_TRACE_FACILITY_2                      0
 #define configBENCHMARK                                 0
 #define configUSE_16_BIT_TICKS                          0
 #define configIDLE_SHOULD_YIELD                         0
