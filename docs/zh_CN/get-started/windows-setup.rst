@@ -28,7 +28,6 @@ ESP-IDF 需要安装一些必备工具，才能围绕 {IDF_TARGET_NAME} 构建�
 
 .. _get-started-windows-tools-installer:
 
-
 ESP-IDF 工具安装器
 =======================
 

@@ -16,6 +16,7 @@ For Powershell, change to the directory where ESP-IDF is installed. Then run::
     install.ps1
 
 This will download and install the tools necessary to use ESP-IDF. If the specific version of the tool is already installed, no action will be taken.
+
 The tools are downloaded and installed into a directory specified during ESP-IDF Tools Installer process. By default, this is ``C:\Users\username\.espressif``.
 
 .. _get-started-export_bat-windows:

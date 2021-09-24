@@ -1,5 +1,5 @@
 ***********************************************
-Setup Toolchain for Mac OS from Scratch
+Setup Toolchain for macOS from Scratch
 ***********************************************
 
 :link_to_translation:`zh_CN:[中文]`
