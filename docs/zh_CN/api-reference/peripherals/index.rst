@@ -15,6 +15,7 @@
     :SOC_DIG_SIGN_SUPPORTED: ds
     i2c
     i2s
+    lcd
     ledc
     :SOC_MCPWM_SUPPORTED: mcpwm
     :SOC_PCNT_SUPPORTED: pcnt
