@@ -80,8 +80,8 @@ I (401) I2S: APLL: Req RATE: 44100, real rate: 88199.977, BITS: 16, CLKM: 1, BCK
 I (431) I2S: APLL: Req RATE: 44100, real rate: 88199.977, BITS: 16, CLKM: 1, BCK_M: 8, MCLK: 22579194.000, SCLK: 2822399.250000, diva: 1, divb: 0
 I (431) pdm_rec_example: Initializing SD card
 I (431) pdm_rec_example: Using SDMMC peripheral
-I (441) gpio: GPIO[13]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 
-Name: USD  
+I (441) gpio: GPIO[13]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
+Name: USD
 Type: SDHC/SDXC
 Speed: 20 MHz
 Size: 3813MB
