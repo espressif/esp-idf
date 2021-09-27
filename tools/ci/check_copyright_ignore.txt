@@ -2216,7 +2216,6 @@ components/sdmmc/sdmmc_init.c
 components/sdmmc/sdmmc_io.c
 components/sdmmc/sdmmc_mmc.c
 components/sdmmc/sdmmc_sd.c
-components/sdmmc/test/test_sd.c
 components/sdmmc/test/test_sdio.c
 components/soc/esp32/adc_periph.c
 components/soc/esp32/dac_periph.c
