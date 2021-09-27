@@ -99,10 +99,10 @@ typedef struct {
 } opi_psram_mode_reg_t;
 
 static const char* TAG = "opi psram";
-static DRAM_ATTR psram_size_t s_psram_size;
-static void IRAM_ATTR s_config_psram_spi_phases(void);
+static psram_size_t s_psram_size;
+static void s_config_psram_spi_phases(void);
 
-uint8_t IRAM_ATTR psram_get_cs_io(void)
+uint8_t psram_get_cs_io(void)
 {
     return OCT_PSRAM_CS1_IO;
 }
@@ -110,7 +110,7 @@ uint8_t IRAM_ATTR psram_get_cs_io(void)
 /**
  * Initialise mode registers of the PSRAM
  */
-static void IRAM_ATTR s_init_psram_mode_reg(int spi_num, opi_psram_mode_reg_t *mode_reg_config)
+static void s_init_psram_mode_reg(int spi_num, opi_psram_mode_reg_t *mode_reg_config)
 {
     esp_rom_spiflash_read_mode_t mode = ESP_ROM_SPIFLASH_OPI_DTR_MODE;
     int cmd_len = 16;
@@ -145,7 +145,7 @@ static void IRAM_ATTR s_init_psram_mode_reg(int spi_num, opi_psram_mode_reg_t *m
                              false);
 }
 
-static void IRAM_ATTR s_get_psram_mode_reg(int spi_num, opi_psram_mode_reg_t *out_reg)
+static void s_get_psram_mode_reg(int spi_num, opi_psram_mode_reg_t *out_reg)
 {
     esp_rom_spiflash_read_mode_t mode = ESP_ROM_SPIFLASH_OPI_DTR_MODE;
     int cmd_len = 16;
@@ -192,7 +192,7 @@ static void IRAM_ATTR s_get_psram_mode_reg(int spi_num, opi_psram_mode_reg_t *ou
                             false);
 }
 
-static void IRAM_ATTR s_print_psram_info(opi_psram_mode_reg_t *reg_val)
+static void s_print_psram_info(opi_psram_mode_reg_t *reg_val)
 {
     ESP_EARLY_LOGI(TAG, "vendor id : 0x%02x (%s)", reg_val->mr1.vendor_id, reg_val->mr1.vendor_id == 0x0d ? "AP" : "UNKNOWN");
     ESP_EARLY_LOGI(TAG, "dev id    : 0x%02x (generation %d)", reg_val->mr2.dev_id, reg_val->mr2.dev_id + 1);
@@ -215,7 +215,7 @@ static void IRAM_ATTR s_print_psram_info(opi_psram_mode_reg_t *reg_val)
                                                                                 reg_val->mr0.drive_str == 0x02 ? 4 : 8);
 }
 
-static void IRAM_ATTR psram_set_cs_timing(void)
+static void psram_set_cs_timing(void)
 {
     //SPI0/1 share the cs_hold / cs_setup, cd_hold_time / cd_setup_time, cs_hold_delay registers for PSRAM, so we only need to set SPI0 related registers here
     SET_PERI_REG_MASK(SPI_MEM_SPI_SMEM_AC_REG(0), SPI_MEM_SPI_SMEM_CS_HOLD_M | SPI_MEM_SPI_SMEM_CS_SETUP_M);
@@ -225,7 +225,7 @@ static void IRAM_ATTR psram_set_cs_timing(void)
     SET_PERI_REG_BITS(SPI_MEM_SPI_SMEM_AC_REG(0), SPI_MEM_SPI_SMEM_CS_HOLD_DELAY_V, OCT_PSRAM_CS_HOLD_DELAY, SPI_MEM_SPI_SMEM_CS_HOLD_DELAY_S);
 }
 
-static void IRAM_ATTR s_init_psram_pins(void)
+static void s_init_psram_pins(void)
 {
     //Set cs1 pin function
     PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[OCT_PSRAM_CS1_IO],  FUNC_SPICS1_SPICS1);
@@ -235,7 +235,7 @@ static void IRAM_ATTR s_init_psram_pins(void)
     REG_SET_FIELD(SPI_MEM_DATE_REG(0), SPI_MEM_SPI_SMEM_SPICLK_FUN_DRV, 3);
 }
 
-esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vaddrmode)
+esp_err_t psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vaddrmode)
 {
     s_init_psram_pins();
     psram_set_cs_timing();
@@ -248,7 +248,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
     esp_rom_spi_set_dtr_swap_mode(1, false, false);
 
     //Set PSRAM read latency and drive strength
-    static DRAM_ATTR opi_psram_mode_reg_t mode_reg = {0};
+    static opi_psram_mode_reg_t mode_reg = {0};
     mode_reg.mr0.lt = 1;
     mode_reg.mr0.read_latency = 2;
     mode_reg.mr0.drive_str = 0;
@@ -279,7 +279,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
 }
 
 //Configure PSRAM SPI0 phase related registers here according to the PSRAM chip requirement
-static void IRAM_ATTR s_config_psram_spi_phases(void)
+static void s_config_psram_spi_phases(void)
 {
     //Config Write CMD phase for SPI0 to access PSRAM
     SET_PERI_REG_MASK(SPI_MEM_CACHE_SCTRL_REG(0), SPI_MEM_CACHE_SRAM_USR_WCMD_M);
