@@ -3532,6 +3532,8 @@ examples/network/simple_sniffer/main/cmd_sniffer.h
 examples/network/simple_sniffer/main/simple_sniffer_example_main.c
 examples/openthread/ot_br/main/esp_ot_br.c
 examples/openthread/ot_br/main/esp_ot_config.h
+examples/openthread/ot_cli/main/esp_ot_cli.c
+examples/openthread/ot_cli/main/esp_ot_config.h
 examples/openthread/ot_rcp/main/esp_ot_config.h
 examples/openthread/ot_rcp/main/esp_ot_rcp.c
 examples/peripherals/adc/esp32c3/adc/main/adc_dma_example_main.c

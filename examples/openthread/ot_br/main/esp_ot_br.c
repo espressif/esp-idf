@@ -19,6 +19,7 @@
 #include "esp_netif_net_stack.h"
 #include "esp_openthread.h"
 #include "esp_openthread_border_router.h"
+#include "esp_openthread_cli.h"
 #include "esp_openthread_lock.h"
 #include "esp_openthread_netif_glue.h"
 #include "esp_openthread_types.h"
@@ -48,8 +49,6 @@
 #include "openthread/thread_ftd.h"
 
 #define TAG "esp_ot_br"
-
-extern void otAppCliInit(otInstance *aInstance);
 
 static int hex_digit_to_int(char hex)
 {
@@ -170,12 +169,13 @@ static void ot_task_worker(void *aContext)
 
     esp_openthread_lock_acquire(portMAX_DELAY);
     (void)otLoggingSetLevel(CONFIG_LOG_DEFAULT_LEVEL);
-    otAppCliInit(esp_openthread_get_instance());
+    esp_openthread_cli_init();
     create_config_network(esp_openthread_get_instance());
     launch_openthread_network(esp_openthread_get_instance());
     esp_openthread_lock_release();
 
     // Run the main loop
+    esp_openthread_cli_create_task();
     esp_openthread_launch_mainloop();
 
     // Clean up
