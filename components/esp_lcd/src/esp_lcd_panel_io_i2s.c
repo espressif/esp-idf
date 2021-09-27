@@ -81,8 +81,8 @@ struct lcd_i80_trans_descriptor_t {
     lcd_panel_io_i80_t *i80_device; // i80 device issuing this transaction
     const void *data;     // Data buffer
     uint32_t data_length; // Data buffer size
-    void *cb_user_data;   // private data used by trans_done_cb
-    bool (*trans_done_cb)(esp_lcd_panel_io_handle_t panel_io, void *user_data, void *event_data); // transaction done callback
+    esp_lcd_panel_io_color_trans_done_cb_t trans_done_cb; // transaction done callback
+    void *user_ctx;   // private data used by trans_done_cb
     struct {
         unsigned int dc_level: 1; // Level of DC line for this transaction
     } flags;
@@ -97,11 +97,11 @@ struct lcd_panel_io_i80_t {
     QueueHandle_t trans_queue; // Transaction queue, transactions in this queue are pending for scheduler to dispatch
     QueueHandle_t done_queue;  // Transaction done queue, transactions in this queue are finished but not recycled by the caller
     size_t queue_size;         // Size of transaction queue
-    size_t num_trans_inflight;  // Number of transactions that are undergoing (the descriptor not recycled yet)
+    size_t num_trans_inflight; // Number of transactions that are undergoing (the descriptor not recycled yet)
     int lcd_cmd_bits;          // Bit width of LCD command
     int lcd_param_bits;        // Bit width of LCD parameter
-    void *cb_user_data;        // private data used when transfer color data
-    bool (*on_color_trans_done)(esp_lcd_panel_io_handle_t panel_io, void *user_data, void *event_data); // color data trans done callback
+    void *user_ctx;            // private data used when transfer color data
+    esp_lcd_panel_io_color_trans_done_cb_t on_color_trans_done; // color data trans done callback
     LIST_ENTRY(lcd_panel_io_i80_t) device_list_entry; // Entry of i80 device list
     struct {
         unsigned int dc_cmd_level: 1;  // Level of DC line in CMD phase
@@ -274,7 +274,7 @@ esp_err_t esp_lcd_new_panel_io_i80(esp_lcd_i80_bus_handle_t bus, const esp_lcd_p
     i80_device->dc_levels.dc_data_level = io_config->dc_levels.dc_data_level;
     i80_device->cs_gpio_num = io_config->cs_gpio_num;
     i80_device->on_color_trans_done = io_config->on_color_trans_done;
-    i80_device->cb_user_data = io_config->user_data;
+    i80_device->user_ctx = io_config->user_ctx;
     i80_device->flags.cs_active_high = io_config->flags.cs_active_high;
     i80_device->flags.swap_color_bytes = io_config->flags.swap_color_bytes;
     i80_device->flags.pclk_idle_low = io_config->flags.pclk_idle_low;
@@ -557,7 +557,7 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
 
     // sending LCD color data to queue
     trans_desc->trans_done_cb = next_device->on_color_trans_done;
-    trans_desc->cb_user_data = next_device->cb_user_data;
+    trans_desc->user_ctx = next_device->user_ctx;
     trans_desc->flags.dc_level = next_device->dc_levels.dc_data_level; // DC level for data transaction
     i2s_lcd_prepare_color_buffer(trans_desc, color, color_size);
     // send transaction to trans_queue
@@ -697,7 +697,7 @@ static IRAM_ATTR void lcd_default_isr_handler(void *args)
             }
             // device callback
             if (trans_desc->trans_done_cb) {
-                if (trans_desc->trans_done_cb(&cur_device->base, trans_desc->cb_user_data, NULL)) {
+                if (trans_desc->trans_done_cb(&cur_device->base, NULL, trans_desc->user_ctx)) {
                     need_yield = true;
                 }
             }

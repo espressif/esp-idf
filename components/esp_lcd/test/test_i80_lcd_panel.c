@@ -413,9 +413,9 @@ TEST_CASE("lcd panel with i80 interface (st7789, 8bits)", "[lcd]")
 #if CONFIG_LV_USE_USER_DATA
 #include "test_lvgl_port.h"
 
-static bool notify_lvgl_ready_to_flush(esp_lcd_panel_io_handle_t panel_io, void *user_data, void *event_data)
+static bool notify_lvgl_ready_to_flush(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx)
 {
-    lv_disp_t *disp = *(lv_disp_t **)user_data;
+    lv_disp_t *disp = *(lv_disp_t **)user_ctx;
     lv_disp_flush_ready(&disp->driver);
     return false;
 }
@@ -465,7 +465,7 @@ TEST_CASE("lvgl gui with i80 interface (st7789, 8bits)", "[lcd][lvgl][ignore]")
             .swap_color_bytes = 1,
         },
         .on_color_trans_done = notify_lvgl_ready_to_flush,
-        .user_data = &disp,
+        .user_ctx = &disp,
         .lcd_cmd_bits = 8,
         .lcd_param_bits = 8,
     };
@@ -537,7 +537,7 @@ TEST_CASE("lvgl gui with i80 interface (nt35510, 8/16bits)", "[lcd][lvgl][ignore
             .dc_data_level = 1,
         },
         .on_color_trans_done = notify_lvgl_ready_to_flush,
-        .user_data = &disp,
+        .user_ctx = &disp,
         .lcd_cmd_bits = 16,
         .lcd_param_bits = 16,
     };

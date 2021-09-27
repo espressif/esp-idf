@@ -1,11 +1,8 @@
-/* LCD LVGL UI example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: CC0-1.0
+ */
 
 #include <math.h>
 #include "lvgl.h"
@@ -18,6 +15,11 @@
 LV_IMG_DECLARE(esp_logo)
 LV_IMG_DECLARE(esp_text)
 
+typedef struct {
+    lv_obj_t *scr;
+    int count_val;
+} my_timer_context_t;
+
 static lv_obj_t *arc[3];
 static lv_obj_t *img_logo;
 static lv_obj_t *img_text;
@@ -29,8 +31,9 @@ static lv_color_t arc_color[] = {
 
 static void anim_timer_cb(lv_timer_t *timer)
 {
-    static int32_t count = -90;
-    lv_obj_t *scr = (lv_obj_t *) timer->user_data;
+    my_timer_context_t *timer_ctx = (my_timer_context_t *) timer->user_data;
+    int count = timer_ctx->count_val;
+    lv_obj_t *scr = timer_ctx->scr;
 
     // Play arc animation
     if (count < 90) {
@@ -58,14 +61,16 @@ static void anim_timer_cb(lv_timer_t *timer)
     // Move images when arc animation finished
     if ((count >= 100) && (count <= 180)) {
         lv_coord_t offset = (sinf((count - 140) * 2.25f / 90.0f) + 1) * 20.0f;
-        lv_obj_align((lv_obj_t *) timer->user_data, LV_ALIGN_CENTER, 0, -offset);
+        lv_obj_align(img_logo, LV_ALIGN_CENTER, 0, -offset);
         lv_obj_align(img_text, LV_ALIGN_CENTER, 0, 2 * offset);
         lv_obj_set_style_img_opa(img_text, offset / 40.0f * 255, 0);
     }
 
     // Delete timer when all animation finished
-    if (++count >= 180) {
+    if ((count += 5) == 220) {
         lv_timer_del(timer);
+    } else {
+        timer_ctx->count_val = count;
     }
 }
 
@@ -95,5 +100,9 @@ void example_lvgl_demo_ui(lv_obj_t *scr)
     }
 
     // Create timer for animation
-    lv_timer_create(anim_timer_cb, 20, (void *) scr);
+    static my_timer_context_t my_tim_ctx = {
+        .count_val = -90,
+    };
+    my_tim_ctx.scr = scr;
+    lv_timer_create(anim_timer_cb, 20, &my_tim_ctx);
 }

@@ -78,8 +78,8 @@ struct esp_rgb_panel_t {
     int new_frame_id;               // ID for new frame, we use ID to identify whether the frame content has been updated
     int cur_frame_id;               // ID for current transferring frame
     SemaphoreHandle_t done_sem;     // Binary semaphore, indicating if the new frame has been flushed to LCD
-    bool (*on_frame_trans_done)(esp_lcd_panel_t *panel, void *user_data); // Callback, invoked after frame trans done
-    void *user_data;                // Reserved user's data of callback functions
+    esp_lcd_rgb_panel_frame_trans_done_cb_t on_frame_trans_done; // Callback, invoked after frame trans done
+    void *user_ctx;                // Reserved user's data of callback functions
     int x_gap;                      // Extra gap in x coordinate, it's used when calculate the flush window
     int y_gap;                      // Extra gap in y coordinate, it's used when calculate the flush window
     struct {
@@ -164,7 +164,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     rgb_panel->disp_gpio_num = rgb_panel_config->disp_gpio_num;
     rgb_panel->flags.disp_en_level = !rgb_panel_config->flags.disp_active_low;
     rgb_panel->on_frame_trans_done = rgb_panel_config->on_frame_trans_done;
-    rgb_panel->user_data = rgb_panel_config->user_data;
+    rgb_panel->user_ctx = rgb_panel_config->user_ctx;
     // fill function table
     rgb_panel->base.del = rgb_panel_del;
     rgb_panel->base.reset = rgb_panel_reset;
@@ -493,7 +493,7 @@ IRAM_ATTR static void lcd_default_isr_handler(void *args)
     if (intr_status & LCD_LL_EVENT_VSYNC_END) {
         if (panel->flags.new_frame) { // the finished one is a new frame
             if (panel->on_frame_trans_done) {
-                if (panel->on_frame_trans_done(&panel->base, panel->user_data)) {
+                if (panel->on_frame_trans_done(&panel->base, NULL, panel->user_ctx)) {
                     need_yield = true;
                 }
             }

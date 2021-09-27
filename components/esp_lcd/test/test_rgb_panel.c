@@ -105,9 +105,9 @@ TEST_CASE("lcd rgb lcd panel", "[lcd]")
 #if CONFIG_LV_USE_USER_DATA
 #include "test_lvgl_port.h"
 
-static bool notify_lvgl_ready_to_flush(esp_lcd_panel_handle_t panel, void *user_data)
+static bool notify_lvgl_ready_to_flush(esp_lcd_panel_handle_t panel, esp_lcd_rgb_panel_event_data_t *edata, void *user_ctx)
 {
-    lv_disp_t *disp = *(lv_disp_t **)user_data;
+    lv_disp_t *disp = *(lv_disp_t **)user_ctx;
     lv_disp_flush_ready(&disp->driver);
     return false;
 }
@@ -157,7 +157,7 @@ TEST_CASE("lvgl gui with rgb interface", "[lcd][lvgl][ignore]")
         },
         .flags.fb_in_psram = 1,
         .on_frame_trans_done = notify_lvgl_ready_to_flush,
-        .user_data = &disp,
+        .user_ctx = &disp,
     };
     TEST_ESP_OK(esp_lcd_new_rgb_panel(&panel_config, &panel_handle));
     TEST_ESP_OK(esp_lcd_panel_reset(panel_handle));
