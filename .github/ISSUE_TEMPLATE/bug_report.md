@@ -24,7 +24,7 @@ If the issue cannot be solved after the steps before, please follow these instru
 
 1. Fill in all the fields under **Environment** marked with [ ] by picking the correct option for you in each case and deleting the others.
 2. Describe your problem.
-3. Include [debug logs from the "monitor" tool](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/idf-monitor.html#automatically-decoding-addresses), or [coredumps](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/core_dump.html).
+3. Include [debug logs from the "monitor" tool](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/tools/idf-monitor.html), or [coredumps](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/core_dump.html).
 4. Providing as much information as possible under **Other items if possible** will help us locate and fix the problem.
 5. Use [Markdown](https://guides.github.com/features/mastering-markdown/) (see formatting buttons above) and the Preview tab to check what the issue will look like.
 6. Delete these instructions from the above to the below marker lines before submitting this issue.
