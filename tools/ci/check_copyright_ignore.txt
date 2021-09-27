@@ -1116,7 +1116,6 @@ components/esp_system/include/esp_private/usb_console.h
 components/esp_system/include/esp_system.h
 components/esp_system/include/esp_task.h
 components/esp_system/include/esp_task_wdt.h
-components/esp_system/int_wdt.c
 components/esp_system/panic.c
 components/esp_system/port/arch/riscv/expression_with_stack.c
 components/esp_system/port/arch/xtensa/debug_helpers.c
@@ -1328,8 +1327,6 @@ components/freemodbus/port/portother.c
 components/freemodbus/port/portother_m.c
 components/freemodbus/port/portserial.c
 components/freemodbus/port/portserial_m.c
-components/freemodbus/port/porttimer.c
-components/freemodbus/port/porttimer_m.c
 components/freemodbus/serial_master/modbus_controller/mbc_serial_master.c
 components/freemodbus/serial_master/modbus_controller/mbc_serial_master.h
 components/freemodbus/serial_master/port/port_serial_master.h
@@ -1447,7 +1444,6 @@ components/hal/esp32/include/hal/interrupt_controller_ll.h
 components/hal/esp32/include/hal/ledc_ll.h
 components/hal/esp32/include/hal/mcpwm_ll.h
 components/hal/esp32/include/hal/mpu_ll.h
-components/hal/esp32/include/hal/mwdt_ll.h
 components/hal/esp32/include/hal/pcnt_ll.h
 components/hal/esp32/include/hal/rmt_ll.h
 components/hal/esp32/include/hal/rtc_cntl_ll.h
@@ -1459,7 +1455,6 @@ components/hal/esp32/include/hal/soc_ll.h
 components/hal/esp32/include/hal/spi_flash_encrypted_ll.h
 components/hal/esp32/include/hal/spi_flash_ll.h
 components/hal/esp32/include/hal/spi_ll.h
-components/hal/esp32/include/hal/timer_ll.h
 components/hal/esp32/include/hal/touch_sensor_hal.h
 components/hal/esp32/include/hal/touch_sensor_ll.h
 components/hal/esp32/include/hal/trace_ll.h
@@ -1486,7 +1481,6 @@ components/hal/esp32c3/include/hal/interrupt_controller_ll.h
 components/hal/esp32c3/include/hal/ledc_ll.h
 components/hal/esp32c3/include/hal/memprot_ll.h
 components/hal/esp32c3/include/hal/mpu_ll.h
-components/hal/esp32c3/include/hal/mwdt_ll.h
 components/hal/esp32c3/include/hal/rtc_cntl_ll.h
 components/hal/esp32c3/include/hal/rwdt_ll.h
 components/hal/esp32c3/include/hal/sha_ll.h
@@ -1497,7 +1491,6 @@ components/hal/esp32c3/include/hal/spi_flash_ll.h
 components/hal/esp32c3/include/hal/spi_ll.h
 components/hal/esp32c3/include/hal/spimem_flash_ll.h
 components/hal/esp32c3/include/hal/systimer_ll.h
-components/hal/esp32c3/include/hal/timer_ll.h
 components/hal/esp32c3/include/hal/twai_ll.h
 components/hal/esp32c3/include/hal/uart_ll.h
 components/hal/esp32c3/include/hal/uhci_ll.h
@@ -1522,7 +1515,6 @@ components/hal/esp32h2/include/hal/interrupt_controller_ll.h
 components/hal/esp32h2/include/hal/ledc_ll.h
 components/hal/esp32h2/include/hal/memprot_ll.h
 components/hal/esp32h2/include/hal/mpu_ll.h
-components/hal/esp32h2/include/hal/mwdt_ll.h
 components/hal/esp32h2/include/hal/rtc_cntl_ll.h
 components/hal/esp32h2/include/hal/rwdt_ll.h
 components/hal/esp32h2/include/hal/sha_ll.h
@@ -1533,7 +1525,6 @@ components/hal/esp32h2/include/hal/spi_flash_ll.h
 components/hal/esp32h2/include/hal/spi_ll.h
 components/hal/esp32h2/include/hal/spimem_flash_ll.h
 components/hal/esp32h2/include/hal/systimer_ll.h
-components/hal/esp32h2/include/hal/timer_ll.h
 components/hal/esp32h2/include/hal/twai_ll.h
 components/hal/esp32h2/include/hal/uart_ll.h
 components/hal/esp32h2/include/hal/uhci_ll.h
@@ -1564,7 +1555,6 @@ components/hal/esp32s2/include/hal/ledc_ll.h
 components/hal/esp32s2/include/hal/memprot_ll.h
 components/hal/esp32s2/include/hal/memprot_peri_ll.h
 components/hal/esp32s2/include/hal/mpu_ll.h
-components/hal/esp32s2/include/hal/mwdt_ll.h
 components/hal/esp32s2/include/hal/pcnt_ll.h
 components/hal/esp32s2/include/hal/rtc_cntl_ll.h
 components/hal/esp32s2/include/hal/rtc_io_ll.h
@@ -1577,7 +1567,6 @@ components/hal/esp32s2/include/hal/spi_flash_ll.h
 components/hal/esp32s2/include/hal/spi_ll.h
 components/hal/esp32s2/include/hal/spimem_flash_ll.h
 components/hal/esp32s2/include/hal/systimer_ll.h
-components/hal/esp32s2/include/hal/timer_ll.h
 components/hal/esp32s2/include/hal/touch_sensor_hal.h
 components/hal/esp32s2/include/hal/touch_sensor_ll.h
 components/hal/esp32s2/include/hal/trace_ll.h
@@ -1599,7 +1588,6 @@ components/hal/esp32s3/include/hal/ledc_ll.h
 components/hal/esp32s3/include/hal/mcpwm_ll.h
 components/hal/esp32s3/include/hal/memprot_ll.h
 components/hal/esp32s3/include/hal/mpu_ll.h
-components/hal/esp32s3/include/hal/mwdt_ll.h
 components/hal/esp32s3/include/hal/pcnt_ll.h
 components/hal/esp32s3/include/hal/rtc_cntl_ll.h
 components/hal/esp32s3/include/hal/rwdt_ll.h
@@ -1611,7 +1599,6 @@ components/hal/esp32s3/include/hal/spi_flash_ll.h
 components/hal/esp32s3/include/hal/spi_ll.h
 components/hal/esp32s3/include/hal/spimem_flash_ll.h
 components/hal/esp32s3/include/hal/systimer_ll.h
-components/hal/esp32s3/include/hal/timer_ll.h
 components/hal/esp32s3/include/hal/trace_ll.h
 components/hal/esp32s3/include/hal/twai_ll.h
 components/hal/esp32s3/include/hal/uart_ll.h
@@ -1676,8 +1663,6 @@ components/hal/include/hal/spi_slave_hd_hal.h
 components/hal/include/hal/spi_types.h
 components/hal/include/hal/systimer_hal.h
 components/hal/include/hal/systimer_types.h
-components/hal/include/hal/timer_hal.h
-components/hal/include/hal/timer_types.h
 components/hal/include/hal/touch_sensor_hal.h
 components/hal/include/hal/twai_hal.h
 components/hal/include/hal/twai_types.h
@@ -1717,7 +1702,6 @@ components/hal/spi_slave_hal_iram.c
 components/hal/spi_slave_hd_hal.c
 components/hal/systimer_hal.c
 components/hal/test/test_mpu.c
-components/hal/timer_hal.c
 components/hal/touch_sensor_hal.c
 components/hal/twai_hal.c
 components/hal/twai_hal_iram.c
@@ -2223,8 +2207,6 @@ components/soc/esp32/include/soc/spi_reg.h
 components/soc/esp32/include/soc/spi_struct.h
 components/soc/esp32/include/soc/syscon_reg.h
 components/soc/esp32/include/soc/syscon_struct.h
-components/soc/esp32/include/soc/timer_group_reg.h
-components/soc/esp32/include/soc/timer_group_struct.h
 components/soc/esp32/include/soc/touch_sensor_channel.h
 components/soc/esp32/include/soc/twai_struct.h
 components/soc/esp32/include/soc/uart_channel.h
@@ -2244,7 +2226,6 @@ components/soc/esp32/sdio_slave_periph.c
 components/soc/esp32/sdmmc_periph.c
 components/soc/esp32/sigmadelta_periph.c
 components/soc/esp32/spi_periph.c
-components/soc/esp32/timer_periph.c
 components/soc/esp32/touch_sensor_periph.c
 components/soc/esp32/uart_periph.c
 components/soc/esp32c3/adc_periph.c
@@ -2330,7 +2311,6 @@ components/soc/esp32c3/ledc_periph.c
 components/soc/esp32c3/rmt_periph.c
 components/soc/esp32c3/sigmadelta_periph.c
 components/soc/esp32c3/spi_periph.c
-components/soc/esp32c3/timer_periph.c
 components/soc/esp32c3/uart_periph.c
 components/soc/esp32h2/adc_periph.c
 components/soc/esp32h2/gdma_periph.c
@@ -2418,7 +2398,6 @@ components/soc/esp32h2/ledc_periph.c
 components/soc/esp32h2/rmt_periph.c
 components/soc/esp32h2/sigmadelta_periph.c
 components/soc/esp32h2/spi_periph.c
-components/soc/esp32h2/timer_periph.c
 components/soc/esp32h2/uart_periph.c
 components/soc/esp32s2/adc_periph.c
 components/soc/esp32s2/dac_periph.c
@@ -2524,7 +2503,6 @@ components/soc/esp32s2/rmt_periph.c
 components/soc/esp32s2/rtc_io_periph.c
 components/soc/esp32s2/sigmadelta_periph.c
 components/soc/esp32s2/spi_periph.c
-components/soc/esp32s2/timer_periph.c
 components/soc/esp32s2/touch_sensor_periph.c
 components/soc/esp32s2/uart_periph.c
 components/soc/esp32s2/usb_periph.c
@@ -2624,8 +2602,6 @@ components/soc/esp32s3/include/soc/system_reg.h
 components/soc/esp32s3/include/soc/system_struct.h
 components/soc/esp32s3/include/soc/systimer_reg.h
 components/soc/esp32s3/include/soc/systimer_struct.h
-components/soc/esp32s3/include/soc/timer_group_reg.h
-components/soc/esp32s3/include/soc/timer_group_struct.h
 components/soc/esp32s3/include/soc/touch_channel.h
 components/soc/esp32s3/include/soc/touch_sensor_caps.h
 components/soc/esp32s3/include/soc/twai_caps.h
@@ -2661,7 +2637,6 @@ components/soc/esp32s3/sdio_slave_periph.c
 components/soc/esp32s3/sdmmc_periph.c
 components/soc/esp32s3/sigmadelta_periph.c
 components/soc/esp32s3/spi_periph.c
-components/soc/esp32s3/timer_periph.c
 components/soc/esp32s3/uart_periph.c
 components/soc/esp32s3/usb_periph.c
 components/soc/esp32s3/usb_periph.h
@@ -2691,7 +2666,6 @@ components/soc/include/soc/sigmadelta_periph.h
 components/soc/include/soc/soc_memory_types.h
 components/soc/include/soc/spi_periph.h
 components/soc/include/soc/syscon_periph.h
-components/soc/include/soc/timer_periph.h
 components/soc/include/soc/touch_sensor_periph.h
 components/soc/include/soc/twai_periph.h
 components/soc/include/soc/uart_periph.h
@@ -3377,8 +3351,6 @@ examples/bluetooth/esp_ble_mesh/common_components/fast_provisioning/ble_mesh_fas
 examples/bluetooth/esp_ble_mesh/common_components/light_driver/include/iot_led.h
 examples/bluetooth/esp_ble_mesh/common_components/light_driver/include/iot_light.h
 examples/bluetooth/esp_ble_mesh/common_components/light_driver/include/light_driver.h
-examples/bluetooth/esp_ble_mesh/common_components/light_driver/iot_led.c
-examples/bluetooth/esp_ble_mesh/common_components/light_driver/iot_light.c
 examples/bluetooth/esp_ble_mesh/common_components/light_driver/light_driver.c
 examples/bluetooth/esp_hid_device/main/esp_hid_device_main.c
 examples/bluetooth/esp_hid_device/main/esp_hid_gap.c
@@ -3597,8 +3569,6 @@ examples/peripherals/spi_slave_hd/append_mode/slave/main/app_main.c
 examples/peripherals/spi_slave_hd/segment_mode/seg_master/main/app_main.c
 examples/peripherals/spi_slave_hd/segment_mode/seg_slave/main/app_main.c
 examples/peripherals/temp_sensor/main/temp_sensor_main.c
-examples/peripherals/timer_group/example_test.py
-examples/peripherals/timer_group/main/timer_group_example_main.c
 examples/peripherals/touch_element/touch_button/main/touch_button_example_main.c
 examples/peripherals/touch_element/touch_element_waterproof/main/waterproof_example_main.c
 examples/peripherals/touch_element/touch_elements_combination/main/touch_elements_example_main.c
@@ -4161,7 +4131,6 @@ tools/unit-test-app/components/test_utils/include/ccomp_timer.h
 tools/unit-test-app/components/test_utils/include/test_utils.h
 tools/unit-test-app/components/test_utils/private_include/ccomp_timer_impl.h
 tools/unit-test-app/components/test_utils/ref_clock_impl_rmt_pcnt.c
-tools/unit-test-app/components/test_utils/ref_clock_impl_timergroup.c
 tools/unit-test-app/components/test_utils/test/ccomp_timer_test_api.c
 tools/unit-test-app/components/test_utils/test/ccomp_timer_test_data.c
 tools/unit-test-app/components/test_utils/test/ccomp_timer_test_inst.c
