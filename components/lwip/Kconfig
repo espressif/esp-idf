@@ -266,6 +266,15 @@ menu "LWIP"
             server. Last valid DHCP configuration is stored in nvs and restored after reset/power-up. If IP is still
             available, there is no need for sending discovery message to DHCP server and save some time.
 
+    config LWIP_DHCP_OPTIONS_LEN
+        int "DHCP total option length"
+        default 68
+        range 68 255
+        help
+            Set total length of outgoing DHCP option msg. Generally bigger value means it can carry more
+            options and values. If your code meets LWIP_ASSERT due to option value is too long.
+            Please increase the LWIP_DHCP_OPTIONS_LEN value.
+
     menu "DHCP server"
 
         config LWIP_DHCPS

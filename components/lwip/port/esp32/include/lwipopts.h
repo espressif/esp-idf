@@ -266,6 +266,12 @@
 
 #endif
 
+/**
+ * CONFIG_LWIP_DHCP_OPTIONS_LEN: The total length of outgoing DHCP option msg. If you have many options
+ * and options value is too long, you can configure the length according to your requirements
+ */
+#define DHCP_OPTIONS_LEN                CONFIG_LWIP_DHCP_OPTIONS_LEN
+
 /*
    ------------------------------------
    ---------- AUTOIP options ----------
