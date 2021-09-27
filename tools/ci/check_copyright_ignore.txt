@@ -1524,7 +1524,6 @@ components/hal/esp32c3/include/hal/ledc_ll.h
 components/hal/esp32c3/include/hal/memprot_ll.h
 components/hal/esp32c3/include/hal/mpu_ll.h
 components/hal/esp32c3/include/hal/mwdt_ll.h
-components/hal/esp32c3/include/hal/rmt_ll.h
 components/hal/esp32c3/include/hal/rtc_cntl_ll.h
 components/hal/esp32c3/include/hal/rwdt_ll.h
 components/hal/esp32c3/include/hal/sha_ll.h
@@ -1563,7 +1562,6 @@ components/hal/esp32h2/include/hal/ledc_ll.h
 components/hal/esp32h2/include/hal/memprot_ll.h
 components/hal/esp32h2/include/hal/mpu_ll.h
 components/hal/esp32h2/include/hal/mwdt_ll.h
-components/hal/esp32h2/include/hal/rmt_ll.h
 components/hal/esp32h2/include/hal/rtc_cntl_ll.h
 components/hal/esp32h2/include/hal/rwdt_ll.h
 components/hal/esp32h2/include/hal/sha_ll.h
@@ -1608,7 +1606,6 @@ components/hal/esp32s2/include/hal/memprot_peri_ll.h
 components/hal/esp32s2/include/hal/mpu_ll.h
 components/hal/esp32s2/include/hal/mwdt_ll.h
 components/hal/esp32s2/include/hal/pcnt_ll.h
-components/hal/esp32s2/include/hal/rmt_ll.h
 components/hal/esp32s2/include/hal/rtc_cntl_ll.h
 components/hal/esp32s2/include/hal/rtc_io_ll.h
 components/hal/esp32s2/include/hal/rwdt_ll.h
@@ -1647,7 +1644,6 @@ components/hal/esp32s3/include/hal/memprot_ll.h
 components/hal/esp32s3/include/hal/mpu_ll.h
 components/hal/esp32s3/include/hal/mwdt_ll.h
 components/hal/esp32s3/include/hal/pcnt_ll.h
-components/hal/esp32s3/include/hal/rmt_ll.h
 components/hal/esp32s3/include/hal/rtc_cntl_ll.h
 components/hal/esp32s3/include/hal/rtc_io_ll.h
 components/hal/esp32s3/include/hal/rwdt_ll.h
@@ -2563,7 +2559,6 @@ components/soc/esp32s2/include/soc/sens_reg.h
 components/soc/esp32s2/include/soc/sens_struct.h
 components/soc/esp32s2/include/soc/sensitive_reg.h
 components/soc/esp32s2/include/soc/soc.h
-components/soc/esp32s2/include/soc/soc_caps.h
 components/soc/esp32s2/include/soc/soc_pins.h
 components/soc/esp32s2/include/soc/soc_ulp.h
 components/soc/esp32s2/include/soc/spi_mem_reg.h
