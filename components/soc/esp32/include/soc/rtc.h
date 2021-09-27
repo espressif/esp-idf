@@ -493,6 +493,7 @@ typedef struct rtc_sleep_config_s {
     uint32_t rtc_slowmem_pd_en : 1;     //!< power down RTC slow memory
     uint32_t rtc_peri_pd_en : 1;        //!< power down RTC peripherals
     uint32_t wifi_pd_en : 1;            //!< power down WiFi
+    uint32_t int_8m_pd_en : 1;          //!< Power down Internal 8M oscillator
     uint32_t rom_mem_pd_en : 1;         //!< power down main RAM and ROM
     uint32_t deep_slp : 1;              //!< power down digital domain
     uint32_t wdt_flashboot_mod_en : 1;  //!< enable WDT flashboot mode
@@ -513,6 +514,7 @@ typedef struct rtc_sleep_config_s {
  *
  * @param RTC_SLEEP_PD_x flags combined using bitwise OR
  */
+#define is_dslp(pd_flags)   ((pd_flags) & RTC_SLEEP_PD_DIG)
 #define RTC_SLEEP_CONFIG_DEFAULT(sleep_flags) { \
     .lslp_mem_inf_fpu = 0, \
     .rtc_mem_inf_fpu = 0, \
@@ -521,13 +523,18 @@ typedef struct rtc_sleep_config_s {
     .rtc_slowmem_pd_en = ((sleep_flags) & RTC_SLEEP_PD_RTC_SLOW_MEM) ? 1 : 0, \
     .rtc_peri_pd_en = ((sleep_flags) & RTC_SLEEP_PD_RTC_PERIPH) ? 1 : 0, \
     .wifi_pd_en = 0, \
+    .int_8m_pd_en = is_dslp(sleep_flags) ? 1 : ((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? 1 : 0, \
     .rom_mem_pd_en = 0, \
     .deep_slp = ((sleep_flags) & RTC_SLEEP_PD_DIG) ? 1 : 0, \
     .wdt_flashboot_mod_en = 0, \
     .dig_dbias_wak = RTC_CNTL_DBIAS_1V10, \
-    .dig_dbias_slp = RTC_CNTL_DBIAS_0V90, \
+    .dig_dbias_slp = is_dslp(sleep_flags)                   ? RTC_CNTL_DBIAS_0V90 \
+                   : !((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? RTC_CNTL_DBIAS_1V10 \
+                   : RTC_CNTL_DBIAS_0V90, \
     .rtc_dbias_wak = RTC_CNTL_DBIAS_1V10, \
-    .rtc_dbias_slp = RTC_CNTL_DBIAS_0V90, \
+    .rtc_dbias_slp = is_dslp(sleep_flags)                   ? RTC_CNTL_DBIAS_0V90 \
+                   : !((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? RTC_CNTL_DBIAS_1V10 \
+                   : RTC_CNTL_DBIAS_0V90, \
     .lslp_meminf_pd = 1, \
     .vddsdio_pd_en = ((sleep_flags) & RTC_SLEEP_PD_VDDSDIO) ? 1 : 0, \
     .xtal_fpu = ((sleep_flags) & RTC_SLEEP_PD_XTAL) ? 0 : 1 \
@@ -540,6 +547,7 @@ typedef struct rtc_sleep_config_s {
 #define RTC_SLEEP_PD_RTC_MEM_FOLLOW_CPU BIT(4)  //!< RTC FAST and SLOW memories are automatically powered up and down along with the CPU
 #define RTC_SLEEP_PD_VDDSDIO            BIT(5)  //!< Power down VDDSDIO regulator
 #define RTC_SLEEP_PD_XTAL               BIT(6)  //!< Power down main XTAL
+#define RTC_SLEEP_PD_INT_8M             BIT(7)  //!< Power down Internal 8M oscillator
 
 /* Various delays to be programmed into power control state machines */
 #define RTC_CNTL_XTL_BUF_WAIT_SLP_US        (500)
